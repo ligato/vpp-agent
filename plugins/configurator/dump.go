@@ -26,12 +26,13 @@ type dumpService struct {
 	log logging.Logger
 
 	// VPP Handlers
-	aclHandler   aclvppcalls.ACLVppRead
-	ifHandler    ifvppcalls.IfVppRead
-	natHandler   natvppcalls.NatVppRead
-	bdHandler    l2vppcalls.BridgeDomainVppRead
+	aclHandler aclvppcalls.ACLVppRead
+	ifHandler  ifvppcalls.IfVppRead
+	natHandler natvppcalls.NatVppRead
+	/*bdHandler    l2vppcalls.BridgeDomainVppRead
 	fibHandler   l2vppcalls.FIBVppRead
-	xcHandler    l2vppcalls.XConnectVppRead
+	xcHandler    l2vppcalls.XConnectVppRead*/
+	l2Handler    l2vppcalls.L2VppAPI
 	arpHandler   l3vppcalls.ArpVppRead
 	pArpHandler  l3vppcalls.ProxyArpVppRead
 	rtHandler    l3vppcalls.RouteVppRead
@@ -148,7 +149,7 @@ func (svc *dumpService) DumpIPSecSAs() ([]*vpp_ipsec.SecurityAssociation, error)
 // only error is send back in response
 func (svc *dumpService) DumpBDs() ([]*vpp_l2.BridgeDomain, error) {
 	var bds []*vpp_l2.BridgeDomain
-	bdDetails, err := svc.bdHandler.DumpBridgeDomains()
+	bdDetails, err := svc.l2Handler.DumpBridgeDomains()
 	if err != nil {
 		return nil, err
 	}
@@ -163,7 +164,7 @@ func (svc *dumpService) DumpBDs() ([]*vpp_l2.BridgeDomain, error) {
 // only error is send back in response
 func (svc *dumpService) DumpFIBs() ([]*vpp_l2.FIBEntry, error) {
 	var fibs []*vpp_l2.FIBEntry
-	fibDetails, err := svc.fibHandler.DumpL2FIBs()
+	fibDetails, err := svc.l2Handler.DumpL2FIBs()
 	if err != nil {
 		return nil, err
 	}
@@ -178,7 +179,7 @@ func (svc *dumpService) DumpFIBs() ([]*vpp_l2.FIBEntry, error) {
 // only error is send back in response
 func (svc *dumpService) DumpXConnects() ([]*vpp_l2.XConnectPair, error) {
 	var xcs []*vpp_l2.XConnectPair
-	xcDetails, err := svc.xcHandler.DumpXConnectPairs()
+	xcDetails, err := svc.l2Handler.DumpXConnectPairs()
 	if err != nil {
 		return nil, err
 	}

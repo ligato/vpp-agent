@@ -93,21 +93,17 @@ func (p *Plugin) registerNatHandlers() {
 
 // Registers L2 plugin REST handlers
 func (p *Plugin) registerL2Handlers() {
-	// GET bridge domain IDs
-	/*p.registerHTTPHandler(resturl.BdID, GET, func() (interface{}, error) {
-		return p.bdHandler.DumpBridgeDomainIDs()
-	})*/
 	// GET bridge domains
 	p.registerHTTPHandler(resturl.Bd, GET, func() (interface{}, error) {
-		return p.bdHandler.DumpBridgeDomains()
+		return p.l2Handler.DumpBridgeDomains()
 	})
 	// GET FIB entries
 	p.registerHTTPHandler(resturl.Fib, GET, func() (interface{}, error) {
-		return p.fibHandler.DumpL2FIBs()
+		return p.l2Handler.DumpL2FIBs()
 	})
 	// GET cross connects
 	p.registerHTTPHandler(resturl.Xc, GET, func() (interface{}, error) {
-		return p.xcHandler.DumpXConnectPairs()
+		return p.l2Handler.DumpXConnectPairs()
 	})
 }
 
@@ -257,8 +253,7 @@ func (p *Plugin) commandHandler(formatter *render.Render) http.HandlerFunc {
 		defer ch.Close()
 
 		r := &vpe.CliInband{
-			Length: uint32(len(command)),
-			Cmd:    []byte(command),
+			Cmd: command,
 		}
 		reply := &vpe.CliInbandReply{}
 		err = ch.SendRequest(r).ReceiveReply(reply)
@@ -279,20 +274,19 @@ func (p *Plugin) commandHandler(formatter *render.Render) http.HandlerFunc {
 	}
 }
 
-func (p *Plugin) sendCommand(ch govppapi.Channel, command string) ([]byte, error) {
+func (p *Plugin) sendCommand(ch govppapi.Channel, command string) (string, error) {
 	r := &vpe.CliInband{
-		Length: uint32(len(command)),
-		Cmd:    []byte(command),
+		Cmd: command,
 	}
 
 	reply := &vpe.CliInbandReply{}
 	if err := ch.SendRequest(r).ReceiveReply(reply); err != nil {
-		return nil, fmt.Errorf("sending request failed: %v", err)
+		return "", fmt.Errorf("sending request failed: %v", err)
 	} else if reply.Retval > 0 {
-		return nil, fmt.Errorf("request returned error code: %v", reply.Retval)
+		return "", fmt.Errorf("request returned error code: %v", reply.Retval)
 	}
 
-	return reply.Reply[:reply.Length], nil
+	return reply.Reply, nil
 }
 
 // telemetryHandler - returns various telemetry data

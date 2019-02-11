@@ -55,12 +55,13 @@ type Plugin struct {
 	dumpChan api.Channel
 
 	// VPP Handlers
-	aclHandler  aclvppcalls.ACLVppRead
-	ifHandler   ifvppcalls.IfVppRead
-	natHandler  natvppcalls.NatVppRead
-	bdHandler   l2vppcalls.BridgeDomainVppRead
+	aclHandler aclvppcalls.ACLVppRead
+	ifHandler  ifvppcalls.IfVppRead
+	natHandler natvppcalls.NatVppRead
+	/*bdHandler   l2vppcalls.BridgeDomainVppRead
 	fibHandler  l2vppcalls.FIBVppRead
-	xcHandler   l2vppcalls.XConnectVppRead
+	xcHandler   l2vppcalls.XConnectVppRead*/
+	l2Handler   l2vppcalls.L2VppAPI
 	arpHandler  l3vppcalls.ArpVppRead
 	pArpHandler l3vppcalls.ProxyArpVppRead
 	rtHandler   l3vppcalls.RouteVppRead
@@ -115,9 +116,10 @@ func (p *Plugin) Init() (err error) {
 	p.aclHandler = aclvppcalls.NewACLVppHandler(p.vppChan, p.dumpChan, ifIndexes)
 	p.ifHandler = ifvppcalls.NewIfVppHandler(p.vppChan, p.Log)
 	p.natHandler = natvppcalls.NewNatVppHandler(p.vppChan, ifIndexes, dhcpIndexes, p.Log)
-	p.bdHandler = l2vppcalls.NewBridgeDomainVppHandler(p.vppChan, ifIndexes, p.Log)
+	/*p.bdHandler = l2vppcalls.NewBridgeDomainVppHandler(p.vppChan, ifIndexes, p.Log)
 	p.fibHandler = l2vppcalls.NewFIBVppHandler(p.vppChan, ifIndexes, bdIndexes, p.Log)
-	p.xcHandler = l2vppcalls.NewXConnectVppHandler(p.vppChan, ifIndexes, p.Log)
+	p.xcHandler = l2vppcalls.NewXConnectVppHandler(p.vppChan, ifIndexes, p.Log)*/
+	p.l2Handler = l2vppcalls.CompatibleL2VppHandler(p.vppChan, ifIndexes, bdIndexes, p.Log)
 	p.arpHandler = l3vppcalls.NewArpVppHandler(p.vppChan, ifIndexes, p.Log)
 	p.pArpHandler = l3vppcalls.NewProxyArpVppHandler(p.vppChan, ifIndexes, p.Log)
 	p.rtHandler = l3vppcalls.NewRouteVppHandler(p.vppChan, ifIndexes, p.Log)
@@ -187,7 +189,6 @@ func getIndexPageItems() map[string][]indexItem {
 		},
 		"L2 plugin": {
 			{Name: "Bridge domains", Path: resturl.Bd},
-			{Name: "Bridge domain IDs", Path: resturl.BdID},
 			{Name: "L2Fibs", Path: resturl.Fib},
 			{Name: "Cross connects", Path: resturl.Xc},
 		},
@@ -244,7 +245,6 @@ func getPermissionsGroups() []*access.PermissionGroup {
 			newPermission(resturl.VxLan, GET),
 			newPermission(resturl.AfPacket, GET),
 			newPermission(resturl.Bd, GET),
-			newPermission(resturl.BdID, GET),
 			newPermission(resturl.Fib, GET),
 			newPermission(resturl.Xc, GET),
 			newPermission(resturl.Arps, GET),

@@ -17,19 +17,35 @@ package vppcalls
 import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
-	l2 "github.com/ligato/vpp-agent/api/models/vpp/l2"
 	"github.com/ligato/vpp-agent/pkg/idxvpp"
+
+	l2 "github.com/ligato/vpp-agent/api/models/vpp/l2"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 )
 
-// BridgeDomainVppAPI provides methods for managing bridge domains.
-type BridgeDomainVppAPI interface {
-	BridgeDomainVppWrite
-	BridgeDomainVppRead
+// BridgeDomainDetails is the wrapper structure for the bridge domain northbound API structure.
+// NOTE: Interfaces in BridgeDomains_BridgeDomain is overridden by the local Interfaces member.
+type BridgeDomainDetails struct {
+	Bd   *l2.BridgeDomain  `json:"bridge_domain"`
+	Meta *BridgeDomainMeta `json:"bridge_domain_meta"`
 }
 
-// BridgeDomainVppWrite provides write methods for bridge domains.
-type BridgeDomainVppWrite interface {
+// BridgeDomainMeta contains bridge domain interface name/index map
+type BridgeDomainMeta struct {
+	BdID uint32 `json:"bridge_domain_id"`
+}
+
+// L2VppAPI groups L2 Vpp APIs.
+type L2VppAPI interface {
+	BridgeDomainVppAPI
+	FIBVppAPI
+	XConnectVppAPI
+}
+
+// BridgeDomainVppAPI provides methods for managing bridge domains.
+type BridgeDomainVppAPI interface {
+	BridgeDomainVppRead
+
 	// AddBridgeDomain adds new bridge domain.
 	AddBridgeDomain(bdIdx uint32, bd *l2.BridgeDomain) error
 	// DeleteBridgeDomain removes existing bridge domain.
@@ -53,12 +69,8 @@ type BridgeDomainVppRead interface {
 
 // FIBVppAPI provides methods for managing FIBs.
 type FIBVppAPI interface {
-	FIBVppWrite
 	FIBVppRead
-}
 
-// FIBVppWrite provides write methods for FIBs.
-type FIBVppWrite interface {
 	// AddL2FIB creates L2 FIB table entry.
 	AddL2FIB(fib *l2.FIBEntry) error
 	// DeleteL2FIB removes existing L2 FIB table entry.
@@ -74,12 +86,8 @@ type FIBVppRead interface {
 
 // XConnectVppAPI provides methods for managing cross connects.
 type XConnectVppAPI interface {
-	XConnectVppWrite
 	XConnectVppRead
-}
 
-// XConnectVppWrite provides write methods for cross connects.
-type XConnectVppWrite interface {
 	// AddL2XConnect creates xConnect between two existing interfaces.
 	AddL2XConnect(rxIface, txIface string) error
 	// DeleteL2XConnect removes xConnect between two interfaces.
@@ -93,53 +101,26 @@ type XConnectVppRead interface {
 	DumpXConnectPairs() (map[uint32]*XConnectDetails, error)
 }
 
-// BridgeDomainVppHandler is accessor for bridge domain-related vppcalls methods.
-type BridgeDomainVppHandler struct {
-	callsChannel govppapi.Channel
-	ifIndexes    ifaceidx.IfaceMetadataIndex
-	log          logging.Logger
+var Versions = map[string]HandlerVersion{}
+
+type HandlerVersion struct {
+	Msgs []govppapi.Message
+	New  func(govppapi.Channel, ifaceidx.IfaceMetadataIndex, idxvpp.NameToIndex, logging.Logger) L2VppAPI
 }
 
-// FIBVppHandler is accessor for FIB-related vppcalls methods.
-type FIBVppHandler struct {
-	callsChannel govppapi.Channel
-	ifIndexes    ifaceidx.IfaceMetadataIndex
-	bdIndexes    idxvpp.NameToIndex
-	log          logging.Logger
-}
-
-// XConnectVppHandler is accessor for cross-connect-related vppcalls methods.
-type XConnectVppHandler struct {
-	callsChannel govppapi.Channel
-	ifIndexes    ifaceidx.IfaceMetadataIndex
-	log          logging.Logger
-}
-
-// NewBridgeDomainVppHandler creates new instance of bridge domain vppcalls handler.
-func NewBridgeDomainVppHandler(callsChan govppapi.Channel, ifIndexes ifaceidx.IfaceMetadataIndex, log logging.Logger) *BridgeDomainVppHandler {
-	return &BridgeDomainVppHandler{
-		callsChannel: callsChan,
-		ifIndexes:    ifIndexes,
-		log:          log,
+func CompatibleL2VppHandler(
+	ch govppapi.Channel,
+	ifIdx ifaceidx.IfaceMetadataIndex,
+	bdIdx idxvpp.NameToIndex,
+	log logging.Logger,
+) L2VppAPI {
+	for ver, h := range Versions {
+		if err := ch.CheckCompatiblity(h.Msgs...); err != nil {
+			log.Debugf("version %s not compatible", ver)
+			continue
+		}
+		log.Debugf("found compatible version:", ver)
+		return h.New(ch, ifIdx, bdIdx, log)
 	}
-}
-
-// NewFIBVppHandler creates new instance of FIB vppcalls handler.
-func NewFIBVppHandler(callsChan govppapi.Channel, ifIndexes ifaceidx.IfaceMetadataIndex, bdIndexes idxvpp.NameToIndex,
-	log logging.Logger) *FIBVppHandler {
-	return &FIBVppHandler{
-		callsChannel: callsChan,
-		ifIndexes:    ifIndexes,
-		bdIndexes:    bdIndexes,
-		log:          log,
-	}
-}
-
-// NewXConnectVppHandler creates new instance of cross connect vppcalls handler.
-func NewXConnectVppHandler(callsChan govppapi.Channel, ifIndexes ifaceidx.IfaceMetadataIndex, log logging.Logger) *XConnectVppHandler {
-	return &XConnectVppHandler{
-		callsChannel: callsChan,
-		ifIndexes:    ifIndexes,
-		log:          log,
-	}
+	return nil
 }

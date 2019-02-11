@@ -20,8 +20,8 @@ import (
 
 	"github.com/go-errors/errors"
 	punt "github.com/ligato/vpp-agent/api/models/vpp/punt"
-	api_ip "github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
-	api_punt "github.com/ligato/vpp-agent/plugins/vpp/binapi/punt"
+	ipba "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1810/ip"
+	puntba "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1810/punt"
 )
 
 // AddPunt configures new punt entry
@@ -95,13 +95,13 @@ func (h *PuntVppHandler) DeletePuntRedirect(puntCfg *punt.IPRedirect) error {
 }
 
 func (h *PuntVppHandler) handlePuntToHost(punt *punt.ToHost, isAdd bool) error {
-	req := &api_punt.Punt{
+	req := &puntba.Punt{
 		IsAdd:      boolToUint(isAdd),
 		IPv:        resolveL3Proto(punt.L3Protocol),
 		L4Protocol: resolveL4Proto(punt.L4Protocol),
 		L4Port:     uint16(punt.Port),
 	}
-	reply := &api_punt.PuntReply{}
+	reply := &puntba.PuntReply{}
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
@@ -125,14 +125,14 @@ func (h *PuntVppHandler) registerPuntWithSocket(punt *punt.ToHost, isIPv4 bool) 
 		pathByte[i] = c
 	}
 
-	req := &api_punt.PuntSocketRegister{
+	req := &puntba.PuntSocketRegister{
 		HeaderVersion: 1,
 		IsIP4:         boolToUint(isIPv4),
 		L4Protocol:    resolveL4Proto(punt.L4Protocol),
 		L4Port:        uint16(punt.Port),
 		Pathname:      pathByte,
 	}
-	reply := &api_punt.PuntSocketRegisterReply{}
+	reply := &puntba.PuntSocketRegisterReply{}
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
@@ -158,12 +158,12 @@ func (h *PuntVppHandler) unregisterPuntWithSocketIPv6(punt *punt.ToHost) error {
 }
 
 func (h *PuntVppHandler) unregisterPuntWithSocket(punt *punt.ToHost, isIPv4 bool) error {
-	req := &api_punt.PuntSocketDeregister{
+	req := &puntba.PuntSocketDeregister{
 		IsIP4:      boolToUint(isIPv4),
 		L4Protocol: resolveL4Proto(punt.L4Protocol),
 		L4Port:     uint16(punt.Port),
 	}
-	reply := &api_punt.PuntSocketDeregisterReply{}
+	reply := &puntba.PuntSocketDeregisterReply{}
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
@@ -221,14 +221,14 @@ func (h *PuntVppHandler) handlePuntRedirect(punt *punt.IPRedirect, isIPv4, isAdd
 		nextHop = net.ParseIP(nextHopStr).To16()
 	}
 
-	req := &api_ip.IPPuntRedirect{
+	req := &ipba.IPPuntRedirect{
 		IsAdd:       boolToUint(isAdd),
 		IsIP6:       boolToUint(!isIPv4),
 		RxSwIfIndex: rxIfIdx,
 		TxSwIfIndex: txMetadata.SwIfIndex,
 		Nh:          nextHop,
 	}
-	reply := &api_ip.IPPuntRedirectReply{}
+	reply := &ipba.IPPuntRedirectReply{}
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	}

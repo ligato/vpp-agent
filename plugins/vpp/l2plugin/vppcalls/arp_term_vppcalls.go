@@ -1,23 +1,23 @@
-// Copyright (c) 2017 Cisco and/or its affiliates.
+//  Copyright (c) 2019 Cisco and/or its affiliates.
 //
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at:
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at:
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//      http://www.apache.org/licenses/LICENSE-2.0
 //
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
 
 package vppcalls
 
 import (
+	"fmt"
 	"net"
 
-	"github.com/ligato/cn-infra/utils/addrs"
 	l2ba "github.com/ligato/vpp-agent/plugins/vpp/binapi/l2"
 )
 
@@ -31,22 +31,14 @@ func (h *BridgeDomainVppHandler) callBdIPMacAddDel(isAdd bool, bdID uint32, mac 
 	if err != nil {
 		return err
 	}
-	req.MacAddress = macAddr
+	copy(req.Mac[:], macAddr)
 
-	isIpv6, err := addrs.IsIPv6(ip)
+	req.IP, err = ipToAddress(ip)
 	if err != nil {
 		return err
 	}
-	ipAddr := net.ParseIP(ip)
-	if isIpv6 {
-		req.IsIPv6 = 1
-		req.IPAddress = []byte(ipAddr.To16())
-	} else {
-		req.IsIPv6 = 0
-		req.IPAddress = []byte(ipAddr.To4())
-	}
-	reply := &l2ba.BdIPMacAddDelReply{}
 
+	reply := &l2ba.BdIPMacAddDelReply{}
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	}
@@ -70,4 +62,23 @@ func (h *BridgeDomainVppHandler) RemoveArpTerminationTableEntry(bdID uint32, mac
 		return err
 	}
 	return nil
+}
+
+func ipToAddress(ipstr string) (addr l2ba.Address, err error) {
+	netIP := net.ParseIP(ipstr)
+	if netIP == nil {
+		return l2ba.Address{}, fmt.Errorf("invalid IP: %q", ipstr)
+	}
+	if ip4 := netIP.To4(); ip4 == nil {
+		addr.Af = l2ba.ADDRESS_IP6
+		var ip6addr l2ba.IP6Address
+		copy(ip6addr[:], netIP.To16())
+		addr.Un.SetIP6(ip6addr)
+	} else {
+		addr.Af = l2ba.ADDRESS_IP4
+		var ip4addr l2ba.IP4Address
+		copy(ip4addr[:], ip4)
+		addr.Un.SetIP4(ip4addr)
+	}
+	return
 }

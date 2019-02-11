@@ -29,6 +29,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/tap"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/tapv2"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vmxnet3"
+	interfaces_1810 "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1810/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vxlan"
 )
 
@@ -106,8 +107,72 @@ func (h *IfVppHandler) DumpInterfacesByType(reqType interfaces.Interface_Type) (
 	return ifs, nil
 }
 
-// DumpInterfaces implements interface handler.
-func (h *IfVppHandler) DumpInterfaces() (map[uint32]*InterfaceDetails, error) {
+func (h *IfVppHandler) dumpInterfaces_1810() (map[uint32]*InterfaceDetails, error) {
+	// map for the resulting interfaces
+	ifs := make(map[uint32]*InterfaceDetails)
+
+	// First, dump all interfaces to create initial data.
+	reqCtx := h.callsChannel.SendMultiRequest(&interfaces_1810.SwInterfaceDump{})
+	for {
+		ifDetails := &interfaces_1810.SwInterfaceDetails{}
+		stop, err := reqCtx.ReceiveReply(ifDetails)
+		if stop {
+			break // Break from the loop.
+		}
+		if err != nil {
+			return nil, fmt.Errorf("failed to dump interface: %v", err)
+		}
+
+		ifaceName := cleanString(ifDetails.InterfaceName)
+		details := &InterfaceDetails{
+			Interface: &interfaces.Interface{
+				Name:        cleanString(ifDetails.Tag),
+				Type:        guessInterfaceType(ifaceName), // the type may be amended later by further dumps
+				Enabled:     ifDetails.AdminUpDown > 0,
+				PhysAddress: net.HardwareAddr(ifDetails.L2Address[:ifDetails.L2AddressLength]).String(),
+				Mtu:         getMtu(ifDetails.LinkMtu),
+			},
+			Meta: &InterfaceMeta{
+				SwIfIndex:    ifDetails.SwIfIndex,
+				Tag:          cleanString(ifDetails.Tag),
+				InternalName: ifaceName,
+				SubID:        ifDetails.SubID,
+				SupSwIfIndex: ifDetails.SupSwIfIndex,
+			},
+		}
+
+		// sub interface
+		if ifDetails.SupSwIfIndex != ifDetails.SwIfIndex {
+			details.Interface.Type = interfaces.Interface_SUB_INTERFACE
+			details.Interface.Link = &interfaces.Interface_Sub{
+				Sub: &interfaces.SubInterface{
+					ParentName: ifs[ifDetails.SupSwIfIndex].Interface.Name,
+					SubId:      ifDetails.SubID,
+				},
+			}
+		}
+		// Fill name for physical interfaces (they are mostly without tag)
+		switch details.Interface.Type {
+		case interfaces.Interface_DPDK:
+			details.Interface.Name = ifaceName
+		case interfaces.Interface_AF_PACKET:
+			details.Interface.Link = &interfaces.Interface_Afpacket{
+				Afpacket: &interfaces.AfpacketLink{
+					HostIfName: strings.TrimPrefix(ifaceName, "host-"),
+				},
+			}
+		}
+		ifs[ifDetails.SwIfIndex] = details
+	}
+
+	return ifs, nil
+}
+
+func (h *IfVppHandler) dumpInterfaces() (map[uint32]*InterfaceDetails, error) {
+	if err := h.callsChannel.CheckCompatiblity(&interfaces_1810.SwInterfaceDetails{}); err == nil {
+		return h.dumpInterfaces_1810()
+	}
+
 	// map for the resulting interfaces
 	ifs := make(map[uint32]*InterfaceDetails)
 
@@ -163,6 +228,16 @@ func (h *IfVppHandler) DumpInterfaces() (map[uint32]*InterfaceDetails, error) {
 			}
 		}
 		ifs[ifDetails.SwIfIndex] = details
+	}
+
+	return ifs, nil
+}
+
+// DumpInterfaces implements interface handler.
+func (h *IfVppHandler) DumpInterfaces() (map[uint32]*InterfaceDetails, error) {
+	ifs, err := h.dumpInterfaces()
+	if err != nil {
+		return nil, err
 	}
 
 	// Get DHCP clients

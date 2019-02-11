@@ -31,7 +31,7 @@ import (
 	intf "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
+	interfaces_1810 "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1810/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 )
 
@@ -139,13 +139,13 @@ func (c *InterfaceStateUpdater) AfterInit() error {
 func (c *InterfaceStateUpdater) subscribeVPPNotifications() error {
 	var err error
 	// subscribe for receiving SwInterfaceEvents notifications
-	if c.vppNotifSubs, err = c.vppCh.SubscribeNotification(c.notifChan, &interfaces.SwInterfaceEvent{}); err != nil {
+	if c.vppNotifSubs, err = c.vppCh.SubscribeNotification(c.notifChan, &interfaces_1810.SwInterfaceEvent{}); err != nil {
 		return errors.Errorf("failed to subscribe VPP notification (sw_interface_event): %v", err)
 	}
 
-	wantIfEventsReply := &interfaces.WantInterfaceEventsReply{}
+	wantIfEventsReply := &interfaces_1810.WantInterfaceEventsReply{}
 	// enable interface state notifications from VPP
-	err = c.vppCh.SendRequest(&interfaces.WantInterfaceEvents{
+	err = c.vppCh.SendRequest(&interfaces_1810.WantInterfaceEvents{
 		PID:           uint32(os.Getpid()),
 		EnableDisable: 1,
 	}).ReceiveReply(wantIfEventsReply)
@@ -206,7 +206,7 @@ func (c *InterfaceStateUpdater) watchVPPNotifications(ctx context.Context) {
 			c.kvScheduler.TransactionBarrier()
 
 			switch notif := msg.(type) {
-			case *interfaces.SwInterfaceEvent:
+			case *interfaces_1810.SwInterfaceEvent:
 				c.processIfStateEvent(notif)
 			default:
 				c.log.Debugf("Ignoring unknown VPP notification: %s, %v",
@@ -218,11 +218,11 @@ func (c *InterfaceStateUpdater) watchVPPNotifications(ctx context.Context) {
 				c.setIfStateDeleted(ifMetaDto.Metadata.SwIfIndex, ifMetaDto.Name)
 			} else if !ifMetaDto.Update {
 				// process new interface (no way to filter by swIfIndex, need to dump all of them)
-				req := &interfaces.SwInterfaceDump{}
+				req := &interfaces_1810.SwInterfaceDump{}
 				reqCtx := c.vppCh.SendMultiRequest(req)
 
 				for {
-					msg := &interfaces.SwInterfaceDetails{}
+					msg := &interfaces_1810.SwInterfaceDetails{}
 					stop, err := reqCtx.ReceiveReply(msg)
 					if stop {
 						break
@@ -359,7 +359,7 @@ func (c *InterfaceStateUpdater) processCombinedCounterStat(statName statType, da
 }
 
 // processIfStateEvent process a VPP state event notification.
-func (c *InterfaceStateUpdater) processIfStateEvent(notif *interfaces.SwInterfaceEvent) {
+func (c *InterfaceStateUpdater) processIfStateEvent(notif *interfaces_1810.SwInterfaceEvent) {
 	c.access.Lock()
 	defer c.access.Unlock()
 
@@ -417,7 +417,7 @@ func (c *InterfaceStateUpdater) getIfStateDataWLookup(ifIdx uint32) (
 
 // updateIfStateFlags updates the interface state data in memory from provided VPP flags message and returns updated state data.
 // NOTE: plugin.ifStateData needs to be locked when calling this function!
-func (c *InterfaceStateUpdater) updateIfStateFlags(vppMsg *interfaces.SwInterfaceEvent) (
+func (c *InterfaceStateUpdater) updateIfStateFlags(vppMsg *interfaces_1810.SwInterfaceEvent) (
 	iface *intf.InterfaceState, found bool) {
 
 	ifState, found := c.getIfStateDataWLookup(vppMsg.SwIfIndex)
@@ -445,7 +445,7 @@ func (c *InterfaceStateUpdater) updateIfStateFlags(vppMsg *interfaces.SwInterfac
 }
 
 // updateIfStateDetails updates the interface state data in memory from provided VPP details message.
-func (c *InterfaceStateUpdater) updateIfStateDetails(ifDetails *interfaces.SwInterfaceDetails) {
+func (c *InterfaceStateUpdater) updateIfStateDetails(ifDetails *interfaces_1810.SwInterfaceDetails) {
 	c.access.Lock()
 	defer c.access.Unlock()
 

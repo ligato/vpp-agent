@@ -24,13 +24,14 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/memclnt"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpe"
+	vpe_1810 "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1810/vpe"
 )
 
 // VpeInfo contains information about VPP connection and process.
 type VpeInfo struct {
 	PID            uint32
 	ClientIdx      uint32
-	ModuleVersions map[string]ModuleVersion
+	ModuleVersions []ModuleVersion
 }
 
 type ModuleVersion struct {
@@ -38,6 +39,10 @@ type ModuleVersion struct {
 	Major uint32
 	Minor uint32
 	Patch uint32
+}
+
+func (m ModuleVersion) String() string {
+	return fmt.Sprintf("%s %d.%d.%d", m.Name, m.Major, m.Minor, m.Patch)
 }
 
 // GetVpeInfo retrieves vpe information.
@@ -50,9 +55,8 @@ func GetVpeInfo(vppChan govppapi.Channel) (*VpeInfo, error) {
 	}
 
 	info := &VpeInfo{
-		PID:            reply.VpePID,
-		ClientIdx:      reply.ClientIndex,
-		ModuleVersions: make(map[string]ModuleVersion),
+		PID:       reply.VpePID,
+		ClientIdx: reply.ClientIndex,
 	}
 
 	{
@@ -65,12 +69,13 @@ func GetVpeInfo(vppChan govppapi.Channel) (*VpeInfo, error) {
 
 		for _, v := range reply.APIVersions {
 			name := string(cleanBytes(v.Name))
-			info.ModuleVersions[name] = ModuleVersion{
+			name = strings.TrimSuffix(name, ".api")
+			info.ModuleVersions = append(info.ModuleVersions, ModuleVersion{
 				Name:  name,
 				Major: v.Major,
 				Minor: v.Minor,
 				Patch: v.Patch,
-			}
+			})
 		}
 	}
 
@@ -85,10 +90,9 @@ type VersionInfo struct {
 	BuildDirectory string
 }
 
-// GetVersionInfo retrieves version info
-func GetVersionInfo(vppChan govppapi.Channel) (*VersionInfo, error) {
-	req := &vpe.ShowVersion{}
-	reply := &vpe.ShowVersionReply{}
+func getVersionInfo_1810(vppChan govppapi.Channel) (*VersionInfo, error) {
+	req := &vpe_1810.ShowVersion{}
+	reply := &vpe_1810.ShowVersionReply{}
 
 	if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
 		return nil, err
@@ -106,11 +110,55 @@ func GetVersionInfo(vppChan govppapi.Channel) (*VersionInfo, error) {
 	return info, nil
 }
 
-// RunCliCommand executes CLI command and returns output
-func RunCliCommand(vppChan govppapi.Channel, cmd string) (string, error) {
-	req := &vpe.CliInband{
+func runCliCommand_1810(vppChan govppapi.Channel, cmd string) (string, error) {
+	req := &vpe_1810.CliInband{
 		Cmd:    []byte(cmd),
 		Length: uint32(len(cmd)),
+	}
+	reply := &vpe_1810.CliInbandReply{}
+
+	if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
+		return "", err
+	} else if reply.Retval != 0 {
+		return "", fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
+	}
+
+	return string(cleanBytes(reply.Reply)), nil
+}
+
+// GetVersionInfo retrieves version info
+func GetVersionInfo(vppChan govppapi.Channel) (*VersionInfo, error) {
+	if err := vppChan.CheckCompatiblity(&vpe_1810.ShowVersionReply{}); err == nil {
+		return getVersionInfo_1810(vppChan)
+	}
+
+	req := &vpe.ShowVersion{}
+	reply := &vpe.ShowVersionReply{}
+
+	if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
+		return nil, err
+	} else if reply.Retval != 0 {
+		return nil, fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
+	}
+
+	info := &VersionInfo{
+		Program:        reply.Program,
+		Version:        reply.Version,
+		BuildDate:      reply.BuildDate,
+		BuildDirectory: reply.BuildDirectory,
+	}
+
+	return info, nil
+}
+
+// RunCliCommand executes CLI command and returns output
+func RunCliCommand(vppChan govppapi.Channel, cmd string) (string, error) {
+	if err := vppChan.CheckCompatiblity(&vpe_1810.CliInband{}); err == nil {
+		return runCliCommand_1810(vppChan, cmd)
+	}
+
+	req := &vpe.CliInband{
+		Cmd: cmd,
 	}
 	reply := &vpe.CliInbandReply{}
 
@@ -120,7 +168,7 @@ func RunCliCommand(vppChan govppapi.Channel, cmd string) (string, error) {
 		return "", fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
-	return string(cleanBytes(reply.Reply)), nil
+	return reply.Reply, nil
 }
 
 // MemoryInfo contains values returned from 'show memory'

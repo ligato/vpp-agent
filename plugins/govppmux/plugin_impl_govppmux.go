@@ -160,8 +160,8 @@ func (p *Plugin) Init() error {
 		p.Log.Errorf("retrieving vpe info failed: %v", err)
 		return err
 	}
-	p.Log.Infof("Connected to VPP [PID:%d] (took %s)",
-		info.PID, vppConnectTime.Truncate(time.Millisecond))
+	p.Log.Infof("Connected to VPP [PID:%d, ClientIdx:%d] (took %s)",
+		info.PID, info.ClientIdx, vppConnectTime.Truncate(time.Millisecond))
 	p.retrieveVersion()
 
 	// Register providing status reports (push mode)
@@ -311,7 +311,7 @@ func (p *Plugin) retrieveVpeInfo() (*vppcalls.VpeInfo, error) {
 		p.Log.Warn("getting version info failed:", err)
 		return nil, err
 	}
-	p.Log.Debugf("connection info: %+v", info)
+	p.Log.Debugf("vpp module versions: %+v", info.ModuleVersions)
 
 	return info, nil
 }

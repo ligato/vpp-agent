@@ -1,16 +1,16 @@
-// Copyright (c) 2017 Cisco and/or its affiliates.
+//  Copyright (c) 2019 Cisco and/or its affiliates.
 //
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at:
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at:
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//      http://www.apache.org/licenses/LICENSE-2.0
 //
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
 
 package vppcalls
 
@@ -23,18 +23,6 @@ import (
 	l2nb "github.com/ligato/vpp-agent/api/models/vpp/l2"
 	l2ba "github.com/ligato/vpp-agent/plugins/vpp/binapi/l2"
 )
-
-// BridgeDomainDetails is the wrapper structure for the bridge domain northbound API structure.
-// NOTE: Interfaces in BridgeDomains_BridgeDomain is overridden by the local Interfaces member.
-type BridgeDomainDetails struct {
-	Bd   *l2nb.BridgeDomain `json:"bridge_domain"`
-	Meta *BridgeDomainMeta  `json:"bridge_domain_meta"`
-}
-
-// BridgeDomainMeta contains bridge domain interface name/index map
-type BridgeDomainMeta struct {
-	BdID uint32 `json:"bridge_domain_id"`
-}
 
 // DumpBridgeDomains implements bridge domain handler.
 func (h *BridgeDomainVppHandler) DumpBridgeDomains() ([]*BridgeDomainDetails, error) {
@@ -132,7 +120,7 @@ func (h *BridgeDomainVppHandler) dumpBridgeDomainMacTable() (map[uint32][]*l2nb.
 		} else {
 			arpEntry.IpAddress = ipAddr[:4].To4().String()
 		}
-		arpEntry.PhysAddress = net.HardwareAddr(msg.MacAddress).String()
+		arpEntry.PhysAddress = net.HardwareAddr(msg.MacAddress[:]).String()
 
 		// Add ARP entry to result map
 		bdArpTable[msg.BdID] = append(bdArpTable[msg.BdID], arpEntry)

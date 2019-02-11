@@ -22,12 +22,8 @@ import (
 
 // ACLVppAPI provides read/write methods required to handle VPP access lists
 type ACLVppAPI interface {
-	ACLVppWrite
 	ACLVppRead
-}
 
-// ACLVppWrite provides write methods for ACL plugin
-type ACLVppWrite interface {
 	// AddACL create new ACL (L3/L4). Returns ACL index provided by VPP.
 	AddACL(rules []*acl.ACL_Rule, aclName string) (aclIdx uint32, err error)
 	// AddMACIPACL creates new MACIP ACL (L2). Returns ACL index provided by VPP.

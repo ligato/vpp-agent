@@ -5,15 +5,14 @@
  Package ipsec is a generated from VPP binary API module 'ipsec'.
 
  It contains following objects:
-	 50 messages
-	 25 services
-
+	 27 services
+	 54 messages
 */
 package ipsec
 
-import "git.fd.io/govpp.git/api"
-import "github.com/lunixbochs/struc"
-import "bytes"
+import api "git.fd.io/govpp.git/api"
+import struc "github.com/lunixbochs/struc"
+import bytes "bytes"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = api.RegisterMessage
@@ -21,90 +20,8 @@ var _ = struc.Pack
 var _ = bytes.NewBuffer
 
 // Services represents VPP binary API services:
-//
-//	"services": {
-//	    "ipsec_spd_add_del": {
-//	        "reply": "ipsec_spd_add_del_reply"
-//	    },
-//	    "ipsec_interface_add_del_spd": {
-//	        "reply": "ipsec_interface_add_del_spd_reply"
-//	    },
-//	    "ipsec_tunnel_if_set_sa": {
-//	        "reply": "ipsec_tunnel_if_set_sa_reply"
-//	    },
-//	    "ikev2_set_responder": {
-//	        "reply": "ikev2_set_responder_reply"
-//	    },
-//	    "ipsec_spds_dump": {
-//	        "reply": "ipsec_spds_details",
-//	        "stream": true
-//	    },
-//	    "ikev2_profile_set_ts": {
-//	        "reply": "ikev2_profile_set_ts_reply"
-//	    },
-//	    "ikev2_set_local_key": {
-//	        "reply": "ikev2_set_local_key_reply"
-//	    },
-//	    "ikev2_initiate_del_ike_sa": {
-//	        "reply": "ikev2_initiate_del_ike_sa_reply"
-//	    },
-//	    "ikev2_set_ike_transforms": {
-//	        "reply": "ikev2_set_ike_transforms_reply"
-//	    },
-//	    "ipsec_tunnel_if_set_key": {
-//	        "reply": "ipsec_tunnel_if_set_key_reply"
-//	    },
-//	    "ikev2_initiate_sa_init": {
-//	        "reply": "ikev2_initiate_sa_init_reply"
-//	    },
-//	    "ipsec_sa_set_key": {
-//	        "reply": "ipsec_sa_set_key_reply"
-//	    },
-//	    "ikev2_set_sa_lifetime": {
-//	        "reply": "ikev2_set_sa_lifetime_reply"
-//	    },
-//	    "ikev2_initiate_rekey_child_sa": {
-//	        "reply": "ikev2_initiate_rekey_child_sa_reply"
-//	    },
-//	    "ipsec_sad_add_del_entry": {
-//	        "reply": "ipsec_sad_add_del_entry_reply"
-//	    },
-//	    "ikev2_profile_set_auth": {
-//	        "reply": "ikev2_profile_set_auth_reply"
-//	    },
-//	    "ipsec_spd_dump": {
-//	        "reply": "ipsec_spd_details",
-//	        "stream": true
-//	    },
-//	    "ipsec_sa_dump": {
-//	        "reply": "ipsec_sa_details",
-//	        "stream": true
-//	    },
-//	    "ikev2_profile_add_del": {
-//	        "reply": "ikev2_profile_add_del_reply"
-//	    },
-//	    "ikev2_set_esp_transforms": {
-//	        "reply": "ikev2_set_esp_transforms_reply"
-//	    },
-//	    "ipsec_spd_add_del_entry": {
-//	        "reply": "ipsec_spd_add_del_entry_reply"
-//	    },
-//	    "ikev2_profile_set_id": {
-//	        "reply": "ikev2_profile_set_id_reply"
-//	    },
-//	    "ikev2_initiate_del_child_sa": {
-//	        "reply": "ikev2_initiate_del_child_sa_reply"
-//	    },
-//	    "ipsec_tunnel_if_add_del": {
-//	        "reply": "ipsec_tunnel_if_add_del_reply"
-//	    },
-//	    "ipsec_spd_interface_dump": {
-//	        "reply": "ipsec_spd_interface_details",
-//	        "stream": true
-//	    }
-//	},
-//
 type Services interface {
+	DumpIpsecBackend(*IpsecBackendDump) ([]*IpsecBackendDetails, error)
 	DumpIpsecSa(*IpsecSaDump) ([]*IpsecSaDetails, error)
 	DumpIpsecSpd(*IpsecSpdDump) ([]*IpsecSpdDetails, error)
 	DumpIpsecSpdInterface(*IpsecSpdInterfaceDump) ([]*IpsecSpdInterfaceDetails, error)
@@ -125,6 +42,7 @@ type Services interface {
 	IpsecInterfaceAddDelSpd(*IpsecInterfaceAddDelSpd) (*IpsecInterfaceAddDelSpdReply, error)
 	IpsecSaSetKey(*IpsecSaSetKey) (*IpsecSaSetKeyReply, error)
 	IpsecSadAddDelEntry(*IpsecSadAddDelEntry) (*IpsecSadAddDelEntryReply, error)
+	IpsecSelectBackend(*IpsecSelectBackend) (*IpsecSelectBackendReply, error)
 	IpsecSpdAddDel(*IpsecSpdAddDel) (*IpsecSpdAddDelReply, error)
 	IpsecSpdAddDelEntry(*IpsecSpdAddDelEntry) (*IpsecSpdAddDelEntryReply, error)
 	IpsecTunnelIfAddDel(*IpsecTunnelIfAddDel) (*IpsecTunnelIfAddDelReply, error)
@@ -134,112 +52,457 @@ type Services interface {
 
 /* Messages */
 
-// IpsecSpdAddDel represents VPP binary API message 'ipsec_spd_add_del':
-//
-//	"ipsec_spd_add_del",
-//	[
-//	    "u16",
-//	    "_vl_msg_id"
-//	],
-//	[
-//	    "u32",
-//	    "client_index"
-//	],
-//	[
-//	    "u32",
-//	    "context"
-//	],
-//	[
-//	    "u8",
-//	    "is_add"
-//	],
-//	[
-//	    "u32",
-//	    "spd_id"
-//	],
-//	{
-//	    "crc": "0x9ffdf5da"
-//	}
-//
-type IpsecSpdAddDel struct {
-	IsAdd uint8
-	SpdID uint32
+// Ikev2InitiateDelChildSa represents VPP binary API message 'ikev2_initiate_del_child_sa':
+type Ikev2InitiateDelChildSa struct {
+	Ispi uint32
 }
 
-func (*IpsecSpdAddDel) GetMessageName() string {
-	return "ipsec_spd_add_del"
+func (*Ikev2InitiateDelChildSa) GetMessageName() string {
+	return "ikev2_initiate_del_child_sa"
 }
-func (*IpsecSpdAddDel) GetCrcString() string {
-	return "9ffdf5da"
+func (*Ikev2InitiateDelChildSa) GetCrcString() string {
+	return "7f004d2e"
 }
-func (*IpsecSpdAddDel) GetMessageType() api.MessageType {
+func (*Ikev2InitiateDelChildSa) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 
-// IpsecSpdAddDelReply represents VPP binary API message 'ipsec_spd_add_del_reply':
-//
-//	"ipsec_spd_add_del_reply",
-//	[
-//	    "u16",
-//	    "_vl_msg_id"
-//	],
-//	[
-//	    "u32",
-//	    "context"
-//	],
-//	[
-//	    "i32",
-//	    "retval"
-//	],
-//	{
-//	    "crc": "0xe8d4e804"
-//	}
-//
-type IpsecSpdAddDelReply struct {
+// Ikev2InitiateDelChildSaReply represents VPP binary API message 'ikev2_initiate_del_child_sa_reply':
+type Ikev2InitiateDelChildSaReply struct {
 	Retval int32
 }
 
-func (*IpsecSpdAddDelReply) GetMessageName() string {
-	return "ipsec_spd_add_del_reply"
+func (*Ikev2InitiateDelChildSaReply) GetMessageName() string {
+	return "ikev2_initiate_del_child_sa_reply"
 }
-func (*IpsecSpdAddDelReply) GetCrcString() string {
+func (*Ikev2InitiateDelChildSaReply) GetCrcString() string {
 	return "e8d4e804"
 }
-func (*IpsecSpdAddDelReply) GetMessageType() api.MessageType {
+func (*Ikev2InitiateDelChildSaReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 
+// Ikev2InitiateDelIkeSa represents VPP binary API message 'ikev2_initiate_del_ike_sa':
+type Ikev2InitiateDelIkeSa struct {
+	Ispi uint64
+}
+
+func (*Ikev2InitiateDelIkeSa) GetMessageName() string {
+	return "ikev2_initiate_del_ike_sa"
+}
+func (*Ikev2InitiateDelIkeSa) GetCrcString() string {
+	return "8d125bdd"
+}
+func (*Ikev2InitiateDelIkeSa) GetMessageType() api.MessageType {
+	return api.RequestMessage
+}
+
+// Ikev2InitiateDelIkeSaReply represents VPP binary API message 'ikev2_initiate_del_ike_sa_reply':
+type Ikev2InitiateDelIkeSaReply struct {
+	Retval int32
+}
+
+func (*Ikev2InitiateDelIkeSaReply) GetMessageName() string {
+	return "ikev2_initiate_del_ike_sa_reply"
+}
+func (*Ikev2InitiateDelIkeSaReply) GetCrcString() string {
+	return "e8d4e804"
+}
+func (*Ikev2InitiateDelIkeSaReply) GetMessageType() api.MessageType {
+	return api.ReplyMessage
+}
+
+// Ikev2InitiateRekeyChildSa represents VPP binary API message 'ikev2_initiate_rekey_child_sa':
+type Ikev2InitiateRekeyChildSa struct {
+	Ispi uint32
+}
+
+func (*Ikev2InitiateRekeyChildSa) GetMessageName() string {
+	return "ikev2_initiate_rekey_child_sa"
+}
+func (*Ikev2InitiateRekeyChildSa) GetCrcString() string {
+	return "7f004d2e"
+}
+func (*Ikev2InitiateRekeyChildSa) GetMessageType() api.MessageType {
+	return api.RequestMessage
+}
+
+// Ikev2InitiateRekeyChildSaReply represents VPP binary API message 'ikev2_initiate_rekey_child_sa_reply':
+type Ikev2InitiateRekeyChildSaReply struct {
+	Retval int32
+}
+
+func (*Ikev2InitiateRekeyChildSaReply) GetMessageName() string {
+	return "ikev2_initiate_rekey_child_sa_reply"
+}
+func (*Ikev2InitiateRekeyChildSaReply) GetCrcString() string {
+	return "e8d4e804"
+}
+func (*Ikev2InitiateRekeyChildSaReply) GetMessageType() api.MessageType {
+	return api.ReplyMessage
+}
+
+// Ikev2InitiateSaInit represents VPP binary API message 'ikev2_initiate_sa_init':
+type Ikev2InitiateSaInit struct {
+	Name []byte `struc:"[64]byte"`
+}
+
+func (*Ikev2InitiateSaInit) GetMessageName() string {
+	return "ikev2_initiate_sa_init"
+}
+func (*Ikev2InitiateSaInit) GetCrcString() string {
+	return "0cb71b0e"
+}
+func (*Ikev2InitiateSaInit) GetMessageType() api.MessageType {
+	return api.RequestMessage
+}
+
+// Ikev2InitiateSaInitReply represents VPP binary API message 'ikev2_initiate_sa_init_reply':
+type Ikev2InitiateSaInitReply struct {
+	Retval int32
+}
+
+func (*Ikev2InitiateSaInitReply) GetMessageName() string {
+	return "ikev2_initiate_sa_init_reply"
+}
+func (*Ikev2InitiateSaInitReply) GetCrcString() string {
+	return "e8d4e804"
+}
+func (*Ikev2InitiateSaInitReply) GetMessageType() api.MessageType {
+	return api.ReplyMessage
+}
+
+// Ikev2ProfileAddDel represents VPP binary API message 'ikev2_profile_add_del':
+type Ikev2ProfileAddDel struct {
+	Name  []byte `struc:"[64]byte"`
+	IsAdd uint8
+}
+
+func (*Ikev2ProfileAddDel) GetMessageName() string {
+	return "ikev2_profile_add_del"
+}
+func (*Ikev2ProfileAddDel) GetCrcString() string {
+	return "405b222e"
+}
+func (*Ikev2ProfileAddDel) GetMessageType() api.MessageType {
+	return api.RequestMessage
+}
+
+// Ikev2ProfileAddDelReply represents VPP binary API message 'ikev2_profile_add_del_reply':
+type Ikev2ProfileAddDelReply struct {
+	Retval int32
+}
+
+func (*Ikev2ProfileAddDelReply) GetMessageName() string {
+	return "ikev2_profile_add_del_reply"
+}
+func (*Ikev2ProfileAddDelReply) GetCrcString() string {
+	return "e8d4e804"
+}
+func (*Ikev2ProfileAddDelReply) GetMessageType() api.MessageType {
+	return api.ReplyMessage
+}
+
+// Ikev2ProfileSetAuth represents VPP binary API message 'ikev2_profile_set_auth':
+type Ikev2ProfileSetAuth struct {
+	Name       []byte `struc:"[64]byte"`
+	AuthMethod uint8
+	IsHex      uint8
+	DataLen    uint32 `struc:"sizeof=Data"`
+	Data       []byte
+}
+
+func (*Ikev2ProfileSetAuth) GetMessageName() string {
+	return "ikev2_profile_set_auth"
+}
+func (*Ikev2ProfileSetAuth) GetCrcString() string {
+	return "bd76f369"
+}
+func (*Ikev2ProfileSetAuth) GetMessageType() api.MessageType {
+	return api.RequestMessage
+}
+
+// Ikev2ProfileSetAuthReply represents VPP binary API message 'ikev2_profile_set_auth_reply':
+type Ikev2ProfileSetAuthReply struct {
+	Retval int32
+}
+
+func (*Ikev2ProfileSetAuthReply) GetMessageName() string {
+	return "ikev2_profile_set_auth_reply"
+}
+func (*Ikev2ProfileSetAuthReply) GetCrcString() string {
+	return "e8d4e804"
+}
+func (*Ikev2ProfileSetAuthReply) GetMessageType() api.MessageType {
+	return api.ReplyMessage
+}
+
+// Ikev2ProfileSetID represents VPP binary API message 'ikev2_profile_set_id':
+type Ikev2ProfileSetID struct {
+	Name    []byte `struc:"[64]byte"`
+	IsLocal uint8
+	IDType  uint8
+	DataLen uint32 `struc:"sizeof=Data"`
+	Data    []byte
+}
+
+func (*Ikev2ProfileSetID) GetMessageName() string {
+	return "ikev2_profile_set_id"
+}
+func (*Ikev2ProfileSetID) GetCrcString() string {
+	return "ca88c0ef"
+}
+func (*Ikev2ProfileSetID) GetMessageType() api.MessageType {
+	return api.RequestMessage
+}
+
+// Ikev2ProfileSetIDReply represents VPP binary API message 'ikev2_profile_set_id_reply':
+type Ikev2ProfileSetIDReply struct {
+	Retval int32
+}
+
+func (*Ikev2ProfileSetIDReply) GetMessageName() string {
+	return "ikev2_profile_set_id_reply"
+}
+func (*Ikev2ProfileSetIDReply) GetCrcString() string {
+	return "e8d4e804"
+}
+func (*Ikev2ProfileSetIDReply) GetMessageType() api.MessageType {
+	return api.ReplyMessage
+}
+
+// Ikev2ProfileSetTs represents VPP binary API message 'ikev2_profile_set_ts':
+type Ikev2ProfileSetTs struct {
+	Name      []byte `struc:"[64]byte"`
+	IsLocal   uint8
+	Proto     uint8
+	StartPort uint16
+	EndPort   uint16
+	StartAddr uint32
+	EndAddr   uint32
+}
+
+func (*Ikev2ProfileSetTs) GetMessageName() string {
+	return "ikev2_profile_set_ts"
+}
+func (*Ikev2ProfileSetTs) GetCrcString() string {
+	return "481aad89"
+}
+func (*Ikev2ProfileSetTs) GetMessageType() api.MessageType {
+	return api.RequestMessage
+}
+
+// Ikev2ProfileSetTsReply represents VPP binary API message 'ikev2_profile_set_ts_reply':
+type Ikev2ProfileSetTsReply struct {
+	Retval int32
+}
+
+func (*Ikev2ProfileSetTsReply) GetMessageName() string {
+	return "ikev2_profile_set_ts_reply"
+}
+func (*Ikev2ProfileSetTsReply) GetCrcString() string {
+	return "e8d4e804"
+}
+func (*Ikev2ProfileSetTsReply) GetMessageType() api.MessageType {
+	return api.ReplyMessage
+}
+
+// Ikev2SetEspTransforms represents VPP binary API message 'ikev2_set_esp_transforms':
+type Ikev2SetEspTransforms struct {
+	Name          []byte `struc:"[64]byte"`
+	CryptoAlg     uint32
+	CryptoKeySize uint32
+	IntegAlg      uint32
+	DhGroup       uint32
+}
+
+func (*Ikev2SetEspTransforms) GetMessageName() string {
+	return "ikev2_set_esp_transforms"
+}
+func (*Ikev2SetEspTransforms) GetCrcString() string {
+	return "919f5efd"
+}
+func (*Ikev2SetEspTransforms) GetMessageType() api.MessageType {
+	return api.RequestMessage
+}
+
+// Ikev2SetEspTransformsReply represents VPP binary API message 'ikev2_set_esp_transforms_reply':
+type Ikev2SetEspTransformsReply struct {
+	Retval int32
+}
+
+func (*Ikev2SetEspTransformsReply) GetMessageName() string {
+	return "ikev2_set_esp_transforms_reply"
+}
+func (*Ikev2SetEspTransformsReply) GetCrcString() string {
+	return "e8d4e804"
+}
+func (*Ikev2SetEspTransformsReply) GetMessageType() api.MessageType {
+	return api.ReplyMessage
+}
+
+// Ikev2SetIkeTransforms represents VPP binary API message 'ikev2_set_ike_transforms':
+type Ikev2SetIkeTransforms struct {
+	Name          []byte `struc:"[64]byte"`
+	CryptoAlg     uint32
+	CryptoKeySize uint32
+	IntegAlg      uint32
+	DhGroup       uint32
+}
+
+func (*Ikev2SetIkeTransforms) GetMessageName() string {
+	return "ikev2_set_ike_transforms"
+}
+func (*Ikev2SetIkeTransforms) GetCrcString() string {
+	return "919f5efd"
+}
+func (*Ikev2SetIkeTransforms) GetMessageType() api.MessageType {
+	return api.RequestMessage
+}
+
+// Ikev2SetIkeTransformsReply represents VPP binary API message 'ikev2_set_ike_transforms_reply':
+type Ikev2SetIkeTransformsReply struct {
+	Retval int32
+}
+
+func (*Ikev2SetIkeTransformsReply) GetMessageName() string {
+	return "ikev2_set_ike_transforms_reply"
+}
+func (*Ikev2SetIkeTransformsReply) GetCrcString() string {
+	return "e8d4e804"
+}
+func (*Ikev2SetIkeTransformsReply) GetMessageType() api.MessageType {
+	return api.ReplyMessage
+}
+
+// Ikev2SetLocalKey represents VPP binary API message 'ikev2_set_local_key':
+type Ikev2SetLocalKey struct {
+	KeyFile []byte `struc:"[256]byte"`
+}
+
+func (*Ikev2SetLocalKey) GetMessageName() string {
+	return "ikev2_set_local_key"
+}
+func (*Ikev2SetLocalKey) GetCrcString() string {
+	return "e4996cd5"
+}
+func (*Ikev2SetLocalKey) GetMessageType() api.MessageType {
+	return api.RequestMessage
+}
+
+// Ikev2SetLocalKeyReply represents VPP binary API message 'ikev2_set_local_key_reply':
+type Ikev2SetLocalKeyReply struct {
+	Retval int32
+}
+
+func (*Ikev2SetLocalKeyReply) GetMessageName() string {
+	return "ikev2_set_local_key_reply"
+}
+func (*Ikev2SetLocalKeyReply) GetCrcString() string {
+	return "e8d4e804"
+}
+func (*Ikev2SetLocalKeyReply) GetMessageType() api.MessageType {
+	return api.ReplyMessage
+}
+
+// Ikev2SetResponder represents VPP binary API message 'ikev2_set_responder':
+type Ikev2SetResponder struct {
+	Name      []byte `struc:"[64]byte"`
+	SwIfIndex uint32
+	Address   []byte `struc:"[4]byte"`
+}
+
+func (*Ikev2SetResponder) GetMessageName() string {
+	return "ikev2_set_responder"
+}
+func (*Ikev2SetResponder) GetCrcString() string {
+	return "a99996f3"
+}
+func (*Ikev2SetResponder) GetMessageType() api.MessageType {
+	return api.RequestMessage
+}
+
+// Ikev2SetResponderReply represents VPP binary API message 'ikev2_set_responder_reply':
+type Ikev2SetResponderReply struct {
+	Retval int32
+}
+
+func (*Ikev2SetResponderReply) GetMessageName() string {
+	return "ikev2_set_responder_reply"
+}
+func (*Ikev2SetResponderReply) GetCrcString() string {
+	return "e8d4e804"
+}
+func (*Ikev2SetResponderReply) GetMessageType() api.MessageType {
+	return api.ReplyMessage
+}
+
+// Ikev2SetSaLifetime represents VPP binary API message 'ikev2_set_sa_lifetime':
+type Ikev2SetSaLifetime struct {
+	Name            []byte `struc:"[64]byte"`
+	Lifetime        uint64
+	LifetimeJitter  uint32
+	Handover        uint32
+	LifetimeMaxdata uint64
+}
+
+func (*Ikev2SetSaLifetime) GetMessageName() string {
+	return "ikev2_set_sa_lifetime"
+}
+func (*Ikev2SetSaLifetime) GetCrcString() string {
+	return "46d31203"
+}
+func (*Ikev2SetSaLifetime) GetMessageType() api.MessageType {
+	return api.RequestMessage
+}
+
+// Ikev2SetSaLifetimeReply represents VPP binary API message 'ikev2_set_sa_lifetime_reply':
+type Ikev2SetSaLifetimeReply struct {
+	Retval int32
+}
+
+func (*Ikev2SetSaLifetimeReply) GetMessageName() string {
+	return "ikev2_set_sa_lifetime_reply"
+}
+func (*Ikev2SetSaLifetimeReply) GetCrcString() string {
+	return "e8d4e804"
+}
+func (*Ikev2SetSaLifetimeReply) GetMessageType() api.MessageType {
+	return api.ReplyMessage
+}
+
+// IpsecBackendDetails represents VPP binary API message 'ipsec_backend_details':
+type IpsecBackendDetails struct {
+	Name     []byte `struc:"[128]byte"`
+	Protocol uint8
+	Index    uint8
+	Active   uint8
+}
+
+func (*IpsecBackendDetails) GetMessageName() string {
+	return "ipsec_backend_details"
+}
+func (*IpsecBackendDetails) GetCrcString() string {
+	return "3ba4d642"
+}
+func (*IpsecBackendDetails) GetMessageType() api.MessageType {
+	return api.ReplyMessage
+}
+
+// IpsecBackendDump represents VPP binary API message 'ipsec_backend_dump':
+type IpsecBackendDump struct{}
+
+func (*IpsecBackendDump) GetMessageName() string {
+	return "ipsec_backend_dump"
+}
+func (*IpsecBackendDump) GetCrcString() string {
+	return "51077d14"
+}
+func (*IpsecBackendDump) GetMessageType() api.MessageType {
+	return api.RequestMessage
+}
+
 // IpsecInterfaceAddDelSpd represents VPP binary API message 'ipsec_interface_add_del_spd':
-//
-//	"ipsec_interface_add_del_spd",
-//	[
-//	    "u16",
-//	    "_vl_msg_id"
-//	],
-//	[
-//	    "u32",
-//	    "client_index"
-//	],
-//	[
-//	    "u32",
-//	    "context"
-//	],
-//	[
-//	    "u8",
-//	    "is_add"
-//	],
-//	[
-//	    "u32",
-//	    "sw_if_index"
-//	],
-//	[
-//	    "u32",
-//	    "spd_id"
-//	],
-//	{
-//	    "crc": "0x1e3b8286"
-//	}
-//
 type IpsecInterfaceAddDelSpd struct {
 	IsAdd     uint8
 	SwIfIndex uint32
@@ -257,24 +520,6 @@ func (*IpsecInterfaceAddDelSpd) GetMessageType() api.MessageType {
 }
 
 // IpsecInterfaceAddDelSpdReply represents VPP binary API message 'ipsec_interface_add_del_spd_reply':
-//
-//	"ipsec_interface_add_del_spd_reply",
-//	[
-//	    "u16",
-//	    "_vl_msg_id"
-//	],
-//	[
-//	    "u32",
-//	    "context"
-//	],
-//	[
-//	    "i32",
-//	    "retval"
-//	],
-//	{
-//	    "crc": "0xe8d4e804"
-//	}
-//
 type IpsecInterfaceAddDelSpdReply struct {
 	Retval int32
 }
@@ -289,251 +534,93 @@ func (*IpsecInterfaceAddDelSpdReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 
-// IpsecSpdAddDelEntry represents VPP binary API message 'ipsec_spd_add_del_entry':
-//
-//	"ipsec_spd_add_del_entry",
-//	[
-//	    "u16",
-//	    "_vl_msg_id"
-//	],
-//	[
-//	    "u32",
-//	    "client_index"
-//	],
-//	[
-//	    "u32",
-//	    "context"
-//	],
-//	[
-//	    "u8",
-//	    "is_add"
-//	],
-//	[
-//	    "u32",
-//	    "spd_id"
-//	],
-//	[
-//	    "i32",
-//	    "priority"
-//	],
-//	[
-//	    "u8",
-//	    "is_outbound"
-//	],
-//	[
-//	    "u8",
-//	    "is_ipv6"
-//	],
-//	[
-//	    "u8",
-//	    "is_ip_any"
-//	],
-//	[
-//	    "u8",
-//	    "remote_address_start",
-//	    16
-//	],
-//	[
-//	    "u8",
-//	    "remote_address_stop",
-//	    16
-//	],
-//	[
-//	    "u8",
-//	    "local_address_start",
-//	    16
-//	],
-//	[
-//	    "u8",
-//	    "local_address_stop",
-//	    16
-//	],
-//	[
-//	    "u8",
-//	    "protocol"
-//	],
-//	[
-//	    "u16",
-//	    "remote_port_start"
-//	],
-//	[
-//	    "u16",
-//	    "remote_port_stop"
-//	],
-//	[
-//	    "u16",
-//	    "local_port_start"
-//	],
-//	[
-//	    "u16",
-//	    "local_port_stop"
-//	],
-//	[
-//	    "u8",
-//	    "policy"
-//	],
-//	[
-//	    "u32",
-//	    "sa_id"
-//	],
-//	{
-//	    "crc": "0x7687a364"
-//	}
-//
-type IpsecSpdAddDelEntry struct {
-	IsAdd              uint8
-	SpdID              uint32
-	Priority           int32
-	IsOutbound         uint8
-	IsIPv6             uint8
-	IsIPAny            uint8
-	RemoteAddressStart []byte `struc:"[16]byte"`
-	RemoteAddressStop  []byte `struc:"[16]byte"`
-	LocalAddressStart  []byte `struc:"[16]byte"`
-	LocalAddressStop   []byte `struc:"[16]byte"`
-	Protocol           uint8
-	RemotePortStart    uint16
-	RemotePortStop     uint16
-	LocalPortStart     uint16
-	LocalPortStop      uint16
-	Policy             uint8
-	SaID               uint32
+// IpsecSaDetails represents VPP binary API message 'ipsec_sa_details':
+type IpsecSaDetails struct {
+	SaID           uint32
+	SwIfIndex      uint32
+	Spi            uint32
+	Protocol       uint8
+	CryptoAlg      uint8
+	CryptoKeyLen   uint8
+	CryptoKey      []byte `struc:"[128]byte"`
+	IntegAlg       uint8
+	IntegKeyLen    uint8
+	IntegKey       []byte `struc:"[128]byte"`
+	UseEsn         uint8
+	UseAntiReplay  uint8
+	IsTunnel       uint8
+	IsTunnelIP6    uint8
+	TunnelSrcAddr  []byte `struc:"[16]byte"`
+	TunnelDstAddr  []byte `struc:"[16]byte"`
+	Salt           uint32
+	SeqOutbound    uint64
+	LastSeqInbound uint64
+	ReplayWindow   uint64
+	TotalDataSize  uint64
+	UDPEncap       uint8
+	TxTableID      uint32
 }
 
-func (*IpsecSpdAddDelEntry) GetMessageName() string {
-	return "ipsec_spd_add_del_entry"
+func (*IpsecSaDetails) GetMessageName() string {
+	return "ipsec_sa_details"
 }
-func (*IpsecSpdAddDelEntry) GetCrcString() string {
-	return "7687a364"
+func (*IpsecSaDetails) GetCrcString() string {
+	return "ef0f518f"
 }
-func (*IpsecSpdAddDelEntry) GetMessageType() api.MessageType {
+func (*IpsecSaDetails) GetMessageType() api.MessageType {
+	return api.ReplyMessage
+}
+
+// IpsecSaDump represents VPP binary API message 'ipsec_sa_dump':
+type IpsecSaDump struct {
+	SaID uint32
+}
+
+func (*IpsecSaDump) GetMessageName() string {
+	return "ipsec_sa_dump"
+}
+func (*IpsecSaDump) GetCrcString() string {
+	return "2076c2f4"
+}
+func (*IpsecSaDump) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 
-// IpsecSpdAddDelEntryReply represents VPP binary API message 'ipsec_spd_add_del_entry_reply':
-//
-//	"ipsec_spd_add_del_entry_reply",
-//	[
-//	    "u16",
-//	    "_vl_msg_id"
-//	],
-//	[
-//	    "u32",
-//	    "context"
-//	],
-//	[
-//	    "i32",
-//	    "retval"
-//	],
-//	{
-//	    "crc": "0xe8d4e804"
-//	}
-//
-type IpsecSpdAddDelEntryReply struct {
+// IpsecSaSetKey represents VPP binary API message 'ipsec_sa_set_key':
+type IpsecSaSetKey struct {
+	SaID               uint32
+	CryptoKeyLength    uint8
+	CryptoKey          []byte `struc:"[128]byte"`
+	IntegrityKeyLength uint8
+	IntegrityKey       []byte `struc:"[128]byte"`
+}
+
+func (*IpsecSaSetKey) GetMessageName() string {
+	return "ipsec_sa_set_key"
+}
+func (*IpsecSaSetKey) GetCrcString() string {
+	return "93b4f08a"
+}
+func (*IpsecSaSetKey) GetMessageType() api.MessageType {
+	return api.RequestMessage
+}
+
+// IpsecSaSetKeyReply represents VPP binary API message 'ipsec_sa_set_key_reply':
+type IpsecSaSetKeyReply struct {
 	Retval int32
 }
 
-func (*IpsecSpdAddDelEntryReply) GetMessageName() string {
-	return "ipsec_spd_add_del_entry_reply"
+func (*IpsecSaSetKeyReply) GetMessageName() string {
+	return "ipsec_sa_set_key_reply"
 }
-func (*IpsecSpdAddDelEntryReply) GetCrcString() string {
+func (*IpsecSaSetKeyReply) GetCrcString() string {
 	return "e8d4e804"
 }
-func (*IpsecSpdAddDelEntryReply) GetMessageType() api.MessageType {
+func (*IpsecSaSetKeyReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 
 // IpsecSadAddDelEntry represents VPP binary API message 'ipsec_sad_add_del_entry':
-//
-//	"ipsec_sad_add_del_entry",
-//	[
-//	    "u16",
-//	    "_vl_msg_id"
-//	],
-//	[
-//	    "u32",
-//	    "client_index"
-//	],
-//	[
-//	    "u32",
-//	    "context"
-//	],
-//	[
-//	    "u8",
-//	    "is_add"
-//	],
-//	[
-//	    "u32",
-//	    "sad_id"
-//	],
-//	[
-//	    "u32",
-//	    "spi"
-//	],
-//	[
-//	    "u8",
-//	    "protocol"
-//	],
-//	[
-//	    "u8",
-//	    "crypto_algorithm"
-//	],
-//	[
-//	    "u8",
-//	    "crypto_key_length"
-//	],
-//	[
-//	    "u8",
-//	    "crypto_key",
-//	    128
-//	],
-//	[
-//	    "u8",
-//	    "integrity_algorithm"
-//	],
-//	[
-//	    "u8",
-//	    "integrity_key_length"
-//	],
-//	[
-//	    "u8",
-//	    "integrity_key",
-//	    128
-//	],
-//	[
-//	    "u8",
-//	    "use_extended_sequence_number"
-//	],
-//	[
-//	    "u8",
-//	    "use_anti_replay"
-//	],
-//	[
-//	    "u8",
-//	    "is_tunnel"
-//	],
-//	[
-//	    "u8",
-//	    "is_tunnel_ipv6"
-//	],
-//	[
-//	    "u8",
-//	    "tunnel_src_address",
-//	    16
-//	],
-//	[
-//	    "u8",
-//	    "tunnel_dst_address",
-//	    16
-//	],
-//	[
-//	    "u8",
-//	    "udp_encap"
-//	],
-//	{
-//	    "crc": "0x306782b4"
-//	}
-//
 type IpsecSadAddDelEntry struct {
 	IsAdd                     uint8
 	SadID                     uint32
@@ -565,24 +652,6 @@ func (*IpsecSadAddDelEntry) GetMessageType() api.MessageType {
 }
 
 // IpsecSadAddDelEntryReply represents VPP binary API message 'ipsec_sad_add_del_entry_reply':
-//
-//	"ipsec_sad_add_del_entry_reply",
-//	[
-//	    "u16",
-//	    "_vl_msg_id"
-//	],
-//	[
-//	    "u32",
-//	    "context"
-//	],
-//	[
-//	    "i32",
-//	    "retval"
-//	],
-//	{
-//	    "crc": "0xe8d4e804"
-//	}
-//
 type IpsecSadAddDelEntryReply struct {
 	Retval int32
 }
@@ -597,1366 +666,115 @@ func (*IpsecSadAddDelEntryReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 
-// IpsecSaSetKey represents VPP binary API message 'ipsec_sa_set_key':
-//
-//	"ipsec_sa_set_key",
-//	[
-//	    "u16",
-//	    "_vl_msg_id"
-//	],
-//	[
-//	    "u32",
-//	    "client_index"
-//	],
-//	[
-//	    "u32",
-//	    "context"
-//	],
-//	[
-//	    "u32",
-//	    "sa_id"
-//	],
-//	[
-//	    "u8",
-//	    "crypto_key_length"
-//	],
-//	[
-//	    "u8",
-//	    "crypto_key",
-//	    128
-//	],
-//	[
-//	    "u8",
-//	    "integrity_key_length"
-//	],
-//	[
-//	    "u8",
-//	    "integrity_key",
-//	    128
-//	],
-//	{
-//	    "crc": "0x93b4f08a"
-//	}
-//
-type IpsecSaSetKey struct {
-	SaID               uint32
-	CryptoKeyLength    uint8
-	CryptoKey          []byte `struc:"[128]byte"`
-	IntegrityKeyLength uint8
-	IntegrityKey       []byte `struc:"[128]byte"`
+// IpsecSelectBackend represents VPP binary API message 'ipsec_select_backend':
+type IpsecSelectBackend struct {
+	Protocol uint8
+	Index    uint8
 }
 
-func (*IpsecSaSetKey) GetMessageName() string {
-	return "ipsec_sa_set_key"
+func (*IpsecSelectBackend) GetMessageName() string {
+	return "ipsec_select_backend"
 }
-func (*IpsecSaSetKey) GetCrcString() string {
-	return "93b4f08a"
+func (*IpsecSelectBackend) GetCrcString() string {
+	return "f2cc2b47"
 }
-func (*IpsecSaSetKey) GetMessageType() api.MessageType {
+func (*IpsecSelectBackend) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 
-// IpsecSaSetKeyReply represents VPP binary API message 'ipsec_sa_set_key_reply':
-//
-//	"ipsec_sa_set_key_reply",
-//	[
-//	    "u16",
-//	    "_vl_msg_id"
-//	],
-//	[
-//	    "u32",
-//	    "context"
-//	],
-//	[
-//	    "i32",
-//	    "retval"
-//	],
-//	{
-//	    "crc": "0xe8d4e804"
-//	}
-//
-type IpsecSaSetKeyReply struct {
+// IpsecSelectBackendReply represents VPP binary API message 'ipsec_select_backend_reply':
+type IpsecSelectBackendReply struct {
 	Retval int32
 }
 
-func (*IpsecSaSetKeyReply) GetMessageName() string {
-	return "ipsec_sa_set_key_reply"
+func (*IpsecSelectBackendReply) GetMessageName() string {
+	return "ipsec_select_backend_reply"
 }
-func (*IpsecSaSetKeyReply) GetCrcString() string {
+func (*IpsecSelectBackendReply) GetCrcString() string {
 	return "e8d4e804"
 }
-func (*IpsecSaSetKeyReply) GetMessageType() api.MessageType {
+func (*IpsecSelectBackendReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 
-// Ikev2ProfileAddDel represents VPP binary API message 'ikev2_profile_add_del':
-//
-//	"ikev2_profile_add_del",
-//	[
-//	    "u16",
-//	    "_vl_msg_id"
-//	],
-//	[
-//	    "u32",
-//	    "client_index"
-//	],
-//	[
-//	    "u32",
-//	    "context"
-//	],
-//	[
-//	    "u8",
-//	    "name",
-//	    64
-//	],
-//	[
-//	    "u8",
-//	    "is_add"
-//	],
-//	{
-//	    "crc": "0x405b222e"
-//	}
-//
-type Ikev2ProfileAddDel struct {
-	Name  []byte `struc:"[64]byte"`
+// IpsecSpdAddDel represents VPP binary API message 'ipsec_spd_add_del':
+type IpsecSpdAddDel struct {
 	IsAdd uint8
-}
-
-func (*Ikev2ProfileAddDel) GetMessageName() string {
-	return "ikev2_profile_add_del"
-}
-func (*Ikev2ProfileAddDel) GetCrcString() string {
-	return "405b222e"
-}
-func (*Ikev2ProfileAddDel) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
-
-// Ikev2ProfileAddDelReply represents VPP binary API message 'ikev2_profile_add_del_reply':
-//
-//	"ikev2_profile_add_del_reply",
-//	[
-//	    "u16",
-//	    "_vl_msg_id"
-//	],
-//	[
-//	    "u32",
-//	    "context"
-//	],
-//	[
-//	    "i32",
-//	    "retval"
-//	],
-//	{
-//	    "crc": "0xe8d4e804"
-//	}
-//
-type Ikev2ProfileAddDelReply struct {
-	Retval int32
-}
-
-func (*Ikev2ProfileAddDelReply) GetMessageName() string {
-	return "ikev2_profile_add_del_reply"
-}
-func (*Ikev2ProfileAddDelReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*Ikev2ProfileAddDelReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
-
-// Ikev2ProfileSetAuth represents VPP binary API message 'ikev2_profile_set_auth':
-//
-//	"ikev2_profile_set_auth",
-//	[
-//	    "u16",
-//	    "_vl_msg_id"
-//	],
-//	[
-//	    "u32",
-//	    "client_index"
-//	],
-//	[
-//	    "u32",
-//	    "context"
-//	],
-//	[
-//	    "u8",
-//	    "name",
-//	    64
-//	],
-//	[
-//	    "u8",
-//	    "auth_method"
-//	],
-//	[
-//	    "u8",
-//	    "is_hex"
-//	],
-//	[
-//	    "u32",
-//	    "data_len"
-//	],
-//	[
-//	    "u8",
-//	    "data",
-//	    0,
-//	    "data_len"
-//	],
-//	{
-//	    "crc": "0xbd76f369"
-//	}
-//
-type Ikev2ProfileSetAuth struct {
-	Name       []byte `struc:"[64]byte"`
-	AuthMethod uint8
-	IsHex      uint8
-	DataLen    uint32 `struc:"sizeof=Data"`
-	Data       []byte
-}
-
-func (*Ikev2ProfileSetAuth) GetMessageName() string {
-	return "ikev2_profile_set_auth"
-}
-func (*Ikev2ProfileSetAuth) GetCrcString() string {
-	return "bd76f369"
-}
-func (*Ikev2ProfileSetAuth) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
-
-// Ikev2ProfileSetAuthReply represents VPP binary API message 'ikev2_profile_set_auth_reply':
-//
-//	"ikev2_profile_set_auth_reply",
-//	[
-//	    "u16",
-//	    "_vl_msg_id"
-//	],
-//	[
-//	    "u32",
-//	    "context"
-//	],
-//	[
-//	    "i32",
-//	    "retval"
-//	],
-//	{
-//	    "crc": "0xe8d4e804"
-//	}
-//
-type Ikev2ProfileSetAuthReply struct {
-	Retval int32
-}
-
-func (*Ikev2ProfileSetAuthReply) GetMessageName() string {
-	return "ikev2_profile_set_auth_reply"
-}
-func (*Ikev2ProfileSetAuthReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*Ikev2ProfileSetAuthReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
-
-// Ikev2ProfileSetID represents VPP binary API message 'ikev2_profile_set_id':
-//
-//	"ikev2_profile_set_id",
-//	[
-//	    "u16",
-//	    "_vl_msg_id"
-//	],
-//	[
-//	    "u32",
-//	    "client_index"
-//	],
-//	[
-//	    "u32",
-//	    "context"
-//	],
-//	[
-//	    "u8",
-//	    "name",
-//	    64
-//	],
-//	[
-//	    "u8",
-//	    "is_local"
-//	],
-//	[
-//	    "u8",
-//	    "id_type"
-//	],
-//	[
-//	    "u32",
-//	    "data_len"
-//	],
-//	[
-//	    "u8",
-//	    "data",
-//	    0,
-//	    "data_len"
-//	],
-//	{
-//	    "crc": "0xca88c0ef"
-//	}
-//
-type Ikev2ProfileSetID struct {
-	Name    []byte `struc:"[64]byte"`
-	IsLocal uint8
-	IDType  uint8
-	DataLen uint32 `struc:"sizeof=Data"`
-	Data    []byte
-}
-
-func (*Ikev2ProfileSetID) GetMessageName() string {
-	return "ikev2_profile_set_id"
-}
-func (*Ikev2ProfileSetID) GetCrcString() string {
-	return "ca88c0ef"
-}
-func (*Ikev2ProfileSetID) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
-
-// Ikev2ProfileSetIDReply represents VPP binary API message 'ikev2_profile_set_id_reply':
-//
-//	"ikev2_profile_set_id_reply",
-//	[
-//	    "u16",
-//	    "_vl_msg_id"
-//	],
-//	[
-//	    "u32",
-//	    "context"
-//	],
-//	[
-//	    "i32",
-//	    "retval"
-//	],
-//	{
-//	    "crc": "0xe8d4e804"
-//	}
-//
-type Ikev2ProfileSetIDReply struct {
-	Retval int32
-}
-
-func (*Ikev2ProfileSetIDReply) GetMessageName() string {
-	return "ikev2_profile_set_id_reply"
-}
-func (*Ikev2ProfileSetIDReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*Ikev2ProfileSetIDReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
-
-// Ikev2ProfileSetTs represents VPP binary API message 'ikev2_profile_set_ts':
-//
-//	"ikev2_profile_set_ts",
-//	[
-//	    "u16",
-//	    "_vl_msg_id"
-//	],
-//	[
-//	    "u32",
-//	    "client_index"
-//	],
-//	[
-//	    "u32",
-//	    "context"
-//	],
-//	[
-//	    "u8",
-//	    "name",
-//	    64
-//	],
-//	[
-//	    "u8",
-//	    "is_local"
-//	],
-//	[
-//	    "u8",
-//	    "proto"
-//	],
-//	[
-//	    "u16",
-//	    "start_port"
-//	],
-//	[
-//	    "u16",
-//	    "end_port"
-//	],
-//	[
-//	    "u32",
-//	    "start_addr"
-//	],
-//	[
-//	    "u32",
-//	    "end_addr"
-//	],
-//	{
-//	    "crc": "0x481aad89"
-//	}
-//
-type Ikev2ProfileSetTs struct {
-	Name      []byte `struc:"[64]byte"`
-	IsLocal   uint8
-	Proto     uint8
-	StartPort uint16
-	EndPort   uint16
-	StartAddr uint32
-	EndAddr   uint32
-}
-
-func (*Ikev2ProfileSetTs) GetMessageName() string {
-	return "ikev2_profile_set_ts"
-}
-func (*Ikev2ProfileSetTs) GetCrcString() string {
-	return "481aad89"
-}
-func (*Ikev2ProfileSetTs) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
-
-// Ikev2ProfileSetTsReply represents VPP binary API message 'ikev2_profile_set_ts_reply':
-//
-//	"ikev2_profile_set_ts_reply",
-//	[
-//	    "u16",
-//	    "_vl_msg_id"
-//	],
-//	[
-//	    "u32",
-//	    "context"
-//	],
-//	[
-//	    "i32",
-//	    "retval"
-//	],
-//	{
-//	    "crc": "0xe8d4e804"
-//	}
-//
-type Ikev2ProfileSetTsReply struct {
-	Retval int32
-}
-
-func (*Ikev2ProfileSetTsReply) GetMessageName() string {
-	return "ikev2_profile_set_ts_reply"
-}
-func (*Ikev2ProfileSetTsReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*Ikev2ProfileSetTsReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
-
-// Ikev2SetLocalKey represents VPP binary API message 'ikev2_set_local_key':
-//
-//	"ikev2_set_local_key",
-//	[
-//	    "u16",
-//	    "_vl_msg_id"
-//	],
-//	[
-//	    "u32",
-//	    "client_index"
-//	],
-//	[
-//	    "u32",
-//	    "context"
-//	],
-//	[
-//	    "u8",
-//	    "key_file",
-//	    256
-//	],
-//	{
-//	    "crc": "0xe4996cd5"
-//	}
-//
-type Ikev2SetLocalKey struct {
-	KeyFile []byte `struc:"[256]byte"`
-}
-
-func (*Ikev2SetLocalKey) GetMessageName() string {
-	return "ikev2_set_local_key"
-}
-func (*Ikev2SetLocalKey) GetCrcString() string {
-	return "e4996cd5"
-}
-func (*Ikev2SetLocalKey) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
-
-// Ikev2SetLocalKeyReply represents VPP binary API message 'ikev2_set_local_key_reply':
-//
-//	"ikev2_set_local_key_reply",
-//	[
-//	    "u16",
-//	    "_vl_msg_id"
-//	],
-//	[
-//	    "u32",
-//	    "context"
-//	],
-//	[
-//	    "i32",
-//	    "retval"
-//	],
-//	{
-//	    "crc": "0xe8d4e804"
-//	}
-//
-type Ikev2SetLocalKeyReply struct {
-	Retval int32
-}
-
-func (*Ikev2SetLocalKeyReply) GetMessageName() string {
-	return "ikev2_set_local_key_reply"
-}
-func (*Ikev2SetLocalKeyReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*Ikev2SetLocalKeyReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
-
-// Ikev2SetResponder represents VPP binary API message 'ikev2_set_responder':
-//
-//	"ikev2_set_responder",
-//	[
-//	    "u16",
-//	    "_vl_msg_id"
-//	],
-//	[
-//	    "u32",
-//	    "client_index"
-//	],
-//	[
-//	    "u32",
-//	    "context"
-//	],
-//	[
-//	    "u8",
-//	    "name",
-//	    64
-//	],
-//	[
-//	    "u32",
-//	    "sw_if_index"
-//	],
-//	[
-//	    "u8",
-//	    "address",
-//	    4
-//	],
-//	{
-//	    "crc": "0xa99996f3"
-//	}
-//
-type Ikev2SetResponder struct {
-	Name      []byte `struc:"[64]byte"`
-	SwIfIndex uint32
-	Address   []byte `struc:"[4]byte"`
-}
-
-func (*Ikev2SetResponder) GetMessageName() string {
-	return "ikev2_set_responder"
-}
-func (*Ikev2SetResponder) GetCrcString() string {
-	return "a99996f3"
-}
-func (*Ikev2SetResponder) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
-
-// Ikev2SetResponderReply represents VPP binary API message 'ikev2_set_responder_reply':
-//
-//	"ikev2_set_responder_reply",
-//	[
-//	    "u16",
-//	    "_vl_msg_id"
-//	],
-//	[
-//	    "u32",
-//	    "context"
-//	],
-//	[
-//	    "i32",
-//	    "retval"
-//	],
-//	{
-//	    "crc": "0xe8d4e804"
-//	}
-//
-type Ikev2SetResponderReply struct {
-	Retval int32
-}
-
-func (*Ikev2SetResponderReply) GetMessageName() string {
-	return "ikev2_set_responder_reply"
-}
-func (*Ikev2SetResponderReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*Ikev2SetResponderReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
-
-// Ikev2SetIkeTransforms represents VPP binary API message 'ikev2_set_ike_transforms':
-//
-//	"ikev2_set_ike_transforms",
-//	[
-//	    "u16",
-//	    "_vl_msg_id"
-//	],
-//	[
-//	    "u32",
-//	    "client_index"
-//	],
-//	[
-//	    "u32",
-//	    "context"
-//	],
-//	[
-//	    "u8",
-//	    "name",
-//	    64
-//	],
-//	[
-//	    "u32",
-//	    "crypto_alg"
-//	],
-//	[
-//	    "u32",
-//	    "crypto_key_size"
-//	],
-//	[
-//	    "u32",
-//	    "integ_alg"
-//	],
-//	[
-//	    "u32",
-//	    "dh_group"
-//	],
-//	{
-//	    "crc": "0x919f5efd"
-//	}
-//
-type Ikev2SetIkeTransforms struct {
-	Name          []byte `struc:"[64]byte"`
-	CryptoAlg     uint32
-	CryptoKeySize uint32
-	IntegAlg      uint32
-	DhGroup       uint32
-}
-
-func (*Ikev2SetIkeTransforms) GetMessageName() string {
-	return "ikev2_set_ike_transforms"
-}
-func (*Ikev2SetIkeTransforms) GetCrcString() string {
-	return "919f5efd"
-}
-func (*Ikev2SetIkeTransforms) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
-
-// Ikev2SetIkeTransformsReply represents VPP binary API message 'ikev2_set_ike_transforms_reply':
-//
-//	"ikev2_set_ike_transforms_reply",
-//	[
-//	    "u16",
-//	    "_vl_msg_id"
-//	],
-//	[
-//	    "u32",
-//	    "context"
-//	],
-//	[
-//	    "i32",
-//	    "retval"
-//	],
-//	{
-//	    "crc": "0xe8d4e804"
-//	}
-//
-type Ikev2SetIkeTransformsReply struct {
-	Retval int32
-}
-
-func (*Ikev2SetIkeTransformsReply) GetMessageName() string {
-	return "ikev2_set_ike_transforms_reply"
-}
-func (*Ikev2SetIkeTransformsReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*Ikev2SetIkeTransformsReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
-
-// Ikev2SetEspTransforms represents VPP binary API message 'ikev2_set_esp_transforms':
-//
-//	"ikev2_set_esp_transforms",
-//	[
-//	    "u16",
-//	    "_vl_msg_id"
-//	],
-//	[
-//	    "u32",
-//	    "client_index"
-//	],
-//	[
-//	    "u32",
-//	    "context"
-//	],
-//	[
-//	    "u8",
-//	    "name",
-//	    64
-//	],
-//	[
-//	    "u32",
-//	    "crypto_alg"
-//	],
-//	[
-//	    "u32",
-//	    "crypto_key_size"
-//	],
-//	[
-//	    "u32",
-//	    "integ_alg"
-//	],
-//	[
-//	    "u32",
-//	    "dh_group"
-//	],
-//	{
-//	    "crc": "0x919f5efd"
-//	}
-//
-type Ikev2SetEspTransforms struct {
-	Name          []byte `struc:"[64]byte"`
-	CryptoAlg     uint32
-	CryptoKeySize uint32
-	IntegAlg      uint32
-	DhGroup       uint32
-}
-
-func (*Ikev2SetEspTransforms) GetMessageName() string {
-	return "ikev2_set_esp_transforms"
-}
-func (*Ikev2SetEspTransforms) GetCrcString() string {
-	return "919f5efd"
-}
-func (*Ikev2SetEspTransforms) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
-
-// Ikev2SetEspTransformsReply represents VPP binary API message 'ikev2_set_esp_transforms_reply':
-//
-//	"ikev2_set_esp_transforms_reply",
-//	[
-//	    "u16",
-//	    "_vl_msg_id"
-//	],
-//	[
-//	    "u32",
-//	    "context"
-//	],
-//	[
-//	    "i32",
-//	    "retval"
-//	],
-//	{
-//	    "crc": "0xe8d4e804"
-//	}
-//
-type Ikev2SetEspTransformsReply struct {
-	Retval int32
-}
-
-func (*Ikev2SetEspTransformsReply) GetMessageName() string {
-	return "ikev2_set_esp_transforms_reply"
-}
-func (*Ikev2SetEspTransformsReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*Ikev2SetEspTransformsReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
-
-// Ikev2SetSaLifetime represents VPP binary API message 'ikev2_set_sa_lifetime':
-//
-//	"ikev2_set_sa_lifetime",
-//	[
-//	    "u16",
-//	    "_vl_msg_id"
-//	],
-//	[
-//	    "u32",
-//	    "client_index"
-//	],
-//	[
-//	    "u32",
-//	    "context"
-//	],
-//	[
-//	    "u8",
-//	    "name",
-//	    64
-//	],
-//	[
-//	    "u64",
-//	    "lifetime"
-//	],
-//	[
-//	    "u32",
-//	    "lifetime_jitter"
-//	],
-//	[
-//	    "u32",
-//	    "handover"
-//	],
-//	[
-//	    "u64",
-//	    "lifetime_maxdata"
-//	],
-//	{
-//	    "crc": "0x46d31203"
-//	}
-//
-type Ikev2SetSaLifetime struct {
-	Name            []byte `struc:"[64]byte"`
-	Lifetime        uint64
-	LifetimeJitter  uint32
-	Handover        uint32
-	LifetimeMaxdata uint64
-}
-
-func (*Ikev2SetSaLifetime) GetMessageName() string {
-	return "ikev2_set_sa_lifetime"
-}
-func (*Ikev2SetSaLifetime) GetCrcString() string {
-	return "46d31203"
-}
-func (*Ikev2SetSaLifetime) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
-
-// Ikev2SetSaLifetimeReply represents VPP binary API message 'ikev2_set_sa_lifetime_reply':
-//
-//	"ikev2_set_sa_lifetime_reply",
-//	[
-//	    "u16",
-//	    "_vl_msg_id"
-//	],
-//	[
-//	    "u32",
-//	    "context"
-//	],
-//	[
-//	    "i32",
-//	    "retval"
-//	],
-//	{
-//	    "crc": "0xe8d4e804"
-//	}
-//
-type Ikev2SetSaLifetimeReply struct {
-	Retval int32
-}
-
-func (*Ikev2SetSaLifetimeReply) GetMessageName() string {
-	return "ikev2_set_sa_lifetime_reply"
-}
-func (*Ikev2SetSaLifetimeReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*Ikev2SetSaLifetimeReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
-
-// Ikev2InitiateSaInit represents VPP binary API message 'ikev2_initiate_sa_init':
-//
-//	"ikev2_initiate_sa_init",
-//	[
-//	    "u16",
-//	    "_vl_msg_id"
-//	],
-//	[
-//	    "u32",
-//	    "client_index"
-//	],
-//	[
-//	    "u32",
-//	    "context"
-//	],
-//	[
-//	    "u8",
-//	    "name",
-//	    64
-//	],
-//	{
-//	    "crc": "0x0cb71b0e"
-//	}
-//
-type Ikev2InitiateSaInit struct {
-	Name []byte `struc:"[64]byte"`
-}
-
-func (*Ikev2InitiateSaInit) GetMessageName() string {
-	return "ikev2_initiate_sa_init"
-}
-func (*Ikev2InitiateSaInit) GetCrcString() string {
-	return "0cb71b0e"
-}
-func (*Ikev2InitiateSaInit) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
-
-// Ikev2InitiateSaInitReply represents VPP binary API message 'ikev2_initiate_sa_init_reply':
-//
-//	"ikev2_initiate_sa_init_reply",
-//	[
-//	    "u16",
-//	    "_vl_msg_id"
-//	],
-//	[
-//	    "u32",
-//	    "context"
-//	],
-//	[
-//	    "i32",
-//	    "retval"
-//	],
-//	{
-//	    "crc": "0xe8d4e804"
-//	}
-//
-type Ikev2InitiateSaInitReply struct {
-	Retval int32
-}
-
-func (*Ikev2InitiateSaInitReply) GetMessageName() string {
-	return "ikev2_initiate_sa_init_reply"
-}
-func (*Ikev2InitiateSaInitReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*Ikev2InitiateSaInitReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
-
-// Ikev2InitiateDelIkeSa represents VPP binary API message 'ikev2_initiate_del_ike_sa':
-//
-//	"ikev2_initiate_del_ike_sa",
-//	[
-//	    "u16",
-//	    "_vl_msg_id"
-//	],
-//	[
-//	    "u32",
-//	    "client_index"
-//	],
-//	[
-//	    "u32",
-//	    "context"
-//	],
-//	[
-//	    "u64",
-//	    "ispi"
-//	],
-//	{
-//	    "crc": "0x8d125bdd"
-//	}
-//
-type Ikev2InitiateDelIkeSa struct {
-	Ispi uint64
-}
-
-func (*Ikev2InitiateDelIkeSa) GetMessageName() string {
-	return "ikev2_initiate_del_ike_sa"
-}
-func (*Ikev2InitiateDelIkeSa) GetCrcString() string {
-	return "8d125bdd"
-}
-func (*Ikev2InitiateDelIkeSa) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
-
-// Ikev2InitiateDelIkeSaReply represents VPP binary API message 'ikev2_initiate_del_ike_sa_reply':
-//
-//	"ikev2_initiate_del_ike_sa_reply",
-//	[
-//	    "u16",
-//	    "_vl_msg_id"
-//	],
-//	[
-//	    "u32",
-//	    "context"
-//	],
-//	[
-//	    "i32",
-//	    "retval"
-//	],
-//	{
-//	    "crc": "0xe8d4e804"
-//	}
-//
-type Ikev2InitiateDelIkeSaReply struct {
-	Retval int32
-}
-
-func (*Ikev2InitiateDelIkeSaReply) GetMessageName() string {
-	return "ikev2_initiate_del_ike_sa_reply"
-}
-func (*Ikev2InitiateDelIkeSaReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*Ikev2InitiateDelIkeSaReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
-
-// Ikev2InitiateDelChildSa represents VPP binary API message 'ikev2_initiate_del_child_sa':
-//
-//	"ikev2_initiate_del_child_sa",
-//	[
-//	    "u16",
-//	    "_vl_msg_id"
-//	],
-//	[
-//	    "u32",
-//	    "client_index"
-//	],
-//	[
-//	    "u32",
-//	    "context"
-//	],
-//	[
-//	    "u32",
-//	    "ispi"
-//	],
-//	{
-//	    "crc": "0x7f004d2e"
-//	}
-//
-type Ikev2InitiateDelChildSa struct {
-	Ispi uint32
-}
-
-func (*Ikev2InitiateDelChildSa) GetMessageName() string {
-	return "ikev2_initiate_del_child_sa"
-}
-func (*Ikev2InitiateDelChildSa) GetCrcString() string {
-	return "7f004d2e"
-}
-func (*Ikev2InitiateDelChildSa) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
-
-// Ikev2InitiateDelChildSaReply represents VPP binary API message 'ikev2_initiate_del_child_sa_reply':
-//
-//	"ikev2_initiate_del_child_sa_reply",
-//	[
-//	    "u16",
-//	    "_vl_msg_id"
-//	],
-//	[
-//	    "u32",
-//	    "context"
-//	],
-//	[
-//	    "i32",
-//	    "retval"
-//	],
-//	{
-//	    "crc": "0xe8d4e804"
-//	}
-//
-type Ikev2InitiateDelChildSaReply struct {
-	Retval int32
-}
-
-func (*Ikev2InitiateDelChildSaReply) GetMessageName() string {
-	return "ikev2_initiate_del_child_sa_reply"
-}
-func (*Ikev2InitiateDelChildSaReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*Ikev2InitiateDelChildSaReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
-
-// Ikev2InitiateRekeyChildSa represents VPP binary API message 'ikev2_initiate_rekey_child_sa':
-//
-//	"ikev2_initiate_rekey_child_sa",
-//	[
-//	    "u16",
-//	    "_vl_msg_id"
-//	],
-//	[
-//	    "u32",
-//	    "client_index"
-//	],
-//	[
-//	    "u32",
-//	    "context"
-//	],
-//	[
-//	    "u32",
-//	    "ispi"
-//	],
-//	{
-//	    "crc": "0x7f004d2e"
-//	}
-//
-type Ikev2InitiateRekeyChildSa struct {
-	Ispi uint32
-}
-
-func (*Ikev2InitiateRekeyChildSa) GetMessageName() string {
-	return "ikev2_initiate_rekey_child_sa"
-}
-func (*Ikev2InitiateRekeyChildSa) GetCrcString() string {
-	return "7f004d2e"
-}
-func (*Ikev2InitiateRekeyChildSa) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
-
-// Ikev2InitiateRekeyChildSaReply represents VPP binary API message 'ikev2_initiate_rekey_child_sa_reply':
-//
-//	"ikev2_initiate_rekey_child_sa_reply",
-//	[
-//	    "u16",
-//	    "_vl_msg_id"
-//	],
-//	[
-//	    "u32",
-//	    "context"
-//	],
-//	[
-//	    "i32",
-//	    "retval"
-//	],
-//	{
-//	    "crc": "0xe8d4e804"
-//	}
-//
-type Ikev2InitiateRekeyChildSaReply struct {
-	Retval int32
-}
-
-func (*Ikev2InitiateRekeyChildSaReply) GetMessageName() string {
-	return "ikev2_initiate_rekey_child_sa_reply"
-}
-func (*Ikev2InitiateRekeyChildSaReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*Ikev2InitiateRekeyChildSaReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
-
-// IpsecSpdsDump represents VPP binary API message 'ipsec_spds_dump':
-//
-//	"ipsec_spds_dump",
-//	[
-//	    "u16",
-//	    "_vl_msg_id"
-//	],
-//	[
-//	    "u32",
-//	    "client_index"
-//	],
-//	[
-//	    "u32",
-//	    "context"
-//	],
-//	{
-//	    "crc": "0x51077d14"
-//	}
-//
-type IpsecSpdsDump struct{}
-
-func (*IpsecSpdsDump) GetMessageName() string {
-	return "ipsec_spds_dump"
-}
-func (*IpsecSpdsDump) GetCrcString() string {
-	return "51077d14"
-}
-func (*IpsecSpdsDump) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
-
-// IpsecSpdsDetails represents VPP binary API message 'ipsec_spds_details':
-//
-//	"ipsec_spds_details",
-//	[
-//	    "u16",
-//	    "_vl_msg_id"
-//	],
-//	[
-//	    "u32",
-//	    "context"
-//	],
-//	[
-//	    "u32",
-//	    "spd_id"
-//	],
-//	[
-//	    "u32",
-//	    "npolicies"
-//	],
-//	{
-//	    "crc": "0xa04bb254"
-//	}
-//
-type IpsecSpdsDetails struct {
-	SpdID     uint32
-	Npolicies uint32
-}
-
-func (*IpsecSpdsDetails) GetMessageName() string {
-	return "ipsec_spds_details"
-}
-func (*IpsecSpdsDetails) GetCrcString() string {
-	return "a04bb254"
-}
-func (*IpsecSpdsDetails) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
-
-// IpsecSpdDump represents VPP binary API message 'ipsec_spd_dump':
-//
-//	"ipsec_spd_dump",
-//	[
-//	    "u16",
-//	    "_vl_msg_id"
-//	],
-//	[
-//	    "u32",
-//	    "client_index"
-//	],
-//	[
-//	    "u32",
-//	    "context"
-//	],
-//	[
-//	    "u32",
-//	    "spd_id"
-//	],
-//	[
-//	    "u32",
-//	    "sa_id"
-//	],
-//	{
-//	    "crc": "0xafefbf7d"
-//	}
-//
-type IpsecSpdDump struct {
 	SpdID uint32
-	SaID  uint32
 }
 
-func (*IpsecSpdDump) GetMessageName() string {
-	return "ipsec_spd_dump"
+func (*IpsecSpdAddDel) GetMessageName() string {
+	return "ipsec_spd_add_del"
 }
-func (*IpsecSpdDump) GetCrcString() string {
-	return "afefbf7d"
+func (*IpsecSpdAddDel) GetCrcString() string {
+	return "9ffdf5da"
 }
-func (*IpsecSpdDump) GetMessageType() api.MessageType {
+func (*IpsecSpdAddDel) GetMessageType() api.MessageType {
 	return api.RequestMessage
+}
+
+// IpsecSpdAddDelEntry represents VPP binary API message 'ipsec_spd_add_del_entry':
+type IpsecSpdAddDelEntry struct {
+	IsAdd              uint8
+	SpdID              uint32
+	Priority           int32
+	IsOutbound         uint8
+	IsIPv6             uint8
+	IsIPAny            uint8
+	RemoteAddressStart []byte `struc:"[16]byte"`
+	RemoteAddressStop  []byte `struc:"[16]byte"`
+	LocalAddressStart  []byte `struc:"[16]byte"`
+	LocalAddressStop   []byte `struc:"[16]byte"`
+	Protocol           uint8
+	RemotePortStart    uint16
+	RemotePortStop     uint16
+	LocalPortStart     uint16
+	LocalPortStop      uint16
+	Policy             uint8
+	SaID               uint32
+}
+
+func (*IpsecSpdAddDelEntry) GetMessageName() string {
+	return "ipsec_spd_add_del_entry"
+}
+func (*IpsecSpdAddDelEntry) GetCrcString() string {
+	return "7687a364"
+}
+func (*IpsecSpdAddDelEntry) GetMessageType() api.MessageType {
+	return api.RequestMessage
+}
+
+// IpsecSpdAddDelEntryReply represents VPP binary API message 'ipsec_spd_add_del_entry_reply':
+type IpsecSpdAddDelEntryReply struct {
+	Retval int32
+}
+
+func (*IpsecSpdAddDelEntryReply) GetMessageName() string {
+	return "ipsec_spd_add_del_entry_reply"
+}
+func (*IpsecSpdAddDelEntryReply) GetCrcString() string {
+	return "e8d4e804"
+}
+func (*IpsecSpdAddDelEntryReply) GetMessageType() api.MessageType {
+	return api.ReplyMessage
+}
+
+// IpsecSpdAddDelReply represents VPP binary API message 'ipsec_spd_add_del_reply':
+type IpsecSpdAddDelReply struct {
+	Retval int32
+}
+
+func (*IpsecSpdAddDelReply) GetMessageName() string {
+	return "ipsec_spd_add_del_reply"
+}
+func (*IpsecSpdAddDelReply) GetCrcString() string {
+	return "e8d4e804"
+}
+func (*IpsecSpdAddDelReply) GetMessageType() api.MessageType {
+	return api.ReplyMessage
 }
 
 // IpsecSpdDetails represents VPP binary API message 'ipsec_spd_details':
-//
-//	"ipsec_spd_details",
-//	[
-//	    "u16",
-//	    "_vl_msg_id"
-//	],
-//	[
-//	    "u32",
-//	    "context"
-//	],
-//	[
-//	    "u32",
-//	    "spd_id"
-//	],
-//	[
-//	    "i32",
-//	    "priority"
-//	],
-//	[
-//	    "u8",
-//	    "is_outbound"
-//	],
-//	[
-//	    "u8",
-//	    "is_ipv6"
-//	],
-//	[
-//	    "u8",
-//	    "local_start_addr",
-//	    16
-//	],
-//	[
-//	    "u8",
-//	    "local_stop_addr",
-//	    16
-//	],
-//	[
-//	    "u16",
-//	    "local_start_port"
-//	],
-//	[
-//	    "u16",
-//	    "local_stop_port"
-//	],
-//	[
-//	    "u8",
-//	    "remote_start_addr",
-//	    16
-//	],
-//	[
-//	    "u8",
-//	    "remote_stop_addr",
-//	    16
-//	],
-//	[
-//	    "u16",
-//	    "remote_start_port"
-//	],
-//	[
-//	    "u16",
-//	    "remote_stop_port"
-//	],
-//	[
-//	    "u8",
-//	    "protocol"
-//	],
-//	[
-//	    "u8",
-//	    "policy"
-//	],
-//	[
-//	    "u32",
-//	    "sa_id"
-//	],
-//	[
-//	    "u64",
-//	    "bytes"
-//	],
-//	[
-//	    "u64",
-//	    "packets"
-//	],
-//	{
-//	    "crc": "0x1560895d"
-//	}
-//
 type IpsecSpdDetails struct {
 	SpdID           uint32
 	Priority        int32
@@ -1987,71 +805,23 @@ func (*IpsecSpdDetails) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 
-// IpsecSpdInterfaceDump represents VPP binary API message 'ipsec_spd_interface_dump':
-//
-//	"ipsec_spd_interface_dump",
-//	[
-//	    "u16",
-//	    "_vl_msg_id"
-//	],
-//	[
-//	    "u32",
-//	    "client_index"
-//	],
-//	[
-//	    "u32",
-//	    "context"
-//	],
-//	[
-//	    "u32",
-//	    "spd_index"
-//	],
-//	[
-//	    "u8",
-//	    "spd_index_valid"
-//	],
-//	{
-//	    "crc": "0x8971de19"
-//	}
-//
-type IpsecSpdInterfaceDump struct {
-	SpdIndex      uint32
-	SpdIndexValid uint8
+// IpsecSpdDump represents VPP binary API message 'ipsec_spd_dump':
+type IpsecSpdDump struct {
+	SpdID uint32
+	SaID  uint32
 }
 
-func (*IpsecSpdInterfaceDump) GetMessageName() string {
-	return "ipsec_spd_interface_dump"
+func (*IpsecSpdDump) GetMessageName() string {
+	return "ipsec_spd_dump"
 }
-func (*IpsecSpdInterfaceDump) GetCrcString() string {
-	return "8971de19"
+func (*IpsecSpdDump) GetCrcString() string {
+	return "afefbf7d"
 }
-func (*IpsecSpdInterfaceDump) GetMessageType() api.MessageType {
+func (*IpsecSpdDump) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 
 // IpsecSpdInterfaceDetails represents VPP binary API message 'ipsec_spd_interface_details':
-//
-//	"ipsec_spd_interface_details",
-//	[
-//	    "u16",
-//	    "_vl_msg_id"
-//	],
-//	[
-//	    "u32",
-//	    "context"
-//	],
-//	[
-//	    "u32",
-//	    "spd_index"
-//	],
-//	[
-//	    "u32",
-//	    "sw_if_index"
-//	],
-//	{
-//	    "crc": "0x2c54296d"
-//	}
-//
 type IpsecSpdInterfaceDetails struct {
 	SpdIndex  uint32
 	SwIfIndex uint32
@@ -2067,111 +837,52 @@ func (*IpsecSpdInterfaceDetails) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 
+// IpsecSpdInterfaceDump represents VPP binary API message 'ipsec_spd_interface_dump':
+type IpsecSpdInterfaceDump struct {
+	SpdIndex      uint32
+	SpdIndexValid uint8
+}
+
+func (*IpsecSpdInterfaceDump) GetMessageName() string {
+	return "ipsec_spd_interface_dump"
+}
+func (*IpsecSpdInterfaceDump) GetCrcString() string {
+	return "8971de19"
+}
+func (*IpsecSpdInterfaceDump) GetMessageType() api.MessageType {
+	return api.RequestMessage
+}
+
+// IpsecSpdsDetails represents VPP binary API message 'ipsec_spds_details':
+type IpsecSpdsDetails struct {
+	SpdID     uint32
+	Npolicies uint32
+}
+
+func (*IpsecSpdsDetails) GetMessageName() string {
+	return "ipsec_spds_details"
+}
+func (*IpsecSpdsDetails) GetCrcString() string {
+	return "a04bb254"
+}
+func (*IpsecSpdsDetails) GetMessageType() api.MessageType {
+	return api.ReplyMessage
+}
+
+// IpsecSpdsDump represents VPP binary API message 'ipsec_spds_dump':
+type IpsecSpdsDump struct{}
+
+func (*IpsecSpdsDump) GetMessageName() string {
+	return "ipsec_spds_dump"
+}
+func (*IpsecSpdsDump) GetCrcString() string {
+	return "51077d14"
+}
+func (*IpsecSpdsDump) GetMessageType() api.MessageType {
+	return api.RequestMessage
+}
+
 // IpsecTunnelIfAddDel represents VPP binary API message 'ipsec_tunnel_if_add_del':
-//
-//	"ipsec_tunnel_if_add_del",
-//	[
-//	    "u16",
-//	    "_vl_msg_id"
-//	],
-//	[
-//	    "u32",
-//	    "client_index"
-//	],
-//	[
-//	    "u32",
-//	    "context"
-//	],
-//	[
-//	    "u8",
-//	    "is_add"
-//	],
-//	[
-//	    "u8",
-//	    "esn"
-//	],
-//	[
-//	    "u8",
-//	    "anti_replay"
-//	],
-//	[
-//	    "u8",
-//	    "local_ip",
-//	    4
-//	],
-//	[
-//	    "u8",
-//	    "remote_ip",
-//	    4
-//	],
-//	[
-//	    "u32",
-//	    "local_spi"
-//	],
-//	[
-//	    "u32",
-//	    "remote_spi"
-//	],
-//	[
-//	    "u8",
-//	    "crypto_alg"
-//	],
-//	[
-//	    "u8",
-//	    "local_crypto_key_len"
-//	],
-//	[
-//	    "u8",
-//	    "local_crypto_key",
-//	    128
-//	],
-//	[
-//	    "u8",
-//	    "remote_crypto_key_len"
-//	],
-//	[
-//	    "u8",
-//	    "remote_crypto_key",
-//	    128
-//	],
-//	[
-//	    "u8",
-//	    "integ_alg"
-//	],
-//	[
-//	    "u8",
-//	    "local_integ_key_len"
-//	],
-//	[
-//	    "u8",
-//	    "local_integ_key",
-//	    128
-//	],
-//	[
-//	    "u8",
-//	    "remote_integ_key_len"
-//	],
-//	[
-//	    "u8",
-//	    "remote_integ_key",
-//	    128
-//	],
-//	[
-//	    "u8",
-//	    "renumber"
-//	],
-//	[
-//	    "u32",
-//	    "show_instance"
-//	],
-//	[
-//	    "u8",
-//	    "udp_encap"
-//	],
-//	{
-//	    "crc": "0x2ee1da12"
-//	}
-//
 type IpsecTunnelIfAddDel struct {
 	IsAdd              uint8
 	Esn                uint8
@@ -2193,41 +904,20 @@ type IpsecTunnelIfAddDel struct {
 	Renumber           uint8
 	ShowInstance       uint32
 	UDPEncap           uint8
+	TxTableID          uint32
 }
 
 func (*IpsecTunnelIfAddDel) GetMessageName() string {
 	return "ipsec_tunnel_if_add_del"
 }
 func (*IpsecTunnelIfAddDel) GetCrcString() string {
-	return "2ee1da12"
+	return "6764788a"
 }
 func (*IpsecTunnelIfAddDel) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 
 // IpsecTunnelIfAddDelReply represents VPP binary API message 'ipsec_tunnel_if_add_del_reply':
-//
-//	"ipsec_tunnel_if_add_del_reply",
-//	[
-//	    "u16",
-//	    "_vl_msg_id"
-//	],
-//	[
-//	    "u32",
-//	    "context"
-//	],
-//	[
-//	    "i32",
-//	    "retval"
-//	],
-//	[
-//	    "u32",
-//	    "sw_if_index"
-//	],
-//	{
-//	    "crc": "0xfda5941f"
-//	}
-//
 type IpsecTunnelIfAddDelReply struct {
 	Retval    int32
 	SwIfIndex uint32
@@ -2243,225 +933,7 @@ func (*IpsecTunnelIfAddDelReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 
-// IpsecSaDump represents VPP binary API message 'ipsec_sa_dump':
-//
-//	"ipsec_sa_dump",
-//	[
-//	    "u16",
-//	    "_vl_msg_id"
-//	],
-//	[
-//	    "u32",
-//	    "client_index"
-//	],
-//	[
-//	    "u32",
-//	    "context"
-//	],
-//	[
-//	    "u32",
-//	    "sa_id"
-//	],
-//	{
-//	    "crc": "0x2076c2f4"
-//	}
-//
-type IpsecSaDump struct {
-	SaID uint32
-}
-
-func (*IpsecSaDump) GetMessageName() string {
-	return "ipsec_sa_dump"
-}
-func (*IpsecSaDump) GetCrcString() string {
-	return "2076c2f4"
-}
-func (*IpsecSaDump) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
-
-// IpsecSaDetails represents VPP binary API message 'ipsec_sa_details':
-//
-//	"ipsec_sa_details",
-//	[
-//	    "u16",
-//	    "_vl_msg_id"
-//	],
-//	[
-//	    "u32",
-//	    "context"
-//	],
-//	[
-//	    "u32",
-//	    "sa_id"
-//	],
-//	[
-//	    "u32",
-//	    "sw_if_index"
-//	],
-//	[
-//	    "u32",
-//	    "spi"
-//	],
-//	[
-//	    "u8",
-//	    "protocol"
-//	],
-//	[
-//	    "u8",
-//	    "crypto_alg"
-//	],
-//	[
-//	    "u8",
-//	    "crypto_key_len"
-//	],
-//	[
-//	    "u8",
-//	    "crypto_key",
-//	    128
-//	],
-//	[
-//	    "u8",
-//	    "integ_alg"
-//	],
-//	[
-//	    "u8",
-//	    "integ_key_len"
-//	],
-//	[
-//	    "u8",
-//	    "integ_key",
-//	    128
-//	],
-//	[
-//	    "u8",
-//	    "use_esn"
-//	],
-//	[
-//	    "u8",
-//	    "use_anti_replay"
-//	],
-//	[
-//	    "u8",
-//	    "is_tunnel"
-//	],
-//	[
-//	    "u8",
-//	    "is_tunnel_ip6"
-//	],
-//	[
-//	    "u8",
-//	    "tunnel_src_addr",
-//	    16
-//	],
-//	[
-//	    "u8",
-//	    "tunnel_dst_addr",
-//	    16
-//	],
-//	[
-//	    "u32",
-//	    "salt"
-//	],
-//	[
-//	    "u64",
-//	    "seq_outbound"
-//	],
-//	[
-//	    "u64",
-//	    "last_seq_inbound"
-//	],
-//	[
-//	    "u64",
-//	    "replay_window"
-//	],
-//	[
-//	    "u64",
-//	    "total_data_size"
-//	],
-//	[
-//	    "u8",
-//	    "udp_encap"
-//	],
-//	{
-//	    "crc": "0xdc927a3b"
-//	}
-//
-type IpsecSaDetails struct {
-	SaID           uint32
-	SwIfIndex      uint32
-	Spi            uint32
-	Protocol       uint8
-	CryptoAlg      uint8
-	CryptoKeyLen   uint8
-	CryptoKey      []byte `struc:"[128]byte"`
-	IntegAlg       uint8
-	IntegKeyLen    uint8
-	IntegKey       []byte `struc:"[128]byte"`
-	UseEsn         uint8
-	UseAntiReplay  uint8
-	IsTunnel       uint8
-	IsTunnelIP6    uint8
-	TunnelSrcAddr  []byte `struc:"[16]byte"`
-	TunnelDstAddr  []byte `struc:"[16]byte"`
-	Salt           uint32
-	SeqOutbound    uint64
-	LastSeqInbound uint64
-	ReplayWindow   uint64
-	TotalDataSize  uint64
-	UDPEncap       uint8
-}
-
-func (*IpsecSaDetails) GetMessageName() string {
-	return "ipsec_sa_details"
-}
-func (*IpsecSaDetails) GetCrcString() string {
-	return "dc927a3b"
-}
-func (*IpsecSaDetails) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
-
 // IpsecTunnelIfSetKey represents VPP binary API message 'ipsec_tunnel_if_set_key':
-//
-//	"ipsec_tunnel_if_set_key",
-//	[
-//	    "u16",
-//	    "_vl_msg_id"
-//	],
-//	[
-//	    "u32",
-//	    "client_index"
-//	],
-//	[
-//	    "u32",
-//	    "context"
-//	],
-//	[
-//	    "u32",
-//	    "sw_if_index"
-//	],
-//	[
-//	    "u8",
-//	    "key_type"
-//	],
-//	[
-//	    "u8",
-//	    "alg"
-//	],
-//	[
-//	    "u8",
-//	    "key_len"
-//	],
-//	[
-//	    "u8",
-//	    "key",
-//	    128
-//	],
-//	{
-//	    "crc": "0x326169a8"
-//	}
-//
 type IpsecTunnelIfSetKey struct {
 	SwIfIndex uint32
 	KeyType   uint8
@@ -2481,24 +953,6 @@ func (*IpsecTunnelIfSetKey) GetMessageType() api.MessageType {
 }
 
 // IpsecTunnelIfSetKeyReply represents VPP binary API message 'ipsec_tunnel_if_set_key_reply':
-//
-//	"ipsec_tunnel_if_set_key_reply",
-//	[
-//	    "u16",
-//	    "_vl_msg_id"
-//	],
-//	[
-//	    "u32",
-//	    "context"
-//	],
-//	[
-//	    "i32",
-//	    "retval"
-//	],
-//	{
-//	    "crc": "0xe8d4e804"
-//	}
-//
 type IpsecTunnelIfSetKeyReply struct {
 	Retval int32
 }
@@ -2514,36 +968,6 @@ func (*IpsecTunnelIfSetKeyReply) GetMessageType() api.MessageType {
 }
 
 // IpsecTunnelIfSetSa represents VPP binary API message 'ipsec_tunnel_if_set_sa':
-//
-//	"ipsec_tunnel_if_set_sa",
-//	[
-//	    "u16",
-//	    "_vl_msg_id"
-//	],
-//	[
-//	    "u32",
-//	    "client_index"
-//	],
-//	[
-//	    "u32",
-//	    "context"
-//	],
-//	[
-//	    "u32",
-//	    "sw_if_index"
-//	],
-//	[
-//	    "u32",
-//	    "sa_id"
-//	],
-//	[
-//	    "u8",
-//	    "is_outbound"
-//	],
-//	{
-//	    "crc": "0x6ab567f2"
-//	}
-//
 type IpsecTunnelIfSetSa struct {
 	SwIfIndex  uint32
 	SaID       uint32
@@ -2561,24 +985,6 @@ func (*IpsecTunnelIfSetSa) GetMessageType() api.MessageType {
 }
 
 // IpsecTunnelIfSetSaReply represents VPP binary API message 'ipsec_tunnel_if_set_sa_reply':
-//
-//	"ipsec_tunnel_if_set_sa_reply",
-//	[
-//	    "u16",
-//	    "_vl_msg_id"
-//	],
-//	[
-//	    "u32",
-//	    "context"
-//	],
-//	[
-//	    "i32",
-//	    "retval"
-//	],
-//	{
-//	    "crc": "0xe8d4e804"
-//	}
-//
 type IpsecTunnelIfSetSaReply struct {
 	Retval int32
 }
@@ -2594,16 +1000,14 @@ func (*IpsecTunnelIfSetSaReply) GetMessageType() api.MessageType {
 }
 
 func init() {
-	api.RegisterMessage((*IpsecSpdAddDel)(nil), "ipsec.IpsecSpdAddDel")
-	api.RegisterMessage((*IpsecSpdAddDelReply)(nil), "ipsec.IpsecSpdAddDelReply")
-	api.RegisterMessage((*IpsecInterfaceAddDelSpd)(nil), "ipsec.IpsecInterfaceAddDelSpd")
-	api.RegisterMessage((*IpsecInterfaceAddDelSpdReply)(nil), "ipsec.IpsecInterfaceAddDelSpdReply")
-	api.RegisterMessage((*IpsecSpdAddDelEntry)(nil), "ipsec.IpsecSpdAddDelEntry")
-	api.RegisterMessage((*IpsecSpdAddDelEntryReply)(nil), "ipsec.IpsecSpdAddDelEntryReply")
-	api.RegisterMessage((*IpsecSadAddDelEntry)(nil), "ipsec.IpsecSadAddDelEntry")
-	api.RegisterMessage((*IpsecSadAddDelEntryReply)(nil), "ipsec.IpsecSadAddDelEntryReply")
-	api.RegisterMessage((*IpsecSaSetKey)(nil), "ipsec.IpsecSaSetKey")
-	api.RegisterMessage((*IpsecSaSetKeyReply)(nil), "ipsec.IpsecSaSetKeyReply")
+	api.RegisterMessage((*Ikev2InitiateDelChildSa)(nil), "ipsec.Ikev2InitiateDelChildSa")
+	api.RegisterMessage((*Ikev2InitiateDelChildSaReply)(nil), "ipsec.Ikev2InitiateDelChildSaReply")
+	api.RegisterMessage((*Ikev2InitiateDelIkeSa)(nil), "ipsec.Ikev2InitiateDelIkeSa")
+	api.RegisterMessage((*Ikev2InitiateDelIkeSaReply)(nil), "ipsec.Ikev2InitiateDelIkeSaReply")
+	api.RegisterMessage((*Ikev2InitiateRekeyChildSa)(nil), "ipsec.Ikev2InitiateRekeyChildSa")
+	api.RegisterMessage((*Ikev2InitiateRekeyChildSaReply)(nil), "ipsec.Ikev2InitiateRekeyChildSaReply")
+	api.RegisterMessage((*Ikev2InitiateSaInit)(nil), "ipsec.Ikev2InitiateSaInit")
+	api.RegisterMessage((*Ikev2InitiateSaInitReply)(nil), "ipsec.Ikev2InitiateSaInitReply")
 	api.RegisterMessage((*Ikev2ProfileAddDel)(nil), "ipsec.Ikev2ProfileAddDel")
 	api.RegisterMessage((*Ikev2ProfileAddDelReply)(nil), "ipsec.Ikev2ProfileAddDelReply")
 	api.RegisterMessage((*Ikev2ProfileSetAuth)(nil), "ipsec.Ikev2ProfileSetAuth")
@@ -2612,36 +1016,99 @@ func init() {
 	api.RegisterMessage((*Ikev2ProfileSetIDReply)(nil), "ipsec.Ikev2ProfileSetIDReply")
 	api.RegisterMessage((*Ikev2ProfileSetTs)(nil), "ipsec.Ikev2ProfileSetTs")
 	api.RegisterMessage((*Ikev2ProfileSetTsReply)(nil), "ipsec.Ikev2ProfileSetTsReply")
+	api.RegisterMessage((*Ikev2SetEspTransforms)(nil), "ipsec.Ikev2SetEspTransforms")
+	api.RegisterMessage((*Ikev2SetEspTransformsReply)(nil), "ipsec.Ikev2SetEspTransformsReply")
+	api.RegisterMessage((*Ikev2SetIkeTransforms)(nil), "ipsec.Ikev2SetIkeTransforms")
+	api.RegisterMessage((*Ikev2SetIkeTransformsReply)(nil), "ipsec.Ikev2SetIkeTransformsReply")
 	api.RegisterMessage((*Ikev2SetLocalKey)(nil), "ipsec.Ikev2SetLocalKey")
 	api.RegisterMessage((*Ikev2SetLocalKeyReply)(nil), "ipsec.Ikev2SetLocalKeyReply")
 	api.RegisterMessage((*Ikev2SetResponder)(nil), "ipsec.Ikev2SetResponder")
 	api.RegisterMessage((*Ikev2SetResponderReply)(nil), "ipsec.Ikev2SetResponderReply")
-	api.RegisterMessage((*Ikev2SetIkeTransforms)(nil), "ipsec.Ikev2SetIkeTransforms")
-	api.RegisterMessage((*Ikev2SetIkeTransformsReply)(nil), "ipsec.Ikev2SetIkeTransformsReply")
-	api.RegisterMessage((*Ikev2SetEspTransforms)(nil), "ipsec.Ikev2SetEspTransforms")
-	api.RegisterMessage((*Ikev2SetEspTransformsReply)(nil), "ipsec.Ikev2SetEspTransformsReply")
 	api.RegisterMessage((*Ikev2SetSaLifetime)(nil), "ipsec.Ikev2SetSaLifetime")
 	api.RegisterMessage((*Ikev2SetSaLifetimeReply)(nil), "ipsec.Ikev2SetSaLifetimeReply")
-	api.RegisterMessage((*Ikev2InitiateSaInit)(nil), "ipsec.Ikev2InitiateSaInit")
-	api.RegisterMessage((*Ikev2InitiateSaInitReply)(nil), "ipsec.Ikev2InitiateSaInitReply")
-	api.RegisterMessage((*Ikev2InitiateDelIkeSa)(nil), "ipsec.Ikev2InitiateDelIkeSa")
-	api.RegisterMessage((*Ikev2InitiateDelIkeSaReply)(nil), "ipsec.Ikev2InitiateDelIkeSaReply")
-	api.RegisterMessage((*Ikev2InitiateDelChildSa)(nil), "ipsec.Ikev2InitiateDelChildSa")
-	api.RegisterMessage((*Ikev2InitiateDelChildSaReply)(nil), "ipsec.Ikev2InitiateDelChildSaReply")
-	api.RegisterMessage((*Ikev2InitiateRekeyChildSa)(nil), "ipsec.Ikev2InitiateRekeyChildSa")
-	api.RegisterMessage((*Ikev2InitiateRekeyChildSaReply)(nil), "ipsec.Ikev2InitiateRekeyChildSaReply")
-	api.RegisterMessage((*IpsecSpdsDump)(nil), "ipsec.IpsecSpdsDump")
-	api.RegisterMessage((*IpsecSpdsDetails)(nil), "ipsec.IpsecSpdsDetails")
-	api.RegisterMessage((*IpsecSpdDump)(nil), "ipsec.IpsecSpdDump")
+	api.RegisterMessage((*IpsecBackendDetails)(nil), "ipsec.IpsecBackendDetails")
+	api.RegisterMessage((*IpsecBackendDump)(nil), "ipsec.IpsecBackendDump")
+	api.RegisterMessage((*IpsecInterfaceAddDelSpd)(nil), "ipsec.IpsecInterfaceAddDelSpd")
+	api.RegisterMessage((*IpsecInterfaceAddDelSpdReply)(nil), "ipsec.IpsecInterfaceAddDelSpdReply")
+	api.RegisterMessage((*IpsecSaDetails)(nil), "ipsec.IpsecSaDetails")
+	api.RegisterMessage((*IpsecSaDump)(nil), "ipsec.IpsecSaDump")
+	api.RegisterMessage((*IpsecSaSetKey)(nil), "ipsec.IpsecSaSetKey")
+	api.RegisterMessage((*IpsecSaSetKeyReply)(nil), "ipsec.IpsecSaSetKeyReply")
+	api.RegisterMessage((*IpsecSadAddDelEntry)(nil), "ipsec.IpsecSadAddDelEntry")
+	api.RegisterMessage((*IpsecSadAddDelEntryReply)(nil), "ipsec.IpsecSadAddDelEntryReply")
+	api.RegisterMessage((*IpsecSelectBackend)(nil), "ipsec.IpsecSelectBackend")
+	api.RegisterMessage((*IpsecSelectBackendReply)(nil), "ipsec.IpsecSelectBackendReply")
+	api.RegisterMessage((*IpsecSpdAddDel)(nil), "ipsec.IpsecSpdAddDel")
+	api.RegisterMessage((*IpsecSpdAddDelEntry)(nil), "ipsec.IpsecSpdAddDelEntry")
+	api.RegisterMessage((*IpsecSpdAddDelEntryReply)(nil), "ipsec.IpsecSpdAddDelEntryReply")
+	api.RegisterMessage((*IpsecSpdAddDelReply)(nil), "ipsec.IpsecSpdAddDelReply")
 	api.RegisterMessage((*IpsecSpdDetails)(nil), "ipsec.IpsecSpdDetails")
-	api.RegisterMessage((*IpsecSpdInterfaceDump)(nil), "ipsec.IpsecSpdInterfaceDump")
+	api.RegisterMessage((*IpsecSpdDump)(nil), "ipsec.IpsecSpdDump")
 	api.RegisterMessage((*IpsecSpdInterfaceDetails)(nil), "ipsec.IpsecSpdInterfaceDetails")
+	api.RegisterMessage((*IpsecSpdInterfaceDump)(nil), "ipsec.IpsecSpdInterfaceDump")
+	api.RegisterMessage((*IpsecSpdsDetails)(nil), "ipsec.IpsecSpdsDetails")
+	api.RegisterMessage((*IpsecSpdsDump)(nil), "ipsec.IpsecSpdsDump")
 	api.RegisterMessage((*IpsecTunnelIfAddDel)(nil), "ipsec.IpsecTunnelIfAddDel")
 	api.RegisterMessage((*IpsecTunnelIfAddDelReply)(nil), "ipsec.IpsecTunnelIfAddDelReply")
-	api.RegisterMessage((*IpsecSaDump)(nil), "ipsec.IpsecSaDump")
-	api.RegisterMessage((*IpsecSaDetails)(nil), "ipsec.IpsecSaDetails")
 	api.RegisterMessage((*IpsecTunnelIfSetKey)(nil), "ipsec.IpsecTunnelIfSetKey")
 	api.RegisterMessage((*IpsecTunnelIfSetKeyReply)(nil), "ipsec.IpsecTunnelIfSetKeyReply")
 	api.RegisterMessage((*IpsecTunnelIfSetSa)(nil), "ipsec.IpsecTunnelIfSetSa")
 	api.RegisterMessage((*IpsecTunnelIfSetSaReply)(nil), "ipsec.IpsecTunnelIfSetSaReply")
+}
+
+var Messages = []api.Message{
+	(*Ikev2InitiateDelChildSa)(nil),
+	(*Ikev2InitiateDelChildSaReply)(nil),
+	(*Ikev2InitiateDelIkeSa)(nil),
+	(*Ikev2InitiateDelIkeSaReply)(nil),
+	(*Ikev2InitiateRekeyChildSa)(nil),
+	(*Ikev2InitiateRekeyChildSaReply)(nil),
+	(*Ikev2InitiateSaInit)(nil),
+	(*Ikev2InitiateSaInitReply)(nil),
+	(*Ikev2ProfileAddDel)(nil),
+	(*Ikev2ProfileAddDelReply)(nil),
+	(*Ikev2ProfileSetAuth)(nil),
+	(*Ikev2ProfileSetAuthReply)(nil),
+	(*Ikev2ProfileSetID)(nil),
+	(*Ikev2ProfileSetIDReply)(nil),
+	(*Ikev2ProfileSetTs)(nil),
+	(*Ikev2ProfileSetTsReply)(nil),
+	(*Ikev2SetEspTransforms)(nil),
+	(*Ikev2SetEspTransformsReply)(nil),
+	(*Ikev2SetIkeTransforms)(nil),
+	(*Ikev2SetIkeTransformsReply)(nil),
+	(*Ikev2SetLocalKey)(nil),
+	(*Ikev2SetLocalKeyReply)(nil),
+	(*Ikev2SetResponder)(nil),
+	(*Ikev2SetResponderReply)(nil),
+	(*Ikev2SetSaLifetime)(nil),
+	(*Ikev2SetSaLifetimeReply)(nil),
+	(*IpsecBackendDetails)(nil),
+	(*IpsecBackendDump)(nil),
+	(*IpsecInterfaceAddDelSpd)(nil),
+	(*IpsecInterfaceAddDelSpdReply)(nil),
+	(*IpsecSaDetails)(nil),
+	(*IpsecSaDump)(nil),
+	(*IpsecSaSetKey)(nil),
+	(*IpsecSaSetKeyReply)(nil),
+	(*IpsecSadAddDelEntry)(nil),
+	(*IpsecSadAddDelEntryReply)(nil),
+	(*IpsecSelectBackend)(nil),
+	(*IpsecSelectBackendReply)(nil),
+	(*IpsecSpdAddDel)(nil),
+	(*IpsecSpdAddDelEntry)(nil),
+	(*IpsecSpdAddDelEntryReply)(nil),
+	(*IpsecSpdAddDelReply)(nil),
+	(*IpsecSpdDetails)(nil),
+	(*IpsecSpdDump)(nil),
+	(*IpsecSpdInterfaceDetails)(nil),
+	(*IpsecSpdInterfaceDump)(nil),
+	(*IpsecSpdsDetails)(nil),
+	(*IpsecSpdsDump)(nil),
+	(*IpsecTunnelIfAddDel)(nil),
+	(*IpsecTunnelIfAddDelReply)(nil),
+	(*IpsecTunnelIfSetKey)(nil),
+	(*IpsecTunnelIfSetKeyReply)(nil),
+	(*IpsecTunnelIfSetSa)(nil),
+	(*IpsecTunnelIfSetSaReply)(nil),
 }
