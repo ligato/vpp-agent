@@ -27,14 +27,10 @@ type dumpService struct {
 
 	// VPP Handlers
 	aclHandler   aclvppcalls.ACLVppRead
-	ifHandler    ifvppcalls.IfVppRead
+	ifHandler    ifvppcalls.InterfaceVppRead
 	natHandler   natvppcalls.NatVppRead
-	bdHandler    l2vppcalls.BridgeDomainVppRead
-	fibHandler   l2vppcalls.FIBVppRead
-	xcHandler    l2vppcalls.XConnectVppRead
-	arpHandler   l3vppcalls.ArpVppRead
-	pArpHandler  l3vppcalls.ProxyArpVppRead
-	rtHandler    l3vppcalls.RouteVppRead
+	l2Handler    l2vppcalls.L2VppAPI
+	l3Handler    l3vppcalls.L3VppAPI
 	ipsecHandler ipsecvppcalls.IPSecVPPRead
 	puntHandler  vppcalls.PuntVPPRead
 	// Linux handlers
@@ -148,7 +144,7 @@ func (svc *dumpService) DumpIPSecSAs() ([]*vpp_ipsec.SecurityAssociation, error)
 // only error is send back in response
 func (svc *dumpService) DumpBDs() ([]*vpp_l2.BridgeDomain, error) {
 	var bds []*vpp_l2.BridgeDomain
-	bdDetails, err := svc.bdHandler.DumpBridgeDomains()
+	bdDetails, err := svc.l2Handler.DumpBridgeDomains()
 	if err != nil {
 		return nil, err
 	}
@@ -163,7 +159,7 @@ func (svc *dumpService) DumpBDs() ([]*vpp_l2.BridgeDomain, error) {
 // only error is send back in response
 func (svc *dumpService) DumpFIBs() ([]*vpp_l2.FIBEntry, error) {
 	var fibs []*vpp_l2.FIBEntry
-	fibDetails, err := svc.fibHandler.DumpL2FIBs()
+	fibDetails, err := svc.l2Handler.DumpL2FIBs()
 	if err != nil {
 		return nil, err
 	}
@@ -178,7 +174,7 @@ func (svc *dumpService) DumpFIBs() ([]*vpp_l2.FIBEntry, error) {
 // only error is send back in response
 func (svc *dumpService) DumpXConnects() ([]*vpp_l2.XConnectPair, error) {
 	var xcs []*vpp_l2.XConnectPair
-	xcDetails, err := svc.xcHandler.DumpXConnectPairs()
+	xcDetails, err := svc.l2Handler.DumpXConnectPairs()
 	if err != nil {
 		return nil, err
 	}
@@ -193,7 +189,7 @@ func (svc *dumpService) DumpXConnects() ([]*vpp_l2.XConnectPair, error) {
 // only error is send back in response
 func (svc *dumpService) DumpRoutes() ([]*vpp_l3.Route, error) {
 	var routes []*vpp_l3.Route
-	rtDetails, err := svc.rtHandler.DumpRoutes()
+	rtDetails, err := svc.l3Handler.DumpRoutes()
 	if err != nil {
 		return nil, err
 	}
@@ -208,7 +204,7 @@ func (svc *dumpService) DumpRoutes() ([]*vpp_l3.Route, error) {
 // only error is send back in response
 func (svc *dumpService) DumpARPs() ([]*vpp_l3.ARPEntry, error) {
 	var arps []*vpp_l3.ARPEntry
-	arpDetails, err := svc.arpHandler.DumpArpEntries()
+	arpDetails, err := svc.l3Handler.DumpArpEntries()
 	if err != nil {
 		return nil, err
 	}
@@ -221,7 +217,7 @@ func (svc *dumpService) DumpARPs() ([]*vpp_l3.ARPEntry, error) {
 
 // DumpPunt reads VPP Punt socket registrations and returns them as an *PuntResponse.
 func (svc *dumpService) DumpPunt() (punts []*vpp_punt.ToHost, err error) {
-	dump, err := svc.puntHandler.DumpPuntRegisteredSockets()
+	dump, err := svc.puntHandler.DumpRegisteredPuntSockets()
 	if err != nil {
 		return nil, err
 	}

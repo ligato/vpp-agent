@@ -17,22 +17,11 @@ package vppcalls
 import (
 	"net"
 
-	stn "github.com/ligato/vpp-agent/api/models/vpp/stn"
 	"github.com/pkg/errors"
 
+	stn "github.com/ligato/vpp-agent/api/models/vpp/stn"
 	api "github.com/ligato/vpp-agent/plugins/vpp/binapi/stn"
 )
-
-// StnDetails contains a proto-modelled STN data and VPP specific metadata
-type StnDetails struct {
-	Rule *stn.Rule
-	Meta *StnMeta
-}
-
-// StnMeta contains an index of the interface defined by name in the STN rule
-type StnMeta struct {
-	IfIdx uint32
-}
 
 // DumpSTNRules implements STN handler, it returns all STN rules present on the VPP
 func (h *StnVppHandler) DumpSTNRules() ([]*StnDetails, error) {

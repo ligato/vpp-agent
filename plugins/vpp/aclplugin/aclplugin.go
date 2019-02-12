@@ -29,6 +29,8 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/aclplugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/vpp/aclplugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin"
+
+	_ "github.com/ligato/vpp-agent/plugins/vpp/aclplugin/vppcalls/vpp1810"
 )
 
 // ACLPlugin is a plugin that manages ACLs.
@@ -69,7 +71,7 @@ func (p *ACLPlugin) Init() error {
 	}
 
 	// init handlers
-	p.aclHandler = vppcalls.NewACLVppHandler(p.vppCh, p.dumpVppCh, p.IfPlugin.GetInterfaceIndex())
+	p.aclHandler = vppcalls.CompatibleACLVppHandler(p.vppCh, p.dumpVppCh, p.IfPlugin.GetInterfaceIndex(), p.Log)
 
 	// init & register descriptors
 	p.aclDescriptor = descriptor.NewACLDescriptor(p.aclHandler, p.IfPlugin, p.Log)

@@ -113,7 +113,7 @@ type InterfaceDescriptor struct {
 
 	// dependencies
 	log       logging.Logger
-	ifHandler vppcalls.IfVppAPI
+	ifHandler vppcalls.InterfaceVppAPI
 
 	// optional dependencies, provide if AFPacket and/or TAP+TAP_TO_VPP interfaces are used
 	linuxIfPlugin  LinuxPluginAPI
@@ -142,7 +142,7 @@ type NetlinkAPI interface {
 }
 
 // NewInterfaceDescriptor creates a new instance of the Interface descriptor.
-func NewInterfaceDescriptor(ifHandler vppcalls.IfVppAPI, defaultMtu uint32,
+func NewInterfaceDescriptor(ifHandler vppcalls.InterfaceVppAPI, defaultMtu uint32,
 	linuxIfHandler NetlinkAPI, linuxIfPlugin LinuxPluginAPI, nsPlugin nsplugin.API, log logging.PluginLogger) *InterfaceDescriptor {
 
 	return &InterfaceDescriptor{
@@ -637,7 +637,7 @@ func getIPAddressVersions(ipAddrs []*net.IPNet) (isIPv4, isIPv6 bool) {
 }
 
 // setInterfaceVrf sets the interface to VRF according to versions of IP addresses configured on the interface.
-func setInterfaceVrf(ifHandler vppcalls.IfVppAPI, ifName string, ifIdx uint32, vrf uint32, ipAddresses []*net.IPNet) error {
+func setInterfaceVrf(ifHandler vppcalls.InterfaceVppAPI, ifName string, ifIdx uint32, vrf uint32, ipAddresses []*net.IPNet) error {
 	if vrf == 0 {
 		// explicit set to VRF 0 seems to be causing issues on VPP
 		// NOTE: because of this return, this function cannot be used to switch VRF from non-zero to zero

@@ -1,16 +1,16 @@
-// Copyright (c) 2017 Cisco and/or its affiliates.
+//  Copyright (c) 2019 Cisco and/or its affiliates.
 //
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at:
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at:
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//      http://www.apache.org/licenses/LICENSE-2.0
 //
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
 
 package vppcalls_test
 
@@ -32,11 +32,15 @@ func TestVppAddArpTerminationTableEntry(t *testing.T) {
 
 	Expect(err).ShouldNot(HaveOccurred())
 	Expect(ctx.MockChannel.Msg).To(Equal(&l2ba.BdIPMacAddDel{
-		BdID:       4,
-		IsAdd:      1,
-		IsIPv6:     0,
-		IPAddress:  []byte{192, 168, 4, 4},
-		MacAddress: []byte{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF},
+		BdID:  4,
+		IsAdd: 1,
+		IP: l2ba.Address{
+			Af: l2ba.ADDRESS_IP4,
+			Un: l2ba.AddressUnionIP4(
+				l2ba.IP4Address{192, 168, 4, 4},
+			),
+		},
+		Mac: l2ba.MacAddress{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF},
 	}))
 }
 
@@ -50,11 +54,15 @@ func TestVppAddArpTerminationTableEntryIPv6(t *testing.T) {
 
 	Expect(err).ShouldNot(HaveOccurred())
 	Expect(ctx.MockChannel.Msg).To(Equal(&l2ba.BdIPMacAddDel{
-		BdID:       4,
-		IsAdd:      1,
-		IsIPv6:     1,
-		IPAddress:  []byte{32, 1, 13, 185, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 84},
-		MacAddress: []byte{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF},
+		BdID:  4,
+		IsAdd: 1,
+		IP: l2ba.Address{
+			Af: l2ba.ADDRESS_IP6,
+			Un: l2ba.AddressUnionIP6(
+				l2ba.IP6Address{32, 1, 13, 185, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 84},
+			),
+		},
+		Mac: l2ba.MacAddress{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF},
 	}))
 }
 
@@ -68,11 +76,15 @@ func TestVppRemoveArpTerminationTableEntry(t *testing.T) {
 
 	Expect(err).ShouldNot(HaveOccurred())
 	Expect(ctx.MockChannel.Msg).To(Equal(&l2ba.BdIPMacAddDel{
-		BdID:       4,
-		IsAdd:      0,
-		IsIPv6:     0,
-		IPAddress:  []byte{192, 168, 4, 4},
-		MacAddress: []byte{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF},
+		BdID:  4,
+		IsAdd: 0,
+		IP: l2ba.Address{
+			Af: l2ba.ADDRESS_IP4,
+			Un: l2ba.AddressUnionIP4(
+				l2ba.IP4Address{192, 168, 4, 4},
+			),
+		},
+		Mac: l2ba.MacAddress{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF},
 	}))
 }
 

@@ -36,7 +36,7 @@ func TestVppAddSPD(t *testing.T) {
 	err := ipSecHandler.AddSPD(10)
 
 	Expect(err).ShouldNot(HaveOccurred())
-	Expect(ctx.MockChannel.Msg).To(Equal(&ipsec.IpsecSpdAddDel{
+	Expect(ctx.MockChannel.Msg).To(BeEquivalentTo(&ipsec.IpsecSpdAddDel{
 		IsAdd: 1,
 		SpdID: 10,
 	}))
@@ -51,7 +51,7 @@ func TestVppDelSPD(t *testing.T) {
 	err := ipSecHandler.DeleteSPD(10)
 
 	Expect(err).ShouldNot(HaveOccurred())
-	Expect(ctx.MockChannel.Msg).To(Equal(&ipsec.IpsecSpdAddDel{
+	Expect(ctx.MockChannel.Msg).To(BeEquivalentTo(&ipsec.IpsecSpdAddDel{
 		IsAdd: 0,
 		SpdID: 10,
 	}))
@@ -70,7 +70,7 @@ func TestVppAddSPDEntry(t *testing.T) {
 	})
 
 	Expect(err).ShouldNot(HaveOccurred())
-	Expect(ctx.MockChannel.Msg).To(Equal(&ipsec.IpsecSpdAddDelEntry{
+	Expect(ctx.MockChannel.Msg).To(BeEquivalentTo(&ipsec.IpsecSpdAddDelEntry{
 		IsAdd:              1,
 		SpdID:              10,
 		SaID:               5,
@@ -98,7 +98,7 @@ func TestVppDelSPDEntry(t *testing.T) {
 	})
 
 	Expect(err).ShouldNot(HaveOccurred())
-	Expect(ctx.MockChannel.Msg).To(Equal(&ipsec.IpsecSpdAddDelEntry{
+	Expect(ctx.MockChannel.Msg).To(BeEquivalentTo(&ipsec.IpsecSpdAddDelEntry{
 		IsAdd:              0,
 		SpdID:              10,
 		SaID:               2,
@@ -126,7 +126,7 @@ func TestVppInterfaceAddSPD(t *testing.T) {
 	})
 
 	Expect(err).ShouldNot(HaveOccurred())
-	Expect(ctx.MockChannel.Msg).To(Equal(&ipsec.IpsecInterfaceAddDelSpd{
+	Expect(ctx.MockChannel.Msg).To(BeEquivalentTo(&ipsec.IpsecInterfaceAddDelSpd{
 		IsAdd:     1,
 		SpdID:     10,
 		SwIfIndex: 2,
@@ -146,7 +146,7 @@ func TestVppInterfaceDelSPD(t *testing.T) {
 	})
 
 	Expect(err).ShouldNot(HaveOccurred())
-	Expect(ctx.MockChannel.Msg).To(Equal(&ipsec.IpsecInterfaceAddDelSpd{
+	Expect(ctx.MockChannel.Msg).To(BeEquivalentTo(&ipsec.IpsecInterfaceAddDelSpd{
 		IsAdd:     0,
 		SpdID:     10,
 		SwIfIndex: 2,
@@ -157,7 +157,7 @@ func ipSecTestSetup(t *testing.T) (*vppcallmock.TestCtx, vppcalls.IPSecVppAPI, i
 	ctx := vppcallmock.SetupTestCtx(t)
 	log := logrus.NewLogger("test-log")
 	ifIndex := ifaceidx.NewIfaceIndex(log, "ipsec-test-ifidx")
-	ipSecHandler := vppcalls.NewIPsecVppHandler(ctx.MockChannel, ifIndex, log)
+	ipSecHandler := vppcalls.NewIPSecVppHandler(ctx.MockChannel, ifIndex, log)
 	return ctx, ipSecHandler, ifIndex
 }
 
@@ -178,7 +178,7 @@ func TestVppAddSA(t *testing.T) {
 	})
 
 	Expect(err).ShouldNot(HaveOccurred())
-	Expect(ctx.MockChannel.Msg).To(Equal(&ipsec.IpsecSadAddDelEntry{
+	Expect(ctx.MockChannel.Msg).To(BeEquivalentTo(&ipsec.IpsecSadAddDelEntry{
 		IsAdd: 1,
 		SadID: 1,
 		Spi:   1001,
@@ -206,7 +206,7 @@ func TestVppDelSA(t *testing.T) {
 	})
 
 	Expect(err).ShouldNot(HaveOccurred())
-	Expect(ctx.MockChannel.Msg).To(Equal(&ipsec.IpsecSadAddDelEntry{
+	Expect(ctx.MockChannel.Msg).To(BeEquivalentTo(&ipsec.IpsecSadAddDelEntry{
 		IsAdd: 0,
 		SadID: 1,
 		Spi:   1001,

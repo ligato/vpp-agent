@@ -65,7 +65,7 @@ const (
 	INVALID_DST_ADDRESS                            = -58
 	ADDRESS_LENGTH_MISMATCH                        = -59
 	ADDRESS_NOT_FOUND_FOR_INTERFACE                = -60
-	ADDRESS_NOT_LINK_LOCAL                         = -61
+	ADDRESS_NOT_DELETABLE                          = -61
 	IP6_NOT_ENABLED                                = -62
 	IN_PROGRESS                                    = 10
 	NO_SUCH_NODE                                   = -63
@@ -155,6 +155,9 @@ const (
 	INSTANCE_IN_USE                                = -147
 	INVALID_SESSION_ID                             = -148
 	ACL_IN_USE_BY_LOOKUP_CONTEXT                   = -149
+	INVALID_VALUE_3                                = -150
+	NON_ETHERNET                                   = -151
+	BD_ALREADY_HAS_BVI                             = -152
 )
 
 var vppApiErrors = map[VPPApiError]string{
@@ -191,7 +194,7 @@ var vppApiErrors = map[VPPApiError]string{
 	INVALID_DST_ADDRESS:                "Invalid dst address",
 	ADDRESS_LENGTH_MISMATCH:            "Address length mismatch",
 	ADDRESS_NOT_FOUND_FOR_INTERFACE:    "Address not found for interface",
-	ADDRESS_NOT_LINK_LOCAL:             "Address not link-local",
+	ADDRESS_NOT_DELETABLE:              "Address not deletable",
 	IP6_NOT_ENABLED:                    "ip6 not enabled",
 	IN_PROGRESS:                        "Operation in progress",
 	NO_SUCH_NODE:                       "No such graph node",
@@ -281,4 +284,7 @@ var vppApiErrors = map[VPPApiError]string{
 	INSTANCE_IN_USE:                    "Instance in use",
 	INVALID_SESSION_ID:                 "session ID out of range",
 	ACL_IN_USE_BY_LOOKUP_CONTEXT:       "ACL in use by a lookup context",
+	INVALID_VALUE_3:                    "Invalid value #3",
+	NON_ETHERNET:                       "Interface is not an Ethernet interface",
+	BD_ALREADY_HAS_BVI:                 "Bridge domain already has a BVI interface",
 }

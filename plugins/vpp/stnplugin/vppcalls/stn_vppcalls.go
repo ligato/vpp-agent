@@ -17,12 +17,12 @@ package vppcalls
 import (
 	"fmt"
 	"net"
+	"strings"
 
-	stn "github.com/ligato/vpp-agent/api/models/vpp/stn"
 	"github.com/pkg/errors"
 
+	stn "github.com/ligato/vpp-agent/api/models/vpp/stn"
 	api "github.com/ligato/vpp-agent/plugins/vpp/binapi/stn"
-	"strings"
 )
 
 // AddSTNRule implements STN handler, adds a new STN rule to the VPP.

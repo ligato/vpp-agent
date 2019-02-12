@@ -19,26 +19,26 @@ import (
 )
 
 // InterfaceAdminDown implements interface handler.
-func (h *IfVppHandler) InterfaceAdminDown(ifIdx uint32) error {
+func (h *InterfaceVppHandler) InterfaceAdminDown(ifIdx uint32) error {
 	return h.interfaceSetFlags(ifIdx, false)
 }
 
 // InterfaceAdminUp implements interface handler.
-func (h *IfVppHandler) InterfaceAdminUp(ifIdx uint32) error {
+func (h *InterfaceVppHandler) InterfaceAdminUp(ifIdx uint32) error {
 	return h.interfaceSetFlags(ifIdx, true)
 }
 
 // SetInterfaceTag implements interface handler.
-func (h *IfVppHandler) SetInterfaceTag(tag string, ifIdx uint32) error {
+func (h *InterfaceVppHandler) SetInterfaceTag(tag string, ifIdx uint32) error {
 	return h.handleInterfaceTag(tag, ifIdx, true)
 }
 
 // RemoveInterfaceTag implements interface handler.
-func (h *IfVppHandler) RemoveInterfaceTag(tag string, ifIdx uint32) error {
+func (h *InterfaceVppHandler) RemoveInterfaceTag(tag string, ifIdx uint32) error {
 	return h.handleInterfaceTag(tag, ifIdx, false)
 }
 
-func (h *IfVppHandler) interfaceSetFlags(ifIdx uint32, adminUp bool) error {
+func (h *InterfaceVppHandler) interfaceSetFlags(ifIdx uint32, adminUp bool) error {
 	req := &interfaces.SwInterfaceSetFlags{
 		SwIfIndex:   ifIdx,
 		AdminUpDown: boolToUint(adminUp),
@@ -52,7 +52,7 @@ func (h *IfVppHandler) interfaceSetFlags(ifIdx uint32, adminUp bool) error {
 	return nil
 }
 
-func (h *IfVppHandler) handleInterfaceTag(tag string, ifIdx uint32, isAdd bool) error {
+func (h *InterfaceVppHandler) handleInterfaceTag(tag string, ifIdx uint32, isAdd bool) error {
 	req := &interfaces.SwInterfaceTagAddDel{
 		Tag:   []byte(tag),
 		IsAdd: boolToUint(isAdd),

@@ -15,13 +15,12 @@
 package vppcalls
 
 import (
-	"math"
 	"net"
 
 	"github.com/pkg/errors"
 
 	nat "github.com/ligato/vpp-agent/api/models/vpp/nat"
-	binapi "github.com/ligato/vpp-agent/plugins/vpp/binapi/nat"
+	natba "github.com/ligato/vpp-agent/plugins/vpp/binapi/nat"
 )
 
 // Num protocol representation
@@ -40,10 +39,10 @@ const (
 
 // SetNat44Forwarding configures NAT44 forwarding.
 func (h *NatVppHandler) SetNat44Forwarding(enableFwd bool) error {
-	req := &binapi.Nat44ForwardingEnableDisable{
+	req := &natba.Nat44ForwardingEnableDisable{
 		Enable: boolToUint(enableFwd),
 	}
-	reply := &binapi.Nat44ForwardingEnableDisableReply{}
+	reply := &natba.Nat44ForwardingEnableDisableReply{}
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
@@ -128,12 +127,12 @@ func (h *NatVppHandler) handleNat44Interface(iface string, isInside, isAdd bool)
 		return errors.New("failed to get interface metadata")
 	}
 
-	req := &binapi.Nat44InterfaceAddDelFeature{
+	req := &natba.Nat44InterfaceAddDelFeature{
 		SwIfIndex: ifaceMeta.SwIfIndex,
 		IsInside:  boolToUint(isInside),
 		IsAdd:     boolToUint(isAdd),
 	}
-	reply := &binapi.Nat44InterfaceAddDelFeatureReply{}
+	reply := &natba.Nat44InterfaceAddDelFeatureReply{}
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
@@ -150,12 +149,12 @@ func (h *NatVppHandler) handleNat44InterfaceOutputFeature(iface string, isInside
 		return errors.New("failed to get interface metadata")
 	}
 
-	req := &binapi.Nat44InterfaceAddDelOutputFeature{
+	req := &natba.Nat44InterfaceAddDelOutputFeature{
 		SwIfIndex: ifaceMeta.SwIfIndex,
 		IsInside:  boolToUint(isInside),
 		IsAdd:     boolToUint(isAdd),
 	}
-	reply := &binapi.Nat44InterfaceAddDelOutputFeatureReply{}
+	reply := &natba.Nat44InterfaceAddDelOutputFeatureReply{}
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
@@ -172,14 +171,14 @@ func (h *NatVppHandler) handleNat44AddressPool(address string, vrf uint32, twice
 			address)
 	}
 
-	req := &binapi.Nat44AddDelAddressRange{
+	req := &natba.Nat44AddDelAddressRange{
 		FirstIPAddress: ipAddr,
 		LastIPAddress:  ipAddr,
 		VrfID:          vrf,
 		TwiceNat:       boolToUint(twiceNat),
 		IsAdd:          boolToUint(isAdd),
 	}
-	reply := &binapi.Nat44AddDelAddressRangeReply{}
+	reply := &natba.Nat44AddDelAddressRangeReply{}
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
@@ -190,14 +189,14 @@ func (h *NatVppHandler) handleNat44AddressPool(address string, vrf uint32, twice
 
 // Calls VPP binary API to setup NAT virtual reassembly
 func (h *NatVppHandler) handleNatVirtualReassembly(vrCfg *nat.VirtualReassembly, isIpv6 bool) error {
-	req := &binapi.NatSetReass{
+	req := &natba.NatSetReass{
 		Timeout:  vrCfg.Timeout,
 		MaxReass: uint16(vrCfg.MaxReassemblies),
 		MaxFrag:  uint8(vrCfg.MaxFragments),
 		DropFrag: boolToUint(vrCfg.DropFragments),
 		IsIP6:    boolToUint(isIpv6),
 	}
-	reply := &binapi.NatSetReassReply{}
+	reply := &natba.NatSetReassReply{}
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
@@ -249,7 +248,7 @@ func (h *NatVppHandler) handleNat44StaticMapping(mapping *nat.DNat44_StaticMappi
 		addrOnly = true
 	}
 
-	req := &binapi.Nat44AddDelStaticMapping{
+	req := &natba.Nat44AddDelStaticMapping{
 		Tag:               []byte(dnatLabel),
 		LocalIPAddress:    lcIPAddr,
 		ExternalIPAddress: exIPAddr,
@@ -269,7 +268,7 @@ func (h *NatVppHandler) handleNat44StaticMapping(mapping *nat.DNat44_StaticMappi
 		req.ExternalPort = uint16(mapping.ExternalPort)
 	}
 
-	reply := &binapi.Nat44AddDelStaticMappingReply{}
+	reply := &natba.Nat44AddDelStaticMappingReply{}
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
@@ -298,19 +297,8 @@ func (h *NatVppHandler) handleNat44StaticMappingLb(mapping *nat.DNat44_StaticMap
 	}
 
 	// Transform local IP/Ports
-	var (
-		locals   []binapi.Nat44LbAddrPort
-		localNum int
-	)
+	var locals []natba.Nat44LbAddrPort
 	for _, local := range mapping.LocalIps {
-		// TODO: this is a temporary solution
-		// once LocalNum uses bigger range than uint8 this check should be removed
-		// as well as the cast below uint8(len...
-		localNum++
-		if localNum > math.MaxUint8 {
-			h.log.Warnf("Only the first %v local addresses will be programmed", math.MaxUint8)
-			break
-		}
 		if local.LocalPort == 0 {
 			return errors.Errorf("cannot set local IP/Port for DNAT mapping %s: port is missing",
 				dnatLabel)
@@ -322,7 +310,7 @@ func (h *NatVppHandler) handleNat44StaticMappingLb(mapping *nat.DNat44_StaticMap
 				dnatLabel, local.LocalIp)
 		}
 
-		locals = append(locals, binapi.Nat44LbAddrPort{
+		locals = append(locals, natba.Nat44LbAddrPort{
 			Addr:        localIP,
 			Port:        uint16(local.LocalPort),
 			Probability: uint8(local.Probability),
@@ -330,10 +318,10 @@ func (h *NatVppHandler) handleNat44StaticMappingLb(mapping *nat.DNat44_StaticMap
 		})
 	}
 
-	req := &binapi.Nat44AddDelLbStaticMapping{
-		Tag:          []byte(dnatLabel),
-		Locals:       locals,
-		LocalNum:     uint8(len(locals)),
+	req := &natba.Nat44AddDelLbStaticMapping{
+		Tag:    []byte(dnatLabel),
+		Locals: locals,
+		//LocalNum:     uint32(len(locals)), // should not be needed (will be set by struc)
 		ExternalAddr: exIPAddrByte,
 		ExternalPort: uint16(mapping.ExternalPort),
 		Protocol:     h.protocolNBValueToNumber(mapping.Protocol),
@@ -344,7 +332,7 @@ func (h *NatVppHandler) handleNat44StaticMappingLb(mapping *nat.DNat44_StaticMap
 		Affinity:     mapping.SessionAffinity,
 	}
 
-	reply := &binapi.Nat44AddDelLbStaticMappingReply{}
+	reply := &natba.Nat44AddDelLbStaticMappingReply{}
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
@@ -387,7 +375,7 @@ func (h *NatVppHandler) handleNat44IdentityMapping(mapping *nat.DNat44_IdentityM
 		addrOnly = true
 	}
 
-	req := &binapi.Nat44AddDelIdentityMapping{
+	req := &natba.Nat44AddDelIdentityMapping{
 		Tag:       []byte(dnatLabel),
 		AddrOnly:  boolToUint(addrOnly),
 		IPAddress: ipAddr,
@@ -398,7 +386,7 @@ func (h *NatVppHandler) handleNat44IdentityMapping(mapping *nat.DNat44_IdentityM
 		IsAdd:     boolToUint(isAdd),
 	}
 
-	reply := &binapi.Nat44AddDelIdentityMappingReply{}
+	reply := &natba.Nat44AddDelIdentityMappingReply{}
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err

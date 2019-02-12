@@ -3,7 +3,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:08eb037bd34c7d0e9b50cbd3d8dff5f16481af15e5d0d440e4daa52772e9a834"
+  digest = "1:338e58ac092c70de529772aff37647f430d73af0e401580b6fd1f1b626ac2f88"
   name = "git.fd.io/govpp.git"
   packages = [
     "adapter",
@@ -16,7 +16,7 @@
     "core",
   ]
   pruneopts = "UT"
-  revision = "2323d3ffe6e66ea7ffa40be232aa54c1d24c8651"
+  revision = "df05a70f90a1486a86a4156b1b0d68c94f2098b4"
 
 [[projects]]
   branch = "master"

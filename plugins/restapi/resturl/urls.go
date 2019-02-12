@@ -70,8 +70,6 @@ const (
 const (
 	// restBd is rest bridge domain path
 	Bd = "/dump/vpp/v2/bd"
-	// restBdId is rest bridge domain ID path
-	BdID = "/dump/vpp/v2/bdid"
 	// restFib is rest FIB path
 	Fib = "/dump/vpp/v2/fib"
 	// restXc is rest cross-connect path

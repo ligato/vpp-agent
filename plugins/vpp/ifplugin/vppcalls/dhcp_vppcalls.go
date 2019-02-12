@@ -18,7 +18,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/dhcp"
 )
 
-func (h *IfVppHandler) handleInterfaceDHCP(ifIdx uint32, hostName string, isAdd bool) error {
+func (h *InterfaceVppHandler) handleInterfaceDHCP(ifIdx uint32, hostName string, isAdd bool) error {
 	req := &dhcp.DHCPClientConfig{
 		IsAdd: boolToUint(isAdd),
 		Client: dhcp.DHCPClient{
@@ -37,11 +37,11 @@ func (h *IfVppHandler) handleInterfaceDHCP(ifIdx uint32, hostName string, isAdd 
 }
 
 // SetInterfaceAsDHCPClient implements interface handler.
-func (h *IfVppHandler) SetInterfaceAsDHCPClient(ifIdx uint32, hostName string) error {
+func (h *InterfaceVppHandler) SetInterfaceAsDHCPClient(ifIdx uint32, hostName string) error {
 	return h.handleInterfaceDHCP(ifIdx, hostName, true)
 }
 
 // UnsetInterfaceAsDHCPClient implements interface handler.
-func (h *IfVppHandler) UnsetInterfaceAsDHCPClient(ifIdx uint32, hostName string) error {
+func (h *InterfaceVppHandler) UnsetInterfaceAsDHCPClient(ifIdx uint32, hostName string) error {
 	return h.handleInterfaceDHCP(ifIdx, hostName, false)
 }

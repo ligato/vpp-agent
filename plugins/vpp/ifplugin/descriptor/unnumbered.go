@@ -40,12 +40,12 @@ const (
 // Values = Interface_Unnumbered{} derived from interfaces where IsUnnumbered==true
 type UnnumberedIfDescriptor struct {
 	log       logging.Logger
-	ifHandler vppcalls.IfVppAPI
+	ifHandler vppcalls.InterfaceVppAPI
 	ifIndex   ifaceidx.IfaceMetadataIndex
 }
 
 // NewUnnumberedIfDescriptor creates a new instance of UnnumberedIfDescriptor.
-func NewUnnumberedIfDescriptor(ifHandler vppcalls.IfVppAPI, log logging.PluginLogger) *UnnumberedIfDescriptor {
+func NewUnnumberedIfDescriptor(ifHandler vppcalls.InterfaceVppAPI, log logging.PluginLogger) *UnnumberedIfDescriptor {
 	return &UnnumberedIfDescriptor{
 		ifHandler: ifHandler,
 		log:       log.NewLogger("unif-descriptor"),

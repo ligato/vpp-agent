@@ -7,6 +7,16 @@ var (
 	msgControlPingReply api.Message = new(ControlPingReply)
 )
 
+// SetControlPing sets the control ping message used by core.
+func SetControlPing(m api.Message) {
+	msgControlPing = m
+}
+
+// SetControlPingReply sets the control ping reply message used by core.
+func SetControlPingReply(m api.Message) {
+	msgControlPingReply = m
+}
+
 type ControlPing struct{}
 
 func (*ControlPing) GetMessageName() string {
@@ -33,4 +43,9 @@ func (*ControlPingReply) GetCrcString() string {
 }
 func (*ControlPingReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
+}
+
+func init() {
+	api.RegisterMessage((*ControlPing)(nil), "ControlPing")
+	api.RegisterMessage((*ControlPingReply)(nil), "ControlPingReply")
 }

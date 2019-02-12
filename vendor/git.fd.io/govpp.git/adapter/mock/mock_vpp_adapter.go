@@ -134,7 +134,7 @@ func (a *VppAdapter) GetMsgNameByID(msgID uint16) (string, bool) {
 func (a *VppAdapter) registerBinAPITypes() {
 	a.access.Lock()
 	defer a.access.Unlock()
-	for _, msg := range api.GetAllMessages() {
+	for _, msg := range api.GetRegisteredMessages() {
 		a.binAPITypes[msg.GetMessageName()] = reflect.TypeOf(msg).Elem()
 	}
 }

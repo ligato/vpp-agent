@@ -19,7 +19,6 @@ import (
 	"strconv"
 
 	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
-	"github.com/ligato/vpp-agent/plugins/govppmux/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
 	"github.com/pkg/errors"
 )
@@ -63,7 +62,7 @@ var (
 
 // GetIPScanNeighbor dumps current IP Scan Neighbor configuration.
 func (h *IPNeighHandler) GetIPScanNeighbor() (*l3.IPScanNeighbor, error) {
-	data, err := vppcalls.RunCliCommand(h.callsChannel, "show ip scan-neighbor")
+	data, err := h.RunCli("show ip scan-neighbor")
 	if err != nil {
 		return nil, err
 	}

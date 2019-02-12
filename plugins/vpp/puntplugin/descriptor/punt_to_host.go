@@ -44,6 +44,8 @@ var (
 
 // PuntToHostDescriptor teaches KVScheduler how to configure VPP punt to host or unix domain socket.
 type PuntToHostDescriptor struct {
+	RegisterSocketFn func(register bool, toHost *punt.ToHost, socketPath string)
+
 	// dependencies
 	log         logging.Logger
 	puntHandler vppcalls.PuntVppAPI
@@ -111,40 +113,50 @@ func (d *PuntToHostDescriptor) Validate(key string, puntCfg *punt.ToHost) error 
 }
 
 // Create adds new punt to host entry or registers new punt to unix domain socket.
-func (d *PuntToHostDescriptor) Create(key string, punt *punt.ToHost) (metadata interface{}, err error) {
+func (d *PuntToHostDescriptor) Create(key string, punt *punt.ToHost) (interface{}, error) {
 	// add punt to host
 	if punt.SocketPath == "" {
-		err = d.puntHandler.AddPunt(punt)
-		if err != nil {
+		if err := d.puntHandler.AddPunt(punt); err != nil {
 			d.log.Error(err)
+			return nil, err
 		}
-		return nil, err
+		return nil, nil
 	}
 
 	// register punt to socket
-	err = d.puntHandler.RegisterPuntSocket(punt)
+	pathname, err := d.puntHandler.RegisterPuntSocket(punt)
 	if err != nil {
 		d.log.Error(err)
+		return nil, err
 	}
 
-	return nil, err
+	if d.RegisterSocketFn != nil {
+		d.RegisterSocketFn(true, punt, pathname)
+	}
+
+	return nil, nil
 }
 
 // Delete removes VPP punt configuration.
 func (d *PuntToHostDescriptor) Delete(key string, punt *punt.ToHost, metadata interface{}) error {
 	if punt.SocketPath == "" {
-		// TODO punt delete does not work for non-socket
-		d.log.Warn("Punt delete is not supported by the VPP")
-		return nil
+		if err := d.puntHandler.DeletePunt(punt); err != nil {
+			d.log.Error(err)
+			return err
+		}
 	}
 
 	// deregister punt to socket
-	err := d.puntHandler.DeregisterPuntSocket(punt)
-	if err != nil {
+	if err := d.puntHandler.DeregisterPuntSocket(punt); err != nil {
 		d.log.Error(err)
+		return err
 	}
 
-	return err
+	if d.RegisterSocketFn != nil {
+		d.RegisterSocketFn(false, punt, "")
+	}
+
+	return nil
 }
 
 // Retrieve returns all configured VPP punt to host entries.
@@ -152,7 +164,7 @@ func (d *PuntToHostDescriptor) Retrieve(correlate []adapter.PuntToHostKVWithMeta
 	// TODO dump for punt and punt socket register missing in api
 	d.log.Info("Dump punt/socket register is not supported by the VPP")
 
-	socks, err := d.puntHandler.DumpPuntRegisteredSockets()
+	socks, err := d.puntHandler.DumpRegisteredPuntSockets()
 	if err != nil {
 		return nil, err
 	}

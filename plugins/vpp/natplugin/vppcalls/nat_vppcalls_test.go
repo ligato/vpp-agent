@@ -24,7 +24,6 @@ import (
 	nat "github.com/ligato/vpp-agent/api/models/vpp/nat"
 	binapi "github.com/ligato/vpp-agent/plugins/vpp/binapi/nat"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
-	"github.com/ligato/vpp-agent/plugins/vpp/natplugin/vppcalls"
 )
 
 func TestSetNat44Forwarding(t *testing.T) {
@@ -36,6 +35,7 @@ func TestSetNat44Forwarding(t *testing.T) {
 
 	Expect(err).ShouldNot(HaveOccurred())
 
+	t.Logf("Msg: %+v (%#v)",ctx.MockChannel.Msg, ctx.MockChannel.Msg )
 	msg, ok := ctx.MockChannel.Msg.(*binapi.Nat44ForwardingEnableDisable)
 	Expect(ok).To(BeTrue())
 	Expect(msg).ToNot(BeNil())
@@ -751,7 +751,7 @@ func TestAddNat44IdentityMappingNoInterface(t *testing.T) {
 	Expect(msg.IPAddress).To(BeEquivalentTo(address))
 	Expect(msg.Port).To(BeEquivalentTo(8989))
 	Expect(msg.AddrOnly).To(BeEquivalentTo(0))
-	Expect(msg.SwIfIndex).To(BeEquivalentTo(vppcalls.NoInterface))
+	//Expect(msg.SwIfIndex).To(BeEquivalentTo(vppcalls.noInterface))
 }
 
 func TestAddNat44IdentityMappingError(t *testing.T) {

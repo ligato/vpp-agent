@@ -25,26 +25,6 @@ import (
 	ipsecapi "github.com/ligato/vpp-agent/plugins/vpp/binapi/ipsec"
 )
 
-// IPSecSaDetails holds security association with VPP metadata
-type IPSecSaDetails struct {
-	Sa   *ipsec.SecurityAssociation
-	Meta *IPSecSaMeta
-}
-
-// IPSecSaMeta contains all VPP-specific metadata
-type IPSecSaMeta struct {
-	SaID           uint32
-	Interface      string
-	IfIdx          uint32
-	CryptoKeyLen   uint8
-	IntegKeyLen    uint8
-	Salt           uint32
-	SeqOutbound    uint64
-	LastSeqInbound uint64
-	ReplayWindow   uint64
-	TotalDataSize  uint64
-}
-
 // DumpIPSecSA implements IPSec handler.
 func (h *IPSecVppHandler) DumpIPSecSA() (saList []*IPSecSaDetails, err error) {
 	return h.DumpIPSecSAWithIndex(^uint32(0)) // Get everything
@@ -105,21 +85,6 @@ func (h *IPSecVppHandler) DumpIPSecSAWithIndex(saID uint32) (saList []*IPSecSaDe
 	}
 
 	return saList, nil
-}
-
-// IPSecSpdDetails represents IPSec policy databases with particular metadata
-type IPSecSpdDetails struct {
-	Spd         *ipsec.SecurityPolicyDatabase
-	PolicyMeta  map[string]*SpdMeta // SA index name is a key
-	NumPolicies uint32
-}
-
-// SpdMeta hold VPP-specific data related to SPD
-type SpdMeta struct {
-	SaID    uint32
-	Policy  uint8
-	Bytes   uint64
-	Packets uint64
 }
 
 // DumpIPSecSPD implements IPSec handler.

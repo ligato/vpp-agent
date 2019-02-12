@@ -25,34 +25,6 @@ import (
 	acl_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/acl"
 )
 
-// Protocol types that can occur in ACLs
-const (
-	ICMPv4Proto = 1
-	TCPProto    = 6
-	UDPProto    = 17
-	ICMPv6Proto = 58
-)
-
-// ACLDetails is combination of proto-modelled ACL data and VPP provided metadata
-type ACLDetails struct {
-	ACL  *acl.ACL `json:"acl"`
-	Meta *ACLMeta `json:"acl_meta"`
-}
-
-// ACLMeta holds VPP-specific metadata
-type ACLMeta struct {
-	Index uint32 `json:"acl_index"`
-	Tag   string `json:"acl_tag"`
-}
-
-// ACLToInterface is definition of interface and all ACLs which are bound to
-// the interface either as ingress or egress
-type ACLToInterface struct {
-	SwIfIdx    uint32
-	IngressACL []uint32
-	EgressACL  []uint32
-}
-
 // DumpACL implements ACL handler.
 func (h *ACLVppHandler) DumpACL() ([]*ACLDetails, error) {
 	ruleIPData := make(map[ACLMeta][]*acl.ACL_Rule)

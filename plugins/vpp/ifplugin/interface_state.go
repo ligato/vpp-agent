@@ -15,10 +15,7 @@
 package ifplugin
 
 import (
-	"bytes"
 	"context"
-	"net"
-	"os"
 	"sync"
 	"time"
 
@@ -31,8 +28,8 @@ import (
 	intf "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
+	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
 )
 
 // PeriodicPollingPeriod between statistics reads
@@ -76,12 +73,11 @@ type InterfaceStateUpdater struct {
 
 	goVppMux govppmux.StatsAPI
 
-	vppCh                   govppapi.Channel
-	vppNotifSubs            govppapi.SubscriptionCtx
-	vppCountersSubs         govppapi.SubscriptionCtx
-	vppCombinedCountersSubs govppapi.SubscriptionCtx
-	notifChan               chan govppapi.Message
-	ifMetaChan              chan ifaceidx.IfaceMetadataDto
+	vppCh      govppapi.Channel
+	ifMetaChan chan ifaceidx.IfaceMetadataDto
+
+	ifHandler vppcalls.InterfaceVppAPI
+	ifEvents  chan *vppcalls.InterfaceEvent
 
 	cancel context.CancelFunc // cancel can be used to cancel all goroutines and their jobs inside of the plugin
 	wg     sync.WaitGroup     // wait group that allows to wait until all goroutines of the plugin have finished
@@ -109,9 +105,12 @@ func (c *InterfaceStateUpdater) Init(ctx context.Context, logger logging.PluginL
 		return errors.Errorf("failed to create API channel: %v", err)
 	}
 
+	c.ifHandler = vppcalls.CompatibleInterfaceVppHandler(c.vppCh, logger.NewLogger("if-handler"))
+
 	c.ifMetaChan = make(chan ifaceidx.IfaceMetadataDto, 100)
 	swIfIndexes.WatchInterfaces("ifplugin_ifstate", c.ifMetaChan)
-	c.notifChan = make(chan govppapi.Message, 100)
+
+	c.ifEvents = make(chan *vppcalls.InterfaceEvent)
 
 	// Create child context
 	var childCtx context.Context
@@ -137,20 +136,8 @@ func (c *InterfaceStateUpdater) AfterInit() error {
 
 // subscribeVPPNotifications subscribes for interface state notifications from VPP.
 func (c *InterfaceStateUpdater) subscribeVPPNotifications() error {
-	var err error
-	// subscribe for receiving SwInterfaceEvents notifications
-	if c.vppNotifSubs, err = c.vppCh.SubscribeNotification(c.notifChan, &interfaces.SwInterfaceEvent{}); err != nil {
-		return errors.Errorf("failed to subscribe VPP notification (sw_interface_event): %v", err)
-	}
-
-	wantIfEventsReply := &interfaces.WantInterfaceEventsReply{}
-	// enable interface state notifications from VPP
-	err = c.vppCh.SendRequest(&interfaces.WantInterfaceEvents{
-		PID:           uint32(os.Getpid()),
-		EnableDisable: 1,
-	}).ReceiveReply(wantIfEventsReply)
-	if err != nil {
-		return errors.Errorf("failed to get interface events: %v", err)
+	if err := c.ifHandler.WatchInterfaceEvents(c.ifEvents); err != nil {
+		return err
 	}
 
 	return nil
@@ -161,23 +148,14 @@ func (c *InterfaceStateUpdater) Close() error {
 	c.cancel()
 	c.wg.Wait()
 
-	if c.vppNotifSubs != nil {
+	// TODO: handle unsubscribing
+	/*if c.vppNotifSubs != nil {
 		if err := c.vppNotifSubs.Unsubscribe(); err != nil {
 			return errors.Errorf("failed to unsubscribe interface state notification on close: %v", err)
 		}
-	}
-	if c.vppCountersSubs != nil {
-		if err := c.vppCountersSubs.Unsubscribe(); err != nil {
-			return errors.Errorf("failed to unsubscribe interface state counters on close: %v", err)
-		}
-	}
-	if c.vppCombinedCountersSubs != nil {
-		if err := c.vppCombinedCountersSubs.Unsubscribe(); err != nil {
-			return errors.Errorf("failed to unsubscribe interface state combined counters on close: %v", err)
-		}
-	}
+	}*/
 
-	if err := safeclose.Close(c.vppCh, c.notifChan); err != nil {
+	if err := safeclose.Close(c.vppCh); err != nil {
 		return errors.Errorf("failed to safe close interface state: %v", err)
 	}
 
@@ -188,54 +166,33 @@ func (c *InterfaceStateUpdater) Close() error {
 func (c *InterfaceStateUpdater) watchVPPNotifications(ctx context.Context) {
 	defer c.wg.Done()
 
-	if c.notifChan != nil {
-		c.log.Debug("Interface state VPP notification watcher started")
-	} else {
-		c.log.Warn("Interface state VPP notification does not start: the channel c nil")
-		return
-	}
-
 	// Periodically read VPP counters and combined counters for VPP statistics
 	go c.startReadingCounters(ctx)
 
 	for {
 		select {
-		case msg := <-c.notifChan:
+		case notif := <-c.ifEvents:
 			// if the notification is a result of a configuration change,
 			// make sure the associated transaction has already finalized
 			c.kvScheduler.TransactionBarrier()
 
-			switch notif := msg.(type) {
-			case *interfaces.SwInterfaceEvent:
-				c.processIfStateEvent(notif)
-			default:
-				c.log.Debugf("Ignoring unknown VPP notification: %s, %v",
-					msg.GetMessageName(), msg)
-			}
+			c.processIfStateEvent(notif)
 
 		case ifMetaDto := <-c.ifMetaChan:
 			if ifMetaDto.Del {
 				c.setIfStateDeleted(ifMetaDto.Metadata.SwIfIndex, ifMetaDto.Name)
 			} else if !ifMetaDto.Update {
-				// process new interface (no way to filter by swIfIndex, need to dump all of them)
-				req := &interfaces.SwInterfaceDump{}
-				reqCtx := c.vppCh.SendMultiRequest(req)
-
-				for {
-					msg := &interfaces.SwInterfaceDetails{}
-					stop, err := reqCtx.ReceiveReply(msg)
-					if stop {
-						break
-					}
-					if err != nil {
-						c.log.Warnf("failed to receive interface dump details: %v", err)
-						continue
-					}
-					if msg.SwIfIndex != ifMetaDto.Metadata.SwIfIndex {
+				ifaces, err := c.ifHandler.DumpInterfaces()
+				if err != nil {
+					c.log.Warnf("dump interfaces failed: %v", err)
+					continue
+				}
+				for _, ifaceDetails := range ifaces {
+					if ifaceDetails.Meta.SwIfIndex != ifMetaDto.Metadata.SwIfIndex {
 						// not the added interface
 						continue
 					}
-					c.updateIfStateDetails(msg)
+					c.updateIfStateDetails(ifaceDetails)
 				}
 			}
 
@@ -359,7 +316,7 @@ func (c *InterfaceStateUpdater) processCombinedCounterStat(statName statType, da
 }
 
 // processIfStateEvent process a VPP state event notification.
-func (c *InterfaceStateUpdater) processIfStateEvent(notif *interfaces.SwInterfaceEvent) {
+func (c *InterfaceStateUpdater) processIfStateEvent(notif *vppcalls.InterfaceEvent) {
 	c.access.Lock()
 	defer c.access.Unlock()
 
@@ -417,7 +374,7 @@ func (c *InterfaceStateUpdater) getIfStateDataWLookup(ifIdx uint32) (
 
 // updateIfStateFlags updates the interface state data in memory from provided VPP flags message and returns updated state data.
 // NOTE: plugin.ifStateData needs to be locked when calling this function!
-func (c *InterfaceStateUpdater) updateIfStateFlags(vppMsg *interfaces.SwInterfaceEvent) (
+func (c *InterfaceStateUpdater) updateIfStateFlags(vppMsg *vppcalls.InterfaceEvent) (
 	iface *intf.InterfaceState, found bool) {
 
 	ifState, found := c.getIfStateDataWLookup(vppMsg.SwIfIndex)
@@ -426,16 +383,16 @@ func (c *InterfaceStateUpdater) updateIfStateFlags(vppMsg *interfaces.SwInterfac
 	}
 	ifState.LastChange = time.Now().Unix()
 
-	if vppMsg.Deleted == 1 {
+	if vppMsg.Deleted {
 		ifState.AdminStatus = intf.InterfaceState_DELETED
 		ifState.OperStatus = intf.InterfaceState_DELETED
 	} else {
-		if vppMsg.AdminUpDown == 1 {
+		if vppMsg.AdminState == 1 {
 			ifState.AdminStatus = intf.InterfaceState_UP
 		} else {
 			ifState.AdminStatus = intf.InterfaceState_DOWN
 		}
-		if vppMsg.LinkUpDown == 1 {
+		if vppMsg.LinkState == 1 {
 			ifState.OperStatus = intf.InterfaceState_UP
 		} else {
 			ifState.OperStatus = intf.InterfaceState_DOWN
@@ -445,35 +402,38 @@ func (c *InterfaceStateUpdater) updateIfStateFlags(vppMsg *interfaces.SwInterfac
 }
 
 // updateIfStateDetails updates the interface state data in memory from provided VPP details message.
-func (c *InterfaceStateUpdater) updateIfStateDetails(ifDetails *interfaces.SwInterfaceDetails) {
+func (c *InterfaceStateUpdater) updateIfStateDetails(ifDetails *vppcalls.InterfaceDetails) {
 	c.access.Lock()
 	defer c.access.Unlock()
 
-	ifState, found := c.getIfStateDataWLookup(ifDetails.SwIfIndex)
+	ifState, found := c.getIfStateDataWLookup(ifDetails.Meta.SwIfIndex)
 	if !found {
 		return
 	}
 
-	ifState.InternalName = string(bytes.SplitN(ifDetails.InterfaceName, []byte{0x00}, 2)[0])
+	ifState.InternalName = ifDetails.Meta.InternalName
 
-	if ifDetails.AdminUpDown == 1 {
+	if ifDetails.Meta.AdminState == 1 {
 		ifState.AdminStatus = intf.InterfaceState_UP
-	} else {
+	} else if ifDetails.Meta.AdminState == 0 {
 		ifState.AdminStatus = intf.InterfaceState_DOWN
-	}
-
-	if ifDetails.LinkUpDown == 1 {
-		ifState.OperStatus = intf.InterfaceState_UP
 	} else {
-		ifState.OperStatus = intf.InterfaceState_DOWN
+		ifState.AdminStatus = intf.InterfaceState_UNKNOWN_STATUS
 	}
 
-	hwAddr := net.HardwareAddr(ifDetails.L2Address[:ifDetails.L2AddressLength])
-	ifState.PhysAddress = hwAddr.String()
+	if ifDetails.Meta.LinkState == 1 {
+		ifState.OperStatus = intf.InterfaceState_UP
+	} else if ifDetails.Meta.LinkState == 0 {
+		ifState.OperStatus = intf.InterfaceState_DOWN
+	} else {
+		ifState.OperStatus = intf.InterfaceState_UNKNOWN_STATUS
+	}
 
-	ifState.Mtu = uint32(ifDetails.LinkMtu)
+	ifState.PhysAddress = ifDetails.Interface.PhysAddress
 
-	switch ifDetails.LinkSpeed {
+	ifState.Mtu = uint32(ifDetails.Meta.LinkMTU)
+
+	switch ifDetails.Meta.LinkSpeed {
 	case 1:
 		ifState.Speed = 10 * megabit // 10M
 	case 2:
@@ -490,7 +450,7 @@ func (c *InterfaceStateUpdater) updateIfStateDetails(ifDetails *interfaces.SwInt
 		ifState.Speed = 0
 	}
 
-	switch ifDetails.LinkSpeed {
+	switch ifDetails.Meta.LinkSpeed {
 	case 1:
 		ifState.Duplex = intf.InterfaceState_HALF
 	case 2:

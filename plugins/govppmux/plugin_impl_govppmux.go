@@ -32,6 +32,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/ligato/vpp-agent/plugins/govppmux/vppcalls"
+	_ "github.com/ligato/vpp-agent/plugins/govppmux/vppcalls/vpp1810"
 )
 
 // Default path to socket for VPP stats
@@ -155,14 +156,29 @@ func (p *Plugin) Init() error {
 		return errors.New("unable to connect to VPP")
 	}
 	vppConnectTime := time.Since(startTime)
-	info, err := p.retrieveVpeInfo()
+
+	vppAPIChan, err := p.vppConn.NewAPIChannel()
+	if err != nil {
+		p.Log.Error("getting new api channel failed:", err)
+		return err
+	}
+	defer vppAPIChan.Close()
+
+	vpeHandler := vppcalls.CompatibleVpeHandler(vppAPIChan)
+
+	ver, err := vpeHandler.GetVersionInfo()
+	if err != nil {
+		p.Log.Errorf("retrieving version info failed: %v", err)
+		return err
+	}
+	info, err := vpeHandler.GetVpeInfo()
 	if err != nil {
 		p.Log.Errorf("retrieving vpe info failed: %v", err)
 		return err
 	}
-	p.Log.Infof("Connected to VPP [PID:%d] (took %s)",
-		info.PID, vppConnectTime.Truncate(time.Millisecond))
-	p.retrieveVersion()
+	p.Log.Infof("Connected to VPP %v [PID:%d, ClientIdx:%d] (took %s)",
+		ver.Version, info.PID, info.ClientIdx, vppConnectTime.Truncate(time.Millisecond))
+	p.Log.Debugf("loaded module versions: %v", info.ModuleVersions)
 
 	// Register providing status reports (push mode)
 	p.StatusCheck.Register(p.PluginName, nil)
@@ -275,8 +291,16 @@ func (p *Plugin) handleVPPConnectionEvents(ctx context.Context) {
 		select {
 		case status := <-p.vppConChan:
 			if status.State == govpp.Connected {
-				p.retrieveVpeInfo()
-				p.retrieveVersion()
+				vppAPIChan, err := p.vppConn.NewAPIChannel()
+				if err != nil {
+					p.Log.Error("getting new api channel failed:", err)
+					return
+				}
+				defer vppAPIChan.Close()
+
+				vpeHandler := vppcalls.CompatibleVpeHandler(vppAPIChan)
+				vpeHandler.GetVersionInfo()
+				vpeHandler.GetVpeInfo()
 				if p.config.ReconnectResync && p.lastConnErr != nil {
 					p.Log.Info("Starting resync after VPP reconnect")
 					if p.Resync != nil {
@@ -288,7 +312,7 @@ func (p *Plugin) handleVPPConnectionEvents(ctx context.Context) {
 				}
 				p.StatusCheck.ReportStateChange(p.PluginName, statuscheck.OK, nil)
 			} else {
-				p.lastConnErr = errors.New("VPP disconnected")
+				p.lastConnErr = errors.Errorf("VPP disconnected (status: %v)", status)
 				p.StatusCheck.ReportStateChange(p.PluginName, statuscheck.Error, p.lastConnErr)
 			}
 
@@ -298,7 +322,7 @@ func (p *Plugin) handleVPPConnectionEvents(ctx context.Context) {
 	}
 }
 
-func (p *Plugin) retrieveVpeInfo() (*vppcalls.VpeInfo, error) {
+/*func (p *Plugin) retrieveVpeInfo() (*vppcalls.VpeInfo, error) {
 	vppAPIChan, err := p.vppConn.NewAPIChannel()
 	if err != nil {
 		p.Log.Error("getting new api channel failed:", err)
@@ -311,7 +335,7 @@ func (p *Plugin) retrieveVpeInfo() (*vppcalls.VpeInfo, error) {
 		p.Log.Warn("getting version info failed:", err)
 		return nil, err
 	}
-	p.Log.Debugf("connection info: %+v", info)
+	p.Log.Debugf("vpp module versions: %+v", info.ModuleVersions)
 
 	return info, nil
 }
@@ -341,3 +365,4 @@ func (p *Plugin) retrieveVersion() {
 	}
 	p.Log.Infof("VPP ACL plugin version: %q", aclVersion)
 }
+*/

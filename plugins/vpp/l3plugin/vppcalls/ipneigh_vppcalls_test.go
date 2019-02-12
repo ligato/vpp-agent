@@ -71,8 +71,7 @@ func TestGetIPScanNeighbor(t *testing.T) {
 			defer ctx.TeardownTestCtx()
 
 			ctx.MockVpp.MockReply(&vpe.CliInbandReply{
-				Reply:  []byte(test.cliReply),
-				Length: uint32(len(test.cliReply)),
+				Reply: test.cliReply,
 			})
 
 			handler := NewIPNeighVppHandler(ctx.MockChannel, nil)

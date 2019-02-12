@@ -91,6 +91,7 @@ func (c *Connection) processRequest(ch *Channel, req *vppRequest) error {
 			"msg_name": req.msg.GetMessageName(),
 			"msg_size": len(data),
 			"seq_num":  req.seqNum,
+			"msg_crc":  req.msg.GetCrcString(),
 		}).Debug(" -> Sending a message to VPP.")
 	}
 
@@ -163,6 +164,7 @@ func (c *Connection) msgCallback(msgID uint16, data []byte) {
 			"channel":  chanID,
 			"is_multi": isMulti,
 			"seq_num":  seqNum,
+			"msg_crc":  msg.GetCrcString(),
 		}).Debug(" <- Received a message from VPP.")
 	}
 

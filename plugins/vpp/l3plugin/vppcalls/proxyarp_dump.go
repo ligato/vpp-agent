@@ -22,11 +22,6 @@ import (
 	l3binapi "github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
 )
 
-// ProxyArpRangesDetails holds info about proxy ARP range as a proto modeled data
-type ProxyArpRangesDetails struct {
-	Range *l3.ProxyARP_Range
-}
-
 // DumpProxyArpRanges implements proxy arp handler.
 func (h *ProxyArpVppHandler) DumpProxyArpRanges() (pArpRngs []*ProxyArpRangesDetails, err error) {
 	reqCtx := h.callsChannel.SendMultiRequest(&l3binapi.ProxyArpDump{})
@@ -51,17 +46,6 @@ func (h *ProxyArpVppHandler) DumpProxyArpRanges() (pArpRngs []*ProxyArpRangesDet
 	}
 
 	return pArpRngs, nil
-}
-
-// ProxyArpInterfaceDetails holds info about proxy ARP interfaces as a proto modeled data
-type ProxyArpInterfaceDetails struct {
-	Interface *l3.ProxyARP_Interface
-	Meta      *ProxyArpInterfaceMeta
-}
-
-// ProxyArpInterfaceMeta contains interface vpp index
-type ProxyArpInterfaceMeta struct {
-	SwIfIndex uint32
 }
 
 // DumpProxyArpInterfaces implements proxy arp handler.
