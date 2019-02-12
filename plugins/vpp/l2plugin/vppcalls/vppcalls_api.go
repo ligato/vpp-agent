@@ -17,9 +17,9 @@ package vppcalls
 import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/vpp-agent/pkg/idxvpp"
 
 	l2 "github.com/ligato/vpp-agent/api/models/vpp/l2"
+	"github.com/ligato/vpp-agent/pkg/idxvpp"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 )
 
@@ -119,8 +119,8 @@ func CompatibleL2VppHandler(
 			log.Debugf("version %s not compatible", ver)
 			continue
 		}
-		log.Debugf("found compatible version:", ver)
+		log.Debug("found compatible version:", ver)
 		return h.New(ch, ifIdx, bdIdx, log)
 	}
-	return nil
+	panic("no compatible version available")
 }

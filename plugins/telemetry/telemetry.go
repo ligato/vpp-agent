@@ -18,14 +18,15 @@ import (
 	"strconv"
 	"time"
 
-	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/infra"
 	prom "github.com/ligato/cn-infra/rpc/prometheus"
 	"github.com/ligato/cn-infra/servicelabel"
-	"github.com/ligato/vpp-agent/plugins/govppmux"
-	"github.com/ligato/vpp-agent/plugins/govppmux/vppcalls"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+
+	"github.com/ligato/vpp-agent/plugins/govppmux"
+	"github.com/ligato/vpp-agent/plugins/telemetry/vppcalls"
+	_ "github.com/ligato/vpp-agent/plugins/telemetry/vppcalls/vpp1810"
 )
 
 const (
@@ -84,6 +85,8 @@ const (
 // Plugin registers Telemetry Plugin
 type Plugin struct {
 	Deps
+
+	handler vppcalls.TelemetryVppAPI
 
 	runtimeGaugeVecs map[string]*prometheus.GaugeVec
 	runtimeStats     map[string]*runtimeStats
@@ -331,13 +334,14 @@ func (p *Plugin) periodicUpdates() {
 		p.Log.Errorf("Error creating channel: %v", err)
 		return
 	}
+	p.handler = vppcalls.CompatibleTelemetryHandler(vppCh)
 
 Loop:
 	for {
 		select {
 		// Delay period between updates
 		case <-time.After(p.updatePeriod):
-			p.updateData(vppCh)
+			p.updateData()
 		// Plugin has stopped.
 		case <-p.quit:
 			break Loop
@@ -348,9 +352,9 @@ Loop:
 	vppCh.Close()
 }
 
-func (p *Plugin) updateData(vppCh govppapi.Channel) {
+func (p *Plugin) updateData() {
 	// Update runtime
-	runtimeInfo, err := vppcalls.GetRuntimeInfo(vppCh)
+	runtimeInfo, err := p.handler.GetRuntimeInfo()
 	if err != nil {
 		p.Log.Errorf("Command failed: %v", err)
 	} else {
@@ -388,7 +392,7 @@ func (p *Plugin) updateData(vppCh govppapi.Channel) {
 	}
 
 	// Update memory
-	memoryInfo, err := vppcalls.GetMemory(vppCh)
+	memoryInfo, err := p.handler.GetMemory()
 	if err != nil {
 		p.Log.Errorf("Command failed: %v", err)
 	} else {
@@ -424,7 +428,7 @@ func (p *Plugin) updateData(vppCh govppapi.Channel) {
 	}
 
 	// Update buffers
-	buffersInfo, err := vppcalls.GetBuffersInfo(vppCh)
+	buffersInfo, err := p.handler.GetBuffersInfo()
 	if err != nil {
 		p.Log.Errorf("Command failed: %v", err)
 	} else {
@@ -460,7 +464,7 @@ func (p *Plugin) updateData(vppCh govppapi.Channel) {
 	}
 
 	// Update node counters
-	nodeCountersInfo, err := vppcalls.GetNodeCounters(vppCh)
+	nodeCountersInfo, err := p.handler.GetNodeCounters()
 	if err != nil {
 		p.Log.Errorf("Command failed: %v", err)
 	} else {

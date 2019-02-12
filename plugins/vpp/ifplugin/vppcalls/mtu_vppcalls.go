@@ -19,7 +19,7 @@ import (
 )
 
 // SetInterfaceMtu implements interface handler.
-func (h *IfVppHandler) SetInterfaceMtu(ifIdx uint32, mtu uint32) error {
+func (h *InterfaceVppHandler) SetInterfaceMtu(ifIdx uint32, mtu uint32) error {
 	req := &interfaces.HwInterfaceSetMtu{
 		SwIfIndex: ifIdx,
 		Mtu:       uint16(mtu),

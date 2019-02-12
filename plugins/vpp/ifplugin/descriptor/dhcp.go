@@ -16,25 +16,18 @@ package descriptor
 
 import (
 	"context"
-	"fmt"
-	"net"
 	"strings"
 	"sync"
 
-	prototypes "github.com/gogo/protobuf/types"
-
-	govppapi "git.fd.io/govpp.git/api"
-	"github.com/ligato/cn-infra/logging"
-	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-
-	"bytes"
-
 	"github.com/gogo/protobuf/proto"
+	prototypes "github.com/gogo/protobuf/types"
+	"github.com/ligato/cn-infra/logging"
+	"github.com/pkg/errors"
+
 	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/dhcp"
+	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
-	"github.com/pkg/errors"
 )
 
 const (
@@ -48,7 +41,7 @@ const (
 type DHCPDescriptor struct {
 	// provided by the plugin
 	log         logging.Logger
-	ifHandler   vppcalls.IfVppAPI
+	ifHandler   vppcalls.InterfaceVppAPI
 	kvscheduler kvs.KVScheduler
 	ifIndex     ifaceidx.IfaceMetadataIndex
 
@@ -58,7 +51,7 @@ type DHCPDescriptor struct {
 }
 
 // NewDHCPDescriptor creates a new instance of DHCPDescriptor.
-func NewDHCPDescriptor(kvscheduler kvs.KVScheduler, ifHandler vppcalls.IfVppAPI, log logging.PluginLogger) *DHCPDescriptor {
+func NewDHCPDescriptor(kvscheduler kvs.KVScheduler, ifHandler vppcalls.InterfaceVppAPI, log logging.PluginLogger) *DHCPDescriptor {
 	descriptor := &DHCPDescriptor{
 		kvscheduler: kvscheduler,
 		ifHandler:   ifHandler,
@@ -89,13 +82,13 @@ func (d *DHCPDescriptor) SetInterfaceIndex(ifIndex ifaceidx.IfaceMetadataIndex) 
 }
 
 // WatchDHCPNotifications starts watching for DHCP notifications.
-func (d *DHCPDescriptor) WatchDHCPNotifications(ctx context.Context, dhcpChan chan govppapi.Message) {
+func (d *DHCPDescriptor) WatchDHCPNotifications(ctx context.Context) {
 	// Create child context
 	var childCtx context.Context
 	childCtx, d.cancel = context.WithCancel(ctx)
 
 	d.wg.Add(1)
-	go d.watchDHCPNotifications(childCtx, dhcpChan)
+	go d.watchDHCPNotifications(childCtx)
 }
 
 // Close stops watching of DHCP notifications.
@@ -223,57 +216,41 @@ func (d *DHCPDescriptor) DerivedValues(key string, dhcpData proto.Message) (derV
 }
 
 // watchDHCPNotifications watches and processes DHCP notifications.
-func (d *DHCPDescriptor) watchDHCPNotifications(ctx context.Context, dhcpChan chan govppapi.Message) {
+func (d *DHCPDescriptor) watchDHCPNotifications(ctx context.Context) {
 	defer d.wg.Done()
 	d.log.Debug("Started watcher on DHCP notifications")
 
+	dhcpChan := make(chan *vppcalls.Lease)
+	if err := d.ifHandler.WatchDHCPLeases(dhcpChan); err != nil {
+		d.log.Errorf("watching dhcp leases failed: %v", err)
+		return
+	}
+
 	for {
 		select {
-		case notification := <-dhcpChan:
-			switch dhcpNotif := notification.(type) {
-			case *dhcp.DHCPComplEvent:
-				lease := dhcpNotif.Lease
+		case lease := <-dhcpChan:
+			// interface logical name
+			ifName, _, found := d.ifIndex.LookupBySwIfIndex(lease.SwIfIndex)
+			if !found {
+				d.log.Warnf("Interface sw_if_index=%d with DHCP lease was not found in the mapping", lease.SwIfIndex)
+				continue
+			}
 
-				// L2 address (defined for L2 rewrite)
-				var hwAddr net.HardwareAddr = lease.HostMac
+			d.log.Debugf("DHCP assigned %v to interface %q (router address %v)", lease.HostAddress, ifName, lease.RouterAddress)
 
-				// interface hostname
-				hostname := string(bytes.SplitN(dhcpNotif.Lease.Hostname, []byte{0x00}, 2)[0])
-
-				// interface and router IP addresses
-				var hostIPAddr, routerIPAddr string
-				if lease.IsIPv6 == 1 {
-					hostIPAddr = fmt.Sprintf("%s/%d", net.IP(lease.HostAddress).To16().String(), uint32(lease.MaskWidth))
-					routerIPAddr = fmt.Sprintf("%s/%d", net.IP(lease.RouterAddress).To16().String(), uint32(lease.MaskWidth))
-				} else {
-					hostIPAddr = fmt.Sprintf("%s/%d", net.IP(lease.HostAddress[:4]).To4().String(), uint32(lease.MaskWidth))
-					routerIPAddr = fmt.Sprintf("%s/%d", net.IP(lease.RouterAddress[:4]).To4().String(), uint32(lease.MaskWidth))
-				}
-
-				// interface logical name
-				ifName, _, found := d.ifIndex.LookupBySwIfIndex(lease.SwIfIndex)
-				if !found {
-					d.log.Warnf("Interface sw_if_index=%d with DHCP lease was not found in the mapping", lease.SwIfIndex)
-					continue
-				}
-
-				d.log.Debugf("DHCP assigned %v to interface %q (router address %v)", hostIPAddr, ifName, routerIPAddr)
-
-				// notify about the new lease
-				dhcpLease := &interfaces.DHCPLease{
-					InterfaceName:   ifName,
-					HostName:        hostname,
-					HostPhysAddress: hwAddr.String(),
-					IsIpv6:          lease.IsIPv6 == 1,
-					HostIpAddress:   hostIPAddr,
-					RouterIpAddress: routerIPAddr,
-				}
-				if err := d.kvscheduler.PushSBNotification(
-					interfaces.DHCPLeaseKey(ifName),
-					dhcpLease,
-					dhcpLease); err != nil {
-					d.log.Error(err)
-				}
+			// notify about the new lease
+			dhcpLease := &interfaces.DHCPLease{
+				InterfaceName:   ifName,
+				HostName:        lease.Hostname,
+				HostPhysAddress: lease.HostMac,
+				HostIpAddress:   lease.HostAddress,
+				RouterIpAddress: lease.RouterAddress,
+			}
+			if err := d.kvscheduler.PushSBNotification(
+				interfaces.DHCPLeaseKey(ifName),
+				dhcpLease,
+				dhcpLease); err != nil {
+				d.log.Error(err)
 			}
 		case <-ctx.Done():
 			return

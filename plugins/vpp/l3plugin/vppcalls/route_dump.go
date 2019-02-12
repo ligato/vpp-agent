@@ -23,32 +23,6 @@ import (
 	l3binapi "github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
 )
 
-// RouteDetails is object returned as a VPP dump. It contains static route data in proto format, and VPP-specific
-// metadata
-type RouteDetails struct {
-	Route *l3.Route
-	Meta  *RouteMeta
-}
-
-// RouteMeta holds fields returned from the VPP as details which are not in the model
-type RouteMeta struct {
-	TableName         string
-	OutgoingIfIdx     uint32
-	IsIPv6            bool
-	Afi               uint8
-	IsLocal           bool
-	IsUDPEncap        bool
-	IsUnreach         bool
-	IsProhibit        bool
-	IsResolveHost     bool
-	IsResolveAttached bool
-	IsDvr             bool
-	IsSourceLookup    bool
-	NextHopID         uint32
-	RpfID             uint32
-	LabelStack        []l3binapi.FibMplsLabel
-}
-
 // DumpRoutes implements route handler.
 func (h *RouteHandler) DumpRoutes() ([]*RouteDetails, error) {
 	var routes []*RouteDetails
@@ -161,6 +135,16 @@ func (h *RouteHandler) dumpRouteIPDetails(tableID uint32, tableName []byte, addr
 				ViaVrfId:          viaVrfID,
 			}
 
+			labelStack := make([]FibMplsLabel, len(path.LabelStack))
+			for i, l := range path.LabelStack {
+				labelStack[i] = FibMplsLabel{
+					IsUniform: uintToBool(l.IsUniform),
+					Label:     l.Label,
+					TTL:       l.TTL,
+					Exp:       l.Exp,
+				}
+			}
+
 			// Route metadata
 			meta := &RouteMeta{
 				TableName:         string(bytes.SplitN(tableName, []byte{0x00}, 2)[0]),
@@ -177,7 +161,7 @@ func (h *RouteHandler) dumpRouteIPDetails(tableID uint32, tableName []byte, addr
 				IsResolveHost:     uintToBool(path.IsResolveHost),
 				IsSourceLookup:    uintToBool(path.IsSourceLookup),
 				IsUnreach:         uintToBool(path.IsUnreach),
-				LabelStack:        path.LabelStack,
+				LabelStack:        labelStack,
 			}
 
 			routeDetails = append(routeDetails, &RouteDetails{

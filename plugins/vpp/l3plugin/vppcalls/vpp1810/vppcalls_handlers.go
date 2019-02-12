@@ -1,4 +1,4 @@
-//  Copyright (c) 2018 Cisco and/or its affiliates.
+//  Copyright (c) 2019 Cisco and/or its affiliates.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -18,85 +18,34 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
-	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
+
+	vpevppcalls "github.com/ligato/vpp-agent/plugins/govppmux/vppcalls"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1810/ip"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
+	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls"
 )
 
-// ArpVppAPI provides methods for managing ARP entries
-type ArpVppAPI interface {
-	ArpVppWrite
-	ArpVppRead
+func init() {
+	vppcalls.Versions["vpp1810"] = vppcalls.HandlerVersion{
+		Msgs: ip.Messages,
+		New:  NewL3VppHandler,
+	}
 }
 
-// ArpVppWrite provides write methods for ARPs
-type ArpVppWrite interface {
-	// VppAddArp adds ARP entry according to provided input
-	VppAddArp(entry *l3.ARPEntry) error
-	// VppDelArp removes old ARP entry according to provided input
-	VppDelArp(entry *l3.ARPEntry) error
+type L3VppHandler struct {
+	*ArpVppHandler
+	*ProxyArpVppHandler
+	*RouteHandler
+	*IPNeighHandler
 }
 
-// ArpVppRead provides read methods for ARPs
-type ArpVppRead interface {
-	// DumpArpEntries dumps ARPs from VPP and fills them into the provided static route map.
-	DumpArpEntries() ([]*ArpDetails, error)
-}
-
-// ProxyArpVppAPI provides methods for managing proxy ARP entries
-type ProxyArpVppAPI interface {
-	ProxyArpVppWrite
-	ProxyArpVppRead
-}
-
-// ProxyArpVppWrite provides write methods for proxy ARPs
-type ProxyArpVppWrite interface {
-	// EnableProxyArpInterface enables interface for proxy ARP
-	EnableProxyArpInterface(ifName string) error
-	// DisableProxyArpInterface disables interface for proxy ARP
-	DisableProxyArpInterface(ifName string) error
-	// AddProxyArpRange adds new IP range for proxy ARP
-	AddProxyArpRange(firstIP, lastIP []byte) error
-	// DeleteProxyArpRange removes proxy ARP IP range
-	DeleteProxyArpRange(firstIP, lastIP []byte) error
-}
-
-// ProxyArpVppRead provides read methods for proxy ARPs
-type ProxyArpVppRead interface {
-	// DumpProxyArpRanges returns configured proxy ARP ranges
-	DumpProxyArpRanges() ([]*ProxyArpRangesDetails, error)
-	// DumpProxyArpRanges returns configured proxy ARP interfaces
-	DumpProxyArpInterfaces() ([]*ProxyArpInterfaceDetails, error)
-}
-
-// RouteVppAPI provides methods for managing routes
-type RouteVppAPI interface {
-	RouteVppWrite
-	RouteVppRead
-}
-
-// RouteVppWrite provides write methods for routes
-type RouteVppWrite interface {
-	// VppAddRoute adds new route, according to provided input.
-	// Every route has to contain VRF ID (default is 0).
-	VppAddRoute(route *l3.Route) error
-	// VppDelRoute removes old route, according to provided input.
-	// Every route has to contain VRF ID (default is 0).
-	VppDelRoute(route *l3.Route) error
-}
-
-// RouteVppRead provides read methods for routes
-type RouteVppRead interface {
-	// DumpRoutes dumps l3 routes from VPP and fills them
-	// into the provided static route map.
-	DumpRoutes() ([]*RouteDetails, error)
-}
-
-// IPNeighVppAPI provides methods for managing IP scan neighbor configuration
-type IPNeighVppAPI interface {
-	// SetIPScanNeighbor configures IP scan neighbor to the VPP
-	SetIPScanNeighbor(data *l3.IPScanNeighbor) error
-	// GetIPScanNeighbor returns IP scan neighbor configuration from the VPP
-	GetIPScanNeighbor() (*l3.IPScanNeighbor, error)
+func NewL3VppHandler(ch govppapi.Channel, ifIdx ifaceidx.IfaceMetadataIndex, log logging.Logger) vppcalls.L3VppAPI {
+	return &L3VppHandler{
+		ArpVppHandler:      NewArpVppHandler(ch, ifIdx, log),
+		ProxyArpVppHandler: NewProxyArpVppHandler(ch, ifIdx, log),
+		RouteHandler:       NewRouteVppHandler(ch, ifIdx, log),
+		IPNeighHandler:     NewIPNeighVppHandler(ch, log),
+	}
 }
 
 // ArpVppHandler is accessor for ARP-related vppcalls methods
@@ -124,6 +73,7 @@ type RouteHandler struct {
 type IPNeighHandler struct {
 	callsChannel govppapi.Channel
 	log          logging.Logger
+	vpevppcalls.VpeVppAPI
 }
 
 // NewArpVppHandler creates new instance of IPsec vppcalls handler
@@ -170,6 +120,7 @@ func NewIPNeighVppHandler(callsChan govppapi.Channel, log logging.Logger) *IPNei
 	return &IPNeighHandler{
 		callsChannel: callsChan,
 		log:          log,
+		VpeVppAPI:    vpevppcalls.CompatibleVpeHandler(callsChan),
 	}
 }
 

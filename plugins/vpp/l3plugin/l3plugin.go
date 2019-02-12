@@ -32,6 +32,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/descriptor"
 	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls"
+	_ "github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls/vpp1810"
 )
 
 // L3Plugin configures Linux routes and ARP entries using Netlink API.

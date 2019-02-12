@@ -76,7 +76,7 @@ func TestDeleteRoute(t *testing.T) {
 	Expect(err).To(Not(BeNil()))
 }
 
-func routeTestSetup(t *testing.T) (*vppcallmock.TestCtx, ifvppcalls.IfVppAPI, vppcalls.RouteVppAPI) {
+func routeTestSetup(t *testing.T) (*vppcallmock.TestCtx, ifvppcalls.InterfaceVppAPI, vppcalls.RouteVppAPI) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	log := logrus.NewLogger("test-log")
 	ifHandler := ifvppcalls.NewIfVppHandler(ctx.MockChannel, log)

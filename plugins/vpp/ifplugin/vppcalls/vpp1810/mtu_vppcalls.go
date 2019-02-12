@@ -15,22 +15,20 @@
 package vppcalls
 
 import (
-	"fmt"
-
-	govppapi "git.fd.io/govpp.git/api"
-	aclapi "github.com/ligato/vpp-agent/plugins/vpp/binapi/acl"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
 )
 
-// GetACLPluginVersion retrieves ACL plugin version.
-func GetACLPluginVersion(ch govppapi.Channel) (string, error) {
-	req := &aclapi.ACLPluginGetVersion{}
-	reply := &aclapi.ACLPluginGetVersionReply{}
+// SetInterfaceMtu implements interface handler.
+func (h *InterfaceVppHandler) SetInterfaceMtu(ifIdx uint32, mtu uint32) error {
+	req := &interfaces.HwInterfaceSetMtu{
+		SwIfIndex: ifIdx,
+		Mtu:       uint16(mtu),
+	}
+	reply := &interfaces.HwInterfaceSetMtuReply{}
 
-	if err := ch.SendRequest(req).ReceiveReply(reply); err != nil {
-		return "", fmt.Errorf("failed to get VPP ACL plugin version: %v", err)
+	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
+		return err
 	}
 
-	version := fmt.Sprintf("%d.%d", reply.Major, reply.Minor)
-
-	return version, nil
+	return nil
 }

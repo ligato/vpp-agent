@@ -26,16 +26,11 @@ type dumpService struct {
 	log logging.Logger
 
 	// VPP Handlers
-	aclHandler aclvppcalls.ACLVppRead
-	ifHandler  ifvppcalls.IfVppRead
-	natHandler natvppcalls.NatVppRead
-	/*bdHandler    l2vppcalls.BridgeDomainVppRead
-	fibHandler   l2vppcalls.FIBVppRead
-	xcHandler    l2vppcalls.XConnectVppRead*/
+	aclHandler   aclvppcalls.ACLVppRead
+	ifHandler    ifvppcalls.InterfaceVppRead
+	natHandler   natvppcalls.NatVppRead
 	l2Handler    l2vppcalls.L2VppAPI
-	arpHandler   l3vppcalls.ArpVppRead
-	pArpHandler  l3vppcalls.ProxyArpVppRead
-	rtHandler    l3vppcalls.RouteVppRead
+	l3Handler    l3vppcalls.L3VppAPI
 	ipsecHandler ipsecvppcalls.IPSecVPPRead
 	puntHandler  vppcalls.PuntVPPRead
 	// Linux handlers
@@ -194,7 +189,7 @@ func (svc *dumpService) DumpXConnects() ([]*vpp_l2.XConnectPair, error) {
 // only error is send back in response
 func (svc *dumpService) DumpRoutes() ([]*vpp_l3.Route, error) {
 	var routes []*vpp_l3.Route
-	rtDetails, err := svc.rtHandler.DumpRoutes()
+	rtDetails, err := svc.l3Handler.DumpRoutes()
 	if err != nil {
 		return nil, err
 	}
@@ -209,7 +204,7 @@ func (svc *dumpService) DumpRoutes() ([]*vpp_l3.Route, error) {
 // only error is send back in response
 func (svc *dumpService) DumpARPs() ([]*vpp_l3.ARPEntry, error) {
 	var arps []*vpp_l3.ARPEntry
-	arpDetails, err := svc.arpHandler.DumpArpEntries()
+	arpDetails, err := svc.l3Handler.DumpArpEntries()
 	if err != nil {
 		return nil, err
 	}

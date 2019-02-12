@@ -25,9 +25,11 @@ import (
 	"github.com/ligato/cn-infra/utils/safeclose"
 
 	"github.com/ligato/vpp-agent/plugins/govppmux"
+	vpevppcalls "github.com/ligato/vpp-agent/plugins/govppmux/vppcalls"
 	iflinuxcalls "github.com/ligato/vpp-agent/plugins/linux/ifplugin/linuxcalls"
 	l3linuxcalls "github.com/ligato/vpp-agent/plugins/linux/l3plugin/linuxcalls"
 	"github.com/ligato/vpp-agent/plugins/restapi/resturl"
+	telemetryvppcalls "github.com/ligato/vpp-agent/plugins/telemetry/vppcalls"
 	aclvppcalls "github.com/ligato/vpp-agent/plugins/vpp/aclplugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin"
 	ifvppcalls "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
@@ -54,13 +56,13 @@ type Plugin struct {
 	vppChan  api.Channel
 	dumpChan api.Channel
 
+	// Handlers
+	vpeHandler  vpevppcalls.VpeVppAPI
+	teleHandler telemetryvppcalls.TelemetryVppAPI
 	// VPP Handlers
-	aclHandler aclvppcalls.ACLVppRead
-	ifHandler  ifvppcalls.IfVppRead
-	natHandler natvppcalls.NatVppRead
-	/*bdHandler   l2vppcalls.BridgeDomainVppRead
-	fibHandler  l2vppcalls.FIBVppRead
-	xcHandler   l2vppcalls.XConnectVppRead*/
+	aclHandler  aclvppcalls.ACLVppRead
+	ifHandler   ifvppcalls.InterfaceVppRead
+	natHandler  natvppcalls.NatVppRead
 	l2Handler   l2vppcalls.L2VppAPI
 	arpHandler  l3vppcalls.ArpVppRead
 	pArpHandler l3vppcalls.ProxyArpVppRead
@@ -112,19 +114,20 @@ func (p *Plugin) Init() (err error) {
 	bdIndexes := p.VPPL2Plugin.GetBDIndex()
 	dhcpIndexes := p.VPPIfPlugin.GetDHCPIndex()
 
-	// Initialize VPP handlers
+	// Initialize handlers
+	p.vpeHandler = vpevppcalls.CompatibleVpeHandler(p.vppChan)
+	p.teleHandler = telemetryvppcalls.CompatibleTelemetryHandler(p.vppChan)
+
+	// VPP handlers
 	p.aclHandler = aclvppcalls.NewACLVppHandler(p.vppChan, p.dumpChan, ifIndexes)
-	p.ifHandler = ifvppcalls.NewIfVppHandler(p.vppChan, p.Log)
+	p.ifHandler = ifvppcalls.CompatibleInterfaceVppHandler(p.vppChan, p.Log)
 	p.natHandler = natvppcalls.NewNatVppHandler(p.vppChan, ifIndexes, dhcpIndexes, p.Log)
-	/*p.bdHandler = l2vppcalls.NewBridgeDomainVppHandler(p.vppChan, ifIndexes, p.Log)
-	p.fibHandler = l2vppcalls.NewFIBVppHandler(p.vppChan, ifIndexes, bdIndexes, p.Log)
-	p.xcHandler = l2vppcalls.NewXConnectVppHandler(p.vppChan, ifIndexes, p.Log)*/
 	p.l2Handler = l2vppcalls.CompatibleL2VppHandler(p.vppChan, ifIndexes, bdIndexes, p.Log)
 	p.arpHandler = l3vppcalls.NewArpVppHandler(p.vppChan, ifIndexes, p.Log)
 	p.pArpHandler = l3vppcalls.NewProxyArpVppHandler(p.vppChan, ifIndexes, p.Log)
 	p.rtHandler = l3vppcalls.NewRouteVppHandler(p.vppChan, ifIndexes, p.Log)
 
-	// Linux indexes and handlers
+	// Linux handlers
 	//if p.Linux != nil {
 	p.linuxIfHandler = iflinuxcalls.NewNetLinkHandler()
 	p.linuxL3Handler = l3linuxcalls.NewNetLinkHandler()

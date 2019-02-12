@@ -22,17 +22,6 @@ import (
 	l3binapi "github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
 )
 
-// ArpDetails holds info about ARP entry as a proto model
-type ArpDetails struct {
-	Arp  *l3.ARPEntry
-	Meta *ArpMeta
-}
-
-// ArpMeta contains interface index of the ARP interface
-type ArpMeta struct {
-	SwIfIndex uint32
-}
-
 // DumpArpEntries implements arp handler.
 func (h *ArpVppHandler) DumpArpEntries() ([]*ArpDetails, error) {
 	var entries []*ArpDetails

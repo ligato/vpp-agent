@@ -17,20 +17,80 @@ package vppcalls
 import (
 	"net"
 
-	"git.fd.io/govpp.git/api"
+	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 
 	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 )
 
-// IfVppAPI provides methods for creating and managing interface plugin
-type IfVppAPI interface {
-	IfVppWrite
-	IfVppRead
+// InterfaceDetails is the wrapper structure for the interface northbound API structure.
+type InterfaceDetails struct {
+	Interface *interfaces.Interface `json:"interface"`
+	Meta      *InterfaceMeta        `json:"interface_meta"`
 }
 
-// IfVppWrite provides write methods for interface plugin
-type IfVppWrite interface {
+// InterfaceMeta is combination of proto-modelled Interface data and VPP provided metadata
+type InterfaceMeta struct {
+	SwIfIndex    uint32           `json:"sw_if_index"`
+	SupSwIfIndex uint32           `json:"sub_sw_if_index"`
+	L2Address    net.HardwareAddr `json:"l2_address"`
+	InternalName string           `json:"internal_name"`
+	AdminState   uint8            `json:"admin_state"`
+	LinkState    uint8            `json:"link_state"`
+	LinkDuplex   uint8            `json:"link_duplex"`
+	LinkMTU      uint16           `json:"link_mtu"`
+	LinkSpeed    uint32           `json:"link_speed"`
+	SubID        uint32           `json:"sub_id"`
+	Tag          string           `json:"tag"`
+	// dhcp
+	Dhcp *Dhcp `json:"dhcp"`
+	// vrf
+	VrfIPv4 uint32 `json:"vrf_ipv4"`
+	VrfIPv6 uint32 `json:"vrf_ipv6"`
+	// wmxnet3
+	Pci uint32 `json:"pci"`
+}
+
+// InterfaceEvent represents interface event from VPP.
+type InterfaceEvent struct {
+	SwIfIndex  uint32
+	AdminState uint8
+	LinkState  uint8
+	Deleted    bool
+}
+
+// Dhcp is helper struct for DHCP metadata, split to client and lease (similar to VPP binary API)
+type Dhcp struct {
+	Client *Client `json:"dhcp_client"`
+	Lease  *Lease  `json:"dhcp_lease"`
+}
+
+// Client is helper struct grouping DHCP client data
+type Client struct {
+	SwIfIndex        uint32
+	Hostname         string
+	ID               string
+	WantDhcpEvent    bool
+	SetBroadcastFlag bool
+	PID              uint32
+}
+
+// Lease is helper struct grouping DHCP lease data
+type Lease struct {
+	SwIfIndex     uint32
+	State         uint8
+	Hostname      string
+	IsIPv6        bool
+	MaskWidth     uint8
+	HostAddress   string
+	RouterAddress string
+	HostMac       string
+}
+
+// InterfaceVppAPI provides methods for creating and managing interface plugin
+type InterfaceVppAPI interface {
+	InterfaceVppRead
+
 	// AddAfPacketInterface calls AfPacketCreate VPP binary API.
 	AddAfPacketInterface(ifName string, hwAddr string, afPacketIntf *interfaces.AfpacketLink) (swIndex uint32, err error)
 	// DeleteAfPacketInterface calls AfPacketDelete VPP binary API.
@@ -108,14 +168,13 @@ type IfVppWrite interface {
 	DeleteSubif(ifIdx uint32) error
 }
 
-// IfVppRead provides read methods for interface plugin
-type IfVppRead interface {
+// InterfaceVppRead provides read methods for interface plugin
+type InterfaceVppRead interface {
 	// DumpInterfaces dumps VPP interface data into the northbound API data structure
 	// map indexed by software interface index.
 	//
 	// LIMITATIONS:
 	// - there is no af_packet dump binary API. We relay on naming conventions of the internal VPP interface names
-	// - ip.IPAddressDetails has wrong internal structure, as a workaround we need to handle them as notifications
 	DumpInterfaces() (map[uint32]*InterfaceDetails, error)
 	// DumpInterfacesByType returns all VPP interfaces of the specified type
 	DumpInterfacesByType(reqType interfaces.Interface_Type) (map[uint32]*InterfaceDetails, error)
@@ -127,18 +186,27 @@ type IfVppRead interface {
 	DumpMemifSocketDetails() (map[string]uint32, error)
 	// DumpDhcpClients dumps DHCP-related information for all interfaces.
 	DumpDhcpClients() (map[uint32]*Dhcp, error)
+	// WatchInterfaceEvents starts watching for interface events.
+	WatchInterfaceEvents(ch chan<- *InterfaceEvent) error
+	// WatchDHCPLeases starts watching for DHCP leases.
+	WatchDHCPLeases(ch chan<- *Lease) error
 }
 
-// IfVppHandler is accessor for interface-related vppcalls methods
-type IfVppHandler struct {
-	callsChannel api.Channel
-	log          logging.Logger
+var Versions = map[string]HandlerVersion{}
+
+type HandlerVersion struct {
+	Msgs []govppapi.Message
+	New  func(govppapi.Channel, logging.Logger) InterfaceVppAPI
 }
 
-// NewIfVppHandler creates new instance of interface vppcalls handler
-func NewIfVppHandler(callsChan api.Channel, log logging.Logger) *IfVppHandler {
-	return &IfVppHandler{
-		callsChannel: callsChan,
-		log:          log,
+func CompatibleInterfaceVppHandler(ch govppapi.Channel, log logging.Logger) InterfaceVppAPI {
+	for ver, h := range Versions {
+		log.Debugf("checking compatibility with %s", ver)
+		if err := ch.CheckCompatiblity(h.Msgs...); err != nil {
+			continue
+		}
+		log.Debug("found compatible version:", ver)
+		return h.New(ch, log)
 	}
+	panic("no compatible version available")
 }
