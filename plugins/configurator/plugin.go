@@ -107,7 +107,7 @@ func (p *Plugin) initHandlers() (err error) {
 	dhcpIndexes := p.VPPIfPlugin.GetDHCPIndex()
 
 	// Initialize VPP handlers
-	p.configurator.aclHandler = aclvppcalls.NewACLVppHandler(p.vppChan, p.dumpChan, ifIndexes)
+	p.configurator.aclHandler = aclvppcalls.CompatibleACLVppHandler(p.vppChan, p.dumpChan, ifIndexes, p.Log)
 	p.configurator.ifHandler = ifvppcalls.CompatibleInterfaceVppHandler(p.vppChan, p.Log)
 	p.configurator.natHandler = natvppcalls.NewNatVppHandler(p.vppChan, ifIndexes, dhcpIndexes, p.Log)
 	p.configurator.l2Handler = l2vppcalls.CompatibleL2VppHandler(p.vppChan, ifIndexes, bdIndexes, p.Log)

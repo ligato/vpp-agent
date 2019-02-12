@@ -1,4 +1,4 @@
-//  Copyright (c) 2018 Cisco and/or its affiliates.
+//  Copyright (c) 2019 Cisco and/or its affiliates.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -22,12 +22,13 @@ import (
 	"github.com/ligato/cn-infra/logging/logrus"
 
 	acl "github.com/ligato/vpp-agent/api/models/vpp/acl"
-	acl_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/acl"
+	"github.com/ligato/vpp-agent/plugins/vpp/aclplugin/vppcalls"
+	acl_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1810/acl"
 )
 
 // DumpACL implements ACL handler.
-func (h *ACLVppHandler) DumpACL() ([]*ACLDetails, error) {
-	ruleIPData := make(map[ACLMeta][]*acl.ACL_Rule)
+func (h *ACLVppHandler) DumpACL() ([]*vppcalls.ACLDetails, error) {
+	ruleIPData := make(map[vppcalls.ACLMeta][]*acl.ACL_Rule)
 
 	// get all ACLs with IP ruleData
 	IPRuleACLs, err := h.DumpIPAcls()
@@ -65,16 +66,16 @@ func (h *ACLVppHandler) DumpACL() ([]*ACLDetails, error) {
 		return nil, err
 	}
 
-	var ACLs []*ACLDetails
+	var ACLs []*vppcalls.ACLDetails
 	// Build a list of ACL ruleData with ruleData, interfaces, index and tag (name)
 	for identifier, rules := range ruleIPData {
-		ACLs = append(ACLs, &ACLDetails{
+		ACLs = append(ACLs, &vppcalls.ACLDetails{
 			ACL: &acl.ACL{
 				Name:       identifier.Tag,
 				Rules:      rules,
 				Interfaces: interfaceData[identifier.Index],
 			},
-			Meta: &ACLMeta{
+			Meta: &vppcalls.ACLMeta{
 				Index: identifier.Index,
 				Tag:   identifier.Tag,
 			},
@@ -85,8 +86,8 @@ func (h *ACLVppHandler) DumpACL() ([]*ACLDetails, error) {
 }
 
 // DumpMACIPACL implements ACL handler.
-func (h *ACLVppHandler) DumpMACIPACL() ([]*ACLDetails, error) {
-	ruleMACIPData := make(map[ACLMeta][]*acl.ACL_Rule)
+func (h *ACLVppHandler) DumpMACIPACL() ([]*vppcalls.ACLDetails, error) {
+	ruleMACIPData := make(map[vppcalls.ACLMeta][]*acl.ACL_Rule)
 
 	// get all ACLs with MACIP ruleData
 	MACIPRuleACLs, err := h.DumpMacIPAcls()
@@ -120,16 +121,16 @@ func (h *ACLVppHandler) DumpMACIPACL() ([]*ACLDetails, error) {
 		return nil, err
 	}
 
-	var ACLs []*ACLDetails
+	var ACLs []*vppcalls.ACLDetails
 	// Build a list of ACL ruleData with ruleData, interfaces, index and tag (name)
 	for metadata, rules := range ruleMACIPData {
-		ACLs = append(ACLs, &ACLDetails{
+		ACLs = append(ACLs, &vppcalls.ACLDetails{
 			ACL: &acl.ACL{
 				Name:       metadata.Tag,
 				Rules:      rules,
 				Interfaces: interfaceData[metadata.Index],
 			},
-			Meta: &ACLMeta{
+			Meta: &vppcalls.ACLMeta{
 				Index: metadata.Index,
 				Tag:   metadata.Tag,
 			},
@@ -143,7 +144,7 @@ func (h *ACLVppHandler) DumpACLInterfaces(indices []uint32) (map[uint32]*acl.ACL
 	// list of ACL-to-interfaces
 	aclsWithInterfaces := make(map[uint32]*acl.ACL_Interfaces)
 
-	var interfaceData []*ACLToInterface
+	var interfaceData []*vppcalls.ACLToInterface
 	var wasErr error
 
 	msgIP := &acl_api.ACLInterfaceListDump{
@@ -161,7 +162,7 @@ func (h *ACLVppHandler) DumpACLInterfaces(indices []uint32) (map[uint32]*acl.ACL
 		}
 
 		if replyIP.Count > 0 {
-			data := &ACLToInterface{
+			data := &vppcalls.ACLToInterface{
 				SwIfIdx: replyIP.SwIfIndex,
 			}
 			for i, aclIdx := range replyIP.Acls {
@@ -216,7 +217,7 @@ func (h *ACLVppHandler) DumpMACIPACLInterfaces(indices []uint32) (map[uint32]*ac
 	// list of ACL-to-interfaces
 	aclsWithInterfaces := make(map[uint32]*acl.ACL_Interfaces)
 
-	var interfaceData []*ACLToInterface
+	var interfaceData []*vppcalls.ACLToInterface
 
 	msgMACIP := &acl_api.MacipACLInterfaceListDump{
 		SwIfIndex: 0xffffffff, // dump all
@@ -232,7 +233,7 @@ func (h *ACLVppHandler) DumpMACIPACLInterfaces(indices []uint32) (map[uint32]*ac
 			return nil, fmt.Errorf("MACIP ACL interface list dump reply error: %v", err)
 		}
 		if replyMACIP.Count > 0 {
-			data := &ACLToInterface{
+			data := &vppcalls.ACLToInterface{
 				SwIfIdx: replyMACIP.SwIfIndex,
 			}
 			for _, aclIdx := range replyMACIP.Acls {
@@ -270,8 +271,8 @@ func (h *ACLVppHandler) DumpMACIPACLInterfaces(indices []uint32) (map[uint32]*ac
 }
 
 // DumpIPAcls implements ACL handler.
-func (h *ACLVppHandler) DumpIPAcls() (map[ACLMeta][]acl_api.ACLRule, error) {
-	aclIPRules := make(map[ACLMeta][]acl_api.ACLRule)
+func (h *ACLVppHandler) DumpIPAcls() (map[vppcalls.ACLMeta][]acl_api.ACLRule, error) {
+	aclIPRules := make(map[vppcalls.ACLMeta][]acl_api.ACLRule)
 	var wasErr error
 
 	req := &acl_api.ACLDump{
@@ -288,7 +289,7 @@ func (h *ACLVppHandler) DumpIPAcls() (map[ACLMeta][]acl_api.ACLRule, error) {
 			break
 		}
 
-		metadata := ACLMeta{
+		metadata := vppcalls.ACLMeta{
 			Index: msg.ACLIndex,
 			Tag:   string(bytes.SplitN(msg.Tag, []byte{0x00}, 2)[0]),
 		}
@@ -300,8 +301,8 @@ func (h *ACLVppHandler) DumpIPAcls() (map[ACLMeta][]acl_api.ACLRule, error) {
 }
 
 // DumpMacIPAcls implements ACL handler.
-func (h *ACLVppHandler) DumpMacIPAcls() (map[ACLMeta][]acl_api.MacipACLRule, error) {
-	aclMACIPRules := make(map[ACLMeta][]acl_api.MacipACLRule)
+func (h *ACLVppHandler) DumpMacIPAcls() (map[vppcalls.ACLMeta][]acl_api.MacipACLRule, error) {
+	aclMACIPRules := make(map[vppcalls.ACLMeta][]acl_api.MacipACLRule)
 
 	req := &acl_api.MacipACLDump{
 		ACLIndex: 0xffffffff,
@@ -317,7 +318,7 @@ func (h *ACLVppHandler) DumpMacIPAcls() (map[ACLMeta][]acl_api.MacipACLRule, err
 			break
 		}
 
-		metadata := ACLMeta{
+		metadata := vppcalls.ACLMeta{
 			Index: msg.ACLIndex,
 			Tag:   string(bytes.Trim(msg.Tag, "\x00")),
 		}
@@ -556,11 +557,11 @@ func (h *ACLVppHandler) getIPRuleMatches(r acl_api.ACLRule) *acl.ACL_Rule_IpRule
 	}
 
 	switch r.Proto {
-	case TCPProto:
+	case vppcalls.TCPProto:
 		ipRule.Tcp = h.getTCPMatchRule(r)
-	case UDPProto:
+	case vppcalls.UDPProto:
 		ipRule.Udp = h.getUDPMatchRule(r)
-	case ICMPv4Proto, ICMPv6Proto:
+	case vppcalls.ICMPv4Proto, vppcalls.ICMPv6Proto:
 		ipRule.Icmp = h.getIcmpMatchRule(r)
 	}
 	return ipRule
