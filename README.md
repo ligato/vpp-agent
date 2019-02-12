@@ -11,12 +11,30 @@
 
 The VPP Agent is a Go implementation of a control/management plane for
 [VPP][1] based cloud-native [Virtual Network Functions][2] (VNFs). The VPP
-Agent is built on top of the [CN-Infra platform][16] for developing 
+Agent is built on top of the [CN Infra][16], platform for developing 
 cloud-native VNFs.
 
 The VPP Agent can be used as-is as a management/control agent for VNFs 
-based on off-the-shelf VPP (for example, a VPP-based vswitch), or as a
+based on off-the-shelf VPP (e.g. a VPP-based vswitch), or as a
 platform for developing customized VNFs with customized VPP-based data.
+
+### Releases
+
+|Release|Version|Date|
+|---|---|---|
+|Latest stable release|[![Latest release](https://img.shields.io/github/release/ligato/vpp-agent.svg)](https://github.com/ligato/vpp-agent/releases/latest)|![Development release](https://img.shields.io/github/release-date/ligato/vpp-agent.svg?style=flat)|
+|Latest pre-release|[![Latest release](https://img.shields.io/github/release-pre/ligato/vpp-agent.svg)](https://github.com/ligato/vpp-agent/releases/latest)|![Development release](https://img.shields.io/github/release-date-pre/ligato/vpp-agent.svg?style=flat)|
+
+**Important info** :warning: 
+
+The `master` branch has moved to **[v2](https://github.com/ligato/vpp-agent/blob/master/CHANGELOG.md#v200)** 
+which introduces various breaking changes.
+
+The `dev` branch will be used for all the future development.
+
+The `pantheon-dev` branch is deprecated (v1) and will be removed in following weeks. 
+
+Please checkout [CHANGELOG](CHANGELOG.md) for a full list of changes on every every release.
 
 ## Architecture
 
@@ -41,28 +59,29 @@ over multiple transport protocols (HTTP, gRPC, Etcd, ...). Plugins use the
 [GoVPP library][4] to interact with the VPP.
 
 The following figure shows the VPP Agent in context of a cloud-native VNF, 
-where the VNF's data plane is implemented using VPP/DPDK and its management/control planes are implemented using the VNF agent:
+where the VNF's data plane is implemented using VPP/DPDK and 
+its management/control planes are implemented using the VNF agent:
 
 ![context](docs/imgs/context.png "VPP Agent & its Plugins on top of cn-infra")
 
 ## Plugins
  
 The set of plugins in the VPP Agent is as follows:
-* [Default VPP Plugins][5] - plugins providing northbound APIs to "default" 
-  VPP functionality (i.e. VPP functions available "out-of-the-box"): 
-  * [Interfaces][6] - network interface configuration (PCI Ethernet, MEMIF,
-    AF_Packet, VXLAN, Loopback...) + BFD
-  * [L2][7] - Bridge Domains, L2 cross-connects
-  * [L3][8] - IP Routes, VRFs...
-  * [ACL][9] - VPP access lists (VPP ACL plugin)
-* [GOVPPmux][10] - plugin wrapper around GoVPP. Multiplexes plugins' access to
-  VPP on a single connection.
-* [Linux][11] (VETH) - allows optional configuration of Linux virtual ethernet 
+* [VPP plugins](plugins/vpp) - core plugins providing northbound APIs to _default_ VPP functionality: 
+  - [Interfaces](plugins/vpp/ifplugin) - VPP network interfaces (e.g. DPDK, MEMIF, AF_Packet, VXLAN, Loopback..)
+  - [L2](plugins/vpp/l2plugin) - Bridge Domains, L2 cross-connects..
+  - [L3](plugins/vpp/l3plugin) - IP Routes, ARPs, ProxyARPs, VRFs..
+  - [ACL](plugins/vpp/aclplugin) - VPP Access Lists (VPP ACL plugin)
+* [Linux plugins](plugins/linux) (VETH) - allows optional configuration of Linux virtual ethernet 
   interfaces
-* [CN-Infra datasync][12] - data synchronization after HA events
-* [CN-Infra core][13] - lifecycle management of plugins (loading, 
-  initialization, unloading)
-* [RESTAPI](plugins/rest) - allows to run VPP CLI commands and also provides API to expose existing Northbound objects
+  - [Interfaces](plugins/linux/ifplugin) - Linux network interfaces (e.g. VETH, TAP..)
+  - [L3](plugins/linux/l3plugin) - IP Routes, ARPs
+  - [NS](plugins/linux/nsplugin) - Linux network namespaces
+* [GoVPPmux](plugins/govppmux) - plugin wrapper around GoVPP. Multiplexes plugins' access to
+  VPP on a single connection.
+* [RESTAPI](plugins/restapi) - provides API to retrieve actual state
+* [KVScheduler](plugins/kvscheduler) - synchronizes the *desired state* described by northbound
+  components with the *actual state* of the southbound. 
 
 ## Tools
 
@@ -80,18 +99,18 @@ of VNFs based on the VPP Agent:
 ## Quickstart
 
 For a quick start with the VPP Agent, you can use pre-built Docker images with
-the Agent and VPP on [Dockerhub][14] (or this for [ARM64][17]).
+the Agent and VPP on DockerHub: [ligato/vpp-agent][14] (or for ARM64: [ligato/vpp-agent-arm64][17]).
 
 0. Start ETCD and Kafka on your host (e.g. in Docker as described [here][15]).
    Note: **The Agent in the pre-built Docker image will not start if it can't 
    connect to both Etcd and Kafka**.
 
-   Note: **For ARM64 see the information for [kafka][18] and for [etcd][19]**.
+   Note: **for ARM64 see the information for [kafka][18] and for [etcd][19]**.
 
 1. Run VPP + VPP Agent in a Docker image:
 ```
 docker pull ligato/vpp-agent
-docker run -it --name vpp --rm ligato/vpp-agent
+docker run -it --rm --name vpp ligato/vpp-agent
 ```
 
 2. Configure the VPP agent using agentctl:
@@ -120,22 +139,13 @@ Read the README for the [Development Docker Image](docker/dev/README.md) for mor
 ## Contribution:
 If you are interested in contributing, please see the [contribution guidelines](CONTRIBUTING.md).
 
-[1]: https://fd.io/
+[1]: https://fd.io/technology/#vpp
 [2]: https://github.com/ligato/cn-infra/blob/master/docs/readmes/cn_virtual_function.md
 [3]: https://developers.google.com/protocol-buffers/
 [4]: https://wiki.fd.io/view/GoVPP
-[5]: plugins/vpp
-[6]: plugins/vpp/ifplugin
-[7]: plugins/vpp/l2plugin
-[8]: plugins/vpp/l3plugin
-[9]: plugins/vpp/aclplugin
-[10]: plugins/govppmux
-[11]: plugins/linux
-[12]: https://github.com/ligato/cn-infra/tree/master/datasync
-[13]: https://github.com/ligato/cn-infra/tree/master/core
-[14]: https://hub.docker.com/r/ligato/vpp-agent/
+[14]: https://hub.docker.com/r/ligato/vpp-agent
 [15]: docker/dev/README.md#running-etcd-server-on-local-host
 [16]: https://github.com/ligato/cn-infra
-[17]: https://hub.docker.com/r/ligato/vpp-agent-arm64/
+[17]: https://hub.docker.com/r/ligato/vpp-agent-arm64
 [18]: docs/arm64/kafka.md
 [19]: docs/arm64/etcd.md
