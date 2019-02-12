@@ -178,6 +178,7 @@ func (p *Plugin) Init() error {
 	}
 	p.Log.Infof("Connected to VPP %v [PID:%d, ClientIdx:%d] (took %s)",
 		ver.Version, info.PID, info.ClientIdx, vppConnectTime.Truncate(time.Millisecond))
+	p.Log.Debugf("loaded module versions: %v", info.ModuleVersions)
 
 	// Register providing status reports (push mode)
 	p.StatusCheck.Register(p.PluginName, nil)
