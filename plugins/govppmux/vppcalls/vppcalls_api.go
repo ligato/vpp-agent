@@ -22,6 +22,7 @@ type VpeInfo struct {
 	ModuleVersions []ModuleVersion
 }
 
+// ModuleVersion contains info about version of particular VPP module.
 type ModuleVersion struct {
 	Name  string
 	Major uint32
@@ -33,6 +34,7 @@ func (m ModuleVersion) String() string {
 	return fmt.Sprintf("%s-%d.%d.%d", m.Name, m.Major, m.Minor, m.Patch)
 }
 
+// VpeVppAPI provides methods for retrieving info and running CLI commands.
 type VpeVppAPI interface {
 	GetVersionInfo() (*VersionInfo, error)
 	GetVpeInfo() (*VpeInfo, error)
