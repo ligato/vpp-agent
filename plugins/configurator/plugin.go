@@ -109,11 +109,11 @@ func (p *Plugin) initHandlers() (err error) {
 	// Initialize VPP handlers
 	p.configurator.aclHandler = aclvppcalls.CompatibleACLVppHandler(p.vppChan, p.dumpChan, ifIndexes, p.Log)
 	p.configurator.ifHandler = ifvppcalls.CompatibleInterfaceVppHandler(p.vppChan, p.Log)
-	p.configurator.natHandler = natvppcalls.NewNatVppHandler(p.vppChan, ifIndexes, dhcpIndexes, p.Log)
+	p.configurator.natHandler = natvppcalls.CompatibleNatVppHandler(p.vppChan, ifIndexes, dhcpIndexes, p.Log)
 	p.configurator.l2Handler = l2vppcalls.CompatibleL2VppHandler(p.vppChan, ifIndexes, bdIndexes, p.Log)
 	p.configurator.l3Handler = l3vppcalls.CompatibleL3VppHandler(p.vppChan, ifIndexes, p.Log)
-	p.configurator.ipsecHandler = ipsecvppcalls.NewIPsecVppHandler(p.vppChan, ifIndexes, p.Log)
-	p.configurator.puntHandler = puntvppcalls.NewPuntVppHandler(p.vppChan, ifIndexes, p.Log)
+	p.configurator.ipsecHandler = ipsecvppcalls.CompatibleIPSecVppHandler(p.vppChan, ifIndexes, p.Log)
+	p.configurator.puntHandler = puntvppcalls.CompatiblePuntVppHandler(p.vppChan, ifIndexes, p.Log)
 
 	// Linux indexes and handlers
 	p.configurator.linuxIfHandler = iflinuxcalls.NewNetLinkHandler()

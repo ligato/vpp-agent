@@ -16,31 +16,42 @@ package vppcalls
 
 import (
 	govppapi "git.fd.io/govpp.git/api"
+	"github.com/ligato/cn-infra/idxmap"
+	"github.com/ligato/cn-infra/logging"
 
-	"github.com/ligato/vpp-agent/plugins/vpp/aclplugin/vppcalls"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1810/acl"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1810/nat"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
+	"github.com/ligato/vpp-agent/plugins/vpp/natplugin/vppcalls"
 )
 
 func init() {
 	var msgs []govppapi.Message
-	msgs = append(msgs, acl.Messages...)
+	msgs = append(msgs, nat.Messages...)
 
 	vppcalls.Versions["vpp1810"] = vppcalls.HandlerVersion{
 		Msgs: msgs,
-		New: func(ch govppapi.Channel, ifIndexes ifaceidx.IfaceMetadataIndex) vppcalls.ACLVppAPI {
-			return &ACLVppHandler{
-				callsChannel: ch,
-				dumpChannel:  ch,
-				ifIndexes:    ifIndexes,
-			}
+		New: func(ch govppapi.Channel, ifIdx ifaceidx.IfaceMetadataIndex, dhcpIdx idxmap.NamedMapping, log logging.Logger) vppcalls.NatVppAPI {
+			return &NatVppHandler{ch, ifIdx, dhcpIdx, log}
 		},
 	}
 }
 
-// ACLVppHandler is accessor for acl-related vppcalls methods
-type ACLVppHandler struct {
+// NatVppHandler is accessor for NAT-related vppcalls methods.
+type NatVppHandler struct {
 	callsChannel govppapi.Channel
-	dumpChannel  govppapi.Channel
 	ifIndexes    ifaceidx.IfaceMetadataIndex
+	dhcpIndex    idxmap.NamedMapping
+	log          logging.Logger
 }
+
+/*// NewNatVppHandler creates new instance of NAT vppcalls handler.
+func NewNatVppHandler(callsChan api.Channel, ifIndexes ifaceidx.IfaceMetadataIndex,
+	dhcpIndex idxmap.NamedMapping, log logging.Logger) *NatVppHandler {
+
+	return &NatVppHandler{
+		callsChannel: callsChan,
+		ifIndexes:    ifIndexes,
+		dhcpIndex:    dhcpIndex,
+		log:          log,
+	}
+}*/

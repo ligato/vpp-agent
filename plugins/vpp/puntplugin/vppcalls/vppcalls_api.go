@@ -15,26 +15,29 @@
 package vppcalls
 
 import (
-	"git.fd.io/govpp.git/api"
+	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
+
 	punt "github.com/ligato/vpp-agent/api/models/vpp/punt"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 )
 
-// PuntVppAPI provides methods for managing VPP punt configuration.
-type PuntVppAPI interface {
-	PuntVPPWrite
-	PuntVPPRead
+// PuntDetails includes proto-modelled punt object and its socket path
+type PuntDetails struct {
+	PuntData   *punt.ToHost
+	SocketPath string
 }
 
-// PuntVPPWrite provides write methods for punt
-type PuntVPPWrite interface {
+// PuntVppAPI provides methods for managing VPP punt configuration.
+type PuntVppAPI interface {
+	PuntVPPRead
+
 	// AddPunt configures new punt to the host from the VPP
 	AddPunt(punt *punt.ToHost) error
 	// DeletePunt removes or unregisters punt entry
 	DeletePunt(punt *punt.ToHost) error
 	// RegisterPuntSocket registers new punt to unix domain socket entry
-	RegisterPuntSocket(puntCfg *punt.ToHost) error
+	RegisterPuntSocket(puntCfg *punt.ToHost) (string, error)
 	// DeregisterPuntSocket removes existing punt to socket registration
 	DeregisterPuntSocket(puntCfg *punt.ToHost) error
 	// AddPuntRedirect adds new punt IP redirect entry
@@ -46,24 +49,26 @@ type PuntVPPWrite interface {
 // PuntVPPRead provides read methods for punt
 type PuntVPPRead interface {
 	// DumpPuntRegisteredSockets returns all punt socket registrations known to the VPP agent
-	// TODO since the API to dump sockets is missing, the method works only with the entries in local cache
-	DumpPuntRegisteredSockets() ([]*PuntDetails, error)
+	DumpRegisteredPuntSockets() ([]*PuntDetails, error)
 }
 
-// PuntVppHandler is accessor for punt-related vppcalls methods.
-type PuntVppHandler struct {
-	callsChannel api.Channel
-	ifIndexes    ifaceidx.IfaceMetadataIndex
-	log          logging.Logger
+var Versions = map[string]HandlerVersion{}
 
-	RegisterSocketFn func(register bool, toHost *punt.ToHost, socketPath string)
+type HandlerVersion struct {
+	Msgs []govppapi.Message
+	New  func(govppapi.Channel, ifaceidx.IfaceMetadataIndex, logging.Logger) PuntVppAPI
 }
 
-// NewPuntVppHandler creates new instance of punt vppcalls handler
-func NewPuntVppHandler(callsChan api.Channel, ifIndexes ifaceidx.IfaceMetadataIndex, log logging.Logger) *PuntVppHandler {
-	return &PuntVppHandler{
-		callsChannel: callsChan,
-		ifIndexes:    ifIndexes,
-		log:          log,
+func CompatiblePuntVppHandler(
+	ch govppapi.Channel, idx ifaceidx.IfaceMetadataIndex, log logging.Logger,
+) PuntVppAPI {
+	for ver, h := range Versions {
+		log.Debugf("checking compatibility with %s", ver)
+		if err := ch.CheckCompatiblity(h.Msgs...); err != nil {
+			continue
+		}
+		log.Debug("found compatible version:", ver)
+		return h.New(ch, idx, log)
 	}
+	panic("no compatible version available")
 }

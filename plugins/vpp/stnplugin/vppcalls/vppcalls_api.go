@@ -15,20 +15,28 @@
 package vppcalls
 
 import (
-	"git.fd.io/govpp.git/api"
+	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
+
 	stn "github.com/ligato/vpp-agent/api/models/vpp/stn"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 )
 
-// StnVppAPI provides methods for managing STN rules
-type StnVppAPI interface {
-	StnVppWrite
-	StnVppRead
+// StnDetails contains a proto-modelled STN data and VPP specific metadata
+type StnDetails struct {
+	Rule *stn.Rule
+	Meta *StnMeta
 }
 
-// StnVppWrite provides write methods for STN rules
-type StnVppWrite interface {
+// StnMeta contains an index of the interface defined by name in the STN rule
+type StnMeta struct {
+	IfIdx uint32
+}
+
+// StnVppAPI provides methods for managing STN rules
+type StnVppAPI interface {
+	StnVppRead
+
 	// AddSTNRule calls StnAddDelRule bin API with IsAdd=1
 	AddSTNRule(stnRule *stn.Rule) error
 	// DelSTNRule calls StnAddDelRule bin API with IsAdd=0
@@ -41,18 +49,23 @@ type StnVppRead interface {
 	DumpSTNRules() ([]*StnDetails, error)
 }
 
-// StnVppHandler is accessor for STN-related vppcalls methods
-type StnVppHandler struct {
-	callsChannel api.Channel
-	ifIndexes    ifaceidx.IfaceMetadataIndex
-	log          logging.Logger
+var Versions = map[string]HandlerVersion{}
+
+type HandlerVersion struct {
+	Msgs []govppapi.Message
+	New  func(govppapi.Channel, ifaceidx.IfaceMetadataIndex, logging.Logger) StnVppAPI
 }
 
-// NewStnVppHandler creates new instance of STN vppcalls handler
-func NewStnVppHandler(callsChan api.Channel, ifIndexes ifaceidx.IfaceMetadataIndex, log logging.Logger) *StnVppHandler {
-	return &StnVppHandler{
-		callsChannel: callsChan,
-		ifIndexes:    ifIndexes,
-		log:          log,
+func CompatibleStnVppHandler(
+	ch govppapi.Channel, idx ifaceidx.IfaceMetadataIndex, log logging.Logger,
+) StnVppAPI {
+	for ver, h := range Versions {
+		log.Debugf("checking compatibility with %s", ver)
+		if err := ch.CheckCompatiblity(h.Msgs...); err != nil {
+			continue
+		}
+		log.Debug("found compatible version:", ver)
+		return h.New(ch, idx, log)
 	}
+	panic("no compatible version available")
 }

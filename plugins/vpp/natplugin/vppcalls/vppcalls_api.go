@@ -15,7 +15,7 @@
 package vppcalls
 
 import (
-	"git.fd.io/govpp.git/api"
+	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/idxmap"
 	"github.com/ligato/cn-infra/logging"
 
@@ -25,12 +25,8 @@ import (
 
 // NatVppAPI provides methods for managing VPP NAT configuration.
 type NatVppAPI interface {
-	NatVppWrite
 	NatVppRead
-}
 
-// NatVppWrite provides write methods for VPP NAT configuration.
-type NatVppWrite interface {
 	// SetNat44Forwarding configures NAT44 forwarding.
 	SetNat44Forwarding(enableFwd bool) error
 	// EnableNat44Interface enables NAT44 feature for provided interface
@@ -63,22 +59,23 @@ type NatVppRead interface {
 	DNat44Dump() ([]*nat.DNat44, error)
 }
 
-// NatVppHandler is accessor for NAT-related vppcalls methods.
-type NatVppHandler struct {
-	callsChannel api.Channel
-	ifIndexes    ifaceidx.IfaceMetadataIndex
-	dhcpIndex    idxmap.NamedMapping
-	log          logging.Logger
+var Versions = map[string]HandlerVersion{}
+
+type HandlerVersion struct {
+	Msgs []govppapi.Message
+	New  func(govppapi.Channel, ifaceidx.IfaceMetadataIndex, idxmap.NamedMapping, logging.Logger) NatVppAPI
 }
 
-// NewNatVppHandler creates new instance of NAT vppcalls handler.
-func NewNatVppHandler(callsChan api.Channel, ifIndexes ifaceidx.IfaceMetadataIndex,
-	dhcpIndex idxmap.NamedMapping, log logging.Logger) *NatVppHandler {
-
-	return &NatVppHandler{
-		callsChannel: callsChan,
-		ifIndexes:    ifIndexes,
-		dhcpIndex:    dhcpIndex,
-		log:          log,
+func CompatibleNatVppHandler(
+	ch govppapi.Channel, ifIdx ifaceidx.IfaceMetadataIndex, dhcpIdx idxmap.NamedMapping, log logging.Logger,
+) NatVppAPI {
+	for ver, h := range Versions {
+		log.Debugf("checking compatibility with %s", ver)
+		if err := ch.CheckCompatiblity(h.Msgs...); err != nil {
+			continue
+		}
+		log.Debug("found compatible version:", ver)
+		return h.New(ch, ifIdx, dhcpIdx, log)
 	}
+	panic("no compatible version available")
 }

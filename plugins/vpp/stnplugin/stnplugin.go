@@ -20,13 +20,16 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/health/statuscheck"
 	"github.com/ligato/cn-infra/infra"
+	"github.com/pkg/errors"
+
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin"
 	"github.com/ligato/vpp-agent/plugins/vpp/stnplugin/descriptor"
 	"github.com/ligato/vpp-agent/plugins/vpp/stnplugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/vpp/stnplugin/vppcalls"
-	"github.com/pkg/errors"
+
+	_ "github.com/ligato/vpp-agent/plugins/vpp/stnplugin/vppcalls/vpp1810"
 )
 
 // STNPlugin configures VPP STN rules using GoVPP.
@@ -60,7 +63,7 @@ func (p *STNPlugin) Init() (err error) {
 	}
 
 	// init STN handler
-	p.stnHandler = vppcalls.NewStnVppHandler(p.vppCh, p.IfPlugin.GetInterfaceIndex(), p.Log)
+	p.stnHandler = vppcalls.CompatibleStnVppHandler(p.vppCh, p.IfPlugin.GetInterfaceIndex(), p.Log)
 
 	// init and register STN descriptor
 	p.stnDescriptor = descriptor.NewSTNDescriptor(p.stnHandler, p.Log)

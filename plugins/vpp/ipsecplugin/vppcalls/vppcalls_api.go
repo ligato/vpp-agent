@@ -21,14 +21,45 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 )
 
-// IPSecVppAPI provides methods for creating and managing of a IPsec configuration
-type IPSecVppAPI interface {
-	IPSecVppWrite
-	IPSecVPPRead
+// IPSecSaDetails holds security association with VPP metadata
+type IPSecSaDetails struct {
+	Sa   *ipsec.SecurityAssociation
+	Meta *IPSecSaMeta
 }
 
-// IPSecVppWrite provides write methods for IPsec
-type IPSecVppWrite interface {
+// IPSecSaMeta contains all VPP-specific metadata
+type IPSecSaMeta struct {
+	SaID           uint32
+	Interface      string
+	IfIdx          uint32
+	CryptoKeyLen   uint8
+	IntegKeyLen    uint8
+	Salt           uint32
+	SeqOutbound    uint64
+	LastSeqInbound uint64
+	ReplayWindow   uint64
+	TotalDataSize  uint64
+}
+
+// IPSecSpdDetails represents IPSec policy databases with particular metadata
+type IPSecSpdDetails struct {
+	Spd         *ipsec.SecurityPolicyDatabase
+	PolicyMeta  map[string]*SpdMeta // SA index name is a key
+	NumPolicies uint32
+}
+
+// SpdMeta hold VPP-specific data related to SPD
+type SpdMeta struct {
+	SaID    uint32
+	Policy  uint8
+	Bytes   uint64
+	Packets uint64
+}
+
+// IPSecVppAPI provides methods for creating and managing of a IPsec configuration
+type IPSecVppAPI interface {
+	IPSecVPPRead
+
 	// AddSPD adds SPD to VPP via binary API
 	AddSPD(spdID uint32) error
 	// DelSPD deletes SPD from VPP via binary API
@@ -57,18 +88,23 @@ type IPSecVPPRead interface {
 	DumpIPSecSAWithIndex(saID uint32) (saList []*IPSecSaDetails, err error)
 }
 
-// IPSecVppHandler is accessor for IPSec-related vppcalls methods
-type IPSecVppHandler struct {
-	callsChannel govppapi.Channel
-	ifIndexes    ifaceidx.IfaceMetadataIndex
-	log          logging.Logger
+var Versions = map[string]HandlerVersion{}
+
+type HandlerVersion struct {
+	Msgs []govppapi.Message
+	New  func(govppapi.Channel, ifaceidx.IfaceMetadataIndex, logging.Logger) IPSecVppAPI
 }
 
-// NewIPsecVppHandler creates new instance of IPSec vppcalls handler
-func NewIPsecVppHandler(callsChan govppapi.Channel, ifIndexes ifaceidx.IfaceMetadataIndex, log logging.Logger) *IPSecVppHandler {
-	return &IPSecVppHandler{
-		callsChannel: callsChan,
-		ifIndexes:    ifIndexes,
-		log:          log,
+func CompatibleIPSecVppHandler(
+	ch govppapi.Channel, idx ifaceidx.IfaceMetadataIndex, log logging.Logger,
+) IPSecVppAPI {
+	for ver, h := range Versions {
+		log.Debugf("checking compatibility with %s", ver)
+		if err := ch.CheckCompatiblity(h.Msgs...); err != nil {
+			continue
+		}
+		log.Debug("found compatible version:", ver)
+		return h.New(ch, idx, log)
 	}
+	panic("no compatible version available")
 }

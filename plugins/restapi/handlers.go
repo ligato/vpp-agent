@@ -108,19 +108,19 @@ func (p *Plugin) registerL2Handlers() {
 func (p *Plugin) registerL3Handlers() {
 	// GET ARP entries
 	p.registerHTTPHandler(resturl.Arps, GET, func() (interface{}, error) {
-		return p.arpHandler.DumpArpEntries()
+		return p.l3Handler.DumpArpEntries()
 	})
 	// GET proxy ARP interfaces
 	p.registerHTTPHandler(resturl.PArpIfs, GET, func() (interface{}, error) {
-		return p.pArpHandler.DumpProxyArpInterfaces()
+		return p.l3Handler.DumpProxyArpInterfaces()
 	})
 	// GET proxy ARP ranges
 	p.registerHTTPHandler(resturl.PArpRngs, GET, func() (interface{}, error) {
-		return p.pArpHandler.DumpProxyArpRanges()
+		return p.l3Handler.DumpProxyArpRanges()
 	})
 	// GET static routes
 	p.registerHTTPHandler(resturl.Routes, GET, func() (interface{}, error) {
-		return p.rtHandler.DumpRoutes()
+		return p.l3Handler.DumpRoutes()
 	})
 }
 

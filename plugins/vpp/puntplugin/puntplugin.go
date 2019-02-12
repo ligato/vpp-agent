@@ -27,12 +27,15 @@ import (
 	"github.com/ligato/cn-infra/infra"
 	"github.com/ligato/vpp-agent/api/models/vpp/punt"
 	"github.com/ligato/vpp-agent/pkg/models"
+
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin"
 	"github.com/ligato/vpp-agent/plugins/vpp/puntplugin/descriptor"
 	"github.com/ligato/vpp-agent/plugins/vpp/puntplugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/vpp/puntplugin/vppcalls"
+
+	_ "github.com/ligato/vpp-agent/plugins/vpp/puntplugin/vppcalls/vpp1810"
 )
 
 // PuntPlugin configures VPP punt to host or unix domain socket entries and IP redirect entries using GoVPP.
@@ -68,26 +71,7 @@ func (p *PuntPlugin) Init() (err error) {
 	}
 
 	// init punt handler
-	puntHandler := vppcalls.NewPuntVppHandler(p.vppCh, p.IfPlugin.GetInterfaceIndex(), p.Log)
-	// TODO: temporary workaround for publishing registered sockets
-	puntHandler.RegisterSocketFn = func(register bool, toHost *vpp_punt.ToHost, socketPath string) {
-		if p.PublishState == nil {
-			return
-		}
-		key := strings.Replace(models.Key(toHost), "config/", "status/", -1)
-		if register {
-			puntToHost := *toHost
-			puntToHost.SocketPath = socketPath
-			if err := p.PublishState.Put(key, &puntToHost); err != nil {
-				p.Log.Errorf("publishing registered socket failed: %v", err)
-			}
-		} else {
-			if err := p.PublishState.Put(key, nil); err != nil {
-				p.Log.Errorf("publishing unregistered socket failed: %v", err)
-			}
-		}
-	}
-	p.puntHandler = puntHandler
+	p.puntHandler = vppcalls.CompatiblePuntVppHandler(p.vppCh, p.IfPlugin.GetInterfaceIndex(), p.Log)
 
 	// init and register punt descriptor
 	p.toHostDescriptor = descriptor.NewPuntToHostDescriptor(p.puntHandler, p.Log)
@@ -103,6 +87,25 @@ func (p *PuntPlugin) Init() (err error) {
 	err = p.KVScheduler.RegisterKVDescriptor(ipRedirectDescriptor)
 	if err != nil {
 		return err
+	}
+
+	// TODO: temporary workaround for publishing registered sockets
+	p.toHostDescriptor.RegisterSocketFn = func(register bool, toHost *vpp_punt.ToHost, socketPath string) {
+		if p.PublishState == nil {
+			return
+		}
+		key := strings.Replace(models.Key(toHost), "config/", "status/", -1)
+		if register {
+			puntToHost := *toHost
+			puntToHost.SocketPath = socketPath
+			if err := p.PublishState.Put(key, &puntToHost); err != nil {
+				p.Log.Errorf("publishing registered socket failed: %v", err)
+			}
+		} else {
+			if err := p.PublishState.Put(key, nil); err != nil {
+				p.Log.Errorf("publishing unregistered socket failed: %v", err)
+			}
+		}
 	}
 
 	return nil

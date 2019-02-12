@@ -32,6 +32,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/l2plugin/descriptor"
 	"github.com/ligato/vpp-agent/plugins/vpp/l2plugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/vpp/l2plugin/vppcalls"
+
 	_ "github.com/ligato/vpp-agent/plugins/vpp/l2plugin/vppcalls/vpp1810"
 )
 

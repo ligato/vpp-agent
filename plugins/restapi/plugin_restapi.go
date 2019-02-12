@@ -60,13 +60,11 @@ type Plugin struct {
 	vpeHandler  vpevppcalls.VpeVppAPI
 	teleHandler telemetryvppcalls.TelemetryVppAPI
 	// VPP Handlers
-	aclHandler  aclvppcalls.ACLVppRead
-	ifHandler   ifvppcalls.InterfaceVppRead
-	natHandler  natvppcalls.NatVppRead
-	l2Handler   l2vppcalls.L2VppAPI
-	arpHandler  l3vppcalls.ArpVppRead
-	pArpHandler l3vppcalls.ProxyArpVppRead
-	rtHandler   l3vppcalls.RouteVppRead
+	aclHandler aclvppcalls.ACLVppRead
+	ifHandler  ifvppcalls.InterfaceVppRead
+	natHandler natvppcalls.NatVppRead
+	l2Handler  l2vppcalls.L2VppAPI
+	l3Handler  l3vppcalls.L3VppAPI
 	// Linux handlers
 	linuxIfHandler iflinuxcalls.NetlinkAPIRead
 	linuxL3Handler l3linuxcalls.NetlinkAPIRead
@@ -121,11 +119,9 @@ func (p *Plugin) Init() (err error) {
 	// VPP handlers
 	p.aclHandler = aclvppcalls.CompatibleACLVppHandler(p.vppChan, p.dumpChan, ifIndexes, p.Log)
 	p.ifHandler = ifvppcalls.CompatibleInterfaceVppHandler(p.vppChan, p.Log)
-	p.natHandler = natvppcalls.NewNatVppHandler(p.vppChan, ifIndexes, dhcpIndexes, p.Log)
+	p.natHandler = natvppcalls.CompatibleNatVppHandler(p.vppChan, ifIndexes, dhcpIndexes, p.Log)
 	p.l2Handler = l2vppcalls.CompatibleL2VppHandler(p.vppChan, ifIndexes, bdIndexes, p.Log)
-	p.arpHandler = l3vppcalls.NewArpVppHandler(p.vppChan, ifIndexes, p.Log)
-	p.pArpHandler = l3vppcalls.NewProxyArpVppHandler(p.vppChan, ifIndexes, p.Log)
-	p.rtHandler = l3vppcalls.NewRouteVppHandler(p.vppChan, ifIndexes, p.Log)
+	p.l3Handler = l3vppcalls.CompatibleL3VppHandler(p.vppChan, ifIndexes, p.Log)
 
 	// Linux handlers
 	//if p.Linux != nil {

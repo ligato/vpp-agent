@@ -1,16 +1,16 @@
-// Copyright (c) 2018 Cisco and/or its affiliates.
+//  Copyright (c) 2019 Cisco and/or its affiliates.
 //
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at:
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at:
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//      http://www.apache.org/licenses/LICENSE-2.0
 //
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
 
 package vppcalls
 
@@ -20,12 +20,13 @@ import (
 	"github.com/pkg/errors"
 
 	stn "github.com/ligato/vpp-agent/api/models/vpp/stn"
-	api "github.com/ligato/vpp-agent/plugins/vpp/binapi/stn"
+	api "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1810/stn"
+	"github.com/ligato/vpp-agent/plugins/vpp/stnplugin/vppcalls"
 )
 
 // DumpSTNRules implements STN handler, it returns all STN rules present on the VPP
-func (h *StnVppHandler) DumpSTNRules() ([]*StnDetails, error) {
-	var stnDetails []*StnDetails
+func (h *StnVppHandler) DumpSTNRules() ([]*vppcalls.StnDetails, error) {
+	var stnDetails []*vppcalls.StnDetails
 
 	req := &api.StnRulesDump{}
 	reqCtx := h.callsChannel.SendMultiRequest(req)
@@ -54,11 +55,11 @@ func (h *StnVppHandler) DumpSTNRules() ([]*StnDetails, error) {
 			IpAddress: stnIP,
 			Interface: ifName,
 		}
-		stnMeta := &StnMeta{
+		stnMeta := &vppcalls.StnMeta{
 			IfIdx: msg.SwIfIndex,
 		}
 
-		stnDetails = append(stnDetails, &StnDetails{
+		stnDetails = append(stnDetails, &vppcalls.StnDetails{
 			Rule: stnRule,
 			Meta: stnMeta,
 		})

@@ -751,7 +751,7 @@ func TestAddNat44IdentityMappingNoInterface(t *testing.T) {
 	Expect(msg.IPAddress).To(BeEquivalentTo(address))
 	Expect(msg.Port).To(BeEquivalentTo(8989))
 	Expect(msg.AddrOnly).To(BeEquivalentTo(0))
-	Expect(msg.SwIfIndex).To(BeEquivalentTo(vppcalls.NoInterface))
+	Expect(msg.SwIfIndex).To(BeEquivalentTo(vppcalls.noInterface))
 }
 
 func TestAddNat44IdentityMappingError(t *testing.T) {

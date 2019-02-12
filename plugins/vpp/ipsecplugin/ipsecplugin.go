@@ -30,6 +30,8 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/ipsecplugin/descriptor"
 	"github.com/ligato/vpp-agent/plugins/vpp/ipsecplugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/vpp/ipsecplugin/vppcalls"
+
+	_ "github.com/ligato/vpp-agent/plugins/vpp/ipsecplugin/vppcalls/vpp1810"
 )
 
 // IPSecPlugin configures VPP security policy databases and security associations using GoVPP.
@@ -66,7 +68,7 @@ func (p *IPSecPlugin) Init() (err error) {
 	}
 
 	// init IPSec handler
-	p.ipSecHandler = vppcalls.NewIPsecVppHandler(p.vppCh, p.IfPlugin.GetInterfaceIndex(), p.Log)
+	p.ipSecHandler = vppcalls.CompatibleIPSecVppHandler(p.vppCh, p.IfPlugin.GetInterfaceIndex(), p.Log)
 
 	// init and register security policy database descriptor
 	p.spdDescriptor = descriptor.NewIPSecSPDDescriptor(p.ipSecHandler, p.Log)

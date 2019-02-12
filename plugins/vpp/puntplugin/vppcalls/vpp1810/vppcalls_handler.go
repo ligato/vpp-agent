@@ -16,30 +16,37 @@ package vppcalls
 
 import (
 	govppapi "git.fd.io/govpp.git/api"
+	"github.com/ligato/cn-infra/logging"
 
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/acl"
+	ba_ip "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1810/ip"
+	ba_punt "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1810/punt"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
+	"github.com/ligato/vpp-agent/plugins/vpp/puntplugin/vppcalls"
 )
 
 func init() {
 	var msgs []govppapi.Message
-	msgs = append(msgs, acl.Messages...)
+	msgs = append(msgs, ba_ip.Messages...)
+	msgs = append(msgs, ba_punt.Messages...)
 
-	Versions["vpp1901"] = HandlerVersion{
+	vppcalls.Versions["vpp1810"] = vppcalls.HandlerVersion{
 		Msgs: msgs,
-		New: func(ch govppapi.Channel, ifIndexes ifaceidx.IfaceMetadataIndex) ACLVppAPI {
-			return &ACLVppHandler{
-				callsChannel: ch,
-				dumpChannel:  ch,
-				ifIndexes:    ifIndexes,
-			}
-		},
+		New:  NewPuntVppHandler,
 	}
 }
 
-// ACLVppHandler is accessor for acl-related vppcalls methods
-type ACLVppHandler struct {
+// PuntVppHandler is accessor for punt-related vppcalls methods.
+type PuntVppHandler struct {
 	callsChannel govppapi.Channel
-	dumpChannel  govppapi.Channel
 	ifIndexes    ifaceidx.IfaceMetadataIndex
+	log          logging.Logger
+}
+
+// NewPuntVppHandler creates new instance of punt vppcalls handler
+func NewPuntVppHandler(callsChan govppapi.Channel, ifIndexes ifaceidx.IfaceMetadataIndex, log logging.Logger) vppcalls.PuntVppAPI {
+	return &PuntVppHandler{
+		callsChannel: callsChan,
+		ifIndexes:    ifIndexes,
+		log:          log,
+	}
 }

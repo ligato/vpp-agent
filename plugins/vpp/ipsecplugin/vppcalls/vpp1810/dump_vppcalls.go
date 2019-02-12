@@ -22,16 +22,17 @@ import (
 	"github.com/go-errors/errors"
 
 	ipsec "github.com/ligato/vpp-agent/api/models/vpp/ipsec"
-	ipsecapi "github.com/ligato/vpp-agent/plugins/vpp/binapi/ipsec"
+	ipsecapi "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1810/ipsec"
+	"github.com/ligato/vpp-agent/plugins/vpp/ipsecplugin/vppcalls"
 )
 
 // DumpIPSecSA implements IPSec handler.
-func (h *IPSecVppHandler) DumpIPSecSA() (saList []*IPSecSaDetails, err error) {
+func (h *IPSecVppHandler) DumpIPSecSA() (saList []*vppcalls.IPSecSaDetails, err error) {
 	return h.DumpIPSecSAWithIndex(^uint32(0)) // Get everything
 }
 
 // DumpIPSecSAWithIndex implements IPSec handler.
-func (h *IPSecVppHandler) DumpIPSecSAWithIndex(saID uint32) (saList []*IPSecSaDetails, err error) {
+func (h *IPSecVppHandler) DumpIPSecSAWithIndex(saID uint32) (saList []*vppcalls.IPSecSaDetails, err error) {
 	saDetails, err := h.dumpSecurityAssociations(saID)
 	if err != nil {
 		return nil, err
@@ -67,7 +68,7 @@ func (h *IPSecVppHandler) DumpIPSecSAWithIndex(saID uint32) (saList []*IPSecSaDe
 			TunnelDstAddr:  tunnelDstAddrStr,
 			EnableUdpEncap: uintToBool(saData.UDPEncap),
 		}
-		meta := &IPSecSaMeta{
+		meta := &vppcalls.IPSecSaMeta{
 			SaID:           saData.SaID,
 			IfIdx:          saData.SwIfIndex,
 			CryptoKeyLen:   saData.CryptoKeyLen,
@@ -78,7 +79,7 @@ func (h *IPSecVppHandler) DumpIPSecSAWithIndex(saID uint32) (saList []*IPSecSaDe
 			ReplayWindow:   saData.ReplayWindow,
 			TotalDataSize:  saData.TotalDataSize,
 		}
-		saList = append(saList, &IPSecSaDetails{
+		saList = append(saList, &vppcalls.IPSecSaDetails{
 			Sa:   sa,
 			Meta: meta,
 		})
@@ -88,8 +89,8 @@ func (h *IPSecVppHandler) DumpIPSecSAWithIndex(saID uint32) (saList []*IPSecSaDe
 }
 
 // DumpIPSecSPD implements IPSec handler.
-func (h *IPSecVppHandler) DumpIPSecSPD() (spdList []*IPSecSpdDetails, err error) {
-	metadata := make(map[string]*SpdMeta)
+func (h *IPSecVppHandler) DumpIPSecSPD() (spdList []*vppcalls.IPSecSpdDetails, err error) {
+	metadata := make(map[string]*vppcalls.SpdMeta)
 
 	// TODO dump IPSec SPD interfaces is not available in current VPP version
 
@@ -152,7 +153,7 @@ func (h *IPSecVppHandler) DumpIPSecSPD() (spdList []*IPSecSpdDetails, err error)
 			spd.PolicyEntries = append(spd.PolicyEntries, policyEntry)
 
 			// Prepare meta and put to the metadata map
-			meta := &SpdMeta{
+			meta := &vppcalls.SpdMeta{
 				SaID:    spdDetails.SaID,
 				Policy:  spdDetails.Policy,
 				Bytes:   spdDetails.Bytes,
@@ -161,7 +162,7 @@ func (h *IPSecVppHandler) DumpIPSecSPD() (spdList []*IPSecSpdDetails, err error)
 			metadata[strconv.Itoa(int(spdDetails.SaID))] = meta
 		}
 		// Store SPD in list
-		spdList = append(spdList, &IPSecSpdDetails{
+		spdList = append(spdList, &vppcalls.IPSecSpdDetails{
 			Spd:         spd,
 			PolicyMeta:  metadata,
 			NumPolicies: numPolicies,

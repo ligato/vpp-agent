@@ -16,30 +16,36 @@ package vppcalls
 
 import (
 	govppapi "git.fd.io/govpp.git/api"
+	"github.com/ligato/cn-infra/logging"
 
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/acl"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/stn"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 )
 
 func init() {
 	var msgs []govppapi.Message
-	msgs = append(msgs, acl.Messages...)
+	msgs = append(msgs, stn.Messages...)
 
 	Versions["vpp1901"] = HandlerVersion{
 		Msgs: msgs,
-		New: func(ch govppapi.Channel, ifIndexes ifaceidx.IfaceMetadataIndex) ACLVppAPI {
-			return &ACLVppHandler{
-				callsChannel: ch,
-				dumpChannel:  ch,
-				ifIndexes:    ifIndexes,
-			}
+		New: func(ch govppapi.Channel, ifIdx ifaceidx.IfaceMetadataIndex, log logging.Logger) StnVppAPI {
+			return &StnVppHandler{ch, ifIdx, log}
 		},
 	}
 }
 
-// ACLVppHandler is accessor for acl-related vppcalls methods
-type ACLVppHandler struct {
+// StnVppHandler is accessor for STN-related vppcalls methods
+type StnVppHandler struct {
 	callsChannel govppapi.Channel
-	dumpChannel  govppapi.Channel
 	ifIndexes    ifaceidx.IfaceMetadataIndex
+	log          logging.Logger
 }
+
+/*// NewStnVppHandler creates new instance of STN vppcalls handler
+func NewStnVppHandler(callsChan api.Channel, ifIndexes ifaceidx.IfaceMetadataIndex, log logging.Logger) *StnVppHandler {
+	return &StnVppHandler{
+		callsChannel: callsChan,
+		ifIndexes:    ifIndexes,
+		log:          log,
+	}
+}*/

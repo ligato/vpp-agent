@@ -40,6 +40,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
+
 	_ "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls/vpp1810"
 )
 

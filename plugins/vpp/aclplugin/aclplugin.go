@@ -28,8 +28,9 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/aclplugin/descriptor"
 	"github.com/ligato/vpp-agent/plugins/vpp/aclplugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/vpp/aclplugin/vppcalls"
-	_ "github.com/ligato/vpp-agent/plugins/vpp/aclplugin/vppcalls/vpp1810"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin"
+
+	_ "github.com/ligato/vpp-agent/plugins/vpp/aclplugin/vppcalls/vpp1810"
 )
 
 // ACLPlugin is a plugin that manages ACLs.
