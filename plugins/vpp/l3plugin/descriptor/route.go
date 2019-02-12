@@ -119,7 +119,7 @@ func validateRoute(route *l3.Route) error {
 		return err
 	}
 	if ipNet.String() != route.DstNetwork {
-		return fmt.Errorf("DstNetwork must represent IP network")
+		return fmt.Errorf("DstNetwork (%s) must represent IP network (%s)", route.DstNetwork, ipNet.String())
 	}
 	return nil
 }
