@@ -1,4 +1,4 @@
-//  Copyright (c) 2018 Cisco and/or its affiliates.
+//  Copyright (c) 2019 Cisco and/or its affiliates.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -17,14 +17,14 @@ package vppcalls_test
 import (
 	"testing"
 
-	"github.com/ligato/vpp-agent/plugins/govppmux/vppcalls"
+	"github.com/ligato/vpp-agent/plugins/telemetry/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpe"
 	"github.com/ligato/vpp-agent/tests/vppcallmock"
 	. "github.com/onsi/gomega"
 )
 
 func TestGetBuffers(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, handler := testSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	const reply = `Thread             Name                 Index       Size        Alloc       Free       #Alloc       #Free  
@@ -38,10 +38,10 @@ func TestGetBuffers(t *testing.T) {
      0           replication-recycle           7        1024      0           0           0           0    
      0                       default           8        2048      0           0           0           0    `
 	ctx.MockVpp.MockReply(&vpe.CliInbandReply{
-		Reply: []byte(reply),
+		Reply: reply,
 	})
 
-	info, err := vppcalls.GetBuffersInfo(ctx.MockChannel)
+	info, err := handler.GetBuffersInfo()
 
 	Expect(err).ShouldNot(HaveOccurred())
 	Expect(info.Items).To(HaveLen(9))
@@ -78,7 +78,7 @@ func TestGetBuffers(t *testing.T) {
 }
 
 func TestGetRuntime(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, handler := testSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	const reply = `Thread 0 vpp_main (lcore 0)
@@ -135,10 +135,10 @@ Time 21.5, average vectors/node 0.00, last 128 main loops 0.00 per node 0.00
 unix-epoll-input                 polling          20563870               0               0          3.56e3            0.00
 `
 	ctx.MockVpp.MockReply(&vpe.CliInbandReply{
-		Reply: []byte(reply),
+		Reply: reply,
 	})
 
-	info, err := vppcalls.GetRuntimeInfo(ctx.MockChannel)
+	info, err := handler.GetRuntimeInfo()
 
 	Expect(err).ShouldNot(HaveOccurred())
 	Expect(info.Threads).To(HaveLen(3))
@@ -155,7 +155,7 @@ unix-epoll-input                 polling          20563870               0      
 }
 
 func TestGetMemory(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, handler := testSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	const reply = `Thread 0 vpp_main
@@ -166,10 +166,10 @@ Thread 2 vpp_wk_1
 22991 objects, 19199k of 24937k used, 5196k free, 5168k reclaimed, 361k overhead, 1048572k capacity
 `
 	ctx.MockVpp.MockReply(&vpe.CliInbandReply{
-		Reply: []byte(reply),
+		Reply: reply,
 	})
 
-	info, err := vppcalls.GetMemory(ctx.MockChannel)
+	info, err := handler.GetMemory()
 
 	Expect(err).ShouldNot(HaveOccurred())
 	Expect(info.Threads).To(HaveLen(3))
@@ -198,7 +198,7 @@ Thread 2 vpp_wk_1
 }
 
 func TestGetNodeCounters(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, handler := testSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	const reply = `   Count                    Node                  Reason
@@ -214,10 +214,10 @@ func TestGetNodeCounters(t *testing.T) {
          1                cdp-input               good cdp packets (processed)
 `
 	ctx.MockVpp.MockReply(&vpe.CliInbandReply{
-		Reply: []byte(reply),
+		Reply: reply,
 	})
 
-	info, err := vppcalls.GetNodeCounters(ctx.MockChannel)
+	info, err := handler.GetNodeCounters()
 
 	Expect(err).ShouldNot(HaveOccurred())
 	Expect(info.Counters).To(HaveLen(10))
@@ -246,4 +246,10 @@ func TestGetNodeCounters(t *testing.T) {
 		Node:   "cdp-input",
 		Reason: "good cdp packets (processed)",
 	}))
+}
+
+func testSetup(t *testing.T) (*vppcallmock.TestCtx, vppcalls.TelemetryVppAPI) {
+	ctx := vppcallmock.SetupTestCtx(t)
+	handler := vppcalls.NewTelemetryVppHandler(ctx.MockChannel)
+	return ctx, handler
 }

@@ -29,7 +29,7 @@ func init() {
 	Versions["vpp1901"] = HandlerVersion{
 		Msgs: msgs,
 		New: func(ch govppapi.Channel, ifIdx ifaceidx.IfaceMetadataIndex, log logging.Logger) StnVppAPI {
-			return &StnVppHandler{ch, ifIdx, log}
+			return NewStnVppHandler(ch, ifIdx, log)
 		},
 	}
 }
@@ -41,11 +41,11 @@ type StnVppHandler struct {
 	log          logging.Logger
 }
 
-/*// NewStnVppHandler creates new instance of STN vppcalls handler
-func NewStnVppHandler(callsChan api.Channel, ifIndexes ifaceidx.IfaceMetadataIndex, log logging.Logger) *StnVppHandler {
+// NewStnVppHandler creates new instance of STN vppcalls handler
+func NewStnVppHandler(callsChan govppapi.Channel, ifIndexes ifaceidx.IfaceMetadataIndex, log logging.Logger) *StnVppHandler {
 	return &StnVppHandler{
 		callsChannel: callsChan,
 		ifIndexes:    ifIndexes,
 		log:          log,
 	}
-}*/
+}

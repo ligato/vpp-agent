@@ -34,8 +34,7 @@ func init() {
 	Versions["vpp1901"] = HandlerVersion{
 		Msgs: msgs,
 		New: func(ch govppapi.Channel) TelemetryVppAPI {
-			vpeHandler := vppcalls.CompatibleVpeHandler(ch)
-			return &TelemetryHandler{ch, vpeHandler}
+			return NewTelemetryVppHandler(ch)
 		},
 	}
 }
@@ -43,6 +42,11 @@ func init() {
 type TelemetryHandler struct {
 	ch govppapi.Channel
 	vppcalls.VpeVppAPI
+}
+
+func NewTelemetryVppHandler(ch govppapi.Channel) *TelemetryHandler {
+	vpeHandler := vppcalls.CompatibleVpeHandler(ch)
+	return &TelemetryHandler{ch, vpeHandler}
 }
 
 var (

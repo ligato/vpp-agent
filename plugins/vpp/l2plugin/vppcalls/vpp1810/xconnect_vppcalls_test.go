@@ -19,9 +19,10 @@ import (
 
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging/logrus"
-	l2ba "github.com/ligato/vpp-agent/plugins/vpp/binapi/l2"
+	l2ba "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1810/l2"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
-	"github.com/ligato/vpp-agent/plugins/vpp/l2plugin/vppcalls_1810"
+	"github.com/ligato/vpp-agent/plugins/vpp/l2plugin/vppcalls"
+	"github.com/ligato/vpp-agent/plugins/vpp/l2plugin/vppcalls/vpp1810"
 	"github.com/ligato/vpp-agent/tests/vppcallmock"
 	. "github.com/onsi/gomega"
 )
@@ -118,10 +119,10 @@ func TestVppUnsetL2XConnect(t *testing.T) {
 	}
 }
 
-func xcTestSetup(t *testing.T) (*vppcallmock.TestCtx, vppcalls_1810.XConnectVppAPI, ifaceidx.IfaceMetadataIndexRW) {
+func xcTestSetup(t *testing.T) (*vppcallmock.TestCtx, vppcalls.XConnectVppAPI, ifaceidx.IfaceMetadataIndexRW) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	log := logrus.NewLogger("test-log")
 	ifaceIdx := ifaceidx.NewIfaceIndex(log, "xc-if-idx")
-	xcHandler := vppcalls_1810.NewXConnectVppHandler(ctx.MockChannel, ifaceIdx, log)
+	xcHandler := vppcalls_1810.NewL2VppHandler(ctx.MockChannel, ifaceIdx, nil, log)
 	return ctx, xcHandler, ifaceIdx
 }

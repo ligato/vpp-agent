@@ -195,7 +195,7 @@ func (h *NatVppHandler) nat44StaticMappingDump() (entries stMappingMap, err erro
 			extIfaceName string
 			extIfaceMeta *ifaceidx.IfaceMetadata
 		)
-		if msg.ExternalSwIfIndex != noInterface {
+		if msg.ExternalSwIfIndex != NoInterface {
 			extIfaceName, extIfaceMeta, found = h.ifIndexes.LookupBySwIfIndex(msg.ExternalSwIfIndex)
 			if !found {
 				h.log.Warnf("Interface with index %v not found in the mapping", msg.ExternalSwIfIndex)
@@ -224,7 +224,7 @@ func (h *NatVppHandler) nat44StaticMappingDump() (entries stMappingMap, err erro
 		}
 		entries[tag] = append(entries[tag], mapping)
 
-		if msg.ExternalSwIfIndex != noInterface {
+		if msg.ExternalSwIfIndex != NoInterface {
 			// collect auto-generated "child" mappings (interface replaced with every assigned IP address)
 			for _, ipAddr := range h.getInterfaceIPAddresses(extIfaceName, extIfaceMeta) {
 				childMapping := proto.Clone(mapping).(*nat.DNat44_StaticMapping)
@@ -339,7 +339,7 @@ func (h *NatVppHandler) nat44IdentityMappingDump() (entries idMappingMap, err er
 			ifaceName string
 			ifaceMeta *ifaceidx.IfaceMetadata
 		)
-		if msg.SwIfIndex != noInterface {
+		if msg.SwIfIndex != NoInterface {
 			ifaceName, ifaceMeta, found = h.ifIndexes.LookupBySwIfIndex(msg.SwIfIndex)
 			if !found {
 				h.log.Warnf("Interface with index %v not found in the mapping", msg.SwIfIndex)
@@ -359,7 +359,7 @@ func (h *NatVppHandler) nat44IdentityMappingDump() (entries idMappingMap, err er
 		}
 		entries[tag] = append(entries[tag], mapping)
 
-		if msg.SwIfIndex != noInterface {
+		if msg.SwIfIndex != NoInterface {
 			// collect auto-generated "child" mappings (interface replaced with every assigned IP address)
 			for _, ipAddr := range h.getInterfaceIPAddresses(ifaceName, ifaceMeta) {
 				childMapping := proto.Clone(mapping).(*nat.DNat44_IdentityMapping)

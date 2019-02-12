@@ -30,7 +30,7 @@ func init() {
 	Versions["vpp1901"] = HandlerVersion{
 		Msgs: msgs,
 		New: func(ch govppapi.Channel, ifIdx ifaceidx.IfaceMetadataIndex, dhcpIdx idxmap.NamedMapping, log logging.Logger) NatVppAPI {
-			return &NatVppHandler{ch, ifIdx, dhcpIdx, log}
+			return NewNatVppHandler(ch, ifIdx, dhcpIdx, log)
 		},
 	}
 }
@@ -43,14 +43,14 @@ type NatVppHandler struct {
 	log          logging.Logger
 }
 
-/*// NewNatVppHandler creates new instance of NAT vppcalls handler.
-func NewNatVppHandler(callsChan api.Channel, ifIndexes ifaceidx.IfaceMetadataIndex,
-	dhcpIndex idxmap.NamedMapping, log logging.Logger) *NatVppHandler {
-
+// NewNatVppHandler creates new instance of NAT vppcalls handler.
+func NewNatVppHandler(callsChan govppapi.Channel,
+	ifIndexes ifaceidx.IfaceMetadataIndex, dhcpIndex idxmap.NamedMapping, log logging.Logger,
+) *NatVppHandler {
 	return &NatVppHandler{
 		callsChannel: callsChan,
 		ifIndexes:    ifIndexes,
 		dhcpIndex:    dhcpIndex,
 		log:          log,
 	}
-}*/
+}

@@ -18,14 +18,15 @@ import (
 	"testing"
 
 	"github.com/ligato/cn-infra/logging/logrus"
+	. "github.com/onsi/gomega"
 
 	l2nb "github.com/ligato/vpp-agent/api/models/vpp/l2"
 	"github.com/ligato/vpp-agent/pkg/idxvpp"
-	l2ba "github.com/ligato/vpp-agent/plugins/vpp/binapi/l2"
+	l2ba "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1810/l2"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
-	"github.com/ligato/vpp-agent/plugins/vpp/l2plugin/vppcalls_1810"
+	"github.com/ligato/vpp-agent/plugins/vpp/l2plugin/vppcalls"
+	"github.com/ligato/vpp-agent/plugins/vpp/l2plugin/vppcalls/vpp1810"
 	"github.com/ligato/vpp-agent/tests/vppcallmock"
-	. "github.com/onsi/gomega"
 )
 
 var testDataInFib = []*l2nb.FIBEntry{
@@ -99,11 +100,11 @@ func TestL2FibDelete(t *testing.T) {
 	}
 }
 
-func fibTestSetup(t *testing.T) (*vppcallmock.TestCtx, vppcalls_1810.FIBVppAPI, ifaceidx.IfaceMetadataIndexRW, idxvpp.NameToIndexRW) {
+func fibTestSetup(t *testing.T) (*vppcallmock.TestCtx, vppcalls.FIBVppAPI, ifaceidx.IfaceMetadataIndexRW, idxvpp.NameToIndexRW) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	logger := logrus.NewLogger("test-log")
 	ifaceIdx := ifaceidx.NewIfaceIndex(logger, "fib-if-idx")
 	bdIndexes := idxvpp.NewNameToIndex(logger, "fib-bd-idx", nil)
-	fibHandler := vppcalls_1810.NewFIBVppHandler(ctx.MockChannel, ifaceIdx, bdIndexes, logger)
+	fibHandler := vppcalls_1810.NewL2VppHandler(ctx.MockChannel, ifaceIdx, bdIndexes, logger)
 	return ctx, fibHandler, ifaceIdx, bdIndexes
 }

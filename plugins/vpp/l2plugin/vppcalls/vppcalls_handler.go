@@ -15,6 +15,9 @@
 package vppcalls
 
 import (
+	"fmt"
+	"net"
+
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 
@@ -96,4 +99,23 @@ func newXConnectVppHandler(ch govppapi.Channel, ifIdx ifaceidx.IfaceMetadataInde
 		ifIndexes:    ifIdx,
 		log:          log,
 	}
+}
+
+func ipToAddress(ipstr string) (addr l2ba.Address, err error) {
+	netIP := net.ParseIP(ipstr)
+	if netIP == nil {
+		return l2ba.Address{}, fmt.Errorf("invalid IP: %q", ipstr)
+	}
+	if ip4 := netIP.To4(); ip4 == nil {
+		addr.Af = l2ba.ADDRESS_IP6
+		var ip6addr l2ba.IP6Address
+		copy(ip6addr[:], netIP.To16())
+		addr.Un.SetIP6(ip6addr)
+	} else {
+		addr.Af = l2ba.ADDRESS_IP4
+		var ip4addr l2ba.IP4Address
+		copy(ip4addr[:], ip4)
+		addr.Un.SetIP4(ip4addr)
+	}
+	return
 }

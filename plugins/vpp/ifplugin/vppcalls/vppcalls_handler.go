@@ -46,7 +46,7 @@ func init() {
 	Versions["vpp1901"] = HandlerVersion{
 		Msgs: msgs,
 		New: func(ch govppapi.Channel, log logging.Logger) InterfaceVppAPI {
-			return &InterfaceVppHandler{ch, log}
+			return NewInterfaceVppHandler(ch, log)
 		},
 	}
 }
@@ -55,4 +55,9 @@ func init() {
 type InterfaceVppHandler struct {
 	callsChannel govppapi.Channel
 	log          logging.Logger
+}
+
+// NewInterfaceVppHandler returns new InterfaceVppHandler.
+func NewInterfaceVppHandler(ch govppapi.Channel, log logging.Logger) *InterfaceVppHandler {
+	return &InterfaceVppHandler{ch, log}
 }

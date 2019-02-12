@@ -27,12 +27,8 @@ func init() {
 
 	Versions["vpp1901"] = HandlerVersion{
 		Msgs: msgs,
-		New: func(ch govppapi.Channel, ifIndexes ifaceidx.IfaceMetadataIndex) ACLVppAPI {
-			return &ACLVppHandler{
-				callsChannel: ch,
-				dumpChannel:  ch,
-				ifIndexes:    ifIndexes,
-			}
+		New: func(ch govppapi.Channel, ifIdx ifaceidx.IfaceMetadataIndex) ACLVppAPI {
+			return NewACLVppHandler(ch, ch, ifIdx)
 		},
 	}
 }
@@ -42,4 +38,12 @@ type ACLVppHandler struct {
 	callsChannel govppapi.Channel
 	dumpChannel  govppapi.Channel
 	ifIndexes    ifaceidx.IfaceMetadataIndex
+}
+
+func NewACLVppHandler(ch, dch govppapi.Channel, ifIdx ifaceidx.IfaceMetadataIndex) *ACLVppHandler {
+	return &ACLVppHandler{
+		callsChannel: ch,
+		dumpChannel:  dch,
+		ifIndexes:    ifIdx,
+	}
 }

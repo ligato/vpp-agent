@@ -15,13 +15,12 @@
 package vppcalls
 
 import (
-	"math"
 	"net"
 
 	"github.com/pkg/errors"
 
 	nat "github.com/ligato/vpp-agent/api/models/vpp/nat"
-	natba "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1810/nat"
+	natba "github.com/ligato/vpp-agent/plugins/vpp/binapi/nat"
 )
 
 // Num protocol representation
@@ -33,7 +32,7 @@ const (
 
 const (
 	// NoInterface is sw-if-idx which means 'no interface'
-	noInterface = ^uint32(0)
+	NoInterface = ^uint32(0)
 	// Maximal length of tag
 	maxTagLen = 64
 )
@@ -208,7 +207,7 @@ func (h *NatVppHandler) handleNatVirtualReassembly(vrCfg *nat.VirtualReassembly,
 
 // Calls VPP binary API to add/remove NAT44 static mapping
 func (h *NatVppHandler) handleNat44StaticMapping(mapping *nat.DNat44_StaticMapping, dnatLabel string, isAdd bool) error {
-	var ifIdx = noInterface
+	var ifIdx = NoInterface
 	var exIPAddr net.IP
 
 	// check tag length limit
@@ -298,19 +297,8 @@ func (h *NatVppHandler) handleNat44StaticMappingLb(mapping *nat.DNat44_StaticMap
 	}
 
 	// Transform local IP/Ports
-	var (
-		locals   []natba.Nat44LbAddrPort
-		localNum int
-	)
+	var locals []natba.Nat44LbAddrPort
 	for _, local := range mapping.LocalIps {
-		// TODO: this is a temporary solution
-		// once LocalNum uses bigger range than uint8 this check should be removed
-		// as well as the cast below uint8(len...
-		localNum++
-		if localNum > math.MaxUint8 {
-			h.log.Warnf("Only the first %v local addresses will be programmed", math.MaxUint8)
-			break
-		}
 		if local.LocalPort == 0 {
 			return errors.Errorf("cannot set local IP/Port for DNAT mapping %s: port is missing",
 				dnatLabel)
@@ -331,9 +319,9 @@ func (h *NatVppHandler) handleNat44StaticMappingLb(mapping *nat.DNat44_StaticMap
 	}
 
 	req := &natba.Nat44AddDelLbStaticMapping{
-		Tag:          []byte(dnatLabel),
-		Locals:       locals,
-		LocalNum:     uint8(len(locals)),
+		Tag:    []byte(dnatLabel),
+		Locals: locals,
+		//LocalNum:     uint32(len(locals)), // should not be needed (will be set by struc)
 		ExternalAddr: exIPAddrByte,
 		ExternalPort: uint16(mapping.ExternalPort),
 		Protocol:     h.protocolNBValueToNumber(mapping.Protocol),
@@ -355,7 +343,7 @@ func (h *NatVppHandler) handleNat44StaticMappingLb(mapping *nat.DNat44_StaticMap
 
 // Calls VPP binary API to add/remove NAT44 identity mapping.
 func (h *NatVppHandler) handleNat44IdentityMapping(mapping *nat.DNat44_IdentityMapping, dnatLabel string, isAdd bool) error {
-	var ifIdx = noInterface
+	var ifIdx = NoInterface
 	var ipAddr net.IP
 
 	// check tag length limit
@@ -373,7 +361,7 @@ func (h *NatVppHandler) handleNat44IdentityMapping(mapping *nat.DNat44_IdentityM
 		ifIdx = ifMeta.SwIfIndex
 	}
 
-	if ifIdx == noInterface {
+	if ifIdx == NoInterface {
 		// Case with IP (optionally port). Verify and parse input IP/port
 		ipAddr = net.ParseIP(mapping.IpAddress).To4()
 		if ipAddr == nil {

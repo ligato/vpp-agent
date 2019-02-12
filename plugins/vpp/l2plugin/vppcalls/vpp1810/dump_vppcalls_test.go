@@ -18,14 +18,15 @@ import (
 	"testing"
 
 	govppapi "git.fd.io/govpp.git/api"
+	. "github.com/onsi/gomega"
+
 	l2nb "github.com/ligato/vpp-agent/api/models/vpp/l2"
 	"github.com/ligato/vpp-agent/pkg/idxvpp"
-	l2ba "github.com/ligato/vpp-agent/plugins/vpp/binapi/l2"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpe"
+	l2ba "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1810/l2"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
-	"github.com/ligato/vpp-agent/plugins/vpp/l2plugin/vppcalls_1810"
+	"github.com/ligato/vpp-agent/plugins/vpp/l2plugin/vppcalls"
 	"github.com/ligato/vpp-agent/tests/vppcallmock"
-	. "github.com/onsi/gomega"
 )
 
 var testDataInMessagesBDs = []govppapi.Message{
@@ -47,7 +48,7 @@ var testDataInMessagesBDs = []govppapi.Message{
 	},
 }
 
-var testDataOutMessage = []*vppcalls_1810.BridgeDomainDetails{
+var testDataOutMessage = []*vppcalls.BridgeDomainDetails{
 	{
 		Bd: &l2nb.BridgeDomain{
 			Flood:               true,
@@ -65,7 +66,7 @@ var testDataOutMessage = []*vppcalls_1810.BridgeDomainDetails{
 				},
 			},
 		},
-		Meta: &vppcalls_1810.BridgeDomainMeta{
+		Meta: &vppcalls.BridgeDomainMeta{
 			BdID: 4,
 		},
 	}, {
@@ -91,7 +92,7 @@ var testDataOutMessage = []*vppcalls_1810.BridgeDomainDetails{
 				},
 			},
 		},
-		Meta: &vppcalls_1810.BridgeDomainMeta{
+		Meta: &vppcalls.BridgeDomainMeta{
 			BdID: 5,
 		},
 	},
@@ -179,7 +180,7 @@ var testDataInMessagesFIBs = []govppapi.Message{
 	},
 }
 
-var testDataOutFIBs = []*vppcalls_1810.FibTableDetails{
+var testDataOutFIBs = []*vppcalls.FibTableDetails{
 	{
 		Fib: &l2nb.FIBEntry{
 			PhysAddress:             "aa:aa:aa:aa:aa:aa",
@@ -189,7 +190,7 @@ var testDataOutFIBs = []*vppcalls_1810.FibTableDetails{
 			BridgedVirtualInterface: false,
 			OutgoingInterface:       "",
 		},
-		Meta: &vppcalls_1810.FibMeta{
+		Meta: &vppcalls.FibMeta{
 			BdID:  10,
 			IfIdx: ^uint32(0),
 		},
@@ -203,7 +204,7 @@ var testDataOutFIBs = []*vppcalls_1810.FibTableDetails{
 			BridgedVirtualInterface: true,
 			OutgoingInterface:       "if1",
 		},
-		Meta: &vppcalls_1810.FibMeta{
+		Meta: &vppcalls.FibMeta{
 			BdID:  20,
 			IfIdx: 1,
 		},
@@ -246,13 +247,13 @@ var testDataInXConnect = []govppapi.Message{
 	},
 }
 
-var testDataOutXconnect = []*vppcalls_1810.XConnectDetails{
+var testDataOutXconnect = []*vppcalls.XConnectDetails{
 	{
 		Xc: &l2nb.XConnectPair{
 			ReceiveInterface:  "if1",
 			TransmitInterface: "if2",
 		},
-		Meta: &vppcalls_1810.XcMeta{
+		Meta: &vppcalls.XcMeta{
 			ReceiveInterfaceSwIfIdx:  1,
 			TransmitInterfaceSwIfIdx: 2,
 		},
@@ -262,7 +263,7 @@ var testDataOutXconnect = []*vppcalls_1810.XConnectDetails{
 			ReceiveInterface:  "if3",
 			TransmitInterface: "if4",
 		},
-		Meta: &vppcalls_1810.XcMeta{
+		Meta: &vppcalls.XcMeta{
 			ReceiveInterfaceSwIfIdx:  3,
 			TransmitInterfaceSwIfIdx: 4,
 		},

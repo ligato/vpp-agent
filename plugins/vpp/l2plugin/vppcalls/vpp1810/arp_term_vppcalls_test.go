@@ -17,7 +17,7 @@ package vppcalls_1810_test
 import (
 	"testing"
 
-	l2ba "github.com/ligato/vpp-agent/plugins/vpp/binapi/l2"
+	l2ba "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1810/l2"
 	. "github.com/onsi/gomega"
 )
 

@@ -29,7 +29,7 @@ func init() {
 	Versions["vpp1901"] = HandlerVersion{
 		Msgs: msgs,
 		New: func(ch govppapi.Channel, ifIdx ifaceidx.IfaceMetadataIndex, log logging.Logger) IPSecVppAPI {
-			return &IPSecVppHandler{ch, ifIdx, log}
+			return NewIPSecVppHandler(ch, ifIdx, log)
 		},
 	}
 }
@@ -39,4 +39,8 @@ type IPSecVppHandler struct {
 	callsChannel govppapi.Channel
 	ifIndexes    ifaceidx.IfaceMetadataIndex
 	log          logging.Logger
+}
+
+func NewIPSecVppHandler(ch govppapi.Channel, ifIdx ifaceidx.IfaceMetadataIndex, log logging.Logger) *IPSecVppHandler {
+	return &IPSecVppHandler{ch, ifIdx, log}
 }

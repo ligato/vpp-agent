@@ -79,7 +79,7 @@ func TestDeleteRoute(t *testing.T) {
 func routeTestSetup(t *testing.T) (*vppcallmock.TestCtx, ifvppcalls.InterfaceVppAPI, vppcalls.RouteVppAPI) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	log := logrus.NewLogger("test-log")
-	ifHandler := ifvppcalls.NewIfVppHandler(ctx.MockChannel, log)
+	ifHandler := ifvppcalls.NewInterfaceVppHandler(ctx.MockChannel, log)
 	ifIndexes := ifaceidx.NewIfaceIndex(logrus.NewLogger("test"), "test")
 	rtHandler := vppcalls.NewRouteVppHandler(ctx.MockChannel, ifIndexes, log)
 	return ctx, ifHandler, rtHandler
