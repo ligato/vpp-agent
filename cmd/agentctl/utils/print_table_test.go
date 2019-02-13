@@ -14,6 +14,7 @@
 
 package utils_test
 
+/*
 import (
 	"testing"
 
@@ -214,3 +215,4 @@ func Test13TableActiveShortFlagWithFilter(t *testing.T) {
 		utils.OutErrPkt, utils.Drop, utils.Ipv4Pkt, utils.Ipv6Pkt, utils.Punt)
 	then.DoesNotContainItems(table.String(), "vpp-2", "vpp-3", "vpp-1-interface-2", "vpp-1-interface-3")
 }
+*/

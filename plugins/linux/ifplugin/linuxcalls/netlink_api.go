@@ -18,24 +18,23 @@ import (
 	"net"
 
 	"github.com/vishvananda/netlink"
-
-	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/vpp-agent/plugins/linux/ifplugin/ifaceidx"
-	"github.com/ligato/vpp-agent/plugins/linux/nsplugin"
+	"github.com/vishvananda/netns"
 )
 
-// NetlinkAPI interface covers all methods inside linux calls package needed to manage linux interfaces.
+// NetlinkAPI interface covers all methods inside linux calls package
+// needed to manage linux interfaces.
 type NetlinkAPI interface {
 	NetlinkAPIWrite
 	NetlinkAPIRead
 }
 
-// NetlinkAPIWrite interface covers write methods inside linux calls package needed to manage linux interfaces.
+// NetlinkAPIWrite interface covers write methods inside linux calls package
+// needed to manage linux interfaces.
 type NetlinkAPIWrite interface {
 	// AddVethInterfacePair configures two connected VETH interfaces
 	AddVethInterfacePair(ifName, peerIfName string) error
-	// DelVethInterfacePair removes VETH pair
-	DelVethInterfacePair(ifName, peerIfName string) error
+	// DeleteInterface removes the given interface.
+	DeleteInterface(ifName string) error
 	// SetInterfaceUp sets interface state to 'up'
 	SetInterfaceUp(ifName string) error
 	// SetInterfaceDown sets interface state to 'down'
@@ -50,42 +49,44 @@ type NetlinkAPIWrite interface {
 	SetInterfaceMTU(ifName string, mtu int) error
 	// RenameInterface changes interface host name
 	RenameInterface(ifName string, newName string) error
+	// SetInterfaceAlias sets the alias of the given interface.
+	// Equivalent to: `ip link set dev $ifName alias $alias`
+	SetInterfaceAlias(ifName, alias string) error
+	// SetLinkNamespace puts link into a network namespace.
+	SetLinkNamespace(link netlink.Link, ns netns.NsHandle) error
+	// SetChecksumOffloading enables/disables Rx/Tx checksum offloading
+	// for the given interface.
+	SetChecksumOffloading(ifName string, rxOn, txOn bool) error
 }
 
-// NetlinkAPIRead interface covers read methods inside linux calls package needed to manage linux interfaces.
+// NetlinkAPIRead interface covers read methods inside linux calls package
+// needed to manage linux interfaces.
 type NetlinkAPIRead interface {
 	// GetLinkByName returns netlink interface type
 	GetLinkByName(ifName string) (netlink.Link, error)
 	// GetLinkList return all links from namespace
 	GetLinkList() ([]netlink.Link, error)
+	// LinkSubscribe takes a channel to which notifications will be sent
+	// when links change. Close the 'done' chan to stop subscription.
+	LinkSubscribe(ch chan<- netlink.LinkUpdate, done <-chan struct{}) error
 	// GetAddressList reads all IP addresses
 	GetAddressList(ifName string) ([]netlink.Addr, error)
-	// GetInterfaceType returns linux interface type
-	GetInterfaceType(ifName string) (string, error)
-	// GetVethPeerName returns VETH's peer name
-	GetVethPeerName(ifName string) (string, error)
-	// GetInterfaceByName returns *net.Interface type from name
-	GetInterfaceByName(ifName string) (*net.Interface, error)
-	// DumpInterfaces returns all configured linux interfaces in all namespaces in proto-modelled format with metadata
-	DumpInterfaces() ([]*LinuxInterfaceDetails, error)
-	// DumpInterfaceStatistics returns statistics data for all known interfaces interfaces
-	DumpInterfaceStatistics() ([]*LinuxInterfaceStatistics, error)
 	// InterfaceExists verifies interface existence
 	InterfaceExists(ifName string) (bool, error)
+	// IsInterfaceUp checks if the interface is UP.
+	IsInterfaceUp(ifName string) (bool, error)
+	// GetInterfaceType returns linux interface type
+	GetInterfaceType(ifName string) (string, error)
+	// GetChecksumOffloading returns the state of Rx/Tx checksum offloading
+	// for the given interface.
+	GetChecksumOffloading(ifName string) (rxOn, txOn bool, err error)
 }
 
-// NetLinkHandler is accessor for netlink methods
+// NetLinkHandler is accessor for Netlink methods.
 type NetLinkHandler struct {
-	nsHandler nsplugin.NamespaceAPI
-	ifIndexes ifaceidx.LinuxIfIndex
-	log       logging.Logger
 }
 
-// NewNetLinkHandler creates new instance of netlink handler
-func NewNetLinkHandler(nsHandler nsplugin.NamespaceAPI, ifIndexes ifaceidx.LinuxIfIndex, log logging.Logger) *NetLinkHandler {
-	return &NetLinkHandler{
-		nsHandler: nsHandler,
-		ifIndexes: ifIndexes,
-		log:       log,
-	}
+// NewNetLinkHandler creates new instance of Netlink handler.
+func NewNetLinkHandler() *NetLinkHandler {
+	return &NetLinkHandler{}
 }

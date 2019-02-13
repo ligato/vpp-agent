@@ -28,7 +28,7 @@ import (
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/api/configurator"
 	"github.com/ligato/vpp-agent/client"
-	"github.com/ligato/vpp-agent/cmd/vpp-agent/app/v2"
+	"github.com/ligato/vpp-agent/cmd/vpp-agent/app"
 	"github.com/ligato/vpp-agent/examples/custom_model/pb"
 	"github.com/ligato/vpp-agent/plugins/orchestrator"
 	"github.com/namsral/flag"
@@ -54,9 +54,9 @@ var exampleFinished = make(chan struct{})
 func main() {
 	ep := &ExamplePlugin{}
 	ep.Deps = Deps{
+		VPP:          app.DefaultVPP(),
+		Linux:        app.DefaultLinux(),
 		Orchestrator: &orchestrator.DefaultPlugin,
-		VPP:          appv2.DefaultVPP(),
-		Linux:        appv2.DefaultLinux(),
 	}
 	ep.SetName("custom-model-example")
 	ep.Setup()
@@ -82,9 +82,9 @@ type ExamplePlugin struct {
 
 type Deps struct {
 	infra.PluginDeps
+	app.VPP
+	app.Linux
 	Orchestrator *orchestrator.Plugin
-	appv2.VPP
-	appv2.Linux
 }
 
 // Init initializes example plugin.

@@ -23,8 +23,8 @@ import (
 )
 
 // GetAddressList calls AddrList netlink API
-func (handler *NetLinkHandler) GetAddressList(ifName string) ([]netlink.Addr, error) {
-	link, err := handler.GetLinkByName(ifName)
+func (h *NetLinkHandler) GetAddressList(ifName string) ([]netlink.Addr, error) {
+	link, err := h.GetLinkByName(ifName)
 	if err != nil {
 		return nil, err
 	}
@@ -33,8 +33,8 @@ func (handler *NetLinkHandler) GetAddressList(ifName string) ([]netlink.Addr, er
 }
 
 // AddInterfaceIP calls AddrAdd Netlink API.
-func (handler *NetLinkHandler) AddInterfaceIP(ifName string, addr *net.IPNet) error {
-	link, err := handler.GetLinkByName(ifName)
+func (h *NetLinkHandler) AddInterfaceIP(ifName string, addr *net.IPNet) error {
+	link, err := h.GetLinkByName(ifName)
 	if err != nil {
 		return err
 	}
@@ -43,8 +43,8 @@ func (handler *NetLinkHandler) AddInterfaceIP(ifName string, addr *net.IPNet) er
 }
 
 // DelInterfaceIP calls AddrDel Netlink API.
-func (handler *NetLinkHandler) DelInterfaceIP(ifName string, addr *net.IPNet) error {
-	link, err := handler.GetLinkByName(ifName)
+func (h *NetLinkHandler) DelInterfaceIP(ifName string, addr *net.IPNet) error {
+	link, err := h.GetLinkByName(ifName)
 	if err != nil {
 		return err
 	}
@@ -53,8 +53,8 @@ func (handler *NetLinkHandler) DelInterfaceIP(ifName string, addr *net.IPNet) er
 }
 
 // SetInterfaceMTU calls LinkSetMTU Netlink API.
-func (handler *NetLinkHandler) SetInterfaceMTU(ifName string, mtu int) error {
-	link, err := handler.GetLinkByName(ifName)
+func (h *NetLinkHandler) SetInterfaceMTU(ifName string, mtu int) error {
+	link, err := h.GetLinkByName(ifName)
 	if err != nil {
 		return err
 	}

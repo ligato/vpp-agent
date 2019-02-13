@@ -14,6 +14,7 @@
 
 package impl
 
+/*
 import (
 	"errors"
 
@@ -253,3 +254,4 @@ func AddBridgeDomainFlags(cmd *cobra.Command) {
 	cmd.Flags().Uint32VarP(&bdCommonFields.MacAge, "mac", "", 0, "MAC aging time in min, 0 for disabled aging ")
 
 }
+*/

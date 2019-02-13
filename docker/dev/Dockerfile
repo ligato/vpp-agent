@@ -76,7 +76,7 @@ RUN set -eux; \
     find . -type f -name '*.o' -exec rm -rf '{}' \;
 
 # install Go
-ENV GOLANG_VERSION 1.11.1
+ENV GOLANG_VERSION 1.11.5
 ARG GOLANG_OS_ARCH=linux-amd64
 RUN wget -O go.tgz "https://golang.org/dl/go${GOLANG_VERSION}.${GOLANG_OS_ARCH}.tar.gz" \
  && tar -C /usr/local -xzf go.tgz \
@@ -86,6 +86,11 @@ ENV GOPATH /go
 ENV PATH $GOPATH/bin:/usr/local/go/bin:$PATH
 RUN mkdir -p "$GOPATH/src" "$GOPATH/bin" \
  && chmod -R 777 "$GOPATH"
+
+# install debugger
+RUN \
+	go get -u github.com/go-delve/delve/cmd/dlv && dlv version; \
+	curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh && dep version;
 
 # copy configs
 COPY \

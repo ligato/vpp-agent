@@ -18,52 +18,51 @@ import (
 	"bytes"
 	"net"
 
-	"github.com/go-errors/errors"
+	"github.com/pkg/errors"
 
+	l2nb "github.com/ligato/vpp-agent/api/models/vpp/l2"
 	l2ba "github.com/ligato/vpp-agent/plugins/vpp/binapi/l2"
-	l2nb "github.com/ligato/vpp-agent/plugins/vpp/model/l2"
 )
 
 // BridgeDomainDetails is the wrapper structure for the bridge domain northbound API structure.
 // NOTE: Interfaces in BridgeDomains_BridgeDomain is overridden by the local Interfaces member.
 type BridgeDomainDetails struct {
-	Bd   *l2nb.BridgeDomains_BridgeDomain `json:"bridge_domain"`
-	Meta *BridgeDomainMeta                `json:"bridge_domain_meta"`
+	Bd   *l2nb.BridgeDomain `json:"bridge_domain"`
+	Meta *BridgeDomainMeta  `json:"bridge_domain_meta"`
 }
 
 // BridgeDomainMeta contains bridge domain interface name/index map
 type BridgeDomainMeta struct {
-	BdID          uint32            `json:"bridge_domain_id"`
-	BdIfIdxToName map[uint32]string `json:"bridge_domain_id_to_name"`
+	BdID uint32 `json:"bridge_domain_id"`
 }
 
 // DumpBridgeDomains implements bridge domain handler.
-func (h *BridgeDomainVppHandler) DumpBridgeDomains() (map[uint32]*BridgeDomainDetails, error) {
-	// At first prepare bridge domain ARP termination table which needs to be dumped separately
+func (h *BridgeDomainVppHandler) DumpBridgeDomains() ([]*BridgeDomainDetails, error) {
+	// At first prepare bridge domain ARP termination table which needs to be dumped separately.
 	bdArpTab, err := h.dumpBridgeDomainMacTable()
 	if err != nil {
 		return nil, errors.Errorf("failed to dump arp termination table: %v", err)
 	}
 
-	// map for the resulting BDs
-	bds := make(map[uint32]*BridgeDomainDetails)
+	// list of resulting BDs
+	var bds []*BridgeDomainDetails
 
-	// First, dump all interfaces to create initial data.
+	// dump bridge domains
 	reqCtx := h.callsChannel.SendMultiRequest(&l2ba.BridgeDomainDump{BdID: ^uint32(0)})
 
 	for {
 		bdDetails := &l2ba.BridgeDomainDetails{}
 		stop, err := reqCtx.ReceiveReply(bdDetails)
 		if stop {
-			break // Break from the loop.
+			break
 		}
 		if err != nil {
 			return nil, err
 		}
 
-		// base bridge domain details
-		bds[bdDetails.BdID] = &BridgeDomainDetails{
-			Bd: &l2nb.BridgeDomains_BridgeDomain{
+		// bridge domain metadata
+		bdData := &BridgeDomainDetails{
+			Bd: &l2nb.BridgeDomain{
 				Name:                string(bytes.Replace(bdDetails.BdTag, []byte{0x00}, []byte{}, -1)),
 				Flood:               bdDetails.Flood > 0,
 				UnknownUnicastFlood: bdDetails.UuFlood > 0,
@@ -73,14 +72,13 @@ func (h *BridgeDomainVppHandler) DumpBridgeDomains() (map[uint32]*BridgeDomainDe
 				MacAge:              uint32(bdDetails.MacAge),
 			},
 			Meta: &BridgeDomainMeta{
-				BdID:          bdDetails.BdID,
-				BdIfIdxToName: make(map[uint32]string),
+				BdID: bdDetails.BdID,
 			},
 		}
 
-		// Bridge domain interfaces and metadata
+		// bridge domain interfaces
 		for _, iface := range bdDetails.SwIfDetails {
-			ifName, _, exists := h.ifIndexes.LookupName(iface.SwIfIndex)
+			ifaceName, _, exists := h.ifIndexes.LookupBySwIfIndex(iface.SwIfIndex)
 			if !exists {
 				h.log.Warnf("Bridge domain dump: interface name for index %d not found", iface.SwIfIndex)
 				continue
@@ -90,48 +88,29 @@ func (h *BridgeDomainVppHandler) DumpBridgeDomains() (map[uint32]*BridgeDomainDe
 			if iface.SwIfIndex == bdDetails.BviSwIfIndex {
 				bvi = true
 			}
-			// Add metadata entry
-			bds[bdDetails.BdID].Meta.BdIfIdxToName[iface.SwIfIndex] = ifName
-			// Add interface entry
-			bds[bdDetails.BdID].Bd.Interfaces = append(bds[bdDetails.BdID].Bd.Interfaces, &l2nb.BridgeDomains_BridgeDomain_Interfaces{
-				Name: ifName,
+			// add interface entry
+			bdData.Bd.Interfaces = append(bdData.Bd.Interfaces, &l2nb.BridgeDomain_Interface{
+				Name: ifaceName,
 				BridgedVirtualInterface: bvi,
 				SplitHorizonGroup:       uint32(iface.Shg),
 			})
 		}
-		// Add ARP termination entries
+
+		// Add ARP termination entries.
 		arpTable, ok := bdArpTab[bdDetails.BdID]
 		if ok {
-			bds[bdDetails.BdID].Bd.ArpTerminationTable = arpTable
+			bdData.Bd.ArpTerminationTable = arpTable
 		}
+
+		bds = append(bds, bdData)
 	}
 
 	return bds, nil
 }
 
-// DumpBridgeDomainIDs implements bridge domain handler.
-func (h *BridgeDomainVppHandler) DumpBridgeDomainIDs() ([]uint32, error) {
-	req := &l2ba.BridgeDomainDump{BdID: ^uint32(0)}
-	var activeDomains []uint32
-	reqCtx := h.callsChannel.SendMultiRequest(req)
-	for {
-		msg := &l2ba.BridgeDomainDetails{}
-		stop, err := reqCtx.ReceiveReply(msg)
-		if err != nil {
-			return nil, err
-		}
-		if stop {
-			break
-		}
-		activeDomains = append(activeDomains, msg.BdID)
-	}
-
-	return activeDomains, nil
-}
-
 // Reads ARP termination table from all bridge domains. Result is then added to bridge domains.
-func (h *BridgeDomainVppHandler) dumpBridgeDomainMacTable() (map[uint32][]*l2nb.BridgeDomains_BridgeDomain_ArpTerminationEntry, error) {
-	bdArpTable := make(map[uint32][]*l2nb.BridgeDomains_BridgeDomain_ArpTerminationEntry)
+func (h *BridgeDomainVppHandler) dumpBridgeDomainMacTable() (map[uint32][]*l2nb.BridgeDomain_ArpTerminationEntry, error) {
+	bdArpTable := make(map[uint32][]*l2nb.BridgeDomain_ArpTerminationEntry)
 	req := &l2ba.BdIPMacDump{BdID: ^uint32(0)}
 
 	reqCtx := h.callsChannel.SendMultiRequest(req)
@@ -146,7 +125,7 @@ func (h *BridgeDomainVppHandler) dumpBridgeDomainMacTable() (map[uint32][]*l2nb.
 		}
 
 		// Prepare ARP entry
-		arpEntry := &l2nb.BridgeDomains_BridgeDomain_ArpTerminationEntry{}
+		arpEntry := &l2nb.BridgeDomain_ArpTerminationEntry{}
 		var ipAddr net.IP = msg.IPAddress
 		if uintToBool(msg.IsIPv6) {
 			arpEntry.IpAddress = ipAddr.To16().String()
@@ -156,12 +135,7 @@ func (h *BridgeDomainVppHandler) dumpBridgeDomainMacTable() (map[uint32][]*l2nb.
 		arpEntry.PhysAddress = net.HardwareAddr(msg.MacAddress).String()
 
 		// Add ARP entry to result map
-		arpEntries, ok := bdArpTable[msg.BdID]
-		if ok {
-			arpEntries = append(arpEntries, arpEntry)
-		} else {
-			bdArpTable[msg.BdID] = append(bdArpTable[msg.BdID], arpEntry)
-		}
+		bdArpTable[msg.BdID] = append(bdArpTable[msg.BdID], arpEntry)
 	}
 
 	return bdArpTable, nil
@@ -169,8 +143,8 @@ func (h *BridgeDomainVppHandler) dumpBridgeDomainMacTable() (map[uint32][]*l2nb.
 
 // FibTableDetails is the wrapper structure for the FIB table entry northbound API structure.
 type FibTableDetails struct {
-	Fib  *l2nb.FibTable_FibEntry `json:"fib"`
-	Meta *FibMeta                `json:"fib_meta"`
+	Fib  *l2nb.FIBEntry `json:"fib"`
+	Meta *FibMeta       `json:"fib_meta"`
 }
 
 // FibMeta contains FIB interface and bridge domain name/index map
@@ -179,12 +153,13 @@ type FibMeta struct {
 	IfIdx uint32 `json:"outgoing_interface_sw_if_idx"`
 }
 
-// DumpFIBTableEntries implements fib handler.
-func (h *FibVppHandler) DumpFIBTableEntries() (map[string]*FibTableDetails, error) {
+// DumpL2FIBs dumps VPP L2 FIB table entries into the northbound API
+// data structure map indexed by destination MAC address.
+func (h *FIBVppHandler) DumpL2FIBs() (map[string]*FibTableDetails, error) {
 	// map for the resulting FIBs
 	fibs := make(map[string]*FibTableDetails)
 
-	reqCtx := h.syncCallsChannel.SendMultiRequest(&l2ba.L2FibTableDump{BdID: ^uint32(0)})
+	reqCtx := h.callsChannel.SendMultiRequest(&l2ba.L2FibTableDump{BdID: ^uint32(0)})
 	for {
 		fibDetails := &l2ba.L2FibTableDetails{}
 		stop, err := reqCtx.ReceiveReply(fibDetails)
@@ -196,26 +171,32 @@ func (h *FibVppHandler) DumpFIBTableEntries() (map[string]*FibTableDetails, erro
 		}
 
 		mac := net.HardwareAddr(fibDetails.Mac).String()
-		var action l2nb.FibTable_FibEntry_Action
+		var action l2nb.FIBEntry_Action
 		if fibDetails.FilterMac > 0 {
-			action = l2nb.FibTable_FibEntry_DROP
+			action = l2nb.FIBEntry_DROP
 		} else {
-			action = l2nb.FibTable_FibEntry_FORWARD
+			action = l2nb.FIBEntry_FORWARD
 		}
 
-		// Interface name
-		ifName, _, exists := h.ifIndexes.LookupName(fibDetails.SwIfIndex)
-		if !exists {
-			h.log.Warnf("FIB dump: interface name for index %d not found", fibDetails.SwIfIndex)
+		// Interface name (only for FORWARD entries)
+		var ifName string
+		if action == l2nb.FIBEntry_FORWARD {
+			var exists bool
+			ifName, _, exists = h.ifIndexes.LookupBySwIfIndex(fibDetails.SwIfIndex)
+			if !exists {
+				h.log.Warnf("FIB dump: interface name for index %d not found", fibDetails.SwIfIndex)
+				continue
+			}
 		}
 		// Bridge domain name
-		bdName, _, exists := h.bdIndexes.LookupName(fibDetails.BdID)
+		bdName, _, exists := h.bdIndexes.LookupByIndex(fibDetails.BdID)
 		if !exists {
 			h.log.Warnf("FIB dump: bridge domain name for index %d not found", fibDetails.BdID)
+			continue
 		}
 
 		fibs[mac] = &FibTableDetails{
-			Fib: &l2nb.FibTable_FibEntry{
+			Fib: &l2nb.FIBEntry{
 				PhysAddress:             mac,
 				BridgeDomain:            bdName,
 				Action:                  action,
@@ -235,8 +216,8 @@ func (h *FibVppHandler) DumpFIBTableEntries() (map[string]*FibTableDetails, erro
 
 // XConnectDetails is the wrapper structure for the l2 xconnect northbound API structure.
 type XConnectDetails struct {
-	Xc   *l2nb.XConnectPairs_XConnectPair `json:"x_connect"`
-	Meta *XcMeta                          `json:"x_connect_meta"`
+	Xc   *l2nb.XConnectPair `json:"x_connect"`
+	Meta *XcMeta            `json:"x_connect_meta"`
 }
 
 // XcMeta contains cross connect rx/tx interface indexes
@@ -255,24 +236,26 @@ func (h *XConnectVppHandler) DumpXConnectPairs() (map[uint32]*XConnectDetails, e
 		pairs := &l2ba.L2XconnectDetails{}
 		stop, err := reqCtx.ReceiveReply(pairs)
 		if stop {
-			break // Break from the loop.
+			break
 		}
 		if err != nil {
 			return nil, err
 		}
 
 		// Find interface names
-		rxIfaceName, _, exists := h.ifIndexes.LookupName(pairs.RxSwIfIndex)
+		rxIfaceName, _, exists := h.ifIndexes.LookupBySwIfIndex(pairs.RxSwIfIndex)
 		if !exists {
 			h.log.Warnf("XConnect dump: rx interface name for index %d not found", pairs.RxSwIfIndex)
+			continue
 		}
-		txIfaceName, _, exists := h.ifIndexes.LookupName(pairs.TxSwIfIndex)
+		txIfaceName, _, exists := h.ifIndexes.LookupBySwIfIndex(pairs.TxSwIfIndex)
 		if !exists {
 			h.log.Warnf("XConnect dump: tx interface name for index %d not found", pairs.TxSwIfIndex)
+			continue
 		}
 
 		xpairs[pairs.RxSwIfIndex] = &XConnectDetails{
-			Xc: &l2nb.XConnectPairs_XConnectPair{
+			Xc: &l2nb.XConnectPair{
 				ReceiveInterface:  rxIfaceName,
 				TransmitInterface: txIfaceName,
 			},

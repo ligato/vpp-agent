@@ -26,7 +26,7 @@ import (
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/servicelabel"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/l3"
+	//"github.com/ligato/vpp-agent/plugins/vpp/model/l3"
 )
 
 // Common exit flags
@@ -129,14 +129,14 @@ func ParseKey(key string) (label string, dataType string, name string, plugStatC
 			return label, dataType, rebuildName(params), plugStatCfgRev
 		}
 		// Recognize static route.
-		if len(ps) > 6 && ps[4] == "vrf" && ps[6] == "fib" {
+		/*if len(ps) > 6 && ps[4] == "vrf" && ps[6] == "fib" {
 			dataType += "/" + strings.TrimPrefix(l3.RoutesPrefix, l3.VrfPrefix)
 
 			if len(ps) > 7 {
 				params = append(params, ps[7:]...)
 			}
 			return label, dataType, rebuildName(params), plugStatCfgRev
-		}
+		}*/
 		dataType += "/"
 		params = ps[5:]
 	} else {

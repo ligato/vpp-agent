@@ -18,21 +18,18 @@ import (
 	"testing"
 
 	"github.com/ligato/cn-infra/logging/logrus"
-	"github.com/ligato/vpp-agent/pkg/idxvpp/nametoidx"
 	acl_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/acl"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpe"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
-	"github.com/ligato/vpp-agent/tests/vppcallmock"
 	. "github.com/onsi/gomega"
 )
 
 // Test translation of IP rule into ACL Plugin's format
 func TestGetIPRuleMatch(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
-	defer ctx.TeardownTestCtx()
-	aclHandler := NewACLVppHandler(ctx.MockChannel, nil)
+	ctx := setupACLTest(t)
+	defer ctx.teardownACLTest()
 
-	icmpV4Rule := aclHandler.getIPRuleMatches(acl_api.ACLRule{
+	icmpV4Rule := ctx.aclHandler.getIPRuleMatches(acl_api.ACLRule{
 		SrcIPAddr:      []byte{10, 0, 0, 1},
 		SrcIPPrefixLen: 24,
 		DstIPAddr:      []byte{20, 0, 0, 1},
@@ -43,7 +40,7 @@ func TestGetIPRuleMatch(t *testing.T) {
 		t.Fatal("should have icmp match")
 	}
 
-	icmpV6Rule := aclHandler.getIPRuleMatches(acl_api.ACLRule{
+	icmpV6Rule := ctx.aclHandler.getIPRuleMatches(acl_api.ACLRule{
 		IsIPv6:         1,
 		SrcIPAddr:      []byte{'d', 'e', 'd', 'd', 1},
 		SrcIPPrefixLen: 64,
@@ -55,7 +52,7 @@ func TestGetIPRuleMatch(t *testing.T) {
 		t.Fatal("should have icmpv6 match")
 	}
 
-	tcpRule := aclHandler.getIPRuleMatches(acl_api.ACLRule{
+	tcpRule := ctx.aclHandler.getIPRuleMatches(acl_api.ACLRule{
 		SrcIPAddr:      []byte{10, 0, 0, 1},
 		SrcIPPrefixLen: 24,
 		DstIPAddr:      []byte{20, 0, 0, 1},
@@ -66,7 +63,7 @@ func TestGetIPRuleMatch(t *testing.T) {
 		t.Fatal("should have tcp match")
 	}
 
-	udpRule := aclHandler.getIPRuleMatches(acl_api.ACLRule{
+	udpRule := ctx.aclHandler.getIPRuleMatches(acl_api.ACLRule{
 		SrcIPAddr:      []byte{10, 0, 0, 1},
 		SrcIPPrefixLen: 24,
 		DstIPAddr:      []byte{20, 0, 0, 1},
@@ -80,11 +77,10 @@ func TestGetIPRuleMatch(t *testing.T) {
 
 // Test translation of MACIP rule into ACL Plugin's format
 func TestGetMACIPRuleMatches(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
-	defer ctx.TeardownTestCtx()
-	aclHandler := NewACLVppHandler(ctx.MockChannel, nil)
+	ctx := setupACLTest(t)
+	defer ctx.teardownACLTest()
 
-	macipV4Rule := aclHandler.getMACIPRuleMatches(acl_api.MacipACLRule{
+	macipV4Rule := ctx.aclHandler.getMACIPRuleMatches(acl_api.MacipACLRule{
 		IsPermit:       1,
 		SrcMac:         []byte{2, 'd', 'e', 'a', 'd', 2},
 		SrcMacMask:     []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff},
@@ -94,7 +90,7 @@ func TestGetMACIPRuleMatches(t *testing.T) {
 	if macipV4Rule.GetSourceMacAddress() == "" {
 		t.Fatal("should have mac match")
 	}
-	macipV6Rule := aclHandler.getMACIPRuleMatches(acl_api.MacipACLRule{
+	macipV6Rule := ctx.aclHandler.getMACIPRuleMatches(acl_api.MacipACLRule{
 		IsPermit:       0,
 		IsIPv6:         1,
 		SrcMac:         []byte{2, 'd', 'e', 'a', 'd', 2},
@@ -109,8 +105,8 @@ func TestGetMACIPRuleMatches(t *testing.T) {
 
 // Test dumping of IP rules
 func TestDumpIPACL(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
-	defer ctx.TeardownTestCtx()
+	ctx := setupACLTest(t)
+	defer ctx.teardownACLTest()
 
 	ctx.MockVpp.MockReply(
 		&acl_api.ACLDetails{
@@ -140,12 +136,9 @@ func TestDumpIPACL(t *testing.T) {
 	})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 
-	aclHandler := NewACLVppHandler(ctx.MockChannel, ctx.MockChannel)
+	ctx.ifIndexes.Put("if0", &ifaceidx.IfaceMetadata{SwIfIndex: 1})
 
-	swIfIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "test", nil))
-	swIfIndexes.RegisterName("if0", 1, nil)
-
-	ifaces, err := aclHandler.DumpIPACL(swIfIndexes)
+	ifaces, err := ctx.aclHandler.DumpACL()
 	Expect(err).To(Succeed())
 	Expect(ifaces).To(HaveLen(3))
 	//Expect(ifaces[0].Identifier.ACLIndex).To(Equal(uint32(0)))
@@ -156,8 +149,8 @@ func TestDumpIPACL(t *testing.T) {
 
 // Test dumping of MACIP rules
 func TestDumpMACIPACL(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
-	defer ctx.TeardownTestCtx()
+	ctx := setupACLTest(t)
+	defer ctx.teardownACLTest()
 
 	ctx.MockVpp.MockReply(
 		&acl_api.MacipACLDetails{
@@ -186,12 +179,10 @@ func TestDumpMACIPACL(t *testing.T) {
 	})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 
-	aclHandler := NewACLVppHandler(ctx.MockChannel, ctx.MockChannel)
+	swIfIndexes := ifaceidx.NewIfaceIndex(logrus.DefaultLogger(), "test")
+	swIfIndexes.Put("if0", &ifaceidx.IfaceMetadata{SwIfIndex: 1})
 
-	swIfIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "test", nil))
-	swIfIndexes.RegisterName("if0", 1, nil)
-
-	ifaces, err := aclHandler.DumpMACIPACL(swIfIndexes)
+	ifaces, err := ctx.aclHandler.DumpMACIPACL()
 	Expect(err).To(Succeed())
 	Expect(ifaces).To(HaveLen(3))
 	//Expect(ifaces[0].Identifier.ACLIndex).To(Equal(uint32(0)))
@@ -202,8 +193,8 @@ func TestDumpMACIPACL(t *testing.T) {
 
 // Test dumping of interfaces with assigned IP rules
 func TestDumpACLInterfaces(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
-	defer ctx.TeardownTestCtx()
+	ctx := setupACLTest(t)
+	defer ctx.teardownACLTest()
 
 	ctx.MockVpp.MockReply(&acl_api.ACLInterfaceListDetails{
 		SwIfIndex: 1,
@@ -213,13 +204,10 @@ func TestDumpACLInterfaces(t *testing.T) {
 	})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 
-	aclHandler := NewACLVppHandler(ctx.MockChannel, ctx.MockChannel)
-
-	swIfIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "test", nil))
-	swIfIndexes.RegisterName("if0", 1, nil)
+	ctx.ifIndexes.Put("if0", &ifaceidx.IfaceMetadata{SwIfIndex: 1})
 
 	indexes := []uint32{0, 2}
-	ifaces, err := aclHandler.DumpIPACLInterfaces(indexes, swIfIndexes)
+	ifaces, err := ctx.aclHandler.DumpACLInterfaces(indexes)
 	Expect(err).To(Succeed())
 	Expect(ifaces).To(HaveLen(2))
 	Expect(ifaces[0].Ingress).To(Equal([]string{"if0"}))
@@ -228,8 +216,8 @@ func TestDumpACLInterfaces(t *testing.T) {
 
 // Test dumping of interfaces with assigned MACIP rules
 func TestDumpMACIPACLInterfaces(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
-	defer ctx.TeardownTestCtx()
+	ctx := setupACLTest(t)
+	defer ctx.teardownACLTest()
 
 	ctx.MockVpp.MockReply(&acl_api.MacipACLInterfaceListDetails{
 		SwIfIndex: 1,
@@ -238,13 +226,10 @@ func TestDumpMACIPACLInterfaces(t *testing.T) {
 	})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 
-	aclHandler := NewACLVppHandler(ctx.MockChannel, ctx.MockChannel)
-
-	swIfIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "test-sw_if_indexes", ifaceidx.IndexMetadata))
-	swIfIndexes.RegisterName("if0", 1, nil)
+	ctx.ifIndexes.Put("if0", &ifaceidx.IfaceMetadata{SwIfIndex: 1})
 
 	indexes := []uint32{0, 1}
-	ifaces, err := aclHandler.DumpMACIPACLInterfaces(indexes, swIfIndexes)
+	ifaces, err := ctx.aclHandler.DumpMACIPACLInterfaces(indexes)
 	Expect(err).To(Succeed())
 	Expect(ifaces).To(HaveLen(2))
 	Expect(ifaces[0].Ingress).To(Equal([]string{"if0"}))
@@ -255,8 +240,8 @@ func TestDumpMACIPACLInterfaces(t *testing.T) {
 
 // Test dumping of all configured ACLs with IP-type ruleData
 func TestDumpIPAcls(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
-	defer ctx.TeardownTestCtx()
+	ctx := setupACLTest(t)
+	defer ctx.teardownACLTest()
 
 	ctx.MockVpp.MockReply(&acl_api.ACLDetails{
 		ACLIndex: 0,
@@ -265,17 +250,15 @@ func TestDumpIPAcls(t *testing.T) {
 	})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 
-	aclHandler := NewACLVppHandler(ctx.MockChannel, ctx.MockChannel)
-
-	IPRuleACLs, err := aclHandler.DumpIPAcls()
+	IPRuleACLs, err := ctx.aclHandler.DumpIPAcls()
 	Expect(err).To(Succeed())
 	Expect(IPRuleACLs).To(HaveLen(1))
 }
 
 // Test dumping of all configured ACLs with MACIP-type ruleData
 func TestDumpMacIPAcls(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
-	defer ctx.TeardownTestCtx()
+	ctx := setupACLTest(t)
+	defer ctx.teardownACLTest()
 
 	ctx.MockVpp.MockReply(&acl_api.MacipACLDetails{
 		ACLIndex: 0,
@@ -284,16 +267,14 @@ func TestDumpMacIPAcls(t *testing.T) {
 	})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 
-	aclHandler := NewACLVppHandler(ctx.MockChannel, ctx.MockChannel)
-
-	MacIPRuleACLs, err := aclHandler.DumpMacIPAcls()
+	MacIPRuleACLs, err := ctx.aclHandler.DumpMacIPAcls()
 	Expect(err).To(Succeed())
 	Expect(MacIPRuleACLs).To(HaveLen(1))
 }
 
 func TestDumpInterfaceIPAcls(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
-	defer ctx.TeardownTestCtx()
+	ctx := setupACLTest(t)
+	defer ctx.teardownACLTest()
 
 	ctx.MockVpp.MockReply(&acl_api.ACLInterfaceListDetails{
 		SwIfIndex: 0,
@@ -312,16 +293,14 @@ func TestDumpInterfaceIPAcls(t *testing.T) {
 		R:        []acl_api.ACLRule{{IsPermit: 2}, {IsPermit: 0}},
 	})
 
-	aclHandler := NewACLVppHandler(ctx.MockChannel, ctx.MockChannel)
-
-	ACLs, err := aclHandler.DumpInterfaceIPAcls(0)
+	ACLs, err := ctx.aclHandler.DumpInterfaceACLs(0)
 	Expect(err).To(Succeed())
-	Expect(ACLs.Acls).To(HaveLen(2))
+	Expect(ACLs).To(HaveLen(2))
 }
 
 func TestDumpInterfaceMACIPAcls(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
-	defer ctx.TeardownTestCtx()
+	ctx := setupACLTest(t)
+	defer ctx.teardownACLTest()
 
 	ctx.MockVpp.MockReply(&acl_api.MacipACLInterfaceListDetails{
 		SwIfIndex: 0,
@@ -339,18 +318,14 @@ func TestDumpInterfaceMACIPAcls(t *testing.T) {
 		R:        []acl_api.MacipACLRule{{IsPermit: 2}, {IsPermit: 1}},
 	})
 
-	aclHandler := NewACLVppHandler(ctx.MockChannel, ctx.MockChannel)
-
-	ACLs, err := aclHandler.DumpInterfaceMACIPAcls(0)
+	ACLs, err := ctx.aclHandler.DumpInterfaceMACIPACLs(0)
 	Expect(err).To(Succeed())
-	Expect(ACLs.Acls).To(HaveLen(2))
+	Expect(ACLs).To(HaveLen(2))
 }
 
 func TestDumpInterface(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
-	defer ctx.TeardownTestCtx()
-
-	aclHandler := NewACLVppHandler(ctx.MockChannel, ctx.MockChannel)
+	ctx := setupACLTest(t)
+	defer ctx.teardownACLTest()
 
 	ctx.MockVpp.MockReply(&acl_api.ACLInterfaceListDetails{
 		SwIfIndex: 0,
@@ -358,12 +333,12 @@ func TestDumpInterface(t *testing.T) {
 		NInput:    1,
 		Acls:      []uint32{0, 1},
 	})
-	IPacls, err := aclHandler.DumpInterfaceIPACLs(0)
+	IPacls, err := ctx.aclHandler.DumpInterfaceACLList(0)
 	Expect(err).To(BeNil())
 	Expect(IPacls.Acls).To(HaveLen(2))
 
 	ctx.MockVpp.MockReply(&acl_api.ACLInterfaceListDetails{})
-	IPacls, err = aclHandler.DumpInterfaceIPACLs(0)
+	IPacls, err = ctx.aclHandler.DumpInterfaceACLList(0)
 	Expect(err).To(BeNil())
 	Expect(IPacls.Acls).To(HaveLen(0))
 
@@ -372,19 +347,19 @@ func TestDumpInterface(t *testing.T) {
 		Count:     2,
 		Acls:      []uint32{0, 1},
 	})
-	MACIPacls, err := aclHandler.DumpInterfaceMACIPACLs(0)
+	MACIPacls, err := ctx.aclHandler.DumpInterfaceMACIPACLList(0)
 	Expect(err).To(BeNil())
 	Expect(MACIPacls.Acls).To(HaveLen(2))
 
 	ctx.MockVpp.MockReply(&acl_api.MacipACLInterfaceListDetails{})
-	MACIPacls, err = aclHandler.DumpInterfaceMACIPACLs(0)
+	MACIPacls, err = ctx.aclHandler.DumpInterfaceMACIPACLList(0)
 	Expect(err).To(BeNil())
 	Expect(MACIPacls.Acls).To(HaveLen(0))
 }
 
 func TestDumpInterfaces(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
-	defer ctx.TeardownTestCtx()
+	ctx := setupACLTest(t)
+	defer ctx.teardownACLTest()
 
 	ctx.MockVpp.MockReply(
 		&acl_api.ACLInterfaceListDetails{
@@ -418,9 +393,7 @@ func TestDumpInterfaces(t *testing.T) {
 		})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 
-	aclHandler := NewACLVppHandler(ctx.MockChannel, ctx.MockChannel)
-
-	IPacls, MACIPacls, err := aclHandler.DumpInterfaces()
+	IPacls, MACIPacls, err := ctx.aclHandler.DumpInterfacesLists()
 	Expect(err).To(BeNil())
 	Expect(IPacls).To(HaveLen(3))
 	Expect(MACIPacls).To(HaveLen(2))

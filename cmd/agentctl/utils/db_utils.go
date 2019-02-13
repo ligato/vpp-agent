@@ -24,9 +24,9 @@ import (
 
 	"github.com/ligato/cn-infra/db/keyval"
 	"github.com/ligato/cn-infra/health/statuscheck/model/status"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/l2"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/l3"
+	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
+	l2 "github.com/ligato/vpp-agent/api/models/vpp/l2"
+	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
 )
 
 // VppMetaData defines the etcd metadata.
@@ -46,28 +46,28 @@ type InterfaceWithMD struct {
 // and its etcd metadata.
 type IfConfigWithMD struct {
 	Metadata  VppMetaData
-	Interface *interfaces.Interfaces_Interface
+	Interface *interfaces.Interface
 }
 
 // IfStateWithMD contains a data record for interface state and its
 // etcd metadata.
 type IfStateWithMD struct {
 	Metadata       VppMetaData
-	InterfaceState *interfaces.InterfacesState_Interface
+	InterfaceState *interfaces.InterfaceState
 }
 
 // InterfaceErrorWithMD contains a data record for interface errors and its
 // etcd metadata.
 type InterfaceErrorWithMD struct {
 	VppMetaData
-	InterfaceErrorList []*interfaces.InterfaceErrors_Interface
+	//InterfaceErrorList []*interfaces.InterfaceErrors_Interface
 }
 
 // BridgeDomainErrorWithMD contains a data record for bridge domain errors and its
 // etcd metadata.
 type BridgeDomainErrorWithMD struct {
 	VppMetaData
-	BdErrorList []*l2.BridgeDomainErrors_BridgeDomain
+	BdErrorList []*l2.BridgeDomain
 }
 
 // BdWithMD contains a Bridge Domain data record and its etcd
@@ -81,35 +81,35 @@ type BdWithMD struct {
 // metadata.
 type BdConfigWithMD struct {
 	Metadata     VppMetaData
-	BridgeDomain *l2.BridgeDomains_BridgeDomain
+	BridgeDomain *l2.BridgeDomain
 }
 
 // BdStateWithMD contains a Bridge Domain state data record and its etcd
 // metadata.
 type BdStateWithMD struct {
-	Metadata          VppMetaData
-	BridgeDomainState *l2.BridgeDomainState_BridgeDomain
+	Metadata VppMetaData
+	//BridgeDomainState *l2.BridgeDomainState_BridgeDomain
 }
 
 // FibTableWithMD contains an FIB table data record and its etcd
 // metadata.
 type FibTableWithMD struct {
 	VppMetaData
-	FibTable []*l2.FibTable_FibEntry
+	FibTable []*l2.FIBEntry
 }
 
 // XconnectWithMD contains an l2 cross-Connect data record and its
 // etcd metadata.
 type XconnectWithMD struct {
 	VppMetaData
-	*l2.XConnectPairs_XConnectPair
+	*l2.XConnectPair
 }
 
 // StaticRoutesWithMD contains a static route data record and its
 // etcd metadata.
 type StaticRoutesWithMD struct {
 	VppMetaData
-	Routes []*l3.StaticRoutes_Route
+	Routes []*l3.Route
 }
 
 // VppStatusWithMD contains a VPP Status data record and its etcd
@@ -185,7 +185,7 @@ func (ed EtcdDump) ReadDataFromDb(db keyval.ProtoBroker, key string,
 		return false, nil
 	}
 
-	vd, ok := ed[label]
+	/*vd, ok := ed[label]
 	if !ok {
 		vd = newVppDataRecord()
 	}
@@ -208,7 +208,7 @@ func (ed EtcdDump) ReadDataFromDb(db keyval.ProtoBroker, key string,
 		ed[label], err = readXconnectFromDb(db, vd, key, params)
 	case l3.RoutesPrefix:
 		ed[label], err = readRoutesFromDb(db, vd, key)
-	}
+	}*/
 
 	return true, err
 }
@@ -226,7 +226,7 @@ func isItemAllowed(item string, filter []string) bool {
 }
 
 func readIfConfigFromDb(db keyval.ProtoBroker, vd *VppData, key string, name string) (*VppData, error) {
-	ifc := &interfaces.Interfaces_Interface{}
+	ifc := &interfaces.Interface{}
 	if name == "" {
 		fmt.Printf("WARNING: Invalid interface Key '%s'\n", key)
 		return vd, nil
@@ -243,7 +243,7 @@ func readIfConfigFromDb(db keyval.ProtoBroker, vd *VppData, key string, name str
 }
 
 func readIfStateFromDb(db keyval.ProtoBroker, vd *VppData, key string, name string) (*VppData, error) {
-	ifs := &interfaces.InterfacesState_Interface{}
+	ifs := &interfaces.InterfaceState{}
 	if name == "" {
 		fmt.Printf("WARNING: Invalid ifstate Key '%s'\n", key)
 		return vd, nil
@@ -258,6 +258,7 @@ func readIfStateFromDb(db keyval.ProtoBroker, vd *VppData, key string, name stri
 	return vd, err
 }
 
+/*
 func readInterfaceErrorFromDb(db keyval.ProtoBroker, vd *VppData, key string, name string) (*VppData, error) {
 	ife := &interfaces.InterfaceErrors_Interface{}
 	if name == "" {
@@ -275,13 +276,13 @@ func readInterfaceErrorFromDb(db keyval.ProtoBroker, vd *VppData, key string, na
 
 	return vd, err
 }
-
+*/
 func readBdConfigFromDb(db keyval.ProtoBroker, vd *VppData, key string, name string) (*VppData, error) {
 	if name == "" {
 		fmt.Printf("WARNING: Invalid bridge domain config Key '%s'\n", key)
 		return vd, nil
 	}
-	bd := &l2.BridgeDomains_BridgeDomain{}
+	bd := &l2.BridgeDomain{}
 	found, rev, err := readDataFromDb(db, key, bd)
 	if found && err == nil {
 		vd.BridgeDomains[name] = BdWithMD{
@@ -292,6 +293,7 @@ func readBdConfigFromDb(db keyval.ProtoBroker, vd *VppData, key string, name str
 	return vd, err
 }
 
+/*
 func readBdStateFromDb(db keyval.ProtoBroker, vd *VppData, key string, name string) (*VppData, error) {
 	if name == "" {
 		fmt.Printf("WARNING: Invalid bridge domain state Key '%s'\n", key)
@@ -325,9 +327,9 @@ func readBdErrorFromDb(db keyval.ProtoBroker, vd *VppData, key string, name stri
 
 	return vd, err
 }
-
+*/
 func readFibFromDb(db keyval.ProtoBroker, vd *VppData, key string) (*VppData, error) {
-	fibEntry := &l2.FibTable_FibEntry{}
+	fibEntry := &l2.FIBEntry{}
 	found, rev, err := readDataFromDb(db, key, fibEntry)
 	if found && err == nil {
 		fibTable := vd.FibTableEntries.FibTable
@@ -343,7 +345,7 @@ func readXconnectFromDb(db keyval.ProtoBroker, vd *VppData, key string, name str
 		fmt.Printf("WARNING: Invalid cross-connect Key '%s'\n", key)
 		return vd, nil
 	}
-	xc := &l2.XConnectPairs_XConnectPair{}
+	xc := &l2.XConnectPair{}
 	found, rev, err := readDataFromDb(db, key, xc)
 	if found && err == nil {
 		vd.XConnectPairs[name] =
@@ -353,7 +355,7 @@ func readXconnectFromDb(db keyval.ProtoBroker, vd *VppData, key string, name str
 }
 
 func readRoutesFromDb(db keyval.ProtoBroker, vd *VppData, key string) (*VppData, error) {
-	route := &l3.StaticRoutes_Route{}
+	route := &l3.Route{}
 	found, rev, err := readDataFromDb(db, key, route)
 
 	if found && err == nil {

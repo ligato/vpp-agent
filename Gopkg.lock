@@ -30,6 +30,14 @@
   revision = "d6e3b3328b783f23731bc4d058875b0371ff8109"
 
 [[projects]]
+  digest = "1:ed77032e4241e3b8329c9304d66452ed196e795876e14be677a546f36b94e67a"
+  name = "github.com/DataDog/zstd"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "c7161f8c63c045cbc7ca051dcc969dd0e4054de2"
+  version = "v1.3.5"
+
+[[projects]]
   digest = "1:bf42be3cb1519bf8018dfd99720b1005ee028d947124cab3ccf965da59381df6"
   name = "github.com/Microsoft/go-winio"
   packages = ["."]
@@ -46,15 +54,15 @@
   revision = "cd527374f1e5bff4938207604a14f2e38a9cf512"
 
 [[projects]]
-  digest = "1:a74fd61e4e9147799aab09264450de47f1637b043525fcf8cf0cd4b1476816e1"
+  digest = "1:59ced12f3862e56e91115f7f24969db8b609b0a6355063b8d1355aceb52d5f14"
   name = "github.com/Shopify/sarama"
   packages = [
     ".",
     "mocks",
   ]
   pruneopts = "UT"
-  revision = "3b1b38866a79f06deddf0487d5c27ba0697ccd65"
-  version = "v1.15.0"
+  revision = "03a43f93cd29dc549e6d9b11892795c206f9c38c"
+  version = "v1.20.1"
 
 [[projects]]
   branch = "master"
@@ -113,7 +121,7 @@
   revision = "b2b946a77f5973f420514090d6f6dd58b08303f0"
 
 [[projects]]
-  digest = "1:85fce1e2e3ec72eecab2a2fd8fb85d7a825f0d5cd841652fe0ad980bbe22dd4a"
+  digest = "1:7ae4616edd396840ccc1506d287211ef883d3e93604dde0c9d1dd5721bb449d5"
   name = "github.com/coreos/etcd"
   packages = [
     "auth/authpb",
@@ -126,8 +134,8 @@
     "pkg/types",
   ]
   pruneopts = "UT"
-  revision = "fca8add78a9d926166eb739b8e4a124434025ba3"
-  version = "v3.3.9"
+  revision = "27fc7e2296f506182f58ce846e48f36b34fe6842"
+  version = "v3.3.10"
 
 [[projects]]
   digest = "1:85968a9e07d94b5f3d15993b9884ab5fcc41c8b7b6418df8b6a3baa387bb8d68"
@@ -248,14 +256,6 @@
   pruneopts = "UT"
   revision = "44cc805cf13205b55f69e14bcb69867d1ae92f98"
   version = "v1.1.0"
-
-[[projects]]
-  digest = "1:f4f6279cb37479954644babd8f8ef00584ff9fa63555d2c6718c1c3517170202"
-  name = "github.com/elazarl/go-bindata-assetfs"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "30f82fa23fd844bd5bb1e5f216db87fd77b5eb43"
-  version = "v1.0.0"
 
 [[projects]]
   digest = "1:ad7ffa16c33f19ee2c17bce7ee865f5632cdc90d908aa313849900ecb3f722df"
@@ -428,6 +428,18 @@
   version = "v1.6.2"
 
 [[projects]]
+  digest = "1:a93a4de7b00fb9cc952bc0483e9a32cd273adbbd7f3282bfe89656b2f88fb08c"
+  name = "github.com/grpc-ecosystem/go-grpc-middleware"
+  packages = [
+    ".",
+    "auth",
+    "util/metautils",
+  ]
+  pruneopts = "UT"
+  revision = "c250d6563d4d4c20252cd865923440e829844f4e"
+  version = "v1.0.0"
+
+[[projects]]
   digest = "1:f8cb7c367c825e0c0be75f17e9b003d39b1240a1535fbbf095a18d7bb0d0c9c9"
   name = "github.com/hashicorp/consul"
   packages = ["api"]
@@ -477,7 +489,7 @@
 
 [[projects]]
   branch = "dev"
-  digest = "1:d683e93d20eefe52454f6fac3eec057bebf273a925c5cba9b678a938957cfe4b"
+  digest = "1:103b685a90ea6f52d661d374fe351ed376c2fe180c25bb59873ec6003e390cdf"
   name = "github.com/ligato/cn-infra"
   packages = [
     "agent",
@@ -520,7 +532,7 @@
     "utils/safeclose",
   ]
   pruneopts = "T"
-  revision = "7332c57ac284a7aa1778ace0005ddaf2552698d5"
+  revision = "baf4f60d8a6792fd6ade9f93a4227f391b4d5ead"
 
 [[projects]]
   branch = "master"
@@ -977,9 +989,7 @@
     "git.fd.io/govpp.git/cmd/binapi-generator",
     "git.fd.io/govpp.git/core",
     "github.com/buger/goterm",
-    "github.com/elazarl/go-bindata-assetfs",
     "github.com/fsouza/go-dockerclient",
-    "github.com/ghodss/yaml",
     "github.com/go-errors/errors",
     "github.com/gogo/protobuf/gogoproto",
     "github.com/gogo/protobuf/jsonpb",
@@ -1011,7 +1021,6 @@
     "github.com/ligato/cn-infra/logging/logrus",
     "github.com/ligato/cn-infra/logging/measure",
     "github.com/ligato/cn-infra/logging/measure/model/apitrace",
-    "github.com/ligato/cn-infra/messaging",
     "github.com/ligato/cn-infra/messaging/kafka",
     "github.com/ligato/cn-infra/rpc/grpc",
     "github.com/ligato/cn-infra/rpc/prometheus",

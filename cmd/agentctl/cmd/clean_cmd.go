@@ -14,6 +14,7 @@
 
 package cmd
 
+/*
 import (
 	"errors"
 	"fmt"
@@ -29,8 +30,7 @@ import (
 	"github.com/ligato/vpp-agent/cmd/agentctl/utils"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l2"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/l3"
-)
+	"github.com/ligato/vpp-agent/plugins/vpp/model/l3")
 
 const dataTypeFlagName = "dataType"
 
@@ -66,7 +66,7 @@ for all agents will be deleted.`,
     $ agentctl clean vpp1 -dataType %s,%s
   Delete all data for all agents (no filter):
     $ agentctl clean`,
-		status.StatusPrefix, status.StatusPrefix, interfaces.Prefix),
+		status.StatusPrefix, status.StatusPrefix , interfaces.Prefix),
 	Run: cleanFunc,
 }
 
@@ -119,3 +119,4 @@ func cleanFunc(cmd *cobra.Command, args []string) {
 
 	}
 }
+*/

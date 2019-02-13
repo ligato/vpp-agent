@@ -19,7 +19,7 @@ import (
 
 	ifApi "github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
 
-	"github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
+	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	. "github.com/onsi/gomega"
 )
 
@@ -29,7 +29,7 @@ func TestSetRxPlacement(t *testing.T) {
 
 	ctx.MockVpp.MockReply(&ifApi.SwInterfaceSetRxPlacementReply{})
 
-	err := ifHandler.SetRxPlacement(1, &interfaces.Interfaces_Interface_RxPlacementSettings{
+	err := ifHandler.SetRxPlacement(1, &interfaces.Interface_RxPlacementSettings{
 		Queue:  1,
 		Worker: 2,
 		IsMain: true,
@@ -51,7 +51,7 @@ func TestSetRxPlacementRetval(t *testing.T) {
 		Retval: 1,
 	})
 
-	err := ifHandler.SetRxPlacement(1, &interfaces.Interfaces_Interface_RxPlacementSettings{
+	err := ifHandler.SetRxPlacement(1, &interfaces.Interface_RxPlacementSettings{
 		Queue:  1,
 		Worker: 2,
 	})
@@ -65,7 +65,7 @@ func TestSetRxPlacementError(t *testing.T) {
 
 	ctx.MockVpp.MockReply(&ifApi.SwInterfaceSetRxPlacement{})
 
-	err := ifHandler.SetRxPlacement(1, &interfaces.Interfaces_Interface_RxPlacementSettings{
+	err := ifHandler.SetRxPlacement(1, &interfaces.Interface_RxPlacementSettings{
 		Queue:  1,
 		Worker: 2,
 	})

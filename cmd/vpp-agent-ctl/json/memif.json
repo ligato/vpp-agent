@@ -10,5 +10,5 @@
         "socket_filename": "/tmp/memif1.sock"
     },
     "name": "memif1",
-    "type": 2
+    "type": "MEMIF"
 }

@@ -18,16 +18,13 @@ import (
 	"testing"
 
 	acl_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/acl"
-	"github.com/ligato/vpp-agent/tests/vppcallmock"
 	. "github.com/onsi/gomega"
 )
 
 // Test assignment of IP acl rule to given interface
 func TestRequestSetACLToInterfaces(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
-	defer ctx.TeardownTestCtx()
-
-	aclHandler := NewACLVppHandler(ctx.MockChannel, ctx.MockChannel)
+	ctx := setupACLTest(t)
+	defer ctx.teardownACLTest()
 
 	ctx.MockVpp.MockReply(&acl_api.ACLInterfaceListDetails{
 		SwIfIndex: 0,
@@ -36,7 +33,7 @@ func TestRequestSetACLToInterfaces(t *testing.T) {
 		Acls:      []uint32{0, 1},
 	})
 	ctx.MockVpp.MockReply(&acl_api.ACLInterfaceSetACLListReply{})
-	err := aclHandler.SetACLToInterfacesAsIngress(0, []uint32{0})
+	err := ctx.aclHandler.SetACLToInterfacesAsIngress(0, []uint32{0})
 	Expect(err).To(BeNil())
 
 	ctx.MockVpp.MockReply(&acl_api.ACLInterfaceListDetails{
@@ -46,13 +43,13 @@ func TestRequestSetACLToInterfaces(t *testing.T) {
 		Acls:      []uint32{0, 1},
 	})
 	ctx.MockVpp.MockReply(&acl_api.ACLInterfaceSetACLListReply{})
-	err = aclHandler.SetACLToInterfacesAsEgress(0, []uint32{0})
+	err = ctx.aclHandler.SetACLToInterfacesAsEgress(0, []uint32{0})
 	Expect(err).To(BeNil())
 
 	// error cases
 
 	ctx.MockVpp.MockReply(&acl_api.ACLInterfaceSetACLListReply{})
-	err = aclHandler.SetACLToInterfacesAsIngress(0, []uint32{0})
+	err = ctx.aclHandler.SetACLToInterfacesAsIngress(0, []uint32{0})
 	Expect(err).To(Not(BeNil()))
 
 	ctx.MockVpp.MockReply(&acl_api.ACLInterfaceListDetails{
@@ -62,7 +59,7 @@ func TestRequestSetACLToInterfaces(t *testing.T) {
 		Acls:      []uint32{0, 1},
 	})
 	ctx.MockVpp.MockReply(&acl_api.MacipACLAddReplaceReply{})
-	err = aclHandler.SetACLToInterfacesAsIngress(0, []uint32{0})
+	err = ctx.aclHandler.SetACLToInterfacesAsIngress(0, []uint32{0})
 	Expect(err).To(Not(BeNil()))
 
 	ctx.MockVpp.MockReply(&acl_api.ACLInterfaceListDetails{
@@ -72,16 +69,14 @@ func TestRequestSetACLToInterfaces(t *testing.T) {
 		Acls:      []uint32{0, 1},
 	})
 	ctx.MockVpp.MockReply(&acl_api.ACLInterfaceSetACLListReply{Retval: -1})
-	err = aclHandler.SetACLToInterfacesAsIngress(0, []uint32{0})
+	err = ctx.aclHandler.SetACLToInterfacesAsIngress(0, []uint32{0})
 	Expect(err).To(Not(BeNil()))
 }
 
 // Test deletion of IP acl rule from given interface
 func TestRequestRemoveInterfacesFromACL(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
-	defer ctx.TeardownTestCtx()
-
-	aclHandler := NewACLVppHandler(ctx.MockChannel, ctx.MockChannel)
+	ctx := setupACLTest(t)
+	defer ctx.teardownACLTest()
 
 	ctx.MockVpp.MockReply(&acl_api.ACLInterfaceListDetails{
 		SwIfIndex: 0,
@@ -90,7 +85,7 @@ func TestRequestRemoveInterfacesFromACL(t *testing.T) {
 		Acls:      []uint32{0, 1},
 	})
 	ctx.MockVpp.MockReply(&acl_api.ACLInterfaceSetACLListReply{})
-	err := aclHandler.RemoveIPIngressACLFromInterfaces(0, []uint32{0})
+	err := ctx.aclHandler.RemoveACLFromInterfacesAsIngress(0, []uint32{0})
 	Expect(err).To(BeNil())
 
 	ctx.MockVpp.MockReply(&acl_api.ACLInterfaceListDetails{
@@ -100,13 +95,13 @@ func TestRequestRemoveInterfacesFromACL(t *testing.T) {
 		Acls:      []uint32{0, 1},
 	})
 	ctx.MockVpp.MockReply(&acl_api.ACLInterfaceSetACLListReply{})
-	err = aclHandler.RemoveIPEgressACLFromInterfaces(0, []uint32{0})
+	err = ctx.aclHandler.RemoveACLFromInterfacesAsEgress(0, []uint32{0})
 	Expect(err).To(BeNil())
 
 	// error cases
 
 	ctx.MockVpp.MockReply(&acl_api.ACLInterfaceSetACLListReply{})
-	err = aclHandler.RemoveIPEgressACLFromInterfaces(0, []uint32{0})
+	err = ctx.aclHandler.RemoveACLFromInterfacesAsEgress(0, []uint32{0})
 	Expect(err).To(Not(BeNil()))
 
 	ctx.MockVpp.MockReply(&acl_api.ACLInterfaceListDetails{
@@ -116,7 +111,7 @@ func TestRequestRemoveInterfacesFromACL(t *testing.T) {
 		Acls:      []uint32{0, 1},
 	})
 	ctx.MockVpp.MockReply(&acl_api.MacipACLAddReplaceReply{})
-	err = aclHandler.RemoveIPEgressACLFromInterfaces(0, []uint32{0})
+	err = ctx.aclHandler.RemoveACLFromInterfacesAsEgress(0, []uint32{0})
 	Expect(err).To(Not(BeNil()))
 
 	ctx.MockVpp.MockReply(&acl_api.ACLInterfaceListDetails{
@@ -126,50 +121,46 @@ func TestRequestRemoveInterfacesFromACL(t *testing.T) {
 		Acls:      []uint32{0, 1},
 	})
 	ctx.MockVpp.MockReply(&acl_api.ACLInterfaceSetACLListReply{Retval: -1})
-	err = aclHandler.RemoveIPEgressACLFromInterfaces(0, []uint32{0})
+	err = ctx.aclHandler.RemoveACLFromInterfacesAsEgress(0, []uint32{0})
 	Expect(err).To(Not(BeNil()))
 }
 
 // Test assignment of MACIP acl rule to given interface
 func TestSetMacIPAclToInterface(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
-	defer ctx.TeardownTestCtx()
-
-	aclHandler := NewACLVppHandler(ctx.MockChannel, ctx.MockChannel)
+	ctx := setupACLTest(t)
+	defer ctx.teardownACLTest()
 
 	ctx.MockVpp.MockReply(&acl_api.MacipACLInterfaceAddDelReply{})
-	err := aclHandler.SetMacIPACLToInterface(0, []uint32{0})
+	err := ctx.aclHandler.SetMACIPACLToInterfaces(0, []uint32{0})
 	Expect(err).To(BeNil())
 
 	// error cases
 
 	ctx.MockVpp.MockReply(&acl_api.MacipACLAddReplaceReply{})
-	err = aclHandler.SetMacIPACLToInterface(0, []uint32{0})
+	err = ctx.aclHandler.SetMACIPACLToInterfaces(0, []uint32{0})
 	Expect(err).To(Not(BeNil()))
 
 	ctx.MockVpp.MockReply(&acl_api.MacipACLInterfaceAddDelReply{Retval: -1})
-	err = aclHandler.SetMacIPACLToInterface(0, []uint32{0})
+	err = ctx.aclHandler.SetMACIPACLToInterfaces(0, []uint32{0})
 	Expect(err).To(Not(BeNil()))
 }
 
 // Test deletion of MACIP acl rule from given interface
 func TestRemoveMacIPIngressACLFromInterfaces(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
-	defer ctx.TeardownTestCtx()
-
-	aclHandler := NewACLVppHandler(ctx.MockChannel, ctx.MockChannel)
+	ctx := setupACLTest(t)
+	defer ctx.teardownACLTest()
 
 	ctx.MockVpp.MockReply(&acl_api.MacipACLInterfaceAddDelReply{})
-	err := aclHandler.RemoveMacIPIngressACLFromInterfaces(1, []uint32{0})
+	err := ctx.aclHandler.RemoveMACIPACLFromInterfaces(1, []uint32{0})
 	Expect(err).To(BeNil())
 
 	// error cases
 
 	ctx.MockVpp.MockReply(&acl_api.MacipACLAddReplaceReply{})
-	err = aclHandler.RemoveMacIPIngressACLFromInterfaces(0, []uint32{0})
+	err = ctx.aclHandler.RemoveMACIPACLFromInterfaces(0, []uint32{0})
 	Expect(err).To(Not(BeNil()))
 
 	ctx.MockVpp.MockReply(&acl_api.MacipACLInterfaceAddDelReply{Retval: -1})
-	err = aclHandler.RemoveMacIPIngressACLFromInterfaces(0, []uint32{0})
+	err = ctx.aclHandler.RemoveMACIPACLFromInterfaces(0, []uint32{0})
 	Expect(err).To(Not(BeNil()))
 }

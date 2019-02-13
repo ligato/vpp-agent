@@ -14,6 +14,7 @@
 
 package cmd
 
+/*
 import (
 	"github.com/ligato/vpp-agent/cmd/agentctl/impl"
 	"github.com/ligato/vpp-agent/cmd/agentctl/utils"
@@ -250,3 +251,4 @@ func initIfJSONCmd() {
 	putInterfaceCommand.AddCommand(putIfJSONCmd)
 
 }
+*/

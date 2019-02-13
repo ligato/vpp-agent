@@ -15,14 +15,12 @@
 package vppcalls
 
 import (
-	"fmt"
-
+	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/memif"
-	intf "github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
 )
 
 // AddMemifInterface implements interface handler.
-func (h *IfVppHandler) AddMemifInterface(ifName string, memIface *intf.Interfaces_Interface_Memif, socketID uint32) (swIdx uint32, err error) {
+func (h *IfVppHandler) AddMemifInterface(ifName string, memIface *interfaces.MemifLink, socketID uint32) (swIdx uint32, err error) {
 	req := &memif.MemifCreate{
 		ID:         memIface.Id,
 		Mode:       uint8(memIface.Mode),
@@ -49,8 +47,6 @@ func (h *IfVppHandler) AddMemifInterface(ifName string, memIface *intf.Interface
 
 	if err = h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return 0, err
-	} else if reply.Retval != 0 {
-		return 0, fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
 	return reply.SwIfIndex, h.SetInterfaceTag(ifName, reply.SwIfIndex)
@@ -65,8 +61,6 @@ func (h *IfVppHandler) DeleteMemifInterface(ifName string, idx uint32) error {
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
-	} else if reply.Retval != 0 {
-		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
 	return h.RemoveInterfaceTag(ifName, idx)
@@ -83,8 +77,6 @@ func (h *IfVppHandler) RegisterMemifSocketFilename(filename []byte, id uint32) e
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
-	} else if reply.Retval != 0 {
-		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
 	return nil

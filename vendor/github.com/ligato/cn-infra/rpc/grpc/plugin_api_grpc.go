@@ -14,7 +14,9 @@
 
 package grpc
 
-import "google.golang.org/grpc"
+import (
+	"google.golang.org/grpc"
+)
 
 // Server defines the API for getting grpc.Server instance that
 // is useful for registering new GRPC services

@@ -27,12 +27,12 @@ import (
 	"github.com/ligato/vpp-agent/api/models/linux/l3"
 	linux_ns "github.com/ligato/vpp-agent/api/models/linux/namespace"
 	"github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	linux_ifplugin "github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin"
-	linuxifaceidx "github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin/ifaceidx"
-	linux_l3plugin "github.com/ligato/vpp-agent/plugins/linuxv2/l3plugin"
-	linux_nsplugin "github.com/ligato/vpp-agent/plugins/linuxv2/nsplugin"
-	vpp_ifplugin "github.com/ligato/vpp-agent/plugins/vppv2/ifplugin"
-	vppifaceidx "github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/ifaceidx"
+	linux_ifplugin "github.com/ligato/vpp-agent/plugins/linux/ifplugin"
+	linuxifaceidx "github.com/ligato/vpp-agent/plugins/linux/ifplugin/ifaceidx"
+	linux_l3plugin "github.com/ligato/vpp-agent/plugins/linux/l3plugin"
+	linux_nsplugin "github.com/ligato/vpp-agent/plugins/linux/nsplugin"
+	vpp_ifplugin "github.com/ligato/vpp-agent/plugins/vpp/ifplugin"
+	vppifaceidx "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 )
 
 /*
@@ -63,10 +63,10 @@ func main() {
 // ExamplePlugin is the main plugin which
 // handles resync and changes in this example.
 type ExamplePlugin struct {
-	Orchestrator  *orchestrator.Plugin
 	LinuxIfPlugin *linux_ifplugin.IfPlugin
 	LinuxL3Plugin *linux_l3plugin.L3Plugin
 	VPPIfPlugin   *vpp_ifplugin.IfPlugin
+	Orchestrator  *orchestrator.Plugin
 }
 
 // String returns plugin name
@@ -130,8 +130,8 @@ func testLocalClientWithScheduler(
 	err = txn2.
 		Put().
 		LinuxInterface(veth1).
-		Delete().
-		VppInterface(vppTap.Name).
+		/*Delete().
+		VppInterface(vppTap.Name).*/
 		Send().ReceiveReply()
 	if err != nil {
 		fmt.Println(err)
@@ -266,10 +266,10 @@ var (
 				VppTapIfName: vppTapLogicalName,
 			},
 		},
-		Namespace: &linux_ns.NetNamespace{
+		/*Namespace: &linux_ns.NetNamespace{
 			Type:      linux_ns.NetNamespace_MICROSERVICE,
 			Reference: mycroservice2,
-		},
+		},*/
 	}
 
 	vppTap = &vpp_interfaces.Interface{
@@ -283,8 +283,8 @@ var (
 		Mtu: mycroservice2Mtu,
 		Link: &vpp_interfaces.Interface_Tap{
 			Tap: &vpp_interfaces.TapLink{
-				Version:        2,
-				ToMicroservice: mycroservice2,
+				Version: 2,
+				//ToMicroservice: mycroservice2,
 			},
 		},
 	}

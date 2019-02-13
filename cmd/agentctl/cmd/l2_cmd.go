@@ -14,12 +14,7 @@
 
 package cmd
 
-import (
-	"github.com/ligato/vpp-agent/cmd/agentctl/impl"
-	"github.com/ligato/vpp-agent/cmd/agentctl/utils"
-	"github.com/spf13/cobra"
-)
-
+/*
 // 'putBridgeDomain' command can be used to put bridge domain configuration to etcd. This command can be used
 // with attribute flags (forward, learn, etc.) in order to change BD attributes
 // and it can also manipulate inner BD configuration (attach or remove interfaces, add or remove
@@ -240,3 +235,4 @@ func init() {
 	l2FibEntryCommand.Flags().BoolVarP(&l2FibEntryFlags.IsDelete, utils.IsDelete, "D", false,
 		"Delete FIB entry")
 }
+*/

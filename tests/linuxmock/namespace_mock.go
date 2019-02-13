@@ -1,12 +1,6 @@
 package linuxmock
 
-import (
-	"github.com/ligato/vpp-agent/plugins/linux/model/interfaces"
-	"github.com/ligato/vpp-agent/plugins/linux/model/l3"
-	"github.com/ligato/vpp-agent/plugins/linux/nsplugin"
-	"github.com/vishvananda/netns"
-)
-
+/*
 // NamespacePluginMock allows to mock namespace plugin methods to manage namespaces and microservices
 type NamespacePluginMock struct {
 	responses []*WhenNsResp
@@ -66,7 +60,7 @@ func (mock *NamespacePluginMock) getReturnValues(name string) (response []interf
 	return
 }
 
-/* Mocked netlink handler methods */ //todo define other
+// Mocked netlink handler methods  //todo define other
 
 // GetOrCreateNamespace implements NsManagement.
 func (mock *NamespacePluginMock) GetOrCreateNamespace(ns *nsplugin.Namespace) (netns.NsHandle, error) {
@@ -194,3 +188,4 @@ func (mock *NamespacePluginMock) RouteNsToGeneric(ns *l3.LinuxStaticRoutes_Route
 
 // HandleMicroservices implements Microservices.
 func (mock *NamespacePluginMock) HandleMicroservices(ctx *nsplugin.MicroserviceCtx) {}
+*/

@@ -18,44 +18,43 @@ import (
 	"testing"
 
 	"github.com/ligato/cn-infra/logging/logrus"
-	"github.com/ligato/vpp-agent/pkg/idxvpp/nametoidx"
+	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpe"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	ifvppcalls "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/l3"
 	"github.com/ligato/vpp-agent/tests/vppcallmock"
 	. "github.com/onsi/gomega"
 )
 
-var routes = []*l3.StaticRoutes_Route{
+var routes = []*l3.Route{
 	{
 		VrfId:       1,
-		DstIpAddr:   "192.168.10.21/24",
+		DstNetwork:  "192.168.10.21/24",
 		NextHopAddr: "192.168.30.1",
 	},
 	{
 		VrfId:       2,
-		DstIpAddr:   "10.0.0.1/24",
+		DstNetwork:  "10.0.0.1/24",
 		NextHopAddr: "192.168.30.1",
 	},
 }
 
 // Test adding routes
 func TestAddRoute(t *testing.T) {
-	ctx, ifHandler, rtHandler := routeTestSetup(t)
+	ctx, _, rtHandler := routeTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&ip.IPFibDetails{})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 	ctx.MockVpp.MockReply(&ip.IPTableAddDelReply{})
 	ctx.MockVpp.MockReply(&ip.IPAddDelRouteReply{})
-	err := rtHandler.VppAddRoute(ifHandler, routes[0], 0)
+	err := rtHandler.VppAddRoute(routes[0])
 	Expect(err).To(Succeed())
 
 	ctx.MockVpp.MockReply(&ip.IPAddDelRouteReply{})
-	err = rtHandler.VppAddRoute(ifHandler, routes[0], 0)
+	err = rtHandler.VppAddRoute(routes[0])
 	Expect(err).To(Not(BeNil()))
 }
 
@@ -65,15 +64,15 @@ func TestDeleteRoute(t *testing.T) {
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&ip.IPAddDelRouteReply{})
-	err := rtHandler.VppDelRoute(routes[0], ^uint32(0))
+	err := rtHandler.VppDelRoute(routes[0])
 	Expect(err).To(Succeed())
 
 	ctx.MockVpp.MockReply(&ip.IPAddDelRouteReply{})
-	err = rtHandler.VppDelRoute(routes[1], ^uint32(0))
+	err = rtHandler.VppDelRoute(routes[1])
 	Expect(err).To(Succeed())
 
 	ctx.MockVpp.MockReply(&ip.IPAddDelRouteReply{Retval: 1})
-	err = rtHandler.VppDelRoute(routes[0], ^uint32(0))
+	err = rtHandler.VppDelRoute(routes[0])
 	Expect(err).To(Not(BeNil()))
 }
 
@@ -81,7 +80,7 @@ func routeTestSetup(t *testing.T) (*vppcallmock.TestCtx, ifvppcalls.IfVppAPI, vp
 	ctx := vppcallmock.SetupTestCtx(t)
 	log := logrus.NewLogger("test-log")
 	ifHandler := ifvppcalls.NewIfVppHandler(ctx.MockChannel, log)
-	ifIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(log, "rt-if-idx", nil))
+	ifIndexes := ifaceidx.NewIfaceIndex(logrus.NewLogger("test"), "test")
 	rtHandler := vppcalls.NewRouteVppHandler(ctx.MockChannel, ifIndexes, log)
 	return ctx, ifHandler, rtHandler
 }

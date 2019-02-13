@@ -23,7 +23,7 @@ import (
 	"github.com/ligato/cn-infra/agent"
 	"github.com/ligato/cn-infra/logging"
 	log "github.com/ligato/cn-infra/logging/logrus"
-	"github.com/ligato/vpp-agent/cmd/vpp-agent/app/v2"
+	"github.com/ligato/vpp-agent/cmd/vpp-agent/app"
 )
 
 const logo = `                                      __
@@ -34,12 +34,14 @@ const logo = `                                      __
 
 `
 
-var vppAgent = appv2.New()
+var vppAgent = app.New()
 
 func main() {
 	fmt.Fprintf(os.Stdout, logo, agent.BuildVersion)
 
-	a := agent.NewAgent(agent.AllPlugins(vppAgent))
+	a := agent.NewAgent(
+		agent.AllPlugins(vppAgent),
+	)
 
 	if err := a.Run(); err != nil {
 		log.DefaultLogger().Fatal(err)

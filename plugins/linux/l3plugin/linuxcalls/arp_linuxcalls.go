@@ -20,23 +20,19 @@ import (
 	"github.com/vishvananda/netlink"
 )
 
-// AddArpEntry creates a new static ARP entry
-func (handler *NetLinkHandler) AddArpEntry(name string, arpEntry *netlink.Neigh) error {
-	return netlink.NeighAdd(arpEntry)
-}
-
-// SetArpEntry updates existing arp entry
-func (handler *NetLinkHandler) SetArpEntry(name string, arpEntry *netlink.Neigh) error {
+// SetARPEntry updates existing arp entry
+func (h *NetLinkHandler) SetARPEntry(arpEntry *netlink.Neigh) error {
 	return netlink.NeighSet(arpEntry)
 }
 
-// DelArpEntry removes an static ARP entry
-func (handler *NetLinkHandler) DelArpEntry(name string, arpEntry *netlink.Neigh) error {
+// DelARPEntry removes an static ARP entry
+func (h *NetLinkHandler) DelARPEntry(arpEntry *netlink.Neigh) error {
 	return netlink.NeighDel(arpEntry)
 }
 
-// GetArpEntries reads all configured static ARP entries for given interface
-// <interfaceIdx> and <family> parameters works as filters, if they are set to zero, all arp entries are returned
-func (handler *NetLinkHandler) GetArpEntries(interfaceIdx int, family int) ([]netlink.Neigh, error) {
-	return netlink.NeighList(interfaceIdx, family)
+// GetARPEntries reads all configured static ARP entries for given interface.
+// <interfaceIdx> works as filter, if set to zero, all arp entries in the namespace
+// are returned
+func (h *NetLinkHandler) GetARPEntries(interfaceIdx int) ([]netlink.Neigh, error) {
+	return netlink.NeighList(interfaceIdx, 0)
 }

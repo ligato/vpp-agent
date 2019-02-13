@@ -108,11 +108,11 @@ func (p *Plugin) startResync() {
 			t := time.Now()
 			p.startSingleResync(regName, reg)
 
-			p.Log.Infof("Resync for %v took %v", regName, time.Since(t))
+			p.Log.Infof("Resync for %v took %v", regName, time.Since(t).Truncate(time.Millisecond))
 		}
 	}
 
-	p.Log.Infof("Resync complete (took: %v)", time.Since(resyncStart))
+	p.Log.Infof("Resync complete (took: %v)", time.Since(resyncStart).Truncate(time.Millisecond))
 
 	// TODO check if there ReportError (if not than report) if error occurred even during Resync
 }
