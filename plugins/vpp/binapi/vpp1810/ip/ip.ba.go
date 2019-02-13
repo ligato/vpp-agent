@@ -128,8 +128,8 @@ type FibPath struct {
 	NextHopID         uint32
 	RpfID             uint32
 	ViaLabel          uint32
-	NLabels           uint8
-	LabelStack        []FibMplsLabel `struc:"[16]FibMplsLabel"`
+	NLabels           uint8 `struc:"sizeof=LabelStack"` // MANUALLY FIXED, see https://jira.fd.io/browse/VPP-1261
+	LabelStack        []FibMplsLabel
 }
 
 func (*FibPath) GetTypeName() string {
