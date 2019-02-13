@@ -46,7 +46,7 @@ KVS -> KVS: **start graph refresh**
     activate ID
      ID --> KVS: true
     deactivate ID
-   KVS -> KVS: value is  **handled by** Interface Descriptor
+   KVS -> KVS: value is **handled by** Interface Descriptor
    KVS -> ID: **Dependencies**(//my-af-packet//)
     activate ID
      ID --> KVS: //my-af-packet// **depends on** (Linux interface) //"linux/interface/host-name/eth1"//
