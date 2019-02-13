@@ -17,8 +17,8 @@ package vppcalls
 import (
 	"fmt"
 
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1810/interfaces"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1810/ip"
 )
 
 // CreateVrf implements interface handler.

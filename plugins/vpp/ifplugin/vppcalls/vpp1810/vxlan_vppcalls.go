@@ -19,7 +19,7 @@ import (
 	"net"
 
 	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vxlan"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1810/vxlan"
 )
 
 func (h *InterfaceVppHandler) addDelVxLanTunnel(vxLan *interfaces.VxlanLink, vrf, multicastIf uint32, isAdd bool) (swIdx uint32, err error) {

@@ -75,7 +75,6 @@ type IfPlugin struct {
 	ifDescriptor   *descriptor.InterfaceDescriptor
 	unIfDescriptor *descriptor.UnnumberedIfDescriptor
 	dhcpDescriptor *descriptor.DHCPDescriptor
-	//dhcpChan       chan govppapi.Message
 
 	// index maps
 	intfIndex ifaceidx.IfaceMetadataIndex
@@ -192,10 +191,6 @@ func (p *IfPlugin) Init() error {
 	p.dhcpDescriptor.SetInterfaceIndex(p.intfIndex)
 
 	// start watching for DHCP notifications
-	/*p.dhcpChan = make(chan govppapi.Message, 1)
-	if _, err := p.vppCh.SubscribeNotification(p.dhcpChan, &dhcp.DHCPComplEvent{}); err != nil {
-		return err
-	}*/
 	p.dhcpDescriptor.WatchDHCPNotifications(p.ctx)
 
 	// interface state data

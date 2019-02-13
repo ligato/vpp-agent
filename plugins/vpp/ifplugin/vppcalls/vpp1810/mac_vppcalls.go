@@ -17,7 +17,7 @@ package vppcalls
 import (
 	"net"
 
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1810/interfaces"
 )
 
 // SetInterfaceMac implements interface handler.

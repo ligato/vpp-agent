@@ -20,7 +20,7 @@ import (
 	"net"
 
 	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	api "github.com/ligato/vpp-agent/plugins/vpp/binapi/ipsec"
+	api "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1810/ipsec"
 )
 
 // AddIPSecTunnelInterface adds a new IPSec tunnel interface.
