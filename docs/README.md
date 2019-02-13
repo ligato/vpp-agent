@@ -1,4 +1,4 @@
-# [VPP Agent](../README.md) docs
+# [VPP Agent](/README.md) docs
 
 - [Deployment](Deployment.md)
 - [Design](Design.md)
