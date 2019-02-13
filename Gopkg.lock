@@ -46,14 +46,6 @@
   version = "v0.4.11"
 
 [[projects]]
-  branch = "master"
-  digest = "1:3721a10686511b80c052323423f0de17a8c06d417dbdd3b392b1578432a33aae"
-  name = "github.com/Nvveen/Gotty"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "cd527374f1e5bff4938207604a14f2e38a9cf512"
-
-[[projects]]
   digest = "1:49eb5d6ac71a788f1f15331e7cd87286b92951fdf758f418e12f22ac8dd27af1"
   name = "github.com/Shopify/sarama"
   packages = [
@@ -191,10 +183,9 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:9947f1584dea52b039a8653d5e74339619c0b082e38ca579d1ce1a7da2624897"
+  digest = "1:fa12049430b4ecf4e300ae81ed9ed6b97eec594dc8018434a7d84f8e77d6163f"
   name = "github.com/docker/docker"
   packages = [
-    "api/types",
     "api/types/blkiodev",
     "api/types/container",
     "api/types/filters",
@@ -206,7 +197,6 @@
     "api/types/swarm/runtime",
     "api/types/versions",
     "errdefs",
-    "opts",
     "pkg/fileutils",
     "pkg/homedir",
     "pkg/idtools",
@@ -235,13 +225,6 @@
   pruneopts = "UT"
   revision = "47565b4f722fb6ceae66b95f853feed578a4a51c"
   version = "v0.3.3"
-
-[[projects]]
-  digest = "1:00d0d550a1f1d7ca03270ebc1e136f21f6b9dab37f0c37e9a90d56d2f7afcff9"
-  name = "github.com/docker/libnetwork"
-  packages = ["ipamutils"]
-  pruneopts = "UT"
-  revision = "9ffeaf7d8b64fa0eb64cc27835dc1a5a90328024"
 
 [[projects]]
   digest = "1:1f0c7ab489b407a7f8f9ad16c25a504d28ab461517a971d341388a56156c1bd7"
@@ -300,7 +283,7 @@
   version = "v1.4.7"
 
 [[projects]]
-  digest = "1:76d257c053e613c593017c941bbfe889442b51c40efb0ae44573891113431bc4"
+  digest = "1:ed9147c7efe8c4604ba6d6148e22b10ca79e0923ef2e13b765dd39e299be1003"
   name = "github.com/fsouza/go-dockerclient"
   packages = [
     ".",
@@ -309,8 +292,8 @@
     "internal/term",
   ]
   pruneopts = "UT"
-  revision = "8300e91d8f670b3ae69ac75948337dba391a9768"
-  version = "v1.3.3"
+  revision = "a8d735713a2b2b9101595fdf53fdb03cb51681b6"
+  version = "v1.3.6"
 
 [[projects]]
   digest = "1:2cd7915ab26ede7d95b8749e6b1f933f1c6d5398030684e6505940a10f31cfda"
@@ -465,6 +448,14 @@
   packages = ["."]
   pruneopts = "UT"
   revision = "2b2a61e366a66d3efb279e46176e7291001e0354"
+
+[[projects]]
+  branch = "master"
+  digest = "1:33f920ba428942560c22c0e145127dc09a52c52d64eac284daea6b0926fab0d1"
+  name = "github.com/ijc/Gotty"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "a8b993ba6abdb0e0c12b0125c603323a71c7790c"
 
 [[projects]]
   digest = "1:870d441fe217b8e689d7949fef6e43efbc787e50f200cb1e70dbca9204a1d6be"
