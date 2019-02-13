@@ -58,7 +58,9 @@ type XConnectVppHandler struct {
 }
 
 // NewBridgeDomainVppHandler creates new instance of bridge domain vppcalls handler.
-func newBridgeDomainVppHandler(callsChan govppapi.Channel, ifIndexes ifaceidx.IfaceMetadataIndex, log logging.Logger) *BridgeDomainVppHandler {
+func newBridgeDomainVppHandler(callsChan govppapi.Channel,
+	ifIndexes ifaceidx.IfaceMetadataIndex, log logging.Logger,
+) *BridgeDomainVppHandler {
 	return &BridgeDomainVppHandler{
 		callsChannel: callsChan,
 		ifIndexes:    ifIndexes,
@@ -67,8 +69,9 @@ func newBridgeDomainVppHandler(callsChan govppapi.Channel, ifIndexes ifaceidx.If
 }
 
 // NewFIBVppHandler creates new instance of FIB vppcalls handler.
-func newFIBVppHandler(callsChan govppapi.Channel, ifIndexes ifaceidx.IfaceMetadataIndex, bdIndexes idxvpp.NameToIndex,
-	log logging.Logger) *FIBVppHandler {
+func newFIBVppHandler(callsChan govppapi.Channel,
+	ifIndexes ifaceidx.IfaceMetadataIndex, bdIndexes idxvpp.NameToIndex, log logging.Logger,
+) *FIBVppHandler {
 	return &FIBVppHandler{
 		callsChannel: callsChan,
 		ifIndexes:    ifIndexes,
@@ -78,7 +81,9 @@ func newFIBVppHandler(callsChan govppapi.Channel, ifIndexes ifaceidx.IfaceMetada
 }
 
 // NewXConnectVppHandler creates new instance of cross connect vppcalls handler.
-func newXConnectVppHandler(callsChan govppapi.Channel, ifIndexes ifaceidx.IfaceMetadataIndex, log logging.Logger) *XConnectVppHandler {
+func newXConnectVppHandler(callsChan govppapi.Channel,
+	ifIndexes ifaceidx.IfaceMetadataIndex, log logging.Logger,
+) *XConnectVppHandler {
 	return &XConnectVppHandler{
 		callsChannel: callsChan,
 		ifIndexes:    ifIndexes,
