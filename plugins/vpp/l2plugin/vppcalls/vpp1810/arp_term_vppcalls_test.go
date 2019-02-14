@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package vppcalls_1810_test
+package vpp1810_test
 
 import (
 	"testing"

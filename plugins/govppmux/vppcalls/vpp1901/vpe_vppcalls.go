@@ -20,22 +20,31 @@ import (
 	"strings"
 
 	govppapi "git.fd.io/govpp.git/api"
+
 	"github.com/ligato/vpp-agent/plugins/govppmux/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/memclnt"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/vpe"
 )
 
 func init() {
+	var msgs []govppapi.Message
+	msgs = append(msgs, vpe.Messages...)
+	msgs = append(msgs, memclnt.Messages...)
+
 	vppcalls.Versions["vpp1901"] = vppcalls.HandlerVersion{
-		Msgs: append(vpe.Messages, memclnt.Messages...),
+		Msgs: msgs,
 		New: func(ch govppapi.Channel) vppcalls.VpeVppAPI {
-			return &VpeHandler{ch}
+			return NewVpeHandler(ch)
 		},
 	}
 }
 
 type VpeHandler struct {
 	ch govppapi.Channel
+}
+
+func NewVpeHandler(ch govppapi.Channel) *VpeHandler {
+	return &VpeHandler{ch}
 }
 
 // GetVersionInfo retrieves version info

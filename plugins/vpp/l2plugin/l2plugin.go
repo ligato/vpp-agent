@@ -34,6 +34,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/l2plugin/vppcalls"
 
 	_ "github.com/ligato/vpp-agent/plugins/vpp/l2plugin/vppcalls/vpp1810"
+	_ "github.com/ligato/vpp-agent/plugins/vpp/l2plugin/vppcalls/vpp1901"
 )
 
 // L2Plugin configures VPP bridge domains, L2 FIBs and xConnects using GoVPP.
@@ -93,6 +94,9 @@ func (p *L2Plugin) Init() (err error) {
 	if !withIndex {
 		return errors.New("missing index with bridge domain metadata")
 	}
+
+	// we set l2Handler again here, because bdIndex was nil before
+	p.l2Handler = vppcalls.CompatibleL2VppHandler(p.vppCh, p.IfPlugin.GetInterfaceIndex(), p.bdIndex, p.Log)
 
 	// init & register descriptors
 	p.bdIfaceDescriptor = descriptor.NewBDInterfaceDescriptor(p.bdIndex, p.l2Handler, p.Log)

@@ -26,16 +26,24 @@ import (
 )
 
 func init() {
+	var msgs []govppapi.Message
+	msgs = append(msgs, vpe.Messages...)
+	msgs = append(msgs, memclnt.Messages...)
+
 	vppcalls.Versions["vpp1810"] = vppcalls.HandlerVersion{
-		Msgs: append(vpe.Messages, memclnt.Messages...),
+		Msgs: msgs,
 		New: func(ch govppapi.Channel) vppcalls.VpeVppAPI {
-			return &VpeHandler{ch}
+			return NewVpeHandler(ch)
 		},
 	}
 }
 
 type VpeHandler struct {
 	ch govppapi.Channel
+}
+
+func NewVpeHandler(ch govppapi.Channel) *VpeHandler {
+	return &VpeHandler{ch}
 }
 
 func (h *VpeHandler) GetVersionInfo() (*vppcalls.VersionInfo, error) {

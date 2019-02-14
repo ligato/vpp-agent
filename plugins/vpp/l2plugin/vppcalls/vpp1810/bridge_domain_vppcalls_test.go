@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package vppcalls_1810_test
+package vpp1810_test
 
 import (
 	"testing"
@@ -139,6 +139,6 @@ func bdTestSetup(t *testing.T) (*vppcallmock.TestCtx, vppcalls.BridgeDomainVppAP
 	ctx := vppcallmock.SetupTestCtx(t)
 	log := logrus.NewLogger("test-log")
 	ifIndex := ifaceidx.NewIfaceIndex(log, "bd-test-ifidx")
-	bdHandler := vppcalls_1810.NewL2VppHandler(ctx.MockChannel, ifIndex, nil, log)
+	bdHandler := vpp1810.NewL2VppHandler(ctx.MockChannel, ifIndex, nil, log)
 	return ctx, bdHandler, ifIndex
 }

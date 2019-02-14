@@ -18,6 +18,7 @@ import (
 	"testing"
 
 	"github.com/ligato/vpp-agent/plugins/telemetry/vppcalls"
+	"github.com/ligato/vpp-agent/plugins/telemetry/vppcalls/vpp1901"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/vpe"
 	"github.com/ligato/vpp-agent/tests/vppcallmock"
 	. "github.com/onsi/gomega"
@@ -250,6 +251,6 @@ func TestGetNodeCounters(t *testing.T) {
 
 func testSetup(t *testing.T) (*vppcallmock.TestCtx, vppcalls.TelemetryVppAPI) {
 	ctx := vppcallmock.SetupTestCtx(t)
-	handler := vppcalls.NewTelemetryVppHandler(ctx.MockChannel)
+	handler := vpp1901.NewTelemetryVppHandler(ctx.MockChannel)
 	return ctx, handler
 }

@@ -1,7 +1,7 @@
-diff --git b/plugins/vpp/binapi/sr/sr.ba.go a/plugins/vpp/binapi/sr/sr.ba.go
+diff --git b/plugins/vpp/binapi/sr/sr.ba.go a/plugins/vpp/binapi/default/sr/sr.ba.go
 index e7e0a021..42153a48 100644
---- b/plugins/vpp/binapi/sr/sr.ba.go
-+++ a/plugins/vpp/binapi/sr/sr.ba.go
+--- b/plugins/vpp/binapi/default/sr/sr.ba.go
++++ a/plugins/vpp/binapi/default/sr/sr.ba.go
 @@ -70,9 +70,9 @@ func (*Srv6Sid) GetCrcString() string {
  //            }
  //

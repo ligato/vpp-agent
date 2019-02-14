@@ -22,6 +22,7 @@ import (
 
 	govppapi "git.fd.io/govpp.git/api"
 	vpevppcalls "github.com/ligato/vpp-agent/plugins/govppmux/vppcalls"
+	"github.com/ligato/vpp-agent/plugins/govppmux/vppcalls/vpp1901"
 	"github.com/ligato/vpp-agent/plugins/telemetry/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/memclnt"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/vpe"
@@ -46,7 +47,8 @@ type TelemetryHandler struct {
 }
 
 func NewTelemetryVppHandler(ch govppapi.Channel) *TelemetryHandler {
-	vpeHandler := vpevppcalls.CompatibleVpeHandler(ch)
+	//vpeHandler := vpevppcalls.CompatibleVpeHandler(ch)
+	vpeHandler := vpp1901.NewVpeHandler(ch)
 	return &TelemetryHandler{ch, vpeHandler}
 }
 

@@ -12,7 +12,7 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 
-package vppcalls
+package vpp1810
 
 import (
 	govppapi "git.fd.io/govpp.git/api"
@@ -20,6 +20,7 @@ import (
 	"github.com/ligato/cn-infra/logging/logrus"
 
 	vpevppcalls "github.com/ligato/vpp-agent/plugins/govppmux/vppcalls"
+	"github.com/ligato/vpp-agent/plugins/govppmux/vppcalls/vpp1810"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1810/ip"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls"
@@ -120,7 +121,7 @@ func NewIPNeighVppHandler(callsChan govppapi.Channel, log logging.Logger) *IPNei
 	return &IPNeighHandler{
 		callsChannel: callsChan,
 		log:          log,
-		VpeVppAPI:    vpevppcalls.CompatibleVpeHandler(callsChan),
+		VpeVppAPI:    vpp1810.NewVpeHandler(callsChan),
 	}
 }
 
