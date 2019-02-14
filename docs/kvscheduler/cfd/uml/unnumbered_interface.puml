@@ -49,6 +49,10 @@ KVS -> KVS: **start txn**
    ID --> KVS: << no dependencies >>
   deactivate ID
  KVS -> KVS: value //GigabitEthernet0/8/0// is **ready** to be created
+ KVS -> ID: **Validate**(//GigabitEthernet0/8/0//)
+  activate ID
+   ID --> KVS: ok (valid configuration)
+  deactivate ID
  KVS -> ID: **Create**(//GigabitEthernet0/8/0//)
   activate ID
    ID --> KVS: ok
@@ -78,6 +82,10 @@ KVS -> KVS: **start txn**
   activate ID
    ID --> KVS: << no dependencies >> \n(for the TAP interface itself, without borrowing IP yet)
   deactivate ID
+ KVS -> ID: **Validate**(//my-unnumbered-tap//)
+  activate ID
+   ID --> KVS: ok (valid config)
+  deactivate ID
  KVS -> ID: **Create**(//my-unnumbered-tap//) \n(TAP interface created, but not as an unnumbered yet)
   activate ID
    ID --> KVS: ok
@@ -98,15 +106,19 @@ KVS -> KVS: **start txn**
   deactivate UD
  KVS -> KVS: //borrow-ip-for-my-unnumbered-tap// is **handled by** Unnumbered Interface Descriptor
 
- KVS -> ID: **Dependencies**(//borrow-ip-for-my-unnumbered-tap//)
-  activate ID
-   ID --> KVS: //borrow-ip-for-my-unnumbered-tap// **depends on** (interface) //GigabitEthernet0/8/0// to exists \nand have at least one IP address assigned \n(**AnyOf** selecting //address/GigabitEthernet0/8/0/*//)
-  deactivate ID
+ KVS -> UD: **Dependencies**(//borrow-ip-for-my-unnumbered-tap//)
+  activate UD
+   UD --> KVS: //borrow-ip-for-my-unnumbered-tap// **depends on** (interface) //GigabitEthernet0/8/0// to exists \nand have at least one IP address assigned \n(**AnyOf** selecting //address/GigabitEthernet0/8/0/*//)
+  deactivate UD
  KVS -> KVS: value //borrow-ip-for-my-unnumbered-tap// is **ready** to be created \n(//"address/GigabitEthernet0/8/0/192.168.1.1/24"// satisfies the dependency)
- KVS -> ID: **Create**(//borrow-ip-for-my-unnumbered-tap//) \n (borrows IP for the TAP interface)
-  activate ID
-   ID --> KVS: ok
-  deactivate ID
+ KVS -> UD: **Validate**(//borrow-ip-for-my-unnumbered-tap//)
+  activate UD
+   UD --> KVS: ok (valid derived value)
+  deactivate UD
+ KVS -> UD: **Create**(//borrow-ip-for-my-unnumbered-tap//) \n (borrows IP for the TAP interface)
+  activate UD
+   UD --> KVS: ok
+  deactivate UD
 
  KVS -> KVS: **finalize and record txn**
  deactivate KVS
@@ -165,6 +177,10 @@ KVS -> KVS: **start txn #1**
     ID --> KVS: << no dependencies >>
    deactivate ID
   KVS -> KVS: value //GigabitEthernet0/8/0-l2// **is ready for** //GigabitEthernet0/8/0// to be updated into
+  KVS -> ID: **Validate**(//GigabitEthernet0/8/0-l2//)
+   activate ID
+    ID --> KVS: ok (valid new revision)
+   deactivate ID
   KVS -> ID: **Update**(old= //GigabitEthernet0/8/0//, new= //GigabitEthernet0/8/0-l2//)
    activate ID
     ID --> KVS: ok

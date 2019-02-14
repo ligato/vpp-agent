@@ -52,6 +52,10 @@ KVS -> KVS: **start txn**
    ID --> KVS: << no dependencies >>
   deactivate ID
  KVS -> KVS: value //my-tap// is **ready** to be created
+ KVS -> ID: **Validate**(//my-tap//)
+  activate ID
+   ID --> KVS: ok (valid configuration)
+  deactivate ID
  KVS -> ID: **Create**(//my-tap//)
   activate ID
    ID --> KVS: ok

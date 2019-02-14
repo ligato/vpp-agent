@@ -86,6 +86,10 @@ IW -> KVS: **Notification**: value //"linux/interface/host-name/eth1"// was **cr
    KVS -> KVS: //my-af-packet// (from previous txn) **is now ready** to be created \n dependency on //"linux/interface/host-name/eth1"// is now **satisfied**
     activate KVS #CCBBBB
      KVS -> KVS: (**cached**) //my-af-packet// is **handled by** Interface Descriptor
+     KVS -> ID: **Validate**(//my-af-packet//)
+      activate ID
+       ID --> KVS: ok (valid configuration)
+      deactivate ID
      KVS -> ID: **Create**(//my-af-packet//)
       activate ID
        ID --> KVS: ok

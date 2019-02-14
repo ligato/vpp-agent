@@ -35,14 +35,14 @@ since they do not play any role in the presented scenarios.
   - using bridge domain it is demonstrated how derived values can be used to
     "break" item into multiple parts with their own CRUD operations and
     dependencies
-  - control flow diagram shows how and when the derived values get processed  
+  - control flow diagram shows how and when the derived values get processed
 * [Unnumbered interface][unnumbered-interface]
   - with unnumbered interface it is shown that derived values themselves can be
     a target of dependencies
 * [Interface re-creation][recreate-interface]
   - the example outlines the control-flow of item re-creation (update which
     cannot be applied incrementally, but requires the target item to be removed
-    first and then created with the new configuration) 
+    first and then created with the new configuration)
 * [Retry of failed operation][retry-failed-ops]
   - example of a failed (best-effort) transaction, fixed by a subsequent Retry
 * [Revert of failed transaction][revert-failed-txn]

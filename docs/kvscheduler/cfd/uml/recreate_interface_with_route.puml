@@ -71,10 +71,10 @@ KVS -> KVS: **start txn #1**
     KVS -> KVS: value //my-route// set to the **PENDING** state
     KVS -> KVS: going back to apply **Delete()** for //my-tap//...
    deactivate KVS
-  KVS -> RD: **Delete**(//my-tap//)
-   activate RD
-    RD --> KVS: ok
-   deactivate RD
+  KVS -> ID: **Delete**(//my-tap//)
+   activate ID
+    ID --> KVS: ok
+   deactivate ID
   KVS -> KVS: removed value //my-tap// from the graph
 
 == Create //my-tap-rev2//, its derived values and //my-route// which is waiting for the interface) ==
@@ -85,7 +85,11 @@ KVS -> KVS: **start txn #1**
     ID --> KVS: << no dependencies >>
    deactivate ID
   KVS -> KVS: value //my-tap-rev2// is **ready** to be created
-  KVS -> ID: **Create**(my-tap-rev2)
+  KVS -> ID: **Validate**(//my-tap-rev2//)
+   activate ID
+    ID --> KVS: ok (valid configuration)
+   deactivate ID
+  KVS -> ID: **Create**(//my-tap-rev2//)
    activate ID
     ID --> KVS: ok
    deactivate ID
@@ -93,6 +97,10 @@ KVS -> KVS: **start txn #1**
   KVS -> KVS: //my-route// (from previous txn) **is now ready** to be created \n - dependency on //my-tap-rev2// is now **satisfied**
    activate KVS #CCBBBB
     KVS -> KVS: (**cached**) //my-route// is **handled by** RouteDescriptor
+    KVS -> RD: **Validate**(//my-route//)
+     activate RD
+      RD --> KVS: ok (valid configuration)
+     deactivate RD
     KVS -> RD: **Create**(//my-route//)
      activate RD
       RD --> KVS: ok

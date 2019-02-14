@@ -28,9 +28,13 @@ KVS -> KVS: **start txn**
     ID --> KVS: << no dependencies >>
    deactivate ID
   KVS -> KVS: value //my-tap// is **ready** to be created
+  KVS -> ID: **Validate**(//my-tap//)
+  activate ID
+   ID --> KVS: ok (valid configuration)
+  deactivate ID
   KVS -> ID: **Create**(//my-tap//)
   activate ID
-   ID --> KVS: nil
+   ID --> KVS: ok
   deactivate ID
 
   KVS -> ID: **DerivedValues**(//my-tap//)
@@ -63,10 +67,14 @@ KVS -> KVS: **start txn**
    deactivate RD
   KVS -> KVS: value //my-route// is **ready** to be created
 
-  KVS -> ID: **Create**(//my-route//)
-   activate ID
-    ID --> KVS: error
-   destroy ID
+  KVS -> RD: **Validate**(//my-route//)
+   activate RD
+    RD --> KVS: ok (valid configuration)
+   deactivate RD
+  KVS -> RD: **Create**(//my-route//)
+   activate RD
+    RD --> KVS: error
+   destroy RD
 
 == Transaction failed, revert already executed changes ==
 

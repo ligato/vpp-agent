@@ -91,6 +91,10 @@ KVS -> KVS: **start txn #1**
     ID --> KVS: << no dependencies >>
    deactivate ID
   KVS -> KVS: value //my-tap// is **ready** to be created
+  KVS -> ID: **Validate**(my-tap)
+   activate ID
+    ID --> KVS: ok (valid configuration)
+   deactivate ID
   KVS -> ID: **Create**(my-tap)
    activate ID
     ID --> KVS: ok
@@ -99,6 +103,10 @@ KVS -> KVS: **start txn #1**
   KVS -> KVS: //my-route// (from previous txn) **is now ready** to be created \n dependency on //my-tap// is now **satisfied**
    activate KVS #CCBBBB
     KVS -> KVS: (**cached**) //my-route// is **handled by** RouteDescriptor
+    KVS -> RD: **Validate**(//my-route//)
+     activate RD
+      RD --> KVS: ok (valid configuration)
+     deactivate RD
     KVS -> RD: **Create**(//my-route//)
      activate RD
       RD --> KVS: ok

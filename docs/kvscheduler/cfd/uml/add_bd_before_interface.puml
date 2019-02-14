@@ -60,10 +60,14 @@ KVS -> KVS: **start txn #0**
     BD --> KVS: << no dependencies >>
    deactivate BD
   KVS -> KVS: value //my-bd// is **ready** to be created \n(just plain BD, without the interface)
-  KVS -> ID: **Create**(my-bd)
-   activate ID
-    ID --> KVS: ok
-   deactivate ID
+  KVS -> BD: **Validate**(//my-bd//)
+   activate BD
+    BD --> KVS: ok (valid configuration)
+   deactivate BD
+  KVS -> BD: **Create**(//my-bd//)
+   activate BD
+    BD --> KVS: ok
+   deactivate BD
 
   KVS -> ID: **DerivedValues**(//my-bd//)
    activate ID
@@ -115,6 +119,10 @@ KVS -> KVS: **start txn #1**
     ID --> KVS: << no dependencies >>
    deactivate ID
   KVS -> KVS: value //my-tap// is **ready** to be created
+  KVS -> ID: **Validate**(//my-tap//)
+   activate ID
+    ID --> KVS: ok (valid configuration)
+   deactivate ID
   KVS -> ID: **Create**(//my-tap//)
    activate ID
     ID --> KVS: ok
@@ -123,6 +131,10 @@ KVS -> KVS: **start txn #1**
   KVS -> KVS: //"my-bd/interface/my-tap"// (from previous txn) **is now ready** to be created \n - dependency on //my-tap// is now **satisfied**
    activate KVS #CCBBBB
     KVS -> KVS: (**cached**) //"my-bd/interface/my-tap"// is **handled by** BD-Interface descriptor
+    KVS -> BDI: **Validate**(//"my-bd/interface/my-tap"//) \n(put interface //my-tap// to BD //my-bd//)
+     activate BDI
+      BDI --> KVS: ok (valid configuration)
+     deactivate BDI
     KVS -> BDI: **Create**(//"my-bd/interface/my-tap"//) \n(put interface //my-tap// to BD //my-bd//)
      activate BDI
       BDI --> KVS: ok

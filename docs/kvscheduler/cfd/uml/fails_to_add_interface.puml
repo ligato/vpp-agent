@@ -42,7 +42,11 @@ KVS -> KVS: **start txn**
    ID --> KVS: << no dependencies >>
   deactivate ID
  KVS -> KVS: value //my-tap// is **ready** to be created
- KVS -> ID: **Create**(my-tap)
+ KVS -> ID: **Validate**(//my-tap//)
+  activate ID
+   ID --> KVS: ok (valid configuration)
+  deactivate ID
+ KVS -> ID: **Create**(//my-tap//)
   activate ID
    ID --> KVS: error
   destroy ID
@@ -83,9 +87,13 @@ KVS -> KVS: **trigger Re-try txn** for //my-tap// (after configured time delay)
     ID --> KVS: << no dependencies >>
    deactivate ID
   KVS -> KVS: value //my-tap// is **ready** to be created
+  KVS -> ID: **Validate**(//my-tap//)
+   activate ID
+    ID --> KVS: ok (valid configuration)
+   deactivate ID
   KVS -> ID: **Create**(my-tap)
    activate ID
-    ID --> KVS: nil (**retry helped**)
+    ID --> KVS: ok (**retry helped**)
    deactivate ID
 
   KVS -> ID: **DerivedValues**(//my-tap//)
