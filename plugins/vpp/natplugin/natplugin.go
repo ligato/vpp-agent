@@ -33,6 +33,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/natplugin/vppcalls"
 
 	_ "github.com/ligato/vpp-agent/plugins/vpp/natplugin/vppcalls/vpp1810"
+	_ "github.com/ligato/vpp-agent/plugins/vpp/natplugin/vppcalls/vpp1901"
 )
 
 // NATPlugin configures VPP NAT.

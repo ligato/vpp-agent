@@ -16,7 +16,6 @@ package vpp1810
 
 import (
 	"bytes"
-	"fmt"
 	"strings"
 
 	govppapi "git.fd.io/govpp.git/api"
@@ -27,10 +26,14 @@ import (
 )
 
 func init() {
+	var msgs []govppapi.Message
+	msgs = append(msgs, vpe.Messages...)
+	msgs = append(msgs, memclnt.Messages...)
+
 	vppcalls.Versions["vpp1810"] = vppcalls.HandlerVersion{
-		Msgs: append(vpe.Messages, memclnt.Messages...),
+		Msgs: msgs,
 		New: func(ch govppapi.Channel) vppcalls.VpeVppAPI {
-			return &VpeHandler{ch}
+			return NewVpeHandler(ch)
 		},
 	}
 }
@@ -39,14 +42,16 @@ type VpeHandler struct {
 	ch govppapi.Channel
 }
 
+func NewVpeHandler(ch govppapi.Channel) *VpeHandler {
+	return &VpeHandler{ch}
+}
+
 func (h *VpeHandler) GetVersionInfo() (*vppcalls.VersionInfo, error) {
 	req := &vpe.ShowVersion{}
 	reply := &vpe.ShowVersionReply{}
 
 	if err := h.ch.SendRequest(req).ReceiveReply(reply); err != nil {
 		return nil, err
-	} else if reply.Retval != 0 {
-		return nil, fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
 	info := &vppcalls.VersionInfo{
@@ -105,8 +110,6 @@ func (h *VpeHandler) RunCli(cmd string) (string, error) {
 
 	if err := h.ch.SendRequest(req).ReceiveReply(reply); err != nil {
 		return "", err
-	} else if reply.Retval != 0 {
-		return "", fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
 	return string(cleanBytes(reply.Reply)), nil

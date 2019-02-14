@@ -21,7 +21,7 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	govpp "git.fd.io/govpp.git/core"
 	log "github.com/ligato/cn-infra/logging/logrus"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpe"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/vpe"
 	. "github.com/onsi/gomega"
 	"github.com/sirupsen/logrus"
 )

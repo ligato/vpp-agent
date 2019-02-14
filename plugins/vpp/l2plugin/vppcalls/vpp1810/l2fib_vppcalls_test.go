@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package vppcalls_1810_test
+package vpp1810_test
 
 import (
 	"testing"
@@ -105,6 +105,6 @@ func fibTestSetup(t *testing.T) (*vppcallmock.TestCtx, vppcalls.FIBVppAPI, iface
 	logger := logrus.NewLogger("test-log")
 	ifaceIdx := ifaceidx.NewIfaceIndex(logger, "fib-if-idx")
 	bdIndexes := idxvpp.NewNameToIndex(logger, "fib-bd-idx", nil)
-	fibHandler := vppcalls_1810.NewL2VppHandler(ctx.MockChannel, ifaceIdx, bdIndexes, logger)
+	fibHandler := vpp1810.NewL2VppHandler(ctx.MockChannel, ifaceIdx, bdIndexes, logger)
 	return ctx, fibHandler, ifaceIdx, bdIndexes
 }

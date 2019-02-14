@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package vppcalls_1810_test
+package vpp1810_test
 
 import (
 	"testing"
@@ -123,6 +123,6 @@ func xcTestSetup(t *testing.T) (*vppcallmock.TestCtx, vppcalls.XConnectVppAPI, i
 	ctx := vppcallmock.SetupTestCtx(t)
 	log := logrus.NewLogger("test-log")
 	ifaceIdx := ifaceidx.NewIfaceIndex(log, "xc-if-idx")
-	xcHandler := vppcalls_1810.NewL2VppHandler(ctx.MockChannel, ifaceIdx, nil, log)
+	xcHandler := vpp1810.NewL2VppHandler(ctx.MockChannel, ifaceIdx, nil, log)
 	return ctx, xcHandler, ifaceIdx
 }

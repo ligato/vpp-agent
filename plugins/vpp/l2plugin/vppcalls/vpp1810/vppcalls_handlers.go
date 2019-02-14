@@ -1,4 +1,4 @@
-package vppcalls_1810
+package vpp1810
 
 import (
 	govppapi "git.fd.io/govpp.git/api"
@@ -13,7 +13,11 @@ import (
 func init() {
 	vppcalls.Versions["vpp1810"] = vppcalls.HandlerVersion{
 		Msgs: l2ba.Messages,
-		New:  NewL2VppHandler,
+		New: func(ch govppapi.Channel,
+			ifIdx ifaceidx.IfaceMetadataIndex, bdIdx idxvpp.NameToIndex, log logging.Logger,
+		) vppcalls.L2VppAPI {
+			return NewL2VppHandler(ch, ifIdx, bdIdx, log)
+		},
 	}
 }
 
@@ -24,10 +28,8 @@ type L2VppHandler struct {
 }
 
 func NewL2VppHandler(ch govppapi.Channel,
-	ifIdx ifaceidx.IfaceMetadataIndex,
-	bdIdx idxvpp.NameToIndex,
-	log logging.Logger,
-) vppcalls.L2VppAPI {
+	ifIdx ifaceidx.IfaceMetadataIndex, bdIdx idxvpp.NameToIndex, log logging.Logger,
+) *L2VppHandler {
 	return &L2VppHandler{
 		BridgeDomainVppHandler: newBridgeDomainVppHandler(ch, ifIdx, log),
 		FIBVppHandler:          newFIBVppHandler(ch, ifIdx, bdIdx, log),

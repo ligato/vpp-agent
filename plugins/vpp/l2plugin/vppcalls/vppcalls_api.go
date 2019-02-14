@@ -67,6 +67,18 @@ type BridgeDomainVppRead interface {
 	DumpBridgeDomains() ([]*BridgeDomainDetails, error)
 }
 
+// FibTableDetails is the wrapper structure for the FIB table entry northbound API structure.
+type FibTableDetails struct {
+	Fib  *l2.FIBEntry `json:"fib"`
+	Meta *FibMeta     `json:"fib_meta"`
+}
+
+// FibMeta contains FIB interface and bridge domain name/index map
+type FibMeta struct {
+	BdID  uint32 `json:"bridge_domain_id"`
+	IfIdx uint32 `json:"outgoing_interface_sw_if_idx"`
+}
+
 // FIBVppAPI provides methods for managing FIBs.
 type FIBVppAPI interface {
 	FIBVppRead
@@ -82,6 +94,18 @@ type FIBVppRead interface {
 	// DumpL2FIBs dumps VPP L2 FIB table entries into the northbound API
 	// data structure map indexed by destination MAC address.
 	DumpL2FIBs() (map[string]*FibTableDetails, error)
+}
+
+// XConnectDetails is the wrapper structure for the l2 xconnect northbound API structure.
+type XConnectDetails struct {
+	Xc   *l2.XConnectPair `json:"x_connect"`
+	Meta *XcMeta          `json:"x_connect_meta"`
+}
+
+// XcMeta contains cross connect rx/tx interface indexes
+type XcMeta struct {
+	ReceiveInterfaceSwIfIdx  uint32 `json:"receive_interface_sw_if_idx"`
+	TransmitInterfaceSwIfIdx uint32 `json:"transmit_interface_sw_if_idx"`
 }
 
 // XConnectVppAPI provides methods for managing cross connects.
