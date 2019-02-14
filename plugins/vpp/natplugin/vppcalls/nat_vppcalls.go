@@ -20,7 +20,7 @@ import (
 	"github.com/pkg/errors"
 
 	nat "github.com/ligato/vpp-agent/api/models/vpp/nat"
-	natba "github.com/ligato/vpp-agent/plugins/vpp/binapi/nat"
+	natba "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/nat"
 )
 
 // Num protocol representation

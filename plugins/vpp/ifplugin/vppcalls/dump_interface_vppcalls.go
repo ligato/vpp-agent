@@ -21,15 +21,15 @@ import (
 	"strings"
 
 	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/dhcp"
-	binapi_interface "github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/ipsec"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/memif"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/tap"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/tapv2"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vmxnet3"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vxlan"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/dhcp"
+	binapi_interface "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/interfaces"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/ip"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/ipsec"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/memif"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/tap"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/tapv2"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/vmxnet3"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/vxlan"
 )
 
 // Default VPP MTU value

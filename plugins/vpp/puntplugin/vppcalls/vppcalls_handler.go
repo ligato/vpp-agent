@@ -21,8 +21,8 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 
-	ba_ip "github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
-	ba_punt "github.com/ligato/vpp-agent/plugins/vpp/binapi/punt"
+	ba_ip "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/ip"
+	ba_punt "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/punt"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 )
 

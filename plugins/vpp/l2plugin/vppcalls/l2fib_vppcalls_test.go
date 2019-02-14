@@ -21,7 +21,7 @@ import (
 
 	l2nb "github.com/ligato/vpp-agent/api/models/vpp/l2"
 	"github.com/ligato/vpp-agent/pkg/idxvpp"
-	l2ba "github.com/ligato/vpp-agent/plugins/vpp/binapi/l2"
+	l2ba "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/l2"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/l2plugin/vppcalls"
 	"github.com/ligato/vpp-agent/tests/vppcallmock"

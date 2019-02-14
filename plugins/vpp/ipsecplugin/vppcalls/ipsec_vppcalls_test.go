@@ -20,7 +20,7 @@ import (
 
 	"github.com/ligato/cn-infra/logging/logrus"
 	ipsec2 "github.com/ligato/vpp-agent/api/models/vpp/ipsec"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/ipsec"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/ipsec"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/ipsecplugin/vppcalls"
 	"github.com/ligato/vpp-agent/tests/vppcallmock"

@@ -16,7 +16,6 @@ package vpp1810
 
 import (
 	"bytes"
-	"fmt"
 	"strings"
 
 	govppapi "git.fd.io/govpp.git/api"
@@ -45,8 +44,6 @@ func (h *VpeHandler) GetVersionInfo() (*vppcalls.VersionInfo, error) {
 
 	if err := h.ch.SendRequest(req).ReceiveReply(reply); err != nil {
 		return nil, err
-	} else if reply.Retval != 0 {
-		return nil, fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
 	info := &vppcalls.VersionInfo{
@@ -105,8 +102,6 @@ func (h *VpeHandler) RunCli(cmd string) (string, error) {
 
 	if err := h.ch.SendRequest(req).ReceiveReply(reply); err != nil {
 		return "", err
-	} else if reply.Retval != 0 {
-		return "", fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
 	return string(cleanBytes(reply.Reply)), nil

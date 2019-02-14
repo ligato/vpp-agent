@@ -22,7 +22,7 @@ import (
 	"github.com/go-errors/errors"
 
 	ipsec "github.com/ligato/vpp-agent/api/models/vpp/ipsec"
-	ipsecapi "github.com/ligato/vpp-agent/plugins/vpp/binapi/ipsec"
+	ipsecapi "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/ipsec"
 )
 
 // DumpIPSecSA implements IPSec handler.

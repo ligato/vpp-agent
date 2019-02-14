@@ -20,7 +20,7 @@ import (
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/plugins/govppmux/vppcalls"
 
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/ip"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 )
 

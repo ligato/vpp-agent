@@ -23,8 +23,8 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/pkg/errors"
 
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/dhcp"
-	binapi_interfaces "github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/dhcp"
+	binapi_interfaces "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/interfaces"
 )
 
 func (h *InterfaceVppHandler) WatchInterfaceEvents(events chan<- *InterfaceEvent) error {

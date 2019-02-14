@@ -25,7 +25,7 @@ import (
 
 	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	nat "github.com/ligato/vpp-agent/api/models/vpp/nat"
-	ba_nat "github.com/ligato/vpp-agent/plugins/vpp/binapi/nat"
+	ba_nat "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/nat"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 )
 

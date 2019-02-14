@@ -18,8 +18,8 @@ import (
 	"testing"
 
 	"github.com/ligato/cn-infra/logging/logrus"
-	acl_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/acl"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpe"
+	acl_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/acl"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/vpe"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	. "github.com/onsi/gomega"
 )

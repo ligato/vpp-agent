@@ -19,10 +19,10 @@ import (
 	"testing"
 
 	ifModel "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpe"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vxlan"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/interfaces"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/ip"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/vpe"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/vxlan"
 	. "github.com/onsi/gomega"
 )
 

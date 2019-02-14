@@ -17,7 +17,7 @@ package vppcalls
 import (
 	"github.com/ligato/vpp-agent/api/models/vpp"
 	"github.com/ligato/vpp-agent/api/models/vpp/punt"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/punt"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/punt"
 )
 
 // FIXME: temporary solutions for providing data in dump

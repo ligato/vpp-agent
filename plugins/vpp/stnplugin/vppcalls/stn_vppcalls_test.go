@@ -23,7 +23,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/stnplugin/vppcalls"
 
 	"github.com/ligato/cn-infra/logging/logrus"
-	api "github.com/ligato/vpp-agent/plugins/vpp/binapi/stn"
+	api "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/stn"
 	"github.com/ligato/vpp-agent/tests/vppcallmock"
 	. "github.com/onsi/gomega"
 )

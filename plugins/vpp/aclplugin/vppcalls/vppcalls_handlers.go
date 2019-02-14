@@ -17,7 +17,7 @@ package vppcalls
 import (
 	govppapi "git.fd.io/govpp.git/api"
 
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/acl"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/acl"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 )
 

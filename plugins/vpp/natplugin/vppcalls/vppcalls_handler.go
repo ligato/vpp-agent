@@ -19,7 +19,7 @@ import (
 	"github.com/ligato/cn-infra/idxmap"
 	"github.com/ligato/cn-infra/logging"
 
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/nat"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/nat"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 )
 

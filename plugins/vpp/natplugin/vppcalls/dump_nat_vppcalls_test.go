@@ -26,8 +26,8 @@ import (
 
 	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	nat "github.com/ligato/vpp-agent/api/models/vpp/nat"
-	bin_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/nat"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpe"
+	bin_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/nat"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/vpe"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/natplugin/vppcalls"
 	"github.com/ligato/vpp-agent/tests/vppcallmock"

@@ -15,7 +15,7 @@
 package vppcalls
 
 import (
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/dhcp"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/dhcp"
 )
 
 func (h *InterfaceVppHandler) handleInterfaceDHCP(ifIdx uint32, hostName string, isAdd bool) error {

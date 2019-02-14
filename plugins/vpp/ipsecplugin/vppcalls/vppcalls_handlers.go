@@ -18,7 +18,7 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/ipsec"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/ipsec"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 )
 

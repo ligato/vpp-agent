@@ -18,8 +18,8 @@ import (
 	"testing"
 
 	"github.com/ligato/cn-infra/logging/logrus"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpe"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/ip"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/vpe"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/tests/vppcallmock"
 	. "github.com/onsi/gomega"

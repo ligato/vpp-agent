@@ -19,8 +19,8 @@ import (
 
 	"github.com/ligato/cn-infra/logging/logrus"
 	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpe"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/ip"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/vpe"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	ifvppcalls "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls"

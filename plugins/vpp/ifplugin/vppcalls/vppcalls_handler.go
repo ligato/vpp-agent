@@ -18,16 +18,16 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/af_packet"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/dhcp"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/ipsec"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/memif"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/tap"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/tapv2"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vmxnet3"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vxlan"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/af_packet"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/dhcp"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/interfaces"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/ip"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/ipsec"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/memif"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/tap"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/tapv2"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/vmxnet3"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/vxlan"
 )
 
 func init() {

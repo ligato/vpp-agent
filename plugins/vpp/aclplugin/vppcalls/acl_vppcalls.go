@@ -20,7 +20,7 @@ import (
 	"strings"
 
 	acl "github.com/ligato/vpp-agent/api/models/vpp/acl"
-	aclapi "github.com/ligato/vpp-agent/plugins/vpp/binapi/acl"
+	aclapi "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/acl"
 )
 
 // AddACL implements ACL handler.

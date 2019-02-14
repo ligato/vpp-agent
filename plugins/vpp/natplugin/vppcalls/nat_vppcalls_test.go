@@ -22,7 +22,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	nat "github.com/ligato/vpp-agent/api/models/vpp/nat"
-	binapi "github.com/ligato/vpp-agent/plugins/vpp/binapi/nat"
+	binapi "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/nat"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 )
 
@@ -35,7 +35,7 @@ func TestSetNat44Forwarding(t *testing.T) {
 
 	Expect(err).ShouldNot(HaveOccurred())
 
-	t.Logf("Msg: %+v (%#v)",ctx.MockChannel.Msg, ctx.MockChannel.Msg )
+	t.Logf("Msg: %+v (%#v)", ctx.MockChannel.Msg, ctx.MockChannel.Msg)
 	msg, ok := ctx.MockChannel.Msg.(*binapi.Nat44ForwardingEnableDisable)
 	Expect(ok).To(BeTrue())
 	Expect(msg).ToNot(BeNil())

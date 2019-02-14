@@ -12,7 +12,7 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 
-package vppcalls
+package vpp1901
 
 import (
 	"bytes"
@@ -20,14 +20,15 @@ import (
 	"strings"
 
 	govppapi "git.fd.io/govpp.git/api"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/memclnt"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpe"
+	"github.com/ligato/vpp-agent/plugins/govppmux/vppcalls"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/memclnt"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/vpe"
 )
 
 func init() {
-	Versions["vpp1901"] = HandlerVersion{
+	vppcalls.Versions["vpp1901"] = vppcalls.HandlerVersion{
 		Msgs: append(vpe.Messages, memclnt.Messages...),
-		New: func(ch govppapi.Channel) VpeVppAPI {
+		New: func(ch govppapi.Channel) vppcalls.VpeVppAPI {
 			return &VpeHandler{ch}
 		},
 	}
@@ -38,17 +39,15 @@ type VpeHandler struct {
 }
 
 // GetVersionInfo retrieves version info
-func (h *VpeHandler) GetVersionInfo() (*VersionInfo, error) {
+func (h *VpeHandler) GetVersionInfo() (*vppcalls.VersionInfo, error) {
 	req := &vpe.ShowVersion{}
 	reply := &vpe.ShowVersionReply{}
 
 	if err := h.ch.SendRequest(req).ReceiveReply(reply); err != nil {
 		return nil, err
-	} else if reply.Retval != 0 {
-		return nil, fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
-	info := &VersionInfo{
+	info := &vppcalls.VersionInfo{
 		Program:        reply.Program,
 		Version:        reply.Version,
 		BuildDate:      reply.BuildDate,
@@ -59,7 +58,7 @@ func (h *VpeHandler) GetVersionInfo() (*VersionInfo, error) {
 }
 
 // GetVpeInfo retrieves vpe information.
-func (h *VpeHandler) GetVpeInfo() (*VpeInfo, error) {
+func (h *VpeHandler) GetVpeInfo() (*vppcalls.VpeInfo, error) {
 	req := &vpe.ControlPing{}
 	reply := &vpe.ControlPingReply{}
 
@@ -67,7 +66,7 @@ func (h *VpeHandler) GetVpeInfo() (*VpeInfo, error) {
 		return nil, err
 	}
 
-	info := &VpeInfo{
+	info := &vppcalls.VpeInfo{
 		PID:       reply.VpePID,
 		ClientIdx: reply.ClientIndex,
 	}
@@ -83,7 +82,7 @@ func (h *VpeHandler) GetVpeInfo() (*VpeInfo, error) {
 		for _, v := range reply.APIVersions {
 			name := string(cleanBytes(v.Name))
 			name = strings.TrimSuffix(name, ".api")
-			info.ModuleVersions = append(info.ModuleVersions, ModuleVersion{
+			info.ModuleVersions = append(info.ModuleVersions, vppcalls.ModuleVersion{
 				Name:  name,
 				Major: v.Major,
 				Minor: v.Minor,

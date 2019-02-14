@@ -21,8 +21,8 @@ import (
 	. "github.com/onsi/gomega"
 
 	punt "github.com/ligato/vpp-agent/api/models/vpp/punt"
-	ba_ip "github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
-	ba_punt "github.com/ligato/vpp-agent/plugins/vpp/binapi/punt"
+	ba_ip "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/ip"
+	ba_punt "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/punt"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/puntplugin/vppcalls"
 	"github.com/ligato/vpp-agent/tests/vppcallmock"

@@ -18,7 +18,7 @@ import (
 	"testing"
 
 	"github.com/ligato/vpp-agent/plugins/telemetry/vppcalls"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpe"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/vpe"
 	"github.com/ligato/vpp-agent/tests/vppcallmock"
 	. "github.com/onsi/gomega"
 )

@@ -22,7 +22,7 @@ import (
 	"github.com/ligato/cn-infra/logging"
 
 	"github.com/ligato/vpp-agent/pkg/idxvpp"
-	l2ba "github.com/ligato/vpp-agent/plugins/vpp/binapi/l2"
+	l2ba "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/l2"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 )
 

@@ -32,7 +32,9 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/ligato/vpp-agent/plugins/govppmux/vppcalls"
+
 	_ "github.com/ligato/vpp-agent/plugins/govppmux/vppcalls/vpp1810"
+	_ "github.com/ligato/vpp-agent/plugins/govppmux/vppcalls/vpp1901"
 )
 
 // Default path to socket for VPP stats

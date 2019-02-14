@@ -15,7 +15,7 @@
 package vppcalls
 
 import (
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/ip"
 	"github.com/pkg/errors"
 )
 
