@@ -12,7 +12,7 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 
-package vppcalls
+package vpp1901
 
 import (
 	"fmt"
@@ -21,7 +21,8 @@ import (
 	"strings"
 
 	govppapi "git.fd.io/govpp.git/api"
-	"github.com/ligato/vpp-agent/plugins/govppmux/vppcalls"
+	vpevppcalls "github.com/ligato/vpp-agent/plugins/govppmux/vppcalls"
+	"github.com/ligato/vpp-agent/plugins/telemetry/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/memclnt"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/vpe"
 )
@@ -31,9 +32,9 @@ func init() {
 	msgs = append(msgs, memclnt.Messages...)
 	msgs = append(msgs, vpe.Messages...)
 
-	Versions["vpp1901"] = HandlerVersion{
+	vppcalls.Versions["vpp1901"] = vppcalls.HandlerVersion{
 		Msgs: msgs,
-		New: func(ch govppapi.Channel) TelemetryVppAPI {
+		New: func(ch govppapi.Channel) vppcalls.TelemetryVppAPI {
 			return NewTelemetryVppHandler(ch)
 		},
 	}
@@ -41,11 +42,11 @@ func init() {
 
 type TelemetryHandler struct {
 	ch govppapi.Channel
-	vppcalls.VpeVppAPI
+	vpevppcalls.VpeVppAPI
 }
 
 func NewTelemetryVppHandler(ch govppapi.Channel) *TelemetryHandler {
-	vpeHandler := vppcalls.CompatibleVpeHandler(ch)
+	vpeHandler := vpevppcalls.CompatibleVpeHandler(ch)
 	return &TelemetryHandler{ch, vpeHandler}
 }
 
@@ -55,13 +56,13 @@ var (
 )
 
 // GetMemory retrieves `show memory` info.
-func (h *TelemetryHandler) GetMemory() (*MemoryInfo, error) {
+func (h *TelemetryHandler) GetMemory() (*vppcalls.MemoryInfo, error) {
 	data, err := h.RunCli("show memory")
 	if err != nil {
 		return nil, err
 	}
 
-	var threads []MemoryThread
+	var threads []vppcalls.MemoryThread
 
 	threadMatches := memoryRe.FindAllStringSubmatch(string(data), -1)
 	for _, matches := range threadMatches {
@@ -73,7 +74,7 @@ func (h *TelemetryHandler) GetMemory() (*MemoryInfo, error) {
 		if err != nil {
 			return nil, err
 		}
-		thread := &MemoryThread{
+		thread := &vppcalls.MemoryThread{
 			ID:        uint(id),
 			Name:      fields[1],
 			Objects:   strToUint64(fields[2]),
@@ -87,7 +88,7 @@ func (h *TelemetryHandler) GetMemory() (*MemoryInfo, error) {
 		threads = append(threads, *thread)
 	}
 
-	info := &MemoryInfo{
+	info := &vppcalls.MemoryInfo{
 		Threads: threads,
 	}
 
@@ -100,13 +101,13 @@ var (
 )
 
 // GetNodeCounters retrieves node counters info.
-func (h *TelemetryHandler) GetNodeCounters() (*NodeCounterInfo, error) {
+func (h *TelemetryHandler) GetNodeCounters() (*vppcalls.NodeCounterInfo, error) {
 	data, err := h.RunCli("show node counters")
 	if err != nil {
 		return nil, err
 	}
 
-	var counters []NodeCounter
+	var counters []vppcalls.NodeCounter
 
 	for i, line := range strings.Split(string(data), "\n") {
 		// Skip empty lines
@@ -130,14 +131,14 @@ func (h *TelemetryHandler) GetNodeCounters() (*NodeCounterInfo, error) {
 		}
 		fields := matches[1:]
 
-		counters = append(counters, NodeCounter{
+		counters = append(counters, vppcalls.NodeCounter{
 			Count:  strToUint64(fields[0]),
 			Node:   fields[1],
 			Reason: fields[2],
 		})
 	}
 
-	info := &NodeCounterInfo{
+	info := &vppcalls.NodeCounterInfo{
 		Counters: counters,
 	}
 
@@ -155,13 +156,13 @@ var (
 )
 
 // GetRuntimeInfo retrieves how runtime info.
-func (h *TelemetryHandler) GetRuntimeInfo() (*RuntimeInfo, error) {
+func (h *TelemetryHandler) GetRuntimeInfo() (*vppcalls.RuntimeInfo, error) {
 	data, err := h.RunCli("show runtime")
 	if err != nil {
 		return nil, err
 	}
 
-	var threads []RuntimeThread
+	var threads []vppcalls.RuntimeThread
 
 	threadMatches := runtimeRe.FindAllStringSubmatch(string(data), -1)
 	for _, matches := range threadMatches {
@@ -169,7 +170,7 @@ func (h *TelemetryHandler) GetRuntimeInfo() (*RuntimeInfo, error) {
 		if len(fields) != 12 {
 			return nil, fmt.Errorf("invalid runtime data for thread: %q", matches[0])
 		}
-		thread := RuntimeThread{
+		thread := vppcalls.RuntimeThread{
 			ID:                  uint(strToUint64(fields[0])),
 			Name:                fields[1],
 			Time:                strToFloat64(fields[2]),
@@ -189,7 +190,7 @@ func (h *TelemetryHandler) GetRuntimeInfo() (*RuntimeInfo, error) {
 			if len(fields) != 7 {
 				return nil, fmt.Errorf("invalid runtime data for thread item: %q", matches[0])
 			}
-			thread.Items = append(thread.Items, RuntimeItem{
+			thread.Items = append(thread.Items, vppcalls.RuntimeItem{
 				Name:           fields[0],
 				State:          fields[1],
 				Calls:          strToUint64(fields[2]),
@@ -203,7 +204,7 @@ func (h *TelemetryHandler) GetRuntimeInfo() (*RuntimeInfo, error) {
 		threads = append(threads, thread)
 	}
 
-	info := &RuntimeInfo{
+	info := &vppcalls.RuntimeInfo{
 		Threads: threads,
 	}
 
@@ -216,13 +217,13 @@ var (
 )
 
 // GetBuffersInfo retrieves buffers info
-func (h *TelemetryHandler) GetBuffersInfo() (*BuffersInfo, error) {
+func (h *TelemetryHandler) GetBuffersInfo() (*vppcalls.BuffersInfo, error) {
 	data, err := h.RunCli("show buffers")
 	if err != nil {
 		return nil, err
 	}
 
-	var items []BuffersItem
+	var items []vppcalls.BuffersItem
 
 	for i, line := range strings.Split(string(data), "\n") {
 		// Skip empty lines
@@ -246,7 +247,7 @@ func (h *TelemetryHandler) GetBuffersInfo() (*BuffersInfo, error) {
 		}
 		fields := matches[1:]
 
-		items = append(items, BuffersItem{
+		items = append(items, vppcalls.BuffersItem{
 			ThreadID: uint(strToUint64(fields[0])),
 			Name:     fields[1],
 			Index:    uint(strToUint64(fields[2])),
@@ -258,7 +259,7 @@ func (h *TelemetryHandler) GetBuffersInfo() (*BuffersInfo, error) {
 		})
 	}
 
-	info := &BuffersInfo{
+	info := &vppcalls.BuffersInfo{
 		Items: items,
 	}
 
