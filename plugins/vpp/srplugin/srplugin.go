@@ -32,7 +32,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/srplugin/vppcalls"
 	"github.com/pkg/errors"
 
-	_ "github.com/ligato/vpp-agent/plugins/vpp/srplugin/vppcalls/vpp1810"
+	//_ "github.com/ligato/vpp-agent/plugins/vpp/srplugin/vppcalls/vpp1810"  // TODO FIXME forcing everything to vpp 19.01 due to not functioning proper switching mechanism
 	_ "github.com/ligato/vpp-agent/plugins/vpp/srplugin/vppcalls/vpp1901"
 )
 
