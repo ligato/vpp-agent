@@ -1,4 +1,0 @@
-	Address: 	${sidAddress}
-	Behavior: 	DX6 (Endpoint with decapsulation and IPv6 cross-connect)
-	Iface:  	${interface}
-	Next hop: 	${nexthop}

@@ -1,0 +1,16 @@
+{
+  "name": "${name}",
+  "type": 5,
+  "enabled": ${enabled},
+  "phys_address": "${mac}",
+  "mtu": ${mtu},
+  "vrf": ${vrf},
+  "ip_addresses": [
+    "${ip}/${prefix}",
+    "${second_ip}/${second_prefix}"
+  ],
+  "tap": {
+    "version": 2,
+    "host_if_name": "${host_if_name}"
+  }
+}

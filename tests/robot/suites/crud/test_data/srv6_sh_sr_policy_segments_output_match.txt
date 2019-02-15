@@ -1,1 +1,0 @@
-  	[${segmentlist[0]}].- < ${segmentlist[2]}, ${segmentlist[3]}, ${segmentlist[4]},  > weight: ${segmentlist[1]}

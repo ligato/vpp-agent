@@ -130,14 +130,16 @@ Get ETCD Dump
     [Return]            ${out}
 
 Take ETCD Snapshots
-    [Arguments]         ${tag}    ${machine}=docker
-    ${dump}=            Get ETCD Dump    ${machine}
-    Append To File      ${RESULTS_FOLDER}/etcd_dump-${tag}.txt    ${dump}
-    Append To File      ${RESULTS_FOLDER_SUITE}/etcd_dump-${tag}.txt    ${dump}
-    ${errors}=          Get Lines Containing String    ${dump}    /error/
-    ${status}=          Run Keyword And Return Status    Should Be Empty    ${errors}
-    Run Keyword If      ${status}==False         Log     Errors detected in keys: ${errors}    level=WARN
-    
+    [Arguments]            ${tag}    ${machine}=docker
+    ${dump}=               Get ETCD Dump    ${machine}
+    Append To File         ${RESULTS_FOLDER}/etcd_dump-${tag}.txt    ${dump}
+    Append To File         ${RESULTS_FOLDER_SUITE}/etcd_dump-${tag}.txt    ${dump}
+    ${errors}=             Get Lines Containing String    ${dump}    /error/
+    ${errorscount}=        Get Line Count    ${errors}
+    ${nullerrors}=         Get Regexp Matches    ${dump}    /error/.*\nnull\n
+    ${nullerrorscount}=    Get Length    ${nullerrors}
+    Run Keyword If         ${errorscount} > 0 and ${errorscount} != ${nullerrorscount}    Log     Errors detected in keys: ${errors}    level=WARN
+
 Create Next Snapshot Prefix
     ${prefix}=          Evaluate    str(${snapshot_num}).zfill(3)
     ${snapshot_num}=    Evaluate    ${snapshot_num}+1
