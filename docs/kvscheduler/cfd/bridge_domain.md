@@ -25,14 +25,14 @@ The bridge domain itself has no dependencies and will be configured as long as
 it is demanded by NB.
 The bindings, however, will each have a dependency on its associated interface
 (and implicitly on the bridge domain it is derived from).
-Even if one or more interface are missing or are being deleted, the remaining
+Even if one or more interfaces are missing or are being deleted, the remaining
 of the bridge domain will remain unaffected and continuously functional.
 
 The control-flow diagram shows that bridge domain is created even if the
 interface that it is supposed to contain gets configured later. The binding
 remains in the `PENDING` state until the interface is configured.
-  
+
 
 ![CFD](https://raw.githubusercontent.com/milanlenco/vpp-agent/kvs-docs/docs/kvscheduler/cfd/uml/add_bd_before_interface.svg?sanitize=true)
 
- 
+

@@ -62,7 +62,7 @@ KVS -> KVS: **start txn**
   activate KVS  #FFBFDD
    KVS -> ID: **Retrieve**()
     activate ID
-     ID --> KVS: ID --> KVS: retrieved interfaces = [ //local0// (OBTAINED)] \n (//my-tap// not configured => retry == **Create()**)
+     ID --> KVS: retrieved interfaces = [ //local0// (OBTAINED)] \n (//my-tap// not configured => retry == **Create()**)
     deactivate ID
    KVS -> KVS: **save refreshed values**
   deactivate KVS 

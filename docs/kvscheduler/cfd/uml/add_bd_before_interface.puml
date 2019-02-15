@@ -69,10 +69,10 @@ KVS -> KVS: **start txn #0**
     BD --> KVS: ok
    deactivate BD
 
-  KVS -> ID: **DerivedValues**(//my-bd//)
-   activate ID
-    ID --> KVS: derived-values = [ //"my-bd/interface/my-tap"//]
-   deactivate ID
+  KVS -> BD: **DerivedValues**(//my-bd//)
+   activate BD
+    BD --> KVS: derived-values = [ //"my-bd/interface/my-tap"//]
+   deactivate BD
   KVS -> KVS: **schedule create** for //"my-bd/interface/my-tap"// \n(put interface //my-tap// to BD //my-bd//)
   KVS -> ID: **KeySelector**(//"my-bd/interface/my-tap"//)
   activate ID
@@ -131,7 +131,7 @@ KVS -> KVS: **start txn #1**
   KVS -> KVS: //"my-bd/interface/my-tap"// (from previous txn) **is now ready** to be created \n - dependency on //my-tap// is now **satisfied**
    activate KVS #CCBBBB
     KVS -> KVS: (**cached**) //"my-bd/interface/my-tap"// is **handled by** BD-Interface descriptor
-    KVS -> BDI: **Validate**(//"my-bd/interface/my-tap"//) \n(put interface //my-tap// to BD //my-bd//)
+    KVS -> BDI: **Validate**(//"my-bd/interface/my-tap"//)
      activate BDI
       BDI --> KVS: ok (valid configuration)
      deactivate BDI

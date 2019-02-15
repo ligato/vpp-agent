@@ -14,13 +14,18 @@ of the configuration items that are automatically pre-created in the SB plane
 (e.g. default routes, physical interfaces, etc.), are omitted from the diagrams
 since they do not play any role in the presented scenarios.
 
+The UML diagrams are plotted as SVG images, also containing links to images
+presenting the state of the graph with values at the end of every transaction.
+But to be able to access these links, the UML diagrams have to be clicked at
+to open them as standalone inside another web browser tab. From within github
+web-UI the links are not directly accessible.
 
 ## Index
 
 * [Create single interface (KVDB NB)][create-interface-kvdb]
   - the most basic (and also verbose) example, outlining all the interactions
     between KVScheduler, descriptors, models and NB (KVDB) needed to create
-    a single value (VPP interface in this case) with derived value but without
+    a single value (VPP interface in this case) with a derived value but without
     any dependencies
 * [Create single interface (GRPC NB)][create-interface-grpc]
   - variant of the example above, where NB is GRPC instead of KVDB
@@ -49,7 +54,7 @@ since they do not play any role in the presented scenarios.
   - example of a failed transaction, with already executed changes fully reverted
     to leave no visible effects
 * [AF-Packet interface][af-packet-interface]
-  - the example describes control-flow of creating an AF-Packet interface
+  - this example describes control-flow of creating an AF-Packet interface
     depended on a host interface, presence of which is announced to KVScheduler
     via notifications
 

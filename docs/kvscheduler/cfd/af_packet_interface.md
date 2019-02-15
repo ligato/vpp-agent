@@ -19,12 +19,12 @@ though they are not requested to be configured by NB. Obtained values are
 allowed to have their own descriptors, but from the CRUD operations only
 `Retrieve()` is ever called to refresh the graph. `Create`, `Delete` and `Update`
 are never used, since obtained values are updated externally and the agent is
-only notified about the changes *after* they has already happened.
+only notified about the changes *after* they have already happened.
 
 Linux interface plugin ships with `InterfaceWatcher` descriptor, which retrieves
-and notifies about Linux interface in the network namespace of the agent
+and notifies about Linux interfaces in the network namespace of the agent
 (so-called default network namespace). Linux interfaces are assigned unique
-keys using their host names: `linux/interface/host-name/eth1`
+keys using their host names, e.g.: `linux/interface/host-name/eth1`
 The `AF-Packet` interface then defines dependency referencing the key with the
 host name of the interface it is supposed to attach to (cannot attach
 to interfaces from other namespaces).

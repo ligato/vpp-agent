@@ -3,7 +3,7 @@
 ## Example: Transaction revert
 
 An update transaction (i.e. not resync) can be configured to run in either
-[best-effort mode][retry_failed_operation.md], allowing partial completion,
+[best-effort mode](retry_failed_operation.md), allowing partial completion,
 or to terminate upon first failure and revert already applied changes so that no
 visible effects are left in the system (i.e. the true transaction definition).
 This behaviour is only supported with GRPC or localclient as the agent NB

@@ -64,46 +64,46 @@ descriptors.
 The graph-based system representation uses new terminology to abstract from
 concrete objects:
 
-* **Model** is a description for a single item type (e.g. interface, route,
-  bridge domain, etc.), defined as a Protobuf Message, structuring and
-  serializing configuration data, further coupled with meta-specification used
+* **Model** builds representation for a single item type (e.g. interface, route,
+  bridge domain, etc.), using a Protobuf Message to structure and serialize
+  configuration data, further coupled with meta-specification used
   to categorize the item type and to build/parse keys for/of item instances
   (for example, Bridge Domain model can be found [here][bd-model-example]).
   
-  **TODO: add link to model documentation once it exists**
+  **TODO: add link to the model documentation once it exists**
   
-* **Value** (`proto.Message`) is a run-time instance of a given model
+* **Value** (`proto.Message`) is a run-time instance of a given model.
 
 * **Key** (`string`) identifies specific value - it is built using the model
   specification and value attributes that uniquely identifies the instance.
 
-* **Label** (`string`) provide shorter identifier unique only across values
+* **Label** (`string`) provides shorter identifier unique only across values
   of the same type (e.g. interface name) - like key, it is generated using
   the model specification and primary value fields.
 
-* **Value State** (`ValueState`): operational state of a value - for example,
+* **Value State** (`enum ValueState`): operational state of a value - for example,
   value can be successfully `CONFIGURED`, or `PENDING` due to unmet dependencies,
   or in a `FAILED` state after the last CRUD operation returned an error,
   etc. - all distinguished value states are defined using a protobuf enumerated
-  type [here][value-states]
+  type [here][value-states].
 
-* **Value Status** (`BaseValueStatus`): Value State coupled with further details,
-  such as the last executed operation, last returned error, list of unmet
-  dependencies, etc.
+* **Value Status** (`struct BaseValueStatus`): Value State coupled with further
+  details, such as the last executed operation, last returned error, list of
+  unmet dependencies, etc.
   Status of one or more values and their updates can be read and watch for
   via the [KVScheduler API][value-states-api] - more info on API can be found
-  [below](#API)
+  [below](#API).
 
 * **Metadata** (`interface{}`) is an extra run-time information (of undefined
   type) assigned to a value, which may be updated after a CRUD operation or an
   agent restart (for example [sw_if_index][vpp-iface-idx] of every interface is
-  kept in the metadata for its key-value pair).
+  kept alongside the value).
   The label "metadata" was inherited from VPP-Agent v1.x and is a rather
   unfortunate one - the metadata are in fact "state data" of the associated
   value. Furthermore, in a future release we plan to support user-defined
-  metadata labels - an extendable meta-information assigned to key-value pairs
-  by NB to describe the purpose of configuration items for layers above the
-  KVScheduler (i.e. opaque to the scheduling algorithm).
+  metadata labels - an extendable meta-information, assigned to key-value pairs
+  by NB to describe the semantic purpose of configuration items for layers above
+  the KVScheduler (i.e. opaque to the scheduling algorithm).
   What is currently known as metadata will be then renamed to **Statedata** and
   will be allowed to change not only through CRUD operations, but also via
   notifications (i.e. asynchronously).
@@ -118,10 +118,10 @@ concrete objects:
 
 * **[Value origin][value-origin]** defines where the value came from - whether
   it was received from NB to be configured or whether it was created in the SB
-  plane automatically (e.g. default routes, loop0 interface, etc.)
+  plane automatically (e.g. default routes, loop0 interface, etc.).
 
 * Key-value pairs are operated with through CRUD operations: **C**reate,
-  **R**etrieve, **U**pdate and **D**elete
+  **R**etrieve, **U**pdate and **D**elete.
 
 * **Dependency** defined for a value, references another key-value pair that
   must exist (be created), otherwise the associated value cannot be Created and
@@ -138,18 +138,26 @@ concrete objects:
   treated as a [separate key-value pair][bd-derived-vals], dependent on the
   [target interface to be created first][bd-iface-deps], but otherwise not
   blocking the rest of the bridge domain to be applied - see [control-flow][bd-cfd]
-  demonstrating the order of operations needed to create a bridge domain
+  demonstrating the order of operations needed to create a bridge domain.
 
 * **Graph** of values is a kvscheduler-internal in-memory storage for all
   configured and pending key-value pairs, with edges representing inter-value
-  relations, such as "depends-on" and "is-derived-from"
-  (*note:* configurators - now just plugins - no longer have to implement their
-  own caches for pending values)
+  relations, such as "depends-on" and "is-derived-from".
+  
+  *Note:* configurators - now just "plugins" - no longer have to implement their
+  own caches for pending values.  
+  
+* **Graph Refresh** is a process of updating the graph content to reflect the
+  real state of the southbound. This is achieved by calling `Retrieve` of
+  every descriptor that supports the operation and adding/updating vertices
+  with retrieved values. The refresh is performed just before [Full or Downstream
+  resync](#resync) or after a failed C(R)UD operation(s), but only for vertices
+  affected by the failure.
 
 * **KVDescriptor** assigns implementations of CRUD operations and defines
   derived values and dependencies to a single value type - this is what
   configurators basically boil down to - to learn more, please read how to
-  [implement your own KVDescriptor](Implementing-your-own-KVDescriptor)
+  [implement your own KVDescriptor](Implementing-your-own-KVDescriptor).
 
 ### Dependencies
 
@@ -158,13 +166,14 @@ respected by the scheduling algorithm:
 1. `A` **depends on** `B`:
    - `A` cannot exist without `B`
    - request to Create `A` without `B` existing must be postponed by marking
-     `A` as `pending` (value with unmet dependencies) in the in-memory graph
+     `A` as `PENDING` (value with unmet dependencies) in the in-memory graph
    - if `B` is to be removed and `A` exists, `A` must be removed first and set
-     to `pending` state in case `B` is restored in the future
-   - Note: values pushed from SB are not checked for dependencies
+     to the `PENDING` state in case `B` is restored in the future
+   - Note: values obtained from SB via notifications are not checked for
+     dependencies
 2. `B` **is derived from** `A`:
    - value `B` is not created directly (by NB or SB) but gets derived from base
-     value `A` (using the DerivedValues() method of the base value's descriptor)
+     value `A` (using the `DerivedValues()` method of the descriptor for `A`)
    - derived value exists only as long as its base does and gets removed
      (immediately, not pending) once the base value goes away
    - derived value may be described by a different descriptor than the base and
@@ -180,7 +189,7 @@ derivation relations using [bridge domain][bd-cfd] as an example, together with
 a pending value (of unspecified type) waiting for some interface to be created
 first.
 
-![KVScheduler diagram](img/kvscheduler.png)
+![KVScheduler diagram](img/kvscheduler.svg)
 
 ## Resync
 
@@ -191,14 +200,14 @@ needs to determine and execute the set of operations needed to get the state
 in-sync after a transaction or restart.
 
 Furthermore, KVScheduler enhances the concept of state reconciliation, and
-defines three types of the resync:
+differentiates three types of the resync:
 * **Full resync**: desired configuration is re-read from NB, the view of SB is
-  refreshed via Retrieve operations and inconsistencies are resolved via
+  refreshed via `Retrieve` operations and inconsistencies are resolved via
   `Create`\\`Delete`\\`Update` operations
 * **Upstream resync**: partial resync, same as Full resync except the view of SB
   is assumed to be up-to-date and will not get refreshed - can be used by NB
   when it is easier to re-calculate the desired state than to determine the
-  (minimal) difference
+  (minimal) difference to reflect a given event
 * **Downstream resync**: partial resync, same as Full resync except the desired
   configuration is assumed to be up-to-date and will not be re-read from
   NB - can be used periodically to resync, even without interacting with NB
@@ -253,6 +262,9 @@ therefore the plan matches the executed operations):
           - key: vpp/config/v2/ipneigh
           - prev-value: { scan_interval:1 max_proc_time:20 max_update:10 scan_int_delay:1 stale_threshold:4  }
           - new-value: { mode:IPv4 scan_interval:1 stale_threshold:4  }
+
+// here you would potentially see logs from C(R)UD operations           
+          
 o----------------------------------------------------------------------------------------------------------------------o
   * executed operations (2019-01-21 11:29:27.794325984 +0000 UTC m=+8.270999232 - 2019-01-21 11:29:27.797588466 +0000 UTC m=+8.274261700, duration = 3.262468ms):
      1. ADD:
@@ -272,12 +284,12 @@ x-------------------------------------------------------------------------------
 The API of KVScheduler is defined inside a separate [sub-package "api"][kvscheduler-api-dir]
 of the [plugin][plugin]. A set of available interfaces is split across multiple
 files:
- * `errors.go`: definitions of error that can be returned from within the scheduler;
-   additionally `InvalidValueError` error wrapper is defined to allow plugins
-   further specify the reason of a [validation error][kvdescriptor-validate],
+ * `errors.go`: definitions of errors that can be returned from within
+   the scheduler; additionally `InvalidValueError` error wrapper is defined
+   to allow plugins further specify the reason of a [validation error][kvdescriptor-validate],
    which is then exposed through the [value status][value-states]
 
- * `kv_scheduler_api.go`: the API of scheduler the ca be used:
+ * `kv_scheduler_api.go`: the API of scheduler that can be used:
    - by NB to commit transaction or to read and watch for value status updates
    - by SB to push notifications about values created/updated automatically or
      externally
@@ -288,7 +300,7 @@ files:
  * `txn_options.go`: a set of available options for transactions - for example,
    a transaction can be customized to allow re-try of failed operations,
    triggered after a configured time period and with a given limit to the maximum
-   number of retries
+   number of retries allowed
 
  * `txn_record.go`: type definition used to store a record of already processed
    transaction - these records can be obtained using either [GetTransactionHistory][get-history-api]
@@ -331,18 +343,20 @@ only via formatted logs but also through a set of REST APIs:
         - `seq-num=<txn-seq-num>`: transaction sequence number
         - `since=<unix-timestamp>`: if undefined, the output starts with the
            oldest kept record
-        - `until=<unix-timestamp>`: if undefined, the output end with the last
+        - `until=<unix-timestamp>`: if undefined, the output ends with the last
            executed transaction
 * **key timeline**: `GET /scheduler/key-timeline`
      - args:
         - `key=<key-without-agent-prefix>`: key of the value to show changes
            over time for
-* **graph snapshot**: `GET /scheduler/graph-snaphost`
+* **graph snapshot** (internal representation, not using `dot`): `GET /scheduler/graph-snaphost`
     - args:
         - `time=<unix-timestamp>`: if undefined, current state is returned
 * **dump values**: `GET /scheduler/dump`
     - args (without args prints Index page):
-        - `descriptor=<descriptor-name>`
+        - `descriptor=<descriptor-name>`: dump values in the scope of the given
+           descriptor
+        - `key-prefix=<key-prefix>`: dump values with the given key prefix
         - `view=<NB, SB, internal>`: whether to dump desired, actual or the
            configuration state as known to KVScheduler
 * **request downstream resync**: `POST /scheduler/downstream-resync`
@@ -356,7 +370,7 @@ only via formatted logs but also through a set of REST APIs:
 [vpp-iface-idx]: https://github.com/ligato/vpp-agent/blob/e8e54ef67b666e57ffef1bca555c8ce5585f215f/plugins/vpp/ifplugin/ifaceidx/ifaceidx.go#L62
 [vpp-iface-map]: https://github.com/ligato/vpp-agent/blob/e8e54ef67b666e57ffef1bca555c8ce5585f215f/plugins/vpp/ifplugin/ifplugin_api.go#L27
 [value-origin]: https://github.com/ligato/vpp-agent/blob/e8e54ef67b666e57ffef1bca555c8ce5585f215f/plugins/kvscheduler/api/kv_descriptor_api.go#L53
-[bd-interface]: https://github.com/ligato/vpp-agent/blob/e8e54ef67b666e57ffef1bca555c8ce5585f215f/api/models/vpp/l2/bridge-domain.proto#L19
+[bd-interface]: https://github.com/ligato/vpp-agent/blob/e8e54ef67b666e57ffef1bca555c8ce5585f215f/api/models/vpp/l2/bridge-domain.proto#L19-L24
 [bd-derived-vals]: https://github.com/ligato/vpp-agent/blob/e8e54ef67b666e57ffef1bca555c8ce5585f215f/plugins/vpp/l2plugin/descriptor/bridgedomain.go#L242-L251
 [bd-iface-deps]: https://github.com/ligato/vpp-agent/blob/e8e54ef67b666e57ffef1bca555c8ce5585f215f/plugins/vpp/l2plugin/descriptor/bd_interface.go#L120-L127
 [bd-cfd]: cfd/bridge_domain.md

@@ -27,7 +27,7 @@ your own KVDescriptor.
 
 Let's start first by understanding the [descriptor API][descriptor-api].
 First of all, descriptor is not an interface that needs to be implemented, but
-rather a structure to be initialized with right attribute values and callbacks
+rather a structure to be initialized with the right attribute values and callbacks
 to CRUD operations. This was chosen to reinforce the fact that descriptors are
 meant to be **stateless** - the state of values is instead kept by the scheduler
 and run-time information can be stored into the [metadata][kvscheduler-terminology],
@@ -40,16 +40,17 @@ be fully visible from the outside.
 
 What follows is a list of all descriptor attributes, split across sub-sections,
 each with a detailed explanation and pointers to examples. Optional fields can
-be left uninitialized (zero values). Please note, that using
-[descriptor adapters](#descriptor-adapter), the signatures of the callbacks
-will become adapted to use the real proto message type (e.g. `*vpp_l3.Route`)
-as opposed to the bare `proto.Message` interface, avoiding all the boiler-plate
-type casting.
+be left uninitialized (zero values).
+
+Please note that using [descriptor adapters](#descriptor-adapter), the signatures
+of the callbacks will become adapted to use the real proto message type
+(e.g. `*vpp_l3.Route`) as opposed to the bare `proto.Message` interface, avoiding
+all the boiler-plate type casting.
 
 **Note**: `KeySelector`, `ValueTypeName`, `KeyLabel` & `NBKeyPrefix`
 will all be replaced in a future release with a single reference to the value
-[model][kvscheduler-terminology] (**TODO: add link to model documentation once
-it exists**). Most descriptors already use the methods provided by models
+[model][kvscheduler-terminology] (**TODO: add link to the model documentation
+once it exists**). Most descriptors already use the methods provided by models
 to define these fields. But we do not yet have tools to build models for
 [derived values](#derivedvalues) and without them we cannot fully switch
 to models.
@@ -68,7 +69,7 @@ to models.
   values described by this descriptor
 * descriptors for derived values do not need to define this field - the values
   they describe do not come from NB directly, instead get derived from other
-  values which are in the scope of another descriptor
+  values which are in the scope of other descriptors
 * [model][kvscheduler-terminology] can be used to obtain the key prefix
   using `KeyPrefix()` method - [here is an example][nb-key-prefix]
 
@@ -95,9 +96,9 @@ to models.
    key scope of the descriptor and not necessarily in the entire key space
    (e.g. interface name rather than the full key)
 * [model][kvscheduler-terminology] provides key shortener off-the-shelf with
-  method `StripKeyPrefix()` - [here is an example][key-label]
+  the method `StripKeyPrefix()` - [here is an example][key-label]
 * if defined, key label will be used as value identifier in the metadata map
-  (i.e. it for example allows to ask for interface metadata simply by the
+  (it then for example allows to ask for interface metadata simply by the
   interface name rather than using a full key)
 
 ### ValueComparator
@@ -140,7 +141,7 @@ to models.
 * optional callback: `func(key string, value proto.Message) error`
 * can be provided to implement validation of the value data received from NB
   (e.g. check for validity of interface configuration)
-* `Validate` is called for every new value before it is Created or Updated
+* `Validate` is called for every new value before it is Created or Updated into
 * if the validations fails (returned error is non-nil), the scheduler will
   mark the value as invalid ([state][value-states] `INVALID`) and will not
   attempt to apply it
@@ -248,13 +249,16 @@ to models.
   `Create`/`Delete`/`Update` callbacks, will always be returned for the same
   value (non-retriable) or if the value can be theoretically fixed merely by
   repeating the operation (retriable)
-* if the callback is not defined, every error will be considered retriable
+* if the callback is not defined, every C(R)UD error will be considered retriable
+* validation errors (returned from [Validate](#validate)) are automatically
+  considered non-retriable - no matter how many times an invalid configuration
+  is re-applied, it is still invalid and the operation would fail 
 * if a C(R)UD operation fails with a retriable error and the associated
   (`best-effort`) transaction [allows Retry][retry-opt], the KVscheduler will
   schedule repeat for these failed operations to run in a separate transaction,
   triggered after a configurable time delay and with a limit to the maximum
-  number of retries - it can be requested to double the delay for every next
-  attempt, feature known as exponential backoff
+  number of retries allowed - it can be requested to double the delay for every
+  next attempt, feature known as exponential backoff
 
 ### DerivedValues
 
@@ -302,10 +306,10 @@ type KeySelector func(key string) bool
 * for value that has one or more dependencies, provide callback that will
   tell which keys must already exist for the value to be considered ready
   for creation
-* dependency can be specified either exactly with a specific key, or using
-  predicate `AnyOf`, which must return true for at least one of the keys of
-  already created values for the dependency to be considered satisfied
-  (i.e. matching keys are basically ORed)
+* dependency can either reference a specific key, or use the predicate `AnyOf`,
+  which must return `true` for at least one of the keys of already created
+  values for the dependency to be considered satisfied (i.e. matching keys are
+  basically ORed)
 * the callback is optional - if not defined, the kv-pairs of the descriptor
   are assumed to have no dependencies
 * multiple listed dependencies must all be satisfied - i.e. they are ANDed
@@ -316,7 +320,7 @@ type KeySelector func(key string) bool
   linux/l3plugin: a Linux route cannot be created (request will fail) if the
   selected gateway (next hop) isn't already routable based on IP addresses
   assigned to interfaces from the same namespace or using link-local routes
-  \- the implemented `AnyOf` selector returns `true` if it find just such
+  \- the implemented `AnyOf` selector returns `true` whenever it finds just such
   interface or a link-local route among already configured/obtained values
 
 ### RetrieveDependencies
@@ -379,7 +383,7 @@ Available arguments are:
   - repeated and optional argument, but since `value-type` is mandatory, at least
     the package with the protobuf model of the value should be imported
   - import path can be relative to the file with the `go:generate` command
-    (hence the plugin's top-level directory is preferred)
+    (hence the plugin's top-level directory is preferred to avoid double dots)
 
 For example, `go:generate` for VPP interface can be found [here][vpp-iface-adapter].
 Running `go generate <your-plugin-path>` will generate the adapter for your
@@ -401,12 +405,12 @@ The adapter will present the KVDescriptor API with value type and metadata type
 already casted to your own data types for every field:
 ```
 func New<your-descriptor-name>Descriptor(<args>) *adapter.<your-descriptor-name>Descriptor {
-	return &adapter.<your-descriptor-name>Descriptor{
-		Name:        <your-descriptor-name>,
-		KeySelector: <your-key-selector>,
+    return &adapter.<your-descriptor-name>Descriptor{
+        Name:        <your-descriptor-name>,
+        KeySelector: <your-key-selector>,
         Create:      <your-Create-operation-implementation>,
         // etc., fill all the mandatory fields or whenever the default value is not suitable
-	}
+    }
 }
 ```
 
@@ -476,7 +480,7 @@ across all the VPP-Agent plugins:
 │   ├── ...
 │   └── <descriptor-for-modeln>.go
 ├── <southband-name>calls/  // e.g. "vppcalls/"
-├── <metadata-map>  // if custom secondary index over metadata is needed
+├── <metadata-map>  // if custom secondary index for metadata is needed
 │   └── <map-impl>.go
 ├── <your-plugin>.go
 ├── <your-plugin>_api.go
@@ -484,21 +488,30 @@ across all the VPP-Agent plugins:
 ```
 
 Directory `model` is where you would put all your proto models and the code
-generated from it. `descriptor` directory is a place for all the descriptors
+generated from it.
+
+`descriptor` directory is a place for all the descriptors
 implemented by your plugin, optionally adapted for a specific protobuf type with
 generated adapters nested further in the sub-directory `adapter` (adapters are
 quite hidden since they should never need to be looked at and definitely not
-edited manually). It is recommended to implementation of all the SB calls needed
-for your descriptor into a separate package `<southband-name>calls/`
+edited manually).
+
+It is recommended to put implementation of every SB calls needed for your
+descriptor into a separate package `<southband-name>calls/`
 (e.g. [linuxcalls][linuxcalls]) and expose them via interface. This will allow
 to replace access to SB with mocks and make unit testing easier.
+
 If you define custom metadata map, put the implementation into a separate
 plugin's top-level directory, called for example `<model>idx`.
+
 `<your-plugin.go>` is where you would implement the Plugin interface
 (`Init`, `AfterInit`, `Close` methods) and register all the descriptors within
-the `Init` phase. `<your-plugin>_api.go` is a place to define API of your
-plugin - plugins most commonly [expose read-only references to maps with
-metadata](#expose-metadata) for configuration items they describe.
+the `Init` phase.
+
+`<your-plugin>_api.go` is a place to define API of your plugin - plugins most
+commonly [expose read-only references to maps with metadata](#expose-metadata)
+for configuration items they describe.
+
 It is a non-written rule to put plugin constructor and some default options and
 default dependency injections into the file `options.go` (example
 [option.go][options-example] for VPP ifplugin).
@@ -513,15 +526,15 @@ and [VPP routes][vpp-route-descriptor], which have simple CRUD methods
 and a single dependency on the associated interface. Then, learn how to break
 a more complex object into multiple values using [bridge domains][vpp-bd-descriptor]
 and [BD-interface bindings][vpp-bd-iface-descriptor], derived one for every
-interface assigned into the domain, as an example. Finally, check out the
+interface to be assigned into the domain, as an example. Finally, check out the
 [Linux interface watcher][linux-iface-watcher], which shows that values may enter
 the graph even from below as SB notifications, and used as [targets for dependencies][afpacket-dep]
 by other objects.
 These descriptors cover most of the features and should help you to get started
 implementing your own.
 
-**TODO: create and add links to "mock" descriptors (mostly just skeletons and
-some printouts)**
+**TODO: create and add links to "mock" descriptors to play with (mostly just
+skeletons and some printouts)**
 
 
 
@@ -547,7 +560,7 @@ some printouts)**
 [key-label]: https://github.com/ligato/vpp-agent/blob/e8e54ef67b666e57ffef1bca555c8ce5585f215f/plugins/linux/ifplugin/descriptor/interface.go#L147
 [key-selector]: https://github.com/ligato/vpp-agent/blob/e8e54ef67b666e57ffef1bca555c8ce5585f215f/plugins/linux/ifplugin/descriptor/interface.go#L146
 [nb-key-prefix]: https://github.com/ligato/vpp-agent/blob/e8e54ef67b666e57ffef1bca555c8ce5585f215f/plugins/linux/ifplugin/descriptor/interface.go#L144
-[compare-mtu]: https://github.com/ligato/vpp-agent/blob/e8e54ef67b666e57ffef1bca555c8ce5585f215f/plugins/vpp/ifplugin/descriptor/interface.go#L220-L225
+[compare-mtu]: https://github.com/ligato/vpp-agent/blob/e8e54ef67b666e57ffef1bca555c8ce5585f215f/plugins/linux/ifplugin/descriptor/interface.go#L191-L194
 [named-mapping]: https://github.com/ligato/cn-infra/blob/master/idxmap/mem/inmemory_name_mapping.go
 [vpp-ifaceidx]: https://github.com/ligato/vpp-agent/tree/master/plugins/vpp/ifplugin/ifaceidx
 [vpp-iface-by-ip]: https://github.com/ligato/vpp-agent/blob/master/plugins/vpp/ifplugin/ifaceidx/ifaceidx.go#L135-L139
