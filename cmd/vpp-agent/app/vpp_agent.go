@@ -27,6 +27,7 @@ import (
 	"github.com/ligato/cn-infra/health/statuscheck"
 	"github.com/ligato/cn-infra/logging/logmanager"
 	"github.com/ligato/cn-infra/messaging/kafka"
+	"github.com/ligato/vpp-agent/plugins/vpp/srplugin"
 
 	"github.com/ligato/vpp-agent/plugins/configurator"
 	linux_ifplugin "github.com/ligato/vpp-agent/plugins/linux/ifplugin"
@@ -158,6 +159,7 @@ type VPP struct {
 	NATPlugin   *natplugin.NATPlugin
 	PuntPlugin  *puntplugin.PuntPlugin
 	STNPlugin   *stnplugin.STNPlugin
+	SRPlugin    *srplugin.SRPlugin
 }
 
 func DefaultVPP() VPP {
@@ -170,6 +172,7 @@ func DefaultVPP() VPP {
 		NATPlugin:   &natplugin.DefaultPlugin,
 		PuntPlugin:  &puntplugin.DefaultPlugin,
 		STNPlugin:   &stnplugin.DefaultPlugin,
+		SRPlugin:    &srplugin.DefaultPlugin,
 	}
 }
 
