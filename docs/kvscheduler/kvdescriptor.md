@@ -217,7 +217,7 @@ to models.
 
 * optional callback: `func(correlate []KVWithMetadata) ([]KVWithMetadata, error)`
   - where:
- ```
+ ``` golang
  // KVWithMetadata encapsulates key-value pair with metadata and the origin mark.
  type KVWithMetadata struct {
      Key      string
@@ -279,7 +279,7 @@ to models.
 
 * optional callback: `func(key string, value proto.Message) []Dependency`
   - where:
-```
+``` golang
 // Dependency references another kv pair that must exist before the associated
 // value can be created.
 type Dependency struct {
@@ -356,7 +356,7 @@ make get-desc-adapter-generator
 
 Then, to generate adapter for your descriptor, put `go:generate` command for
 `descriptor-adapter` to (preferably) your plugin's main go file:
-```
+``` golang
 //go:generate descriptor-adapter --descriptor-name <your-descriptor-name>  --value-type <your-value-type-name> [--meta-type <your-metadata-type-name>] [--import <IMPORT-PATH>...] --output-dir "descriptor"
 ```
 Available arguments are:
@@ -395,7 +395,7 @@ Once you have adapter generated and CRUD callbacks prepared, you can initialize
 and register your descriptor.
 First, import adapter into the go file with the descriptor
 ([assuming recommended directory layout](#plugin-directory-layout)):
-```
+```golang
 import "github.com/<your-organization>/<your-agent>/plugins/<your-plugin>/descriptor/adapter"
 ```
 
@@ -403,7 +403,7 @@ Next, add constructor that will return your descriptor initialized and ready for
 registration with the scheduler.
 The adapter will present the KVDescriptor API with value type and metadata type
 already casted to your own data types for every field:
-```
+```golang
 func New<your-descriptor-name>Descriptor(<args>) *adapter.<your-descriptor-name>Descriptor {
     return &adapter.<your-descriptor-name>Descriptor{
         Name:        <your-descriptor-name>,
@@ -418,7 +418,7 @@ Next, inside the `Init` method of your plugin, import the package with all your
 descriptors and register them using
 [KVScheduler.RegisterKVDescriptor(<DESCRIPTOR>)][register-kvdescriptor] method:
 
-```
+```golang
 import "github.com/<your-organization>/<your-agent>/plugins/<your-plugin>/descriptor"
 
 func (p *YourPlugin) Init() error {
@@ -430,7 +430,7 @@ func (p *YourPlugin) Init() error {
 
 As you can see, the KVScheduler becomes plugin dependency, which needs to be
 properly injected:
-```
+```golang
 \\\\ plugin main go file:
 import kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 
