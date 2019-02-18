@@ -243,9 +243,6 @@ func (d *PolicySegmentListDescriptor) Dependencies(key string, segmentList *srv6
 // EquivalentSegmentLists determines whether 2 policy segment lists are logically equal. This comparison takes into
 // consideration also semantics that couldn't be modeled into proto models (i.e. SID is IPv6 address and not only string)
 func (d *PolicySegmentListDescriptor) EquivalentSegmentLists(key string, oldSL, newSL *srv6.PolicySegmentList) bool {
-	if oldSL == nil || newSL == nil {
-		return oldSL == newSL
-	}
 	return oldSL.Weight == newSL.Weight &&
 		equivalentSIDs(oldSL.PolicyBsid, newSL.PolicyBsid) &&
 		d.equivalentSegments(oldSL.Segments, newSL.Segments)

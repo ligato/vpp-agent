@@ -73,9 +73,6 @@ func (d *LocalSIDDescriptor) GetDescriptor() *adapter.LocalSIDDescriptor {
 // EquivalentLocalSIDs determines whether 2 localSIDs are logically equal. This comparison takes into consideration also
 // semantics that couldn't be modeled into proto models (i.e. SID is IPv6 address and not only string)
 func (d *LocalSIDDescriptor) EquivalentLocalSIDs(key string, oldLocalSID, newLocalSID *srv6.LocalSID) bool {
-	if oldLocalSID == nil || newLocalSID == nil {
-		return oldLocalSID == newLocalSID
-	}
 	return oldLocalSID.FibTableId == newLocalSID.FibTableId &&
 		equivalentSIDs(oldLocalSID.Sid, newLocalSID.Sid) &&
 		d.equivalentEndFunctions(oldLocalSID.EndFunction, newLocalSID.EndFunction)

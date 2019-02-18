@@ -218,9 +218,6 @@ func (d *PolicyDescriptor) Dependencies(key string, policy *srv6.Policy) (depend
 // EquivalentPolicies determines whether 2 policies are logically equal. This comparison takes into consideration also
 // semantics that couldn't be modeled into proto models (i.e. SID is IPv6 address and not only string)
 func (d *PolicyDescriptor) EquivalentPolicies(key string, oldPolicy, newPolicy *srv6.Policy) bool {
-	if oldPolicy == nil || newPolicy == nil {
-		return oldPolicy == newPolicy
-	}
 	return oldPolicy.FibTableId == newPolicy.FibTableId &&
 		equivalentSIDs(oldPolicy.Bsid, newPolicy.Bsid) &&
 		oldPolicy.SprayBehaviour == newPolicy.SprayBehaviour &&
