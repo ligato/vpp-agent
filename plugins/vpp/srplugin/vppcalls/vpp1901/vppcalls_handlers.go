@@ -20,6 +20,7 @@ import (
 	vpe_vppcalls "github.com/ligato/vpp-agent/plugins/govppmux/vppcalls"
 	vpe_vpp1901 "github.com/ligato/vpp-agent/plugins/govppmux/vppcalls/vpp1901"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/sr"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/vpe"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/srplugin/vppcalls"
 )
@@ -27,6 +28,7 @@ import (
 func init() {
 	var msgs []govppapi.Message
 	msgs = append(msgs, sr.Messages...)
+	msgs = append(msgs, vpe.Messages...) // using also vpe -> need to have correct vpp version also for vpe
 
 	vppcalls.Versions["vpp1901"] = vppcalls.HandlerVersion{
 		Msgs: msgs,
