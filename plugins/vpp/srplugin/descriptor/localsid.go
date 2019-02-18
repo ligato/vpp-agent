@@ -56,17 +56,16 @@ func NewLocalSIDDescriptor(srHandler vppcalls.SRv6VppAPI, log logging.PluginLogg
 // the KVScheduler.
 func (d *LocalSIDDescriptor) GetDescriptor() *adapter.LocalSIDDescriptor {
 	return &adapter.LocalSIDDescriptor{
-		Name:               LocalSIDDescriptorName,
-		NBKeyPrefix:        srv6.ModelLocalSID.KeyPrefix(),
-		ValueTypeName:      srv6.ModelLocalSID.ProtoName(),
-		KeySelector:        srv6.ModelLocalSID.IsKeyValid,
-		KeyLabel:           srv6.ModelLocalSID.StripKeyPrefix,
-		ValueComparator:    d.EquivalentLocalSIDs,
-		Validate:           d.Validate,
-		Create:             d.Create,
-		Delete:             d.Delete,
-		UpdateWithRecreate: d.UpdateWithRecreate,
-		Dependencies:       d.Dependencies,
+		Name:            LocalSIDDescriptorName,
+		NBKeyPrefix:     srv6.ModelLocalSID.KeyPrefix(),
+		ValueTypeName:   srv6.ModelLocalSID.ProtoName(),
+		KeySelector:     srv6.ModelLocalSID.IsKeyValid,
+		KeyLabel:        srv6.ModelLocalSID.StripKeyPrefix,
+		ValueComparator: d.EquivalentLocalSIDs,
+		Validate:        d.Validate,
+		Create:          d.Create,
+		Delete:          d.Delete,
+		Dependencies:    d.Dependencies,
 	}
 }
 
@@ -182,11 +181,6 @@ func (d *LocalSIDDescriptor) Delete(key string, value *srv6.LocalSID, metadata i
 		return errors.Errorf("failed to delete local sid %s: %v", sid.String(), err)
 	}
 	return nil
-}
-
-// UpdateWithRecreate always returns true - LocalSIDs are always updated via re-creation.
-func (d *LocalSIDDescriptor) UpdateWithRecreate(key string, oldValue, newValue *srv6.LocalSID, metadata interface{}) bool {
-	return true
 }
 
 // Dependencies for LocalSIDs are represented by interface (interface in up state)

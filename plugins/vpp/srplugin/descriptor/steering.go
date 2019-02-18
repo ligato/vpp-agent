@@ -62,17 +62,16 @@ func NewSteeringDescriptor(srHandler vppcalls.SRv6VppAPI, valueProvider schedule
 // the KVScheduler.
 func (d *SteeringDescriptor) GetDescriptor() *adapter.SteeringDescriptor {
 	return &adapter.SteeringDescriptor{
-		Name:               SteeringDescriptorName,
-		NBKeyPrefix:        srv6.ModelSteering.KeyPrefix(),
-		ValueTypeName:      srv6.ModelSteering.ProtoName(),
-		KeySelector:        srv6.ModelSteering.IsKeyValid,
-		KeyLabel:           srv6.ModelSteering.StripKeyPrefix,
-		ValueComparator:    d.EquivalentSteering,
-		Validate:           d.Validate,
-		Create:             d.Create,
-		Delete:             d.Delete,
-		UpdateWithRecreate: d.UpdateWithRecreate,
-		Dependencies:       d.Dependencies,
+		Name:            SteeringDescriptorName,
+		NBKeyPrefix:     srv6.ModelSteering.KeyPrefix(),
+		ValueTypeName:   srv6.ModelSteering.ProtoName(),
+		KeySelector:     srv6.ModelSteering.IsKeyValid,
+		KeyLabel:        srv6.ModelSteering.StripKeyPrefix,
+		ValueComparator: d.EquivalentSteering,
+		Validate:        d.Validate,
+		Create:          d.Create,
+		Delete:          d.Delete,
+		Dependencies:    d.Dependencies,
 	}
 }
 
@@ -221,9 +220,4 @@ func (d *SteeringDescriptor) Dependencies(key string, steering *srv6.Steering) (
 		Key:   srv6.PolicyKey(steering.GetPolicyBsid()), //TODO support also policy identification by index (impl using derived value?)
 	})
 	return dependencies
-}
-
-// UpdateWithRecreate always returns true - Steerings are always updated via re-creation.
-func (d *SteeringDescriptor) UpdateWithRecreate(key string, oldValue, newValue *srv6.Steering, metadata interface{}) bool {
-	return true
 }
