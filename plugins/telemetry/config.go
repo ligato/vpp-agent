@@ -24,8 +24,8 @@ type Config struct {
 	Disabled bool `json:"disabled"`
 }
 
-// getConfig returns telemetry plugin file configuration if exists
-func (p *Plugin) getConfig() (*Config, error) {
+// loadConfig returns telemetry plugin file configuration if exists
+func (p *Plugin) loadConfig() (*Config, error) {
 	config := &Config{}
 	found, err := p.Cfg.LoadValue(config)
 	if err != nil {

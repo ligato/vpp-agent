@@ -268,22 +268,6 @@ func (p *Plugin) GetTrace() *apitrace.Trace {
 	return p.tracer.Get()
 }
 
-// ListStats returns all stats names
-func (p *Plugin) ListStats(prefixes ...string) ([]string, error) {
-	if p.statsAdapter == nil {
-		return nil, nil
-	}
-	return p.statsAdapter.ListStats(prefixes...)
-}
-
-// DumpStats returns all stats with name, type and value
-func (p *Plugin) DumpStats(prefixes ...string) ([]*adapter.StatEntry, error) {
-	if p.statsAdapter == nil {
-		return nil, nil
-	}
-	return p.statsAdapter.DumpStats(prefixes...)
-}
-
 // handleVPPConnectionEvents handles VPP connection events.
 func (p *Plugin) handleVPPConnectionEvents(ctx context.Context) {
 	p.wg.Add(1)
@@ -323,48 +307,3 @@ func (p *Plugin) handleVPPConnectionEvents(ctx context.Context) {
 		}
 	}
 }
-
-/*func (p *Plugin) retrieveVpeInfo() (*vppcalls.VpeInfo, error) {
-	vppAPIChan, err := p.vppConn.NewAPIChannel()
-	if err != nil {
-		p.Log.Error("getting new api channel failed:", err)
-		return nil, err
-	}
-	defer vppAPIChan.Close()
-
-	info, err := vppcalls.GetVpeInfo(vppAPIChan)
-	if err != nil {
-		p.Log.Warn("getting version info failed:", err)
-		return nil, err
-	}
-	p.Log.Debugf("vpp module versions: %+v", info.ModuleVersions)
-
-	return info, nil
-}
-
-func (p *Plugin) retrieveVersion() {
-	vppAPIChan, err := p.vppConn.NewAPIChannel()
-	if err != nil {
-		p.Log.Error("getting new api channel failed:", err)
-		return
-	}
-	defer vppAPIChan.Close()
-
-	version, err := vppcalls.GetVersionInfo(vppAPIChan)
-	if err != nil {
-		p.Log.Warn("getting version info failed:", err)
-		return
-	}
-
-	p.Log.Debugf("version info: %+v", version)
-	p.Log.Infof("VPP version: %q (%v)", version.Version, version.BuildDate)
-
-	// Get VPP ACL plugin version
-	var aclVersion string
-	if aclVersion, err = vppcalls.GetACLPluginVersion(vppAPIChan); err != nil {
-		p.Log.Warn("getting acl version info failed:", err)
-		return
-	}
-	p.Log.Infof("VPP ACL plugin version: %q", aclVersion)
-}
-*/

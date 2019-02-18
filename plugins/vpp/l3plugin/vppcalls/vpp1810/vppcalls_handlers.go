@@ -22,13 +22,18 @@ import (
 	vpevppcalls "github.com/ligato/vpp-agent/plugins/govppmux/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/govppmux/vppcalls/vpp1810"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1810/ip"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1810/vpe"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls"
 )
 
 func init() {
+	var msgs []govppapi.Message
+	msgs = append(msgs, ip.Messages...)
+	msgs = append(msgs, vpe.Messages...)
+
 	vppcalls.Versions["vpp1810"] = vppcalls.HandlerVersion{
-		Msgs: ip.Messages,
+		Msgs: msgs,
 		New:  NewL3VppHandler,
 	}
 }
