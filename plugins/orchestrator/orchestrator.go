@@ -135,7 +135,11 @@ func (p *Plugin) watchEvents() {
 				kvPairs = append(kvPairs, kv)
 			}
 
-			ctx := DataSrcContext(context.Background(), "watcher")
+			ctx := e.GetContext()
+			if ctx == nil {
+				ctx = context.Background()
+			}
+			ctx = DataSrcContext(ctx, "watcher")
 			ctx = kvs.WithRetryDefault(ctx)
 
 			_, err = p.PushData(ctx, kvPairs)
@@ -176,7 +180,11 @@ func (p *Plugin) watchEvents() {
 			}
 			p.log.Debugf("Resync with %d items", n)
 
-			ctx := DataSrcContext(context.Background(), "watcher")
+			ctx := e.GetContext()
+			if ctx == nil {
+				ctx = context.Background()
+			}
+			ctx = DataSrcContext(ctx, "watcher")
 			ctx = kvs.WithResync(ctx, kvs.FullResync, true)
 			ctx = kvs.WithRetryDefault(ctx)
 

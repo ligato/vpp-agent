@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package mock.l2;
+
+// generate method XXX_MessageName() for every defined proto message, which
+// the agent needs to obtain the message name inside init(), even before the
+// message type is registered with proto.RegisterType()
+import "github.com/gogo/protobuf/gogoproto/gogo.proto";
+option (gogoproto.messagename_all) = true;
+
+message FIBEntry {
+    string phys_address = 1;       /* unique destination MAC address */
+    string bridge_domain = 2;      /* name of bridge domain this FIB table entry belongs to */
+
+    enum Action {
+        FORWARD = 0;               /* forward the matching frame */
+        DROP = 1;                  /* drop the matching frame */
+    };
+    Action action = 3;             /* action to tke on matching frames */
+
+    string outgoing_interface = 4; /* outgoing interface for matching frames */
+}

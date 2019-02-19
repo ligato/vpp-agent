@@ -15,6 +15,8 @@
 package dbadapter
 
 import (
+	"context"
+
 	"github.com/ligato/cn-infra/db/keyval"
 	"github.com/ligato/vpp-agent/pkg/models"
 
@@ -66,7 +68,7 @@ func (dsl *DataChangeDSL) Delete() vppclient.DeleteDSL {
 
 // Send propagates requested changes to the plugins.
 func (dsl *DataChangeDSL) Send() vppclient.Reply {
-	err := dsl.txn.Commit()
+	err := dsl.txn.Commit(context.Background())
 	return &Reply{err}
 }
 

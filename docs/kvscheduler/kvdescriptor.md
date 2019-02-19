@@ -252,7 +252,7 @@ to models.
 * if the callback is not defined, every C(R)UD error will be considered retriable
 * validation errors (returned from [Validate](#validate)) are automatically
   considered non-retriable - no matter how many times an invalid configuration
-  is re-applied, it is still invalid and the operation would fail 
+  is re-applied, it is still invalid and the operation would fail
 * if a C(R)UD operation fails with a retriable error and the associated
   (`best-effort`) transaction [allows Retry][retry-opt], the KVscheduler will
   schedule repeat for these failed operations to run in a separate transaction,
@@ -279,30 +279,29 @@ to models.
 
 * optional callback: `func(key string, value proto.Message) []Dependency`
   - where:
-``` golang
-// Dependency references another kv pair that must exist before the associated
-// value can be created.
-type Dependency struct {
-	// Label should be a short human-readable string labeling the dependency.
-	// Must be unique in the list of dependencies for a value.
-	Label string
+ ``` golang
+ // Dependency references another kv pair that must exist before the associated
+ // value can be created.
+ type Dependency struct {
+     // Label should be a short human-readable string labeling the dependency.
+     // Must be unique in the list of dependencies for a value.
+     Label string
 
-	// Key of another kv pair that the associated value depends on.
-	// If empty, AnyOf must be defined instead.
-	Key string
+     // Key of another kv pair that the associated value depends on.
+     // If empty, AnyOf must be defined instead.
+     Key string
 
-	// AnyOf, if not nil, must return true for at least one of the already
-	// created keys for the dependency to be considered satisfied.
-	// Either Key or AnyOf should be defined, but not both at the same time.
-	// Note: AnyOf comes with more overhead than a static key dependency,
-	// so prefer to use the latter whenever possible.
-	AnyOf KeySelector
-}
+     // AnyOf, if not nil, must return true for at least one of the already
+     // created keys for the dependency to be considered satisfied.
+     // Either Key or AnyOf should be defined, but not both at the same time.
+     // Note: AnyOf comes with more overhead than a static key dependency,
+     // so prefer to use the latter whenever possible.
+     AnyOf KeySelector
+ }
 
-// KeySelector is used to filter keys.
-type KeySelector func(key string) bool
-```
-
+ // KeySelector is used to filter keys.
+ type KeySelector func(key string) bool
+ ```
 * for value that has one or more dependencies, provide callback that will
   tell which keys must already exist for the value to be considered ready
   for creation
@@ -404,15 +403,22 @@ registration with the scheduler.
 The adapter will present the KVDescriptor API with value type and metadata type
 already casted to your own data types for every field:
 ```golang
-func New<your-descriptor-name>Descriptor(<args>) *adapter.<your-descriptor-name>Descriptor {
-    return &adapter.<your-descriptor-name>Descriptor{
+func New<your-descriptor-name>Descriptor(<args>) *KVDescriptor {
+    typedDescriptor := &adapter.<your-descriptor-name>Descriptor{
         Name:        <your-descriptor-name>,
         KeySelector: <your-key-selector>,
         Create:      <your-Create-operation-implementation>,
         // etc., fill all the mandatory fields or whenever the default value is not suitable
     }
+    return adapter.New<your-descriptor-name>Descriptor(typedDescriptor)
 }
 ```
+Note: even though descriptors are meant to be stateless, it is still common to
+implement CRUD operations as methods of a structure. But the structure should
+only serve as a "static context" for the descriptor, storing for example
+references to the logger, SB handler(s), etc. - things that do not change once
+the descriptor is constructed (typically received as input arguments for the
+descriptor constructor) .
 
 Next, inside the `Init` method of your plugin, import the package with all your
 descriptors and register them using
@@ -496,7 +502,7 @@ generated adapters nested further in the sub-directory `adapter` (adapters are
 quite hidden since they should never need to be looked at and definitely not
 edited manually).
 
-It is recommended to put implementation of every SB calls needed for your
+It is recommended to put implementation of every SB call needed for your
 descriptor into a separate package `<southband-name>calls/`
 (e.g. [linuxcalls][linuxcalls]) and expose them via interface. This will allow
 to replace access to SB with mocks and make unit testing easier.
@@ -518,6 +524,21 @@ default dependency injections into the file `options.go` (example
 
 ## Descriptor examples
 
+### Descriptor skeletons
+
+TODO
+
+### Mock SB
+
+We have prepared an [interactive hands-on example][mock-plugins-example],
+demonstrating the KVScheduler framework using replicated `vpp/ifplugin` and
+`vpp/l2plugin`, where models are simplified and the VPP is replaced with a mock
+southbound, printing the triggered CRUD operations into the stdout instead of
+actually executing them. The example is fully focused on the scheduler and the
+descriptors, and on that abstraction level the actual SB underneath is irrelevant. 
+
+### Real-world examples
+
 Since all the VPP and Linux plugins use the KVScheduler framework, there is
 already plenty of descriptors available in the repository to take inspiration
 from. Even though interfaces are the basis of network configuration, we recommend
@@ -532,10 +553,6 @@ the graph even from below as SB notifications, and used as [targets for dependen
 by other objects.
 These descriptors cover most of the features and should help you to get started
 implementing your own.
-
-**TODO: create and add links to "mock" descriptors to play with (mostly just
-skeletons and some printouts)**
-
 
 
 [existing-descriptors]: https://github.com/ligato/vpp-agent/wiki/KVDescriptors
@@ -582,3 +599,4 @@ skeletons and some printouts)**
 [linux-route-gw-dep]: https://github.com/ligato/vpp-agent/blob/e8e54ef67b666e57ffef1bca555c8ce5585f215f/plugins/linux/l3plugin/descriptor/route.go#L255-L273
 [vpp-route-retrieve-deps]: https://github.com/ligato/vpp-agent/blob/e8e54ef67b666e57ffef1bca555c8ce5585f215f/plugins/vpp/l3plugin/descriptor/route.go#L74
 [vpp-route-iface-name]: https://github.com/ligato/vpp-agent/blob/e8e54ef67b666e57ffef1bca555c8ce5585f215f/plugins/vpp/l3plugin/vppcalls/route_dump.go#L139-L150
+[mock-plugins-example]: ../../examples/kvscheduler/mock_plugins/README.md

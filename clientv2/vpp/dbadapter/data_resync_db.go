@@ -15,6 +15,8 @@
 package dbadapter
 
 import (
+	"context"
+
 	"github.com/ligato/cn-infra/db/keyval"
 	"github.com/ligato/vpp-agent/pkg/models"
 
@@ -253,7 +255,7 @@ func (dsl *DataResyncDSL) Send() vppclient.Reply {
 		break
 	}
 
-	err := dsl.txn.Commit()
+	err := dsl.txn.Commit(context.Background())
 
 	return &Reply{err: err}
 }
