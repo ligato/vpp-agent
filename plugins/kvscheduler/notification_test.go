@@ -14,10 +14,9 @@
 
 package kvscheduler
 
-/* TODO: fix and re-enable UTs
 import (
 	"context"
-	"errors"
+	//"errors"
 	"strings"
 	"testing"
 	"time"
@@ -58,7 +57,7 @@ func TestNotifications(t *testing.T) {
 		ValueTypeName: proto.MessageName(test.NewArrayValue()),
 		DerivedValues: test.ArrayValueDerBuilder,
 		WithMetadata:  true,
-	}, mockSB, 0, test.WithoutDump)
+	}, mockSB, 0, test.WithoutRetrieve)
 	// -> descriptor2:
 	descriptor2 := test.NewMockDescriptor(&KVDescriptor{
 		Name:          descriptor2Name,
@@ -81,8 +80,8 @@ func TestNotifications(t *testing.T) {
 			}
 			return nil
 		},
-		WithMetadata:     true,
-		DumpDependencies: []string{descriptor1Name},
+		WithMetadata:         true,
+		RetrieveDependencies: []string{descriptor1Name},
 	}, mockSB, 0)
 
 	// register both descriptors with the scheduler
@@ -100,7 +99,7 @@ func TestNotifications(t *testing.T) {
 	// run resync transaction against empty SB
 	startTime := time.Now()
 	schedulerTxn := scheduler.StartNBTransaction()
-	schedulerTxn.SetValue(prefixB+baseValue2, test.NewLazyArrayValue("item1", "item2"))
+	schedulerTxn.SetValue(prefixB+baseValue2, test.NewArrayValue("item1", "item2"))
 	seqNum, err := schedulerTxn.Commit(WithResync(context.Background(), FullResync, true))
 	stopTime := time.Now()
 	Expect(seqNum).To(BeEquivalentTo(0))
@@ -117,9 +116,9 @@ func TestNotifications(t *testing.T) {
 	opHistory := mockSB.PopHistoryOfOps()
 	Expect(opHistory).To(HaveLen(1))
 	operation := opHistory[0]
-	Expect(operation.OpType).To(Equal(test.MockDump))
+	Expect(operation.OpType).To(Equal(test.MockRetrieve))
 	Expect(operation.Descriptor).To(BeEquivalentTo(descriptor2Name))
-	checkValuesForCorrelation(operation.CorrelateDump, []KVWithMetadata{
+	checkValues(operation.CorrelateRetrieve, []KVWithMetadata{
 		{
 			Key:      prefixB + baseValue2,
 			Value:    test.NewArrayValue("item1", "item2"),
@@ -143,16 +142,15 @@ func TestNotifications(t *testing.T) {
 	checkRecordedValues(txn.Values, []RecordedKVPair{
 		{Key: prefixB + baseValue2, Value: utils.RecordProtoMessage(test.NewArrayValue("item1", "item2")), Origin: FromNB},
 	})
-	Expect(txn.PreErrors).To(BeEmpty())
 
 	txnOps := RecordedTxnOps{
 		{
-			Operation:  Add,
-			Key:        prefixB + baseValue2,
-			NewValue:   utils.RecordProtoMessage(test.NewArrayValue("item1", "item2")),
-			PrevOrigin: FromNB,
-			NewOrigin:  FromNB,
-			IsPending:  true,
+			Operation: TxnOperation_CREATE,
+			Key:       prefixB + baseValue2,
+			NewValue:  utils.RecordProtoMessage(test.NewArrayValue("item1", "item2")),
+			PrevState: ValueState_NONEXISTENT,
+			NewState:  ValueState_PENDING,
+			NOOP:      true,
 		},
 	}
 	checkTxnOperations(txn.Planned, txnOps)
@@ -162,24 +160,57 @@ func TestNotifications(t *testing.T) {
 	graphR := scheduler.graph.Read()
 	errorStats := graphR.GetFlagStats(ErrorFlagName, nil)
 	Expect(errorStats.TotalCount).To(BeEquivalentTo(0))
-	pendingStats := graphR.GetFlagStats(PendingFlagName, nil)
+	pendingStats := graphR.GetFlagStats(UnavailValueFlagName, nil)
 	Expect(pendingStats.TotalCount).To(BeEquivalentTo(1))
 	derivedStats := graphR.GetFlagStats(DerivedFlagName, nil)
 	Expect(derivedStats.TotalCount).To(BeEquivalentTo(0))
 	lastUpdateStats := graphR.GetFlagStats(LastUpdateFlagName, nil)
 	Expect(lastUpdateStats.TotalCount).To(BeEquivalentTo(1))
-	lastChangeStats := graphR.GetFlagStats(LastChangeFlagName, nil)
-	Expect(lastChangeStats.TotalCount).To(BeEquivalentTo(1))
 	descriptorStats := graphR.GetFlagStats(DescriptorFlagName, nil)
 	Expect(descriptorStats.TotalCount).To(BeEquivalentTo(1))
 	Expect(descriptorStats.PerValueCount).ToNot(HaveKey(descriptor1Name))
 	Expect(descriptorStats.PerValueCount).To(HaveKey(descriptor2Name))
 	Expect(descriptorStats.PerValueCount[descriptor2Name]).To(BeEquivalentTo(1))
-	originStats := graphR.GetFlagStats(OriginFlagName, nil)
-	Expect(originStats.TotalCount).To(BeEquivalentTo(1))
-	Expect(originStats.PerValueCount).To(HaveKey(FromNB.String()))
-	Expect(originStats.PerValueCount[FromNB.String()]).To(BeEquivalentTo(1))
+	valueStateStats := graphR.GetFlagStats(ValueStateFlagName, nil)
+	Expect(valueStateStats.TotalCount).To(BeEquivalentTo(1))
+	Expect(valueStateStats.PerValueCount).To(HaveKey(ValueState_PENDING.String()))
+	Expect(valueStateStats.PerValueCount[ValueState_PENDING.String()]).To(BeEquivalentTo(1))
 	graphR.Release()
+
+	// check value dumps for prefix B
+	nbConfig := []KVWithMetadata{
+		{Key: prefixB + baseValue2, Value: test.NewArrayValue("item1", "item2"), Origin: FromNB},
+	}
+	views := []View{NBView, SBView, CachedView}
+	for _, view := range views {
+		var expValues []KVWithMetadata
+		if view == NBView {
+			expValues = nbConfig
+		} // else empty expected set of values
+		dumpedValues, err := scheduler.DumpValuesByKeyPrefix(prefixB, view)
+		Expect(err).To(BeNil())
+		checkValues(dumpedValues, expValues)
+		dumpedValues, err = scheduler.DumpValuesByDescriptor(descriptor2Name, view)
+		Expect(err).To(BeNil())
+		checkValues(dumpedValues, expValues)
+	}
+	mockSB.PopHistoryOfOps() // remove Retrieve-s from the history
+
+	// check value status
+	status := scheduler.GetValueStatus(prefixB + baseValue2)
+	Expect(status).ToNot(BeNil())
+	checkBaseValueStatus(status, &BaseValueStatus{
+		Value: &ValueStatus{
+			Key:           prefixB + baseValue2,
+			State:         ValueState_PENDING,
+			LastOperation: TxnOperation_CREATE,
+			Details:       []string{prefixA + baseValue1},
+		},
+	})
+
+	// subscribe to receive notifications about value state changes for prefixA
+	errorChan := make(chan *BaseValueStatus, 5)
+	scheduler.WatchValueStatus(errorChan, prefixSelector(prefixA))
 
 	// send notification
 	startTime = time.Now()
@@ -232,15 +263,85 @@ func TestNotifications(t *testing.T) {
 	opHistory = mockSB.PopHistoryOfOps()
 	Expect(opHistory).To(HaveLen(2))
 	operation = opHistory[0]
-	Expect(operation.OpType).To(Equal(test.MockAdd))
+	Expect(operation.OpType).To(Equal(test.MockCreate))
 	Expect(operation.Descriptor).To(BeEquivalentTo(descriptor2Name))
 	Expect(operation.Key).To(BeEquivalentTo(prefixB + baseValue2))
 	Expect(operation.Err).To(BeNil())
 	operation = opHistory[1]
-	Expect(operation.OpType).To(Equal(test.MockAdd))
+	Expect(operation.OpType).To(Equal(test.MockCreate))
 	Expect(operation.Descriptor).To(BeEquivalentTo(descriptor2Name))
 	Expect(operation.Key).To(BeEquivalentTo(prefixB + baseValue2 + "/item1"))
 	Expect(operation.Err).To(BeNil())
+
+	// check value dumps for prefix A
+	sbState := []KVWithMetadata{
+		{Key: prefixA + baseValue1, Value: test.NewArrayValue("item1"), Origin: FromSB, Metadata: &test.OnlyInteger{Integer: 10}},
+	}
+	for _, view := range views {
+		// prefix
+		var expValues []KVWithMetadata
+		expErrMsg := "descriptor does not support Retrieve operation" // Retrieve not supported
+		if view != NBView {
+			expValues = sbState
+		} // else empty set of dumped values
+		dumpedValues, err := scheduler.DumpValuesByKeyPrefix(prefixA, view)
+		if view == SBView {
+			Expect(err).ToNot(BeNil())
+			Expect(err.Error()).To(BeEquivalentTo(expErrMsg))
+		} else {
+			Expect(err).To(BeNil())
+			checkValues(dumpedValues, expValues)
+		}
+		dumpedValues, err = scheduler.DumpValuesByDescriptor(descriptor1Name, view)
+		if view == SBView {
+			Expect(err).ToNot(BeNil())
+			Expect(err.Error()).To(BeEquivalentTo(expErrMsg))
+		} else {
+			Expect(err).To(BeNil())
+			checkValues(dumpedValues, expValues)
+		}
+	}
+	mockSB.PopHistoryOfOps() // remove Retrieve-s from the history
+
+	// check value status
+	status = scheduler.GetValueStatus(prefixB + baseValue2)
+	Expect(status).ToNot(BeNil())
+	checkBaseValueStatus(status, &BaseValueStatus{
+		Value: &ValueStatus{
+			Key:           prefixB + baseValue2,
+			State:         ValueState_CONFIGURED,
+			LastOperation: TxnOperation_CREATE,
+		},
+		DerivedValues: []*ValueStatus{
+			{
+				Key:           prefixB + baseValue2 + "/item1",
+				State:         ValueState_CONFIGURED,
+				LastOperation: TxnOperation_CREATE,
+			},
+			{
+				Key:           prefixB + baseValue2 + "/item2",
+				State:         ValueState_PENDING,
+				LastOperation: TxnOperation_CREATE,
+				Details:       []string{prefixA + baseValue1 + "/item2"},
+			},
+		},
+	})
+	status = scheduler.GetValueStatus(prefixA + baseValue1)
+	Expect(status).ToNot(BeNil())
+	checkBaseValueStatus(status, &BaseValueStatus{
+		Value: &ValueStatus{
+			Key:           prefixA + baseValue1,
+			State:         ValueState_OBTAINED,
+			LastOperation: TxnOperation_UNDEFINED,
+		},
+		DerivedValues: []*ValueStatus{
+			{
+				Key:           prefixA + baseValue1 + "/item1",
+				State:         ValueState_OBTAINED,
+				LastOperation: TxnOperation_UNDEFINED,
+			},
+		},
+	})
 
 	// check transaction operations
 	txnHistory = scheduler.GetTransactionHistory(startTime, time.Now())
@@ -257,49 +358,48 @@ func TestNotifications(t *testing.T) {
 	checkRecordedValues(txn.Values, []RecordedKVPair{
 		{Key: prefixA + baseValue1, Value: utils.RecordProtoMessage(test.NewArrayValue("item1")), Origin: FromSB},
 	})
-	Expect(txn.PreErrors).To(BeEmpty())
 
 	txnOps = RecordedTxnOps{
 		{
-			Operation:  Add,
-			Key:        prefixA + baseValue1,
-			NewValue:   utils.RecordProtoMessage(test.NewArrayValue("item1")),
-			PrevOrigin: FromSB,
-			NewOrigin:  FromSB,
+			Operation: TxnOperation_CREATE,
+			Key:       prefixA + baseValue1,
+			NewValue:  utils.RecordProtoMessage(test.NewArrayValue("item1")),
+			PrevState: ValueState_NONEXISTENT,
+			NewState:  ValueState_OBTAINED,
 		},
 		{
-			Operation:  Add,
-			Key:        prefixB + baseValue2,
-			PrevValue:  utils.RecordProtoMessage(test.NewArrayValue("item1", "item2")),
-			NewValue:   utils.RecordProtoMessage(test.NewArrayValue("item1", "item2")),
-			PrevOrigin: FromNB,
-			NewOrigin:  FromNB,
-			WasPending: true,
+			Operation: TxnOperation_CREATE,
+			Key:       prefixB + baseValue2,
+			PrevValue: utils.RecordProtoMessage(test.NewArrayValue("item1", "item2")),
+			NewValue:  utils.RecordProtoMessage(test.NewArrayValue("item1", "item2")),
+			PrevState: ValueState_PENDING,
+			NewState:  ValueState_CONFIGURED,
 		},
 		{
-			Operation:  Add,
-			Key:        prefixB + baseValue2 + "/item1",
-			Derived:    true,
-			NewValue:   utils.RecordProtoMessage(test.NewStringValue("item1")),
-			PrevOrigin: FromNB,
-			NewOrigin:  FromNB,
+			Operation: TxnOperation_CREATE,
+			Key:       prefixB + baseValue2 + "/item1",
+			IsDerived: true,
+			NewValue:  utils.RecordProtoMessage(test.NewStringValue("item1")),
+			PrevState: ValueState_NONEXISTENT,
+			NewState:  ValueState_CONFIGURED,
 		},
 		{
-			Operation:  Add,
-			Key:        prefixB + baseValue2 + "/item2",
-			Derived:    true,
-			NewValue:   utils.RecordProtoMessage(test.NewStringValue("item2")),
-			PrevOrigin: FromNB,
-			NewOrigin:  FromNB,
-			IsPending:  true,
+			Operation: TxnOperation_CREATE,
+			Key:       prefixB + baseValue2 + "/item2",
+			IsDerived: true,
+			NewValue:  utils.RecordProtoMessage(test.NewStringValue("item2")),
+			PrevState: ValueState_NONEXISTENT,
+			NewState:  ValueState_PENDING,
+			NOOP:      true,
 		},
 		{
-			Operation:  Add,
+			Operation:  TxnOperation_CREATE,
 			Key:        prefixA + baseValue1 + "/item1",
-			Derived:    true,
+			IsDerived:  true,
+			IsProperty: true,
 			NewValue:   utils.RecordProtoMessage(test.NewStringValue("item1")),
-			PrevOrigin: FromSB,
-			NewOrigin:  FromSB,
+			PrevState:  ValueState_NONEXISTENT,
+			NewState:   ValueState_OBTAINED,
 		},
 	}
 	checkTxnOperations(txn.Planned, txnOps)
@@ -309,26 +409,26 @@ func TestNotifications(t *testing.T) {
 	graphR = scheduler.graph.Read()
 	errorStats = graphR.GetFlagStats(ErrorFlagName, nil)
 	Expect(errorStats.TotalCount).To(BeEquivalentTo(0))
-	pendingStats = graphR.GetFlagStats(PendingFlagName, nil)
+	pendingStats = graphR.GetFlagStats(UnavailValueFlagName, nil)
 	Expect(pendingStats.TotalCount).To(BeEquivalentTo(2))
 	derivedStats = graphR.GetFlagStats(DerivedFlagName, nil)
 	Expect(derivedStats.TotalCount).To(BeEquivalentTo(3))
 	lastUpdateStats = graphR.GetFlagStats(LastUpdateFlagName, nil)
 	Expect(lastUpdateStats.TotalCount).To(BeEquivalentTo(6))
-	lastChangeStats = graphR.GetFlagStats(LastChangeFlagName, nil)
-	Expect(lastChangeStats.TotalCount).To(BeEquivalentTo(3))
 	descriptorStats = graphR.GetFlagStats(DescriptorFlagName, nil)
 	Expect(descriptorStats.TotalCount).To(BeEquivalentTo(5))
 	Expect(descriptorStats.PerValueCount).To(HaveKey(descriptor1Name))
 	Expect(descriptorStats.PerValueCount[descriptor1Name]).To(BeEquivalentTo(1))
 	Expect(descriptorStats.PerValueCount).To(HaveKey(descriptor2Name))
 	Expect(descriptorStats.PerValueCount[descriptor2Name]).To(BeEquivalentTo(4))
-	originStats = graphR.GetFlagStats(OriginFlagName, nil)
-	Expect(originStats.TotalCount).To(BeEquivalentTo(6))
-	Expect(originStats.PerValueCount).To(HaveKey(FromNB.String()))
-	Expect(originStats.PerValueCount[FromNB.String()]).To(BeEquivalentTo(4))
-	Expect(originStats.PerValueCount).To(HaveKey(FromSB.String()))
-	Expect(originStats.PerValueCount[FromSB.String()]).To(BeEquivalentTo(2))
+	valueStateStats = graphR.GetFlagStats(ValueStateFlagName, nil)
+	Expect(valueStateStats.TotalCount).To(BeEquivalentTo(6))
+	Expect(valueStateStats.PerValueCount).To(HaveKey(ValueState_PENDING.String()))
+	Expect(valueStateStats.PerValueCount[ValueState_PENDING.String()]).To(BeEquivalentTo(2))
+	Expect(valueStateStats.PerValueCount).To(HaveKey(ValueState_CONFIGURED.String()))
+	Expect(valueStateStats.PerValueCount[ValueState_CONFIGURED.String()]).To(BeEquivalentTo(2))
+	Expect(valueStateStats.PerValueCount).To(HaveKey(ValueState_OBTAINED.String()))
+	Expect(valueStateStats.PerValueCount[ValueState_OBTAINED.String()]).To(BeEquivalentTo(2))
 	graphR.Release()
 
 	// send 2nd notification
@@ -383,17 +483,35 @@ func TestNotifications(t *testing.T) {
 
 	// check operations executed in SB
 	opHistory = mockSB.PopHistoryOfOps()
-	Expect(opHistory).To(HaveLen(2))
+	Expect(opHistory).To(HaveLen(1))
 	operation = opHistory[0]
-	Expect(operation.OpType).To(Equal(test.MockUpdate))
-	Expect(operation.Descriptor).To(BeEquivalentTo(descriptor2Name))
-	Expect(operation.Key).To(BeEquivalentTo(prefixB + baseValue2))
-	Expect(operation.Err).To(BeNil())
-	operation = opHistory[1]
-	Expect(operation.OpType).To(Equal(test.MockAdd))
+	Expect(operation.OpType).To(Equal(test.MockCreate))
 	Expect(operation.Descriptor).To(BeEquivalentTo(descriptor2Name))
 	Expect(operation.Key).To(BeEquivalentTo(prefixB + baseValue2 + "/item2"))
 	Expect(operation.Err).To(BeNil())
+
+	// check value status
+	status = scheduler.GetValueStatus(prefixB + baseValue2)
+	Expect(status).ToNot(BeNil())
+	checkBaseValueStatus(status, &BaseValueStatus{
+		Value: &ValueStatus{
+			Key:           prefixB + baseValue2,
+			State:         ValueState_CONFIGURED,
+			LastOperation: TxnOperation_CREATE,
+		},
+		DerivedValues: []*ValueStatus{
+			{
+				Key:           prefixB + baseValue2 + "/item1",
+				State:         ValueState_CONFIGURED,
+				LastOperation: TxnOperation_CREATE,
+			},
+			{
+				Key:           prefixB + baseValue2 + "/item2",
+				State:         ValueState_CONFIGURED,
+				LastOperation: TxnOperation_CREATE,
+			},
+		},
+	})
 
 	// check transaction operations
 	txnHistory = scheduler.GetTransactionHistory(startTime, time.Now())
@@ -410,42 +528,33 @@ func TestNotifications(t *testing.T) {
 	checkRecordedValues(txn.Values, []RecordedKVPair{
 		{Key: prefixA + baseValue1, Value: utils.RecordProtoMessage(test.NewArrayValue("item1", "item2")), Origin: FromSB},
 	})
-	Expect(txn.PreErrors).To(BeEmpty())
 
 	txnOps = RecordedTxnOps{
 		{
-			Operation:  Modify,
-			Key:        prefixA + baseValue1,
-			PrevValue:  utils.RecordProtoMessage(test.NewArrayValue("item1")),
-			NewValue:   utils.RecordProtoMessage(test.NewArrayValue("item1", "item2")),
-			PrevOrigin: FromSB,
-			NewOrigin:  FromSB,
+			Operation: TxnOperation_UPDATE,
+			Key:       prefixA + baseValue1,
+			PrevValue: utils.RecordProtoMessage(test.NewArrayValue("item1")),
+			NewValue:  utils.RecordProtoMessage(test.NewArrayValue("item1", "item2")),
+			PrevState: ValueState_OBTAINED,
+			NewState:  ValueState_OBTAINED,
 		},
 		{
-			Operation:  Update,
-			Key:        prefixB + baseValue2,
-			PrevValue:  utils.RecordProtoMessage(test.NewArrayValue("item1", "item2")),
-			NewValue:   utils.RecordProtoMessage(test.NewArrayValue("item1", "item2")),
-			PrevOrigin: FromNB,
-			NewOrigin:  FromNB,
-		},
-		{
-			Operation:  Add,
+			Operation:  TxnOperation_CREATE,
 			Key:        prefixA + baseValue1 + "/item2",
-			Derived:    true,
+			IsDerived:  true,
+			IsProperty: true,
 			NewValue:   utils.RecordProtoMessage(test.NewStringValue("item2")),
-			PrevOrigin: FromSB,
-			NewOrigin:  FromSB,
+			PrevState:  ValueState_NONEXISTENT,
+			NewState:   ValueState_OBTAINED,
 		},
 		{
-			Operation:  Add,
-			Key:        prefixB + baseValue2 + "/item2",
-			Derived:    true,
-			PrevValue:  utils.RecordProtoMessage(test.NewStringValue("item2")),
-			NewValue:   utils.RecordProtoMessage(test.NewStringValue("item2")),
-			PrevOrigin: FromNB,
-			NewOrigin:  FromNB,
-			WasPending: true,
+			Operation: TxnOperation_CREATE,
+			Key:       prefixB + baseValue2 + "/item2",
+			IsDerived: true,
+			PrevValue: utils.RecordProtoMessage(test.NewStringValue("item2")),
+			NewValue:  utils.RecordProtoMessage(test.NewStringValue("item2")),
+			PrevState: ValueState_PENDING,
+			NewState:  ValueState_CONFIGURED,
 		},
 	}
 	checkTxnOperations(txn.Planned, txnOps)
@@ -455,26 +564,26 @@ func TestNotifications(t *testing.T) {
 	graphR = scheduler.graph.Read()
 	errorStats = graphR.GetFlagStats(ErrorFlagName, nil)
 	Expect(errorStats.TotalCount).To(BeEquivalentTo(0))
-	pendingStats = graphR.GetFlagStats(PendingFlagName, nil)
+	pendingStats = graphR.GetFlagStats(UnavailValueFlagName, nil)
 	Expect(pendingStats.TotalCount).To(BeEquivalentTo(2))
 	derivedStats = graphR.GetFlagStats(DerivedFlagName, nil)
 	Expect(derivedStats.TotalCount).To(BeEquivalentTo(6))
 	lastUpdateStats = graphR.GetFlagStats(LastUpdateFlagName, nil)
-	Expect(lastUpdateStats.TotalCount).To(BeEquivalentTo(11))
-	lastChangeStats = graphR.GetFlagStats(LastChangeFlagName, nil)
-	Expect(lastChangeStats.TotalCount).To(BeEquivalentTo(5))
+	Expect(lastUpdateStats.TotalCount).To(BeEquivalentTo(10))
 	descriptorStats = graphR.GetFlagStats(DescriptorFlagName, nil)
-	Expect(descriptorStats.TotalCount).To(BeEquivalentTo(8))
+	Expect(descriptorStats.TotalCount).To(BeEquivalentTo(7))
 	Expect(descriptorStats.PerValueCount).To(HaveKey(descriptor1Name))
 	Expect(descriptorStats.PerValueCount[descriptor1Name]).To(BeEquivalentTo(2))
 	Expect(descriptorStats.PerValueCount).To(HaveKey(descriptor2Name))
-	Expect(descriptorStats.PerValueCount[descriptor2Name]).To(BeEquivalentTo(6))
-	originStats = graphR.GetFlagStats(OriginFlagName, nil)
-	Expect(originStats.TotalCount).To(BeEquivalentTo(11))
-	Expect(originStats.PerValueCount).To(HaveKey(FromNB.String()))
-	Expect(originStats.PerValueCount[FromNB.String()]).To(BeEquivalentTo(6))
-	Expect(originStats.PerValueCount).To(HaveKey(FromSB.String()))
-	Expect(originStats.PerValueCount[FromSB.String()]).To(BeEquivalentTo(5))
+	Expect(descriptorStats.PerValueCount[descriptor2Name]).To(BeEquivalentTo(5))
+	valueStateStats = graphR.GetFlagStats(ValueStateFlagName, nil)
+	Expect(valueStateStats.TotalCount).To(BeEquivalentTo(10))
+	Expect(valueStateStats.PerValueCount).To(HaveKey(ValueState_PENDING.String()))
+	Expect(valueStateStats.PerValueCount[ValueState_PENDING.String()]).To(BeEquivalentTo(2))
+	Expect(valueStateStats.PerValueCount).To(HaveKey(ValueState_CONFIGURED.String()))
+	Expect(valueStateStats.PerValueCount[ValueState_CONFIGURED.String()]).To(BeEquivalentTo(3))
+	Expect(valueStateStats.PerValueCount).To(HaveKey(ValueState_OBTAINED.String()))
+	Expect(valueStateStats.PerValueCount[ValueState_OBTAINED.String()]).To(BeEquivalentTo(5))
 	graphR.Release()
 
 	// send 3rd notification
@@ -515,6 +624,27 @@ func TestNotifications(t *testing.T) {
 	Expect(operation.Key).To(BeEquivalentTo(prefixB + baseValue2))
 	Expect(operation.Err).To(BeNil())
 
+	// check value status
+	status = scheduler.GetValueStatus(prefixB + baseValue2)
+	Expect(status).ToNot(BeNil())
+	checkBaseValueStatus(status, &BaseValueStatus{
+		Value: &ValueStatus{
+			Key:           prefixB + baseValue2,
+			State:         ValueState_PENDING,
+			LastOperation: TxnOperation_DELETE,
+			Details:       []string{prefixA + baseValue1},
+		},
+	})
+	status = scheduler.GetValueStatus(prefixA + baseValue1)
+	Expect(status).ToNot(BeNil())
+	checkBaseValueStatus(status, &BaseValueStatus{
+		Value: &ValueStatus{
+			Key:           prefixA + baseValue1,
+			State:         ValueState_NONEXISTENT,
+			LastOperation: TxnOperation_UNDEFINED,
+		},
+	})
+
 	// check transaction operations
 	txnHistory = scheduler.GetTransactionHistory(startTime, time.Now())
 	Expect(txnHistory).To(HaveLen(1))
@@ -530,55 +660,56 @@ func TestNotifications(t *testing.T) {
 	checkRecordedValues(txn.Values, []RecordedKVPair{
 		{Key: prefixA + baseValue1, Value: utils.RecordProtoMessage(nil), Origin: FromSB},
 	})
-	Expect(txn.PreErrors).To(BeEmpty())
 
 	txnOps = RecordedTxnOps{
 		{
-			Operation:  Delete,
+			Operation:  TxnOperation_DELETE,
 			Key:        prefixA + baseValue1 + "/item1",
-			Derived:    true,
+			IsDerived:  true,
+			IsProperty: true,
 			PrevValue:  utils.RecordProtoMessage(test.NewStringValue("item1")),
-			PrevOrigin: FromSB,
-			NewOrigin:  FromSB,
+			PrevState:  ValueState_OBTAINED,
+			NewState:   ValueState_REMOVED,
 		},
 		{
-			Operation:  Delete,
-			Key:        prefixB + baseValue2 + "/item2",
-			Derived:    true,
-			PrevValue:  utils.RecordProtoMessage(test.NewStringValue("item2")),
-			PrevOrigin: FromNB,
-			NewOrigin:  FromNB,
+			Operation: TxnOperation_DELETE,
+			Key:       prefixB + baseValue2 + "/item2",
+			IsDerived: true,
+			PrevValue: utils.RecordProtoMessage(test.NewStringValue("item2")),
+			PrevState: ValueState_CONFIGURED,
+			NewState:  ValueState_REMOVED,
 		},
 		{
-			Operation:  Delete,
+			Operation:  TxnOperation_DELETE,
 			Key:        prefixA + baseValue1 + "/item2",
-			Derived:    true,
+			IsDerived:  true,
+			IsProperty: true,
 			PrevValue:  utils.RecordProtoMessage(test.NewStringValue("item2")),
-			PrevOrigin: FromSB,
-			NewOrigin:  FromSB,
+			PrevState:  ValueState_OBTAINED,
+			NewState:   ValueState_REMOVED,
 		},
 		{
-			Operation:  Delete,
-			Key:        prefixB + baseValue2 + "/item1",
-			Derived:    true,
-			PrevValue:  utils.RecordProtoMessage(test.NewStringValue("item1")),
-			PrevOrigin: FromNB,
-			NewOrigin:  FromNB,
+			Operation: TxnOperation_DELETE,
+			Key:       prefixB + baseValue2 + "/item1",
+			IsDerived: true,
+			PrevValue: utils.RecordProtoMessage(test.NewStringValue("item1")),
+			PrevState: ValueState_CONFIGURED,
+			NewState:  ValueState_REMOVED,
 		},
 		{
-			Operation:  Delete,
-			Key:        prefixB + baseValue2,
-			PrevValue:  utils.RecordProtoMessage(test.NewArrayValue("item1", "item2")),
-			PrevOrigin: FromNB,
-			NewOrigin:  FromNB,
-			IsPending:  true,
+			Operation: TxnOperation_DELETE,
+			Key:       prefixB + baseValue2,
+			PrevValue: utils.RecordProtoMessage(test.NewArrayValue("item1", "item2")),
+			NewValue:  utils.RecordProtoMessage(test.NewArrayValue("item1", "item2")), // TODO: do we want nil instead?
+			PrevState: ValueState_CONFIGURED,
+			NewState:  ValueState_PENDING,
 		},
 		{
-			Operation:  Delete,
-			Key:        prefixA + baseValue1,
-			PrevValue:  utils.RecordProtoMessage(test.NewArrayValue("item1", "item2")),
-			PrevOrigin: FromSB,
-			NewOrigin:  FromSB,
+			Operation: TxnOperation_DELETE,
+			Key:       prefixA + baseValue1,
+			PrevValue: utils.RecordProtoMessage(test.NewArrayValue("item1", "item2")),
+			PrevState: ValueState_OBTAINED,
+			NewState:  ValueState_REMOVED,
 		},
 	}
 	checkTxnOperations(txn.Planned, txnOps)
@@ -589,6 +720,7 @@ func TestNotifications(t *testing.T) {
 	Expect(err).To(BeNil())
 }
 
+/* TODO: fix and re-enable UT:
 func TestNotificationsWithRetry(t *testing.T) {
 	RegisterTestingT(t)
 
@@ -686,7 +818,7 @@ func TestNotificationsWithRetry(t *testing.T) {
 
 	// run 1st data-change transaction with retry against empty SB
 	schedulerTxn1 := scheduler.StartNBTransaction()
-	schedulerTxn1.SetValue(prefixB+baseValue2, test.NewLazyArrayValue("item1", "item2"))
+	schedulerTxn1.SetValue(prefixB+baseValue2, test.NewArrayValue("item1", "item2"))
 	seqNum, err := schedulerTxn1.Commit(WithRetry(context.Background(), 3*time.Second, true))
 	Expect(seqNum).To(BeEquivalentTo(0))
 	Expect(err).ShouldNot(HaveOccurred())
@@ -832,14 +964,14 @@ func TestNotificationsWithRetry(t *testing.T) {
 	// -> planned operations
 	txnOps := RecordedTxnOps{
 		{
-			Operation:  Add,
+			Operation:  TxnOperation_CREATE,
 			Key:        prefixA + baseValue1,
 			NewValue:   utils.RecordProtoMessage(test.NewArrayValue("item1", "item2")),
 			PrevOrigin: FromSB,
 			NewOrigin:  FromSB,
 		},
 		{
-			Operation:  Add,
+			Operation:  TxnOperation_CREATE,
 			Key:        prefixB + baseValue2,
 			PrevValue:  utils.RecordProtoMessage(test.NewArrayValue("item1", "item2")),
 			NewValue:   utils.RecordProtoMessage(test.NewArrayValue("item1", "item2")),
@@ -848,7 +980,7 @@ func TestNotificationsWithRetry(t *testing.T) {
 			WasPending: true,
 		},
 		{
-			Operation:  Add,
+			Operation:  TxnOperation_CREATE,
 			Key:        prefixB + baseValue2 + "/item1",
 			Derived:    true,
 			NewValue:   utils.RecordProtoMessage(test.NewStringValue("item1")),
@@ -856,7 +988,7 @@ func TestNotificationsWithRetry(t *testing.T) {
 			NewOrigin:  FromNB,
 		},
 		{
-			Operation:  Add,
+			Operation:  TxnOperation_CREATE,
 			Key:        prefixC + baseValue3,
 			PrevValue:  utils.RecordProtoMessage(test.NewStringValue("base-value3-data")),
 			NewValue:   utils.RecordProtoMessage(test.NewStringValue("base-value3-data")),
@@ -865,7 +997,7 @@ func TestNotificationsWithRetry(t *testing.T) {
 			WasPending: true,
 		},
 		{
-			Operation:  Add,
+			Operation:  TxnOperation_CREATE,
 			Key:        prefixA + baseValue1 + "/item1",
 			Derived:    true,
 			NewValue:   utils.RecordProtoMessage(test.NewStringValue("item1")),
@@ -881,7 +1013,7 @@ func TestNotificationsWithRetry(t *testing.T) {
 			NewOrigin:  FromNB,
 		},
 		{
-			Operation:  Add,
+			Operation:  TxnOperation_CREATE,
 			Key:        prefixA + baseValue1 + "/item2",
 			Derived:    true,
 			NewValue:   utils.RecordProtoMessage(test.NewStringValue("item2")),
@@ -889,7 +1021,7 @@ func TestNotificationsWithRetry(t *testing.T) {
 			NewOrigin:  FromSB,
 		},
 		{
-			Operation:  Add,
+			Operation:  TxnOperation_CREATE,
 			Key:        prefixB + baseValue2 + "/item2",
 			Derived:    true,
 			NewValue:   utils.RecordProtoMessage(test.NewStringValue("item2")),
@@ -910,14 +1042,14 @@ func TestNotificationsWithRetry(t *testing.T) {
 	// -> executed operations
 	txnOps = RecordedTxnOps{
 		{
-			Operation:  Add,
+			Operation:  TxnOperation_CREATE,
 			Key:        prefixA + baseValue1,
 			NewValue:   utils.RecordProtoMessage(test.NewArrayValue("item1", "item2")),
 			PrevOrigin: FromSB,
 			NewOrigin:  FromSB,
 		},
 		{
-			Operation:  Add,
+			Operation:  TxnOperation_CREATE,
 			Key:        prefixB + baseValue2,
 			PrevValue:  utils.RecordProtoMessage(test.NewArrayValue("item1", "item2")),
 			NewValue:   utils.RecordProtoMessage(test.NewArrayValue("item1", "item2")),
@@ -926,7 +1058,7 @@ func TestNotificationsWithRetry(t *testing.T) {
 			WasPending: true,
 		},
 		{
-			Operation:  Add,
+			Operation:  TxnOperation_CREATE,
 			Key:        prefixB + baseValue2 + "/item1",
 			Derived:    true,
 			NewValue:   utils.RecordProtoMessage(test.NewStringValue("item1")),
@@ -934,7 +1066,7 @@ func TestNotificationsWithRetry(t *testing.T) {
 			NewOrigin:  FromNB,
 		},
 		{
-			Operation:  Add,
+			Operation:  TxnOperation_CREATE,
 			Key:        prefixC + baseValue3,
 			PrevValue:  utils.RecordProtoMessage(test.NewStringValue("base-value3-data")),
 			NewValue:   utils.RecordProtoMessage(test.NewStringValue("base-value3-data")),
@@ -945,7 +1077,7 @@ func TestNotificationsWithRetry(t *testing.T) {
 			NewErr:     errors.New("failed to add value"),
 		},
 		{
-			Operation:  Add,
+			Operation:  TxnOperation_CREATE,
 			Key:        prefixA + baseValue1 + "/item1",
 			Derived:    true,
 			NewValue:   utils.RecordProtoMessage(test.NewStringValue("item1")),
@@ -953,7 +1085,7 @@ func TestNotificationsWithRetry(t *testing.T) {
 			NewOrigin:  FromSB,
 		},
 		{
-			Operation:  Add,
+			Operation:  TxnOperation_CREATE,
 			Key:        prefixA + baseValue1 + "/item2",
 			Derived:    true,
 			NewValue:   utils.RecordProtoMessage(test.NewStringValue("item2")),
@@ -961,7 +1093,7 @@ func TestNotificationsWithRetry(t *testing.T) {
 			NewOrigin:  FromSB,
 		},
 		{
-			Operation:  Add,
+			Operation:  TxnOperation_CREATE,
 			Key:        prefixB + baseValue2 + "/item2",
 			Derived:    true,
 			NewValue:   utils.RecordProtoMessage(test.NewStringValue("item2")),
@@ -1064,7 +1196,7 @@ func TestNotificationsWithRetry(t *testing.T) {
 			IsRetry:    true,
 		},
 		{
-			Operation:  Add,
+			Operation:  TxnOperation_CREATE,
 			Key:        prefixB + baseValue2 + "/item2",
 			Derived:    true,
 			NewValue:   utils.RecordProtoMessage(test.NewStringValue("item2")),
@@ -1126,7 +1258,7 @@ func TestNotificationsWithRetry(t *testing.T) {
 	Expect(txn.PreErrors).To(BeEmpty())
 	txnOps = RecordedTxnOps{
 		{
-			Operation:  Add,
+			Operation:  TxnOperation_CREATE,
 			Key:        prefixC + baseValue3,
 			PrevValue:  utils.RecordProtoMessage(test.NewStringValue("base-value3-data")),
 			NewValue:   utils.RecordProtoMessage(test.NewStringValue("base-value3-data")),

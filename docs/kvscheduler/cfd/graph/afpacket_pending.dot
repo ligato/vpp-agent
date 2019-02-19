@@ -1,0 +1,57 @@
+digraph kvscheduler {
+	ranksep=.5;
+	labelloc="b";
+	labeljust="c";
+	fontsize="12";
+	fontname="Ubuntu"; 
+	rankdir="LR";
+	bgcolor="lightgray";
+	style="solid";
+	penwidth="1";
+	pad="0.04";
+	nodesep="<no value>";
+	ordering="out";
+
+	node [shape="box" style="filled" fontname="Ubuntu" fillcolor="honeydew" penwidth="1.0" margin="0.03,0.0"];
+	edge [minlen="1"]
+
+		subgraph "cluster_nodes" {
+			labelloc="t";
+			labeljust="c";
+			fontsize="15";
+			tooltip="";
+			label="4 keys";
+			bgcolor="white";
+
+
+			subgraph "cluster_linux-interface-watcher" {
+				penwidth="0.8";
+				fontsize="16";
+				style="filled";
+				fillcolor="#e6ecfa";
+				label="< linux-interface-watcher >";
+
+				"linux/interface/host-name/eth1" [ margin="0.01" href="/scheduler/key-timeline?key=linux/interface/host-name/eth1&amp;time=1549965074962075260" fillcolor="Black" fontcolor="White" tooltip="[NONEXISTENT] linux/interface/host-name/eth1\n-----\n<nil>" pad="0.01" ]
+				"linux/interface/host-name/eth0" [ pad="0.01" margin="0.01" href="/scheduler/key-timeline?key=linux/interface/host-name/eth0&amp;time=1549965074962075260" label="linux/interface/host-name/eth0" fillcolor="LightCyan" tooltip="[OBTAINED] linux/interface/host-name/eth0\n-----\n" ]
+
+			}
+
+			subgraph "cluster_vpp-interface" {
+				style="filled";
+				fillcolor="#e6ecfa";
+				label="< vpp-interface >";
+				penwidth="0.8";
+				fontsize="16";
+
+				"config/vpp/v2/interfaces/my-af-packet" [ tooltip="[PENDING] config/vpp/v2/interfaces/my-af-packet\n-----\nname: \"my-af-packet\"\ntype: AF_PACKET\nenabled: true\nafpacket: <\n  host_if_name: \"eth1\"\n>\n" pad="0.01" margin="0.01" href="/scheduler/key-timeline?key=config/vpp/v2/interfaces/my-af-packet&amp;time=1549965074962075260" label="my-af-packet" fillcolor="Pink" style="dashed,filled" ]
+				"config/vpp/v2/interfaces/UNTAGGED-local0" [ fillcolor="LightCyan" tooltip="[OBTAINED] config/vpp/v2/interfaces/UNTAGGED-local0\n-----\nname: \"UNTAGGED-local0\"\ntype: SOFTWARE_LOOPBACK\n" pad="0.01" margin="0.01" href="/scheduler/key-timeline?key=config/vpp/v2/interfaces/UNTAGGED-local0&amp;time=1549965074962075260" label="UNTAGGED-local0" ]
+
+			}
+
+		}
+
+	"config/vpp/v2/interfaces/my-af-packet" -> "linux/interface/host-name/eth1" [ tooltip="afpacket-host-interface-exists" color="Red" ]
+
+
+}
+

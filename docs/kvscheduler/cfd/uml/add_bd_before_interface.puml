@@ -1,0 +1,175 @@
+@startuml
+
+skinparam ParticipantPadding 20
+skinparam BoxPadding 10
+skinparam SequenceMessageAlign center
+
+participant ID as "Interface Descriptor"
+participant BD as "BD Descriptor"
+participant BDI as "BD-Interface Descriptor"
+participant KVS as "KVScheduler"
+participant ORCH as "Orchestrator \n(KVDB COLLAPSED)"
+
+ID -> KVS: **RegisterKVDescriptor**()
+activate KVS
+KVS --> ID: ok
+deactivate KVS
+BD -> KVS: **RegisterKVDescriptor**()
+activate KVS
+KVS --> BD: ok
+deactivate KVS
+BDI -> KVS: **RegisterKVDescriptor**()
+activate KVS
+KVS --> BDI: ok
+deactivate KVS
+
+== Resync Transaction #0 (add bridge domain with interface not available yet) ==
+
+ORCH -> KVS: **Resync Txn** = [\l - create bridge-domain //my-bd// to contain interface //my-tap// \l]
+activate KVS  #FFBBBB
+
+KVS -> KVS: **start graph refresh**
+ activate KVS  #FFBFDD
+  KVS -> KVS: **order of value retrieval** given by **RetrieveDependencies** \n (BD descriptor requests to Retrieve Interface descriptor first)
+  KVS -> ID: **Retrieve**()
+   activate ID
+    ID --> KVS: retrieved interfaces = [ //local0// (OBTAINED)]
+   deactivate ID
+  KVS -> BD: **Retrieve**()
+   activate BD
+    BD --> KVS: << no pre-configured BDs >>
+   deactivate BD
+  KVS -> KVS: BD-Interface descriptor **does not define Retrieve()** \n(describes only derived values)
+  KVS -> KVS: **save refreshed graph**
+ deactivate KVS
+
+KVS -> KVS: **start txn #0**
+ activate KVS  #FFDDCC
+  KVS -> KVS: //local0// is OBTAINED => **not to be removed** by resync
+  KVS -> ID: **KeySelector**(//my-bd//)
+  activate ID
+   ID --> KVS: false
+  deactivate ID
+  KVS -> BD: **KeySelector**(//my-bd//)
+  activate BD
+   BD --> KVS: true
+  deactivate BD
+  KVS -> KVS: value is **handled by** BD descriptor
+  KVS -> BD: **Dependencies**(//my-bd//)
+   activate BD
+    BD --> KVS: << no dependencies >>
+   deactivate BD
+  KVS -> KVS: value //my-bd// is **ready** to be created \n(just plain BD, without the interface)
+  KVS -> BD: **Validate**(//my-bd//)
+   activate BD
+    BD --> KVS: ok (valid configuration)
+   deactivate BD
+  KVS -> BD: **Create**(//my-bd//)
+   activate BD
+    BD --> KVS: ok
+   deactivate BD
+
+  KVS -> BD: **DerivedValues**(//my-bd//)
+   activate BD
+    BD --> KVS: derived-values = [ //"my-bd/interface/my-tap"//]
+   deactivate BD
+  KVS -> KVS: **schedule create** for //"my-bd/interface/my-tap"// \n(put interface //my-tap// to BD //my-bd//)
+  KVS -> ID: **KeySelector**(//"my-bd/interface/my-tap"//)
+  activate ID
+   ID --> KVS: false
+  deactivate ID
+  KVS -> BD: **KeySelector**(//"my-bd/interface/my-tap"//)
+  activate BD
+   BD --> KVS: false
+  deactivate BD
+  KVS -> BDI: **KeySelector**(//"my-bd/interface/my-tap"//)
+  activate BDI
+   BDI --> KVS: true
+  deactivate BDI
+  KVS -> KVS: value is **handled by** BD-Interface descriptor
+  KVS -> BDI: **Dependencies**(//"my-bd/interface/my-tap"//)
+  activate BDI
+   BDI --> KVS: //"my-bd/interface/my-tap"// **depends on** (interface) //my-tap//
+  deactivate BDI
+  KVS -> KVS: value //"my-bd/interface/my-tap"// is **not-ready** to be created (**PENDING**) \n - **missing** value //my-tap//
+
+  KVS -> KVS: **finalize and record txn #0**
+ deactivate KVS
+
+ note over KVS: [[https://raw.githubusercontent.com/milanlenco/vpp-agent/kvs-docs/docs/kvscheduler/cfd/graph/bd_iface_pending.svg?sanitize=true Graph after transaction]]
+
+KVS --> ORCH: **value state updates**
+KVS --> ORCH: **txn error** (nil)
+deactivate KVS
+
+== Data-Change Transaction #1 (create //my-tap// and insert it into the bridge domain) ==
+
+ORCH -> KVS: **Data-Change Txn** = [create interface //my-tap// with IP 196.168.1.1/24]
+activate KVS  #FFBBBB
+
+KVS -> KVS: **start txn #1**
+ activate KVS  #FFDDCC
+  KVS -> ID: **KeySelector**(//my-tap//)
+  activate ID
+  ID --> KVS: true
+  deactivate ID
+  KVS -> KVS: value is **handled by** InterfaceDescriptor
+  KVS -> ID: **Dependencies**(//my-tap//)
+   activate ID
+    ID --> KVS: << no dependencies >>
+   deactivate ID
+  KVS -> KVS: value //my-tap// is **ready** to be created
+  KVS -> ID: **Validate**(//my-tap//)
+   activate ID
+    ID --> KVS: ok (valid configuration)
+   deactivate ID
+  KVS -> ID: **Create**(//my-tap//)
+   activate ID
+    ID --> KVS: ok
+   deactivate ID
+
+  KVS -> KVS: //"my-bd/interface/my-tap"// (from previous txn) **is now ready** to be created \n - dependency on //my-tap// is now **satisfied**
+   activate KVS #CCBBBB
+    KVS -> KVS: (**cached**) //"my-bd/interface/my-tap"// is **handled by** BD-Interface descriptor
+    KVS -> BDI: **Validate**(//"my-bd/interface/my-tap"//)
+     activate BDI
+      BDI --> KVS: ok (valid configuration)
+     deactivate BDI
+    KVS -> BDI: **Create**(//"my-bd/interface/my-tap"//) \n(put interface //my-tap// to BD //my-bd//)
+     activate BDI
+      BDI --> KVS: ok
+     deactivate BDI
+    KVS -> KVS: not calling **DerivedValues**, the value is already derived
+    KVS -> KVS: change the state of the value //"my-bd/interface/my-tap"// from PENDING to **CONFIGURED**
+    KVS -> KVS: going back to finalize //my-tap//...
+   deactivate KVS
+
+  KVS -> ID: **DerivedValues**(//my-tap//)
+   activate ID
+    ID --> KVS: derived-values = [ //"address/my-tap/192.168.1.1/24"//]
+   deactivate ID
+  KVS -> KVS: **schedule create** for //"address/my-tap/192.168.1.1/24"//
+  KVS -> ID: **KeySelector**(//"address/my-tap/192.168.1.1/24"//)
+   activate ID
+    ID --> KVS: false
+   deactivate ID
+    KVS -> BD: **KeySelector**(//"address/my-tap/192.168.1.1/24"//)
+   activate BD
+    BD --> KVS: false
+   deactivate BD
+    KVS -> BDI: **KeySelector**(//"address/my-tap/192.168.1.1/24"//)
+   activate BDI
+    BDI --> KVS: false
+   deactivate BDI
+  KVS -> KVS: //"address/my-tap/192.168.1.1/24"// is **property** \n (without CRUD operations)
+
+  KVS -> KVS: **finalize and record txn #1**
+ deactivate KVS
+
+ note over KVS: [[https://raw.githubusercontent.com/milanlenco/vpp-agent/kvs-docs/docs/kvscheduler/cfd/graph/bd_iface_configured.svg?sanitize=true Graph after transaction]]
+
+KVS --> ORCH: **value state updates** \n (including for updated //my-bd// from previous txn)
+KVS --> ORCH: **txn error** (nil)
+deactivate KVS
+
+@enduml

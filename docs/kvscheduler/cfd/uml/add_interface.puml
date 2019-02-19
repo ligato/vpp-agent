@@ -1,0 +1,89 @@
+@startuml
+
+skinparam ParticipantPadding 20
+skinparam BoxPadding 10
+skinparam SequenceMessageAlign center
+
+box "VPP Interfaces" #EEEEFF
+entity IM as "Interface Model"
+participant ID as "Interface Descriptor"
+end box
+participant KVS as "KVScheduler"
+participant ORCH as "Orchestrator"
+database DB as "KVDB"
+
+ID -> KVS: **RegisterKVDescriptor**()
+activate KVS
+ KVS --> ID: ok
+deactivate KVS
+
+== Resync Transaction #0 (configure //my-tap// interface) ==
+
+ORCH -> ORCH: **start startup resync**
+activate ORCH
+ORCH -> DB: list all values
+DB --> ORCH: **config snapshot** = [interface //my-tap// with IP //192.168.1.1/24//]
+ORCH -> KVS: **Resync Txn** = [apply value (interface) //my-tap//]
+activate KVS  #FFBBBB
+
+KVS -> KVS: **start graph refresh**
+ activate KVS  #FFBFDD
+  KVS -> ID: **Retrieve**()
+   activate ID
+    ID --> KVS: retrieved interfaces = [ //local0// (OBTAINED)]
+   deactivate ID
+  KVS -> KVS: **save refreshed graph**
+ deactivate KVS
+
+KVS -> KVS: **start txn**
+ activate KVS  #FFDDCC
+  KVS -> KVS: //local0// is OBTAINED => **not to be removed** by resync
+ KVS -> ID: **KeySelector**(//my-tap//)
+  activate ID
+   ID -> IM: **IsKeyValid**(//my-tap//)
+   activate IM
+    IM --> ID: true
+   deactivate IM
+   ID --> KVS: true
+  deactivate ID
+ KVS -> KVS: value is **handled by** InterfaceDescriptor
+ KVS -> ID: **Dependencies**(//my-tap//)
+  activate ID
+   ID --> KVS: << no dependencies >>
+  deactivate ID
+ KVS -> KVS: value //my-tap// is **ready** to be created
+ KVS -> ID: **Validate**(//my-tap//)
+  activate ID
+   ID --> KVS: ok (valid configuration)
+  deactivate ID
+ KVS -> ID: **Create**(//my-tap//)
+  activate ID
+   ID --> KVS: ok
+  deactivate ID
+
+ KVS -> ID: **DerivedValues**(//my-tap//)
+  activate ID
+   ID --> KVS: derived-values = [ //"address/my-tap/192.168.1.1/24"//]
+  deactivate ID
+  KVS -> KVS: **schedule create** for //"address/my-tap/192.168.1.1/24"//
+  KVS -> ID: **KeySelector**(//"address/my-tap/192.168.1.1/24"//)
+  activate ID
+   ID -> IM: **IsKeyValid**(//"address/my-tap/192.168.1.1/24"//)
+   activate IM
+   IM --> ID: false
+   deactivate IM
+   ID --> KVS: false
+  deactivate ID
+ KVS -> KVS: //"address/my-tap/192.168.1.1/24"// is **property** \n (without CRUD operations)
+
+ KVS -> KVS: **finalize and record txn**
+ deactivate KVS
+
+ note over KVS: [[https://raw.githubusercontent.com/milanlenco/vpp-agent/kvs-docs/docs/kvscheduler/cfd/graph/interface_created.svg?sanitize=true Graph after transaction]]
+
+KVS --> ORCH: **value state updates**
+KVS --> ORCH: **txn error** (nil)
+deactivate KVS
+deactivate ORCH
+
+@enduml

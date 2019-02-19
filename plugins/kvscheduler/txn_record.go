@@ -90,6 +90,7 @@ func (s *Scheduler) preRecordTxnOp(args *applyValueArgs, node graph.Node) *kvs.R
 		IsProperty:  args.isDerived && s.registry.GetDescriptorForKey(args.kv.key) == nil,
 		IsRevert:    args.kv.isRevert,
 		IsRetry:     args.isRetry,
+		IsRecreate:  args.recreating != nil && args.recreating.Has(args.kv.key),
 	}
 }
 

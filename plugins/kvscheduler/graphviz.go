@@ -169,7 +169,7 @@ func (s *Scheduler) renderDotOutput(graphNodes []*graph.RecordedNode, txn *kvs.R
 
 			if _, ok := c.Clusters[descriptorName]; !ok {
 				c.Clusters[descriptorName] = &dotCluster{
-					ID:       key,
+					ID:       descriptorName,
 					Clusters: make(map[string]*dotCluster),
 					Attrs: dotAttrs{
 						"penwidth":  "0.8",
@@ -183,12 +183,15 @@ func (s *Scheduler) renderDotOutput(graphNodes []*graph.RecordedNode, txn *kvs.R
 			c = c.Clusters[descriptorName]
 		}
 
-		valueState := kvs.ValueState_MISSING // missing dependencies
+		var valueState kvs.ValueState
 		stateFlag := graphNode.GetFlag(ValueStateFlagName)
 		if stateFlag != nil {
 			valueState = stateFlag.(*ValueStateFlag).valueState
 		}
 		switch valueState {
+		case kvs.ValueState_NONEXISTENT:
+			attrs["fontcolor"] = "White"
+			attrs["fillcolor"] = "Black"
 		case kvs.ValueState_MISSING:
 			attrs["fillcolor"] = "Dimgray"
 			attrs["style"] = "dashed,filled"
@@ -360,7 +363,7 @@ func dotToImage(outfname string, format string, dot []byte) (string, error) {
 }
 
 const tmplGraph = `digraph kvscheduler {
-	ranksep=.5
+	ranksep=.5;
 	//nodesep=.1
     label="{{.Title}}";
 	labelloc="b";
