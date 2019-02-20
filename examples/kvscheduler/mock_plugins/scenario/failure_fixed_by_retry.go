@@ -45,7 +45,7 @@ func FailureFixedWithRetry() {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	informAboutGraphUrl(0, true, false)
+	informAboutGraphURL(0, true, false)
 
 	printMessage(
 		"Automatic Retry (triggered in the background)",
@@ -56,5 +56,5 @@ func FailureFixedWithRetry() {
 	)
 	// retry is scheduler to run 1 second after the failed transaction and
 	// since printMessage() waits 2 seconds, the interface should be fixed by now
-	informAboutGraphUrl(1, false, true)
+	informAboutGraphURL(1, false, true)
 }

@@ -50,7 +50,7 @@ func PendingAfterResync() {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	informAboutGraphUrl(0, true, true)
+	informAboutGraphURL(0, true, true)
 
 	printMessage(
 		"Change config",
@@ -68,5 +68,5 @@ func PendingAfterResync() {
 	if err := req.Send(context.Background()); err != nil {
 		log.Fatalln(err)
 	}
-	informAboutGraphUrl(1, false, true)
+	informAboutGraphURL(1, false, true)
 }

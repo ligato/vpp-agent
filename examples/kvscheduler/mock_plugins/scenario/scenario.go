@@ -133,7 +133,7 @@ func printMessage(lines ...string) {
 	time.Sleep(time.Second * 2)
 }
 
-func informAboutGraphUrl(txnNum int, afterResync bool, sleep bool) {
+func informAboutGraphURL(txnNum int, afterResync bool, sleep bool) {
 	txnType := "data-update txn"
 	if afterResync {
 		txnType = "resync txn"

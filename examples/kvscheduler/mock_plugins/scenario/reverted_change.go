@@ -38,7 +38,7 @@ func RevertedChange() {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	informAboutGraphUrl(0, true, true)
+	informAboutGraphURL(0, true, true)
 
 	printMessage(
 		"Change config (revert-on-failure enabled)",
@@ -71,5 +71,5 @@ func RevertedChange() {
 	if err := req.Send(ctx); err != nil {
 		log.Fatalln(err)
 	}
-	informAboutGraphUrl(1, false, true)
+	informAboutGraphURL(1, false, true)
 }
