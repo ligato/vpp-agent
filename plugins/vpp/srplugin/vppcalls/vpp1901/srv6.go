@@ -30,8 +30,6 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/sr"
 )
 
-// TODO test this file for vpp 19.10 !!!
-
 // Constants for behavior function hardcoded into VPP (there can be also custom behavior functions implemented as VPP plugins)
 // Constants are taken from VPP's vnet/srv6/sr.h (names are modified to Golang from original C form in VPP code)
 const (

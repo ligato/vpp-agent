@@ -94,6 +94,7 @@ message Policy {
 
 /* Model for segment list of SRv6 policy */
 message PolicySegmentList {
+    string name = 4;                    /* unique policy segment list identification within policy (used in keys when is police segment list stored in key-value stores(i.e. ETCD)) */
     string policy_bsid = 1;             /* reference to policy where this policy segment belongs */
     uint32 weight = 2;                  /* used for loadbalancing in case of multiple policy segments in routing process (ignored in case of spray policies) */
     repeated string segments = 3;       /* list of sids creating one segmented road */
@@ -101,6 +102,8 @@ message PolicySegmentList {
 
 /* Model for steering traffic to SRv6 policy */
 message Steering {
+    string name = 5;                         /* globally unique steering identification (used in keys when is steering stored in key-value stores(i.e. ETCD)) */
+
     /* Referencing policy that should be used for steering traffic into (all policy references are mutual exclusive)*/
     oneof policy_ref {
         string policy_bsid = 1;              /* BSID identifier for policy to which we want to steer routing into (policyBSID and policyIndex are mutual exclusive) */
@@ -114,7 +117,7 @@ message Steering {
     }
 
     message L2Traffic {                 /* L2 traffic that should be steered into SR policy */
-        string interface_name = 1;       /* name of interface with incomming traffic that should be steered to SR policy */
+        string interface_name = 1;       /* name of interface with incoming traffic that should be steered to SR policy */
     }
     message L3Traffic {                 /* L3 traffic that should be steered into SR policy */
         uint32 fib_table_id = 1;          /* ID of FIB table where to install FIB entry for the BSID */

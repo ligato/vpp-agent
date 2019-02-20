@@ -78,7 +78,8 @@ func (d *SteeringDescriptor) GetDescriptor() *adapter.SteeringDescriptor {
 // EquivalentSteering determines whether 2 steerings are logically equal. This comparison takes into consideration also
 // semantics that couldn't be modeled into proto models (i.e. SID is IPv6 address and not only string)
 func (d *SteeringDescriptor) EquivalentSteering(key string, oldSteering, newSteering *srv6.Steering) bool {
-	return d.equivalentPolicy(oldSteering.PolicyRef, newSteering.PolicyRef) &&
+	return strings.TrimSpace(oldSteering.Name) == strings.TrimSpace(newSteering.Name) &&
+		d.equivalentPolicy(oldSteering.PolicyRef, newSteering.PolicyRef) &&
 		d.equivalentTraffic(oldSteering.Traffic, newSteering.Traffic)
 }
 

@@ -15,6 +15,7 @@
 package vpp_srv6
 
 import (
+	"fmt"
 	"net"
 	"strings"
 
@@ -46,14 +47,14 @@ var (
 		Module:  ModuleName,
 		Type:    "policysegmentlist",
 		Version: "v2",
-	})
+	}, models.WithNameTemplate(fmt.Sprintf("{{.Name}}/%s/{{.PolicyBsid}}", ModelPolicy.Type)))
 
 	// ModelSteering is registered NB model of Steering
 	ModelSteering = models.Register(&Steering{}, models.Spec{
 		Module:  ModuleName,
 		Type:    "steering",
 		Version: "v2",
-	})
+	}, models.WithNameTemplate("{{.Name}}"))
 )
 
 // SID (in srv6 package) is SRv6's segment id. It is always represented as IPv6 address

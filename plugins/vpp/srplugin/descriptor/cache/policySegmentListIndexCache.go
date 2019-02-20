@@ -56,5 +56,11 @@ func (c *PolicySegmentListIndexCache) id(sl *srv6.PolicySegmentList) string {
 		segmentStrBuf.WriteString(strings.TrimSpace(strings.ToLower(segment)))
 		segmentStrBuf.WriteString(",")
 	}
-	return strings.TrimSpace(strings.ToLower(sl.GetPolicyBsid())) + "#" + fmt.Sprint(sl.GetWeight()) + "#" + segmentStrBuf.String()
+	idParts := []string{
+		strings.TrimSpace(sl.GetName()),
+		strings.TrimSpace(strings.ToLower(sl.GetPolicyBsid())),
+		fmt.Sprint(sl.GetWeight()),
+		segmentStrBuf.String(),
+	}
+	return strings.Join(idParts, "#")
 }
