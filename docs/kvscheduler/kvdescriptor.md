@@ -5,9 +5,9 @@ dependencies for a single value type. With these "descriptions",
 the [KVScheduler](kvscheduler.md) is then able to manipulate the key-value
 pairs in a generic way, without having to understand what they actually represent.
 The scheduler uses the learned dependencies, reads the south-bound (SB) state
-using the `Retrieve` callbacks provided by your Descriptor, and applies the 
-`Create`, `Delete` and `Update` operations provided by your Descriptor as needed
-to keep the north-bound (NB) in-sync with the SB.
+using the `Retrieve` callbacks provided by descriptors, and applies the
+`Create`, `Delete` and `Update` operations, also provided by descriptors,
+as needed to keep the north-bound (NB) in-sync with the SB.
 
 In VPP-Agent v2, all VPP and Linux plugins were re-written (and decoupled
 from each other), in a way that every supported configuration item is now
