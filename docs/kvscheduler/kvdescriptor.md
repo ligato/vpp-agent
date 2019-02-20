@@ -2,26 +2,28 @@
 
 KVDescriptor implements CRUD operations and defines derived values and
 dependencies for a single value type. With these "descriptions",
-the [KVScheduler](kvscheduler.md) is then able to manipulate with key-value
-pairs generically, without having to understand what they actually represent.
-The scheduler uses the learned dependencies, reads the SB state using provided
-`Retrieve` callbacks, and applies `Create`, `Delete` and `Update` operations
-as needed to keep NB in-sync with SB.
+the [KVScheduler](kvscheduler.md) is then able to manipulate the key-value
+pairs in a generic way, without having to understand what they actually represent.
+The scheduler uses the learned dependencies, reads the south-bound (SB) state
+using the `Retrieve` callbacks provided by your Descriptor, and applies the 
+`Create`, `Delete` and `Update` operations provided by your Descriptor as needed
+to keep the north-bound (NB) in-sync with the SB.
 
-In VPP-Agent v2, all the VPP and Linux plugins were re-written (and decoupled
+In VPP-Agent v2, all VPP and Linux plugins were re-written (and decoupled
 from each other), in a way that every supported configuration item is now
 described by its own descriptor inside the corresponding plugin, i.e. there is
 a descriptor for [Linux interfaces][linux-interface-descr],
 [VPP interfaces][vpp-interface-descr], [VPP routes][vpp-route-descr], etc.
 A full list of existing descriptors can be found [here][existing-descriptors].
 
-This design pattern improves modularity, resulting in loosely coupled plugins,
-allowing further extensibility beyond the already supported configuration items.
-The KVScheduler is not even limited to VPP/Linux as the SB plane. Actually,
-control plane for any system whose items can be represented as key-value pairs
-and operated through CRUD operations qualifies for integration with the
-framework. Here we provide a step-by-step guide on how to implement and register
-your own KVDescriptor.
+This design pattern improves modularity and extensibility - VPP Agent v2 is a
+collection of loosely coupled plugins to which new plugins that extend the 
+Agent's functionality can be easily added. The KVScheduler is not even limited 
+to either VPP or Linux as the SB plane. Actually, a control plane for any system
+whose configuration and status stanzas can be represented as key-value pairs and
+can be operated upon via CRUD operations can be integrated with this framework. 
+The rest of this document provides a step-by-step guide on how to implement your
+own KVDescriptor and register it with the KVScheduler.
 
 ## Descriptor API
 

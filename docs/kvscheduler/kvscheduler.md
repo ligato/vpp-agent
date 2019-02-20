@@ -1,12 +1,12 @@
 # KVScheduler
 
 A major enhancement that led to the increase of the agent's major version number
-from 1.x to 2.x, is an introduction of a new framework, called **KVScheduler**,
-providing transaction-based configuration processing with a generic mechanism
+from 1.x to 2.x, is an introduction of a new framework, called **KVScheduler**.
+It provides transaction-based configuration processing with a generic mechanism
 for dependency resolution between configuration items, which in effect
 simplifies and unifies the configurators. KVScheduler is shipped as a separate
-[plugin], even though it is now a core component around which all the VPP and
-Linux configurators have been re-build.
+[plugin], even though it is now a core component used by all VPP and
+Linux configurators.
 
 ## Motivation
 
@@ -32,32 +32,31 @@ gradually arose with the set of supported configuration items growing:
 
 ## Basic concepts
 
-KVScheduler turns to the graph theory to find solution for the problem of
-dependencies between configuration items and proper operation ordering. A level
-of abstraction is build above the configurators (from now on just "plugins"),
-where the state of the system is modeled as a graph - configuration items are
-vertices and relations between them are represented with edges. The graph is
-then walked through to generate transaction plans, refresh the state, execute
-state reconciliation, etc.
+KVScheduler turns to graph theory to find the solution for the problem of
+dependencies between configuration items and therir respective proper operation
+ordering. A level of abstraction is build above configurators (from now on just
+"plugins"), where the state of the system is modeled as a graph - configuration
+items are vertices and relations between them are represented as edges. The
+graph is then walked through to generate transaction plans, refresh the state,
+execute state reconciliation, etc.
 
-Transaction plan prepared using the graph representation consist of a series
-of CRUD operations to be executed on some of the graph vertices. To abstract
-from specific configuration items and details on how to manipulate with them,
-the vertices are "described" to KVScheduler in a unified way via so-called
-[KVDescriptor-s][kvdescriptor-guide], which can be though of as handlers, each
+The transaction plan prepared using the graph representation consists of a 
+series of CRUD operations to be executed on some of the graph vertices. To 
+abstract from specific configuration items and details on how to manipulate them,
+graph vertices are "described" to KVScheduler in a unified way via 
+[KVDescriptors][kvdescriptor-guide]. KVDescriptors are basically handlers, each
 assigned to a distinct subset of graph vertices, providing the scheduler with
-pointers to callbacks implementing CRUD operations among other things.
+pointers to callbacks that implement CRUD operations among other things.
 
-The idea of KVDescriptor-s is based on the Mediator pattern - plugins are
-decoupled and no longer communicate with each other directly, instead interact
-through the mediator, which is the scheduler.
-Plugins only have to provide CRUD callbacks and describe dependencies through
-one or more KVDescriptor-s, for the scheduler to be then able to plan operations
-without even knowing what the graph vertices actually represent in the configured
-system. Furthermore, the set of supported configuration items can be easily
-extended without altering the transaction processing engine or increasing the
-complexity of any of the components - simply by implementing and registering new
-descriptors.
+The idea of KVDescriptors is based on the Mediator pattern, where plugins are
+decoupled and no longer communicate directly, but instead interact with each other
+through the mediator (the KVScheduler). Plugins only have to provide CRUD callbacks
+and describe their dependencies on other plugins through one or more KVDescriptors.
+The scheduler is then able to plan operations without even knowing what the graph
+vertices actually represent in the configured system. Furthermore, the set of 
+supported configuration items can be easily extended without altering the transaction
+processing engine or increasing the complexity of any of the components - simply by
+implementing and registering new descriptors.
 
 ### Terminology
 
