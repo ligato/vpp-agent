@@ -15,6 +15,8 @@
 package kvdbsync
 
 import (
+	"context"
+
 	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/datasync/syncbase"
@@ -23,13 +25,15 @@ import (
 // ChangeWatchResp is a structure that adapts the BytesWatchResp to the
 // datasync api.
 type ChangeWatchResp struct {
+	ctx     context.Context
 	changes []datasync.ProtoWatchResp
 	*syncbase.DoneChannel
 }
 
 // NewChangeWatchResp creates a new instance of ChangeWatchResp.
-func NewChangeWatchResp(delegate datasync.ProtoWatchResp, prevVal datasync.LazyValue) *ChangeWatchResp {
+func NewChangeWatchResp(ctx context.Context, delegate datasync.ProtoWatchResp, prevVal datasync.LazyValue) *ChangeWatchResp {
 	return &ChangeWatchResp{
+		ctx: ctx,
 		changes: []datasync.ProtoWatchResp{
 			&changePrev{
 				ProtoWatchResp: delegate,
@@ -38,6 +42,11 @@ func NewChangeWatchResp(delegate datasync.ProtoWatchResp, prevVal datasync.LazyV
 		},
 		DoneChannel: &syncbase.DoneChannel{DoneChan: nil},
 	}
+}
+
+// GetContext returns the context associated with the event.
+func (ev *ChangeWatchResp) GetContext() context.Context {
+	return ev.ctx
 }
 
 // GetChanges returns list of changes for the change event.

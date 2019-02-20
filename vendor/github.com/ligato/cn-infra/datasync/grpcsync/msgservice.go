@@ -49,7 +49,7 @@ func (s *DataMsgServiceServer) DataChanges(stream msg.DataMsgService_DataChanges
 		for _, sub := range s.adapter.base.Subscriptions() {
 			for _, keyPrefix := range sub.KeyPrefixes {
 				if strings.HasPrefix(chng.Key, keyPrefix) {
-					sub.ChangeChan <- msg.NewChangeWatchResp(chng, func(err2 error) {
+					sub.ChangeChan <- msg.NewChangeWatchResp(context.Background(), chng, func(err2 error) {
 						err = stream.Send(&msg.DataChangeReply{Key: chng.Key, OperationType: chng.OperationType,
 							Result: 0 /*TODO VPP Result*/})
 						if err != nil {
