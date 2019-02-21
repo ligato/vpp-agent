@@ -226,7 +226,7 @@ Put TAP Unnumbered Interface
 Put Static Fib Entry
     [Arguments]    ${node}    ${bd_name}    ${mac}    ${outgoing_interface}    ${static}=true
     ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/static_fib.json
-    ${uri}=               Set Variable                  /vnf-agent/${node}/config/vpp/l2/${AGENT_VER}/bridge-domain/${name}/fib/${mac}
+    ${uri}=               Set Variable                  /vnf-agent/${node}/config/vpp/l2/${AGENT_VER}/bridge-domain/${bd_name}/fib/${mac}
     ${data}=              Replace Variables             ${data}
     Put Json     ${uri}    ${data}
 
