@@ -17,11 +17,11 @@ a descriptor for [Linux interfaces][linux-interface-descr],
 A full list of existing descriptors can be found [here][existing-descriptors].
 
 This design pattern improves modularity and extensibility - VPP Agent v2 is a
-collection of loosely coupled plugins to which new plugins that extend the 
-Agent's functionality can be easily added. The KVScheduler is not even limited 
+collection of loosely coupled plugins to which new plugins that extend the
+Agent's functionality can be easily added. The KVScheduler is not even limited
 to either VPP or Linux as the SB plane. Actually, a control plane for any system
 whose configuration and status stanzas can be represented as key-value pairs and
-can be operated upon via CRUD operations can be integrated with this framework. 
+can be operated upon via CRUD operations can be integrated with this framework.
 The rest of this document provides a step-by-step guide on how to implement your
 own KVDescriptor and register it with the KVScheduler.
 
@@ -528,16 +528,24 @@ default dependency injections into the file `options.go` (example
 
 ### Descriptor skeletons
 
-TODO
+For a quick start, you may use prepared skeleton of a plugin with a single
+descriptor, available in two variants:
+ * [without leveraging the support for metadata][plugin-skeleton-withoutmeta]
+ * [with metadata, including custom metadata index map][plugin-skeleton-withmeta]
+
+**Beware**: extensive copy-pasting is actually a bad practise, so use the
+provided skeletons with caution and eventually learn how to write your own
+plugins from the scratch, using the skeletons only as a reference.
 
 ### Mock SB
 
 We have prepared an [interactive hands-on example][mock-plugins-example],
 demonstrating the KVScheduler framework using replicated `vpp/ifplugin` and
-`vpp/l2plugin`, where models are simplified and the VPP is replaced with a mock
-southbound, printing the triggered CRUD operations into the stdout instead of
-actually executing them. The example is fully focused on the scheduler and the
-descriptors, and on that abstraction level the actual SB underneath is irrelevant. 
+`vpp/l2plugin` under various scenarios, where models are simplified and the VPP
+is replaced with a mock southbound, printing the triggered CRUD operations into
+the stdout instead of actually executing them. The example is fully focused on
+the scheduler and the descriptors, and on that abstraction level the actual SB
+underneath is irrelevant.
 
 ### Real-world examples
 
@@ -602,3 +610,5 @@ implementing your own.
 [vpp-route-retrieve-deps]: https://github.com/ligato/vpp-agent/blob/e8e54ef67b666e57ffef1bca555c8ce5585f215f/plugins/vpp/l3plugin/descriptor/route.go#L74
 [vpp-route-iface-name]: https://github.com/ligato/vpp-agent/blob/e8e54ef67b666e57ffef1bca555c8ce5585f215f/plugins/vpp/l3plugin/vppcalls/route_dump.go#L139-L150
 [mock-plugins-example]: ../../examples/kvscheduler/mock_plugins/README.md
+[plugin-skeleton-withmeta]: ../../examples/kvscheduler/plugin_skeleton/with_metadata/plugin.go
+[plugin-skeleton-withoutmeta]: ../../examples/kvscheduler/plugin_skeleton/without_metadata/plugin.go

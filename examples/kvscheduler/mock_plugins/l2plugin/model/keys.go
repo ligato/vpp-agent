@@ -21,7 +21,7 @@ import (
 )
 
 // ModuleName is the module name used for models of the mock l2plugin.
-const ModuleName = "mock.l2"
+const ModuleName = "mock"
 
 var (
 	ModelBridgeDomain = models.Register(&BridgeDomain{}, models.Spec{

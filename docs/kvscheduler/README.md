@@ -7,6 +7,6 @@ processing inside the VPP-Agent.
 * [KVScheduler basic concepts and API](kvscheduler.md)
 * [Implementing your own KVDescriptor](kvdescriptor.md)
 * [Transaction examples with control-flow diagrams](control_flow_diagrams.md)
-
+* [Troubleshooting guide](troubleshooting.md)
 
 [kvscheduler]: https://github.com/ligato/vpp-agent/tree/master/plugins/kvscheduler
