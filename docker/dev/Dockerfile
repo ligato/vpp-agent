@@ -89,9 +89,11 @@ RUN mkdir -p "$GOPATH/src" "$GOPATH/bin" \
 
 # install debugger
 RUN \
+      if [ "$GOLANG_OS_ARCH" == "linux-amd64" ]; \
+      then \
 	go get -u github.com/go-delve/delve/cmd/dlv && dlv version; \
-	curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh && dep version;
-
+	curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh && dep version; \
+      fi
 # copy configs
 COPY \
     docker/dev/etcd.conf \
