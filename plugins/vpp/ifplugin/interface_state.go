@@ -239,7 +239,7 @@ func (c *InterfaceStateUpdater) doInterfaceStatsRead() {
 
 // processSimpleCounterStat fills state data for every registered interface and publishes them
 func (c *InterfaceStateUpdater) processSimpleCounterStat(statName statType, data adapter.SimpleCounterStat) {
-	if data == nil || len(data) == 0 {
+	if len(data) == 0 {
 		return
 	}
 	// Add up counter values from all workers, sumPackets is fixed length - all the inner arrays (workers)
@@ -282,7 +282,7 @@ func (c *InterfaceStateUpdater) processSimpleCounterStat(statName statType, data
 
 // processCombinedCounterStat fills combined state data for every registered interface and publishes them
 func (c *InterfaceStateUpdater) processCombinedCounterStat(statName statType, data adapter.CombinedCounterStat) {
-	if data == nil || len(data) == 0 {
+	if len(data) == 0 {
 		return
 	}
 	// Add up counter values from all workers, sumPackets is fixed length - all the inner arrays (workers)

@@ -268,6 +268,22 @@ func (p *Plugin) GetTrace() *apitrace.Trace {
 	return p.tracer.Get()
 }
 
+// ListStats returns all stats names
+func (p *Plugin) ListStats(prefixes ...string) ([]string, error) {
+	if p.statsAdapter == nil {
+		return nil, nil
+	}
+	return p.statsAdapter.ListStats(prefixes...)
+}
+
+// DumpStats returns all stats with name, type and value
+func (p *Plugin) DumpStats(prefixes ...string) ([]*adapter.StatEntry, error) {
+	if p.statsAdapter == nil {
+		return nil, nil
+	}
+	return p.statsAdapter.DumpStats(prefixes...)
+}
+
 // handleVPPConnectionEvents handles VPP connection events.
 func (p *Plugin) handleVPPConnectionEvents(ctx context.Context) {
 	p.wg.Add(1)
