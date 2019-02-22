@@ -32,66 +32,64 @@ gradually arose with the set of supported configuration items growing:
 
 ## Basic concepts
 
-KVScheduler turns to graph theory to find the solution for the problem of
-dependencies between configuration items and therir respective proper operation
-ordering. A level of abstraction is build above configurators (from now on just
-"plugins"), where the state of the system is modeled as a graph - configuration
-items are vertices and relations between them are represented as edges. The
-graph is then walked through to generate transaction plans, refresh the state,
-execute state reconciliation, etc.
+KVScheduler uses graph theory concepts to manage dependencies between configuration i
+tems and therir respective proper operation ordering. A level of abstraction is build
+on top of configurators (from now on just "plugins"), where the state of the system 
+is modeled as a graph; configuration items are represented as vertices and relations
+between them are represented as edges. The graph is then walked through to generate 
+transaction plans, refresh the state, execute state reconciliation, etc.
 
-The transaction plan prepared using the graph representation consists of a 
+The transaction plan that is prepared using the graph representation consists of a 
 series of CRUD operations to be executed on some of the graph vertices. To 
 abstract from specific configuration items and details on how to manipulate them,
 graph vertices are "described" to KVScheduler in a unified way via 
 [KVDescriptors][kvdescriptor-guide]. KVDescriptors are basically handlers, each
 assigned to a distinct subset of graph vertices, providing the scheduler with
-pointers to callbacks that implement CRUD operations among other things.
+pointers to callbacks that, among other things, implement CRUD operations.
 
-The idea of KVDescriptors is based on the Mediator pattern, where plugins are
-decoupled and no longer communicate directly, but instead interact with each other
-through the mediator (the KVScheduler). Plugins only have to provide CRUD callbacks
-and describe their dependencies on other plugins through one or more KVDescriptors.
-The scheduler is then able to plan operations without even knowing what the graph
-vertices actually represent in the configured system. Furthermore, the set of 
-supported configuration items can be easily extended without altering the transaction
-processing engine or increasing the complexity of any of the components - simply by
-implementing and registering new descriptors.
+KVDescriptors are based on the Mediator pattern, where plugins are decoupled and no
+longer communicate directly, but instead interact with each other through a mediator
+(the KVScheduler). Plugins only have to provide CRUD callbacks and describe their 
+dependencies on other plugins through one or more KVDescriptors. The scheduler is 
+then able to plan operations without even knowing what the graph vertices actually
+represent in the configured system. Furthermore, the set of supported configuratio
+n items can be easily extended without altering the transaction processing engine
+or increasing the complexity of any of the components - simply by implementing and 
+registering new descriptors.
 
 ### Terminology
 
 The graph-based system representation uses new terminology to abstract from
 concrete objects:
 
-* **Model** builds representation for a single item type (e.g. interface, route,
-  bridge domain, etc.), using a Protobuf Message to structure and serialize
+* **Model** builds a representation for a single item type (e.g. interface, route,
+  bridge domain, etc.); it uses a Protobuf Message to structure and serialize
   configuration data, further coupled with meta-specification used
   to categorize the item type and to build/parse keys for/of item instances
-  (for example, Bridge Domain model can be found [here][bd-model-example]).
+  (for example, the Bridge Domain model can be found [here][bd-model-example]).
   
   **TODO: add link to the model documentation once it exists**
   
 * **Value** (`proto.Message`) is a run-time instance of a given model.
 
-* **Key** (`string`) identifies specific value - it is built using the model
-  specification and value attributes that uniquely identifies the instance.
+* **Key** (`string`) identifies a specific value - it is built using the model
+  specification and value attributes that uniquely identify the instance.
 
-* **Label** (`string`) provides shorter identifier unique only across values
-  of the same type (e.g. interface name) - like key, it is generated using
-  the model specification and primary value fields.
+* **Label** (`string`) provides a shorter identifier that is unique only across
+  value of the same type (e.g. interface name) - similar to the key, it is 
+  generated using from the model specification and primary value fields.
 
 * **Value State** (`enum ValueState`): operational state of a value - for example,
   value can be successfully `CONFIGURED`, or `PENDING` due to unmet dependencies,
-  or in a `FAILED` state after the last CRUD operation returned an error,
-  etc. - all distinguished value states are defined using a protobuf enumerated
-  type [here][value-states].
+  or in a `FAILED` state after the last CRUD operation returned an error. The 
+  set of value states is defined using the protobuf enumerated type 
+  [here][value-states].
 
-* **Value Status** (`struct BaseValueStatus`): Value State coupled with further
-  details, such as the last executed operation, last returned error, list of
-  unmet dependencies, etc.
-  Status of one or more values and their updates can be read and watch for
-  via the [KVScheduler API][value-states-api] - more info on API can be found
-  [below](#API).
+* **Value Status** (`struct BaseValueStatus`): Value State is coupled with 
+  further details, such as the last executed operation, the last returned error,
+  or the list of unmet dependencies. The status of one or more values and their
+  updates can be read and watched for via the [KVScheduler API][value-states-api]
+  - more info on this API can be found [below](#API).
 
 * **Metadata** (`interface{}`) is an extra run-time information (of undefined
   type) assigned to a value, which may be updated after a CRUD operation or an
