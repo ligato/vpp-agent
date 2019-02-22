@@ -150,31 +150,33 @@ concrete objects:
   just before the [Full or Downstream resync](#resync) or after a failed C(R)UD 
   operation(s), but only for vertices affected by the failure.
 
-* **KVDescriptor** assigns implementations of CRUD operations and defines
-  derived values and dependencies for a single value type. KVDescriptors
-  are at the core of configurators - to learn more, please read how to
+* **KVDescriptor** provides implementations of CRUD operations for a single value
+  type and registers them with the KVScheduler. It also defines derived values 
+  and dependencies for the value type. KVDescriptors are at the core of 
+  configurators (plugins)- to learn more, please read how to
   [implement your own KVDescriptor](Implementing-your-own-KVDescriptor).
 
 ### Dependencies
 
-The scheduler learns two kinds of relations between values that have to be
-respected by the scheduling algorithm:
+The scheduler must learn about two kinds of relationships between values that
+utilized by the scheduling algorithm:
 1. `A` **depends on** `B`:
    - `A` cannot exist without `B`
-   - request to Create `A` without `B` existing must be postponed by marking
+   - A request to Create `A` without `B` existing must be postponed by marking
      `A` as `PENDING` (value with unmet dependencies) in the in-memory graph
-   - if `B` is to be removed and `A` exists, `A` must be removed first and set
+   - If `B` is to be removed and `A` exists, `A` must be removed first and set
      to the `PENDING` state in case `B` is restored in the future
    - Note: values obtained from SB via notifications are not checked for
      dependencies
 2. `B` **is derived from** `A`:
-   - value `B` is not created directly (by NB or SB) but gets derived from base
-     value `A` (using the `DerivedValues()` method of the descriptor for `A`)
-   - derived value exists only as long as its base does and gets removed
-     (immediately, not pending) once the base value goes away
-   - derived value may be described by a different descriptor than the base and
-     usually represents property of the base value (that other values may depend
-     on) or an extra action to be taken when additional dependencies are met.
+   - Value `B` is not created directly (by NB or SB) but gets derived from a 
+     base value `A` (using the `DerivedValues()` method of the descriptor for `A`)
+   - A derived value exists only as long as its base exists and is removed
+     immediately (i.e. not pending) when the base value goes away
+   - A derived value may be described by a different descriptor than the base 
+     value. IT usually represents some property of the base value (that other 
+     values may dependon) or an extra action to be taken when additional 
+     dependencies are met.
 
 ### Diagram
 
