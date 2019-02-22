@@ -79,39 +79,38 @@ concrete objects:
   value of the same type (e.g. interface name) - similar to the key, it is 
   generated using from the model specification and primary value fields.
 
-* **Value State** (`enum ValueState`): operational state of a value - for example,
-  value can be successfully `CONFIGURED`, or `PENDING` due to unmet dependencies,
-  or in a `FAILED` state after the last CRUD operation returned an error. The 
-  set of value states is defined using the protobuf enumerated type 
+* **Value State** (`enum ValueState`) is the operational state of a value. For
+  example, a value can be successfully `CONFIGURED`, or `PENDING` due to unmet
+  dependencies, or in a `FAILED` state after the last CRUD operation returned
+  an error. The set of value states is defined using the protobuf enumerated type 
   [here][value-states].
 
-* **Value Status** (`struct BaseValueStatus`): Value State is coupled with 
+* **Value Status** (`struct BaseValueStatus`): Value State is associated with 
   further details, such as the last executed operation, the last returned error,
   or the list of unmet dependencies. The status of one or more values and their
-  updates can be read and watched for via the [KVScheduler API][value-states-api]
-  - more info on this API can be found [below](#API).
+  updates can be read and watched for via the [KVScheduler API][value-states-api].
+  More information on this API can be found [below](#API).
 
-* **Metadata** (`interface{}`) is an extra run-time information (of undefined
-  type) assigned to a value, which may be updated after a CRUD operation or an
-  agent restart (for example [sw_if_index][vpp-iface-idx] of every interface is
-  kept alongside the value).
-  The label "metadata" was inherited from VPP-Agent v1.x and is a rather
-  unfortunate one - the metadata are in fact "state data" of the associated
-  value. Furthermore, in a future release we plan to support user-defined
-  metadata labels - an extendable meta-information, assigned to key-value pairs
-  by NB to describe the semantic purpose of configuration items for layers above
-  the KVScheduler (i.e. opaque to the scheduling algorithm).
-  What is currently known as metadata will be then renamed to **Statedata** and
-  will be allowed to change not only through CRUD operations, but also via
-  notifications (i.e. asynchronously).
+* **Metadata** (`interface{}`) is additional run-time information (of undefined
+  type) assigned to a value. It is typically updated after a CRUD operation or 
+  after agent restart. An example of metadata is the [sw_if_index][vpp-iface-idx],
+  which is kept for every interface alongside its value. The name "metadata" was
+  inherited from VPP-Agent v1.x and it is rather a misnomer - metadata is in fact
+  the "state data" for its associated value. Furthermore, in a future release we 
+  plan to support user-defined metadata labels - an extensible meta-information, 
+  assigned to key-value pairs by the NB to describe the semantic purpose of 
+  configuration items for layers above the KVScheduler (i.e. opaque to the scheduling
+  algorithm). Metadata will be renamed to **Statedata**, and it will be allowed to 
+  change not only through CRUD operations, but also asynchronously through 
+  notifications.
 
-* **Metadata Map**, also known as index-map, implements mapping between value
-  label and its metadata for a given value type - typically exposed in read-only
-  mode to allow other plugins to read and reference metadata (for example,
-  interface plugin exposes its metadata map [here][vpp-iface-map], which is then
-  used by ARP, Route plugin etc. to read sw_if_index of target interfaces).
-  Metadata maps are automatically created and updated by scheduler (he is the
-  owner), and exposed to other plugins only in the read-only mode.
+* **Metadata Map**, also known as index-map, implements the mapping between a value
+  label and its metadata for a given value type. It is typically exposed in read-only
+  mode to allow other plugins to read and reference metadata. For example, the 
+  interface plugin exposes its metadata map [here][vpp-iface-map]; it is used by the
+  ARP Plugin, the Route Plugin, and other plugins to read the sw_if_index of target
+  interfaces. Metadata maps are automatically created and updated by scheduler (it
+  is the owner), and exposed to other plugins in read-only mode.
 
 * **[Value origin][value-origin]** defines where the value came from - whether
   it was received from NB to be configured or whether it was created in the SB
