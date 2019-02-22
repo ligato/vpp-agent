@@ -105,10 +105,17 @@ func (d *UnnumberedIfDescriptor) Create(key string, unIntf *interfaces.Interface
 	}
 
 	// VRF (optional), should be done before setting as unnumbered
-	err = setInterfaceVrf(d.ifHandler, ifName, ifMeta.SwIfIndex, ifMeta.Vrf, ipAddresses)
-	if err != nil {
-		d.log.Error(err)
-		return nil, err
+	if ifMeta.Vrf == 0 {
+		// explicit set to VRF 0 seems to be causing issues on VPP
+		// NOTE: because of this return, this function cannot be used to switch VRF from non-zero to zero
+		// (can be only used to put a newly created interface to a VRF)
+		d.log.Debugf("Set VRF to 0 for unnumbered interface is not allowed")
+	} else {
+		err = setInterfaceVrf(d.ifHandler, ifName, ifMeta.SwIfIndex, ifMeta.Vrf, ipAddresses)
+		if err != nil {
+			d.log.Error(err)
+			return nil, err
+		}
 	}
 
 	err = d.ifHandler.SetUnnumberedIP(ifMeta.SwIfIndex, ifWithIPMeta.SwIfIndex)
