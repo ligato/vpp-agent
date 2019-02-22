@@ -412,6 +412,11 @@ func (d *InterfaceDescriptor) UpdateWithRecreate(key string, oldIntf, newIntf *i
 		return true
 	}
 
+	// case for af-packet mac update (cannot be updated directly)
+	if oldIntf.GetType() == interfaces.Interface_AF_PACKET && oldIntf.PhysAddress != newIntf.PhysAddress {
+		return true
+	}
+
 	return false
 }
 
