@@ -177,6 +177,7 @@ func (d *InterfaceDescriptor) Create(key string, intf *interfaces.Interface) (me
 
 	// MAC address. Note: physical interfaces cannot have the MAC address changed
 	if intf.GetPhysAddress() != "" &&
+		intf.GetType() != interfaces.Interface_AF_PACKET &&
 		intf.GetType() != interfaces.Interface_DPDK {
 		if err = d.ifHandler.SetInterfaceMac(ifIdx, intf.GetPhysAddress()); err != nil {
 			err = errors.Errorf("failed to set MAC address %s to interface %s: %v",
@@ -357,6 +358,7 @@ func (d *InterfaceDescriptor) Update(key string, oldIntf, newIntf *interfaces.In
 	// configure new MAC address if set (and only if it was changed and only for supported interface type)
 	if newIntf.PhysAddress != "" &&
 		newIntf.PhysAddress != oldIntf.PhysAddress &&
+		oldIntf.Type != interfaces.Interface_AF_PACKET &&
 		oldIntf.Type != interfaces.Interface_DPDK {
 		if err := d.ifHandler.SetInterfaceMac(ifIdx, newIntf.PhysAddress); err != nil {
 			err = errors.Errorf("setting interface %s MAC address %s failed: %v",
