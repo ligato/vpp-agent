@@ -113,17 +113,17 @@ concrete objects:
   is the owner), and exposed to other plugins in read-only mode.
 
 * **[Value origin][value-origin]** defines where the value came from - whether
-  it was received from NB to be configured or whether it was created in the SB
-  plane automatically (e.g. default routes, loop0 interface, etc.).
+  it was received as configuration from the NB. or whether it was automatically
+  created in the SB plane (e.g. default routes, the loop0 interface, etc.).
 
-* Key-value pairs are operated with through CRUD operations: **C**reate,
+* **Key-value pairs** are operated on through CRUD operations: **C**reate,
   **R**etrieve, **U**pdate and **D**elete.
 
-* **Dependency** defined for a value, references another key-value pair that
-  must exist (be created), otherwise the associated value cannot be Created and
-  must remain cached in the state `PENDING` - value is allowed to have defined
-  multiple dependencies and all must be satisfied for the value to be considered
-  ready for creation.
+* **Dependency** is defined for a value, and it references another key-value pair
+  that must exist (be created) before the dependent value can be **C**reated. If 
+  a dependency is not satisfied, the dependent value must remain cached in the 
+  `PENDING` state. Multiple dependencies can be defined for a value, and they all
+  must be satisfied before the value can be **C**reated.
 
 * **Derived value**, in a future release to be renamed to **attribute** for more
   clarity, is typically a single field of the original value or its property,
@@ -144,15 +144,15 @@ concrete objects:
   own caches for pending values.  
   
 * **Graph Refresh** is a process of updating the graph content to reflect the
-  real state of the southbound. This is achieved by calling `Retrieve` of
-  every descriptor that supports the operation and adding/updating vertices
-  with retrieved values. The refresh is performed just before [Full or Downstream
-  resync](#resync) or after a failed C(R)UD operation(s), but only for vertices
-  affected by the failure.
+  real state of the Southbound. This is achieved by calling the `Retrieve` 
+  function of every descriptor that supports the `Retrieve` operation and
+  adding/updating graph vertices with the retrieved values. Refresh is performed
+  just before the [Full or Downstream resync](#resync) or after a failed C(R)UD 
+  operation(s), but only for vertices affected by the failure.
 
 * **KVDescriptor** assigns implementations of CRUD operations and defines
-  derived values and dependencies to a single value type - this is what
-  configurators basically boil down to - to learn more, please read how to
+  derived values and dependencies for a single value type. KVDescriptors
+  are at the core of configurators - to learn more, please read how to
   [implement your own KVDescriptor](Implementing-your-own-KVDescriptor).
 
 ### Dependencies
@@ -178,10 +178,10 @@ respected by the scheduling algorithm:
 
 ### Diagram
 
-The easiest way to understand KVScheduler is through a graphical visualization.
+The easiest way to understand the KVScheduler is through a graphical visualization.
 In the following diagram we show how the scheduler interacts with the layers
-above and below. A minimalistic graph sketch shows both dependency and
-derivation relations using [bridge domain][bd-cfd] as an example, together with
+above and below. A minimalistic graph sketch shows both the dependency and
+derivation relations using [Bridge Domain][bd-cfd] as an example, together with
 a pending value (of unspecified type) waiting for some interface to be created
 first.
 
