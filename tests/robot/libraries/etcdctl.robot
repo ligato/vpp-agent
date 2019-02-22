@@ -507,15 +507,15 @@ Put Linux ARP With Namespace
     Put Json     ${uri}    ${data}
 
 Put Linux ARP
-    [Arguments]    ${node}    ${interface}    ${arpname}    ${ipv4}    ${MAC}
+    [Arguments]    ${node}    ${interface}    ${ipv4}    ${MAC}
     ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/arp_linux.json
-    ${uri}=               Set Variable                  /vnf-agent/${node}/config/linux/l3/${AGENT_VER}/arp/${arpname}
+    ${uri}=               Set Variable                  /vnf-agent/${node}/config/linux/l3/${AGENT_VER}/arp/${interface}/${ipv4}
     ${data}=              Replace Variables             ${data}
     Put Json     ${uri}    ${data}
 
 Delete Linux ARP
-    [Arguments]    ${node}    ${arpname}
-    ${uri}=               Set Variable                  /vnf-agent/${node}/config/linux/l3/${AGENT_VER}/arp/${arpname}
+    [Arguments]    ${node}    ${interface}    ${ipv4}
+    ${uri}=               Set Variable                  /vnf-agent/${node}/config/linux/l3/${AGENT_VER}/arp/${interface}/${ipv4}
     ${out}=      Delete key    ${uri}
     [Return]    ${out}
 

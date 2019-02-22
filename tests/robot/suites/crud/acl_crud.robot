@@ -19,7 +19,7 @@ Test Teardown     TestTeardown
 ${REPLY_DATA_FOLDER}            ${CURDIR}/replyACL
 ${VARIABLES}=       common
 ${ENV}=             common
-${api_handler}=     215
+${api_handler}=     222
 ${ACL1_NAME}=       acl1_tcp
 ${ACL2_NAME}=       acl2_tcp
 ${ACL3_NAME}=       acl3_UDP
