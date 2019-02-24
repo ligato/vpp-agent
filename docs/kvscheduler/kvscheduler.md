@@ -32,102 +32,100 @@ gradually arose with the set of supported configuration items growing:
 
 ## Basic concepts
 
-KVScheduler turns to graph theory to find the solution for the problem of
-dependencies between configuration items and therir respective proper operation
-ordering. A level of abstraction is build above configurators (from now on just
-"plugins"), where the state of the system is modeled as a graph - configuration
-items are vertices and relations between them are represented as edges. The
-graph is then walked through to generate transaction plans, refresh the state,
-execute state reconciliation, etc.
+KVScheduler uses graph theory concepts to manage dependencies between configuration i
+tems and therir respective proper operation ordering. A level of abstraction is build
+on top of configurators (from now on just "plugins"), where the state of the system 
+is modeled as a graph; configuration items are represented as vertices and relations
+between them are represented as edges. The graph is then walked through to generate 
+transaction plans, refresh the state, execute state reconciliation, etc.
 
-The transaction plan prepared using the graph representation consists of a 
+The transaction plan that is prepared using the graph representation consists of a 
 series of CRUD operations to be executed on some of the graph vertices. To 
 abstract from specific configuration items and details on how to manipulate them,
 graph vertices are "described" to KVScheduler in a unified way via 
 [KVDescriptors][kvdescriptor-guide]. KVDescriptors are basically handlers, each
 assigned to a distinct subset of graph vertices, providing the scheduler with
-pointers to callbacks that implement CRUD operations among other things.
+pointers to callbacks that, among other things, implement CRUD operations.
 
-The idea of KVDescriptors is based on the Mediator pattern, where plugins are
-decoupled and no longer communicate directly, but instead interact with each other
-through the mediator (the KVScheduler). Plugins only have to provide CRUD callbacks
-and describe their dependencies on other plugins through one or more KVDescriptors.
-The scheduler is then able to plan operations without even knowing what the graph
-vertices actually represent in the configured system. Furthermore, the set of 
-supported configuration items can be easily extended without altering the transaction
-processing engine or increasing the complexity of any of the components - simply by
-implementing and registering new descriptors.
+KVDescriptors are based on the Mediator pattern, where plugins are decoupled and no
+longer communicate directly, but instead interact with each other through a mediator
+(the KVScheduler). Plugins only have to provide CRUD callbacks and describe their 
+dependencies on other plugins through one or more KVDescriptors. The scheduler is 
+then able to plan operations without even knowing what the graph vertices actually
+represent in the configured system. Furthermore, the set of supported configuratio
+n items can be easily extended without altering the transaction processing engine
+or increasing the complexity of any of the components - simply by implementing and 
+registering new descriptors.
 
 ### Terminology
 
 The graph-based system representation uses new terminology to abstract from
 concrete objects:
 
-* <a name="model"></a>**Model** builds representation for a single item type
-  (e.g. interface, route, bridge domain, etc.), using a Protobuf Message to
+* <a name="model"></a> **Model** builds a representation for a single item type
+  (e.g. interface, route, bridge domain, etc.); it uses a Protobuf Message to
   structure and serialize configuration data, further coupled with
   meta-specification used to categorize the item type and to build/parse keys
-  for/of item instances (for example, Bridge Domain model can be found
-  [here][bd-model-example]).
+  for/of item instances
+  (for example, the Bridge Domain model can be found [here][bd-model-example]).
   
   **TODO: add link to the model documentation once it exists**
   
 * **Value** (`proto.Message`) is a run-time instance of a given model.
 
-* **Key** (`string`) identifies specific value - it is built using the model
-  specification and value attributes that uniquely identifies the instance.
+* **Key** (`string`) identifies a specific value - it is built using the model
+  specification and value attributes that uniquely identify the instance.
 
-* **Label** (`string`) provides shorter identifier unique only across values
-  of the same type (e.g. interface name) - like key, it is generated using
-  the model specification and primary value fields.
+* **Label** (`string`) provides a shorter identifier that is unique only across
+  value of the same type (e.g. interface name) - similar to the key, it is 
+  generated using from the model specification and primary value fields.
 
-* **Value State** (`enum ValueState`): operational state of a value - for example,
-  value can be successfully `CONFIGURED`, or `PENDING` due to unmet dependencies,
-  or in a `FAILED` state after the last CRUD operation returned an error,
-  etc. - all distinguished value states are defined using a protobuf enumerated
-  type [here][value-states].
+* **Value State** (`enum ValueState`) is the operational state of a value. For
+  example, a value can be successfully `CONFIGURED`, or `PENDING` due to unmet
+  dependencies, or in a `FAILED` state after the last CRUD operation returned
+  an error. The set of value states is defined using the protobuf enumerated type 
+  [here][value-states].
 
-* **Value Status** (`struct BaseValueStatus`): Value State coupled with further
-  details, such as the last executed operation, last returned error, list of
-  unmet dependencies, etc.
-  Status of one or more values and their updates can be read and watch for
-  via the [KVScheduler API][value-states-api] - more info on API can be found
-  [below](#API).
+* **Value Status** (`struct BaseValueStatus`): Value State is associated with 
+  further details, such as the last executed operation, the last returned error,
+  or the list of unmet dependencies. The status of one or more values and their
+  updates can be read and watched for via the [KVScheduler API][value-states-api].
+  More information on this API can be found [below](#API).
 
-* **Metadata** (`interface{}`) is an extra run-time information (of undefined
-  type) assigned to a value, which may be updated after a CRUD operation or an
-  agent restart (for example [sw_if_index][vpp-iface-idx] of every interface is
-  kept alongside the value).
-  The label "metadata" was inherited from VPP-Agent v1.x and is a rather
-  unfortunate one - the metadata are in fact "state data" of the associated
-  value. Furthermore, in a future release we plan to support user-defined
-  metadata labels - an extendable meta-information, assigned to key-value pairs
-  by NB to describe the semantic purpose of configuration items for layers above
-  the KVScheduler (i.e. opaque to the scheduling algorithm).
-  What is currently known as metadata will be then renamed to **Statedata** and
-  will be allowed to change not only through CRUD operations, but also via
-  notifications (i.e. asynchronously).
+* <a name="metadata"></a> **Metadata** (`interface{}`) is additional run-time
+  information (of undefined type) assigned to a value. It is typically updated
+  after a CRUD operation or after agent restart. An example of metadata is the
+  [sw_if_index][vpp-iface-idx], which is kept for every interface alongside its
+  value. The name "metadata" was inherited from VPP-Agent v1.x and it is rather
+  a misnomer - metadata is in fact the "state data" for its associated value.
+  Furthermore, in a future release we plan to support user-defined metadata
+  labels - an extensible meta-information, assigned to key-value pairs by the NB
+  to describe the semantic purpose of configuration items for layers above the
+  KVScheduler (i.e. opaque to the scheduling algorithm). Metadata will be renamed
+  to **Statedata**, and it will be allowed to change not only through CRUD
+  operations, but also asynchronously through notifications.
 
-* **Metadata Map**, also known as index-map, implements mapping between value
-  label and its metadata for a given value type - typically exposed in read-only
-  mode to allow other plugins to read and reference metadata (for example,
-  interface plugin exposes its metadata map [here][vpp-iface-map], which is then
-  used by ARP, Route plugin etc. to read sw_if_index of target interfaces).
-  Metadata maps are automatically created and updated by scheduler (he is the
-  owner), and exposed to other plugins only in the read-only mode.
+* **Metadata Map**, also known as index-map, implements the mapping between a value
+  label and its metadata for a given value type. It is typically exposed in read-only
+  mode to allow other plugins to read and reference metadata. For example, the 
+  interface plugin exposes its metadata map [here][vpp-iface-map]; it is used by the
+  ARP Plugin, the Route Plugin, and other plugins to read the sw_if_index of target
+  interfaces. Metadata maps are automatically created and updated by scheduler (it
+  is the owner), and exposed to other plugins in read-only mode.
 
-* **[Value origin][value-origin]** defines where the value came from - whether
-  it was received from NB to be configured or whether it was created in the SB
-  plane automatically (e.g. default routes, loop0 interface, etc.).
+* <a name="value-origin"></a>  **[Value origin][value-origin]** defines where
+  the value came from - whether it was received as configuration from the NB or
+  whether it was automatically created in the SB plane (e.g. default routes,
+  the loop0 interface, etc.).
 
-* Key-value pairs are operated with through CRUD operations: **C**reate,
+* **Key-value pairs** are operated on through CRUD operations: **C**reate,
   **R**etrieve, **U**pdate and **D**elete.
 
-* **Dependency** defined for a value, references another key-value pair that
-  must exist (be created), otherwise the associated value cannot be Created and
-  must remain cached in the state `PENDING` - value is allowed to have defined
-  multiple dependencies and all must be satisfied for the value to be considered
-  ready for creation.
+* **Dependency** is defined for a value, and it references another key-value pair
+  that must exist (be created) before the dependent value can be **C**reated. If 
+  a dependency is not satisfied, the dependent value must remain cached in the 
+  `PENDING` state. Multiple dependencies can be defined for a value, and they all
+  must be satisfied before the value can be **C**reated.
 
 * **Derived value**, in a future release to be renamed to **attribute** for more
   clarity, is typically a single field of the original value or its property,
@@ -140,52 +138,55 @@ concrete objects:
   blocking the rest of the bridge domain to be applied - see [control-flow][bd-cfd]
   demonstrating the order of operations needed to create a bridge domain.
 
-* **Graph** of values is a kvscheduler-internal in-memory storage for all
-  configured and pending key-value pairs, with edges representing inter-value
-  relations, such as "depends-on" and "is-derived-from".
+* <a name="graph"></a> **Graph** of values is a kvscheduler-internal in-memory
+  storage for all configured and pending key-value pairs, with edges representing
+  inter-value relations, such as "depends-on" and "is-derived-from".
   
   *Note:* configurators - now just "plugins" - no longer have to implement their
   own caches for pending values.  
   
-* **Graph Refresh** is a process of updating the graph content to reflect the
-  real state of the southbound. This is achieved by calling `Retrieve` of
-  every descriptor that supports the operation and adding/updating vertices
-  with retrieved values. The refresh is performed just before [Full or Downstream
-  resync](#resync) or after a failed C(R)UD operation(s), but only for vertices
-  affected by the failure.
+* <a name="graph-refresh"></a> **Graph Refresh** is a process of updating
+  the graph content to reflect the real state of the Southbound. This is achieved
+  by calling the `Retrieve` function of every descriptor that supports the
+  `Retrieve` operation and adding/updating graph vertices with the retrieved
+  values. Refresh is performed just before the [Full or Downstream resync](#resync)
+  or after a failed C(R)UD operation(s), but only for vertices affected by the
+  failure.
 
-* **KVDescriptor** assigns implementations of CRUD operations and defines
-  derived values and dependencies to a single value type - this is what
-  configurators basically boil down to - to learn more, please read how to
+* **KVDescriptor** provides implementations of CRUD operations for a single value
+  type and registers them with the KVScheduler. It also defines derived values 
+  and dependencies for the value type. KVDescriptors are at the core of 
+  configurators (plugins)- to learn more, please read how to
   [implement your own KVDescriptor](Implementing-your-own-KVDescriptor).
 
 ### Dependencies
 
-The scheduler learns two kinds of relations between values that have to be
-respected by the scheduling algorithm:
+The scheduler must learn about two kinds of relationships between values that
+utilized by the scheduling algorithm:
 1. `A` **depends on** `B`:
    - `A` cannot exist without `B`
-   - request to Create `A` without `B` existing must be postponed by marking
+   - A request to Create `A` without `B` existing must be postponed by marking
      `A` as `PENDING` (value with unmet dependencies) in the in-memory graph
-   - if `B` is to be removed and `A` exists, `A` must be removed first and set
+   - If `B` is to be removed and `A` exists, `A` must be removed first and set
      to the `PENDING` state in case `B` is restored in the future
    - Note: values obtained from SB via notifications are not checked for
      dependencies
 2. `B` **is derived from** `A`:
-   - value `B` is not created directly (by NB or SB) but gets derived from base
-     value `A` (using the `DerivedValues()` method of the descriptor for `A`)
-   - derived value exists only as long as its base does and gets removed
-     (immediately, not pending) once the base value goes away
-   - derived value may be described by a different descriptor than the base and
-     usually represents property of the base value (that other values may depend
-     on) or an extra action to be taken when additional dependencies are met.
+   - Value `B` is not created directly (by NB or SB) but gets derived from a 
+     base value `A` (using the `DerivedValues()` method of the descriptor for `A`)
+   - A derived value exists only as long as its base exists and is removed
+     immediately (i.e. not pending) when the base value goes away
+   - A derived value may be described by a different descriptor than the base 
+     value. IT usually represents some property of the base value (that other 
+     values may dependon) or an extra action to be taken when additional 
+     dependencies are met.
 
 ### Diagram
 
-The easiest way to understand KVScheduler is through a graphical visualization.
+The easiest way to understand the KVScheduler is through a graphical visualization.
 In the following diagram we show how the scheduler interacts with the layers
-above and below. A minimalistic graph sketch shows both dependency and
-derivation relations using [bridge domain][bd-cfd] as an example, together with
+above and below. A minimalistic graph sketch shows both the dependency and
+derivation relations using [Bridge Domain][bd-cfd] as an example, together with
 a pending value (of unspecified type) waiting for some interface to be created
 first.
 

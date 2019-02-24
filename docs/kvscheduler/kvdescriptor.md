@@ -32,7 +32,7 @@ First of all, descriptor is not an interface that needs to be implemented, but
 rather a structure to be initialized with the right attribute values and callbacks
 to CRUD operations. This was chosen to reinforce the fact that descriptors are
 meant to be **stateless** - the state of values is instead kept by the scheduler
-and run-time information can be stored into the [metadata][kvscheduler-terminology],
+and run-time information can be stored into the [metadata](kvscheduler.md#metadata),
 optionally carried with each value. The state of the graph with values and their
 metadata should determine what exactly will be executed next in the SB plane
 for a given transaction.
@@ -51,7 +51,7 @@ all the boiler-plate type casting.
 
 **Note**: `KeySelector`, `ValueTypeName`, `KeyLabel` & `NBKeyPrefix`
 will all be replaced in a future release with a single reference to the value
-[model][kvscheduler-terminology] (**TODO: add link to the model documentation
+[model](kvscheduler.md#model) (**TODO: add link to the model documentation
 once it exists**). Most descriptors already use the methods provided by models
 to define these fields. But we do not yet have tools to build models for
 [derived values](#derivedvalues) and without them we cannot fully switch
@@ -72,7 +72,7 @@ to models.
 * descriptors for derived values do not need to define this field - the values
   they describe do not come from NB directly, instead get derived from other
   values which are in the scope of other descriptors
-* [model][kvscheduler-terminology] can be used to obtain the key prefix
+* [model](kvscheduler.md#model) can be used to obtain the key prefix
   using `KeyPrefix()` method - [here is an example][nb-key-prefix]
 
 ### KeySelector
@@ -80,14 +80,14 @@ to models.
 * **mandatory** callback: `func(key string) bool`
 * a predicate that should select (i.e. return true) for keys identifying values
   described by the given descriptor
-* typically, selector uses `IsKeyValid` from the value [model][kvscheduler-terminology]
+* typically, selector uses `IsKeyValid` from the value [model](kvscheduler.md#model)
   to check if the key is valid for the model - [here is an example][key-selector]
 
 ### ValueTypeName
 
 * `string` attribute, **mandatory for [non-derived values](#derivedvalues)**
 * name of the protobuf message used to structure and serialize value data
-* [model][kvscheduler-terminology] can be used to obtain the proto message name
+* [model](kvscheduler.md#model) can be used to obtain the proto message name
   using `ProtoName()` method - [here is an example][value-type-name]
 
 ### KeyLabel
@@ -97,7 +97,7 @@ to models.
    identifier, that, unlike the original key, only needs to be unique in the
    key scope of the descriptor and not necessarily in the entire key space
    (e.g. interface name rather than the full key)
-* [model][kvscheduler-terminology] provides key shortener off-the-shelf with
+* [model](kvscheduler.md#model) provides key shortener off-the-shelf with
   the method `StripKeyPrefix()` - [here is an example][key-label]
 * if defined, key label will be used as value identifier in the metadata map
   (it then for example allows to ask for interface metadata simply by the
@@ -570,7 +570,6 @@ implementing your own.
 [vpp-interface-descr]: https://github.com/ligato/vpp-agent/blob/master/plugins/vpp/ifplugin/descriptor/interface.go
 [vpp-route-descr]: https://github.com/ligato/vpp-agent/blob/master/plugins/vpp/l3plugin/descriptor/route.go
 [descriptor-api]: https://github.com/ligato/vpp-agent/blob/e8e54ef67b666e57ffef1bca555c8ce5585f215f/plugins/kvscheduler/api/kv_descriptor_api.go#L82-L248
-[kvscheduler-terminology]: kvscheduler.md#terminology
 [descriptor-adapter]: https://github.com/ligato/vpp-agent/tree/master/plugins/kvscheduler/descriptor-adapter
 [vpp-iface-adapter]: https://github.com/ligato/vpp-agent/blob/e8e54ef67b666e57ffef1bca555c8ce5585f215f/plugins/vpp/ifplugin/ifplugin.go#L15
 [register-kvdescriptor]: https://github.com/ligato/vpp-agent/blob/e8e54ef67b666e57ffef1bca555c8ce5585f215f/plugins/kvscheduler/api/kv_scheduler_api.go#L195-L199

@@ -111,7 +111,7 @@ to configure the value:
 
 ### Resync removes item not configured by NB
   - objects not configured by the agent, but instead created in SB automatically
-    (e.g. default routes) should be Retrieved with [Origin](kvscheduler.md#basic-concepts)
+    (e.g. default routes) should be Retrieved with [Origin](kvscheduler.md#value-origin)
     `FromSB`
   - `UnknownOrigin` can also be used and the scheduler will search through the
     history of transactions to see if the given value has been configured by the
@@ -272,7 +272,7 @@ func (d *InterfaceDescriptor) Create(key string, intf *interfaces.Interface) (me
  * <a name="models-bad-usage"></a>
    **not using models for non-derived values or mixing them with custom key
      building/parsing methods**
-      - it is true that [models](kvscheduler.md#basic-concepts) are
+      - it is true that [models](kvscheduler.md#model) are
         work-in-progress and not yet supported with derived values
       - for non-derived values, however, the models are already mandatory and
         should be used to define these four descriptor fields: `NBKeyPrefix`,

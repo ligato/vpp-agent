@@ -101,7 +101,7 @@ transaction shown above:
 
 Furthermore, before [Full or Downstream Resync](kvscheduler.md#resync) (not for
 Upstream Resync), or after a transaction error, the KVScheduler dumps the state
-of the graph into `stdout` *after* it was [refreshed](kvscheduler.md#basic-concepts):
+of the graph into `stdout` *after* it was [refreshed](kvscheduler.md#graph-refresh):
 
 ![Graph dump](img/graph-dump.png)
 
@@ -136,9 +136,9 @@ having the [verification error][verification-error] attached.
 
 ## How-to visualize the graph
 
-The graph-based representation of the system state, as used internally by the
-KVScheduler, can be displayed using any modern web browser (supporting SVG)
-at the URL:
+The [graph-based representation of the system state](kvscheduler.md#graph),
+as used internally by the KVScheduler, can be displayed using any modern web
+browser (supporting SVG) at the URL:
 ```
 http://<host>:9191/scheduler/graph
 ```
@@ -342,7 +342,6 @@ stdout:
 ```
 
 
-[kvscheduler-graph]: kvscheduler.md#basic-concepts
 [logmanager-readme]: ../../vendor/github.com/ligato/cn-infra/logging/logmanager/README.md
 [plugin-interface]: https://github.com/ligato/cn-infra/blob/425b8dd352626b88fb36713d7589ac9fc678bdb7/infra/infra.go#L8-L16
 [verification-error]: https://github.com/ligato/vpp-agent/blob/de1a2254298d61c5712b8e4d6a4b24648b229f04/plugins/kvscheduler/api/errors.go#L162-L213
