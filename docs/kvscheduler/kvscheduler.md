@@ -63,11 +63,12 @@ implementing and registering new descriptors.
 The graph-based system representation uses new terminology to abstract from
 concrete objects:
 
-* **Model** builds representation for a single item type (e.g. interface, route,
-  bridge domain, etc.), using a Protobuf Message to structure and serialize
-  configuration data, further coupled with meta-specification used
-  to categorize the item type and to build/parse keys for/of item instances
-  (for example, Bridge Domain model can be found [here][bd-model-example]).
+* <a name="model"></a>**Model** builds representation for a single item type
+  (e.g. interface, route, bridge domain, etc.), using a Protobuf Message to
+  structure and serialize configuration data, further coupled with
+  meta-specification used to categorize the item type and to build/parse keys
+  for/of item instances (for example, Bridge Domain model can be found
+  [here][bd-model-example]).
   
   **TODO: add link to the model documentation once it exists**
   
@@ -374,7 +375,7 @@ only via formatted logs but also through a set of REST APIs:
 [bd-iface-deps]: https://github.com/ligato/vpp-agent/blob/e8e54ef67b666e57ffef1bca555c8ce5585f215f/plugins/vpp/l2plugin/descriptor/bd_interface.go#L120-L127
 [bd-cfd]: cfd/bridge_domain.md
 [contiv-vpp]: https://github.com/contiv/vpp/
-[graph-example]: img/graph-example.svg
+[graph-example]: img/large-graph-example.svg
 [clientv2]: https://github.com/ligato/vpp-agent/tree/master/clientv2
 [value-states]: https://github.com/ligato/vpp-agent/blob/master/plugins/kvscheduler/api/value_status.proto
 [value-states-api]: https://github.com/ligato/vpp-agent/blob/e8e54ef67b666e57ffef1bca555c8ce5585f215f/plugins/kvscheduler/api/kv_scheduler_api.go#L233-L239
