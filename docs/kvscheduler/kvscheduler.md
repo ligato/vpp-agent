@@ -137,8 +137,9 @@ concrete objects:
   demonstrating the order of operations needed to create a bridge domain.
 
 * **Graph** of values is a kvscheduler-internal in-memory storage for all
-  configured and pending key-value pairs, with edges representing inter-value
-  relations, such as "depends-on" and "is-derived-from".
+  configured and pending key-value pairs, where graph edges represent inter-value
+  relations, such as "depends-on" or "is-derived-from", and graph nodes are the
+  key-value pairs themselves.
   
   *Note:* configurators - now just "plugins" - no longer have to implement their
   own caches for pending values.  
@@ -180,10 +181,9 @@ utilized by the scheduling algorithm:
 
 ### Diagram
 
-The easiest way to understand the KVScheduler is through a graphical visualization.
-In the following diagram we show how the scheduler interacts with the layers
-above and below. A minimalistic graph sketch shows both the dependency and
-derivation relations using [Bridge Domain][bd-cfd] as an example, together with
+The following diagram shows the interactions between the scheduler and the layers
+above it and below it. Using [Bridge Domain][bd-cfd] as an example, the diagram 
+shows both the dependency and the derivation relationships, together with
 a pending value (of unspecified type) waiting for some interface to be created
 first.
 
@@ -191,24 +191,26 @@ first.
 
 ## Resync
 
-Plugins no longer have to implement resync (state reconciliation) on their own.
-As they "teach" KVScheduler how to operate with configuration items by providing
-callbacks to CRUD operations through KVDescriptors, the scheduler has all it
-needs to determine and execute the set of operations needed to get the state
-in-sync after a transaction or restart.
+Plugins no longer have to implement their own resync (state reconciliation) 
+mechanisms. By providing a KVDescriptor with CRUD operation callbacks to the 
+KVScheduler a plugin "teaches" the KVScheduler how to handle plugin's 
+configuration items. The KVScheduler has all it needs to determine and 
+execute the set of operations needed to get the state in-sync after a 
+transaction or restart.
 
-Furthermore, KVScheduler enhances the concept of state reconciliation, and
-differentiates three types of the resync:
-* **Full resync**: desired configuration is re-read from NB, the view of SB is
-  refreshed via `Retrieve` operations and inconsistencies are resolved via
-  `Create`\\`Delete`\\`Update` operations
-* **Upstream resync**: partial resync, same as Full resync except the view of SB
-  is assumed to be up-to-date and will not get refreshed - can be used by NB
-  when it is easier to re-calculate the desired state than to determine the
-  (minimal) difference to reflect a given event
-* **Downstream resync**: partial resync, same as Full resync except the desired
-  configuration is assumed to be up-to-date and will not be re-read from
-  NB - can be used periodically to resync, even without interacting with NB
+The KVScheduler further enhances the concept of state reconciliation. Three
+resync types are defined:
+* **Full resync**: the desired configuration is re-read from NB, the view of 
+  SB is refreshed via one or more `Retrieve` operations and inconsistencies 
+  are resolved via the `Create`\\`Delete`\\`Update` operations.
+* **Upstream resync**: a partial resync, similar to the Full resync, but the
+  view of SB state is not refreshed. It is either assumed to be up-to-date 
+  and/or it is not required int the resync because it may be easier to 
+  re-calculate the desired state than to determine the (minimal) difference 
+* **Downstream resync**: partial resync, similar to the Full resync, except
+  the desired configuration is assumed to be up-to-date and will not be re-read
+  from the NB. Downstream resync can be used periodically to resync, even without
+  interacting with the NB.
 
 ## Transactions
 
