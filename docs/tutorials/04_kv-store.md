@@ -59,7 +59,7 @@ The Go code was generated using `go:generate` directive from the example.
 //go:generate protoc --proto_path=model --gogo_out=model ./model/model.proto
 ```
 
-To update some value in the KV store we will use broker's `Put` method.
+To update some value in a KV store we will use broker's `Put` method.
 
 ```go
 value := &model.Greetings{
@@ -72,6 +72,18 @@ if err != nil {
 ```
 
 The value above will be updated for key `/myplugin/greetings/hello`.
+
+To retrieve some value from a KV store we will use broker's `GetValue` method.
+
+```go
+value := new(model.Greetings)
+found, rev, err := broker.GetValue("greetings/hello", value)
+if err != nil {
+	// handle error
+}else if !found {
+	// handle not found
+}
+```
 
 To watch for changes in the KV store we need to initialize a watcher.
 

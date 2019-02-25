@@ -80,22 +80,34 @@ func (p *MyPlugin) onChange(resp datasync.ProtoWatchResp) {
 		p.Log.Errorf("GetValue for change failed: %v", err)
 		return
 	}
-	p.Log.Infof("%v change: KEY: %q VALUE: %+v", resp.GetChangeType(), resp.GetKey(), value)
+	p.Log.Infof("%v change, Key: %q Value: %+v", resp.GetChangeType(), resp.GetKey(), value)
 }
 
 func (p *MyPlugin) updater() {
 	broker := p.KVStore.NewBroker(keyPrefix)
 
+	// Retrieve value from KV store
+	value := new(model.Greetings)
+	found, _, err := broker.GetValue("greetings/hello", value)
+	if err != nil {
+		p.Log.Errorf("GetValue failed: %v", err)
+	} else if !found {
+		p.Log.Info("No greetings found..")
+	} else {
+		p.Log.Infof("Found some greetings: %+v", value)
+	}
+
 	// Wait few seconds
 	time.Sleep(time.Second * 2)
 
+	p.Log.Infof("updating..")
+
 	// Prepare data
-	value := &model.Greetings{
+	value = &model.Greetings{
 		Greeting: "Hello",
 	}
 
-	// Update data in KV store
-	p.Log.Infof("updating value")
+	// Update value in KV store
 	if err := broker.Put("greetings/hello", value); err != nil {
 		p.Log.Errorf("Put failed: %v", err)
 	}
