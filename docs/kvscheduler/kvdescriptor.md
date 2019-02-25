@@ -219,16 +219,15 @@ Please note that all optional fields can be left uninitialized (zero values).
 ### Retrieve
 
 * optional callback: `func(correlate []KVWithMetadata) ([]KVWithMetadata, error)`
-  - where:
- ```
- // KVWithMetadata encapsulates key-value pair with metadata and the origin mark.
- type KVWithMetadata struct {
-     Key      string
-     Value    proto.Message
-     Metadata Metadata
-     Origin   ValueOrigin
- }
- ```
+  - where [`KVWithMetadata`](https://github.com/ligato/vpp-agent/blob/73970d00f781ee136436d70cc8c9890742641c70/plugins/kvscheduler/api/kv_scheduler_api.go#L76) is defined as:
+    ```go
+    type KVWithMetadata struct {
+        Key      string
+        Value    proto.Message
+        Metadata Metadata
+        Origin   ValueOrigin
+    }
+    ```
 * "R" from CRUD, implements the operation to read the real-time snapshot of the 
   SB plane configuration for all values in descriptor's scope 
 * it is a key operation for state reconciliation (or as we call it - "resync"),
@@ -281,31 +280,16 @@ Please note that all optional fields can be left uninitialized (zero values).
 ### Dependencies
 
 * optional callback: `func(key string, value proto.Message) []Dependency`
-  - where:
-```
-// Dependency references another kv pair that must exist before the associated
-// value can be created.
-type Dependency struct {
-	// Label should be a short human-readable string labeling the dependency.
-	// Must be unique in the list of dependencies for a value.
-	Label string
-
-	// Key of another kv pair that the associated value depends on.
-	// If empty, AnyOf must be defined instead.
-	Key string
-
-	// AnyOf, if not nil, must return true for at least one of the already
-	// created keys for the dependency to be considered satisfied.
-	// Either Key or AnyOf should be defined, but not both at the same time.
-	// Note: AnyOf comes with more overhead than a static key dependency,
-	// so prefer to use the latter whenever possible.
-	AnyOf KeySelector
-}
-
-// KeySelector is used to filter keys.
-type KeySelector func(key string) bool
-```
-
+  - where [`Dependency`](https://github.com/ligato/vpp-agent/blob/73970d00f781ee136436d70cc8c9890742641c70/plugins/kvscheduler/api/kv_descriptor_api.go#L24) is defined as:
+    ```go
+    type Dependency struct {
+    	Label string
+    	Key string
+    	AnyOf KeySelector
+    }
+    
+    type KeySelector func(key string) bool
+    ```
 * for value that has one or more dependencies, provide a callback that will
   tell which keys must already exist for the value to be considered ready
   for creation
@@ -354,13 +338,14 @@ To remove this drawback, the KVScheduler is shipped with a utility called
 [descriptor-adapter][descriptor-adapter]. It generated an adapter for a given
 value type that will prepare and hide all the type conversions. The tool can
 be installed as follows:
-```
+
+```sh
 make get-desc-adapter-generator
 ```
 
 Then, to generate an adapter for your descriptor, put the `go:generate` command
 for the `descriptor-adapter` to (preferably) your plugin's main go file:
-```
+```go
 //go:generate descriptor-adapter --descriptor-name <your-descriptor-name>  --value-type <your-value-type-name> [--meta-type <your-metadata-type-name>] [--import <IMPORT-PATH>...] --output-dir "descriptor"
 ```
 Available arguments are:
@@ -399,7 +384,8 @@ Once you have your adapter generated and the CRUD callbacks prepared, you can
 initialize and register your descriptor.
 First, import the adapter into the go file with the descriptor
 ([assuming recommended directory layout](#plugin-directory-layout)):
-```
+
+```go
 import "github.com/<your-organization>/<your-agent>/plugins/<your-plugin>/descriptor/adapter"
 ```
 
@@ -407,7 +393,8 @@ Next, add a constructor that will return your descriptor initialized and ready f
 registration with the scheduler. The adapter will present the KVDescriptor API with
 the value type and metadata type already casted to your own data types for every 
 field:
-```
+
+```go
 func New<your-descriptor-name>Descriptor(<args>) *adapter.<your-descriptor-name>Descriptor {
     return &adapter.<your-descriptor-name>Descriptor{
         Name:        <your-descriptor-name>,
@@ -421,37 +408,40 @@ func New<your-descriptor-name>Descriptor(<args>) *adapter.<your-descriptor-name>
 Next, inside the `Init` method of your plugin, import the package with all your
 descriptors and register them using the 
 [KVScheduler.RegisterKVDescriptor(<DESCRIPTOR>)][register-kvdescriptor] method:
-
-```
+	
+```go
 import "github.com/<your-organization>/<your-agent>/plugins/<your-plugin>/descriptor"
 
 func (p *YourPlugin) Init() error {
     yourDescriptor1 = descriptor.New<descriptor-name>Descriptor(<args>)
     p.Deps.KVScheduler.RegisterKVDescriptor(yourDescriptor1)
-    ...
+    //...
 }
 ```
 
 As you can see, the KVScheduler becomes a plugin dependency, which needs to be
 properly injected:
-```
-\\\\ plugin main go file:
+
+```go
+// main.go
 import kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 
 type Deps struct {
     infra.PluginDeps
     KVScheduler kvs.KVScheduler
-    ...
+    //...
 }
+```
 
-\\\\ options.go
+```go
+// options.go
 import kvs "github.com/ligato/vpp-agent/plugins/kvscheduler"
 
 func NewPlugin(opts ...Option) *<your-plugin> {
     p := &<your-plugin>{}
-    // ...
+    //...
     p.KVScheduler = &kvs.DefaultPlugin
-    // ...
+    //...
     return p
 }
 ```
@@ -467,6 +457,7 @@ read-only. An example for VPP interface metadata map can be found
 
 While it is not mandatory, we recommend to follow the same directory layout used
 across all the VPP-Agent plugins:
+
 ```
 <your-plugin>/
 ├── model/  // + protobuf-generated code
@@ -537,7 +528,6 @@ implementing your own.
 
 **TODO: create and add links to "mock" descriptors to play with (mostly just
 skeletons and some printouts)**
-
 
 
 [existing-descriptors]: https://github.com/ligato/vpp-agent/wiki/KVDescriptors
