@@ -4,6 +4,7 @@
 - [Design](Design.md)
 - [Extensibility](Extensibility.md)
 - [KVScheduler](kvscheduler/README.md)
+- [Tutorials](tutorials/README.md)
 
 ## Wiki
 
