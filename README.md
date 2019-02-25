@@ -25,16 +25,15 @@ platform for developing customized VNFs with customized VPP-based data.
 |Latest stable release|[![Latest release](https://img.shields.io/github/release/ligato/vpp-agent.svg)](https://github.com/ligato/vpp-agent/releases/latest)|![Development release](https://img.shields.io/github/release-date/ligato/vpp-agent.svg?style=flat)|
 |Latest pre-release|[![Latest release](https://img.shields.io/github/release-pre/ligato/vpp-agent.svg)](https://github.com/ligato/vpp-agent/releases/latest)|![Development release](https://img.shields.io/github/release-date-pre/ligato/vpp-agent.svg?style=flat)|
 
-**Important info** :warning: 
-
-The `master` branch has moved to **[v2](https://github.com/ligato/vpp-agent/blob/master/CHANGELOG.md#v200)** 
-which introduces various breaking changes.
-
-The `dev` branch will be used for all the future development.
-
-The `pantheon-dev` branch is deprecated (v1) and will be removed in following weeks. 
-
 Please checkout [CHANGELOG](CHANGELOG.md) for a full list of changes on every every release.
+
+### Branches
+
+|Branch|Actual State|
+|---|---|
+|`master`|:warning: has **moved to v2**, introducing several [breaking changes](https://github.com/ligato/vpp-agent/blob/master/CHANGELOG.md#v200)|
+|`dev`|will be used for all the future **development**|
+|`pantheon-dev`|is **deprecated** (v1) and will be removed in the following weeks|
 
 ## Architecture
 
