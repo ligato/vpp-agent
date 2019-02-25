@@ -11,7 +11,7 @@ same Linux process.
 
 The VNF Agent architecture is shown in the following figure: 
 
-![vpp agent](/docs/imgs/vpp_agent.png "VPP Agent & plugins on top of CN-infra")
+![vpp agent](imgs/vpp_agent.png "VPP Agent & plugins on top of CN-infra")
 
 Each (northbound) VPP API - L2, L3, ACL, ... - is implemented by a specific
 VNF Agent plugin, which translates northbound API calls/operations into 
@@ -24,4 +24,4 @@ The following figure shows the VPP Agent in context of a cloud-native VNF,
 where the VNF's data plane is implemented using VPP/DPDK and 
 its management/control planes are implemented using the VNF agent:
 
-![context](/docs/imgs/context.png "VPP Agent & Plugins on top of CN-infra")
+![context](imgs/context.png "VPP Agent & Plugins on top of CN-infra")
