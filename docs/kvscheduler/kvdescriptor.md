@@ -229,17 +229,17 @@ Please note that all optional fields can be left uninitialized (zero values).
      Origin   ValueOrigin
  }
  ```
-* "R" from CRUD, implementing operation to read all the values in the scope of
-  the descriptor, truly configured in the SB plane at that moment
+* "R" from CRUD, implements the operation to read the real-time snapshot of the 
+  SB plane configuration for all values in descriptor's scope 
 * it is a key operation for state reconciliation (or as we call it - "resync"),
-  as it gives KVScheduler the ability to refresh it's view of SB and determine
-  the sequence of `Create`/`Update`/`Delete` operations needed to get the actual
-  state (SB) in-sync with the desired state (NB)
+  as it gives the KVScheduler the ability to refresh it's view of the SB and 
+  determine the sequence of `Create`/`Update`/`Delete` operations needed to get 
+  the actual state (SB) in-sync with the intended state (NB)
 * it is optional in the sense that, if not provided, it is assumed that the
   `Retrieve` operation is not supported and therefore the state of SB for the
   given value type cannot be refreshed and will be assumed to be up-to-date
-  (but especially after an agent restart this might not be the case)
-* input argument `correlate` represents the non-derived values currently created
+  (note that in particular after an agent restart this might not be the case)
+* the input argument `correlate` represents the non-derived values currently created
   or getting applied as viewed from the northbound/scheduler point of view:
     - startup resync: `correlate` = values received from NB to be applied
 	- run-time/downstream resync: `correlate` = cached values taken and applied
@@ -248,7 +248,7 @@ Please note that all optional fields can be left uninitialized (zero values).
 ### IsRetriableFailure
 
 * callback: `func(err error) bool`
-* optionally tell scheduler if the given error, returned by one of the
+* optionally tell the scheduler if a given error, returned by one of the
   `Create`/`Delete`/`Update` callbacks, will always be returned for the same
   value (non-retriable) or if the value can be theoretically fixed merely by
   repeating the operation (retriable)
@@ -267,8 +267,8 @@ Please note that all optional fields can be left uninitialized (zero values).
 
 * optional callback: `func(key string, value proto.Message) []KeyValuePair`
 * to break a complex value into multiple pieces managed separately by different
-  descriptors, implement and provide callback `DerivedValues`
-* derived value is typically a single field of the original value or its
+  descriptors, implement and provide the `DerivedValues` callback
+* a derived value is typically a single field of the original value or its
   property, with possibly its own dependencies (dependency on the source value
   is implicit, i.e. source value is created before its derived values), custom
   implementations for CRUD operations and potentially used as a target for
@@ -306,13 +306,13 @@ type Dependency struct {
 type KeySelector func(key string) bool
 ```
 
-* for value that has one or more dependencies, provide callback that will
+* for value that has one or more dependencies, provide a callback that will
   tell which keys must already exist for the value to be considered ready
   for creation
-* dependency can either reference a specific key, or use the predicate `AnyOf`,
-  which must return `true` for at least one of the keys of already created
-  values for the dependency to be considered satisfied (i.e. matching keys are
-  basically ORed)
+* for a dependency to be considered satisfied, the dependency can either 
+  reference a specific key or use the predicate `AnyOf`, which must return 
+  `true` for at least one of the keys of some already created values (i.e.
+  matching keys are basically ORed)
 * the callback is optional - if not defined, the kv-pairs of the descriptor
   are assumed to have no dependencies
 * multiple listed dependencies must all be satisfied - i.e. they are ANDed
@@ -329,12 +329,13 @@ type KeySelector func(key string) bool
 ### RetrieveDependencies
 
 * optional attribute, slice of strings
-* if, in order to `Retrieve` values, some other descriptors have to be have
-  their values refreshed first, here you can list them
+* if, in order to `Retrieve` values, some other descriptors must have
+  their respective values refreshed first, here you can list them woth this
+  attribute
 * [for example][vpp-route-retrieve-deps], in order to retrieve routes and
-  re-construct their configuration for NB models, interfaces have to be
-  retrieved first, to learn the mapping between interface names (NB ID)
-  and their indexes (SB ID) from the metadata map of the interface plugin
+  re-construct their configuration for NB models, interfaces must be retrieved
+  first, to learn the mapping between interface names (NB ID) and their indices
+  (SB ID) from the metadata map of the interface plugin
   - this is because the retrieved routes will reference outgoing interfaces
     through SB indexes, which need to be [translated into the logical names from
     NB][vpp-route-iface-name]
@@ -357,8 +358,8 @@ The tool can be installed with:
 make get-desc-adapter-generator
 ```
 
-Then, to generate adapter for your descriptor, put `go:generate` command for
-`descriptor-adapter` to (preferably) your plugin's main go file:
+Then, to generate an adapter for your descriptor, put `go:generate` command for
+the `descriptor-adapter` to (preferably) your plugin's main go file:
 ```
 //go:generate descriptor-adapter --descriptor-name <your-descriptor-name>  --value-type <your-value-type-name> [--meta-type <your-metadata-type-name>] [--import <IMPORT-PATH>...] --output-dir "descriptor"
 ```
