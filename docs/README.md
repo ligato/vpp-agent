@@ -25,11 +25,11 @@ platform for developing customized VNFs with customized VPP-based data.
 - [Release Changelog](https://github.com/ligato/vpp-agent/blob/master/CHANGELOG.md) contains list of changes for released versions.
 
 ### Development with VPP Agent
-- [Development Guide](https://github.com/ligato/vpp-agent/wiki/user-guide) is the best place to start for developers.
+- [Development Guide](https://github.com/ligato/vpp-agent/wiki/development-guide) is the best place to start for developers.
 - [Examples](https://github.com/ligato/vpp-agent/blob/master/examples/README.md) contains various examples.
-- [KVScheduler](kvscheduler/README.md) provides documentation to KVScheduler.
+- [KVScheduler](kvscheduler/README.md) contains developer guide for KVScheduler.
+- [Testing](https://github.com/ligato/vpp-agent/wiki/testing/Testing) contains information about integration tests.
 - [GoDocs](https://godoc.org/github.com/ligato/vpp-agent) provides auto-generated code documentation.
-- [Testing](https://github.com/ligato/vpp-agent/wiki/testing/Testing) contains information for testers about integration tests.
 
 [fdio-vpp]: https://fd.io/technology/#vpp
 [vnf]: https://github.com/ligato/cn-infra/blob/master/docs/readmes/cn_virtual_function.md
