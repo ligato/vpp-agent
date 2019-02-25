@@ -14,20 +14,20 @@ based on off-the-shelf VPP (e.g. a VPP-based vswitch), or as a
 platform for developing customized VNFs with customized VPP-based data.
 
 ### Introduction to VPP Agent
-- [Architecture](/docs/Architecture.md) describes architecture of VPP Agent.
-- [Design](/docs/Design.md) describes VPP Agent design.
-- [Deployment](/docs/Deployment.md) provides information about deployment options.
+- [Architecture](Architecture.md) describes architecture of VPP Agent.
+- [Design](Design.md) describes VPP Agent design.
+- [Deployment](Deployment.md) provides information about deployment options.
   
 ### Getting started with VPP Agent
 - [User Guide](https://github.com/ligato/vpp-agent/wiki/user-guide) is the best place to start for users.
-- [Tutorials](/docs/tutorials/README.md) will show you step-by-step tutorials.
+- [Tutorials](tutorials/README.md) will show you step-by-step tutorials.
 - [Troubleshooting](https://github.com/ligato/vpp-agent/wiki/FAQ) contains list of commonly encountered problems.
-- [Release Changelog](/CHANGELOG.md) contains list of changes for released versions.
+- [Release Changelog](https://github.com/ligato/vpp-agent/blob/master/CHANGELOG.md) contains list of changes for released versions.
 
 ### Development with VPP Agent
 - [Development Guide](https://github.com/ligato/vpp-agent/wiki/user-guide) is the best place to start for developers.
-- [Examples](/examples/README.md) contains various examples.
-- [KVScheduler](/docs/kvscheduler/README.md) provides documentation to KVScheduler.
+- [Examples](https://github.com/ligato/vpp-agent/blob/master/examples/README.md) contains various examples.
+- [KVScheduler](kvscheduler/README.md) provides documentation to KVScheduler.
 - [GoDocs](https://godoc.org/github.com/ligato/vpp-agent) provides auto-generated code documentation.
 - [Testing](https://github.com/ligato/vpp-agent/wiki/testing/Testing) contains information for testers about integration tests.
 
