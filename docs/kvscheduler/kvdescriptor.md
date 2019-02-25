@@ -158,7 +158,7 @@ Please note that all optional fields can be left uninitialized (zero values).
 ### Create
 
 * callback: `func(key string, value proto.Message) (metadata interface{}, err error)`
-* "C" from CRUD, implementing operation to create a new value
+* "C" from CRUD, implements the operation to create a new value
 * **mandatory for descriptors that describe values received from NB**, but
   optional for descriptors with only `OBTAINED` values in their scope - i.e.
   values received from SB via notifications as already created
@@ -175,7 +175,7 @@ Please note that all optional fields can be left uninitialized (zero values).
 ### Delete
 
 * callback: `func(key string, value proto.Message, metadata Metadata) error`
-* "D" from CRUD, implementing operation to delete an existing value
+* "D" from CRUD, implements the operation to delete an existing value
 * **mandatory for descriptors that describe values received from NB**, but
   optional for descriptors with only `OBTAINED` values in their scope - i.e.
   values received from SB via notifications as already created
@@ -190,30 +190,29 @@ Please note that all optional fields can be left uninitialized (zero values).
 ### Update
 
 * callback: `func(key string, oldValue, newValue proto.Message, oldMetadata interface{}) (newMetadata interface{}, err error)`
-* "U" from CRUD, implementing operation to update an existing value
+* "U" from CRUD, implements the operation to update an existing value
 * the callback is optional - if undefined, updates will be always performed
-  via re-creation, i.e. `Delete(key, oldValue, oldMetadata)` followed by
+  via re-creation, i.e. calling `Delete(key, oldValue, oldMetadata)` followed by
   `newMetadata, err = Create(key, newValue)`
 * the current value metadata, passed to the callback as `oldMetadata`, can be
   edited in-place (i.e. without deep-copying) and returned as `newMetadata`
-* not all the configuration updates are supported by SB to apply incrementally
-  \- for example, changing interface type (e.g. going from VETH to TAP) cannot
+* sometimes an SB does not support incremental configuration updates - for 
+  example, changing the interface type (e.g. going from VETH to TAP) cannot
   be done without fully re-creating the interface - on the other hand, Linux
-  [interface host name can be changed][linux-rename-interface] via dedicated
+  [interface host name can be changed][linux-rename-interface] via a dedicated
   netlink call
 
 ### UpdateWithRecreate
 
 * optional callback: `func(key string, oldValue, newValue proto.Message, oldMetadata interface{}) (newMetadata interface{}, err error)`
-* sometimes, for some or all kinds of updates, SB plane does not provide
-  specific Update operations, instead the value has to be re-created,
-  i.e. calling `Delete(key, oldValue, oldMetadata)` followed by
-  `newMetadata, err = Create(key, newValue)`
-* through this callback the KVScheduler can be informed if the given value
-  change requires full re-creation
-* if not defined, KVScheduler will decide based on the (un)availability of the
-  `Update` operation - if provided, it is assumed that any change can be applied
-  incrementally, otherwise a full re-creation is the only way to go
+* sometimes, for some or all kinds of its updates, an SB plane does not provide
+  specific Update operations; instead, the value must be re-created, by calling
+  `Delete(key, oldValue, oldMetadata)` followed by `newMetadata, err = Create(key, newValue)`
+* through this callback the KVScheduler can be informed if a given value change
+  requires full re-creation
+* if not defined, the KVScheduler will decide based on the (un)availability of 
+  the `Update` operation - if provided, it is assumed that any change can be 
+  applied incrementally, otherwise a full re-creation is the only way to go
 * [for example][vpp-iface-recreate], changing VPP interface type (e.g. going
   from MEMIF to TAP) cannot be done without fully re-creating the interface
 
