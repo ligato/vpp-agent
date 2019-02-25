@@ -19,35 +19,36 @@ A full list of existing descriptors can be found [here][existing-descriptors].
 This design pattern improves modularity and extensibility - VPP Agent v2 is a
 collection of loosely coupled plugins to which new plugins that extend the 
 Agent's functionality can be easily added. The KVScheduler is not even limited 
-to either VPP or Linux as the SB plane. Actually, a control plane for any system
-whose configuration and status stanzas can be represented as key-value pairs and
-can be operated upon via CRUD operations can be integrated with this framework. 
+to either VPP or Linux as the SB plane. Actually, we can integrated with this
+framework any control plane for any system whose configuration and status is 
+represented as key-value pairs that can be operated upon via CRUD operations.
+
 The rest of this document provides a step-by-step guide on how to implement your
 own KVDescriptor and register it with the KVScheduler.
 
 ## Descriptor API
 
 Let's start first by understanding the [descriptor API][descriptor-api].
-First of all, descriptor is not an interface that needs to be implemented, but
-rather a structure to be initialized with the right attribute values and callbacks
-to CRUD operations. This was chosen to reinforce the fact that descriptors are
-meant to be **stateless** - the state of values is instead kept by the scheduler
-and run-time information can be stored into the [metadata][kvscheduler-terminology],
-optionally carried with each value. The state of the graph with values and their
-metadata should determine what exactly will be executed next in the SB plane
-for a given transaction.
-The graph is already exposed via formatted logs and programming+REST APIs,
-therefore if descriptors do not hide any state internally, the system state will
-be fully visible from the outside.
+First of all, a descriptor is not an interface that needs to be implemented, but
+rather a structure that needs to be properly initialized with attributes and
+callbacks to CRUD operations. This approach was chosen to reinforce the fact 
+that descriptors are meant to be **stateless** - the state of values is instead 
+kept by the scheduler and run-time information can be stored in 
+[metadata][kvscheduler-terminology] that is optionally carried with each value. 
+The state of the graph with values and their metadata should determine what 
+exactly will be executed next in the SB plane for a given transaction. The graph
+is already exposed through logs and programmatic and REST APIs, therefore if 
+descriptors do not store any state internally, the system state will be fully 
+visible from the outside.
 
-What follows is a list of all descriptor attributes, split across sub-sections,
-each with a detailed explanation and pointers to examples. Optional fields can
-be left uninitialized (zero values).
+The following sub-sections describe all descriptor attributes inf detail and 
+provide pointers to examples. 
 
 Please note that using [descriptor adapters](#descriptor-adapter), the signatures
 of the callbacks will become adapted to use the real proto message type
 (e.g. `*vpp_l3.Route`) as opposed to the bare `proto.Message` interface, avoiding
-all the boiler-plate type casting.
+all the boiler-plate type casting. Note also that optional fields can be left 
+uninitialized (zero values).
 
 **Note**: `KeySelector`, `ValueTypeName`, `KeyLabel` & `NBKeyPrefix`
 will all be replaced in a future release with a single reference to the value
