@@ -49,7 +49,7 @@ func (tx *bytesTxn) Delete(key string) keyval.BytesTxn {
 // Commit commits all operations in a transaction to the data store.
 // Commit is atomic - either all operations in the transaction are
 // committed to the data store, or none of them.
-func (tx *bytesTxn) Commit() error {
-	_, err := tx.kv.Txn(context.Background()).Then(tx.ops...).Commit()
+func (tx *bytesTxn) Commit(ctx context.Context) error {
+	_, err := tx.kv.Txn(ctx).Then(tx.ops...).Commit()
 	return err
 }

@@ -57,7 +57,7 @@ func (c *client) ResyncConfig(items ...proto.Message) error {
 		txn.Put(key, item)
 	}
 
-	return txn.Commit()
+	return txn.Commit(context.Background())
 }
 
 func (c *client) GetConfig(dsts ...interface{}) error {
@@ -108,7 +108,7 @@ func (r *changeRequest) Send(ctx context.Context) error {
 	if r.err != nil {
 		return r.err
 	}
-	return r.txn.Commit()
+	return r.txn.Commit(ctx)
 }
 
 // ProtoTxnFactory defines interface for keyval transaction provider.

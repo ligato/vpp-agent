@@ -11,6 +11,7 @@ import (
 	"github.com/ligato/cn-infra/db/keyval/kvproto"
 	"github.com/ligato/cn-infra/examples/etcd-lib/model/phonebook"
 	"github.com/ligato/cn-infra/logging/logrus"
+	"context"
 )
 
 const (
@@ -95,7 +96,7 @@ func putTxn(db keyval.ProtoBroker, data string) {
 		txn.Put(key, &contacts[i])
 	}
 
-	txn.Commit()
+	txn.Commit(context.Background())
 
 }
 

@@ -20,6 +20,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"context"
 
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/logging/logrus"
@@ -97,7 +98,7 @@ func (adapter *Registry) Watch(resyncName string, changeChan chan datasync.Chang
 }
 
 // PropagateChanges fills registered channels with the data.
-func (adapter *Registry) PropagateChanges(txData map[string]datasync.ChangeValue) error {
+func (adapter *Registry) PropagateChanges(ctx context.Context, txData map[string]datasync.ChangeValue) error {
 	var events []func(done chan error)
 
 	for _, sub := range adapter.subscriptions {
@@ -138,6 +139,7 @@ func (adapter *Registry) PropagateChanges(txData map[string]datasync.ChangeValue
 			sendTo := func(sub *Subscription) func(done chan error) {
 				return func(done chan error) {
 					sub.ChangeChan <- &ChangeEvent{
+						ctx:      ctx,
 						Changes:  changes,
 						delegate: &DoneChannel{done},
 					}
@@ -156,7 +158,7 @@ func (adapter *Registry) PropagateChanges(txData map[string]datasync.ChangeValue
 			return err
 		}
 	case <-time.After(PropagateChangesTimeout):
-		logrus.DefaultLogger().Warnf("Timeout of aggregated change callback (%v)",
+		logrus.DefaultLogger().Warnf("Timeout of aggregated data-change callbacks (%v)",
 			PropagateChangesTimeout)
 	}
 
@@ -164,11 +166,12 @@ func (adapter *Registry) PropagateChanges(txData map[string]datasync.ChangeValue
 }
 
 // PropagateResync fills registered channels with the data.
-func (adapter *Registry) PropagateResync(txData map[string]datasync.ChangeValue) error {
+func (adapter *Registry) PropagateResync(ctx context.Context, txData map[string]datasync.ChangeValue) error {
+	var events []func(done chan error)
 	adapter.lastRev.Cleanup()
 
 	for _, sub := range adapter.subscriptions {
-		resyncEv := NewResyncEventDB(map[string]datasync.KeyValIterator{})
+		items := map[string]datasync.KeyValIterator{}
 
 		for _, prefix := range sub.KeyPrefixes {
 			var kvs []datasync.KeyVal
@@ -185,10 +188,34 @@ func (adapter *Registry) PropagateResync(txData map[string]datasync.ChangeValue)
 					})
 				}
 			}
-
-			resyncEv.its[prefix] = NewKVIterator(kvs)
+			items[prefix] = NewKVIterator(kvs)
 		}
-		sub.ResyncChan <- resyncEv //TODO default and/or timeout
+
+		sendTo := func(sub *Subscription) func(done chan error) {
+			return func(done chan error) {
+				sub.ResyncChan <- &ResyncEventDB{
+					ctx:         ctx,
+					its:         items,
+					DoneChannel: NewDoneChannel(done),
+				}
+			}
+		}
+		events = append(events, sendTo(sub))
+	}
+
+	done := make(chan error, 1)
+	go AggregateDone(events, done)
+
+	select {
+	case err := <-done:
+		if err != nil {
+			return err
+		}
+
+	// TODO: maybe higher timeout for resync event?
+	case <-time.After(PropagateChangesTimeout):
+		logrus.DefaultLogger().Warnf("Timeout of aggregated resync callbacks (%v)",
+			PropagateChangesTimeout)
 	}
 
 	return nil

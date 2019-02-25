@@ -69,13 +69,12 @@ func NewFIBDescriptor(fibHandler vppcalls.FIBVppAPI, log logging.PluginLogger) *
 // the KVScheduler.
 func (d *FIBDescriptor) GetDescriptor() *adapter.FIBDescriptor {
 	return &adapter.FIBDescriptor{
-		Name:            FIBDescriptorName,
-		NBKeyPrefix:     l2.ModelFIBEntry.KeyPrefix(),
-		ValueTypeName:   l2.ModelFIBEntry.ProtoName(),
-		KeySelector:     l2.ModelFIBEntry.IsKeyValid,
-		KeyLabel:        l2.ModelFIBEntry.StripKeyPrefix,
-		ValueComparator: d.EquivalentFIBs,
-		// NB keys already covered by the prefix for bridge domains
+		Name:                 FIBDescriptorName,
+		NBKeyPrefix:          l2.ModelFIBEntry.KeyPrefix(),
+		ValueTypeName:        l2.ModelFIBEntry.ProtoName(),
+		KeySelector:          l2.ModelFIBEntry.IsKeyValid,
+		KeyLabel:             l2.ModelFIBEntry.StripKeyPrefix,
+		ValueComparator:      d.EquivalentFIBs,
 		Validate:             d.Validate,
 		Create:               d.Create,
 		Delete:               d.Delete,

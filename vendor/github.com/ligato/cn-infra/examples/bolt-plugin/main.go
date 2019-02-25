@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log"
 
 	"github.com/ligato/cn-infra/agent"
@@ -43,7 +44,7 @@ func (p *BoltExample) Init() (err error) {
 	txn := db.NewTxn()
 	txn.Put("/agent/config/interface/iface0", nil)
 	txn.Put("/agent/config/interface/iface1", nil)
-	txn.Commit()
+	txn.Commit(context.Background())
 
 	// List keys
 	const listPrefix = "/agent/config/interface/"

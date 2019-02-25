@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package model;
+
+// generate method XXX_MessageName() for every defined proto message, which
+// the agent needs to obtain the message name inside init(), even before the
+// message type is registered with proto.RegisterType()
+import "github.com/gogo/protobuf/gogoproto/gogo.proto";
+option (gogoproto.messagename_all) = true;
+
+message ValueSkeleton {
+    /*
+      logical name is often defined to build unique keys for value instances
+       - alternativelly, in the value model (keys.go), you may apply the
+         WithNameTemplate() option to generate value instance name using a golang
+         template, combining multiple value attributes that collectively
+         guarantee unique value identification (i.e. primary key)
+      */
+    string name = 1;
+};
+

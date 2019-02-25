@@ -62,10 +62,11 @@ registering new descriptors.
 The graph-based system representation uses new terminology to abstract from
 concrete objects:
 
-* **Model** builds a representation for a single item type (e.g. interface, route,
-  bridge domain, etc.); it uses a Protobuf Message to structure and serialize
-  configuration data, further coupled with meta-specification used
-  to categorize the item type and to build/parse keys for/of item instances
+* <a name="model"></a> **Model** builds a representation for a single item type
+  (e.g. interface, route, bridge domain, etc.); it uses a Protobuf Message to
+  structure and serialize configuration data, further coupled with
+  meta-specification used to categorize the item type and to build/parse keys
+  for/of item instances
   (for example, the Bridge Domain model can be found [here][bd-model-example]).
   
   **TODO: add link to the model documentation once it exists**
@@ -91,18 +92,18 @@ concrete objects:
   updates can be read and watched for via the [KVScheduler API][value-states-api].
   More information on this API can be found [below](#API).
 
-* **Metadata** (`interface{}`) is additional run-time information (of undefined
-  type) assigned to a value. It is typically updated after a CRUD operation or 
-  after agent restart. An example of metadata is the [sw_if_index][vpp-iface-idx],
-  which is kept for every interface alongside its value. The name "metadata" was
-  inherited from VPP-Agent v1.x and it is rather a misnomer - metadata is in fact
-  the "state data" for its associated value. Furthermore, in a future release we 
-  plan to support user-defined metadata labels - an extensible meta-information, 
-  assigned to key-value pairs by the NB to describe the semantic purpose of 
-  configuration items for layers above the KVScheduler (i.e. opaque to the scheduling
-  algorithm). Metadata will be renamed to **Statedata**, and it will be allowed to 
-  change not only through CRUD operations, but also asynchronously through 
-  notifications.
+* <a name="metadata"></a> **Metadata** (`interface{}`) is additional run-time
+  information (of undefined type) assigned to a value. It is typically updated
+  after a CRUD operation or after agent restart. An example of metadata is the
+  [sw_if_index][vpp-iface-idx], which is kept for every interface alongside its
+  value. The name "metadata" was inherited from VPP-Agent v1.x and it is rather
+  a misnomer - metadata is in fact the "state data" for its associated value.
+  Furthermore, in a future release we plan to support user-defined metadata
+  labels - an extensible meta-information, assigned to key-value pairs by the NB
+  to describe the semantic purpose of configuration items for layers above the
+  KVScheduler (i.e. opaque to the scheduling algorithm). Metadata will be renamed
+  to **Statedata**, and it will be allowed to change not only through CRUD
+  operations, but also asynchronously through notifications.
 
 * **Metadata Map**, also known as index-map, implements the mapping between a value
   label and its metadata for a given value type. It is typically exposed in read-only
@@ -112,9 +113,10 @@ concrete objects:
   interfaces. Metadata maps are automatically created and updated by scheduler (it
   is the owner), and exposed to other plugins in read-only mode.
 
-* **[Value origin][value-origin]** defines where the value came from - whether
-  it was received as configuration from the NB. or whether it was automatically
-  created in the SB plane (e.g. default routes, the loop0 interface, etc.).
+* <a name="value-origin"></a>  **[Value origin][value-origin]** defines where
+  the value came from - whether it was received as configuration from the NB or
+  whether it was automatically created in the SB plane (e.g. default routes,
+  the loop0 interface, etc.).
 
 * **Key-value pairs** are operated on through CRUD operations: **C**reate,
   **R**etrieve, **U**pdate and **D**elete.
@@ -136,20 +138,21 @@ concrete objects:
   blocking the rest of the bridge domain to be applied - see [control-flow][bd-cfd]
   demonstrating the order of operations needed to create a bridge domain.
 
-* **Graph** of values is a kvscheduler-internal in-memory storage for all
-  configured and pending key-value pairs, where graph edges represent inter-value
-  relations, such as "depends-on" or "is-derived-from", and graph nodes are the
-  key-value pairs themselves.
+* <a name="graph"></a> **Graph** of values is a kvscheduler-internal in-memory
+  storage for all configured and pending key-value pairs, where graph edges
+  represent inter-value relations, such as "depends-on" or "is-derived-from",
+  and graph nodes are the key-value pairs themselves.
   
   *Note:* configurators - now just "plugins" - no longer have to implement their
   own caches for pending values.  
   
-* **Graph Refresh** is a process of updating the graph content to reflect the
-  real state of the Southbound. This is achieved by calling the `Retrieve` 
-  function of every descriptor that supports the `Retrieve` operation and
-  adding/updating graph vertices with the retrieved values. Refresh is performed
-  just before the [Full or Downstream resync](#resync) or after a failed C(R)UD 
-  operation(s), but only for vertices affected by the failure.
+* <a name="graph-refresh"></a> **Graph Refresh** is a process of updating
+  the graph content to reflect the real state of the Southbound. This is achieved
+  by calling the `Retrieve` function of every descriptor that supports the
+  `Retrieve` operation and adding/updating graph vertices with the retrieved
+  values. Refresh is performed just before the [Full or Downstream resync](#resync)
+  or after a failed C(R)UD operation(s), but only for vertices affected by the
+  failure.
 
 * **KVDescriptor** provides implementations of CRUD operations for a single value
   type and registers them with the KVScheduler. It also defines derived values 
@@ -375,7 +378,7 @@ only via formatted logs but also through a set of REST APIs:
 [bd-iface-deps]: https://github.com/ligato/vpp-agent/blob/e8e54ef67b666e57ffef1bca555c8ce5585f215f/plugins/vpp/l2plugin/descriptor/bd_interface.go#L120-L127
 [bd-cfd]: cfd/bridge_domain.md
 [contiv-vpp]: https://github.com/contiv/vpp/
-[graph-example]: img/graph-example.svg
+[graph-example]: img/large-graph-example.svg
 [clientv2]: https://github.com/ligato/vpp-agent/tree/master/clientv2
 [value-states]: https://github.com/ligato/vpp-agent/blob/master/plugins/kvscheduler/api/value_status.proto
 [value-states-api]: https://github.com/ligato/vpp-agent/blob/e8e54ef67b666e57ffef1bca555c8ce5585f215f/plugins/kvscheduler/api/kv_scheduler_api.go#L233-L239
