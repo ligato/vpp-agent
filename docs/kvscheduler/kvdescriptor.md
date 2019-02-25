@@ -47,8 +47,7 @@ provide pointers to examples.
 Please note that using [descriptor adapters](#descriptor-adapter), the signatures
 of the callbacks will become adapted to use the real proto message type
 (e.g. `*vpp_l3.Route`) as opposed to the bare `proto.Message` interface, avoiding
-all the boiler-plate type casting. Note also that optional fields can be left 
-uninitialized (zero values).
+all the boiler-plate type casting. 
 
 **Note**: `KeySelector`, `ValueTypeName`, `KeyLabel` & `NBKeyPrefix`
 will all be replaced in a future release with a single reference to the value
@@ -58,31 +57,34 @@ to define these fields. But we do not yet have tools to build models for
 [derived values](#derivedvalues) and without them we cannot fully switch
 to models.
 
+Please note that all optional fields can be left uninitialized (zero values).
+
 ### Name
 
 * `string` attribute, **mandatory**
 * name (ID) of the descriptor
-* it should be unique across all registered descriptors from all initialized
+* it MUST be unique across all registered descriptors from all initialized
   plugins
 
 ### NBKeyPrefix
 
 * `string` attribute, optional
-* key prefix that the scheduler should watch in NB (e.g. `etcd`) to receive all
-  values described by this descriptor
+* key prefix that the scheduler should watch in an NB (for example, `etcd`) to receive
+  all values described by this descriptor
 * descriptors for derived values do not need to define this field - the values
   they describe do not come from NB directly, instead get derived from other
-  values which are in the scope of other descriptors
+  values which are in scope of other descriptors
 * [model][kvscheduler-terminology] can be used to obtain the key prefix
-  using `KeyPrefix()` method - [here is an example][nb-key-prefix]
+  using the `KeyPrefix()` method - [here is an example][nb-key-prefix]
 
 ### KeySelector
 
 * **mandatory** callback: `func(key string) bool`
 * a predicate that should select (i.e. return true) for keys identifying values
-  described by the given descriptor
-* typically, selector uses `IsKeyValid` from the value [model][kvscheduler-terminology]
-  to check if the key is valid for the model - [here is an example][key-selector]
+  described by this descriptor
+* typically, a selector uses the `IsKeyValid` method from the value 
+  [model][kvscheduler-terminology] to check if the key is valid for the model 
+  \- [here is an example][key-selector]
 
 ### ValueTypeName
 
@@ -94,26 +96,26 @@ to models.
 ### KeyLabel
 
 * optional callback: `func(key string) string`
-* "a key shortener" - function that will receive a key and should return value
+* "a key shortener" - function that will receive a key and should return a value
    identifier, that, unlike the original key, only needs to be unique in the
    key scope of the descriptor and not necessarily in the entire key space
    (e.g. interface name rather than the full key)
-* [model][kvscheduler-terminology] provides key shortener off-the-shelf with
-  the method `StripKeyPrefix()` - [here is an example][key-label]
-* if defined, key label will be used as value identifier in the metadata map
-  (it then for example allows to ask for interface metadata simply by the
+* [model][kvscheduler-terminology] provides an off-the-shelf key shortener
+  method `StripKeyPrefix()` - [here is an example][key-label]
+* if defined, KeyLabel will be used as value identifier in the metadata map
+  (it then, for example, allows to ask for interface metadata simply by the
   interface name rather than using a full key)
 
 ### ValueComparator
 
 * optional callback: `func(key string, oldValue, newValue proto.Message) bool`
 * allows to optionally customize how two values are compared for equality
-* normally, the scheduler compares two values of the same key using `proto.Equal`
-  to determine if `Update` operation is needed
+* typically, the scheduler will compare two values of the same key using the 
+  `proto.Equal`method to determine if the `Update` operation is needed
 * sometimes, however, different values for the same field may be effectively
-  equivalent - [for example][compare-mtu], MTU 0 (default) might want to be
-  treated as equivalent to MTU 1500 (i.e. change from 0 to 1500 or vice-versa
-  should not trigger `Update`)
+  equivalent - [for example][compare-mtu], we want to treat MTU 0 (default)
+  as equivalent to MTU 1500 (i.e. change from 0 to 1500 or vice-versa should 
+  not trigger an `Update`)
 
 ### WithMetadata
 
@@ -125,8 +127,7 @@ to models.
 * metadata are often used in [Retrieve](#retrieve) to correlate NB configuration
   with retrieved SB data
 * metadata are not supported with [derived values](#derivedvalues)
-* **note**: in a future release the term "metadata" will be renamed to "statedata",
-  which is more fitting
+* **note**: in a future release the term "metadata" will be renamed to "statedata"
 
 ### MetadataMapFactory
 
@@ -136,8 +137,8 @@ to models.
 * if not defined, the scheduler will use the bare [NamedMapping][named-mapping]
   from the idxmap package
 * for example, VPP [ifplugin][vpp-ifplugin] implements custom map called
-  [ifaceidx][vpp-ifaceidx], which allows to [lookup interfaces by the assigned
-  IP addresses][vpp-iface-by-ip] among other things
+  [ifaceidx][vpp-ifaceidx], which allows to [lookup interfaces by assigned
+  IP addresses][vpp-iface-by-ip], among other things
 
 ### Validate
 
@@ -163,9 +164,9 @@ to models.
   values received from SB via notifications as already created
 * for non-derived values, descriptor may return metadata to associate with
   the value
-* KVScheduler ensures that all the dependencies are satisfied when the Create
-  is being called
-* for example, descriptor for VPP ARP entries simply [adds new ARP entry][vpp-arp-create]
+* KVScheduler ensures that all dependencies are satisfied when the Create
+  callback is called
+* for example, the descriptor for VPP ARP entries simply [adds new ARP entry][vpp-arp-create]
   defined by the value with configuration - it knows that the associated
   interface it depends on is guaranteed to already exist by the scheduling
   algorithm and can therefore [read the interface index from its metadata][vpp-arp-get-iface-index],
@@ -178,13 +179,13 @@ to models.
 * **mandatory for descriptors that describe values received from NB**, but
   optional for descriptors with only `OBTAINED` values in their scope - i.e.
   values received from SB via notifications as already created
-* KVScheduler ensures that all the items that depend on a value which is being
-  removed are deleted first and put into the `PENDING` state
-* for example, descriptor for VPP ARP entries simply [removes existing ARP entry][vpp-arp-delete],
+* KVScheduler ensures that all items that depend on a value which is being
+  removed are deleted first and their state is set to `PENDING`
+* for example, the descriptor for VPP ARP entries simply [removes existing ARP entry][vpp-arp-delete],
   knowing that the scheduling algorithm guarantees that the associated interfaces,
   marked as a dependency of the ARP entry, will not be removed before the
-  ARP and therefore the interface index, needed to build the delete request for
-  VPP, can still be [read from the interfaces metadata][vpp-arp-get-iface-index]
+  ARP entry and therefore the interface index that is required to build the
+  delete request for VPP, can still be [read from the interfaces metadata][vpp-arp-get-iface-index]
 
 ### Update
 
