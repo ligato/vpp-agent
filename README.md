@@ -1,13 +1,11 @@
 # VPP Agent
 
-[![Latest release](https://img.shields.io/github/release/ligato/vpp-agent.svg)](https://github.com/ligato/vpp-agent/releases/latest)
+![GitHub last commit](https://img.shields.io/github/last-commit/ligato/vpp-agent.svg) 
 [![Build Status](https://travis-ci.org/ligato/vpp-agent.svg?branch=master)](https://travis-ci.org/ligato/vpp-agent)
 [![Coverage Status](https://coveralls.io/repos/github/ligato/vpp-agent/badge.svg?branch=master)](https://coveralls.io/github/ligato/vpp-agent?branch=master)
 [![Go Report Card](https://goreportcard.com/badge/github.com/ligato/vpp-agent)](https://goreportcard.com/report/github.com/ligato/vpp-agent)
 [![GoDoc](https://godoc.org/github.com/ligato/vpp-agent?status.svg)](https://godoc.org/github.com/ligato/vpp-agent)
 [![GitHub license](https://img.shields.io/badge/license-Apache%20license%202.0-blue.svg)](https://github.com/ligato/vpp-agent/blob/master/LICENSE)
-
-###### Please note that the content of this repository is currently **WORK IN PROGRESS**.
 
 The VPP Agent is a Go implementation of a control/management plane for
 [VPP][1] based cloud-native [Virtual Network Functions][2] (VNFs). The VPP
@@ -18,22 +16,24 @@ The VPP Agent can be used as-is as a management/control agent for VNFs
 based on off-the-shelf VPP (e.g. a VPP-based vswitch), or as a
 platform for developing customized VNFs with customized VPP-based data.
 
+###### Please note that the content of this repository is currently **WORK IN PROGRESS**!
+
 ### Releases
 
 |Release|Version|Date|
-|---|---|---|
-|Latest stable release|[![Latest release](https://img.shields.io/github/release/ligato/vpp-agent.svg)](https://github.com/ligato/vpp-agent/releases/latest)|![Development release](https://img.shields.io/github/release-date/ligato/vpp-agent.svg?style=flat)|
-|Latest pre-release|[![Latest release](https://img.shields.io/github/release-pre/ligato/vpp-agent.svg)](https://github.com/ligato/vpp-agent/releases/latest)|![Development release](https://img.shields.io/github/release-date-pre/ligato/vpp-agent.svg?style=flat)|
+|---|:---:|---|
+|Latest release|[![Latest release](https://img.shields.io/github/release/ligato/vpp-agent.svg)](https://github.com/ligato/vpp-agent/releases/latest)|![Release date](https://img.shields.io/github/release-date/ligato/vpp-agent.svg?style=flat)|
+|Latest pre-release|[![Latest pre-release](https://img.shields.io/github/release-pre/ligato/vpp-agent.svg)](https://github.com/ligato/vpp-agent/releases)|![Release date](https://img.shields.io/github/release-date-pre/ligato/vpp-agent.svg?style=flat)|
 
-Please checkout [CHANGELOG](CHANGELOG.md) for a full list of changes on every every release.
+For complete list of changes for each release, see [CHANGELOG](CHANGELOG.md).
 
 ### Branches
 
-|Branch|Actual State|
-|---|---|
-|`master`|:warning: has **moved to v2**, introducing several [breaking changes](https://github.com/ligato/vpp-agent/blob/master/CHANGELOG.md#v200)|
-|`dev`|will be used for all the future **development**|
-|`pantheon-dev`|is **deprecated** (v1) and will be removed in the following weeks|
+|Branch|Activity|Info|
+|---:|:---:|---|
+|`master`|![GitHub last commit (branch)](https://img.shields.io/github/last-commit/ligato/vpp-agent/master.svg)| has **moved to v2**, introducing several [breaking changes](https://github.com/ligato/vpp-agent/blob/master/CHANGELOG.md#v200) :warning:|
+|`dev`|![GitHub last commit (branch)](https://img.shields.io/github/last-commit/ligato/vpp-agent/dev.svg)|will be used for all the future **development**|
+|`pantheon-dev`|![GitHub last commit (branch)](https://img.shields.io/github/last-commit/ligato/vpp-agent/pantheon-dev.svg)|has been **deprecated** (v1) and will be removed in the following weeks|
 
 ## Architecture
 
