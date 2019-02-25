@@ -20,8 +20,6 @@ platform for developing customized VNFs with customized VPP-based data.
 
 ### Releases
 
-![GitHub commits since latest release](https://img.shields.io/github/commits-since/ligato/vpp-agent/latest.svg)
-
 |Release|Release Date|
 |:---:|:---:|
 |[![Latest release](https://img.shields.io/github/release/ligato/vpp-agent.svg?label=latest%20release)](https://github.com/ligato/vpp-agent/releases/latest)|![Release date](https://img.shields.io/github/release-date/ligato/vpp-agent.svg?label=)|
@@ -30,9 +28,6 @@ platform for developing customized VNFs with customized VPP-based data.
 For complete list of changes for each release, see [CHANGELOG](CHANGELOG.md).
 
 ### Branches
-
-![GitHub commit activity](https://img.shields.io/github/commit-activity/w/ligato/vpp-agent.svg)
-![GitHub last commit](https://img.shields.io/github/last-commit/ligato/vpp-agent.svg) 
 
 |Branch|Last Commit|Info|
 |---:|:---:|---|
