@@ -502,7 +502,7 @@ Delete ARP
 Put Linux ARP With Namespace
     [Arguments]    ${node}    ${interface}    ${arpname}    ${ipv4}    ${MAC}    ${nsname}    ${nstype}
     ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/arp_linux.json
-    ${uri}=               Set Variable                  /vnf-agent/${node}/config/linux/l3/${AGENT_VER}/arp/${arpname}
+    ${uri}=               Set Variable                  /vnf-agent/${node}/config/linux/l3/${AGENT_VER}/arp/${interface}/${ipv4}
     ${data}=              Replace Variables             ${data}
     Put Json     ${uri}    ${data}
 
