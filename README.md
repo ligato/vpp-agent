@@ -1,7 +1,6 @@
 # VPP Agent
 
-![GitHub commit activity](https://img.shields.io/github/commit-activity/w/ligato/vpp-agent.svg)
-![GitHub last commit](https://img.shields.io/github/last-commit/ligato/vpp-agent.svg) 
+![GitHub contributors](https://img.shields.io/github/contributors/ligato/vpp-agent.svg)
 [![Build Status](https://travis-ci.org/ligato/vpp-agent.svg?branch=master)](https://travis-ci.org/ligato/vpp-agent)
 [![Coverage Status](https://coveralls.io/repos/github/ligato/vpp-agent/badge.svg?branch=master)](https://coveralls.io/github/ligato/vpp-agent?branch=master)
 [![Go Report Card](https://goreportcard.com/badge/github.com/ligato/vpp-agent)](https://goreportcard.com/report/github.com/ligato/vpp-agent)
@@ -21,20 +20,25 @@ platform for developing customized VNFs with customized VPP-based data.
 
 ### Releases
 
-|Release|Version|Date|
-|---|:---:|---|
-|Latest release|[![Latest release](https://img.shields.io/github/release/ligato/vpp-agent.svg)](https://github.com/ligato/vpp-agent/releases/latest)|![Release date](https://img.shields.io/github/release-date/ligato/vpp-agent.svg?style=flat)|
-|Latest pre-release|[![Latest pre-release](https://img.shields.io/github/release-pre/ligato/vpp-agent.svg)](https://github.com/ligato/vpp-agent/releases)|![Release date](https://img.shields.io/github/release-date-pre/ligato/vpp-agent.svg?style=flat)|
+![GitHub commits since latest release](https://img.shields.io/github/commits-since/ligato/vpp-agent/latest.svg)
+
+|Release|Release Date|
+|:---:|:---:|
+|[![Latest release](https://img.shields.io/github/release/ligato/vpp-agent.svg?label=latest%20release)](https://github.com/ligato/vpp-agent/releases/latest)|![Release date](https://img.shields.io/github/release-date/ligato/vpp-agent.svg?label=)|
+|[![Pre-release](https://img.shields.io/github/release-pre/ligato/vpp-agent.svg?label=pre-release)](https://github.com/ligato/vpp-agent/releases)|![Release date](https://img.shields.io/github/release-date-pre/ligato/vpp-agent.svg?label=)|
 
 For complete list of changes for each release, see [CHANGELOG](CHANGELOG.md).
 
 ### Branches
 
-|Branch|Activity|Info|
+![GitHub commit activity](https://img.shields.io/github/commit-activity/w/ligato/vpp-agent.svg)
+![GitHub last commit](https://img.shields.io/github/last-commit/ligato/vpp-agent.svg) 
+
+|Branch|Last Commit|Info|
 |---:|:---:|---|
-|`master`|![GitHub last commit (branch)](https://img.shields.io/github/last-commit/ligato/vpp-agent/master.svg)| has **moved to v2**, introducing several [breaking changes](https://github.com/ligato/vpp-agent/blob/master/CHANGELOG.md#v200) :warning:|
-|`dev`|![GitHub last commit (branch)](https://img.shields.io/github/last-commit/ligato/vpp-agent/dev.svg)|will be used for all the future **development**|
-|`pantheon-dev`|![GitHub last commit (branch)](https://img.shields.io/github/last-commit/ligato/vpp-agent/pantheon-dev.svg)|has been **deprecated** (v1) and will be removed in the following weeks|
+|`master`|![GitHub last commit (branch)](https://img.shields.io/github/last-commit/ligato/vpp-agent/master.svg?label=)| has **moved to v2**, introducing several [breaking changes](https://github.com/ligato/vpp-agent/blob/master/CHANGELOG.md#v200) :warning:|
+|`dev`|![GitHub last commit (branch)](https://img.shields.io/github/last-commit/ligato/vpp-agent/dev.svg?label=)|will be used for all the future **development**|
+|`pantheon-dev`|![GitHub last commit (branch)](https://img.shields.io/github/last-commit/ligato/vpp-agent/pantheon-dev.svg?label=)|has been **deprecated** (v1) and will be removed in the following weeks|
 
 ## Architecture
 
