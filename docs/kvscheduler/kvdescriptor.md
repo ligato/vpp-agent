@@ -17,37 +17,37 @@ a descriptor for [Linux interfaces][linux-interface-descr],
 A full list of existing descriptors can be found [here][existing-descriptors].
 
 This design pattern improves modularity and extensibility - VPP Agent v2 is a
-collection of loosely coupled plugins to which new plugins that extend the
-Agent's functionality can be easily added. The KVScheduler is not even limited
-to either VPP or Linux as the SB plane. Actually, a control plane for any system
-whose configuration and status stanzas can be represented as key-value pairs and
-can be operated upon via CRUD operations can be integrated with this framework.
+collection of loosely coupled plugins to which new plugins that extend the 
+Agent's functionality can be easily added. The KVScheduler is not even limited 
+to either VPP or Linux as the SB plane. Actually, we can integrated with this
+framework any control plane for any system whose configuration and status is 
+represented as key-value pairs that can be operated upon via CRUD operations.
+
 The rest of this document provides a step-by-step guide on how to implement your
 own KVDescriptor and register it with the KVScheduler.
 
 ## Descriptor API
 
 Let's start first by understanding the [descriptor API][descriptor-api].
-First of all, descriptor is not an interface that needs to be implemented, but
-rather a structure to be initialized with the right attribute values and callbacks
-to CRUD operations. This was chosen to reinforce the fact that descriptors are
-meant to be **stateless** - the state of values is instead kept by the scheduler
-and run-time information can be stored into the [metadata](kvscheduler.md#metadata),
-optionally carried with each value. The state of the graph with values and their
-metadata should determine what exactly will be executed next in the SB plane
-for a given transaction.
-The graph is already exposed via formatted logs and programming+REST APIs,
-therefore if descriptors do not hide any state internally, the system state will
-be fully visible from the outside.
+First of all, a descriptor is not an interface that needs to be implemented, but
+rather a structure that needs to be properly initialized with attributes and
+callbacks to CRUD operations. This approach was chosen to reinforce the fact 
+that descriptors are meant to be **stateless** - the state of values is instead 
+kept by the scheduler and run-time information can be stored in 
+[metadata](kvscheduler.md#metadata) that is optionally carried with each value. 
+The state of the graph with values and their metadata should determine what 
+exactly will be executed next in the SB plane for a given transaction. The graph
+is already exposed through logs and programmatic and REST APIs, therefore if 
+descriptors do not store any state internally, the system state will be fully 
+visible from the outside.
 
-What follows is a list of all descriptor attributes, split across sub-sections,
-each with a detailed explanation and pointers to examples. Optional fields can
-be left uninitialized (zero values).
+The following sub-sections describe all descriptor attributes in detail and 
+provide pointers to examples. 
 
 Please note that using [descriptor adapters](#descriptor-adapter), the signatures
 of the callbacks will become adapted to use the real proto message type
 (e.g. `*vpp_l3.Route`) as opposed to the bare `proto.Message` interface, avoiding
-all the boiler-plate type casting.
+all the boiler-plate type casting. 
 
 **Note**: `KeySelector`, `ValueTypeName`, `KeyLabel` & `NBKeyPrefix`
 will all be replaced in a future release with a single reference to the value
@@ -57,31 +57,34 @@ to define these fields. But we do not yet have tools to build models for
 [derived values](#derivedvalues) and without them we cannot fully switch
 to models.
 
+Please note that all optional fields can be left uninitialized (zero values).
+
 ### Name
 
 * `string` attribute, **mandatory**
 * name (ID) of the descriptor
-* it should be unique across all registered descriptors from all initialized
+* it MUST be unique across all registered descriptors from all initialized
   plugins
 
 ### NBKeyPrefix
 
 * `string` attribute, optional
-* key prefix that the scheduler should watch in NB (e.g. `etcd`) to receive all
-  values described by this descriptor
+* key prefix that the scheduler should watch in an NB (for example, `etcd`) to receive
+  all values described by this descriptor
 * descriptors for derived values do not need to define this field - the values
   they describe do not come from NB directly, instead get derived from other
-  values which are in the scope of other descriptors
+  values which are in scope of other descriptors
 * [model](kvscheduler.md#model) can be used to obtain the key prefix
-  using `KeyPrefix()` method - [here is an example][nb-key-prefix]
+  using the `KeyPrefix()` method - [here is an example][nb-key-prefix]
 
 ### KeySelector
 
 * **mandatory** callback: `func(key string) bool`
 * a predicate that should select (i.e. return true) for keys identifying values
-  described by the given descriptor
-* typically, selector uses `IsKeyValid` from the value [model](kvscheduler.md#model)
-  to check if the key is valid for the model - [here is an example][key-selector]
+  described by this descriptor
+* typically, a selector uses the `IsKeyValid` method from the value 
+  [model](kvscheduler.md#model) to check if the key is valid for the model 
+  \- [here is an example][key-selector]
 
 ### ValueTypeName
 
@@ -93,26 +96,26 @@ to models.
 ### KeyLabel
 
 * optional callback: `func(key string) string`
-* "a key shortener" - function that will receive a key and should return value
+* "a key shortener" - function that will receive a key and should return a value
    identifier, that, unlike the original key, only needs to be unique in the
    key scope of the descriptor and not necessarily in the entire key space
    (e.g. interface name rather than the full key)
-* [model](kvscheduler.md#model) provides key shortener off-the-shelf with
-  the method `StripKeyPrefix()` - [here is an example][key-label]
-* if defined, key label will be used as value identifier in the metadata map
-  (it then for example allows to ask for interface metadata simply by the
+* [model](kvscheduler.md#model) provides an off-the-shelf key shortener
+  method `StripKeyPrefix()` - [here is an example][key-label]
+* if defined, KeyLabel will be used as value identifier in the metadata map
+  (it then, for example, allows to ask for interface metadata simply by the
   interface name rather than using a full key)
 
 ### ValueComparator
 
 * optional callback: `func(key string, oldValue, newValue proto.Message) bool`
 * allows to optionally customize how two values are compared for equality
-* normally, the scheduler compares two values of the same key using `proto.Equal`
-  to determine if `Update` operation is needed
+* typically, the scheduler will compare two values of the same key using the 
+  `proto.Equal`method to determine if the `Update` operation is needed
 * sometimes, however, different values for the same field may be effectively
-  equivalent - [for example][compare-mtu], MTU 0 (default) might want to be
-  treated as equivalent to MTU 1500 (i.e. change from 0 to 1500 or vice-versa
-  should not trigger `Update`)
+  equivalent - [for example][compare-mtu], we want to treat MTU 0 (default)
+  as equivalent to MTU 1500 (i.e. change from 0 to 1500 or vice-versa should 
+  not trigger an `Update`)
 
 ### WithMetadata
 
@@ -124,8 +127,7 @@ to models.
 * metadata are often used in [Retrieve](#retrieve) to correlate NB configuration
   with retrieved SB data
 * metadata are not supported with [derived values](#derivedvalues)
-* **note**: in a future release the term "metadata" will be renamed to "statedata",
-  which is more fitting
+* **note**: in a future release the term "metadata" will be renamed to "statedata"
 
 ### MetadataMapFactory
 
@@ -135,8 +137,8 @@ to models.
 * if not defined, the scheduler will use the bare [NamedMapping][named-mapping]
   from the idxmap package
 * for example, VPP [ifplugin][vpp-ifplugin] implements custom map called
-  [ifaceidx][vpp-ifaceidx], which allows to [lookup interfaces by the assigned
-  IP addresses][vpp-iface-by-ip] among other things
+  [ifaceidx][vpp-ifaceidx], which allows to [lookup interfaces by assigned
+  IP addresses][vpp-iface-by-ip], among other things
 
 ### Validate
 
@@ -156,15 +158,15 @@ to models.
 ### Create
 
 * callback: `func(key string, value proto.Message) (metadata interface{}, err error)`
-* "C" from CRUD, implementing operation to create a new value
+* "C" from CRUD, implements the operation to create a new value
 * **mandatory for descriptors that describe values received from NB**, but
   optional for descriptors with only `OBTAINED` values in their scope - i.e.
   values received from SB via notifications as already created
 * for non-derived values, descriptor may return metadata to associate with
   the value
-* KVScheduler ensures that all the dependencies are satisfied when the Create
-  is being called
-* for example, descriptor for VPP ARP entries simply [adds new ARP entry][vpp-arp-create]
+* KVScheduler ensures that all dependencies are satisfied when the Create
+  callback is called
+* for example, the descriptor for VPP ARP entries simply [adds new ARP entry][vpp-arp-create]
   defined by the value with configuration - it knows that the associated
   interface it depends on is guaranteed to already exist by the scheduling
   algorithm and can therefore [read the interface index from its metadata][vpp-arp-get-iface-index],
@@ -173,45 +175,44 @@ to models.
 ### Delete
 
 * callback: `func(key string, value proto.Message, metadata Metadata) error`
-* "D" from CRUD, implementing operation to delete an existing value
+* "D" from CRUD, implements the operation to delete an existing value
 * **mandatory for descriptors that describe values received from NB**, but
   optional for descriptors with only `OBTAINED` values in their scope - i.e.
   values received from SB via notifications as already created
-* KVScheduler ensures that all the items that depend on a value which is being
-  removed are deleted first and put into the `PENDING` state
-* for example, descriptor for VPP ARP entries simply [removes existing ARP entry][vpp-arp-delete],
+* KVScheduler ensures that all items that depend on a value which is being
+  removed are deleted first and their state is set to `PENDING`
+* for example, the descriptor for VPP ARP entries simply [removes existing ARP entry][vpp-arp-delete],
   knowing that the scheduling algorithm guarantees that the associated interfaces,
   marked as a dependency of the ARP entry, will not be removed before the
-  ARP and therefore the interface index, needed to build the delete request for
-  VPP, can still be [read from the interfaces metadata][vpp-arp-get-iface-index]
+  ARP entry and therefore the interface index that is required to build the
+  delete request for VPP, can still be [read from the interfaces metadata][vpp-arp-get-iface-index]
 
 ### Update
 
 * callback: `func(key string, oldValue, newValue proto.Message, oldMetadata interface{}) (newMetadata interface{}, err error)`
-* "U" from CRUD, implementing operation to update an existing value
+* "U" from CRUD, implements the operation to update an existing value
 * the callback is optional - if undefined, updates will be always performed
-  via re-creation, i.e. `Delete(key, oldValue, oldMetadata)` followed by
+  via re-creation, i.e. calling `Delete(key, oldValue, oldMetadata)` followed by
   `newMetadata, err = Create(key, newValue)`
 * the current value metadata, passed to the callback as `oldMetadata`, can be
   edited in-place (i.e. without deep-copying) and returned as `newMetadata`
-* not all the configuration updates are supported by SB to apply incrementally
-  \- for example, changing interface type (e.g. going from VETH to TAP) cannot
+* sometimes an SB does not support incremental configuration updates - for 
+  example, changing the interface type (e.g. going from VETH to TAP) cannot
   be done without fully re-creating the interface - on the other hand, Linux
-  [interface host name can be changed][linux-rename-interface] via dedicated
+  [interface host name can be changed][linux-rename-interface] via a dedicated
   netlink call
 
 ### UpdateWithRecreate
 
 * optional callback: `func(key string, oldValue, newValue proto.Message, oldMetadata interface{}) (newMetadata interface{}, err error)`
-* sometimes, for some or all kinds of updates, SB plane does not provide
-  specific Update operations, instead the value has to be re-created,
-  i.e. calling `Delete(key, oldValue, oldMetadata)` followed by
-  `newMetadata, err = Create(key, newValue)`
-* through this callback the KVScheduler can be informed if the given value
-  change requires full re-creation
-* if not defined, KVScheduler will decide based on the (un)availability of the
-  `Update` operation - if provided, it is assumed that any change can be applied
-  incrementally, otherwise a full re-creation is the only way to go
+* sometimes, for some or all kinds of its updates, an SB plane does not provide
+  specific Update operations; instead, the value must be re-created, by calling
+  `Delete(key, oldValue, oldMetadata)` followed by `newMetadata, err = Create(key, newValue)`
+* through this callback the KVScheduler can be informed if a given value change
+  requires full re-creation
+* if not defined, the KVScheduler will decide based on the (un)availability of 
+  the `Update` operation - if provided, it is assumed that any change can be 
+  applied incrementally, otherwise a full re-creation is the only way to go
 * [for example][vpp-iface-recreate], changing VPP interface type (e.g. going
   from MEMIF to TAP) cannot be done without fully re-creating the interface
 
@@ -228,17 +229,17 @@ to models.
      Origin   ValueOrigin
  }
  ```
-* "R" from CRUD, implementing operation to read all the values in the scope of
-  the descriptor, truly configured in the SB plane at that moment
+* "R" from CRUD, implements the operation to read the real-time snapshot of the 
+  SB plane configuration for all values in descriptor's scope 
 * it is a key operation for state reconciliation (or as we call it - "resync"),
-  as it gives KVScheduler the ability to refresh it's view of SB and determine
-  the sequence of `Create`/`Update`/`Delete` operations needed to get the actual
-  state (SB) in-sync with the desired state (NB)
+  as it gives the KVScheduler the ability to refresh it's view of the SB and 
+  determine the sequence of `Create`/`Update`/`Delete` operations needed to get 
+  the actual state (SB) in-sync with the intended state (NB)
 * it is optional in the sense that, if not provided, it is assumed that the
   `Retrieve` operation is not supported and therefore the state of SB for the
   given value type cannot be refreshed and will be assumed to be up-to-date
-  (but especially after an agent restart this might not be the case)
-* input argument `correlate` represents the non-derived values currently created
+  (note that in particular after an agent restart this might not be the case)
+* the input argument `correlate` represents the non-derived values currently created
   or getting applied as viewed from the northbound/scheduler point of view:
     - startup resync: `correlate` = values received from NB to be applied
 	- run-time/downstream resync: `correlate` = cached values taken and applied
@@ -247,7 +248,7 @@ to models.
 ### IsRetriableFailure
 
 * callback: `func(err error) bool`
-* optionally tell scheduler if the given error, returned by one of the
+* optionally tell the scheduler if a given error, returned by one of the
   `Create`/`Delete`/`Update` callbacks, will always be returned for the same
   value (non-retriable) or if the value can be theoretically fixed merely by
   repeating the operation (retriable)
@@ -266,8 +267,8 @@ to models.
 
 * optional callback: `func(key string, value proto.Message) []KeyValuePair`
 * to break a complex value into multiple pieces managed separately by different
-  descriptors, implement and provide callback `DerivedValues`
-* derived value is typically a single field of the original value or its
+  descriptors, implement and provide the `DerivedValues` callback
+* a derived value is typically a single field of the original value or its
   property, with possibly its own dependencies (dependency on the source value
   is implicit, i.e. source value is created before its derived values), custom
   implementations for CRUD operations and potentially used as a target for
@@ -304,13 +305,13 @@ to models.
  // KeySelector is used to filter keys.
  type KeySelector func(key string) bool
  ```
-* for value that has one or more dependencies, provide callback that will
+* for value that has one or more dependencies, provide a callback that will
   tell which keys must already exist for the value to be considered ready
   for creation
-* dependency can either reference a specific key, or use the predicate `AnyOf`,
-  which must return `true` for at least one of the keys of already created
-  values for the dependency to be considered satisfied (i.e. matching keys are
-  basically ORed)
+* for a dependency to be considered satisfied, the dependency can either 
+  reference a specific key or use the predicate `AnyOf`, which must return 
+  `true` for at least one of the keys of some already created values (i.e.
+  matching keys are basically ORed)
 * the callback is optional - if not defined, the kv-pairs of the descriptor
   are assumed to have no dependencies
 * multiple listed dependencies must all be satisfied - i.e. they are ANDed
@@ -327,12 +328,13 @@ to models.
 ### RetrieveDependencies
 
 * optional attribute, slice of strings
-* if, in order to `Retrieve` values, some other descriptors have to be have
-  their values refreshed first, here you can list them
+* if, in order to `Retrieve` values, some other descriptors must have
+  their respective values refreshed first, here you can list them woth this
+  attribute
 * [for example][vpp-route-retrieve-deps], in order to retrieve routes and
-  re-construct their configuration for NB models, interfaces have to be
-  retrieved first, to learn the mapping between interface names (NB ID)
-  and their indexes (SB ID) from the metadata map of the interface plugin
+  re-construct their configuration for NB models, interfaces must be retrieved
+  first, to learn the mapping between interface names (NB ID) and their indices
+  (SB ID) from the metadata map of the interface plugin
   - this is because the retrieved routes will reference outgoing interfaces
     through SB indexes, which need to be [translated into the logical names from
     NB][vpp-route-iface-name]
@@ -355,9 +357,9 @@ The tool can be installed with:
 make get-desc-adapter-generator
 ```
 
-Then, to generate adapter for your descriptor, put `go:generate` command for
-`descriptor-adapter` to (preferably) your plugin's main go file:
-``` golang
+Then, to generate an adapter for your descriptor, put `go:generate` command for
+the `descriptor-adapter` to (preferably) your plugin's main go file:
+```
 //go:generate descriptor-adapter --descriptor-name <your-descriptor-name>  --value-type <your-value-type-name> [--meta-type <your-metadata-type-name>] [--import <IMPORT-PATH>...] --output-dir "descriptor"
 ```
 Available arguments are:

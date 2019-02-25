@@ -27,7 +27,7 @@ gradually arose with the set of supported configuration items growing:
   items became impractical to reason about
 * a culmination of all the issues above was an unreliable and unpredictable
   re-synchronization (or resync for short), also known as state reconciliation,
-  between northbound (desired state) and southbound (actual state) - something
+  between northbound (intended state) and southbound (actual state) - something
   that was meant to be marketed as the main feature of the VPP-Agent
 
 ## Basic concepts
@@ -139,8 +139,9 @@ concrete objects:
   demonstrating the order of operations needed to create a bridge domain.
 
 * <a name="graph"></a> **Graph** of values is a kvscheduler-internal in-memory
-  storage for all configured and pending key-value pairs, with edges representing
-  inter-value relations, such as "depends-on" and "is-derived-from".
+  storage for all configured and pending key-value pairs, where graph edges
+  represent inter-value relations, such as "depends-on" or "is-derived-from",
+  and graph nodes are the key-value pairs themselves.
   
   *Note:* configurators - now just "plugins" - no longer have to implement their
   own caches for pending values.  
@@ -183,10 +184,9 @@ utilized by the scheduling algorithm:
 
 ### Diagram
 
-The easiest way to understand the KVScheduler is through a graphical visualization.
-In the following diagram we show how the scheduler interacts with the layers
-above and below. A minimalistic graph sketch shows both the dependency and
-derivation relations using [Bridge Domain][bd-cfd] as an example, together with
+The following diagram shows the interactions between the scheduler and the layers
+above it and below it. Using [Bridge Domain][bd-cfd] as an example, the diagram 
+shows both the dependency and the derivation relationships, together with
 a pending value (of unspecified type) waiting for some interface to be created
 first.
 
@@ -194,54 +194,56 @@ first.
 
 ## Resync
 
-Plugins no longer have to implement resync (state reconciliation) on their own.
-As they "teach" KVScheduler how to operate with configuration items by providing
-callbacks to CRUD operations through KVDescriptors, the scheduler has all it
-needs to determine and execute the set of operations needed to get the state
-in-sync after a transaction or restart.
+Plugins no longer have to implement their own resync (state reconciliation) 
+mechanisms. By providing a KVDescriptor with CRUD operation callbacks to the 
+KVScheduler a plugin "teaches" the KVScheduler how to handle plugin's 
+configuration items. The KVScheduler has all it needs to determine and 
+execute the set of operations needed to get the state in-sync after a 
+transaction or restart.
 
-Furthermore, KVScheduler enhances the concept of state reconciliation, and
-differentiates three types of the resync:
-* **Full resync**: desired configuration is re-read from NB, the view of SB is
-  refreshed via `Retrieve` operations and inconsistencies are resolved via
-  `Create`\\`Delete`\\`Update` operations
-* **Upstream resync**: partial resync, same as Full resync except the view of SB
-  is assumed to be up-to-date and will not get refreshed - can be used by NB
-  when it is easier to re-calculate the desired state than to determine the
-  (minimal) difference to reflect a given event
-* **Downstream resync**: partial resync, same as Full resync except the desired
-  configuration is assumed to be up-to-date and will not be re-read from
-  NB - can be used periodically to resync, even without interacting with NB
+The KVScheduler further enhances the concept of state reconciliation. Three
+resync types are defined:
+* **Full resync**: the intended configuration is re-read from NB, the view of 
+  SB is refreshed via one or more `Retrieve` operations and inconsistencies 
+  are resolved via the `Create`\\`Delete`\\`Update` operations.
+* **Upstream resync**: a partial resync, similar to the Full resync, but the
+  view of SB state is not refreshed. It is either assumed to be up-to-date 
+  and/or it is not required int the resync because it may be easier to 
+  re-calculate the intended state than to determine the (minimal) difference 
+* **Downstream resync**: partial resync, similar to the Full resync, except
+  the intended configuration is assumed to be up-to-date and will not be re-read
+  from the NB. Downstream resync can be used periodically to resync, even without
+  interacting with the NB.
 
 ## Transactions
 
-The scheduler allows to group related changes and apply them as transactions.
+The KVScheduler allows to group related changes and apply them as a transaction.
 This is not supported, however, by all agent NB interfaces - for example,
 changes from `etcd` datastore are always received one a time. To leverage
 the transaction support, localclient (the same process) or GRPC API (remote
 access) have to be used instead (both defined [here][clientv2]).
 
-Inside the scheduler, transactions are queued and executed synchronously to
+Inside the KVScheduler, transactions are queued and executed synchronously to
 simplify the algorithm and avoid concurrency issues. The processing of
 a transaction is split into two stages:
 * **Simulation**: the set of operations to execute and their order is determined
- (so-called *transaction plan*), without actually calling any CRUD callbacks
- from the descriptors - assuming no failures.
+  (so-called *transaction plan*), without actually calling any CRUD callbacks
+  from the descriptors - assuming no failures.
 * **Execution**: executing the operations in the right order. If any operation
- fails, the already applied changes are reverted, unless the so called
- `BestEffort` mode is enabled, in which case the scheduler tries to apply the
- maximum possible set of required changes. `BestEffort` is default for resync.
+  fails, the already applied changes are reverted, unless the `BestEffort` mode
+  is enabled, in which case the scheduler tries to apply the maximum possible set
+  of required changes. `BestEffort` is default for resync.
 
-Right after simulation, transaction metadata (sequence number printed as `#xxx`,
-description, values to apply, etc.) are printed, together with the transaction
-plan. This is done before execution, to ensure that the user is informed about
-the operations that were going to be executed even if any of the operations
-causes the agent to crash. After the transaction has executed, the set of actually
-executed operations and potentially some errors are printed to finalize the
-output for transaction.
+Right after the simulation, transaction metadata (sequence number printed as 
+`#xxx`, description, values to apply, etc.) are printed, together with the 
+transaction plan. This is done before execution, to ensure that the user is 
+informed about the operations that were going to be executed even if any of 
+the operations causes the agent to crash. After the transaction has executed, the
+set of actually executed operations and potentially some errors are printed to 
+finalize the output for transaction.
 
-An example transaction output printed to logs (in this case there were no errors,
-therefore the plan matches the executed operations):
+An example transaction output log is shown below. There were no errors, therefore
+the plan matches the executed operations:
 ```
 +======================================================================================================================+
 | Transaction #5                                                                                        NB transaction |
@@ -282,30 +284,30 @@ x-------------------------------------------------------------------------------
 
 ## API
 
-The API of KVScheduler is defined inside a separate [sub-package "api"][kvscheduler-api-dir]
-of the [plugin][plugin]. A set of available interfaces is split across multiple
-files:
- * `errors.go`: definitions of errors that can be returned from within
-   the scheduler; additionally `InvalidValueError` error wrapper is defined
-   to allow plugins further specify the reason of a [validation error][kvdescriptor-validate],
-   which is then exposed through the [value status][value-states]
+The KVScheduler API is defined ine a separate [sub-package "api"][kvscheduler-api-dir]
+of the [plugin][plugin]. The interfaces that constitute the KVScheduler API are defined
+in multiple files:
+ * `errors.go`: definitions of errors that can be returned from within the KVScheduler;
+   additionally the `InvalidValueError` error wrapper is defined to allow plugins to 
+   further specify the reason for a [validation error][kvdescriptor-validate], which is
+   then exposed through the [value status][value-states].
 
- * `kv_scheduler_api.go`: the API of scheduler that can be used:
-   - by NB to commit transaction or to read and watch for value status updates
-   - by SB to push notifications about values created/updated automatically or
+ * `kv_scheduler_api.go`: the KVScheduler API that can be used by:
+   - the NB to commit a transaction or to read and watch for value status updates
+   - the SB to push notifications about values created/updated automatically or
      externally
 
- * `kv_descriptor_api.go`: defines the interface of a KVDescriptor, a detailed
+ * `kv_descriptor_api.go`: defines the KVDescriptor interface; the detailed
    description can be found in a separate [guide][kvdescriptor-guide]
 
  * `txn_options.go`: a set of available options for transactions - for example,
-   a transaction can be customized to allow re-try of failed operations,
-   triggered after a configured time period and with a given limit to the maximum
-   number of retries allowed
+   a transaction can be customized to allow retries of failed operations,
+   triggered after a specified time period and within a given limit to the 
+   maximum number of retries allowed
 
- * `txn_record.go`: type definition used to store a record of already processed
-   transaction - these records can be obtained using either [GetTransactionHistory][get-history-api]
-   method or through the [REST API](#rest-api)
+ * `txn_record.go`: type definition used to store a record of an already processed
+   transaction - these records can be obtained using either the 
+   [GetTransactionHistory][get-history-api] method or through the [REST API](#rest-api).
 
  * `value_status.proto`: operational value status defined using protobuf
    \- [the API][value-states-api] allows to read the current status of one or
@@ -358,7 +360,7 @@ only via formatted logs but also through a set of REST APIs:
         - `descriptor=<descriptor-name>`: dump values in the scope of the given
            descriptor
         - `key-prefix=<key-prefix>`: dump values with the given key prefix
-        - `view=<NB, SB, internal>`: whether to dump desired, actual or the
+        - `view=<NB, SB, internal>`: whether to dump intended, actual or the
            configuration state as known to KVScheduler
 * **request downstream resync**: `POST /scheduler/downstream-resync`
     - args:
