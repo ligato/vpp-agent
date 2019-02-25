@@ -1,5 +1,6 @@
 # VPP Agent
 
+![GitHub commit activity](https://img.shields.io/github/commit-activity/w/ligato/vpp-agent.svg)
 ![GitHub last commit](https://img.shields.io/github/last-commit/ligato/vpp-agent.svg) 
 [![Build Status](https://travis-ci.org/ligato/vpp-agent.svg?branch=master)](https://travis-ci.org/ligato/vpp-agent)
 [![Coverage Status](https://coveralls.io/repos/github/ligato/vpp-agent/badge.svg?branch=master)](https://coveralls.io/github/ligato/vpp-agent?branch=master)
