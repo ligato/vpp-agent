@@ -7,6 +7,8 @@
 [![GoDoc](https://godoc.org/github.com/ligato/vpp-agent?status.svg)](https://godoc.org/github.com/ligato/vpp-agent)
 [![GitHub license](https://img.shields.io/badge/license-Apache%20license%202.0-blue.svg)](https://github.com/ligato/vpp-agent/blob/master/LICENSE)
 
+###### Please note that the content of this repository is currently **WORK IN PROGRESS**!
+
 The VPP Agent is a Go implementation of a control/management plane for
 [VPP][1] based cloud-native [Virtual Network Functions][2] (VNFs). The VPP
 Agent is built on top of the [CN Infra][16], platform for developing 
@@ -15,8 +17,6 @@ cloud-native VNFs.
 The VPP Agent can be used as-is as a management/control agent for VNFs 
 based on off-the-shelf VPP (e.g. a VPP-based vswitch), or as a
 platform for developing customized VNFs with customized VPP-based data.
-
-###### Please note that the content of this repository is currently **WORK IN PROGRESS**!
 
 ### Releases
 
@@ -34,6 +34,42 @@ For complete list of changes for each release, see [CHANGELOG](CHANGELOG.md).
 |`master`|![GitHub last commit (branch)](https://img.shields.io/github/last-commit/ligato/vpp-agent/master.svg?label=)| has **moved to v2**, introducing several [breaking changes](https://github.com/ligato/vpp-agent/blob/master/CHANGELOG.md#v200) :warning:|
 |`dev`|![GitHub last commit (branch)](https://img.shields.io/github/last-commit/ligato/vpp-agent/dev.svg?label=)|will be used for all the future **development**|
 |`pantheon-dev`|![GitHub last commit (branch)](https://img.shields.io/github/last-commit/ligato/vpp-agent/pantheon-dev.svg?label=)|has been **deprecated** (v1) and will be removed in the following weeks|
+
+## Quickstart
+
+For a quick start with the VPP Agent, you can use pre-built Docker images with
+the Agent and VPP on DockerHub: [ligato/vpp-agent][14] (or for ARM64: [ligato/vpp-agent-arm64][17]).
+
+0. Start ETCD and Kafka on your host (e.g. in Docker as described [here][15]).
+   Note: **The Agent in the pre-built Docker image will not start if it can't 
+   connect to both Etcd and Kafka**.
+
+   Note: **for ARM64 see the information for [kafka][18] and for [etcd][19]**.
+
+1. Run VPP + VPP Agent in a Docker container:
+```
+docker pull ligato/vpp-agent
+docker run -it --rm --name vpp --privileged ligato/vpp-agent
+```
+
+2. Manage VPP agent using agentctl:
+```
+docker exec -it vpp agentctl -h
+```
+
+3. Check the configuration (using agentctl or directly using VPP console):
+```
+docker exec -it vpp agentctl -e 172.17.0.1:2379 show
+docker exec -it vpp vppctl -s localhost:5002
+```
+
+**Next Steps**
+
+See [README](docker/dev/README.md) of development docker image for more details.
+
+## Documentation
+
+All of the documentation for the VPP Agent can be found at [ligato.io/vpp-agent](https://ligato.io/vpp-agent/).
 
 ## Architecture
 
@@ -63,7 +99,7 @@ its management/control planes are implemented using the VNF agent:
 
 ![context](docs/imgs/context.png "VPP Agent & its Plugins on top of cn-infra")
 
-## Plugins
+### Plugins
  
 The set of plugins in the VPP Agent is as follows:
 * [VPP plugins](plugins/vpp) - core plugins providing northbound APIs to _default_ VPP functionality: 
@@ -82,7 +118,7 @@ The set of plugins in the VPP Agent is as follows:
 * [KVScheduler](plugins/kvscheduler) - synchronizes the *desired state* described by northbound
   components with the *actual state* of the southbound. 
 
-## Tools
+### Tools
 
 The VPP agent repository also contains tools for building and troubleshooting 
 of VNFs based on the VPP Agent:
@@ -95,47 +131,8 @@ of VNFs based on the VPP Agent:
 * [docker](docker) - container-based development environment for the VPP
   agent and for app/extension plugins.
 
-## Quickstart
+## Contributing
 
-For a quick start with the VPP Agent, you can use pre-built Docker images with
-the Agent and VPP on DockerHub: [ligato/vpp-agent][14] (or for ARM64: [ligato/vpp-agent-arm64][17]).
-
-0. Start ETCD and Kafka on your host (e.g. in Docker as described [here][15]).
-   Note: **The Agent in the pre-built Docker image will not start if it can't 
-   connect to both Etcd and Kafka**.
-
-   Note: **for ARM64 see the information for [kafka][18] and for [etcd][19]**.
-
-1. Run VPP + VPP Agent in a Docker image:
-```
-docker pull ligato/vpp-agent
-docker run -it --rm --name vpp ligato/vpp-agent
-```
-
-2. Configure the VPP agent using agentctl:
-```
-docker exec -it vpp agentctl -h
-```
-
-3. Check the configuration (using agentctl or directly using VPP console):
-```
-docker exec -it vpp agentctl -e 172.17.0.1:2379 show
-docker exec -it vpp vppctl -s localhost:5002
-```
-
-## Documentation
-GoDoc can be browsed [online](https://godoc.org/github.com/ligato/vpp-agent).
-
-## Next Steps
-Read the README for the [Development Docker Image](docker/dev/README.md) for more details.
-
-#### Deployment:
-[![K8s integration](docs/imgs/k8s_deployment_thumb.png "VPP Agent - K8s integration")](docs/Deployment.md)
-
-#### Design & architecture:
-[![VPP agent 10.000 feet](docs/imgs/vpp_agent_10K_feet_thumb.png "VPP Agent - 10.000 feet view on the architecture")](docs/Design.md)
-
-## Contribution:
 If you are interested in contributing, please see the [contribution guidelines](CONTRIBUTING.md).
 
 [1]: https://fd.io/technology/#vpp
