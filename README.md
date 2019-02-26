@@ -24,7 +24,7 @@ CNFs. An example of a custom VPP-based CNF is the [Contiv-VPP][20] vswitch.
 |[![Latest release](https://img.shields.io/github/release/ligato/vpp-agent.svg?label=latest%20release)](https://github.com/ligato/vpp-agent/releases/latest)|![Release date](https://img.shields.io/github/release-date/ligato/vpp-agent.svg?label=)|
 |[![Pre-release](https://img.shields.io/github/release-pre/ligato/vpp-agent.svg?label=pre-release)](https://github.com/ligato/vpp-agent/releases)|![Release date](https://img.shields.io/github/release-date-pre/ligato/vpp-agent.svg?label=)|
 
-For the complete list of changes for each release, see [CHANGELOG](CHANGELOG.md).
+Have a look at the [release notes](CHANGELOG.md) for a complete list of changes.
 
 ### Branches
 
