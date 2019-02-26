@@ -21,17 +21,15 @@ import (
 	"strings"
 
 	"github.com/ligato/cn-infra/idxmap"
-
-	"github.com/ligato/vpp-agent/pkg/idxvpp"
-
-	"github.com/go-errors/errors"
-	"github.com/ligato/vpp-agent/plugins/vpp/ipsecplugin/vppcalls"
-
 	"github.com/ligato/cn-infra/logging"
+	"github.com/pkg/errors"
+
 	ipsec "github.com/ligato/vpp-agent/api/models/vpp/ipsec"
+	"github.com/ligato/vpp-agent/pkg/idxvpp"
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	vppIfDescriptor "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/descriptor"
 	"github.com/ligato/vpp-agent/plugins/vpp/ipsecplugin/descriptor/adapter"
+	"github.com/ligato/vpp-agent/plugins/vpp/ipsecplugin/vppcalls"
 )
 
 const (

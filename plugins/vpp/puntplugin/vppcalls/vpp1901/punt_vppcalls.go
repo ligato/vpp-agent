@@ -17,7 +17,7 @@ package vpp1901
 import (
 	"strings"
 
-	"github.com/go-errors/errors"
+	"github.com/pkg/errors"
 
 	punt "github.com/ligato/vpp-agent/api/models/vpp/punt"
 	ba_ip "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/ip"

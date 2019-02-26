@@ -17,7 +17,8 @@ package vpp1901
 import (
 	"fmt"
 
-	"github.com/go-errors/errors"
+	"github.com/pkg/errors"
+
 	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/vmxnet3"
 )
@@ -43,8 +44,6 @@ func (h *InterfaceVppHandler) AddVmxNet3(ifName string, vmxNet3 *interfaces.VmxN
 	reply := &vmxnet3.Vmxnet3CreateReply{}
 	if err = h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return 0, errors.Errorf(err.Error())
-	} else if reply.Retval != 0 {
-		return 0, errors.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
 	return reply.SwIfIndex, h.SetInterfaceTag(ifName, reply.SwIfIndex)
@@ -58,8 +57,6 @@ func (h *InterfaceVppHandler) DeleteVmxNet3(ifName string, ifIdx uint32) error {
 	reply := &vmxnet3.Vmxnet3DeleteReply{}
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return errors.Errorf(err.Error())
-	} else if reply.Retval != 0 {
-		return errors.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
 	return h.RemoveInterfaceTag(ifName, ifIdx)

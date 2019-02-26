@@ -16,6 +16,7 @@ package kvscheduler
 
 import (
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/gogo/protobuf/proto"
@@ -24,6 +25,8 @@ import (
 	"github.com/ligato/vpp-agent/plugins/kvscheduler/internal/graph"
 	"github.com/ligato/vpp-agent/plugins/kvscheduler/internal/utils"
 )
+
+var enableGraphDump = os.Getenv("KVSCHEDULER_GRAPHDUMP") != ""
 
 const (
 	nodeVisitBeginMark = "[BEGIN]"
@@ -38,7 +41,9 @@ type resyncData struct {
 
 // refreshGraph updates all/some values in the graph to their *real* state
 // using the Retrieve methods from descriptors.
-func (s *Scheduler) refreshGraph(graphW graph.RWAccess, keys utils.KeySet, resyncData *resyncData, verbose bool) {
+func (s *Scheduler) refreshGraph(graphW graph.RWAccess,
+	keys utils.KeySet, resyncData *resyncData, verbose bool,
+) {
 	if s.logGraphWalk {
 		keysToRefresh := "<ALL>"
 		if keys != nil && keys.Length() > 0 {
@@ -115,13 +120,12 @@ func (s *Scheduler) refreshGraph(graphW graph.RWAccess, keys utils.KeySet, resyn
 			var list strings.Builder
 			for i, d := range retrieved {
 				num := fmt.Sprintf("%d.", i+1)
-				list.WriteString(fmt.Sprintf("\n - %3s %q -> %v [%s]",
-					num, d.Key, utils.ProtoToString(d.Value), d.Origin))
+				list.WriteString(fmt.Sprintf("\n - %3s [%s]: %q (%s)\n   %v",
+					num, descriptor.Name, d.Key, d.Origin, utils.ProtoToString(d.Value)))
 				if d.Metadata != nil {
-					list.WriteString(fmt.Sprintf(" Metadata: %+v", d.Metadata))
+					list.WriteString(fmt.Sprintf("\n   Metadata: %+v", d.Metadata))
 				}
 			}
-
 			s.Log.Debugf("%s descriptor retrieved %d item%s: %v",
 				descriptor.Name, len(retrieved), plural, list.String())
 
@@ -202,7 +206,7 @@ func (s *Scheduler) refreshGraph(graphW graph.RWAccess, keys utils.KeySet, resyn
 		s.refreshUnavailNode(graphW, node, refreshedKeys, 2)
 	}
 
-	if verbose {
+	if enableGraphDump && verbose && s.Log.GetLevel() >= logging.DebugLevel {
 		fmt.Println(dumpGraph(graphW))
 	}
 }

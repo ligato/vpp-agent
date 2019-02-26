@@ -23,6 +23,8 @@ import (
 	"github.com/ligato/cn-infra/logging"
 )
 
+var DefaultNotifTimeout = time.Millisecond * 100
+
 // WithIndex is interface that items with integer handle must implement to get
 // indexed by NameToIndex.
 type WithIndex interface {
@@ -153,7 +155,7 @@ func (idx *nameToIndex) WatchItems(subscriber string, channel chan<- NameToIndex
 		}
 		select {
 		case channel <- msg:
-		case <-time.After(idxmap.DefaultNotifTimeout):
+		case <-time.After(DefaultNotifTimeout):
 			idx.log.Warn("Unable to deliver notification")
 		}
 	}

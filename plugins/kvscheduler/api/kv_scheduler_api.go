@@ -18,10 +18,10 @@ package api
 
 import (
 	"context"
+	"time"
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/cn-infra/idxmap"
-	"time"
 )
 
 // KeySelector is used to filter keys.

@@ -17,11 +17,10 @@ package govppmux
 import (
 	"time"
 
-	"github.com/ligato/cn-infra/logging/measure"
-
 	govppapi "git.fd.io/govpp.git/api"
 	"git.fd.io/govpp.git/core"
-	"github.com/ligato/cn-infra/logging/logrus"
+	"github.com/ligato/cn-infra/logging"
+	"github.com/ligato/cn-infra/logging/measure"
 )
 
 // goVppChan implements govpp channel interface. Instance is returned by NewAPIChannel() or NewAPIChannelBuffered(),
@@ -33,6 +32,19 @@ type goVppChan struct {
 	retry retryConfig
 	// tracer used to measure binary api call duration
 	tracer measure.Tracer
+}
+
+func newGovppChan(ch govppapi.Channel, retryCfg retryConfig, tracer measure.Tracer) *goVppChan {
+	govppChan := &goVppChan{
+		Channel: ch,
+		retry:   retryCfg,
+		tracer:  tracer,
+	}
+	return govppChan
+}
+
+func (c *goVppChan) Close() {
+	c.Channel.Close()
 }
 
 // helper struct holding info about retry configuration
@@ -98,24 +110,20 @@ func (r *govppRequestCtx) ReceiveReply(reply govppapi.Message) error {
 	}()
 
 	var timeout time.Duration
-	maxAttempts := r.retry.attempts
+	maxRetries := r.retry.attempts
 	if r.retry.timeout > 0 { // Default value is 500ms
 		timeout = r.retry.timeout
 	}
 
-	var err error
 	// Receive reply from original send
-	if err = r.requestCtx.ReceiveReply(reply); err == core.ErrNotConnected && maxAttempts > 0 {
-		// Try to re-sent requests
-		for attemptIdx := 1; attemptIdx <= maxAttempts; attemptIdx++ {
-			// Wait, then try again
-			time.Sleep(timeout)
-			logrus.DefaultLogger().Warnf("Govppmux: retrying binary API message %v, attempt: %d",
-				r.requestMsg.GetMessageName(), attemptIdx)
-			if err = r.sendRequest(r.requestMsg).ReceiveReply(reply); err != core.ErrNotConnected {
-				return err
-			}
-		}
+	err := r.requestCtx.ReceiveReply(reply)
+	for retry := 1; err == core.ErrNotConnected && retry <= maxRetries; retry++ {
+		// Wait before next attempt
+		time.Sleep(timeout)
+		logging.Warnf("Govppmux: retrying (%d/%d) binary API message %v",
+			retry, maxRetries, r.requestMsg.GetMessageName())
+		// Retry request
+		err = r.sendRequest(r.requestMsg).ReceiveReply(reply)
 	}
 
 	return err

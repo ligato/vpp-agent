@@ -16,6 +16,7 @@ package vpp1810
 
 import (
 	"bytes"
+	"encoding/hex"
 	"fmt"
 	"net"
 	"strings"
@@ -544,6 +545,26 @@ func (h *InterfaceVppHandler) dumpVxlanDetails(ifs map[uint32]*InterfaceDetails)
 	return nil
 }
 
+func verifyIPSecTunnelDetails(local, remote *ipsec.IpsecSaDetails) error {
+	if local.SwIfIndex != remote.SwIfIndex {
+		return fmt.Errorf("swIfIndex data mismatch (local: %v, remote: %v)",
+			local.SwIfIndex, remote.SwIfIndex)
+	}
+	if local.IsTunnel != remote.IsTunnel {
+		return fmt.Errorf("tunnel data mismatch (local: %v, remote: %v)",
+			local.IsTunnel, remote.IsTunnel)
+	}
+
+	if local.IsTunnelIP6 != remote.IsTunnelIP6 ||
+		!bytes.Equal(local.TunnelSrcAddr, remote.TunnelDstAddr) ||
+		!bytes.Equal(local.TunnelDstAddr, remote.TunnelSrcAddr) {
+		return fmt.Errorf("src/dst IP mismatch (local: ipv6=%v src=%v dst=%v, remote: ipv6=%v src=%v dst=%v)",
+			local.IsTunnelIP6, local.TunnelSrcAddr, local.TunnelDstAddr, remote.IsTunnelIP6, remote.TunnelSrcAddr, remote.TunnelDstAddr)
+	}
+
+	return nil
+}
+
 // dumpIPSecTunnelDetails dumps IPSec tunnel interfaces from the VPP and fills them into the provided interface map.
 func (h *InterfaceVppHandler) dumpIPSecTunnelDetails(ifs map[uint32]*InterfaceDetails) error {
 	// tunnel interfaces are a part of security association dump
@@ -580,30 +601,47 @@ func (h *InterfaceVppHandler) dumpIPSecTunnelDetails(ifs map[uint32]*InterfaceDe
 			continue
 		}
 
-		var tunnelSrcAddrStr, tunnelDstAddrStr string
-		if uintToBool(tunnel.IsTunnelIP6) {
-			var tunnelSrcAddr, tunnelDstAddr net.IP = tunnel.TunnelSrcAddr, tunnel.TunnelDstAddr
-			tunnelSrcAddrStr, tunnelDstAddrStr = tunnelSrcAddr.String(), tunnelDstAddr.String()
-		} else {
-			var tunnelSrcAddr, tunnelDstAddr net.IP = tunnel.TunnelSrcAddr[:4], tunnel.TunnelDstAddr[:4]
-			tunnelSrcAddrStr, tunnelDstAddrStr = tunnelSrcAddr.String(), tunnelDstAddr.String()
+		local := firstSaData
+		remote := tunnel
+
+		// verify data for local & remote
+		if err := verifyIPSecTunnelDetails(local, remote); err != nil {
+			h.log.Warnf("IPSec SA dump for tunnel interface data does not match: %v", err)
+			continue
 		}
 
-		ifs[tunnel.SwIfIndex].Interface.Link = &interfaces.Interface_Ipsec{
+		var localIP, remoteIP string
+		if uintToBool(tunnel.IsTunnelIP6) {
+			localIP = net.IP(local.TunnelSrcAddr).String()
+			remoteIP = net.IP(remote.TunnelSrcAddr).String()
+		} else {
+			localIP = net.IP(local.TunnelSrcAddr[:4]).String()
+			remoteIP = net.IP(remote.TunnelSrcAddr[:4]).String()
+		}
+
+		ifDetails, ok := ifs[tunnel.SwIfIndex]
+		if !ok {
+			h.log.Warnf("ipsec SA dump returned unrecognized swIfIndex: %v", tunnel.SwIfIndex)
+			continue
+		}
+		ifDetails.Interface.Type = interfaces.Interface_IPSEC_TUNNEL
+		ifDetails.Interface.Link = &interfaces.Interface_Ipsec{
 			Ipsec: &interfaces.IPSecLink{
-				Esn:        uintToBool(tunnel.UseEsn),
-				AntiReplay: uintToBool(tunnel.UseAntiReplay),
-				LocalIp:    tunnelSrcAddrStr,
-				RemoteIp:   tunnelDstAddrStr,
-				LocalSpi:   tunnel.Spi,
-				// fll remote SPI from stored SA data
-				RemoteSpi:      firstSaData.Spi,
-				CryptoAlg:      vpp_ipsec.CryptoAlg(tunnel.CryptoAlg),
-				IntegAlg:       vpp_ipsec.IntegAlg(tunnel.IntegAlg),
-				EnableUdpEncap: uintToBool(tunnel.UDPEncap),
+				Esn:             uintToBool(tunnel.UseEsn),
+				AntiReplay:      uintToBool(tunnel.UseAntiReplay),
+				LocalIp:         localIP,
+				RemoteIp:        remoteIP,
+				LocalSpi:        local.Spi,
+				RemoteSpi:       remote.Spi,
+				CryptoAlg:       vpp_ipsec.CryptoAlg(tunnel.CryptoAlg),
+				LocalCryptoKey:  hex.EncodeToString(local.CryptoKey[:local.CryptoKeyLen]),
+				RemoteCryptoKey: hex.EncodeToString(remote.CryptoKey[:remote.CryptoKeyLen]),
+				IntegAlg:        vpp_ipsec.IntegAlg(tunnel.IntegAlg),
+				LocalIntegKey:   hex.EncodeToString(local.IntegKey[:local.IntegKeyLen]),
+				RemoteIntegKey:  hex.EncodeToString(remote.IntegKey[:remote.IntegKeyLen]),
+				EnableUdpEncap:  uintToBool(tunnel.UDPEncap),
 			},
 		}
-		ifs[tunnel.SwIfIndex].Interface.Type = interfaces.Interface_IPSEC_TUNNEL
 	}
 
 	return nil

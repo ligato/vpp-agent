@@ -21,9 +21,10 @@ package ipsecplugin
 
 import (
 	govppapi "git.fd.io/govpp.git/api"
-	"github.com/go-errors/errors"
 	"github.com/ligato/cn-infra/health/statuscheck"
 	"github.com/ligato/cn-infra/infra"
+	"github.com/pkg/errors"
+
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin"

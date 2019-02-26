@@ -337,8 +337,7 @@ func (s *Scheduler) applyDelete(node graph.NodeRW, txnOp *kvs.RecordedTxnOp, arg
 		}
 		if err != nil {
 			retriableErr = handler.isRetriableFailure(err)
-		}
-		if canNodeHaveMetadata(node) && descriptor.WithMetadata {
+		} else if canNodeHaveMetadata(node) && descriptor.WithMetadata {
 			node.SetMetadata(nil)
 		}
 	}
