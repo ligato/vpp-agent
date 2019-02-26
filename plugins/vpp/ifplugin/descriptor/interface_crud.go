@@ -175,7 +175,7 @@ func (d *InterfaceDescriptor) Create(key string, intf *interfaces.Interface) (me
 		}
 	}
 
-	// MAC address. Note: af-packet uses HwAddr from the host and physical interfaces cannot have the MAC address changed
+	// MAC address. Note: physical interfaces cannot have the MAC address changed
 	if intf.GetPhysAddress() != "" &&
 		intf.GetType() != interfaces.Interface_AF_PACKET &&
 		intf.GetType() != interfaces.Interface_DPDK {
@@ -330,7 +330,7 @@ func (d *InterfaceDescriptor) Update(key string, oldIntf, newIntf *interfaces.In
 	}
 
 	// rx-placement
-	if !proto.Equal(getRxPlacement(oldIntf), getRxPlacement(newIntf)) {
+	if newIntf.GetRxPlacementSettings() != nil && !proto.Equal(getRxPlacement(oldIntf), getRxPlacement(newIntf)) {
 		if err = d.ifHandler.SetRxPlacement(ifIdx, newIntf.GetRxPlacementSettings()); err != nil {
 			err = errors.Errorf("failed to modify rx-placement for interface %s: %v", newIntf.Name, err)
 			d.log.Error(err)

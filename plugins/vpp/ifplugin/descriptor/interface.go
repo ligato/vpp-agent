@@ -412,6 +412,11 @@ func (d *InterfaceDescriptor) UpdateWithRecreate(key string, oldIntf, newIntf *i
 		return true
 	}
 
+	// case for af-packet mac update (cannot be updated directly)
+	if oldIntf.GetType() == interfaces.Interface_AF_PACKET && oldIntf.PhysAddress != newIntf.PhysAddress {
+		return true
+	}
+
 	return false
 }
 
@@ -638,12 +643,6 @@ func getIPAddressVersions(ipAddrs []*net.IPNet) (isIPv4, isIPv6 bool) {
 
 // setInterfaceVrf sets the interface to VRF according to versions of IP addresses configured on the interface.
 func setInterfaceVrf(ifHandler vppcalls.InterfaceVppAPI, ifName string, ifIdx uint32, vrf uint32, ipAddresses []*net.IPNet) error {
-	if vrf == 0 {
-		// explicit set to VRF 0 seems to be causing issues on VPP
-		// NOTE: because of this return, this function cannot be used to switch VRF from non-zero to zero
-		// (can be only used to put a newly created interface to a VRF)
-		return nil
-	}
 	isIPv4, isIPv6 := getIPAddressVersions(ipAddresses)
 	if isIPv4 {
 		if err := ifHandler.SetInterfaceVrf(ifIdx, vrf); err != nil {

@@ -226,7 +226,7 @@ Put TAP Unnumbered Interface
 Put Static Fib Entry
     [Arguments]    ${node}    ${bd_name}    ${mac}    ${outgoing_interface}    ${static}=true
     ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/static_fib.json
-    ${uri}=               Set Variable                  /vnf-agent/${node}/config/vpp/l2/${AGENT_VER}/bridge-domain/${name}/fib/${mac}
+    ${uri}=               Set Variable                  /vnf-agent/${node}/config/vpp/l2/${AGENT_VER}/bridge-domain/${bd_name}/fib/${mac}
     ${data}=              Replace Variables             ${data}
     Put Json     ${uri}    ${data}
 
@@ -502,20 +502,20 @@ Delete ARP
 Put Linux ARP With Namespace
     [Arguments]    ${node}    ${interface}    ${arpname}    ${ipv4}    ${MAC}    ${nsname}    ${nstype}
     ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/arp_linux.json
-    ${uri}=               Set Variable                  /vnf-agent/${node}/config/linux/l3/${AGENT_VER}/arp/${arpname}
+    ${uri}=               Set Variable                  /vnf-agent/${node}/config/linux/l3/${AGENT_VER}/arp/${interface}/${ipv4}
     ${data}=              Replace Variables             ${data}
     Put Json     ${uri}    ${data}
 
 Put Linux ARP
-    [Arguments]    ${node}    ${interface}    ${arpname}    ${ipv4}    ${MAC}
+    [Arguments]    ${node}    ${interface}    ${ipv4}    ${MAC}
     ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/arp_linux.json
-    ${uri}=               Set Variable                  /vnf-agent/${node}/config/linux/l3/${AGENT_VER}/arp/${arpname}
+    ${uri}=               Set Variable                  /vnf-agent/${node}/config/linux/l3/${AGENT_VER}/arp/${interface}/${ipv4}
     ${data}=              Replace Variables             ${data}
     Put Json     ${uri}    ${data}
 
 Delete Linux ARP
-    [Arguments]    ${node}    ${arpname}
-    ${uri}=               Set Variable                  /vnf-agent/${node}/config/linux/l3/${AGENT_VER}/arp/${arpname}
+    [Arguments]    ${node}    ${interface}    ${ipv4}
+    ${uri}=               Set Variable                  /vnf-agent/${node}/config/linux/l3/${AGENT_VER}/arp/${interface}/${ipv4}
     ${out}=      Delete key    ${uri}
     [Return]    ${out}
 

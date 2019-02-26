@@ -21,6 +21,7 @@ import (
 	"strings"
 
 	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
+	vpp_ipsec "github.com/ligato/vpp-agent/api/models/vpp/ipsec"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/dhcp"
 	binapi_interface "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/ip"
@@ -598,8 +599,8 @@ func (h *InterfaceVppHandler) dumpIPSecTunnelDetails(ifs map[uint32]*vppcalls.In
 				LocalSpi:   tunnel.Spi,
 				// fll remote SPI from stored SA data
 				RemoteSpi:      firstSaData.Spi,
-				CryptoAlg:      interfaces.IPSecLink_CryptoAlg(tunnel.CryptoAlg),
-				IntegAlg:       interfaces.IPSecLink_IntegAlg(tunnel.IntegAlg),
+				CryptoAlg:      vpp_ipsec.CryptoAlg(tunnel.CryptoAlg),
+				IntegAlg:       vpp_ipsec.IntegAlg(tunnel.IntegAlg),
 				EnableUdpEncap: uintToBool(tunnel.UDPEncap),
 			},
 		}

@@ -90,8 +90,7 @@ RUN mkdir -p "$GOPATH/src" "$GOPATH/bin" \
 # install debugger
 RUN \
 	go get -u github.com/go-delve/delve/cmd/dlv && dlv version; \
-	curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh && dep version;
-
+	go get -u github.com/golang/dep/cmd/dep && dep version;
 # copy configs
 COPY \
     docker/dev/etcd.conf \

@@ -7,6 +7,8 @@ option go_package = "github.com/ligato/vpp-agent/api/models/vpp/interfaces;vpp_i
 import "github.com/gogo/protobuf/gogoproto/gogo.proto";
 option (gogoproto.messagename_all) = true;
 
+import "models/vpp/ipsec/ipsec.proto";
+
 message Interface {
     enum Type {
         UNDEFINED_TYPE = 0;
@@ -104,9 +106,9 @@ message AfpacketLink {
 message TapLink {
     uint32 version = 1;         /* 1 / unset = use the original TAP interface; 2 = use a fast virtio-based TAP */
     string host_if_name = 2;    /* name of the TAP interface in the host OS;
-                                       if empty, it will be auto-generated (suitable for combination with TAP_TO_VPP
-                                       interface from Linux ifplugin, because then this name is only temporary anyway)
-                                     */
+                                   if empty, it will be auto-generated (suitable for combination with TAP_TO_VPP
+                                   interface from Linux ifplugin, because then this name is only temporary anyway)
+                                */
     string to_microservice = 3; /* if TAP connects VPP with microservice, fill this parameter with the target
                                        microservice name - should match with the namespace reference of the associated
                                        TAP_TO_VPP interface (it is still moved to the namespace by Linux-ifplugin but
@@ -123,28 +125,14 @@ message IPSecLink {
     uint32 local_spi = 6;               /* Local security parameter index */
     uint32 remote_spi = 7;              /* Remote security parameter index */
 
-    enum CryptoAlg {
-        NONE_CRYPTO = 0;
-        AES_CBC_128 = 1;
-        AES_CBC_192 = 2;
-        AES_CBC_256 = 3;
-    }
-    CryptoAlg crypto_alg = 8;           /* Cryptographic algorithm for encryption */
+    ipsec.CryptoAlg crypto_alg = 8;     /* Cryptographic algorithm for encryption */
     string local_crypto_key = 9;
     string remote_crypto_key = 10;
 
-    enum IntegAlg {
-        NONE_INTEG = 0;
-        MD5_96 = 1;
-        SHA1_96 = 2;
-        SHA_256_96 = 3;
-        SHA_256_128 = 4;
-        SHA_384_192 = 5;
-        SHA_512_256 = 6;
-    }
-    IntegAlg integ_alg = 11;            /* Cryptographic algorithm for authentication */
+    ipsec.IntegAlg integ_alg = 11;      /* Cryptographic algorithm for authentication */
     string local_integ_key = 12;
     string remote_integ_key = 13;
+
     bool enable_udp_encap = 14;         /* Enable UDP encapsulation */
 }
 

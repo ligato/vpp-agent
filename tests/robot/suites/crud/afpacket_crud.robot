@@ -8,7 +8,7 @@ Resource     ../../variables/${VARIABLES}_variables.robot
 
 Resource     ../../libraries/all_libs.robot
 
-Force Tags        crud     IPv4    ExpectedFailure
+Force Tags        crud     IPv4
 Suite Setup       Testsuite Setup
 Suite Teardown    Testsuite Teardown
 Test Setup        TestSetup
@@ -70,7 +70,7 @@ Check That Afpacket2 Is Not Created Without Veth4
 
 Add Veth4 Interface
     linux: Interface Not Exists    node=agent_vpp_1    mac=${VETH4_MAC}
-    Put Veth Interface    node=agent_vpp_1    name=vpp1_veth4    mac=${VETH4_MAC}    peer=vpp1_veth3    enabled=false
+    Put Veth Interface    node=agent_vpp_1    name=vpp1_veth4    mac=${VETH4_MAC}    peer=vpp1_veth3    enabled=true
 
 Check That Afpacket2 Interface Is Created
     vpp_term: Interface Is Created    node=agent_vpp_1    mac=${AFP2_MAC}
@@ -79,8 +79,8 @@ Check That Afpacket2 Interface Is Created
 Check That Veth3 And Veth4 Interfaces Are Created And Not Affected By Afpacket2 Interface
     linux: Interface Is Created    node=agent_vpp_1    mac=${VETH3_MAC}
     linux: Interface Is Created    node=agent_vpp_1    mac=${VETH4_MAC}
-    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    linux: Check Veth Interface State     agent_vpp_1    vpp1_veth3    mac=${VETH3_MAC}    ipv4=20.20.1.1/24    mtu=1500    state=lowerlayerdown
-    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    linux: Check Veth Interface State     agent_vpp_1    vpp1_veth4    mac=${VETH4_MAC}    state=down
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    linux: Check Veth Interface State     agent_vpp_1    vpp1_veth3    mac=${VETH3_MAC}    ipv4=20.20.1.1/24    mtu=1500    state=up
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    linux: Check Veth Interface State     agent_vpp_1    vpp1_veth4    mac=${VETH4_MAC}    state=up
 
 Check That Afpacket1 Interface Is Still Configured
     vat_term: Check Afpacket Interface State    agent_vpp_1    vpp1_afpacket1    enabled=1    mac=${AFP1_MAC}
@@ -95,8 +95,8 @@ Check That Afpacket1 Interface Is Still Configured After Update
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vat_term: Check Afpacket Interface State    agent_vpp_1    vpp1_afpacket1    enabled=1    mac=${AFP1_MAC}
 
 Check That Veth3 And Veth4 Interfaces Are Not Affected By Change Of Afpacket2 Interface
-    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    linux: Check Veth Interface State     agent_vpp_1    vpp1_veth3    mac=${VETH3_MAC}    ipv4=20.20.1.1/24    mtu=1500    state=lowerlayerdown
-    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    linux: Check Veth Interface State     agent_vpp_1    vpp1_veth4    mac=${VETH4_MAC}    state=down
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    linux: Check Veth Interface State     agent_vpp_1    vpp1_veth3    mac=${VETH3_MAC}    ipv4=20.20.1.1/24    mtu=1500    state=up
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    linux: Check Veth Interface State     agent_vpp_1    vpp1_veth4    mac=${VETH4_MAC}    state=up
 
 Delete Afpacket1 Interface
     Delete VPP Interface    node=agent_vpp_1    name=vpp1_afpacket1
