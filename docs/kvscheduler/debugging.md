@@ -12,28 +12,28 @@
  
 ## How-to enable agent debug logs
 
-The agent allows to change the log level globally or individually per logger
-via configuration file `logging.conf`, environment variable `INITIAL_LOGLVL=<level>`
-or even during the agent run-time through the REST API: `POST /log/<logger-name>/<log-level>`
-Detailed info can be found in the [documentation for the logmanager plugin][logmanager-readme].
+You can change the agent's log level globally or individually per logger via the 
+configuration file `logging.conf`, the environment variable `INITIAL_LOGLVL=<level>`
+or during run-time through the Agent's REST API: `POST /log/<logger-name>/<log-level>`
+Detailed info about setting log levels in the Agent can be found in the 
+[documentation for the logmanager plugin][logmanager-readme].
 
-The KVScheduler, however, prints most of its interesting data, such as the
-[transaction logs](#understanding-transaction-log) or the [graph walk log](#understanding-the-graph-walk-(advanced))
-directly to `stdout`. This output is concise and easy to read, providing enough
-information and visibility to debug and resolve most of the issues that are in
-some way related to the KVScheduler framework. These transaction logs are also
-not dependent on any KVScheduler implementation details, and therefore not expected
-to change much between releases.
+The KVScheduler prints most of its interesting data, such as
+[transaction logs](#understanding-transaction-log) or 
+[graph walk logs](#understanding-the-graph-walk-(advanced)) directly to `stdout`. This
+output is concise and easy to read, providing enough information and visibility to 
+debug and resolve most of the issues that are in some way related to the KVScheduler 
+framework. These transaction logs are not dependent on any KVScheduler implementation 
+details, and therefore not expected to change much between releases.
 
 KVScheduler-internal debug messages, which require some knowledge of the
 underlying implementation, are logged using the logger named `kvscheduler`.
 
 ## How-to debug agent plugin lookup
 
-The easiest way to determine if your plugin has been found and properly
-initialized by the Agent's plugin lookup procedure is to enable verbose
-lookup logs. Before the agent is start, set the DEBUG_INFRA environment
-variable as follows:
+The easiest way to determine if your plugin has been found and properly initialized by
+the Agent's plugin lookup procedure is to enable verbose lookup logs. Before the agent
+is start, set the `DEBUG_INFRA` environment variable as follows:
 ``` 
 export DEBUG_INFRA=lookup
 ```
@@ -109,15 +109,16 @@ of the graph to `stdout` *after* it was [refreshed](kvscheduler.md#graph-refresh
 ## CRUD verification mode
 
 The KVScheduler allows to verify the correctness of CRUD operations provided by 
-descriptors. If enabled, the scheduler will trigger verification inside the 
-post-processing stage of every transaction. The values changed (created/update/deleted)
-by the transaction are re-read (using `Retrieve` methods from descriptors) and
-compared to verify that they are indeed equal to what was the intent of the 
-transaction. A failed check could either mean that the affected values have 
-been changed externally - but that is unlikely given that values are re-read 
-practically immediately after the changes have been applied - or, far more likely,
-that some of the CRUD operations of the corresponding descriptor(s) are not 
-implemented correctly.
+descriptors. If enabled, the KVScheduler will trigger verification inside the 
+post-processing stage of every transaction. The values changed by the transaction
+(i.e the created / updated / deleted values) are re-read (using the `Retrieve` 
+methods from descriptors) and compared to the intended values to verify that they
+have been applied correctly. A failed check may mean that the affected values have 
+been changed by some external entity or, more likely, that some of the CRUD 
+operations of the corresponding descriptor(s) are not implemented correctly.
+Note that since the SB values are re-read  practically immediately after the 
+changes have been applied, it is very unlikely that an external entity has changed
+them.
 
 The verification mode is costly - `Retrieve` operations are run after every
 transaction for descriptors with changed values - therefore it is disabled
@@ -144,7 +145,7 @@ browser (supporting SVG) at the URL:
 ```
 http://<host>:9191/scheduler/graph
 ```
-*Note:* 9191 is the default port number for the REST API, but can be changed 
+*Note:* 9191 is the default port number for the REST API, but it can be changed 
 in the configuration file for the [REST plugin][rest-plugin-readme].
 
 The requirement is to have the `dot` renderer from graphviz installed on the
@@ -154,7 +155,7 @@ package, which for Ubuntu can be installed with:
 root$ apt-get install graphviz
 ```
 
-An example of rendered graph can be seen below. Graph vertices, drawn as
+An example of a rendered graph can be seen below. Graph vertices, drawn as
 rectangles, are used to represent key-value pairs. Derived values have rounded
 corners. Different fill-colors represent different value states. If you hover
 with the mouse cursor over a graph node, a tooltip will pop up, describing the
@@ -165,7 +166,7 @@ relations between values:
    oriented backwards, pointing to the parents  
 ![graph example](img/graph-visualization.svg)
 
-Without any GET arguments, the API returns rendering of the graph in its current
+Without any GET arguments, the API returns the rendering of the graph in its current
 state. Alternatively, it is possible to pass argument `txn=<seq-num>`, to display
 the graph state as it was when the given transaction has just finalized,
 highlighting the vertices updated by the transaction with a yellow border.
@@ -194,7 +195,7 @@ The scheduler may visit a graph node in one of the transaction processing stages
 
 ### Graph refresh
 
-During a graph refresh, some or all the registered descriptors are asked to
+During the graph refresh, some or all the registered descriptors are asked to
 `Retrieve` the values currently created in the SB. Nodes corresponding to
 the retrieved values are refreshed by the method `refreshValue()`. The method
 propagates the call further to `refreshAvailNode()` for the node itself and 
