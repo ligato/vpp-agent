@@ -15,7 +15,6 @@
 package vpp1901
 
 import (
-	"fmt"
 	"net"
 	"strings"
 
@@ -76,8 +75,6 @@ func (h *StnVppHandler) addDelStnRule(stnRule *stn.Rule, isAdd bool) error {
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
-	} else if reply.Retval != 0 {
-		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
 	return nil

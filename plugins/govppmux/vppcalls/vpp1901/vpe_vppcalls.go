@@ -16,7 +16,6 @@ package vpp1901
 
 import (
 	"bytes"
-	"fmt"
 	"strings"
 
 	govppapi "git.fd.io/govpp.git/api"
@@ -112,8 +111,6 @@ func (h *VpeHandler) RunCli(cmd string) (string, error) {
 
 	if err := h.ch.SendRequest(req).ReceiveReply(reply); err != nil {
 		return "", err
-	} else if reply.Retval != 0 {
-		return "", fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
 	return reply.Reply, nil

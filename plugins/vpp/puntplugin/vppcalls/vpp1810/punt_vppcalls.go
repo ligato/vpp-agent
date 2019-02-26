@@ -18,7 +18,8 @@ import (
 	"net"
 	"strings"
 
-	"github.com/go-errors/errors"
+	"github.com/pkg/errors"
+
 	punt "github.com/ligato/vpp-agent/api/models/vpp/punt"
 	ipba "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1810/ip"
 	puntba "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1810/punt"
