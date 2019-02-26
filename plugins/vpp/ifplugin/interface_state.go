@@ -106,7 +106,7 @@ func (c *InterfaceStateUpdater) Init(ctx context.Context, logger logging.PluginL
 
 	c.ifHandler = vppcalls.CompatibleInterfaceVppHandler(c.vppCh, logger.NewLogger("if-handler"))
 
-	c.ifMetaChan = make(chan ifaceidx.IfaceMetadataDto, 100)
+	c.ifMetaChan = make(chan ifaceidx.IfaceMetadataDto, 1000)
 	swIfIndexes.WatchInterfaces("ifplugin_ifstate", c.ifMetaChan)
 
 	c.ifEvents = make(chan *vppcalls.InterfaceEvent)
