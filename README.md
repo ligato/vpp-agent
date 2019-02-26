@@ -9,14 +9,13 @@
 
 ###### Please note that the content of this repository is currently **WORK IN PROGRESS**!
 
-The VPP Agent is a Go implementation of a control/management plane for
-[VPP][1] based cloud-native [Virtual Network Functions][2] (VNFs). The VPP
-Agent is built on top of the [CN Infra][16], platform for developing 
-cloud-native VNFs.
+The VPP Agent is a Go implementation of a control/management plane for [VPP][1] based
+cloud-native [Virtual Network Functions][2] (VNFs). The VPP Agent is built on top of 
+[CN Infra][16], a framework for developing cloud-native VNFs (CNFs).
 
-The VPP Agent can be used as-is as a management/control agent for VNFs 
-based on off-the-shelf VPP (e.g. a VPP-based vswitch), or as a
-platform for developing customized VNFs with customized VPP-based data.
+The VPP Agent can be used as-is as a management/control agent for VNFs  based on off-the-shelf
+VPP (e.g. a VPP-based vswitch), or as a framework for developing management agents for VPP-based
+CNFs.
 
 ### Releases
 
@@ -25,7 +24,7 @@ platform for developing customized VNFs with customized VPP-based data.
 |[![Latest release](https://img.shields.io/github/release/ligato/vpp-agent.svg?label=latest%20release)](https://github.com/ligato/vpp-agent/releases/latest)|![Release date](https://img.shields.io/github/release-date/ligato/vpp-agent.svg?label=)|
 |[![Pre-release](https://img.shields.io/github/release-pre/ligato/vpp-agent.svg?label=pre-release)](https://github.com/ligato/vpp-agent/releases)|![Release date](https://img.shields.io/github/release-date-pre/ligato/vpp-agent.svg?label=)|
 
-For complete list of changes for each release, see [CHANGELOG](CHANGELOG.md).
+For the complete list of changes for each release, see [CHANGELOG](CHANGELOG.md).
 
 ### Branches
 
@@ -37,8 +36,8 @@ For complete list of changes for each release, see [CHANGELOG](CHANGELOG.md).
 
 ## Quickstart
 
-For a quick start with the VPP Agent, you can use pre-built Docker images with
-the Agent and VPP on DockerHub: [ligato/vpp-agent][14] (or for ARM64: [ligato/vpp-agent-arm64][17]).
+For a quick start with the VPP Agent, you can use the pre-built Docker images on DockerHub
+that contain the VPP Agent and VPP: [ligato/vpp-agent][14] (or for ARM64: [ligato/vpp-agent-arm64][17]).
 
 0. Start ETCD and Kafka on your host (e.g. in Docker as described [here][15]).
    Note: **The Agent in the pre-built Docker image will not start if it can't 
@@ -69,7 +68,7 @@ See [README](docker/dev/README.md) of development docker image for more details.
 
 ## Documentation
 
-All of the documentation for the VPP Agent can be found at [ligato.io/vpp-agent](https://ligato.io/vpp-agent/).
+Detailed documentation for the VPP Agent can be found at [ligato.io/vpp-agent](https://ligato.io/vpp-agent/).
 
 ## Architecture
 
