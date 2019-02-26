@@ -4,14 +4,13 @@ Learn how to use, deploy and develop with VPP Agent.
 
 ### What is VPP Agent?
 
-The VPP Agent is a Go implementation of a control/management plane for
-[VPP][fdio-vpp] based cloud-native [Virtual Network Functions][vnf] (VNFs). The VPP
-Agent is built on top of the [CN Infra][cn-infra], platform for developing 
-cloud-native VNFs.
+The VPP Agent is a Go implementation of a control/management plane for [VPP][1fdio-vpp] based
+cloud-native [Virtual Network Functions][vnf] (VNFs). The VPP Agent is built on top of 
+[CN Infra][cn-infra], a framework for developing cloud-native VNFs (CNFs).
 
-The VPP Agent can be used as-is as a management/control agent for VNFs 
-based on off-the-shelf VPP (e.g. a VPP-based vswitch), or as a
-platform for developing customized VNFs with customized VPP-based data.
+The VPP Agent can be used as-is as a management/control agent for VNFs  based on off-the-shelf
+VPP (e.g. a VPP-based vswitch), or as a framework for developing management agents for VPP-based
+CNFs. An example of a custom VPP-based CNF is the [Contiv-VPP][contivvpp] vswitch.
 
 ### Introduction to VPP Agent
 - [Architecture](Architecture.md) describes architecture of VPP Agent.
@@ -34,3 +33,4 @@ platform for developing customized VNFs with customized VPP-based data.
 [fdio-vpp]: https://fd.io/technology/#vpp
 [vnf]: https://github.com/ligato/cn-infra/blob/master/docs/readmes/cn_virtual_function.md
 [cn-infra]: https://github.com/ligato/cn-infra
+[contivvpp]: https://github.com/contiv/vpp
