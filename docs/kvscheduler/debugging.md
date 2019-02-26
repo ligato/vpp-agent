@@ -17,34 +17,35 @@ via configuration file `logging.conf`, environment variable `INITIAL_LOGLVL=<lev
 or even during the agent run-time through the REST API: `POST /log/<logger-name>/<log-level>`
 Detailed info can be found in the [documentation for the logmanager plugin][logmanager-readme].
 
-KVScheduler, however, prints most of the interesting stuff, such as the
+The KVScheduler, however, prints most of its interesting data, such as the
 [transaction logs](#understanding-transaction-log) or the [graph walk log](#understanding-the-graph-walk-(advanced))
-directly into `stdout`. This output is made to be concise and easy to read,
-providing enough information and visibility to debug and resolve most of the
-issues that are in some way related to the KVScheduler framework.
-The transaction logs are also quite detached from the implementation details
-and not expected to change very much between releases.
+directly to `stdout`. This output is concise and easy to read, providing enough
+information and visibility to debug and resolve most of the issues that are in
+some way related to the KVScheduler framework. These transaction logs are also
+not dependent on any KVScheduler implementation details, and therefore not expected
+to change much between releases.
 
 KVScheduler-internal debug messages, which require some knowledge of the
 underlying implementation, are logged using the logger named `kvscheduler`.
 
 ## How-to debug agent plugin lookup
 
-The quickest way to determine if your plugin has been found and properly
-initialized by the plugin lookup procedure of the agent, is to enable verbose
-lookup logs using the environment variable (before the agent is started):
+The easiest way to determine if your plugin has been found and properly
+initialized by the Agent's plugin lookup procedure is to enable verbose
+lookup logs. Before the agent is start, set the DEBUG_INFRA environment
+variable as follows:
 ``` 
 export DEBUG_INFRA=lookup
 ```
 
-Then search for `FOUND PLUGIN: <your-plugin-name>` in the logs - if not found,
-it means that your plugin is either not listed among the agent dependencies, or
-it does not implement the [plugin interface][plugin-interface].
+Then search for `FOUND PLUGIN: <your-plugin-name>` in the logs. If you do not 
+find a log entry for your plugin, it means that it is either not listed among 
+the agent dependencies or it does not implement the [plugin interface][plugin-interface].
 
 ## <a name="how-to-list-descriptors"></a> How-to list registered descriptors and watched key prefixes
 
-The quickest way to determine what descriptors are registered, is to use the
-REST API `GET /scheduler/dump` without any arguments.
+The easiest way to determine what descriptors are registered with the KVScheduler
+is to use the REST API `GET /scheduler/dump` without any arguments.
 For example:
 ```
 $ curl localhost:9191/scheduler/dump
@@ -78,10 +79,10 @@ NB is not being applied into SB. If the value key prefix or the associated
 descriptor are not registered, the value will not be even delivered into the
 KVScheduler. 
 
-## Understanding transaction log
+## Understanding the KVScheduler transaction log
 
-KVScheduler prints well-formatted and easy-to-read summary of every executed
-transaction into `stdout`.The output describes the transaction type, the
+The KVScheduler prints well-formatted and easy-to-read summary of every executed
+transaction to `stdout`. The output describes the transaction type, the
 assigned sequence number, the values to be changed, the transaction plan prepared
 by the scheduling algorithm and finally the actual sequence of executed operations,
 which may differ from the plan if there were any errors.
@@ -99,32 +100,33 @@ transaction shown above:
 
 ![Retry of failed operations](img/retry-txn.png)
 
-Furthermore, before [Full or Downstream Resync](kvscheduler.md#resync) (not for
+Furthermore, before a [Full or Downstream Resync](kvscheduler.md#resync) (not for
 Upstream Resync), or after a transaction error, the KVScheduler dumps the state
-of the graph into `stdout` *after* it was [refreshed](kvscheduler.md#graph-refresh):
+of the graph to `stdout` *after* it was [refreshed](kvscheduler.md#graph-refresh):
 
 ![Graph dump](img/graph-dump.png)
 
 ## CRUD verification mode
 
-KVScheduler allows to verify correctness of CRUD operations provided by descriptors.
-If enabled, the scheduler will trigger verification inside the post-processing
-stage of every transaction. The values changed (created/update/deleted) by the
-transaction are re-read (using `Retrieve` methods from descriptors) and compared
-to check if they are indeed equal to what has been set by the transaction.
-A failed check could either mean that the affected values have been changed
-externally \- but that is unlikely given that values are re-read practically
-immediately after the changes - or, far more likely, some of the CRUD operations
-of the corresponding descriptor(s) are not implemented correctly.
+The KVScheduler allows to verify the correctness of CRUD operations provided by 
+descriptors. If enabled, the scheduler will trigger verification inside the 
+post-processing stage of every transaction. The values changed (created/update/deleted)
+by the transaction are re-read (using `Retrieve` methods from descriptors) and
+compared to verify that they are indeed equal to what was the intent of the 
+transaction. A failed check could either mean that the affected values have 
+been changed externally - but that is unlikely given that values are re-read 
+practically immediately after the changes have been applied - or, far more likely,
+that some of the CRUD operations of the corresponding descriptor(s) are not 
+implemented correctly.
 
 The verification mode is costly - `Retrieve` operations are run after every
 transaction for descriptors with changed values - therefore it is disabled
-by default and not recommended for use in the production environment.
+by default and not recommended for use in production environments.
 
-But for the development and testing purposes, the feature is very handy and
-allows to quickly discover bugs inside the CRUD operations. We advice to
-test newly implemented descriptors in the verification mode before they
-are released. Also, consider the use of the feature with the regression test
+However, for development and testing purposes, the feature is very handy and
+allows to quickly discover bugs ins the CRUD operation implementations. We 
+recommend to test newly implemented descriptors in the verification mode before
+they are released. Also, consider the use of the feature with regression test
 suites.      
 
 The verification mode is enabled using the environment variable (before the
