@@ -103,7 +103,7 @@ func (p *dispatcher) PushData(ctx context.Context, kvPairs []KeyVal) (kvErrs []k
 			kvErrs = txErr.GetKVErrors()
 			var errInfo = ""
 			for i, kvErr := range kvErrs {
-				errInfo += fmt.Sprintf(" - %d. error (%s) %s - %+v\n", i+1, kvErr.TxnOperation, kvErr.Key, kvErr.Error)
+				errInfo += fmt.Sprintf(" - %3d. error (%s) %s - %v\n", i+1, kvErr.TxnOperation, kvErr.Key, kvErr.Error)
 			}
 			p.log.Errorf("Transaction #%d finished with %d errors", seqID, len(kvErrs))
 			fmt.Println(errInfo)

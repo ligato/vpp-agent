@@ -155,10 +155,12 @@ func (ifmx *ifaceMetadataIndex) WatchInterfaces(subscriber string, channel chan<
 			NamedMappingEvent: dto.NamedMappingEvent,
 			Metadata:          typedMeta,
 		}
+		timeout := idxmap.DefaultNotifTimeout
 		select {
 		case channel <- msg:
-		case <-time.After(idxmap.DefaultNotifTimeout):
-			ifmx.log.Warn("Unable to deliver notification")
+			// OK
+		case <-time.After(timeout):
+			ifmx.log.Warnf("Unable to deliver interface watch notification after %v, channel is full", timeout)
 		}
 	}
 	if err := ifmx.Watch(subscriber, watcher); err != nil {
