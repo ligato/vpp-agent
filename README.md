@@ -15,7 +15,7 @@ cloud-native [Virtual Network Functions][2] (VNFs). The VPP Agent is built on to
 
 The VPP Agent can be used as-is as a management/control agent for VNFs  based on off-the-shelf
 VPP (e.g. a VPP-based vswitch), or as a framework for developing management agents for VPP-based
-CNFs.
+CNFs. An example of a custom VPP-based CNF is the [Contiv-VPP][20] vswitch.
 
 ### Releases
 
@@ -144,3 +144,4 @@ If you are interested in contributing, please see the [contribution guidelines](
 [17]: https://hub.docker.com/r/ligato/vpp-agent-arm64
 [18]: docs/arm64/kafka.md
 [19]: docs/arm64/etcd.md
+[20]: https://github.com/contiv/vpp
