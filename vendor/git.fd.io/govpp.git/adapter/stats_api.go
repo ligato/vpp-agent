@@ -14,6 +14,10 @@
 
 package adapter
 
+import (
+	"fmt"
+)
+
 // StatsAPI provides connection to VPP stats API.
 type StatsAPI interface {
 	// Connect establishes client connection to the stats API.
@@ -34,11 +38,11 @@ type StatsAPI interface {
 type StatType int
 
 const (
-	_ StatType = iota
-	ScalarIndex
-	SimpleCounterVector
-	CombinedCounterVector
-	ErrorIndex
+	_                     StatType = 0
+	ScalarIndex                    = 1
+	SimpleCounterVector            = 2
+	CombinedCounterVector          = 3
+	ErrorIndex                     = 4
 )
 
 func (d StatType) String() string {
@@ -52,7 +56,7 @@ func (d StatType) String() string {
 	case ErrorIndex:
 		return "ErrorIndex"
 	}
-	return "UnknownStatType"
+	return fmt.Sprintf("UnknownStatType(%d)", d)
 }
 
 // StatEntry represents single stat entry. The type of stat stored in Data
@@ -79,13 +83,13 @@ type ScalarStat float64
 type ErrorStat uint64
 
 // SimpleCounterStat represents stat for SimpleCounterVector.
-// The outer array represents workers and the inner array represents sw_if_index.
-// Values should be aggregated per interface for every worker.
+// The outer array represents workers and the inner array represents interface/node/.. indexes.
+// Values should be aggregated per interface/node for every worker.
 type SimpleCounterStat [][]Counter
 
 // CombinedCounterStat represents stat for CombinedCounterVector.
-// The outer array represents workers and the inner array represents sw_if_index.
-// Values should be aggregated per interface for every worker.
+// The outer array represents workers and the inner array represents interface/node/.. indexes.
+// Values should be aggregated per interface/node for every worker.
 type CombinedCounterStat [][]CombinedCounter
 
 // Data represents some type of stat which is usually defined by StatType.

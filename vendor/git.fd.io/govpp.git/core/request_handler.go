@@ -88,11 +88,10 @@ func (c *Connection) processRequest(ch *Channel, req *vppRequest) error {
 			"context":  context,
 			"is_multi": req.multi,
 			"msg_id":   msgID,
-			"msg_name": req.msg.GetMessageName(),
 			"msg_size": len(data),
 			"seq_num":  req.seqNum,
 			"msg_crc":  req.msg.GetCrcString(),
-		}).Debug(" -> Sending a message to VPP.")
+		}).Debugf(" --> sending msg: %s", req.msg.GetMessageName())
 	}
 
 	// send the request to VPP
@@ -117,7 +116,7 @@ func (c *Connection) processRequest(ch *Channel, req *vppRequest) error {
 			"msg_id":   c.pingReqID,
 			"msg_size": len(pingData),
 			"seq_num":  req.seqNum,
-		}).Debug(" -> Sending a control ping to VPP.")
+		}).Debug("  -> sending control ping")
 
 		if err := c.vppClient.SendMsg(context, pingData); err != nil {
 			log.WithFields(logger.Fields{
@@ -159,13 +158,12 @@ func (c *Connection) msgCallback(msgID uint16, data []byte) {
 		log.WithFields(logger.Fields{
 			"context":  context,
 			"msg_id":   msgID,
-			"msg_name": msg.GetMessageName(),
 			"msg_size": len(data),
 			"channel":  chanID,
 			"is_multi": isMulti,
 			"seq_num":  seqNum,
 			"msg_crc":  msg.GetCrcString(),
-		}).Debug(" <- Received a message from VPP.")
+		}).Debugf(" <- received msg: %s", msg.GetMessageName())
 	}
 
 	if context == 0 || c.isNotificationMessage(msgID) {

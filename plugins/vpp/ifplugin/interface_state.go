@@ -19,7 +19,6 @@ import (
 	"sync"
 	"time"
 
-	"git.fd.io/govpp.git/adapter"
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/utils/safeclose"
@@ -222,97 +221,42 @@ func (c *InterfaceStateUpdater) doInterfaceStatsRead() {
 	c.access.Lock()
 	defer c.access.Unlock()
 
-	statEntries, err := c.goVppMux.DumpStats(ifPrefix)
+	ifStatsList, err := c.goVppMux.GetInterfaceStats()
 	if err != nil {
 		// TODO add some counter to prevent it log forever
 		c.log.Errorf("failed to read statistics data: %v", err)
 	}
-	for _, statEntry := range statEntries {
-		switch data := statEntry.Data.(type) {
-		case adapter.SimpleCounterStat:
-			c.processSimpleCounterStat(statType(statEntry.Name), data)
-		case adapter.CombinedCounterStat:
-			c.processCombinedCounterStat(statType(statEntry.Name), data)
-		}
+	if ifStatsList == nil || len(ifStatsList.Interfaces) == 0 {
+		return
+	}
+	for _, ifStats := range ifStatsList.Interfaces {
+		c.processInterfaceStatEntry(ifStats)
 	}
 }
 
-// processSimpleCounterStat fills state data for every registered interface and publishes them
-func (c *InterfaceStateUpdater) processSimpleCounterStat(statName statType, data adapter.SimpleCounterStat) {
-	if len(data) == 0 {
+// processInterfaceStatEntry fills state data for every registered interface and publishes them
+func (c *InterfaceStateUpdater) processInterfaceStatEntry(ifCounters govppapi.InterfaceCounters) {
+	ifState, found := c.getIfStateDataWLookup(ifCounters.InterfaceIndex)
+	if !found {
 		return
 	}
-	// Add up counter values from all workers, sumPackets is fixed length - all the inner arrays (workers)
-	// have values for all interfaces. Length is taken from the first worker (main thread) which is always present
-	sumPackets := make([]adapter.Counter, len(data[0]))
-	for _, worker := range data {
-		for swIfIndex, partialPackets := range worker {
-			sumPackets[swIfIndex] += partialPackets
-		}
+	ifState.Statistics = &intf.InterfaceState_Statistics{
+		DropPackets:     ifCounters.Drops,
+		PuntPackets:     ifCounters.Punts,
+		Ipv4Packets:     ifCounters.IP4,
+		Ipv6Packets:     ifCounters.IP6,
+		InNobufPackets:  ifCounters.RxNoBuf,
+		InMissPackets:   ifCounters.RxMiss,
+		InErrorPackets:  ifCounters.RxErrors,
+		OutErrorPackets: ifCounters.TxErrors,
+		InPackets:       ifCounters.RxPackets,
+		InBytes:         ifCounters.RxBytes,
+		OutPackets:      ifCounters.TxPackets,
+		OutBytes:        ifCounters.TxBytes,
 	}
-	for swIfIndex, packets := range sumPackets {
-		ifState, found := c.getIfStateDataWLookup(uint32(swIfIndex))
-		if !found {
-			continue
-		}
-		ifStats := ifState.Statistics
-		switch statName {
-		case Drop:
-			ifStats.DropPackets = uint64(packets)
-		case Punt:
-			ifStats.PuntPackets = uint64(packets)
-		case IPv4:
-			ifStats.Ipv4Packets = uint64(packets)
-		case IPv6:
-			ifStats.Ipv6Packets = uint64(packets)
-		case RxNoBuf:
-			ifStats.InNobufPackets = uint64(packets)
-		case RxMiss:
-			ifStats.InMissPackets = uint64(packets)
-		case RxError:
-			ifStats.InErrorPackets = uint64(packets)
-		case TxError:
-			ifStats.OutErrorPackets = uint64(packets)
-		}
 
-		c.publishIfState(&intf.InterfaceNotification{
-			Type: intf.InterfaceNotification_COUNTERS, State: ifState})
-	}
-}
-
-// processCombinedCounterStat fills combined state data for every registered interface and publishes them
-func (c *InterfaceStateUpdater) processCombinedCounterStat(statName statType, data adapter.CombinedCounterStat) {
-	if len(data) == 0 {
-		return
-	}
-	// Add up counter values from all workers, sumPackets is fixed length - all the inner arrays (workers)
-	// have values for all interfaces. Length is taken from the first worker (main thread) which is always present
-	sumCombined := make([]adapter.CombinedCounter, len(data[0]))
-	for _, worker := range data {
-		for swIfIndex, partialPackets := range worker {
-			sumCombined[swIfIndex].Packets += partialPackets.Packets
-			sumCombined[swIfIndex].Bytes += partialPackets.Bytes
-		}
-	}
-	for swIfIndex, combined := range sumCombined {
-		ifState, found := c.getIfStateDataWLookup(uint32(swIfIndex))
-		if !found {
-			continue
-		}
-		ifStats := ifState.Statistics
-		switch statName {
-		case Rx:
-			ifStats.InPackets = uint64(combined.Packets)
-			ifStats.InBytes = uint64(combined.Bytes)
-		case Tx:
-			ifStats.OutPackets = uint64(combined.Packets)
-			ifStats.OutBytes = uint64(combined.Bytes)
-		}
-		// TODO process other stats types
-
-		c.publishIfState(&intf.InterfaceNotification{
-			Type: intf.InterfaceNotification_COUNTERS, State: ifState})
-	}
+	c.publishIfState(&intf.InterfaceNotification{
+		Type: intf.InterfaceNotification_COUNTERS, State: ifState})
 }
 
 // processIfStateEvent process a VPP state event notification.

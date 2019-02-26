@@ -41,7 +41,7 @@ var (
 	HealthCheckThreshold     = 1                      // number of failed health checks until the error is reported
 	DefaultReplyTimeout      = time.Second * 1        // default timeout for replies from VPP
 	ReconnectInterval        = time.Second * 1        // default interval for reconnect attempts
-	MaxReconnectAttempts     = 10                     // maximum number of reconnect attempts
+	MaxReconnectAttempts     = 3                      // maximum number of reconnect attempts
 )
 
 // ConnectionState represents the current state of the connection to VPP.
@@ -58,6 +58,19 @@ const (
 	Failed
 )
 
+func (s ConnectionState) String() string {
+	switch s {
+	case Connected:
+		return "Connected"
+	case Disconnected:
+		return "Disconnected"
+	case Failed:
+		return "Failed"
+	default:
+		return fmt.Sprintf("UnknownState(%d)", s)
+	}
+}
+
 // ConnectionEvent is a notification about change in the VPP connection state.
 type ConnectionEvent struct {
 	// Timestamp holds the time when the event has been created.
@@ -72,7 +85,8 @@ type ConnectionEvent struct {
 
 // Connection represents a shared memory connection to VPP via vppAdapter.
 type Connection struct {
-	vppClient adapter.VppAPI // VPP binary API client adapter
+	vppClient adapter.VppAPI // VPP binary API client
+	//statsClient adapter.StatsAPI // VPP stats API client
 
 	vppConnected uint32 // non-zero if the adapter is connected to VPP
 
@@ -107,8 +121,9 @@ func newConnection(binapi adapter.VppAPI) *Connection {
 	return c
 }
 
-// Connect connects to VPP using specified VPP adapter and returns the connection handle.
-// This call blocks until VPP is connected, or an error occurs. Only one connection attempt will be performed.
+// Connect connects to VPP API using specified adapter and returns a connection handle.
+// This call blocks until it is either connected, or an error occurs.
+// Only one connection attempt will be performed.
 func Connect(binapi adapter.VppAPI) (*Connection, error) {
 	// create new connection handle
 	c := newConnection(binapi)
@@ -158,7 +173,7 @@ func (c *Connection) connectVPP() error {
 	return nil
 }
 
-// Disconnect disconnects from VPP and releases all connection-related resources.
+// Disconnect disconnects from VPP API and releases all connection-related resources.
 func (c *Connection) Disconnect() {
 	if c == nil {
 		return
