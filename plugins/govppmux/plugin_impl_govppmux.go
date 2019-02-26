@@ -243,7 +243,7 @@ func (p *Plugin) NewAPIChannel() (govppapi.Channel, error) {
 		p.config.RetryRequestCount,
 		p.config.RetryRequestTimeout,
 	}
-	return &goVppChan{ch, retryCfg, p.tracer}, nil
+	return newGovppChan(ch, retryCfg, p.tracer), nil
 }
 
 // NewAPIChannelBuffered returns a new API channel for communication with VPP via govpp core.
@@ -261,7 +261,7 @@ func (p *Plugin) NewAPIChannelBuffered(reqChanBufSize, replyChanBufSize int) (go
 		p.config.RetryRequestCount,
 		p.config.RetryRequestTimeout,
 	}
-	return &goVppChan{ch, retryCfg, p.tracer}, nil
+	return newGovppChan(ch, retryCfg, p.tracer), nil
 }
 
 // GetTrace returns all trace entries measured so far
