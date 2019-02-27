@@ -14,7 +14,10 @@
 
 package keyval
 
-import "github.com/ligato/cn-infra/datasync"
+import (
+	"github.com/ligato/cn-infra/datasync"
+	"context"
+)
 
 // BytesBroker allows storing, retrieving and removing data in a key-value form.
 type BytesBroker interface {
@@ -48,7 +51,7 @@ type BytesTxn interface {
 	// Commit tries to execute all the operations of the transaction.
 	// In the end, either all of them have been successfully applied or none
 	// of them and an error is returned.
-	Commit() error
+	Commit(ctx context.Context) error
 }
 
 // BytesKvPair groups getters for a key-value pair.

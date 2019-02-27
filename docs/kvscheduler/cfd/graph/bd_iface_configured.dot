@@ -1,0 +1,69 @@
+digraph kvscheduler {
+	ranksep=.5;
+	labelloc="b";
+	labeljust="c";
+	fontsize="12";
+	fontname="Ubuntu"; 
+	rankdir="LR";
+	bgcolor="lightgray";
+	style="solid";
+	penwidth="1";
+	pad="0.04";
+	nodesep="<no value>";
+	ordering="out";
+
+	node [shape="box" style="filled" fontname="Ubuntu" fillcolor="honeydew" penwidth="1.0" margin="0.03,0.0"];
+	edge [minlen="1"]
+
+		subgraph "cluster_nodes" {
+			fontsize="15";
+			tooltip="";
+			label="5 keys";
+			bgcolor="white";
+			labelloc="t";
+			labeljust="c";
+
+			"vpp/interface/address/my-tap/192.168.1.1/24" [ tooltip="[CONFIGURED] vpp/interface/address/my-tap/192.168.1.1/24\n-----\n" fillcolor="LightYellow" color="bisque4" style="rounded,filled" pad="0.01" margin="0.01" href="/scheduler/key-timeline?key=vpp/interface/address/my-tap/192.168.1.1/24&amp;time=1549966053793175789" ]
+
+				subgraph "cluster_vpp-bd-interface" {
+					penwidth="0.8";
+					fontsize="16";
+					style="filled";
+					fillcolor="#e6ecfa";
+					label="< vpp-bd-interface >";
+
+					"vpp/bd/my-bd/interface/my-tap" [ color="bisque4" style="rounded,filled" pad="0.01" margin="0.01" href="/scheduler/key-timeline?key=vpp/bd/my-bd/interface/my-tap&amp;time=1549966053793175789" label="vpp/bd/my-bd/interface/my-tap" fillcolor="LightYellow" tooltip="[CONFIGURED] vpp/bd/my-bd/interface/my-tap\n-----\nname: \"my-tap\"\n" ]
+
+				}
+
+			subgraph "cluster_vpp-bridge-domain" {
+				penwidth="0.8";
+				fontsize="16";
+				style="filled";
+				fillcolor="#e6ecfa";
+				label="< vpp-bridge-domain >";
+
+				"config/vpp/l2/v2/bridge-domain/my-bd" [ pad="0.01" margin="0.01" href="/scheduler/key-timeline?key=config/vpp/l2/v2/bridge-domain/my-bd&amp;time=1549966053793175789" label="my-bd" fillcolor="PaleGreen" tooltip="[CONFIGURED] config/vpp/l2/v2/bridge-domain/my-bd\n-----\nname: \"my-bd\"\nforward: true\nlearn: true\ninterfaces: <\n  name: \"my-tap\"\n>\n" ]
+
+			}
+
+			subgraph "cluster_vpp-interface" {
+				label="< vpp-interface >";
+				penwidth="0.8";
+				fontsize="16";
+				style="filled";
+				fillcolor="#e6ecfa";
+
+				"config/vpp/v2/interfaces/my-tap" [ pad="0.01" margin="0.01" href="/scheduler/key-timeline?key=config/vpp/v2/interfaces/my-tap&amp;time=1549966053793175789" label="my-tap" fillcolor="PaleGreen" tooltip="[CONFIGURED] config/vpp/v2/interfaces/my-tap\n-----\nname: \"my-tap\"\ntype: TAP\nenabled: true\nip_addresses: \"192.168.1.1/24\"\ntap: <\n  version: 1\n>\n" ]
+					"config/vpp/v2/interfaces/UNTAGGED-local0" [ pad="0.01" margin="0.01" href="/scheduler/key-timeline?key=config/vpp/v2/interfaces/UNTAGGED-local0&amp;time=1549966053793175789" label="UNTAGGED-local0" fillcolor="LightCyan" tooltip="[OBTAINED] config/vpp/v2/interfaces/UNTAGGED-local0\n-----\nname: \"UNTAGGED-local0\"\ntype: SOFTWARE_LOOPBACK\n" ]
+
+			}
+
+		}
+
+	"config/vpp/v2/interfaces/my-tap" -> "vpp/interface/address/my-tap/192.168.1.1/24" [ color="bisque4" arrowhead="invempty" ]
+		"config/vpp/l2/v2/bridge-domain/my-bd" -> "vpp/bd/my-bd/interface/my-tap" [ color="bisque4" arrowhead="invempty" ]
+		"vpp/bd/my-bd/interface/my-tap" -> "config/vpp/v2/interfaces/my-tap" [ tooltip="interface-exists" ]
+
+
+}

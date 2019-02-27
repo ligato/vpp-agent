@@ -1,0 +1,146 @@
+@startuml
+
+skinparam ParticipantPadding 20
+skinparam BoxPadding 10
+skinparam SequenceMessageAlign center
+
+participant ID as "Interface Descriptor"
+participant RD as "Route Descriptor"
+participant KVS as "KVScheduler"
+participant ORCH as "Orchestrator"
+database DB as "KVDB"
+
+ID -> KVS: **RegisterKVDescriptor**()
+activate KVS
+KVS --> ID: ok
+deactivate KVS
+RD -> KVS: **RegisterKVDescriptor**()
+activate KVS
+KVS --> RD: ok
+deactivate KVS
+
+== Resync Transaction #0 (route //my-route// delayed until the outgoing interface //my-tap// is configured) ==
+
+ORCH -> ORCH: **start startup resync**
+activate ORCH
+ORCH -> DB: list all values
+activate DB
+DB --> ORCH: **config snapshot** = [route //my-route//]
+deactivate DB
+ORCH -> KVS: **Resync Txn** = [\l - configure route //my-route// with //my-tap// as outgoing interface\l]
+activate KVS  #FFBBBB
+
+KVS -> KVS: **start graph refresh**
+ activate KVS  #FFBFDD
+  KVS -> KVS: **order of value retrieval** given by **RetrieveDependencies** \n (RouteDescriptor requests to Retrieve InterfaceDescriptor first)
+  KVS -> ID: **Retrieve**()
+   activate ID
+    ID --> KVS: retrieved interfaces = [ //local0// (OBTAINED)]
+   deactivate ID
+  KVS -> RD: **Retrieve**()
+   activate RD
+    RD --> KVS: retrieved interfaces = [ //default-route// (OBTAINED)]
+   deactivate RD
+  KVS -> KVS: **save refreshed graph**
+ deactivate KVS
+
+KVS -> KVS: **start txn #0**
+ activate KVS  #FFDDCC
+  KVS -> KVS: //local0// is OBTAINED => **not to be removed** by resync
+  KVS -> KVS: //default-route// is OBTAINED => **not to be removed** by resync
+  KVS -> ID: **KeySelector**(//my-route//)
+  activate ID
+  ID --> KVS: false
+  deactivate ID
+  KVS -> RD: **KeySelector**(//my-route//)
+  activate RD
+  RD --> KVS: true
+  deactivate RD
+  KVS -> KVS: value is **handled by** Route Descriptor
+  KVS -> RD: **Dependencies**(//my-route//)
+   activate RD
+    RD --> KVS: //my-route// **depends on** (interface) //my-tap//
+   deactivate RD
+  KVS -> KVS: value //my-route// is **not-ready** to be created (PENDING) \n **missing** value //my-tap//
+  KVS -> KVS: **finalize and record txn #0**
+ deactivate KVS
+
+ note over KVS: [[https://raw.githubusercontent.com/milanlenco/vpp-agent/kvs-docs/docs/kvscheduler/cfd/graph/route_pending.svg?sanitize=true Graph after transaction]]
+
+KVS --> ORCH: **value state updates**
+KVS --> ORCH: **txn error** (nil)
+deactivate KVS
+deactivate ORCH
+
+== Data-Change Transaction #0 (configure interface //my-tap// and the route //my-route// which depends on it) ==
+
+DB --> ORCH: **Put** = [interface //my-tap//]
+activate ORCH
+ORCH -> KVS: **Data-Change Txn** = [apply value (interface) //my-tap//]
+activate KVS  #FFBBBB
+
+KVS -> KVS: **start txn #1**
+ activate KVS  #FFDDCC
+  KVS -> ID: **KeySelector**(//my-tap//)
+  activate ID
+  ID --> KVS: true
+  deactivate ID
+  KVS -> KVS: value is **handled by** InterfaceDescriptor
+  KVS -> ID: **Dependencies**(//my-tap//)
+   activate ID
+    ID --> KVS: << no dependencies >>
+   deactivate ID
+  KVS -> KVS: value //my-tap// is **ready** to be created
+  KVS -> ID: **Validate**(my-tap)
+   activate ID
+    ID --> KVS: ok (valid configuration)
+   deactivate ID
+  KVS -> ID: **Create**(my-tap)
+   activate ID
+    ID --> KVS: ok
+   deactivate ID
+
+  KVS -> KVS: //my-route// (from previous txn) **is now ready** to be created \n dependency on //my-tap// is now **satisfied**
+   activate KVS #CCBBBB
+    KVS -> KVS: (**cached**) //my-route// is **handled by** RouteDescriptor
+    KVS -> RD: **Validate**(//my-route//)
+     activate RD
+      RD --> KVS: ok (valid configuration)
+     deactivate RD
+    KVS -> RD: **Create**(//my-route//)
+     activate RD
+      RD --> KVS: ok
+     deactivate RD
+    KVS -> RD: **DerivedValues**(//my-route//)
+     activate RD
+      RD --> KVS: <<no derived values>>
+     deactivate RD
+   KVS -> KVS: going back to finalize //my-tap//...
+   deactivate KVS
+
+  KVS -> ID: **DerivedValues**(//my-tap//)
+   activate ID
+    ID --> KVS: derived-values = [ //"address/my-tap/192.168.1.1/24"//]
+   deactivate ID
+   KVS -> KVS: **schedule create** for //"address/my-tap/192.168.1.1/24"//
+   KVS -> ID: **KeySelector**(//"address/my-tap/192.168.1.1/24"//)
+   activate ID
+    ID --> KVS: false
+   deactivate ID
+   KVS -> RD: **KeySelector**(//"address/my-tap/192.168.1.1/24"//)
+   activate RD
+    RD --> KVS: false
+   deactivate RD
+  KVS -> KVS: //"address/my-tap/192.168.1.1/24"// is **property** \n (without CRUD operations)
+
+  KVS -> KVS: **finalize and record txn #1**
+ deactivate KVS
+
+ note over KVS: [[https://raw.githubusercontent.com/milanlenco/vpp-agent/kvs-docs/docs/kvscheduler/cfd/graph/route_created.svg?sanitize=true Graph after transaction]]
+
+KVS --> ORCH: **value state updates** \n (including for //my-route// from previous txn)
+KVS --> ORCH: **txn error** (nil)
+deactivate KVS
+deactivate ORCH
+
+@enduml

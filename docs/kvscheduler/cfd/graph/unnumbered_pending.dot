@@ -1,0 +1,59 @@
+digraph kvscheduler {
+	ranksep=.5;
+	labelloc="b";
+	labeljust="c";
+	fontsize="12";
+	fontname="Ubuntu"; 
+	rankdir="LR";
+	bgcolor="lightgray";
+	style="solid";
+	penwidth="1";
+	pad="0.04";
+	nodesep="<no value>";
+	ordering="out";
+
+	node [shape="box" style="filled" fontname="Ubuntu" fillcolor="honeydew" penwidth="1.0" margin="0.03,0.0"];
+	edge [minlen="1"]
+
+		subgraph "cluster_nodes" {
+			label="4 keys";
+			bgcolor="white";
+			labelloc="t";
+			labeljust="c";
+			fontsize="15";
+			tooltip="";
+
+			"? unnumbered-interface-has-IP ?" [ href="/scheduler/key-timeline?key=? unnumbered-interface-has-IP ?&amp;time=1549974209336213678" fontcolor="White" fillcolor="Black" tooltip="[NONEXISTENT] ? unnumbered-interface-has-IP ?\n-----\n<nil>" pad="0.01" margin="0.01" ]
+
+				subgraph "cluster_vpp-interface" {
+					penwidth="0.8";
+					fontsize="16";
+					style="filled";
+					fillcolor="#e6ecfa";
+					label="< vpp-interface >";
+
+					"config/vpp/v2/interfaces/GigabitEthernet0/8/0" [ pad="0.01" margin="0.01" href="/scheduler/key-timeline?key=config/vpp/v2/interfaces/GigabitEthernet0/8/0&amp;time=1549974209336213678" label="GigabitEthernet0/8/0" fillcolor="PaleGreen" tooltip="[CONFIGURED] config/vpp/v2/interfaces/GigabitEthernet0/8/0\n-----\nname: \"GigabitEthernet0/8/0\"\ntype: DPDK\nenabled: true\n" ]
+						"config/vpp/v2/interfaces/UNTAGGED-local0" [ label="UNTAGGED-local0" fillcolor="LightCyan" tooltip="[OBTAINED] config/vpp/v2/interfaces/UNTAGGED-local0\n-----\nname: \"UNTAGGED-local0\"\ntype: SOFTWARE_LOOPBACK\n" pad="0.01" margin="0.01" href="/scheduler/key-timeline?key=config/vpp/v2/interfaces/UNTAGGED-local0&amp;time=1549974209336213678" ]
+						"config/vpp/v2/interfaces/my-unnumbered-tap" [ href="/scheduler/key-timeline?key=config/vpp/v2/interfaces/my-unnumbered-tap&amp;time=1549974209336213678" label="my-unnumbered-tap" fillcolor="PaleGreen" tooltip="[CONFIGURED] config/vpp/v2/interfaces/my-unnumbered-tap\n-----\nname: \"my-unnumbered-tap\"\ntype: TAP\nenabled: true\nunnumbered: <\n  interface_with_ip: \"GigabitEthernet0/8/0\"\n>\ntap: <\n  version: 1\n>\n" pad="0.01" margin="0.01" ]
+
+				}
+
+			subgraph "cluster_vpp-unnumbered-interface" {
+				label="< vpp-unnumbered-interface >";
+				penwidth="0.8";
+				fontsize="16";
+				style="filled";
+				fillcolor="#e6ecfa";
+
+				"vpp/interface/unnumbered/my-unnumbered-tap" [ fillcolor="LightYellow" style="rounded,filled" tooltip="[PENDING] vpp/interface/unnumbered/my-unnumbered-tap\n-----\ninterface_with_ip: \"GigabitEthernet0/8/0\"\n" color="bisque4" pad="0.01" margin="0.01" href="/scheduler/key-timeline?key=vpp/interface/unnumbered/my-unnumbered-tap&amp;time=1549974209336213678" label="vpp/interface/unnumbered/my-unnumbered-tap \n(borrow-ip-for-my-unnumbered-tap from CFD)" ]
+
+			}
+
+		}
+
+	"config/vpp/v2/interfaces/my-unnumbered-tap" -> "vpp/interface/unnumbered/my-unnumbered-tap" [ color="bisque4" arrowhead="invempty" ]
+		"vpp/interface/unnumbered/my-unnumbered-tap" -> "? unnumbered-interface-has-IP ?" [ tooltip="unnumbered-interface-has-IP" color="Red" ]
+
+
+}
+

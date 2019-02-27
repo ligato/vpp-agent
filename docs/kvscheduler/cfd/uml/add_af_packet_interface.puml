@@ -1,0 +1,109 @@
+@startuml
+
+skinparam ParticipantPadding 20
+skinparam BoxPadding 10
+skinparam SequenceMessageAlign center
+
+participant IW as "Linux Interface Watcher"
+participant ID as "VPP Interface Descriptor"
+participant KVS as "KVScheduler"
+participant ORCH as "Orchestrator \n(NB COLLAPSED)"
+
+ID -> KVS: **RegisterKVDescriptor**()
+activate KVS
+ KVS --> ID: ok
+deactivate KVS
+IW -> KVS: **RegisterKVDescriptor**()
+activate KVS
+ KVS --> IW: ok
+deactivate KVS
+
+== Resync Transaction #0 (configure //my-af-packet// interface) ==
+
+ORCH -> ORCH: **start startup resync**
+activate ORCH
+ORCH -> KVS: **Resync Txn** = [\l - interface //my-af-packet// to be attached to **eth1** from the Linux network stack \l ]
+
+activate KVS  #FFBBBB
+KVS -> KVS: **start graph refresh**
+ activate KVS  #FFBFDD
+  KVS -> IW: **Retrieve**()
+   activate IW
+    IW --> KVS: retrieved Linux interfaces = [ //linux/interface/host-name/eth0// (OBTAINED)]
+   deactivate IW
+  KVS -> ID: **Retrieve**()
+   activate ID
+    ID --> KVS: retrieved interfaces = [ //local0// (OBTAINED)]
+   deactivate ID
+  KVS -> KVS: **save refreshed graph**
+ deactivate KVS
+
+ KVS -> KVS: **start txn**
+  activate KVS  #FFDDCC
+   KVS -> KVS: //local0// is OBTAINED => **not to be removed** by resync
+   KVS -> KVS: //linux/interface/host-name/eth0// is OBTAINED => **not to be removed** by resync
+   KVS -> IW: **KeySelector**(//my-af-packet//)
+    activate IW
+     IW --> KVS: false
+    deactivate IW
+   KVS -> ID: **KeySelector**(//my-af-packet//)
+    activate ID
+     ID --> KVS: true
+    deactivate ID
+   KVS -> KVS: value is **handled by** Interface Descriptor
+   KVS -> ID: **Dependencies**(//my-af-packet//)
+    activate ID
+     ID --> KVS: //my-af-packet// **depends on** (Linux interface) //"linux/interface/host-name/eth1"//
+    deactivate ID
+   KVS -> KVS: value //my-af-packet// is **not-ready** to be created (**PENDING**) \n - **missing** value //"linux/interface/host-name/eth1"//
+
+  KVS -> KVS: **finalize and record txn**
+ deactivate KVS
+
+ note over KVS: [[https://raw.githubusercontent.com/milanlenco/vpp-agent/kvs-docs/docs/kvscheduler/cfd/graph/afpacket_pending.svg?sanitize=true Graph after transaction]]
+
+KVS --> ORCH: **value state updates**
+KVS --> ORCH: **txn error** (nil)
+deactivate KVS
+deactivate ORCH
+
+|||
+|||
+
+== SB notification #1 (Linux interface //"linux/interface/host-name/eth1"// was created) ==
+
+IW -> KVS: **Notification**: value //"linux/interface/host-name/eth1"// was **created**
+ activate KVS #DDFFCC
+
+   KVS -> IW: **KeySelector**(//"linux/interface/host-name/eth1"//)?
+    activate IW
+     IW --> KVS: true
+    deactivate IW
+   KVS -> KVS: value is **handled by** InterfaceWatcher
+   KVS -> KVS: add //"linux/interface/host-name/eth1"// to the graph as already created
+   KVS -> KVS: check values that depend on //"linux/interface/host-name/eth1"//...
+
+   KVS -> KVS: //my-af-packet// (from previous txn) **is now ready** to be created \n dependency on //"linux/interface/host-name/eth1"// is now **satisfied**
+    activate KVS #CCBBBB
+     KVS -> KVS: (**cached**) //my-af-packet// is **handled by** Interface Descriptor
+     KVS -> ID: **Validate**(//my-af-packet//)
+      activate ID
+       ID --> KVS: ok (valid configuration)
+      deactivate ID
+     KVS -> ID: **Create**(//my-af-packet//)
+      activate ID
+       ID --> KVS: ok
+      deactivate ID
+     KVS -> ID: **DerivedValues**(//my-af-packet//)
+      activate ID
+       ID --> KVS: << no derived values >> (interface without IP address)
+      deactivate ID
+    deactivate KVS
+
+  note over KVS: [[https://raw.githubusercontent.com/milanlenco/vpp-agent/kvs-docs/docs/kvscheduler/cfd/graph/afpacket_created.svg?sanitize=true Graph after transaction]]
+
+KVS --> ORCH: **value state updates**
+deactivate KVS
+
+
+@enduml

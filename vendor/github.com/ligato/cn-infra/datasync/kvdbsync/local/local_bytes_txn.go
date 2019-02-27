@@ -20,6 +20,7 @@ import (
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/datasync/syncbase"
 	"github.com/ligato/cn-infra/db/keyval"
+	"context"
 )
 
 // bytesTxnItem is used in BytesTxn.
@@ -33,11 +34,11 @@ type bytesTxnItem struct {
 type BytesTxn struct {
 	access sync.Mutex
 	items  map[string]*bytesTxnItem
-	commit func(map[string]datasync.ChangeValue) error
+	commit func(context.Context, map[string]datasync.ChangeValue) error
 }
 
 // NewBytesTxn is a constructor.
-func NewBytesTxn(commit func(map[string]datasync.ChangeValue) error) *BytesTxn {
+func NewBytesTxn(commit func(context.Context, map[string]datasync.ChangeValue) error) *BytesTxn {
 	return &BytesTxn{
 		items:  make(map[string]*bytesTxnItem),
 		commit: commit,
@@ -65,7 +66,7 @@ func (txn *BytesTxn) Delete(key string) keyval.BytesTxn {
 }
 
 // Commit executes the transaction.
-func (txn *BytesTxn) Commit() error {
+func (txn *BytesTxn) Commit(ctx context.Context) error {
 	txn.access.Lock()
 	defer txn.access.Unlock()
 
@@ -78,5 +79,5 @@ func (txn *BytesTxn) Commit() error {
 
 		kvs[key] = syncbase.NewChangeBytes(key, item.data, 0, changeType)
 	}
-	return txn.commit(kvs)
+	return txn.commit(ctx, kvs)
 }

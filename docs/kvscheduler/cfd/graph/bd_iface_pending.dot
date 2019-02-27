@@ -1,0 +1,67 @@
+digraph kvscheduler {
+	ranksep=.5;
+	labelloc="b";
+	labeljust="c";
+	fontsize="12";
+	fontname="Ubuntu"; 
+	rankdir="LR";
+	bgcolor="lightgray";
+	style="solid";
+	penwidth="1";
+	pad="0.04";
+	nodesep="<no value>";
+	ordering="out";
+
+	node [shape="box" style="filled" fontname="Ubuntu" fillcolor="honeydew" penwidth="1.0" margin="0.03,0.0"];
+	edge [minlen="1"]
+
+		subgraph "cluster_nodes" {
+			label="3 keys";
+			bgcolor="white";
+			labelloc="t";
+			labeljust="c";
+			fontsize="15";
+			tooltip="";
+
+
+			subgraph "cluster_vpp-bd-interface" {
+				penwidth="0.8";
+				fontsize="16";
+				style="filled";
+				fillcolor="#e6ecfa";
+				label="< vpp-bd-interface >";
+
+				"vpp/bd/my-bd/interface/my-tap" [ tooltip="[PENDING] vpp/bd/my-bd/interface/my-tap\n-----\nname: \"my-tap\"\n" color="bisque4" pad="0.01" margin="0.01" href="/scheduler/key-timeline?key=vpp/bd/my-bd/interface/my-tap&amp;time=1549965921720324950" label="vpp/bd/my-bd/interface/my-tap" fillcolor="LightYellow" style="rounded,filled" ]
+
+			}
+
+			subgraph "cluster_vpp-bridge-domain" {
+				penwidth="0.8";
+				fontsize="16";
+				style="filled";
+				fillcolor="#e6ecfa";
+				label="< vpp-bridge-domain >";
+
+				"config/vpp/l2/v2/bridge-domain/my-bd" [ href="/scheduler/key-timeline?key=config/vpp/l2/v2/bridge-domain/my-bd&amp;time=1549965921720324950" label="my-bd" fillcolor="PaleGreen" tooltip="[CONFIGURED] config/vpp/l2/v2/bridge-domain/my-bd\n-----\nname: \"my-bd\"\nforward: true\nlearn: true\ninterfaces: <\n  name: \"my-tap\"\n>\n" pad="0.01" margin="0.01" ]
+
+			}
+
+			subgraph "cluster_vpp-interface" {
+				penwidth="0.8";
+				fontsize="16";
+				style="filled";
+				fillcolor="#e6ecfa";
+				label="< vpp-interface >";
+
+				"config/vpp/v2/interfaces/my-tap" [ pad="0.01" margin="0.01" href="/scheduler/key-timeline?key=config/vpp/v2/interfaces/my-tap&amp;time=1549965921720324950" label="my-tap" fillcolor="Black" fontcolor="White" tooltip="[NONEXISTENT] config/vpp/v2/interfaces/my-tap\n-----\n<nil>" ]
+					"config/vpp/v2/interfaces/UNTAGGED-local0" [ pad="0.01" margin="0.01" href="/scheduler/key-timeline?key=config/vpp/v2/interfaces/UNTAGGED-local0&amp;time=1549965921720324950" label="UNTAGGED-local0" fillcolor="LightCyan" tooltip="[OBTAINED] config/vpp/v2/interfaces/UNTAGGED-local0\n-----\nname: \"UNTAGGED-local0\"\ntype: SOFTWARE_LOOPBACK\n" ]
+
+			}
+
+		}
+
+	"vpp/bd/my-bd/interface/my-tap" -> "config/vpp/v2/interfaces/my-tap" [ tooltip="interface-exists" color="Red" ]
+		"config/vpp/l2/v2/bridge-domain/my-bd" -> "vpp/bd/my-bd/interface/my-tap" [ color="bisque4" arrowhead="invempty" ]
+
+
+}

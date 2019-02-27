@@ -14,5 +14,5 @@
 
 // Package vppagent is the parent for vpp-specific packages used to build
 // VPP Agent, a control/management plane for VPP-based cloud-native VNFs.
-// VPP Agent is built on the cn-infra platform.
+// VPP Agent is built on the cn-infra framework.
 package vppagent

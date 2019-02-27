@@ -15,6 +15,7 @@
 package msg
 
 import (
+	"context"
 	"encoding/json"
 
 	"github.com/gogo/protobuf/proto"
@@ -25,8 +26,9 @@ import (
 //go:generate protoc --proto_path=. --gogo_out=plugins=grpc:. datamsg.proto
 
 // NewChangeWatchResp is a constructor.
-func NewChangeWatchResp(message *DataChangeRequest, callback func(error)) *ChangeEvent {
+func NewChangeWatchResp(ctx context.Context, message *DataChangeRequest, callback func(error)) *ChangeEvent {
 	return &ChangeEvent{
+		ctx:     ctx,
 		changes: []datasync.ProtoWatchResp{
 			&ChangeWatchResp{message: message},
 		},
@@ -36,8 +38,14 @@ func NewChangeWatchResp(message *DataChangeRequest, callback func(error)) *Chang
 
 // ChangeEvent represents change event with changes.
 type ChangeEvent struct {
+	ctx      context.Context
 	changes  []datasync.ProtoWatchResp
 	callback func(error)
+}
+
+// GetContext returns the context associated with the event.
+func (ev *ChangeEvent) GetContext() context.Context {
+	return ev.ctx
 }
 
 // GetChanges returns list of changes for the change event.

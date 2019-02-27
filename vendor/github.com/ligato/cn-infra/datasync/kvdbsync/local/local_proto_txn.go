@@ -15,6 +15,7 @@
 package local
 
 import (
+	"context"
 	"sync"
 
 	"github.com/gogo/protobuf/proto"
@@ -42,11 +43,11 @@ func (item *protoTxnItem) GetValue(out proto.Message) error {
 type ProtoTxn struct {
 	access sync.Mutex
 	items  map[string]*protoTxnItem
-	commit func(map[string]datasync.ChangeValue) error
+	commit func(context.Context, map[string]datasync.ChangeValue) error
 }
 
 // NewProtoTxn is a constructor.
-func NewProtoTxn(commit func(map[string]datasync.ChangeValue) error) *ProtoTxn {
+func NewProtoTxn(commit func(context.Context, map[string]datasync.ChangeValue) error) *ProtoTxn {
 	return &ProtoTxn{
 		items:  make(map[string]*protoTxnItem),
 		commit: commit,
@@ -74,7 +75,7 @@ func (txn *ProtoTxn) Delete(key string) keyval.ProtoTxn {
 }
 
 // Commit executes the transaction.
-func (txn *ProtoTxn) Commit() error {
+func (txn *ProtoTxn) Commit(ctx context.Context) error {
 	txn.access.Lock()
 	defer txn.access.Unlock()
 
@@ -89,5 +90,5 @@ func (txn *ProtoTxn) Commit() error {
 		kvs[key] = syncbase.NewChange(key, item.data, 0, changeType)
 	}
 
-	return txn.commit(kvs)
+	return txn.commit(ctx, kvs)
 }

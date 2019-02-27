@@ -15,14 +15,17 @@
 package syncbase
 
 import (
+	"context"
+
 	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/logging/logrus"
 )
 
 // NewResyncEventDB creates a new instance of ResyncEventDB using the given map of iterators.
-func NewResyncEventDB(its map[string]datasync.KeyValIterator) *ResyncEventDB {
+func NewResyncEventDB(ctx context.Context, its map[string]datasync.KeyValIterator) *ResyncEventDB {
 	return &ResyncEventDB{
+		ctx:         ctx,
 		its:         its,
 		DoneChannel: &DoneChannel{make(chan error, 1)},
 	}
@@ -30,8 +33,14 @@ func NewResyncEventDB(its map[string]datasync.KeyValIterator) *ResyncEventDB {
 
 // ResyncEventDB implements the interface datasync.ResyncEvent (see comments in there).
 type ResyncEventDB struct {
+	ctx context.Context
 	its map[string]datasync.KeyValIterator
 	*DoneChannel
+}
+
+// GetContext returns the context associated with the event.
+func (ev *ResyncEventDB) GetContext() context.Context {
+	return ev.ctx
 }
 
 // GetValues returns values of the event.
@@ -41,8 +50,14 @@ func (ev *ResyncEventDB) GetValues() map[string]datasync.KeyValIterator {
 
 // ChangeEvent is a simple structure that implements interface datasync.ChangeEvent.
 type ChangeEvent struct {
+	ctx      context.Context
 	Changes  []datasync.ProtoWatchResp
 	delegate datasync.CallbackResult
+}
+
+// GetContext returns the context associated with the event.
+func (ev *ChangeEvent) GetContext() context.Context {
+	return ev.ctx
 }
 
 // GetChanges returns list of changes for the change event.
