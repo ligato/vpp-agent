@@ -1,0 +1,43 @@
+digraph kvscheduler {
+	ranksep=.5;
+	labelloc="b";
+	labeljust="c";
+	fontsize="12";
+	fontname="Ubuntu"; 
+	rankdir="LR";
+	bgcolor="lightgray";
+	style="solid";
+	penwidth="1";
+	pad="0.04";
+	nodesep="<no value>";
+	ordering="out";
+
+	node [shape="box" style="filled" fontname="Ubuntu" fillcolor="honeydew" penwidth="1.0" margin="0.03,0.0"];
+	edge [minlen="1"]
+
+		subgraph "cluster_nodes" {
+			bgcolor="white";
+			labelloc="t";
+			labeljust="c";
+			fontsize="15";
+			tooltip="";
+			label="2 keys";
+
+
+			subgraph "cluster_vpp-interface" {
+				penwidth="0.8";
+				fontsize="16";
+				style="filled";
+				fillcolor="#e6ecfa";
+				label="< vpp-interface >";
+
+				"config/vpp/v2/interfaces/UNTAGGED-local0" [ tooltip="[OBTAINED] config/vpp/v2/interfaces/UNTAGGED-local0\n-----\nname: \"UNTAGGED-local0\"\ntype: SOFTWARE_LOOPBACK\n" pad="0.01" margin="0.01" href="/scheduler/key-timeline?key=config/vpp/v2/interfaces/UNTAGGED-local0&amp;time=1549972017481800974" label="UNTAGGED-local0" fillcolor="LightCyan" ]
+					"config/vpp/v2/interfaces/my-tap" [ href="/scheduler/key-timeline?key=config/vpp/v2/interfaces/my-tap&amp;time=1549972017481800974" label="my-tap" fillcolor="Deeppink" tooltip="[RETRYING] config/vpp/v2/interfaces/my-tap\n-----\nname: \"my-tap\"\ntype: TAP\nenabled: true\nip_addresses: \"192.168.1.1/24\"\ntap: <\n  version: 1\n>\n" pad="0.01" margin="0.01" ]
+
+			}
+
+		}
+
+
+
+}

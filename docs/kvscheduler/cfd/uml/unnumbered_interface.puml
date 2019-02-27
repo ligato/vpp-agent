@@ -1,0 +1,200 @@
+@startuml
+
+skinparam ParticipantPadding 20
+skinparam BoxPadding 10
+skinparam SequenceMessageAlign center
+
+participant ID as "Interface Descriptor"
+participant UD as "Unnumbered Interface Descriptor"
+participant KVS as "KVScheduler"
+participant ORCH as "Orchestrator \n(NB COLLAPSED)"
+
+ID -> KVS: **RegisterKVDescriptor**()
+activate KVS
+KVS --> ID: ok
+deactivate KVS
+UD -> KVS: **RegisterKVDescriptor**()
+activate KVS
+KVS --> UD: ok
+deactivate KVS
+
+== Resync Transaction #0 (configure unnumbered interface //my-unnumbered-tap// borrowing IP from //GigabitEthernet0/8/0//) ==
+
+ORCH -> ORCH: **start startup resync**
+activate ORCH
+ORCH -> KVS: **Resync Txn** = [\l - interface //GigabitEthernet0/8/0// with IP 192.168.1.1/24\l - interface //my-unnumbered-tap// borrowing IP from //GigabitEthernet0/8/0// \l ]
+activate KVS  #FFBBBB
+
+KVS -> KVS: **start graph refresh**
+ activate KVS  #FFBFDD
+  KVS -> ID: **Retrieve**()
+   activate ID
+    ID --> KVS: retrieved interfaces = [ //local0// (OBTAINED)]
+   deactivate ID
+  KVS -> KVS: Unnumbered Interface descriptor **does not define Retrieve()** \n(describes only derived values)
+  KVS -> KVS: **save refreshed graph**
+ deactivate KVS
+
+KVS -> KVS: **start txn**
+ activate KVS  #FFDDCC
+  KVS -> KVS: //local0// is OBTAINED => **not to be removed** by resync
+
+ KVS -> ID: **KeySelector**(//GigabitEthernet0/8/0//)
+  activate ID
+   ID --> KVS: true
+  deactivate ID
+ KVS -> KVS: value is **handled by** InterfaceDescriptor
+ KVS -> ID: **Dependencies**(//GigabitEthernet0/8/0//)
+  activate ID
+   ID --> KVS: << no dependencies >>
+  deactivate ID
+ KVS -> KVS: value //GigabitEthernet0/8/0// is **ready** to be created
+ KVS -> ID: **Validate**(//GigabitEthernet0/8/0//)
+  activate ID
+   ID --> KVS: ok (valid configuration)
+  deactivate ID
+ KVS -> ID: **Create**(//GigabitEthernet0/8/0//)
+  activate ID
+   ID --> KVS: ok
+  deactivate ID
+
+ KVS -> ID: **DerivedValues**(//GigabitEthernet0/8/0//)
+  activate ID
+   ID --> KVS: derived-values = [ //"address/GigabitEthernet0/8/0/192.168.1.1/24"//]
+  deactivate ID
+  KVS -> KVS: **schedule create** for //"address/GigabitEthernet0/8/0/192.168.1.1/24"//
+  KVS -> ID: **KeySelector**(//"address/GigabitEthernet0/8/0/192.168.1.1/24"//)
+  activate ID
+   ID --> KVS: false
+  deactivate ID
+  KVS -> UD: **KeySelector**(//"address/GigabitEthernet0/8/0/192.168.1.1/24"//)
+  activate UD
+   UD --> KVS: false
+  deactivate UD
+ KVS -> KVS: //"address/GigabitEthernet0/8/0/192.168.1.1/24"// is **property** \n (without CRUD operations)
+ 
+ KVS -> ID: **KeySelector**(//my-unnumbered-tap//)
+  activate ID
+   ID --> KVS: true
+  deactivate ID
+ KVS -> KVS: value is **handled by** Interface Descriptor
+ KVS -> ID: **Dependencies**(//my-unnumbered-tap//)
+  activate ID
+   ID --> KVS: << no dependencies >> \n(for the TAP interface itself, without borrowing IP yet)
+  deactivate ID
+ KVS -> ID: **Validate**(//my-unnumbered-tap//)
+  activate ID
+   ID --> KVS: ok (valid config)
+  deactivate ID
+ KVS -> ID: **Create**(//my-unnumbered-tap//) \n(TAP interface created, but not as an unnumbered yet)
+  activate ID
+   ID --> KVS: ok
+  deactivate ID
+
+ KVS -> ID: **DerivedValues**(//my-unnumbered-tap//)
+  activate ID
+   ID --> KVS: derived values = [ //borrow-ip-for-my-unnumbered-tap// ]
+  deactivate ID
+ KVS -> KVS: **schedule create** for //borrow-ip-for-my-unnumbered-tap//
+  KVS -> ID: **KeySelector**(//borrow-ip-for-my-unnumbered-tap//)
+  activate ID
+   ID --> KVS: false
+  deactivate ID
+  KVS -> UD: **KeySelector**(//borrow-ip-for-my-unnumbered-tap//)
+  activate UD
+   UD --> KVS: true
+  deactivate UD
+ KVS -> KVS: //borrow-ip-for-my-unnumbered-tap// is **handled by** Unnumbered Interface Descriptor
+
+ KVS -> UD: **Dependencies**(//borrow-ip-for-my-unnumbered-tap//)
+  activate UD
+   UD --> KVS: //borrow-ip-for-my-unnumbered-tap// **depends on** (interface) //GigabitEthernet0/8/0// to exists \nand have at least one IP address assigned \n(**AnyOf** selecting //address/GigabitEthernet0/8/0/*//)
+  deactivate UD
+ KVS -> KVS: value //borrow-ip-for-my-unnumbered-tap// is **ready** to be created \n(//"address/GigabitEthernet0/8/0/192.168.1.1/24"// satisfies the dependency)
+ KVS -> UD: **Validate**(//borrow-ip-for-my-unnumbered-tap//)
+  activate UD
+   UD --> KVS: ok (valid derived value)
+  deactivate UD
+ KVS -> UD: **Create**(//borrow-ip-for-my-unnumbered-tap//) \n (borrows IP for the TAP interface)
+  activate UD
+   UD --> KVS: ok
+  deactivate UD
+
+ KVS -> KVS: **finalize and record txn**
+ deactivate KVS
+
+ note over KVS: [[https://raw.githubusercontent.com/milanlenco/vpp-agent/kvs-docs/docs/kvscheduler/cfd/graph/unnumbered_created.svg?sanitize=true Graph after transaction]]
+
+KVS --> ORCH: **value state updates**
+KVS --> ORCH: **txn error** (nil)
+deactivate KVS
+deactivate ORCH
+
+== Data-Change Transaction #1 (remove IP address from interface //GigabitEthernet0/8/0// and undo //borrow-ip-for-my-unnumbered-tap// as a consequence) ==
+
+ORCH -> ORCH: **apply change** received from NB
+activate ORCH
+ORCH -> KVS: **Data-Change Txn** = [\l - interface //GigabitEthernet0/8/0// without IP address - L2 mode, further denoted as //GigabitEthernet0/8/0-l2//\l]
+activate KVS  #FFBBBB
+
+KVS -> KVS: **start txn #1**
+ activate KVS  #FFDDCC
+  KVS -> KVS: //GigabitEthernet0/8/0-l2// is a **new revision for** //GigabitEthernet0/8/0//
+  KVS -> KVS: (**cached**) value is **handled by** InterfaceDescriptor
+  
+  KVS -> ID: **ValueComparator**(old= //GigabitEthernet0/8/0//, new= //GigabitEthernet0/8/0-l2//)
+   activate ID
+    ID --> KVS: false (the new and the current value revisions are not equivalent and **Update()** is needed)
+   deactivate ID
+   
+  KVS -> ID: **UpdateWithRecreate**(old= //GigabitEthernet0/8/0//, new= //GigabitEthernet0/8/0-l2//)
+   activate ID
+    ID --> KVS: false (the change can be applied incrementally using **Update()**)
+   deactivate ID
+
+  KVS -> KVS: **determine obsolete derived values** \ngoing from //GigabitEthernet0/8/0//  to //GigabitEthernet0/8/0-l2//
+  KVS -> ID: **DerivedValues**(//GigabitEthernet0/8/0-l2//)
+   activate ID
+    ID --> KVS: << no derived values >> (without IP address)
+   deactivate ID
+  KVS -> KVS: //"address/GigabitEthernet0/8/0/192.168.1.1/24"// is obsolete derived value
+  KVS -> KVS: (**cached**) //"address/GigabitEthernet0/8/0/192.168.1.1/24"// is **property** \n (no Delete operation to execute)
+  KVS -> KVS: remove //"address/GigabitEthernet0/8/0/192.168.1.1/24"// from the graph
+
+  KVS -> KVS: (**cached**) //borrow-ip-for-my-unnumbered-tap// **depends on** //address/GigabitEthernet0/8/0/*//\nand must be therefore Deleted first \nand set to the PENDING state
+   activate KVS #CCBBBB
+    KVS -> KVS: (**cached**) //borrow-ip-for-my-unnumbered-tap// is **handled by** Unnumbered Interface Descriptor
+    KVS -> UD: **Delete**(//borrow-ip-for-my-unnumbered-tap//) \n (//my-unnumbered-tap// is not really unnumbered for the time being)
+     activate UD
+      UD --> KVS: ok
+     deactivate UD
+    KVS -> KVS: set value //borrow-ip-for-my-unnumbered-tap// to the **PENDING** state
+  deactivate KVS
+  KVS -> KVS: removed value //"address/GigabitEthernet0/8/0/192.168.1.1/24"// from the graph
+
+  KVS -> ID: **Dependencies**(//GigabitEthernet0/8/0-l2//)
+   activate ID
+    ID --> KVS: << no dependencies >>
+   deactivate ID
+  KVS -> KVS: value //GigabitEthernet0/8/0-l2// **is ready for** //GigabitEthernet0/8/0// to be updated into
+  KVS -> ID: **Validate**(//GigabitEthernet0/8/0-l2//)
+   activate ID
+    ID --> KVS: ok (valid new revision)
+   deactivate ID
+  KVS -> ID: **Update**(old= //GigabitEthernet0/8/0//, new= //GigabitEthernet0/8/0-l2//)
+   activate ID
+    ID --> KVS: ok
+   deactivate ID
+  KVS -> KVS: (**cached**) no values derived \nfrom //GigabitEthernet0/8/0-l2// to be updated/created
+
+  KVS -> KVS: **finalize and record txn #1**
+ deactivate KVS
+
+ note over KVS: [[https://raw.githubusercontent.com/milanlenco/vpp-agent/kvs-docs/docs/kvscheduler/cfd/graph/unnumbered_pending.svg?sanitize=true Graph after transaction]]
+
+KVS --> ORCH: **value state updates** \n (including for now-pending //borrow-ip-for-my-unnumbered-tap// from previous txn)
+KVS --> ORCH: **txn error** (nil)
+deactivate KVS
+deactivate ORCH
+
+@enduml

@@ -13,6 +13,7 @@ import (
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/namsral/flag"
+	"context"
 )
 
 // SimpleRedis is base structure which holds together all items needed to run the example - logger, redis client,
@@ -166,7 +167,7 @@ func (sr *SimpleRedis) start(db keyval.BytesBroker) {
 	for i := 3; i <= 11; i++ {
 		txn.Put(sr.prefix+"/key"+strconv.Itoa(i), []byte("data"+strconv.Itoa(i)))
 	}
-	if err := txn.Commit(); err != nil {
+	if err := txn.Commit(context.Background()); err != nil {
 		sr.log.Errorf("failed to commit transaction: %v", err)
 	}
 	sr.log.Info("... done")

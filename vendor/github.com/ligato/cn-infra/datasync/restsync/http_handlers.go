@@ -16,10 +16,10 @@ package restsync
 
 import (
 	"net/http"
+	"context"
+	"io/ioutil"
 
 	"github.com/unrolled/render"
-
-	"io/ioutil"
 
 	"github.com/ligato/cn-infra/datasync/kvdbsync/local"
 )
@@ -36,7 +36,7 @@ func (adapter *Adapter) putMessage(formatter *render.Render) http.HandlerFunc {
 			if err != nil {
 				localtxn := local.NewBytesTxn(adapter.base.PropagateChanges)
 				localtxn.Put(req.RequestURI, data)
-				err = localtxn.Commit()
+				err = localtxn.Commit(context.Background())
 			}
 		}
 
@@ -53,7 +53,7 @@ func (adapter *Adapter) delMessage(formatter *render.Render) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		localtxn := local.NewBytesTxn(adapter.base.PropagateChanges)
 		localtxn.Delete(req.RequestURI)
-		err := localtxn.Commit()
+		err := localtxn.Commit(context.Background())
 
 		if err != nil {
 			formatter.JSON(w, http.StatusInternalServerError, struct{ Test string }{err.Error()})

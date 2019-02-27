@@ -1,0 +1,194 @@
++======================================================================================================================+
+| Transaction #0                                                                          NB Transaction (Full Resync) |
++======================================================================================================================+
+  * transaction arguments:
+      - seq-num: 0
+      - type: NB Transaction, Full Resync
+      - values:
+          - key: config/vpp/l2/v2/bridge-domain/bd2
+            val: { name:"bd2" interfaces:<name:"tap1" >  }
+          - key: config/vpp/l2/v2/fib/bd2/mac/ee:ee:ee:ff:ff:ff
+            val: { phys_address:"ee:ee:ee:ff:ff:ff" bridge_domain:"bd2" outgoing_interface:"tap1"  }
+          - key: config/vpp/v2/interfaces/tap1
+            val: { name:"tap1" type:TAP enabled:true  }
+  * planned operations:
+      1. CREATE:
+          - key: config/vpp/l2/v2/bridge-domain/bd2
+          - value: { name:"bd2" interfaces:<name:"tap1" >  } 
+      2. CREATE:
+          - key: config/vpp/v2/interfaces/tap1
+          - value: { name:"tap1" type:TAP enabled:true  } 
+      3. CREATE [DERIVED]:
+          - key: vpp/bd/bd2/interface/tap1
+          - value: { name:"tap1"  } 
+      4. CREATE:
+          - key: config/vpp/l2/v2/fib/bd2/mac/ee:ee:ee:ff:ff:ff
+          - value: { phys_address:"ee:ee:ee:ff:ff:ff" bridge_domain:"bd2" outgoing_interface:"tap1"  } 
+
+ERRO[0008] cannot find free interface id                 loc="descriptor/interface_crud.go(31)" logger=vpp-ifplugin.if-descriptor
+o----------------------------------------------------------------------------------------------------------------------o
+  * executed operations (2019-02-21 13:27:16.21 +0100 CET -> 2019-02-21 13:27:16.235 +0100 CET, dur: 25ms):
+      1. CREATE:
+          - key: config/vpp/l2/v2/bridge-domain/bd2
+          - value: { name:"bd2" interfaces:<name:"tap1" >  } 
+      2. CREATE [DERIVED NOOP IS-PENDING]:
+          - key: vpp/bd/bd2/interface/tap1
+          - value: { name:"tap1"  } 
+      3. CREATE [NOOP IS-PENDING]:
+          - key: config/vpp/l2/v2/fib/bd2/mac/ee:ee:ee:ff:ff:ff
+          - value: { phys_address:"ee:ee:ee:ff:ff:ff" bridge_domain:"bd2" outgoing_interface:"tap1"  } 
+      4. CREATE:
+          - key: config/vpp/v2/interfaces/tap1
+          - value: { name:"tap1" type:TAP enabled:true  } 
+          - error: cannot find free interface id
+x----------------------------------------------------------------------------------------------------------------------x
+x #0                                                                                                         took 25ms x
+x----------------------------------------------------------------------------------------------------------------------x
+
+
+
++======================================================================================================================+
+| GRAPH                                                                                                        5 nodes |
++======================================================================================================================+
+| [vpp-bridge-domain] config/vpp/l2/v2/bridge-domain/bd2 (bd2)                                        TXN-0 CONFIGURED |
+|   name: "bd2"                                                                                                        |
+|   interfaces: <                                                                                                      |
+|     name: "tap1"                                                                                                     |
+|   >                                                                                                                  |
+| Derives:                                                                                                             |
+|  - [vpp-bd-interface] vpp/bd/bd2/interface/tap1                                                                      |
+| Metadata: &{Index:1}                                                                                                 |
++----------------------------------------------------------------------------------------------------------------------+
+| [vpp-l2-fib] config/vpp/l2/v2/fib/bd2/mac/ee:ee:ee:ff:ff:ff (bd2/mac/ee:ee:ee:ff:ff:ff) <UNAVAILABLE>  TXN-0 PENDING |
+|   phys_address: "ee:ee:ee:ff:ff:ff"                                                                                  |
+|   bridge_domain: "bd2"                                                                                               |
+|   outgoing_interface: "tap1"                                                                                         |
+| Depends on:                                                                                                          |
+|  - bridged-interface -> vpp/bd/bd2/interface/tap1                                                                    |
++----------------------------------------------------------------------------------------------------------------------+
+| [vpp-interface] config/vpp/v2/interfaces/UNTAGGED-local0 (UNTAGGED-local0)                            TXN-0 OBTAINED |
+|   name: "UNTAGGED-local0"                                                                                            |
+|   type: SOFTWARE_LOOPBACK                                                                                            |
+| Metadata: &{SwIfIndex:0 Vrf:0 IPAddresses:[] TAPHostIfName:}                                                         |
++----------------------------------------------------------------------------------------------------------------------+
+| [vpp-interface] config/vpp/v2/interfaces/tap1 (tap1)                                   <UNAVAILABLE>  TXN-0 RETRYING |
+|   name: "tap1"                                                                                                       |
+|   type: TAP                                                                                                          |
+|   enabled: true                                                                                                      |
+| Dependency for:                                                                                                      |
+|  - [vpp-bd-interface] vpp/bd/bd2/interface/tap1                                                                      |
+| Errors: cannot find free interface id                                                                                |
++----------------------------------------------------------------------------------------------------------------------+
+| [vpp-bd-interface] vpp/bd/bd2/interface/tap1                                            <UNAVAILABLE>  TXN-0 PENDING |
+|   name: "tap1"                                                                                                       |
+| Depends on:                                                                                                          |
+|  - interface-exists -> config/vpp/v2/interfaces/tap1                                                                 |
+| Dependency for:                                                                                                      |
+|  - [vpp-l2-fib] config/vpp/l2/v2/fib/bd2/mac/ee:ee:ee:ff:ff:ff                                                       |
+| Derived from: config/vpp/l2/v2/bridge-domain/bd2                                                                     |
++======================================================================================================================+
+
+
+
+
++======================================================================================================================+
+| Transaction #1                                                                                                 RETRY |
++======================================================================================================================+
+  * transaction arguments:
+      - seq-num: 1
+      - type: RETRY (for txn 0, attempt #1)
+      - values:
+          - key: config/vpp/v2/interfaces/tap1
+            val: { name:"tap1" type:TAP enabled:true  }
+  * planned operations:
+      1. CREATE [RETRY]:
+          - key: config/vpp/v2/interfaces/tap1
+          - value: { name:"tap1" type:TAP enabled:true  } 
+          - prev-error: cannot find free interface id
+      2. CREATE [DERIVED RETRY WAS-PENDING]:
+          - key: vpp/bd/bd2/interface/tap1
+          - value: { name:"tap1"  } 
+      3. CREATE [RETRY WAS-PENDING]:
+          - key: config/vpp/l2/v2/fib/bd2/mac/ee:ee:ee:ff:ff:ff
+          - value: { phys_address:"ee:ee:ee:ff:ff:ff" bridge_domain:"bd2" outgoing_interface:"tap1"  } 
+
+o----------------------------------------------------------------------------------------------------------------------o
+  * executed operations (2019-02-21 13:27:17.26 +0100 CET -> 2019-02-21 13:27:17.287 +0100 CET, dur: 26ms):
+      1. CREATE [RETRY]:
+          - key: config/vpp/v2/interfaces/tap1
+          - value: { name:"tap1" type:TAP enabled:true  } 
+          - prev-error: cannot find free interface id
+      2. CREATE [DERIVED RETRY WAS-PENDING]:
+          - key: vpp/bd/bd2/interface/tap1
+          - value: { name:"tap1"  } 
+      3. CREATE [RETRY WAS-PENDING]:
+          - key: config/vpp/l2/v2/fib/bd2/mac/ee:ee:ee:ff:ff:ff
+          - value: { phys_address:"ee:ee:ee:ff:ff:ff" bridge_domain:"bd2" outgoing_interface:"tap1"  } 
+x----------------------------------------------------------------------------------------------------------------------x
+x #1                                                                                                         took 26ms x
+x----------------------------------------------------------------------------------------------------------------------x
+
+
+
+
+
+
++======================================================================================================================+
+| Transaction #1                                                                                        NB Transaction |
++======================================================================================================================+
+  * transaction arguments:
+      - seq-num: 1
+      - type: NB Transaction
+      - values:
+          - key: config/vpp/v2/interfaces/loopback1
+            val: { name:"loopback1" type:TAP  }
+          - key: config/vpp/v2/interfaces/tap1
+            val: { name:"tap1" type:TAP enabled:true phys_address:"11:22:33:44:55:66"  }
+          - key: config/vpp/v2/interfaces/tap2
+            val: <NIL>
+  * planned operations:
+      1. DELETE [IS-PENDING]:
+          - key: config/vpp/l2/v2/fib/bd1/mac/aa:aa:aa:bb:bb:bb
+          - value: { phys_address:"aa:aa:aa:bb:bb:bb" bridge_domain:"bd1" outgoing_interface:"tap2"  } 
+      2. DELETE [DERIVED IS-PENDING]:
+          - key: vpp/bd/bd1/interface/tap2
+          - value: { name:"tap2"  } 
+      3. DELETE:
+          - key: config/vpp/v2/interfaces/tap2
+          - value: { name:"tap2" type:TAP enabled:true phys_address:"11:22:33:44:55:66"  } 
+      4. CREATE:
+          - key: config/vpp/v2/interfaces/loopback1
+          - value: { name:"loopback1" type:TAP  } 
+      5. CREATE [DERIVED WAS-PENDING]:
+          - key: vpp/bd/bd1/interface/loopback1
+          - value: { name:"loopback1" bridged_virtual_interface:true  } 
+      6. UPDATE:
+          - key: config/vpp/v2/interfaces/tap1
+          - prev-value: { name:"tap1" type:TAP enabled:true  } 
+          - new-value: { name:"tap1" type:TAP enabled:true phys_address:"11:22:33:44:55:66"  } 
+
+INFO[0013] No subscription found for the notification message.  msg_id=83 msg_size=17
+o----------------------------------------------------------------------------------------------------------------------o
+  * executed operations (2019-02-21 13:31:27.593 +0100 CET -> 2019-02-21 13:31:27.656 +0100 CET, dur: 62ms):
+      1. DELETE [IS-PENDING]:
+          - key: config/vpp/l2/v2/fib/bd1/mac/aa:aa:aa:bb:bb:bb
+          - value: { phys_address:"aa:aa:aa:bb:bb:bb" bridge_domain:"bd1" outgoing_interface:"tap2"  } 
+      2. DELETE [DERIVED IS-PENDING]:
+          - key: vpp/bd/bd1/interface/tap2
+          - value: { name:"tap2"  } 
+      3. DELETE:
+          - key: config/vpp/v2/interfaces/tap2
+          - value: { name:"tap2" type:TAP enabled:true phys_address:"11:22:33:44:55:66"  } 
+      4. CREATE:
+          - key: config/vpp/v2/interfaces/loopback1
+          - value: { name:"loopback1" type:TAP  } 
+      5. CREATE [DERIVED WAS-PENDING]:
+          - key: vpp/bd/bd1/interface/loopback1
+          - value: { name:"loopback1" bridged_virtual_interface:true  } 
+      6. UPDATE:
+          - key: config/vpp/v2/interfaces/tap1
+          - prev-value: { name:"tap1" type:TAP enabled:true  } 
+          - new-value: { name:"tap1" type:TAP enabled:true phys_address:"11:22:33:44:55:66"  } 
+x----------------------------------------------------------------------------------------------------------------------x
+x #1                                                                                                         took 62ms x
+x----------------------------------------------------------------------------------------------------------------------x

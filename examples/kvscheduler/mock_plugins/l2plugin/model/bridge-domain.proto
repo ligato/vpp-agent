@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package mock.l2;
+
+// generate method XXX_MessageName() for every defined proto message, which
+// the agent needs to obtain the message name inside init(), even before the
+// message type is registered with proto.RegisterType()
+import "github.com/gogo/protobuf/gogoproto/gogo.proto";
+option (gogoproto.messagename_all) = true;
+
+message BridgeDomain {
+    string name = 1;                        /* bridge domain name */
+
+    message Interface {
+        string name = 1;                    /* interface name belonging to this bridge domain */
+        bool bridged_virtual_interface = 2; /* true if this is a BVI interface */
+    }
+    repeated Interface interfaces = 10;     /* list of interfaces */
+}

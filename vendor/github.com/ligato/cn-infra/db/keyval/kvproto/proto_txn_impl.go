@@ -15,6 +15,8 @@
 package kvproto
 
 import (
+	"context"
+
 	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/cn-infra/db/keyval"
 )
@@ -60,9 +62,9 @@ func (tx *protoTxn) Delete(key string) keyval.ProtoTxn {
 // Commit commits all operations in a transaction to the data store.
 // Commit is atomic - either all operations in the transaction are
 // committed to the data store, or none of them.
-func (tx *protoTxn) Commit() error {
+func (tx *protoTxn) Commit(ctx context.Context) error {
 	if tx.err != nil {
 		return tx.err
 	}
-	return tx.txn.Commit()
+	return tx.txn.Commit(ctx)
 }

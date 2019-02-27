@@ -1,0 +1,111 @@
+@startuml
+
+skinparam ParticipantPadding 20
+skinparam BoxPadding 10
+skinparam SequenceMessageAlign center
+
+participant ID as "Interface Descriptor"
+participant RD as "Route Descriptor"
+participant KVS as "KVScheduler"
+participant ORCH as "Orchestrator \n(NB COLLAPSED)"
+
+== Data-Change Transaction with Revert enabled (interface //my-tap// + route //my-route//) ==
+
+ORCH -> ORCH: **trigger transaction** received from NB \n(localclient or GRPC)
+activate ORCH
+ORCH -> KVS: **Data-Change Txn with Revert enabled** = [\l - interface //my-tap//, \l - route //my-route// \l]
+activate KVS  #FFBBBB
+
+KVS -> KVS: **start txn**
+ activate KVS  #FFDDCC
+  KVS -> ID: **KeySelector**(//my-tap//)
+   activate ID
+    ID --> KVS: true
+   deactivate ID
+  KVS -> KVS: value is **handled by** InterfaceDescriptor
+  KVS -> ID: **Dependencies**(//my-tap//)
+   activate ID
+    ID --> KVS: << no dependencies >>
+   deactivate ID
+  KVS -> KVS: value //my-tap// is **ready** to be created
+  KVS -> ID: **Validate**(//my-tap//)
+  activate ID
+   ID --> KVS: ok (valid configuration)
+  deactivate ID
+  KVS -> ID: **Create**(//my-tap//)
+  activate ID
+   ID --> KVS: ok
+  deactivate ID
+
+  KVS -> ID: **DerivedValues**(//my-tap//)
+   activate ID
+    ID --> KVS: derived-values = [ //"address/my-tap/192.168.1.1/24"//]
+   deactivate ID
+   KVS -> KVS: **schedule create** for //"address/my-tap/192.168.1.1/24"//
+   KVS -> ID: **KeySelector**(//"address/my-tap/192.168.1.1/24"//)
+   activate ID
+    ID --> KVS: false
+   deactivate ID
+   KVS -> RD: **KeySelector**(//"address/my-tap/192.168.1.1/24"//)
+   activate RD
+    RD --> KVS: false
+   deactivate RD
+  KVS -> KVS: //"address/my-tap/192.168.1.1/24"// is **property** \n (without CRUD operations)
+
+  KVS -> ID: **KeySelector**(//my-route//)
+   activate ID
+    ID --> KVS: false
+   deactivate ID
+  KVS -> RD: **KeySelector**(//my-route//)
+   activate RD
+    RD --> KVS: true
+   deactivate RD
+  KVS -> KVS: value is **handled by** RouteDescriptor
+  KVS -> RD: **Dependencies**(//my-route//)
+   activate RD
+    RD --> KVS: //my-route// **depends on** (interface) //my-tap//
+   deactivate RD
+  KVS -> KVS: value //my-route// is **ready** to be created
+
+  KVS -> RD: **Validate**(//my-route//)
+   activate RD
+    RD --> KVS: ok (valid configuration)
+   deactivate RD
+  KVS -> RD: **Create**(//my-route//)
+   activate RD
+    RD --> KVS: error
+   destroy RD
+
+== Transaction failed, revert already executed changes ==
+
+  KVS -> KVS: **Refresh** the failed value to learn its state \n - needed to determine the revert operation
+   activate KVS  #FFBFDD
+    KVS -> RD: **Retrieve**()
+     activate RD
+      RD --> KVS: << no retrieved routes >> (nothing to revert for //my-route//)
+     deactivate RD
+    KVS -> KVS: **save refreshed values**
+   deactivate KVS
+
+  KVS -> KVS: undo Create (i.e. **Delete**) of //my-tap// interface
+   activate KVS #CCBBBB
+    KVS -> KVS: (**cached**) value is **handled by** InterfaceDescriptor
+    KVS -> KVS: remove derived values of //my-tap// first (//"address/my-tap/192.168.1.1/24"//)
+    KVS -> KVS: apply **Delete()** for //"address/my-tap/192.168.1.1/24"//
+    KVS -> KVS: (**cached**) //"address/my-tap/192.168.1.1/24"// is **property** \n (no Delete operation to execute)
+    KVS -> KVS: removed value //"address/my-tap/192.168.1.1/24"// from the graph
+    KVS -> ID: **Delete**(//my-tap//)
+     activate ID
+      ID --> KVS: ok
+     deactivate ID
+    KVS -> KVS: removed value //my-tap// from the graph
+   deactivate KVS
+
+  KVS -> KVS: **finalize and record txn #1** \n(reverted - ends with no visible effect)
+ deactivate KVS
+KVS --> ORCH: **value state updates**
+KVS --> ORCH: **txn error** (non-nil)
+deactivate KVS
+deactivate ORCH
+
+@enduml

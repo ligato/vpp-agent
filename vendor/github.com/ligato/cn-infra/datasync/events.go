@@ -1,6 +1,8 @@
 package datasync
 
 import (
+	"context"
+
 	"github.com/gogo/protobuf/proto"
 )
 
@@ -30,6 +32,8 @@ type CallbackResult interface {
 // (<resyncChan> from KeyValProtoWatcher.Watch).
 type ResyncEvent interface {
 	CallbackResult
+	// GetContext returns the context associated with the event.
+	GetContext() context.Context
 	// GetValues returns key-value pairs sorted by key prefixes
 	// (<keyPrefix> variable list from KeyValProtoWatcher.Watch).
 	GetValues() map[string]KeyValIterator
@@ -42,6 +46,8 @@ type ResyncEvent interface {
 // (previous value) and the value *after* the change (current value).
 type ChangeEvent interface {
 	CallbackResult
+	// GetContext returns the context associated with the event.
+	GetContext() context.Context
 	// GetChanges returns list of changes for this change event.
 	GetChanges() []ProtoWatchResp
 }

@@ -15,6 +15,7 @@
 package kvdbsync
 
 import (
+	"context"
 	"time"
 
 	"github.com/ligato/cn-infra/datasync"
@@ -81,7 +82,7 @@ func (keys *watchBrokerKeys) watchChanges(x datasync.ProtoWatchResp) {
 			syncbase.NewKeyVal(x.GetKey(), x, x.GetRevision()))
 	}
 
-	ch := NewChangeWatchResp(x, prev)
+	ch := NewChangeWatchResp(context.Background(), x, prev)
 	keys.changeChan <- ch
 	// TODO NICE-to-HAVE publish the err using the transport asynchronously
 }
@@ -135,7 +136,7 @@ func (keys *watchBrokerKeys) resync() error {
 		iterators[keyPrefix] = NewIterator(it)
 	}
 
-	resyncEvent := syncbase.NewResyncEventDB(iterators)
+	resyncEvent := syncbase.NewResyncEventDB(context.Background(), iterators)
 	keys.resyncChan <- resyncEvent
 
 	select {

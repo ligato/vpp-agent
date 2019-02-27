@@ -1,0 +1,45 @@
+digraph kvscheduler {
+    ranksep=.5
+    labelloc="b";
+    labeljust="c";
+    fontsize="12";
+    fontname="Ubuntu";
+    rankdir="LR";
+    bgcolor="lightgray";
+    style="solid";
+    penwidth="1";
+    pad="0.04";
+    nodesep="<no value>";
+    ordering="out";
+
+    node [shape="box" style="filled" fontname="Ubuntu" fillcolor="honeydew" penwidth="1.0" margin="0.03,0.0"];
+    edge [minlen="1"]
+
+        subgraph "cluster_nodes" {
+            label="3 keys";
+            bgcolor="white";
+            labelloc="t";
+            labeljust="c";
+            fontsize="15";
+            tooltip="";
+
+            "vpp/interface/address/my-tap/192.168.1.1/24" [ pad="0.01" margin="0.01" href="/scheduler/key-timeline?key=vpp/interface/address/my-tap/192.168.1.1/24&amp;time=1549960085333251485" tooltip="[CONFIGURED] vpp/interface/address/my-tap/192.168.1.1/24\n-----\n" fillcolor="LightYellow" color="bisque4" style="rounded,filled" ]
+
+                subgraph "cluster_config/vpp/v2/interfaces/my-tap" {
+                    fillcolor="#e6ecfa";
+                    label="< vpp-interface >";
+                    penwidth="0.8";
+                    fontsize="16";
+                    style="filled";
+
+                    "config/vpp/v2/interfaces/my-tap" [ margin="0.01" href="/scheduler/key-timeline?key=config/vpp/v2/interfaces/my-tap&amp;time=1549960085333251485" label="my-tap" fillcolor="PaleGreen" tooltip="[CONFIGURED] config/vpp/v2/interfaces/my-tap\n-----\nname: \"my-tap\"\ntype: TAP\nenabled: true\nip_addresses: \"192.168.1.1/24\"\ntap: <\n  version: 1\n>\n" pad="0.01" ]
+                        "config/vpp/v2/interfaces/UNTAGGED-local0" [ pad="0.01" margin="0.01" href="/scheduler/key-timeline?key=config/vpp/v2/interfaces/UNTAGGED-local0&amp;time=1549960085333251485" label="UNTAGGED-local0" fillcolor="LightCyan" tooltip="[OBTAINED] config/vpp/v2/interfaces/UNTAGGED-local0\n-----\nname: \"UNTAGGED-local0\"\ntype: SOFTWARE_LOOPBACK\n" ]
+
+                }
+
+        }
+
+    "config/vpp/v2/interfaces/my-tap" -> "vpp/interface/address/my-tap/192.168.1.1/24" [ color="bisque4" arrowhead="invempty" ]
+
+
+}

@@ -21,6 +21,7 @@ import (
 	goredis "github.com/go-redis/redis"
 	"github.com/howeyc/crc16"
 	"github.com/ligato/cn-infra/db/keyval"
+	"context"
 )
 
 type op struct {
@@ -63,7 +64,7 @@ func (tx *Txn) Delete(key string) keyval.BytesTxn {
 // Commit commits all operations in a transaction to the data store.
 // Commit is atomic - either all operations in the transaction are
 // committed to the data store, or none of them.
-func (tx *Txn) Commit() (err error) {
+func (tx *Txn) Commit(ctx context.Context) (err error) {
 	if tx.db.closed {
 		return fmt.Errorf("Commit() called on a closed connection")
 	}

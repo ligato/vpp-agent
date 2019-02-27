@@ -1,0 +1,56 @@
+digraph kvscheduler {
+	ranksep=.5;
+	labelloc="b";
+	labeljust="c";
+	fontsize="12";
+	fontname="Ubuntu"; 
+	rankdir="LR";
+	bgcolor="lightgray";
+	style="solid";
+	penwidth="1";
+	pad="0.04";
+	nodesep="<no value>";
+	ordering="out";
+
+	node [shape="box" style="filled" fontname="Ubuntu" fillcolor="honeydew" penwidth="1.0" margin="0.03,0.0"];
+	edge [minlen="1"]
+
+		subgraph "cluster_nodes" {
+			label="5 keys";
+			bgcolor="white";
+			labelloc="t";
+			labeljust="c";
+			fontsize="15";
+			tooltip="";
+
+			"vpp/interface/address/my-tap/192.168.1.1/24" [ margin="0.01" href="/scheduler/key-timeline?key=vpp/interface/address/my-tap/192.168.1.1/24&amp;time=1549971022492256271" tooltip="[CONFIGURED] vpp/interface/address/my-tap/192.168.1.1/24\n-----\n" fillcolor="LightYellow" color="bisque4" style="rounded,filled" pad="0.01" ]
+
+				subgraph "cluster_vpp-interface" {
+					penwidth="0.8";
+					fontsize="16";
+					style="filled";
+					fillcolor="#e6ecfa";
+					label="< vpp-interface >";
+
+					"config/vpp/v2/interfaces/my-tap" [ label="my-tap" fillcolor="PaleGreen" tooltip="[CONFIGURED] config/vpp/v2/interfaces/my-tap\n-----\nname: \"my-tap\"\ntype: TAP\nenabled: true\nip_addresses: \"192.168.1.1/24\"\ntap: <\n  version: 1\n>\n" pad="0.01" margin="0.01" href="/scheduler/key-timeline?key=config/vpp/v2/interfaces/my-tap&amp;time=1549971022492256271" ]
+					"config/vpp/v2/interfaces/UNTAGGED-local0" [ pad="0.01" margin="0.01" href="/scheduler/key-timeline?key=config/vpp/v2/interfaces/UNTAGGED-local0&amp;time=1549971022492256271" label="UNTAGGED-local0" fillcolor="LightCyan" tooltip="[OBTAINED] config/vpp/v2/interfaces/UNTAGGED-local0\n-----\nname: \"UNTAGGED-local0\"\ntype: SOFTWARE_LOOPBACK\n" ]
+				}
+
+			subgraph "cluster_vpp-route" {
+				penwidth="0.8";
+				fontsize="16";
+				style="filled";
+				fillcolor="#e6ecfa";
+				label="< vpp-route >";
+
+				"config/vpp/v2/route/vrf/0/dst/192.168.0.0/16/gw/192.168.1.100" [ href="/scheduler/key-timeline?key=config/vpp/v2/route/vrf/0/dst/192.168.0.0/16/gw/192.168.1.100&amp;time=1549971022492256271" label="config/vpp/v2/route/vrf/0/dst/192.168.0.0/16/gw/192.168.1.100 \n(my-route from CFD)" fillcolor="PaleGreen" tooltip="[CONFIGURED] config/vpp/v2/route/vrf/0/dst/192.168.0.0/16/gw/192.168.1.100\n-----\ndst_network: \"192.168.0.0/16\"\nnext_hop_addr: \"192.168.1.100\"\noutgoing_interface: \"my-tap\"\n" pad="0.01" margin="0.01" ]
+				"config/vpp/v2/route/vrf/0/dst/0.0.0.0/0/gw/0.0.0.0" [ href="/scheduler/key-timeline?key=config/vpp/v2/route/vrf/0/dst/0.0.0.0/0/gw/0.0.0.0&amp;time=1549971022492256271" label="config/vpp/v2/route/vrf/0/dst/0.0.0.0/0/gw/0.0.0.0  \n(default-route from CFD)" fillcolor="LightCyan" tooltip="[OBTAINED] config/vpp/v2/route/vrf/0/dst/0.0.0.0/0/gw/0.0.0.0\n-----\ntype: DROP\ndst_network: \"0.0.0.0/0\"\nnext_hop_addr: \"0.0.0.0\"\nweight: 1\n" pad="0.01" margin="0.01" ]
+			}
+
+		}
+
+	"config/vpp/v2/route/vrf/0/dst/192.168.0.0/16/gw/192.168.1.100" -> "config/vpp/v2/interfaces/my-tap" [ tooltip="interface-exists" ]
+		"config/vpp/v2/interfaces/my-tap" -> "vpp/interface/address/my-tap/192.168.1.1/24" [ color="bisque4" arrowhead="invempty" ]
+
+
+}
