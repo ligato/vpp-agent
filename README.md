@@ -73,12 +73,12 @@ Detailed documentation for the VPP Agent can be found at [ligato.io/vpp-agent](h
 ## Architecture
 
 The VPP Agent is basically a set of VPP-specific plugins that use the 
-CN-Infra platform to interact with other services/microservices in the
+CN-Infra framework to interact with other services/microservices in the
 cloud (e.g. a KV data store, messaging, log warehouse, etc.). The VPP Agent
 exposes VPP functionality to client apps via a higher-level model-driven 
 API. Clients that consume this API may be either external (connecting to 
 the VPP Agent via REST, gRPC API, Etcd or message bus transport), or local
-Apps and/or Extension plugins running on the same CN-Infra platform in the 
+Apps and/or Extension plugins running on the same CN-Infra framework in the 
 same Linux process. 
 
 The VNF Agent architecture is shown in the following figure: 
