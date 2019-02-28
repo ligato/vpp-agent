@@ -22,6 +22,7 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	"github.com/go-errors/errors"
 	"github.com/unrolled/render"
 
 	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
@@ -30,12 +31,19 @@ import (
 
 // Registers access list REST handlers
 func (p *Plugin) registerAccessListHandlers() {
+	unavailHandler := errors.New("aclHandler is not available")
 	// GET IP ACLs
 	p.registerHTTPHandler(resturl.ACLIP, GET, func() (interface{}, error) {
+		if p.aclHandler == nil {
+			return nil, unavailHandler
+		}
 		return p.aclHandler.DumpACL()
 	})
 	// GET MACIP ACLs
 	p.registerHTTPHandler(resturl.ACLMACIP, GET, func() (interface{}, error) {
+		if p.aclHandler == nil {
+			return nil, unavailHandler
+		}
 		return p.aclHandler.DumpMACIPACL()
 	})
 }
@@ -74,16 +82,23 @@ func (p *Plugin) registerInterfaceHandlers() {
 
 // Registers NAT REST handlers
 func (p *Plugin) registerNatHandlers() {
+	unavailHandler := errors.New("natHandler is not available")
 	// GET NAT configuration
 	/*p.registerHTTPHandler(resturl.NatURL, GET, func() (interface{}, error) {
 		return p.natHandler.Nat44Dump()
 	})*/
 	// GET NAT global config
 	p.registerHTTPHandler(resturl.NatGlobal, GET, func() (interface{}, error) {
+		if p.natHandler == nil {
+			return nil, unavailHandler
+		}
 		return p.natHandler.Nat44GlobalConfigDump()
 	})
 	// GET DNAT config
 	p.registerHTTPHandler(resturl.NatDNat, GET, func() (interface{}, error) {
+		if p.natHandler == nil {
+			return nil, unavailHandler
+		}
 		return p.natHandler.DNat44Dump()
 	})
 }

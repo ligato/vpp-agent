@@ -98,6 +98,10 @@ type HandlerVersion struct {
 func CompatibleIPSecVppHandler(
 	ch govppapi.Channel, idx ifaceidx.IfaceMetadataIndex, log logging.Logger,
 ) IPSecVppAPI {
+	if len(Versions) == 0 {
+		// ipsecplugin is not loaded
+		return nil
+	}
 	for ver, h := range Versions {
 		log.Debugf("checking compatibility with %s", ver)
 		if err := ch.CheckCompatiblity(h.Msgs...); err != nil {
