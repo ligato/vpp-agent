@@ -370,7 +370,7 @@ func (d *InterfaceDescriptor) Validate(key string, intf *interfaces.Interface) e
 		}
 	case interfaces.Interface_DPDK:
 		if _, ok := d.ethernetIfs[intf.Name]; !ok {
-			return kvs.NewInvalidValueError(ErrDPDKInterfaceMissing, "link.sub.parent_name")
+			return kvs.NewInvalidValueError(ErrDPDKInterfaceMissing, "name")
 		}
 		if getRxMode(intf).GetRxMode() != interfaces.Interface_RxModeSettings_POLLING {
 			return kvs.NewInvalidValueError(ErrUnsupportedRxMode, "rx_mode_settings.rx_mode")
