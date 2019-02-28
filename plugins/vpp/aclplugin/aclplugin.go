@@ -73,6 +73,9 @@ func (p *ACLPlugin) Init() error {
 
 	// init handlers
 	p.aclHandler = vppcalls.CompatibleACLVppHandler(p.vppCh, p.dumpVppCh, p.IfPlugin.GetInterfaceIndex(), p.Log)
+	if p.aclHandler == nil {
+		return errors.New("aclHandler is not available")
+	}
 
 	// init & register descriptors
 	p.aclDescriptor = descriptor.NewACLDescriptor(p.aclHandler, p.IfPlugin, p.Log)

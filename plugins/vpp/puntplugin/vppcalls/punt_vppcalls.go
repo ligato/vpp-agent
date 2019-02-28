@@ -62,6 +62,10 @@ type HandlerVersion struct {
 func CompatiblePuntVppHandler(
 	ch govppapi.Channel, idx ifaceidx.IfaceMetadataIndex, log logging.Logger,
 ) PuntVppAPI {
+	if len(Versions) == 0 {
+		// puntplugin is not loaded
+		return nil
+	}
 	for ver, h := range Versions {
 		log.Debugf("checking compatibility with %s", ver)
 		if err := ch.CheckCompatiblity(h.Msgs...); err != nil {

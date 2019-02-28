@@ -71,6 +71,9 @@ func (p *IPSecPlugin) Init() (err error) {
 
 	// init IPSec handler
 	p.ipSecHandler = vppcalls.CompatibleIPSecVppHandler(p.vppCh, p.IfPlugin.GetInterfaceIndex(), p.Log)
+	if p.ipSecHandler == nil {
+		return errors.New("ipsecHandler is not available")
+	}
 
 	// init and register security policy database descriptor
 	p.spdDescriptor = descriptor.NewIPSecSPDDescriptor(p.ipSecHandler, p.Log)
