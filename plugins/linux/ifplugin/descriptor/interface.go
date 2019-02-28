@@ -98,6 +98,9 @@ var (
 
 	// ErrNamespaceWithoutReference is returned when namespace is missing reference.
 	ErrNamespaceWithoutReference = errors.New("namespace defined without name")
+
+	// ErrInvalidIPWithMask is returned when address is invalid or mask is missing
+	ErrInvalidIPWithMask = errors.New("IP with mask is not valid")
 )
 
 // InterfaceDescriptor teaches KVScheduler how to configure Linux interfaces.
@@ -224,6 +227,13 @@ func (d *InterfaceDescriptor) Validate(key string, linuxIf *interfaces.Interface
 	if linuxIf.GetName() == "" {
 		return kvs.NewInvalidValueError(ErrInterfaceWithoutName, "name")
 	}
+	addrs := linuxIf.GetIpAddresses()
+	for _, a := range addrs {
+		if _, _, err := net.ParseCIDR(a); err != nil {
+			return kvs.NewInvalidValueError(ErrInvalidIPWithMask, "ip_addresses")
+		}
+	}
+
 	if linuxIf.GetType() == interfaces.Interface_UNDEFINED {
 		return kvs.NewInvalidValueError(ErrInterfaceWithoutType, "type")
 	}
