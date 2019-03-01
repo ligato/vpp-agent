@@ -318,18 +318,20 @@ func (d *InterfaceDescriptor) Create(key string, intf *interfaces.Interface) (me
 
   * <a name="manipulating-with-derived"></a>
     **manipulating with value attributes which were derived out**
-      - value attribute derived into a separate key-value pairs and handled
-        by CRUD operations of another descriptor, can be think of as a slice
-        of the original value that was cut out - it still has an implicit
-        dependency relation on its original value, but should no longer
-        be considered as a part of it
-      - for example, if we would define a separate derived value for every
-        IP address to be assigned to an interface, and there would be another
-        descriptor which implements these assignments (i.e. `Create` = add IP,
-        `Delete` = unassign IP, etc.), then the descriptor for interfaces should
-        no longer: consider IP address when comparing interfaces in
-        `ValueComparator`, (un)assign IP addresses in `Create`/`Update`/`Delete`,
-        consider IP addresses for interface dependencies, and so forth
+      - value attribute derived into a separate key-value pair and handled
+        by CRUD operations of another descriptor, can be imagined as a slice
+        of the original value that was split away - it still has an implicit
+        dependency on its original value, but should no longer be considered
+        as a part of it
+      - for example, [if we would define a separate derived value for every
+        IP address to be assigned to an interface](img/derived-interface-ip.svg),
+        and there would be another descriptor which implements these assignments
+        (i.e. `Create` = add IP, `Delete` = unassign IP, etc.), then the descriptor
+        for interfaces should no longer:
+         - consider IP addresses when comparing interfaces in `ValueComparator`
+         - (un)assign IP addresses in `Create`/`Update`/`Delete`
+         - consider IP addresses for interface dependencies
+         - etc.
 
   * <a name="retrieve-derived"></a>
     **implementing Retrieve method for descriptor with only derived values
