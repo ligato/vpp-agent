@@ -15,52 +15,46 @@
 package descriptor
 
 import (
-	"sort"
-	"strings"
-
 	"github.com/ligato/cn-infra/logging"
 	srv6 "github.com/ligato/vpp-agent/api/models/vpp/srv6"
 	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/vpp/srplugin/descriptor/adapter"
-	"github.com/ligato/vpp-agent/plugins/vpp/srplugin/descriptor/cache"
 	"github.com/ligato/vpp-agent/plugins/vpp/srplugin/vppcalls"
 	"github.com/pkg/errors"
 )
 
-const (
-	// PolicyDescriptorName is the name of the descriptor for VPP policies
-	PolicyDescriptorName = "vpp-sr-policy"
-
-	// dependency labels
-	atLeastOneSegmentListExistsDep = "sr-at-least-one-segment-list-exists"
-)
+// PolicyDescriptorName is the name of the descriptor for VPP policies
+const PolicyDescriptorName = "vpp-sr-policy"
 
 // PolicyDescriptor teaches KVScheduler how to configure VPP SRv6 policies.
+//
+// Implementation note: according to https://tools.ietf.org/html/draft-ietf-spring-segment-routing-policy-02#section-2.6,
+// (weight,segments) tuple is not unique identification of candidate path(segment list) in policy (VPP also allows to
+// have multiple segment lists that have the same (weight,segments) but differs in index (in ietf material they call it
+// "Discriminator of a Candidate Path")). However, in validation and equivalency stage of vpp-agent there is no way how
+// to get from VPP the index (validation precedes creation call and VPP doesn't have it). As result, restriction must be
+// made, (weight,segments) is unique within given Policy. The drawback is that you can't create multiple segment lists
+// with the same (weight,segments), but that is not issue if you don't want to explicitly rely on special attributes
+// used by tie-breaking rules from https://tools.ietf.org/html/draft-ietf-spring-segment-routing-policy-02#section-2.9
+// (i.e. VPP-internal index). These special attributes can't be explicitly set in VPP, so can't rely on them anyway. So
+// we should not miss any client use case for current VPP implementation (by removing duplicated segment list we don't
+// break any use case).
 type PolicyDescriptor struct {
 	// dependencies
-	log                         logging.Logger
-	srHandler                   vppcalls.SRv6VppAPI
-	scheduler                   scheduler.KVScheduler
-	vppIndexSeq                 *gaplessSequence
-	policyInfoCache             cache.PolicyInfoCache
-	policyIndexCache            *cache.PolicyIndexCache
-	policySegmentListIndexCache *cache.PolicySegmentListIndexCache
-	slDescriptor                *PolicySegmentListDescriptor
+	log       logging.Logger
+	srHandler vppcalls.SRv6VppAPI
+}
+
+// PolicyMetadata are Policy-related metadata that KVscheduler bundles with Policy data. They are served by KVScheduler in Create/Update descriptor methods.
+type PolicyMetadata struct {
+	segmentListIndexes map[*srv6.Policy_SegmentList]uint32
 }
 
 // NewPolicyDescriptor creates a new instance of the Srv6 policy descriptor.
-func NewPolicyDescriptor(srHandler vppcalls.SRv6VppAPI, scheduler scheduler.KVScheduler, log logging.PluginLogger,
-	policyInfoCache cache.PolicyInfoCache, policyIndexCache *cache.PolicyIndexCache,
-	policySegmentListIndexCache *cache.PolicySegmentListIndexCache, slDescriptor *PolicySegmentListDescriptor) *PolicyDescriptor {
+func NewPolicyDescriptor(srHandler vppcalls.SRv6VppAPI, log logging.PluginLogger) *PolicyDescriptor {
 	return &PolicyDescriptor{
-		log:                         log.NewLogger("policy-descriptor"),
-		srHandler:                   srHandler,
-		scheduler:                   scheduler,
-		vppIndexSeq:                 newSequence(),
-		policyInfoCache:             policyInfoCache,
-		policyIndexCache:            policyIndexCache,
-		policySegmentListIndexCache: policySegmentListIndexCache,
-		slDescriptor:                slDescriptor,
+		log:       log.NewLogger("policy-descriptor"),
+		srHandler: srHandler,
 	}
 }
 
@@ -68,17 +62,18 @@ func NewPolicyDescriptor(srHandler vppcalls.SRv6VppAPI, scheduler scheduler.KVSc
 // the KVScheduler.
 func (d *PolicyDescriptor) GetDescriptor() *adapter.PolicyDescriptor {
 	return &adapter.PolicyDescriptor{
-		Name:            PolicyDescriptorName,
-		NBKeyPrefix:     srv6.ModelPolicy.KeyPrefix(),
-		ValueTypeName:   srv6.ModelPolicy.ProtoName(),
-		KeySelector:     srv6.ModelPolicy.IsKeyValid,
-		KeyLabel:        srv6.ModelPolicy.StripKeyPrefix,
-		ValueComparator: d.EquivalentPolicies,
-		Validate:        d.Validate,
-		Create:          d.Create,
-		Delete:          d.Delete,
-		Update:          d.Update,
-		Dependencies:    d.Dependencies,
+		Name:               PolicyDescriptorName,
+		NBKeyPrefix:        srv6.ModelPolicy.KeyPrefix(),
+		ValueTypeName:      srv6.ModelPolicy.ProtoName(),
+		KeySelector:        srv6.ModelPolicy.IsKeyValid,
+		KeyLabel:           srv6.ModelPolicy.StripKeyPrefix,
+		ValueComparator:    d.EquivalentPolicies,
+		Validate:           d.Validate,
+		Create:             d.Create,
+		Delete:             d.Delete,
+		Update:             d.Update,
+		UpdateWithRecreate: d.UpdateWithRecreate,
+		WithMetadata:       true,
 	}
 }
 
@@ -91,167 +86,182 @@ func (d *PolicyDescriptor) Validate(key string, policy *srv6.Policy) error {
 	if err != nil {
 		return scheduler.NewInvalidValueError(errors.Errorf("failed to parse binding sid %s, should be a valid ipv6 address: %v", policy.GetBsid(), err), "bsid")
 	}
+	if len(policy.SegmentLists) == 0 { // includes nil check
+		return scheduler.NewInvalidValueError(errors.New("there must be defined at least one segment list"), "SegmentLists")
+	}
+
+	for i, sl := range policy.SegmentLists {
+		for _, segment := range sl.Segments {
+			_, err := ParseIPv6(segment)
+			if err != nil {
+				return scheduler.NewInvalidValueError(errors.Errorf("failed to parse segment %s in segments %v, should be a valid ipv6 address: %v", segment, sl.Segments, err), "SegmentLists.segments")
+			}
+		}
+
+		// checking for segment list duplicity (existence of this check is used in equivalency check too), see PolicyDescriptor's godoc implementation note for more info
+		for j, previousSL := range policy.SegmentLists[:i] {
+			if d.equivalentSegmentList(previousSL, sl) {
+				return scheduler.NewInvalidValueError(errors.Errorf("found duplicated segment list: %+v (list index %v) and %+v (list index %v) ", sl, i, previousSL, j), "SegmentLists")
+			}
+		}
+	}
 	return nil
 }
 
 // Create creates new Policy into VPP using VPP's binary api
 func (d *PolicyDescriptor) Create(key string, policy *srv6.Policy) (metadata interface{}, err error) {
-	bsid, _ := ParseIPv6(policy.GetBsid()) // already validated
-	sl, slDescChoice, err := d.segmentListForPolicyCreation(policy.GetBsid())
+	// add base policy (NB policy model has all segment lists, but SB vppcall's policy is only policy with one segment (VPP binary API definition))
+	bsid, _ := ParseIPv6(policy.GetBsid())                            // already validated
+	err = d.srHandler.AddPolicy(bsid, policy, policy.SegmentLists[0]) // there exist first segment (validation checked it)
 	if err != nil {
-		return nil, errors.Errorf("can't get segment list for policy creation: %v", err)
+		return nil, errors.Errorf("failed to write policy %s with first segment %s: %v", bsid.String(), policy.SegmentLists[0], err)
 	}
-	err = d.srHandler.AddPolicy(bsid, policy, sl)
+
+	// add segment lists to policy
+	for _, sl := range policy.SegmentLists[1:] {
+		if err := d.srHandler.AddPolicySegmentList(bsid, policy, sl); err != nil {
+			return nil, errors.Errorf("failed to add policy segment %s: %v", bsid, err)
+		}
+	}
+
+	// retrieve from VPP indexes of just added Policy/Segment Lists and store it as metadata
+	_, slIndexes, err := d.srHandler.RetrievePolicyIndexInfo(policy)
 	if err != nil {
-		return nil, errors.Errorf("failed to write policy %s with first segment %s: %v", bsid.String(), sl.Segments, err)
+		return nil, errors.Errorf("can't retrieve indexes of created srv6 policy with bsid %v : %v", bsid, err)
 	}
-
-	// FIXME now i'm just guessing index that will Policy get in VPP (= being dependent on internal implementation inside VPP) and that is just very fragile -> API should tell this but it doesn't!
-	d.policyIndexCache.Put(policy, d.vppIndexSeq.nextID())
-	if slDescChoice { // update SL index (SL create didn't created anything in VPP so no index could be retrieved, but now the SL is in VPP)
-		index, err := d.srHandler.RetrievePolicySegmentIndex(sl)
-		if err != nil {
-			return nil, errors.Errorf("can't retrieve from VPP the index of created segment list (first SL choosen by SL descriptor): %v", err)
-		}
-		d.policySegmentListIndexCache.Put(sl, index)
+	metadata = &PolicyMetadata{
+		segmentListIndexes: slIndexes,
 	}
-	return nil, nil
-}
-
-// segmentListForPolicyCreation retrieves policy segment list that is needed for policy creation
-func (d *PolicyDescriptor) segmentListForPolicyCreation(policyBSID string) (*srv6.PolicySegmentList, bool, error) {
-	policyBSID = strings.TrimSpace(strings.ToLower(policyBSID))
-	pInfo, exists := d.policyInfoCache[policyBSID]
-	if !exists { // policy creation is called first -> choose SL that should be used policy creation
-		slList, _, err := allSegmentListsInOnePolicy(policyBSID, d.scheduler)
-		if err != nil {
-			return nil, false, err
-		}
-		if len(slList) == 0 {
-			return nil, false, errors.Errorf("can't find policy segment list with parent policy %v", policyBSID)
-		}
-		d.policyInfoCache[policyBSID] = &cache.PolicyInfo{
-			PolicyCreationSL: slList[0],
-			//PolicyCreationSLIndex:   d.slDescriptor.NextSegmentListIndex(), // calling internal index generator of segment list descriptor
-			PolicyCreationSLCreated: false, // this call (policy creation) is called before SL creation
-			SLCounter:               1,     // normally only creation of SL can change this counter, but creation of policy also uses SL so SL count after policy creation is 1
-		}
-		return slList[0], false, nil
-	}
-
-	// segment list creation called first -> using it's choose of SL for policy creation (Note: it choosed itself)
-	if pInfo.PolicyCreationSL == nil {
-		return nil, false, errors.Errorf("policy segment list for policy creation should be choosen by previously "+
-			"called SL creation method, but wasn't (parent policy %v)", policyBSID)
-	}
-	return pInfo.PolicyCreationSL, true, nil
+	return metadata, nil
 }
 
 // Delete removes Policy from VPP using VPP's binary api
 func (d *PolicyDescriptor) Delete(key string, policy *srv6.Policy, metadata interface{}) error {
 	bsid, _ := ParseIPv6(policy.GetBsid())                 // already validated
-	if err := d.srHandler.DeletePolicy(bsid); err != nil { // expecting that policy delete will also delete policy segments in vpp
+	if err := d.srHandler.DeletePolicy(bsid); err != nil { // expecting that delete of SB defined policy will also delete policy segments in vpp
 		return errors.Errorf("failed to delete policy %s: %v", bsid.String(), err)
-	}
-	delete(d.policyInfoCache, strings.TrimSpace(strings.ToLower(policy.GetBsid())))
-	index, exists := d.policyIndexCache.Get(policy)
-	if !exists {
-		d.log.Warn("can't release index for policy %v", policy)
-	} else {
-		d.vppIndexSeq.delete(index)
-		d.policyIndexCache.Remove(policy)
 	}
 	return nil
 }
 
-// Update updates Policy in VPP using VPP's binary api. Due to VPP binary api limitations, rearranging of other objects
-// in VPP can occur, but in the end everything should be logically the same as before and with updated Policy.
+// Update updates Policy in VPP using VPP's binary api. Only changes of segment list handled here. Other updates are
+// handle by recreation (see function UpdateWithRecreate)
 func (d *PolicyDescriptor) Update(key string, oldPolicy, newPolicy *srv6.Policy, oldMetadata interface{}) (newMetadata interface{}, err error) {
-	// get segment lists
-	bsid := strings.TrimSpace(strings.ToLower(oldPolicy.GetBsid()))
-	slList, slKeys, err := allSegmentListsInOnePolicy(bsid, d.scheduler)
-	if err != nil {
-		return nil, errors.Errorf("can't retrieve segment lists for policy recreation: %v", err)
-	}
-
-	// remove segment list (policy delete removes also segment lists in VPP, but some stuff on vpp-agent side won't be
-	// updated properly if SL delete is not called, i.e. SL index provider(gaplessindex provider))
-	for i, sl := range slList {
-		err = d.slDescriptor.Delete(slKeys[i], sl, nil)
-		if err != nil {
-			return nil, errors.Errorf("can't recreate policy due to delete problem of policy segment list %v: %v", sl, err)
+	// compute segment lists for delete (removePool) and segment lists to add (addPool)
+	removePool := make([]*srv6.Policy_SegmentList, len(oldPolicy.SegmentLists))
+	addPool := make([]*srv6.Policy_SegmentList, 0, len(newPolicy.SegmentLists))
+	copy(removePool, oldPolicy.SegmentLists)
+	for _, newSL := range newPolicy.SegmentLists {
+		found := false
+		for i, oldSL := range removePool {
+			if d.equivalentSegmentList(oldSL, newSL) {
+				removePool = append(removePool[:i], removePool[i+1:]...)
+				found = true
+				break
+			}
+		}
+		if !found {
+			addPool = append(addPool, newSL)
 		}
 	}
 
-	// recreate policy
-	err = d.Delete(key, oldPolicy, oldMetadata)
-	if err != nil {
-		return nil, errors.Errorf("can't recreate policy due to policy delete problems: %v", err)
-	}
-	newMetadata, err = d.Create(key, newPolicy)
-	if err != nil {
-		return nil, errors.Errorf("can't recreate policy due to policy creation problems: %v", err)
-	}
-
-	// add segments lists again because they got lost in recreation of policy
-	for i, sl := range slList {
-		_, err = d.slDescriptor.Create(slKeys[i], sl)
-		if err != nil {
-			return nil, errors.Errorf("can't apply segment list %v as part of policy modification: %v", sl, err)
+	// add new segment lists not present in oldPolicy
+	bsid, _ := ParseIPv6(newPolicy.GetBsid()) // already validated
+	for _, sl := range addPool {
+		if err := d.srHandler.AddPolicySegmentList(bsid, newPolicy, sl); err != nil {
+			return nil, errors.Errorf("failed update policy: failed to add policy segment %s: %v", bsid, err)
 		}
 	}
+
+	// remove old segment lists not present in newPolicy
+	slIndexes := oldMetadata.(*PolicyMetadata).segmentListIndexes
+	for _, sl := range removePool {
+		index, exists := slIndexes[sl]
+		if !exists {
+			return nil, errors.Errorf("failed update policy: failed to find index for segment list "+
+				"%+v in policy with bsid %v (metadata segment list indexes: %+v)", sl, bsid, slIndexes)
+		}
+		if err := d.srHandler.DeletePolicySegmentList(bsid, newPolicy, sl, index); err != nil {
+			return nil, errors.Errorf("failed update policy: failed to delete policy segment %s: %v", bsid, err)
+		}
+	}
+
+	// update metadata be recreation it from scratch
+	_, slIndexes, err = d.srHandler.RetrievePolicyIndexInfo(newPolicy)
+	if err != nil {
+		return nil, errors.Errorf("can't retrieve indexes of updated srv6 policy with bsid %v : %v", bsid, err)
+	}
+	newMetadata = &PolicyMetadata{
+		segmentListIndexes: slIndexes,
+	}
+
 	return newMetadata, nil
 }
 
-// Dependencies defines dependencies of Policy descriptor
-func (d *PolicyDescriptor) Dependencies(key string, policy *srv6.Policy) (dependencies []scheduler.Dependency) {
-	dependencies = append(dependencies, scheduler.Dependency{
-		Label: atLeastOneSegmentListExistsDep,
-		AnyOf: func(key string) bool { // exists at least one segment list for policy (policy with no segment list can't exists)
-			policyBSID, _, isSegmentListKey := srv6.ParsePolicySegmentList(key)
-			return isSegmentListKey && strings.ToLower(policyBSID) == strings.ToLower(policy.Bsid)
-		},
-	})
-	return dependencies
+// UpdateWithRecreate define whether update case should be handled by complete policy recreation
+func (d *PolicyDescriptor) UpdateWithRecreate(key string, oldPolicy, newPolicy *srv6.Policy, oldMetadata interface{}) bool {
+	return !d.equivalentPolicyAttributes(oldPolicy, newPolicy) // update with recreate only when policy attributes changes because segment list change can be handled more efficiently
 }
 
 // EquivalentPolicies determines whether 2 policies are logically equal. This comparison takes into consideration also
 // semantics that couldn't be modeled into proto models (i.e. SID is IPv6 address and not only string)
 func (d *PolicyDescriptor) EquivalentPolicies(key string, oldPolicy, newPolicy *srv6.Policy) bool {
+	return d.equivalentPolicyAttributes(oldPolicy, newPolicy) &&
+		d.equivalentSegmentLists(oldPolicy.SegmentLists, newPolicy.SegmentLists)
+}
+
+func (d *PolicyDescriptor) equivalentPolicyAttributes(oldPolicy, newPolicy *srv6.Policy) bool {
 	return oldPolicy.FibTableId == newPolicy.FibTableId &&
 		equivalentSIDs(oldPolicy.Bsid, newPolicy.Bsid) &&
 		oldPolicy.SprayBehaviour == newPolicy.SprayBehaviour &&
 		oldPolicy.SrhEncapsulation == newPolicy.SrhEncapsulation
 }
 
-// gaplessSequence emulates sequence indexes grabbing for Policy segments inside VPP // FIXME this is poor VPP API, correct way is tha API should tell as choosen index at Policy segment creation
-type gaplessSequence struct {
-	nextfree []uint32
+func (d *PolicyDescriptor) equivalentSegmentLists(oldSLs, newSLs []*srv6.Policy_SegmentList) bool {
+	if oldSLs == nil || newSLs == nil {
+		return oldSLs == nil && newSLs == nil
+	}
+	if len(oldSLs) != len(newSLs) {
+		return false
+	}
+
+	// checking segment lists equality (segment lists with just reordered segment list items are considered equal)
+	// we know that:
+	// 1. lists have the same length (due to previous checks),
+	// 2. there are no segment list equivalence duplicates (due to validation check)
+	// => hence if we check that each segment list from newSLs has its equivalent in oldSLs then we got equivalent bijection
+	// and that means that they are equal (items maybe reordered but equal). If we find one segment list from newSLs that
+	// is not in oldSLs, the SLs are obviously not equal.
+	for _, newSL := range newSLs {
+		found := false
+		for _, oldSL := range oldSLs {
+			if d.equivalentSegmentList(oldSL, newSL) {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return false
+		}
+	}
+	return true
 }
 
-func newSequence() *gaplessSequence {
-	return &gaplessSequence{
-		nextfree: []uint32{0},
-	}
+func (d *PolicyDescriptor) equivalentSegmentList(oldSL, newSL *srv6.Policy_SegmentList) bool {
+	return oldSL.Weight == newSL.Weight && d.equivalentSegments(oldSL.Segments, newSL.Segments)
 }
 
-func (seq *gaplessSequence) nextID() uint32 {
-	if len(seq.nextfree) == 1 { // no gaps in sequence
-		result := seq.nextfree[0]
-		seq.nextfree[0]++
-		return result
+func (d *PolicyDescriptor) equivalentSegments(segments1, segments2 []string) bool {
+	if segments1 == nil || segments2 == nil {
+		return segments1 == nil && segments2 == nil
 	}
-	// use first gap and then remove it from free IDs list
-	result := seq.nextfree[0]
-	seq.nextfree = seq.nextfree[1:]
-	return result
-}
-
-func (seq *gaplessSequence) delete(id uint32) {
-	if id >= seq.nextfree[len(seq.nextfree)-1] {
-		return // nothing to do because it is not sequenced yet
+	if len(segments1) != len(segments2) {
+		return false
 	}
-	// add gap and move it to proper place (gaps with lower id should be used first by finding next ID)
-	seq.nextfree = append(seq.nextfree, id)
-	sort.Slice(seq.nextfree, func(i, j int) bool { return seq.nextfree[i] < seq.nextfree[j] })
+	for i := range segments1 {
+		if !equivalentSIDs(segments1[i], segments2[i]) {
+			return false
+		}
+	}
+	return true
 }

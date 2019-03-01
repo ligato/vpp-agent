@@ -90,14 +90,13 @@ message Policy {
     uint32 fib_table_id = 2;             /* ID of FIB table where to install Policy entry */
     bool srh_encapsulation = 3;          /* are SR headers handled by encapsulation? (no means insertion of SR headers) */
     bool spray_behaviour = 4;            /* spray(multicast) to all policy segments? (no means to use PolicySegment.weight to loadbalance traffic)*/
-}
 
-/* Model for segment list of SRv6 policy */
-message PolicySegmentList {
-    string name = 4;                    /* unique policy segment list identification within policy (used in keys when is police segment list stored in key-value stores(i.e. ETCD)) */
-    string policy_bsid = 1;             /* reference to policy where this policy segment belongs */
-    uint32 weight = 2;                  /* used for loadbalancing in case of multiple policy segments in routing process (ignored in case of spray policies) */
-    repeated string segments = 3;       /* list of sids creating one segmented road */
+    /* Model for SRv6 Segment List */
+    message SegmentList {
+        uint32 weight = 1;               /* used for loadbalancing in case of multiple policy segments in routing process (ignored in case of spray policies) */
+        repeated string segments = 2;    /* list of sids creating one segmented road */
+    }
+    repeated SegmentList segment_lists = 5;
 }
 
 /* Model for steering traffic to SRv6 policy */

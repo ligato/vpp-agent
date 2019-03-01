@@ -301,7 +301,7 @@ func (h *SRv6VppHandler) SetEncapsSourceAddress(address string) error {
 }
 
 // AddPolicy adds SRv6 policy given by identified <bindingSid>,initial segment list for policy <policySegmentList> and other policy settings in <policy>
-func (h *SRv6VppHandler) AddPolicy(bindingSid net.IP, policy *srv6.Policy, segmentList *srv6.PolicySegmentList) error {
+func (h *SRv6VppHandler) AddPolicy(bindingSid net.IP, policy *srv6.Policy, segmentList *srv6.Policy_SegmentList) error {
 	h.log.Debugf("Adding SR policy with binding SID %v and list of next SIDs %v", bindingSid, segmentList.Segments)
 	sids, err := h.convertPolicySegment(segmentList)
 	if err != nil {
@@ -351,7 +351,7 @@ func (h *SRv6VppHandler) DeletePolicy(bindingSid net.IP) error {
 }
 
 // AddPolicySegmentList adds segment list <segmentList> to SRv6 policy <policy> that has policy BSID <bindingSid>
-func (h *SRv6VppHandler) AddPolicySegmentList(bindingSid net.IP, policy *srv6.Policy, segmentList *srv6.PolicySegmentList) error {
+func (h *SRv6VppHandler) AddPolicySegmentList(bindingSid net.IP, policy *srv6.Policy, segmentList *srv6.Policy_SegmentList) error {
 	h.log.Debugf("Adding segment %v to SR policy with binding SID %v", segmentList.Segments, bindingSid)
 	err := h.modPolicy(AddSRList, bindingSid, policy, segmentList, 0)
 	if err == nil {
@@ -362,7 +362,7 @@ func (h *SRv6VppHandler) AddPolicySegmentList(bindingSid net.IP, policy *srv6.Po
 }
 
 // DeletePolicySegmentList removes segment list <segmentList> (with segment list index <segmentListIndex>) from SRv6 policy <policy> that has policy BSID <bindingSid>
-func (h *SRv6VppHandler) DeletePolicySegmentList(bindingSid net.IP, policy *srv6.Policy, segmentList *srv6.PolicySegmentList, segmentListIndex uint32) error {
+func (h *SRv6VppHandler) DeletePolicySegmentList(bindingSid net.IP, policy *srv6.Policy, segmentList *srv6.Policy_SegmentList, segmentListIndex uint32) error {
 	h.log.Debugf("Removing segment %v (index %v) from SR policy with binding SID %v", segmentList.Segments, segmentListIndex, bindingSid)
 	err := h.modPolicy(DeleteSRList, bindingSid, policy, segmentList, segmentListIndex)
 	if err == nil {
@@ -372,7 +372,7 @@ func (h *SRv6VppHandler) DeletePolicySegmentList(bindingSid net.IP, policy *srv6
 	return err
 }
 
-func (h *SRv6VppHandler) modPolicy(operation uint8, bindingSid net.IP, policy *srv6.Policy, segmentList *srv6.PolicySegmentList, segmentListIndex uint32) error {
+func (h *SRv6VppHandler) modPolicy(operation uint8, bindingSid net.IP, policy *srv6.Policy, segmentList *srv6.Policy_SegmentList, segmentListIndex uint32) error {
 	sids, err := h.convertPolicySegment(segmentList)
 	if err != nil {
 		return err
@@ -399,7 +399,7 @@ func (h *SRv6VppHandler) modPolicy(operation uint8, bindingSid net.IP, policy *s
 	return nil
 }
 
-func (h *SRv6VppHandler) convertPolicySegment(segmentList *srv6.PolicySegmentList) (*sr.Srv6SidList, error) {
+func (h *SRv6VppHandler) convertPolicySegment(segmentList *srv6.Policy_SegmentList) (*sr.Srv6SidList, error) {
 	var segments []sr.Srv6Sid
 	for _, sid := range segmentList.Segments {
 		// parse to IPv6 address
@@ -422,30 +422,43 @@ func (h *SRv6VppHandler) convertPolicySegment(segmentList *srv6.PolicySegmentLis
 	}, nil
 }
 
-// RetrievePolicySegmentIndex retrieves index of segment list <segmentList>
-func (h *SRv6VppHandler) RetrievePolicySegmentIndex(segmentList *srv6.PolicySegmentList) (uint32, error) {
+// RetrievePolicyIndexInfo retrieves index of policy <policy> and its segment lists
+func (h *SRv6VppHandler) RetrievePolicyIndexInfo(policy *srv6.Policy) (policyIndex uint32, segmentListIndexes map[*srv6.Policy_SegmentList]uint32, err error) {
 	// dump sr policies using VPP CLI
 	data, err := h.RunCli("sh sr policies")
 	if err != nil {
-		return 0, fmt.Errorf("can't dump index data from VPP: %v", err)
+		return ^uint32(0), nil, fmt.Errorf("can't dump index data from VPP: %v", err)
 	}
 
 	// do necessary parsing to extract index of segment list
 	dumpStr := strings.ToLower(string(data))
-	policyHeader := fmt.Sprintf("bsid: %v", strings.ToLower(segmentList.GetPolicyBsid()))
-	slRE := regexp.MustCompile(fmt.Sprintf("\\[(\\d+)\\].- < %s,[^:>]*> weight: %d", strings.ToLower(strings.Join(segmentList.Segments, ", ")), segmentList.Weight))
+	segmentListIndexes = make(map[*srv6.Policy_SegmentList]uint32)
+
 	for _, policyStr := range strings.Split(dumpStr, "-----------") {
-		if strings.Contains(policyStr, policyHeader) {
-			if match := slRE.FindStringSubmatch(policyStr); match != nil {
-				parsed, err := strconv.ParseUint(match[1], 10, 32)
-				if err != nil {
-					return 0, fmt.Errorf("can't parse segment policy index %q", match[1])
-				}
-				return uint32(parsed), nil
+		policyHeader := regexp.MustCompile(fmt.Sprintf("\\[(\\d+)\\]\\.-\\s+bsid:\\s*%s", strings.ToLower(strings.TrimSpace(policy.GetBsid()))))
+		if policyMatch := policyHeader.FindStringSubmatch(policyStr); policyMatch != nil {
+			parsed, err := strconv.ParseUint(policyMatch[1], 10, 32)
+			if err != nil {
+				return ^uint32(0), nil, fmt.Errorf("can't parse policy index %q (dump: %s)", policyMatch[1], dumpStr)
 			}
+			policyIndex = uint32(parsed)
+
+			for _, sl := range policy.SegmentLists {
+				slRE := regexp.MustCompile(fmt.Sprintf("\\[(\\d+)\\].- < %s,[^:>]*> weight: %d", strings.ToLower(strings.Join(sl.Segments, ", ")), sl.Weight))
+				if slMatch := slRE.FindStringSubmatch(policyStr); slMatch != nil {
+					parsed, err := strconv.ParseUint(slMatch[1], 10, 32)
+					if err != nil {
+						return ^uint32(0), nil, fmt.Errorf("can't parse segment policy index %q (dump: %s)", slMatch[1], dumpStr)
+					}
+					segmentListIndexes[sl] = uint32(parsed)
+					continue
+				}
+				return ^uint32(0), nil, fmt.Errorf("can't find index for segment list %+v (policy bsid %v) in dump %q", sl, policy.GetBsid(), dumpStr)
+			}
+			return policyIndex, segmentListIndexes, nil
 		}
 	}
-	return 0, fmt.Errorf("can't find index for policy segment list %v in dump %q", segmentList, dumpStr)
+	return ^uint32(0), nil, fmt.Errorf("can't find index for policy with bsid %v in dump %q", policy.GetBsid(), dumpStr)
 }
 
 // AddSteering sets in VPP steering into SRv6 policy.

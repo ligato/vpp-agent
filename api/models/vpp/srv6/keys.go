@@ -15,9 +15,7 @@
 package vpp_srv6
 
 import (
-	"fmt"
 	"net"
-	"strings"
 
 	"github.com/ligato/vpp-agent/pkg/models"
 )
@@ -42,13 +40,6 @@ var (
 		Version: "v2",
 	}, models.WithNameTemplate("{{.Bsid}}"))
 
-	// ModelPolicySegmentList is registered NB model of PolicySegmentList
-	ModelPolicySegmentList = models.Register(&PolicySegmentList{}, models.Spec{
-		Module:  ModuleName,
-		Type:    "policysegmentlist",
-		Version: "v2",
-	}, models.WithNameTemplate(fmt.Sprintf("{{.Name}}/%s/{{.PolicyBsid}}", ModelPolicy.Type)))
-
 	// ModelSteering is registered NB model of Steering
 	ModelSteering = models.Register(&Steering{}, models.Spec{
 		Module:  ModuleName,
@@ -65,18 +56,4 @@ func PolicyKey(bsid string) string {
 	return models.Key(&Policy{
 		Bsid: bsid,
 	})
-}
-
-// ParsePolicySegmentList parses key representing policy segment list
-func ParsePolicySegmentList(key string) (policyBSID string, policySegmentListName string, isPolicySegmentListKey bool) {
-	keyComps := strings.Split(key, "/")
-	if len(keyComps) == 8 && isCorrectModule(keyComps) && keyComps[4] == ModelPolicySegmentList.Type && keyComps[6] == ModelPolicy.Type {
-		return keyComps[7], keyComps[5], true
-	}
-	return "", "", false
-}
-
-func isCorrectModule(keyComps []string) bool {
-	expectedKeys := strings.Split(ModuleName, ".")
-	return keyComps[1] == expectedKeys[0] && keyComps[2] == expectedKeys[1]
 }

@@ -14,7 +14,6 @@
 
 //go:generate descriptor-adapter --descriptor-name LocalSID --value-type *vpp_srv6.LocalSID --import "github.com/ligato/vpp-agent/api/models/vpp/srv6" --output-dir "descriptor"
 //go:generate descriptor-adapter --descriptor-name Policy --value-type *vpp_srv6.Policy --import "github.com/ligato/vpp-agent/api/models/vpp/srv6" --output-dir "descriptor"
-//go:generate descriptor-adapter --descriptor-name PolicySegmentList --value-type *vpp_srv6.PolicySegmentList --import "github.com/ligato/vpp-agent/api/models/vpp/srv6" --output-dir "descriptor"
 //go:generate descriptor-adapter --descriptor-name Steering --value-type *vpp_srv6.Steering --import "github.com/ligato/vpp-agent/api/models/vpp/srv6" --output-dir "descriptor"
 
 package srplugin
@@ -28,7 +27,6 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin"
 	"github.com/ligato/vpp-agent/plugins/vpp/srplugin/descriptor"
 	"github.com/ligato/vpp-agent/plugins/vpp/srplugin/descriptor/adapter"
-	"github.com/ligato/vpp-agent/plugins/vpp/srplugin/descriptor/cache"
 	"github.com/ligato/vpp-agent/plugins/vpp/srplugin/vppcalls"
 	"github.com/pkg/errors"
 
@@ -47,10 +45,9 @@ type SRPlugin struct {
 	srHandler vppcalls.SRv6VppAPI
 
 	// descriptors
-	localSIDDescriptor    *descriptor.LocalSIDDescriptor
-	policyDescriptor      *descriptor.PolicyDescriptor
-	segmentListDescriptor *descriptor.PolicySegmentListDescriptor
-	steeringDescriptor    *descriptor.SteeringDescriptor
+	localSIDDescriptor *descriptor.LocalSIDDescriptor
+	policyDescriptor   *descriptor.PolicyDescriptor
+	steeringDescriptor *descriptor.SteeringDescriptor
 }
 
 // Deps lists dependencies of the interface p.
@@ -74,27 +71,16 @@ func (p *SRPlugin) Init() error {
 	// init handlers
 	p.srHandler = vppcalls.CompatibleSRv6VppHandler(p.vppCh, p.IfPlugin.GetInterfaceIndex(), p.Log)
 
-	// global caches
-	policyInfoCache := make(cache.PolicyInfoCache)
-	policyIndexCache := cache.NewPolicyIndexCache()
-	policySegmentListIndexCache := cache.NewPolicySegmentListIndexCache()
-
 	// init & register descriptors
 	p.localSIDDescriptor = descriptor.NewLocalSIDDescriptor(p.srHandler, p.Log)
 	localSIDDescriptor := adapter.NewLocalSIDDescriptor(p.localSIDDescriptor.GetDescriptor())
 	p.Deps.Scheduler.RegisterKVDescriptor(localSIDDescriptor)
 
-	p.segmentListDescriptor = descriptor.NewPolicySegmentListDescriptor(p.srHandler, p.Deps.Scheduler, p.Log,
-		policyInfoCache, policyIndexCache, policySegmentListIndexCache)
-	segmentListDescriptor := adapter.NewPolicySegmentListDescriptor(p.segmentListDescriptor.GetDescriptor())
-	p.Deps.Scheduler.RegisterKVDescriptor(segmentListDescriptor)
-
-	p.policyDescriptor = descriptor.NewPolicyDescriptor(p.srHandler, p.Deps.Scheduler, p.Log, policyInfoCache,
-		policyIndexCache, policySegmentListIndexCache, p.segmentListDescriptor)
+	p.policyDescriptor = descriptor.NewPolicyDescriptor(p.srHandler, p.Log)
 	policyDescriptor := adapter.NewPolicyDescriptor(p.policyDescriptor.GetDescriptor())
 	p.Deps.Scheduler.RegisterKVDescriptor(policyDescriptor)
 
-	p.steeringDescriptor = descriptor.NewSteeringDescriptor(p.srHandler, p.Deps.Scheduler, p.Log, policyIndexCache)
+	p.steeringDescriptor = descriptor.NewSteeringDescriptor(p.srHandler, p.Log)
 	steeringDescriptor := adapter.NewSteeringDescriptor(p.steeringDescriptor.GetDescriptor())
 	p.Deps.Scheduler.RegisterKVDescriptor(steeringDescriptor)
 

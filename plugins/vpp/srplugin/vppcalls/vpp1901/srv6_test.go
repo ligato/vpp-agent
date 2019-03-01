@@ -740,7 +740,7 @@ func TestAddPolicy(t *testing.T) {
 		Fail              bool
 		BSID              net.IP
 		Policy            *srv6.Policy
-		PolicySegmentList *srv6.PolicySegmentList
+		PolicySegmentList *srv6.Policy_SegmentList
 		MockReply         govppapi.Message
 		Verify            func(error, govppapi.Message)
 	}{
@@ -748,7 +748,7 @@ func TestAddPolicy(t *testing.T) {
 			Name:              "simple SetAddPolicy",
 			BSID:              sidA.Addr,
 			Policy:            policy(sidA.Addr, 10, false, true),
-			PolicySegmentList: policySegmentList(sidA.Addr, 1, sidA.Addr, sidB.Addr, sidC.Addr),
+			PolicySegmentList: policySegmentList(1, sidA.Addr, sidB.Addr, sidC.Addr),
 			MockReply:         &sr.SrPolicyAddReply{},
 			Verify: func(err error, catchedMsg govppapi.Message) {
 				Expect(err).ShouldNot(HaveOccurred())
@@ -769,7 +769,7 @@ func TestAddPolicy(t *testing.T) {
 			Name:   "invalid SID (not IP address) in segment list",
 			BSID:   sidA.Addr,
 			Policy: policy(sidA.Addr, 10, false, true),
-			PolicySegmentList: &srv6.PolicySegmentList{
+			PolicySegmentList: &srv6.Policy_SegmentList{
 				Weight:   1,
 				Segments: []string{sidToStr(sidA), invalidIPAddress, sidToStr(sidC)},
 			},
@@ -782,7 +782,7 @@ func TestAddPolicy(t *testing.T) {
 			Name:              "failure propagation from VPP",
 			BSID:              sidA.Addr,
 			Policy:            policy(sidA.Addr, 0, true, true),
-			PolicySegmentList: policySegmentList(sidA.Addr, 1, sidA.Addr, sidB.Addr, sidC.Addr),
+			PolicySegmentList: policySegmentList(1, sidA.Addr, sidB.Addr, sidC.Addr),
 			MockReply:         &sr.SrPolicyAddReply{Retval: 1},
 			Verify: func(err error, msg govppapi.Message) {
 				Expect(err).Should(HaveOccurred())
@@ -840,7 +840,7 @@ func TestDeletePolicy(t *testing.T) {
 			defer teardown(ctx)
 			// data and prepare case
 			policy := policy(td.BSID, 0, true, true)
-			segment := policySegmentList(td.BSID, 1, sidA.Addr, sidB.Addr, sidC.Addr)
+			segment := policySegmentList(1, sidA.Addr, sidB.Addr, sidC.Addr)
 			vppCalls.AddPolicy(td.BSID, policy, segment)
 			ctx.MockVpp.MockReply(td.MockReply)
 			// make the call and verify
@@ -857,7 +857,7 @@ func TestAddPolicySegmentList(t *testing.T) {
 		Name              string
 		BSID              net.IP
 		Policy            *srv6.Policy
-		PolicySegmentList *srv6.PolicySegmentList
+		PolicySegmentList *srv6.Policy_SegmentList
 		MockReply         govppapi.Message
 		Verify            func(error, govppapi.Message)
 	}{
@@ -865,7 +865,7 @@ func TestAddPolicySegmentList(t *testing.T) {
 			Name:              "simple addition of policy segment",
 			BSID:              sidA.Addr,
 			Policy:            policy(sidA.Addr, 10, false, true),
-			PolicySegmentList: policySegmentList(sidA.Addr, 1, sidA.Addr, sidB.Addr, sidC.Addr),
+			PolicySegmentList: policySegmentList(1, sidA.Addr, sidB.Addr, sidC.Addr),
 			MockReply:         &sr.SrPolicyModReply{},
 			Verify: func(err error, catchedMsg govppapi.Message) {
 				Expect(err).ShouldNot(HaveOccurred())
@@ -885,10 +885,9 @@ func TestAddPolicySegmentList(t *testing.T) {
 			Name:   "invalid SID (not IP address) in segment list",
 			BSID:   sidA.Addr,
 			Policy: policy(sidA.Addr, 10, false, true),
-			PolicySegmentList: &srv6.PolicySegmentList{
-				PolicyBsid: sidToStr(sidA),
-				Weight:     1,
-				Segments:   []string{sidToStr(sidA), invalidIPAddress, sidToStr(sidC)},
+			PolicySegmentList: &srv6.Policy_SegmentList{
+				Weight:   1,
+				Segments: []string{sidToStr(sidA), invalidIPAddress, sidToStr(sidC)},
 			},
 			MockReply: &sr.SrPolicyModReply{},
 			Verify: func(err error, catchedMsg govppapi.Message) {
@@ -899,7 +898,7 @@ func TestAddPolicySegmentList(t *testing.T) {
 			Name:              "failure propagation from VPP",
 			BSID:              sidA.Addr,
 			Policy:            policy(sidA.Addr, 0, true, true),
-			PolicySegmentList: policySegmentList(sidA.Addr, 1, sidA.Addr, sidB.Addr, sidC.Addr),
+			PolicySegmentList: policySegmentList(1, sidA.Addr, sidB.Addr, sidC.Addr),
 			MockReply:         &sr.SrPolicyModReply{Retval: 1},
 			Verify: func(err error, msg govppapi.Message) {
 				Expect(err).Should(HaveOccurred())
@@ -927,7 +926,7 @@ func TestDeletePolicySegmentList(t *testing.T) {
 		Name              string
 		BSID              net.IP
 		Policy            *srv6.Policy
-		PolicySegmentList *srv6.PolicySegmentList
+		PolicySegmentList *srv6.Policy_SegmentList
 		SegmentIndex      uint32
 		MockReply         govppapi.Message
 		Verify            func(error, govppapi.Message)
@@ -936,7 +935,7 @@ func TestDeletePolicySegmentList(t *testing.T) {
 			Name:              "simple deletion of policy segment",
 			BSID:              sidA.Addr,
 			Policy:            policy(sidA.Addr, 10, false, true),
-			PolicySegmentList: policySegmentList(sidA.Addr, 1, sidA.Addr, sidB.Addr, sidC.Addr),
+			PolicySegmentList: policySegmentList(1, sidA.Addr, sidB.Addr, sidC.Addr),
 			SegmentIndex:      111,
 			MockReply:         &sr.SrPolicyModReply{},
 			Verify: func(err error, catchedMsg govppapi.Message) {
@@ -958,7 +957,7 @@ func TestDeletePolicySegmentList(t *testing.T) {
 			Name:   "invalid SID (not IP address) in segment list",
 			BSID:   sidA.Addr,
 			Policy: policy(sidA.Addr, 10, false, true),
-			PolicySegmentList: &srv6.PolicySegmentList{
+			PolicySegmentList: &srv6.Policy_SegmentList{
 				Weight:   1,
 				Segments: []string{sidToStr(sidA), invalidIPAddress, sidToStr(sidC)},
 			},
@@ -972,7 +971,7 @@ func TestDeletePolicySegmentList(t *testing.T) {
 			Name:              "failure propagation from VPP",
 			BSID:              sidA.Addr,
 			Policy:            policy(sidA.Addr, 0, true, true),
-			PolicySegmentList: policySegmentList(sidA.Addr, 1, sidA.Addr, sidB.Addr, sidC.Addr),
+			PolicySegmentList: policySegmentList(1, sidA.Addr, sidB.Addr, sidC.Addr),
 			SegmentIndex:      111,
 			MockReply:         &sr.SrPolicyModReply{Retval: 1},
 			Verify: func(err error, msg govppapi.Message) {
@@ -1239,8 +1238,8 @@ func testAddRemoveSteering(t *testing.T, removal bool) {
 	}
 }
 
-// TestRetrievePolicySegmentIndex tests all cases for method RetrievePolicySegmentIndex
-func TestRetrievePolicySegmentIndex(t *testing.T) {
+// RetrievePolicyIndexInfo tests all cases for method RetrievePolicyIndexInfo
+func TestRetrievePolicyIndexInfo(t *testing.T) {
 	correctCLIOutput := `
 [4].-	BSID: a::
 
@@ -1253,37 +1252,53 @@ func TestRetrievePolicySegmentIndex(t *testing.T) {
 	Segment Lists:
 
   	[2].- < a::, b::, c::,  > weight: 1
+  	[3].- < b::, b::, c::,  > weight: 1
+  	[4].- < c::, b::, c::,  > weight: 1
 
 -----------
 `
-	correctIndex := uint32(2)
+	correctPolicyIndex := uint32(4)
+	segmentListABC := policySegmentList(1, sidA.Addr, sidB.Addr, sidC.Addr)
+	segmentListBBC := policySegmentList(1, sidB.Addr, sidB.Addr, sidC.Addr)
+	notExistingSegmentListCCC := policySegmentList(1, sidC.Addr, sidC.Addr, sidC.Addr)
 
 	// Prepare different cases
 	cases := []struct {
-		Name                string
-		PolicySegmentList   *srv6.PolicySegmentList
-		MockReply           govppapi.Message
-		ExpectedResultIndex uint32
-		ExpectingFailure    bool
+		Name                       string
+		Policy                     *srv6.Policy
+		MockReply                  govppapi.Message
+		ExpectedPolicyIndex        uint32
+		ExpectedSegmentListIndexes map[*srv6.Policy_SegmentList]uint32
+		ExpectingFailure           bool
 	}{
 		{
-			Name:              "basic successful index retrieval",
-			PolicySegmentList: policySegmentList(sidA.Addr, 1, sidA.Addr, sidB.Addr, sidC.Addr),
+			Name:   "basic successful index retrieval",
+			Policy: policy(sidA.Addr, 10, false, true, segmentListABC, segmentListBBC),
 			MockReply: &vpe.CliInbandReply{
 				Reply:  correctCLIOutput,
 				Retval: 0,
 			},
-			ExpectedResultIndex: correctIndex,
+			ExpectedPolicyIndex:        correctPolicyIndex,
+			ExpectedSegmentListIndexes: map[*srv6.Policy_SegmentList]uint32{segmentListABC: uint32(2), segmentListBBC: uint32(3)},
 		},
 		{
-			Name:              "failure propagation from VPP",
-			PolicySegmentList: policySegmentList(sidA.Addr, 1, sidA.Addr, sidB.Addr, sidC.Addr),
-			MockReply:         &vpe.CliInbandReply{Retval: 1},
-			ExpectingFailure:  true,
+			Name:             "failure propagation from VPP",
+			Policy:           policy(sidA.Addr, 10, false, true, segmentListABC, segmentListBBC),
+			MockReply:        &vpe.CliInbandReply{Retval: 1},
+			ExpectingFailure: true,
 		},
 		{
-			Name:              "searching for not existing policy segment list",
-			PolicySegmentList: policySegmentList(sidA.Addr, 1, sidB.Addr, sidB.Addr, sidB.Addr),
+			Name:   "searching for not existing policy ",
+			Policy: policy(sidC.Addr, 10, false, true, segmentListABC, segmentListBBC),
+			MockReply: &vpe.CliInbandReply{
+				Reply:  correctCLIOutput,
+				Retval: 0,
+			},
+			ExpectingFailure: true,
+		},
+		{
+			Name:   "searching for not existing policy segment list",
+			Policy: policy(sidA.Addr, 10, false, true, notExistingSegmentListCCC),
 			MockReply: &vpe.CliInbandReply{
 				Reply:  correctCLIOutput,
 				Retval: 0,
@@ -1298,7 +1313,7 @@ func TestRetrievePolicySegmentIndex(t *testing.T) {
 			defer teardown(ctx)
 			// prepare reply, make call and verify
 			ctx.MockVpp.MockReply(td.MockReply)
-			resultIndex, err := vppCalls.RetrievePolicySegmentIndex(td.PolicySegmentList)
+			resultPolicyIndex, resultSlIndexes, err := vppCalls.RetrievePolicyIndexInfo(td.Policy)
 			Expect(ctx.MockChannel.Msg).To(Equal(&vpe.CliInband{
 				Cmd: "sh sr policies",
 			}))
@@ -1306,7 +1321,8 @@ func TestRetrievePolicySegmentIndex(t *testing.T) {
 				Expect(err).Should(HaveOccurred())
 			} else {
 				Expect(err).ShouldNot(HaveOccurred())
-				Expect(resultIndex).To(Equal(correctIndex))
+				Expect(resultPolicyIndex).To(Equal(td.ExpectedPolicyIndex))
+				Expect(resultSlIndexes).To(Equal(td.ExpectedSegmentListIndexes))
 			}
 		})
 	}
@@ -1348,25 +1364,25 @@ func parseIPv6(str string) (net.IP, error) {
 	return ipv6, nil
 }
 
-func policy(bsid srv6.SID, fibtableID uint32, sprayBehaviour bool, srhEncapsulation bool) *srv6.Policy {
+func policy(bsid srv6.SID, fibtableID uint32, sprayBehaviour bool, srhEncapsulation bool, segmentLists ...*srv6.Policy_SegmentList) *srv6.Policy {
 	return &srv6.Policy{
 		Bsid:             bsid.String(),
 		FibTableId:       fibtableID,
 		SprayBehaviour:   sprayBehaviour,
 		SrhEncapsulation: srhEncapsulation,
+		SegmentLists:     segmentLists,
 	}
 }
 
-func policySegmentList(bsid srv6.SID, weight uint32, sids ...srv6.SID) *srv6.PolicySegmentList {
+func policySegmentList(weight uint32, sids ...srv6.SID) *srv6.Policy_SegmentList {
 	segments := make([]string, len(sids))
 	for i, sid := range sids {
 		segments[i] = sid.String()
 	}
 
-	return &srv6.PolicySegmentList{
-		PolicyBsid: bsid.String(),
-		Weight:     weight,
-		Segments:   segments,
+	return &srv6.Policy_SegmentList{
+		Weight:   weight,
+		Segments: segments,
 	}
 }
 

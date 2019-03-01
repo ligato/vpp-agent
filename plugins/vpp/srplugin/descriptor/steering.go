@@ -20,12 +20,10 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/cn-infra/logging"
 	srv6 "github.com/ligato/vpp-agent/api/models/vpp/srv6"
 	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/vpp/srplugin/descriptor/adapter"
-	"github.com/ligato/vpp-agent/plugins/vpp/srplugin/descriptor/cache"
 	"github.com/ligato/vpp-agent/plugins/vpp/srplugin/vppcalls"
 	"github.com/pkg/errors"
 )
@@ -41,20 +39,15 @@ const (
 // SteeringDescriptor teaches KVScheduler how to configure VPP SRv6 steering.
 type SteeringDescriptor struct {
 	// dependencies
-	log              logging.Logger
-	srHandler        vppcalls.SRv6VppAPI
-	valueProvider    scheduler.ValueProvider
-	policyIndexCache *cache.PolicyIndexCache
+	log       logging.Logger
+	srHandler vppcalls.SRv6VppAPI
 }
 
 // NewSteeringDescriptor creates a new instance of the Srv6 steering descriptor.
-func NewSteeringDescriptor(srHandler vppcalls.SRv6VppAPI, valueProvider scheduler.ValueProvider, log logging.PluginLogger,
-	policyIndexCache *cache.PolicyIndexCache) *SteeringDescriptor {
+func NewSteeringDescriptor(srHandler vppcalls.SRv6VppAPI, log logging.PluginLogger) *SteeringDescriptor {
 	return &SteeringDescriptor{
-		log:              log.NewLogger("steering-descriptor"),
-		srHandler:        srHandler,
-		valueProvider:    valueProvider,
-		policyIndexCache: policyIndexCache,
+		log:       log.NewLogger("steering-descriptor"),
+		srHandler: srHandler,
 	}
 }
 
@@ -192,33 +185,18 @@ func (d *SteeringDescriptor) Delete(key string, steering *srv6.Steering, metadat
 	return nil
 }
 
-func (d *SteeringDescriptor) policyBsid(index uint32) (string, error) {
-	kvs, err := d.valueProvider.DumpValuesByDescriptor(PolicyDescriptorName, scheduler.NBView)
-	if err != nil {
-		return "", errors.Errorf("can't get data from value provider(scheduler) for descriptor %v and view %v: %v", PolicyDescriptorName, scheduler.NBView, err)
-	}
-	for _, kv := range kvs {
-		policy, ok := kv.Value.(*srv6.Policy)
-		if !ok {
-			return "", errors.Errorf("Unexpected proto message type. Expected %v, Got %v", proto.MessageName(&srv6.Policy{}), proto.MessageName(kv.Value))
-		}
-		kvIndex, exists := d.policyIndexCache.Get(policy)
-		if !exists {
-			d.log.Warnf("policy %v doesn't have index, ignoring it from search of policy bsid by policy index", policy)
-			continue
-		}
-		if index == kvIndex {
-			return policy.GetBsid(), nil
-		}
-	}
-	return "", errors.Errorf("can't find policy with index %v", index)
-}
-
 // Dependencies defines dependencies of Steering descriptor
 func (d *SteeringDescriptor) Dependencies(key string, steering *srv6.Steering) (dependencies []scheduler.Dependency) {
+	//TODO support also policy identification by index for Dependency waiting (impl using derived value) and do proper robot test for it (vppcalls and NB support it already)
+	if _, ok := steering.GetPolicyRef().(*srv6.Steering_PolicyBsid); !ok {
+		d.log.Errorf("Non-BSID policy reference in steering is not fully supported (dependency waiting is not "+
+			"implemented). Using empty dependencies for steering %+v", steering)
+		return dependencies
+	}
+
 	dependencies = append(dependencies, scheduler.Dependency{
 		Label: policyExistsDep,
-		Key:   srv6.PolicyKey(steering.GetPolicyBsid()), //TODO support also policy identification by index (impl using derived value?)
+		Key:   srv6.PolicyKey(steering.GetPolicyBsid()),
 	})
 	return dependencies
 }
