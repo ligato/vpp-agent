@@ -20,7 +20,9 @@ ${SYNC_SLEEP}=                    3s
 ${PING_WAIT_TIMEOUT}=             15s
 ${PING_SLEEP}=                    1s
 
-@{segmentList}                    b::    c::
+@{segments}                       b::    c::
+@{segmentsweight}                 1    @{segments}    # segment list's weight and segments
+@{segmentList}                    ${segmentsweight}
 ${vpp1_tap_ipv6}=                 a::a
 ${linux_vpp1_tap_ipv6}=           a::1
 ${linux_vpp1_tap_ipv6_subnet}=    a::
@@ -79,8 +81,7 @@ Common Setup Used Across All Tests
     Create Route On agent_vpp_1 With IP b::/64 With Vrf Id 0 With Interface vpp1_memif1 And Next Hop ab::b
     Create Route On agent_vpp_2 With IP c::/64 With Vrf Id 0 With Interface vpp2_memif2 And Next Hop bc::c
     # configure segment routing that is common for all tests
-    Put SRv6 Policy                 node=agent_vpp_1    bsid=a::c            fibtable=0         srhEncapsulation=true    sprayBehaviour=false
-    Put SRv6 Policy Segment List    node=agent_vpp_1    name=firstSegment    policyBSID=a::c    weight=1                 segmentlist=${segmentList}
+    Put SRv6 Policy                 node=agent_vpp_1    bsid=a::c            fibtable=0         srhEncapsulation=true    sprayBehaviour=false    segmentlists=${segmentList}
     # preventing packet drops due to unresolved ipv6 neighbor discovery
     vpp_term: Set IPv6 neighbor  agent_vpp_1    memif1/1    ab::b    ${vpp2_memif1_mac}
     vpp_term: Set IPv6 neighbor  agent_vpp_2    memif1/1    ab::a    ${vpp1_memif1_mac}

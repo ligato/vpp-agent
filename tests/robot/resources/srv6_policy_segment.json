@@ -1,8 +1,0 @@
-{
-  "name": "${name}",
-  "policy_bsid": "${policyBSID}",
-  "weight":${weight},
-  "segments":[
-    ${segmentlistStr}
-  ]
-}

@@ -601,43 +601,36 @@ Delete Local SID
     [Return]    ${out}
 
 Put SRv6 Policy
-    [Arguments]    ${node}    ${bsid}    ${fibtable}    ${srhEncapsulation}    ${sprayBehaviour}
+    [Arguments]    ${node}    ${bsid}    ${fibtable}    ${srhEncapsulation}    ${sprayBehaviour}    ${segmentlists}
     [Documentation]    Add SRv6 Policy config json to etcd.
-    ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/srv6_policy.json
-    ${uri}=               Set Variable                  /vnf-agent/${node}/config/vpp/srv6/${AGENT_VER}/policy/${bsid}
-    ${data}=              Replace Variables             ${data}
-    Put Json     ${uri}    ${data}
-
-Delete SRv6 Policy
-    [Arguments]    ${node}    ${bsid}
-    [Documentation]    Delete SRv6 policy config json from etcd.
-    ${uri}=     Set Variable           /vnf-agent/${node}/config/vpp/srv6/${AGENT_VER}/policy/${bsid}
-    ${out}=     Delete key    ${uri}
-    [Return]    ${out}
-
-Put SRv6 Policy Segment List
-    [Arguments]    ${node}    ${name}    ${policyBSID}    ${weight}    ${segmentlist}
-    [Documentation]    Add SRv6 Policy Segment List config json to etcd.
-    ${segmentlistStr}=    Convert List To JSON string    @{segmentlist}
-    ${data}=              OperatingSystem.Get File       ${CURDIR}/../resources/srv6_policy_segment.json
-    ${uri}=               Set Variable                   /vnf-agent/${node}/config/vpp/srv6/${AGENT_VER}/policysegmentlist/${name}/policy/${policyBSID}
-    ${data}=              Replace Variables              ${data}
+    # compute segment lists part of json
+    ${SLTemplate}=         OperatingSystem.Get File      ${CURDIR}/../resources/srv6_policy_segmentlist.json
+    ${segmentlists}=       Copy List     ${segmentlists}    # creating defensive copy to not alter global segmentlists variable
+    ${segmentListCount}    Get Length    ${segmentlists}
+    :FOR    ${i}    IN RANGE    ${segmentListCount}
+    \    ${segmentlist}=       Set Variable    ${segmentlists[${i}]}
+    \    ${segments}=          Get Slice From List    ${segmentlist}    1    # segments = segment list without weight
+    \    ${segmentsStr}=       Convert List To JSON string    @{segments}
+    \    ${segmentlistStr}=    Replace Variables    ${SLTemplate}
+    \    Set List Value        ${segmentlists}    ${i}    ${segmentlistStr}    # using local copy of segmentlists as storage for computed segment list json strings
+    ${segmentlistsStr}=    Evaluate    ",".join($segmentlists)
+    # get it all together into policy json template
+    ${PolicyTemplate}=     OperatingSystem.Get File    ${CURDIR}/../resources/srv6_policy.json
+    ${uri}=                Set Variable    /vnf-agent/${node}/config/vpp/srv6/${AGENT_VER}/policy/${bsid}
+    ${data}=               Replace Variables    ${PolicyTemplate}
     Put Json     ${uri}    ${data}
 
 Convert List To JSON string
     [Arguments]    @{list}
     [Documentation]    Converts list to JSON compatible string (list items quoted and delimited by comma). No square brackets surrounding output included.
-    ${jsonStr}    Set Variable    ${EMPTY}
-    :FOR    ${item}    IN    @{list}
-    \    ${jsonStr}=       Run Keyword If   '${jsonStr}'!='${EMPTY}'    Catenate    ${jsonStr}    ,
-    \    ...               ELSE             Set Variable    ${jsonStr}
-    \    ${jsonStr}=       Catenate         ${jsonStr}    "${item}"
+    ${list}=  Evaluate  ['"'+item+'"' for item in $list]
+    ${jsonStr}=  Evaluate  ",".join($list)
     [Return]           ${jsonStr}
 
-Delete SRv6 Policy Segment List
-    [Arguments]    ${node}    ${name}    ${policyBSID}
-    [Documentation]    Delete SRv6 policy segment list config json from etcd.
-    ${uri}=     Set Variable           /vnf-agent/${node}/config/vpp/srv6/${AGENT_VER}/policysegmentlist/${name}/policy/${policyBSID}
+Delete SRv6 Policy
+    [Arguments]    ${node}    ${bsid}
+    [Documentation]    Delete SRv6 policy config json from etcd.
+    ${uri}=     Set Variable           /vnf-agent/${node}/config/vpp/srv6/${AGENT_VER}/policy/${bsid}
     ${out}=     Delete key    ${uri}
     [Return]    ${out}
 

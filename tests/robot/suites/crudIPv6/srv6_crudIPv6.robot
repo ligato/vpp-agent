@@ -25,13 +25,18 @@ ${RESYNC_WAIT}=        30s
 @{segmentList1}    b::    c::    d::
 @{segmentList2}    c::    d::    e::
 @{segmentList3}    d::    e::    a::
+@{segmentList4}    e::    a::    b::
 @{segmentList1weight1}    1    @{segmentList1}    # segment list's weight and segments
 @{segmentList2weight2}    2    @{segmentList2}    # segment list's weight and segments
 @{segmentList3weight3}    3    @{segmentList3}    # segment list's weight and segments
+@{segmentList3weight4}    4    @{segmentList3}    # segment list's weight and segments
+@{segmentList4weight4}    4    @{segmentList4}    # segment list's weight and segments
 @{segmentLists1weight1}        ${segmentList1weight1}
-@{segmentLists2weight2}        ${segmentList2weight2}
+@{segmentLists3weight3}        ${segmentList3weight3}
+@{segmentLists3weight4}        ${segmentList3weight4}
+@{segmentLists4weight4}        ${segmentList4weight4}
 @{segmentLists12weight12}      ${segmentList1weight1}    ${segmentList2weight2}
-@{segmentLists13weight13}      ${segmentList1weight1}    ${segmentList3weight3}
+@{segmentLists23weight23}      ${segmentList2weight2}    ${segmentList3weight3}
 
 *** Test Cases ***
 Configure Environment
@@ -61,77 +66,26 @@ Check SR-Proxy CRUD
     Delete Local SID                       node=agent_vpp_1    localsidName=A
     Wait Until Keyword Succeeds        ${WAIT_TIMEOUT}     ${SYNC_SLEEP}     vpp_term: Check Local SID Deleted     node=agent_vpp_1    sidAddress=a::
 
-Check Policy CRUD (Basic Cases)
-    Put SRv6 Policy                    node=agent_vpp_1    bsid=a::e       fibtable=0         srhEncapsulation=true      sprayBehaviour=true
-    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Check SRv6 Policy Nonexistence    node=agent_vpp_1    bsid=a::e
-    Put SRv6 Policy Segment List       node=agent_vpp_1    name=firstSL    policyBSID=a::e    weight=1                   segmentlist=${segmentList1}
-    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Check SRv6 Policy Presence        node=agent_vpp_1    bsid=a::e    fibtable=0    behaviour=Encapsulation    type=Spray    index=0    segmentlists=${segmentLists1weight1}
-    Put SRv6 Policy                    node=agent_vpp_1    bsid=a::e       fibtable=0         srhEncapsulation=false      sprayBehaviour=true    #modification
-    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Check SRv6 Policy Presence        node=agent_vpp_1    bsid=a::e    fibtable=0    behaviour=SRH insertion    type=Spray    index=0    segmentlists=${segmentLists1weight1}
+Check Policy CRUD
+    Put SRv6 Policy                    node=agent_vpp_1    bsid=a::e    segmentlists=${segmentLists1weight1}    fibtable=0         srhEncapsulation=true      sprayBehaviour=true
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Check SRv6 Policy Presence        node=agent_vpp_1    bsid=a::e    segmentlists=${segmentLists1weight1}    fibtable=0    behaviour=Encapsulation    type=Spray    index=0
+    Put SRv6 Policy                    node=agent_vpp_1    bsid=a::e    segmentlists=${segmentLists1weight1}    fibtable=0         srhEncapsulation=false      sprayBehaviour=true    # modification of non-segment list part
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Check SRv6 Policy Presence        node=agent_vpp_1    bsid=a::e    segmentlists=${segmentLists1weight1}    fibtable=0    behaviour=SRH insertion    type=Spray    index=0
+    Put SRv6 Policy                    node=agent_vpp_1    bsid=a::e    segmentlists=${segmentLists12weight12}    fibtable=0         srhEncapsulation=false      sprayBehaviour=true    # modification - adding one new segment list (+preserving one existing segment key)
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Check SRv6 Policy Presence        node=agent_vpp_1    bsid=a::e    segmentlists=${segmentLists12weight12}    fibtable=0    behaviour=SRH insertion    type=Spray    index=0
+    Put SRv6 Policy                    node=agent_vpp_1    bsid=a::e    segmentlists=${segmentLists23weight23}    fibtable=0         srhEncapsulation=false      sprayBehaviour=true    # modification - mixing addition of mew segment list with removal of existing segment list (+preserving one existing segment key)
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Check SRv6 Policy Presence        node=agent_vpp_1    bsid=a::e    segmentlists=${segmentLists23weight23}    fibtable=0    behaviour=SRH insertion    type=Spray    index=0
+    Put SRv6 Policy                    node=agent_vpp_1    bsid=a::e    segmentlists=${segmentLists3weight3}    fibtable=0         srhEncapsulation=false      sprayBehaviour=true    # modification - removing of existing segment list (+preserving one existing segment key)
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Check SRv6 Policy Presence        node=agent_vpp_1    bsid=a::e    segmentlists=${segmentLists3weight3}    fibtable=0    behaviour=SRH insertion    type=Spray    index=0
+    Put SRv6 Policy                    node=agent_vpp_1    bsid=a::e    segmentlists=${segmentLists3weight4}    fibtable=0         srhEncapsulation=false      sprayBehaviour=true    # modification - modify weight of existing segment list
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Check SRv6 Policy Presence        node=agent_vpp_1    bsid=a::e    segmentlists=${segmentLists3weight4}    fibtable=0    behaviour=SRH insertion    type=Spray    index=0
+    Put SRv6 Policy                    node=agent_vpp_1    bsid=a::e    segmentlists=${segmentLists4weight4}    fibtable=0         srhEncapsulation=false      sprayBehaviour=true    # modification - modify segments of existing segment list
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Check SRv6 Policy Presence        node=agent_vpp_1    bsid=a::e    segmentlists=${segmentLists4weight4}    fibtable=0    behaviour=SRH insertion    type=Spray    index=0
     Delete SRv6 Policy                 node=agent_vpp_1    bsid=a::e
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Check SRv6 Policy Nonexistence    node=agent_vpp_1    bsid=a::e
-    Delete SRv6 Policy Segment List    node=agent_vpp_1    name=firstSL     policyBSID=a::e    # cleanup
-
-Check Policy Delete By Removal Of Last Segment List
-    Put SRv6 Policy                    node=agent_vpp_1    bsid=a::e       fibtable=0         srhEncapsulation=true      sprayBehaviour=true
-    Put SRv6 Policy Segment List       node=agent_vpp_1    name=firstSL    policyBSID=a::e    weight=1                   segmentlist=${segmentList1}
-    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Check SRv6 Policy Presence        node=agent_vpp_1    bsid=a::e    fibtable=0    behaviour=Encapsulation    type=Spray    index=0    segmentlists=${segmentLists1weight1}
-    Delete SRv6 Policy Segment List    node=agent_vpp_1    name=firstSL    policyBSID=a::e
-    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Check SRv6 Policy Nonexistence    node=agent_vpp_1    bsid=a::e
-    Delete SRv6 Policy                 node=agent_vpp_1    bsid=a::e       # cleanup
-
-Check Policy Creation By Using Reversed-Ordered Policy And Policy Segment List Setting
-    Put SRv6 Policy Segment List       node=agent_vpp_1    name=firstSL    policyBSID=a::e    weight=1                 segmentlist=${segmentList1}
-    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Check SRv6 Policy Nonexistence    node=agent_vpp_1    bsid=a::e
-    Put SRv6 Policy                    node=agent_vpp_1    bsid=a::e       fibtable=0         srhEncapsulation=true    sprayBehaviour=true
-    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Check SRv6 Policy Presence        node=agent_vpp_1    bsid=a::e    fibtable=0    behaviour=Encapsulation    type=Spray    index=0    segmentlists=${segmentLists1weight1}
-    Delete SRv6 Policy Segment List    node=agent_vpp_1    name=firstSL    policyBSID=a::e    # cleanup
-    Delete SRv6 Policy                 node=agent_vpp_1    bsid=a::e       # cleanup
-
-Check Policy Segment List CRUD (Behavior Of First PSL in Policy)
-    Put SRv6 Policy                    node=agent_vpp_1    bsid=a::e       fibtable=0         srhEncapsulation=true      sprayBehaviour=true
-    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Check SRv6 Policy Nonexistence    node=agent_vpp_1    bsid=a::e
-    Put SRv6 Policy Segment List       node=agent_vpp_1    name=firstSL    policyBSID=a::e    weight=1                   segmentlist=${segmentList1}
-    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Check SRv6 Policy Presence        node=agent_vpp_1    bsid=a::e    fibtable=0    behaviour=Encapsulation    type=Spray    index=0    segmentlists=${segmentLists1weight1}
-    Put SRv6 Policy Segment List       node=agent_vpp_1    name=firstSL    policyBSID=a::e    weight=2                   segmentlist=${segmentList2}    #modification
-    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Check SRv6 Policy Presence        node=agent_vpp_1    bsid=a::e    fibtable=0    behaviour=Encapsulation    type=Spray    index=0    segmentlists=${segmentLists2weight2}
-    Delete SRv6 Policy Segment List    node=agent_vpp_1    name=firstSL    policyBSID=a::e    # delete check and cleanup (policy gets deleted too)
-    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Check SRv6 Policy Nonexistence    node=agent_vpp_1    bsid=a::e
-    Delete SRv6 Policy                 node=agent_vpp_1    bsid=a::e       # cleanup
-
-Check Policy Segment List CRUD (Behavior Of Non-First PSL in Policy)
-    Put SRv6 Policy                    node=agent_vpp_1    bsid=a::e        fibtable=0         srhEncapsulation=true      sprayBehaviour=true
-    Put SRv6 Policy Segment List       node=agent_vpp_1    name=firstSL     policyBSID=a::e    weight=1                   segmentlist=${segmentList1}
-    Put SRv6 Policy Segment List       node=agent_vpp_1    name=secondSL    policyBSID=a::e    weight=2                   segmentlist=${segmentList2}
-    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Check SRv6 Policy Presence        node=agent_vpp_1    bsid=a::e    fibtable=0    behaviour=Encapsulation    type=Spray    index=0    segmentlists=${segmentLists12weight12}
-    Put SRv6 Policy Segment List       node=agent_vpp_1    name=secondSL    policyBSID=a::e    weight=3                   segmentlist=${segmentList3}    #modification
-    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Check SRv6 Policy Presence        node=agent_vpp_1    bsid=a::e    fibtable=0    behaviour=Encapsulation    type=Spray    index=0    segmentlists=${segmentLists13weight13}
-    Delete SRv6 Policy Segment List    node=agent_vpp_1    name=secondSL    policyBSID=a::e    # delete check
-    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Check SRv6 Policy Presence        node=agent_vpp_1    bsid=a::e    fibtable=0    behaviour=Encapsulation    type=Spray    index=0    segmentlists=${segmentLists1weight1}
-    Delete SRv6 Policy Segment List    node=agent_vpp_1    name=firstSL     policyBSID=a::e    # cleanup
-    Delete SRv6 Policy                 node=agent_vpp_1    bsid=a::e        # cleanup
-
-Check Policy And Two Policy Segment List Creation in different order 1 (checking call ordering problems mixing first and non-first PSL)
-    Put SRv6 Policy Segment List       node=agent_vpp_1    name=firstSL     policyBSID=a::e    weight=1                   segmentlist=${segmentList1}
-    Put SRv6 Policy                    node=agent_vpp_1    bsid=a::e        fibtable=0         srhEncapsulation=true      sprayBehaviour=true
-    Put SRv6 Policy Segment List       node=agent_vpp_1    name=secondSL    policyBSID=a::e    weight=2                   segmentlist=${segmentList2}
-    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Check SRv6 Policy Presence        node=agent_vpp_1    bsid=a::e    fibtable=0    behaviour=Encapsulation    type=Spray    index=0    segmentlists=${segmentLists12weight12}
-    Delete SRv6 Policy Segment List    node=agent_vpp_1    name=firstSL     policyBSID=a::e    # cleanup
-    Delete SRv6 Policy Segment List    node=agent_vpp_1    name=secondSL    policyBSID=a::e    # cleanup
-    Delete SRv6 Policy                 node=agent_vpp_1    bsid=a::e        # cleanup
-
-Check Policy And Two Policy Segment List Creation in different order 2 (checking call ordering problems mixing first and non-first PSL)
-    Put SRv6 Policy Segment List       node=agent_vpp_1    name=firstSL     policyBSID=a::e    weight=1                   segmentlist=${segmentList1}
-    Put SRv6 Policy Segment List       node=agent_vpp_1    name=secondSL    policyBSID=a::e    weight=2                   segmentlist=${segmentList2}
-    Put SRv6 Policy                    node=agent_vpp_1    bsid=a::e        fibtable=0         srhEncapsulation=true      sprayBehaviour=true
-    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Check SRv6 Policy Presence        node=agent_vpp_1    bsid=a::e    fibtable=0    behaviour=Encapsulation    type=Spray    index=0    segmentlists=${segmentLists12weight12}
-    Delete SRv6 Policy Segment List    node=agent_vpp_1    name=firstSL     policyBSID=a::e    # cleanup
-    Delete SRv6 Policy Segment List    node=agent_vpp_1    name=secondSL    policyBSID=a::e    # cleanup
-    Delete SRv6 Policy                 node=agent_vpp_1    bsid=a::e        # cleanup
 
 Check Steering CRUD
-    Put SRv6 Policy                    node=agent_vpp_1    bsid=a::e       fibtable=0         srhEncapsulation=true    sprayBehaviour=true
-    Put SRv6 Policy Segment List       node=agent_vpp_1    name=firstSL    policyBSID=a::e    weight=1                 segmentlist=${segmentList1}
+    Put SRv6 Policy                    node=agent_vpp_1    bsid=a::e       fibtable=0         srhEncapsulation=true    sprayBehaviour=true    segmentlists=${segmentLists1weight1}
     Put SRv6 Steering                  node=agent_vpp_1    name=toE        bsid=a::e          fibtable=0               prefixAddress=e::/64
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Check SRv6 Steering Presence      node=agent_vpp_1    bsid=a::e    prefixAddress=e::/64
     Put SRv6 Steering                  node=agent_vpp_1    name=toE        bsid=a::e          fibtable=0               prefixAddress=d::/64   # modification
@@ -139,49 +93,41 @@ Check Steering CRUD
     Delete SRv6 Steering               node=agent_vpp_1    name=toE
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Check SRv6 Steering NonExistence  node=agent_vpp_1    bsid=a::e    prefixAddress=d::/64
     Delete SRv6 Policy                 node=agent_vpp_1    bsid=a::e       #cleanup
-    Delete SRv6 Policy Segment List    node=agent_vpp_1    name=firstSL    policyBSID=a::e     #cleanup
 
 #TODO Steering can reference policy also by index -> add test (currently NOT WORKING on VPP side!)
 
 Check Steering Creation By Using Reversed-Ordered Steering And Policy Setting (Delayed Configuration)
     Put SRv6 Steering                  node=agent_vpp_1    name=toE        bsid=a::e          fibtable=0               prefixAddress=e::/64
-    Put SRv6 Policy                    node=agent_vpp_1    bsid=a::e       fibtable=0         srhEncapsulation=true    sprayBehaviour=true
-    Put SRv6 Policy Segment List       node=agent_vpp_1    name=firstSL    policyBSID=a::e    weight=1                 segmentlist=${segmentList1}
+    Put SRv6 Policy                    node=agent_vpp_1    bsid=a::e       fibtable=0         srhEncapsulation=true    sprayBehaviour=true    segmentlists=${segmentLists1weight1}
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Check SRv6 Steering Presence      node=agent_vpp_1    bsid=a::e    prefixAddress=e::/64
     Delete SRv6 Steering               node=agent_vpp_1    name=toE        #cleanup
     Delete SRv6 Policy                 node=agent_vpp_1    bsid=a::e       #cleanup
-    Delete SRv6 Policy Segment List    node=agent_vpp_1    name=firstSL    policyBSID=a::e     #cleanup
 
-Check Steering Delete By Removal of Policy/Last Segment List in Policy (Cascade Delete)
-    Put SRv6 Policy                    node=agent_vpp_1    bsid=a::e       fibtable=0         srhEncapsulation=true    sprayBehaviour=true
-    Put SRv6 Policy Segment List       node=agent_vpp_1    name=firstSL    policyBSID=a::e    weight=1                 segmentlist=${segmentList1}
+Check Steering Delete By Removal of Policy
+    Put SRv6 Policy                    node=agent_vpp_1    bsid=a::e       fibtable=0         srhEncapsulation=true    sprayBehaviour=true    segmentlists=${segmentLists1weight1}
     Put SRv6 Steering                  node=agent_vpp_1    name=toE        bsid=a::e          fibtable=0               prefixAddress=e::/64
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Check SRv6 Steering Presence      node=agent_vpp_1    bsid=a::e    prefixAddress=e::/64
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Check SRv6 Policy Presence        node=agent_vpp_1    bsid=a::e    fibtable=0    behaviour=Encapsulation    type=Spray    index=0    segmentlists=${segmentLists1weight1}
-    Delete SRv6 Policy Segment List    node=agent_vpp_1    name=firstSL    policyBSID=a::e    # also cascade delete of policy
+    Delete SRv6 Policy                 node=agent_vpp_1    bsid=a::e
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Check SRv6 Policy Nonexistence    node=agent_vpp_1    bsid=a::e
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Check SRv6 Steering NonExistence  node=agent_vpp_1    bsid=a::e    prefixAddress=e::/64
     Delete SRv6 Steering               node=agent_vpp_1    name=toE        #cleanup
-    Delete SRv6 Policy                 node=agent_vpp_1    bsid=a::e       #cleanup
 
-Check Update Of Policy Segment List Should Not Trigger Cascade Delete Of Policy And Steering
+Check Update Of Policy Should Not Trigger Cascade Delete Of Steering
     Put SRv6 Steering                  node=agent_vpp_1    name=toE        bsid=a::e          fibtable=0               prefixAddress=e::/64
-    Put SRv6 Policy                    node=agent_vpp_1    bsid=a::e       fibtable=0         srhEncapsulation=true    sprayBehaviour=true
-    Put SRv6 Policy Segment List       node=agent_vpp_1    name=firstSL    policyBSID=a::e    weight=1                 segmentlist=${segmentList1}
+    Put SRv6 Policy                    node=agent_vpp_1    bsid=a::e       fibtable=0         srhEncapsulation=true    sprayBehaviour=true    segmentlists=${segmentLists1weight1}
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Check SRv6 Steering Presence      node=agent_vpp_1    bsid=a::e    prefixAddress=e::/64
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Check SRv6 Policy Presence        node=agent_vpp_1    bsid=a::e    fibtable=0    behaviour=Encapsulation    type=Spray    index=0    segmentlists=${segmentLists1weight1}
-    Put SRv6 Policy Segment List       node=agent_vpp_1    name=firstSL    policyBSID=a::e    weight=2                 segmentlist=${segmentList2}         #modification
+    Put SRv6 Policy                    node=agent_vpp_1    bsid=a::e       fibtable=0         srhEncapsulation=false    sprayBehaviour=true    segmentlists=${segmentLists1weight1}    #modification of non-segment attribute
     Sleep    5s    # waiting constant time is bad practice, but how to otherwise check that nothing has changed?
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Check SRv6 Steering Presence      node=agent_vpp_1    bsid=a::e    prefixAddress=e::/64
-    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Check SRv6 Policy Presence        node=agent_vpp_1    bsid=a::e    fibtable=0    behaviour=Encapsulation    type=Spray    index=0    segmentlists=${segmentLists2weight2}
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Check SRv6 Policy Presence        node=agent_vpp_1    bsid=a::e    fibtable=0    behaviour=SRH insertion    type=Spray    index=0    segmentlists=${segmentLists1weight1}
     Delete SRv6 Steering               node=agent_vpp_1    name=toE        #cleanup
     Delete SRv6 Policy                 node=agent_vpp_1    bsid=a::e       #cleanup
-    Delete SRv6 Policy Segment List    node=agent_vpp_1    name=firstSL    policyBSID=a::e     #cleanup
 
 Check Resynchronization for clean VPP start
     Put Local SID With End.DX6 function    node=agent_vpp_1    localsidName=A    sidAddress=a::     fibtable=0               outinterface=vpp1_afpacket1    nexthop=a::1
-    Put SRv6 Policy                        node=agent_vpp_1    bsid=a::e         fibtable=0         srhEncapsulation=true    sprayBehaviour=true
-    Put SRv6 Policy Segment List           node=agent_vpp_1    name=firstSL      policyBSID=a::e    weight=1                 segmentlist=${segmentList1}
+    Put SRv6 Policy                        node=agent_vpp_1    bsid=a::e         fibtable=0         srhEncapsulation=true    sprayBehaviour=true            segmentlists=${segmentLists1weight1}
     Put SRv6 Steering                      node=agent_vpp_1    name=toE          bsid=a::e          fibtable=0               prefixAddress=e::/64
     Remove All VPP Nodes
     Sleep                                       3s
@@ -191,7 +137,6 @@ Check Resynchronization for clean VPP start
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Check SRv6 Steering Presence      node=agent_vpp_1    bsid=a::e         prefixAddress=e::/64
     Delete SRv6 Steering                   node=agent_vpp_1    name=toE        #cleanup
     Delete SRv6 Policy                     node=agent_vpp_1    bsid=a::e       #cleanup
-    Delete SRv6 Policy Segment List        node=agent_vpp_1    name=firstSL    policyBSID=a::e     #cleanup
     Delete Local SID                       node=agent_vpp_1    localsidName=A
 
 *** Keywords ***
