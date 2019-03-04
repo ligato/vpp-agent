@@ -35,13 +35,18 @@ import (
 	aclvppcalls "github.com/ligato/vpp-agent/plugins/vpp/aclplugin/vppcalls"
 )
 
+// Default path to socket for VPP stats
+const defaultStatsSocket = "/run/vpp/stats.sock"
+
 // Plugin implements the govppmux plugin interface.
 type Plugin struct {
 	Deps
 
-	vppConn    *govpp.Connection
-	vppAdapter adapter.VppAPI
-	vppConChan chan govpp.ConnectionEvent
+	vppConn      *govpp.Connection
+	vppAdapter   adapter.VppAPI
+	statsConn    govppapi.StatsProvider
+	statsAdapter adapter.StatsAPI
+	vppConChan   chan govpp.ConnectionEvent
 
 	lastConnErr error
 
@@ -75,6 +80,7 @@ type Config struct {
 	// The prefix prepended to the name used for shared memory (SHM) segments. If not set,
 	// shared memory segments are created directly in the SHM directory /dev/shm.
 	ShmPrefix       string `json:"shm-prefix"`
+	StatsSocketName string `json:"stats-socket-name"`
 	ReconnectResync bool   `json:"resync-after-reconnect"`
 	// How many times can be request resent in case vpp is suddenly disconnected.
 	RetryRequestCount int `json:"retry-request-count"`
@@ -149,6 +155,21 @@ func (plugin *Plugin) Init() error {
 	ctx, plugin.cancel = context.WithCancel(context.Background())
 	go plugin.handleVPPConnectionEvents(ctx)
 
+	// Connect to VPP status socket
+	var statsSocket string
+	if plugin.config.StatsSocketName != "" {
+		statsSocket = plugin.config.StatsSocketName
+	} else {
+		statsSocket = defaultStatsSocket
+	}
+	statsAdapter := NewStatsAdapter(statsSocket)
+	if statsAdapter == nil {
+		plugin.Log.Warnf("Unable to connect to the VPP statistics socket, nil stats adapter", err)
+	} else if plugin.statsConn, err = govpp.ConnectStats(statsAdapter); err != nil {
+		plugin.Log.Warnf("Unable to connect to the VPP statistics socket, %v", err)
+		plugin.statsAdapter = nil
+	}
+
 	return nil
 }
 
@@ -215,6 +236,54 @@ func (plugin *Plugin) GetTrace() *apitrace.Trace {
 		return nil
 	}
 	return plugin.tracer.Get()
+}
+
+// ListStats returns all stats names
+func (plugin *Plugin) ListStats(prefixes ...string) ([]string, error) {
+	if plugin.statsAdapter == nil {
+		return nil, nil
+	}
+	return plugin.statsAdapter.ListStats(prefixes...)
+}
+
+// DumpStats returns all stats with name, type and value
+func (plugin *Plugin) DumpStats(prefixes ...string) ([]*adapter.StatEntry, error) {
+	if plugin.statsAdapter == nil {
+		return nil, nil
+	}
+	return plugin.statsAdapter.DumpStats(prefixes...)
+}
+
+// GetSystemStats retrieves system statistics of the connected VPP instance like Vector rate, Input rate, etc.
+func (plugin *Plugin) GetSystemStats() (*govppapi.SystemStats, error) {
+	if plugin.statsConn == nil || plugin.statsConn.(*govpp.StatsConnection) == nil {
+		return nil, nil
+	}
+	return plugin.statsConn.GetSystemStats()
+}
+
+// GetNodeStats retrieves a list of Node VPP counters (vectors, clocks, ...)
+func (plugin *Plugin) GetNodeStats() (*govppapi.NodeStats, error) {
+	if plugin.statsConn == nil || plugin.statsConn.(*govpp.StatsConnection) == nil {
+		return nil, nil
+	}
+	return plugin.statsConn.GetNodeStats()
+}
+
+// GetInterfaceStats retrieves all counters related to the VPP interfaces
+func (plugin *Plugin) GetInterfaceStats() (*govppapi.InterfaceStats, error) {
+	if plugin.statsConn == nil || plugin.statsConn.(*govpp.StatsConnection) == nil {
+		return nil, nil
+	}
+	return plugin.statsConn.GetInterfaceStats()
+}
+
+// GetErrorStats retrieves VPP error counters
+func (plugin *Plugin) GetErrorStats(names ...string) (*govppapi.ErrorStats, error) {
+	if plugin.statsConn == nil || plugin.statsConn.(*govpp.StatsConnection) == nil {
+		return nil, nil
+	}
+	return plugin.statsConn.GetErrorStats()
 }
 
 // handleVPPConnectionEvents handles VPP connection events.
