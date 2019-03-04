@@ -67,6 +67,7 @@ func TestAddLocalSID(t *testing.T) {
 		{
 			Name: "addition with end behaviour",
 			Input: &srv6.LocalSID{
+				Sid:        sidToStr(sidA),
 				FibTableId: 10,
 				EndFunction: &srv6.LocalSID_BaseEndFunction{
 					BaseEndFunction: &srv6.LocalSID_End{
@@ -85,6 +86,7 @@ func TestAddLocalSID(t *testing.T) {
 		{
 			Name: "addition with endX behaviour (ipv6 next hop address)",
 			Input: &srv6.LocalSID{
+				Sid:        sidToStr(sidA),
 				FibTableId: 10,
 				EndFunction: &srv6.LocalSID_EndFunction_X{
 					EndFunction_X: &srv6.LocalSID_EndX{
@@ -107,6 +109,7 @@ func TestAddLocalSID(t *testing.T) {
 		{
 			Name: "addition with endX behaviour (ipv4 next hop address)",
 			Input: &srv6.LocalSID{
+				Sid:        sidToStr(sidA),
 				FibTableId: 10,
 				EndFunction: &srv6.LocalSID_EndFunction_X{
 					EndFunction_X: &srv6.LocalSID_EndX{
@@ -129,6 +132,7 @@ func TestAddLocalSID(t *testing.T) {
 		{
 			Name: "addition with endT behaviour",
 			Input: &srv6.LocalSID{
+				Sid:        sidToStr(sidA),
 				FibTableId: 10,
 				EndFunction: &srv6.LocalSID_EndFunction_T{
 					EndFunction_T: &srv6.LocalSID_EndT{
@@ -147,6 +151,7 @@ func TestAddLocalSID(t *testing.T) {
 		{
 			Name: "addition with endDX2 behaviour (ipv6 next hop address)",
 			Input: &srv6.LocalSID{
+				Sid:        sidToStr(sidA),
 				FibTableId: 10,
 				EndFunction: &srv6.LocalSID_EndFunction_DX2{
 					EndFunction_DX2: &srv6.LocalSID_EndDX2{
@@ -170,6 +175,7 @@ func TestAddLocalSID(t *testing.T) {
 		{
 			Name: "addition with endDX2 behaviour (ipv4 next hop address)",
 			Input: &srv6.LocalSID{
+				Sid:        sidToStr(sidA),
 				FibTableId: 10,
 				EndFunction: &srv6.LocalSID_EndFunction_DX2{
 					EndFunction_DX2: &srv6.LocalSID_EndDX2{
@@ -193,6 +199,7 @@ func TestAddLocalSID(t *testing.T) {
 		{
 			Name: "addition with endDX4 behaviour",
 			Input: &srv6.LocalSID{
+				Sid:        sidToStr(sidA),
 				FibTableId: 10,
 				EndFunction: &srv6.LocalSID_EndFunction_DX4{
 					EndFunction_DX4: &srv6.LocalSID_EndDX4{
@@ -214,6 +221,7 @@ func TestAddLocalSID(t *testing.T) {
 		{
 			Name: "addition with endDX6 behaviour",
 			Input: &srv6.LocalSID{
+				Sid:        sidToStr(sidA),
 				FibTableId: 10,
 				EndFunction: &srv6.LocalSID_EndFunction_DX6{
 					EndFunction_DX6: &srv6.LocalSID_EndDX6{
@@ -236,6 +244,7 @@ func TestAddLocalSID(t *testing.T) {
 		{
 			Name: "addition with endDT4 behaviour",
 			Input: &srv6.LocalSID{
+				Sid:        sidToStr(sidA),
 				FibTableId: 10,
 				EndFunction: &srv6.LocalSID_EndFunction_DT4{
 					EndFunction_DT4: &srv6.LocalSID_EndDT4{},
@@ -252,6 +261,7 @@ func TestAddLocalSID(t *testing.T) {
 		{
 			Name: "addition with endDT6 behaviour",
 			Input: &srv6.LocalSID{
+				Sid:        sidToStr(sidA),
 				FibTableId: 10,
 				EndFunction: &srv6.LocalSID_EndFunction_DT6{
 					EndFunction_DT6: &srv6.LocalSID_EndDT6{},
@@ -273,6 +283,7 @@ func TestAddLocalSID(t *testing.T) {
 				&interfaces.SwInterfaceDetails{Tag: toIFaceByte(ifaceB), InterfaceName: toIFaceByte(memif2)},
 			},
 			Input: &srv6.LocalSID{
+				Sid:        sidToStr(sidA),
 				FibTableId: 10,
 				EndFunction: &srv6.LocalSID_EndFunction_AD{
 					EndFunction_AD: &srv6.LocalSID_EndAD{
@@ -294,6 +305,7 @@ func TestAddLocalSID(t *testing.T) {
 				&interfaces.SwInterfaceDetails{Tag: toIFaceByte(ifaceB), InterfaceName: toIFaceByte("tap0")},
 			},
 			Input: &srv6.LocalSID{
+				Sid:        sidToStr(sidA),
 				FibTableId: 10,
 				EndFunction: &srv6.LocalSID_EndFunction_AD{
 					EndFunction_AD: &srv6.LocalSID_EndAD{
@@ -315,6 +327,7 @@ func TestAddLocalSID(t *testing.T) {
 				&interfaces.SwInterfaceDetails{Tag: toIFaceByte(ifaceB), InterfaceName: toIFaceByte("vxlan0")},
 			},
 			Input: &srv6.LocalSID{
+				Sid:        sidToStr(sidA),
 				FibTableId: 10,
 				EndFunction: &srv6.LocalSID_EndFunction_AD{
 					EndFunction_AD: &srv6.LocalSID_EndAD{
@@ -336,6 +349,7 @@ func TestAddLocalSID(t *testing.T) {
 				&interfaces.SwInterfaceDetails{Tag: toIFaceByte(ifaceB), InterfaceName: toIFaceByte("vmxnet3-0")},
 			},
 			Input: &srv6.LocalSID{
+				Sid:        sidToStr(sidA),
 				FibTableId: 10,
 				EndFunction: &srv6.LocalSID_EndFunction_AD{
 					EndFunction_AD: &srv6.LocalSID_EndAD{
@@ -357,6 +371,7 @@ func TestAddLocalSID(t *testing.T) {
 				&interfaces.SwInterfaceDetails{Tag: toIFaceByte(ifaceB), InterfaceName: toIFaceByte("unknown0")},
 			},
 			Input: &srv6.LocalSID{
+				Sid:        sidToStr(sidA),
 				FibTableId: 10,
 				EndFunction: &srv6.LocalSID_EndFunction_AD{
 					EndFunction_AD: &srv6.LocalSID_EndAD{
@@ -374,6 +389,7 @@ func TestAddLocalSID(t *testing.T) {
 			Name:          "fail due to missing end function",
 			ExpectFailure: true,
 			Input: &srv6.LocalSID{
+				Sid:        sidToStr(sidA),
 				FibTableId: 0,
 			},
 		},
@@ -382,6 +398,7 @@ func TestAddLocalSID(t *testing.T) {
 			FailInVPP:     true,
 			ExpectFailure: true,
 			Input: &srv6.LocalSID{
+				Sid:        sidToStr(sidA),
 				FibTableId: 0,
 				EndFunction: &srv6.LocalSID_BaseEndFunction{
 					BaseEndFunction: &srv6.LocalSID_End{
@@ -400,6 +417,7 @@ func TestAddLocalSID(t *testing.T) {
 				&interfaces.SwInterfaceDetails{Tag: toIFaceByte(ifaceB), InterfaceName: toIFaceByte(memif2)},
 			},
 			Input: &srv6.LocalSID{
+				Sid:        sidToStr(sidA),
 				FibTableId: 10,
 				EndFunction: &srv6.LocalSID_EndFunction_AD{
 					EndFunction_AD: &srv6.LocalSID_EndAD{
@@ -416,6 +434,7 @@ func TestAddLocalSID(t *testing.T) {
 			ExpectFailure: true,
 			cliMode:       true,
 			Input: &srv6.LocalSID{
+				Sid:        sidToStr(sidA),
 				FibTableId: 10,
 				EndFunction: &srv6.LocalSID_EndFunction_AD{
 					EndFunction_AD: &srv6.LocalSID_EndAD{
@@ -434,6 +453,7 @@ func TestAddLocalSID(t *testing.T) {
 				&interfaces.SwInterfaceDetails{Tag: toIFaceByte(ifaceB), InterfaceName: toIFaceByte(memif2)},
 			},
 			Input: &srv6.LocalSID{
+				Sid:        sidToStr(sidA),
 				FibTableId: 10,
 				EndFunction: &srv6.LocalSID_EndFunction_AD{
 					EndFunction_AD: &srv6.LocalSID_EndAD{
@@ -452,6 +472,7 @@ func TestAddLocalSID(t *testing.T) {
 				&interfaces.SwInterfaceDetails{Tag: toIFaceByte(ifaceA), InterfaceName: toIFaceByte(memif1)},
 			},
 			Input: &srv6.LocalSID{
+				Sid:        sidToStr(sidA),
 				FibTableId: 10,
 				EndFunction: &srv6.LocalSID_EndFunction_AD{
 					EndFunction_AD: &srv6.LocalSID_EndAD{
@@ -466,6 +487,7 @@ func TestAddLocalSID(t *testing.T) {
 			Name:          "missing interface in swIndexes (addition with endX behaviour)",
 			ExpectFailure: true,
 			Input: &srv6.LocalSID{
+				Sid:        sidToStr(sidA),
 				FibTableId: 10,
 				EndFunction: &srv6.LocalSID_EndFunction_X{
 					EndFunction_X: &srv6.LocalSID_EndX{
@@ -494,6 +516,7 @@ func TestAddLocalSID(t *testing.T) {
 			Name:          "missing interface in swIndexes (addition with endDX2 behaviour)",
 			ExpectFailure: true,
 			Input: &srv6.LocalSID{
+				Sid:        sidToStr(sidA),
 				FibTableId: 10,
 				EndFunction: &srv6.LocalSID_EndFunction_DX2{
 					EndFunction_DX2: &srv6.LocalSID_EndDX2{
@@ -508,6 +531,7 @@ func TestAddLocalSID(t *testing.T) {
 			Name:          "invalid IP address (addition with endDX2 behaviour)",
 			ExpectFailure: true,
 			Input: &srv6.LocalSID{
+				Sid:        sidToStr(sidA),
 				FibTableId: 10,
 				EndFunction: &srv6.LocalSID_EndFunction_DX2{
 					EndFunction_DX2: &srv6.LocalSID_EndDX2{
@@ -522,6 +546,7 @@ func TestAddLocalSID(t *testing.T) {
 			Name:          "missing interface in swIndexes (addition with endDX4 behaviour)",
 			ExpectFailure: true,
 			Input: &srv6.LocalSID{
+				Sid:        sidToStr(sidA),
 				FibTableId: 10,
 				EndFunction: &srv6.LocalSID_EndFunction_DX4{
 					EndFunction_DX4: &srv6.LocalSID_EndDX4{
@@ -535,6 +560,7 @@ func TestAddLocalSID(t *testing.T) {
 			Name:          "invalid IP address (addition with endDX4 behaviour)",
 			ExpectFailure: true,
 			Input: &srv6.LocalSID{
+				Sid:        sidToStr(sidA),
 				FibTableId: 10,
 				EndFunction: &srv6.LocalSID_EndFunction_DX4{
 					EndFunction_DX4: &srv6.LocalSID_EndDX4{
@@ -548,6 +574,7 @@ func TestAddLocalSID(t *testing.T) {
 			Name:          "rejection of IPv6 addresses (addition with endDX4 behaviour)",
 			ExpectFailure: true,
 			Input: &srv6.LocalSID{
+				Sid:        sidToStr(sidA),
 				FibTableId: 10,
 				EndFunction: &srv6.LocalSID_EndFunction_DX4{
 					EndFunction_DX4: &srv6.LocalSID_EndDX4{
@@ -561,6 +588,7 @@ func TestAddLocalSID(t *testing.T) {
 			Name:          "missing interface in swIndexes (addition with endDX6 behaviour)",
 			ExpectFailure: true,
 			Input: &srv6.LocalSID{
+				Sid:        sidToStr(sidA),
 				FibTableId: 10,
 				EndFunction: &srv6.LocalSID_EndFunction_DX6{
 					EndFunction_DX6: &srv6.LocalSID_EndDX6{
@@ -574,6 +602,7 @@ func TestAddLocalSID(t *testing.T) {
 			Name:          "invalid IP address (addition with endDX6 behaviour)",
 			ExpectFailure: true,
 			Input: &srv6.LocalSID{
+				Sid:        sidToStr(sidA),
 				FibTableId: 10,
 				EndFunction: &srv6.LocalSID_EndFunction_DX6{
 					EndFunction_DX6: &srv6.LocalSID_EndDX6{
@@ -613,7 +642,7 @@ func TestAddLocalSID(t *testing.T) {
 				}
 			}
 			// make the call
-			err := vppCalls.AddLocalSid(sidA.Addr, td.Input)
+			err := vppCalls.AddLocalSid(td.Input)
 			// verify result
 			if td.ExpectFailure {
 				Expect(err).Should(HaveOccurred())
@@ -664,6 +693,7 @@ func TestDeleteLocalSID(t *testing.T) {
 			defer teardown(ctx)
 			// data and prepare case
 			localsid := &srv6.LocalSID{
+				Sid:        td.Sid.String(),
 				FibTableId: 10,
 				EndFunction: &srv6.LocalSID_BaseEndFunction{
 					BaseEndFunction: &srv6.LocalSID_End{
@@ -671,7 +701,7 @@ func TestDeleteLocalSID(t *testing.T) {
 					},
 				},
 			}
-			vppCalls.AddLocalSid(td.Sid, localsid)
+			vppCalls.AddLocalSid(localsid)
 			ctx.MockVpp.MockReply(td.MockReply)
 			// make the call and verify
 			err := vppCalls.DeleteLocalSid(td.Sid)
@@ -736,23 +766,20 @@ func TestSetEncapsSourceAddress(t *testing.T) {
 func TestAddPolicy(t *testing.T) {
 	// Prepare different cases
 	cases := []struct {
-		Name              string
-		Fail              bool
-		BSID              net.IP
-		Policy            *srv6.Policy
-		PolicySegmentList *srv6.Policy_SegmentList
-		MockReply         govppapi.Message
-		Verify            func(error, govppapi.Message)
+		Name        string
+		Fail        bool
+		Policy      *srv6.Policy
+		MockReplies []govppapi.Message
+		Verify      func(error, []govppapi.Message)
 	}{
 		{
-			Name:              "simple SetAddPolicy",
-			BSID:              sidA.Addr,
-			Policy:            policy(sidA.Addr, 10, false, true),
-			PolicySegmentList: policySegmentList(1, sidA.Addr, sidB.Addr, sidC.Addr),
-			MockReply:         &sr.SrPolicyAddReply{},
-			Verify: func(err error, catchedMsg govppapi.Message) {
+			Name:        "simple SetAddPolicy",
+			Policy:      policy(sidA.Addr, 10, false, true, policySegmentList(1, sidA.Addr, sidB.Addr, sidC.Addr)),
+			MockReplies: []govppapi.Message{&sr.SrPolicyAddReply{}},
+			Verify: func(err error, catchedMsgs []govppapi.Message) {
 				Expect(err).ShouldNot(HaveOccurred())
-				Expect(catchedMsg).To(Equal(&sr.SrPolicyAdd{
+				Expect(catchedMsgs).To(HaveLen(1))
+				Expect(catchedMsgs[0]).To(Equal(&sr.SrPolicyAdd{
 					BsidAddr: sidA.Addr,
 					FibTable: 10,
 					Type:     boolToUint(false),
@@ -766,25 +793,93 @@ func TestAddPolicy(t *testing.T) {
 			},
 		},
 		{
-			Name:   "invalid SID (not IP address) in segment list",
-			BSID:   sidA.Addr,
-			Policy: policy(sidA.Addr, 10, false, true),
-			PolicySegmentList: &srv6.Policy_SegmentList{
-				Weight:   1,
-				Segments: []string{sidToStr(sidA), invalidIPAddress, sidToStr(sidC)},
+			Name: "adding policy with multiple segment lists",
+			Policy: policy(sidA.Addr, 10, false, true,
+				policySegmentList(1, sidA.Addr, sidB.Addr, sidC.Addr), policySegmentList(1, sidB.Addr, sidC.Addr, sidA.Addr)),
+			MockReplies: []govppapi.Message{&sr.SrPolicyAddReply{}, &sr.SrPolicyModReply{}},
+			Verify: func(err error, catchedMsgs []govppapi.Message) {
+				Expect(err).ShouldNot(HaveOccurred())
+				Expect(catchedMsgs).To(HaveLen(2))
+				Expect(catchedMsgs[0]).To(Equal(&sr.SrPolicyAdd{
+					BsidAddr: sidA.Addr,
+					FibTable: 10,
+					Type:     boolToUint(false),
+					IsEncap:  boolToUint(true),
+					Sids: sr.Srv6SidList{
+						Weight:  1,
+						NumSids: 3,
+						Sids:    []sr.Srv6Sid{{Addr: sidA.Addr}, {Addr: sidB.Addr}, {Addr: sidC.Addr}},
+					},
+				}))
+				Expect(catchedMsgs[1]).To(Equal(&sr.SrPolicyMod{
+					BsidAddr:  sidA.Addr,
+					Operation: vpp1901.AddSRList,
+					FibTable:  10,
+					Sids: sr.Srv6SidList{
+						Weight:  1,
+						NumSids: 3,
+						Sids:    []sr.Srv6Sid{{Addr: sidB.Addr}, {Addr: sidC.Addr}, {Addr: sidA.Addr}},
+					},
+				}))
 			},
-			MockReply: &sr.SrPolicyAddReply{},
-			Verify: func(err error, catchedMsg govppapi.Message) {
+		},
+		{
+			Name:        "failing when adding policy with empty segment lists",
+			Policy:      policy(sidA.Addr, 10, false, true),
+			MockReplies: []govppapi.Message{&sr.SrPolicyAddReply{}},
+			Verify: func(err error, catchedMsgs []govppapi.Message) {
 				Expect(err).Should(HaveOccurred())
 			},
 		},
 		{
-			Name:              "failure propagation from VPP",
-			BSID:              sidA.Addr,
-			Policy:            policy(sidA.Addr, 0, true, true),
-			PolicySegmentList: policySegmentList(1, sidA.Addr, sidB.Addr, sidC.Addr),
-			MockReply:         &sr.SrPolicyAddReply{Retval: 1},
-			Verify: func(err error, msg govppapi.Message) {
+			Name: "invalid binding SID in policy",
+			Policy: &srv6.Policy{
+				Bsid:             invalidIPAddress,
+				FibTableId:       10,
+				SprayBehaviour:   false,
+				SrhEncapsulation: true,
+				SegmentLists: []*srv6.Policy_SegmentList{
+					&srv6.Policy_SegmentList{
+						Weight:   1,
+						Segments: []string{sidToStr(sidA), invalidIPAddress, sidToStr(sidC)},
+					},
+				},
+			},
+			MockReplies: []govppapi.Message{&sr.SrPolicyAddReply{}},
+			Verify: func(err error, catchedMsgs []govppapi.Message) {
+				Expect(err).Should(HaveOccurred())
+			},
+		},
+		{
+			Name: "invalid SID (not IP address) in first segment list",
+			Policy: policy(sidA.Addr, 10, false, true,
+				&srv6.Policy_SegmentList{
+					Weight:   1,
+					Segments: []string{sidToStr(sidA), invalidIPAddress, sidToStr(sidC)},
+				}),
+			MockReplies: []govppapi.Message{&sr.SrPolicyAddReply{}},
+			Verify: func(err error, catchedMsgs []govppapi.Message) {
+				Expect(err).Should(HaveOccurred())
+			},
+		},
+		{
+			Name: "invalid SID (not IP address) in non-first segment list",
+			Policy: policy(sidA.Addr, 10, false, true,
+				policySegmentList(1, sidA.Addr, sidB.Addr, sidC.Addr),
+				&srv6.Policy_SegmentList{
+					Weight:   1,
+					Segments: []string{sidToStr(sidA), invalidIPAddress, sidToStr(sidC)},
+				}),
+			MockReplies: []govppapi.Message{&sr.SrPolicyAddReply{}, &sr.SrPolicyModReply{}},
+			Verify: func(err error, catchedMsgs []govppapi.Message) {
+				Expect(err).Should(HaveOccurred())
+			},
+		},
+		{
+			Name:        "failure propagation from VPP",
+			Policy:      policy(sidA.Addr, 0, true, true, policySegmentList(1, sidA.Addr, sidB.Addr, sidC.Addr)),
+			MockReplies: []govppapi.Message{&sr.SrPolicyAddReply{Retval: 1}},
+			Verify: func(err error, msgs []govppapi.Message) {
 				Expect(err).Should(HaveOccurred())
 			},
 		},
@@ -796,9 +891,11 @@ func TestAddPolicy(t *testing.T) {
 			ctx, vppCalls := setup(t)
 			defer teardown(ctx)
 			// prepare reply, make call and verify
-			ctx.MockVpp.MockReply(td.MockReply)
-			err := vppCalls.AddPolicy(td.BSID, td.Policy, td.PolicySegmentList)
-			td.Verify(err, ctx.MockChannel.Msg)
+			for _, reply := range td.MockReplies {
+				ctx.MockVpp.MockReply(reply)
+			}
+			err := vppCalls.AddPolicy(td.Policy)
+			td.Verify(err, ctx.MockChannel.Msgs)
 		})
 	}
 }
@@ -839,9 +936,8 @@ func TestDeletePolicy(t *testing.T) {
 			ctx, vppCalls := setup(t)
 			defer teardown(ctx)
 			// data and prepare case
-			policy := policy(td.BSID, 0, true, true)
-			segment := policySegmentList(1, sidA.Addr, sidB.Addr, sidC.Addr)
-			vppCalls.AddPolicy(td.BSID, policy, segment)
+			policy := policy(td.BSID, 0, true, true, policySegmentList(1, sidA.Addr, sidB.Addr, sidC.Addr))
+			vppCalls.AddPolicy(policy)
 			ctx.MockVpp.MockReply(td.MockReply)
 			// make the call and verify
 			err := vppCalls.DeletePolicy(td.BSID)
@@ -855,7 +951,6 @@ func TestAddPolicySegmentList(t *testing.T) {
 	// Prepare different cases
 	cases := []struct {
 		Name              string
-		BSID              net.IP
 		Policy            *srv6.Policy
 		PolicySegmentList *srv6.Policy_SegmentList
 		MockReply         govppapi.Message
@@ -863,7 +958,6 @@ func TestAddPolicySegmentList(t *testing.T) {
 	}{
 		{
 			Name:              "simple addition of policy segment",
-			BSID:              sidA.Addr,
 			Policy:            policy(sidA.Addr, 10, false, true),
 			PolicySegmentList: policySegmentList(1, sidA.Addr, sidB.Addr, sidC.Addr),
 			MockReply:         &sr.SrPolicyModReply{},
@@ -883,7 +977,6 @@ func TestAddPolicySegmentList(t *testing.T) {
 		},
 		{
 			Name:   "invalid SID (not IP address) in segment list",
-			BSID:   sidA.Addr,
 			Policy: policy(sidA.Addr, 10, false, true),
 			PolicySegmentList: &srv6.Policy_SegmentList{
 				Weight:   1,
@@ -895,8 +988,21 @@ func TestAddPolicySegmentList(t *testing.T) {
 			},
 		},
 		{
+			Name: "invalid binding SID (not IP address) in policy",
+			Policy: &srv6.Policy{
+				Bsid:             invalidIPAddress,
+				FibTableId:       10,
+				SprayBehaviour:   false,
+				SrhEncapsulation: true,
+			},
+			PolicySegmentList: policySegmentList(1, sidA.Addr, sidB.Addr, sidC.Addr),
+			MockReply:         &sr.SrPolicyModReply{},
+			Verify: func(err error, catchedMsg govppapi.Message) {
+				Expect(err).Should(HaveOccurred())
+			},
+		},
+		{
 			Name:              "failure propagation from VPP",
-			BSID:              sidA.Addr,
 			Policy:            policy(sidA.Addr, 0, true, true),
 			PolicySegmentList: policySegmentList(1, sidA.Addr, sidB.Addr, sidC.Addr),
 			MockReply:         &sr.SrPolicyModReply{Retval: 1},
@@ -913,7 +1019,7 @@ func TestAddPolicySegmentList(t *testing.T) {
 			defer teardown(ctx)
 			// prepare reply, make call and verify
 			ctx.MockVpp.MockReply(td.MockReply)
-			err := vppCalls.AddPolicySegmentList(td.BSID, td.Policy, td.PolicySegmentList)
+			err := vppCalls.AddPolicySegmentList(td.PolicySegmentList, td.Policy)
 			td.Verify(err, ctx.MockChannel.Msg)
 		})
 	}
@@ -924,7 +1030,6 @@ func TestDeletePolicySegmentList(t *testing.T) {
 	// Prepare different cases
 	cases := []struct {
 		Name              string
-		BSID              net.IP
 		Policy            *srv6.Policy
 		PolicySegmentList *srv6.Policy_SegmentList
 		SegmentIndex      uint32
@@ -933,8 +1038,7 @@ func TestDeletePolicySegmentList(t *testing.T) {
 	}{
 		{
 			Name:              "simple deletion of policy segment",
-			BSID:              sidA.Addr,
-			Policy:            policy(sidA.Addr, 10, false, true),
+			Policy:            policy(sidA.Addr, 10, false, true, policySegmentList(1, sidA.Addr, sidB.Addr, sidC.Addr)),
 			PolicySegmentList: policySegmentList(1, sidA.Addr, sidB.Addr, sidC.Addr),
 			SegmentIndex:      111,
 			MockReply:         &sr.SrPolicyModReply{},
@@ -954,9 +1058,12 @@ func TestDeletePolicySegmentList(t *testing.T) {
 			},
 		},
 		{
-			Name:   "invalid SID (not IP address) in segment list",
-			BSID:   sidA.Addr,
-			Policy: policy(sidA.Addr, 10, false, true),
+			Name: "invalid SID (not IP address) in segment list",
+			Policy: policy(sidA.Addr, 10, false, true,
+				&srv6.Policy_SegmentList{
+					Weight:   1,
+					Segments: []string{sidToStr(sidA), invalidIPAddress, sidToStr(sidC)},
+				}),
 			PolicySegmentList: &srv6.Policy_SegmentList{
 				Weight:   1,
 				Segments: []string{sidToStr(sidA), invalidIPAddress, sidToStr(sidC)},
@@ -969,8 +1076,7 @@ func TestDeletePolicySegmentList(t *testing.T) {
 		},
 		{
 			Name:              "failure propagation from VPP",
-			BSID:              sidA.Addr,
-			Policy:            policy(sidA.Addr, 0, true, true),
+			Policy:            policy(sidA.Addr, 0, true, true, policySegmentList(1, sidA.Addr, sidB.Addr, sidC.Addr)),
 			PolicySegmentList: policySegmentList(1, sidA.Addr, sidB.Addr, sidC.Addr),
 			SegmentIndex:      111,
 			MockReply:         &sr.SrPolicyModReply{Retval: 1},
@@ -987,7 +1093,7 @@ func TestDeletePolicySegmentList(t *testing.T) {
 			defer teardown(ctx)
 			// prepare reply, make call and verify
 			ctx.MockVpp.MockReply(td.MockReply)
-			err := vppCalls.DeletePolicySegmentList(td.BSID, td.Policy, td.PolicySegmentList, td.SegmentIndex)
+			err := vppCalls.DeletePolicySegmentList(td.PolicySegmentList, td.SegmentIndex, td.Policy)
 			td.Verify(err, ctx.MockChannel.Msg)
 		})
 	}

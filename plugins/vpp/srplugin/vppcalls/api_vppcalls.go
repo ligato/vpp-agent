@@ -31,20 +31,20 @@ type SRv6VppAPI interface {
 
 // SRv6VPPWrite provides write methods for segment routing
 type SRv6VPPWrite interface {
-	// AddLocalSid adds local sid given by <sidAddr> and <localSID> into VPP
-	AddLocalSid(sidAddr net.IP, localSID *srv6.LocalSID) error
+	// AddLocalSid adds local sid <localSID> into VPP
+	AddLocalSid(localSID *srv6.LocalSID) error
 	// DeleteLocalSid delets local sid given by <sidAddr> in VPP
 	DeleteLocalSid(sidAddr net.IP) error
 	// SetEncapsSourceAddress sets for SRv6 in VPP the source address used for encapsulated packet
 	SetEncapsSourceAddress(address string) error
-	// AddPolicy adds VPP SRv6 policy given by identified <bindingSid>,initial segment list for policy <policySegmentList> and other policy settings in <policy>
-	AddPolicy(bindingSid net.IP, policy *srv6.Policy, segmentList *srv6.Policy_SegmentList) error
-	// DeletePolicy deletes VPP SRv6 policy given by binding SID <bindingSid>
+	// AddPolicy adds SRv6 policy <policy> into VPP (including all policy's segment lists).
+	AddPolicy(policy *srv6.Policy) error
+	// DeletePolicy deletes SRv6 policy given by binding SID <bindingSid> (including all policy's segment lists).
 	DeletePolicy(bindingSid net.IP) error
-	// AddPolicySegmentList adds segment list <segmentList> to SRv6 policy <policy> that has policy BSID <bindingSid>
-	AddPolicySegmentList(bindingSid net.IP, policy *srv6.Policy, segmentList *srv6.Policy_SegmentList) error
-	// DeletePolicySegmentList removes segment list <segmentList> (with segment index <segmentIndex>) from SRv6 policy <policy> that has policy BSID <bindingSid>
-	DeletePolicySegmentList(bindingSid net.IP, policy *srv6.Policy, segmentList *srv6.Policy_SegmentList, segmentIndex uint32) error
+	// AddPolicySegmentList adds segment list <segmentList> to SRv6 policy <policy> in VPP
+	AddPolicySegmentList(segmentList *srv6.Policy_SegmentList, policy *srv6.Policy) error
+	// DeletePolicySegmentList removes segment list <segmentList> (with VPP-internal index <segmentVPPIndex>) from SRv6 policy <policy> in VPP
+	DeletePolicySegmentList(segmentList *srv6.Policy_SegmentList, segmentVPPIndex uint32, policy *srv6.Policy) error
 	// AddSteering sets in VPP steering into SRv6 policy.
 	AddSteering(steering *srv6.Steering) error
 	// RemoveSteering removes in VPP steering into SRv6 policy.

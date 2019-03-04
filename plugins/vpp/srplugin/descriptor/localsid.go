@@ -167,9 +167,8 @@ func (d *LocalSIDDescriptor) Validate(key string, localSID *srv6.LocalSID) error
 
 // Create creates new Local SID into VPP using VPP's binary api
 func (d *LocalSIDDescriptor) Create(key string, value *srv6.LocalSID) (metadata interface{}, err error) {
-	sid, _ := ParseIPv6(value.GetSid()) // already validated
-	if err := d.srHandler.AddLocalSid(sid, value); err != nil {
-		return nil, errors.Errorf("failed to add local sid %s: %v", sid.String(), err)
+	if err := d.srHandler.AddLocalSid(value); err != nil {
+		return nil, errors.Errorf("failed to add local sid %s: %v", value.GetSid(), err)
 	}
 	return nil, nil
 }

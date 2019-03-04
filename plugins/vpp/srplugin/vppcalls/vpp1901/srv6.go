@@ -60,8 +60,12 @@ const (
 	ModifyWeightOfSRList                  // Modify the weight of an existing SR List
 )
 
-// AddLocalSid adds local sid given by <sidAddr> and <localSID> into VPP
-func (h *SRv6VppHandler) AddLocalSid(sidAddr net.IP, localSID *srv6.LocalSID) error {
+// AddLocalSid adds local sid <localSID> into VPP
+func (h *SRv6VppHandler) AddLocalSid(localSID *srv6.LocalSID) error {
+	sidAddr, err := parseIPv6(localSID.GetSid())
+	if err != nil {
+		return fmt.Errorf("sid address %s is not IPv6 address: %v", localSID.GetSid(), err) // calls from descriptor are already validated
+	}
 	return h.addDelLocalSid(false, sidAddr, localSID)
 }
 
@@ -300,10 +304,27 @@ func (h *SRv6VppHandler) SetEncapsSourceAddress(address string) error {
 	return nil
 }
 
-// AddPolicy adds SRv6 policy given by identified <bindingSid>,initial segment list for policy <policySegmentList> and other policy settings in <policy>
-func (h *SRv6VppHandler) AddPolicy(bindingSid net.IP, policy *srv6.Policy, segmentList *srv6.Policy_SegmentList) error {
-	h.log.Debugf("Adding SR policy with binding SID %v and list of next SIDs %v", bindingSid, segmentList.Segments)
-	sids, err := h.convertPolicySegment(segmentList)
+// AddPolicy adds SRv6 policy <policy> into VPP (including all policy's segment lists).
+func (h *SRv6VppHandler) AddPolicy(policy *srv6.Policy) error {
+	if err := h.addBasePolicyWithFirstSegmentList(policy); err != nil {
+		return fmt.Errorf("can't create Policy with first segment list (Policy: %+v): %v", policy, err)
+	}
+	if err := h.addOtherSegmentLists(policy); err != nil {
+		return fmt.Errorf("can't add all segment lists to created policy %+v: %v", policy, err)
+	}
+	return nil
+}
+
+func (h *SRv6VppHandler) addBasePolicyWithFirstSegmentList(policy *srv6.Policy) error {
+	h.log.Debugf("Adding SR policy %+v", policy)
+	bindingSid, err := parseIPv6(policy.GetBsid()) // already validated
+	if err != nil {
+		return fmt.Errorf("binding sid address %s is not IPv6 address: %v", policy.GetBsid(), err) // calls from descriptor are already validated
+	}
+	if len(policy.SegmentLists) == 0 {
+		return fmt.Errorf("policy must have defined at least one segment list (Policy: %+v)", policy) // calls from descriptor are already validated
+	}
+	sids, err := h.convertPolicySegment(policy.SegmentLists[0])
 	if err != nil {
 		return err
 	}
@@ -324,9 +345,18 @@ func (h *SRv6VppHandler) AddPolicy(bindingSid net.IP, policy *srv6.Policy, segme
 		return fmt.Errorf("vpp call %q returned: %d", reply.GetMessageName(), reply.Retval)
 	}
 
-	h.log.WithFields(logging.Fields{"binding SID": bindingSid, "list of next SIDs": segmentList.Segments}).
-		Debug("SR policy added")
+	h.log.WithFields(logging.Fields{"binding SID": bindingSid, "list of next SIDs": policy.SegmentLists[0].Segments}).
+		Debug("base SR policy (policy with just one segment list) added")
 
+	return nil
+}
+
+func (h *SRv6VppHandler) addOtherSegmentLists(policy *srv6.Policy) error {
+	for _, sl := range policy.SegmentLists[1:] {
+		if err := h.AddPolicySegmentList(sl, policy); err != nil {
+			return fmt.Errorf("failed to add policy segment %+v: %v", sl, err)
+		}
+	}
 	return nil
 }
 
@@ -350,33 +380,38 @@ func (h *SRv6VppHandler) DeletePolicy(bindingSid net.IP) error {
 	return nil
 }
 
-// AddPolicySegmentList adds segment list <segmentList> to SRv6 policy <policy> that has policy BSID <bindingSid>
-func (h *SRv6VppHandler) AddPolicySegmentList(bindingSid net.IP, policy *srv6.Policy, segmentList *srv6.Policy_SegmentList) error {
-	h.log.Debugf("Adding segment %v to SR policy with binding SID %v", segmentList.Segments, bindingSid)
-	err := h.modPolicy(AddSRList, bindingSid, policy, segmentList, 0)
+// AddPolicySegmentList adds segment list <segmentList> to SRv6 policy <policy> in VPP
+func (h *SRv6VppHandler) AddPolicySegmentList(segmentList *srv6.Policy_SegmentList, policy *srv6.Policy) error {
+	h.log.Debugf("Adding segment %+v to SR policy %+v", segmentList, policy)
+	err := h.modPolicy(AddSRList, policy, segmentList, 0)
 	if err == nil {
-		h.log.WithFields(logging.Fields{"binding SID": bindingSid, "list of next SIDs": segmentList.Segments}).
+		h.log.WithFields(logging.Fields{"binding SID": policy.Bsid, "list of next SIDs": segmentList.Segments}).
 			Debug("SR policy modified(added another segment list)")
 	}
 	return err
 }
 
-// DeletePolicySegmentList removes segment list <segmentList> (with segment list index <segmentListIndex>) from SRv6 policy <policy> that has policy BSID <bindingSid>
-func (h *SRv6VppHandler) DeletePolicySegmentList(bindingSid net.IP, policy *srv6.Policy, segmentList *srv6.Policy_SegmentList, segmentListIndex uint32) error {
-	h.log.Debugf("Removing segment %v (index %v) from SR policy with binding SID %v", segmentList.Segments, segmentListIndex, bindingSid)
-	err := h.modPolicy(DeleteSRList, bindingSid, policy, segmentList, segmentListIndex)
+// DeletePolicySegmentList removes segment list <segmentList> (with VPP-internal index <segmentVPPIndex>) from SRv6 policy <policy> in VPP
+func (h *SRv6VppHandler) DeletePolicySegmentList(segmentList *srv6.Policy_SegmentList, segmentVPPIndex uint32, policy *srv6.Policy) error {
+	h.log.Debugf("Removing segment %+v (vpp-internal index %v) from SR policy %+v", segmentList, segmentVPPIndex, policy)
+	err := h.modPolicy(DeleteSRList, policy, segmentList, segmentVPPIndex)
 	if err == nil {
-		h.log.WithFields(logging.Fields{"binding SID": bindingSid, "list of next SIDs": segmentList.Segments, "segmentListIndex": segmentListIndex}).
+		h.log.WithFields(logging.Fields{"binding SID": policy.Bsid, "list of next SIDs": segmentList.Segments, "segmentListIndex": segmentVPPIndex}).
 			Debug("SR policy modified(removed segment list)")
 	}
 	return err
 }
 
-func (h *SRv6VppHandler) modPolicy(operation uint8, bindingSid net.IP, policy *srv6.Policy, segmentList *srv6.Policy_SegmentList, segmentListIndex uint32) error {
+func (h *SRv6VppHandler) modPolicy(operation uint8, policy *srv6.Policy, segmentList *srv6.Policy_SegmentList, segmentListIndex uint32) error {
+	bindingSid, err := parseIPv6(policy.GetBsid())
+	if err != nil {
+		return fmt.Errorf("binding sid address %s is not IPv6 address: %v", policy.GetBsid(), err) // calls from descriptor are already validated
+	}
 	sids, err := h.convertPolicySegment(segmentList)
 	if err != nil {
 		return err
 	}
+
 	// Note: Weight in sr.SrPolicyMod is leftover from API changes that moved weight into sr.Srv6SidList (it is weight of sid list not of the whole policy)
 	req := &sr.SrPolicyMod{
 		BsidAddr:  []byte(bindingSid), // TODO add ability to define policy also by index (SrPolicyIndex)

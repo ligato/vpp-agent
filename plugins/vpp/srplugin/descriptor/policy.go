@@ -110,24 +110,16 @@ func (d *PolicyDescriptor) Validate(key string, policy *srv6.Policy) error {
 
 // Create creates new Policy into VPP using VPP's binary api
 func (d *PolicyDescriptor) Create(key string, policy *srv6.Policy) (metadata interface{}, err error) {
-	// add base policy (NB policy model has all segment lists, but SB vppcall's policy is only policy with one segment (VPP binary API definition))
-	bsid, _ := ParseIPv6(policy.GetBsid())                            // already validated
-	err = d.srHandler.AddPolicy(bsid, policy, policy.SegmentLists[0]) // there exist first segment (validation checked it)
+	// add policy (including segment lists)
+	err = d.srHandler.AddPolicy(policy) // there exist first segment (validation checked it)
 	if err != nil {
-		return nil, errors.Errorf("failed to write policy %s with first segment %s: %v", bsid.String(), policy.SegmentLists[0], err)
-	}
-
-	// add segment lists to policy
-	for _, sl := range policy.SegmentLists[1:] {
-		if err := d.srHandler.AddPolicySegmentList(bsid, policy, sl); err != nil {
-			return nil, errors.Errorf("failed to add policy segment %s: %v", bsid, err)
-		}
+		return nil, errors.Errorf("failed to write policy %s with first segment %s: %v", policy.GetBsid(), policy.SegmentLists[0], err)
 	}
 
 	// retrieve from VPP indexes of just added Policy/Segment Lists and store it as metadata
 	_, slIndexes, err := d.srHandler.RetrievePolicyIndexInfo(policy)
 	if err != nil {
-		return nil, errors.Errorf("can't retrieve indexes of created srv6 policy with bsid %v : %v", bsid, err)
+		return nil, errors.Errorf("can't retrieve indexes of created srv6 policy with bsid %v : %v", policy.GetBsid(), err)
 	}
 	metadata = &PolicyMetadata{
 		segmentListIndexes: slIndexes,
@@ -166,10 +158,9 @@ func (d *PolicyDescriptor) Update(key string, oldPolicy, newPolicy *srv6.Policy,
 	}
 
 	// add new segment lists not present in oldPolicy
-	bsid, _ := ParseIPv6(newPolicy.GetBsid()) // already validated
 	for _, sl := range addPool {
-		if err := d.srHandler.AddPolicySegmentList(bsid, newPolicy, sl); err != nil {
-			return nil, errors.Errorf("failed update policy: failed to add policy segment %s: %v", bsid, err)
+		if err := d.srHandler.AddPolicySegmentList(sl, newPolicy); err != nil {
+			return nil, errors.Errorf("failed update policy: failed to add policy segment %s: %v", newPolicy.GetBsid(), err)
 		}
 	}
 
@@ -179,17 +170,17 @@ func (d *PolicyDescriptor) Update(key string, oldPolicy, newPolicy *srv6.Policy,
 		index, exists := slIndexes[sl]
 		if !exists {
 			return nil, errors.Errorf("failed update policy: failed to find index for segment list "+
-				"%+v in policy with bsid %v (metadata segment list indexes: %+v)", sl, bsid, slIndexes)
+				"%+v in policy with bsid %v (metadata segment list indexes: %+v)", sl, oldPolicy.GetBsid(), slIndexes)
 		}
-		if err := d.srHandler.DeletePolicySegmentList(bsid, newPolicy, sl, index); err != nil {
-			return nil, errors.Errorf("failed update policy: failed to delete policy segment %s: %v", bsid, err)
+		if err := d.srHandler.DeletePolicySegmentList(sl, index, newPolicy); err != nil {
+			return nil, errors.Errorf("failed update policy: failed to delete policy segment %s: %v", oldPolicy.GetBsid(), err)
 		}
 	}
 
 	// update metadata be recreation it from scratch
 	_, slIndexes, err = d.srHandler.RetrievePolicyIndexInfo(newPolicy)
 	if err != nil {
-		return nil, errors.Errorf("can't retrieve indexes of updated srv6 policy with bsid %v : %v", bsid, err)
+		return nil, errors.Errorf("can't retrieve indexes of updated srv6 policy with bsid %v : %v", newPolicy.GetBsid(), err)
 	}
 	newMetadata = &PolicyMetadata{
 		segmentListIndexes: slIndexes,
