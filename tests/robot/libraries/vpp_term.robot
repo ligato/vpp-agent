@@ -275,6 +275,16 @@ vpp_term: Check ARP
     ${status}=         Run Keyword If     '${internal_name}'!='${None}'  Parse ARP    ${out}   ${internal_name}   ${ipv4}     ${MAC}   ELSE    Set Variable   False
     Should Be Equal As Strings   ${status}   ${presence}
 
+vpp_term: Set IPv6 neighbor
+    [Arguments]        ${node}      ${interface}    ${ipv6}     ${MAC}
+    [Documentation]    Sets IPv6 neighbors
+    vpp_term: Issue Command  ${node}   set ip6 neighbor ${interface} ${ipv6} ${MAC}
+
+vpp_term: Set ARP
+    [Arguments]        ${node}      ${interface}    ${ipv4}     ${MAC}
+    [Documentation]    Sets ARP (IPv4 neighbors)
+    vpp_term: Issue Command  ${node}   set ip arp ${interface} ${ipv4} ${MAC}
+
 vpp_term: Show Application Namespaces
     [Arguments]        ${node}
     [Documentation]    Show application namespaces through vpp terminal
@@ -339,13 +349,17 @@ vpp_term: Show Trace
     ${out}=            vpp_term: Issue Command  ${node}    show trace
     [Return]           ${out}
 
-
-vpp_term: Add Trace Memif
+vpp_term: Clear Trace
     [Arguments]        ${node}
-    [Documentation]    vpp_term: Add Trace for memif interfaces
-    ${out}=            vpp_term: Issue Command  ${node}    trace add memif-input 10
+    [Documentation]    vpp_term: Clear Trace
+    ${out}=            vpp_term: Issue Command  ${node}    clear trace
     [Return]           ${out}
 
+vpp_term: Add Trace Memif
+    [Arguments]        ${node}    ${count}=10
+    [Documentation]    vpp_term: Add Trace for memif interfaces
+    ${out}=            vpp_term: Issue Command  ${node}    trace add memif-input ${count}
+    [Return]           ${out}
 
 vpp_term: Show STN Rules
     [Arguments]        ${node}
@@ -371,9 +385,9 @@ vpp_term: Check STN Rule Deleted
     Should Not Contain     ${out}    ${internal_name}
 
 vpp_term: Add Trace Afpacket
-    [Arguments]        ${node}
+    [Arguments]        ${node}    ${count}=10
     [Documentation]    vpp_term: Add Trace for afpacket interfaces
-    ${out}=            vpp_term: Issue Command  ${node}    trace add af-packet-input 10
+    ${out}=            vpp_term: Issue Command  ${node}    trace add af-packet-input ${count}
     [Return]           ${out}
 
 vpp_term: Set VPP Tracing And Debugging
@@ -400,6 +414,12 @@ vpp_term: Check Local SID Presence
     #${terminal_timeout}
     Wait Until Keyword Succeeds    5x    2s    vpp_term: Local SID exists    node=${node}     sidAddress=${sidAddress}    interface=${interface}    nexthop=${nexthop}
 
+vpp_term: Check SR-Proxy Local SID Presence
+    [Arguments]        ${node}     ${sidAddress}    ${serviceaddress}    ${outinterface}    ${ininterface}
+    [Documentation]    Checking if specified local sid with SR-Proxy functionality (End.AD) exists or will show up
+    #${terminal_timeout}
+    Wait Until Keyword Succeeds    5x    2s    vpp_term: SR-Proxy Local SID exists    node=${node}     sidAddress=${sidAddress}    serviceaddress=${serviceaddress}    outinterface=${outinterface}    ininterface=${ininterface}
+
 vpp_term: Local SID exists
     [Arguments]        ${node}     ${sidAddress}    ${interface}    ${nexthop}
     [Documentation]    Checking if specified local sid exists
@@ -408,7 +428,20 @@ vpp_term: Local SID exists
     ${localsidsStr}=   OperatingSystem.Get File    /tmp/srv6_sh_sr_localsid_output.txt
     ${localsidsStr}=   Basic_Operations.Replace_Rn_N   ${localsidsStr}    #FIX for BUG with New Line
     ${localsidsStr}=   Convert To Lowercase    ${localsidsStr}
-    ${matchdata}=      OperatingSystem.Get File    ${CURDIR}/../suites/crud/test_data/srv6_sh_sr_localsid_output_match.txt
+    ${matchdata}=      OperatingSystem.Get File    ${CURDIR}/../suites/crudIPv6/test_data/srv6_sh_sr_localsid_output_match.txt
+    ${matchdata}=      Replace Variables           ${matchdata}
+    ${matchdata}=      Convert To Lowercase    ${matchdata}
+    Should Contain    ${localsidsStr}    ${matchdata}
+
+vpp_term: SR-Proxy Local SID exists
+    [Arguments]        ${node}     ${sidAddress}    ${serviceaddress}    ${outinterface}    ${ininterface}
+    [Documentation]    Checking if specified SR-Proxy local sid exists
+    ${localsidsStr}=   vpp_term: Show Local SIDs    ${node}
+    Create File        /tmp/srv6_sh_sr_localsid_proxy_output.txt    ${localsidsStr}   #FIXME remove dirty trick with saving string to file just to be able to match substring in string
+    ${localsidsStr}=   OperatingSystem.Get File    /tmp/srv6_sh_sr_localsid_proxy_output.txt
+    ${localsidsStr}=   Basic_Operations.Replace_Rn_N   ${localsidsStr}    #FIX for BUG with New Line
+    ${localsidsStr}=   Convert To Lowercase    ${localsidsStr}
+    ${matchdata}=      OperatingSystem.Get File    ${CURDIR}/../suites/crudIPv6/test_data/srv6_sh_sr_localsid_proxy_output_match.txt
     ${matchdata}=      Replace Variables           ${matchdata}
     ${matchdata}=      Convert To Lowercase    ${matchdata}
     Should Contain    ${localsidsStr}    ${matchdata}
@@ -469,7 +502,7 @@ vpp_term: Local SID doesnt exist
     Create File           /tmp/srv6_sh_sr_localsid_output.txt    ${localsidsStr}   #FIXME remove dirty trick with saving string to file just to be able to match substring in string
     ${localsidsStr}=      OperatingSystem.Get File    /tmp/srv6_sh_sr_localsid_output.txt
     ${localsidsStr}=      Convert To Lowercase    ${localsidsStr}
-    ${matchdata}=         OperatingSystem.Get File    ${CURDIR}/../suites/crud/test_data/srv6_sh_sr_localsid_output_no_match.txt
+    ${matchdata}=         OperatingSystem.Get File    ${CURDIR}/../suites/crudIPv6/test_data/srv6_sh_sr_localsid_output_no_match.txt
     ${matchdata}=         Replace Variables           ${matchdata}
     ${matchdata}=         Convert To Lowercase    ${matchdata}
     Should Not Contain    ${localsidsStr}    ${matchdata}
@@ -488,17 +521,22 @@ vpp_term: SRv6 Policy exists
     ${policyStr}=      OperatingSystem.Get File    /tmp/srv6_sh_sr_policies_output.txt
     ${policyStr}=      Basic_Operations.Replace_Rn_N   ${policyStr}    #FIX for BUG with New Line
     ${policyStr}=      Convert To Lowercase    ${policyStr}
-    ${policymatchdata}=     OperatingSystem.Get File    ${CURDIR}/../suites/crud/test_data/srv6_sh_sr_policies_output_match.txt
-    ${policymatchdata}=     Replace Variables           ${policymatchdata}
-    ${policymatchdata}=     Convert To Lowercase    ${policymatchdata}
-    ${segmentlistsmatchdata}=    Set Variable    ${EMPTY}
+    ${policyregexpmatchdata}=     OperatingSystem.Get File    ${CURDIR}/../suites/crudIPv6/test_data/srv6_sh_sr_policies_output_regexp_match.txt
+    ${policyregexpmatchdata}=     Replace Variables           ${policyregexpmatchdata}
+    ${policyregexpmatchdata}=     Convert To Lowercase    ${policyregexpmatchdata}
+    ${segmentlistsregexpmatchdata}=    Set Variable    ${EMPTY}
     :FOR    ${segmentlist}    IN    @{segmentlists}
-    \    ${segmentlistmatchdata}=    OperatingSystem.Get File    ${CURDIR}/../suites/crud/test_data/srv6_sh_sr_policy_segments_output_match.txt
-    \    ${segmentlistmatchdata}=    Replace Variables           ${segmentlistmatchdata}
-    \    ${segmentlistmatchdata}=    Convert To Lowercase    ${segmentlistmatchdata}
-    \    ${segmentlistsmatchdata}=    Catenate    SEPARATOR=  ${segmentlistsmatchdata}   ${segmentlistmatchdata}
-    ${matchdata}=    Catenate    SEPARATOR=  ${policymatchdata}   ${segmentlistsmatchdata}
-    Should Contain    ${policyStr}    ${matchdata}
+    \    ${segmentlistregexpmatchdata}=     OperatingSystem.Get File    ${CURDIR}/../suites/crudIPv6/test_data/srv6_sh_sr_policy_segments_output_regexp_match.txt
+    \    ${segmentlistregexpmatchdata}=     Replace Variables           ${segmentlistregexpmatchdata}
+    \    ${segmentlistregexpmatchdata}=     Convert To Lowercase        ${segmentlistregexpmatchdata}
+    \    ${segmentlistsregexpmatchdata}=    Catenate    SEPARATOR=      ${segmentlistsregexpmatchdata}    (?=\[^v\]*    ${segmentlistregexpmatchdata}    )
+    ${segmentCount}=    Get Length    ${segmentlists}
+    # using these facts for creating regexp (also using (?=...) groups to check segment list in any order):
+    # 1. "v" can't be in segment list part, but it is in beginning of next policy ("behaVior")
+    # 2. "weight" in each segment list and non "w" characters around it to count segments
+    # 3. "-----" is policy delimiter (but unfortunatelly "-" is part of segment list -> using "v" from fact 1.)
+    ${regexp}=    Catenate    SEPARATOR=  ${policyregexpmatchdata}   ${segmentlistsregexpmatchdata}    (\[^vw\]*weight\[^vw\]*){${segmentCount}}-----
+    Should Match Regexp    ${policyStr}    ${regexp}
 
 vpp_term: Show SRv6 policies
     [Arguments]        ${node}
@@ -518,7 +556,7 @@ vpp_term: SRv6 Policy doesnt exist
     Create File           /tmp/srv6_sh_sr_policies_output.txt    ${policyStr}   #FIXME remove dirty trick with saving string to file just to be able to match substring in string
     ${policyStr}=         OperatingSystem.Get File    /tmp/srv6_sh_sr_policies_output.txt
     ${policyStr}=         Convert To Lowercase    ${policyStr}
-    ${matchdata}=         OperatingSystem.Get File    ${CURDIR}/../suites/crud/test_data/srv6_sh_sr_policies_output_no_match.txt
+    ${matchdata}=         OperatingSystem.Get File    ${CURDIR}/../suites/crudIPv6/test_data/srv6_sh_sr_policies_output_no_match.txt
     ${matchdata}=         Replace Variables           ${matchdata}
     ${matchdata}=         Convert To Lowercase    ${matchdata}
     Should Not Contain    ${policyStr}    ${matchdata}
@@ -536,7 +574,7 @@ vpp_term: SRv6 Steering exists
     Create File        /tmp/srv6_sh_sr_steerings_output.txt    ${steeringStr}   #FIXME remove dirty trick with saving string to file just to be able to match substring in string
     ${steeringStr}=    OperatingSystem.Get File    /tmp/srv6_sh_sr_steerings_output.txt
     ${steeringStr}=    Convert To Lowercase    ${steeringStr}
-    ${matchdata}=      OperatingSystem.Get File    ${CURDIR}/../suites/crud/test_data/srv6_sh_sr_steering_output_match.txt
+    ${matchdata}=      OperatingSystem.Get File    ${CURDIR}/../suites/crudIPv6/test_data/srv6_sh_sr_steering_output_match.txt
     ${matchdata}=      Replace Variables           ${matchdata}
     ${matchdata}=      Convert To Lowercase    ${matchdata}
     Should Contain    ${steeringStr}    ${matchdata}
@@ -544,7 +582,7 @@ vpp_term: SRv6 Steering exists
 vpp_term: Show SRv6 steering policies
     [Arguments]        ${node}
     [Documentation]    Show SRv6 steering policies through vpp terminal
-    ${out}=            vpp_term: Issue Command  ${node}   sh sr steering policies
+    ${out}=            vpp_term: Issue Command  ${node}   sh sr steering-policies
     [Return]           ${out}
 
 vpp_term: Check SRv6 Steering NonExistence
@@ -560,7 +598,7 @@ vpp_term: SRv6 Steering doesnt exist
     Create File           /tmp/srv6_sh_sr_steerings_output.txt    ${steeringStr}   #FIXME remove dirty trick with saving string to file just to be able to match substring in string
     ${steeringStr}=       OperatingSystem.Get File    /tmp/srv6_sh_sr_steerings_output.txt
     ${steeringStr}=       Convert To Lowercase    ${steeringStr}
-    ${matchdata}=         OperatingSystem.Get File    ${CURDIR}/../suites/crud/test_data/srv6_sh_sr_steering_output_match.txt
+    ${matchdata}=         OperatingSystem.Get File    ${CURDIR}/../suites/crudIPv6/test_data/srv6_sh_sr_steering_output_match.txt
     ${matchdata}=         Replace Variables           ${matchdata}
     ${matchdata}=         Convert To Lowercase    ${matchdata}
     Should Not Contain    ${steeringStr}    ${matchdata}

@@ -149,6 +149,7 @@ generate-desc-adapters: get-desc-adapter-generator
 	cd plugins/vpp/puntplugin && go generate
 	cd plugins/vpp/stnplugin && go generate
 	cd plugins/vpp/puntplugin && go generate
+	cd plugins/vpp/srplugin && go generate
 	@echo
 
 verify-binapi:

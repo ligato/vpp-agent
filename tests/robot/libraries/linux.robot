@@ -64,15 +64,15 @@ linux: Interface Not Exists
     linux: Check Interface Presence    ${node}    ${mac}    ${FALSE}
 
 linux: Check Ping
-    [Arguments]        ${node}    ${ip}
-    ${out}=            Execute In Container    ${node}    ping -c 5 ${ip}
+    [Arguments]        ${node}    ${ip}    ${count}=5
+    ${out}=            Execute In Container    ${node}    ping -c ${count} ${ip}
     Should Contain     ${out}    from ${ip}
     Should Not Contain    ${out}    100% packet loss
 
 linux: Check Ping6
-    [Arguments]        ${node}    ${ip}
-    ${out}=            Execute In Container    ${node}    ping6 -c 5 ${ip}
-    Should Contain     ${out}    from ${ip}
+    [Arguments]        ${node}    ${ip}    ${count}=5
+    ${out}=            Execute In Container    ${node}    ping6 -c ${count} ${ip}
+    Should Contain     ${out}    from ${ip}    ignore_case=True
     Should Not Contain    ${out}    100% packet loss
 
 linux: Run TCP Ping Server On Node
@@ -122,9 +122,11 @@ linux: Check Processes on Node
     ${out}=            Execute In Container    ${node}    ps aux
 
 linux: Set Host TAP Interface
-    [Arguments]    ${node}    ${host_if_name}    ${ip}    ${prefix}
+    [Arguments]    ${node}    ${host_if_name}    ${ip}    ${prefix}    ${mac}=    ${second_ip}=    ${second_prefix}=
     ${out}=    Execute In Container    ${node}    ip link set dev ${host_if_name} up
     ${out}=    Execute In Container    ${node}    ip addr add ${ip}/${prefix} dev ${host_if_name}
+    Run Keyword If    "${second_ip}" != ""    Execute In Container    ${node}    ip addr add ${second_ip}/${second_prefix} dev ${host_if_name}
+    Run Keyword If    "${mac}" != ""          Execute In Container    ${node}    ip link set ${host_if_name} address ${mac}
 
 linux: Add Route
     [Arguments]    ${node}    ${destination_ip}    ${prefix}    ${next_hop_ip}

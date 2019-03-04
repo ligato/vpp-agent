@@ -541,6 +541,13 @@ Put TAPv2 Interface With IP
     ${data}=              Replace Variables             ${data}
     Put Json     ${uri}    ${data}
 
+Put TAPv2 Interface With 2 IPs
+    [Arguments]    ${node}    ${name}    ${mac}    ${ip}    ${second_ip}    ${host_if_name}    ${prefix}=24    ${second_prefix}=24    ${mtu}=1500    ${enabled}=true    ${vrf}=0
+    ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/tapv2_interface_with_two_ips.json
+    ${uri}=               Set Variable                  /vnf-agent/${node}/config/vpp/${AGENT_VER}/interfaces/${name}
+    ${data}=              Replace Variables             ${data}
+    Put Json     ${uri}    ${data}
+
 Put STN Rule
     [Arguments]    ${node}    ${interface}    ${ip}
     ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/stn_rule.json
@@ -554,49 +561,76 @@ Delete STN Rule
     ${out}=      Delete key    ${uri}
     [Return]    ${out}
 
-Put Local SID
+Put Local SID With Base End function
+    [Arguments]    ${node}    ${localsidName}    ${sidAddress}    ${fibtable}
+    [Documentation]    Add json to etcd that configurates local SID with base end function.
+    ${data}=               OperatingSystem.Get File      ${CURDIR}/../resources/srv6_local_sid_with_base_end_function.json
+    ${uri}=                Set Variable                  /vnf-agent/${node}/config/vpp/srv6/${AGENT_VER}/localsid/${localsidName}
+    ${data}=               Replace Variables             ${data}
+    Put Json     ${uri}    ${data}
+
+Put Local SID With End.DX4 function
     [Arguments]    ${node}    ${localsidName}    ${sidAddress}    ${fibtable}    ${outinterface}    ${nexthop}
-    [Documentation]    Add Local SID config json to etcd.
-    ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/srv6_local_sid.json
-    ${uri}=               Set Variable                  /vnf-agent/${node}/config/vpp/${AGENT_VER}/srv6/localsid/${localsidName}
-    ${data}=              Replace Variables             ${data}
+    [Documentation]    Add json to etcd that configurates local SID with DX4 end function.
+    ${data}=               OperatingSystem.Get File      ${CURDIR}/../resources/srv6_local_sid_with_dx4_end_function.json
+    ${uri}=                Set Variable                  /vnf-agent/${node}/config/vpp/srv6/${AGENT_VER}/localsid/${localsidName}
+    ${data}=               Replace Variables             ${data}
+    Put Json     ${uri}    ${data}
+
+Put Local SID With End.DX6 function
+    [Arguments]    ${node}    ${localsidName}    ${sidAddress}    ${fibtable}    ${outinterface}    ${nexthop}
+    [Documentation]    Add json to etcd that configurates local SID with DX6 end function.
+    ${data}=               OperatingSystem.Get File      ${CURDIR}/../resources/srv6_local_sid_with_dx6_end_function.json
+    ${uri}=                Set Variable                  /vnf-agent/${node}/config/vpp/srv6/${AGENT_VER}/localsid/${localsidName}
+    ${data}=               Replace Variables             ${data}
+    Put Json     ${uri}    ${data}
+
+Put Local SID With End.AD function
+    [Arguments]    ${node}    ${localsidName}    ${sidAddress}    ${serviceaddress}    ${outinterface}    ${ininterface}
+    [Documentation]    Add json to etcd that configurates local SID with AD end function (dynamic SR-proxy).
+    ${data}=               OperatingSystem.Get File      ${CURDIR}/../resources/srv6_local_sid_with_ad_end_function.json
+    ${uri}=                Set Variable                  /vnf-agent/${node}/config/vpp/srv6/${AGENT_VER}/localsid/${localsidName}
+    ${data}=               Replace Variables             ${data}
     Put Json     ${uri}    ${data}
 
 Delete Local SID
     [Arguments]    ${node}    ${localsidName}
     [Documentation]    Delete Local SID config json from etcd.
-    ${uri}=     Set Variable           /vnf-agent/${node}/config/vpp/${AGENT_VER}/srv6/localsid/${localsidName}
+    ${uri}=     Set Variable           /vnf-agent/${node}/config/vpp/srv6/${AGENT_VER}/localsid/${localsidName}
     ${out}=     Delete key    ${uri}
     [Return]    ${out}
 
 Put SRv6 Policy
-    [Arguments]    ${node}    ${name}    ${bsid}    ${fibtable}    ${srhEncapsulation}    ${sprayBehaviour}
+    [Arguments]    ${node}    ${bsid}    ${fibtable}    ${srhEncapsulation}    ${sprayBehaviour}    ${segmentlists}
     [Documentation]    Add SRv6 Policy config json to etcd.
-    ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/srv6_policy.json
-    ${uri}=               Set Variable                  /vnf-agent/${node}/config/vpp/${AGENT_VER}/srv6/policy/${name}
-    ${data}=              Replace Variables             ${data}
+    # compute segment lists part of json
+    ${SLTemplate}=         OperatingSystem.Get File      ${CURDIR}/../resources/srv6_policy_segmentlist.json
+    ${segmentlists}=       Copy List     ${segmentlists}    # creating defensive copy to not alter global segmentlists variable
+    ${segmentListCount}    Get Length    ${segmentlists}
+    :FOR    ${i}    IN RANGE    ${segmentListCount}
+    \    ${segmentlist}=       Set Variable    ${segmentlists[${i}]}
+    \    ${segments}=          Get Slice From List    ${segmentlist}    1    # segments = segment list without weight
+    \    ${segmentsStr}=       Convert List To JSON string    @{segments}
+    \    ${segmentlistStr}=    Replace Variables    ${SLTemplate}
+    \    Set List Value        ${segmentlists}    ${i}    ${segmentlistStr}    # using local copy of segmentlists as storage for computed segment list json strings
+    ${segmentlistsStr}=    Evaluate    ",".join($segmentlists)
+    # get it all together into policy json template
+    ${PolicyTemplate}=     OperatingSystem.Get File    ${CURDIR}/../resources/srv6_policy.json
+    ${uri}=                Set Variable    /vnf-agent/${node}/config/vpp/srv6/${AGENT_VER}/policy/${bsid}
+    ${data}=               Replace Variables    ${PolicyTemplate}
     Put Json     ${uri}    ${data}
+
+Convert List To JSON string
+    [Arguments]    @{list}
+    [Documentation]    Converts list to JSON compatible string (list items quoted and delimited by comma). No square brackets surrounding output included.
+    ${list}=  Evaluate  ['"'+item+'"' for item in $list]
+    ${jsonStr}=  Evaluate  ",".join($list)
+    [Return]           ${jsonStr}
 
 Delete SRv6 Policy
-    [Arguments]    ${node}    ${name}
+    [Arguments]    ${node}    ${bsid}
     [Documentation]    Delete SRv6 policy config json from etcd.
-    ${uri}=     Set Variable           /vnf-agent/${node}/config/vpp/${AGENT_VER}/srv6/policy/${name}
-    ${out}=     Delete key    ${uri}
-    [Return]    ${out}
-
-Put SRv6 Policy Segment
-    [Arguments]    ${node}    ${name}    ${policyName}    ${policyBSID}    ${weight}    ${segmentlist}
-    [Documentation]    Add SRv6 Policy Segment config json to etcd.
-    length should be      ${segmentlist}                3
-    ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/srv6_policy_segment.json
-    ${uri}=               Set Variable                  /vnf-agent/${node}/config/vpp/${AGENT_VER}/srv6/policy/${policyName}/segment/${name}
-    ${data}=              Replace Variables             ${data}
-    Put Json     ${uri}    ${data}
-
-Delete SRv6 Policy Segment
-    [Arguments]    ${node}    ${name}    ${policyName}
-    [Documentation]    Delete SRv6 policy segment config json from etcd.
-    ${uri}=     Set Variable           /vnf-agent/${node}/config/vpp/${AGENT_VER}/srv6/policy/${policyName}/segment/${name}
+    ${uri}=     Set Variable           /vnf-agent/${node}/config/vpp/srv6/${AGENT_VER}/policy/${bsid}
     ${out}=     Delete key    ${uri}
     [Return]    ${out}
 
@@ -604,13 +638,13 @@ Put SRv6 Steering
     [Arguments]    ${node}    ${name}    ${bsid}    ${fibtable}    ${prefixAddress}
     [Documentation]    Add SRv6 steering config json to etcd.
     ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/srv6_steering.json
-    ${uri}=               Set Variable                  /vnf-agent/${node}/config/vpp/${AGENT_VER}/srv6/steering/${name}
+    ${uri}=               Set Variable                  /vnf-agent/${node}/config/vpp/srv6/${AGENT_VER}/steering/${name}
     ${data}=              Replace Variables             ${data}
     Put Json     ${uri}    ${data}
 
 Delete SRv6 Steering
     [Arguments]    ${node}    ${name}
     [Documentation]    Delete SRv6 steering config json from etcd.
-    ${uri}=     Set Variable           /vnf-agent/${node}/config/vpp/${AGENT_VER}/srv6/steering/${name}
+    ${uri}=     Set Variable           /vnf-agent/${node}/config/vpp/srv6/${AGENT_VER}/steering/${name}
     ${out}=     Delete key    ${uri}
     [Return]    ${out}

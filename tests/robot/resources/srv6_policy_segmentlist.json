@@ -1,0 +1,6 @@
+    {
+      "weight": ${segmentlist[0]},
+      "segments":[
+        ${segmentsStr}
+      ]
+    }

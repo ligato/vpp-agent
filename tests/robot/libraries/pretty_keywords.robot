@@ -26,6 +26,10 @@ Create ${type} ${name} On ${node} With IP ${ip}, MAC ${mac}, Key ${key} And ${so
     ${type}=   Set Variable if    "${type}"=="Master"    true    false
     ${out}=    Put Memif Interface With IP    ${node}    ${name}   ${mac}    ${type}   ${key}    ${ip}    socket=${socket}
 
+Create ${type} ${name} On ${node} With Prefixed IP ${ip}/${prefix}, MAC ${mac}, Key ${key} And ${socket} Socket
+    ${type}=   Set Variable if    "${type}"=="Master"    true    false
+    ${out}=    Put Memif Interface With IP    ${node}    ${name}   ${mac}    ${type}   ${key}    ${ip}    prefix=${prefix}    socket=${socket}
+
 Create ${type} ${name} On ${node} With Vrf ${vrf}, IP ${ip}, MAC ${mac}, Key ${key} And ${socket} Socket
     ${type}=   Set Variable if    "${type}"=="Master"    true    false
     ${out}=    Put Memif Interface With IP    ${node}    ${name}   ${mac}    ${type}   ${key}    ${ip}    socket=${socket}    vrf=${vrf}
@@ -51,6 +55,12 @@ Create Route On ${node} With IP ${ip}/${prefix} With Next Hop VRF ${next_hop_vrf
     ${data}=        OperatingSystem.Get File    ${CURDIR}/../../robot/resources/route_to_other_vrf.json
     ${data}=        replace variables           ${data}
     ${uri}=         Set Variable                /vnf-agent/${node}/config/vpp/${AGENT_VER}/route/vrf/${id}/dst/${ip}/${prefix}/gw/
+    ${out}=         Put Json    ${uri}   ${data}
+
+Create Route On ${node} With IP ${ip}/${prefix} With Vrf Id ${id} With Interface ${interface} And Next Hop ${next_hop}
+    ${data}=        OperatingSystem.Get File    ${CURDIR}/../../robot/resources/static_route_with_interface.json
+    ${data}=        replace variables           ${data}
+    ${uri}=         Set Variable                /vnf-agent/${node}/config/vpp/${AGENT_VER}/route/vrf/${id}/dst/${ip}/${prefix}/gw/${next_hop}
     ${out}=         Put Json    ${uri}   ${data}
 
 Create DNat On ${node} With Name ${name} Local IP ${local_ip} Local Port ${local_port} External IP ${ext_ip} External Interface ${ext_int} External Port ${ext_port} Vrf Id ${id}
