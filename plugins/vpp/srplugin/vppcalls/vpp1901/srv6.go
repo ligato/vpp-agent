@@ -123,7 +123,13 @@ func (h *SRv6VppHandler) addSRProxy(sidAddr net.IP, localSID *srv6.LocalSID) err
 	}
 
 	// add SR-proxy using VPP CLI
-	data, err := h.RunCli(fmt.Sprintf("sr localsid address %v behavior end.ad nh %v oif %v iif %v", sidAddr, localSID.GetEndFunction_AD().ServiceAddress, outInterface, inInterface))
+	var cmd string
+	if strings.TrimSpace(localSID.GetEndFunction_AD().L3ServiceAddress) == "" { // L2 service
+		cmd = fmt.Sprintf("sr localsid address %v behavior end.ad oif %v iif %v", sidAddr, outInterface, inInterface)
+	} else { // L3 service
+		cmd = fmt.Sprintf("sr localsid address %v behavior end.ad nh %v oif %v iif %v", sidAddr, localSID.GetEndFunction_AD().L3ServiceAddress, outInterface, inInterface)
+	}
+	data, err := h.RunCli(cmd)
 	if err != nil {
 		return err
 	}
@@ -188,7 +194,7 @@ func (h *SRv6VppHandler) endFunction(localSID *srv6.LocalSID) string {
 	case *srv6.LocalSID_EndFunction_DT6:
 		return fmt.Sprint("DT6")
 	case *srv6.LocalSID_EndFunction_AD:
-		return fmt.Sprintf("AD{ServiceAddress: %v, OutgoingInterface: %v, IncomingInterface: %v}", ef.EndFunction_AD.ServiceAddress, ef.EndFunction_AD.OutgoingInterface, ef.EndFunction_AD.IncomingInterface)
+		return fmt.Sprintf("AD{L3ServiceAddress: %v, OutgoingInterface: %v, IncomingInterface: %v}", ef.EndFunction_AD.L3ServiceAddress, ef.EndFunction_AD.OutgoingInterface, ef.EndFunction_AD.IncomingInterface)
 	case nil:
 		return "<nil>"
 	default:

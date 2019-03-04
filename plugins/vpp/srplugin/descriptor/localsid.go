@@ -110,8 +110,9 @@ func (d *LocalSIDDescriptor) equivalentEndFunctions(ef1, ef2 interface{}) bool {
 	case *srv6.LocalSID_EndFunction_AD:
 		return equivalentTrimmedLowered(ef1typed.EndFunction_AD.OutgoingInterface, ef2.(*srv6.LocalSID_EndFunction_AD).EndFunction_AD.OutgoingInterface) &&
 			equivalentTrimmedLowered(ef1typed.EndFunction_AD.IncomingInterface, ef2.(*srv6.LocalSID_EndFunction_AD).EndFunction_AD.IncomingInterface) &&
-			(equivalentIPv4(ef1typed.EndFunction_AD.ServiceAddress, ef2.(*srv6.LocalSID_EndFunction_AD).EndFunction_AD.ServiceAddress) ||
-				equivalentIPv6(ef1typed.EndFunction_AD.ServiceAddress, ef2.(*srv6.LocalSID_EndFunction_AD).EndFunction_AD.ServiceAddress))
+			(equivalentIPv4(ef1typed.EndFunction_AD.L3ServiceAddress, ef2.(*srv6.LocalSID_EndFunction_AD).EndFunction_AD.L3ServiceAddress) || // l3 ipv4 service
+				equivalentIPv6(ef1typed.EndFunction_AD.L3ServiceAddress, ef2.(*srv6.LocalSID_EndFunction_AD).EndFunction_AD.L3ServiceAddress) || // l3 ipv6 service
+				(strings.TrimSpace(ef1typed.EndFunction_AD.L3ServiceAddress) == "" && strings.TrimSpace(ef2.(*srv6.LocalSID_EndFunction_AD).EndFunction_AD.L3ServiceAddress) == "")) // l2 service
 	default:
 		d.log.Warn("EquivalentSteering found unknown end function type (%T). Using general reflect.DeepEqual for it.", ef1)
 		return reflect.DeepEqual(ef1, ef2) // unknown end function type
@@ -152,9 +153,13 @@ func (d *LocalSIDDescriptor) Validate(key string, localSID *srv6.LocalSID) error
 	case *srv6.LocalSID_EndFunction_DT4:
 	case *srv6.LocalSID_EndFunction_DT6:
 	case *srv6.LocalSID_EndFunction_AD:
-		ip := net.ParseIP(ef.EndFunction_AD.ServiceAddress)
+		if strings.TrimSpace(ef.EndFunction_AD.L3ServiceAddress) == "" {
+			return nil // l2 service
+		}
+		// l3 service
+		ip := net.ParseIP(ef.EndFunction_AD.L3ServiceAddress)
 		if ip == nil {
-			return scheduler.NewInvalidValueError(errors.Errorf("failed to parse service address %s, should be a valid ip address(ipv4 or ipv6): %v", ef.EndFunction_AD.ServiceAddress, err), "endfunction_AD.ServiceAddress")
+			return scheduler.NewInvalidValueError(errors.Errorf("failed to parse service address %s, should be a valid ip address(ipv4 or ipv6) or empty(case of l2 service): %v", ef.EndFunction_AD.L3ServiceAddress, err), "endfunction_AD.L3ServiceAddress")
 		}
 	case nil:
 		return scheduler.NewInvalidValueError(errors.New("end function must be provided"), "endfunction")
