@@ -1,0 +1,6 @@
+{
+  "l2_traffic": {
+    "interface_name": "${interfaceName}"
+  },
+  "policy_bsid": "${bsid}"
+}

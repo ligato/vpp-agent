@@ -1,7 +1,7 @@
 {
   "sid": "${sidAddress}",
   "end_function_AD": {
-    "service_address":"${serviceaddress}",
+    "l3_service_address":"${l3serviceaddress}",
     "outgoing_interface":"${outinterface}",
     "incoming_interface":"${ininterface}"
   }
