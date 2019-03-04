@@ -1,3 +1,20 @@
+# Release v1.8.1-vpp19.01 (2019-3-4)
+- v19.01-16~gd30202244
+- cn-infra v1.7
+- GO 1.11
+
+## Major Topics
+
+The motive for this minor release was updated VPP with several fixed bugs from the previous version. The VPP version also introduced new interface statistics mechanism, thus the stats processing was updated in the interface plugin.
+
+## New Features
+- [vpp-ifplugin](plugins/vpp/ifplugin)
+  * Support for new VPP stats (the support for old ones were deprecated by the VPP, thus removed from the vpp-agent as well).
+  
+## Fixed Bugs
+- VPP bug: fixed crash when attempting to run in kubernetes pod 
+- VPP bug: fixed crash in barrier sync when vlib_worker_threads is zero
+
 # Release v1.8-vpp19.01 (2018-12-12)
 - VPP v19.01-rc0~394-g6b4a32de
 - cn-infra v1.7
