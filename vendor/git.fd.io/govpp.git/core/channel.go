@@ -31,7 +31,7 @@ var (
 
 // MessageCodec provides functionality for decoding binary data to generated API messages.
 type MessageCodec interface {
-	//EncodeMsg encodes message into binary data.
+	// EncodeMsg encodes message into binary data.
 	EncodeMsg(msg api.Message, msgID uint16) ([]byte, error)
 	// DecodeMsg decodes binary-encoded data of a message into provided Message structure.
 	DecodeMsg(data []byte, msg api.Message) error
@@ -142,10 +142,14 @@ func (ch *Channel) SendMultiRequest(msg api.Message) api.MultiRequestCtx {
 	return &multiRequestCtx{ch: ch, seqNum: seqNum}
 }
 
-func getMsgFactory(msg api.Message) func() api.Message {
-	return func() api.Message {
-		return reflect.New(reflect.TypeOf(msg).Elem()).Interface().(api.Message)
+func (ch *Channel) CheckCompatiblity(msgs ...api.Message) error {
+	for _, msg := range msgs {
+		_, err := ch.msgIdentifier.GetMessageID(msg)
+		if err != nil {
+			return err
+		}
 	}
+	return nil
 }
 
 func (ch *Channel) SubscribeNotification(notifChan chan api.Message, event api.Message) (api.SubscriptionCtx, error) {

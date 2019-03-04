@@ -19,7 +19,6 @@ import (
 	"net"
 
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/utils/addrs"
 	l2ba "github.com/ligato/vpp-agent/plugins/vpp/binapi/l2"
 )
 
@@ -33,33 +32,16 @@ func (h *BridgeDomainVppHandler) callBdIPMacAddDel(isAdd bool, bdID uint32, mac 
 	if err != nil {
 		return err
 	}
-	req.Mac = l2ba.MacAddress{Bytes: macAddr}
+	copy(req.Mac[:], macAddr)
 
-	isIpv6, err := addrs.IsIPv6(ip)
+	req.IP, err = ipToAddress(ip)
 	if err != nil {
 		return err
 	}
-	parsedIP := net.ParseIP(ip)
-	var ipAddress [16]byte
-	if isIpv6 {
-		copy(ipAddress[:], []byte(parsedIP.To16()))
-		req.IP = l2ba.Address{
-			Af: l2ba.ADDRESS_IP6,
-			Un: l2ba.AddressUnion{Union_data: ipAddress},
-		}
-	} else {
-		copy(ipAddress[:], []byte(parsedIP.To4()))
-		req.IP = l2ba.Address{
-			Af: l2ba.ADDRESS_IP4,
-			Un: l2ba.AddressUnion{Union_data: ipAddress},
-		}
-	}
-	reply := &l2ba.BdIPMacAddDelReply{}
 
+	reply := &l2ba.BdIPMacAddDelReply{}
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
-	} else if reply.Retval != 0 {
-		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
 	return nil
@@ -91,4 +73,23 @@ func (h *BridgeDomainVppHandler) VppRemoveArpTerminationTableEntry(bdID uint32, 
 	h.log.WithFields(logging.Fields{"bdID": bdID, "MAC": mac, "IP": ip}).Debug("ARP termination entry removed")
 
 	return nil
+}
+
+func ipToAddress(ipstr string) (addr l2ba.Address, err error) {
+	netIP := net.ParseIP(ipstr)
+	if netIP == nil {
+		return l2ba.Address{}, fmt.Errorf("invalid IP: %q", ipstr)
+	}
+	if ip4 := netIP.To4(); ip4 == nil {
+		addr.Af = l2ba.ADDRESS_IP6
+		var ip6addr l2ba.IP6Address
+		copy(ip6addr[:], netIP.To16())
+		addr.Un.SetIP6(ip6addr)
+	} else {
+		addr.Af = l2ba.ADDRESS_IP4
+		var ip4addr l2ba.IP4Address
+		copy(ip4addr[:], ip4)
+		addr.Un.SetIP4(ip4addr)
+	}
+	return
 }

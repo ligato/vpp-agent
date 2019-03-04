@@ -5,15 +5,14 @@
  Package bfd is a generated from VPP binary API module 'bfd'.
 
  It contains following objects:
-	 28 messages
 	 14 services
-
+	 28 messages
 */
 package bfd
 
-import "git.fd.io/govpp.git/api"
-import "github.com/lunixbochs/struc"
-import "bytes"
+import api "git.fd.io/govpp.git/api"
+import struc "github.com/lunixbochs/struc"
+import bytes "bytes"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = api.RegisterMessage
@@ -21,54 +20,6 @@ var _ = struc.Pack
 var _ = bytes.NewBuffer
 
 // Services represents VPP binary API services:
-//
-//	"services": {
-//	    "bfd_udp_mod": {
-//	        "reply": "bfd_udp_mod_reply"
-//	    },
-//	    "bfd_auth_del_key": {
-//	        "reply": "bfd_auth_del_key_reply"
-//	    },
-//	    "bfd_udp_del_echo_source": {
-//	        "reply": "bfd_udp_del_echo_source_reply"
-//	    },
-//	    "bfd_auth_keys_dump": {
-//	        "reply": "bfd_auth_keys_details",
-//	        "stream": true
-//	    },
-//	    "bfd_udp_get_echo_source": {
-//	        "reply": "bfd_udp_get_echo_source_reply"
-//	    },
-//	    "want_bfd_events": {
-//	        "reply": "want_bfd_events_reply"
-//	    },
-//	    "bfd_udp_auth_deactivate": {
-//	        "reply": "bfd_udp_auth_deactivate_reply"
-//	    },
-//	    "bfd_auth_set_key": {
-//	        "reply": "bfd_auth_set_key_reply"
-//	    },
-//	    "bfd_udp_auth_activate": {
-//	        "reply": "bfd_udp_auth_activate_reply"
-//	    },
-//	    "bfd_udp_session_dump": {
-//	        "reply": "bfd_udp_session_details",
-//	        "stream": true
-//	    },
-//	    "bfd_udp_add": {
-//	        "reply": "bfd_udp_add_reply"
-//	    },
-//	    "bfd_udp_del": {
-//	        "reply": "bfd_udp_del_reply"
-//	    },
-//	    "bfd_udp_set_echo_source": {
-//	        "reply": "bfd_udp_set_echo_source_reply"
-//	    },
-//	    "bfd_udp_session_set_flags": {
-//	        "reply": "bfd_udp_session_set_flags_reply"
-//	    }
-//	},
-//
 type Services interface {
 	DumpBfdAuthKeys(*BfdAuthKeysDump) ([]*BfdAuthKeysDetails, error)
 	DumpBfdUDPSession(*BfdUDPSessionDump) ([]*BfdUDPSessionDetails, error)
@@ -88,297 +39,100 @@ type Services interface {
 
 /* Messages */
 
-// BfdUDPSetEchoSource represents VPP binary API message 'bfd_udp_set_echo_source':
-//
-//	"bfd_udp_set_echo_source",
-//	[
-//	    "u16",
-//	    "_vl_msg_id"
-//	],
-//	[
-//	    "u32",
-//	    "client_index"
-//	],
-//	[
-//	    "u32",
-//	    "context"
-//	],
-//	[
-//	    "u32",
-//	    "sw_if_index"
-//	],
-//	{
-//	    "crc": "0x529cb13f"
-//	}
-//
-type BfdUDPSetEchoSource struct {
-	SwIfIndex uint32
+// BfdAuthDelKey represents VPP binary API message 'bfd_auth_del_key':
+type BfdAuthDelKey struct {
+	ConfKeyID uint32
 }
 
-func (*BfdUDPSetEchoSource) GetMessageName() string {
-	return "bfd_udp_set_echo_source"
+func (*BfdAuthDelKey) GetMessageName() string {
+	return "bfd_auth_del_key"
 }
-func (*BfdUDPSetEchoSource) GetCrcString() string {
-	return "529cb13f"
+func (*BfdAuthDelKey) GetCrcString() string {
+	return "65310b22"
 }
-func (*BfdUDPSetEchoSource) GetMessageType() api.MessageType {
+func (*BfdAuthDelKey) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 
-// BfdUDPSetEchoSourceReply represents VPP binary API message 'bfd_udp_set_echo_source_reply':
-//
-//	"bfd_udp_set_echo_source_reply",
-//	[
-//	    "u16",
-//	    "_vl_msg_id"
-//	],
-//	[
-//	    "u32",
-//	    "context"
-//	],
-//	[
-//	    "i32",
-//	    "retval"
-//	],
-//	{
-//	    "crc": "0xe8d4e804"
-//	}
-//
-type BfdUDPSetEchoSourceReply struct {
+// BfdAuthDelKeyReply represents VPP binary API message 'bfd_auth_del_key_reply':
+type BfdAuthDelKeyReply struct {
 	Retval int32
 }
 
-func (*BfdUDPSetEchoSourceReply) GetMessageName() string {
-	return "bfd_udp_set_echo_source_reply"
+func (*BfdAuthDelKeyReply) GetMessageName() string {
+	return "bfd_auth_del_key_reply"
 }
-func (*BfdUDPSetEchoSourceReply) GetCrcString() string {
+func (*BfdAuthDelKeyReply) GetCrcString() string {
 	return "e8d4e804"
 }
-func (*BfdUDPSetEchoSourceReply) GetMessageType() api.MessageType {
+func (*BfdAuthDelKeyReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 
-// BfdUDPDelEchoSource represents VPP binary API message 'bfd_udp_del_echo_source':
-//
-//	"bfd_udp_del_echo_source",
-//	[
-//	    "u16",
-//	    "_vl_msg_id"
-//	],
-//	[
-//	    "u32",
-//	    "client_index"
-//	],
-//	[
-//	    "u32",
-//	    "context"
-//	],
-//	{
-//	    "crc": "0x51077d14"
-//	}
-//
-type BfdUDPDelEchoSource struct{}
-
-func (*BfdUDPDelEchoSource) GetMessageName() string {
-	return "bfd_udp_del_echo_source"
+// BfdAuthKeysDetails represents VPP binary API message 'bfd_auth_keys_details':
+type BfdAuthKeysDetails struct {
+	ConfKeyID uint32
+	UseCount  uint32
+	AuthType  uint8
 }
-func (*BfdUDPDelEchoSource) GetCrcString() string {
+
+func (*BfdAuthKeysDetails) GetMessageName() string {
+	return "bfd_auth_keys_details"
+}
+func (*BfdAuthKeysDetails) GetCrcString() string {
+	return "84130e9f"
+}
+func (*BfdAuthKeysDetails) GetMessageType() api.MessageType {
+	return api.ReplyMessage
+}
+
+// BfdAuthKeysDump represents VPP binary API message 'bfd_auth_keys_dump':
+type BfdAuthKeysDump struct{}
+
+func (*BfdAuthKeysDump) GetMessageName() string {
+	return "bfd_auth_keys_dump"
+}
+func (*BfdAuthKeysDump) GetCrcString() string {
 	return "51077d14"
 }
-func (*BfdUDPDelEchoSource) GetMessageType() api.MessageType {
+func (*BfdAuthKeysDump) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 
-// BfdUDPDelEchoSourceReply represents VPP binary API message 'bfd_udp_del_echo_source_reply':
-//
-//	"bfd_udp_del_echo_source_reply",
-//	[
-//	    "u16",
-//	    "_vl_msg_id"
-//	],
-//	[
-//	    "u32",
-//	    "context"
-//	],
-//	[
-//	    "i32",
-//	    "retval"
-//	],
-//	{
-//	    "crc": "0xe8d4e804"
-//	}
-//
-type BfdUDPDelEchoSourceReply struct {
+// BfdAuthSetKey represents VPP binary API message 'bfd_auth_set_key':
+type BfdAuthSetKey struct {
+	ConfKeyID uint32
+	KeyLen    uint8
+	AuthType  uint8
+	Key       []byte `struc:"[20]byte"`
+}
+
+func (*BfdAuthSetKey) GetMessageName() string {
+	return "bfd_auth_set_key"
+}
+func (*BfdAuthSetKey) GetCrcString() string {
+	return "690b8877"
+}
+func (*BfdAuthSetKey) GetMessageType() api.MessageType {
+	return api.RequestMessage
+}
+
+// BfdAuthSetKeyReply represents VPP binary API message 'bfd_auth_set_key_reply':
+type BfdAuthSetKeyReply struct {
 	Retval int32
 }
 
-func (*BfdUDPDelEchoSourceReply) GetMessageName() string {
-	return "bfd_udp_del_echo_source_reply"
+func (*BfdAuthSetKeyReply) GetMessageName() string {
+	return "bfd_auth_set_key_reply"
 }
-func (*BfdUDPDelEchoSourceReply) GetCrcString() string {
+func (*BfdAuthSetKeyReply) GetCrcString() string {
 	return "e8d4e804"
 }
-func (*BfdUDPDelEchoSourceReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
-
-// BfdUDPGetEchoSource represents VPP binary API message 'bfd_udp_get_echo_source':
-//
-//	"bfd_udp_get_echo_source",
-//	[
-//	    "u16",
-//	    "_vl_msg_id"
-//	],
-//	[
-//	    "u32",
-//	    "client_index"
-//	],
-//	[
-//	    "u32",
-//	    "context"
-//	],
-//	{
-//	    "crc": "0x51077d14"
-//	}
-//
-type BfdUDPGetEchoSource struct{}
-
-func (*BfdUDPGetEchoSource) GetMessageName() string {
-	return "bfd_udp_get_echo_source"
-}
-func (*BfdUDPGetEchoSource) GetCrcString() string {
-	return "51077d14"
-}
-func (*BfdUDPGetEchoSource) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
-
-// BfdUDPGetEchoSourceReply represents VPP binary API message 'bfd_udp_get_echo_source_reply':
-//
-//	"bfd_udp_get_echo_source_reply",
-//	[
-//	    "u16",
-//	    "_vl_msg_id"
-//	],
-//	[
-//	    "u32",
-//	    "context"
-//	],
-//	[
-//	    "i32",
-//	    "retval"
-//	],
-//	[
-//	    "u32",
-//	    "sw_if_index"
-//	],
-//	[
-//	    "u8",
-//	    "is_set"
-//	],
-//	[
-//	    "u8",
-//	    "have_usable_ip4"
-//	],
-//	[
-//	    "u8",
-//	    "ip4_addr",
-//	    4
-//	],
-//	[
-//	    "u8",
-//	    "have_usable_ip6"
-//	],
-//	[
-//	    "u8",
-//	    "ip6_addr",
-//	    16
-//	],
-//	{
-//	    "crc": "0x6924ca6b"
-//	}
-//
-type BfdUDPGetEchoSourceReply struct {
-	Retval        int32
-	SwIfIndex     uint32
-	IsSet         uint8
-	HaveUsableIP4 uint8
-	IP4Addr       []byte `struc:"[4]byte"`
-	HaveUsableIP6 uint8
-	IP6Addr       []byte `struc:"[16]byte"`
-}
-
-func (*BfdUDPGetEchoSourceReply) GetMessageName() string {
-	return "bfd_udp_get_echo_source_reply"
-}
-func (*BfdUDPGetEchoSourceReply) GetCrcString() string {
-	return "6924ca6b"
-}
-func (*BfdUDPGetEchoSourceReply) GetMessageType() api.MessageType {
+func (*BfdAuthSetKeyReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 
 // BfdUDPAdd represents VPP binary API message 'bfd_udp_add':
-//
-//	"bfd_udp_add",
-//	[
-//	    "u16",
-//	    "_vl_msg_id"
-//	],
-//	[
-//	    "u32",
-//	    "client_index"
-//	],
-//	[
-//	    "u32",
-//	    "context"
-//	],
-//	[
-//	    "u32",
-//	    "sw_if_index"
-//	],
-//	[
-//	    "u32",
-//	    "desired_min_tx"
-//	],
-//	[
-//	    "u32",
-//	    "required_min_rx"
-//	],
-//	[
-//	    "u8",
-//	    "local_addr",
-//	    16
-//	],
-//	[
-//	    "u8",
-//	    "peer_addr",
-//	    16
-//	],
-//	[
-//	    "u8",
-//	    "is_ipv6"
-//	],
-//	[
-//	    "u8",
-//	    "detect_mult"
-//	],
-//	[
-//	    "u8",
-//	    "is_authenticated"
-//	],
-//	[
-//	    "u8",
-//	    "bfd_key_id"
-//	],
-//	[
-//	    "u32",
-//	    "conf_key_id"
-//	],
-//	{
-//	    "crc": "0x61cf1850"
-//	}
-//
 type BfdUDPAdd struct {
 	SwIfIndex       uint32
 	DesiredMinTx    uint32
@@ -403,24 +157,6 @@ func (*BfdUDPAdd) GetMessageType() api.MessageType {
 }
 
 // BfdUDPAddReply represents VPP binary API message 'bfd_udp_add_reply':
-//
-//	"bfd_udp_add_reply",
-//	[
-//	    "u16",
-//	    "_vl_msg_id"
-//	],
-//	[
-//	    "u32",
-//	    "context"
-//	],
-//	[
-//	    "i32",
-//	    "retval"
-//	],
-//	{
-//	    "crc": "0xe8d4e804"
-//	}
-//
 type BfdUDPAddReply struct {
 	Retval int32
 }
@@ -435,55 +171,172 @@ func (*BfdUDPAddReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 
+// BfdUDPAuthActivate represents VPP binary API message 'bfd_udp_auth_activate':
+type BfdUDPAuthActivate struct {
+	SwIfIndex uint32
+	LocalAddr []byte `struc:"[16]byte"`
+	PeerAddr  []byte `struc:"[16]byte"`
+	IsIPv6    uint8
+	IsDelayed uint8
+	BfdKeyID  uint8
+	ConfKeyID uint32
+}
+
+func (*BfdUDPAuthActivate) GetMessageName() string {
+	return "bfd_udp_auth_activate"
+}
+func (*BfdUDPAuthActivate) GetCrcString() string {
+	return "1bae0947"
+}
+func (*BfdUDPAuthActivate) GetMessageType() api.MessageType {
+	return api.RequestMessage
+}
+
+// BfdUDPAuthActivateReply represents VPP binary API message 'bfd_udp_auth_activate_reply':
+type BfdUDPAuthActivateReply struct {
+	Retval int32
+}
+
+func (*BfdUDPAuthActivateReply) GetMessageName() string {
+	return "bfd_udp_auth_activate_reply"
+}
+func (*BfdUDPAuthActivateReply) GetCrcString() string {
+	return "e8d4e804"
+}
+func (*BfdUDPAuthActivateReply) GetMessageType() api.MessageType {
+	return api.ReplyMessage
+}
+
+// BfdUDPAuthDeactivate represents VPP binary API message 'bfd_udp_auth_deactivate':
+type BfdUDPAuthDeactivate struct {
+	SwIfIndex uint32
+	LocalAddr []byte `struc:"[16]byte"`
+	PeerAddr  []byte `struc:"[16]byte"`
+	IsIPv6    uint8
+	IsDelayed uint8
+}
+
+func (*BfdUDPAuthDeactivate) GetMessageName() string {
+	return "bfd_udp_auth_deactivate"
+}
+func (*BfdUDPAuthDeactivate) GetCrcString() string {
+	return "10661991"
+}
+func (*BfdUDPAuthDeactivate) GetMessageType() api.MessageType {
+	return api.RequestMessage
+}
+
+// BfdUDPAuthDeactivateReply represents VPP binary API message 'bfd_udp_auth_deactivate_reply':
+type BfdUDPAuthDeactivateReply struct {
+	Retval int32
+}
+
+func (*BfdUDPAuthDeactivateReply) GetMessageName() string {
+	return "bfd_udp_auth_deactivate_reply"
+}
+func (*BfdUDPAuthDeactivateReply) GetCrcString() string {
+	return "e8d4e804"
+}
+func (*BfdUDPAuthDeactivateReply) GetMessageType() api.MessageType {
+	return api.ReplyMessage
+}
+
+// BfdUDPDel represents VPP binary API message 'bfd_udp_del':
+type BfdUDPDel struct {
+	SwIfIndex uint32
+	LocalAddr []byte `struc:"[16]byte"`
+	PeerAddr  []byte `struc:"[16]byte"`
+	IsIPv6    uint8
+}
+
+func (*BfdUDPDel) GetMessageName() string {
+	return "bfd_udp_del"
+}
+func (*BfdUDPDel) GetCrcString() string {
+	return "c9e9cc5a"
+}
+func (*BfdUDPDel) GetMessageType() api.MessageType {
+	return api.RequestMessage
+}
+
+// BfdUDPDelEchoSource represents VPP binary API message 'bfd_udp_del_echo_source':
+type BfdUDPDelEchoSource struct{}
+
+func (*BfdUDPDelEchoSource) GetMessageName() string {
+	return "bfd_udp_del_echo_source"
+}
+func (*BfdUDPDelEchoSource) GetCrcString() string {
+	return "51077d14"
+}
+func (*BfdUDPDelEchoSource) GetMessageType() api.MessageType {
+	return api.RequestMessage
+}
+
+// BfdUDPDelEchoSourceReply represents VPP binary API message 'bfd_udp_del_echo_source_reply':
+type BfdUDPDelEchoSourceReply struct {
+	Retval int32
+}
+
+func (*BfdUDPDelEchoSourceReply) GetMessageName() string {
+	return "bfd_udp_del_echo_source_reply"
+}
+func (*BfdUDPDelEchoSourceReply) GetCrcString() string {
+	return "e8d4e804"
+}
+func (*BfdUDPDelEchoSourceReply) GetMessageType() api.MessageType {
+	return api.ReplyMessage
+}
+
+// BfdUDPDelReply represents VPP binary API message 'bfd_udp_del_reply':
+type BfdUDPDelReply struct {
+	Retval int32
+}
+
+func (*BfdUDPDelReply) GetMessageName() string {
+	return "bfd_udp_del_reply"
+}
+func (*BfdUDPDelReply) GetCrcString() string {
+	return "e8d4e804"
+}
+func (*BfdUDPDelReply) GetMessageType() api.MessageType {
+	return api.ReplyMessage
+}
+
+// BfdUDPGetEchoSource represents VPP binary API message 'bfd_udp_get_echo_source':
+type BfdUDPGetEchoSource struct{}
+
+func (*BfdUDPGetEchoSource) GetMessageName() string {
+	return "bfd_udp_get_echo_source"
+}
+func (*BfdUDPGetEchoSource) GetCrcString() string {
+	return "51077d14"
+}
+func (*BfdUDPGetEchoSource) GetMessageType() api.MessageType {
+	return api.RequestMessage
+}
+
+// BfdUDPGetEchoSourceReply represents VPP binary API message 'bfd_udp_get_echo_source_reply':
+type BfdUDPGetEchoSourceReply struct {
+	Retval        int32
+	SwIfIndex     uint32
+	IsSet         uint8
+	HaveUsableIP4 uint8
+	IP4Addr       []byte `struc:"[4]byte"`
+	HaveUsableIP6 uint8
+	IP6Addr       []byte `struc:"[16]byte"`
+}
+
+func (*BfdUDPGetEchoSourceReply) GetMessageName() string {
+	return "bfd_udp_get_echo_source_reply"
+}
+func (*BfdUDPGetEchoSourceReply) GetCrcString() string {
+	return "6924ca6b"
+}
+func (*BfdUDPGetEchoSourceReply) GetMessageType() api.MessageType {
+	return api.ReplyMessage
+}
+
 // BfdUDPMod represents VPP binary API message 'bfd_udp_mod':
-//
-//	"bfd_udp_mod",
-//	[
-//	    "u16",
-//	    "_vl_msg_id"
-//	],
-//	[
-//	    "u32",
-//	    "client_index"
-//	],
-//	[
-//	    "u32",
-//	    "context"
-//	],
-//	[
-//	    "u32",
-//	    "sw_if_index"
-//	],
-//	[
-//	    "u32",
-//	    "desired_min_tx"
-//	],
-//	[
-//	    "u32",
-//	    "required_min_rx"
-//	],
-//	[
-//	    "u8",
-//	    "local_addr",
-//	    16
-//	],
-//	[
-//	    "u8",
-//	    "peer_addr",
-//	    16
-//	],
-//	[
-//	    "u8",
-//	    "is_ipv6"
-//	],
-//	[
-//	    "u8",
-//	    "detect_mult"
-//	],
-//	{
-//	    "crc": "0x6049bf47"
-//	}
-//
 type BfdUDPMod struct {
 	SwIfIndex     uint32
 	DesiredMinTx  uint32
@@ -505,24 +358,6 @@ func (*BfdUDPMod) GetMessageType() api.MessageType {
 }
 
 // BfdUDPModReply represents VPP binary API message 'bfd_udp_mod_reply':
-//
-//	"bfd_udp_mod_reply",
-//	[
-//	    "u16",
-//	    "_vl_msg_id"
-//	],
-//	[
-//	    "u32",
-//	    "context"
-//	],
-//	[
-//	    "i32",
-//	    "retval"
-//	],
-//	{
-//	    "crc": "0xe8d4e804"
-//	}
-//
 type BfdUDPModReply struct {
 	Retval int32
 }
@@ -537,185 +372,7 @@ func (*BfdUDPModReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 
-// BfdUDPDel represents VPP binary API message 'bfd_udp_del':
-//
-//	"bfd_udp_del",
-//	[
-//	    "u16",
-//	    "_vl_msg_id"
-//	],
-//	[
-//	    "u32",
-//	    "client_index"
-//	],
-//	[
-//	    "u32",
-//	    "context"
-//	],
-//	[
-//	    "u32",
-//	    "sw_if_index"
-//	],
-//	[
-//	    "u8",
-//	    "local_addr",
-//	    16
-//	],
-//	[
-//	    "u8",
-//	    "peer_addr",
-//	    16
-//	],
-//	[
-//	    "u8",
-//	    "is_ipv6"
-//	],
-//	{
-//	    "crc": "0xc9e9cc5a"
-//	}
-//
-type BfdUDPDel struct {
-	SwIfIndex uint32
-	LocalAddr []byte `struc:"[16]byte"`
-	PeerAddr  []byte `struc:"[16]byte"`
-	IsIPv6    uint8
-}
-
-func (*BfdUDPDel) GetMessageName() string {
-	return "bfd_udp_del"
-}
-func (*BfdUDPDel) GetCrcString() string {
-	return "c9e9cc5a"
-}
-func (*BfdUDPDel) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
-
-// BfdUDPDelReply represents VPP binary API message 'bfd_udp_del_reply':
-//
-//	"bfd_udp_del_reply",
-//	[
-//	    "u16",
-//	    "_vl_msg_id"
-//	],
-//	[
-//	    "u32",
-//	    "context"
-//	],
-//	[
-//	    "i32",
-//	    "retval"
-//	],
-//	{
-//	    "crc": "0xe8d4e804"
-//	}
-//
-type BfdUDPDelReply struct {
-	Retval int32
-}
-
-func (*BfdUDPDelReply) GetMessageName() string {
-	return "bfd_udp_del_reply"
-}
-func (*BfdUDPDelReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*BfdUDPDelReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
-
-// BfdUDPSessionDump represents VPP binary API message 'bfd_udp_session_dump':
-//
-//	"bfd_udp_session_dump",
-//	[
-//	    "u16",
-//	    "_vl_msg_id"
-//	],
-//	[
-//	    "u32",
-//	    "client_index"
-//	],
-//	[
-//	    "u32",
-//	    "context"
-//	],
-//	{
-//	    "crc": "0x51077d14"
-//	}
-//
-type BfdUDPSessionDump struct{}
-
-func (*BfdUDPSessionDump) GetMessageName() string {
-	return "bfd_udp_session_dump"
-}
-func (*BfdUDPSessionDump) GetCrcString() string {
-	return "51077d14"
-}
-func (*BfdUDPSessionDump) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
-
 // BfdUDPSessionDetails represents VPP binary API message 'bfd_udp_session_details':
-//
-//	"bfd_udp_session_details",
-//	[
-//	    "u16",
-//	    "_vl_msg_id"
-//	],
-//	[
-//	    "u32",
-//	    "context"
-//	],
-//	[
-//	    "u32",
-//	    "sw_if_index"
-//	],
-//	[
-//	    "u8",
-//	    "local_addr",
-//	    16
-//	],
-//	[
-//	    "u8",
-//	    "peer_addr",
-//	    16
-//	],
-//	[
-//	    "u8",
-//	    "is_ipv6"
-//	],
-//	[
-//	    "u8",
-//	    "state"
-//	],
-//	[
-//	    "u8",
-//	    "is_authenticated"
-//	],
-//	[
-//	    "u8",
-//	    "bfd_key_id"
-//	],
-//	[
-//	    "u32",
-//	    "conf_key_id"
-//	],
-//	[
-//	    "u32",
-//	    "required_min_rx"
-//	],
-//	[
-//	    "u32",
-//	    "desired_min_tx"
-//	],
-//	[
-//	    "u8",
-//	    "detect_mult"
-//	],
-//	{
-//	    "crc": "0x837bb0ed"
-//	}
-//
 type BfdUDPSessionDetails struct {
 	SwIfIndex       uint32
 	LocalAddr       []byte `struc:"[16]byte"`
@@ -740,47 +397,20 @@ func (*BfdUDPSessionDetails) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 
+// BfdUDPSessionDump represents VPP binary API message 'bfd_udp_session_dump':
+type BfdUDPSessionDump struct{}
+
+func (*BfdUDPSessionDump) GetMessageName() string {
+	return "bfd_udp_session_dump"
+}
+func (*BfdUDPSessionDump) GetCrcString() string {
+	return "51077d14"
+}
+func (*BfdUDPSessionDump) GetMessageType() api.MessageType {
+	return api.RequestMessage
+}
+
 // BfdUDPSessionSetFlags represents VPP binary API message 'bfd_udp_session_set_flags':
-//
-//	"bfd_udp_session_set_flags",
-//	[
-//	    "u16",
-//	    "_vl_msg_id"
-//	],
-//	[
-//	    "u32",
-//	    "client_index"
-//	],
-//	[
-//	    "u32",
-//	    "context"
-//	],
-//	[
-//	    "u32",
-//	    "sw_if_index"
-//	],
-//	[
-//	    "u8",
-//	    "local_addr",
-//	    16
-//	],
-//	[
-//	    "u8",
-//	    "peer_addr",
-//	    16
-//	],
-//	[
-//	    "u8",
-//	    "is_ipv6"
-//	],
-//	[
-//	    "u8",
-//	    "admin_up_down"
-//	],
-//	{
-//	    "crc": "0x667d6e7c"
-//	}
-//
 type BfdUDPSessionSetFlags struct {
 	SwIfIndex   uint32
 	LocalAddr   []byte `struc:"[16]byte"`
@@ -800,24 +430,6 @@ func (*BfdUDPSessionSetFlags) GetMessageType() api.MessageType {
 }
 
 // BfdUDPSessionSetFlagsReply represents VPP binary API message 'bfd_udp_session_set_flags_reply':
-//
-//	"bfd_udp_session_set_flags_reply",
-//	[
-//	    "u16",
-//	    "_vl_msg_id"
-//	],
-//	[
-//	    "u32",
-//	    "context"
-//	],
-//	[
-//	    "i32",
-//	    "retval"
-//	],
-//	{
-//	    "crc": "0xe8d4e804"
-//	}
-//
 type BfdUDPSessionSetFlagsReply struct {
 	Retval int32
 }
@@ -832,33 +444,37 @@ func (*BfdUDPSessionSetFlagsReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 
+// BfdUDPSetEchoSource represents VPP binary API message 'bfd_udp_set_echo_source':
+type BfdUDPSetEchoSource struct {
+	SwIfIndex uint32
+}
+
+func (*BfdUDPSetEchoSource) GetMessageName() string {
+	return "bfd_udp_set_echo_source"
+}
+func (*BfdUDPSetEchoSource) GetCrcString() string {
+	return "529cb13f"
+}
+func (*BfdUDPSetEchoSource) GetMessageType() api.MessageType {
+	return api.RequestMessage
+}
+
+// BfdUDPSetEchoSourceReply represents VPP binary API message 'bfd_udp_set_echo_source_reply':
+type BfdUDPSetEchoSourceReply struct {
+	Retval int32
+}
+
+func (*BfdUDPSetEchoSourceReply) GetMessageName() string {
+	return "bfd_udp_set_echo_source_reply"
+}
+func (*BfdUDPSetEchoSourceReply) GetCrcString() string {
+	return "e8d4e804"
+}
+func (*BfdUDPSetEchoSourceReply) GetMessageType() api.MessageType {
+	return api.ReplyMessage
+}
+
 // WantBfdEvents represents VPP binary API message 'want_bfd_events':
-//
-//	"want_bfd_events",
-//	[
-//	    "u16",
-//	    "_vl_msg_id"
-//	],
-//	[
-//	    "u32",
-//	    "client_index"
-//	],
-//	[
-//	    "u32",
-//	    "context"
-//	],
-//	[
-//	    "u32",
-//	    "enable_disable"
-//	],
-//	[
-//	    "u32",
-//	    "pid"
-//	],
-//	{
-//	    "crc": "0x476f5a08"
-//	}
-//
 type WantBfdEvents struct {
 	EnableDisable uint32
 	PID           uint32
@@ -875,24 +491,6 @@ func (*WantBfdEvents) GetMessageType() api.MessageType {
 }
 
 // WantBfdEventsReply represents VPP binary API message 'want_bfd_events_reply':
-//
-//	"want_bfd_events_reply",
-//	[
-//	    "u16",
-//	    "_vl_msg_id"
-//	],
-//	[
-//	    "u32",
-//	    "context"
-//	],
-//	[
-//	    "i32",
-//	    "retval"
-//	],
-//	{
-//	    "crc": "0xe8d4e804"
-//	}
-//
 type WantBfdEventsReply struct {
 	Retval int32
 }
@@ -907,457 +505,64 @@ func (*WantBfdEventsReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 
-// BfdAuthSetKey represents VPP binary API message 'bfd_auth_set_key':
-//
-//	"bfd_auth_set_key",
-//	[
-//	    "u16",
-//	    "_vl_msg_id"
-//	],
-//	[
-//	    "u32",
-//	    "client_index"
-//	],
-//	[
-//	    "u32",
-//	    "context"
-//	],
-//	[
-//	    "u32",
-//	    "conf_key_id"
-//	],
-//	[
-//	    "u8",
-//	    "key_len"
-//	],
-//	[
-//	    "u8",
-//	    "auth_type"
-//	],
-//	[
-//	    "u8",
-//	    "key",
-//	    20
-//	],
-//	{
-//	    "crc": "0x690b8877"
-//	}
-//
-type BfdAuthSetKey struct {
-	ConfKeyID uint32
-	KeyLen    uint8
-	AuthType  uint8
-	Key       []byte `struc:"[20]byte"`
-}
-
-func (*BfdAuthSetKey) GetMessageName() string {
-	return "bfd_auth_set_key"
-}
-func (*BfdAuthSetKey) GetCrcString() string {
-	return "690b8877"
-}
-func (*BfdAuthSetKey) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
-
-// BfdAuthSetKeyReply represents VPP binary API message 'bfd_auth_set_key_reply':
-//
-//	"bfd_auth_set_key_reply",
-//	[
-//	    "u16",
-//	    "_vl_msg_id"
-//	],
-//	[
-//	    "u32",
-//	    "context"
-//	],
-//	[
-//	    "i32",
-//	    "retval"
-//	],
-//	{
-//	    "crc": "0xe8d4e804"
-//	}
-//
-type BfdAuthSetKeyReply struct {
-	Retval int32
-}
-
-func (*BfdAuthSetKeyReply) GetMessageName() string {
-	return "bfd_auth_set_key_reply"
-}
-func (*BfdAuthSetKeyReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*BfdAuthSetKeyReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
-
-// BfdAuthDelKey represents VPP binary API message 'bfd_auth_del_key':
-//
-//	"bfd_auth_del_key",
-//	[
-//	    "u16",
-//	    "_vl_msg_id"
-//	],
-//	[
-//	    "u32",
-//	    "client_index"
-//	],
-//	[
-//	    "u32",
-//	    "context"
-//	],
-//	[
-//	    "u32",
-//	    "conf_key_id"
-//	],
-//	{
-//	    "crc": "0x65310b22"
-//	}
-//
-type BfdAuthDelKey struct {
-	ConfKeyID uint32
-}
-
-func (*BfdAuthDelKey) GetMessageName() string {
-	return "bfd_auth_del_key"
-}
-func (*BfdAuthDelKey) GetCrcString() string {
-	return "65310b22"
-}
-func (*BfdAuthDelKey) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
-
-// BfdAuthDelKeyReply represents VPP binary API message 'bfd_auth_del_key_reply':
-//
-//	"bfd_auth_del_key_reply",
-//	[
-//	    "u16",
-//	    "_vl_msg_id"
-//	],
-//	[
-//	    "u32",
-//	    "context"
-//	],
-//	[
-//	    "i32",
-//	    "retval"
-//	],
-//	{
-//	    "crc": "0xe8d4e804"
-//	}
-//
-type BfdAuthDelKeyReply struct {
-	Retval int32
-}
-
-func (*BfdAuthDelKeyReply) GetMessageName() string {
-	return "bfd_auth_del_key_reply"
-}
-func (*BfdAuthDelKeyReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*BfdAuthDelKeyReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
-
-// BfdAuthKeysDump represents VPP binary API message 'bfd_auth_keys_dump':
-//
-//	"bfd_auth_keys_dump",
-//	[
-//	    "u16",
-//	    "_vl_msg_id"
-//	],
-//	[
-//	    "u32",
-//	    "client_index"
-//	],
-//	[
-//	    "u32",
-//	    "context"
-//	],
-//	{
-//	    "crc": "0x51077d14"
-//	}
-//
-type BfdAuthKeysDump struct{}
-
-func (*BfdAuthKeysDump) GetMessageName() string {
-	return "bfd_auth_keys_dump"
-}
-func (*BfdAuthKeysDump) GetCrcString() string {
-	return "51077d14"
-}
-func (*BfdAuthKeysDump) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
-
-// BfdAuthKeysDetails represents VPP binary API message 'bfd_auth_keys_details':
-//
-//	"bfd_auth_keys_details",
-//	[
-//	    "u16",
-//	    "_vl_msg_id"
-//	],
-//	[
-//	    "u32",
-//	    "context"
-//	],
-//	[
-//	    "u32",
-//	    "conf_key_id"
-//	],
-//	[
-//	    "u32",
-//	    "use_count"
-//	],
-//	[
-//	    "u8",
-//	    "auth_type"
-//	],
-//	{
-//	    "crc": "0x84130e9f"
-//	}
-//
-type BfdAuthKeysDetails struct {
-	ConfKeyID uint32
-	UseCount  uint32
-	AuthType  uint8
-}
-
-func (*BfdAuthKeysDetails) GetMessageName() string {
-	return "bfd_auth_keys_details"
-}
-func (*BfdAuthKeysDetails) GetCrcString() string {
-	return "84130e9f"
-}
-func (*BfdAuthKeysDetails) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
-
-// BfdUDPAuthActivate represents VPP binary API message 'bfd_udp_auth_activate':
-//
-//	"bfd_udp_auth_activate",
-//	[
-//	    "u16",
-//	    "_vl_msg_id"
-//	],
-//	[
-//	    "u32",
-//	    "client_index"
-//	],
-//	[
-//	    "u32",
-//	    "context"
-//	],
-//	[
-//	    "u32",
-//	    "sw_if_index"
-//	],
-//	[
-//	    "u8",
-//	    "local_addr",
-//	    16
-//	],
-//	[
-//	    "u8",
-//	    "peer_addr",
-//	    16
-//	],
-//	[
-//	    "u8",
-//	    "is_ipv6"
-//	],
-//	[
-//	    "u8",
-//	    "is_delayed"
-//	],
-//	[
-//	    "u8",
-//	    "bfd_key_id"
-//	],
-//	[
-//	    "u32",
-//	    "conf_key_id"
-//	],
-//	{
-//	    "crc": "0x1bae0947"
-//	}
-//
-type BfdUDPAuthActivate struct {
-	SwIfIndex uint32
-	LocalAddr []byte `struc:"[16]byte"`
-	PeerAddr  []byte `struc:"[16]byte"`
-	IsIPv6    uint8
-	IsDelayed uint8
-	BfdKeyID  uint8
-	ConfKeyID uint32
-}
-
-func (*BfdUDPAuthActivate) GetMessageName() string {
-	return "bfd_udp_auth_activate"
-}
-func (*BfdUDPAuthActivate) GetCrcString() string {
-	return "1bae0947"
-}
-func (*BfdUDPAuthActivate) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
-
-// BfdUDPAuthActivateReply represents VPP binary API message 'bfd_udp_auth_activate_reply':
-//
-//	"bfd_udp_auth_activate_reply",
-//	[
-//	    "u16",
-//	    "_vl_msg_id"
-//	],
-//	[
-//	    "u32",
-//	    "context"
-//	],
-//	[
-//	    "i32",
-//	    "retval"
-//	],
-//	{
-//	    "crc": "0xe8d4e804"
-//	}
-//
-type BfdUDPAuthActivateReply struct {
-	Retval int32
-}
-
-func (*BfdUDPAuthActivateReply) GetMessageName() string {
-	return "bfd_udp_auth_activate_reply"
-}
-func (*BfdUDPAuthActivateReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*BfdUDPAuthActivateReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
-
-// BfdUDPAuthDeactivate represents VPP binary API message 'bfd_udp_auth_deactivate':
-//
-//	"bfd_udp_auth_deactivate",
-//	[
-//	    "u16",
-//	    "_vl_msg_id"
-//	],
-//	[
-//	    "u32",
-//	    "client_index"
-//	],
-//	[
-//	    "u32",
-//	    "context"
-//	],
-//	[
-//	    "u32",
-//	    "sw_if_index"
-//	],
-//	[
-//	    "u8",
-//	    "local_addr",
-//	    16
-//	],
-//	[
-//	    "u8",
-//	    "peer_addr",
-//	    16
-//	],
-//	[
-//	    "u8",
-//	    "is_ipv6"
-//	],
-//	[
-//	    "u8",
-//	    "is_delayed"
-//	],
-//	{
-//	    "crc": "0x10661991"
-//	}
-//
-type BfdUDPAuthDeactivate struct {
-	SwIfIndex uint32
-	LocalAddr []byte `struc:"[16]byte"`
-	PeerAddr  []byte `struc:"[16]byte"`
-	IsIPv6    uint8
-	IsDelayed uint8
-}
-
-func (*BfdUDPAuthDeactivate) GetMessageName() string {
-	return "bfd_udp_auth_deactivate"
-}
-func (*BfdUDPAuthDeactivate) GetCrcString() string {
-	return "10661991"
-}
-func (*BfdUDPAuthDeactivate) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
-
-// BfdUDPAuthDeactivateReply represents VPP binary API message 'bfd_udp_auth_deactivate_reply':
-//
-//	"bfd_udp_auth_deactivate_reply",
-//	[
-//	    "u16",
-//	    "_vl_msg_id"
-//	],
-//	[
-//	    "u32",
-//	    "context"
-//	],
-//	[
-//	    "i32",
-//	    "retval"
-//	],
-//	{
-//	    "crc": "0xe8d4e804"
-//	}
-//
-type BfdUDPAuthDeactivateReply struct {
-	Retval int32
-}
-
-func (*BfdUDPAuthDeactivateReply) GetMessageName() string {
-	return "bfd_udp_auth_deactivate_reply"
-}
-func (*BfdUDPAuthDeactivateReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*BfdUDPAuthDeactivateReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
-
 func init() {
-	api.RegisterMessage((*BfdUDPSetEchoSource)(nil), "bfd.BfdUDPSetEchoSource")
-	api.RegisterMessage((*BfdUDPSetEchoSourceReply)(nil), "bfd.BfdUDPSetEchoSourceReply")
-	api.RegisterMessage((*BfdUDPDelEchoSource)(nil), "bfd.BfdUDPDelEchoSource")
-	api.RegisterMessage((*BfdUDPDelEchoSourceReply)(nil), "bfd.BfdUDPDelEchoSourceReply")
-	api.RegisterMessage((*BfdUDPGetEchoSource)(nil), "bfd.BfdUDPGetEchoSource")
-	api.RegisterMessage((*BfdUDPGetEchoSourceReply)(nil), "bfd.BfdUDPGetEchoSourceReply")
-	api.RegisterMessage((*BfdUDPAdd)(nil), "bfd.BfdUDPAdd")
-	api.RegisterMessage((*BfdUDPAddReply)(nil), "bfd.BfdUDPAddReply")
-	api.RegisterMessage((*BfdUDPMod)(nil), "bfd.BfdUDPMod")
-	api.RegisterMessage((*BfdUDPModReply)(nil), "bfd.BfdUDPModReply")
-	api.RegisterMessage((*BfdUDPDel)(nil), "bfd.BfdUDPDel")
-	api.RegisterMessage((*BfdUDPDelReply)(nil), "bfd.BfdUDPDelReply")
-	api.RegisterMessage((*BfdUDPSessionDump)(nil), "bfd.BfdUDPSessionDump")
-	api.RegisterMessage((*BfdUDPSessionDetails)(nil), "bfd.BfdUDPSessionDetails")
-	api.RegisterMessage((*BfdUDPSessionSetFlags)(nil), "bfd.BfdUDPSessionSetFlags")
-	api.RegisterMessage((*BfdUDPSessionSetFlagsReply)(nil), "bfd.BfdUDPSessionSetFlagsReply")
-	api.RegisterMessage((*WantBfdEvents)(nil), "bfd.WantBfdEvents")
-	api.RegisterMessage((*WantBfdEventsReply)(nil), "bfd.WantBfdEventsReply")
-	api.RegisterMessage((*BfdAuthSetKey)(nil), "bfd.BfdAuthSetKey")
-	api.RegisterMessage((*BfdAuthSetKeyReply)(nil), "bfd.BfdAuthSetKeyReply")
 	api.RegisterMessage((*BfdAuthDelKey)(nil), "bfd.BfdAuthDelKey")
 	api.RegisterMessage((*BfdAuthDelKeyReply)(nil), "bfd.BfdAuthDelKeyReply")
-	api.RegisterMessage((*BfdAuthKeysDump)(nil), "bfd.BfdAuthKeysDump")
 	api.RegisterMessage((*BfdAuthKeysDetails)(nil), "bfd.BfdAuthKeysDetails")
+	api.RegisterMessage((*BfdAuthKeysDump)(nil), "bfd.BfdAuthKeysDump")
+	api.RegisterMessage((*BfdAuthSetKey)(nil), "bfd.BfdAuthSetKey")
+	api.RegisterMessage((*BfdAuthSetKeyReply)(nil), "bfd.BfdAuthSetKeyReply")
+	api.RegisterMessage((*BfdUDPAdd)(nil), "bfd.BfdUDPAdd")
+	api.RegisterMessage((*BfdUDPAddReply)(nil), "bfd.BfdUDPAddReply")
 	api.RegisterMessage((*BfdUDPAuthActivate)(nil), "bfd.BfdUDPAuthActivate")
 	api.RegisterMessage((*BfdUDPAuthActivateReply)(nil), "bfd.BfdUDPAuthActivateReply")
 	api.RegisterMessage((*BfdUDPAuthDeactivate)(nil), "bfd.BfdUDPAuthDeactivate")
 	api.RegisterMessage((*BfdUDPAuthDeactivateReply)(nil), "bfd.BfdUDPAuthDeactivateReply")
+	api.RegisterMessage((*BfdUDPDel)(nil), "bfd.BfdUDPDel")
+	api.RegisterMessage((*BfdUDPDelEchoSource)(nil), "bfd.BfdUDPDelEchoSource")
+	api.RegisterMessage((*BfdUDPDelEchoSourceReply)(nil), "bfd.BfdUDPDelEchoSourceReply")
+	api.RegisterMessage((*BfdUDPDelReply)(nil), "bfd.BfdUDPDelReply")
+	api.RegisterMessage((*BfdUDPGetEchoSource)(nil), "bfd.BfdUDPGetEchoSource")
+	api.RegisterMessage((*BfdUDPGetEchoSourceReply)(nil), "bfd.BfdUDPGetEchoSourceReply")
+	api.RegisterMessage((*BfdUDPMod)(nil), "bfd.BfdUDPMod")
+	api.RegisterMessage((*BfdUDPModReply)(nil), "bfd.BfdUDPModReply")
+	api.RegisterMessage((*BfdUDPSessionDetails)(nil), "bfd.BfdUDPSessionDetails")
+	api.RegisterMessage((*BfdUDPSessionDump)(nil), "bfd.BfdUDPSessionDump")
+	api.RegisterMessage((*BfdUDPSessionSetFlags)(nil), "bfd.BfdUDPSessionSetFlags")
+	api.RegisterMessage((*BfdUDPSessionSetFlagsReply)(nil), "bfd.BfdUDPSessionSetFlagsReply")
+	api.RegisterMessage((*BfdUDPSetEchoSource)(nil), "bfd.BfdUDPSetEchoSource")
+	api.RegisterMessage((*BfdUDPSetEchoSourceReply)(nil), "bfd.BfdUDPSetEchoSourceReply")
+	api.RegisterMessage((*WantBfdEvents)(nil), "bfd.WantBfdEvents")
+	api.RegisterMessage((*WantBfdEventsReply)(nil), "bfd.WantBfdEventsReply")
+}
+
+var Messages = []api.Message{
+	(*BfdAuthDelKey)(nil),
+	(*BfdAuthDelKeyReply)(nil),
+	(*BfdAuthKeysDetails)(nil),
+	(*BfdAuthKeysDump)(nil),
+	(*BfdAuthSetKey)(nil),
+	(*BfdAuthSetKeyReply)(nil),
+	(*BfdUDPAdd)(nil),
+	(*BfdUDPAddReply)(nil),
+	(*BfdUDPAuthActivate)(nil),
+	(*BfdUDPAuthActivateReply)(nil),
+	(*BfdUDPAuthDeactivate)(nil),
+	(*BfdUDPAuthDeactivateReply)(nil),
+	(*BfdUDPDel)(nil),
+	(*BfdUDPDelEchoSource)(nil),
+	(*BfdUDPDelEchoSourceReply)(nil),
+	(*BfdUDPDelReply)(nil),
+	(*BfdUDPGetEchoSource)(nil),
+	(*BfdUDPGetEchoSourceReply)(nil),
+	(*BfdUDPMod)(nil),
+	(*BfdUDPModReply)(nil),
+	(*BfdUDPSessionDetails)(nil),
+	(*BfdUDPSessionDump)(nil),
+	(*BfdUDPSessionSetFlags)(nil),
+	(*BfdUDPSessionSetFlagsReply)(nil),
+	(*BfdUDPSetEchoSource)(nil),
+	(*BfdUDPSetEchoSourceReply)(nil),
+	(*WantBfdEvents)(nil),
+	(*WantBfdEventsReply)(nil),
 }

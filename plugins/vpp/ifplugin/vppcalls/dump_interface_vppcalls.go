@@ -52,6 +52,10 @@ type InterfaceMeta struct {
 	VrfIPv4      uint32 `json:"vrf_ipv4"`
 	VrfIPv6      uint32 `json:"vrf_ipv6"`
 	Pci          uint32 `json:"pci"`
+	AdminState   uint8  `json:"admin_state"`
+	LinkState    uint8  `json:"link_state"`
+	LinkMTU      uint16 `json:"link_mtu"`
+	LinkSpeed    uint32 `json:"link_speed"`
 }
 
 // Dhcp is helper struct for DHCP metadata, split to client and lease (similar to VPP binary API)
@@ -135,6 +139,10 @@ func (h *IfVppHandler) DumpInterfaces() (map[uint32]*InterfaceDetails, error) {
 				SwIfIndex:    ifDetails.SwIfIndex,
 				Tag:          string(bytes.SplitN(ifDetails.Tag, []byte{0x00}, 2)[0]),
 				InternalName: string(bytes.SplitN(ifDetails.InterfaceName, []byte{0x00}, 2)[0]),
+				AdminState:   ifDetails.AdminUpDown,
+				LinkState:    ifDetails.LinkUpDown,
+				LinkMTU:      ifDetails.LinkMtu,
+				LinkSpeed:    ifDetails.LinkSpeed,
 			},
 		}
 		// Fill name for physical interfaces (they are mostly without tag)

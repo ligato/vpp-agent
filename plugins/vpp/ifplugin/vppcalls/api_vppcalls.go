@@ -120,6 +120,8 @@ type IfVppRead interface {
 	GetInterfaceVrfIPv6(ifIdx uint32) (vrfID uint32, err error)
 	// DumpMemifSocketDetails dumps memif socket details from the VPP
 	DumpMemifSocketDetails() (map[string]uint32, error)
+	// WatchInterfaceEvents starts watching for interface events.
+	WatchInterfaceEvents(ch chan<- *InterfaceEvent) error
 }
 
 // BfdVppAPI provides methods for managing BFD
@@ -259,6 +261,14 @@ type StnVppHandler struct {
 	ifIndexes    ifaceidx.SwIfIndex
 	callsChannel api.Channel
 	log          logging.Logger
+}
+
+// InterfaceEvent represents interface event from VPP.
+type InterfaceEvent struct {
+	SwIfIndex  uint32
+	AdminState uint8
+	LinkState  uint8
+	Deleted    bool
 }
 
 // NewIfVppHandler creates new instance of interface vppcalls handler

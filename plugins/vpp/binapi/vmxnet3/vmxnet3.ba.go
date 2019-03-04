@@ -5,15 +5,14 @@
  Package vmxnet3 is a generated from VPP binary API module 'vmxnet3'.
 
  It contains following objects:
-	  6 messages
 	  3 services
-
+	  6 messages
 */
 package vmxnet3
 
-import "git.fd.io/govpp.git/api"
-import "github.com/lunixbochs/struc"
-import "bytes"
+import api "git.fd.io/govpp.git/api"
+import struc "github.com/lunixbochs/struc"
+import bytes "bytes"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = api.RegisterMessage
@@ -21,20 +20,6 @@ var _ = struc.Pack
 var _ = bytes.NewBuffer
 
 // Services represents VPP binary API services:
-//
-//	"services": {
-//	    "vmxnet3_dump": {
-//	        "reply": "vmxnet3_details",
-//	        "stream": true
-//	    },
-//	    "vmxnet3_delete": {
-//	        "reply": "vmxnet3_delete_reply"
-//	    },
-//	    "vmxnet3_create": {
-//	        "reply": "vmxnet3_create_reply"
-//	    }
-//	},
-//
 type Services interface {
 	DumpVmxnet3(*Vmxnet3Dump) ([]*Vmxnet3Details, error)
 	Vmxnet3Create(*Vmxnet3Create) (*Vmxnet3CreateReply, error)
@@ -44,40 +29,6 @@ type Services interface {
 /* Messages */
 
 // Vmxnet3Create represents VPP binary API message 'vmxnet3_create':
-//
-//	"vmxnet3_create",
-//	[
-//	    "u16",
-//	    "_vl_msg_id"
-//	],
-//	[
-//	    "u32",
-//	    "client_index"
-//	],
-//	[
-//	    "u32",
-//	    "context"
-//	],
-//	[
-//	    "u32",
-//	    "pci_addr"
-//	],
-//	[
-//	    "i32",
-//	    "enable_elog"
-//	],
-//	[
-//	    "u16",
-//	    "rxq_size"
-//	],
-//	[
-//	    "u16",
-//	    "txq_size"
-//	],
-//	{
-//	    "crc": "0x7318251d"
-//	}
-//
 type Vmxnet3Create struct {
 	PciAddr    uint32
 	EnableElog int32
@@ -96,28 +47,6 @@ func (*Vmxnet3Create) GetMessageType() api.MessageType {
 }
 
 // Vmxnet3CreateReply represents VPP binary API message 'vmxnet3_create_reply':
-//
-//	"vmxnet3_create_reply",
-//	[
-//	    "u16",
-//	    "_vl_msg_id"
-//	],
-//	[
-//	    "u32",
-//	    "context"
-//	],
-//	[
-//	    "i32",
-//	    "retval"
-//	],
-//	[
-//	    "u32",
-//	    "sw_if_index"
-//	],
-//	{
-//	    "crc": "0xfda5941f"
-//	}
-//
 type Vmxnet3CreateReply struct {
 	Retval    int32
 	SwIfIndex uint32
@@ -134,28 +63,6 @@ func (*Vmxnet3CreateReply) GetMessageType() api.MessageType {
 }
 
 // Vmxnet3Delete represents VPP binary API message 'vmxnet3_delete':
-//
-//	"vmxnet3_delete",
-//	[
-//	    "u16",
-//	    "_vl_msg_id"
-//	],
-//	[
-//	    "u32",
-//	    "client_index"
-//	],
-//	[
-//	    "u32",
-//	    "context"
-//	],
-//	[
-//	    "u32",
-//	    "sw_if_index"
-//	],
-//	{
-//	    "crc": "0x529cb13f"
-//	}
-//
 type Vmxnet3Delete struct {
 	SwIfIndex uint32
 }
@@ -171,24 +78,6 @@ func (*Vmxnet3Delete) GetMessageType() api.MessageType {
 }
 
 // Vmxnet3DeleteReply represents VPP binary API message 'vmxnet3_delete_reply':
-//
-//	"vmxnet3_delete_reply",
-//	[
-//	    "u16",
-//	    "_vl_msg_id"
-//	],
-//	[
-//	    "u32",
-//	    "context"
-//	],
-//	[
-//	    "i32",
-//	    "retval"
-//	],
-//	{
-//	    "crc": "0xe8d4e804"
-//	}
-//
 type Vmxnet3DeleteReply struct {
 	Retval int32
 }
@@ -204,93 +93,6 @@ func (*Vmxnet3DeleteReply) GetMessageType() api.MessageType {
 }
 
 // Vmxnet3Details represents VPP binary API message 'vmxnet3_details':
-//
-//	"vmxnet3_details",
-//	[
-//	    "u16",
-//	    "_vl_msg_id"
-//	],
-//	[
-//	    "u32",
-//	    "context"
-//	],
-//	[
-//	    "u32",
-//	    "sw_if_index"
-//	],
-//	[
-//	    "u8",
-//	    "if_name",
-//	    64
-//	],
-//	[
-//	    "u8",
-//	    "hw_addr",
-//	    6
-//	],
-//	[
-//	    "u32",
-//	    "pci_addr"
-//	],
-//	[
-//	    "u8",
-//	    "version"
-//	],
-//	[
-//	    "u16",
-//	    "rx_qid"
-//	],
-//	[
-//	    "u16",
-//	    "rx_qsize"
-//	],
-//	[
-//	    "u16",
-//	    "rx_fill",
-//	    2
-//	],
-//	[
-//	    "u16",
-//	    "rx_next"
-//	],
-//	[
-//	    "u16",
-//	    "rx_produce",
-//	    2
-//	],
-//	[
-//	    "u16",
-//	    "rx_consume",
-//	    2
-//	],
-//	[
-//	    "u16",
-//	    "tx_qid"
-//	],
-//	[
-//	    "u16",
-//	    "tx_qsize"
-//	],
-//	[
-//	    "u16",
-//	    "tx_next"
-//	],
-//	[
-//	    "u16",
-//	    "tx_produce"
-//	],
-//	[
-//	    "u16",
-//	    "tx_consume"
-//	],
-//	[
-//	    "u8",
-//	    "admin_up_down"
-//	],
-//	{
-//	    "crc": "0x2374ddc9"
-//	}
-//
 type Vmxnet3Details struct {
 	SwIfIndex   uint32
 	IfName      []byte `struc:"[64]byte"`
@@ -322,24 +124,6 @@ func (*Vmxnet3Details) GetMessageType() api.MessageType {
 }
 
 // Vmxnet3Dump represents VPP binary API message 'vmxnet3_dump':
-//
-//	"vmxnet3_dump",
-//	[
-//	    "u16",
-//	    "_vl_msg_id"
-//	],
-//	[
-//	    "u32",
-//	    "client_index"
-//	],
-//	[
-//	    "u32",
-//	    "context"
-//	],
-//	{
-//	    "crc": "0x51077d14"
-//	}
-//
 type Vmxnet3Dump struct{}
 
 func (*Vmxnet3Dump) GetMessageName() string {
@@ -359,4 +143,13 @@ func init() {
 	api.RegisterMessage((*Vmxnet3DeleteReply)(nil), "vmxnet3.Vmxnet3DeleteReply")
 	api.RegisterMessage((*Vmxnet3Details)(nil), "vmxnet3.Vmxnet3Details")
 	api.RegisterMessage((*Vmxnet3Dump)(nil), "vmxnet3.Vmxnet3Dump")
+}
+
+var Messages = []api.Message{
+	(*Vmxnet3Create)(nil),
+	(*Vmxnet3CreateReply)(nil),
+	(*Vmxnet3Delete)(nil),
+	(*Vmxnet3DeleteReply)(nil),
+	(*Vmxnet3Details)(nil),
+	(*Vmxnet3Dump)(nil),
 }
