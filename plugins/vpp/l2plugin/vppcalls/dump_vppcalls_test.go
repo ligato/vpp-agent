@@ -178,7 +178,7 @@ func TestDumpBridgeDomainsWithARP(t *testing.T) {
 				BdID:       5,
 				IsIPv6:     0,
 				IPAddress:  []byte{192, 168, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-				MacAddress: []byte{0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA},
+				MacAddress: l2ba.MacAddress{0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA},
 			},
 		},
 		{

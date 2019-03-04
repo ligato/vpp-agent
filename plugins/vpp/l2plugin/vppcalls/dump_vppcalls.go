@@ -94,7 +94,7 @@ func (h *BridgeDomainVppHandler) DumpBridgeDomains() (map[uint32]*BridgeDomainDe
 			bds[bdDetails.BdID].Meta.BdIfIdxToName[iface.SwIfIndex] = ifName
 			// Add interface entry
 			bds[bdDetails.BdID].Bd.Interfaces = append(bds[bdDetails.BdID].Bd.Interfaces, &l2nb.BridgeDomains_BridgeDomain_Interfaces{
-				Name: ifName,
+				Name:                    ifName,
 				BridgedVirtualInterface: bvi,
 				SplitHorizonGroup:       uint32(iface.Shg),
 			})
@@ -153,7 +153,7 @@ func (h *BridgeDomainVppHandler) dumpBridgeDomainMacTable() (map[uint32][]*l2nb.
 		} else {
 			arpEntry.IpAddress = ipAddr[:4].To4().String()
 		}
-		arpEntry.PhysAddress = net.HardwareAddr(msg.MacAddress).String()
+		arpEntry.PhysAddress = net.HardwareAddr(msg.MacAddress[:]).String()
 
 		// Add ARP entry to result map
 		arpEntries, ok := bdArpTable[msg.BdID]

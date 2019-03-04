@@ -38,7 +38,7 @@ func TestVppAddArpTerminationTableEntry(t *testing.T) {
 			Af: l2ba.ADDRESS_IP4,
 			Un: l2ba.AddressUnion{Union_data: [16]byte{192, 168, 4, 4}},
 		},
-		Mac: l2ba.MacAddress{Bytes: []byte{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}},
+		Mac: l2ba.MacAddress{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF},
 	}))
 }
 
@@ -58,7 +58,7 @@ func TestVppAddArpTerminationTableEntryIPv6(t *testing.T) {
 			Af: l2ba.ADDRESS_IP6,
 			Un: l2ba.AddressUnion{Union_data: [16]byte{32, 1, 13, 185, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 84}},
 		},
-		Mac: l2ba.MacAddress{Bytes: []byte{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}},
+		Mac: l2ba.MacAddress{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF},
 	}))
 }
 
@@ -78,7 +78,7 @@ func TestVppRemoveArpTerminationTableEntry(t *testing.T) {
 			Af: l2ba.ADDRESS_IP4,
 			Un: l2ba.AddressUnion{Union_data: [16]byte{192, 168, 4, 4}},
 		},
-		Mac: l2ba.MacAddress{Bytes: []byte{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}},
+		Mac: l2ba.MacAddress{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF},
 	}))
 }
 
