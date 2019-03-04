@@ -12,17 +12,17 @@ see [ligato.io/cn-infra/tutorials][cn-infra-tutorials].
 This series of tutorials show usage the _vanilla_ VPP Agent as-is without any 
 code modification.
 
-- [Run VPP Agent](001_run-vppagent.md)
-- [Configure VPP Agent](002_configure-vppagent.md)
-- [Use VPP Agent](003_use-vppagent.md)
+- [Run VPP Agent](001_run-vppagent.md) (TODO)
+- [Configure VPP Agent](002_configure-vppagent.md) (TODO)
+- [Use VPP Agent](003_use-vppagent.md) (TODO)
 
 ## Custom VPP Agent Development
 
 This series of tutorials focus on extending the VPP Agent functionality and 
 customizing it for a specific use cases.
 
-- [Building Custom VPP Agent](101_custom-vppagent.md)
-- [Defining Custom Models](102_custom-model.md)
-- [Implementing Custom Descriptors](103_custom-descriptor.md)
+- [Building Custom VPP Agent](101_custom-vppagent.md) (TODO)
+- [Defining Custom Models](102_custom-model.md) (TODO)
+- [Implementing Custom Descriptors](103_custom-descriptor.md) (TODO)
 
 [cn-infra-tutorials]: https://ligato.io/cn-infra/tutorials/
