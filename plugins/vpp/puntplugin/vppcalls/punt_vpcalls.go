@@ -48,10 +48,12 @@ func (h *PuntVppHandler) registerPuntWithSocket(punt *punt.Punt, isIPv4 bool) ([
 
 	req := &api_punt.PuntSocketRegister{
 		HeaderVersion: 1,
-		IsIP4:         boolToUint(isIPv4),
-		L4Protocol:    resolveL4Proto(punt.L4Protocol),
-		L4Port:        uint16(punt.Port),
-		Pathname:      pathByte,
+		Punt: api_punt.Punt{
+			IPv:        resolveL3Proto(punt.L3Protocol),
+			L4Protocol: resolveL4Proto(punt.L4Protocol),
+			L4Port:     uint16(punt.Port),
+		},
+		Pathname: pathByte,
 	}
 	reply := &api_punt.PuntSocketRegisterReply{}
 
@@ -64,9 +66,11 @@ func (h *PuntVppHandler) registerPuntWithSocket(punt *punt.Punt, isIPv4 bool) ([
 
 func (h *PuntVppHandler) unregisterPuntWithSocket(punt *punt.Punt, isIPv4 bool) error {
 	req := &api_punt.PuntSocketDeregister{
-		IsIP4:      boolToUint(isIPv4),
-		L4Protocol: resolveL4Proto(punt.L4Protocol),
-		L4Port:     uint16(punt.Port),
+		Punt: api_punt.Punt{
+			IPv:        resolveL3Proto(punt.L3Protocol),
+			L4Protocol: resolveL4Proto(punt.L4Protocol),
+			L4Port:     uint16(punt.Port),
+		},
 	}
 	reply := &api_punt.PuntSocketDeregisterReply{}
 
@@ -77,6 +81,18 @@ func (h *PuntVppHandler) unregisterPuntWithSocket(punt *punt.Punt, isIPv4 bool) 
 	return nil
 }
 
+func resolveL3Proto(protocol punt.L3Protocol) uint8 {
+	switch protocol {
+	case punt.L3Protocol_IPv4:
+		return uint8(punt.L3Protocol_IPv4)
+	case punt.L3Protocol_IPv6:
+		return uint8(punt.L3Protocol_IPv6)
+	case punt.L3Protocol_ALL:
+		return ^uint8(0) // binary API representation for both protocols
+	}
+	return uint8(punt.L3Protocol_UNDEFINED_L3)
+}
+
 func resolveL4Proto(protocol punt.L4Protocol) uint8 {
 	switch protocol {
 	case punt.L4Protocol_TCP:
@@ -85,11 +101,4 @@ func resolveL4Proto(protocol punt.L4Protocol) uint8 {
 		return uint8(punt.L4Protocol_UDP)
 	}
 	return uint8(punt.L4Protocol_UNDEFINED_L4)
-}
-
-func boolToUint(input bool) uint8 {
-	if input {
-		return 1
-	}
-	return 0
 }
