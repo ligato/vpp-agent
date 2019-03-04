@@ -16,6 +16,7 @@ package keyval
 
 import (
 	"io"
+	"context"
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/cn-infra/datasync"
@@ -56,7 +57,7 @@ type ProtoTxn interface {
 	// Commit tries to execute all the operations of the transaction.
 	// In the end, either all of them have been successfully applied or none
 	// of them and an error is returned.
-	Commit() error
+	Commit(ctx context.Context) error
 }
 
 // ProtoKvPair groups getter for single key-value pair.

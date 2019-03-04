@@ -206,6 +206,9 @@ func (s *Scheduler) Close() error {
 // (none for derived values expressing properties).
 func (s *Scheduler) RegisterKVDescriptor(descriptor *kvs.KVDescriptor) error {
 	// TODO: validate descriptor
+	if s.registry.GetDescriptor(descriptor.Name) != nil {
+		return kvs.ErrDescriptorExists
+	}
 
 	s.registry.RegisterDescriptor(descriptor)
 	if descriptor.NBKeyPrefix != "" {

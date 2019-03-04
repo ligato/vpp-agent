@@ -21,9 +21,10 @@ package ipsecplugin
 
 import (
 	govppapi "git.fd.io/govpp.git/api"
-	"github.com/go-errors/errors"
 	"github.com/ligato/cn-infra/health/statuscheck"
 	"github.com/ligato/cn-infra/infra"
+	"github.com/pkg/errors"
+
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin"
@@ -70,6 +71,9 @@ func (p *IPSecPlugin) Init() (err error) {
 
 	// init IPSec handler
 	p.ipSecHandler = vppcalls.CompatibleIPSecVppHandler(p.vppCh, p.IfPlugin.GetInterfaceIndex(), p.Log)
+	if p.ipSecHandler == nil {
+		return errors.New("ipsecHandler is not available")
+	}
 
 	// init and register security policy database descriptor
 	p.spdDescriptor = descriptor.NewIPSecSPDDescriptor(p.ipSecHandler, p.Log)

@@ -17,8 +17,9 @@ package descriptor
 import (
 	"strconv"
 
-	"github.com/go-errors/errors"
 	"github.com/ligato/cn-infra/logging"
+	"github.com/pkg/errors"
+
 	ipsec "github.com/ligato/vpp-agent/api/models/vpp/ipsec"
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/vpp/ipsecplugin/descriptor/adapter"

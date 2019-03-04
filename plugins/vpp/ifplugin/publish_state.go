@@ -112,7 +112,7 @@ func (p *IfPlugin) publishIfStateEvents() {
 			}
 
 			// Send interface state data to global agent status
-			if p.statusCheckReg {
+			if p.statusCheckReg && ifState.State.InternalName != "" {
 				p.StatusCheck.ReportStateChangeWithMeta(p.PluginName, statuscheck.OK, nil, &status.InterfaceStats_Interface{
 					InternalName: ifState.State.InternalName,
 					Index:        ifState.State.IfIndex,

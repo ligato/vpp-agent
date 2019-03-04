@@ -20,6 +20,7 @@ import (
 	"github.com/hashicorp/consul/api"
 
 	"github.com/ligato/cn-infra/db/keyval"
+	"context"
 )
 
 // Txn allows grouping operations into the transaction. Transaction executes
@@ -58,7 +59,7 @@ func (tx *txn) Delete(key string) keyval.BytesTxn {
 // Commit commits all operations in a transaction to the data store.
 // Commit is atomic - either all operations in the transaction are
 // committed to the data store, or none of them.
-func (tx *txn) Commit() error {
+func (tx *txn) Commit(ctx context.Context) error {
 	ok, resp, _, err := tx.kv.Txn(tx.ops, nil)
 	if err != nil {
 		return err

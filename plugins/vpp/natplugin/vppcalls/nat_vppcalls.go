@@ -69,6 +69,10 @@ type HandlerVersion struct {
 func CompatibleNatVppHandler(
 	ch govppapi.Channel, ifIdx ifaceidx.IfaceMetadataIndex, dhcpIdx idxmap.NamedMapping, log logging.Logger,
 ) NatVppAPI {
+	if len(Versions) == 0 {
+		// natplugin is not loaded
+		return nil
+	}
 	for ver, h := range Versions {
 		log.Debugf("checking compatibility with %s", ver)
 		if err := ch.CheckCompatiblity(h.Msgs...); err != nil {

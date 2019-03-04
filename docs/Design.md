@@ -1,4 +1,5 @@
-# Architecture
+# Design
+
 ![VPP agent 10.000 feet](imgs/vpp_agent_10K_feet.png)
 
 Brief description:

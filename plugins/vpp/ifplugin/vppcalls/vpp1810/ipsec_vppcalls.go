@@ -16,7 +16,6 @@ package vpp1810
 
 import (
 	"encoding/hex"
-	"fmt"
 	"net"
 
 	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
@@ -77,8 +76,6 @@ func (h *InterfaceVppHandler) tunnelIfAddDel(ifName string, ipSecLink *interface
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return 0, err
-	} else if reply.Retval != 0 {
-		return 0, fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
 	return reply.SwIfIndex, nil

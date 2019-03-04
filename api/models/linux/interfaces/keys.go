@@ -119,7 +119,7 @@ func InterfaceAddressKey(ifName string, address string) string {
 	var mask string
 	addrComps := strings.Split(address, "/")
 	addr := addrComps[0]
-	if len(addrComps) > 0 {
+	if len(addrComps) > 1 {
 		mask = addrComps[1]
 	}
 	key := strings.Replace(interfaceAddressKeyTemplate, "{ifName}", ifName, 1)

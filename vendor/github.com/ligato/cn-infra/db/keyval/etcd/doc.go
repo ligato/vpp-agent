@@ -72,7 +72,7 @@
 //    txn.Delete(key, value)
 //
 //    // try to commit the transaction
-//    err := txn.Commit()
+//    err := txn.Commit(context.Background())
 //
 // To retrieve a value identified by key:
 //    data, found, rev, err := db.GetValue(key)

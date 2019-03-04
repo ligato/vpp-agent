@@ -19,7 +19,7 @@ import (
 	"net"
 	"strconv"
 
-	"github.com/go-errors/errors"
+	"github.com/pkg/errors"
 
 	"github.com/ligato/cn-infra/utils/addrs"
 	ipsec "github.com/ligato/vpp-agent/api/models/vpp/ipsec"

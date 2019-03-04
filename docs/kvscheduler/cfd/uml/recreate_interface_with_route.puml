@@ -1,0 +1,130 @@
+@startuml
+
+skinparam ParticipantPadding 20
+skinparam BoxPadding 10
+skinparam SequenceMessageAlign center
+
+participant ID as "Interface Descriptor"
+participant RD as "Route Descriptor"
+participant KVS as "KVScheduler"
+participant ORCH as "Orchestrator \n(NB COLLAPSED)"
+
+ID -> KVS: **RegisterKVDescriptor**()
+activate KVS
+KVS --> ID: ok
+deactivate KVS
+RD -> KVS: **RegisterKVDescriptor**()
+activate KVS
+KVS --> RD: ok
+deactivate KVS
+
+== Resync Transaction #0 (configure interface //my-tap// and the associated route //my-route//) ==
+
+ORCH -> ORCH: **start startup resync**
+activate ORCH
+ORCH -> KVS: **Resync Txn** = [\l - interface //my-tap// with IP 196.168.1.1/24 \l - route //my-route// associated with //my-tap// \l ]
+activate KVS  #FFBBBB
+
+KVS -> KVS: **plan and execute transaction txn #0** (**COLLAPSED**)
+KVS -> ID: **Retrieve** values, **Create** //my-tap//, //my-route//, etc.
+ activate ID
+  ID --> KVS: retrieved values, feedback from CRUD operations, etc.
+ deactivate ID
+
+ note over KVS: [[https://raw.githubusercontent.com/milanlenco/vpp-agent/kvs-docs/docs/kvscheduler/cfd/graph/route_created.svg?sanitize=true Graph after transaction]]
+
+KVS --> ORCH: **value state updates**
+KVS --> ORCH: **txn error** (nil)
+deactivate KVS
+deactivate ORCH
+
+== Data-Change Transaction #1 (updated //my-tap// through re-creation) ==
+
+ORCH -> ORCH: **apply change** received from NB
+activate ORCH
+ORCH -> KVS: **Data-Change Txn** = [\l - interface //my-tap// with increased RX ring size (requires re-creation) \l  (second revision of the interface denoted as //my-tap-rev2//) \l]
+activate KVS  #FFBBBB
+
+KVS -> KVS: **start txn #1**
+ activate KVS  #FFDDCC
+  KVS -> KVS: //my-tap-rev2// is a **new revision for** //my-tap//
+  KVS -> KVS: (**cached**) value is **handled by** InterfaceDescriptor
+
+  KVS -> ID: **UpdateWithRecreate**(old= //my-tap//, new= //my-tap-rev2//)
+   activate ID
+    ID --> KVS: true (interface has to be re-created to apply the new config)
+   deactivate ID
+
+== Delete obsolete //my-tap//, derived value //"address/my-tap/192.168.1.1/24"// and //my-route// which depends on it) ==
+
+  KVS -> KVS: apply **Delete()** operation for obsolete //my-tap//
+  KVS -> KVS: remove derived values of //my-tap// first (//"address/my-tap/192.168.1.1/24"//)
+  KVS -> KVS: (**cached**) //"address/my-tap/192.168.1.1/24"// is **property** \n (no Delete operation to execute)
+  KVS -> KVS: removed value //"address/my-tap/192.168.1.1/24"// from the graph
+  KVS -> KVS: (**cached**) //my-route// **depends on** //my-tap//\nand must be therefore deleted first \nand set to the PENDING state
+   activate KVS #CCBBBB
+    KVS -> KVS: (**cached**) //my-route// is **handled by** RouteDescriptor
+    KVS -> RD: **Delete**(//my-route//)
+     activate RD
+      RD --> KVS: ok
+     deactivate RD
+    KVS -> KVS: value //my-route// set to the **PENDING** state
+    KVS -> KVS: going back to apply **Delete()** for //my-tap//...
+   deactivate KVS
+  KVS -> ID: **Delete**(//my-tap//)
+   activate ID
+    ID --> KVS: ok
+   deactivate ID
+  KVS -> KVS: removed value //my-tap// from the graph
+
+== Create //my-tap-rev2//, its derived values and //my-route// which is waiting for the interface) ==
+
+  KVS -> KVS: apply **Create()** operation for //my-tap-rev2// \n(recreated, i.e. the same key as //my-tap//)
+  KVS -> ID: **Dependencies**(//my-tap-rev2//)
+   activate ID
+    ID --> KVS: << no dependencies >>
+   deactivate ID
+  KVS -> KVS: value //my-tap-rev2// is **ready** to be created
+  KVS -> ID: **Validate**(//my-tap-rev2//)
+   activate ID
+    ID --> KVS: ok (valid configuration)
+   deactivate ID
+  KVS -> ID: **Create**(//my-tap-rev2//)
+   activate ID
+    ID --> KVS: ok
+   deactivate ID
+
+  KVS -> KVS: //my-route// (from previous txn) **is now ready** to be created \n - dependency on //my-tap-rev2// is now **satisfied**
+   activate KVS #CCBBBB
+    KVS -> KVS: (**cached**) //my-route// is **handled by** RouteDescriptor
+    KVS -> RD: **Validate**(//my-route//)
+     activate RD
+      RD --> KVS: ok (valid configuration)
+     deactivate RD
+    KVS -> RD: **Create**(//my-route//)
+     activate RD
+      RD --> KVS: ok
+     deactivate RD
+    KVS -> RD: **DerivedValues**(//my-route//)
+     activate RD
+      RD --> KVS: <<no derived values>>
+     deactivate RD
+   KVS -> KVS: change the state of the value //my-route// from PENDING to **CONFIGURED**
+   KVS -> KVS: going back to finalize //my-tap-rev2//...
+   deactivate KVS
+
+  KVS -> ID: **DerivedValues**(//my-tap-rev2//)
+   activate ID
+    ID --> KVS: derived-values = [//"address/my-tap-rev2/192.168.1.1/24"//]
+   deactivate ID
+  KVS -> KVS: **schedule create** for //"address/my-tap-rev2/192.168.1.1/24"//
+  KVS -> KVS: (**cached**, the same derived key as for //my-tap//) \n//"address/my-tap-rev2/192.168.1.1/24"// is **property** \n (no CRUD operation to execute)
+
+  KVS -> KVS: **finalize and record txn #1**
+ deactivate KVS
+KVS --> ORCH: **value state updates** \n (including for now-pending //my-route// from previous txn)
+KVS --> ORCH: **txn error** (nil)
+deactivate KVS
+deactivate ORCH
+
+@enduml

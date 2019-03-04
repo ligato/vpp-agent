@@ -76,13 +76,21 @@ type mockedChannel struct {
 
 	// List of all messages which passed through method SendRequest
 	Msgs []govppapi.Message
+
+	RetErrs []error
 }
 
 // SendRequest just save input argument to structure field for future check
 func (m *mockedChannel) SendRequest(msg govppapi.Message) govppapi.RequestCtx {
 	m.Msg = msg
 	m.Msgs = append(m.Msgs, msg)
-	return m.Channel.SendRequest(msg)
+	reqCtx := m.Channel.SendRequest(msg)
+	var retErr error
+	if retErrsLen := len(m.RetErrs); retErrsLen > 0 {
+		retErr = m.RetErrs[retErrsLen-1]
+		m.RetErrs = m.RetErrs[:retErrsLen-1]
+	}
+	return &mockedContext{reqCtx, retErr}
 }
 
 // SendMultiRequest just save input argument to structure field for future check
@@ -90,6 +98,19 @@ func (m *mockedChannel) SendMultiRequest(msg govppapi.Message) govppapi.MultiReq
 	m.Msg = msg
 	m.Msgs = append(m.Msgs, msg)
 	return m.Channel.SendMultiRequest(msg)
+}
+
+type mockedContext struct {
+	requestCtx govppapi.RequestCtx
+	retErr     error
+}
+
+// ReceiveReply returns prepared error or nil
+func (m *mockedContext) ReceiveReply(msg govppapi.Message) error {
+	if m.retErr != nil {
+		return m.retErr
+	}
+	return m.requestCtx.ReceiveReply(msg)
 }
 
 // HandleReplies represents spec for MockReplyHandler.

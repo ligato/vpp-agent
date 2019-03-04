@@ -16,7 +16,6 @@ package vpp1901
 
 import (
 	"errors"
-	"fmt"
 
 	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/tap"
@@ -29,10 +28,6 @@ func (h *InterfaceVppHandler) AddTapInterface(ifName string, tapIf *interfaces.T
 		return 0, errors.New("host interface name was not provided for the TAP interface")
 	}
 
-	var (
-		retval  int32
-		msgName string
-	)
 	if tapIf.Version == 2 {
 		// Configure fast virtio-based TAP interface
 		req := &tapv2.TapCreateV2{
@@ -46,9 +41,7 @@ func (h *InterfaceVppHandler) AddTapInterface(ifName string, tapIf *interfaces.T
 
 		reply := &tapv2.TapCreateV2Reply{}
 		err = h.callsChannel.SendRequest(req).ReceiveReply(reply)
-		retval = reply.Retval
 		swIfIdx = reply.SwIfIndex
-		msgName = reply.GetMessageName()
 	} else {
 		// Configure the original TAP interface
 		req := &tap.TapConnect{
@@ -58,15 +51,10 @@ func (h *InterfaceVppHandler) AddTapInterface(ifName string, tapIf *interfaces.T
 
 		reply := &tap.TapConnectReply{}
 		err = h.callsChannel.SendRequest(req).ReceiveReply(reply)
-		retval = reply.Retval
 		swIfIdx = reply.SwIfIndex
-		msgName = reply.GetMessageName()
 	}
 	if err != nil {
 		return 0, err
-	}
-	if retval != 0 {
-		return 0, fmt.Errorf("%s returned %d", msgName, retval)
 	}
 
 	return swIfIdx, h.SetInterfaceTag(ifName, swIfIdx)
@@ -74,11 +62,8 @@ func (h *InterfaceVppHandler) AddTapInterface(ifName string, tapIf *interfaces.T
 
 // DeleteTapInterface implements interface handler.
 func (h *InterfaceVppHandler) DeleteTapInterface(ifName string, idx uint32, version uint32) error {
-	var (
-		err     error
-		retval  int32
-		msgName string
-	)
+	var err error
+
 	if version == 2 {
 		req := &tapv2.TapDeleteV2{
 			SwIfIndex: idx,
@@ -86,8 +71,6 @@ func (h *InterfaceVppHandler) DeleteTapInterface(ifName string, idx uint32, vers
 
 		reply := &tapv2.TapDeleteV2Reply{}
 		err = h.callsChannel.SendRequest(req).ReceiveReply(reply)
-		retval = reply.Retval
-		msgName = reply.GetMessageName()
 	} else {
 		req := &tap.TapDelete{
 			SwIfIndex: idx,
@@ -95,14 +78,9 @@ func (h *InterfaceVppHandler) DeleteTapInterface(ifName string, idx uint32, vers
 
 		reply := &tap.TapDeleteReply{}
 		err = h.callsChannel.SendRequest(req).ReceiveReply(reply)
-		retval = reply.Retval
-		msgName = reply.GetMessageName()
 	}
 	if err != nil {
 		return err
-	}
-	if retval != 0 {
-		return fmt.Errorf("%s returned %d", msgName, retval)
 	}
 
 	return h.RemoveInterfaceTag(ifName, idx)

@@ -20,6 +20,7 @@ import (
 	"github.com/go-errors/errors"
 	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/cn-infra/logging"
+
 	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	ipsec "github.com/ligato/vpp-agent/api/models/vpp/ipsec"
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"

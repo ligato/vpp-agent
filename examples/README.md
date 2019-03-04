@@ -41,7 +41,7 @@ Current examples:
   use the notifications package to  receive VPP notifications streamed by different 
   vpp-agent process.
 
-* **[CN-Infra  examples][1]** demonstrate how to use the CN-Infra platform
+* **[CN-Infra  examples][1]** demonstrate how to use the CN-Infra framework
   plugins.
   
 ## How to run an example

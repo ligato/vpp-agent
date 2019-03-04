@@ -104,6 +104,9 @@ var (
 
 	// ErrSubInterfaceWithoutParent is returned when interface of type sub-interface is defined without parent.
 	ErrSubInterfaceWithoutParent = errors.Errorf("subinterface with no parent interface defined")
+
+	// ErrDPDKInterfaceMissing is returned when the expected DPDK interface does not exist on the VPP.
+	ErrDPDKInterfaceMissing = errors.Errorf("DPDK interface with given name does not exists")
 )
 
 // InterfaceDescriptor teaches KVScheduler how to configure VPP interfaces.
@@ -366,6 +369,9 @@ func (d *InterfaceDescriptor) Validate(key string, intf *interfaces.Interface) e
 			return kvs.NewInvalidValueError(ErrSubInterfaceWithoutParent, "link.sub.parent_name")
 		}
 	case interfaces.Interface_DPDK:
+		if _, ok := d.ethernetIfs[intf.Name]; !ok {
+			return kvs.NewInvalidValueError(ErrDPDKInterfaceMissing, "name")
+		}
 		if getRxMode(intf).GetRxMode() != interfaces.Interface_RxModeSettings_POLLING {
 			return kvs.NewInvalidValueError(ErrUnsupportedRxMode, "rx_mode_settings.rx_mode")
 		}

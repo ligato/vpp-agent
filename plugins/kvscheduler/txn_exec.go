@@ -337,8 +337,7 @@ func (s *Scheduler) applyDelete(node graph.NodeRW, txnOp *kvs.RecordedTxnOp, arg
 		}
 		if err != nil {
 			retriableErr = handler.isRetriableFailure(err)
-		}
-		if canNodeHaveMetadata(node) && descriptor.WithMetadata {
+		} else if canNodeHaveMetadata(node) && descriptor.WithMetadata {
 			node.SetMetadata(nil)
 		}
 	}
@@ -697,6 +696,10 @@ func (s *Scheduler) applyNewRelations(node graph.NodeRW, handler *descriptorHand
 // applyDerived (re-)applies the given list of derived values.
 func (s *Scheduler) applyDerived(derivedVals []kvForTxn, args *applyValueArgs, check bool) (executed kvs.RecordedTxnOps, err error) {
 	var wasErr error
+	if s.logGraphWalk {
+		endLog := s.logNodeVisit("applyDerived", args)
+		defer endLog()
+	}
 
 	// order derivedVals by key (just for deterministic behaviour which simplifies testing)
 	sort.Slice(derivedVals, func(i, j int) bool { return derivedVals[i].key < derivedVals[j].key })
@@ -720,6 +723,11 @@ func (s *Scheduler) applyDerived(derivedVals []kvForTxn, args *applyValueArgs, c
 
 // runDepUpdates triggers dependency updates on all nodes that depend on the given node.
 func (s *Scheduler) runDepUpdates(node graph.Node, args *applyValueArgs) (executed kvs.RecordedTxnOps, err error) {
+	if s.logGraphWalk {
+		endLog := s.logNodeVisit("runDepUpdates", args)
+		defer endLog()
+	}
+
 	var wasErr error
 	depNodes := node.GetSources(DependencyRelation)
 
@@ -866,12 +874,7 @@ func (s *Scheduler) markFailedValue(node graph.NodeRW, args *applyValueArgs, err
 }
 
 func (s *Scheduler) logNodeVisit(operation string, args *applyValueArgs) func() {
-	var msg string
-	if args.isDepUpdate {
-		msg = fmt.Sprintf("%s (key = %s, dep-update)", operation, args.kv.key)
-	} else {
-		msg = fmt.Sprintf("%s (key = %s)", operation, args.kv.key)
-	}
+	msg := fmt.Sprintf("%s (key = %s)", operation, args.kv.key)
 	args.depth++
 	indent := strings.Repeat(" ", args.depth*2)
 	fmt.Printf("%s%s %s\n", indent, nodeVisitBeginMark, msg)

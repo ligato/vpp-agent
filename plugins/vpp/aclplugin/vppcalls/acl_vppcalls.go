@@ -116,6 +116,10 @@ type HandlerVersion struct {
 }
 
 func CompatibleACLVppHandler(ch, dch govppapi.Channel, idx ifaceidx.IfaceMetadataIndex, log logging.Logger) ACLVppAPI {
+	if len(Versions) == 0 {
+		// aclplugin is not loaded
+		return nil
+	}
 	for ver, h := range Versions {
 		log.Debugf("checking compatibility with %s", ver)
 		if err := ch.CheckCompatiblity(h.Msgs...); err != nil {

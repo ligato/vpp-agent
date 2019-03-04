@@ -19,11 +19,11 @@ import (
 	"net"
 	"strconv"
 
-	"github.com/go-errors/errors"
-	"github.com/ligato/vpp-agent/plugins/vpp/ipsecplugin/vppcalls"
+	"github.com/pkg/errors"
 
 	ipsec "github.com/ligato/vpp-agent/api/models/vpp/ipsec"
 	ipsecapi "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/ipsec"
+	"github.com/ligato/vpp-agent/plugins/vpp/ipsecplugin/vppcalls"
 )
 
 // DumpIPSecSA implements IPSec handler.

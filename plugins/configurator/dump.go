@@ -1,6 +1,7 @@
 package configurator
 
 import (
+	"github.com/go-errors/errors"
 	"github.com/ligato/cn-infra/logging"
 	"golang.org/x/net/context"
 
@@ -62,6 +63,9 @@ func (svc *dumpService) Dump(context.Context, *rpc.DumpRequest) (*rpc.DumpRespon
 // only error is send back in response
 func (svc *dumpService) DumpAcls() ([]*vpp_acl.ACL, error) {
 	var acls []*vpp_acl.ACL
+	if svc.aclHandler == nil {
+		return nil, errors.New("aclHandler is not available")
+	}
 	ipACLs, err := svc.aclHandler.DumpACL()
 	if err != nil {
 		return nil, err
@@ -99,6 +103,9 @@ func (svc *dumpService) DumpInterfaces() ([]*vpp_interfaces.Interface, error) {
 // only error is send back in response
 func (svc *dumpService) DumpIPSecSPDs() ([]*vpp_ipsec.SecurityPolicyDatabase, error) {
 	var spds []*vpp_ipsec.SecurityPolicyDatabase
+	if svc.ipsecHandler == nil {
+		return nil, errors.New("ipsecHandler is not available")
+	}
 	spdDetails, err := svc.ipsecHandler.DumpIPSecSPD()
 	if err != nil {
 		return nil, err
@@ -114,6 +121,9 @@ func (svc *dumpService) DumpIPSecSPDs() ([]*vpp_ipsec.SecurityPolicyDatabase, er
 // only error is send back in response
 func (svc *dumpService) DumpIPSecSAs() ([]*vpp_ipsec.SecurityAssociation, error) {
 	var sas []*vpp_ipsec.SecurityAssociation
+	if svc.ipsecHandler == nil {
+		return nil, errors.New("ipsecHandler is not available")
+	}
 	saDetails, err := svc.ipsecHandler.DumpIPSecSA()
 	if err != nil {
 		return nil, err
@@ -217,6 +227,9 @@ func (svc *dumpService) DumpARPs() ([]*vpp_l3.ARPEntry, error) {
 
 // DumpPunt reads VPP Punt socket registrations and returns them as an *PuntResponse.
 func (svc *dumpService) DumpPunt() (punts []*vpp_punt.ToHost, err error) {
+	if svc.puntHandler == nil {
+		return nil, errors.New("puntHandler is not available")
+	}
 	dump, err := svc.puntHandler.DumpRegisteredPuntSockets()
 	if err != nil {
 		return nil, err
