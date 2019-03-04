@@ -25,9 +25,11 @@ import (
 )
 
 const (
+	inputFileExt  = ".api.json" // file extension of the VPP API files
+	outputFileExt = ".ba.go"    // file extension of the Go generated files
+
 	govppApiImportPath = "git.fd.io/govpp.git/api" // import path of the govpp API package
-	inputFileExt       = ".api.json"               // file extension of the VPP binary API files
-	outputFileExt      = ".ba.go"                  // file extension of the Go generated files
+	constAPIVersionCrc = "APIVersionCrc"           // name for the API version CRC constant
 )
 
 // context is a structure storing data for code generation
@@ -36,6 +38,9 @@ type context struct {
 	outputFile string // output file with generated Go package
 
 	inputData []byte // contents of the input file
+
+	includeAPIVersionCrc bool // include constant with API version CRC string
+	includeComments      bool // include parts of original source in comments
 
 	moduleName  string // name of the source VPP module
 	packageName string // name of the Go package being generated
@@ -83,19 +88,18 @@ func generatePackage(ctx *context, w *bufio.Writer) error {
 	generateHeader(ctx, w)
 	generateImports(ctx, w)
 
-	if *includeAPIVer {
-		const APIVerConstName = "VlAPIVersion"
-		fmt.Fprintf(w, "// %s represents version of the binary API module.\n", APIVerConstName)
-		fmt.Fprintf(w, "const %s = %v\n", APIVerConstName, ctx.packageData.APIVersion)
+	if ctx.includeAPIVersionCrc {
+		fmt.Fprintf(w, "// %s defines API version CRC of the VPP binary API module.\n", constAPIVersionCrc)
+		fmt.Fprintf(w, "const %s = %v\n", constAPIVersionCrc, ctx.packageData.APIVersion)
 		fmt.Fprintln(w)
 	}
 
 	// generate services
 	if len(ctx.packageData.Services) > 0 {
 		generateServices(ctx, w, ctx.packageData.Services)
-	}
 
-	// TODO: generate implementation for Services interface
+		// TODO: generate implementation for Services interface
+	}
 
 	// generate enums
 	if len(ctx.packageData.Enums) > 0 {
@@ -140,16 +144,23 @@ func generatePackage(ctx *context, w *bufio.Writer) error {
 		for _, msg := range ctx.packageData.Messages {
 			generateMessage(ctx, w, &msg)
 		}
-	}
 
-	// generate message registrations
-	fmt.Fprintln(w)
-	fmt.Fprintln(w, "func init() {")
-	for _, msg := range ctx.packageData.Messages {
-		name := camelCaseName(msg.Name)
-		fmt.Fprintf(w, "\tapi.RegisterMessage((*%s)(nil), \"%s\")\n", name, ctx.moduleName+"."+name)
+		// generate message registrations
+		fmt.Fprintln(w, "func init() {")
+		for _, msg := range ctx.packageData.Messages {
+			name := camelCaseName(msg.Name)
+			fmt.Fprintf(w, "\tapi.RegisterMessage((*%s)(nil), \"%s\")\n", name, ctx.moduleName+"."+name)
+		}
+		fmt.Fprintln(w, "}")
+		fmt.Fprintln(w)
+
+		fmt.Fprintln(w, "var Messages = []api.Message{")
+		for _, msg := range ctx.packageData.Messages {
+			name := camelCaseName(msg.Name)
+			fmt.Fprintf(w, "\t(*%s)(nil),\n", name)
+		}
+		fmt.Fprintln(w, "}")
 	}
-	fmt.Fprintln(w, "}")
 
 	// flush the data:
 	if err := w.Flush(); err != nil {
@@ -181,13 +192,13 @@ func generateHeader(ctx *context, w io.Writer) {
 			fmt.Fprintf(w, "\t%3d %s\n", num, obj)
 		}
 	}
-	printObjNum("message", len(ctx.packageData.Messages))
-	printObjNum("type", len(ctx.packageData.Types))
-	printObjNum("alias", len(ctx.packageData.Aliases))
-	printObjNum("enum", len(ctx.packageData.Enums))
-	printObjNum("union", len(ctx.packageData.Unions))
+
 	printObjNum("service", len(ctx.packageData.Services))
-	fmt.Fprintln(w)
+	printObjNum("enum", len(ctx.packageData.Enums))
+	printObjNum("alias", len(ctx.packageData.Aliases))
+	printObjNum("type", len(ctx.packageData.Types))
+	printObjNum("union", len(ctx.packageData.Unions))
+	printObjNum("message", len(ctx.packageData.Messages))
 	fmt.Fprintln(w, "*/")
 	fmt.Fprintf(w, "package %s\n", ctx.packageName)
 	fmt.Fprintln(w)
@@ -195,9 +206,9 @@ func generateHeader(ctx *context, w io.Writer) {
 
 // generateImports writes generated package imports into w
 func generateImports(ctx *context, w io.Writer) {
-	fmt.Fprintf(w, "import \"%s\"\n", govppApiImportPath)
-	fmt.Fprintf(w, "import \"%s\"\n", "github.com/lunixbochs/struc")
-	fmt.Fprintf(w, "import \"%s\"\n", "bytes")
+	fmt.Fprintf(w, "import api \"%s\"\n", govppApiImportPath)
+	fmt.Fprintf(w, "import struc \"%s\"\n", "github.com/lunixbochs/struc")
+	fmt.Fprintf(w, "import bytes \"%s\"\n", "bytes")
 	fmt.Fprintln(w)
 
 	fmt.Fprintf(w, "// Reference imports to suppress errors if they are not otherwise used.\n")
@@ -205,6 +216,13 @@ func generateImports(ctx *context, w io.Writer) {
 	fmt.Fprintf(w, "var _ = struc.Pack\n")
 	fmt.Fprintf(w, "var _ = bytes.NewBuffer\n")
 	fmt.Fprintln(w)
+
+	/*fmt.Fprintln(w, "// This is a compile-time assertion to ensure that this generated file")
+	fmt.Fprintln(w, "// is compatible with the GoVPP api package it is being compiled against.")
+	fmt.Fprintln(w, "// A compilation error at this line likely means your copy of the")
+	fmt.Fprintln(w, "// GoVPP api package needs to be updated.")
+	fmt.Fprintln(w, "const _ = api.GoVppAPIPackageIsVersion1 // please upgrade the GoVPP api package")
+	fmt.Fprintln(w)*/
 }
 
 // generateComment writes generated comment for the object into w
@@ -213,6 +231,10 @@ func generateComment(ctx *context, w io.Writer, goName string, vppName string, o
 		fmt.Fprintf(w, "// %s represents VPP binary API services:\n", goName)
 	} else {
 		fmt.Fprintf(w, "// %s represents VPP binary API %s '%s':\n", goName, objKind, vppName)
+	}
+
+	if !ctx.includeComments {
+		return
 	}
 
 	var isNotSpace = func(r rune) bool {
@@ -272,7 +294,7 @@ func generateServices(ctx *context, w *bufio.Writer, services []Service) {
 
 	// generate interface
 	fmt.Fprintf(w, "type %s interface {\n", "Services")
-	for _, svc := range ctx.packageData.Services {
+	for _, svc := range services {
 		generateService(ctx, w, &svc)
 	}
 	fmt.Fprintln(w, "}")
@@ -285,7 +307,14 @@ func generateService(ctx *context, w io.Writer, svc *Service) {
 	reqTyp := camelCaseName(svc.RequestType)
 
 	// method name is same as parameter type name by default
-	method := svc.MethodName()
+	method := reqTyp
+	if svc.Stream {
+		// use Dump as prefix instead of suffix for stream services
+		if m := strings.TrimSuffix(method, "Dump"); method != m {
+			method = "Dump" + m
+		}
+	}
+
 	params := fmt.Sprintf("*%s", reqTyp)
 	returns := "error"
 	if replyType := camelCaseName(svc.ReplyType); replyType != "" {
@@ -343,41 +372,6 @@ func generateAlias(ctx *context, w io.Writer, alias *Alias) {
 
 	dataType := convertToGoType(ctx, alias.Type)
 	fmt.Fprintf(w, "%s\n", dataType)
-
-	fmt.Fprintln(w)
-}
-
-// generateType writes generated code for the type into w
-func generateType(ctx *context, w io.Writer, typ *Type) {
-	name := camelCaseName(typ.Name)
-
-	logf(" writing type %q (%s) with %d fields", typ.Name, name, len(typ.Fields))
-
-	// generate struct comment
-	generateComment(ctx, w, name, typ.Name, "type")
-
-	// generate struct definition
-	fmt.Fprintf(w, "type %s struct {\n", name)
-
-	// generate struct fields
-	for i, field := range typ.Fields {
-		// skip internal fields
-		switch strings.ToLower(field.Name) {
-		case "crc", "_vl_msg_id":
-			continue
-		}
-
-		generateField(ctx, w, typ.Fields, i)
-	}
-
-	// generate end of the struct
-	fmt.Fprintln(w, "}")
-
-	// generate name getter
-	generateTypeNameGetter(w, name, typ.Name)
-
-	// generate CRC getter
-	generateCrcGetter(w, name, typ.CRC)
 
 	fmt.Fprintln(w)
 }
@@ -451,6 +445,10 @@ func (u *%[1]s) String() string {
 
 func generateUnionGetterSetter(w io.Writer, structName string, getterField, getterStruct string) {
 	fmt.Fprintf(w, `
+func %[1]s%[2]s(a %[3]s) (u %[1]s) {
+	u.Set%[2]s(a)
+	return
+}
 func (u *%[1]s) Set%[2]s(a %[3]s) {
 	var b = new(bytes.Buffer)
 	if err := struc.Pack(b, &a); err != nil {
@@ -464,6 +462,41 @@ func (u *%[1]s) Get%[2]s() (a %[3]s) {
 	return
 }
 `, structName, getterField, getterStruct)
+}
+
+// generateType writes generated code for the type into w
+func generateType(ctx *context, w io.Writer, typ *Type) {
+	name := camelCaseName(typ.Name)
+
+	logf(" writing type %q (%s) with %d fields", typ.Name, name, len(typ.Fields))
+
+	// generate struct comment
+	generateComment(ctx, w, name, typ.Name, "type")
+
+	// generate struct definition
+	fmt.Fprintf(w, "type %s struct {\n", name)
+
+	// generate struct fields
+	for i, field := range typ.Fields {
+		// skip internal fields
+		switch strings.ToLower(field.Name) {
+		case crcField, msgIdField:
+			continue
+		}
+
+		generateField(ctx, w, typ.Fields, i)
+	}
+
+	// generate end of the struct
+	fmt.Fprintln(w, "}")
+
+	// generate name getter
+	generateTypeNameGetter(w, name, typ.Name)
+
+	// generate CRC getter
+	generateCrcGetter(w, name, typ.CRC)
+
+	fmt.Fprintln(w)
 }
 
 // generateMessage writes generated code for the message into w
@@ -485,26 +518,28 @@ func generateMessage(ctx *context, w io.Writer, msg *Message) {
 	n := 0
 	for i, field := range msg.Fields {
 		if i == 1 {
-			if field.Name == "client_index" {
-				// "client_index" as the second member, this might be an event message or a request
+			if field.Name == clientIndexField {
+				// "client_index" as the second member,
+				// this might be an event message or a request
 				msgType = eventMessage
 				wasClientIndex = true
-			} else if field.Name == "context" {
+			} else if field.Name == contextField {
 				// reply needs "context" as the second member
 				msgType = replyMessage
 			}
 		} else if i == 2 {
-			if wasClientIndex && field.Name == "context" {
-				// request needs "client_index" as the second member and "context" as the third member
+			if wasClientIndex && field.Name == contextField {
+				// request needs "client_index" as the second member
+				// and "context" as the third member
 				msgType = requestMessage
 			}
 		}
 
 		// skip internal fields
 		switch strings.ToLower(field.Name) {
-		case "crc", "_vl_msg_id":
+		case crcField, msgIdField:
 			continue
-		case "client_index", "context":
+		case clientIndexField, contextField:
 			if n == 0 {
 				continue
 			}
@@ -528,6 +563,8 @@ func generateMessage(ctx *context, w io.Writer, msg *Message) {
 
 	// generate message type getter method
 	generateMessageTypeGetter(w, name, msgType)
+
+	fmt.Fprintln(w)
 }
 
 // generateField writes generated code for the field into w
@@ -537,10 +574,16 @@ func generateField(ctx *context, w io.Writer, fields []Field, i int) {
 	fieldName := strings.TrimPrefix(field.Name, "_")
 	fieldName = camelCaseName(fieldName)
 
-	dataType := convertToGoType(ctx, field.Type)
+	// generate length field for strings
+	if field.Type == "string" {
+		fmt.Fprintf(w, "\tXXX_%sLen uint32 `struc:\"sizeof=%s\"`\n", fieldName, fieldName)
+	}
 
+	dataType := convertToGoType(ctx, field.Type)
 	fieldType := dataType
-	if field.IsArray() {
+
+	// check if it is array
+	if field.Length > 0 || field.SizeFrom != "" {
 		if dataType == "uint8" {
 			dataType = "byte"
 		}
