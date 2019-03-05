@@ -21,8 +21,8 @@ CNFs. An example of a custom VPP-based CNF is the [Contiv-VPP][20] vswitch.
 
 |Release|Release Date|Info|
 |---|:---:|---|
-|[![Latest release](https://img.shields.io/github/release/ligato/vpp-agent.svg?label=release&logo=github)](https://github.com/ligato/vpp-agent/releases/latest)|![Release date](https://img.shields.io/github/release-date/ligato/vpp-agent.svg?label=)|latest release|
-|[![pre-release](https://img.shields.io/github/release-pre/ligato/vpp-agent.svg?label=release&logo=github)](https://github.com/ligato/vpp-agent/releases)|![Release date](https://img.shields.io/github/release-date-pre/ligato/vpp-agent.svg?label=)|pre-release|
+|[![stable](https://img.shields.io/github/release/ligato/vpp-agent.svg?label=release&logo=github)](https://github.com/ligato/vpp-agent/releases/latest)|![Release date](https://img.shields.io/github/release-date/ligato/vpp-agent.svg?label=)|latest release|
+|[![latest](https://img.shields.io/github/release-pre/ligato/vpp-agent.svg?label=release&logo=github)](https://github.com/ligato/vpp-agent/releases)|![Release date](https://img.shields.io/github/release-date-pre/ligato/vpp-agent.svg?label=)|last release/pre-release|
 
 Have a look at the [release notes](CHANGELOG.md) for a complete list of changes.
 
