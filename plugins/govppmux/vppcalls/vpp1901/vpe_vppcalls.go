@@ -46,6 +46,14 @@ func NewVpeHandler(ch govppapi.Channel) *VpeHandler {
 	return &VpeHandler{ch}
 }
 
+// Ping pings the VPP.
+func (h *VpeHandler) Ping() error {
+	req := &vpe.ControlPing{}
+	reply := &vpe.ControlPingReply{}
+
+	return h.ch.SendRequest(req).ReceiveReply(reply)
+}
+
 // GetVersionInfo retrieves version info
 func (h *VpeHandler) GetVersionInfo() (*vppcalls.VersionInfo, error) {
 	req := &vpe.ShowVersion{}

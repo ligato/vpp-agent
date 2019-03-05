@@ -36,6 +36,7 @@ func (m ModuleVersion) String() string {
 
 // VpeVppAPI provides methods for retrieving info and running CLI commands.
 type VpeVppAPI interface {
+	Ping() error
 	GetVersionInfo() (*VersionInfo, error)
 	GetVpeInfo() (*VpeInfo, error)
 	RunCli(cmd string) (string, error)
