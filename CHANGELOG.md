@@ -2,6 +2,7 @@
 
 - [v2.0.0](#v2.0.0)
 - [v1.8.0](#v1.8.0)
+  - v[1.8.1](#v1.8.1)
 - [v1.7.0](#v1.7.0)
 - [v1.6.0](#v1.6.0)
 - [v1.5.0](#v1.5.0)
@@ -114,6 +115,25 @@ RELEASE CHANGELOG TEMPLATE:
 * Description improved in various proto files.
 
 
+<a name="v1.8.1"></a>
+# [1.8.1](https://github.com/ligato/vpp-agent/compare/v1.8..v1.8.1) (2019-3-4)
+
+The motive for this minor release was updated VPP with several fixed bugs from the previous version. The VPP version also introduced new interface statistics mechanism, thus the stats processing was updated in the interface plugin.
+
+### Compatibility
+- v19.01-16~gd30202244
+- cn-infra v1.7
+- GO 1.11
+
+### Bug Fixes
+- VPP bug: fixed crash when attempting to run in kubernetes pod 
+- VPP bug: fixed crash in barrier sync when vlib_worker_threads is zero
+
+### Features
+- [vpp-ifplugin](plugins/vpp/ifplugin)
+  * Support for new VPP stats (the support for old ones were deprecated by the VPP, thus removed from the vpp-agent as well).
+  
+  
 <a name="v1.8.0"></a>
 # [1.8.0](https://github.com/ligato/vpp-agent/compare/v1.7...v1.8) (2018-12-12)
 
