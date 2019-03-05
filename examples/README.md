@@ -78,5 +78,5 @@ Current examples:
  --kafka-config=/opt/vpp-agent/dev/kafka.conf
  ```
 [1]: https://github.com/ligato/cn-infra/tree/master/examples 
-[2]: docs/arm64/kafka.md
-[3]: docs/arm64/etcd.md
+[2]: https://github.com/ligato/vpp-agent/blob/master/docs/arm64/kafka.md
+[3]: https://github.com/ligato/vpp-agent/blob/master/docs/arm64/etcd.md
