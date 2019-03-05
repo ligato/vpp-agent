@@ -66,7 +66,6 @@ RELEASE CHANGELOG TEMPLATE:
   - The orchestrator is a new component which long-term added value will be a support for multiple northbound data sources (KVDB, GRPC, ...). The current implementation handles combination of GRPC + KVDB, which includes data changes and resync. In the future, any combination of sources will be supported.
 * [if-plugin](plugins/vpp/ifplugin)
   - UDP encapsulation can be configured to IPSec tunnel interface
-  - Support for new VPP stats (the support for old ones were deprecated by the VPP, thus removed from the vpp-agent as well).
 * [nat-plugin](plugins/vpp/natplugin)      
   - Added support for session affinity in NAT44 static mapping with load balancer.
 
@@ -118,7 +117,7 @@ RELEASE CHANGELOG TEMPLATE:
 <a name="v1.8.1"></a>
 # [1.8.1](https://github.com/ligato/vpp-agent/compare/v1.8..v1.8.1) (2019-3-4)
 
-The motive for this minor release was updated VPP with several fixed bugs from the previous version. The VPP version also introduced new interface statistics mechanism, thus the stats processing was updated in the interface plugin.
+Motive for this minor release was updated VPP with several fixed bugs from the previous version. The VPP version also introduced new interface statistics mechanism, thus the stats processing was updated in the interface plugin.
 
 ### Compatibility
 - v19.01-16~gd30202244
