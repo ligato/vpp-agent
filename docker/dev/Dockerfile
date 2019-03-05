@@ -94,7 +94,6 @@ RUN \
 # copy configs
 COPY \
     docker/dev/etcd.conf \
-    docker/dev/kafka.conf \
     docker/dev/vpp-plugin.conf \
     docker/dev/linux-plugin.conf \
     docker/dev/logs.conf \

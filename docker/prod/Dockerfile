@@ -48,7 +48,6 @@ COPY --from=devimg \
 # copy configs
 COPY \
     etcd.conf \
-    kafka.conf \
     vpp-plugin.conf \
     linux-plugin.conf \
  /opt/vpp-agent/dev/
