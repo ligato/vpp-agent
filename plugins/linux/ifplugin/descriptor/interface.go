@@ -106,11 +106,11 @@ var (
 	// ErrInvalidIPWithMask is returned when address is invalid or mask is missing
 	ErrInvalidIPWithMask = errors.New("IP with mask is not valid")
 
-	// ErrNamespaceDoesntExists is returned on attempt to configure loopback in non-existing namespace
-	ErrNamespaceDoesntExists = errors.New("namespace doesn't exist")
-
 	// ErrLoopbackAlreadyConfigured is returned when multiple logical NB interfaces tries to configure the same loopback
 	ErrLoopbackAlreadyConfigured = errors.New("loopback already configured")
+
+	// ErrLoopbackNotFound is returned if loopback interface can not be found
+	ErrLoopbackNotFound = errors.New("loopback not found")
 )
 
 // InterfaceDescriptor teaches KVScheduler how to configure Linux interfaces.
@@ -167,6 +167,7 @@ func (d *InterfaceDescriptor) GetDescriptor() *adapter.InterfaceDescriptor {
 		Update:               d.Update,
 		UpdateWithRecreate:   d.UpdateWithRecreate,
 		Retrieve:             d.Retrieve,
+		IsRetriableFailure:   d.IsRetriableFailure,
 		DerivedValues:        d.DerivedValues,
 		Dependencies:         d.Dependencies,
 		RetrieveDependencies: []string{nsdescriptor.MicroserviceDescriptorName},
@@ -270,23 +271,8 @@ func (d *InterfaceDescriptor) Validate(key string, linuxIf *interfaces.Interface
 		if linuxIf.GetVeth().GetPeerIfName() == "" {
 			return kvs.NewInvalidValueError(ErrVETHWithoutPeer, "peer_if_name")
 		}
-	case *interfaces.Interface_Loop:
-		nsCtx := nslinuxcalls.NewNamespaceMgmtCtx()
-		nsHandle, err := d.nsPlugin.GetNamespaceHandle(nsCtx, linuxIf.Namespace)
-		if err != nil {
-			return kvs.NewInvalidValueError(ErrNamespaceDoesntExists, "namespace")
-		}
-		nsHandle.Close()
-
-		// in each network namespace there is exactly one loopback interface,
-		// multiple configurations for a single namespaces is not valid
-		alias, err := d.getLoopbackAlias(nsCtx, linuxIf)
-		if err != nil || (alias != "" && alias != linuxIf.Name) {
-			d.log.WithField("error", err).Errorf("loopback already configured using logical name '%v'", alias)
-			return kvs.NewInvalidValueError(ErrLoopbackAlreadyConfigured, "namespace")
-		}
-
 	}
+
 	return nil
 }
 
@@ -638,6 +624,13 @@ type retrievedIfaces struct {
 	err        error
 }
 
+func (d *InterfaceDescriptor) IsRetriableFailure(err error) bool {
+	if err == ErrLoopbackAlreadyConfigured {
+		return false
+	}
+	return true
+}
+
 // Retrieve returns all Linux interfaces managed by this agent, attached to the default namespace
 // or to one of the configured non-default namespaces.
 func (d *InterfaceDescriptor) Retrieve(correlate []adapter.InterfaceKVWithMetadata) ([]adapter.InterfaceKVWithMetadata, error) {
@@ -834,7 +827,6 @@ func (d *InterfaceDescriptor) retrieveInterfaces(nsList []*namespace.NetNamespac
 			} else if link.Attrs().Name == defaultLoopbackName {
 				intf.Type = interfaces.Interface_LOOPBACK
 				intf.Name = alias
-				intf.Link = &interfaces.Interface_Loop{}
 			} else {
 				// unsupported interface type supposedly configured by agent => print warning
 				d.log.WithFields(logging.Fields{

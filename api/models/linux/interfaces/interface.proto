@@ -31,7 +31,6 @@ message Interface {
     oneof link {
         VethLink veth = 20;             /* VETH-specific configuration */
         TapLink tap = 21;               /* TAP_TO_VPP-specific configuration */
-        LoopLink loop = 22;
     };
 };
 
@@ -49,8 +48,4 @@ message VethLink {
 
 message TapLink {
     string vpp_tap_if_name = 1;     /* Logical name of the VPP TAP interface (mandatory for TAP_TO_VPP) */
-};
-
-message LoopLink {
-
 };

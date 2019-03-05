@@ -29,12 +29,26 @@ func (d *InterfaceDescriptor) createLoopback(nsCtx nslinuxcalls.NamespaceMgmtCtx
 	hostName := getHostIfName(linuxIf)
 	agentPrefix := d.serviceLabel.GetAgentPrefix()
 
-	revert, err := d.nsPlugin.SwitchToNamespace(nsCtx, linuxIf.Namespace)
+	if linuxIf.Namespace != nil {
+		revert, err := d.nsPlugin.SwitchToNamespace(nsCtx, linuxIf.Namespace)
+		if err != nil {
+			d.log.Error(err)
+			return nil, err
+		}
+		defer revert()
+	}
+
+	// in each network namespace there is exactly one loopback interface,
+	// multiple configurations for a single namespaces is not valid
+	alias, err := d.getLoopbackAlias(nsCtx, linuxIf)
 	if err != nil {
 		d.log.Error(err)
-		return nil, err
+		return nil, ErrLoopbackNotFound
 	}
-	defer revert()
+	if alias != "" && alias != linuxIf.Name {
+		d.log.Errorf("loopback already configured using logical name '%v'", alias)
+		return nil, ErrLoopbackAlreadyConfigured
+	}
 
 	// add alias in order to include loopback in retrieve output
 	err = d.ifHandler.SetInterfaceAlias(hostName, agentPrefix+linuxIf.Name)
@@ -61,17 +75,19 @@ func (d *InterfaceDescriptor) createLoopback(nsCtx nslinuxcalls.NamespaceMgmtCtx
 func (d *InterfaceDescriptor) deleteLoopback(nsCtx nslinuxcalls.NamespaceMgmtCtx, linuxIf *interfaces.Interface) error {
 	hostName := getHostIfName(linuxIf)
 
-	revert, err := d.nsPlugin.SwitchToNamespace(nsCtx, linuxIf.Namespace)
-	if err != nil {
-		d.log.Error(err)
-		return err
+	if linuxIf.Namespace != nil {
+		revert, err := d.nsPlugin.SwitchToNamespace(nsCtx, linuxIf.Namespace)
+		if err != nil {
+			d.log.Error(err)
+			return err
+		}
+		defer revert()
 	}
-	defer revert()
 
 	// remove interface alias
 	// - actually vishvananda/netlink does not support alias removal, so we just change
 	//   it to a string which is not prefixed with agent label
-	err = d.ifHandler.SetInterfaceAlias(hostName, "")
+	err := d.ifHandler.SetInterfaceAlias(hostName, "")
 	if err != nil {
 		d.log.Error(err)
 		return err
@@ -82,12 +98,14 @@ func (d *InterfaceDescriptor) deleteLoopback(nsCtx nslinuxcalls.NamespaceMgmtCtx
 
 // getLoopbackAlias returns alias associated with the loopback
 func (d *InterfaceDescriptor) getLoopbackAlias(nsCtx nslinuxcalls.NamespaceMgmtCtx, linuxIf *interfaces.Interface) (string, error) {
-	revert, err := d.nsPlugin.SwitchToNamespace(nsCtx, linuxIf.Namespace)
-	if err != nil {
-		d.log.Error(err)
-		return "", err
+	if linuxIf.Namespace != nil {
+		revert, err := d.nsPlugin.SwitchToNamespace(nsCtx, linuxIf.Namespace)
+		if err != nil {
+			d.log.Error(err)
+			return "", err
+		}
+		defer revert()
 	}
-	defer revert()
 
 	link, err := d.ifHandler.GetLinkByName(getHostIfName(linuxIf))
 	if err != nil {

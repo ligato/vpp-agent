@@ -398,7 +398,6 @@ func (ctl *VppAgentCtlImpl) PutLinuxLoop() error {
 		IpAddresses: []string{
 			"192.168.16.4/24",
 		},
-		Link: &linuxIf.Interface_Loop{},
 	}
 
 	ctl.Log.Println(linuxLoop)
