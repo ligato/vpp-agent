@@ -15,7 +15,7 @@ This image is used for development and debugging.
 
 Supported architectures are:
 * AMD64 (a.k.a. x86_64)
-* ARM64 (a.k.a. aarch64) - see [arm64 docker image][3].
+* ARM64 (a.k.a. aarch64) - see [arm64 docker image][2].
 
 Here follows the information related to AMD64 architecture:
 For a quick start with the development image, you can download 
@@ -134,9 +134,7 @@ sudo docker run -it --volume $HOME/myvpp:/opt/vpp-agent/dev/vpp --rm --privilege
 ## Running VPP and the Agent
 
 **NOTE: The Agent will terminate if it cannot connect to VPP and to a Etcd
-server. If Kafka config is specified, a successful connection to Kafka is
-also required. If Kafka config is not specified, the Agent will run without
-it, but all Kafka-related functionality will be disabled.** 
+server.** 
 
 Start VPP in one of two modes: 
  - If you don't need (or don't have) DPDK, use "vpp lite":
@@ -174,24 +172,9 @@ mapped onto the host at port 2379; the host's IP address
 will typically be 172.17.0.1, unless you change your Docker 
 networking settings.*
 
-- Edit `/opt/vpp-agent/dev/kafka.conf` to point the agent to a Kafka broker.
-  The default configuration is:
-
-```
-addrs:
- - "172.17.0.1:9092"
-```
-
-*Note that if you start Kafka in its own container on the same
-host as the VPP/Agent container (as described below), you can
-use the default broker address configuration as is. Kafka will
-be mapped  onto the host at port 9092; the host's IP address 
-will typically be 172.17.0.1, unless you change your Docker 
-networking settings.*
-
 - Start the Agent:
 ```
-vpp-agent --etcd-config=/opt/vpp-agent/dev/etcd.conf --kafka-config=/opt/vpp-agent/dev/kafka.conf
+vpp-agent --etcd-config=/opt/vpp-agent/dev/etcd.conf
 ```
 
 ## Running Etcd Server on Local Host
@@ -212,16 +195,7 @@ Call the agent via ETCD using the testing client:
 vpp-agent-ctl /opt/vpp-agent/dev/etcd.conf -tap
 vpp-agent-ctl /opt/vpp-agent/dev/etcd.conf -tapd
 ```
-Note: **For ARM64 see the information about [etcd][2]**.
-
-## Running Kafka on Local Host
-
-You can start Kafka in a separate container:
-```
-sudo docker run -p 2181:2181 -p 9092:9092 --name kafka --rm \
- --env ADVERTISED_HOST=172.17.0.1 --env ADVERTISED_PORT=9092 spotify/kafka
-```
-Note: **For ARM64 see the information about [kafka][1]**.
+Note: **For ARM64 see the information about [etcd][1]**.
 
 ## Rebuilding the Agent
 ```
@@ -350,6 +324,5 @@ console.
 - Use the newly built agent as described in Section
   '[Running VPP and the Agent](#running-vpp-and-the-agent)'.
 
-[1]: ../../docs/arm64/kafka.md
-[2]: ../../docs/arm64/etcd.md
-[3]: ../../docs/arm64/docker_images.md
+[1]: ../../docs/arm64/etcd.md
+[2]: ../../docs/arm64/docker_images.md
