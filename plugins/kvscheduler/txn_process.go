@@ -15,6 +15,8 @@
 package kvscheduler
 
 import (
+	"context"
+	"sync/atomic"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
@@ -30,6 +32,7 @@ import (
 // Once finalized, it is recorded as instance of RecordedTxn and these data
 // are thrown away.
 type transaction struct {
+	ctx     context.Context
 	seqNum  uint64
 	txnType kvs.TxnType
 	values  []kvForTxn
@@ -88,6 +91,7 @@ func (s *Scheduler) consumeTransactions() {
 			return
 		}
 		s.processTransaction(txn)
+		atomic.AddUint64(&stats.TransactionsProcessed, 1)
 	}
 }
 
@@ -113,8 +117,9 @@ func (s *Scheduler) processTransaction(txn *transaction) {
 	s.txnLock.Lock()
 	defer s.txnLock.Unlock()
 
-	// 1. Pre-processing:
 	startTime = time.Now()
+
+	// 1. Pre-processing:
 	skipTxnExec := s.preProcessTransaction(txn)
 
 	// 2. Ordering:
@@ -134,10 +139,11 @@ func (s *Scheduler) processTransaction(txn *transaction) {
 	if !skipTxnExec {
 		executedOps = s.executeTransaction(txn, false)
 	}
+
 	stopTime = time.Now()
 
 	// 6. Recording:
-	s.recordTransaction(preTxnRecord, executedOps, startTime, stopTime)
+	s.recordTransaction(txn, preTxnRecord, executedOps, startTime, stopTime)
 
 	// 7. Post-processing:
 	s.postProcessTransaction(txn, executedOps)
@@ -281,6 +287,7 @@ func (s *Scheduler) postProcessTransaction(txn *transaction, executed kvs.Record
 	// collect new failures (combining derived with base)
 	toRetry := utils.NewSliceBasedKeySet()
 	toRefresh := utils.NewSliceBasedKeySet()
+
 	var verboseRefresh bool
 	graphR := s.graph.Read()
 	for _, op := range executed {

@@ -154,6 +154,7 @@ func (s *Scheduler) registerHandlers(http rest.HTTPHandlers) {
 	http.RegisterHTTPHandler(dumpURL, s.dumpGetHandler, "GET")
 	http.RegisterHTTPHandler(statusURL, s.statusGetHandler, "GET")
 	http.RegisterHTTPHandler(urlPrefix+"graph", s.dotGraphHandler, "GET")
+	http.RegisterHTTPHandler(urlPrefix+"stats", s.statsHandler, "GET")
 }
 
 // txnHistoryGetHandler is the GET handler for "txn-history" API.
@@ -485,6 +486,12 @@ func (s *Scheduler) statusGetHandler(formatter *render.Render) http.HandlerFunc 
 			return status[i].Value.Key < status[j].Value.Key
 		})
 		s.logError(formatter.JSON(w, http.StatusOK, status))
+	}
+}
+
+func (s *Scheduler) statsHandler(formatter *render.Render) http.HandlerFunc {
+	return func(w http.ResponseWriter, req *http.Request) {
+		formatter.JSON(w, http.StatusOK, GetStats())
 	}
 }
 

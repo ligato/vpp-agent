@@ -61,7 +61,8 @@ type Deps struct {
 // Init sets plugin child loggers
 func (p *Plugin) Init() error {
 	p.configurator.log = p.Log.NewLogger("configurator")
-	p.configurator.notifyService.log = p.Log.NewLogger("configurator-notify")
+	p.configurator.dumpService.log = p.Log.NewLogger("dump")
+	p.configurator.notifyService.log = p.Log.NewLogger("notify")
 	p.configurator.dispatch = p.Dispatch
 
 	if err := p.initHandlers(); err != nil {

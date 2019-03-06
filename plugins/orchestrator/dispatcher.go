@@ -108,12 +108,12 @@ func (p *dispatcher) PushData(ctx context.Context, kvPairs []KeyVal) (kvErrs []k
 			p.log.Errorf("Transaction #%d finished with %d errors", seqID, len(kvErrs))
 			fmt.Println(errInfo)
 		} else {
-			p.log.Errorf("Transaction #%d failed: %v", seqID, err)
+			p.log.Errorf("Transaction failed: %v", err)
 		}
-	} else {
-		p.log.Infof("Transaction #%d successful!", seqID)
 		return kvErrs, err
 	}
+
+	p.log.Infof("Transaction #%d successful!", seqID)
 
 	return nil, nil
 }
