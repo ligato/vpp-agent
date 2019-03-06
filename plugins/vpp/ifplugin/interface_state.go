@@ -109,7 +109,7 @@ func (c *InterfaceStateUpdater) Init(ctx context.Context, logger logging.PluginL
 	c.ifMetaChan = make(chan ifaceidx.IfaceMetadataDto, 1000)
 	swIfIndexes.WatchInterfaces("ifplugin_ifstate", c.ifMetaChan)
 
-	c.ifEvents = make(chan *vppcalls.InterfaceEvent)
+	c.ifEvents = make(chan *vppcalls.InterfaceEvent, 1000)
 
 	// Create child context
 	var childCtx context.Context

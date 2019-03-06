@@ -210,9 +210,7 @@ func (s *Scheduler) RegisterKVDescriptor(descriptor *kvs.KVDescriptor) error {
 		return kvs.ErrDescriptorExists
 	}
 
-	descriptorStats[descriptor.Name] = &DescriptorStats{
-		Methods: map[string]*MethodStats{},
-	}
+	stats.addDescriptor(descriptor.Name)
 
 	s.registry.RegisterDescriptor(descriptor)
 	if descriptor.NBKeyPrefix != "" {

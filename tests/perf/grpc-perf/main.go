@@ -27,7 +27,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/cn-infra/agent"
 	"github.com/ligato/cn-infra/infra"
-	"github.com/ligato/cn-infra/logging/logrus"
+	"github.com/ligato/cn-infra/logging"
 	"github.com/namsral/flag"
 	"google.golang.org/grpc"
 
@@ -47,22 +47,32 @@ var (
 	numClients    = flag.Int("clients", 1, "number of concurrent grpc clients")
 
 	dialTimeout = time.Second * 2
+	reqTimeout  = time.Second * 10
 )
 
-var stressTestFinished = make(chan struct{})
-
 func main() {
+	if *debug {
+		logging.DefaultLogger.SetLevel(logging.DebugLevel)
+	}
 
-	ep := &GRPCStressPlugin{}
-	ep.SetName("grpc-stress-test-client")
-	ep.Setup()
+	quit := make(chan struct{})
+
+	ep := NewGRPCStressPlugin()
 
 	a := agent.NewAgent(
 		agent.AllPlugins(ep),
-		agent.QuitOnClose(stressTestFinished))
-		//agent.StartTimeout(time.Second*1000000))
-	if err := a.Run(); err != nil {
-		log.Fatal()
+		agent.QuitOnClose(quit),
+	)
+
+	if err := a.Start(); err != nil {
+		log.Fatalln(err)
+	}
+
+	ep.setupInitial()
+	ep.runAllClients()
+
+	if err := a.Stop(); err != nil {
+		log.Fatalln(err)
 	}
 }
 
@@ -72,25 +82,119 @@ type GRPCStressPlugin struct {
 
 	conns []*grpc.ClientConn
 
-	wg     sync.WaitGroup
+	wg sync.WaitGroup
+}
+
+func NewGRPCStressPlugin() *GRPCStressPlugin {
+	p := &GRPCStressPlugin{}
+	p.SetName("grpc-stress-test-client")
+	p.Setup()
+	return p
 }
 
 // Init initializes  plugin.
-func (p *GRPCStressPlugin) Init() (err error) {
+func (p *GRPCStressPlugin) Init() error {
+	return nil
+}
 
-	log.Printf("numTunnels: %d, numPerRequest: %d, numClients=%d\n",
-		*numTunnels, *numPerRequest, *numClients)
+// Dialer for unix domain socket
+func dialer(socket, address string, timeoutVal time.Duration) func(string, time.Duration) (net.Conn, error) {
+	return func(addr string, timeout time.Duration) (net.Conn, error) {
+		// Pass values
+		addr, timeout = address, timeoutVal
+		// Dial with timeout
+		return net.DialTimeout(socket, addr, timeoutVal)
+	}
+}
 
-	// create a conn/client to create the red/black interfaces that each tunnel will reference
+func (p *GRPCStressPlugin) setupInitial() {
+	// create a conn/client to create the red/black interfaces
+	// that each tunnel will reference
+
 	conn, err := grpc.Dial("unix",
 		grpc.WithInsecure(),
 		grpc.WithDialer(dialer(*socketType, *address, dialTimeout)),
 	)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	client := configurator.NewConfiguratorClient(conn)
 	p.runGRPCCreateRedBlackMemifs(client)
+}
 
+// create the initial red and black memif's that kiknos uses ...
+// ipsec wil ref the red ONLY i guess we dont need the black yet
+// but maybe there will be a reason
+func (p *GRPCStressPlugin) runGRPCCreateRedBlackMemifs(client configurator.ConfiguratorClient) {
+	p.Log.Infof("Configuring memif interfaces..")
+
+	memifRedInfo := &interfaces.Interface_Memif{
+		Memif: &interfaces.MemifLink{
+			Id:             1000,
+			Master:         false,
+			SocketFilename: "/var/run/memif_k8s-master.sock",
+		},
+	}
+	memIFRed := &interfaces.Interface{
+		Name:        "red",
+		Type:        interfaces.Interface_MEMIF,
+		Enabled:     true,
+		IpAddresses: []string{"100.100.100.100/24"},
+		Mtu:         9000,
+		Link:        memifRedInfo,
+	}
+	memifBlackInfo := &interfaces.Interface_Memif{
+		Memif: &interfaces.MemifLink{
+			Id:             1001,
+			Master:         false,
+			SocketFilename: "/var/run/memif_k8s-master.sock",
+		},
+	}
+	memIFBlack := &interfaces.Interface{
+		Name:        "black",
+		Type:        interfaces.Interface_MEMIF,
+		Enabled:     true,
+		IpAddresses: []string{"20.20.20.100/24"},
+		Mtu:         9000,
+		Link:        memifBlackInfo,
+	}
+	ifaces := []*interfaces.Interface{memIFRed, memIFBlack}
+
+	ctx, cancel := context.WithTimeout(context.Background(), reqTimeout)
+	_, err := client.Update(ctx, &configurator.UpdateRequest{
+		Update: &configurator.Config{
+			VppConfig: &vpp.ConfigData{
+				Interfaces: ifaces,
+			},
+		},
+	})
+	if err != nil {
+		log.Fatalln(err)
+	}
+	cancel()
+
+	if *debug {
+		p.Log.Infof("Requesting get..")
+
+		cfg, err := client.Get(context.Background(), &configurator.GetRequest{})
+		if err != nil {
+			log.Fatalln(err)
+		}
+		out, _ := (&jsonpb.Marshaler{Indent: "  "}).MarshalToString(cfg)
+		fmt.Printf("Config:\n %+v\n", out)
+	}
+
+}
+
+func (p *GRPCStressPlugin) runAllClients() {
+	p.Log.Debugf("numTunnels: %d, numPerRequest: %d, numClients=%d",
+		*numTunnels, *numPerRequest, *numClients)
 
 	p.wg.Add(*numClients)
+	p.Log.Infof("Running for %d clients", *numClients)
+
+	t := time.Now()
 
 	for i := 0; i < *numClients; i++ {
 		// Set up connection to the server.
@@ -98,45 +202,34 @@ func (p *GRPCStressPlugin) Init() (err error) {
 			grpc.WithInsecure(),
 			grpc.WithDialer(dialer(*socketType, *address, dialTimeout)),
 		)
-
 		if err != nil {
-			return err
+			log.Fatal(err)
 		}
 		p.conns = append(p.conns, conn)
 		client := configurator.NewConfiguratorClient(p.conns[i])
+
 		go p.runGRPCStressCreate(i, client, *numTunnels)
 	}
 
-	log.Printf("GRPCStressPlugin: init done")
-
-	return nil
-}
-
-// Close cleans up the resources.
-func (p *GRPCStressPlugin) Close() error {
-	logrus.DefaultLogger().Info("Closing example plugin")
-
+	p.Log.Debugf("Waiting..")
 	p.wg.Wait()
+
+	took := time.Since(t).Round(time.Microsecond * 100)
+	p.Log.Infof("All clients done, took: %v", took)
 
 	for i := 0; i < *numClients; i++ {
 		if err := p.conns[i].Close(); err != nil {
-			return err
+			log.Fatal(err)
 		}
 	}
 
-	logrus.DefaultLogger().Info("Closing example plugin: DONE")
-
-	stressTestFinished <- struct{}{}
-
-	return nil
 }
 
 // runGRPCStressCreate creates 1 tunnel and 1 route ... emulating what strongswan does on a per remote warrior
 func (p *GRPCStressPlugin) runGRPCStressCreate(id int, client configurator.ConfiguratorClient, numTunnels int) {
-
 	defer p.wg.Done()
 
-	p.Log.Infof("Creating %d tunnels/routes ... for client %d, ", numTunnels, id)
+	p.Log.Debugf("Creating %d tunnels/routes ... for client %d, ", numTunnels, id)
 
 	startTime := time.Now()
 
@@ -187,7 +280,7 @@ func (p *GRPCStressPlugin) runGRPCStressCreate(id int, client configurator.Confi
 			}
 			routes := []*vpp_l3.Route{route}
 
-			p.Log.Infof("Creating %s ... client: %d, tunNum: %d", ipsecTunnelName, id, tunNum)
+			//p.Log.Infof("Creating %s ... client: %d, tunNum: %d", ipsecTunnelName, id, tunNum)
 
 			_, err := client.Update(context.Background(), &configurator.UpdateRequest{
 				Update: &configurator.Config{
@@ -198,16 +291,15 @@ func (p *GRPCStressPlugin) runGRPCStressCreate(id int, client configurator.Confi
 				},
 			})
 			if err != nil {
-				log.Fatalln(err)
-				log.Panicf("Error creating tun/route: id/tun=%d/%d, err: %s", id, tunNum, err)
+				log.Fatalf("Error creating tun/route: id/tun=%d/%d, err: %s", id, tunNum, err)
 			}
 		}
 	}
 
 	endTime := time.Now()
 
-	log.Printf("total create time for client %d, tunnels: %d, time: %s\n",
-		id, numTunnels, endTime.Sub(startTime).String())
+	p.Log.Infof("Client #%d done, %d tunnels took %s",
+		id, numTunnels, endTime.Sub(startTime).Round(time.Millisecond))
 
 	if *debug {
 		time.Sleep(time.Second * 5)
@@ -230,78 +322,6 @@ func (p *GRPCStressPlugin) runGRPCStressCreate(id int, client configurator.Confi
 		fmt.Printf("Dump:\n %+v\n", proto.MarshalTextString(dump))
 	}
 
-}
-
-// create the initial red and black memif's that kiknos uses ... ipsec wil ref the red ONLY
-// i guess we dont need the black yet but maybe there will be a reason
-func (p *GRPCStressPlugin) runGRPCCreateRedBlackMemifs(client configurator.ConfiguratorClient) {
-
-	p.Log.Infof("Creating the red/black memif's ...")
-
-	memifRedInfo := &interfaces.Interface_Memif{
-		Memif: &interfaces.MemifLink{
-			Id:             1000,
-			Master:         false,
-			SocketFilename: "/var/run/memif_k8s-master.sock",
-		},
-	}
-	memIFRed := &interfaces.Interface{
-		Name:        "red",
-		Type:        interfaces.Interface_MEMIF,
-		Enabled:     true,
-		IpAddresses: []string{"100.100.100.100/24"},
-		Mtu:         9000,
-		Link:        memifRedInfo,
-	}
-	memifBlackInfo := &interfaces.Interface_Memif{
-		Memif: &interfaces.MemifLink{
-			Id:             1001,
-			Master:         false,
-			SocketFilename: "/var/run/memif_k8s-master.sock",
-		},
-	}
-	memIFBlack := &interfaces.Interface{
-		Name:        "black",
-		Type:        interfaces.Interface_MEMIF,
-		Enabled:     true,
-		IpAddresses: []string{"20.20.20.100/24"},
-		Mtu:         9000,
-		Link:        memifBlackInfo,
-	}
-	ifaces := []*interfaces.Interface{memIFRed, memIFBlack}
-
-	_, err := client.Update(context.Background(), &configurator.UpdateRequest{
-		Update: &configurator.Config{
-			VppConfig: &vpp.ConfigData{
-				Interfaces: ifaces,
-			},
-		},
-	})
-	if err != nil {
-		log.Fatalln(err)
-	}
-
-	if *debug {
-		p.Log.Infof("Requesting get..")
-
-		cfg, err := client.Get(context.Background(), &configurator.GetRequest{})
-		if err != nil {
-			log.Fatalln(err)
-		}
-		out, _ := (&jsonpb.Marshaler{Indent: "  "}).MarshalToString(cfg)
-		fmt.Printf("Config:\n %+v\n", out)
-	}
-
-}
-
-// Dialer for unix domain socket
-func dialer(socket, address string, timeoutVal time.Duration) func(string, time.Duration) (net.Conn, error) {
-	return func(addr string, timeout time.Duration) (net.Conn, error) {
-		// Pass values
-		addr, timeout = address, timeoutVal
-		// Dial with timeout
-		return net.DialTimeout(socket, addr, timeoutVal)
-	}
 }
 
 func gen3octets(num uint32) string {

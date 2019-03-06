@@ -491,7 +491,7 @@ func (s *Scheduler) statusGetHandler(formatter *render.Render) http.HandlerFunc 
 
 func (s *Scheduler) statsHandler(formatter *render.Render) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
-		formatter.JSON(w, http.StatusOK, GetDescriptorStats())
+		formatter.JSON(w, http.StatusOK, GetStats())
 	}
 }
 

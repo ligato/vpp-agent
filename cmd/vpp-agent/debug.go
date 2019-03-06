@@ -17,7 +17,6 @@
 package main
 
 import (
-	"context"
 	_ "expvar"
 	"log"
 	"net/http"
@@ -26,8 +25,6 @@ import (
 	"runtime"
 	"runtime/pprof"
 	"runtime/trace"
-
-	"github.com/ligato/cn-infra/agent"
 )
 
 var (
@@ -81,7 +78,6 @@ func debug() func() {
 		if err := trace.Start(traceFile); err != nil {
 			log.Fatalf("failed to start trace: %v", err)
 		}
-		trace.Log(context.Background(), "build-version", agent.BuildVersion)
 	}
 
 	return func() {

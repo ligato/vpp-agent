@@ -16,6 +16,7 @@ package kvscheduler
 
 import (
 	"context"
+	"sync/atomic"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
@@ -90,6 +91,7 @@ func (s *Scheduler) consumeTransactions() {
 			return
 		}
 		s.processTransaction(txn)
+		atomic.AddUint64(&stats.TransactionsProcessed, 1)
 	}
 }
 
@@ -285,6 +287,7 @@ func (s *Scheduler) postProcessTransaction(txn *transaction, executed kvs.Record
 	// collect new failures (combining derived with base)
 	toRetry := utils.NewSliceBasedKeySet()
 	toRefresh := utils.NewSliceBasedKeySet()
+
 	var verboseRefresh bool
 	graphR := s.graph.Read()
 	for _, op := range executed {

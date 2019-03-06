@@ -23,65 +23,104 @@ import (
 )
 
 var (
-	descriptorStatsMu sync.RWMutex
-	descriptorStats   = map[string]*DescriptorStats{}
+	stats Stats
 )
 
+func init() {
+	stats.Descriptors = map[string]*DescriptorStats{}
+}
+
+func GetStats() *Stats {
+	s := new(Stats)
+	stats.descriptorMu.RLock()
+	*s = stats
+	stats.descriptorMu.RUnlock()
+	return s
+}
+
+type Stats struct {
+	TransactionsProcessed uint64
+
+	descriptorMu sync.RWMutex
+	Descriptors  map[string]*DescriptorStats
+}
+
+func (s *Stats) addDescriptor(name string) {
+	s.Descriptors[name] = &DescriptorStats{}
+}
+
 func GetDescriptorStats() map[string]*DescriptorStats {
-	stats := map[string]*DescriptorStats{}
-	descriptorStatsMu.RLock()
-	for d, ds := range descriptorStats {
+	s := map[string]*DescriptorStats{}
+	stats.descriptorMu.RLock()
+	for d, ds := range stats.Descriptors {
 		dss := *ds
-		stats[d] = &dss
+		s[d] = &dss
 	}
-	descriptorStatsMu.RUnlock()
-	return stats
+	stats.descriptorMu.RUnlock()
+	return s
 }
 
 type DescriptorStats struct {
-	Methods map[string]*MethodStats
-}
-
-func (s *DescriptorStats) MarshalJSON() ([]byte, error) {
-	d := map[string]string{}
-	for m, ms := range s.Methods {
-		d[m] = fmt.Sprintf(
-			"calls: %d, duration: %s (avg: %s, max: %s)",
-			ms.Calls, ms.TotalNs, ms.AvgNs, ms.MaxNs,
-		)
-	}
-	return json.Marshal(d)
+	Methods []*MethodStats
 }
 
 type MethodStats struct {
+	Method  string
 	Calls   uint64
 	TotalNs time.Duration
 	AvgNs   time.Duration
 	MaxNs   time.Duration
 }
 
+func dur(d time.Duration) string {
+	return d.Round(time.Microsecond * 100).String()
+}
+
+func (s *DescriptorStats) MarshalJSON() ([]byte, error) {
+	d := map[string]string{}
+	for _, ms := range s.Methods {
+		m := fmt.Sprintf("%s()", ms.Method)
+		d[m] = fmt.Sprintf(
+			"calls: %d, total: %s, avg: %s, max: %s",
+			ms.Calls, dur(ms.TotalNs), dur(ms.AvgNs), dur(ms.MaxNs),
+		)
+	}
+	return json.Marshal(d)
+}
+
+func (s *DescriptorStats) getOrCreateMethod(method string) *MethodStats {
+	stats.descriptorMu.RLock()
+	for _, m := range s.Methods {
+		if m.Method == method {
+			stats.descriptorMu.RUnlock()
+			return m
+		}
+	}
+	stats.descriptorMu.RUnlock()
+	ms := &MethodStats{Method: method}
+	stats.descriptorMu.Lock()
+	s.Methods = append(s.Methods, ms)
+	stats.descriptorMu.Unlock()
+	return ms
+}
+
+func (m *MethodStats) increment(took time.Duration) {
+	stats.descriptorMu.Lock()
+	m.Calls++
+	m.TotalNs += took
+	m.AvgNs = m.TotalNs / time.Duration(m.Calls)
+	if took > m.MaxNs {
+		m.MaxNs = took
+	}
+	stats.descriptorMu.Unlock()
+}
+
 func trackDescMethod(d, m string) func() {
 	t := time.Now()
-	descriptorStatsMu.RLock()
-	desc := descriptorStats[d]
-	method, ok := desc.Methods[m]
-	descriptorStatsMu.RUnlock()
-	if !ok {
-		desc.Methods[m] = new(MethodStats)
-		descriptorStatsMu.Lock()
-		method = desc.Methods[m]
-		descriptorStatsMu.Unlock()
-	}
+	method := stats.Descriptors[d].getOrCreateMethod(m)
 	return func() {
 		took := time.Since(t)
-		descriptorStatsMu.Lock()
-		method.Calls++
-		method.TotalNs += took
-		method.AvgNs = method.TotalNs / time.Duration(method.Calls)
-		if took > method.MaxNs {
-			method.MaxNs = took
-		}
-		descriptorStatsMu.Unlock()
+		method.increment(took)
 	}
 }
 

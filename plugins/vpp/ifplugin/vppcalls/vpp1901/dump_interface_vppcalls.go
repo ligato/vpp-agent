@@ -590,7 +590,13 @@ func (h *InterfaceVppHandler) dumpIPSecTunnelDetails(ifs map[uint32]*vppcalls.In
 			tunnelSrcAddrStr, tunnelDstAddrStr = tunnelSrcAddr.String(), tunnelDstAddr.String()
 		}
 
-		ifs[tunnel.SwIfIndex].Interface.Link = &interfaces.Interface_Ipsec{
+		ifDetails, ok := ifs[tunnel.SwIfIndex]
+		if !ok {
+			h.log.Warnf("ipsec SA dump returned unrecognized swIfIndex: %v", tunnel.SwIfIndex)
+			continue
+		}
+		ifDetails.Interface.Type = interfaces.Interface_IPSEC_TUNNEL
+		ifDetails.Interface.Link = &interfaces.Interface_Ipsec{
 			Ipsec: &interfaces.IPSecLink{
 				Esn:        uintToBool(tunnel.UseEsn),
 				AntiReplay: uintToBool(tunnel.UseAntiReplay),
@@ -604,7 +610,6 @@ func (h *InterfaceVppHandler) dumpIPSecTunnelDetails(ifs map[uint32]*vppcalls.In
 				EnableUdpEncap: uintToBool(tunnel.UDPEncap),
 			},
 		}
-		ifs[tunnel.SwIfIndex].Interface.Type = interfaces.Interface_IPSEC_TUNNEL
 	}
 
 	return nil
