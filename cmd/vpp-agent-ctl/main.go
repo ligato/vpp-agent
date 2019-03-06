@@ -144,6 +144,10 @@ func do(ctl data.VppAgentCtl) {
 			err = ctl.PutLinuxTap()
 		case "-ltapd":
 			err = ctl.DeleteLinuxTap()
+		case "-lloop":
+			err = ctl.PutLinuxLoop()
+		case "-lloopd":
+			err = ctl.DeleteLinuxLoop()
 		// IPSec plugin
 		case "-spd":
 			err = ctl.PutIPSecSPD()
