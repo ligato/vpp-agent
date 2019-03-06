@@ -159,7 +159,9 @@ func (s *Scheduler) preRecordTransaction(txn *transaction, planned kvs.RecordedT
 }
 
 // recordTransaction records the finalized transaction (log + in-memory).
-func (s *Scheduler) recordTransaction(txnRecord *kvs.RecordedTxn, executed kvs.RecordedTxnOps, start, stop time.Time) {
+func (s *Scheduler) recordTransaction(txn *transaction, txnRecord *kvs.RecordedTxn, executed kvs.RecordedTxnOps, start, stop time.Time) {
+	//defer trace.StartRegion(txn.ctx, "recordTransaction").End()
+
 	txnRecord.PreRecord = false
 	txnRecord.Start = start
 	txnRecord.Stop = stop

@@ -88,6 +88,21 @@ const (
 	DownstreamResync
 )
 
+func (t ResyncType) String() string {
+	switch t {
+	case NotResync:
+		return "NotResync"
+	case FullResync:
+		return "FullResync"
+	case UpstreamResync:
+		return "UpstreamResync"
+	case DownstreamResync:
+		return "DownstreamResync"
+	default:
+		return "UnknownResync"
+	}
+}
+
 // WithResync prepares context for transaction that, based on the resync type,
 // will trigger resync between the configuration states of NB, the agent and SB.
 // For DownstreamResync the transaction should be empty, otherwise it should
