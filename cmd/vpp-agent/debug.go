@@ -17,6 +17,7 @@
 package main
 
 import (
+	"context"
 	_ "expvar"
 	"log"
 	"net/http"
@@ -24,6 +25,9 @@ import (
 	"os"
 	"runtime"
 	"runtime/pprof"
+	"runtime/trace"
+
+	"github.com/ligato/cn-infra/agent"
 )
 
 var (
@@ -31,6 +35,7 @@ var (
 	debugServerAddr = os.Getenv("DEBUG_SERVERADDR")
 	cpuprofile      = os.Getenv("DEBUG_CPUPROFILE")
 	memprofile      = os.Getenv("DEBUG_MEMPROFILE")
+	traceprofile    = os.Getenv("DEBUG_TRACEPROFILE")
 )
 
 func init() {
@@ -54,10 +59,10 @@ func debug() func() {
 	/*trace.AuthRequest = func(req *http.Request) (any, sensitive bool) {
 		return true, true
 	}*/
+	var err error
 
 	var cpuFile *os.File
 	if cpuprofile != "" {
-		var err error
 		cpuFile, err = os.Create(cpuprofile)
 		if err != nil {
 			log.Fatal("could not create CPU profile: ", err)
@@ -67,7 +72,26 @@ func debug() func() {
 		}
 	}
 
+	var traceFile *os.File
+	if traceprofile != "" {
+		traceFile, err = os.Create(traceprofile)
+		if err != nil {
+			log.Fatalf("failed to create trace output file: %v", err)
+		}
+		if err := trace.Start(traceFile); err != nil {
+			log.Fatalf("failed to start trace: %v", err)
+		}
+		trace.Log(context.Background(), "build-version", agent.BuildVersion)
+	}
+
 	return func() {
+		if traceFile != nil {
+			trace.Stop()
+			log.Printf("closing trace profile file: %s", traceFile.Name())
+			if err := traceFile.Close(); err != nil {
+				log.Fatalf("failed to close trace file: %v", err)
+			}
+		}
 		if cpuFile != nil {
 			pprof.StopCPUProfile()
 			log.Printf("closing CPU profile file: %s", cpuFile.Name())
