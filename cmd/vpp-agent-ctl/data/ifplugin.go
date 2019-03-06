@@ -396,6 +396,7 @@ func (ctl *VppAgentCtlImpl) PutLinuxLoop() error {
 			Type:      linux_namespace.NetNamespace_NSID,
 		},
 		IpAddresses: []string{
+			"127.0.0.1/8",
 			"192.168.16.4/24",
 		},
 	}

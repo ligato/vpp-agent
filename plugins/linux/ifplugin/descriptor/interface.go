@@ -44,6 +44,7 @@ import (
 	nsdescriptor "github.com/ligato/vpp-agent/plugins/linux/nsplugin/descriptor"
 	nslinuxcalls "github.com/ligato/vpp-agent/plugins/linux/nsplugin/linuxcalls"
 	vpp_ifaceidx "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
+	"syscall"
 )
 
 const (
@@ -343,7 +344,8 @@ func (d *InterfaceDescriptor) Create(key string, linuxIf *interfaces.Interface) 
 	}
 	for _, ipAddress := range ipAddresses {
 		err = d.ifHandler.AddInterfaceIP(hostName, ipAddress)
-		if err != nil {
+		// an attempt to add already assign IP is not considered as error
+		if err != nil && syscall.EEXIST.Error() != err.Error() {
 			err = errors.Errorf("failed to add IP address %v to linux interface %s: %v",
 				ipAddress, linuxIf.Name, err)
 			d.log.Error(err)
@@ -504,7 +506,8 @@ func (d *InterfaceDescriptor) Update(key string, oldLinuxIf, newLinuxIf *interfa
 
 	for i := range add {
 		err := d.ifHandler.AddInterfaceIP(newHostName, add[i])
-		if nil != err {
+		// an attempt to add already assign IP is not considered as error
+		if nil != err && syscall.EEXIST.Error() != err.Error() {
 			err = errors.Errorf("linux interface modify: failed to add IP addresses %s to %s: %v",
 				add[i], newLinuxIf.Name, err)
 			d.log.Error(err)
