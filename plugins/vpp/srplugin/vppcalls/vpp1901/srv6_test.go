@@ -287,7 +287,7 @@ func TestAddLocalSID(t *testing.T) {
 				FibTableId: 10,
 				EndFunction: &srv6.LocalSID_EndFunction_AD{
 					EndFunction_AD: &srv6.LocalSID_EndAD{
-						ServiceAddress:    nextHopIPv4.String(),
+						L3ServiceAddress:  nextHopIPv4.String(),
 						OutgoingInterface: ifaceA,
 						IncomingInterface: ifaceB,
 					},
@@ -295,6 +295,27 @@ func TestAddLocalSID(t *testing.T) {
 			},
 			Expected: &vpe.CliInband{
 				Cmd: fmt.Sprintf("sr localsid address %v behavior end.ad nh %v oif %v iif %v", sidToStr(sidA), nextHopIPv4.String(), memif1, memif2),
+			},
+		},
+		{
+			Name:    "addition with endAD behaviour for L2 sr-unaware service",
+			cliMode: true,
+			MockInterfaceDump: []govppapi.Message{
+				&interfaces.SwInterfaceDetails{Tag: toIFaceByte(ifaceA), InterfaceName: toIFaceByte(memif1)},
+				&interfaces.SwInterfaceDetails{Tag: toIFaceByte(ifaceB), InterfaceName: toIFaceByte(memif2)},
+			},
+			Input: &srv6.LocalSID{
+				Sid:        sidToStr(sidA),
+				FibTableId: 10,
+				EndFunction: &srv6.LocalSID_EndFunction_AD{
+					EndFunction_AD: &srv6.LocalSID_EndAD{ //missing L3ServiceAddress means it is L2 service
+						OutgoingInterface: ifaceA,
+						IncomingInterface: ifaceB,
+					},
+				},
+			},
+			Expected: &vpe.CliInband{
+				Cmd: fmt.Sprintf("sr localsid address %v behavior end.ad oif %v iif %v", sidToStr(sidA), memif1, memif2),
 			},
 		},
 		{
@@ -309,7 +330,7 @@ func TestAddLocalSID(t *testing.T) {
 				FibTableId: 10,
 				EndFunction: &srv6.LocalSID_EndFunction_AD{
 					EndFunction_AD: &srv6.LocalSID_EndAD{
-						ServiceAddress:    nextHopIPv4.String(),
+						L3ServiceAddress:  nextHopIPv4.String(),
 						OutgoingInterface: ifaceA,
 						IncomingInterface: ifaceB,
 					},
@@ -331,7 +352,7 @@ func TestAddLocalSID(t *testing.T) {
 				FibTableId: 10,
 				EndFunction: &srv6.LocalSID_EndFunction_AD{
 					EndFunction_AD: &srv6.LocalSID_EndAD{
-						ServiceAddress:    nextHopIPv4.String(),
+						L3ServiceAddress:  nextHopIPv4.String(),
 						OutgoingInterface: ifaceA,
 						IncomingInterface: ifaceB,
 					},
@@ -353,7 +374,7 @@ func TestAddLocalSID(t *testing.T) {
 				FibTableId: 10,
 				EndFunction: &srv6.LocalSID_EndFunction_AD{
 					EndFunction_AD: &srv6.LocalSID_EndAD{
-						ServiceAddress:    nextHopIPv4.String(),
+						L3ServiceAddress:  nextHopIPv4.String(),
 						OutgoingInterface: ifaceA,
 						IncomingInterface: ifaceB,
 					},
@@ -375,7 +396,7 @@ func TestAddLocalSID(t *testing.T) {
 				FibTableId: 10,
 				EndFunction: &srv6.LocalSID_EndFunction_AD{
 					EndFunction_AD: &srv6.LocalSID_EndAD{
-						ServiceAddress:    nextHopIPv4.String(),
+						L3ServiceAddress:  nextHopIPv4.String(),
 						OutgoingInterface: ifaceA,
 						IncomingInterface: "unknown0", // interface name is taken from vpp internal name
 					},
@@ -421,7 +442,7 @@ func TestAddLocalSID(t *testing.T) {
 				FibTableId: 10,
 				EndFunction: &srv6.LocalSID_EndFunction_AD{
 					EndFunction_AD: &srv6.LocalSID_EndAD{
-						ServiceAddress:    nextHopIPv4.String(),
+						L3ServiceAddress:  nextHopIPv4.String(),
 						OutgoingInterface: ifaceA,
 						IncomingInterface: ifaceB,
 					},
@@ -438,7 +459,7 @@ func TestAddLocalSID(t *testing.T) {
 				FibTableId: 10,
 				EndFunction: &srv6.LocalSID_EndFunction_AD{
 					EndFunction_AD: &srv6.LocalSID_EndAD{
-						ServiceAddress:    nextHopIPv4.String(),
+						L3ServiceAddress:  nextHopIPv4.String(),
 						OutgoingInterface: ifaceA,
 						IncomingInterface: ifaceB,
 					},
@@ -457,7 +478,7 @@ func TestAddLocalSID(t *testing.T) {
 				FibTableId: 10,
 				EndFunction: &srv6.LocalSID_EndFunction_AD{
 					EndFunction_AD: &srv6.LocalSID_EndAD{
-						ServiceAddress:    nextHopIPv4.String(),
+						L3ServiceAddress:  nextHopIPv4.String(),
 						OutgoingInterface: ifaceA,
 						IncomingInterface: ifaceB,
 					},
@@ -476,7 +497,7 @@ func TestAddLocalSID(t *testing.T) {
 				FibTableId: 10,
 				EndFunction: &srv6.LocalSID_EndFunction_AD{
 					EndFunction_AD: &srv6.LocalSID_EndAD{
-						ServiceAddress:    nextHopIPv4.String(),
+						L3ServiceAddress:  nextHopIPv4.String(),
 						OutgoingInterface: ifaceA,
 						IncomingInterface: ifaceB,
 					},
