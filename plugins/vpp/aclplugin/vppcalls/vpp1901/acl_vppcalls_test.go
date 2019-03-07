@@ -21,7 +21,7 @@ import (
 	acl "github.com/ligato/vpp-agent/api/models/vpp/acl"
 	acl_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/acl"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
-	"github.com/ligato/vpp-agent/tests/vppcallmock"
+	"github.com/ligato/vpp-agent/plugins/vpp/vppcallmock"
 	. "github.com/onsi/gomega"
 )
 

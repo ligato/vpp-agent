@@ -23,7 +23,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/l2plugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/vpp/l2plugin/vppcalls/vpp1901"
-	"github.com/ligato/vpp-agent/tests/vppcallmock"
+	"github.com/ligato/vpp-agent/plugins/vpp/vppcallmock"
 	. "github.com/onsi/gomega"
 )
 
