@@ -7,6 +7,10 @@ This series of tutorials provide step-by-step guides for:
 For tutorials focused on development with CN-Infra framework, 
 see [ligato.io/cn-infra/tutorials][cn-infra-tutorials].
 
+## Developing with VPP Agent Framework
+
+- [KV scheduler](05_kv-scheduler.md) (Note: this tutorial is continuation of the [cn-infra tutorials](https://ligato.io/cn-infra/tutorials/))
+
 ## Vanilla VPP Agent Usage
 
 This series of tutorials show usage the _vanilla_ VPP Agent as-is without any 
