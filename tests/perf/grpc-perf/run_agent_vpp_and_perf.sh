@@ -2,83 +2,117 @@
 
 set -euo pipefail
 
-tunnels="$1"
+tunnels="${1:-1}"
+
+log_vpp=/tmp/grpc-perf_vpp.log
+log_agent=/tmp/grpc-perf_agent.log
 
 echo "--------------------------------------------------------------------------------"
-echo " running test with ${tunnels} tunnels "
+echo " Test run: ${tunnels} tunnels "
 echo "--------------------------------------------------------------------------------"
 
 function fail() {
     set +eu
-    echo "${1:-Test failure!}" >&2
+    echo -e "${1:-Test failure!}" >&2
     exit "${2:-1}"
 }
 
 function start_vpp() {
 	echo -n "-> starting VPP.. "
 	rm -f /dev/shm/db /dev/shm/global_vm /dev/shm/vpe-api
-	vpp -c /etc/vpp/vpp.conf > /tmp/perf_vpp.log 2>&1 &
+	vpp -c /etc/vpp/vpp.conf > "$log_vpp" 2>&1 &
 	pid_vpp="$!"
-	echo "OK! (PID:${pid_vpp})"
+	echo "ok! (PID:${pid_vpp})"
+	sleep 3
 }
 
 function stop_vpp() {
 	set +ue
-	echo "-> stopping VPP.."
-	kill ${pid_vpp}
+	if ps -p $pid_vpp >/dev/null 2>&1; then	
+		echo "-> stopping VPP.."
+		kill -9 $pid_vpp
+	fi
 }
 
 function check_vpp() {
 	set +ue
+	echo -n "-> checking VPP.. "
 	if ! ps -p $pid_vpp >/dev/null 2>&1; then
 		wait $pid_vpp
-		fail "VPP failure! (exit code: $?)"
+		vpp_result=$?
+		out=$(tail "$log_vpp")
+		fail "VPP down! (exit code: $vpp_result)\n\n$log_vpp output:\n${out}\n"
+	fi
+	log_errors=$(grep 'WARNING' "$log_vpp" | wc -l)
+	if [[ "$log_errors" -gt "0" ]]; then
+		echo "found ${log_errors} warnings!"
+	else
+		echo "ok!"
 	fi
 }
 
 function start_agent() {
 	echo -n "-> starting agent.. "
 	DEBUG_ENABLED=true DEBUG_CPUPROFILE=/tmp/perf_cpu.prof DEBUG_TRACEPROFILE=/tmp/perf_trace.out \
-		vpp-agent -etcd-config=etcd.conf -grpc-config=grpc.conf > /tmp/perf_vpp-agent.log 2>&1 &
+		vpp-agent -etcd-config=etcd.conf -grpc-config=grpc.conf > "$log_agent" 2>&1 &
 	pid_agent="$!"
-	echo "OK! (PID:${pid_agent})"
+	echo "ok! (PID:${pid_agent})"
+	sleep 3
 }
 
 function stop_agent() {
 	set +ue
-	echo "-> stopping agent.."
-	kill -SIGINT ${pid_agent}
+	if ps -p $pid_agent >/dev/null 2>&1; then
+		echo "-> stopping agent.."
+		kill -SIGINT ${pid_agent}
+		wait ${pid_agent}
+	fi
 }
 
 function check_agent() {
 	set +ue
+	echo -n "-> checking agent.. "
 	if ! ps -p $pid_agent >/dev/null 2>&1; then
 		wait $pid_agent
-		fail "Agent failure! (exit code: $?)"
+		result=$?
+		out=$(tail "$log_agent")
+		fail "Agent down! (exit code: $result)\n\n$log_agent output:\n${out}\n"		
+	fi	
+	log_errors=$(grep 'level=error' "$log_agent" | wc -l)
+	if [[ "$log_errors" -gt "0" ]]; then
+		echo "found ${log_errors} errors!"
+	else
+		echo "ok!"
 	fi
 }
 
-trap 'stop_agent >/dev/null 2>&1; stop_vpp >/dev/null 2>&1; exit' EXIT
+trap 'stop_agent; stop_vpp; exit' EXIT
 
-# start vpp & agent
 start_vpp
-sleep 3
 start_agent
-sleep 3
 
-# run test
-echo "-> starting test.."
-./grpc-perf -tunnels=$tunnels || echo "Test exit code: $?"
+echo "-> running test.."
+echo "--------------------------------------------------------------------------------"
+test_result=0
+./grpc-perf -tunnels=$tunnels || test_result=$?
+echo "--------------------------------------------------------------------------------"
+if [[ "$test_result" == "0" ]]; then
+	echo " ✓ Test passed!"
+else
+	echo " ✗ Test failed! (exit code: $test_result)"
+fi
+echo "--------------------------------------------------------------------------------"
 
-# check crashes
 check_vpp
 check_agent
+sleep 1
 
 echo "-> collecting data.."
 curl -s -X GET -H "Content-Type: application/json" http://127.0.0.1:9191/scheduler/stats
 #curl -s -X GET -H "Content-Type: application/json" http://127.0.0.1:1234/debug/vars
 # TODO: collect more data
 
-echo "-> test complete"
+echo "-> test finished."
+sleep 1
 
 

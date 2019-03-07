@@ -11,12 +11,13 @@ echo "==========================================================================
 echo " gRPC Performance Test "
 echo "================================================================================"
 
+echo "-> preparing test.."
+
 # install agent
 make -C ../.. agent
 
+# build test
 cd grpc-perf
-
-echo "-> preparing test.."
 go build
 
 ./run_agent_vpp_and_perf.sh 10
