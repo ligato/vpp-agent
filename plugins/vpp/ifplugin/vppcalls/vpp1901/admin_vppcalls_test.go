@@ -21,7 +21,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls/vpp1901"
-	"github.com/ligato/vpp-agent/tests/vppcallmock"
+	"github.com/ligato/vpp-agent/plugins/vpp/vppcallmock"
 	. "github.com/onsi/gomega"
 )
 

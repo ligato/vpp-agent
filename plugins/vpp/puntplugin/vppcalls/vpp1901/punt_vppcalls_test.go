@@ -26,7 +26,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/puntplugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/vpp/puntplugin/vppcalls/vpp1901"
-	"github.com/ligato/vpp-agent/tests/vppcallmock"
+	"github.com/ligato/vpp-agent/plugins/vpp/vppcallmock"
 )
 
 func TestAddPunt(t *testing.T) {

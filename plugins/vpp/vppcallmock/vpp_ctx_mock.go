@@ -23,12 +23,7 @@ import (
 	log "github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/vpe"
 	. "github.com/onsi/gomega"
-	"github.com/sirupsen/logrus"
 )
-
-func init() {
-	govpp.SetLogLevel(logrus.DebugLevel)
-}
 
 // TestCtx is helping structure for unit testing.
 // It wraps VppAdapter which is used instead of real VPP.

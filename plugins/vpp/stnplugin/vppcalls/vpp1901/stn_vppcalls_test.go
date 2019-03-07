@@ -26,7 +26,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/stnplugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/vpp/stnplugin/vppcalls/vpp1901"
-	"github.com/ligato/vpp-agent/tests/vppcallmock"
+	"github.com/ligato/vpp-agent/plugins/vpp/vppcallmock"
 )
 
 func TestAddStnRule(t *testing.T) {

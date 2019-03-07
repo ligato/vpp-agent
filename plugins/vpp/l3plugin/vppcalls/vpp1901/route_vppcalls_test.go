@@ -26,7 +26,7 @@ import (
 	ifvpp1901 "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls/vpp1901"
 	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls/vpp1901"
-	"github.com/ligato/vpp-agent/tests/vppcallmock"
+	"github.com/ligato/vpp-agent/plugins/vpp/vppcallmock"
 	. "github.com/onsi/gomega"
 )
 

@@ -21,7 +21,7 @@ import (
 	"git.fd.io/govpp.git/adapter/mock"
 	govppapi "git.fd.io/govpp.git/api"
 	"git.fd.io/govpp.git/core"
-	"github.com/ligato/vpp-agent/tests/vppcallmock"
+	"github.com/ligato/vpp-agent/plugins/vpp/vppcallmock"
 )
 
 // GoVPPMux implements GoVPP Mux API with stats
