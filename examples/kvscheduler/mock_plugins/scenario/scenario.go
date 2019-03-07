@@ -38,7 +38,7 @@ const (
 )
 
 // Run runs a scenario selected by the user.
-func Run(kvscheduler kvs.KVScheduler) {
+func Run(kvscheduler kvs.KVScheduler, setLogging func(debugMode bool)) {
 	time.Sleep(300 * time.Millisecond) // give agent logs time to get printed
 	defer func() {
 		fmt.Printf(InfoMsgColor, "The example scenario has finalized, the agent can be now terminated with CTRL-C.")
@@ -48,6 +48,7 @@ func Run(kvscheduler kvs.KVScheduler) {
 
 	// let the user to select the scenario to run
 	scenarioFnc := func() {}
+	debugLog := true
 	scanner := bufio.NewScanner(os.Stdin)
 	fmt.Println("")
 	fmt.Printf(InputReqMsgColor, "Please select the example scenario to run: ")
@@ -57,6 +58,7 @@ func Run(kvscheduler kvs.KVScheduler) {
 	fmt.Printf(InputReqMsgColor, "4) Invalid interface configuration fixed in the next Update transaction")
 	fmt.Printf(InputReqMsgColor, "5) Change of the interface type performed via re-creation")
 	fmt.Printf(InputReqMsgColor, "6) Failed interface creation fixed by subsequent Retry")
+	fmt.Printf(InputReqMsgColor, "7) Run performance test")
 inputLoop:
 	for {
 		fmt.Print("--> ")
@@ -81,16 +83,23 @@ inputLoop:
 		case "6":
 			scenarioFnc = FailureFixedWithRetry
 			break inputLoop
+		case "7":
+			debugLog = false
+			scenarioFnc = PerfTest
+			break inputLoop
 		default:
 			fmt.Printf(ErrorMsgColor, "Invalid option!")
 			continue
 		}
 	}
 
-	// watch and inform about value status updates
-	ch := make(chan *kvs.BaseValueStatus, 100)
-	kvscheduler.WatchValueStatus(ch, nil)
-	go watchValueStatus(ch)
+	setLogging(debugLog)
+	if debugLog {
+		// watch and inform about value status updates
+		ch := make(chan *kvs.BaseValueStatus, 100)
+		kvscheduler.WatchValueStatus(ch, nil)
+		go watchValueStatus(ch)
+	}
 
 	// start the selected scenario
 	scenarioFnc()

@@ -93,6 +93,11 @@ func (node *nodeR) GetValue() proto.Message {
 // GetFlag returns reference to the given flag or nil if the node doesn't have
 // this flag associated.
 func (node *nodeR) GetFlag(name string) Flag {
+	pgraph := node.graph.parent
+	if pgraph != nil && pgraph.methodTracker != nil {
+		defer pgraph.methodTracker("Node.GetFlag")()
+	}
+
 	for _, flag := range node.flags {
 		if flag.GetName() == name {
 			return flag
@@ -109,6 +114,11 @@ func (node *nodeR) GetMetadata() interface{} {
 // GetTargets returns a set of nodes, indexed by relation labels, that the
 // edges of the given relation points to.
 func (node *nodeR) GetTargets(relation string) (runtimeTargets RuntimeTargetsByLabel) {
+	pgraph := node.graph.parent
+	if pgraph != nil && pgraph.methodTracker != nil {
+		defer pgraph.methodTracker("Node.GetTargets")()
+	}
+
 	relTargets := node.targets.GetTargetsForRelation(relation)
 	if relTargets == nil {
 		return nil
@@ -130,6 +140,11 @@ func (node *nodeR) GetTargets(relation string) (runtimeTargets RuntimeTargetsByL
 // GetSources returns a set of nodes with edges of the given relation
 // pointing to this node.
 func (node *nodeR) GetSources(relation string) (nodes []Node) {
+	pgraph := node.graph.parent
+	if pgraph != nil && pgraph.methodTracker != nil {
+		defer pgraph.methodTracker("Node.GetSources")()
+	}
+
 	relSources := node.sources.getSourcesForRelation(relation)
 	if relSources == nil {
 		return nil

@@ -54,6 +54,10 @@ func (graph *graphRW) RegisterMetadataMap(mapName string, mapping idxmap.NamedMa
 // If <newRev> is true, the changes will recorded as a new revision of the
 // node for the history.
 func (graph *graphRW) SetNode(key string) NodeRW {
+	if graph.parent.methodTracker != nil {
+		defer graph.parent.methodTracker("SetNode")()
+	}
+
 	node, has := graph.nodes[key]
 	if has {
 		return node
@@ -72,6 +76,10 @@ func (graph *graphRW) SetNode(key string) NodeRW {
 // DeleteNode deletes node with the given key.
 // Returns true if the node really existed before the operation.
 func (graph *graphRW) DeleteNode(key string) bool {
+	if graph.parent.methodTracker != nil {
+		defer graph.parent.methodTracker("DeleteNode")()
+	}
+
 	node, has := graph.nodes[key]
 	if !has {
 		return false
@@ -93,6 +101,10 @@ func (graph *graphRW) DeleteNode(key string) bool {
 
 // Save propagates all changes to the graph.
 func (graph *graphRW) Save() {
+	if graph.parent.methodTracker != nil {
+		defer graph.parent.methodTracker("Save")()
+	}
+
 	graph.parent.rwLock.Lock()
 	defer graph.parent.rwLock.Unlock()
 
@@ -180,6 +192,10 @@ func (graph *graphRW) Save() {
 
 // Release records changes if requested.
 func (graph *graphRW) Release() {
+	if graph.parent.methodTracker != nil {
+		defer graph.parent.methodTracker("Release")()
+	}
+
 	if graph.record && graph.parent.recordOldRevs {
 		graph.parent.rwLock.Lock()
 		defer graph.parent.rwLock.Unlock()

@@ -67,6 +67,10 @@ func (graph *graphR) GetNode(key string) Node {
 // GetNodes returns a set of nodes matching the key selector (can be nil)
 // and every provided flag selector.
 func (graph *graphR) GetNodes(keySelector KeySelector, flagSelectors ...FlagSelector) (nodes []Node) {
+	if graph.parent.methodTracker != nil {
+		defer graph.parent.methodTracker("GetNodes")()
+	}
+
 	for key, node := range graph.nodes {
 		if keySelector != nil && !keySelector(key) {
 			continue
@@ -111,6 +115,10 @@ func (graph *graphR) GetNodeTimeline(key string) []*RecordedNode {
 
 // GetFlagStats returns stats for a given flag.
 func (graph *graphR) GetFlagStats(flagName string, selector KeySelector) FlagStats {
+	if graph.parent.methodTracker != nil {
+		defer graph.parent.methodTracker("GetFlagStats")()
+	}
+
 	stats := FlagStats{PerValueCount: make(map[string]uint)}
 
 	for key, timeline := range graph.timeline {
@@ -138,6 +146,10 @@ func (graph *graphR) GetFlagStats(flagName string, selector KeySelector) FlagSta
 
 // GetSnapshot returns the snapshot of the graph at a given time.
 func (graph *graphR) GetSnapshot(time time.Time) (nodes []*RecordedNode) {
+	if graph.parent.methodTracker != nil {
+		defer graph.parent.methodTracker("GetSnapshot")()
+	}
+
 	for _, timeline := range graph.timeline {
 		for _, record := range timeline {
 			if record.Since.Before(time) &&
@@ -152,6 +164,10 @@ func (graph *graphR) GetSnapshot(time time.Time) (nodes []*RecordedNode) {
 
 // GetKeys returns sorted keys.
 func (graph *graphR) GetKeys() []string {
+	if graph.parent.methodTracker != nil {
+		defer graph.parent.methodTracker("GetKeys")()
+	}
+
 	var keys []string
 	for key := range graph.nodes {
 		keys = append(keys, key)
@@ -165,6 +181,10 @@ func (graph *graphR) GetKeys() []string {
 // Dump returns a human-readable string representation of the current graph
 // content for debugging purposes.
 func (graph *graphR) Dump() string {
+	if graph.parent.methodTracker != nil {
+		defer graph.parent.methodTracker("Dump")()
+	}
+
 	// order nodes by keys
 	var keys []string
 	for key := range graph.nodes {

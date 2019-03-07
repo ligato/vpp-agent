@@ -151,8 +151,13 @@ func (s *Scheduler) Init() error {
 	// prepare context for all go routines
 	s.ctx, s.cancel = context.WithCancel(context.Background())
 	// initialize graph for in-memory storage of key-value pairs
-	s.graph = graph.NewGraph(s.config.RecordTransactionHistory, s.config.TransactionHistoryAgeLimit,
-		s.config.PermanentlyRecordedInitPeriod)
+	graphOpts := graph.Opts{
+		RecordOldRevs:       s.config.RecordTransactionHistory,
+		RecordAgeLimit:      s.config.TransactionHistoryAgeLimit,
+		PermanentInitPeriod: s.config.PermanentlyRecordedInitPeriod,
+		MethodTracker:       trackGraphMethod,
+	}
+	s.graph = graph.NewGraph(graphOpts)
 	// initialize registry for key->descriptor lookups
 	s.registry = registry.NewRegistry()
 	// prepare channel for serializing transactions

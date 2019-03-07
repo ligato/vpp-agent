@@ -25,6 +25,7 @@ import (
 	mock_ifplugin "github.com/ligato/vpp-agent/examples/kvscheduler/mock_plugins/ifplugin"
 	mock_l2plugin "github.com/ligato/vpp-agent/examples/kvscheduler/mock_plugins/l2plugin"
 	"github.com/ligato/vpp-agent/examples/kvscheduler/mock_plugins/scenario"
+	"github.com/ligato/cn-infra/logging"
 )
 
 /*
@@ -70,7 +71,17 @@ func (a *ExampleAgent) Init() error {
 
 // AfterInit handles the phase after initialization.
 func (a *ExampleAgent) AfterInit() error {
-	go scenario.Run(a.KVScheduler)
+	go scenario.Run(a.KVScheduler, func(debugMode bool) {
+		if debugMode {
+			a.KVScheduler.Log.SetLevel(logging.DebugLevel)
+		} else {
+			a.Orchestrator.Log.SetLevel(logging.ErrorLevel)
+			a.MockIfPlugin.Log.SetLevel(logging.ErrorLevel)
+			a.MockL2Plugin.Log.SetLevel(logging.ErrorLevel)
+			logging.DefaultRegistry.SetLevel(
+				a.Orchestrator.String() +".dispatcher", logging.ErrorLevel.String())
+		}
+	})
 	return nil
 }
 

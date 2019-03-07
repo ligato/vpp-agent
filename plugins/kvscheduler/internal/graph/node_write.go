@@ -58,6 +58,11 @@ func (node *node) SetValue(value proto.Message) {
 
 // SetFlags associates given flag with this node.
 func (node *node) SetFlags(flags ...Flag) {
+	pgraph := node.graph.parent
+	if pgraph != nil && pgraph.methodTracker != nil {
+		defer pgraph.methodTracker("Node.SetFlags")()
+	}
+
 	toBeSet := make(map[string]struct{})
 	for _, flag := range flags {
 		toBeSet[flag.GetName()] = struct{}{}
@@ -76,6 +81,11 @@ func (node *node) SetFlags(flags ...Flag) {
 
 // DelFlags removes given flag from this node.
 func (node *node) DelFlags(names ...string) {
+	pgraph := node.graph.parent
+	if pgraph != nil && pgraph.methodTracker != nil {
+		defer pgraph.methodTracker("Node.DelFlags")()
+	}
+
 	var otherFlags []Flag
 	for _, flag := range node.flags {
 		delete := false
@@ -113,6 +123,11 @@ func (node *node) SetMetadata(metadata interface{}) {
 
 // SetTargets provides definition of all edges pointing from this node.
 func (node *node) SetTargets(targetsDef []RelationTargetDef) {
+	pgraph := node.graph.parent
+	if pgraph != nil && pgraph.methodTracker != nil {
+		defer pgraph.methodTracker("Node.SetTargets")()
+	}
+
 	node.targetsDef = targetsDef
 	node.dataUpdated = true
 

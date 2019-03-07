@@ -49,6 +49,8 @@ var (
 	value2 = NewStringValue("this is value2")
 	value3 = NewStringValue("this is value3")
 	value4 = NewStringValue("this is value4")
+
+	commonOpts = Opts{RecordOldRevs:true, RecordAgeLimit: minutesInOneDay, PermanentInitPeriod: minutesInOneHour}
 )
 
 func prefixASelector(key string) bool {
@@ -80,7 +82,7 @@ func selectNodesToBuild(ids ...int) map[int]struct{} {
 
 func buildGraph(graph Graph, record, regMaps bool, nodes map[int]struct{}) Graph {
 	if graph == nil {
-		graph = NewGraph(true, minutesInOneDay, minutesInOneHour)
+		graph = NewGraph(commonOpts)
 	}
 	graphW := graph.Write(record)
 
