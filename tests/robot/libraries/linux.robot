@@ -75,6 +75,23 @@ linux: Check Ping6
     Should Contain     ${out}    from ${ip}    ignore_case=True
     Should Not Contain    ${out}    100% packet loss
 
+linux: Install Executable Script
+    [Arguments]        ${node}    ${scriptContent}    ${fileName}    ${fileDirectory}=/usr/bin
+    ${fullFilePath}=    Catenate    SEPARATOR=    ${fileDirectory}    /    ${fileName}
+    ${scriptContent}=    Replace String    ${scriptContent}    "    \\"           # preparing " character for echoing from sh script
+    ${scriptContent}=    Replace String    ${scriptContent}    '    \'\"\'\"\'    # preparing ' character for echoing from sh script
+    ${scriptContent}=    Replace String    ${scriptContent}    \n    \\n          # preparing linux EOL for echoing from sh script
+    ${scriptContent}=    Replace String    ${scriptContent}    \r    \\r          # preparing windows EOL (\r\n) for echoing from sh script
+    Execute In Container    ${node}    sh -c 'echo "${scriptContent}" > ${fullFilePath}'
+    Execute In Container    ${node}    chmod a+x ${fullFilePath}
+
+linux: Send Ethernet Frame
+    [Arguments]        ${node}    ${out_interface}    ${source_address}    ${destination_address}    ${ethernet_type}    ${payload}    ${checksum}
+    ${script}=    OperatingSystem.Get File    ${CURDIR}/../../robot/resources/sendEthernetFrame.py
+    ${script}=    replace variables           ${script}
+    linux: Install Executable Script    ${node}    ${script}    sendEthernetFrame.py
+    Execute In Container    ${node}    sendEthernetFrame.py
+
 linux: Run TCP Ping Server On Node
     [Arguments]    ${node}   ${port}
     [Documentation]    Run TCP PingServer as listener on node ${node}

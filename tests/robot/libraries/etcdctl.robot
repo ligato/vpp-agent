@@ -586,7 +586,7 @@ Put Local SID With End.DX6 function
     Put Json     ${uri}    ${data}
 
 Put Local SID With End.AD function
-    [Arguments]    ${node}    ${localsidName}    ${sidAddress}    ${serviceaddress}    ${outinterface}    ${ininterface}
+    [Arguments]    ${node}    ${localsidName}    ${sidAddress}    ${outinterface}    ${ininterface}    ${l3serviceaddress}=
     [Documentation]    Add json to etcd that configurates local SID with AD end function (dynamic SR-proxy).
     ${data}=               OperatingSystem.Get File      ${CURDIR}/../resources/srv6_local_sid_with_ad_end_function.json
     ${uri}=                Set Variable                  /vnf-agent/${node}/config/vpp/srv6/${AGENT_VER}/localsid/${localsidName}
@@ -634,10 +634,18 @@ Delete SRv6 Policy
     ${out}=     Delete key    ${uri}
     [Return]    ${out}
 
-Put SRv6 Steering
+Put SRv6 L3 Steering
     [Arguments]    ${node}    ${name}    ${bsid}    ${fibtable}    ${prefixAddress}
     [Documentation]    Add SRv6 steering config json to etcd.
-    ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/srv6_steering.json
+    ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/srv6_steering_l3.json
+    ${uri}=               Set Variable                  /vnf-agent/${node}/config/vpp/srv6/${AGENT_VER}/steering/${name}
+    ${data}=              Replace Variables             ${data}
+    Put Json     ${uri}    ${data}
+
+Put SRv6 L2 Steering
+    [Arguments]    ${node}    ${name}    ${bsid}    ${interfaceName}
+    [Documentation]    Add SRv6 steering config json to etcd.
+    ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/srv6_steering_l2.json
     ${uri}=               Set Variable                  /vnf-agent/${node}/config/vpp/srv6/${AGENT_VER}/steering/${name}
     ${data}=              Replace Variables             ${data}
     Put Json     ${uri}    ${data}

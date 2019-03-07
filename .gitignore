@@ -14,6 +14,7 @@
 !/examples/**/*.*
 
 # test results
+/tests/perf/grpc-perf/grpc-perf
 /tests/perf/log
 /tests/perf/logresult.zip
 /tests/robot/variables/jozo_local_variables.robot

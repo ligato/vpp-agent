@@ -16,6 +16,7 @@ func (h *descriptorHandler) keyLabel(key string) string {
 	if h.descriptor == nil || h.descriptor.KeyLabel == nil {
 		return key
 	}
+	defer trackDescMethod(h.descriptor.Name, "KeyLabel")()
 	return h.descriptor.KeyLabel(key)
 }
 
@@ -24,6 +25,7 @@ func (h *descriptorHandler) equivalentValues(key string, oldValue, newValue prot
 	if h.descriptor == nil || h.descriptor.ValueComparator == nil {
 		return proto.Equal(oldValue, newValue)
 	}
+	defer trackDescMethod(h.descriptor.Name, "ValueComparator")()
 	return h.descriptor.ValueComparator(key, oldValue, newValue)
 }
 
@@ -32,6 +34,7 @@ func (h *descriptorHandler) validate(key string, value proto.Message) error {
 	if h.descriptor == nil || h.descriptor.Validate == nil {
 		return nil
 	}
+	defer trackDescMethod(h.descriptor.Name, "Validate")()
 	return h.descriptor.Validate(key, value)
 }
 
@@ -43,6 +46,7 @@ func (h *descriptorHandler) create(key string, value proto.Message) (metadata kv
 	if h.descriptor.Create == nil {
 		return nil, kvs.ErrUnimplementedCreate
 	}
+	defer trackDescMethod(h.descriptor.Name, "Create")()
 	return h.descriptor.Create(key, value)
 }
 
@@ -51,6 +55,7 @@ func (h *descriptorHandler) update(key string, oldValue, newValue proto.Message,
 	if h.descriptor == nil {
 		return oldMetadata, nil
 	}
+	defer trackDescMethod(h.descriptor.Name, "Update")()
 	return h.descriptor.Update(key, oldValue, newValue, oldMetadata)
 }
 
@@ -69,6 +74,7 @@ func (h *descriptorHandler) updateWithRecreate(key string, oldValue, newValue pr
 		// re-creation
 		return false
 	}
+	defer trackDescMethod(h.descriptor.Name, "UpdateWithRecreate")()
 	return h.descriptor.UpdateWithRecreate(key, oldValue, newValue, metadata)
 }
 
@@ -80,6 +86,7 @@ func (h *descriptorHandler) delete(key string, value proto.Message, metadata kvs
 	if h.descriptor.Delete == nil {
 		return kvs.ErrUnimplementedDelete
 	}
+	defer trackDescMethod(h.descriptor.Name, "Delete")()
 	return h.descriptor.Delete(key, value, metadata)
 }
 
@@ -97,6 +104,7 @@ func (h *descriptorHandler) isRetriableFailure(err error) bool {
 	if h.descriptor == nil || h.descriptor.IsRetriableFailure == nil {
 		return true
 	}
+	defer trackDescMethod(h.descriptor.Name, "IsRetriableFailure")()
 	return h.descriptor.IsRetriableFailure(err)
 }
 
@@ -105,6 +113,7 @@ func (h *descriptorHandler) dependencies(key string, value proto.Message) (deps 
 	if h.descriptor == nil || h.descriptor.Dependencies == nil {
 		return
 	}
+	defer trackDescMethod(h.descriptor.Name, "Dependencies")()
 	return h.descriptor.Dependencies(key, value)
 }
 
@@ -113,6 +122,7 @@ func (h *descriptorHandler) derivedValues(key string, value proto.Message) (deri
 	if h.descriptor == nil || h.descriptor.DerivedValues == nil {
 		return
 	}
+	defer trackDescMethod(h.descriptor.Name, "DerivedValues")()
 	return h.descriptor.DerivedValues(key, value)
 }
 
@@ -121,6 +131,7 @@ func (h *descriptorHandler) retrieve(correlate []kvs.KVWithMetadata) (values []k
 	if h.descriptor == nil || h.descriptor.Retrieve == nil {
 		return values, false, nil
 	}
+	defer trackDescMethod(h.descriptor.Name, "Retrieve")()
 	values, err = h.descriptor.Retrieve(correlate)
 	return values, true, err
 }

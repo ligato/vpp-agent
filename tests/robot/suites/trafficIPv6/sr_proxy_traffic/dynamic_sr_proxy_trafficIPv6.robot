@@ -17,6 +17,8 @@ ${VARIABLES}=                     common
 ${ENV}=                           common
 ${WAIT_TIMEOUT}=                  20s
 ${SYNC_SLEEP}=                    3s
+${TRACE_WAIT_TIMEOUT}=            6s
+${TRACE_SYNC_SLEEP}=              1s
 ${PING_WAIT_TIMEOUT}=             15s
 ${PING_SLEEP}=                    1s
 
@@ -55,6 +57,17 @@ ${srproxy_out_memif_mac}=         02:f1:be:90:03:02
 ${service_in_memif_mac}=          02:f1:be:90:00:04
 ${service_out_memif_mac}=         02:f1:be:90:02:04
 ${srproxy_in_memif_mac}=          02:f1:be:90:04:02
+
+# ethernet frame sending variables (used as values in sending python script or in validation)
+${out_interface}=                 linux_vpp1_tap
+${source_mac_address}=            01:02:03:04:05:06
+${destination_mac_address}=       01:02:03:04:05:06
+${ethernet_type}                  88b5                                # using public ethernet type for prototype and vendor-specific protocol development to not explicitly say what to expect in payload (=general frame) (http://standards-oui.ieee.org/ethertype/eth.txt)
+${payload}                        "["*30)+"PAYLOAD"+("]"*30           # custom payload (= general frame) (inserted directly "as is" in python script)
+${payload_hex_prefix}=            5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b    # partial prefix of payload in hexadecimal form (used for validation)
+${checksum}                       1a2b3c4d                            # checksum is not controlled anywhere, but needed for correct construction of frame structure
+${srproxy_out_memif_vpp_name}=    memif3/3                            # used for validation
+${srproxy_in_memif_vpp_index}=    4                                   # used for validation
 
 *** Test Cases ***
 Common Setup Used Across All Tests
@@ -106,14 +119,14 @@ Dynamic SR Proxy with L3-IPv6 SR-unaware service
     ## steering trafic from linux to TAPs tunnel leading to VPP
     linux: Add Route     node=agent_vpp_1    destination_ip=${linux_vpp3_tap_ipv6}    prefix=64    next_hop_ip=${vpp1_tap_ipv6}
     ## steering traffic to segment routing
-    Put SRv6 Steering    node=agent_vpp_1    name=toC    bsid=a::c    fibtable=0    prefixAddress=c::/64
+    Put SRv6 L3 Steering    node=agent_vpp_1    name=toC    bsid=a::c    fibtable=0    prefixAddress=c::/64
     ## creating sr-proxy in and out interfaces (using memifs)
     Create Master srproxy_out_memif on agent_vpp_2 with Prefixed IP bd:1::b/32, MAC ${srproxy_out_memif_mac}, key 3 and m3.sock socket
     Create Slave service_in_memif on agent_vpp_4 with Prefixed IP bd:1::d/32, MAC ${service_in_memif_mac}, key 3 and m3.sock socket
     Create Master service_out_memif on agent_vpp_4 with Prefixed IP bd:2::d/32, MAC ${service_out_memif_mac}, key 4 and m4.sock socket
     Create Slave srproxy_in_memif on agent_vpp_2 with Prefixed IP bd:2::b/32, MAC ${srproxy_in_memif_mac}, key 4 and m4.sock socket
     ## configure SR-proxy
-    Put Local SID With End.AD function    node=agent_vpp_2    localsidName=B    sidAddress=b::    serviceaddress=bd:1::d    outinterface=srproxy_out_memif    ininterface=srproxy_in_memif
+    Put Local SID With End.AD function    node=agent_vpp_2    localsidName=B    sidAddress=b::    l3serviceaddress=bd:1::d    outinterface=srproxy_out_memif    ininterface=srproxy_in_memif
     ## creating service routes (Service just sends received packets back)
     Create Route On agent_vpp_4 With IP ${linux_vpp3_tap_ipv6_subnet}/64 With Vrf Id 0 With Interface service_out_memif And Next Hop bd:2::b
     ## configure exit from segment routing
@@ -141,9 +154,9 @@ Dynamic SR Proxy with L3-IPv6 SR-unaware service
     Wait Until Keyword Succeeds    ${PING_WAIT_TIMEOUT}   .${PING_SLEEP}    linux: Check Ping6    node=agent_vpp_1    ip=${linux_vpp3_tap_ipv6}    count=1
     # check that packet is processed by SR-proxy, send to SR-unware service using correct interface and in the process decapsulated(checked only source and destination address and not if SR header extension is missing because that is not visible in trace)
     ${vpp2trace}=    vpp_term: Show Trace    agent_vpp_2
-    Packet Trace ${vpp2trace} Should Contain One Packet Trace That Contains These Ordered Substrings srv6-ad-localsid, IP6: ${srproxy_out_memif_mac} -> ${service_in_memif_mac}, ICMP6: ${linux_vpp1_tap_ipv6} -> ${linux_vpp3_tap_ipv6}, .  # using only 3 substrings to match packet trace
+    Packet Trace ${vpp2trace} Should Contain One Packet Trace That Contains These Ordered Substrings srv6-ad-localsid, IP6: ${srproxy_out_memif_mac} -> ${service_in_memif_mac}, ICMP6: ${linux_vpp1_tap_ipv6} -> ${linux_vpp3_tap_ipv6}, ., .  # using only 3 substrings to match packet trace
     # check that packet has returned from SR-unware service, gets rewritten by proxy (SR encapsulation) and send to another SR segment (correct interface and correct source and destination address)
-    Packet Trace ${vpp2trace} Should Contain One Packet Trace That Contains These Ordered Substrings ${linux_vpp1_tap_ipv6} -> ${linux_vpp3_tap_ipv6}, SRv6-AD-rewrite: src :: dst c::, IP6: ${vpp2_memif2_mac} -> ${vpp3_memif1_mac}, IPV6_ROUTE: :: -> c::
+    Packet Trace ${vpp2trace} Should Contain One Packet Trace That Contains These Ordered Substrings ${linux_vpp1_tap_ipv6} -> ${linux_vpp3_tap_ipv6}, SRv6-AD-rewrite: src :: dst c::, IP6: ${vpp2_memif2_mac} -> ${vpp3_memif1_mac}, IPV6_ROUTE: :: -> c::, .  # using only 4 substrings to match packet trace
 
     # cleanup (for next test)
     Delete VPP Interface     agent_vpp_2         srproxy_in_memif
@@ -165,14 +178,14 @@ Dynamic SR Proxy with L3-IPv4 SR-unaware service
     ## steering trafic from linux to TAPs tunnel leading to VPP
     linux: Add Route     node=agent_vpp_1    destination_ip=${linux_vpp3_tap_ipv4_subnet}    prefix=24    next_hop_ip=${vpp1_tap_ipv4}
     ## steering traffic to segment routing
-    Put SRv6 Steering    node=agent_vpp_1    name=toC    bsid=a::c    fibtable=0    prefixAddress=${linux_vpp3_tap_ipv4_subnet}/24
+    Put SRv6 L3 Steering    node=agent_vpp_1    name=toC    bsid=a::c    fibtable=0    prefixAddress=${linux_vpp3_tap_ipv4_subnet}/24
     ## creating sr-proxy in and out interfaces (using memifs)
     Create Master srproxy_out_memif on agent_vpp_2 with Prefixed IP ${srproxy_out_memif_ipv4}/24, MAC ${srproxy_out_memif_mac}, key 3 and m3.sock socket
     Create Slave service_in_memif on agent_vpp_4 with Prefixed IP ${service_in_memif_ipv4}/24, MAC ${service_in_memif_mac}, key 3 and m3.sock socket
     Create Master service_out_memif on agent_vpp_4 with Prefixed IP ${service_out_memif_ipv4}/24, MAC ${service_out_memif_mac}, key 4 and m4.sock socket
     Create Slave srproxy_in_memif on agent_vpp_2 with Prefixed IP ${srproxy_in_memif_ipv4}/24, MAC ${srproxy_in_memif_mac}, key 4 and m4.sock socket
     ## configure SR-proxy
-    Put Local SID With End.AD function     node=agent_vpp_2    localsidName=B    sidAddress=b::    serviceaddress=${service_in_memif_ipv4}    outinterface=srproxy_out_memif    ininterface=srproxy_in_memif
+    Put Local SID With End.AD function     node=agent_vpp_2    localsidName=B    sidAddress=b::    l3serviceaddress=${service_in_memif_ipv4}    outinterface=srproxy_out_memif    ininterface=srproxy_in_memif
     ## creating service routes (Service just sends received packets back)
     Create Route On agent_vpp_4 With IP ${linux_vpp3_tap_ipv4_subnet}/24 With Vrf Id 0 With Interface service_out_memif And Next Hop ${srproxy_in_memif_ipv4}
     ## configure exit from segment routing
@@ -196,15 +209,54 @@ Dynamic SR Proxy with L3-IPv4 SR-unaware service
     Wait Until Keyword Succeeds    ${PING_WAIT_TIMEOUT}   .${PING_SLEEP}    linux: Check Ping    node=agent_vpp_1    ip=${linux_vpp3_tap_ipv4}    count=1
     # check that packet is processed by SR-proxy, send to SR-unware service using correct interface and in the process decapsulated(checked only source and destination address and not if SR header extension is missing because that is not visible in trace)
     ${vpp2trace}=    vpp_term: Show Trace    agent_vpp_2
-    Packet Trace ${vpp2trace} Should Contain One Packet Trace That Contains These Ordered Substrings srv6-ad-localsid, IP4: ${srproxy_out_memif_mac} -> ${service_in_memif_mac}, ICMP: ${linux_vpp1_tap_ipv4} -> ${linux_vpp3_tap_ipv4}, .  # using only 3 substrings to match packet trace
+    Packet Trace ${vpp2trace} Should Contain One Packet Trace That Contains These Ordered Substrings srv6-ad-localsid, IP4: ${srproxy_out_memif_mac} -> ${service_in_memif_mac}, ICMP: ${linux_vpp1_tap_ipv4} -> ${linux_vpp3_tap_ipv4}, ., .  # using only 3 substrings to match packet trace
     # check that packet has returned from SR-unware service, gets rewritten by proxy (SR encapsulation) and send to another SR segment (correct interface and correct source and destination address)
-    Packet Trace ${vpp2trace} Should Contain One Packet Trace That Contains These Ordered Substrings ${linux_vpp1_tap_ipv4} -> ${linux_vpp3_tap_ipv4}, SRv6-AD-rewrite: src :: dst c::, IP6: ${vpp2_memif2_mac} -> ${vpp3_memif1_mac}, IPV6_ROUTE: :: -> c::
+    Packet Trace ${vpp2trace} Should Contain One Packet Trace That Contains These Ordered Substrings ${linux_vpp1_tap_ipv4} -> ${linux_vpp3_tap_ipv4}, SRv6-AD-rewrite: src :: dst c::, IP6: ${vpp2_memif2_mac} -> ${vpp3_memif1_mac}, IPV6_ROUTE: :: -> c::, .  # using only 4 substrings to match packet trace
+
+    # cleanup (for next test)
+    Delete Local SID         node=agent_vpp_2    localsidName=B
+    vpp_term: Clear Trace    agent_vpp_2
+
+Dynamic SR Proxy with L2 SR-unaware service
+    # Testing L2 traffic(sending custom Ethernet frame) going through SR-proxy (IPv6 segment routing) connected to
+    # L2 SR-unaware service. Desired frame path starts identically to the path in IPv6 SR-unaware service test, but
+    # ends right after SR-proxy (at least it is not further checked). We don't do the full packet/frame path as for
+    # IPv4/IPv6 SR-unaware services, because sending ethernet frame is not like ping that has echo and nice ping tool
+    # in linux that tells you whether echo was received or not. For doing the same for ethernet frame, there have to be
+    # some traffic catching tool and that is too complicated for something that is basically not the aim of test.
+    # The aim is to check SR-proxy functionality.
+
+    # creating path for frame (path is already partially done in common setup+using memifs between sr-proxy and service from ipv4 test)
+    ## steering traffic to segment routing
+    Put SRv6 L2 Steering    node=agent_vpp_1    name=toC    bsid=a::c    interfaceName=vpp1_tap
+    ## configure SR-proxy
+    Put Local SID With End.AD function    node=agent_vpp_2    localsidName=B    sidAddress=b::    outinterface=srproxy_out_memif    ininterface=srproxy_in_memif    # L2 SR-unware service
+    ## creating service paths (Service just sends received frame back)
+    Create Bridge Domain bd1 Without Autolearn On agent_vpp_4 With Interfaces service_in_memif, service_out_memif
+    Add fib entry for 01:02:03:04:05:06 in bd1 over service_out_memif on agent_vpp_4
+
+    # add packet tracing
+    vpp_term: Add Trace Memif     agent_vpp_2    100
+    # sending ethernet frame
+    linux: Send Ethernet Frame    agent_vpp_1    ${out_interface}    ${source_mac_address}    ${destination_mac_address}    ${ethernet_type}    ${payload}    ${checksum}
+    Wait Until Keyword Succeeds   ${TRACE_WAIT_TIMEOUT}   ${TRACE_SYNC_SLEEP}    Trace on agent_vpp_2 has at least 2 packets
+    # check that packet is processed by SR-proxy, send to SR-unware service using correct interface and in the process decapsulated(checked only ethernet frame
+    # type and source/destination address and not if SR header extension is missing because that is not visible in trace)
+    ${vpp2trace}=    vpp_term: Show Trace    agent_vpp_2
+    Packet Trace ${vpp2trace} Should Contain One Packet Trace That Contains These Ordered Substrings srv6-ad-localsid, ${srproxy_out_memif_vpp_name}, 0x${ethernet_type}: ${source_mac_address} -> ${destination_mac_address}, ., .  # using only 3 substrings to match packet trace
+    # check that packet has returned from SR-unware service (something received from correct interface and later checked its rewritten payload to be sure it is
+    # the right frame), gets rewritten by proxy (SR encapsulation) and send to another SR segment (correct interface and correct source and destination address)
+    Packet Trace ${vpp2trace} Should Contain One Packet Trace That Contains These Ordered Substrings memif: hw_if_index ${srproxy_in_memif_vpp_index}, SRv6-AD-rewrite: src :: dst c::, ${ethernet_type}${payload_hex_prefix}, IP6: ${vpp2_memif2_mac} -> ${vpp3_memif1_mac}, IPV6_ROUTE: :: -> c::
 
 
 *** Keywords ***
-Packet Trace ${packettrace} Should Contain One Packet Trace That Contains These Ordered Substrings ${substr1}, ${substr2}, ${substr3}, ${substr4}
+Packet Trace ${packettrace} Should Contain One Packet Trace That Contains These Ordered Substrings ${substr1}, ${substr2}, ${substr3}, ${substr4}, ${substr5}
     ${packetsplit}=       String.Split String    ${packettrace}    Packet
-    Should Contain Match    ${packetsplit}    regexp=.*${substr1}.*${substr2}.*${substr3}.*${substr4}.*    case_insensitive=True
+    Should Contain Match    ${packetsplit}    regexp=.*${substr1}.*${substr2}.*${substr3}.*${substr4}.*${substr5}.*    case_insensitive=True
+
+Trace on ${node} has at least 2 packets
+    ${trace}=    vpp_term: Show Trace    ${node}
+    Should Contain    ${trace}    Packet 2
 
 TestSetup
     Make Datastore Snapshots    ${TEST_NAME}_test_setup

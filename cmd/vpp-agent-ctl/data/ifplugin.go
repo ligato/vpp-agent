@@ -58,6 +58,10 @@ type InterfacesCtl interface {
 	PutLinuxTap() error
 	// DeleteLinuxTap removes linux TAP type interface configuration from the ETCD
 	DeleteLinuxTap() error
+	// PutLinuxLoop puts linux loopback type interface configuration to the ETCD
+	PutLinuxLoop() error
+	// DeleteLinuxLoop removes linux loopback type interface configuration from the ETCD
+	DeleteLinuxLoop() error
 }
 
 // PutDPDKInterface puts ethernet type interface config to the ETCD
@@ -377,5 +381,35 @@ func (ctl *VppAgentCtlImpl) DeleteLinuxTap() error {
 
 	ctl.Log.Println("Deleting", linuxTapKey)
 	_, err := ctl.broker.Delete(linuxTapKey)
+	return err
+}
+
+// PutLinuxTap puts linux TAP type interface configuration to the ETCD
+func (ctl *VppAgentCtlImpl) PutLinuxLoop() error {
+	linuxLoop := &linuxIf.Interface{
+		Name:        "loop",
+		Type:        linuxIf.Interface_LOOPBACK,
+		Enabled:     true,
+		PhysAddress: "AA:AA:BE:EF:F0:0D",
+		Namespace: &linux_namespace.NetNamespace{
+			Reference: "ns1",
+			Type:      linux_namespace.NetNamespace_NSID,
+		},
+		IpAddresses: []string{
+			"127.0.0.1/8",
+			"192.168.16.4/24",
+		},
+	}
+
+	ctl.Log.Println(linuxLoop)
+	return ctl.broker.Put(linuxIf.InterfaceKey(linuxLoop.Name), linuxLoop)
+}
+
+// DeleteLinuxTap removes linux TAP type interface configuration from the ETCD
+func (ctl *VppAgentCtlImpl) DeleteLinuxLoop() error {
+	linuxLoopKey := linuxIf.InterfaceKey("loop")
+
+	ctl.Log.Println("Deleting", linuxLoopKey)
+	_, err := ctl.broker.Delete(linuxLoopKey)
 	return err
 }

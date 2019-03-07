@@ -40,18 +40,62 @@ type dumpService struct {
 }
 
 func (svc *dumpService) Dump(context.Context, *rpc.DumpRequest) (*rpc.DumpResponse, error) {
+	svc.log.Debugf("Received Dump request..")
+
 	dump := newConfig()
 
-	dump.VppConfig.Interfaces, _ = svc.DumpInterfaces()
-	dump.VppConfig.Acls, _ = svc.DumpAcls()
-	dump.VppConfig.IpsecSpds, _ = svc.DumpIPSecSPDs()
-	dump.VppConfig.IpsecSas, _ = svc.DumpIPSecSAs()
-	dump.VppConfig.BridgeDomains, _ = svc.DumpBDs()
-	dump.VppConfig.Routes, _ = svc.DumpRoutes()
-	dump.VppConfig.Arps, _ = svc.DumpARPs()
-	dump.VppConfig.Fibs, _ = svc.DumpFIBs()
-	dump.VppConfig.XconnectPairs, _ = svc.DumpXConnects()
-	dump.VppConfig.PuntTohosts, _ = svc.DumpPunt()
+	var err error
+
+	dump.VppConfig.Interfaces, err = svc.DumpInterfaces()
+	if err != nil {
+		svc.log.Errorf("DumpInterfaces failed: %v", err)
+		return nil, err
+	}
+	dump.VppConfig.Acls, err = svc.DumpAcls()
+	if err != nil {
+		svc.log.Errorf("DumpAcls failed: %v", err)
+		return nil, err
+	}
+	dump.VppConfig.IpsecSpds, err = svc.DumpIPSecSPDs()
+	if err != nil {
+		svc.log.Errorf("DumpIPSecSPDs failed: %v", err)
+		return nil, err
+	}
+	dump.VppConfig.IpsecSas, err = svc.DumpIPSecSAs()
+	if err != nil {
+		svc.log.Errorf("DumpIPSecSAs failed: %v", err)
+		return nil, err
+	}
+	dump.VppConfig.BridgeDomains, err = svc.DumpBDs()
+	if err != nil {
+		svc.log.Errorf("DumpBDs failed: %v", err)
+		return nil, err
+	}
+	dump.VppConfig.Routes, err = svc.DumpRoutes()
+	if err != nil {
+		svc.log.Errorf("DumpRoutes failed: %v", err)
+		return nil, err
+	}
+	dump.VppConfig.Arps, err = svc.DumpARPs()
+	if err != nil {
+		svc.log.Errorf("DumpARPs failed: %v", err)
+		return nil, err
+	}
+	dump.VppConfig.Fibs, err = svc.DumpFIBs()
+	if err != nil {
+		svc.log.Errorf("DumpFIBs failed: %v", err)
+		return nil, err
+	}
+	dump.VppConfig.XconnectPairs, err = svc.DumpXConnects()
+	if err != nil {
+		svc.log.Errorf("DumpXConnects failed: %v", err)
+		return nil, err
+	}
+	dump.VppConfig.PuntTohosts, err = svc.DumpPunt()
+	if err != nil {
+		svc.log.Errorf("DumpPunt failed: %v", err)
+		return nil, err
+	}
 
 	// FIXME: linux interface handler should return known proto instead of netlink
 	// state.LinuxData.Interfaces, _ = svc.DumpLinuxInterfaces()

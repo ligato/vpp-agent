@@ -59,9 +59,9 @@ Check Local SID CRUD
 
 Check SR-Proxy CRUD
     # SR-proxy is actual a Local SID with End.AD end function, but VPP is configured in this case differently in compare to other local SIDs (VPP CLI(using VPE binary API) vs binary VPP API) -> need to test this
-    Put Local SID With End.AD function     node=agent_vpp_1    localsidName=A    sidAddress=a::    serviceaddress=10.10.1.2    outinterface=vpp1_afpacket1    ininterface=vpp1_afpacket2
+    Put Local SID With End.AD function     node=agent_vpp_1    localsidName=A    sidAddress=a::    l3serviceaddress=10.10.1.2    outinterface=vpp1_afpacket1    ininterface=vpp1_afpacket2
     Wait Until Keyword Succeeds        ${WAIT_TIMEOUT}     ${SYNC_SLEEP}     vpp_term: Check SR-Proxy Local SID Presence    node=agent_vpp_1    sidAddress=a::    serviceaddress=10.10.1.2    outinterface=host-vpp1_veth2    ininterface=host-vpp1_veth4
-    Put Local SID With End.AD function     node=agent_vpp_1    localsidName=A    sidAddress=a::    serviceaddress=10.10.1.2    outinterface=vpp1_afpacket2    ininterface=vpp1_afpacket1   #modification
+    Put Local SID With End.AD function     node=agent_vpp_1    localsidName=A    sidAddress=a::    l3serviceaddress=10.10.1.2    outinterface=vpp1_afpacket2    ininterface=vpp1_afpacket1   #modification
     Wait Until Keyword Succeeds        ${WAIT_TIMEOUT}     ${SYNC_SLEEP}     vpp_term: Check SR-Proxy Local SID Presence    node=agent_vpp_1    sidAddress=a::    serviceaddress=10.10.1.2    outinterface=host-vpp1_veth4    ininterface=host-vpp1_veth2
     Delete Local SID                       node=agent_vpp_1    localsidName=A
     Wait Until Keyword Succeeds        ${WAIT_TIMEOUT}     ${SYNC_SLEEP}     vpp_term: Check Local SID Deleted     node=agent_vpp_1    sidAddress=a::
@@ -86,9 +86,9 @@ Check Policy CRUD
 
 Check Steering CRUD
     Put SRv6 Policy                    node=agent_vpp_1    bsid=a::e       fibtable=0         srhEncapsulation=true    sprayBehaviour=true    segmentlists=${segmentLists1weight1}
-    Put SRv6 Steering                  node=agent_vpp_1    name=toE        bsid=a::e          fibtable=0               prefixAddress=e::/64
+    Put SRv6 L3 Steering                  node=agent_vpp_1    name=toE        bsid=a::e          fibtable=0               prefixAddress=e::/64
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Check SRv6 Steering Presence      node=agent_vpp_1    bsid=a::e    prefixAddress=e::/64
-    Put SRv6 Steering                  node=agent_vpp_1    name=toE        bsid=a::e          fibtable=0               prefixAddress=d::/64   # modification
+    Put SRv6 L3 Steering               node=agent_vpp_1    name=toE        bsid=a::e          fibtable=0               prefixAddress=d::/64   # modification
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Check SRv6 Steering Presence      node=agent_vpp_1    bsid=a::e    prefixAddress=d::/64
     Delete SRv6 Steering               node=agent_vpp_1    name=toE
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Check SRv6 Steering NonExistence  node=agent_vpp_1    bsid=a::e    prefixAddress=d::/64
@@ -97,7 +97,7 @@ Check Steering CRUD
 #TODO Steering can reference policy also by index -> add test (currently NOT WORKING on VPP side!)
 
 Check Steering Creation By Using Reversed-Ordered Steering And Policy Setting (Delayed Configuration)
-    Put SRv6 Steering                  node=agent_vpp_1    name=toE        bsid=a::e          fibtable=0               prefixAddress=e::/64
+    Put SRv6 L3 Steering                  node=agent_vpp_1    name=toE        bsid=a::e          fibtable=0               prefixAddress=e::/64
     Put SRv6 Policy                    node=agent_vpp_1    bsid=a::e       fibtable=0         srhEncapsulation=true    sprayBehaviour=true    segmentlists=${segmentLists1weight1}
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Check SRv6 Steering Presence      node=agent_vpp_1    bsid=a::e    prefixAddress=e::/64
     Delete SRv6 Steering               node=agent_vpp_1    name=toE        #cleanup
@@ -105,7 +105,7 @@ Check Steering Creation By Using Reversed-Ordered Steering And Policy Setting (D
 
 Check Steering Delete By Removal of Policy
     Put SRv6 Policy                    node=agent_vpp_1    bsid=a::e       fibtable=0         srhEncapsulation=true    sprayBehaviour=true    segmentlists=${segmentLists1weight1}
-    Put SRv6 Steering                  node=agent_vpp_1    name=toE        bsid=a::e          fibtable=0               prefixAddress=e::/64
+    Put SRv6 L3 Steering                  node=agent_vpp_1    name=toE        bsid=a::e          fibtable=0               prefixAddress=e::/64
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Check SRv6 Steering Presence      node=agent_vpp_1    bsid=a::e    prefixAddress=e::/64
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Check SRv6 Policy Presence        node=agent_vpp_1    bsid=a::e    fibtable=0    behaviour=Encapsulation    type=Spray    index=0    segmentlists=${segmentLists1weight1}
     Delete SRv6 Policy                 node=agent_vpp_1    bsid=a::e
@@ -114,7 +114,7 @@ Check Steering Delete By Removal of Policy
     Delete SRv6 Steering               node=agent_vpp_1    name=toE        #cleanup
 
 Check Update Of Policy Should Not Trigger Cascade Delete Of Steering
-    Put SRv6 Steering                  node=agent_vpp_1    name=toE        bsid=a::e          fibtable=0               prefixAddress=e::/64
+    Put SRv6 L3 Steering                  node=agent_vpp_1    name=toE        bsid=a::e          fibtable=0               prefixAddress=e::/64
     Put SRv6 Policy                    node=agent_vpp_1    bsid=a::e       fibtable=0         srhEncapsulation=true    sprayBehaviour=true    segmentlists=${segmentLists1weight1}
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Check SRv6 Steering Presence      node=agent_vpp_1    bsid=a::e    prefixAddress=e::/64
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Check SRv6 Policy Presence        node=agent_vpp_1    bsid=a::e    fibtable=0    behaviour=Encapsulation    type=Spray    index=0    segmentlists=${segmentLists1weight1}
@@ -128,7 +128,7 @@ Check Update Of Policy Should Not Trigger Cascade Delete Of Steering
 Check Resynchronization for clean VPP start
     Put Local SID With End.DX6 function    node=agent_vpp_1    localsidName=A    sidAddress=a::     fibtable=0               outinterface=vpp1_afpacket1    nexthop=a::1
     Put SRv6 Policy                        node=agent_vpp_1    bsid=a::e         fibtable=0         srhEncapsulation=true    sprayBehaviour=true            segmentlists=${segmentLists1weight1}
-    Put SRv6 Steering                      node=agent_vpp_1    name=toE          bsid=a::e          fibtable=0               prefixAddress=e::/64
+    Put SRv6 L3 Steering                      node=agent_vpp_1    name=toE          bsid=a::e          fibtable=0               prefixAddress=e::/64
     Remove All VPP Nodes
     Sleep                                       3s
     Add Agent VPP Node                          agent_vpp_1

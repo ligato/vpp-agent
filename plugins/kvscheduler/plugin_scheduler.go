@@ -210,6 +210,8 @@ func (s *Scheduler) RegisterKVDescriptor(descriptor *kvs.KVDescriptor) error {
 		return kvs.ErrDescriptorExists
 	}
 
+	stats.addDescriptor(descriptor.Name)
+
 	s.registry.RegisterDescriptor(descriptor)
 	if descriptor.NBKeyPrefix != "" {
 		s.keyPrefixes = append(s.keyPrefixes, descriptor.NBKeyPrefix)
@@ -400,6 +402,7 @@ func (txn *SchedulerTxn) Commit(ctx context.Context) (txnSeqNum uint64, err erro
 	txnSeqNum = ^uint64(0)
 
 	txnData := &transaction{
+		ctx:     ctx,
 		txnType: kvs.NBTransaction,
 		nb:      &nbTxn{},
 		values:  make([]kvForTxn, 0, len(txn.values)),
@@ -433,6 +436,7 @@ func (txn *SchedulerTxn) Commit(ctx context.Context) (txnSeqNum uint64, err erro
 	if txnData.nb.isBlocking {
 		txnData.nb.resultChan = make(chan txnResult, 1)
 	}
+
 	err = txn.scheduler.enqueueTxn(txnData)
 	if err != nil {
 		return txnSeqNum, kvs.NewTransactionError(err, nil)

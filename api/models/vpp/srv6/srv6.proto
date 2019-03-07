@@ -77,9 +77,9 @@ message LocalSID {
 
     /* End function behavior of dynamic segment routing proxy endpoint */
     message EndAD {
-        string service_address = 1;      /* IPv6/IPv4 address of SR-unaware service (address type depends whether service is IPv4 or IPv6 service) */
         string outgoing_interface = 2;   /* name of interface on segment routing proxy side sending data to segment routing unaware service */
         string incoming_interface = 3;   /* name of interface on segment routing proxy side receiving data from segment routing unaware service */
+        string l3_service_address = 4;   /* IPv6/IPv4 address of L3 SR-unaware service (address type depends whether service is IPv4 or IPv6 service), in case of L2 service it must be empty */
     }
 }
 

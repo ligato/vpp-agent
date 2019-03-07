@@ -267,7 +267,6 @@ func (p *Plugin) NewAPIChannelBuffered(reqChanBufSize, replyChanBufSize int) (go
 // GetTrace returns all trace entries measured so far
 func (p *Plugin) GetTrace() *apitrace.Trace {
 	if !p.config.TraceEnabled {
-		p.Log.Warnf("VPP API trace is disabled")
 		return nil
 	}
 	return p.tracer.Get()

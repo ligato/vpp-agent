@@ -1,0 +1,26 @@
+#!/bin/bash
+
+cd "$(dirname "$0")"
+
+set -euo pipefail
+
+# This test script calls the run script in the ./grpc-perf subfolder 
+# with varying the count of tunnels.
+
+echo "================================================================================"
+echo " gRPC Performance Test "
+echo "================================================================================"
+
+# install agent
+make -C ../.. agent
+
+cd grpc-perf
+
+echo "-> preparing test.."
+go build
+
+./run_agent_vpp_and_perf.sh 10
+./run_agent_vpp_and_perf.sh 100
+./run_agent_vpp_and_perf.sh 1000
+#./run_agent_vpp_and_perf.sh 10000
+
