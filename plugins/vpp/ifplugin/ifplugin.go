@@ -137,7 +137,8 @@ func (p *IfPlugin) Init() error {
 	p.fromConfigFile()
 
 	// Fills nil dependencies with default values
-	p.publishStats = p.PublishStatistics != nil || p.NotifyStates != nil
+	// FIXME: for performance reasons, disabled until refactored
+	//p.publishStats = p.PublishStatistics != nil || p.NotifyStates != nil
 	p.fixNilPointers()
 
 	// VPP channel
@@ -220,7 +221,7 @@ func (p *IfPlugin) Init() error {
 				case p.ifStateChan <- state:
 					// OK
 				default:
-					p.Log.Debug("Unable to send to the ifStateChan channel - channel buffer full.")
+					p.Log.Warn("Unable to send to the ifStateChan channel - channel buffer full.")
 				}
 			}); err != nil {
 			return err
