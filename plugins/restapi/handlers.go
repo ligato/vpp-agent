@@ -26,6 +26,7 @@ import (
 	"github.com/unrolled/render"
 
 	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
+	"github.com/ligato/vpp-agent/plugins/govppmux"
 	"github.com/ligato/vpp-agent/plugins/restapi/resturl"
 )
 
@@ -350,7 +351,7 @@ func (p *Plugin) telemetryNodeCountHandler(formatter *render.Render) http.Handle
 // tracerHandler - returns binary API call trace
 func (p *Plugin) tracerHandler(formatter *render.Render) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
-		entries := p.GoVppmux.GetTrace()
+		entries := govppmux.GetStats()
 		if entries == nil {
 			p.logError(formatter.JSON(w, http.StatusOK, "VPP api trace is disabled"))
 			return

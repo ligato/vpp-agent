@@ -103,12 +103,18 @@ else
 fi
 echo "--------------------------------------------------------------------------------"
 
+sleep 1
 check_vpp
 check_agent
 sleep 1
 
+if [[ "$test_result" != "0" ]]; then
+	fail "Test failure!"
+fi
+
 echo "-> collecting data.."
 curl -s -X GET -H "Content-Type: application/json" http://127.0.0.1:9191/scheduler/stats
+curl -s -X GET -H "Content-Type: application/json" http://127.0.0.1:9191/vpp/binapitrace
 #curl -s -X GET -H "Content-Type: application/json" http://127.0.0.1:1234/debug/vars
 # TODO: collect more data
 
