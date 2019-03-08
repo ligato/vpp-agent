@@ -62,6 +62,10 @@ func (h *InterfaceVppHandler) WatchInterfaceEvents(events chan<- *InterfaceEvent
 		EnableDisable: 1,
 	}).ReceiveReply(wantIfEventsReply)
 	if err != nil {
+		if err == govppapi.VPPApiError(govppapi.INVALID_REGISTRATION) {
+			h.log.Warnf("already registered for watch interface events: %v", err)
+			return nil
+		}
 		return errors.Errorf("failed to watch interface events: %v", err)
 	}
 

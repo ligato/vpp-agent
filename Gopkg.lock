@@ -3,20 +3,22 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:b6b3690dbd9f8ac2361ffc77d86331a10365425c602ee588c9b4ec0d037e05b0"
+  digest = "1:895d3e8000bfcd540827ff191e425379eb20d0859b98debb9a389a14e12a35f8"
   name = "git.fd.io/govpp.git"
   packages = [
     "adapter",
     "adapter/mock",
     "adapter/mock/binapi",
+    "adapter/socketclient",
     "adapter/vppapiclient",
     "api",
     "cmd/binapi-generator",
     "codec",
     "core",
+    "examples/bin_api/memclnt",
   ]
   pruneopts = "UT"
-  revision = "45e38494c1d65ad9178ad15f4048c0ab16f98b77"
+  revision = "6dd658f579ae4e1d9704e14380b69fe906c57ad2"
 
 [[projects]]
   branch = "master"
@@ -984,6 +986,7 @@
   input-imports = [
     "git.fd.io/govpp.git/adapter",
     "git.fd.io/govpp.git/adapter/mock",
+    "git.fd.io/govpp.git/adapter/socketclient",
     "git.fd.io/govpp.git/adapter/vppapiclient",
     "git.fd.io/govpp.git/api",
     "git.fd.io/govpp.git/cmd/binapi-generator",

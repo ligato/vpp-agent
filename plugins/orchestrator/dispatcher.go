@@ -16,6 +16,7 @@ package orchestrator
 
 import (
 	"fmt"
+	"runtime/trace"
 	"sync"
 
 	"github.com/ligato/cn-infra/logging"
@@ -59,6 +60,10 @@ func (p *dispatcher) PushData(ctx context.Context, kvPairs []KeyVal) (kvErrs []k
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
+	trace.Logf(ctx, "kvPairs", "%d", len(kvPairs))
+
+	pr := trace.StartRegion(ctx, "prepare kv data")
+
 	dataSrc, ok := DataSrcFromContext(ctx)
 	if !ok {
 		dataSrc = "global"
@@ -69,6 +74,7 @@ func (p *dispatcher) PushData(ctx context.Context, kvPairs []KeyVal) (kvErrs []k
 	txn := p.kvs.StartNBTransaction()
 
 	if typ, _ := kvs.IsResync(ctx); typ == kvs.FullResync {
+		trace.Log(ctx, "resyncType", typ.String())
 		p.store.Reset(dataSrc)
 		for _, kv := range kvPairs {
 			if kv.Val == nil {
@@ -96,6 +102,8 @@ func (p *dispatcher) PushData(ctx context.Context, kvPairs []KeyVal) (kvErrs []k
 			}
 		}
 	}
+
+	pr.End()
 
 	seqID, err := txn.Commit(ctx)
 	if err != nil {

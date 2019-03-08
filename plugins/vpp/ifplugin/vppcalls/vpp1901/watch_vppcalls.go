@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"time"
 
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/pkg/errors"
@@ -27,6 +28,8 @@ import (
 	binapi_interfaces "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
 )
+
+var InterfaceEventTimeout = time.Second
 
 func (h *InterfaceVppHandler) WatchInterfaceEvents(events chan<- *vppcalls.InterfaceEvent) error {
 	notifChan := make(chan govppapi.Message)
@@ -41,17 +44,30 @@ func (h *InterfaceVppHandler) WatchInterfaceEvents(events chan<- *vppcalls.Inter
 	go func() {
 		for {
 			select {
-			case e := <-notifChan:
+			case e, ok := <-notifChan:
+				if !ok {
+					h.log.Debugf("interface notification channel was closed")
+					return
+				}
 				ifEvent, ok := e.(*binapi_interfaces.SwInterfaceEvent)
 				if !ok {
 					continue
 				}
-				events <- &vppcalls.InterfaceEvent{
+				event := &vppcalls.InterfaceEvent{
 					SwIfIndex:  ifEvent.SwIfIndex,
 					AdminState: ifEvent.AdminUpDown,
 					LinkState:  ifEvent.LinkUpDown,
 					Deleted:    ifEvent.Deleted != 0,
 				}
+				// send event in goroutine for quick processing
+				go func() {
+					select {
+					case events <- event:
+						// sent ok
+					case <-time.After(InterfaceEventTimeout):
+						h.log.Warnf("unable to deliver interface event, dropping it")
+					}
+				}()
 			}
 		}
 	}()
@@ -63,6 +79,10 @@ func (h *InterfaceVppHandler) WatchInterfaceEvents(events chan<- *vppcalls.Inter
 		EnableDisable: 1,
 	}).ReceiveReply(wantIfEventsReply)
 	if err != nil {
+		if err == govppapi.VPPApiError(govppapi.INVALID_REGISTRATION) {
+			h.log.Warnf("already registered for watch interface events: %v", err)
+			return nil
+		}
 		return errors.Errorf("failed to watch interface events: %v", err)
 	}
 

@@ -15,6 +15,9 @@
 package govppmux
 
 import (
+	"context"
+	"runtime/trace"
+	"sync/atomic"
 	"time"
 
 	govppapi "git.fd.io/govpp.git/api"
@@ -40,11 +43,14 @@ func newGovppChan(ch govppapi.Channel, retryCfg retryConfig, tracer measure.Trac
 		retry:   retryCfg,
 		tracer:  tracer,
 	}
+	atomic.AddUint64(&stats.ChannelsCreated, 1)
+	atomic.AddUint64(&stats.ChannelsOpen, 1)
 	return govppChan
 }
 
 func (c *goVppChan) Close() {
 	c.Channel.Close()
+	atomic.AddUint64(&stats.ChannelsOpen, ^uint64(0)) // decrement
 }
 
 // helper struct holding info about retry configuration
@@ -55,6 +61,8 @@ type retryConfig struct {
 
 // govppRequestCtx is custom govpp RequestCtx.
 type govppRequestCtx struct {
+	ctx  context.Context
+	task *trace.Task
 	// Original request context
 	requestCtx govppapi.RequestCtx
 	// Function allowing to re-send request in case it's granted by the config file
@@ -71,6 +79,8 @@ type govppRequestCtx struct {
 
 // govppMultirequestCtx is custom govpp MultiRequestCtx.
 type govppMultirequestCtx struct {
+	ctx  context.Context
+	task *trace.Task
 	// Original multi request context
 	requestCtx govppapi.MultiRequestCtx
 	// Parameter for sendRequest
@@ -84,16 +94,21 @@ type govppMultirequestCtx struct {
 // SendRequest sends asynchronous request to the vpp and receives context used to receive reply.
 // Plugin govppmux allows to re-send retry which failed because of disconnected vpp, if enabled.
 func (c *goVppChan) SendRequest(request govppapi.Message) govppapi.RequestCtx {
-	start := time.Now()
+	ctx, task := trace.NewTask(context.Background(), "govpp.SendRequest")
+	trace.Log(ctx, "messageName", request.GetMessageName())
 
-	sendRequest := c.Channel.SendRequest
+	start := time.Now()
 	// Send request now and wait for context
-	requestCtx := sendRequest(request)
+	requestCtx := c.Channel.SendRequest(request)
+
+	atomic.AddUint64(&stats.RequestsSent, 1)
 
 	// Return context with value and function which allows to send request again if needed
 	return &govppRequestCtx{
+		ctx:         ctx,
+		task:        task,
 		requestCtx:  requestCtx,
-		sendRequest: sendRequest,
+		sendRequest: c.Channel.SendRequest,
 		requestMsg:  request,
 		retry:       c.retry,
 		tracer:      c.tracer,
@@ -104,6 +119,7 @@ func (c *goVppChan) SendRequest(request govppapi.Message) govppapi.RequestCtx {
 // ReceiveReply handles request and returns error if occurred. Also does retry if this option is available.
 func (r *govppRequestCtx) ReceiveReply(reply govppapi.Message) error {
 	defer func() {
+		r.task.End()
 		if r.tracer != nil {
 			r.tracer.LogTime(r.requestMsg.GetMessageName(), r.start)
 		}
@@ -117,28 +133,46 @@ func (r *govppRequestCtx) ReceiveReply(reply govppapi.Message) error {
 
 	// Receive reply from original send
 	err := r.requestCtx.ReceiveReply(reply)
-	for retry := 1; err == core.ErrNotConnected && retry <= maxRetries; retry++ {
+
+	for retry := 1; err == core.ErrNotConnected; retry++ {
+		if retry > maxRetries {
+			// retrying failed
+			break
+		}
+		logging.Warnf("Govppmux: request retry (%d/%d), message %s in %v",
+			retry, maxRetries, r.requestMsg.GetMessageName(), timeout)
 		// Wait before next attempt
 		time.Sleep(timeout)
-		logging.Warnf("Govppmux: retrying (%d/%d) binary API message %v",
-			retry, maxRetries, r.requestMsg.GetMessageName())
 		// Retry request
+		trace.Logf(r.ctx, "requestRetry", "%d/%d", retry, maxRetries)
 		err = r.sendRequest(r.requestMsg).ReceiveReply(reply)
 	}
+
+	if err != nil {
+		atomic.AddUint64(&stats.RequestsFailed, 1)
+	}
+
+	took := time.Since(r.start)
+	trackMsgRequestDur(r.requestMsg.GetMessageName(), took)
 
 	return err
 }
 
 // SendMultiRequest sends asynchronous request to the vpp and receives context used to receive reply.
 func (c *goVppChan) SendMultiRequest(request govppapi.Message) govppapi.MultiRequestCtx {
-	start := time.Now()
+	ctx, task := trace.NewTask(context.Background(), "govpp.SendMultiRequest")
+	trace.Log(ctx, "msgName", request.GetMessageName())
 
-	sendMultiRequest := c.Channel.SendMultiRequest
+	start := time.Now()
 	// Send request now and wait for context
-	requestCtx := sendMultiRequest(request)
+	requestCtx := c.Channel.SendMultiRequest(request)
+
+	atomic.AddUint64(&stats.RequestsSent, 1)
 
 	// Return context with value and function which allows to send request again if needed
 	return &govppMultirequestCtx{
+		ctx:        ctx,
+		task:       task,
 		requestCtx: requestCtx,
 		requestMsg: request,
 		tracer:     c.tracer,
@@ -151,7 +185,13 @@ func (r *govppMultirequestCtx) ReceiveReply(reply govppapi.Message) (bool, error
 	// Receive reply from original send
 	last, err := r.requestCtx.ReceiveReply(reply)
 	if last {
+		took := time.Since(r.start)
+		trackMsgRequestDur(r.requestMsg.GetMessageName(), took)
+		if err != nil {
+			atomic.AddUint64(&stats.RequestsFailed, 1)
+		}
 		defer func() {
+			r.task.End()
 			if r.tracer != nil {
 				r.tracer.LogTime(r.requestMsg.GetMessageName(), r.start)
 			}

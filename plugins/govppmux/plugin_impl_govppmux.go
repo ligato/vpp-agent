@@ -25,8 +25,6 @@ import (
 	"github.com/ligato/cn-infra/datasync/resync"
 	"github.com/ligato/cn-infra/health/statuscheck"
 	"github.com/ligato/cn-infra/infra"
-	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/logging/measure/model/apitrace"
 	"github.com/pkg/errors"
@@ -118,12 +116,6 @@ func (p *Plugin) loadConfig() (*Config, error) {
 // Init is the entry point called by Agent Core. A single binary-API connection to VPP is established.
 func (p *Plugin) Init() error {
 	var err error
-
-	govppLogger := p.Deps.Log.NewLogger("govpp")
-	if govppLogger, ok := govppLogger.(*logrus.Logger); ok {
-		govppLogger.SetLevel(logging.InfoLevel)
-		govpp.SetLogger(govppLogger.StandardLogger())
-	}
 
 	if p.config, err = p.loadConfig(); err != nil {
 		return err
