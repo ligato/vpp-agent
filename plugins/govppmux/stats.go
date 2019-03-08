@@ -57,10 +57,10 @@ func dur(d time.Duration) string {
 	return d.Round(time.Microsecond * 100).String()
 }
 
-func (ms *MessageStats) MarshalJSON() ([]byte, error) {
+func (m *MessageStats) MarshalJSON() ([]byte, error) {
 	d := fmt.Sprintf(
 		"calls: %d, total: %s, avg: %s, max: %s",
-		ms.Calls, dur(ms.TotalNs), dur(ms.AvgNs), dur(ms.MaxNs),
+		m.Calls, dur(m.TotalNs), dur(m.AvgNs), dur(m.MaxNs),
 	)
 	return json.Marshal(d)
 }
