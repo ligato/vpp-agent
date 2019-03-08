@@ -16,6 +16,7 @@ package kvscheduler
 
 import (
 	"fmt"
+	"runtime/trace"
 	"sort"
 	"strings"
 	"time"
@@ -98,6 +99,8 @@ func (s *Scheduler) preRecordTxnOp(args *applyValueArgs, node graph.Node) *kvs.R
 // preRecordTransaction logs transaction arguments + plan before execution to
 // persist some information in case there is a crash during execution.
 func (s *Scheduler) preRecordTransaction(txn *transaction, planned kvs.RecordedTxnOps) *kvs.RecordedTxn {
+	defer trace.StartRegion(txn.ctx, "preRecordTransaction").End()
+
 	// allocate new transaction record
 	record := &kvs.RecordedTxn{
 		PreRecord: true,

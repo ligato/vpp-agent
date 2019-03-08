@@ -16,6 +16,7 @@ package kvscheduler
 
 import (
 	"context"
+	"runtime/trace"
 	"sync/atomic"
 	"time"
 
@@ -108,16 +109,10 @@ func (s *Scheduler) consumeTransactions() {
 //     state updates to the subscribers and returning error/nil to the caller
 //     of blocking commit
 func (s *Scheduler) processTransaction(txn *transaction) {
-	var (
-		simulatedOps kvs.RecordedTxnOps
-		executedOps  kvs.RecordedTxnOps
-		startTime    time.Time
-		stopTime     time.Time
-	)
 	s.txnLock.Lock()
 	defer s.txnLock.Unlock()
 
-	startTime = time.Now()
+	startTime := time.Now()
 
 	// 1. Pre-processing:
 	skipTxnExec := s.preProcessTransaction(txn)
@@ -128,6 +123,7 @@ func (s *Scheduler) processTransaction(txn *transaction) {
 	}
 
 	// 3. Simulation:
+	var simulatedOps kvs.RecordedTxnOps
 	if !skipTxnExec {
 		simulatedOps = s.executeTransaction(txn, true)
 	}
@@ -136,11 +132,12 @@ func (s *Scheduler) processTransaction(txn *transaction) {
 	preTxnRecord := s.preRecordTransaction(txn, simulatedOps)
 
 	// 5. Execution:
+	var executedOps kvs.RecordedTxnOps
 	if !skipTxnExec {
 		executedOps = s.executeTransaction(txn, false)
 	}
 
-	stopTime = time.Now()
+	stopTime := time.Now()
 
 	// 6. Recording:
 	s.recordTransaction(txn, preTxnRecord, executedOps, startTime, stopTime)
@@ -152,6 +149,8 @@ func (s *Scheduler) processTransaction(txn *transaction) {
 // preProcessTransaction initializes transaction parameters, filters obsolete retry
 // operations and refreshes the graph for resync.
 func (s *Scheduler) preProcessTransaction(txn *transaction) (skip bool) {
+	defer trace.StartRegion(txn.ctx, "preProcessTransaction").End()
+
 	// allocate new transaction sequence number
 	txn.seqNum = s.txnSeqNumber
 	s.txnSeqNumber++
@@ -284,6 +283,8 @@ func (s *Scheduler) preProcessRetryTxn(txn *transaction) (skip bool) {
 // value state updates to the subscribers and error/nil to the caller of a blocking
 // commit.
 func (s *Scheduler) postProcessTransaction(txn *transaction, executed kvs.RecordedTxnOps) {
+	defer trace.StartRegion(txn.ctx, "postProcessTransaction").End()
+
 	// collect new failures (combining derived with base)
 	toRetry := utils.NewSliceBasedKeySet()
 	toRefresh := utils.NewSliceBasedKeySet()

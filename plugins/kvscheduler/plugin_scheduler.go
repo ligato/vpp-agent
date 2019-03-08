@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"os"
+	"runtime/trace"
 	"sync"
 	"time"
 
@@ -399,6 +400,9 @@ func (txn *SchedulerTxn) SetValue(key string, value proto.Message) kvs.Txn {
 // Operations with unmet dependencies will get postponed and possibly
 // executed later.
 func (txn *SchedulerTxn) Commit(ctx context.Context) (txnSeqNum uint64, err error) {
+	ctx, task := trace.NewTask(ctx, "scheduler.Commit")
+	defer task.End()
+
 	txnSeqNum = ^uint64(0)
 
 	txnData := &transaction{
@@ -449,6 +453,7 @@ func (txn *SchedulerTxn) Commit(ctx context.Context) (txnSeqNum uint64, err erro
 			return txnSeqNum, kvs.NewTransactionError(kvs.ErrTxnWaitCanceled, nil)
 		case txnResult := <-txnData.nb.resultChan:
 			close(txnData.nb.resultChan)
+			trace.Logf(ctx, "txnSeqNum", "%d", txnResult.txnSeqNum)
 			return txnResult.txnSeqNum, txnResult.err
 		}
 	}

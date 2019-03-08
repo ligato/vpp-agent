@@ -1,6 +1,8 @@
 package configurator
 
 import (
+	"runtime/trace"
+
 	"github.com/gogo/status"
 	"github.com/ligato/cn-infra/logging"
 	"golang.org/x/net/context"
@@ -35,6 +37,11 @@ func (svc *configuratorServer) Get(context.Context, *rpc.GetRequest) (*rpc.GetRe
 
 // Update adds configuration data present in data request to the VPP/Linux
 func (svc *configuratorServer) Update(ctx context.Context, req *rpc.UpdateRequest) (*rpc.UpdateResponse, error) {
+	ctx, task := trace.NewTask(ctx, "grpc.Update")
+	defer task.End()
+
+	trace.Logf(ctx, "updateData", "%+v", req)
+
 	protos := util.ExtractProtos(req.Update.VppConfig, req.Update.LinuxConfig)
 
 	var kvPairs []orchestrator.KeyVal
