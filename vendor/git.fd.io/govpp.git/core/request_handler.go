@@ -23,6 +23,8 @@ import (
 	logger "github.com/sirupsen/logrus"
 )
 
+var ReplyChannelTimeout = time.Millisecond * 100
+
 var (
 	ErrNotConnected = errors.New("not connected to VPP, ignoring the request")
 	ErrProbeTimeout = errors.New("probe reply not received within timeout period")
@@ -91,7 +93,7 @@ func (c *Connection) processRequest(ch *Channel, req *vppRequest) error {
 			"msg_size": len(data),
 			"seq_num":  req.seqNum,
 			"msg_crc":  req.msg.GetCrcString(),
-		}).Debugf(" --> sending msg: %s", req.msg.GetMessageName())
+		}).Debugf("--> govpp send: %s: %+v", req.msg.GetMessageName(), req.msg)
 	}
 
 	// send the request to VPP
@@ -163,7 +165,7 @@ func (c *Connection) msgCallback(msgID uint16, data []byte) {
 			"is_multi": isMulti,
 			"seq_num":  seqNum,
 			"msg_crc":  msg.GetCrcString(),
-		}).Debugf(" <- received msg: %s", msg.GetMessageName())
+		}).Debugf("<-- govpp recv: %s", msg.GetMessageName())
 	}
 
 	if context == 0 || c.isNotificationMessage(msgID) {
@@ -209,7 +211,7 @@ func sendReply(ch *Channel, reply *vppReply) {
 	select {
 	case ch.replyChan <- reply:
 		// reply sent successfully
-	case <-time.After(time.Millisecond * 100):
+	case <-time.After(ReplyChannelTimeout):
 		// receiver still not ready
 		log.WithFields(logger.Fields{
 			"channel": ch,
