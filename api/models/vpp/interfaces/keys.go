@@ -72,6 +72,13 @@ const (
 	UnnumberedKeyPrefix = "vpp/interface/unnumbered/"
 )
 
+/* Bond interface enslavement (derived) */
+const (
+	// BondEnslaveKeyPrefix is used as a common prefix for keys derived from
+	// interfaces to represent interface slaves for bond interface.
+	BondEnslaveKeyPrefix = "vpp/interface/bond/"
+)
+
 /* DHCP (client - derived, lease - notification) */
 const (
 	// DHCPClientKeyPrefix is used as a common prefix for keys derived from
@@ -174,6 +181,24 @@ func UnnumberedKey(iface string) string {
 // ParseNameFromUnnumberedKey returns suffix of the key.
 func ParseNameFromUnnumberedKey(key string) (iface string, isUnnumberedKey bool) {
 	suffix := strings.TrimPrefix(key, UnnumberedKeyPrefix)
+	if suffix != key && suffix != "" {
+		return suffix, true
+	}
+	return
+}
+
+/* Bond interface enslavement (derived) */
+
+func BondEnslaveInterfaceKey(iface string) string {
+	if iface == "" {
+		iface = InvalidKeyPart
+	}
+	return BondEnslaveKeyPrefix + iface
+}
+
+// ParseNameFromBondEnslaveInterfaceKey returns suffix of the key.
+func ParseNameFromBondEnslaveInterfaceKey(key string) (iface string, isBondEnslaveKey bool) {
+	suffix := strings.TrimPrefix(key, BondEnslaveKeyPrefix)
 	if suffix != key && suffix != "" {
 		return suffix, true
 	}

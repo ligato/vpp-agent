@@ -21,6 +21,7 @@ message Interface {
         VXLAN_TUNNEL = 7;
         IPSEC_TUNNEL = 8;
         VMXNET3_INTERFACE = 9;
+        BOND_INTERFACE = 10;
     };
 
     string name = 1;                   /* Logical interface name unique across all configured interfaces (mandatory) */
@@ -59,6 +60,13 @@ message Interface {
     }
     RxPlacementSettings rx_placement_settings = 11;
 
+    message BondEnslavement {
+        string bond_interface = 1;
+        bool is_passive = 2;
+        bool is_long_timeout = 3;
+    }
+    BondEnslavement bond_enslavement = 12;
+
     oneof link {
         SubInterface sub = 100;         /* sub-interface configuration */
         MemifLink memif = 101;          /* memif-specific configuration */
@@ -67,6 +75,7 @@ message Interface {
         VxlanLink vxlan = 104;          /* VXLAN-specific configuration */
         IPSecLink ipsec = 105;          /* IPSec tunnel-specific configuration */
         VmxNet3Link vmx_net3 = 106;     /* VmxNet3-specific configuration */
+        BondLink bond = 107;                 /* Bond interface-specific configuration */
     };
 };
 
@@ -143,4 +152,24 @@ message VmxNet3Link {
     bool enable_elog = 2;   /* turn on elog */
     uint32 rxq_size = 3;    /* receive queue size (default is 1024) */
     uint32 txq_size = 4;    /* transmit queue size (default is 1024) */
+}
+
+message BondLink {
+    uint32 id = 1;
+    string mac = 2;
+    enum Mode {
+      UNKNOWN = 0;
+      ROUND_ROBIN = 1;
+      ACTIVE_BACKUP = 2;
+      XOR = 3;
+      BROADCAST = 4;
+      LACP = 5;
+    }
+    Mode mode = 3;
+    enum LoadBalance {
+        L2 = 0;
+        L34 = 1;
+        L23 = 2;
+    }
+    LoadBalance lb = 4; // Load balance is optional and valid only for XOR and LACP modes
 }
