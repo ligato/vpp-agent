@@ -17,22 +17,10 @@ const (
 	ifPrefix         = "/interface/"
 )
 
-// IfDescriptor defines all dependencies used in descriptor methods (vpp handlers, loggers, ...)
-type IfDescriptor struct {
-	// dependencies
-	log logging.PluginLogger
-}
-
 // NewIfDescriptor creates a new instance of the descriptor
-func NewIfDescriptor(logger logging.PluginLogger) *IfDescriptor {
-	return &IfDescriptor{
-		log: logger,
-	}
-}
-
-// GetDescriptor returns the type-safe descriptor
-func (d *IfDescriptor) GetDescriptor() *adapter.InterfaceDescriptor {
-	return &adapter.InterfaceDescriptor{
+func NewIfDescriptor(logger logging.PluginLogger) *api.KVDescriptor {
+	// convert typed descriptor into generic descriptor API using adapter
+	typedDescriptor := &adapter.InterfaceDescriptor{
 		// Descriptor name, must be unique across all descriptors
 		Name: ifDescriptorName,
 		// Prefix for the descriptor-specific configuration
@@ -54,11 +42,12 @@ func (d *IfDescriptor) GetDescriptor() *adapter.InterfaceDescriptor {
 		WithMetadata: true,
 		// Add a new configuration item
 		Create: func(key string, value *model.Interface) (metadata interface{}, err error) {
-			d.log.Infof("Interface %s created", value.Name)
+			logger.Infof("Interface %s created", value.Name)
 			// Return interface name so the scheduler remembers it
 			return value.Name, nil
 		},
 	}
+	return adapter.NewInterfaceDescriptor(typedDescriptor)
 }
 
 /* Route Descriptor */
@@ -69,19 +58,18 @@ const (
 	routeInterfaceDepLabel = "route-interface"
 )
 
+// RouteDescriptor is a descriptor object with
 type RouteDescriptor struct {
 	// dependencies
 	log logging.PluginLogger
 }
 
-func NewRouteDescriptor(logger logging.PluginLogger) *RouteDescriptor {
-	return &RouteDescriptor{
+// GetDescriptor returns type safe descriptor structure
+func NewRouteDescriptor(logger logging.PluginLogger) *api.KVDescriptor {
+	descriptorCtx := &RouteDescriptor{
 		log: logger,
 	}
-}
-
-func (d *RouteDescriptor) GetDescriptor() *adapter.RouteDescriptor {
-	return &adapter.RouteDescriptor{
+	typedDescriptor := &adapter.RouteDescriptor{
 		// Descriptor name, must be unique across all descriptors
 		Name: routeDescriptorName,
 		// Prefix for the descriptor-specific configuration
@@ -89,31 +77,40 @@ func (d *RouteDescriptor) GetDescriptor() *adapter.RouteDescriptor {
 		// A string value defining descriptor type
 		ValueTypeName: proto.MessageName(&model.Route{}),
 		// A unique identifier of the configuration (name, label)
-		KeyLabel: func(key string) string {
-			return strings.TrimPrefix(key, routePrefix)
-		},
+		KeyLabel: descriptorCtx.KeyLabel,
 		// Returns true if the provided key is relevant for this descriptor is some way
-		KeySelector: func(key string) bool {
-			if strings.HasPrefix(key, routePrefix) {
-				return true
-			}
-			return false
-		},
+		KeySelector: descriptorCtx.KeySelector,
 		// All other keys that must exist before the item is configured
-		Dependencies: func(key string, value *model.Route) []api.Dependency {
-			return []api.Dependency{
-				{
-					Label: routeInterfaceDepLabel,
-					Key:   ifPrefix + value.InterfaceName,
-				},
-			}
-		},
+		Dependencies: descriptorCtx.Dependencies,
 		// A list of descriptors expected to handle dependencies
 		RetrieveDependencies: []string{ifDescriptorName},
 		// Add a new configuration item
-		Create: func(key string, value *model.Route) (metadata interface{}, err error) {
-			d.log.Infof("Created route %s dependent on interface %s", value.Name, value.InterfaceName)
-			return nil, nil
+		Create: descriptorCtx.Create,
+	}
+	return adapter.NewRouteDescriptor(typedDescriptor)
+}
+
+func (d *RouteDescriptor) KeyLabel(key string) string {
+	return strings.TrimPrefix(key, routePrefix)
+}
+
+func (d *RouteDescriptor) KeySelector(key string) bool {
+	if strings.HasPrefix(key, routePrefix) {
+		return true
+	}
+	return false
+}
+
+func (d *RouteDescriptor) Dependencies(key string, value *model.Route) []api.Dependency {
+	return []api.Dependency{
+		{
+			Label: routeInterfaceDepLabel,
+			Key:   ifPrefix + value.InterfaceName,
 		},
 	}
+}
+
+func (d *RouteDescriptor) Create(key string, value *model.Route) (metadata interface{}, err error) {
+	d.log.Infof("Created route %s dependent on interface %s", value.Name, value.InterfaceName)
+	return nil, nil
 }

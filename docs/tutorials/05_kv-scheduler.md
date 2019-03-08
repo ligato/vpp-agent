@@ -14,48 +14,51 @@ The vpp-agent uses VPP API in form of binary API calls. Each VPP binary API call
 2. to configure parameters, a parent item is required to be present
 2. some configuration items themselves are dependent on other and cannot be configured earlier
 
- It means that binary API calls have to be called in an exact order. The VPP agent uses a KV scheduler component to ensure it with system of caching and configuration dependency handling. Every plugin configuring something dependent on other plugin's configs in certain way can be added to the KV scheduler and profit from its advantages. 
+It means that binary API calls have to be called in an exact order. The VPP agent uses a KV scheduler component to ensure it with system of caching and configuration dependency handling. Every plugin configuring something dependent on other plugin's configs in certain way can be added to the KV scheduler and profit from its advantages. 
  
- As a first step, we will use the special [proto model][1]. The model defines two simple messages - an `Interface` and a `Route` requiring some interface. The model demonstrates simple dependency between configuration items (since we need an interface to configure the route).  
+As a first step, we will use the special [proto model][1]. The model defines two simple messages - an `Interface` and a `Route` requiring some interface. The model demonstrates simple dependency between configuration items (since we need an interface to configure the route).  
  
- In order to register our hello world plugin to the scheduler and work with the new model, we need a two new components - a **descriptor** and an **adapter** for every proto-defined type.
+**Important note:** The vpp-agent uses the orchestrator component, which responsibility is to collect northbound data if provided from multiple sources (mainly a KVDB store and GRPC). The orchestrator requires exact message names in order to perform successful marshalling, thus those methods have to be generated using special protobuf option (together with the following import):
+```proto
+import "github.com/gogo/protobuf/gogoproto/gogo.proto";
+option (gogoproto.messagename_all) = true;
+```
+
+In order to register our hello world plugin to the scheduler and work with the new model, we need a two new components - a **descriptor** and an **adapter** for every proto-defined type.
  
- #### 1. Adapters
+#### 1. Adapters
  
- Let's start with adapters. The purpose of the adapter is to define conversion methods between our proto-defined type and bare `proto.Message`. Since this code fulfils the definition of a boilerplate, we will generate it. The generator is called `descriptor-adapter` and can be found in the [inside the KVScheduler plugin][2]. Build the binary file from the go files inside, and use it to generate two adapters for the `Interface` and `Route` proto messages:
+Let's start with adapters. The purpose of the adapter is to define conversion methods between our proto-defined type and bare `proto.Message`. Since this code fulfils the definition of a boilerplate, we will generate it. The generator is called `descriptor-adapter` and can be found [inside the KVScheduler plugin][2]. Build the binary file from the go files inside, and use it to generate two adapters for the `Interface` and `Route` proto messages:
  
 ```
 descriptor-adapter --descriptor-name Interface --value-type *model.Interface --import "github.com/ligato/vpp-agent/examples/tutorials/05_kv-scheduler/model" --output-dir "descriptor"
 descriptor-adapter --descriptor-name Route --value-type *model.Route --import "github.com/ligato/vpp-agent/examples/tutorials/05_kv-scheduler/model" --output-dir "descriptor"
 ```
 
-It is a good practice to add those commands to the plugin file with the `//go:generate` directives. Adapters were automatically created in the `adapter` directory within plugin folder.
+It is a good practice to add those commands to the plugin file with the `//go:generate` directives. Adapters were automatically created in the `descriptor/adapter` directory within plugin folder.
 
 #### 2. Descriptor without dependency
 
-Another step is to define descriptors. We start with the interface descriptor, since there is no dependency on other messages. Let's create the `descriptors.go` so the code is outside of `main.go`, and define following code:
+Another step is to define descriptors. The descriptor itself can be implemented in two ways:
+1. We define the descriptor constructor which implements all required methods directly (good when descriptor methods are few and short in implementation)
+2. We define the descriptor object, implement all methods on it and then put method references to the descriptor constructor (preferred way)
+
+In the interface descriptor, we use the first approach. Let's create the `descriptors.go` so the code is outside of `main.go`, and define following code:
 
 ```go
-type IfDescriptor struct {
-	log logging.PluginLogger
-}
-
-func NewIfDescriptor(logger logging.PluginLogger) *IfDescriptor {
-	return &IfDescriptor{
-		log: logger,
+func NewIfDescriptor(logger logging.PluginLogger) *api.KVDescriptor {
+	typedDescriptor := &adapter.InterfaceDescriptor{
+		// descriptor implementation
 	}
+	return adapter.NewInterfaceDescriptor(typedDescriptor)
 }
 ```
 
-The `IfDescriptor` is a descriptor object which can define its own dependencies (used in descriptor methods). The `NewIfDescriptor` is a constructor (and also initializes descriptor dependencies). Next we define `GetDescriptor()` method which returns typed descriptor (from generated adapter code):
+**Note:** descriptors in the example are all in the single file since they are short, but the preferred way it to have separate `.go` file for every descriptor. 
 
-```go
-func (d *IfDescriptor) GetDescriptor() *adapter.InterfaceDescriptor {
-    return &adapter.InterfaceDescriptor{}
-}
-```
+The `NewIfDescriptor` is a constructor function which returns a type-safe descriptor object. All potential descriptor dependencies (logger, various mappings, etc.) are provided via constructor parameters.  
 
-If you have a look at `adapter.InterfaceDescriptor`, you see that it defines several fields. Most important fields are function-types with CRUD definition and fields resolving dependencies. The full API list is documented in the [KvDescriptor structure][3]. Here, we implement the necessary ones:
+If you have a look at `adapter.InterfaceDescriptor`, you will see that it defines several fields. Most important fields are function-types with CRUD definition and fields resolving dependencies. The full API list is documented in the [KvDescriptor structure][3]. Here, we implement the necessary ones:
 
 * Name of the descriptor, must be unique for all descriptors. 
 ```go
@@ -79,10 +82,13 @@ KeyLabel: func(key string) string {
 },
 ```
 
-* Key selector returns true if the provided key is valid for given descriptor. In the example, every descriptor uses own key, but there are cases where the descriptor processes other descriptor's keys or derived types.
+* Key selector returns true if the provided key is described by given descriptor. The descriptor can support a subset of keys, but only one value type can be processed by any descriptor.
 ```go
 KeySelector: func(key string) bool {
-    return true	
+    if strings.HasPrefix(key, ifPrefix) {
+        return true
+    }
+    return false
 },
 ```
 
@@ -93,74 +99,99 @@ WithMetadata: true,
 
 * Create method configures new configuration item.
 ```go
-Create: func(key string, value *model.Car) (metadata interface{}, err error) {
-    d.log.Infof("%s car created", value.Color)
-    // Return color of the car so the scheduler remembers it
-    return value.Color, nil
+Create: func(key string, value *model.Interface) (metadata interface{}, err error) {
+    d.log.Infof("Interface %s created", value.Name)
+    return value.Name, nil
 },
 ```
 
 This is how the completed interface descriptor looks like:
 ```go
-return &adapter.CarDescriptor{
-    Name: "interface-descriptor",
-    NBKeyPrefix: "/interface/",
-    ValueTypeName: proto.MessageName(&model.Interface{}),
-    KeyLabel: func(key string) string {
-        return strings.TrimPrefix(key, "/interface/")
-    },
-    KeySelector: func(key string) bool {
-        return true	
-    },
-    WithMetadata: true,
-    Create: func(key string, value *model.Interface) (metadata interface{}, err error) {
-        d.log.Infof("Interface %s created", value.Name)
-        return value.Color, nil
-    },
+func NewIfDescriptor(logger logging.PluginLogger) *api.KVDescriptor {
+	typedDescriptor := &adapter.InterfaceDescriptor{
+		Name: ifDescriptorName,
+		NBKeyPrefix: ifPrefix,
+		ValueTypeName: proto.MessageName(&model.Interface{}),
+		KeyLabel: func(key string) string {
+			return strings.TrimPrefix(key, ifPrefix)
+		},
+		KeySelector: func(key string) bool {
+			if strings.HasPrefix(key, ifPrefix) {
+				return true
+			}
+			return false
+		},
+		WithMetadata: true,
+		Create: func(key string, value *model.Interface) (metadata interface{}, err error) {
+			logger.Infof("Interface %s created", value.Name)
+			return value.Name, nil
+		},
+	}
+	return adapter.NewInterfaceDescriptor(typedDescriptor)
 }
 ```
 
 #### 3. Descriptor with dependency
 
-This descriptor defines some additional fields, since we need to define dependency on the interface configuration item. Define the constructor and related methods first:
+This descriptor defines some additional fields, since we need to define dependency on the interface configuration item. Also here we specify descriptor struct and implement methods outside of the descriptor constructor. Define the struct and constructor first:
 ```go
 type RouteDescriptor struct {
 	// dependencies
 	log logging.PluginLogger
 }
 
-func NewRouteDescriptor(logger logging.PluginLogger) *RouteDescriptor {
-	return &RouteDescriptor{
-		log: logger,
+func NewRouteDescriptor(logger logging.PluginLogger) *api.KVDescriptor {
+	typedDescriptor := &adapter.RouteDescriptor{
+		// descriptor implementation
 	}
-}
-
-func (d *RouteDescriptor) GetDescriptor() *adapter.RouteDescriptor {
-	return &adapter.RouteDescriptor{}
-	}
+	return adapter.NewRouteDescriptor(typedDescriptor)
 }
 ```
 
-The route descriptor fields `Name`, `NBKeyPrefix`, `ValueTypeName`, `KeyLabel`and `KeySelector` are implemented in the same manner as for the interface type. The field `WithMetadata` is not needed here, so the `Create` method does not return any metadata value:
+The route descriptor fields, `NBKeyPrefix`, `KeyLabel`and `KeySelector` are implemented in the same manner as for the interface type, but outside of the constructor as methods with `RouteDescriptor` as pointer receiver (since they are `func` type):
 ```go
-Create: func(key string, value *model.Route) (metadata interface{}, err error) {
-    d.log.Infof("Created route %s dependent on interface %s", value.Name, value.InterfaceName)
-    return nil, nil
-},
+func (d *RouteDescriptor) KeyLabel(key string) string {
+	return strings.TrimPrefix(key, routePrefix)
+}
+
+func (d *RouteDescriptor) KeySelector(key string) bool {
+	if strings.HasPrefix(key, routePrefix) {
+		return true
+	}
+	return false
+}
+
+func (d *RouteDescriptor) Dependencies(key string, value *model.Route) []api.Dependency {
+	return []api.Dependency{
+		{
+			Label: routeInterfaceDepLabel,
+			Key:   ifPrefix + value.InterfaceName,
+		},
+	}
+}
 ```
+
+The field `WithMetadata` is not needed here, so the `Create` method does not return any metadata value:
+
+```go
+func (d *RouteDescriptor) Create(key string, value *model.Route) (metadata interface{}, err error) {
+	d.log.Infof("Created route %s dependent on interface %s", value.Name, value.InterfaceName)
+	return nil, nil
+}
+``` 
 
 In addition, there are two new fields:
 
-* A list of dependencies - complete keys (prefix+label) required for the given configuration item. The item will not be created while the dependent key does not exist. The label is informative and should be unique.
+* A list of dependencies - key prefix + unique label value required for the given configuration item. The item will not be created while the dependent key does not exist. The label is informative and should be unique.
 ```go
-Dependencies: func(key string, value *model.Route) []api.Dependency {
-    return []api.Dependency{
-        {
-            Label: routeInterfaceDepLabel,
-            Key:   ifPrefix + value.InterfaceName,
-        },
-    }
-},
+func (d *RouteDescriptor) Dependencies(key string, value *model.Route) []api.Dependency {
+	return []api.Dependency{
+		{
+			Label: routeInterfaceDepLabel,
+			Key:   ifPrefix + value.InterfaceName,
+		},
+	}
+}
 ```
 
 * A list of descriptors where the dependent values are processed. In the example, we return the interface descriptor since that is the one handling interfaces.
@@ -168,36 +199,51 @@ Dependencies: func(key string, value *model.Route) []api.Dependency {
 RetrieveDependencies: []string{ifDescriptorName},
 ```
 
-This is how the completed route descriptor looks like:
+Now define descriptor context of type `RouteDescriptor` within `NewRouteDescriptor`:
 ```go
-func (d *RouteDescriptor) GetDescriptor() *adapter.RouteDescriptor {
-	return &adapter.RouteDescriptor{
+func NewRouteDescriptor(logger logging.PluginLogger) *api.KVDescriptor {
+	descriptorCtx := &RouteDescriptor{
+		log: logger,
+	}
+	typedDescriptor := &adapter.RouteDescriptor{
+		// descriptor implementation
+	}
+	return adapter.NewRouteDescriptor(typedDescriptor)
+}
+```
+
+Set non-function fields:
+```go
+func NewRouteDescriptor(logger logging.PluginLogger) *api.KVDescriptor {
+	descriptorCtx := &RouteDescriptor{
+		log: logger,
+	}
+	typedDescriptor := &adapter.RouteDescriptor{
+        Name: routeDescriptorName,
+        NBKeyPrefix: routePrefix,
+        ValueTypeName: proto.MessageName(&model.Route{}),      
+        RetrieveDependencies: []string{ifDescriptorName},
+	}
+	return adapter.NewRouteDescriptor(typedDescriptor)
+}
+```
+
+Set function fields as references to the `RouteDescriptor` methods. The complete descriptor:
+```go
+func NewRouteDescriptor(logger logging.PluginLogger) *api.KVDescriptor {
+	descriptorCtx := &RouteDescriptor{
+		log: logger,
+	}
+	typedDescriptor := &adapter.RouteDescriptor{
 		Name: routeDescriptorName,
 		NBKeyPrefix: routePrefix,
 		ValueTypeName: proto.MessageName(&model.Route{}),
-		KeyLabel: func(key string) string {
-			return strings.TrimPrefix(key, routePrefix)
-		},
-		KeySelector: func(key string) bool {
-			if strings.HasPrefix(key, routePrefix) {
-				return true
-			}
-			return false
-		},
-		Dependencies: func(key string, value *model.Route) []api.Dependency {
-			return []api.Dependency{
-				{
-					Label: routeInterfaceDepLabel,
-					Key:   ifPrefix + value.InterfaceName,
-				},
-			}
-		},
-		RetrieveDependencies: []string{ifDescriptorName},
-		Create: func(key string, value *model.Route) (metadata interface{}, err error) {
-			d.log.Infof("Created route %s dependent on interface %s", value.Name, value.InterfaceName)
-			return nil, nil
-		},
+		KeyLabel: descriptorCtx.KeyLabel,
+		KeySelector: descriptorCtx.KeySelector,
+		Dependencies: descriptorCtx.Dependencies,
+		Create: descriptorCtx.Create,
 	}
+	return adapter.NewRouteDescriptor(typedDescriptor)
 }
 ```
 
@@ -270,7 +316,7 @@ Output:
   - value: { name:"route2" interface_name:"if2"  } 
 ```
 
-The order is exactly the same despite the fact values were added to transaction in the reversed order. As we cam see, the scheduler ordered configuration items before creating the transaction.
+The order is exactly the same despite the fact values were added to transaction in the reversed order. As we can see, the scheduler ordered configuration items before creating the transaction.
 
 * **3. Configure the route and the interface in separated transactions**
 
@@ -282,7 +328,7 @@ In this case, we have two outputs since there are two transactions:
   - value: { name:"route3" interface_name:"if3"  } 
 ```
 
-The route comes first, but it is post-poned (cached) since the dependent interface does not exist and the scheduler does not know when it appears, marking the route as `[NOOP IS-PENDING]`.
+The route comes first, but it is postponed (cached) since the dependent interface does not exist and the scheduler does not know when it appears, marking the route as `[NOOP IS-PENDING]`.
 
 ```bash
 1. CREATE:

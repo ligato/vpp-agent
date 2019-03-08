@@ -21,7 +21,6 @@ import (
 	"github.com/ligato/cn-infra/agent"
 	"github.com/ligato/cn-infra/infra"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/vpp-agent/examples/tutorials/05_kv-scheduler/adapter"
 	"github.com/ligato/vpp-agent/examples/tutorials/05_kv-scheduler/model"
 	"github.com/ligato/vpp-agent/plugins/kvscheduler"
 	"github.com/ligato/vpp-agent/plugins/kvscheduler/api"
@@ -70,12 +69,12 @@ func NewHelloWorld() *HelloWorld {
 func (p *HelloWorld) Init() error {
 	p.Log.Println("Hello World!")
 
-	err := p.KVScheduler.RegisterKVDescriptor(adapter.NewInterfaceDescriptor(NewIfDescriptor(p.Log).GetDescriptor()))
+	err := p.KVScheduler.RegisterKVDescriptor(NewIfDescriptor(p.Log))
 	if err != nil {
 		// handle error
 	}
 
-	err = p.KVScheduler.RegisterKVDescriptor(adapter.NewRouteDescriptor(NewRouteDescriptor(p.Log).GetDescriptor()))
+	err = p.KVScheduler.RegisterKVDescriptor(NewRouteDescriptor(p.Log))
 	if err != nil {
 		// handle error
 	}
