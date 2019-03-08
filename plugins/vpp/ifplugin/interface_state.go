@@ -181,7 +181,8 @@ func (c *InterfaceStateUpdater) watchVPPNotifications(ctx context.Context) {
 			if ifMetaDto.Del {
 				c.setIfStateDeleted(ifMetaDto.Metadata.SwIfIndex, ifMetaDto.Name)
 			} else if !ifMetaDto.Update {
-				ifaces, err := c.ifHandler.DumpInterfaces()
+				// FIXME: dumping should be avoided here
+				/*ifaces, err := c.ifHandler.DumpInterfaces()
 				if err != nil {
 					c.log.Warnf("dump interfaces failed: %v", err)
 					continue
@@ -192,7 +193,7 @@ func (c *InterfaceStateUpdater) watchVPPNotifications(ctx context.Context) {
 						continue
 					}
 					c.updateIfStateDetails(ifaceDetails)
-				}
+				}*/
 			}
 
 		case <-ctx.Done():

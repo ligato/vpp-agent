@@ -16,6 +16,7 @@ package kvscheduler
 
 import (
 	"fmt"
+	"runtime/trace"
 	"sort"
 	"strings"
 
@@ -54,11 +55,13 @@ type applyValueArgs struct {
 // If <dry-run> is enabled, Validate/Create/Delete/Update operations will not be executed
 // and the graph will be returned to its original state at the end.
 func (s *Scheduler) executeTransaction(txn *transaction, dryRun bool) (executed kvs.RecordedTxnOps) {
+	op := "execute transaction"
+	if dryRun {
+		op = "simulate transaction"
+	}
+	defer trace.StartRegion(txn.ctx, op).End()
+
 	if s.logGraphWalk {
-		op := "execute transaction"
-		if dryRun {
-			op = "simulate transaction"
-		}
 		msg := fmt.Sprintf("%s (seqNum=%d)", op, txn.seqNum)
 		fmt.Printf("%s %s\n", nodeVisitBeginMark, msg)
 		defer fmt.Printf("%s %s\n", nodeVisitEndMark, msg)

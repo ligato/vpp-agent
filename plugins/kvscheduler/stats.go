@@ -28,7 +28,9 @@ var (
 )
 
 func init() {
-	stats.Descriptors = map[string]*StructStats{}
+	stats.Descriptors = map[string]*StructStats{
+		"ALL": {},
+	}
 	stats.Graph = &StructStats{}
 }
 
@@ -128,9 +130,11 @@ func (m *MethodStats) increment(took time.Duration) {
 func trackDescMethod(d, m string) func() {
 	t := time.Now()
 	method := stats.Descriptors[d].getOrCreateMethod(m)
+	methodall := stats.Descriptors["ALL"].getOrCreateMethod(m)
 	return func() {
 		took := time.Since(t)
 		method.increment(took)
+		methodall.increment(took)
 	}
 }
 
