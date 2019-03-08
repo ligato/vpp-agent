@@ -31,7 +31,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/kvscheduler"
 )
 
-const iterations = 1000
+const iterations = 500
 const groupSize = 100
 
 func profile(c client.ConfigClient, runTxn func(iter int, withOrch bool), description ...string) {
@@ -108,9 +108,7 @@ func PerfTest() {
 		"  - add new TAP interface")
 
 	// perf test #3
-	bd := &l2.BridgeDomain{
-		Name: "bd1",
-	}
+	var bdIfaces []string
 	addTapWithFIB := func(iter int, withOrch bool) {
 		tap := &interfaces.Interface{
 			Name:    "tap-" + strconv.Itoa(iter),
@@ -118,18 +116,30 @@ func PerfTest() {
 			Enabled: true,
 		}
 
+		// bd
+		if iter == 0 {
+			bdIfaces = []string{}
+		}
+		bdIfaces = append(bdIfaces, tap.GetName())
+		bd := &l2.BridgeDomain{
+			Name: "bd1",
+			Interfaces: make([]*l2.BridgeDomain_Interface, 0, len(bdIfaces)),
+		}
+		for _, iface := range bdIfaces {
+			bd.Interfaces = append(bd.Interfaces, &l2.BridgeDomain_Interface{
+				Name: iface,
+			})
+		}
+
+		// fib
 		var hwAddr [6]byte
 		binary.BigEndian.PutUint32(hwAddr[2:], uint32(iter))
-
 		fib := &l2.FIBEntry{
 			PhysAddress:       net.HardwareAddr(hwAddr[:]).String(),
 			BridgeDomain:      bd.GetName(),
 			Action:            l2.FIBEntry_FORWARD,
 			OutgoingInterface: tap.GetName(),
 		}
-		bd.Interfaces = append(bd.Interfaces, &l2.BridgeDomain_Interface{
-			Name: tap.GetName(),
-		})
 
 		if withOrch {
 			req := c.ChangeRequest()

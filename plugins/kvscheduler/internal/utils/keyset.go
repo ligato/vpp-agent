@@ -32,6 +32,9 @@ type KeySet interface {
 	// Length returns the number of keys in the set.
 	Length() int
 
+	// Equals compares this set with <set2> for equality.
+	Equals(set2 KeySet) bool
+
 	// Has returns true if the given key is in the set.
 	Has(key string) bool
 
@@ -93,6 +96,19 @@ func (s *singletonKeySet) Length() int {
 		return 0
 	}
 	return 1
+}
+
+// Equals compares this set with <set2> for equality.
+func (s *singletonKeySet) Equals(set2 KeySet) bool {
+	if s.Length() != set2.Length() {
+		return false
+	}
+	for _, elem := range s.Iterate() {
+		if !set2.Has(elem) {
+			return false
+		}
+	}
+	return true
 }
 
 // Has returns true if the given key is in the set.
@@ -249,6 +265,19 @@ func (s *mapKeySet) Length() int {
 	return len(s.set)
 }
 
+// Equals compares this set with <set2> for equality.
+func (s *mapKeySet) Equals(set2 KeySet) bool {
+	if s.Length() != set2.Length() {
+		return false
+	}
+	for elem := range s.set {
+		if !set2.Has(elem) {
+			return false
+		}
+	}
+	return true
+}
+
 // Has returns true if the given key is in the set.
 func (s *mapKeySet) Has(key string) bool {
 	if s == nil {
@@ -375,6 +404,28 @@ func (s *sliceKeySet) Length() int {
 		return 0
 	}
 	return s.length
+}
+
+// Equals compares this set with <set2> for equality.
+func (s *sliceKeySet) Equals(set2 KeySet) bool {
+	if s.Length() != set2.Length() {
+		return false
+	}
+	set2Slice, isSlice := set2.(*sliceKeySet)
+	if isSlice {
+		for i := 0; i < s.length; i++ {
+			if s.set[i] != set2Slice.set[i] {
+				return false
+			}
+		}
+	} else {
+		for _, elem := range s.Iterate() {
+			if !set2.Has(elem) {
+				return false
+			}
+		}
+	}
+	return true
 }
 
 // Has returns true if the given key is in the set.

@@ -27,6 +27,7 @@ type graphRW struct {
 	record  bool
 	deleted []string
 	newRevs map[string]bool // key -> data-updated?
+
 }
 
 // newGraphRW creates a new instance of grapRW, which extends an existing
@@ -65,7 +66,7 @@ func (graph *graphRW) SetNode(key string) NodeRW {
 	node = newNode(nil)
 	node.graph = graph.graphR
 	node.key = key
-	for _, otherNode := range graph.nodes {
+	for _, otherNode := range graph.nodes { // TODO: maybe filter out nodes which are guaranteed to not have this as dep?
 		otherNode.checkPotentialTarget(node)
 	}
 	graph.nodes[key] = node
@@ -92,7 +93,7 @@ func (graph *graphRW) DeleteNode(key string) bool {
 	delete(graph.nodes, key)
 
 	// remove from targets of other nodes
-	for _, otherNode := range graph.nodes {
+	for _, otherNode := range graph.nodes { // TODO: avoid iteration over all
 		otherNode.removeFromTargets(key)
 	}
 	graph.deleted = append(graph.deleted, key)
@@ -134,7 +135,7 @@ func (graph *graphRW) Save() {
 	graph.deleted = []string{}
 
 	// apply new/changes nodes
-	for key, node := range graph.nodes {
+	for key, node := range graph.nodes { // TODO: this is expensive when everything is copied - iterate only over changed nodes
 		if !node.dataUpdated && !node.targetsUpdated && !node.sourcesUpdated {
 			continue
 		}

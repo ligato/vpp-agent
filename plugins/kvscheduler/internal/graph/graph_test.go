@@ -44,7 +44,7 @@ func TestEmptyGraph(t *testing.T) {
 	Expect(graphR.GetNodes(prefixASelector)).To(BeEmpty())
 	Expect(graphR.GetMetadataMap(metadataMapA)).To(BeNil())
 	Expect(graphR.GetSnapshot(time.Now())).To(BeEmpty())
-	flagStats := graphR.GetFlagStats(ColorFlagName, nil)
+	flagStats := graphR.GetFlagStats(ColorFlagIndex, nil)
 	Expect(flagStats.TotalCount).To(BeEquivalentTo(0))
 	Expect(flagStats.PerValueCount).To(BeEmpty())
 	graphR.Release()
@@ -67,7 +67,7 @@ func TestSingleNode(t *testing.T) {
 	Expect(nodeW.GetTargets(relation1)).To(BeEmpty())
 	Expect(nodeW.GetSources(relation1)).To(BeEmpty())
 	Expect(nodeW.GetMetadata()).To(BeNil())
-	Expect(nodeW.GetFlag(ColorFlagName)).To(BeNil())
+	Expect(nodeW.GetFlag(ColorFlagIndex)).To(BeNil())
 
 	// set attributes:
 	nodeW.SetLabel(value1Label)
@@ -80,12 +80,12 @@ func TestSingleNode(t *testing.T) {
 	Expect(nodeW.GetLabel()).To(Equal(value1Label))
 	Expect(nodeW.GetValue()).To(Equal(value1))
 	Expect(nodeW.GetMetadata().(MetaWithInteger).GetInteger()).To(Equal(1))
-	flag := nodeW.GetFlag(ColorFlagName)
+	flag := nodeW.GetFlag(ColorFlagIndex)
 	Expect(flag).ToNot(BeNil())
 	colorFlag := flag.(*ColorFlagImpl)
 	Expect(colorFlag.Color).To(Equal(Red))
-	Expect(nodeW.GetFlag(AbstractFlagName)).ToNot(BeNil())
-	Expect(nodeW.GetFlag(TemporaryFlagName)).To(BeNil())
+	Expect(nodeW.GetFlag(AbstractFlagIndex)).ToNot(BeNil())
+	Expect(nodeW.GetFlag(TemporaryFlagIndex)).To(BeNil())
 	Expect(nodeW.GetTargets(relation1)).To(BeEmpty())
 	Expect(nodeW.GetSources(relation1)).To(BeEmpty())
 
@@ -106,12 +106,12 @@ func TestSingleNode(t *testing.T) {
 	Expect(nodeR.GetLabel()).To(Equal(value1Label))
 	Expect(nodeR.GetValue()).To(Equal(value1))
 	Expect(nodeR.GetMetadata().(MetaWithInteger).GetInteger()).To(Equal(1))
-	flag = nodeR.GetFlag(ColorFlagName)
+	flag = nodeR.GetFlag(ColorFlagIndex)
 	Expect(flag).ToNot(BeNil())
 	colorFlag = flag.(*ColorFlagImpl)
 	Expect(colorFlag.Color).To(Equal(Red))
-	Expect(nodeR.GetFlag(AbstractFlagName)).ToNot(BeNil())
-	Expect(nodeR.GetFlag(TemporaryFlagName)).To(BeNil())
+	Expect(nodeR.GetFlag(AbstractFlagIndex)).ToNot(BeNil())
+	Expect(nodeR.GetFlag(TemporaryFlagIndex)).To(BeNil())
 	Expect(nodeR.GetTargets(relation1)).To(BeEmpty())
 	Expect(nodeR.GetSources(relation1)).To(BeEmpty())
 
@@ -129,7 +129,7 @@ func TestSingleNode(t *testing.T) {
 	Expect(label).To(Equal(value1Label))
 
 	// check history
-	flagStats := graphR.GetFlagStats(ColorFlagName, prefixASelector)
+	flagStats := graphR.GetFlagStats(ColorFlagIndex, prefixASelector)
 	Expect(flagStats.TotalCount).To(BeEquivalentTo(1))
 	Expect(flagStats.PerValueCount).To(BeEquivalentTo(map[string]uint{Red.String(): 1}))
 	timeline := graphR.GetNodeTimeline(keyA1)
@@ -144,7 +144,7 @@ func TestSingleNode(t *testing.T) {
 	Expect(record.Targets).To(BeEmpty())
 	Expect(record.TargetUpdateOnly).To(BeFalse())
 	Expect(record.MetadataFields).To(BeEquivalentTo(map[string][]string{IntegerKey: {"1"}}))
-	Expect(record.Flags).To(BeEquivalentTo(RecordedFlags{[]Flag{ColorFlag(Red), AbstractFlag()}}))
+	Expect(record.Flags).To(BeEquivalentTo(RecordedFlags{[maxFlags]Flag{ColorFlag(Red), AbstractFlag()}}))
 }
 
 func TestMultipleNodes(t *testing.T) {
@@ -162,12 +162,12 @@ func TestMultipleNodes(t *testing.T) {
 	Expect(node1.GetLabel()).To(Equal(value1Label))
 	Expect(node1.GetValue()).To(Equal(value1))
 	Expect(node1.GetMetadata().(MetaWithInteger).GetInteger()).To(Equal(1))
-	flag := node1.GetFlag(ColorFlagName)
+	flag := node1.GetFlag(ColorFlagIndex)
 	Expect(flag).ToNot(BeNil())
 	colorFlag := flag.(*ColorFlagImpl)
 	Expect(colorFlag.Color).To(Equal(Red))
-	Expect(node1.GetFlag(AbstractFlagName)).ToNot(BeNil())
-	Expect(node1.GetFlag(TemporaryFlagName)).To(BeNil())
+	Expect(node1.GetFlag(AbstractFlagIndex)).ToNot(BeNil())
+	Expect(node1.GetFlag(TemporaryFlagIndex)).To(BeNil())
 	Expect(node1.GetTargets(relation1)).To(HaveLen(1))
 	checkTargets(node1, relation1, "node2", keyA2)
 	checkSources(node1, relation1, keyB1)
@@ -181,12 +181,12 @@ func TestMultipleNodes(t *testing.T) {
 	Expect(node2.GetLabel()).To(Equal(value2Label))
 	Expect(node2.GetValue()).To(Equal(value2))
 	Expect(node2.GetMetadata().(MetaWithInteger).GetInteger()).To(Equal(2))
-	flag = node2.GetFlag(ColorFlagName)
+	flag = node2.GetFlag(ColorFlagIndex)
 	Expect(flag).ToNot(BeNil())
 	colorFlag = flag.(*ColorFlagImpl)
 	Expect(colorFlag.Color).To(Equal(Blue))
-	Expect(node2.GetFlag(AbstractFlagName)).To(BeNil())
-	Expect(node2.GetFlag(TemporaryFlagName)).To(BeNil())
+	Expect(node2.GetFlag(AbstractFlagIndex)).To(BeNil())
+	Expect(node2.GetFlag(TemporaryFlagIndex)).To(BeNil())
 	Expect(node2.GetTargets(relation1)).To(HaveLen(1))
 	checkTargets(node2, relation1, "node3", keyA3)
 	checkSources(node2, relation1, keyA1, keyB1)
@@ -199,12 +199,12 @@ func TestMultipleNodes(t *testing.T) {
 	Expect(node3.GetLabel()).To(Equal(value3Label))
 	Expect(node3.GetValue()).To(Equal(value3))
 	Expect(node3.GetMetadata().(MetaWithInteger).GetInteger()).To(Equal(3))
-	flag = node3.GetFlag(ColorFlagName)
+	flag = node3.GetFlag(ColorFlagIndex)
 	Expect(flag).ToNot(BeNil())
 	colorFlag = flag.(*ColorFlagImpl)
 	Expect(colorFlag.Color).To(Equal(Green))
-	Expect(node3.GetFlag(AbstractFlagName)).ToNot(BeNil())
-	Expect(node3.GetFlag(TemporaryFlagName)).ToNot(BeNil())
+	Expect(node3.GetFlag(AbstractFlagIndex)).ToNot(BeNil())
+	Expect(node3.GetFlag(TemporaryFlagIndex)).ToNot(BeNil())
 	Expect(node3.GetTargets(relation1)).To(BeEmpty())
 	checkSources(node3, relation1, keyA2, keyB1)
 	Expect(node3.GetTargets(relation2)).To(HaveLen(2))
@@ -218,9 +218,9 @@ func TestMultipleNodes(t *testing.T) {
 	Expect(node4.GetLabel()).To(Equal(value4Label))
 	Expect(node4.GetValue()).To(Equal(value4))
 	Expect(node4.GetMetadata().(MetaWithInteger).GetInteger()).To(Equal(1))
-	Expect(node4.GetFlag(ColorFlagName)).To(BeNil())
-	Expect(node4.GetFlag(AbstractFlagName)).To(BeNil())
-	Expect(node4.GetFlag(TemporaryFlagName)).ToNot(BeNil())
+	Expect(node4.GetFlag(ColorFlagIndex)).To(BeNil())
+	Expect(node4.GetFlag(AbstractFlagIndex)).To(BeNil())
+	Expect(node4.GetFlag(TemporaryFlagIndex)).ToNot(BeNil())
 	Expect(node4.GetTargets(relation1)).To(HaveLen(1))
 	checkTargets(node4, relation1, "prefixA", keyA1, keyA2, keyA3)
 	checkSources(node4, relation1)
@@ -261,20 +261,20 @@ func TestMultipleNodes(t *testing.T) {
 	// check history
 
 	// -> flags:
-	flagStats := graphR.GetFlagStats(ColorFlagName, prefixASelector)
+	flagStats := graphR.GetFlagStats(ColorFlagIndex, prefixASelector)
 	Expect(flagStats.TotalCount).To(BeEquivalentTo(3))
 	Expect(flagStats.PerValueCount).To(BeEquivalentTo(map[string]uint{
 		Red.String():   1,
 		Blue.String():  1,
 		Green.String(): 1,
 	}))
-	flagStats = graphR.GetFlagStats(ColorFlagName, prefixBSelector)
+	flagStats = graphR.GetFlagStats(ColorFlagIndex, prefixBSelector)
 	Expect(flagStats.TotalCount).To(BeEquivalentTo(0))
 	Expect(flagStats.PerValueCount).To(BeEmpty())
-	flagStats = graphR.GetFlagStats(AbstractFlagName, nil)
+	flagStats = graphR.GetFlagStats(AbstractFlagIndex, nil)
 	Expect(flagStats.TotalCount).To(BeEquivalentTo(2))
 	Expect(flagStats.PerValueCount).To(BeEquivalentTo(map[string]uint{"": 2}))
-	flagStats = graphR.GetFlagStats(TemporaryFlagName, nil)
+	flagStats = graphR.GetFlagStats(TemporaryFlagIndex, nil)
 	Expect(flagStats.TotalCount).To(BeEquivalentTo(2))
 	Expect(flagStats.PerValueCount).To(BeEquivalentTo(map[string]uint{"": 2}))
 
@@ -293,7 +293,7 @@ func TestMultipleNodes(t *testing.T) {
 	checkRecordedTargets(record.Targets, relation2, 1, "prefixB", keyB1)
 	Expect(record.TargetUpdateOnly).To(BeFalse())
 	Expect(record.MetadataFields).To(BeEquivalentTo(map[string][]string{IntegerKey: {"1"}}))
-	Expect(record.Flags).To(BeEquivalentTo(RecordedFlags{[]Flag{ColorFlag(Red), AbstractFlag()}}))
+	Expect(record.Flags).To(BeEquivalentTo(RecordedFlags{[maxFlags]Flag{ColorFlag(Red), AbstractFlag()}}))
 
 	// -> timeline node2:
 	timeline = graphR.GetNodeTimeline(keyA2)
@@ -309,7 +309,7 @@ func TestMultipleNodes(t *testing.T) {
 	checkRecordedTargets(record.Targets, relation1, 1, "node3", keyA3)
 	Expect(record.TargetUpdateOnly).To(BeFalse())
 	Expect(record.MetadataFields).To(BeEquivalentTo(map[string][]string{IntegerKey: {"2"}}))
-	Expect(record.Flags).To(BeEquivalentTo(RecordedFlags{[]Flag{ColorFlag(Blue)}}))
+	Expect(record.Flags).To(BeEquivalentTo(RecordedFlags{[maxFlags]Flag{ColorFlag(Blue)}}))
 
 	// -> timeline node3:
 	timeline = graphR.GetNodeTimeline(keyA3)
@@ -326,7 +326,7 @@ func TestMultipleNodes(t *testing.T) {
 	checkRecordedTargets(record.Targets, relation2, 2, "prefixB", keyB1)
 	Expect(record.TargetUpdateOnly).To(BeFalse())
 	Expect(record.MetadataFields).To(BeEquivalentTo(map[string][]string{IntegerKey: {"3"}}))
-	Expect(record.Flags).To(BeEquivalentTo(RecordedFlags{[]Flag{ColorFlag(Green), AbstractFlag(), TemporaryFlag()}}))
+	Expect(record.Flags).To(BeEquivalentTo(RecordedFlags{[maxFlags]Flag{ColorFlag(Green), AbstractFlag(), TemporaryFlag()}}))
 
 	// -> timeline node4:
 	timeline = graphR.GetNodeTimeline(keyB1)
@@ -343,7 +343,7 @@ func TestMultipleNodes(t *testing.T) {
 	checkRecordedTargets(record.Targets, relation2, 1, "non-existing-key")
 	Expect(record.TargetUpdateOnly).To(BeFalse())
 	Expect(record.MetadataFields).To(BeEquivalentTo(map[string][]string{IntegerKey: {"1"}}))
-	Expect(record.Flags).To(BeEquivalentTo(RecordedFlags{[]Flag{TemporaryFlag()}}))
+	Expect(record.Flags).To(BeEquivalentTo(RecordedFlags{flags(TemporaryFlag())}))
 
 	// check snapshot:
 	// -> before the changes
@@ -386,8 +386,8 @@ func TestSelectors(t *testing.T) {
 	graphR.Release()
 	graphW := graph.Write(false)
 	graphW.SetNode(keyA1).SetFlags(ColorFlag(Green), TemporaryFlag())
-	graphW.SetNode(keyA1).DelFlags(AbstractFlagName)
-	graphW.SetNode(keyA3).DelFlags(ColorFlagName)
+	graphW.SetNode(keyA1).DelFlags(AbstractFlagIndex)
+	graphW.SetNode(keyA3).DelFlags(ColorFlagIndex)
 	graphW.Save()
 	graphW.Release()
 
@@ -425,12 +425,12 @@ func TestNodeRemoval(t *testing.T) {
 	Expect(node1.GetLabel()).To(Equal(value1Label))
 	Expect(node1.GetValue()).To(Equal(value1))
 	Expect(node1.GetMetadata().(MetaWithInteger).GetInteger()).To(Equal(1))
-	flag := node1.GetFlag(ColorFlagName)
+	flag := node1.GetFlag(ColorFlagIndex)
 	Expect(flag).ToNot(BeNil())
 	colorFlag := flag.(*ColorFlagImpl)
 	Expect(colorFlag.Color).To(Equal(Red))
-	Expect(node1.GetFlag(AbstractFlagName)).ToNot(BeNil())
-	Expect(node1.GetFlag(TemporaryFlagName)).To(BeNil())
+	Expect(node1.GetFlag(AbstractFlagIndex)).ToNot(BeNil())
+	Expect(node1.GetFlag(TemporaryFlagIndex)).To(BeNil())
 	Expect(node1.GetTargets(relation1)).To(HaveLen(1))
 	checkTargets(node1, relation1, "node2")
 	checkSources(node1, relation1)
@@ -448,12 +448,12 @@ func TestNodeRemoval(t *testing.T) {
 	Expect(node3.GetLabel()).To(Equal(value3Label))
 	Expect(node3.GetValue()).To(Equal(value3))
 	Expect(node3.GetMetadata().(MetaWithInteger).GetInteger()).To(Equal(3))
-	flag = node3.GetFlag(ColorFlagName)
+	flag = node3.GetFlag(ColorFlagIndex)
 	Expect(flag).ToNot(BeNil())
 	colorFlag = flag.(*ColorFlagImpl)
 	Expect(colorFlag.Color).To(Equal(Green))
-	Expect(node3.GetFlag(AbstractFlagName)).ToNot(BeNil())
-	Expect(node3.GetFlag(TemporaryFlagName)).ToNot(BeNil())
+	Expect(node3.GetFlag(AbstractFlagIndex)).ToNot(BeNil())
+	Expect(node3.GetFlag(TemporaryFlagIndex)).ToNot(BeNil())
 	Expect(node3.GetTargets(relation1)).To(BeEmpty())
 	checkSources(node3, relation1)
 	Expect(node3.GetTargets(relation2)).To(HaveLen(2))
@@ -494,20 +494,20 @@ func TestNodeRemoval(t *testing.T) {
 	// check history
 
 	// -> flags:
-	flagStats := graphR.GetFlagStats(ColorFlagName, prefixASelector)
+	flagStats := graphR.GetFlagStats(ColorFlagIndex, prefixASelector)
 	Expect(flagStats.TotalCount).To(BeEquivalentTo(3))
 	Expect(flagStats.PerValueCount).To(BeEquivalentTo(map[string]uint{
 		Red.String():   1,
 		Blue.String():  1,
 		Green.String(): 1,
 	}))
-	flagStats = graphR.GetFlagStats(ColorFlagName, prefixBSelector)
+	flagStats = graphR.GetFlagStats(ColorFlagIndex, prefixBSelector)
 	Expect(flagStats.TotalCount).To(BeEquivalentTo(0))
 	Expect(flagStats.PerValueCount).To(BeEmpty())
-	flagStats = graphR.GetFlagStats(AbstractFlagName, nil)
+	flagStats = graphR.GetFlagStats(AbstractFlagIndex, nil)
 	Expect(flagStats.TotalCount).To(BeEquivalentTo(2))
 	Expect(flagStats.PerValueCount).To(BeEquivalentTo(map[string]uint{"": 2}))
-	flagStats = graphR.GetFlagStats(TemporaryFlagName, nil)
+	flagStats = graphR.GetFlagStats(TemporaryFlagIndex, nil)
 	Expect(flagStats.TotalCount).To(BeEquivalentTo(2))
 	Expect(flagStats.PerValueCount).To(BeEquivalentTo(map[string]uint{"": 2}))
 
@@ -528,7 +528,7 @@ func TestNodeRemoval(t *testing.T) {
 	checkRecordedTargets(record.Targets, relation2, 1, "prefixB", keyB1)
 	Expect(record.TargetUpdateOnly).To(BeFalse())
 	Expect(record.MetadataFields).To(BeEquivalentTo(map[string][]string{IntegerKey: {"1"}}))
-	Expect(record.Flags).To(BeEquivalentTo(RecordedFlags{[]Flag{ColorFlag(Red), AbstractFlag()}}))
+	Expect(record.Flags).To(BeEquivalentTo(RecordedFlags{[maxFlags]Flag{ColorFlag(Red), AbstractFlag()}}))
 	//   -> new record
 	record = timeline[1]
 	Expect(record.Key).To(Equal(keyA1))
@@ -542,7 +542,7 @@ func TestNodeRemoval(t *testing.T) {
 	checkRecordedTargets(record.Targets, relation2, 1, "prefixB")
 	Expect(record.TargetUpdateOnly).To(BeTrue())
 	Expect(record.MetadataFields).To(BeEquivalentTo(map[string][]string{IntegerKey: {"1"}}))
-	Expect(record.Flags).To(BeEquivalentTo(RecordedFlags{[]Flag{ColorFlag(Red), AbstractFlag()}}))
+	Expect(record.Flags).To(BeEquivalentTo(RecordedFlags{[maxFlags]Flag{ColorFlag(Red), AbstractFlag()}}))
 
 	// -> timeline node2:
 	timeline = graphR.GetNodeTimeline(keyA2)
@@ -560,7 +560,7 @@ func TestNodeRemoval(t *testing.T) {
 	checkRecordedTargets(record.Targets, relation1, 1, "node3", keyA3)
 	Expect(record.TargetUpdateOnly).To(BeFalse())
 	Expect(record.MetadataFields).To(BeEquivalentTo(map[string][]string{IntegerKey: {"2"}}))
-	Expect(record.Flags).To(BeEquivalentTo(RecordedFlags{[]Flag{ColorFlag(Blue)}}))
+	Expect(record.Flags).To(BeEquivalentTo(RecordedFlags{[maxFlags]Flag{ColorFlag(Blue)}}))
 
 	// -> timeline node3:
 	timeline = graphR.GetNodeTimeline(keyA3)
@@ -579,7 +579,7 @@ func TestNodeRemoval(t *testing.T) {
 	checkRecordedTargets(record.Targets, relation2, 2, "prefixB", keyB1)
 	Expect(record.TargetUpdateOnly).To(BeFalse())
 	Expect(record.MetadataFields).To(BeEquivalentTo(map[string][]string{IntegerKey: {"3"}}))
-	Expect(record.Flags).To(BeEquivalentTo(RecordedFlags{[]Flag{ColorFlag(Green), AbstractFlag(), TemporaryFlag()}}))
+	Expect(record.Flags).To(BeEquivalentTo(RecordedFlags{[maxFlags]Flag{ColorFlag(Green), AbstractFlag(), TemporaryFlag()}}))
 	//   -> new record
 	record = timeline[1]
 	Expect(record.Key).To(Equal(keyA3))
@@ -593,7 +593,7 @@ func TestNodeRemoval(t *testing.T) {
 	checkRecordedTargets(record.Targets, relation2, 2, "prefixB")
 	Expect(record.TargetUpdateOnly).To(BeTrue())
 	Expect(record.MetadataFields).To(BeEquivalentTo(map[string][]string{IntegerKey: {"3"}}))
-	Expect(record.Flags).To(BeEquivalentTo(RecordedFlags{[]Flag{ColorFlag(Green), AbstractFlag(), TemporaryFlag()}}))
+	Expect(record.Flags).To(BeEquivalentTo(RecordedFlags{[maxFlags]Flag{ColorFlag(Green), AbstractFlag(), TemporaryFlag()}}))
 
 	// -> timeline node4:
 	//   -> old record
@@ -612,7 +612,7 @@ func TestNodeRemoval(t *testing.T) {
 	checkRecordedTargets(record.Targets, relation2, 1, "non-existing-key")
 	Expect(record.TargetUpdateOnly).To(BeFalse())
 	Expect(record.MetadataFields).To(BeEquivalentTo(map[string][]string{IntegerKey: {"1"}}))
-	Expect(record.Flags).To(BeEquivalentTo(RecordedFlags{[]Flag{TemporaryFlag()}}))
+	Expect(record.Flags).To(BeEquivalentTo(RecordedFlags{flags(TemporaryFlag())}))
 
 	// check snapshot:
 	records := graphR.GetSnapshot(time.Now())
@@ -651,7 +651,7 @@ func TestNodeTimeline(t *testing.T) {
 	graphW = graph.Write(true)
 	node = graphW.SetNode(keyA1)
 	node.SetFlags(TemporaryFlag())
-	node.DelFlags(AbstractFlagName)
+	node.DelFlags(AbstractFlagIndex)
 	node.SetMetadata(&OnlyInteger{Integer: 2})
 	graphW.Save()
 	graphW.Release()
@@ -660,16 +660,16 @@ func TestNodeTimeline(t *testing.T) {
 	graphR := graph.Read()
 
 	// -> flags:
-	flagStats := graphR.GetFlagStats(ColorFlagName, nil)
+	flagStats := graphR.GetFlagStats(ColorFlagIndex, nil)
 	Expect(flagStats.TotalCount).To(BeEquivalentTo(3))
 	Expect(flagStats.PerValueCount).To(BeEquivalentTo(map[string]uint{
 		Red.String():  1,
 		Blue.String(): 2,
 	}))
-	flagStats = graphR.GetFlagStats(AbstractFlagName, nil)
+	flagStats = graphR.GetFlagStats(AbstractFlagIndex, nil)
 	Expect(flagStats.TotalCount).To(BeEquivalentTo(2))
 	Expect(flagStats.PerValueCount).To(BeEquivalentTo(map[string]uint{"": 2}))
-	flagStats = graphR.GetFlagStats(TemporaryFlagName, nil)
+	flagStats = graphR.GetFlagStats(TemporaryFlagIndex, nil)
 	Expect(flagStats.TotalCount).To(BeEquivalentTo(1))
 	Expect(flagStats.PerValueCount).To(BeEquivalentTo(map[string]uint{"": 1}))
 
@@ -690,7 +690,7 @@ func TestNodeTimeline(t *testing.T) {
 	checkRecordedTargets(record.Targets, relation2, 1, "prefixB")
 	Expect(record.TargetUpdateOnly).To(BeFalse())
 	Expect(record.MetadataFields).To(BeEquivalentTo(map[string][]string{IntegerKey: {"1"}}))
-	Expect(record.Flags).To(BeEquivalentTo(RecordedFlags{[]Flag{ColorFlag(Red), AbstractFlag()}}))
+	Expect(record.Flags).To(BeEquivalentTo(RecordedFlags{[maxFlags]Flag{ColorFlag(Red), AbstractFlag()}}))
 	//   -> second record
 	record = timeline[1]
 	Expect(record.Key).To(Equal(keyA1))
@@ -705,7 +705,7 @@ func TestNodeTimeline(t *testing.T) {
 	checkRecordedTargets(record.Targets, relation2, 1, "prefixB")
 	Expect(record.TargetUpdateOnly).To(BeFalse())
 	Expect(record.MetadataFields).To(BeEquivalentTo(map[string][]string{IntegerKey: {"1"}}))
-	Expect(record.Flags).To(BeEquivalentTo(RecordedFlags{[]Flag{AbstractFlag(), ColorFlag(Blue)}}))
+	Expect(record.Flags).To(BeEquivalentTo(RecordedFlags{flags(AbstractFlag(), ColorFlag(Blue))}))
 	//   -> third record
 	record = timeline[2]
 	Expect(record.Key).To(Equal(keyA1))
@@ -719,7 +719,7 @@ func TestNodeTimeline(t *testing.T) {
 	checkRecordedTargets(record.Targets, relation2, 1, "prefixB")
 	Expect(record.TargetUpdateOnly).To(BeFalse())
 	Expect(record.MetadataFields).To(BeEquivalentTo(map[string][]string{IntegerKey: {"2"}}))
-	Expect(record.Flags).To(BeEquivalentTo(RecordedFlags{[]Flag{ColorFlag(Blue), TemporaryFlag()}}))
+	Expect(record.Flags).To(BeEquivalentTo(RecordedFlags{flags(ColorFlag(Blue), TemporaryFlag())}))
 
 	graphR.Release()
 }

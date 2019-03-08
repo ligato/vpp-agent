@@ -78,14 +78,9 @@ func (graph *graphR) GetNodes(keySelector KeySelector, flagSelectors ...FlagSele
 		selected := true
 		for _, flagSelector := range flagSelectors {
 			for _, flag := range flagSelector.flags {
-				hasFlag := false
-				for _, nodeFlag := range node.flags {
-					if nodeFlag.GetName() == flag.GetName() &&
-						(flag.GetValue() == "" || (nodeFlag.GetValue() == flag.GetValue())) {
-						hasFlag = true
-						break
-					}
-				}
+				nodeFlag := node.flags[flag.GetIndex()]
+				hasFlag := nodeFlag != nil &&
+					(flag.GetValue() == "" || (nodeFlag.GetValue() == flag.GetValue()))
 				if hasFlag != flagSelector.with {
 					selected = false
 					break
@@ -114,7 +109,7 @@ func (graph *graphR) GetNodeTimeline(key string) []*RecordedNode {
 }
 
 // GetFlagStats returns stats for a given flag.
-func (graph *graphR) GetFlagStats(flagName string, selector KeySelector) FlagStats {
+func (graph *graphR) GetFlagStats(flagIndex int, selector KeySelector) FlagStats {
 	if graph.parent.methodTracker != nil {
 		defer graph.parent.methodTracker("GetFlagStats")()
 	}
@@ -129,7 +124,7 @@ func (graph *graphR) GetFlagStats(flagName string, selector KeySelector) FlagSta
 			if record.TargetUpdateOnly {
 				continue
 			}
-			if flag := record.Flags.GetFlag(flagName); flag != nil {
+			if flag := record.Flags.GetFlag(flagIndex); flag != nil {
 				//fmt.Printf("Found flag %s/%s in %dth record of %s\n", flagName, flag.GetValue(), idx, record.Key)
 				flagValue := flag.GetValue()
 				stats.TotalCount++
@@ -235,7 +230,7 @@ func (graph *graphR) Release() {
 
 // copyNodesOnly returns a deep-copy of the graph, excluding the timelines
 // and the map with mappings.
-func (graph *graphR) copyNodesOnly() *graphR {
+func (graph *graphR) copyNodesOnly() *graphR { // TODO: get rid of this
 	graphCopy := &graphR{
 		parent: graph.parent,
 		nodes:  make(map[string]*node),
@@ -274,16 +269,19 @@ func (graph *graphR) getMetadataFields(node *node) map[string][]string {
 }
 
 // prettyPrintFlags returns nicely formatted string representation of the given list of flags.
-func prettyPrintFlags(flags []Flag) string {
+func prettyPrintFlags(flags [maxFlags]Flag) string {
 	var str string
-	for idx, flag := range flags {
+	for _, flag := range flags {
+		if flag == nil {
+			continue
+		}
+		if str != "" {
+			str += printDelimiter
+		}
 		if flag.GetValue() == "" {
 			str += flag.GetName()
 		} else {
 			str += fmt.Sprintf("%s:<%s>", flag.GetName(), flag.GetValue())
-		}
-		if idx < len(flags)-1 {
-			str += printDelimiter
 		}
 	}
 	return str

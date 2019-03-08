@@ -189,6 +189,13 @@ func buildGraph(graph Graph, record, regMaps bool, nodes map[int]struct{}) Graph
 	return graph
 }
 
+func flags(flags ...Flag) (flagArray [maxFlags]Flag) {
+	for _, f := range flags {
+		flagArray[f.GetIndex()] = f
+	}
+	return
+}
+
 func checkTargets(node Node, relation string, label string, targetKeys ...string) {
 	targets := node.GetTargets(relation)
 	forLabel := targets.GetTargetsForLabel(label)

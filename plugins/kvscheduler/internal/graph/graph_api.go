@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"fmt"
 	"time"
+	"sort"
 
 	"github.com/gogo/protobuf/proto"
 
@@ -78,7 +79,7 @@ type ReadAccess interface {
 	GetNodes(keySelector KeySelector, flagSelectors ...FlagSelector) []Node
 
 	// GetFlagStats returns stats for a given flag.
-	GetFlagStats(flagName string, filter KeySelector) FlagStats
+	GetFlagStats(flagIndex int, filter KeySelector) FlagStats
 
 	// GetNodeTimeline returns timeline of all node revisions, ordered from
 	// the oldest to the newest.
@@ -129,7 +130,7 @@ type Node interface {
 
 	// GetFlag returns reference to the given flag or nil if the node doesn't have
 	// this flag associated.
-	GetFlag(name string) Flag
+	GetFlag(flagIndex int) Flag
 
 	// GetMetadata returns the value metadata associated with the node.
 	GetMetadata() interface{}
@@ -156,8 +157,8 @@ type NodeRW interface {
 	// SetFlags associates given flag with this node.
 	SetFlags(flags ...Flag)
 
-	// DelFlags removes given flag from this node.
-	DelFlags(names ...string)
+	// DelFlags removes given flags from this node.
+	DelFlags(flagIndexes ...int)
 
 	// SetMetadataMap chooses metadata map to be used to store the association
 	// between this node's value label and metadata.
@@ -170,8 +171,12 @@ type NodeRW interface {
 	SetTargets(targets []RelationTargetDef)
 }
 
-// Flag is a name:value pair.
+// Flag is a (index+name):value pair.
 type Flag interface {
+	// GetIndex should return unique index among all defined flags, starting
+	// from 0.
+	GetIndex() int
+
 	// GetName should return name of the flag.
 	GetName() string
 
@@ -226,7 +231,7 @@ type Targets struct {
 	MatchingKeys utils.KeySet
 }
 
-// TargetsByLabel is a slice of single-relation targets, grouped by labels.
+// TargetsByLabel is a slice of single-relation targets, grouped (and sorted) by labels.
 type TargetsByLabel []*Targets
 
 // String returns human-readable string representation of TargetsByLabel.
@@ -250,12 +255,30 @@ type RelationTargets struct {
 
 // GetTargetsForLabel returns targets (keys) for the given label.
 func (t *RelationTargets) GetTargetsForLabel(label string) *Targets {
-	for _, targets := range t.Targets {
-		if targets.Label == label {
-			return targets
-		}
+	idx := t.labelIdx(label)
+	if idx < len(t.Targets) && t.Targets[idx].Label == label {
+		return t.Targets[idx]
 	}
 	return nil
+}
+
+// AddTargets adds new targets for a new label (without checking for duplicities!).
+func (t *RelationTargets) AddTargets(targets *Targets) {
+	labelIdx := t.labelIdx(targets.Label)
+	t.Targets = append(t.Targets, nil)
+	if labelIdx < len(t.Targets)-1 {
+		copy(t.Targets[labelIdx+1:], t.Targets[labelIdx:])
+	}
+	t.Targets[labelIdx] = targets
+}
+
+// labelIdx returns index in the array at which a target with the given label
+// should be stored.
+func (t *RelationTargets) labelIdx(label string) int {
+	return sort.Search(len(t.Targets),
+		func(i int) bool {
+			return label <= t.Targets[i].Label
+		})
 }
 
 // TargetsByRelation is a slice of all targets, grouped by relations.
@@ -321,27 +344,27 @@ type RecordedNode struct {
 
 // GetFlag returns reference to the given flag or nil if the node didn't have
 // this flag associated at the time when it was recorded.
-func (node *RecordedNode) GetFlag(name string) Flag {
-	for _, flag := range node.Flags.Flags {
-		if flag.GetName() == name {
-			return flag
-		}
-	}
-	return nil
+func (node *RecordedNode) GetFlag(flagIndex int) Flag {
+	return node.Flags.GetFlag(flagIndex)
 }
 
 // RecordedFlags is a record of assigned flags at a given time.
 type RecordedFlags struct {
-	Flags []Flag
+	Flags [maxFlags]Flag
 }
 
 // MarshalJSON marshalls recorded flags into JSON.
 func (rf RecordedFlags) MarshalJSON() ([]byte, error) {
 	buffer := bytes.NewBufferString("{")
-	for idx, flag := range rf.Flags {
-		if idx > 0 {
+	first := true
+	for _, flag := range rf.Flags {
+		if flag == nil {
+			continue
+		}
+		if !first {
 			buffer.WriteString(",")
 		}
+		first = false
 		buffer.WriteString(fmt.Sprintf("\"%s\":\"%s\"", flag.GetName(), flag.GetValue()))
 	}
 	buffer.WriteString("}")
@@ -350,13 +373,8 @@ func (rf RecordedFlags) MarshalJSON() ([]byte, error) {
 
 // GetFlag returns reference to the given flag or nil if the node hasn't had
 // this flag associated at the given time.
-func (rf RecordedFlags) GetFlag(name string) Flag {
-	for _, flag := range rf.Flags {
-		if flag.GetName() == name {
-			return flag
-		}
-	}
-	return nil
+func (rf RecordedFlags) GetFlag(flagIndex int) Flag {
+	return rf.Flags[flagIndex]
 }
 
 // FlagStats is a summary of the usage for a given flag.

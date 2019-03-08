@@ -165,7 +165,7 @@ func (s *Scheduler) refreshGraph(graphW graph.RWAccess,
 				timeline := graphW.GetNodeTimeline(retrievedKV.Key)
 				if len(timeline) > 0 {
 					lastRev := timeline[len(timeline)-1]
-					valueStateFlag := lastRev.Flags.GetFlag(ValueStateFlagName)
+					valueStateFlag := lastRev.Flags.GetFlag(ValueStateFlagIndex)
 					valueState := valueStateFlag.(*ValueStateFlag).valueState
 					retrievedKV.Origin = valueStateToOrigin(valueState)
 				}
@@ -288,7 +288,7 @@ func (s *Scheduler) refreshAvailNode(graphW graph.RWAccess, node graph.NodeRW,
 	// update availability
 	if !isNodeAvailable(node) {
 		s.updatedStates.Add(baseKey)
-		node.DelFlags(UnavailValueFlagName)
+		node.DelFlags(UnavailValueFlagIndex)
 	}
 	refreshed.Add(node.GetKey())
 
@@ -310,12 +310,12 @@ func (s *Scheduler) refreshAvailNode(graphW graph.RWAccess, node graph.NodeRW,
 	if descriptor != nil {
 		node.SetFlags(&DescriptorFlag{descriptor.Name})
 	} else {
-		node.DelFlags(DescriptorFlagName)
+		node.DelFlags(DescriptorFlagIndex)
 	}
 
 	// updated flags for derived values
 	if !derived {
-		node.DelFlags(DerivedFlagName)
+		node.DelFlags(DerivedFlagIndex)
 	} else {
 		node.SetFlags(&DerivedFlag{baseKey})
 	}
@@ -421,15 +421,15 @@ func dumpGraph(g graph.RWAccess) string {
 			keyLabel = fmt.Sprintf("%s (%s)", key, label)
 		}
 		descriptor := ""
-		if f := node.GetFlag(DescriptorFlagName); f != nil {
+		if f := node.GetFlag(DescriptorFlagIndex); f != nil {
 			descriptor = fmt.Sprintf("[%s] ", f.GetValue())
 		}
 		lastUpdate := "-"
-		if f := node.GetFlag(LastUpdateFlagName); f != nil {
+		if f := node.GetFlag(LastUpdateFlagIndex); f != nil {
 			lastUpdate = f.GetValue()
 		}
 		unavailable := ""
-		if f := node.GetFlag(UnavailValueFlagName); f != nil {
+		if f := node.GetFlag(UnavailValueFlagIndex); f != nil {
 			unavailable = "<UNAVAILABLE> "
 		}
 		writeLine(fmt.Sprintf("%s%s", descriptor, keyLabel), fmt.Sprintf("%s %s %s",
@@ -465,7 +465,7 @@ func dumpGraph(g graph.RWAccess) string {
 				} else {
 					for _, node := range der.Nodes {
 						desc := ""
-						if d := node.GetFlag(DescriptorFlagName); d != nil {
+						if d := node.GetFlag(DescriptorFlagIndex); d != nil {
 							desc = fmt.Sprintf("[%s] ", d.GetValue())
 						}
 						nodeDers = append(nodeDers, fmt.Sprintf("%s%s", desc, node.GetKey()))
@@ -479,7 +479,7 @@ func dumpGraph(g graph.RWAccess) string {
 			var nodeDeps []string
 			for _, node := range f {
 				desc := ""
-				if d := node.GetFlag(DescriptorFlagName); d != nil {
+				if d := node.GetFlag(DescriptorFlagIndex); d != nil {
 					desc = fmt.Sprintf("[%s] ", d.GetValue())
 				}
 				nodeDeps = append(nodeDeps, fmt.Sprintf("%s%s", desc, node.GetKey()))
@@ -496,7 +496,7 @@ func dumpGraph(g graph.RWAccess) string {
 		if f := node.GetMetadata(); f != nil {
 			writeLine(fmt.Sprintf("Metadata: %+v", f), "")
 		}
-		if f := node.GetFlag(ErrorFlagName); f != nil {
+		if f := node.GetFlag(ErrorFlagIndex); f != nil {
 			writeLine(fmt.Sprintf("Errors: %+v", f.GetValue()), "")
 		}
 

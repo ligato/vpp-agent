@@ -268,12 +268,12 @@ func (s *Scheduler) applyDelete(node graph.NodeRW, txnOp *kvs.RecordedTxnOp, arg
 	defer func() {
 		if inheritedErr != nil {
 			// revert back to available, derived value failed instead
-			node.DelFlags(UnavailValueFlagName)
+			node.DelFlags(UnavailValueFlagIndex)
 			s.updateNodeState(node, prevState, args)
 			return
 		}
 		if err == nil {
-			node.DelFlags(ErrorFlagName)
+			node.DelFlags(ErrorFlagIndex)
 			if pending {
 				// deleted due to missing dependencies
 				txnOp.NewState = kvs.ValueState_PENDING
@@ -383,7 +383,7 @@ func (s *Scheduler) applyCreate(node graph.NodeRW, txnOp *kvs.RecordedTxnOp, arg
 			return
 		}
 		node.SetFlags(&UnavailValueFlag{})
-		node.DelFlags(ErrorFlagName)
+		node.DelFlags(ErrorFlagIndex)
 		txnOp.NOOP = true
 		txnOp.NewState = kvs.ValueState_UNIMPLEMENTED
 		s.updateNodeState(node, txnOp.NewState, args)
@@ -414,7 +414,7 @@ func (s *Scheduler) applyCreate(node graph.NodeRW, txnOp *kvs.RecordedTxnOp, arg
 	}
 
 	// apply new relations
-	_, updateExecs, inheritedErr := s.applyNewRelations(node, handler, args)
+	derives, updateExecs, inheritedErr := s.applyNewRelations(node, handler, nil, true, args)
 	executed = append(executed, updateExecs...)
 	if inheritedErr != nil {
 		// error is not expected here, executed operations should be NOOPs
@@ -422,14 +422,10 @@ func (s *Scheduler) applyCreate(node graph.NodeRW, txnOp *kvs.RecordedTxnOp, arg
 		return
 	}
 
-	derives := handler.derivedValues(node.GetKey(), node.GetValue())
-	dependencies := handler.dependencies(node.GetKey(), node.GetValue())
-	node.SetTargets(constructTargets(dependencies, derives))
-
 	if !isNodeReady(node) {
 		// if not ready, nothing to do
 		node.SetFlags(&UnavailValueFlag{})
-		node.DelFlags(ErrorFlagName)
+		node.DelFlags(ErrorFlagIndex)
 		txnOp.NewState = kvs.ValueState_PENDING
 		txnOp.NOOP = true
 		s.updateNodeState(node, txnOp.NewState, args)
@@ -468,7 +464,7 @@ func (s *Scheduler) applyCreate(node graph.NodeRW, txnOp *kvs.RecordedTxnOp, arg
 	}
 
 	// finalize node and save before going to derived values + dependencies
-	node.DelFlags(ErrorFlagName, UnavailValueFlagName)
+	node.DelFlags(ErrorFlagIndex, UnavailValueFlagIndex)
 	if args.kv.origin == kvs.FromSB {
 		txnOp.NewState = kvs.ValueState_OBTAINED
 	} else {
@@ -577,7 +573,7 @@ func (s *Scheduler) applyUpdate(node graph.NodeRW, txnOp *kvs.RecordedTxnOp, arg
 	node.SetValue(args.kv.value)
 
 	// apply new relations
-	derives, updateExecs, inheritedErr := s.applyNewRelations(node, handler, args)
+	derives, updateExecs, inheritedErr := s.applyNewRelations(node, handler, prevValue, !equivalent, args)
 	executed = append(executed, updateExecs...)
 	if inheritedErr != nil {
 		err = inheritedErr
@@ -625,7 +621,7 @@ func (s *Scheduler) applyUpdate(node graph.NodeRW, txnOp *kvs.RecordedTxnOp, arg
 	}
 
 	// finalize node and save before going to new/modified derived values + dependencies
-	node.DelFlags(ErrorFlagName, UnavailValueFlagName)
+	node.DelFlags(ErrorFlagIndex, UnavailValueFlagIndex)
 	if args.kv.origin == kvs.FromSB {
 		txnOp.NewState = kvs.ValueState_OBTAINED
 	} else {
@@ -673,35 +669,50 @@ func (s *Scheduler) applyUpdate(node graph.NodeRW, txnOp *kvs.RecordedTxnOp, arg
 // applyNewRelations updates relation definitions and removes obsolete derived
 // values.
 func (s *Scheduler) applyNewRelations(node graph.NodeRW, handler *descriptorHandler,
+	prevValue proto.Message, updateDeps bool,
 	args *applyValueArgs) (derivedVals []kvs.KeyValuePair, executed kvs.RecordedTxnOps, err error) {
 
-	// get the set of derived keys before update
-	prevDerived := getDerivedKeys(node)
-
-	// set new targets
-	derivedVals = nil
-	if !args.isDerived {
-		derivedVals = handler.derivedValues(node.GetKey(), node.GetValue())
-	}
-	dependencies := handler.dependencies(node.GetKey(), node.GetValue())
-	node.SetTargets(constructTargets(dependencies, derivedVals))
-
-	if args.isDerived {
+	if args.isDerived && !updateDeps {
+		// nothing to update
 		return
 	}
 
-	// remove obsolete derived values
-	var obsoleteDerVals []kvForTxn
-	prevDerived.Subtract(getDerivedKeys(node))
-	for _, obsolete := range prevDerived.Iterate() {
-		obsoleteDerVals = append(obsoleteDerVals, kvForTxn{
-			key:      obsolete,
-			value:    nil, // delete
-			origin:   args.kv.origin,
-			isRevert: args.kv.isRevert,
-		})
+	// get the set of derived keys before update
+	prevDerivedKeys := utils.NewSliceBasedKeySet()
+	if !args.isDerived && prevValue != nil {
+		for _, kv := range handler.derivedValues(node.GetKey(), prevValue) {
+			prevDerivedKeys.Add(kv.Key)
+		}
 	}
-	executed, err = s.applyDerived(obsoleteDerVals, args, false)
+
+	// get the set of derived keys after update
+	newDerivedKeys := utils.NewSliceBasedKeySet()
+	if !args.isDerived {
+		derivedVals = handler.derivedValues(node.GetKey(), node.GetValue())
+		for _, kv := range derivedVals {
+			newDerivedKeys.Add(kv.Key)
+		}
+	}
+	updateDerived := !prevDerivedKeys.Equals(newDerivedKeys)
+	if updateDeps || updateDerived {
+		dependencies := handler.dependencies(node.GetKey(), node.GetValue())
+		node.SetTargets(constructTargets(dependencies, derivedVals))
+	}
+
+	// remove obsolete derived values
+	if updateDerived {
+		var obsoleteDerVals []kvForTxn
+		prevDerivedKeys.Subtract(newDerivedKeys)
+		for _, obsolete := range prevDerivedKeys.Iterate() {
+			obsoleteDerVals = append(obsoleteDerVals, kvForTxn{
+				key:      obsolete,
+				value:    nil, // delete
+				origin:   args.kv.origin,
+				isRevert: args.kv.isRevert,
+			})
+		}
+		executed, err = s.applyDerived(obsoleteDerVals, args, false)
+	}
 	return
 }
 

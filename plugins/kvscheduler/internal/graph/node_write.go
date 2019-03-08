@@ -58,49 +58,17 @@ func (node *node) SetValue(value proto.Message) {
 
 // SetFlags associates given flag with this node.
 func (node *node) SetFlags(flags ...Flag) {
-	pgraph := node.graph.parent
-	if pgraph != nil && pgraph.methodTracker != nil {
-		defer pgraph.methodTracker("Node.SetFlags")()
-	}
-
-	toBeSet := make(map[string]struct{})
 	for _, flag := range flags {
-		toBeSet[flag.GetName()] = struct{}{}
+		node.flags[flag.GetIndex()] = flag
 	}
-
-	var otherFlags []Flag
-	for _, flag := range node.flags {
-		if _, set := toBeSet[flag.GetName()]; !set {
-			otherFlags = append(otherFlags, flag)
-		}
-	}
-
-	node.flags = append(otherFlags, flags...)
 	node.dataUpdated = true
 }
 
 // DelFlags removes given flag from this node.
-func (node *node) DelFlags(names ...string) {
-	pgraph := node.graph.parent
-	if pgraph != nil && pgraph.methodTracker != nil {
-		defer pgraph.methodTracker("Node.DelFlags")()
+func (node *node) DelFlags(flagIndexes ...int) {
+	for _, idx := range flagIndexes {
+		node.flags[idx] = nil
 	}
-
-	var otherFlags []Flag
-	for _, flag := range node.flags {
-		delete := false
-		for _, flagName := range names {
-			if flag.GetName() == flagName {
-				delete = true
-				break
-			}
-		}
-		if !delete {
-			otherFlags = append(otherFlags, flag)
-		}
-	}
-
-	node.flags = otherFlags
 	node.dataUpdated = true
 }
 
@@ -128,7 +96,7 @@ func (node *node) SetTargets(targetsDef []RelationTargetDef) {
 		defer pgraph.methodTracker("Node.SetTargets")()
 	}
 
-	node.targetsDef = targetsDef
+	node.targetsDef = newTargetsDef(targetsDef)
 	node.dataUpdated = true
 
 	// remove obsolete targets
@@ -140,7 +108,7 @@ func (node *node) SetTargets(targetsDef []RelationTargetDef) {
 			var toRemove []string
 			for _, target := range targets.MatchingKeys.Iterate() {
 				obsolete := true
-				targetDefs := node.getTargetDefsForKey(target, relTargets.Relation)
+				targetDefs := node.targetsDef.getForKey(relTargets.Relation, target)
 				for _, targetDef := range targetDefs {
 					if targetDef.Label == targets.Label {
 						obsolete = false
@@ -158,15 +126,8 @@ func (node *node) SetTargets(targetsDef []RelationTargetDef) {
 			}
 
 			// remove the entire label if it is no longer defined
-			obsoleteLabel := true
-			for _, targetDef := range node.targetsDef {
-				if targetDef.Relation == relTargets.Relation &&
-					targetDef.Label == targets.Label {
-					obsoleteLabel = false
-					break
-				}
-			}
-			if obsoleteLabel {
+			_, labelStillDefined := node.targetsDef.getForLabel(relTargets.Relation, targets.Label)
+			if !labelStillDefined {
 				newLen := len(relTargets.Targets) - 1
 				copy(relTargets.Targets[labelIdx:], relTargets.Targets[labelIdx+1:])
 				relTargets.Targets = relTargets.Targets[:newLen]
@@ -182,7 +143,7 @@ func (node *node) SetTargets(targetsDef []RelationTargetDef) {
 
 	// build new targets
 	var usesSelector bool
-	for _, targetDef := range node.targetsDef {
+	for _, targetDef := range node.targetsDef.defs {
 		node.createEntryForTarget(targetDef)
 		if targetDef.Key != "" {
 			// without selectors, the lookup procedure has complexity O(m*log(n))
@@ -202,29 +163,15 @@ func (node *node) SetTargets(targetsDef []RelationTargetDef) {
 			node.checkPotentialTarget(otherNode)
 		}
 	}
+
 }
 
 // checkPotentialTarget checks if node2 is target of node in any of the relations.
 func (node *node) checkPotentialTarget(node2 *node) {
-	targetDefs := node.getTargetDefsForKey(node2.key, "") // for any relation
+	targetDefs := node.targetsDef.getForKey("", node2.key) // for any relation
 	for _, targetDef := range targetDefs {
 		node.addToTargets(node2, targetDef)
 	}
-}
-
-// getTargetDefsForKey returns all target definitions that select the given key.
-// Target definitions can be further filtered by the relation.
-func (node *node) getTargetDefsForKey(key, relation string) (defs []RelationTargetDef) {
-	for _, targetDef := range node.targetsDef {
-		if relation != "" && targetDef.Relation != relation {
-			continue
-		}
-		if targetDef.Key == key ||
-			(targetDef.Key == "" && targetDef.Selector(key)) {
-			defs = append(defs, targetDef)
-		}
-	}
-	return defs
 }
 
 // createEntryForTarget creates entry for target(s) with the given definition
@@ -246,7 +193,7 @@ func (node *node) createEntryForTarget(targetDef RelationTargetDef) {
 			// selector
 			targets.MatchingKeys = utils.NewSliceBasedKeySet()
 		}
-		relTargets.Targets = append(relTargets.Targets, targets)
+		relTargets.AddTargets(targets)
 	}
 	targets.ExpectedKey = targetDef.Key
 }
