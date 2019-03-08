@@ -14,7 +14,7 @@
 
 //go:generate descriptor-adapter --descriptor-name Interface  --value-type *vpp_interfaces.Interface --meta-type *ifaceidx.IfaceMetadata --import "ifaceidx" --import "github.com/ligato/vpp-agent/api/models/vpp/interfaces" --output-dir "descriptor"
 //go:generate descriptor-adapter --descriptor-name Unnumbered  --value-type *vpp_interfaces.Interface_Unnumbered --import "github.com/ligato/vpp-agent/api/models/vpp/interfaces" --output-dir "descriptor"
-//go:generate descriptor-adapter --descriptor-name BondEnslavement  --value-type *vpp_interfaces.Interface_BondEnslavement --import "github.com/ligato/vpp-agent/api/models/vpp/interfaces" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name BondedInterface  --value-type *vpp_interfaces.BondLink_BondedInterface --import "github.com/ligato/vpp-agent/api/models/vpp/interfaces" --output-dir "descriptor"
 
 package ifplugin
 
@@ -74,10 +74,9 @@ type IfPlugin struct {
 	linuxIfHandler linux_ifcalls.NetlinkAPIRead
 
 	// descriptors
-	ifDescriptor       *descriptor.InterfaceDescriptor
-	unIfDescriptor     *descriptor.UnnumberedIfDescriptor
-	bondEnslDescriptor *descriptor.BondEnslaveDescriptor
-	dhcpDescriptor     *descriptor.DHCPDescriptor
+	ifDescriptor   *descriptor.InterfaceDescriptor
+	unIfDescriptor *descriptor.UnnumberedIfDescriptor
+	dhcpDescriptor *descriptor.DHCPDescriptor
 
 	// index maps
 	intfIndex ifaceidx.IfaceMetadataIndex
@@ -169,9 +168,8 @@ func (p *IfPlugin) Init() error {
 		return err
 	}
 
-	p.bondEnslDescriptor = descriptor.NewBondEnslaveDescriptor(p.ifHandler, p.Log)
-	bondSlaveDescriptor := adapter.NewBondEnslavementDescriptor(p.bondEnslDescriptor.GetDescriptor())
-	err = p.KVScheduler.RegisterKVDescriptor(bondSlaveDescriptor)
+	bondIfDescriptor, bondIfDescCtx := descriptor.NewBondedInterfaceDescriptor(p.ifHandler, p.intfIndex, p.Log)
+	err = p.KVScheduler.RegisterKVDescriptor(bondIfDescriptor)
 	if err != nil {
 		return err
 	}
@@ -198,7 +196,7 @@ func (p *IfPlugin) Init() error {
 	// pass read-only index map to descriptors
 	p.ifDescriptor.SetInterfaceIndex(p.intfIndex)
 	p.unIfDescriptor.SetInterfaceIndex(p.intfIndex)
-	p.bondEnslDescriptor.SetInterfaceIndex(p.intfIndex)
+	bondIfDescCtx.SetInterfaceIndex(p.intfIndex)
 	p.dhcpDescriptor.SetInterfaceIndex(p.intfIndex)
 
 	// start watching for DHCP notifications

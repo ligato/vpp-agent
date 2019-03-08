@@ -10,44 +10,44 @@ import (
 
 ////////// type-safe key-value pair with metadata //////////
 
-type BondEnslavementKVWithMetadata struct {
+type BondedInterfaceKVWithMetadata struct {
 	Key      string
-	Value    *vpp_interfaces.Interface_BondEnslavement
+	Value    *vpp_interfaces.BondLink_BondedInterface
 	Metadata interface{}
 	Origin   ValueOrigin
 }
 
 ////////// type-safe Descriptor structure //////////
 
-type BondEnslavementDescriptor struct {
+type BondedInterfaceDescriptor struct {
 	Name                 string
 	KeySelector          KeySelector
 	ValueTypeName        string
 	KeyLabel             func(key string) string
-	ValueComparator      func(key string, oldValue, newValue *vpp_interfaces.Interface_BondEnslavement) bool
+	ValueComparator      func(key string, oldValue, newValue *vpp_interfaces.BondLink_BondedInterface) bool
 	NBKeyPrefix          string
 	WithMetadata         bool
 	MetadataMapFactory   MetadataMapFactory
-	Validate             func(key string, value *vpp_interfaces.Interface_BondEnslavement) error
-	Create               func(key string, value *vpp_interfaces.Interface_BondEnslavement) (metadata interface{}, err error)
-	Delete               func(key string, value *vpp_interfaces.Interface_BondEnslavement, metadata interface{}) error
-	Update               func(key string, oldValue, newValue *vpp_interfaces.Interface_BondEnslavement, oldMetadata interface{}) (newMetadata interface{}, err error)
-	UpdateWithRecreate   func(key string, oldValue, newValue *vpp_interfaces.Interface_BondEnslavement, metadata interface{}) bool
-	Retrieve             func(correlate []BondEnslavementKVWithMetadata) ([]BondEnslavementKVWithMetadata, error)
+	Validate             func(key string, value *vpp_interfaces.BondLink_BondedInterface) error
+	Create               func(key string, value *vpp_interfaces.BondLink_BondedInterface) (metadata interface{}, err error)
+	Delete               func(key string, value *vpp_interfaces.BondLink_BondedInterface, metadata interface{}) error
+	Update               func(key string, oldValue, newValue *vpp_interfaces.BondLink_BondedInterface, oldMetadata interface{}) (newMetadata interface{}, err error)
+	UpdateWithRecreate   func(key string, oldValue, newValue *vpp_interfaces.BondLink_BondedInterface, metadata interface{}) bool
+	Retrieve             func(correlate []BondedInterfaceKVWithMetadata) ([]BondedInterfaceKVWithMetadata, error)
 	IsRetriableFailure   func(err error) bool
-	DerivedValues        func(key string, value *vpp_interfaces.Interface_BondEnslavement) []KeyValuePair
-	Dependencies         func(key string, value *vpp_interfaces.Interface_BondEnslavement) []Dependency
+	DerivedValues        func(key string, value *vpp_interfaces.BondLink_BondedInterface) []KeyValuePair
+	Dependencies         func(key string, value *vpp_interfaces.BondLink_BondedInterface) []Dependency
 	RetrieveDependencies []string /* descriptor name */
 }
 
 ////////// Descriptor adapter //////////
 
-type BondEnslavementDescriptorAdapter struct {
-	descriptor *BondEnslavementDescriptor
+type BondedInterfaceDescriptorAdapter struct {
+	descriptor *BondedInterfaceDescriptor
 }
 
-func NewBondEnslavementDescriptor(typedDescriptor *BondEnslavementDescriptor) *KVDescriptor {
-	adapter := &BondEnslavementDescriptorAdapter{descriptor: typedDescriptor}
+func NewBondedInterfaceDescriptor(typedDescriptor *BondedInterfaceDescriptor) *KVDescriptor {
+	adapter := &BondedInterfaceDescriptorAdapter{descriptor: typedDescriptor}
 	descriptor := &KVDescriptor{
 		Name:                 typedDescriptor.Name,
 		KeySelector:          typedDescriptor.KeySelector,
@@ -89,88 +89,88 @@ func NewBondEnslavementDescriptor(typedDescriptor *BondEnslavementDescriptor) *K
 	return descriptor
 }
 
-func (da *BondEnslavementDescriptorAdapter) ValueComparator(key string, oldValue, newValue proto.Message) bool {
-	typedOldValue, err1 := castBondEnslavementValue(key, oldValue)
-	typedNewValue, err2 := castBondEnslavementValue(key, newValue)
+func (da *BondedInterfaceDescriptorAdapter) ValueComparator(key string, oldValue, newValue proto.Message) bool {
+	typedOldValue, err1 := castBondedInterfaceValue(key, oldValue)
+	typedNewValue, err2 := castBondedInterfaceValue(key, newValue)
 	if err1 != nil || err2 != nil {
 		return false
 	}
 	return da.descriptor.ValueComparator(key, typedOldValue, typedNewValue)
 }
 
-func (da *BondEnslavementDescriptorAdapter) Validate(key string, value proto.Message) (err error) {
-	typedValue, err := castBondEnslavementValue(key, value)
+func (da *BondedInterfaceDescriptorAdapter) Validate(key string, value proto.Message) (err error) {
+	typedValue, err := castBondedInterfaceValue(key, value)
 	if err != nil {
 		return err
 	}
 	return da.descriptor.Validate(key, typedValue)
 }
 
-func (da *BondEnslavementDescriptorAdapter) Create(key string, value proto.Message) (metadata Metadata, err error) {
-	typedValue, err := castBondEnslavementValue(key, value)
+func (da *BondedInterfaceDescriptorAdapter) Create(key string, value proto.Message) (metadata Metadata, err error) {
+	typedValue, err := castBondedInterfaceValue(key, value)
 	if err != nil {
 		return nil, err
 	}
 	return da.descriptor.Create(key, typedValue)
 }
 
-func (da *BondEnslavementDescriptorAdapter) Update(key string, oldValue, newValue proto.Message, oldMetadata Metadata) (newMetadata Metadata, err error) {
-	oldTypedValue, err := castBondEnslavementValue(key, oldValue)
+func (da *BondedInterfaceDescriptorAdapter) Update(key string, oldValue, newValue proto.Message, oldMetadata Metadata) (newMetadata Metadata, err error) {
+	oldTypedValue, err := castBondedInterfaceValue(key, oldValue)
 	if err != nil {
 		return nil, err
 	}
-	newTypedValue, err := castBondEnslavementValue(key, newValue)
+	newTypedValue, err := castBondedInterfaceValue(key, newValue)
 	if err != nil {
 		return nil, err
 	}
-	typedOldMetadata, err := castBondEnslavementMetadata(key, oldMetadata)
+	typedOldMetadata, err := castBondedInterfaceMetadata(key, oldMetadata)
 	if err != nil {
 		return nil, err
 	}
 	return da.descriptor.Update(key, oldTypedValue, newTypedValue, typedOldMetadata)
 }
 
-func (da *BondEnslavementDescriptorAdapter) Delete(key string, value proto.Message, metadata Metadata) error {
-	typedValue, err := castBondEnslavementValue(key, value)
+func (da *BondedInterfaceDescriptorAdapter) Delete(key string, value proto.Message, metadata Metadata) error {
+	typedValue, err := castBondedInterfaceValue(key, value)
 	if err != nil {
 		return err
 	}
-	typedMetadata, err := castBondEnslavementMetadata(key, metadata)
+	typedMetadata, err := castBondedInterfaceMetadata(key, metadata)
 	if err != nil {
 		return err
 	}
 	return da.descriptor.Delete(key, typedValue, typedMetadata)
 }
 
-func (da *BondEnslavementDescriptorAdapter) UpdateWithRecreate(key string, oldValue, newValue proto.Message, metadata Metadata) bool {
-	oldTypedValue, err := castBondEnslavementValue(key, oldValue)
+func (da *BondedInterfaceDescriptorAdapter) UpdateWithRecreate(key string, oldValue, newValue proto.Message, metadata Metadata) bool {
+	oldTypedValue, err := castBondedInterfaceValue(key, oldValue)
 	if err != nil {
 		return true
 	}
-	newTypedValue, err := castBondEnslavementValue(key, newValue)
+	newTypedValue, err := castBondedInterfaceValue(key, newValue)
 	if err != nil {
 		return true
 	}
-	typedMetadata, err := castBondEnslavementMetadata(key, metadata)
+	typedMetadata, err := castBondedInterfaceMetadata(key, metadata)
 	if err != nil {
 		return true
 	}
 	return da.descriptor.UpdateWithRecreate(key, oldTypedValue, newTypedValue, typedMetadata)
 }
 
-func (da *BondEnslavementDescriptorAdapter) Retrieve(correlate []KVWithMetadata) ([]KVWithMetadata, error) {
-	var correlateWithType []BondEnslavementKVWithMetadata
+func (da *BondedInterfaceDescriptorAdapter) Retrieve(correlate []KVWithMetadata) ([]KVWithMetadata, error) {
+	var correlateWithType []BondedInterfaceKVWithMetadata
 	for _, kvpair := range correlate {
-		typedValue, err := castBondEnslavementValue(kvpair.Key, kvpair.Value)
+		typedValue, err := castBondedInterfaceValue(kvpair.Key, kvpair.Value)
 		if err != nil {
 			continue
 		}
-		typedMetadata, err := castBondEnslavementMetadata(kvpair.Key, kvpair.Metadata)
+		typedMetadata, err := castBondedInterfaceMetadata(kvpair.Key, kvpair.Metadata)
 		if err != nil {
 			continue
 		}
 		correlateWithType = append(correlateWithType,
-			BondEnslavementKVWithMetadata{
+			BondedInterfaceKVWithMetadata{
 				Key:      kvpair.Key,
 				Value:    typedValue,
 				Metadata: typedMetadata,
@@ -195,16 +195,16 @@ func (da *BondEnslavementDescriptorAdapter) Retrieve(correlate []KVWithMetadata)
 	return values, err
 }
 
-func (da *BondEnslavementDescriptorAdapter) DerivedValues(key string, value proto.Message) []KeyValuePair {
-	typedValue, err := castBondEnslavementValue(key, value)
+func (da *BondedInterfaceDescriptorAdapter) DerivedValues(key string, value proto.Message) []KeyValuePair {
+	typedValue, err := castBondedInterfaceValue(key, value)
 	if err != nil {
 		return nil
 	}
 	return da.descriptor.DerivedValues(key, typedValue)
 }
 
-func (da *BondEnslavementDescriptorAdapter) Dependencies(key string, value proto.Message) []Dependency {
-	typedValue, err := castBondEnslavementValue(key, value)
+func (da *BondedInterfaceDescriptorAdapter) Dependencies(key string, value proto.Message) []Dependency {
+	typedValue, err := castBondedInterfaceValue(key, value)
 	if err != nil {
 		return nil
 	}
@@ -213,15 +213,15 @@ func (da *BondEnslavementDescriptorAdapter) Dependencies(key string, value proto
 
 ////////// Helper methods //////////
 
-func castBondEnslavementValue(key string, value proto.Message) (*vpp_interfaces.Interface_BondEnslavement, error) {
-	typedValue, ok := value.(*vpp_interfaces.Interface_BondEnslavement)
+func castBondedInterfaceValue(key string, value proto.Message) (*vpp_interfaces.BondLink_BondedInterface, error) {
+	typedValue, ok := value.(*vpp_interfaces.BondLink_BondedInterface)
 	if !ok {
 		return nil, ErrInvalidValueType(key, value)
 	}
 	return typedValue, nil
 }
 
-func castBondEnslavementMetadata(key string, metadata Metadata) (interface{}, error) {
+func castBondedInterfaceMetadata(key string, metadata Metadata) (interface{}, error) {
 	if metadata == nil {
 		return nil, nil
 	}

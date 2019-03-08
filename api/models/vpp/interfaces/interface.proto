@@ -60,13 +60,6 @@ message Interface {
     }
     RxPlacementSettings rx_placement_settings = 11;
 
-    message BondEnslavement {
-        string bond_interface = 1;
-        bool is_passive = 2;
-        bool is_long_timeout = 3;
-    }
-    BondEnslavement bond_enslavement = 12;
-
     oneof link {
         SubInterface sub = 100;         /* sub-interface configuration */
         MemifLink memif = 101;          /* memif-specific configuration */
@@ -172,4 +165,11 @@ message BondLink {
         L23 = 2;
     }
     LoadBalance lb = 4; // Load balance is optional and valid only for XOR and LACP modes
+
+    message BondedInterface {
+        string name = 1;
+        bool is_passive = 2;
+        bool is_long_timeout = 3;
+    }
+    repeated BondedInterface bonded_interfaces = 12;
 }

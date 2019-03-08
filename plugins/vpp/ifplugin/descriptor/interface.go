@@ -493,11 +493,13 @@ func (d *InterfaceDescriptor) DerivedValues(key string, intf *interfaces.Interfa
 	}
 
 	// bond slave interface
-	if intf.GetBondEnslavement() != nil {
-		derValues = append(derValues, kvs.KeyValuePair{
-			Key:   interfaces.BondEnslaveInterfaceKey(intf.Name),
-			Value: intf.GetBondEnslavement(),
-		})
+	if intf.Type == interfaces.Interface_BOND_INTERFACE && intf.GetBond() != nil {
+		for _, slaveIf := range intf.GetBond().GetBondedInterfaces() {
+			derValues = append(derValues, kvs.KeyValuePair{
+				Key:   interfaces.BondedInterfaceKey(intf.Name, slaveIf.Name),
+				Value: slaveIf,
+			})
+		}
 	}
 
 	// DHCP client

@@ -74,9 +74,9 @@ const (
 
 /* Bond interface enslavement (derived) */
 const (
-	// BondEnslaveKeyPrefix is used as a common prefix for keys derived from
+	// BondedInterfacePrefix is used as a common prefix for keys derived from
 	// interfaces to represent interface slaves for bond interface.
-	BondEnslaveKeyPrefix = "vpp/interface/bond/"
+	BondedInterfacePrefix = "vpp/bond/{bond}/interface/{iface}"
 )
 
 /* DHCP (client - derived, lease - notification) */
@@ -187,22 +187,29 @@ func ParseNameFromUnnumberedKey(key string) (iface string, isUnnumberedKey bool)
 	return
 }
 
-/* Bond interface enslavement (derived) */
+/* Bond slave interface (derived) */
 
-func BondEnslaveInterfaceKey(iface string) string {
-	if iface == "" {
-		iface = InvalidKeyPart
+// BondedInterfaceKey returns a key with bond and slave interface set
+func BondedInterfaceKey(bondIf, slaveIf string) string {
+	if bondIf == "" {
+		bondIf = InvalidKeyPart
 	}
-	return BondEnslaveKeyPrefix + iface
+	if slaveIf == "" {
+		slaveIf = InvalidKeyPart
+	}
+	key := strings.Replace(BondedInterfacePrefix, "{bond}", bondIf, 1)
+	key = strings.Replace(key, "{iface}", slaveIf, 1)
+	return key
 }
 
-// ParseNameFromBondEnslaveInterfaceKey returns suffix of the key.
-func ParseNameFromBondEnslaveInterfaceKey(key string) (iface string, isBondEnslaveKey bool) {
-	suffix := strings.TrimPrefix(key, BondEnslaveKeyPrefix)
-	if suffix != key && suffix != "" {
-		return suffix, true
+// ParseBondedInterfaceKey returns names of interfaces of the key.
+func ParseBondedInterfaceKey(key string) (bondIf, slaveIf string, isBondSlaveInterfaceKey bool) {
+	keyComps := strings.Split(key, "/")
+	if len(keyComps) >= 5 && keyComps[0] == "vpp" && keyComps[1] == "bond" && keyComps[3] == "interface" {
+		slaveIf = strings.Join(keyComps[4:], "/")
+		return keyComps[2], slaveIf, true
 	}
-	return
+	return "", "", false
 }
 
 /* DHCP (client - derived, lease - notification) */
