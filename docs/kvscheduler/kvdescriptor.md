@@ -34,7 +34,7 @@ rather a structure that needs to be properly initialized with attributes and
 callbacks to CRUD operations. This approach was chosen to reinforce the fact 
 that descriptors are meant to be **stateless** - the state of values is instead 
 kept by the scheduler and run-time information can be stored in 
-[metadata][kvscheduler-terminology] that is optionally carried with each value. 
+[metadata](kvscheduler.md#metadata) that is optionally carried with each value. 
 The state of the graph with values and their metadata should determine what 
 exactly will be executed next in the SB plane for a given transaction. The graph
 is already exposed through logs and programmatic and REST APIs, therefore if 
@@ -51,7 +51,7 @@ all the boiler-plate type casting.
 
 **Note**: `KeySelector`, `ValueTypeName`, `KeyLabel` & `NBKeyPrefix`
 will all be replaced in a future release with a single reference to the value
-[model][kvscheduler-terminology] (**TODO: add link to the model documentation
+[model](kvscheduler.md#model) (**TODO: add link to the model documentation
 once it exists**). Most descriptors already use the methods provided by models
 to define these fields. But we do not yet have tools to build models for
 [derived values](#derivedvalues) and without them we cannot fully switch
@@ -74,7 +74,7 @@ Please note that all optional fields can be left uninitialized (zero values).
 * descriptors for derived values do not need to define this field - the values
   they describe do not come from NB directly, instead get derived from other
   values which are in scope of other descriptors
-* [model][kvscheduler-terminology] can be used to obtain the key prefix
+* [model](kvscheduler.md#model) can be used to obtain the key prefix
   using the `KeyPrefix()` method - [here is an example][nb-key-prefix]
 
 ### KeySelector
@@ -83,14 +83,14 @@ Please note that all optional fields can be left uninitialized (zero values).
 * a predicate that should select (i.e. return true) for keys identifying values
   described by this descriptor
 * typically, a selector uses the `IsKeyValid` method from the value 
-  [model][kvscheduler-terminology] to check if the key is valid for the model 
+  [model](kvscheduler.md#model) to check if the key is valid for the model 
   \- [here is an example][key-selector]
 
 ### ValueTypeName
 
 * `string` attribute, **mandatory for [non-derived values](#derivedvalues)**
 * name of the protobuf message used to structure and serialize value data
-* [model][kvscheduler-terminology] can be used to obtain the proto message name
+* [model](kvscheduler.md#model) can be used to obtain the proto message name
   using `ProtoName()` method - [here is an example][value-type-name]
 
 ### KeyLabel
@@ -100,7 +100,7 @@ Please note that all optional fields can be left uninitialized (zero values).
    identifier, that, unlike the original key, only needs to be unique in the
    key scope of the descriptor and not necessarily in the entire key space
    (e.g. interface name rather than the full key)
-* [model][kvscheduler-terminology] provides an off-the-shelf key shortener
+* [model](kvscheduler.md#model) provides an off-the-shelf key shortener
   method `StripKeyPrefix()` - [here is an example][key-label]
 * if defined, KeyLabel will be used as value identifier in the metadata map
   (it then, for example, allows to ask for interface metadata simply by the
@@ -219,7 +219,7 @@ Please note that all optional fields can be left uninitialized (zero values).
 ### Retrieve
 
 * optional callback: `func(correlate []KVWithMetadata) ([]KVWithMetadata, error)`
-  - where [`KVWithMetadata`](https://github.com/ligato/vpp-agent/blob/73970d00f781ee136436d70cc8c9890742641c70/plugins/kvscheduler/api/kv_scheduler_api.go#L76) is defined as:
+  - where [KVWithMetadata][kvwithmetadata] is defined as:
     ```go
     type KVWithMetadata struct {
         Key      string
@@ -280,7 +280,7 @@ Please note that all optional fields can be left uninitialized (zero values).
 ### Dependencies
 
 * optional callback: `func(key string, value proto.Message) []Dependency`
-  - where [`Dependency`](https://github.com/ligato/vpp-agent/blob/73970d00f781ee136436d70cc8c9890742641c70/plugins/kvscheduler/api/kv_descriptor_api.go#L24) is defined as:
+  - where [Dependency][kvdependency] is defined as:
     ```go
     type Dependency struct {
     	Label string
@@ -511,6 +511,29 @@ and default dependency injections into the file `options.go` (example
 
 ## Descriptor examples
 
+### Descriptor skeletons
+
+For a quick start, you may use prepared skeleton of a plugin with a single
+descriptor, available in two variants:
+ * [without leveraging the support for metadata][plugin-skeleton-withoutmeta]
+ * [with metadata, including custom metadata index map][plugin-skeleton-withmeta]
+
+**Beware**: extensive copy-pasting is actually a bad practise, so use the
+provided skeletons with caution and eventually learn how to write your own
+plugins from the scratch, using the skeletons only as a reference.
+
+### Mock SB
+
+We have prepared an [interactive hands-on example][mock-plugins-example],
+demonstrating the KVScheduler framework using replicated `vpp/ifplugin` and
+`vpp/l2plugin` under various scenarios, where models are simplified and the VPP
+is replaced with a mock southbound, printing the triggered CRUD operations into
+the stdout instead of actually executing them. The example is fully focused on
+the scheduler and the descriptors, and on that abstraction level the actual SB
+underneath is irrelevant.
+
+### Real-world examples
+
 Since all VPP and Linux plugins use the KVScheduler framework, there are
 already many descriptors in the repository to look at and clone. Even though
 interfaces are the basis of network configuration, we recommend to start studying
@@ -526,16 +549,12 @@ by other objects.
 These descriptors cover most of the features and should help you to get started
 implementing your own.
 
-**TODO: create and add links to "mock" descriptors to play with (mostly just
-skeletons and some printouts)**
-
 
 [existing-descriptors]: https://github.com/ligato/vpp-agent/wiki/KVDescriptors
 [linux-interface-descr]: https://github.com/ligato/vpp-agent/blob/master/plugins/linux/ifplugin/descriptor/interface.go
 [vpp-interface-descr]: https://github.com/ligato/vpp-agent/blob/master/plugins/vpp/ifplugin/descriptor/interface.go
 [vpp-route-descr]: https://github.com/ligato/vpp-agent/blob/master/plugins/vpp/l3plugin/descriptor/route.go
 [descriptor-api]: https://github.com/ligato/vpp-agent/blob/e8e54ef67b666e57ffef1bca555c8ce5585f215f/plugins/kvscheduler/api/kv_descriptor_api.go#L82-L248
-[kvscheduler-terminology]: kvscheduler.md#terminology
 [descriptor-adapter]: https://github.com/ligato/vpp-agent/tree/master/plugins/kvscheduler/descriptor-adapter
 [vpp-iface-adapter]: https://github.com/ligato/vpp-agent/blob/e8e54ef67b666e57ffef1bca555c8ce5585f215f/plugins/vpp/ifplugin/ifplugin.go#L15
 [register-kvdescriptor]: https://github.com/ligato/vpp-agent/blob/e8e54ef67b666e57ffef1bca555c8ce5585f215f/plugins/kvscheduler/api/kv_scheduler_api.go#L195-L199
@@ -574,3 +593,8 @@ skeletons and some printouts)**
 [linux-route-gw-dep]: https://github.com/ligato/vpp-agent/blob/e8e54ef67b666e57ffef1bca555c8ce5585f215f/plugins/linux/l3plugin/descriptor/route.go#L255-L273
 [vpp-route-retrieve-deps]: https://github.com/ligato/vpp-agent/blob/e8e54ef67b666e57ffef1bca555c8ce5585f215f/plugins/vpp/l3plugin/descriptor/route.go#L74
 [vpp-route-iface-name]: https://github.com/ligato/vpp-agent/blob/e8e54ef67b666e57ffef1bca555c8ce5585f215f/plugins/vpp/l3plugin/vppcalls/route_dump.go#L139-L150
+[mock-plugins-example]: ../../examples/kvscheduler/mock_plugins/README.md
+[plugin-skeleton-withmeta]: ../../examples/kvscheduler/plugin_skeleton/with_metadata/plugin.go
+[plugin-skeleton-withoutmeta]: ../../examples/kvscheduler/plugin_skeleton/without_metadata/plugin.go
+[kvwithmetadata]: https://github.com/ligato/vpp-agent/blob/73970d00f781ee136436d70cc8c9890742641c70/plugins/kvscheduler/api/kv_scheduler_api.go#L76
+[kvdependency]: https://github.com/ligato/vpp-agent/blob/73970d00f781ee136436d70cc8c9890742641c70/plugins/kvscheduler/api/kv_descriptor_api.go#L24
