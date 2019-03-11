@@ -15,6 +15,8 @@
 package graph
 
 import (
+	"reflect"
+
 	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/vpp-agent/plugins/kvscheduler/internal/utils"
 )
@@ -79,6 +81,9 @@ func (node *node) SetMetadataMap(mapName string) {
 		node.metadataMap = mapName
 		node.dataUpdated = true
 		node.metaInSync = false
+		if !node.graph.wCopy {
+			node.syncMetadata()
+		}
 	}
 }
 
@@ -87,6 +92,34 @@ func (node *node) SetMetadata(metadata interface{}) {
 	node.metadata = metadata
 	node.dataUpdated = true
 	node.metaInSync = false
+	if !node.graph.wCopy {
+		node.syncMetadata()
+	}
+}
+
+// syncMetadata applies metadata changes into the associated mapping.
+func (node *node) syncMetadata() {
+	if node.metaInSync {
+		return
+	}
+	// update metadata map
+	if mapping, hasMapping := node.graph.mappings[node.metadataMap]; hasMapping {
+		if node.metadataAdded {
+			if node.metadata == nil {
+				mapping.Delete(node.label)
+				node.metadataAdded = false
+			} else {
+				prevMeta, _ := mapping.GetValue(node.label)
+				if !reflect.DeepEqual(prevMeta, node.metadata) {
+					mapping.Update(node.label, node.metadata)
+				}
+			}
+		} else if node.metadata != nil {
+			mapping.Put(node.label, node.metadata)
+			node.metadataAdded = true
+		}
+	}
+	node.metaInSync = true
 }
 
 // SetTargets provides definition of all edges pointing from this node.
@@ -204,7 +237,8 @@ func (node *node) addToTargets(node2 *node, targetDef RelationTargetDef) {
 	// update targets of node
 	relTargets := node.targets.GetTargetsForRelation(targetDef.Relation)
 	targets := relTargets.GetTargetsForLabel(targetDef.Label)
-	node.targetsUpdated = targets.MatchingKeys.Add(node2.key) || node.targetsUpdated
+	updated := targets.MatchingKeys.Add(node2.key)
+	node.targetsUpdated = updated || node.targetsUpdated
 
 	// update sources of node2
 	relSources := node2.sources.getSourcesForRelation(targetDef.Relation)
@@ -215,15 +249,24 @@ func (node *node) addToTargets(node2 *node, targetDef RelationTargetDef) {
 		}
 		node2.sources = append(node2.sources, relSources)
 	}
-	node2.sourcesUpdated = relSources.sources.Add(node.key) || node2.sourcesUpdated
+	updated = relSources.sources.Add(node.key)
+	node2.sourcesUpdated = updated || node2.sourcesUpdated
+	if updated {
+		node.graph.unsaved.Add(node.key)
+	}
 }
 
 // removeFromTargets removes given key from the set of targets.
 func (node *node) removeFromTargets(key string) {
+	var updated bool
 	for _, relTargets := range node.targets {
 		for _, targets := range relTargets.Targets {
-			node.targetsUpdated = targets.MatchingKeys.Del(key) || node.targetsUpdated
+			updated = targets.MatchingKeys.Del(key)
+			node.targetsUpdated = updated || node.targetsUpdated
 		}
+	}
+	if updated {
+		node.graph.unsaved.Add(node.key)
 	}
 }
 
@@ -243,4 +286,7 @@ func (node *node) removeThisFromSources() {
 func (node *node) removeFromSources(relation string, key string) {
 	updated := node.sources.getSourcesForRelation(relation).sources.Del(key)
 	node.sourcesUpdated = updated || node.sourcesUpdated
+	if updated {
+		node.graph.unsaved.Add(node.key)
+	}
 }

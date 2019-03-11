@@ -214,28 +214,14 @@ func (node *nodeR) copy() *nodeR {
 	nodeCopy.metadataAdded = node.metadataAdded
 	nodeCopy.metadataMap = node.metadataMap
 
-	// copy flags
+	// copy flags (arrays are passed by value)
 	nodeCopy.flags = node.flags
 
 	// shallow-copy target definitions (immutable)
 	nodeCopy.targetsDef = node.targetsDef
 
 	// copy targets
-	nodeCopy.targets = make(TargetsByRelation, 0, len(node.targets))
-	for _, relTargets := range node.targets {
-		targets := make(TargetsByLabel, 0, len(relTargets.Targets))
-		for _, target := range relTargets.Targets {
-			targets = append(targets, &Targets{
-				Label:        target.Label,
-				ExpectedKey:  target.ExpectedKey,
-				MatchingKeys: target.MatchingKeys.CopyOnWrite(),
-			})
-		}
-		nodeCopy.targets = append(nodeCopy.targets, &RelationTargets{
-			Relation: relTargets.Relation,
-			Targets:  targets,
-		})
-	}
+	nodeCopy.targets = node.copyTargets()
 
 	// copy sources
 	nodeCopy.sources = make(sourcesByRelation, 0, len(node.sources))
@@ -246,4 +232,23 @@ func (node *nodeR) copy() *nodeR {
 		})
 	}
 	return nodeCopy
+}
+
+func (node *nodeR) copyTargets() TargetsByRelation {
+	tCopy := make(TargetsByRelation, 0, len(node.targets))
+	for _, relTargets := range node.targets {
+		targets := make(TargetsByLabel, 0, len(relTargets.Targets))
+		for _, target := range relTargets.Targets {
+			targets = append(targets, &Targets{
+				Label:        target.Label,
+				ExpectedKey:  target.ExpectedKey,
+				MatchingKeys: target.MatchingKeys.CopyOnWrite(),
+			})
+		}
+		tCopy = append(tCopy, &RelationTargets{
+			Relation: relTargets.Relation,
+			Targets:  targets,
+		})
+	}
+	return tCopy
 }

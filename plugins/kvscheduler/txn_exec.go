@@ -54,7 +54,7 @@ type applyValueArgs struct {
 // executeTransaction executes pre-processed transaction.
 // If <dry-run> is enabled, Validate/Create/Delete/Update operations will not be executed
 // and the graph will be returned to its original state at the end.
-func (s *Scheduler) executeTransaction(txn *transaction, dryRun bool) (executed kvs.RecordedTxnOps) {
+func (s *Scheduler) executeTransaction(txn *transaction, graphW graph.RWAccess, dryRun bool) (executed kvs.RecordedTxnOps) {
 	op := "execute transaction"
 	if dryRun {
 		op = "simulate transaction"
@@ -66,8 +66,6 @@ func (s *Scheduler) executeTransaction(txn *transaction, dryRun bool) (executed 
 		fmt.Printf("%s %s\n", nodeVisitBeginMark, msg)
 		defer fmt.Printf("%s %s\n", nodeVisitEndMark, msg)
 	}
-	downstreamResync := txn.txnType == kvs.NBTransaction && txn.nb.resyncType == kvs.DownstreamResync
-	graphW := s.graph.Write(!downstreamResync)
 	branch := utils.NewMapBasedKeySet() // branch of current recursive calls to applyValue used to handle cycles
 	applied := utils.NewMapBasedKeySet()
 
@@ -94,9 +92,9 @@ func (s *Scheduler) executeTransaction(txn *transaction, dryRun bool) (executed 
 		if err != nil {
 			if txn.txnType == kvs.NBTransaction && txn.nb.revertOnFailure {
 				// refresh failed value and trigger reverting
+				// (not dry-run)
 				failedKey := utils.NewSingletonKeySet(kv.key)
 				s.refreshGraph(graphW, failedKey, nil, true)
-				graphW.Save() // certainly not dry-run
 				revert = true
 				break
 			}
@@ -106,7 +104,7 @@ func (s *Scheduler) executeTransaction(txn *transaction, dryRun bool) (executed 
 	if revert {
 		// record graph state in-between failure and revert
 		graphW.Release()
-		graphW = s.graph.Write(true)
+		graphW = s.graph.Write(!dryRun,true)
 
 		// revert back to previous values
 		for _, kvPair := range prevValues {
@@ -131,8 +129,6 @@ func (s *Scheduler) executeTransaction(txn *transaction, dryRun bool) (executed 
 
 	// get rid of uninteresting intermediate pending Create/Delete operations
 	executed = s.compressTxnOps(executed)
-
-	graphW.Release()
 	return executed
 }
 
@@ -252,9 +248,6 @@ func (s *Scheduler) applyDelete(node graph.NodeRW, txnOp *kvs.RecordedTxnOp, arg
 		endLog := s.logNodeVisit("applyDelete", args)
 		defer endLog()
 	}
-	if !args.dryRun {
-		defer args.graphW.Save()
-	}
 
 	if node.GetValue() == nil {
 		// remove value that does not exist => noop (do not even record)
@@ -365,9 +358,6 @@ func (s *Scheduler) applyCreate(node graph.NodeRW, txnOp *kvs.RecordedTxnOp, arg
 		endLog := s.logNodeVisit("applyCreate", args)
 		defer endLog()
 	}
-	if !args.dryRun {
-		defer args.graphW.Save()
-	}
 	node.SetValue(args.kv.value)
 
 	// get descriptor
@@ -475,9 +465,6 @@ func (s *Scheduler) applyCreate(node graph.NodeRW, txnOp *kvs.RecordedTxnOp, arg
 	}
 	s.updateNodeState(node, txnOp.NewState, args)
 	executed = append(executed, txnOp)
-	if !args.dryRun {
-		args.graphW.Save()
-	}
 
 	// update values that depend on this kv-pair
 	depExecs, inheritedErr := s.runDepUpdates(node, args)
@@ -512,9 +499,6 @@ func (s *Scheduler) applyUpdate(node graph.NodeRW, txnOp *kvs.RecordedTxnOp, arg
 	if s.logGraphWalk {
 		endLog := s.logNodeVisit("applyUpdate", args)
 		defer endLog()
-	}
-	if !args.dryRun {
-		defer args.graphW.Save()
 	}
 
 	// validate new value
@@ -642,11 +626,6 @@ func (s *Scheduler) applyUpdate(node graph.NodeRW, txnOp *kvs.RecordedTxnOp, arg
 			txnOp.NOOP = equivalent
 			executed = append(executed, txnOp)
 		}
-	}
-
-	// save before going into derived values
-	if !args.dryRun {
-		args.graphW.Save()
 	}
 
 	if !args.isDerived {

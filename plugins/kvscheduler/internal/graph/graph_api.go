@@ -28,18 +28,19 @@ import (
 )
 
 // Graph is an in-memory graph representation of key-value pairs and their
-// relations, where nodes are kv-pairs and each relation is a separate set of direct
-// labeled edges.
+// relations, where nodes are kv-pairs and each relation is a separate set of
+// direct labeled edges.
 //
-// The graph furthermore allows to associate metadata and flags (name:value pairs)
-// with every node. It is possible to register instances of NamedMapping, each
-// for a different set of selected nodes, and the graph will keep them up-to-date
-// with the latest value-label->metadata associations.
+// The graph furthermore allows to associate metadata and flags (idx/name:value
+// pairs) with every node. It is possible to register instances of NamedMapping,
+// each for a different set of selected nodes, and the graph will keep them
+// up-to-date with the latest value-label->metadata associations.
 //
 // The graph provides various getter method, for example it is possible to select
 // a set of nodes using a key selector and/or a flag selector.
-// As for editing, Graph allows to prepare new changes and then save them or let
-// them get discarded by GC.
+// As for editing, Graph allows to either write in-place (immediate effect)
+// or to prepare new changes and then save them later or let them get discarded
+// by GC.
 //
 // The graph supports multiple-readers single-writer access, i.e. it is assumed
 // there is no write-concurrency.
@@ -56,11 +57,14 @@ type Graph interface {
 	// Write returns a graph handle for read-write access.
 	// The graph supports at most one writer at a time - i.e. it is assumed
 	// there is no write-concurrency.
-	// The changes are propagated to the graph using Save().
+	// If <inPlace> is enabled, the changes are applied with immediate effect,
+	// otherwise they are propagated to the graph using Save().
+	// In-place Write handle holds write lock, therefore reading is blocked until
+	// the handle is released.
 	// If <record> is true, the changes will be recorded once the handle is
 	// released.
 	// Release eventually using Release() method.
-	Write(record bool) RWAccess
+	Write(inPlace, record bool) RWAccess
 }
 
 // ReadAccess lists operations provided by the read-only graph handle.
@@ -94,7 +98,9 @@ type ReadAccess interface {
 
 	// Release releases the graph handle (both Read() & Write() should end with
 	// release).
-	Release() // for reader release R-lock
+	// For reader, the method releases R-lock.
+	// For in-place writer, the method releases W-lock.
+	Release()
 }
 
 // RWAccess lists operations provided by the read-write graph handle.
@@ -106,7 +112,8 @@ type RWAccess interface {
 	RegisterMetadataMap(mapName string, mapping idxmap.NamedMappingRW)
 
 	// SetNode creates new node or returns read-write handle to an existing node.
-	// The changes are propagated to the graph only after Save() is called.
+	// If in-place writing is disabled, the changes are propagated to the graph
+	// only after Save() is called.
 	SetNode(key string) NodeRW
 
 	// DeleteNode deletes node with the given key.
@@ -114,7 +121,9 @@ type RWAccess interface {
 	DeleteNode(key string) bool
 
 	// Save propagates all changes to the graph.
-	Save() // noop if no changes performed, acquires RW-lock for the time of the operation
+	// Use for **not-in-place** writing.
+	// NOOP if no changes performed, acquires RW-lock for the time of the operation
+	Save()
 }
 
 // Node is a read-only handle to a single graph node.
@@ -219,7 +228,7 @@ type RelationTargetDef struct {
 	Key string
 
 	// Selector selecting a set of target nodes.
-	Selector KeySelector
+	Selector KeySelector // TODO: further restrict the set of candidates using key prefixes
 }
 
 // Targets groups relation targets with the same label.
@@ -231,7 +240,8 @@ type Targets struct {
 	MatchingKeys utils.KeySet
 }
 
-// TargetsByLabel is a slice of single-relation targets, grouped (and sorted) by labels.
+// TargetsByLabel is a slice of single-relation targets, grouped (and sorted)
+// by labels.
 type TargetsByLabel []*Targets
 
 // String returns human-readable string representation of TargetsByLabel.

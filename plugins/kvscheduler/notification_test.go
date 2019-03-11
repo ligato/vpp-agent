@@ -15,7 +15,6 @@
 package kvscheduler
 
 import (
-	"context"
 	"errors"
 	"strings"
 	"testing"
@@ -38,6 +37,7 @@ func TestNotifications(t *testing.T) {
 	}))
 	err := scheduler.Init()
 	Expect(err).To(BeNil())
+	scheduler.config.EnableTxnSimulation = true
 
 	// prepare mocks
 	mockSB := test.NewMockSouthbound()
@@ -100,7 +100,7 @@ func TestNotifications(t *testing.T) {
 	startTime := time.Now()
 	schedulerTxn := scheduler.StartNBTransaction()
 	schedulerTxn.SetValue(prefixB+baseValue2, test.NewArrayValue("item1", "item2"))
-	seqNum, err := schedulerTxn.Commit(WithResync(context.Background(), FullResync, true))
+	seqNum, err := schedulerTxn.Commit(WithResync(testCtx, FullResync, true))
 	stopTime := time.Now()
 	Expect(seqNum).To(BeEquivalentTo(0))
 	Expect(err).ShouldNot(HaveOccurred())
@@ -729,6 +729,7 @@ func TestNotificationsWithRetry(t *testing.T) {
 	}))
 	err := scheduler.Init()
 	Expect(err).To(BeNil())
+	scheduler.config.EnableTxnSimulation = true
 
 	// prepare mocks
 	mockSB := test.NewMockSouthbound()
@@ -814,14 +815,14 @@ func TestNotificationsWithRetry(t *testing.T) {
 	// run 1st data-change transaction with retry against empty SB
 	schedulerTxn1 := scheduler.StartNBTransaction()
 	schedulerTxn1.SetValue(prefixB+baseValue2, test.NewArrayValue("item1", "item2"))
-	seqNum, err := schedulerTxn1.Commit(WithRetryDefault(context.Background()))
+	seqNum, err := schedulerTxn1.Commit(WithRetryDefault(testCtx))
 	Expect(seqNum).To(BeEquivalentTo(0))
 	Expect(err).ShouldNot(HaveOccurred())
 
 	// run 2nd data-change transaction with retry
 	schedulerTxn2 := scheduler.StartNBTransaction()
 	schedulerTxn2.SetValue(prefixC+baseValue3, test.NewStringValue("base-value3-data"))
-	seqNum, err = schedulerTxn2.Commit(WithRetry(context.Background(), 3*time.Second, 3, true))
+	seqNum, err = schedulerTxn2.Commit(WithRetry(testCtx, 3*time.Second, 3, true))
 	Expect(seqNum).To(BeEquivalentTo(1))
 	Expect(err).ShouldNot(HaveOccurred())
 

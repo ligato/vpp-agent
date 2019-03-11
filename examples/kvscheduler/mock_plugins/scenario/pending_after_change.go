@@ -39,7 +39,7 @@ func PendingAfterChange() {
 		tap1, tap2, loopback1, bd1, fib2,
 	)
 	if err != nil {
-		log.Fatalln(err)
+		log.Println(err)
 	}
 	informAboutGraphURL(0, true, true)
 
@@ -64,7 +64,7 @@ func PendingAfterChange() {
 	req.Update(tap1, loopback1)
 	req.Delete(tap2)
 	if err := req.Send(context.Background()); err != nil {
-		log.Fatalln(err)
+		log.Println(err)
 	}
 	informAboutGraphURL(1, false, true)
 }

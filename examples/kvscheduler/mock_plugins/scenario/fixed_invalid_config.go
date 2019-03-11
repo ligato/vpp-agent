@@ -47,7 +47,7 @@ func InvalidConfigFixedWithUpdate() {
 		tap1, tap2Invalid, loopback1, bd1, fib2,
 	)
 	if err != nil {
-		log.Fatalln(err)
+		log.Println(err)
 	}
 	informAboutGraphURL(0, true, true)
 
@@ -62,7 +62,7 @@ func InvalidConfigFixedWithUpdate() {
 	req := c.ChangeRequest()
 	req.Update(tap2)
 	if err := req.Send(context.Background()); err != nil {
-		log.Fatalln(err)
+		log.Println(err)
 	}
 	informAboutGraphURL(1, false, true)
 }

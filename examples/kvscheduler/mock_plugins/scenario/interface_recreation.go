@@ -39,7 +39,7 @@ func InterfaceRecreation() {
 		tap1, bd2, fib3,
 	)
 	if err != nil {
-		log.Fatalln(err)
+		log.Println(err)
 	}
 	informAboutGraphURL(0, true, true)
 
@@ -59,7 +59,7 @@ func InterfaceRecreation() {
 	req := c.ChangeRequest()
 	req.Update(tap1)
 	if err := req.Send(context.Background()); err != nil {
-		log.Fatalln(err)
+		log.Println(err)
 	}
 	informAboutGraphURL(1, false, true)
 }

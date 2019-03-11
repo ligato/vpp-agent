@@ -48,7 +48,7 @@ func PendingAfterResync() {
 		tap1, loopback1, bd1WithoutTap1, fib1, fib2,
 	)
 	if err != nil {
-		log.Fatalln(err)
+		log.Println(err)
 	}
 	informAboutGraphURL(0, true, true)
 
@@ -66,7 +66,7 @@ func PendingAfterResync() {
 	req := c.ChangeRequest()
 	req.Update(bd1, tap2)
 	if err := req.Send(context.Background()); err != nil {
-		log.Fatalln(err)
+		log.Println(err)
 	}
 	informAboutGraphURL(1, false, true)
 }

@@ -192,10 +192,6 @@ func (s *Scheduler) refreshGraph(graphW graph.RWAccess,
 				}
 			}
 		}
-
-		// in-progress save to expose changes in the metadata for Retrieve-s
-		// of the following descriptors
-		graphW.Save()
 	}
 
 	// update state of values that do not actually exist

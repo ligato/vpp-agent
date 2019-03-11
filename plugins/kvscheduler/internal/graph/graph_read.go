@@ -32,9 +32,13 @@ const printDelimiter = ", "
 // graphR implements ReadAccess.
 type graphR struct {
 	parent   *kvgraph
+
 	nodes    map[string]*node
 	mappings map[string]idxmap.NamedMappingRW
 	timeline map[string][]*RecordedNode // key -> node records (from the oldest to the newest)
+
+	wCopy   bool
+	unsaved utils.KeySet
 }
 
 // newGraphR creates and initializes a new instance of graphR.
@@ -230,10 +234,11 @@ func (graph *graphR) Release() {
 
 // copyNodesOnly returns a deep-copy of the graph, excluding the timelines
 // and the map with mappings.
-func (graph *graphR) copyNodesOnly() *graphR { // TODO: get rid of this
+func (graph *graphR) copyNodesOnly() *graphR {
 	graphCopy := &graphR{
 		parent: graph.parent,
 		nodes:  make(map[string]*node),
+		wCopy:  true,
 	}
 	for key, node := range graph.nodes {
 		nodeCopy := node.copy()
@@ -251,8 +256,8 @@ func (graph *graphR) recordNode(node *node, targetUpdateOnly bool) *RecordedNode
 		Label:            node.label,
 		Value:            utils.RecordProtoMessage(node.value),
 		Flags:            RecordedFlags{Flags: node.flags},
-		MetadataFields:   graph.getMetadataFields(node), // returned already copied
-		Targets:          node.targets,                  // no need to copy, never changed in graphR
+		MetadataFields:   graph.getMetadataFields(node), // returned is already copied
+		Targets:          node.copyTargets(),
 		TargetUpdateOnly: targetUpdateOnly,
 	}
 	return record

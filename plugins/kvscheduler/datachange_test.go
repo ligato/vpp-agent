@@ -28,6 +28,8 @@ import (
 	"github.com/ligato/vpp-agent/plugins/kvscheduler/internal/utils"
 )
 
+var testCtx = WithSimulation(context.Background())
+
 func TestDataChangeTransactions(t *testing.T) {
 	RegisterTestingT(t)
 
@@ -111,7 +113,7 @@ func TestDataChangeTransactions(t *testing.T) {
 	schedulerTxn.SetValue(prefixA+baseValue1, test.NewArrayValue("item2"))
 	schedulerTxn.SetValue(prefixC+baseValue3, test.NewArrayValue("item1", "item2"))
 	description := "testing data change"
-	seqNum, err := schedulerTxn.Commit(WithDescription(context.Background(), description))
+	seqNum, err := schedulerTxn.Commit(WithDescription(testCtx, description))
 	stopTime := time.Now()
 	Expect(seqNum).To(BeEquivalentTo(0))
 	Expect(err).ShouldNot(HaveOccurred())
@@ -434,7 +436,7 @@ func TestDataChangeTransactions(t *testing.T) {
 	schedulerTxn2 := scheduler.StartNBTransaction()
 	schedulerTxn2.SetValue(prefixC+baseValue3, test.NewArrayValue("item1"))
 	schedulerTxn2.SetValue(prefixA+baseValue1, test.NewArrayValue("item1"))
-	seqNum, err = schedulerTxn2.Commit(context.Background())
+	seqNum, err = schedulerTxn2.Commit(testCtx)
 	stopTime = time.Now()
 	Expect(seqNum).To(BeEquivalentTo(1))
 	Expect(err).ShouldNot(HaveOccurred())
@@ -818,7 +820,7 @@ func TestDataChangeTransactionWithRevert(t *testing.T) {
 	schedulerTxn.SetValue(prefixB+baseValue2, test.NewArrayValue("item1", "item2"))
 	schedulerTxn.SetValue(prefixA+baseValue1, test.NewArrayValue("item2"))
 	schedulerTxn.SetValue(prefixC+baseValue3, test.NewArrayValue("item1", "item2"))
-	seqNum, err := schedulerTxn.Commit(context.Background())
+	seqNum, err := schedulerTxn.Commit(testCtx)
 	Expect(seqNum).To(BeEquivalentTo(0))
 	Expect(err).ShouldNot(HaveOccurred())
 	mockSB.PopHistoryOfOps()
@@ -839,7 +841,7 @@ func TestDataChangeTransactionWithRevert(t *testing.T) {
 	schedulerTxn2 := scheduler.StartNBTransaction()
 	schedulerTxn2.SetValue(prefixC+baseValue3, test.NewArrayValue("item1"))
 	schedulerTxn2.SetValue(prefixA+baseValue1, test.NewArrayValue("item1"))
-	seqNum, err = schedulerTxn2.Commit(WithRevert(context.Background()))
+	seqNum, err = schedulerTxn2.Commit(WithRevert(testCtx))
 	stopTime := time.Now()
 	Expect(seqNum).To(BeEquivalentTo(1))
 	Expect(err).ToNot(BeNil())
@@ -1339,7 +1341,7 @@ func TestDependencyCycles(t *testing.T) {
 	schedulerTxn.SetValue(prefixA+baseValue2, test.NewStringValue("base-value2-data"))
 	schedulerTxn.SetValue(prefixA+baseValue3, test.NewStringValue("base-value3-data"))
 	description := "testing dependency cycles"
-	seqNum, err := schedulerTxn.Commit(WithDescription(context.Background(), description))
+	seqNum, err := schedulerTxn.Commit(WithDescription(testCtx, description))
 	stopTime := time.Now()
 	Expect(seqNum).To(BeEquivalentTo(0))
 	Expect(err).ShouldNot(HaveOccurred())
@@ -1455,7 +1457,7 @@ func TestDependencyCycles(t *testing.T) {
 	startTime = time.Now()
 	schedulerTxn = scheduler.StartNBTransaction()
 	schedulerTxn.SetValue(prefixA+baseValue4, test.NewStringValue("base-value4-data"))
-	seqNum, err = schedulerTxn.Commit(context.Background())
+	seqNum, err = schedulerTxn.Commit(testCtx)
 	stopTime = time.Now()
 	Expect(seqNum).To(BeEquivalentTo(1))
 	Expect(err).ShouldNot(HaveOccurred())
@@ -1631,7 +1633,7 @@ func TestDependencyCycles(t *testing.T) {
 	startTime = time.Now()
 	schedulerTxn = scheduler.StartNBTransaction()
 	schedulerTxn.SetValue(prefixA+baseValue2, nil)
-	seqNum, err = schedulerTxn.Commit(context.Background())
+	seqNum, err = schedulerTxn.Commit(testCtx)
 	stopTime = time.Now()
 	Expect(seqNum).To(BeEquivalentTo(2))
 	Expect(err).ToNot(BeNil())
@@ -1825,7 +1827,7 @@ func TestDependencyCycles(t *testing.T) {
 	// finally, run 4th txn to get back the removed value
 	schedulerTxn = scheduler.StartNBTransaction()
 	schedulerTxn.SetValue(prefixA+baseValue2, test.NewStringValue("base-value2-data-new"))
-	seqNum, err = schedulerTxn.Commit(context.Background())
+	seqNum, err = schedulerTxn.Commit(testCtx)
 	Expect(seqNum).To(BeEquivalentTo(3))
 	Expect(err).ShouldNot(HaveOccurred())
 
@@ -1922,7 +1924,7 @@ func TestFailedDeleteOfDerivedValue(t *testing.T) {
 	// run non-resync transaction against empty SB
 	schedulerTxn := scheduler.StartNBTransaction()
 	schedulerTxn.SetValue(prefixA+baseValue1, test.NewArrayValue("item1"))
-	seqNum, err := schedulerTxn.Commit(context.Background())
+	seqNum, err := schedulerTxn.Commit(testCtx)
 	Expect(seqNum).To(BeEquivalentTo(0))
 	Expect(err).ShouldNot(HaveOccurred())
 
@@ -1953,7 +1955,7 @@ func TestFailedDeleteOfDerivedValue(t *testing.T) {
 	startTime := time.Now()
 	schedulerTxn2 := scheduler.StartNBTransaction()
 	schedulerTxn2.SetValue(prefixA+baseValue1, nil)
-	seqNum, err = schedulerTxn2.Commit(context.Background())
+	seqNum, err = schedulerTxn2.Commit(testCtx)
 	stopTime := time.Now()
 	Expect(seqNum).To(BeEquivalentTo(1))
 	Expect(err).ToNot(BeNil())

@@ -43,7 +43,7 @@ func FailureFixedWithRetry() {
 		tap1, bd2, fib3,
 	)
 	if err != nil {
-		log.Fatalln(err)
+		log.Println(err)
 	}
 	informAboutGraphURL(0, true, false)
 

@@ -84,11 +84,19 @@ func (kvgraph *kvgraph) Read() ReadAccess {
 // Write returns a graph handle for read-write access.
 // The graph supports at most one writer at a time - i.e. it is assumed
 // there is no write-concurrency.
-// The changes are propagated to the graph using Save().
+// If <inPlace> is enabled, the changes are applied with immediate effect,
+// otherwise they are propagated to the graph using Save().
+// In-place Write handle holds write lock, therefore reading is blocked until
+// the handle is released.
+// If <record> is true, the changes will be recorded once the handle is
+// released.
 // Release eventually using Release() method.
-func (kvgraph *kvgraph) Write(record bool) RWAccess {
+func (kvgraph *kvgraph) Write(inPlace, record bool) RWAccess {
 	if kvgraph.methodTracker != nil {
 		defer kvgraph.methodTracker("Write")()
 	}
-	return newGraphRW(kvgraph.graph, record)
+	if inPlace {
+		kvgraph.rwLock.Lock()
+	}
+	return newGraphRW(kvgraph.graph, inPlace, record)
 }

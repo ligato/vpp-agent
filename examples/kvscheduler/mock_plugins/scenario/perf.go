@@ -31,7 +31,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/kvscheduler"
 )
 
-const iterations = 500
+const iterations = 1000
 const groupSize = 100
 
 func profile(c client.ConfigClient, runTxn func(iter int, withOrch bool), description ...string) {
