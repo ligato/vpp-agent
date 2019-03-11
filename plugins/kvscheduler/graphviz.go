@@ -36,6 +36,8 @@ type depNode struct {
 func (s *Scheduler) dotGraphHandler(formatter *render.Render) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		args := req.URL.Query()
+		s.txnLock.Lock()
+		defer s.txnLock.Unlock()
 		graphRead := s.graph.Read()
 		defer graphRead.Release()
 
@@ -148,7 +150,7 @@ func (s *Scheduler) renderDotOutput(graphNodes []*graph.RecordedNode, txn *kvs.R
 
 		label := graphNode.Label
 		var descriptorName string
-		if descriptorFlag := graphNode.GetFlag(DescriptorFlagName); descriptorFlag != nil {
+		if descriptorFlag := graphNode.GetFlag(DescriptorFlagIndex); descriptorFlag != nil {
 			descriptorName = descriptorFlag.GetValue()
 		} else {
 			// for missing dependencies
@@ -187,8 +189,8 @@ func (s *Scheduler) renderDotOutput(graphNodes []*graph.RecordedNode, txn *kvs.R
 			dashedStyle bool
 			valueState  kvs.ValueState
 		)
-		isDerived := graphNode.GetFlag(DerivedFlagName) != nil
-		stateFlag := graphNode.GetFlag(ValueStateFlagName)
+		isDerived := graphNode.GetFlag(DerivedFlagIndex) != nil
+		stateFlag := graphNode.GetFlag(ValueStateFlagIndex)
 		if stateFlag != nil {
 			valueState = stateFlag.(*ValueStateFlag).valueState
 		}

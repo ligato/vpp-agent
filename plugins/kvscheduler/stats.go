@@ -23,46 +23,56 @@ import (
 )
 
 var (
-	stats        Stats
-	descriptorMu sync.RWMutex
+	stats   Stats
+	statsMu sync.RWMutex
 )
 
 func init() {
-	stats.Descriptors = map[string]*DescriptorStats{
+	stats.Descriptors = map[string]*StructStats{
 		"ALL": {},
 	}
+	stats.Graph = &StructStats{}
 }
 
 func GetStats() *Stats {
 	s := new(Stats)
-	descriptorMu.RLock()
+	statsMu.RLock()
 	*s = stats
-	descriptorMu.RUnlock()
+	statsMu.RUnlock()
 	return s
 }
 
 type Stats struct {
 	TransactionsProcessed uint64
 
-	Descriptors map[string]*DescriptorStats
+	Graph       *StructStats
+	Descriptors map[string]*StructStats
 }
 
 func (s *Stats) addDescriptor(name string) {
-	s.Descriptors[name] = &DescriptorStats{}
+	s.Descriptors[name] = &StructStats{}
 }
 
-func GetDescriptorStats() map[string]*DescriptorStats {
-	s := map[string]*DescriptorStats{}
-	descriptorMu.RLock()
+func GetDescriptorStats() map[string]*StructStats {
+	s := map[string]*StructStats{}
+	statsMu.RLock()
 	for d, ds := range stats.Descriptors {
 		dss := *ds
 		s[d] = &dss
 	}
-	descriptorMu.RUnlock()
+	statsMu.RUnlock()
 	return s
 }
 
-type DescriptorStats struct {
+func GetGraphStats() *StructStats {
+	s := new(StructStats)
+	statsMu.RLock()
+	*s = *stats.Graph
+	statsMu.RUnlock()
+	return s
+}
+
+type StructStats struct {
 	Methods []*MethodStats
 }
 
@@ -78,7 +88,7 @@ func dur(d time.Duration) string {
 	return d.Round(time.Microsecond * 100).String()
 }
 
-func (s *DescriptorStats) MarshalJSON() ([]byte, error) {
+func (s *StructStats) MarshalJSON() ([]byte, error) {
 	d := map[string]string{}
 	for _, ms := range s.Methods {
 		m := fmt.Sprintf("%s()", ms.Method)
@@ -90,31 +100,31 @@ func (s *DescriptorStats) MarshalJSON() ([]byte, error) {
 	return json.Marshal(d)
 }
 
-func (s *DescriptorStats) getOrCreateMethod(method string) *MethodStats {
-	descriptorMu.RLock()
+func (s *StructStats) getOrCreateMethod(method string) *MethodStats {
+	statsMu.RLock()
 	for _, m := range s.Methods {
 		if m.Method == method {
-			descriptorMu.RUnlock()
+			statsMu.RUnlock()
 			return m
 		}
 	}
-	descriptorMu.RUnlock()
+	statsMu.RUnlock()
 	ms := &MethodStats{Method: method}
-	descriptorMu.Lock()
+	statsMu.Lock()
 	s.Methods = append(s.Methods, ms)
-	descriptorMu.Unlock()
+	statsMu.Unlock()
 	return ms
 }
 
 func (m *MethodStats) increment(took time.Duration) {
-	descriptorMu.Lock()
+	statsMu.Lock()
 	m.Calls++
 	m.TotalNs += took
 	m.AvgNs = m.TotalNs / time.Duration(m.Calls)
 	if took > m.MaxNs {
 		m.MaxNs = took
 	}
-	descriptorMu.Unlock()
+	statsMu.Unlock()
 }
 
 func trackDescMethod(d, m string) func() {
@@ -128,8 +138,20 @@ func trackDescMethod(d, m string) func() {
 	}
 }
 
+func trackGraphMethod(m string) func() {
+	t := time.Now()
+	method := stats.Graph.getOrCreateMethod(m)
+	return func() {
+		took := time.Since(t)
+		method.increment(took)
+	}
+}
+
 func init() {
 	expvar.Publish("kvdescriptors", expvar.Func(func() interface{} {
 		return GetDescriptorStats()
+	}))
+	expvar.Publish("kvgraph", expvar.Func(func() interface{} {
+		return GetGraphStats()
 	}))
 }

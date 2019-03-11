@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"fmt"
 	"time"
+	"sort"
 
 	"github.com/gogo/protobuf/proto"
 
@@ -27,18 +28,19 @@ import (
 )
 
 // Graph is an in-memory graph representation of key-value pairs and their
-// relations, where nodes are kv-pairs and each relation is a separate set of direct
-// labeled edges.
+// relations, where nodes are kv-pairs and each relation is a separate set of
+// direct labeled edges.
 //
-// The graph furthermore allows to associate metadata and flags (name:value pairs)
-// with every node. It is possible to register instances of NamedMapping, each
-// for a different set of selected nodes, and the graph will keep them up-to-date
-// with the latest value-label->metadata associations.
+// The graph furthermore allows to associate metadata and flags (idx/name:value
+// pairs) with every node. It is possible to register instances of NamedMapping,
+// each for a different set of selected nodes, and the graph will keep them
+// up-to-date with the latest value-label->metadata associations.
 //
 // The graph provides various getter method, for example it is possible to select
 // a set of nodes using a key selector and/or a flag selector.
-// As for editing, Graph allows to prepare new changes and then save them or let
-// them get discarded by GC.
+// As for editing, Graph allows to either write in-place (immediate effect)
+// or to prepare new changes and then save them later or let them get discarded
+// by GC.
 //
 // The graph supports multiple-readers single-writer access, i.e. it is assumed
 // there is no write-concurrency.
@@ -55,11 +57,14 @@ type Graph interface {
 	// Write returns a graph handle for read-write access.
 	// The graph supports at most one writer at a time - i.e. it is assumed
 	// there is no write-concurrency.
-	// The changes are propagated to the graph using Save().
+	// If <inPlace> is enabled, the changes are applied with immediate effect,
+	// otherwise they are propagated to the graph using Save().
+	// In-place Write handle holds write lock, therefore reading is blocked until
+	// the handle is released.
 	// If <record> is true, the changes will be recorded once the handle is
 	// released.
 	// Release eventually using Release() method.
-	Write(record bool) RWAccess
+	Write(inPlace, record bool) RWAccess
 }
 
 // ReadAccess lists operations provided by the read-only graph handle.
@@ -78,7 +83,7 @@ type ReadAccess interface {
 	GetNodes(keySelector KeySelector, flagSelectors ...FlagSelector) []Node
 
 	// GetFlagStats returns stats for a given flag.
-	GetFlagStats(flagName string, filter KeySelector) FlagStats
+	GetFlagStats(flagIndex int, filter KeySelector) FlagStats
 
 	// GetNodeTimeline returns timeline of all node revisions, ordered from
 	// the oldest to the newest.
@@ -93,7 +98,9 @@ type ReadAccess interface {
 
 	// Release releases the graph handle (both Read() & Write() should end with
 	// release).
-	Release() // for reader release R-lock
+	// For reader, the method releases R-lock.
+	// For in-place writer, the method releases W-lock.
+	Release()
 }
 
 // RWAccess lists operations provided by the read-write graph handle.
@@ -105,7 +112,8 @@ type RWAccess interface {
 	RegisterMetadataMap(mapName string, mapping idxmap.NamedMappingRW)
 
 	// SetNode creates new node or returns read-write handle to an existing node.
-	// The changes are propagated to the graph only after Save() is called.
+	// If in-place writing is disabled, the changes are propagated to the graph
+	// only after Save() is called.
 	SetNode(key string) NodeRW
 
 	// DeleteNode deletes node with the given key.
@@ -113,7 +121,9 @@ type RWAccess interface {
 	DeleteNode(key string) bool
 
 	// Save propagates all changes to the graph.
-	Save() // noop if no changes performed, acquires RW-lock for the time of the operation
+	// Use for **not-in-place** writing.
+	// NOOP if no changes performed, acquires RW-lock for the time of the operation
+	Save()
 }
 
 // Node is a read-only handle to a single graph node.
@@ -129,7 +139,7 @@ type Node interface {
 
 	// GetFlag returns reference to the given flag or nil if the node doesn't have
 	// this flag associated.
-	GetFlag(name string) Flag
+	GetFlag(flagIndex int) Flag
 
 	// GetMetadata returns the value metadata associated with the node.
 	GetMetadata() interface{}
@@ -156,8 +166,8 @@ type NodeRW interface {
 	// SetFlags associates given flag with this node.
 	SetFlags(flags ...Flag)
 
-	// DelFlags removes given flag from this node.
-	DelFlags(names ...string)
+	// DelFlags removes given flags from this node.
+	DelFlags(flagIndexes ...int)
 
 	// SetMetadataMap chooses metadata map to be used to store the association
 	// between this node's value label and metadata.
@@ -170,8 +180,12 @@ type NodeRW interface {
 	SetTargets(targets []RelationTargetDef)
 }
 
-// Flag is a name:value pair.
+// Flag is a (index+name):value pair.
 type Flag interface {
+	// GetIndex should return unique index among all defined flags, starting
+	// from 0.
+	GetIndex() int
+
 	// GetName should return name of the flag.
 	GetName() string
 
@@ -214,7 +228,7 @@ type RelationTargetDef struct {
 	Key string
 
 	// Selector selecting a set of target nodes.
-	Selector KeySelector
+	Selector KeySelector // TODO: further restrict the set of candidates using key prefixes
 }
 
 // Targets groups relation targets with the same label.
@@ -226,7 +240,8 @@ type Targets struct {
 	MatchingKeys utils.KeySet
 }
 
-// TargetsByLabel is a slice of single-relation targets, grouped by labels.
+// TargetsByLabel is a slice of single-relation targets, grouped (and sorted)
+// by labels.
 type TargetsByLabel []*Targets
 
 // String returns human-readable string representation of TargetsByLabel.
@@ -250,12 +265,30 @@ type RelationTargets struct {
 
 // GetTargetsForLabel returns targets (keys) for the given label.
 func (t *RelationTargets) GetTargetsForLabel(label string) *Targets {
-	for _, targets := range t.Targets {
-		if targets.Label == label {
-			return targets
-		}
+	idx := t.labelIdx(label)
+	if idx < len(t.Targets) && t.Targets[idx].Label == label {
+		return t.Targets[idx]
 	}
 	return nil
+}
+
+// AddTargets adds new targets for a new label (without checking for duplicities!).
+func (t *RelationTargets) AddTargets(targets *Targets) {
+	labelIdx := t.labelIdx(targets.Label)
+	t.Targets = append(t.Targets, nil)
+	if labelIdx < len(t.Targets)-1 {
+		copy(t.Targets[labelIdx+1:], t.Targets[labelIdx:])
+	}
+	t.Targets[labelIdx] = targets
+}
+
+// labelIdx returns index in the array at which a target with the given label
+// should be stored.
+func (t *RelationTargets) labelIdx(label string) int {
+	return sort.Search(len(t.Targets),
+		func(i int) bool {
+			return label <= t.Targets[i].Label
+		})
 }
 
 // TargetsByRelation is a slice of all targets, grouped by relations.
@@ -321,27 +354,27 @@ type RecordedNode struct {
 
 // GetFlag returns reference to the given flag or nil if the node didn't have
 // this flag associated at the time when it was recorded.
-func (node *RecordedNode) GetFlag(name string) Flag {
-	for _, flag := range node.Flags.Flags {
-		if flag.GetName() == name {
-			return flag
-		}
-	}
-	return nil
+func (node *RecordedNode) GetFlag(flagIndex int) Flag {
+	return node.Flags.GetFlag(flagIndex)
 }
 
 // RecordedFlags is a record of assigned flags at a given time.
 type RecordedFlags struct {
-	Flags []Flag
+	Flags [maxFlags]Flag
 }
 
 // MarshalJSON marshalls recorded flags into JSON.
 func (rf RecordedFlags) MarshalJSON() ([]byte, error) {
 	buffer := bytes.NewBufferString("{")
-	for idx, flag := range rf.Flags {
-		if idx > 0 {
+	first := true
+	for _, flag := range rf.Flags {
+		if flag == nil {
+			continue
+		}
+		if !first {
 			buffer.WriteString(",")
 		}
+		first = false
 		buffer.WriteString(fmt.Sprintf("\"%s\":\"%s\"", flag.GetName(), flag.GetValue()))
 	}
 	buffer.WriteString("}")
@@ -350,13 +383,8 @@ func (rf RecordedFlags) MarshalJSON() ([]byte, error) {
 
 // GetFlag returns reference to the given flag or nil if the node hasn't had
 // this flag associated at the given time.
-func (rf RecordedFlags) GetFlag(name string) Flag {
-	for _, flag := range rf.Flags {
-		if flag.GetName() == name {
-			return flag
-		}
-	}
-	return nil
+func (rf RecordedFlags) GetFlag(flagIndex int) Flag {
+	return rf.Flags[flagIndex]
 }
 
 // FlagStats is a summary of the usage for a given flag.

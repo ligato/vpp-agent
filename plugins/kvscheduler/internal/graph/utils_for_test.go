@@ -49,6 +49,8 @@ var (
 	value2 = NewStringValue("this is value2")
 	value3 = NewStringValue("this is value3")
 	value4 = NewStringValue("this is value4")
+
+	commonOpts = Opts{RecordOldRevs:true, RecordAgeLimit: minutesInOneDay, PermanentInitPeriod: minutesInOneHour}
 )
 
 func prefixASelector(key string) bool {
@@ -78,11 +80,11 @@ func selectNodesToBuild(ids ...int) map[int]struct{} {
 	return nodeIDs
 }
 
-func buildGraph(graph Graph, record, regMaps bool, nodes map[int]struct{}) Graph {
+func buildGraph(graph Graph, wInPlace bool, record, regMaps bool, nodes map[int]struct{}) Graph {
 	if graph == nil {
-		graph = NewGraph(true, minutesInOneDay, minutesInOneHour)
+		graph = NewGraph(commonOpts)
 	}
-	graphW := graph.Write(record)
+	graphW := graph.Write(wInPlace,record)
 
 	if regMaps {
 		graphW.RegisterMetadataMap(metadataMapA, NewNameToInteger(metadataMapA))
@@ -164,27 +166,36 @@ func buildGraph(graph Graph, record, regMaps bool, nodes map[int]struct{}) Graph
 		})
 	}
 
-	graphW.Save()
+	if !wInPlace {
+		graphW.Save()
 
-	// make changes that will not be saved and thus should have no effect
-	if node1 != nil {
-		node1.SetTargets([]RelationTargetDef{
-			{relation1, "node3", keyA3, nil},
-			{relation2, "node2", keyA2, nil},
-		})
-	}
-	if node3 != nil {
-		node3.SetTargets([]RelationTargetDef{})
-	}
-	if node4 != nil {
-		node4.SetTargets([]RelationTargetDef{
-			{relation1, "prefixA", "use-key-instead-of-selector", nil},
-			{relation2, "non-existing-key", keyA3, nil},
-		})
+		// make changes that will not be saved and thus should have no effect
+		if node1 != nil {
+			node1.SetTargets([]RelationTargetDef{
+				{relation1, "node3", keyA3, nil},
+				{relation2, "node2", keyA2, nil},
+			})
+		}
+		if node3 != nil {
+			node3.SetTargets([]RelationTargetDef{})
+		}
+		if node4 != nil {
+			node4.SetTargets([]RelationTargetDef{
+				{relation1, "prefixA", "use-key-instead-of-selector", nil},
+				{relation2, "non-existing-key", keyA3, nil},
+			})
+		}
 	}
 
 	graphW.Release()
 	return graph
+}
+
+func flags(flags ...Flag) (flagArray [maxFlags]Flag) {
+	for _, f := range flags {
+		flagArray[f.GetIndex()] = f
+	}
+	return
 }
 
 func checkTargets(node Node, relation string, label string, targetKeys ...string) {

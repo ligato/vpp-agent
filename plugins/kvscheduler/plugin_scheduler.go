@@ -56,6 +56,10 @@ const (
 	// recorded
 	defaultPermanentlyRecordedInitPeriod = 60 // in minutes
 
+	// by default, all NB transactions and SB notifications are run without
+	// simulation (Retries are always first simulated)
+	defaultEnableTxnSimulation = false
+
 	// name of the environment variable used to enable verification after every transaction
 	verifyModeEnv = "KVSCHED_VERIFY_MODE"
 
@@ -117,6 +121,7 @@ type Config struct {
 	RecordTransactionHistory      bool   `json:"record-transaction-history"`
 	TransactionHistoryAgeLimit    uint32 `json:"transaction-history-age-limit"`    // in minutes
 	PermanentlyRecordedInitPeriod uint32 `json:"permanently-recorded-init-period"` // in minutes
+	EnableTxnSimulation           bool   `json:"enable-txn-simulation"`
 }
 
 // SchedulerTxn implements transaction for the KV scheduler.
@@ -139,6 +144,7 @@ func (s *Scheduler) Init() error {
 		RecordTransactionHistory:      defaultRecordTransactionHistory,
 		TransactionHistoryAgeLimit:    defaultTransactionHistoryAgeLimit,
 		PermanentlyRecordedInitPeriod: defaultPermanentlyRecordedInitPeriod,
+		EnableTxnSimulation:           defaultEnableTxnSimulation,
 	}
 
 	// load configuration
@@ -152,8 +158,13 @@ func (s *Scheduler) Init() error {
 	// prepare context for all go routines
 	s.ctx, s.cancel = context.WithCancel(context.Background())
 	// initialize graph for in-memory storage of key-value pairs
-	s.graph = graph.NewGraph(s.config.RecordTransactionHistory, s.config.TransactionHistoryAgeLimit,
-		s.config.PermanentlyRecordedInitPeriod)
+	graphOpts := graph.Opts{
+		RecordOldRevs:       s.config.RecordTransactionHistory,
+		RecordAgeLimit:      s.config.TransactionHistoryAgeLimit,
+		PermanentInitPeriod: s.config.PermanentlyRecordedInitPeriod,
+		MethodTracker:       trackGraphMethod,
+	}
+	s.graph = graph.NewGraph(graphOpts)
 	// initialize registry for key->descriptor lookups
 	s.registry = registry.NewRegistry()
 	// prepare channel for serializing transactions
@@ -225,9 +236,8 @@ func (s *Scheduler) RegisterKVDescriptor(descriptor *kvs.KVDescriptor) error {
 		} else {
 			metadataMap = mem.NewNamedMapping(s.Log, descriptor.Name, nil)
 		}
-		graphW := s.graph.Write(false)
+		graphW := s.graph.Write(true,false)
 		graphW.RegisterMetadataMap(descriptor.Name, metadataMap)
-		graphW.Save()
 		graphW.Release()
 	}
 	return nil
@@ -427,6 +437,7 @@ func (txn *SchedulerTxn) Commit(ctx context.Context) (txnSeqNum uint64, err erro
 	txnData.nb.retryArgs, txnData.nb.retryEnabled = kvs.IsWithRetry(ctx)
 	txnData.nb.revertOnFailure = kvs.IsWithRevert(ctx)
 	txnData.nb.description, _ = kvs.IsWithDescription(ctx)
+	txnData.nb.withSimulation = txn.scheduler.config.EnableTxnSimulation || kvs.IsWithSimulation(ctx)
 
 	// validate transaction options
 	if txnData.nb.resyncType == kvs.DownstreamResync && len(txnData.values) > 0 {

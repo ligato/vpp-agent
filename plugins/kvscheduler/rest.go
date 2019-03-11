@@ -308,7 +308,7 @@ func (s *Scheduler) flagStatsGetHandler(formatter *render.Render) http.HandlerFu
 			graphR := s.graph.Read()
 			defer graphR.Release()
 
-			stats := graphR.GetFlagStats(flags[0], func(key string) bool {
+			stats := graphR.GetFlagStats(flagNameToIndex(flags[0]), func(key string) bool {
 				if len(prefixes) == 0 {
 					return true
 				}

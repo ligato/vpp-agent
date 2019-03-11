@@ -56,7 +56,8 @@ func (t TxnType) String() string {
 
 // RecordedTxn is used to record executed transaction.
 type RecordedTxn struct {
-	PreRecord bool // not yet fully recorded, only args + plan + pre-processing errors
+	PreRecord      bool // not yet fully recorded, only args + plan + pre-processing errors
+	WithSimulation bool
 
 	// timestamps
 	Start time.Time
@@ -174,8 +175,10 @@ func (txn *RecordedTxn) StringWithOpts(resultOnly, verbose bool, indent int) str
 
 	printOps:
 		// planned operations
-		str += indent1 + "* planned operations:\n"
-		str += txn.Planned.StringWithOpts(verbose, indent+4)
+		if txn.WithSimulation {
+			str += indent1 + "* planned operations:\n"
+			str += txn.Planned.StringWithOpts(verbose, indent+4)
+		}
 	}
 
 	if !txn.PreRecord {

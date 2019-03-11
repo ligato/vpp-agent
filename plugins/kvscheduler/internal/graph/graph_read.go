@@ -32,9 +32,13 @@ const printDelimiter = ", "
 // graphR implements ReadAccess.
 type graphR struct {
 	parent   *kvgraph
+
 	nodes    map[string]*node
 	mappings map[string]idxmap.NamedMappingRW
 	timeline map[string][]*RecordedNode // key -> node records (from the oldest to the newest)
+
+	wCopy   bool
+	unsaved utils.KeySet
 }
 
 // newGraphR creates and initializes a new instance of graphR.
@@ -67,6 +71,10 @@ func (graph *graphR) GetNode(key string) Node {
 // GetNodes returns a set of nodes matching the key selector (can be nil)
 // and every provided flag selector.
 func (graph *graphR) GetNodes(keySelector KeySelector, flagSelectors ...FlagSelector) (nodes []Node) {
+	if graph.parent.methodTracker != nil {
+		defer graph.parent.methodTracker("GetNodes")()
+	}
+
 	for key, node := range graph.nodes {
 		if keySelector != nil && !keySelector(key) {
 			continue
@@ -74,14 +82,9 @@ func (graph *graphR) GetNodes(keySelector KeySelector, flagSelectors ...FlagSele
 		selected := true
 		for _, flagSelector := range flagSelectors {
 			for _, flag := range flagSelector.flags {
-				hasFlag := false
-				for _, nodeFlag := range node.flags {
-					if nodeFlag.GetName() == flag.GetName() &&
-						(flag.GetValue() == "" || (nodeFlag.GetValue() == flag.GetValue())) {
-						hasFlag = true
-						break
-					}
-				}
+				nodeFlag := node.flags[flag.GetIndex()]
+				hasFlag := nodeFlag != nil &&
+					(flag.GetValue() == "" || (nodeFlag.GetValue() == flag.GetValue()))
 				if hasFlag != flagSelector.with {
 					selected = false
 					break
@@ -110,7 +113,11 @@ func (graph *graphR) GetNodeTimeline(key string) []*RecordedNode {
 }
 
 // GetFlagStats returns stats for a given flag.
-func (graph *graphR) GetFlagStats(flagName string, selector KeySelector) FlagStats {
+func (graph *graphR) GetFlagStats(flagIndex int, selector KeySelector) FlagStats {
+	if graph.parent.methodTracker != nil {
+		defer graph.parent.methodTracker("GetFlagStats")()
+	}
+
 	stats := FlagStats{PerValueCount: make(map[string]uint)}
 
 	for key, timeline := range graph.timeline {
@@ -121,7 +128,7 @@ func (graph *graphR) GetFlagStats(flagName string, selector KeySelector) FlagSta
 			if record.TargetUpdateOnly {
 				continue
 			}
-			if flag := record.Flags.GetFlag(flagName); flag != nil {
+			if flag := record.Flags.GetFlag(flagIndex); flag != nil {
 				//fmt.Printf("Found flag %s/%s in %dth record of %s\n", flagName, flag.GetValue(), idx, record.Key)
 				flagValue := flag.GetValue()
 				stats.TotalCount++
@@ -138,6 +145,10 @@ func (graph *graphR) GetFlagStats(flagName string, selector KeySelector) FlagSta
 
 // GetSnapshot returns the snapshot of the graph at a given time.
 func (graph *graphR) GetSnapshot(time time.Time) (nodes []*RecordedNode) {
+	if graph.parent.methodTracker != nil {
+		defer graph.parent.methodTracker("GetSnapshot")()
+	}
+
 	for _, timeline := range graph.timeline {
 		for _, record := range timeline {
 			if record.Since.Before(time) &&
@@ -152,6 +163,10 @@ func (graph *graphR) GetSnapshot(time time.Time) (nodes []*RecordedNode) {
 
 // GetKeys returns sorted keys.
 func (graph *graphR) GetKeys() []string {
+	if graph.parent.methodTracker != nil {
+		defer graph.parent.methodTracker("GetKeys")()
+	}
+
 	var keys []string
 	for key := range graph.nodes {
 		keys = append(keys, key)
@@ -165,6 +180,10 @@ func (graph *graphR) GetKeys() []string {
 // Dump returns a human-readable string representation of the current graph
 // content for debugging purposes.
 func (graph *graphR) Dump() string {
+	if graph.parent.methodTracker != nil {
+		defer graph.parent.methodTracker("Dump")()
+	}
+
 	// order nodes by keys
 	var keys []string
 	for key := range graph.nodes {
@@ -219,6 +238,7 @@ func (graph *graphR) copyNodesOnly() *graphR {
 	graphCopy := &graphR{
 		parent: graph.parent,
 		nodes:  make(map[string]*node),
+		wCopy:  true,
 	}
 	for key, node := range graph.nodes {
 		nodeCopy := node.copy()
@@ -236,8 +256,8 @@ func (graph *graphR) recordNode(node *node, targetUpdateOnly bool) *RecordedNode
 		Label:            node.label,
 		Value:            utils.RecordProtoMessage(node.value),
 		Flags:            RecordedFlags{Flags: node.flags},
-		MetadataFields:   graph.getMetadataFields(node), // returned already copied
-		Targets:          node.targets,                  // no need to copy, never changed in graphR
+		MetadataFields:   graph.getMetadataFields(node), // returned is already copied
+		Targets:          node.copyTargets(),
 		TargetUpdateOnly: targetUpdateOnly,
 	}
 	return record
@@ -254,16 +274,19 @@ func (graph *graphR) getMetadataFields(node *node) map[string][]string {
 }
 
 // prettyPrintFlags returns nicely formatted string representation of the given list of flags.
-func prettyPrintFlags(flags []Flag) string {
+func prettyPrintFlags(flags [maxFlags]Flag) string {
 	var str string
-	for idx, flag := range flags {
+	for _, flag := range flags {
+		if flag == nil {
+			continue
+		}
+		if str != "" {
+			str += printDelimiter
+		}
 		if flag.GetValue() == "" {
 			str += flag.GetName()
 		} else {
 			str += fmt.Sprintf("%s:<%s>", flag.GetName(), flag.GetValue())
-		}
-		if idx < len(flags)-1 {
-			str += printDelimiter
 		}
 	}
 	return str

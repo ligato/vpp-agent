@@ -38,9 +38,13 @@ const (
 	// the context.
 	revertCtxKey
 
-	// txnDescriptionKey is a key under which transaction description is stored
+	// txnDescriptionCtxKey is a key under which transaction description is stored
 	// into the context.
-	txnDescriptionKey
+	txnDescriptionCtxKey
+
+	// txnSimulationCtxKey is a key under which option enabling txn simulation
+	// is stored into the context.
+	txnSimulationCtxKey
 )
 
 // modifiable default parameters for the *retry* txn option
@@ -231,15 +235,37 @@ type txnDescriptionOpt struct {
 // provided.
 // By default, transactions are without description.
 func WithDescription(ctx context.Context, description string) context.Context {
-	return context.WithValue(ctx, txnDescriptionKey, &txnDescriptionOpt{description: description})
+	return context.WithValue(ctx, txnDescriptionCtxKey, &txnDescriptionOpt{description: description})
 }
 
 // IsWithDescription returns true if the transaction context is configured
 // to include transaction description.
 func IsWithDescription(ctx context.Context) (description string, withDescription bool) {
-	descriptionOpt, withDescription := ctx.Value(txnDescriptionKey).(*txnDescriptionOpt)
+	descriptionOpt, withDescription := ctx.Value(txnDescriptionCtxKey).(*txnDescriptionOpt)
 	if !withDescription {
 		return "", false
 	}
 	return descriptionOpt.description, true
+}
+
+/* Txn Simulation */
+
+// txnSimulationOpt represents the *txn-simulation* transaction option.
+type txnSimulationOpt struct {
+	// no attributes
+}
+
+// WithSimulation enables simulation of txn operations, which is triggered before
+// execution to obtain the sequence of intended operations without actually
+// calling any CRUD operations and assuming no failures.
+// By default, simulation is disabled.
+func WithSimulation(ctx context.Context) context.Context {
+	return context.WithValue(ctx, txnSimulationCtxKey, &txnSimulationOpt{})
+}
+
+// IsWithSimulation returns true if transaction context is configured to enable
+// pre-execution simulation.
+func IsWithSimulation(ctx context.Context) bool {
+	_, withSimulation := ctx.Value(txnSimulationCtxKey).(*txnSimulationOpt)
+	return withSimulation
 }

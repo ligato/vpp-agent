@@ -19,6 +19,12 @@ package test
 // TestingFlag as a base for flags in the UTs.
 type TestingFlag struct {
 	Name, Value string
+	Index int
+}
+
+// GetIndex returns the assigned index.
+func (flag *TestingFlag) GetIndex() int {
+	return flag.Index
 }
 
 // GetName returns the assigned name.
@@ -58,6 +64,8 @@ func (color Color) String() string {
 
 // ColorFlagName is the name of the color flag.
 const ColorFlagName = "color"
+// ColorFlagIndex is the index of the color flag.
+const ColorFlagIndex = 0
 
 // ColorFlagImpl implements flag used in UTs to associate "color" with nodes.
 type ColorFlagImpl struct {
@@ -69,6 +77,7 @@ type ColorFlagImpl struct {
 func ColorFlag(color Color) *ColorFlagImpl {
 	return &ColorFlagImpl{
 		TestingFlag: TestingFlag{
+			Index: ColorFlagIndex,
 			Name:  ColorFlagName,
 			Value: color.String(),
 		},
@@ -80,6 +89,7 @@ func ColorFlag(color Color) *ColorFlagImpl {
 func AnyColorFlag() *ColorFlagImpl {
 	return &ColorFlagImpl{
 		TestingFlag: TestingFlag{
+			Index: ColorFlagIndex,
 			Name:  ColorFlagName,
 			Value: "",
 		},
@@ -88,6 +98,8 @@ func AnyColorFlag() *ColorFlagImpl {
 
 // AbstractFlagName is the name of the abstract flag.
 const AbstractFlagName = "is-abstract"
+// AbstractFlagIndex is the index of the abstract flag.
+const AbstractFlagIndex = 1
 
 // AbstractFlagImpl is used in UTs to mark "abstract" key-value pairs.
 type AbstractFlagImpl struct {
@@ -98,7 +110,8 @@ type AbstractFlagImpl struct {
 func AbstractFlag() *AbstractFlagImpl {
 	return &AbstractFlagImpl{
 		TestingFlag: TestingFlag{
-			Name: AbstractFlagName,
+			Index: AbstractFlagIndex,
+			Name:  AbstractFlagName,
 			// empty value -> it is a boolean flag
 		},
 	}
@@ -106,6 +119,8 @@ func AbstractFlag() *AbstractFlagImpl {
 
 // TemporaryFlagName is the name of the temporary flag.
 const TemporaryFlagName = "is-temporary"
+// TemporaryFlagIndex is the index of the temporary flag.
+const TemporaryFlagIndex = 2
 
 // TemporaryFlagImpl is used in UTs to mark "temporary" key-value pairs.
 type TemporaryFlagImpl struct {
@@ -116,7 +131,8 @@ type TemporaryFlagImpl struct {
 func TemporaryFlag() *TemporaryFlagImpl {
 	return &TemporaryFlagImpl{
 		TestingFlag: TestingFlag{
-			Name: TemporaryFlagName,
+			Index: TemporaryFlagIndex,
+			Name:  TemporaryFlagName,
 			// empty value -> it is a boolean flag
 		},
 	}
