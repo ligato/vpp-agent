@@ -18,6 +18,7 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/bond"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/l2"
 
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/af_packet"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/dhcp"
@@ -40,6 +41,7 @@ func init() {
 	msgs = append(msgs, interfaces.Messages...)
 	msgs = append(msgs, ip.Messages...)
 	msgs = append(msgs, ipsec.Messages...)
+	msgs = append(msgs, l2.Messages...)
 	msgs = append(msgs, memif.Messages...)
 	msgs = append(msgs, tap.Messages...)
 	msgs = append(msgs, tapv2.Messages...)
