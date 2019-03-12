@@ -3,8 +3,6 @@ package vpp1810
 // TODO test with 18:10 vpp
 
 import (
-	"net"
-
 	if_model "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/bond"
 )
@@ -15,14 +13,6 @@ func (h *InterfaceVppHandler) AddBondInterface(ifName string, bondLink *if_model
 		ID:   bondLink.Id,
 		Mode: getBondMode(bondLink.Mode),
 		Lb:   getLoadBalance(bondLink.Lb),
-	}
-	if bondLink.Mac != "" {
-		var err error
-		req.UseCustomMac = 1
-		req.MacAddress, err = net.ParseMAC(bondLink.Mac)
-		if err != nil {
-			return 0, err
-		}
 	}
 
 	reply := &bond.BondCreateReply{}

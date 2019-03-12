@@ -76,7 +76,7 @@ const (
 const (
 	// BondedInterfacePrefix is used as a common prefix for keys derived from
 	// interfaces to represent interface slaves for bond interface.
-	BondedInterfacePrefix = "vpp/bond/{bond}/interface/{iface}"
+	BondedInterfacePrefix = "vpp/bond/{bond}/interface/{iface}/"
 )
 
 /* DHCP (client - derived, lease - notification) */

@@ -295,10 +295,10 @@ func (ctl *VppAgentCtlImpl) PutBondInterface() error {
 		IpAddresses: []string{"40.0.0.0/24"},
 		Vrf:         0,
 		Type:        interfaces.Interface_BOND_INTERFACE,
+		PhysAddress: "92:C7:42:67:AB:CA",
 		Link: &interfaces.Interface_Bond{
 			Bond: &interfaces.BondLink{
 				Id:   5,
-				Mac:  "92:C7:42:67:AB:CF",
 				Mode: interfaces.BondLink_XOR,
 				Lb:   interfaces.BondLink_L23,
 				BondedInterfaces: []*interfaces.BondLink_BondedInterface{

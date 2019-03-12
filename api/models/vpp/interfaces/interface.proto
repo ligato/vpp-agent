@@ -149,7 +149,6 @@ message VmxNet3Link {
 
 message BondLink {
     uint32 id = 1;
-    string mac = 2;
     enum Mode {
       UNKNOWN = 0;
       ROUND_ROBIN = 1;

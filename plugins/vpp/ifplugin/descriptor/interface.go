@@ -330,7 +330,6 @@ func (d *InterfaceDescriptor) equivalentVmxNet3(oldVmxNet3, newVmxNet3 *interfac
 // equivalentBond compares two bond interfaces for equivalence.
 func (d *InterfaceDescriptor) equivalentBond(oldBond, newBond *interfaces.BondLink) bool {
 	return oldBond.Id == newBond.Id &&
-		oldBond.Mac == newBond.Mac &&
 		oldBond.Mode == newBond.Mode &&
 		oldBond.Lb == newBond.Lb
 }
