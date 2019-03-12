@@ -146,7 +146,7 @@ type Node interface {
 
 	// GetTargets returns a set of nodes, indexed by relation labels, that the
 	// edges of the given relation points to.
-	GetTargets(relation string) RuntimeTargetsByLabel
+	GetTargets(relation string) RuntimeTargets
 
 	// GetSources returns a set of nodes with edges of the given relation
 	// pointing to this node.
@@ -222,118 +222,97 @@ type RelationTargetDef struct {
 	// Label for the edge.
 	Label string // mandatory, unique for a given (source, relation)
 
-	// Either Key or Selector are defined:
+	// Either Key or Selector should be defined:
 
 	// Key of the target node.
 	Key string
 
 	// Selector selecting a set of target nodes.
-	Selector KeySelector // TODO: further restrict the set of candidates using key prefixes
+	Selector TargetSelector
 }
 
-// Targets groups relation targets with the same label.
-// Target nodes are not referenced directly, instead via their keys (suitable
+// TargetSelector allows to dynamically select a set of target nodes.
+// The selections of KeyPrefixes and KeySelector are **intersected**.
+type TargetSelector struct {
+	// KeyPrefixes is a list of key prefixes, each selecting a subset of target
+	// nodes, which are then combined together - i.e. **union** is computed.
+	KeyPrefixes []string
+
+	// KeySelector allows to dynamically select target nodes.
+	KeySelector KeySelector
+}
+
+// Target nodes - not referenced directly, instead via their keys (suitable
 // for recording).
-type Targets struct {
+type Target struct {
+	Relation     string
 	Label        string
-	ExpectedKey  string // empty if AnyOf predicate is used instead
+	ExpectedKey  string // empty if Selector is used instead
 	MatchingKeys utils.KeySet
 }
 
-// TargetsByLabel is a slice of single-relation targets, grouped (and sorted)
-// by labels.
-type TargetsByLabel []*Targets
+// Targets is a slice of all targets of a single node, sorted by relation+label
+// (in this order).
+type Targets []Target
 
-// String returns human-readable string representation of TargetsByLabel.
-func (t TargetsByLabel) String() string {
-	str := "{"
-	for idx, targets := range t {
+// String returns human-readable string representation of Targets.
+func (ts Targets) String() string {
+	var (
+		idx      int
+		str      string
+		relation string
+	)
+	if len(ts) > 0 {
+		relation = ts[0].Relation
+		str += relation + ":"
+	}
+	str += "{"
+	for _, target := range ts {
+		if target.Relation != relation {
+			relation = target.Relation
+			str += "} " + relation + ":{"
+			idx = 0
+		}
 		if idx > 0 {
 			str += ", "
 		}
-		str += fmt.Sprintf("%s->%s", targets.Label, targets.MatchingKeys.String())
+		str += fmt.Sprintf("%s->%s", target.Label, target.MatchingKeys.String())
 	}
 	str += "}"
 	return str
 }
 
-// RelationTargets groups targets of the same relation.
-type RelationTargets struct {
-	Relation string
-	Targets  TargetsByLabel
-}
-
-// GetTargetsForLabel returns targets (keys) for the given label.
-func (t *RelationTargets) GetTargetsForLabel(label string) *Targets {
-	idx := t.labelIdx(label)
-	if idx < len(t.Targets) && t.Targets[idx].Label == label {
-		return t.Targets[idx]
-	}
-	return nil
-}
-
-// AddTargets adds new targets for a new label (without checking for duplicities!).
-func (t *RelationTargets) AddTargets(targets *Targets) {
-	labelIdx := t.labelIdx(targets.Label)
-	t.Targets = append(t.Targets, nil)
-	if labelIdx < len(t.Targets)-1 {
-		copy(t.Targets[labelIdx+1:], t.Targets[labelIdx:])
-	}
-	t.Targets[labelIdx] = targets
-}
-
-// labelIdx returns index in the array at which a target with the given label
-// should be stored.
-func (t *RelationTargets) labelIdx(label string) int {
-	return sort.Search(len(t.Targets),
+// RelationBegin returns index where targets for a given relation start
+// in the array, or -1 if there are none.
+func (ts Targets) RelationBegin(relation string) int {
+	idx := sort.Search(len(ts),
 		func(i int) bool {
-			return label <= t.Targets[i].Label
+			return relation <= ts[i].Relation
 		})
-}
-
-// TargetsByRelation is a slice of all targets, grouped by relations.
-type TargetsByRelation []*RelationTargets
-
-// GetTargetsForRelation returns targets (keys by label) for the given relation.
-func (t TargetsByRelation) GetTargetsForRelation(relation string) *RelationTargets {
-	for _, relTargets := range t {
-		if relTargets.Relation == relation {
-			return relTargets
-		}
+	if idx < len(ts) && ts[idx].Relation == relation {
+		return idx
 	}
-	return nil
+	return -1
 }
 
-// String returns human-readable string representation of TargetsByRelation.
-func (t TargetsByRelation) String() string {
-	str := "{"
-	for idx, relTargets := range t {
-		if idx > 0 {
-			str += ", "
-		}
-		str += fmt.Sprintf("%s->%s", relTargets.Relation, relTargets.Targets.String())
-	}
-	str += "}"
-	return str
-}
-
-// RuntimeTargets groups relation targets with the same label.
-// Targets are stored as direct runtime references pointing to instances of target
-// nodes.
-type RuntimeTargets struct {
+// RuntimeTarget, unlike Target, contains direct runtime references pointing
+// to instances of target nodes (suitable for runtime processing but not for
+// recording).
+type RuntimeTarget struct {
 	Label string
 	Nodes []Node
 }
 
-// RuntimeTargetsByLabel is a slice of single-relation (runtime reference-based)
+// RuntimeTargets is a slice of single-relation (runtime reference-based)
 // targets, grouped by labels.
-type RuntimeTargetsByLabel []*RuntimeTargets
+type RuntimeTargets []RuntimeTarget
 
-// GetTargetsForLabel returns targets (nodes) for the given label.
-func (rt RuntimeTargetsByLabel) GetTargetsForLabel(label string) *RuntimeTargets {
-	for _, targets := range rt {
-		if targets.Label == label {
-			return targets
+// GetTargetForLabel returns target (single node or a set of nodes) for
+// the given label.
+func (rt RuntimeTargets) GetTargetForLabel(label string) *RuntimeTarget {
+	for _, target := range rt {
+		if target.Label == label {
+			return target
 		}
 	}
 	return nil
@@ -348,7 +327,7 @@ type RecordedNode struct {
 	Value            proto.Message
 	Flags            RecordedFlags
 	MetadataFields   map[string][]string // field name -> values
-	Targets          TargetsByRelation
+	Targets          Targets
 	TargetUpdateOnly bool                // true if only runtime Targets have changed since the last rev
 }
 

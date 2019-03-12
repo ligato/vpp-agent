@@ -36,23 +36,8 @@ type nodeR struct {
 	metadata      interface{}
 	metadataAdded bool
 	metadataMap   string
-	targetsDef    *targetsDef
-	targets       TargetsByRelation
-	sources       sourcesByRelation
-}
-
-// targetsDef implements effective lookups over target definitions.
-type targetsDef struct {
-	defs []RelationTargetDef
-
-	selectors  []RelationTargetDef
-	staticKeys map[string][]RelationTargetDef
-	byLabel    map[relationLabel]RelationTargetDef
-}
-
-// relationLabel groups relation + target label.
-type relationLabel struct {
-	relation, label string
+	targets       Targets
+	sources       sources
 }
 
 // relationSources groups all sources for a single relation.
@@ -61,58 +46,11 @@ type relationSources struct {
 	sources  utils.KeySet
 }
 
-// sourcesByRelation is a slice of all sources, grouped by relations.
-type sourcesByRelation []*relationSources
-
-// newTargetsDef is a constructor for targetsDef.
-func newTargetsDef(defs []RelationTargetDef) *targetsDef {
-	tdef := &targetsDef{
-		defs:       defs,
-		staticKeys: make(map[string][]RelationTargetDef),
-		byLabel:    make(map[relationLabel]RelationTargetDef),
-	}
-	for _, def := range defs {
-		tdef.byLabel[relationLabel{relation: def.Relation, label: def.Label}] = def
-		if def.Key == "" && def.Selector != nil {
-			tdef.selectors = append(tdef.selectors, def)
-		} else {
-			if _, hasKey := tdef.staticKeys[def.Key]; !hasKey {
-				tdef.staticKeys[def.Key] = []RelationTargetDef{}
-			}
-			tdef.staticKeys[def.Key] = append(tdef.staticKeys[def.Key], def)
-		}
-	}
-	return tdef
-}
-
-// getDefinition retrieves definition for the given relation and label.
-func (td *targetsDef) getForLabel(relation, label string) (def RelationTargetDef, exists bool) {
-	def, exists = td.byLabel[relationLabel{relation: relation, label: label}]
-	return
-}
-
-// getDefinition retrieves definition(s) selecting the given key.
-func (td *targetsDef) getForKey(relation string, key string) (defs []RelationTargetDef) {
-	if staticDefs, hasStaticDefs := td.staticKeys[key]; hasStaticDefs {
-		for _, def := range staticDefs {
-			if relation == "" || def.Relation == relation {
-				defs = append(defs, def)
-			}
-		}
-	}
-	for _, def := range td.selectors {
-		if relation != "" && def.Relation != relation {
-			continue
-		}
-		if def.Selector(key) {
-			defs = append(defs, def)
-		}
-	}
-	return defs
-}
+// sources is a slice of all sources, grouped by relations.
+type sources []relationSources
 
 // String returns human-readable string representation of sourcesByRelation.
-func (s sourcesByRelation) String() string {
+func (s sources) String() string {
 	str := "{"
 	for idx, sources := range s {
 		if idx > 0 {
@@ -125,7 +63,7 @@ func (s sourcesByRelation) String() string {
 }
 
 // getSourcesForRelation returns sources (keys) for the given relation.
-func (s sourcesByRelation) getSourcesForRelation(relation string) *relationSources {
+func (s sources) getSourcesForRelation(relation string) *relationSources {
 	for _, relSources := range s {
 		if relSources.relation == relation {
 			return relSources

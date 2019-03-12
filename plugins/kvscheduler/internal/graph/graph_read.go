@@ -31,6 +31,8 @@ const printDelimiter = ", "
 
 // graphR implements ReadAccess.
 type graphR struct {
+	edgeLookup
+
 	parent   *kvgraph
 
 	nodes    map[string]*node

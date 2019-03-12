@@ -124,6 +124,7 @@ func (node *node) syncMetadata() {
 
 // SetTargets provides definition of all edges pointing from this node.
 func (node *node) SetTargets(targetsDef []RelationTargetDef) {
+
 	pgraph := node.graph.parent
 	if pgraph != nil && pgraph.methodTracker != nil {
 		defer pgraph.methodTracker("Node.SetTargets")()
