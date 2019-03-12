@@ -139,7 +139,7 @@ func (d *InterfaceDescriptor) Create(key string, intf *interfaces.Interface) (me
 			return nil, err
 		}
 	case interfaces.Interface_BOND_INTERFACE:
-		ifIdx, err = d.ifHandler.AddBondInterface(intf.Name, intf.GetBond())
+		ifIdx, err = d.ifHandler.AddBondInterface(intf.Name, intf.PhysAddress, intf.GetBond())
 		if err != nil {
 			d.log.Error(err)
 			return nil, err
@@ -181,10 +181,12 @@ func (d *InterfaceDescriptor) Create(key string, intf *interfaces.Interface) (me
 		}
 	}
 
-	// MAC address. Note: physical interfaces cannot have the MAC address changed
+	// MAC address. Note: physical interfaces cannot have the MAC address changed. The bond interface uses its own
+	// binary API call to set MAC address.
 	if intf.GetPhysAddress() != "" &&
 		intf.GetType() != interfaces.Interface_AF_PACKET &&
-		intf.GetType() != interfaces.Interface_DPDK {
+		intf.GetType() != interfaces.Interface_DPDK &&
+		intf.GetType() != interfaces.Interface_BOND_INTERFACE {
 		if err = d.ifHandler.SetInterfaceMac(ifIdx, intf.GetPhysAddress()); err != nil {
 			err = errors.Errorf("failed to set MAC address %s to interface %s: %v",
 				intf.GetPhysAddress(), intf.Name, err)
@@ -367,7 +369,8 @@ func (d *InterfaceDescriptor) Update(key string, oldIntf, newIntf *interfaces.In
 	if newIntf.PhysAddress != "" &&
 		newIntf.PhysAddress != oldIntf.PhysAddress &&
 		oldIntf.Type != interfaces.Interface_AF_PACKET &&
-		oldIntf.Type != interfaces.Interface_DPDK {
+		oldIntf.Type != interfaces.Interface_DPDK &&
+		oldIntf.Type != interfaces.Interface_BOND_INTERFACE {
 		if err := d.ifHandler.SetInterfaceMac(ifIdx, newIntf.PhysAddress); err != nil {
 			err = errors.Errorf("setting interface %s MAC address %s failed: %v",
 				newIntf.Name, newIntf.PhysAddress, err)

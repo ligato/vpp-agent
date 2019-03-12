@@ -121,7 +121,7 @@ type InterfaceVppAPI interface {
 	// DeleteVmxNet3 removes vmxNet3 interface
 	DeleteVmxNet3(ifName string, ifIdx uint32) error
 	// AddBondInterface configures bond interface.
-	AddBondInterface(ifName string, bondLink *interfaces.BondLink) (uint32, error)
+	AddBondInterface(ifName string, mac string, bondLink *interfaces.BondLink) (uint32, error)
 	// DeleteBondInterface removes bond interface.
 	DeleteBondInterface(ifName string, ifIdx uint32) error
 	// InterfaceAdminDown calls binary API SwInterfaceSetFlagsReply with AdminUpDown=0.

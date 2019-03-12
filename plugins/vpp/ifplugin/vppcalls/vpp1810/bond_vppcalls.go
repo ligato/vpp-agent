@@ -1,4 +1,4 @@
-// Copyright (c) 2019 Pantheon Technologies and/or its affiliates.
+// Copyright (c) 2019 PANTHEON.tech
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,15 +15,25 @@
 package vpp1810
 
 import (
+	"net"
+
 	if_model "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1810/bond"
 )
 
 // AddBondInterface implements interface handler.
-func (h *InterfaceVppHandler) AddBondInterface(ifName string, bondLink *if_model.BondLink) (uint32, error) {
+func (h *InterfaceVppHandler) AddBondInterface(ifName string, mac string, bondLink *if_model.BondLink) (uint32, error) {
 	req := &bond.BondCreate{
 		Mode: getBondMode(bondLink.Mode),
 		Lb:   getLoadBalance(bondLink.Lb),
+	}
+	if mac != "" {
+		parsedMac, err := net.ParseMAC(mac)
+		if err != nil {
+			return 0, err
+		}
+		req.UseCustomMac = 1
+		req.MacAddress = parsedMac
 	}
 
 	reply := &bond.BondCreateReply{}
