@@ -235,6 +235,14 @@ func (d *InterfaceDescriptor) Create(key string, intf *interfaces.Interface) (me
 		}
 	}
 
+	// set vlan tag rewrite
+	if intf.Type == interfaces.Interface_SUB_INTERFACE && intf.GetSub().TagRwOption != interfaces.SubInterface_DISABLED {
+		if err := d.ifHandler.SetVLanTagRewrite(ifIdx, intf.GetSub()); err != nil {
+			d.log.Error(err)
+			return nil, err
+		}
+	}
+
 	// set interface up if enabled
 	if intf.Enabled {
 		if err = d.ifHandler.InterfaceAdminUp(ifIdx); err != nil {
@@ -432,6 +440,20 @@ func (d *InterfaceDescriptor) Update(key string, oldIntf, newIntf *interfaces.In
 				err = errors.Errorf("failed to set MTU to interface %s: %v", newIntf.Name, err)
 				d.log.Error(err)
 				return oldMetadata, err
+			}
+		}
+	}
+
+	// update vlan tag rewrite
+	if newIntf.Type == interfaces.Interface_SUB_INTERFACE {
+		oldSub, newSub := oldIntf.GetSub(), newIntf.GetSub()
+		if oldSub.TagRwOption != newSub.TagRwOption ||
+			oldSub.PushDot1Q != newSub.PushDot1Q ||
+			oldSub.Tag1 != newSub.Tag1 ||
+			oldSub.Tag2 != newSub.Tag2 {
+			if err := d.ifHandler.SetVLanTagRewrite(ifIdx, newSub); err != nil {
+				d.log.Error(err)
+				return nil, err
 			}
 		}
 	}

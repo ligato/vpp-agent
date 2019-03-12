@@ -109,8 +109,12 @@ func (h *InterfaceVppHandler) dumpInterfaces() (map[uint32]*InterfaceDetails, er
 			details.Interface.Type = interfaces.Interface_SUB_INTERFACE
 			details.Interface.Link = &interfaces.Interface_Sub{
 				Sub: &interfaces.SubInterface{
-					ParentName: ifs[ifDetails.SupSwIfIndex].Interface.Name,
-					SubId:      ifDetails.SubID,
+					ParentName:  ifs[ifDetails.SupSwIfIndex].Interface.Name,
+					SubId:       ifDetails.SubID,
+					TagRwOption: getTagRwOption(ifDetails.VtrOp),
+					PushDot1Q:   uintToBool(uint8(ifDetails.VtrPushDot1q)),
+					Tag1:        ifDetails.VtrTag1,
+					Tag2:        ifDetails.VtrTag2,
 				},
 			}
 		}
@@ -798,4 +802,27 @@ func uintToBool(value uint8) bool {
 
 func cleanString(b []byte) string {
 	return string(bytes.SplitN(b, []byte{0x00}, 2)[0])
+}
+
+func getTagRwOption(op uint32) interfaces.SubInterface_TagRewriteOptions {
+	switch op {
+	case 1:
+		return interfaces.SubInterface_PUSH1
+	case 2:
+		return interfaces.SubInterface_PUSH2
+	case 3:
+		return interfaces.SubInterface_POP1
+	case 4:
+		return interfaces.SubInterface_POP2
+	case 5:
+		return interfaces.SubInterface_TRANSLATE11
+	case 6:
+		return interfaces.SubInterface_TRANSLATE12
+	case 7:
+		return interfaces.SubInterface_TRANSLATE21
+	case 8:
+		return interfaces.SubInterface_TRANSLATE22
+	default: // disabled
+		return interfaces.SubInterface_DISABLED
+	}
 }
