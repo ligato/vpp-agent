@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+package model;
+
+message Interface {
+    string name = 1;
+}
+
+message Route {
+    string name = 1;
+    string interface_name = 2;
+}
+
+
