@@ -4,13 +4,12 @@ package vpp1810
 
 import (
 	if_model "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/bond"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1810/bond"
 )
 
 // AddBondInterface implements interface handler.
 func (h *InterfaceVppHandler) AddBondInterface(ifName string, bondLink *if_model.BondLink) (uint32, error) {
 	req := &bond.BondCreate{
-		ID:   bondLink.Id,
 		Mode: getBondMode(bondLink.Mode),
 		Lb:   getLoadBalance(bondLink.Lb),
 	}
