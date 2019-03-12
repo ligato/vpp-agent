@@ -1,8 +1,8 @@
 # VPP Agent Tutorials
 
 This series of tutorials provide step-by-step guides for:
-- [Vanilla VPP Agent Usage](#vanilla-vpp-agent-usage)
-- [Custom VPP Agent Development](#custom-vpp-agent-development)
+- [Vanilla VPP Agent Usage](#vanilla-vpp-agent-usage) (TODO)
+- [Custom VPP Agent Development](#custom-vpp-agent-development) (TODO)
 
 For tutorials focused on development with CN-Infra framework, 
 see [ligato.io/cn-infra/tutorials][cn-infra-tutorials].
