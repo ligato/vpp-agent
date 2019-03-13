@@ -184,11 +184,6 @@ func (p *Plugin) watchEvents() {
 				}
 			}
 
-			if len(kvPairs) == 0 {
-				p.log.Warn("no valid kv pairs received in resync event")
-				continue
-			}
-
 			p.log.Debugf("Resync with %d items", len(kvPairs))
 
 			ctx := e.GetContext()
