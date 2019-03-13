@@ -16,6 +16,7 @@ package graph
 
 import (
 	"reflect"
+	"sort"
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/vpp-agent/plugins/kvscheduler/internal/utils"
@@ -130,125 +131,189 @@ func (node *node) SetTargets(targetsDef []RelationTargetDef) {
 		defer pgraph.methodTracker("Node.SetTargets")()
 	}
 
-	node.targetsDef = newTargetsDef(targetsDef)
-	node.dataUpdated = true
+	sort.Slice(targetsDef, func(i, j int) bool {
+		_, order := targetsDef[i].Compare(targetsDef[j])
+		return order == -1
+	})
 
-	// remove obsolete targets
-	for _, relTargets := range node.targets {
-		for labelIdx := 0; labelIdx < len(relTargets.Targets); {
-			targets := relTargets.Targets[labelIdx]
-
-			// collect keys to remove for this relation+label
-			var toRemove []string
-			for _, target := range targets.MatchingKeys.Iterate() {
-				obsolete := true
-				targetDefs := node.targetsDef.getForKey(relTargets.Relation, target)
-				for _, targetDef := range targetDefs {
-					if targetDef.Label == targets.Label {
-						obsolete = false
-						break
+	var i,j int
+	for i < len(targetsDef) || j < len(node.targetsDef) {
+		var equal bool
+		var order int
+		if i < len(targetsDef) && j < len(node.targetsDef) {
+			equal, order = targetsDef[i].Compare(node.targetsDef[j])
+		} else if i < len(targetsDef) {
+			equal = false
+			order = -1
+		} else {
+			equal = false
+			order = 1
+		}
+		if equal {
+			if targetsDef[i].WithKeySelector() {
+				// re-run key selector
+				target := &node.targets[i]
+				// -> remove obsolete targets
+				var obsolete []string
+				for _, key := range target.MatchingKeys.Iterate() {
+					if targetsDef[i].Selector.KeySelector(key) == false {
+						obsolete = append(obsolete, key)
 					}
 				}
-				if len(targetDefs) == 0 {
-					// this is no longer target for any label of this relation
-					targetNode := node.graph.nodes[target]
-					targetNode.removeFromSources(relTargets.Relation, node.GetKey())
+				for _, key := range obsolete {
+					target.MatchingKeys.Del(key)
 				}
-				if obsolete {
-					toRemove = append(toRemove, target)
-				}
+				// -> check for new targets
+				node.iterEveryEdge(targetsDef[i], func(key string) {
+					target.MatchingKeys.Add(key)
+				})
 			}
+			i++
+			j++
+			continue
+		}
 
-			// remove the entire label if it is no longer defined
-			_, labelStillDefined := node.targetsDef.getForLabel(relTargets.Relation, targets.Label)
-			if !labelStillDefined {
-				newLen := len(relTargets.Targets) - 1
-				copy(relTargets.Targets[labelIdx:], relTargets.Targets[labelIdx+1:])
-				relTargets.Targets = relTargets.Targets[:newLen]
+		// not equal, process the first in the order
+		if order == 0 {
+			// updated target definition
+			target := &node.targets[i]
+			target.ExpectedKey = targetsDef[i].Key
+			if !targetsDef[i].WithKeySelector() {
+				target.MatchingKeys = utils.NewSingletonKeySet("")
 			} else {
-				// remove just obsolete targets, not the entire label
-				for _, target := range toRemove {
-					targets.MatchingKeys.Del(target)
-				}
-				labelIdx++
+				// selector
+				target.MatchingKeys = utils.NewSliceBasedKeySet()
 			}
+			// re-create edges
+			node.addDelEdges(node.targetsDef[j], true)
+			node.addDelEdges(targetsDef[i], false)
+			node.iterEveryEdge(targetsDef[i], func(key string) {
+				target.MatchingKeys.Add(key)
+			})
+			i++
+			j++
+			continue
+		}
+		if order == -1 {
+			// new target definition
+			node.addDelEdges(targetsDef[i], false)
+			node.addTargetEntry(i, targetsDef[i].Relation, targetsDef[i].Label,
+				targetsDef[i].WithKeySelector())
+			target := &node.targets[i]
+			node.iterEveryEdge(targetsDef[i], func(key string) {
+				target.MatchingKeys.Add(key)
+			})
+			i++
+			continue
+		}
+		if order == 1 {
+			// obsolete target definition
+			node.addDelEdges(node.targetsDef[j], true)
+			node.removeTargetEntry(i+1)
+			j++
+			continue
 		}
 	}
 
-	// build new targets
-	var usesSelector bool
-	for _, targetDef := range node.targetsDef.defs {
-		node.createEntryForTarget(targetDef)
-		if targetDef.Key != "" {
-			// without selectors, the lookup procedure has complexity O(m*log(n))
-			// where n = number of nodes; m = number of edges defined for this node
-			if node2, hasTarget := node.graph.nodes[targetDef.Key]; hasTarget {
-				node.addToTargets(node2, targetDef)
-			}
-		} else {
-			usesSelector = true // have to use the less efficient O(mn) lookup
-		}
+	node.targetsDef = targetsDef
+	node.dataUpdated = true
+	// check implementation:
+	if len(node.targetsDef) != len(node.targets) {
+		panic("SetTargets: len(node.targetsDef) != len(node.targets)")
 	}
-	if usesSelector {
-		for _, otherNode := range node.graph.nodes {
-			if otherNode.key == node.key {
-				continue
-			}
-			node.checkPotentialTarget(otherNode)
-		}
-	}
-
 }
 
-// checkPotentialTarget checks if node2 is target of node in any of the relations.
-func (node *node) checkPotentialTarget(node2 *node) {
-	targetDefs := node.targetsDef.getForKey("", node2.key) // for any relation
-	for _, targetDef := range targetDefs {
-		node.addToTargets(node2, targetDef)
+// addTargetEntry adds new target entry at the given index.
+func (node *node) addTargetEntry(index int, relation, label string, withSelector bool) {
+	node.targets = append(node.targets, Target{})
+	if index < len(node.targets)-1 {
+		copy(node.targets[index+1:], node.targets[index:])
+	}
+	node.targets[index].Relation = relation
+	node.targets[index].Label = label
+	node.targets[index].ExpectedKey = ""
+	node.targets[index].MatchingKeys = utils.NewSliceBasedKeySet()
+	if !withSelector {
+		node.targets[index].MatchingKeys = utils.NewSingletonKeySet("")
+	} else {
+		// selector
+		node.targets[index].MatchingKeys = utils.NewSliceBasedKeySet()
 	}
 }
 
-// createEntryForTarget creates entry for target(s) with the given definition
-// if it does not exist yet.
-func (node *node) createEntryForTarget(targetDef RelationTargetDef) {
-	relTargets := node.targets.GetTargetsForRelation(targetDef.Relation)
-	if relTargets == nil {
-		// new relation
-		relTargets = &RelationTargets{Relation: targetDef.Relation}
-		node.targets = append(node.targets, relTargets)
+// removeTargetEntry removes target entry at the given index
+func (node *node) removeTargetEntry(index int) {
+	if index < len(node.targets)-1 {
+		copy(node.targets[index:], node.targets[index+1:])
 	}
-	targets := relTargets.GetTargetsForLabel(targetDef.Label)
-	if targets == nil {
-		// new relation label
-		targets = &Targets{Label: targetDef.Label, ExpectedKey: targetDef.Key}
-		if targetDef.Key != "" {
-			targets.MatchingKeys = utils.NewSingletonKeySet("")
-		} else {
-			// selector
-			targets.MatchingKeys = utils.NewSliceBasedKeySet()
+	node.targets = node.targets[0:len(node.targets)-1]
+}
+
+func (node *node) addDelEdges(target RelationTargetDef, del bool) {
+	cb := node.graph.edgeLookup.addEdge
+	if del {
+		cb = node.graph.edgeLookup.delEdge
+	}
+	if target.Key != "" {
+		cb(edge{
+			targetKey:  target.Key,
+			isPrefix:   false,
+			sourceNode: node.key,
+			relation:   target.Relation,
+			label:      target.Label,
+		})
+	} else {
+		for _, keyPrefix := range target.Selector.KeyPrefixes {
+			cb(edge{
+				targetKey:  keyPrefix,
+				isPrefix:   true,
+				sourceNode: node.key,
+				relation:   target.Relation,
+				label:      target.Label,
+			})
 		}
-		relTargets.AddTargets(targets)
+		if len(target.Selector.KeyPrefixes) == 0 {
+			cb(edge{
+				targetKey:  "",
+				isPrefix:   true,
+				sourceNode: node.key,
+				relation:   target.Relation,
+				label:      target.Label,
+			})
+		}
 	}
-	targets.ExpectedKey = targetDef.Key
+}
+
+// iterEveryEdge iterates over every outgoing edge.
+func (node *node) iterEveryEdge(target RelationTargetDef, cb func(targetKey string)) {
+	checkTarget := func(key string) {
+		if !target.WithKeySelector() || target.Selector.KeySelector(key) == true {
+			cb(key)
+		}
+	}
+	if len(target.Selector.KeyPrefixes) == 0 {
+		node.graph.edgeLookup.iterTargets("", true, checkTarget)
+	}
+	for _, keyPrefix := range target.Selector.KeyPrefixes {
+		node.graph.edgeLookup.iterTargets(keyPrefix, true, checkTarget)
+	}
 }
 
 // addToTargets adds node2 into the set of targets for this node. Sources of node2
 // are also updated accordingly.
-func (node *node) addToTargets(node2 *node, targetDef RelationTargetDef) {
+func (node *node) addToTargets(node2 *node, target *Target) {
 	// update targets of node
-	relTargets := node.targets.GetTargetsForRelation(targetDef.Relation)
-	targets := relTargets.GetTargetsForLabel(targetDef.Label)
-	updated := targets.MatchingKeys.Add(node2.key)
+	updated := target.MatchingKeys.Add(node2.key)
 	node.targetsUpdated = updated || node.targetsUpdated
 
 	// update sources of node2
-	relSources := node2.sources.getSourcesForRelation(targetDef.Relation)
+	relSources := node2.sources.getSourcesForRelation(target.Relation)
 	if relSources == nil {
-		relSources = &relationSources{
-			relation: targetDef.Relation,
+		node2.sources = append(node2.sources, relationSources{
+			relation: target.Relation,
 			sources:  utils.NewSliceBasedKeySet(),
-		}
-		node2.sources = append(node2.sources, relSources)
+		})
+		relSources = &(node2.sources[len(node2.sources)-1])
 	}
 	updated = relSources.sources.Add(node.key)
 	node2.sourcesUpdated = updated || node2.sourcesUpdated
@@ -257,15 +322,11 @@ func (node *node) addToTargets(node2 *node, targetDef RelationTargetDef) {
 	}
 }
 
-// removeFromTargets removes given key from the set of targets.
-func (node *node) removeFromTargets(key string) {
-	var updated bool
-	for _, relTargets := range node.targets {
-		for _, targets := range relTargets.Targets {
-			updated = targets.MatchingKeys.Del(key)
-			node.targetsUpdated = updated || node.targetsUpdated
-		}
-	}
+// removeFromTarget removes given key from the given target.
+func (node *node) removeFromTarget(key, relation, label string) {
+	target, _ := node.targets.GetTargetForLabel(relation, label)
+	updated := target.MatchingKeys.Del(key)
+	node.targetsUpdated = updated || node.targetsUpdated
 	if updated {
 		node.graph.unsaved.Add(node.key)
 	}
@@ -273,12 +334,10 @@ func (node *node) removeFromTargets(key string) {
 
 // removeFromTargets removes this node from the set of sources of all the other nodes.
 func (node *node) removeThisFromSources() {
-	for _, relTargets := range node.targets {
-		for _, targets := range relTargets.Targets {
-			for _, key := range targets.MatchingKeys.Iterate() {
-				targetNode := node.graph.nodes[key]
-				targetNode.removeFromSources(relTargets.Relation, node.GetKey())
-			}
+	for _, target := range node.targets {
+		for _, key := range target.MatchingKeys.Iterate() {
+			targetNode := node.graph.nodes[key]
+			targetNode.removeFromSources(target.Relation, node.GetKey())
 		}
 	}
 }

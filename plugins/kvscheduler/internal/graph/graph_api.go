@@ -231,6 +231,39 @@ type RelationTargetDef struct {
 	Selector TargetSelector
 }
 
+// Compare compares two relation target definitions (with the exception of KeySelector-s).
+func (t RelationTargetDef) Compare(t2 RelationTargetDef) (equal bool, order int) {
+	if t.Relation < t2.Relation {
+		return false, -1
+	}
+	if t.Relation > t2.Relation {
+		return false, 1
+	}
+	if t.Label < t2.Label {
+		return false, -1
+	}
+	if t.Label > t2.Label {
+		return false, 1
+	}
+	if t.Key != t2.Key {
+		return false, 0
+	}
+	if len(t.Selector.KeyPrefixes) != len(t2.Selector.KeyPrefixes) {
+		return false, 0
+	}
+	for i := 0; i < len(t.Selector.KeyPrefixes); i++ {
+		if t.Selector.KeyPrefixes[i] != t2.Selector.KeyPrefixes[i] {
+			return false, 0
+		}
+	}
+	return true, 0
+}
+
+// WithKeySelector returns true if the target is defined with key selector.
+func (t RelationTargetDef) WithKeySelector() bool {
+	return t.Key == "" && t.Selector.KeySelector != nil
+}
+
 // TargetSelector allows to dynamically select a set of target nodes.
 // The selections of KeyPrefixes and KeySelector are **intersected**.
 type TargetSelector struct {
@@ -277,6 +310,7 @@ func (ts Targets) String() string {
 			str += ", "
 		}
 		str += fmt.Sprintf("%s->%s", target.Label, target.MatchingKeys.String())
+		idx++
 	}
 	str += "}"
 	return str
@@ -285,14 +319,38 @@ func (ts Targets) String() string {
 // RelationBegin returns index where targets for a given relation start
 // in the array, or -1 if there are none.
 func (ts Targets) RelationBegin(relation string) int {
-	idx := sort.Search(len(ts),
-		func(i int) bool {
-			return relation <= ts[i].Relation
-		})
+	idx := ts.lookupIdx(relation, "")
 	if idx < len(ts) && ts[idx].Relation == relation {
 		return idx
 	}
-	return -1
+	return len(ts)
+}
+
+// GetTargetForLabel returns reference(+index) to target with the given
+// relation+label.
+func (ts Targets) GetTargetForLabel(relation, label string) (t *Target, idx int) {
+	idx = ts.lookupIdx(relation, label)
+	if idx < len(ts) &&
+		ts[idx].Relation == relation && ts[idx].Label == label {
+		return &ts[idx], idx
+	}
+	return nil, -1
+}
+
+// lookupIdx returns index where target for the given (relation,label) pair should
+// be stored in the array.
+func (ts Targets) lookupIdx(relation, label string) int {
+	idx := sort.Search(len(ts),
+		func(i int) bool {
+			if relation < ts[i].Relation {
+				return true
+			}
+			if relation == ts[i].Relation && label < ts[i].Label {
+				return true
+			}
+			return false
+		})
+	return idx
 }
 
 // RuntimeTarget, unlike Target, contains direct runtime references pointing
@@ -310,9 +368,9 @@ type RuntimeTargets []RuntimeTarget
 // GetTargetForLabel returns target (single node or a set of nodes) for
 // the given label.
 func (rt RuntimeTargets) GetTargetForLabel(label string) *RuntimeTarget {
-	for _, target := range rt {
-		if target.Label == label {
-			return target
+	for idx := range rt {
+		if rt[idx].Label == label {
+			return &rt[idx]
 		}
 	}
 	return nil

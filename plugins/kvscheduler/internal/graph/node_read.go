@@ -36,7 +36,11 @@ type nodeR struct {
 	metadata      interface{}
 	metadataAdded bool
 	metadataMap   string
+
+	// same length and corresponding order (lexicographically by relation+label)
 	targets       Targets
+	targetsDef    []RelationTargetDef
+
 	sources       sources
 }
 
@@ -52,11 +56,11 @@ type sources []relationSources
 // String returns human-readable string representation of sourcesByRelation.
 func (s sources) String() string {
 	str := "{"
-	for idx, sources := range s {
+	for idx, rs := range s {
 		if idx > 0 {
 			str += ", "
 		}
-		str += fmt.Sprintf("%s->%s", sources.relation, sources.sources.String())
+		str += fmt.Sprintf("%s->%s", rs.relation, rs.sources.String())
 	}
 	str += "}"
 	return str
@@ -64,9 +68,9 @@ func (s sources) String() string {
 
 // getSourcesForRelation returns sources (keys) for the given relation.
 func (s sources) getSourcesForRelation(relation string) *relationSources {
-	for _, relSources := range s {
-		if relSources.relation == relation {
-			return relSources
+	for idx := range s {
+		if s[idx].relation == relation {
+			return &s[idx]
 		}
 	}
 	return nil
@@ -105,18 +109,17 @@ func (node *nodeR) GetMetadata() interface{} {
 
 // GetTargets returns a set of nodes, indexed by relation labels, that the
 // edges of the given relation points to.
-func (node *nodeR) GetTargets(relation string) (runtimeTargets RuntimeTargetsByLabel) {
-	relTargets := node.targets.GetTargetsForRelation(relation)
-	if relTargets == nil {
-		return nil
-	}
-	for _, targets := range relTargets.Targets {
+func (node *nodeR) GetTargets(relation string) (runtimeTargets RuntimeTargets) {
+	for i := node.targets.RelationBegin(relation); i < len(node.targets); i++ {
+		if node.targets[i].Relation != relation {
+			break
+		}
 		var nodes []Node
-		for _, key := range targets.MatchingKeys.Iterate() {
+		for _, key := range node.targets[i].MatchingKeys.Iterate() {
 			nodes = append(nodes, node.graph.nodes[key])
 		}
-		runtimeTargets = append(runtimeTargets, &RuntimeTargets{
-			Label: targets.Label,
+		runtimeTargets = append(runtimeTargets, RuntimeTarget{
+			Label: node.targets[i].Label,
 			Nodes: nodes,
 		})
 	}
@@ -162,31 +165,20 @@ func (node *nodeR) copy() *nodeR {
 	nodeCopy.targets = node.copyTargets()
 
 	// copy sources
-	nodeCopy.sources = make(sourcesByRelation, 0, len(node.sources))
-	for _, relSources := range node.sources {
-		nodeCopy.sources = append(nodeCopy.sources, &relationSources{
-			relation: relSources.relation,
-			sources:  relSources.sources.CopyOnWrite(),
-		})
+	nodeCopy.sources = make(sources, len(node.sources))
+	copy(nodeCopy.sources, node.sources)
+	for i := range nodeCopy.sources {
+		nodeCopy.sources[i].sources = nodeCopy.sources[i].sources.CopyOnWrite()
 	}
+
 	return nodeCopy
 }
 
-func (node *nodeR) copyTargets() TargetsByRelation {
-	tCopy := make(TargetsByRelation, 0, len(node.targets))
-	for _, relTargets := range node.targets {
-		targets := make(TargetsByLabel, 0, len(relTargets.Targets))
-		for _, target := range relTargets.Targets {
-			targets = append(targets, &Targets{
-				Label:        target.Label,
-				ExpectedKey:  target.ExpectedKey,
-				MatchingKeys: target.MatchingKeys.CopyOnWrite(),
-			})
-		}
-		tCopy = append(tCopy, &RelationTargets{
-			Relation: relTargets.Relation,
-			Targets:  targets,
-		})
+func (node *nodeR) copyTargets() Targets {
+	targets := make(Targets, len(node.targets))
+	copy(targets, node.targets)
+	for i := range targets {
+		targets[i].MatchingKeys = targets[i].MatchingKeys.CopyOnWrite()
 	}
-	return tCopy
+	return targets
 }

@@ -31,9 +31,9 @@ const printDelimiter = ", "
 
 // graphR implements ReadAccess.
 type graphR struct {
-	edgeLookup
+	*edgeLookup
 
-	parent   *kvgraph
+	parent *kvgraph
 
 	nodes    map[string]*node
 	mappings map[string]idxmap.NamedMappingRW
@@ -46,9 +46,10 @@ type graphR struct {
 // newGraphR creates and initializes a new instance of graphR.
 func newGraphR() *graphR {
 	return &graphR{
-		nodes:    make(map[string]*node),
-		mappings: make(map[string]idxmap.NamedMappingRW),
-		timeline: make(map[string][]*RecordedNode),
+		edgeLookup: newEdgeLookup(),
+		nodes:      make(map[string]*node),
+		mappings:   make(map[string]idxmap.NamedMappingRW),
+		timeline:   make(map[string][]*RecordedNode),
 	}
 }
 
@@ -238,9 +239,10 @@ func (graph *graphR) Release() {
 // and the map with mappings.
 func (graph *graphR) copyNodesOnly() *graphR {
 	graphCopy := &graphR{
-		parent: graph.parent,
-		nodes:  make(map[string]*node),
-		wCopy:  true,
+		edgeLookup: graph.edgeLookup.makeOverlay(),
+		parent:     graph.parent,
+		nodes:      make(map[string]*node),
+		wCopy:      true,
 	}
 	for key, node := range graph.nodes {
 		nodeCopy := node.copy()
@@ -295,24 +297,36 @@ func prettyPrintFlags(flags [maxFlags]Flag) string {
 }
 
 // prettyPrintTargets returns nicely formatted relation targets.
-func prettyPrintTargets(targets TargetsByRelation) string {
+func prettyPrintTargets(targets Targets) string {
 	if len(targets) == 0 {
 		return "<NONE>"
 	}
-	var str string
 	idx := 0
-	for _, relation := range targets {
-		str += fmt.Sprintf("[%s]{%s}", relation.Relation, prettyPrintEdges(relation.Targets))
-		if idx < len(targets)-1 {
+	relation := targets[0].Relation
+	str := fmt.Sprintf("[%s]{", relation)
+	for _, target := range targets {
+		if target.Relation != relation {
+			relation = target.Relation
+			str += fmt.Sprintf("}%s[%s]{", printDelimiter, relation)
+			idx = 0
+		}
+		if idx > 0 {
 			str += printDelimiter
+		}
+		if target.MatchingKeys.Length() == 1 && target.MatchingKeys.Has(target.Label) {
+			// special case: there 1:1 between label and the key
+			str += target.Label
+		} else {
+			str += target.Label + " -> " + target.MatchingKeys.String()
 		}
 		idx++
 	}
+	str += "}"
 	return str
 }
 
 // prettyPrintSources returns nicely formatted relation sources.
-func prettyPrintSources(sources []*relationSources) string {
+func prettyPrintSources(sources sources) string {
 	if len(sources) == 0 {
 		return "<NONE>"
 	}
@@ -321,25 +335,6 @@ func prettyPrintSources(sources []*relationSources) string {
 	for _, relSources := range sources {
 		str += fmt.Sprintf("[%s]%s", relSources.relation, relSources.sources.String())
 		if idx < len(sources)-1 {
-			str += printDelimiter
-		}
-		idx++
-	}
-	return str
-}
-
-// prettyPrintEdges returns nicely formatted node edges.
-func prettyPrintEdges(edges TargetsByLabel) string {
-	var str string
-	idx := 0
-	for _, edge := range edges {
-		if edge.MatchingKeys.Length() == 1 && edge.MatchingKeys.Has(edge.Label) {
-			// special case: there 1:1 between label and the key
-			str += edge.Label
-		} else {
-			str += edge.Label + " -> " + edge.MatchingKeys.String()
-		}
-		if idx < len(edges)-1 {
 			str += printDelimiter
 		}
 		idx++
