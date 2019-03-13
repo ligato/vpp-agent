@@ -65,7 +65,7 @@ func GetKey(x proto.Message) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	name, err := model.nameFunc(x)
+	name, err := model.name(x)
 	if err != nil {
 		return "", err
 	}
@@ -79,7 +79,7 @@ func GetName(x proto.Message) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	name, err := model.nameFunc(x)
+	name, err := model.name(x)
 	if err != nil {
 		return "", err
 	}
