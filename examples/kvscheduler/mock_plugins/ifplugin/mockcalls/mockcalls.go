@@ -16,6 +16,7 @@ package mockcalls
 
 import (
 	"fmt"
+
 	"github.com/ligato/vpp-agent/examples/kvscheduler/mock_plugins/ifplugin/model"
 )
 
@@ -31,7 +32,7 @@ func (h *MockIfaceHandler) CreateLoopbackInterface(ifaceName string) (sbIfaceHan
 		Name: ifaceName,
 		Type: mock_interfaces.Interface_LOOPBACK,
 	}
-	h.log.Infof("Created Loopback interface: %s", ifaceName)
+	h.log.Debugf("Created Loopback interface: %s", ifaceName)
 	return sbIfaceHandle, nil
 }
 
@@ -42,7 +43,7 @@ func (h *MockIfaceHandler) DeleteLoopbackInterface(sbIfaceHandle uint32) error {
 		return err
 	}
 	delete(h.mockIfaces, sbIfaceHandle)
-	h.log.Infof("Deleted Loopback interface: %s", iface.Name)
+	h.log.Debugf("Deleted Loopback interface: %s", iface.Name)
 	return nil
 }
 
@@ -58,10 +59,9 @@ func (h *MockIfaceHandler) CreateTapInterface(ifaceName string) (sbIfaceHandle u
 		Name: ifaceName,
 		Type: mock_interfaces.Interface_TAP,
 	}
-	h.log.Infof("Created TAP interface: %s", ifaceName)
+	h.log.Debugf("Created TAP interface: %s", ifaceName)
 	return sbIfaceHandle, nil
 }
-
 
 // CreateTapInterface deletes TAP interface in the mock SB.
 func (h *MockIfaceHandler) DeleteTapInterface(sbIfaceHandle uint32) error {
@@ -70,7 +70,7 @@ func (h *MockIfaceHandler) DeleteTapInterface(sbIfaceHandle uint32) error {
 		return err
 	}
 	delete(h.mockIfaces, sbIfaceHandle)
-	h.log.Infof("Deleted TAP interface: %s", iface.Name)
+	h.log.Debugf("Deleted TAP interface: %s", iface.Name)
 	return nil
 }
 
@@ -81,7 +81,7 @@ func (h *MockIfaceHandler) InterfaceAdminDown(sbIfaceHandle uint32) error {
 		return err
 	}
 	iface.Enabled = false
-	h.log.Infof("Set interface '%s' DOWN", iface.Name)
+	h.log.Debugf("Set interface '%s' DOWN", iface.Name)
 	return nil
 }
 
@@ -92,7 +92,7 @@ func (h *MockIfaceHandler) InterfaceAdminUp(sbIfaceHandle uint32) error {
 		return err
 	}
 	iface.Enabled = true
-	h.log.Infof("Set interface '%s' UP", iface.Name)
+	h.log.Debugf("Set interface '%s' UP", iface.Name)
 	return nil
 }
 
@@ -103,13 +103,13 @@ func (h *MockIfaceHandler) SetInterfaceMac(sbIfaceHandle uint32, macAddress stri
 		return err
 	}
 	iface.PhysAddress = macAddress
-	h.log.Infof("Set interface '%s' MAC address: %s", iface.Name, macAddress)
+	h.log.Debugf("Set interface '%s' MAC address: %s", iface.Name, macAddress)
 	return nil
 }
 
 // DumpInterfaces returns interfaces "configured" in the mock SB.
 func (h *MockIfaceHandler) DumpInterfaces() (mockIfaces, error) {
-	h.log.Infof("Dumped mock interfaces: %+v", h.mockIfaces)
+	h.log.Debugf("Dumped mock interfaces: %+v", h.mockIfaces)
 	return h.mockIfaces, nil
 }
 

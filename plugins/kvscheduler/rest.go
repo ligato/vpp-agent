@@ -143,7 +143,7 @@ func kvsWithMetaForREST(in []kvs.KVWithMetadata) (out []kvs.KVWithMetadata) {
 // registerHandlers registers all supported REST APIs.
 func (s *Scheduler) registerHandlers(http rest.HTTPHandlers) {
 	if http == nil {
-		s.Log.Warn("No http handler provided, skipping registration of KVScheduler REST handlers")
+		s.Log.Debug("No http handler provided, skipping registration of KVScheduler REST handlers")
 		return
 	}
 	http.RegisterHTTPHandler(txnHistoryURL, s.txnHistoryGetHandler, "GET")

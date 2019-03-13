@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"runtime/trace"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -119,23 +120,8 @@ func (s *Scheduler) preRecordTransaction(txn *transaction, planned kvs.RecordedT
 		record.RetryAttempt = txn.retry.attempt
 	}
 
-	// build header for the log
-	var downstreamResync bool
-	txnInfo := fmt.Sprintf("%s", txn.txnType.String())
-	if txn.txnType == kvs.NBTransaction && txn.nb.resyncType != kvs.NotResync {
-		ResyncType := "Full Resync"
-		if txn.nb.resyncType == kvs.DownstreamResync {
-			ResyncType = "SB Sync"
-			downstreamResync = true
-		}
-		if txn.nb.resyncType == kvs.UpstreamResync {
-			ResyncType = "NB Sync"
-		}
-		txnInfo = fmt.Sprintf("%s (%s)", txn.txnType.String(), ResyncType)
-	}
-
 	// record values sorted alphabetically by keys
-	if !downstreamResync {
+	if txn.txnType != kvs.NBTransaction || txn.nb.resyncType != kvs.DownstreamResync {
 		for _, kv := range txn.values {
 			record.Values = append(record.Values, kvs.RecordedKVPair{
 				Key:    kv.key,
@@ -150,11 +136,23 @@ func (s *Scheduler) preRecordTransaction(txn *transaction, planned kvs.RecordedT
 
 	// send to the log
 	if s.Log.GetLevel() >= logging.DebugLevel {
+		// build header for the log
+		txnInfo := txn.txnType.String()
+		if txn.txnType == kvs.NBTransaction && txn.nb.resyncType != kvs.NotResync {
+			resyncType := "Full Resync"
+			if txn.nb.resyncType == kvs.DownstreamResync {
+				resyncType = "SB Sync"
+			}
+			if txn.nb.resyncType == kvs.UpstreamResync {
+				resyncType = "NB Sync"
+			}
+			txnInfo = fmt.Sprintf("%s (%s)", txn.txnType.String(), resyncType)
+		}
 		var buf strings.Builder
 		buf.WriteString("+======================================================================================================================+\n")
 		msg := fmt.Sprintf("Transaction #%d", record.SeqNum)
 		n := 115 - len(msg)
-		buf.WriteString(fmt.Sprintf("| %s %"+fmt.Sprint(n)+"s |\n", msg, txnInfo))
+		buf.WriteString(fmt.Sprintf("| %s %"+strconv.Itoa(n)+"s |\n", msg, txnInfo))
 		buf.WriteString("+======================================================================================================================+\n")
 		buf.WriteString(record.StringWithOpts(false, false, 2))
 		fmt.Println(buf.String())
@@ -165,7 +163,7 @@ func (s *Scheduler) preRecordTransaction(txn *transaction, planned kvs.RecordedT
 
 // recordTransaction records the finalized transaction (log + in-memory).
 func (s *Scheduler) recordTransaction(txn *transaction, txnRecord *kvs.RecordedTxn, executed kvs.RecordedTxnOps, start, stop time.Time) {
-	//defer trace.StartRegion(txn.ctx, "recordTransaction").End()
+	defer trace.StartRegion(txn.ctx, "recordTransaction").End()
 
 	txnRecord.PreRecord = false
 	txnRecord.Start = start
