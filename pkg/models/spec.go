@@ -44,6 +44,9 @@ type registeredModel struct {
 	modelOptions
 }
 
+// NameFunc represents function which can name model instance.
+type NameFunc func(obj interface{}) (string, error)
+
 type modelOptions struct {
 	nameTemplate string
 	nameFunc     NameFunc
@@ -80,10 +83,10 @@ func (m registeredModel) KeyPrefix() string {
 // or returns empty name and valid as false if the key is not valid.
 func (m registeredModel) ParseKey(key string) (name string, valid bool) {
 	name = strings.TrimPrefix(key, m.keyPrefix)
-	if name == key || name == "" {
+	if name == key || (name == "" && m.nameFunc != nil) {
 		name = strings.TrimPrefix(key, m.modelPath)
 	}
-	if name != key && name != "" {
+	if name != key && (name != "" || m.nameFunc == nil) {
 		// TODO: validate name?
 		return name, true
 	}
@@ -102,6 +105,13 @@ func (m registeredModel) StripKeyPrefix(key string) string {
 		return name
 	}
 	return key
+}
+
+func (m registeredModel) name(x proto.Message) (string, error) {
+	if m.nameFunc == nil {
+		return "", nil
+	}
+	return m.nameFunc(x)
 }
 
 var (
@@ -159,6 +169,10 @@ func Register(pb proto.Message, spec Spec, opts ...ModelOption) *registeredModel
 		opt(&model.modelOptions)
 	}
 
+	if model.nameFunc == nil {
+		model.keyPrefix = strings.TrimSuffix(model.keyPrefix, "/")
+	}
+
 	registeredModels[model.protoName] = model
 	modelPaths[model.modelPath] = model.protoName
 
@@ -176,9 +190,6 @@ func buildModelPath(version, module, typ string) string {
 type named interface {
 	GetName() string
 }
-
-// NameFunc represents function which can name model instance.
-type NameFunc func(obj interface{}) (string, error)
 
 func NameTemplate(t string) NameFunc {
 	tmpl := template.Must(

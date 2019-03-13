@@ -44,13 +44,13 @@ var (
 		Module:  ModuleName,
 		Type:    "proxyarp-global",
 		Version: "v2",
-	}, models.WithNameTemplate("settings"))
+	})
 
 	ModelIPScanNeighbor = models.Register(&IPScanNeighbor{}, models.Spec{
 		Module:  ModuleName,
 		Type:    "ipscanneigh-global",
 		Version: "v2",
-	}, models.WithNameTemplate("settings"))
+	})
 )
 
 // ProxyARPKey is key for global proxy arp

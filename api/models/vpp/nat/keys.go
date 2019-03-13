@@ -28,7 +28,7 @@ var (
 		Module:  ModuleName,
 		Type:    "nat44-global",
 		Version: "v2",
-	}, models.WithNameTemplate("settings"))
+	})
 	ModelDNat44 = models.Register(&DNat44{}, models.Spec{
 		Module:  ModuleName,
 		Type:    "dnat44",

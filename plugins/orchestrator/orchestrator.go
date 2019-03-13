@@ -131,12 +131,17 @@ func (p *Plugin) watchEvents() {
 						p.log.Errorf("unmarshal value for key %s failed: %v", kv.Key, err)
 						continue
 					}
+					if k := models.Key(kv.Val); k != kv.Key {
+						p.log.Errorf("value for key %s does not match generated model key: %v", kv.Key, k)
+						continue
+					}
 				}
 				kvPairs = append(kvPairs, kv)
 			}
 
 			if len(kvPairs) == 0 {
 				p.log.Warn("no valid kv pairs received in change event")
+				e.Done(nil)
 				continue
 			}
 
@@ -165,6 +170,10 @@ func (p *Plugin) watchEvents() {
 					val, err := models.UnmarshalLazyValue(key, x)
 					if err != nil {
 						p.log.Errorf("unmarshal value for key %s failed: %v", key, err)
+						continue
+					}
+					if k := models.Key(val); k != key {
+						p.log.Errorf("value for key %s does not match generated model key: %v", key, k)
 						continue
 					}
 					kvPairs = append(kvPairs, KeyVal{
