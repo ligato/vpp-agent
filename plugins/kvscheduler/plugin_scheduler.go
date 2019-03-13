@@ -153,7 +153,7 @@ func (s *Scheduler) Init() error {
 		s.Log.Error(err)
 		return err
 	}
-	s.Log.Infof("KVScheduler configuration: %+v", *s.config)
+	s.Log.Debugf("KVScheduler configuration: %+v", *s.config)
 
 	// prepare context for all go routines
 	s.ctx, s.cancel = context.WithCancel(context.Background())
@@ -236,7 +236,7 @@ func (s *Scheduler) RegisterKVDescriptor(descriptor *kvs.KVDescriptor) error {
 		} else {
 			metadataMap = mem.NewNamedMapping(s.Log, descriptor.Name, nil)
 		}
-		graphW := s.graph.Write(true,false)
+		graphW := s.graph.Write(true, false)
 		graphW.RegisterMetadataMap(descriptor.Name, metadataMap)
 		graphW.Release()
 	}

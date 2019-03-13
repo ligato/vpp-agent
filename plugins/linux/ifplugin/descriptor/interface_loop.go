@@ -22,6 +22,8 @@ import (
 	"strings"
 )
 
+const unconfiguredAlias = "unconfigured"
+
 // createLoopback adds logical name as alias to linux loopback interface
 func (d *InterfaceDescriptor) createLoopback(nsCtx nslinuxcalls.NamespaceMgmtCtx,
 	linuxIf *interfaces.Interface) (metadata *ifaceidx.LinuxIfMetadata, err error) {
@@ -45,7 +47,7 @@ func (d *InterfaceDescriptor) createLoopback(nsCtx nslinuxcalls.NamespaceMgmtCtx
 		d.log.Error(err)
 		return nil, ErrLoopbackNotFound
 	}
-	if alias != "" && alias != linuxIf.Name {
+	if alias != "" && alias != linuxIf.Name && alias != unconfiguredAlias {
 		d.log.Errorf("loopback already configured using logical name '%v'", alias)
 		return nil, ErrLoopbackAlreadyConfigured
 	}
@@ -87,7 +89,7 @@ func (d *InterfaceDescriptor) deleteLoopback(nsCtx nslinuxcalls.NamespaceMgmtCtx
 	// remove interface alias
 	// - actually vishvananda/netlink does not support alias removal, so we just change
 	//   it to a string which is not prefixed with agent label
-	err := d.ifHandler.SetInterfaceAlias(hostName, "")
+	err := d.ifHandler.SetInterfaceAlias(hostName, unconfiguredAlias)
 	if err != nil {
 		d.log.Error(err)
 		return err
