@@ -118,6 +118,11 @@ func Register(pb proto.Message, spec Spec, opts ...ModelOption) *registeredModel
 		protoName: proto.MessageName(pb),
 	}
 
+	// Check proto message name
+	if model.protoName == "" {
+		panic(fmt.Sprintf("empty proto message name for type: %T\n\n\tPlease ensure your .proto file contains: 'option (gogoproto.messagename_all) = true'", pb))
+	}
+
 	// Check duplicate registration
 	if _, ok := registeredModels[model.protoName]; ok {
 		panic(fmt.Sprintf("proto message %q already registered", model.protoName))
