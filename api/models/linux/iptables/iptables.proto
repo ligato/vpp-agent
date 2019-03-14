@@ -26,6 +26,8 @@ message RuleChain {
         FILTER = 0;
         NAT = 1;
         MANGLE = 2;
+        RAW = 3;
+        SECURITY = 4;
     };
     Table table = 5;                             /* table the rule chain belongs to */
 

@@ -21,7 +21,6 @@ import (
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 
 	"github.com/ligato/vpp-agent/plugins/linux/iptablesplugin/descriptor"
-	"github.com/ligato/vpp-agent/plugins/linux/iptablesplugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/linux/iptablesplugin/linuxcalls"
 	"github.com/ligato/vpp-agent/plugins/linux/nsplugin"
 )
@@ -83,8 +82,8 @@ func (p *IPTablesPlugin) Init() error {
 	}
 
 	// init & register the descriptor
-	ruleChainDescriptor := adapter.NewRuleChainDescriptor(descriptor.NewRuleChainDescriptor(
-		p.KVScheduler, p.iptHandler, p.NsPlugin, p.Log, config.GoRoutinesCnt).GetDescriptor())
+	ruleChainDescriptor := descriptor.NewRuleChainDescriptor(
+		p.KVScheduler, p.iptHandler, p.NsPlugin, p.Log, config.GoRoutinesCnt)
 
 	err = p.Deps.KVScheduler.RegisterKVDescriptor(ruleChainDescriptor)
 	if err != nil {

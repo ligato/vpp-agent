@@ -48,6 +48,9 @@ var (
 	// ErrCustomChainWithoutName is returned when the chain name is not provided for the custom iptables chain.
 	ErrCustomChainWithoutName = errors.New("iptables chain of type CUSTOM defined without chain name")
 
+	// ErrInvalidChainForTable is returned when the chain is not valid for the provided table.
+	ErrInvalidChainForTable = errors.New("provided chain is not valid for the provided table")
+
 	// ErrDefaultPolicyOnNonFilterRule is returned when a default policy is applied on a table different to FILTER.
 	ErrDefaultPolicyOnNonFilterRule = errors.New("iptables default policy can be only applied on FILTER tables")
 
@@ -69,51 +72,53 @@ type RuleChainDescriptor struct {
 // NewRuleChainDescriptor creates a new instance of the iptables RuleChain descriptor.
 func NewRuleChainDescriptor(
 	scheduler kvs.KVScheduler, ipTablesHandler linuxcalls.IPTablesAPI, nsPlugin nsplugin.API,
-	log logging.PluginLogger, goRoutinesCnt int) *RuleChainDescriptor {
+	log logging.PluginLogger, goRoutinesCnt int) *kvs.KVDescriptor {
 
-	return &RuleChainDescriptor{
+	descrCtx := &RuleChainDescriptor{
 		scheduler:       scheduler,
 		ipTablesHandler: ipTablesHandler,
 		nsPlugin:        nsPlugin,
 		goRoutinesCnt:   goRoutinesCnt,
 		log:             log.NewLogger("ipt-rulechain-descriptor"),
 	}
-}
 
-// GetDescriptor returns descriptor suitable for registration (via adapter) with the KVScheduler.
-func (d *RuleChainDescriptor) GetDescriptor() *adapter.RuleChainDescriptor {
-	return &adapter.RuleChainDescriptor{
+	typedDescr := &adapter.RuleChainDescriptor{
 		Name:                 RuleChainDescriptorName,
 		NBKeyPrefix:          linux_iptables.ModelRuleChain.KeyPrefix(),
 		ValueTypeName:        linux_iptables.ModelRuleChain.ProtoName(),
 		KeySelector:          linux_iptables.ModelRuleChain.IsKeyValid,
 		KeyLabel:             linux_iptables.ModelRuleChain.StripKeyPrefix,
-		ValueComparator:      d.EquivalentRuleChains,
-		Validate:             d.Validate,
-		Create:               d.Create,
-		Delete:               d.Delete,
-		UpdateWithRecreate:   d.UpdateWithRecreate,
-		Retrieve:             d.Retrieve,
-		Dependencies:         d.Dependencies,
+		ValueComparator:      descrCtx.EquivalentRuleChains,
+		Validate:             descrCtx.Validate,
+		Create:               descrCtx.Create,
+		Delete:               descrCtx.Delete,
+		Retrieve:             descrCtx.Retrieve,
+		Dependencies:         descrCtx.Dependencies,
 		RetrieveDependencies: []string{ifdescriptor.InterfaceDescriptorName},
 	}
+	return adapter.NewRuleChainDescriptor(typedDescr)
 }
 
 // EquivalentRuleChains is a comparison function for two RuleChain entries.
 func (d *RuleChainDescriptor) EquivalentRuleChains(key string, oldRCh, newRch *linux_iptables.RuleChain) bool {
 
 	// first, compare everything except the rules
-	oldCopy := proto.Clone(oldRCh).(*linux_iptables.RuleChain)
-	newCopy := proto.Clone(newRch).(*linux_iptables.RuleChain)
-	oldCopy.Rules = nil
-	newCopy.Rules = nil
+	oldRules := oldRCh.Rules
+	newRules := newRch.Rules
 
-	if !proto.Equal(oldCopy, newCopy) {
+	oldRCh.Rules = nil
+	newRch.Rules = nil
+	defer func() {
+		oldRCh.Rules = oldRules
+		newRch.Rules = newRules
+	}()
+
+	if !proto.Equal(oldRCh, newRch) {
 		return false
 	}
 
 	// compare rule count
-	if len(oldRCh.Rules) != len(newRch.Rules) {
+	if len(oldRules) != len(newRules) {
 		return false
 	}
 
@@ -122,10 +127,10 @@ func (d *RuleChainDescriptor) EquivalentRuleChains(key string, oldRCh, newRch *l
 	// "-i eth0 -s 192.168.0.1 -j ACCEPT" is equivalent to
 	// "-s 192.168.0.1 -i eth0 -j ACCEPT"
 
-	for i := range oldRCh.Rules {
+	for i := range oldRules {
 		// tokenize the matching rules based on space separator
-		oldTokens := strings.Split(oldRCh.Rules[i], " ")
-		newTokens := strings.Split(oldRCh.Rules[i], " ")
+		oldTokens := strings.Split(oldRules[i], " ")
+		newTokens := strings.Split(newRules[i], " ")
 		// compare token counts first
 		if len(oldTokens) != len(newTokens) {
 			return false
@@ -142,14 +147,17 @@ func (d *RuleChainDescriptor) EquivalentRuleChains(key string, oldRCh, newRch *l
 }
 
 // Validate validates iptables rule chain.
-func (d *RuleChainDescriptor) Validate(key string, rs *linux_iptables.RuleChain) (err error) {
-	if rs.ChainType == linux_iptables.RuleChain_CUSTOM && rs.ChainName == "" {
+func (d *RuleChainDescriptor) Validate(key string, rch *linux_iptables.RuleChain) (err error) {
+	if rch.ChainType == linux_iptables.RuleChain_CUSTOM && rch.ChainName == "" {
 		return kvs.NewInvalidValueError(ErrCustomChainWithoutName, "chain_name")
 	}
-	if rs.Table != linux_iptables.RuleChain_FILTER && rs.DefaultPolicy != linux_iptables.RuleChain_NONE {
+	if !isAllowedChain(rch.Table, rch.ChainType) {
+		return kvs.NewInvalidValueError(ErrInvalidChainForTable, "chain_type")
+	}
+	if rch.Table != linux_iptables.RuleChain_FILTER && rch.DefaultPolicy != linux_iptables.RuleChain_NONE {
 		return kvs.NewInvalidValueError(ErrDefaultPolicyOnNonFilterRule, "default_policy")
 	}
-	if rs.ChainType == linux_iptables.RuleChain_CUSTOM && rs.DefaultPolicy != linux_iptables.RuleChain_NONE {
+	if rch.ChainType == linux_iptables.RuleChain_CUSTOM && rch.DefaultPolicy != linux_iptables.RuleChain_NONE {
 		return kvs.NewInvalidValueError(ErrDefaultPolicyOnCustomChain, "default_policy")
 	}
 	return nil
@@ -245,12 +253,6 @@ func (d *RuleChainDescriptor) Delete(key string, rch *linux_iptables.RuleChain, 
 	return nil
 }
 
-// UpdateWithRecreate tells the scheduler that the update should be performed with re-create.
-func (d *RuleChainDescriptor) UpdateWithRecreate(key string, oldRCh, newRCh *linux_iptables.RuleChain, oldMetadata interface{}) bool {
-	// always update with recreate
-	return true
-}
-
 // Dependencies lists dependencies for a iptables rule chain.
 func (d *RuleChainDescriptor) Dependencies(key string, rch *linux_iptables.RuleChain) []kvs.Dependency {
 	if len(rch.Interfaces) > 0 {
@@ -258,7 +260,7 @@ func (d *RuleChainDescriptor) Dependencies(key string, rch *linux_iptables.RuleC
 		var deps []kvs.Dependency
 		for _, i := range rch.Interfaces {
 			deps = append(deps, kvs.Dependency{
-				Label: ruleChainInterfaceDep,
+				Label: ruleChainInterfaceDep + "-" + i,
 				Key:   ifmodel.InterfaceKey(i),
 			})
 		}
@@ -357,6 +359,58 @@ func (d *RuleChainDescriptor) retrieveRuleChains(
 func sliceContains(slice []string, value string) bool {
 	for _, i := range slice {
 		if i == value {
+			return true
+		}
+	}
+	return false
+}
+
+// isAllowedChain returns true if provided chain is valid for the provided table, false otherwise.
+func isAllowedChain(table linux_iptables.RuleChain_Table, chain linux_iptables.RuleChain_ChainType) bool {
+	switch table {
+	case linux_iptables.RuleChain_FILTER:
+		// Input / Forward / Output / Custom
+		switch chain {
+		case linux_iptables.RuleChain_PREROUTING:
+			return false
+		case linux_iptables.RuleChain_POSTROUTING:
+			return false
+		default:
+			return true
+		}
+	case linux_iptables.RuleChain_NAT:
+		// Prerouting / Output / Postrouting / Custom
+		switch chain {
+		case linux_iptables.RuleChain_INPUT:
+			return false
+		case linux_iptables.RuleChain_FORWARD:
+			return false
+		default:
+			return true
+		}
+	case linux_iptables.RuleChain_MANGLE:
+		// all chains
+		return true
+	case linux_iptables.RuleChain_RAW:
+		// Prerouting / Output / Custom
+		switch chain {
+		case linux_iptables.RuleChain_INPUT:
+			return false
+		case linux_iptables.RuleChain_FORWARD:
+			return false
+		case linux_iptables.RuleChain_POSTROUTING:
+			return false
+		default:
+			return true
+		}
+	case linux_iptables.RuleChain_SECURITY:
+		// Input / Output / Forward
+		switch chain {
+		case linux_iptables.RuleChain_PREROUTING:
+			return false
+		case linux_iptables.RuleChain_POSTROUTING:
+			return false
+		default:
 			return true
 		}
 	}
