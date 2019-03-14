@@ -109,8 +109,12 @@ func (h *InterfaceVppHandler) dumpInterfaces() (map[uint32]*vppcalls.InterfaceDe
 			details.Interface.Type = interfaces.Interface_SUB_INTERFACE
 			details.Interface.Link = &interfaces.Interface_Sub{
 				Sub: &interfaces.SubInterface{
-					ParentName: ifs[ifDetails.SupSwIfIndex].Interface.Name,
-					SubId:      ifDetails.SubID,
+					ParentName:  ifs[ifDetails.SupSwIfIndex].Interface.Name,
+					SubId:       ifDetails.SubID,
+					TagRwOption: getTagRwOption(ifDetails.VtrOp),
+					PushDot1Q:   uintToBool(uint8(ifDetails.VtrPushDot1q)),
+					Tag1:        ifDetails.VtrTag1,
+					Tag2:        ifDetails.VtrTag2,
 				},
 			}
 		}
@@ -754,6 +758,29 @@ func getRxModeType(mode uint8) interfaces.Interface_RxModeSettings_RxModeType {
 		return interfaces.Interface_RxModeSettings_DEFAULT
 	default:
 		return interfaces.Interface_RxModeSettings_UNKNOWN
+	}
+}
+
+func getTagRwOption(op uint32) interfaces.SubInterface_TagRewriteOptions {
+	switch op {
+	case 1:
+		return interfaces.SubInterface_PUSH1
+	case 2:
+		return interfaces.SubInterface_PUSH2
+	case 3:
+		return interfaces.SubInterface_POP1
+	case 4:
+		return interfaces.SubInterface_POP2
+	case 5:
+		return interfaces.SubInterface_TRANSLATE11
+	case 6:
+		return interfaces.SubInterface_TRANSLATE12
+	case 7:
+		return interfaces.SubInterface_TRANSLATE21
+	case 8:
+		return interfaces.SubInterface_TRANSLATE22
+	default: // disabled
+		return interfaces.SubInterface_DISABLED
 	}
 }
 

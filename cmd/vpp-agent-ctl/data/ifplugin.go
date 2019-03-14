@@ -299,7 +299,7 @@ func (ctl *VppAgentCtlImpl) PutSubInterface() error {
 		Type:    interfaces.Interface_SUB_INTERFACE,
 		Link: &interfaces.Interface_Sub{
 			Sub: &interfaces.SubInterface{
-				ParentName: "loop1",
+				ParentName: "bond1",
 				SubId:      10,
 				// tag-rewrite options
 				TagRwOption: interfaces.SubInterface_PUSH1,
@@ -333,8 +333,7 @@ func (ctl *VppAgentCtlImpl) PutBondInterface() error {
 		Link: &interfaces.Interface_Bond{
 			Bond: &interfaces.BondLink{
 				Id:   5,
-				Mode: interfaces.BondLink_XOR,
-				Lb:   interfaces.BondLink_L23,
+				Mode: interfaces.BondLink_ROUND_ROBIN,
 				BondedInterfaces: []*interfaces.BondLink_BondedInterface{
 					{
 						Name:          "loop1",
