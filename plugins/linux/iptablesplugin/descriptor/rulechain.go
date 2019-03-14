@@ -434,6 +434,10 @@ func tableNameStr(rch *linux_iptables.RuleChain) string {
 		return "nat"
 	case linux_iptables.RuleChain_MANGLE:
 		return "mangle"
+	case linux_iptables.RuleChain_RAW:
+		return "raw"
+	case linux_iptables.RuleChain_SECURITY:
+		return "security"
 	default:
 		return "filter"
 	}
