@@ -136,7 +136,9 @@ func (s sourcesByRelation) getSourcesForRelation(relation string) *relationSourc
 
 // newNodeR creates a new instance of nodeR.
 func newNodeR() *nodeR {
-	return &nodeR{}
+	return &nodeR{
+		targetsDef: newTargetsDef(nil),
+	}
 }
 
 // GetKey returns the key associated with the node.
