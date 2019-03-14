@@ -55,8 +55,8 @@ func (h *IPTablesHandler) Init() error {
 }
 
 // CreateChain creates an iptables chain in the specified table.
-func (h *IPTablesHandler) CreateChain(proto Protocol, table, chain string) error {
-	handler, err := h.getHandler(proto)
+func (h *IPTablesHandler) CreateChain(protocol L3Protocol, table, chain string) error {
+	handler, err := h.getHandler(protocol)
 	if err != nil {
 		return err
 	}
@@ -64,8 +64,8 @@ func (h *IPTablesHandler) CreateChain(proto Protocol, table, chain string) error
 }
 
 // DeleteChain deletes an iptables chain in the specified table.
-func (h *IPTablesHandler) DeleteChain(proto Protocol, table, chain string) error {
-	handler, err := h.getHandler(proto)
+func (h *IPTablesHandler) DeleteChain(protocol L3Protocol, table, chain string) error {
+	handler, err := h.getHandler(protocol)
 	if err != nil {
 		return err
 	}
@@ -73,8 +73,8 @@ func (h *IPTablesHandler) DeleteChain(proto Protocol, table, chain string) error
 }
 
 // SetChainDefaultPolicy sets default policy in the specified chain. Should be called only on FILTER tables.
-func (h *IPTablesHandler) SetChainDefaultPolicy(proto Protocol, table, chain, defaultPolicy string) error {
-	handler, err := h.getHandler(proto)
+func (h *IPTablesHandler) SetChainDefaultPolicy(protocol L3Protocol, table, chain, defaultPolicy string) error {
+	handler, err := h.getHandler(protocol)
 	if err != nil {
 		return err
 	}
@@ -82,8 +82,8 @@ func (h *IPTablesHandler) SetChainDefaultPolicy(proto Protocol, table, chain, de
 }
 
 // AppendRule appends a rule into the specified chain.
-func (h *IPTablesHandler) AppendRule(proto Protocol, table, chain string, rule string) error {
-	handler, err := h.getHandler(proto)
+func (h *IPTablesHandler) AppendRule(protocol L3Protocol, table, chain string, rule string) error {
+	handler, err := h.getHandler(protocol)
 	if err != nil {
 		return err
 	}
@@ -93,8 +93,8 @@ func (h *IPTablesHandler) AppendRule(proto Protocol, table, chain string, rule s
 }
 
 // DeleteRule deletes a rule from the specified chain.
-func (h *IPTablesHandler) DeleteRule(proto Protocol, table, chain string, rule string) error {
-	handler, err := h.getHandler(proto)
+func (h *IPTablesHandler) DeleteRule(protocol L3Protocol, table, chain string, rule string) error {
+	handler, err := h.getHandler(protocol)
 	if err != nil {
 		return err
 	}
@@ -104,8 +104,8 @@ func (h *IPTablesHandler) DeleteRule(proto Protocol, table, chain string, rule s
 }
 
 // DeleteAllRules deletes all rules within the specified chain.
-func (h *IPTablesHandler) DeleteAllRules(proto Protocol, table, chain string) error {
-	handler, err := h.getHandler(proto)
+func (h *IPTablesHandler) DeleteAllRules(protocol L3Protocol, table, chain string) error {
+	handler, err := h.getHandler(protocol)
 	if err != nil {
 		return err
 	}
@@ -113,8 +113,8 @@ func (h *IPTablesHandler) DeleteAllRules(proto Protocol, table, chain string) er
 }
 
 // ListRules lists all rules within the specified chain.
-func (h *IPTablesHandler) ListRules(proto Protocol, table, chain string) (rules []string, err error) {
-	handler, err := h.getHandler(proto)
+func (h *IPTablesHandler) ListRules(protocol L3Protocol, table, chain string) (rules []string, err error) {
+	handler, err := h.getHandler(protocol)
 	if err != nil {
 		return nil, err
 	}
@@ -138,17 +138,17 @@ func (h *IPTablesHandler) ListRules(proto Protocol, table, chain string) (rules 
 
 // getHandler returns the iptables handler for the given protocol.
 // returns an error if the requested handler is not initialized.
-func (h *IPTablesHandler) getHandler(proto Protocol) (*iptables.IPTables, error) {
+func (h *IPTablesHandler) getHandler(protocol L3Protocol) (*iptables.IPTables, error) {
 	var handler *iptables.IPTables
 
-	if proto == ProtocolIPv4 {
+	if protocol == ProtocolIPv4 {
 		handler = h.v4Handler
 	} else {
 		handler = h.v6Handler
 	}
 
 	if handler == nil {
-		return nil, fmt.Errorf("iptables handler for protocol %v is not initialized", proto)
+		return nil, fmt.Errorf("iptables handler for protocol %v is not initialized", protocol)
 	}
 	return handler, nil
 }

@@ -418,7 +418,7 @@ func isAllowedChain(table linux_iptables.RuleChain_Table, chain linux_iptables.R
 }
 
 // protocolType returns protocol of the given rule chain in the NB API format.
-func protocolType(rch *linux_iptables.RuleChain) linuxcalls.Protocol {
+func protocolType(rch *linux_iptables.RuleChain) linuxcalls.L3Protocol {
 	switch rch.Protocol {
 	case linux_iptables.RuleChain_IPv6:
 		return linuxcalls.ProtocolIPv6

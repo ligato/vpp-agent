@@ -14,11 +14,11 @@
 
 package linuxcalls
 
-// Protocol to differentiate between IPv4 and IPv6
-type Protocol byte
+// L3Protocol to differentiate between IPv4 and IPv6
+type L3Protocol byte
 
 const (
-	ProtocolIPv4 Protocol = iota
+	ProtocolIPv4 L3Protocol = iota
 	ProtocolIPv6
 )
 
@@ -36,29 +36,29 @@ type IPTablesAPI interface {
 // needed to manage linux iptables rules.
 type IPTablesAPIWrite interface {
 	// CreateChain creates an iptables chain in the specified table.
-	CreateChain(proto Protocol, table, chain string) error
+	CreateChain(protocol L3Protocol, table, chain string) error
 
 	// DeleteChain deletes an iptables chain in the specified table.
-	DeleteChain(proto Protocol, table, chain string) error
+	DeleteChain(protocol L3Protocol, table, chain string) error
 
 	// SetChainDefaultPolicy sets default policy in the specified chain. Should be called only on FILTER tables.
-	SetChainDefaultPolicy(proto Protocol, table, chain, defaultPolicy string) error
+	SetChainDefaultPolicy(protocol L3Protocol, table, chain, defaultPolicy string) error
 
 	// AppendRule appends a rule into the specified chain.
-	AppendRule(proto Protocol, table, chain string, rule string) error
+	AppendRule(protocol L3Protocol, table, chain string, rule string) error
 
 	// DeleteRule deletes a rule from the specified chain.
-	DeleteRule(proto Protocol, table, chain string, rule string) error
+	DeleteRule(protocol L3Protocol, table, chain string, rule string) error
 
-	// DeleteAllRules deletes all rules within the specified chain.
-	DeleteAllRules(proto Protocol, table, chain string) error
+	// protocol deletes all rules within the specified chain.
+	DeleteAllRules(proto L3Protocol, table, chain string) error
 }
 
 // IPTablesAPIRead interface covers read methods inside linux calls package
 // needed to manage linux iptables rules.
 type IPTablesAPIRead interface {
 	// ListRules lists all rules within the specified chain.
-	ListRules(proto Protocol, table, chain string) (rules []string, err error)
+	ListRules(protocol L3Protocol, table, chain string) (rules []string, err error)
 }
 
 // NewIPTablesHandler creates new instance of iptables handler.
