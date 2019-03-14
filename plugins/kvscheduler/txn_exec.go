@@ -66,25 +66,26 @@ func (s *Scheduler) executeTransaction(txn *transaction, graphW graph.RWAccess, 
 		fmt.Printf("%s %s\n", nodeVisitBeginMark, msg)
 		defer fmt.Printf("%s %s\n", nodeVisitEndMark, msg)
 	}
+
 	branch := utils.NewMapBasedKeySet() // branch of current recursive calls to applyValue used to handle cycles
 	applied := utils.NewMapBasedKeySet()
 
-	var revert bool
 	prevValues := make([]kvs.KeyValuePair, 0, len(txn.values))
+
 	// execute transaction either in best-effort mode or with revert on the first failure
+	var revert bool
 	for _, kv := range txn.values {
 		applied.Add(kv.key)
-		ops, prevValue, err := s.applyValue(
-			&applyValueArgs{
-				graphW:  graphW,
-				txn:     txn,
-				kv:      kv,
-				baseKey: kv.key,
-				applied: applied,
-				dryRun:  dryRun,
-				isRetry: txn.txnType == kvs.RetryFailedOps,
-				branch:  branch,
-			})
+		ops, prevValue, err := s.applyValue(&applyValueArgs{
+			graphW:  graphW,
+			txn:     txn,
+			kv:      kv,
+			baseKey: kv.key,
+			applied: applied,
+			dryRun:  dryRun,
+			isRetry: txn.txnType == kvs.RetryFailedOps,
+			branch:  branch,
+		})
 		executed = append(executed, ops...)
 		prevValues = append(prevValues, kvs.KeyValuePair{})
 		copy(prevValues[1:], prevValues)
@@ -104,25 +105,24 @@ func (s *Scheduler) executeTransaction(txn *transaction, graphW graph.RWAccess, 
 	if revert {
 		// record graph state in-between failure and revert
 		graphW.Release()
-		graphW = s.graph.Write(!dryRun,true)
+		graphW = s.graph.Write(!dryRun, true)
 
 		// revert back to previous values
 		for _, kvPair := range prevValues {
-			ops, _, _ := s.applyValue(
-				&applyValueArgs{
-					graphW: graphW,
-					txn:    txn,
-					kv: kvForTxn{
-						key:      kvPair.Key,
-						value:    kvPair.Value,
-						origin:   kvs.FromNB,
-						isRevert: true,
-					},
-					baseKey: kvPair.Key,
-					applied: applied,
-					dryRun:  dryRun,
-					branch:  branch,
-				})
+			ops, _, _ := s.applyValue(&applyValueArgs{
+				graphW: graphW,
+				txn:    txn,
+				kv: kvForTxn{
+					key:      kvPair.Key,
+					value:    kvPair.Value,
+					origin:   kvs.FromNB,
+					isRevert: true,
+				},
+				baseKey: kvPair.Key,
+				applied: applied,
+				dryRun:  dryRun,
+				branch:  branch,
+			})
 			executed = append(executed, ops...)
 		}
 	}
@@ -152,7 +152,8 @@ func (s *Scheduler) applyValue(args *applyValueArgs) (executed kvs.RecordedTxnOp
 	node := args.graphW.SetNode(args.kv.key)
 
 	// remember previous value for a potential revert
-	prevValue = kvs.KeyValuePair{Key: node.GetKey(), Value: node.GetValue()}
+	prevValue.Key = node.GetKey()
+	prevValue.Value = node.GetValue()
 
 	// remember previous value status to detect and notify about changes
 	prevState := getNodeState(node)

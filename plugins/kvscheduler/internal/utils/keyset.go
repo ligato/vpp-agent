@@ -15,9 +15,9 @@
 package utils
 
 import (
+	"encoding/json"
 	"sort"
 	"strings"
-	"encoding/json"
 )
 
 // KeySet defines API for a set of keys.
@@ -194,7 +194,11 @@ type mapWithKeys map[string]struct{}
 
 // NewMapBasedKeySet returns KeySet implemented using map.
 func NewMapBasedKeySet(keys ...string) KeySet {
-	s := &mapKeySet{set: make(mapWithKeys), iter: []string{}, iterInSync: true}
+	s := &mapKeySet{
+		set:        make(mapWithKeys),
+		iter:       []string{},
+		iterInSync: true,
+	}
 	for _, key := range keys {
 		s.Add(key)
 	}
@@ -349,11 +353,11 @@ func (s *mapKeySet) CopyOnWrite() KeySet {
 
 // deepCopyMap returns a deep-copy of the internal map representing the key set.
 func (s *mapKeySet) deepCopyMap() mapWithKeys {
-	copy := make(mapWithKeys)
+	c := make(mapWithKeys, len(s.set))
 	for key := range s.set {
-		copy[key] = struct{}{}
+		c[key] = struct{}{}
 	}
-	return copy
+	return c
 }
 
 // MarshalJSON marshalls the set into JSON.
