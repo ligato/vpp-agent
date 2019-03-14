@@ -231,6 +231,15 @@ func do(ctl data.VppAgentCtl) {
 			err = ctl.PutStn()
 		case "-stnd":
 			err = ctl.DeleteStn()
+		// Linux iptables plugin
+		case "-lipt":
+			err = ctl.PutIPTablesRule(false)
+		case "-liptd":
+			err = ctl.DeleteIPTablesRule(false)
+		case "-lipt6":
+			err = ctl.PutIPTablesRule(true)
+		case "-lipt6d":
+			err = ctl.DeleteIPTablesRule(true)
 		default:
 			usage()
 		}
@@ -306,6 +315,10 @@ func usage() {
 		
 	STN plugin:
 		-stn,		-stnd		- STN rule
+
+	Linux iptables plugin:
+		-lipt,	-liptd			- Linux iptables rule set (IPv4)
+		-lipt6,	-lipt6d			- Linux ip6tables rule set (IPv6)
 	`)
 
 	if err != nil {

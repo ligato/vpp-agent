@@ -31,6 +31,7 @@ import (
 
 	"github.com/ligato/vpp-agent/plugins/configurator"
 	linux_ifplugin "github.com/ligato/vpp-agent/plugins/linux/ifplugin"
+	linux_iptablesplugin "github.com/ligato/vpp-agent/plugins/linux/iptablesplugin"
 	linux_l3plugin "github.com/ligato/vpp-agent/plugins/linux/l3plugin"
 	linux_nsplugin "github.com/ligato/vpp-agent/plugins/linux/nsplugin"
 	"github.com/ligato/vpp-agent/plugins/orchestrator"
@@ -178,15 +179,17 @@ func DefaultVPP() VPP {
 
 // Linux contains all Linux plugins.
 type Linux struct {
-	IfPlugin *linux_ifplugin.IfPlugin
-	L3Plugin *linux_l3plugin.L3Plugin
-	NSPlugin *linux_nsplugin.NsPlugin
+	IfPlugin       *linux_ifplugin.IfPlugin
+	L3Plugin       *linux_l3plugin.L3Plugin
+	NSPlugin       *linux_nsplugin.NsPlugin
+	IPTablesPlugin *linux_iptablesplugin.IPTablesPlugin
 }
 
 func DefaultLinux() Linux {
 	return Linux{
-		IfPlugin: &linux_ifplugin.DefaultPlugin,
-		L3Plugin: &linux_l3plugin.DefaultPlugin,
-		NSPlugin: &linux_nsplugin.DefaultPlugin,
+		IfPlugin:       &linux_ifplugin.DefaultPlugin,
+		L3Plugin:       &linux_l3plugin.DefaultPlugin,
+		NSPlugin:       &linux_nsplugin.DefaultPlugin,
+		IPTablesPlugin: &linux_iptablesplugin.DefaultPlugin,
 	}
 }
