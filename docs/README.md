@@ -18,7 +18,7 @@ CNFs. An example of a custom VPP-based CNF is the [Contiv-VPP][contivvpp] vswitc
 - [Deployment](Deployment.md) provides information about deployment options.
   
 ### Getting started with VPP Agent
-- [User Guide](https://github.com/ligato/vpp-agent/wiki/user-guide) is the best place to start for users.
+- [User Guide](user-guide/UserGuide.md) is the best place to start for users.
 - [Tutorials](tutorials/README.md) will show you step-by-step tutorials.
 - [Troubleshooting](https://github.com/ligato/vpp-agent/wiki/FAQ) contains list of commonly encountered problems.
 - [Release Changelog](https://github.com/ligato/vpp-agent/blob/master/CHANGELOG.md) contains list of changes for released versions.
