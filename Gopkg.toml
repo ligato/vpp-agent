@@ -75,6 +75,10 @@ required = [
   name = "github.com/opencontainers/runc"
   version = "v1.0.0-rc5"
 
+[[constraint]]
+  name = "github.com/coreos/go-iptables"
+  version = "0.4.0"
+
 # Overrides
 
 [[override]]

@@ -40,6 +40,7 @@ type VppAgentCtl interface {
 	NatCtl
 	PuntCtl
 	StnCtl
+	IPTablesCtl
 }
 
 // VppAgentCtlImpl is a ctl context

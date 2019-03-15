@@ -140,6 +140,7 @@ generate-desc-adapters: get-desc-adapter-generator
 	@echo "=> generating descriptor adapters"
 	cd plugins/linux/ifplugin && go generate
 	cd plugins/linux/l3plugin && go generate
+	cd plugins/linux/iptablesplugin && go generate
 	cd plugins/vpp/aclplugin && go generate
 	cd plugins/vpp/ifplugin && go generate
 	cd plugins/vpp/ipsecplugin && go generate

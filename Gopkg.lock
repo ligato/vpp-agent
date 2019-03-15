@@ -140,6 +140,14 @@
   version = "v3.3.10"
 
 [[projects]]
+  digest = "1:536efb6849eb903912acbec0183e1b34e31cc75217b44988aedde59ad249c693"
+  name = "github.com/coreos/go-iptables"
+  packages = ["iptables"]
+  pruneopts = "UT"
+  revision = "47f22b0dd3355c0ba570ba12b0b8a36bf214c04b"
+  version = "v0.4.0"
+
+[[projects]]
   digest = "1:85968a9e07d94b5f3d15993b9884ab5fcc41c8b7b6418df8b6a3baa387bb8d68"
   name = "github.com/coreos/go-systemd"
   packages = [
@@ -992,6 +1000,7 @@
     "git.fd.io/govpp.git/cmd/binapi-generator",
     "git.fd.io/govpp.git/core",
     "github.com/buger/goterm",
+    "github.com/coreos/go-iptables/iptables",
     "github.com/fsouza/go-dockerclient",
     "github.com/go-errors/errors",
     "github.com/gogo/protobuf/gogoproto",
