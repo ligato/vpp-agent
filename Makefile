@@ -250,6 +250,14 @@ dev-image:
 prod-image:
 	./docker/prod/build.sh
 
+perf:
+	@echo "=> running perf test"
+	./tests/perf/grpc-perf/test.sh 1000
+
+perf-all:
+	@echo "=> running all perf tests"
+	./tests/perf/run_all.sh
+
 .PHONY: build clean \
 	install cmd examples clean-examples test \
 	test-cover test-cover-html test-cover-xml \
@@ -259,4 +267,5 @@ prod-image:
 	get-linkcheck check-links \
 	travis \
 	get-yamllint yamllint \
-	images dev-image prod-image
+	images dev-image prod-image \
+	perf perf-all

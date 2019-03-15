@@ -168,6 +168,7 @@ func (p *GRPCStressPlugin) runGRPCCreateRedBlackMemifs(client configurator.Confi
 				Interfaces: ifaces,
 			},
 		},
+		FullResync: true,
 	})
 	if err != nil {
 		log.Fatalln(err)
