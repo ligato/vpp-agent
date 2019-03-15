@@ -63,6 +63,14 @@ func newEdgeLookup() *edgeLookup {
 	}
 }
 
+func (el *edgeLookup) reset() {
+	el.nodeKeysMap = make(map[string]bool)
+	el.nodeKeys = el.nodeKeys[:0]
+	el.removedNodes = 0
+	el.edges = el.edges[:0]
+	el.removedEdges = 0
+}
+
 func (el *edgeLookup) makeOverlay() *edgeLookup {
 	if el.overlay == nil {
 		// create overlay for the first time
@@ -212,7 +220,7 @@ func (el *edgeLookup) iterTargets(key string, isPrefix bool, cb func(targetNode 
 		if (known && !added) || (!known && el.underlay == nil) {
 			return
 		}
-		if el.underlay != nil {
+		if !known && el.underlay != nil {
 			_, added = el.underlay.nodeKeysMap[key]
 			if !added {
 				return

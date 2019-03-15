@@ -32,9 +32,9 @@ How to run:
   - run all benchmarks:	`./graph.test -test.run=XXX -test.bench=.`
   - with CPU profile:	`./graph.test -test.run=XXX -test.bench=. -test.cpuprofile=cpu.out`
     - analyze profile: `go tool pprof cpu.out`
-  - with mem profile:	`./graph.test -test.run=XXX -test.bench=. -memprofile mem.out`
+  - with mem profile:	`./graph.test -test.run=XXX -test.bench=. -test.memprofile mem.out`
     - analyze profile: `go tool pprof -alloc_space mem.out`
-  - with trace profile:	`./graph.test -test.run=XXX -test.bench=. -trace trace.out`
+  - with trace profile:	`./graph.test -test.run=XXX -test.bench=. -test.trace trace.out`
     - analyze profile: `go tool trace -http=:6060 trace.out`
 
 */
@@ -52,41 +52,59 @@ type scaleCtx struct {
 	targetPrefixes map[int]string
 }
 
-func BenchmarkScaleWithoutRecording(b *testing.B) {
-	benchmarkScale(b, Opts{
-		RecordOldRevs: false,
-	}, false)
+func init() {
+	benchEl = newEdgeLookup()
 }
 
-func BenchmarkScaleWithoutRecordingWriteInPlace(b *testing.B) {
+func BenchmarkScaleWithoutRec(b *testing.B) {
 	benchmarkScale(b, Opts{
 		RecordOldRevs: false,
-	}, true)
+	}, false, true)
 }
 
-func BenchmarkScaleWithRecording(b *testing.B) {
+func BenchmarkScaleWithoutRecInPlace(b *testing.B) {
+	benchmarkScale(b, Opts{
+		RecordOldRevs: false,
+	}, true, true)
+}
+
+func BenchmarkScaleWithoutRecInPlaceWithoutDel(b *testing.B) {
+	benchmarkScale(b, Opts{
+		RecordOldRevs: false,
+	}, true, false)
+}
+
+func BenchmarkScaleWithRec(b *testing.B) {
 	benchmarkScale(b, Opts{
 		RecordOldRevs:       true,
 		RecordAgeLimit:      historyAgeLimit,
 		PermanentInitPeriod: permanentInitPeriod,
-	}, false)
+	}, false, true)
 }
 
-func BenchmarkScaleWithRecordingWriteInPlace(b *testing.B) {
+func BenchmarkScaleWithRecInPlace(b *testing.B) {
 	benchmarkScale(b, Opts{
 		RecordOldRevs:       true,
 		RecordAgeLimit:      historyAgeLimit,
 		PermanentInitPeriod: permanentInitPeriod,
-	}, true)
+	}, true, true)
 }
 
-func benchmarkScale(b *testing.B, gOpts Opts, wInPlace bool) {
+func BenchmarkScaleWithRecInPlaceWithoutDel(b *testing.B) {
+	benchmarkScale(b, Opts{
+		RecordOldRevs:       true,
+		RecordAgeLimit:      historyAgeLimit,
+		PermanentInitPeriod: permanentInitPeriod,
+	}, true, false)
+}
+
+func benchmarkScale(b *testing.B, gOpts Opts, wInPlace, withDeletes bool) {
 	for _, n := range scale {
 		b.Run(strconv.Itoa(n), func(b *testing.B) {
 			ctx := setupScale(n)
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
-				runScale(ctx, n, gOpts, wInPlace)
+				runScale(ctx, n, gOpts, wInPlace, withDeletes)
 			}
 		})
 	}
@@ -109,8 +127,8 @@ func setupScale(n int) scaleCtx {
 	return c
 }
 
-func runScale(c scaleCtx, n int, gOpts Opts, wInPlace bool) {
-	g := NewGraph(gOpts)
+func runScale(c scaleCtx, n int, gOpts Opts, wInPlace bool, withDeletes bool) {
+	g := NewGraph(gOpts) // re-uses benchEl
 
 	// create n nodes
 	w := g.Write(wInPlace, gOpts.RecordOldRevs)
@@ -153,18 +171,22 @@ func runScale(c scaleCtx, n int, gOpts Opts, wInPlace bool) {
 		node.GetTargets("relation1")
 		node.GetTargets("relation2")
 		node.GetMetadata()
+		node.GetSources("relation1")
+		node.GetSources("relation2")
 	}
 	r.Release()
 
-	// remove all nodes
-	w = g.Write(wInPlace, gOpts.RecordOldRevs)
-	for i := 0; i < n; i++ {
-		w.DeleteNode(c.keys[i])
-	}
+	if withDeletes {
+		// remove all nodes
+		w = g.Write(wInPlace, gOpts.RecordOldRevs)
+		for i := 0; i < n; i++ {
+			w.DeleteNode(c.keys[i])
+		}
 
-	// save + release write handle
-	if !wInPlace {
-		w.Save()
+		// save + release write handle
+		if !wInPlace {
+			w.Save()
+		}
+		w.Release()
 	}
-	w.Release()
 }

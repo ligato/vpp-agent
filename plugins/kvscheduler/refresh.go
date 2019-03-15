@@ -473,19 +473,23 @@ func dumpGraph(g graph.RWAccess) string {
 		if f := node.GetSources(DependencyRelation); len(f) > 0 {
 			writeLine("Dependency for:", "")
 			var nodeDeps []string
-			for _, node := range f {
-				desc := ""
-				if d := node.GetFlag(DescriptorFlagIndex); d != nil {
-					desc = fmt.Sprintf("[%s] ", d.GetValue())
+			for _, perLabel := range f {
+				for _, node := range perLabel.Nodes {
+					desc := ""
+					if d := node.GetFlag(DescriptorFlagIndex); d != nil {
+						desc = fmt.Sprintf("[%s] ", d.GetValue())
+					}
+					nodeDeps = append(nodeDeps, fmt.Sprintf("%s%s", desc, node.GetKey()))
 				}
-				nodeDeps = append(nodeDeps, fmt.Sprintf("%s%s", desc, node.GetKey()))
 			}
 			writeLines(strings.Join(nodeDeps, "\n"), " - ")
 		}
 		if f := node.GetSources(DerivesRelation); len(f) > 0 {
 			var nodeDers []string
-			for _, der := range f {
-				nodeDers = append(nodeDers, der.GetKey())
+			for _, perLabel := range f {
+				for _, der := range perLabel.Nodes {
+					nodeDers = append(nodeDers, der.GetKey())
+				}
 			}
 			writeLine(fmt.Sprintf("Derived from: %s", strings.Join(nodeDers, " ")), "")
 		}

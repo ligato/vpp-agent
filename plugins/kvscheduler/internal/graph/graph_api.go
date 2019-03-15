@@ -101,6 +101,11 @@ type ReadAccess interface {
 	// For reader, the method releases R-lock.
 	// For in-place writer, the method releases W-lock.
 	Release()
+
+	// ValidateEdges checks if targets and sources of all nodes correspond with
+	// each other.
+	// Use only for UTs, debugging, etc.
+	ValidateEdges() error
 }
 
 // RWAccess lists operations provided by the read-write graph handle.
@@ -148,9 +153,9 @@ type Node interface {
 	// edges of the given relation points to.
 	GetTargets(relation string) RuntimeTargets
 
-	// GetSources returns a set of nodes with edges of the given relation
-	// pointing to this node.
-	GetSources(relation string) []Node
+	// GetSources returns edges pointing to this node in the reverse
+	// orientation.
+	GetSources(relation string) RuntimeTargets
 }
 
 // NodeRW is a read-write handle to a single graph node.
@@ -334,7 +339,7 @@ func (ts Targets) GetTargetForLabel(relation, label string) (t *Target, idx int)
 		ts[idx].Relation == relation && ts[idx].Label == label {
 		return &ts[idx], idx
 	}
-	return nil, -1
+	return nil, idx
 }
 
 // lookupIdx returns index where target for the given (relation,label) pair should
@@ -345,12 +350,22 @@ func (ts Targets) lookupIdx(relation, label string) int {
 			if relation < ts[i].Relation {
 				return true
 			}
-			if relation == ts[i].Relation && label < ts[i].Label {
+			if relation == ts[i].Relation && label <= ts[i].Label {
 				return true
 			}
 			return false
 		})
 	return idx
+}
+
+// copy returns deep copy of targets (key sets deep copied on write).
+func (ts Targets) copy() Targets {
+	tCopy := make(Targets, len(ts))
+	copy(tCopy, ts)
+	for i := range tCopy {
+		tCopy[i].MatchingKeys = ts[i].MatchingKeys.CopyOnWrite()
+	}
+	return tCopy
 }
 
 // RuntimeTarget, unlike Target, contains direct runtime references pointing

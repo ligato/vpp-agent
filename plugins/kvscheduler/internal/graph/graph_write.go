@@ -108,18 +108,18 @@ func (graph *graphRW) DeleteNode(key string) bool {
 		return false
 	}
 
-	// remove from sources of current targets
-	node.removeThisFromSources()
+	// remove outgoing edges (not the most effective approach...)
+	node.SetTargets(nil)
 
-	// delete from graph
-	delete(graph.nodes, key)
-
-	// remove from targets of other nodes
+	// remove incoming edges
 	graph.edgeLookup.iterSources(key, func(sourceNodeKey, relation, label string) {
 		sourceNode := graph.nodes[sourceNodeKey]
 		sourceNode.removeFromTarget(key, relation, label)
 	})
 	graph.edgeLookup.delNodeKey(key)
+
+	// delete from graph
+	delete(graph.nodes, key)
 
 	// unset metadata
 	if graph.wInPlace && node.metadataAdded {

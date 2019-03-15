@@ -15,11 +15,7 @@
 package graph
 
 import (
-	"fmt"
-
 	"github.com/gogo/protobuf/proto"
-
-	"github.com/ligato/vpp-agent/plugins/kvscheduler/internal/utils"
 )
 
 // maximum number of flags allowed to have defined
@@ -41,39 +37,7 @@ type nodeR struct {
 	targets       Targets
 	targetsDef    []RelationTargetDef
 
-	sources       sources
-}
-
-// relationSources groups all sources for a single relation.
-type relationSources struct {
-	relation string
-	sources  utils.KeySet
-}
-
-// sources is a slice of all sources, grouped by relations.
-type sources []relationSources
-
-// String returns human-readable string representation of sourcesByRelation.
-func (s sources) String() string {
-	str := "{"
-	for idx, rs := range s {
-		if idx > 0 {
-			str += ", "
-		}
-		str += fmt.Sprintf("%s->%s", rs.relation, rs.sources.String())
-	}
-	str += "}"
-	return str
-}
-
-// getSourcesForRelation returns sources (keys) for the given relation.
-func (s sources) getSourcesForRelation(relation string) *relationSources {
-	for idx := range s {
-		if s[idx].relation == relation {
-			return &s[idx]
-		}
-	}
-	return nil
+	sources       Targets
 }
 
 // newNodeR creates a new instance of nodeR.
@@ -126,23 +90,23 @@ func (node *nodeR) GetTargets(relation string) (runtimeTargets RuntimeTargets) {
 	return runtimeTargets
 }
 
-// GetSources returns a set of nodes with edges of the given relation
-// pointing to this node.
-func (node *nodeR) GetSources(relation string) (nodes []Node) {
-	pgraph := node.graph.parent
-	if pgraph != nil && pgraph.methodTracker != nil {
-		defer pgraph.methodTracker("Node.GetSources")()
+// GetSources returns edges pointing to this node in the reverse
+// orientation.
+func (node *nodeR) GetSources(relation string) (runtimeTargets RuntimeTargets) {
+	for i := node.sources.RelationBegin(relation); i < len(node.sources); i++ {
+		if node.sources[i].Relation != relation {
+			break
+		}
+		var nodes []Node
+		for _, key := range node.sources[i].MatchingKeys.Iterate() {
+			nodes = append(nodes, node.graph.nodes[key])
+		}
+		runtimeTargets = append(runtimeTargets, RuntimeTarget{
+			Label: node.sources[i].Label,
+			Nodes: nodes,
+		})
 	}
-
-	relSources := node.sources.getSourcesForRelation(relation)
-	if relSources == nil {
-		return nil
-	}
-
-	for _, key := range relSources.sources.Iterate() {
-		nodes = append(nodes, node.graph.nodes[key])
-	}
-	return nodes
+	return runtimeTargets
 }
 
 // copy returns a deep copy of the node.
@@ -162,23 +126,9 @@ func (node *nodeR) copy() *nodeR {
 	nodeCopy.targetsDef = node.targetsDef
 
 	// copy targets
-	nodeCopy.targets = node.copyTargets()
+	nodeCopy.targets = node.targets.copy()
 
 	// copy sources
-	nodeCopy.sources = make(sources, len(node.sources))
-	copy(nodeCopy.sources, node.sources)
-	for i := range nodeCopy.sources {
-		nodeCopy.sources[i].sources = nodeCopy.sources[i].sources.CopyOnWrite()
-	}
-
+	nodeCopy.sources = node.sources.copy()
 	return nodeCopy
-}
-
-func (node *nodeR) copyTargets() Targets {
-	targets := make(Targets, len(node.targets))
-	copy(targets, node.targets)
-	for i := range targets {
-		targets[i].MatchingKeys = targets[i].MatchingKeys.CopyOnWrite()
-	}
-	return targets
 }

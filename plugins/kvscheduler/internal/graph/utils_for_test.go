@@ -85,6 +85,7 @@ func buildGraph(graph Graph, wInPlace bool, record, regMaps bool, nodes map[int]
 		graph = NewGraph(commonOpts)
 	}
 	graphW := graph.Write(wInPlace,record)
+	Expect(graphW.ValidateEdges()).To(BeNil())
 
 	if regMaps {
 		graphW.RegisterMetadataMap(metadataMapA, NewNameToInteger(metadataMapA))
@@ -106,15 +107,18 @@ func buildGraph(graph Graph, wInPlace bool, record, regMaps bool, nodes map[int]
 			{relation1, "node3", keyA3, TargetSelector{}},
 			{relation2, "node2", keyA2, TargetSelector{}},
 		})
+		Expect(graphW.ValidateEdges()).To(BeNil())
 		// targets changed
 		node1.SetTargets([]RelationTargetDef{
 			{relation1, "node2", keyA2, TargetSelector{}},
 			{relation2, "prefixB", "", TargetSelector{KeySelector: prefixBSelector}},
 		})
+		Expect(graphW.ValidateEdges()).To(BeNil())
 	}
 
 	if _, addNode2 := nodes[2]; addNode2 {
 		node2 = graphW.SetNode(keyA2)
+		Expect(graphW.ValidateEdges()).To(BeNil())
 		node2.SetLabel(value2Label)
 		node2.SetValue(value2)
 		node2.SetMetadata(&OnlyInteger{Integer: 2})
@@ -123,14 +127,17 @@ func buildGraph(graph Graph, wInPlace bool, record, regMaps bool, nodes map[int]
 		node2.SetTargets([]RelationTargetDef{
 			{relation1, "node3", keyA1, TargetSelector{}},
 		})
+		Expect(graphW.ValidateEdges()).To(BeNil())
 		// targets changed
 		node2.SetTargets([]RelationTargetDef{
 			{relation1, "node3", keyA3, TargetSelector{}},
 		})
+		Expect(graphW.ValidateEdges()).To(BeNil())
 	}
 
 	if _, addNode3 := nodes[3]; addNode3 {
 		node3 = graphW.SetNode(keyA3)
+		Expect(graphW.ValidateEdges()).To(BeNil())
 		node3.SetLabel(value3Label)
 		node3.SetValue(value3)
 		node3.SetMetadata(&OnlyInteger{Integer: 3})
@@ -140,15 +147,18 @@ func buildGraph(graph Graph, wInPlace bool, record, regMaps bool, nodes map[int]
 			{relation2, "node1+node2", "", TargetSelector{KeySelector: keySelector(keyA1, keyA2)}},
 			{relation2, "prefixB", keyB1, TargetSelector{}},
 		})
+		Expect(graphW.ValidateEdges()).To(BeNil())
 		// targets changed
 		node3.SetTargets([]RelationTargetDef{
 			{relation2, "node1+node2", "", TargetSelector{KeySelector: keySelector(keyA1, keyA2)}},
 			{relation2, "prefixB", "", TargetSelector{KeySelector: prefixBSelector}},
 		})
+		Expect(graphW.ValidateEdges()).To(BeNil())
 	}
 
 	if _, addNode4 := nodes[4]; addNode4 {
 		node4 = graphW.SetNode(keyB1)
+		Expect(graphW.ValidateEdges()).To(BeNil())
 		node4.SetLabel(value4Label)
 		node4.SetValue(value4)
 		node4.SetMetadata(&OnlyInteger{Integer: 1})
@@ -159,11 +169,13 @@ func buildGraph(graph Graph, wInPlace bool, record, regMaps bool, nodes map[int]
 			{relation2, "non-existing-key", "non-existing-key", TargetSelector{}},
 			{relation2, "non-existing-key2", "non-existing-key2", TargetSelector{}},
 		})
+		Expect(graphW.ValidateEdges()).To(BeNil())
 		// targets changed
 		node4.SetTargets([]RelationTargetDef{
 			{relation1, "prefixA", "", TargetSelector{KeySelector: prefixASelector}},
 			{relation2, "non-existing-key", "non-existing-key", TargetSelector{}},
 		})
+		Expect(graphW.ValidateEdges()).To(BeNil())
 	}
 
 	if !wInPlace {
@@ -175,15 +187,18 @@ func buildGraph(graph Graph, wInPlace bool, record, regMaps bool, nodes map[int]
 				{relation1, "node3", keyA3, TargetSelector{}},
 				{relation2, "node2", keyA2, TargetSelector{}},
 			})
+			Expect(graphW.ValidateEdges()).To(BeNil())
 		}
 		if node3 != nil {
 			node3.SetTargets([]RelationTargetDef{})
+			Expect(graphW.ValidateEdges()).To(BeNil())
 		}
 		if node4 != nil {
 			node4.SetTargets([]RelationTargetDef{
 				{relation1, "prefixA", "use-key-instead-of-selector", TargetSelector{}},
 				{relation2, "non-existing-key", keyA3, TargetSelector{}},
 			})
+			Expect(graphW.ValidateEdges()).To(BeNil())
 		}
 	}
 
@@ -214,6 +229,9 @@ func checkTargets(node Node, relation string, label string, targetKeys ...string
 func checkRecordedTargets(recordedTargets Targets, relation string, labelCnt int, label string, targetKeys ...string) {
 	cnt := 0
 	for i := recordedTargets.RelationBegin(relation); i < len(recordedTargets); i++ {
+		if recordedTargets[i].Relation != relation {
+			break
+		}
 		cnt++
 	}
 	Expect(cnt).To(Equal(labelCnt))
@@ -250,13 +268,15 @@ func checkRecordedNodes(nodes []*RecordedNode, keys ...string) {
 
 func checkSources(node Node, relation string, sourceKeys ...string) {
 	sourceNodes := make(map[string]struct{})
-	for _, sourceNode := range node.GetSources(relation) {
-		sourceNodes[sourceNode.GetKey()] = struct{}{}
+	for _, perLabel := range node.GetSources(relation) {
+		for _, sourceNode := range perLabel.Nodes {
+			sourceNodes[sourceNode.GetKey()] = struct{}{}
+		}
 	}
 	for _, sourceKey := range sourceKeys {
 		Expect(sourceNodes).To(HaveKey(sourceKey))
 	}
-	Expect(node.GetSources(relation)).To(HaveLen(len(sourceKeys)))
+	Expect(sourceNodes).To(HaveLen(len(sourceKeys)))
 }
 
 func checkMetadataValues(mapping idxmap.NamedMapping, labels ...string) {

@@ -29,6 +29,9 @@ import (
 // printDelimiter is used in pretty-printing of the graph.
 const printDelimiter = ", "
 
+// edge lookup re-used between benchmark scale tests.
+var benchEl *edgeLookup
+
 // graphR implements ReadAccess.
 type graphR struct {
 	*edgeLookup
@@ -45,8 +48,16 @@ type graphR struct {
 
 // newGraphR creates and initializes a new instance of graphR.
 func newGraphR() *graphR {
+	var el *edgeLookup
+	if benchEl != nil {
+		// this is a benchmark
+		el = benchEl
+		el.reset()
+	} else {
+		el = newEdgeLookup()
+	}
 	return &graphR{
-		edgeLookup: newEdgeLookup(),
+		edgeLookup: el,
 		nodes:      make(map[string]*node),
 		mappings:   make(map[string]idxmap.NamedMappingRW),
 		timeline:   make(map[string][]*RecordedNode),
@@ -215,7 +226,7 @@ func (graph *graphR) Dump() string {
 			buf.WriteString(fmt.Sprintf("| Targets: %107v |\n", prettyPrintTargets(node.targets)))
 		}
 		if len(node.sources) > 0 {
-			buf.WriteString(fmt.Sprintf("| Sources: %107v |\n", prettyPrintSources(node.sources)))
+			buf.WriteString(fmt.Sprintf("| Sources: %107v |\n", prettyPrintTargets(node.sources)))
 		}
 		if metadata := graph.getMetadataFields(node); len(metadata) > 0 {
 			buf.WriteString(fmt.Sprintf("| Metadata: %106v |\n", metadata))
@@ -233,6 +244,41 @@ func (graph *graphR) Dump() string {
 // release).
 func (graph *graphR) Release() {
 	graph.parent.rwLock.RUnlock()
+}
+
+// ValidateEdges checks if targets and sources of all nodes correspond with each
+// other.
+// Use only for UTs, debugging, etc.
+func (graph *graphR) ValidateEdges() error {
+	for key, node := range graph.nodes {
+		// validate targets
+		for _, target := range node.targets {
+			for _, targetKey := range target.MatchingKeys.Iterate() {
+				targetNode, ok := graph.nodes[targetKey]
+				if !ok {
+					return fmt.Errorf("broken target %s -> %s", key, targetKey)
+				}
+				source, _ := targetNode.sources.GetTargetForLabel(target.Relation, target.Label)
+				if source == nil || !source.MatchingKeys.Has(key) {
+					return fmt.Errorf("missing source for target %s -> %s", key, targetKey)
+				}
+			}
+		}
+		// validate sources
+		for _, source := range node.sources {
+			for _, sourceKey := range source.MatchingKeys.Iterate() {
+				sourceNode, ok := graph.nodes[sourceKey]
+				if !ok {
+					return fmt.Errorf("broken source %s -> %s", key, sourceKey)
+				}
+				target, _ := sourceNode.targets.GetTargetForLabel(source.Relation, source.Label)
+				if target == nil || !target.MatchingKeys.Has(key) {
+					return fmt.Errorf("missing target for source %s -> %s", key, sourceKey)
+				}
+			}
+		}
+	}
+	return nil
 }
 
 // copyNodesOnly returns a deep-copy of the graph, excluding the timelines
@@ -254,6 +300,8 @@ func (graph *graphR) copyNodesOnly() *graphR {
 
 // recordNode builds a record for the node to be added into the timeline.
 func (graph *graphR) recordNode(node *node, targetUpdateOnly bool) *RecordedNode {
+	targets := node.targets
+	node.targets = targets.copy() // COW for node, original for record
 	record := &RecordedNode{
 		Since:            time.Now(),
 		Key:              node.key,
@@ -261,7 +309,7 @@ func (graph *graphR) recordNode(node *node, targetUpdateOnly bool) *RecordedNode
 		Value:            utils.RecordProtoMessage(node.value),
 		Flags:            RecordedFlags{Flags: node.flags},
 		MetadataFields:   graph.getMetadataFields(node), // returned is already copied
-		Targets:          node.copyTargets(),
+		Targets:          targets,
 		TargetUpdateOnly: targetUpdateOnly,
 	}
 	return record
@@ -322,20 +370,5 @@ func prettyPrintTargets(targets Targets) string {
 		idx++
 	}
 	str += "}"
-	return str
-}
-
-// prettyPrintSources returns nicely formatted relation sources.
-func prettyPrintSources(sources sources) string {
-	if len(sources) == 0 {
-		return "<NONE>"
-	}
-	var str string
-	for idx, relSources := range sources {
-		str += fmt.Sprintf("[%s]%s", relSources.relation, relSources.sources.String())
-		if idx < len(sources)-1 {
-			str += printDelimiter
-		}
-	}
 	return str
 }

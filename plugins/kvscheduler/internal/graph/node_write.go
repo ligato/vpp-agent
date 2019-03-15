@@ -162,10 +162,13 @@ func (node *node) SetTargets(targetsDef []RelationTargetDef) {
 				}
 				for _, key := range obsolete {
 					target.MatchingKeys.Del(key)
+					targetNode := node.graph.nodes[key]
+					targetNode.removeFromSources(target.Relation, target.Label, node.key)
 				}
 				// -> check for new targets
 				node.iterEveryEdge(targetsDef[i], func(key string) {
-					target.MatchingKeys.Add(key)
+					targetNode := node.graph.nodes[key]
+					node.addToTargets(targetNode, target)
 				})
 			}
 			i++
@@ -178,17 +181,23 @@ func (node *node) SetTargets(targetsDef []RelationTargetDef) {
 			// updated target definition
 			target := &node.targets[i]
 			target.ExpectedKey = targetsDef[i].Key
+			// remove previous edges
+			for _, key := range target.MatchingKeys.Iterate() {
+				targetNode := node.graph.nodes[key]
+				targetNode.removeFromSources(target.Relation, target.Label, node.key)
+			}
+			node.addDelEdges(node.targetsDef[j], true)
+			// create new edges
 			if !targetsDef[i].WithKeySelector() {
 				target.MatchingKeys = utils.NewSingletonKeySet("")
 			} else {
 				// selector
 				target.MatchingKeys = utils.NewSliceBasedKeySet()
 			}
-			// re-create edges
-			node.addDelEdges(node.targetsDef[j], true)
 			node.addDelEdges(targetsDef[i], false)
 			node.iterEveryEdge(targetsDef[i], func(key string) {
-				target.MatchingKeys.Add(key)
+				targetNode := node.graph.nodes[key]
+				node.addToTargets(targetNode, target)
 			})
 			i++
 			j++
@@ -200,16 +209,24 @@ func (node *node) SetTargets(targetsDef []RelationTargetDef) {
 			node.addTargetEntry(i, targetsDef[i].Relation, targetsDef[i].Label,
 				targetsDef[i].WithKeySelector())
 			target := &node.targets[i]
+			target.ExpectedKey = targetsDef[i].Key
 			node.iterEveryEdge(targetsDef[i], func(key string) {
-				target.MatchingKeys.Add(key)
+				targetNode := node.graph.nodes[key]
+				node.addToTargets(targetNode, target)
+
 			})
 			i++
 			continue
 		}
 		if order == 1 {
 			// obsolete target definition
+			target := &node.targets[i]
+			for _, key := range target.MatchingKeys.Iterate() {
+				targetNode := node.graph.nodes[key]
+				targetNode.removeFromSources(target.Relation, target.Label, node.key)
+			}
 			node.addDelEdges(node.targetsDef[j], true)
-			node.removeTargetEntry(i+1)
+			node.removeTargetEntry(i)
 			j++
 			continue
 		}
@@ -303,30 +320,42 @@ func (node *node) iterEveryEdge(target RelationTargetDef, cb func(targetKey stri
 	}
 }
 
-// addToTargets adds node2 into the set of targets for this node. Sources of node2
-// are also updated accordingly.
+// addToTargets adds node2 into the set of targets for this node.
+// Sources of node2 are also updated accordingly.
 func (node *node) addToTargets(node2 *node, target *Target) {
 	// update targets of node
 	updated := target.MatchingKeys.Add(node2.key)
 	node.targetsUpdated = updated || node.targetsUpdated
+	if !updated {
+		return
+	}
 
 	// update sources of node2
-	relSources := node2.sources.getSourcesForRelation(target.Relation)
-	if relSources == nil {
-		node2.sources = append(node2.sources, relationSources{
-			relation: target.Relation,
-			sources:  utils.NewSliceBasedKeySet(),
-		})
-		relSources = &(node2.sources[len(node2.sources)-1])
+	node2.addToSources(node, target)
+}
+
+// addToSources adds node2 into the set of sources for this node.
+func (node *node) addToSources(node2 *node, target *Target) {
+	s, idx := node.sources.GetTargetForLabel(target.Relation, target.Label)
+	if s == nil {
+		node.sources = append(node.sources, Target{})
+		if idx < len(node.sources)-1 {
+			copy(node.sources[idx+1:], node.sources[idx:])
+		}
+		node.sources[idx].Relation = target.Relation
+		node.sources[idx].Label = target.Label
+		node.sources[idx].MatchingKeys = utils.NewSliceBasedKeySet()
+		s = &(node.sources[idx])
 	}
-	updated = relSources.sources.Add(node.key)
-	node2.sourcesUpdated = updated || node2.sourcesUpdated
+	updated := s.MatchingKeys.Add(node2.key)
+	node.sourcesUpdated = updated || node.sourcesUpdated
 	if updated {
 		node.graph.unsaved.Add(node.key)
 	}
 }
 
 // removeFromTarget removes given key from the given target.
+// Note: sources are not updated!
 func (node *node) removeFromTarget(key, relation, label string) {
 	target, _ := node.targets.GetTargetForLabel(relation, label)
 	updated := target.MatchingKeys.Del(key)
@@ -336,21 +365,18 @@ func (node *node) removeFromTarget(key, relation, label string) {
 	}
 }
 
-// removeFromTargets removes this node from the set of sources of all the other nodes.
-func (node *node) removeThisFromSources() {
-	for _, target := range node.targets {
-		for _, key := range target.MatchingKeys.Iterate() {
-			targetNode := node.graph.nodes[key]
-			targetNode.removeFromSources(target.Relation, node.GetKey())
-		}
-	}
-}
-
 // removeFromSources removes given key from the sources for the given relation.
-func (node *node) removeFromSources(relation string, key string) {
-	updated := node.sources.getSourcesForRelation(relation).sources.Del(key)
-	node.sourcesUpdated = updated || node.sourcesUpdated
+func (node *node) removeFromSources(relation, label, key string) {
+	t, idx := node.sources.GetTargetForLabel(relation, label)
+	updated := t.MatchingKeys.Del(key)
 	if updated {
+		if t.MatchingKeys.Length() == 0 {
+			if idx < len(node.sources)-1 {
+				copy(node.sources[idx:], node.sources[idx+1:])
+			}
+			node.sources = node.sources[0:len(node.sources)-1]
+		}
+		node.sourcesUpdated = true
 		node.graph.unsaved.Add(node.key)
 	}
 }

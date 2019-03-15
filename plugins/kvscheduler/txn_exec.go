@@ -694,7 +694,9 @@ func (s *Scheduler) applyNewRelations(node graph.NodeRW, handler *descriptorHand
 				isRevert: args.kv.isRevert,
 			})
 		}
-		executed, err = s.applyDerived(obsoleteDerVals, args, false)
+		if len(obsoleteDerVals) > 0 {
+			executed, err = s.applyDerived(obsoleteDerVals, args, false)
+		}
 	}
 	return
 }
@@ -735,7 +737,10 @@ func (s *Scheduler) runDepUpdates(node graph.Node, args *applyValueArgs) (execut
 	}
 
 	var wasErr error
-	depNodes := node.GetSources(DependencyRelation)
+	var depNodes []graph.Node
+	for _, depPerLabel := range node.GetSources(DependencyRelation) {
+		depNodes = append(depNodes, depPerLabel.Nodes...)
+	}
 
 	// order depNodes by key (just for deterministic behaviour which simplifies testing)
 	sort.Slice(depNodes, func(i, j int) bool { return depNodes[i].GetKey() < depNodes[j].GetKey() })
