@@ -16,8 +16,9 @@ package kvscheduler_test
 
 import (
 	"context"
+	"flag"
 	"fmt"
-	"log"
+	"strconv"
 	"testing"
 
 	"github.com/ligato/cn-infra/logging"
@@ -48,38 +49,32 @@ How to run:
     - analyze profile: `go tool pprof -alloc_space mem.out`
   - with trace profile:	`./kvscheduler.test -test.run=XXX -test.bench=. -trace trace.out`
     - analyze profile: `go tool trace -http=:6060 trace.out`
+
 */
 
-func BenchmarkScale1(b *testing.B)    { benchmarkScale(1, b) }
-func BenchmarkScale10(b *testing.B)   { benchmarkScale(10, b) }
-func BenchmarkScale100(b *testing.B)  { benchmarkScale(100, b) }
-func BenchmarkScale1000(b *testing.B) { benchmarkScale(1000, b) }
-
-func benchmarkScale(i int, b *testing.B) {
-	for n := 0; n < b.N; n++ {
-		runScale(i)
+func BenchmarkScale(b *testing.B) {
+	for _, n := range [...]int{1, 10, 100, 1000} {
+		b.Run(strconv.Itoa(n), func(b *testing.B) {
+			b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				err := runScale(n)
+				if err != nil {
+					b.Fatal(err)
+				}
+			}
+		})
 	}
 }
 
-func runScale(n int) {
-	// error handler
-	checkErr := func(err error) {
-		if err != nil {
-			log.Fatal(err)
-		}
-	}
+// result should be saved to global variable to prevent compiler optimization
+var seqNum uint64
 
-	// prepare run context
-	runCtx := newRunCtx()
-	err := runCtx.Init()
-	checkErr(err)
-	defer func() {
-		err = runCtx.Close()
-		checkErr(err)
-	}()
+func runScale(n int) error {
+	c := setupScale()
+	defer teardownScale(c)
 
 	// run non-resync transaction against empty SB
-	txn := runCtx.scheduler.StartNBTransaction()
+	txn := c.scheduler.StartNBTransaction()
 
 	// create single bridge domain
 	valBd := &mock_l2.BridgeDomain{
@@ -99,8 +94,29 @@ func runScale(n int) {
 	txn.SetValue(models.Key(valBd), valBd)
 
 	testCtx := WithSimulation(context.Background())
-	_, err = txn.Commit(WithDescription(testCtx, "benchmarking scale"))
-	checkErr(err)
+	seq, err := txn.Commit(WithDescription(testCtx, "benchmarking scale"))
+	if err != nil {
+		return err
+	}
+
+	seqNum = seq
+
+	return err
+}
+
+func setupScale() *runCtx {
+	// prepare run context
+	c := newRunCtx()
+	if err := c.Init(); err != nil {
+		panic(err)
+	}
+	return c
+}
+
+func teardownScale(c *runCtx) {
+	if err := c.Close(); err != nil {
+		panic(err)
+	}
 }
 
 type runCtx struct {
@@ -150,4 +166,12 @@ func (c *runCtx) Close() error {
 	}
 	logging.DefaultRegistry.ClearRegistry()
 	return nil
+}
+
+var scaleFlag = flag.Int("scale", 10, "number of items for scale test")
+
+func TestScale(t *testing.T) {
+	if err := runScale(*scaleFlag); err != nil {
+		t.Fatal(err)
+	}
 }

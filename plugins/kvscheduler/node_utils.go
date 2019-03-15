@@ -35,6 +35,7 @@ func nodesToKVPairsWithMetadata(nodes []graph.Node) (kvPairs []kvs.KVWithMetadat
 
 // constructTargets builds targets for the graph based on derived values and dependencies.
 func constructTargets(deps []kvs.Dependency, derives []kvs.KeyValuePair) (targets []graph.RelationTargetDef) {
+	targets = make([]graph.RelationTargetDef, 0, len(deps)+len(derives))
 	for _, dep := range deps {
 		target := graph.RelationTargetDef{
 			Relation: DependencyRelation,

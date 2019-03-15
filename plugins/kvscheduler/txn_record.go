@@ -176,7 +176,7 @@ func (s *Scheduler) recordTransaction(txn *transaction, txnRecord *kvs.RecordedT
 		buf.WriteString(txnRecord.StringWithOpts(true, false, 2))
 		buf.WriteString("x----------------------------------------------------------------------------------------------------------------------x\n")
 		msg := fmt.Sprintf("#%d", txnRecord.SeqNum)
-		msg2 := fmt.Sprintf("took %v", stop.Sub(start).Round(time.Millisecond))
+		msg2 := fmt.Sprintf("took %v", stop.Sub(start).Round(time.Microsecond*100))
 		buf.WriteString(fmt.Sprintf("| %s %"+fmt.Sprint(115-len(msg))+"s |\n", msg, msg2))
 		buf.WriteString("x----------------------------------------------------------------------------------------------------------------------x\n")
 		fmt.Println(buf.String())
