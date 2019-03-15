@@ -176,7 +176,7 @@ type NodeRW interface {
 	// SetMetadata associates given value metadata with this node.
 	SetMetadata(metadata interface{})
 
-	// SetTargets provides definition of all edges pointing from this node.
+	// SetTargets updates definitions of all edges pointing from this node.
 	SetTargets(targets []RelationTargetDef)
 }
 
@@ -367,6 +367,7 @@ type RuntimeTargets []RuntimeTarget
 
 // GetTargetForLabel returns target (single node or a set of nodes) for
 // the given label.
+// Linear complexity is OK, it is used only in UTs.
 func (rt RuntimeTargets) GetTargetForLabel(label string) *RuntimeTarget {
 	for idx := range rt {
 		if rt[idx].Label == label {

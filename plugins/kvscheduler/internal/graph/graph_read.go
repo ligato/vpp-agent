@@ -331,13 +331,11 @@ func prettyPrintSources(sources sources) string {
 		return "<NONE>"
 	}
 	var str string
-	idx := 0
-	for _, relSources := range sources {
+	for idx, relSources := range sources {
 		str += fmt.Sprintf("[%s]%s", relSources.relation, relSources.sources.String())
 		if idx < len(sources)-1 {
 			str += printDelimiter
 		}
-		idx++
 	}
 	return str
 }

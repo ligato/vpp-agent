@@ -123,7 +123,7 @@ func (node *node) syncMetadata() {
 	node.metaInSync = true
 }
 
-// SetTargets provides definition of all edges pointing from this node.
+// SetTargets updates definitions of all edges pointing from this node.
 func (node *node) SetTargets(targetsDef []RelationTargetDef) {
 
 	pgraph := node.graph.parent
@@ -290,6 +290,10 @@ func (node *node) iterEveryEdge(target RelationTargetDef, cb func(targetKey stri
 		if !target.WithKeySelector() || target.Selector.KeySelector(key) == true {
 			cb(key)
 		}
+	}
+	if target.Key != "" {
+		node.graph.edgeLookup.iterTargets(target.Key, false, checkTarget)
+		return
 	}
 	if len(target.Selector.KeyPrefixes) == 0 {
 		node.graph.edgeLookup.iterTargets("", true, checkTarget)
