@@ -23,6 +23,7 @@ import (
 	"github.com/ligato/cn-infra/logging"
 	ifmodel "github.com/ligato/vpp-agent/api/models/linux/interfaces"
 	"github.com/ligato/vpp-agent/api/models/linux/iptables"
+	"github.com/ligato/vpp-agent/api/models/linux/namespace"
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	ifdescriptor "github.com/ligato/vpp-agent/plugins/linux/ifplugin/descriptor"
 	"github.com/ligato/vpp-agent/plugins/linux/iptablesplugin/descriptor/adapter"
@@ -37,6 +38,7 @@ const (
 
 	// dependency labels
 	ruleChainInterfaceDep = "interface-exists"
+	microserviceDep       = "microservice-available"
 
 	// minimum number of namespaces to be given to a single Go routine for processing
 	// in the Retrieve operation
@@ -255,9 +257,10 @@ func (d *RuleChainDescriptor) Delete(key string, rch *linux_iptables.RuleChain, 
 
 // Dependencies lists dependencies for a iptables rule chain.
 func (d *RuleChainDescriptor) Dependencies(key string, rch *linux_iptables.RuleChain) []kvs.Dependency {
+	var deps []kvs.Dependency
+
+	// the associated interfaces must exist
 	if len(rch.Interfaces) > 0 {
-		// the associated interfaces must exist
-		var deps []kvs.Dependency
 		for _, i := range rch.Interfaces {
 			deps = append(deps, kvs.Dependency{
 				Label: ruleChainInterfaceDep + "-" + i,
@@ -266,6 +269,15 @@ func (d *RuleChainDescriptor) Dependencies(key string, rch *linux_iptables.RuleC
 		}
 		return deps
 	}
+
+	// microservice must be available
+	if rch.Namespace.Type == linux_namespace.NetNamespace_MICROSERVICE {
+		deps = append(deps, kvs.Dependency{
+			Label: microserviceDep + "-" + rch.Namespace.Reference,
+			Key:   linux_namespace.MicroserviceKey(rch.Namespace.Reference),
+		})
+	}
+
 	return nil
 }
 
