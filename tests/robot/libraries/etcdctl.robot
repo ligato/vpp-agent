@@ -188,7 +188,7 @@ Get Interface Sw If Index
 
 Get Bridge Domain ID
     [Arguments]    ${node}    ${bd_name}
-    ${bds_dump}=    Execute On Machine    docker    curl -X GET http://localhost:9191/dump/vpp/v2/bd
+    ${bds_dump}=    Execute On Machine    docker    curl -sX GET http://localhost:9191/dump/vpp/v2/bd
     ${bds_json}=    Evaluate    json.loads('''${bds_dump}''')    json
     ${index}=   Set Variable    0
     :FOR    ${bd}   IN  @{bds_json}
@@ -199,7 +199,7 @@ Get Bridge Domain ID
 
 Get Bridge Domain ID IPv6
     [Arguments]    ${node}    ${bd_name}
-    ${bds_dump}=    Execute On Machine    docker    curl --noproxy "::" -g -6 -X GET http://[::]:9191/dump/vpp/v2/bd
+    ${bds_dump}=    Execute On Machine    docker    curl --noproxy "::" -g -6 -sX GET http://[::]:9191/dump/vpp/v2/bd
     ${bds_json}=    Evaluate    json.loads('''${bds_dump}''')    json
     ${index}=   Set Variable    0
     :FOR    ${bd}   IN  @{bds_json}

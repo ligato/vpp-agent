@@ -10,7 +10,7 @@ Resource    ../../../libraries/pretty_keywords.robot
 
 Force Tags        traffic     IPv4    ExpectedFailure
 Suite Setup       Testsuite Setup
-Suite Teardown    Suite Cleanup
+Suite Teardown    Testsuite Teardown
 Test Setup        TestSetup
 Test Teardown     TestTeardown
 

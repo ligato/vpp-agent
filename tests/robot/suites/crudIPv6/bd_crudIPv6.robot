@@ -24,7 +24,7 @@ ${VETH1_IP_PREFIX}=      fd30::1:e:0:0:1/64
 ${MEMIF1_IP}=            fd31::1:1:0:0:1
 ${MEMIF1_IP_PREFIX}=     fd31::1:1:0:0:1/64
 ${VXLAN_IP}=             fd31::1:1:0:0:2
-${VXLAN_IP_PREFIX}=      fd31::1:1:0:0:1/64
+${VXLAN_IP_PREFIX}=      fd31::1:1:0:0:2/64
 ${LOOPBACK_IP}=          fd32::1:1:0:0:1
 ${LOOPBACK_IP_PREFIX}=   fd32::1:1:0:0:1/64
 ${TAP_IP}=               fd33::1:1:0:0:1
@@ -41,14 +41,14 @@ Show Interfaces Before Setup
     vpp_term: Show Interfaces    agent_vpp_1
 
 Add Interfaces For BDs
-    Put Memif Interface With IP    node=agent_vpp_1    name=vpp1_memif1    mac=62:61:61:61:61:61    master=true    id=1    ip=${MEMIF1_IP}
-    Put Veth Interface With IP    node=agent_vpp_1    name=vpp1_veth1    mac=12:11:11:11:11:11    peer=vpp1_veth2    ip=${VETH1_IP}
+    Put Memif Interface With IP    node=agent_vpp_1    name=vpp1_memif1    mac=62:61:61:61:61:61    master=true    id=1    ip=${MEMIF1_IP}    prefix=${PREFIX}
+    Put Veth Interface With IP    node=agent_vpp_1    name=vpp1_veth1    mac=12:11:11:11:11:11    peer=vpp1_veth2    ip=${VETH1_IP}    prefix=${PREFIX}
     Put Veth Interface    node=agent_vpp_1    name=vpp1_veth2    mac=12:12:12:12:12:12    peer=vpp1_veth1
     Put Afpacket Interface    node=agent_vpp_1    name=vpp1_afpacket1    mac=a2:a1:a1:a1:a1:a1    host_int=vpp1_veth2
     Put VXLan Interface    node=agent_vpp_1    name=vpp1_vxlan1    src=${MEMIF1_IP}    dst=${VXLAN_IP}    vni=5
-    Put Loopback Interface With IP    node=agent_vpp_1    name=vpp1_loop1    mac=12:21:21:11:11:11    ip=${LOOPBACK_IP}
-    Put TAP Interface With IP    node=agent_vpp_1    name=vpp1_tap1    mac=32:21:21:11:11:11    ip=${TAP_IP}    host_if_name=linux_vpp1_tap1
-    Put Memif Interface With IP    node=agent_vpp_1    name=vpp1_memif2    mac=62:61:61:61:61:62    master=true    id=2    ip=${VXLAN_IP}
+    Put Loopback Interface With IP    node=agent_vpp_1    name=vpp1_loop1    mac=12:21:21:11:11:11    ip=${LOOPBACK_IP}    prefix=${PREFIX}
+    Put TAP Interface With IP    node=agent_vpp_1    name=vpp1_tap1    mac=32:21:21:11:11:11    ip=${TAP_IP}    host_if_name=linux_vpp1_tap1    prefix=${PREFIX}
+    Put Memif Interface With IP    node=agent_vpp_1    name=vpp1_memif2    mac=62:61:61:61:61:62    master=true    id=2    ip=${VXLAN_IP}    prefix=${PREFIX}
     Put VXLan Interface    node=agent_vpp_1    name=vpp1_vxlan2    src=192.168.2.1    dst=192.168.2.2    vni=15
     Put Loopback Interface With IP    node=agent_vpp_1    name=bvi_vpp1_loop2    mac=12:21:21:11:11:12    ip=20.20.2.1
     Put Loopback Interface With IP    node=agent_vpp_1    name=bvi_vpp1_loop3    mac=12:21:21:11:11:13    ip=20.20.3.1
