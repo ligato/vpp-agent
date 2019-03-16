@@ -322,7 +322,7 @@ func (ts Targets) String() string {
 }
 
 // RelationBegin returns index where targets for a given relation start
-// in the array, or -1 if there are none.
+// in the array, or len(ts) if there are none.
 func (ts Targets) RelationBegin(relation string) int {
 	idx := ts.lookupIdx(relation, "")
 	if idx < len(ts) && ts[idx].Relation == relation {

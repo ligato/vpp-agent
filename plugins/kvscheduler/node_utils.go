@@ -42,8 +42,8 @@ func constructTargets(deps []kvs.Dependency, derives []kvs.KeyValuePair) (target
 			Label:    dep.Label,
 			Key:      dep.Key,
 			Selector: graph.TargetSelector{
-				// TODO: add key prefixes here
-				KeySelector: dep.AnyOf,
+				KeyPrefixes: dep.AnyOf.KeyPrefixes,
+				KeySelector: dep.AnyOf.KeySelector,
 			},
 		}
 		targets = append(targets, target)

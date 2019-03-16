@@ -776,7 +776,12 @@ func TestNotificationsWithRetry(t *testing.T) {
 		Dependencies: func(key string, value proto.Message) []Dependency {
 			if key == prefixC+baseValue3 {
 				return []Dependency{
-					{Label: prefixA, AnyOf: prefixSelector(prefixA)},
+					{
+						Label: prefixA,
+						AnyOf: AnyOfDependency{
+							KeyPrefixes: []string{prefixA},
+						},
+					},
 				}
 			}
 			return nil

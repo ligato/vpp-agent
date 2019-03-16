@@ -180,7 +180,7 @@ func (node *node) SetTargets(targetsDef []RelationTargetDef) {
 		if order == 0 {
 			// updated target definition
 			target := &node.targets[i]
-			target.ExpectedKey = targetsDef[i].Key
+			target.ExpectedKey = expectedKey(targetsDef[i])
 			// remove previous edges
 			for _, key := range target.MatchingKeys.Iterate() {
 				targetNode := node.graph.nodes[key]
@@ -209,7 +209,7 @@ func (node *node) SetTargets(targetsDef []RelationTargetDef) {
 			node.addTargetEntry(i, targetsDef[i].Relation, targetsDef[i].Label,
 				targetsDef[i].WithKeySelector())
 			target := &node.targets[i]
-			target.ExpectedKey = targetsDef[i].Key
+			target.ExpectedKey = expectedKey(targetsDef[i])
 			node.iterEveryEdge(targetsDef[i], func(key string) {
 				targetNode := node.graph.nodes[key]
 				node.addToTargets(targetNode, target)
@@ -379,4 +379,17 @@ func (node *node) removeFromSources(relation, label, key string) {
 		node.sourcesUpdated = true
 		node.graph.unsaved.Add(node.key)
 	}
+}
+
+func expectedKey(target RelationTargetDef) (expKey string) {
+	if target.Key != "" {
+		return target.Key
+	}
+	for idx, prefix := range target.Selector.KeyPrefixes {
+		if idx > 0 {
+			expKey += " | "
+		}
+		expKey += prefix + "*"
+	}
+	return expKey
 }

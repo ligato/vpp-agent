@@ -448,9 +448,12 @@ func (d *InterfaceDescriptor) Dependencies(key string, intf *interfaces.Interfac
 		if vxlanMulticast := intf.GetVxlan().GetMulticast(); vxlanMulticast != "" {
 			dependencies = append(dependencies, kvs.Dependency{
 				Label: vxlanMulticastDep,
-				AnyOf: func(key string) bool {
-					ifName, ifaceAddr, _, isIfaceAddrKey := interfaces.ParseInterfaceAddressKey(key)
-					return isIfaceAddrKey && ifName == vxlanMulticast && ifaceAddr.IsMulticast()
+				AnyOf: kvs.AnyOfDependency{
+					KeyPrefixes: []string{interfaces.InterfaceAddressPrefix(vxlanMulticast)},
+					KeySelector: func(key string) bool {
+						_, ifaceAddr, _, _ := interfaces.ParseInterfaceAddressKey(key)
+						return ifaceAddr.IsMulticast()
+					},
 				},
 			})
 		}

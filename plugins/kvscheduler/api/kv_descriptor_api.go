@@ -30,12 +30,46 @@ type Dependency struct {
 	// If empty, AnyOf must be defined instead.
 	Key string
 
-	// AnyOf, if not nil, must return true for at least one of the already created
-	// keys for the dependency to be considered satisfied.
+	// AnyOf defines a set of keys from which at least one must reference
+	// a created object for the dependency to be considered satisfied - i.e.
+	// **any of** the matched keys is good enough to satisfy the dependency.
 	// Either Key or AnyOf should be defined, but not both at the same time.
-	// Note: AnyOf comes with more overhead than a static key dependency,
-	// so prefer to use the latter whenever possible.
-	AnyOf KeySelector
+	// BEWARE: AnyOf comes with more overhead than a static key dependency
+	// (especially when KeySelector is used without KeyPrefixes), so prefer to
+	// use Key whenever possible.
+	AnyOf AnyOfDependency
+}
+
+// AnyOfDependency defines a set of keys from which at least one must reference
+// a created object for the dependency to be considered satisfied.
+//
+// KeyPrefixes jointly select a set of keys that begin with at least one of the
+// defined key prefixes, potentially further filtered by KeySelector, which is
+// typically parsing and evaluating key suffix to check if it satisfies the
+// dependency (i.e. the selections of KeyPrefixes and KeySelector are
+// **intersected**).
+//
+// KeyPrefixes and KeySelector can be combined, but also used as standalone.
+// However, using only KeySelector without limiting the set of candidates using
+// prefixes is very costly - for the scheduling algorithm the key selector is
+// a black box that can potentially match any key and must be therefore checked
+// with every key entering the key space (i.e. linear complexity as opposed to
+// logarithmic complexity when the key space is suitably reduced with prefixes).
+type AnyOfDependency struct {
+	// KeyPrefixes is a list of all (longest common) key prefixes found in the
+	// keys satisfying the dependency. If defined (not empty), the scheduler will
+	// know that for a given key to match the dependency, it must begin with at
+	// least one of the specified prefixes.
+	// Keys matched by these prefixes can be further filtered with the KeySelector
+	// below.
+	KeyPrefixes []string
+
+	// KeySelector, if defined (non-nil), must return true for at least one of
+	// the already created keys for the dependency to be considered satisfied.
+	// It is recommended to narrow down the set of candidates as much as possible
+	// using KeyPrefixes, so that the KeySelector will not have to be called too
+	// many times, limiting its impact on the performance.
+	KeySelector KeySelector
 }
 
 // MetadataMapFactory can be used by descriptor to define a custom map associating

@@ -111,6 +111,15 @@ func InterfaceStateKey(iface string) string {
 
 /* Interface Address (derived) */
 
+// InterfaceAddressPrefix returns longest-common prefix of keys representing
+// assigned IP addresses to a specific VPP interface.
+func InterfaceAddressPrefix(iface string) string {
+	if iface == "" {
+		iface = InvalidKeyPart
+	}
+	return AddressKeyPrefix + iface + "/"
+}
+
 // InterfaceAddressKey returns key representing IP address assigned to VPP interface.
 func InterfaceAddressKey(iface string, address string) string {
 	if iface == "" {
