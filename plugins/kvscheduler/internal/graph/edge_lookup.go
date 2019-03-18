@@ -259,12 +259,6 @@ func (el *edgeLookup) iterSources(targetKey string, cb func(sourceNode, relation
 	idx := el.edgeIdx(edge{targetKey: targetKey})
 	// iter over key prefixes (smaller than the length of targetKey)
 	for i := idx - 1; i >= 0; i-- {
-		if el.edges[i].removed {
-			continue
-		}
-		if !el.edges[i].isPrefix {
-			continue
-		}
 		if el.edges[i].targetKey == "" {
 			// empty key prefixes already iterated above
 			break
@@ -272,15 +266,21 @@ func (el *edgeLookup) iterSources(targetKey string, cb func(sourceNode, relation
 		if !strings.HasPrefix(targetKey, el.edges[i].targetKey) {
 			break
 		}
+		if el.edges[i].removed {
+			continue
+		}
+		if !el.edges[i].isPrefix {
+			continue
+		}
 		cb(el.edges[i].sourceNode, el.edges[i].relation, el.edges[i].label)
 	}
 	// iter over exactly matching key(-prefixes)
 	for i := idx; i < len(el.edges); i++ {
-		if el.edges[i].removed {
-			continue
-		}
 		if el.edges[i].targetKey != targetKey {
 			break
+		}
+		if el.edges[i].removed {
+			continue
 		}
 		cb(el.edges[i].sourceNode, el.edges[i].relation, el.edges[i].label)
 	}
