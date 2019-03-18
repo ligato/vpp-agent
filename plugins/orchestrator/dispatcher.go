@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"runtime/trace"
 	"sync"
+	"time"
 
 	"github.com/ligato/cn-infra/logging"
 	"golang.org/x/net/context"
@@ -105,6 +106,8 @@ func (p *dispatcher) PushData(ctx context.Context, kvPairs []KeyVal) (kvErrs []k
 
 	pr.End()
 
+	t := time.Now()
+
 	seqID, err := txn.Commit(ctx)
 	if err != nil {
 		if txErr, ok := err.(*kvs.TransactionError); ok && len(txErr.GetKVErrors()) > 0 {
@@ -121,7 +124,8 @@ func (p *dispatcher) PushData(ctx context.Context, kvPairs []KeyVal) (kvErrs []k
 		return kvErrs, err
 	}
 
-	p.log.Infof("Transaction #%d successful!", seqID)
+	took := time.Since(t).Round(time.Microsecond * 100)
+	p.log.Infof("Transaction #%d successful! (took %v)", seqID, took)
 
 	return nil, nil
 }

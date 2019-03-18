@@ -41,10 +41,10 @@ import (
 var (
 	address       = flag.String("address", "127.0.0.1:9111", "address of GRPC server")
 	socketType    = flag.String("socket-type", "tcp", "socket type [tcp, tcp4, tcp6, unix, unixpacket]")
-	numTunnels    = flag.Int("tunnels", 1, "number of tunnels to stress per client")
+	numClients    = flag.Int("clients", 1, "number of concurrent grpc clients")
+	numTunnels    = flag.Int("tunnels", 100, "number of tunnels to stress per client")
 	numPerRequest = flag.Int("numperreq", 1, "number of tunnels/routes per grpc request")
 	debug         = flag.Bool("debug", false, "turn on debug dump")
-	numClients    = flag.Int("clients", 1, "number of concurrent grpc clients")
 
 	dialTimeout = time.Second * 2
 	reqTimeout  = time.Second * 10
@@ -108,9 +108,6 @@ func dialer(socket, address string, timeoutVal time.Duration) func(string, time.
 }
 
 func (p *GRPCStressPlugin) setupInitial() {
-	// create a conn/client to create the red/black interfaces
-	// that each tunnel will reference
-
 	conn, err := grpc.Dial("unix",
 		grpc.WithInsecure(),
 		grpc.WithDialer(dialer(*socketType, *address, dialTimeout)),
@@ -120,6 +117,9 @@ func (p *GRPCStressPlugin) setupInitial() {
 	}
 
 	client := configurator.NewConfiguratorClient(conn)
+
+	// create a conn/client to create the red/black interfaces
+	// that each tunnel will reference
 	p.runGRPCCreateRedBlackMemifs(client)
 }
 
@@ -192,11 +192,11 @@ func (p *GRPCStressPlugin) runAllClients() {
 	p.Log.Debugf("numTunnels: %d, numPerRequest: %d, numClients=%d",
 		*numTunnels, *numPerRequest, *numClients)
 
-	p.wg.Add(*numClients)
 	p.Log.Infof("Running for %d clients", *numClients)
 
 	t := time.Now()
 
+	p.wg.Add(*numClients)
 	for i := 0; i < *numClients; i++ {
 		// Set up connection to the server.
 		conn, err := grpc.Dial("unix",
@@ -212,7 +212,7 @@ func (p *GRPCStressPlugin) runAllClients() {
 		go p.runGRPCStressCreate(i, client, *numTunnels)
 	}
 
-	p.Log.Debugf("Waiting..")
+	p.Log.Debugf("Waiting for clients..")
 	p.wg.Wait()
 
 	took := time.Since(t).Round(time.Microsecond * 100)
