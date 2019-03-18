@@ -48,10 +48,7 @@ The image tag `latest` is built from **master branch** and `dev` tag is built fr
 For a quick start with the VPP Agent, you can use the pre-built Docker images on DockerHub
 that contain the VPP Agent and VPP: [ligato/vpp-agent][14] (or for ARM64: [ligato/vpp-agent-arm64][17]).
 
-0. Start ETCD and Kafka on your host (e.g. in Docker as described [here][15]).
-   Note: **The Agent in the pre-built Docker image will not start if it can't 
-   connect to both Etcd and Kafka**.
-
+0. Start ETCD (for image versions lower than 2.0, the Kafka is required as well) on your host (e.g. in Docker as described [here][15]).
    Note: **for ARM64 see the information for [kafka][18] and for [etcd][19]**.
 
 1. Run VPP + VPP Agent in a Docker container:
