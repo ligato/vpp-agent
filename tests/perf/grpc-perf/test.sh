@@ -24,6 +24,8 @@ agent_info="${REPORT_DIR}/agent-info.txt"
 # -------
 
 function run_test() {
+	# create report directory
+	mkdir -p ${REPORT_DIR}
 	perftest "$1" 2>&1 | tee $log_report
 }
 
@@ -93,8 +95,6 @@ function prepare_test() {
 		echo "-> compiling grpc-perf.."
 		go build -v
 	}
-	# create report directory
-	mkdir -p ${REPORT_DIR}
 }
 
 function fail() {
@@ -134,8 +134,8 @@ function start_vpp() {
 	rm -f /dev/shm/db /dev/shm/global_vm /dev/shm/vpe-api
 	vpp -c /etc/vpp/vpp.conf > "$log_vpp" 2>&1 &
 	pid_vpp="$!"
+	timeout "${wait_vpp_boot}" grep -q "vlib_plugin_early_init" <(tail -qF $log_vpp)
 	echo "ok! (PID:${pid_vpp})"
-	sleep $wait_vpp_boot
 }
 
 function stop_vpp() {
@@ -177,16 +177,16 @@ function vppcli() {
 #  agent
 # -------
 
-wait_agent_boot=3
+wait_agent_boot=5
 
 function start_agent() {
 	echo -n "-> starting agent.. "
-	# DEBUG_MEMPROFILE=/tmp/perf_mem.prof
-	DEBUG_ENABLED=true DEBUG_CPUPROFILE=/tmp/perf_cpu.prof DEBUG_TRACEPROFILE=/tmp/perf_trace.out \
-		vpp-agent -grpc-config=grpc.conf > "$log_agent" 2>&1 &
+	vpp-agent -etcd-config=etcd.conf -grpc-config=grpc.conf > "$log_agent" 2>&1 &
 	pid_agent="$!"
+	timeout "${wait_agent_boot}" grep -q "Agent started" <(tail -qF $log_agent) || {
+		fail "timeout!"
+	}
 	echo "ok! (PID:${pid_agent})"
-	sleep $wait_agent_boot
 }
 
 function stop_agent() {
