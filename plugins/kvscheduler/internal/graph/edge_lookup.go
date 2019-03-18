@@ -263,14 +263,15 @@ func (el *edgeLookup) iterSources(targetKey string, cb func(sourceNode, relation
 			// empty key prefixes already iterated above
 			break
 		}
-		if !strings.HasPrefix(targetKey, el.edges[i].targetKey) {
-			break
-		}
 		if el.edges[i].removed {
 			continue
 		}
 		if !el.edges[i].isPrefix {
 			continue
+		}
+		if !strings.HasPrefix(targetKey, el.edges[i].targetKey) {
+			//break
+			continue // TODO: damn...
 		}
 		cb(el.edges[i].sourceNode, el.edges[i].relation, el.edges[i].label)
 	}
