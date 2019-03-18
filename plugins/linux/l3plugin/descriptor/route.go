@@ -256,19 +256,25 @@ func (d *RouteDescriptor) Dependencies(key string, route *linux_l3.Route) []kvs.
 	if gwAddr != nil && !gwAddr.IsUnspecified() {
 		dependencies = append(dependencies, kvs.Dependency{
 			Label: routeGwReachabilityDep,
-			AnyOf: func(key string) bool {
-				dstAddr, ifName, isRouteKey := linux_l3.ParseStaticLinkLocalRouteKey(key)
-				if isRouteKey && ifName == route.OutgoingInterface && dstAddr.Contains(gwAddr) {
-					// GW address is neighbour as told by another link-local route
-					return true
-				}
-				ifName, addr, isAddrKey := ifmodel.ParseInterfaceAddressKey(key)
-				if isAddrKey && ifName == route.OutgoingInterface && addr.Contains(gwAddr) {
-					// GW address is inside the local network of the outgoing interface
-					// as given by the assigned IP address
-					return true
-				}
-				return false
+			AnyOf: kvs.AnyOfDependency{
+				KeyPrefixes: []string{
+					ifmodel.InterfaceAddressPrefix(route.OutgoingInterface),
+					linux_l3.StaticLinkLocalRoutePrefix(route.OutgoingInterface),
+				},
+				KeySelector: func(key string) bool {
+					dstAddr, ifName, isRouteKey := linux_l3.ParseStaticLinkLocalRouteKey(key)
+					if isRouteKey && ifName == route.OutgoingInterface && dstAddr.Contains(gwAddr) {
+						// GW address is neighbour as told by another link-local route
+						return true
+					}
+					ifName, addr, isAddrKey := ifmodel.ParseInterfaceAddressKey(key)
+					if isAddrKey && ifName == route.OutgoingInterface && addr.Contains(gwAddr) {
+						// GW address is inside the local network of the outgoing interface
+						// as given by the assigned IP address
+						return true
+					}
+					return false
+				},
 			},
 		})
 	} else if route.OutgoingInterface != "" {
@@ -277,9 +283,10 @@ func (d *RouteDescriptor) Dependencies(key string, route *linux_l3.Route) []kvs.
 		// routes will inherit this dependency transitively through GW-reachability dep.
 		dependencies = append(dependencies, kvs.Dependency{
 			Label: routeOutInterfaceIPAddrDep,
-			AnyOf: func(key string) bool {
-				ifName, _, isAddrKey := ifmodel.ParseInterfaceAddressKey(key)
-				return isAddrKey && ifName == route.OutgoingInterface
+			AnyOf: kvs.AnyOfDependency{
+				KeyPrefixes: []string{
+					ifmodel.InterfaceAddressPrefix(route.OutgoingInterface),
+				},
 			},
 		})
 	}

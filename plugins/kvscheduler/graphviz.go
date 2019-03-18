@@ -267,46 +267,48 @@ func (s *Scheduler) renderDotOutput(graphNodes []*graph.RecordedNode, txn *kvs.R
 
 	for _, graphNode := range graphNodes {
 		n := processGraphNode(graphNode)
+		targets := graphNode.Targets
 
-		derived := graphNode.Targets.GetTargetsForRelation(DerivesRelation)
-		if derived != nil {
-			for _, target := range derived.Targets {
-				for _, dKey := range target.MatchingKeys.Iterate() {
-					dn := processGraphNode(getGraphNode(dKey))
-					attrs := make(dotAttrs)
-					attrs["color"] = "bisque4"
-					attrs["arrowhead"] = "invempty"
-					e := &dotEdge{
-						From:  n,
-						To:    dn,
-						Attrs: attrs,
-					}
-					addEdge(e)
+		for i := targets.RelationBegin(DerivesRelation); i < len(targets); i++ {
+			if targets[i].Relation != DerivesRelation {
+				break
+			}
+			for _, dKey := range targets[i].MatchingKeys.Iterate() {
+				dn := processGraphNode(getGraphNode(dKey))
+				attrs := make(dotAttrs)
+				attrs["color"] = "bisque4"
+				attrs["arrowhead"] = "invempty"
+				e := &dotEdge{
+					From:  n,
+					To:    dn,
+					Attrs: attrs,
 				}
+				addEdge(e)
 			}
 		}
 
-		dependencies := graphNode.Targets.GetTargetsForRelation(DependencyRelation)
-		if dependencies != nil {
+		for i := targets.RelationBegin(DependencyRelation); i < len(targets); i++ {
+			target := targets[i]
+			if target.Relation != DependencyRelation {
+				break
+			}
 			var deps []depNode
-			for _, target := range dependencies.Targets {
-				if target.MatchingKeys.Length() == 0 {
-					var dn *dotNode
-					if target.ExpectedKey != "" {
-						dn = processGraphNode(&graph.RecordedNode{
-							Key: target.ExpectedKey,
-						})
-					} else {
-						dn = processGraphNode(&graph.RecordedNode{
-							Key: "? " + target.Label + " ?",
-						})
-					}
-					deps = append(deps, depNode{node: dn, label: target.Label})
+			if target.MatchingKeys.Length() == 0 {
+				var dn *dotNode
+				if target.ExpectedKey != "" {
+					dn = processGraphNode(&graph.RecordedNode{
+						Key: target.ExpectedKey,
+					})
+				} else {
+					dn = processGraphNode(&graph.RecordedNode{
+						Key: "? " + target.Label + " ?",
+					})
 				}
-				for _, dKey := range target.MatchingKeys.Iterate() {
-					dn := processGraphNode(getGraphNode(dKey))
-					deps = append(deps, depNode{node: dn, label: target.Label, satisfied: true})
-				}
+				deps = append(deps, depNode{node: dn, label: target.Label})
+			}
+			for _, dKey := range target.MatchingKeys.Iterate() {
+				dn := processGraphNode(getGraphNode(dKey))
+				deps = append(deps, depNode{node: dn, label: target.Label, satisfied: true})
 			}
 			for _, d := range deps {
 				attrs := make(dotAttrs)

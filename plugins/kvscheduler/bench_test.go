@@ -53,11 +53,20 @@ How to run:
 */
 
 func BenchmarkScale(b *testing.B) {
+	benchmarkScale(b, true)
+}
+
+func BenchmarkScaleWithoutSimulation(b *testing.B) {
+	benchmarkScale(b, false)
+}
+
+
+func benchmarkScale(b *testing.B, withSimulation bool) {
 	for _, n := range [...]int{1, 10, 100, 1000} {
 		b.Run(strconv.Itoa(n), func(b *testing.B) {
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
-				err := runScale(n)
+				err := runScale(n, withSimulation)
 				if err != nil {
 					b.Fatal(err)
 				}
@@ -69,7 +78,7 @@ func BenchmarkScale(b *testing.B) {
 // result should be saved to global variable to prevent compiler optimization
 var seqNum uint64
 
-func runScale(n int) error {
+func runScale(n int, withSimulation bool) error {
 	c := setupScale()
 	defer teardownScale(c)
 
@@ -93,7 +102,10 @@ func runScale(n int) error {
 	}
 	txn.SetValue(models.Key(valBd), valBd)
 
-	testCtx := WithSimulation(context.Background())
+	testCtx := context.Background()
+	if withSimulation {
+		testCtx = WithSimulation(testCtx)
+	}
 	seq, err := txn.Commit(WithDescription(testCtx, "benchmarking scale"))
 	if err != nil {
 		return err
@@ -171,7 +183,7 @@ func (c *runCtx) Close() error {
 var scaleFlag = flag.Int("scale", 10, "number of items for scale test")
 
 func TestScale(t *testing.T) {
-	if err := runScale(*scaleFlag); err != nil {
+	if err := runScale(*scaleFlag, true); err != nil {
 		t.Fatal(err)
 	}
 }

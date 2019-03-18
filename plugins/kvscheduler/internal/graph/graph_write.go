@@ -72,13 +72,26 @@ func (graph *graphRW) SetNode(key string) NodeRW {
 	if has {
 		return node
 	}
+
+	// new node
 	node = newNode(nil)
 	node.graph = graph.graphR
 	node.key = key
-	for _, otherNode := range graph.nodes { // TODO: log(n) lookup
-		otherNode.checkPotentialTarget(node)
-	}
 	graph.nodes[key] = node
+
+	// add edges going into this new node
+	graph.edgeLookup.addNodeKey(key)
+	graph.edgeLookup.iterSources(key, func(sourceNodeKey, relation, label string) {
+		sourceNode := graph.nodes[sourceNodeKey]
+		target, targetIdx := sourceNode.targets.GetTargetForLabel(relation, label)
+		keySelector := sourceNode.targetsDef[targetIdx].Selector.KeySelector
+		if keySelector != nil {
+			if keySelector(key) == false {
+				return
+			}
+		}
+		sourceNode.addToTargets(node, target)
+	})
 
 	return node
 }
@@ -95,17 +108,20 @@ func (graph *graphRW) DeleteNode(key string) bool {
 		return false
 	}
 
-	// remove from sources of current targets
-	node.removeThisFromSources()
+	// remove outgoing edges (not the most effective approach...)
+	node.SetTargets(nil)
+
+	// remove incoming edges
+	graph.edgeLookup.iterSources(key, func(sourceNodeKey, relation, label string) {
+		sourceNode := graph.nodes[sourceNodeKey]
+		sourceNode.removeFromTarget(key, relation, label)
+	})
+	graph.edgeLookup.delNodeKey(key)
 
 	// delete from graph
 	delete(graph.nodes, key)
 
-	// remove from targets of other nodes
-	for _, otherNode := range graph.nodes { // TODO: iterate over sources only
-		otherNode.removeFromTargets(key)
-	}
-
+	// unset metadata
 	if graph.wInPlace && node.metadataAdded {
 		if mapping, hasMapping := graph.mappings[node.metadataMap]; hasMapping {
 			mapping.Delete(node.label)
@@ -136,6 +152,9 @@ func (graph *graphRW) Save() {
 				destGraph.mappings[mapName] = mapping
 			}
 		}
+
+		// save updated edgeLookup
+		graph.edgeLookup.saveOverlay()
 	}
 
 	for _, key := range graph.unsaved.Iterate() {

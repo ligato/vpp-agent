@@ -101,6 +101,11 @@ type ReadAccess interface {
 	// For reader, the method releases R-lock.
 	// For in-place writer, the method releases W-lock.
 	Release()
+
+	// ValidateEdges checks if targets and sources of all nodes correspond with
+	// each other.
+	// Use only for UTs, debugging, etc.
+	ValidateEdges() error
 }
 
 // RWAccess lists operations provided by the read-write graph handle.
@@ -146,11 +151,11 @@ type Node interface {
 
 	// GetTargets returns a set of nodes, indexed by relation labels, that the
 	// edges of the given relation points to.
-	GetTargets(relation string) RuntimeTargetsByLabel
+	GetTargets(relation string) RuntimeTargets
 
-	// GetSources returns a set of nodes with edges of the given relation
-	// pointing to this node.
-	GetSources(relation string) []Node
+	// GetSources returns edges pointing to this node in the reverse
+	// orientation.
+	GetSources(relation string) RuntimeTargets
 }
 
 // NodeRW is a read-write handle to a single graph node.
@@ -176,7 +181,7 @@ type NodeRW interface {
 	// SetMetadata associates given value metadata with this node.
 	SetMetadata(metadata interface{})
 
-	// SetTargets provides definition of all edges pointing from this node.
+	// SetTargets updates definitions of all edges pointing from this node.
 	SetTargets(targets []RelationTargetDef)
 }
 
@@ -222,118 +227,166 @@ type RelationTargetDef struct {
 	// Label for the edge.
 	Label string // mandatory, unique for a given (source, relation)
 
-	// Either Key or Selector are defined:
+	// Either Key or Selector should be defined:
 
 	// Key of the target node.
 	Key string
 
 	// Selector selecting a set of target nodes.
-	Selector KeySelector // TODO: further restrict the set of candidates using key prefixes
+	Selector TargetSelector
 }
 
-// Targets groups relation targets with the same label.
-// Target nodes are not referenced directly, instead via their keys (suitable
+// Compare compares two relation target definitions (with the exception of KeySelector-s).
+func (t RelationTargetDef) Compare(t2 RelationTargetDef) (equal bool, order int) {
+	if t.Relation < t2.Relation {
+		return false, -1
+	}
+	if t.Relation > t2.Relation {
+		return false, 1
+	}
+	if t.Label < t2.Label {
+		return false, -1
+	}
+	if t.Label > t2.Label {
+		return false, 1
+	}
+	if t.Key != t2.Key {
+		return false, 0
+	}
+	if len(t.Selector.KeyPrefixes) != len(t2.Selector.KeyPrefixes) {
+		return false, 0
+	}
+	for i := 0; i < len(t.Selector.KeyPrefixes); i++ {
+		if t.Selector.KeyPrefixes[i] != t2.Selector.KeyPrefixes[i] {
+			return false, 0
+		}
+	}
+	return true, 0
+}
+
+// WithKeySelector returns true if the target is defined with key selector.
+func (t RelationTargetDef) WithKeySelector() bool {
+	return t.Key == "" && t.Selector.KeySelector != nil
+}
+
+// TargetSelector allows to dynamically select a set of target nodes.
+// The selections of KeyPrefixes and KeySelector are **intersected**.
+type TargetSelector struct {
+	// KeyPrefixes is a list of key prefixes, each selecting a subset of target
+	// nodes, which are then combined together - i.e. **union** is computed.
+	KeyPrefixes []string
+
+	// KeySelector allows to dynamically select target nodes.
+	KeySelector KeySelector
+}
+
+// Target nodes - not referenced directly, instead via their keys (suitable
 // for recording).
-type Targets struct {
+type Target struct {
+	Relation     string
 	Label        string
-	ExpectedKey  string // empty if AnyOf predicate is used instead
+	ExpectedKey  string // empty if Selector is used instead
 	MatchingKeys utils.KeySet
 }
 
-// TargetsByLabel is a slice of single-relation targets, grouped (and sorted)
-// by labels.
-type TargetsByLabel []*Targets
+// Targets is a slice of all targets of a single node, sorted by relation+label
+// (in this order).
+type Targets []Target
 
-// String returns human-readable string representation of TargetsByLabel.
-func (t TargetsByLabel) String() string {
-	str := "{"
-	for idx, targets := range t {
+// String returns human-readable string representation of Targets.
+func (ts Targets) String() string {
+	var (
+		idx      int
+		str      string
+		relation string
+	)
+	if len(ts) > 0 {
+		relation = ts[0].Relation
+		str += relation + ":"
+	}
+	str += "{"
+	for _, target := range ts {
+		if target.Relation != relation {
+			relation = target.Relation
+			str += "} " + relation + ":{"
+			idx = 0
+		}
 		if idx > 0 {
 			str += ", "
 		}
-		str += fmt.Sprintf("%s->%s", targets.Label, targets.MatchingKeys.String())
+		str += fmt.Sprintf("%s->%s", target.Label, target.MatchingKeys.String())
+		idx++
 	}
 	str += "}"
 	return str
 }
 
-// RelationTargets groups targets of the same relation.
-type RelationTargets struct {
-	Relation string
-	Targets  TargetsByLabel
-}
-
-// GetTargetsForLabel returns targets (keys) for the given label.
-func (t *RelationTargets) GetTargetsForLabel(label string) *Targets {
-	idx := t.labelIdx(label)
-	if idx < len(t.Targets) && t.Targets[idx].Label == label {
-		return t.Targets[idx]
+// RelationBegin returns index where targets for a given relation start
+// in the array, or len(ts) if there are none.
+func (ts Targets) RelationBegin(relation string) int {
+	idx := ts.lookupIdx(relation, "")
+	if idx < len(ts) && ts[idx].Relation == relation {
+		return idx
 	}
-	return nil
+	return len(ts)
 }
 
-// AddTargets adds new targets for a new label (without checking for duplicities!).
-func (t *RelationTargets) AddTargets(targets *Targets) {
-	labelIdx := t.labelIdx(targets.Label)
-	t.Targets = append(t.Targets, nil)
-	if labelIdx < len(t.Targets)-1 {
-		copy(t.Targets[labelIdx+1:], t.Targets[labelIdx:])
+// GetTargetForLabel returns reference(+index) to target with the given
+// relation+label.
+func (ts Targets) GetTargetForLabel(relation, label string) (t *Target, idx int) {
+	idx = ts.lookupIdx(relation, label)
+	if idx < len(ts) &&
+		ts[idx].Relation == relation && ts[idx].Label == label {
+		return &ts[idx], idx
 	}
-	t.Targets[labelIdx] = targets
+	return nil, idx
 }
 
-// labelIdx returns index in the array at which a target with the given label
-// should be stored.
-func (t *RelationTargets) labelIdx(label string) int {
-	return sort.Search(len(t.Targets),
+// lookupIdx returns index where target for the given (relation,label) pair should
+// be stored in the array.
+func (ts Targets) lookupIdx(relation, label string) int {
+	idx := sort.Search(len(ts),
 		func(i int) bool {
-			return label <= t.Targets[i].Label
+			if relation < ts[i].Relation {
+				return true
+			}
+			if relation == ts[i].Relation && label <= ts[i].Label {
+				return true
+			}
+			return false
 		})
+	return idx
 }
 
-// TargetsByRelation is a slice of all targets, grouped by relations.
-type TargetsByRelation []*RelationTargets
-
-// GetTargetsForRelation returns targets (keys by label) for the given relation.
-func (t TargetsByRelation) GetTargetsForRelation(relation string) *RelationTargets {
-	for _, relTargets := range t {
-		if relTargets.Relation == relation {
-			return relTargets
-		}
+// copy returns deep copy of targets (key sets deep copied on write).
+func (ts Targets) copy() Targets {
+	tCopy := make(Targets, len(ts))
+	copy(tCopy, ts)
+	for i := range tCopy {
+		tCopy[i].MatchingKeys = ts[i].MatchingKeys.CopyOnWrite()
 	}
-	return nil
+	return tCopy
 }
 
-// String returns human-readable string representation of TargetsByRelation.
-func (t TargetsByRelation) String() string {
-	str := "{"
-	for idx, relTargets := range t {
-		if idx > 0 {
-			str += ", "
-		}
-		str += fmt.Sprintf("%s->%s", relTargets.Relation, relTargets.Targets.String())
-	}
-	str += "}"
-	return str
-}
-
-// RuntimeTargets groups relation targets with the same label.
-// Targets are stored as direct runtime references pointing to instances of target
-// nodes.
-type RuntimeTargets struct {
+// RuntimeTarget, unlike Target, contains direct runtime references pointing
+// to instances of target nodes (suitable for runtime processing but not for
+// recording).
+type RuntimeTarget struct {
 	Label string
 	Nodes []Node
 }
 
-// RuntimeTargetsByLabel is a slice of single-relation (runtime reference-based)
+// RuntimeTargets is a slice of single-relation (runtime reference-based)
 // targets, grouped by labels.
-type RuntimeTargetsByLabel []*RuntimeTargets
+type RuntimeTargets []RuntimeTarget
 
-// GetTargetsForLabel returns targets (nodes) for the given label.
-func (rt RuntimeTargetsByLabel) GetTargetsForLabel(label string) *RuntimeTargets {
-	for _, targets := range rt {
-		if targets.Label == label {
-			return targets
+// GetTargetForLabel returns target (single node or a set of nodes) for
+// the given label.
+// Linear complexity is OK, it is used only in UTs.
+func (rt RuntimeTargets) GetTargetForLabel(label string) *RuntimeTarget {
+	for idx := range rt {
+		if rt[idx].Label == label {
+			return &rt[idx]
 		}
 	}
 	return nil
@@ -348,7 +401,7 @@ type RecordedNode struct {
 	Value            proto.Message
 	Flags            RecordedFlags
 	MetadataFields   map[string][]string // field name -> values
-	Targets          TargetsByRelation
+	Targets          Targets
 	TargetUpdateOnly bool                // true if only runtime Targets have changed since the last rev
 }
 

@@ -240,9 +240,8 @@ func (d *ARPDescriptor) Dependencies(key string, arp *l3.ARPEntry) []kvs.Depende
 			},
 			{
 				Label: arpInterfaceIPDep,
-				AnyOf: func(key string) bool {
-					ifName, _, isAddrKey := ifmodel.ParseInterfaceAddressKey(key)
-					return isAddrKey && ifName == arp.Interface
+				AnyOf: kvs.AnyOfDependency{
+					KeyPrefixes: []string{ifmodel.InterfaceAddressPrefix(arp.Interface)},
 				},
 			},
 		}
