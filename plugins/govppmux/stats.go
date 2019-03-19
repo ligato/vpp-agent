@@ -15,25 +15,27 @@
 package govppmux
 
 import (
-	"encoding/json"
 	"expvar"
-	"fmt"
 	"sync"
 	"time"
+
+	"github.com/ligato/vpp-agent/pkg/metrics"
 )
 
 var (
-	stats     Stats
-	messageMu sync.RWMutex
+	stats   Stats
+	statsMu sync.RWMutex
 )
 
 func init() {
-	stats.Messages = map[string]*MessageStats{}
+	stats.Messages = make(metrics.Calls)
 }
 
 func GetStats() *Stats {
 	s := new(Stats)
+	statsMu.RLock()
 	*s = stats
+	statsMu.RUnlock()
 	return s
 }
 
@@ -42,58 +44,29 @@ type Stats struct {
 	ChannelsOpen    uint64
 	RequestsSent    uint64
 	RequestsFailed  uint64
-	Messages        map[string]*MessageStats
+	AllMessages     metrics.CallStats
+	Messages        metrics.Calls
 }
 
-type MessageStats struct {
-	Message string
-	Calls   uint64
-	TotalNs time.Duration
-	AvgNs   time.Duration
-	MaxNs   time.Duration
-}
-
-func dur(d time.Duration) string {
-	return d.Round(time.Microsecond * 100).String()
-}
-
-func (m *MessageStats) MarshalJSON() ([]byte, error) {
-	d := fmt.Sprintf(
-		"calls: %d, total: %s, avg: %s, max: %s",
-		m.Calls, dur(m.TotalNs), dur(m.AvgNs), dur(m.MaxNs),
-	)
-	return json.Marshal(d)
-}
-
-func (s *Stats) getOrCreateMessage(msg string) *MessageStats {
-	messageMu.RLock()
+func (s *Stats) getOrCreateMessage(msg string) *metrics.CallStats {
+	statsMu.RLock()
 	ms, ok := s.Messages[msg]
-	messageMu.RUnlock()
+	statsMu.RUnlock()
 	if !ok {
-		ms = &MessageStats{Message: msg}
-		messageMu.Lock()
+		ms = &metrics.CallStats{Name: msg}
+		statsMu.Lock()
 		s.Messages[msg] = ms
-		messageMu.Unlock()
+		statsMu.Unlock()
 	}
 	return ms
 }
 
-func (m *MessageStats) increment(took time.Duration) {
-	m.Calls++
-	m.TotalNs += took
-	m.AvgNs = m.TotalNs / time.Duration(m.Calls)
-	if took > m.MaxNs {
-		m.MaxNs = took
-	}
-}
-
 func trackMsgRequestDur(m string, d time.Duration) {
 	ms := stats.getOrCreateMessage(m)
-	mall := stats.getOrCreateMessage("ALL")
-	messageMu.Lock()
-	ms.increment(d)
-	mall.increment(d)
-	messageMu.Unlock()
+	statsMu.Lock()
+	ms.Increment(d)
+	stats.AllMessages.Increment(d)
+	statsMu.Unlock()
 }
 
 func init() {

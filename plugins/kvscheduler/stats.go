@@ -17,9 +17,10 @@ package kvscheduler
 import (
 	"encoding/json"
 	"expvar"
-	"fmt"
 	"sync"
 	"time"
+
+	"github.com/ligato/vpp-agent/pkg/metrics"
 )
 
 var (
@@ -28,11 +29,33 @@ var (
 )
 
 func init() {
-	stats.Descriptors = map[string]*StructStats{
-		"ALL": {},
-	}
-	stats.Graph = &StructStats{}
+	stats.GraphMethods.Methods = make(metrics.Calls)
+	stats.AllDescriptors.Methods = make(metrics.Calls)
+	stats.Descriptors = make(map[string]*StructStats)
 }
+
+/*func GetDescriptorStats() map[string]metrics.Calls {
+	ss := make(map[string]metrics.Calls, len(stats.Descriptors))
+	statsMu.RLock()
+	for d, ds := range stats.Descriptors {
+		cc := make(metrics.Calls, len(ds))
+		for c, cs := range ds {
+			css := *cs
+			cc[c] = &css
+		}
+		ss[d] = cc
+	}
+	statsMu.RUnlock()
+	return ss
+}*/
+
+/*func GetGraphStats() *metrics.CallStats {
+	s := make(metrics.Calls, len(stats.Descriptors))
+	statsMu.RLock()
+	*s = stats.Graph
+	statsMu.RUnlock()
+	return s
+}*/
 
 func GetStats() *Stats {
 	s := new(Stats)
@@ -45,113 +68,69 @@ func GetStats() *Stats {
 type Stats struct {
 	TransactionsProcessed uint64
 
-	Graph       *StructStats
-	Descriptors map[string]*StructStats
+	GraphMethods   StructStats
+	AllDescriptors StructStats
+	Descriptors    map[string]*StructStats
 }
 
 func (s *Stats) addDescriptor(name string) {
-	s.Descriptors[name] = &StructStats{}
-}
-
-func GetDescriptorStats() map[string]*StructStats {
-	s := map[string]*StructStats{}
-	statsMu.RLock()
-	for d, ds := range stats.Descriptors {
-		dss := *ds
-		s[d] = &dss
+	s.Descriptors[name] = &StructStats{
+		Methods: make(metrics.Calls),
 	}
-	statsMu.RUnlock()
-	return s
-}
-
-func GetGraphStats() *StructStats {
-	s := new(StructStats)
-	statsMu.RLock()
-	*s = *stats.Graph
-	statsMu.RUnlock()
-	return s
 }
 
 type StructStats struct {
-	Methods []*MethodStats
-}
-
-type MethodStats struct {
-	Method  string
-	Calls   uint64
-	TotalNs time.Duration
-	AvgNs   time.Duration
-	MaxNs   time.Duration
-}
-
-func dur(d time.Duration) string {
-	return d.Round(time.Microsecond * 100).String()
+	Methods metrics.Calls `json:"-,omitempty"`
 }
 
 func (s *StructStats) MarshalJSON() ([]byte, error) {
-	d := map[string]string{}
+	/*d := make(map[string]*metrics.CallStats, len(s.Methods))
 	for _, ms := range s.Methods {
-		m := fmt.Sprintf("%s()", ms.Method)
-		d[m] = fmt.Sprintf(
-			"calls: %d, total: %s, avg: %s, max: %s",
-			ms.Calls, dur(ms.TotalNs), dur(ms.AvgNs), dur(ms.MaxNs),
-		)
-	}
-	return json.Marshal(d)
+		m := fmt.Sprintf("%s()", ms.Name)
+		d[m] = ms
+	}*/
+	return json.Marshal(s.Methods)
 }
 
-func (s *StructStats) getOrCreateMethod(method string) *MethodStats {
+func (s *StructStats) getOrCreateMethod(method string) *metrics.CallStats {
 	statsMu.RLock()
-	for _, m := range s.Methods {
-		if m.Method == method {
-			statsMu.RUnlock()
-			return m
-		}
-	}
+	ms, ok := s.Methods[method]
 	statsMu.RUnlock()
-	ms := &MethodStats{Method: method}
-	statsMu.Lock()
-	s.Methods = append(s.Methods, ms)
-	statsMu.Unlock()
-	return ms
-}
-
-func (m *MethodStats) increment(took time.Duration) {
-	statsMu.Lock()
-	m.Calls++
-	m.TotalNs += took
-	m.AvgNs = m.TotalNs / time.Duration(m.Calls)
-	if took > m.MaxNs {
-		m.MaxNs = took
+	if !ok {
+		ms = &metrics.CallStats{Name: method}
+		statsMu.Lock()
+		s.Methods[method] = ms
+		statsMu.Unlock()
 	}
-	statsMu.Unlock()
+	return ms
 }
 
 func trackDescMethod(d, m string) func() {
 	t := time.Now()
 	method := stats.Descriptors[d].getOrCreateMethod(m)
-	methodall := stats.Descriptors["ALL"].getOrCreateMethod(m)
+	methodall := stats.AllDescriptors.getOrCreateMethod(m)
 	return func() {
 		took := time.Since(t)
-		method.increment(took)
-		methodall.increment(took)
+		statsMu.Lock()
+		method.Increment(took)
+		methodall.Increment(took)
+		statsMu.Unlock()
 	}
 }
 
 func trackGraphMethod(m string) func() {
 	t := time.Now()
-	method := stats.Graph.getOrCreateMethod(m)
+	method := stats.GraphMethods.getOrCreateMethod(m)
 	return func() {
 		took := time.Since(t)
-		method.increment(took)
+		statsMu.Lock()
+		method.Increment(took)
+		statsMu.Unlock()
 	}
 }
 
 func init() {
-	expvar.Publish("kvdescriptors", expvar.Func(func() interface{} {
-		return GetDescriptorStats()
-	}))
-	expvar.Publish("kvgraph", expvar.Func(func() interface{} {
-		return GetGraphStats()
+	expvar.Publish("kvscheduler", expvar.Func(func() interface{} {
+		return GetStats()
 	}))
 }
