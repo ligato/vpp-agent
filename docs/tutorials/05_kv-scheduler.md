@@ -48,9 +48,10 @@ components - a **descriptor** and an **adapter** for every proto-defined type (p
  
 #### 1. Adapters
  
-Let's start with adapters. The purpose of an adapter is to define conversion methods between our proto-defined type and
-a bare `proto.Message`. Since this code fulfils the definition of a boilerplate, we will generate it. The generator is
-called `descriptor-adapter` and can be found [inside the KVScheduler plugin][2]. Build the binary file from the go files inside, and use it to generate the adapters for the `Interface` and `Route` proto messages:
+Let's start with adapters. The purpose of an adapter is to define conversion methods between uour proto-defined type and
+a bare `proto.Message` that the KV Scheduler works with. Since this is boilerplate code, the is tooling to auto-generate
+it. The code generator is called `descriptor-adapter` and it can be found [inside the KVScheduler plugin][2]. Build the 
+binary file from the go files inside, and use it to generate the adapters for the `Interface` and `Route` proto messages:
  
 ```
 descriptor-adapter --descriptor-name Interface --value-type *model.Interface --import "github.com/ligato/vpp-agent/examples/tutorials/05_kv-scheduler/model" --output-dir "descriptor"
@@ -61,12 +62,12 @@ It is good practice to add the above commands to the plugin's main .go file with
 `descriptor-adapter` generator will put the generated adapters into the `descriptor/adapter` directory within the
 plugin folder.
 
-#### 2. Descriptor without dependency
+#### 2. A descriptor without dependency
 
-Another step is to define descriptors. The descriptor itself can be implemented in two ways:
-1. We define the descriptor constructor which implements all required methods directly (good when descriptor methods
+The next  step is to define descriptors. Your descriptor can be implemented in one of two ways:
+1. Define the descriptor constructor which implements all required methods directly (good when descriptor methods
    are few and short in implementation)
-2. We define a descriptor object, implement all methods on it and then put a method references in the descriptor
+2. Define a descriptor object, implement all methods on it and then put a method references in the descriptor
    constructor (the preferred way)
 
 In the interface descriptor, we use the first approach. Let's create a new file - `descriptors.go` - so that the
@@ -81,14 +82,14 @@ func NewIfDescriptor(logger logging.PluginLogger) *api.KVDescriptor {
 }
 ```
 
-**Note:** descriptors in this example are all in a single file since they are short, but the preferred way it to have
-a separate `.go` file for each descriptor. 
+**Note:** descriptors in this example are all in a single file since they are short, but the preferred way is to put
+each descriptor in its own `.go` file. 
 
-`NewIfDescriptor` is a constructor function which returns a type-safe descriptor object. All potential descriptor 
+`NewIfDescriptor` is a constructor function that returns a type-safe descriptor object. All potential descriptor 
 dependencies (logger, various mappings, etc.) are provided via constructor parameters.  
 
 If you have a look at `adapter.InterfaceDescriptor`, you will see that it defines several fields. The most important
-fields are function-types with CRUD definitions and fields resolving dependencies. The full API list is documented in the [KvDescriptor structure][3]. Here, we implement the necessary ones:
+fields are function-types with CRUD definitions and fields resolving dependencies. The full API list is documented in the [KvDescriptor structure][3]. Here, we implement the the APIs that we need for our simple example:
 
 * Name of the descriptor, must be unique for all descriptors. 
 ```go
