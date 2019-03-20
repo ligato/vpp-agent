@@ -21,7 +21,6 @@ import (
 
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/pkg/errors"
 
 	intf "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
@@ -31,32 +30,13 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
 )
 
-// PeriodicPollingPeriod between statistics reads
-// TODO  should be configurable
-var PeriodicPollingPeriod = 1 * time.Second
+var (
+	// PeriodicPollingPeriod between statistics reads
+	// TODO  should be configurable
+	PeriodicPollingPeriod = time.Second * 5
 
-// statType is the specific interface statistics type.
-type statType string
-
-// interface stats prefix as defined by the VPP
-const ifPrefix = "/if/"
-
-// interface statistics matching patterns
-const (
-	Drop    statType = ifPrefix + "drops"
-	Punt             = ifPrefix + "punt"
-	IPv4             = ifPrefix + "ip4"
-	IPv6             = ifPrefix + "ip6"
-	RxNoBuf          = ifPrefix + "rx-no-buf"
-	RxMiss           = ifPrefix + "rx-miss"
-	RxError          = ifPrefix + "rx-error"
-	TxError          = ifPrefix + "tx-error"
-	Rx               = ifPrefix + "rx"
-	Tx               = ifPrefix + "tx"
-)
-
-const (
-	megabit = 1000000 // One megabit in bytes
+	// StateUpdateDelay defines delay before dumping states
+	StateUpdateDelay = time.Second * 3
 )
 
 // InterfaceStateUpdater holds state data of all VPP interfaces.
@@ -78,6 +58,12 @@ type InterfaceStateUpdater struct {
 	ifHandler vppcalls.InterfaceVppAPI
 	ifEvents  chan *vppcalls.InterfaceEvent
 
+	ifsForUpdate   map[uint32]struct{}
+	lastIfCounters map[uint32]govppapi.InterfaceCounters
+
+	lastIfNotif time.Time
+	lastIfMeta  time.Time
+
 	cancel context.CancelFunc // cancel can be used to cancel all goroutines and their jobs inside of the plugin
 	wg     sync.WaitGroup     // wait group that allows to wait until all goroutines of the plugin have finished
 }
@@ -96,6 +82,9 @@ func (c *InterfaceStateUpdater) Init(ctx context.Context, logger logging.PluginL
 	c.kvScheduler = kvScheduler
 	c.publishIfState = publishIfState
 	c.ifState = make(map[uint32]*intf.InterfaceState)
+
+	c.ifsForUpdate = make(map[uint32]struct{})
+	c.lastIfCounters = make(map[uint32]govppapi.InterfaceCounters)
 
 	// VPP channel
 	c.goVppMux = goVppMux
@@ -118,6 +107,13 @@ func (c *InterfaceStateUpdater) Init(ctx context.Context, logger logging.PluginL
 	// Watch for incoming notifications
 	c.wg.Add(1)
 	go c.watchVPPNotifications(childCtx)
+
+	// Periodically read VPP counters and combined counters for VPP statistics
+	c.wg.Add(1)
+	go c.startReadingCounters(childCtx)
+
+	c.wg.Add(1)
+	go c.startUpdatingIfStateDetails(childCtx)
 
 	c.log.Info("Interface state updater initialized")
 
@@ -154,19 +150,12 @@ func (c *InterfaceStateUpdater) Close() error {
 		}
 	}*/
 
-	if err := safeclose.Close(c.vppCh); err != nil {
-		return errors.Errorf("failed to safe close interface state: %v", err)
-	}
-
 	return nil
 }
 
 // watchVPPNotifications watches for delivery of notifications from VPP.
 func (c *InterfaceStateUpdater) watchVPPNotifications(ctx context.Context) {
 	defer c.wg.Done()
-
-	// Periodically read VPP counters and combined counters for VPP statistics
-	go c.startReadingCounters(ctx)
 
 	for {
 		select {
@@ -181,19 +170,7 @@ func (c *InterfaceStateUpdater) watchVPPNotifications(ctx context.Context) {
 			if ifMetaDto.Del {
 				c.setIfStateDeleted(ifMetaDto.Metadata.SwIfIndex, ifMetaDto.Name)
 			} else if !ifMetaDto.Update {
-				// FIXME: dumping should be avoided here
-				/*ifaces, err := c.ifHandler.DumpInterfaces()
-				if err != nil {
-					c.log.Warnf("dump interfaces failed: %v", err)
-					continue
-				}
-				for _, ifaceDetails := range ifaces {
-					if ifaceDetails.Meta.SwIfIndex != ifMetaDto.Metadata.SwIfIndex {
-						// not the added interface
-						continue
-					}
-					c.updateIfStateDetails(ifaceDetails)
-				}*/
+				c.processIfMetaCreate(ifMetaDto.Metadata.SwIfIndex)
 			}
 
 		case <-ctx.Done():
@@ -204,12 +181,38 @@ func (c *InterfaceStateUpdater) watchVPPNotifications(ctx context.Context) {
 	}
 }
 
-// startReadingCounters periodically reads statistics for all interfaces
-func (c *InterfaceStateUpdater) startReadingCounters(ctx context.Context) {
+func (c *InterfaceStateUpdater) startUpdatingIfStateDetails(ctx context.Context) {
+	defer c.wg.Done()
+
+	/*timer := time.NewTimer(PeriodicPollingPeriod)
+	if !ifUpdateTimer.Stop() {
+		<-ifUpdateTimer.C
+	}
+	ifUpdateTimer.Reset(PeriodicPollingPeriod)*/
+
+	tick := time.NewTicker(StateUpdateDelay)
 	for {
 		select {
-		case <-time.After(PeriodicPollingPeriod):
+		case <-tick.C:
+			c.doUpdatesIfStateDetails()
+
+		case <-ctx.Done():
+			c.log.Debug("update if state details polling stopped")
+			return
+		}
+	}
+}
+
+// startReadingCounters periodically reads statistics for all interfaces
+func (c *InterfaceStateUpdater) startReadingCounters(ctx context.Context) {
+	defer c.wg.Done()
+
+	tick := time.NewTicker(PeriodicPollingPeriod)
+	for {
+		select {
+		case <-tick.C:
 			c.doInterfaceStatsRead()
+
 		case <-ctx.Done():
 			c.log.Debug("Interface state VPP periodic polling stopped")
 			return
@@ -217,30 +220,91 @@ func (c *InterfaceStateUpdater) startReadingCounters(ctx context.Context) {
 	}
 }
 
+func (c *InterfaceStateUpdater) processIfMetaCreate(swIfIdx uint32) {
+	c.access.Lock()
+	defer c.access.Unlock()
+
+	c.lastIfMeta = time.Now()
+
+	c.ifsForUpdate[swIfIdx] = struct{}{}
+}
+
+func (c *InterfaceStateUpdater) doUpdatesIfStateDetails() {
+	c.access.Lock()
+
+	// prevent reading stats if last interface notification has been
+	// received in less than polling period
+	if time.Since(c.lastIfMeta) < StateUpdateDelay {
+		c.access.Unlock()
+		return
+	}
+	if len(c.ifsForUpdate) == 0 {
+		c.access.Unlock()
+		return
+	}
+
+	// we dont want to lock during potentionally long dump call
+	c.access.Unlock()
+
+	c.log.Debugf("running update for interface state details (%d)", len(c.ifsForUpdate))
+
+	ifaces, err := c.ifHandler.DumpInterfaces()
+	if err != nil {
+		c.log.Warnf("dump interfaces failed: %v", err)
+		return
+	}
+
+	c.access.Lock()
+	for _, ifaceDetails := range ifaces {
+		if _, ok := c.ifsForUpdate[ifaceDetails.Meta.SwIfIndex]; !ok {
+			// not interface for update
+			continue
+		}
+		c.updateIfStateDetails(ifaceDetails)
+	}
+	// clear interfaces for update
+	c.ifsForUpdate = make(map[uint32]struct{})
+	c.access.Unlock()
+}
+
 // doInterfaceStatsRead dumps statistics using interface filter and processes them
 func (c *InterfaceStateUpdater) doInterfaceStatsRead() {
 	c.access.Lock()
 	defer c.access.Unlock()
 
-	ifStatsList, err := c.goVppMux.GetInterfaceStats()
+	// prevent reading stats if last interface notification has been
+	// received in less than polling period
+	if time.Since(c.lastIfNotif) < StateUpdateDelay {
+		return
+	}
+
+	ifStats, err := c.goVppMux.GetInterfaceStats()
 	if err != nil {
 		// TODO add some counter to prevent it log forever
 		c.log.Errorf("failed to read statistics data: %v", err)
 	}
-	if ifStatsList == nil || len(ifStatsList.Interfaces) == 0 {
+	if ifStats == nil || len(ifStats.Interfaces) == 0 {
 		return
 	}
-	for _, ifStats := range ifStatsList.Interfaces {
-		c.processInterfaceStatEntry(ifStats)
+
+	for i, ifCounters := range ifStats.Interfaces {
+		index := uint32(i)
+		if last, ok := c.lastIfCounters[index]; ok && last == ifCounters {
+			continue
+		}
+		c.lastIfCounters[index] = ifCounters
+		c.processInterfaceStatEntry(ifCounters)
 	}
 }
 
 // processInterfaceStatEntry fills state data for every registered interface and publishes them
 func (c *InterfaceStateUpdater) processInterfaceStatEntry(ifCounters govppapi.InterfaceCounters) {
+
 	ifState, found := c.getIfStateDataWLookup(ifCounters.InterfaceIndex)
 	if !found {
 		return
 	}
+
 	ifState.Statistics = &intf.InterfaceState_Statistics{
 		DropPackets:     ifCounters.Drops,
 		PuntPackets:     ifCounters.Punts,
@@ -262,8 +326,11 @@ func (c *InterfaceStateUpdater) processInterfaceStatEntry(ifCounters govppapi.In
 
 // processIfStateEvent process a VPP state event notification.
 func (c *InterfaceStateUpdater) processIfStateEvent(notif *vppcalls.InterfaceEvent) {
+
 	c.access.Lock()
 	defer c.access.Unlock()
+
+	c.lastIfNotif = time.Now()
 
 	// update and return if state data
 	ifState, found := c.updateIfStateFlags(notif)
@@ -295,8 +362,7 @@ func (c *InterfaceStateUpdater) getIfStateData(swIfIndex uint32, ifName string) 
 
 // getIfStateDataWLookup returns interface state data structure for the specified interface index (creates it if it does not exist).
 // NOTE: plugin.ifStateData needs to be locked when calling this function!
-func (c *InterfaceStateUpdater) getIfStateDataWLookup(ifIdx uint32) (
-	*intf.InterfaceState, bool) {
+func (c *InterfaceStateUpdater) getIfStateDataWLookup(ifIdx uint32) (*intf.InterfaceState, bool) {
 	ifName, _, found := c.swIfIndexes.LookupBySwIfIndex(ifIdx)
 	if !found {
 		return nil, found
@@ -346,10 +412,10 @@ func (c *InterfaceStateUpdater) updateIfStateFlags(vppMsg *vppcalls.InterfaceEve
 	return ifState, true
 }
 
+const megabit = 1000000 // One megabit in bytes
+
 // updateIfStateDetails updates the interface state data in memory from provided VPP details message.
 func (c *InterfaceStateUpdater) updateIfStateDetails(ifDetails *vppcalls.InterfaceDetails) {
-	c.access.Lock()
-	defer c.access.Unlock()
 
 	ifState, found := c.getIfStateDataWLookup(ifDetails.Meta.SwIfIndex)
 	if !found {
@@ -410,6 +476,7 @@ func (c *InterfaceStateUpdater) updateIfStateDetails(ifDetails *vppcalls.Interfa
 
 // setIfStateDeleted marks the interface as deleted in the state data structure in memory.
 func (c *InterfaceStateUpdater) setIfStateDeleted(swIfIndex uint32, ifName string) {
+
 	c.access.Lock()
 	defer c.access.Unlock()
 

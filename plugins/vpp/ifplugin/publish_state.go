@@ -1,9 +1,12 @@
 package ifplugin
 
 import (
+	"strings"
+
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/health/statuscheck"
 	"github.com/ligato/cn-infra/health/statuscheck/model/status"
+	"github.com/pkg/errors"
 
 	"github.com/ligato/vpp-agent/api/models/vpp"
 	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
@@ -28,9 +31,10 @@ func (p *IfPlugin) watchStatusEvents() {
 
 // onStatusResyncEvent is triggered during resync of interface state data
 func (p *IfPlugin) onStatusResyncEvent(e datasync.ResyncEvent) {
+	p.Log.Debugf("received status resync event (%d prefixes)", len(e.GetValues()))
+
 	var wasError error
-	for key, vals := range e.GetValues() {
-		p.Log.Debugf("trying to delete obsolete status for key %v begin ", key)
+	for prefix, vals := range e.GetValues() {
 		var keys []string
 		for {
 			x, stop := vals.GetNext()
@@ -40,10 +44,13 @@ func (p *IfPlugin) onStatusResyncEvent(e datasync.ResyncEvent) {
 			keys = append(keys, x.GetKey())
 		}
 		if len(keys) > 0 {
+			p.Log.Debugf("- %q (%v items)", prefix, len(keys))
 			err := p.resyncIfStateEvents(keys)
 			if err != nil {
 				wasError = err
 			}
+		} else {
+			p.Log.Debugf("- %q (no items)", prefix)
 		}
 	}
 	e.Done(wasError)
@@ -54,9 +61,11 @@ func (p *IfPlugin) resyncIfStateEvents(keys []string) error {
 	p.publishLock.Lock()
 	defer p.publishLock.Unlock()
 
+	p.Log.Debugf("resync interface state events with %d keys", len(keys))
+
 	for _, key := range keys {
-		ifaceName, isIntfKey := interfaces.ModelInterface.ParseKey(key)
-		if !isIntfKey {
+		ifaceName := strings.TrimPrefix(key, interfaces.StatePrefix)
+		if ifaceName == key {
 			continue
 		}
 
@@ -64,7 +73,7 @@ func (p *IfPlugin) resyncIfStateEvents(keys []string) error {
 		if !found {
 			err := p.PublishStatistics.Put(key, nil /*means delete*/)
 			if err != nil {
-				return err
+				return errors.WithMessagef(err, "publish statistic for key %s failed", key)
 			}
 			p.Log.Debugf("Obsolete interface status for %v deleted", key)
 		} else {

@@ -227,7 +227,9 @@ func (d *MicroserviceDescriptor) handleMicroservices(ctx *microserviceCtx) {
 	}
 
 	for _, container := range containers {
-		d.log.Debugf("processing new container %v with state %v", container.ID, container.State)
+		if ctx.lastInspected != 0 {
+			d.log.Debugf("processing new container %v with state %v", container.ID, container.State)
+		}
 		if container.State == "running" && container.Created > ctx.lastInspected {
 			// Inspect the container to get the list of defined environment variables.
 			details, err := d.dockerClient.InspectContainer(container.ID)
