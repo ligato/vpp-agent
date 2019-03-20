@@ -18,8 +18,8 @@ the interface is already present in the VPP. Another example is an L2 FIB entry,
 the required interface and a bridge domain exist and the interface is also assigned to the bridge domain, 
 creating a complex dependency tree. In general, it is true that:
 
-1. To configure a proto-modelled data item coming from the northbound, usually more than one binary API call is
-   required
+1. Typically, more than one binary API call is required to configure a proto-modelled data item coming from the
+   northbound 
 2. To configure a configuration parameter, its parent must exist
 2. Some configuration items are dependent on other configuration items, and they cannot be configured before their
    dependencies are met
@@ -43,26 +43,34 @@ import "github.com/gogo/protobuf/gogoproto/gogo.proto";
 option (gogoproto.messagename_all) = true;
 ```
 
-In order to register our hello world plugin to the scheduler and work with the new model, we need a two new components - a **descriptor** and an **adapter** for every proto-defined type.
+In order to register our Hello World plugin with the scheduler and to work with our new model, we need two new 
+components - a **descriptor** and an **adapter** for every proto-defined type (proto message).
  
 #### 1. Adapters
  
-Let's start with adapters. The purpose of the adapter is to define conversion methods between our proto-defined type and bare `proto.Message`. Since this code fulfils the definition of a boilerplate, we will generate it. The generator is called `descriptor-adapter` and can be found [inside the KVScheduler plugin][2]. Build the binary file from the go files inside, and use it to generate two adapters for the `Interface` and `Route` proto messages:
+Let's start with adapters. The purpose of an adapter is to define conversion methods between our proto-defined type and
+a bare `proto.Message`. Since this code fulfils the definition of a boilerplate, we will generate it. The generator is
+called `descriptor-adapter` and can be found [inside the KVScheduler plugin][2]. Build the binary file from the go files inside, and use it to generate the adapters for the `Interface` and `Route` proto messages:
  
 ```
 descriptor-adapter --descriptor-name Interface --value-type *model.Interface --import "github.com/ligato/vpp-agent/examples/tutorials/05_kv-scheduler/model" --output-dir "descriptor"
 descriptor-adapter --descriptor-name Route --value-type *model.Route --import "github.com/ligato/vpp-agent/examples/tutorials/05_kv-scheduler/model" --output-dir "descriptor"
 ```
 
-It is a good practice to add those commands to the plugin file with the `//go:generate` directives. Adapters were automatically created in the `descriptor/adapter` directory within plugin folder.
+It is good practice to add the above commands to the plugin's main .go file with the `//go:generate` directives. The 
+`descriptor-adapter` generator will put the generated adapters into the `descriptor/adapter` directory within the
+plugin folder.
 
 #### 2. Descriptor without dependency
 
 Another step is to define descriptors. The descriptor itself can be implemented in two ways:
-1. We define the descriptor constructor which implements all required methods directly (good when descriptor methods are few and short in implementation)
-2. We define the descriptor object, implement all methods on it and then put method references to the descriptor constructor (preferred way)
+1. We define the descriptor constructor which implements all required methods directly (good when descriptor methods
+   are few and short in implementation)
+2. We define a descriptor object, implement all methods on it and then put a method references in the descriptor
+   constructor (the preferred way)
 
-In the interface descriptor, we use the first approach. Let's create the `descriptors.go` so the code is outside of `main.go`, and define following code:
+In the interface descriptor, we use the first approach. Let's create a new file - `descriptors.go` - so that the
+descriptor code is outside of `main.go`. Next, add the following code:
 
 ```go
 func NewIfDescriptor(logger logging.PluginLogger) *api.KVDescriptor {
@@ -73,11 +81,14 @@ func NewIfDescriptor(logger logging.PluginLogger) *api.KVDescriptor {
 }
 ```
 
-**Note:** descriptors in the example are all in the single file since they are short, but the preferred way it to have separate `.go` file for every descriptor. 
+**Note:** descriptors in this example are all in a single file since they are short, but the preferred way it to have
+a separate `.go` file for each descriptor. 
 
-The `NewIfDescriptor` is a constructor function which returns a type-safe descriptor object. All potential descriptor dependencies (logger, various mappings, etc.) are provided via constructor parameters.  
+`NewIfDescriptor` is a constructor function which returns a type-safe descriptor object. All potential descriptor 
+dependencies (logger, various mappings, etc.) are provided via constructor parameters.  
 
-If you have a look at `adapter.InterfaceDescriptor`, you will see that it defines several fields. Most important fields are function-types with CRUD definition and fields resolving dependencies. The full API list is documented in the [KvDescriptor structure][3]. Here, we implement the necessary ones:
+If you have a look at `adapter.InterfaceDescriptor`, you will see that it defines several fields. The most important
+fields are function-types with CRUD definitions and fields resolving dependencies. The full API list is documented in the [KvDescriptor structure][3]. Here, we implement the necessary ones:
 
 * Name of the descriptor, must be unique for all descriptors. 
 ```go
