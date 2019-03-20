@@ -1,20 +1,33 @@
 # Tutorial: Add plugin to the KV scheduler
 
-The tutorial shows how to extend our hello world plugin from previous tutorials to wire it with the KV scheduler. We will learn how to prepare a descriptor, generate the adapter and wire the plugin with the KV scheduler. 
+This tutorial shows how to use the ['KV Scheduler'][5] in our hello world plugin that was created in previous
+tutorials. You will learn how to prepare a descriptor, generate the adapter and wire the plugin with the KV 
+Scheduler. 
 
 Requirements:
 * Complete and understand the ['Hello World Agent'](https://ligato.io/cn-infra/tutorials/01_hello-world) tutorial
 * Complete and understand the ['Plugin Dependencies'](https://ligato.io/cn-infra/tutorials/02_plugin-deps) tutorial
 
-For simplicity, this tutorial does not use ETCD or any other northbound database. Instead, the NB events are created manually in the example, using the KV Scheduler API.
+For simplicity, this tutorial does not use ETCD or any other northbound kv store. Instead, NB events are created 
+programmatically in the example, using the KV Scheduler API.
 
-The vpp-agent uses VPP API in form of binary API calls. Each VPP binary API call is designed to create a configuration item in the VPP or add or modify various parameters. In practice, these actions can be dependent on each other. The IP address can be assigned to an interface only if the interface is already present in the VPP. Another example is a VPP forwarding FIB entry, which can be added only if required interface and bridge domain exists and the interface is also assigned in the bridge domain, creating a complex dependency tree. In general, it is true that:
+The vpp-agent uses the VPP binary API calls. Each VPP binary API call is designed to create a configuration item
+in VPP or to add or modify one or more configuration parameters. In practice, these actions can be dependent on
+each other. For example, an IP address can be assigned to an interface only if the interface is already present
+in VPP. Another example is an L2 FIB entry, which can be added only if the required interface and bridge domain
+exist and the interface is also assigned to the bridge domain, creating a complex dependency tree. In general, it
+is true that:
 
-1. to configure all the proto-modelled data provided by the northbound, usually more than one binary API call is required
-2. to configure parameters, a parent item is required to be present
-2. some configuration items themselves are dependent on other and cannot be configured earlier
+1. To configure a proto-modelled data item coming from the northbound, usually more than one binary API call is
+   required
+2. To configure a configuration parameter, its parent must exist
+2. Some configuration items are dependent on other configuration items, and they cannot be configured before their
+   dependencies are met
 
-It means that binary API calls have to be called in an exact order. The VPP agent uses a KV scheduler component to ensure it with system of caching and configuration dependency handling. Every plugin configuring something dependent on other plugin's configs in certain way can be added to the KV scheduler and profit from its advantages. 
+This means that binary API calls must be called in a certain order. The VPP agent uses the KV Scheduler to ensure
+this order, managing configuration dependencies and caching configuration items until their dependencies are met.
+Any plugin that configures something that is dependent on some other plugin's configutation items can be registered
+with the KV scheduler and profit from this functionality. 
  
 As a first step, we will use the special [proto model][1]. The model defines two simple messages - an `Interface` and a `Route` requiring some interface. The model demonstrates simple dependency between configuration items (since we need an interface to configure the route).  
  
@@ -345,5 +358,6 @@ The second transaction introduced the expected interface. The scheduler recogniz
  [2]: https://github.com/ligato/vpp-agent/tree/master/plugins/kvscheduler/descriptor-adapter
  [3]: /plugins/kvscheduler/api/kv_descriptor_api.go
  [4]: /examples/tutorials/05_kv-scheduler
+ [5]: https://github.com/ligato/vpp-agent/blob/master/docs/kvscheduler/README.md
  
  
