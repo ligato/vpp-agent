@@ -15,6 +15,7 @@
 package bolt
 
 import (
+	"bytes"
 	"context"
 	"strings"
 
@@ -81,6 +82,9 @@ func (c *Client) watch(resp func(watchResp keyval.BytesWatchResp), closeCh chan 
 					boltLogger.WithField("prefix", prefix).
 						Debug("Watch recv chan was closed")
 					return
+				}
+				if c.cfg.FilterDupNotifs && bytes.Equal(ev.Value, ev.PrevValue) {
+					continue
 				}
 				r := &watchResp{
 					typ:       ev.Type,

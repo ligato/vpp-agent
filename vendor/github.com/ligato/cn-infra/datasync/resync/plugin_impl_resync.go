@@ -15,6 +15,7 @@
 package resync
 
 import (
+	"strings"
 	"sync"
 	"time"
 
@@ -22,8 +23,11 @@ import (
 	"github.com/ligato/cn-infra/logging"
 )
 
-const (
-	singleResyncTimeout = time.Second * 5
+var (
+	// SingleResyncAcceptTimeout defines timeout for accepting resync start.
+	SingleResyncAcceptTimeout = time.Second * 1
+	// SingleResyncAckTimeout defines timeout for resync ack.
+	SingleResyncAckTimeout = time.Second * 10
 )
 
 // Plugin implements Plugin interface, therefore it can be loaded with other plugins.
@@ -45,11 +49,6 @@ type Deps struct {
 // Init initializes variables.
 func (p *Plugin) Init() error {
 	p.registrations = make(map[string]*registration)
-	return nil
-}
-
-// AfterInit method starts the resync.
-func (p *Plugin) AfterInit() error {
 	return nil
 }
 
@@ -96,10 +95,12 @@ func (p *Plugin) DoResync() {
 // Call callback on plugins to create/delete/modify objects.
 func (p *Plugin) startResync() {
 	if len(p.regOrder) == 0 {
-		p.Log.Infof("No registrations, skipping resync")
+		p.Log.Warnf("No registrations, skipping resync")
 		return
 	}
-	p.Log.Infof("Starting resync for: %+v", p.regOrder)
+
+	subs := strings.Join(p.regOrder, ", ")
+	p.Log.Infof("Resync starting for %d registrations (%v)", len(p.regOrder), subs)
 
 	resyncStart := time.Now()
 
@@ -108,23 +109,30 @@ func (p *Plugin) startResync() {
 			t := time.Now()
 			p.startSingleResync(regName, reg)
 
-			p.Log.Infof("Resync for %v took %v", regName, time.Since(t).Truncate(time.Millisecond))
+			took := time.Since(t).Round(time.Millisecond)
+			p.Log.Debugf("finished resync for %v took %v", regName, took)
 		}
 	}
 
-	p.Log.Infof("Resync complete (took: %v)", time.Since(resyncStart).Truncate(time.Millisecond))
+	p.Log.Infof("Resync done (took: %v)", time.Since(resyncStart).Round(time.Millisecond))
 
 	// TODO check if there ReportError (if not than report) if error occurred even during Resync
 }
 func (p *Plugin) startSingleResync(resyncName string, reg *registration) {
 	started := newStatusEvent(Started)
 
-	reg.statusChan <- started
+	select {
+	case reg.statusChan <- started:
+		// accept
+	case <-time.After(SingleResyncAcceptTimeout):
+		p.Log.WithField("regName", resyncName).Warn("Timeout of resync start!")
+		return
+	}
 
 	select {
 	case <-started.ReceiveAck():
 		// ack
-	case <-time.After(singleResyncTimeout):
-		p.Log.WithField("regName", resyncName).Warn("Timeout of ACK")
+	case <-time.After(SingleResyncAckTimeout):
+		p.Log.WithField("regName", resyncName).Warn("Timeout of resync ACK!")
 	}
 }

@@ -206,7 +206,7 @@ func (a *agent) starter() error {
 }
 
 func (a *agent) start() error {
-	agentLogger.Infof("Starting agent with %d plugins", len(a.opts.Plugins))
+	agentLogger.Debugf("starting %d plugins", len(a.opts.Plugins))
 
 	// Init plugins
 	for _, plugin := range a.opts.Plugins {
