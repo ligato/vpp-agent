@@ -19,10 +19,10 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"syscall"
 
 	"github.com/gogo/protobuf/proto"
 	prototypes "github.com/gogo/protobuf/types"
-	"github.com/ligato/vpp-agent/pkg/models"
 	"github.com/pkg/errors"
 	"github.com/vishvananda/netlink"
 	"golang.org/x/sys/unix"
@@ -32,11 +32,12 @@ import (
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/servicelabel"
 	"github.com/ligato/cn-infra/utils/addrs"
-	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 
 	interfaces "github.com/ligato/vpp-agent/api/models/linux/interfaces"
 	namespace "github.com/ligato/vpp-agent/api/models/linux/namespace"
 	vpp_intf "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
+	"github.com/ligato/vpp-agent/pkg/models"
+	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/linux/ifplugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/linux/ifplugin/ifaceidx"
 	iflinuxcalls "github.com/ligato/vpp-agent/plugins/linux/ifplugin/linuxcalls"
@@ -44,7 +45,6 @@ import (
 	nsdescriptor "github.com/ligato/vpp-agent/plugins/linux/nsplugin/descriptor"
 	nslinuxcalls "github.com/ligato/vpp-agent/plugins/linux/nsplugin/linuxcalls"
 	vpp_ifaceidx "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
-	"syscall"
 )
 
 const (
@@ -123,6 +123,9 @@ type InterfaceDescriptor struct {
 	vppIfPlugin  VPPIfPluginAPI
 	scheduler    kvs.KVScheduler
 
+	// runtime
+	intfIndex ifaceidx.LinuxIfMetadataIndex
+
 	// parallelization of the Retrieve operation
 	goRoutinesCnt int
 }
@@ -173,6 +176,12 @@ func (d *InterfaceDescriptor) GetDescriptor() *adapter.InterfaceDescriptor {
 		Dependencies:         d.Dependencies,
 		RetrieveDependencies: []string{nsdescriptor.MicroserviceDescriptorName},
 	}
+}
+
+// SetInterfaceIndex should be used to provide interface index immediately after
+// the descriptor registration.
+func (d *InterfaceDescriptor) SetInterfaceIndex(intfIndex ifaceidx.LinuxIfMetadataIndex) {
+	d.intfIndex = intfIndex
 }
 
 // EquivalentInterfaces is case-insensitive comparison function for

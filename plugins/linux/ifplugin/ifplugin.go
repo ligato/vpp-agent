@@ -110,6 +110,9 @@ func (p *IfPlugin) Init() error {
 		return errors.New("missing index with interface metadata")
 	}
 
+	// pass read-only index map to descriptors
+	p.ifDescriptor.SetInterfaceIndex(p.ifIndex)
+
 	// start interface watching
 	if err = p.ifWatcher.StartWatching(); err != nil {
 		return err

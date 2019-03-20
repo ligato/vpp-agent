@@ -100,6 +100,7 @@ func New() *VPPAgent {
 	}
 	orchestrator.DefaultPlugin.Watcher = watchers
 
+	ifplugin.DefaultPlugin.Watcher = watchers
 	ifplugin.DefaultPlugin.NotifyStates = ifStatePub
 	ifplugin.DefaultPlugin.PublishStatistics = writers
 	puntplugin.DefaultPlugin.PublishState = writers

@@ -21,6 +21,7 @@ import (
 	"context"
 	"os"
 	"sync"
+	"time"
 
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/datasync"
@@ -137,8 +138,7 @@ func (p *IfPlugin) Init() error {
 	p.fromConfigFile()
 
 	// Fills nil dependencies with default values
-	// FIXME: for performance reasons, disabled until refactored
-	//p.publishStats = p.PublishStatistics != nil || p.NotifyStates != nil
+	p.publishStats = p.PublishStatistics != nil || p.NotifyStates != nil
 	p.fixNilPointers()
 
 	// VPP channel
@@ -199,11 +199,7 @@ func (p *IfPlugin) Init() error {
 	if p.publishStats {
 		// subscribe & watch for resync of interface state data
 		p.resyncStatusChan = make(chan datasync.ResyncEvent)
-		p.watchStatusReg, err = p.Watcher.Watch("VPP-interface-state",
-			nil, p.resyncStatusChan, interfaces.StatePrefix)
-		if err != nil {
-			return err
-		}
+
 		p.wg.Add(1)
 		go p.watchStatusEvents()
 
@@ -215,18 +211,48 @@ func (p *IfPlugin) Init() error {
 		p.ifStateChan = make(chan *interfaces.InterfaceNotification, 1000)
 		// Interface state updater
 		p.ifStateUpdater = &InterfaceStateUpdater{}
-		if err := p.ifStateUpdater.Init(p.ctx, p.Log, p.KVScheduler, p.GoVppmux, p.intfIndex,
-			func(state *interfaces.InterfaceNotification) {
-				select {
-				case p.ifStateChan <- state:
-					// OK
-				default:
-					p.Log.Warn("Unable to send to the ifStateChan channel - channel buffer full.")
+
+		var n int
+		var t time.Time
+		ifNotifHandler := func(state *interfaces.InterfaceNotification) {
+			select {
+			case p.ifStateChan <- state:
+				// OK
+			default:
+				// full
+				if time.Since(t) > time.Second {
+					p.Log.Debugf("ifStateChan channel is full (%d)", n)
+					n = 0
+				} else {
+					n++
 				}
-			}); err != nil {
+				t = time.Now()
+			}
+		}
+
+		if err := p.ifStateUpdater.Init(p.ctx, p.Log, p.KVScheduler, p.GoVppmux, p.intfIndex, ifNotifHandler); err != nil {
 			return err
 		}
+
+		if err = p.subscribeWatcher(); err != nil {
+			return err
+		}
+
 		p.Log.Debug("ifStateUpdater Initialized")
+	}
+
+	return nil
+}
+
+func (p *IfPlugin) subscribeWatcher() (err error) {
+	keyPrefixes := []string{interfaces.StatePrefix}
+
+	p.Log.Debugf("subscribe to %d status prefixes: %v", len(keyPrefixes), keyPrefixes)
+
+	p.watchStatusReg, err = p.Watcher.Watch("vpp-if-state",
+		nil, p.resyncStatusChan, keyPrefixes...)
+	if err != nil {
+		return err
 	}
 
 	return nil
@@ -266,9 +292,7 @@ func (p *IfPlugin) Close() error {
 		// state updater
 		p.ifStateUpdater,
 		// registrations
-		p.watchStatusReg,
-		// channels
-		p.resyncStatusChan, p.ifStateChan)
+		p.watchStatusReg)
 }
 
 // GetInterfaceIndex gives read-only access to map with metadata of all configured
