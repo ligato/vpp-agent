@@ -1,4 +1,4 @@
-# Tutorial: Add plugin to the KV scheduler
+# Tutorial: Using the KV Scheduler in your plugin
 
 This tutorial shows how to use the ['KV Scheduler'][5] in our hello world plugin that was created in previous
 tutorials. You will learn how to prepare a descriptor, generate the adapter and wire the plugin with the KV 
@@ -11,12 +11,12 @@ Requirements:
 For simplicity, this tutorial does not use ETCD or any other northbound kv store. Instead, NB events are created 
 programmatically in the example, using the KV Scheduler API.
 
-The vpp-agent uses the VPP binary API calls. Each VPP binary API call is designed to create a configuration item
-in VPP or to add or modify one or more configuration parameters. In practice, these actions can be dependent on
-each other. For example, an IP address can be assigned to an interface only if the interface is already present
-in VPP. Another example is an L2 FIB entry, which can be added only if the required interface and bridge domain
-exist and the interface is also assigned to the bridge domain, creating a complex dependency tree. In general, it
-is true that:
+The vpp-agent uses VPP binary API calls to configure the VPP. Each VPP binary API call is designed to create
+a configuration item in the VPP or to add or modify one or more configuration parameters. In practice, these
+actions can be dependent on each other. For example, an IP address can be assigned to an interface only if 
+the interface is already present in the VPP. Another example is an L2 FIB entry, which can be added only if
+the required interface and a bridge domain exist and the interface is also assigned to the bridge domain, 
+creating a complex dependency tree. In general, it is true that:
 
 1. To configure a proto-modelled data item coming from the northbound, usually more than one binary API call is
    required
@@ -24,14 +24,20 @@ is true that:
 2. Some configuration items are dependent on other configuration items, and they cannot be configured before their
    dependencies are met
 
-This means that binary API calls must be called in a certain order. The VPP agent uses the KV Scheduler to ensure
+This means that VPP binary API calls must be called in a certain order. The VPP agent uses the KV Scheduler to ensure
 this order, managing configuration dependencies and caching configuration items until their dependencies are met.
 Any plugin that configures something that is dependent on some other plugin's configutation items can be registered
 with the KV scheduler and profit from this functionality. 
  
-As a first step, we will use the special [proto model][1]. The model defines two simple messages - an `Interface` and a `Route` requiring some interface. The model demonstrates simple dependency between configuration items (since we need an interface to configure the route).  
+First, we define a simple northbound [proto model][1] that we will use in our example plugin. The model defines two
+simple messages - an  `Interface` and a `Route` that depends on some interface. The model demonstrates a simple 
+dependency between configuration  items (basically, we need an interface to configure a route).  
  
-**Important note:** The vpp-agent uses the orchestrator component, which responsibility is to collect northbound data if provided from multiple sources (mainly a KVDB store and GRPC). The orchestrator requires exact message names in order to perform successful marshalling, thus those methods have to be generated using special protobuf option (together with the following import):
+**Important note:** The vpp-agent uses the Orchestrator component, which is responsible for collecting northbound
+data from multiple sources (mainly a KV Store and GRPC clients). To marshall/unmarshall proto messages defined in
+northbound proto models, the Orchestrator needs message names to be present in the messages. To generate code where
+message names are present in proto messages we must use the following special protobuf option (together with its
+import):
 ```proto
 import "github.com/gogo/protobuf/gogoproto/gogo.proto";
 option (gogoproto.messagename_all) = true;
