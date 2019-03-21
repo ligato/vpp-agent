@@ -15,8 +15,8 @@
 package graph
 
 import (
-	"testing"
 	. "github.com/onsi/gomega"
+	"testing"
 )
 
 type mockIter struct {
@@ -186,7 +186,7 @@ func TestLookupOverNodeKeysWithOverlay(t *testing.T) {
 	Expect(mi.visitedNodes).To(HaveKey("prefix1/node2"))
 	Expect(mi.visitedNodes).To(HaveKey("prefix2/node3"))
 	mi.reset()
-	
+
 	// check in the underlay before saving
 	el.iterTargets("prefix1/node1", false, mi.visitNode)
 	Expect(mi.visitedNodes).To(HaveLen(1))
@@ -207,7 +207,7 @@ func TestLookupOverNodeKeysWithOverlay(t *testing.T) {
 	Expect(mi.visitedNodes).To(HaveKey("prefix1/node1"))
 	Expect(mi.visitedNodes).To(HaveKey("prefix2/node3"))
 	mi.reset()
-	
+
 	// save and re-check in the underlay
 	elOver.saveOverlay()
 	el.iterTargets("prefix1/node1", false, mi.visitNode)
@@ -233,7 +233,7 @@ func TestLookupOverNodeKeysWithOverlay(t *testing.T) {
 	Expect(mi.visitedNodes).To(HaveKey("prefix1/node2"))
 	Expect(mi.visitedNodes).To(HaveKey("prefix2/node3"))
 	mi.reset()
-	
+
 	// delete two in overlay
 	elOver.delNodeKey("prefix1/node2")
 	elOver.delNodeKey("prefix2/node3")
@@ -253,7 +253,7 @@ func TestLookupOverNodeKeysWithOverlay(t *testing.T) {
 	Expect(mi.visitedNodes).To(HaveLen(1))
 	Expect(mi.visitedNodes).To(HaveKey("prefix1/node1"))
 	mi.reset()
-	
+
 	// check in underlay before save:
 	el.iterTargets("prefix1/node1", false, mi.visitNode)
 	Expect(mi.visitedNodes).To(HaveLen(1))
@@ -278,7 +278,7 @@ func TestLookupOverNodeKeysWithOverlay(t *testing.T) {
 	Expect(mi.visitedNodes).To(HaveKey("prefix1/node2"))
 	Expect(mi.visitedNodes).To(HaveKey("prefix2/node3"))
 	mi.reset()
-	
+
 	// save and re-check underlay
 	elOver.saveOverlay()
 	el.iterTargets("prefix1/node1", false, mi.visitNode)
@@ -338,13 +338,14 @@ func TestLookupOverEdges(t *testing.T) {
 	el.iterSources("some-key", mi.visitEdge)
 	Expect(mi.visitedEdges).To(BeEmpty())
 
-	el.addEdge(edge{  // "prefix1/node2" -> "prefix1/node1"
+	el.addEdge(edge{ // "prefix1/node2" -> "prefix1/node1"
 		targetKey:  "prefix1/node1",
 		isPrefix:   false,
 		sourceNode: "prefix1/node2",
 		relation:   "depends-on",
 		label:      "node1 exists",
 	})
+	Expect(el.verifyDirDepthBounds()).To(BeNil())
 	el.addEdge(edge{ // "prefix1/node2" -> "prefix2/node3"
 		targetKey:  "prefix2/node3",
 		isPrefix:   false,
@@ -352,6 +353,7 @@ func TestLookupOverEdges(t *testing.T) {
 		relation:   "depends-on",
 		label:      "node3 exists",
 	})
+	Expect(el.verifyDirDepthBounds()).To(BeNil())
 
 	el.addEdge(edge{ // "prefix2/node3" -> "prefix1/*"
 		targetKey:  "prefix1/",
@@ -360,6 +362,7 @@ func TestLookupOverEdges(t *testing.T) {
 		relation:   "depends-on",
 		label:      "prefix1 non-empty",
 	})
+	Expect(el.verifyDirDepthBounds()).To(BeNil())
 	el.addEdge(edge{ // "prefix2/node3" -> "prefix2/node3"
 		targetKey:  "prefix2/node3",
 		isPrefix:   false,
@@ -367,6 +370,7 @@ func TestLookupOverEdges(t *testing.T) {
 		relation:   "myself",
 		label:      "edge to itself",
 	})
+	Expect(el.verifyDirDepthBounds()).To(BeNil())
 
 	el.addEdge(edge{
 		targetKey:  "", // "prefix1/node1" -> *
@@ -375,6 +379,7 @@ func TestLookupOverEdges(t *testing.T) {
 		relation:   "all",
 		label:      "all",
 	})
+	Expect(el.verifyDirDepthBounds()).To(BeNil())
 
 	Expect(el.edges).To(HaveLen(5))
 
@@ -406,6 +411,7 @@ func TestLookupOverEdges(t *testing.T) {
 		relation:   "depends-on",
 		label:      "node3 exists",
 	})
+	Expect(el.verifyDirDepthBounds()).To(BeNil())
 	el.delEdge(edge{
 		targetKey:  "", // "prefix1/node1" -> *
 		isPrefix:   true,
@@ -413,6 +419,7 @@ func TestLookupOverEdges(t *testing.T) {
 		relation:   "all",
 		label:      "all",
 	})
+	Expect(el.verifyDirDepthBounds()).To(BeNil())
 	Expect(el.edges).To(HaveLen(5)) // not gc-ed yet
 
 	el.iterSources("prefix1/node1", mi.visitEdge)
@@ -439,6 +446,7 @@ func TestLookupOverEdges(t *testing.T) {
 		relation:   "depends-on",
 		label:      "prefix1 non-empty",
 	})
+	Expect(el.verifyDirDepthBounds()).To(BeNil())
 	Expect(el.edges).To(HaveLen(2)) // gc-ed
 
 	el.iterSources("prefix1/node1", mi.visitEdge)
@@ -456,13 +464,14 @@ func TestLookupOverEdges(t *testing.T) {
 	mi.reset()
 
 	// delete the remaining edges
-	el.delEdge(edge{  // "prefix1/node2" -> "prefix1/node1"
+	el.delEdge(edge{ // "prefix1/node2" -> "prefix1/node1"
 		targetKey:  "prefix1/node1",
 		isPrefix:   false,
 		sourceNode: "prefix1/node2",
 		relation:   "depends-on",
 		label:      "node1 exists",
 	})
+	Expect(el.verifyDirDepthBounds()).To(BeNil())
 	el.delEdge(edge{ // "prefix2/node3" -> "prefix2/node3"
 		targetKey:  "prefix2/node3",
 		isPrefix:   false,
@@ -470,6 +479,7 @@ func TestLookupOverEdges(t *testing.T) {
 		relation:   "myself",
 		label:      "edge to itself",
 	})
+	Expect(el.verifyDirDepthBounds()).To(BeNil())
 	Expect(el.edges).To(BeEmpty()) // gc-ed
 
 	el.iterSources("prefix1/node1", mi.visitEdge)
@@ -490,13 +500,14 @@ func TestLookupOverEdgesWithOverlay(t *testing.T) {
 	el := newEdgeLookup()
 	Expect(el).ToNot(BeNil())
 
-	el.addEdge(edge{  // "prefix1/node2" -> "prefix1/node1"
+	el.addEdge(edge{ // "prefix1/node2" -> "prefix1/node1"
 		targetKey:  "prefix1/node1",
 		isPrefix:   false,
 		sourceNode: "prefix1/node2",
 		relation:   "depends-on",
 		label:      "node1 exists",
 	})
+	Expect(el.verifyDirDepthBounds()).To(BeNil())
 	el.addEdge(edge{ // "prefix1/node2" -> "prefix2/node3"
 		targetKey:  "prefix2/node3",
 		isPrefix:   false,
@@ -504,7 +515,7 @@ func TestLookupOverEdgesWithOverlay(t *testing.T) {
 		relation:   "depends-on",
 		label:      "node3 exists",
 	})
-
+	Expect(el.verifyDirDepthBounds()).To(BeNil())
 	el.addEdge(edge{ // "prefix2/node3" -> "prefix1/*"
 		targetKey:  "prefix1/",
 		isPrefix:   true,
@@ -512,12 +523,14 @@ func TestLookupOverEdgesWithOverlay(t *testing.T) {
 		relation:   "depends-on",
 		label:      "prefix1 non-empty",
 	})
+	Expect(el.verifyDirDepthBounds()).To(BeNil())
 
 	elOver := el.makeOverlay()
 	Expect(elOver).ToNot(BeNil())
 	Expect(elOver.underlay).To(Equal(el))
 	Expect(el.overlay).To(Equal(elOver))
-	
+	Expect(elOver.verifyDirDepthBounds()).To(BeNil())
+
 	elOver.addEdge(edge{ // "prefix2/node3" -> "prefix2/node3"
 		targetKey:  "prefix2/node3",
 		isPrefix:   false,
@@ -525,6 +538,7 @@ func TestLookupOverEdgesWithOverlay(t *testing.T) {
 		relation:   "myself",
 		label:      "edge to itself",
 	})
+	Expect(elOver.verifyDirDepthBounds()).To(BeNil())
 
 	elOver.addEdge(edge{
 		targetKey:  "", // "prefix1/node1" -> *
@@ -533,10 +547,11 @@ func TestLookupOverEdgesWithOverlay(t *testing.T) {
 		relation:   "all",
 		label:      "all",
 	})
+	Expect(elOver.verifyDirDepthBounds()).To(BeNil())
 
 	Expect(el.edges).To(HaveLen(3))
 	Expect(elOver.edges).To(HaveLen(5))
-	
+
 	// check overlay
 	elOver.iterSources("prefix1/node1", mi.visitEdge)
 	Expect(mi.visitedEdges).To(HaveLen(3))
@@ -555,7 +570,7 @@ func TestLookupOverEdgesWithOverlay(t *testing.T) {
 	Expect(mi.visitedEdges).To(HaveKey(visitedEdge{"prefix2/node3", "myself", "edge to itself"}))
 	Expect(mi.visitedEdges).To(HaveKey(visitedEdge{"prefix1/node1", "all", "all"}))
 	mi.reset()
-	
+
 	// check underlay
 	el.iterSources("prefix1/node1", mi.visitEdge)
 	Expect(mi.visitedEdges).To(HaveLen(2))
@@ -570,9 +585,10 @@ func TestLookupOverEdgesWithOverlay(t *testing.T) {
 	Expect(mi.visitedEdges).To(HaveLen(1))
 	Expect(mi.visitedEdges).To(HaveKey(visitedEdge{"prefix1/node2", "depends-on", "node3 exists"}))
 	mi.reset()
-	
+
 	// save and re-check underlay
 	elOver.saveOverlay()
+	Expect(el.verifyDirDepthBounds()).To(BeNil())
 	el.iterSources("prefix1/node1", mi.visitEdge)
 	Expect(mi.visitedEdges).To(HaveLen(3))
 	Expect(mi.visitedEdges).To(HaveKey(visitedEdge{"prefix1/node2", "depends-on", "node1 exists"}))
@@ -589,8 +605,8 @@ func TestLookupOverEdgesWithOverlay(t *testing.T) {
 	Expect(mi.visitedEdges).To(HaveKey(visitedEdge{"prefix1/node2", "depends-on", "node3 exists"}))
 	Expect(mi.visitedEdges).To(HaveKey(visitedEdge{"prefix2/node3", "myself", "edge to itself"}))
 	Expect(mi.visitedEdges).To(HaveKey(visitedEdge{"prefix1/node1", "all", "all"}))
-	mi.reset()	
-	
+	mi.reset()
+
 	// delete 2 edges in overlay
 	elOver.delEdge(edge{ // "prefix1/node2" -> "prefix2/node3"
 		targetKey:  "prefix2/node3",
@@ -599,6 +615,7 @@ func TestLookupOverEdgesWithOverlay(t *testing.T) {
 		relation:   "depends-on",
 		label:      "node3 exists",
 	})
+	Expect(elOver.verifyDirDepthBounds()).To(BeNil())
 	elOver.delEdge(edge{
 		targetKey:  "", // "prefix1/node1" -> *
 		isPrefix:   true,
@@ -606,6 +623,7 @@ func TestLookupOverEdgesWithOverlay(t *testing.T) {
 		relation:   "all",
 		label:      "all",
 	})
+	Expect(elOver.verifyDirDepthBounds()).To(BeNil())
 	Expect(elOver.edges).To(HaveLen(5)) // not gc-ed yet
 
 	// check overlay
@@ -622,7 +640,7 @@ func TestLookupOverEdgesWithOverlay(t *testing.T) {
 	Expect(mi.visitedEdges).To(HaveLen(1))
 	Expect(mi.visitedEdges).To(HaveKey(visitedEdge{"prefix2/node3", "myself", "edge to itself"}))
 	mi.reset()
-	
+
 	// underlay before save
 	el.iterSources("prefix1/node1", mi.visitEdge)
 	Expect(mi.visitedEdges).To(HaveLen(3))
@@ -641,9 +659,10 @@ func TestLookupOverEdgesWithOverlay(t *testing.T) {
 	Expect(mi.visitedEdges).To(HaveKey(visitedEdge{"prefix2/node3", "myself", "edge to itself"}))
 	Expect(mi.visitedEdges).To(HaveKey(visitedEdge{"prefix1/node1", "all", "all"}))
 	mi.reset()
-	
+
 	// save and re-check underlay
 	elOver.saveOverlay()
+	Expect(el.verifyDirDepthBounds()).To(BeNil())
 	el.iterSources("prefix1/node1", mi.visitEdge)
 	Expect(mi.visitedEdges).To(HaveLen(2))
 	Expect(mi.visitedEdges).To(HaveKey(visitedEdge{"prefix1/node2", "depends-on", "node1 exists"}))
@@ -657,7 +676,7 @@ func TestLookupOverEdgesWithOverlay(t *testing.T) {
 	Expect(mi.visitedEdges).To(HaveLen(1))
 	Expect(mi.visitedEdges).To(HaveKey(visitedEdge{"prefix2/node3", "myself", "edge to itself"}))
 	mi.reset()
-	
+
 	// delete another edge, but do not save
 	elOver.delEdge(edge{ // "prefix2/node3" -> "prefix1/*"
 		targetKey:  "prefix1/",
@@ -666,6 +685,7 @@ func TestLookupOverEdgesWithOverlay(t *testing.T) {
 		relation:   "depends-on",
 		label:      "prefix1 non-empty",
 	})
+	Expect(elOver.verifyDirDepthBounds()).To(BeNil())
 	Expect(elOver.edges).To(HaveLen(2)) // gc-ed
 	Expect(el.edges).To(HaveLen(5))
 
@@ -686,6 +706,7 @@ func TestLookupOverEdgesWithOverlay(t *testing.T) {
 	Expect(el.makeOverlay()).To(Equal(elOver))
 	elOver = el.makeOverlay()
 	elOver.saveOverlay()
+	Expect(el.verifyDirDepthBounds()).To(BeNil())
 
 	// check underlay
 	el.iterSources("prefix1/node1", mi.visitEdge)
@@ -702,5 +723,3 @@ func TestLookupOverEdgesWithOverlay(t *testing.T) {
 	Expect(mi.visitedEdges).To(HaveKey(visitedEdge{"prefix2/node3", "myself", "edge to itself"}))
 	mi.reset()
 }
-
-
