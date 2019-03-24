@@ -67,12 +67,16 @@ message LocalSID {
 
     /* End function behavior of endpoint with decapsulation and specific IPv4 table lookup*/
     message EndDT4 {
-        // TODO model this end function
+        uint32 vrf_id = 1;              /* vrf index of IPv4 table that should be used for lookup.
+                                           vrf_index and fib_table_id should refer to the same routing table. VRF index refer to it from client side
+                                           and FIB table id from VPP-internal side (index of memory allocated structure from pool)(source: https://wiki.fd.io/view/VPP/Per-feature_Notes). */
     }
 
     /* End function behavior of endpoint with decapsulation and specific IPv6 table lookup*/
     message EndDT6 {
-        // TODO model this end function
+        uint32 vrf_id = 1;              /* vrf index of IPv6 table that should be used for lookup.
+                                           vrf_index and fib_table_id should refer to the same routing table. VRF index refer to it from client side
+                                           and FIB table id from VPP-internal side (index of memory allocated structure from pool)(source: https://wiki.fd.io/view/VPP/Per-feature_Notes). */
     }
 
     /* End function behavior of dynamic segment routing proxy endpoint */

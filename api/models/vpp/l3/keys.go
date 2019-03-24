@@ -100,3 +100,8 @@ func ParseProxyARPInterfaceKey(key string) (iface string, isProxyARPInterfaceKey
 	}
 	return "", false
 }
+
+// RoutePrefix returns longest-common prefix of keys representing route that is written to given vrf table.
+func RoutePrefix(vrf string) string {
+	return ModelRoute.KeyPrefix() + "vrf/" + vrf + "/"
+}

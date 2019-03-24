@@ -240,22 +240,24 @@ func TestAddLocalSID(t *testing.T) {
 				NhAddr6:   nextHop,
 			},
 		},
-		// endDT4 and endDT6 are not fully modelled yet -> testing only current implementation
 		{
 			Name: "addition with endDT4 behaviour",
 			Input: &srv6.LocalSID{
 				Sid:        sidToStr(sidA),
 				FibTableId: 10,
 				EndFunction: &srv6.LocalSID_EndFunction_DT4{
-					EndFunction_DT4: &srv6.LocalSID_EndDT4{},
+					EndFunction_DT4: &srv6.LocalSID_EndDT4{
+						VrfId: 5,
+					},
 				},
 			},
 			Expected: &sr.SrLocalsidAddDel{
-				IsDel:    0,
-				Localsid: sidA,
-				Behavior: vpp1901.BehaviorDT4,
-				FibTable: 10,
-				EndPsp:   0,
+				IsDel:     0,
+				Localsid:  sidA,
+				Behavior:  vpp1901.BehaviorDT4,
+				FibTable:  10,
+				SwIfIndex: 5,
+				EndPsp:    0,
 			},
 		},
 		{
@@ -264,15 +266,18 @@ func TestAddLocalSID(t *testing.T) {
 				Sid:        sidToStr(sidA),
 				FibTableId: 10,
 				EndFunction: &srv6.LocalSID_EndFunction_DT6{
-					EndFunction_DT6: &srv6.LocalSID_EndDT6{},
+					EndFunction_DT6: &srv6.LocalSID_EndDT6{
+						VrfId: 5,
+					},
 				},
 			},
 			Expected: &sr.SrLocalsidAddDel{
-				IsDel:    0,
-				Localsid: sidA,
-				Behavior: vpp1901.BehaviorDT6,
-				FibTable: 10,
-				EndPsp:   0,
+				IsDel:     0,
+				Localsid:  sidA,
+				Behavior:  vpp1901.BehaviorDT6,
+				FibTable:  10,
+				SwIfIndex: 5,
+				EndPsp:    0,
 			},
 		},
 		{

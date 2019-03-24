@@ -15,12 +15,14 @@
 package descriptor
 
 import (
+	"fmt"
 	"net"
 	"reflect"
 	"strings"
 
 	"github.com/ligato/cn-infra/logging"
 	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
+	"github.com/ligato/vpp-agent/api/models/vpp/l3"
 	srv6 "github.com/ligato/vpp-agent/api/models/vpp/srv6"
 	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/vpp/srplugin/descriptor/adapter"
@@ -35,6 +37,7 @@ const (
 	// dependency labels
 	localsidOutgoingInterfaceDep = "sr-localsid-outgoing-interface-exists"
 	localsidIncomingInterfaceDep = "sr-localsid-incoming-interface-exists"
+	localsidVRFDep               = "sr-localsid-vrf-table-exists"
 )
 
 // LocalSIDDescriptor teaches KVScheduler how to configure VPP LocalSIDs.
@@ -104,9 +107,9 @@ func (d *LocalSIDDescriptor) equivalentEndFunctions(ef1, ef2 interface{}) bool {
 		return equivalentIPv4(ef1typed.EndFunction_DX6.NextHop, ef2.(*srv6.LocalSID_EndFunction_DX6).EndFunction_DX6.NextHop) &&
 			equivalentTrimmedLowered(ef1typed.EndFunction_DX6.OutgoingInterface, ef2.(*srv6.LocalSID_EndFunction_DX6).EndFunction_DX6.OutgoingInterface)
 	case *srv6.LocalSID_EndFunction_DT4:
-		return true
+		return ef1typed.EndFunction_DT4.VrfId == ef2.(*srv6.LocalSID_EndFunction_DT4).EndFunction_DT4.VrfId
 	case *srv6.LocalSID_EndFunction_DT6:
-		return true
+		return ef1typed.EndFunction_DT6.VrfId == ef2.(*srv6.LocalSID_EndFunction_DT6).EndFunction_DT6.VrfId
 	case *srv6.LocalSID_EndFunction_AD:
 		return equivalentTrimmedLowered(ef1typed.EndFunction_AD.OutgoingInterface, ef2.(*srv6.LocalSID_EndFunction_AD).EndFunction_AD.OutgoingInterface) &&
 			equivalentTrimmedLowered(ef1typed.EndFunction_AD.IncomingInterface, ef2.(*srv6.LocalSID_EndFunction_AD).EndFunction_AD.IncomingInterface) &&
@@ -210,6 +213,24 @@ func (d *LocalSIDDescriptor) Dependencies(key string, localSID *srv6.LocalSID) (
 			Label: localsidOutgoingInterfaceDep,
 			Key:   interfaces.InterfaceKey(ef.EndFunction_DX6.OutgoingInterface),
 		})
+	case *srv6.LocalSID_EndFunction_DT4:
+		if ef.EndFunction_DT4.VrfId != 0 { // VRF 0 is in VPP by default, no need to wait for first route
+			dependencies = append(dependencies, scheduler.Dependency{
+				Label: localsidVRFDep,
+				AnyOf: scheduler.AnyOfDependency{
+					KeyPrefixes: []string{vpp_l3.RoutePrefix(fmt.Sprint(ef.EndFunction_DT4.VrfId))}, // waiting for VRF table creation (route creation creates also VRF table if it doesn't exist)
+				},
+			})
+		}
+	case *srv6.LocalSID_EndFunction_DT6:
+		if ef.EndFunction_DT6.VrfId != 0 { // VRF 0 is in VPP by default, no need to wait for first route
+			dependencies = append(dependencies, scheduler.Dependency{
+				Label: localsidVRFDep,
+				AnyOf: scheduler.AnyOfDependency{
+					KeyPrefixes: []string{vpp_l3.RoutePrefix(fmt.Sprint(ef.EndFunction_DT6.VrfId))}, // waiting for VRF table creation (route creation creates also VRF table if it doesn't exist)
+				},
+			})
+		}
 	case *srv6.LocalSID_EndFunction_AD:
 		dependencies = append(dependencies, scheduler.Dependency{
 			Label: localsidOutgoingInterfaceDep,

@@ -274,8 +274,10 @@ func (h *SRv6VppHandler) writeEndFunction(req *sr.SrLocalsidAddDel, sidAddr net.
 		req.NhAddr6 = []byte(nhAddr6)
 	case *srv6.LocalSID_EndFunction_DT4:
 		req.Behavior = BehaviorDT4
+		req.SwIfIndex = ef.EndFunction_DT4.VrfId
 	case *srv6.LocalSID_EndFunction_DT6:
 		req.Behavior = BehaviorDT6
+		req.SwIfIndex = ef.EndFunction_DT6.VrfId
 	case nil:
 		return fmt.Errorf("End function not set. Please configure end function for local SID %v ", sidAddr)
 	default:
