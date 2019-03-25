@@ -601,6 +601,10 @@ func (h *IfVppHandler) dumpIPSecTunnelDetails(ifs map[uint32]*InterfaceDetails) 
 	tunnelParts := make(map[uint32]*ipsec.IpsecSaDetails)
 
 	for _, tunnel := range tunnels {
+		_, ifIdxExists := ifs[tunnel.SwIfIndex]
+		if !ifIdxExists {
+			continue
+		}
 		// first appearance is stored in the map, the second one is used in configuration.
 		firstSaData, ok := tunnelParts[tunnel.SwIfIndex]
 		if !ok {
@@ -701,9 +705,8 @@ func (h *IfVppHandler) dumpRxPlacement(ifs map[uint32]*InterfaceDetails) error {
 		if stop {
 			break
 		}
-		ifData, ok := ifs[rxDetails.SwIfIndex]
-		if !ok {
-			h.log.Warnf("Received rx-placement data for unknown interface with index %d", rxDetails.SwIfIndex)
+		ifData, ifIdxExists := ifs[rxDetails.SwIfIndex]
+		if !ifIdxExists {
 			continue
 		}
 		ifData.Interface.RxModeSettings = &interfaces.Interface_RxModeSettings{
