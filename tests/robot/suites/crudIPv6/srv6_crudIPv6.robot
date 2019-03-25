@@ -50,20 +50,20 @@ Configure Environment
     Put Afpacket Interface        node=agent_vpp_1    name=vpp1_afpacket2    mac=a2:a2:a2:a2:a2:a2    host_int=vpp1_veth4
 
 Check Local SID CRUD
-    Put Local SID With End.DX6 function    node=agent_vpp_1    localsidName=A    sidAddress=a::    fibtable=0          outinterface=vpp1_afpacket1           nexthop=a::1
+    Put Local SID With End.DX6 function    node=agent_vpp_1    sidAddress=a::    fibtable=0          outinterface=vpp1_afpacket1           nexthop=a::1
     Wait Until Keyword Succeeds        ${WAIT_TIMEOUT}     ${SYNC_SLEEP}     vpp_term: Check Local SID Presence    node=agent_vpp_1    sidAddress=a::    interface=host-vpp1_veth2    nexthop=a::1
-    Put Local SID With End.DX6 function    node=agent_vpp_1    localsidName=A    sidAddress=a::    fibtable=0          outinterface=vpp1_afpacket1           nexthop=c::1   #modification
+    Put Local SID With End.DX6 function    node=agent_vpp_1    sidAddress=a::    fibtable=0          outinterface=vpp1_afpacket1           nexthop=c::1   #modification
     Wait Until Keyword Succeeds        ${WAIT_TIMEOUT}     ${SYNC_SLEEP}     vpp_term: Check Local SID Presence    node=agent_vpp_1    sidAddress=a::    interface=host-vpp1_veth2    nexthop=c::1
-    Delete Local SID                       node=agent_vpp_1    localsidName=A
+    Delete Local SID                       node=agent_vpp_1    sidAddress=a::
     Wait Until Keyword Succeeds        ${WAIT_TIMEOUT}     ${SYNC_SLEEP}     vpp_term: Check Local SID Deleted     node=agent_vpp_1    sidAddress=a::
 
 Check SR-Proxy CRUD
     # SR-proxy is actual a Local SID with End.AD end function, but VPP is configured in this case differently in compare to other local SIDs (VPP CLI(using VPE binary API) vs binary VPP API) -> need to test this
-    Put Local SID With End.AD function     node=agent_vpp_1    localsidName=A    sidAddress=a::    l3serviceaddress=10.10.1.2    outinterface=vpp1_afpacket1    ininterface=vpp1_afpacket2
+    Put Local SID With End.AD function     node=agent_vpp_1    sidAddress=a::    l3serviceaddress=10.10.1.2    outinterface=vpp1_afpacket1    ininterface=vpp1_afpacket2
     Wait Until Keyword Succeeds        ${WAIT_TIMEOUT}     ${SYNC_SLEEP}     vpp_term: Check SR-Proxy Local SID Presence    node=agent_vpp_1    sidAddress=a::    serviceaddress=10.10.1.2    outinterface=host-vpp1_veth2    ininterface=host-vpp1_veth4
-    Put Local SID With End.AD function     node=agent_vpp_1    localsidName=A    sidAddress=a::    l3serviceaddress=10.10.1.2    outinterface=vpp1_afpacket2    ininterface=vpp1_afpacket1   #modification
+    Put Local SID With End.AD function     node=agent_vpp_1    sidAddress=a::    l3serviceaddress=10.10.1.2    outinterface=vpp1_afpacket2    ininterface=vpp1_afpacket1   #modification
     Wait Until Keyword Succeeds        ${WAIT_TIMEOUT}     ${SYNC_SLEEP}     vpp_term: Check SR-Proxy Local SID Presence    node=agent_vpp_1    sidAddress=a::    serviceaddress=10.10.1.2    outinterface=host-vpp1_veth4    ininterface=host-vpp1_veth2
-    Delete Local SID                       node=agent_vpp_1    localsidName=A
+    Delete Local SID                       node=agent_vpp_1    sidAddress=a::
     Wait Until Keyword Succeeds        ${WAIT_TIMEOUT}     ${SYNC_SLEEP}     vpp_term: Check Local SID Deleted     node=agent_vpp_1    sidAddress=a::
 
 Check Policy CRUD
@@ -126,9 +126,9 @@ Check Update Of Policy Should Not Trigger Cascade Delete Of Steering
     Delete SRv6 Policy                 node=agent_vpp_1    bsid=a::e       #cleanup
 
 Check Resynchronization for clean VPP start
-    Put Local SID With End.DX6 function    node=agent_vpp_1    localsidName=A    sidAddress=a::     fibtable=0               outinterface=vpp1_afpacket1    nexthop=a::1
-    Put SRv6 Policy                        node=agent_vpp_1    bsid=a::e         fibtable=0         srhEncapsulation=true    sprayBehaviour=true            segmentlists=${segmentLists1weight1}
-    Put SRv6 L3 Steering                      node=agent_vpp_1    name=toE          bsid=a::e          fibtable=0               prefixAddress=e::/64
+    Put Local SID With End.DX6 function    node=agent_vpp_1    sidAddress=a::    fibtable=0    outinterface=vpp1_afpacket1    nexthop=a::1
+    Put SRv6 Policy                        node=agent_vpp_1    bsid=a::e         fibtable=0    srhEncapsulation=true    sprayBehaviour=true            segmentlists=${segmentLists1weight1}
+    Put SRv6 L3 Steering                   node=agent_vpp_1    name=toE          bsid=a::e     fibtable=0               prefixAddress=e::/64
     Remove All VPP Nodes
     Sleep                                       3s
     Add Agent VPP Node                          agent_vpp_1
@@ -137,7 +137,7 @@ Check Resynchronization for clean VPP start
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Check SRv6 Steering Presence      node=agent_vpp_1    bsid=a::e         prefixAddress=e::/64
     Delete SRv6 Steering                   node=agent_vpp_1    name=toE        #cleanup
     Delete SRv6 Policy                     node=agent_vpp_1    bsid=a::e       #cleanup
-    Delete Local SID                       node=agent_vpp_1    localsidName=A
+    Delete Local SID                       node=agent_vpp_1    sidAddress=a::
 
 *** Keywords ***
 TestSetup

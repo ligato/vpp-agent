@@ -1,4 +1,5 @@
 {
+  "name": "${name}",
   "l2_traffic": {
     "interface_name": "${interfaceName}"
   },
