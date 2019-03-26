@@ -424,6 +424,8 @@ vpp_term: Local SID exists
     ${localsidsStr}=   Convert To Lowercase    ${localsidsStr}
     ${matchdata}=      Set Variable            ${EMPTY}
     ${matchdata}=      Run Keyword If     '${endFunctionType}' == 'BASE'    OperatingSystem.Get File    ${CURDIR}/../suites/crudIPv6/test_data/srv6_sh_sr_localsid_end_output_match.txt        ELSE    Set Variable    ${matchdata}
+    ${matchdata}=      Run Keyword If     '${endFunctionType}' == 'X'       OperatingSystem.Get File    ${CURDIR}/../suites/crudIPv6/test_data/srv6_sh_sr_localsid_end_x_output_match.txt      ELSE    Set Variable    ${matchdata}
+    ${matchdata}=      Run Keyword If     '${endFunctionType}' == 'T'       OperatingSystem.Get File    ${CURDIR}/../suites/crudIPv6/test_data/srv6_sh_sr_localsid_end_t_output_match.txt      ELSE    Set Variable    ${matchdata}
     ${matchdata}=      Run Keyword If     '${endFunctionType}' == 'DT4'     OperatingSystem.Get File    ${CURDIR}/../suites/crudIPv6/test_data/srv6_sh_sr_localsid_end_dt4_output_match.txt    ELSE    Set Variable    ${matchdata}
     ${matchdata}=      Run Keyword If     '${endFunctionType}' == 'DT6'     OperatingSystem.Get File    ${CURDIR}/../suites/crudIPv6/test_data/srv6_sh_sr_localsid_end_dt6_output_match.txt    ELSE    Set Variable    ${matchdata}
     ${matchdata}=      Run Keyword If     '${endFunctionType}' == 'DX4'     OperatingSystem.Get File    ${CURDIR}/../suites/crudIPv6/test_data/srv6_sh_sr_localsid_end_dx4_output_match.txt    ELSE    Set Variable    ${matchdata}

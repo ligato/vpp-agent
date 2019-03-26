@@ -50,7 +50,32 @@ Configure Environment
     Put Veth Interface            node=agent_vpp_1    name=vpp1_veth4        mac=12:14:14:14:14:14    peer=vpp1_veth3
     Put Afpacket Interface        node=agent_vpp_1    name=vpp1_afpacket2    mac=a2:a2:a2:a2:a2:a2    host_int=vpp1_veth4
 
-#TODO Add CRUD tests for LocalSIDs with these END functions: EndX, EndT, EndDX2
+#TODO Add CRUD test for LocalSIDs with END.DX function (VPP CLI dump writes that DX2 is unsupported, but note in NB model tells that only case with vlan != 0 should not be supported)
+
+Check CRUD For Local SID With END Function (Base End)
+    Put Local SID With Base End function    node=agent_vpp_1    sidAddress=a::    fibtable=0
+    Wait Until Keyword Succeeds        ${WAIT_TIMEOUT}     ${SYNC_SLEEP}     vpp_term: Check Local SID Presence    node=agent_vpp_1    sidAddress=a::    endFunctionType=BASE
+    # can't really modify something visible in CLI output -> can't test update
+    Delete Local SID                       node=agent_vpp_1    sidAddress=a::
+    Wait Until Keyword Succeeds        ${WAIT_TIMEOUT}     ${SYNC_SLEEP}     vpp_term: Check Local SID Deleted     node=agent_vpp_1    sidAddress=a::
+
+Check CRUD For Local SID With END.X Function
+    Put Local SID With End.X function    node=agent_vpp_1    sidAddress=a::    fibtable=0          outinterface=vpp1_afpacket1           nexthop=a::1    psp=false
+    Wait Until Keyword Succeeds        ${WAIT_TIMEOUT}     ${SYNC_SLEEP}     vpp_term: Check Local SID Presence    node=agent_vpp_1    sidAddress=a::    endFunctionType=X   interface=host-vpp1_veth2    nexthop=a::1
+    Put Local SID With End.X function    node=agent_vpp_1    sidAddress=a::    fibtable=0          outinterface=vpp1_afpacket1           nexthop=c::1    psp=false   #modification
+    Wait Until Keyword Succeeds        ${WAIT_TIMEOUT}     ${SYNC_SLEEP}     vpp_term: Check Local SID Presence    node=agent_vpp_1    sidAddress=a::    endFunctionType=X   interface=host-vpp1_veth2    nexthop=c::1
+    Delete Local SID                       node=agent_vpp_1    sidAddress=a::
+    Wait Until Keyword Succeeds        ${WAIT_TIMEOUT}     ${SYNC_SLEEP}     vpp_term: Check Local SID Deleted     node=agent_vpp_1    sidAddress=a::
+
+Check CRUD For Local SID With END.T Function
+    Create Route On agent_vpp_1 With IP ab::/24 With Next Hop cd::1 And Vrf Id 21    # creating ipv6 vrf table, don't care about route
+    Create Route On agent_vpp_1 With IP ab::/24 With Next Hop cd::1 And Vrf Id 22    # creating ipv6 vrf table, don't care about route
+    Put Local SID With End.T function    node=agent_vpp_1    sidAddress=a::    fibtable=0          vrfid=21    psp=false
+    Wait Until Keyword Succeeds        ${WAIT_TIMEOUT}     ${SYNC_SLEEP}     vpp_term: Check Local SID Presence    node=agent_vpp_1    sidAddress=a::    endFunctionType=T   fibtable=1
+    Put Local SID With End.T function    node=agent_vpp_1    sidAddress=a::    fibtable=0          vrfid=22    psp=false    #modification (fibtable is index for structure from memory pool (1-to-1 mapping between vrf and fib table id) -> track changes of vrf with fibtable id)
+    Wait Until Keyword Succeeds        ${WAIT_TIMEOUT}     ${SYNC_SLEEP}     vpp_term: Check Local SID Presence    node=agent_vpp_1    sidAddress=a::    endFunctionType=T   fibtable=2
+    Delete Local SID                       node=agent_vpp_1    sidAddress=a::
+    Wait Until Keyword Succeeds        ${WAIT_TIMEOUT}     ${SYNC_SLEEP}     vpp_term: Check Local SID Deleted     node=agent_vpp_1    sidAddress=a::
 
 Check CRUD For Local SID With END.DT4 Function
     Create Route On agent_vpp_1 With IP 20.20.1.0/24 With Next Hop 192.168.1.2 And Vrf Id 11    # creating ipv4 vrf table, don't care about route
@@ -63,21 +88,12 @@ Check CRUD For Local SID With END.DT4 Function
     Wait Until Keyword Succeeds        ${WAIT_TIMEOUT}     ${SYNC_SLEEP}     vpp_term: Check Local SID Deleted     node=agent_vpp_1    sidAddress=a::
 
 Check CRUD For Local SID With END.DT6 Function
-    Create Route On agent_vpp_1 With IP ab::/24 With Next Hop cd::1 And Vrf Id 21    # creating ipv6 vrf table, don't care about route
-    Create Route On agent_vpp_1 With IP ab::/24 With Next Hop cd::1 And Vrf Id 22    # creating ipv6 vrf table, don't care about route
-    Put Local SID With End.DT6 function    node=agent_vpp_1    sidAddress=a::    fibtable=0          vrfid=21
-    Wait Until Keyword Succeeds        ${WAIT_TIMEOUT}     ${SYNC_SLEEP}     vpp_term: Check Local SID Presence    node=agent_vpp_1    sidAddress=a::    endFunctionType=DT6   fibtable=1
-    Put Local SID With End.DT6 function    node=agent_vpp_1    sidAddress=a::    fibtable=0          vrfid=22    #modification (fibtable is index for structure from memory pool (1-to-1 mapping between vrf and fib table id) -> track changes of vrf with fibtable id)
-    Wait Until Keyword Succeeds        ${WAIT_TIMEOUT}     ${SYNC_SLEEP}     vpp_term: Check Local SID Presence    node=agent_vpp_1    sidAddress=a::    endFunctionType=DT6   fibtable=2
-    Delete Local SID                       node=agent_vpp_1    sidAddress=a::
-    Wait Until Keyword Succeeds        ${WAIT_TIMEOUT}     ${SYNC_SLEEP}     vpp_term: Check Local SID Deleted     node=agent_vpp_1    sidAddress=a::
-
-
-Check CRUD For Local SID With END.DX6 Function
-    Put Local SID With End.DX6 function    node=agent_vpp_1    sidAddress=a::    fibtable=0          outinterface=vpp1_afpacket1           nexthop=a::1
-    Wait Until Keyword Succeeds        ${WAIT_TIMEOUT}     ${SYNC_SLEEP}     vpp_term: Check Local SID Presence    node=agent_vpp_1    sidAddress=a::    endFunctionType=DX6   interface=host-vpp1_veth2    nexthop=a::1
-    Put Local SID With End.DX6 function    node=agent_vpp_1    sidAddress=a::    fibtable=0          outinterface=vpp1_afpacket1           nexthop=c::1   #modification
-    Wait Until Keyword Succeeds        ${WAIT_TIMEOUT}     ${SYNC_SLEEP}     vpp_term: Check Local SID Presence    node=agent_vpp_1    sidAddress=a::    endFunctionType=DX6   interface=host-vpp1_veth2    nexthop=c::1
+    Create Route On agent_vpp_1 With IP ab::/24 With Next Hop cd::1 And Vrf Id 23    # creating ipv6 vrf table, don't care about route
+    Create Route On agent_vpp_1 With IP ab::/24 With Next Hop cd::1 And Vrf Id 24    # creating ipv6 vrf table, don't care about route
+    Put Local SID With End.DT6 function    node=agent_vpp_1    sidAddress=a::    fibtable=0          vrfid=23
+    Wait Until Keyword Succeeds        ${WAIT_TIMEOUT}     ${SYNC_SLEEP}     vpp_term: Check Local SID Presence    node=agent_vpp_1    sidAddress=a::    endFunctionType=DT6   fibtable=3
+    Put Local SID With End.DT6 function    node=agent_vpp_1    sidAddress=a::    fibtable=0          vrfid=24    #modification (fibtable is index for structure from memory pool (1-to-1 mapping between vrf and fib table id) -> track changes of vrf with fibtable id)
+    Wait Until Keyword Succeeds        ${WAIT_TIMEOUT}     ${SYNC_SLEEP}     vpp_term: Check Local SID Presence    node=agent_vpp_1    sidAddress=a::    endFunctionType=DT6   fibtable=4
     Delete Local SID                       node=agent_vpp_1    sidAddress=a::
     Wait Until Keyword Succeeds        ${WAIT_TIMEOUT}     ${SYNC_SLEEP}     vpp_term: Check Local SID Deleted     node=agent_vpp_1    sidAddress=a::
 
@@ -89,6 +105,13 @@ Check CRUD For Local SID With END.DX4 Function
     Delete Local SID                       node=agent_vpp_1    sidAddress=a::
     Wait Until Keyword Succeeds        ${WAIT_TIMEOUT}     ${SYNC_SLEEP}     vpp_term: Check Local SID Deleted     node=agent_vpp_1    sidAddress=a::
 
+Check CRUD For Local SID With END.DX6 Function
+    Put Local SID With End.DX6 function    node=agent_vpp_1    sidAddress=a::    fibtable=0          outinterface=vpp1_afpacket1           nexthop=a::1
+    Wait Until Keyword Succeeds        ${WAIT_TIMEOUT}     ${SYNC_SLEEP}     vpp_term: Check Local SID Presence    node=agent_vpp_1    sidAddress=a::    endFunctionType=DX6   interface=host-vpp1_veth2    nexthop=a::1
+    Put Local SID With End.DX6 function    node=agent_vpp_1    sidAddress=a::    fibtable=0          outinterface=vpp1_afpacket1           nexthop=c::1   #modification
+    Wait Until Keyword Succeeds        ${WAIT_TIMEOUT}     ${SYNC_SLEEP}     vpp_term: Check Local SID Presence    node=agent_vpp_1    sidAddress=a::    endFunctionType=DX6   interface=host-vpp1_veth2    nexthop=c::1
+    Delete Local SID                       node=agent_vpp_1    sidAddress=a::
+    Wait Until Keyword Succeeds        ${WAIT_TIMEOUT}     ${SYNC_SLEEP}     vpp_term: Check Local SID Deleted     node=agent_vpp_1    sidAddress=a::
 
 Check CRUD For Local SID With END.AD Function (SR-Proxy)
     # SR-proxy is actual a Local SID with End.AD end function, but VPP is configured in this case differently in compare to other local SIDs (VPP CLI(using VPE binary API) vs binary VPP API) -> need to test this
@@ -98,14 +121,6 @@ Check CRUD For Local SID With END.AD Function (SR-Proxy)
     Wait Until Keyword Succeeds        ${WAIT_TIMEOUT}     ${SYNC_SLEEP}     vpp_term: Check Local SID Presence    node=agent_vpp_1    sidAddress=a::    endFunctionType=AD    serviceaddress=10.10.1.2    outinterface=host-vpp1_veth4    ininterface=host-vpp1_veth2
     Delete Local SID                       node=agent_vpp_1    sidAddress=a::
     Wait Until Keyword Succeeds        ${WAIT_TIMEOUT}     ${SYNC_SLEEP}     vpp_term: Check Local SID Deleted     node=agent_vpp_1    sidAddress=a::
-
-Check CRUD For Local SID With END Function (Base End)
-    Put Local SID With Base End function    node=agent_vpp_1    sidAddress=a::    fibtable=0
-    Wait Until Keyword Succeeds        ${WAIT_TIMEOUT}     ${SYNC_SLEEP}     vpp_term: Check Local SID Presence    node=agent_vpp_1    sidAddress=a::    endFunctionType=BASE
-    # can't really modify something visible in CLI output -> can't test update
-    Delete Local SID                       node=agent_vpp_1    sidAddress=a::
-    Wait Until Keyword Succeeds        ${WAIT_TIMEOUT}     ${SYNC_SLEEP}     vpp_term: Check Local SID Deleted     node=agent_vpp_1    sidAddress=a::
-
 
 Check Policy CRUD
     Put SRv6 Policy                    node=agent_vpp_1    bsid=a::e    segmentlists=${segmentLists1weight1}    fibtable=0         srhEncapsulation=true      sprayBehaviour=true
