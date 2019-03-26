@@ -47,14 +47,18 @@ type TelemetryHandler struct {
 }
 
 func NewTelemetryVppHandler(ch govppapi.Channel) *TelemetryHandler {
-	//vpeHandler := vpevppcalls.CompatibleVpeHandler(ch)
 	vpeHandler := vpp1901.NewVpeHandler(ch)
 	return &TelemetryHandler{ch, vpeHandler}
 }
 
 var (
 	// Regular expression to parse output from `show memory`
-	memoryRe = regexp.MustCompile(`Thread\s+(\d+)\s+(\w+).?\s+(\d+) objects, ([\dkmg\.]+) of ([\dkmg\.]+) used, ([\dkmg\.]+) free, ([\dkmg\.]+) reclaimed, ([\dkmg\.]+) overhead, ([\dkmg\.]+) capacity`)
+	memoryRe = regexp.MustCompile(
+		`Thread\s+(\d+)\s+(\w+).?\s+` +
+			`virtual memory start 0x[0-9abcdef]+, size ([\dkmg\.]+), ([\dkmg\.]+) pages, page size ([\dkmg\.]+)\s+` +
+			`(?:\s+(?:numa [\d]+|not mapped|unknown): [\dkmg\.]+ pages, [\dkmg\.]+\s+)+\s+` +
+			`\s+total: ([\dkmgKMG\.]+), used: ([\dkmgKMG\.]+), free: ([\dkmgKMG\.]+), trimmable: ([\dkmgKMG\.]+)`,
+	)
 )
 
 // GetMemory retrieves `show memory` info.
@@ -64,13 +68,18 @@ func (h *TelemetryHandler) GetMemory() (*vppcalls.MemoryInfo, error) {
 		return nil, err
 	}
 
-	var threads []vppcalls.MemoryThread
+	input := string(data)
+	threadMatches := memoryRe.FindAllStringSubmatch(input, -1)
 
-	threadMatches := memoryRe.FindAllStringSubmatch(string(data), -1)
+	if len(threadMatches) == 0 && input != "" {
+		return nil, fmt.Errorf("invalid memory input: %q", input)
+	}
+
+	var threads []vppcalls.MemoryThread
 	for _, matches := range threadMatches {
 		fields := matches[1:]
 		if len(fields) != 9 {
-			return nil, fmt.Errorf("invalid memory data for thread: %q", matches[0])
+			return nil, fmt.Errorf("invalid memory data %v for thread: %q", fields, matches[0])
 		}
 		id, err := strconv.ParseUint(fields[0], 10, 64)
 		if err != nil {
@@ -79,13 +88,13 @@ func (h *TelemetryHandler) GetMemory() (*vppcalls.MemoryInfo, error) {
 		thread := &vppcalls.MemoryThread{
 			ID:        uint(id),
 			Name:      fields[1],
-			Objects:   strToUint64(fields[2]),
-			Used:      strToUint64(fields[3]),
-			Total:     strToUint64(fields[4]),
-			Free:      strToUint64(fields[5]),
-			Reclaimed: strToUint64(fields[6]),
-			Overhead:  strToUint64(fields[7]),
-			Capacity:  strToUint64(fields[8]),
+			Size:      strToUint64(fields[2]),
+			Pages:     strToUint64(fields[3]),
+			PageSize:  strToUint64(fields[4]),
+			Total:     strToUint64(fields[5]),
+			Used:      strToUint64(fields[6]),
+			Free:      strToUint64(fields[7]),
+			Reclaimed: strToUint64(fields[8]),
 		}
 		threads = append(threads, *thread)
 	}
@@ -150,11 +159,11 @@ func (h *TelemetryHandler) GetNodeCounters() (*vppcalls.NodeCounterInfo, error) 
 var (
 	// Regular expression to parse output from `show runtime`
 	runtimeRe = regexp.MustCompile(`(?:-+\n)?(?:Thread (\d+) (\w+)(?: \(lcore \d+\))?\n)?` +
-		`Time ([0-9\.e]+), average vectors/node ([0-9\.e]+), last (\d+) main loops ([0-9\.e]+) per node ([0-9\.e]+)\s+` +
-		`vector rates in ([0-9\.e]+), out ([0-9\.e]+), drop ([0-9\.e]+), punt ([0-9\.e]+)\n` +
-		`\s+Name\s+State\s+Calls\s+Vectors\s+Suspends\s+Clocks\s+Vectors/Call\s+` +
-		`((?:[\w-:\.]+\s+\w+(?:[ -]\w+)*\s+\d+\s+\d+\s+\d+\s+[0-9\.e]+\s+[0-9\.e]+\s+)+)`)
-	runtimeItemsRe = regexp.MustCompile(`([\w-:\.]+)\s+(\w+(?:[ -]\w+)*)\s+(\d+)\s+(\d+)\s+(\d+)\s+([0-9\.e]+)\s+([0-9\.e]+)\s+`)
+		`Time ([0-9\.e-]+), average vectors/node ([0-9\.e-]+), last (\d+) main loops ([0-9\.e-]+) per node ([0-9\.e-]+)\s+` +
+		`vector rates in ([0-9\.e-]+), out ([0-9\.e-]+), drop ([0-9\.e-]+), punt ([0-9\.e-]+)\n` +
+		`\s+Name\s+State\s+Calls\s+Vectors\s+Suspends\s+Clocks\s+Vectors/Call\s+Perf Ticks\s+` +
+		`((?:[\w-:\.]+\s+\w+(?:[ -]\w+)*\s+\d+\s+\d+\s+\d+\s+[0-9\.e-]+\s+[0-9\.e-]+\s+)+)`)
+	runtimeItemsRe = regexp.MustCompile(`([\w-:\.]+)\s+(\w+(?:[ -]\w+)*)\s+(\d+)\s+(\d+)\s+(\d+)\s+([0-9\.e-]+)\s+([0-9\.e-]+)\s+`)
 )
 
 // GetRuntimeInfo retrieves how runtime info.
@@ -164,9 +173,14 @@ func (h *TelemetryHandler) GetRuntimeInfo() (*vppcalls.RuntimeInfo, error) {
 		return nil, err
 	}
 
-	var threads []vppcalls.RuntimeThread
+	input := string(data)
+	threadMatches := runtimeRe.FindAllStringSubmatch(input, -1)
 
-	threadMatches := runtimeRe.FindAllStringSubmatch(string(data), -1)
+	if len(threadMatches) == 0 && input != "" {
+		return nil, fmt.Errorf("invalid runtime input: %q", input)
+	}
+
+	var threads []vppcalls.RuntimeThread
 	for _, matches := range threadMatches {
 		fields := matches[1:]
 		if len(fields) != 12 {
@@ -271,8 +285,11 @@ func (h *TelemetryHandler) GetBuffersInfo() (*vppcalls.BuffersInfo, error) {
 func strToFloat64(s string) float64 {
 	// Replace 'k' (thousands) with 'e3' to make it parsable with strconv
 	s = strings.Replace(s, "k", "e3", 1)
+	s = strings.Replace(s, "K", "e3", 1)
 	s = strings.Replace(s, "m", "e6", 1)
+	s = strings.Replace(s, "M", "e6", 1)
 	s = strings.Replace(s, "g", "e9", 1)
+	s = strings.Replace(s, "G", "e9", 1)
 
 	num, err := strconv.ParseFloat(s, 10)
 	if err != nil {
