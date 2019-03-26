@@ -569,6 +569,22 @@ Put Local SID With Base End function
     ${data}=               Replace Variables             ${data}
     Put Json     ${uri}    ${data}
 
+Put Local SID With End.DT4 function
+    [Arguments]    ${node}    ${sidAddress}    ${fibtable}    ${vrfid}
+    [Documentation]    Add json to etcd that configurates local SID with DT4 end function.
+    ${data}=               OperatingSystem.Get File      ${CURDIR}/../resources/srv6_local_sid_with_dt4_end_function.json
+    ${uri}=                Set Variable                  /vnf-agent/${node}/config/vpp/srv6/${AGENT_VER}/localsid/${sidAddress}
+    ${data}=               Replace Variables             ${data}
+    Put Json     ${uri}    ${data}
+
+Put Local SID With End.DT6 function
+    [Arguments]    ${node}    ${sidAddress}    ${fibtable}    ${vrfid}
+    [Documentation]    Add json to etcd that configurates local SID with DT6 end function.
+    ${data}=               OperatingSystem.Get File      ${CURDIR}/../resources/srv6_local_sid_with_dt6_end_function.json
+    ${uri}=                Set Variable                  /vnf-agent/${node}/config/vpp/srv6/${AGENT_VER}/localsid/${sidAddress}
+    ${data}=               Replace Variables             ${data}
+    Put Json     ${uri}    ${data}
+
 Put Local SID With End.DX4 function
     [Arguments]    ${node}    ${sidAddress}    ${fibtable}    ${outinterface}    ${nexthop}
     [Documentation]    Add json to etcd that configurates local SID with DX4 end function.
