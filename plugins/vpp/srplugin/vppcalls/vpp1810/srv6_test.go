@@ -136,27 +136,28 @@ func TestAddLocalSID(t *testing.T) {
 				FibTableId: 10,
 				EndFunction: &srv6.LocalSID_EndFunction_T{
 					EndFunction_T: &srv6.LocalSID_EndT{
-						Psp: true,
+						Psp:   true,
+						VrfId: 11,
 					},
 				},
 			},
 			Expected: &sr.SrLocalsidAddDel{
-				IsDel:    0,
-				Localsid: sidA,
-				Behavior: vpp1810.BehaviorT,
-				FibTable: 10,
-				EndPsp:   1,
+				IsDel:     0,
+				Localsid:  sidA,
+				Behavior:  vpp1810.BehaviorT,
+				FibTable:  10,
+				SwIfIndex: 11,
+				EndPsp:    1,
 			},
 		},
 		{
-			Name: "addition with endDX2 behaviour (ipv6 next hop address)",
+			Name: "addition with endDX2 behaviour",
 			Input: &srv6.LocalSID{
 				Sid:        sidToStr(sidA),
 				FibTableId: 10,
 				EndFunction: &srv6.LocalSID_EndFunction_DX2{
 					EndFunction_DX2: &srv6.LocalSID_EndDX2{
 						VlanTag:           1,
-						NextHop:           nextHop.String(),
 						OutgoingInterface: ifaceA,
 					},
 				},
@@ -169,31 +170,6 @@ func TestAddLocalSID(t *testing.T) {
 				EndPsp:    0,
 				VlanIndex: 1,
 				SwIfIndex: swIndexA,
-				NhAddr6:   nextHop,
-			},
-		},
-		{
-			Name: "addition with endDX2 behaviour (ipv4 next hop address)",
-			Input: &srv6.LocalSID{
-				Sid:        sidToStr(sidA),
-				FibTableId: 10,
-				EndFunction: &srv6.LocalSID_EndFunction_DX2{
-					EndFunction_DX2: &srv6.LocalSID_EndDX2{
-						VlanTag:           1,
-						NextHop:           nextHopIPv4.String(),
-						OutgoingInterface: ifaceA,
-					},
-				},
-			},
-			Expected: &sr.SrLocalsidAddDel{
-				IsDel:     0,
-				Localsid:  sidA,
-				Behavior:  vpp1810.BehaviorDX2,
-				FibTable:  10,
-				EndPsp:    0,
-				VlanIndex: 1,
-				SwIfIndex: swIndexA,
-				NhAddr4:   nextHopIPv4,
 			},
 		},
 		{
@@ -553,23 +529,7 @@ func TestAddLocalSID(t *testing.T) {
 				EndFunction: &srv6.LocalSID_EndFunction_DX2{
 					EndFunction_DX2: &srv6.LocalSID_EndDX2{
 						VlanTag:           1,
-						NextHop:           nextHop.String(),
 						OutgoingInterface: ifaceBOutOfidxs,
-					},
-				},
-			},
-		},
-		{
-			Name:          "invalid IP address (addition with endDX2 behaviour)",
-			ExpectFailure: true,
-			Input: &srv6.LocalSID{
-				Sid:        sidToStr(sidA),
-				FibTableId: 10,
-				EndFunction: &srv6.LocalSID_EndFunction_DX2{
-					EndFunction_DX2: &srv6.LocalSID_EndDX2{
-						VlanTag:           1,
-						NextHop:           invalidIPAddress,
-						OutgoingInterface: ifaceA,
 					},
 				},
 			},

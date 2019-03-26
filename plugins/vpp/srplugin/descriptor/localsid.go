@@ -95,10 +95,10 @@ func (d *LocalSIDDescriptor) equivalentEndFunctions(ef1, ef2 interface{}) bool {
 			equivalentIPv6(ef1typed.EndFunction_X.NextHop, ef2.(*srv6.LocalSID_EndFunction_X).EndFunction_X.NextHop) &&
 			equivalentTrimmedLowered(ef1typed.EndFunction_X.OutgoingInterface, ef2.(*srv6.LocalSID_EndFunction_X).EndFunction_X.OutgoingInterface)
 	case *srv6.LocalSID_EndFunction_T:
-		return ef1typed.EndFunction_T.Psp == ef2.(*srv6.LocalSID_EndFunction_T).EndFunction_T.Psp
+		return ef1typed.EndFunction_T.Psp == ef2.(*srv6.LocalSID_EndFunction_T).EndFunction_T.Psp &&
+			ef1typed.EndFunction_T.VrfId == ef2.(*srv6.LocalSID_EndFunction_T).EndFunction_T.VrfId
 	case *srv6.LocalSID_EndFunction_DX2:
 		return ef1typed.EndFunction_DX2.VlanTag == ef2.(*srv6.LocalSID_EndFunction_DX2).EndFunction_DX2.VlanTag &&
-			equivalentTrimmedLowered(ef1typed.EndFunction_DX2.NextHop, ef2.(*srv6.LocalSID_EndFunction_DX2).EndFunction_DX2.NextHop) && // mac address
 			equivalentTrimmedLowered(ef1typed.EndFunction_DX2.OutgoingInterface, ef2.(*srv6.LocalSID_EndFunction_DX2).EndFunction_DX2.OutgoingInterface)
 	case *srv6.LocalSID_EndFunction_DX4:
 		return equivalentIPv4(ef1typed.EndFunction_DX4.NextHop, ef2.(*srv6.LocalSID_EndFunction_DX4).EndFunction_DX4.NextHop) &&
@@ -193,6 +193,15 @@ func (d *LocalSIDDescriptor) Delete(key string, value *srv6.LocalSID, metadata i
 // Dependencies for LocalSIDs are represented by interface (interface in up state)
 func (d *LocalSIDDescriptor) Dependencies(key string, localSID *srv6.LocalSID) (dependencies []scheduler.Dependency) {
 	switch ef := localSID.EndFunction.(type) {
+	case *srv6.LocalSID_EndFunction_T:
+		if ef.EndFunction_T.VrfId != 0 { // VRF 0 is in VPP by default, no need to wait for first route
+			dependencies = append(dependencies, scheduler.Dependency{
+				Label: localsidVRFDep,
+				AnyOf: scheduler.AnyOfDependency{
+					KeyPrefixes: []string{vpp_l3.RoutePrefix(fmt.Sprint(ef.EndFunction_T.VrfId))}, // waiting for VRF table creation (route creation creates also VRF table if it doesn't exist)
+				},
+			})
+		}
 	case *srv6.LocalSID_EndFunction_X:
 		dependencies = append(dependencies, scheduler.Dependency{
 			Label: localsidOutgoingInterfaceDep,
