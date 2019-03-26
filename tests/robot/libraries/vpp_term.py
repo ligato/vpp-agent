@@ -1,3 +1,6 @@
+import json
+import re
+
 # input - output from sh int addr
 # output - list of words containing ip/prefix
 def Find_IPV4_In_Text(text):
@@ -46,6 +49,108 @@ def Parse_ARP(info, intf, ip, mac):
     print "ARP Found"
     return False
 
+# input - json output from sw_interface_dump, index
+# output - whole interface state
+def Get_Interface_State(out, index):
+    out =  out[out.find('['):out.rfind(']')+1]
+    data = json.loads(out)
+    state = -1
+    for iface in data:
+        if iface["sw_if_index"] == int(index):
+            state = iface
+    return state
+
+# input - mac in dec from sw_interface_dump
+# output - regular mac in hex
+def Convert_Dec_MAC_To_Hex(mac):
+    hexmac=[]
+    for num in mac[:6]:
+        hexmac.append("%02x" % num)
+    hexmac = ":".join(hexmac)
+    return hexmac
+
+def replace_rrn(mytext):
+    if mytext=="":
+        return ""
+    mytext=mytext.replace("\r\r\n", "")
+    print mytext
+    return mytext
+
+def replace_spaces_to_space(mytext):
+    mytext = re.sub(
+           r" +",
+           " ", mytext
+           )
+    return mytext
+
+def replace_slash_to_space(mytext):
+    mytext = re.sub(
+           r"/",
+           " ", mytext
+           )
+    return mytext
+
+# input - output from sh int, interface name
+# output - index
+def Vpp_Get_Interface_Index(out, name):
+    out = replace_rrn(out)
+    out = replace_spaces_to_space(out)
+    data =  out[out.rfind(name):out.rfind(name)+10]
+    index = -1
+    numbers = [int(s) for s in data.split() if s.isdigit()]
+    print data
+    print numbers
+    if len(numbers) > 0:
+       index = numbers[0]
+    else:
+       print "Index Not Found"
+    return index
+
+# input - output from sh int, interface name
+# output - whole interface state
+def Vpp_Get_Interface_State(out, name):
+    out = replace_rrn(out)
+    out = replace_spaces_to_space(out)
+    data = out[out.rfind(name):out.rfind(name) + 15]
+    state = [str(s) for s in data.split()]
+    print state
+    if state[2] == 'up':
+        interfacestate = 1
+    elif state[2] == 'down':
+        interfacestate = 0
+    else:
+        print "State Not Found"
+    return interfacestate
+
+# input - output from sh int, interface name
+# output - mtu
+def Vpp_Get_Interface_Mtu(out, name):
+    out = replace_rrn(out)
+    out = replace_spaces_to_space(out)
+    data = out[out.rfind(name):out.rfind(name) + 25]
+    state = replace_slash_to_space(data)
+    state = [str(s) for s in state.split()]
+    if len(data) > 0:
+        interfacemtu = state[3]
+    else:
+        print "Mtu Not Found"
+    return interfacemtu
+
+# input - output from sh h, interface name
+# output - mac address
+def Vpp_Get_Mac_Address(out, name):
+    ethadd = "Ethernet address"
+    out = replace_rrn(out)
+    out = replace_spaces_to_space(out)
+    data = out[out.find(name):out.rfind(name) + 70]
+    print data
+    address = data[data.find(ethadd):data.find(ethadd)+35]
+    if len(data) > 0:
+        macaddress = re.search(r'([0-9A-F]{2}[:-]){5}([0-9A-F]{2})', address, re.I).group()
+        print macaddress
+    else:
+        print "Mac Address Not Found"
+    return macaddress
 
 # input - output from sh ip arp command
 # output - state info list

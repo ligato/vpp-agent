@@ -3,6 +3,8 @@
 *** Settings ***
 Library      vat_term.py
 
+Resource     vpp_term.robot
+
 *** Variables ***
 ${terminal_timeout}=      30s
 ${bd_timeout}=            15s
@@ -85,17 +87,10 @@ vat_term: Get Interface Name
     ${name}=           Get Interface Name    ${out}    ${index}
     [Return]           ${name}
 
-vat_term: Get Interface Index
-    [Arguments]        ${node}     ${name}
-    [Documentation]    Return interface index with specified name
-    ${out}=            vat_term: Interfaces Dump    ${node}
-    ${index}=          Get Interface Index    ${out}    ${name}
-    [Return]           ${index}
-
 vat_term: Check VXLan Interface State
     [Arguments]          ${node}    ${name}    @{desired_state}
     ${internal_name}=    Get Interface Internal Name    ${node}    ${name}
-    ${internal_index}=   vat_term: Get Interface Index    ${node}    ${internal_name}
+    ${internal_index}=   vpp_term: Get Interface Index    ${node}    ${internal_name}
     ${vxlan_data}=       vat_term: VXLan Tunnel Dump    ${node}    sw_if_index ${internal_index}
     ${vxlan_data}=       Evaluate    json.loads('''${vxlan_data}''')    json
     ${interfaces}=       vat_term: Interfaces Dump    ${node}
@@ -111,7 +106,7 @@ vat_term: Check VXLan Interface State
 vat_term: Check Afpacket Interface State
     [Arguments]          ${node}    ${name}    @{desired_state}
     ${internal_name}=    Get Interface Internal Name    ${node}    ${name}
-    ${internal_index}=   vat_term: Get Interface Index    ${node}    ${internal_name}
+    ${internal_index}=   vpp_term: Get Interface Index    ${node}    ${internal_name}
     ${interfaces}=       vat_term: Interfaces Dump    ${node}
     ${int_state}=        Get Interface State    ${interfaces}    ${internal_index}
     ${ipv4_list}=        vpp_term: Get Interface IPs    ${node}    ${internal_name}
@@ -131,7 +126,7 @@ vat_term: Check Afpacket Interface State
 vat_term: Check Physical Interface State
     [Arguments]          ${node}    ${name}    @{desired_state}
     ${internal_name}=    Get Interface Internal Name    ${node}    ${name}
-    ${internal_index}=   vat_term: Get Interface Index    ${node}    ${internal_name}
+    ${internal_index}=   vpp_term: Get Interface Index    ${node}    ${internal_name}
     ${interfaces}=       vat_term: Interfaces Dump    ${node}
     ${int_state}=        Get Interface State    ${interfaces}    ${internal_index}
     ${ipv4_list}=        vpp_term: Get Interface IPs    ${node}    ${internal_name}
@@ -148,7 +143,7 @@ vat_term: Check Physical Interface State
 vat_term: Check Loopback Interface State
     [Arguments]          ${node}    ${name}    @{desired_state}
     ${internal_name}=    Get Interface Internal Name    ${node}    ${name}
-    ${internal_index}=   vat_term: Get Interface Index    ${node}    ${internal_name}
+    ${internal_index}=   vpp_term: Get Interface Index    ${node}    ${internal_name}
     ${interfaces}=       vat_term: Interfaces Dump    ${node}
     ${int_state}=        Get Interface State    ${interfaces}    ${internal_index}
     ${ipv4_list}=        vpp_term: Get Interface IPs    ${node}    ${internal_name}

@@ -24,17 +24,6 @@ def Get_Interface_Name(out, index):
             name = iface["interface_name"]
     return name
 
-# input - json output from sw_interface_dump, interface name
-# output - index
-def Get_Interface_Index(out, name):
-    out =  out[out.find('['):out.rfind(']')+1]
-    data = json.loads(out)
-    index = -1
-    for iface in data:
-        if iface["interface_name"] == name:
-            index = iface["sw_if_index"]
-    return index
-
 # input - json output from sw_interface_dump, index
 # output - whole interface state
 def Get_Interface_State(out, index):

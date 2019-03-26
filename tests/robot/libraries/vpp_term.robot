@@ -4,6 +4,8 @@
 Library      Collections
 Library      vpp_term.py
 
+Resource     etcdctl.robot
+
 *** Variables ***
 ${interface_timeout}=     15s
 ${terminal_timeout}=      30s
@@ -165,13 +167,13 @@ vpp_term: Interface Not Exists
     vpp_term: Check Interface Presence    ${node}    ${mac}    ${FALSE}
 
 vpp_term: Check Interface UpDown Status
-    [Arguments]          ${node}     ${interface}    ${status}=1
+    [Arguments]          ${node}     ${interface}    ${enabled}=1
     [Documentation]      Checking up/down state of specified internal interface
-    ${internal_index}=   vat_term: Get Interface Index    agent_vpp_1    ${interface}
-    ${interfaces}=       vat_term: Interfaces Dump    agent_vpp_1
-    ${int_state}=        Get Interface State    ${interfaces}    ${internal_index}
-    ${enabled}=          Set Variable    ${int_state["admin_up_down"]}
-    Should Be Equal As Integers    ${enabled}    ${status}
+    ${internal_name}=    etcdctl.Get Interface Internal Name    ${node}    ${interface}
+    ${internal_index}=   vpp_term: Get Interface Index    ${node}    ${internal_name}
+    ${interfaces}=       vpp_term: Show Interfaces    ${node}
+    ${int_state}=        Vpp Get Interface State    ${interfaces}    ${internal_name}
+    Should Be Equal As Integers    ${int_state}    ${enabled}
 
 vpp_term: Get Interface IPs
     [Arguments]          ${node}     ${interface}
@@ -194,6 +196,13 @@ vpp_term: Get Interface MAC
     ${sh_h}=             vpp_term: Show Hardware    ${node}    ${interface}
     ${mac}=              Find MAC In Text    ${sh_h}
     [Return]             ${mac}
+
+vpp_term: Get Interface Index
+    [Arguments]        ${node}     ${name}
+    [Documentation]    Return interface index with specified name
+    ${out}=            vpp_term: Show Interfaces    ${node}
+    ${index}=          Vpp Get Interface Index    ${out}    ${name}
+    [Return]           ${index}
 
 vpp_term: Interface Is Enabled
     [Arguments]          ${node}     ${interface}
@@ -245,6 +254,26 @@ vpp_term: Check TAP IP6 Interface State
     ${ipv6_string}=      Get From List    ${ipv6}    0
     ${mac}=              vpp_term: Get Interface MAC    ${node}    ${internal_name}
     ${actual_state}=     Create List    mac=${mac}    ipv6=${ipv6_string}    state=${tap_int_state}
+    List Should Contain Sub List    ${actual_state}    ${desired_state}
+    [Return]             ${actual_state}
+
+vpp_term: Check Loopback Interface State
+    [Arguments]          ${node}    ${name}    @{desired_state}
+    ${internal_name}=    etcdctl.Get Interface Internal Name    ${node}    ${name}
+    ${internal_index}=   vpp_term: Get Interface Index    ${node}    ${internal_name}
+    ${interfaces}=       vpp_term: Show Interfaces    ${node}
+    ${int_state}=        Vpp Get Interface State    ${interfaces}    ${internal_name}
+    ${ipv4_list}=        vpp_term: Get Interface IPs    ${node}    ${internal_name}
+    ${ipv6_list}=        vpp_term: Get Interface IP6 IPs    ${node}    ${internal_name}
+    ${enabled}=          Set Variable    ${int_state}             #${int_state["admin_up_down"]}
+    ${mtu}=              Vpp_Get_Interface_Mtu  ${interfaces}    ${internal_name}
+    ${hardware}=         vpp_term: Show Hardware    ${node}    ${internal_name}
+    ${mac}=              Vpp Get Mac Address    ${hardware}    ${internal_name}
+    ${actual_state}=     Create List    enabled=${enabled}    mtu=${mtu}    mac=${mac}
+    :FOR    ${ip}    IN    @{ipv4_list}
+    \    Append To List    ${actual_state}    ipv4=${ip}
+    :FOR    ${ip}    IN    @{ipv6_list}
+    \    Append To List    ${actual_state}    ipv6=${ip}
     List Should Contain Sub List    ${actual_state}    ${desired_state}
     [Return]             ${actual_state}
 
