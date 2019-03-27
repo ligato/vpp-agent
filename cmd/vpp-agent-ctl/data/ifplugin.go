@@ -50,6 +50,10 @@ type InterfacesCtl interface {
 	PutIPSecTunnelInterface() error
 	// DeleteIPSecTunnelInterface removes IPSec tunnel interface
 	DeleteIPSecTunnelInterface() error
+	// PutSubInterface configures sub interface
+	PutSubInterface() error
+	// DelSubInterface removes sub interface
+	DeleteSubInterface() error
 	// PutBondInterface configures bond type interface to the ETCD
 	PutBondInterface() error
 	// DeleteBondInterface removes bond-type interface from the ETCD
@@ -287,6 +291,36 @@ func (ctl *VppAgentCtlImpl) DeleteIPSecTunnelInterface() error {
 	return err
 }
 
+// PutSubInterface configures the sub-interface type interface
+func (ctl *VppAgentCtlImpl) PutSubInterface() error {
+	subIf := &interfaces.Interface{
+		Name:    "sub1",
+		Enabled: true,
+		Type:    interfaces.Interface_SUB_INTERFACE,
+		Link: &interfaces.Interface_Sub{
+			Sub: &interfaces.SubInterface{
+				ParentName: "bond1",
+				SubId:      10,
+				// tag-rewrite options
+				TagRwOption: interfaces.SubInterface_PUSH1,
+				PushDot1Q:   true,
+				Tag2:        20,
+			},
+		},
+	}
+	ctl.Log.Infof("Interface put: %v", subIf)
+	return ctl.broker.Put(interfaces.InterfaceKey(subIf.Name), subIf)
+}
+
+// DeleteSubInterface removes sub-interface
+func (ctl *VppAgentCtlImpl) DeleteSubInterface() error {
+	subIfKey := interfaces.InterfaceKey("sub1")
+
+	ctl.Log.Infof("Interface delete: %v", subIfKey)
+	_, err := ctl.broker.Delete(subIfKey)
+	return err
+}
+
 // PutBondInterface configures bond type interface to the ETCD
 func (ctl *VppAgentCtlImpl) PutBondInterface() error {
 	bondIf := &interfaces.Interface{
@@ -299,8 +333,7 @@ func (ctl *VppAgentCtlImpl) PutBondInterface() error {
 		Link: &interfaces.Interface_Bond{
 			Bond: &interfaces.BondLink{
 				Id:   5,
-				Mode: interfaces.BondLink_XOR,
-				Lb:   interfaces.BondLink_L23,
+				Mode: interfaces.BondLink_ROUND_ROBIN,
 				BondedInterfaces: []*interfaces.BondLink_BondedInterface{
 					{
 						Name:          "loop1",

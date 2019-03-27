@@ -174,6 +174,8 @@ type InterfaceVppAPI interface {
 	AttachInterfaceToBond(ifIdx, bondIfIdx uint32, isPassive, isLongTimeout bool) error
 	// DetachInterfaceFromBond removes interface slave status from any bond interfaces.
 	DetachInterfaceFromBond(ifIdx uint32) error
+    // SetVLanTagRewrite sets VLan tag rewrite rule for given sub-interface
+	SetVLanTagRewrite(ifIdx uint32, subIf *interfaces.SubInterface) error
 }
 
 // InterfaceVppRead provides read methods for interface plugin

@@ -44,7 +44,7 @@ func (ctl *VppAgentCtlImpl) PutBridgeDomain() error {
 		MacAge:              0,
 		Interfaces: []*l2.BridgeDomain_Interface{
 			{
-				Name: "loop1",
+				Name: "sub1",
 				BridgedVirtualInterface: true,
 				SplitHorizonGroup:       0,
 			},
