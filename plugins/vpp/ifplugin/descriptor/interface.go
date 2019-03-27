@@ -329,6 +329,23 @@ func (d *InterfaceDescriptor) equivalentVmxNet3(oldVmxNet3, newVmxNet3 *interfac
 
 // equivalentBond compares two bond interfaces for equivalence.
 func (d *InterfaceDescriptor) equivalentBond(oldBond, newBond *interfaces.BondLink) bool {
+	if len(oldBond.BondedInterfaces) != len(newBond.BondedInterfaces) {
+		return false
+	}
+	for _, oldBondSlave := range oldBond.BondedInterfaces {
+		var found bool
+		for _, newBondSlave := range newBond.BondedInterfaces {
+			if oldBondSlave.Name == newBondSlave.Name &&
+				oldBondSlave.IsPassive == newBondSlave.IsPassive &&
+				oldBondSlave.IsLongTimeout == newBondSlave.IsLongTimeout {
+				found = true
+			}
+		}
+		if !found {
+			return false
+		}
+	}
+
 	return oldBond.Id == newBond.Id &&
 		oldBond.Mode == newBond.Mode &&
 		oldBond.Lb == newBond.Lb
