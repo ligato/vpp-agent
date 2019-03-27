@@ -80,7 +80,7 @@ func (h *TelemetryHandler) GetMemory() (*vppcalls.MemoryInfo, error) {
 			Free:      strToUint64(fields[5]),
 			Reclaimed: strToUint64(fields[6]),
 			Overhead:  strToUint64(fields[7]),
-			Capacity:  strToUint64(fields[8]),
+			Size:      strToUint64(fields[8]),
 		}
 		threads = append(threads, *thread)
 	}
