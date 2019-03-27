@@ -15,6 +15,7 @@
 //go:generate binapi-generator --input-file=/usr/share/vpp/api/acl.api.json --output-dir=default
 //go:generate binapi-generator --input-file=/usr/share/vpp/api/af_packet.api.json --output-dir=default
 //go:generate binapi-generator --input-file=/usr/share/vpp/api/bfd.api.json --output-dir=default
+//go:generate binapi-generator --input-file=/usr/share/vpp/api/bond.api.json --output-dir=default
 //go:generate binapi-generator --input-file=/usr/share/vpp/api/dhcp.api.json --output-dir=default
 //go:generate binapi-generator --input-file=/usr/share/vpp/api/interface.api.json --output-dir=default
 //go:generate binapi-generator --input-file=/usr/share/vpp/api/ip.api.json --output-dir=default

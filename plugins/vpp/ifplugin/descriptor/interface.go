@@ -279,6 +279,10 @@ func (d *InterfaceDescriptor) equivalentTypeSpecificConfig(oldIntf, newIntf *int
 		if !d.equivalentVmxNet3(oldIntf.GetVmxNet3(), newIntf.GetVmxNet3()) {
 			return false
 		}
+	case interfaces.Interface_BOND_INTERFACE:
+		if !d.equivalentBond(oldIntf.GetBond(), newIntf.GetBond()) {
+			return false
+		}
 	}
 	return true
 }
@@ -321,6 +325,13 @@ func (d *InterfaceDescriptor) equivalentIPSecTunnels(oldTun, newTun *interfaces.
 func (d *InterfaceDescriptor) equivalentVmxNet3(oldVmxNet3, newVmxNet3 *interfaces.VmxNet3Link) bool {
 	return oldVmxNet3.RxqSize == newVmxNet3.RxqSize &&
 		oldVmxNet3.TxqSize == newVmxNet3.TxqSize
+}
+
+// equivalentBond compares two bond interfaces for equivalence.
+func (d *InterfaceDescriptor) equivalentBond(oldBond, newBond *interfaces.BondLink) bool {
+	return oldBond.Id == newBond.Id &&
+		oldBond.Mode == newBond.Mode &&
+		oldBond.Lb == newBond.Lb
 }
 
 // MetadataFactory is a factory for index-map customized for VPP interfaces.
@@ -481,6 +492,16 @@ func (d *InterfaceDescriptor) DerivedValues(key string, intf *interfaces.Interfa
 			Key:   interfaces.UnnumberedKey(intf.Name),
 			Value: intf.GetUnnumbered(),
 		})
+	}
+
+	// bond slave interface
+	if intf.Type == interfaces.Interface_BOND_INTERFACE && intf.GetBond() != nil {
+		for _, slaveIf := range intf.GetBond().GetBondedInterfaces() {
+			derValues = append(derValues, kvs.KeyValuePair{
+				Key:   interfaces.BondedInterfaceKey(intf.Name, slaveIf.Name),
+				Value: slaveIf,
+			})
+		}
 	}
 
 	// DHCP client

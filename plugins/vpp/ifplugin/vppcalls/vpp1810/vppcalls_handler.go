@@ -17,8 +17,8 @@ package vpp1810
 import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
-
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1810/af_packet"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1810/bond"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1810/dhcp"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1810/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1810/ip"
@@ -43,6 +43,7 @@ type (
 func init() {
 	var msgs []govppapi.Message
 	msgs = append(msgs, af_packet.Messages...)
+	msgs = append(msgs, bond.Messages...)
 	msgs = append(msgs, dhcp.Messages...)
 	msgs = append(msgs, interfaces.Messages...)
 	msgs = append(msgs, ip.Messages...)
