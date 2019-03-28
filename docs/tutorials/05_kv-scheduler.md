@@ -62,9 +62,11 @@ It is good practice to add the above commands to the plugin's main .go file with
 `descriptor-adapter` generator will put the generated adapters into the `descriptor/adapter` directory within the
 plugin folder.
 
-#### 2. A descriptor without dependency
+#### 2. Descriptor without dependency
 
-The next  step is to define descriptors. Your descriptor can be implemented in one of two ways:
+The next  step is to define descriptors. We start with the interface descriptor, which has no dependencies. 
+
+A descriptor can be implemented in one of two ways:
 1. Define the descriptor constructor which implements all required methods directly (good when descriptor methods
    are few and short in implementation)
 2. Define a descriptor object, implement all methods on it and then put a method references in the descriptor
@@ -113,7 +115,8 @@ KeyLabel: func(key string) string {
 },
 ```
 
-* Key selector returns true if the provided key is described by given descriptor. The descriptor can support a subset of keys, but only one value type can be processed by any descriptor.
+* Key selector returns true if the provided key is described by the given descriptor. A descriptor can support a 
+  subset of keys, but it can only process one value type.
 ```go
 KeySelector: func(key string) bool {
     if strings.HasPrefix(key, ifPrefix) {
@@ -123,12 +126,12 @@ KeySelector: func(key string) bool {
 },
 ```
 
-* This flag enables metadata for given type
+* This flag enables metadata for the given type
 ```go
 WithMetadata: true,
 ```
 
-* Create method configures new configuration item.
+* Create method configures a new configuration item (interface).
 ```go
 Create: func(key string, value *model.Interface) (metadata interface{}, err error) {
     d.log.Infof("Interface %s created", value.Name)
@@ -164,7 +167,10 @@ func NewIfDescriptor(logger logging.PluginLogger) *api.KVDescriptor {
 
 #### 3. Descriptor with dependency
 
-This descriptor defines some additional fields, since we need to define dependency on the interface configuration item. Also here we specify descriptor struct and implement methods outside of the descriptor constructor. Define the struct and constructor first:
+Next, we continue with the route descriptor, which has a dependency on an interface. This descriptor defines additional
+fields, since we need to define the dependency on the interface configuration item. Also here we specify descriptor
+struct and implement methods outside of the descriptor constructor. Define the struct and constructor first:
+
 ```go
 type RouteDescriptor struct {
 	// dependencies
@@ -213,7 +219,8 @@ func (d *RouteDescriptor) Create(key string, value *model.Route) (metadata inter
 
 In addition, there are two new fields:
 
-* A list of dependencies - key prefix + unique label value required for the given configuration item. The item will not be created while the dependent key does not exist. The label is informative and should be unique.
+* A list of dependencies - a key prefix and a unique label value are required for any given given configuration item.
+The item will not be created while the dependent key does not exist. The label is informative and should be unique.
 ```go
 func (d *RouteDescriptor) Dependencies(key string, value *model.Route) []api.Dependency {
 	return []api.Dependency{
@@ -225,7 +232,8 @@ func (d *RouteDescriptor) Dependencies(key string, value *model.Route) []api.Dep
 }
 ```
 
-* A list of descriptors where the dependent values are processed. In the example, we return the interface descriptor since that is the one handling interfaces.
+* A list of descriptors where the dependent values are processed. In the example, we return the interface descriptor
+  since that is the one handling interfaces.
 ```go
 RetrieveDependencies: []string{ifDescriptorName},
 ```
@@ -282,7 +290,8 @@ The descriptor API provides more methods not used in the example in order to kee
 
 #### Wire our plugin with the KV scheduler
 
-Now when descriptors are completed, we will register them in `main.go`. First step is to add `KVScheduler` to the `HelloWorld` plugin as a plugin dependency:
+Now when the descriptors are completed, we will register them in `main.go`. First step is to add the `KVScheduler` to the
+`HelloWorld` plugin as a plugin dependency:
 ```go
 type HelloWorld struct {
 	infra.PluginDeps
@@ -309,16 +318,22 @@ func (p *HelloWorld) Init() error {
 }
 ```
 
-And the last change is to replace plugin initialization method with `AllPlugins()` in the `main()` to ensure load of the KV scheduler from the hello world plugin.
+The last step is to replace the plugin initialization method with `AllPlugins()` in the `main()` to ensure that the 
+KV Scheduler is loaded and initialized from the hello world plugin.
 ```go
 a := agent.NewAgent(agent.AllPlugins(p))
 ```
 
-Starting the agent now will load KV scheduler plugin together with the hello world plugin. The KV scheduler will receive all the northbound data and passes them to the hello world descriptor in the correct order, or caches them if necessary.
+Starting the agent now will load the KV Scheduler plugin together with the hello world plugin. The KV Scheduler will
+receive all northbound data and pass them to the hello world descriptor in correct order. If dependencies for a 
+configuration item are not met (i.e. if a route is programmed before its interface dependency is is met), the item 
+will be cached.
 
 #### Example and testing
 
-The example code from this tutorial can be found [here][4]. It contains `main.go`, `descriptors.go` and two folders with model and generated adapters. The tutorial example is extended for the `AfterInit()` method which starts a new go routine with testing procedure. It performs three test-cases:
+The example code from this tutorial can be found [here][4]. It contains `main.go`, `descriptors.go` and two folders with
+model and generated adapters. The tutorial example is extended for the `AfterInit()` method which starts a new go routine
+with testing procedure. It performs three test-cases:
 The example can be build and started without any config files. Northbound transactions are simulated with KV Scheduler method `StartNBTransaction()`.
 
 * **1. Configure the interface and the route in a single transaction**
