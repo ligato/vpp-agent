@@ -1,4 +1,4 @@
 - defaults:
-        name: global
-        logrotate:
-                numToKeep: 7 
+  name: global
+  logrotate:
+    numToKeep: 7
