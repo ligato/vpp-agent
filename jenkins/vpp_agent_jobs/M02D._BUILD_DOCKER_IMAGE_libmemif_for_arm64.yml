@@ -2,29 +2,29 @@
     block-downstream: false
     block-upstream: false
     builders:
-    - shell: |-
-        sshpass -p "$robotpassword" ssh -tt -o StrictHostKeyChecking=no $robotusername@147.75.98.202  << EOF
-        docker login --username ${dockerhubusername} --password ${dockerhubpassword}
-        exit
-        EOF
-    - shell: |-
-        sshpass -p "$robotpassword" ssh -tt -o StrictHostKeyChecking=no $robotusername@147.75.98.202  << 'EOF'
-        #rm -rf work
-        mkdir -p work
-        cd work
-        rm -rf libmemif
-        git clone https://github.com/JakubGrajciar/libmemif.git
-        cd libmemif
-        git status
-
-        #git log --name-status HEAD^..HEAD
-        #git log -p [--follow] [-1] kafka/Dockerfile
-
-        docker build -t stanislavchlebec/libmemif-sample-service-arm64 ./
-        docker push stanislavchlebec/libmemif-sample-service-arm64:latest
-
-        exit
-        EOF
+      - shell: |-
+          sshpass -p "$robotpassword" ssh -tt -o StrictHostKeyChecking=no $robotusername@147.75.98.202  << EOF
+          docker login --username ${dockerhubusername} --password ${dockerhubpassword}
+          exit
+          EOF
+      - shell: |-
+          sshpass -p "$robotpassword" ssh -tt -o StrictHostKeyChecking=no $robotusername@147.75.98.202  << 'EOF'
+          #rm -rf work
+          mkdir -p work
+          cd work
+          rm -rf libmemif
+          git clone https://github.com/JakubGrajciar/libmemif.git
+          cd libmemif
+          git status
+  
+          #git log --name-status HEAD^..HEAD
+          #git log -p [--follow] [-1] kafka/Dockerfile
+  
+          docker build -t stanislavchlebec/libmemif-sample-service-arm64 ./
+          docker push stanislavchlebec/libmemif-sample-service-arm64:latest
+  
+          exit
+          EOF
     concurrent: false
     description: |-
       This job run on Jenkins master (147.75.83.101).
@@ -33,51 +33,51 @@
     name: M02D. BUILD DOCKER IMAGE libmemif for arm64
     node: master
     parameters:
-    - raw:
-        xml: |
-          <com.cloudbees.plugins.credentials.CredentialsParameterDefinition plugin="credentials@2.1.18">
-          <name>dockerhub</name>
-          <description />
-          <defaultValue>dockerhub-stano</defaultValue>
-          <credentialType>com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl</credentialType>
-          <required>true</required>
-          </com.cloudbees.plugins.credentials.CredentialsParameterDefinition>
-    - raw:
-        xml: |
-          <com.cloudbees.plugins.credentials.CredentialsParameterDefinition plugin="credentials@2.1.18">
-          <name>robot</name>
-          <description />
-          <defaultValue>robot</defaultValue>
-          <credentialType>com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl</credentialType>
-          <required>false</required>
-          </com.cloudbees.plugins.credentials.CredentialsParameterDefinition>
+      - raw:
+          xml: |
+            <com.cloudbees.plugins.credentials.CredentialsParameterDefinition plugin="credentials@2.1.18">
+            <name>dockerhub</name>
+            <description />
+            <defaultValue>dockerhub-stano</defaultValue>
+            <credentialType>com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl</credentialType>
+            <required>true</required>
+            </com.cloudbees.plugins.credentials.CredentialsParameterDefinition>
+      - raw:
+          xml: |
+            <com.cloudbees.plugins.credentials.CredentialsParameterDefinition plugin="credentials@2.1.18">
+            <name>robot</name>
+            <description />
+            <defaultValue>robot</defaultValue>
+            <credentialType>com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl</credentialType>
+            <required>false</required>
+            </com.cloudbees.plugins.credentials.CredentialsParameterDefinition>
     project-type: freestyle
     properties:
-    - build-discarder:
-        artifact-days-to-keep: -1
-        artifact-num-to-keep: -1
-        days-to-keep: -1
-        num-to-keep: 7
-    - raw:
-        xml: |
-          <hudson.plugins.throttleconcurrents.ThrottleJobProperty plugin="throttle-concurrents@2.0.1">
-          <maxConcurrentPerNode>0</maxConcurrentPerNode>
-          <maxConcurrentTotal>0</maxConcurrentTotal>
-          <categories class="java.util.concurrent.CopyOnWriteArrayList" />
-          <throttleEnabled>false</throttleEnabled>
-          <throttleOption>project</throttleOption>
-          <limitOneJobWithMatchingParams>false</limitOneJobWithMatchingParams>
-          <paramsToUseForLimit />
-          </hudson.plugins.throttleconcurrents.ThrottleJobProperty>
+      - build-discarder:
+          artifact-days-to-keep: -1
+          artifact-num-to-keep: -1
+          days-to-keep: -1
+          num-to-keep: 7
+      - raw:
+          xml: |
+            <hudson.plugins.throttleconcurrents.ThrottleJobProperty plugin="throttle-concurrents@2.0.1">
+            <maxConcurrentPerNode>0</maxConcurrentPerNode>
+            <maxConcurrentTotal>0</maxConcurrentTotal>
+            <categories class="java.util.concurrent.CopyOnWriteArrayList" />
+            <throttleEnabled>false</throttleEnabled>
+            <throttleOption>project</throttleOption>
+            <limitOneJobWithMatchingParams>false</limitOneJobWithMatchingParams>
+            <paramsToUseForLimit />
+            </hudson.plugins.throttleconcurrents.ThrottleJobProperty>
     publishers: []
     triggers: []
     wrappers:
-    - credentials-binding:
-      - username-password-separated:
-          credential-id: dockerhub-stano
-          password: dockerhubpassword
-          username: dockerhubusername
-      - username-password-separated:
-          credential-id: robot
-          password: robotpassword
-          username: robotusername
+      - credentials-binding:
+        - username-password-separated:
+            credential-id: dockerhub-stano
+            password: dockerhubpassword
+            username: dockerhubusername
+        - username-password-separated:
+            credential-id: robot
+            password: robotpassword
+            username: robotusername
