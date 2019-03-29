@@ -1,0 +1,134 @@
+- job:
+    block-downstream: false
+    block-upstream: false
+    builders:
+    - shell: |-
+        #!/bin/bash
+        set -x
+
+        git status
+        git show
+        echo I should be on dev branch ....
+
+        docker login --username ${dockerhubusername} --password ${dockerhubpassword}
+
+        # UBUNTU dev_sfc_controller
+        cd docker/dev_sfc_controller
+        ./build.sh
+
+        if [ "${BRANCH}" == "master" ]; then
+        TAG2=$(git describe --exact-match --tags HEAD 2>/dev/null || true)
+        export TAG2
+        if [ "$TAG2" != "" ]; then
+        docker tag dev_sfc_controller:latest ligato/dev-sfc-controller-arm64:$TAG2-ubuntu
+        docker push ligato/dev-sfc-controller-arm64:$TAG2-ubuntu
+        fi
+        fi
+
+        if [ "${BRANCH}" == "master" ]; then
+        TAG2="latest"
+        docker tag dev_sfc_controller:latest ligato/dev-sfc-controller-arm64:$TAG2-ubuntu
+        docker push ligato/dev-sfc-controller-arm64:$TAG2-ubuntu
+        else
+        TAG2="${BRANCH}"
+        docker tag dev_sfc_controller:latest ligato/dev-sfc-controller-arm64:$TAG2-ubuntu
+        docker push ligato/dev-sfc-controller-arm64:$TAG2-ubuntu
+        fi
+
+        # ALPINE dev_sfc_controller
+        cd ../dev_sfc_controller_alpine
+        ./build.sh
+
+        if [ "${BRANCH}" == "master" ]; then
+        TAG2=$(git describe --exact-match --tags HEAD 2>/dev/null || true)
+        export TAG2
+        if [ "$TAG2" != "" ]; then
+        docker tag dev_sfc_controller:latest ligato/dev-sfc-controller-arm64:$TAG2-alpine
+        docker push ligato/dev-sfc-controller-arm64:$TAG2-alpine
+        fi
+        fi
+
+        if [ "${BRANCH}" == "master" ]; then
+        TAG2="latest"
+        docker tag dev_sfc_controller:latest ligato/dev-sfc-controller-arm64:$TAG2-alpine
+        docker push ligato/dev-sfc-controller-arm64:$TAG2-alpine
+        else
+        TAG2="${BRANCH}"
+        docker tag dev_sfc_controller:latest ligato/dev-sfc-controller-arm64:$TAG2-alpine
+        docker push ligato/dev-sfc-controller-arm64:$TAG2-alpine
+        fi
+
+
+
+        # ALPINE prod_sfc_controller
+        cd ../prod_sfc_controller_alpine
+        ./build.sh
+
+        if [ "${BRANCH}" == "master" ]; then
+        TAG2=$(git describe --exact-match --tags HEAD 2>/dev/null || true)
+        export TAG2
+        if [ "$TAG2" != "" ]; then
+        docker tag prod_sfc_controller:latest ligato/sfc-controller-arm64:$TAG2-alpine
+        docker push ligato/sfc-controller-arm64:$TAG2-alpine
+        fi
+        fi
+
+        if [ "${BRANCH}" == "master" ]; then
+        TAG2="latest"
+        docker tag prod_sfc_controller:latest ligato/sfc-controller-arm64:$TAG2-alpine
+        docker push ligato/sfc-controller-arm64:$TAG2-alpine
+        else
+        TAG2="${BRANCH}"
+        docker tag prod_sfc_controller:latest ligato/sfc-controller-arm64:$TAG2-alpine
+        docker push ligato/sfc-controller-arm64:$TAG2-alpine
+        fi
+
+        echo "Remove ligato/sfc-controller <none> docker images"
+        docker rmi $(docker images --filter "dangling=true" --filter "reference=ligato/*sfc-controller-arm64:*" -q --no-trunc) || true
+    concurrent: false
+    description: |-
+      default building of ligato/sfc-controller (dev-ubuntu,dev-alpine) on branch dev
+      it is possible to change branch by parameter
+    disabled: false
+    name: 02B. BUILD DOCKER IMAGE sfc_controller for arm64
+    node: BuildDockerImages
+    parameters:
+    - string:
+        default: dev
+        description: ''
+        name: BRANCH
+        trim: 'false'
+    project-type: freestyle
+    properties:
+    - build-discarder:
+        artifact-days-to-keep: -1
+        artifact-num-to-keep: -1
+        days-to-keep: -1
+        num-to-keep: 7
+    - raw:
+        xml: |
+          <hudson.plugins.throttleconcurrents.ThrottleJobProperty plugin="throttle-concurrents@2.0.1">
+          <maxConcurrentPerNode>0</maxConcurrentPerNode>
+          <maxConcurrentTotal>0</maxConcurrentTotal>
+          <categories class="java.util.concurrent.CopyOnWriteArrayList" />
+          <throttleEnabled>false</throttleEnabled>
+          <throttleOption>project</throttleOption>
+          <limitOneJobWithMatchingParams>false</limitOneJobWithMatchingParams>
+          <paramsToUseForLimit />
+          </hudson.plugins.throttleconcurrents.ThrottleJobProperty>
+    publishers: []
+    scm:
+    - git:
+        branches:
+        - refs/heads/${BRANCH}
+        url: https://github.com/ligato/sfc-controller.git
+    triggers:
+    - pollscm:
+        cron: H 11 * * 1-5
+        ignore-post-commit-hooks: false
+    wrappers:
+    - credentials-binding:
+      - username-password-separated:
+          credential-id: dockerhub-stano
+          password: dockerhubpassword
+          username: dockerhubusername
