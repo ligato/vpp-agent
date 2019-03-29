@@ -53,16 +53,16 @@
           url: https://github.com/ligato/vpp-agent.git
     triggers: []
     wrappers:
-     - raw:
-         xml: |
-           <hudson.plugins.ws__cleanup.PreBuildCleanup plugin="ws-cleanup@0.37">
-           <deleteDirs>false</deleteDirs>
-           <cleanupParameter />
-           <externalDelete />
-           <disableDeferredWipeout>false</disableDeferredWipeout>
-           </hudson.plugins.ws__cleanup.PreBuildCleanup>
-     - credentials-binding:
-       - username-password-separated:
-           credential-id: robot
-           password: robotpassword
-           username: robotusername
+      - raw:
+          xml: |
+            <hudson.plugins.ws__cleanup.PreBuildCleanup plugin="ws-cleanup@0.37">
+            <deleteDirs>false</deleteDirs>
+            <cleanupParameter />
+            <externalDelete />
+            <disableDeferredWipeout>false</disableDeferredWipeout>
+            </hudson.plugins.ws__cleanup.PreBuildCleanup>
+      - credentials-binding:
+          - username-password-separated:
+              credential-id: robot
+              password: robotpassword
+              username: robotusername

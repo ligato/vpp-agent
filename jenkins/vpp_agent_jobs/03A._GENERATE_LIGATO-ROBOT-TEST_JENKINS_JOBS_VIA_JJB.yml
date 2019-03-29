@@ -4,7 +4,7 @@
     builders:
       - shell: |-
           cd jobs5
-  
+
           rm -rf failed_jobs  list_of_all_robot_tests  p2.yaml  passed_jobs  r1  r2
           ls
           #04pipeline_template.yaml
@@ -12,7 +12,7 @@
           #defaults.yaml
           #script.py
           #script.sh
-  
+
           ./script.sh
           ls
           # GENERATED:
@@ -20,14 +20,14 @@
           #p.yaml
           #r1
           #r2
-  
+
           cd ..
-  
+
           rm -rf backup.sh  crud_example   output  output20180820  output20190204  update.log
           ls
           #update.sh
           #jobs5
-  
+
           #README.md
           #backup.sh
           #crud_example

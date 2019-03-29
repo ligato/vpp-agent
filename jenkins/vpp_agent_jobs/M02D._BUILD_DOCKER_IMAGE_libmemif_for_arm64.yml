@@ -16,13 +16,13 @@
           git clone https://github.com/JakubGrajciar/libmemif.git
           cd libmemif
           git status
-  
+
           #git log --name-status HEAD^..HEAD
           #git log -p [--follow] [-1] kafka/Dockerfile
-  
+
           docker build -t stanislavchlebec/libmemif-sample-service-arm64 ./
           docker push stanislavchlebec/libmemif-sample-service-arm64:latest
-  
+
           exit
           EOF
     concurrent: false
@@ -73,11 +73,11 @@
     triggers: []
     wrappers:
       - credentials-binding:
-        - username-password-separated:
-            credential-id: dockerhub-stano
-            password: dockerhubpassword
-            username: dockerhubusername
-        - username-password-separated:
-            credential-id: robot
-            password: robotpassword
-            username: robotusername
+          - username-password-separated:
+              credential-id: dockerhub-stano
+              password: dockerhubpassword
+              username: dockerhubusername
+          - username-password-separated:
+              credential-id: robot
+              password: robotpassword
+              username: robotusername

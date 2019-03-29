@@ -4,9 +4,9 @@
     builders:
       - shell: |-
           set +x
-  
+
           cd /root/vpp-agent
-  
+
           #https://stackoverflow.com/questions/46333402/how-to-assign-git-commit-hash-to-a-variable-in-jenkins-file
           #git status
           #git log -n 1
@@ -14,7 +14,7 @@
           THISHASH="$(git rev-parse --short HEAD)"
           #echo LASTVERSION="${LASTVERSION}" THISHASH="${THISHASH}"
           #git describe
-  
+
           ####
           # START - RUN THIS SCRIPT ON ARM64 SERVER
           ####
@@ -23,17 +23,17 @@
           set +x
           #whoami
           #pwd
-  
+
           rm -rf work
           mkdir -p work/ligato
           cd work/ligato
           git clone https://github.com/ligato/vpp-agent.git
           cd vpp-agent
-  
+
           #git branch --set-upstream-to=origin/dev dev
           #git pull --tags
           #git rev-parse HEAD
-  
+
           #cd docker/dev
           #IMAGE_TAG=stanislavchlebec/dev-vpp-agent-arm64:`git describe`
           #export IMAGE_TAG
@@ -44,9 +44,9 @@
           #docker tag stanislavchlebec/dev-vpp-agent-arm64:`git describe` stanislavchlebec/dev-vpp-agent-arm64:latest
           #docker push stanislavchlebec/dev-vpp-agent-arm64:`git describe`
           #docker push stanislavchlebec/dev-vpp-agent:latest
-  
+
           docker login --username ${dockerhubusername} --password ${dockerhubpassword}
-  
+
           #20180927 new way
           echo BEGIN OF BUILDING ....
           #----------------------------------------------------
@@ -55,13 +55,13 @@
           git status
           #git checkout ${THISHASH}
           #git checkout v2.0.0-beta
-  
+
           # building of dev_vpp_agent in branch dev
           echo building of dev_vpp_agent in branch dev
-  
+
           cd docker/dev
           ./build.sh #-> dev_vpp_agent:latest
-  
+
           #echo branch:dev DEV PUSH
           #./push_image.sh
           # 20190206 according Ondrej Fabry
@@ -69,7 +69,7 @@
           export IMAGE
           docker tag dev_vpp_agent:latest \$IMAGE:dev
           docker push \$IMAGE:dev
-  
+
           TAG=\$(git describe --tags --exact-match HEAD 2>/dev/null || true)
           export TAG
           if [ "\$TAG" != "" ]; then
@@ -77,13 +77,13 @@
           docker tag dev_vpp_agent:latest \$IMAGE:\$TAG
           docker push \$IMAGE:\$TAG
           fi
-  
+
           # building of prod_vpp_agent in branch dev
           echo building of prod_vpp_agent in branch dev
-  
+
           cd ../../docker/prod
           ./build.sh #-> prod_vpp_agent:latest
-  
+
           #echo branch:dev PROD PUSH
           #./push_image.sh
           # 20190206 according Ondrej Fabry
@@ -91,7 +91,7 @@
           export IMAGE
           docker tag prod_vpp_agent:latest \$IMAGE:dev
           docker push \$IMAGE:dev
-  
+
           TAG=\$(git describe --tags --exact-match HEAD 2>/dev/null || true)
           export TAG
           if [ "\$TAG" != "" ]; then
@@ -99,20 +99,20 @@
           docker tag prod_vpp_agent:latest \$IMAGE:\$TAG
           docker push \$IMAGE:\$TAG
           fi
-  
+
           #----------------------------------------------------
           cd ../..
-  
+
           #branch:master
           git checkout master
           git status
-  
+
           # building of dev_vpp_agent in branch master
           echo building of dev_vpp_agent in branch master
-  
+
           cd docker/dev
           ./build.sh #-> dev_vpp_agent:latest
-  
+
           #echo branch:dev DEV PUSH
           #./push_image.sh
           # 20190206 according Ondrej Fabry
@@ -120,7 +120,7 @@
           export IMAGE
           docker tag dev_vpp_agent:latest \$IMAGE:latest
           docker push \$IMAGE:latest
-  
+
           TAG=\$(git describe --tags  --exact-match HEAD 2>/dev/null || true)
           export TAG
           if [ "\$TAG" != "" ]; then
@@ -128,13 +128,13 @@
           docker tag dev_vpp_agent:latest \$IMAGE:\$TAG
           docker push \$IMAGE:\$TAG
           fi
-  
+
           # building of prod_vpp_agent in branch master
           echo building of prod_vpp_agent in branch master
-  
+
           cd ../../docker/prod
           ./build.sh #-> prod_vpp_agent:latest
-  
+
           #echo branch:dev PROD PUSH
           #./push_image.sh
           # 20190206 according Ondrej Fabry
@@ -142,7 +142,7 @@
           export IMAGE
           docker tag prod_vpp_agent:latest \$IMAGE:latest
           docker push \$IMAGE:latest
-  
+
           TAG=\$(git describe  --tags  --exact-match HEAD 2>/dev/null || true)
           export TAG
           if [ "\$TAG" != "" ]; then
@@ -150,7 +150,7 @@
           docker tag prod_vpp_agent:latest \$IMAGE:\$TAG
           docker push \$IMAGE:\$TAG
           fi
-  
+
           #----------------------------------------------------
           ##dev
           #cd ../../docker/dev
@@ -160,7 +160,7 @@
           #echo master DEV PUSH
           #./push_image.sh
           #BRANCH_HEAD_TAG=`git describe` ./push_image.sh
-  
+
           ##prod
           #cd ../../docker/prod
           #
@@ -169,67 +169,67 @@
           #echo master PROD PUSH
           #./push_image.sh
           ##BRANCH_HEAD_TAG=`git describe` ./push_image.sh
-  
+
           echo END OF BUILDING ....
-  
+
           echo "Remove ligato/*vpp-agent <none> docker images"
           docker rmi -f \$(docker images --filter "dangling=true" --filter "reference=ligato/*vpp-agent-arm64:*" -q --no-trunc) || true
-  
+
           docker ps -a
-  
-          exit
-          EOF
-          ####
-          # END - RUN THIS SCRIPT ON ARM64 SERVER
-          ####
-    - raw:
-        xml: |
-          <org.jenkinsci.plugins.conditionalbuildstep.singlestep.SingleConditionalBuilder plugin="conditional-buildstep@1.3.6">
-          <condition class="org.jenkins_ci.plugins.run_condition.core.StatusCondition" plugin="run-condition@1.2">
-          <worstResult>
-          <name>SUCCESS</name>
-          <ordinal>0</ordinal>
-          <color>BLUE</color>
-          <completeBuild>true</completeBuild>
-          </worstResult>
-          <bestResult>
-          <name>SUCCESS</name>
-          <ordinal>0</ordinal>
-          <color>BLUE</color>
-          <completeBuild>true</completeBuild>
-          </bestResult>
-          </condition>
-          <buildStep class="hudson.tasks.Shell">
-          <command>set +x
-          ####
-          # START - RUN THIS SCRIPT ON ARM64 SERVER
-          ####
-          sshpass -p "$robotpassword" ssh -tt -o StrictHostKeyChecking=no $robotusername@147.75.72.194 &lt;&lt; EOF
-          #!/bin/bash
-          set +x
-          #whoami
-          #pwd
-
-          #IMAGE=ligato/dev-vpp-agent-arm64
-          #docker pull \$IMAGE:dev
-
-          IMAGE=ligato/vpp-agent-arm64
-          docker pull \$IMAGE:dev
-
-          echo "Remove ligato/*vpp-agent &lt;none&gt; docker images"
-          docker rmi -f \$(docker images --filter "dangling=true" --filter "reference=ligato/*vpp-agent-arm64:*" -q --no-trunc) || true
-
-          #docker images
 
           exit
           EOF
           ####
           # END - RUN THIS SCRIPT ON ARM64 SERVER
           ####
-          </command>
-          </buildStep>
-          <runner class="org.jenkins_ci.plugins.run_condition.BuildStepRunner$Fail" plugin="run-condition@1.2" />
-          </org.jenkinsci.plugins.conditionalbuildstep.singlestep.SingleConditionalBuilder>
+      - raw:
+          xml: |
+            <org.jenkinsci.plugins.conditionalbuildstep.singlestep.SingleConditionalBuilder plugin="conditional-buildstep@1.3.6">
+            <condition class="org.jenkins_ci.plugins.run_condition.core.StatusCondition" plugin="run-condition@1.2">
+            <worstResult>
+            <name>SUCCESS</name>
+            <ordinal>0</ordinal>
+            <color>BLUE</color>
+            <completeBuild>true</completeBuild>
+            </worstResult>
+            <bestResult>
+            <name>SUCCESS</name>
+            <ordinal>0</ordinal>
+            <color>BLUE</color>
+            <completeBuild>true</completeBuild>
+            </bestResult>
+            </condition>
+            <buildStep class="hudson.tasks.Shell">
+            <command>set +x
+            ####
+            # START - RUN THIS SCRIPT ON ARM64 SERVER
+            ####
+            sshpass -p "$robotpassword" ssh -tt -o StrictHostKeyChecking=no $robotusername@147.75.72.194 &lt;&lt; EOF
+            #!/bin/bash
+            set +x
+            #whoami
+            #pwd
+
+            #IMAGE=ligato/dev-vpp-agent-arm64
+            #docker pull \$IMAGE:dev
+
+            IMAGE=ligato/vpp-agent-arm64
+            docker pull \$IMAGE:dev
+
+            echo "Remove ligato/*vpp-agent &lt;none&gt; docker images"
+            docker rmi -f \$(docker images --filter "dangling=true" --filter "reference=ligato/*vpp-agent-arm64:*" -q --no-trunc) || true
+
+            #docker images
+
+            exit
+            EOF
+            ####
+            # END - RUN THIS SCRIPT ON ARM64 SERVER
+            ####
+            </command>
+            </buildStep>
+            <runner class="org.jenkins_ci.plugins.run_condition.BuildStepRunner$Fail" plugin="run-condition@1.2" />
+            </org.jenkinsci.plugins.conditionalbuildstep.singlestep.SingleConditionalBuilder>
     concurrent: false
     description: |-
       This job run on Jenkins master (147.75.83.101).
@@ -260,7 +260,7 @@
     scm:
       - git:
           branches:
-          - refs/heads/dev
+            - refs/heads/dev
           url: https://github.com/ligato/vpp-agent.git
     triggers:
       - pollscm:
@@ -268,11 +268,11 @@
           ignore-post-commit-hooks: false
     wrappers:
       - credentials-binding:
-        - username-password-separated:
-            credential-id: dockerhub-stano
-            password: dockerhubpassword
-            username: dockerhubusername
-        - username-password-separated:
-            credential-id: robot
-            password: robotpassword
-            username: robotusername
+          - username-password-separated:
+              credential-id: dockerhub-stano
+              password: dockerhubpassword
+              username: dockerhubusername
+          - username-password-separated:
+              credential-id: robot
+              password: robotpassword
+              username: robotusername
