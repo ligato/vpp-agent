@@ -76,7 +76,7 @@ E', value: "${{VARIABLES_FILE}}"), string(name: 'DOCKER_HOST_IP', value: "${{DOC
 [1]: https://github.com/ligato/vpp-agent/tree/master/tests/robot/suites
 [2]: script.sh
 [3]: script.py
-[4]: vpp_agent_jobs/01A.\ PREPARE\ REPOSITORY\ INSIDE\ JENKINS\ CONTAINER.yml
+[4]: vpp_agent_jobs/01A.i%20PREPAREi%20REPOSITORYi%20INSIDEi%20JENKINS%20CONTAINER.yml
 [5]: pipeline_template.yaml
 [6]: 05test_template.yaml
 [7]: defaults.yaml
