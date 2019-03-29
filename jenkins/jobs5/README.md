@@ -1,16 +1,8 @@
 ## What contains this folder
 
-```
--rw-rw-r-- 1 stanislav stanislav  1932 Mar 29 10:23 04pipeline_template.yaml
--rw-rw-r-- 1 stanislav stanislav  4965 Mar 29 10:23 05test_template.yaml
--rw-rw-r-- 1 stanislav stanislav    82 Mar 29 10:23 defaults.yaml
--rw-rw-r-- 1 stanislav stanislav  8061 Mar 29 10:23 list_of_all_robot_tests
--rw-rw-r-- 1 stanislav stanislav 10821 Mar 29 10:23 script.py
--rwxrwxr-x 1 stanislav stanislav   292 Mar 29 10:23 script.sh
-```
 
 Here are templates for jenkins-job-builder.
-Template 05test_template.yaml is a template for jenkins job which basically runs pybot command to run one file with robot tests e.g.
+Template [05test_template.yaml][6] is a template for jenkins job which basically runs pybot command to run one file with robot tests e.g.
 ```
 pybot --loglevel ${LOGLEVEL} -v AGENT_VPP_IMAGE_NAME:${IMAGE_NAME} -v AGENT_IMAGE_NAME:${IMAGE_NAME} -v DOCKER_HOST_IP:${DOCKER_HOST_IP} -v VARIABLES:${VARIABLES_FILE}    /root/vpp-agent/tests/robot/suites/crud/tap_crud.robot
 
@@ -18,7 +10,7 @@ pybot --loglevel ${LOGLEVEL} -v AGENT_VPP_IMAGE_NAME:${IMAGE_NAME} -v AGENT_IMAG
 Note: the variables enclosed in curly braces will be replaced in time of execution of jenkins job
 Note: This procedure suppose that some preliminary steps are done - preparation of repository to the folder /root. This is done by other jenkins job ([vpp_agent_jobs/'01A. PREPARE REPOSITORY INSIDE JENKINS CONTAINER.yml)][4]. This is done to prevent recurrent downloading of repository for each single robot file.
 
-Template 04pipeline_template.yaml is a template which amasses the jobs to the groups to run them together.
+Template [04pipeline_template.yaml][5] is a template which amasses the jobs to the groups to run them together.
 
 
 Project ligato/vpp-agent contains [robot tests][1]
@@ -84,4 +76,7 @@ E', value: "${{VARIABLES_FILE}}"), string(name: 'DOCKER_HOST_IP', value: "${{DOC
 [1]: https://github.com/ligato/vpp-agent/tree/master/tests/robot/suites
 [2]: script.sh
 [3]: script.py
-[4]: 'vpp_agent_jobs/01A. PREPARE REPOSITORY INSIDE JENKINS CONTAINER.yml'
+[4]: vpp_agent_jobs/01A.\ PREPARE\ REPOSITORY\ INSIDE\ JENKINS\ CONTAINER.yml
+[5]: pipeline_template.yaml
+[6]: 05test_template.yaml
+[7]: defaults.yaml
