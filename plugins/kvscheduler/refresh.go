@@ -202,7 +202,7 @@ func (s *Scheduler) refreshGraph(graphW graph.RWAccess,
 		s.refreshUnavailNode(graphW, node, refreshedKeys, 2)
 	}
 
-	if enableGraphDump && verbose && s.Log.GetLevel() >= logging.DebugLevel {
+	if enableGraphDump && verbose && s.config.PrintTxnSummary {
 		fmt.Println(dumpGraph(graphW))
 	}
 }
