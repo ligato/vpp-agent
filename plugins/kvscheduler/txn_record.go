@@ -22,7 +22,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ligato/cn-infra/logging"
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/kvscheduler/internal/graph"
 	"github.com/ligato/vpp-agent/plugins/kvscheduler/internal/utils"
@@ -134,8 +133,8 @@ func (s *Scheduler) preRecordTransaction(txn *transaction, planned kvs.RecordedT
 		})
 	}
 
-	// send to the log
-	if s.Log.GetLevel() >= logging.DebugLevel {
+	// if enabled, print txn summary
+	if s.config.PrintTxnSummary {
 		// build header for the log
 		txnInfo := txn.txnType.String()
 		if txn.txnType == kvs.NBTransaction && txn.nb.resyncType != kvs.NotResync {
@@ -170,7 +169,7 @@ func (s *Scheduler) recordTransaction(txn *transaction, txnRecord *kvs.RecordedT
 	txnRecord.Stop = stop
 	txnRecord.Executed = executed
 
-	if s.Log.GetLevel() >= logging.DebugLevel {
+	if s.config.PrintTxnSummary {
 		var buf strings.Builder
 		buf.WriteString("o----------------------------------------------------------------------------------------------------------------------o\n")
 		buf.WriteString(txnRecord.StringWithOpts(true, false, 2))

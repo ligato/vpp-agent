@@ -60,6 +60,10 @@ const (
 	// simulation (Retries are always first simulated)
 	defaultEnableTxnSimulation = false
 
+	// by default, a concise summary of every processed transactions is printed
+	// to stdout
+	defaultPrintTxnSummary = true
+
 	// name of the environment variable used to enable verification after every transaction
 	verifyModeEnv = "KVSCHED_VERIFY_MODE"
 
@@ -122,6 +126,7 @@ type Config struct {
 	TransactionHistoryAgeLimit    uint32 `json:"transaction-history-age-limit"`    // in minutes
 	PermanentlyRecordedInitPeriod uint32 `json:"permanently-recorded-init-period"` // in minutes
 	EnableTxnSimulation           bool   `json:"enable-txn-simulation"`
+	PrintTxnSummary               bool   `json:"print-txn-summary"`
 }
 
 // SchedulerTxn implements transaction for the KV scheduler.
@@ -145,6 +150,7 @@ func (s *Scheduler) Init() error {
 		TransactionHistoryAgeLimit:    defaultTransactionHistoryAgeLimit,
 		PermanentlyRecordedInitPeriod: defaultPermanentlyRecordedInitPeriod,
 		EnableTxnSimulation:           defaultEnableTxnSimulation,
+		PrintTxnSummary:               defaultPrintTxnSummary,
 	}
 
 	// load configuration
