@@ -21,6 +21,7 @@ message Interface {
         VXLAN_TUNNEL = 7;
         IPSEC_TUNNEL = 8;
         VMXNET3_INTERFACE = 9;
+        BOND_INTERFACE = 10;
     };
 
     string name = 1;                   /* Logical interface name unique across all configured interfaces (mandatory) */
@@ -67,12 +68,28 @@ message Interface {
         VxlanLink vxlan = 104;          /* VXLAN-specific configuration */
         IPSecLink ipsec = 105;          /* IPSec tunnel-specific configuration */
         VmxNet3Link vmx_net3 = 106;     /* VmxNet3-specific configuration */
+        BondLink bond = 107;                 /* Bond interface-specific configuration */
     };
 };
 
 message SubInterface {
-    string parent_name = 1;     /* Name of the parent (super) interface */
-    uint32 sub_id = 2;          /* SubInterface ID, used as VLAN */
+    string parent_name = 1;                 /* Name of the parent (super) interface */
+    uint32 sub_id = 2;                      /* SubInterface ID, used as VLAN */
+    enum TagRewriteOptions {                /* VLAN tag rewrite rule applied for given tag for sub-interface */
+        DISABLED = 0;
+        PUSH1 = 1;
+        PUSH2 = 2;
+        POP1 = 3;
+        POP2 = 4;
+        TRANSLATE11 = 5;
+        TRANSLATE12 = 6;
+        TRANSLATE21 = 7;
+        TRANSLATE22 = 8;
+    }
+    TagRewriteOptions tag_rw_option = 3;
+    bool push_dot1q = 4;                    /* Set ether-type of the first tag to dot1q if true, dot1ad otherwise */
+    uint32 tag1 = 5;                        /* First tag (required for PUSH1 and any TRANSLATE) */
+    uint32 tag2 = 6;                        /* Second tag (required for PUSH2 and any TRANSLATE) */
 }
 
 message MemifLink {
@@ -143,4 +160,30 @@ message VmxNet3Link {
     bool enable_elog = 2;   /* turn on elog */
     uint32 rxq_size = 3;    /* receive queue size (default is 1024) */
     uint32 txq_size = 4;    /* transmit queue size (default is 1024) */
+}
+
+message BondLink {
+    uint32 id = 1;
+    enum Mode {
+      UNKNOWN = 0;
+      ROUND_ROBIN = 1;
+      ACTIVE_BACKUP = 2;
+      XOR = 3;
+      BROADCAST = 4;
+      LACP = 5;
+    }
+    Mode mode = 3;
+    enum LoadBalance {
+        L2 = 0;
+        L34 = 1;
+        L23 = 2;
+    }
+    LoadBalance lb = 4; // Load balance is optional and valid only for XOR and LACP modes
+
+    message BondedInterface {
+        string name = 1;
+        bool is_passive = 2;
+        bool is_long_timeout = 3;
+    }
+    repeated BondedInterface bonded_interfaces = 12;
 }

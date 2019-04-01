@@ -138,6 +138,12 @@ func (d *InterfaceDescriptor) Create(key string, intf *interfaces.Interface) (me
 			d.log.Error(err)
 			return nil, err
 		}
+	case interfaces.Interface_BOND_INTERFACE:
+		ifIdx, err = d.ifHandler.AddBondInterface(intf.Name, intf.PhysAddress, intf.GetBond())
+		if err != nil {
+			d.log.Error(err)
+			return nil, err
+		}
 	}
 
 	/*
@@ -175,10 +181,12 @@ func (d *InterfaceDescriptor) Create(key string, intf *interfaces.Interface) (me
 		}
 	}
 
-	// MAC address. Note: physical interfaces cannot have the MAC address changed
+	// MAC address. Note: physical interfaces cannot have the MAC address changed. The bond interface uses its own
+	// binary API call to set MAC address.
 	if intf.GetPhysAddress() != "" &&
 		intf.GetType() != interfaces.Interface_AF_PACKET &&
-		intf.GetType() != interfaces.Interface_DPDK {
+		intf.GetType() != interfaces.Interface_DPDK &&
+		intf.GetType() != interfaces.Interface_BOND_INTERFACE {
 		if err = d.ifHandler.SetInterfaceMac(ifIdx, intf.GetPhysAddress()); err != nil {
 			err = errors.Errorf("failed to set MAC address %s to interface %s: %v",
 				intf.GetPhysAddress(), intf.Name, err)
@@ -224,6 +232,14 @@ func (d *InterfaceDescriptor) Create(key string, intf *interfaces.Interface) (me
 				d.log.Error(err)
 				return nil, err
 			}
+		}
+	}
+
+	// set vlan tag rewrite
+	if intf.Type == interfaces.Interface_SUB_INTERFACE && intf.GetSub().TagRwOption != interfaces.SubInterface_DISABLED {
+		if err := d.ifHandler.SetVLanTagRewrite(ifIdx, intf.GetSub()); err != nil {
+			d.log.Error(err)
+			return nil, err
 		}
 	}
 
@@ -303,6 +319,8 @@ func (d *InterfaceDescriptor) Delete(key string, intf *interfaces.Interface, met
 		err = d.ifHandler.DeleteSubif(ifIdx)
 	case interfaces.Interface_VMXNET3_INTERFACE:
 		err = d.ifHandler.DeleteVmxNet3(intf.Name, ifIdx)
+	case interfaces.Interface_BOND_INTERFACE:
+		err = d.ifHandler.DeleteBondInterface(intf.Name, ifIdx)
 	}
 	if err != nil {
 		err = errors.Errorf("failed to remove interface %s, index %d: %v", intf.Name, ifIdx, err)
@@ -359,7 +377,8 @@ func (d *InterfaceDescriptor) Update(key string, oldIntf, newIntf *interfaces.In
 	if newIntf.PhysAddress != "" &&
 		newIntf.PhysAddress != oldIntf.PhysAddress &&
 		oldIntf.Type != interfaces.Interface_AF_PACKET &&
-		oldIntf.Type != interfaces.Interface_DPDK {
+		oldIntf.Type != interfaces.Interface_DPDK &&
+		oldIntf.Type != interfaces.Interface_BOND_INTERFACE {
 		if err := d.ifHandler.SetInterfaceMac(ifIdx, newIntf.PhysAddress); err != nil {
 			err = errors.Errorf("setting interface %s MAC address %s failed: %v",
 				newIntf.Name, newIntf.PhysAddress, err)
@@ -421,6 +440,20 @@ func (d *InterfaceDescriptor) Update(key string, oldIntf, newIntf *interfaces.In
 				err = errors.Errorf("failed to set MTU to interface %s: %v", newIntf.Name, err)
 				d.log.Error(err)
 				return oldMetadata, err
+			}
+		}
+	}
+
+	// update vlan tag rewrite
+	if newIntf.Type == interfaces.Interface_SUB_INTERFACE {
+		oldSub, newSub := oldIntf.GetSub(), newIntf.GetSub()
+		if oldSub.TagRwOption != newSub.TagRwOption ||
+			oldSub.PushDot1Q != newSub.PushDot1Q ||
+			oldSub.Tag1 != newSub.Tag1 ||
+			oldSub.Tag2 != newSub.Tag2 {
+			if err := d.ifHandler.SetVLanTagRewrite(ifIdx, newSub); err != nil {
+				d.log.Error(err)
+				return nil, err
 			}
 		}
 	}

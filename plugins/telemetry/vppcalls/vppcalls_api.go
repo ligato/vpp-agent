@@ -28,13 +28,15 @@ type MemoryInfo struct {
 type MemoryThread struct {
 	ID        uint   `json:"id"`
 	Name      string `json:"name"`
+	Size      uint64 `json:"size"`
 	Objects   uint64 `json:"objects"`
 	Used      uint64 `json:"used"`
 	Total     uint64 `json:"total"`
 	Free      uint64 `json:"free"`
 	Reclaimed uint64 `json:"reclaimed"`
 	Overhead  uint64 `json:"overhead"`
-	Capacity  uint64 `json:"capacity"`
+	Pages     uint64 `json:"pages"`
+	PageSize  uint64 `json:"page_size"`
 }
 
 // NodeCounterInfo contains values returned from 'show node counters'

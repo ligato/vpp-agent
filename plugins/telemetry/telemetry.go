@@ -15,6 +15,7 @@
 package telemetry
 
 import (
+	"sync"
 	"time"
 
 	"github.com/ligato/cn-infra/infra"
@@ -30,8 +31,10 @@ import (
 )
 
 const (
-	// Default update period between metric updates
+	// default period between updates
 	defaultUpdatePeriod = time.Second * 30
+	// minimum period between updates
+	minimumUpdatePeriod = time.Second * 5
 )
 
 // Plugin registers Telemetry Plugin
@@ -46,6 +49,7 @@ type Plugin struct {
 	updatePeriod time.Duration
 	disabled     bool
 
+	wg   sync.WaitGroup
 	quit chan struct{}
 }
 
@@ -100,11 +104,12 @@ func (p *Plugin) Init() error {
 		}
 		// This prevents setting the update period to less than 5 seconds,
 		// which can have significant performance hit.
-		if config.PollingInterval > time.Second*5 {
+		if config.PollingInterval > minimumUpdatePeriod {
 			p.updatePeriod = config.PollingInterval
-			p.Log.Infof("Telemetry polling period changed to %v", p.updatePeriod)
+			p.Log.Infof("polling period changed to %v", p.updatePeriod)
 		} else if config.PollingInterval > 0 {
-			p.Log.Warnf("Telemetry polling period has to be at least 5s, using default: %v", defaultUpdatePeriod)
+			p.Log.Warnf("polling period has to be at least %s, using default: %v",
+				minimumUpdatePeriod, defaultUpdatePeriod)
 		}
 	}
 	// This serves as fallback if the config was not found or if the value is not set in config.
@@ -126,6 +131,7 @@ func (p *Plugin) AfterInit() error {
 		return nil
 	}
 
+	p.wg.Add(1)
 	go p.periodicUpdates()
 
 	return nil
@@ -133,35 +139,37 @@ func (p *Plugin) AfterInit() error {
 
 // Close is used to clean up resources used by Telemetry Plugin
 func (p *Plugin) Close() error {
-	if p.quit != nil {
-		close(p.quit)
-		p.quit = nil
-	}
+	close(p.quit)
+	p.wg.Wait()
 	return nil
 }
 
 // periodic updates for the metrics data
 func (p *Plugin) periodicUpdates() {
+	defer p.wg.Done()
+
 	// Create GoVPP channel
 	vppCh, err := p.GoVppmux.NewAPIChannel()
 	if err != nil {
-		p.Log.Errorf("Error creating channel: %v", err)
+		p.Log.Errorf("creating channel failed: %v", err)
 		return
 	}
+	defer vppCh.Close()
+
 	p.handler = vppcalls.CompatibleTelemetryHandler(vppCh)
 
-Loop:
+	p.Log.Debugf("starting periodic updates (%v)", p.updatePeriod)
+
 	for {
 		select {
 		// Delay period between updates
 		case <-time.After(p.updatePeriod):
 			p.updatePrometheus()
+
 		// Plugin has stopped.
 		case <-p.quit:
-			break Loop
+			p.Log.Debugf("stopping periodic updates")
+			return
 		}
 	}
-
-	// Close GoVPP channel
-	vppCh.Close()
 }

@@ -120,6 +120,10 @@ type InterfaceVppAPI interface {
 	AddVmxNet3(ifName string, vmxNet3 *interfaces.VmxNet3Link) (uint32, error)
 	// DeleteVmxNet3 removes vmxNet3 interface
 	DeleteVmxNet3(ifName string, ifIdx uint32) error
+	// AddBondInterface configures bond interface.
+	AddBondInterface(ifName string, mac string, bondLink *interfaces.BondLink) (uint32, error)
+	// DeleteBondInterface removes bond interface.
+	DeleteBondInterface(ifName string, ifIdx uint32) error
 	// InterfaceAdminDown calls binary API SwInterfaceSetFlagsReply with AdminUpDown=0.
 	InterfaceAdminDown(ifIdx uint32) error
 	// InterfaceAdminUp calls binary API SwInterfaceSetFlagsReply with AdminUpDown=1.
@@ -166,6 +170,12 @@ type InterfaceVppAPI interface {
 	CreateSubif(ifIdx, vlanID uint32) (swIfIdx uint32, err error)
 	// DeleteSubif deletes sub interface.
 	DeleteSubif(ifIdx uint32) error
+	// AttachInterfaceToBond adds interface as a slave to the bond interface.
+	AttachInterfaceToBond(ifIdx, bondIfIdx uint32, isPassive, isLongTimeout bool) error
+	// DetachInterfaceFromBond removes interface slave status from any bond interfaces.
+	DetachInterfaceFromBond(ifIdx uint32) error
+    // SetVLanTagRewrite sets VLan tag rewrite rule for given sub-interface
+	SetVLanTagRewrite(ifIdx uint32, subIf *interfaces.SubInterface) error
 }
 
 // InterfaceVppRead provides read methods for interface plugin

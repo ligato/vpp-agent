@@ -135,6 +135,14 @@ func do(ctl data.VppAgentCtl) {
 			err = ctl.PutIPSecTunnelInterface()
 		case "-ipsectund":
 			err = ctl.DeleteIPSecTunnelInterface()
+		case "-sub":
+			err = ctl.PutSubInterface()
+		case "-subd":
+			err = ctl.DeleteSubInterface()
+		case "-bond":
+			err = ctl.PutBondInterface()
+		case "-bondd":
+			err = ctl.DeleteBondInterface()
 		// Linux interface plugin
 		case "-veth":
 			err = ctl.PutVEthPair()
@@ -278,6 +286,8 @@ func usage() {
 		-vxlan,		-vxland		- VxLAN type interface
 		-afpkt,		-afpktd		- af_packet type interface
 		-ipsectun, 	-ipsectund 	- IPSec tunnel interface
+		-sub		-subd		- Sub-interface
+		-bond		-bondd		- Bond interface
 
 	Linux interface plugin:
 		-veth,		-vethd		- Linux VETH interface pair

@@ -14,6 +14,7 @@
 
 //go:generate descriptor-adapter --descriptor-name Interface  --value-type *vpp_interfaces.Interface --meta-type *ifaceidx.IfaceMetadata --import "ifaceidx" --import "github.com/ligato/vpp-agent/api/models/vpp/interfaces" --output-dir "descriptor"
 //go:generate descriptor-adapter --descriptor-name Unnumbered  --value-type *vpp_interfaces.Interface_Unnumbered --import "github.com/ligato/vpp-agent/api/models/vpp/interfaces" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name BondedInterface  --value-type *vpp_interfaces.BondLink_BondedInterface --import "github.com/ligato/vpp-agent/api/models/vpp/interfaces" --output-dir "descriptor"
 
 package ifplugin
 
@@ -168,6 +169,12 @@ func (p *IfPlugin) Init() error {
 		return err
 	}
 
+	bondIfDescriptor, bondIfDescCtx := descriptor.NewBondedInterfaceDescriptor(p.ifHandler, p.intfIndex, p.Log)
+	err = p.KVScheduler.RegisterKVDescriptor(bondIfDescriptor)
+	if err != nil {
+		return err
+	}
+
 	p.dhcpDescriptor = descriptor.NewDHCPDescriptor(p.KVScheduler, p.ifHandler, p.Log)
 	dhcpDescriptor := p.dhcpDescriptor.GetDescriptor()
 	err = p.KVScheduler.RegisterKVDescriptor(dhcpDescriptor)
@@ -190,6 +197,7 @@ func (p *IfPlugin) Init() error {
 	// pass read-only index map to descriptors
 	p.ifDescriptor.SetInterfaceIndex(p.intfIndex)
 	p.unIfDescriptor.SetInterfaceIndex(p.intfIndex)
+	bondIfDescCtx.SetInterfaceIndex(p.intfIndex)
 	p.dhcpDescriptor.SetInterfaceIndex(p.intfIndex)
 
 	// start watching for DHCP notifications

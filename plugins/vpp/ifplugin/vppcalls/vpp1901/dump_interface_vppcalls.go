@@ -20,6 +20,8 @@ import (
 	"net"
 	"strings"
 
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/bond"
+
 	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	vpp_ipsec "github.com/ligato/vpp-agent/api/models/vpp/ipsec"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/dhcp"
@@ -109,8 +111,12 @@ func (h *InterfaceVppHandler) dumpInterfaces() (map[uint32]*vppcalls.InterfaceDe
 			details.Interface.Type = interfaces.Interface_SUB_INTERFACE
 			details.Interface.Link = &interfaces.Interface_Sub{
 				Sub: &interfaces.SubInterface{
-					ParentName: ifs[ifDetails.SupSwIfIndex].Interface.Name,
-					SubId:      ifDetails.SubID,
+					ParentName:  ifs[ifDetails.SupSwIfIndex].Interface.Name,
+					SubId:       ifDetails.SubID,
+					TagRwOption: getTagRwOption(ifDetails.VtrOp),
+					PushDot1Q:   uintToBool(uint8(ifDetails.VtrPushDot1q)),
+					Tag1:        ifDetails.VtrTag1,
+					Tag2:        ifDetails.VtrTag2,
 				},
 			}
 		}
@@ -228,6 +234,11 @@ func (h *InterfaceVppHandler) DumpInterfaces() (map[uint32]*vppcalls.InterfaceDe
 	}
 
 	err = h.dumpVmxNet3Details(ifs)
+	if err != nil {
+		return nil, err
+	}
+
+	err = h.dumpBondDetails(ifs)
 	if err != nil {
 		return nil, err
 	}
@@ -643,6 +654,63 @@ func (h *InterfaceVppHandler) dumpVmxNet3Details(ifs map[uint32]*vppcalls.Interf
 	return nil
 }
 
+// dumpBondDetails dumps bond interface details from VPP and fills them into the provided interface map.
+func (h *InterfaceVppHandler) dumpBondDetails(ifs map[uint32]*vppcalls.InterfaceDetails) error {
+	bondIndexes := make([]uint32, 0)
+	reqCtx := h.callsChannel.SendMultiRequest(&bond.SwInterfaceBondDump{})
+	for {
+		bondDetails := &bond.SwInterfaceBondDetails{}
+		stop, err := reqCtx.ReceiveReply(bondDetails)
+		if err != nil {
+			return fmt.Errorf("failed to dump bond interface details: %v", err)
+		}
+		if stop {
+			break
+		}
+		_, ifIdxExists := ifs[bondDetails.SwIfIndex]
+		if !ifIdxExists {
+			continue
+		}
+		ifs[bondDetails.SwIfIndex].Interface.Link = &interfaces.Interface_Bond{
+			Bond: &interfaces.BondLink{
+				Id:   bondDetails.ID,
+				Mode: getBondIfMode(bondDetails.Mode),
+				Lb:   getBondLoadBalance(bondDetails.Lb),
+			},
+		}
+		ifs[bondDetails.SwIfIndex].Interface.Type = interfaces.Interface_BOND_INTERFACE
+		bondIndexes = append(bondIndexes, bondDetails.SwIfIndex)
+	}
+
+	// get slave interfaces for bonds
+	for _, bondIdx := range bondIndexes {
+		var bondSlaves []*interfaces.BondLink_BondedInterface
+		reqSlCtx := h.callsChannel.SendMultiRequest(&bond.SwInterfaceSlaveDump{SwIfIndex: bondIdx})
+		for {
+			slaveDetails := &bond.SwInterfaceSlaveDetails{}
+			stop, err := reqSlCtx.ReceiveReply(slaveDetails)
+			if err != nil {
+				return fmt.Errorf("failed to dump bond slave details: %v", err)
+			}
+			if stop {
+				break
+			}
+			slaveIf, ifIdxExists := ifs[slaveDetails.SwIfIndex]
+			if !ifIdxExists {
+				continue
+			}
+			bondSlaves = append(bondSlaves, &interfaces.BondLink_BondedInterface{
+				Name:          slaveIf.Interface.Name,
+				IsPassive:     uintToBool(slaveDetails.IsPassive),
+				IsLongTimeout: uintToBool(slaveDetails.IsLongTimeout),
+			})
+			ifs[bondIdx].Interface.GetBond().BondedInterfaces = bondSlaves
+		}
+	}
+
+	return nil
+}
+
 // dumpUnnumberedDetails returns a map of unnumbered interface indexes, every with interface index of element with IP
 func (h *InterfaceVppHandler) dumpUnnumberedDetails() (map[uint32]uint32, error) {
 	unIfMap := make(map[uint32]uint32) // unnumbered/ip-interface
@@ -719,8 +787,12 @@ func guessInterfaceType(ifName string) interfaces.Interface_Type {
 
 	case strings.HasPrefix(ifName, "ipsec"):
 		return interfaces.Interface_IPSEC_TUNNEL
+
 	case strings.HasPrefix(ifName, "vmxnet3"):
 		return interfaces.Interface_VMXNET3_INTERFACE
+
+	case strings.HasPrefix(ifName, "Bond"):
+		return interfaces.Interface_BOND_INTERFACE
 
 	default:
 		return interfaces.Interface_DPDK
@@ -754,6 +826,58 @@ func getRxModeType(mode uint8) interfaces.Interface_RxModeSettings_RxModeType {
 		return interfaces.Interface_RxModeSettings_DEFAULT
 	default:
 		return interfaces.Interface_RxModeSettings_UNKNOWN
+	}
+}
+
+func getBondIfMode(mode uint8) interfaces.BondLink_Mode {
+	switch mode {
+	case 1:
+		return interfaces.BondLink_ROUND_ROBIN
+	case 2:
+		return interfaces.BondLink_ACTIVE_BACKUP
+	case 3:
+		return interfaces.BondLink_XOR
+	case 4:
+		return interfaces.BondLink_BROADCAST
+	case 5:
+		return interfaces.BondLink_LACP
+	default:
+		// UNKNOWN
+		return 0
+	}
+}
+
+func getBondLoadBalance(lb uint8) interfaces.BondLink_LoadBalance {
+	switch lb {
+	case 1:
+		return interfaces.BondLink_L34
+	case 2:
+		return interfaces.BondLink_L23
+	default:
+		return interfaces.BondLink_L2
+	}
+}
+
+func getTagRwOption(op uint32) interfaces.SubInterface_TagRewriteOptions {
+	switch op {
+	case 1:
+		return interfaces.SubInterface_PUSH1
+	case 2:
+		return interfaces.SubInterface_PUSH2
+	case 3:
+		return interfaces.SubInterface_POP1
+	case 4:
+		return interfaces.SubInterface_POP2
+	case 5:
+		return interfaces.SubInterface_TRANSLATE11
+	case 6:
+		return interfaces.SubInterface_TRANSLATE12
+	case 7:
+		return interfaces.SubInterface_TRANSLATE21
+	case 8:
+		return interfaces.SubInterface_TRANSLATE22
+	default: // disabled
+		return interfaces.SubInterface_DISABLED
 	}
 }
 
