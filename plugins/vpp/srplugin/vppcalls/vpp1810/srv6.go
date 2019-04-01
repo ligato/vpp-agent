@@ -190,9 +190,9 @@ func (h *SRv6VppHandler) endFunction(localSID *srv6.LocalSID) string {
 	case *srv6.LocalSID_EndFunction_DX6:
 		return fmt.Sprintf("DX6{OutgoingInterface: %v, NextHop: %v}", ef.EndFunction_DX6.OutgoingInterface, ef.EndFunction_DX6.NextHop)
 	case *srv6.LocalSID_EndFunction_DT4:
-		return fmt.Sprint("DT4")
+		return fmt.Sprintf("DT4{vrf: %v}", ef.EndFunction_DT4.VrfId)
 	case *srv6.LocalSID_EndFunction_DT6:
-		return fmt.Sprint("DT6")
+		return fmt.Sprintf("DT6{vrf: %v}", ef.EndFunction_DT6.VrfId)
 	case *srv6.LocalSID_EndFunction_AD:
 		return fmt.Sprintf("AD{L3ServiceAddress: %v, OutgoingInterface: %v, IncomingInterface: %v}", ef.EndFunction_AD.L3ServiceAddress, ef.EndFunction_AD.OutgoingInterface, ef.EndFunction_AD.IncomingInterface)
 	case nil:
