@@ -15,7 +15,6 @@
 package descriptor
 
 import (
-	"fmt"
 	"net"
 	"reflect"
 	"strings"
@@ -198,7 +197,7 @@ func (d *LocalSIDDescriptor) Dependencies(key string, localSID *srv6.LocalSID) (
 			dependencies = append(dependencies, scheduler.Dependency{
 				Label: localsidVRFDep,
 				AnyOf: scheduler.AnyOfDependency{
-					KeyPrefixes: []string{vpp_l3.RoutePrefix(fmt.Sprint(ef.EndFunction_T.VrfId))}, // waiting for VRF table creation (route creation creates also VRF table if it doesn't exist)
+					KeyPrefixes: []string{vpp_l3.RouteVrfPrefix(ef.EndFunction_T.VrfId)}, // waiting for VRF table creation (route creation creates also VRF table if it doesn't exist)
 				},
 			})
 		}
@@ -227,7 +226,7 @@ func (d *LocalSIDDescriptor) Dependencies(key string, localSID *srv6.LocalSID) (
 			dependencies = append(dependencies, scheduler.Dependency{
 				Label: localsidVRFDep,
 				AnyOf: scheduler.AnyOfDependency{
-					KeyPrefixes: []string{vpp_l3.RoutePrefix(fmt.Sprint(ef.EndFunction_DT4.VrfId))}, // waiting for VRF table creation (route creation creates also VRF table if it doesn't exist)
+					KeyPrefixes: []string{vpp_l3.RouteVrfPrefix(ef.EndFunction_DT4.VrfId)}, // waiting for VRF table creation (route creation creates also VRF table if it doesn't exist)
 				},
 			})
 		}
@@ -236,7 +235,7 @@ func (d *LocalSIDDescriptor) Dependencies(key string, localSID *srv6.LocalSID) (
 			dependencies = append(dependencies, scheduler.Dependency{
 				Label: localsidVRFDep,
 				AnyOf: scheduler.AnyOfDependency{
-					KeyPrefixes: []string{vpp_l3.RoutePrefix(fmt.Sprint(ef.EndFunction_DT6.VrfId))}, // waiting for VRF table creation (route creation creates also VRF table if it doesn't exist)
+					KeyPrefixes: []string{vpp_l3.RouteVrfPrefix(ef.EndFunction_DT6.VrfId)}, // waiting for VRF table creation (route creation creates also VRF table if it doesn't exist)
 				},
 			})
 		}
