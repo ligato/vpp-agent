@@ -1,0 +1,3 @@
+	Address: 	${sidAddress}
+	Behavior: 	DT4 (Endpoint with decapsulation and specific IPv4 table lookup)
+	Table: 	${fibtable}

@@ -34,23 +34,25 @@ message LocalSID {
         bool psp = 1;                    /* use PSP (penultimate segment POP of the SRH) or by default use USP (Ultimate Segment Pop of the SRH) */
     }
 
-    /* End function behavior of endpoint with Layer-3 cross-connect*/
+    /* End function behavior of endpoint with Layer-3 cross-connect (IPv6) */
     message EndX {
         bool psp = 1;                    /* use PSP (penultimate segment POP of the SRH) or by default use USP (Ultimate Segment Pop of the SRH) */
         string outgoing_interface = 2;   /* name of cross-connected outgoing interface */
-        string next_hop = 3;             /* next hop address for cross-connected link */
+        string next_hop = 3;             /* IPv6 next hop address for cross-connected link */
     }
 
     /* End function behavior of endpoint with specific IPv6 table lookup*/
     message EndT {
         bool psp = 1;                    /* use PSP (penultimate segment POP of the SRH) or by default use USP (Ultimate Segment Pop of the SRH) */
+        uint32 vrf_id = 2;               /* vrf index of IPv6 table that should be used for lookup.
+                                           vrf_index and fib_table_id should refer to the same routing table. VRF index refer to it from client side
+                                           and FIB table id from VPP-internal side (index of memory allocated structure from pool)(source: https://wiki.fd.io/view/VPP/Per-feature_Notes). */
     }
 
-    /* End function nehavior of endpoint with decapsulation and Layer-2 cross-connect (or DX2 with egress VLAN rewrite when VLAN notzero - not supported this variant yet)*/
+    /* End function behavior of endpoint with decapsulation and Layer-2 cross-connect (or DX2 with egress VLAN rewrite when VLAN notzero - not supported this variant yet)*/
     message EndDX2 {
         uint32 vlan_tag = 1;             /* Outgoing VLAN tag */
         string outgoing_interface = 2;   /* name of cross-connected outgoing interface */
-        string next_hop = 3;             /* next hop address for cross-connected link */
     }
 
     /* End function behavior of endpoint with decapsulation and IPv4 cross-connect*/
@@ -67,12 +69,16 @@ message LocalSID {
 
     /* End function behavior of endpoint with decapsulation and specific IPv4 table lookup*/
     message EndDT4 {
-        // TODO model this end function
+        uint32 vrf_id = 1;               /* vrf index of IPv4 table that should be used for lookup.
+                                            vrf_index and fib_table_id should refer to the same routing table. VRF index refer to it from client side
+                                            and FIB table id from VPP-internal side (index of memory allocated structure from pool)(source: https://wiki.fd.io/view/VPP/Per-feature_Notes). */
     }
 
     /* End function behavior of endpoint with decapsulation and specific IPv6 table lookup*/
     message EndDT6 {
-        // TODO model this end function
+        uint32 vrf_id = 1;               /* vrf index of IPv6 table that should be used for lookup.
+                                            vrf_index and fib_table_id should refer to the same routing table. VRF index refer to it from client side
+                                            and FIB table id from VPP-internal side (index of memory allocated structure from pool)(source: https://wiki.fd.io/view/VPP/Per-feature_Notes). */
     }
 
     /* End function behavior of dynamic segment routing proxy endpoint */

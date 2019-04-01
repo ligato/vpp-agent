@@ -1,0 +1,4 @@
+	Address: 	${sidAddress}
+	Behavior: 	X (Endpoint with Layer-3 cross-connect)
+	Iface:  	${interface}
+	Next hop: 	${nexthop}

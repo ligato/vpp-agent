@@ -15,6 +15,7 @@
 package vpp_l3
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/ligato/vpp-agent/pkg/models"
@@ -99,4 +100,9 @@ func ParseProxyARPInterfaceKey(key string) (iface string, isProxyARPInterfaceKey
 		return suffix, true
 	}
 	return "", false
+}
+
+// RouteVrfPrefix returns longest-common prefix of keys representing route that is written to given vrf table.
+func RouteVrfPrefix(vrf uint32) string {
+	return ModelRoute.KeyPrefix() + "vrf/" + fmt.Sprint(vrf) + "/"
 }

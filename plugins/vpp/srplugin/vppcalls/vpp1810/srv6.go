@@ -182,17 +182,17 @@ func (h *SRv6VppHandler) endFunction(localSID *srv6.LocalSID) string {
 	case *srv6.LocalSID_EndFunction_X:
 		return fmt.Sprintf("X{psp: %v, OutgoingInterface: %v, NextHop: %v}", ef.EndFunction_X.Psp, ef.EndFunction_X.OutgoingInterface, ef.EndFunction_X.NextHop)
 	case *srv6.LocalSID_EndFunction_T:
-		return fmt.Sprintf("T{psp: %v}", ef.EndFunction_T.Psp)
+		return fmt.Sprintf("T{psp: %v, vrf: %v}", ef.EndFunction_T.Psp, ef.EndFunction_T.VrfId)
 	case *srv6.LocalSID_EndFunction_DX2:
-		return fmt.Sprintf("DX2{VlanTag: %v, OutgoingInterface: %v, NextHop: %v}", ef.EndFunction_DX2.VlanTag, ef.EndFunction_DX2.OutgoingInterface, ef.EndFunction_DX2.NextHop)
+		return fmt.Sprintf("DX2{VlanTag: %v, OutgoingInterface: %v}", ef.EndFunction_DX2.VlanTag, ef.EndFunction_DX2.OutgoingInterface)
 	case *srv6.LocalSID_EndFunction_DX4:
 		return fmt.Sprintf("DX4{OutgoingInterface: %v, NextHop: %v}", ef.EndFunction_DX4.OutgoingInterface, ef.EndFunction_DX4.NextHop)
 	case *srv6.LocalSID_EndFunction_DX6:
 		return fmt.Sprintf("DX6{OutgoingInterface: %v, NextHop: %v}", ef.EndFunction_DX6.OutgoingInterface, ef.EndFunction_DX6.NextHop)
 	case *srv6.LocalSID_EndFunction_DT4:
-		return fmt.Sprint("DT4")
+		return fmt.Sprintf("DT4{vrf: %v}", ef.EndFunction_DT4.VrfId)
 	case *srv6.LocalSID_EndFunction_DT6:
-		return fmt.Sprint("DT6")
+		return fmt.Sprintf("DT6{vrf: %v}", ef.EndFunction_DT6.VrfId)
 	case *srv6.LocalSID_EndFunction_AD:
 		return fmt.Sprintf("AD{L3ServiceAddress: %v, OutgoingInterface: %v, IncomingInterface: %v}", ef.EndFunction_AD.L3ServiceAddress, ef.EndFunction_AD.OutgoingInterface, ef.EndFunction_AD.IncomingInterface)
 	case nil:
@@ -227,6 +227,7 @@ func (h *SRv6VppHandler) writeEndFunction(req *sr.SrLocalsidAddDel, sidAddr net.
 	case *srv6.LocalSID_EndFunction_T:
 		req.Behavior = BehaviorT
 		req.EndPsp = boolToUint(ef.EndFunction_T.Psp)
+		req.SwIfIndex = ef.EndFunction_T.VrfId
 	case *srv6.LocalSID_EndFunction_DX2:
 		req.Behavior = BehaviorDX2
 		req.VlanIndex = ef.EndFunction_DX2.VlanTag
@@ -235,15 +236,6 @@ func (h *SRv6VppHandler) writeEndFunction(req *sr.SrLocalsidAddDel, sidAddr net.
 			return fmt.Errorf("for interface %v doesn't exist sw index", ef.EndFunction_DX2.OutgoingInterface)
 		}
 		req.SwIfIndex = ifMeta.SwIfIndex
-		nhAddr, err := parseIPv6(ef.EndFunction_DX2.NextHop) // parses also ipv4 addresses but into ipv6 address form
-		if err != nil {
-			return err
-		}
-		if nhAddr4 := nhAddr.To4(); nhAddr4 != nil { // ipv4 address in ipv6 address form?
-			req.NhAddr4 = nhAddr4
-		} else {
-			req.NhAddr6 = []byte(nhAddr)
-		}
 	case *srv6.LocalSID_EndFunction_DX4:
 		req.Behavior = BehaviorDX4
 		ifMeta, exists := h.ifIndexes.LookupByName(ef.EndFunction_DX4.OutgoingInterface)
@@ -274,8 +266,10 @@ func (h *SRv6VppHandler) writeEndFunction(req *sr.SrLocalsidAddDel, sidAddr net.
 		req.NhAddr6 = []byte(nhAddr6)
 	case *srv6.LocalSID_EndFunction_DT4:
 		req.Behavior = BehaviorDT4
+		req.SwIfIndex = ef.EndFunction_DT4.VrfId
 	case *srv6.LocalSID_EndFunction_DT6:
 		req.Behavior = BehaviorDT6
+		req.SwIfIndex = ef.EndFunction_DT6.VrfId
 	case nil:
 		return fmt.Errorf("End function not set. Please configure end function for local SID %v ", sidAddr)
 	default:

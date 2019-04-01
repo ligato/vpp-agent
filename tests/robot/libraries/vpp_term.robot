@@ -409,40 +409,29 @@ vpp_term: Dump Trace
 
 
 vpp_term: Check Local SID Presence
-    [Arguments]        ${node}     ${sidAddress}    ${interface}    ${nexthop}
-    [Documentation]    Checking if specified local sid exists or will show up
+    [Arguments]        ${node}     ${sidAddress}    ${endFunctionType}    ${fibtable}=    ${interface}=    ${nexthop}=    ${serviceaddress}=    ${outinterface}=    ${ininterface}=
+    [Documentation]    Checking if specified local sid exists or will show up (parameters contains union of all END function parameters to be able to cover them all)
     #${terminal_timeout}
-    Wait Until Keyword Succeeds    5x    2s    vpp_term: Local SID exists    node=${node}     sidAddress=${sidAddress}    interface=${interface}    nexthop=${nexthop}
-
-vpp_term: Check SR-Proxy Local SID Presence
-    [Arguments]        ${node}     ${sidAddress}    ${serviceaddress}    ${outinterface}    ${ininterface}
-    [Documentation]    Checking if specified local sid with SR-Proxy functionality (End.AD) exists or will show up
-    #${terminal_timeout}
-    Wait Until Keyword Succeeds    5x    2s    vpp_term: SR-Proxy Local SID exists    node=${node}     sidAddress=${sidAddress}    serviceaddress=${serviceaddress}    outinterface=${outinterface}    ininterface=${ininterface}
+    Wait Until Keyword Succeeds    5x    2s    vpp_term: Local SID exists    node=${node}     sidAddress=${sidAddress}    endFunctionType=${endFunctionType}    fibtable=${fibtable}    interface=${interface}    nexthop=${nexthop}    serviceaddress=${serviceaddress}    outinterface=${outinterface}    ininterface=${ininterface}
 
 vpp_term: Local SID exists
-    [Arguments]        ${node}     ${sidAddress}    ${interface}    ${nexthop}
-    [Documentation]    Checking if specified local sid exists
+    [Arguments]        ${node}     ${sidAddress}    ${endFunctionType}    ${fibtable}    ${interface}    ${nexthop}    ${serviceaddress}    ${outinterface}    ${ininterface}
+    [Documentation]    Checking if specified local sid exists (parameters contains union of all END function parameters to be able to cover them all)
     ${localsidsStr}=   vpp_term: Show Local SIDs    ${node}
     Create File        /tmp/srv6_sh_sr_localsid_output.txt    ${localsidsStr}   #FIXME remove dirty trick with saving string to file just to be able to match substring in string
     ${localsidsStr}=   OperatingSystem.Get File    /tmp/srv6_sh_sr_localsid_output.txt
     ${localsidsStr}=   Basic_Operations.Replace_Rn_N   ${localsidsStr}    #FIX for BUG with New Line
     ${localsidsStr}=   Convert To Lowercase    ${localsidsStr}
-    ${matchdata}=      OperatingSystem.Get File    ${CURDIR}/../suites/crudIPv6/test_data/srv6_sh_sr_localsid_output_match.txt
-    ${matchdata}=      Replace Variables           ${matchdata}
-    ${matchdata}=      Convert To Lowercase    ${matchdata}
-    Should Contain    ${localsidsStr}    ${matchdata}
-
-vpp_term: SR-Proxy Local SID exists
-    [Arguments]        ${node}     ${sidAddress}    ${serviceaddress}    ${outinterface}    ${ininterface}
-    [Documentation]    Checking if specified SR-Proxy local sid exists
-    ${localsidsStr}=   vpp_term: Show Local SIDs    ${node}
-    Create File        /tmp/srv6_sh_sr_localsid_proxy_output.txt    ${localsidsStr}   #FIXME remove dirty trick with saving string to file just to be able to match substring in string
-    ${localsidsStr}=   OperatingSystem.Get File    /tmp/srv6_sh_sr_localsid_proxy_output.txt
-    ${localsidsStr}=   Basic_Operations.Replace_Rn_N   ${localsidsStr}    #FIX for BUG with New Line
-    ${localsidsStr}=   Convert To Lowercase    ${localsidsStr}
-    ${matchdata}=      OperatingSystem.Get File    ${CURDIR}/../suites/crudIPv6/test_data/srv6_sh_sr_localsid_proxy_output_match.txt
-    ${matchdata}=      Replace Variables           ${matchdata}
+    ${matchdata}=      Set Variable            ${EMPTY}
+    ${matchdata}=      Run Keyword If     '${endFunctionType}' == 'BASE'    OperatingSystem.Get File    ${CURDIR}/../suites/crudIPv6/test_data/srv6_sh_sr_localsid_end_output_match.txt        ELSE    Set Variable    ${matchdata}
+    ${matchdata}=      Run Keyword If     '${endFunctionType}' == 'X'       OperatingSystem.Get File    ${CURDIR}/../suites/crudIPv6/test_data/srv6_sh_sr_localsid_end_x_output_match.txt      ELSE    Set Variable    ${matchdata}
+    ${matchdata}=      Run Keyword If     '${endFunctionType}' == 'T'       OperatingSystem.Get File    ${CURDIR}/../suites/crudIPv6/test_data/srv6_sh_sr_localsid_end_t_output_match.txt      ELSE    Set Variable    ${matchdata}
+    ${matchdata}=      Run Keyword If     '${endFunctionType}' == 'DT4'     OperatingSystem.Get File    ${CURDIR}/../suites/crudIPv6/test_data/srv6_sh_sr_localsid_end_dt4_output_match.txt    ELSE    Set Variable    ${matchdata}
+    ${matchdata}=      Run Keyword If     '${endFunctionType}' == 'DT6'     OperatingSystem.Get File    ${CURDIR}/../suites/crudIPv6/test_data/srv6_sh_sr_localsid_end_dt6_output_match.txt    ELSE    Set Variable    ${matchdata}
+    ${matchdata}=      Run Keyword If     '${endFunctionType}' == 'DX4'     OperatingSystem.Get File    ${CURDIR}/../suites/crudIPv6/test_data/srv6_sh_sr_localsid_end_dx4_output_match.txt    ELSE    Set Variable    ${matchdata}
+    ${matchdata}=      Run Keyword If     '${endFunctionType}' == 'DX6'     OperatingSystem.Get File    ${CURDIR}/../suites/crudIPv6/test_data/srv6_sh_sr_localsid_end_dx6_output_match.txt    ELSE    Set Variable    ${matchdata}
+    ${matchdata}=      Run Keyword If     '${endFunctionType}' == 'AD'      OperatingSystem.Get File    ${CURDIR}/../suites/crudIPv6/test_data/srv6_sh_sr_localsid_end_ad_output_match.txt     ELSE    Set Variable    ${matchdata}
+    ${matchdata}=      Replace Variables       ${matchdata}
     ${matchdata}=      Convert To Lowercase    ${matchdata}
     Should Contain    ${localsidsStr}    ${matchdata}
 

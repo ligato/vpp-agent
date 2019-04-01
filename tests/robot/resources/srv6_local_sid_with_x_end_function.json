@@ -1,0 +1,9 @@
+{
+  "sid": "${sidAddress}",
+  "fib_table_id": ${fibtable},
+  "end_function_X": {
+    "psp" : ${psp},
+    "outgoing_interface":"${outinterface}",
+    "next_hop":"${nexthop}"
+  }
+}

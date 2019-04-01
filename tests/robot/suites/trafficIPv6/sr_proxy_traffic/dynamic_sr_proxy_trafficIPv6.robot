@@ -126,11 +126,11 @@ Dynamic SR Proxy with L3-IPv6 SR-unaware service
     Create Master service_out_memif on agent_vpp_4 with Prefixed IP bd:2::d/32, MAC ${service_out_memif_mac}, key 4 and m4.sock socket
     Create Slave srproxy_in_memif on agent_vpp_2 with Prefixed IP bd:2::b/32, MAC ${srproxy_in_memif_mac}, key 4 and m4.sock socket
     ## configure SR-proxy
-    Put Local SID With End.AD function    node=agent_vpp_2    localsidName=B    sidAddress=b::    l3serviceaddress=bd:1::d    outinterface=srproxy_out_memif    ininterface=srproxy_in_memif
+    Put Local SID With End.AD function    node=agent_vpp_2    sidAddress=b::    l3serviceaddress=bd:1::d    outinterface=srproxy_out_memif    ininterface=srproxy_in_memif
     ## creating service routes (Service just sends received packets back)
     Create Route On agent_vpp_4 With IP ${linux_vpp3_tap_ipv6_subnet}/64 With Vrf Id 0 With Interface service_out_memif And Next Hop bd:2::b
     ## configure exit from segment routing
-    Put Local SID With End.DX6 function    node=agent_vpp_3    localsidName=C       sidAddress=c::     fibtable=0         outinterface=vpp3_tap    nexthop=${linux_vpp3_tap_ipv6}
+    Put Local SID With End.DX6 function    node=agent_vpp_3    sidAddress=c::     fibtable=0         outinterface=vpp3_tap    nexthop=${linux_vpp3_tap_ipv6}
     ## path for ping packet returning back to source (no segment routing, but just plain IPv6 route):
     ## create route for ping echo to get back to vpp3 from linux enviroment in agent_vpp_3 container
     linux: Add Route    node=agent_vpp_3    destination_ip=${linux_vpp1_tap_ipv6}    prefix=64    next_hop_ip=${vpp3_tap_ipv6}
@@ -165,8 +165,8 @@ Dynamic SR Proxy with L3-IPv6 SR-unaware service
     Delete VPP Interface     agent_vpp_4         service_out_memif
     Delete VPP Interface     agent_vpp_3         vpp3_memif2
     Delete VPP Interface     agent_vpp_1         vpp1_memif2
-    Delete Local SID         node=agent_vpp_2    localsidName=B
-    Delete Local SID         node=agent_vpp_3    localsidName=C
+    Delete Local SID         node=agent_vpp_2    sidAddress=b::
+    Delete Local SID         node=agent_vpp_3    sidAddress=c::
     vpp_term: Clear Trace    agent_vpp_2
 
 Dynamic SR Proxy with L3-IPv4 SR-unaware service
@@ -185,11 +185,11 @@ Dynamic SR Proxy with L3-IPv4 SR-unaware service
     Create Master service_out_memif on agent_vpp_4 with Prefixed IP ${service_out_memif_ipv4}/24, MAC ${service_out_memif_mac}, key 4 and m4.sock socket
     Create Slave srproxy_in_memif on agent_vpp_2 with Prefixed IP ${srproxy_in_memif_ipv4}/24, MAC ${srproxy_in_memif_mac}, key 4 and m4.sock socket
     ## configure SR-proxy
-    Put Local SID With End.AD function     node=agent_vpp_2    localsidName=B    sidAddress=b::    l3serviceaddress=${service_in_memif_ipv4}    outinterface=srproxy_out_memif    ininterface=srproxy_in_memif
+    Put Local SID With End.AD function     node=agent_vpp_2    sidAddress=b::    l3serviceaddress=${service_in_memif_ipv4}    outinterface=srproxy_out_memif    ininterface=srproxy_in_memif
     ## creating service routes (Service just sends received packets back)
     Create Route On agent_vpp_4 With IP ${linux_vpp3_tap_ipv4_subnet}/24 With Vrf Id 0 With Interface service_out_memif And Next Hop ${srproxy_in_memif_ipv4}
     ## configure exit from segment routing
-    Put Local SID With End.DX4 function    node=agent_vpp_3    localsidName=C    sidAddress=c::    fibtable=0    outinterface=vpp3_tap    nexthop=${linux_vpp3_tap_ipv4}
+    Put Local SID With End.DX4 function    node=agent_vpp_3    sidAddress=c::    fibtable=0    outinterface=vpp3_tap    nexthop=${linux_vpp3_tap_ipv4}
     ## path for ping packet returning back to source (no segment routing, but just plain IPv4 route):
     ## create route for ping echo to get back to vpp3 from linux enviroment in agent_vpp_3 container
     linux: Add Route    node=agent_vpp_3    destination_ip=${linux_vpp1_tap_ipv4_subnet}    prefix=24    next_hop_ip=${vpp3_tap_ipv4}
@@ -214,7 +214,7 @@ Dynamic SR Proxy with L3-IPv4 SR-unaware service
     Packet Trace ${vpp2trace} Should Contain One Packet Trace That Contains These Ordered Substrings ${linux_vpp1_tap_ipv4} -> ${linux_vpp3_tap_ipv4}, SRv6-AD-rewrite: src :: dst c::, IP6: ${vpp2_memif2_mac} -> ${vpp3_memif1_mac}, IPV6_ROUTE: :: -> c::, .  # using only 4 substrings to match packet trace
 
     # cleanup (for next test)
-    Delete Local SID         node=agent_vpp_2    localsidName=B
+    Delete Local SID         node=agent_vpp_2    sidAddress=b::
     vpp_term: Clear Trace    agent_vpp_2
 
 Dynamic SR Proxy with L2 SR-unaware service
@@ -230,7 +230,7 @@ Dynamic SR Proxy with L2 SR-unaware service
     ## steering traffic to segment routing
     Put SRv6 L2 Steering    node=agent_vpp_1    name=toC    bsid=a::c    interfaceName=vpp1_tap
     ## configure SR-proxy
-    Put Local SID With End.AD function    node=agent_vpp_2    localsidName=B    sidAddress=b::    outinterface=srproxy_out_memif    ininterface=srproxy_in_memif    # L2 SR-unware service
+    Put Local SID With End.AD function    node=agent_vpp_2    sidAddress=b::    outinterface=srproxy_out_memif    ininterface=srproxy_in_memif    # L2 SR-unware service
     ## creating service paths (Service just sends received frame back)
     Create Bridge Domain bd1 Without Autolearn On agent_vpp_4 With Interfaces service_in_memif, service_out_memif
     Add fib entry for 01:02:03:04:05:06 in bd1 over service_out_memif on agent_vpp_4

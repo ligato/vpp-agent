@@ -1,0 +1,8 @@
+{
+  "sid": "${sidAddress}",
+  "fib_table_id": ${fibtable},
+  "end_function_T": {
+    "psp" : ${psp},
+    "vrf_id": ${vrfid}
+  }
+}
