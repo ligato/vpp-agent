@@ -15,7 +15,7 @@
 package main
 
 import (
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/interfaces"
 	"log"
 	"net"
 	"time"
