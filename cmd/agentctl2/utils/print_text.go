@@ -47,11 +47,12 @@ func (ed EtcdDump) PrintTest(showConf bool) (*bytes.Buffer, error) {
  	xconnectTemplate := createXconnectTableTemplate()
  	arpTemplate := createArpTableTemplate()
  	routeTemplate := createRouteTableTemplate()
+	proxyarpTemplate := createProxyArpTemplate()
 
 	templates := []*template.Template{}
 	// Keep template order
 	templates = append(templates, ifTemplate, aclTemplate, bdTemplate, fibTemplate,
-		xconnectTemplate, arpTemplate, routeTemplate)
+		xconnectTemplate, arpTemplate, routeTemplate, proxyarpTemplate)
 
 	return ed.textRenderer(showConf, templates)
 }
@@ -429,6 +430,45 @@ func createRouteTableTemplate() (*template.Template) {
 			"{{with .Weight}}\n{{pfx 2}}Weight: {{.}}{{end}}" +
 			"{{with .Preference}}\n{{pfx 2}}Preference: {{.}}{{end}}" +
 			"{{with .ViaVrfId}}\n{{pfx 2}}ViaVrfId: {{.}}{{end}}" +
+
+			//End
+			"{{end}}{{end}}" +
+
+			"{{end}}")
+
+	if err != nil {
+		panic(err)
+	}
+
+	return Template
+}
+
+func createProxyArpTemplate() (*template.Template) {
+
+	FuncMap := template.FuncMap{
+		"setBold":        setBold,
+		"pfx":            getPrefix,
+	}
+
+	Template, err := template.New("proxyarp").Funcs(FuncMap).Parse(
+		"{{with .ProxyARP}}\n{{pfx 1}}Proxy ARP:" +
+
+			"{{with .Config}}{{with .ProxyARP}}" +
+
+		//Iterate over Interfaces
+			"{{range $InterfacesName, $InterfaceData := .Interfaces}}" +
+			"{{with .Name}}\n{{pfx 2}}{{.}}{{end}}" +
+
+		//End iterate
+			"{{end}}" +
+
+		//Iterate over Proxy Ranges
+			"{{range $ProxyName, $ProxyData := .Ranges}}" +
+			"{{with .FirstIpAddr}}\n{{pfx 2}}First IP Address: {{.}}{{end}}" +
+			"{{with .LastIpAddr}}\n{{pfx 2}}Last IP Address: {{.}}{{end}}" +
+
+		//End iterate
+			"{{end}}" +
 
 			//End
 			"{{end}}{{end}}" +

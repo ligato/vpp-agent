@@ -24,6 +24,7 @@ const (
 	XConnectPath     = "config/vpp/l2/v2/xconnect/"
 	ARPPath          = "config/vpp/v2/arp/"
 	RoutePath        = "config/vpp/v2/route/"
+	ProxyARPPath 	 = "config/vpp/v2/proxyarp-global"
 )
 
 // VppMetaData defines the etcd metadata.
@@ -111,17 +112,30 @@ type ARPWithMD struct {
 	Config *ARPConfigWithMD
 }
 
-// ARPConfigWithMD contains a data record for interface configuration
+// StaticRouterConfigWithMD contains a data record for interface configuration
 // and its etcd metadata.
 type StaticRoutesConfigWithMD struct {
 	Metadata  VppMetaData
 	Route *l3.Route
 }
 
-// ARPWithMD contains a data record for interface and its
+// StaticRouterWithMD contains a data record for interface and its
 // etcd metadata.
 type StaticRoutesWithMD struct {
 	Config *StaticRoutesConfigWithMD
+}
+
+// ProxyARPConfigWithMD contains a data record for interface configuration
+// and its etcd metadata.
+type ProxyARPConfigWithMD struct {
+	Metadata  VppMetaData
+	ProxyARP *l3.ProxyARP
+}
+
+// ProxyARPWithMD contains a data record for interface and its
+// etcd metadata.
+type ProxyARPWithMD struct {
+	Config *ProxyARPConfigWithMD
 }
 
 // VppData defines a structure to hold all etcd data records (of all
@@ -136,6 +150,7 @@ type VppData struct {
 	XConnectPairs      map[string]XconnectWithMD
 	ARP 			   ARPWithMD
 	StaticRoutes       StaticRoutesWithMD
+	ProxyARP 		   ProxyARPWithMD
 //	Status             map[string]VppStatusWithMD
 	ShowEtcd           bool
 	ShowConf		   bool
@@ -185,6 +200,8 @@ func (ed EtcdDump) ReadDataFromDb(db keyval.ProtoBroker, key string) (found bool
 		ed[label], err = readARPConfigFromDb(db, vd, key, params)
 	case RoutePath:
 		ed[label], err = readStatiRouteConfigFromDb(db, vd, key, params)
+	case ProxyARPPath:
+		ed[label], err = readProxyARPConfigFromDb(db, vd, key)
 	}
 
 	return true, err
@@ -304,6 +321,18 @@ func readStatiRouteConfigFromDb(db keyval.ProtoBroker, vd *VppData, key string, 
 	if found && err == nil {
 		vd.StaticRoutes = StaticRoutesWithMD{
 			Config: &StaticRoutesConfigWithMD{VppMetaData{rev, key}, route},
+		}
+	}
+	return vd, err
+}
+
+func readProxyARPConfigFromDb(db keyval.ProtoBroker, vd *VppData, key string) (*VppData, error) {
+	parp := &l3.ProxyARP{}
+
+	found, rev, err := readDataFromDb(db, key, parp)
+	if found && err == nil {
+		vd.ProxyARP = ProxyARPWithMD{
+			Config: &ProxyARPConfigWithMD{VppMetaData{rev, key}, parp},
 		}
 	}
 	return vd, err

@@ -43,7 +43,7 @@ func confFunction(cmd *cobra.Command, args []string) {
 	ed := utils.NewEtcdDump()
 	for {
 		if key, _, done := keyIter.GetNext(); !done {
-			//fmt.Printf("Key: '%s'\n", key)
+			fmt.Printf("Key: '%s'\n", key)
 			if _, err = ed.ReadDataFromDb(db, key); err != nil {
 				utils.ExitWithError(utils.ExitError, err)
 			}
