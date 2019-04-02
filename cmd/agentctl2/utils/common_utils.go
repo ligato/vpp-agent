@@ -137,6 +137,25 @@ func ParseKey(key string) (label string, dataType string, name string, plugStatC
 			}
 		}
 
+		if "nat" == ps[3] {
+			if len(ps) > 4 {
+				version := ps[4]
+				dataType += "/" + version
+			}
+
+			if len(ps) > 5 {
+				tp := ps[5]
+				dataType += "/" + tp
+			}
+
+			if len(ps) > 6 {
+				dataType += "/"
+				params = ps[6:]
+			} else {
+				params = []string{}
+			}
+		}
+
 	} else {
 		params = []string{}
 	}

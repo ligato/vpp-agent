@@ -49,11 +49,14 @@ func (ed EtcdDump) PrintTest(showConf bool) (*bytes.Buffer, error) {
  	routeTemplate := createRouteTableTemplate()
 	proxyarpTemplate := createProxyArpTemplate()
 	ipneighbor := createIPScanNeightTemplate()
+	nat := createNATTemplate()
+	dnat := createDNATTemplate()
 
 	templates := []*template.Template{}
 	// Keep template order
 	templates = append(templates, ifTemplate, aclTemplate, bdTemplate, fibTemplate,
-		xconnectTemplate, arpTemplate, routeTemplate, proxyarpTemplate, ipneighbor)
+		xconnectTemplate, arpTemplate, routeTemplate, proxyarpTemplate, ipneighbor,
+		nat, dnat)
 
 	return ed.textRenderer(showConf, templates)
 }
@@ -502,6 +505,114 @@ func createIPScanNeightTemplate() (*template.Template) {
 			"{{with .MaxUpdate}}\n{{pfx 2}}Max Uptime: {{.}}{{end}}" +
 			"{{with .ScanIntDelay}}\n{{pfx 2}}Scan Int Delay: {{.}}{{end}}" +
 			"{{with .StaleThreshold}}\n{{pfx 2}}Stale Threshold: {{.}}{{end}}" +
+
+			//End
+			"{{end}}{{end}}" +
+
+			"{{end}}")
+
+	if err != nil {
+		panic(err)
+	}
+
+	return Template
+}
+
+func createNATTemplate() (*template.Template) {
+
+	FuncMap := template.FuncMap{
+		"setBold":        setBold,
+		"pfx":            getPrefix,
+	}
+
+	Template, err := template.New("nat").Funcs(FuncMap).Parse(
+		"{{with .NAT}}\n{{pfx 1}}NAT:" +
+
+			"{{with .Config}}{{with .Nat44Global}}" +
+
+			"{{with .Label}}\n{{pfx 2}}Label: {{.}}{{end}}" +
+
+		//Iterate over StMappings
+			"{{range $StMapName, $StMapData:= .StMappings}}" +
+			"{{with .ExternalInterface}}\n{{pfx 3}}External Interface: {{.}}{{end}}" +
+			"{{with .ExternalIp}}\n{{pfx 3}}External IP: {{.}}{{end}}" +
+			"{{with .ExternalPort}}\n{{pfx 3}}External Port: {{.}}{{end}}" +
+
+		//Iterate over Local IPs
+			"{{range $LocalIPName, $LocalIPData := .LocalIps}}" +
+			"{{with .VrfId}}\n{{pfx 4}}VrfID: {{.}}{{end}}" +
+			"{{with .LocalIp}}\n{{pfx 4}}Local IP: {{.}}{{end}}" +
+			"{{with .LocalPort}}\n{{pfx 4}}Local Port: {{.}}{{end}}" +
+			"{{with .Probability}}\n{{pfx 4}}Probability: {{.}}{{end}}" +
+
+		//End over Local IPs
+			"{{end}}" +
+
+			"{{with .Protocol}}\n{{pfx 3}}Protocol: {{.}}{{end}}" +
+			"{{with .TwiceNat}}\n{{pfx 3}}Twice Nat: {{.}}{{end}}" +
+			"{{with .SessionAffinity}}\n{{pfx 3}}Session Affinity: {{.}}{{end}}" +
+
+		//End StMappings
+			"{{end}}" +
+
+			//End
+			"{{end}}{{end}}" +
+
+			"{{end}}")
+
+	if err != nil {
+		panic(err)
+	}
+
+	return Template
+}
+
+func createDNATTemplate() (*template.Template) {
+
+	FuncMap := template.FuncMap{
+		"setBold":        setBold,
+		"pfx":            getPrefix,
+	}
+
+	Template, err := template.New("dnat").Funcs(FuncMap).Parse(
+		"{{with .DNAT}}\n{{pfx 1}}DNAT:" +
+
+			"{{with .Config}}{{with .DNat44}}" +
+
+			"{{with .Label}}\n{{pfx 2}}Label: {{.}}{{end}}" +
+
+		//Iterate over StMappings
+			"{{range $StMapName, $StMapData:= .StMappings}}" +
+			"{{with .ExternalInterface}}\n{{pfx 3}}External Interface: {{.}}{{end}}" +
+			"{{with .ExternalIp}}\n{{pfx 3}}External IP: {{.}}{{end}}" +
+			"{{with .ExternalPort}}\n{{pfx 3}}External Port: {{.}}{{end}}" +
+
+		//Iterate over Local IPs
+			"{{range $LocalIPName, $LocalIPData := .LocalIps}}" +
+			"{{with .VrfId}}\n{{pfx 4}}VrfID: {{.}}{{end}}" +
+			"{{with .LocalIp}}\n{{pfx 4}}Local IP: {{.}}{{end}}" +
+			"{{with .LocalPort}}\n{{pfx 4}}Local Port: {{.}}{{end}}" +
+			"{{with .Probability}}\n{{pfx 4}}Probability: {{.}}{{end}}" +
+
+		//End over Local IPs
+			"{{end}}" +
+
+			"{{with .Protocol}}\n{{pfx 3}}Protocol: {{.}}{{end}}" +
+			"{{with .TwiceNat}}\n{{pfx 3}}Twice Nat: {{.}}{{end}}" +
+			"{{with .SessionAffinity}}\n{{pfx 3}}Session Affinity: {{.}}{{end}}" +
+
+		//End StMappings
+			"{{end}}" +
+
+		//Iterate over StMappings
+			"{{range $IdMapName, $IDMapData:= .IdMappings}}" +
+			"{{with .VrfId}}\n{{pfx 4}}VrfID: {{.}}{{end}}" +
+			"{{with .Interface}}\n{{pfx 4}}Interface: {{.}}{{end}}" +
+			"{{with .IPAddress}}\n{{pfx 4}}IP Address: {{.}}{{end}}" +
+			"{{with .Port}}\n{{pfx 4}}Port: {{.}}{{end}}" +
+			"{{with .Protocol}}\n{{pfx 4}}Protocol: {{.}}{{end}}" +
+		//End over StMappings
+			"{{end}}" +
 
 			//End
 			"{{end}}{{end}}" +

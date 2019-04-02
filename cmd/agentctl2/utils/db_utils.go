@@ -12,6 +12,7 @@ import (
 	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	l2 "github.com/ligato/vpp-agent/api/models/vpp/l2"
 	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
+	nat "github.com/ligato/vpp-agent/api/models/vpp/nat"
 
 	"errors"
 )
@@ -26,6 +27,9 @@ const (
 	RoutePath        = "config/vpp/v2/route/"
 	ProxyARPPath 	 = "config/vpp/v2/proxyarp-global"
 	IPScanneightPath = "config/vpp/v2/ipscanneigh-global"
+	NATPath			 = "config/vpp/nat/v2/nat44-global"
+	DNATPath		 = "config/vpp/nat/v2/dnat44/"
+
 )
 
 // VppMetaData defines the etcd metadata.
@@ -152,6 +156,32 @@ type IPScanNeighWithMD struct {
 	Config *IPScanNeighConfigWithMD
 }
 
+// NATConfigWithMD contains a data record for interface configuration
+// and its etcd metadata.
+type NATConfigWithMD struct {
+	Metadata  VppMetaData
+	Nat44Global *nat.Nat44Global
+}
+
+// NATWithMD contains a data record for interface and its
+// etcd metadata.
+type NATWithMD struct {
+	Config *NATConfigWithMD
+}
+
+// DNATConfigWithMD contains a data record for interface configuration
+// and its etcd metadata.
+type DNATConfigWithMD struct {
+	Metadata  VppMetaData
+	DNat44 *nat.DNat44
+}
+
+// DNATWithMD contains a data record for interface and its
+// etcd metadata.
+type DNATWithMD struct {
+	Config *DNATConfigWithMD
+}
+
 // VppData defines a structure to hold all etcd data records (of all
 // types) for one VPP.
 type VppData struct {
@@ -166,6 +196,8 @@ type VppData struct {
 	StaticRoutes       StaticRoutesWithMD
 	ProxyARP 		   ProxyARPWithMD
 	IPScanNeight	   IPScanNeighWithMD
+	NAT 			   NATWithMD
+	DNAT    		   map[string]DNATWithMD
 //	Status             map[string]VppStatusWithMD
 	ShowEtcd           bool
 	ShowConf		   bool
@@ -205,6 +237,7 @@ func (ed EtcdDump) ReadDataFromDb(db keyval.ProtoBroker, key string) (found bool
 		ed[label], err = readAclConfigFromDb(db, vd, key, params)
 	case InterfacePath:
 		ed[label], err = readInterfaceConfigFromDb(db, vd, key, params)
+		//FIXME: Error in key
 	//case BridgeDomainPath:
 	//	ed[label], err = readBridgeConfigFromDb(db, vd, key, params)
 	case FibTablePath:
@@ -219,6 +252,11 @@ func (ed EtcdDump) ReadDataFromDb(db keyval.ProtoBroker, key string) (found bool
 		ed[label], err = readProxyARPConfigFromDb(db, vd, key)
 	case IPScanneightPath:
 		ed[label], err = readIPScanNeightConfigFromDb(db, vd, key)
+		//FIXME: Error in key
+	//case NATPath:
+	//	ed[label], err = readNATConfigFromDb(db, vd, key)
+	//case DNATPath:
+	//	ed[label], err = readDNATConfigFromDb(db, vd, key, params)
 	}
 
 	return true, err
@@ -367,6 +405,35 @@ func readIPScanNeightConfigFromDb(db keyval.ProtoBroker, vd *VppData, key string
 	return vd, err
 }
 
+func readNATConfigFromDb(db keyval.ProtoBroker, vd *VppData, key string) (*VppData, error) {
+	nat := &nat.Nat44Global{}
+
+	found, rev, err := readDataFromDb(db, key, nat)
+	if found && err == nil {
+		vd.NAT = NATWithMD{
+			Config: &NATConfigWithMD{VppMetaData{rev, key}, nat},
+		}
+	}
+	return vd, err
+}
+
+func readDNATConfigFromDb(db keyval.ProtoBroker, vd *VppData, key string, name string) (*VppData, error) {
+	if name == "" {
+		fmt.Printf("WARNING: Invalid dnat config Key '%s'\n", key)
+		return vd, nil
+	}
+
+	dnat := &nat.DNat44{}
+
+	found, rev, err := readDataFromDb(db, key, dnat)
+	if found && err == nil {
+		vd.DNAT[name] = DNATWithMD{
+			Config: &DNATConfigWithMD{VppMetaData{rev, key}, dnat},
+		}
+	}
+	return vd, err
+}
+
 func readDataFromDb(db keyval.ProtoBroker, key string, obj proto.Message) (bool, int64, error) {
 	found, rev, err := db.GetValue(key, obj)
 	if err != nil {
@@ -387,6 +454,10 @@ func newVppDataRecord() *VppData {
 		XConnectPairs:      make(map[string]XconnectWithMD),
 		ARP:				ARPWithMD{},
 		StaticRoutes:       StaticRoutesWithMD{},
+		ProxyARP:			ProxyARPWithMD{},
+		IPScanNeight: 		IPScanNeighWithMD{},
+		NAT:				NATWithMD{},
+		DNAT: 				make(map[string]DNATWithMD),
 		ShowEtcd:           false,
 		ShowConf:			false,
 	}
