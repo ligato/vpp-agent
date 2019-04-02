@@ -56,7 +56,7 @@ Current examples:
   ```
   Note: **For ARM64 see the information for [etcd][3]**.
   
- **2. Start Kafka on localhost**
+ **2. (Optional) start Kafka on localhost**
 
  ```
  sudo docker run -p 2181:2181 -p 9092:9092 --name kafka --rm \
@@ -78,5 +78,5 @@ Current examples:
  --kafka-config=/opt/vpp-agent/dev/kafka.conf
  ```
 [1]: https://github.com/ligato/cn-infra/tree/master/examples 
-[2]: https://github.com/ligato/vpp-agent/blob/master/docs/arm64/kafka.md
-[3]: https://github.com/ligato/vpp-agent/blob/master/docs/arm64/etcd.md
+[2]: /docs/arm64/kafka.md
+[3]: /docs/arm64/etcd.md

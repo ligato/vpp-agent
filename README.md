@@ -19,30 +19,36 @@ CNFs. An example of a custom VPP-based CNF is the [Contiv-VPP][20] vswitch.
 
 ### Releases
 
-|Release|Release Date|
-|:---:|:---:|
-|[![Latest release](https://img.shields.io/github/release/ligato/vpp-agent.svg?label=latest%20release)](https://github.com/ligato/vpp-agent/releases/latest)|![Release date](https://img.shields.io/github/release-date/ligato/vpp-agent.svg?label=)|
-|[![Pre-release](https://img.shields.io/github/release-pre/ligato/vpp-agent.svg?label=pre-release)](https://github.com/ligato/vpp-agent/releases)|![Release date](https://img.shields.io/github/release-date-pre/ligato/vpp-agent.svg?label=)|
+|Release|Release Date|Info|
+|---|:---:|---|
+|[![stable](https://img.shields.io/github/release/ligato/vpp-agent.svg?label=release&logo=github)](https://github.com/ligato/vpp-agent/releases/latest)|![Release date](https://img.shields.io/github/release-date/ligato/vpp-agent.svg?label=)|latest release|
+|[![latest](https://img.shields.io/github/release-pre/ligato/vpp-agent.svg?label=release&logo=github)](https://github.com/ligato/vpp-agent/releases)|![Release date](https://img.shields.io/github/release-date-pre/ligato/vpp-agent.svg?label=)|last release/pre-release|
 
 Have a look at the [release notes](CHANGELOG.md) for a complete list of changes.
 
 ### Branches
 
 |Branch|Last Commit|Info|
-|---:|:---:|---|
-|`master`|![GitHub last commit (branch)](https://img.shields.io/github/last-commit/ligato/vpp-agent/master.svg?label=)| has **moved to v2**, introducing several [breaking changes](https://github.com/ligato/vpp-agent/blob/master/CHANGELOG.md#v200) :warning:|
-|`dev`|![GitHub last commit (branch)](https://img.shields.io/github/last-commit/ligato/vpp-agent/dev.svg?label=)|will be used for all the future **development**|
-|`pantheon-dev`|![GitHub last commit (branch)](https://img.shields.io/github/last-commit/ligato/vpp-agent/pantheon-dev.svg?label=)|has been **deprecated** (v1) and will be removed in the following weeks|
+|---|:---:|---|
+|[![master](https://img.shields.io/badge/branch-master-blue.svg?logo=git&logoColor=white)](https://github.com/ligato/vpp-agent/tree/master)|![GitHub last commit (branch)](https://img.shields.io/github/last-commit/ligato/vpp-agent/master.svg?label=)| has **moved to v2**, introducing several [breaking changes](https://github.com/ligato/vpp-agent/blob/master/CHANGELOG.md#v200) :warning:|
+|[![dev](https://img.shields.io/badge/branch-dev-green.svg?logo=git&logoColor=white)](https://github.com/ligato/vpp-agent/tree/dev)|![GitHub last commit (branch)](https://img.shields.io/github/last-commit/ligato/vpp-agent/dev.svg?label=)|will be used for all the future **development**|
+|[![pantheon-dev](https://img.shields.io/badge/branch-pantheon--dev-inactive.svg?logo=git&logoColor=white)](https://github.com/ligato/vpp-agent/tree/pantheon-dev)|![GitHub last commit (branch)](https://img.shields.io/github/last-commit/ligato/vpp-agent/pantheon-dev.svg?label=)|has been **deprecated** (v1) and will be removed in the following weeks|
+
+### Images
+
+|Image|Image Size/Layers|Info|
+|---|:---:|---|
+|[![ligato/vpp-agent](https://img.shields.io/badge/image-ligato/vpp--agent-blue.svg?logo=docker&logoColor=white)](https://cloud.docker.com/u/ligato/repository/docker/ligato/vpp-agent)|![MicroBadger Size](https://img.shields.io/microbadger/image-size/ligato/vpp-agent.svg) ![MicroBadger Layers](https://img.shields.io/microbadger/layers/ligato/vpp-agent.svg)|minimal image for production|
+|[![ligato/dev-vpp-agent](https://img.shields.io/badge/image-ligato/dev--vpp--agent-blue.svg?logo=docker&logoColor=white)](https://cloud.docker.com/u/ligato/repository/docker/ligato/dev-vpp-agent)|![MicroBadger Size](https://img.shields.io/microbadger/image-size/ligato/dev-vpp-agent.svg) ![MicroBadger Layers](https://img.shields.io/microbadger/layers/ligato/dev-vpp-agent.svg)|image prepared for developers|
+
+The image tag `latest` is built from **master branch** and `dev` tag is built from **dev branch**.
 
 ## Quickstart
 
 For a quick start with the VPP Agent, you can use the pre-built Docker images on DockerHub
 that contain the VPP Agent and VPP: [ligato/vpp-agent][14] (or for ARM64: [ligato/vpp-agent-arm64][17]).
 
-0. Start ETCD and Kafka on your host (e.g. in Docker as described [here][15]).
-   Note: **The Agent in the pre-built Docker image will not start if it can't 
-   connect to both Etcd and Kafka**.
-
+0. Start ETCD (for image versions lower than 2.0, the Kafka is required as well) on your host (e.g. in Docker as described [here][15]).
    Note: **for ARM64 see the information for [kafka][18] and for [etcd][19]**.
 
 1. Run VPP + VPP Agent in a Docker container:

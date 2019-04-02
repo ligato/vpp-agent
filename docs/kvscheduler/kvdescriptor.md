@@ -269,13 +269,16 @@ Please note that all optional fields can be left uninitialized (zero values).
   descriptors, implement and provide the `DerivedValues` callback
 * a derived value is typically a single field of the original value or its
   property, with possibly its own dependencies (dependency on the source value
-  is implicit, i.e. source value is created before its derived values), custom
-  implementations for CRUD operations and potentially used as a target for
-  dependencies of other key-value pairs
+  is implicit, i.e. source value is created before its derived values), separate
+  CRUD operations and potentially used as a target for dependencies of other
+  key-value pairs
 * for example, every [interface to be assigned to a bridge domain][bd-interface]
   is treated as a [separate key-value pair][bd-derived-vals], dependent on
   the [target interface to be created first][bd-iface-deps], but otherwise
-  not blocking the rest of the bridge domain to be applied
+  not blocking the rest of the bridge domain to be applied - a use-case depicted
+  by the following diagram:
+
+![derived values](img/derived-values.svg)
 
 ### Dependencies
 
