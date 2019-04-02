@@ -354,10 +354,11 @@
   version = "v5.0"
 
 [[projects]]
-  digest = "1:d3dd317f7fb7d94351b27dcc256b5b69ef13e8a86c57883949aa344cf640c51b"
+  digest = "1:a4e6cb9d433cdd86e8b80f65e0578d5fc13bfb1bbd18daefda89539675c71ccb"
   name = "github.com/gogo/protobuf"
   packages = [
     "gogoproto",
+    "jsonpb",
     "plugin/compare",
     "plugin/defaultcheck",
     "plugin/description",
@@ -381,6 +382,8 @@
     "protoc-gen-gogo/generator/internal/remap",
     "protoc-gen-gogo/grpc",
     "protoc-gen-gogo/plugin",
+    "sortkeys",
+    "types",
     "vanity",
     "vanity/command",
   ]
@@ -425,6 +428,18 @@
   pruneopts = "UT"
   revision = "e3702bed27f0d39777b0b37b664b6280e8ef8fbf"
   version = "v1.6.2"
+
+[[projects]]
+  digest = "1:a93a4de7b00fb9cc952bc0483e9a32cd273adbbd7f3282bfe89656b2f88fb08c"
+  name = "github.com/grpc-ecosystem/go-grpc-middleware"
+  packages = [
+    ".",
+    "auth",
+    "util/metautils",
+  ]
+  pruneopts = "UT"
+  revision = "c250d6563d4d4c20252cd865923440e829844f4e"
+  version = "v1.0.0"
 
 [[projects]]
   digest = "1:662f988f80b8e4208a0004d1e9d67543602fdd00b7106a857b8339e3d276ae1e"
@@ -484,7 +499,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:cf02ae752160d35c8d3522d6321653ea31bf3f91e425caa34142d3cf90143781"
+  digest = "1:f886f7e75be90937b494481fd4ea9a950339ea9c587ad3ab2b932b33ce8c641f"
   name = "github.com/ligato/cn-infra"
   packages = [
     "agent",
@@ -528,7 +543,7 @@
     "utils/safeclose",
   ]
   pruneopts = "T"
-  revision = "43e3685bb0770ff94f395b4519297fcf9a149ad5"
+  revision = "7728b023d39d088205a27be7cf1048d98467f93d"
 
 [[projects]]
   branch = "master"
