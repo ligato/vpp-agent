@@ -1,7 +1,7 @@
-diff --git b/plugins/vpp/binapi/ip/ip.ba.go a/plugins/vpp/binapi/ip/ip.ba.go
+diff --git b/plugins/vpp/binapi/ip/ip.ba.go a/plugins/vpp/binapi/default/ip/ip.ba.go
 index 6564081d..a68ca172 100644
---- b/plugins/vpp/binapi/ip/ip.ba.go
-+++ a/plugins/vpp/binapi/ip/ip.ba.go
+--- b/plugins/vpp/binapi/default/ip/ip.ba.go
++++ a/plugins/vpp/binapi/default/ip/ip.ba.go
 @@ -340,8 +340,8 @@ type FibPath struct {
  	NextHopID         uint32
  	RpfID             uint32

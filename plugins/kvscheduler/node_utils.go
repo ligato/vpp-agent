@@ -35,12 +35,16 @@ func nodesToKVPairsWithMetadata(nodes []graph.Node) (kvPairs []kvs.KVWithMetadat
 
 // constructTargets builds targets for the graph based on derived values and dependencies.
 func constructTargets(deps []kvs.Dependency, derives []kvs.KeyValuePair) (targets []graph.RelationTargetDef) {
+	targets = make([]graph.RelationTargetDef, 0, len(deps)+len(derives))
 	for _, dep := range deps {
 		target := graph.RelationTargetDef{
 			Relation: DependencyRelation,
 			Label:    dep.Label,
 			Key:      dep.Key,
-			Selector: dep.AnyOf,
+			Selector: graph.TargetSelector{
+				KeyPrefixes: dep.AnyOf.KeyPrefixes,
+				KeySelector: dep.AnyOf.KeySelector,
+			},
 		}
 		targets = append(targets, target)
 	}
@@ -50,7 +54,6 @@ func constructTargets(deps []kvs.Dependency, derives []kvs.KeyValuePair) (target
 			Relation: DerivesRelation,
 			Label:    derived.Key,
 			Key:      derived.Key,
-			Selector: nil,
 		}
 		targets = append(targets, target)
 	}
@@ -164,7 +167,7 @@ func correlateValsSelectors(descriptor string) []graph.FlagSelector {
 // getNodeState returns state stored in the ValueState flag.
 func getNodeState(node graph.Node) kvs.ValueState {
 	if node != nil {
-		flag := node.GetFlag(ValueStateFlagName)
+		flag := node.GetFlag(ValueStateFlagIndex)
 		if flag != nil {
 			return flag.(*ValueStateFlag).valueState
 		}
@@ -191,7 +194,7 @@ func getNodeOrigin(node graph.Node) kvs.ValueOrigin {
 // getNodeError returns node error stored in Error flag.
 func getNodeError(node graph.Node) (retriable bool, err error) {
 	if node != nil {
-		errorFlag := node.GetFlag(ErrorFlagName)
+		errorFlag := node.GetFlag(ErrorFlagIndex)
 		if errorFlag != nil {
 			flag := errorFlag.(*ErrorFlag)
 			return flag.retriable, flag.err
@@ -214,7 +217,7 @@ func getNodeLastUpdate(node graph.Node) *LastUpdateFlag {
 	if node == nil {
 		return nil
 	}
-	flag := node.GetFlag(LastUpdateFlagName)
+	flag := node.GetFlag(LastUpdateFlagIndex)
 	if flag == nil {
 		return nil
 	}
@@ -247,7 +250,7 @@ func getNodeDescriptor(node graph.Node) string {
 	if node == nil {
 		return ""
 	}
-	flag := node.GetFlag(DescriptorFlagName)
+	flag := node.GetFlag(DescriptorFlagIndex)
 	if flag == nil {
 		return ""
 	}
@@ -255,11 +258,11 @@ func getNodeDescriptor(node graph.Node) string {
 }
 
 func isNodeDerived(node graph.Node) bool {
-	return node.GetFlag(DerivedFlagName) != nil
+	return node.GetFlag(DerivedFlagIndex) != nil
 }
 
 func getNodeBaseKey(node graph.Node) string {
-	flag := node.GetFlag(DerivedFlagName)
+	flag := node.GetFlag(DerivedFlagIndex)
 	if flag == nil {
 		return node.GetKey()
 	}
@@ -271,7 +274,7 @@ func isNodeAvailable(node graph.Node) bool {
 	if node == nil {
 		return false
 	}
-	return node.GetFlag(UnavailValueFlagName) == nil
+	return node.GetFlag(UnavailValueFlagIndex) == nil
 }
 
 // isNodeReady return true if the given node has all dependencies satisfied.

@@ -29,20 +29,38 @@ import (
 // printDelimiter is used in pretty-printing of the graph.
 const printDelimiter = ", "
 
+// edge lookup re-used between benchmark scale tests.
+var benchEl *edgeLookup
+
 // graphR implements ReadAccess.
 type graphR struct {
-	parent   *kvgraph
+	*edgeLookup
+
+	parent *kvgraph
+
 	nodes    map[string]*node
 	mappings map[string]idxmap.NamedMappingRW
 	timeline map[string][]*RecordedNode // key -> node records (from the oldest to the newest)
+
+	wCopy   bool
+	unsaved utils.KeySet
 }
 
 // newGraphR creates and initializes a new instance of graphR.
 func newGraphR() *graphR {
+	var el *edgeLookup
+	if benchEl != nil {
+		// this is a benchmark
+		el = benchEl
+		el.reset()
+	} else {
+		el = newEdgeLookup()
+	}
 	return &graphR{
-		nodes:    make(map[string]*node),
-		mappings: make(map[string]idxmap.NamedMappingRW),
-		timeline: make(map[string][]*RecordedNode),
+		edgeLookup: el,
+		nodes:      make(map[string]*node),
+		mappings:   make(map[string]idxmap.NamedMappingRW),
+		timeline:   make(map[string][]*RecordedNode),
 	}
 }
 
@@ -67,6 +85,10 @@ func (graph *graphR) GetNode(key string) Node {
 // GetNodes returns a set of nodes matching the key selector (can be nil)
 // and every provided flag selector.
 func (graph *graphR) GetNodes(keySelector KeySelector, flagSelectors ...FlagSelector) (nodes []Node) {
+	if graph.parent.methodTracker != nil {
+		defer graph.parent.methodTracker("GetNodes")()
+	}
+
 	for key, node := range graph.nodes {
 		if keySelector != nil && !keySelector(key) {
 			continue
@@ -74,14 +96,9 @@ func (graph *graphR) GetNodes(keySelector KeySelector, flagSelectors ...FlagSele
 		selected := true
 		for _, flagSelector := range flagSelectors {
 			for _, flag := range flagSelector.flags {
-				hasFlag := false
-				for _, nodeFlag := range node.flags {
-					if nodeFlag.GetName() == flag.GetName() &&
-						(flag.GetValue() == "" || (nodeFlag.GetValue() == flag.GetValue())) {
-						hasFlag = true
-						break
-					}
-				}
+				nodeFlag := node.flags[flag.GetIndex()]
+				hasFlag := nodeFlag != nil &&
+					(flag.GetValue() == "" || (nodeFlag.GetValue() == flag.GetValue()))
 				if hasFlag != flagSelector.with {
 					selected = false
 					break
@@ -110,7 +127,11 @@ func (graph *graphR) GetNodeTimeline(key string) []*RecordedNode {
 }
 
 // GetFlagStats returns stats for a given flag.
-func (graph *graphR) GetFlagStats(flagName string, selector KeySelector) FlagStats {
+func (graph *graphR) GetFlagStats(flagIndex int, selector KeySelector) FlagStats {
+	if graph.parent.methodTracker != nil {
+		defer graph.parent.methodTracker("GetFlagStats")()
+	}
+
 	stats := FlagStats{PerValueCount: make(map[string]uint)}
 
 	for key, timeline := range graph.timeline {
@@ -121,7 +142,7 @@ func (graph *graphR) GetFlagStats(flagName string, selector KeySelector) FlagSta
 			if record.TargetUpdateOnly {
 				continue
 			}
-			if flag := record.Flags.GetFlag(flagName); flag != nil {
+			if flag := record.Flags.GetFlag(flagIndex); flag != nil {
 				//fmt.Printf("Found flag %s/%s in %dth record of %s\n", flagName, flag.GetValue(), idx, record.Key)
 				flagValue := flag.GetValue()
 				stats.TotalCount++
@@ -138,6 +159,10 @@ func (graph *graphR) GetFlagStats(flagName string, selector KeySelector) FlagSta
 
 // GetSnapshot returns the snapshot of the graph at a given time.
 func (graph *graphR) GetSnapshot(time time.Time) (nodes []*RecordedNode) {
+	if graph.parent.methodTracker != nil {
+		defer graph.parent.methodTracker("GetSnapshot")()
+	}
+
 	for _, timeline := range graph.timeline {
 		for _, record := range timeline {
 			if record.Since.Before(time) &&
@@ -152,6 +177,10 @@ func (graph *graphR) GetSnapshot(time time.Time) (nodes []*RecordedNode) {
 
 // GetKeys returns sorted keys.
 func (graph *graphR) GetKeys() []string {
+	if graph.parent.methodTracker != nil {
+		defer graph.parent.methodTracker("GetKeys")()
+	}
+
 	var keys []string
 	for key := range graph.nodes {
 		keys = append(keys, key)
@@ -165,6 +194,10 @@ func (graph *graphR) GetKeys() []string {
 // Dump returns a human-readable string representation of the current graph
 // content for debugging purposes.
 func (graph *graphR) Dump() string {
+	if graph.parent.methodTracker != nil {
+		defer graph.parent.methodTracker("Dump")()
+	}
+
 	// order nodes by keys
 	var keys []string
 	for key := range graph.nodes {
@@ -193,7 +226,7 @@ func (graph *graphR) Dump() string {
 			buf.WriteString(fmt.Sprintf("| Targets: %107v |\n", prettyPrintTargets(node.targets)))
 		}
 		if len(node.sources) > 0 {
-			buf.WriteString(fmt.Sprintf("| Sources: %107v |\n", prettyPrintSources(node.sources)))
+			buf.WriteString(fmt.Sprintf("| Sources: %107v |\n", prettyPrintTargets(node.sources)))
 		}
 		if metadata := graph.getMetadataFields(node); len(metadata) > 0 {
 			buf.WriteString(fmt.Sprintf("| Metadata: %106v |\n", metadata))
@@ -213,12 +246,49 @@ func (graph *graphR) Release() {
 	graph.parent.rwLock.RUnlock()
 }
 
+// ValidateEdges checks if targets and sources of all nodes correspond with each
+// other.
+// Use only for UTs, debugging, etc.
+func (graph *graphR) ValidateEdges() error {
+	for key, node := range graph.nodes {
+		// validate targets
+		for _, target := range node.targets {
+			for _, targetKey := range target.MatchingKeys.Iterate() {
+				targetNode, ok := graph.nodes[targetKey]
+				if !ok {
+					return fmt.Errorf("broken target %s -> %s", key, targetKey)
+				}
+				source, _ := targetNode.sources.GetTargetForLabel(target.Relation, target.Label)
+				if source == nil || !source.MatchingKeys.Has(key) {
+					return fmt.Errorf("missing source for target %s -> %s", key, targetKey)
+				}
+			}
+		}
+		// validate sources
+		for _, source := range node.sources {
+			for _, sourceKey := range source.MatchingKeys.Iterate() {
+				sourceNode, ok := graph.nodes[sourceKey]
+				if !ok {
+					return fmt.Errorf("broken source %s -> %s", key, sourceKey)
+				}
+				target, _ := sourceNode.targets.GetTargetForLabel(source.Relation, source.Label)
+				if target == nil || !target.MatchingKeys.Has(key) {
+					return fmt.Errorf("missing target for source %s -> %s", key, sourceKey)
+				}
+			}
+		}
+	}
+	return nil
+}
+
 // copyNodesOnly returns a deep-copy of the graph, excluding the timelines
 // and the map with mappings.
 func (graph *graphR) copyNodesOnly() *graphR {
 	graphCopy := &graphR{
-		parent: graph.parent,
-		nodes:  make(map[string]*node),
+		edgeLookup: graph.edgeLookup.makeOverlay(),
+		parent:     graph.parent,
+		nodes:      make(map[string]*node),
+		wCopy:      true,
 	}
 	for key, node := range graph.nodes {
 		nodeCopy := node.copy()
@@ -230,14 +300,16 @@ func (graph *graphR) copyNodesOnly() *graphR {
 
 // recordNode builds a record for the node to be added into the timeline.
 func (graph *graphR) recordNode(node *node, targetUpdateOnly bool) *RecordedNode {
+	targets := node.targets
+	node.targets = targets.copy() // COW for node, original for record
 	record := &RecordedNode{
 		Since:            time.Now(),
 		Key:              node.key,
 		Label:            node.label,
 		Value:            utils.RecordProtoMessage(node.value),
 		Flags:            RecordedFlags{Flags: node.flags},
-		MetadataFields:   graph.getMetadataFields(node), // returned already copied
-		Targets:          node.targets,                  // no need to copy, never changed in graphR
+		MetadataFields:   graph.getMetadataFields(node), // returned is already copied
+		Targets:          targets,
 		TargetUpdateOnly: targetUpdateOnly,
 	}
 	return record
@@ -254,70 +326,49 @@ func (graph *graphR) getMetadataFields(node *node) map[string][]string {
 }
 
 // prettyPrintFlags returns nicely formatted string representation of the given list of flags.
-func prettyPrintFlags(flags []Flag) string {
+func prettyPrintFlags(flags [maxFlags]Flag) string {
 	var str string
-	for idx, flag := range flags {
+	for _, flag := range flags {
+		if flag == nil {
+			continue
+		}
+		if str != "" {
+			str += printDelimiter
+		}
 		if flag.GetValue() == "" {
 			str += flag.GetName()
 		} else {
 			str += fmt.Sprintf("%s:<%s>", flag.GetName(), flag.GetValue())
-		}
-		if idx < len(flags)-1 {
-			str += printDelimiter
 		}
 	}
 	return str
 }
 
 // prettyPrintTargets returns nicely formatted relation targets.
-func prettyPrintTargets(targets TargetsByRelation) string {
+func prettyPrintTargets(targets Targets) string {
 	if len(targets) == 0 {
 		return "<NONE>"
 	}
-	var str string
 	idx := 0
-	for _, relation := range targets {
-		str += fmt.Sprintf("[%s]{%s}", relation.Relation, prettyPrintEdges(relation.Targets))
-		if idx < len(targets)-1 {
+	relation := targets[0].Relation
+	str := fmt.Sprintf("[%s]{", relation)
+	for _, target := range targets {
+		if target.Relation != relation {
+			relation = target.Relation
+			str += fmt.Sprintf("}%s[%s]{", printDelimiter, relation)
+			idx = 0
+		}
+		if idx > 0 {
 			str += printDelimiter
 		}
-		idx++
-	}
-	return str
-}
-
-// prettyPrintSources returns nicely formatted relation sources.
-func prettyPrintSources(sources []*relationSources) string {
-	if len(sources) == 0 {
-		return "<NONE>"
-	}
-	var str string
-	idx := 0
-	for _, relSources := range sources {
-		str += fmt.Sprintf("[%s]%s", relSources.relation, relSources.sources.String())
-		if idx < len(sources)-1 {
-			str += printDelimiter
-		}
-		idx++
-	}
-	return str
-}
-
-// prettyPrintEdges returns nicely formatted node edges.
-func prettyPrintEdges(edges TargetsByLabel) string {
-	var str string
-	idx := 0
-	for _, edge := range edges {
-		if edge.MatchingKeys.Length() == 1 && edge.MatchingKeys.Has(edge.Label) {
+		if target.MatchingKeys.Length() == 1 && target.MatchingKeys.Has(target.Label) {
 			// special case: there 1:1 between label and the key
-			str += edge.Label
+			str += target.Label
 		} else {
-			str += edge.Label + " -> " + edge.MatchingKeys.String()
-		}
-		if idx < len(edges)-1 {
-			str += printDelimiter
+			str += target.Label + " -> " + target.MatchingKeys.String()
 		}
 		idx++
 	}
+	str += "}"
 	return str
 }

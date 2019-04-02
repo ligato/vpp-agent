@@ -35,6 +35,21 @@ type kvgraph struct {
 	recordOldRevs       bool
 	recordAgeLimit      time.Duration
 	permanentInitPeriod time.Duration
+
+	methodTracker MethodTracker
+}
+
+// MethodTracker can be optionally supplied to track beginning and end of calls
+// for (non-trivial) graph methods.
+type MethodTracker func(method string) (onReturn func())
+
+// Opts groups input options for the graph constructor.
+type Opts struct {
+	RecordOldRevs       bool
+	RecordAgeLimit      uint32
+	PermanentInitPeriod uint32
+
+	MethodTracker MethodTracker
 }
 
 // NewGraph creates and new instance of key-value graph.
@@ -44,13 +59,14 @@ type kvgraph struct {
 // memory usage growth. The initial phase of the execution is, however, of greater
 // significance and <permanentInitPeriod> allows to keep records from that period
 // permanently in memory.
-func NewGraph(recordOldRevs bool, recordAgeLimit, permanentInitPeriod uint32) Graph {
+func NewGraph(opts Opts) Graph {
 	kvgraph := &kvgraph{
 		startTime:           time.Now(),
 		lastRevTrimming:     time.Now(),
-		recordOldRevs:       recordOldRevs,
-		recordAgeLimit:      time.Duration(recordAgeLimit) * time.Minute,
-		permanentInitPeriod: time.Duration(permanentInitPeriod) * time.Minute,
+		recordOldRevs:       opts.RecordOldRevs,
+		recordAgeLimit:      time.Duration(opts.RecordAgeLimit) * time.Minute,
+		permanentInitPeriod: time.Duration(opts.PermanentInitPeriod) * time.Minute,
+		methodTracker:       opts.MethodTracker,
 	}
 	kvgraph.graph = newGraphR()
 	kvgraph.graph.parent = kvgraph
@@ -68,8 +84,19 @@ func (kvgraph *kvgraph) Read() ReadAccess {
 // Write returns a graph handle for read-write access.
 // The graph supports at most one writer at a time - i.e. it is assumed
 // there is no write-concurrency.
-// The changes are propagated to the graph using Save().
+// If <inPlace> is enabled, the changes are applied with immediate effect,
+// otherwise they are propagated to the graph using Save().
+// In-place Write handle holds write lock, therefore reading is blocked until
+// the handle is released.
+// If <record> is true, the changes will be recorded once the handle is
+// released.
 // Release eventually using Release() method.
-func (kvgraph *kvgraph) Write(record bool) RWAccess {
-	return newGraphRW(kvgraph.graph, record)
+func (kvgraph *kvgraph) Write(inPlace, record bool) RWAccess {
+	if kvgraph.methodTracker != nil {
+		defer kvgraph.methodTracker("Write")()
+	}
+	if inPlace {
+		kvgraph.rwLock.Lock()
+	}
+	return newGraphRW(kvgraph.graph, inPlace, record)
 }

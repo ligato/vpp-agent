@@ -15,9 +15,9 @@
 package utils
 
 import (
+	"encoding/json"
 	"sort"
 	"strings"
-	"encoding/json"
 )
 
 // KeySet defines API for a set of keys.
@@ -31,6 +31,9 @@ type KeySet interface {
 
 	// Length returns the number of keys in the set.
 	Length() int
+
+	// Equals compares this set with <set2> for equality.
+	Equals(set2 KeySet) bool
 
 	// Has returns true if the given key is in the set.
 	Has(key string) bool
@@ -93,6 +96,19 @@ func (s *singletonKeySet) Length() int {
 		return 0
 	}
 	return 1
+}
+
+// Equals compares this set with <set2> for equality.
+func (s *singletonKeySet) Equals(set2 KeySet) bool {
+	if s.Length() != set2.Length() {
+		return false
+	}
+	for _, elem := range s.Iterate() {
+		if !set2.Has(elem) {
+			return false
+		}
+	}
+	return true
 }
 
 // Has returns true if the given key is in the set.
@@ -178,7 +194,11 @@ type mapWithKeys map[string]struct{}
 
 // NewMapBasedKeySet returns KeySet implemented using map.
 func NewMapBasedKeySet(keys ...string) KeySet {
-	s := &mapKeySet{set: make(mapWithKeys), iter: []string{}, iterInSync: true}
+	s := &mapKeySet{
+		set:        make(mapWithKeys),
+		iter:       []string{},
+		iterInSync: true,
+	}
 	for _, key := range keys {
 		s.Add(key)
 	}
@@ -247,6 +267,19 @@ func (s *mapKeySet) Length() int {
 		return 0
 	}
 	return len(s.set)
+}
+
+// Equals compares this set with <set2> for equality.
+func (s *mapKeySet) Equals(set2 KeySet) bool {
+	if s.Length() != set2.Length() {
+		return false
+	}
+	for elem := range s.set {
+		if !set2.Has(elem) {
+			return false
+		}
+	}
+	return true
 }
 
 // Has returns true if the given key is in the set.
@@ -320,11 +353,11 @@ func (s *mapKeySet) CopyOnWrite() KeySet {
 
 // deepCopyMap returns a deep-copy of the internal map representing the key set.
 func (s *mapKeySet) deepCopyMap() mapWithKeys {
-	copy := make(mapWithKeys)
+	c := make(mapWithKeys, len(s.set))
 	for key := range s.set {
-		copy[key] = struct{}{}
+		c[key] = struct{}{}
 	}
-	return copy
+	return c
 }
 
 // MarshalJSON marshalls the set into JSON.
@@ -375,6 +408,28 @@ func (s *sliceKeySet) Length() int {
 		return 0
 	}
 	return s.length
+}
+
+// Equals compares this set with <set2> for equality.
+func (s *sliceKeySet) Equals(set2 KeySet) bool {
+	if s.Length() != set2.Length() {
+		return false
+	}
+	set2Slice, isSlice := set2.(*sliceKeySet)
+	if isSlice {
+		for i := 0; i < s.length; i++ {
+			if s.set[i] != set2Slice.set[i] {
+				return false
+			}
+		}
+	} else {
+		for _, elem := range s.Iterate() {
+			if !set2.Has(elem) {
+				return false
+			}
+		}
+	}
+	return true
 }
 
 // Has returns true if the given key is in the set.

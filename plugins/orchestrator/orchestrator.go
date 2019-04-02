@@ -18,10 +18,11 @@ import (
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/infra"
 	"github.com/ligato/cn-infra/rpc/grpc"
+	"golang.org/x/net/context"
+
 	api "github.com/ligato/vpp-agent/api/genericmanager"
 	"github.com/ligato/vpp-agent/pkg/models"
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-	"golang.org/x/net/context"
 )
 
 // Plugin implements sync service for GRPC.
@@ -128,12 +129,24 @@ func (p *Plugin) watchEvents() {
 				if x.GetChangeType() != datasync.Delete {
 					kv.Val, err = models.UnmarshalLazyValue(kv.Key, x)
 					if err != nil {
-						p.log.Error(err)
+						p.log.Errorf("unmarshal value for key %s failed: %v", kv.Key, err)
+						continue
+					}
+					if k := models.Key(kv.Val); k != kv.Key {
+						p.log.Errorf("value for key %s does not match generated model key: %v", kv.Key, k)
 						continue
 					}
 				}
 				kvPairs = append(kvPairs, kv)
 			}
+
+			if len(kvPairs) == 0 {
+				p.log.Warn("no valid kv pairs received in change event")
+				e.Done(nil)
+				continue
+			}
+
+			p.log.Debugf("Change with %d items", len(kvPairs))
 
 			ctx := e.GetContext()
 			if ctx == nil {
@@ -149,7 +162,6 @@ func (p *Plugin) watchEvents() {
 		case e := <-p.resyncChan:
 			p.log.Debugf("=> received RESYNC event (%v prefixes)", len(e.GetValues()))
 
-			var n int
 			var kvPairs []KeyVal
 
 			for prefix, iter := range e.GetValues() {
@@ -158,7 +170,11 @@ func (p *Plugin) watchEvents() {
 					key := x.GetKey()
 					val, err := models.UnmarshalLazyValue(key, x)
 					if err != nil {
-						p.log.Error(err)
+						p.log.Errorf("unmarshal value for key %s failed: %v", key, err)
+						continue
+					}
+					if k := models.Key(val); k != key {
+						p.log.Errorf("value for key %s does not match generated model key: %v", key, k)
 						continue
 					}
 					kvPairs = append(kvPairs, KeyVal{
@@ -167,7 +183,6 @@ func (p *Plugin) watchEvents() {
 					})
 					p.log.Debugf(" -- key: %s", x.GetKey())
 					keyVals = append(keyVals, x)
-					n++
 				}
 				if len(keyVals) > 0 {
 					p.log.Debugf("- %q (%v items)", prefix, len(keyVals))
@@ -178,7 +193,8 @@ func (p *Plugin) watchEvents() {
 					p.log.Debugf("\t - %q: (rev: %v)", x.GetKey(), x.GetRevision())
 				}
 			}
-			p.log.Debugf("Resync with %d items", n)
+
+			p.log.Debugf("Resync with %d items", len(kvPairs))
 
 			ctx := e.GetContext()
 			if ctx == nil {

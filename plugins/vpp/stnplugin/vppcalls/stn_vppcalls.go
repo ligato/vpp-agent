@@ -1,4 +1,4 @@
-// Copyright (c) 2017 Cisco and/or its affiliates.
+// Copyright (c) 2018 Cisco and/or its affiliates.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,78 +15,57 @@
 package vppcalls
 
 import (
-	"fmt"
-	"net"
+	govppapi "git.fd.io/govpp.git/api"
+	"github.com/ligato/cn-infra/logging"
 
 	stn "github.com/ligato/vpp-agent/api/models/vpp/stn"
-	"github.com/pkg/errors"
-
-	api "github.com/ligato/vpp-agent/plugins/vpp/binapi/stn"
-	"strings"
+	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 )
 
-// AddSTNRule implements STN handler, adds a new STN rule to the VPP.
-func (h *StnVppHandler) AddSTNRule(stnRule *stn.Rule) error {
-	return h.addDelStnRule(stnRule, true)
+// StnDetails contains a proto-modelled STN data and VPP specific metadata
+type StnDetails struct {
+	Rule *stn.Rule
+	Meta *StnMeta
 }
 
-// DeleteSTNRule implements STN handler, removes the provided STN rule from the VPP.
-func (h *StnVppHandler) DeleteSTNRule(stnRule *stn.Rule) error {
-	return h.addDelStnRule(stnRule, false)
+// StnMeta contains an index of the interface defined by name in the STN rule
+type StnMeta struct {
+	IfIdx uint32
 }
 
-func (h *StnVppHandler) addDelStnRule(stnRule *stn.Rule, isAdd bool) error {
-	// get interface index
-	ifaceMeta, found := h.ifIndexes.LookupByName(stnRule.Interface)
-	if !found {
-		return errors.New("failed to get interface metadata")
-	}
-	swIfIndex := ifaceMeta.GetIndex()
+// StnVppAPI provides methods for managing STN rules
+type StnVppAPI interface {
+	StnVppRead
 
-	// remove mask from IP address if necessary
-	ipAddr := stnRule.IpAddress
-	ipParts := strings.Split(ipAddr, "/")
-	if len(ipParts) > 1 {
-		h.log.Debugf("STN IP address %s is defined with mask, removing it")
-		ipAddr = ipParts[0]
-	}
-
-	// parse IP address
-	var byteIP []byte
-	var isIPv4 uint8
-	ip := net.ParseIP(ipAddr)
-	if ip == nil {
-		return errors.Errorf("failed to parse IP address %s", ipAddr)
-	} else if ip.To4() == nil {
-		byteIP = []byte(ip.To16())
-		isIPv4 = 0
-	} else {
-		byteIP = []byte(ip.To4())
-		isIPv4 = 1
-	}
-
-	// add STN rule
-	req := &api.StnAddDelRule{
-		IsIP4:     isIPv4,
-		IPAddress: byteIP,
-		SwIfIndex: swIfIndex,
-		IsAdd:     boolToUint(isAdd),
-	}
-	reply := &api.StnAddDelRuleReply{}
-
-	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
-		return err
-	} else if reply.Retval != 0 {
-		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
-	}
-
-	return nil
-
+	// AddSTNRule calls StnAddDelRule bin API with IsAdd=1
+	AddSTNRule(stnRule *stn.Rule) error
+	// DelSTNRule calls StnAddDelRule bin API with IsAdd=0
+	DeleteSTNRule(stnRule *stn.Rule) error
 }
 
-func boolToUint(input bool) uint8 {
-	if input {
-		return 1
+// StnVppRead provides read methods for STN rules
+type StnVppRead interface {
+	// DumpSTNRules returns a list of all STN rules configured on the VPP
+	DumpSTNRules() ([]*StnDetails, error)
+}
+
+var Versions = map[string]HandlerVersion{}
+
+type HandlerVersion struct {
+	Msgs []govppapi.Message
+	New  func(govppapi.Channel, ifaceidx.IfaceMetadataIndex, logging.Logger) StnVppAPI
+}
+
+func CompatibleStnVppHandler(
+	ch govppapi.Channel, idx ifaceidx.IfaceMetadataIndex, log logging.Logger,
+) StnVppAPI {
+	for ver, h := range Versions {
+		log.Debugf("checking compatibility with %s", ver)
+		if err := ch.CheckCompatiblity(h.Msgs...); err != nil {
+			continue
+		}
+		log.Debug("found compatible version:", ver)
+		return h.New(ch, idx, log)
 	}
-	return 0
+	panic("no compatible version available")
 }

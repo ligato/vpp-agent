@@ -15,12 +15,11 @@
 package graph
 
 import (
-	"fmt"
-
 	"github.com/gogo/protobuf/proto"
-
-	"github.com/ligato/vpp-agent/plugins/kvscheduler/internal/utils"
 )
+
+// maximum number of flags allowed to have defined
+const maxFlags = 8
 
 // nodeR implements Node.
 type nodeR struct {
@@ -29,45 +28,16 @@ type nodeR struct {
 	key           string
 	label         string
 	value         proto.Message
-	flags         []Flag
+	flags         [maxFlags]Flag
 	metadata      interface{}
 	metadataAdded bool
 	metadataMap   string
+
+	// same length and corresponding order (lexicographically by relation+label)
+	targets       Targets
 	targetsDef    []RelationTargetDef
-	targets       TargetsByRelation
-	sources       sourcesByRelation
-}
 
-// relationSources groups all sources for a single relation.
-type relationSources struct {
-	relation string
-	sources  utils.KeySet
-}
-
-// sourcesByRelation is a slice of all sources, grouped by relations.
-type sourcesByRelation []*relationSources
-
-// String returns human-readable string representation of sourcesByRelation.
-func (s sourcesByRelation) String() string {
-	str := "{"
-	for idx, sources := range s {
-		if idx > 0 {
-			str += ", "
-		}
-		str += fmt.Sprintf("%s->%s", sources.relation, sources.sources.String())
-	}
-	str += "}"
-	return str
-}
-
-// getSourcesForRelation returns sources (keys) for the given relation.
-func (s sourcesByRelation) getSourcesForRelation(relation string) *relationSources {
-	for _, relSources := range s {
-		if relSources.relation == relation {
-			return relSources
-		}
-	}
-	return nil
+	sources       Targets
 }
 
 // newNodeR creates a new instance of nodeR.
@@ -92,13 +62,8 @@ func (node *nodeR) GetValue() proto.Message {
 
 // GetFlag returns reference to the given flag or nil if the node doesn't have
 // this flag associated.
-func (node *nodeR) GetFlag(name string) Flag {
-	for _, flag := range node.flags {
-		if flag.GetName() == name {
-			return flag
-		}
-	}
-	return nil
+func (node *nodeR) GetFlag(flagIndex int) Flag {
+	return node.flags[flagIndex]
 }
 
 // GetMetadata returns the value metadata associated with the node.
@@ -108,37 +73,40 @@ func (node *nodeR) GetMetadata() interface{} {
 
 // GetTargets returns a set of nodes, indexed by relation labels, that the
 // edges of the given relation points to.
-func (node *nodeR) GetTargets(relation string) (runtimeTargets RuntimeTargetsByLabel) {
-	relTargets := node.targets.GetTargetsForRelation(relation)
-	if relTargets == nil {
-		return nil
-	}
-	for _, targets := range relTargets.Targets {
+func (node *nodeR) GetTargets(relation string) (runtimeTargets RuntimeTargets) {
+	for i := node.targets.RelationBegin(relation); i < len(node.targets); i++ {
+		if node.targets[i].Relation != relation {
+			break
+		}
 		var nodes []Node
-		for _, key := range targets.MatchingKeys.Iterate() {
+		for _, key := range node.targets[i].MatchingKeys.Iterate() {
 			nodes = append(nodes, node.graph.nodes[key])
 		}
-		runtimeTargets = append(runtimeTargets, &RuntimeTargets{
-			Label: targets.Label,
+		runtimeTargets = append(runtimeTargets, RuntimeTarget{
+			Label: node.targets[i].Label,
 			Nodes: nodes,
 		})
 	}
 	return runtimeTargets
 }
 
-
-// GetSources returns a set of nodes with edges of the given relation
-// pointing to this node.
-func (node *nodeR) GetSources(relation string) (nodes []Node) {
-	relSources := node.sources.getSourcesForRelation(relation)
-	if relSources == nil {
-		return nil
+// GetSources returns edges pointing to this node in the reverse
+// orientation.
+func (node *nodeR) GetSources(relation string) (runtimeTargets RuntimeTargets) {
+	for i := node.sources.RelationBegin(relation); i < len(node.sources); i++ {
+		if node.sources[i].Relation != relation {
+			break
+		}
+		var nodes []Node
+		for _, key := range node.sources[i].MatchingKeys.Iterate() {
+			nodes = append(nodes, node.graph.nodes[key])
+		}
+		runtimeTargets = append(runtimeTargets, RuntimeTarget{
+			Label: node.sources[i].Label,
+			Nodes: nodes,
+		})
 	}
-
-	for _, key := range relSources.sources.Iterate() {
-		nodes = append(nodes, node.graph.nodes[key])
-	}
-	return nodes
+	return runtimeTargets
 }
 
 // copy returns a deep copy of the node.
@@ -151,36 +119,16 @@ func (node *nodeR) copy() *nodeR {
 	nodeCopy.metadataAdded = node.metadataAdded
 	nodeCopy.metadataMap = node.metadataMap
 
-	// shallow-copy flags (immutable)
+	// copy flags (arrays are passed by value)
 	nodeCopy.flags = node.flags
 
 	// shallow-copy target definitions (immutable)
 	nodeCopy.targetsDef = node.targetsDef
 
 	// copy targets
-	nodeCopy.targets = make(TargetsByRelation, 0, len(node.targets))
-	for _, relTargets := range node.targets {
-		targets := make(TargetsByLabel, 0, len(relTargets.Targets))
-		for _, target := range relTargets.Targets {
-			targets = append(targets, &Targets{
-				Label:        target.Label,
-				ExpectedKey:  target.ExpectedKey,
-				MatchingKeys: target.MatchingKeys.CopyOnWrite(),
-			})
-		}
-		nodeCopy.targets = append(nodeCopy.targets, &RelationTargets{
-			Relation: relTargets.Relation,
-			Targets:  targets,
-		})
-	}
+	nodeCopy.targets = node.targets.copy()
 
 	// copy sources
-	nodeCopy.sources = make(sourcesByRelation, 0, len(node.sources))
-	for _, relSources := range node.sources {
-		nodeCopy.sources = append(nodeCopy.sources, &relationSources{
-			relation: relSources.relation,
-			sources:  relSources.sources.CopyOnWrite(),
-		})
-	}
+	nodeCopy.sources = node.sources.copy()
 	return nodeCopy
 }

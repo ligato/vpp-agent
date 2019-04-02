@@ -135,6 +135,14 @@ func do(ctl data.VppAgentCtl) {
 			err = ctl.PutIPSecTunnelInterface()
 		case "-ipsectund":
 			err = ctl.DeleteIPSecTunnelInterface()
+		case "-sub":
+			err = ctl.PutSubInterface()
+		case "-subd":
+			err = ctl.DeleteSubInterface()
+		case "-bond":
+			err = ctl.PutBondInterface()
+		case "-bondd":
+			err = ctl.DeleteBondInterface()
 		// Linux interface plugin
 		case "-veth":
 			err = ctl.PutVEthPair()
@@ -144,6 +152,10 @@ func do(ctl data.VppAgentCtl) {
 			err = ctl.PutLinuxTap()
 		case "-ltapd":
 			err = ctl.DeleteLinuxTap()
+		case "-lloop":
+			err = ctl.PutLinuxLoop()
+		case "-lloopd":
+			err = ctl.DeleteLinuxLoop()
 		// IPSec plugin
 		case "-spd":
 			err = ctl.PutIPSecSPD()
@@ -227,6 +239,15 @@ func do(ctl data.VppAgentCtl) {
 			err = ctl.PutStn()
 		case "-stnd":
 			err = ctl.DeleteStn()
+		// Linux iptables plugin
+		case "-lipt":
+			err = ctl.PutIPTablesRule(false)
+		case "-liptd":
+			err = ctl.DeleteIPTablesRule(false)
+		case "-lipt6":
+			err = ctl.PutIPTablesRule(true)
+		case "-lipt6d":
+			err = ctl.DeleteIPTablesRule(true)
 		default:
 			usage()
 		}
@@ -265,6 +286,8 @@ func usage() {
 		-vxlan,		-vxland		- VxLAN type interface
 		-afpkt,		-afpktd		- af_packet type interface
 		-ipsectun, 	-ipsectund 	- IPSec tunnel interface
+		-sub		-subd		- Sub-interface
+		-bond		-bondd		- Bond interface
 
 	Linux interface plugin:
 		-veth,		-vethd		- Linux VETH interface pair
@@ -302,6 +325,10 @@ func usage() {
 		
 	STN plugin:
 		-stn,		-stnd		- STN rule
+
+	Linux iptables plugin:
+		-lipt,	-liptd			- Linux iptables rule set (IPv4)
+		-lipt6,	-lipt6d			- Linux ip6tables rule set (IPv6)
 	`)
 
 	if err != nil {

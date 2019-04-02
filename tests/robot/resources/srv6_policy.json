@@ -2,5 +2,8 @@
   "bsid": "${bsid}",
   "fib_table_id": ${fibtable},
   "srh_encapsulation": ${srhEncapsulation},
-  "spray_behaviour": ${sprayBehaviour}
+  "spray_behaviour": ${sprayBehaviour},
+  "segmentLists":[
+${segmentlistsStr}
+  ]
 }

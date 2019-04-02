@@ -1,0 +1,7 @@
+{
+  "sid": "${sidAddress}",
+  "fib_table_id": ${fibtable},
+  "end_function_DT6": {
+    "vrf_id": ${vrfid}
+  }
+}

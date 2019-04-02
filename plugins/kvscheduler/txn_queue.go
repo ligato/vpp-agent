@@ -15,6 +15,7 @@
 package kvscheduler
 
 import (
+	"context"
 	"time"
 
 	"github.com/ligato/cn-infra/logging"
@@ -24,6 +25,10 @@ import (
 
 // enqueueTxn adds transaction into the FIFO queue (channel) for execution.
 func (s *Scheduler) enqueueTxn(txn *transaction) error {
+	if txn.ctx == nil {
+		txn.ctx = context.TODO()
+	}
+	//trace.Log(txn.ctx, "txn", "enqueue")
 	if txn.txnType == kvs.NBTransaction && txn.nb.isBlocking {
 		select {
 		case <-s.ctx.Done():
@@ -48,6 +53,7 @@ func (s *Scheduler) dequeueTxn() (txn *transaction, canceled bool) {
 	case <-s.ctx.Done():
 		return nil, true
 	case txn = <-s.txnQueue:
+		//trace.Log(txn.ctx, "txn", "dequeue")
 		return txn, false
 	}
 }
@@ -66,7 +72,10 @@ func (s *Scheduler) delayRetry(args *retryTxn) {
 	case <-s.ctx.Done():
 		return
 	case <-time.After(args.delay):
-		err := s.enqueueTxn(&transaction{txnType: kvs.RetryFailedOps, retry: args})
+		err := s.enqueueTxn(&transaction{
+			txnType: kvs.RetryFailedOps,
+			retry:   args,
+		})
 		if err != nil {
 			s.Log.WithFields(logging.Fields{
 				"txnSeqNum": args.txnSeqNum,

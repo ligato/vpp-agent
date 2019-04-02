@@ -64,16 +64,33 @@ linux: Interface Not Exists
     linux: Check Interface Presence    ${node}    ${mac}    ${FALSE}
 
 linux: Check Ping
-    [Arguments]        ${node}    ${ip}
-    ${out}=            Execute In Container    ${node}    ping -c 5 ${ip}
+    [Arguments]        ${node}    ${ip}    ${count}=5
+    ${out}=            Execute In Container    ${node}    ping -c ${count} ${ip}
     Should Contain     ${out}    from ${ip}
     Should Not Contain    ${out}    100% packet loss
 
 linux: Check Ping6
-    [Arguments]        ${node}    ${ip}
-    ${out}=            Execute In Container    ${node}    ping6 -c 5 ${ip}
-    Should Contain     ${out}    from ${ip}
+    [Arguments]        ${node}    ${ip}    ${count}=5
+    ${out}=            Execute In Container    ${node}    ping6 -c ${count} ${ip}
+    Should Contain     ${out}    from ${ip}    ignore_case=True
     Should Not Contain    ${out}    100% packet loss
+
+linux: Install Executable Script
+    [Arguments]        ${node}    ${scriptContent}    ${fileName}    ${fileDirectory}=/usr/bin
+    ${fullFilePath}=    Catenate    SEPARATOR=    ${fileDirectory}    /    ${fileName}
+    ${scriptContent}=    Replace String    ${scriptContent}    "    \\"           # preparing " character for echoing from sh script
+    ${scriptContent}=    Replace String    ${scriptContent}    '    \'\"\'\"\'    # preparing ' character for echoing from sh script
+    ${scriptContent}=    Replace String    ${scriptContent}    \n    \\n          # preparing linux EOL for echoing from sh script
+    ${scriptContent}=    Replace String    ${scriptContent}    \r    \\r          # preparing windows EOL (\r\n) for echoing from sh script
+    Execute In Container    ${node}    sh -c 'echo "${scriptContent}" > ${fullFilePath}'
+    Execute In Container    ${node}    chmod a+x ${fullFilePath}
+
+linux: Send Ethernet Frame
+    [Arguments]        ${node}    ${out_interface}    ${source_address}    ${destination_address}    ${ethernet_type}    ${payload}    ${checksum}
+    ${script}=    OperatingSystem.Get File    ${CURDIR}/../../robot/resources/sendEthernetFrame.py
+    ${script}=    replace variables           ${script}
+    linux: Install Executable Script    ${node}    ${script}    sendEthernetFrame.py
+    Execute In Container    ${node}    sendEthernetFrame.py
 
 linux: Run TCP Ping Server On Node
     [Arguments]    ${node}   ${port}
@@ -122,9 +139,11 @@ linux: Check Processes on Node
     ${out}=            Execute In Container    ${node}    ps aux
 
 linux: Set Host TAP Interface
-    [Arguments]    ${node}    ${host_if_name}    ${ip}    ${prefix}
+    [Arguments]    ${node}    ${host_if_name}    ${ip}    ${prefix}    ${mac}=    ${second_ip}=    ${second_prefix}=
     ${out}=    Execute In Container    ${node}    ip link set dev ${host_if_name} up
     ${out}=    Execute In Container    ${node}    ip addr add ${ip}/${prefix} dev ${host_if_name}
+    Run Keyword If    "${second_ip}" != ""    Execute In Container    ${node}    ip addr add ${second_ip}/${second_prefix} dev ${host_if_name}
+    Run Keyword If    "${mac}" != ""          Execute In Container    ${node}    ip link set ${host_if_name} address ${mac}
 
 linux: Add Route
     [Arguments]    ${node}    ${destination_ip}    ${prefix}    ${next_hop_ip}

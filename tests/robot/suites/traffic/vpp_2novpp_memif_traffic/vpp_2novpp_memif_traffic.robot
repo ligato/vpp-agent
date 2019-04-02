@@ -57,3 +57,7 @@ TestSetup
 
 TestTeardown
     Make Datastore Snapshots    ${TEST_NAME}_test_teardown
+
+Suite Cleanup
+    Stop SFC Controller Container
+    Testsuite Teardown

@@ -16,7 +16,9 @@ package orchestrator
 
 import (
 	"fmt"
+	"runtime/trace"
 	"sync"
+	"time"
 
 	"github.com/ligato/cn-infra/logging"
 	"golang.org/x/net/context"
@@ -59,6 +61,10 @@ func (p *dispatcher) PushData(ctx context.Context, kvPairs []KeyVal) (kvErrs []k
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
+	trace.Logf(ctx, "kvPairs", "%d", len(kvPairs))
+
+	pr := trace.StartRegion(ctx, "prepare kv data")
+
 	dataSrc, ok := DataSrcFromContext(ctx)
 	if !ok {
 		dataSrc = "global"
@@ -69,6 +75,7 @@ func (p *dispatcher) PushData(ctx context.Context, kvPairs []KeyVal) (kvErrs []k
 	txn := p.kvs.StartNBTransaction()
 
 	if typ, _ := kvs.IsResync(ctx); typ == kvs.FullResync {
+		trace.Log(ctx, "resyncType", typ.String())
 		p.store.Reset(dataSrc)
 		for _, kv := range kvPairs {
 			if kv.Val == nil {
@@ -97,23 +104,28 @@ func (p *dispatcher) PushData(ctx context.Context, kvPairs []KeyVal) (kvErrs []k
 		}
 	}
 
+	pr.End()
+
+	t := time.Now()
+
 	seqID, err := txn.Commit(ctx)
 	if err != nil {
 		if txErr, ok := err.(*kvs.TransactionError); ok && len(txErr.GetKVErrors()) > 0 {
 			kvErrs = txErr.GetKVErrors()
 			var errInfo = ""
 			for i, kvErr := range kvErrs {
-				errInfo += fmt.Sprintf(" - %d. error (%s) %s - %+v\n", i+1, kvErr.TxnOperation, kvErr.Key, kvErr.Error)
+				errInfo += fmt.Sprintf(" - %3d. error (%s) %s - %v\n", i+1, kvErr.TxnOperation, kvErr.Key, kvErr.Error)
 			}
 			p.log.Errorf("Transaction #%d finished with %d errors", seqID, len(kvErrs))
 			fmt.Println(errInfo)
 		} else {
-			p.log.Errorf("Transaction #%d failed: %v", seqID, err)
+			p.log.Errorf("Transaction failed: %v", err)
 		}
-	} else {
-		p.log.Infof("Transaction #%d successful!", seqID)
 		return kvErrs, err
 	}
+
+	took := time.Since(t).Round(time.Microsecond * 100)
+	p.log.Infof("Transaction #%d successful! (took %v)", seqID, took)
 
 	return nil, nil
 }

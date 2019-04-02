@@ -1,6 +1,7 @@
 package configurator
 
 import (
+	"github.com/go-errors/errors"
 	"github.com/ligato/cn-infra/logging"
 	"golang.org/x/net/context"
 
@@ -27,14 +28,10 @@ type dumpService struct {
 
 	// VPP Handlers
 	aclHandler   aclvppcalls.ACLVppRead
-	ifHandler    ifvppcalls.IfVppRead
+	ifHandler    ifvppcalls.InterfaceVppRead
 	natHandler   natvppcalls.NatVppRead
-	bdHandler    l2vppcalls.BridgeDomainVppRead
-	fibHandler   l2vppcalls.FIBVppRead
-	xcHandler    l2vppcalls.XConnectVppRead
-	arpHandler   l3vppcalls.ArpVppRead
-	pArpHandler  l3vppcalls.ProxyArpVppRead
-	rtHandler    l3vppcalls.RouteVppRead
+	l2Handler    l2vppcalls.L2VppAPI
+	l3Handler    l3vppcalls.L3VppAPI
 	ipsecHandler ipsecvppcalls.IPSecVPPRead
 	puntHandler  vppcalls.PuntVPPRead
 	// Linux handlers
@@ -43,18 +40,62 @@ type dumpService struct {
 }
 
 func (svc *dumpService) Dump(context.Context, *rpc.DumpRequest) (*rpc.DumpResponse, error) {
+	svc.log.Debugf("Received Dump request..")
+
 	dump := newConfig()
 
-	dump.VppConfig.Interfaces, _ = svc.DumpInterfaces()
-	dump.VppConfig.Acls, _ = svc.DumpAcls()
-	dump.VppConfig.IpsecSpds, _ = svc.DumpIPSecSPDs()
-	dump.VppConfig.IpsecSas, _ = svc.DumpIPSecSAs()
-	dump.VppConfig.BridgeDomains, _ = svc.DumpBDs()
-	dump.VppConfig.Routes, _ = svc.DumpRoutes()
-	dump.VppConfig.Arps, _ = svc.DumpARPs()
-	dump.VppConfig.Fibs, _ = svc.DumpFIBs()
-	dump.VppConfig.XconnectPairs, _ = svc.DumpXConnects()
-	dump.VppConfig.PuntTohosts, _ = svc.DumpPunt()
+	var err error
+
+	dump.VppConfig.Interfaces, err = svc.DumpInterfaces()
+	if err != nil {
+		svc.log.Errorf("DumpInterfaces failed: %v", err)
+		return nil, err
+	}
+	dump.VppConfig.Acls, err = svc.DumpAcls()
+	if err != nil {
+		svc.log.Errorf("DumpAcls failed: %v", err)
+		return nil, err
+	}
+	dump.VppConfig.IpsecSpds, err = svc.DumpIPSecSPDs()
+	if err != nil {
+		svc.log.Errorf("DumpIPSecSPDs failed: %v", err)
+		return nil, err
+	}
+	dump.VppConfig.IpsecSas, err = svc.DumpIPSecSAs()
+	if err != nil {
+		svc.log.Errorf("DumpIPSecSAs failed: %v", err)
+		return nil, err
+	}
+	dump.VppConfig.BridgeDomains, err = svc.DumpBDs()
+	if err != nil {
+		svc.log.Errorf("DumpBDs failed: %v", err)
+		return nil, err
+	}
+	dump.VppConfig.Routes, err = svc.DumpRoutes()
+	if err != nil {
+		svc.log.Errorf("DumpRoutes failed: %v", err)
+		return nil, err
+	}
+	dump.VppConfig.Arps, err = svc.DumpARPs()
+	if err != nil {
+		svc.log.Errorf("DumpARPs failed: %v", err)
+		return nil, err
+	}
+	dump.VppConfig.Fibs, err = svc.DumpFIBs()
+	if err != nil {
+		svc.log.Errorf("DumpFIBs failed: %v", err)
+		return nil, err
+	}
+	dump.VppConfig.XconnectPairs, err = svc.DumpXConnects()
+	if err != nil {
+		svc.log.Errorf("DumpXConnects failed: %v", err)
+		return nil, err
+	}
+	dump.VppConfig.PuntTohosts, err = svc.DumpPunt()
+	if err != nil {
+		svc.log.Errorf("DumpPunt failed: %v", err)
+		return nil, err
+	}
 
 	// FIXME: linux interface handler should return known proto instead of netlink
 	// state.LinuxData.Interfaces, _ = svc.DumpLinuxInterfaces()
@@ -66,6 +107,9 @@ func (svc *dumpService) Dump(context.Context, *rpc.DumpRequest) (*rpc.DumpRespon
 // only error is send back in response
 func (svc *dumpService) DumpAcls() ([]*vpp_acl.ACL, error) {
 	var acls []*vpp_acl.ACL
+	if svc.aclHandler == nil {
+		return nil, errors.New("aclHandler is not available")
+	}
 	ipACLs, err := svc.aclHandler.DumpACL()
 	if err != nil {
 		return nil, err
@@ -103,6 +147,9 @@ func (svc *dumpService) DumpInterfaces() ([]*vpp_interfaces.Interface, error) {
 // only error is send back in response
 func (svc *dumpService) DumpIPSecSPDs() ([]*vpp_ipsec.SecurityPolicyDatabase, error) {
 	var spds []*vpp_ipsec.SecurityPolicyDatabase
+	if svc.ipsecHandler == nil {
+		return nil, errors.New("ipsecHandler is not available")
+	}
 	spdDetails, err := svc.ipsecHandler.DumpIPSecSPD()
 	if err != nil {
 		return nil, err
@@ -118,6 +165,9 @@ func (svc *dumpService) DumpIPSecSPDs() ([]*vpp_ipsec.SecurityPolicyDatabase, er
 // only error is send back in response
 func (svc *dumpService) DumpIPSecSAs() ([]*vpp_ipsec.SecurityAssociation, error) {
 	var sas []*vpp_ipsec.SecurityAssociation
+	if svc.ipsecHandler == nil {
+		return nil, errors.New("ipsecHandler is not available")
+	}
 	saDetails, err := svc.ipsecHandler.DumpIPSecSA()
 	if err != nil {
 		return nil, err
@@ -148,7 +198,7 @@ func (svc *dumpService) DumpIPSecSAs() ([]*vpp_ipsec.SecurityAssociation, error)
 // only error is send back in response
 func (svc *dumpService) DumpBDs() ([]*vpp_l2.BridgeDomain, error) {
 	var bds []*vpp_l2.BridgeDomain
-	bdDetails, err := svc.bdHandler.DumpBridgeDomains()
+	bdDetails, err := svc.l2Handler.DumpBridgeDomains()
 	if err != nil {
 		return nil, err
 	}
@@ -163,7 +213,7 @@ func (svc *dumpService) DumpBDs() ([]*vpp_l2.BridgeDomain, error) {
 // only error is send back in response
 func (svc *dumpService) DumpFIBs() ([]*vpp_l2.FIBEntry, error) {
 	var fibs []*vpp_l2.FIBEntry
-	fibDetails, err := svc.fibHandler.DumpL2FIBs()
+	fibDetails, err := svc.l2Handler.DumpL2FIBs()
 	if err != nil {
 		return nil, err
 	}
@@ -178,7 +228,7 @@ func (svc *dumpService) DumpFIBs() ([]*vpp_l2.FIBEntry, error) {
 // only error is send back in response
 func (svc *dumpService) DumpXConnects() ([]*vpp_l2.XConnectPair, error) {
 	var xcs []*vpp_l2.XConnectPair
-	xcDetails, err := svc.xcHandler.DumpXConnectPairs()
+	xcDetails, err := svc.l2Handler.DumpXConnectPairs()
 	if err != nil {
 		return nil, err
 	}
@@ -193,7 +243,7 @@ func (svc *dumpService) DumpXConnects() ([]*vpp_l2.XConnectPair, error) {
 // only error is send back in response
 func (svc *dumpService) DumpRoutes() ([]*vpp_l3.Route, error) {
 	var routes []*vpp_l3.Route
-	rtDetails, err := svc.rtHandler.DumpRoutes()
+	rtDetails, err := svc.l3Handler.DumpRoutes()
 	if err != nil {
 		return nil, err
 	}
@@ -208,7 +258,7 @@ func (svc *dumpService) DumpRoutes() ([]*vpp_l3.Route, error) {
 // only error is send back in response
 func (svc *dumpService) DumpARPs() ([]*vpp_l3.ARPEntry, error) {
 	var arps []*vpp_l3.ARPEntry
-	arpDetails, err := svc.arpHandler.DumpArpEntries()
+	arpDetails, err := svc.l3Handler.DumpArpEntries()
 	if err != nil {
 		return nil, err
 	}
@@ -221,7 +271,10 @@ func (svc *dumpService) DumpARPs() ([]*vpp_l3.ARPEntry, error) {
 
 // DumpPunt reads VPP Punt socket registrations and returns them as an *PuntResponse.
 func (svc *dumpService) DumpPunt() (punts []*vpp_punt.ToHost, err error) {
-	dump, err := svc.puntHandler.DumpPuntRegisteredSockets()
+	if svc.puntHandler == nil {
+		return nil, errors.New("puntHandler is not available")
+	}
+	dump, err := svc.puntHandler.DumpRegisteredPuntSockets()
 	if err != nil {
 		return nil, err
 	}

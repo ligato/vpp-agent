@@ -254,14 +254,7 @@ func (p *Process) watch() {
 			last = current
 		case <-p.cancelChan:
 			ticker.Stop()
-			if p.GetNotificationChan() != nil {
-				close(p.options.notifyChan)
-			}
-
-			p.isWatched = false
-
-			p.log.Debugf("Process %s watcher stopped", p.name)
-
+			p.closeNotifyChan()
 			return
 		}
 	}
@@ -274,4 +267,19 @@ func (p *Process) watchOutput(w io.Writer, r io.Reader) {
 			p.log.Errorf("Output watcher error: %v", err)
 		}
 	}()
+}
+
+func (p *Process) closeNotifyChan() {
+	// rescue wheel if somebody forgets to read the doc
+	defer func() {
+		if r := recover(); r != nil {
+			p.log.Warnf("notify channel should not be closed by provider (recovered from panic: %v)", r)
+		}
+	}()
+	if p.GetNotificationChan() != nil {
+		close(p.options.notifyChan)
+	}
+
+	p.isWatched = false
+	p.log.Debugf("Process %s watcher stopped", p.name)
 }

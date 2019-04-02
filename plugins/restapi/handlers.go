@@ -22,23 +22,29 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	govppapi "git.fd.io/govpp.git/api"
+	"github.com/go-errors/errors"
 	"github.com/unrolled/render"
 
 	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	"github.com/ligato/vpp-agent/plugins/govppmux/vppcalls"
+	"github.com/ligato/vpp-agent/plugins/govppmux"
 	"github.com/ligato/vpp-agent/plugins/restapi/resturl"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpe"
 )
 
 // Registers access list REST handlers
 func (p *Plugin) registerAccessListHandlers() {
+	unavailHandler := errors.New("aclHandler is not available")
 	// GET IP ACLs
 	p.registerHTTPHandler(resturl.ACLIP, GET, func() (interface{}, error) {
+		if p.aclHandler == nil {
+			return nil, unavailHandler
+		}
 		return p.aclHandler.DumpACL()
 	})
 	// GET MACIP ACLs
 	p.registerHTTPHandler(resturl.ACLMACIP, GET, func() (interface{}, error) {
+		if p.aclHandler == nil {
+			return nil, unavailHandler
+		}
 		return p.aclHandler.DumpMACIPACL()
 	})
 }
@@ -77,37 +83,40 @@ func (p *Plugin) registerInterfaceHandlers() {
 
 // Registers NAT REST handlers
 func (p *Plugin) registerNatHandlers() {
+	unavailHandler := errors.New("natHandler is not available")
 	// GET NAT configuration
 	/*p.registerHTTPHandler(resturl.NatURL, GET, func() (interface{}, error) {
 		return p.natHandler.Nat44Dump()
 	})*/
 	// GET NAT global config
 	p.registerHTTPHandler(resturl.NatGlobal, GET, func() (interface{}, error) {
+		if p.natHandler == nil {
+			return nil, unavailHandler
+		}
 		return p.natHandler.Nat44GlobalConfigDump()
 	})
 	// GET DNAT config
 	p.registerHTTPHandler(resturl.NatDNat, GET, func() (interface{}, error) {
+		if p.natHandler == nil {
+			return nil, unavailHandler
+		}
 		return p.natHandler.DNat44Dump()
 	})
 }
 
 // Registers L2 plugin REST handlers
 func (p *Plugin) registerL2Handlers() {
-	// GET bridge domain IDs
-	/*p.registerHTTPHandler(resturl.BdID, GET, func() (interface{}, error) {
-		return p.bdHandler.DumpBridgeDomainIDs()
-	})*/
 	// GET bridge domains
 	p.registerHTTPHandler(resturl.Bd, GET, func() (interface{}, error) {
-		return p.bdHandler.DumpBridgeDomains()
+		return p.l2Handler.DumpBridgeDomains()
 	})
 	// GET FIB entries
 	p.registerHTTPHandler(resturl.Fib, GET, func() (interface{}, error) {
-		return p.fibHandler.DumpL2FIBs()
+		return p.l2Handler.DumpL2FIBs()
 	})
 	// GET cross connects
 	p.registerHTTPHandler(resturl.Xc, GET, func() (interface{}, error) {
-		return p.xcHandler.DumpXConnectPairs()
+		return p.l2Handler.DumpXConnectPairs()
 	})
 }
 
@@ -115,19 +124,19 @@ func (p *Plugin) registerL2Handlers() {
 func (p *Plugin) registerL3Handlers() {
 	// GET ARP entries
 	p.registerHTTPHandler(resturl.Arps, GET, func() (interface{}, error) {
-		return p.arpHandler.DumpArpEntries()
+		return p.l3Handler.DumpArpEntries()
 	})
 	// GET proxy ARP interfaces
 	p.registerHTTPHandler(resturl.PArpIfs, GET, func() (interface{}, error) {
-		return p.pArpHandler.DumpProxyArpInterfaces()
+		return p.l3Handler.DumpProxyArpInterfaces()
 	})
 	// GET proxy ARP ranges
 	p.registerHTTPHandler(resturl.PArpRngs, GET, func() (interface{}, error) {
-		return p.pArpHandler.DumpProxyArpRanges()
+		return p.l3Handler.DumpProxyArpRanges()
 	})
 	// GET static routes
 	p.registerHTTPHandler(resturl.Routes, GET, func() (interface{}, error) {
-		return p.rtHandler.DumpRoutes()
+		return p.l3Handler.DumpRoutes()
 	})
 }
 
@@ -247,67 +256,22 @@ func (p *Plugin) commandHandler(formatter *render.Render) http.HandlerFunc {
 
 		p.Log.Debugf("VPPCLI command: %v", command)
 
-		ch, err := p.GoVppmux.NewAPIChannel()
-		if err != nil {
-			errMsg := fmt.Sprintf("500 Internal server error: error creating channel: %v\n", err)
-			p.Log.Error(errMsg)
-			p.logError(formatter.JSON(w, http.StatusInternalServerError, errMsg))
-			return
-		}
-		defer ch.Close()
-
-		r := &vpe.CliInband{
-			Length: uint32(len(command)),
-			Cmd:    []byte(command),
-		}
-		reply := &vpe.CliInbandReply{}
-		err = ch.SendRequest(r).ReceiveReply(reply)
+		reply, err := p.vpeHandler.RunCli(command)
 		if err != nil {
 			errMsg := fmt.Sprintf("500 Internal server error: sending request failed: %v\n", err)
 			p.Log.Error(errMsg)
 			p.logError(formatter.JSON(w, http.StatusInternalServerError, errMsg))
 			return
-		} else if reply.Retval > 0 {
-			errMsg := fmt.Sprintf("500 Internal server error: request returned error code: %v\n", reply.Retval)
-			p.Log.Error(err)
-			p.logError(formatter.JSON(w, http.StatusInternalServerError, errMsg))
-			return
 		}
 
-		p.Log.Debugf("VPPCLI response: %s", reply.Reply)
-		p.logError(formatter.JSON(w, http.StatusOK, string(reply.Reply)))
+		p.Log.Debugf("VPPCLI response: %s", reply)
+		p.logError(formatter.JSON(w, http.StatusOK, reply))
 	}
-}
-
-func (p *Plugin) sendCommand(ch govppapi.Channel, command string) ([]byte, error) {
-	r := &vpe.CliInband{
-		Length: uint32(len(command)),
-		Cmd:    []byte(command),
-	}
-
-	reply := &vpe.CliInbandReply{}
-	if err := ch.SendRequest(r).ReceiveReply(reply); err != nil {
-		return nil, fmt.Errorf("sending request failed: %v", err)
-	} else if reply.Retval > 0 {
-		return nil, fmt.Errorf("request returned error code: %v", reply.Retval)
-	}
-
-	return reply.Reply[:reply.Length], nil
 }
 
 // telemetryHandler - returns various telemetry data
 func (p *Plugin) telemetryHandler(formatter *render.Render) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
-
-		ch, err := p.GoVppmux.NewAPIChannel()
-		if err != nil {
-			errMsg := fmt.Sprintf("500 Internal server error: error creating channel: %v\n", err)
-			p.Log.Error(errMsg)
-			p.logError(formatter.JSON(w, http.StatusInternalServerError, errMsg))
-			return
-		}
-		defer ch.Close()
-
 		type cmdOut struct {
 			Command string
 			Output  interface{}
@@ -315,7 +279,7 @@ func (p *Plugin) telemetryHandler(formatter *render.Render) http.HandlerFunc {
 		var cmdOuts []cmdOut
 
 		var runCmd = func(command string) {
-			out, err := p.sendCommand(ch, command)
+			out, err := p.vpeHandler.RunCli(command)
 			if err != nil {
 				errMsg := fmt.Sprintf("500 Internal server error: sending command failed: %v\n", err)
 				p.Log.Error(errMsg)
@@ -342,17 +306,7 @@ func (p *Plugin) telemetryHandler(formatter *render.Render) http.HandlerFunc {
 // telemetryMemoryHandler - returns various telemetry data
 func (p *Plugin) telemetryMemoryHandler(formatter *render.Render) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
-
-		ch, err := p.GoVppmux.NewAPIChannel()
-		if err != nil {
-			errMsg := fmt.Sprintf("500 Internal server error: error creating channel: %v\n", err)
-			p.Log.Error(errMsg)
-			p.logError(formatter.JSON(w, http.StatusInternalServerError, errMsg))
-			return
-		}
-		defer ch.Close()
-
-		info, err := vppcalls.GetMemory(ch)
+		info, err := p.teleHandler.GetMemory()
 		if err != nil {
 			errMsg := fmt.Sprintf("500 Internal server error: sending command failed: %v\n", err)
 			p.Log.Error(errMsg)
@@ -367,17 +321,7 @@ func (p *Plugin) telemetryMemoryHandler(formatter *render.Render) http.HandlerFu
 // telemetryHandler - returns various telemetry data
 func (p *Plugin) telemetryRuntimeHandler(formatter *render.Render) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
-
-		ch, err := p.GoVppmux.NewAPIChannel()
-		if err != nil {
-			errMsg := fmt.Sprintf("500 Internal server error: error creating channel: %v\n", err)
-			p.Log.Error(errMsg)
-			p.logError(formatter.JSON(w, http.StatusInternalServerError, errMsg))
-			return
-		}
-		defer ch.Close()
-
-		runtimeInfo, err := vppcalls.GetRuntimeInfo(ch)
+		runtimeInfo, err := p.teleHandler.GetRuntimeInfo()
 		if err != nil {
 			errMsg := fmt.Sprintf("500 Internal server error: sending command failed: %v\n", err)
 			p.Log.Error(errMsg)
@@ -392,17 +336,7 @@ func (p *Plugin) telemetryRuntimeHandler(formatter *render.Render) http.HandlerF
 // telemetryHandler - returns various telemetry data
 func (p *Plugin) telemetryNodeCountHandler(formatter *render.Render) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
-
-		ch, err := p.GoVppmux.NewAPIChannel()
-		if err != nil {
-			errMsg := fmt.Sprintf("500 Internal server error: error creating channel: %v\n", err)
-			p.Log.Error(errMsg)
-			p.logError(formatter.JSON(w, http.StatusInternalServerError, errMsg))
-			return
-		}
-		defer ch.Close()
-
-		nodeCounters, err := vppcalls.GetNodeCounters(ch)
+		nodeCounters, err := p.teleHandler.GetNodeCounters()
 		if err != nil {
 			errMsg := fmt.Sprintf("500 Internal server error: sending command failed: %v\n", err)
 			p.Log.Error(errMsg)
@@ -417,22 +351,7 @@ func (p *Plugin) telemetryNodeCountHandler(formatter *render.Render) http.Handle
 // tracerHandler - returns binary API call trace
 func (p *Plugin) tracerHandler(formatter *render.Render) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
-		ch, err := p.GoVppmux.NewAPIChannel()
-		if err != nil {
-			errMsg := fmt.Sprintf("500 Internal server error: error creating channel: %v\n", err)
-			p.Log.Error(errMsg)
-			p.logError(formatter.JSON(w, http.StatusInternalServerError, errMsg))
-			return
-		}
-		defer ch.Close()
-
-		entries := p.GoVppmux.GetTrace()
-		if err != nil {
-			errMsg := fmt.Sprintf("500 Internal server error: sending command failed: %v\n", err)
-			p.Log.Error(errMsg)
-			p.logError(formatter.JSON(w, http.StatusInternalServerError, errMsg))
-			return
-		}
+		entries := govppmux.GetStats()
 		if entries == nil {
 			p.logError(formatter.JSON(w, http.StatusOK, "VPP api trace is disabled"))
 			return

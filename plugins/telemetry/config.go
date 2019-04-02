@@ -24,10 +24,17 @@ type Config struct {
 	Disabled bool `json:"disabled"`
 }
 
-// getConfig returns telemetry plugin file configuration if exists
-func (p *Plugin) getConfig() (*Config, error) {
-	config := &Config{}
-	found, err := p.Cfg.LoadValue(config)
+func defaultConfig() *Config {
+	return &Config{
+		PollingInterval: defaultUpdatePeriod,
+	}
+}
+
+// loadConfig returns telemetry plugin file configuration if exists
+func (p *Plugin) loadConfig() (*Config, error) {
+	cfg := defaultConfig()
+
+	found, err := p.Cfg.LoadValue(cfg)
 	if err != nil {
 		return nil, err
 	}
@@ -35,6 +42,8 @@ func (p *Plugin) getConfig() (*Config, error) {
 		p.Log.Debug("Telemetry config not found")
 		return nil, nil
 	}
-	p.Log.Debug("Telemetry config found")
-	return config, err
+
+	p.Log.Debugf("Telemetry config found: %+v", cfg)
+
+	return cfg, err
 }

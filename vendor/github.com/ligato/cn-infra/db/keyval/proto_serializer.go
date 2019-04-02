@@ -61,6 +61,9 @@ func (sj *SerializerJSON) Unmarshal(data []byte, protoData proto.Message) error 
 // Marshal serializes proto message to the slice of bytes using
 // jsonpb marshaller to correctly marshal protobuf data.
 func (sj *SerializerJSON) Marshal(message proto.Message) ([]byte, error) {
+	if message == nil {
+		return []byte("null"), nil
+	}
 	var buf bytes.Buffer
 	if err := DefaultMarshaler.Marshal(&buf, message); err != nil {
 		return nil, err

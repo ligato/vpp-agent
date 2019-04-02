@@ -19,10 +19,10 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"syscall"
 
 	"github.com/gogo/protobuf/proto"
 	prototypes "github.com/gogo/protobuf/types"
-	"github.com/ligato/vpp-agent/pkg/models"
 	"github.com/pkg/errors"
 	"github.com/vishvananda/netlink"
 	"golang.org/x/sys/unix"
@@ -32,11 +32,12 @@ import (
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/servicelabel"
 	"github.com/ligato/cn-infra/utils/addrs"
-	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 
 	interfaces "github.com/ligato/vpp-agent/api/models/linux/interfaces"
 	namespace "github.com/ligato/vpp-agent/api/models/linux/namespace"
 	vpp_intf "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
+	"github.com/ligato/vpp-agent/pkg/models"
+	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/linux/ifplugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/linux/ifplugin/ifaceidx"
 	iflinuxcalls "github.com/ligato/vpp-agent/plugins/linux/ifplugin/linuxcalls"
@@ -49,6 +50,10 @@ import (
 const (
 	// InterfaceDescriptorName is the name of the descriptor for Linux interfaces.
 	InterfaceDescriptorName = "linux-interface"
+
+	// defaultLoopbackName is the name used to access loopback interface in linux
+	// host_if_name field in config is effectively ignored
+	defaultLoopbackName = "lo"
 
 	// defaultEthernetMTU - expected when MTU is not specified in the config.
 	defaultEthernetMTU = 1500
@@ -98,6 +103,15 @@ var (
 
 	// ErrNamespaceWithoutReference is returned when namespace is missing reference.
 	ErrNamespaceWithoutReference = errors.New("namespace defined without name")
+
+	// ErrInvalidIPWithMask is returned when address is invalid or mask is missing
+	ErrInvalidIPWithMask = errors.New("IP with mask is not valid")
+
+	// ErrLoopbackAlreadyConfigured is returned when multiple logical NB interfaces tries to configure the same loopback
+	ErrLoopbackAlreadyConfigured = errors.New("loopback already configured")
+
+	// ErrLoopbackNotFound is returned if loopback interface can not be found
+	ErrLoopbackNotFound = errors.New("loopback not found")
 )
 
 // InterfaceDescriptor teaches KVScheduler how to configure Linux interfaces.
@@ -108,6 +122,9 @@ type InterfaceDescriptor struct {
 	nsPlugin     nsplugin.API
 	vppIfPlugin  VPPIfPluginAPI
 	scheduler    kvs.KVScheduler
+
+	// runtime
+	intfIndex ifaceidx.LinuxIfMetadataIndex
 
 	// parallelization of the Retrieve operation
 	goRoutinesCnt int
@@ -154,10 +171,17 @@ func (d *InterfaceDescriptor) GetDescriptor() *adapter.InterfaceDescriptor {
 		Update:               d.Update,
 		UpdateWithRecreate:   d.UpdateWithRecreate,
 		Retrieve:             d.Retrieve,
+		IsRetriableFailure:   d.IsRetriableFailure,
 		DerivedValues:        d.DerivedValues,
 		Dependencies:         d.Dependencies,
 		RetrieveDependencies: []string{nsdescriptor.MicroserviceDescriptorName},
 	}
+}
+
+// SetInterfaceIndex should be used to provide interface index immediately after
+// the descriptor registration.
+func (d *InterfaceDescriptor) SetInterfaceIndex(intfIndex ifaceidx.LinuxIfMetadataIndex) {
+	d.intfIndex = intfIndex
 }
 
 // EquivalentInterfaces is case-insensitive comparison function for
@@ -224,6 +248,13 @@ func (d *InterfaceDescriptor) Validate(key string, linuxIf *interfaces.Interface
 	if linuxIf.GetName() == "" {
 		return kvs.NewInvalidValueError(ErrInterfaceWithoutName, "name")
 	}
+	addrs := linuxIf.GetIpAddresses()
+	for _, a := range addrs {
+		if _, _, err := net.ParseCIDR(a); err != nil {
+			return kvs.NewInvalidValueError(ErrInvalidIPWithMask, "ip_addresses")
+		}
+	}
+
 	if linuxIf.GetType() == interfaces.Interface_UNDEFINED {
 		return kvs.NewInvalidValueError(ErrInterfaceWithoutType, "type")
 	}
@@ -251,6 +282,7 @@ func (d *InterfaceDescriptor) Validate(key string, linuxIf *interfaces.Interface
 			return kvs.NewInvalidValueError(ErrVETHWithoutPeer, "peer_if_name")
 		}
 	}
+
 	return nil
 }
 
@@ -271,6 +303,8 @@ func (d *InterfaceDescriptor) Create(key string, linuxIf *interfaces.Interface) 
 		metadata, err = d.createVETH(nsCtx, key, linuxIf)
 	case interfaces.Interface_TAP_TO_VPP:
 		metadata, err = d.createTAPToVPP(nsCtx, key, linuxIf)
+	case interfaces.Interface_LOOPBACK:
+		metadata, err = d.createLoopback(nsCtx, linuxIf)
 	default:
 		return nil, ErrUnsupportedLinuxInterfaceType
 	}
@@ -319,7 +353,8 @@ func (d *InterfaceDescriptor) Create(key string, linuxIf *interfaces.Interface) 
 	}
 	for _, ipAddress := range ipAddresses {
 		err = d.ifHandler.AddInterfaceIP(hostName, ipAddress)
-		if err != nil {
+		// an attempt to add already assign IP is not considered as error
+		if err != nil && syscall.EEXIST != err {
 			err = errors.Errorf("failed to add IP address %v to linux interface %s: %v",
 				ipAddress, linuxIf.Name, err)
 			d.log.Error(err)
@@ -389,6 +424,8 @@ func (d *InterfaceDescriptor) Delete(key string, linuxIf *interfaces.Interface, 
 		return d.deleteVETH(nsCtx, key, linuxIf, metadata)
 	case interfaces.Interface_TAP_TO_VPP:
 		return d.deleteAutoTAP(nsCtx, key, linuxIf, metadata)
+	case interfaces.Interface_LOOPBACK:
+		return d.deleteLoopback(nsCtx, linuxIf)
 	}
 
 	err = ErrUnsupportedLinuxInterfaceType
@@ -478,7 +515,8 @@ func (d *InterfaceDescriptor) Update(key string, oldLinuxIf, newLinuxIf *interfa
 
 	for i := range add {
 		err := d.ifHandler.AddInterfaceIP(newHostName, add[i])
-		if nil != err {
+		// an attempt to add already assign IP is not considered as error
+		if nil != err && syscall.EEXIST != err {
 			err = errors.Errorf("linux interface modify: failed to add IP addresses %s to %s: %v",
 				add[i], newLinuxIf.Name, err)
 			d.log.Error(err)
@@ -596,6 +634,13 @@ func (d *InterfaceDescriptor) DerivedValues(key string, linuxIf *interfaces.Inte
 type retrievedIfaces struct {
 	interfaces []adapter.InterfaceKVWithMetadata
 	err        error
+}
+
+func (d *InterfaceDescriptor) IsRetriableFailure(err error) bool {
+	if err == ErrLoopbackAlreadyConfigured {
+		return false
+	}
+	return true
 }
 
 // Retrieve returns all Linux interfaces managed by this agent, attached to the default namespace
@@ -791,6 +836,9 @@ func (d *InterfaceDescriptor) retrieveInterfaces(nsList []*namespace.NetNamespac
 				intf.Name, vppTapIfName, _ = parseTapAlias(alias)
 				intf.Link = &interfaces.Interface_Tap{
 					Tap: &interfaces.TapLink{VppTapIfName: vppTapIfName}}
+			} else if link.Attrs().Name == defaultLoopbackName {
+				intf.Type = interfaces.Interface_LOOPBACK
+				intf.Name = alias
 			} else {
 				// unsupported interface type supposedly configured by agent => print warning
 				d.log.WithFields(logging.Fields{
@@ -970,6 +1018,9 @@ func (d *InterfaceDescriptor) getInterfaceAddresses(ifName string) (addresses []
 
 // getHostIfName returns the interface host name.
 func getHostIfName(linuxIf *interfaces.Interface) string {
+	if linuxIf.Type == interfaces.Interface_LOOPBACK {
+		return defaultLoopbackName
+	}
 	hostIfName := linuxIf.HostIfName
 	if hostIfName == "" {
 		hostIfName = linuxIf.Name

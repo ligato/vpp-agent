@@ -17,12 +17,22 @@
 package govppmux
 
 import (
+	"os"
+
 	"git.fd.io/govpp.git/adapter"
+	"git.fd.io/govpp.git/adapter/socketclient"
 	"git.fd.io/govpp.git/adapter/vppapiclient"
+)
+
+var (
+	UseSocketClient = os.Getenv("GOVPPMUX_NOSOCK") == ""
 )
 
 // NewVppAdapter returns real vpp api adapter, used for building with vppapiclient library.
 func NewVppAdapter(shmPrefix string) adapter.VppAPI {
+	if UseSocketClient {
+		return socketclient.NewVppClient("/run/vpp-api.sock")
+	}
 	return vppapiclient.NewVppClient(shmPrefix)
 }
 

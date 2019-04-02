@@ -36,11 +36,10 @@ func (d *InterfaceDescriptor) createVETH(nsCtx nslinuxcalls.NamespaceMgmtCtx, ke
 	tempPeerHostName := getVethTemporaryHostName(peerName)
 
 	// context
-	ifIndex := d.scheduler.GetMetadataMap(InterfaceDescriptorName)
 	agentPrefix := d.serviceLabel.GetAgentPrefix()
 
 	// check if this VETH-end was already created by the other end
-	_, peerExists := ifIndex.GetValue(peerName)
+	_, peerExists := d.intfIndex.LookupByName(peerName)
 	if !peerExists {
 		// delete obsolete/invalid unfinished VETH (ignore errors)
 		d.ifHandler.DeleteInterface(tempHostName)
@@ -111,8 +110,7 @@ func (d *InterfaceDescriptor) deleteVETH(nsCtx nslinuxcalls.NamespaceMgmtCtx, ke
 	tempPeerHostName := getVethTemporaryHostName(peerName)
 
 	// check if the other end is still configured
-	ifIndex := d.scheduler.GetMetadataMap(InterfaceDescriptorName)
-	_, peerExists := ifIndex.GetValue(peerName)
+	_, peerExists := d.intfIndex.LookupByName(peerName)
 	if peerExists {
 		// just un-configure this VETH-end, but do not delete the pair
 

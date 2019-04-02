@@ -1,6 +1,11 @@
 # VPP Agent examples
 
-This folder contains several examples that illustrate various aspects of VPP Agent's functionality. Each example is structured as an individual executable with its own `main.go` file. Each example focuses on a very simple use case. All examples use ETCD and GOVPP (for vpp-agent version lower than 2.0 also Kafka), so please make sure there are running instances of them and VPP before starting any example.
+This folder contains several examples that illustrate various aspects of
+VPP Agent's functionality. Each example is structured as an individual 
+executable with its own `main.go` file. Each example focuses on a very 
+simple use case. All examples use ETCD, GOVPP and Kafka, so please make
+sure there are running instances of ETCD, Kafka and VPP before starting
+an example.
 
 Current examples:
 * **[govpp_call](govpp_call/main.go)** is an example of a plugin with a 

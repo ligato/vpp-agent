@@ -27,9 +27,11 @@ import (
 	"github.com/ligato/cn-infra/health/statuscheck"
 	"github.com/ligato/cn-infra/logging/logmanager"
 	"github.com/ligato/cn-infra/messaging/kafka"
+	"github.com/ligato/vpp-agent/plugins/vpp/srplugin"
 
 	"github.com/ligato/vpp-agent/plugins/configurator"
 	linux_ifplugin "github.com/ligato/vpp-agent/plugins/linux/ifplugin"
+	linux_iptablesplugin "github.com/ligato/vpp-agent/plugins/linux/iptablesplugin"
 	linux_l3plugin "github.com/ligato/vpp-agent/plugins/linux/l3plugin"
 	linux_nsplugin "github.com/ligato/vpp-agent/plugins/linux/nsplugin"
 	"github.com/ligato/vpp-agent/plugins/orchestrator"
@@ -98,6 +100,7 @@ func New() *VPPAgent {
 	}
 	orchestrator.DefaultPlugin.Watcher = watchers
 
+	ifplugin.DefaultPlugin.Watcher = watchers
 	ifplugin.DefaultPlugin.NotifyStates = ifStatePub
 	ifplugin.DefaultPlugin.PublishStatistics = writers
 	puntplugin.DefaultPlugin.PublishState = writers
@@ -158,6 +161,7 @@ type VPP struct {
 	NATPlugin   *natplugin.NATPlugin
 	PuntPlugin  *puntplugin.PuntPlugin
 	STNPlugin   *stnplugin.STNPlugin
+	SRPlugin    *srplugin.SRPlugin
 }
 
 func DefaultVPP() VPP {
@@ -170,20 +174,23 @@ func DefaultVPP() VPP {
 		NATPlugin:   &natplugin.DefaultPlugin,
 		PuntPlugin:  &puntplugin.DefaultPlugin,
 		STNPlugin:   &stnplugin.DefaultPlugin,
+		SRPlugin:    &srplugin.DefaultPlugin,
 	}
 }
 
 // Linux contains all Linux plugins.
 type Linux struct {
-	IfPlugin *linux_ifplugin.IfPlugin
-	L3Plugin *linux_l3plugin.L3Plugin
-	NSPlugin *linux_nsplugin.NsPlugin
+	IfPlugin       *linux_ifplugin.IfPlugin
+	L3Plugin       *linux_l3plugin.L3Plugin
+	NSPlugin       *linux_nsplugin.NsPlugin
+	IPTablesPlugin *linux_iptablesplugin.IPTablesPlugin
 }
 
 func DefaultLinux() Linux {
 	return Linux{
-		IfPlugin: &linux_ifplugin.DefaultPlugin,
-		L3Plugin: &linux_l3plugin.DefaultPlugin,
-		NSPlugin: &linux_nsplugin.DefaultPlugin,
+		IfPlugin:       &linux_ifplugin.DefaultPlugin,
+		L3Plugin:       &linux_l3plugin.DefaultPlugin,
+		NSPlugin:       &linux_nsplugin.DefaultPlugin,
+		IPTablesPlugin: &linux_iptablesplugin.DefaultPlugin,
 	}
 }

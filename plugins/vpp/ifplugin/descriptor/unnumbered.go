@@ -40,12 +40,12 @@ const (
 // Values = Interface_Unnumbered{} derived from interfaces where IsUnnumbered==true
 type UnnumberedIfDescriptor struct {
 	log       logging.Logger
-	ifHandler vppcalls.IfVppAPI
+	ifHandler vppcalls.InterfaceVppAPI
 	ifIndex   ifaceidx.IfaceMetadataIndex
 }
 
 // NewUnnumberedIfDescriptor creates a new instance of UnnumberedIfDescriptor.
-func NewUnnumberedIfDescriptor(ifHandler vppcalls.IfVppAPI, log logging.PluginLogger) *UnnumberedIfDescriptor {
+func NewUnnumberedIfDescriptor(ifHandler vppcalls.InterfaceVppAPI, log logging.PluginLogger) *UnnumberedIfDescriptor {
 	return &UnnumberedIfDescriptor{
 		ifHandler: ifHandler,
 		log:       log.NewLogger("unif-descriptor"),
@@ -105,10 +105,17 @@ func (d *UnnumberedIfDescriptor) Create(key string, unIntf *interfaces.Interface
 	}
 
 	// VRF (optional), should be done before setting as unnumbered
-	err = setInterfaceVrf(d.ifHandler, ifName, ifMeta.SwIfIndex, ifMeta.Vrf, ipAddresses)
-	if err != nil {
-		d.log.Error(err)
-		return nil, err
+	if ifMeta.Vrf == 0 {
+		// explicit set to VRF 0 seems to be causing issues on VPP
+		// NOTE: because of this return, this function cannot be used to switch VRF from non-zero to zero
+		// (can be only used to put a newly created interface to a VRF)
+		d.log.Debugf("Set VRF to 0 for unnumbered interface is not allowed")
+	} else {
+		err = setInterfaceVrf(d.ifHandler, ifName, ifMeta.SwIfIndex, ifMeta.Vrf, ipAddresses)
+		if err != nil {
+			d.log.Error(err)
+			return nil, err
+		}
 	}
 
 	err = d.ifHandler.SetUnnumberedIP(ifMeta.SwIfIndex, ifWithIPMeta.SwIfIndex)
@@ -144,9 +151,8 @@ func (d *UnnumberedIfDescriptor) Dependencies(key string, unIntf *interfaces.Int
 	//   one IP address assigned
 	return []kvs.Dependency{{
 		Label: unnumberedInterfaceHasIPDep,
-		AnyOf: func(key string) bool {
-			ifName, _, _, isIfaceAddrKey := interfaces.ParseInterfaceAddressKey(key)
-			return isIfaceAddrKey && ifName == unIntf.InterfaceWithIp
+		AnyOf: kvs.AnyOfDependency{
+			KeyPrefixes: []string{interfaces.InterfaceAddressPrefix(unIntf.InterfaceWithIp)},
 		},
 	}}
 }

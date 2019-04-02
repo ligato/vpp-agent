@@ -14,6 +14,7 @@
 
 //go:generate descriptor-adapter --descriptor-name Interface  --value-type *vpp_interfaces.Interface --meta-type *ifaceidx.IfaceMetadata --import "ifaceidx" --import "github.com/ligato/vpp-agent/api/models/vpp/interfaces" --output-dir "descriptor"
 //go:generate descriptor-adapter --descriptor-name Unnumbered  --value-type *vpp_interfaces.Interface_Unnumbered --import "github.com/ligato/vpp-agent/api/models/vpp/interfaces" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name BondedInterface  --value-type *vpp_interfaces.BondLink_BondedInterface --import "github.com/ligato/vpp-agent/api/models/vpp/interfaces" --output-dir "descriptor"
 
 package ifplugin
 
@@ -21,15 +22,15 @@ import (
 	"context"
 	"os"
 	"sync"
+	"time"
 
 	govppapi "git.fd.io/govpp.git/api"
-	"github.com/pkg/errors"
-
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/health/statuscheck"
 	"github.com/ligato/cn-infra/idxmap"
 	"github.com/ligato/cn-infra/infra"
 	"github.com/ligato/cn-infra/utils/safeclose"
+	"github.com/pkg/errors"
 
 	"github.com/ligato/vpp-agent/api/models/vpp"
 	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
@@ -37,11 +38,13 @@ import (
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	linux_ifcalls "github.com/ligato/vpp-agent/plugins/linux/ifplugin/linuxcalls"
 	"github.com/ligato/vpp-agent/plugins/linux/nsplugin"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/dhcp"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/descriptor"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
+
+	_ "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls/vpp1810"
+	_ "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls/vpp1901"
 )
 
 const (
@@ -68,14 +71,13 @@ type IfPlugin struct {
 	vppCh govppapi.Channel
 
 	// handlers
-	ifHandler      vppcalls.IfVppAPI
+	ifHandler      vppcalls.InterfaceVppAPI
 	linuxIfHandler linux_ifcalls.NetlinkAPIRead
 
 	// descriptors
 	ifDescriptor   *descriptor.InterfaceDescriptor
 	unIfDescriptor *descriptor.UnnumberedIfDescriptor
 	dhcpDescriptor *descriptor.DHCPDescriptor
-	dhcpChan       chan govppapi.Message
 
 	// index maps
 	intfIndex ifaceidx.IfaceMetadataIndex
@@ -146,7 +148,7 @@ func (p *IfPlugin) Init() error {
 	}
 
 	// init handlers
-	p.ifHandler = vppcalls.NewIfVppHandler(p.vppCh, p.Log)
+	p.ifHandler = vppcalls.CompatibleInterfaceVppHandler(p.vppCh, p.Log)
 	if p.LinuxIfPlugin != nil {
 		p.linuxIfHandler = linux_ifcalls.NewNetLinkHandler()
 	}
@@ -163,6 +165,12 @@ func (p *IfPlugin) Init() error {
 	p.unIfDescriptor = descriptor.NewUnnumberedIfDescriptor(p.ifHandler, p.Log)
 	unIfDescriptor := adapter.NewUnnumberedDescriptor(p.unIfDescriptor.GetDescriptor())
 	err = p.KVScheduler.RegisterKVDescriptor(unIfDescriptor)
+	if err != nil {
+		return err
+	}
+
+	bondIfDescriptor, bondIfDescCtx := descriptor.NewBondedInterfaceDescriptor(p.ifHandler, p.intfIndex, p.Log)
+	err = p.KVScheduler.RegisterKVDescriptor(bondIfDescriptor)
 	if err != nil {
 		return err
 	}
@@ -189,24 +197,17 @@ func (p *IfPlugin) Init() error {
 	// pass read-only index map to descriptors
 	p.ifDescriptor.SetInterfaceIndex(p.intfIndex)
 	p.unIfDescriptor.SetInterfaceIndex(p.intfIndex)
+	bondIfDescCtx.SetInterfaceIndex(p.intfIndex)
 	p.dhcpDescriptor.SetInterfaceIndex(p.intfIndex)
 
 	// start watching for DHCP notifications
-	p.dhcpChan = make(chan govppapi.Message, 1)
-	if _, err := p.vppCh.SubscribeNotification(p.dhcpChan, &dhcp.DHCPComplEvent{}); err != nil {
-		return err
-	}
-	p.dhcpDescriptor.WatchDHCPNotifications(p.ctx, p.dhcpChan)
+	p.dhcpDescriptor.WatchDHCPNotifications(p.ctx)
 
 	// interface state data
 	if p.publishStats {
 		// subscribe & watch for resync of interface state data
 		p.resyncStatusChan = make(chan datasync.ResyncEvent)
-		p.watchStatusReg, err = p.Watcher.Watch("VPP-interface-state",
-			nil, p.resyncStatusChan, interfaces.StatePrefix)
-		if err != nil {
-			return err
-		}
+
 		p.wg.Add(1)
 		go p.watchStatusEvents()
 
@@ -218,18 +219,48 @@ func (p *IfPlugin) Init() error {
 		p.ifStateChan = make(chan *interfaces.InterfaceNotification, 1000)
 		// Interface state updater
 		p.ifStateUpdater = &InterfaceStateUpdater{}
-		if err := p.ifStateUpdater.Init(p.ctx, p.Log, p.KVScheduler, p.GoVppmux, p.intfIndex,
-			func(state *interfaces.InterfaceNotification) {
-				select {
-				case p.ifStateChan <- state:
-					// OK
-				default:
-					p.Log.Debug("Unable to send to the ifStateChan channel - channel buffer full.")
+
+		var n int
+		var t time.Time
+		ifNotifHandler := func(state *interfaces.InterfaceNotification) {
+			select {
+			case p.ifStateChan <- state:
+				// OK
+			default:
+				// full
+				if time.Since(t) > time.Second {
+					p.Log.Debugf("ifStateChan channel is full (%d)", n)
+					n = 0
+				} else {
+					n++
 				}
-			}); err != nil {
+				t = time.Now()
+			}
+		}
+
+		if err := p.ifStateUpdater.Init(p.ctx, p.Log, p.KVScheduler, p.GoVppmux, p.intfIndex, ifNotifHandler); err != nil {
 			return err
 		}
+
+		if err = p.subscribeWatcher(); err != nil {
+			return err
+		}
+
 		p.Log.Debug("ifStateUpdater Initialized")
+	}
+
+	return nil
+}
+
+func (p *IfPlugin) subscribeWatcher() (err error) {
+	keyPrefixes := []string{interfaces.StatePrefix}
+
+	p.Log.Debugf("subscribe to %d status prefixes: %v", len(keyPrefixes), keyPrefixes)
+
+	p.watchStatusReg, err = p.Watcher.Watch("vpp-if-state",
+		nil, p.resyncStatusChan, keyPrefixes...)
+	if err != nil {
+		return err
 	}
 
 	return nil
@@ -269,9 +300,7 @@ func (p *IfPlugin) Close() error {
 		// state updater
 		p.ifStateUpdater,
 		// registrations
-		p.watchStatusReg,
-		// channels
-		p.dhcpChan, p.resyncStatusChan, p.ifStateChan)
+		p.watchStatusReg)
 }
 
 // GetInterfaceIndex gives read-only access to map with metadata of all configured

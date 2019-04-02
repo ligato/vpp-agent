@@ -49,6 +49,18 @@ type StatsAPI interface {
 	// 40 for sw_if_index 2 (sum of stats from all workers)
 	//
 	DumpStats(patterns ...string) ([]*adapter.StatEntry, error)
+
+	// GetSystemStats retrieves system statistics of the connected VPP instance like Vector rate, Input rate, etc.
+	GetSystemStats() (*govppapi.SystemStats, error)
+
+	// GetNodeStats retrieves a list of Node VPP counters (vectors, clocks, ...)
+	GetNodeStats() (*govppapi.NodeStats, error)
+
+	// GetInterfaceStats retrieves all counters related to the VPP interfaces
+	GetInterfaceStats() (*govppapi.InterfaceStats, error)
+
+	// GetErrorStats retrieves VPP error counters
+	GetErrorStats(names ...string) (*govppapi.ErrorStats, error)
 }
 
 // API for other plugins to get connectivity to VPP.

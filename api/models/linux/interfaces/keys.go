@@ -114,12 +114,18 @@ func ParseInterfaceStateKey(key string) (ifName string, ifIsUp bool, isStateKey 
 
 /* Interface Address (derived) */
 
+// InterfaceAddressPrefix returns longest-common prefix of keys representing
+// assigned IP addresses to a specific Linux interface.
+func InterfaceAddressPrefix(iface string) string {
+	return InterfaceAddressKeyPrefix + iface + "/"
+}
+
 // InterfaceAddressKey returns key representing IP address assigned to Linux interface.
 func InterfaceAddressKey(ifName string, address string) string {
 	var mask string
 	addrComps := strings.Split(address, "/")
 	addr := addrComps[0]
-	if len(addrComps) > 0 {
+	if len(addrComps) > 1 {
 		mask = addrComps[1]
 	}
 	key := strings.Replace(interfaceAddressKeyTemplate, "{ifName}", ifName, 1)

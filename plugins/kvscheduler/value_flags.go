@@ -27,24 +27,55 @@ const (
 
 	// LastUpdateFlagName is the name of the LastUpdate flag.
 	LastUpdateFlagName = "last-update"
+	// LastUpdateFlagIndex is the Index of the LastUpdate flag.
+	LastUpdateFlagIndex = 0
 
 	// ErrorFlagName is the name of the Error flag.
 	ErrorFlagName = "error"
+	// ErrorFlagIndex is the Index of the ErrorFlag flag.
+	ErrorFlagIndex = 1
 
 	////// updated by transactions + refresh:
 
 	// ValueStateFlagName is the name of the Value-State flag.
 	ValueStateFlagName = "value-state"
+	// ValueStateFlagIndex is the index of the Value-State flag.
+	ValueStateFlagIndex = 2
 
 	// UnavailValueFlagName is the name of the Unavailable-Value flag.
 	UnavailValueFlagName = "unavailable"
+	// UnavailValueFlagIndex is the index of the Unavailable-Value flag.
+	UnavailValueFlagIndex = 3
 
 	// DescriptorFlagName is the name of the Descriptor flag.
 	DescriptorFlagName = "descriptor"
+	// DescriptorFlagIndex is the index of the Descriptor flag.
+	DescriptorFlagIndex = 4
 
 	// DerivedFlagName is the name of the Derived flag.
 	DerivedFlagName = "derived"
+	// DerivedFlagIndex is the index of the Derived flag.
+	DerivedFlagIndex = 5
 )
+
+// flagNameToIndex converts flag name to the associated index.
+func flagNameToIndex(flagName string) int {
+	switch flagName {
+	case LastUpdateFlagName:
+		return LastUpdateFlagIndex
+	case ErrorFlagName:
+		return ErrorFlagIndex
+	case ValueStateFlagName:
+		return ValueStateFlagIndex
+	case UnavailValueFlagName:
+		return UnavailValueFlagIndex
+	case DescriptorFlagName:
+		return DescriptorFlagIndex
+	case DerivedFlagName:
+		return DerivedFlagIndex
+	}
+	return -1
+}
 
 /****************************** LastUpdate Flag *******************************/
 
@@ -64,6 +95,11 @@ type LastUpdateFlag struct {
 	retryArgs    *kvs.RetryOpt
 }
 
+// GetIndex returns 0.
+func (flag *LastUpdateFlag) GetIndex() int {
+	return LastUpdateFlagIndex
+}
+
 // GetName return name of the LastUpdate flag.
 func (flag *LastUpdateFlag) GetName() string {
 	return LastUpdateFlagName
@@ -81,6 +117,11 @@ func (flag *LastUpdateFlag) GetValue() string {
 type ErrorFlag struct {
 	err       error
 	retriable bool
+}
+
+// GetIndex returns 1.
+func (flag *ErrorFlag) GetIndex() int {
+	return ErrorFlagIndex
 }
 
 // GetName return name of the Origin flag.
@@ -104,6 +145,11 @@ type ValueStateFlag struct {
 	valueState kvs.ValueState
 }
 
+// GetIndex returns 2.
+func (flag *ValueStateFlag) GetIndex() int {
+	return ValueStateFlagIndex
+}
+
 // GetName returns name of the ValueState flag.
 func (flag *ValueStateFlag) GetName() string {
 	return ValueStateFlagName
@@ -119,6 +165,11 @@ func (flag *ValueStateFlag) GetValue() string {
 // UnavailValueFlag is used to mark NB values which should not be considered
 // when resolving dependencies of other values (for various possible reasons).
 type UnavailValueFlag struct {
+}
+
+// GetIndex returns 3.
+func (flag *UnavailValueFlag) GetIndex() int {
+	return UnavailValueFlagIndex
 }
 
 // GetName return name of the UnavailValue flag.
@@ -139,6 +190,11 @@ type DescriptorFlag struct {
 	descriptorName string
 }
 
+// GetIndex returns 4.
+func (flag *DescriptorFlag) GetIndex() int {
+	return DescriptorFlagIndex
+}
+
 // GetName return name of the Descriptor flag.
 func (flag *DescriptorFlag) GetName() string {
 	return DescriptorFlagName
@@ -154,6 +210,11 @@ func (flag *DescriptorFlag) GetValue() string {
 // DerivedFlag is used to mark derived values.
 type DerivedFlag struct {
 	baseKey string
+}
+
+// GetIndex returns 5.
+func (flag *DerivedFlag) GetIndex() int {
+	return DerivedFlagIndex
 }
 
 // GetName return name of the Derived flag.

@@ -1,0 +1,3 @@
+	Address: 	${sidAddress}
+	Behavior: 	DT6 (Endpoint with decapsulation and specific IPv6 table lookup)
+	Table: ${fibtable}

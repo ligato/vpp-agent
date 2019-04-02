@@ -16,7 +16,9 @@ package kvscheduler
 
 import (
 	"fmt"
+	"runtime/trace"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -81,28 +83,32 @@ func (s *Scheduler) preRecordTxnOp(args *applyValueArgs, node graph.Node) *kvs.R
 	}
 	_, prevErr := getNodeError(node)
 	return &kvs.RecordedTxnOp{
-		Key:         args.kv.key,
-		PrevValue:   utils.RecordProtoMessage(node.GetValue()),
-		NewValue:    utils.RecordProtoMessage(args.kv.value),
-		PrevState:   getNodeState(node),
-		PrevErr:     prevErr,
-		IsDerived:   args.isDerived,
-		IsProperty:  args.isDerived && s.registry.GetDescriptorForKey(args.kv.key) == nil,
-		IsRevert:    args.kv.isRevert,
-		IsRetry:     args.isRetry,
-		IsRecreate:  args.recreating != nil && args.recreating.Has(args.kv.key),
+		Key:        args.kv.key,
+		PrevValue:  utils.RecordProtoMessage(node.GetValue()),
+		NewValue:   utils.RecordProtoMessage(args.kv.value),
+		PrevState:  getNodeState(node),
+		PrevErr:    prevErr,
+		IsDerived:  args.isDerived,
+		IsProperty: args.isDerived && s.registry.GetDescriptorForKey(args.kv.key) == nil,
+		IsRevert:   args.kv.isRevert,
+		IsRetry:    args.isRetry,
+		IsRecreate: args.recreating != nil && args.recreating.Has(args.kv.key),
 	}
 }
 
 // preRecordTransaction logs transaction arguments + plan before execution to
 // persist some information in case there is a crash during execution.
-func (s *Scheduler) preRecordTransaction(txn *transaction, planned kvs.RecordedTxnOps) *kvs.RecordedTxn {
+func (s *Scheduler) preRecordTransaction(txn *transaction, planned kvs.RecordedTxnOps,
+	skippedSimulation bool) *kvs.RecordedTxn {
+	defer trace.StartRegion(txn.ctx, "preRecordTransaction").End()
+
 	// allocate new transaction record
 	record := &kvs.RecordedTxn{
-		PreRecord: true,
-		SeqNum:    txn.seqNum,
-		TxnType:   txn.txnType,
-		Planned:   planned,
+		PreRecord:      true,
+		WithSimulation: !skippedSimulation,
+		SeqNum:         txn.seqNum,
+		TxnType:        txn.txnType,
+		Planned:        planned,
 	}
 	if txn.txnType == kvs.NBTransaction {
 		record.ResyncType = txn.nb.resyncType
@@ -113,23 +119,8 @@ func (s *Scheduler) preRecordTransaction(txn *transaction, planned kvs.RecordedT
 		record.RetryAttempt = txn.retry.attempt
 	}
 
-	// build header for the log
-	var downstreamResync bool
-	txnInfo := fmt.Sprintf("%s", txn.txnType.String())
-	if txn.txnType == kvs.NBTransaction && txn.nb.resyncType != kvs.NotResync {
-		ResyncType := "Full Resync"
-		if txn.nb.resyncType == kvs.DownstreamResync {
-			ResyncType = "SB Sync"
-			downstreamResync = true
-		}
-		if txn.nb.resyncType == kvs.UpstreamResync {
-			ResyncType = "NB Sync"
-		}
-		txnInfo = fmt.Sprintf("%s (%s)", txn.txnType.String(), ResyncType)
-	}
-
 	// record values sorted alphabetically by keys
-	if !downstreamResync {
+	if txn.txnType != kvs.NBTransaction || txn.nb.resyncType != kvs.DownstreamResync {
 		for _, kv := range txn.values {
 			record.Values = append(record.Values, kvs.RecordedKVPair{
 				Key:    kv.key,
@@ -142,35 +133,53 @@ func (s *Scheduler) preRecordTransaction(txn *transaction, planned kvs.RecordedT
 		})
 	}
 
-	// send to the log
-	var buf strings.Builder
-	buf.WriteString("+======================================================================================================================+\n")
-	msg := fmt.Sprintf("Transaction #%d", record.SeqNum)
-	n := 115 - len(msg)
-	buf.WriteString(fmt.Sprintf("| %s %"+fmt.Sprint(n)+"s |\n", msg, txnInfo))
-	buf.WriteString("+======================================================================================================================+\n")
-	buf.WriteString(record.StringWithOpts(false, false, 2))
-	fmt.Println(buf.String())
+	// if enabled, print txn summary
+	if s.config.PrintTxnSummary {
+		// build header for the log
+		txnInfo := txn.txnType.String()
+		if txn.txnType == kvs.NBTransaction && txn.nb.resyncType != kvs.NotResync {
+			resyncType := "Full Resync"
+			if txn.nb.resyncType == kvs.DownstreamResync {
+				resyncType = "SB Sync"
+			}
+			if txn.nb.resyncType == kvs.UpstreamResync {
+				resyncType = "NB Sync"
+			}
+			txnInfo = fmt.Sprintf("%s (%s)", txn.txnType.String(), resyncType)
+		}
+		var buf strings.Builder
+		buf.WriteString("+======================================================================================================================+\n")
+		msg := fmt.Sprintf("Transaction #%d", record.SeqNum)
+		n := 115 - len(msg)
+		buf.WriteString(fmt.Sprintf("| %s %"+strconv.Itoa(n)+"s |\n", msg, txnInfo))
+		buf.WriteString("+======================================================================================================================+\n")
+		buf.WriteString(record.StringWithOpts(false, false, 2))
+		fmt.Println(buf.String())
+	}
 
 	return record
 }
 
 // recordTransaction records the finalized transaction (log + in-memory).
-func (s *Scheduler) recordTransaction(txnRecord *kvs.RecordedTxn, executed kvs.RecordedTxnOps, start, stop time.Time) {
+func (s *Scheduler) recordTransaction(txn *transaction, txnRecord *kvs.RecordedTxn, executed kvs.RecordedTxnOps, start, stop time.Time) {
+	defer trace.StartRegion(txn.ctx, "recordTransaction").End()
+
 	txnRecord.PreRecord = false
 	txnRecord.Start = start
 	txnRecord.Stop = stop
 	txnRecord.Executed = executed
 
-	var buf strings.Builder
-	buf.WriteString("o----------------------------------------------------------------------------------------------------------------------o\n")
-	buf.WriteString(txnRecord.StringWithOpts(true, false, 2))
-	buf.WriteString("x----------------------------------------------------------------------------------------------------------------------x\n")
-	msg := fmt.Sprintf("#%d", txnRecord.SeqNum)
-	msg2 := fmt.Sprintf("took %v", stop.Sub(start).Round(time.Millisecond))
-	buf.WriteString(fmt.Sprintf("x %s %"+fmt.Sprint(115-len(msg))+"s x\n", msg, msg2))
-	buf.WriteString("x----------------------------------------------------------------------------------------------------------------------x\n")
-	fmt.Println(buf.String())
+	if s.config.PrintTxnSummary {
+		var buf strings.Builder
+		buf.WriteString("o----------------------------------------------------------------------------------------------------------------------o\n")
+		buf.WriteString(txnRecord.StringWithOpts(true, false, 2))
+		buf.WriteString("x----------------------------------------------------------------------------------------------------------------------x\n")
+		msg := fmt.Sprintf("#%d", txnRecord.SeqNum)
+		msg2 := fmt.Sprintf("took %v", stop.Sub(start).Round(time.Microsecond*100))
+		buf.WriteString(fmt.Sprintf("| %s %"+fmt.Sprint(115-len(msg))+"s |\n", msg, msg2))
+		buf.WriteString("x----------------------------------------------------------------------------------------------------------------------x\n")
+		fmt.Println(buf.String())
+	}
 
 	// add transaction record into the history
 	if s.config.RecordTransactionHistory {

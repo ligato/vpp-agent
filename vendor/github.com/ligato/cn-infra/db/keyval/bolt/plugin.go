@@ -25,9 +25,10 @@ import (
 
 // Config represents configuration for Bolt plugin.
 type Config struct {
-	DbPath      string        `json:"db-path"`
-	FileMode    os.FileMode   `json:"file-mode"`
-	LockTimeout time.Duration `json:"lock-timeout"`
+	DbPath          string        `json:"db-path"`
+	FileMode        os.FileMode   `json:"file-mode"`
+	LockTimeout     time.Duration `json:"lock-timeout"`
+	FilterDupNotifs bool          `json:"filter-duplicate-notifications"`
 }
 
 // Plugin implements bolt plugin.

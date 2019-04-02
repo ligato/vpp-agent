@@ -143,7 +143,7 @@ func kvsWithMetaForREST(in []kvs.KVWithMetadata) (out []kvs.KVWithMetadata) {
 // registerHandlers registers all supported REST APIs.
 func (s *Scheduler) registerHandlers(http rest.HTTPHandlers) {
 	if http == nil {
-		s.Log.Warn("No http handler provided, skipping registration of KVScheduler REST handlers")
+		s.Log.Debug("No http handler provided, skipping registration of KVScheduler REST handlers")
 		return
 	}
 	http.RegisterHTTPHandler(txnHistoryURL, s.txnHistoryGetHandler, "GET")
@@ -154,6 +154,7 @@ func (s *Scheduler) registerHandlers(http rest.HTTPHandlers) {
 	http.RegisterHTTPHandler(dumpURL, s.dumpGetHandler, "GET")
 	http.RegisterHTTPHandler(statusURL, s.statusGetHandler, "GET")
 	http.RegisterHTTPHandler(urlPrefix+"graph", s.dotGraphHandler, "GET")
+	http.RegisterHTTPHandler(urlPrefix+"stats", s.statsHandler, "GET")
 }
 
 // txnHistoryGetHandler is the GET handler for "txn-history" API.
@@ -307,7 +308,7 @@ func (s *Scheduler) flagStatsGetHandler(formatter *render.Render) http.HandlerFu
 			graphR := s.graph.Read()
 			defer graphR.Release()
 
-			stats := graphR.GetFlagStats(flags[0], func(key string) bool {
+			stats := graphR.GetFlagStats(flagNameToIndex(flags[0]), func(key string) bool {
 				if len(prefixes) == 0 {
 					return true
 				}
@@ -485,6 +486,12 @@ func (s *Scheduler) statusGetHandler(formatter *render.Render) http.HandlerFunc 
 			return status[i].Value.Key < status[j].Value.Key
 		})
 		s.logError(formatter.JSON(w, http.StatusOK, status))
+	}
+}
+
+func (s *Scheduler) statsHandler(formatter *render.Render) http.HandlerFunc {
+	return func(w http.ResponseWriter, req *http.Request) {
+		formatter.JSON(w, http.StatusOK, GetStats())
 	}
 }
 

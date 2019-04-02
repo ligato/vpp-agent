@@ -61,7 +61,8 @@ type Deps struct {
 // Init sets plugin child loggers
 func (p *Plugin) Init() error {
 	p.configurator.log = p.Log.NewLogger("configurator")
-	p.configurator.notifyService.log = p.Log.NewLogger("configurator-notify")
+	p.configurator.dumpService.log = p.Log.NewLogger("dump")
+	p.configurator.notifyService.log = p.Log.NewLogger("notify")
 	p.configurator.dispatch = p.Dispatch
 
 	if err := p.initHandlers(); err != nil {
@@ -107,17 +108,13 @@ func (p *Plugin) initHandlers() (err error) {
 	dhcpIndexes := p.VPPIfPlugin.GetDHCPIndex()
 
 	// Initialize VPP handlers
-	p.configurator.aclHandler = aclvppcalls.NewACLVppHandler(p.vppChan, p.dumpChan, ifIndexes)
-	p.configurator.ifHandler = ifvppcalls.NewIfVppHandler(p.vppChan, p.Log)
-	p.configurator.natHandler = natvppcalls.NewNatVppHandler(p.vppChan, ifIndexes, dhcpIndexes, p.Log)
-	p.configurator.bdHandler = l2vppcalls.NewBridgeDomainVppHandler(p.vppChan, ifIndexes, p.Log)
-	p.configurator.fibHandler = l2vppcalls.NewFIBVppHandler(p.vppChan, ifIndexes, bdIndexes, p.Log)
-	p.configurator.xcHandler = l2vppcalls.NewXConnectVppHandler(p.vppChan, ifIndexes, p.Log)
-	p.configurator.arpHandler = l3vppcalls.NewArpVppHandler(p.vppChan, ifIndexes, p.Log)
-	p.configurator.pArpHandler = l3vppcalls.NewProxyArpVppHandler(p.vppChan, ifIndexes, p.Log)
-	p.configurator.rtHandler = l3vppcalls.NewRouteVppHandler(p.vppChan, ifIndexes, p.Log)
-	p.configurator.ipsecHandler = ipsecvppcalls.NewIPsecVppHandler(p.vppChan, ifIndexes, p.Log)
-	p.configurator.puntHandler = puntvppcalls.NewPuntVppHandler(p.vppChan, ifIndexes, p.Log)
+	p.configurator.aclHandler = aclvppcalls.CompatibleACLVppHandler(p.vppChan, p.dumpChan, ifIndexes, p.Log)
+	p.configurator.ifHandler = ifvppcalls.CompatibleInterfaceVppHandler(p.vppChan, p.Log)
+	p.configurator.natHandler = natvppcalls.CompatibleNatVppHandler(p.vppChan, ifIndexes, dhcpIndexes, p.Log)
+	p.configurator.l2Handler = l2vppcalls.CompatibleL2VppHandler(p.vppChan, ifIndexes, bdIndexes, p.Log)
+	p.configurator.l3Handler = l3vppcalls.CompatibleL3VppHandler(p.vppChan, ifIndexes, p.Log)
+	p.configurator.ipsecHandler = ipsecvppcalls.CompatibleIPSecVppHandler(p.vppChan, ifIndexes, p.Log)
+	p.configurator.puntHandler = puntvppcalls.CompatiblePuntVppHandler(p.vppChan, ifIndexes, p.Log)
 
 	// Linux indexes and handlers
 	p.configurator.linuxIfHandler = iflinuxcalls.NewNetLinkHandler()

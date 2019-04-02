@@ -15,28 +15,37 @@
 package graph
 
 import (
-	"reflect"
 	"time"
 
 	"github.com/ligato/cn-infra/idxmap"
+	"github.com/ligato/vpp-agent/plugins/kvscheduler/internal/utils"
 )
 
 // graphRW implements RWAccess.
 type graphRW struct {
 	*graphR
-	record  bool
-	deleted []string
-	newRevs map[string]bool // key -> data-updated?
+
+	record   bool
+	wInPlace bool
+
+	newRevs  map[string]bool // key -> data-updated? (for Release)
 }
 
 // newGraphRW creates a new instance of grapRW, which extends an existing
 // graph with write-operations.
-func newGraphRW(graph *graphR, recordChanges bool) *graphRW {
-	graphRCopy := graph.copyNodesOnly()
+func newGraphRW(graph *graphR, wInPlace, recordChanges bool) *graphRW {
+	var gR *graphR
+	if wInPlace {
+		gR = graph
+	} else {
+		gR = graph.copyNodesOnly()
+	}
+	gR.unsaved = utils.NewSliceBasedKeySet()
 	return &graphRW{
-		graphR:  graphRCopy,
-		record:  recordChanges,
-		newRevs: make(map[string]bool),
+		graphR:   gR,
+		wInPlace: wInPlace,
+		record:   recordChanges,
+		newRevs:  make(map[string]bool),
 	}
 }
 
@@ -54,17 +63,35 @@ func (graph *graphRW) RegisterMetadataMap(mapName string, mapping idxmap.NamedMa
 // If <newRev> is true, the changes will recorded as a new revision of the
 // node for the history.
 func (graph *graphRW) SetNode(key string) NodeRW {
+	if graph.parent.methodTracker != nil {
+		defer graph.parent.methodTracker("SetNode")()
+	}
+
+	graph.unsaved.Add(key)
 	node, has := graph.nodes[key]
 	if has {
 		return node
 	}
+
+	// new node
 	node = newNode(nil)
 	node.graph = graph.graphR
 	node.key = key
-	for _, otherNode := range graph.nodes {
-		otherNode.checkPotentialTarget(node)
-	}
 	graph.nodes[key] = node
+
+	// add edges going into this new node
+	graph.edgeLookup.addNodeKey(key)
+	graph.edgeLookup.iterSources(key, func(sourceNodeKey, relation, label string) {
+		sourceNode := graph.nodes[sourceNodeKey]
+		target, targetIdx := sourceNode.targets.GetTargetForLabel(relation, label)
+		keySelector := sourceNode.targetsDef[targetIdx].Selector.KeySelector
+		if keySelector != nil {
+			if keySelector(key) == false {
+				return
+			}
+		}
+		sourceNode.addToTargets(node, target)
+	})
 
 	return node
 }
@@ -72,81 +99,91 @@ func (graph *graphRW) SetNode(key string) NodeRW {
 // DeleteNode deletes node with the given key.
 // Returns true if the node really existed before the operation.
 func (graph *graphRW) DeleteNode(key string) bool {
+	if graph.parent.methodTracker != nil {
+		defer graph.parent.methodTracker("DeleteNode")()
+	}
+
 	node, has := graph.nodes[key]
 	if !has {
 		return false
 	}
 
-	// remove from sources of current targets
-	node.removeThisFromSources()
+	// remove outgoing edges (not the most effective approach...)
+	node.SetTargets(nil)
+
+	// remove incoming edges
+	graph.edgeLookup.iterSources(key, func(sourceNodeKey, relation, label string) {
+		sourceNode := graph.nodes[sourceNodeKey]
+		sourceNode.removeFromTarget(key, relation, label)
+	})
+	graph.edgeLookup.delNodeKey(key)
 
 	// delete from graph
 	delete(graph.nodes, key)
 
-	// remove from targets of other nodes
-	for _, otherNode := range graph.nodes {
-		otherNode.removeFromTargets(key)
+	// unset metadata
+	if graph.wInPlace && node.metadataAdded {
+		if mapping, hasMapping := graph.mappings[node.metadataMap]; hasMapping {
+			mapping.Delete(node.label)
+		}
 	}
-	graph.deleted = append(graph.deleted, key)
+
+	graph.unsaved.Add(key)
 	return true
 }
 
 // Save propagates all changes to the graph.
 func (graph *graphRW) Save() {
-	graph.parent.rwLock.Lock()
-	defer graph.parent.rwLock.Unlock()
+	if graph.parent.methodTracker != nil {
+		defer graph.parent.methodTracker("Save")()
+	}
+
+	if !graph.wInPlace {
+		graph.parent.rwLock.Lock()
+		defer graph.parent.rwLock.Unlock()
+	}
 
 	destGraph := graph.parent.graph
 
-	// propagate newly registered mappings
-	for mapName, mapping := range graph.mappings {
-		if _, alreadyReg := destGraph.mappings[mapName]; !alreadyReg {
-			destGraph.mappings[mapName] = mapping
-		}
-	}
-
-	// apply deleted nodes
-	for _, key := range graph.deleted {
-		if node, has := destGraph.nodes[key]; has {
-			// remove metadata
-			if node.metadataAdded {
-				if mapping, hasMapping := destGraph.mappings[node.metadataMap]; hasMapping {
-					mapping.Delete(node.label)
-				}
+	if !graph.wInPlace {
+		// propagate newly registered mappings
+		for mapName, mapping := range graph.mappings {
+			if _, alreadyReg := destGraph.mappings[mapName]; !alreadyReg {
+				destGraph.mappings[mapName] = mapping
 			}
-			// remove node from graph
-			delete(destGraph.nodes, key)
 		}
-		graph.newRevs[key] = true
-	}
-	graph.deleted = []string{}
 
-	// apply new/changes nodes
-	for key, node := range graph.nodes {
-		if !node.dataUpdated && !node.targetsUpdated && !node.sourcesUpdated {
+		// save updated edgeLookup
+		graph.edgeLookup.saveOverlay()
+	}
+
+	for _, key := range graph.unsaved.Iterate() {
+		node, found := graph.nodes[key]
+		deleted := !found
+		if !deleted && !node.dataUpdated && !node.targetsUpdated && !node.sourcesUpdated {
 			continue
 		}
 
-		// update metadata
-		if !node.metaInSync {
-			// update metadata map
-			if mapping, hasMapping := destGraph.mappings[node.metadataMap]; hasMapping {
-				if node.metadataAdded {
-					if node.metadata == nil {
-						mapping.Delete(node.label)
-						node.metadataAdded = false
-					} else {
-						prevMeta, _ := mapping.GetValue(node.label)
-						if !reflect.DeepEqual(prevMeta, node.metadata) {
-							mapping.Update(node.label, node.metadata)
+		if deleted {
+			// node was deleted:
+
+			if !graph.wInPlace {
+				if node, has := destGraph.nodes[key]; has {
+					// remove metadata
+					if node.metadataAdded {
+						if mapping, hasMapping := destGraph.mappings[node.metadataMap]; hasMapping {
+							mapping.Delete(node.label)
 						}
 					}
-				} else if node.metadata != nil {
-					mapping.Put(node.label, node.metadata)
-					node.metadataAdded = true
+					// remove node from graph
+					delete(destGraph.nodes, key)
 				}
 			}
+			graph.newRevs[key] = true
+			continue
 		}
+
+		// node was created or updated:
 
 		// mark node for recording during RW-handle release
 		// (ignore if only sources have been updated)
@@ -157,18 +194,26 @@ func (graph *graphRW) Save() {
 			graph.newRevs[key] = graph.newRevs[key] || node.dataUpdated
 		}
 
-		// copy changed node to the actual graph
-		nodeCopy := node.copy()
-		nodeCopy.graph = destGraph
-		destGraph.nodes[key] = newNode(nodeCopy)
+		if !graph.wInPlace {
+			// copy changed node to the actual graph
+			nodeCopyR := node.copy()
+			nodeCopyR.graph = destGraph
+			nodeCopy := newNode(nodeCopyR)
+			destGraph.nodes[key] = nodeCopy
 
-		// use copy-on-write targets+sources for the write-handle
-		cowTargets := nodeCopy.targets
-		nodeCopy.targets = node.targets
-		node.targets = cowTargets
-		cowSources := nodeCopy.sources
-		nodeCopy.sources = node.sources
-		node.sources = cowSources
+			// sync metadata
+			nodeCopy.metaInSync = node.metaInSync
+			nodeCopy.syncMetadata()
+			node.metadataAdded = nodeCopy.metadataAdded
+
+			// use copy-on-write targets+sources for the write-handle
+			cowTargets := nodeCopy.targets
+			nodeCopy.targets = node.targets
+			node.targets = cowTargets
+			cowSources := nodeCopy.sources
+			nodeCopy.sources = node.sources
+			node.sources = cowSources
+		}
 
 		// working copy is now in-sync
 		node.dataUpdated = false
@@ -176,13 +221,27 @@ func (graph *graphRW) Save() {
 		node.sourcesUpdated = false
 		node.metaInSync = true
 	}
+
+	graph.unsaved = utils.NewSliceBasedKeySet()
 }
 
 // Release records changes if requested.
 func (graph *graphRW) Release() {
-	if graph.record && graph.parent.recordOldRevs {
-		graph.parent.rwLock.Lock()
+	if graph.parent.methodTracker != nil {
+		defer graph.parent.methodTracker("Release")()
+	}
+
+	if graph.wInPlace {
+		// update unsaved & newRevs
+		graph.Save()
 		defer graph.parent.rwLock.Unlock()
+	}
+
+	if graph.record && graph.parent.recordOldRevs {
+		if !graph.wInPlace {
+			graph.parent.rwLock.Lock()
+			defer graph.parent.rwLock.Unlock()
+		}
 
 		destGraph := graph.parent.graph
 		for key, dataUpdated := range graph.newRevs {

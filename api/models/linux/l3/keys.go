@@ -64,7 +64,7 @@ const (
 	LinkLocalRouteKeyPrefix = "linux/link-local-route/"
 
 	// staticLinkLocalRouteKeyTemplate is a template for key derived from link-local route.
-	linkLocalRouteKeyTemplate = LinkLocalRouteKeyPrefix + "{dest-net}/{dest-mask}/{out-intf}"
+	linkLocalRouteKeyTemplate = LinkLocalRouteKeyPrefix + "{out-intf}/{dest-net}/{dest-mask}"
 )
 
 /* Link-local Route (derived) */
@@ -72,6 +72,12 @@ const (
 // StaticLinkLocalRouteKey returns a derived key used to represent link-local route.
 func StaticLinkLocalRouteKey(dstAddr, outgoingInterface string) string {
 	return RouteKeyFromTemplate(linkLocalRouteKeyTemplate, dstAddr, outgoingInterface)
+}
+
+// StaticLinkLocalRoutePrefix returns longest-common prefix of keys representing
+// link-local routes that have the given outgoing Linux interface.
+func StaticLinkLocalRoutePrefix(outgoingInterface string) string {
+	return LinkLocalRouteKeyPrefix + outgoingInterface + "/"
 }
 
 // ParseStaticLinkLocalRouteKey parses route attributes from a key derived from link-local route.
@@ -98,14 +104,17 @@ func parseRouteFromKeySuffix(key, prefix, errPrefix string) (dstNetAddr *net.IPN
 	if strings.HasPrefix(key, prefix) {
 		routeSuffix := strings.TrimPrefix(key, prefix)
 		routeComps := strings.Split(routeSuffix, "/")
-		if len(routeComps) != 3 {
+
+		// beware: interface name may contain forward slashes
+		if len(routeComps) < 3 {
 			return nil, "", false
 		}
-		_, dstNetAddr, err = net.ParseCIDR(routeComps[0] + "/" + routeComps[1])
+		lastIdx := len(routeComps) - 1
+		_, dstNetAddr, err = net.ParseCIDR(routeComps[lastIdx-1] + "/" + routeComps[lastIdx])
 		if err != nil {
 			return nil, "", false
 		}
-		outgoingInterface = routeComps[2]
+		outgoingInterface = strings.Join(routeComps[:lastIdx-1], "/")
 		isRouteKey = true
 		return
 	}

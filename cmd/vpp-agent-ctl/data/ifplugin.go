@@ -50,6 +50,14 @@ type InterfacesCtl interface {
 	PutIPSecTunnelInterface() error
 	// DeleteIPSecTunnelInterface removes IPSec tunnel interface
 	DeleteIPSecTunnelInterface() error
+	// PutSubInterface configures sub interface
+	PutSubInterface() error
+	// DelSubInterface removes sub interface
+	DeleteSubInterface() error
+	// PutBondInterface configures bond type interface to the ETCD
+	PutBondInterface() error
+	// DeleteBondInterface removes bond-type interface from the ETCD
+	DeleteBondInterface() error
 	// PutVEthPair puts two VETH type interfaces to the ETCD
 	PutVEthPair() error
 	// DeleteVEthPair removes VETH pair interfaces from the ETCD
@@ -58,6 +66,10 @@ type InterfacesCtl interface {
 	PutLinuxTap() error
 	// DeleteLinuxTap removes linux TAP type interface configuration from the ETCD
 	DeleteLinuxTap() error
+	// PutLinuxLoop puts linux loopback type interface configuration to the ETCD
+	PutLinuxLoop() error
+	// DeleteLinuxLoop removes linux loopback type interface configuration from the ETCD
+	DeleteLinuxLoop() error
 }
 
 // PutDPDKInterface puts ethernet type interface config to the ETCD
@@ -279,6 +291,72 @@ func (ctl *VppAgentCtlImpl) DeleteIPSecTunnelInterface() error {
 	return err
 }
 
+// PutSubInterface configures the sub-interface type interface
+func (ctl *VppAgentCtlImpl) PutSubInterface() error {
+	subIf := &interfaces.Interface{
+		Name:    "sub1",
+		Enabled: true,
+		Type:    interfaces.Interface_SUB_INTERFACE,
+		Link: &interfaces.Interface_Sub{
+			Sub: &interfaces.SubInterface{
+				ParentName: "bond1",
+				SubId:      10,
+				// tag-rewrite options
+				TagRwOption: interfaces.SubInterface_PUSH1,
+				PushDot1Q:   true,
+				Tag2:        20,
+			},
+		},
+	}
+	ctl.Log.Infof("Interface put: %v", subIf)
+	return ctl.broker.Put(interfaces.InterfaceKey(subIf.Name), subIf)
+}
+
+// DeleteSubInterface removes sub-interface
+func (ctl *VppAgentCtlImpl) DeleteSubInterface() error {
+	subIfKey := interfaces.InterfaceKey("sub1")
+
+	ctl.Log.Infof("Interface delete: %v", subIfKey)
+	_, err := ctl.broker.Delete(subIfKey)
+	return err
+}
+
+// PutBondInterface configures bond type interface to the ETCD
+func (ctl *VppAgentCtlImpl) PutBondInterface() error {
+	bondIf := &interfaces.Interface{
+		Name:        "bond1",
+		Enabled:     true,
+		IpAddresses: []string{"40.0.0.0/24"},
+		Vrf:         0,
+		Type:        interfaces.Interface_BOND_INTERFACE,
+		PhysAddress: "92:C7:42:67:AB:CA",
+		Link: &interfaces.Interface_Bond{
+			Bond: &interfaces.BondLink{
+				Id:   5,
+				Mode: interfaces.BondLink_ROUND_ROBIN,
+				BondedInterfaces: []*interfaces.BondLink_BondedInterface{
+					{
+						Name:          "loop1",
+						IsPassive:     true,
+						IsLongTimeout: false,
+					},
+				},
+			},
+		},
+	}
+	ctl.Log.Infof("Interface put: %v", bondIf)
+	return ctl.broker.Put(interfaces.InterfaceKey(bondIf.Name), bondIf)
+}
+
+// DeleteBondInterface removes bond-type interface from the ETCD
+func (ctl *VppAgentCtlImpl) DeleteBondInterface() error {
+	bondKey := interfaces.InterfaceKey("bond1")
+
+	ctl.Log.Infof("Interface delete: %v", bondKey)
+	_, err := ctl.broker.Delete(bondKey)
+	return err
+}
+
 // PutVEthPair puts two VETH type interfaces to the ETCD
 func (ctl *VppAgentCtlImpl) PutVEthPair() error {
 	// Note: VETH interfaces are created in pairs
@@ -377,5 +455,35 @@ func (ctl *VppAgentCtlImpl) DeleteLinuxTap() error {
 
 	ctl.Log.Println("Deleting", linuxTapKey)
 	_, err := ctl.broker.Delete(linuxTapKey)
+	return err
+}
+
+// PutLinuxTap puts linux TAP type interface configuration to the ETCD
+func (ctl *VppAgentCtlImpl) PutLinuxLoop() error {
+	linuxLoop := &linuxIf.Interface{
+		Name:        "loop",
+		Type:        linuxIf.Interface_LOOPBACK,
+		Enabled:     true,
+		PhysAddress: "AA:AA:BE:EF:F0:0D",
+		Namespace: &linux_namespace.NetNamespace{
+			Reference: "ns1",
+			Type:      linux_namespace.NetNamespace_NSID,
+		},
+		IpAddresses: []string{
+			"127.0.0.1/8",
+			"192.168.16.4/24",
+		},
+	}
+
+	ctl.Log.Println(linuxLoop)
+	return ctl.broker.Put(linuxIf.InterfaceKey(linuxLoop.Name), linuxLoop)
+}
+
+// DeleteLinuxTap removes linux TAP type interface configuration from the ETCD
+func (ctl *VppAgentCtlImpl) DeleteLinuxLoop() error {
+	linuxLoopKey := linuxIf.InterfaceKey("loop")
+
+	ctl.Log.Println("Deleting", linuxLoopKey)
+	_, err := ctl.broker.Delete(linuxLoopKey)
 	return err
 }

@@ -31,6 +31,9 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/natplugin/descriptor"
 	"github.com/ligato/vpp-agent/plugins/vpp/natplugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/vpp/natplugin/vppcalls"
+
+	_ "github.com/ligato/vpp-agent/plugins/vpp/natplugin/vppcalls/vpp1810"
+	_ "github.com/ligato/vpp-agent/plugins/vpp/natplugin/vppcalls/vpp1901"
 )
 
 // NATPlugin configures VPP NAT.
@@ -68,7 +71,10 @@ func (p *NATPlugin) Init() error {
 	}
 
 	// init NAT handler
-	p.natHandler = vppcalls.NewNatVppHandler(p.vppCh, p.IfPlugin.GetInterfaceIndex(), p.IfPlugin.GetDHCPIndex(), p.Log)
+	p.natHandler = vppcalls.CompatibleNatVppHandler(p.vppCh, p.IfPlugin.GetInterfaceIndex(), p.IfPlugin.GetDHCPIndex(), p.Log)
+	if p.natHandler == nil {
+		return errors.New("natHandler is not available")
+	}
 
 	// init and register descriptors
 	p.nat44GlobalDescriptor = descriptor.NewNAT44GlobalDescriptor(p.natHandler, p.Log)

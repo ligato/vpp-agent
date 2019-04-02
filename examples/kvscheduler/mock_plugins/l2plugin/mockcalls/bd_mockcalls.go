@@ -16,6 +16,7 @@ package mockcalls
 
 import (
 	"fmt"
+
 	l2 "github.com/ligato/vpp-agent/examples/kvscheduler/mock_plugins/l2plugin/model"
 )
 
@@ -26,7 +27,7 @@ func (h *MockBDHandler) CreateBridgeDomain(bdName string) (sbBDHandle uint32, er
 	h.mockBDs[sbBDHandle] = &l2.BridgeDomain{
 		Name: bdName,
 	}
-	h.log.Infof("Created bridge domain: %s", bdName)
+	h.log.Debugf("Created bridge domain: %s", bdName)
 	return sbBDHandle, nil
 }
 
@@ -37,7 +38,7 @@ func (h *MockBDHandler) DeleteBridgeDomain(sbBDHandle uint32) error {
 		return err
 	}
 	delete(h.mockBDs, sbBDHandle)
-	h.log.Infof("Deleted bridge domain: %s", bd.Name)
+	h.log.Debugf("Deleted bridge domain: %s", bd.Name)
 	return nil
 }
 
@@ -57,7 +58,7 @@ func (h *MockBDHandler) AddInterfaceToBridgeDomain(sbBDHandle uint32, ifaceName 
 		Name: ifaceName,
 		BridgedVirtualInterface: isBVI,
 	})
-	h.log.Infof("Added interface '%s' into the bridge domain '%s'",
+	h.log.Debugf("Added interface '%s' into the bridge domain '%s'",
 		ifaceName, bd.Name)
 	return nil
 }
@@ -79,14 +80,14 @@ func (h *MockBDHandler) DeleteInterfaceFromBridgeDomain(sbBDHandle uint32, iface
 			ifaceName, bd.Name)
 	}
 	bd.Interfaces = append(bd.Interfaces[:idx], bd.Interfaces[idx+1:]...)
-	h.log.Infof("Removed interface '%s' from the bridge domain '%s'",
+	h.log.Debugf("Removed interface '%s' from the bridge domain '%s'",
 		ifaceName, bd.Name)
 	return nil
 }
 
 // DumpBridgeDomains dumps bridge domains "configured" in the mock SB.
 func (h *MockBDHandler) DumpBridgeDomains() (mockBDs, error) {
-	h.log.Infof("Dumped mock bridge domains: %+v", h.mockBDs)
+	h.log.Debugf("Dumped mock bridge domains: %+v", h.mockBDs)
 	return h.mockBDs, nil
 }
 

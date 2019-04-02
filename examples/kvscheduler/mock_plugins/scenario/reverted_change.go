@@ -36,7 +36,7 @@ func RevertedChange() {
 		tap1, bd2,
 	)
 	if err != nil {
-		log.Fatalln(err)
+		log.Println(err)
 	}
 	informAboutGraphURL(0, true, true)
 
@@ -69,7 +69,7 @@ func RevertedChange() {
 	ctx = kvs.WithRevert(ctx)
 
 	if err := req.Send(ctx); err != nil {
-		log.Fatalln(err)
+		log.Println(err)
 	}
 	informAboutGraphURL(1, false, true)
 }

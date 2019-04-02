@@ -32,6 +32,9 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/l2plugin/descriptor"
 	"github.com/ligato/vpp-agent/plugins/vpp/l2plugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/vpp/l2plugin/vppcalls"
+
+	_ "github.com/ligato/vpp-agent/plugins/vpp/l2plugin/vppcalls/vpp1810"
+	_ "github.com/ligato/vpp-agent/plugins/vpp/l2plugin/vppcalls/vpp1901"
 )
 
 // L2Plugin configures VPP bridge domains, L2 FIBs and xConnects using GoVPP.
@@ -42,9 +45,7 @@ type L2Plugin struct {
 	vppCh govppapi.Channel
 
 	// handlers
-	bdHandler  vppcalls.BridgeDomainVppAPI
-	fibHandler vppcalls.FIBVppAPI
-	xCHandler  vppcalls.XConnectVppAPI
+	l2Handler vppcalls.L2VppAPI
 
 	// descriptors
 	bdDescriptor      *descriptor.BridgeDomainDescriptor
@@ -72,11 +73,14 @@ func (p *L2Plugin) Init() (err error) {
 		return errors.Errorf("failed to create GoVPP API channel: %v", err)
 	}
 
-	// init BD handler
-	p.bdHandler = vppcalls.NewBridgeDomainVppHandler(p.vppCh, p.IfPlugin.GetInterfaceIndex(), p.Log)
+	// init handlers
+	p.l2Handler = vppcalls.CompatibleL2VppHandler(p.vppCh, p.IfPlugin.GetInterfaceIndex(), p.bdIndex, p.Log)
+	if p.l2Handler == nil {
+		return errors.Errorf("could not find compatible L2VppHandler")
+	}
 
 	// init and register bridge domain descriptor
-	p.bdDescriptor = descriptor.NewBridgeDomainDescriptor(p.bdHandler, p.Log)
+	p.bdDescriptor = descriptor.NewBridgeDomainDescriptor(p.l2Handler, p.Log)
 	bdDescriptor := adapter.NewBridgeDomainDescriptor(p.bdDescriptor.GetDescriptor())
 	err = p.KVScheduler.RegisterKVDescriptor(bdDescriptor)
 	if err != nil {
@@ -91,26 +95,25 @@ func (p *L2Plugin) Init() (err error) {
 		return errors.New("missing index with bridge domain metadata")
 	}
 
-	// init FIB and xConnect handlers
-	p.fibHandler = vppcalls.NewFIBVppHandler(p.vppCh, p.IfPlugin.GetInterfaceIndex(), p.bdIndex, p.Log)
-	p.xCHandler = vppcalls.NewXConnectVppHandler(p.vppCh, p.IfPlugin.GetInterfaceIndex(), p.Log)
+	// we set l2Handler again here, because bdIndex was nil before
+	p.l2Handler = vppcalls.CompatibleL2VppHandler(p.vppCh, p.IfPlugin.GetInterfaceIndex(), p.bdIndex, p.Log)
 
 	// init & register descriptors
-	p.bdIfaceDescriptor = descriptor.NewBDInterfaceDescriptor(p.bdIndex, p.bdHandler, p.Log)
+	p.bdIfaceDescriptor = descriptor.NewBDInterfaceDescriptor(p.bdIndex, p.l2Handler, p.Log)
 	bdIfaceDescriptor := adapter.NewBDInterfaceDescriptor(p.bdIfaceDescriptor.GetDescriptor())
 	err = p.KVScheduler.RegisterKVDescriptor(bdIfaceDescriptor)
 	if err != nil {
 		return err
 	}
 
-	p.fibDescriptor = descriptor.NewFIBDescriptor(p.fibHandler, p.Log)
+	p.fibDescriptor = descriptor.NewFIBDescriptor(p.l2Handler, p.Log)
 	fibDescriptor := adapter.NewFIBDescriptor(p.fibDescriptor.GetDescriptor())
 	err = p.KVScheduler.RegisterKVDescriptor(fibDescriptor)
 	if err != nil {
 		return err
 	}
 
-	p.xcDescriptor = descriptor.NewXConnectDescriptor(p.xCHandler, p.Log)
+	p.xcDescriptor = descriptor.NewXConnectDescriptor(p.l2Handler, p.Log)
 	xcDescriptor := adapter.NewXConnectDescriptor(p.xcDescriptor.GetDescriptor())
 	err = p.KVScheduler.RegisterKVDescriptor(xcDescriptor)
 	if err != nil {

@@ -134,7 +134,7 @@ func (p *Plugin) Register(pluginName infra.PluginName, probe PluginStateProbe) {
 	// write initial status data into ETCD
 	p.publishPluginData(pluginName, stat)
 
-	p.Log.Infof("Plugin %v: status check probe registered", pluginName)
+	p.Log.Debugf("Plugin %v: status check probe registered", pluginName)
 }
 
 // ReportStateChange can be used to report a change in the status of a previously registered plugin.
@@ -179,8 +179,8 @@ func (p *Plugin) reportStateChange(pluginName infra.PluginName, state PluginStat
 		return
 	}
 
-	p.Log.WithFields(map[string]interface{}{"plugin": pluginName, "state": state, "lastErr": lastError}).Info(
-		"Agent plugin state update.")
+	p.Log.WithFields(map[string]interface{}{"plugin": pluginName, "state": state, "lastErr": lastError}).
+		Info("Agent plugin state update.")
 
 	// update plugin state
 	stat.State = stateToProto(state)

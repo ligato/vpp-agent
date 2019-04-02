@@ -14,6 +14,7 @@ message Interface {
         UNDEFINED = 0;
         VETH = 1;
         TAP_TO_VPP = 2;                 /* TAP created by VPP to have the Linux-side further configured */
+        LOOPBACK = 3;
     };
 
     string name = 1;                    /* Logical interface name unique across all configured interfaces (mandatory) */

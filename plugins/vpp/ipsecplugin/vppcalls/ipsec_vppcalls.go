@@ -15,205 +15,100 @@
 package vppcalls
 
 import (
-	"encoding/hex"
-	"net"
-	"strconv"
-
-	"github.com/go-errors/errors"
-
-	"github.com/ligato/cn-infra/utils/addrs"
+	govppapi "git.fd.io/govpp.git/api"
+	"github.com/ligato/cn-infra/logging"
 	ipsec "github.com/ligato/vpp-agent/api/models/vpp/ipsec"
-	api "github.com/ligato/vpp-agent/plugins/vpp/binapi/ipsec"
+	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 )
 
-// AddSPD implements IPSec handler.
-func (h *IPSecVppHandler) AddSPD(spdID uint32) error {
-	return h.spdAddDel(spdID, true)
+// IPSecSaDetails holds security association with VPP metadata
+type IPSecSaDetails struct {
+	Sa   *ipsec.SecurityAssociation
+	Meta *IPSecSaMeta
 }
 
-// DeleteSPD implements IPSec handler.
-func (h *IPSecVppHandler) DeleteSPD(spdID uint32) error {
-	return h.spdAddDel(spdID, false)
+// IPSecSaMeta contains all VPP-specific metadata
+type IPSecSaMeta struct {
+	SaID           uint32
+	Interface      string
+	IfIdx          uint32
+	CryptoKeyLen   uint8
+	IntegKeyLen    uint8
+	Salt           uint32
+	SeqOutbound    uint64
+	LastSeqInbound uint64
+	ReplayWindow   uint64
+	TotalDataSize  uint64
 }
 
-// AddSPDEntry implements IPSec handler.
-func (h *IPSecVppHandler) AddSPDEntry(spdID, saID uint32, spd *ipsec.SecurityPolicyDatabase_PolicyEntry) error {
-	return h.spdAddDelEntry(spdID, saID, spd, true)
+// IPSecSpdDetails represents IPSec policy databases with particular metadata
+type IPSecSpdDetails struct {
+	Spd         *ipsec.SecurityPolicyDatabase
+	PolicyMeta  map[string]*SpdMeta // SA index name is a key
+	NumPolicies uint32
 }
 
-// DeleteSPDEntry implements IPSec handler.
-func (h *IPSecVppHandler) DeleteSPDEntry(spdID, saID uint32, spd *ipsec.SecurityPolicyDatabase_PolicyEntry) error {
-	return h.spdAddDelEntry(spdID, saID, spd, false)
+// SpdMeta hold VPP-specific data related to SPD
+type SpdMeta struct {
+	SaID    uint32
+	Policy  uint8
+	Bytes   uint64
+	Packets uint64
 }
 
-// AddSPDInterface implements IPSec handler.
-func (h *IPSecVppHandler) AddSPDInterface(spdID uint32, ifaceCfg *ipsec.SecurityPolicyDatabase_Interface) error {
-	ifaceMeta, found := h.ifIndexes.LookupByName(ifaceCfg.Name)
-	if !found {
-		return errors.New("failed to get interface metadata")
+// IPSecVppAPI provides methods for creating and managing of a IPsec configuration
+type IPSecVppAPI interface {
+	IPSecVPPRead
+
+	// AddSPD adds SPD to VPP via binary API
+	AddSPD(spdID uint32) error
+	// DelSPD deletes SPD from VPP via binary API
+	DeleteSPD(spdID uint32) error
+	// InterfaceAddSPD adds SPD interface assignment to VPP via binary API
+	AddSPDInterface(spdID uint32, iface *ipsec.SecurityPolicyDatabase_Interface) error
+	// InterfaceDelSPD deletes SPD interface assignment from VPP via binary API
+	DeleteSPDInterface(spdID uint32, iface *ipsec.SecurityPolicyDatabase_Interface) error
+	// AddSPDEntry adds SPD policy entry to VPP via binary API
+	AddSPDEntry(spdID, saID uint32, spd *ipsec.SecurityPolicyDatabase_PolicyEntry) error
+	// DelSPDEntry deletes SPD policy entry from VPP via binary API
+	DeleteSPDEntry(spdID, saID uint32, spd *ipsec.SecurityPolicyDatabase_PolicyEntry) error
+	// AddSAEntry adds SA to VPP via binary API
+	AddSA(sa *ipsec.SecurityAssociation) error
+	// DelSAEntry deletes SA from VPP via binary API
+	DeleteSA(sa *ipsec.SecurityAssociation) error
+}
+
+// IPSecVPPRead provides read methods for IPSec
+type IPSecVPPRead interface {
+	// DumpIPSecSPD returns a list of IPSec security policy databases
+	DumpIPSecSPD() (spdList []*IPSecSpdDetails, err error)
+	// DumpIPSecSA returns a list of configured security associations
+	DumpIPSecSA() (saList []*IPSecSaDetails, err error)
+	// DumpIPSecSAWithIndex returns a security association with provided index
+	DumpIPSecSAWithIndex(saID uint32) (saList []*IPSecSaDetails, err error)
+}
+
+var Versions = map[string]HandlerVersion{}
+
+type HandlerVersion struct {
+	Msgs []govppapi.Message
+	New  func(govppapi.Channel, ifaceidx.IfaceMetadataIndex, logging.Logger) IPSecVppAPI
+}
+
+func CompatibleIPSecVppHandler(
+	ch govppapi.Channel, idx ifaceidx.IfaceMetadataIndex, log logging.Logger,
+) IPSecVppAPI {
+	if len(Versions) == 0 {
+		// ipsecplugin is not loaded
+		return nil
 	}
-	return h.interfaceAddDelSpd(spdID, ifaceMeta.SwIfIndex, true)
-}
-
-// DeleteSPDInterface implements IPSec handler.
-func (h *IPSecVppHandler) DeleteSPDInterface(spdID uint32, ifaceCfg *ipsec.SecurityPolicyDatabase_Interface) error {
-	ifaceMeta, found := h.ifIndexes.LookupByName(ifaceCfg.Name)
-	if !found {
-		return errors.New("failed to get interface metadata")
-	}
-	return h.interfaceAddDelSpd(spdID, ifaceMeta.SwIfIndex, false)
-}
-
-// AddSA implements IPSec handler.
-func (h *IPSecVppHandler) AddSA(sa *ipsec.SecurityAssociation) error {
-	return h.sadAddDelEntry(sa, true)
-}
-
-// DeleteSA implements IPSec handler.
-func (h *IPSecVppHandler) DeleteSA(sa *ipsec.SecurityAssociation) error {
-	return h.sadAddDelEntry(sa, false)
-}
-
-func (h *IPSecVppHandler) spdAddDel(spdID uint32, isAdd bool) error {
-	req := &api.IpsecSpdAddDel{
-		IsAdd: boolToUint(isAdd),
-		SpdID: spdID,
-	}
-	reply := &api.IpsecSpdAddDelReply{}
-
-	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (h *IPSecVppHandler) spdAddDelEntry(spdID, saID uint32, spd *ipsec.SecurityPolicyDatabase_PolicyEntry, isAdd bool) error {
-	req := &api.IpsecSpdAddDelEntry{
-		IsAdd:           boolToUint(isAdd),
-		SpdID:           spdID,
-		Priority:        spd.Priority,
-		IsOutbound:      boolToUint(spd.IsOutbound),
-		Protocol:        uint8(spd.Protocol),
-		RemotePortStart: uint16(spd.RemotePortStart),
-		RemotePortStop:  uint16(spd.RemotePortStop),
-		LocalPortStart:  uint16(spd.LocalPortStart),
-		LocalPortStop:   uint16(spd.LocalPortStop),
-		Policy:          uint8(spd.Action),
-		SaID:            saID,
-	}
-	if req.RemotePortStop == 0 {
-		req.RemotePortStop = ^req.RemotePortStop
-	}
-	if req.LocalPortStop == 0 {
-		req.LocalPortStop = ^req.LocalPortStop
-	}
-	if spd.RemoteAddrStart != "" {
-		isIPv6, err := addrs.IsIPv6(spd.RemoteAddrStart)
-		if err != nil {
-			return err
+	for ver, h := range Versions {
+		log.Debugf("checking compatibility with %s", ver)
+		if err := ch.CheckCompatiblity(h.Msgs...); err != nil {
+			continue
 		}
-		if isIPv6 {
-			req.IsIPv6 = 1
-			req.RemoteAddressStart = net.ParseIP(spd.RemoteAddrStart).To16()
-			req.RemoteAddressStop = net.ParseIP(spd.RemoteAddrStop).To16()
-			req.LocalAddressStart = net.ParseIP(spd.LocalAddrStart).To16()
-			req.LocalAddressStop = net.ParseIP(spd.LocalAddrStop).To16()
-		} else {
-			req.IsIPv6 = 0
-			req.RemoteAddressStart = net.ParseIP(spd.RemoteAddrStart).To4()
-			req.RemoteAddressStop = net.ParseIP(spd.RemoteAddrStop).To4()
-			req.LocalAddressStart = net.ParseIP(spd.LocalAddrStart).To4()
-			req.LocalAddressStop = net.ParseIP(spd.LocalAddrStop).To4()
-		}
-	} else {
-		req.RemoteAddressStart = net.ParseIP("0.0.0.0").To4()
-		req.RemoteAddressStop = net.ParseIP("255.255.255.255").To4()
-		req.LocalAddressStart = net.ParseIP("0.0.0.0").To4()
-		req.LocalAddressStop = net.ParseIP("255.255.255.255").To4()
+		log.Debug("found compatible version:", ver)
+		return h.New(ch, idx, log)
 	}
-	reply := &api.IpsecSpdAddDelEntryReply{}
-
-	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (h *IPSecVppHandler) interfaceAddDelSpd(spdID, swIfIdx uint32, isAdd bool) error {
-	req := &api.IpsecInterfaceAddDelSpd{
-		IsAdd:     boolToUint(isAdd),
-		SwIfIndex: swIfIdx,
-		SpdID:     spdID,
-	}
-	reply := &api.IpsecInterfaceAddDelSpdReply{}
-
-	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (h *IPSecVppHandler) sadAddDelEntry(sa *ipsec.SecurityAssociation, isAdd bool) error {
-	cryptoKey, err := hex.DecodeString(sa.CryptoKey)
-	if err != nil {
-		return err
-	}
-	integKey, err := hex.DecodeString(sa.IntegKey)
-	if err != nil {
-		return err
-	}
-
-	saID, err := strconv.Atoi(sa.Index)
-	if err != nil {
-		return err
-	}
-
-	req := &api.IpsecSadAddDelEntry{
-		IsAdd:                     boolToUint(isAdd),
-		SadID:                     uint32(saID),
-		Spi:                       sa.Spi,
-		Protocol:                  uint8(sa.Protocol),
-		CryptoAlgorithm:           uint8(sa.CryptoAlg),
-		CryptoKey:                 cryptoKey,
-		CryptoKeyLength:           uint8(len(cryptoKey)),
-		IntegrityAlgorithm:        uint8(sa.IntegAlg),
-		IntegrityKey:              integKey,
-		IntegrityKeyLength:        uint8(len(integKey)),
-		UseExtendedSequenceNumber: boolToUint(sa.UseEsn),
-		UseAntiReplay:             boolToUint(sa.UseAntiReplay),
-		UDPEncap:                  boolToUint(sa.EnableUdpEncap),
-	}
-	if sa.TunnelSrcAddr != "" {
-		req.IsTunnel = 1
-		isIPv6, err := addrs.IsIPv6(sa.TunnelSrcAddr)
-		if err != nil {
-			return err
-		}
-		if isIPv6 {
-			req.IsTunnelIPv6 = 1
-			req.TunnelSrcAddress = net.ParseIP(sa.TunnelSrcAddr).To16()
-			req.TunnelDstAddress = net.ParseIP(sa.TunnelDstAddr).To16()
-		} else {
-			req.IsTunnelIPv6 = 0
-			req.TunnelSrcAddress = net.ParseIP(sa.TunnelSrcAddr).To4()
-			req.TunnelDstAddress = net.ParseIP(sa.TunnelDstAddr).To4()
-		}
-	}
-	reply := &api.IpsecSadAddDelEntryReply{}
-
-	if err = h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func boolToUint(value bool) uint8 {
-	if value {
-		return 1
-	}
-	return 0
+	panic("no compatible version available")
 }

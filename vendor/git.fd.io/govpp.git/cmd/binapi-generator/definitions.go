@@ -15,42 +15,9 @@
 package main
 
 import (
-	"strconv"
 	"strings"
 	"unicode"
 )
-
-func getBinapiTypeSize(binapiType string) int {
-	if _, ok := binapiTypes[binapiType]; ok {
-		b, err := strconv.Atoi(strings.TrimLeft(binapiType, "uif"))
-		if err == nil {
-			return b / 8
-		}
-	}
-	return -1
-}
-
-// binapiTypes is a set of types used VPP binary API for translation to Go types
-var binapiTypes = map[string]string{
-	"u8":  "uint8",
-	"i8":  "int8",
-	"u16": "uint16",
-	"i16": "int16",
-	"u32": "uint32",
-	"i32": "int32",
-	"u64": "uint64",
-	"i64": "int64",
-	"f64": "float64",
-}
-
-func usesInitialism(s string) string {
-	if u := strings.ToUpper(s); commonInitialisms[u] {
-		return u
-	} else if su, ok := specialInitialisms[u]; ok {
-		return su
-	}
-	return ""
-}
 
 // commonInitialisms is a set of common initialisms that need to stay in upper case.
 var commonInitialisms = map[string]bool{
@@ -103,6 +70,15 @@ var specialInitialisms = map[string]string{
 	"IPV": "IPv",
 	//"IPV4": "IPv4",
 	//"IPV6": "IPv6",
+}
+
+func usesInitialism(s string) string {
+	if u := strings.ToUpper(s); commonInitialisms[u] {
+		return u
+	} else if su, ok := specialInitialisms[u]; ok {
+		return su
+	}
+	return ""
 }
 
 // camelCaseName returns correct name identifier (camelCase).

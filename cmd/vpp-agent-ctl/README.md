@@ -1,67 +1,77 @@
-#Vpp-agent-ctl
+# VPP Agent examples
 
-The vpp-agent-ctl is testing/example utility which purpose is to store given key-value configuration to the ETCD database or read its content. The vpp-agent-ctl consists from two parts, basic crud commands and example data for every configuration type currently supported by the vpp-agent. 
+This folder contains several examples that illustrate various aspects of VPP Agent's functionality. Each example is structured as an individual executable with its own `main.go` file. Each example focuses on a very simple use case. All examples use ETCD and GOVPP (for vpp-agent version lower than 2.0 also Kafka), so please make sure there are running instances of them and VPP before starting any example.
 
-The vpp-agent-ctl does not maintain ETCD connectivity, the link is established before every command execution and released after completion.
+Current examples:
+* **[govpp_call](govpp_call/main.go)** is an example of a plugin with a 
+  configurator and a channel to send/receive data to VPP. The example 
+  shows how to transform northbound model data to VPP binary API calls. 
+* **[idx_mapping_lookup](idx_mapping_lookup/main.go)** shows the usage 
+  of the name-to-index mapping (registration, read by name/index, 
+  un-registration)
+* **[idx_mapping_watcher](idx_mapping_watcher/main.go)** shows how to 
+  watch on changes in a name-to-index mapping
+* **[localclient_vpp_plugins](localclient_vpp/plugins/main.go)** demonstrates 
+  how to use the localclient package to push example configuration into 
+  VPP plugins that run in the same agent instance (i.e. in the same OS process). 
+  Behind the scenes, configuration data is transported via go channels.
+* **[localclient_vpp_nat](localclient_vpp/nat/main.go)** demonstrates
+  how to set up NAT global configuration and Destination NAT. The example
+  uses localclient to put example data to the respective VPP plugins.
+* **[localclient_linux_tap](localclient_linux/tap/main.go)** configures 
+  simple topology consisting of VPP Tap interfaces with linux host 
+  counterparts. Example demonstrates how to use the localclient package 
+  to push example configuration for those interface types into linux 
+  and VPP plugins running within the same agent instance (i.e. within 
+  the same OS process). Behind the scenes the configuration data 
+  is transported via go channels. 
+* **[localclient_linux_veth](localclient_linux/veth/main.go)** configures 
+  simple topology consisting of VPP af-packet interfaces attached to 
+  linux Veth pairs. As before, this example also uses localclient to push 
+  the configuration to vpp-agent plugins.  
+* **[grpc_vpp_remote_client](grpc_vpp/remote_client/main.go)** demonstrates how to
+  use the remoteclient package to push example configuration into
+  VPP default plugins running within different vpp-agent OS process.
+* **[grpc_vpp_notifications](grpc_vpp/notifications/main.go)** demonstrates how to
+  use the notifications package to  receive VPP notifications streamed by different 
+  vpp-agent process.
 
-## CRUD commands
-
-All those commands can be shown either calling binary without parameter, or with invalid parameter.
-
-**PUT** allows to store data in the ETCD. Put requires two parameters, key and value. The value is represented by .json file. Example json files are stored inside vpp-agent-ctl ([link to directory](json))
-
-```
-vpp-agent-ctl -put <key> <data>
-```
-
-**GET** can be used to read configuration for given key. If the key does not exist, is not valid or is not set, command returns an empty value.
-
-```
-vpp-agent-ctl -get <key>
-```
-
-**DEL** removes data from the ETCD, identified with provided key. 
-
-```
-vpp-agent-ctl -del <key>
-```
-
-**LIST** prints all keys currently present in the database. The command takes no parameter.
+* **[CN-Infra  examples][1]** demonstrate how to use the CN-Infra framework
+  plugins.
+  
+## How to run an example
+ 
+ **1. Start the ETCD server on localhost**
+ 
+  ```
+  sudo docker run -p 2379:2379 --name etcd --rm 
+  quay.io/coreos/etcd:v3.1.0 /usr/local/bin/etcd \
+  -advertise-client-urls http://0.0.0.0:2379 \
+  -listen-client-urls http://0.0.0.0:2379
+  ```
+  Note: **For ARM64 see the information for [etcd][3]**.
+  
+ **2. (Optional) start Kafka on localhost**
 
  ```
- vpp-agent-ctl -list
+ sudo docker run -p 2181:2181 -p 9092:9092 --name kafka --rm \
+  --env ADVERTISED_HOST=172.17.0.1 --env ADVERTISED_PORT=9092 spotify/kafka
+ ```
+  Note: **For ARM64 see the information for [kafka][2]**.
+
+ **3. Start VPP**
+ ```
+ vpp unix { interactive } plugins { plugin dpdk_plugin.so { disable } }
  ```
  
-**DUMP** returns all key-value pairs currently present in the database. The command takes no parameter.
- 
-```
-vpp-agent-ctl -list
-```
+ **4. Start desired example**
 
-## Example pre-defined configurations
-
-For the quick testing or as a configuration example, the vpp-agent-ctl provides special commands for every available configuration type. Commands can be shown running `vpp-agent-ctl` without parameters. They are sorted per vpp-agent plugin always in pairs; one command to crate a configuration, the second one to remove it. 
-
-Data put using command can be edited - all of them are available in [data package](data) separated in files according to plugins, with interface at the top so the desired configuration item can be easily found. Then, just edit the field(s) needed and `go build` the main file. Then, calling respective command will put the changed data.
-
-Example commands:
-
-1. To add access list with IP rules:
-
-```
-vpp-agent-clt -aclip
-``` 
-
-2. To add VxLAN interface
-
-```
-vpp-agent-ctl -vxlan
-```
-
-3. To delete TAP interface
-
-```
-vpp-agent-ctl -tapd
-```
-
-All the 'delete' cases are by default set to match with creating data (so every delete removes the data created by associated create command).
+ Example can be started now from particular directory.
+ ```
+ go run main.go  \
+ --etcd-config=/opt/vpp-agent/dev/etcd.conf \
+ --kafka-config=/opt/vpp-agent/dev/kafka.conf
+ ```
+[1]: https://github.com/ligato/cn-infra/tree/master/examples 
+[2]: /docs/arm64/kafka.md
+[3]: /docs/arm64/etcd.md

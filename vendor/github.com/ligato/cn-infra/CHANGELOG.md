@@ -1,3 +1,46 @@
+# Release v2.0 (2019-04-02)
+
+## Breaking Changes
+* The `ChangeEvent` interface was modified. Before, it returned single value of type `ProtoWatchResp`, now it contains a new method `GetChanges()` which return a list of values of that type. 
+
+## New Features
+* [Datasync](datasync/README.md)
+  - The `ChangeEvent` interface provides a new method `GetContext` returning a context associated with the given event. 
+  - The `ResyncEvent` interface also provides a new method called `GetContext` returning a context associated with the given resync event.
+  - Resync time duration is shown in milliseconds
+* [IdxMap](idxmap/README.md)
+  - New method `ListFields(string)` in the `NamedMapping` interface providing a map of fields associated with the item identified by the named parameter known as secondary indexes     
+* [GRPC](rpc/grpc)
+  - Added authentication support for the GRPC plugin
+* [Probe](health/probe)
+  - Support for non-fatal errors. The probe plugin keeps a lst of non-fatal plugins. Errors reported from the non-fatal plugin are effectively ignored in the vpp-agent overall status.
+* [BoltDB](db/keyval/bolt)
+  - The config file now has an option to filter duplicated notifications.  
+
+## Improvements
+* [Agent](agent)
+  - `DumpStackTraceOnTimeout` is now disabled by default with possibility to enable it via the environment variable `DUMP_STACK_ON_TIMEOUT`.
+  - The agent logs the last plugin in case it fails to start because of the timeout
+  - Signal received during startup closes the agent instance
+* [FileDB](db/keyval/filedb)
+  - If the child process is not detached, the `PDeathSignal` is set preventing the child process to hang
+  - The process watcher is started on process start, rather than on process creation
+  - A new or an attached process can be created with custom I/O writer
+  - Support for environment variables for processes  
+* [Resync](datasync/resync)
+  - The resync timeout was split into two values, for ACK timeout set to 10 second (up from 5) and for ACCEPT timeout set to 1 second.   
+  
+## Fixed Bugs
+* The ETCD plugin watch is now properly closed using a context
+* The plugin lookup works correctly with interface types where the inner type is slice or array of plugins
+* `PropagateResync` now waits at the result of the resync event instead of returning immediately
+* Used `jsonpb` to fix protobuf marshalling/unmarshalling
+* Plugin config directory paths with ".." are now handled properly.
+* If channel used by process manager is closed by the used (which should not be done), the plugin recovers
+
+## Documentation
+* Added "beginner" tutorials (hello world, plugin dependencies, REST handler, KV Store, plugin lookup) with examples. 
+
 # Release v1.7 (2018-12-12)
 
 ## Major Topics

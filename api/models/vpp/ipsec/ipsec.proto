@@ -7,6 +7,33 @@ option go_package = "github.com/ligato/vpp-agent/api/models/vpp/ipsec;vpp_ipsec"
 import "github.com/gogo/protobuf/gogoproto/gogo.proto";
 option (gogoproto.messagename_all) = true;
 
+/* Cryptographic algorithm for encryption */
+enum CryptoAlg { // vpp/src/vnet/ipsec/ipsec_sa.h:22
+    NONE_CRYPTO = 0;
+    AES_CBC_128 = 1;
+    AES_CBC_192 = 2;
+    AES_CBC_256 = 3;
+    AES_CTR_128 = 4;
+    AES_CTR_192 = 5;
+    AES_CTR_256 = 6;
+    AES_GCM_128 = 7;
+    AES_GCM_192 = 8;
+    AES_GCM_256 = 9;
+    DES_CBC = 10;
+    DES3_CBC = 11;  // 3DES_CBC
+}
+
+/* Cryptographic algorithm for authentication */
+enum IntegAlg { // vpp/src/vnet/ipsec/ipsec_sa.h:44
+    NONE_INTEG = 0;
+    MD5_96 = 1;         /* RFC2403 */
+    SHA1_96 = 2;        /* RFC2404 */
+    SHA_256_96 = 3;     /* draft-ietf-ipsec-ciph-sha-256-00 */
+    SHA_256_128 = 4;    /* RFC4868 */
+    SHA_384_192 = 5;    /* RFC4868 */
+    SHA_512_256 = 6;    /* RFC4868 */
+}
+
 /* Security Policy Database (SPD) */
 message SecurityPolicyDatabase {
     string index = 1;                           /* Numerical security policy database index, serves as a unique identifier */
@@ -56,24 +83,9 @@ message SecurityAssociation {
     }
     IPSecProtocol protocol = 3;
 
-    enum CryptoAlg {
-        NONE_CRYPTO = 0;
-        AES_CBC_128 = 1;
-        AES_CBC_192 = 2;
-        AES_CBC_256 = 3;
-    }
     CryptoAlg crypto_alg = 4;       /* Cryptographic algorithm for encryption */
     string crypto_key = 5;
 
-    enum IntegAlg {
-        NONE_INTEG = 0;
-        MD5_96 = 1;
-        SHA1_96 = 2;
-        SHA_256_96 = 3;
-        SHA_256_128 = 4;
-        SHA_384_192 = 5;
-        SHA_512_256 = 6;
-    }
     IntegAlg integ_alg = 6;         /* Cryptographic algorithm for authentication */
     string integ_key = 7;
 

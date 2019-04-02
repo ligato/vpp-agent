@@ -1,0 +1,3 @@
+	Address: 	${sidAddress}
+	Behavior: 	T (Endpoint with specific IPv6 table lookup)
+	Table:  	${fibtable}

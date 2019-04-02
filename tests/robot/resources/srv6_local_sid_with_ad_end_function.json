@@ -1,0 +1,8 @@
+{
+  "sid": "${sidAddress}",
+  "end_function_AD": {
+    "l3_service_address":"${l3serviceaddress}",
+    "outgoing_interface":"${outinterface}",
+    "incoming_interface":"${ininterface}"
+  }
+}

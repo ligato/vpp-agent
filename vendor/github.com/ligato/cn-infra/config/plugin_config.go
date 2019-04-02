@@ -159,10 +159,7 @@ func Dir() (dir string, err error) {
 			if err != nil {
 				return cwd, err
 			}
-			if len(val) > 1 {
-				return filepath.Join(cwd, val[1:]), nil
-			}
-			return cwd, nil
+			return filepath.Join(cwd, val), nil
 		}
 		return val, nil
 	}

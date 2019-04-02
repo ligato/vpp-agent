@@ -15,6 +15,9 @@
 package kvscheduler
 
 import (
+	"context"
+	"runtime/trace"
+	"sync/atomic"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
@@ -30,6 +33,7 @@ import (
 // Once finalized, it is recorded as instance of RecordedTxn and these data
 // are thrown away.
 type transaction struct {
+	ctx     context.Context
 	seqNum  uint64
 	txnType kvs.TxnType
 	values  []kvForTxn
@@ -56,6 +60,7 @@ type nbTxn struct {
 	retryArgs    *kvs.RetryOpt
 
 	revertOnFailure bool
+	withSimulation  bool
 	description     string
 	resultChan      chan txnResult
 }
@@ -88,6 +93,7 @@ func (s *Scheduler) consumeTransactions() {
 			return
 		}
 		s.processTransaction(txn)
+		atomic.AddUint64(&stats.TransactionsProcessed, 1)
 	}
 }
 
@@ -104,40 +110,47 @@ func (s *Scheduler) consumeTransactions() {
 //     state updates to the subscribers and returning error/nil to the caller
 //     of blocking commit
 func (s *Scheduler) processTransaction(txn *transaction) {
-	var (
-		simulatedOps kvs.RecordedTxnOps
-		executedOps  kvs.RecordedTxnOps
-		startTime    time.Time
-		stopTime     time.Time
-	)
 	s.txnLock.Lock()
 	defer s.txnLock.Unlock()
 
+	startTime := time.Now()
+
 	// 1. Pre-processing:
-	startTime = time.Now()
-	skipTxnExec := s.preProcessTransaction(txn)
+	skipExec, skipSimulation, record := s.preProcessTransaction(txn)
 
 	// 2. Ordering:
-	if !skipTxnExec {
+	if !skipExec {
 		txn.values = s.orderValuesByOp(txn.values)
 	}
 
 	// 3. Simulation:
-	if !skipTxnExec {
-		simulatedOps = s.executeTransaction(txn, true)
+	var simulatedOps kvs.RecordedTxnOps
+	if !skipSimulation {
+		graphW := s.graph.Write(false, record)
+		simulatedOps = s.executeTransaction(txn, graphW, true)
+		if len(simulatedOps) == 0 {
+			// nothing to execute
+			graphW.Save()
+			skipExec = true
+		}
+		graphW.Release()
 	}
 
 	// 4. Pre-recording
-	preTxnRecord := s.preRecordTransaction(txn, simulatedOps)
+	preTxnRecord := s.preRecordTransaction(txn, simulatedOps, skipSimulation)
 
 	// 5. Execution:
-	if !skipTxnExec {
-		executedOps = s.executeTransaction(txn, false)
+	var executedOps kvs.RecordedTxnOps
+	if !skipExec {
+		graphW := s.graph.Write(true, record)
+		executedOps = s.executeTransaction(txn, graphW, false)
+		graphW.Release()
 	}
-	stopTime = time.Now()
+
+	stopTime := time.Now()
 
 	// 6. Recording:
-	s.recordTransaction(preTxnRecord, executedOps, startTime, stopTime)
+	s.recordTransaction(txn, preTxnRecord, executedOps, startTime, stopTime)
 
 	// 7. Post-processing:
 	s.postProcessTransaction(txn, executedOps)
@@ -145,21 +158,29 @@ func (s *Scheduler) processTransaction(txn *transaction) {
 
 // preProcessTransaction initializes transaction parameters, filters obsolete retry
 // operations and refreshes the graph for resync.
-func (s *Scheduler) preProcessTransaction(txn *transaction) (skip bool) {
+func (s *Scheduler) preProcessTransaction(txn *transaction) (skipExec, skipSimulation, record bool) {
+	defer trace.StartRegion(txn.ctx, "preProcessTransaction").End()
+
 	// allocate new transaction sequence number
 	txn.seqNum = s.txnSeqNumber
 	s.txnSeqNumber++
 
 	switch txn.txnType {
 	case kvs.SBNotification:
-		skip = s.preProcessNotification(txn)
+		skipExec = s.preProcessNotification(txn)
+		skipSimulation = !s.config.EnableTxnSimulation
+		record = true
 	case kvs.NBTransaction:
-		skip = s.preProcessNBTransaction(txn)
+		skipExec = s.preProcessNBTransaction(txn)
+		skipSimulation = skipExec || !txn.nb.withSimulation
+		record = txn.nb.resyncType != kvs.DownstreamResync
 	case kvs.RetryFailedOps:
-		skip = s.preProcessRetryTxn(txn)
+		skipExec = s.preProcessRetryTxn(txn)
+		skipSimulation = skipExec
+		record = true
 	}
 
-	return skip
+	return
 }
 
 // preProcessNotification filters out non-valid SB notification.
@@ -180,9 +201,8 @@ func (s *Scheduler) preProcessNBTransaction(txn *transaction) (skip bool) {
 	}
 
 	// for resync refresh the graph + collect deletes
-	graphW := s.graph.Write(false)
+	graphW := s.graph.Write(true,false)
 	defer graphW.Release()
-	defer graphW.Save()
 	s.resyncCount++
 
 	if txn.nb.resyncType == kvs.DownstreamResync {
@@ -278,9 +298,12 @@ func (s *Scheduler) preProcessRetryTxn(txn *transaction) (skip bool) {
 // value state updates to the subscribers and error/nil to the caller of a blocking
 // commit.
 func (s *Scheduler) postProcessTransaction(txn *transaction, executed kvs.RecordedTxnOps) {
+	defer trace.StartRegion(txn.ctx, "postProcessTransaction").End()
+
 	// collect new failures (combining derived with base)
 	toRetry := utils.NewSliceBasedKeySet()
 	toRefresh := utils.NewSliceBasedKeySet()
+
 	var verboseRefresh bool
 	graphR := s.graph.Read()
 	for _, op := range executed {
@@ -311,9 +334,8 @@ func (s *Scheduler) postProcessTransaction(txn *transaction, executed kvs.Record
 	// refresh base values which themselves are in a failed state or have derived failed values
 	// - in verifyMode all updated values are re-freshed
 	if toRefresh.Length() > 0 {
-		graphW := s.graph.Write(false)
+		graphW := s.graph.Write(true,false)
 		s.refreshGraph(graphW, toRefresh, nil, verboseRefresh)
-		graphW.Save()
 
 		// split values based on the retry metadata
 		retryTxns := make(map[retryTxnMeta]*retryTxn)
@@ -484,11 +506,10 @@ func (s *Scheduler) postProcessTransaction(txn *transaction, executed kvs.Record
 
 	// delete removed values from the graph after the notifications have been sent
 	if removed.Length() > 0 {
-		graphW := s.graph.Write(true)
+		graphW := s.graph.Write(true,true)
 		for _, key := range removed.Iterate() {
 			graphW.DeleteNode(key)
 		}
-		graphW.Save()
 		graphW.Release()
 	}
 }

@@ -1,0 +1,58 @@
+syntax = "proto3";
+
+package linux.iptables;
+
+option go_package = "github.com/ligato/vpp-agent/api/models/linux/iptables;linux_iptables";
+
+import "github.com/gogo/protobuf/gogoproto/gogo.proto";
+option (gogoproto.messagename_all) = true;
+
+import "models/linux/namespace/namespace.proto";
+
+message RuleChain {
+    string name = 1;                             /* logical name of the rule chain across all configured
+                                                    rule chains (mandatory) */
+    linux.namespace.NetNamespace namespace = 2;  /* network namespace in which this rule chain is applied */
+
+    repeated string interfaces = 3;              /* list of interfaces referred by the rules (optional) */
+
+    enum Protocol {
+        IPv4 = 0;
+        IPv6 = 1;
+    };
+    Protocol protocol = 4;                       /* protocol (address family) of the rule chain */
+
+    enum Table {
+        FILTER = 0;
+        NAT = 1;
+        MANGLE = 2;
+        RAW = 3;
+        SECURITY = 4;
+    };
+    Table table = 5;                             /* table the rule chain belongs to */
+
+    enum ChainType {
+        CUSTOM = 0;
+        INPUT = 1;
+        OUTPUT = 2;
+        FORWARD = 3;
+        PREROUTING = 4;
+        POSTROUTING = 5;
+
+    };
+    ChainType chain_type = 6;                   /* type of the chain */
+
+    string chain_name = 7;                      /* name of the chain, used only for chains with CUSTOM chain_type */
+
+    enum Policy {
+        NONE = 0;
+        ACCEPT = 1;
+        DROP = 2;
+        QUEUE = 3;
+        RETURN = 4;
+    }
+    Policy default_policy = 8;                  /* default policy of the chain. Used for FILTER tables only. */
+
+    repeated string rules = 10;                 /* ordered list of strings containing the match and action part of
+                                                   the rules, e.g. "-i eth0 -s 192.168.0.1 -j ACCEPT" */
+}

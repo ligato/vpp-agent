@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/ligato/cn-infra/agent"
@@ -13,7 +14,6 @@ import (
 	"github.com/ligato/cn-infra/examples/model"
 	"github.com/ligato/cn-infra/infra"
 	"github.com/ligato/cn-infra/servicelabel"
-	"github.com/ligato/cn-infra/utils/safeclose"
 	"golang.org/x/net/context"
 )
 
@@ -66,6 +66,7 @@ type ExamplePlugin struct {
 	eventCounter  uint8
 	publisherDone bool
 
+	wg              sync.WaitGroup
 	exampleFinished chan struct{}
 }
 
@@ -79,12 +80,15 @@ type Deps struct {
 
 // Init starts the consumer.
 func (p *ExamplePlugin) Init() error {
+	p.Log.Info("Init plugin..")
 	// Initialize plugin fields.
 	p.resyncChannel = make(chan datasync.ResyncEvent)
 	p.changeChannel = make(chan datasync.ChangeEvent)
+
 	p.context, p.cancel = context.WithCancel(context.Background())
 
 	// Start the consumer (ETCD watcher).
+	p.wg.Add(1)
 	go p.consumer()
 
 	// Subscribe watcher to be able to watch on data changes and resync events.
@@ -93,7 +97,7 @@ func (p *ExamplePlugin) Init() error {
 		return err
 	}
 
-	p.Log.Info("Initialization of the custom plugin for the datasync example is completed")
+	p.Log.Info("Plugin Init for datasync example done")
 
 	return nil
 }
@@ -113,7 +117,11 @@ func (p *ExamplePlugin) AfterInit() error {
 // Channels used to propagate data resync and data change events are closed
 // as well.
 func (p *ExamplePlugin) Close() error {
-	return safeclose.Close(p.resyncChannel, p.changeChannel)
+	p.Log.Info("Close plugin..")
+	// Close the watcher
+	p.cancel()
+	p.wg.Wait()
+	return nil
 }
 
 // subscribeWatcher subscribes for data change and data resync events.
@@ -122,8 +130,9 @@ func (p *ExamplePlugin) Close() error {
 func (p *ExamplePlugin) subscribeWatcher() (err error) {
 	prefix := etcdKeyPrefix(p.ServiceLabel.GetAgentLabel())
 	p.Log.Infof("Prefix: %v", prefix)
-	p.watchDataReg, err = p.Watcher.
-		Watch("ExamplePlugin", p.changeChannel, p.resyncChannel, prefix)
+
+	p.watchDataReg, err = p.Watcher.Watch("ExamplePlugin",
+		p.changeChannel, p.resyncChannel, prefix)
 	if err != nil {
 		return err
 	}
@@ -148,7 +157,9 @@ func (p *ExamplePlugin) etcdPublisher() {
 	// a simple data structure into ETCD.
 	label := etcdKeyPrefixLabel(p.ServiceLabel.GetAgentLabel(), "index")
 	p.Log.Infof("Write data to %v", label)
-	p.Publisher.Put(label, exampleData)
+	if err := p.Publisher.Put(label, exampleData); err != nil {
+		p.Log.Fatal(err)
+	}
 
 	// Prepare different set of data.
 	p.Log.Infof("Update data at %v", label)
@@ -156,18 +167,21 @@ func (p *ExamplePlugin) etcdPublisher() {
 
 	// UPDATE: demonstrate how use the Data Broker Put() API to change
 	// an already stored data in ETCD.
-	p.Publisher.Put(label, exampleData)
+	if err := p.Publisher.Put(label, exampleData); err != nil {
+		p.Log.Fatal(err)
+	}
 
 	// Prepare another different set of data.
 	p.Log.Infof("Update data at %v", label)
 	exampleData = p.buildData("string3", 2, false)
 
 	// UPDATE: only to demonstrate Unregister functionality
-	p.Publisher.Put(label, exampleData)
+	if err := p.Publisher.Put(label, exampleData); err != nil {
+		p.Log.Fatal(err)
+	}
 
 	// Wait for the consumer (change should not be passed to listener)
 	time.Sleep(2 * time.Second)
-
 	p.publisherDone = true
 }
 
@@ -175,11 +189,16 @@ func (p *ExamplePlugin) etcdPublisher() {
 // Changes arrive via data change channel, get identified based on the key
 // and printed into the log.
 func (p *ExamplePlugin) consumer() {
-	p.Log.Print("KeyValProtoWatcher started")
+	defer p.wg.Done()
+
+	p.Log.Print("Consumer started")
 	for {
 		select {
 		// WATCH: demonstrate how to receive data change events.
-		case dataEv := <-p.changeChannel:
+		case dataEv, ok := <-p.changeChannel:
+			if !ok {
+				return
+			}
 			p.Log.Printf("Received event: %v", dataEv)
 			// If event arrives, the key is extracted and used together with
 			// the expected prefix to identify item.
@@ -238,9 +257,7 @@ func (p *ExamplePlugin) closeExample() {
 			if p.eventCounter != 2 {
 				p.Log.Error("etcd/datasync example failed ", p.eventCounter)
 			}
-			// Close the watcher
-			p.cancel()
-			p.Log.Infof("etcd/datasync example finished, sending shutdown ...")
+			p.Log.Infof("etcd/datasync example finished, closing example")
 			// Close the example
 			close(p.exampleFinished)
 			break
