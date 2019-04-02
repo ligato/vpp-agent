@@ -57,7 +57,7 @@ func (s *Scheduler) refreshGraph(graphW graph.RWAccess,
 
 	// iterate over all descriptors, in order given by retrieve dependencies
 	for _, descriptor := range s.registry.GetAllDescriptors() {
-		handler := &descriptorHandler{descriptor}
+		handler := newDescriptorHandler(descriptor)
 
 		// check if this descriptor's key space should be refreshed as well
 		var skip bool
@@ -249,7 +249,7 @@ func (s *Scheduler) refreshValue(graphW graph.RWAccess, retrievedKV kvs.KVWithMe
 		derNode := graphW.SetNode(kv.Key)
 		if !isObsolete {
 			derDescr := s.registry.GetDescriptorForKey(kv.Key)
-			derHandler := descriptorHandler{derDescr}
+			derHandler := newDescriptorHandler(derDescr)
 			derNode.SetValue(kv.Value)
 			dependencies := derHandler.dependencies(derNode.GetKey(), derNode.GetValue())
 			derNode.SetTargets(constructTargets(dependencies, nil))
