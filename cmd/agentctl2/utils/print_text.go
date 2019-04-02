@@ -48,11 +48,12 @@ func (ed EtcdDump) PrintTest(showConf bool) (*bytes.Buffer, error) {
  	arpTemplate := createArpTableTemplate()
  	routeTemplate := createRouteTableTemplate()
 	proxyarpTemplate := createProxyArpTemplate()
+	ipneighbor := createIPScanNeightTemplate()
 
 	templates := []*template.Template{}
 	// Keep template order
 	templates = append(templates, ifTemplate, aclTemplate, bdTemplate, fibTemplate,
-		xconnectTemplate, arpTemplate, routeTemplate, proxyarpTemplate)
+		xconnectTemplate, arpTemplate, routeTemplate, proxyarpTemplate, ipneighbor)
 
 	return ed.textRenderer(showConf, templates)
 }
@@ -469,6 +470,38 @@ func createProxyArpTemplate() (*template.Template) {
 
 		//End iterate
 			"{{end}}" +
+
+			//End
+			"{{end}}{{end}}" +
+
+			"{{end}}")
+
+	if err != nil {
+		panic(err)
+	}
+
+	return Template
+}
+
+func createIPScanNeightTemplate() (*template.Template) {
+
+	FuncMap := template.FuncMap{
+		"setBold":        setBold,
+		"pfx":            getPrefix,
+	}
+
+	Template, err := template.New("ipscanneigh").Funcs(FuncMap).Parse(
+		"{{with .IPScanNeight}}\n{{pfx 1}}IP Neighbor:" +
+
+			"{{with .Config}}{{with .IPScanNeighbor}}" +
+
+			"{{with .Mode}}\n{{pfx 2}}Mode: {{.}}{{end}}" +
+			"{{with .ScanInterval}}\n{{pfx 2}}Scan Interval: {{.}}{{end}}" +
+			"{{with .MaxProcTime}}\n{{pfx 2}}Max Proc Time: {{.}}{{end}}" +
+			"{{with .MaxProcTime}}\n{{pfx 2}}Max Proc Time: {{.}}{{end}}" +
+			"{{with .MaxUpdate}}\n{{pfx 2}}Max Uptime: {{.}}{{end}}" +
+			"{{with .ScanIntDelay}}\n{{pfx 2}}Scan Int Delay: {{.}}{{end}}" +
+			"{{with .StaleThreshold}}\n{{pfx 2}}Stale Threshold: {{.}}{{end}}" +
 
 			//End
 			"{{end}}{{end}}" +

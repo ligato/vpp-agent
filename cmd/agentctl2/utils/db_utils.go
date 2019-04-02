@@ -25,6 +25,7 @@ const (
 	ARPPath          = "config/vpp/v2/arp/"
 	RoutePath        = "config/vpp/v2/route/"
 	ProxyARPPath 	 = "config/vpp/v2/proxyarp-global"
+	IPScanneightPath = "config/vpp/v2/ipscanneigh-global"
 )
 
 // VppMetaData defines the etcd metadata.
@@ -138,6 +139,19 @@ type ProxyARPWithMD struct {
 	Config *ProxyARPConfigWithMD
 }
 
+// IPScanNeighConfigWithMD contains a data record for interface configuration
+// and its etcd metadata.
+type IPScanNeighConfigWithMD struct {
+	Metadata  VppMetaData
+	IPScanNeighbor *l3.IPScanNeighbor
+}
+
+// IPScanNeighWithMD contains a data record for interface and its
+// etcd metadata.
+type IPScanNeighWithMD struct {
+	Config *IPScanNeighConfigWithMD
+}
+
 // VppData defines a structure to hold all etcd data records (of all
 // types) for one VPP.
 type VppData struct {
@@ -151,6 +165,7 @@ type VppData struct {
 	ARP 			   ARPWithMD
 	StaticRoutes       StaticRoutesWithMD
 	ProxyARP 		   ProxyARPWithMD
+	IPScanNeight	   IPScanNeighWithMD
 //	Status             map[string]VppStatusWithMD
 	ShowEtcd           bool
 	ShowConf		   bool
@@ -202,6 +217,8 @@ func (ed EtcdDump) ReadDataFromDb(db keyval.ProtoBroker, key string) (found bool
 		ed[label], err = readStatiRouteConfigFromDb(db, vd, key, params)
 	case ProxyARPPath:
 		ed[label], err = readProxyARPConfigFromDb(db, vd, key)
+	case IPScanneightPath:
+		ed[label], err = readIPScanNeightConfigFromDb(db, vd, key)
 	}
 
 	return true, err
@@ -333,6 +350,18 @@ func readProxyARPConfigFromDb(db keyval.ProtoBroker, vd *VppData, key string) (*
 	if found && err == nil {
 		vd.ProxyARP = ProxyARPWithMD{
 			Config: &ProxyARPConfigWithMD{VppMetaData{rev, key}, parp},
+		}
+	}
+	return vd, err
+}
+
+func readIPScanNeightConfigFromDb(db keyval.ProtoBroker, vd *VppData, key string) (*VppData, error) {
+	scan := &l3.IPScanNeighbor{}
+
+	found, rev, err := readDataFromDb(db, key, scan)
+	if found && err == nil {
+		vd.IPScanNeight = IPScanNeighWithMD{
+			Config: &IPScanNeighConfigWithMD{VppMetaData{rev, key}, scan},
 		}
 	}
 	return vd, err
