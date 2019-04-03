@@ -363,7 +363,7 @@ func (s *Scheduler) DumpValuesByDescriptor(descriptor string, view kvs.View) (va
 
 	// retrieve from the in-memory graph first (for Retrieve it is used for correlation)
 	inMemNodes := nodesToKVPairsWithMetadata(
-		graphR.GetNodes(nil, correlateValsSelectors(descriptor)...))
+		graphR.GetNodes(nil, descrValsSelectors(descriptor, true)...))
 
 	if view == kvs.CachedView {
 		// return the scheduler's view of SB for the given descriptor

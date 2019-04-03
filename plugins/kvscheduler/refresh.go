@@ -59,6 +59,11 @@ func (s *Scheduler) refreshGraph(graphW graph.RWAccess,
 	for _, descriptor := range s.registry.GetAllDescriptors() {
 		handler := newDescriptorHandler(descriptor)
 
+		// get base values for this descriptor from memory before refresh
+		// (including those marked as unavailable which may need metadata update)
+		descrNodes := graphW.GetNodes(nil,
+			descrValsSelectors(descriptor.Name, false)...)
+
 		// check if this descriptor's key space should be refreshed as well
 		var skip bool
 		if keys != nil {
@@ -72,16 +77,18 @@ func (s *Scheduler) refreshGraph(graphW graph.RWAccess,
 		}
 		if skip {
 			// nothing to refresh in the key space of this descriptor
-			s.skipRefresh(graphW, descriptor.Name, nil, refreshedKeys)
+			s.skipRefresh(descrNodes, nil, refreshedKeys)
 			continue
 		}
 
-		// get available base values for this descriptor from memory before
-		// refresh
-		prevAvailNodes := graphW.GetNodes(nil, correlateValsSelectors(descriptor.Name)...)
-
 		// get key-value pairs for correlation
-		var correlate []kvs.KVWithMetadata
+		var correlateCap int
+		if resyncData != nil && resyncData.first {
+			correlateCap = len(resyncData.values)
+		} else {
+			correlateCap = len(descrNodes)
+		}
+		correlate := make([]kvs.KVWithMetadata, 0, correlateCap)
 		if resyncData != nil && resyncData.first {
 			// for startup resync, use data received from NB
 			for _, kv := range resyncData.values {
@@ -97,7 +104,11 @@ func (s *Scheduler) refreshGraph(graphW graph.RWAccess,
 		} else {
 			// for refresh of failed values or run-time resync, use in-memory
 			// kv-pairs for correlation
-			correlate = nodesToKVPairsWithMetadata(prevAvailNodes)
+			for _, node := range descrNodes {
+				if isNodeAvailable(node) {
+					correlate = append(correlate, nodeToKVPairWithMetadata(node))
+				}
+			}
 		}
 
 		// execute Retrieve operation
@@ -109,7 +120,7 @@ func (s *Scheduler) refreshGraph(graphW graph.RWAccess,
 				s.Log.WithField("descriptor", descriptor.Name).
 					Error("failed to retrieve values, refresh for the descriptor will be skipped")
 			}
-			s.skipRefresh(graphW, descriptor.Name, nil, refreshedKeys)
+			s.skipRefresh(descrNodes, nil, refreshedKeys)
 			continue
 		} else if verbose {
 			plural := "s"
@@ -133,7 +144,7 @@ func (s *Scheduler) refreshGraph(graphW graph.RWAccess,
 
 		if keys != nil && keys.Length() > 0 {
 			// mark keys that should not be touched as refreshed
-			s.skipRefresh(graphW, descriptor.Name, keys, refreshedKeys)
+			s.skipRefresh(descrNodes, keys, refreshedKeys)
 		}
 
 		// process retrieved kv-pairs
@@ -181,9 +192,9 @@ func (s *Scheduler) refreshGraph(graphW graph.RWAccess,
 		}
 
 		// unset the metadata from base NB values that do not actually exists
-		for _, node := range prevAvailNodes {
+		for _, node := range descrNodes {
 			if refreshed := refreshedKeys.Has(node.GetKey()); !refreshed {
-				if getNodeOrigin(node) == kvs.FromNB {
+				if getNodeOrigin(node) == kvs.FromNB && node.GetMetadata() != nil {
 					if s.logGraphWalk {
 						fmt.Printf("  -> unset metadata for key=%s\n", node.GetKey())
 					}
@@ -369,11 +380,8 @@ func (s *Scheduler) refreshNodeState(node graph.NodeRW, newState kvs.ValueState,
 
 // skipRefresh is used to mark nodes as refreshed without actual refreshing
 // if they should not (or cannot) be refreshed.
-func (s *Scheduler) skipRefresh(graphR graph.ReadAccess, descriptor string, except utils.KeySet, refreshed utils.KeySet) {
-	skipped := graphR.GetNodes(nil,
-		graph.WithFlags(&DescriptorFlag{descriptor}),
-		graph.WithoutFlags(&DerivedFlag{}))
-	for _, node := range skipped {
+func (s *Scheduler) skipRefresh(nodes []graph.Node, except utils.KeySet, refreshed utils.KeySet) {
+	for _, node := range nodes {
 		if except != nil {
 			if toRefresh := except.Has(node.GetKey()); toRefresh {
 				continue
