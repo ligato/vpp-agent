@@ -10,10 +10,13 @@ import (
 	"github.com/ligato/cn-infra/db/keyval"
 	acl "github.com/ligato/vpp-agent/api/models/vpp/acl"
 	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
+	ipsec "github.com/ligato/vpp-agent/api/models/vpp/ipsec"
 	l2 "github.com/ligato/vpp-agent/api/models/vpp/l2"
 	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
 	nat "github.com/ligato/vpp-agent/api/models/vpp/nat"
-	ipsec "github.com/ligato/vpp-agent/api/models/vpp/ipsec"
+
+	linterface "github.com/ligato/vpp-agent/api/models/linux/interfaces"
+	ll3 "github.com/ligato/vpp-agent/api/models/linux/l3"
 
 	"errors"
 )
@@ -32,6 +35,12 @@ const (
 	DNATPath		 = "config/vpp/nat/v2/dnat44/"
 	IPSecPolicyPath	 = "config/vpp/ipsec/v2/spd/"
 	IPSecAssociate   = "config/vpp/ipsec/v2/sa/"
+)
+
+const (
+	lInterfacePath 	 = "config/linux/interfaces/v2/interface/"
+	lARPPath		 = "config/linux/l3/v2/arp/"
+	lRoutePath		 = "config/linux/l3/v2/route/"
 )
 
 // VppMetaData defines the etcd metadata.
@@ -210,6 +219,45 @@ type IPSecAssosiciationWithMD struct {
 	Config *IPSecAssosiciationConfigWithMD
 }
 
+// lInterfaceConfigWithMD contains a data record for interface configuration
+// and its etcd metadata.
+type lInterfaceConfigWithMD struct {
+	Metadata  VppMetaData
+	Interface *linterface.Interface
+}
+
+// lInterfaceWithMD contains a data record for interface and its
+// etcd metadata.
+type lInterfaceWithMD struct {
+	Config *lInterfaceConfigWithMD
+}
+
+// lARPConfigWithMD contains a data record for interface configuration
+// and its etcd metadata.
+type lARPConfigWithMD struct {
+	Metadata  VppMetaData
+	ARPEntry *ll3.ARPEntry
+}
+
+// lARPWithMD contains a data record for interface and its
+// etcd metadata.
+type lARPWithMD struct {
+	Config *lARPConfigWithMD
+}
+
+// lRouteConfigWithMD contains a data record for interface configuration
+// and its etcd metadata.
+type lRouteConfigWithMD struct {
+	Metadata  VppMetaData
+	Route *ll3.Route
+}
+
+// lRouteWithMD contains a data record for interface and its
+// etcd metadata.
+type lRouteWithMD struct {
+	Config *lRouteConfigWithMD
+}
+
 // VppData defines a structure to hold all etcd data records (of all
 // types) for one VPP.
 type VppData struct {
@@ -229,8 +277,11 @@ type VppData struct {
 	IPSecPolicyDb	   map[string]IPSecPolicyWithMD
 	IPSecAssociate 	   map[string]IPSecAssosiciationWithMD
 //	Status             map[string]VppStatusWithMD
-	ShowEtcd           bool
-	ShowConf		   bool
+	LInterfaces   	   map[string]lInterfaceWithMD
+	LARP 			   map[string]lARPWithMD
+	LRoute			   map[string]lRouteWithMD
+	ShowEtcd    	   bool
+	ShowConf    	   bool
 }
 
 // EtcdDump is a map of VppData records. It constitutes a temporary
@@ -255,7 +306,7 @@ func NewEtcdDump() EtcdDump {
 // error. The function returns true if the specified item has been
 // found.
 func (ed EtcdDump) ReadDataFromDb(db keyval.ProtoBroker, key string) (found bool, err error) {
-	label, dataType, params, _:= ParseKey(key)
+	label, dataType, params := ParseKey(key)
 
 	vd, ok := ed[label]
 	if !ok {
@@ -267,7 +318,6 @@ func (ed EtcdDump) ReadDataFromDb(db keyval.ProtoBroker, key string) (found bool
 		ed[label], err = readAclConfigFromDb(db, vd, key, params)
 	case InterfacePath:
 		ed[label], err = readInterfaceConfigFromDb(db, vd, key, params)
-		//FIXME: Error in key
 	case BridgeDomainPath:
 		ed[label], err = readBridgeConfigFromDb(db, vd, key, params)
 	case FibTablePath:
@@ -291,6 +341,12 @@ func (ed EtcdDump) ReadDataFromDb(db keyval.ProtoBroker, key string) (found bool
 		ed[label], err = readIPSecPolicyConfigFromDb(db, vd, key, params)
 	case IPSecAssociate:
 		ed[label], err = readIPSecAssociateConfigFromDb(db, vd, key, params)
+	case lInterfacePath:
+		ed[label], err = readLinuxInterfaceConfigFromDb(db, vd, key, params)
+	case lARPPath:
+		ed[label], err = readLinuxARPConfigFromDb(db, vd, key, params)
+	case lRoutePath:
+		ed[label], err = readLinuxRouteConfigFromDb(db, vd, key, params)
 	}
 
 	return true, err
@@ -502,6 +558,57 @@ func readIPSecAssociateConfigFromDb(db keyval.ProtoBroker, vd *VppData, key stri
 	return vd, err
 }
 
+func readLinuxInterfaceConfigFromDb(db keyval.ProtoBroker, vd *VppData, key string, name string) (*VppData, error) {
+	if name == "" {
+		fmt.Printf("WARNING: Invalid linux interface config Key '%s'\n", key)
+		return vd, nil
+	}
+
+	int := &linterface.Interface{}
+
+	found, rev, err := readDataFromDb(db, key, int)
+	if found && err == nil {
+		vd.LInterfaces[name] = lInterfaceWithMD{
+			Config: &lInterfaceConfigWithMD{VppMetaData{rev, key}, int},
+		}
+	}
+	return vd, err
+}
+
+func readLinuxARPConfigFromDb(db keyval.ProtoBroker, vd *VppData, key string, name string) (*VppData, error) {
+	if name == "" {
+		fmt.Printf("WARNING: Invalid linux arp config Key '%s'\n", key)
+		return vd, nil
+	}
+
+	arp := &ll3.ARPEntry{}
+
+	found, rev, err := readDataFromDb(db, key, arp)
+	if found && err == nil {
+		vd.LARP[name] = lARPWithMD{
+			Config: &lARPConfigWithMD{VppMetaData{rev, key}, arp},
+		}
+	}
+	return vd, err
+}
+
+func readLinuxRouteConfigFromDb(db keyval.ProtoBroker, vd *VppData, key string, name string) (*VppData, error) {
+	if name == "" {
+		fmt.Printf("WARNING: Invalid linux route config Key '%s'\n", key)
+		return vd, nil
+	}
+
+	route := &ll3.Route{}
+
+	found, rev, err := readDataFromDb(db, key, route)
+	if found && err == nil {
+		vd.LRoute[name] = lRouteWithMD{
+			Config: &lRouteConfigWithMD{VppMetaData{rev, key}, route},
+		}
+	}
+	return vd, err
+}
+
 func readDataFromDb(db keyval.ProtoBroker, key string, obj proto.Message) (bool, int64, error) {
 	found, rev, err := db.GetValue(key, obj)
 	if err != nil {
@@ -515,21 +622,24 @@ func readDataFromDb(db keyval.ProtoBroker, key string, obj proto.Message) (bool,
 
 func newVppDataRecord() *VppData {
 	return &VppData{
-		ACL:				make(map[string]ACLWithMD),
-		Interfaces:         make(map[string]InterfaceWithMD),
-		BridgeDomains: 		make(map[string]BdWithMD),
-		FibTableEntries: 	FibTableWithMD{},
-		XConnectPairs:      make(map[string]XconnectWithMD),
-		ARP:				ARPWithMD{},
-		StaticRoutes:       StaticRoutesWithMD{},
-		ProxyARP:			ProxyARPWithMD{},
-		IPScanNeight: 		IPScanNeighWithMD{},
-		NAT:				NATWithMD{},
-		DNAT: 				make(map[string]DNATWithMD),
-		IPSecPolicyDb:      make(map[string]IPSecPolicyWithMD),
-		IPSecAssociate:     make(map[string]IPSecAssosiciationWithMD),
-		ShowEtcd:           false,
-		ShowConf:			false,
+		ACL:			 make(map[string]ACLWithMD),
+		Interfaces:      make(map[string]InterfaceWithMD),
+		BridgeDomains:   make(map[string]BdWithMD),
+		FibTableEntries: FibTableWithMD{},
+		XConnectPairs:   make(map[string]XconnectWithMD),
+		ARP:             ARPWithMD{},
+		StaticRoutes:    StaticRoutesWithMD{},
+		ProxyARP:        ProxyARPWithMD{},
+		IPScanNeight:    IPScanNeighWithMD{},
+		NAT:             NATWithMD{},
+		DNAT:            make(map[string]DNATWithMD),
+		IPSecPolicyDb:   make(map[string]IPSecPolicyWithMD),
+		IPSecAssociate:  make(map[string]IPSecAssosiciationWithMD),
+		LInterfaces:     make(map[string]lInterfaceWithMD),
+		LARP: 			 make(map[string]lARPWithMD),
+		LRoute: 		 make(map[string]lRouteWithMD),
+		ShowEtcd:        false,
+		ShowConf:        false,
 	}
 }
 

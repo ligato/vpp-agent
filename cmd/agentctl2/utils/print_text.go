@@ -39,7 +39,6 @@ func (p pfx) getPrefix(level int) string {
 func (ed EtcdDump) PrintTest(showConf bool) (*bytes.Buffer, error) {
 	prefixer = newPrefixer(false, perLevelSpaces)
 
-
  	ifTemplate := createInterfaceTemplate()
  	aclTemplate := createAclTemplate()
  	bdTemplate := createBridgeTemplate()
@@ -54,11 +53,15 @@ func (ed EtcdDump) PrintTest(showConf bool) (*bytes.Buffer, error) {
 	spolicy := createIPSecPolicyTemplate()
 	sassociation := createIPSecAssociationTemplate()
 
+	linterface := createlInterfaceTemplate()
+	larp := createlARPTemplate()
+	lroute := createlRouteTemplate()
+
 	templates := []*template.Template{}
 	// Keep template order
 	templates = append(templates, ifTemplate, aclTemplate, bdTemplate, fibTemplate,
 		xconnectTemplate, arpTemplate, routeTemplate, proxyarpTemplate, ipneighbor,
-		nat, dnat, spolicy, sassociation)
+		nat, dnat, spolicy, sassociation, linterface, larp, lroute)
 
 	return ed.textRenderer(showConf, templates)
 }
@@ -723,6 +726,129 @@ func createIPSecAssociationTemplate() (*template.Template) {
 			"{{end}}" +
 
 		// End Config
+			"{{end}}" +
+
+			"{{end}}")
+
+	if err != nil {
+		panic(err)
+	}
+
+	return Template
+}
+
+func createlInterfaceTemplate() (*template.Template) {
+
+	FuncMap := template.FuncMap{
+		"setBold":        setBold,
+		"pfx":            getPrefix,
+	}
+
+	Template, err := template.New("linterface").Funcs(FuncMap).Parse(
+		"{{$conf := .ShowConf}}" +
+			"{{with .LInterfaces}}\n{{pfx 1}}Linux interface:" +
+
+		// Iterate over interface.
+			"{{range $InterfaceName, $InterfaceData := .}}\n{{pfx 2}}{{setBold $InterfaceName}}" +
+			"{{if $conf}}" +
+			"{{with .Config}}{{with .Interface}}" +
+
+			"{{with .Type}}\n{{pfx 3}}Type: {{.}}{{end}}" +
+
+			"{{with .Namespace}}\n{{pfx 3}}Name Space:" +
+			"{{with .Type}}\n{{pfx 4}}Type: {{.}}{{end}}" +
+			"{{with .Reference}}\n{{pfx 4}}Reference: {{.}}{{end}}" +
+			"{{end}}" +
+
+			"{{with .HostIfName}}\n{{pfx 3}}Host IfName: {{.}}{{end}}" +
+			"{{with .Enabled}}\n{{pfx 3}}Enabled: {{.}}{{end}}" +
+			"{{with .IpAddresses}}\n{{pfx 3}}Ip Addresses: {{.}}{{end}}" +
+			"{{with .PhysAddress}}\n{{pfx 3}}PhysAddress: {{.}}{{end}}" +
+			"{{with .Mtu}}\n{{pfx 3}}Mtu: {{.}}{{end}}" +
+			"{{with .Link}}\n{{pfx 3}}Link: {{.}}{{end}}" +
+
+		//End
+			"{{end}}{{end}}" +
+
+		//End conf
+			"{{end}}" +
+		//End iterate over interface.
+			"{{end}}" +
+
+			"{{end}}")
+
+	if err != nil {
+		panic(err)
+	}
+
+	return Template
+}
+
+func createlARPTemplate() (*template.Template) {
+
+	FuncMap := template.FuncMap{
+		"setBold":        setBold,
+		"pfx":            getPrefix,
+	}
+
+	Template, err := template.New("larp").Funcs(FuncMap).Parse(
+		"{{$conf := .ShowConf}}" +
+			"{{with .LARP}}\n{{pfx 1}}Linux ARP:" +
+
+		// Iterate over interface.
+			"{{range $InterfaceName, $InterfaceData := .}}\n{{pfx 2}}{{setBold $InterfaceName}}" +
+			"{{if $conf}}" +
+			"{{with .Config}}{{with .ARPEntry}}" +
+
+			"{{with .Interface}}\n{{pfx 3}}Interface: {{.}}{{end}}" +
+			"{{with .IpAddress}}\n{{pfx 3}}Ip Address: {{.}}{{end}}" +
+			"{{with .HwAddress}}\n{{pfx 3}}HwAddress: {{.}}{{end}}" +
+
+		//End
+			"{{end}}{{end}}" +
+
+		//End conf
+			"{{end}}" +
+		//End iterate over interface.
+			"{{end}}" +
+
+			"{{end}}")
+
+	if err != nil {
+		panic(err)
+	}
+
+	return Template
+}
+
+func createlRouteTemplate() (*template.Template) {
+
+	FuncMap := template.FuncMap{
+		"setBold":        setBold,
+		"pfx":            getPrefix,
+	}
+
+	Template, err := template.New("lroute").Funcs(FuncMap).Parse(
+		"{{$conf := .ShowConf}}" +
+			"{{with .LRoute}}\n{{pfx 1}}Linux Route:" +
+
+		// Iterate over Route.
+			"{{range $RouteName, $RouteData := .}}\n{{pfx 2}}{{setBold $RouteName}}" +
+			"{{if $conf}}" +
+			"{{with .Config}}{{with .Route}}" +
+
+			"{{with .OutgoingInterface}}\n{{pfx 3}}Outgoing Interface: {{.}}{{end}}" +
+			"{{with .Scope}}\n{{pfx 3}}Scope: {{.}}{{end}}" +
+			"{{with .DstNetwork}}\n{{pfx 3}}Dst Network: {{.}}{{end}}" +
+			"{{with .GwAddr}}\n{{pfx 3}}Gw Addr: {{.}}{{end}}" +
+			"{{with .Metric}}\n{{pfx 3}}Metric: {{.}}{{end}}" +
+
+		//End
+			"{{end}}{{end}}" +
+
+		//End conf
+			"{{end}}" +
+		//End iterate over interface.
 			"{{end}}" +
 
 			"{{end}}")

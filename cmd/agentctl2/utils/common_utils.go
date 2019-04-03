@@ -47,19 +47,8 @@ const (
 // parameter list is empty if data path is the Last segment in the
 // Key.
 //
-// URI Examples:
-// * /vnf-agent/{agent-label}/vpp/config/v1/interface/{interface-name}
-// * /vnf-agent/{agent-label}/vpp/status/v1/interface/{interface-name}
-// * /vnf-agent/{agent-label}/check/status/v1/agent
-//
-// Explanation of the URI examples:
-// * allAgntsPref   label     plugin stats ver  dataType
-// *                ps[0]      ps[1] ps[2]ps[3] ps[4]
-//
-// Example for dataType ... "check/status/v1/"
 
-//TODO: Rewrite
-func ParseKey(key string) (label string, dataType string, name string, plugStatCfgRev string) {
+func ParseKey(key string) (label string, dataType string, name string) {
 	ps := strings.Split(strings.TrimPrefix(key, servicelabel.GetAllAgentsPrefix()), "/")
 	var plugin, statusConfig, version string
 	var params []string
@@ -69,35 +58,54 @@ func ParseKey(key string) (label string, dataType string, name string, plugStatC
 	if len(ps) > 1 {
 		plugin = ps[1]
 		dataType = plugin
-		plugStatCfgRev = dataType
 	}
 	if len(ps) > 2 {
 		statusConfig = ps[2]
 		dataType += "/" + statusConfig
-		plugStatCfgRev = dataType
-	}
-	if len(ps) > 3 {
-		version = ps[3]
-		dataType += "/" + version
-		plugStatCfgRev = dataType
-	}
-	plugStatCfgRev += "/"
 
-	if len(ps) > 3 {
-		// Recognize key type
-		if  "v2" ==  ps[3]{
-			if len(ps) > 4 {
-				tp := ps[4]
-				dataType += "/" + tp
+		if "vpp" == ps[2] {
+			if len(ps) > 3 {
+				version = ps[3]
+				dataType += "/" + version
 			}
 
-			if len(ps) > 5 {
-				dataType += "/"
-				params = ps[5:]
+			// Recognize key type
+			if  "v2" ==  ps[3]{
+				if len(ps) > 4 {
+					tp := ps[4]
+					dataType += "/" + tp
+				}
+
+				if len(ps) > 5 {
+					dataType += "/"
+					params = ps[5:]
+				} else {
+					params = []string{}
+				}
 			} else {
-				params = []string{}
+				if len(ps) > 4 {
+					version := ps[4]
+					dataType += "/" + version
+				}
+
+				if len(ps) > 5 {
+					tp := ps[5]
+					dataType += "/" + tp
+				}
+
+				if len(ps) > 6 {
+					dataType += "/"
+					params = ps[6:]
+				} else {
+					params = []string{}
+				}
 			}
-		} else {
+		} else if "linux" == ps[2] {
+			if len(ps) > 3 {
+				version = ps[3]
+				dataType += "/" + version
+			}
+
 			if len(ps) > 4 {
 				version := ps[4]
 				dataType += "/" + version
@@ -114,70 +122,14 @@ func ParseKey(key string) (label string, dataType string, name string, plugStatC
 			} else {
 				params = []string{}
 			}
+		} else {
+			params = []string{}
 		}
 	} else {
 		params = []string{}
 	}
 
-	/*
-	// In case localDataType is equal to 'bd', or 'interface', or 'vrf', verify
-	// next item to identify error/fib key.
-	if len(ps) > 3 {
-		// Recognize interface error key.
-		if ps[4] == "interface" && ps[5] == "error" {
-			ifaceErrorDataType := ps[5]
-			dataType += "/" + ifaceErrorDataType
-			if len(ps) > 6 {
-				dataType += "/"
-				params = ps[6:]
-			} else {
-				params = []string{}
-			}
-
-			return label, dataType, rebuildName(params), plugStatCfgRev
-		}
-		// Recognize bridge domain error key.
-		if ps[4] == "bd" && ps[5] == "error" {
-			bdErrorDataType := ps[5]
-			dataType += "/" + bdErrorDataType
-			if len(ps) > 6 {
-				dataType += "/"
-				params = ps[6:]
-			} else {
-				params = []string{}
-			}
-			return label, dataType, rebuildName(params), plugStatCfgRev
-		}
-		// Recognize FIB key.
-		if len(ps) > 6 && ps[4] == "bd" && ps[6] == "fib" {
-			fibDataType := ps[6]
-			dataType += "/{bd}/" + fibDataType
-
-			if len(ps) > 7 {
-				dataType += "/"
-				params = ps[7:]
-			} else {
-				params = []string{}
-			}
-			return label, dataType, rebuildName(params), plugStatCfgRev
-		}
-		// Recognize static route.
-		/*if len(ps) > 6 && ps[4] == "vrf" && ps[6] == "fib" {
-			dataType += "/" + strings.TrimPrefix(l3.RoutesPrefix, l3.VrfPrefix)
-
-			if len(ps) > 7 {
-				params = append(params, ps[7:]...)
-			}
-			return label, dataType, rebuildName(params), plugStatCfgRev
-		}*//*
-		dataType += "/"
-		params = ps[5:]
-	} else {
-		params = []string{}
-	}
-*/
-
-	return label, dataType, rebuildName(params), plugStatCfgRev
+	return label, dataType, rebuildName(params)
 }
 
 // Reconstruct item name in case it contains slashes.
