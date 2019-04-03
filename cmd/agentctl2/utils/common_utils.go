@@ -97,9 +97,7 @@ func ParseKey(key string) (label string, dataType string, name string, plugStatC
 			} else {
 				params = []string{}
 			}
-		}
-
-		if "l2" == ps[3] {
+		} else {
 			if len(ps) > 4 {
 				version := ps[4]
 				dataType += "/" + version
@@ -117,45 +115,6 @@ func ParseKey(key string) (label string, dataType string, name string, plugStatC
 				params = []string{}
 			}
 		}
-
-		if "acls" == ps[3] {
-			if len(ps) > 4 {
-				version := ps[4]
-				dataType += "/" + version
-			}
-
-			if len(ps) > 5 {
-				tp := ps[5]
-				dataType += "/" + tp
-			}
-
-			if len(ps) > 6 {
-				dataType += "/"
-				params = ps[6:]
-			} else {
-				params = []string{}
-			}
-		}
-
-		if "nat" == ps[3] {
-			if len(ps) > 4 {
-				version := ps[4]
-				dataType += "/" + version
-			}
-
-			if len(ps) > 5 {
-				tp := ps[5]
-				dataType += "/" + tp
-			}
-
-			if len(ps) > 6 {
-				dataType += "/"
-				params = ps[6:]
-			} else {
-				params = []string{}
-			}
-		}
-
 	} else {
 		params = []string{}
 	}

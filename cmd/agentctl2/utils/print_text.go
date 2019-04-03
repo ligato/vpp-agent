@@ -51,12 +51,14 @@ func (ed EtcdDump) PrintTest(showConf bool) (*bytes.Buffer, error) {
 	ipneighbor := createIPScanNeightTemplate()
 	nat := createNATTemplate()
 	dnat := createDNATTemplate()
+	spolicy := createIPSecPolicyTemplate()
+	sassociation := createIPSecAssociationTemplate()
 
 	templates := []*template.Template{}
 	// Keep template order
 	templates = append(templates, ifTemplate, aclTemplate, bdTemplate, fibTemplate,
 		xconnectTemplate, arpTemplate, routeTemplate, proxyarpTemplate, ipneighbor,
-		nat, dnat)
+		nat, dnat, spolicy, sassociation)
 
 	return ed.textRenderer(showConf, templates)
 }
@@ -616,6 +618,112 @@ func createDNATTemplate() (*template.Template) {
 
 			//End
 			"{{end}}{{end}}" +
+
+			"{{end}}")
+
+	if err != nil {
+		panic(err)
+	}
+
+	return Template
+}
+
+func createIPSecPolicyTemplate() (*template.Template) {
+
+	FuncMap := template.FuncMap{
+		"setBold":        setBold,
+		"pfx":            getPrefix,
+	}
+
+	Template, err := template.New("ipsecpolicy").Funcs(FuncMap).Parse(
+		"{{$conf := .ShowConf}}" +
+			"{{with .IPSecPolicyDb}}\n{{pfx 1}}Security policy database:" +
+
+		// Iterate over Policy.
+			"{{range $PolicyName, $PolicyData := .}}" +
+			"{{if $conf}}" +
+
+			"{{with .Config}}{{with .SecurityPolicyDatabase}}" +
+		// Iterate over Interfaces.
+			"{{range $InterfaceName, $InterfaceData := .Interfaces}}\n{{pfx 2}}Interfaces:" +
+			"{{with .Name}}\n{{pfx 3}}Name: {{.}}{{end}}" +
+
+		// End iterate over Interfaces.
+			"{{end}}" +
+
+		// Iterate over Interfaces.
+			"{{range $PolicyName, $PolicyData := .PolicyEntries}}\n{{pfx 2}}PolicyEntries:" +
+			"{{with .SaIndex}}\n{{pfx 3}}SaIndex: {{.}}{{end}}" +
+			"{{with .Priority}}\n{{pfx 3}}Priority: {{.}}{{end}}" +
+			"{{with .IsOutbound}}\n{{pfx 3}}Is Outbound: {{.}}{{end}}" +
+			"{{with .RemoteAddrStart}}\n{{pfx 3}}Remote Addr Start: {{.}}{{end}}" +
+			"{{with .RemoteAddrStop}}\n{{pfx 3}}Remote Addr Stop: {{.}}{{end}}" +
+			"{{with .LocalAddrStart}}\n{{pfx 3}}Local Addr Start: {{.}}{{end}}" +
+			"{{with .LocalAddrStop}}\n{{pfx 3}}Local Addr Stop: {{.}}{{end}}" +
+			"{{with .Protocol}}\n{{pfx 3}}Protocol: {{.}}{{end}}" +
+			"{{with .RemotePortStart}}\n{{pfx 3}}Remote Port Start: {{.}}{{end}}" +
+			"{{with .RemotePortStop}}\n{{pfx 3}}Remote Port Stop: {{.}}{{end}}" +
+			"{{with .LocalPortStart}}\n{{pfx 3}}Local Port Start: {{.}}{{end}}" +
+			"{{with .LocalPortStop}}\n{{pfx 3}}Local Port Stop: {{.}}{{end}}" +
+			"{{with .Action}}\n{{pfx 3}}Action: {{.}}{{end}}" +
+
+		// End iterate over Interfaces.
+			"{{end}}" +
+		//End
+			"{{end}}{{end}}" +
+
+		// End iterate over Policy.
+			"{{end}}" +
+		// End Config
+			"{{end}}" +
+
+			"{{end}}")
+
+	if err != nil {
+		panic(err)
+	}
+
+	return Template
+}
+
+func createIPSecAssociationTemplate() (*template.Template) {
+
+	FuncMap := template.FuncMap{
+		"setBold":        setBold,
+		"pfx":            getPrefix,
+	}
+
+	Template, err := template.New("ipsecassociation").Funcs(FuncMap).Parse(
+		"{{$conf := .ShowConf}}" +
+			"{{with .IPSecAssociate}}\n{{pfx 1}}Security associations:" +
+
+		// Iterate over Association.
+			"{{range $AssociationName, $AssociationData := .}}" +
+			"{{if $conf}}" +
+
+			"{{with .Config}}{{with .SecurityAssociation }}" +
+
+			"{{with .Index}}\n{{pfx 3}}Index: {{.}}{{end}}" +
+			"{{with .Spi}}\n{{pfx 3}}Spi: {{.}}{{end}}" +
+			"{{with .Protocol}}\n{{pfx 3}}Protocol: {{.}}{{end}}" +
+			"{{with .CryptoAlg}}\n{{pfx 3}}Crypto Alg: {{.}}{{end}}" +
+			"{{with .CryptoKey}}\n{{pfx 3}}Crypto Key: {{.}}{{end}}" +
+			"{{with .IntegAlg}}\n{{pfx 3}}Integ Alg: {{.}}{{end}}" +
+			"{{with .IntegKey}}\n{{pfx 3}}Integ Key: {{.}}{{end}}" +
+			"{{with .UseEsn}}\n{{pfx 3}}Use Esn: {{.}}{{end}}" +
+			"{{with .UseAntiReplay}}\n{{pfx 3}}Use Anti Replay: {{.}}{{end}}" +
+			"{{with .TunnelSrcAddr}}\n{{pfx 3}}Tunnel Src Addr: {{.}}{{end}}" +
+			"{{with .TunnelDstAddr}}\n{{pfx 3}}Tunnel Dst Addr: {{.}}{{end}}" +
+			"{{with .EnableUdpEncap}}\n{{pfx 3}}Enable Udp Encap: {{.}}{{end}}" +
+
+			//End
+			"{{end}}{{end}}" +
+
+		// End iterate over Association.
+			"{{end}}" +
+
+		// End Config
+			"{{end}}" +
 
 			"{{end}}")
 

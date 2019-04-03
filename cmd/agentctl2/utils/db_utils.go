@@ -13,6 +13,7 @@ import (
 	l2 "github.com/ligato/vpp-agent/api/models/vpp/l2"
 	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
 	nat "github.com/ligato/vpp-agent/api/models/vpp/nat"
+	ipsec "github.com/ligato/vpp-agent/api/models/vpp/ipsec"
 
 	"errors"
 )
@@ -29,7 +30,8 @@ const (
 	IPScanneightPath = "config/vpp/v2/ipscanneigh-global"
 	NATPath			 = "config/vpp/nat/v2/nat44-global"
 	DNATPath		 = "config/vpp/nat/v2/dnat44/"
-
+	IPSecPolicyPath	 = "config/vpp/ipsec/v2/spd/"
+	IPSecAssociate   = "config/vpp/ipsec/v2/sa/"
 )
 
 // VppMetaData defines the etcd metadata.
@@ -182,6 +184,32 @@ type DNATWithMD struct {
 	Config *DNATConfigWithMD
 }
 
+// IPSecPolicyConfigWithMD contains a data record for interface configuration
+// and its etcd metadata.
+type IPSecPolicyConfigWithMD struct {
+	Metadata  VppMetaData
+	SecurityPolicyDatabase *ipsec.SecurityPolicyDatabase
+}
+
+// IPSecPolicyWithMD contains a data record for interface and its
+// etcd metadata.
+type IPSecPolicyWithMD struct {
+	Config *IPSecPolicyConfigWithMD
+}
+
+// IPSecAssociationConfigWithMD contains a data record for interface configuration
+// and its etcd metadata.
+type IPSecAssosiciationConfigWithMD struct {
+	Metadata  VppMetaData
+	SecurityAssociation *ipsec.SecurityAssociation
+}
+
+// IPSecAssosiciationWithMD contains a data record for interface and its
+// etcd metadata.
+type IPSecAssosiciationWithMD struct {
+	Config *IPSecAssosiciationConfigWithMD
+}
+
 // VppData defines a structure to hold all etcd data records (of all
 // types) for one VPP.
 type VppData struct {
@@ -198,6 +226,8 @@ type VppData struct {
 	IPScanNeight	   IPScanNeighWithMD
 	NAT 			   NATWithMD
 	DNAT    		   map[string]DNATWithMD
+	IPSecPolicyDb	   map[string]IPSecPolicyWithMD
+	IPSecAssociate 	   map[string]IPSecAssosiciationWithMD
 //	Status             map[string]VppStatusWithMD
 	ShowEtcd           bool
 	ShowConf		   bool
@@ -257,6 +287,10 @@ func (ed EtcdDump) ReadDataFromDb(db keyval.ProtoBroker, key string) (found bool
 	//	ed[label], err = readNATConfigFromDb(db, vd, key)
 	//case DNATPath:
 	//	ed[label], err = readDNATConfigFromDb(db, vd, key, params)
+	case IPSecPolicyPath:
+		ed[label], err = readIPSecPolicyConfigFromDb(db, vd, key, params)
+	case IPSecAssociate:
+		ed[label], err = readIPSecAssociateConfigFromDb(db, vd, key, params)
 	}
 
 	return true, err
@@ -434,6 +468,40 @@ func readDNATConfigFromDb(db keyval.ProtoBroker, vd *VppData, key string, name s
 	return vd, err
 }
 
+func readIPSecPolicyConfigFromDb(db keyval.ProtoBroker, vd *VppData, key string, name string) (*VppData, error) {
+	if name == "" {
+		fmt.Printf("WARNING: Invalid ip sec policy database config Key '%s'\n", key)
+		return vd, nil
+	}
+
+	policy := &ipsec.SecurityPolicyDatabase{}
+
+	found, rev, err := readDataFromDb(db, key, policy)
+	if found && err == nil {
+		vd.IPSecPolicyDb[name] = IPSecPolicyWithMD{
+			Config: &IPSecPolicyConfigWithMD{VppMetaData{rev, key}, policy},
+		}
+	}
+	return vd, err
+}
+
+func readIPSecAssociateConfigFromDb(db keyval.ProtoBroker, vd *VppData, key string, name string) (*VppData, error) {
+	if name == "" {
+		fmt.Printf("WARNING: Invalid ip sec associate config Key '%s'\n", key)
+		return vd, nil
+	}
+
+	ipsec := &ipsec.SecurityAssociation{}
+
+	found, rev, err := readDataFromDb(db, key, ipsec)
+	if found && err == nil {
+		vd.IPSecAssociate[name] = IPSecAssosiciationWithMD{
+			Config: &IPSecAssosiciationConfigWithMD{VppMetaData{rev, key}, ipsec},
+		}
+	}
+	return vd, err
+}
+
 func readDataFromDb(db keyval.ProtoBroker, key string, obj proto.Message) (bool, int64, error) {
 	found, rev, err := db.GetValue(key, obj)
 	if err != nil {
@@ -458,6 +526,8 @@ func newVppDataRecord() *VppData {
 		IPScanNeight: 		IPScanNeighWithMD{},
 		NAT:				NATWithMD{},
 		DNAT: 				make(map[string]DNATWithMD),
+		IPSecPolicyDb:      make(map[string]IPSecPolicyWithMD),
+		IPSecAssociate:     make(map[string]IPSecAssosiciationWithMD),
 		ShowEtcd:           false,
 		ShowConf:			false,
 	}
