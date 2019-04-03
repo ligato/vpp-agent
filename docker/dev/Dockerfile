@@ -123,4 +123,4 @@ WORKDIR /
 
 # run supervisor as the default executable
 CMD rm -f /dev/shm/db /dev/shm/global_vm /dev/shm/vpe-api && \
-    /usr/bin/supervisord -c /etc/supervisord/supervisord.conf
+    exec /usr/bin/supervisord -c /etc/supervisord/supervisord.conf
