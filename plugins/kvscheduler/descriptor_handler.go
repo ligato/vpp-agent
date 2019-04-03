@@ -19,6 +19,9 @@ func init() {
 func checkNetNs() error {
 	if enableNetNsCheck && defaultNs != -1 {
 		ns, nsErr := netns.Get()
+		if nsErr == nil {
+			defer ns.Close()
+		}
 		if nsErr == nil && !defaultNs.Equal(ns) {
 			return kvs.ErrEscapedNetNs
 		}
