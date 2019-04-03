@@ -285,7 +285,7 @@ func createBridgeTemplate() (*template.Template) {
 			"{{with .MacAge}}\n{{pfx 3}}: {{.}}{{end}}" +
 
 			//Interate over interfaces.
-			"{{range $InterfaceName, $InterfaceData := .Interfaces}}\n{{pfx 3}}{{setBold $InterfaceName}}" +
+			"{{range $InterfaceName, $InterfaceData := .Interfaces}}\n{{pfx 3}}Interfaces:" +
 			"{{with .BridgedVirtualInterface}}\n{{pfx 4}}BridgedVirtualInterface: {{isEnabled .}}{{end}}" +
 			"{{with .SplitHorizonGroup}}\n{{pfx 4}}SplitHorizonGroup: {{.}} {{end}}" +
 
@@ -293,8 +293,8 @@ func createBridgeTemplate() (*template.Template) {
 			"{{end}}" +
 
 		//Interate over ArpTerminationTable.
-			"{{range $ArpTableName, $ArpTableData := .ArpTerminationTable}}\n{{pfx 3}}{{setBold $ArpTableName}}" +
-			"{{with .IpAddress}}\n{{pfx 4}}IP Address: {{getIpAddresses .}} {{end}}" +
+			"{{range $ArpTableName, $ArpTableData := .ArpTerminationTable}}\n{{pfx 3}}Arp Termination Table:" +
+			"{{with .IpAddress}}\n{{pfx 4}}IP Address: {{.}} {{end}}" +
 			"{{with .PhysAddress}}\n{{pfx 4}}: {{.}} {{end}}" +
 
 			//End interate ArpTerminationTable.

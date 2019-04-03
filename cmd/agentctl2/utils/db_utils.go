@@ -268,8 +268,8 @@ func (ed EtcdDump) ReadDataFromDb(db keyval.ProtoBroker, key string) (found bool
 	case InterfacePath:
 		ed[label], err = readInterfaceConfigFromDb(db, vd, key, params)
 		//FIXME: Error in key
-	//case BridgeDomainPath:
-	//	ed[label], err = readBridgeConfigFromDb(db, vd, key, params)
+	case BridgeDomainPath:
+		ed[label], err = readBridgeConfigFromDb(db, vd, key, params)
 	case FibTablePath:
 		ed[label], err = readFibTableConfigFromDb(db, vd, key, params)
 	case XConnectPath:
