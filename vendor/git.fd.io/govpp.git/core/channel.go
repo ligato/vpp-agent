@@ -184,10 +184,7 @@ func (ch *Channel) SetReplyTimeout(timeout time.Duration) {
 }
 
 func (ch *Channel) Close() {
-	if ch.reqChan != nil {
-		close(ch.reqChan)
-		ch.reqChan = nil
-	}
+	close(ch.reqChan)
 }
 
 func (req *requestCtx) ReceiveReply(msg api.Message) error {
