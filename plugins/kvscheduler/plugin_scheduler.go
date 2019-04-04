@@ -67,6 +67,10 @@ const (
 	// name of the environment variable used to enable verification after every transaction
 	verifyModeEnv = "KVSCHED_VERIFY_MODE"
 
+	// name of the environment variable used to turn on automatic check for
+	// the preservation of the original network namespace after descriptor operations
+	checkNetNamespaceEnv = "KVSCHED_CHECK_NET_NS"
+
 	// name of the environment variable used to trigger log messages showing
 	// graph traversal
 	logGraphWalkEnv = "KVSCHED_LOG_GRAPH_WALK"
@@ -359,7 +363,7 @@ func (s *Scheduler) DumpValuesByDescriptor(descriptor string, view kvs.View) (va
 
 	// retrieve from the in-memory graph first (for Retrieve it is used for correlation)
 	inMemNodes := nodesToKVPairsWithMetadata(
-		graphR.GetNodes(nil, correlateValsSelectors(descriptor)...))
+		graphR.GetNodes(nil, descrValsSelectors(descriptor, true)...))
 
 	if view == kvs.CachedView {
 		// return the scheduler's view of SB for the given descriptor

@@ -86,6 +86,10 @@ type Config struct {
 	RetryRequestCount int `json:"retry-request-count"`
 	// Time between request resend attempts. Default is 500ms.
 	RetryRequestTimeout time.Duration `json:"retry-request-timeout"`
+	// How many times can be connection request resent in case the vpp is not reachable.
+	RetryConnectCount int `json:"retry-connect-count"`
+	// Time between connection request resend attempts. Default is 1s.
+	RetryConnectTimeout time.Duration `json:"retry-connect-timeout"`
 }
 
 func defaultConfig() *Config {
@@ -95,6 +99,7 @@ func defaultConfig() *Config {
 		HealthCheckThreshold:     1,
 		ReplyTimeout:             time.Second,
 		RetryRequestTimeout:      500 * time.Millisecond,
+		RetryConnectTimeout:      time.Second,
 	}
 }
 
@@ -139,7 +144,7 @@ func (p *Plugin) Init() error {
 	}
 
 	startTime := time.Now()
-	p.vppConn, p.vppConChan, err = govpp.AsyncConnect(p.vppAdapter)
+	p.vppConn, p.vppConChan, err = govpp.AsyncConnect(p.vppAdapter, p.config.RetryConnectCount, p.config.RetryConnectTimeout)
 	if err != nil {
 		return err
 	}

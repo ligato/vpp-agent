@@ -114,7 +114,7 @@ func (a *vppClient) Connect() error {
 		return fmt.Errorf("already connected to binary API, disconnect first")
 	}
 
-	var rc _Ctype_int
+	var rc C.int
 	if a.shmPrefix == "" {
 		rc = C.govpp_connect(nil)
 	} else {
