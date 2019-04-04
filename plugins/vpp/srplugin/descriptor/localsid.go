@@ -15,11 +15,13 @@
 package descriptor
 
 import (
+	"fmt"
 	"net"
 	"reflect"
 	"strings"
 
 	"github.com/ligato/cn-infra/logging"
+	"github.com/ligato/cn-infra/utils/addrs"
 	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	"github.com/ligato/vpp-agent/api/models/vpp/l3"
 	srv6 "github.com/ligato/vpp-agent/api/models/vpp/srv6"
@@ -236,6 +238,15 @@ func (d *LocalSIDDescriptor) Dependencies(key string, localSID *srv6.LocalSID) (
 				Label: localsidVRFDep,
 				AnyOf: scheduler.AnyOfDependency{
 					KeyPrefixes: []string{vpp_l3.RouteVrfPrefix(ef.EndFunction_DT6.VrfId)}, // waiting for VRF table creation (route creation creates also VRF table if it doesn't exist)
+					KeySelector: func(key string) bool {
+						_, dstNetAddr, dstNetMask, _, _ := vpp_l3.ParseRouteKey(key)
+						dstNet := fmt.Sprintf("%s/%d", dstNetAddr, dstNetMask)
+						_, isIPv6, err := addrs.ParseIPWithPrefix(dstNet)
+						if err != nil {
+							return false // it fails also in route creation (vpp_calls) and it is before needed vrf creation
+						}
+						return isIPv6
+					},
 				},
 			})
 		}

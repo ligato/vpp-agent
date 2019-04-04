@@ -16,6 +16,7 @@ package vpp_l3
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/ligato/vpp-agent/pkg/models"
@@ -105,4 +106,20 @@ func ParseProxyARPInterfaceKey(key string) (iface string, isProxyARPInterfaceKey
 // RouteVrfPrefix returns longest-common prefix of keys representing route that is written to given vrf table.
 func RouteVrfPrefix(vrf uint32) string {
 	return ModelRoute.KeyPrefix() + "vrf/" + fmt.Sprint(vrf) + "/"
+}
+
+// ParseRouteKey parses VRF label and route address from a route key.
+func ParseRouteKey(key string) (vrfIndex string, dstNetAddr string, dstNetMask int, nextHopAddr string, isRouteKey bool) {
+	if routeKey := strings.TrimPrefix(key, ModelRoute.KeyPrefix()); routeKey != key {
+		keyParts := strings.Split(routeKey, "/")
+		if len(keyParts) >= 7 &&
+			keyParts[0] == "vrf" &&
+			keyParts[2] == "dst" &&
+			keyParts[5] == "gw" {
+			if mask, err := strconv.Atoi(keyParts[4]); err == nil {
+				return keyParts[1], keyParts[3], mask, keyParts[6], true
+			}
+		}
+	}
+	return "", "", 0, "", false
 }
