@@ -14,6 +14,12 @@
 
 package vpp_l3
 
+import (
+	"testing"
+
+	. "github.com/onsi/gomega"
+)
+
 /*func TestRouteKey(t *testing.T) {
 	tests := []struct {
 		name        string
@@ -85,7 +91,9 @@ package vpp_l3
 		})
 	}
 }
+*/
 
+// TestParseRouteKey test different cases for ParseRouteKey(...)
 func TestParseRouteKey(t *testing.T) {
 	tests := []struct {
 		name                string
@@ -98,7 +106,7 @@ func TestParseRouteKey(t *testing.T) {
 	}{
 		{
 			name:                "route-ipv4",
-			routeKey:            "vpp/config/v2/route/vrf/0/dst/10.10.0.0/16/gw/0.0.0.0",
+			routeKey:            "config/vpp/v2/route/vrf/0/dst/10.10.0.0/16/gw/0.0.0.0",
 			expectedIsRouteKey:  true,
 			expectedVrfIndex:    "0",
 			expectedDstNetAddr:  "10.10.0.0",
@@ -107,7 +115,7 @@ func TestParseRouteKey(t *testing.T) {
 		},
 		{
 			name:                "route-ipv6",
-			routeKey:            "vpp/config/v2/route/vrf/0/dst/2001:db8::/32/gw/::",
+			routeKey:            "config/vpp/v2/route/vrf/0/dst/2001:db8::/32/gw/::",
 			expectedIsRouteKey:  true,
 			expectedVrfIndex:    "0",
 			expectedDstNetAddr:  "2001:db8::",
@@ -116,42 +124,26 @@ func TestParseRouteKey(t *testing.T) {
 		},
 		{
 			name:               "invalid-key",
-			routeKey:           "vpp/config/v2/route/vrf/0/dst/2001:db8::/32/",
+			routeKey:           "config/vpp/v2/route/vrf/0/dst/2001:db8::/32/",
 			expectedIsRouteKey: false,
 		},
 		{
 			name:               "invalid-key-missing-dst",
-			routeKey:           "vpp/config/v2/route/vrf/0/10.10.0.0/16/gw/0.0.0.0",
+			routeKey:           "config/vpp/v2/route/vrf/0/10.10.0.0/16/gw/0.0.0.0",
 			expectedIsRouteKey: false,
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			name, isRouteKey := models.Model(&Route{}).ParseKey(test.routeKey)
-			nameParts := strings.Split(name, "/")
-			if len(nameParts) != 7 {
-				t.Fatalf("invalid name: %q", name)
-			}
-			vrfIndex, dstNetAddr, nextHopAddr := nameParts[1], nameParts[3], nameParts[6]
-			dstNetMask, err := strconv.Atoi(nameParts[4])
-			if err != nil {
-				t.Fatalf("invalid mask: %v", dstNetMask)
-			}
-			if isRouteKey != test.expectedIsRouteKey {
-				t.Errorf("expected isRouteKey: %v\tgot: %v", test.expectedIsRouteKey, isRouteKey)
-			}
-			if vrfIndex != test.expectedVrfIndex {
-				t.Errorf("expected vrfIndex: %q\tgot: %q", test.expectedVrfIndex, vrfIndex)
-			}
-			if dstNetAddr != test.expectedDstNetAddr {
-				t.Errorf("expected dstNetAddr: %q\tgot: %q", test.expectedDstNetAddr, dstNetAddr)
-			}
-			if dstNetMask != test.expectedDstNetMask {
-				t.Errorf("expected dstNetMask: %v\tgot: %v", test.expectedDstNetMask, dstNetMask)
-			}
-			if nextHopAddr != test.expectedNextHopAddr {
-				t.Errorf("expected nextHopAddr: %q\tgot: %q", test.expectedNextHopAddr, nextHopAddr)
+			RegisterTestingT(t)
+			vrfIndex, dstNetAddr, dstNetMask, nextHopAddr, isRouteKey := ParseRouteKey(test.routeKey)
+			Expect(isRouteKey).To(BeEquivalentTo(test.expectedIsRouteKey), "Route/Non-route key should be properly detected")
+			if isRouteKey {
+				Expect(vrfIndex).To(BeEquivalentTo(test.expectedVrfIndex), "VRF should be properly extracted by parsing route key")
+				Expect(dstNetAddr).To(BeEquivalentTo(test.expectedDstNetAddr), "Destination network address should be properly extracted by parsing route key")
+				Expect(dstNetMask).To(BeEquivalentTo(test.expectedDstNetMask), "Destination network mask should be properly extracted by parsing route key")
+				Expect(nextHopAddr).To(BeEquivalentTo(test.expectedNextHopAddr), "Next hop address should be properly extracted by parsing route key")
 			}
 		})
 	}
-}*/
+}
