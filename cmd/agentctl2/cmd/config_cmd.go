@@ -21,12 +21,12 @@ var showConfig = &cobra.Command{
 }
 
 var (
-	showConf	bool
+	showConf bool
 )
 
 func init() {
 	RootCmd.AddCommand(showConfig)
-	showConfig.Flags().BoolVar(&showConf,"verbose", false, "Show Configuration")
+	showConfig.Flags().BoolVar(&showConf, "verbose", false, "Show Configuration")
 }
 
 func confFunction(cmd *cobra.Command, args []string) {

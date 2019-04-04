@@ -15,6 +15,7 @@
 package linux_l3
 
 import (
+	"github.com/gogo/protobuf/jsonpb"
 	"net"
 	"strconv"
 	"strings"
@@ -119,4 +120,30 @@ func parseRouteFromKeySuffix(key, prefix, errPrefix string) (dstNetAddr *net.IPN
 		return
 	}
 	return nil, "", false
+}
+
+func (m *ARPEntry) MarshalJSON() ([]byte, error) {
+	marshaller := &jsonpb.Marshaler{}
+	str, err := marshaller.MarshalToString(m)
+	if err != nil {
+		return nil, err
+	}
+	return []byte(str), nil
+}
+
+func (m *ARPEntry) UnmarshalJSON(data []byte) error {
+	return jsonpb.UnmarshalString(string(data), m)
+}
+
+func (m *Route) MarshalJSON() ([]byte, error) {
+	marshaller := &jsonpb.Marshaler{}
+	str, err := marshaller.MarshalToString(m)
+	if err != nil {
+		return nil, err
+	}
+	return []byte(str), nil
+}
+
+func (m *Route) UnmarshalJSON(data []byte) error {
+	return jsonpb.UnmarshalString(string(data), m)
 }

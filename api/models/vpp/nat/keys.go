@@ -15,6 +15,7 @@
 package vpp_nat
 
 import (
+	"github.com/gogo/protobuf/jsonpb"
 	"strings"
 
 	"github.com/ligato/vpp-agent/pkg/models"
@@ -102,4 +103,30 @@ func ParseInterfaceNAT44Key(key string) (iface string, isInside bool, isInterfac
 		}
 	}
 	return "", false, false
+}
+
+func (m *Nat44Global) MarshalJSON() ([]byte, error) {
+	marshaller := &jsonpb.Marshaler{}
+	str, err := marshaller.MarshalToString(m)
+	if err != nil {
+		return nil, err
+	}
+	return []byte(str), nil
+}
+
+func (m *Nat44Global) UnmarshalJSON(data []byte) error {
+	return jsonpb.UnmarshalString(string(data), m)
+}
+
+func (m *DNat44) MarshalJSON() ([]byte, error) {
+	marshaller := &jsonpb.Marshaler{}
+	str, err := marshaller.MarshalToString(m)
+	if err != nil {
+		return nil, err
+	}
+	return []byte(str), nil
+}
+
+func (m *DNat44) UnmarshalJSON(data []byte) error {
+	return jsonpb.UnmarshalString(string(data), m)
 }

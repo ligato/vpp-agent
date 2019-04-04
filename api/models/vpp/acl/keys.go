@@ -15,6 +15,7 @@
 package vpp_acl
 
 import (
+	"github.com/gogo/protobuf/jsonpb"
 	"strings"
 
 	"github.com/ligato/vpp-agent/pkg/models"
@@ -84,4 +85,17 @@ func ParseACLToInterfaceKey(key string) (acl, iface, flow string, isACLToInterfa
 		}
 	}
 	return "", "", "", false
+}
+
+func (m *ACL) MarshalJSON() ([]byte, error) {
+	marshaller := &jsonpb.Marshaler{}
+	str, err := marshaller.MarshalToString(m)
+	if err != nil {
+		return nil, err
+	}
+	return []byte(str), nil
+}
+
+func (m *ACL) UnmarshalJSON(data []byte) error {
+	return jsonpb.UnmarshalString(string(data), m)
 }

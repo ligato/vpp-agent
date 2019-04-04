@@ -1,4 +1,3 @@
-
 package utils
 
 import (
@@ -21,28 +20,6 @@ import (
 	"errors"
 )
 
-const (
-	ACLPath          = "config/vpp/acls/v2/acl/"
-	InterfacePath    = "config/vpp/v2/interfaces/"
-	BridgeDomainPath = "config/vpp/l2/v2/bridge-domain/"
-	FibTablePath     = "config/vpp/l2/v2/fib/"
-	XConnectPath     = "config/vpp/l2/v2/xconnect/"
-	ARPPath          = "config/vpp/v2/arp/"
-	RoutePath        = "config/vpp/v2/route/"
-	ProxyARPPath 	 = "config/vpp/v2/proxyarp-global"
-	IPScanneightPath = "config/vpp/v2/ipscanneigh-global"
-	NATPath			 = "config/vpp/nat/v2/nat44-global"
-	DNATPath		 = "config/vpp/nat/v2/dnat44/"
-	IPSecPolicyPath	 = "config/vpp/ipsec/v2/spd/"
-	IPSecAssociate   = "config/vpp/ipsec/v2/sa/"
-)
-
-const (
-	lInterfacePath 	 = "config/linux/interfaces/v2/interface/"
-	lARPPath		 = "config/linux/l3/v2/arp/"
-	lRoutePath		 = "config/linux/l3/v2/route/"
-)
-
 // VppMetaData defines the etcd metadata.
 type VppMetaData struct {
 	Rev int64
@@ -52,8 +29,8 @@ type VppMetaData struct {
 // ACLConfigWithMD contains a data record for interface configuration
 // and its etcd metadata.
 type ACLConfigWithMD struct {
-	Metadata  VppMetaData
-	ACL 	  *acl.ACL
+	Metadata VppMetaData
+	ACL      *acl.ACL
 }
 
 // InterfaceWithMD contains a data record for interface and its
@@ -73,13 +50,13 @@ type IfConfigWithMD struct {
 // etcd metadata.
 type InterfaceWithMD struct {
 	Config *IfConfigWithMD
-//	State  *IfStateWithMD
+	//	State  *IfStateWithMD
 }
 
 // BdConfigWithMD contains a data record for interface configuration
 // and its etcd metadata.
 type BdConfigWithMD struct {
-	Metadata  VppMetaData
+	Metadata     VppMetaData
 	BridgeDomain *l2.BridgeDomain
 }
 
@@ -92,7 +69,7 @@ type BdWithMD struct {
 // FibTableConfigWithMD contains a data record for interface configuration
 // and its etcd metadata.
 type FibTableConfigWithMD struct {
-	Metadata  VppMetaData
+	Metadata VppMetaData
 	FIBEntry *l2.FIBEntry
 }
 
@@ -105,7 +82,7 @@ type FibTableWithMD struct {
 // XconnectConfigWithMD contains a data record for interface configuration
 // and its etcd metadata.
 type XconnectConfigWithMD struct {
-	Metadata  VppMetaData
+	Metadata VppMetaData
 	Xconnect *l2.XConnectPair
 }
 
@@ -118,7 +95,7 @@ type XconnectWithMD struct {
 // ARPConfigWithMD contains a data record for interface configuration
 // and its etcd metadata.
 type ARPConfigWithMD struct {
-	Metadata  VppMetaData
+	Metadata VppMetaData
 	ARPEntry *l3.ARPEntry
 }
 
@@ -131,8 +108,8 @@ type ARPWithMD struct {
 // StaticRouterConfigWithMD contains a data record for interface configuration
 // and its etcd metadata.
 type StaticRoutesConfigWithMD struct {
-	Metadata  VppMetaData
-	Route *l3.Route
+	Metadata VppMetaData
+	Route    *l3.Route
 }
 
 // StaticRouterWithMD contains a data record for interface and its
@@ -144,7 +121,7 @@ type StaticRoutesWithMD struct {
 // ProxyARPConfigWithMD contains a data record for interface configuration
 // and its etcd metadata.
 type ProxyARPConfigWithMD struct {
-	Metadata  VppMetaData
+	Metadata VppMetaData
 	ProxyARP *l3.ProxyARP
 }
 
@@ -157,7 +134,7 @@ type ProxyARPWithMD struct {
 // IPScanNeighConfigWithMD contains a data record for interface configuration
 // and its etcd metadata.
 type IPScanNeighConfigWithMD struct {
-	Metadata  VppMetaData
+	Metadata       VppMetaData
 	IPScanNeighbor *l3.IPScanNeighbor
 }
 
@@ -170,7 +147,7 @@ type IPScanNeighWithMD struct {
 // NATConfigWithMD contains a data record for interface configuration
 // and its etcd metadata.
 type NATConfigWithMD struct {
-	Metadata  VppMetaData
+	Metadata    VppMetaData
 	Nat44Global *nat.Nat44Global
 }
 
@@ -183,8 +160,8 @@ type NATWithMD struct {
 // DNATConfigWithMD contains a data record for interface configuration
 // and its etcd metadata.
 type DNATConfigWithMD struct {
-	Metadata  VppMetaData
-	DNat44 *nat.DNat44
+	Metadata VppMetaData
+	DNat44   *nat.DNat44
 }
 
 // DNATWithMD contains a data record for interface and its
@@ -196,7 +173,7 @@ type DNATWithMD struct {
 // IPSecPolicyConfigWithMD contains a data record for interface configuration
 // and its etcd metadata.
 type IPSecPolicyConfigWithMD struct {
-	Metadata  VppMetaData
+	Metadata               VppMetaData
 	SecurityPolicyDatabase *ipsec.SecurityPolicyDatabase
 }
 
@@ -209,7 +186,7 @@ type IPSecPolicyWithMD struct {
 // IPSecAssociationConfigWithMD contains a data record for interface configuration
 // and its etcd metadata.
 type IPSecAssosiciationConfigWithMD struct {
-	Metadata  VppMetaData
+	Metadata            VppMetaData
 	SecurityAssociation *ipsec.SecurityAssociation
 }
 
@@ -235,7 +212,7 @@ type lInterfaceWithMD struct {
 // lARPConfigWithMD contains a data record for interface configuration
 // and its etcd metadata.
 type lARPConfigWithMD struct {
-	Metadata  VppMetaData
+	Metadata VppMetaData
 	ARPEntry *ll3.ARPEntry
 }
 
@@ -248,8 +225,8 @@ type lARPWithMD struct {
 // lRouteConfigWithMD contains a data record for interface configuration
 // and its etcd metadata.
 type lRouteConfigWithMD struct {
-	Metadata  VppMetaData
-	Route *ll3.Route
+	Metadata VppMetaData
+	Route    *ll3.Route
 }
 
 // lRouteWithMD contains a data record for interface and its
@@ -261,27 +238,27 @@ type lRouteWithMD struct {
 // VppData defines a structure to hold all etcd data records (of all
 // types) for one VPP.
 type VppData struct {
-	ACL 			   map[string]ACLWithMD
-	Interfaces         map[string]InterfaceWithMD
-//	InterfaceErrors    map[string]InterfaceErrorWithMD
-	BridgeDomains      map[string]BdWithMD
-//	BridgeDomainErrors map[string]BridgeDomainErrorWithMD
-	FibTableEntries    FibTableWithMD
-	XConnectPairs      map[string]XconnectWithMD
-	ARP 			   ARPWithMD
-	StaticRoutes       StaticRoutesWithMD
-	ProxyARP 		   ProxyARPWithMD
-	IPScanNeight	   IPScanNeighWithMD
-	NAT 			   NATWithMD
-	DNAT    		   map[string]DNATWithMD
-	IPSecPolicyDb	   map[string]IPSecPolicyWithMD
-	IPSecAssociate 	   map[string]IPSecAssosiciationWithMD
-//	Status             map[string]VppStatusWithMD
-	LInterfaces   	   map[string]lInterfaceWithMD
-	LARP 			   map[string]lARPWithMD
-	LRoute			   map[string]lRouteWithMD
-	ShowEtcd    	   bool
-	ShowConf    	   bool
+	ACL        map[string]ACLWithMD
+	Interfaces map[string]InterfaceWithMD
+	//	InterfaceErrors    map[string]InterfaceErrorWithMD
+	BridgeDomains map[string]BdWithMD
+	//	BridgeDomainErrors map[string]BridgeDomainErrorWithMD
+	FibTableEntries FibTableWithMD
+	XConnectPairs   map[string]XconnectWithMD
+	ARP             ARPWithMD
+	StaticRoutes    StaticRoutesWithMD
+	ProxyARP        ProxyARPWithMD
+	IPScanNeight    IPScanNeighWithMD
+	NAT             NATWithMD
+	DNAT            map[string]DNATWithMD
+	IPSecPolicyDb   map[string]IPSecPolicyWithMD
+	IPSecAssociate  map[string]IPSecAssosiciationWithMD
+	//	Status             map[string]VppStatusWithMD
+	LInterfaces map[string]lInterfaceWithMD
+	LARP        map[string]lARPWithMD
+	LRoute      map[string]lRouteWithMD
+	ShowEtcd    bool
+	ShowConf    bool
 }
 
 // EtcdDump is a map of VppData records. It constitutes a temporary
@@ -379,7 +356,7 @@ func readInterfaceConfigFromDb(db keyval.ProtoBroker, vd *VppData, key string, n
 
 	found, rev, err := readDataFromDb(db, key, int)
 	if found && err == nil {
-		vd.Interfaces[name] = InterfaceWithMD {
+		vd.Interfaces[name] = InterfaceWithMD{
 			Config: &IfConfigWithMD{VppMetaData{rev, key}, int},
 		}
 	}
@@ -447,7 +424,7 @@ func readARPConfigFromDb(db keyval.ProtoBroker, vd *VppData, key string, name st
 
 	found, rev, err := readDataFromDb(db, key, arp)
 	if found && err == nil {
-		vd.ARP = ARPWithMD {
+		vd.ARP = ARPWithMD{
 			Config: &ARPConfigWithMD{VppMetaData{rev, key}, arp},
 		}
 	}
@@ -622,7 +599,7 @@ func readDataFromDb(db keyval.ProtoBroker, key string, obj proto.Message) (bool,
 
 func newVppDataRecord() *VppData {
 	return &VppData{
-		ACL:			 make(map[string]ACLWithMD),
+		ACL:             make(map[string]ACLWithMD),
 		Interfaces:      make(map[string]InterfaceWithMD),
 		BridgeDomains:   make(map[string]BdWithMD),
 		FibTableEntries: FibTableWithMD{},
@@ -636,8 +613,8 @@ func newVppDataRecord() *VppData {
 		IPSecPolicyDb:   make(map[string]IPSecPolicyWithMD),
 		IPSecAssociate:  make(map[string]IPSecAssosiciationWithMD),
 		LInterfaces:     make(map[string]lInterfaceWithMD),
-		LARP: 			 make(map[string]lARPWithMD),
-		LRoute: 		 make(map[string]lRouteWithMD),
+		LARP:            make(map[string]lARPWithMD),
+		LRoute:          make(map[string]lRouteWithMD),
 		ShowEtcd:        false,
 		ShowConf:        false,
 	}
@@ -651,4 +628,3 @@ func (ed EtcdDump) getSortedKeys() []string {
 	sort.Strings(keys)
 	return keys
 }
-

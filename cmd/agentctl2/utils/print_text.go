@@ -22,7 +22,7 @@ type pfx struct {
 }
 
 var (
-	prefixer   pfx
+	prefixer pfx
 )
 
 func newPrefixer(t bool, s int) pfx {
@@ -39,13 +39,13 @@ func (p pfx) getPrefix(level int) string {
 func (ed EtcdDump) PrintTest(showConf bool) (*bytes.Buffer, error) {
 	prefixer = newPrefixer(false, perLevelSpaces)
 
- 	ifTemplate := createInterfaceTemplate()
- 	aclTemplate := createAclTemplate()
- 	bdTemplate := createBridgeTemplate()
- 	fibTemplate := createFibTableTemplate()
- 	xconnectTemplate := createXconnectTableTemplate()
- 	arpTemplate := createArpTableTemplate()
- 	routeTemplate := createRouteTableTemplate()
+	ifTemplate := createInterfaceTemplate()
+	aclTemplate := createAclTemplate()
+	bdTemplate := createBridgeTemplate()
+	fibTemplate := createFibTableTemplate()
+	xconnectTemplate := createXconnectTableTemplate()
+	arpTemplate := createArpTableTemplate()
+	routeTemplate := createRouteTableTemplate()
 	proxyarpTemplate := createProxyArpTemplate()
 	ipneighbor := createIPScanNeightTemplate()
 	nat := createNATTemplate()
@@ -66,7 +66,7 @@ func (ed EtcdDump) PrintTest(showConf bool) (*bytes.Buffer, error) {
 	return ed.textRenderer(showConf, templates)
 }
 
-func createAclTemplate() (*template.Template) {
+func createAclTemplate() *template.Template {
 
 	FuncMap := template.FuncMap{
 		"setBold":        setBold,
@@ -79,18 +79,18 @@ func createAclTemplate() (*template.Template) {
 		"{{$conf := .ShowConf}}" +
 			"{{with .ACL}}\n{{pfx 1}}ACL:" +
 
-		// Iterate over ACL.
+			// Iterate over ACL.
 			"{{range $ACLName, $ACLData := .}}\n{{pfx 2}}{{setBold $ACLName}}" +
 			"{{if $conf}}" +
 			"{{with .Config}}{{with .ACL}}" +
 
-		//Start Rules
+			//Start Rules
 			"{{with .Rules}}\n{{pfx 3}}ACL Rules:" +
-		// Iterate over ACL rule.
+			// Iterate over ACL rule.
 			"{{range $RuleName, $RuleData := .}}" +
 			"{{with .Action}}\n{{pfx 4}}Action: {{.}}{{end}}" +
 
-		//Start IP Rule
+			//Start IP Rule
 			"{{with .IpRule}}\n{{pfx 4}}IP Rule:" +
 
 			//Start IP
@@ -102,78 +102,78 @@ func createAclTemplate() (*template.Template) {
 			"{{with .SourceNetwork}}\n{{pfx 6}}Source Network:" +
 			"{{.}}{{end}}" +
 
-		// End IP
+			// End IP
 			"{{end}}" +
 
 			"{{with .Icmp}}\n{{pfx 5}}ICMP:" +
 			"{{with .Icmpv6}}\n{{pfx 6}}Is ICMPv6{{isEnabled .}}{{end}}" +
 
-		//Start ICMP Code Range
+			//Start ICMP Code Range
 			"{{with .IcmpCodeRange}}\n{{pfx 6}}ICMP Code Range:" +
 			"{{with .First}}\n{{pfx 7}}First: {{.}}{{end}}" +
 			"{{with .Last}}\n{{pfx 7}}Last: {{.}}{{end}}" +
 
-		//End ICMP Code Range
+			//End ICMP Code Range
 			"{{end}}" +
 
-		//Start ICMP Type Range
+			//Start ICMP Type Range
 			"{{with .IcmpTypeRange}}\n{{pfx 6}}ICMP Type Range" +
 			"{{with .First}}\n{{pfx 7}}First: {{.}}{{end}}" +
 			"{{with .Last}}\n{{pfx 7}}Last: {{.}}{{end}}" +
 
-		//End ICMP Type Range
+			//End ICMP Type Range
 			"{{end}}" +
 
-		//End ICMP
+			//End ICMP
 			"{{end}}" +
 
-		//Start TCP
+			//Start TCP
 			"{{with .Tcp}}\n{{pfx 5}}TCP:" +
 			"{{with .DestinationPortRange}}\n{{pfx 6}}Destination Port Range:" +
 			"{{with .LowerPort}}\n{{pfx 7}}Lower Port: {{.}}{{end}}" +
 			"{{with .UpperPort}}\n{{pfx 7}}Upper Port: {{.}}{{end}}" +
 
-		//End DestinationPortRange
+			//End DestinationPortRange
 			"{{end}}" +
 
 			"{{with .SourcePortRange}}\n{{pfx 6}}Source Port Range" +
 			"{{with .LowerPort}}\n{{pfx 7}}Lower Port: {{.}}{{end}}" +
 			"{{with .UpperPort}}\n{{pfx 7}}Upper Port: {{.}}{{end}}" +
 
-		//End SourcePortRange
+			//End SourcePortRange
 			"{{end}}" +
 
 			"{{with .TcpFlagsMask}}\n{{pfx 6}}TCP Flags Mask: {{.}}{{end}}" +
 			"{{with .TcpFlagsValue}}\n{{pfx 6}}TCP Flags Value: {{.}}{{end}}" +
 
-		//End TCP
+			//End TCP
 			"{{end}}" +
 
-		//Start UDP
+			//Start UDP
 			"{{with .Udp}}\n{{pfx 5}}UDP:" +
-		//Start UDP Destinaton Port
+			//Start UDP Destinaton Port
 			"{{with .DestinationPortRange}}\n{{pfx 6}}Destination Port Range:" +
 			"{{with .LowerPort}}\n{{pfx 7}}Lower Port: {{.}}{{end}}" +
 			"{{with .UpperPort}}\n{{pfx 7}}Upper Port: {{.}}{{end}}" +
 
-		//End DestinationPortRange
+			//End DestinationPortRange
 			"{{end}}" +
 
-		//Start UDP Source Port
+			//Start UDP Source Port
 			"{{with .SourcePortRange}}\n{{pfx 6}}Source Port Range:" +
 			"{{with .LowerPort}}\n{{pfx 7}}Lower Port: {{.}}{{end}}" +
 			"{{with .UpperPort}}\n{{pfx 7}}Upper Port: {{.}}{{end}}" +
 
-		//End SourcePortRange
+			//End SourcePortRange
 			"{{end}}" +
 
-		//End UDP
+			//End UDP
 			"{{end}}" +
 
-		//End IP Rule
+			//End IP Rule
 			"{{end}}" +
 
-		//Macip Rule
+			//Macip Rule
 			"{{with .MacipRule}}\n{{pfx 4}}Macip Rule:" +
 			"{{with .SourceAddress}}\n{{pfx 5}}Source Address: {{getIpAddresses .}}{{end}}" +
 			"{{with .SourceAddressPrefix}}/{{.}}{{end}}" +
@@ -181,13 +181,13 @@ func createAclTemplate() (*template.Template) {
 			"{{with .SourceMacAddress}}\n{{pfx 5}}Source MacAddress: {{.}}{{end}}" +
 			"{{with .SourceMacAddressMAsk}}/{{.}}{{end}}" +
 
-		//End Macip Rule
+			//End Macip Rule
 			"{{end}}" +
 
-		//End Rule range
+			//End Rule range
 			"{{end}}" +
 
-		// End iterate over ACL rule.
+			// End iterate over ACL rule.
 			"{{end}}" +
 
 			//Interfaces
@@ -198,7 +198,7 @@ func createAclTemplate() (*template.Template) {
 
 			"{{end}}{{end}}" +
 
-		// End Config
+			// End Config
 			"{{end}}" +
 
 			"{{end}}{{end}}")
@@ -210,7 +210,7 @@ func createAclTemplate() (*template.Template) {
 	return Template
 }
 
-func createInterfaceTemplate() (*template.Template) {
+func createInterfaceTemplate() *template.Template {
 
 	ifFuncMap := template.FuncMap{
 		"convertTime":    convertTime,
@@ -227,7 +227,7 @@ func createInterfaceTemplate() (*template.Template) {
 		"{{$conf := .ShowConf}}" +
 			"{{with .Interfaces}}\n{{pfx 1}}INTERFACES:" +
 
-		// Iterate over interfaces.
+			// Iterate over interfaces.
 			"{{range $ifaceName, $ifaceData := .}}\n{{pfx 2}}{{setBold $ifaceName}}\n" +
 
 			"{{if $conf}}" +
@@ -263,7 +263,7 @@ func createInterfaceTemplate() (*template.Template) {
 	return Template
 }
 
-func createBridgeTemplate() (*template.Template) {
+func createBridgeTemplate() *template.Template {
 
 	FuncMap := template.FuncMap{
 		"setBold":        setBold,
@@ -295,7 +295,7 @@ func createBridgeTemplate() (*template.Template) {
 			//End interate interfaces.
 			"{{end}}" +
 
-		//Interate over ArpTerminationTable.
+			//Interate over ArpTerminationTable.
 			"{{range $ArpTableName, $ArpTableData := .ArpTerminationTable}}\n{{pfx 3}}Arp Termination Table:" +
 			"{{with .IpAddress}}\n{{pfx 4}}IP Address: {{.}} {{end}}" +
 			"{{with .PhysAddress}}\n{{pfx 4}}: {{.}} {{end}}" +
@@ -309,7 +309,6 @@ func createBridgeTemplate() (*template.Template) {
 
 			"{{end}}{{end}}")
 
-
 	if err != nil {
 		panic(err)
 	}
@@ -317,7 +316,7 @@ func createBridgeTemplate() (*template.Template) {
 	return Template
 }
 
-func createFibTableTemplate() (*template.Template) {
+func createFibTableTemplate() *template.Template {
 
 	FuncMap := template.FuncMap{
 		"convertTime":    convertTime,
@@ -346,7 +345,7 @@ func createFibTableTemplate() (*template.Template) {
 
 			"{{end}}{{end}}" +
 
-		//End config
+			//End config
 			"{{end}}" +
 			"{{end}}")
 
@@ -357,18 +356,18 @@ func createFibTableTemplate() (*template.Template) {
 	return Template
 }
 
-func createXconnectTableTemplate() (*template.Template) {
+func createXconnectTableTemplate() *template.Template {
 
 	FuncMap := template.FuncMap{
-		"setBold":        setBold,
-		"pfx":            getPrefix,
+		"setBold": setBold,
+		"pfx":     getPrefix,
 	}
 
 	Template, err := template.New("xconnect").Funcs(FuncMap).Parse(
 		"{{$conf := .ShowConf}}" +
 			"{{with .XConnectPairs}}\n{{pfx 1}}Xconnect:" +
 
-		// Iterate over xconnect.
+			// Iterate over xconnect.
 			"{{range $XconnectName, $XconnectData := .}}\n{{pfx 2}}{{setBold $XconnectName}}" +
 			"{{if $conf}}" +
 
@@ -390,7 +389,7 @@ func createXconnectTableTemplate() (*template.Template) {
 	return Template
 }
 
-func createArpTableTemplate() (*template.Template) {
+func createArpTableTemplate() *template.Template {
 
 	FuncMap := template.FuncMap{
 		"setBold":        setBold,
@@ -400,7 +399,7 @@ func createArpTableTemplate() (*template.Template) {
 	}
 
 	Template, err := template.New("arp").Funcs(FuncMap).Parse(
-			"{{with .ARP}}\n{{pfx 1}}ARP:" +
+		"{{with .ARP}}\n{{pfx 1}}ARP:" +
 			"{{with .Config}}{{with .ARPEntry}}" +
 
 			"{{with .Interface}}\n{{pfx 2}}Interface: {{.}}{{end}}" +
@@ -419,7 +418,7 @@ func createArpTableTemplate() (*template.Template) {
 	return Template
 }
 
-func createRouteTableTemplate() (*template.Template) {
+func createRouteTableTemplate() *template.Template {
 
 	FuncMap := template.FuncMap{
 		"setBold":        setBold,
@@ -452,11 +451,11 @@ func createRouteTableTemplate() (*template.Template) {
 	return Template
 }
 
-func createProxyArpTemplate() (*template.Template) {
+func createProxyArpTemplate() *template.Template {
 
 	FuncMap := template.FuncMap{
-		"setBold":        setBold,
-		"pfx":            getPrefix,
+		"setBold": setBold,
+		"pfx":     getPrefix,
 	}
 
 	Template, err := template.New("proxyarp").Funcs(FuncMap).Parse(
@@ -464,19 +463,19 @@ func createProxyArpTemplate() (*template.Template) {
 
 			"{{with .Config}}{{with .ProxyARP}}" +
 
-		//Iterate over Interfaces
+			//Iterate over Interfaces
 			"{{range $InterfacesName, $InterfaceData := .Interfaces}}" +
 			"{{with .Name}}\n{{pfx 2}}{{.}}{{end}}" +
 
-		//End iterate
+			//End iterate
 			"{{end}}" +
 
-		//Iterate over Proxy Ranges
+			//Iterate over Proxy Ranges
 			"{{range $ProxyName, $ProxyData := .Ranges}}" +
 			"{{with .FirstIpAddr}}\n{{pfx 2}}First IP Address: {{.}}{{end}}" +
 			"{{with .LastIpAddr}}\n{{pfx 2}}Last IP Address: {{.}}{{end}}" +
 
-		//End iterate
+			//End iterate
 			"{{end}}" +
 
 			//End
@@ -491,11 +490,11 @@ func createProxyArpTemplate() (*template.Template) {
 	return Template
 }
 
-func createIPScanNeightTemplate() (*template.Template) {
+func createIPScanNeightTemplate() *template.Template {
 
 	FuncMap := template.FuncMap{
-		"setBold":        setBold,
-		"pfx":            getPrefix,
+		"setBold": setBold,
+		"pfx":     getPrefix,
 	}
 
 	Template, err := template.New("ipscanneigh").Funcs(FuncMap).Parse(
@@ -523,11 +522,11 @@ func createIPScanNeightTemplate() (*template.Template) {
 	return Template
 }
 
-func createNATTemplate() (*template.Template) {
+func createNATTemplate() *template.Template {
 
 	FuncMap := template.FuncMap{
-		"setBold":        setBold,
-		"pfx":            getPrefix,
+		"setBold": setBold,
+		"pfx":     getPrefix,
 	}
 
 	Template, err := template.New("nat").Funcs(FuncMap).Parse(
@@ -537,27 +536,27 @@ func createNATTemplate() (*template.Template) {
 
 			"{{with .Label}}\n{{pfx 2}}Label: {{.}}{{end}}" +
 
-		//Iterate over StMappings
+			//Iterate over StMappings
 			"{{range $StMapName, $StMapData:= .StMappings}}" +
 			"{{with .ExternalInterface}}\n{{pfx 3}}External Interface: {{.}}{{end}}" +
 			"{{with .ExternalIp}}\n{{pfx 3}}External IP: {{.}}{{end}}" +
 			"{{with .ExternalPort}}\n{{pfx 3}}External Port: {{.}}{{end}}" +
 
-		//Iterate over Local IPs
+			//Iterate over Local IPs
 			"{{range $LocalIPName, $LocalIPData := .LocalIps}}" +
 			"{{with .VrfId}}\n{{pfx 4}}VrfID: {{.}}{{end}}" +
 			"{{with .LocalIp}}\n{{pfx 4}}Local IP: {{.}}{{end}}" +
 			"{{with .LocalPort}}\n{{pfx 4}}Local Port: {{.}}{{end}}" +
 			"{{with .Probability}}\n{{pfx 4}}Probability: {{.}}{{end}}" +
 
-		//End over Local IPs
+			//End over Local IPs
 			"{{end}}" +
 
 			"{{with .Protocol}}\n{{pfx 3}}Protocol: {{.}}{{end}}" +
 			"{{with .TwiceNat}}\n{{pfx 3}}Twice Nat: {{.}}{{end}}" +
 			"{{with .SessionAffinity}}\n{{pfx 3}}Session Affinity: {{.}}{{end}}" +
 
-		//End StMappings
+			//End StMappings
 			"{{end}}" +
 
 			//End
@@ -572,11 +571,11 @@ func createNATTemplate() (*template.Template) {
 	return Template
 }
 
-func createDNATTemplate() (*template.Template) {
+func createDNATTemplate() *template.Template {
 
 	FuncMap := template.FuncMap{
-		"setBold":        setBold,
-		"pfx":            getPrefix,
+		"setBold": setBold,
+		"pfx":     getPrefix,
 	}
 
 	Template, err := template.New("dnat").Funcs(FuncMap).Parse(
@@ -586,37 +585,37 @@ func createDNATTemplate() (*template.Template) {
 
 			"{{with .Label}}\n{{pfx 2}}Label: {{.}}{{end}}" +
 
-		//Iterate over StMappings
+			//Iterate over StMappings
 			"{{range $StMapName, $StMapData:= .StMappings}}" +
 			"{{with .ExternalInterface}}\n{{pfx 3}}External Interface: {{.}}{{end}}" +
 			"{{with .ExternalIp}}\n{{pfx 3}}External IP: {{.}}{{end}}" +
 			"{{with .ExternalPort}}\n{{pfx 3}}External Port: {{.}}{{end}}" +
 
-		//Iterate over Local IPs
+			//Iterate over Local IPs
 			"{{range $LocalIPName, $LocalIPData := .LocalIps}}" +
 			"{{with .VrfId}}\n{{pfx 4}}VrfID: {{.}}{{end}}" +
 			"{{with .LocalIp}}\n{{pfx 4}}Local IP: {{.}}{{end}}" +
 			"{{with .LocalPort}}\n{{pfx 4}}Local Port: {{.}}{{end}}" +
 			"{{with .Probability}}\n{{pfx 4}}Probability: {{.}}{{end}}" +
 
-		//End over Local IPs
+			//End over Local IPs
 			"{{end}}" +
 
 			"{{with .Protocol}}\n{{pfx 3}}Protocol: {{.}}{{end}}" +
 			"{{with .TwiceNat}}\n{{pfx 3}}Twice Nat: {{.}}{{end}}" +
 			"{{with .SessionAffinity}}\n{{pfx 3}}Session Affinity: {{.}}{{end}}" +
 
-		//End StMappings
+			//End StMappings
 			"{{end}}" +
 
-		//Iterate over StMappings
+			//Iterate over StMappings
 			"{{range $IdMapName, $IDMapData:= .IdMappings}}" +
 			"{{with .VrfId}}\n{{pfx 4}}VrfID: {{.}}{{end}}" +
 			"{{with .Interface}}\n{{pfx 4}}Interface: {{.}}{{end}}" +
 			"{{with .IPAddress}}\n{{pfx 4}}IP Address: {{.}}{{end}}" +
 			"{{with .Port}}\n{{pfx 4}}Port: {{.}}{{end}}" +
 			"{{with .Protocol}}\n{{pfx 4}}Protocol: {{.}}{{end}}" +
-		//End over StMappings
+			//End over StMappings
 			"{{end}}" +
 
 			//End
@@ -631,30 +630,30 @@ func createDNATTemplate() (*template.Template) {
 	return Template
 }
 
-func createIPSecPolicyTemplate() (*template.Template) {
+func createIPSecPolicyTemplate() *template.Template {
 
 	FuncMap := template.FuncMap{
-		"setBold":        setBold,
-		"pfx":            getPrefix,
+		"setBold": setBold,
+		"pfx":     getPrefix,
 	}
 
 	Template, err := template.New("ipsecpolicy").Funcs(FuncMap).Parse(
 		"{{$conf := .ShowConf}}" +
 			"{{with .IPSecPolicyDb}}\n{{pfx 1}}Security policy database:" +
 
-		// Iterate over Policy.
+			// Iterate over Policy.
 			"{{range $PolicyName, $PolicyData := .}}" +
 			"{{if $conf}}" +
 
 			"{{with .Config}}{{with .SecurityPolicyDatabase}}" +
-		// Iterate over Interfaces.
+			// Iterate over Interfaces.
 			"{{range $InterfaceName, $InterfaceData := .Interfaces}}\n{{pfx 2}}Interfaces:" +
 			"{{with .Name}}\n{{pfx 3}}Name: {{.}}{{end}}" +
 
-		// End iterate over Interfaces.
+			// End iterate over Interfaces.
 			"{{end}}" +
 
-		// Iterate over Interfaces.
+			// Iterate over Interfaces.
 			"{{range $PolicyName, $PolicyData := .PolicyEntries}}\n{{pfx 2}}PolicyEntries:" +
 			"{{with .SaIndex}}\n{{pfx 3}}SaIndex: {{.}}{{end}}" +
 			"{{with .Priority}}\n{{pfx 3}}Priority: {{.}}{{end}}" +
@@ -670,14 +669,14 @@ func createIPSecPolicyTemplate() (*template.Template) {
 			"{{with .LocalPortStop}}\n{{pfx 3}}Local Port Stop: {{.}}{{end}}" +
 			"{{with .Action}}\n{{pfx 3}}Action: {{.}}{{end}}" +
 
-		// End iterate over Interfaces.
+			// End iterate over Interfaces.
 			"{{end}}" +
-		//End
+			//End
 			"{{end}}{{end}}" +
 
-		// End iterate over Policy.
+			// End iterate over Policy.
 			"{{end}}" +
-		// End Config
+			// End Config
 			"{{end}}" +
 
 			"{{end}}")
@@ -689,18 +688,18 @@ func createIPSecPolicyTemplate() (*template.Template) {
 	return Template
 }
 
-func createIPSecAssociationTemplate() (*template.Template) {
+func createIPSecAssociationTemplate() *template.Template {
 
 	FuncMap := template.FuncMap{
-		"setBold":        setBold,
-		"pfx":            getPrefix,
+		"setBold": setBold,
+		"pfx":     getPrefix,
 	}
 
 	Template, err := template.New("ipsecassociation").Funcs(FuncMap).Parse(
 		"{{$conf := .ShowConf}}" +
 			"{{with .IPSecAssociate}}\n{{pfx 1}}Security associations:" +
 
-		// Iterate over Association.
+			// Iterate over Association.
 			"{{range $AssociationName, $AssociationData := .}}" +
 			"{{if $conf}}" +
 
@@ -722,10 +721,10 @@ func createIPSecAssociationTemplate() (*template.Template) {
 			//End
 			"{{end}}{{end}}" +
 
-		// End iterate over Association.
+			// End iterate over Association.
 			"{{end}}" +
 
-		// End Config
+			// End Config
 			"{{end}}" +
 
 			"{{end}}")
@@ -737,18 +736,18 @@ func createIPSecAssociationTemplate() (*template.Template) {
 	return Template
 }
 
-func createlInterfaceTemplate() (*template.Template) {
+func createlInterfaceTemplate() *template.Template {
 
 	FuncMap := template.FuncMap{
-		"setBold":        setBold,
-		"pfx":            getPrefix,
+		"setBold": setBold,
+		"pfx":     getPrefix,
 	}
 
 	Template, err := template.New("linterface").Funcs(FuncMap).Parse(
 		"{{$conf := .ShowConf}}" +
 			"{{with .LInterfaces}}\n{{pfx 1}}Linux interface:" +
 
-		// Iterate over interface.
+			// Iterate over interface.
 			"{{range $InterfaceName, $InterfaceData := .}}\n{{pfx 2}}{{setBold $InterfaceName}}" +
 			"{{if $conf}}" +
 			"{{with .Config}}{{with .Interface}}" +
@@ -767,12 +766,12 @@ func createlInterfaceTemplate() (*template.Template) {
 			"{{with .Mtu}}\n{{pfx 3}}Mtu: {{.}}{{end}}" +
 			"{{with .Link}}\n{{pfx 3}}Link: {{.}}{{end}}" +
 
-		//End
+			//End
 			"{{end}}{{end}}" +
 
-		//End conf
+			//End conf
 			"{{end}}" +
-		//End iterate over interface.
+			//End iterate over interface.
 			"{{end}}" +
 
 			"{{end}}")
@@ -784,18 +783,18 @@ func createlInterfaceTemplate() (*template.Template) {
 	return Template
 }
 
-func createlARPTemplate() (*template.Template) {
+func createlARPTemplate() *template.Template {
 
 	FuncMap := template.FuncMap{
-		"setBold":        setBold,
-		"pfx":            getPrefix,
+		"setBold": setBold,
+		"pfx":     getPrefix,
 	}
 
 	Template, err := template.New("larp").Funcs(FuncMap).Parse(
 		"{{$conf := .ShowConf}}" +
 			"{{with .LARP}}\n{{pfx 1}}Linux ARP:" +
 
-		// Iterate over interface.
+			// Iterate over interface.
 			"{{range $InterfaceName, $InterfaceData := .}}\n{{pfx 2}}{{setBold $InterfaceName}}" +
 			"{{if $conf}}" +
 			"{{with .Config}}{{with .ARPEntry}}" +
@@ -804,12 +803,12 @@ func createlARPTemplate() (*template.Template) {
 			"{{with .IpAddress}}\n{{pfx 3}}Ip Address: {{.}}{{end}}" +
 			"{{with .HwAddress}}\n{{pfx 3}}HwAddress: {{.}}{{end}}" +
 
-		//End
+			//End
 			"{{end}}{{end}}" +
 
-		//End conf
+			//End conf
 			"{{end}}" +
-		//End iterate over interface.
+			//End iterate over interface.
 			"{{end}}" +
 
 			"{{end}}")
@@ -821,18 +820,18 @@ func createlARPTemplate() (*template.Template) {
 	return Template
 }
 
-func createlRouteTemplate() (*template.Template) {
+func createlRouteTemplate() *template.Template {
 
 	FuncMap := template.FuncMap{
-		"setBold":        setBold,
-		"pfx":            getPrefix,
+		"setBold": setBold,
+		"pfx":     getPrefix,
 	}
 
 	Template, err := template.New("lroute").Funcs(FuncMap).Parse(
 		"{{$conf := .ShowConf}}" +
 			"{{with .LRoute}}\n{{pfx 1}}Linux Route:" +
 
-		// Iterate over Route.
+			// Iterate over Route.
 			"{{range $RouteName, $RouteData := .}}\n{{pfx 2}}{{setBold $RouteName}}" +
 			"{{if $conf}}" +
 			"{{with .Config}}{{with .Route}}" +
@@ -843,12 +842,12 @@ func createlRouteTemplate() (*template.Template) {
 			"{{with .GwAddr}}\n{{pfx 3}}Gw Addr: {{.}}{{end}}" +
 			"{{with .Metric}}\n{{pfx 3}}Metric: {{.}}{{end}}" +
 
-		//End
+			//End
 			"{{end}}{{end}}" +
 
-		//End conf
+			//End conf
 			"{{end}}" +
-		//End iterate over interface.
+			//End iterate over interface.
 			"{{end}}" +
 
 			"{{end}}")
