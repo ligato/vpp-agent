@@ -354,10 +354,11 @@
   version = "v5.0"
 
 [[projects]]
-  digest = "1:d3dd317f7fb7d94351b27dcc256b5b69ef13e8a86c57883949aa344cf640c51b"
+  digest = "1:a4e6cb9d433cdd86e8b80f65e0578d5fc13bfb1bbd18daefda89539675c71ccb"
   name = "github.com/gogo/protobuf"
   packages = [
     "gogoproto",
+    "jsonpb",
     "plugin/compare",
     "plugin/defaultcheck",
     "plugin/description",
@@ -381,6 +382,8 @@
     "protoc-gen-gogo/generator/internal/remap",
     "protoc-gen-gogo/grpc",
     "protoc-gen-gogo/plugin",
+    "sortkeys",
+    "types",
     "vanity",
     "vanity/command",
   ]
@@ -425,6 +428,18 @@
   pruneopts = "UT"
   revision = "e3702bed27f0d39777b0b37b664b6280e8ef8fbf"
   version = "v1.6.2"
+
+[[projects]]
+  digest = "1:a93a4de7b00fb9cc952bc0483e9a32cd273adbbd7f3282bfe89656b2f88fb08c"
+  name = "github.com/grpc-ecosystem/go-grpc-middleware"
+  packages = [
+    ".",
+    "auth",
+    "util/metautils",
+  ]
+  pruneopts = "UT"
+  revision = "c250d6563d4d4c20252cd865923440e829844f4e"
+  version = "v1.0.0"
 
 [[projects]]
   digest = "1:662f988f80b8e4208a0004d1e9d67543602fdd00b7106a857b8339e3d276ae1e"
@@ -484,7 +499,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:cf02ae752160d35c8d3522d6321653ea31bf3f91e425caa34142d3cf90143781"
+  digest = "1:dd01e7ab55ea6c683d67defd8c3b365e62445fb4ec6a5939a4b1be1f903e5456"
   name = "github.com/ligato/cn-infra"
   packages = [
     "agent",
@@ -528,7 +543,7 @@
     "utils/safeclose",
   ]
   pruneopts = "T"
-  revision = "43e3685bb0770ff94f395b4519297fcf9a149ad5"
+  revision = "1009a1eda9ba369c0aea207b8ecea13cd109f350"
 
 [[projects]]
   branch = "master"
@@ -753,12 +768,12 @@
   revision = "3113b8401b8a98917cde58f8bbd42a1b1c03b1fd"
 
 [[projects]]
-  digest = "1:274f67cb6fed9588ea2521ecdac05a6d62a8c51c074c1fccc6a49a40ba80e925"
+  branch = "master"
+  digest = "1:a3b8912deeef29007fab9a13a9f21b9e9b59c621a2ed61e2fe7b37320a71fbd5"
   name = "github.com/satori/go.uuid"
   packages = ["."]
   pruneopts = "UT"
-  revision = "f58768cc1a7a7e77a3bd49e98cdd21419399b6a3"
-  version = "v1.2.0"
+  revision = "b2ce2384e17bbe0c6d34077efa39dbab3e09123b"
 
 [[projects]]
   digest = "1:76b02b3f516299ddfed21a4e7ce26cda0b9a57f14575bfe4aa2d644ea0e8e24c"
