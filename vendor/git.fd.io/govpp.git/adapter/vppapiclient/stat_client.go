@@ -249,8 +249,8 @@ func (c *statClient) DumpStats(patterns ...string) (stats []*adapter.StatEntry, 
 			length := int(C.govpp_stat_segment_vec_len(unsafe.Pointer(C.govpp_stat_segment_data_get_simple_counter(&v))))
 			vector := make([][]adapter.Counter, length)
 			for k := 0; k < length; k++ {
-				for j := 0; j < int(C.govpp_stat_segment_vec_len(unsafe.Pointer(C.govpp_stat_segment_data_get_simple_counter_index(&v, _Ctype_int(k))))); j++ {
-					vector[k] = append(vector[k], adapter.Counter(C.govpp_stat_segment_data_get_simple_counter_index_value(&v, _Ctype_int(k), _Ctype_int(j))))
+				for j := 0; j < int(C.govpp_stat_segment_vec_len(unsafe.Pointer(C.govpp_stat_segment_data_get_simple_counter_index(&v, C.int(k))))); j++ {
+					vector[k] = append(vector[k], adapter.Counter(C.govpp_stat_segment_data_get_simple_counter_index_value(&v, C.int(k), C.int(j))))
 				}
 			}
 			stat.Data = adapter.SimpleCounterStat(vector)
@@ -259,10 +259,10 @@ func (c *statClient) DumpStats(patterns ...string) (stats []*adapter.StatEntry, 
 			length := int(C.govpp_stat_segment_vec_len(unsafe.Pointer(C.govpp_stat_segment_data_get_combined_counter(&v))))
 			vector := make([][]adapter.CombinedCounter, length)
 			for k := 0; k < length; k++ {
-				for j := 0; j < int(C.govpp_stat_segment_vec_len(unsafe.Pointer(C.govpp_stat_segment_data_get_combined_counter_index(&v, _Ctype_int(k))))); j++ {
+				for j := 0; j < int(C.govpp_stat_segment_vec_len(unsafe.Pointer(C.govpp_stat_segment_data_get_combined_counter_index(&v, C.int(k))))); j++ {
 					vector[k] = append(vector[k], adapter.CombinedCounter{
-						Packets: adapter.Counter(C.govpp_stat_segment_data_get_combined_counter_index_packets(&v, _Ctype_int(k), _Ctype_int(j))),
-						Bytes:   adapter.Counter(C.govpp_stat_segment_data_get_combined_counter_index_bytes(&v, _Ctype_int(k), _Ctype_int(j))),
+						Packets: adapter.Counter(C.govpp_stat_segment_data_get_combined_counter_index_packets(&v, C.int(k), C.int(j))),
+						Bytes:   adapter.Counter(C.govpp_stat_segment_data_get_combined_counter_index_bytes(&v, C.int(k), C.int(j))),
 					})
 				}
 			}
