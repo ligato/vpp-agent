@@ -439,7 +439,7 @@ func (s *Scheduler) postProcessTransaction(txn *transaction, executed kvs.Record
 				continue
 			}
 			descriptor := s.registry.GetDescriptorForKey(key)
-			handler := &descriptorHandler{descriptor}
+			handler := newDescriptorHandler(descriptor)
 			equivalent := handler.equivalentValues(key, node.GetValue(), expValue)
 			if !equivalent {
 				kvErrors = append(kvErrors, kvs.KeyWithError{

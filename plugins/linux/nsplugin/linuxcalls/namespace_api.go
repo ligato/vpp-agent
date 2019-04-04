@@ -15,11 +15,14 @@
 package linuxcalls
 
 import (
+	"os"
 	"runtime"
 
 	"github.com/ligato/cn-infra/logging"
 	"github.com/vishvananda/netns"
 )
+
+var enableNsCtxCheck = os.Getenv("NSPLUGIN_CHECK_NS_CTX") != ""
 
 // NamedNetNsAPI defines methods related to management of named network namespaces.
 type NamedNetNsAPI interface {
@@ -68,7 +71,17 @@ func (ctx *namespaceMgmtCtx) UnlockOSThread() {
 // NewNamespaceMgmtCtx creates and returns a new context for management of Linux
 // namespaces.
 func NewNamespaceMgmtCtx() NamespaceMgmtCtx {
-	return &namespaceMgmtCtx{}
+	nsCtx := &namespaceMgmtCtx{}
+	if enableNsCtxCheck {
+		bt := make([]byte, 1<<16)
+		runtime.Stack(bt, false)
+		runtime.SetFinalizer(nsCtx, func(ctx *namespaceMgmtCtx) {
+			if ctx.lockOsThreadCnt != 0 {
+				panic("locked ns ctx to be GCed - created at: " + string(bt))
+			}
+		})
+	}
+	return nsCtx
 }
 
 // namedNetNsHandler implements NamedNetNsAPI using provided system handler.
