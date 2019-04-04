@@ -2,13 +2,44 @@ package kvscheduler
 
 import (
 	"github.com/gogo/protobuf/proto"
+	"github.com/vishvananda/netns"
+	"os"
+
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 )
+
+// checking of the original network namespace preservation
+var defaultNs netns.NsHandle
+var enableNetNsCheck = os.Getenv(checkNetNamespaceEnv) != ""
+
+func init() {
+	defaultNs, _ = netns.Get()
+}
+
+func checkNetNs() error {
+	if enableNetNsCheck && defaultNs != -1 {
+		ns, nsErr := netns.Get()
+		if nsErr == nil {
+			defer ns.Close()
+		}
+		if nsErr == nil && !defaultNs.Equal(ns) {
+			return kvs.ErrEscapedNetNs
+		}
+	}
+	return nil
+}
 
 // descriptorHandler handles access to descriptor methods (callbacks).
 // For callback not provided, a default return value is returned.
 type descriptorHandler struct {
 	descriptor *kvs.KVDescriptor
+}
+
+// newDescriptorHandler is a constructor for descriptor handler
+func newDescriptorHandler(descr *kvs.KVDescriptor) *descriptorHandler {
+	return &descriptorHandler{
+		descriptor: descr,
+	}
 }
 
 // keyLabel by default returns the key itself.
@@ -47,7 +78,12 @@ func (h *descriptorHandler) create(key string, value proto.Message) (metadata kv
 		return nil, kvs.ErrUnimplementedCreate
 	}
 	defer trackDescMethod(h.descriptor.Name, "Create")()
-	return h.descriptor.Create(key, value)
+	metadata, err = h.descriptor.Create(key, value)
+	if nsErr := checkNetNs(); nsErr != nil {
+		err = nsErr
+	}
+	return metadata, err
+
 }
 
 // update is not called if Update is not provided (updateWithRecreate() returns true).
@@ -56,7 +92,11 @@ func (h *descriptorHandler) update(key string, oldValue, newValue proto.Message,
 		return oldMetadata, nil
 	}
 	defer trackDescMethod(h.descriptor.Name, "Update")()
-	return h.descriptor.Update(key, oldValue, newValue, oldMetadata)
+	newMetadata, err = h.descriptor.Update(key, oldValue, newValue, oldMetadata)
+	if nsErr := checkNetNs(); nsErr != nil {
+		err = nsErr
+	}
+	return newMetadata, err
 }
 
 // updateWithRecreate either forwards the call to UpdateWithRecreate if defined
@@ -87,7 +127,11 @@ func (h *descriptorHandler) delete(key string, value proto.Message, metadata kvs
 		return kvs.ErrUnimplementedDelete
 	}
 	defer trackDescMethod(h.descriptor.Name, "Delete")()
-	return h.descriptor.Delete(key, value, metadata)
+	err := h.descriptor.Delete(key, value, metadata)
+	if nsErr := checkNetNs(); nsErr != nil {
+		err = nsErr
+	}
+	return err
 }
 
 // isRetriableFailure first checks for errors returned by the handler itself.
@@ -95,7 +139,10 @@ func (h *descriptorHandler) delete(key string, value proto.Message, metadata kvs
 // can be potentially fixed by retry.
 func (h *descriptorHandler) isRetriableFailure(err error) bool {
 	// first check for errors returned by the handler itself
-	handlerErrs := []error{kvs.ErrUnimplementedCreate, kvs.ErrUnimplementedDelete}
+	handlerErrs := []error{
+		kvs.ErrUnimplementedCreate,
+		kvs.ErrUnimplementedDelete,
+		kvs.ErrEscapedNetNs}
 	for _, handlerError := range handlerErrs {
 		if err == handlerError {
 			return false
@@ -133,5 +180,8 @@ func (h *descriptorHandler) retrieve(correlate []kvs.KVWithMetadata) (values []k
 	}
 	defer trackDescMethod(h.descriptor.Name, "Retrieve")()
 	values, err = h.descriptor.Retrieve(correlate)
+	if nsErr := checkNetNs(); nsErr != nil {
+		err = nsErr
+	}
 	return values, true, err
 }

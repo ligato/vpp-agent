@@ -38,7 +38,7 @@ func (s *Scheduler) orderValuesByOp(values []kvForTxn) []kvForTxn {
 	var delete, recreate, create, update []kvForTxn
 	for _, kv := range values {
 		descriptor := s.registry.GetDescriptorForKey(kv.key)
-		handler := &descriptorHandler{descriptor}
+		handler := newDescriptorHandler(descriptor)
 		node := graphR.GetNode(kv.key)
 
 		if kv.value == nil {

@@ -339,7 +339,7 @@ func (s *Scheduler) applyDelete(node graph.NodeRW, txnOp *kvs.RecordedTxnOp, arg
 
 	// execute delete operation
 	descriptor := s.registry.GetDescriptorForKey(node.GetKey())
-	handler := &descriptorHandler{descriptor}
+	handler := newDescriptorHandler(descriptor)
 	if !args.dryRun && descriptor != nil {
 		if args.kv.origin != kvs.FromSB {
 			err = handler.delete(node.GetKey(), node.GetValue(), node.GetMetadata())
@@ -363,7 +363,7 @@ func (s *Scheduler) applyCreate(node graph.NodeRW, txnOp *kvs.RecordedTxnOp, arg
 
 	// get descriptor
 	descriptor := s.registry.GetDescriptorForKey(args.kv.key)
-	handler := &descriptorHandler{descriptor}
+	handler := newDescriptorHandler(descriptor)
 	if descriptor != nil {
 		node.SetFlags(&DescriptorFlag{descriptor.Name})
 		node.SetLabel(handler.keyLabel(args.kv.key))
@@ -504,7 +504,7 @@ func (s *Scheduler) applyUpdate(node graph.NodeRW, txnOp *kvs.RecordedTxnOp, arg
 
 	// validate new value
 	descriptor := s.registry.GetDescriptorForKey(args.kv.key)
-	handler := &descriptorHandler{descriptor}
+	handler := newDescriptorHandler(descriptor)
 	if !args.dryRun && args.kv.origin == kvs.FromNB {
 		err = handler.validate(node.GetKey(), node.GetValue())
 		if err != nil {

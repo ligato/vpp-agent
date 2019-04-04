@@ -4,9 +4,11 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
+	"github.com/fsnotify/fsnotify"
 	"io"
 	"net"
 	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"time"
@@ -72,9 +74,39 @@ func nilCallback(msgID uint16, data []byte) {
 	Log.Warnf("no callback set, dropping message: ID=%v len=%d", msgID, len(data))
 }
 
-func (*vppClient) WaitReady() error {
-	// TODO: add watcher for socket file?
-	return nil
+// WaitReady checks socket file existence and waits for it if necessary
+func (c *vppClient) WaitReady() error {
+	// verify file existence
+	if _, err := os.Stat(c.sockAddr); err == nil {
+		return nil
+	} else if os.IsExist(err) {
+		return err
+	}
+
+	// if not, watch for it
+	watcher, err := fsnotify.NewWatcher()
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err := watcher.Close(); err != nil {
+			Log.Errorf("failed to close file watcher: %v", err)
+		}
+	}()
+	path := filepath.Dir(c.sockAddr)
+	if err := watcher.Add(path); err != nil {
+		return err
+	}
+
+	for {
+		ev := <-watcher.Events
+		if ev.Name == path {
+			if (ev.Op & fsnotify.Create) == fsnotify.Create {
+				// socket ready
+				return nil
+			}
+		}
+	}
 }
 
 func (c *vppClient) SetMsgCallback(cb adapter.MsgCallback) {

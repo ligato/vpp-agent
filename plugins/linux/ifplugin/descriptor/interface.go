@@ -55,8 +55,9 @@ const (
 	// host_if_name field in config is effectively ignored
 	defaultLoopbackName = "lo"
 
-	// defaultEthernetMTU - expected when MTU is not specified in the config.
+	// default MTU - expected when MTU is not specified in the config.
 	defaultEthernetMTU = 1500
+	defaultLoopbackMTU = 65536
 
 	// dependency labels
 	tapInterfaceDep = "vpp-tap-interface-exists"
@@ -1032,6 +1033,9 @@ func getHostIfName(linuxIf *interfaces.Interface) string {
 func getInterfaceMTU(linuxIntf *interfaces.Interface) int {
 	mtu := int(linuxIntf.Mtu)
 	if mtu == 0 {
+		if linuxIntf.Type == interfaces.Interface_LOOPBACK {
+			return defaultLoopbackMTU
+		}
 		return defaultEthernetMTU
 	}
 	return mtu
