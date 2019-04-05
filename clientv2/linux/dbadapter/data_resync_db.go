@@ -130,6 +130,12 @@ func (dsl *DataResyncDSL) XConnect(xcon *l2.XConnectPair) linuxclient.DataResync
 	return dsl
 }
 
+// VrfTable adds VPP VRF table to the RESYNC request.
+func (dsl *DataResyncDSL) VrfTable(vrfTable *l3.VrfTable) linuxclient.DataResyncDSL {
+	dsl.vppDataResync.VrfTable(vrfTable)
+	return dsl
+}
+
 // StaticRoute adds VPP L3 Static Route to the RESYNC request.
 func (dsl *DataResyncDSL) StaticRoute(staticRoute *l3.Route) linuxclient.DataResyncDSL {
 	dsl.vppDataResync.StaticRoute(staticRoute)

@@ -63,7 +63,8 @@ message DNat44 {
     repeated StaticMapping st_mappings = 2;
 
     message IdentityMapping {                /* A list of identity mappings in DNAT. */
-        uint32 vrf_id = 1;                   /* VRF (table) ID. */
+        uint32 vrf_id = 1;                   /* VRF (table) ID. Non-zero VRF has to be explicitly created
+                                                (see api/models/vpp/l3/vrf.proto) */
         string interface = 2;                /* Name of the interface to use address from; preferred over ip_address. */
         string ip_address = 3;               /* IP address. */
         uint32 port = 4;                     /* Port (do not set for address mapping). */

@@ -17,6 +17,7 @@
 //go:generate descriptor-adapter --descriptor-name ProxyARP --value-type *vpp_l3.ProxyARP --import "github.com/ligato/vpp-agent/api/models/vpp/l3" --output-dir "descriptor"
 //go:generate descriptor-adapter --descriptor-name ProxyARPInterface --value-type *vpp_l3.ProxyARP_Interface --import "github.com/ligato/vpp-agent/api/models/vpp/l3" --output-dir "descriptor"
 //go:generate descriptor-adapter --descriptor-name IPScanNeighbor --value-type *vpp_l3.IPScanNeighbor --import "github.com/ligato/vpp-agent/api/models/vpp/l3" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name VrfTable --value-type *vpp_l3.VrfTable --import "github.com/ligato/vpp-agent/api/models/vpp/l3" --output-dir "descriptor"
 
 package l3plugin
 
@@ -115,6 +116,12 @@ func (p *L3Plugin) Init() error {
 	p.ipScanNeighborDescriptor = descriptor.NewIPScanNeighborDescriptor(p.KVScheduler, p.l3Handler, p.Log)
 	ipScanNeighborDescriptor := adapter.NewIPScanNeighborDescriptor(p.ipScanNeighborDescriptor.GetDescriptor())
 	err = p.Deps.KVScheduler.RegisterKVDescriptor(ipScanNeighborDescriptor)
+	if err != nil {
+		return err
+	}
+
+	vrfTableDescriptor := descriptor.NewVrfTableDescriptor(p.l3Handler, p.Log)
+	err = p.Deps.KVScheduler.RegisterKVDescriptor(vrfTableDescriptor)
 	if err != nil {
 		return err
 	}

@@ -42,6 +42,8 @@ type DataResyncDSL interface {
 	BDFIB(fib *l2.FIBEntry) DataResyncDSL
 	// XConnect adds Cross Connect to the RESYNC request.
 	XConnect(xcon *l2.XConnectPair) DataResyncDSL
+	// VrfTable adds VRF table to the RESYNC request.
+	VrfTable(val *l3.VrfTable) DataResyncDSL
 	// StaticRoute adds L3 Static Route to the RESYNC request.
 	StaticRoute(staticRoute *l3.Route) DataResyncDSL
 	// Arp adds VPP L3 ARP to the RESYNC request.

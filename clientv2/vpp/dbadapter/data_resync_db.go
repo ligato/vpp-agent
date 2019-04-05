@@ -83,6 +83,15 @@ func (dsl *DataResyncDSL) BDFIB(val *l2.FIBEntry) vppclient.DataResyncDSL {
 	return dsl
 }
 
+// VrfTable adds VRF table to the RESYNC request.
+func (dsl *DataResyncDSL) VrfTable(val *l3.VrfTable) vppclient.DataResyncDSL {
+	key := l3.VrfTableKey(val.Id, val.Protocol)
+	dsl.txn.Put(key, val)
+	dsl.txnKeys = append(dsl.txnKeys, key)
+
+	return dsl
+}
+
 // XConnect adds Cross Connect to the RESYNC request.
 func (dsl *DataResyncDSL) XConnect(val *l2.XConnectPair) vppclient.DataResyncDSL {
 	key := l2.XConnectKey(val.ReceiveInterface)

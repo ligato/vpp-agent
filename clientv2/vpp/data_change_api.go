@@ -62,6 +62,8 @@ type PutDSL interface {
 	BDFIB(fib *l2.FIBEntry) PutDSL
 	// XConnect adds a request to create or update VPP Cross Connect.
 	XConnect(val *l2.XConnectPair) PutDSL
+	// VrfTable adds a request to create or update VPP VRF table.
+	VrfTable(val *l3.VrfTable) PutDSL
 	// StaticRoute adds a request to create or update VPP L3 Static Route.
 	StaticRoute(val *l3.Route) PutDSL
 	// Arp adds a request to create or update VPP L3 ARP.
@@ -107,6 +109,8 @@ type DeleteDSL interface {
 	BDFIB(bdName string, mac string) DeleteDSL
 	// XConnect adds a request to delete an existing VPP Cross Connect.
 	XConnect(rxIfaceName string) DeleteDSL
+	// VrfTable adds a request to delete existing VPP VRF table.
+	VrfTable(id uint32, proto l3.VrfTable_Protocol) DeleteDSL
 	// StaticRoute adds a request to delete an existing VPP L3 Static Route.
 	StaticRoute(vrf uint32, dstAddr string, nextHopAddr string) DeleteDSL
 	// Arp adds a request to delete an existing VPP L3 ARP.

@@ -29,6 +29,7 @@ import (
 	ifdescriptor "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/descriptor"
 	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls"
+	"github.com/ligato/cn-infra/utils/addrs"
 )
 
 const (
@@ -37,6 +38,8 @@ const (
 
 	// dependency labels
 	routeOutInterfaceDep = "interface-exists"
+	vrfTableDep = "vrf-table-exists"
+	viaVrfTableDep = "via-vrf-table-exists"
 
 	// static route weight by default
 	defaultWeight = 1
@@ -67,6 +70,7 @@ func (d *RouteDescriptor) GetDescriptor() *adapter.RouteDescriptor {
 		ValueTypeName:        l3.ModelRoute.ProtoName(),
 		KeySelector:          l3.ModelRoute.IsKeyValid,
 		ValueComparator:      d.EquivalentRoutes,
+		Validate:             d.Validate,
 		Create:               d.Create,
 		Delete:               d.Delete,
 		Retrieve:             d.Retrieve,
@@ -99,29 +103,29 @@ func (d *RouteDescriptor) EquivalentRoutes(key string, oldRoute, newRoute *l3.Ro
 	return true
 }
 
+// Validate validates VPP static route configuration.
+func (d *RouteDescriptor) Validate(key string, route *l3.Route) (err error) {
+	_, ipNet, err := net.ParseCIDR(route.DstNetwork)
+	if err != nil {
+		return kvs.NewInvalidValueError(err, "dst_network")
+	}
+	if strings.ToLower(ipNet.String()) != strings.ToLower(route.DstNetwork) {
+		return kvs.NewInvalidValueError(
+			fmt.Errorf("DstNetwork (%s) must represent IP network (%s)", route.DstNetwork, ipNet.String()),
+			"dst_network")
+	}
+	return nil
+}
+
+
 // Create adds VPP static route.
 func (d *RouteDescriptor) Create(key string, route *l3.Route) (metadata interface{}, err error) {
-	if err = validateRoute(route); err != nil {
-		return nil, err
-	}
-
 	err = d.routeHandler.VppAddRoute(route)
 	if err != nil {
 		return nil, err
 	}
 
 	return nil, nil
-}
-
-func validateRoute(route *l3.Route) error {
-	_, ipNet, err := net.ParseCIDR(route.DstNetwork)
-	if err != nil {
-		return err
-	}
-	if ipNet.String() != route.DstNetwork {
-		return fmt.Errorf("DstNetwork (%s) must represent IP network (%s)", route.DstNetwork, ipNet.String())
-	}
-	return nil
 }
 
 // Delete removes VPP static route.
@@ -165,6 +169,26 @@ func (d *RouteDescriptor) Dependencies(key string, route *l3.Route) []kvs.Depend
 			Key:   interfaces.InterfaceKey(route.OutgoingInterface),
 		})
 	}
+
+	// non-zero VRFs
+	var protocol l3.VrfTable_Protocol
+	_, isIPv6, _ := addrs.ParseIPWithPrefix(route.DstNetwork)
+	if isIPv6 {
+		protocol = l3.VrfTable_IPV6
+	}
+	if route.VrfId != 0 {
+		dependencies = append(dependencies, kvs.Dependency{
+			Label: vrfTableDep,
+			Key:   l3.VrfTableKey(route.VrfId, protocol),
+		})
+	}
+	if route.Type == l3.Route_INTER_VRF && route.ViaVrfId != 0 {
+		dependencies = append(dependencies, kvs.Dependency{
+			Label: viaVrfTableDep,
+			Key:   l3.VrfTableKey(route.ViaVrfId, protocol),
+		})
+	}
+
 	// TODO: perhaps check GW routability
 	return dependencies
 }

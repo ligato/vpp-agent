@@ -59,6 +59,8 @@ type DataResyncDSL interface {
 	BD(bd *vpp_l2.BridgeDomain) DataResyncDSL
 	// BDFIB adds VPP L2 FIB to the RESYNC request.
 	BDFIB(fib *vpp_l2.FIBEntry) DataResyncDSL
+	// VrfTable adds VPP VRF table to the RESYNC request.
+	VrfTable(val *vpp_l3.VrfTable) DataResyncDSL
 	// XConnect adds VPP Cross Connect to the RESYNC request.
 	XConnect(xcon *vpp_l2.XConnectPair) DataResyncDSL
 	// StaticRoute adds VPP L3 Static Route to the RESYNC request.

@@ -102,6 +102,12 @@ func (dsl *PutDSL) XConnect(val *l2.XConnectPair) vppclient.PutDSL {
 	return dsl
 }
 
+// VrfTable adds a request to create or update VPP VRF table.
+func (dsl *PutDSL) VrfTable(val *l3.VrfTable) vppclient.PutDSL {
+	dsl.parent.txn.Put(l3.VrfTableKey(val.Id, val.Protocol), val)
+	return dsl
+}
+
 // StaticRoute adds a request to create or update VPP L3 Static Route.
 func (dsl *PutDSL) StaticRoute(val *l3.Route) vppclient.PutDSL {
 	dsl.parent.txn.Put(l3.RouteKey(val.VrfId, val.DstNetwork, val.NextHopAddr), val)
@@ -206,6 +212,12 @@ func (dsl *DeleteDSL) BDFIB(bdName string, mac string) vppclient.DeleteDSL {
 // XConnect adds a request to delete an existing VPP Cross Connect.
 func (dsl *DeleteDSL) XConnect(rxIfName string) vppclient.DeleteDSL {
 	dsl.parent.txn.Delete(l2.XConnectKey(rxIfName))
+	return dsl
+}
+
+// VrfTable adds a request to delete existing VPP VRF table.
+func (dsl *DeleteDSL) VrfTable(id uint32, proto l3.VrfTable_Protocol) vppclient.DeleteDSL {
+	dsl.parent.txn.Delete(l3.VrfTableKey(id, proto))
 	return dsl
 }
 

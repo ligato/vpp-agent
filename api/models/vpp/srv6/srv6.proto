@@ -46,7 +46,8 @@ message LocalSID {
         bool psp = 1;                    /* use PSP (penultimate segment POP of the SRH) or by default use USP (Ultimate Segment Pop of the SRH) */
         uint32 vrf_id = 2;               /* vrf index of IPv6 table that should be used for lookup.
                                            vrf_index and fib_table_id should refer to the same routing table. VRF index refer to it from client side
-                                           and FIB table id from VPP-internal side (index of memory allocated structure from pool)(source: https://wiki.fd.io/view/VPP/Per-feature_Notes). */
+                                           and FIB table id from VPP-internal side (index of memory allocated structure from pool)(source: https://wiki.fd.io/view/VPP/Per-feature_Notes).
+                                           Non-zero VRF has to be explicitly created (see api/models/vpp/l3/vrf.proto) */
     }
 
     /* End function behavior of endpoint with decapsulation and Layer-2 cross-connect (or DX2 with egress VLAN rewrite when VLAN notzero - not supported this variant yet)*/
@@ -71,14 +72,16 @@ message LocalSID {
     message EndDT4 {
         uint32 vrf_id = 1;               /* vrf index of IPv4 table that should be used for lookup.
                                             vrf_index and fib_table_id should refer to the same routing table. VRF index refer to it from client side
-                                            and FIB table id from VPP-internal side (index of memory allocated structure from pool)(source: https://wiki.fd.io/view/VPP/Per-feature_Notes). */
+                                            and FIB table id from VPP-internal side (index of memory allocated structure from pool)(source: https://wiki.fd.io/view/VPP/Per-feature_Notes).
+                                            Non-zero VRF has to be explicitly created (see api/models/vpp/l3/vrf.proto) */
     }
 
     /* End function behavior of endpoint with decapsulation and specific IPv6 table lookup*/
     message EndDT6 {
         uint32 vrf_id = 1;               /* vrf index of IPv6 table that should be used for lookup.
                                             vrf_index and fib_table_id should refer to the same routing table. VRF index refer to it from client side
-                                            and FIB table id from VPP-internal side (index of memory allocated structure from pool)(source: https://wiki.fd.io/view/VPP/Per-feature_Notes). */
+                                            and FIB table id from VPP-internal side (index of memory allocated structure from pool)(source: https://wiki.fd.io/view/VPP/Per-feature_Notes).
+                                            Non-zero VRF has to be explicitly created (see api/models/vpp/l3/vrf.proto) */
     }
 
     /* End function behavior of dynamic segment routing proxy endpoint */
