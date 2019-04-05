@@ -1,6 +1,7 @@
 # Release Changelog
 
 - [v2.0.0](#v2.0.0)
+  - [v2.0.1](#v2.0.1)
 - [v1.8.0](#v1.8.0)
   - [v1.8.1](#v1.8.1)
 - [v1.7.0](#v1.7.0)
@@ -35,9 +36,38 @@ RELEASE CHANGELOG TEMPLATE:
 ### Documentation
 -->
 
+<a name="v2.0.1"></a>
+# [2.0.1](https://github.com/ligato/vpp-agent/compare/v2.0.0...v2.0.1) (2019-04-05)
+
+### Compatibility
+- **VPP 19.01** (compatible by default, recommended)
+- **VPP 18.10** (backwards compatible)
+- cn-infra v2.0
+- Go 1.11
+
+### Bug Fixes
+* Fixed bug where Linux network namespace was not reverted in some cases.
+* The VPP socketclient connection checks (and waits) for the socket file in the same manner as for the shared memory, giving 
+  the GoVPPMux more time to connect in case the VPP startup is delayed. Also errors occurred during the shm/socket file watch 
+  are now properly handled. 
+
+### Improvements
+* [GoVPPMux](plugins/govppmux)
+  - Added option to adjust the number of connection attempts and time delay between them. Seek `retry-connect-count` and
+  `retry-connect-timeout` fields in [govpp.conf](plugins/govppmux/govpp.conf). Also keep in mind the total time in which 
+  plugins can be initialized when using these fields. 
+* [linux-if-plugin](plugins/linux/ifplugin)
+  - Default loopback MTU was set to 65536.
+* [ns-plugin](plugins/linux/nsplugin)
+  - Plugin descriptor returns `ErrEscapedNetNs` if Linux namespace was changed but not reverted back before returned
+  to scheduler. 
+  
+### Docker Images
+* Supervisord process is started with PID=1
+
 
 <a name="v2.0.0"></a>
-# [2.0.0](https://github.com/ligato/vpp-agent/compare/v1.8...master) (2019-04-02)
+# [2.0.0](https://github.com/ligato/vpp-agent/compare/v1.8...v2.0.0) (2019-04-02)
 
 ### Compatibility
 - **VPP 19.01** (compatible by default, recommended)
