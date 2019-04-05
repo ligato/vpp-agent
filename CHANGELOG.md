@@ -50,6 +50,7 @@ RELEASE CHANGELOG TEMPLATE:
 * The VPP socketclient connection checks (and waits) for the socket file in the same manner as for the shared memory, giving 
   the GoVPPMux more time to connect in case the VPP startup is delayed. Also errors occurred during the shm/socket file watch 
   are now properly handled. 
+* Fixed wrong dependency for SRv6 end functions referencing VRF tables (DT6,DT4,T).
 
 ### Improvements
 * [GoVPPMux](plugins/govppmux)
@@ -63,8 +64,7 @@ RELEASE CHANGELOG TEMPLATE:
   to scheduler. 
   
 ### Docker Images
-* Supervisord process is started with PID=1
-
+* Supervisord process is now started with PID=1
 
 <a name="v2.0.0"></a>
 # [2.0.0](https://github.com/ligato/vpp-agent/compare/v1.8...v2.0.0) (2019-04-02)
