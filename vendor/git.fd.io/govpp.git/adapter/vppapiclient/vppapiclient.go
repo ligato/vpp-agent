@@ -54,9 +54,9 @@ govpp_send(uint32_t context, void *data, size_t size)
 }
 
 static int
-govpp_connect(char *shm)
+govpp_connect(char *shm, int rx_qlen)
 {
-    return vac_connect("govpp", shm, govpp_msg_callback, 32);
+    return vac_connect("govpp", shm, govpp_msg_callback, rx_qlen);
 }
 
 static int
@@ -78,10 +78,17 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"time"
 	"unsafe"
 
 	"git.fd.io/govpp.git/adapter"
 	"github.com/fsnotify/fsnotify"
+)
+
+var (
+	// MaxWaitReady defines maximum duration before waiting for shared memory
+	// segment times out
+	MaxWaitReady = time.Second * 15
 )
 
 const (
@@ -97,14 +104,21 @@ var globalVppClient *vppClient
 
 // stubVppClient is the default implementation of the VppAPI.
 type vppClient struct {
-	shmPrefix   string
-	msgCallback adapter.MsgCallback
+	shmPrefix      string
+	msgCallback    adapter.MsgCallback
+	inputQueueSize uint16
 }
 
 // NewVppClient returns a new VPP binary API client.
 func NewVppClient(shmPrefix string) adapter.VppAPI {
+	return NewVppClientWithInputQueueSize(shmPrefix, 32)
+}
+
+// NewVppClientWithInputQueueSize returns a new VPP binary API client with a custom input queue size.
+func NewVppClientWithInputQueueSize(shmPrefix string, inputQueueSize uint16) adapter.VppAPI {
 	return &vppClient{
-		shmPrefix: shmPrefix,
+		shmPrefix:      shmPrefix,
+		inputQueueSize: inputQueueSize,
 	}
 }
 
@@ -114,12 +128,13 @@ func (a *vppClient) Connect() error {
 		return fmt.Errorf("already connected to binary API, disconnect first")
 	}
 
+	rxQlen := C.int(a.inputQueueSize)
 	var rc C.int
 	if a.shmPrefix == "" {
-		rc = C.govpp_connect(nil)
+		rc = C.govpp_connect(nil, rxQlen)
 	} else {
 		shm := C.CString(a.shmPrefix)
-		rc = C.govpp_connect(shm)
+		rc = C.govpp_connect(shm, rxQlen)
 	}
 	if rc != 0 {
 		return fmt.Errorf("connecting to VPP binary API failed (rc=%v)", rc)
@@ -173,16 +188,15 @@ func (a *vppClient) SetMsgCallback(cb adapter.MsgCallback) {
 // WaitReady blocks until shared memory for sending
 // binary api calls is present on the file system.
 func (a *vppClient) WaitReady() error {
-	var path string
-
 	// join the path to the shared memory segment
+	var path string
 	if a.shmPrefix == "" {
 		path = filepath.Join(shmDir, vppShmFile)
 	} else {
 		path = filepath.Join(shmDir, a.shmPrefix+"-"+vppShmFile)
 	}
 
-	// check if file at the path exists
+	// check if file at the path already exists
 	if _, err := os.Stat(path); err == nil {
 		// file exists, we are ready
 		return nil
@@ -197,21 +211,26 @@ func (a *vppClient) WaitReady() error {
 	}
 	defer watcher.Close()
 
+	// start watching directory
 	if err := watcher.Add(shmDir); err != nil {
 		return err
 	}
 
 	for {
-		ev := <-watcher.Events
-		if ev.Name == path {
-			if (ev.Op & fsnotify.Create) == fsnotify.Create {
-				// file was created, we are ready
-				break
+		select {
+		case <-time.After(MaxWaitReady):
+			return fmt.Errorf("waiting for shared memory segment timed out (%s)", MaxWaitReady)
+		case e := <-watcher.Errors:
+			return e
+		case ev := <-watcher.Events:
+			if ev.Name == path {
+				if (ev.Op & fsnotify.Create) == fsnotify.Create {
+					// file was created, we are ready
+					return nil
+				}
 			}
 		}
 	}
-
-	return nil
 }
 
 //export go_msg_callback
