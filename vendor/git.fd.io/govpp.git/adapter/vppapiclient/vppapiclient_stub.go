@@ -28,6 +28,10 @@ func NewVppClient(string) adapter.VppAPI {
 	return &stubVppClient{}
 }
 
+func NewVppClientWithInputQueueSize(string, uint16) adapter.VppAPI {
+	return &stubVppClient{}
+}
+
 func (a *stubVppClient) Connect() error {
 	return adapter.ErrNotImplemented
 }
