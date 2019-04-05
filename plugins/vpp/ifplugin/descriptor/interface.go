@@ -31,6 +31,7 @@ import (
 	linux_intf "github.com/ligato/vpp-agent/api/models/linux/interfaces"
 	linux_ns "github.com/ligato/vpp-agent/api/models/linux/namespace"
 	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
+	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	linux_ifdescriptor "github.com/ligato/vpp-agent/plugins/linux/ifplugin/descriptor"
 	linux_ifaceidx "github.com/ligato/vpp-agent/plugins/linux/ifplugin/ifaceidx"
@@ -47,6 +48,7 @@ const (
 	// dependency labels
 	afPacketHostInterfaceDep = "afpacket-host-interface-exists"
 	vxlanMulticastDep        = "vxlan-multicast-interface-exists"
+	vxlanVrfTableDep         = "vrf-table-for-vxlan-exists"
 	microserviceDep          = "microservice-available"
 	parentInterfaceDep       = "parent-interface-exists"
 
@@ -198,7 +200,6 @@ func (d *InterfaceDescriptor) EquivalentInterfaces(key string, oldIntf, newIntf 
 	if oldIntf.Name != newIntf.Name ||
 		oldIntf.Type != newIntf.Type ||
 		oldIntf.Enabled != newIntf.Enabled ||
-		oldIntf.Vrf != newIntf.Vrf ||
 		oldIntf.SetDhcpClient != newIntf.SetDhcpClient {
 		return false
 	}
@@ -210,6 +211,13 @@ func (d *InterfaceDescriptor) EquivalentInterfaces(key string, oldIntf, newIntf 
 	// type-specific (defaults considered)
 	if !d.equivalentTypeSpecificConfig(oldIntf, newIntf) {
 		return false
+	}
+
+	if newIntf.Type == interfaces.Interface_VXLAN_TUNNEL {
+		if oldIntf.Vrf != newIntf.Vrf {
+			// interface will be re-created
+			return false
+		}
 	}
 
 	// TODO: for TAPv2 the RxMode dump is unstable
@@ -424,8 +432,7 @@ func (d *InterfaceDescriptor) Validate(key string, intf *interfaces.Interface) e
 // UpdateWithRecreate returns true if Type, VRF (or VRF IP version) or Type-specific
 // attributes are different.
 func (d *InterfaceDescriptor) UpdateWithRecreate(key string, oldIntf, newIntf *interfaces.Interface, metadata *ifaceidx.IfaceMetadata) bool {
-	if oldIntf.Type != newIntf.Type ||
-		oldIntf.Vrf != newIntf.Vrf {
+	if oldIntf.Type != newIntf.Type {
 		return true
 	}
 
@@ -443,6 +450,11 @@ func (d *InterfaceDescriptor) UpdateWithRecreate(key string, oldIntf, newIntf *i
 	wasIPv4, wasIPv6 := getIPAddressVersions(oldAddrs)
 	isIPv4, isIPv6 := getIPAddressVersions(newAddrs)
 	if wasIPv4 != isIPv4 || wasIPv6 != isIPv6 {
+		return true
+	}
+
+	if oldIntf.GetType() == interfaces.Interface_VXLAN_TUNNEL && oldIntf.Vrf != newIntf.Vrf {
+		// for VXLAN interface a change in the VRF assignment requires full re-creation
 		return true
 	}
 
@@ -485,6 +497,20 @@ func (d *InterfaceDescriptor) Dependencies(key string, intf *interfaces.Interfac
 				},
 			})
 		}
+		if intf.GetVrf() != 0 {
+			// binary API for creating VXLAN tunnel requires the VRF table
+			// to be already created
+			var protocol l3.VrfTable_Protocol
+			srcAddr := net.ParseIP(intf.GetVxlan().GetSrcAddress()).To4()
+			dstAddr := net.ParseIP(intf.GetVxlan().GetDstAddress()).To4()
+			if srcAddr == nil && dstAddr == nil {
+				protocol = l3.VrfTable_IPV6
+			}
+			dependencies = append(dependencies, kvs.Dependency{
+				Label: vxlanVrfTableDep,
+				Key:   l3.VrfTableKey(intf.GetVrf(), protocol),
+			})
+		}
 	case interfaces.Interface_SUB_INTERFACE:
 		// SUB_INTERFACE requires parent interface
 		if parentName := intf.GetSub().GetParentName(); parentName != "" {
@@ -501,7 +527,8 @@ func (d *InterfaceDescriptor) Dependencies(key string, intf *interfaces.Interfac
 // DerivedValues derives:
 //  - key-value for unnumbered configuration sub-section
 //  - empty value for enabled DHCP client
-//  - one empty value for every IP address assigned to the interface.
+//  - one empty value for every IP address to be assigned to the interface
+//  - one empty value VRF table to put the interface into.
 func (d *InterfaceDescriptor) DerivedValues(key string, intf *interfaces.Interface) (derValues []kvs.KeyValuePair) {
 	// unnumbered interface
 	if intf.GetUnnumbered() != nil {
@@ -536,6 +563,8 @@ func (d *InterfaceDescriptor) DerivedValues(key string, intf *interfaces.Interfa
 			Value: &prototypes.Empty{},
 		})
 	}
+
+	// TODO: VRF assignment
 
 	// TODO: define derived value for UP/DOWN state (needed for subinterfaces)
 

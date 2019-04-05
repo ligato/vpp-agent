@@ -21,6 +21,7 @@ import (
 	"github.com/gogo/protobuf/jsonpb"
 
 	"github.com/ligato/vpp-agent/pkg/models"
+	"strconv"
 )
 
 // ModuleName is the module name used for models.
@@ -63,6 +64,20 @@ const (
 	// addressKeyTemplate is a template for (derived) key representing IP address
 	// (incl. mask) assigned to a VPP interface.
 	addressKeyTemplate = AddressKeyPrefix + "{iface}/{addr}/{mask}"
+)
+
+/* Interface VRF (derived) */
+const (
+	// vrfTableKeyPrefix is used as a common prefix for keys derived from
+	// interfaces to represent target VRF tables.
+	vrfTableKeyPrefix = "vpp/interface/vrf/"
+
+	// vrfTableKeyTemplate is a template for (derived) key representing assignment
+	// of a VPP interface into a VRF table.
+	vrfTableKeyTemplate = vrfTableKeyPrefix + "{iface}/protocol/{protocol}/table-id/{table-id}"
+
+	vrfIPv4Proto = "ipv4"
+	vrfIPv6Proto = "ipv6"
 )
 
 /* Unnumbered interface (derived) */
@@ -173,6 +188,74 @@ func ParseInterfaceAddressKey(key string) (iface string, ipAddr net.IP, ipAddrNe
 			return "", nil, nil, false
 		}
 		return iface, ipAddr, ipAddrNet, true
+	}
+	return
+}
+
+/* Interface VRF table (derived) */
+
+// InterfaceVrfTableKey returns key representing VRF table that the interface
+// is assigned into.
+// For vrf<0, the method returns key prefix matching the VRF table of the
+// interface for the given IP version without knowing the table ID.
+func InterfaceVrfTableKey(iface string, vrf int, ipv6 bool) string {
+	if iface == "" {
+		iface = InvalidKeyPart
+	}
+	protocol := vrfIPv4Proto
+	if ipv6 {
+		protocol = vrfIPv6Proto
+	}
+
+	var tableId string
+	if vrf >= 0 {
+		tableId = strconv.Itoa(vrf)
+	}
+
+	key := strings.Replace(vrfTableKeyTemplate, "{iface}", iface, 1)
+	key = strings.Replace(key, "{protocol}", protocol, 1)
+	key = strings.Replace(key, "{table-id}", tableId, 1)
+	return key
+}
+
+// ParseInterfaceVrfTableKey parses interface address from key derived
+// from interface by InterfaceAddressKey().
+func ParseInterfaceVrfTableKey(key string) (iface string, vrf int, ipv6, isVrfTableKey bool) {
+	if suffix := strings.TrimPrefix(key, vrfTableKeyPrefix); suffix != key {
+		parts := strings.Split(suffix, "/")
+
+		// beware: interface name may contain forward slashes (e.g. ETHERNET_CSMACD)
+		if len(parts) < 5 {
+			return
+		}
+		lastIdx := len(parts) - 1
+		if parts[lastIdx-3] != "protocol" || parts[lastIdx-1] != "table-id" {
+			return
+		}
+
+		// parse VRF table ID
+		var err error
+		vrf, err = strconv.Atoi(parts[lastIdx])
+		if err != nil {
+			return
+		}
+
+		// parse protocol
+		switch parts[lastIdx-2] {
+		case vrfIPv4Proto:
+			ipv6 = false
+		case vrfIPv6Proto:
+			ipv6 = true
+		default:
+			return
+		}
+
+		// parse interface name
+		iface = strings.Join(parts[:lastIdx-3], "/")
+		if iface == "" {
+			return
+		}
+		isVrfTableKey = true
 	}
 	return
 }
