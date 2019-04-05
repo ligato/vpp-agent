@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
-	"github.com/fsnotify/fsnotify"
 	"io"
 	"net"
 	"os"
@@ -12,6 +11,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/fsnotify/fsnotify"
 
 	"github.com/lunixbochs/struc"
 	logger "github.com/sirupsen/logrus"
@@ -32,6 +33,10 @@ const (
 var (
 	ConnectTimeout    = time.Second * 3
 	DisconnectTimeout = time.Second
+
+	// MaxWaitReady defines maximum duration before waiting for socket file
+	// times out
+	MaxWaitReady = time.Second * 15
 
 	Debug       = os.Getenv("DEBUG_GOVPP_SOCK") != ""
 	DebugMsgIds = os.Getenv("DEBUG_GOVPP_SOCKMSG") != ""
@@ -76,7 +81,7 @@ func nilCallback(msgID uint16, data []byte) {
 
 // WaitReady checks socket file existence and waits for it if necessary
 func (c *vppClient) WaitReady() error {
-	// verify file existence
+	// check if file at the path already exists
 	if _, err := os.Stat(c.sockAddr); err == nil {
 		return nil
 	} else if os.IsExist(err) {
@@ -93,17 +98,25 @@ func (c *vppClient) WaitReady() error {
 			Log.Errorf("failed to close file watcher: %v", err)
 		}
 	}()
-	path := filepath.Dir(c.sockAddr)
-	if err := watcher.Add(path); err != nil {
+
+	// start watching directory
+	if err := watcher.Add(filepath.Dir(c.sockAddr)); err != nil {
 		return err
 	}
 
 	for {
-		ev := <-watcher.Events
-		if ev.Name == path {
-			if (ev.Op & fsnotify.Create) == fsnotify.Create {
-				// socket ready
-				return nil
+		select {
+		case <-time.After(MaxWaitReady):
+			return fmt.Errorf("waiting for socket file timed out (%s)", MaxWaitReady)
+		case e := <-watcher.Errors:
+			return e
+		case ev := <-watcher.Events:
+			Log.Debugf("watcher event: %+v", ev)
+			if ev.Name == c.sockAddr {
+				if (ev.Op & fsnotify.Create) == fsnotify.Create {
+					// socket was created, we are ready
+					return nil
+				}
 			}
 		}
 	}
