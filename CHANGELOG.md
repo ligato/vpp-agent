@@ -760,8 +760,7 @@ Enabled support for wathing data store `OfDifferentAgent()` - see:
 Preview of new Kafka client API methods that allows to fill also partition and offset argument. New methods implementation ignores these new parameters for now (fallback to existing implementation based on `github.com/bsm/sarama-cluster` and `github.com/Shopify/sarama`).
 
 
-<a name="v1.0.2"></a>
-## [1.0.2](https://github.com/ligato/vpp-agent/compare/v1.0.1...v1.0.2) (2017-08-28)
+## <a name="v1.0.2"></a> [1.0.2](https://github.com/ligato/vpp-agent/compare/v1.0.1...v1.0.2) (2017-08-28)
 
 ### Compatibility
 - VPP version v17.10-rc0~203
