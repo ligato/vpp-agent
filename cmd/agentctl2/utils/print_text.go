@@ -40,7 +40,7 @@ func (ed EtcdDump) PrintTest(showConf bool) (*bytes.Buffer, error) {
 	prefixer = newPrefixer(false, perLevelSpaces)
 
 	ifTemplate := createInterfaceTemplate()
-	aclTemplate := createAclTemplate()
+	aclTemplate := createACLTemplate()
 	bdTemplate := createBridgeTemplate()
 	fibTemplate := createFibTableTemplate()
 	xconnectTemplate := createXconnectTableTemplate()
@@ -66,7 +66,7 @@ func (ed EtcdDump) PrintTest(showConf bool) (*bytes.Buffer, error) {
 	return ed.textRenderer(showConf, templates)
 }
 
-func createAclTemplate() *template.Template {
+func createACLTemplate() *template.Template {
 
 	FuncMap := template.FuncMap{
 		"setBold":        setBold,

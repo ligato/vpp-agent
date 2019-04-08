@@ -292,7 +292,7 @@ func (ed EtcdDump) ReadDataFromDb(db keyval.ProtoBroker, key string) (found bool
 
 	switch dataType {
 	case ACLPath:
-		ed[label], err = readAclConfigFromDb(db, vd, key, params)
+		ed[label], err = readACLConfigFromDb(db, vd, key, params)
 	case InterfacePath:
 		ed[label], err = readInterfaceConfigFromDb(db, vd, key, params)
 	case BridgeDomainPath:
@@ -329,7 +329,7 @@ func (ed EtcdDump) ReadDataFromDb(db keyval.ProtoBroker, key string) (found bool
 	return true, err
 }
 
-func readAclConfigFromDb(db keyval.ProtoBroker, vd *VppData, key string, name string) (*VppData, error) {
+func readACLConfigFromDb(db keyval.ProtoBroker, vd *VppData, key string, name string) (*VppData, error) {
 	if name == "" {
 		fmt.Printf("WARNING: Invalid ACL config Key '%s'\n", key)
 		return vd, nil

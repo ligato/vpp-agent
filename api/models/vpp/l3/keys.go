@@ -18,7 +18,8 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-        "github.com/gogo/protobuf/jsonpb"
+
+    "github.com/gogo/protobuf/jsonpb"
 	"github.com/ligato/vpp-agent/pkg/models"
 )
 
