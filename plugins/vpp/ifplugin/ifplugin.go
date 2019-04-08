@@ -39,7 +39,6 @@ import (
 	linux_ifcalls "github.com/ligato/vpp-agent/plugins/linux/ifplugin/linuxcalls"
 	"github.com/ligato/vpp-agent/plugins/linux/nsplugin"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/descriptor"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
 
@@ -74,14 +73,12 @@ type IfPlugin struct {
 	ifHandler      vppcalls.InterfaceVppAPI
 	linuxIfHandler linux_ifcalls.NetlinkAPIRead
 
-	// descriptors
-	ifDescriptor   *descriptor.InterfaceDescriptor
-	unIfDescriptor *descriptor.UnnumberedIfDescriptor
-	dhcpDescriptor *descriptor.DHCPDescriptor
-
 	// index maps
 	intfIndex ifaceidx.IfaceMetadataIndex
 	dhcpIndex idxmap.NamedMapping
+
+	// descriptors
+	dhcpDescriptor *descriptor.DHCPDescriptor
 
 	// from config file
 	defaultMtu uint32
@@ -154,54 +151,62 @@ func (p *IfPlugin) Init() error {
 	}
 
 	// init & register descriptors
-	p.ifDescriptor = descriptor.NewInterfaceDescriptor(p.ifHandler, p.defaultMtu,
-		p.linuxIfHandler, p.LinuxIfPlugin, p.NsPlugin, p.Log)
-	ifDescriptor := adapter.NewInterfaceDescriptor(p.ifDescriptor.GetDescriptor())
-	err = p.KVScheduler.RegisterKVDescriptor(ifDescriptor)
+	// -> base interface descriptor
+	ifaceDescriptor, ifaceDescrCtx := descriptor.NewInterfaceDescriptor(p.ifHandler,
+		p.defaultMtu, p.linuxIfHandler, p.LinuxIfPlugin, p.NsPlugin, p.Log)
+	err = p.KVScheduler.RegisterKVDescriptor(ifaceDescriptor)
 	if err != nil {
 		return err
 	}
-
-	p.unIfDescriptor = descriptor.NewUnnumberedIfDescriptor(p.ifHandler, p.Log)
-	unIfDescriptor := adapter.NewUnnumberedDescriptor(p.unIfDescriptor.GetDescriptor())
-	err = p.KVScheduler.RegisterKVDescriptor(unIfDescriptor)
-	if err != nil {
-		return err
-	}
-
-	bondIfDescriptor, bondIfDescCtx := descriptor.NewBondedInterfaceDescriptor(p.ifHandler, p.intfIndex, p.Log)
-	err = p.KVScheduler.RegisterKVDescriptor(bondIfDescriptor)
-	if err != nil {
-		return err
-	}
-
-	p.dhcpDescriptor = descriptor.NewDHCPDescriptor(p.KVScheduler, p.ifHandler, p.Log)
-	dhcpDescriptor := p.dhcpDescriptor.GetDescriptor()
-	err = p.KVScheduler.RegisterKVDescriptor(dhcpDescriptor)
-	if err != nil {
-		return err
-	}
-
-	// obtain read-only references to index maps
 	var withIndex bool
-	metadataMap := p.KVScheduler.GetMetadataMap(ifDescriptor.Name)
+	metadataMap := p.KVScheduler.GetMetadataMap(ifaceDescriptor.Name)
 	p.intfIndex, withIndex = metadataMap.(ifaceidx.IfaceMetadataIndex)
 	if !withIndex {
 		return errors.New("missing index with interface metadata")
+	}
+	ifaceDescrCtx.SetInterfaceIndex(p.intfIndex)
+
+	// -> interface-address descriptor
+	addrDescriptor := descriptor.NewInterfaceAddressDescriptor(p.ifHandler, p.intfIndex, p.Log)
+	err = p.KVScheduler.RegisterKVDescriptor(addrDescriptor)
+	if err != nil {
+		return err
+	}
+
+	// -> DHCP descriptor
+	var dhcpDescriptor *kvs.KVDescriptor
+	dhcpDescriptor, p.dhcpDescriptor = descriptor.NewDHCPDescriptor(p.KVScheduler,
+		p.ifHandler, p.intfIndex, p.Log)
+	err = p.KVScheduler.RegisterKVDescriptor(dhcpDescriptor)
+	if err != nil {
+		return err
 	}
 	p.dhcpIndex = p.KVScheduler.GetMetadataMap(dhcpDescriptor.Name)
 	if p.dhcpIndex == nil {
 		return errors.New("missing index with DHCP metadata")
 	}
-
-	// pass read-only index map to descriptors
-	p.ifDescriptor.SetInterfaceIndex(p.intfIndex)
-	p.unIfDescriptor.SetInterfaceIndex(p.intfIndex)
-	bondIfDescCtx.SetInterfaceIndex(p.intfIndex)
-	p.dhcpDescriptor.SetInterfaceIndex(p.intfIndex)
-
-	// start watching for DHCP notifications
 	p.dhcpDescriptor.WatchDHCPNotifications(p.ctx)
+
+	// -> unnumbered descriptor
+	unIfDescriptor := descriptor.NewUnnumberedIfDescriptor(p.ifHandler, p.intfIndex, p.Log)
+	err = p.KVScheduler.RegisterKVDescriptor(unIfDescriptor)
+	if err != nil {
+		return err
+	}
+
+	// -> bond descriptor
+	bondIfDescriptor, _ := descriptor.NewBondedInterfaceDescriptor(p.ifHandler, p.intfIndex, p.Log)
+	err = p.KVScheduler.RegisterKVDescriptor(bondIfDescriptor)
+	if err != nil {
+		return err
+	}
+
+	// -> VRF descriptor
+	vrfDescriptor := descriptor.NewInterfaceVrfDescriptor(p.ifHandler, p.intfIndex, p.Log)
+	err = p.KVScheduler.RegisterKVDescriptor(vrfDescriptor)
+	if err != nil {
+		return err
+	}
 
 	// interface state data
 	if p.publishStats {

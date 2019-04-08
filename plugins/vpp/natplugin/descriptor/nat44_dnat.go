@@ -20,11 +20,13 @@ import (
 	"github.com/pkg/errors"
 
 	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
+	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
 	nat "github.com/ligato/vpp-agent/api/models/vpp/nat"
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	vpp_ifdescriptor "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/descriptor"
 	"github.com/ligato/vpp-agent/plugins/vpp/natplugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/vpp/natplugin/vppcalls"
+	"strconv"
 )
 
 const (
@@ -38,6 +40,7 @@ const (
 
 	// dependency labels
 	mappingInterfaceDep = "interface-exists"
+	mappingVrfDep = "vrf-table-exists"
 )
 
 // A list of non-retriable errors:
@@ -217,17 +220,22 @@ func (d *DNAT44Descriptor) Retrieve(correlate []adapter.DNAT44KVWithMetadata) (
 
 // Dependencies lists external interfaces from mappings as dependencies.
 func (d *DNAT44Descriptor) Dependencies(key string, dnat *nat.DNat44) (dependencies []kvs.Dependency) {
-	// collect referenced external interfaces
+	// collect referenced external interfaces and VRFs
 	externalIfaces := make(map[string]struct{})
+	vrfs := make(map[uint32]struct{})
 	for _, mapping := range dnat.StMappings {
 		if mapping.ExternalInterface != "" {
 			externalIfaces[mapping.ExternalInterface] = struct{}{}
+		}
+		for _, localIP := range mapping.LocalIps {
+			vrfs[localIP.VrfId] = struct{}{}
 		}
 	}
 	for _, mapping := range dnat.IdMappings {
 		if mapping.Interface != "" {
 			externalIfaces[mapping.Interface] = struct{}{}
 		}
+		vrfs[mapping.VrfId] = struct{}{}
 	}
 
 	// for every external interface add one dependency
@@ -237,6 +245,17 @@ func (d *DNAT44Descriptor) Dependencies(key string, dnat *nat.DNat44) (dependenc
 			Key:   interfaces.InterfaceKey(externalIface),
 		})
 	}
+	// for every VRF add one dependency
+	for vrf := range vrfs {
+		if vrf == 0 {
+			continue
+		}
+		dependencies = append(dependencies, kvs.Dependency{
+			Label: mappingVrfDep + "-" + strconv.Itoa(int(vrf)),
+			Key:   l3.VrfTableKey(vrf, l3.VrfTable_IPV4),
+		})
+	}
+
 	return dependencies
 }
 

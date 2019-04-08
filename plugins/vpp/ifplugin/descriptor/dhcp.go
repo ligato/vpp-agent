@@ -51,34 +51,27 @@ type DHCPDescriptor struct {
 }
 
 // NewDHCPDescriptor creates a new instance of DHCPDescriptor.
-func NewDHCPDescriptor(kvscheduler kvs.KVScheduler, ifHandler vppcalls.InterfaceVppAPI, log logging.PluginLogger) *DHCPDescriptor {
-	descriptor := &DHCPDescriptor{
+func NewDHCPDescriptor(kvscheduler kvs.KVScheduler, ifHandler vppcalls.InterfaceVppAPI,
+	ifIndex ifaceidx.IfaceMetadataIndex, log logging.PluginLogger) (descr *kvs.KVDescriptor, ctx *DHCPDescriptor) {
+
+	ctx = &DHCPDescriptor{
 		kvscheduler: kvscheduler,
 		ifHandler:   ifHandler,
+		ifIndex:     ifIndex,
 		log:         log.NewLogger("dhcp-descriptor"),
 	}
-	return descriptor
-}
-
-// GetDescriptor returns descriptor suitable for registration with the KVScheduler.
-func (d *DHCPDescriptor) GetDescriptor() *kvs.KVDescriptor {
-	return &kvs.KVDescriptor{
+	descr = &kvs.KVDescriptor{
 		Name:                 DHCPDescriptorName,
-		KeySelector:          d.IsDHCPRelatedKey,
-		KeyLabel:             d.InterfaceNameFromKey,
-		WithMetadata:         true,            // DHCP leases
-		Create:               d.Create,        // DHCP client
-		Delete:               d.Delete,        // DHCP client
-		Retrieve:             d.Retrieve,      // DHCP leases
-		DerivedValues:        d.DerivedValues, // IP address from DHCP lease
+		KeySelector:          ctx.IsDHCPRelatedKey,
+		KeyLabel:             ctx.InterfaceNameFromKey,
+		WithMetadata:         true,              // DHCP leases
+		Create:               ctx.Create,        // DHCP client
+		Delete:               ctx.Delete,        // DHCP client
+		Retrieve:             ctx.Retrieve,      // DHCP leases
+		DerivedValues:        ctx.DerivedValues, // IP address from DHCP lease
 		RetrieveDependencies: []string{InterfaceDescriptorName},
 	}
-}
-
-// SetInterfaceIndex should be used to provide interface index immediately after
-// the descriptor registration.
-func (d *DHCPDescriptor) SetInterfaceIndex(ifIndex ifaceidx.IfaceMetadataIndex) {
-	d.ifIndex = ifIndex
+	return
 }
 
 // WatchDHCPNotifications starts watching for DHCP notifications.

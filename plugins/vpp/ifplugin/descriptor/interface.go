@@ -148,9 +148,11 @@ type NetlinkAPI interface {
 
 // NewInterfaceDescriptor creates a new instance of the Interface descriptor.
 func NewInterfaceDescriptor(ifHandler vppcalls.InterfaceVppAPI, defaultMtu uint32,
-	linuxIfHandler NetlinkAPI, linuxIfPlugin LinuxPluginAPI, nsPlugin nsplugin.API, log logging.PluginLogger) *InterfaceDescriptor {
+	linuxIfHandler NetlinkAPI, linuxIfPlugin LinuxPluginAPI, nsPlugin nsplugin.API,
+	log logging.PluginLogger) (descr *kvs.KVDescriptor, ctx *InterfaceDescriptor) {
 
-	return &InterfaceDescriptor{
+	// descriptor context
+	ctx = &InterfaceDescriptor{
 		ifHandler:       ifHandler,
 		defaultMtu:      defaultMtu,
 		linuxIfPlugin:   linuxIfPlugin,
@@ -160,31 +162,30 @@ func NewInterfaceDescriptor(ifHandler vppcalls.InterfaceVppAPI, defaultMtu uint3
 		memifSocketToID: make(map[string]uint32),
 		ethernetIfs:     make(map[string]uint32),
 	}
-}
 
-// GetDescriptor returns descriptor suitable for registration (via adapter) with
-// the KVScheduler.
-func (d *InterfaceDescriptor) GetDescriptor() *adapter.InterfaceDescriptor {
-	return &adapter.InterfaceDescriptor{
+	// descriptor
+	typedDescr := &adapter.InterfaceDescriptor{
 		Name:               InterfaceDescriptorName,
 		NBKeyPrefix:        interfaces.ModelInterface.KeyPrefix(),
 		ValueTypeName:      interfaces.ModelInterface.ProtoName(),
 		KeySelector:        interfaces.ModelInterface.IsKeyValid,
 		KeyLabel:           interfaces.ModelInterface.StripKeyPrefix,
-		ValueComparator:    d.EquivalentInterfaces,
+		ValueComparator:    ctx.EquivalentInterfaces,
 		WithMetadata:       true,
-		MetadataMapFactory: d.MetadataFactory,
-		Validate:           d.Validate,
-		Create:             d.Create,
-		Delete:             d.Delete,
-		Update:             d.Update,
-		UpdateWithRecreate: d.UpdateWithRecreate,
-		Retrieve:           d.Retrieve,
-		Dependencies:       d.Dependencies,
-		DerivedValues:      d.DerivedValues,
+		MetadataMapFactory: ctx.MetadataFactory,
+		Validate:           ctx.Validate,
+		Create:             ctx.Create,
+		Delete:             ctx.Delete,
+		Update:             ctx.Update,
+		UpdateWithRecreate: ctx.UpdateWithRecreate,
+		Retrieve:           ctx.Retrieve,
+		Dependencies:       ctx.Dependencies,
+		DerivedValues:      ctx.DerivedValues,
 		// If Linux-IfPlugin is loaded, dump it first.
 		RetrieveDependencies: []string{linux_ifdescriptor.InterfaceDescriptorName},
 	}
+	descr = adapter.NewInterfaceDescriptor(typedDescr)
+	return
 }
 
 // SetInterfaceIndex should be used to provide interface index immediately after
@@ -426,6 +427,8 @@ func (d *InterfaceDescriptor) Validate(key string, intf *interfaces.Interface) e
 		}
 	}
 
+	// TODO: validate IP addresses
+
 	return nil
 }
 
@@ -438,18 +441,6 @@ func (d *InterfaceDescriptor) UpdateWithRecreate(key string, oldIntf, newIntf *i
 
 	// if type-specific attributes have changed, then re-create the interface
 	if !d.equivalentTypeSpecificConfig(oldIntf, newIntf) {
-		return true
-	}
-
-	// check if VRF IP version has changed
-	newAddrs, err1 := addrs.StrAddrsToStruct(newIntf.IpAddresses)
-	oldAddrs, err2 := addrs.StrAddrsToStruct(oldIntf.IpAddresses)
-	if err1 != nil || err2 != nil {
-		return false
-	}
-	wasIPv4, wasIPv6 := getIPAddressVersions(oldAddrs)
-	isIPv4, isIPv6 := getIPAddressVersions(newAddrs)
-	if wasIPv4 != isIPv4 || wasIPv6 != isIPv6 {
 		return true
 	}
 
@@ -491,8 +482,8 @@ func (d *InterfaceDescriptor) Dependencies(key string, intf *interfaces.Interfac
 				AnyOf: kvs.AnyOfDependency{
 					KeyPrefixes: []string{interfaces.InterfaceAddressPrefix(vxlanMulticast)},
 					KeySelector: func(key string) bool {
-						_, ifaceAddr, _, _ := interfaces.ParseInterfaceAddressKey(key)
-						return ifaceAddr.IsMulticast()
+						_, ifaceAddr, _, _, _ := interfaces.ParseInterfaceAddressKey(key)
+						return ifaceAddr != nil && ifaceAddr.IsMulticast()
 					},
 				},
 			})
@@ -564,7 +555,32 @@ func (d *InterfaceDescriptor) DerivedValues(key string, intf *interfaces.Interfa
 		})
 	}
 
-	// TODO: VRF assignment
+	// VRF assignment
+	ipAddresses := intf.IpAddresses
+	if intf.GetUnnumbered() != nil {
+		ifWithIP := intf.GetUnnumbered().GetInterfaceWithIp()
+		ifWithIPMeta, found := d.intfIndex.LookupByName(ifWithIP)
+		if !found {
+			d.log.Warnf("failed to find interface %s referenced by unnumbered interface %s",
+				ifWithIP, intf.Name)
+		} else {
+			ipAddresses = ifWithIPMeta.IPAddresses
+		}
+	}
+	ipeNets, _ := addrs.StrAddrsToStruct(ipAddresses)
+	hasIPv4, hasIPv6 := getIPAddressVersions(ipeNets)
+	if hasIPv4 {
+		derValues = append(derValues, kvs.KeyValuePair{
+			Key: interfaces.InterfaceVrfTableKey(intf.GetName(), int(intf.GetVrf()), false),
+			Value: &prototypes.Empty{},
+		})
+	}
+	if hasIPv6 {
+		derValues = append(derValues, kvs.KeyValuePair{
+			Key: interfaces.InterfaceVrfTableKey(intf.GetName(), int(intf.GetVrf()), true),
+			Value: &prototypes.Empty{},
+		})
+	}
 
 	// TODO: define derived value for UP/DOWN state (needed for subinterfaces)
 
@@ -715,22 +731,4 @@ func getIPAddressVersions(ipAddrs []*net.IPNet) (isIPv4, isIPv6 bool) {
 		}
 	}
 	return
-}
-
-// setInterfaceVrf sets the interface to VRF according to versions of IP addresses configured on the interface.
-func setInterfaceVrf(ifHandler vppcalls.InterfaceVppAPI, ifName string, ifIdx uint32, vrf uint32, ipAddresses []*net.IPNet) error {
-	isIPv4, isIPv6 := getIPAddressVersions(ipAddresses)
-	if isIPv4 {
-		if err := ifHandler.SetInterfaceVrf(ifIdx, vrf); err != nil {
-			err = errors.Errorf("failed to set interface %s as IPv4 VRF %d: %v", ifName, vrf, err)
-			return err
-		}
-	}
-	if isIPv6 {
-		if err := ifHandler.SetInterfaceVrfIPv6(ifIdx, vrf); err != nil {
-			err = errors.Errorf("failed to set interface %s as IPv6 VRF %d: %v", ifName, vrf, err)
-			return err
-		}
-	}
-	return nil
 }

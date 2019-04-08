@@ -60,12 +60,6 @@ func NewBondedInterfaceDescriptor(ifHandler vppcalls.InterfaceVppAPI, ifIndex if
 	return adapter.NewBondedInterfaceDescriptor(typedDescriptor), descriptorCtx
 }
 
-// SetInterfaceIndex should be used to provide interface index immediately after
-// the descriptor registration.
-func (d *BondedInterfaceDescriptor) SetInterfaceIndex(ifIndex ifaceidx.IfaceMetadataIndex) {
-	d.ifIndex = ifIndex
-}
-
 // IsBondEnslaveKey returns true if the key is identifying bond VPP interface.
 func (d *BondedInterfaceDescriptor) IsBondEnslaveKey(key string) bool {
 	_, _, isValid := interfaces.ParseBondedInterfaceKey(key)

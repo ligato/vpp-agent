@@ -34,6 +34,8 @@ const (
 
 	// dependency labels
 	unnumberedInterfaceHasIPDep = "unnumbered-interface-has-IP"
+	unnumberedAfterVrfIpv4Dep = "unnumbered-after-VRF-IPv4-assignment"
+	unnumberedAfterVrfIpv6Dep = "unnumbered-after-VRF-IPv6-assignment"
 )
 
 // UnnumberedIfDescriptor sets/unsets VPP interfaces as unnumbered.
@@ -45,30 +47,24 @@ type UnnumberedIfDescriptor struct {
 }
 
 // NewUnnumberedIfDescriptor creates a new instance of UnnumberedIfDescriptor.
-func NewUnnumberedIfDescriptor(ifHandler vppcalls.InterfaceVppAPI, log logging.PluginLogger) *UnnumberedIfDescriptor {
-	return &UnnumberedIfDescriptor{
+func NewUnnumberedIfDescriptor(ifHandler vppcalls.InterfaceVppAPI, ifIndex ifaceidx.IfaceMetadataIndex,
+	log logging.PluginLogger) *kvs.KVDescriptor {
+
+	ctx := &UnnumberedIfDescriptor{
 		ifHandler: ifHandler,
 		log:       log.NewLogger("unif-descriptor"),
 	}
-}
 
-// GetDescriptor returns descriptor suitable for registration (via adapter)
-// with the KVScheduler.
-func (d *UnnumberedIfDescriptor) GetDescriptor() *adapter.UnnumberedDescriptor {
-	return &adapter.UnnumberedDescriptor{
+	typedDescr := &adapter.UnnumberedDescriptor{
 		Name:          UnnumberedIfDescriptorName,
-		KeySelector:   d.IsUnnumberedInterfaceKey,
+		KeySelector:   ctx.IsUnnumberedInterfaceKey,
 		ValueTypeName: proto.MessageName(&interfaces.Interface_Unnumbered{}),
-		Create:        d.Create,
-		Delete:        d.Delete,
-		Dependencies:  d.Dependencies,
+		Create:        ctx.Create,
+		Delete:        ctx.Delete,
+		Dependencies:  ctx.Dependencies,
 	}
-}
 
-// SetInterfaceIndex should be used to provide interface index immediately after
-// the descriptor registration.
-func (d *UnnumberedIfDescriptor) SetInterfaceIndex(ifIndex ifaceidx.IfaceMetadataIndex) {
-	d.ifIndex = ifIndex
+	return adapter.NewUnnumberedDescriptor(typedDescr)
 }
 
 // IsUnnumberedInterfaceKey returns true if the key is identifying unnumbered
@@ -95,27 +91,6 @@ func (d *UnnumberedIfDescriptor) Create(key string, unIntf *interfaces.Interface
 			unIntf.InterfaceWithIp, ifName)
 		d.log.Error(err)
 		return nil, err
-	}
-
-	ipAddresses, err := addrs.StrAddrsToStruct(ifWithIPMeta.IPAddresses)
-	if err != nil {
-		err = errors.Errorf("failed to convert %s IP address list to IPNet structures: %v", ifName, err)
-		d.log.Error(err)
-		return nil, err
-	}
-
-	// VRF (optional), should be done before setting as unnumbered
-	if ifMeta.Vrf == 0 {
-		// explicit set to VRF 0 seems to be causing issues on VPP
-		// NOTE: because of this return, this function cannot be used to switch VRF from non-zero to zero
-		// (can be only used to put a newly created interface to a VRF)
-		d.log.Debugf("Set VRF to 0 for unnumbered interface is not allowed")
-	} else {
-		err = setInterfaceVrf(d.ifHandler, ifName, ifMeta.SwIfIndex, ifMeta.Vrf, ipAddresses)
-		if err != nil {
-			d.log.Error(err)
-			return nil, err
-		}
 	}
 
 	err = d.ifHandler.SetUnnumberedIP(ifMeta.SwIfIndex, ifWithIPMeta.SwIfIndex)
@@ -145,14 +120,50 @@ func (d *UnnumberedIfDescriptor) Delete(key string, unIntf *interfaces.Interface
 }
 
 // Dependencies lists dependencies for an unnumbered VPP interface.
-func (d *UnnumberedIfDescriptor) Dependencies(key string, unIntf *interfaces.Interface_Unnumbered) []kvs.Dependency {
+func (d *UnnumberedIfDescriptor) Dependencies(key string, unIntf *interfaces.Interface_Unnumbered) (deps []kvs.Dependency) {
 	// link between unnumbered interface and the referenced interface with IP address
 	// - satisfied as along as the referenced interface is configured and has at least
 	//   one IP address assigned
-	return []kvs.Dependency{{
-		Label: unnumberedInterfaceHasIPDep,
-		AnyOf: kvs.AnyOfDependency{
-			KeyPrefixes: []string{interfaces.InterfaceAddressPrefix(unIntf.InterfaceWithIp)},
+	deps = []kvs.Dependency{
+		{
+			Label: unnumberedInterfaceHasIPDep,
+			AnyOf: kvs.AnyOfDependency{
+				KeyPrefixes: []string{interfaces.InterfaceAddressPrefix(unIntf.InterfaceWithIp)},
+			},
 		},
-	}}
+	}
+
+	// interface has to be assigned to VRF before setting as unnumbered
+	var ipv4Vrf, ipv6Vrf bool
+	ifName, _ := interfaces.ParseNameFromUnnumberedKey(key)
+	ifMeta, found := d.ifIndex.LookupByName(ifName)
+	if !found {
+		d.log.Warnf("failed to find unnumbered interface %s", ifName)
+		return
+	}
+	ifWithIPMeta, found := d.ifIndex.LookupByName(unIntf.InterfaceWithIp)
+	if !found {
+		d.log.Warnf("failed to find interface %s referenced by unnumbered interface %s",
+			unIntf.InterfaceWithIp, ifName)
+		return
+	}
+	ipAddresses, err := addrs.StrAddrsToStruct(ifWithIPMeta.IPAddresses)
+	if err != nil {
+		d.log.Warnf("failed to convert %s IP address list to IPNet structures: %v", ifName, err)
+		return
+	}
+	ipv4Vrf, ipv6Vrf = getIPAddressVersions(ipAddresses)
+	if ipv4Vrf {
+		deps = append(deps, kvs.Dependency{
+			Label: unnumberedAfterVrfIpv4Dep,
+			Key:   interfaces.InterfaceVrfTableKey(ifName, int(ifMeta.Vrf), false),
+		})
+	}
+	if ipv6Vrf {
+		deps = append(deps, kvs.Dependency{
+			Label: unnumberedAfterVrfIpv6Dep,
+			Key:   interfaces.InterfaceVrfTableKey(ifName, int(ifMeta.Vrf), true),
+		})
+	}
+	return
 }
