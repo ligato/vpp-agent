@@ -27,6 +27,7 @@ import (
 	nbint "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	srv6 "github.com/ligato/vpp-agent/api/models/vpp/srv6"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/interfaces"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/ip"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/sr"
 )
 
@@ -324,6 +325,9 @@ func (h *SRv6VppHandler) addBasePolicyWithFirstSegmentList(policy *srv6.Policy) 
 	if len(policy.SegmentLists) == 0 {
 		return fmt.Errorf("policy must have defined at least one segment list (Policy: %+v)", policy) // calls from descriptor are already validated
 	}
+	if err := h.createVrfIfNeeded(policy.FibTableId, true); err != nil {
+		return fmt.Errorf("VRF table prepare failed in SRv6 policy addition due to: %v", err)
+	}
 	sids, err := h.convertPolicySegment(policy.SegmentLists[0])
 	if err != nil {
 		return err
@@ -572,6 +576,14 @@ func (h *SRv6VppHandler) addDelSteering(delete bool, steering *srv6.Steering) er
 	default:
 		return fmt.Errorf("unknown traffic type (link type %+v)", t)
 	}
+
+	// prepare vrf table for l3 steering
+	if !delete && (steerType == SteerTypeIPv6 || steerType == SteerTypeIPv4) {
+		if err := h.createVrfIfNeeded(tableID, steerType == SteerTypeIPv6); err != nil {
+			return fmt.Errorf("VRF table prepare failed in SRv6 L3 steering addition due to: %v", err)
+		}
+	}
+
 	req := &sr.SrSteeringAddDel{
 		IsDel:         boolToUint(delete),
 		TableID:       tableID,
@@ -594,6 +606,96 @@ func (h *SRv6VppHandler) addDelSteering(delete bool, steering *srv6.Steering) er
 	h.log.WithFields(logging.Fields{"steer type": steerType, "L3 prefix address bytes": prefixAddr,
 		"L2 interface index": intIndex, "policy binding SID": policyBSIDAddr, "policy index": policyIndex}).
 		Debugf("%v steering to SR policy ", operationFinished)
+
+	return nil
+}
+
+// TODO exchange vrf table creation for vrf table dependency in descriptors when vrf model will be done
+// New VRF with provided ID for IPv4 or IPv6 will be created if missing.
+func (h *SRv6VppHandler) createVrfIfNeeded(vrfID uint32, isIPv6 bool) error {
+	// Zero VRF exists by default
+	if vrfID == 0 {
+		return nil
+	}
+
+	// Get all VRFs for IPv4 or IPv6
+	var exists bool
+	if isIPv6 {
+		ipv6Tables, err := h.dumpVrfTablesIPv6()
+		if err != nil {
+			return fmt.Errorf("dumping IPv6 VRF tables failed: %v", err)
+		}
+		_, exists = ipv6Tables[vrfID]
+	} else {
+		tables, err := h.dumpVrfTables()
+		if err != nil {
+			return fmt.Errorf("dumping IPv4 VRF tables failed: %v", err)
+		}
+		_, exists = tables[vrfID]
+	}
+	// Create new VRF if needed
+	if !exists {
+		h.log.Debugf("VRF table %d does not exists and will be created", vrfID)
+		return h.vppAddIPTable(vrfID, isIPv6)
+	}
+
+	return nil
+}
+
+// Returns all IPv4 VRF tables
+func (h *SRv6VppHandler) dumpVrfTables() (map[uint32][]*ip.IPFibDetails, error) {
+	fibs := map[uint32][]*ip.IPFibDetails{}
+	reqCtx := h.callsChannel.SendMultiRequest(&ip.IPFibDump{})
+	for {
+		fibDetails := &ip.IPFibDetails{}
+		stop, err := reqCtx.ReceiveReply(fibDetails)
+		if stop {
+			break
+		}
+		if err != nil {
+			return nil, err
+		}
+
+		tableID := fibDetails.TableID
+		fibs[tableID] = append(fibs[tableID], fibDetails)
+	}
+
+	return fibs, nil
+}
+
+// Returns all IPv6 VRF tables
+func (h *SRv6VppHandler) dumpVrfTablesIPv6() (map[uint32][]*ip.IP6FibDetails, error) {
+	fibs := map[uint32][]*ip.IP6FibDetails{}
+	reqCtx := h.callsChannel.SendMultiRequest(&ip.IP6FibDump{})
+	for {
+		fibDetails := &ip.IP6FibDetails{}
+		stop, err := reqCtx.ReceiveReply(fibDetails)
+		if stop {
+			break
+		}
+		if err != nil {
+			return nil, err
+		}
+
+		tableID := fibDetails.TableID
+		fibs[tableID] = append(fibs[tableID], fibDetails)
+	}
+
+	return fibs, nil
+}
+
+// Creates new VRF table with provided ID and for desired IP version
+func (h *SRv6VppHandler) vppAddIPTable(vrfID uint32, isIPv6 bool) error {
+	req := &ip.IPTableAddDel{
+		TableID: vrfID,
+		IsIPv6:  boolToUint(isIPv6),
+		IsAdd:   1,
+	}
+	reply := &ip.IPTableAddDelReply{}
+
+	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
+		return err
+	}
 
 	return nil
 }

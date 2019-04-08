@@ -198,7 +198,7 @@ func (d *LocalSIDDescriptor) Dependencies(key string, localSID *srv6.LocalSID) (
 		if ef.EndFunction_T.VrfId != 0 { // VRF 0 is in VPP by default, no need to wait for first route
 			dependencies = append(dependencies, scheduler.Dependency{
 				Label: localsidVRFDep,
-				AnyOf: scheduler.AnyOfDependency{
+				AnyOf: scheduler.AnyOfDependency{ // TODO change for vrf dependency when vrf model is done (vrf can be created also by interface creation + it is possible to route to that interface -> depending by route creation only is not enough -> depend on vrf table directly (created by whoever uses it))
 					KeyPrefixes: []string{vpp_l3.RouteVrfPrefix(ef.EndFunction_T.VrfId)}, // waiting for VRF table creation (route creation creates also VRF table if it doesn't exist)
 					KeySelector: d.isIPv6RouteKey,                                        // T refers to IPv6 VRF table
 				},
@@ -228,7 +228,7 @@ func (d *LocalSIDDescriptor) Dependencies(key string, localSID *srv6.LocalSID) (
 		if ef.EndFunction_DT4.VrfId != 0 { // VRF 0 is in VPP by default, no need to wait for first route
 			dependencies = append(dependencies, scheduler.Dependency{
 				Label: localsidVRFDep,
-				AnyOf: scheduler.AnyOfDependency{
+				AnyOf: scheduler.AnyOfDependency{ // TODO change for vrf dependency when vrf model is done (vrf can be created also by interface creation + it is possible to route to that interface -> depending by route creation only is not enough -> depend on vrf table directly (created by whoever uses it))
 					KeyPrefixes: []string{vpp_l3.RouteVrfPrefix(ef.EndFunction_DT4.VrfId)}, // waiting for VRF table creation (route creation creates also VRF table if it doesn't exist)
 					KeySelector: d.isIPv4RouteKey,                                          // we want ipv4 VRF because DT4
 				},
@@ -238,7 +238,7 @@ func (d *LocalSIDDescriptor) Dependencies(key string, localSID *srv6.LocalSID) (
 		if ef.EndFunction_DT6.VrfId != 0 { // VRF 0 is in VPP by default, no need to wait for first route
 			dependencies = append(dependencies, scheduler.Dependency{
 				Label: localsidVRFDep,
-				AnyOf: scheduler.AnyOfDependency{
+				AnyOf: scheduler.AnyOfDependency{ // TODO change for vrf dependency when vrf model is done (vrf can be created also by interface creation + it is possible to route to that interface -> depending by route creation only is not enough -> depend on vrf table directly (created by whoever uses it))
 					KeyPrefixes: []string{vpp_l3.RouteVrfPrefix(ef.EndFunction_DT6.VrfId)}, // waiting for VRF table creation (route creation creates also VRF table if it doesn't exist)
 					KeySelector: d.isIPv6RouteKey,                                          // we want ipv6 VRF because DT6
 				},

@@ -23,6 +23,7 @@ import (
 	"github.com/ligato/cn-infra/logging/logrus"
 	srv6 "github.com/ligato/vpp-agent/api/models/vpp/srv6"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/interfaces"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/ip"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/sr"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/vpe"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
@@ -761,11 +762,17 @@ func TestAddPolicy(t *testing.T) {
 		{
 			Name:        "simple SetAddPolicy",
 			Policy:      policy(sidA.Addr, 10, false, true, policySegmentList(1, sidA.Addr, sidB.Addr, sidC.Addr)),
-			MockReplies: []govppapi.Message{&sr.SrPolicyAddReply{}},
+			MockReplies: []govppapi.Message{&ip.IP6FibDetails{}, &vpe.ControlPingReply{}, &ip.IPTableAddDelReply{}, &sr.SrPolicyAddReply{}},
 			Verify: func(err error, catchedMsgs []govppapi.Message) {
 				Expect(err).ShouldNot(HaveOccurred())
-				Expect(catchedMsgs).To(HaveLen(1))
-				Expect(catchedMsgs[0]).To(Equal(&sr.SrPolicyAdd{
+				Expect(catchedMsgs).To(HaveLen(3))
+				Expect(catchedMsgs[0]).To(Equal(&ip.IP6FibDump{}))
+				Expect(catchedMsgs[1]).To(Equal(&ip.IPTableAddDel{
+					TableID: 10,
+					IsIPv6:  1,
+					IsAdd:   1,
+				}))
+				Expect(catchedMsgs[2]).To(Equal(&sr.SrPolicyAdd{
 					BsidAddr: sidA.Addr,
 					FibTable: 10,
 					Type:     boolToUint(false),
@@ -782,11 +789,17 @@ func TestAddPolicy(t *testing.T) {
 			Name: "adding policy with multiple segment lists",
 			Policy: policy(sidA.Addr, 10, false, true,
 				policySegmentList(1, sidA.Addr, sidB.Addr, sidC.Addr), policySegmentList(1, sidB.Addr, sidC.Addr, sidA.Addr)),
-			MockReplies: []govppapi.Message{&sr.SrPolicyAddReply{}, &sr.SrPolicyModReply{}},
+			MockReplies: []govppapi.Message{&ip.IP6FibDetails{}, &vpe.ControlPingReply{}, &ip.IPTableAddDelReply{}, &sr.SrPolicyAddReply{}, &sr.SrPolicyModReply{}},
 			Verify: func(err error, catchedMsgs []govppapi.Message) {
 				Expect(err).ShouldNot(HaveOccurred())
-				Expect(catchedMsgs).To(HaveLen(2))
-				Expect(catchedMsgs[0]).To(Equal(&sr.SrPolicyAdd{
+				Expect(catchedMsgs).To(HaveLen(4))
+				Expect(catchedMsgs[0]).To(Equal(&ip.IP6FibDump{}))
+				Expect(catchedMsgs[1]).To(Equal(&ip.IPTableAddDel{
+					TableID: 10,
+					IsIPv6:  1,
+					IsAdd:   1,
+				}))
+				Expect(catchedMsgs[2]).To(Equal(&sr.SrPolicyAdd{
 					BsidAddr: sidA.Addr,
 					FibTable: 10,
 					Type:     boolToUint(false),
@@ -797,7 +810,7 @@ func TestAddPolicy(t *testing.T) {
 						Sids:    []sr.Srv6Sid{{Addr: sidA.Addr}, {Addr: sidB.Addr}, {Addr: sidC.Addr}},
 					},
 				}))
-				Expect(catchedMsgs[1]).To(Equal(&sr.SrPolicyMod{
+				Expect(catchedMsgs[3]).To(Equal(&sr.SrPolicyMod{
 					BsidAddr:  sidA.Addr,
 					Operation: vpp1901.AddSRList,
 					FibTable:  10,
@@ -1096,16 +1109,17 @@ func TestRemoveSteering(t *testing.T) {
 }
 
 func testAddRemoveSteering(t *testing.T, removal bool) {
-	action := "addition"
+	const addition = "addition"
+	action := addition
 	if removal {
 		action = "removal"
 	}
 	// Prepare different cases
 	cases := []struct {
-		Name      string
-		Steering  *srv6.Steering
-		MockReply govppapi.Message
-		Verify    func(error, govppapi.Message)
+		Name        string
+		Steering    *srv6.Steering
+		MockReplies []govppapi.Message
+		Verify      func(error, []govppapi.Message)
 	}{
 		{
 			Name: action + " of IPv6 L3 steering",
@@ -1120,18 +1134,44 @@ func testAddRemoveSteering(t *testing.T, removal bool) {
 					},
 				},
 			},
-			MockReply: &sr.SrSteeringAddDelReply{},
-			Verify: func(err error, catchedMsg govppapi.Message) {
+			MockReplies: func() []govppapi.Message {
+				if action == addition {
+					return []govppapi.Message{&ip.IP6FibDetails{}, &vpe.ControlPingReply{}, &ip.IPTableAddDelReply{}, &sr.SrSteeringAddDelReply{}}
+				} else {
+					return []govppapi.Message{&sr.SrSteeringAddDelReply{}}
+				}
+			}(),
+			Verify: func(err error, catchedMsgs []govppapi.Message) {
 				Expect(err).ShouldNot(HaveOccurred())
-				Expect(catchedMsg).To(Equal(&sr.SrSteeringAddDel{
-					IsDel:         boolToUint(removal),
-					BsidAddr:      sidA.Addr,
-					SrPolicyIndex: uint32(0),
-					TableID:       10,
-					TrafficType:   vpp1901.SteerTypeIPv6,
-					PrefixAddr:    net.ParseIP("1::").To16(),
-					MaskWidth:     64,
-				}))
+				if action == addition {
+					Expect(catchedMsgs).To(HaveLen(3))
+					Expect(catchedMsgs[0]).To(Equal(&ip.IP6FibDump{}))
+					Expect(catchedMsgs[1]).To(Equal(&ip.IPTableAddDel{
+						TableID: 10,
+						IsIPv6:  1,
+						IsAdd:   1,
+					}))
+					Expect(catchedMsgs[2]).To(Equal(&sr.SrSteeringAddDel{
+						IsDel:         boolToUint(removal),
+						BsidAddr:      sidA.Addr,
+						SrPolicyIndex: uint32(0),
+						TableID:       10,
+						TrafficType:   vpp1901.SteerTypeIPv6,
+						PrefixAddr:    net.ParseIP("1::").To16(),
+						MaskWidth:     64,
+					}))
+				} else {
+					Expect(catchedMsgs).To(HaveLen(1))
+					Expect(catchedMsgs[0]).To(Equal(&sr.SrSteeringAddDel{
+						IsDel:         boolToUint(removal),
+						BsidAddr:      sidA.Addr,
+						SrPolicyIndex: uint32(0),
+						TableID:       10,
+						TrafficType:   vpp1901.SteerTypeIPv6,
+						PrefixAddr:    net.ParseIP("1::").To16(),
+						MaskWidth:     64,
+					}))
+				}
 			},
 		},
 		{
@@ -1147,18 +1187,44 @@ func testAddRemoveSteering(t *testing.T, removal bool) {
 					},
 				},
 			},
-			MockReply: &sr.SrSteeringAddDelReply{},
-			Verify: func(err error, catchedMsg govppapi.Message) {
+			MockReplies: func() []govppapi.Message {
+				if action == addition {
+					return []govppapi.Message{&ip.IPFibDetails{}, &vpe.ControlPingReply{}, &ip.IPTableAddDelReply{}, &sr.SrSteeringAddDelReply{}}
+				} else {
+					return []govppapi.Message{&sr.SrSteeringAddDelReply{}}
+				}
+			}(),
+			Verify: func(err error, catchedMsgs []govppapi.Message) {
 				Expect(err).ShouldNot(HaveOccurred())
-				Expect(catchedMsg).To(Equal(&sr.SrSteeringAddDel{
-					IsDel:         boolToUint(removal),
-					BsidAddr:      sidA.Addr,
-					SrPolicyIndex: uint32(0),
-					TableID:       10,
-					TrafficType:   vpp1901.SteerTypeIPv4,
-					PrefixAddr:    net.ParseIP("1.2.3.4").To16(),
-					MaskWidth:     24,
-				}))
+				if action == addition {
+					Expect(catchedMsgs).To(HaveLen(3))
+					Expect(catchedMsgs[0]).To(Equal(&ip.IPFibDump{}))
+					Expect(catchedMsgs[1]).To(Equal(&ip.IPTableAddDel{
+						TableID: 10,
+						IsIPv6:  0,
+						IsAdd:   1,
+					}))
+					Expect(catchedMsgs[2]).To(Equal(&sr.SrSteeringAddDel{
+						IsDel:         boolToUint(removal),
+						BsidAddr:      sidA.Addr,
+						SrPolicyIndex: uint32(0),
+						TableID:       10,
+						TrafficType:   vpp1901.SteerTypeIPv4,
+						PrefixAddr:    net.ParseIP("1.2.3.4").To16(),
+						MaskWidth:     24,
+					}))
+				} else {
+					Expect(catchedMsgs).To(HaveLen(1))
+					Expect(catchedMsgs[0]).To(Equal(&sr.SrSteeringAddDel{
+						IsDel:         boolToUint(removal),
+						BsidAddr:      sidA.Addr,
+						SrPolicyIndex: uint32(0),
+						TableID:       10,
+						TrafficType:   vpp1901.SteerTypeIPv4,
+						PrefixAddr:    net.ParseIP("1.2.3.4").To16(),
+						MaskWidth:     24,
+					}))
+				}
 			},
 		},
 		{
@@ -1173,10 +1239,11 @@ func testAddRemoveSteering(t *testing.T, removal bool) {
 					},
 				},
 			},
-			MockReply: &sr.SrSteeringAddDelReply{},
-			Verify: func(err error, catchedMsg govppapi.Message) {
+			MockReplies: []govppapi.Message{&sr.SrSteeringAddDelReply{}},
+			Verify: func(err error, catchedMsgs []govppapi.Message) {
 				Expect(err).ShouldNot(HaveOccurred())
-				Expect(catchedMsg).To(Equal(&sr.SrSteeringAddDel{
+				Expect(catchedMsgs).To(HaveLen(1))
+				Expect(catchedMsgs[0]).To(Equal(&sr.SrSteeringAddDel{
 					IsDel:         boolToUint(removal),
 					BsidAddr:      sidA.Addr,
 					SrPolicyIndex: uint32(0),
@@ -1198,18 +1265,44 @@ func testAddRemoveSteering(t *testing.T, removal bool) {
 					},
 				},
 			},
-			MockReply: &sr.SrSteeringAddDelReply{},
-			Verify: func(err error, catchedMsg govppapi.Message) {
+			MockReplies: func() []govppapi.Message {
+				if action == addition {
+					return []govppapi.Message{&ip.IP6FibDetails{}, &vpe.ControlPingReply{}, &ip.IPTableAddDelReply{}, &sr.SrSteeringAddDelReply{}}
+				} else {
+					return []govppapi.Message{&sr.SrSteeringAddDelReply{}}
+				}
+			}(),
+			Verify: func(err error, catchedMsgs []govppapi.Message) {
 				Expect(err).ShouldNot(HaveOccurred())
-				Expect(catchedMsg).To(Equal(&sr.SrSteeringAddDel{
-					IsDel:         boolToUint(removal),
-					BsidAddr:      nil,
-					SrPolicyIndex: uint32(20),
-					TableID:       10,
-					TrafficType:   vpp1901.SteerTypeIPv6,
-					PrefixAddr:    net.ParseIP("1::").To16(),
-					MaskWidth:     64,
-				}))
+				if action == addition {
+					Expect(catchedMsgs).To(HaveLen(3))
+					Expect(catchedMsgs[0]).To(Equal(&ip.IP6FibDump{}))
+					Expect(catchedMsgs[1]).To(Equal(&ip.IPTableAddDel{
+						TableID: 10,
+						IsIPv6:  1,
+						IsAdd:   1,
+					}))
+					Expect(catchedMsgs[2]).To(Equal(&sr.SrSteeringAddDel{
+						IsDel:         boolToUint(removal),
+						BsidAddr:      nil,
+						SrPolicyIndex: uint32(20),
+						TableID:       10,
+						TrafficType:   vpp1901.SteerTypeIPv6,
+						PrefixAddr:    net.ParseIP("1::").To16(),
+						MaskWidth:     64,
+					}))
+				} else {
+					Expect(catchedMsgs).To(HaveLen(1))
+					Expect(catchedMsgs[0]).To(Equal(&sr.SrSteeringAddDel{
+						IsDel:         boolToUint(removal),
+						BsidAddr:      nil,
+						SrPolicyIndex: uint32(20),
+						TableID:       10,
+						TrafficType:   vpp1901.SteerTypeIPv6,
+						PrefixAddr:    net.ParseIP("1::").To16(),
+						MaskWidth:     64,
+					}))
+				}
 			},
 		},
 		{
@@ -1222,8 +1315,8 @@ func testAddRemoveSteering(t *testing.T, removal bool) {
 					},
 				},
 			},
-			MockReply: &sr.SrSteeringAddDelReply{},
-			Verify: func(err error, catchedMsg govppapi.Message) {
+			MockReplies: []govppapi.Message{&sr.SrSteeringAddDelReply{}},
+			Verify: func(err error, catchedMsgs []govppapi.Message) {
 				Expect(err).Should(HaveOccurred())
 			},
 		},
@@ -1234,8 +1327,8 @@ func testAddRemoveSteering(t *testing.T, removal bool) {
 					PolicyBsid: sidToStr(sidA),
 				},
 			},
-			MockReply: &sr.SrSteeringAddDelReply{},
-			Verify: func(err error, catchedMsg govppapi.Message) {
+			MockReplies: []govppapi.Message{&sr.SrSteeringAddDelReply{}},
+			Verify: func(err error, catchedMsgs []govppapi.Message) {
 				Expect(err).Should(HaveOccurred())
 			},
 		},
@@ -1252,8 +1345,8 @@ func testAddRemoveSteering(t *testing.T, removal bool) {
 					},
 				},
 			},
-			MockReply: &sr.SrSteeringAddDelReply{},
-			Verify: func(err error, catchedMsg govppapi.Message) {
+			MockReplies: []govppapi.Message{&sr.SrSteeringAddDelReply{}},
+			Verify: func(err error, catchedMsgs []govppapi.Message) {
 				Expect(err).Should(HaveOccurred())
 			},
 		},
@@ -1269,8 +1362,8 @@ func testAddRemoveSteering(t *testing.T, removal bool) {
 					},
 				},
 			},
-			MockReply: &sr.SrSteeringAddDelReply{},
-			Verify: func(err error, catchedMsg govppapi.Message) {
+			MockReplies: []govppapi.Message{&sr.SrSteeringAddDelReply{}},
+			Verify: func(err error, catchedMsgs []govppapi.Message) {
 				Expect(err).Should(HaveOccurred())
 			},
 		},
@@ -1287,8 +1380,8 @@ func testAddRemoveSteering(t *testing.T, removal bool) {
 					},
 				},
 			},
-			MockReply: &sr.SrSteeringAddDelReply{},
-			Verify: func(err error, catchedMsg govppapi.Message) {
+			MockReplies: []govppapi.Message{&sr.SrSteeringAddDelReply{}},
+			Verify: func(err error, catchedMsgs []govppapi.Message) {
 				Expect(err).Should(HaveOccurred())
 			},
 		},
@@ -1305,8 +1398,8 @@ func testAddRemoveSteering(t *testing.T, removal bool) {
 					},
 				},
 			},
-			MockReply: &sr.SrSteeringAddDelReply{Retval: 1},
-			Verify: func(err error, msg govppapi.Message) {
+			MockReplies: []govppapi.Message{&sr.SrSteeringAddDelReply{Retval: 1}},
+			Verify: func(err error, catchedMsgs []govppapi.Message) {
 				Expect(err).Should(HaveOccurred())
 			},
 		},
@@ -1318,14 +1411,16 @@ func testAddRemoveSteering(t *testing.T, removal bool) {
 			ctx, vppCalls := setup(t)
 			defer teardown(ctx)
 			// prepare reply, make call and verify
-			ctx.MockVpp.MockReply(td.MockReply)
+			for _, reply := range td.MockReplies {
+				ctx.MockVpp.MockReply(reply)
+			}
 			var err error
 			if removal {
 				err = vppCalls.RemoveSteering(td.Steering)
 			} else {
 				err = vppCalls.AddSteering(td.Steering)
 			}
-			td.Verify(err, ctx.MockChannel.Msg)
+			td.Verify(err, ctx.MockChannel.Msgs)
 		})
 	}
 }
