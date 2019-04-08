@@ -87,7 +87,6 @@ func (d *InterfaceAddressDescriptor) Create(key string, emptyVal proto.Message) 
 		return nil, err
 	}
 
-
 	err = d.ifHandler.AddInterfaceIP(ifMeta.SwIfIndex, ipAddrNet)
 	return nil, err
 }
@@ -107,7 +106,6 @@ func (d *InterfaceAddressDescriptor) Delete(key string, emptyVal proto.Message, 
 		d.log.Error(err)
 		return err
 	}
-
 
 	err = d.ifHandler.DelInterfaceIP(ifMeta.SwIfIndex, ipAddrNet)
 	return err

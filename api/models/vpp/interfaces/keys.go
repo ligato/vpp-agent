@@ -16,12 +16,12 @@ package vpp_interfaces
 
 import (
 	"net"
+	"strconv"
 	"strings"
 
 	"github.com/gogo/protobuf/jsonpb"
 
 	"github.com/ligato/vpp-agent/pkg/models"
-	"strconv"
 )
 
 // ModuleName is the module name used for models.
@@ -57,20 +57,20 @@ const (
 
 /* Interface Address (derived) */
 const (
-	// AddressKeyPrefix is used as a common prefix for keys derived from
-	// interfaces to represent assigned IP addresses.
-	AddressKeyPrefix = "vpp/interface/address/"
+	// addressKeyTemplate is a template for (derived) key representing assigned
+	// IP addresses to an interface.
+	addressKeyTemplate = "vpp/interface/{iface}/address/{address}"
 )
 
 /* Interface VRF (derived) */
 const (
 	// vrfTableKeyPrefix is used as a common prefix for keys derived from
 	// interfaces to represent target VRF tables.
-	vrfTableKeyPrefix = "vpp/interface/vrf/"
+	vrfTableKeyPrefix = "vpp/vrf/"
 
 	// vrfTableKeyTemplate is a template for (derived) key representing assignment
 	// of a VPP interface into a VRF table.
-	vrfTableKeyTemplate = vrfTableKeyPrefix + "{iface}/protocol/{protocol}/table-id/{table-id}"
+	vrfTableKeyTemplate = vrfTableKeyPrefix + "{vrf}/protocol/{protocol}/interface/{iface}"
 
 	vrfIPv4Proto = "ipv4"
 	vrfIPv6Proto = "ipv6"
@@ -132,10 +132,7 @@ func InterfaceStateKey(iface string) string {
 // InterfaceAddressPrefix returns longest-common prefix of keys representing
 // assigned IP addresses to a specific VPP interface.
 func InterfaceAddressPrefix(iface string) string {
-	if iface == "" {
-		iface = InvalidKeyPart
-	}
-	return AddressKeyPrefix + iface + "/"
+	return InterfaceAddressKey(iface, "")
 }
 
 // InterfaceAddressKey returns key representing IP address assigned to VPP interface.
@@ -145,37 +142,45 @@ func InterfaceAddressKey(iface string, address string) string {
 	}
 
 	// construct key without validating the IP address
-	return AddressKeyPrefix + iface + "/" + address
+	key := strings.Replace(addressKeyTemplate, "{iface}", iface, 1)
+	key = strings.Replace(key, "{address}", address, 1)
+	return key
 }
 
 // ParseInterfaceAddressKey parses interface address from key derived
 // from interface by InterfaceAddressKey().
 func ParseInterfaceAddressKey(key string) (iface string, ipAddr net.IP, ipAddrNet *net.IPNet, invalidIP, isAddrKey bool) {
-	if suffix := strings.TrimPrefix(key, AddressKeyPrefix); suffix != key {
-		parts := strings.Split(suffix, "/")
-
-		// beware: interface name may contain forward slashes (e.g. ETHERNET_CSMACD)
-		if len(parts) < 3 {
-			return "", nil, nil, true, true
-		}
-
-		// parse interface name
-		lastIdx := len(parts) - 1
-		iface = strings.Join(parts[:lastIdx-1], "/")
-		if iface == "" {
-			iface = InvalidKeyPart
-		}
-
-		// parse IP address
-		var err error
-		ipAddr, ipAddrNet, err = net.ParseCIDR(parts[lastIdx-1] + "/" + parts[lastIdx])
-		if err != nil {
-			return "", nil, nil, true, true
-		}
-
-
-		return iface, ipAddr, ipAddrNet, false, true
+	parts := strings.Split(key, "/")
+	if len(parts) < 4 || parts[0] != "vpp" || parts[1] != "interface" {
+		return
 	}
+
+	addrIdx := -1
+	for idx, part := range parts {
+		if part == "address" {
+			addrIdx = idx
+			break
+		}
+	}
+	if addrIdx == -1 {
+		return
+	}
+	isAddrKey = true
+
+	// parse interface name
+	iface = strings.Join(parts[2:addrIdx], "/")
+	if iface == "" {
+		iface = InvalidKeyPart
+	}
+
+	// parse IP address
+	var err error
+	ipAddr, ipAddrNet, err = net.ParseCIDR(strings.Join(parts[addrIdx+1:], "/"))
+	if err != nil {
+		invalidIP = true
+		return
+	}
+
 	return
 }
 
@@ -183,8 +188,6 @@ func ParseInterfaceAddressKey(key string) (iface string, ipAddr net.IP, ipAddrNe
 
 // InterfaceVrfTableKey returns key representing VRF table that the interface
 // is assigned into.
-// For vrf<0, the method returns key prefix matching the VRF table of the
-// interface for the given IP version without knowing the table ID.
 func InterfaceVrfTableKey(iface string, vrf int, ipv6 bool) string {
 	if iface == "" {
 		iface = InvalidKeyPart
@@ -194,14 +197,14 @@ func InterfaceVrfTableKey(iface string, vrf int, ipv6 bool) string {
 		protocol = vrfIPv6Proto
 	}
 
-	var tableId string
+	var vrfTableID string
 	if vrf >= 0 {
-		tableId = strconv.Itoa(vrf)
+		vrfTableID = strconv.Itoa(vrf)
 	}
 
 	key := strings.Replace(vrfTableKeyTemplate, "{iface}", iface, 1)
 	key = strings.Replace(key, "{protocol}", protocol, 1)
-	key = strings.Replace(key, "{table-id}", tableId, 1)
+	key = strings.Replace(key, "{vrf}", vrfTableID, 1)
 	return key
 }
 
@@ -215,13 +218,12 @@ func ParseInterfaceVrfTableKey(key string) (iface string, vrf int, ipv6, isVrfTa
 		if len(parts) < 5 {
 			return
 		}
-		lastIdx := len(parts) - 1
-		if parts[lastIdx-3] != "protocol" || parts[lastIdx-1] != "table-id" {
+		if parts[1] != "protocol" || parts[3] != "interface" {
 			return
 		}
 
 		// parse interface name
-		iface = strings.Join(parts[:lastIdx-3], "/")
+		iface = strings.Join(parts[4:], "/")
 		if iface == "" || iface == InvalidKeyPart {
 			iface = ""
 			return
@@ -229,14 +231,14 @@ func ParseInterfaceVrfTableKey(key string) (iface string, vrf int, ipv6, isVrfTa
 
 		// parse VRF table ID
 		var err error
-		vrf, err = strconv.Atoi(parts[lastIdx])
+		vrf, err = strconv.Atoi(parts[0])
 		if err != nil {
 			iface = ""
 			return
 		}
 
 		// parse protocol
-		switch parts[lastIdx-2] {
+		switch parts[2] {
 		case vrfIPv4Proto:
 			ipv6 = false
 		case vrfIPv6Proto:

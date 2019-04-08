@@ -218,7 +218,7 @@ func (d *DNAT44Descriptor) Retrieve(correlate []adapter.DNAT44KVWithMetadata) (
 	return retrieved, nil
 }
 
-// Dependencies lists external interfaces from mappings as dependencies.
+// Dependencies lists external interfaces and VRFs from mappings as dependencies.
 func (d *DNAT44Descriptor) Dependencies(key string, dnat *nat.DNat44) (dependencies []kvs.Dependency) {
 	// collect referenced external interfaces and VRFs
 	externalIfaces := make(map[string]struct{})

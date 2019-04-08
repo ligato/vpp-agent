@@ -427,8 +427,6 @@ func (d *InterfaceDescriptor) Validate(key string, intf *interfaces.Interface) e
 		}
 	}
 
-	// TODO: validate IP addresses
-
 	return nil
 }
 
@@ -566,6 +564,9 @@ func (d *InterfaceDescriptor) DerivedValues(key string, intf *interfaces.Interfa
 		} else {
 			ipAddresses = ifWithIPMeta.IPAddresses
 		}
+	}
+	if intf.Type == interfaces.Interface_VXLAN_TUNNEL {
+		ipAddresses = []string{intf.GetVxlan().GetSrcAddress(), intf.GetVxlan().GetDstAddress()}
 	}
 	ipeNets, _ := addrs.StrAddrsToStruct(ipAddresses)
 	hasIPv4, hasIPv6 := getIPAddressVersions(ipeNets)
