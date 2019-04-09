@@ -178,7 +178,6 @@ func ParseInterfaceAddressKey(key string) (iface string, ipAddr net.IP, ipAddrNe
 	ipAddr, ipAddrNet, err = net.ParseCIDR(strings.Join(parts[addrIdx+1:], "/"))
 	if err != nil {
 		invalidIP = true
-		return
 	}
 
 	return
@@ -208,8 +207,8 @@ func InterfaceVrfTableKey(iface string, vrf int, ipv6 bool) string {
 	return key
 }
 
-// ParseInterfaceVrfTableKey parses interface address from key derived
-// from interface by InterfaceAddressKey().
+// ParseInterfaceVrfTableKey parses interface and VRF table ID from key derived
+// from interface by InterfaceVrfTableKey().
 func ParseInterfaceVrfTableKey(key string) (iface string, vrf int, ipv6, isVrfTableKey bool) {
 	if suffix := strings.TrimPrefix(key, vrfTableKeyPrefix); suffix != key {
 		parts := strings.Split(suffix, "/")

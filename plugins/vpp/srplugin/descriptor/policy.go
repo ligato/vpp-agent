@@ -51,30 +51,27 @@ type PolicyMetadata struct {
 }
 
 // NewPolicyDescriptor creates a new instance of the Srv6 policy descriptor.
-func NewPolicyDescriptor(srHandler vppcalls.SRv6VppAPI, log logging.PluginLogger) *PolicyDescriptor {
-	return &PolicyDescriptor{
+func NewPolicyDescriptor(srHandler vppcalls.SRv6VppAPI, log logging.PluginLogger) *scheduler.KVDescriptor {
+	ctx := &PolicyDescriptor{
 		log:       log.NewLogger("policy-descriptor"),
 		srHandler: srHandler,
 	}
-}
 
-// GetDescriptor returns descriptor suitable for registration (via adapter) with
-// the KVScheduler.
-func (d *PolicyDescriptor) GetDescriptor() *adapter.PolicyDescriptor {
-	return &adapter.PolicyDescriptor{
+	typedDescr := &adapter.PolicyDescriptor{
 		Name:               PolicyDescriptorName,
 		NBKeyPrefix:        srv6.ModelPolicy.KeyPrefix(),
 		ValueTypeName:      srv6.ModelPolicy.ProtoName(),
 		KeySelector:        srv6.ModelPolicy.IsKeyValid,
 		KeyLabel:           srv6.ModelPolicy.StripKeyPrefix,
-		ValueComparator:    d.EquivalentPolicies,
-		Validate:           d.Validate,
-		Create:             d.Create,
-		Delete:             d.Delete,
-		Update:             d.Update,
-		UpdateWithRecreate: d.UpdateWithRecreate,
+		ValueComparator:    ctx.EquivalentPolicies,
+		Validate:           ctx.Validate,
+		Create:             ctx.Create,
+		Delete:             ctx.Delete,
+		Update:             ctx.Update,
+		UpdateWithRecreate: ctx.UpdateWithRecreate,
 		WithMetadata:       true,
 	}
+	return adapter.NewPolicyDescriptor(typedDescr)
 }
 
 // Validate validates VPP policies.

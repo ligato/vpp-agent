@@ -49,28 +49,25 @@ type LocalSIDDescriptor struct {
 }
 
 // NewLocalSIDDescriptor creates a new instance of the LocalSID descriptor.
-func NewLocalSIDDescriptor(srHandler vppcalls.SRv6VppAPI, log logging.PluginLogger) *LocalSIDDescriptor {
-	return &LocalSIDDescriptor{
+func NewLocalSIDDescriptor(srHandler vppcalls.SRv6VppAPI, log logging.PluginLogger) *scheduler.KVDescriptor {
+	ctx := &LocalSIDDescriptor{
 		log:       log.NewLogger("localsid-descriptor"),
 		srHandler: srHandler,
 	}
-}
 
-// GetDescriptor returns descriptor suitable for registration (via adapter) with
-// the KVScheduler.
-func (d *LocalSIDDescriptor) GetDescriptor() *adapter.LocalSIDDescriptor {
-	return &adapter.LocalSIDDescriptor{
+	typedDescr := &adapter.LocalSIDDescriptor{
 		Name:            LocalSIDDescriptorName,
 		NBKeyPrefix:     srv6.ModelLocalSID.KeyPrefix(),
 		ValueTypeName:   srv6.ModelLocalSID.ProtoName(),
 		KeySelector:     srv6.ModelLocalSID.IsKeyValid,
 		KeyLabel:        srv6.ModelLocalSID.StripKeyPrefix,
-		ValueComparator: d.EquivalentLocalSIDs,
-		Validate:        d.Validate,
-		Create:          d.Create,
-		Delete:          d.Delete,
-		Dependencies:    d.Dependencies,
+		ValueComparator: ctx.EquivalentLocalSIDs,
+		Validate:        ctx.Validate,
+		Create:          ctx.Create,
+		Delete:          ctx.Delete,
+		Dependencies:    ctx.Dependencies,
 	}
+	return adapter.NewLocalSIDDescriptor(typedDescr)
 }
 
 // EquivalentLocalSIDs determines whether 2 localSIDs are logically equal. This comparison takes into consideration also

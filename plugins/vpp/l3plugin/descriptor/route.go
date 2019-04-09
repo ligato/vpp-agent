@@ -53,30 +53,27 @@ type RouteDescriptor struct {
 
 // NewRouteDescriptor creates a new instance of the Route descriptor.
 func NewRouteDescriptor(
-	routeHandler vppcalls.RouteVppAPI, log logging.PluginLogger) *RouteDescriptor {
+	routeHandler vppcalls.RouteVppAPI, log logging.PluginLogger) *kvs.KVDescriptor {
 
-	return &RouteDescriptor{
+	ctx := &RouteDescriptor{
 		routeHandler: routeHandler,
 		log:          log.NewLogger("static-route-descriptor"),
 	}
-}
 
-// GetDescriptor returns descriptor suitable for registration (via adapter) with
-// the KVScheduler.
-func (d *RouteDescriptor) GetDescriptor() *adapter.RouteDescriptor {
-	return &adapter.RouteDescriptor{
+	typedDescr := &adapter.RouteDescriptor{
 		Name:                 RouteDescriptorName,
 		NBKeyPrefix:          l3.ModelRoute.KeyPrefix(),
 		ValueTypeName:        l3.ModelRoute.ProtoName(),
 		KeySelector:          l3.ModelRoute.IsKeyValid,
-		ValueComparator:      d.EquivalentRoutes,
-		Validate:             d.Validate,
-		Create:               d.Create,
-		Delete:               d.Delete,
-		Retrieve:             d.Retrieve,
-		Dependencies:         d.Dependencies,
+		ValueComparator:      ctx.EquivalentRoutes,
+		Validate:             ctx.Validate,
+		Create:               ctx.Create,
+		Delete:               ctx.Delete,
+		Retrieve:             ctx.Retrieve,
+		Dependencies:         ctx.Dependencies,
 		RetrieveDependencies: []string{ifdescriptor.InterfaceDescriptorName},
 	}
+	return adapter.NewRouteDescriptor(typedDescr)
 }
 
 // EquivalentRoutes is case-insensitive comparison function for l3.Route.

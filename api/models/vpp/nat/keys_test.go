@@ -148,7 +148,7 @@ func TestParseInterfaceNAT44Key(t *testing.T) {
 		},
 		{
 			name:                        "not interface key 1",
-			key:                         "vpp/nat44/address/192.168.1.1",
+			key:                         "vpp/nat44/address/192.168.1.1/twice-nat/on",
 			expectedIface:               "",
 			expectedIsInside:            false,
 			expectedIsInterfaceNAT44Key: false,
@@ -172,6 +172,113 @@ func TestParseInterfaceNAT44Key(t *testing.T) {
 			}
 			if isInside != test.expectedIsInside {
 				t.Errorf("expected isInside: %t\tgot: %t", test.expectedIsInside, isInside)
+			}
+		})
+	}
+}
+
+func TestAddressNAT44Key(t *testing.T) {
+	tests := []struct {
+		name        string
+		address     string
+		twiceNat    bool
+		expectedKey string
+	}{
+		{
+			name:        "twice NAT is disabled",
+			address:     "192.168.1.1",
+			twiceNat:    false,
+			expectedKey: "vpp/nat44/address/192.168.1.1/twice-nat/off",
+		},
+		{
+			name:        "twice NAT is enabled",
+			address:     "192.168.1.1",
+			twiceNat:    true,
+			expectedKey: "vpp/nat44/address/192.168.1.1/twice-nat/on",
+		},
+		{
+			name:        "invalid address",
+			address:     "invalid",
+			twiceNat:    true,
+			expectedKey: "vpp/nat44/address/invalid/twice-nat/on",
+		},
+		{
+			name:        "empty address",
+			address:     "",
+			twiceNat:    true,
+			expectedKey: "vpp/nat44/address//twice-nat/on",
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			key := AddressNAT44Key(test.address, test.twiceNat)
+			if key != test.expectedKey {
+				t.Errorf("failed for: address=%s twiceNat=%t\n"+
+					"expected key:\n\t%q\ngot key:\n\t%q",
+					test.address, test.twiceNat, test.expectedKey, key)
+			}
+		})
+	}
+}
+
+func TestParseAddressNAT44Key(t *testing.T) {
+	tests := []struct {
+		name                      string
+		key                       string
+		expectedAddress           string
+		expectedTwiceNat          bool
+		expectedIsAddressNAT44Key bool
+	}{
+		{
+			name:                      "twice NAT is disabled",
+			key:                       "vpp/nat44/address/192.168.1.1/twice-nat/off",
+			expectedAddress:           "192.168.1.1",
+			expectedTwiceNat:          false,
+			expectedIsAddressNAT44Key: true,
+		},
+		{
+			name:                      "twice NAT is enabled",
+			key:                       "vpp/nat44/address/192.168.1.1/twice-nat/on",
+			expectedAddress:           "192.168.1.1",
+			expectedTwiceNat:          true,
+			expectedIsAddressNAT44Key: true,
+		},
+		{
+			name:                      "invalid address (not validated)",
+			key:                       "vpp/nat44/address/invalid/twice-nat/on",
+			expectedAddress:           "invalid",
+			expectedTwiceNat:          true,
+			expectedIsAddressNAT44Key: true,
+		},
+		{
+			name:                      "empty address (not validated)",
+			key:                       "vpp/nat44/address//twice-nat/on",
+			expectedAddress:           "",
+			expectedTwiceNat:          true,
+			expectedIsAddressNAT44Key: true,
+		},
+		{
+			name:                      "not address key",
+			key:                       "vpp/nat44/interface/tap0/feature/in",
+			expectedIsAddressNAT44Key: false,
+		},
+		{
+			name:                      "not address key (missing twice-nat flag)",
+			key:                       "vpp/nat44/address/192.168.1.1",
+			expectedIsAddressNAT44Key: false,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			address, twiceNat, isAddressNAT44Key := ParseAddressNAT44Key(test.key)
+			if isAddressNAT44Key != test.expectedIsAddressNAT44Key {
+				t.Errorf("expected isAddressNAT44Key: %v\tgot: %v", test.expectedIsAddressNAT44Key, isAddressNAT44Key)
+			}
+			if address != test.expectedAddress {
+				t.Errorf("expected address: %s\tgot: %s", test.expectedAddress, address)
+			}
+			if twiceNat != test.expectedTwiceNat {
+				t.Errorf("expected twiceNat: %t\tgot: %t", test.expectedTwiceNat, twiceNat)
 			}
 		})
 	}

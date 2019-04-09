@@ -72,17 +72,18 @@ func (p *SRPlugin) Init() error {
 	p.srHandler = vppcalls.CompatibleSRv6VppHandler(p.vppCh, p.IfPlugin.GetInterfaceIndex(), p.Log)
 
 	// init & register descriptors
-	p.localSIDDescriptor = descriptor.NewLocalSIDDescriptor(p.srHandler, p.Log)
-	localSIDDescriptor := adapter.NewLocalSIDDescriptor(p.localSIDDescriptor.GetDescriptor())
-	p.Deps.Scheduler.RegisterKVDescriptor(localSIDDescriptor)
+	localSIDDescriptor := descriptor.NewLocalSIDDescriptor(p.srHandler, p.Log)
+	policyDescriptor := descriptor.NewPolicyDescriptor(p.srHandler, p.Log)
+	steeringDescriptor := descriptor.NewSteeringDescriptor(p.srHandler, p.Log)
 
-	p.policyDescriptor = descriptor.NewPolicyDescriptor(p.srHandler, p.Log)
-	policyDescriptor := adapter.NewPolicyDescriptor(p.policyDescriptor.GetDescriptor())
-	p.Deps.Scheduler.RegisterKVDescriptor(policyDescriptor)
-
-	p.steeringDescriptor = descriptor.NewSteeringDescriptor(p.srHandler, p.Log)
-	steeringDescriptor := adapter.NewSteeringDescriptor(p.steeringDescriptor.GetDescriptor())
-	p.Deps.Scheduler.RegisterKVDescriptor(steeringDescriptor)
+	err = p.Deps.Scheduler.RegisterKVDescriptor(
+		localSIDDescriptor,
+		policyDescriptor,
+		steeringDescriptor,
+	)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }

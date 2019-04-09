@@ -44,28 +44,25 @@ type SteeringDescriptor struct {
 }
 
 // NewSteeringDescriptor creates a new instance of the Srv6 steering descriptor.
-func NewSteeringDescriptor(srHandler vppcalls.SRv6VppAPI, log logging.PluginLogger) *SteeringDescriptor {
-	return &SteeringDescriptor{
+func NewSteeringDescriptor(srHandler vppcalls.SRv6VppAPI, log logging.PluginLogger) *scheduler.KVDescriptor {
+	ctx := &SteeringDescriptor{
 		log:       log.NewLogger("steering-descriptor"),
 		srHandler: srHandler,
 	}
-}
 
-// GetDescriptor returns descriptor suitable for registration (via adapter) with
-// the KVScheduler.
-func (d *SteeringDescriptor) GetDescriptor() *adapter.SteeringDescriptor {
-	return &adapter.SteeringDescriptor{
+	typedDescr := &adapter.SteeringDescriptor{
 		Name:            SteeringDescriptorName,
 		NBKeyPrefix:     srv6.ModelSteering.KeyPrefix(),
 		ValueTypeName:   srv6.ModelSteering.ProtoName(),
 		KeySelector:     srv6.ModelSteering.IsKeyValid,
 		KeyLabel:        srv6.ModelSteering.StripKeyPrefix,
-		ValueComparator: d.EquivalentSteering,
-		Validate:        d.Validate,
-		Create:          d.Create,
-		Delete:          d.Delete,
-		Dependencies:    d.Dependencies,
+		ValueComparator: ctx.EquivalentSteering,
+		Validate:        ctx.Validate,
+		Create:          ctx.Create,
+		Delete:          ctx.Delete,
+		Dependencies:    ctx.Dependencies,
 	}
+	return adapter.NewSteeringDescriptor(typedDescr)
 }
 
 // EquivalentSteering determines whether 2 steerings are logically equal. This comparison takes into consideration also

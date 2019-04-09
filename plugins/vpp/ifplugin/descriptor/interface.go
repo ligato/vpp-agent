@@ -18,7 +18,6 @@ import (
 	"fmt"
 	"hash/fnv"
 	"net"
-	"reflect"
 	"strings"
 
 	"github.com/gogo/protobuf/proto"
@@ -239,18 +238,6 @@ func (d *InterfaceDescriptor) EquivalentInterfaces(key string, oldIntf, newIntf 
 	// compare MAC addresses case-insensitively (also handle unspecified MAC address)
 	if newIntf.PhysAddress != "" &&
 		strings.ToLower(oldIntf.PhysAddress) != strings.ToLower(newIntf.PhysAddress) {
-		return false
-	}
-
-	// order-irrelevant comparison of IP addresses
-	oldIntfAddrs, err1 := addrs.StrAddrsToStruct(oldIntf.IpAddresses)
-	newIntfAddrs, err2 := addrs.StrAddrsToStruct(newIntf.IpAddresses)
-	if err1 != nil || err2 != nil {
-		// one or both of the configurations are invalid, compare lazily
-		return reflect.DeepEqual(oldIntf.IpAddresses, newIntf.IpAddresses)
-	}
-	obsoleteAddr, newAddr := addrs.DiffAddr(oldIntfAddrs, newIntfAddrs)
-	if len(obsoleteAddr) != 0 || len(newAddr) != 0 {
 		return false
 	}
 
@@ -516,6 +503,7 @@ func (d *InterfaceDescriptor) Dependencies(key string, intf *interfaces.Interfac
 // DerivedValues derives:
 //  - key-value for unnumbered configuration sub-section
 //  - empty value for enabled DHCP client
+//  - configuration for every slave of a bonded interface
 //  - one empty value for every IP address to be assigned to the interface
 //  - one empty value VRF table to put the interface into.
 func (d *InterfaceDescriptor) DerivedValues(key string, intf *interfaces.Interface) (derValues []kvs.KeyValuePair) {
@@ -554,22 +542,24 @@ func (d *InterfaceDescriptor) DerivedValues(key string, intf *interfaces.Interfa
 	}
 
 	// VRF assignment
-	ipAddresses := intf.IpAddresses
+	var hasIPv4, hasIPv6 bool
 	if intf.GetUnnumbered() != nil {
-		ifWithIP := intf.GetUnnumbered().GetInterfaceWithIp()
-		ifWithIPMeta, found := d.intfIndex.LookupByName(ifWithIP)
-		if !found {
-			d.log.Warnf("failed to find interface %s referenced by unnumbered interface %s",
-				ifWithIP, intf.Name)
-		} else {
-			ipAddresses = ifWithIPMeta.IPAddresses
+		// TODO
+		// derived values and dependencies cannot be determined based on configuration
+		// of another object (referenced numbered interface), therefore we will
+		// set the table for both IP versions regardless of IP address assigned
+		// to the numbered interface
+		hasIPv4 = true
+		hasIPv6 = true
+	} else {
+		// not unnumbered
+		ipAddresses := intf.IpAddresses
+		if intf.Type == interfaces.Interface_VXLAN_TUNNEL {
+			ipAddresses = []string{intf.GetVxlan().GetSrcAddress(), intf.GetVxlan().GetDstAddress()}
 		}
+		ipeNets, _ := addrs.StrAddrsToStruct(ipAddresses)
+		hasIPv4, hasIPv6 = getIPAddressVersions(ipeNets)
 	}
-	if intf.Type == interfaces.Interface_VXLAN_TUNNEL {
-		ipAddresses = []string{intf.GetVxlan().GetSrcAddress(), intf.GetVxlan().GetDstAddress()}
-	}
-	ipeNets, _ := addrs.StrAddrsToStruct(ipAddresses)
-	hasIPv4, hasIPv6 := getIPAddressVersions(ipeNets)
 	if hasIPv4 {
 		derValues = append(derValues, kvs.KeyValuePair{
 			Key: interfaces.InterfaceVrfTableKey(intf.GetName(), int(intf.GetVrf()), false),

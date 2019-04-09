@@ -194,11 +194,11 @@ func (v View) String() string {
 type KVScheduler interface {
 	ValueProvider
 
-	// RegisterKVDescriptor registers descriptor for a set of selected
+	// RegisterKVDescriptor registers descriptor(s) for a set of selected
 	// keys. It should be called in the Init phase of agent plugins.
 	// Every key-value pair must have at most one descriptor associated with it
 	// (none for derived values expressing properties).
-	RegisterKVDescriptor(descriptor *KVDescriptor) error
+	RegisterKVDescriptor(descriptor ...*KVDescriptor) error
 
 	// GetRegisteredNBKeyPrefixes returns a list of key prefixes from NB with values
 	// described by registered descriptors and therefore managed by the scheduler.

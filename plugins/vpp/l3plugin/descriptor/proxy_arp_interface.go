@@ -42,29 +42,26 @@ type ProxyArpInterfaceDescriptor struct {
 
 // NewProxyArpInterfaceDescriptor creates a new instance of the ProxyArpInterfaceDescriptor.
 func NewProxyArpInterfaceDescriptor(scheduler kvs.KVScheduler,
-	proxyArpHandler vppcalls.ProxyArpVppAPI, log logging.PluginLogger) *ProxyArpInterfaceDescriptor {
+	proxyArpHandler vppcalls.ProxyArpVppAPI, log logging.PluginLogger) *kvs.KVDescriptor {
 
-	return &ProxyArpInterfaceDescriptor{
+	ctx := &ProxyArpInterfaceDescriptor{
 		scheduler:       scheduler,
 		proxyArpHandler: proxyArpHandler,
 		log:             log.NewLogger("proxy-arp-interface-descriptor"),
 	}
-}
 
-// GetDescriptor returns descriptor suitable for registration (via adapter) with
-// the KVScheduler.
-func (d *ProxyArpInterfaceDescriptor) GetDescriptor() *adapter.ProxyARPInterfaceDescriptor {
-	return &adapter.ProxyARPInterfaceDescriptor{
+	typedDescr := &adapter.ProxyARPInterfaceDescriptor{
 		Name: ProxyArpInterfaceDescriptorName,
 		KeySelector: func(key string) bool {
 			_, isProxyARPInterfaceKey := l3.ParseProxyARPInterfaceKey(key)
 			return isProxyARPInterfaceKey
 		},
 		ValueTypeName: proto.MessageName(&l3.ProxyARP_Interface{}),
-		Create:        d.Create,
-		Delete:        d.Delete,
-		Dependencies:  d.Dependencies,
+		Create:        ctx.Create,
+		Delete:        ctx.Delete,
+		Dependencies:  ctx.Dependencies,
 	}
+	return adapter.NewProxyARPInterfaceDescriptor(typedDescr)
 }
 
 // Create enables VPP Proxy ARP for interface.

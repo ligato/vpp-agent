@@ -57,33 +57,29 @@ type DNAT44Descriptor struct {
 }
 
 // NewDNAT44Descriptor creates a new instance of the DNAT44 descriptor.
-func NewDNAT44Descriptor(natHandler vppcalls.NatVppAPI, log logging.PluginLogger) *DNAT44Descriptor {
-
-	return &DNAT44Descriptor{
+func NewDNAT44Descriptor(natHandler vppcalls.NatVppAPI, log logging.PluginLogger) *kvs.KVDescriptor {
+	ctx := &DNAT44Descriptor{
 		natHandler: natHandler,
 		log:        log.NewLogger("nat44-dnat-descriptor"),
 	}
-}
-
-// GetDescriptor returns descriptor suitable for registration (via adapter) with
-// the KVScheduler.
-func (d *DNAT44Descriptor) GetDescriptor() *adapter.DNAT44Descriptor {
-	return &adapter.DNAT44Descriptor{
+	
+	typedDescr := &adapter.DNAT44Descriptor{
 		Name:            DNAT44DescriptorName,
 		NBKeyPrefix:     nat.ModelDNat44.KeyPrefix(),
 		ValueTypeName:   nat.ModelDNat44.ProtoName(),
 		KeySelector:     nat.ModelDNat44.IsKeyValid,
 		KeyLabel:        nat.ModelDNat44.StripKeyPrefix,
-		ValueComparator: d.EquivalentDNAT44,
-		Validate:        d.Validate,
-		Create:          d.Create,
-		Delete:          d.Delete,
-		Update:          d.Update,
-		Retrieve:        d.Retrieve,
-		Dependencies:    d.Dependencies,
+		ValueComparator: ctx.EquivalentDNAT44,
+		Validate:        ctx.Validate,
+		Create:          ctx.Create,
+		Delete:          ctx.Delete,
+		Update:          ctx.Update,
+		Retrieve:        ctx.Retrieve,
+		Dependencies:    ctx.Dependencies,
 		// retrieve interfaces and allocated IP addresses first
 		RetrieveDependencies: []string{vpp_ifdescriptor.InterfaceDescriptorName, vpp_ifdescriptor.DHCPDescriptorName},
 	}
+	return adapter.NewDNAT44Descriptor(typedDescr)
 }
 
 // EquivalentDNAT44 compares two instances of DNAT44 for equality.
@@ -218,7 +214,7 @@ func (d *DNAT44Descriptor) Retrieve(correlate []adapter.DNAT44KVWithMetadata) (
 	return retrieved, nil
 }
 
-// Dependencies lists external interfaces and VRFs from mappings as dependencies.
+// Dependencies lists external interfaces and non-zero VRFs from mappings as dependencies.
 func (d *DNAT44Descriptor) Dependencies(key string, dnat *nat.DNat44) (dependencies []kvs.Dependency) {
 	// collect referenced external interfaces and VRFs
 	externalIfaces := make(map[string]struct{})
@@ -245,7 +241,7 @@ func (d *DNAT44Descriptor) Dependencies(key string, dnat *nat.DNat44) (dependenc
 			Key:   interfaces.InterfaceKey(externalIface),
 		})
 	}
-	// for every VRF add one dependency
+	// for every non-zero VRF add one dependency
 	for vrf := range vrfs {
 		if vrf == 0 {
 			continue

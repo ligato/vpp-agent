@@ -52,7 +52,7 @@ type VrfTableDescriptor struct {
 func NewVrfTableDescriptor(
 	vtHandler vppcalls.VrfTableVppAPI, log logging.PluginLogger) *kvs.KVDescriptor {
 
-	descrCtx := &VrfTableDescriptor{
+	ctx := &VrfTableDescriptor{
 		vtHandler: vtHandler,
 		log:       log.NewLogger("vrf-table-descriptor"),
 	}
@@ -62,11 +62,11 @@ func NewVrfTableDescriptor(
 		ValueTypeName:      l3.ModelVrfTable.ProtoName(),
 		KeySelector:        l3.ModelVrfTable.IsKeyValid,
 		KeyLabel:           l3.ModelVrfTable.StripKeyPrefix,
-		ValueComparator:    descrCtx.EquivalentVrfTables,
-		Validate:           descrCtx.Validate,
-		Create:             descrCtx.Create,
-		Delete:             descrCtx.Delete,
-		Retrieve:           descrCtx.Retrieve,
+		ValueComparator:    ctx.EquivalentVrfTables,
+		Validate:           ctx.Validate,
+		Create:             ctx.Create,
+		Delete:             ctx.Delete,
+		Retrieve:           ctx.Retrieve,
 	}
 	return adapter.NewVrfTableDescriptor(typedDescr)
 }

@@ -49,7 +49,8 @@ func DNAT44Key(label string) string {
 	})
 }
 
-/* NAT44 interface */
+/* NAT44 interface (derived) */
+
 const (
 	// interfaceNAT44KeyPrefix is a common prefix for (derived) keys each representing
 	// NAT44 configuration for a single interface.
@@ -64,12 +65,28 @@ const (
 	outFeature = "out"
 )
 
+/* NAT44 address (derived) */
+
+const (
+	// addressNAT44KeyPrefix is a common prefix for (derived) keys each representing
+	// single address from the NAT44 address pool.
+	addressNAT44KeyPrefix = "vpp/nat44/address/"
+
+	// addressNAT44KeyTemplate is a template for (derived) key representing
+	// single address from the NAT44 address pool.
+	addressNAT44KeyTemplate = addressNAT44KeyPrefix + "{address}/twice-nat/{twice-nat}"
+
+	// twice-NAT switch
+	twiceNatOn  = "on"
+	twiceNatOff = "off"
+)
+
 const (
 	// InvalidKeyPart is used in key for parts which are invalid
 	InvalidKeyPart = "<invalid>"
 )
 
-/* NAT44 interface */
+/* NAT44 interface (derived) */
 
 // InterfaceNAT44Key returns (derived) key representing NAT44 configuration
 // for a given interface.
@@ -102,4 +119,37 @@ func ParseInterfaceNAT44Key(key string) (iface string, isInside bool, isInterfac
 		}
 	}
 	return "", false, false
+}
+
+/* NAT44 address (derived) */
+
+// AddressNAT44Key returns (derived) key representing NAT44 configuration
+// for a single IP address from the NAT44 address pool.
+// Address is inserted into the key without validation!
+func AddressNAT44Key(address string, twiceNat bool) string {
+	key := strings.Replace(addressNAT44KeyTemplate, "{address}", address, 1)
+	twiceNatFlag := twiceNatOff
+	if twiceNat {
+		twiceNatFlag = twiceNatOn
+	}
+	key = strings.Replace(key, "{twice-nat}", twiceNatFlag, 1)
+	return key
+}
+
+// ParseAddressNAT44Key parses configuration of a single NAT44 address from a key
+// returned by AddressNAT44Key().
+func ParseAddressNAT44Key(key string) (address string, twiceNat bool, isAddressNAT44Key bool) {
+	trim := strings.TrimPrefix(key, addressNAT44KeyPrefix)
+	if trim != key && trim != "" {
+		fibComps := strings.Split(trim, "/")
+		if len(fibComps) >= 3 && fibComps[len(fibComps)-2] == "twice-nat" {
+			if fibComps[len(fibComps)-1] == twiceNatOn {
+				twiceNat = true
+			}
+			address = strings.Join(fibComps[:len(fibComps)-2], "/")
+			isAddressNAT44Key = true
+			return
+		}
+	}
+	return
 }
