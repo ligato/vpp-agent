@@ -1,0 +1,78 @@
+- job:
+    block-downstream: false
+    block-upstream: false
+    builders:
+      - shell: |-
+          cd jobs5
+
+          rm -rf failed_jobs  list_of_all_robot_tests  p2.yaml  passed_jobs  r1  r2
+          ls
+          #04pipeline_template.yaml
+          #05test_template.yaml
+          #defaults.yaml
+          #script.py
+          #script.sh
+
+          ./script.sh
+          ls
+          # GENERATED:
+          #list_of_all_robot_tests
+          #p.yaml
+          #r1
+          #r2
+
+          cd ..
+
+          rm -rf backup.sh  crud_example   output  output20180820  output20190204  update.log
+          ls
+          #update.sh
+          #jobs5
+
+          #README.md
+          #backup.sh
+          #crud_example
+          #jenkins_jobs.ini
+          #jobs5
+          #output20190204
+          ./update.sh
+          cat update.log
+    concurrent: false
+    disabled: false
+    name: 03A. GENERATE LIGATO-ROBOT-TEST JENKINS JOBS VIA JJB
+    node: master
+    project-type: freestyle
+    properties:
+      - build-discarder:
+          artifact-days-to-keep: -1
+          artifact-num-to-keep: -1
+          days-to-keep: -1
+          num-to-keep: 7
+      - raw:
+          xml: |
+            <hudson.plugins.throttleconcurrents.ThrottleJobProperty plugin="throttle-concurrents@2.0.1">
+            <maxConcurrentPerNode>0</maxConcurrentPerNode>
+            <maxConcurrentTotal>0</maxConcurrentTotal>
+            <categories class="java.util.concurrent.CopyOnWriteArrayList" />
+            <throttleEnabled>false</throttleEnabled>
+            <throttleOption>project</throttleOption>
+            <limitOneJobWithMatchingParams>false</limitOneJobWithMatchingParams>
+            <paramsToUseForLimit />
+            </hudson.plugins.throttleconcurrents.ThrottleJobProperty>
+    publishers: []
+    scm:
+      - git:
+          branches:
+            - '*/master'
+          credentials-id: github
+          url: https://github.com/stanislav-chlebec/LigatoJenkins.git
+    triggers: []
+    wrappers:
+      - raw:
+          xml: |
+            <hudson.plugins.ws__cleanup.PreBuildCleanup plugin="ws-cleanup@0.37">
+            <deleteDirs>false</deleteDirs>
+            <cleanupParameter />
+            <externalDelete />
+            <disableDeferredWipeout>false</disableDeferredWipeout>
+            </hudson.plugins.ws__cleanup.PreBuildCleanup>
+      - credentials-binding: []
