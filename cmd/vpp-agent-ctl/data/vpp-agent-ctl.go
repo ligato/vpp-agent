@@ -32,6 +32,7 @@ type VppAgentCtl interface {
 	// Etcd access
 	EtcdCtl
 	// Other interfaces with configuration related methods
+	ABFCtl
 	ACLCtl
 	InterfacesCtl
 	IPSecCtl
