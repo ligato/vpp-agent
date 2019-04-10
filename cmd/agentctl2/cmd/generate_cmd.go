@@ -24,60 +24,227 @@ var generateConfig = &cobra.Command{
 	Long: `
 	Generate example command
 `,
-	Run: generateFunction,
+}
+
+var generateACL = &cobra.Command{
+	Use:   "ACL",
+	Short: "Generate VPP example ACL config",
+	Long: `
+	Generate VPP example ACL config
+`,
+	Args: cobra.MaximumNArgs(0),
+	Run:  aclGenerateFunction,
+}
+
+var generateInterface = &cobra.Command{
+	Use:   "Interface",
+	Short: "Generate VPP example Interface config",
+	Long: `
+	Generate VPP example Interface config
+`,
+	Args: cobra.MaximumNArgs(0),
+	Run:  interfaceGenerateFunction,
+}
+
+var generateBd = &cobra.Command{
+	Use:   "Bd",
+	Short: "Generate VPP example bridge domain config",
+	Long: `
+	Generate VPP example bridge domain config
+`,
+	Args: cobra.MaximumNArgs(0),
+	Run:  bdGenerateFunction,
+}
+
+var generateIPScanNeighbor = &cobra.Command{
+	Use:   "IPScanNeighbor",
+	Short: "Generate VPP example ip scan neighbor config",
+	Long: `
+	Generate VPP example ip scan neighbor config
+`,
+	Args: cobra.MaximumNArgs(0),
+	Run:  ipScanNeighborGenerateFunction,
+}
+
+var generateNatGlobal = &cobra.Command{
+	Use:   "NatGlobal",
+	Short: "Generate VPP example NatGlobal config",
+	Long: `
+	Generate VPP example NatGlobal config
+`,
+	Args: cobra.MaximumNArgs(0),
+	Run:  natGlobalGenerateFunction,
+}
+
+var generateNatDNat = &cobra.Command{
+	Use:   "NatDNat",
+	Short: "Generate VPP example dnat config",
+	Long: `
+	Generate VPP example dnat config
+`,
+	Args: cobra.MaximumNArgs(0),
+	Run:  natDNatGenerateFunction,
+}
+
+var generateIPSecPolicy = &cobra.Command{
+	Use:   "IPSecPolicy",
+	Short: "Generate VPP example ip sec policy config",
+	Long: `
+	Generate VPP example ip sec policy config
+`,
+	Args: cobra.MaximumNArgs(0),
+	Run:  ipSecPolicyGenerateFunction,
+}
+
+var generateIPSecAssociation = &cobra.Command{
+	Use:   "IPSecAssociation",
+	Short: "Generate VPP example ip sec association config",
+	Long: `
+	Generate VPP example ip sec association config
+`,
+	Args: cobra.MaximumNArgs(0),
+	Run:  ipSecAssociateGenerateFunction,
+}
+
+var generateArps = &cobra.Command{
+	Use:   "Arps",
+	Short: "Generate VPP example arps config",
+	Long: `
+	Generate VPP example arps config
+`,
+	Args: cobra.MaximumNArgs(0),
+	Run:  arpsGenerateFunction,
+}
+
+var generateRoutes = &cobra.Command{
+	Use:   "Routes",
+	Short: "Generate VPP example routes config",
+	Long: `
+	Generate VPP example ip sec policy
+`,
+	Args: cobra.MaximumNArgs(0),
+	Run:  routesGenerateFunction,
+}
+
+var generatePArp = &cobra.Command{
+	Use:   "PArp",
+	Short: "Generate VPP example proxy arp config",
+	Long: `
+	Generate VPP example proxy arp config
+`,
+	Args: cobra.MaximumNArgs(0),
+	Run:  parpGenerateConfig,
+}
+
+var generateLinuxInterface = &cobra.Command{
+	Use:   "LinuxInterface",
+	Short: "Generate Linux example interface config",
+	Long: `
+	Generate Linux example interface config
+`,
+	Args: cobra.MaximumNArgs(0),
+	Run:  linuxInterfaceGenerateFunction,
+}
+
+var generateLinuxARP = &cobra.Command{
+	Use:   "LinuxARP",
+	Short: "Generate Linux example arp config",
+	Long: `
+	Generate Linux example arp config
+`,
+	Args: cobra.MaximumNArgs(0),
+	Run:  linuxARPGenerateFunction,
+}
+
+var generateLinuxRoutes = &cobra.Command{
+	Use:   "LinuxRoutes",
+	Short: "Generate Linux example routes config",
+	Long: `
+	Generate Linux example routes config
+`,
+	Args: cobra.MaximumNArgs(0),
+	Run:  linuxRoutesGenerateFunction,
 }
 
 var formatType *string
 
 func init() {
 	RootCmd.AddCommand(generateConfig)
-	formatType = generateConfig.Flags().String("format", "json",
+	generateConfig.AddCommand(generateACL)
+	generateConfig.AddCommand(generateInterface)
+	generateConfig.AddCommand(generateBd)
+	generateConfig.AddCommand(generateIPScanNeighbor)
+	generateConfig.AddCommand(generateNatGlobal)
+	generateConfig.AddCommand(generateNatDNat)
+	generateConfig.AddCommand(generateIPSecPolicy)
+	generateConfig.AddCommand(generateIPSecAssociation)
+	generateConfig.AddCommand(generateArps)
+	generateConfig.AddCommand(generateRoutes)
+	generateConfig.AddCommand(generatePArp)
+	generateConfig.AddCommand(generateLinuxInterface)
+	generateConfig.AddCommand(generateLinuxARP)
+	generateConfig.AddCommand(generateLinuxRoutes)
+	formatType = generateConfig.PersistentFlags().String("format", "json",
 		"Format:\n\tjson\n\tyaml\n\tproto\n")
 }
 
-func generateFunction(cmd *cobra.Command, args []string) {
-	var gtype cmd_generator.CommandType
+func aclGenerateFunction(cmd *cobra.Command, args []string) {
+	generateFunction(cmd_generator.ACL)
+}
 
-	//TODO: Need rewrite, need list, use combra, but how???
-	if 1 != len(args) {
-		utils.ExitWithError(utils.ExitError, errors.New("Wrong Input arguments"))
-	}
+func interfaceGenerateFunction(cmd *cobra.Command, args []string) {
+	generateFunction(cmd_generator.Interface)
+}
 
-	tp := args[0]
+func bdGenerateFunction(cmd *cobra.Command, args []string) {
+	generateFunction(cmd_generator.Bd)
+}
 
-	switch tp {
-	case "interfaces":
-		gtype = cmd_generator.VPPInterface
-	case "acl":
-		gtype = cmd_generator.VPPACL
-	case "arp":
-		gtype = cmd_generator.VPPARP
-	case "bridge_domain":
-		gtype = cmd_generator.VPPBridgeDomain
-	case "route":
-		gtype = cmd_generator.VPPRoute
-	case "proxy_arp":
-		gtype = cmd_generator.VPPProxyARP
-	case "ip_scan_neighbor":
-		gtype = cmd_generator.VPPIPScanNeighbor
-	case "dnat44":
-		gtype = cmd_generator.VPPDNat
-	case "nat44-global":
-		gtype = cmd_generator.VPPNat
-	case "ipsec_policy":
-		gtype = cmd_generator.VPPIPSecPolicy
-	case "ipsec_association":
-		gtype = cmd_generator.VPPIPSecAssociation
-	case "linux_interface":
-		gtype = cmd_generator.LinuxInterface
-	case "linux_arp":
-		gtype = cmd_generator.LinuxARP
-	case "linux_route":
-		gtype = cmd_generator.LinuxRoute
-	default:
-		utils.ExitWithError(utils.ExitError, errors.New("Unknown config type"))
-	}
+func ipScanNeighborGenerateFunction(cmd *cobra.Command, args []string) {
+	generateFunction(cmd_generator.IPScanNeighbor)
+}
 
+func natGlobalGenerateFunction(cmd *cobra.Command, args []string) {
+	generateFunction(cmd_generator.NatGlobal)
+}
+
+func natDNatGenerateFunction(cmd *cobra.Command, args []string) {
+	generateFunction(cmd_generator.NatDNat)
+}
+
+func ipSecPolicyGenerateFunction(cmd *cobra.Command, args []string) {
+	generateFunction(cmd_generator.IPSecPolicy)
+}
+
+func ipSecAssociateGenerateFunction(cmd *cobra.Command, args []string) {
+	generateFunction(cmd_generator.IPSecAssociation)
+}
+
+func arpsGenerateFunction(cmd *cobra.Command, args []string) {
+	generateFunction(cmd_generator.Arps)
+}
+
+func routesGenerateFunction(cmd *cobra.Command, args []string) {
+	generateFunction(cmd_generator.Routes)
+}
+
+func parpGenerateConfig(cmd *cobra.Command, args []string) {
+	generateFunction(cmd_generator.PArp)
+}
+
+func linuxInterfaceGenerateFunction(cmd *cobra.Command, args []string) {
+	generateFunction(cmd_generator.LinuxInterface)
+}
+
+func linuxARPGenerateFunction(cmd *cobra.Command, args []string) {
+	generateFunction(cmd_generator.LinuxARPs)
+}
+
+func linuxRoutesGenerateFunction(cmd *cobra.Command, args []string) {
+	generateFunction(cmd_generator.LinuxRoutes)
+}
+
+func generateFunction(gtype cmd_generator.CommandType) {
 	msg := cmd_generator.GenerateConfig(gtype)
 
 	switch *formatType {

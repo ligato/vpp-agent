@@ -18,52 +18,65 @@ import (
 type CommandType int
 
 const (
-	VPPACL CommandType = iota
-	VPPARP
-	VPPBridgeDomain
-	VPPInterface
-	VPPRoute
-	VPPProxyARP
-	VPPIPScanNeighbor
-	VPPDNat
-	VPPNat
-	VPPIPSecPolicy
-	VPPIPSecAssociation
+	// VPP ACL
+	ACL CommandType = iota
+
+	// VPP Interfaces
+	Interface
+
+	// VPP l2 plugin
+	Bd
+	IPScanNeighbor
+
+	// VPP NAT
+	NatGlobal
+	NatDNat
+
+	// VPP IP security
+	IPSecPolicy
+	IPSecAssociation
+
+	// VPP L3 plugin
+	Arps
+	Routes
+	PArp
+
+	// Linux Dumps
 	LinuxInterface
-	LinuxARP
-	LinuxRoute
+	LinuxARPs
+	LinuxRoutes
 )
 
 func GenerateConfig(cmdType CommandType) (msg proto.Message) {
 
 	switch cmdType {
-	case VPPACL:
+	case ACL:
 		msg = generateACLConfig()
-	case VPPARP:
+	case Arps:
 		msg = generateARPConfig()
-	case VPPBridgeDomain:
+	case Bd:
 		msg = generateBridgeDomainConfig()
-	case VPPInterface:
+	case Interface:
 		msg = generateInterfaceConfig()
-	case VPPRoute:
+	case Routes:
 		msg = generateRouteConfig()
-	case VPPProxyARP:
+	case PArp:
 		msg = generateProxyARPConfig()
-	case VPPIPScanNeighbor:
+	case IPScanNeighbor:
 		msg = generateIPscanneighConfig()
-	case VPPDNat:
+	case NatGlobal:
 		msg = generateDNATConfig()
-	case VPPNat:
+	case NatDNat:
 		msg = generateNATConfig()
-	case VPPIPSecPolicy:
+	case IPSecPolicy:
 		msg = generateIPSecPolicyConfig()
-	case VPPIPSecAssociation:
+	case IPSecAssociation:
 		msg = generateIPSecAssociationConfig()
 	case LinuxInterface:
 		msg = generateLinuxInterfaceConfig()
-	case LinuxARP:
+	case LinuxARPs:
 		msg = generateARPConfig()
-	case LinuxRoute:
+	case LinuxRoutes:
 		msg = generateLinuxRouteConfig()
 	}
 
