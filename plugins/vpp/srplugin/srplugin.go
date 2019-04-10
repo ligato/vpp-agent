@@ -26,7 +26,6 @@ import (
 	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin"
 	"github.com/ligato/vpp-agent/plugins/vpp/srplugin/descriptor"
-	"github.com/ligato/vpp-agent/plugins/vpp/srplugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/vpp/srplugin/vppcalls"
 	"github.com/pkg/errors"
 
