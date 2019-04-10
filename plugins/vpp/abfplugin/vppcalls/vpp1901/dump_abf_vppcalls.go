@@ -144,6 +144,7 @@ func (h *ABFVppHandler) dumpABFPolicy() ([]*vppcalls.ABFDetails, error) {
 				ResolveAttached: uintToBool(path.IsResolveAttached),
 				Dvr:             uintToBool(path.IsDvr),
 				SourceLookup:    uintToBool(path.IsSourceLookup),
+				InterfaceRx:     uintToBool(path.IsInterfaceRx),
 			}
 
 			// label stack

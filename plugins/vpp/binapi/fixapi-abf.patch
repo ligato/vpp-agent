@@ -1,5 +1,5 @@
 diff --git a/plugins/vpp/binapi/vpp1810/abf/abf.ba.go b/plugins/vpp/binapi/vpp1810/abf/abf.ba.go
-index 5f2ab43b..9efa3bee 100644
+index 5f2ab43b1..9efa3beee 100644
 --- a/plugins/vpp/binapi/vpp1810/abf/abf.ba.go
 +++ b/plugins/vpp/binapi/vpp1810/abf/abf.ba.go
 @@ -96,8 +96,8 @@ type FibPath struct {
@@ -14,10 +14,10 @@ index 5f2ab43b..9efa3bee 100644
  
  func (*FibPath) GetTypeName() string {
 diff --git a/plugins/vpp/binapi/vpp1901/abf/abf.ba.go b/plugins/vpp/binapi/vpp1901/abf/abf.ba.go
-index 5f2ab43b..9efa3bee 100644
+index 3d5432d53..510337f6e 100644
 --- a/plugins/vpp/binapi/vpp1901/abf/abf.ba.go
 +++ b/plugins/vpp/binapi/vpp1901/abf/abf.ba.go
-@@ -96,8 +96,8 @@ type FibPath struct {
+@@ -97,8 +97,8 @@ type FibPath struct {
  	NextHopID         uint32
  	RpfID             uint32
  	ViaLabel          uint32

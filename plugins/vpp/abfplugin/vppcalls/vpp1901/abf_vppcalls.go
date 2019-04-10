@@ -147,6 +147,7 @@ func (h *ABFVppHandler) toFibPaths(abfPaths []*vpp_abf.ABF_ForwardingPath) (fibP
 			IsResolveAttached: boolToUint(abfPath.ResolveAttached),
 			IsDvr:             boolToUint(abfPath.Dvr),
 			IsSourceLookup:    boolToUint(abfPath.SourceLookup),
+			IsInterfaceRx:     boolToUint(abfPath.InterfaceRx),
 			Afi:               uint8(abfPath.Afi),
 			NextHop:           net.ParseIP(abfPath.NextHopIp),
 			NextHopID:         abfPath.NextHopId,

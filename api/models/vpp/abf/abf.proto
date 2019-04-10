@@ -40,6 +40,7 @@ message ABF {
         bool resolve_attached = 16;
         bool dvr = 17;
         bool source_lookup = 18;
+        bool interface_rx = 19;
 
         message Label {
             bool IsUniform = 1;
@@ -47,7 +48,7 @@ message ABF {
             uint32 TTL = 3;
             uint32 Exp = 4;
         }
-        repeated Label label_stack = 19;
+        repeated Label label_stack = 20;
     }
     repeated ForwardingPath forwarding_paths = 4;
 }
