@@ -1,0 +1,30 @@
+diff --git a/plugins/vpp/binapi/vpp1810/abf/abf.ba.go b/plugins/vpp/binapi/vpp1810/abf/abf.ba.go
+index 5f2ab43b..9efa3bee 100644
+--- a/plugins/vpp/binapi/vpp1810/abf/abf.ba.go
++++ b/plugins/vpp/binapi/vpp1810/abf/abf.ba.go
+@@ -96,8 +96,8 @@ type FibPath struct {
+ 	NextHopID         uint32
+ 	RpfID             uint32
+ 	ViaLabel          uint32
+-	NLabels           uint8
+-	LabelStack        []FibMplsLabel `struc:"[16]FibMplsLabel"`
++	NLabels           uint8 `struc:"sizeof=LabelStack"` // MANUALLY FIXED
++	LabelStack        []FibMplsLabel
+ }
+ 
+ func (*FibPath) GetTypeName() string {
+diff --git a/plugins/vpp/binapi/vpp1901/abf/abf.ba.go b/plugins/vpp/binapi/vpp1901/abf/abf.ba.go
+index 5f2ab43b..9efa3bee 100644
+--- a/plugins/vpp/binapi/vpp1901/abf/abf.ba.go
++++ b/plugins/vpp/binapi/vpp1901/abf/abf.ba.go
+@@ -96,8 +96,8 @@ type FibPath struct {
+ 	NextHopID         uint32
+ 	RpfID             uint32
+ 	ViaLabel          uint32
+-	NLabels           uint8
+-	LabelStack        []FibMplsLabel `struc:"[16]FibMplsLabel"`
++	NLabels           uint8 `struc:"sizeof=LabelStack"` // MANUALLY FIXED
++	LabelStack        []FibMplsLabel
+ }
+ 
+ func (*FibPath) GetTypeName() string {
