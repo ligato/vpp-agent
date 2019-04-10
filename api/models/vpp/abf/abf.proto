@@ -1,0 +1,53 @@
+syntax = "proto3";
+
+package vpp.abf;
+
+option go_package = "github.com/ligato/vpp-agent/api/models/vpp/abf;vpp_abf";
+
+import "github.com/gogo/protobuf/gogoproto/gogo.proto";
+option (gogoproto.messagename_all) = true;
+
+// ACL based forwarding
+message ABF {
+    string index = 1;               // ABF index (must be a number)
+    string acl_name = 2;            // Name of the associated access list
+
+    // List of interfaces attached to the ABF
+    message AttachedInterface {
+        string input_interface = 1;
+        uint32 priority = 2;
+        bool is_ipv6 = 3;
+    }
+    repeated AttachedInterface attached_interfaces = 3;
+
+    // List of forwarding paths added to the ABF policy (via)
+    message ForwardingPath {
+        string next_hop_ip = 1;
+        string interface_name = 2;
+        uint32 vrf = 3;
+        uint32 weight = 4;
+        uint32 preference = 5;
+        uint32 afi = 6;
+        uint32 next_hop_id = 7;
+        uint32 rpf_id = 8;
+        uint32 via_label = 9;
+        bool local = 10;
+        bool drop = 11;
+        bool udp_encap = 12;
+        bool unreachable = 13;
+        bool prohibit = 14;
+        bool resolve_host = 15;
+        bool resolve_attached = 16;
+        bool dvr = 17;
+        bool source_lookup = 18;
+
+        message Label {
+            bool IsUniform = 1;
+            uint32 Label = 2;
+            uint32 TTL = 3;
+            uint32 Exp = 4;
+        }
+        repeated Label label_stack = 19;
+    }
+    repeated ForwardingPath forwarding_paths = 4;
+}
