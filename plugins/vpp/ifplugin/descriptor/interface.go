@@ -414,7 +414,7 @@ func (d *InterfaceDescriptor) Validate(key string, intf *interfaces.Interface) e
 		}
 	case interfaces.Interface_BOND_INTERFACE:
 		if name, ok := d.bondIDs[intf.GetBond().GetId()]; ok && name != intf.GetName() {
-			return kvs.NewInvalidValueError(ErrBondInterfaceIDExists)
+			return kvs.NewInvalidValueError(ErrBondInterfaceIDExists, "link.bond.id")
 		}
 	case interfaces.Interface_UNDEFINED_TYPE:
 		return kvs.NewInvalidValueError(ErrInterfaceWithoutType, "type")
