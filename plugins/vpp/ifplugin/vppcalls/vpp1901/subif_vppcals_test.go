@@ -12,57 +12,63 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package vpp1901
+package vpp1901_test
 
 import (
 	"testing"
 
-	"github.com/ligato/vpp-agent/api/models/vpp/interfaces"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/interfaces"
+	. "github.com/onsi/gomega"
 )
 
 func TestCreateSubif(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
-	ctx.MockVpp.MockReply(&sub.CreateSubif{
+	ctx.MockVpp.MockReply(&interfaces.CreateVlanSubifReply{
 		SwIfIndex: 2,
 	})
-
-	err := ifHandler.DeleteIPSecTunnelInterface("if1", &vpp_interfaces.IPSecLink{
-		Esn:             true,
-		LocalIp:         "10.10.0.1",
-		RemoteIp:        "10.10.0.2",
-		LocalCryptoKey:  "4a506a794f574265564551694d653768",
-		RemoteCryptoKey: "9a506a794f574265564551694d653456",
-	})
-
+	swifindex, err := ifHandler.CreateSubif(5, 32)
 	Expect(err).To(BeNil())
+	Expect(swifindex).To(Equal(uint32(2)))
+	vppMsg, ok := ctx.MockChannel.Msg.(*interfaces.CreateVlanSubif)
+	Expect(ok).To(BeTrue())
+	Expect(vppMsg).ToNot(BeNil())
+	Expect(vppMsg.SwIfIndex).To(Equal(uint32(5)))
+	Expect(vppMsg.VlanID).To(Equal(uint32(32)))
 }
-package vpp1901
 
-import (
-"testing"
-
-. "github.com/onsi/gomega"
-
-"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/interfaces"
-ifModel "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-
-)
-
-func TestCreateSubif(t *testing.T) {
+func TestCreateSubifError(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
-
-	ctx.MockVpp.MockReply(&interfaces.CreateSubif{
-		SwIfIndex: 3,
+	ctx.MockVpp.MockReply(&interfaces.CreateVlanSubifReply{
+		SwIfIndex: 2,
+		Retval:    9,
 	})
+	swifindex, err := ifHandler.CreateSubif(5, 32)
+	Expect(err).ToNot(BeNil())
+	Expect(swifindex).To(Equal(uint32(0)))
+}
 
-	subif, _ := ifHandler.
-		err := ifHandler.CreateSubif(10, 25)
-
-	Expect(err).To(BeNil())
-	vppMsg, ok := ctx.MockChannel.Msg.(*interfaces.CreateSubif)
+func TestDeleteSubif(t *testing.T) {
+	ctx, ifHandler := ifTestSetup(t)
+	defer ctx.TeardownTestCtx()
+	ctx.MockVpp.MockReply(&interfaces.DeleteSubifReply{
+		Retval: 2,
+	})
+	err := ifHandler.DeleteSubif(5)
+	Expect(err).ToNot(BeNil())
+	vppMsg, ok := ctx.MockChannel.Msg.(*interfaces.DeleteSubif)
 	Expect(ok).To(BeTrue())
-	Expect(vppMsg.SwIfIndex).To(BeEquivalentTo(1))
-	Expect(vppMsg.VlanID).To(BeEquivalentTo(mac))
+	Expect(vppMsg).ToNot(BeNil())
+	Expect(vppMsg.SwIfIndex).To(Equal(uint32(5)))
+}
+
+func TestDeleteSubifError(t *testing.T) {
+	ctx, ifHandler := ifTestSetup(t)
+	defer ctx.TeardownTestCtx()
+	ctx.MockVpp.MockReply(&interfaces.DeleteSubifReply{
+		Retval: 2,
+	})
+	err := ifHandler.DeleteSubif(5)
+	Expect(err).ToNot(BeNil())
 }
