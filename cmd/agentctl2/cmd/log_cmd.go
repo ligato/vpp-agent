@@ -50,7 +50,7 @@ func init() {
 }
 
 func logFunction(cmd *cobra.Command, args []string) {
-	msg := restapi.GetLog(globalFlags.Endpoints, "/log/list")
+	msg := restapi.GetMsg(globalFlags.Endpoints, "/log/list")
 
 	if verbose {
 		fmt.Printf("%s\n", msg)
@@ -100,5 +100,5 @@ func setFunction(cmd *cobra.Command, args []string) {
 	logger := args[0]
 	level := args[1]
 
-	restapi.SetLog(globalFlags.Endpoints, "/log/"+logger+"/"+level)
+	restapi.SetMsg(globalFlags.Endpoints, "/log/"+logger+"/"+level)
 }

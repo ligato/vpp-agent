@@ -12,7 +12,7 @@ import (
 	"github.com/ligato/vpp-agent/cmd/agentctl2/utils"
 )
 
-func GetLog(endpoints []string, path string) string {
+func GetMsg(endpoints []string, path string) string {
 	if len(endpoints) > 0 {
 		ep := strings.Join(endpoints, ",")
 		os.Setenv("ETCD_ENDPOINTS", ep)
@@ -30,7 +30,6 @@ func GetLog(endpoints []string, path string) string {
 	addr := etcdConfig.Config.Endpoints[0]
 
 	addrPath := "http://" + addr + path
-	fmt.Printf("%s\n", addrPath)
 	resp, err := http.Get(addrPath)
 	if nil != err {
 		utils.ExitWithError(utils.ExitError,
@@ -47,7 +46,7 @@ func GetLog(endpoints []string, path string) string {
 	return string(msg)
 }
 
-func SetLog(endpoints []string, path string) {
+func SetMsg(endpoints []string, path string) {
 	if len(endpoints) > 0 {
 		ep := strings.Join(endpoints, ",")
 		os.Setenv("ETCD_ENDPOINTS", ep)
@@ -65,7 +64,6 @@ func SetLog(endpoints []string, path string) {
 	addr := etcdConfig.Config.Endpoints[0]
 	addrPath := "http://" + addr + path
 
-	fmt.Printf("%s\n", addrPath)
 	client := http.Client{}
 	request, err := http.NewRequest(http.MethodPut, addrPath, strings.NewReader(""))
 	if nil != err {
@@ -88,7 +86,7 @@ func SetLog(endpoints []string, path string) {
 	fmt.Printf("%s\n", contents)
 }
 
-func PostCli(endpoints []string, path string, jsonData string) string {
+func PostMsg(endpoints []string, path string, jsonData string) string {
 	if len(endpoints) > 0 {
 		ep := strings.Join(endpoints, ",")
 		os.Setenv("ETCD_ENDPOINTS", ep)
@@ -106,7 +104,6 @@ func PostCli(endpoints []string, path string, jsonData string) string {
 	addr := etcdConfig.Config.Endpoints[0]
 
 	addrPath := "http://" + addr + path
-	fmt.Printf("%s\n", addrPath)
 	resp, err := http.Post(addrPath, "application/json", strings.NewReader(jsonData))
 	if nil != err {
 		utils.ExitWithError(utils.ExitError,

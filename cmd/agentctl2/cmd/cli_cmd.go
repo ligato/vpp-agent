@@ -34,7 +34,7 @@ func cliFunction(cmd *cobra.Command, args []string) {
 
 	fmt.Printf("%s\n", msg)
 
-	resp := restapi.PostCli(globalFlags.Endpoints, "/vpp/command", msg)
+	resp := restapi.PostMsg(globalFlags.Endpoints, "/vpp/command", msg)
 
 	//TODO: Need format
 	fmt.Printf("%s\n", resp)
