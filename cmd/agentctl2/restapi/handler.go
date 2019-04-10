@@ -87,3 +87,38 @@ func SetLog(endpoints []string, path string) {
 	}
 	fmt.Printf("%s\n", contents)
 }
+
+func PostCli(endpoints []string, path string, jsonData string) string {
+	if len(endpoints) > 0 {
+		ep := strings.Join(endpoints, ",")
+		os.Setenv("ETCD_ENDPOINTS", ep)
+	}
+
+	cfg := &etcd.Config{}
+	etcdConfig, err := etcd.ConfigToClient(cfg)
+
+	if nil != err {
+		utils.ExitWithError(utils.ExitError,
+			errors.New("Failed to read config - "+err.Error()))
+	}
+
+	//TODO: Not nice solution
+	addr := etcdConfig.Config.Endpoints[0]
+
+	addrPath := "http://" + addr + path
+	fmt.Printf("%s\n", addrPath)
+	resp, err := http.Post(addrPath, "application/json", strings.NewReader(jsonData))
+	if nil != err {
+		utils.ExitWithError(utils.ExitError,
+			errors.New("Failed get http request - "+err.Error()))
+	}
+
+	msg, err := ioutil.ReadAll(resp.Body)
+	resp.Body.Close()
+	if nil != err {
+		utils.ExitWithError(utils.ExitError,
+			errors.New("Failed get message body - "+err.Error()))
+	}
+
+	return string(msg)
+}
