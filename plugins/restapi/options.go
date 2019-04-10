@@ -18,6 +18,7 @@ import (
 	"github.com/ligato/cn-infra/rpc/rest"
 
 	"github.com/ligato/vpp-agent/plugins/govppmux"
+	"github.com/ligato/vpp-agent/plugins/vpp/aclplugin"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin"
 	"github.com/ligato/vpp-agent/plugins/vpp/l2plugin"
 )
@@ -32,6 +33,7 @@ func NewPlugin(opts ...Option) *Plugin {
 	p.PluginName = "restpapi"
 	p.HTTPHandlers = &rest.DefaultPlugin
 	p.GoVppmux = &govppmux.DefaultPlugin
+	p.VPPACLPlugin = &aclplugin.DefaultPlugin
 	p.VPPIfPlugin = &ifplugin.DefaultPlugin
 	p.VPPL2Plugin = &l2plugin.DefaultPlugin
 
