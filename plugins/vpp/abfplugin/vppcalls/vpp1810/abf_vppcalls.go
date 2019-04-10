@@ -44,9 +44,9 @@ func (h *ABFVppHandler) AddAbfPolicy(policyID, aclID uint32, abfPaths []*vpp_abf
 }
 
 // DeleteAbfPolicy removes existing ABF entry
-func (h *ABFVppHandler) DeleteAbfPolicy(policyID, aclID uint32, abfPaths []*vpp_abf.ABF_ForwardingPath) error {
-	if err := h.abfAddDelPolicy(policyID, aclID, abfPaths, false); err != nil {
-		return errors.Errorf("failed to delete ABF policy %d (ACL: %v): %v", policyID, aclID, err)
+func (h *ABFVppHandler) DeleteAbfPolicy(policyID uint32, abfPaths []*vpp_abf.ABF_ForwardingPath) error {
+	if err := h.abfAddDelPolicy(policyID, 0, abfPaths, false); err != nil {
+		return errors.Errorf("failed to delete ABF policy %d (ACL: %v): %v", policyID, err)
 	}
 	return nil
 }
@@ -105,6 +105,7 @@ func (h *ABFVppHandler) abfAddDelPolicy(policyID, aclID uint32, abfPaths []*vpp_
 			PolicyID: policyID,
 			ACLIndex: aclID,
 			Paths:    h.toFibPaths(abfPaths),
+			NPaths:   uint8(len(abfPaths)),
 		},
 	}
 	reply := &abf.AbfPolicyAddDelReply{}
@@ -114,52 +115,59 @@ func (h *ABFVppHandler) abfAddDelPolicy(policyID, aclID uint32, abfPaths []*vpp_
 
 func (h *ABFVppHandler) toFibPaths(abfPaths []*vpp_abf.ABF_ForwardingPath) (fibPaths []abf.FibPath) {
 	for _, abfPath := range abfPaths {
-		// label stack
-
-		var fibPathLabelStack []abf.FibMplsLabel
-		for _, abfPathLabel := range abfPath.LabelStack {
-			fibPathLabel := abf.FibMplsLabel{
-				IsUniform: boolToUint(abfPathLabel.IsUniform),
-				Label:     abfPathLabel.Label,
-				Exp:       uint8(abfPathLabel.Exp),
-				TTL:       uint8(abfPathLabel.TTL),
-			}
-			fibPathLabelStack = append(fibPathLabelStack, fibPathLabel)
-		}
-
-		// fib path
+		// fib path interface
 		ifData, exists := h.ifIndexes.LookupByName(abfPath.InterfaceName)
 		if !exists {
 			continue
 		}
 
+		// next hop IP
+		nextHop := net.ParseIP(abfPath.NextHopIp)
+		if nextHop.To4() == nil {
+			nextHop = nextHop.To16()
+		} else {
+			nextHop = nextHop.To4()
+		}
+
 		fibPath := abf.FibPath{
-			SwIfIndex:         ifData.SwIfIndex,
-			TableID:           abfPath.Vrf,
-			Weight:            uint8(abfPath.Weight),
-			Preference:        uint8(abfPath.Preference),
-			IsLocal:           boolToUint(abfPath.Local),
-			IsDrop:            boolToUint(abfPath.Drop),
-			IsUDPEncap:        boolToUint(abfPath.UdpEncap),
-			IsUnreach:         boolToUint(abfPath.Unreachable),
-			IsProhibit:        boolToUint(abfPath.Prohibit),
-			IsResolveHost:     boolToUint(abfPath.ResolveHost),
-			IsResolveAttached: boolToUint(abfPath.ResolveAttached),
-			IsDvr:             boolToUint(abfPath.Dvr),
-			IsSourceLookup:    boolToUint(abfPath.SourceLookup),
-			Afi:               uint8(abfPath.Afi),
-			NextHop:           net.ParseIP(abfPath.NextHopIp),
-			NextHopID:         abfPath.NextHopId,
-			RpfID:             abfPath.RpfId,
-			ViaLabel:          abfPath.ViaLabel,
-			NLabels:           uint8(len(fibPathLabelStack)),
-			LabelStack:        fibPathLabelStack,
+			SwIfIndex:  ifData.SwIfIndex,
+			Weight:     uint8(abfPath.Weight),
+			Preference: uint8(abfPath.Preference),
+			IsDvr:      boolToUint(abfPath.Dvr),
+			NextHop:    parseNextHopToByte(abfPath.NextHopIp),
 		}
 
 		fibPaths = append(fibPaths, fibPath)
 	}
 
 	return fibPaths
+}
+
+// Parses IP address to abf-specific format, where leading zero means IPv4 and other bytes define IP address.
+// TODO since there are only 15 bytes available for IP address, only IPv4 is supported (see VPP-1641)
+func parseNextHopToByte(nh string) (nhIP []byte) {
+	// Support IPv4 only
+	if net.ParseIP(nh) == nil || net.ParseIP(nh).To4() == nil {
+		return nhIP
+	}
+	nhIP = net.ParseIP(nh).To4()
+	var nhShifted []byte
+	for i := 0; i < net.IPv6len; i++ {
+		if i == 0 {
+			// first element determines IP version (0==IPv4 in this case)
+			nhShifted = append(nhShifted, 0)
+			continue
+		}
+		if i <= len(nhIP) {
+			// indexes 1-5
+			nhShifted = append(nhShifted, nhIP[i-1])
+			continue
+		}
+		// trailing zeros
+		nhShifted = append(nhShifted, 0)
+	}
+
+	return nhShifted
 }
 
 func boolToUint(input bool) uint8 {

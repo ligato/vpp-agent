@@ -168,14 +168,8 @@ func (d *ABFDescriptor) Create(key string, abfData *abf.ABF) (*abfidx.ABFMetadat
 
 // Delete removes ABF policy
 func (d *ABFDescriptor) Delete(key string, abfData *abf.ABF, metadata *abfidx.ABFMetadata) error {
-	// get ACL index
-	aclData, exists := d.aclIndex.LookupByName(abfData.AclName)
-	if !exists {
-		err := errors.Errorf("failed to obtain metadata for ACL %s", abfData.AclName)
-		d.log.Error(err)
-	}
-
-	return d.abfHandler.DeleteAbfPolicy(metadata.Index, aclData.Index, abfData.ForwardingPaths)
+	// ACL ID is not required
+	return d.abfHandler.DeleteAbfPolicy(metadata.Index, abfData.ForwardingPaths)
 }
 
 // UpdateWithRecreate is always set to true since there is no binary API to specialy handle a part
@@ -217,7 +211,7 @@ func (d *ABFDescriptor) IsRetriableFailure(err error) bool {
 func (d *ABFDescriptor) DerivedValues(key string, value *abf.ABF) (derived []api.KeyValuePair) {
 	for _, attachedIf := range value.GetAttachedInterfaces() {
 		derived = append(derived, api.KeyValuePair{
-			Key:   abf.ToABFInterfaceKey(value.Index, attachedIf.InputInterface),
+			Key:   abf.ToInterfaceKey(value.Index, attachedIf.InputInterface),
 			Value: &prototypes.Empty{},
 		})
 	}
@@ -265,40 +259,9 @@ func equivalentABFForwardingPaths(oldPaths, newPaths []*abf.ABF_ForwardingPath) 
 		for _, newPath := range newPaths {
 			if oldPath.InterfaceName == newPath.InterfaceName &&
 				oldPath.NextHopIp == newPath.NextHopIp &&
-				oldPath.Vrf == newPath.Vrf &&
 				oldPath.Weight == newPath.Weight &&
 				oldPath.Preference == newPath.Preference &&
-				oldPath.Afi == newPath.Afi &&
-				oldPath.RpfId == newPath.RpfId &&
-				oldPath.ViaLabel == newPath.ViaLabel &&
-				oldPath.Local == newPath.Local &&
-				oldPath.Drop == newPath.Drop &&
-				oldPath.UdpEncap == newPath.UdpEncap &&
-				oldPath.Unreachable == newPath.Unreachable &&
-				oldPath.Prohibit == newPath.Prohibit &&
-				oldPath.ResolveHost == newPath.ResolveHost &&
-				oldPath.ResolveAttached == newPath.ResolveAttached &&
-				oldPath.Dvr == newPath.Dvr &&
-				oldPath.SourceLookup == newPath.SourceLookup &&
-				equivalentLabelStacks(oldPath.LabelStack, newPath.LabelStack) {
-				found = true
-			}
-		}
-		if !found {
-			return false
-		}
-	}
-	return true
-}
-
-func equivalentLabelStacks(oldLabelStack, newLabelStack []*abf.ABF_ForwardingPath_Label) bool {
-	if len(oldLabelStack) != len(newLabelStack) {
-		return false
-	}
-	for _, oldLabelStackEntry := range oldLabelStack {
-		var found bool
-		for _, newLabelStackEntry := range newLabelStack {
-			if proto.Equal(oldLabelStackEntry, newLabelStackEntry) {
+				oldPath.Dvr == newPath.Dvr {
 				found = true
 			}
 		}

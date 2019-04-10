@@ -45,9 +45,9 @@ func (h *ABFVppHandler) AddAbfPolicy(policyID, aclID uint32, abfPaths []*vpp_abf
 }
 
 // DeleteAbfPolicy removes existing ABF entry
-func (h *ABFVppHandler) DeleteAbfPolicy(policyID, aclID uint32, abfPaths []*vpp_abf.ABF_ForwardingPath) error {
-	if err := h.abfAddDelPolicy(policyID, aclID, abfPaths, false); err != nil {
-		return errors.Errorf("failed to delete ABF policy %d (ACL: %v): %v", policyID, aclID, err)
+func (h *ABFVppHandler) DeleteAbfPolicy(policyID uint32, abfPaths []*vpp_abf.ABF_ForwardingPath) error {
+	if err := h.abfAddDelPolicy(policyID, 0, abfPaths, false); err != nil {
+		return errors.Errorf("failed to delete ABF policy %d: %v", policyID, err)
 	}
 	return nil
 }
@@ -106,6 +106,7 @@ func (h *ABFVppHandler) abfAddDelPolicy(policyID, aclID uint32, abfPaths []*vpp_
 			PolicyID: policyID,
 			ACLIndex: aclID,
 			Paths:    h.toFibPaths(abfPaths),
+			NPaths:   uint8(len(abfPaths)),
 		},
 	}
 	reply := &abf.AbfPolicyAddDelReply{}
@@ -115,46 +116,29 @@ func (h *ABFVppHandler) abfAddDelPolicy(policyID, aclID uint32, abfPaths []*vpp_
 
 func (h *ABFVppHandler) toFibPaths(abfPaths []*vpp_abf.ABF_ForwardingPath) (fibPaths []abf.FibPath) {
 	for _, abfPath := range abfPaths {
-		// label stack
-		var fibPathLabelStack []abf.FibMplsLabel
-		for _, abfPathLabel := range abfPath.LabelStack {
-			fibPathLabel := abf.FibMplsLabel{
-				IsUniform: boolToUint(abfPathLabel.IsUniform),
-				Label:     abfPathLabel.Label,
-				Exp:       uint8(abfPathLabel.Exp),
-				TTL:       uint8(abfPathLabel.TTL),
-			}
-			fibPathLabelStack = append(fibPathLabelStack, fibPathLabel)
-		}
-
-		// fib path
+		// fib path interface
 		ifData, exists := h.ifIndexes.LookupByName(abfPath.InterfaceName)
 		if !exists {
 			continue
 		}
 
 		fibPath := abf.FibPath{
-			SwIfIndex:         ifData.SwIfIndex,
-			TableID:           abfPath.Vrf,
-			Weight:            uint8(abfPath.Weight),
-			Preference:        uint8(abfPath.Preference),
-			IsLocal:           boolToUint(abfPath.Local),
-			IsDrop:            boolToUint(abfPath.Drop),
-			IsUDPEncap:        boolToUint(abfPath.UdpEncap),
-			IsUnreach:         boolToUint(abfPath.Unreachable),
-			IsProhibit:        boolToUint(abfPath.Prohibit),
-			IsResolveHost:     boolToUint(abfPath.ResolveHost),
-			IsResolveAttached: boolToUint(abfPath.ResolveAttached),
-			IsDvr:             boolToUint(abfPath.Dvr),
-			IsSourceLookup:    boolToUint(abfPath.SourceLookup),
-			Afi:               uint8(abfPath.Afi),
-			NextHop:           net.ParseIP(abfPath.NextHopIp),
-			NextHopID:         abfPath.NextHopId,
-			RpfID:             abfPath.RpfId,
-			ViaLabel:          abfPath.ViaLabel,
-			NLabels:           uint8(len(fibPathLabelStack)),
-			LabelStack:        fibPathLabelStack,
+			SwIfIndex:  ifData.SwIfIndex,
+			Weight:     uint8(abfPath.Weight),
+			Preference: uint8(abfPath.Preference),
+			IsDvr:      boolToUint(abfPath.Dvr),
 		}
+
+		// next hop IP
+		nextHop := net.ParseIP(abfPath.NextHopIp)
+		if nextHop.To4() == nil {
+			nextHop = nextHop.To16()
+			fibPath.Afi = 1
+		} else {
+			nextHop = nextHop.To4()
+			fibPath.Afi = 0
+		}
+		fibPath.NextHop = nextHop
 
 		fibPaths = append(fibPaths, fibPath)
 	}

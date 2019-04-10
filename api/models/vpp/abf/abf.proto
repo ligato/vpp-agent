@@ -24,30 +24,9 @@ message ABF {
     message ForwardingPath {
         string next_hop_ip = 1;
         string interface_name = 2;
-        uint32 vrf = 3;
         uint32 weight = 4;
         uint32 preference = 5;
-        uint32 afi = 6;
-        uint32 next_hop_id = 7;
-        uint32 rpf_id = 8;
-        uint32 via_label = 9;
-        bool local = 10;
-        bool drop = 11;
-        bool udp_encap = 12;
-        bool unreachable = 13;
-        bool prohibit = 14;
-        bool resolve_host = 15;
-        bool resolve_attached = 16;
         bool dvr = 17;
-        bool source_lookup = 18;
-
-        message Label {
-            bool IsUniform = 1;
-            uint32 Label = 2;
-            uint32 TTL = 3;
-            uint32 Exp = 4;
-        }
-        repeated Label label_stack = 19;
     }
     repeated ForwardingPath forwarding_paths = 4;
 }

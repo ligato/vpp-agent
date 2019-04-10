@@ -16,9 +16,8 @@ package vpp1810
 
 import (
 	govppapi "git.fd.io/govpp.git/api"
-	"github.com/ligato/vpp-agent/plugins/vpp/aclplugin/aclidx"
-
 	"github.com/ligato/vpp-agent/plugins/vpp/abfplugin/vppcalls"
+	"github.com/ligato/vpp-agent/plugins/vpp/aclplugin/aclidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1810/abf"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 )
@@ -33,7 +32,7 @@ func init() {
 			return &ABFVppHandler{
 				callsChannel: ch,
 				dumpChannel:  ch,
-				aclIndexes: aclIndexes,
+				aclIndexes:   aclIndexes,
 				ifIndexes:    ifIndexes,
 			}
 		},

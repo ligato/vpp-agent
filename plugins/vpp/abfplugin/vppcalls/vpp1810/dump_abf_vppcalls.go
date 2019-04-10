@@ -115,9 +115,6 @@ func (h *ABFVppHandler) dumpABFPolicy() ([]*vppcalls.ABFDetails, error) {
 		// paths
 		var fwdPaths []*vpp_abf.ABF_ForwardingPath
 		for _, path := range reply.Policy.Paths {
-			// ip address
-			var nextHopIP net.IP = path.NextHop
-
 			// interface name
 			ifName, _, exists := h.ifIndexes.LookupBySwIfIndex(path.SwIfIndex)
 			if !exists {
@@ -126,37 +123,11 @@ func (h *ABFVppHandler) dumpABFPolicy() ([]*vppcalls.ABFDetails, error) {
 
 			// base fields
 			fwdPath := &vpp_abf.ABF_ForwardingPath{
-				NextHopIp:       nextHopIP.String(),
-				InterfaceName:   ifName,
-				Vrf:             path.TableID,
-				Weight:          uint32(path.Weight),
-				Preference:      uint32(path.Preference),
-				Afi:             uint32(path.Afi),
-				NextHopId:       path.NextHopID,
-				RpfId:           path.RpfID,
-				ViaLabel:        path.ViaLabel,
-				Local:           uintToBool(path.IsLocal),
-				Drop:            uintToBool(path.IsDrop),
-				UdpEncap:        uintToBool(path.IsUDPEncap),
-				Unreachable:     uintToBool(path.IsUnreach),
-				Prohibit:        uintToBool(path.IsProhibit),
-				ResolveHost:     uintToBool(path.IsResolveHost),
-				ResolveAttached: uintToBool(path.IsResolveAttached),
-				Dvr:             uintToBool(path.IsDvr),
-				SourceLookup:    uintToBool(path.IsSourceLookup),
-			}
-
-			// label stack
-			var labelStack []*vpp_abf.ABF_ForwardingPath_Label
-			for _, label := range path.LabelStack {
-				labelEntry := &vpp_abf.ABF_ForwardingPath_Label{
-					IsUniform: uintToBool(label.IsUniform),
-					Label:     label.Label,
-					TTL:       uint32(label.TTL),
-					Exp:       uint32(label.Exp),
-				}
-
-				labelStack = append(labelStack, labelEntry)
+				NextHopIp:     parseNextHopToString(path.NextHop),
+				InterfaceName: ifName,
+				Weight:        uint32(path.Weight),
+				Preference:    uint32(path.Preference),
+				Dvr:           uintToBool(path.IsDvr),
 			}
 
 			fwdPaths = append(fwdPaths, fwdPath)
@@ -177,6 +148,23 @@ func (h *ABFVppHandler) dumpABFPolicy() ([]*vppcalls.ABFDetails, error) {
 	}
 
 	return abfs, nil
+}
+
+// Parses IP address to string. The IP address is received in format where leading byte means IP version
+// (1==IPv4, 2==IPv6) and rest is the IP address.
+// TODO IPv6 not supported since there are only 15 bytes for address itself so it is not returned whole (see VPP-1641)
+func parseNextHopToString(nh []byte) string {
+	if len(nh) != net.IPv6len {
+		return ""
+	}
+	// the first byte determines the IP version
+	if nh[0] == 1 {
+		// IPv4
+		var nhShifted net.IP = append(nh[1:5])
+		return nhShifted.To4().String()
+	}
+
+	return ""
 }
 
 func uintToBool(value uint8) bool {

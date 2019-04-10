@@ -42,7 +42,7 @@ type ABFVppAPI interface {
 	// AddAbfPolicy creates new ABF entry together with a list of forwarding paths
 	AddAbfPolicy(policyID, aclID uint32, abfPaths []*abf.ABF_ForwardingPath) error
 	// DeleteAbfPolicy removes existing ABF entry
-	DeleteAbfPolicy(policyID, aclID uint32, abfPaths []*abf.ABF_ForwardingPath) error
+	DeleteAbfPolicy(policyID uint32, abfPaths []*abf.ABF_ForwardingPath) error
 	// AbfAttachInterfaceIPv4 attaches IPv4 interface to the ABF
 	AbfAttachInterfaceIPv4(policyID, ifIdx, priority uint32) error
 	// AbfDetachInterfaceIPv4 detaches IPV4 interface from the ABF
