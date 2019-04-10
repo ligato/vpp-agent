@@ -64,16 +64,24 @@ const (
 
 /* Interface VRF (derived) */
 const (
-	// vrfTableKeyPrefix is used as a common prefix for keys derived from
-	// interfaces to represent target VRF tables.
-	vrfTableKeyPrefix = "vpp/vrf/"
+	// vrfTKeyTemplatePrefix is a prefix of the template used to construct
+	// key representing assignment of an interface into a VRF table.
+	// The prefix includes the source interface name, but not details about the
+	// target VRF.
+	vrfTKeyTemplatePrefix = "vpp/interface/{iface}/vrf/"
 
-	// vrfTableKeyTemplate is a template for (derived) key representing assignment
+	// vrfKeyTemplate is a template for (derived) key representing assignment
 	// of a VPP interface into a VRF table.
-	vrfTableKeyTemplate = vrfTableKeyPrefix + "{vrf}/protocol/{protocol}/interface/{iface}"
+	vrfKeyTemplate = vrfTKeyTemplatePrefix + "{vrf}/ip-version/{ip-version}"
 
-	vrfIPv4Proto = "ipv4"
-	vrfIPv6Proto = "ipv6"
+	// inheritedVrfKeyTemplate is a template for (derived) key representing
+	// assignment of an (unnumbered) VPP interface into a VRF table, ID of which
+	// is given by the configuration of a referenced (numbered) interface.
+	inheritedVrfKeyTemplate = vrfTKeyTemplatePrefix + "from-interface/{from-iface}"
+
+	vrfIPv4 = "v4"
+	vrfIPv6 = "v6"
+	vrfBoth = "both"
 )
 
 /* Unnumbered interface (derived) */
@@ -183,72 +191,134 @@ func ParseInterfaceAddressKey(key string) (iface string, ipAddr net.IP, ipAddrNe
 	return
 }
 
-/* Interface VRF table (derived) */
+/* Interface VRF (derived) */
 
-// InterfaceVrfTableKey returns key representing VRF table that the interface
-// is assigned into.
-func InterfaceVrfTableKey(iface string, vrf int, ipv6 bool) string {
+// InterfaceVrfKeyPrefix returns prefix of the key representing assignment
+// of the given interface into unspecified VRF table.
+func InterfaceVrfKeyPrefix(iface string) string {
+	return strings.Replace(vrfTKeyTemplatePrefix, "{iface}", iface, 1)
+}
+
+// InterfaceVrfKey returns key representing assignment of the given interface
+// into the given VRF.
+func InterfaceVrfKey(iface string, vrf int, ipv4, ipv6 bool) string {
 	if iface == "" {
 		iface = InvalidKeyPart
 	}
-	protocol := vrfIPv4Proto
-	if ipv6 {
-		protocol = vrfIPv6Proto
+	ipVer := InvalidKeyPart
+	if ipv4 && ipv6 {
+		ipVer = vrfBoth
+	} else if ipv4 {
+		ipVer = vrfIPv4
+	} else if ipv6 {
+		ipVer = vrfIPv6
 	}
 
-	var vrfTableID string
+	vrfTableID := InvalidKeyPart
 	if vrf >= 0 {
 		vrfTableID = strconv.Itoa(vrf)
 	}
 
-	key := strings.Replace(vrfTableKeyTemplate, "{iface}", iface, 1)
-	key = strings.Replace(key, "{protocol}", protocol, 1)
+	key := strings.Replace(vrfKeyTemplate, "{iface}", iface, 1)
 	key = strings.Replace(key, "{vrf}", vrfTableID, 1)
+	key = strings.Replace(key, "{ip-version}", ipVer, 1)
 	return key
 }
 
-// ParseInterfaceVrfTableKey parses interface and VRF table ID from key derived
-// from interface by InterfaceVrfTableKey().
-func ParseInterfaceVrfTableKey(key string) (iface string, vrf int, ipv6, isVrfTableKey bool) {
-	if suffix := strings.TrimPrefix(key, vrfTableKeyPrefix); suffix != key {
-		parts := strings.Split(suffix, "/")
+// ParseInterfaceVrfKey parses details from key derived from interface by
+// InterfaceVrfKey().
+func ParseInterfaceVrfKey(key string) (iface string, vrf int, ipv4, ipv6, isIfaceVrfKey bool) {
+	parts := strings.Split(key, "/")
+	if len(parts) < 7 || parts[0] != "vpp" || parts[1] != "interface" {
+		return
+	}
 
-		// beware: interface name may contain forward slashes (e.g. ETHERNET_CSMACD)
-		if len(parts) < 5 {
-			return
+	vrfIdx := -1
+	ipVerIdx := -1
+	for idx, part := range parts {
+		if part == "vrf" {
+			vrfIdx = idx
 		}
-		if parts[1] != "protocol" || parts[3] != "interface" {
-			return
+		if part == "ip-version" {
+			ipVerIdx = idx
 		}
+	}
+	if vrfIdx == -1 || ipVerIdx != len(parts)-2 {
+		return
+	}
+	isIfaceVrfKey = true
 
-		// parse interface name
-		iface = strings.Join(parts[4:], "/")
-		if iface == "" || iface == InvalidKeyPart {
-			iface = ""
-			return
-		}
+	// parse interface name
+	iface = strings.Join(parts[2:vrfIdx], "/")
+	if iface == "" {
+		iface = InvalidKeyPart
+	}
 
-		// parse VRF table ID
-		var err error
-		vrf, err = strconv.Atoi(parts[0])
-		if err != nil {
-			iface = ""
-			return
-		}
+	// parse VRF table ID
+	var err error
+	vrf, err = strconv.Atoi(parts[vrfIdx+1])
+	if err != nil {
+		vrf = -1
+	}
 
-		// parse protocol
-		switch parts[2] {
-		case vrfIPv4Proto:
-			ipv6 = false
-		case vrfIPv6Proto:
-			ipv6 = true
-		default:
-			iface = ""
-			vrf = 0
-			return
-		}
+	// parse IP version
+	switch parts[ipVerIdx+1] {
+	case vrfBoth:
+		ipv4 = true
+		ipv6 = true
+	case vrfIPv4:
+		ipv4 = true
+	case vrfIPv6:
+		ipv6 = true
+	}
+	return
+}
 
-		isVrfTableKey = true
+// InterfaceInheritedVrfKey returns key representing assignment of the given
+// interface into a VRF inherited from another interface.
+// Used by unnumbered interfaces.
+func InterfaceInheritedVrfKey(iface string, fromIface string) string {
+	if iface == "" {
+		iface = InvalidKeyPart
+	}
+	if fromIface == "" {
+		fromIface = InvalidKeyPart
+	}
+	key := strings.Replace(inheritedVrfKeyTemplate, "{iface}", iface, 1)
+	key = strings.Replace(key, "{from-iface}", fromIface, 1)
+	return key
+}
+
+// ParseInterfaceInheritedVrfKey parses details from key derived from interface by
+// InterfaceInheritedVrfKey().
+func ParseInterfaceInheritedVrfKey(key string) (iface, fromIface string, isIfaceInherVrfKey bool) {
+	parts := strings.Split(key, "/")
+	if len(parts) < 6 || parts[0] != "vpp" || parts[1] != "interface" {
+		return
+	}
+
+	vrfIdx := -1
+	for idx, part := range parts {
+		if part == "vrf" {
+			vrfIdx = idx
+			break
+		}
+	}
+	if vrfIdx == -1 || vrfIdx+2 >= len(parts) || parts[vrfIdx+1] != "from-interface" {
+		return
+	}
+	isIfaceInherVrfKey = true
+
+	// parse interface name
+	iface = strings.Join(parts[2:vrfIdx], "/")
+	if iface == "" {
+		iface = InvalidKeyPart
+	}
+
+	// parse from-interface name
+	fromIface = strings.Join(parts[vrfIdx+2:], "/")
+	if fromIface == "" {
+		fromIface = InvalidKeyPart
 	}
 	return
 }

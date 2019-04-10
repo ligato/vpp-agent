@@ -20,6 +20,7 @@ import (
 	"github.com/pkg/errors"
 
 	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
+	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
@@ -31,10 +32,12 @@ const (
 	InterfaceVrfDescriptorName = "vpp-interface-vrf"
 
 	// dependency labels
-	vrfDep = "vrf-exists"
+	vrfV4Dep        = "vrf-table-v4-exists"
+	vrfV6Dep        = "vrf-table-v4-exists"
+	inheritedVrfDep = "numbered-interface-assigned-to-VRF"
 )
 
-// InterfaceVrfDescriptor (un)assigns VPP interface to IPv4/IPv6 VRF table. 
+// InterfaceVrfDescriptor (un)assigns VPP interface to IPv4/IPv6 VRF table.
 type InterfaceVrfDescriptor struct {
 	log       logging.Logger
 	ifHandler vppcalls.InterfaceVppAPI
@@ -51,77 +54,133 @@ func NewInterfaceVrfDescriptor(ifHandler vppcalls.InterfaceVppAPI, ifIndex iface
 		log:       log.NewLogger("interface-vrf-descriptor"),
 	}
 	return &kvs.KVDescriptor{
-		Name:          InterfaceVrfDescriptorName,
-		KeySelector:   descrCtx.IsInterfaceVrfKey,
-		Create:        descrCtx.Create,
-		Delete:        descrCtx.Delete,
-		Dependencies:  descrCtx.Dependencies,
+		Name:         InterfaceVrfDescriptorName,
+		KeySelector:  descrCtx.IsInterfaceVrfKey,
+		Create:       descrCtx.Create,
+		Delete:       descrCtx.Delete,
+		Dependencies: descrCtx.Dependencies,
 	}
 }
 
 // IsInterfaceVrfKey returns true if the key represents assignment of an interface
 // into a VRF table.
 func (d *InterfaceVrfDescriptor) IsInterfaceVrfKey(key string) bool {
-	_, _, _, isInterfaceVrfKey := interfaces.ParseInterfaceVrfTableKey(key)
-	return isInterfaceVrfKey
+	_, _, _, _, isIfaceVrfKey := interfaces.ParseInterfaceVrfKey(key)
+	if isIfaceVrfKey {
+		return true
+	}
+	_, _, isIfaceInherVrfKey := interfaces.ParseInterfaceInheritedVrfKey(key)
+	if isIfaceInherVrfKey {
+		return true
+	}
+	return false
 }
 
 // Create puts interface into the given VRF table.
 func (d *InterfaceVrfDescriptor) Create(key string, emptyVal proto.Message) (metadata kvs.Metadata, err error) {
-	iface, vrf, ipv6, _ := interfaces.ParseInterfaceVrfTableKey(key)
-	if vrf == 0 {
-		// NOOP
-		return nil, nil
-	}
-
-	ifMeta, found := d.ifIndex.LookupByName(iface)
-	if !found {
-		err = errors.Errorf("failed to find interface %s", iface)
-		d.log.Error(err)
+	swIfIndex, vrf, ipv4, ipv6, err := d.getParametersFromKey(key)
+	if err != nil {
 		return nil, err
 	}
 
-	if ipv6 {
-		err = d.ifHandler.SetInterfaceVrfIPv6(ifMeta.SwIfIndex, uint32(vrf))
-	} else {
-		err = d.ifHandler.SetInterfaceVrf(ifMeta.SwIfIndex, uint32(vrf))
+	if vrf > 0 && ipv4 {
+		err = d.ifHandler.SetInterfaceVrf(swIfIndex, uint32(vrf))
+		if err != nil {
+			d.log.Error(err)
+			return nil, err
+		}
 	}
-
-	return nil, err
+	if vrf > 0 && ipv6 {
+		err = d.ifHandler.SetInterfaceVrfIPv6(swIfIndex, uint32(vrf))
+		if err != nil {
+			d.log.Error(err)
+			return nil, err
+		}
+	}
+	return nil, nil
 }
 
 // Delete removes interface from the given VRF table.
 func (d *InterfaceVrfDescriptor) Delete(key string, emptyVal proto.Message, metadata kvs.Metadata) (err error) {
-	iface, vrf, ipv6, _ := interfaces.ParseInterfaceVrfTableKey(key)
-	if vrf == 0 {
-		// NOOP
-		return nil
+	swIfIndex, vrf, ipv4, ipv6, err := d.getParametersFromKey(key)
+	if err != nil {
+		return err
+	}
+
+	if vrf > 0 && ipv4 {
+		err = d.ifHandler.SetInterfaceVrf(swIfIndex, uint32(0))
+		if err != nil {
+			d.log.Error(err)
+			return err
+		}
+	}
+	if vrf > 0 && ipv6 {
+		err = d.ifHandler.SetInterfaceVrfIPv6(swIfIndex, uint32(0))
+		if err != nil {
+			d.log.Error(err)
+			return err
+		}
+	}
+	return nil
+}
+
+// Dependencies lists the target non-zero VRF as the only dependency.
+func (d *InterfaceVrfDescriptor) Dependencies(key string, emptyVal proto.Message) (deps []kvs.Dependency) {
+	if _, vrf, ipv4, ipv6, isIfaceVrfKey := interfaces.ParseInterfaceVrfKey(key); isIfaceVrfKey {
+		if vrf > 0 && ipv4 {
+			deps = append(deps, kvs.Dependency{
+				Label: vrfV4Dep,
+				Key:   l3.VrfTableKey(uint32(vrf), l3.VrfTable_IPV4),
+			})
+		}
+		if vrf > 0 && ipv6 {
+			deps = append(deps, kvs.Dependency{
+				Label: vrfV6Dep,
+				Key:   l3.VrfTableKey(uint32(vrf), l3.VrfTable_IPV6),
+			})
+		}
+		return deps
+	}
+
+	_, fromIface, _ := interfaces.ParseInterfaceInheritedVrfKey(key)
+	return []kvs.Dependency{
+		{
+			Label: inheritedVrfDep,
+			AnyOf: kvs.AnyOfDependency{
+				KeyPrefixes: []string{interfaces.InterfaceVrfKeyPrefix(fromIface)},
+			},
+		},
+	}
+}
+
+func (d *InterfaceVrfDescriptor) getParametersFromKey(key string) (swIfIndex, vrf uint32, ipv4, ipv6 bool, err error) {
+	var (
+		isIfaceVrfKey    bool
+		vrfTableID       int
+		iface, fromIface string
+	)
+
+	iface, vrfTableID, ipv4, ipv6, isIfaceVrfKey = interfaces.ParseInterfaceVrfKey(key)
+	if !isIfaceVrfKey {
+		iface, fromIface, _ = interfaces.ParseInterfaceInheritedVrfKey(key)
+		fromIfaceMeta, found := d.ifIndex.LookupByName(fromIface)
+		if !found {
+			err = errors.Errorf("failed to find interface %s", iface)
+			d.log.Error(err)
+			return
+		}
+		vrfTableID = int(fromIfaceMeta.Vrf)
+		ipv4, ipv6 = getIPAddressVersions(fromIfaceMeta.IPAddresses)
 	}
 
 	ifMeta, found := d.ifIndex.LookupByName(iface)
 	if !found {
 		err = errors.Errorf("failed to find interface %s", iface)
 		d.log.Error(err)
-		return err
+		return
 	}
 
-	if ipv6 {
-		err = d.ifHandler.SetInterfaceVrfIPv6(ifMeta.SwIfIndex, uint32(0))
-	} else {
-		err = d.ifHandler.SetInterfaceVrf(ifMeta.SwIfIndex, uint32(0))
-	}
-
-	return err
-}
-
-// Dependencies lists non-zero VRF as the only dependency.
-func (d *InterfaceVrfDescriptor) Dependencies(key string, emptyVal proto.Message) []kvs.Dependency {
-	iface, vrf, ipv6, _ := interfaces.ParseInterfaceVrfTableKey(key)
-	if vrf == 0 {
-		return nil
-	}
-	return []kvs.Dependency{{
-		Label: vrfDep,
-		Key:   interfaces.InterfaceVrfTableKey(iface, vrf, ipv6),
-	}}
+	swIfIndex = ifMeta.SwIfIndex
+	vrf = uint32(vrfTableID)
+	return
 }

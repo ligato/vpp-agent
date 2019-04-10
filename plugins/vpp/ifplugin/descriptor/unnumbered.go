@@ -17,7 +17,6 @@ package descriptor
 import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/utils/addrs"
 	"github.com/pkg/errors"
 
 	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
@@ -34,8 +33,6 @@ const (
 
 	// dependency labels
 	unnumberedInterfaceHasIPDep = "unnumbered-interface-has-IP"
-	unnumberedAfterVrfIpv4Dep = "unnumbered-after-VRF-IPv4-assignment"
-	unnumberedAfterVrfIpv6Dep = "unnumbered-after-VRF-IPv6-assignment"
 )
 
 // UnnumberedIfDescriptor sets/unsets VPP interfaces as unnumbered.
@@ -52,6 +49,7 @@ func NewUnnumberedIfDescriptor(ifHandler vppcalls.InterfaceVppAPI, ifIndex iface
 
 	ctx := &UnnumberedIfDescriptor{
 		ifHandler: ifHandler,
+		ifIndex:   ifIndex,
 		log:       log.NewLogger("unif-descriptor"),
 	}
 
@@ -134,36 +132,12 @@ func (d *UnnumberedIfDescriptor) Dependencies(key string, unIntf *interfaces.Int
 	}
 
 	// interface has to be assigned to VRF before setting as unnumbered
-	var ipv4Vrf, ipv6Vrf bool
-	ifName, _ := interfaces.ParseNameFromUnnumberedKey(key)
-	ifMeta, found := d.ifIndex.LookupByName(ifName)
-	if !found {
-		d.log.Warnf("failed to find unnumbered interface %s", ifName)
-		return
-	}
-	ifWithIPMeta, found := d.ifIndex.LookupByName(unIntf.InterfaceWithIp)
-	if !found {
-		d.log.Warnf("failed to find interface %s referenced by unnumbered interface %s",
-			unIntf.InterfaceWithIp, ifName)
-		return
-	}
-	ipAddresses, err := addrs.StrAddrsToStruct(ifWithIPMeta.IPAddresses)
-	if err != nil {
-		d.log.Warnf("failed to convert %s IP address list to IPNet structures: %v", ifName, err)
-		return
-	}
-	ipv4Vrf, ipv6Vrf = getIPAddressVersions(ipAddresses)
-	if ipv4Vrf {
-		deps = append(deps, kvs.Dependency{
-			Label: unnumberedAfterVrfIpv4Dep,
-			Key:   interfaces.InterfaceVrfTableKey(ifName, int(ifMeta.Vrf), false),
-		})
-	}
-	if ipv6Vrf {
-		deps = append(deps, kvs.Dependency{
-			Label: unnumberedAfterVrfIpv6Dep,
-			Key:   interfaces.InterfaceVrfTableKey(ifName, int(ifMeta.Vrf), true),
-		})
-	}
+	iface, _ := interfaces.ParseNameFromUnnumberedKey(key)
+	deps = append(deps, kvs.Dependency{
+		Label: interfaceInVrfDep,
+		AnyOf: kvs.AnyOfDependency{
+			KeyPrefixes: []string{interfaces.InterfaceVrfKeyPrefix(iface)},
+		},
+	})
 	return
 }

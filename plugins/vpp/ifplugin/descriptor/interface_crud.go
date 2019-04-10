@@ -368,8 +368,9 @@ func (d *InterfaceDescriptor) Update(key string, oldIntf, newIntf *interfaces.In
 		}
 	}
 
-	// update IP addresses in the metadata
+	// update metadata
 	oldMetadata.IPAddresses = newIntf.IpAddresses
+	oldMetadata.Vrf = newIntf.Vrf
 	return oldMetadata, nil
 }
 
@@ -500,6 +501,7 @@ func (d *InterfaceDescriptor) Retrieve(correlate []adapter.InterfaceKVWithMetada
 		// add interface record into the dump
 		metadata := &ifaceidx.IfaceMetadata{
 			SwIfIndex:     ifIdx,
+			Vrf:           intf.Interface.Vrf,
 			IPAddresses:   intf.Interface.IpAddresses,
 			TAPHostIfName: tapHostIfName,
 		}

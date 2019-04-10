@@ -34,7 +34,7 @@ const (
 	interfaceInVrfDep = "interface-assigned-to-vrf-table"
 )
 
-// InterfaceAddressDescriptor (un)assigns IP address to/from VPP interface. 
+// InterfaceAddressDescriptor (un)assigns IP address to/from VPP interface.
 type InterfaceAddressDescriptor struct {
 	log       logging.Logger
 	ifHandler vppcalls.InterfaceVppAPI
@@ -51,12 +51,12 @@ func NewInterfaceAddressDescriptor(ifHandler vppcalls.InterfaceVppAPI, ifIndex i
 		log:       log.NewLogger("interface-address-descriptor"),
 	}
 	return &kvs.KVDescriptor{
-		Name:          InterfaceAddressDescriptorName,
-		KeySelector:   descrCtx.IsInterfaceAddressKey,
-		Validate:      descrCtx.Validate,
-		Create:        descrCtx.Create,
-		Delete:        descrCtx.Delete,
-		Dependencies:  descrCtx.Dependencies,
+		Name:         InterfaceAddressDescriptorName,
+		KeySelector:  descrCtx.IsInterfaceAddressKey,
+		Validate:     descrCtx.Validate,
+		Create:       descrCtx.Create,
+		Delete:       descrCtx.Delete,
+		Dependencies: descrCtx.Dependencies,
 	}
 }
 
@@ -75,6 +75,7 @@ func (d *InterfaceAddressDescriptor) Validate(key string, emptyVal proto.Message
 	}
 	return nil
 }
+
 // Create assigns IP address to an interface.
 func (d *InterfaceAddressDescriptor) Create(key string, emptyVal proto.Message) (metadata kvs.Metadata, err error) {
 	iface, ipAddr, ipAddrNet, _, _ := interfaces.ParseInterfaceAddressKey(key)
@@ -113,17 +114,11 @@ func (d *InterfaceAddressDescriptor) Delete(key string, emptyVal proto.Message, 
 
 // Dependencies lists assignment of the interface into the VRF table as the only dependency.
 func (d *InterfaceAddressDescriptor) Dependencies(key string, emptyVal proto.Message) []kvs.Dependency {
-	var ipv6 bool
-	iface, ipAddr, _,  _, _ := interfaces.ParseInterfaceAddressKey(key)
-	ifMeta, found := d.ifIndex.LookupByName(iface)
-	if !found {
-		d.log.Warnf("failed to find interface %s", iface)
-		return nil
-	}
-	ipv6 = ipAddr.To4() == nil
-
+	iface, _, _, _, _ := interfaces.ParseInterfaceAddressKey(key)
 	return []kvs.Dependency{{
 		Label: interfaceInVrfDep,
-		Key:   interfaces.InterfaceVrfTableKey(iface, int(ifMeta.Vrf), ipv6),
+		AnyOf: kvs.AnyOfDependency{
+			KeyPrefixes: []string{interfaces.InterfaceVrfKeyPrefix(iface)},
+		},
 	}}
 }

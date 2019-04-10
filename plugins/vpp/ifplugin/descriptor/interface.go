@@ -24,7 +24,6 @@ import (
 	prototypes "github.com/gogo/protobuf/types"
 	"github.com/ligato/cn-infra/idxmap"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/utils/addrs"
 	"github.com/pkg/errors"
 
 	linux_intf "github.com/ligato/vpp-agent/api/models/linux/interfaces"
@@ -198,6 +197,7 @@ func (d *InterfaceDescriptor) SetInterfaceIndex(intfIndex ifaceidx.IfaceMetadata
 func (d *InterfaceDescriptor) EquivalentInterfaces(key string, oldIntf, newIntf *interfaces.Interface) bool {
 	// attributes compared as usually:
 	if oldIntf.Name != newIntf.Name ||
+		oldIntf.Vrf != newIntf.Vrf ||
 		oldIntf.Type != newIntf.Type ||
 		oldIntf.Enabled != newIntf.Enabled ||
 		oldIntf.SetDhcpClient != newIntf.SetDhcpClient {
@@ -238,6 +238,11 @@ func (d *InterfaceDescriptor) EquivalentInterfaces(key string, oldIntf, newIntf 
 	// compare MAC addresses case-insensitively (also handle unspecified MAC address)
 	if newIntf.PhysAddress != "" &&
 		strings.ToLower(oldIntf.PhysAddress) != strings.ToLower(newIntf.PhysAddress) {
+		return false
+	}
+
+	if !equalStringSets(oldIntf.IpAddresses, newIntf.IpAddresses) {
+		// call Update just to update IP addresses in the metadata
 		return false
 	}
 
@@ -417,8 +422,7 @@ func (d *InterfaceDescriptor) Validate(key string, intf *interfaces.Interface) e
 	return nil
 }
 
-// UpdateWithRecreate returns true if Type, VRF (or VRF IP version) or Type-specific
-// attributes are different.
+// UpdateWithRecreate returns true if Type or Type-specific attributes are different.
 func (d *InterfaceDescriptor) UpdateWithRecreate(key string, oldIntf, newIntf *interfaces.Interface, metadata *ifaceidx.IfaceMetadata) bool {
 	if oldIntf.Type != newIntf.Type {
 		return true
@@ -505,7 +509,7 @@ func (d *InterfaceDescriptor) Dependencies(key string, intf *interfaces.Interfac
 //  - empty value for enabled DHCP client
 //  - configuration for every slave of a bonded interface
 //  - one empty value for every IP address to be assigned to the interface
-//  - one empty value VRF table to put the interface into.
+//  - one empty value for VRF table to put the interface into.
 func (d *InterfaceDescriptor) DerivedValues(key string, intf *interfaces.Interface) (derValues []kvs.KeyValuePair) {
 	// unnumbered interface
 	if intf.GetUnnumbered() != nil {
@@ -542,35 +546,33 @@ func (d *InterfaceDescriptor) DerivedValues(key string, intf *interfaces.Interfa
 	}
 
 	// VRF assignment
-	var hasIPv4, hasIPv6 bool
 	if intf.GetUnnumbered() != nil {
-		// TODO
-		// derived values and dependencies cannot be determined based on configuration
-		// of another object (referenced numbered interface), therefore we will
-		// set the table for both IP versions regardless of IP address assigned
-		// to the numbered interface
-		hasIPv4 = true
-		hasIPv6 = true
+		// VRF inherited from the target numbered interface
+		derValues = append(derValues, kvs.KeyValuePair{
+			Key:   interfaces.InterfaceInheritedVrfKey(intf.GetName(), intf.GetUnnumbered().GetInterfaceWithIp()),
+			Value: &prototypes.Empty{},
+		})
 	} else {
 		// not unnumbered
-		ipAddresses := intf.IpAddresses
+		var hasIPv4, hasIPv6 bool
 		if intf.Type == interfaces.Interface_VXLAN_TUNNEL {
-			ipAddresses = []string{intf.GetVxlan().GetSrcAddress(), intf.GetVxlan().GetDstAddress()}
+			srcAddr := net.ParseIP(intf.GetVxlan().GetSrcAddress()).To4()
+			dstAddr := net.ParseIP(intf.GetVxlan().GetDstAddress()).To4()
+			if srcAddr == nil && dstAddr == nil {
+				hasIPv6 = true
+			} else {
+				hasIPv4 = true
+			}
+		} else {
+			// not VXLAN tunnel
+			hasIPv4, hasIPv6 = getIPAddressVersions(intf.IpAddresses)
 		}
-		ipeNets, _ := addrs.StrAddrsToStruct(ipAddresses)
-		hasIPv4, hasIPv6 = getIPAddressVersions(ipeNets)
-	}
-	if hasIPv4 {
-		derValues = append(derValues, kvs.KeyValuePair{
-			Key: interfaces.InterfaceVrfTableKey(intf.GetName(), int(intf.GetVrf()), false),
-			Value: &prototypes.Empty{},
-		})
-	}
-	if hasIPv6 {
-		derValues = append(derValues, kvs.KeyValuePair{
-			Key: interfaces.InterfaceVrfTableKey(intf.GetName(), int(intf.GetVrf()), true),
-			Value: &prototypes.Empty{},
-		})
+		if hasIPv4 || hasIPv6 {
+			derValues = append(derValues, kvs.KeyValuePair{
+				Key:   interfaces.InterfaceVrfKey(intf.GetName(), int(intf.GetVrf()), hasIPv4, hasIPv6),
+				Value: &prototypes.Empty{},
+			})
+		}
 	}
 
 	// TODO: define derived value for UP/DOWN state (needed for subinterfaces)
@@ -711,14 +713,34 @@ func fnvHash(s string) uint32 {
 	return h.Sum32()
 }
 
+// equalStringSets compares two sets of strings for equality.
+func equalStringSets(set1, set2 []string) bool {
+	if len(set1) != len(set2) {
+		return false
+	}
+	for _, item1 := range set1 {
+		found := false
+		for _, item2 := range set2 {
+			if item1 == item2 {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return false
+		}
+	}
+	return true
+}
+
 // getIPAddressVersions returns two flags to tell whether the provided list of addresses
 // contains IPv4 and/or IPv6 type addresses
-func getIPAddressVersions(ipAddrs []*net.IPNet) (isIPv4, isIPv6 bool) {
+func getIPAddressVersions(ipAddrs []string) (hasIPv4, hasIPv6 bool) {
 	for _, ip := range ipAddrs {
-		if ip.IP.To4() != nil {
-			isIPv4 = true
+		if strings.Contains(ip, ":") {
+			hasIPv6 = true
 		} else {
-			isIPv6 = true
+			hasIPv4 = true
 		}
 	}
 	return
