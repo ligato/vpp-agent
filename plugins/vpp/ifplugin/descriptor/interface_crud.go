@@ -144,6 +144,7 @@ func (d *InterfaceDescriptor) Create(key string, intf *interfaces.Interface) (me
 			d.log.Error(err)
 			return nil, err
 		}
+		d.bondIDs[intf.GetBond().GetId()] = intf.GetName()
 	}
 
 	/*
@@ -321,6 +322,7 @@ func (d *InterfaceDescriptor) Delete(key string, intf *interfaces.Interface, met
 		err = d.ifHandler.DeleteVmxNet3(intf.Name, ifIdx)
 	case interfaces.Interface_BOND_INTERFACE:
 		err = d.ifHandler.DeleteBondInterface(intf.Name, ifIdx)
+		delete(d.bondIDs, intf.GetBond().GetId())
 	}
 	if err != nil {
 		err = errors.Errorf("failed to remove interface %s, index %d: %v", intf.Name, ifIdx, err)
@@ -491,8 +493,9 @@ func (d *InterfaceDescriptor) Retrieve(correlate []adapter.InterfaceKVWithMetada
 		}
 	}
 
-	// clear the map of ethernet interfaces
+	// clear the map of ethernet interfaces and bond IDs
 	d.ethernetIfs = make(map[string]uint32)
+	d.bondIDs = make(map[uint32]string)
 
 	// dump current state of VPP interfaces
 	vppIfs, err := d.ifHandler.DumpInterfaces()
@@ -519,6 +522,9 @@ func (d *InterfaceDescriptor) Retrieve(correlate []adapter.InterfaceKVWithMetada
 			// untagged interface - generate a logical name for it
 			// (apart from local0 it will get removed by resync)
 			intf.Interface.Name = untaggedIfPreffix + intf.Meta.InternalName
+		}
+		if intf.Interface.Type == interfaces.Interface_BOND_INTERFACE {
+			d.bondIDs[intf.Interface.GetBond().GetId()] = intf.Interface.Name
 		}
 
 		// get TAP host interface name
