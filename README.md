@@ -32,7 +32,8 @@ Have a look at the [release notes](CHANGELOG.md) for a complete list of changes.
 |---|:---:|---|
 |[![master](https://img.shields.io/badge/branch-master-blue.svg?logo=git&logoColor=white)](https://github.com/ligato/vpp-agent/tree/master)|![GitHub last commit (branch)](https://img.shields.io/github/last-commit/ligato/vpp-agent/master.svg?label=)| has **moved to v2**, introducing several [breaking changes](https://github.com/ligato/vpp-agent/blob/master/CHANGELOG.md#v200) :warning:|
 |[![dev](https://img.shields.io/badge/branch-dev-green.svg?logo=git&logoColor=white)](https://github.com/ligato/vpp-agent/tree/dev)|![GitHub last commit (branch)](https://img.shields.io/github/last-commit/ligato/vpp-agent/dev.svg?label=)|will be used for all the future **development**|
-|[![pantheon-dev](https://img.shields.io/badge/branch-pantheon--dev-inactive.svg?logo=git&logoColor=white)](https://github.com/ligato/vpp-agent/tree/pantheon-dev)|![GitHub last commit (branch)](https://img.shields.io/github/last-commit/ligato/vpp-agent/pantheon-dev.svg?label=)|has been **deprecated** (v1) and will be removed in the following weeks|
+
+**Note:** The branch pantheon-dev has been **deprecated** (v1).
 
 ### Images
 
