@@ -106,6 +106,10 @@ func do(ctl data.VppAgentCtl) {
 			err = ctl.PutMACIPAcl()
 		case "-aclmacd":
 			err = ctl.DeleteMACIPAcl()
+		case "-abf":
+			err = ctl.PutABF()
+		case "-abfd":
+			err = ctl.DeleteABF()
 		// VPP interface plugin
 		case "-eth":
 			err = ctl.PutDPDKInterface()
@@ -273,6 +277,9 @@ func usage() {
 		-list
 
 	Prearranged flags (create, delete) sorted by plugin:
+
+	ACL-based forwarding plugin:
+		-abf		-abfd		- ACL-based forwarding
 
 	Access list plugin:
 		-aclip,		-aclipd		- Access List with IP rules
