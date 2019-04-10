@@ -107,6 +107,9 @@ var (
 
 	// ErrDPDKInterfaceMissing is returned when the expected DPDK interface does not exist on the VPP.
 	ErrDPDKInterfaceMissing = errors.Errorf("DPDK interface with given name does not exists")
+
+	// ErrBondInterfaceIDExists is returned when the bond interface uses existing ID value
+	ErrBondInterfaceIDExists = errors.Errorf("Bond interface ID already exists")
 )
 
 // InterfaceDescriptor teaches KVScheduler how to configure VPP interfaces.
@@ -127,8 +130,9 @@ type InterfaceDescriptor struct {
 	intfIndex              ifaceidx.IfaceMetadataIndex
 	memifSocketToID        map[string]uint32 // memif socket filename to ID map (all known sockets)
 	defaultMemifSocketPath string
-	ethernetIfs            map[string]uint32 // name-to-index map of ethernet interfaces
-	// (entry is not removed even if interface is un-configured)
+	bondIDs                map[uint32]string // bond ID to name (ID != sw_if_idx)
+	ethernetIfs            map[string]uint32 // name-to-index map of ethernet interfaces (entry is not
+	// removed even if interface is un-configured)
 }
 
 // LinuxPluginAPI is defined here to avoid import cycles.
@@ -157,6 +161,7 @@ func NewInterfaceDescriptor(ifHandler vppcalls.InterfaceVppAPI, defaultMtu uint3
 		log:             log.NewLogger("if-descriptor"),
 		memifSocketToID: make(map[string]uint32),
 		ethernetIfs:     make(map[string]uint32),
+		bondIDs:         make(map[uint32]string),
 	}
 }
 
@@ -406,6 +411,10 @@ func (d *InterfaceDescriptor) Validate(key string, intf *interfaces.Interface) e
 	case interfaces.Interface_AF_PACKET:
 		if intf.GetAfpacket().GetHostIfName() == "" {
 			return kvs.NewInvalidValueError(ErrAfPacketWithoutHostName, "link.afpacket.host_if_name")
+		}
+	case interfaces.Interface_BOND_INTERFACE:
+		if name, ok := d.bondIDs[intf.GetBond().GetId()]; ok && name != intf.GetName() {
+			return kvs.NewInvalidValueError(ErrBondInterfaceIDExists, "link.bond.id")
 		}
 	case interfaces.Interface_UNDEFINED_TYPE:
 		return kvs.NewInvalidValueError(ErrInterfaceWithoutType, "type")
