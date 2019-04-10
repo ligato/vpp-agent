@@ -20,6 +20,7 @@ import (
 	"github.com/ligato/cn-infra/db/keyval"
 	"github.com/ligato/vpp-agent/pkg/models"
 
+	abf "github.com/ligato/vpp-agent/api/models/vpp/abf"
 	acl "github.com/ligato/vpp-agent/api/models/vpp/acl"
 	intf "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	ipsec "github.com/ligato/vpp-agent/api/models/vpp/ipsec"
@@ -59,6 +60,15 @@ func (dsl *DataResyncDSL) Interface(val *intf.Interface) vppclient.DataResyncDSL
 // ACL adds Access Control List to the RESYNC request.
 func (dsl *DataResyncDSL) ACL(val *acl.ACL) vppclient.DataResyncDSL {
 	key := acl.Key(val.Name)
+	dsl.txn.Put(key, val)
+	dsl.txnKeys = append(dsl.txnKeys, key)
+
+	return dsl
+}
+
+// ACL adds Access Control List to the RESYNC request.
+func (dsl *DataResyncDSL) ABF(val *abf.ABF) vppclient.DataResyncDSL {
+	key := acl.Key(val.Index)
 	dsl.txn.Put(key, val)
 	dsl.txnKeys = append(dsl.txnKeys, key)
 

@@ -20,6 +20,7 @@ import (
 	"github.com/ligato/cn-infra/db/keyval"
 	"github.com/ligato/vpp-agent/pkg/models"
 
+	abf "github.com/ligato/vpp-agent/api/models/vpp/abf"
 	acl "github.com/ligato/vpp-agent/api/models/vpp/acl"
 	intf "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	ipsec "github.com/ligato/vpp-agent/api/models/vpp/ipsec"
@@ -81,6 +82,12 @@ func (dsl *PutDSL) Interface(val *intf.Interface) vppclient.PutDSL {
 // ACL adds a request to create or update VPP Access Control List.
 func (dsl *PutDSL) ACL(val *acl.ACL) vppclient.PutDSL {
 	dsl.parent.txn.Put(acl.Key(val.Name), val)
+	return dsl
+}
+
+// ABF adds a request to create or update VPP ACL-based forwarding
+func (dsl *PutDSL) ABF(val *abf.ABF) vppclient.PutDSL {
+	dsl.parent.txn.Put(abf.Key(val.Index), val)
 	return dsl
 }
 
@@ -187,6 +194,12 @@ func (dsl *DeleteDSL) Interface(interfaceName string) vppclient.DeleteDSL {
 // ACL adds a request to delete an existing VPP Access Control List.
 func (dsl *DeleteDSL) ACL(aclName string) vppclient.DeleteDSL {
 	dsl.parent.txn.Delete(acl.Key(aclName))
+	return dsl
+}
+
+// ABF adds a request to delete and existing VPP ACL-based forwarding.
+func (dsl *DeleteDSL) ABF(abfIndex string) vppclient.DeleteDSL {
+	dsl.parent.txn.Delete(abf.Key(abfIndex))
 	return dsl
 }
 
