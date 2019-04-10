@@ -168,14 +168,8 @@ func (d *ABFDescriptor) Create(key string, abfData *abf.ABF) (*abfidx.ABFMetadat
 
 // Delete removes ABF policy
 func (d *ABFDescriptor) Delete(key string, abfData *abf.ABF, metadata *abfidx.ABFMetadata) error {
-	// get ACL index
-	aclData, exists := d.aclIndex.LookupByName(abfData.AclName)
-	if !exists {
-		err := errors.Errorf("failed to obtain metadata for ACL %s", abfData.AclName)
-		d.log.Error(err)
-	}
-
-	return d.abfHandler.DeleteAbfPolicy(metadata.Index, aclData.Index, abfData.ForwardingPaths)
+	// ACL ID is not required
+	return d.abfHandler.DeleteAbfPolicy(metadata.Index, 0, abfData.ForwardingPaths)
 }
 
 // UpdateWithRecreate is always set to true since there is no binary API to specialy handle a part
@@ -217,7 +211,7 @@ func (d *ABFDescriptor) IsRetriableFailure(err error) bool {
 func (d *ABFDescriptor) DerivedValues(key string, value *abf.ABF) (derived []api.KeyValuePair) {
 	for _, attachedIf := range value.GetAttachedInterfaces() {
 		derived = append(derived, api.KeyValuePair{
-			Key:   abf.ToABFInterfaceKey(value.Index, attachedIf.InputInterface),
+			Key:   abf.ToInterfaceKey(value.Index, attachedIf.InputInterface),
 			Value: &prototypes.Empty{},
 		})
 	}

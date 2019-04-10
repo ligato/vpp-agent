@@ -33,7 +33,7 @@ func init() {
 			return &ABFVppHandler{
 				callsChannel: ch,
 				dumpChannel:  ch,
-				aclIndexes: aclIndexes,
+				aclIndexes:   aclIndexes,
 				ifIndexes:    ifIndexes,
 			}
 		},
@@ -46,4 +46,9 @@ type ABFVppHandler struct {
 	dumpChannel  govppapi.Channel
 	aclIndexes   aclidx.ACLMetadataIndex
 	ifIndexes    ifaceidx.IfaceMetadataIndex
+}
+
+// NewABFVppHandler returns new ABFVppHandler.
+func NewABFVppHandler(calls, dump govppapi.Channel, aclIdx aclidx.ACLMetadataIndex, ifIdx ifaceidx.IfaceMetadataIndex) *ABFVppHandler {
+	return &ABFVppHandler{calls, dump, aclIdx, ifIdx}
 }

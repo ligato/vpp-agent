@@ -67,9 +67,9 @@ func (ctl *VppAgentCtlImpl) PutABF() error {
 }
 
 func (ctl *VppAgentCtlImpl) DeleteABF() error {
-	abfKey := abf.Key("aclip1")
+	abfKey := abf.Key("1")
 
-	ctl.Log.Infof("Deleted acl: %v", abfKey)
+	ctl.Log.Infof("Deleted ABF: %v", abfKey)
 	_, err := ctl.broker.Delete(abfKey)
 	return err
 }

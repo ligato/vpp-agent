@@ -69,7 +69,7 @@ func (d *ABFToInterfaceDescriptor) GetDescriptor() *api.KVDescriptor {
 
 // IsABFInterfaceKey returns true if the key is identifying ABF policy interface (derived value)
 func (d *ABFToInterfaceDescriptor) IsABFInterfaceKey(key string) bool {
-	_, _, isABFToInterfaceKey := vpp_abf.ParseABFToInterfaceKey(key)
+	_, _, isABFToInterfaceKey := vpp_abf.ParseToInterfaceKey(key)
 	return isABFToInterfaceKey
 }
 
@@ -107,7 +107,7 @@ func (d *ABFToInterfaceDescriptor) Delete(key string, emptyVal proto.Message, me
 
 // Dependencies lists the interface as the only dependency for the binding.
 func (d *ABFToInterfaceDescriptor) Dependencies(key string, emptyVal proto.Message) []api.Dependency {
-	_, ifName, _ := vpp_abf.ParseABFToInterfaceKey(key)
+	_, ifName, _ := vpp_abf.ParseToInterfaceKey(key)
 	return []api.Dependency{
 		{
 			Label: interfaceDep,
@@ -119,7 +119,7 @@ func (d *ABFToInterfaceDescriptor) Dependencies(key string, emptyVal proto.Messa
 // returns a bunch of values needed to attach/detach interface to/from ABF
 func (d *ABFToInterfaceDescriptor) process(key string) (isIPv6 bool, abfIdx, ifIdx, priority uint32, err error) {
 	// parse ABF and interface name
-	abfIndex, ifName, isValid := vpp_abf.ParseABFToInterfaceKey(key)
+	abfIndex, ifName, isValid := vpp_abf.ParseToInterfaceKey(key)
 	if !isValid {
 		err = fmt.Errorf("ABF to interface key %s is not valid", key)
 		return

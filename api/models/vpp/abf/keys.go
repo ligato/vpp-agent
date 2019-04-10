@@ -34,6 +34,9 @@ var (
 // Key returns the prefix used in the ETCD to store VPP ACL-based forwarding
 // config of a particular ABF in selected vpp instance.
 func Key(index string) string {
+	if index == "" {
+		index = InvalidKeyPart
+	}
 	return models.Key(&ABF{
 		Index: index,
 	})
@@ -50,7 +53,7 @@ const (
 )
 
 // ToABFInterfaceKey returns key for ABF-to-interface
-func ToABFInterfaceKey(abf, iface string) string {
+func ToInterfaceKey(abf, iface string) string {
 	if abf == "" {
 		abf = InvalidKeyPart
 	}
@@ -64,7 +67,7 @@ func ToABFInterfaceKey(abf, iface string) string {
 }
 
 // ParseABFToInterfaceKey parses ABF-to-interface key
-func ParseABFToInterfaceKey(key string) (abf, iface string, isABFToInterface bool) {
+func ParseToInterfaceKey(key string) (abf, iface string, isABFToInterface bool) {
 	parts := strings.Split(key, "/")
 	if len(parts) >= 5 &&
 		parts[0] == "vpp" && parts[1] == "abf" && parts[3] == "interface" {

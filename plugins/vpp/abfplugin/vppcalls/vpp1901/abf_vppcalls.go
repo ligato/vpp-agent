@@ -106,6 +106,7 @@ func (h *ABFVppHandler) abfAddDelPolicy(policyID, aclID uint32, abfPaths []*vpp_
 			PolicyID: policyID,
 			ACLIndex: aclID,
 			Paths:    h.toFibPaths(abfPaths),
+			NPaths:   uint8(len(abfPaths)),
 		},
 	}
 	reply := &abf.AbfPolicyAddDelReply{}
@@ -133,6 +134,14 @@ func (h *ABFVppHandler) toFibPaths(abfPaths []*vpp_abf.ABF_ForwardingPath) (fibP
 			continue
 		}
 
+		// next hop IP
+		nextHop := net.ParseIP(abfPath.NextHopIp)
+		if nextHop.To4() == nil {
+			nextHop = nextHop.To16()
+		} else {
+			nextHop = nextHop.To4()
+		}
+
 		fibPath := abf.FibPath{
 			SwIfIndex:         ifData.SwIfIndex,
 			TableID:           abfPath.Vrf,
@@ -149,7 +158,7 @@ func (h *ABFVppHandler) toFibPaths(abfPaths []*vpp_abf.ABF_ForwardingPath) (fibP
 			IsSourceLookup:    boolToUint(abfPath.SourceLookup),
 			IsInterfaceRx:     boolToUint(abfPath.InterfaceRx),
 			Afi:               uint8(abfPath.Afi),
-			NextHop:           net.ParseIP(abfPath.NextHopIp),
+			NextHop:           nextHop,
 			NextHopID:         abfPath.NextHopId,
 			RpfID:             abfPath.RpfId,
 			ViaLabel:          abfPath.ViaLabel,
