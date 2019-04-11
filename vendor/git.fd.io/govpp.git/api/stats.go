@@ -17,8 +17,7 @@ type NodeStats struct {
 // NodeCounters represents node counters.
 type NodeCounters struct {
 	NodeIndex uint32
-	// TODO: node name is not currently retrievable via stats API (will be most likely added in 19.04)
-	//NodeName string
+	NodeName  string // requires VPP 19.04+
 
 	Clocks   uint64
 	Vectors  uint64
@@ -34,8 +33,7 @@ type InterfaceStats struct {
 // InterfaceCounters represents interface counters.
 type InterfaceCounters struct {
 	InterfaceIndex uint32
-	// TODO: interface name is not currently retrievable via stats API (will be most likely added in 19.04)
-	//InterfaceName string
+	InterfaceName  string // requires VPP 19.04+
 
 	RxPackets uint64
 	RxBytes   uint64

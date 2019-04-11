@@ -40,7 +40,7 @@ govpp_stat_disconnect()
 }
 
 static uint32_t*
-govpp_stat_segment_ls(uint8_t ** pattern)
+govpp_stat_segment_ls(uint8_t **pattern)
 {
 	return stat_segment_ls(pattern);
 }
@@ -133,6 +133,18 @@ static uint64_t
 govpp_stat_segment_data_get_combined_counter_index_bytes(stat_segment_data_t *data, int index, int index2)
 {
 	return data->combined_counter_vec[index][index2].bytes;
+}
+
+static uint8_t**
+govpp_stat_segment_data_get_name_vector(stat_segment_data_t *data)
+{
+	return data->name_vector;
+}
+
+static char*
+govpp_stat_segment_data_get_name_vector_index(stat_segment_data_t *data, int index)
+{
+	return data->name_vector[index];
 }
 
 static void
@@ -268,8 +280,20 @@ func (c *statClient) DumpStats(patterns ...string) (stats []*adapter.StatEntry, 
 			}
 			stat.Data = adapter.CombinedCounterStat(vector)
 
+		case adapter.NameVector:
+			length := int(C.govpp_stat_segment_vec_len(unsafe.Pointer(C.govpp_stat_segment_data_get_name_vector(&v))))
+			var vector []adapter.Name
+			for k := 0; k < length; k++ {
+				s := C.govpp_stat_segment_data_get_name_vector_index(&v, C.int(k))
+				if s == nil {
+					continue
+				}
+				vector = append(vector, adapter.Name(C.GoString(s)))
+			}
+			stat.Data = adapter.NameStat(vector)
+
 		default:
-			fmt.Fprintf(os.Stderr, "invalid stat type: %v (%d)", typ, typ)
+			fmt.Fprintf(os.Stderr, "invalid stat type: %v (%v)\n", typ, name)
 			continue
 
 		}

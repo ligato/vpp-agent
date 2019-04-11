@@ -1,6 +1,7 @@
 package core
 
 import (
+	"fmt"
 	"strings"
 	"sync/atomic"
 
@@ -19,12 +20,14 @@ const (
 	SystemStats_Heartbeat      = SystemStatsPrefix + "heartbeat"
 
 	NodeStatsPrefix    = "/sys/node/"
+	NodeStats_Names    = NodeStatsPrefix + "names"
 	NodeStats_Clocks   = NodeStatsPrefix + "clocks"
 	NodeStats_Vectors  = NodeStatsPrefix + "vectors"
 	NodeStats_Calls    = NodeStatsPrefix + "calls"
 	NodeStats_Suspends = NodeStatsPrefix + "suspends"
 
 	InterfaceStatsPrefix         = "/if/"
+	InterfaceStats_Names         = InterfaceStatsPrefix + "names"
 	InterfaceStats_Drops         = InterfaceStatsPrefix + "drops"
 	InterfaceStats_Punt          = InterfaceStatsPrefix + "punt"
 	InterfaceStats_IP4           = InterfaceStatsPrefix + "ip4"
@@ -42,7 +45,8 @@ const (
 	InterfaceStats_TxMulticast   = InterfaceStatsPrefix + "tx-multicast"
 	InterfaceStats_TxBroadcast   = InterfaceStatsPrefix + "tx-broadcast"
 
-	NetworkStatsPrefix     = "/net/"
+	NetworkStatsPrefix = "/net/"
+	// TODO: network stats
 	NetworkStats_RouteTo   = NetworkStatsPrefix + "route/to"
 	NetworkStats_RouteVia  = NetworkStatsPrefix + "route/via"
 	NetworkStats_MRoute    = NetworkStatsPrefix + "mroute"
@@ -200,6 +204,20 @@ func (c *StatsConnection) GetNodeStats() (*api.NodeStats, error) {
 
 	for _, stat := range stats {
 		switch stat.Name {
+		case NodeStats_Names:
+			if names, ok := stat.Data.(adapter.NameStat); !ok {
+				return nil, fmt.Errorf("invalid stat type for %s", stat.Name)
+			} else {
+				if nodeStats.Nodes == nil {
+					nodeStats.Nodes = make([]api.NodeCounters, len(names))
+					for i := range names {
+						nodeStats.Nodes[i].NodeIndex = uint32(i)
+					}
+				}
+				for i, name := range names {
+					nodeStats.Nodes[i].NodeName = string(name)
+				}
+			}
 		case NodeStats_Clocks:
 			setPerNode(reduceSimpleCounterStat(stat.Data), func(c *api.NodeCounters, v uint64) {
 				c.Clocks = v
@@ -230,6 +248,7 @@ func (c *StatsConnection) GetInterfaceStats() (*api.InterfaceStats, error) {
 	}
 
 	ifStats := &api.InterfaceStats{}
+
 	var setPerIf = func(perIf []uint64, fn func(c *api.InterfaceCounters, v uint64)) {
 		if ifStats.Interfaces == nil {
 			ifStats.Interfaces = make([]api.InterfaceCounters, len(perIf))
@@ -246,6 +265,20 @@ func (c *StatsConnection) GetInterfaceStats() (*api.InterfaceStats, error) {
 
 	for _, stat := range stats {
 		switch stat.Name {
+		case InterfaceStats_Names:
+			if names, ok := stat.Data.(adapter.NameStat); !ok {
+				return nil, fmt.Errorf("invalid stat type for %s", stat.Name)
+			} else {
+				if ifStats.Interfaces == nil {
+					ifStats.Interfaces = make([]api.InterfaceCounters, len(names))
+					for i := range names {
+						ifStats.Interfaces[i].InterfaceIndex = uint32(i)
+					}
+				}
+				for i, name := range names {
+					ifStats.Interfaces[i].InterfaceName = string(name)
+				}
+			}
 		case InterfaceStats_Drops:
 			setPerIf(reduceSimpleCounterStat(stat.Data), func(c *api.InterfaceCounters, v uint64) {
 				c.Drops = v

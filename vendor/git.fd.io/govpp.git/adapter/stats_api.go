@@ -39,10 +39,11 @@ type StatType int
 
 const (
 	_                     StatType = 0
-	ScalarIndex                    = 1
-	SimpleCounterVector            = 2
-	CombinedCounterVector          = 3
-	ErrorIndex                     = 4
+	ScalarIndex           StatType = 1
+	SimpleCounterVector   StatType = 2
+	CombinedCounterVector StatType = 3
+	ErrorIndex            StatType = 4
+	NameVector            StatType = 5
 )
 
 func (d StatType) String() string {
@@ -55,6 +56,8 @@ func (d StatType) String() string {
 		return "CombinedCounterVector"
 	case ErrorIndex:
 		return "ErrorIndex"
+	case NameVector:
+		return "NameVector"
 	}
 	return fmt.Sprintf("UnknownStatType(%d)", d)
 }
@@ -76,6 +79,9 @@ type CombinedCounter struct {
 	Bytes   Counter
 }
 
+// Name represents string value stored under name vector.
+type Name string
+
 // ScalarStat represents stat for ScalarIndex.
 type ScalarStat float64
 
@@ -92,6 +98,9 @@ type SimpleCounterStat [][]Counter
 // Values should be aggregated per interface/node for every worker.
 type CombinedCounterStat [][]CombinedCounter
 
+// NameStat represents stat for NameVector.
+type NameStat []Name
+
 // Data represents some type of stat which is usually defined by StatType.
 type Stat interface {
 	// isStat is unexported to limit implementations of Data interface to this package,
@@ -102,3 +111,4 @@ func (ScalarStat) isStat()          {}
 func (ErrorStat) isStat()           {}
 func (SimpleCounterStat) isStat()   {}
 func (CombinedCounterStat) isStat() {}
+func (NameStat) isStat()            {}
