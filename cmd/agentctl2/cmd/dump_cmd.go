@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/ligato/vpp-agent/cmd/agentctl2/restapi"
 	"github.com/ligato/vpp-agent/plugins/restapi/resturl"
@@ -334,163 +335,163 @@ func init() {
 func linuxInterfaceDumpFunction(cmd *cobra.Command, args []string) {
 	msg := restapi.GetMsg(globalFlags.Endpoints, resturl.LinuxInterface)
 
-	fmt.Print(msg)
+	fmt.Fprint(os.Stdout, msg)
 }
 
 func linuxRoutesDumpFunction(cmd *cobra.Command, args []string) {
 	msg := restapi.GetMsg(globalFlags.Endpoints, resturl.LinuxRoutes)
 
-	fmt.Print(msg)
+	fmt.Fprint(os.Stdout, msg)
 }
 
 func linuxArpsDumpFunction(cmd *cobra.Command, args []string) {
 	msg := restapi.GetMsg(globalFlags.Endpoints, resturl.LinuxArps)
 
-	fmt.Print(msg)
+	fmt.Fprint(os.Stdout, msg)
 }
 
 func aclIPDumpFunction(cmd *cobra.Command, args []string) {
 	msg := restapi.GetMsg(globalFlags.Endpoints, resturl.ACLIP)
 
-	fmt.Print(msg)
+	fmt.Fprint(os.Stdout, msg)
 }
 
 func aclMACIPDumpFunction(cmd *cobra.Command, args []string) {
 	msg := restapi.GetMsg(globalFlags.Endpoints, resturl.ACLMACIP)
 
-	fmt.Print(msg)
+	fmt.Fprint(os.Stdout, msg)
 }
 
 func interfaceDumpFunction(cmd *cobra.Command, args []string) {
 	msg := restapi.GetMsg(globalFlags.Endpoints, resturl.Interface)
 
-	fmt.Print(msg)
+	fmt.Fprint(os.Stdout, msg)
 }
 
 func loopbackDumpFunction(cmd *cobra.Command, args []string) {
 	msg := restapi.GetMsg(globalFlags.Endpoints, resturl.Loopback)
 
-	fmt.Print(msg)
+	fmt.Fprint(os.Stdout, msg)
 }
 
 func ethernetDumpFunction(cmd *cobra.Command, args []string) {
 	msg := restapi.GetMsg(globalFlags.Endpoints, resturl.Ethernet)
 
-	fmt.Print(msg)
+	fmt.Fprint(os.Stdout, msg)
 }
 
 func memifDumpFunction(cmd *cobra.Command, args []string) {
 	msg := restapi.GetMsg(globalFlags.Endpoints, resturl.Memif)
 
-	fmt.Print(msg)
+	fmt.Fprint(os.Stdout, msg)
 }
 
 func tapDumpFunction(cmd *cobra.Command, args []string) {
 	msg := restapi.GetMsg(globalFlags.Endpoints, resturl.Tap)
 
-	fmt.Print(msg)
+	fmt.Fprint(os.Stdout, msg)
 }
 
 func afPacketDumpFunction(cmd *cobra.Command, args []string) {
 	msg := restapi.GetMsg(globalFlags.Endpoints, resturl.AfPacket)
 
-	fmt.Print(msg)
+	fmt.Fprint(os.Stdout, msg)
 }
 
 func vxlanDumpFunction(cmd *cobra.Command, args []string) {
 	msg := restapi.GetMsg(globalFlags.Endpoints, resturl.VxLan)
 
-	fmt.Print(msg)
+	fmt.Fprint(os.Stdout, msg)
 }
 
 func natGlobalDumpFunction(cmd *cobra.Command, args []string) {
 	msg := restapi.GetMsg(globalFlags.Endpoints, resturl.NatGlobal)
 
-	fmt.Print(msg)
+	fmt.Fprint(os.Stdout, msg)
 }
 
 func dnatDumpFunction(cmd *cobra.Command, args []string) {
 	msg := restapi.GetMsg(globalFlags.Endpoints, resturl.NatDNat)
 
-	fmt.Print(msg)
+	fmt.Fprint(os.Stdout, msg)
 }
 
 func bridgeDomainDumpFunction(cmd *cobra.Command, args []string) {
 	msg := restapi.GetMsg(globalFlags.Endpoints, resturl.Bd)
 
-	fmt.Print(msg)
+	fmt.Fprint(os.Stdout, msg)
 }
 
 func fibDumpFunction(cmd *cobra.Command, args []string) {
 	msg := restapi.GetMsg(globalFlags.Endpoints, resturl.Fib)
 
-	fmt.Print(msg)
+	fmt.Fprint(os.Stdout, msg)
 }
 
 func xcDumpFunction(cmd *cobra.Command, args []string) {
 	msg := restapi.GetMsg(globalFlags.Endpoints, resturl.Xc)
 
-	fmt.Print(msg)
+	fmt.Fprint(os.Stdout, msg)
 }
 
 func routeDumpFunction(cmd *cobra.Command, args []string) {
 	msg := restapi.GetMsg(globalFlags.Endpoints, resturl.Routes)
 
-	fmt.Print(msg)
+	fmt.Fprint(os.Stdout, msg)
 }
 
 func arpDumpFunction(cmd *cobra.Command, args []string) {
 	msg := restapi.GetMsg(globalFlags.Endpoints, resturl.Arps)
 
-	fmt.Print(msg)
+	fmt.Fprint(os.Stdout, msg)
 }
 
 func parpifsDumpFunction(cmd *cobra.Command, args []string) {
 	msg := restapi.GetMsg(globalFlags.Endpoints, resturl.PArpIfs)
 
-	fmt.Print(msg)
+	fmt.Fprint(os.Stdout, msg)
 }
 
 func pArpRngsDumpFunction(cmd *cobra.Command, args []string) {
 	msg := restapi.GetMsg(globalFlags.Endpoints, resturl.PArpRngs)
 
-	fmt.Print(msg)
+	fmt.Fprint(os.Stdout, msg)
 }
 
 func commandDumpFunction(cmd *cobra.Command, args []string) {
 	msg := restapi.GetMsg(globalFlags.Endpoints, resturl.Command)
 
-	fmt.Print(msg)
+	fmt.Fprint(os.Stdout, msg)
 }
 
 func telemetryDumpFunction(cmd *cobra.Command, args []string) {
 	msg := restapi.GetMsg(globalFlags.Endpoints, resturl.Telemetry)
 
-	fmt.Print(msg)
+	fmt.Fprint(os.Stdout, msg)
 }
 
 func telemetryMemoryDumpFunction(cmd *cobra.Command, args []string) {
 	msg := restapi.GetMsg(globalFlags.Endpoints, resturl.TMemory)
 
-	fmt.Print(msg)
+	fmt.Fprint(os.Stdout, msg)
 }
 func telemetryRuntimeDebugFunction(cmd *cobra.Command, args []string) {
 	msg := restapi.GetMsg(globalFlags.Endpoints, resturl.TRuntime)
 
-	fmt.Print(msg)
+	fmt.Fprint(os.Stdout, msg)
 }
 func telemetryNodeCountDumpFunction(cmd *cobra.Command, args []string) {
 	msg := restapi.GetMsg(globalFlags.Endpoints, resturl.TNodeCount)
 
-	fmt.Print(msg)
+	fmt.Fprint(os.Stdout, msg)
 }
 func traceDumpFunction(cmd *cobra.Command, args []string) {
 	msg := restapi.GetMsg(globalFlags.Endpoints, resturl.Tracer)
 
-	fmt.Print(msg)
+	fmt.Fprint(os.Stdout, msg)
 }
 func indexDumpFunction(cmd *cobra.Command, args []string) {
 	msg := restapi.GetMsg(globalFlags.Endpoints, resturl.Index)
 
-	fmt.Print(msg)
+	fmt.Fprint(os.Stdout, msg)
 }

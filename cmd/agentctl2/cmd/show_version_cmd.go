@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/spf13/cobra"
 )
@@ -22,5 +23,5 @@ func init() {
 }
 
 func versionFunc(cmd *cobra.Command, args []string) {
-	fmt.Printf("agentctl version 0.1\n")
+	fmt.Fprint(os.Stdout, "agentctl version 0.1\n")
 }

@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"fmt"
 	"github.com/ligato/vpp-agent/cmd/agentctl2/utils"
 	"github.com/spf13/cobra"
 
@@ -28,7 +27,7 @@ func delFunction(cmd *cobra.Command, args []string) {
 
 	key := args[0]
 
-	fmt.Printf("key: %s\n", key)
+	//fmt.Printf("key: %s\n", key)
 
 	db, err := utils.GetDbForAllAgents(globalFlags.Endpoints)
 	if err != nil {

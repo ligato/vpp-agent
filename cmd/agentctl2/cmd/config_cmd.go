@@ -2,6 +2,8 @@ package cmd
 
 import (
 	"fmt"
+	"os"
+
 	"github.com/ligato/cn-infra/servicelabel"
 	"github.com/ligato/vpp-agent/cmd/agentctl2/utils"
 	"github.com/spf13/cobra"
@@ -43,7 +45,7 @@ func confFunction(cmd *cobra.Command, args []string) {
 	ed := utils.NewEtcdDump()
 	for {
 		if key, _, done := keyIter.GetNext(); !done {
-			fmt.Printf("Key: '%s'\n", key)
+			//fmt.Printf("Key: '%s'\n", key)
 			if _, err = ed.ReadDataFromDb(db, key); err != nil {
 				utils.ExitWithError(utils.ExitError, err)
 			}
@@ -55,12 +57,12 @@ func confFunction(cmd *cobra.Command, args []string) {
 	if len(ed) > 0 {
 		buffer, err := ed.PrintTest(showConf)
 		if err == nil {
-			fmt.Print(buffer.String())
+			fmt.Fprintf(os.Stdout, buffer.String())
 		} else {
-			fmt.Printf("Error: %v", err)
+			fmt.Fprintf(os.Stderr, "Error: %v", err)
 		}
 	} else {
-		fmt.Print("No data found.\n")
+		fmt.Fprintf(os.Stderr, "No data found.\n")
 	}
 
 }

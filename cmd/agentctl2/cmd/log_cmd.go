@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/ligato/vpp-agent/cmd/agentctl2/utils"
@@ -53,14 +54,14 @@ func logFunction(cmd *cobra.Command, args []string) {
 	msg := restapi.GetMsg(globalFlags.Endpoints, "/log/list")
 
 	if verbose {
-		fmt.Printf("%s\n", msg)
+		fmt.Fprintf(os.Stdout, "%s\n", msg)
 		return
 	}
 
 	data := utils.ConvertToLogList(msg)
 
 	if 0 == len(data) {
-		fmt.Print("No data found.\n")
+		fmt.Fprintf(os.Stdout, "No data found.\n")
 		return
 	}
 
@@ -80,7 +81,7 @@ func logFunction(cmd *cobra.Command, args []string) {
 	}
 
 	if 0 == len(tmpData) {
-		fmt.Print("No data found.\n")
+		fmt.Fprintf(os.Stdout, "No data found.\n")
 		return
 	}
 
@@ -90,9 +91,9 @@ func logFunction(cmd *cobra.Command, args []string) {
 func printLogList(data utils.LogList) {
 	buffer, err := data.PrintLogList()
 	if nil == err {
-		fmt.Print(buffer.String())
+		fmt.Fprintf(os.Stdout, buffer.String())
 	} else {
-		fmt.Printf("Error: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 	}
 }
 

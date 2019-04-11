@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
 
 	yaml2 "github.com/ghodss/yaml"
 
@@ -260,6 +261,8 @@ func generateFunction(gtype cmd_generator.CommandType) {
 
 }
 
+const prefix string = "/vnf-agent/vpp1/"
+
 func printJSON(msg proto.Message) {
 
 	js, err := json.MarshalIndent(msg, "", "  ")
@@ -270,7 +273,7 @@ func printJSON(msg proto.Message) {
 			errors.New("Failed generate json, error: "+err.Error()))
 	}
 
-	fmt.Printf("%s\n%s\n", key, js)
+	fmt.Fprintf(os.Stdout, "%s '%s'\n", prefix+key, js)
 }
 
 func printYaml(msg proto.Message) {
@@ -289,12 +292,12 @@ func printYaml(msg proto.Message) {
 			errors.New("Failed generate yaml, error: "+err.Error()))
 	}
 
-	fmt.Printf("%s\n%s\n", key, ym)
+	fmt.Fprintf(os.Stdout, "%s '%s'\n", prefix+key, ym)
 }
 
 func printProto(msg proto.Message) {
 	text := proto.MarshalTextString(msg)
 	key := models.Key(msg)
 
-	fmt.Printf("%s\n%s\n", key, text)
+	fmt.Fprintf(os.Stdout, "%s '%s'\n", prefix+key, text)
 }

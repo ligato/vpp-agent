@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/ligato/vpp-agent/cmd/agentctl2/restapi"
 	"github.com/spf13/cobra"
@@ -32,10 +33,10 @@ func cliFunction(cmd *cobra.Command, args []string) {
 
 	msg := fmt.Sprintf("{\"vppclicommand\":\"%v\"}", cli)
 
-	fmt.Printf("%s\n", msg)
+	fmt.Fprintf(os.Stdout, "%s\n", msg)
 
 	resp := restapi.PostMsg(globalFlags.Endpoints, "/vpp/command", msg)
 
 	//TODO: Need format
-	fmt.Printf("%s\n", resp)
+	fmt.Fprintf(os.Stdout, "%s\n", resp)
 }
