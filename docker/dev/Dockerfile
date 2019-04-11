@@ -4,9 +4,9 @@ FROM golang as verify-stage
 
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
-    patch python-pip \
+    patch python3-pip python3 \
  && rm -rf /var/lib/apt/lists/* \
- && pip install ply
+ && pip3 install ply
 
 ARG VPP_REPO_URL
 ARG VPP_COMMIT
