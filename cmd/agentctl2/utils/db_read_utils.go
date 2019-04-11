@@ -291,38 +291,38 @@ func (ed EtcdDump) ReadDataFromDb(db keyval.ProtoBroker, key string) (found bool
 	}
 
 	switch dataType {
-	case ACLPath:
+	case acl.ModelACL.KeyPrefix():
 		ed[label], err = readACLConfigFromDb(db, vd, key, params)
-	case InterfacePath:
+	case interfaces.ModelInterface.KeyPrefix():
 		ed[label], err = readInterfaceConfigFromDb(db, vd, key, params)
-	case BridgeDomainPath:
+	case l2.ModelBridgeDomain.KeyPrefix():
 		ed[label], err = readBridgeConfigFromDb(db, vd, key, params)
-	case FibTablePath:
+	case l2.ModelFIBEntry.KeyPrefix():
 		ed[label], err = readFibTableConfigFromDb(db, vd, key, params)
-	case XConnectPath:
+	case l2.ModelXConnectPair.KeyPrefix():
 		ed[label], err = readXConnectConfigFromDb(db, vd, key, params)
-	case ARPPath:
+	case l3.ModelARPEntry.KeyPrefix():
 		ed[label], err = readARPConfigFromDb(db, vd, key, params)
-	case RoutePath:
+	case l3.ModelRoute.KeyPrefix():
 		ed[label], err = readStatiRouteConfigFromDb(db, vd, key, params)
-	case ProxyARPPath:
+	case l3.ModelProxyARP.KeyPrefix():
 		ed[label], err = readProxyARPConfigFromDb(db, vd, key)
-	case IPScanneightPath:
+	case l3.ModelIPScanNeighbor.KeyPrefix():
 		ed[label], err = readIPScanNeightConfigFromDb(db, vd, key)
 		//FIXME: Error in key
 	//case NATPath:
 	//	ed[label], err = readNATConfigFromDb(db, vd, key)
 	//case DNATPath:
 	//	ed[label], err = readDNATConfigFromDb(db, vd, key, params)
-	case IPSecPolicyPath:
+	case ipsec.ModelSecurityPolicyDatabase.KeyPrefix():
 		ed[label], err = readIPSecPolicyConfigFromDb(db, vd, key, params)
-	case IPSecAssociate:
+	case ipsec.ModelSecurityAssociation.KeyPrefix():
 		ed[label], err = readIPSecAssociateConfigFromDb(db, vd, key, params)
-	case lInterfacePath:
+	case linterface.ModelInterface.KeyPrefix():
 		ed[label], err = readLinuxInterfaceConfigFromDb(db, vd, key, params)
-	case lARPPath:
+	case ll3.ModelARPEntry.KeyPrefix():
 		ed[label], err = readLinuxARPConfigFromDb(db, vd, key, params)
-	case lRoutePath:
+	case ll3.ModelRoute.KeyPrefix():
 		ed[label], err = readLinuxRouteConfigFromDb(db, vd, key, params)
 	}
 

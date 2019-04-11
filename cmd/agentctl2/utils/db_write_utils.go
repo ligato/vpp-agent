@@ -23,37 +23,37 @@ func WriteData(db keyval.ProtoTxn, key string, json string) {
 	_, dataType, _ := ParseKey(key)
 
 	switch dataType {
-	case ACLPath:
+	case acl.ModelACL.KeyPrefix():
 		writeACLConfigToDb(db, key, json)
-	case InterfacePath:
+	case interfaces.ModelInterface.KeyPrefix():
 		writeInterfaceConfigToDb(db, key, json)
-	case BridgeDomainPath:
+	case l2.ModelBridgeDomain.KeyPrefix():
 		writeBridgeDomainConfigToDb(db, key, json)
-	case FibTablePath:
+	case l2.ModelFIBEntry.KeyPrefix():
 		writeFibTableConfigToDb(db, key, json)
-	case XConnectPath:
+	case l2.ModelXConnectPair.KeyPrefix():
 		writeXConnectConfigToDb(db, key, json)
-	case ARPPath:
+	case l3.ModelARPEntry.KeyPrefix():
 		writeARPConfigToDb(db, key, json)
-	case RoutePath:
+	case l3.ModelRoute.KeyPrefix():
 		writeRouteConfigToDb(db, key, json)
-	case ProxyARPPath:
+	case l3.ModelProxyARP.KeyPrefix():
 		writeProxyConfigToDb(db, key, json)
-	case IPScanneightPath:
+	case l3.ModelIPScanNeighbor.KeyPrefix():
 		writeIPScanneConfigToDb(db, key, json)
-	case NATPath:
+	case nat.ModelNat44Global.KeyPrefix():
 		writeNATConfigToDb(db, key, json)
-	case DNATPath:
+	case nat.ModelDNat44.KeyPrefix():
 		writeDNATConfigToDb(db, key, json)
-	case IPSecPolicyPath:
+	case ipsec.ModelSecurityPolicyDatabase.KeyPrefix():
 		writeIPSecPolicyConfigToDb(db, key, json)
-	case IPSecAssociate:
+	case ipsec.ModelSecurityAssociation.KeyPrefix():
 		writeIPSecAssociateConfigToDb(db, key, json)
-	case lInterfacePath:
+	case linterface.ModelInterface.KeyPrefix():
 		writelInterfaceConfigToDb(db, key, json)
-	case lARPPath:
+	case ll3.ModelARPEntry.KeyPrefix():
 		writelARPConfigToDb(db, key, json)
-	case lRoutePath:
+	case ll3.ModelRoute.KeyPrefix():
 		writelRouteConfigToDb(db, key, json)
 	}
 }
