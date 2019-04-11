@@ -15,12 +15,21 @@
 package vpp1904_test
 
 import (
-	"net"
+	"fmt"
 	"testing"
 
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/ip"
+	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls/vpp1904"
 	. "github.com/onsi/gomega"
 )
+
+func ipToAddr(ip string) ip.Address {
+	addr, err := vpp1904.IPToAddress(ip)
+	if err != nil {
+		panic(fmt.Sprintf("invalid IP: %s", ip))
+	}
+	return addr
+}
 
 func TestAddContainerIP(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
@@ -34,9 +43,10 @@ func TestAddContainerIP(t *testing.T) {
 	vppMsg, ok := ctx.MockChannel.Msg.(*ip.IPContainerProxyAddDel)
 	Expect(ok).To(BeTrue())
 	Expect(vppMsg.SwIfIndex).To(BeEquivalentTo(1))
-	Expect(vppMsg.IsIP4).To(BeEquivalentTo(1))
-	Expect(vppMsg.IP).To(BeEquivalentTo(net.ParseIP("10.0.0.1").To4()))
-	Expect(vppMsg.Plen).To(BeEquivalentTo(24))
+	Expect(vppMsg.Pfx).To(BeEquivalentTo(ip.Prefix{
+		Address:       ipToAddr("10.0.0.1"),
+		AddressLength: 24,
+	}))
 	Expect(vppMsg.IsAdd).To(BeEquivalentTo(1))
 }
 
@@ -52,9 +62,10 @@ func TestAddContainerIPv6(t *testing.T) {
 	vppMsg, ok := ctx.MockChannel.Msg.(*ip.IPContainerProxyAddDel)
 	Expect(ok).To(BeTrue())
 	Expect(vppMsg.SwIfIndex).To(BeEquivalentTo(1))
-	Expect(vppMsg.IsIP4).To(BeEquivalentTo(0))
-	Expect(vppMsg.IP).To(BeEquivalentTo(net.ParseIP("2001:db8:0:1:1:1:1:1").To16()))
-	Expect(vppMsg.Plen).To(BeEquivalentTo(128))
+	Expect(vppMsg.Pfx).To(BeEquivalentTo(ip.Prefix{
+		Address:       ipToAddr("2001:db8:0:1:1:1:1:1"),
+		AddressLength: 128,
+	}))
 	Expect(vppMsg.IsAdd).To(BeEquivalentTo(1))
 }
 
@@ -105,9 +116,10 @@ func TestDelContainerIP(t *testing.T) {
 	vppMsg, ok := ctx.MockChannel.Msg.(*ip.IPContainerProxyAddDel)
 	Expect(ok).To(BeTrue())
 	Expect(vppMsg.SwIfIndex).To(BeEquivalentTo(1))
-	Expect(vppMsg.IsIP4).To(BeEquivalentTo(1))
-	Expect(vppMsg.IP).To(BeEquivalentTo(net.ParseIP("10.0.0.1").To4()))
-	Expect(vppMsg.Plen).To(BeEquivalentTo(24))
+	Expect(vppMsg.Pfx).To(BeEquivalentTo(ip.Prefix{
+		Address:       ipToAddr("10.0.0.1"),
+		AddressLength: 24,
+	}))
 	Expect(vppMsg.IsAdd).To(BeEquivalentTo(0))
 }
 
@@ -123,9 +135,10 @@ func TestDelContainerIPv6(t *testing.T) {
 	vppMsg, ok := ctx.MockChannel.Msg.(*ip.IPContainerProxyAddDel)
 	Expect(ok).To(BeTrue())
 	Expect(vppMsg.SwIfIndex).To(BeEquivalentTo(1))
-	Expect(vppMsg.IsIP4).To(BeEquivalentTo(0))
-	Expect(vppMsg.IP).To(BeEquivalentTo(net.ParseIP("2001:db8:0:1:1:1:1:1").To16()))
-	Expect(vppMsg.Plen).To(BeEquivalentTo(128))
+	Expect(vppMsg.Pfx).To(BeEquivalentTo(ip.Prefix{
+		Address:       ipToAddr("2001:db8:0:1:1:1:1:1"),
+		AddressLength: 128,
+	}))
 	Expect(vppMsg.IsAdd).To(BeEquivalentTo(0))
 }
 

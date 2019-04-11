@@ -16,6 +16,7 @@ package vpp1904_test
 
 import (
 	"encoding/hex"
+	"fmt"
 	"testing"
 
 	"github.com/ligato/cn-infra/logging/logrus"
@@ -27,6 +28,14 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/vppcallmock"
 	. "github.com/onsi/gomega"
 )
+
+func ipToAddr(ip string) ipsec.Address {
+	addr, err := vpp1904.IPToAddress(ip)
+	if err != nil {
+		panic(fmt.Sprintf("invalid IP: %s", ip))
+	}
+	return addr
+}
 
 func TestVppAddSPD(t *testing.T) {
 	ctx, ipSecHandler, _ := ipSecTestSetup(t)
@@ -62,7 +71,7 @@ func TestVppAddSPDEntry(t *testing.T) {
 	ctx, ipSecHandler, _ := ipSecTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&ipsec.IpsecSpdAddDelEntryReply{})
+	ctx.MockVpp.MockReply(&ipsec.IpsecSpdEntryAddDelReply{})
 
 	err := ipSecHandler.AddSPDEntry(10, 5, &ipsec2.SecurityPolicyDatabase_PolicyEntry{
 		SaIndex:    "5",
@@ -71,18 +80,20 @@ func TestVppAddSPDEntry(t *testing.T) {
 	})
 
 	Expect(err).ShouldNot(HaveOccurred())
-	Expect(ctx.MockChannel.Msg).To(BeEquivalentTo(&ipsec.IpsecSpdAddDelEntry{
-		IsAdd:              1,
-		SpdID:              10,
-		SaID:               5,
-		Priority:           10,
-		IsOutbound:         1,
-		RemoteAddressStart: []byte{0, 0, 0, 0},
-		RemoteAddressStop:  []byte{255, 255, 255, 255},
-		LocalAddressStart:  []byte{0, 0, 0, 0},
-		LocalAddressStop:   []byte{255, 255, 255, 255},
-		RemotePortStop:     65535,
-		LocalPortStop:      65535,
+	Expect(ctx.MockChannel.Msg).To(BeEquivalentTo(&ipsec.IpsecSpdEntryAddDel{
+		IsAdd: 1,
+		Entry: ipsec.IpsecSpdEntry{
+			SpdID:              10,
+			SaID:               5,
+			Priority:           10,
+			IsOutbound:         1,
+			RemoteAddressStart: ipToAddr("0.0.0.0"),
+			RemoteAddressStop:  ipToAddr("255.255.255.255"),
+			LocalAddressStart:  ipToAddr("0.0.0.0"),
+			LocalAddressStop:   ipToAddr("255.255.255.255"),
+			RemotePortStop:     65535,
+			LocalPortStop:      65535,
+		},
 	}))
 }
 
@@ -90,7 +101,7 @@ func TestVppDelSPDEntry(t *testing.T) {
 	ctx, ipSecHandler, _ := ipSecTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&ipsec.IpsecSpdAddDelEntryReply{})
+	ctx.MockVpp.MockReply(&ipsec.IpsecSpdEntryAddDelReply{})
 
 	err := ipSecHandler.DeleteSPDEntry(10, 2, &ipsec2.SecurityPolicyDatabase_PolicyEntry{
 		SaIndex:    "2",
@@ -99,18 +110,20 @@ func TestVppDelSPDEntry(t *testing.T) {
 	})
 
 	Expect(err).ShouldNot(HaveOccurred())
-	Expect(ctx.MockChannel.Msg).To(BeEquivalentTo(&ipsec.IpsecSpdAddDelEntry{
-		IsAdd:              0,
-		SpdID:              10,
-		SaID:               2,
-		Priority:           5,
-		IsOutbound:         1,
-		RemoteAddressStart: []byte{0, 0, 0, 0},
-		RemoteAddressStop:  []byte{255, 255, 255, 255},
-		LocalAddressStart:  []byte{0, 0, 0, 0},
-		LocalAddressStop:   []byte{255, 255, 255, 255},
-		RemotePortStop:     65535,
-		LocalPortStop:      65535,
+	Expect(ctx.MockChannel.Msg).To(BeEquivalentTo(&ipsec.IpsecSpdEntryAddDel{
+		IsAdd: 0,
+		Entry: ipsec.IpsecSpdEntry{
+			SpdID:              10,
+			SaID:               2,
+			Priority:           5,
+			IsOutbound:         1,
+			RemoteAddressStart: ipToAddr("0.0.0.0"),
+			RemoteAddressStop:  ipToAddr("255.255.255.255"),
+			LocalAddressStart:  ipToAddr("0.0.0.0"),
+			LocalAddressStop:   ipToAddr("255.255.255.255"),
+			RemotePortStop:     65535,
+			LocalPortStop:      65535,
+		},
 	}))
 }
 
@@ -166,7 +179,7 @@ func TestVppAddSA(t *testing.T) {
 	ctx, ipSecHandler, _ := ipSecTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&ipsec.IpsecSadAddDelEntryReply{})
+	ctx.MockVpp.MockReply(&ipsec.IpsecSadEntryAddDelReply{})
 
 	cryptoKey, err := hex.DecodeString("")
 	Expect(err).To(BeNil())
@@ -179,14 +192,21 @@ func TestVppAddSA(t *testing.T) {
 	})
 
 	Expect(err).ShouldNot(HaveOccurred())
-	Expect(ctx.MockChannel.Msg).To(BeEquivalentTo(&ipsec.IpsecSadAddDelEntry{
-		IsAdd:                     1,
-		SadID:                     1,
-		Spi:                       1001,
-		UseExtendedSequenceNumber: 1,
-		UseAntiReplay:             1,
-		CryptoKey:                 cryptoKey,
-		IntegrityKey:              cryptoKey,
+	Expect(ctx.MockChannel.Msg).To(BeEquivalentTo(&ipsec.IpsecSadEntryAddDel{
+		IsAdd: 1,
+		Entry: ipsec.IpsecSadEntry{
+			SadID: 1,
+			Spi:   1001,
+			CryptoKey: ipsec.Key{
+				Length: uint8(len(cryptoKey)),
+				Data:   cryptoKey,
+			},
+			IntegrityKey: ipsec.Key{
+				Length: uint8(len(cryptoKey)),
+				Data:   cryptoKey,
+			},
+			Flags: ipsec.IPSEC_API_SAD_FLAG_USE_ESN | ipsec.IPSEC_API_SAD_FLAG_USE_ANTI_REPLAY,
+		},
 	}))
 }
 
@@ -194,7 +214,7 @@ func TestVppDelSA(t *testing.T) {
 	ctx, ipSecHandler, _ := ipSecTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&ipsec.IpsecSadAddDelEntryReply{})
+	ctx.MockVpp.MockReply(&ipsec.IpsecSadEntryAddDelReply{})
 
 	cryptoKey, err := hex.DecodeString("")
 	Expect(err).To(BeNil())
@@ -207,13 +227,20 @@ func TestVppDelSA(t *testing.T) {
 	})
 
 	Expect(err).ShouldNot(HaveOccurred())
-	Expect(ctx.MockChannel.Msg).To(BeEquivalentTo(&ipsec.IpsecSadAddDelEntry{
-		IsAdd:                     0,
-		SadID:                     1,
-		Spi:                       1001,
-		UseExtendedSequenceNumber: 1,
-		UseAntiReplay:             1,
-		CryptoKey:                 cryptoKey,
-		IntegrityKey:              cryptoKey,
+	Expect(ctx.MockChannel.Msg).To(BeEquivalentTo(&ipsec.IpsecSadEntryAddDel{
+		IsAdd: 0,
+		Entry: ipsec.IpsecSadEntry{
+			SadID: 1,
+			Spi:   1001,
+			CryptoKey: ipsec.Key{
+				Length: uint8(len(cryptoKey)),
+				Data:   cryptoKey,
+			},
+			IntegrityKey: ipsec.Key{
+				Length: uint8(len(cryptoKey)),
+				Data:   cryptoKey,
+			},
+			Flags: ipsec.IPSEC_API_SAD_FLAG_USE_ESN | ipsec.IPSEC_API_SAD_FLAG_USE_ANTI_REPLAY,
+		},
 	}))
 }

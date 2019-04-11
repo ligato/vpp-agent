@@ -40,7 +40,7 @@ func TestAddInterfaceToBridgeDomain(t *testing.T) {
 	Expect(err).To(BeNil())
 	Expect(ctx.MockChannel.Msgs).To(HaveLen(1))
 	msg := ctx.MockChannel.Msgs[0]
-	Expect(msg).To(Equal(&l2ba.SwInterfaceSetL2Bridge{
+	Expect(msg).To(BeEquivalentTo(&l2ba.SwInterfaceSetL2Bridge{
 		RxSwIfIndex: uint32(1),
 		BdID:        1,
 		Shg:         uint8(0),
@@ -117,7 +117,7 @@ func TestDeleteInterfaceFromBridgeDomain(t *testing.T) {
 	Expect(err).To(BeNil())
 	Expect(ctx.MockChannel.Msgs).To(HaveLen(1))
 	msg := ctx.MockChannel.Msgs[0]
-	Expect(msg).To(Equal(&l2ba.SwInterfaceSetL2Bridge{
+	Expect(msg).To(BeEquivalentTo(&l2ba.SwInterfaceSetL2Bridge{
 		RxSwIfIndex: uint32(10),
 		BdID:        4,
 		Shg:         uint8(12),

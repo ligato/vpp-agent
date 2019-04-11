@@ -19,39 +19,9 @@ import (
 
 	ifModel "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/tap"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/tapv2"
 	. "github.com/onsi/gomega"
 )
-
-func TestAddTapInterface(t *testing.T) {
-	ctx, ifHandler := ifTestSetup(t)
-	defer ctx.TeardownTestCtx()
-
-	ctx.MockVpp.MockReply(&tap.TapConnectReply{
-		SwIfIndex: 1,
-	})
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
-
-	swIfIdx, err := ifHandler.AddTapInterface("tapIf", &ifModel.TapLink{
-		Version:    1,
-		HostIfName: "hostIf",
-		RxRingSize: 1,
-		TxRingSize: 1,
-	})
-	Expect(err).To(BeNil())
-	Expect(swIfIdx).To(BeEquivalentTo(1))
-	var msgCheck bool
-	for _, msg := range ctx.MockChannel.Msgs {
-		vppMsg, ok := msg.(*tap.TapConnect)
-		if ok {
-			Expect(vppMsg.UseRandomMac).To(BeEquivalentTo(1))
-			Expect(vppMsg.TapName).To(BeEquivalentTo([]byte("hostIf")))
-			msgCheck = true
-		}
-	}
-	Expect(msgCheck).To(BeTrue())
-}
 
 func TestAddTapInterfaceV2(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
@@ -82,73 +52,6 @@ func TestAddTapInterfaceV2(t *testing.T) {
 	Expect(msgCheck).To(BeTrue())
 }
 
-func TestAddTapInterfaceNoInput(t *testing.T) {
-	ctx, ifHandler := ifTestSetup(t)
-	defer ctx.TeardownTestCtx()
-
-	ctx.MockVpp.MockReply(&tap.TapConnectReply{
-		SwIfIndex: 1,
-	})
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
-
-	_, err := ifHandler.AddTapInterface("tapIf", nil)
-	Expect(err).ToNot(BeNil())
-}
-
-func TestAddTapInterfaceError(t *testing.T) {
-	ctx, ifHandler := ifTestSetup(t)
-	defer ctx.TeardownTestCtx()
-
-	ctx.MockVpp.MockReply(&tap.TapConnect{})
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
-
-	_, err := ifHandler.AddTapInterface("tapIf", &ifModel.TapLink{
-		Version:    1,
-		HostIfName: "hostIf",
-		RxRingSize: 1,
-		TxRingSize: 1,
-	})
-	Expect(err).ToNot(BeNil())
-}
-
-func TestAddTapInterfaceRetval(t *testing.T) {
-	ctx, ifHandler := ifTestSetup(t)
-	defer ctx.TeardownTestCtx()
-
-	ctx.MockVpp.MockReply(&tap.TapConnectReply{
-		Retval: 1,
-	})
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
-
-	_, err := ifHandler.AddTapInterface("tapIf", &ifModel.TapLink{
-		Version:    1,
-		HostIfName: "hostIf",
-		RxRingSize: 1,
-		TxRingSize: 1,
-	})
-	Expect(err).ToNot(BeNil())
-}
-
-func TestDeleteTapInterface(t *testing.T) {
-	ctx, ifHandler := ifTestSetup(t)
-	defer ctx.TeardownTestCtx()
-
-	ctx.MockVpp.MockReply(&tap.TapDeleteReply{})
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
-
-	err := ifHandler.DeleteTapInterface("tapIf", 1, 1)
-	Expect(err).To(BeNil())
-	var msgCheck bool
-	for _, msg := range ctx.MockChannel.Msgs {
-		vppMsg, ok := msg.(*tap.TapDelete)
-		if ok {
-			Expect(vppMsg.SwIfIndex).To(BeEquivalentTo(1))
-			msgCheck = true
-		}
-	}
-	Expect(msgCheck).To(BeTrue())
-}
-
 func TestDeleteTapInterfaceV2(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
@@ -167,28 +70,4 @@ func TestDeleteTapInterfaceV2(t *testing.T) {
 		}
 	}
 	Expect(msgCheck).To(BeTrue())
-}
-
-func TestDeleteTapInterfaceError(t *testing.T) {
-	ctx, ifHandler := ifTestSetup(t)
-	defer ctx.TeardownTestCtx()
-
-	ctx.MockVpp.MockReply(&tap.TapDelete{})
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
-
-	err := ifHandler.DeleteTapInterface("tapIf", 1, 1)
-	Expect(err).ToNot(BeNil())
-}
-
-func TestDeleteTapInterfaceRetval(t *testing.T) {
-	ctx, ifHandler := ifTestSetup(t)
-	defer ctx.TeardownTestCtx()
-
-	ctx.MockVpp.MockReply(&tap.TapDeleteReply{
-		Retval: 1,
-	})
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
-
-	err := ifHandler.DeleteTapInterface("tapIf", 1, 1)
-	Expect(err).ToNot(BeNil())
 }

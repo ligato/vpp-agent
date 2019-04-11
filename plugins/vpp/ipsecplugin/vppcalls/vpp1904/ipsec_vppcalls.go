@@ -111,19 +111,19 @@ func (h *IPSecVppHandler) spdAddDelEntry(spdID, saID uint32, spd *ipsec.Security
 	}
 
 	var err error
-	req.Entry.RemoteAddressStart, err = ipToIPSecAddress(ipOr(spd.RemoteAddrStart, "0.0.0.0"))
+	req.Entry.RemoteAddressStart, err = IPToAddress(ipOr(spd.RemoteAddrStart, "0.0.0.0"))
 	if err != nil {
 		return err
 	}
-	req.Entry.RemoteAddressStop, err = ipToIPSecAddress(ipOr(spd.RemoteAddrStop, "255.255.255.255"))
+	req.Entry.RemoteAddressStop, err = IPToAddress(ipOr(spd.RemoteAddrStop, "255.255.255.255"))
 	if err != nil {
 		return err
 	}
-	req.Entry.LocalAddressStart, err = ipToIPSecAddress(ipOr(spd.LocalAddrStart, "0.0.0.0"))
+	req.Entry.LocalAddressStart, err = IPToAddress(ipOr(spd.LocalAddrStart, "0.0.0.0"))
 	if err != nil {
 		return err
 	}
-	req.Entry.LocalAddressStop, err = ipToIPSecAddress(ipOr(spd.LocalAddrStop, "255.255.255.255"))
+	req.Entry.LocalAddressStop, err = IPToAddress(ipOr(spd.LocalAddrStop, "255.255.255.255"))
 	if err != nil {
 		return err
 	}
@@ -212,11 +212,11 @@ func (h *IPSecVppHandler) sadAddDelEntry(sa *ipsec.SecurityAssociation, isAdd bo
 		if isIPv6 {
 			flags |= api.IPSEC_API_SAD_FLAG_IS_TUNNEL_V6
 		}
-		req.Entry.TunnelSrc, err = ipToIPSecAddress(sa.TunnelSrcAddr)
+		req.Entry.TunnelSrc, err = IPToAddress(sa.TunnelSrcAddr)
 		if err != nil {
 			return err
 		}
-		req.Entry.TunnelDst, err = ipToIPSecAddress(sa.TunnelDstAddr)
+		req.Entry.TunnelDst, err = IPToAddress(sa.TunnelDstAddr)
 		if err != nil {
 			return err
 		}

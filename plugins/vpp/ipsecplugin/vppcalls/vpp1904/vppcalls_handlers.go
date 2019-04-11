@@ -59,7 +59,7 @@ func ipsecAddrToIP(addr ipsec.Address) net.IP {
 	}
 }
 
-func ipToIPSecAddress(ipstr string) (addr ipsec.Address, err error) {
+func IPToAddress(ipstr string) (addr ipsec.Address, err error) {
 	netIP := net.ParseIP(ipstr)
 	if netIP == nil {
 		return ipsec.Address{}, fmt.Errorf("invalid IP: %q", ipstr)

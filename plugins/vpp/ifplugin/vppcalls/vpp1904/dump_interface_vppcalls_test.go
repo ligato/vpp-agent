@@ -23,7 +23,6 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/ip"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/memif"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/tap"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/tapv2"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/vpe"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/vxlan"
@@ -63,10 +62,6 @@ func TestDumpInterfacesVxLan(t *testing.T) {
 		},
 		{
 			Name: (&memif.MemifDump{}).GetMessageName(),
-			Ping: true,
-		},
-		{
-			Name: (&tap.SwInterfaceTapDump{}).GetMessageName(),
 			Ping: true,
 		},
 		{
@@ -124,10 +119,6 @@ func TestDumpInterfacesHost(t *testing.T) {
 		},
 		{
 			Name: (&memif.MemifDump{}).GetMessageName(),
-			Ping: true,
-		},
-		{
-			Name: (&tap.SwInterfaceTapDump{}).GetMessageName(),
 			Ping: true,
 		},
 		{
@@ -194,10 +185,6 @@ func TestDumpInterfacesMemif(t *testing.T) {
 			},
 		},
 		{
-			Name: (&tap.SwInterfaceTapDump{}).GetMessageName(),
-			Ping: true,
-		},
-		{
 			Name: (&tapv2.SwInterfaceTapV2Dump{}).GetMessageName(),
 			Ping: true,
 		},
@@ -217,84 +204,6 @@ func TestDumpInterfacesMemif(t *testing.T) {
 	Expect(intface.GetMemif().Id).To(Equal(uint32(2)))
 	Expect(intface.GetMemif().Mode).To(Equal(interfaces2.MemifLink_IP))
 	Expect(intface.GetMemif().Master).To(BeFalse())
-}
-
-func TestDumpInterfacesTap1(t *testing.T) {
-	ctx, ifHandler := ifTestSetup(t)
-	defer ctx.TeardownTestCtx()
-
-	hwAddr1Parse, err := net.ParseMAC("01:23:45:67:89:ab")
-	Expect(err).To(BeNil())
-
-	ctx.MockReplies([]*vppcallmock.HandleReplies{
-		{
-			Name: (&interfaces.SwInterfaceDump{}).GetMessageName(),
-			Ping: true,
-			Message: &interfaces.SwInterfaceDetails{
-				SwIfIndex:       0,
-				InterfaceName:   []byte("tap1"),
-				Tag:             []byte("mytap1"),
-				AdminUpDown:     1,
-				LinkMtu:         9216, // Default MTU
-				L2Address:       hwAddr1Parse,
-				L2AddressLength: uint32(len(hwAddr1Parse)),
-			},
-		},
-		{
-			Name: (&interfaces.SwInterfaceGetTable{}).GetMessageName(),
-			Ping: false,
-			Message: &interfaces.SwInterfaceGetTableReply{
-				Retval: 0,
-				VrfID:  42,
-			},
-		},
-		{
-			Name:    (&ip.IPAddressDump{}).GetMessageName(),
-			Ping:    true,
-			Message: &ip.IPAddressDetails{},
-		},
-		{
-			Name: (&dhcp.DHCPClientDump{}).GetMessageName(),
-			Ping: true,
-			Message: &dhcp.DHCPClientDetails{
-				Client: dhcp.DHCPClient{
-					SwIfIndex: 0,
-				},
-			},
-		},
-		{
-			Name: (&tap.SwInterfaceTapDump{}).GetMessageName(),
-			Ping: true,
-			Message: &tap.SwInterfaceTapDetails{
-				SwIfIndex: 0,
-				DevName:   []byte("taptap1"),
-			},
-		},
-		{
-			Name: (&tapv2.SwInterfaceTapV2Dump{}).GetMessageName(),
-			Ping: true,
-		},
-		{
-			Name: (&vxlan.VxlanTunnelDump{}).GetMessageName(),
-			Ping: true,
-		},
-	})
-
-	intfs, err := ifHandler.DumpInterfaces()
-	Expect(err).To(BeNil())
-	Expect(intfs).To(HaveLen(1))
-
-	intface := intfs[0].Interface
-
-	Expect(intface.Type).To(Equal(interfaces2.Interface_TAP))
-	Expect(intface.PhysAddress).To(Equal("01:23:45:67:89:ab"))
-	Expect(intface.Name).To(Equal("mytap1"))
-	Expect(intface.Mtu).To(Equal(uint32(0))) // default mtu
-	Expect(intface.Enabled).To(BeTrue())
-	Expect(intface.Vrf).To(Equal(uint32(42)))
-	Expect(intface.SetDhcpClient).To(BeTrue())
-	Expect(intface.GetTap().HostIfName).To(Equal("taptap1"))
-	Expect(intface.GetTap().Version).To(Equal(uint32(1)))
 }
 
 func TestDumpInterfacesTap2(t *testing.T) {
@@ -339,10 +248,6 @@ func TestDumpInterfacesTap2(t *testing.T) {
 					SwIfIndex: 0,
 				},
 			},
-		},
-		{
-			Name: (&tap.SwInterfaceTapDump{}).GetMessageName(),
-			Ping: true,
 		},
 		{
 			Name: (&tapv2.SwInterfaceTapV2Dump{}).GetMessageName(),
