@@ -53,10 +53,9 @@ func ipsecAddrToIP(addr ipsec.Address) net.IP {
 	if addr.Af == ipsec.ADDRESS_IP6 {
 		addrIP := addr.Un.GetIP6()
 		return net.IP(addrIP[:])
-	} else {
-		addrIP := addr.Un.GetIP4()
-		return net.IP(addrIP[:])
 	}
+	addrIP := addr.Un.GetIP4()
+	return net.IP(addrIP[:])
 }
 
 func IPToAddress(ipstr string) (addr ipsec.Address, err error) {
