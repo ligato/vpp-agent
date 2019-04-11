@@ -17,6 +17,8 @@ package descriptor
 import (
 	"strconv"
 
+	"github.com/ligato/vpp-agent/plugins/vpp/aclplugin/descriptor"
+
 	"github.com/go-errors/errors"
 	"github.com/gogo/protobuf/proto"
 	prototypes "github.com/gogo/protobuf/types"
@@ -87,12 +89,10 @@ func (d *ABFDescriptor) GetDescriptor() *adapter.ABFDescriptor {
 		Validate:             d.Validate,
 		Create:               d.Create,
 		Delete:               d.Delete,
-		UpdateWithRecreate:   d.UpdateWithRecreate,
 		Retrieve:             d.Retrieve,
-		IsRetriableFailure:   d.IsRetriableFailure,
 		DerivedValues:        d.DerivedValues,
 		Dependencies:         d.Dependencies,
-		RetrieveDependencies: []string{ifdescriptor.InterfaceDescriptorName},
+		RetrieveDependencies: []string{ifdescriptor.InterfaceDescriptorName, descriptor.ACLDescriptorName},
 	}
 }
 
@@ -172,13 +172,6 @@ func (d *ABFDescriptor) Delete(key string, abfData *abf.ABF, metadata *abfidx.AB
 	return d.abfHandler.DeleteAbfPolicy(metadata.Index, abfData.ForwardingPaths)
 }
 
-// UpdateWithRecreate is always set to true since there is no binary API to specialy handle a part
-// of the config - the whole ABF policy needs to be removed and created.
-func (d *ABFDescriptor) UpdateWithRecreate(key string, oldAbfData, newAbfData *abf.ABF, oldMetadata *abfidx.ABFMetadata) bool {
-	// always recreate
-	return true
-}
-
 // Retrieve returns ABF policies from the VPP.
 func (d *ABFDescriptor) Retrieve(correlate []adapter.ABFKVWithMetadata) (abfs []adapter.ABFKVWithMetadata, err error) {
 	// Retrieve VPP configuration.
@@ -200,11 +193,6 @@ func (d *ABFDescriptor) Retrieve(correlate []adapter.ABFKVWithMetadata) (abfs []
 	}
 
 	return abfs, nil
-}
-
-// IsRetriableFailure returns <false> for errors related to invalid configuration.
-func (d *ABFDescriptor) IsRetriableFailure(err error) bool {
-	return !(err == ErrABFInvalidIndex || err == ErrABFWithoutACL)
 }
 
 // DerivedValues returns list of derived values for ABF.
