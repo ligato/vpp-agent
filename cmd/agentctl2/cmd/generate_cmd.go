@@ -6,6 +6,10 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/ligato/vpp-agent/api/models/linux"
+
+	"github.com/ligato/vpp-agent/api/models/vpp"
+
 	yaml2 "github.com/ghodss/yaml"
 
 	"github.com/ligato/vpp-agent/pkg/models"
@@ -28,7 +32,7 @@ var generateConfig = &cobra.Command{
 }
 
 var generateACL = &cobra.Command{
-	Use:   "ACL",
+	Use:   utils.GetModuleName(&vpp.ACL{}),
 	Short: "Generate VPP example ACL config",
 	Long: `
 	Generate VPP example ACL config
@@ -38,7 +42,7 @@ var generateACL = &cobra.Command{
 }
 
 var generateInterface = &cobra.Command{
-	Use:   "Interface",
+	Use:   utils.GetModuleName(&vpp.Interface{}),
 	Short: "Generate VPP example Interface config",
 	Long: `
 	Generate VPP example Interface config
@@ -48,7 +52,7 @@ var generateInterface = &cobra.Command{
 }
 
 var generateBd = &cobra.Command{
-	Use:   "Bd",
+	Use:   utils.GetModuleName(&vpp.BridgeDomain{}),
 	Short: "Generate VPP example bridge domain config",
 	Long: `
 	Generate VPP example bridge domain config
@@ -58,7 +62,7 @@ var generateBd = &cobra.Command{
 }
 
 var generateIPScanNeighbor = &cobra.Command{
-	Use:   "IPScanNeighbor",
+	Use:   utils.GetModuleName(&vpp.IPScanNeigh{}),
 	Short: "Generate VPP example ip scan neighbor config",
 	Long: `
 	Generate VPP example ip scan neighbor config
@@ -68,7 +72,7 @@ var generateIPScanNeighbor = &cobra.Command{
 }
 
 var generateNatGlobal = &cobra.Command{
-	Use:   "NatGlobal",
+	Use:   utils.GetModuleName(&vpp.NAT44Global{}),
 	Short: "Generate VPP example NatGlobal config",
 	Long: `
 	Generate VPP example NatGlobal config
@@ -78,7 +82,7 @@ var generateNatGlobal = &cobra.Command{
 }
 
 var generateNatDNat = &cobra.Command{
-	Use:   "NatDNat",
+	Use:   utils.GetModuleName(&vpp.DNAT44{}),
 	Short: "Generate VPP example dnat config",
 	Long: `
 	Generate VPP example dnat config
@@ -88,7 +92,7 @@ var generateNatDNat = &cobra.Command{
 }
 
 var generateIPSecPolicy = &cobra.Command{
-	Use:   "IPSecPolicy",
+	Use:   utils.GetModuleName(&vpp.IPSecSPD{}),
 	Short: "Generate VPP example ip sec policy config",
 	Long: `
 	Generate VPP example ip sec policy config
@@ -98,7 +102,7 @@ var generateIPSecPolicy = &cobra.Command{
 }
 
 var generateIPSecAssociation = &cobra.Command{
-	Use:   "IPSecAssociation",
+	Use:   utils.GetModuleName(&vpp.IPSecSA{}),
 	Short: "Generate VPP example ip sec association config",
 	Long: `
 	Generate VPP example ip sec association config
@@ -108,7 +112,7 @@ var generateIPSecAssociation = &cobra.Command{
 }
 
 var generateArps = &cobra.Command{
-	Use:   "Arps",
+	Use:   utils.GetModuleName(&vpp.ARPEntry{}),
 	Short: "Generate VPP example arps config",
 	Long: `
 	Generate VPP example arps config
@@ -118,7 +122,7 @@ var generateArps = &cobra.Command{
 }
 
 var generateRoutes = &cobra.Command{
-	Use:   "Routes",
+	Use:   utils.GetModuleName(&vpp.Route{}),
 	Short: "Generate VPP example routes config",
 	Long: `
 	Generate VPP example ip sec policy
@@ -128,7 +132,7 @@ var generateRoutes = &cobra.Command{
 }
 
 var generatePArp = &cobra.Command{
-	Use:   "PArp",
+	Use:   utils.GetModuleName(&vpp.ProxyARP{}),
 	Short: "Generate VPP example proxy arp config",
 	Long: `
 	Generate VPP example proxy arp config
@@ -138,7 +142,7 @@ var generatePArp = &cobra.Command{
 }
 
 var generateLinuxInterface = &cobra.Command{
-	Use:   "LinuxInterface",
+	Use:   utils.GetModuleName(&linux.Interface{}),
 	Short: "Generate Linux example interface config",
 	Long: `
 	Generate Linux example interface config
@@ -148,7 +152,7 @@ var generateLinuxInterface = &cobra.Command{
 }
 
 var generateLinuxARP = &cobra.Command{
-	Use:   "LinuxARP",
+	Use:   utils.GetModuleName(&linux.ARPEntry{}),
 	Short: "Generate Linux example arp config",
 	Long: `
 	Generate Linux example arp config
@@ -158,7 +162,7 @@ var generateLinuxARP = &cobra.Command{
 }
 
 var generateLinuxRoutes = &cobra.Command{
-	Use:   "LinuxRoutes",
+	Use:   utils.GetModuleName(&linux.Route{}),
 	Short: "Generate Linux example routes config",
 	Long: `
 	Generate Linux example routes config
@@ -273,7 +277,7 @@ func printJSON(msg proto.Message) {
 			errors.New("Failed generate json, error: "+err.Error()))
 	}
 
-	fmt.Fprintf(os.Stdout, "%s '%s'\n", prefix+key, js)
+	fmt.Fprintf(os.Stdout, "%s\n%s\n", prefix+key, js)
 }
 
 func printYaml(msg proto.Message) {

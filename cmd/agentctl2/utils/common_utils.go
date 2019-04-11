@@ -18,6 +18,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/gogo/protobuf/proto"
+
 	"fmt"
 
 	"github.com/ligato/cn-infra/db/keyval"
@@ -191,6 +193,20 @@ func GetDbForAllAgents(endpoints []string) (keyval.ProtoBroker, error) {
 
 	return kvproto.NewProtoWrapperWithSerializer(etcdBroker, &keyval.SerializerJSON{}), nil
 
+}
+
+func GetModuleName(module proto.Message) string {
+	str := proto.MessageName(module)
+
+	tmp := strings.Split(str, ".")
+
+	outstr := tmp[len(tmp)-1]
+
+	if "linux" == tmp[0] {
+		outstr = "Linux" + outstr
+	}
+
+	return outstr
 }
 
 // ExitWithError is used by all commands to print out an error

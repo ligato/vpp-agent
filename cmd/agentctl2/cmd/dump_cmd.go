@@ -4,6 +4,10 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/ligato/vpp-agent/api/models/linux"
+	"github.com/ligato/vpp-agent/api/models/vpp"
+	"github.com/ligato/vpp-agent/cmd/agentctl2/utils"
+
 	"github.com/ligato/vpp-agent/cmd/agentctl2/restapi"
 	"github.com/ligato/vpp-agent/plugins/restapi/resturl"
 	"github.com/spf13/cobra"
@@ -21,7 +25,7 @@ var dumpCmd = &cobra.Command{
 }
 
 var dumpLinuxInterface = &cobra.Command{
-	Use:   "LinuxInterface",
+	Use:   utils.GetModuleName(&linux.Interface{}),
 	Short: "Dump Linux Interface",
 	Long: `
 	Dump Linux Interface
@@ -31,7 +35,7 @@ var dumpLinuxInterface = &cobra.Command{
 }
 
 var dumpLinuxRoutes = &cobra.Command{
-	Use:   "LinuxRoutes",
+	Use:   utils.GetModuleName(&linux.Route{}),
 	Short: "Dump Linux Routes",
 	Long: `
 	Dump Linux Routes
@@ -41,7 +45,7 @@ var dumpLinuxRoutes = &cobra.Command{
 }
 
 var dumpLinuxArps = &cobra.Command{
-	Use:   "LinuxArps",
+	Use:   utils.GetModuleName(&linux.ARPEntry{}),
 	Short: "Dump Linux Arps",
 	Long: `
 	Dump Linux Arps
@@ -71,7 +75,7 @@ var dumpACLMACIP = &cobra.Command{
 }
 
 var dumpInterface = &cobra.Command{
-	Use:   "Interface",
+	Use:   utils.GetModuleName(&vpp.Interface{}),
 	Short: "Dump Interface",
 	Long: `
 	Dump Interface
@@ -141,7 +145,7 @@ var dumpVxLan = &cobra.Command{
 }
 
 var dumpNatGlobal = &cobra.Command{
-	Use:   "NatGlobal",
+	Use:   utils.GetModuleName(&vpp.NAT44Global{}),
 	Short: "Dump global NAT config",
 	Long: `
 	Dump global NAT config
@@ -151,7 +155,7 @@ var dumpNatGlobal = &cobra.Command{
 }
 
 var dumpNatDNat = &cobra.Command{
-	Use:   "NatDNat",
+	Use:   utils.GetModuleName(&vpp.DNAT44{}),
 	Short: "Dump DNAT configurations",
 	Long: `
 	Dump DNAT configurations
@@ -161,7 +165,7 @@ var dumpNatDNat = &cobra.Command{
 }
 
 var dumpBd = &cobra.Command{
-	Use:   "Bd",
+	Use:   utils.GetModuleName(&vpp.BridgeDomain{}),
 	Short: "Dump Bridge domain",
 	Long: `
 	Dump Bridge domain
@@ -171,7 +175,7 @@ var dumpBd = &cobra.Command{
 }
 
 var dumpFib = &cobra.Command{
-	Use:   "Fib",
+	Use:   utils.GetModuleName(&vpp.L2FIB{}),
 	Short: "Dump Fib",
 	Long: `
 	Dump Fib
@@ -181,7 +185,7 @@ var dumpFib = &cobra.Command{
 }
 
 var dumpXc = &cobra.Command{
-	Use:   "Xc",
+	Use:   utils.GetModuleName(&vpp.XConnect{}),
 	Short: "Dump cross-connect",
 	Long: `
 	Dump cross-connect
@@ -191,7 +195,7 @@ var dumpXc = &cobra.Command{
 }
 
 var dumpRoutes = &cobra.Command{
-	Use:   "Routes",
+	Use:   utils.GetModuleName(&vpp.Route{}),
 	Short: "Dump static route",
 	Long: `
 	Dump static route
@@ -201,7 +205,7 @@ var dumpRoutes = &cobra.Command{
 }
 
 var dumpArps = &cobra.Command{
-	Use:   "Arps",
+	Use:   utils.GetModuleName(&vpp.ARPEntry{}),
 	Short: "Dump ARPs",
 	Long: `
 	Dump ARPs
