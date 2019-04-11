@@ -10,7 +10,7 @@ import (
 
 	"github.com/ligato/vpp-agent/api/models/vpp"
 
-	yaml2 "github.com/ghodss/yaml"
+	yaml "github.com/ghodss/yaml"
 
 	"github.com/ligato/vpp-agent/pkg/models"
 
@@ -189,7 +189,7 @@ func init() {
 	generateConfig.AddCommand(generateLinuxInterface)
 	generateConfig.AddCommand(generateLinuxARP)
 	generateConfig.AddCommand(generateLinuxRoutes)
-	formatType = generateConfig.PersistentFlags().String("format", "json",
+	formatType = generateConfig.PersistentFlags().String("format", "yaml",
 		"Format:\n\tjson\n\tyaml\n\tproto\n")
 }
 
@@ -288,7 +288,7 @@ func printYaml(msg proto.Message) {
 			errors.New("Failed generate json, error: "+err.Error()))
 	}
 
-	ym, err := yaml2.JSONToYAML(js)
+	ym, err := yaml.JSONToYAML(js)
 	key := models.Key(msg)
 
 	if nil != err {
@@ -296,12 +296,12 @@ func printYaml(msg proto.Message) {
 			errors.New("Failed generate yaml, error: "+err.Error()))
 	}
 
-	fmt.Fprintf(os.Stdout, "%s '%s'\n", prefix+key, ym)
+	fmt.Fprintf(os.Stdout, "%s\n%s\n", prefix+key, ym)
 }
 
 func printProto(msg proto.Message) {
 	text := proto.MarshalTextString(msg)
 	key := models.Key(msg)
 
-	fmt.Fprintf(os.Stdout, "%s '%s'\n", prefix+key, text)
+	fmt.Fprintf(os.Stdout, "%s\n%s\n", prefix+key, text)
 }
