@@ -105,7 +105,7 @@ func TestDeleteABFPolicy(t *testing.T) {
 		SwIfIndex: 10,
 	})
 
-	err := abfHandler.DeleteAbfPolicy(1, 2, []*vpp_abf.ABF_ForwardingPath{
+	err := abfHandler.DeleteAbfPolicy(1, []*vpp_abf.ABF_ForwardingPath{
 		{
 			InterfaceName: "if1",
 			NextHopIp:     "10.0.0.1",
@@ -121,7 +121,6 @@ func TestDeleteABFPolicy(t *testing.T) {
 	Expect(ok).To(BeTrue())
 	Expect(req.IsAdd).To(Equal(uint8(0)))
 	Expect(req.Policy.PolicyID).To(Equal(uint32(1)))
-	Expect(req.Policy.ACLIndex).To(Equal(uint32(2)))
 	Expect(req.Policy.NPaths).To(Equal(uint8(2)))
 	Expect(req.Policy.Paths[0].SwIfIndex).To(Equal(uint32(5)))
 	Expect(req.Policy.Paths[0].NextHop[:4]).To(BeEquivalentTo(net.ParseIP("10.0.0.1").To4()))
@@ -137,7 +136,7 @@ func TestDeleteABFPolicyError(t *testing.T) {
 		Retval: 1,
 	})
 
-	err := abfHandler.DeleteAbfPolicy(1, 2, nil)
+	err := abfHandler.DeleteAbfPolicy(1, nil)
 
 	Expect(err).ToNot(BeNil())
 }

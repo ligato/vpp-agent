@@ -46,7 +46,7 @@ func (h *ABFVppHandler) AddAbfPolicy(policyID, aclID uint32, abfPaths []*vpp_abf
 // DeleteAbfPolicy removes existing ABF entry
 func (h *ABFVppHandler) DeleteAbfPolicy(policyID uint32, abfPaths []*vpp_abf.ABF_ForwardingPath) error {
 	if err := h.abfAddDelPolicy(policyID, 0, abfPaths, false); err != nil {
-		return errors.Errorf("failed to delete ABF policy %d (ACL: %v): %v", policyID, err)
+		return errors.Errorf("failed to delete ABF policy %d: %v", policyID, err)
 	}
 	return nil
 }
