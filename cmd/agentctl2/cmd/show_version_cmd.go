@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/ligato/cn-infra/agent"
+
 	"github.com/spf13/cobra"
 )
 
@@ -23,5 +25,5 @@ func init() {
 }
 
 func versionFunc(cmd *cobra.Command, args []string) {
-	fmt.Fprint(os.Stdout, "agentctl version 0.1\n")
+	fmt.Fprintf(os.Stdout, "agentctl version %s\n", agent.BuildVersion)
 }
