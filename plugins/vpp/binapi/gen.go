@@ -12,7 +12,6 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 
-//go:generate binapi-generator --input-file=/usr/share/vpp/api/abf.api.json --output-dir=default
 //go:generate binapi-generator --input-file=/usr/share/vpp/api/core/af_packet.api.json --output-dir=default
 //go:generate binapi-generator --input-file=/usr/share/vpp/api/core/bfd.api.json --output-dir=default
 //go:generate binapi-generator --input-file=/usr/share/vpp/api/core/bond.api.json --output-dir=default
@@ -29,6 +28,7 @@
 //go:generate binapi-generator --input-file=/usr/share/vpp/api/core/vpe.api.json --output-dir=default
 //go:generate binapi-generator --input-file=/usr/share/vpp/api/core/vxlan.api.json --output-dir=default
 
+//go:generate binapi-generator --input-file=/usr/share/vpp/api/plugins/abf.api.json --output-dir=default
 //go:generate binapi-generator --input-file=/usr/share/vpp/api/plugins/acl.api.json --output-dir=default
 //go:generate binapi-generator --input-file=/usr/share/vpp/api/plugins/memif.api.json --output-dir=default
 //go:generate binapi-generator --input-file=/usr/share/vpp/api/plugins/nat.api.json --output-dir=default
