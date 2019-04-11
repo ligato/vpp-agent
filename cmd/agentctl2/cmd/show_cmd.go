@@ -13,8 +13,8 @@ import (
 
 // RootCmd represents the base command when called without any subcommands.
 var showConfig = &cobra.Command{
-	Use:     "config",
-	Aliases: []string{"C"},
+	Use:     "show",
+	Aliases: []string{"s"},
 	Short:   "Show configuration file",
 	Long: `
 	Show configuration file
