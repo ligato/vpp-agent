@@ -71,7 +71,7 @@ RUN set -eux; \
         make build-release pkg-deb; \
     fi; \
     cd build-root; \
-    dpkg -i vpp_*.deb vpp-dev_*.deb libvppinfra*.deb vpp-plugin-core*.deb vpp-dbg_*.deb vpp-api-python_*.deb; \
+    dpkg -i vpp_*.deb libvppinfra_*.deb vpp-dev_*.deb libvppinfra-dev_*.deb  vpp-plugin-core_*.deb vpp-dbg_*.deb vpp-api-python_*.deb; \
     rm -rf .ccache /var/lib/apt/lists/*; \
     find . -type f -name '*.o' -exec rm -rf '{}' \;
 
@@ -123,4 +123,4 @@ WORKDIR /
 
 # run supervisor as the default executable
 CMD rm -f /dev/shm/db /dev/shm/global_vm /dev/shm/vpe-api && \
-    /usr/bin/supervisord -c /etc/supervisord/supervisord.conf
+    exec /usr/bin/supervisord -c /etc/supervisord/supervisord.conf
