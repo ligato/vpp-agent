@@ -30,28 +30,6 @@ import (
 	"github.com/ligato/cn-infra/servicelabel"
 )
 
-const (
-	ACLPath          = "config/vpp/acls/v2/acl/"
-	InterfacePath    = "config/vpp/v2/interfaces/"
-	BridgeDomainPath = "config/vpp/l2/v2/bridge-domain/"
-	FibTablePath     = "config/vpp/l2/v2/fib/"
-	XConnectPath     = "config/vpp/l2/v2/xconnect/"
-	ARPPath          = "config/vpp/v2/arp/"
-	RoutePath        = "config/vpp/v2/route/"
-	ProxyARPPath     = "config/vpp/v2/proxyarp-global"
-	IPScanneightPath = "config/vpp/v2/ipscanneigh-global"
-	NATPath          = "config/vpp/nat/v2/nat44-global"
-	DNATPath         = "config/vpp/nat/v2/dnat44/"
-	IPSecPolicyPath  = "config/vpp/ipsec/v2/spd/"
-	IPSecAssociate   = "config/vpp/ipsec/v2/sa/"
-)
-
-const (
-	lInterfacePath = "config/linux/interfaces/v2/interface/"
-	lARPPath       = "config/linux/l4/v2/arp/"
-	lRoutePath     = "config/linux/l3/v2/route/"
-)
-
 // Common exit flags
 const (
 	ExitSuccess = iota
