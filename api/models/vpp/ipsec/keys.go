@@ -26,15 +26,17 @@ const ModuleName = "vpp.ipsec"
 
 var (
 	ModelSecurityPolicyDatabase = models.Register(&SecurityPolicyDatabase{}, models.Spec{
-		Module:  ModuleName,
-		Version: "v2",
-		Type:    "spd",
+		Module:        ModuleName,
+		Version:       "v2",
+		Type:          "spd",
+		ProtoFileName: "ipsec",
 	}, models.WithNameTemplate("{{.Index}}"))
 
 	ModelSecurityAssociation = models.Register(&SecurityAssociation{}, models.Spec{
-		Module:  ModuleName,
-		Version: "v2",
-		Type:    "sa",
+		Module:        ModuleName,
+		Version:       "v2",
+		Type:          "sa",
+		ProtoFileName: "ipsec",
 	}, models.WithNameTemplate("{{.Index}}"))
 )
 

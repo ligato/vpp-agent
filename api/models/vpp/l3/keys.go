@@ -43,15 +43,17 @@ var (
 	))
 
 	ModelProxyARP = models.Register(&ProxyARP{}, models.Spec{
-		Module:  ModuleName,
-		Type:    "proxyarp-global",
-		Version: "v2",
+		Module:        ModuleName,
+		Type:          "proxyarp-global",
+		Version:       "v2",
+		ProtoFileName: "l3",
 	})
 
 	ModelIPScanNeighbor = models.Register(&IPScanNeighbor{}, models.Spec{
-		Module:  ModuleName,
-		Type:    "ipscanneigh-global",
-		Version: "v2",
+		Module:        ModuleName,
+		Type:          "ipscanneigh-global",
+		Version:       "v2",
+		ProtoFileName: "l3",
 	})
 )
 

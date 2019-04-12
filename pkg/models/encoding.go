@@ -21,8 +21,8 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/types"
 
-	api "github.com/ligato/vpp-agent/api/genericmanager"
 	"github.com/ligato/cn-infra/datasync"
+	api "github.com/ligato/vpp-agent/api/genericmanager"
 )
 
 // This constant is used as prefix for TypeUrl when marshalling to Any.
@@ -121,9 +121,10 @@ func getItemID(pb proto.Message) (*api.Item_ID, error) {
 	return &api.Item_ID{
 		Name: name,
 		Model: &api.Model{
-			Module:  model.Module,
-			Version: model.Version,
-			Type:    model.Type,
+			Module:        model.Module,
+			Version:       model.Version,
+			Type:          model.Type,
+			ProtoFileName: model.ProtoFileName,
 		},
 	}, nil
 }
@@ -177,9 +178,10 @@ func RegisteredModels() (models []*api.ModelInfo) {
 	for _, s := range registeredModels {
 		models = append(models, &api.ModelInfo{
 			Model: &api.Model{
-				Module:  s.Module,
-				Type:    s.Type,
-				Version: s.Version,
+				Module:        s.Module,
+				Type:          s.Type,
+				Version:       s.Version,
+				ProtoFileName: s.ProtoFileName,
 			},
 			Info: map[string]string{
 				"nameTemplate": s.nameTemplate,

@@ -25,14 +25,16 @@ const ModuleName = "vpp.nat"
 
 var (
 	ModelNat44Global = models.Register(&Nat44Global{}, models.Spec{
-		Module:  ModuleName,
-		Type:    "nat44-global",
-		Version: "v2",
+		Module:        ModuleName,
+		Type:          "nat44-global",
+		Version:       "v2",
+		ProtoFileName: "nat",
 	})
 	ModelDNat44 = models.Register(&DNat44{}, models.Spec{
-		Module:  ModuleName,
-		Type:    "dnat44",
-		Version: "v2",
+		Module:        ModuleName,
+		Type:          "dnat44",
+		Version:       "v2",
+		ProtoFileName: "nat",
 	}, models.WithNameTemplate("{{.Label}}"))
 )
 

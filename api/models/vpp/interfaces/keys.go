@@ -28,9 +28,10 @@ const ModuleName = "vpp"
 
 var (
 	ModelInterface = models.Register(&Interface{}, models.Spec{
-		Module:  ModuleName,
-		Version: "v2",
-		Type:    "interfaces",
+		Module:        ModuleName,
+		Version:       "v2",
+		Type:          "interfaces",
+		ProtoFileName: "interface",
 	})
 )
 

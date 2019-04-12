@@ -23,9 +23,10 @@ const ModuleName = "linux.iptables"
 
 var (
 	ModelRuleChain = models.Register(&RuleChain{}, models.Spec{
-		Module:  ModuleName,
-		Version: "v2",
-		Type:    "rulechain",
+		Module:        ModuleName,
+		Version:       "v2",
+		Type:          "rulechain",
+		ProtoFileName: "iptables",
 	}, models.WithNameTemplate("{{.Name}}"))
 )
 

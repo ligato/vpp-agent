@@ -28,23 +28,26 @@ const (
 var (
 	// ModelLocalSID is registered NB model of LocalSID
 	ModelLocalSID = models.Register(&LocalSID{}, models.Spec{
-		Module:  ModuleName,
-		Type:    "localsid",
-		Version: "v2",
+		Module:        ModuleName,
+		Type:          "localsid",
+		Version:       "v2",
+		ProtoFileName: "srv6",
 	}, models.WithNameTemplate("{{.Sid}}"))
 
 	// ModelPolicy is registered NB model of Policy
 	ModelPolicy = models.Register(&Policy{}, models.Spec{
-		Module:  ModuleName,
-		Type:    "policy",
-		Version: "v2",
+		Module:        ModuleName,
+		Type:          "policy",
+		Version:       "v2",
+		ProtoFileName: "srv6",
 	}, models.WithNameTemplate("{{.Bsid}}"))
 
 	// ModelSteering is registered NB model of Steering
 	ModelSteering = models.Register(&Steering{}, models.Spec{
-		Module:  ModuleName,
-		Type:    "steering",
-		Version: "v2",
+		Module:        ModuleName,
+		Type:          "steering",
+		Version:       "v2",
+		ProtoFileName: "srv6",
 	}, models.WithNameTemplate("{{.Name}}"))
 )
 

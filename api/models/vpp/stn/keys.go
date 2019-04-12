@@ -23,9 +23,10 @@ const ModuleName = "vpp.stn"
 
 var (
 	ModelRule = models.Register(&Rule{}, models.Spec{
-		Module:  ModuleName,
-		Type:    "rule",
-		Version: "v2",
+		Module:        ModuleName,
+		Type:          "rule",
+		Version:       "v2",
+		ProtoFileName: "stn",
 	}, models.WithNameTemplate("{{.Interface}}/ip/{{.IpAddress}}"))
 )
 

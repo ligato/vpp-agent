@@ -6,6 +6,7 @@
 .idea/*
 
 # ignore executables (extensionless files)
+/api/models/keygen/keygen
 /cmd/**/*
 !/cmd/**/
 !/cmd/**/*.*

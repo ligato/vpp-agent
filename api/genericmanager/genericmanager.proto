@@ -15,6 +15,8 @@ message Model {
     string version = 2;
     // Type describes name of type described by this model.
     string type = 3;
+    // Required if model resides in proto file with different name as the type itself
+    string proto_file_name = 4;
 }
 
 // Item represents single instance described by the Model.

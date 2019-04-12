@@ -23,16 +23,18 @@ const ModuleName = "vpp"
 
 var (
 	ModelToHost = models.Register(&ToHost{}, models.Spec{
-		Module:  ModuleName,
-		Type:    "tohost",
-		Version: "v2",
+		Module:        ModuleName,
+		Type:          "tohost",
+		Version:       "v2",
+		ProtoFileName: "punt",
 	}, models.WithNameTemplate(
 		"l3/{{.L3Protocol}}/l4/{{.L4Protocol}}/port/{{.Port}}",
 	))
 	ModelIPRedirect = models.Register(&IPRedirect{}, models.Spec{
-		Module:  ModuleName,
-		Type:    "ipredirect",
-		Version: "v2",
+		Module:        ModuleName,
+		Type:          "ipredirect",
+		Version:       "v2",
+		ProtoFileName: "punt",
 	}, models.WithNameTemplate(
 		"l3/{{.L3Protocol}}/tx/{{.TxInterface}}",
 	))
