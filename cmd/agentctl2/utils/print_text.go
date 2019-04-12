@@ -3,7 +3,6 @@ package utils
 import (
 	"bytes"
 	"fmt"
-	"os"
 	"strings"
 	"text/template"
 	"time"
@@ -75,7 +74,7 @@ func createACLTemplate() *template.Template {
 		"pfx":            getPrefix,
 	}
 
-	Template, err := template.New("acl").Funcs(FuncMap).Parse(
+	Template := template.Must(template.New("acl").Funcs(FuncMap).Parse(
 		"{{$conf := .ShowConf}}" +
 			"{{with .ACL}}\n{{pfx 1}}ACL:" +
 
@@ -201,11 +200,7 @@ func createACLTemplate() *template.Template {
 			// End Config
 			"{{end}}" +
 
-			"{{end}}{{end}}")
-
-	if err != nil {
-		panic(err)
-	}
+			"{{end}}{{end}}"))
 
 	return Template
 }
@@ -223,7 +218,7 @@ func createInterfaceTemplate() *template.Template {
 		"pfx":            getPrefix,
 	}
 
-	Template, err := template.New("interfaces").Funcs(ifFuncMap).Parse(
+	Template := template.Must(template.New("interfaces").Funcs(ifFuncMap).Parse(
 		"{{$conf := .ShowConf}}" +
 			"{{with .Interfaces}}\n{{pfx 1}}INTERFACES:" +
 
@@ -254,11 +249,7 @@ func createInterfaceTemplate() *template.Template {
 			// End Config
 			"{{end}}" +
 
-			"{{end}}{{end}}\n")
-
-	if err != nil {
-		panic(err)
-	}
+			"{{end}}{{end}}\n"))
 
 	return Template
 }
@@ -272,7 +263,7 @@ func createBridgeTemplate() *template.Template {
 		"pfx":            getPrefix,
 	}
 
-	Template, err := template.New("bridgeDomains").Funcs(FuncMap).Parse(
+	Template := template.Must(template.New("bridgeDomains").Funcs(FuncMap).Parse(
 		"{{$conf := .ShowConf}}" +
 			"{{with .BridgeDomains}}\n{{pfx 1}}Bridge:" +
 
@@ -307,11 +298,7 @@ func createBridgeTemplate() *template.Template {
 			//End Config
 			"{{end}}" +
 
-			"{{end}}{{end}}")
-
-	if err != nil {
-		panic(err)
-	}
+			"{{end}}{{end}}"))
 
 	return Template
 }
@@ -329,7 +316,7 @@ func createFibTableTemplate() *template.Template {
 		"pfx":            getPrefix,
 	}
 
-	Template, err := template.New("fibTable").Funcs(FuncMap).Parse(
+	Template := template.Must(template.New("fibTable").Funcs(FuncMap).Parse(
 		"{{$conf := .ShowConf}}" +
 			"{{with .FibTableEntries}}\n{{pfx 1}}Fib Table:" +
 
@@ -347,11 +334,7 @@ func createFibTableTemplate() *template.Template {
 
 			//End config
 			"{{end}}" +
-			"{{end}}")
-
-	if err != nil {
-		panic(err)
-	}
+			"{{end}}"))
 
 	return Template
 }
@@ -363,7 +346,7 @@ func createXconnectTableTemplate() *template.Template {
 		"pfx":     getPrefix,
 	}
 
-	Template, err := template.New("xconnect").Funcs(FuncMap).Parse(
+	Template := template.Must(template.New("xconnect").Funcs(FuncMap).Parse(
 		"{{$conf := .ShowConf}}" +
 			"{{with .XConnectPairs}}\n{{pfx 1}}Xconnect:" +
 
@@ -380,11 +363,7 @@ func createXconnectTableTemplate() *template.Template {
 			"{{end}}{{end}}" +
 			//End Conf
 			"{{end}}" +
-			"{{end}}{{end}}")
-
-	if err != nil {
-		panic(err)
-	}
+			"{{end}}{{end}}"))
 
 	return Template
 }
@@ -398,7 +377,7 @@ func createArpTableTemplate() *template.Template {
 		"pfx":            getPrefix,
 	}
 
-	Template, err := template.New("arp").Funcs(FuncMap).Parse(
+	Template := template.Must(template.New("arp").Funcs(FuncMap).Parse(
 		"{{with .ARP}}\n{{pfx 1}}ARP:" +
 			"{{with .Config}}{{with .ARPEntry}}" +
 
@@ -409,11 +388,7 @@ func createArpTableTemplate() *template.Template {
 
 			//End
 			"{{end}}{{end}}" +
-			"{{end}}")
-
-	if err != nil {
-		panic(err)
-	}
+			"{{end}}"))
 
 	return Template
 }
@@ -426,7 +401,7 @@ func createRouteTableTemplate() *template.Template {
 		"pfx":            getPrefix,
 	}
 
-	Template, err := template.New("routetable").Funcs(FuncMap).Parse(
+	Template := template.Must(template.New("routetable").Funcs(FuncMap).Parse(
 		"{{with .StaticRoutes}}\n{{pfx 1}}Route Table:" +
 
 			"{{with .Config}}{{with .Route}}" +
@@ -442,11 +417,7 @@ func createRouteTableTemplate() *template.Template {
 			//End
 			"{{end}}{{end}}" +
 
-			"{{end}}")
-
-	if err != nil {
-		panic(err)
-	}
+			"{{end}}"))
 
 	return Template
 }
@@ -458,7 +429,7 @@ func createProxyArpTemplate() *template.Template {
 		"pfx":     getPrefix,
 	}
 
-	Template, err := template.New("proxyarp").Funcs(FuncMap).Parse(
+	Template := template.Must(template.New("proxyarp").Funcs(FuncMap).Parse(
 		"{{with .ProxyARP}}\n{{pfx 1}}Proxy ARP:" +
 
 			"{{with .Config}}{{with .ProxyARP}}" +
@@ -481,11 +452,7 @@ func createProxyArpTemplate() *template.Template {
 			//End
 			"{{end}}{{end}}" +
 
-			"{{end}}")
-
-	if err != nil {
-		panic(err)
-	}
+			"{{end}}"))
 
 	return Template
 }
@@ -497,7 +464,7 @@ func createIPScanNeightTemplate() *template.Template {
 		"pfx":     getPrefix,
 	}
 
-	Template, err := template.New("ipscanneigh").Funcs(FuncMap).Parse(
+	Template := template.Must(template.New("ipscanneigh").Funcs(FuncMap).Parse(
 		"{{with .IPScanNeight}}\n{{pfx 1}}IP Neighbor:" +
 
 			"{{with .Config}}{{with .IPScanNeighbor}}" +
@@ -513,11 +480,7 @@ func createIPScanNeightTemplate() *template.Template {
 			//End
 			"{{end}}{{end}}" +
 
-			"{{end}}")
-
-	if err != nil {
-		panic(err)
-	}
+			"{{end}}"))
 
 	return Template
 }
@@ -529,7 +492,7 @@ func createNATTemplate() *template.Template {
 		"pfx":     getPrefix,
 	}
 
-	Template, err := template.New("nat").Funcs(FuncMap).Parse(
+	Template := template.Must(template.New("nat").Funcs(FuncMap).Parse(
 		"{{with .NAT}}\n{{pfx 1}}NAT:" +
 
 			"{{with .Config}}{{with .Nat44Global}}" +
@@ -562,11 +525,7 @@ func createNATTemplate() *template.Template {
 			//End
 			"{{end}}{{end}}" +
 
-			"{{end}}")
-
-	if err != nil {
-		panic(err)
-	}
+			"{{end}}"))
 
 	return Template
 }
@@ -578,7 +537,7 @@ func createDNATTemplate() *template.Template {
 		"pfx":     getPrefix,
 	}
 
-	Template, err := template.New("dnat").Funcs(FuncMap).Parse(
+	Template := template.Must(template.New("dnat").Funcs(FuncMap).Parse(
 		"{{with .DNAT}}\n{{pfx 1}}DNAT:" +
 
 			"{{with .Config}}{{with .DNat44}}" +
@@ -621,11 +580,7 @@ func createDNATTemplate() *template.Template {
 			//End
 			"{{end}}{{end}}" +
 
-			"{{end}}")
-
-	if err != nil {
-		panic(err)
-	}
+			"{{end}}"))
 
 	return Template
 }
@@ -637,7 +592,7 @@ func createIPSecPolicyTemplate() *template.Template {
 		"pfx":     getPrefix,
 	}
 
-	Template, err := template.New("ipsecpolicy").Funcs(FuncMap).Parse(
+	Template := template.Must(template.New("ipsecpolicy").Funcs(FuncMap).Parse(
 		"{{$conf := .ShowConf}}" +
 			"{{with .IPSecPolicyDb}}\n{{pfx 1}}Security policy database:" +
 
@@ -679,11 +634,7 @@ func createIPSecPolicyTemplate() *template.Template {
 			// End Config
 			"{{end}}" +
 
-			"{{end}}")
-
-	if err != nil {
-		panic(err)
-	}
+			"{{end}}"))
 
 	return Template
 }
@@ -695,7 +646,7 @@ func createIPSecAssociationTemplate() *template.Template {
 		"pfx":     getPrefix,
 	}
 
-	Template, err := template.New("ipsecassociation").Funcs(FuncMap).Parse(
+	Template := template.Must(template.New("ipsecassociation").Funcs(FuncMap).Parse(
 		"{{$conf := .ShowConf}}" +
 			"{{with .IPSecAssociate}}\n{{pfx 1}}Security associations:" +
 
@@ -727,11 +678,7 @@ func createIPSecAssociationTemplate() *template.Template {
 			// End Config
 			"{{end}}" +
 
-			"{{end}}")
-
-	if err != nil {
-		panic(err)
-	}
+			"{{end}}"))
 
 	return Template
 }
@@ -743,7 +690,7 @@ func createlInterfaceTemplate() *template.Template {
 		"pfx":     getPrefix,
 	}
 
-	Template, err := template.New("linterface").Funcs(FuncMap).Parse(
+	Template := template.Must(template.New("linterface").Funcs(FuncMap).Parse(
 		"{{$conf := .ShowConf}}" +
 			"{{with .LInterfaces}}\n{{pfx 1}}Linux interface:" +
 
@@ -774,11 +721,7 @@ func createlInterfaceTemplate() *template.Template {
 			//End iterate over interface.
 			"{{end}}" +
 
-			"{{end}}")
-
-	if err != nil {
-		panic(err)
-	}
+			"{{end}}"))
 
 	return Template
 }
@@ -790,7 +733,7 @@ func createlARPTemplate() *template.Template {
 		"pfx":     getPrefix,
 	}
 
-	Template, err := template.New("larp").Funcs(FuncMap).Parse(
+	Template := template.Must(template.New("larp").Funcs(FuncMap).Parse(
 		"{{$conf := .ShowConf}}" +
 			"{{with .LARP}}\n{{pfx 1}}Linux ARP:" +
 
@@ -811,11 +754,7 @@ func createlARPTemplate() *template.Template {
 			//End iterate over interface.
 			"{{end}}" +
 
-			"{{end}}")
-
-	if err != nil {
-		panic(err)
-	}
+			"{{end}}"))
 
 	return Template
 }
@@ -827,7 +766,7 @@ func createlRouteTemplate() *template.Template {
 		"pfx":     getPrefix,
 	}
 
-	Template, err := template.New("lroute").Funcs(FuncMap).Parse(
+	Template := template.Must(template.New("lroute").Funcs(FuncMap).Parse(
 		"{{$conf := .ShowConf}}" +
 			"{{with .LRoute}}\n{{pfx 1}}Linux Route:" +
 
@@ -850,11 +789,7 @@ func createlRouteTemplate() *template.Template {
 			//End iterate over interface.
 			"{{end}}" +
 
-			"{{end}}")
-
-	if err != nil {
-		panic(err)
-	}
+			"{{end}}"))
 
 	return Template
 }
@@ -862,16 +797,14 @@ func createlRouteTemplate() *template.Template {
 // Render data according to templates in text form.
 func (ed EtcdDump) textRenderer(showConf bool, templates []*template.Template) (*bytes.Buffer, error) {
 	buffer := new(bytes.Buffer)
-	buffer.WriteTo(os.Stdout)
 	for _, key := range ed.getSortedKeys() {
 		vd, _ := ed[key]
 		vd.ShowConf = showConf
 
-		var wasError error
 		for _, templateVal := range templates {
-			wasError = templateVal.Execute(buffer, vd)
-			if wasError != nil {
-				return nil, wasError
+			err := templateVal.Execute(buffer, vd)
+			if err != nil {
+				return nil, err
 			}
 		}
 	}

@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"html/template"
-	"os"
 
 	"github.com/ligato/vpp-agent/cmd/agentctl/utils"
 )
@@ -41,26 +40,20 @@ func (ll LogList) PrintLogList() (*bytes.Buffer, error) {
 }
 
 func createLogTypeTemplate() *template.Template {
-	Template, err := template.New("log").Parse(
+	Template := template.Must(template.New("log").Parse(
 		"{{with .Logger}}\nLogger: {{.}}{{end}}" +
-			"{{with .Level}}\nLevel: {{.}}{{end}}")
-
-	if err != nil {
-		panic(err)
-	}
+			"{{with .Level}}\nLevel: {{.}}{{end}}"))
 
 	return Template
 }
 
 func (ll LogList) textRenderer(templates []*template.Template) (*bytes.Buffer, error) {
 	buffer := new(bytes.Buffer)
-	buffer.WriteTo(os.Stdout)
 	for _, value := range ll {
-		var wasError error
 		for _, templateVal := range templates {
-			wasError = templateVal.Execute(buffer, value)
-			if nil != wasError {
-				return nil, wasError
+			err := templateVal.Execute(buffer, value)
+			if err != nil {
+				return nil, err
 			}
 		}
 	}
