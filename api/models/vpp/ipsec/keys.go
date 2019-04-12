@@ -15,7 +15,6 @@
 package vpp_ipsec
 
 import (
-	"github.com/gogo/protobuf/jsonpb"
 	"strconv"
 	"strings"
 
@@ -135,30 +134,4 @@ func ParseSPDPolicyKey(key string) (spdIndex string, saIndex string, isSPDIfaceK
 		return keyComps[2], saIndex, true
 	}
 	return "", "", false
-}
-
-func (m *SecurityPolicyDatabase) MarshalJSON() ([]byte, error) {
-	marshaller := &jsonpb.Marshaler{}
-	str, err := marshaller.MarshalToString(m)
-	if err != nil {
-		return nil, err
-	}
-	return []byte(str), nil
-}
-
-func (m *SecurityPolicyDatabase) UnmarshalJSON(data []byte) error {
-	return jsonpb.UnmarshalString(string(data), m)
-}
-
-func (m *SecurityAssociation) MarshalJSON() ([]byte, error) {
-	marshaller := &jsonpb.Marshaler{}
-	str, err := marshaller.MarshalToString(m)
-	if err != nil {
-		return nil, err
-	}
-	return []byte(str), nil
-}
-
-func (m *SecurityAssociation) UnmarshalJSON(data []byte) error {
-	return jsonpb.UnmarshalString(string(data), m)
 }

@@ -19,7 +19,6 @@ import (
 	"strconv"
 	"strings"
 
-    "github.com/gogo/protobuf/jsonpb"
 	"github.com/ligato/vpp-agent/pkg/models"
 )
 
@@ -123,55 +122,4 @@ func ParseRouteKey(key string) (vrfIndex string, dstNetAddr string, dstNetMask i
 		}
 	}
 	return "", "", 0, "", false
-}
-func (m *ARPEntry) MarshalJSON() ([]byte, error) {
-	marshaller := &jsonpb.Marshaler{}
-	str, err := marshaller.MarshalToString(m)
-	if err != nil {
-		return nil, err
-	}
-	return []byte(str), nil
-}
-
-func (m *ARPEntry) UnmarshalJSON(data []byte) error {
-	return jsonpb.UnmarshalString(string(data), m)
-}
-
-func (m *Route) MarshalJSON() ([]byte, error) {
-	marshaller := &jsonpb.Marshaler{}
-	str, err := marshaller.MarshalToString(m)
-	if err != nil {
-		return nil, err
-	}
-	return []byte(str), nil
-}
-
-func (m *Route) UnmarshalJSON(data []byte) error {
-	return jsonpb.UnmarshalString(string(data), m)
-}
-
-func (m *IPScanNeighbor) MarshalJSON() ([]byte, error) {
-	marshaller := &jsonpb.Marshaler{}
-	str, err := marshaller.MarshalToString(m)
-	if err != nil {
-		return nil, err
-	}
-	return []byte(str), nil
-}
-
-func (m *IPScanNeighbor) UnmarshalJSON(data []byte) error {
-	return jsonpb.UnmarshalString(string(data), m)
-}
-
-func (m *ProxyARP) MarshalJSON() ([]byte, error) {
-	marshaller := &jsonpb.Marshaler{}
-	str, err := marshaller.MarshalToString(m)
-	if err != nil {
-		return nil, err
-	}
-	return []byte(str), nil
-}
-
-func (m *ProxyARP) UnmarshalJSON(data []byte) error {
-	return jsonpb.UnmarshalString(string(data), m)
 }

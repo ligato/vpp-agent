@@ -15,7 +15,6 @@
 package vpp_l2
 
 import (
-	"github.com/gogo/protobuf/jsonpb"
 	"strings"
 
 	"github.com/ligato/vpp-agent/pkg/models"
@@ -106,43 +105,4 @@ func ParseBDInterfaceKey(key string) (bdName string, iface string, isBDIfaceKey 
 		return keyComps[2], iface, true
 	}
 	return "", "", false
-}
-
-func (m *BridgeDomain) MarshalJSON() ([]byte, error) {
-	marshaller := &jsonpb.Marshaler{}
-	str, err := marshaller.MarshalToString(m)
-	if err != nil {
-		return nil, err
-	}
-	return []byte(str), nil
-}
-
-func (m *BridgeDomain) UnmarshalJSON(data []byte) error {
-	return jsonpb.UnmarshalString(string(data), m)
-}
-
-func (m *FIBEntry) MarshalJSON() ([]byte, error) {
-	marshaller := &jsonpb.Marshaler{}
-	str, err := marshaller.MarshalToString(m)
-	if err != nil {
-		return nil, err
-	}
-	return []byte(str), nil
-}
-
-func (m *FIBEntry) UnmarshalJSON(data []byte) error {
-	return jsonpb.UnmarshalString(string(data), m)
-}
-
-func (m *XConnectPair) MarshalJSON() ([]byte, error) {
-	marshaller := &jsonpb.Marshaler{}
-	str, err := marshaller.MarshalToString(m)
-	if err != nil {
-		return nil, err
-	}
-	return []byte(str), nil
-}
-
-func (m *XConnectPair) UnmarshalJSON(data []byte) error {
-	return jsonpb.UnmarshalString(string(data), m)
 }
