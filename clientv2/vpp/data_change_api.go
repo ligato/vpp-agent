@@ -104,7 +104,7 @@ type DeleteDSL interface {
 	// ACL adds a request to delete an existing VPP Access Control List.
 	ACL(aclName string) DeleteDSL
 	// ABF adds a request to delete and existing VPP Access Control List.
-	ABF(abfIndex string) DeleteDSL
+	ABF(abfIndex uint32) DeleteDSL
 	// BD adds a request to delete an existing VPP Bridge Domain.
 	BD(bdName string) DeleteDSL
 	// BDFIB adds a request to delete an existing VPP L2 Forwarding Information

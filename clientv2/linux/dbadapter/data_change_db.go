@@ -273,7 +273,7 @@ func (dsl *DeleteDSL) ACL(aclName string) linuxclient.DeleteDSL {
 }
 
 // ABF adds a request to delete an existing VPP ACL-based forwarding
-func (dsl *DeleteDSL) ABF(abfIndex string) linuxclient.DeleteDSL {
+func (dsl *DeleteDSL) ABF(abfIndex uint32) linuxclient.DeleteDSL {
 	dsl.vppDelete.ABF(abfIndex)
 	return dsl
 }

@@ -16,7 +16,6 @@ package vpp1904
 
 import (
 	"net"
-	"strconv"
 
 	vpp_abf "github.com/ligato/vpp-agent/api/models/vpp/abf"
 	"github.com/ligato/vpp-agent/plugins/vpp/abfplugin/vppcalls"
@@ -135,7 +134,7 @@ func (h *ABFVppHandler) dumpABFPolicy() ([]*vppcalls.ABFDetails, error) {
 
 		abfData := &vppcalls.ABFDetails{
 			ABF: &vpp_abf.ABF{
-				Index:           strconv.Itoa(int(reply.Policy.PolicyID)),
+				Index:           reply.Policy.PolicyID,
 				AclName:         aclName,
 				ForwardingPaths: fwdPaths,
 			},

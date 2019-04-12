@@ -9,7 +9,7 @@ option (gogoproto.messagename_all) = true;
 
 // ACL based forwarding
 message ABF {
-    string index = 1;               // ABF index (must be a number)
+    uint32 index = 1;               // ABF index (unique identifier)
     string acl_name = 2;            // Name of the associated access list
 
     // List of interfaces attached to the ABF

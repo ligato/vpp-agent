@@ -25,25 +25,25 @@ import (
 func TestABFKey(t *testing.T) {
 	tests := []struct {
 		name        string
-		abfIndex    string
+		abfIndex    uint32
 		expectedKey string
 	}{
 		{
 			name:        "valid ABF index",
-			abfIndex:    "1",
-			expectedKey: "config/vpp/abfs/v2/abf/1",
+			abfIndex:    0,
+			expectedKey: "config/vpp/abfs/v2/abf/0",
 		},
 		{
-			name:        "invalid ABF index",
-			abfIndex:    "",
-			expectedKey: "config/vpp/abfs/v2/abf/<invalid>",
+			name:        "valid ABF index",
+			abfIndex:    1,
+			expectedKey: "config/vpp/abfs/v2/abf/1",
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			key := vpp_abf.Key(test.abfIndex)
 			if key != test.expectedKey {
-				t.Errorf("failed for: abfIndex=%s\n"+
+				t.Errorf("failed for: abfIndex=%d\n"+
 					"expected key:\n\t%q\ngot key:\n\t%q",
 					test.abfIndex, test.expectedKey, key)
 			}
@@ -87,40 +87,28 @@ func TestParseNameFromKey(t *testing.T) {
 func TestABFToInterfaceKey(t *testing.T) {
 	tests := []struct {
 		name        string
-		abfIndex    string
+		abfIndex    uint32
 		iface       string
 		expectedKey string
 	}{
 		{
 			name:        "interface",
-			abfIndex:    "1",
+			abfIndex:    1,
 			iface:       "tap0",
 			expectedKey: "vpp/abf/1/interface/tap0",
 		},
 		{
-			name:        "empty abf index",
-			abfIndex:    "",
-			iface:       "memif0",
-			expectedKey: "vpp/abf/<invalid>/interface/memif0",
-		},
-		{
 			name:        "empty interface",
-			abfIndex:    "2",
+			abfIndex:    2,
 			iface:       "",
 			expectedKey: "vpp/abf/2/interface/<invalid>",
-		},
-		{
-			name:        "empty parameters",
-			abfIndex:    "",
-			iface:       "",
-			expectedKey: "vpp/abf/<invalid>/interface/<invalid>",
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			key := vpp_abf.ToInterfaceKey(test.abfIndex, test.iface)
 			if key != test.expectedKey {
-				t.Errorf("failed for: abfIndex=%s iface=%s\n"+
+				t.Errorf("failed for: abfIndex=%d iface=%s\n"+
 					"expected key:\n\t%q\ngot key:\n\t%q",
 					test.abfIndex, test.iface, test.expectedKey, key)
 			}

@@ -15,8 +15,6 @@
 package descriptor
 
 import (
-	"strconv"
-
 	"github.com/ligato/vpp-agent/plugins/vpp/aclplugin/descriptor"
 
 	"github.com/go-errors/errors"
@@ -45,9 +43,6 @@ const (
 
 // A list of non-retriable errors:
 var (
-	// ErrABFInvalidIndex is returned when ABF configuration is defined with invalid index (not a number).
-	ErrABFInvalidIndex = errors.New("ABF configuration contains invalid index")
-
 	// ErrABFWithoutACL is returned when ABF configuration does not contain associated access list.
 	ErrABFWithoutACL = errors.New("ABF configuration defined without ACL")
 )
@@ -121,13 +116,6 @@ func (d *ABFDescriptor) EquivalentABFs(key string, oldABF, newABF *abf.ABF) bool
 
 // Validate validates VPP ABF configuration.
 func (d *ABFDescriptor) Validate(key string, abfData *abf.ABF) error {
-	if abfData.Index == "" {
-		return api.NewInvalidValueError(ErrABFInvalidIndex, "index")
-	}
-	_, err := strconv.Atoi(abfData.Index)
-	if err != nil {
-		return api.NewInvalidValueError(ErrABFInvalidIndex, "index")
-	}
 	if abfData.AclName == "" {
 		return api.NewInvalidValueError(ErrABFWithoutACL, "acl_name")
 	}
@@ -137,12 +125,6 @@ func (d *ABFDescriptor) Validate(key string, abfData *abf.ABF) error {
 // Create validates ABF (mainly index), verifies ACL existence and configures ABF policy. Attached interfaces
 // are put to metadata together with the ABF index to make it available for other ABF descriptors.
 func (d *ABFDescriptor) Create(key string, abfData *abf.ABF) (*abfidx.ABFMetadata, error) {
-	abfIdx, err := getABFIndex(abfData)
-	if err != nil {
-		d.log.Error(err)
-		return nil, err
-	}
-
 	// get ACL index
 	aclData, exists := d.aclIndex.LookupByName(abfData.AclName)
 	if !exists {
@@ -152,14 +134,14 @@ func (d *ABFDescriptor) Create(key string, abfData *abf.ABF) (*abfidx.ABFMetadat
 	}
 
 	// add new ABF policy
-	if err := d.abfHandler.AddAbfPolicy(uint32(abfIdx), aclData.Index, abfData.ForwardingPaths); err != nil {
+	if err := d.abfHandler.AddAbfPolicy(abfData.Index, aclData.Index, abfData.ForwardingPaths); err != nil {
 		d.log.Error(err)
 		return nil, err
 	}
 
 	// fill the metadata
 	metadata := &abfidx.ABFMetadata{
-		Index:    uint32(abfIdx),
+		Index:    abfData.Index,
 		Attached: abfData.AttachedInterfaces,
 	}
 
@@ -258,12 +240,4 @@ func equivalentABFForwardingPaths(oldPaths, newPaths []*abf.ABF_ForwardingPath) 
 		}
 	}
 	return true
-}
-
-func getABFIndex(abfData *abf.ABF) (index int, err error) {
-	index, err = strconv.Atoi(abfData.Index)
-	if err != nil {
-		return index, errors.Errorf("cannot convert ABF index %s: %v", abfData.Index, err)
-	}
-	return index, nil
 }

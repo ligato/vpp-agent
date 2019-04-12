@@ -15,6 +15,7 @@
 package vpp_abf
 
 import (
+	"strconv"
 	"strings"
 
 	"github.com/ligato/vpp-agent/pkg/models"
@@ -33,10 +34,7 @@ var (
 
 // Key returns the prefix used in the ETCD to store VPP ACL-based forwarding
 // config of a particular ABF in selected vpp instance.
-func Key(index string) string {
-	if index == "" {
-		index = InvalidKeyPart
-	}
+func Key(index uint32) string {
 	return models.Key(&ABF{
 		Index: index,
 	})
@@ -53,15 +51,12 @@ const (
 )
 
 // ToABFInterfaceKey returns key for ABF-to-interface
-func ToInterfaceKey(abf, iface string) string {
-	if abf == "" {
-		abf = InvalidKeyPart
-	}
+func ToInterfaceKey(abf uint32, iface string) string {
 	if iface == "" {
 		iface = InvalidKeyPart
 	}
 	key := abfToInterfaceTemplate
-	key = strings.Replace(key, "{abf}", abf, 1)
+	key = strings.Replace(key, "{abf}", strconv.Itoa(int(abf)), 1)
 	key = strings.Replace(key, "{iface}", iface, 1)
 	return key
 }

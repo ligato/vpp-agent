@@ -29,7 +29,7 @@ type ABFCtl interface {
 // PutABF puts ACL-based forwarding to the ETCD
 func (ctl *VppAgentCtlImpl) PutABF() error {
 	abfData := &abf.ABF{
-		Index:   "1",
+		Index:   1,
 		AclName: "aclip1",
 		AttachedInterfaces: []*abf.ABF_AttachedInterface{
 			{
@@ -60,7 +60,7 @@ func (ctl *VppAgentCtlImpl) PutABF() error {
 
 // DeleteABF removes ACL-based forwarding from the ETCD
 func (ctl *VppAgentCtlImpl) DeleteABF() error {
-	abfKey := abf.Key("1")
+	abfKey := abf.Key(1)
 
 	ctl.Log.Infof("Deleted ABF: %v", abfKey)
 	_, err := ctl.broker.Delete(abfKey)
