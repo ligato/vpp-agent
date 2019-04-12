@@ -80,7 +80,7 @@ func logFunction(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	if 0 == len(tmpData) {
+	if len(tmpData) == 0 {
 		fmt.Fprintf(os.Stdout, "No data found.\n")
 		return
 	}
@@ -90,7 +90,7 @@ func logFunction(cmd *cobra.Command, args []string) {
 
 func printLogList(data utils.LogList) {
 	buffer, err := data.PrintLogList()
-	if nil == err {
+	if err != nil {
 		fmt.Fprintf(os.Stdout, buffer.String())
 	} else {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)

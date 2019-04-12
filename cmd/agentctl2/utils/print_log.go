@@ -21,7 +21,7 @@ func ConvertToLogList(log string) LogList {
 	data := make(LogList, 0)
 	err := json.Unmarshal([]byte(log), &data)
 
-	if nil != err {
+	if err != nil {
 		utils.ExitWithError(utils.ExitError,
 			errors.New("Failed conver string to json - "+err.Error()))
 	}

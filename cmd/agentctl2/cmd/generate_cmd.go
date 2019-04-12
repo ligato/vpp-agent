@@ -287,7 +287,7 @@ func printJSON(msg proto.Message) {
 	js, err := json.MarshalIndent(msg, "", "  ")
 	key := models.Key(msg)
 
-	if nil != err {
+	if err != nil {
 		utils.ExitWithError(utils.ExitError,
 			errors.New("Failed generate json, error: "+err.Error()))
 	}
@@ -298,7 +298,7 @@ func printJSON(msg proto.Message) {
 func printYaml(msg proto.Message) {
 	js, err := json.MarshalIndent(msg, "", "  ")
 
-	if nil != err {
+	if err != nil {
 		utils.ExitWithError(utils.ExitError,
 			errors.New("Failed generate json, error: "+err.Error()))
 	}
@@ -306,7 +306,7 @@ func printYaml(msg proto.Message) {
 	ym, err := yaml.JSONToYAML(js)
 	key := models.Key(msg)
 
-	if nil != err {
+	if err != nil {
 		utils.ExitWithError(utils.ExitError,
 			errors.New("Failed generate yaml, error: "+err.Error()))
 	}

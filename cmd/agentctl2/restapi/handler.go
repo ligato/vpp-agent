@@ -21,7 +21,7 @@ func GetMsg(endpoints []string, path string) string {
 	cfg := &etcd.Config{}
 	etcdConfig, err := etcd.ConfigToClient(cfg)
 
-	if nil != err {
+	if err != nil {
 		utils.ExitWithError(utils.ExitError,
 			errors.New("Failed to read config - "+err.Error()))
 	}
@@ -38,7 +38,7 @@ func GetMsg(endpoints []string, path string) string {
 
 	msg, err := ioutil.ReadAll(resp.Body)
 	resp.Body.Close()
-	if nil != err {
+	if err != nil {
 		utils.ExitWithError(utils.ExitError,
 			errors.New("Failed get message body - "+err.Error()))
 	}
@@ -55,7 +55,7 @@ func SetMsg(endpoints []string, path string) {
 	cfg := &etcd.Config{}
 	etcdConfig, err := etcd.ConfigToClient(cfg)
 
-	if nil != err {
+	if err != nil {
 		utils.ExitWithError(utils.ExitError,
 			errors.New("Failed to read config - "+err.Error()))
 	}
@@ -66,20 +66,20 @@ func SetMsg(endpoints []string, path string) {
 
 	client := http.Client{}
 	request, err := http.NewRequest(http.MethodPut, addrPath, strings.NewReader(""))
-	if nil != err {
+	if err != nil {
 		utils.ExitWithError(utils.ExitError,
 			errors.New("Failed create put message body - "+err.Error()))
 	}
 
 	response, err := client.Do(request)
-	if nil != err {
+	if err != nil {
 		utils.ExitWithError(utils.ExitError,
 			errors.New("Failed send put message body - "+err.Error()))
 	}
 
 	defer response.Body.Close()
 	contents, err := ioutil.ReadAll(response.Body)
-	if nil != err {
+	if err != nil {
 		utils.ExitWithError(utils.ExitError,
 			errors.New("Failed receiver answer to put message body - "+err.Error()))
 	}
@@ -95,7 +95,7 @@ func PostMsg(endpoints []string, path string, jsonData string) string {
 	cfg := &etcd.Config{}
 	etcdConfig, err := etcd.ConfigToClient(cfg)
 
-	if nil != err {
+	if err != nil {
 		utils.ExitWithError(utils.ExitError,
 			errors.New("Failed to read config - "+err.Error()))
 	}
@@ -105,14 +105,14 @@ func PostMsg(endpoints []string, path string, jsonData string) string {
 
 	addrPath := "http://" + addr + path
 	resp, err := http.Post(addrPath, "application/json", strings.NewReader(jsonData))
-	if nil != err {
+	if err != nil {
 		utils.ExitWithError(utils.ExitError,
 			errors.New("Failed get http request - "+err.Error()))
 	}
 
 	msg, err := ioutil.ReadAll(resp.Body)
 	resp.Body.Close()
-	if nil != err {
+	if err != nil {
 		utils.ExitWithError(utils.ExitError,
 			errors.New("Failed get message body - "+err.Error()))
 	}
