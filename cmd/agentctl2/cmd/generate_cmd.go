@@ -61,6 +61,16 @@ var generateBd = &cobra.Command{
 	Run:  bdGenerateFunction,
 }
 
+var generateFib = &cobra.Command{
+	Use:   utils.GetModuleName(&vpp.L2FIB{}),
+	Short: "Generate VPP example fib config",
+	Long: `
+	Generate VPP example fib config
+`,
+	Args: cobra.MaximumNArgs(0),
+	Run:  fibGenerateFunction,
+}
+
 var generateIPScanNeighbor = &cobra.Command{
 	Use:   utils.GetModuleName(&vpp.IPScanNeigh{}),
 	Short: "Generate VPP example ip scan neighbor config",
@@ -178,6 +188,7 @@ func init() {
 	generateConfig.AddCommand(generateACL)
 	generateConfig.AddCommand(generateInterface)
 	generateConfig.AddCommand(generateBd)
+	generateConfig.AddCommand(generateFib)
 	generateConfig.AddCommand(generateIPScanNeighbor)
 	generateConfig.AddCommand(generateNatGlobal)
 	generateConfig.AddCommand(generateNatDNat)
@@ -203,6 +214,10 @@ func interfaceGenerateFunction(cmd *cobra.Command, args []string) {
 
 func bdGenerateFunction(cmd *cobra.Command, args []string) {
 	generateFunction(cmd_generator.Bd)
+}
+
+func fibGenerateFunction(cmd *cobra.Command, args []string) {
+	generateFunction(cmd_generator.Fib)
 }
 
 func ipScanNeighborGenerateFunction(cmd *cobra.Command, args []string) {

@@ -26,6 +26,7 @@ const (
 
 	// VPP l2 plugin
 	Bd
+	Fib
 	IPScanNeighbor
 
 	// VPP NAT
@@ -56,6 +57,8 @@ func GenerateConfig(cmdType CommandType) (msg proto.Message) {
 		msg = generateARPConfig()
 	case Bd:
 		msg = generateBridgeDomainConfig()
+	case Fib:
+		msg = generateFibConfig()
 	case Interface:
 		msg = generateInterfaceConfig()
 	case Routes:
@@ -83,6 +86,19 @@ func GenerateConfig(cmdType CommandType) (msg proto.Message) {
 	return msg
 }
 
+func generateFibConfig() proto.Message {
+	fib := &l2.FIBEntry{
+		PhysAddress:             "EA:FE:3C:64:A7:44",
+		BridgeDomain:            "bd1",
+		OutgoingInterface:       "loop1",
+		StaticConfig:            true,
+		BridgedVirtualInterface: true,
+		Action:                  l2.FIBEntry_FORWARD, // or DROP
+	}
+
+	return fib
+}
+
 func generateInterfaceConfig() proto.Message {
 	//{"name":"loop1","type":"SOFTWARE_LOOPBACK","enabled":true,
 	// "phys_address":"7C:4E:E7:8A:63:68","ip_addresses":["192.168.25.3/24","172.125.45.1/24"],
@@ -103,85 +119,115 @@ func generateInterfaceConfig() proto.Message {
 }
 
 func generateACLConfig() proto.Message {
-	///vnf-agent/vpp1/config/vpp/acls/v2/acl/acl1 '
-	// {"name":"acl1","interfaces":{"egress":["tap1","tap2"],
-	// "ingress":["tap3","tap4"]},
-	// "rules":[{"action":1,"ip_rule":{"ip":{"destination_network":"10.20.1.0/24",
-	// "source_network":"192.168.1.2/32"},
-	// "tcp":{"destination_port_range":{"lower_port":1150,"upper_port":1250},
-	// "source_port_range":{"lower_port":150,"upper_port":250},
-	// "tcp_flags_mask":20,"tcp_flags_value":10}}}]}'
-
-	eacl := &acl.ACL{
-		Name: "acl1",
-		Interfaces: &acl.ACL_Interfaces{
-			Ingress: []string{"tap1", "tap2"},
-			Egress:  []string{"tap1", "tap2"},
-		},
+	accessList := &acl.ACL{
+		Name: "aclip1",
 		Rules: []*acl.ACL_Rule{
+			// ACL IP rule
 			{
-
-				Action: 1,
+				Action: acl.ACL_Rule_PERMIT,
 				IpRule: &acl.ACL_Rule_IpRule{
 					Ip: &acl.ACL_Rule_IpRule_Ip{
-						DestinationNetwork: "10.20.1.0/24",
-						SourceNetwork:      "192.168.1.2/32",
+						SourceNetwork:      "192.168.1.1/32",
+						DestinationNetwork: "10.20.0.1/24",
 					},
-					Tcp: &acl.ACL_Rule_IpRule_Tcp{
-						DestinationPortRange: &acl.ACL_Rule_IpRule_PortRange{
-							LowerPort: 1150,
-							UpperPort: 1250,
+				},
+			},
+			// ACL ICMP rule
+			{
+				Action: acl.ACL_Rule_PERMIT,
+				IpRule: &acl.ACL_Rule_IpRule{
+					Icmp: &acl.ACL_Rule_IpRule_Icmp{
+						Icmpv6: false,
+						IcmpCodeRange: &acl.ACL_Rule_IpRule_Icmp_Range{
+							First: 150,
+							Last:  250,
 						},
+						IcmpTypeRange: &acl.ACL_Rule_IpRule_Icmp_Range{
+							First: 1150,
+							Last:  1250,
+						},
+					},
+				},
+			},
+			// ACL TCP rule
+			{
+				Action: acl.ACL_Rule_PERMIT,
+				IpRule: &acl.ACL_Rule_IpRule{
+					Tcp: &acl.ACL_Rule_IpRule_Tcp{
+						TcpFlagsMask:  20,
+						TcpFlagsValue: 10,
 						SourcePortRange: &acl.ACL_Rule_IpRule_PortRange{
 							LowerPort: 150,
 							UpperPort: 250,
 						},
-						TcpFlagsMask:  20,
-						TcpFlagsValue: 10,
+						DestinationPortRange: &acl.ACL_Rule_IpRule_PortRange{
+							LowerPort: 1150,
+							UpperPort: 1250,
+						},
+					},
+				},
+			},
+			// ACL UDP rule
+			{
+				Action: acl.ACL_Rule_PERMIT,
+				IpRule: &acl.ACL_Rule_IpRule{
+					Udp: &acl.ACL_Rule_IpRule_Udp{
+						SourcePortRange: &acl.ACL_Rule_IpRule_PortRange{
+							LowerPort: 150,
+							UpperPort: 250,
+						},
+						DestinationPortRange: &acl.ACL_Rule_IpRule_PortRange{
+							LowerPort: 1150,
+							UpperPort: 1250,
+						},
 					},
 				},
 			},
 		},
+		Interfaces: &acl.ACL_Interfaces{
+			Ingress: []string{"tap1", "tap2"},
+			Egress:  []string{"tap1", "tap2"},
+		},
 	}
 
-	return eacl
+	return accessList
 }
 
 func generateBridgeDomainConfig() proto.Message {
-	///vnf-agent/vpp1/config/vpp/l2/v2/bridge-domain/bd1
-	// '{"name":"bd1","learn":true,"flood":true,
-	// "forward":true,"unknown_unicast_flood":true,"arp_termination":true,
-	// "interfaces":[{"name":"if1","split_horizon_group":0,"bridged_virtual_interface":true},
-	// {"name":"if2","split_horizon_group":0},{"name":"if2","split_horizon_group":0}],
-	// "arp_termination_table":[{"ip_address":"192.168.10.10","phys_address":"a7:65:f1:b5:dc:f6"},
-	// {"ip_address":"10.10.0.1","phys_address":"59:6C:45:59:8E:BC"}]}'
-
-	br := &l2.BridgeDomain{
+	bd := &l2.BridgeDomain{
 		Name:                "bd1",
 		Learn:               true,
-		Flood:               true,
-		Forward:             true,
-		UnknownUnicastFlood: true,
 		ArpTermination:      true,
+		Flood:               true,
+		UnknownUnicastFlood: true,
+		Forward:             true,
+		MacAge:              0,
 		Interfaces: []*l2.BridgeDomain_Interface{
 			{
-				Name:              "if1",
-				SplitHorizonGroup: 0,
+				Name:                    "sub1",
+				BridgedVirtualInterface: true,
+				SplitHorizonGroup:       0,
+			},
+			{
+				Name:                    "tap1",
+				BridgedVirtualInterface: false,
+				SplitHorizonGroup:       1,
+			},
+			{
+				Name:                    "memif1",
+				BridgedVirtualInterface: false,
+				SplitHorizonGroup:       2,
 			},
 		},
 		ArpTerminationTable: []*l2.BridgeDomain_ArpTerminationEntry{
 			{
-				IpAddress:   "192.168.10.10",
-				PhysAddress: "a7:65:f1:b5:dc:f6",
-			},
-			{
-				IpAddress:   "10.10.0.1",
-				PhysAddress: "59:6C:45:59:8E:BC",
+				IpAddress:   "192.168.50.20",
+				PhysAddress: "A7:5D:44:D8:E6:51",
 			},
 		},
 	}
 
-	return br
+	return bd
 }
 
 func generateARPConfig() proto.Message {
@@ -201,13 +247,12 @@ func generateARPConfig() proto.Message {
 }
 
 func generateRouteConfig() proto.Message {
-	///vnf-agent/vpp1/config/vpp/v2/route/vrf/0/dst/1.2.3.4/32/gw
-	// '{"type":"INTER_VRF","dst_network":"1.2.3.4/32","via_vrf_id":1}'
-
 	route := &l3.Route{
-		Type:       l3.Route_INTER_VRF,
-		DstNetwork: "1.2.3.4/32",
-		ViaVrfId:   1,
+		Type:        l3.Route_INTER_VRF,
+		VrfId:       1,
+		DstNetwork:  "10.1.1.3/32",
+		NextHopAddr: "192.168.1.13",
+		ViaVrfId:    0,
 	}
 
 	return route
@@ -256,14 +301,7 @@ func generateIPscanneighConfig() proto.Message {
 }
 
 func generateDNATConfig() proto.Message {
-	///vnf-agent/vpp1/config/vpp/nat/v2/dnat44/dnat1
-	// {"label":"dnat1","st_mappings":[{"external_interface":"tap1","external_ip":"192.168.0.1",
-	// "external_port":8989,"local_ips":[{"local_ip":"172.124.0.2",
-	// "local_port":6500,"probability":40},{"local_ip":"172.125.10.5",
-	// "local_port":2300,"probability":40}],"protocol":"UDP","twice_nat":"ENABLED"}],
-	// "id_mappings":[{"ip_address":"10.10.0.1","port":2525}]}
-
-	dnat := &nat.DNat44{
+	dNat := &nat.DNat44{
 		Label: "dnat1",
 		StMappings: []*nat.DNat44_StaticMapping{
 			{
@@ -272,63 +310,70 @@ func generateDNATConfig() proto.Message {
 				ExternalPort:      8989,
 				LocalIps: []*nat.DNat44_StaticMapping_LocalIP{
 					{
+						VrfId:       0,
 						LocalIp:     "172.124.0.2",
 						LocalPort:   6500,
 						Probability: 40,
 					},
 					{
+						VrfId:       0,
+						LocalIp:     "172.125.10.5",
 						LocalPort:   2300,
 						Probability: 40,
 					},
 				},
-				Protocol: nat.DNat44_UDP,
+				Protocol: 1,
 				TwiceNat: nat.DNat44_StaticMapping_ENABLED,
 			},
 		},
 		IdMappings: []*nat.DNat44_IdentityMapping{
 			{
+				VrfId:     0,
 				IpAddress: "10.10.0.1",
 				Port:      2525,
+				Protocol:  0,
 			},
 		},
 	}
 
-	return dnat
+	return dNat
 }
 
 func generateNATConfig() proto.Message {
-	///vnf-agent/vpp1/config/vpp/nat/v2/nat44-global
-	// {"nat_interfaces":[{"name":"tap1"},{"name":"tap2","output_feature":true},
-	// {"name":"tap3","is_inside":true}],"address_pool":[{"address":"192.168.0.1"},
-	// {"address":"175.124.0.1"},{"address":"10.10.0.1"}],
-	// "virtual_reassembly":{"timeout":10,"max_reassemblies":20,
-	// "max_fragments":10,"drop_fragments":true}}
-
-	natg := &nat.Nat44Global{
+	natGlobal := &nat.Nat44Global{
+		Forwarding: false,
 		NatInterfaces: []*nat.Nat44Global_Interface{
 			{
-				Name: "tap1",
+				Name:          "tap1",
+				IsInside:      false,
+				OutputFeature: false,
 			},
 			{
-				Name: "tap2",
-			},
-			{
+				Name:          "tap2",
+				IsInside:      false,
 				OutputFeature: true,
 			},
 			{
-				Name:     "tap3",
-				IsInside: true,
+				Name:          "tap3",
+				IsInside:      true,
+				OutputFeature: false,
 			},
 		},
 		AddressPool: []*nat.Nat44Global_Address{
 			{
-				Address: "192.168.0.1",
+				VrfId:    0,
+				Address:  "192.168.0.1",
+				TwiceNat: false,
 			},
 			{
-				Address: "175.124.0.1",
+				VrfId:    0,
+				Address:  "175.124.0.1",
+				TwiceNat: false,
 			},
 			{
-				Address: "10.10.0.1",
+				VrfId:    0,
+				Address:  "10.10.0.1",
+				TwiceNat: false,
 			},
 		},
 		VirtualReassembly: &nat.VirtualReassembly{
@@ -339,7 +384,7 @@ func generateNATConfig() proto.Message {
 		},
 	}
 
-	return natg
+	return natGlobal
 }
 
 func generateIPSecPolicyConfig() proto.Message {
@@ -358,6 +403,9 @@ func generateIPSecPolicyConfig() proto.Message {
 			{
 				Name: "tap1",
 			},
+			{
+				Name: "loop1",
+			},
 		},
 		PolicyEntries: []*ipsec.SecurityPolicyDatabase_PolicyEntry{
 			{
@@ -368,7 +416,7 @@ func generateIPSecPolicyConfig() proto.Message {
 				LocalAddrStart:  "10.0.0.2",
 				LocalAddrStop:   "10.0.0.2",
 				Action:          3,
-				SaIndex:         "20",
+				SaIndex:         "1",
 			},
 			{
 				Priority:        10,
@@ -378,7 +426,7 @@ func generateIPSecPolicyConfig() proto.Message {
 				LocalAddrStart:  "10.0.0.2",
 				LocalAddrStop:   "10.0.0.2",
 				Action:          3,
-				SaIndex:         "10",
+				SaIndex:         "2",
 			},
 		},
 	}
@@ -393,13 +441,14 @@ func generateIPSecAssociationConfig() proto.Message {
 	// "integ_key":"4339314b55523947594d6d3547666b45764e6a58"}'
 
 	ipsa := &ipsec.SecurityAssociation{
-		Index:     "1",
-		Spi:       1001,
-		Protocol:  1,
-		CryptoAlg: 1,
-		CryptoKey: "4a506a794f574265564551694d653768",
-		IntegAlg:  2,
-		IntegKey:  "4339314b55523947594d6d3547666b45764e6a58",
+		Index:          "1",
+		Spi:            1001,
+		Protocol:       1,
+		CryptoAlg:      1,
+		CryptoKey:      "4a506a794f574265564551694d653768",
+		IntegAlg:       2,
+		IntegKey:       "4339314b55523947594d6d3547666b45764e6a58",
+		EnableUdpEncap: true,
 	}
 
 	return ipsa
