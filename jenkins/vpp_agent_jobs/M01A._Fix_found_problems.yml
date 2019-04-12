@@ -1,0 +1,68 @@
+- job:
+    block-downstream: false
+    block-upstream: false
+    builders:
+      - shell: "# in working copy of vpp-agent repository\ncd /root/vpp-agent\n\n#20190208\
+          \ 10:28:10.960 \tERROR \tError in file '/root/vpp-agent/tests/robot/suites/misc/etcd_clear.robot':\
+          \ Resource file '../../../variables/arm64_local_variables.robot' does not\
+          \ exist.\n#20190208 10:28:10.961 \tERROR \tError in file '/root/vpp-agent/tests/robot/suites/misc/etcd_clear.robot':\
+          \ Resource file '../../../libraries/all_libs.robot' does not exist.\nsed -i\
+          \ -e 's/..\\/..\\/..\\/variables\\/${VARIABLES}_variables.robot/..\\/..\\\
+          /variables\\/${VARIABLES}_variables.robot/g' tests/robot/suites/misc/etcd_clear.robot\n\
+          sed -i -e 's/..\\/..\\/..\\/libraries\\/all_libs.robot/..\\/..\\/libraries\\\
+          /all_libs.robot/g' tests/robot/suites/misc/etcd_clear.robot\n\n\n#list changes\
+          \ in repository\ngit show"
+    concurrent: false
+    disabled: false
+    name: M01A. Fix found problems
+    node: master
+    parameters:
+      - raw:
+          xml: |
+            <com.cloudbees.plugins.credentials.CredentialsParameterDefinition plugin="credentials@2.1.18">
+            <name>robot</name>
+            <description />
+            <defaultValue>robot</defaultValue>
+            <credentialType>com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl</credentialType>
+            <required>true</required>
+            </com.cloudbees.plugins.credentials.CredentialsParameterDefinition>
+    project-type: freestyle
+    properties:
+      - build-discarder:
+          artifact-days-to-keep: -1
+          artifact-num-to-keep: -1
+          days-to-keep: -1
+          num-to-keep: 7
+      - raw:
+          xml: |
+            <hudson.plugins.throttleconcurrents.ThrottleJobProperty plugin="throttle-concurrents@2.0.1">
+            <maxConcurrentPerNode>0</maxConcurrentPerNode>
+            <maxConcurrentTotal>0</maxConcurrentTotal>
+            <categories class="java.util.concurrent.CopyOnWriteArrayList" />
+            <throttleEnabled>false</throttleEnabled>
+            <throttleOption>project</throttleOption>
+            <limitOneJobWithMatchingParams>false</limitOneJobWithMatchingParams>
+            <paramsToUseForLimit />
+            </hudson.plugins.throttleconcurrents.ThrottleJobProperty>
+    publishers: []
+    scm:
+      - git:
+          branches:
+            - '*/dev'
+          local-branch: dev
+          url: https://github.com/ligato/vpp-agent.git
+    triggers: []
+    wrappers:
+      - raw:
+          xml: |
+            <hudson.plugins.ws__cleanup.PreBuildCleanup plugin="ws-cleanup@0.37">
+            <deleteDirs>false</deleteDirs>
+            <cleanupParameter />
+            <externalDelete />
+            <disableDeferredWipeout>false</disableDeferredWipeout>
+            </hudson.plugins.ws__cleanup.PreBuildCleanup>
+      - credentials-binding:
+          - username-password-separated:
+              credential-id: robot
+              password: robotpassword
+              username: robotusername

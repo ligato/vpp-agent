@@ -27,16 +27,15 @@ RUN apt-get update \
 # install vpp
 COPY --from=devimg \
     /opt/vpp-agent/dev/vpp/build-root/vpp_*.deb \
-    /opt/vpp-agent/dev/vpp/build-root/vpp-lib*.deb \
-    /opt/vpp-agent/dev/vpp/build-root/vpp-plugins*.deb \
+    /opt/vpp-agent/dev/vpp/build-root/libvppinfra_*.deb \
+    /opt/vpp-agent/dev/vpp/build-root/vpp-plugin-core_*.deb \
  /opt/vpp/
 
 RUN cd /opt/vpp/ \
- && dpkg -i vpp_*.deb vpp-lib_*.deb vpp-plugins_*.deb \
- && rm vpp*.deb
+ && dpkg -i vpp_*.deb libvppinfra_*.deb vpp-plugin-core_*.deb \
+ && rm *.deb
 
 FROM scratch
-
 COPY --from=base / /
 
 # install agent
@@ -65,4 +64,4 @@ WORKDIR /root/
 
 # run supervisor as the default executable
 CMD rm -f /dev/shm/db /dev/shm/global_vm /dev/shm/vpe-api && \
-    /usr/bin/supervisord -c /etc/supervisord/supervisord.conf
+    exec /usr/bin/supervisord -c /etc/supervisord/supervisord.conf
