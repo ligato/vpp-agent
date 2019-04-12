@@ -2,6 +2,7 @@ package utils
 
 import (
 	"context"
+	json2 "encoding/json"
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/cn-infra/db/keyval"
@@ -62,8 +63,7 @@ func writeACLConfigToDb(db keyval.ProtoTxn, key string, json string) {
 	var err error
 
 	vacl := &acl.ACL{}
-
-	err = vacl.UnmarshalJSON([]byte(json))
+	err = proto.Unmarshal([]byte(json), vacl)
 
 	if nil != err {
 		utils.ExitWithError(utils.ExitError,
@@ -83,7 +83,7 @@ func writeInterfaceConfigToDb(db keyval.ProtoTxn, key string, json string) {
 
 	intr := &interfaces.Interface{}
 
-	err = intr.UnmarshalJSON([]byte(json))
+	err = json2.Unmarshal([]byte(json), intr)
 
 	if nil != err {
 		utils.ExitWithError(utils.ExitError,
@@ -103,7 +103,7 @@ func writeBridgeDomainConfigToDb(db keyval.ProtoTxn, key string, json string) {
 
 	bridge := &l2.BridgeDomain{}
 
-	err = bridge.UnmarshalJSON([]byte(json))
+	err = json2.Unmarshal([]byte(json), bridge)
 
 	if nil != err {
 		utils.ExitWithError(utils.ExitError,
@@ -123,7 +123,7 @@ func writeFibTableConfigToDb(db keyval.ProtoTxn, key string, json string) {
 
 	fib := &l2.FIBEntry{}
 
-	err = fib.UnmarshalJSON([]byte(json))
+	err = json2.Unmarshal([]byte(json), fib)
 
 	if nil != err {
 		utils.ExitWithError(utils.ExitError,
@@ -143,7 +143,7 @@ func writeXConnectConfigToDb(db keyval.ProtoTxn, key string, json string) {
 
 	xconnect := &l2.XConnectPair{}
 
-	err = xconnect.UnmarshalJSON([]byte(json))
+	err = json2.Unmarshal([]byte(json), xconnect)
 
 	if nil != err {
 		utils.ExitWithError(utils.ExitError,
@@ -163,7 +163,7 @@ func writeARPConfigToDb(db keyval.ProtoTxn, key string, json string) {
 
 	arp := &l3.ARPEntry{}
 
-	err = arp.UnmarshalJSON([]byte(json))
+	err = json2.Unmarshal([]byte(json), arp)
 
 	if nil != err {
 		utils.ExitWithError(utils.ExitError,
@@ -183,7 +183,7 @@ func writeRouteConfigToDb(db keyval.ProtoTxn, key string, json string) {
 
 	route := &l3.Route{}
 
-	err = route.UnmarshalJSON([]byte(json))
+	err = json2.Unmarshal([]byte(json), route)
 
 	if nil != err {
 		utils.ExitWithError(utils.ExitError,
@@ -203,7 +203,7 @@ func writeProxyConfigToDb(db keyval.ProtoTxn, key string, json string) {
 
 	proxy := &l3.ProxyARP{}
 
-	err = proxy.UnmarshalJSON([]byte(json))
+	err = json2.Unmarshal([]byte(json), proxy)
 
 	if nil != err {
 		utils.ExitWithError(utils.ExitError,
@@ -223,7 +223,7 @@ func writeIPScanneConfigToDb(db keyval.ProtoTxn, key string, json string) {
 
 	ipscanner := &l3.IPScanNeighbor{}
 
-	err = ipscanner.UnmarshalJSON([]byte(json))
+	err = json2.Unmarshal([]byte(json), ipscanner)
 
 	if nil != err {
 		utils.ExitWithError(utils.ExitError,
@@ -243,7 +243,7 @@ func writeNATConfigToDb(db keyval.ProtoTxn, key string, json string) {
 
 	natg := &nat.Nat44Global{}
 
-	err = natg.UnmarshalJSON([]byte(json))
+	err = json2.Unmarshal([]byte(json), natg)
 
 	if nil != err {
 		utils.ExitWithError(utils.ExitError,
@@ -263,7 +263,7 @@ func writeDNATConfigToDb(db keyval.ProtoTxn, key string, json string) {
 
 	dnat := &nat.DNat44{}
 
-	err = dnat.UnmarshalJSON([]byte(json))
+	err = json2.Unmarshal([]byte(json), dnat)
 
 	if nil != err {
 		utils.ExitWithError(utils.ExitError,
@@ -283,7 +283,7 @@ func writeIPSecPolicyConfigToDb(db keyval.ProtoTxn, key string, json string) {
 
 	policy := &ipsec.SecurityPolicyDatabase{}
 
-	err = policy.UnmarshalJSON([]byte(json))
+	err = json2.Unmarshal([]byte(json), policy)
 
 	if nil != err {
 		utils.ExitWithError(utils.ExitError,
@@ -303,7 +303,7 @@ func writeIPSecAssociateConfigToDb(db keyval.ProtoTxn, key string, json string) 
 
 	ipa := &ipsec.SecurityAssociation{}
 
-	err = ipa.UnmarshalJSON([]byte(json))
+	err = json2.Unmarshal([]byte(json), ipa)
 
 	if nil != err {
 		utils.ExitWithError(utils.ExitError,
@@ -323,7 +323,7 @@ func writelInterfaceConfigToDb(db keyval.ProtoTxn, key string, json string) {
 
 	lint := &linterface.Interface{}
 
-	err = lint.UnmarshalJSON([]byte(json))
+	err = json2.Unmarshal([]byte(json), lint)
 
 	if nil != err {
 		utils.ExitWithError(utils.ExitError,
@@ -343,7 +343,7 @@ func writelARPConfigToDb(db keyval.ProtoTxn, key string, json string) {
 
 	arp := &ll3.ARPEntry{}
 
-	err = arp.UnmarshalJSON([]byte(json))
+	err = json2.Unmarshal([]byte(json), arp)
 
 	if nil != err {
 		utils.ExitWithError(utils.ExitError,
@@ -363,7 +363,7 @@ func writelRouteConfigToDb(db keyval.ProtoTxn, key string, json string) {
 
 	route := &ll3.Route{}
 
-	err = route.UnmarshalJSON([]byte(json))
+	err = json2.Unmarshal([]byte(json), route)
 
 	if nil != err {
 		utils.ExitWithError(utils.ExitError,
