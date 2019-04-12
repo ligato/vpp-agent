@@ -21,7 +21,7 @@ import (
 )
 
 func WriteData(db keyval.ProtoTxn, key string, json string) {
-	_, dataType, _ := ParseKey(key)
+	_, dataType, _, _ := ParseKey(key)
 
 	switch dataType {
 	case acl.ModelACL.KeyPrefix():

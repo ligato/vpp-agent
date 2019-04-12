@@ -12,12 +12,35 @@ import (
 )
 
 // RootCmd represents the base command when called without any subcommands.
-var showConfig = &cobra.Command{
+var showCmd = &cobra.Command{
 	Use:     "show",
 	Aliases: []string{"s"},
-	Short:   "Show configuration file",
+	Short:   "Show detailed config and status data",
 	Long: `
-	Show configuration file
+'show' prints out Etcd configuration and status data (where applicable)
+for agents whose microservice label matches the label filter specified
+in the command's '[agent-label-filter] argument. The filter contains a
+list of comma-separated strings. A match is performed for each string
+in the filter list.
+
+Note that agent's configuration data is stored into Etcd by a 3rd party
+orchestrator. Agent's state data is periodically updated in Etcd by
+healthy agents themselves. Agents for which only configuration records
+exist (i.e. they do not push status records into Etcd) are listed as
+'INACTIVE'.
+
+The etcd flag set to true enables the printout of Etcd metadata for each
+data record (except JSON-formatted output)
+`,
+	Run: confFunction,
+}
+
+var showConfig = &cobra.Command{
+	Use:     "config",
+	Aliases: []string{""},
+	Short:   "Show config data",
+	Long: `
+	Show config data
 `,
 	Run: confFunction,
 }
@@ -27,8 +50,9 @@ var (
 )
 
 func init() {
-	RootCmd.AddCommand(showConfig)
-	showConfig.Flags().BoolVar(&showConf, "verbose", false, "Show Configuration")
+	RootCmd.AddCommand(showCmd)
+	showCmd.PersistentFlags().BoolVar(&showConf, "verbose", false,
+		"Show Configuration")
 }
 
 func confFunction(cmd *cobra.Command, args []string) {

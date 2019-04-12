@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"sort"
 
+	"github.com/ligato/cn-infra/health/statuscheck/model/status"
+
 	"github.com/gogo/protobuf/proto"
 
 	"github.com/ligato/cn-infra/db/keyval"
@@ -46,11 +48,18 @@ type IfConfigWithMD struct {
 	Interface *interfaces.Interface
 }
 
+// IfStateWithMD contains a data record for interface state and its
+// etcd metadata.
+type IfStateWithMD struct {
+	Metadata       VppMetaData
+	InterfaceState *interfaces.InterfaceState
+}
+
 // InterfaceWithMD contains a data record for interface and its
 // etcd metadata.
 type InterfaceWithMD struct {
 	Config *IfConfigWithMD
-	//	State  *IfStateWithMD
+	State  *IfStateWithMD
 }
 
 // BdConfigWithMD contains a data record for interface configuration
@@ -60,10 +69,18 @@ type BdConfigWithMD struct {
 	BridgeDomain *l2.BridgeDomain
 }
 
+// BdStateWithMD contains a Bridge Domain state data record and its etcd
+// metadata.
+type BdStateWithMD struct {
+	Metadata VppMetaData
+	//BridgeDomainState *l2.BridgeDomainState_BridgeDomain
+}
+
 // BdWithMD contains a data record for interface and its
 // etcd metadata.
 type BdWithMD struct {
 	Config *BdConfigWithMD
+	State  *BdStateWithMD
 }
 
 // FibTableConfigWithMD contains a data record for interface configuration
@@ -235,6 +252,13 @@ type lRouteWithMD struct {
 	Config *lRouteConfigWithMD
 }
 
+// VppStatusWithMD contains a VPP Status data record and its etcd
+// metadata.
+type VppStatusWithMD struct {
+	VppMetaData
+	status.AgentStatus
+}
+
 // VppData defines a structure to hold all etcd data records (of all
 // types) for one VPP.
 type VppData struct {
@@ -253,12 +277,12 @@ type VppData struct {
 	DNAT            map[string]DNATWithMD
 	IPSecPolicyDb   map[string]IPSecPolicyWithMD
 	IPSecAssociate  map[string]IPSecAssosiciationWithMD
-	//	Status             map[string]VppStatusWithMD
-	LInterfaces map[string]lInterfaceWithMD
-	LARP        map[string]lARPWithMD
-	LRoute      map[string]lRouteWithMD
-	ShowEtcd    bool
-	ShowConf    bool
+	Status          map[string]VppStatusWithMD
+	LInterfaces     map[string]lInterfaceWithMD
+	LARP            map[string]lARPWithMD
+	LRoute          map[string]lRouteWithMD
+	ShowEtcd        bool
+	ShowConf        bool
 }
 
 // EtcdDump is a map of VppData records. It constitutes a temporary
@@ -268,6 +292,10 @@ type VppData struct {
 // the processed data to the user or updates one or more data records
 // in etcd.
 type EtcdDump map[string]*VppData
+
+const (
+	stsIDAgent = "Agent"
+)
 
 // NewEtcdDump returns a new instance of the temporary storage
 // that will hold data retrieved from etcd.
@@ -283,7 +311,16 @@ func NewEtcdDump() EtcdDump {
 // error. The function returns true if the specified item has been
 // found.
 func (ed EtcdDump) ReadDataFromDb(db keyval.ProtoBroker, key string) (found bool, err error) {
-	label, dataType, params := ParseKey(key)
+	label, dataType, params, plugStatCfgRev := ParseKey(key)
+
+	if plugStatCfgRev == status.StatusPrefix {
+		vd, ok := ed[label]
+		if !ok {
+			vd = newVppDataRecord()
+		}
+		ed[label], err = readStatusFromDb(db, vd, key, params)
+		return true, err
+	}
 
 	vd, ok := ed[label]
 	if !ok {
@@ -327,6 +364,20 @@ func (ed EtcdDump) ReadDataFromDb(db keyval.ProtoBroker, key string) (found bool
 	}
 
 	return true, err
+}
+
+func readStatusFromDb(db keyval.ProtoBroker, vd *VppData, key string, name string) (*VppData, error) {
+	id := stsIDAgent
+	if name != "" {
+		id = name
+	}
+	sts := status.AgentStatus{}
+	found, rev, err := readDataFromDb(db, key, &sts)
+	if found && err == nil {
+		vd.Status[id] =
+			VppStatusWithMD{VppMetaData{rev, key}, sts}
+	}
+	return vd, err
 }
 
 func readACLConfigFromDb(db keyval.ProtoBroker, vd *VppData, key string, name string) (*VppData, error) {
@@ -615,6 +666,7 @@ func newVppDataRecord() *VppData {
 		LInterfaces:     make(map[string]lInterfaceWithMD),
 		LARP:            make(map[string]lARPWithMD),
 		LRoute:          make(map[string]lRouteWithMD),
+		Status:          make(map[string]VppStatusWithMD),
 		ShowEtcd:        false,
 		ShowConf:        false,
 	}

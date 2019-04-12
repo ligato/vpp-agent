@@ -50,7 +50,7 @@ const (
 // Key.
 //
 
-func ParseKey(key string) (label string, dataType string, name string) {
+func ParseKey(key string) (label string, dataType string, name string, plugStatCfgRev string) {
 	ps := strings.Split(strings.TrimPrefix(key, servicelabel.GetAllAgentsPrefix()), "/")
 	var plugin, statusConfig, version string
 	var params []string
@@ -60,10 +60,12 @@ func ParseKey(key string) (label string, dataType string, name string) {
 	if len(ps) > 1 {
 		plugin = ps[1]
 		dataType = plugin
+		plugStatCfgRev = dataType
 	}
 	if len(ps) > 2 {
 		statusConfig = ps[2]
 		dataType += "/" + statusConfig
+		plugStatCfgRev = dataType
 
 		if "vpp" == ps[2] {
 			if len(ps) > 3 {
@@ -124,6 +126,20 @@ func ParseKey(key string) (label string, dataType string, name string) {
 			} else {
 				params = []string{}
 			}
+		} else if "status" == ps[2] {
+			if len(ps) > 3 {
+				version = ps[3]
+				dataType += "/" + version
+				plugStatCfgRev = dataType
+			}
+			plugStatCfgRev += "/"
+
+			//TODO: This only add hot, because statistic, need better understand and analyse
+			if len(ps) > 5 {
+				params = ps[5:]
+				params = ps[5:]
+			}
+
 		} else {
 			params = []string{}
 		}
@@ -131,7 +147,7 @@ func ParseKey(key string) (label string, dataType string, name string) {
 		params = []string{}
 	}
 
-	return label, dataType, rebuildName(params)
+	return label, dataType, rebuildName(params), plugStatCfgRev
 }
 
 // Reconstruct item name in case it contains slashes.

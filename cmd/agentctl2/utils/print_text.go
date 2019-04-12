@@ -38,6 +38,29 @@ func (p pfx) getPrefix(level int) string {
 func (ed EtcdDump) PrintTest(showConf bool) (*bytes.Buffer, error) {
 	prefixer = newPrefixer(false, perLevelSpaces)
 
+	stsFuncMap := template.FuncMap{
+		"convertTime": convertTime,
+		"setBold":     setBold,
+		"setRed":      setRed,
+		"setOsColor":  setOsColor,
+		"pfx":         getPrefix,
+	}
+
+	stsTemplate := template.Must(template.New("status").Funcs(stsFuncMap).Parse(
+		"{{pfx 1}}STATUS:" +
+			"{{$etcd := .ShowEtcd}}" +
+			// Iterate over status.
+			"{{range $statusName, $statusData := .Status}}\n{{pfx 2}}{{$statusName}}: {{setOsColor .State}}" +
+			"{{if .LastUpdate}}, Updated: {{convertTime .LastUpdate | setBold}}{{end}}" +
+			"{{if .LastChange}}, Changed: {{convertTime .LastChange}}{{end}}" +
+			"{{if .BuildVersion}}\n{{pfx 3}}    Version: '{{.BuildVersion}}'{{end}}" +
+			"{{if .BuildDate}}, Built: {{setBold .BuildDate}}{{end}}" +
+			"{{if $etcd}}\n{{pfx 3}}    ETCD: Rev {{.Rev}}, Key '{{.Key}}'{{end}}" +
+			// In case there is no status
+			"{{else}} {{setRed \"INACTIVE\"}}" +
+			// Iterate over status - end of loop
+			"{{end}}\n"))
+
 	ifTemplate := createInterfaceTemplate()
 	aclTemplate := createACLTemplate()
 	bdTemplate := createBridgeTemplate()
@@ -58,8 +81,9 @@ func (ed EtcdDump) PrintTest(showConf bool) (*bytes.Buffer, error) {
 
 	templates := []*template.Template{}
 	// Keep template order
-	templates = append(templates, ifTemplate, aclTemplate, bdTemplate, fibTemplate,
-		xconnectTemplate, arpTemplate, routeTemplate, proxyarpTemplate, ipneighbor,
+	templates = append(templates /* nameTemplate */, stsTemplate, ifTemplate,
+		aclTemplate, bdTemplate, fibTemplate, xconnectTemplate,
+		arpTemplate, routeTemplate, proxyarpTemplate, ipneighbor,
 		nat, dnat, spolicy, sassociation, linterface, larp, lroute)
 
 	return ed.textRenderer(showConf, templates)
