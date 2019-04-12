@@ -10,9 +10,8 @@ import (
 
 // RootCmd represents the base command when called without any subcommands.
 var cliConfig = &cobra.Command{
-	Use:     "cli",
-	Aliases: []string{"c"},
-	Short:   "CLI command for VPP",
+	Use:   "vppcli",
+	Short: "CLI command for VPP",
 	Long: `
 	Run CLI command for VPP
 `,
