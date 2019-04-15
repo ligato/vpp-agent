@@ -120,6 +120,8 @@ get-proto-generators:
 generate-proto: get-proto-generators
 	@echo "=> generating proto"
 	./scripts/genprotos.sh
+	@echo "=> generating docs"
+	@cd api/models/docgen && go build && ./docgen ../../../docs
 
 # Get generator tools
 get-binapi-generators:

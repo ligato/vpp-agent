@@ -11,6 +11,9 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+//
+// An utility to generate documentation from proto models
+//
 
 package main
 
@@ -19,6 +22,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path"
 	"strings"
 	"unicode"
 
@@ -27,20 +31,11 @@ import (
 
 	_ "github.com/ligato/vpp-agent/api/models/linux"
 	_ "github.com/ligato/vpp-agent/api/models/vpp"
-	//linux_if_keys "github.com/ligato/vpp-agent/api/models/linux/interfaces"
-	//linux_l3_keys "github.com/ligato/vpp-agent/api/models/linux/l3"
-	//if_keys "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	//ipsec_keys "github.com/ligato/vpp-agent/api/models/vpp/ipsec"
-	//l2_keys "github.com/ligato/vpp-agent/api/models/vpp/l2"
-	//l3_keys "github.com/ligato/vpp-agent/api/models/vpp/l3"
-	//nat_keys "github.com/ligato/vpp-agent/api/models/vpp/nat"
-	//punt_keys "github.com/ligato/vpp-agent/api/models/vpp/punt"
-	//stn_keys "github.com/ligato/vpp-agent/api/models/vpp/stn"
 )
 
 const (
 	// target file path
-	path = "docs/KeyOverview.md"
+	fileName = "/KeyOverview.md"
 
 	// key high-level plugin prefixes
 	vppPrefix   = "config/vpp/"
@@ -80,7 +75,18 @@ type File struct {
 
 // Generates a file with all vpp-agent key templates
 func main() {
-	file, err := os.Create(path)
+	var filePath string
+	if len(os.Args) > 1 {
+		pathArg := os.Args[1]
+		filePath = path.Join(pathArg + fileName)
+	} else {
+		filePath = fileName
+	}
+	file, err := os.Create(filePath)
+	if err != nil {
+		panic(err)
+	}
+
 	var buffer bytes.Buffer
 
 	// store available models into vpp and linux categories
@@ -174,8 +180,6 @@ ModelLoop:
 						return false
 					} else if ascii1 < ascii2 {
 						return true
-					} else {
-						continue
 					}
 				}
 				return false

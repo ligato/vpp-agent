@@ -18,7 +18,7 @@ Link in key title redirects to the associated proto definition.
 /vnf-agent/<ms-label>/config/vpp/acls/v2/acl
 ```
 
-**[ARPEntry:](https://github.com/ligato/vpp-agent/blob/master/api/models/vpp/l3/arp.proto)**
+**[ARPEntry:](https://github.com/ligato/vpp-agent/blob/master/api/models/vpp/arp/arp.proto)**
 ```
 /vnf-agent/<ms-label>/config/vpp/v2/arp/<interface>/<ip-address>
 ```
@@ -43,19 +43,14 @@ Link in key title redirects to the associated proto definition.
 /vnf-agent/<ms-label>/config/vpp/v2/interfaces
 ```
 
-**[IPRedirect:](https://github.com/ligato/vpp-agent/blob/master/api/models/vpp/punt/punt.proto)**
+**[IPRedirect:](https://github.com/ligato/vpp-agent/blob/master/api/models/vpp/ipredirect/punt.proto)**
 ```
 /vnf-agent/<ms-label>/config/vpp/v2/ipredirect/l3/<l3-protocol>/tx/<tx-interface>
 ```
 
-**[IPScanNeighbor:](https://github.com/ligato/vpp-agent/blob/master/api/models/vpp/l3/l3.proto)**
+**[IPScanNeighbor:](https://github.com/ligato/vpp-agent/blob/master/api/models/vpp/ipscanneigh-global/l3.proto)**
 ```
 /vnf-agent/<ms-label>/config/vpp/v2/ipscanneigh-global
-```
-
-**[LocalSID:](https://github.com/ligato/vpp-agent/blob/master/api/models/vpp/srv6/srv6.proto)**
-```
-/vnf-agent/<ms-label>/config/vpp/srv6/v2/localsid/<sid>
 ```
 
 **[Nat44Global:](https://github.com/ligato/vpp-agent/blob/master/api/models/vpp/nat/nat.proto)**
@@ -63,17 +58,12 @@ Link in key title redirects to the associated proto definition.
 /vnf-agent/<ms-label>/config/vpp/nat/v2/nat44-global
 ```
 
-**[Policy:](https://github.com/ligato/vpp-agent/blob/master/api/models/vpp/srv6/srv6.proto)**
-```
-/vnf-agent/<ms-label>/config/vpp/srv6/v2/policy/<bsid>
-```
-
-**[ProxyARP:](https://github.com/ligato/vpp-agent/blob/master/api/models/vpp/l3/l3.proto)**
+**[ProxyARP:](https://github.com/ligato/vpp-agent/blob/master/api/models/vpp/proxyarp-global/l3.proto)**
 ```
 /vnf-agent/<ms-label>/config/vpp/v2/proxyarp-global
 ```
 
-**[Route:](https://github.com/ligato/vpp-agent/blob/master/api/models/vpp/l3/route.proto)**
+**[Route:](https://github.com/ligato/vpp-agent/blob/master/api/models/vpp/route/route.proto)**
 ```
 /vnf-agent/<ms-label>/config/vpp/v2/route/vrf/<vrf-id>/dst/<dst-network>/gw/<next-hop-addr>
 ```
@@ -93,12 +83,7 @@ Link in key title redirects to the associated proto definition.
 /vnf-agent/<ms-label>/config/vpp/ipsec/v2/spd/<index>
 ```
 
-**[Steering:](https://github.com/ligato/vpp-agent/blob/master/api/models/vpp/srv6/srv6.proto)**
-```
-/vnf-agent/<ms-label>/config/vpp/srv6/v2/steering/<name>
-```
-
-**[ToHost:](https://github.com/ligato/vpp-agent/blob/master/api/models/vpp/punt/punt.proto)**
+**[ToHost:](https://github.com/ligato/vpp-agent/blob/master/api/models/vpp/tohost/punt.proto)**
 ```
 /vnf-agent/<ms-label>/config/vpp/v2/tohost/l3/<l3-protocol>/l4/<l4-protocol>/port/<port>
 ```
@@ -123,10 +108,5 @@ Link in key title redirects to the associated proto definition.
 **[Route:](https://github.com/ligato/vpp-agent/blob/master/api/models/linux/l3/route.proto)**
 ```
 /vnf-agent/<ms-label>/config/linux/l3/v2/route/<dst-network>/<outgoing-interface>
-```
-
-**[RuleChain:](https://github.com/ligato/vpp-agent/blob/master/api/models/linux/iptables/iptables.proto)**
-```
-/vnf-agent/<ms-label>/config/linux/iptables/v2/rulechain/<name>
 ```
 
