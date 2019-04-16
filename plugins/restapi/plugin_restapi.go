@@ -80,7 +80,7 @@ type Plugin struct {
 type Deps struct {
 	infra.PluginDeps
 	HTTPHandlers rest.HTTPHandlers
-	GoVppmux     govppmux.TraceAPI
+	GoVppmux     govppmux.StatsAPI
 	VPPACLPlugin aclplugin.API
 	VPPIfPlugin  ifplugin.API
 	VPPL2Plugin  *l2plugin.L2Plugin
@@ -120,7 +120,7 @@ func (p *Plugin) Init() (err error) {
 
 	// Initialize handlers
 	p.vpeHandler = vpevppcalls.CompatibleVpeHandler(p.vppChan)
-	p.teleHandler = telemetryvppcalls.CompatibleTelemetryHandler(p.vppChan)
+	p.teleHandler = telemetryvppcalls.CompatibleTelemetryHandler(p.vppChan, p.GoVppmux)
 
 	// VPP handlers
 	p.abfHandler = vppcalls.CompatibleABFVppHandler(p.vppChan, p.dumpChan, aclIndexes, ifIndexes, p.Log)

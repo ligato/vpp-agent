@@ -33,22 +33,23 @@ func init() {
 	msgs = append(msgs, memclnt.Messages...)
 	msgs = append(msgs, vpe.Messages...)
 
-	vppcalls.Versions["vpp1901"] = vppcalls.HandlerVersion{
+	vppcalls.Versions["19.01"] = vppcalls.HandlerVersion{
 		Msgs: msgs,
-		New: func(ch govppapi.Channel) vppcalls.TelemetryVppAPI {
-			return NewTelemetryVppHandler(ch)
+		New: func(ch govppapi.Channel, stats govppapi.StatsProvider) vppcalls.TelemetryVppAPI {
+			return NewTelemetryVppHandler(ch, stats)
 		},
 	}
 }
 
 type TelemetryHandler struct {
-	ch govppapi.Channel
+	ch    govppapi.Channel
+	stats govppapi.StatsProvider
 	vpevppcalls.VpeVppAPI
 }
 
-func NewTelemetryVppHandler(ch govppapi.Channel) *TelemetryHandler {
+func NewTelemetryVppHandler(ch govppapi.Channel, stats govppapi.StatsProvider) *TelemetryHandler {
 	vpeHandler := vpp1901.NewVpeHandler(ch)
-	return &TelemetryHandler{ch, vpeHandler}
+	return &TelemetryHandler{ch, stats, vpeHandler}
 }
 
 var (
@@ -143,9 +144,10 @@ func (h *TelemetryHandler) GetNodeCounters() (*vppcalls.NodeCounterInfo, error) 
 		fields := matches[1:]
 
 		counters = append(counters, vppcalls.NodeCounter{
-			Count:  strToUint64(fields[0]),
-			Node:   fields[1],
-			Reason: fields[2],
+			Name:  strings.Join(fields, "/"),
+			Value: strToUint64(fields[0]),
+			//Node:   fields[1],
+			//Reason: fields[2],
 		})
 	}
 

@@ -28,16 +28,8 @@ func TestGetBuffers(t *testing.T) {
 	ctx, handler := testSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	const reply = `Thread             Name                 Index       Size        Alloc       Free       #Alloc       #Free  
-     0                       default           0        2048    576k       42.75k        256         19    
-     0                 lacp-ethernet           1         256    1.13m        27k         512         12    
-     0               marker-ethernet           2         256    1.11g         0           0           0    
-     0                       ip4 arp           3         256      0           0           0           0    
-     0        ip6 neighbor discovery           4         256      0           0           0           0    
-     0                  cdp-ethernet           5         256      0           0           0           0    
-     0                 lldp-ethernet           6         256      0           0           0           0    
-     0           replication-recycle           7        1024      0           0           0           0    
-     0                       default           8        2048      0           0           0           0    `
+	const reply = `Pool Name            Index NUMA  Size  Data Size  Total  Avail  Cached   Used  
+default-numa-0         0     0   2304     2048    17290  17290     0       0   `
 	ctx.MockVpp.MockReply(&vpe.CliInbandReply{
 		Reply: reply,
 	})
@@ -45,18 +37,18 @@ func TestGetBuffers(t *testing.T) {
 	info, err := handler.GetBuffersInfo()
 
 	Expect(err).ShouldNot(HaveOccurred())
-	Expect(info.Items).To(HaveLen(9))
+	Expect(info.Items).To(HaveLen(1))
 	Expect(info.Items[0]).To(Equal(vppcalls.BuffersItem{
-		ThreadID: 0,
-		Name:     "default",
-		Index:    0,
-		Size:     2048,
-		Alloc:    576000,
-		Free:     42750,
-		NumAlloc: 256,
-		NumFree:  19,
+		//ThreadID: 0,
+		Name:  "default-numa-0",
+		Index: 0,
+		Size:  2304,
+		Alloc: 0,
+		Free:  17290,
+		//NumAlloc: 256,
+		//NumFree:  19,
 	}))
-	Expect(info.Items[1]).To(Equal(vppcalls.BuffersItem{
+	/*Expect(info.Items[1]).To(Equal(vppcalls.BuffersItem{
 		ThreadID: 0,
 		Name:     "lacp-ethernet",
 		Index:    1,
@@ -75,7 +67,7 @@ func TestGetBuffers(t *testing.T) {
 		Free:     0,
 		NumAlloc: 0,
 		NumFree:  0,
-	}))
+	}))*/
 }
 
 func TestGetRuntime(t *testing.T) {
@@ -87,6 +79,73 @@ func TestGetRuntime(t *testing.T) {
 		itemIdx     int
 		item        vppcalls.RuntimeItem
 	}{
+		{
+			name: "19.04",
+			reply: `Time 84714.7, average vectors/node 0.00, last 128 main loops 0.00 per node 0.00
+  vector rates in 0.0000e0, out 0.0000e0, drop 0.0000e0, punt 0.0000e0
+             Name                 State         Calls          Vectors        Suspends         Clocks       Vectors/Call  
+acl-plugin-fa-cleaner-process  event wait                6               5               1          1.10e4            0.00
+api-rx-from-ring                 active                  0               0            7870          8.63e5            0.00
+avf-process                    event wait                0               0               1          4.53e3            0.00
+bfd-process                    event wait                0               0               1          7.01e3            0.00
+bond-process                   event wait                0               0               1          2.95e3            0.00
+cdp-process                     any wait                 0               0               1          5.46e3            0.00
+dhcp-client-process             any wait                 0               0             847          6.63e3            0.00
+dhcp6-client-cp-process         any wait                 0               0               1          1.52e3            0.00
+dhcp6-pd-client-cp-process      any wait                 0               0               1          1.71e3            0.00
+dhcp6-pd-reply-publisher-proce event wait                0               0               1          9.73e2            0.00
+dhcp6-reply-publisher-process  event wait                0               0               1          9.12e2            0.00
+dns-resolver-process            any wait                 0               0              85          8.98e3            0.00
+fib-walk                        any wait                 0               0           42247          1.08e4            0.00
+flow-report-process             any wait                 0               0               1          1.33e3            0.00
+flowprobe-timer-process         any wait                 0               0               1          5.18e3            0.00
+gbp-scanner                    event wait                0               0               1          5.17e3            0.00
+igmp-timer-process             event wait                0               0               1          6.53e3            0.00
+ikev2-manager-process           any wait                 0               0           84353          7.84e3            0.00
+ioam-export-process             any wait                 0               0               1          1.64e3            0.00
+ip-neighbor-scan-process        any wait                 0               0            1412          9.65e3            0.00
+ip-route-resolver-process       any wait                 0               0             847          6.12e3            0.00
+ip4-reassembly-expire-walk      any wait                 0               0            8464          6.92e3            0.00
+ip6-icmp-neighbor-discovery-ev  any wait                 0               0           84353          8.58e3            0.00
+ip6-reassembly-expire-walk      any wait                 0               0            8464          6.67e3            0.00
+l2fib-mac-age-scanner-process  event wait                0               0               1          1.98e3            0.00
+lacp-process                   event wait                0               0               1          1.58e5            0.00
+lisp-retry-service              any wait                 0               0           42247          1.08e4            0.00
+lldp-process                   event wait                0               0               1          8.76e4            0.00
+memif-process                  event wait                0               0               1          9.34e3            0.00
+nat-det-expire-walk               done                   1               0               0          2.92e3            0.00
+nat-ha-process                 event wait                0               0               1          4.12e3            0.00
+nat64-expire-walk              event wait                0               0               1          2.41e3            0.00
+nsh-md2-ioam-export-process     any wait                 0               0               1          1.10e4            0.00
+perfmon-periodic-process       event wait                0               0               1          3.61e7            0.00
+rd-cp-process                   any wait                 0               0               1          1.55e3            0.00
+send-dhcp6-client-message-proc  any wait                 0               0               1          2.22e3            0.00
+send-dhcp6-pd-client-message-p  any wait                 0               0               1          1.43e3            0.00
+send-rs-process                 any wait                 0               0               1          1.49e3            0.00
+startup-config-process            done                   1               0               1          5.68e3            0.00
+statseg-collector-process       time wait                0               0            8464          2.79e5            0.00
+udp-ping-process                any wait                 0               0               1          6.96e3            0.00
+unix-cli-127.0.0.1:mdns           done                   2               0               4          2.14e9            0.00
+unix-epoll-input                 polling          20325059               0               0          1.13e7            0.00
+vhost-user-process              any wait                 0               0               1          3.73e3            0.00
+vhost-user-send-interrupt-proc  any wait                 0               0               1          1.28e3            0.00
+vpe-link-state-process         event wait                0               0               1          9.63e2            0.00
+vpe-oam-process                 any wait                 0               0           41419          9.59e3            0.00
+vxlan-gpe-ioam-export-process   any wait                 0               0               1          1.60e3            0.00
+wildcard-ip4-arp-publisher-pro event wait                0               0               1          1.44e3            0.00
+`,
+			threadCount: 1,
+			itemCount:   49,
+			item: vppcalls.RuntimeItem{
+				Name:           "acl-plugin-fa-cleaner-process",
+				State:          "event wait",
+				Calls:          6,
+				Vectors:        5,
+				Suspends:       1,
+				Clocks:         1.10e4,
+				VectorsPerCall: 0,
+			},
+		},
 		{
 			name: "one thread",
 			reply: `Time 3151.2, average vectors/node 1.00, last 128 main loops 0.00 per node 0.00
@@ -168,7 +227,7 @@ wildcard-ip4-arp-publisher-pro event wait                0               0      
 			reply: `Thread 0 vpp_main (lcore 0)
 Time 21.5, average vectors/node 0.00, last 128 main loops 0.00 per node 0.00
   vector rates in 0.0000e0, out 5.0000e-2, drop 0.0000e0, punt 0.0000e0
-             Name                 State         Calls          Vectors        Suspends         Clocks       Vectors/Call     Perf Ticks   
+             Name                 State         Calls          Vectors        Suspends         Clocks       Vectors/Call        
 acl-plugin-fa-cleaner-process  event wait                6               5               1          3.12e4            0.00
 api-rx-from-ring                any wait                 0               0              31          8.61e6            0.00
 avf-process                    event wait                0               0               1          7.79e3            0.00
@@ -209,13 +268,13 @@ wildcard-ip4-arp-publisher-pro event wait                0               0      
 Thread 1 vpp_wk_0 (lcore 1)
 Time 21.5, average vectors/node 0.00, last 128 main loops 0.00 per node 0.00
   vector rates in 0.0000e0, out 0.0000e0, drop 0.0000e0, punt 0.0000e0
-             Name                 State         Calls          Vectors        Suspends         Clocks       Vectors/Call     Perf Ticks   
+             Name                 State         Calls          Vectors        Suspends         Clocks       Vectors/Call     
 unix-epoll-input                 polling          15251181               0               0          3.67e3            0.00
 ---------------
 Thread 2 vpp_wk_1 (lcore 2)
 Time 21.5, average vectors/node 0.00, last 128 main loops 0.00 per node 0.00
   vector rates in 0.0000e0, out 0.0000e0, drop 0.0000e0, punt 0.0000e0
-             Name                 State         Calls          Vectors        Suspends         Clocks       Vectors/Call     Perf Ticks   
+             Name                 State         Calls          Vectors        Suspends         Clocks       Vectors/Call     
 unix-epoll-input                 polling          20563870               0               0          3.56e3            0.00
 `,
 			threadCount: 3,
@@ -392,34 +451,77 @@ func TestGetNodeCounters(t *testing.T) {
 	Expect(err).ShouldNot(HaveOccurred())
 	Expect(info.Counters).To(HaveLen(10))
 	Expect(info.Counters[0]).To(Equal(vppcalls.NodeCounter{
-		Count:  32,
-		Node:   "ipsec-output-ip4",
-		Reason: "IPSec policy protect",
+		Value: 32,
+		Node:  "ipsec-output-ip4",
+		Name:  "IPSec policy protect",
 	}))
 	Expect(info.Counters[6]).To(Equal(vppcalls.NodeCounter{
-		Count:  1,
-		Node:   "arp-input",
-		Reason: "ARP replies sent",
+		Value: 1,
+		Node:  "arp-input",
+		Name:  "ARP replies sent",
 	}))
 	Expect(info.Counters[7]).To(Equal(vppcalls.NodeCounter{
-		Count:  4,
-		Node:   "ip4-input",
-		Reason: "ip4 spoofed local-address packet drops",
+		Value: 4,
+		Node:  "ip4-input",
+		Name:  "ip4 spoofed local-address packet drops",
 	}))
 	Expect(info.Counters[8]).To(Equal(vppcalls.NodeCounter{
-		Count:  2,
-		Node:   "memif1/1-output",
-		Reason: "interface is down",
+		Value: 2,
+		Node:  "memif1/1-output",
+		Name:  "interface is down",
 	}))
 	Expect(info.Counters[9]).To(Equal(vppcalls.NodeCounter{
-		Count:  1,
-		Node:   "cdp-input",
-		Reason: "good cdp packets (processed)",
+		Value: 1,
+		Node:  "cdp-input",
+		Name:  "good cdp packets (processed)",
 	}))
+
+	/*Expect(info.Counters[0]).To(Equal(vppcalls.NodeCounter{
+		Value: 32,
+		Name:  "ipsec-output-ip4/IPSec policy protect",
+	}))
+	Expect(info.Counters[6]).To(Equal(vppcalls.NodeCounter{
+		Value: 1,
+		Name:  "arp-input/ARP replies sent",
+	}))
+	Expect(info.Counters[7]).To(Equal(vppcalls.NodeCounter{
+		Value: 4,
+		Name:  "ip4-input/ip4 spoofed local-address packet drops",
+	}))
+	Expect(info.Counters[8]).To(Equal(vppcalls.NodeCounter{
+		Value: 2,
+		Name:  "memif1/1-output/interface is down",
+	}))
+	Expect(info.Counters[9]).To(Equal(vppcalls.NodeCounter{
+		Value: 1,
+		Name:  "cdp-input/good cdp packets (processed)",
+	}))*/
 }
 
 func testSetup(t *testing.T) (*vppcallmock.TestCtx, vppcalls.TelemetryVppAPI) {
 	ctx := vppcallmock.SetupTestCtx(t)
-	handler := vpp1904.NewTelemetryVppHandler(ctx.MockChannel)
+	handler := vpp1904.NewTelemetryVppHandler(ctx.MockChannel, nil)
 	return ctx, handler
+}
+
+func TestSplitErrorName(t *testing.T) {
+	tests := []struct {
+		name               string
+		input              string
+		expNode, expReason string
+	}{
+		{"basic", "ipsec-input-ip4/IPSEC pkts received", "ipsec-input-ip4", "IPSEC pkts received"},
+		{"ifname", "memif1/1001-output/interface is down", "memif1/1001-output", "interface is down"},
+		{"reslash", "tcp6-input/inconsistent ip/tcp lengths", "tcp6-input", "inconsistent ip/tcp lengths"},
+		{"toomany", "memif1/1001-output/Unrecognized / unknown chunk or chunk-state mismatch", "memif1/1001-output", "Unrecognized / unknown chunk or chunk-state mismatch"},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			RegisterTestingT(t)
+
+			node, reason := vpp1904.SplitErrorName(test.input)
+			Expect(node).To(Equal(test.expNode))
+			Expect(reason).To(Equal(test.expReason))
+		})
+	}
 }

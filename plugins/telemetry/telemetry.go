@@ -33,7 +33,7 @@ import (
 
 const (
 	// default period between updates
-	defaultUpdatePeriod = time.Second * 30
+	defaultUpdatePeriod = time.Second * 10 //30
 	// minimum period between updates
 	minimumUpdatePeriod = time.Second * 5
 )
@@ -58,7 +58,7 @@ type Plugin struct {
 type Deps struct {
 	infra.PluginDeps
 	ServiceLabel servicelabel.ReaderAPI
-	GoVppmux     govppmux.API
+	GoVppmux     govppmux.StatsAPI
 	Prometheus   prom.API
 }
 
@@ -157,7 +157,7 @@ func (p *Plugin) periodicUpdates() {
 	}
 	defer vppCh.Close()
 
-	p.handler = vppcalls.CompatibleTelemetryHandler(vppCh)
+	p.handler = vppcalls.CompatibleTelemetryHandler(vppCh, p.GoVppmux)
 
 	p.Log.Debugf("starting periodic updates (%v)", p.updatePeriod)
 

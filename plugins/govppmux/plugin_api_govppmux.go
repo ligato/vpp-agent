@@ -18,6 +18,7 @@ import (
 	"git.fd.io/govpp.git/adapter"
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging/measure/model/apitrace"
+	"github.com/ligato/vpp-agent/plugins/govppmux/vppcalls"
 )
 
 // TraceAPI is extended API with ability to get traced VPP binary API calls
@@ -63,8 +64,26 @@ type StatsAPI interface {
 	GetErrorStats(names ...string) (*govppapi.ErrorStats, error)
 }
 
+// VPPInfo defines retrieved information about the connected VPP instance.
+type VPPInfo struct {
+	Connected bool
+	vppcalls.VersionInfo
+	vppcalls.VpeInfo
+}
+
+// GetReleaseVersion returns VPP release version (XX.YY), which is normalized from VersionInfo.
+func (vpp VPPInfo) GetReleaseVersion() string {
+	if len(vpp.Version) < 5 {
+		return ""
+	}
+	return vpp.Version[:5]
+}
+
 // API for other plugins to get connectivity to VPP.
 type API interface {
+	// VPPInfo returns VPP information which is retrieved immediatelly after connecting to VPP.
+	VPPInfo() (VPPInfo, error)
+
 	// NewAPIChannel returns a new API channel for communication with VPP via govpp core.
 	// It uses default buffer sizes for the request and reply Go channels.
 	//

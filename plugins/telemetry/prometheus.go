@@ -208,12 +208,16 @@ func (p *Plugin) registerPrometheus() error {
 
 	return nil
 }
+
 func (p *Plugin) updatePrometheus() {
+	p.Log.Debugf("running update")
+
 	// Update runtime
 	runtimeInfo, err := p.handler.GetRuntimeInfo()
 	if err != nil {
 		p.Log.Errorf("GetRuntimeInfo failed: %v", err)
 	} else {
+		p.Log.Debugf("runtime info: %+v", runtimeInfo)
 		for _, thread := range runtimeInfo.Threads {
 			for _, item := range thread.Items {
 				stats, ok := p.runtimeStats[item.Name]
@@ -252,6 +256,7 @@ func (p *Plugin) updatePrometheus() {
 	if err != nil {
 		p.Log.Errorf("GetMemory failed: %v", err)
 	} else {
+		p.Log.Debugf("memory info: %+v", memoryInfo)
 		for _, thread := range memoryInfo.Threads {
 			stats, ok := p.memoryStats[thread.Name]
 			if !ok {
@@ -289,6 +294,7 @@ func (p *Plugin) updatePrometheus() {
 	if err != nil {
 		p.Log.Errorf("GetBuffersInfo failed: %v", err)
 	} else {
+		p.Log.Debugf("buffers info: %+v", buffersInfo)
 		for _, item := range buffersInfo.Items {
 			stats, ok := p.buffersStats[item.Name]
 			if !ok {
@@ -325,19 +331,20 @@ func (p *Plugin) updatePrometheus() {
 	if err != nil {
 		p.Log.Errorf("GetNodeCounters failed: %v", err)
 	} else {
+		p.Log.Debugf("node counters info: %+v", nodeCountersInfo)
 		for _, item := range nodeCountersInfo.Counters {
-			stats, ok := p.nodeCounterStats[item.Node]
+			stats, ok := p.nodeCounterStats[item.Name]
 			if !ok {
 				stats = &nodeCounterStats{
-					itemName: item.Node,
+					itemName: item.Name,
 					metrics:  map[string]prometheus.Gauge{},
 				}
 
 				// add gauges with corresponding labels into vectors
 				for k, vec := range p.nodeCounterGaugeVecs {
 					stats.metrics[k], err = vec.GetMetricWith(prometheus.Labels{
-						nodeCounterItemLabel:   item.Node,
-						nodeCounterReasonLabel: item.Reason,
+						nodeCounterItemLabel:   item.Name,
+						nodeCounterReasonLabel: "", //item.Reason,
 					})
 					if err != nil {
 						p.Log.Error(err)
@@ -345,7 +352,7 @@ func (p *Plugin) updatePrometheus() {
 				}
 			}
 
-			stats.metrics[nodeCounterCountMetric].Set(float64(item.Count))
+			stats.metrics[nodeCounterCountMetric].Set(float64(item.Value))
 		}
 	}
 }

@@ -17,6 +17,7 @@ package vppcalls
 import (
 	govppapi "git.fd.io/govpp.git/api"
 	log "github.com/ligato/cn-infra/logging"
+	"github.com/ligato/vpp-agent/plugins/govppmux"
 )
 
 // MemoryInfo contains values returned from 'show memory'
@@ -39,16 +40,17 @@ type MemoryThread struct {
 	PageSize  uint64 `json:"page_size"`
 }
 
-// NodeCounterInfo contains values returned from 'show node counters'
+// NodeErrorCounterInfo contains values returned from 'show node counters'
 type NodeCounterInfo struct {
 	Counters []NodeCounter `json:"counters"`
 }
 
 // NodeCounter represents single node counter
 type NodeCounter struct {
-	Count  uint64 `json:"count"`
-	Node   string `json:"node"`
-	Reason string `json:"reason"`
+	Value uint64 `json:"value"`
+	Node  string `json:"node"`
+	Name  string `json:"name"`
+	//Reason string `json:"reason"`
 }
 
 // RuntimeInfo contains values returned from 'show runtime'
@@ -74,6 +76,7 @@ type RuntimeThread struct {
 
 // RuntimeItem represents single runtime item
 type RuntimeItem struct {
+	Index          uint    `json:"index"`
 	Name           string  `json:"name"`
 	State          string  `json:"state"`
 	Calls          uint64  `json:"calls"`
@@ -111,17 +114,29 @@ var Versions = map[string]HandlerVersion{}
 
 type HandlerVersion struct {
 	Msgs []govppapi.Message
-	New  func(govppapi.Channel) TelemetryVppAPI
+	New  func(govppapi.Channel, govppapi.StatsProvider) TelemetryVppAPI
 }
 
-func CompatibleTelemetryHandler(ch govppapi.Channel) TelemetryVppAPI {
+func CompatibleTelemetryHandler(ch govppapi.Channel, stats govppmux.StatsAPI) TelemetryVppAPI {
+	if stats != nil {
+		if vpp, err := stats.VPPInfo(); err == nil && vpp.Connected {
+			ver := vpp.GetReleaseVersion()
+			if h, ok := Versions[ver]; ok {
+				if err := ch.CheckCompatiblity(h.Msgs...); err != nil {
+					log.Debugf("version %s not compatible", ver)
+				}
+				log.Debug("found compatible version: ", ver)
+				return h.New(ch, stats)
+			}
+		}
+	}
 	for ver, h := range Versions {
 		if err := ch.CheckCompatiblity(h.Msgs...); err != nil {
 			log.Debugf("version %s not compatible", ver)
 			continue
 		}
-		log.Debug("found compatible version:", ver)
-		return h.New(ch)
+		log.Debug("found compatible version: ", ver)
+		return h.New(ch, stats)
 	}
 	panic("no compatible version available")
 }

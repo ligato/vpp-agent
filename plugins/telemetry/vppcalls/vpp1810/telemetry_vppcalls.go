@@ -35,7 +35,7 @@ func init() {
 
 	vppcalls.Versions["vpp1810"] = vppcalls.HandlerVersion{
 		Msgs: msgs,
-		New: func(ch govppapi.Channel) vppcalls.TelemetryVppAPI {
+		New: func(ch govppapi.Channel, stats govppapi.StatsProvider) vppcalls.TelemetryVppAPI {
 			vpeHandler := vpevppcalls.CompatibleVpeHandler(ch)
 			return &TelemetryHandler{ch, vpeHandler}
 		},
@@ -129,9 +129,8 @@ func (h *TelemetryHandler) GetNodeCounters() (*vppcalls.NodeCounterInfo, error) 
 		fields := matches[1:]
 
 		counters = append(counters, vppcalls.NodeCounter{
-			Count:  strToUint64(fields[0]),
-			Node:   fields[1],
-			Reason: fields[2],
+			Name:  strings.Join(fields, "/"),
+			Value: strToUint64(fields[0]),
 		})
 	}
 
