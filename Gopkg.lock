@@ -1002,6 +1002,7 @@
     "github.com/buger/goterm",
     "github.com/coreos/go-iptables/iptables",
     "github.com/fsouza/go-dockerclient",
+    "github.com/ghodss/yaml",
     "github.com/go-errors/errors",
     "github.com/gogo/protobuf/gogoproto",
     "github.com/gogo/protobuf/jsonpb",
