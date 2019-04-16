@@ -57,20 +57,16 @@ type ABFDescriptor struct {
 	aclIndex aclidx.ACLMetadataIndex
 }
 
-// NewABFDescriptor is constructor for ABF descriptor
+// NewABFDescriptor is constructor for ABF descriptor and returns descriptor
+// suitable for registration (via adapter) with the KVScheduler.
 func NewABFDescriptor(abfHandler vppcalls.ABFVppAPI, aclIndex aclidx.ACLMetadataIndex,
-	logger logging.PluginLogger) *ABFDescriptor {
-	return &ABFDescriptor{
+	logger logging.PluginLogger) *api.KVDescriptor {
+	ctx := &ABFDescriptor{
 		log:        logger.NewLogger("abf-descriptor"),
 		aclIndex:   aclIndex,
 		abfHandler: abfHandler,
 	}
-}
-
-// GetDescriptor returns descriptor suitable for registration (via adapter) with
-// the KVScheduler.
-func (d *ABFDescriptor) GetDescriptor() *adapter.ABFDescriptor {
-	return &adapter.ABFDescriptor{
+	typedDescr := &adapter.ABFDescriptor{
 		Name:          ABFDescriptorName,
 		NBKeyPrefix:   abf.ModelABF.KeyPrefix(),
 		ValueTypeName: abf.ModelABF.ProtoName(),
@@ -78,17 +74,18 @@ func (d *ABFDescriptor) GetDescriptor() *adapter.ABFDescriptor {
 		KeyLabel:      abf.ModelABF.StripKeyPrefix,
 		WithMetadata:  true,
 		MetadataMapFactory: func() idxmap.NamedMappingRW {
-			return abfidx.NewABFIndex(d.log, "vpp-abf-index")
+			return abfidx.NewABFIndex(ctx.log, "vpp-abf-index")
 		},
-		ValueComparator:      d.EquivalentABFs,
-		Validate:             d.Validate,
-		Create:               d.Create,
-		Delete:               d.Delete,
-		Retrieve:             d.Retrieve,
-		DerivedValues:        d.DerivedValues,
-		Dependencies:         d.Dependencies,
+		ValueComparator:      ctx.EquivalentABFs,
+		Validate:             ctx.Validate,
+		Create:               ctx.Create,
+		Delete:               ctx.Delete,
+		Retrieve:             ctx.Retrieve,
+		DerivedValues:        ctx.DerivedValues,
+		Dependencies:         ctx.Dependencies,
 		RetrieveDependencies: []string{ifdescriptor.InterfaceDescriptorName, descriptor.ACLDescriptorName},
 	}
+	return adapter.NewABFDescriptor(typedDescr)
 }
 
 // EquivalentABFs compares related ACL name, list of attached interfaces and forwarding paths to

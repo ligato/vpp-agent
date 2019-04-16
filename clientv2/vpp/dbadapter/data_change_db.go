@@ -87,7 +87,7 @@ func (dsl *PutDSL) ACL(val *acl.ACL) vppclient.PutDSL {
 
 // ABF adds a request to create or update VPP ACL-based forwarding
 func (dsl *PutDSL) ABF(val *abf.ABF) vppclient.PutDSL {
-	dsl.parent.txn.Put(abf.Key(val.Index), val)
+	dsl.parent.txn.Put(models.Key(val), val)
 	return dsl
 }
 

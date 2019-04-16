@@ -24,9 +24,9 @@ message ABF {
     message ForwardingPath {
         string next_hop_ip = 1;
         string interface_name = 2;
-        uint32 weight = 4;
-        uint32 preference = 5;
-        bool dvr = 17;
+        uint32 weight = 3;
+        uint32 preference = 4;
+        bool dvr = 5;
     }
     repeated ForwardingPath forwarding_paths = 4;
 }

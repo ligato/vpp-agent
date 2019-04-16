@@ -66,9 +66,9 @@ func (dsl *DataResyncDSL) ACL(val *acl.ACL) vppclient.DataResyncDSL {
 	return dsl
 }
 
-// ACL adds Access Control List to the RESYNC request.
+// ABF adds ACL-based forwarding to the RESYNC request.
 func (dsl *DataResyncDSL) ABF(val *abf.ABF) vppclient.DataResyncDSL {
-	key := abf.Key(val.Index)
+	key := models.Key(val)
 	dsl.txn.Put(key, val)
 	dsl.txnKeys = append(dsl.txnKeys, key)
 

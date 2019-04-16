@@ -16,6 +16,7 @@ package data
 
 import (
 	abf "github.com/ligato/vpp-agent/api/models/vpp/abf"
+	"github.com/ligato/vpp-agent/pkg/models"
 )
 
 // ABFCtl provides access list related methods for vpp-agent-ctl
@@ -55,7 +56,7 @@ func (ctl *VppAgentCtlImpl) PutABF() error {
 	}
 
 	ctl.Log.Infof("ABF put: %v", abfData)
-	return ctl.broker.Put(abf.Key(abfData.Index), abfData)
+	return ctl.broker.Put(models.Key(abfData), abfData)
 }
 
 // DeleteABF removes ACL-based forwarding from the ETCD

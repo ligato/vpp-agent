@@ -25,7 +25,6 @@ import (
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/vpp/abfplugin/abfidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/abfplugin/descriptor"
-	"github.com/ligato/vpp-agent/plugins/vpp/abfplugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/vpp/abfplugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/vpp/aclplugin"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin"
@@ -79,10 +78,8 @@ func (p *ABFPlugin) Init() error {
 	}
 
 	// init & register descriptor
-	p.abfDescriptor = descriptor.NewABFDescriptor(p.abfHandler, p.ACLPlugin.GetACLIndex(), p.Log)
-	abfDescriptor := adapter.NewABFDescriptor(p.abfDescriptor.GetDescriptor())
-	err = p.Scheduler.RegisterKVDescriptor(abfDescriptor)
-	if err != nil {
+	abfDescriptor := descriptor.NewABFDescriptor(p.abfHandler, p.ACLPlugin.GetACLIndex(), p.Log)
+	if err := p.Deps.Scheduler.RegisterKVDescriptor(abfDescriptor); err != nil {
 		return err
 	}
 
@@ -95,10 +92,8 @@ func (p *ABFPlugin) Init() error {
 	}
 
 	// init & register derived value descriptor
-	p.abfInterfaceDescriptor = descriptor.NewABFToInterfaceDescriptor(p.abfIndex, p.abfHandler, p.IfPlugin, p.Log)
-	abfInterfaceDescriptor := p.abfInterfaceDescriptor.GetDescriptor()
-	err = p.Scheduler.RegisterKVDescriptor(abfInterfaceDescriptor)
-	if err != nil {
+	abfInterfaceDescriptor := descriptor.NewABFToInterfaceDescriptor(p.abfIndex, p.abfHandler, p.IfPlugin, p.Log)
+	if err := p.Deps.Scheduler.RegisterKVDescriptor(abfInterfaceDescriptor); err != nil {
 		return err
 	}
 

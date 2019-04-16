@@ -47,23 +47,20 @@ type ABFToInterfaceDescriptor struct {
 }
 
 // NewABFToInterfaceDescriptor returns new ABFInterface descriptor
-func NewABFToInterfaceDescriptor(abfIndex abfidx.ABFMetadataIndex, abfHandler vppcalls.ABFVppAPI, ifPlugin ifplugin.API, log logging.PluginLogger) *ABFToInterfaceDescriptor {
-	return &ABFToInterfaceDescriptor{
+func NewABFToInterfaceDescriptor(abfIndex abfidx.ABFMetadataIndex, abfHandler vppcalls.ABFVppAPI, ifPlugin ifplugin.API, log logging.PluginLogger) *api.KVDescriptor {
+	ctx := &ABFToInterfaceDescriptor{
 		log:        log,
 		abfHandler: abfHandler,
 		abfIndex:   abfIndex,
 		ifPlugin:   ifPlugin,
 	}
-}
 
-// GetDescriptor returns descriptor suitable for registration with the KVScheduler.
-func (d *ABFToInterfaceDescriptor) GetDescriptor() *api.KVDescriptor {
 	return &api.KVDescriptor{
 		Name:         ABFToInterfaceDescriptorName,
-		KeySelector:  d.IsABFInterfaceKey,
-		Create:       d.Create,
-		Delete:       d.Delete,
-		Dependencies: d.Dependencies,
+		KeySelector:  ctx.IsABFInterfaceKey,
+		Create:       ctx.Create,
+		Delete:       ctx.Delete,
+		Dependencies: ctx.Dependencies,
 	}
 }
 
