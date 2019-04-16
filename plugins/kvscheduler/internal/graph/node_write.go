@@ -328,9 +328,8 @@ func (node *node) addToTargets(node2 *node, target *Target) {
 	node.targetsUpdated = updated || node.targetsUpdated
 	if !updated {
 		return
-	} else {
-		node.graph.unsaved.Add(node.key)
 	}
+	node.graph.unsaved.Add(node.key)
 
 	// update sources of node2
 	node2.addToSources(node, target)
