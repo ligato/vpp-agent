@@ -28,6 +28,7 @@ import (
 
 	_ "github.com/ligato/vpp-agent/plugins/telemetry/vppcalls/vpp1810"
 	_ "github.com/ligato/vpp-agent/plugins/telemetry/vppcalls/vpp1901"
+	_ "github.com/ligato/vpp-agent/plugins/telemetry/vppcalls/vpp1904"
 )
 
 const (
