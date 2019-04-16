@@ -1,4 +1,4 @@
-//  Copyright (c) 2018 Cisco and/or its affiliates.
+//  Copyright (c) 2019 Cisco and/or its affiliates.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -12,46 +12,48 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 
-package restapi
+package abfplugin
 
 import (
-	"github.com/ligato/cn-infra/rpc/rest"
-
+	"github.com/ligato/cn-infra/health/statuscheck"
+	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
+	"github.com/ligato/vpp-agent/plugins/kvscheduler"
 	"github.com/ligato/vpp-agent/plugins/vpp/aclplugin"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin"
-	"github.com/ligato/vpp-agent/plugins/vpp/l2plugin"
 )
 
-// DefaultPlugin is a default instance of Plugin.
+// DefaultPlugin is a default instance of ABFPlugin.
 var DefaultPlugin = *NewPlugin()
 
 // NewPlugin creates a new Plugin with the provides Options
-func NewPlugin(opts ...Option) *Plugin {
-	p := &Plugin{}
+func NewPlugin(opts ...Option) *ABFPlugin {
+	p := &ABFPlugin{}
 
-	p.PluginName = "restpapi"
-	p.HTTPHandlers = &rest.DefaultPlugin
+	p.PluginName = "vpp-abfplugin"
+	p.StatusCheck = &statuscheck.DefaultPlugin
+	p.Scheduler = &kvscheduler.DefaultPlugin
 	p.GoVppmux = &govppmux.DefaultPlugin
-	p.VPPACLPlugin = &aclplugin.DefaultPlugin
-	p.VPPIfPlugin = &ifplugin.DefaultPlugin
-	p.VPPL2Plugin = &l2plugin.DefaultPlugin
+	p.ACLPlugin = &aclplugin.DefaultPlugin
+	p.IfPlugin = &ifplugin.DefaultPlugin
 
 	for _, o := range opts {
 		o(p)
 	}
 
-	p.PluginDeps.Setup()
+	if p.Log == nil {
+		p.Log = logging.ForPlugin(p.String())
+	}
 
 	return p
 }
 
-// Option is a function that acts on a Plugin to inject Dependencies or configuration
-type Option func(*Plugin)
+// Option is a function that can be used in NewPlugin to customize Plugin.
+type Option func(plugin *ABFPlugin)
 
 // UseDeps returns Option that can inject custom dependencies.
-func UseDeps(cb func(*Deps)) Option {
-	return func(p *Plugin) {
-		cb(&p.Deps)
+func UseDeps(f func(*Deps)) Option {
+	return func(p *ABFPlugin) {
+		f(&p.Deps)
 	}
 }

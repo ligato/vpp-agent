@@ -19,6 +19,7 @@ import (
 
 	"github.com/ligato/vpp-agent/api/models/linux/interfaces"
 	"github.com/ligato/vpp-agent/api/models/linux/l3"
+	abf "github.com/ligato/vpp-agent/api/models/vpp/abf"
 	acl "github.com/ligato/vpp-agent/api/models/vpp/acl"
 	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	ipsec "github.com/ligato/vpp-agent/api/models/vpp/ipsec"
@@ -104,6 +105,12 @@ func (dsl *PutDSL) VppInterface(val *interfaces.Interface) linuxclient.PutDSL {
 // ACL adds a request to create or update VPP Access Control List.
 func (dsl *PutDSL) ACL(acl *acl.ACL) linuxclient.PutDSL {
 	dsl.vppPut.ACL(acl)
+	return dsl
+}
+
+// ABF adds a request to create or update VPP ACL-based forwarding
+func (dsl *PutDSL) ABF(abf *abf.ABF) linuxclient.PutDSL {
+	dsl.vppPut.ABF(abf)
 	return dsl
 }
 
@@ -262,6 +269,12 @@ func (dsl *DeleteDSL) VppInterface(ifaceName string) linuxclient.DeleteDSL {
 // ACL adds a request to delete an existing VPP Access Control List.
 func (dsl *DeleteDSL) ACL(aclName string) linuxclient.DeleteDSL {
 	dsl.vppDelete.ACL(aclName)
+	return dsl
+}
+
+// ABF adds a request to delete an existing VPP ACL-based forwarding
+func (dsl *DeleteDSL) ABF(abfIndex uint32) linuxclient.DeleteDSL {
+	dsl.vppDelete.ABF(abfIndex)
 	return dsl
 }
 
