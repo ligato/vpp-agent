@@ -18,8 +18,6 @@ import (
 	"testing"
 
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/ip"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/vpe"
 	. "github.com/onsi/gomega"
 )
 
@@ -75,9 +73,6 @@ func TestSetInterfaceVRF(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&ip.IPFibDetails{})
-	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
-	ctx.MockVpp.MockReply(&ip.IPTableAddDelReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetTableReply{})
 
 	err := ifHandler.SetInterfaceVrf(1, 2)
@@ -92,9 +87,6 @@ func TestSetInterfaceIPv6VRF(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&ip.IP6FibDetails{})
-	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
-	ctx.MockVpp.MockReply(&ip.IPTableAddDelReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetTableReply{})
 
 	err := ifHandler.SetInterfaceVrfIPv6(1, 2)
@@ -110,9 +102,6 @@ func TestSetInterfaceVRFError(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&ip.IPFibDetails{})
-	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
-	ctx.MockVpp.MockReply(&ip.IPTableAddDelReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetTable{})
 
 	err := ifHandler.SetInterfaceVrf(1, 2)
@@ -123,107 +112,10 @@ func TestSetInterfaceVRFRetval(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&ip.IPFibDetails{})
-	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
-	ctx.MockVpp.MockReply(&ip.IPTableAddDelReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetTableReply{
 		Retval: 1,
 	})
 
 	err := ifHandler.SetInterfaceVrf(1, 2)
-	Expect(err).ToNot(BeNil())
-}
-
-func TestCreateVrfIfNeeded(t *testing.T) {
-	ctx, ifHandler := ifTestSetup(t)
-	defer ctx.TeardownTestCtx()
-
-	// IP FIB dump
-	ctx.MockVpp.MockReply(&ip.IPFibDetails{})
-	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
-	// Add/del table
-	ctx.MockVpp.MockReply(&ip.IPTableAddDelReply{})
-
-	err := ifHandler.CreateVrf(1)
-	Expect(err).To(BeNil())
-	var msgCheck bool
-	for _, msg := range ctx.MockChannel.Msgs {
-		vppMsg, ok := msg.(*ip.IPTableAddDel)
-		if ok {
-			Expect(vppMsg.TableID).To(BeEquivalentTo(1))
-			Expect(vppMsg.IsIPv6).To(BeEquivalentTo(0))
-			Expect(vppMsg.IsAdd).To(BeEquivalentTo(1))
-			msgCheck = true
-		}
-	}
-	Expect(msgCheck).To(BeTrue())
-}
-
-func TestCreateIPv6VrfIfNeeded(t *testing.T) {
-	ctx, ifHandler := ifTestSetup(t)
-	defer ctx.TeardownTestCtx()
-
-	// IP FIB dump
-	ctx.MockVpp.MockReply(&ip.IP6FibDetails{})
-	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
-	// Add/del table
-	ctx.MockVpp.MockReply(&ip.IPTableAddDelReply{})
-
-	err := ifHandler.CreateVrfIPv6(1)
-	Expect(err).To(BeNil())
-	var msgCheck bool
-	for _, msg := range ctx.MockChannel.Msgs {
-		vppMsg, ok := msg.(*ip.IPTableAddDel)
-		if ok {
-			Expect(vppMsg.TableID).To(BeEquivalentTo(1))
-			Expect(vppMsg.IsIPv6).To(BeEquivalentTo(1))
-			Expect(vppMsg.IsAdd).To(BeEquivalentTo(1))
-			msgCheck = true
-		}
-	}
-	Expect(msgCheck).To(BeTrue())
-}
-
-func TestCreateVrfIfNeededNull(t *testing.T) {
-	ctx, ifHandler := ifTestSetup(t)
-	defer ctx.TeardownTestCtx()
-
-	// IP FIB dump
-	ctx.MockVpp.MockReply(&ip.IPFibDetails{})
-	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
-	// Add/del table
-	ctx.MockVpp.MockReply(&ip.IPTableAddDelReply{})
-
-	err := ifHandler.CreateVrf(0)
-	Expect(err).To(BeNil())
-}
-
-func TestCreateVrfIfNeededError(t *testing.T) {
-	ctx, ifHandler := ifTestSetup(t)
-	defer ctx.TeardownTestCtx()
-
-	// IP FIB dump
-	ctx.MockVpp.MockReply(&ip.IPFibDetails{})
-	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
-	// Add/del table
-	ctx.MockVpp.MockReply(&ip.IPTableAddDel{})
-
-	err := ifHandler.CreateVrf(1)
-	Expect(err).ToNot(BeNil())
-}
-
-func TestCreateVrfIfNeededRetval(t *testing.T) {
-	ctx, ifHandler := ifTestSetup(t)
-	defer ctx.TeardownTestCtx()
-
-	// IP FIB dump
-	ctx.MockVpp.MockReply(&ip.IPFibDetails{})
-	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
-	// Add/del table
-	ctx.MockVpp.MockReply(&ip.IPTableAddDelReply{
-		Retval: 1,
-	})
-
-	err := ifHandler.CreateVrf(1)
 	Expect(err).ToNot(BeNil())
 }

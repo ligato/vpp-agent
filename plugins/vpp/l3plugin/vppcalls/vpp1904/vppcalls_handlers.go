@@ -49,6 +49,7 @@ type L3VppHandler struct {
 	*ProxyArpVppHandler
 	*RouteHandler
 	*IPNeighHandler
+	*VrfTableHandler
 }
 
 func NewL3VppHandler(
@@ -59,6 +60,7 @@ func NewL3VppHandler(
 		ProxyArpVppHandler: NewProxyArpVppHandler(ch, ifIdx, log),
 		RouteHandler:       NewRouteVppHandler(ch, ifIdx, log),
 		IPNeighHandler:     NewIPNeighVppHandler(ch, log),
+		VrfTableHandler:    NewVrfTableVppHandler(ch, log),
 	}
 }
 
@@ -88,6 +90,12 @@ type IPNeighHandler struct {
 	callsChannel govppapi.Channel
 	log          logging.Logger
 	vpevppcalls.VpeVppAPI
+}
+
+// VrfTableHandler is accessor for vrf-related vppcalls methods
+type VrfTableHandler struct {
+	callsChannel govppapi.Channel
+	log          logging.Logger
 }
 
 // NewArpVppHandler creates new instance of IPsec vppcalls handler
@@ -135,6 +143,17 @@ func NewIPNeighVppHandler(callsChan govppapi.Channel, log logging.Logger) *IPNei
 		callsChannel: callsChan,
 		log:          log,
 		VpeVppAPI:    vpp1904.NewVpeHandler(callsChan),
+	}
+}
+
+// NewVrfTableVppHandler creates new instance of vrf-table vppcalls handler
+func NewVrfTableVppHandler(callsChan govppapi.Channel, log logging.Logger) *VrfTableHandler {
+	if log == nil {
+		log = logrus.NewLogger("vrf-table-handler")
+	}
+	return &VrfTableHandler{
+		callsChannel: callsChan,
+		log:          log,
 	}
 }
 

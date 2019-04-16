@@ -19,13 +19,14 @@ import (
 	"net"
 	"reflect"
 	"strings"
+	"github.com/pkg/errors"
 
 	"github.com/ligato/cn-infra/logging"
 	srv6 "github.com/ligato/vpp-agent/api/models/vpp/srv6"
 	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/vpp/srplugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/vpp/srplugin/vppcalls"
-	"github.com/pkg/errors"
+	"github.com/ligato/vpp-agent/api/models/vpp/l3"
 )
 
 const (
@@ -34,6 +35,7 @@ const (
 
 	// dependency labels
 	policyExistsDep = "sr-policy-for-steering-exists"
+	steeringVRFDep = "sr-steering-vrf-table-exists"
 )
 
 // SteeringDescriptor teaches KVScheduler how to configure VPP SRv6 steering.
@@ -195,5 +197,22 @@ func (d *SteeringDescriptor) Dependencies(key string, steering *srv6.Steering) (
 		Label: policyExistsDep,
 		Key:   srv6.PolicyKey(steering.GetPolicyBsid()),
 	})
+
+	// VRF-table dependency
+	if t, isL3Traffic := steering.Traffic.(*srv6.Steering_L3Traffic_); isL3Traffic {
+		l3Traffic := t.L3Traffic
+		tableId := l3Traffic.FibTableId
+		if tableId > 0 {
+			ip, _, _ := net.ParseCIDR(l3Traffic.PrefixAddress) // PrefixAddress is already validated
+			tableProto := vpp_l3.VrfTable_IPV6
+			if ip.To4() != nil { // IPv4 address
+				tableProto = vpp_l3.VrfTable_IPV4
+			}
+			dependencies = append(dependencies, scheduler.Dependency{
+				Label: steeringVRFDep,
+				Key:   vpp_l3.VrfTableKey(tableId, tableProto),
+			})
+		}
+	}
 	return dependencies
 }
