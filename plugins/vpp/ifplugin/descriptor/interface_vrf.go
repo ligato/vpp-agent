@@ -33,7 +33,7 @@ const (
 
 	// dependency labels
 	vrfV4Dep        = "vrf-table-v4-exists"
-	vrfV6Dep        = "vrf-table-v4-exists"
+	vrfV6Dep        = "vrf-table-v6-exists"
 	inheritedVrfDep = "numbered-interface-assigned-to-VRF"
 )
 

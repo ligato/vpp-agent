@@ -202,7 +202,6 @@ func (d *InterfaceDescriptor) SetInterfaceIndex(intfIndex ifaceidx.IfaceMetadata
 func (d *InterfaceDescriptor) EquivalentInterfaces(key string, oldIntf, newIntf *interfaces.Interface) bool {
 	// attributes compared as usually:
 	if oldIntf.Name != newIntf.Name ||
-		oldIntf.Vrf != newIntf.Vrf ||
 		oldIntf.Type != newIntf.Type ||
 		oldIntf.Enabled != newIntf.Enabled ||
 		oldIntf.SetDhcpClient != newIntf.SetDhcpClient {
@@ -218,9 +217,8 @@ func (d *InterfaceDescriptor) EquivalentInterfaces(key string, oldIntf, newIntf 
 		return false
 	}
 
-	if newIntf.Type == interfaces.Interface_VXLAN_TUNNEL {
+	if newIntf.Unnumbered == nil { // unnumbered inherits VRF from numbered interface
 		if oldIntf.Vrf != newIntf.Vrf {
-			// interface will be re-created
 			return false
 		}
 	}

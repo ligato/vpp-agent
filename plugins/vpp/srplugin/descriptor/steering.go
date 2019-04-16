@@ -201,8 +201,8 @@ func (d *SteeringDescriptor) Dependencies(key string, steering *srv6.Steering) (
 	// VRF-table dependency
 	if t, isL3Traffic := steering.Traffic.(*srv6.Steering_L3Traffic_); isL3Traffic {
 		l3Traffic := t.L3Traffic
-		tableId := l3Traffic.FibTableId
-		if tableId > 0 {
+		tableID := l3Traffic.FibTableId
+		if tableID > 0 {
 			ip, _, _ := net.ParseCIDR(l3Traffic.PrefixAddress) // PrefixAddress is already validated
 			tableProto := vpp_l3.VrfTable_IPV6
 			if ip.To4() != nil { // IPv4 address
@@ -210,7 +210,7 @@ func (d *SteeringDescriptor) Dependencies(key string, steering *srv6.Steering) (
 			}
 			dependencies = append(dependencies, scheduler.Dependency{
 				Label: steeringVRFDep,
-				Key:   vpp_l3.VrfTableKey(tableId, tableProto),
+				Key:   vpp_l3.VrfTableKey(tableID, tableProto),
 			})
 		}
 	}
