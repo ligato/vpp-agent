@@ -29,6 +29,12 @@ const (
 	LinuxArps = "/dump/linux/v2/arps"
 )
 
+// VPP ABF
+const (
+	// REST ABF
+	ABF = "/dump/vpp/v2/abf"
+)
+
 // VPP ACL
 const (
 	// REST ACL IP prefix

@@ -15,6 +15,7 @@
 package vppclient
 
 import (
+	abf "github.com/ligato/vpp-agent/api/models/vpp/abf"
 	acl "github.com/ligato/vpp-agent/api/models/vpp/acl"
 	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	ipsec "github.com/ligato/vpp-agent/api/models/vpp/ipsec"
@@ -56,6 +57,8 @@ type PutDSL interface {
 	Interface(val *interfaces.Interface) PutDSL
 	// ACL adds a request to create or update VPP Access Control List.
 	ACL(acl *acl.ACL) PutDSL
+	// ABF adds a request to create or update VPP ACL-based forwarding.
+	ABF(abf *abf.ABF) PutDSL
 	// BD adds a request to create or update VPP Bridge Domain.
 	BD(val *l2.BridgeDomain) PutDSL
 	// BDFIB adds a request to create or update VPP L2 Forwarding Information Base.
@@ -102,6 +105,8 @@ type DeleteDSL interface {
 	Interface(ifaceName string) DeleteDSL
 	// ACL adds a request to delete an existing VPP Access Control List.
 	ACL(aclName string) DeleteDSL
+	// ABF adds a request to delete and existing VPP Access Control List.
+	ABF(abfIndex uint32) DeleteDSL
 	// BD adds a request to delete an existing VPP Bridge Domain.
 	BD(bdName string) DeleteDSL
 	// BDFIB adds a request to delete an existing VPP L2 Forwarding Information

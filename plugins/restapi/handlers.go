@@ -30,6 +30,17 @@ import (
 	"github.com/ligato/vpp-agent/plugins/restapi/resturl"
 )
 
+// Registers ABF REST handler
+func (p *Plugin) registerABFHandler() {
+	unavailHandler := errors.New("abfHandler is not available")
+	p.registerHTTPHandler(resturl.ABF, GET, func() (interface{}, error) {
+		if p.abfHandler == nil {
+			return nil, unavailHandler
+		}
+		return p.abfHandler.DumpABFPolicy()
+	})
+}
+
 // Registers access list REST handlers
 func (p *Plugin) registerAccessListHandlers() {
 	unavailHandler := errors.New("aclHandler is not available")

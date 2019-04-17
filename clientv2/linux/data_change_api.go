@@ -133,6 +133,8 @@ type DeleteDSL interface {
 	VppInterface(ifaceName string) DeleteDSL
 	// ACL adds a request to delete an existing VPP Access Control List.
 	ACL(aclName string) DeleteDSL
+	// ABF adds a request to delete an existing VPP ACL-based forwarding.
+	ABF(abfIndex uint32) DeleteDSL
 	/*// BfdSession adds a request to delete an existing VPP bidirectional
 	// forwarding detection session.
 	BfdSession(bfdSessionIfaceName string) DeleteDSL
