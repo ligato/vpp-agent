@@ -107,7 +107,7 @@ func (d *NAT44AddressDescriptor) Delete(key string, natAddr *nat.Nat44Global_Add
 
 // Dependencies lists non-zero VRF as the only dependency.
 func (d *NAT44AddressDescriptor) Dependencies(key string, natAddr *nat.Nat44Global_Address) []kvs.Dependency {
-	if natAddr.VrfId == 0 {
+	if natAddr.VrfId == 0 || natAddr.VrfId == ^uint32(0) {
 		return nil
 	}
 	return []kvs.Dependency{
