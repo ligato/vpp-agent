@@ -25,9 +25,22 @@ import (
 
 // DumpArpEntries implements arp handler.
 func (h *ArpVppHandler) DumpArpEntries() ([]*vppcalls.ArpDetails, error) {
+	arpV4Entries, err := h.dumpArpEntries(false)
+	if err != nil {
+		return nil, err
+	}
+	arpV6Entries, err := h.dumpArpEntries(true)
+	if err != nil {
+		return nil, err
+	}
+	return append(arpV4Entries, arpV6Entries...), nil
+}
+
+func (h *ArpVppHandler) dumpArpEntries(isIPv6 bool) ([]*vppcalls.ArpDetails, error) {
 	var entries []*vppcalls.ArpDetails
 	reqCtx := h.callsChannel.SendMultiRequest(&l3binapi.IPNeighborDump{
-		SwIfIndex: 0xffffffff, // Send multirequest to get all ARP entries
+		SwIfIndex: 0xffffffff, // Send multirequest to get all ARP entries for given IP version
+		IsIPv6:    boolToUint(isIPv6),
 	})
 
 	for {
