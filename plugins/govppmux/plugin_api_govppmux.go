@@ -15,69 +15,36 @@
 package govppmux
 
 import (
-	"git.fd.io/govpp.git/adapter"
 	govppapi "git.fd.io/govpp.git/api"
-	"github.com/ligato/cn-infra/logging/measure/model/apitrace"
+	"github.com/ligato/vpp-agent/plugins/govppmux/vppcalls"
 )
-
-// TraceAPI is extended API with ability to get traced VPP binary API calls
-type TraceAPI interface {
-	API
-
-	// GetTrace serves to obtain measured binary API calls
-	GetTrace() *apitrace.Trace
-}
 
 // StatsAPI is extended API with ability to get VPP stats data
 type StatsAPI interface {
 	API
 
-	// ListStats returns all stats names present on the VPP. Patterns can be used as a prefix
-	// to filter the output
-	ListStats(patterns ...string) ([]string, error)
-
-	// ListStats returns all stats names, types and values from the VPP. Patterns can be used as a prefix
-	// to filter the output. Stats are divided between workers. Example:
-	//
-	// stats values: {{0, 20, 30}{0, 0, 10}}
-	//
-	// It means there are three interfaces on two workers (inner arrays, array index == sw_if_index),
-	// and statistics are like following:
-	//
-	// 0 for sw_if_index 0
-	// 20 for sw_if_index 1
-	// 40 for sw_if_index 2 (sum of stats from all workers)
-	//
-	DumpStats(patterns ...string) ([]*adapter.StatEntry, error)
-
-	// GetSystemStats retrieves system statistics of the connected VPP instance like Vector rate, Input rate, etc.
-	GetSystemStats() (*govppapi.SystemStats, error)
-
-	// GetNodeStats retrieves a list of Node VPP counters (vectors, clocks, ...)
-	GetNodeStats() (*govppapi.NodeStats, error)
-
-	// GetInterfaceStats retrieves all counters related to the VPP interfaces
-	GetInterfaceStats() (*govppapi.InterfaceStats, error)
-
-	// GetErrorStats retrieves VPP error counters
-	GetErrorStats(names ...string) (*govppapi.ErrorStats, error)
+	govppapi.StatsProvider
 }
 
 // API for other plugins to get connectivity to VPP.
 type API interface {
-	// NewAPIChannel returns a new API channel for communication with VPP via govpp core.
-	// It uses default buffer sizes for the request and reply Go channels.
-	//
-	// Example of binary API call from some plugin using GOVPP:
-	//      ch, _ := govpp_mux.NewAPIChannel()
-	//      ch.SendRequest(req).ReceiveReply
-	NewAPIChannel() (govppapi.Channel, error)
+	// VPPInfo returns VPP information which is retrieved immediatelly after connecting to VPP.
+	VPPInfo() (VPPInfo, error)
 
-	// NewAPIChannelBuffered returns a new API channel for communication with VPP via govpp core.
-	// It allows to specify custom buffer sizes for the request and reply Go channels.
-	//
-	// Example of binary API call from some plugin using GOVPP:
-	//      ch, _ := govpp_mux.NewAPIChannelBuffered(100, 100)
-	//      ch.SendRequest(req).ReceiveReply
-	NewAPIChannelBuffered(reqChanBufSize, replyChanBufSize int) (govppapi.Channel, error)
+	govppapi.ChannelProvider
+}
+
+// VPPInfo defines retrieved information about the connected VPP instance.
+type VPPInfo struct {
+	Connected bool
+	vppcalls.VersionInfo
+	vppcalls.VpeInfo
+}
+
+// GetReleaseVersion returns VPP release version (XX.YY), which is normalized from VersionInfo.
+func (vpp VPPInfo) GetReleaseVersion() string {
+	if len(vpp.Version) < 5 {
+		return ""
+	}
+	return vpp.Version[:5]
 }

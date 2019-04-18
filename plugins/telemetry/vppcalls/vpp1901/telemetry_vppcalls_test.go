@@ -15,6 +15,7 @@
 package vpp1901_test
 
 import (
+	"context"
 	"testing"
 
 	"github.com/ligato/vpp-agent/plugins/telemetry/vppcalls"
@@ -42,7 +43,7 @@ func TestGetBuffers(t *testing.T) {
 		Reply: reply,
 	})
 
-	info, err := handler.GetBuffersInfo()
+	info, err := handler.GetBuffersInfo(context.TODO())
 
 	Expect(err).ShouldNot(HaveOccurred())
 	Expect(info.Items).To(HaveLen(9))
@@ -238,7 +239,7 @@ unix-epoll-input                 polling          20563870               0      
 
 			ctx.MockVpp.MockReply(&vpe.CliInbandReply{Reply: test.reply})
 
-			info, err := handler.GetRuntimeInfo()
+			info, err := handler.GetRuntimeInfo(context.TODO())
 
 			Expect(err).ShouldNot(HaveOccurred())
 			Expect(len(info.Threads)).To(Equal(test.threadCount))
@@ -358,7 +359,7 @@ no traced allocations
 
 			ctx.MockVpp.MockReply(&vpe.CliInbandReply{Reply: test.reply})
 
-			info, err := handler.GetMemory()
+			info, err := handler.GetMemory(context.TODO())
 
 			Expect(err).ShouldNot(HaveOccurred())
 			Expect(info.Threads).To(HaveLen(test.threadCount))
@@ -387,39 +388,39 @@ func TestGetNodeCounters(t *testing.T) {
 		Reply: reply,
 	})
 
-	info, err := handler.GetNodeCounters()
+	info, err := handler.GetNodeCounters(context.TODO())
 
 	Expect(err).ShouldNot(HaveOccurred())
 	Expect(info.Counters).To(HaveLen(10))
 	Expect(info.Counters[0]).To(Equal(vppcalls.NodeCounter{
-		Count:  32,
-		Node:   "ipsec-output-ip4",
-		Reason: "IPSec policy protect",
+		Value: 32,
+		Node:  "ipsec-output-ip4",
+		Name:  "IPSec policy protect",
 	}))
 	Expect(info.Counters[6]).To(Equal(vppcalls.NodeCounter{
-		Count:  1,
-		Node:   "arp-input",
-		Reason: "ARP replies sent",
+		Value: 1,
+		Node:  "arp-input",
+		Name:  "ARP replies sent",
 	}))
 	Expect(info.Counters[7]).To(Equal(vppcalls.NodeCounter{
-		Count:  4,
-		Node:   "ip4-input",
-		Reason: "ip4 spoofed local-address packet drops",
+		Value: 4,
+		Node:  "ip4-input",
+		Name:  "ip4 spoofed local-address packet drops",
 	}))
 	Expect(info.Counters[8]).To(Equal(vppcalls.NodeCounter{
-		Count:  2,
-		Node:   "memif1/1-output",
-		Reason: "interface is down",
+		Value: 2,
+		Node:  "memif1/1-output",
+		Name:  "interface is down",
 	}))
 	Expect(info.Counters[9]).To(Equal(vppcalls.NodeCounter{
-		Count:  1,
-		Node:   "cdp-input",
-		Reason: "good cdp packets (processed)",
+		Value: 1,
+		Node:  "cdp-input",
+		Name:  "good cdp packets (processed)",
 	}))
 }
 
 func testSetup(t *testing.T) (*vppcallmock.TestCtx, vppcalls.TelemetryVppAPI) {
 	ctx := vppcallmock.SetupTestCtx(t)
-	handler := vpp1901.NewTelemetryVppHandler(ctx.MockChannel)
+	handler := vpp1901.NewTelemetryVppHandler(ctx.MockChannel, nil)
 	return ctx, handler
 }

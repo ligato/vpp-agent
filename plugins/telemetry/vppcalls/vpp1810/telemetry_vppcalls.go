@@ -15,12 +15,14 @@
 package vpp1810
 
 import (
+	"context"
 	"fmt"
 	"regexp"
 	"strconv"
 	"strings"
 
 	govppapi "git.fd.io/govpp.git/api"
+	"github.com/ligato/vpp-agent/plugins/govppmux/vppcalls/vpp1810"
 
 	vpevppcalls "github.com/ligato/vpp-agent/plugins/govppmux/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/telemetry/vppcalls"
@@ -33,11 +35,10 @@ func init() {
 	msgs = append(msgs, memclnt.Messages...)
 	msgs = append(msgs, vpe.Messages...)
 
-	vppcalls.Versions["vpp1810"] = vppcalls.HandlerVersion{
+	vppcalls.Versions["18.10"] = vppcalls.HandlerVersion{
 		Msgs: msgs,
-		New: func(ch govppapi.Channel) vppcalls.TelemetryVppAPI {
-			vpeHandler := vpevppcalls.CompatibleVpeHandler(ch)
-			return &TelemetryHandler{ch, vpeHandler}
+		New: func(ch govppapi.Channel, stats govppapi.StatsProvider) vppcalls.TelemetryVppAPI {
+			return NewTelemetryVppHandler(ch, stats)
 		},
 	}
 }
@@ -47,13 +48,18 @@ type TelemetryHandler struct {
 	vpevppcalls.VpeVppAPI
 }
 
+func NewTelemetryVppHandler(ch govppapi.Channel, stats govppapi.StatsProvider) *TelemetryHandler {
+	vpeHandler := vpp1810.NewVpeHandler(ch)
+	return &TelemetryHandler{ch, vpeHandler}
+}
+
 var (
 	// Regular expression to parse output from `show memory`
 	memoryRe = regexp.MustCompile(`Thread\s+(\d+)\s+(\w+).?\s+(\d+) objects, ([\dkmg\.]+) of ([\dkmg\.]+) used, ([\dkmg\.]+) free, ([\dkmg\.]+) reclaimed, ([\dkmg\.]+) overhead, ([\dkmg\.]+) capacity`)
 )
 
 // GetMemory retrieves `show memory` info.
-func (h *TelemetryHandler) GetMemory() (*vppcalls.MemoryInfo, error) {
+func (h *TelemetryHandler) GetMemory(ctx context.Context) (*vppcalls.MemoryInfo, error) {
 	data, err := h.RunCli("show memory")
 	if err != nil {
 		return nil, err
@@ -98,7 +104,7 @@ var (
 )
 
 // GetNodeCounters retrieves node counters info.
-func (h *TelemetryHandler) GetNodeCounters() (*vppcalls.NodeCounterInfo, error) {
+func (h *TelemetryHandler) GetNodeCounters(ctx context.Context) (*vppcalls.NodeCounterInfo, error) {
 	data, err := h.RunCli("show node counters")
 	if err != nil {
 		return nil, err
@@ -129,9 +135,8 @@ func (h *TelemetryHandler) GetNodeCounters() (*vppcalls.NodeCounterInfo, error) 
 		fields := matches[1:]
 
 		counters = append(counters, vppcalls.NodeCounter{
-			Count:  strToUint64(fields[0]),
-			Node:   fields[1],
-			Reason: fields[2],
+			Name:  strings.Join(fields, "/"),
+			Value: strToUint64(fields[0]),
 		})
 	}
 
@@ -153,7 +158,7 @@ var (
 )
 
 // GetRuntimeInfo retrieves how runtime info.
-func (h *TelemetryHandler) GetRuntimeInfo() (*vppcalls.RuntimeInfo, error) {
+func (h *TelemetryHandler) GetRuntimeInfo(ctx context.Context) (*vppcalls.RuntimeInfo, error) {
 	data, err := h.RunCli("show runtime")
 	if err != nil {
 		return nil, err
@@ -214,7 +219,7 @@ var (
 )
 
 // GetBuffersInfo retrieves buffers info
-func (h *TelemetryHandler) GetBuffersInfo() (*vppcalls.BuffersInfo, error) {
+func (h *TelemetryHandler) GetBuffersInfo(ctx context.Context) (*vppcalls.BuffersInfo, error) {
 	data, err := h.RunCli("show buffers")
 	if err != nil {
 		return nil, err

@@ -15,9 +15,27 @@
 package vppcalls
 
 import (
+	"context"
+
 	govppapi "git.fd.io/govpp.git/api"
 	log "github.com/ligato/cn-infra/logging"
+	"github.com/ligato/vpp-agent/plugins/govppmux"
 )
+
+var Versions = map[string]HandlerVersion{}
+
+type HandlerVersion struct {
+	Msgs []govppapi.Message
+	New  func(govppapi.Channel, govppapi.StatsProvider) TelemetryVppAPI
+}
+
+// TelemetryVppAPI provides API for retrieving telemetry data from VPP.
+type TelemetryVppAPI interface {
+	GetMemory(context.Context) (*MemoryInfo, error)
+	GetNodeCounters(context.Context) (*NodeCounterInfo, error)
+	GetRuntimeInfo(context.Context) (*RuntimeInfo, error)
+	GetBuffersInfo(context.Context) (*BuffersInfo, error)
+}
 
 // MemoryInfo contains values returned from 'show memory'
 type MemoryInfo struct {
@@ -39,16 +57,16 @@ type MemoryThread struct {
 	PageSize  uint64 `json:"page_size"`
 }
 
-// NodeCounterInfo contains values returned from 'show node counters'
+// NodeErrorCounterInfo contains values returned from 'show node counters'
 type NodeCounterInfo struct {
 	Counters []NodeCounter `json:"counters"`
 }
 
 // NodeCounter represents single node counter
 type NodeCounter struct {
-	Count  uint64 `json:"count"`
-	Node   string `json:"node"`
-	Reason string `json:"reason"`
+	Value uint64 `json:"value"`
+	Node  string `json:"node"`
+	Name  string `json:"name"`
 }
 
 // RuntimeInfo contains values returned from 'show runtime'
@@ -74,6 +92,7 @@ type RuntimeThread struct {
 
 // RuntimeItem represents single runtime item
 type RuntimeItem struct {
+	Index          uint    `json:"index"`
 	Name           string  `json:"name"`
 	State          string  `json:"state"`
 	Calls          uint64  `json:"calls"`
@@ -100,28 +119,29 @@ type BuffersItem struct {
 	NumFree  uint64 `json:"num_free"`
 }
 
-type TelemetryVppAPI interface {
-	GetMemory() (*MemoryInfo, error)
-	GetNodeCounters() (*NodeCounterInfo, error)
-	GetRuntimeInfo() (*RuntimeInfo, error)
-	GetBuffersInfo() (*BuffersInfo, error)
-}
-
-var Versions = map[string]HandlerVersion{}
-
-type HandlerVersion struct {
-	Msgs []govppapi.Message
-	New  func(govppapi.Channel) TelemetryVppAPI
-}
-
-func CompatibleTelemetryHandler(ch govppapi.Channel) TelemetryVppAPI {
+func CompatibleTelemetryHandler(ch govppapi.Channel, vpp govppmux.StatsAPI) TelemetryVppAPI {
+	status, err := vpp.VPPInfo()
+	if err != nil {
+		log.Warnf("retrieving VPP status failed: %v", err)
+		return nil
+	}
+	if status.Connected {
+		ver := status.GetReleaseVersion()
+		if h, ok := Versions[ver]; ok {
+			if err := ch.CheckCompatiblity(h.Msgs...); err != nil {
+				log.Debugf("version %s not compatible", ver)
+			}
+			log.Debug("found compatible version: ", ver)
+			return h.New(ch, vpp)
+		}
+	}
 	for ver, h := range Versions {
 		if err := ch.CheckCompatiblity(h.Msgs...); err != nil {
 			log.Debugf("version %s not compatible", ver)
 			continue
 		}
-		log.Debug("found compatible version:", ver)
-		return h.New(ch)
+		log.Debug("found compatible version: ", ver)
+		return h.New(ch, vpp)
 	}
 	panic("no compatible version available")
 }

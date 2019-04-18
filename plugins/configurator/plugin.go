@@ -53,7 +53,7 @@ type Deps struct {
 	infra.PluginDeps
 	GRPCServer  grpc.Server
 	Dispatch    orchestrator.Dispatcher
-	GoVppmux    govppmux.TraceAPI
+	GoVppmux    govppmux.StatsAPI
 	VPPIfPlugin ifplugin.API
 	VPPL2Plugin *l2plugin.L2Plugin
 }

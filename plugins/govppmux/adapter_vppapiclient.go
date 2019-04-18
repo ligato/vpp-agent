@@ -29,11 +29,13 @@ var (
 )
 
 // NewVppAdapter returns real vpp api adapter, used for building with vppapiclient library.
-func NewVppAdapter(shmPrefix string) adapter.VppAPI {
+func NewVppAdapter(addr string) adapter.VppAPI {
 	if UseSocketClient {
-		return socketclient.NewVppClient("/run/vpp-api.sock")
+		// addr is used as socket name
+		return socketclient.NewVppClient(addr)
 	}
-	return vppapiclient.NewVppClient(shmPrefix)
+	// addr is used as shm prefix
+	return vppapiclient.NewVppClient(addr)
 }
 
 // NewStatsAdapter returns stats vpp api adapter, used for reading statistics with vppapiclient library.
