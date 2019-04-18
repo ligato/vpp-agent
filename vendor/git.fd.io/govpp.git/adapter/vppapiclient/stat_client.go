@@ -161,11 +161,17 @@ govpp_stat_segment_string_vector(uint8_t ** string_vector, char *string)
 */
 import "C"
 import (
+	"errors"
 	"fmt"
 	"os"
 	"unsafe"
 
 	"git.fd.io/govpp.git/adapter"
+)
+
+var (
+	ErrStatDirBusy  = errors.New("stat dir busy")
+	ErrStatDumpBusy = errors.New("stat dump busy")
 )
 
 var (
@@ -219,6 +225,9 @@ func (c *statClient) Disconnect() error {
 
 func (c *statClient) ListStats(patterns ...string) (stats []string, err error) {
 	dir := C.govpp_stat_segment_ls(convertStringSlice(patterns))
+	if dir == nil {
+		return nil, ErrStatDirBusy
+	}
 	defer C.govpp_stat_segment_vec_free(unsafe.Pointer(dir))
 
 	l := C.govpp_stat_segment_vec_len(unsafe.Pointer(dir))
@@ -233,9 +242,15 @@ func (c *statClient) ListStats(patterns ...string) (stats []string, err error) {
 
 func (c *statClient) DumpStats(patterns ...string) (stats []*adapter.StatEntry, err error) {
 	dir := C.govpp_stat_segment_ls(convertStringSlice(patterns))
+	if dir == nil {
+		return nil, ErrStatDirBusy
+	}
 	defer C.govpp_stat_segment_vec_free(unsafe.Pointer(dir))
 
 	dump := C.govpp_stat_segment_dump(dir)
+	if dump == nil {
+		return nil, ErrStatDumpBusy
+	}
 	defer C.govpp_stat_segment_data_free(dump)
 
 	l := C.govpp_stat_segment_vec_len(unsafe.Pointer(dump))

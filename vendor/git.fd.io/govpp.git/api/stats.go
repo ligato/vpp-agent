@@ -68,10 +68,24 @@ type ErrorCounter struct {
 	Value       uint64
 }
 
+// BufferStats represents statistics per buffer pool.
+type BufferStats struct {
+	Buffer map[string]BufferPool
+}
+
+// BufferPool represents buffer pool.
+type BufferPool struct {
+	PoolName  string
+	Cached    float64
+	Used      float64
+	Available float64
+}
+
 // StatsProvider provides the methods for getting statistics.
 type StatsProvider interface {
 	GetSystemStats() (*SystemStats, error)
 	GetNodeStats() (*NodeStats, error)
 	GetInterfaceStats() (*InterfaceStats, error)
 	GetErrorStats(names ...string) (*ErrorStats, error)
+	GetBufferStats() (*BufferStats, error)
 }

@@ -2,6 +2,7 @@ package core
 
 import (
 	"fmt"
+	"path"
 	"strings"
 	"sync/atomic"
 
@@ -10,8 +11,6 @@ import (
 )
 
 const (
-	CounterStatsPrefix = "/err/"
-
 	SystemStatsPrefix          = "/sys/"
 	SystemStats_VectorRate     = SystemStatsPrefix + "vector_rate"
 	SystemStats_InputRate      = SystemStatsPrefix + "input_rate"
@@ -25,6 +24,13 @@ const (
 	NodeStats_Vectors  = NodeStatsPrefix + "vectors"
 	NodeStats_Calls    = NodeStatsPrefix + "calls"
 	NodeStats_Suspends = NodeStatsPrefix + "suspends"
+
+	BufferStatsPrefix     = "/buffer-pools/"
+	BufferStats_Cached    = "cached"
+	BufferStats_Used      = "used"
+	BufferStats_Available = "available"
+
+	CounterStatsPrefix = "/err/"
 
 	InterfaceStatsPrefix         = "/if/"
 	InterfaceStats_Names         = InterfaceStatsPrefix + "names"
@@ -45,12 +51,13 @@ const (
 	InterfaceStats_TxMulticast   = InterfaceStatsPrefix + "tx-multicast"
 	InterfaceStats_TxBroadcast   = InterfaceStatsPrefix + "tx-broadcast"
 
-	NetworkStatsPrefix = "/net/"
 	// TODO: network stats
+	NetworkStatsPrefix     = "/net/"
 	NetworkStats_RouteTo   = NetworkStatsPrefix + "route/to"
 	NetworkStats_RouteVia  = NetworkStatsPrefix + "route/via"
 	NetworkStats_MRoute    = NetworkStatsPrefix + "mroute"
 	NetworkStats_Adjacency = NetworkStatsPrefix + "adjacency"
+	NetworkStats_Punt      = NetworkStatsPrefix + "punt"
 )
 
 type StatsConnection struct {
@@ -188,6 +195,7 @@ func (c *StatsConnection) GetNodeStats() (*api.NodeStats, error) {
 	}
 
 	nodeStats := &api.NodeStats{}
+
 	var setPerNode = func(perNode []uint64, fn func(c *api.NodeCounters, v uint64)) {
 		if nodeStats.Nodes == nil {
 			nodeStats.Nodes = make([]api.NodeCounters, len(perNode))
@@ -385,6 +393,42 @@ func (c *StatsConnection) GetInterfaceStats() (*api.InterfaceStats, error) {
 	}
 
 	return ifStats, nil
+}
+
+// GetBufferStats retrieves VPP buffer pools stats.
+func (c *StatsConnection) GetBufferStats() (*api.BufferStats, error) {
+	stats, err := c.statsClient.DumpStats(BufferStatsPrefix)
+	if err != nil {
+		return nil, err
+	}
+
+	bufStats := &api.BufferStats{
+		Buffer: map[string]api.BufferPool{},
+	}
+
+	for _, stat := range stats {
+		d, f := path.Split(stat.Name)
+		d = strings.TrimSuffix(d, "/")
+
+		name := strings.TrimPrefix(d, BufferStatsPrefix)
+		b, ok := bufStats.Buffer[name]
+		if !ok {
+			b.PoolName = name
+		}
+
+		switch f {
+		case BufferStats_Cached:
+			b.Cached = scalarStatToFloat64(stat.Data)
+		case BufferStats_Used:
+			b.Used = scalarStatToFloat64(stat.Data)
+		case BufferStats_Available:
+			b.Available = scalarStatToFloat64(stat.Data)
+		}
+
+		bufStats.Buffer[name] = b
+	}
+
+	return bufStats, nil
 }
 
 func scalarStatToFloat64(stat adapter.Stat) float64 {
