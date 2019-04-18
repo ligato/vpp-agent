@@ -321,6 +321,14 @@ func (p *Plugin) GetErrorStats(names ...string) (*govppapi.ErrorStats, error) {
 	return p.statsConn.GetErrorStats()
 }
 
+// GetErrorStats retrieves VPP error counters
+func (p *Plugin) GetBufferStats() (*govppapi.BufferStats, error) {
+	if p.statsConn == nil || p.statsConn.(*govpp.StatsConnection) == nil {
+		return nil, nil
+	}
+	return p.statsConn.GetBufferStats()
+}
+
 // handleVPPConnectionEvents handles VPP connection events.
 func (p *Plugin) handleVPPConnectionEvents(ctx context.Context) {
 	defer p.wg.Done()
