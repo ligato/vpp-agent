@@ -15,6 +15,7 @@
 package vpp1904
 
 import (
+	"context"
 	"fmt"
 	"regexp"
 	"strconv"
@@ -63,7 +64,11 @@ var (
 )
 
 // GetMemory retrieves `show memory` info.
-func (h *TelemetryHandler) GetMemory() (*vppcalls.MemoryInfo, error) {
+func (h *TelemetryHandler) GetMemory(ctx context.Context) (*vppcalls.MemoryInfo, error) {
+	return h.getMemoryCLI(ctx)
+}
+
+func (h *TelemetryHandler) getMemoryCLI(ctx context.Context) (*vppcalls.MemoryInfo, error) {
 	data, err := h.vpe.RunCli("show memory")
 	if err != nil {
 		return nil, err
@@ -113,11 +118,15 @@ var (
 )
 
 // GetNodeCounters retrieves node counters info.
-func (h *TelemetryHandler) GetNodeCounters() (*vppcalls.NodeCounterInfo, error) {
+func (h *TelemetryHandler) GetNodeCounters(ctx context.Context) (*vppcalls.NodeCounterInfo, error) {
 	if h.stats == nil {
-		return h.GetNodeCountersCLI()
+		return h.getNodeCountersCLI()
 	}
+	return h.getNodeCountersStats()
+}
 
+// GetNodeCounters retrieves node counters info.
+func (h *TelemetryHandler) getNodeCountersStats() (*vppcalls.NodeCounterInfo, error) {
 	errStats, err := h.stats.GetErrorStats()
 	if err != nil {
 		return nil, err
@@ -142,7 +151,7 @@ func (h *TelemetryHandler) GetNodeCounters() (*vppcalls.NodeCounterInfo, error) 
 }
 
 // GetNodeCounters retrieves node counters info.
-func (h *TelemetryHandler) GetNodeCountersCLI() (*vppcalls.NodeCounterInfo, error) {
+func (h *TelemetryHandler) getNodeCountersCLI() (*vppcalls.NodeCounterInfo, error) {
 	data, err := h.vpe.RunCli("show node counters")
 	if err != nil {
 		return nil, err
@@ -197,11 +206,15 @@ var (
 )
 
 // GetRuntimeInfo retrieves how runtime info.
-func (h *TelemetryHandler) GetRuntimeInfo() (*vppcalls.RuntimeInfo, error) {
+func (h *TelemetryHandler) GetRuntimeInfo(ctx context.Context) (*vppcalls.RuntimeInfo, error) {
 	if h.stats == nil {
-		return h.GetRuntimeInfoCLI()
+		return h.getRuntimeInfoCLI()
 	}
+	return h.getRuntimeInfoStats()
+}
 
+// GetRuntimeInfo retrieves how runtime info.
+func (h *TelemetryHandler) getRuntimeInfoStats() (*vppcalls.RuntimeInfo, error) {
 	nodeStats, err := h.stats.GetNodeStats()
 	if err != nil {
 		return nil, err
@@ -236,7 +249,7 @@ func (h *TelemetryHandler) GetRuntimeInfo() (*vppcalls.RuntimeInfo, error) {
 }
 
 // GetRuntimeInfo retrieves how runtime info.
-func (h *TelemetryHandler) GetRuntimeInfoCLI() (*vppcalls.RuntimeInfo, error) {
+func (h *TelemetryHandler) getRuntimeInfoCLI() (*vppcalls.RuntimeInfo, error) {
 	data, err := h.vpe.RunCli("show runtime")
 	if err != nil {
 		return nil, err
@@ -303,8 +316,39 @@ var (
 	)
 )
 
-// GetBuffersInfo retrieves buffers info
-func (h *TelemetryHandler) GetBuffersInfo() (*vppcalls.BuffersInfo, error) {
+// GetBuffersInfo retrieves buffers info from VPP.
+func (h *TelemetryHandler) GetBuffersInfo(ctx context.Context) (*vppcalls.BuffersInfo, error) {
+	if h.stats == nil {
+		return h.getBuffersInfoCLI()
+	}
+	return h.getBuffersInfoStats()
+}
+
+func (h *TelemetryHandler) getBuffersInfoStats() (*vppcalls.BuffersInfo, error) {
+	bufStats, err := h.stats.GetBufferStats()
+	if err != nil {
+		return nil, err
+	}
+
+	var items []vppcalls.BuffersItem
+
+	for _, c := range bufStats.Buffer {
+		items = append(items, vppcalls.BuffersItem{
+			Name:  c.PoolName,
+			Alloc: uint64(c.Used),
+			Free:  uint64(c.Available),
+			//Cached:  c.Cached,
+		})
+	}
+
+	info := &vppcalls.BuffersInfo{
+		Items: items,
+	}
+
+	return info, nil
+}
+
+func (h *TelemetryHandler) getBuffersInfoCLI() (*vppcalls.BuffersInfo, error) {
 	data, err := h.vpe.RunCli("show buffers")
 	if err != nil {
 		return nil, err

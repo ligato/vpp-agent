@@ -15,10 +15,27 @@
 package vppcalls
 
 import (
+	"context"
+
 	govppapi "git.fd.io/govpp.git/api"
 	log "github.com/ligato/cn-infra/logging"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 )
+
+var Versions = map[string]HandlerVersion{}
+
+type HandlerVersion struct {
+	Msgs []govppapi.Message
+	New  func(govppapi.Channel, govppapi.StatsProvider) TelemetryVppAPI
+}
+
+// TelemetryVppAPI provides API for retrieving telemetry data from VPP.
+type TelemetryVppAPI interface {
+	GetMemory(context.Context) (*MemoryInfo, error)
+	GetNodeCounters(context.Context) (*NodeCounterInfo, error)
+	GetRuntimeInfo(context.Context) (*RuntimeInfo, error)
+	GetBuffersInfo(context.Context) (*BuffersInfo, error)
+}
 
 // MemoryInfo contains values returned from 'show memory'
 type MemoryInfo struct {
@@ -50,7 +67,6 @@ type NodeCounter struct {
 	Value uint64 `json:"value"`
 	Node  string `json:"node"`
 	Name  string `json:"name"`
-	//Reason string `json:"reason"`
 }
 
 // RuntimeInfo contains values returned from 'show runtime'
@@ -101,20 +117,6 @@ type BuffersItem struct {
 	Free     uint64 `json:"free"`
 	NumAlloc uint64 `json:"num_alloc"`
 	NumFree  uint64 `json:"num_free"`
-}
-
-type TelemetryVppAPI interface {
-	GetMemory() (*MemoryInfo, error)
-	GetNodeCounters() (*NodeCounterInfo, error)
-	GetRuntimeInfo() (*RuntimeInfo, error)
-	GetBuffersInfo() (*BuffersInfo, error)
-}
-
-var Versions = map[string]HandlerVersion{}
-
-type HandlerVersion struct {
-	Msgs []govppapi.Message
-	New  func(govppapi.Channel, govppapi.StatsProvider) TelemetryVppAPI
 }
 
 func CompatibleTelemetryHandler(ch govppapi.Channel, vpp govppmux.StatsAPI) TelemetryVppAPI {

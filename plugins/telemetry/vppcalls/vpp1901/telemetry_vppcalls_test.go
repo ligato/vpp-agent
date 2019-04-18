@@ -15,6 +15,7 @@
 package vpp1901_test
 
 import (
+	"context"
 	"testing"
 
 	"github.com/ligato/vpp-agent/plugins/telemetry/vppcalls"
@@ -42,7 +43,7 @@ func TestGetBuffers(t *testing.T) {
 		Reply: reply,
 	})
 
-	info, err := handler.GetBuffersInfo()
+	info, err := handler.GetBuffersInfo(context.TODO())
 
 	Expect(err).ShouldNot(HaveOccurred())
 	Expect(info.Items).To(HaveLen(9))
@@ -238,7 +239,7 @@ unix-epoll-input                 polling          20563870               0      
 
 			ctx.MockVpp.MockReply(&vpe.CliInbandReply{Reply: test.reply})
 
-			info, err := handler.GetRuntimeInfo()
+			info, err := handler.GetRuntimeInfo(context.TODO())
 
 			Expect(err).ShouldNot(HaveOccurred())
 			Expect(len(info.Threads)).To(Equal(test.threadCount))
@@ -358,7 +359,7 @@ no traced allocations
 
 			ctx.MockVpp.MockReply(&vpe.CliInbandReply{Reply: test.reply})
 
-			info, err := handler.GetMemory()
+			info, err := handler.GetMemory(context.TODO())
 
 			Expect(err).ShouldNot(HaveOccurred())
 			Expect(info.Threads).To(HaveLen(test.threadCount))
@@ -387,7 +388,7 @@ func TestGetNodeCounters(t *testing.T) {
 		Reply: reply,
 	})
 
-	info, err := handler.GetNodeCounters()
+	info, err := handler.GetNodeCounters(context.TODO())
 
 	Expect(err).ShouldNot(HaveOccurred())
 	Expect(info.Counters).To(HaveLen(10))

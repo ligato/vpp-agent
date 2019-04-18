@@ -15,6 +15,7 @@
 package vpp1901
 
 import (
+	"context"
 	"fmt"
 	"regexp"
 	"strconv"
@@ -63,7 +64,7 @@ var (
 )
 
 // GetMemory retrieves `show memory` info.
-func (h *TelemetryHandler) GetMemory() (*vppcalls.MemoryInfo, error) {
+func (h *TelemetryHandler) GetMemory(ctx context.Context) (*vppcalls.MemoryInfo, error) {
 	data, err := h.RunCli("show memory")
 	if err != nil {
 		return nil, err
@@ -113,7 +114,7 @@ var (
 )
 
 // GetNodeCounters retrieves node counters info.
-func (h *TelemetryHandler) GetNodeCounters() (*vppcalls.NodeCounterInfo, error) {
+func (h *TelemetryHandler) GetNodeCounters(ctx context.Context) (*vppcalls.NodeCounterInfo, error) {
 	data, err := h.RunCli("show node counters")
 	if err != nil {
 		return nil, err
@@ -169,7 +170,7 @@ var (
 )
 
 // GetRuntimeInfo retrieves how runtime info.
-func (h *TelemetryHandler) GetRuntimeInfo() (*vppcalls.RuntimeInfo, error) {
+func (h *TelemetryHandler) GetRuntimeInfo(ctx context.Context) (*vppcalls.RuntimeInfo, error) {
 	data, err := h.RunCli("show runtime")
 	if err != nil {
 		return nil, err
@@ -235,7 +236,7 @@ var (
 )
 
 // GetBuffersInfo retrieves buffers info
-func (h *TelemetryHandler) GetBuffersInfo() (*vppcalls.BuffersInfo, error) {
+func (h *TelemetryHandler) GetBuffersInfo(ctx context.Context) (*vppcalls.BuffersInfo, error) {
 	data, err := h.RunCli("show buffers")
 	if err != nil {
 		return nil, err

@@ -17,6 +17,7 @@
 package restapi
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -317,7 +318,7 @@ func (p *Plugin) telemetryHandler(formatter *render.Render) http.HandlerFunc {
 // telemetryMemoryHandler - returns various telemetry data
 func (p *Plugin) telemetryMemoryHandler(formatter *render.Render) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
-		info, err := p.teleHandler.GetMemory()
+		info, err := p.teleHandler.GetMemory(context.TODO())
 		if err != nil {
 			errMsg := fmt.Sprintf("500 Internal server error: sending command failed: %v\n", err)
 			p.Log.Error(errMsg)
@@ -332,7 +333,7 @@ func (p *Plugin) telemetryMemoryHandler(formatter *render.Render) http.HandlerFu
 // telemetryHandler - returns various telemetry data
 func (p *Plugin) telemetryRuntimeHandler(formatter *render.Render) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
-		runtimeInfo, err := p.teleHandler.GetRuntimeInfo()
+		runtimeInfo, err := p.teleHandler.GetRuntimeInfo(context.TODO())
 		if err != nil {
 			errMsg := fmt.Sprintf("500 Internal server error: sending command failed: %v\n", err)
 			p.Log.Error(errMsg)
@@ -347,7 +348,7 @@ func (p *Plugin) telemetryRuntimeHandler(formatter *render.Render) http.HandlerF
 // telemetryHandler - returns various telemetry data
 func (p *Plugin) telemetryNodeCountHandler(formatter *render.Render) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
-		nodeCounters, err := p.teleHandler.GetNodeCounters()
+		nodeCounters, err := p.teleHandler.GetNodeCounters(context.TODO())
 		if err != nil {
 			errMsg := fmt.Sprintf("500 Internal server error: sending command failed: %v\n", err)
 			p.Log.Error(errMsg)

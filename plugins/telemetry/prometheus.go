@@ -1,10 +1,16 @@
 package telemetry
 
 import (
+	"context"
+	"os"
 	"strconv"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+)
+
+var (
+	debug = os.Getenv("DEBUG_TELEMETRY") != ""
 )
 
 const (
@@ -68,6 +74,31 @@ type prometheusMetrics struct {
 
 	nodeCounterGaugeVecs map[string]*prometheus.GaugeVec
 	nodeCounterStats     map[string]*nodeCounterStats
+}
+
+type runtimeStats struct {
+	threadName string
+	threadID   uint
+	itemName   string
+	metrics    map[string]prometheus.Gauge
+}
+
+type memoryStats struct {
+	threadName string
+	threadID   uint
+	metrics    map[string]prometheus.Gauge
+}
+
+type buffersStats struct {
+	threadID  uint
+	itemName  string
+	itemIndex uint
+	metrics   map[string]prometheus.Gauge
+}
+
+type nodeCounterStats struct {
+	itemName string
+	metrics  map[string]prometheus.Gauge
 }
 
 func (p *Plugin) registerPrometheus() error {
@@ -209,15 +240,15 @@ func (p *Plugin) registerPrometheus() error {
 	return nil
 }
 
-func (p *Plugin) updatePrometheus() {
-	p.Log.Debugf("running update")
+func (p *Plugin) updatePrometheus(ctx context.Context) {
+	p.tracef("running update")
 
 	// Update runtime
-	runtimeInfo, err := p.handler.GetRuntimeInfo()
+	runtimeInfo, err := p.handler.GetRuntimeInfo(ctx)
 	if err != nil {
 		p.Log.Errorf("GetRuntimeInfo failed: %v", err)
 	} else {
-		//p.Log.Debugf("runtime info: %+v", runtimeInfo)
+		p.tracef("runtime info: %+v", runtimeInfo)
 		for _, thread := range runtimeInfo.Threads {
 			for _, item := range thread.Items {
 				stats, ok := p.runtimeStats[item.Name]
@@ -251,50 +282,12 @@ func (p *Plugin) updatePrometheus() {
 		}
 	}
 
-	// Update memory
-	/*memoryInfo, err := p.handler.GetMemory()
-	if err != nil {
-		p.Log.Errorf("GetMemory failed: %v", err)
-	} else {
-		//p.Log.Debugf("memory info: %+v", memoryInfo)
-		for _, thread := range memoryInfo.Threads {
-			stats, ok := p.memoryStats[thread.Name]
-			if !ok {
-				stats = &memoryStats{
-					threadName: thread.Name,
-					threadID:   thread.ID,
-					metrics:    map[string]prometheus.Gauge{},
-				}
-
-				// add gauges with corresponding labels into vectors
-				for k, vec := range p.memoryGaugeVecs {
-					stats.metrics[k], err = vec.GetMetricWith(prometheus.Labels{
-						memoryThreadLabel:   thread.Name,
-						memoryThreadIDLabel: strconv.Itoa(int(thread.ID)),
-					})
-					if err != nil {
-						p.Log.Error(err)
-					}
-				}
-			}
-
-			stats.metrics[memoryObjectsMetric].Set(float64(thread.Objects))
-			stats.metrics[memoryUsedMetric].Set(float64(thread.Used))
-			stats.metrics[memoryTotalMetric].Set(float64(thread.Total))
-			stats.metrics[memoryFreeMetric].Set(float64(thread.Free))
-			stats.metrics[memoryReclaimedMetric].Set(float64(thread.Reclaimed))
-			stats.metrics[memoryOverheadMetric].Set(float64(thread.Overhead))
-			stats.metrics[memorySizeMetric].Set(float64(thread.Size))
-			stats.metrics[memoryPagesMetric].Set(float64(thread.Pages))
-		}
-	}
-
 	// Update buffers
-	buffersInfo, err := p.handler.GetBuffersInfo()
+	buffersInfo, err := p.handler.GetBuffersInfo(ctx)
 	if err != nil {
 		p.Log.Errorf("GetBuffersInfo failed: %v", err)
 	} else {
-		//p.Log.Debugf("buffers info: %+v", buffersInfo)
+		p.tracef("buffers info: %+v", buffersInfo)
 		for _, item := range buffersInfo.Items {
 			stats, ok := p.buffersStats[item.Name]
 			if !ok {
@@ -324,14 +317,14 @@ func (p *Plugin) updatePrometheus() {
 			stats.metrics[buffersNumAllocMetric].Set(float64(item.NumAlloc))
 			stats.metrics[buffersNumFreeMetric].Set(float64(item.NumFree))
 		}
-	}*/
+	}
 
 	// Update node counters
-	nodeCountersInfo, err := p.handler.GetNodeCounters()
+	nodeCountersInfo, err := p.handler.GetNodeCounters(ctx)
 	if err != nil {
 		p.Log.Errorf("GetNodeCounters failed: %v", err)
 	} else {
-		//p.Log.Debugf("node counters info: %+v", nodeCountersInfo)
+		p.tracef("node counters info: %+v", nodeCountersInfo)
 		for _, item := range nodeCountersInfo.Counters {
 			stats, ok := p.nodeCounterStats[item.Name]
 			if !ok {
@@ -344,7 +337,7 @@ func (p *Plugin) updatePrometheus() {
 				for k, vec := range p.nodeCounterGaugeVecs {
 					stats.metrics[k], err = vec.GetMetricWith(prometheus.Labels{
 						nodeCounterItemLabel:   item.Node,
-						nodeCounterReasonLabel: item.Name, //item.Reason,
+						nodeCounterReasonLabel: item.Name,
 					})
 					if err != nil {
 						p.Log.Error(err)
@@ -353,6 +346,44 @@ func (p *Plugin) updatePrometheus() {
 			}
 
 			stats.metrics[nodeCounterCountMetric].Set(float64(item.Value))
+		}
+	}
+
+	// Update memory
+	memoryInfo, err := p.handler.GetMemory(ctx)
+	if err != nil {
+		p.Log.Errorf("GetMemory failed: %v", err)
+	} else {
+		p.tracef("memory info: %+v", memoryInfo)
+		for _, thread := range memoryInfo.Threads {
+			stats, ok := p.memoryStats[thread.Name]
+			if !ok {
+				stats = &memoryStats{
+					threadName: thread.Name,
+					threadID:   thread.ID,
+					metrics:    map[string]prometheus.Gauge{},
+				}
+
+				// add gauges with corresponding labels into vectors
+				for k, vec := range p.memoryGaugeVecs {
+					stats.metrics[k], err = vec.GetMetricWith(prometheus.Labels{
+						memoryThreadLabel:   thread.Name,
+						memoryThreadIDLabel: strconv.Itoa(int(thread.ID)),
+					})
+					if err != nil {
+						p.Log.Error(err)
+					}
+				}
+			}
+
+			stats.metrics[memoryObjectsMetric].Set(float64(thread.Objects))
+			stats.metrics[memoryUsedMetric].Set(float64(thread.Used))
+			stats.metrics[memoryTotalMetric].Set(float64(thread.Total))
+			stats.metrics[memoryFreeMetric].Set(float64(thread.Free))
+			stats.metrics[memoryReclaimedMetric].Set(float64(thread.Reclaimed))
+			stats.metrics[memoryOverheadMetric].Set(float64(thread.Overhead))
+			stats.metrics[memorySizeMetric].Set(float64(thread.Size))
+			stats.metrics[memoryPagesMetric].Set(float64(thread.Pages))
 		}
 	}
 }
