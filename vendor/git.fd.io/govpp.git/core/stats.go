@@ -196,6 +196,9 @@ func (c *StatsConnection) GetNodeStats() (*api.NodeStats, error) {
 			}
 		}
 		for i, v := range perNode {
+			if len(nodeStats.Nodes) <= i {
+				break
+			}
 			nodeCounters := nodeStats.Nodes[i]
 			fn(&nodeCounters, v)
 			nodeStats.Nodes[i] = nodeCounters
@@ -257,6 +260,9 @@ func (c *StatsConnection) GetInterfaceStats() (*api.InterfaceStats, error) {
 			}
 		}
 		for i, v := range perIf {
+			if len(ifStats.Interfaces) <= i {
+				break
+			}
 			ifCounters := ifStats.Interfaces[i]
 			fn(&ifCounters, v)
 			ifStats.Interfaces[i] = ifCounters

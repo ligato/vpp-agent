@@ -285,10 +285,11 @@ func (c *statClient) DumpStats(patterns ...string) (stats []*adapter.StatEntry, 
 			var vector []adapter.Name
 			for k := 0; k < length; k++ {
 				s := C.govpp_stat_segment_data_get_name_vector_index(&v, C.int(k))
-				if s == nil {
-					continue
+				var name adapter.Name
+				if s != nil {
+					name = adapter.Name(C.GoString(s))
 				}
-				vector = append(vector, adapter.Name(C.GoString(s)))
+				vector = append(vector, name)
 			}
 			stat.Data = adapter.NameStat(vector)
 

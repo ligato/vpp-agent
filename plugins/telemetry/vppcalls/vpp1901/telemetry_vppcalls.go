@@ -144,10 +144,10 @@ func (h *TelemetryHandler) GetNodeCounters() (*vppcalls.NodeCounterInfo, error) 
 		fields := matches[1:]
 
 		counters = append(counters, vppcalls.NodeCounter{
-			Name:  strings.Join(fields, "/"),
+			//Name:  strings.Join(fields, "/"),
 			Value: strToUint64(fields[0]),
-			//Node:   fields[1],
-			//Reason: fields[2],
+			Node:  fields[1],
+			Name:  fields[2],
 		})
 	}
 

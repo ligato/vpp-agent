@@ -117,17 +117,20 @@ type HandlerVersion struct {
 	New  func(govppapi.Channel, govppapi.StatsProvider) TelemetryVppAPI
 }
 
-func CompatibleTelemetryHandler(ch govppapi.Channel, stats govppmux.StatsAPI) TelemetryVppAPI {
-	if stats != nil {
-		if vpp, err := stats.VPPInfo(); err == nil && vpp.Connected {
-			ver := vpp.GetReleaseVersion()
-			if h, ok := Versions[ver]; ok {
-				if err := ch.CheckCompatiblity(h.Msgs...); err != nil {
-					log.Debugf("version %s not compatible", ver)
-				}
-				log.Debug("found compatible version: ", ver)
-				return h.New(ch, stats)
+func CompatibleTelemetryHandler(ch govppapi.Channel, vpp govppmux.StatsAPI) TelemetryVppAPI {
+	status, err := vpp.VPPInfo()
+	if err != nil {
+		log.Warnf("retrieving VPP status failed: %v", err)
+		return nil
+	}
+	if status.Connected {
+		ver := status.GetReleaseVersion()
+		if h, ok := Versions[ver]; ok {
+			if err := ch.CheckCompatiblity(h.Msgs...); err != nil {
+				log.Debugf("version %s not compatible", ver)
 			}
+			log.Debug("found compatible version: ", ver)
+			return h.New(ch, vpp)
 		}
 	}
 	for ver, h := range Versions {
@@ -136,7 +139,7 @@ func CompatibleTelemetryHandler(ch govppapi.Channel, stats govppmux.StatsAPI) Te
 			continue
 		}
 		log.Debug("found compatible version: ", ver)
-		return h.New(ch, stats)
+		return h.New(ch, vpp)
 	}
 	panic("no compatible version available")
 }

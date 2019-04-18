@@ -44,7 +44,7 @@ func init() {
 type TelemetryHandler struct {
 	ch    govppapi.Channel
 	stats govppapi.StatsProvider
-	vpevppcalls.VpeVppAPI
+	vpe   vpevppcalls.VpeVppAPI
 }
 
 func NewTelemetryVppHandler(ch govppapi.Channel, stats govppapi.StatsProvider) *TelemetryHandler {
@@ -64,7 +64,7 @@ var (
 
 // GetMemory retrieves `show memory` info.
 func (h *TelemetryHandler) GetMemory() (*vppcalls.MemoryInfo, error) {
-	data, err := h.RunCli("show memory")
+	data, err := h.vpe.RunCli("show memory")
 	if err != nil {
 		return nil, err
 	}
@@ -143,7 +143,7 @@ func (h *TelemetryHandler) GetNodeCounters() (*vppcalls.NodeCounterInfo, error) 
 
 // GetNodeCounters retrieves node counters info.
 func (h *TelemetryHandler) GetNodeCountersCLI() (*vppcalls.NodeCounterInfo, error) {
-	data, err := h.RunCli("show node counters")
+	data, err := h.vpe.RunCli("show node counters")
 	if err != nil {
 		return nil, err
 	}
@@ -237,7 +237,7 @@ func (h *TelemetryHandler) GetRuntimeInfo() (*vppcalls.RuntimeInfo, error) {
 
 // GetRuntimeInfo retrieves how runtime info.
 func (h *TelemetryHandler) GetRuntimeInfoCLI() (*vppcalls.RuntimeInfo, error) {
-	data, err := h.RunCli("show runtime")
+	data, err := h.vpe.RunCli("show runtime")
 	if err != nil {
 		return nil, err
 	}
@@ -305,7 +305,7 @@ var (
 
 // GetBuffersInfo retrieves buffers info
 func (h *TelemetryHandler) GetBuffersInfo() (*vppcalls.BuffersInfo, error) {
-	data, err := h.RunCli("show buffers")
+	data, err := h.vpe.RunCli("show buffers")
 	if err != nil {
 		return nil, err
 	}
