@@ -1,7 +1,12 @@
-# Release Changelog
+# Changelog
+
+![GitHub commits since latest release](https://img.shields.io/github/commits-since/ligato/vpp-agent/latest.svg?style=flat-square)
+
+## Release Notes
 
 - [v2.0.0](#v2.0.0)
   - [v2.0.1](#v2.0.1)
+  - [v2.0.2](#v2.0.2)
 - [v1.8.0](#v1.8.0)
   - [v1.8.1](#v1.8.1)
 - [v1.7.0](#v1.7.0)
@@ -35,6 +40,15 @@ RELEASE CHANGELOG TEMPLATE:
 ### Docker Images
 ### Documentation
 -->
+
+<a name="v2.0.2"></a>
+# [2.0.2](https://github.com/ligato/vpp-agent/compare/v2.0.1...v2.0.2) (2019-04-19)
+
+### Compatibility
+- **VPP 19.01** (updated to `v19.01.1-14-g0f36ef60d`)
+- VPP 18.10 (backwards compatible)
+- cn-infra v2.0
+- Go 1.11
 
 <a name="v2.0.1"></a>
 # [2.0.1](https://github.com/ligato/vpp-agent/compare/v2.0.0...v2.0.1) (2019-04-05)
