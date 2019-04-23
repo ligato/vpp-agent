@@ -41,11 +41,23 @@ type WithTTLOpt struct {
 	TTL time.Duration
 }
 
+// WithClientLifetimeTTLOpt defines option to Put a value
+// for the lifetime of client. Once client is closed TTL is no longer renewed
+// and value gets removed.
+type WithClientLifetimeTTLOpt struct {
+	PutOptionMarker
+}
+
 // WithTTL creates a new instance of TTL option.
 // Once TTL elapses, the associated data are removed.
 // Beware: some implementation might be using TTL with lower precision.
 func WithTTL(TTL time.Duration) *WithTTLOpt {
 	return &WithTTLOpt{TTL: TTL}
+}
+
+// WithClientLifetimeTTL creates a new instance of ClientLifetimeTTL option
+func WithClientLifetimeTTL() *WithClientLifetimeTTLOpt {
+	return &WithClientLifetimeTTLOpt{}
 }
 
 // WithPrefixOpt applies an operation to all items with the specified prefix.

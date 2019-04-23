@@ -22,6 +22,7 @@ import (
 	"github.com/ligato/cn-infra/logging"
 
 	"github.com/coreos/etcd/clientv3"
+	"github.com/coreos/etcd/clientv3/concurrency"
 	"github.com/coreos/etcd/clientv3/namespace"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"golang.org/x/net/context"
@@ -33,6 +34,7 @@ type BytesConnectionEtcd struct {
 	logging.Logger
 	etcdClient *clientv3.Client
 	lessor     clientv3.Lease
+	session    *concurrency.Session
 	opTimeout  time.Duration
 }
 
@@ -43,6 +45,7 @@ type BytesConnectionEtcd struct {
 // to all keys in its methods in order to shorten keys used in arguments.
 type BytesBrokerWatcherEtcd struct {
 	logging.Logger
+	session   *concurrency.Session
 	lessor    clientv3.Lease
 	kv        clientv3.KV
 	watcher   clientv3.Watcher
@@ -70,6 +73,11 @@ func NewEtcdConnectionWithBytes(config ClientConfig, log logging.Logger) (*Bytes
 		return nil, err
 	}
 	conn.opTimeout = config.OpTimeout
+
+	conn.session, err = concurrency.NewSession(etcdClient, concurrency.WithTTL(config.SessionTTL))
+	if err != nil {
+		return nil, err
+	}
 
 	return conn, nil
 }
@@ -103,6 +111,7 @@ func (db *BytesConnectionEtcd) Close() error {
 func (db *BytesConnectionEtcd) NewBroker(prefix string) keyval.BytesBroker {
 	return &BytesBrokerWatcherEtcd{
 		Logger:    db.Logger,
+		session:   db.session,
 		kv:        namespace.NewKV(db.etcdClient, prefix),
 		lessor:    db.lessor,
 		opTimeout: db.opTimeout,
@@ -118,6 +127,7 @@ func (db *BytesConnectionEtcd) NewBroker(prefix string) keyval.BytesBroker {
 func (db *BytesConnectionEtcd) NewWatcher(prefix string) keyval.BytesWatcher {
 	return &BytesBrokerWatcherEtcd{
 		Logger:    db.Logger,
+		session:   db.session,
 		kv:        namespace.NewKV(db.etcdClient, prefix),
 		lessor:    db.lessor,
 		opTimeout: db.opTimeout,
@@ -128,7 +138,7 @@ func (db *BytesConnectionEtcd) NewWatcher(prefix string) keyval.BytesWatcher {
 // Put calls 'Put' function of the underlying BytesConnectionEtcd.
 // KeyPrefix defined in constructor is prepended to the key argument.
 func (pdb *BytesBrokerWatcherEtcd) Put(key string, data []byte, opts ...datasync.PutOption) error {
-	return putInternal(pdb.Logger, pdb.kv, pdb.lessor, pdb.opTimeout, key, data, opts...)
+	return putInternal(pdb.Logger, pdb.kv, pdb.lessor, pdb.opTimeout, pdb.session, key, data, opts...)
 }
 
 // NewTxn creates a new transaction.
@@ -282,10 +292,10 @@ func watchInternal(log logging.Logger, watcher clientv3.Watcher, closeCh chan st
 // Put writes the provided key-value item into the data store.
 // Returns an error if the item could not be written, nil otherwise.
 func (db *BytesConnectionEtcd) Put(key string, binData []byte, opts ...datasync.PutOption) error {
-	return putInternal(db.Logger, db.etcdClient, db.lessor, db.opTimeout, key, binData, opts...)
+	return putInternal(db.Logger, db.etcdClient, db.lessor, db.opTimeout, db.session, key, binData, opts...)
 }
 
-func putInternal(log logging.Logger, kv clientv3.KV, lessor clientv3.Lease, opTimeout time.Duration, key string,
+func putInternal(log logging.Logger, kv clientv3.KV, lessor clientv3.Lease, opTimeout time.Duration, session *concurrency.Session, key string,
 	binData []byte, opts ...datasync.PutOption) error {
 
 	deadline := time.Now().Add(opTimeout)
@@ -301,6 +311,8 @@ func putInternal(log logging.Logger, kv clientv3.KV, lessor clientv3.Lease, opTi
 			}
 
 			etcdOpts = append(etcdOpts, clientv3.WithLease(lease.ID))
+		} else if _, ok := o.(*datasync.WithClientLifetimeTTLOpt); ok && session != nil {
+			etcdOpts = append(etcdOpts, clientv3.WithLease(session.Lease()))
 		}
 	}
 
@@ -324,6 +336,17 @@ func (db *BytesConnectionEtcd) PutIfNotExists(key string, binData []byte) (succe
 		return false, err
 	}
 	return response.Succeeded, nil
+}
+
+// CampaignInElection starts campaign in leader election on a given prefix. Multiple instances can compete on a given prefix.
+// Only one can be elected as leader at a time. The function call blocks until either context is canceled or the caller is elected as leader.
+// Upon successful call a resign callback, that can be used to resign - trigger new election, is returned.
+func (db *BytesConnectionEtcd) CampaignInElection(ctx context.Context, prefix string) (func(c context.Context), error) {
+	e := concurrency.NewElection(db.session, prefix)
+	return func(c context.Context) {
+		e.Resign(c)
+	}, e.Campaign(ctx, "")
+
 }
 
 // Delete removes data identified by the <key>.

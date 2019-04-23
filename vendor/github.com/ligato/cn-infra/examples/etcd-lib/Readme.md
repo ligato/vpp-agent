@@ -69,3 +69,24 @@ Creating  /phonebook/PeterSmith
                 +48621896
 ============================================
 ```
+
+# Election example
+
+Tiny election app showcases the usage of etcd election mechanism in order to select a leader.
+The primary use case of mechanism is to ensure that. Multiple instances of the app can compete
+for leadership on prefix `/election`.
+
+Example usage:
+```
+election/election --cfg etcd.conf
+
+```
+Since there is no other competitor in election, the running instance should be elected as leader and exit immediately.
+
+You can run multiple instances concurrently with optional argument that defines number of seconds that elected leader
+stays in position until it resigns:
+```
+election/election --cfg etcd.conf 5
+
+```
+Observe that always only one instance at a time is leader.

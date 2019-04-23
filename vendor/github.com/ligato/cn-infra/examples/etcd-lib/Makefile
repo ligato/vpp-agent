@@ -15,8 +15,10 @@ clean:
 	rm -f editor/editor
 	rm -f view/view
 	rm -f watcher/watcher
+	rm -f election/election
 
 build:
 	cd view && go build -i
 	cd editor && go build -i
 	cd watcher && go build -i
+	cd election && go build -i

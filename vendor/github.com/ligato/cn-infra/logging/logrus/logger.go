@@ -120,7 +120,11 @@ func (logger *Logger) InitTag(tag ...string) {
 	if len(tag) > 0 {
 		t = tag[0]
 	} else {
-		t = uuid.NewV4().String()[0:8]
+		id, err := uuid.NewV4()
+		if err != nil {
+			panic(fmt.Errorf("error generating uuid: " + err.Error()))
+		}
+		t = id.String()[0:8]
 	}
 	logger.tagMap.Store(index, t)
 }
@@ -144,7 +148,11 @@ func (logger *Logger) SetTag(tag ...string) {
 	if len(tag) > 0 {
 		t = tag[0]
 	} else {
-		t = uuid.NewV4().String()[0:8]
+		id, err := uuid.NewV4()
+		if err != nil {
+			panic(fmt.Errorf("error generating uuid: " + err.Error()))
+		}
+		t = id.String()[0:8]
 	}
 	logger.tagMap.Store(goID, t)
 }
