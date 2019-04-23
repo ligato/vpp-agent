@@ -13,7 +13,7 @@ message LocalSID {
                                             (LocalSids with End.AD function ignore this setting due to missing setting
                                             in the API. The End.AD functionality is separated from the SRv6 functionality
                                             and have no binary API. It has only the CLI API and that doesn't have
-                                            the FIB table setting configurable.)
+                                            the installation vrf id (in VPP API called FIB table) setting configurable.)
                                             Non-zero VRF has to be explicitly created (see api/models/vpp/l3/vrf.proto) */
 
     /* Configuration for end functions (all end functions are mutually exclusive) */

@@ -44,7 +44,7 @@ func (m *LocalSID) Reset()         { *m = LocalSID{} }
 func (m *LocalSID) String() string { return proto.CompactTextString(m) }
 func (*LocalSID) ProtoMessage()    {}
 func (*LocalSID) Descriptor() ([]byte, []int) {
-	return fileDescriptor_srv6_4f434de2b591d550, []int{0}
+	return fileDescriptor_srv6_f12bcb35b7c14b74, []int{0}
 }
 func (m *LocalSID) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_LocalSID.Unmarshal(m, b)
@@ -413,7 +413,7 @@ func (m *LocalSID_End) Reset()         { *m = LocalSID_End{} }
 func (m *LocalSID_End) String() string { return proto.CompactTextString(m) }
 func (*LocalSID_End) ProtoMessage()    {}
 func (*LocalSID_End) Descriptor() ([]byte, []int) {
-	return fileDescriptor_srv6_4f434de2b591d550, []int{0, 0}
+	return fileDescriptor_srv6_f12bcb35b7c14b74, []int{0, 0}
 }
 func (m *LocalSID_End) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_LocalSID_End.Unmarshal(m, b)
@@ -458,7 +458,7 @@ func (m *LocalSID_EndX) Reset()         { *m = LocalSID_EndX{} }
 func (m *LocalSID_EndX) String() string { return proto.CompactTextString(m) }
 func (*LocalSID_EndX) ProtoMessage()    {}
 func (*LocalSID_EndX) Descriptor() ([]byte, []int) {
-	return fileDescriptor_srv6_4f434de2b591d550, []int{0, 1}
+	return fileDescriptor_srv6_f12bcb35b7c14b74, []int{0, 1}
 }
 func (m *LocalSID_EndX) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_LocalSID_EndX.Unmarshal(m, b)
@@ -516,7 +516,7 @@ func (m *LocalSID_EndT) Reset()         { *m = LocalSID_EndT{} }
 func (m *LocalSID_EndT) String() string { return proto.CompactTextString(m) }
 func (*LocalSID_EndT) ProtoMessage()    {}
 func (*LocalSID_EndT) Descriptor() ([]byte, []int) {
-	return fileDescriptor_srv6_4f434de2b591d550, []int{0, 2}
+	return fileDescriptor_srv6_f12bcb35b7c14b74, []int{0, 2}
 }
 func (m *LocalSID_EndT) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_LocalSID_EndT.Unmarshal(m, b)
@@ -567,7 +567,7 @@ func (m *LocalSID_EndDX2) Reset()         { *m = LocalSID_EndDX2{} }
 func (m *LocalSID_EndDX2) String() string { return proto.CompactTextString(m) }
 func (*LocalSID_EndDX2) ProtoMessage()    {}
 func (*LocalSID_EndDX2) Descriptor() ([]byte, []int) {
-	return fileDescriptor_srv6_4f434de2b591d550, []int{0, 3}
+	return fileDescriptor_srv6_f12bcb35b7c14b74, []int{0, 3}
 }
 func (m *LocalSID_EndDX2) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_LocalSID_EndDX2.Unmarshal(m, b)
@@ -618,7 +618,7 @@ func (m *LocalSID_EndDX4) Reset()         { *m = LocalSID_EndDX4{} }
 func (m *LocalSID_EndDX4) String() string { return proto.CompactTextString(m) }
 func (*LocalSID_EndDX4) ProtoMessage()    {}
 func (*LocalSID_EndDX4) Descriptor() ([]byte, []int) {
-	return fileDescriptor_srv6_4f434de2b591d550, []int{0, 4}
+	return fileDescriptor_srv6_f12bcb35b7c14b74, []int{0, 4}
 }
 func (m *LocalSID_EndDX4) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_LocalSID_EndDX4.Unmarshal(m, b)
@@ -669,7 +669,7 @@ func (m *LocalSID_EndDX6) Reset()         { *m = LocalSID_EndDX6{} }
 func (m *LocalSID_EndDX6) String() string { return proto.CompactTextString(m) }
 func (*LocalSID_EndDX6) ProtoMessage()    {}
 func (*LocalSID_EndDX6) Descriptor() ([]byte, []int) {
-	return fileDescriptor_srv6_4f434de2b591d550, []int{0, 5}
+	return fileDescriptor_srv6_f12bcb35b7c14b74, []int{0, 5}
 }
 func (m *LocalSID_EndDX6) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_LocalSID_EndDX6.Unmarshal(m, b)
@@ -719,7 +719,7 @@ func (m *LocalSID_EndDT4) Reset()         { *m = LocalSID_EndDT4{} }
 func (m *LocalSID_EndDT4) String() string { return proto.CompactTextString(m) }
 func (*LocalSID_EndDT4) ProtoMessage()    {}
 func (*LocalSID_EndDT4) Descriptor() ([]byte, []int) {
-	return fileDescriptor_srv6_4f434de2b591d550, []int{0, 6}
+	return fileDescriptor_srv6_f12bcb35b7c14b74, []int{0, 6}
 }
 func (m *LocalSID_EndDT4) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_LocalSID_EndDT4.Unmarshal(m, b)
@@ -762,7 +762,7 @@ func (m *LocalSID_EndDT6) Reset()         { *m = LocalSID_EndDT6{} }
 func (m *LocalSID_EndDT6) String() string { return proto.CompactTextString(m) }
 func (*LocalSID_EndDT6) ProtoMessage()    {}
 func (*LocalSID_EndDT6) Descriptor() ([]byte, []int) {
-	return fileDescriptor_srv6_4f434de2b591d550, []int{0, 7}
+	return fileDescriptor_srv6_f12bcb35b7c14b74, []int{0, 7}
 }
 func (m *LocalSID_EndDT6) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_LocalSID_EndDT6.Unmarshal(m, b)
@@ -807,7 +807,7 @@ func (m *LocalSID_EndAD) Reset()         { *m = LocalSID_EndAD{} }
 func (m *LocalSID_EndAD) String() string { return proto.CompactTextString(m) }
 func (*LocalSID_EndAD) ProtoMessage()    {}
 func (*LocalSID_EndAD) Descriptor() ([]byte, []int) {
-	return fileDescriptor_srv6_4f434de2b591d550, []int{0, 8}
+	return fileDescriptor_srv6_f12bcb35b7c14b74, []int{0, 8}
 }
 func (m *LocalSID_EndAD) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_LocalSID_EndAD.Unmarshal(m, b)
@@ -868,7 +868,7 @@ func (m *Policy) Reset()         { *m = Policy{} }
 func (m *Policy) String() string { return proto.CompactTextString(m) }
 func (*Policy) ProtoMessage()    {}
 func (*Policy) Descriptor() ([]byte, []int) {
-	return fileDescriptor_srv6_4f434de2b591d550, []int{1}
+	return fileDescriptor_srv6_f12bcb35b7c14b74, []int{1}
 }
 func (m *Policy) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Policy.Unmarshal(m, b)
@@ -940,7 +940,7 @@ func (m *Policy_SegmentList) Reset()         { *m = Policy_SegmentList{} }
 func (m *Policy_SegmentList) String() string { return proto.CompactTextString(m) }
 func (*Policy_SegmentList) ProtoMessage()    {}
 func (*Policy_SegmentList) Descriptor() ([]byte, []int) {
-	return fileDescriptor_srv6_4f434de2b591d550, []int{1, 0}
+	return fileDescriptor_srv6_f12bcb35b7c14b74, []int{1, 0}
 }
 func (m *Policy_SegmentList) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Policy_SegmentList.Unmarshal(m, b)
@@ -1002,7 +1002,7 @@ func (m *Steering) Reset()         { *m = Steering{} }
 func (m *Steering) String() string { return proto.CompactTextString(m) }
 func (*Steering) ProtoMessage()    {}
 func (*Steering) Descriptor() ([]byte, []int) {
-	return fileDescriptor_srv6_4f434de2b591d550, []int{2}
+	return fileDescriptor_srv6_f12bcb35b7c14b74, []int{2}
 }
 func (m *Steering) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Steering.Unmarshal(m, b)
@@ -1225,7 +1225,7 @@ func (m *Steering_L2Traffic) Reset()         { *m = Steering_L2Traffic{} }
 func (m *Steering_L2Traffic) String() string { return proto.CompactTextString(m) }
 func (*Steering_L2Traffic) ProtoMessage()    {}
 func (*Steering_L2Traffic) Descriptor() ([]byte, []int) {
-	return fileDescriptor_srv6_4f434de2b591d550, []int{2, 0}
+	return fileDescriptor_srv6_f12bcb35b7c14b74, []int{2, 0}
 }
 func (m *Steering_L2Traffic) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Steering_L2Traffic.Unmarshal(m, b)
@@ -1268,7 +1268,7 @@ func (m *Steering_L3Traffic) Reset()         { *m = Steering_L3Traffic{} }
 func (m *Steering_L3Traffic) String() string { return proto.CompactTextString(m) }
 func (*Steering_L3Traffic) ProtoMessage()    {}
 func (*Steering_L3Traffic) Descriptor() ([]byte, []int) {
-	return fileDescriptor_srv6_4f434de2b591d550, []int{2, 1}
+	return fileDescriptor_srv6_f12bcb35b7c14b74, []int{2, 1}
 }
 func (m *Steering_L3Traffic) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Steering_L3Traffic.Unmarshal(m, b)
@@ -1323,9 +1323,9 @@ func init() {
 	proto.RegisterType((*Steering_L3Traffic)(nil), "vpp.srv6.Steering.L3Traffic")
 }
 
-func init() { proto.RegisterFile("models/vpp/srv6/srv6.proto", fileDescriptor_srv6_4f434de2b591d550) }
+func init() { proto.RegisterFile("models/vpp/srv6/srv6.proto", fileDescriptor_srv6_f12bcb35b7c14b74) }
 
-var fileDescriptor_srv6_4f434de2b591d550 = []byte{
+var fileDescriptor_srv6_f12bcb35b7c14b74 = []byte{
 	// 874 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x96, 0xed, 0x8a, 0xea, 0x46,
 	0x18, 0xc7, 0xcd, 0xba, 0xeb, 0x9a, 0xc7, 0x97, 0x5d, 0xa7, 0xf4, 0x9c, 0x9c, 0x50, 0x5a, 0xbb,
