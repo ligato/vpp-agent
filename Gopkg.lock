@@ -123,11 +123,12 @@
   revision = "b2b946a77f5973f420514090d6f6dd58b08303f0"
 
 [[projects]]
-  digest = "1:7ae4616edd396840ccc1506d287211ef883d3e93604dde0c9d1dd5721bb449d5"
+  digest = "1:ea99507d649edfc9d5cfb1ceaf680545cfb4836a88d80f0de1a2f3781ff1765e"
   name = "github.com/coreos/etcd"
   packages = [
     "auth/authpb",
     "clientv3",
+    "clientv3/concurrency",
     "clientv3/namespace",
     "etcdserver/api/v3rpc/rpctypes",
     "etcdserver/etcdserverpb",
@@ -498,8 +499,8 @@
   version = "v1.0"
 
 [[projects]]
-  branch = "master"
-  digest = "1:f886f7e75be90937b494481fd4ea9a950339ea9c587ad3ab2b932b33ce8c641f"
+  branch = "dev"
+  digest = "1:a1743a974d8166ae0d53abd328af739c34c6822486b7661dc3b8ddd4e31601e8"
   name = "github.com/ligato/cn-infra"
   packages = [
     "agent",
@@ -542,7 +543,7 @@
     "utils/safeclose",
   ]
   pruneopts = "T"
-  revision = "7728b023d39d088205a27be7cf1048d98467f93d"
+  revision = "77e78aeca2f5c728bcf836bcbd20da7afea8ffde"
 
 [[projects]]
   branch = "master"
@@ -767,12 +768,12 @@
   revision = "e2704e165165ec55d062f5919b4b29494e9fa790"
 
 [[projects]]
-  digest = "1:274f67cb6fed9588ea2521ecdac05a6d62a8c51c074c1fccc6a49a40ba80e925"
+  branch = "master"
+  digest = "1:a3b8912deeef29007fab9a13a9f21b9e9b59c621a2ed61e2fe7b37320a71fbd5"
   name = "github.com/satori/go.uuid"
   packages = ["."]
   pruneopts = "UT"
-  revision = "f58768cc1a7a7e77a3bd49e98cdd21419399b6a3"
-  version = "v1.2.0"
+  revision = "b2ce2384e17bbe0c6d34077efa39dbab3e09123b"
 
 [[projects]]
   digest = "1:76b02b3f516299ddfed21a4e7ce26cda0b9a57f14575bfe4aa2d644ea0e8e24c"

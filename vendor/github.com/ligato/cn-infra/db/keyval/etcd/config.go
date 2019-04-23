@@ -42,6 +42,7 @@ type Config struct {
 	ReconnectResync       bool          `json:"resync-after-reconnect"`
 	AllowDelayedStart     bool          `json:"allow-delayed-start"`
 	ReconnectInterval     time.Duration `json:"reconnect-interval"`
+	SessionTTL            int           `json:"session-ttl"`
 }
 
 // ClientConfig extends clientv3.Config with configuration options introduced
@@ -52,6 +53,10 @@ type ClientConfig struct {
 	// OpTimeout is the maximum amount of time the client will wait for a pending
 	// operation before timing out.
 	OpTimeout time.Duration
+
+	// SessionTTL is default TTL (in seconds) used by client in RunElection or WithClientLifetimeTTL put option.
+	// Once given number of seconds elapses without value's lease renewal the value is removed.
+	SessionTTL int
 }
 
 const (
@@ -60,6 +65,9 @@ const (
 
 	// defaultOpTimeout defines the default timeout for any request-reply etcd operation.
 	defaultOpTimeout = 3 * time.Second
+
+	// defaultSessionTTL defines the default TTL value (in seconds)
+	defaultSessionTTL = 5
 )
 
 // ConfigToClient transforms yaml configuration <yc> modelled by Config
@@ -82,11 +90,16 @@ func ConfigToClient(yc *Config) (*ClientConfig, error) {
 		opTimeout = yc.OpTimeout
 	}
 
+	sessionTTL := defaultSessionTTL
+	if yc.SessionTTL != 0 {
+		sessionTTL = yc.SessionTTL
+	}
+
 	clientv3Cfg := &clientv3.Config{
 		Endpoints:   yc.Endpoints,
 		DialTimeout: dialTimeout,
 	}
-	cfg := &ClientConfig{Config: clientv3Cfg, OpTimeout: opTimeout}
+	cfg := &ClientConfig{Config: clientv3Cfg, OpTimeout: opTimeout, SessionTTL: sessionTTL}
 
 	if len(cfg.Endpoints) == 0 {
 		if ep := os.Getenv("ETCD_ENDPOINTS"); ep != "" {

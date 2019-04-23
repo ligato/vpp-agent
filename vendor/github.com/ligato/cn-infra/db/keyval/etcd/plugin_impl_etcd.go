@@ -19,6 +19,7 @@ import (
 	"sync"
 	"time"
 
+	"context"
 	"github.com/ligato/cn-infra/datasync/resync"
 	"github.com/ligato/cn-infra/db/keyval"
 	"github.com/ligato/cn-infra/db/keyval/kvproto"
@@ -170,6 +171,16 @@ func (p *Plugin) PutIfNotExists(key string, value []byte) (succeeded bool, err e
 		return p.connection.PutIfNotExists(key, value)
 	}
 	return false, fmt.Errorf("connection is not established")
+}
+
+// CampaignInElection starts campaign in leader election on a given prefix. Multiple instances can compete on a given prefix.
+// Only one can be elected as leader at a time. The function call blocks until either context is canceled or the caller is elected as leader.
+// Upon successful call a resign callback that triggers new election is returned.
+func (p *Plugin) CampaignInElection(ctx context.Context, prefix string) (func(context.Context), error) {
+	if p.connection != nil {
+		return p.connection.CampaignInElection(ctx, prefix)
+	}
+	return nil, fmt.Errorf("connection is not established")
 }
 
 // Compact compatcs the ETCD database to the specific revision
