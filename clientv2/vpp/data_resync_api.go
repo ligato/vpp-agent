@@ -15,6 +15,7 @@
 package vppclient
 
 import (
+	abf "github.com/ligato/vpp-agent/api/models/vpp/abf"
 	acl "github.com/ligato/vpp-agent/api/models/vpp/acl"
 	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	ipsec "github.com/ligato/vpp-agent/api/models/vpp/ipsec"
@@ -36,6 +37,8 @@ type DataResyncDSL interface {
 	Interface(intf *interfaces.Interface) DataResyncDSL
 	// ACL adds Access Control List to the RESYNC request.
 	ACL(acl *acl.ACL) DataResyncDSL
+	// ABF adds ACL-based forwarding to the RESYNC request.
+	ABF(abf *abf.ABF) DataResyncDSL
 	// BD adds Bridge Domain to the RESYNC request.
 	BD(bd *l2.BridgeDomain) DataResyncDSL
 	// BDFIB adds L2 Forwarding Information Base.
