@@ -20,7 +20,6 @@ import (
 	"github.com/ligato/cn-infra/logging/logrus"
 	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/ip"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/vpe"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	ifvppcalls "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
 	ifvpp1904 "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls/vpp1904"
@@ -32,14 +31,21 @@ import (
 
 var routes = []*l3.Route{
 	{
-		VrfId:       1,
-		DstNetwork:  "192.168.10.21/24",
-		NextHopAddr: "192.168.30.1",
+		VrfId:             1,
+		DstNetwork:        "192.168.10.21/24",
+		NextHopAddr:       "192.168.30.1",
+		OutgoingInterface: "iface1",
 	},
 	{
 		VrfId:       2,
 		DstNetwork:  "10.0.0.1/24",
 		NextHopAddr: "192.168.30.1",
+	},
+	{
+		VrfId:             2,
+		DstNetwork:        "10.11.0.1/16",
+		NextHopAddr:       "192.168.30.1",
+		OutgoingInterface: "iface3",
 	},
 }
 
@@ -48,16 +54,13 @@ func TestAddRoute(t *testing.T) {
 	ctx, _, rtHandler := routeTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&ip.IPFibDetails{})
-	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
-	ctx.MockVpp.MockReply(&ip.IPTableAddDelReply{})
 	ctx.MockVpp.MockReply(&ip.IPAddDelRouteReply{})
 	err := rtHandler.VppAddRoute(routes[0])
 	Expect(err).To(Succeed())
 
 	ctx.MockVpp.MockReply(&ip.IPAddDelRouteReply{})
-	err = rtHandler.VppAddRoute(routes[0])
-	Expect(err).To(Not(BeNil()))
+	err = rtHandler.VppAddRoute(routes[2])
+	Expect(err).To(Not(BeNil())) // unknown interface
 }
 
 // Test deleting routes
@@ -83,6 +86,9 @@ func routeTestSetup(t *testing.T) (*vppcallmock.TestCtx, ifvppcalls.InterfaceVpp
 	log := logrus.NewLogger("test-log")
 	ifHandler := ifvpp1904.NewInterfaceVppHandler(ctx.MockChannel, log)
 	ifIndexes := ifaceidx.NewIfaceIndex(logrus.NewLogger("test"), "test")
+	ifIndexes.Put("iface1", &ifaceidx.IfaceMetadata{
+		SwIfIndex: 1,
+	})
 	rtHandler := vpp1904.NewRouteVppHandler(ctx.MockChannel, ifIndexes, log)
 	return ctx, ifHandler, rtHandler
 }

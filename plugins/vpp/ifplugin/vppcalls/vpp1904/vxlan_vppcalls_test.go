@@ -20,8 +20,6 @@ import (
 
 	ifModel "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/ip"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/vpe"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/vxlan"
 	. "github.com/onsi/gomega"
 )
@@ -63,10 +61,6 @@ func TestAddVxlanTunnelWithVrf(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	// VRF resolution
-	ctx.MockVpp.MockReply(&ip.IPFibDetails{})
-	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
-	ctx.MockVpp.MockReply(&ip.IPTableAddDelReply{})
 	// VxLAN resolution
 	ctx.MockVpp.MockReply(&vxlan.VxlanAddDelTunnelReply{
 		SwIfIndex: 1,
@@ -170,28 +164,6 @@ func TestAddVxlanTunnelError(t *testing.T) {
 	_, err := ifHandler.AddVxLanTunnel("ifName", 0, 0, &ifModel.VxlanLink{
 		SrcAddress: "10.0.0.1",
 		DstAddress: "20.0.0.2",
-		Vni:        1,
-	})
-	Expect(err).ToNot(BeNil())
-}
-
-func TestAddVxlanTunnelWithVrfError(t *testing.T) {
-	ctx, ifHandler := ifTestSetup(t)
-	defer ctx.TeardownTestCtx()
-
-	// VRF resolution
-	ctx.MockVpp.MockReply(&ip.IPFibDump{})
-	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
-	ctx.MockVpp.MockReply(&ip.IPTableAddDelReply{})
-	// VxLAN resolution
-	ctx.MockVpp.MockReply(&vxlan.VxlanAddDelTunnelReply{
-		SwIfIndex: 1,
-	})
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
-
-	_, err := ifHandler.AddVxLanTunnel("ifName", 1, 0, &ifModel.VxlanLink{
-		SrcAddress: "10.0.0.1",
-		DstAddress: "20.0.0.1",
 		Vni:        1,
 	})
 	Expect(err).ToNot(BeNil())

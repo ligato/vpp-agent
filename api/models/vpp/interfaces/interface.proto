@@ -29,7 +29,9 @@ message Interface {
     bool enabled = 3;
     string phys_address = 4;
     repeated string ip_addresses = 5;  /* IP addresses in the format <ipAddress>/<ipPrefix> */
-    uint32 vrf = 6;
+    uint32 vrf = 6;  /* Non-zero VRF has to be explicitly created (see api/models/vpp/l3/vrf.proto).
+                        Ignored for unnumbered interface - the VRF configuration is inherited from
+                        the referenced numbered interface.*/
     bool set_dhcp_client = 7;
     uint32 mtu = 8;
 

@@ -42,31 +42,28 @@ type ProxyArpDescriptor struct {
 
 // NewProxyArpDescriptor creates a new instance of the ProxyArpDescriptor.
 func NewProxyArpDescriptor(scheduler kvs.KVScheduler,
-	proxyArpHandler vppcalls.ProxyArpVppAPI, log logging.PluginLogger) *ProxyArpDescriptor {
+	proxyArpHandler vppcalls.ProxyArpVppAPI, log logging.PluginLogger) *kvs.KVDescriptor {
 
-	return &ProxyArpDescriptor{
+	ctx := &ProxyArpDescriptor{
 		scheduler:       scheduler,
 		proxyArpHandler: proxyArpHandler,
 		log:             log.NewLogger("proxy-arp-descriptor"),
 	}
-}
 
-// GetDescriptor returns descriptor suitable for registration (via adapter) with
-// the KVScheduler.
-func (d *ProxyArpDescriptor) GetDescriptor() *adapter.ProxyARPDescriptor {
-	return &adapter.ProxyARPDescriptor{
+	typedDescr := &adapter.ProxyARPDescriptor{
 		Name:                 ProxyArpDescriptorName,
 		NBKeyPrefix:          l3.ModelProxyARP.KeyPrefix(),
 		ValueTypeName:        l3.ModelProxyARP.ProtoName(),
 		KeySelector:          l3.ModelProxyARP.IsKeyValid,
-		ValueComparator:      d.EquivalentProxyArps,
-		Create:               d.Create,
-		Update:               d.Update,
-		Delete:               d.Delete,
-		Retrieve:             d.Retrieve,
-		DerivedValues:        d.DerivedValues,
+		ValueComparator:      ctx.EquivalentProxyArps,
+		Create:               ctx.Create,
+		Update:               ctx.Update,
+		Delete:               ctx.Delete,
+		Retrieve:             ctx.Retrieve,
+		DerivedValues:        ctx.DerivedValues,
 		RetrieveDependencies: []string{ifdescriptor.InterfaceDescriptorName},
 	}
+	return adapter.NewProxyARPDescriptor(typedDescr)
 }
 
 // DerivedValues derives l3.ProxyARP_Interface for every interface..

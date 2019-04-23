@@ -19,13 +19,14 @@ import (
 	"net"
 	"reflect"
 	"strings"
+	"github.com/pkg/errors"
 
 	"github.com/ligato/cn-infra/logging"
 	srv6 "github.com/ligato/vpp-agent/api/models/vpp/srv6"
 	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/vpp/srplugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/vpp/srplugin/vppcalls"
-	"github.com/pkg/errors"
+	"github.com/ligato/vpp-agent/api/models/vpp/l3"
 )
 
 const (
@@ -34,6 +35,7 @@ const (
 
 	// dependency labels
 	policyExistsDep = "sr-policy-for-steering-exists"
+	steeringVRFDep = "sr-steering-vrf-table-exists"
 )
 
 // SteeringDescriptor teaches KVScheduler how to configure VPP SRv6 steering.
@@ -44,28 +46,25 @@ type SteeringDescriptor struct {
 }
 
 // NewSteeringDescriptor creates a new instance of the Srv6 steering descriptor.
-func NewSteeringDescriptor(srHandler vppcalls.SRv6VppAPI, log logging.PluginLogger) *SteeringDescriptor {
-	return &SteeringDescriptor{
+func NewSteeringDescriptor(srHandler vppcalls.SRv6VppAPI, log logging.PluginLogger) *scheduler.KVDescriptor {
+	ctx := &SteeringDescriptor{
 		log:       log.NewLogger("steering-descriptor"),
 		srHandler: srHandler,
 	}
-}
 
-// GetDescriptor returns descriptor suitable for registration (via adapter) with
-// the KVScheduler.
-func (d *SteeringDescriptor) GetDescriptor() *adapter.SteeringDescriptor {
-	return &adapter.SteeringDescriptor{
+	typedDescr := &adapter.SteeringDescriptor{
 		Name:            SteeringDescriptorName,
 		NBKeyPrefix:     srv6.ModelSteering.KeyPrefix(),
 		ValueTypeName:   srv6.ModelSteering.ProtoName(),
 		KeySelector:     srv6.ModelSteering.IsKeyValid,
 		KeyLabel:        srv6.ModelSteering.StripKeyPrefix,
-		ValueComparator: d.EquivalentSteering,
-		Validate:        d.Validate,
-		Create:          d.Create,
-		Delete:          d.Delete,
-		Dependencies:    d.Dependencies,
+		ValueComparator: ctx.EquivalentSteering,
+		Validate:        ctx.Validate,
+		Create:          ctx.Create,
+		Delete:          ctx.Delete,
+		Dependencies:    ctx.Dependencies,
 	}
+	return adapter.NewSteeringDescriptor(typedDescr)
 }
 
 // EquivalentSteering determines whether 2 steerings are logically equal. This comparison takes into consideration also
@@ -198,5 +197,22 @@ func (d *SteeringDescriptor) Dependencies(key string, steering *srv6.Steering) (
 		Label: policyExistsDep,
 		Key:   srv6.PolicyKey(steering.GetPolicyBsid()),
 	})
+
+	// VRF-table dependency
+	if t, isL3Traffic := steering.Traffic.(*srv6.Steering_L3Traffic_); isL3Traffic {
+		l3Traffic := t.L3Traffic
+		tableID := l3Traffic.FibTableId
+		if tableID > 0 {
+			ip, _, _ := net.ParseCIDR(l3Traffic.PrefixAddress) // PrefixAddress is already validated
+			tableProto := vpp_l3.VrfTable_IPV6
+			if ip.To4() != nil { // IPv4 address
+				tableProto = vpp_l3.VrfTable_IPV4
+			}
+			dependencies = append(dependencies, scheduler.Dependency{
+				Label: steeringVRFDep,
+				Key:   vpp_l3.VrfTableKey(tableID, tableProto),
+			})
+		}
+	}
 	return dependencies
 }

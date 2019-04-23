@@ -148,7 +148,7 @@ func (h *RouteHandler) dumpRouteIPDetails(tableID uint32, tableName []byte, addr
 
 			// Route metadata
 			meta := &vppcalls.RouteMeta{
-				TableName:         string(bytes.SplitN(tableName, []byte{0x00}, 2)[0]),
+				TableName:         bytesToString(tableName),
 				OutgoingIfIdx:     ifIdx,
 				NextHopID:         path.NextHopID,
 				IsIPv6:            ipv6,

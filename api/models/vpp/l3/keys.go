@@ -53,6 +53,14 @@ var (
 		Type:    "ipscanneigh-global",
 		Version: "v2",
 	})
+
+	ModelVrfTable = models.Register(&VrfTable{}, models.Spec{
+		Module:  ModuleName,
+		Type:    "vrf-table",
+		Version: "v2",
+	}, models.WithNameTemplate(
+		`id/{{.Id}}/protocol/{{.Protocol}}`,
+	))
 )
 
 // ProxyARPKey is key for global proxy arp
@@ -79,6 +87,14 @@ func ArpEntryKey(iface, ipAddr string) string {
 	return models.Key(&ARPEntry{
 		Interface: iface,
 		IpAddress: ipAddr,
+	})
+}
+
+// VrfTableKey returns the key used to represent configuration for VPP VRF table.
+func VrfTableKey(id uint32, protocol VrfTable_Protocol) string {
+	return models.Key(&VrfTable{
+		Id:       id,
+		Protocol: protocol,
 	})
 }
 

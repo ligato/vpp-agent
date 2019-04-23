@@ -169,6 +169,12 @@ func (s *Scheduler) applyValue(args *applyValueArgs) (executed kvs.RecordedTxnOp
 		s.determineDepUpdateOperation(node, txnOp)
 		if txnOp.Operation == kvs.TxnOperation_UNDEFINED {
 			// nothing needs to be updated
+			if node.GetValue() == nil {
+				// this value was already deleted (unsatisfied, derived) within
+				// the same cycle of runDepUpdates(), and we do not want to leak
+				// node with nil value
+				args.graphW.DeleteNode(args.kv.key)
+			}
 			return
 		}
 	} else if args.kv.value == nil {
@@ -564,17 +570,20 @@ func (s *Scheduler) applyUpdate(node graph.NodeRW, txnOp *kvs.RecordedTxnOp, arg
 	derives, updateExecs, inheritedErr := s.applyNewRelations(node, handler, prevValue, !equivalent, args)
 	executed = append(executed, updateExecs...)
 	if inheritedErr != nil {
+		node.SetValue(prevValue) // revert back the original value
 		err = inheritedErr
 		return
 	}
 
 	// if the new dependencies are not satisfied => delete and set as pending with the new value
 	if !isNodeReady(node) {
+		node.SetValue(prevValue) // apply delete on the original value
 		delExec, inheritedErr := s.applyDelete(node, txnOp, args, true)
 		executed = append(executed, delExec...)
 		if inheritedErr != nil {
 			err = inheritedErr
 		}
+		node.SetValue(args.kv.value)
 		return
 	}
 

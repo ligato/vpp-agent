@@ -17,6 +17,7 @@
 //go:generate descriptor-adapter --descriptor-name ProxyARP --value-type *vpp_l3.ProxyARP --import "github.com/ligato/vpp-agent/api/models/vpp/l3" --output-dir "descriptor"
 //go:generate descriptor-adapter --descriptor-name ProxyARPInterface --value-type *vpp_l3.ProxyARP_Interface --import "github.com/ligato/vpp-agent/api/models/vpp/l3" --output-dir "descriptor"
 //go:generate descriptor-adapter --descriptor-name IPScanNeighbor --value-type *vpp_l3.IPScanNeighbor --import "github.com/ligato/vpp-agent/api/models/vpp/l3" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name VrfTable --value-type *vpp_l3.VrfTable --import "github.com/ligato/vpp-agent/api/models/vpp/l3" --output-dir "descriptor"
 
 package l3plugin
 
@@ -30,7 +31,6 @@ import (
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin"
 	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/descriptor"
-	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls"
 
 	_ "github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls/vpp1810"
@@ -45,17 +45,10 @@ type L3Plugin struct {
 	// GoVPP channels
 	vppCh govppapi.Channel
 
-	// VPP handlers
+	// VPP handler
 	l3Handler vppcalls.L3VppAPI
-	/*routeHandler    vppcalls.RouteVppAPI
-	arpandler       vppcalls.ArpVppAPI
-	proxyArpHandler vppcalls.ProxyArpVppAPI
-	ipNeigh         vppcalls.IPNeighVppAPI*/
 
 	// descriptors
-	routeDescriptor          *descriptor.RouteDescriptor
-	arpDescriptor            *descriptor.ArpDescriptor
-	proxyArpDescriptor       *descriptor.ProxyArpDescriptor
 	proxyArpIfaceDescriptor  *descriptor.ProxyArpInterfaceDescriptor
 	ipScanNeighborDescriptor *descriptor.IPScanNeighborDescriptor
 }
@@ -80,42 +73,23 @@ func (p *L3Plugin) Init() error {
 
 	// init handlers
 	p.l3Handler = vppcalls.CompatibleL3VppHandler(p.vppCh, p.IfPlugin.GetInterfaceIndex(), p.Log)
-	//p.arpandler = vppcalls.NewArpVppHandler(p.vppCh, p.IfPlugin.GetInterfaceIndex(), nil)
-	//p.proxyArpHandler = vppcalls.NewProxyArpVppHandler(p.vppCh, p.IfPlugin.GetInterfaceIndex(), nil)
-	//p.ipNeigh = vppcalls.NewIPNeighVppHandler(p.vppCh, nil)
 
 	// init & register descriptors
-	p.routeDescriptor = descriptor.NewRouteDescriptor(p.l3Handler, p.Log)
-	routeDescriptor := adapter.NewRouteDescriptor(p.routeDescriptor.GetDescriptor())
-	err = p.Deps.KVScheduler.RegisterKVDescriptor(routeDescriptor)
-	if err != nil {
-		return err
-	}
+	routeDescriptor := descriptor.NewRouteDescriptor(p.l3Handler, p.Log)
+	arpDescriptor := descriptor.NewArpDescriptor(p.KVScheduler, p.l3Handler, p.Log)
+	proxyArpDescriptor := descriptor.NewProxyArpDescriptor(p.KVScheduler, p.l3Handler, p.Log)
+	proxyArpIfaceDescriptor := descriptor.NewProxyArpInterfaceDescriptor(p.KVScheduler, p.l3Handler, p.Log)
+	ipScanNeighborDescriptor := descriptor.NewIPScanNeighborDescriptor(p.KVScheduler, p.l3Handler, p.Log)
+	vrfTableDescriptor := descriptor.NewVrfTableDescriptor(p.l3Handler, p.Log)
 
-	p.arpDescriptor = descriptor.NewArpDescriptor(p.KVScheduler, p.l3Handler, p.Log)
-	arpDescriptor := adapter.NewARPEntryDescriptor(p.arpDescriptor.GetDescriptor())
-	err = p.Deps.KVScheduler.RegisterKVDescriptor(arpDescriptor)
-	if err != nil {
-		return err
-	}
-
-	p.proxyArpDescriptor = descriptor.NewProxyArpDescriptor(p.KVScheduler, p.l3Handler, p.Log)
-	proxyArpDescriptor := adapter.NewProxyARPDescriptor(p.proxyArpDescriptor.GetDescriptor())
-	err = p.Deps.KVScheduler.RegisterKVDescriptor(proxyArpDescriptor)
-	if err != nil {
-		return err
-	}
-
-	p.proxyArpIfaceDescriptor = descriptor.NewProxyArpInterfaceDescriptor(p.KVScheduler, p.l3Handler, p.Log)
-	proxyArpIfaceDescriptor := adapter.NewProxyARPInterfaceDescriptor(p.proxyArpIfaceDescriptor.GetDescriptor())
-	err = p.Deps.KVScheduler.RegisterKVDescriptor(proxyArpIfaceDescriptor)
-	if err != nil {
-		return err
-	}
-
-	p.ipScanNeighborDescriptor = descriptor.NewIPScanNeighborDescriptor(p.KVScheduler, p.l3Handler, p.Log)
-	ipScanNeighborDescriptor := adapter.NewIPScanNeighborDescriptor(p.ipScanNeighborDescriptor.GetDescriptor())
-	err = p.Deps.KVScheduler.RegisterKVDescriptor(ipScanNeighborDescriptor)
+	err = p.Deps.KVScheduler.RegisterKVDescriptor(
+		routeDescriptor,
+		arpDescriptor,
+		proxyArpDescriptor,
+		proxyArpIfaceDescriptor,
+		ipScanNeighborDescriptor,
+		vrfTableDescriptor,
+	)
 	if err != nil {
 		return err
 	}

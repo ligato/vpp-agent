@@ -15,7 +15,6 @@
 package vpp1901
 
 import (
-	"fmt"
 	"net"
 
 	"github.com/ligato/cn-infra/utils/addrs"
@@ -97,22 +96,6 @@ func (h *RouteHandler) vppAddDelRoute(route *vpp_l3.Route, rtIfIdx uint32, delet
 
 // VppAddRoute implements route handler.
 func (h *RouteHandler) VppAddRoute(route *vpp_l3.Route) error {
-	// Evaluate route IP version
-	_, isIPv6, err := addrs.ParseIPWithPrefix(route.DstNetwork)
-	if err != nil {
-		return err
-	}
-
-	// Configure IPv6 VRF
-	if err := h.createVrfIfNeeded(route.VrfId, isIPv6); err != nil {
-		return err
-	}
-	if route.Type == vpp_l3.Route_INTER_VRF {
-		if err := h.createVrfIfNeeded(route.ViaVrfId, isIPv6); err != nil {
-			return err
-		}
-	}
-
 	swIfIdx, err := h.getRouteSwIfIndex(route.OutgoingInterface)
 	if err != nil {
 		return err
@@ -141,93 +124,4 @@ func (h *RouteHandler) getRouteSwIfIndex(ifName string) (swIfIdx uint32, err err
 		swIfIdx = meta.SwIfIndex
 	}
 	return
-}
-
-// New VRF with provided ID for IPv4 or IPv6 will be created if missing.
-func (h *RouteHandler) createVrfIfNeeded(vrfID uint32, isIPv6 bool) error {
-	// Zero VRF exists by default
-	if vrfID == 0 {
-		return nil
-	}
-
-	// Get all VRFs for IPv4 or IPv6
-	var exists bool
-	if isIPv6 {
-		ipv6Tables, err := h.dumpVrfTablesIPv6()
-		if err != nil {
-			return fmt.Errorf("dumping IPv6 VRF tables failed: %v", err)
-		}
-		_, exists = ipv6Tables[vrfID]
-	} else {
-		tables, err := h.dumpVrfTables()
-		if err != nil {
-			return fmt.Errorf("dumping IPv4 VRF tables failed: %v", err)
-		}
-		_, exists = tables[vrfID]
-	}
-	// Create new VRF if needed
-	if !exists {
-		h.log.Debugf("VRF table %d does not exists and will be created", vrfID)
-		return h.vppAddIPTable(vrfID, isIPv6)
-	}
-
-	return nil
-}
-
-// Returns all IPv4 VRF tables
-func (h *RouteHandler) dumpVrfTables() (map[uint32][]*ip.IPFibDetails, error) {
-	fibs := map[uint32][]*ip.IPFibDetails{}
-	reqCtx := h.callsChannel.SendMultiRequest(&ip.IPFibDump{})
-	for {
-		fibDetails := &ip.IPFibDetails{}
-		stop, err := reqCtx.ReceiveReply(fibDetails)
-		if stop {
-			break
-		}
-		if err != nil {
-			return nil, err
-		}
-
-		tableID := fibDetails.TableID
-		fibs[tableID] = append(fibs[tableID], fibDetails)
-	}
-
-	return fibs, nil
-}
-
-// Returns all IPv6 VRF tables
-func (h *RouteHandler) dumpVrfTablesIPv6() (map[uint32][]*ip.IP6FibDetails, error) {
-	fibs := map[uint32][]*ip.IP6FibDetails{}
-	reqCtx := h.callsChannel.SendMultiRequest(&ip.IP6FibDump{})
-	for {
-		fibDetails := &ip.IP6FibDetails{}
-		stop, err := reqCtx.ReceiveReply(fibDetails)
-		if stop {
-			break
-		}
-		if err != nil {
-			return nil, err
-		}
-
-		tableID := fibDetails.TableID
-		fibs[tableID] = append(fibs[tableID], fibDetails)
-	}
-
-	return fibs, nil
-}
-
-// Creates new VRF table with provided ID and for desired IP version
-func (h *RouteHandler) vppAddIPTable(vrfID uint32, isIPv6 bool) error {
-	req := &ip.IPTableAddDel{
-		TableID: vrfID,
-		IsIPv6:  boolToUint(isIPv6),
-		IsAdd:   1,
-	}
-	reply := &ip.IPTableAddDelReply{}
-
-	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
-		return err
-	}
-
-	return nil
 }

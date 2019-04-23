@@ -49,28 +49,25 @@ type LocalSIDDescriptor struct {
 }
 
 // NewLocalSIDDescriptor creates a new instance of the LocalSID descriptor.
-func NewLocalSIDDescriptor(srHandler vppcalls.SRv6VppAPI, log logging.PluginLogger) *LocalSIDDescriptor {
-	return &LocalSIDDescriptor{
+func NewLocalSIDDescriptor(srHandler vppcalls.SRv6VppAPI, log logging.PluginLogger) *scheduler.KVDescriptor {
+	ctx := &LocalSIDDescriptor{
 		log:       log.NewLogger("localsid-descriptor"),
 		srHandler: srHandler,
 	}
-}
 
-// GetDescriptor returns descriptor suitable for registration (via adapter) with
-// the KVScheduler.
-func (d *LocalSIDDescriptor) GetDescriptor() *adapter.LocalSIDDescriptor {
-	return &adapter.LocalSIDDescriptor{
+	typedDescr := &adapter.LocalSIDDescriptor{
 		Name:            LocalSIDDescriptorName,
 		NBKeyPrefix:     srv6.ModelLocalSID.KeyPrefix(),
 		ValueTypeName:   srv6.ModelLocalSID.ProtoName(),
 		KeySelector:     srv6.ModelLocalSID.IsKeyValid,
 		KeyLabel:        srv6.ModelLocalSID.StripKeyPrefix,
-		ValueComparator: d.EquivalentLocalSIDs,
-		Validate:        d.Validate,
-		Create:          d.Create,
-		Delete:          d.Delete,
-		Dependencies:    d.Dependencies,
+		ValueComparator: ctx.EquivalentLocalSIDs,
+		Validate:        ctx.Validate,
+		Create:          ctx.Create,
+		Delete:          ctx.Delete,
+		Dependencies:    ctx.Dependencies,
 	}
+	return adapter.NewLocalSIDDescriptor(typedDescr)
 }
 
 // EquivalentLocalSIDs determines whether 2 localSIDs are logically equal. This comparison takes into consideration also
@@ -195,13 +192,10 @@ func (d *LocalSIDDescriptor) Delete(key string, value *srv6.LocalSID, metadata i
 func (d *LocalSIDDescriptor) Dependencies(key string, localSID *srv6.LocalSID) (dependencies []scheduler.Dependency) {
 	switch ef := localSID.EndFunction.(type) {
 	case *srv6.LocalSID_EndFunction_T:
-		if ef.EndFunction_T.VrfId != 0 { // VRF 0 is in VPP by default, no need to wait for first route
+		if ef.EndFunction_T.VrfId != 0 { // VRF 0 is in VPP by default
 			dependencies = append(dependencies, scheduler.Dependency{
 				Label: localsidVRFDep,
-				AnyOf: scheduler.AnyOfDependency{
-					KeyPrefixes: []string{vpp_l3.RouteVrfPrefix(ef.EndFunction_T.VrfId)}, // waiting for VRF table creation (route creation creates also VRF table if it doesn't exist)
-					KeySelector: d.isIPv6RouteKey,                                        // T refers to IPv6 VRF table
-				},
+				Key:   vpp_l3.VrfTableKey(ef.EndFunction_T.VrfId, vpp_l3.VrfTable_IPV6), // T refers to IPv6 VRF table
 			})
 		}
 	case *srv6.LocalSID_EndFunction_X:
@@ -225,23 +219,17 @@ func (d *LocalSIDDescriptor) Dependencies(key string, localSID *srv6.LocalSID) (
 			Key:   interfaces.InterfaceKey(ef.EndFunction_DX6.OutgoingInterface),
 		})
 	case *srv6.LocalSID_EndFunction_DT4:
-		if ef.EndFunction_DT4.VrfId != 0 { // VRF 0 is in VPP by default, no need to wait for first route
+		if ef.EndFunction_DT4.VrfId != 0 { // VRF 0 is in VPP by default
 			dependencies = append(dependencies, scheduler.Dependency{
 				Label: localsidVRFDep,
-				AnyOf: scheduler.AnyOfDependency{
-					KeyPrefixes: []string{vpp_l3.RouteVrfPrefix(ef.EndFunction_DT4.VrfId)}, // waiting for VRF table creation (route creation creates also VRF table if it doesn't exist)
-					KeySelector: d.isIPv4RouteKey,                                          // we want ipv4 VRF because DT4
-				},
+				Key:   vpp_l3.VrfTableKey(ef.EndFunction_DT4.VrfId, vpp_l3.VrfTable_IPV4), // we want ipv4 VRF because DT4
 			})
 		}
 	case *srv6.LocalSID_EndFunction_DT6:
-		if ef.EndFunction_DT6.VrfId != 0 { // VRF 0 is in VPP by default, no need to wait for first route
+		if ef.EndFunction_DT6.VrfId != 0 { // VRF 0 is in VPP by default
 			dependencies = append(dependencies, scheduler.Dependency{
 				Label: localsidVRFDep,
-				AnyOf: scheduler.AnyOfDependency{
-					KeyPrefixes: []string{vpp_l3.RouteVrfPrefix(ef.EndFunction_DT6.VrfId)}, // waiting for VRF table creation (route creation creates also VRF table if it doesn't exist)
-					KeySelector: d.isIPv6RouteKey,                                          // we want ipv6 VRF because DT6
-				},
+				Key:   vpp_l3.VrfTableKey(ef.EndFunction_DT6.VrfId, vpp_l3.VrfTable_IPV6), // we want ipv6 VRF because DT6
 			})
 		}
 	case *srv6.LocalSID_EndFunction_AD:

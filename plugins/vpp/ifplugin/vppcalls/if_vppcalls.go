@@ -108,7 +108,6 @@ type InterfaceVppAPI interface {
 	// DeleteTapInterface calls TapDelete bin API.
 	DeleteTapInterface(ifName string, idx uint32, version uint32) error
 	// AddVxLanTunnel calls AddDelVxLanTunnelReq with flag add=1.
-	// Note: VxLAN tunnel also creates a VRF table with proper IP version if needed
 	AddVxLanTunnel(ifName string, vrf, multicastIf uint32, vxLan *interfaces.VxlanLink) (swIndex uint32, err error)
 	// DeleteVxLanTunnel calls AddDelVxLanTunnelReq with flag add=0.
 	DeleteVxLanTunnel(ifName string, idx, vrf uint32, vxLan *interfaces.VxlanLink) error
@@ -158,13 +157,9 @@ type InterfaceVppAPI interface {
 	SetRxMode(ifIdx uint32, rxModeSettings *interfaces.Interface_RxModeSettings) error
 	// SetRxPlacement configures rx-placement for interface
 	SetRxPlacement(ifIdx uint32, rxPlacement *interfaces.Interface_RxPlacementSettings) error
-	// CreateVrf checks if VRF exists and creates it if not
-	CreateVrf(vrfID uint32) error
-	// CreateVrfIPv6 checks if IPv6 VRF exists and creates it if not
-	CreateVrfIPv6(vrfID uint32) error
-	// SetInterfaceVrf retrieves VRF table from interface
+	// SetInterfaceVrf sets VRF table for the interface
 	SetInterfaceVrf(ifaceIndex, vrfID uint32) error
-	// SetInterfaceVrfIPv6 retrieves IPV6 VRF table from interface
+	// SetInterfaceVrfIPv6 sets IPV6 VRF table for the interface
 	SetInterfaceVrfIPv6(ifaceIndex, vrfID uint32) error
 	// CreateSubif creates sub interface.
 	CreateSubif(ifIdx, vlanID uint32) (swIfIdx uint32, err error)

@@ -166,6 +166,13 @@ func (h *InterfaceVppHandler) DumpInterfaces() (map[uint32]*InterfaceDetails, er
 	if err != nil {
 		return nil, fmt.Errorf("failed to dump unnumbered interfaces: %v", err)
 	}
+
+	// dump VXLAN details before VRFs (used by isIpv6Interface)
+	err = h.dumpVxlanDetails(ifs)
+	if err != nil {
+		return nil, err
+	}
+
 	// Get interface VRF for every IP family, fill DHCP if set and resolve unnumbered interface setup
 	for _, ifData := range ifs {
 		// VRF is stored in metadata for both, IPv4 and IPv6. If the interface is an IPv6 interface (it contains at least
@@ -220,11 +227,6 @@ func (h *InterfaceVppHandler) DumpInterfaces() (map[uint32]*InterfaceDetails, er
 	}
 
 	err = h.dumpTapDetails(ifs)
-	if err != nil {
-		return nil, err
-	}
-
-	err = h.dumpVxlanDetails(ifs)
 	if err != nil {
 		return nil, err
 	}

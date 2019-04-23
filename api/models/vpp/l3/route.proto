@@ -21,7 +21,8 @@ message Route {
     RouteType type = 10;
     uint32 vrf_id = 1;                  /* VRF identifier, field required for remote client. This value should be
                                            consistent with VRF ID in static route key. If it is not, value from
-                                           kley will be preffered and this field will be overriden.  */
+                                           key will be preffered and this field will be overriden.
+                                           Non-zero VRF has to be explicitly created (see api/models/vpp/l3/vrf.proto) */
     string dst_network = 3;             /* ip address + prefix in format <address>/<prefix> */
     string next_hop_addr = 4;           /* next hop address */
     string outgoing_interface = 5;      /* outgoing interface name */
