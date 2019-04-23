@@ -1,0 +1,5 @@
+{
+  "id": ${id},
+  "protocol": ${protocolEnumValue},
+  "label": "${label}"
+}

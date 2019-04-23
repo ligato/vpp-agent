@@ -68,8 +68,8 @@ Check CRUD For Local SID With END.X Function
     Wait Until Keyword Succeeds        ${WAIT_TIMEOUT}     ${SYNC_SLEEP}     vpp_term: Check Local SID Deleted     node=agent_vpp_1    sidAddress=a::
 
 Check CRUD For Local SID With END.T Function
-    Create Route On agent_vpp_1 With IP ab::/24 With Next Hop cd::1 And Vrf Id 21    # creating ipv6 vrf table, don't care about route
-    Create Route On agent_vpp_1 With IP ab::/24 With Next Hop cd::1 And Vrf Id 22    # creating ipv6 vrf table, don't care about route
+    Create VRF Table    node=agent_vpp_1    id=21    protocol=ipv6
+    Create VRF Table    node=agent_vpp_1    id=22    protocol=ipv6
     Put Local SID With End.T function    node=agent_vpp_1    sidAddress=a::    installationVrfId=0          vrfid=21    psp=false
     Wait Until Keyword Succeeds        ${WAIT_TIMEOUT}     ${SYNC_SLEEP}     vpp_term: Check Local SID Presence    node=agent_vpp_1    sidAddress=a::    endFunctionType=T   fibtable=1
     Put Local SID With End.T function    node=agent_vpp_1    sidAddress=a::    installationVrfId=0          vrfid=22    psp=false    #modification (fibtable is index for structure from memory pool (1-to-1 mapping between vrf and fib table id) -> track changes of vrf with fibtable id)
@@ -78,8 +78,8 @@ Check CRUD For Local SID With END.T Function
     Wait Until Keyword Succeeds        ${WAIT_TIMEOUT}     ${SYNC_SLEEP}     vpp_term: Check Local SID Deleted     node=agent_vpp_1    sidAddress=a::
 
 Check CRUD For Local SID With END.DT4 Function
-    Create Route On agent_vpp_1 With IP 20.20.1.0/24 With Next Hop 192.168.1.2 And Vrf Id 11    # creating ipv4 vrf table, don't care about route
-    Create Route On agent_vpp_1 With IP 20.20.1.0/24 With Next Hop 192.168.1.2 And Vrf Id 12    # creating ipv4 vrf table, don't care about route
+    Create VRF Table    node=agent_vpp_1    id=11    protocol=ipv4
+    Create VRF Table    node=agent_vpp_1    id=12    protocol=ipv4
     Put Local SID With End.DT4 function    node=agent_vpp_1    sidAddress=a::    installationVrfId=0          vrfid=11
     Wait Until Keyword Succeeds        ${WAIT_TIMEOUT}     ${SYNC_SLEEP}     vpp_term: Check Local SID Presence    node=agent_vpp_1    sidAddress=a::    endFunctionType=DT4   fibtable=1
     Put Local SID With End.DT4 function    node=agent_vpp_1    sidAddress=a::    installationVrfId=0          vrfid=12    #modification (fibtable is index for structure from memory pool (1-to-1 mapping between vrf and fib table id) -> track changes of vrf with fibtable id)
@@ -88,8 +88,8 @@ Check CRUD For Local SID With END.DT4 Function
     Wait Until Keyword Succeeds        ${WAIT_TIMEOUT}     ${SYNC_SLEEP}     vpp_term: Check Local SID Deleted     node=agent_vpp_1    sidAddress=a::
 
 Check CRUD For Local SID With END.DT6 Function
-    Create Route On agent_vpp_1 With IP ab::/24 With Next Hop cd::1 And Vrf Id 23    # creating ipv6 vrf table, don't care about route
-    Create Route On agent_vpp_1 With IP ab::/24 With Next Hop cd::1 And Vrf Id 24    # creating ipv6 vrf table, don't care about route
+    Create VRF Table    node=agent_vpp_1    id=23    protocol=ipv6
+    Create VRF Table    node=agent_vpp_1    id=24    protocol=ipv6
     Put Local SID With End.DT6 function    node=agent_vpp_1    sidAddress=a::    installationVrfId=0          vrfid=23
     Wait Until Keyword Succeeds        ${WAIT_TIMEOUT}     ${SYNC_SLEEP}     vpp_term: Check Local SID Presence    node=agent_vpp_1    sidAddress=a::    endFunctionType=DT6   fibtable=3
     Put Local SID With End.DT6 function    node=agent_vpp_1    sidAddress=a::    installationVrfId=0          vrfid=24    #modification (fibtable is index for structure from memory pool (1-to-1 mapping between vrf and fib table id) -> track changes of vrf with fibtable id)
@@ -142,7 +142,7 @@ Check Policy CRUD
 
 Check Steering CRUD
     Put SRv6 Policy                    node=agent_vpp_1    bsid=a::e       installationVrfId=0         srhEncapsulation=true    sprayBehaviour=true    segmentlists=${segmentLists1weight1}
-    Put SRv6 L3 Steering                  node=agent_vpp_1    name=toE        bsid=a::e          installationVrfId=0               prefixAddress=e::/64
+    Put SRv6 L3 Steering               node=agent_vpp_1    name=toE        bsid=a::e          installationVrfId=0               prefixAddress=e::/64
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Check SRv6 Steering Presence      node=agent_vpp_1    bsid=a::e    prefixAddress=e::/64
     Put SRv6 L3 Steering               node=agent_vpp_1    name=toE        bsid=a::e          installationVrfId=0               prefixAddress=d::/64   # modification
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Check SRv6 Steering Presence      node=agent_vpp_1    bsid=a::e    prefixAddress=d::/64

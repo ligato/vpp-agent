@@ -696,3 +696,22 @@ Delete SRv6 Steering
     ${uri}=     Set Variable           /vnf-agent/${node}/config/vpp/srv6/${AGENT_VER}/steering/${name}
     ${out}=     Delete key    ${uri}
     [Return]    ${out}
+
+Create VRF Table
+    [Arguments]    ${node}    ${id}    ${protocol}    ${label}=
+    [Documentation]    Add VRF table config json to etcd.
+    ${protocol}=    Convert To Uppercase    ${protocol}
+    ${protocolEnumValue}=       Run Keyword If   '${protocol}'=='IPV6'    Set Variable    1
+    ...    ELSE    Set Variable    0    #IPv4
+    ${data}=    OperatingSystem.Get File    ${CURDIR}/../resources/vrf.json
+    ${uri}=     Set Variable                /vnf-agent/${node}/config/vpp/${AGENT_VER}/vrf-table/id/${id}/protocol/${protocol}
+    ${data}=    Replace Variables           ${data}
+    Put Json     ${uri}    ${data}
+
+Delete VRF Table
+    [Arguments]    ${node}    ${id}    ${protocol}
+    [Documentation]    Delete VRF table config json from etcd.
+    ${protocol}=    Convert To Uppercase    ${protocol}
+    ${uri}=         Set Variable            /vnf-agent/${node}/config/vpp/${AGENT_VER}/vrf-table/id/${id}/protocol/${protocol}
+    ${out}=         Delete key              ${uri}
+    [Return]    ${out}
