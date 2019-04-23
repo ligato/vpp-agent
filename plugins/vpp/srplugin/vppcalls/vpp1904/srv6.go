@@ -1,16 +1,16 @@
-//  Copyright (c) 2019 Cisco and/or its affiliates.
+// Copyright (c) 2019 Bell Canada, Pantheon Technologies and/or its affiliates.
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at:
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at:
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
+//     http://www.apache.org/licenses/LICENSE-2.0
 //
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 // Package vpp1904 contains wrappers over VPP (version 19.01) binary APIs to simplify their usage
 package vpp1904
@@ -75,7 +75,7 @@ func (h *SRv6VppHandler) DeleteLocalSid(sidAddr net.IP) error {
 }
 
 func (h *SRv6VppHandler) addDelLocalSid(deletion bool, sidAddr net.IP, localSID *srv6.LocalSID) error {
-	h.log.WithFields(logging.Fields{"localSID": sidAddr, "delete": deletion, "FIB table ID": h.fibTableID(localSID), "end function": h.endFunction(localSID)}).
+	h.log.WithFields(logging.Fields{"localSID": sidAddr, "delete": deletion, "installationVrfID": h.installationVrfID(localSID), "end function": h.endFunction(localSID)}).
 		Debug("Adding/deleting Local SID", sidAddr)
 	if !deletion && localSID.GetEndFunction_AD() != nil {
 		return h.addSRProxy(sidAddr, localSID)
@@ -85,7 +85,7 @@ func (h *SRv6VppHandler) addDelLocalSid(deletion bool, sidAddr net.IP, localSID 
 		Localsid: sr.Srv6Sid{Addr: []byte(sidAddr)},
 	}
 	if !deletion {
-		req.FibTable = localSID.FibTableId // where to install localsid entry //TODO meaning change? see proto model TODO
+		req.FibTable = localSID.InstallationVrfId // where to install localsid entry
 		if err := h.writeEndFunction(req, sidAddr, localSID); err != nil {
 			return err
 		}
@@ -99,7 +99,7 @@ func (h *SRv6VppHandler) addDelLocalSid(deletion bool, sidAddr net.IP, localSID 
 		return fmt.Errorf("vpp call %q returned: %d", reply.GetMessageName(), reply.Retval)
 	}
 
-	h.log.WithFields(logging.Fields{"localSID": sidAddr, "delete": deletion, "FIB table ID": h.fibTableID(localSID), "end function": h.endFunction(localSID)}).
+	h.log.WithFields(logging.Fields{"localSID": sidAddr, "delete": deletion, "installationVrfID": h.installationVrfID(localSID), "end function": h.endFunction(localSID)}).
 		Debug("Added/deleted Local SID ", sidAddr)
 
 	return nil
@@ -168,9 +168,9 @@ func (h *SRv6VppHandler) interfaceNameMapping() (map[string]string, error) {
 	return mapping, nil
 }
 
-func (h *SRv6VppHandler) fibTableID(localSID *srv6.LocalSID) string {
+func (h *SRv6VppHandler) installationVrfID(localSID *srv6.LocalSID) string {
 	if localSID != nil {
-		return string(localSID.FibTableId)
+		return string(localSID.InstallationVrfId)
 	}
 	return "<nil>"
 }
@@ -334,7 +334,7 @@ func (h *SRv6VppHandler) addBasePolicyWithFirstSegmentList(policy *srv6.Policy) 
 		Sids:     *sids,
 		IsEncap:  boolToUint(policy.SrhEncapsulation),
 		Type:     boolToUint(policy.SprayBehaviour),
-		FibTable: policy.FibTableId,
+		FibTable: policy.InstallationVrfId,
 	}
 	reply := &sr.SrPolicyAddReply{}
 
@@ -417,7 +417,7 @@ func (h *SRv6VppHandler) modPolicy(operation uint8, policy *srv6.Policy, segment
 		BsidAddr:  []byte(bindingSid), // TODO add ability to define policy also by index (SrPolicyIndex)
 		Operation: operation,
 		Sids:      *sids,
-		FibTable:  policy.FibTableId,
+		FibTable:  policy.InstallationVrfId,
 	}
 	if operation == DeleteSRList || operation == ModifyWeightOfSRList {
 		req.SlIndex = segmentListIndex
@@ -556,7 +556,7 @@ func (h *SRv6VppHandler) addDelSteering(delete bool, steering *srv6.Steering) er
 		if ip.To4() != nil { // IPv4 address
 			steerType = SteerTypeIPv4
 		}
-		tableID = t.L3Traffic.FibTableId
+		tableID = t.L3Traffic.InstallationVrfId
 		prefixAddr = []byte(ip.To16())
 		ms, _ := ipnet.Mask.Size()
 		maskWidth = uint32(ms)

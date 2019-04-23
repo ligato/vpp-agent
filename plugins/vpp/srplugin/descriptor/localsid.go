@@ -73,7 +73,7 @@ func NewLocalSIDDescriptor(srHandler vppcalls.SRv6VppAPI, log logging.PluginLogg
 // EquivalentLocalSIDs determines whether 2 localSIDs are logically equal. This comparison takes into consideration also
 // semantics that couldn't be modeled into proto models (i.e. SID is IPv6 address and not only string)
 func (d *LocalSIDDescriptor) EquivalentLocalSIDs(key string, oldLocalSID, newLocalSID *srv6.LocalSID) bool {
-	return oldLocalSID.FibTableId == newLocalSID.FibTableId &&
+	return oldLocalSID.InstallationVrfId == newLocalSID.InstallationVrfId &&
 		equivalentSIDs(oldLocalSID.Sid, newLocalSID.Sid) &&
 		d.equivalentEndFunctions(oldLocalSID.EndFunction, newLocalSID.EndFunction)
 }
@@ -127,8 +127,8 @@ func (d *LocalSIDDescriptor) Validate(key string, localSID *srv6.LocalSID) error
 	if err != nil {
 		return scheduler.NewInvalidValueError(errors.Errorf("failed to parse local sid %s, should be a valid ipv6 address: %v", localSID.GetSid(), err), "sid")
 	}
-	if localSID.GetFibTableId() < 0 {
-		return scheduler.NewInvalidValueError(errors.Errorf("fibtableid can't be lower than zero, input value %v", localSID.GetFibTableId()), "fibtableid")
+	if localSID.GetInstallationVrfId() < 0 {
+		return scheduler.NewInvalidValueError(errors.Errorf("installation vrf id can't be lower than zero, input value %v", localSID.GetInstallationVrfId()), "installationVrfId")
 	}
 
 	// checking end functions

@@ -19,14 +19,15 @@ import (
 	"net"
 	"reflect"
 	"strings"
+
 	"github.com/pkg/errors"
 
 	"github.com/ligato/cn-infra/logging"
+	"github.com/ligato/vpp-agent/api/models/vpp/l3"
 	srv6 "github.com/ligato/vpp-agent/api/models/vpp/srv6"
 	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/vpp/srplugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/vpp/srplugin/vppcalls"
-	"github.com/ligato/vpp-agent/api/models/vpp/l3"
 )
 
 const (
@@ -35,7 +36,7 @@ const (
 
 	// dependency labels
 	policyExistsDep = "sr-policy-for-steering-exists"
-	steeringVRFDep = "sr-steering-vrf-table-exists"
+	steeringVRFDep  = "sr-steering-vrf-table-exists"
 )
 
 // SteeringDescriptor teaches KVScheduler how to configure VPP SRv6 steering.
@@ -102,7 +103,7 @@ func (d *SteeringDescriptor) equivalentTraffic(traffic1, traffic2 interface{}) b
 	}
 	switch traffic1typed := traffic1.(type) {
 	case *srv6.Steering_L3Traffic_:
-		if traffic1typed.L3Traffic.FibTableId != traffic2.(*srv6.Steering_L3Traffic_).L3Traffic.FibTableId {
+		if traffic1typed.L3Traffic.InstallationVrfId != traffic2.(*srv6.Steering_L3Traffic_).L3Traffic.InstallationVrfId {
 			return false
 		}
 		ip1, ipNet1, err1 := net.ParseCIDR(traffic1typed.L3Traffic.PrefixAddress)
@@ -145,8 +146,8 @@ func (d *SteeringDescriptor) Validate(key string, steering *srv6.Steering) error
 			return scheduler.NewInvalidValueError(errors.New("(non-empty) interface name must be given (L2 traffic definition)"), "InterfaceName")
 		}
 	case *srv6.Steering_L3Traffic_:
-		if t.L3Traffic.FibTableId < 0 {
-			return scheduler.NewInvalidValueError(errors.Errorf("fibtableid for l3 traffic can't be lower than zero, input value %v", t.L3Traffic.FibTableId), "fibtableid")
+		if t.L3Traffic.InstallationVrfId < 0 {
+			return scheduler.NewInvalidValueError(errors.Errorf("installationVrfId for l3 traffic can't be lower than zero, input value %v", t.L3Traffic.InstallationVrfId), "installationVrfId")
 		}
 		_, _, err := net.ParseCIDR(t.L3Traffic.PrefixAddress)
 		if err != nil {
@@ -201,7 +202,7 @@ func (d *SteeringDescriptor) Dependencies(key string, steering *srv6.Steering) (
 	// VRF-table dependency
 	if t, isL3Traffic := steering.Traffic.(*srv6.Steering_L3Traffic_); isL3Traffic {
 		l3Traffic := t.L3Traffic
-		tableID := l3Traffic.FibTableId
+		tableID := l3Traffic.InstallationVrfId
 		if tableID > 0 {
 			ip, _, _ := net.ParseCIDR(l3Traffic.PrefixAddress) // PrefixAddress is already validated
 			tableProto := vpp_l3.VrfTable_IPV6
