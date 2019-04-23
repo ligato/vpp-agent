@@ -562,7 +562,7 @@ Delete STN Rule
     [Return]    ${out}
 
 Put Local SID With Base End function
-    [Arguments]    ${node}    ${sidAddress}    ${fibtable}
+    [Arguments]    ${node}    ${sidAddress}    ${installationVrfId}
     [Documentation]    Add json to etcd that configurates local SID with base end function.
     ${data}=               OperatingSystem.Get File      ${CURDIR}/../resources/srv6_local_sid_with_base_end_function.json
     ${uri}=                Set Variable                  /vnf-agent/${node}/config/vpp/srv6/${AGENT_VER}/localsid/${sidAddress}
@@ -570,7 +570,7 @@ Put Local SID With Base End function
     Put Json     ${uri}    ${data}
 
 Put Local SID With End.X function
-    [Arguments]    ${node}    ${sidAddress}    ${fibtable}    ${outinterface}    ${nexthop}    ${psp}
+    [Arguments]    ${node}    ${sidAddress}    ${installationVrfId}    ${outinterface}    ${nexthop}    ${psp}
     [Documentation]    Add json to etcd that configurates local SID with X end function.
     ${data}=               OperatingSystem.Get File      ${CURDIR}/../resources/srv6_local_sid_with_x_end_function.json
     ${uri}=                Set Variable                  /vnf-agent/${node}/config/vpp/srv6/${AGENT_VER}/localsid/${sidAddress}
@@ -578,7 +578,7 @@ Put Local SID With End.X function
     Put Json     ${uri}    ${data}
 
 Put Local SID With End.T function
-    [Arguments]    ${node}    ${sidAddress}    ${fibtable}    ${vrfid}    ${psp}
+    [Arguments]    ${node}    ${sidAddress}    ${installationVrfId}    ${vrfid}    ${psp}
     [Documentation]    Add json to etcd that configurates local SID with T end function.
     ${data}=               OperatingSystem.Get File      ${CURDIR}/../resources/srv6_local_sid_with_t_end_function.json
     ${uri}=                Set Variable                  /vnf-agent/${node}/config/vpp/srv6/${AGENT_VER}/localsid/${sidAddress}
@@ -586,7 +586,7 @@ Put Local SID With End.T function
     Put Json     ${uri}    ${data}
 
 Put Local SID With End.DT4 function
-    [Arguments]    ${node}    ${sidAddress}    ${fibtable}    ${vrfid}
+    [Arguments]    ${node}    ${sidAddress}    ${installationVrfId}    ${vrfid}
     [Documentation]    Add json to etcd that configurates local SID with DT4 end function.
     ${data}=               OperatingSystem.Get File      ${CURDIR}/../resources/srv6_local_sid_with_dt4_end_function.json
     ${uri}=                Set Variable                  /vnf-agent/${node}/config/vpp/srv6/${AGENT_VER}/localsid/${sidAddress}
@@ -594,7 +594,7 @@ Put Local SID With End.DT4 function
     Put Json     ${uri}    ${data}
 
 Put Local SID With End.DT6 function
-    [Arguments]    ${node}    ${sidAddress}    ${fibtable}    ${vrfid}
+    [Arguments]    ${node}    ${sidAddress}    ${installationVrfId}    ${vrfid}
     [Documentation]    Add json to etcd that configurates local SID with DT6 end function.
     ${data}=               OperatingSystem.Get File      ${CURDIR}/../resources/srv6_local_sid_with_dt6_end_function.json
     ${uri}=                Set Variable                  /vnf-agent/${node}/config/vpp/srv6/${AGENT_VER}/localsid/${sidAddress}
@@ -602,7 +602,7 @@ Put Local SID With End.DT6 function
     Put Json     ${uri}    ${data}
 
 Put Local SID With End.DX2 function
-    [Arguments]    ${node}    ${sidAddress}    ${fibtable}    ${outinterface}    ${vlantag}=0
+    [Arguments]    ${node}    ${sidAddress}    ${installationVrfId}    ${outinterface}    ${vlantag}=0
     [Documentation]    Add json to etcd that configurates local SID with DX2 end function.
     ${data}=               OperatingSystem.Get File      ${CURDIR}/../resources/srv6_local_sid_with_dx2_end_function.json
     ${uri}=                Set Variable                  /vnf-agent/${node}/config/vpp/srv6/${AGENT_VER}/localsid/${sidAddress}
@@ -610,7 +610,7 @@ Put Local SID With End.DX2 function
     Put Json     ${uri}    ${data}
 
 Put Local SID With End.DX4 function
-    [Arguments]    ${node}    ${sidAddress}    ${fibtable}    ${outinterface}    ${nexthop}
+    [Arguments]    ${node}    ${sidAddress}    ${installationVrfId}    ${outinterface}    ${nexthop}
     [Documentation]    Add json to etcd that configurates local SID with DX4 end function.
     ${data}=               OperatingSystem.Get File      ${CURDIR}/../resources/srv6_local_sid_with_dx4_end_function.json
     ${uri}=                Set Variable                  /vnf-agent/${node}/config/vpp/srv6/${AGENT_VER}/localsid/${sidAddress}
@@ -618,7 +618,7 @@ Put Local SID With End.DX4 function
     Put Json     ${uri}    ${data}
 
 Put Local SID With End.DX6 function
-    [Arguments]    ${node}    ${sidAddress}    ${fibtable}    ${outinterface}    ${nexthop}
+    [Arguments]    ${node}    ${sidAddress}    ${installationVrfId}    ${outinterface}    ${nexthop}
     [Documentation]    Add json to etcd that configurates local SID with DX6 end function.
     ${data}=               OperatingSystem.Get File      ${CURDIR}/../resources/srv6_local_sid_with_dx6_end_function.json
     ${uri}=                Set Variable                  /vnf-agent/${node}/config/vpp/srv6/${AGENT_VER}/localsid/${sidAddress}
@@ -641,7 +641,7 @@ Delete Local SID
     [Return]    ${out}
 
 Put SRv6 Policy
-    [Arguments]    ${node}    ${bsid}    ${fibtable}    ${srhEncapsulation}    ${sprayBehaviour}    ${segmentlists}
+    [Arguments]    ${node}    ${bsid}    ${installationVrfId}    ${srhEncapsulation}    ${sprayBehaviour}    ${segmentlists}
     [Documentation]    Add SRv6 Policy config json to etcd.
     # compute segment lists part of json
     ${SLTemplate}=         OperatingSystem.Get File      ${CURDIR}/../resources/srv6_policy_segmentlist.json
@@ -675,7 +675,7 @@ Delete SRv6 Policy
     [Return]    ${out}
 
 Put SRv6 L3 Steering
-    [Arguments]    ${node}    ${name}    ${bsid}    ${fibtable}    ${prefixAddress}
+    [Arguments]    ${node}    ${name}    ${bsid}    ${installationVrfId}    ${prefixAddress}
     [Documentation]    Add SRv6 steering config json to etcd.
     ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/srv6_steering_l3.json
     ${uri}=               Set Variable                  /vnf-agent/${node}/config/vpp/srv6/${AGENT_VER}/steering/${name}

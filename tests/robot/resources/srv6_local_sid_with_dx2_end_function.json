@@ -1,6 +1,6 @@
 {
   "sid": "${sidAddress}",
-  "fib_table_id": ${fibtable},
+  "installation_vrf_id": ${installationVrfId},
   "end_function_DX2": {
     "vlan_tag": ${vlantag},
     "outgoing_interface":"${outinterface}"

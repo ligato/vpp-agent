@@ -94,7 +94,7 @@ Common Setup Used Across All Tests
     Create Route On agent_vpp_1 With IP b::/64 With Vrf Id 0 With Interface vpp1_memif1 And Next Hop ab::b
     Create Route On agent_vpp_2 With IP c::/64 With Vrf Id 0 With Interface vpp2_memif2 And Next Hop bc::c
     # configure segment routing that is common for all tests
-    Put SRv6 Policy                 node=agent_vpp_1    bsid=a::c            fibtable=0         srhEncapsulation=true    sprayBehaviour=false    segmentlists=${segmentList}
+    Put SRv6 Policy                 node=agent_vpp_1    bsid=a::c            installationVrfId=0         srhEncapsulation=true    sprayBehaviour=false    segmentlists=${segmentList}
     # preventing packet drops due to unresolved ipv6 neighbor discovery
     vpp_term: Set IPv6 neighbor  agent_vpp_1    memif1/1    ab::b    ${vpp2_memif1_mac}
     vpp_term: Set IPv6 neighbor  agent_vpp_2    memif1/1    ab::a    ${vpp1_memif1_mac}
@@ -119,7 +119,7 @@ Dynamic SR Proxy with L3-IPv6 SR-unaware service
     ## steering trafic from linux to TAPs tunnel leading to VPP
     linux: Add Route     node=agent_vpp_1    destination_ip=${linux_vpp3_tap_ipv6}    prefix=64    next_hop_ip=${vpp1_tap_ipv6}
     ## steering traffic to segment routing
-    Put SRv6 L3 Steering    node=agent_vpp_1    name=toC    bsid=a::c    fibtable=0    prefixAddress=c::/64
+    Put SRv6 L3 Steering    node=agent_vpp_1    name=toC    bsid=a::c    installationVrfId=0    prefixAddress=c::/64
     ## creating sr-proxy in and out interfaces (using memifs)
     Create Master srproxy_out_memif on agent_vpp_2 with Prefixed IP bd:1::b/32, MAC ${srproxy_out_memif_mac}, key 3 and m3.sock socket
     Create Slave service_in_memif on agent_vpp_4 with Prefixed IP bd:1::d/32, MAC ${service_in_memif_mac}, key 3 and m3.sock socket
@@ -130,7 +130,7 @@ Dynamic SR Proxy with L3-IPv6 SR-unaware service
     ## creating service routes (Service just sends received packets back)
     Create Route On agent_vpp_4 With IP ${linux_vpp3_tap_ipv6_subnet}/64 With Vrf Id 0 With Interface service_out_memif And Next Hop bd:2::b
     ## configure exit from segment routing
-    Put Local SID With End.DX6 function    node=agent_vpp_3    sidAddress=c::     fibtable=0         outinterface=vpp3_tap    nexthop=${linux_vpp3_tap_ipv6}
+    Put Local SID With End.DX6 function    node=agent_vpp_3    sidAddress=c::     installationVrfId=0         outinterface=vpp3_tap    nexthop=${linux_vpp3_tap_ipv6}
     ## path for ping packet returning back to source (no segment routing, but just plain IPv6 route):
     ## create route for ping echo to get back to vpp3 from linux enviroment in agent_vpp_3 container
     linux: Add Route    node=agent_vpp_3    destination_ip=${linux_vpp1_tap_ipv6}    prefix=64    next_hop_ip=${vpp3_tap_ipv6}
@@ -178,7 +178,7 @@ Dynamic SR Proxy with L3-IPv4 SR-unaware service
     ## steering trafic from linux to TAPs tunnel leading to VPP
     linux: Add Route     node=agent_vpp_1    destination_ip=${linux_vpp3_tap_ipv4_subnet}    prefix=24    next_hop_ip=${vpp1_tap_ipv4}
     ## steering traffic to segment routing
-    Put SRv6 L3 Steering    node=agent_vpp_1    name=toC    bsid=a::c    fibtable=0    prefixAddress=${linux_vpp3_tap_ipv4_subnet}/24
+    Put SRv6 L3 Steering    node=agent_vpp_1    name=toC    bsid=a::c    installationVrfId=0    prefixAddress=${linux_vpp3_tap_ipv4_subnet}/24
     ## creating sr-proxy in and out interfaces (using memifs)
     Create Master srproxy_out_memif on agent_vpp_2 with Prefixed IP ${srproxy_out_memif_ipv4}/24, MAC ${srproxy_out_memif_mac}, key 3 and m3.sock socket
     Create Slave service_in_memif on agent_vpp_4 with Prefixed IP ${service_in_memif_ipv4}/24, MAC ${service_in_memif_mac}, key 3 and m3.sock socket
@@ -189,7 +189,7 @@ Dynamic SR Proxy with L3-IPv4 SR-unaware service
     ## creating service routes (Service just sends received packets back)
     Create Route On agent_vpp_4 With IP ${linux_vpp3_tap_ipv4_subnet}/24 With Vrf Id 0 With Interface service_out_memif And Next Hop ${srproxy_in_memif_ipv4}
     ## configure exit from segment routing
-    Put Local SID With End.DX4 function    node=agent_vpp_3    sidAddress=c::    fibtable=0    outinterface=vpp3_tap    nexthop=${linux_vpp3_tap_ipv4}
+    Put Local SID With End.DX4 function    node=agent_vpp_3    sidAddress=c::    installationVrfId=0    outinterface=vpp3_tap    nexthop=${linux_vpp3_tap_ipv4}
     ## path for ping packet returning back to source (no segment routing, but just plain IPv4 route):
     ## create route for ping echo to get back to vpp3 from linux enviroment in agent_vpp_3 container
     linux: Add Route    node=agent_vpp_3    destination_ip=${linux_vpp1_tap_ipv4_subnet}    prefix=24    next_hop_ip=${vpp3_tap_ipv4}
