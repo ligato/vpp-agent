@@ -19,6 +19,7 @@ import (
 
 	"github.com/ligato/vpp-agent/api/models/linux/interfaces"
 	"github.com/ligato/vpp-agent/api/models/linux/l3"
+	abf "github.com/ligato/vpp-agent/api/models/vpp/abf"
 	acl "github.com/ligato/vpp-agent/api/models/vpp/acl"
 	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	ipsec "github.com/ligato/vpp-agent/api/models/vpp/ipsec"
@@ -88,6 +89,12 @@ func (dsl *DataResyncDSL) VppInterface(intf *interfaces.Interface) linuxclient.D
 // ACL adds VPP Access Control List to the RESYNC request.
 func (dsl *DataResyncDSL) ACL(acl *acl.ACL) linuxclient.DataResyncDSL {
 	dsl.vppDataResync.ACL(acl)
+	return dsl
+}
+
+// ABF adds ACL-based forwarding to the RESYNC request.
+func (dsl *DataResyncDSL) ABF(abf *abf.ABF) linuxclient.DataResyncDSL {
+	dsl.vppDataResync.ABF(abf)
 	return dsl
 }
 

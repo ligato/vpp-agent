@@ -17,6 +17,7 @@ package linuxclient
 import (
 	"github.com/ligato/vpp-agent/api/models/linux/interfaces"
 	"github.com/ligato/vpp-agent/api/models/linux/l3"
+	vpp_abf "github.com/ligato/vpp-agent/api/models/vpp/abf"
 	vpp_acl "github.com/ligato/vpp-agent/api/models/vpp/acl"
 	vpp_interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	ipsec "github.com/ligato/vpp-agent/api/models/vpp/ipsec"
@@ -66,6 +67,8 @@ type PutDSL interface {
 	VppInterface(val *vpp_interfaces.Interface) PutDSL
 	// ACL adds a request to create or update VPP Access Control List.
 	ACL(acl *vpp_acl.ACL) PutDSL
+	// ABF adds a request to create or update VPP ACL-based forwarding.
+	ABF(abf *vpp_abf.ABF) PutDSL
 	/*// BfdSession adds a request to create or update VPP bidirectional
 	// forwarding detection session.
 	BfdSession(val *vpp_bfd.SingleHopBFD_Session) PutDSL
