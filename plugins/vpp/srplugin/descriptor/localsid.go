@@ -38,7 +38,8 @@ const (
 	// dependency labels
 	localsidOutgoingInterfaceDep = "sr-localsid-outgoing-interface-exists"
 	localsidIncomingInterfaceDep = "sr-localsid-incoming-interface-exists"
-	localsidVRFDep               = "sr-localsid-vrf-table-exists"
+	localsidInstallationVRFDep   = "sr-localsid-installation-vrf-table-exists"
+	localsidLookupVRFDep         = "sr-localsid-routing-lookup-vrf-table-exists"
 )
 
 // LocalSIDDescriptor teaches KVScheduler how to configure VPP LocalSIDs.
@@ -190,11 +191,16 @@ func (d *LocalSIDDescriptor) Delete(key string, value *srv6.LocalSID, metadata i
 
 // Dependencies for LocalSIDs are represented by interface (interface in up state)
 func (d *LocalSIDDescriptor) Dependencies(key string, localSID *srv6.LocalSID) (dependencies []scheduler.Dependency) {
+	dependencies = append(dependencies, scheduler.Dependency{
+		Label: localsidInstallationVRFDep,
+		Key:   vpp_l3.VrfTableKey(localSID.InstallationVrfId, vpp_l3.VrfTable_IPV6),
+	})
+
 	switch ef := localSID.EndFunction.(type) {
 	case *srv6.LocalSID_EndFunction_T:
 		if ef.EndFunction_T.VrfId != 0 { // VRF 0 is in VPP by default
 			dependencies = append(dependencies, scheduler.Dependency{
-				Label: localsidVRFDep,
+				Label: localsidLookupVRFDep,
 				Key:   vpp_l3.VrfTableKey(ef.EndFunction_T.VrfId, vpp_l3.VrfTable_IPV6), // T refers to IPv6 VRF table
 			})
 		}
@@ -221,14 +227,14 @@ func (d *LocalSIDDescriptor) Dependencies(key string, localSID *srv6.LocalSID) (
 	case *srv6.LocalSID_EndFunction_DT4:
 		if ef.EndFunction_DT4.VrfId != 0 { // VRF 0 is in VPP by default
 			dependencies = append(dependencies, scheduler.Dependency{
-				Label: localsidVRFDep,
+				Label: localsidLookupVRFDep,
 				Key:   vpp_l3.VrfTableKey(ef.EndFunction_DT4.VrfId, vpp_l3.VrfTable_IPV4), // we want ipv4 VRF because DT4
 			})
 		}
 	case *srv6.LocalSID_EndFunction_DT6:
 		if ef.EndFunction_DT6.VrfId != 0 { // VRF 0 is in VPP by default
 			dependencies = append(dependencies, scheduler.Dependency{
-				Label: localsidVRFDep,
+				Label: localsidLookupVRFDep,
 				Key:   vpp_l3.VrfTableKey(ef.EndFunction_DT6.VrfId, vpp_l3.VrfTable_IPV6), // we want ipv6 VRF because DT6
 			})
 		}
