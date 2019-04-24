@@ -108,8 +108,6 @@ func (h *InterfaceVppHandler) WatchDHCPLeases(leasesCh chan<- *vppcalls.Lease) e
 					continue
 				}
 				lease := dhcpEvent.Lease
-				var hostMac net.HardwareAddr
-				copy(hostMac, lease.HostMac)
 				var hostAddr, routerAddr string
 				if uintToBool(lease.IsIPv6) {
 					hostAddr = fmt.Sprintf("%s/%d", net.IP(lease.HostAddress).To16().String(), uint32(lease.MaskWidth))
@@ -125,7 +123,7 @@ func (h *InterfaceVppHandler) WatchDHCPLeases(leasesCh chan<- *vppcalls.Lease) e
 					IsIPv6:        uintToBool(lease.IsIPv6),
 					HostAddress:   hostAddr,
 					RouterAddress: routerAddr,
-					HostMac:       hostMac.String(),
+					HostMac:       net.HardwareAddr(lease.HostMac).String(),
 				}
 			}
 		}
