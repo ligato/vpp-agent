@@ -1,16 +1,16 @@
-//  Copyright (c) 2019 Cisco and/or its affiliates.
+// Copyright (c) 2019 Bell Canada, Pantheon Technologies and/or its affiliates.
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at:
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at:
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
+//     http://www.apache.org/licenses/LICENSE-2.0
 //
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 package vpp1904_test
 
@@ -67,8 +67,8 @@ func TestAddLocalSID(t *testing.T) {
 		{
 			Name: "addition with end behaviour",
 			Input: &srv6.LocalSID{
-				Sid:        sidToStr(sidA),
-				FibTableId: 10,
+				Sid:               sidToStr(sidA),
+				InstallationVrfId: 10,
 				EndFunction: &srv6.LocalSID_BaseEndFunction{
 					BaseEndFunction: &srv6.LocalSID_End{
 						Psp: true,
@@ -79,15 +79,15 @@ func TestAddLocalSID(t *testing.T) {
 				IsDel:    0,
 				Localsid: sidA,
 				Behavior: vpp1904.BehaviorEnd,
-				FibTable: 10,
+				FibTable: 10, // installationVrfId
 				EndPsp:   1,
 			},
 		},
 		{
 			Name: "addition with endX behaviour (ipv6 next hop address)",
 			Input: &srv6.LocalSID{
-				Sid:        sidToStr(sidA),
-				FibTableId: 10,
+				Sid:               sidToStr(sidA),
+				InstallationVrfId: 10,
 				EndFunction: &srv6.LocalSID_EndFunction_X{
 					EndFunction_X: &srv6.LocalSID_EndX{
 						Psp:               true,
@@ -100,7 +100,7 @@ func TestAddLocalSID(t *testing.T) {
 				IsDel:     0,
 				Localsid:  sidA,
 				Behavior:  vpp1904.BehaviorX,
-				FibTable:  10,
+				FibTable:  10, // installationVrfId
 				EndPsp:    1,
 				SwIfIndex: swIndexA,
 				NhAddr6:   nextHop,
@@ -109,8 +109,8 @@ func TestAddLocalSID(t *testing.T) {
 		{
 			Name: "addition with endX behaviour (ipv4 next hop address)",
 			Input: &srv6.LocalSID{
-				Sid:        sidToStr(sidA),
-				FibTableId: 10,
+				Sid:               sidToStr(sidA),
+				InstallationVrfId: 10,
 				EndFunction: &srv6.LocalSID_EndFunction_X{
 					EndFunction_X: &srv6.LocalSID_EndX{
 						Psp:               true,
@@ -123,7 +123,7 @@ func TestAddLocalSID(t *testing.T) {
 				IsDel:     0,
 				Localsid:  sidA,
 				Behavior:  vpp1904.BehaviorX,
-				FibTable:  10,
+				FibTable:  10, // installationVrfId
 				EndPsp:    1,
 				SwIfIndex: swIndexA,
 				NhAddr4:   nextHopIPv4,
@@ -132,8 +132,8 @@ func TestAddLocalSID(t *testing.T) {
 		{
 			Name: "addition with endT behaviour",
 			Input: &srv6.LocalSID{
-				Sid:        sidToStr(sidA),
-				FibTableId: 10,
+				Sid:               sidToStr(sidA),
+				InstallationVrfId: 10,
 				EndFunction: &srv6.LocalSID_EndFunction_T{
 					EndFunction_T: &srv6.LocalSID_EndT{
 						Psp:   true,
@@ -145,7 +145,7 @@ func TestAddLocalSID(t *testing.T) {
 				IsDel:     0,
 				Localsid:  sidA,
 				Behavior:  vpp1904.BehaviorT,
-				FibTable:  10,
+				FibTable:  10, // installationVrfId
 				SwIfIndex: 11,
 				EndPsp:    1,
 			},
@@ -153,8 +153,8 @@ func TestAddLocalSID(t *testing.T) {
 		{
 			Name: "addition with endDX2 behaviour",
 			Input: &srv6.LocalSID{
-				Sid:        sidToStr(sidA),
-				FibTableId: 10,
+				Sid:               sidToStr(sidA),
+				InstallationVrfId: 10,
 				EndFunction: &srv6.LocalSID_EndFunction_DX2{
 					EndFunction_DX2: &srv6.LocalSID_EndDX2{
 						VlanTag:           1,
@@ -166,7 +166,7 @@ func TestAddLocalSID(t *testing.T) {
 				IsDel:     0,
 				Localsid:  sidA,
 				Behavior:  vpp1904.BehaviorDX2,
-				FibTable:  10,
+				FibTable:  10, // installationVrfId
 				EndPsp:    0,
 				VlanIndex: 1,
 				SwIfIndex: swIndexA,
@@ -175,8 +175,8 @@ func TestAddLocalSID(t *testing.T) {
 		{
 			Name: "addition with endDX4 behaviour",
 			Input: &srv6.LocalSID{
-				Sid:        sidToStr(sidA),
-				FibTableId: 10,
+				Sid:               sidToStr(sidA),
+				InstallationVrfId: 10,
 				EndFunction: &srv6.LocalSID_EndFunction_DX4{
 					EndFunction_DX4: &srv6.LocalSID_EndDX4{
 						NextHop:           nextHopIPv4.String(),
@@ -188,7 +188,7 @@ func TestAddLocalSID(t *testing.T) {
 				IsDel:     0,
 				Localsid:  sidA,
 				Behavior:  vpp1904.BehaviorDX4,
-				FibTable:  10,
+				FibTable:  10, // installationVrfId
 				EndPsp:    0,
 				SwIfIndex: swIndexA,
 				NhAddr4:   nextHopIPv4,
@@ -197,8 +197,8 @@ func TestAddLocalSID(t *testing.T) {
 		{
 			Name: "addition with endDX6 behaviour",
 			Input: &srv6.LocalSID{
-				Sid:        sidToStr(sidA),
-				FibTableId: 10,
+				Sid:               sidToStr(sidA),
+				InstallationVrfId: 10,
 				EndFunction: &srv6.LocalSID_EndFunction_DX6{
 					EndFunction_DX6: &srv6.LocalSID_EndDX6{
 						NextHop:           nextHop.String(),
@@ -210,7 +210,7 @@ func TestAddLocalSID(t *testing.T) {
 				IsDel:     0,
 				Localsid:  sidA,
 				Behavior:  vpp1904.BehaviorDX6,
-				FibTable:  10,
+				FibTable:  10, // installationVrfId
 				EndPsp:    0,
 				SwIfIndex: swIndexA,
 				NhAddr6:   nextHop,
@@ -219,8 +219,8 @@ func TestAddLocalSID(t *testing.T) {
 		{
 			Name: "addition with endDT4 behaviour",
 			Input: &srv6.LocalSID{
-				Sid:        sidToStr(sidA),
-				FibTableId: 10,
+				Sid:               sidToStr(sidA),
+				InstallationVrfId: 10,
 				EndFunction: &srv6.LocalSID_EndFunction_DT4{
 					EndFunction_DT4: &srv6.LocalSID_EndDT4{
 						VrfId: 5,
@@ -231,7 +231,7 @@ func TestAddLocalSID(t *testing.T) {
 				IsDel:     0,
 				Localsid:  sidA,
 				Behavior:  vpp1904.BehaviorDT4,
-				FibTable:  10,
+				FibTable:  10, // installationVrfId
 				SwIfIndex: 5,
 				EndPsp:    0,
 			},
@@ -239,8 +239,8 @@ func TestAddLocalSID(t *testing.T) {
 		{
 			Name: "addition with endDT6 behaviour",
 			Input: &srv6.LocalSID{
-				Sid:        sidToStr(sidA),
-				FibTableId: 10,
+				Sid:               sidToStr(sidA),
+				InstallationVrfId: 10,
 				EndFunction: &srv6.LocalSID_EndFunction_DT6{
 					EndFunction_DT6: &srv6.LocalSID_EndDT6{
 						VrfId: 5,
@@ -251,7 +251,7 @@ func TestAddLocalSID(t *testing.T) {
 				IsDel:     0,
 				Localsid:  sidA,
 				Behavior:  vpp1904.BehaviorDT6,
-				FibTable:  10,
+				FibTable:  10, // installationVrfId
 				SwIfIndex: 5,
 				EndPsp:    0,
 			},
@@ -264,8 +264,8 @@ func TestAddLocalSID(t *testing.T) {
 				&interfaces.SwInterfaceDetails{Tag: toIFaceByte(ifaceB), InterfaceName: toIFaceByte(memif2)},
 			},
 			Input: &srv6.LocalSID{
-				Sid:        sidToStr(sidA),
-				FibTableId: 10,
+				Sid:               sidToStr(sidA),
+				InstallationVrfId: 10,
 				EndFunction: &srv6.LocalSID_EndFunction_AD{
 					EndFunction_AD: &srv6.LocalSID_EndAD{
 						L3ServiceAddress:  nextHopIPv4.String(),
@@ -286,8 +286,8 @@ func TestAddLocalSID(t *testing.T) {
 				&interfaces.SwInterfaceDetails{Tag: toIFaceByte(ifaceB), InterfaceName: toIFaceByte(memif2)},
 			},
 			Input: &srv6.LocalSID{
-				Sid:        sidToStr(sidA),
-				FibTableId: 10,
+				Sid:               sidToStr(sidA),
+				InstallationVrfId: 10,
 				EndFunction: &srv6.LocalSID_EndFunction_AD{
 					EndFunction_AD: &srv6.LocalSID_EndAD{ //missing L3ServiceAddress means it is L2 service
 						OutgoingInterface: ifaceA,
@@ -307,8 +307,8 @@ func TestAddLocalSID(t *testing.T) {
 				&interfaces.SwInterfaceDetails{Tag: toIFaceByte(ifaceB), InterfaceName: toIFaceByte("tap0")},
 			},
 			Input: &srv6.LocalSID{
-				Sid:        sidToStr(sidA),
-				FibTableId: 10,
+				Sid:               sidToStr(sidA),
+				InstallationVrfId: 10,
 				EndFunction: &srv6.LocalSID_EndFunction_AD{
 					EndFunction_AD: &srv6.LocalSID_EndAD{
 						L3ServiceAddress:  nextHopIPv4.String(),
@@ -329,8 +329,8 @@ func TestAddLocalSID(t *testing.T) {
 				&interfaces.SwInterfaceDetails{Tag: toIFaceByte(ifaceB), InterfaceName: toIFaceByte("vxlan0")},
 			},
 			Input: &srv6.LocalSID{
-				Sid:        sidToStr(sidA),
-				FibTableId: 10,
+				Sid:               sidToStr(sidA),
+				InstallationVrfId: 10,
 				EndFunction: &srv6.LocalSID_EndFunction_AD{
 					EndFunction_AD: &srv6.LocalSID_EndAD{
 						L3ServiceAddress:  nextHopIPv4.String(),
@@ -351,8 +351,8 @@ func TestAddLocalSID(t *testing.T) {
 				&interfaces.SwInterfaceDetails{Tag: toIFaceByte(ifaceB), InterfaceName: toIFaceByte("vmxnet3-0")},
 			},
 			Input: &srv6.LocalSID{
-				Sid:        sidToStr(sidA),
-				FibTableId: 10,
+				Sid:               sidToStr(sidA),
+				InstallationVrfId: 10,
 				EndFunction: &srv6.LocalSID_EndFunction_AD{
 					EndFunction_AD: &srv6.LocalSID_EndAD{
 						L3ServiceAddress:  nextHopIPv4.String(),
@@ -373,8 +373,8 @@ func TestAddLocalSID(t *testing.T) {
 				&interfaces.SwInterfaceDetails{Tag: toIFaceByte(ifaceB), InterfaceName: toIFaceByte("unknown0")},
 			},
 			Input: &srv6.LocalSID{
-				Sid:        sidToStr(sidA),
-				FibTableId: 10,
+				Sid:               sidToStr(sidA),
+				InstallationVrfId: 10,
 				EndFunction: &srv6.LocalSID_EndFunction_AD{
 					EndFunction_AD: &srv6.LocalSID_EndAD{
 						L3ServiceAddress:  nextHopIPv4.String(),
@@ -391,8 +391,8 @@ func TestAddLocalSID(t *testing.T) {
 			Name:          "fail due to missing end function",
 			ExpectFailure: true,
 			Input: &srv6.LocalSID{
-				Sid:        sidToStr(sidA),
-				FibTableId: 0,
+				Sid:               sidToStr(sidA),
+				InstallationVrfId: 0,
 			},
 		},
 		{
@@ -400,8 +400,8 @@ func TestAddLocalSID(t *testing.T) {
 			FailInVPP:     true,
 			ExpectFailure: true,
 			Input: &srv6.LocalSID{
-				Sid:        sidToStr(sidA),
-				FibTableId: 0,
+				Sid:               sidToStr(sidA),
+				InstallationVrfId: 0,
 				EndFunction: &srv6.LocalSID_BaseEndFunction{
 					BaseEndFunction: &srv6.LocalSID_End{
 						Psp: true,
@@ -419,8 +419,8 @@ func TestAddLocalSID(t *testing.T) {
 				&interfaces.SwInterfaceDetails{Tag: toIFaceByte(ifaceB), InterfaceName: toIFaceByte(memif2)},
 			},
 			Input: &srv6.LocalSID{
-				Sid:        sidToStr(sidA),
-				FibTableId: 10,
+				Sid:               sidToStr(sidA),
+				InstallationVrfId: 10,
 				EndFunction: &srv6.LocalSID_EndFunction_AD{
 					EndFunction_AD: &srv6.LocalSID_EndAD{
 						L3ServiceAddress:  nextHopIPv4.String(),
@@ -436,8 +436,8 @@ func TestAddLocalSID(t *testing.T) {
 			ExpectFailure: true,
 			cliMode:       true,
 			Input: &srv6.LocalSID{
-				Sid:        sidToStr(sidA),
-				FibTableId: 10,
+				Sid:               sidToStr(sidA),
+				InstallationVrfId: 10,
 				EndFunction: &srv6.LocalSID_EndFunction_AD{
 					EndFunction_AD: &srv6.LocalSID_EndAD{
 						L3ServiceAddress:  nextHopIPv4.String(),
@@ -455,8 +455,8 @@ func TestAddLocalSID(t *testing.T) {
 				&interfaces.SwInterfaceDetails{Tag: toIFaceByte(ifaceB), InterfaceName: toIFaceByte(memif2)},
 			},
 			Input: &srv6.LocalSID{
-				Sid:        sidToStr(sidA),
-				FibTableId: 10,
+				Sid:               sidToStr(sidA),
+				InstallationVrfId: 10,
 				EndFunction: &srv6.LocalSID_EndFunction_AD{
 					EndFunction_AD: &srv6.LocalSID_EndAD{
 						L3ServiceAddress:  nextHopIPv4.String(),
@@ -474,8 +474,8 @@ func TestAddLocalSID(t *testing.T) {
 				&interfaces.SwInterfaceDetails{Tag: toIFaceByte(ifaceA), InterfaceName: toIFaceByte(memif1)},
 			},
 			Input: &srv6.LocalSID{
-				Sid:        sidToStr(sidA),
-				FibTableId: 10,
+				Sid:               sidToStr(sidA),
+				InstallationVrfId: 10,
 				EndFunction: &srv6.LocalSID_EndFunction_AD{
 					EndFunction_AD: &srv6.LocalSID_EndAD{
 						L3ServiceAddress:  nextHopIPv4.String(),
@@ -489,8 +489,8 @@ func TestAddLocalSID(t *testing.T) {
 			Name:          "missing interface in swIndexes (addition with endX behaviour)",
 			ExpectFailure: true,
 			Input: &srv6.LocalSID{
-				Sid:        sidToStr(sidA),
-				FibTableId: 10,
+				Sid:               sidToStr(sidA),
+				InstallationVrfId: 10,
 				EndFunction: &srv6.LocalSID_EndFunction_X{
 					EndFunction_X: &srv6.LocalSID_EndX{
 						Psp:               true,
@@ -504,7 +504,7 @@ func TestAddLocalSID(t *testing.T) {
 			Name:          "invalid IP address (addition with endX behaviour)",
 			ExpectFailure: true,
 			Input: &srv6.LocalSID{
-				FibTableId: 10,
+				InstallationVrfId: 10,
 				EndFunction: &srv6.LocalSID_EndFunction_X{
 					EndFunction_X: &srv6.LocalSID_EndX{
 						Psp:               true,
@@ -518,8 +518,8 @@ func TestAddLocalSID(t *testing.T) {
 			Name:          "missing interface in swIndexes (addition with endDX2 behaviour)",
 			ExpectFailure: true,
 			Input: &srv6.LocalSID{
-				Sid:        sidToStr(sidA),
-				FibTableId: 10,
+				Sid:               sidToStr(sidA),
+				InstallationVrfId: 10,
 				EndFunction: &srv6.LocalSID_EndFunction_DX2{
 					EndFunction_DX2: &srv6.LocalSID_EndDX2{
 						VlanTag:           1,
@@ -532,8 +532,8 @@ func TestAddLocalSID(t *testing.T) {
 			Name:          "missing interface in swIndexes (addition with endDX4 behaviour)",
 			ExpectFailure: true,
 			Input: &srv6.LocalSID{
-				Sid:        sidToStr(sidA),
-				FibTableId: 10,
+				Sid:               sidToStr(sidA),
+				InstallationVrfId: 10,
 				EndFunction: &srv6.LocalSID_EndFunction_DX4{
 					EndFunction_DX4: &srv6.LocalSID_EndDX4{
 						NextHop:           nextHopIPv4.String(),
@@ -546,8 +546,8 @@ func TestAddLocalSID(t *testing.T) {
 			Name:          "invalid IP address (addition with endDX4 behaviour)",
 			ExpectFailure: true,
 			Input: &srv6.LocalSID{
-				Sid:        sidToStr(sidA),
-				FibTableId: 10,
+				Sid:               sidToStr(sidA),
+				InstallationVrfId: 10,
 				EndFunction: &srv6.LocalSID_EndFunction_DX4{
 					EndFunction_DX4: &srv6.LocalSID_EndDX4{
 						NextHop:           invalidIPAddress,
@@ -560,8 +560,8 @@ func TestAddLocalSID(t *testing.T) {
 			Name:          "rejection of IPv6 addresses (addition with endDX4 behaviour)",
 			ExpectFailure: true,
 			Input: &srv6.LocalSID{
-				Sid:        sidToStr(sidA),
-				FibTableId: 10,
+				Sid:               sidToStr(sidA),
+				InstallationVrfId: 10,
 				EndFunction: &srv6.LocalSID_EndFunction_DX4{
 					EndFunction_DX4: &srv6.LocalSID_EndDX4{
 						NextHop:           nextHop.String(),
@@ -574,8 +574,8 @@ func TestAddLocalSID(t *testing.T) {
 			Name:          "missing interface in swIndexes (addition with endDX6 behaviour)",
 			ExpectFailure: true,
 			Input: &srv6.LocalSID{
-				Sid:        sidToStr(sidA),
-				FibTableId: 10,
+				Sid:               sidToStr(sidA),
+				InstallationVrfId: 10,
 				EndFunction: &srv6.LocalSID_EndFunction_DX6{
 					EndFunction_DX6: &srv6.LocalSID_EndDX6{
 						NextHop:           nextHop.String(),
@@ -588,8 +588,8 @@ func TestAddLocalSID(t *testing.T) {
 			Name:          "invalid IP address (addition with endDX6 behaviour)",
 			ExpectFailure: true,
 			Input: &srv6.LocalSID{
-				Sid:        sidToStr(sidA),
-				FibTableId: 10,
+				Sid:               sidToStr(sidA),
+				InstallationVrfId: 10,
 				EndFunction: &srv6.LocalSID_EndFunction_DX6{
 					EndFunction_DX6: &srv6.LocalSID_EndDX6{
 						NextHop:           invalidIPAddress,
@@ -679,8 +679,8 @@ func TestDeleteLocalSID(t *testing.T) {
 			defer teardown(ctx)
 			// data and prepare case
 			localsid := &srv6.LocalSID{
-				Sid:        td.Sid.String(),
-				FibTableId: 10,
+				Sid:               td.Sid.String(),
+				InstallationVrfId: 10,
 				EndFunction: &srv6.LocalSID_BaseEndFunction{
 					BaseEndFunction: &srv6.LocalSID_End{
 						Psp: true,
@@ -767,7 +767,7 @@ func TestAddPolicy(t *testing.T) {
 				Expect(catchedMsgs).To(HaveLen(1))
 				Expect(catchedMsgs[0]).To(Equal(&sr.SrPolicyAdd{
 					BsidAddr: sidA.Addr,
-					FibTable: 10,
+					FibTable: 10, // installationVrfId
 					Type:     boolToUint(false),
 					IsEncap:  boolToUint(true),
 					Sids: sr.Srv6SidList{
@@ -788,7 +788,7 @@ func TestAddPolicy(t *testing.T) {
 				Expect(catchedMsgs).To(HaveLen(2))
 				Expect(catchedMsgs[0]).To(Equal(&sr.SrPolicyAdd{
 					BsidAddr: sidA.Addr,
-					FibTable: 10,
+					FibTable: 10, // installationVrfId
 					Type:     boolToUint(false),
 					IsEncap:  boolToUint(true),
 					Sids: sr.Srv6SidList{
@@ -800,7 +800,7 @@ func TestAddPolicy(t *testing.T) {
 				Expect(catchedMsgs[1]).To(Equal(&sr.SrPolicyMod{
 					BsidAddr:  sidA.Addr,
 					Operation: vpp1904.AddSRList,
-					FibTable:  10,
+					FibTable:  10, // installationVrfId
 					Sids: sr.Srv6SidList{
 						Weight:  1,
 						NumSids: 3,
@@ -820,10 +820,10 @@ func TestAddPolicy(t *testing.T) {
 		{
 			Name: "invalid binding SID in policy",
 			Policy: &srv6.Policy{
-				Bsid:             invalidIPAddress,
-				FibTableId:       10,
-				SprayBehaviour:   false,
-				SrhEncapsulation: true,
+				Bsid:              invalidIPAddress,
+				InstallationVrfId: 10,
+				SprayBehaviour:    false,
+				SrhEncapsulation:  true,
 				SegmentLists: []*srv6.Policy_SegmentList{
 					&srv6.Policy_SegmentList{
 						Weight:   1,
@@ -952,7 +952,7 @@ func TestAddPolicySegmentList(t *testing.T) {
 				Expect(catchedMsg).To(Equal(&sr.SrPolicyMod{
 					BsidAddr:  sidA.Addr,
 					Operation: vpp1904.AddSRList,
-					FibTable:  10,
+					FibTable:  10, // installationVrfId
 					Sids: sr.Srv6SidList{
 						Weight:  1,
 						NumSids: 3,
@@ -976,10 +976,10 @@ func TestAddPolicySegmentList(t *testing.T) {
 		{
 			Name: "invalid binding SID (not IP address) in policy",
 			Policy: &srv6.Policy{
-				Bsid:             invalidIPAddress,
-				FibTableId:       10,
-				SprayBehaviour:   false,
-				SrhEncapsulation: true,
+				Bsid:              invalidIPAddress,
+				InstallationVrfId: 10,
+				SprayBehaviour:    false,
+				SrhEncapsulation:  true,
 			},
 			PolicySegmentList: policySegmentList(1, sidA.Addr, sidB.Addr, sidC.Addr),
 			MockReply:         &sr.SrPolicyModReply{},
@@ -1034,7 +1034,7 @@ func TestDeletePolicySegmentList(t *testing.T) {
 					BsidAddr:  sidA.Addr,
 					Operation: vpp1904.DeleteSRList,
 					SlIndex:   111,
-					FibTable:  10,
+					FibTable:  10, // installationVrfId
 					Sids: sr.Srv6SidList{
 						Weight:  1,
 						NumSids: 3,
@@ -1115,8 +1115,8 @@ func testAddRemoveSteering(t *testing.T, removal bool) {
 				},
 				Traffic: &srv6.Steering_L3Traffic_{
 					L3Traffic: &srv6.Steering_L3Traffic{
-						FibTableId:    10,
-						PrefixAddress: "1::/64",
+						InstallationVrfId: 10,
+						PrefixAddress:     "1::/64",
 					},
 				},
 			},
@@ -1142,8 +1142,8 @@ func testAddRemoveSteering(t *testing.T, removal bool) {
 				},
 				Traffic: &srv6.Steering_L3Traffic_{
 					L3Traffic: &srv6.Steering_L3Traffic{
-						FibTableId:    10,
-						PrefixAddress: "1.2.3.4/24",
+						InstallationVrfId: 10,
+						PrefixAddress:     "1.2.3.4/24",
 					},
 				},
 			},
@@ -1193,8 +1193,8 @@ func testAddRemoveSteering(t *testing.T, removal bool) {
 				},
 				Traffic: &srv6.Steering_L3Traffic_{
 					L3Traffic: &srv6.Steering_L3Traffic{
-						FibTableId:    10,
-						PrefixAddress: "1::/64",
+						InstallationVrfId: 10,
+						PrefixAddress:     "1::/64",
 					},
 				},
 			},
@@ -1217,8 +1217,8 @@ func testAddRemoveSteering(t *testing.T, removal bool) {
 			Steering: &srv6.Steering{
 				Traffic: &srv6.Steering_L3Traffic_{
 					L3Traffic: &srv6.Steering_L3Traffic{
-						FibTableId:    10,
-						PrefixAddress: "1::/64",
+						InstallationVrfId: 10,
+						PrefixAddress:     "1::/64",
 					},
 				},
 			},
@@ -1247,8 +1247,8 @@ func testAddRemoveSteering(t *testing.T, removal bool) {
 				},
 				Traffic: &srv6.Steering_L3Traffic_{
 					L3Traffic: &srv6.Steering_L3Traffic{
-						FibTableId:    10,
-						PrefixAddress: invalidIPAddress,
+						InstallationVrfId: 10,
+						PrefixAddress:     invalidIPAddress,
 					},
 				},
 			},
@@ -1282,8 +1282,8 @@ func testAddRemoveSteering(t *testing.T, removal bool) {
 				},
 				Traffic: &srv6.Steering_L3Traffic_{
 					L3Traffic: &srv6.Steering_L3Traffic{
-						FibTableId:    10,
-						PrefixAddress: "1::/64",
+						InstallationVrfId: 10,
+						PrefixAddress:     "1::/64",
 					},
 				},
 			},
@@ -1300,8 +1300,8 @@ func testAddRemoveSteering(t *testing.T, removal bool) {
 				},
 				Traffic: &srv6.Steering_L3Traffic_{
 					L3Traffic: &srv6.Steering_L3Traffic{
-						FibTableId:    10,
-						PrefixAddress: "1::/64",
+						InstallationVrfId: 10,
+						PrefixAddress:     "1::/64",
 					},
 				},
 			},
@@ -1456,13 +1456,13 @@ func parseIPv6(str string) (net.IP, error) {
 	return ipv6, nil
 }
 
-func policy(bsid srv6.SID, fibtableID uint32, sprayBehaviour bool, srhEncapsulation bool, segmentLists ...*srv6.Policy_SegmentList) *srv6.Policy {
+func policy(bsid srv6.SID, installationVrfId uint32, sprayBehaviour bool, srhEncapsulation bool, segmentLists ...*srv6.Policy_SegmentList) *srv6.Policy {
 	return &srv6.Policy{
-		Bsid:             bsid.String(),
-		FibTableId:       fibtableID,
-		SprayBehaviour:   sprayBehaviour,
-		SrhEncapsulation: srhEncapsulation,
-		SegmentLists:     segmentLists,
+		Bsid:              bsid.String(),
+		InstallationVrfId: installationVrfId,
+		SprayBehaviour:    sprayBehaviour,
+		SrhEncapsulation:  srhEncapsulation,
+		SegmentLists:      segmentLists,
 	}
 }
 

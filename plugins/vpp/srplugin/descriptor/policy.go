@@ -18,11 +18,11 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/ligato/cn-infra/logging"
+	"github.com/ligato/vpp-agent/api/models/vpp/l3"
 	srv6 "github.com/ligato/vpp-agent/api/models/vpp/srv6"
 	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/vpp/srplugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/vpp/srplugin/vppcalls"
-	"github.com/ligato/vpp-agent/api/models/vpp/l3"
 )
 
 const (
@@ -84,8 +84,8 @@ func NewPolicyDescriptor(srHandler vppcalls.SRv6VppAPI, log logging.PluginLogger
 
 // Validate validates VPP policies.
 func (d *PolicyDescriptor) Validate(key string, policy *srv6.Policy) error {
-	if policy.GetFibTableId() < 0 {
-		return scheduler.NewInvalidValueError(errors.Errorf("fibtableid can't be lower than zero, input value %v)", policy.GetFibTableId()), "fibtableid")
+	if policy.GetInstallationVrfId() < 0 {
+		return scheduler.NewInvalidValueError(errors.Errorf("installationVrfId can't be lower than zero, input value %v)", policy.GetInstallationVrfId()), "installationVrfId")
 	}
 	_, err := ParseIPv6(policy.GetBsid())
 	if err != nil {
@@ -200,10 +200,10 @@ func (d *PolicyDescriptor) UpdateWithRecreate(key string, oldPolicy, newPolicy *
 }
 
 func (d *PolicyDescriptor) Dependencies(key string, policy *srv6.Policy) (dependencies []scheduler.Dependency) {
-	if policy.FibTableId != 0 {
+	if policy.InstallationVrfId != 0 {
 		dependencies = append(dependencies, scheduler.Dependency{
 			Label: policyVRFDep,
-			Key:   vpp_l3.VrfTableKey(policy.FibTableId, vpp_l3.VrfTable_IPV6),
+			Key:   vpp_l3.VrfTableKey(policy.InstallationVrfId, vpp_l3.VrfTable_IPV6),
 		})
 	}
 	return dependencies
@@ -217,7 +217,7 @@ func (d *PolicyDescriptor) EquivalentPolicies(key string, oldPolicy, newPolicy *
 }
 
 func (d *PolicyDescriptor) equivalentPolicyAttributes(oldPolicy, newPolicy *srv6.Policy) bool {
-	return oldPolicy.FibTableId == newPolicy.FibTableId &&
+	return oldPolicy.InstallationVrfId == newPolicy.InstallationVrfId &&
 		equivalentSIDs(oldPolicy.Bsid, newPolicy.Bsid) &&
 		oldPolicy.SprayBehaviour == newPolicy.SprayBehaviour &&
 		oldPolicy.SrhEncapsulation == newPolicy.SrhEncapsulation
