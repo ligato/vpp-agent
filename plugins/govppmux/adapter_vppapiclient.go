@@ -25,17 +25,18 @@ import (
 )
 
 var (
-	UseSocketClient = os.Getenv("GOVPPMUX_NOSOCK") == ""
+	DisabledSocketClient = os.Getenv("GOVPPMUX_NOSOCK") != ""
 )
 
 // NewVppAdapter returns real vpp api adapter, used for building with vppapiclient library.
-func NewVppAdapter(addr string) adapter.VppAPI {
-	if UseSocketClient {
-		// addr is used as socket name
-		return socketclient.NewVppClient(addr)
+func NewVppAdapter(addr string, useShm bool) adapter.VppAPI {
+	if DisabledSocketClient || useShm {
+		// addr is used as shm prefix
+		return vppapiclient.NewVppClient(addr)
 	}
-	// addr is used as shm prefix
-	return vppapiclient.NewVppClient(addr)
+	// addr is used as socket name
+	return socketclient.NewVppClient(addr)
+
 }
 
 // NewStatsAdapter returns stats vpp api adapter, used for reading statistics with vppapiclient library.

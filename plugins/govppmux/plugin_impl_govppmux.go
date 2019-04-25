@@ -83,6 +83,8 @@ type Config struct {
 	HealthCheckReplyTimeout  time.Duration `json:"health-check-reply-timeout"`
 	HealthCheckThreshold     int           `json:"health-check-threshold"`
 	ReplyTimeout             time.Duration `json:"reply-timeout"`
+	// Connect to VPP for configuration requests via the shared memory instead of through the socket.
+	ConnectViaShm bool `json:"connect-via-shm"`
 	// The prefix prepended to the name used for shared memory (SHM) segments. If not set,
 	// shared memory segments are created directly in the SHM directory /dev/shm.
 	ShmPrefix       string `json:"shm-prefix"`
@@ -142,7 +144,7 @@ func (p *Plugin) Init() error {
 	}
 
 	if p.vppAdapter == nil {
-		p.vppAdapter = NewVppAdapter(p.config.ShmPrefix)
+		p.vppAdapter = NewVppAdapter(p.config.ShmPrefix, p.config.ConnectViaShm)
 	} else {
 		// this is used for testing purposes
 		p.Log.Info("Reusing existing vppAdapter")
