@@ -3,6 +3,12 @@ package utils
 import (
 	"fmt"
 	"sort"
+	"strings"
+
+	"github.com/ligato/vpp-agent/api/models/linux"
+	"github.com/ligato/vpp-agent/api/models/vpp"
+
+	"github.com/ligato/vpp-agent/api/configurator"
 
 	"github.com/ligato/cn-infra/health/statuscheck/model/status"
 
@@ -28,230 +34,6 @@ type VppMetaData struct {
 	Key string
 }
 
-// ACLConfigWithMD contains a data record for interface configuration
-// and its etcd metadata.
-type ACLConfigWithMD struct {
-	Metadata VppMetaData
-	ACL      *acl.ACL
-}
-
-// InterfaceWithMD contains a data record for interface and its
-// etcd metadata.
-type ACLWithMD struct {
-	Config *ACLConfigWithMD
-}
-
-// IfConfigWithMD contains a data record for interface configuration
-// and its etcd metadata.
-type IfConfigWithMD struct {
-	Metadata  VppMetaData
-	Interface *interfaces.Interface
-}
-
-// IfStateWithMD contains a data record for interface state and its
-// etcd metadata.
-type IfStateWithMD struct {
-	Metadata       VppMetaData
-	InterfaceState *interfaces.InterfaceState
-}
-
-// InterfaceWithMD contains a data record for interface and its
-// etcd metadata.
-type InterfaceWithMD struct {
-	Config *IfConfigWithMD
-	State  *IfStateWithMD
-}
-
-// BdConfigWithMD contains a data record for interface configuration
-// and its etcd metadata.
-type BdConfigWithMD struct {
-	Metadata     VppMetaData
-	BridgeDomain *l2.BridgeDomain
-}
-
-// BdStateWithMD contains a Bridge Domain state data record and its etcd
-// metadata.
-type BdStateWithMD struct {
-	Metadata VppMetaData
-	//BridgeDomainState *l2.BridgeDomainState_BridgeDomain
-}
-
-// BdWithMD contains a data record for interface and its
-// etcd metadata.
-type BdWithMD struct {
-	Config *BdConfigWithMD
-	State  *BdStateWithMD
-}
-
-// FibTableConfigWithMD contains a data record for interface configuration
-// and its etcd metadata.
-type FibTableConfigWithMD struct {
-	Metadata VppMetaData
-	FIBEntry *l2.FIBEntry
-}
-
-// FibTableWithMD contains a data record for interface and its
-// etcd metadata.
-type FibTableWithMD struct {
-	Config *FibTableConfigWithMD
-}
-
-// XconnectConfigWithMD contains a data record for interface configuration
-// and its etcd metadata.
-type XconnectConfigWithMD struct {
-	Metadata VppMetaData
-	Xconnect *l2.XConnectPair
-}
-
-// XconnectWithMD contains a data record for interface and its
-// etcd metadata.
-type XconnectWithMD struct {
-	Config *XconnectConfigWithMD
-}
-
-// ARPConfigWithMD contains a data record for interface configuration
-// and its etcd metadata.
-type ARPConfigWithMD struct {
-	Metadata VppMetaData
-	ARPEntry *l3.ARPEntry
-}
-
-// ARPWithMD contains a data record for interface and its
-// etcd metadata.
-type ARPWithMD struct {
-	Config *ARPConfigWithMD
-}
-
-// StaticRouterConfigWithMD contains a data record for interface configuration
-// and its etcd metadata.
-type StaticRoutesConfigWithMD struct {
-	Metadata VppMetaData
-	Route    *l3.Route
-}
-
-// StaticRouterWithMD contains a data record for interface and its
-// etcd metadata.
-type StaticRoutesWithMD struct {
-	Config *StaticRoutesConfigWithMD
-}
-
-// ProxyARPConfigWithMD contains a data record for interface configuration
-// and its etcd metadata.
-type ProxyARPConfigWithMD struct {
-	Metadata VppMetaData
-	ProxyARP *l3.ProxyARP
-}
-
-// ProxyARPWithMD contains a data record for interface and its
-// etcd metadata.
-type ProxyARPWithMD struct {
-	Config *ProxyARPConfigWithMD
-}
-
-// IPScanNeighConfigWithMD contains a data record for interface configuration
-// and its etcd metadata.
-type IPScanNeighConfigWithMD struct {
-	Metadata       VppMetaData
-	IPScanNeighbor *l3.IPScanNeighbor
-}
-
-// IPScanNeighWithMD contains a data record for interface and its
-// etcd metadata.
-type IPScanNeighWithMD struct {
-	Config *IPScanNeighConfigWithMD
-}
-
-// NATConfigWithMD contains a data record for interface configuration
-// and its etcd metadata.
-type NATConfigWithMD struct {
-	Metadata    VppMetaData
-	Nat44Global *nat.Nat44Global
-}
-
-// NATWithMD contains a data record for interface and its
-// etcd metadata.
-type NATWithMD struct {
-	Config *NATConfigWithMD
-}
-
-// DNATConfigWithMD contains a data record for interface configuration
-// and its etcd metadata.
-type DNATConfigWithMD struct {
-	Metadata VppMetaData
-	DNat44   *nat.DNat44
-}
-
-// DNATWithMD contains a data record for interface and its
-// etcd metadata.
-type DNATWithMD struct {
-	Config *DNATConfigWithMD
-}
-
-// IPSecPolicyConfigWithMD contains a data record for interface configuration
-// and its etcd metadata.
-type IPSecPolicyConfigWithMD struct {
-	Metadata               VppMetaData
-	SecurityPolicyDatabase *ipsec.SecurityPolicyDatabase
-}
-
-// IPSecPolicyWithMD contains a data record for interface and its
-// etcd metadata.
-type IPSecPolicyWithMD struct {
-	Config *IPSecPolicyConfigWithMD
-}
-
-// IPSecAssociationConfigWithMD contains a data record for interface configuration
-// and its etcd metadata.
-type IPSecAssosiciationConfigWithMD struct {
-	Metadata            VppMetaData
-	SecurityAssociation *ipsec.SecurityAssociation
-}
-
-// IPSecAssosiciationWithMD contains a data record for interface and its
-// etcd metadata.
-type IPSecAssosiciationWithMD struct {
-	Config *IPSecAssosiciationConfigWithMD
-}
-
-// lInterfaceConfigWithMD contains a data record for interface configuration
-// and its etcd metadata.
-type lInterfaceConfigWithMD struct {
-	Metadata  VppMetaData
-	Interface *linterface.Interface
-}
-
-// lInterfaceWithMD contains a data record for interface and its
-// etcd metadata.
-type lInterfaceWithMD struct {
-	Config *lInterfaceConfigWithMD
-}
-
-// lARPConfigWithMD contains a data record for interface configuration
-// and its etcd metadata.
-type lARPConfigWithMD struct {
-	Metadata VppMetaData
-	ARPEntry *ll3.ARPEntry
-}
-
-// lARPWithMD contains a data record for interface and its
-// etcd metadata.
-type lARPWithMD struct {
-	Config *lARPConfigWithMD
-}
-
-// lRouteConfigWithMD contains a data record for interface configuration
-// and its etcd metadata.
-type lRouteConfigWithMD struct {
-	Metadata VppMetaData
-	Route    *ll3.Route
-}
-
-// lRouteWithMD contains a data record for interface and its
-// etcd metadata.
-type lRouteWithMD struct {
-	Config *lRouteConfigWithMD
-}
-
 // VppStatusWithMD contains a VPP Status data record and its etcd
 // metadata.
 type VppStatusWithMD struct {
@@ -262,27 +44,10 @@ type VppStatusWithMD struct {
 // VppData defines a structure to hold all etcd data records (of all
 // types) for one VPP.
 type VppData struct {
-	ACL        map[string]ACLWithMD
-	Interfaces map[string]InterfaceWithMD
-	//	InterfaceErrors    map[string]InterfaceErrorWithMD
-	BridgeDomains map[string]BdWithMD
-	//	BridgeDomainErrors map[string]BridgeDomainErrorWithMD
-	FibTableEntries FibTableWithMD
-	XConnectPairs   map[string]XconnectWithMD
-	ARP             ARPWithMD
-	StaticRoutes    StaticRoutesWithMD
-	ProxyARP        ProxyARPWithMD
-	IPScanNeight    IPScanNeighWithMD
-	NAT             NATWithMD
-	DNAT            map[string]DNATWithMD
-	IPSecPolicyDb   map[string]IPSecPolicyWithMD
-	IPSecAssociate  map[string]IPSecAssosiciationWithMD
-	Status          map[string]VppStatusWithMD
-	LInterfaces     map[string]lInterfaceWithMD
-	LARP            map[string]lARPWithMD
-	LRoute          map[string]lRouteWithMD
-	ShowEtcd        bool
-	ShowConf        bool
+	Status   map[string]VppStatusWithMD
+	Config   configurator.Config
+	ShowEtcd bool
+	ShowConf bool
 }
 
 // EtcdDump is a map of VppData records. It constitutes a temporary
@@ -303,6 +68,20 @@ func NewEtcdDump() EtcdDump {
 	return make(EtcdDump)
 }
 
+func (ed EtcdDump) ReadStatusDataFromDb(db keyval.ProtoBroker, key string,
+	agent string) (found bool, err error) {
+	vd, ok := ed[agent]
+	if !ok {
+		vd = newVppDataRecord()
+	}
+
+	ps := strings.Split(key, "/")
+	len := len(ps)
+
+	ed[agent], err = readStatusFromDb(db, vd, key, ps[len-1])
+	return true, err
+}
+
 // ReadDataFromDb reads a data record from etcd, parses it according to
 // the expected record type and stores it in the EtcdDump temporary
 // storage. A record is identified by a Key.
@@ -310,57 +89,47 @@ func NewEtcdDump() EtcdDump {
 // The function returns an error if the etcd client encountered an
 // error. The function returns true if the specified item has been
 // found.
-func (ed EtcdDump) ReadDataFromDb(db keyval.ProtoBroker, key string) (found bool, err error) {
-	label, dataType, params, plugStatCfgRev := ParseKey(key)
-
-	if plugStatCfgRev == status.StatusPrefix {
-		vd, ok := ed[label]
-		if !ok {
-			vd = newVppDataRecord()
-		}
-		ed[label], err = readStatusFromDb(db, vd, key, params)
-		return true, err
-	}
-
-	vd, ok := ed[label]
+func (ed EtcdDump) ReadDataFromDb(db keyval.ProtoBroker, key string,
+	agent string) (found bool, err error) {
+	vd, ok := ed[agent]
 	if !ok {
 		vd = newVppDataRecord()
 	}
 
-	switch dataType {
-	case acl.ModelACL.KeyPrefix():
-		ed[label], err = readACLConfigFromDb(db, vd, key, params)
-	case interfaces.ModelInterface.KeyPrefix():
-		ed[label], err = readInterfaceConfigFromDb(db, vd, key, params)
-	case l2.ModelBridgeDomain.KeyPrefix():
-		ed[label], err = readBridgeConfigFromDb(db, vd, key, params)
-	case l2.ModelFIBEntry.KeyPrefix():
-		ed[label], err = readFibTableConfigFromDb(db, vd, key, params)
-	case l2.ModelXConnectPair.KeyPrefix():
-		ed[label], err = readXConnectConfigFromDb(db, vd, key, params)
-	case l3.ModelARPEntry.KeyPrefix():
-		ed[label], err = readARPConfigFromDb(db, vd, key, params)
-	case l3.ModelRoute.KeyPrefix():
-		ed[label], err = readStatiRouteConfigFromDb(db, vd, key, params)
-	case l3.ModelProxyARP.KeyPrefix():
-		ed[label], err = readProxyARPConfigFromDb(db, vd, key)
-	case l3.ModelIPScanNeighbor.KeyPrefix():
-		ed[label], err = readIPScanNeightConfigFromDb(db, vd, key)
+	switch {
+	case strings.HasPrefix(key, acl.ModelACL.KeyPrefix()):
+		ed[agent], err = readACLConfigFromDb(db, vd, key)
+	case strings.HasPrefix(key, interfaces.ModelInterface.KeyPrefix()):
+		ed[agent], err = readInterfaceConfigFromDb(db, vd, key)
+	case strings.HasPrefix(key, l2.ModelBridgeDomain.KeyPrefix()):
+		ed[agent], err = readBridgeConfigFromDb(db, vd, key)
+	case strings.HasPrefix(key, l2.ModelFIBEntry.KeyPrefix()):
+		ed[agent], err = readFibTableConfigFromDb(db, vd, key)
+	case strings.HasPrefix(key, l2.ModelXConnectPair.KeyPrefix()):
+		ed[agent], err = readXConnectConfigFromDb(db, vd, key)
+	case strings.HasPrefix(key, l3.ModelARPEntry.KeyPrefix()):
+		ed[agent], err = readARPConfigFromDb(db, vd, key)
+	case strings.HasPrefix(key, l3.ModelRoute.KeyPrefix()):
+		ed[agent], err = readStatiRouteConfigFromDb(db, vd, key)
+	case strings.HasPrefix(key, l3.ModelProxyARP.KeyPrefix()):
+		ed[agent], err = readProxyARPConfigFromDb(db, vd, key)
+	case strings.HasPrefix(key, l3.ModelIPScanNeighbor.KeyPrefix()):
+		ed[agent], err = readIPScanNeightConfigFromDb(db, vd, key)
 		//FIXME: Error in key
 	//case NATPath:
 	//	ed[label], err = readNATConfigFromDb(db, vd, key)
 	//case DNATPath:
 	//	ed[label], err = readDNATConfigFromDb(db, vd, key, params)
-	case ipsec.ModelSecurityPolicyDatabase.KeyPrefix():
-		ed[label], err = readIPSecPolicyConfigFromDb(db, vd, key, params)
-	case ipsec.ModelSecurityAssociation.KeyPrefix():
-		ed[label], err = readIPSecAssociateConfigFromDb(db, vd, key, params)
-	case linterface.ModelInterface.KeyPrefix():
-		ed[label], err = readLinuxInterfaceConfigFromDb(db, vd, key, params)
-	case ll3.ModelARPEntry.KeyPrefix():
-		ed[label], err = readLinuxARPConfigFromDb(db, vd, key, params)
-	case ll3.ModelRoute.KeyPrefix():
-		ed[label], err = readLinuxRouteConfigFromDb(db, vd, key, params)
+	case strings.HasPrefix(key, ipsec.ModelSecurityPolicyDatabase.KeyPrefix()):
+		ed[agent], err = readIPSecPolicyConfigFromDb(db, vd, key)
+	case strings.HasPrefix(key, ipsec.ModelSecurityAssociation.KeyPrefix()):
+		ed[agent], err = readIPSecAssociateConfigFromDb(db, vd, key)
+	case strings.HasPrefix(key, linterface.ModelInterface.KeyPrefix()):
+		ed[agent], err = readLinuxInterfaceConfigFromDb(db, vd, key)
+	case strings.HasPrefix(key, ll3.ModelARPEntry.KeyPrefix()):
+		ed[agent], err = readLinuxARPConfigFromDb(db, vd, key)
+	case strings.HasPrefix(key, ll3.ModelRoute.KeyPrefix()):
+		ed[agent], err = readLinuxRouteConfigFromDb(db, vd, key)
 	}
 
 	return true, err
@@ -380,121 +149,72 @@ func readStatusFromDb(db keyval.ProtoBroker, vd *VppData, key string, name strin
 	return vd, err
 }
 
-func readACLConfigFromDb(db keyval.ProtoBroker, vd *VppData, key string, name string) (*VppData, error) {
-	if name == "" {
-		fmt.Printf("WARNING: Invalid ACL config Key '%s'\n", key)
-		return vd, nil
-	}
-
+func readACLConfigFromDb(db keyval.ProtoBroker, vd *VppData, key string) (*VppData, error) {
 	acl := &acl.ACL{}
 
-	found, rev, err := readDataFromDb(db, key, acl)
+	found, _, err := readDataFromDb(db, key, acl)
 	if found && err == nil {
-		vd.ACL[name] = ACLWithMD{
-			Config: &ACLConfigWithMD{VppMetaData{rev, key}, acl},
-		}
+		vd.Config.VppConfig.Acls = append(vd.Config.VppConfig.Acls, acl)
 	}
 	return vd, err
 }
 
-func readInterfaceConfigFromDb(db keyval.ProtoBroker, vd *VppData, key string, name string) (*VppData, error) {
-	if name == "" {
-		fmt.Printf("WARNING: Invalid interface config Key '%s'\n", key)
-		return vd, nil
-	}
-
+func readInterfaceConfigFromDb(db keyval.ProtoBroker, vd *VppData, key string) (*VppData, error) {
 	int := &interfaces.Interface{}
 
-	found, rev, err := readDataFromDb(db, key, int)
+	found, _, err := readDataFromDb(db, key, int)
 	if found && err == nil {
-		vd.Interfaces[name] = InterfaceWithMD{
-			Config: &IfConfigWithMD{VppMetaData{rev, key}, int},
-		}
+		vd.Config.VppConfig.Interfaces = append(vd.Config.VppConfig.Interfaces, int)
 	}
 	return vd, err
 }
 
-func readBridgeConfigFromDb(db keyval.ProtoBroker, vd *VppData, key string, name string) (*VppData, error) {
-	if name == "" {
-		fmt.Printf("WARNING: Invalid Bridge domain config Key '%s'\n", key)
-		return vd, nil
-	}
-
+func readBridgeConfigFromDb(db keyval.ProtoBroker, vd *VppData, key string) (*VppData, error) {
 	br := &l2.BridgeDomain{}
 
-	found, rev, err := readDataFromDb(db, key, br)
+	found, _, err := readDataFromDb(db, key, br)
 	if found && err == nil {
-		vd.BridgeDomains[name] = BdWithMD{
-			Config: &BdConfigWithMD{VppMetaData{rev, key}, br},
-		}
+		vd.Config.VppConfig.BridgeDomains = append(vd.Config.VppConfig.BridgeDomains, br)
 	}
 	return vd, err
 }
 
-func readFibTableConfigFromDb(db keyval.ProtoBroker, vd *VppData, key string, name string) (*VppData, error) {
-	if name == "" {
-		fmt.Printf("WARNING: Invalid Fib table config Key '%s'\n", key)
-		return vd, nil
-	}
-
+func readFibTableConfigFromDb(db keyval.ProtoBroker, vd *VppData, key string) (*VppData, error) {
 	fib := &l2.FIBEntry{}
 
-	found, rev, err := readDataFromDb(db, key, fib)
+	found, _, err := readDataFromDb(db, key, fib)
 	if found && err == nil {
-		vd.FibTableEntries = FibTableWithMD{
-			Config: &FibTableConfigWithMD{VppMetaData{rev, key}, fib},
-		}
+		vd.Config.VppConfig.Fibs = append(vd.Config.VppConfig.Fibs, fib)
 	}
 	return vd, err
 }
 
-func readXConnectConfigFromDb(db keyval.ProtoBroker, vd *VppData, key string, name string) (*VppData, error) {
-	if name == "" {
-		fmt.Printf("WARNING: Invalid xconnect config Key '%s'\n", key)
-		return vd, nil
-	}
-
+func readXConnectConfigFromDb(db keyval.ProtoBroker, vd *VppData, key string) (*VppData, error) {
 	xconnect := &l2.XConnectPair{}
 
-	found, rev, err := readDataFromDb(db, key, xconnect)
+	found, _, err := readDataFromDb(db, key, xconnect)
 	if found && err == nil {
-		vd.XConnectPairs[name] = XconnectWithMD{
-			Config: &XconnectConfigWithMD{VppMetaData{rev, key}, xconnect},
-		}
+		vd.Config.VppConfig.XconnectPairs = append(vd.Config.VppConfig.XconnectPairs, xconnect)
 	}
 	return vd, err
 }
 
-func readARPConfigFromDb(db keyval.ProtoBroker, vd *VppData, key string, name string) (*VppData, error) {
-	if name == "" {
-		fmt.Printf("WARNING: Invalid arp config Key '%s'\n", key)
-		return vd, nil
-	}
-
+func readARPConfigFromDb(db keyval.ProtoBroker, vd *VppData, key string) (*VppData, error) {
 	arp := &l3.ARPEntry{}
 
-	found, rev, err := readDataFromDb(db, key, arp)
+	found, _, err := readDataFromDb(db, key, arp)
 	if found && err == nil {
-		vd.ARP = ARPWithMD{
-			Config: &ARPConfigWithMD{VppMetaData{rev, key}, arp},
-		}
+		vd.Config.VppConfig.Arps = append(vd.Config.VppConfig.Arps, arp)
 	}
 	return vd, err
 }
 
-func readStatiRouteConfigFromDb(db keyval.ProtoBroker, vd *VppData, key string, name string) (*VppData, error) {
-	if name == "" {
-		fmt.Printf("WARNING: Invalid static route config Key '%s'\n", key)
-		return vd, nil
-	}
-
+func readStatiRouteConfigFromDb(db keyval.ProtoBroker, vd *VppData, key string) (*VppData, error) {
 	route := &l3.Route{}
 
-	found, rev, err := readDataFromDb(db, key, route)
+	found, _, err := readDataFromDb(db, key, route)
 	if found && err == nil {
-		vd.StaticRoutes = StaticRoutesWithMD{
-			Config: &StaticRoutesConfigWithMD{VppMetaData{rev, key}, route},
-		}
+		vd.Config.VppConfig.Routes = append(vd.Config.VppConfig.Routes, route)
 	}
 	return vd, err
 }
@@ -502,11 +222,9 @@ func readStatiRouteConfigFromDb(db keyval.ProtoBroker, vd *VppData, key string, 
 func readProxyARPConfigFromDb(db keyval.ProtoBroker, vd *VppData, key string) (*VppData, error) {
 	parp := &l3.ProxyARP{}
 
-	found, rev, err := readDataFromDb(db, key, parp)
+	found, _, err := readDataFromDb(db, key, parp)
 	if found && err == nil {
-		vd.ProxyARP = ProxyARPWithMD{
-			Config: &ProxyARPConfigWithMD{VppMetaData{rev, key}, parp},
-		}
+		vd.Config.VppConfig.ProxyArp = parp
 	}
 	return vd, err
 }
@@ -514,11 +232,9 @@ func readProxyARPConfigFromDb(db keyval.ProtoBroker, vd *VppData, key string) (*
 func readIPScanNeightConfigFromDb(db keyval.ProtoBroker, vd *VppData, key string) (*VppData, error) {
 	scan := &l3.IPScanNeighbor{}
 
-	found, rev, err := readDataFromDb(db, key, scan)
+	found, _, err := readDataFromDb(db, key, scan)
 	if found && err == nil {
-		vd.IPScanNeight = IPScanNeighWithMD{
-			Config: &IPScanNeighConfigWithMD{VppMetaData{rev, key}, scan},
-		}
+		vd.Config.VppConfig.IpscanNeighbor = scan
 	}
 	return vd, err
 }
@@ -526,113 +242,69 @@ func readIPScanNeightConfigFromDb(db keyval.ProtoBroker, vd *VppData, key string
 func readNATConfigFromDb(db keyval.ProtoBroker, vd *VppData, key string) (*VppData, error) {
 	nat := &nat.Nat44Global{}
 
-	found, rev, err := readDataFromDb(db, key, nat)
+	found, _, err := readDataFromDb(db, key, nat)
 	if found && err == nil {
-		vd.NAT = NATWithMD{
-			Config: &NATConfigWithMD{VppMetaData{rev, key}, nat},
-		}
+		vd.Config.VppConfig.Nat44Global = nat
 	}
 	return vd, err
 }
 
-func readDNATConfigFromDb(db keyval.ProtoBroker, vd *VppData, key string, name string) (*VppData, error) {
-	if name == "" {
-		fmt.Printf("WARNING: Invalid dnat config Key '%s'\n", key)
-		return vd, nil
-	}
-
+func readDNATConfigFromDb(db keyval.ProtoBroker, vd *VppData, key string) (*VppData, error) {
 	dnat := &nat.DNat44{}
 
-	found, rev, err := readDataFromDb(db, key, dnat)
+	found, _, err := readDataFromDb(db, key, dnat)
 	if found && err == nil {
-		vd.DNAT[name] = DNATWithMD{
-			Config: &DNATConfigWithMD{VppMetaData{rev, key}, dnat},
-		}
+		vd.Config.VppConfig.Dnat44S = append(vd.Config.VppConfig.Dnat44S, dnat)
 	}
 	return vd, err
 }
 
-func readIPSecPolicyConfigFromDb(db keyval.ProtoBroker, vd *VppData, key string, name string) (*VppData, error) {
-	if name == "" {
-		fmt.Printf("WARNING: Invalid ip sec policy database config Key '%s'\n", key)
-		return vd, nil
-	}
-
+func readIPSecPolicyConfigFromDb(db keyval.ProtoBroker, vd *VppData, key string) (*VppData, error) {
 	policy := &ipsec.SecurityPolicyDatabase{}
 
-	found, rev, err := readDataFromDb(db, key, policy)
+	found, _, err := readDataFromDb(db, key, policy)
 	if found && err == nil {
-		vd.IPSecPolicyDb[name] = IPSecPolicyWithMD{
-			Config: &IPSecPolicyConfigWithMD{VppMetaData{rev, key}, policy},
-		}
+		vd.Config.VppConfig.IpsecSpds = append(vd.Config.VppConfig.IpsecSpds, policy)
 	}
 	return vd, err
 }
 
-func readIPSecAssociateConfigFromDb(db keyval.ProtoBroker, vd *VppData, key string, name string) (*VppData, error) {
-	if name == "" {
-		fmt.Printf("WARNING: Invalid ip sec associate config Key '%s'\n", key)
-		return vd, nil
-	}
-
+func readIPSecAssociateConfigFromDb(db keyval.ProtoBroker, vd *VppData, key string) (*VppData, error) {
 	ipsec := &ipsec.SecurityAssociation{}
 
-	found, rev, err := readDataFromDb(db, key, ipsec)
+	found, _, err := readDataFromDb(db, key, ipsec)
 	if found && err == nil {
-		vd.IPSecAssociate[name] = IPSecAssosiciationWithMD{
-			Config: &IPSecAssosiciationConfigWithMD{VppMetaData{rev, key}, ipsec},
-		}
+		vd.Config.VppConfig.IpsecSas = append(vd.Config.VppConfig.IpsecSas, ipsec)
 	}
 	return vd, err
 }
 
-func readLinuxInterfaceConfigFromDb(db keyval.ProtoBroker, vd *VppData, key string, name string) (*VppData, error) {
-	if name == "" {
-		fmt.Printf("WARNING: Invalid linux interface config Key '%s'\n", key)
-		return vd, nil
-	}
-
+func readLinuxInterfaceConfigFromDb(db keyval.ProtoBroker, vd *VppData, key string) (*VppData, error) {
 	int := &linterface.Interface{}
 
-	found, rev, err := readDataFromDb(db, key, int)
+	found, _, err := readDataFromDb(db, key, int)
 	if found && err == nil {
-		vd.LInterfaces[name] = lInterfaceWithMD{
-			Config: &lInterfaceConfigWithMD{VppMetaData{rev, key}, int},
-		}
+		vd.Config.LinuxConfig.Interfaces = append(vd.Config.LinuxConfig.Interfaces, int)
 	}
 	return vd, err
 }
 
-func readLinuxARPConfigFromDb(db keyval.ProtoBroker, vd *VppData, key string, name string) (*VppData, error) {
-	if name == "" {
-		fmt.Printf("WARNING: Invalid linux arp config Key '%s'\n", key)
-		return vd, nil
-	}
-
+func readLinuxARPConfigFromDb(db keyval.ProtoBroker, vd *VppData, key string) (*VppData, error) {
 	arp := &ll3.ARPEntry{}
 
-	found, rev, err := readDataFromDb(db, key, arp)
+	found, _, err := readDataFromDb(db, key, arp)
 	if found && err == nil {
-		vd.LARP[name] = lARPWithMD{
-			Config: &lARPConfigWithMD{VppMetaData{rev, key}, arp},
-		}
+		vd.Config.LinuxConfig.ArpEntries = append(vd.Config.LinuxConfig.ArpEntries, arp)
 	}
 	return vd, err
 }
 
-func readLinuxRouteConfigFromDb(db keyval.ProtoBroker, vd *VppData, key string, name string) (*VppData, error) {
-	if name == "" {
-		fmt.Printf("WARNING: Invalid linux route config Key '%s'\n", key)
-		return vd, nil
-	}
-
+func readLinuxRouteConfigFromDb(db keyval.ProtoBroker, vd *VppData, key string) (*VppData, error) {
 	route := &ll3.Route{}
 
-	found, rev, err := readDataFromDb(db, key, route)
+	found, _, err := readDataFromDb(db, key, route)
 	if found && err == nil {
-		vd.LRoute[name] = lRouteWithMD{
-			Config: &lRouteConfigWithMD{VppMetaData{rev, key}, route},
-		}
+		vd.Config.LinuxConfig.Routes = append(vd.Config.LinuxConfig.Routes, route)
 	}
 	return vd, err
 }
@@ -650,25 +322,13 @@ func readDataFromDb(db keyval.ProtoBroker, key string, obj proto.Message) (bool,
 
 func newVppDataRecord() *VppData {
 	return &VppData{
-		ACL:             make(map[string]ACLWithMD),
-		Interfaces:      make(map[string]InterfaceWithMD),
-		BridgeDomains:   make(map[string]BdWithMD),
-		FibTableEntries: FibTableWithMD{},
-		XConnectPairs:   make(map[string]XconnectWithMD),
-		ARP:             ARPWithMD{},
-		StaticRoutes:    StaticRoutesWithMD{},
-		ProxyARP:        ProxyARPWithMD{},
-		IPScanNeight:    IPScanNeighWithMD{},
-		NAT:             NATWithMD{},
-		DNAT:            make(map[string]DNATWithMD),
-		IPSecPolicyDb:   make(map[string]IPSecPolicyWithMD),
-		IPSecAssociate:  make(map[string]IPSecAssosiciationWithMD),
-		LInterfaces:     make(map[string]lInterfaceWithMD),
-		LARP:            make(map[string]lARPWithMD),
-		LRoute:          make(map[string]lRouteWithMD),
-		Status:          make(map[string]VppStatusWithMD),
-		ShowEtcd:        false,
-		ShowConf:        false,
+		Status: make(map[string]VppStatusWithMD),
+		Config: configurator.Config{
+			VppConfig:   &vpp.ConfigData{},
+			LinuxConfig: &linux.ConfigData{},
+		},
+		ShowEtcd: false,
+		ShowConf: false,
 	}
 }
 

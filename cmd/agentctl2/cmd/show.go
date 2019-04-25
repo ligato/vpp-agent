@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/ligato/cn-infra/health/statuscheck/model/status"
+
+	"github.com/ligato/cn-infra/db/keyval"
 	"github.com/ligato/cn-infra/servicelabel"
 	"github.com/ligato/vpp-agent/cmd/agentctl2/utils"
 	"github.com/spf13/cobra"
@@ -66,11 +69,37 @@ func confFunction(cmd *cobra.Command, args []string) {
 		utils.ExitWithError(utils.ExitError, errors.New("Failed to get keys - "+err.Error()))
 	}
 
+	agentLabels := make([]string, 0)
+
+	for {
+		if key, _, done := keyIter.GetNext(); !done {
+
+			agentLabel := utils.GetAgentLabel(key)
+			addUniqueString(agentLabel, &agentLabels)
+			continue
+		}
+		break
+	}
+
+	for _, agentLabel := range agentLabels {
+		db1 := db.NewBroker(servicelabel.GetAllAgentsPrefix() + agentLabel + "/")
+		printAgentStatus(db1, agentLabel)
+		printAgentConfig(db1, agentLabel)
+	}
+}
+
+func printAgentStatus(db keyval.ProtoBroker, agentLabel string) {
+
+	keyIter, err := db.ListKeys(status.StatusPrefix)
+	if err != nil {
+		utils.ExitWithError(utils.ExitError, errors.New("Failed to get keys - "+err.Error()))
+	}
+
 	ed := utils.NewEtcdDump()
 	for {
 		if key, _, done := keyIter.GetNext(); !done {
 			//fmt.Printf("Key: '%s'\n", key)
-			if _, err = ed.ReadDataFromDb(db, key); err != nil {
+			if _, err = ed.ReadStatusDataFromDb(db, key, agentLabel); err != nil {
 				utils.ExitWithError(utils.ExitError, err)
 			}
 			continue
@@ -79,7 +108,7 @@ func confFunction(cmd *cobra.Command, args []string) {
 	}
 
 	if len(ed) > 0 {
-		buffer, err := ed.PrintTest(showConf)
+		buffer, err := ed.PrintStatus(showConf)
 		if err == nil {
 			fmt.Fprintf(os.Stdout, buffer.String())
 		} else {
@@ -88,5 +117,46 @@ func confFunction(cmd *cobra.Command, args []string) {
 	} else {
 		fmt.Fprintf(os.Stderr, "No data found.\n")
 	}
+}
 
+func printAgentConfig(db keyval.ProtoBroker, agentLabel string) {
+
+	keyIter, err := db.ListKeys("config")
+	if err != nil {
+		utils.ExitWithError(utils.ExitError, errors.New("Failed to get keys - "+err.Error()))
+	}
+
+	ed := utils.NewEtcdDump()
+	for {
+		if key, _, done := keyIter.GetNext(); !done {
+			//fmt.Printf("Key: '%s'\n", key)
+			if _, err = ed.ReadDataFromDb(db, key, agentLabel); err != nil {
+				utils.ExitWithError(utils.ExitError, err)
+			}
+			continue
+		}
+		break
+	}
+
+	if len(ed) > 0 {
+		buffer, err := ed.PrintConfig(showConf)
+		if err == nil {
+			fmt.Fprintf(os.Stdout, buffer.String())
+		} else {
+			fmt.Fprintf(os.Stderr, "Error: %v", err)
+		}
+	} else {
+		fmt.Fprintf(os.Stderr, "No data found.\n")
+	}
+}
+
+func addUniqueString(str string, unique *[]string) {
+
+	for _, value := range *unique {
+		if value == str {
+			return
+		}
+	}
+
+	*unique = append(*unique, str)
 }

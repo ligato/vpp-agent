@@ -18,6 +18,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/go-errors/errors"
+
 	"github.com/gogo/protobuf/proto"
 
 	"fmt"
@@ -41,6 +43,17 @@ const (
 	ExitIO
 	ExitBadArgs = 128
 )
+
+func GetAgentLabel(key string) (agentLabel string) {
+	ps := strings.Split(strings.TrimPrefix(key, servicelabel.GetAllAgentsPrefix()), "/")
+	if 1 > len(key) {
+		ExitWithError(ExitInvalidInput, errors.New("Wrong key, key: "+key))
+	}
+
+	agentLabel = ps[0]
+
+	return agentLabel
+}
 
 // ParseKey parses the etcd Key for the microservice label and the
 // data type encoded in the Key. The function returns the microservice
@@ -168,7 +181,7 @@ func rebuildName(params []string) string {
 
 // GetDbForAllAgents opens a connection to etcd, specified in the command line
 // or the "ETCD_ENDPOINTS" environment variable.
-func GetDbForAllAgents(endpoints []string) (keyval.ProtoBroker, error) {
+func GetDbForAllAgents(endpoints []string) (*kvproto.ProtoWrapper, error) {
 	if len(endpoints) > 0 {
 		ep := strings.Join(endpoints, ",")
 		os.Setenv("ETCD_ENDPOINTS", ep)
@@ -186,7 +199,6 @@ func GetDbForAllAgents(endpoints []string) (keyval.ProtoBroker, error) {
 	}
 
 	return kvproto.NewProtoWrapperWithSerializer(etcdBroker, &keyval.SerializerJSON{}), nil
-
 }
 
 func GetModuleName(module proto.Message) string {
