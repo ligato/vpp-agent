@@ -93,7 +93,7 @@ type Config struct {
 	// The prefix prepended to the name used for shared memory (SHM) segments. If not set,
 	// shared memory segments are created directly in the SHM directory /dev/shm.
 	ShmPrefix        string `json:"shm-prefix"`
-	BinApiSocketPath string `json:"binapi-socket-path"`
+	BinAPISocketPath string `json:"binapi-socket-path"`
 	StatsSocketPath  string `json:"stats-socket-path"`
 	// How many times can be request resent in case vpp is suddenly disconnected.
 	RetryRequestCount int `json:"retry-request-count"`
@@ -150,7 +150,7 @@ func (p *Plugin) Init() error {
 	}
 
 	if p.vppAdapter == nil {
-		address := p.config.BinApiSocketPath
+		address := p.config.BinAPISocketPath
 		useShm := disabledSocketClient || p.config.ConnectViaShm
 		if useShm {
 			address = p.config.ShmPrefix
