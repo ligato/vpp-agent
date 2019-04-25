@@ -78,19 +78,21 @@ func (d *InterfaceVrfDescriptor) IsInterfaceVrfKey(key string) bool {
 
 // Create puts interface into the given VRF table.
 func (d *InterfaceVrfDescriptor) Create(key string, emptyVal proto.Message) (metadata kvs.Metadata, err error) {
-	swIfIndex, vrf, ipv4, ipv6, err := d.getParametersFromKey(key)
+	swIfIndex, vrf, inheritedVrf, ipv4, ipv6, err := d.getParametersFromKey(key)
 	if err != nil {
 		return nil, err
 	}
 
-	if vrf > 0 && ipv4 {
+	// unnumbered interfaces (inherited VRF) should not be explicitly set to VRF=0 (probably bug in VPP)
+
+	if (!inheritedVrf || vrf > 0) && ipv4 {
 		err = d.ifHandler.SetInterfaceVrf(swIfIndex, uint32(vrf))
 		if err != nil {
 			d.log.Error(err)
 			return nil, err
 		}
 	}
-	if vrf > 0 && ipv6 {
+	if (!inheritedVrf || vrf > 0) && ipv6 {
 		err = d.ifHandler.SetInterfaceVrfIPv6(swIfIndex, uint32(vrf))
 		if err != nil {
 			d.log.Error(err)
@@ -102,19 +104,19 @@ func (d *InterfaceVrfDescriptor) Create(key string, emptyVal proto.Message) (met
 
 // Delete removes interface from the given VRF table.
 func (d *InterfaceVrfDescriptor) Delete(key string, emptyVal proto.Message, metadata kvs.Metadata) (err error) {
-	swIfIndex, vrf, ipv4, ipv6, err := d.getParametersFromKey(key)
+	swIfIndex, vrf, inheritedVrf, ipv4, ipv6, err := d.getParametersFromKey(key)
 	if err != nil {
 		return err
 	}
 
-	if vrf > 0 && ipv4 {
+	if !inheritedVrf && vrf > 0 && ipv4 {
 		err = d.ifHandler.SetInterfaceVrf(swIfIndex, uint32(0))
 		if err != nil {
 			d.log.Error(err)
 			return err
 		}
 	}
-	if vrf > 0 && ipv6 {
+	if !inheritedVrf && vrf > 0 && ipv6 {
 		err = d.ifHandler.SetInterfaceVrfIPv6(swIfIndex, uint32(0))
 		if err != nil {
 			d.log.Error(err)
@@ -153,7 +155,9 @@ func (d *InterfaceVrfDescriptor) Dependencies(key string, emptyVal proto.Message
 	}
 }
 
-func (d *InterfaceVrfDescriptor) getParametersFromKey(key string) (swIfIndex, vrf uint32, ipv4, ipv6 bool, err error) {
+func (d *InterfaceVrfDescriptor) getParametersFromKey(key string) (swIfIndex, vrf uint32,
+	inheritedVrf bool, ipv4, ipv6 bool, err error) {
+
 	var (
 		isIfaceVrfKey    bool
 		vrfTableID       int
@@ -171,6 +175,7 @@ func (d *InterfaceVrfDescriptor) getParametersFromKey(key string) (swIfIndex, vr
 		}
 		vrfTableID = int(fromIfaceMeta.Vrf)
 		ipv4, ipv6 = getIPAddressVersions(fromIfaceMeta.IPAddresses)
+		inheritedVrf = true
 	}
 
 	ifMeta, found := d.ifIndex.LookupByName(iface)
