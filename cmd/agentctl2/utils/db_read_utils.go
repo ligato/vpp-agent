@@ -44,10 +44,10 @@ type VppStatusWithMD struct {
 // VppData defines a structure to hold all etcd data records (of all
 // types) for one VPP.
 type VppData struct {
-	Status   map[string]VppStatusWithMD
-	Config   configurator.Config
-	ShowEtcd bool
-	ShowConf bool
+	Status    map[string]VppStatusWithMD
+	Config    configurator.Config
+	PrintConf bool
+	ShowConf  bool
 }
 
 // EtcdDump is a map of VppData records. It constitutes a temporary
@@ -327,8 +327,8 @@ func newVppDataRecord() *VppData {
 			VppConfig:   &vpp.ConfigData{},
 			LinuxConfig: &linux.ConfigData{},
 		},
-		ShowEtcd: false,
-		ShowConf: false,
+		PrintConf: false,
+		ShowConf:  false,
 	}
 }
 

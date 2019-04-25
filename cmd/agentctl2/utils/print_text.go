@@ -47,7 +47,7 @@ func (ed EtcdDump) PrintStatus(showConf bool) (*bytes.Buffer, error) {
 	}
 
 	stsTemplate := template.Must(template.New("status").Funcs(stsFuncMap).Parse(
-		"{{pfx 1}}STATUS:" +
+		"{{pfx 1}}{{setBold \"STATUS\"}}:" +
 			"{{$etcd := .ShowEtcd}}" +
 			// Iterate over status.
 			"{{range $statusName, $statusData := .Status}}\n{{pfx 2}}{{$statusName}}: {{setOsColor .State}}" +
@@ -90,7 +90,7 @@ func (ed EtcdDump) PrintConfig(showConf bool) (*bytes.Buffer, error) {
 
 	templates := []*template.Template{}
 	// Keep template order
-	templates = append(templates /* nameTemplate */ /*, stsTemplate*/, ifTemplate,
+	templates = append(templates, ifTemplate,
 		aclTemplate, bdTemplate, fibTemplate, xconnectTemplate,
 		arpTemplate, routeTemplate, proxyarpTemplate, ipneighbor,
 		/*nat, dnat,*/ spolicy, sassociation, linterface, larp, lroute)
@@ -108,12 +108,14 @@ func createACLTemplate() *template.Template {
 	}
 
 	Template := template.Must(template.New("acl").Funcs(FuncMap).Parse(
-		"{{$conf := .ShowConf}}" +
+		"{{$conf := .ShowConf}}{{$print := .PrintConf}}" +
 			"{{with .Config}}{{with .VppConfig}}" +
-			"{{with .Acls}}\n{{pfx 1}}ACL:" +
+			"{{with .Acls}}\n{{pfx 1}}{{setBold \"ACL\"}}" +
+
+			"{{if $print}}:" +
 
 			// Iterate over ACL.
-			"{{range .}}\n{{pfx 2}}{{setBold .Name}}" +
+			"{{range .}}\n{{pfx 2}}{{.Name}}" +
 			"{{if $conf}}" +
 
 			//// Iterate over ACL rule.
@@ -222,6 +224,9 @@ func createACLTemplate() *template.Template {
 			// End Iterate
 			"{{end}}" +
 
+			// End print
+			"\n{{end}}" +
+
 			"{{end}}" +
 			"{{end}}{{end}}"))
 
@@ -242,13 +247,15 @@ func createInterfaceTemplate() *template.Template {
 	}
 
 	Template := template.Must(template.New("interfaces").Funcs(ifFuncMap).Parse(
-		"{{$conf := .ShowConf}}" +
+		"{{$conf := .ShowConf}}{{$print := .PrintConf}}" +
 			"{{with .Config}}{{with .VppConfig}}" +
-			"{{with .Interfaces}}\n{{pfx 1}}INTERFACES:" +
+			"{{with .Interfaces}}\n{{pfx 1}}{{setBold \"Interfaces\"}}" +
+
+			"{{if $print}}:" +
 
 			// Iterate over interfaces.
 			"{{range .}}" +
-			"\n{{pfx 2}}{{setBold .Name}}" +
+			"\n{{pfx 2}}{{.Name}}" +
 
 			"{{if $conf}}" +
 			// Interface overall status
@@ -271,8 +278,11 @@ func createInterfaceTemplate() *template.Template {
 			// End Config
 			"{{end}}" +
 
+			// End print
+			"\n{{end}}" +
+
 			"{{end}}{{end}}" +
-			"{{end}}{{end}}\n"))
+			"{{end}}{{end}}"))
 
 	return Template
 }
@@ -287,12 +297,14 @@ func createBridgeTemplate() *template.Template {
 	}
 
 	Template := template.Must(template.New("bridgeDomains").Funcs(FuncMap).Parse(
-		"{{$conf := .ShowConf}}" +
+		"{{$conf := .ShowConf}}{{$print := .PrintConf}}" +
 			"{{with .Config}}{{with .VppConfig}}" +
-			"{{with .BridgeDomains}}\n{{pfx 1}}Bridge:" +
+			"{{with .BridgeDomains}}\n{{pfx 1}}{{setBold \"Bridge\"}}" +
+
+			"{{if $print}}:" +
 
 			"{{range .}}" +
-			"\n{{pfx 2}}{{setBold .Name}}" +
+			"\n{{pfx 2}}{{.Name}}" +
 			"{{if $conf}}" +
 			"\n{{pfx 3}}Flood: {{isEnabled .Flood}}" +
 			"\n{{pfx 3}}Unknown Unicast Flood: {{isEnabled .UnknownUnicastFlood}}" +
@@ -323,6 +335,9 @@ func createBridgeTemplate() *template.Template {
 			//End Config
 			"{{end}}" +
 
+			// End print
+			"\n{{end}}" +
+
 			"{{end}}{{end}}" +
 			"{{end}}{{end}}"))
 
@@ -343,8 +358,11 @@ func createFibTableTemplate() *template.Template {
 	}
 
 	Template := template.Must(template.New("fibTable").Funcs(FuncMap).Parse(
-		"{{with .Config}}{{with .VppConfig}}" +
-			"{{with .Fibs}}\n{{pfx 1}}Fib Table:" +
+		"{{$print := .PrintConf}}" +
+			"{{with .Config}}{{with .VppConfig}}" +
+			"{{with .Fibs}}\n{{pfx 1}}{{setBold \"Fib Table\"}}" +
+
+			"{{if $print}}:" +
 
 			"{{range .}}" +
 
@@ -356,6 +374,9 @@ func createFibTableTemplate() *template.Template {
 			"\n{{pfx 3}}Bridge Virtual Interface: {{isEnabled .BridgedVirtualInterface}}" +
 
 			"{{end}}" +
+
+			// End print
+			"\n{{end}}" +
 
 			"{{end}}{{end}}" +
 			"{{end}}"))
@@ -371,9 +392,11 @@ func createXconnectTableTemplate() *template.Template {
 	}
 
 	Template := template.Must(template.New("xconnect").Funcs(FuncMap).Parse(
-		"{{$conf := .ShowConf}}" +
+		"{{$conf := .ShowConf}}{{$print := .PrintConf}}" +
 			"{{with .Config}}{{with .VppConfig}}" +
-			"{{with .XconnectPairs}}\n{{pfx 1}}Xconnect:" +
+			"{{with .XconnectPairs}}\n{{pfx 1}}{{setBold \"Xconnect\"}}" +
+
+			"{{if $print}}:" +
 
 			// Iterate over xconnect.
 			"{{range .XConnectPairs}}" +
@@ -388,6 +411,10 @@ func createXconnectTableTemplate() *template.Template {
 			"{{end}}{{end}}" +
 			//End Conf
 			"{{end}}" +
+
+			// End print
+			"\n{{end}}" +
+
 			"{{end}}{{end}}" +
 			"{{end}}{{end}}"))
 
@@ -404,8 +431,11 @@ func createArpTableTemplate() *template.Template {
 	}
 
 	Template := template.Must(template.New("arp").Funcs(FuncMap).Parse(
-		"{{with .Config}}{{with .VppConfig}}" +
-			"{{with .Arps}}\n{{pfx 1}}ARP:" +
+		"{{$print := .PrintConf}}" +
+			"{{with .Config}}{{with .VppConfig}}" +
+			"{{with .Arps}}\n{{pfx 1}}{{setBold \"ARP\"}}" +
+
+			"{{if $print}}:" +
 
 			"{{range .}}" +
 
@@ -415,6 +445,9 @@ func createArpTableTemplate() *template.Template {
 			"\n{{pfx 2}}Static: {{isEnabled .Static}}" +
 
 			"{{end}}" +
+
+			// End print
+			"\n{{end}}" +
 
 			//End
 			"{{end}}" +
@@ -432,8 +465,11 @@ func createRouteTableTemplate() *template.Template {
 	}
 
 	Template := template.Must(template.New("routetable").Funcs(FuncMap).Parse(
-		"{{with .Config}}{{with .VppConfig}}" +
-			"{{with .Routes}}\n{{pfx 1}}Route Table:" +
+		"{{$print := .PrintConf}}" +
+			"{{with .Config}}{{with .VppConfig}}" +
+			"{{with .Routes}}\n{{pfx 1}}{{setBold \"Route Table\"}}:" +
+
+			"{{if $print}}:" +
 
 			"{{range .}}" +
 
@@ -448,6 +484,9 @@ func createRouteTableTemplate() *template.Template {
 
 			//End
 			"{{end}}" +
+
+			// End print
+			"\n{{end}}" +
 
 			"{{end}}" +
 
@@ -464,8 +503,11 @@ func createProxyArpTemplate() *template.Template {
 	}
 
 	Template := template.Must(template.New("proxyarp").Funcs(FuncMap).Parse(
-		"{{with .Config}}{{with .VppConfig}}" +
-			"{{with .ProxyArp}}\n{{pfx 1}}Proxy ARP:" +
+		"{{$print := .PrintConf}}" +
+			"{{with .Config}}{{with .VppConfig}}" +
+			"{{with .ProxyArp}}\n{{pfx 1}}{{setBold \"Proxy ARP\"}}" +
+
+			"{{if $print}}:" +
 
 			//Iterate over Interfaces
 			"{{range .Interfaces}}" +
@@ -481,6 +523,9 @@ func createProxyArpTemplate() *template.Template {
 
 			//End iterate
 			"{{end}}" +
+
+			// End print
+			"\n{{end}}" +
 
 			//End
 			"{{end}}" +
@@ -498,8 +543,11 @@ func createIPScanNeightTemplate() *template.Template {
 	}
 
 	Template := template.Must(template.New("ipscanneigh").Funcs(FuncMap).Parse(
-		"{{with .Config}}{{with .VppConfig}}" +
-			"{{with .IpscanNeighbor}}\n{{pfx 1}}IP Neighbor:" +
+		"{{$print := .PrintConf}}" +
+			"{{with .Config}}{{with .VppConfig}}" +
+			"{{with .IpscanNeighbor}}\n{{pfx 1}}{{setBold \"IP Neighbor\"}}" +
+
+			"{{if $print}}:" +
 
 			"\n{{pfx 2}}Mode: {{.Mode}}" +
 			"\n{{pfx 2}}Scan Interval: {{.ScanInterval}}" +
@@ -508,6 +556,9 @@ func createIPScanNeightTemplate() *template.Template {
 			"\n{{pfx 2}}Max Uptime: {{.MaxUpdate}}" +
 			"\n{{pfx 2}}Scan Int Delay: {{.ScanIntDelay}}" +
 			"\n{{pfx 2}}Stale Threshold: {{.StaleThreshold}}" +
+
+			// End print
+			"\n{{end}}" +
 
 			//End
 			"{{end}}" +
@@ -525,8 +576,11 @@ func createNATTemplate() *template.Template {
 	}
 
 	Template := template.Must(template.New("nat").Funcs(FuncMap).Parse(
-		"{{with .Config}}{{with .VppConfig}}" +
-			"{{with .NAT}}\n{{pfx 1}}NAT:" +
+		"{{$print := .PrintConf}}" +
+			"{{with .Config}}{{with .VppConfig}}" +
+			"{{with .NAT}}\n{{pfx 1}}{{setBold \"NAT\"}}" +
+
+			"{{if $print}}:" +
 
 			"{{with .Label}}\n{{pfx 2}}Label: {{.}}{{end}}" +
 
@@ -553,6 +607,9 @@ func createNATTemplate() *template.Template {
 			//End StMappings
 			"{{end}}" +
 
+			// End print
+			"\n{{end}}" +
+
 			//End
 			"{{end}}" +
 
@@ -569,8 +626,11 @@ func createDNATTemplate() *template.Template {
 	}
 
 	Template := template.Must(template.New("dnat").Funcs(FuncMap).Parse(
-		"{{with .Config}}{{with .VppConfig}}" +
-			"{{with .DNAT}}\n{{pfx 1}}DNAT:" +
+		"{{$print := .PrintConf}}" +
+			"{{with .Config}}{{with .VppConfig}}" +
+			"{{with .DNAT}}\n{{pfx 1}}{{setBold \"DNAT\"}}" +
+
+			"{{if $print}}:" +
 
 			"{{with .Label}}\n{{pfx 2}}Label: {{.}}{{end}}" +
 
@@ -607,6 +667,9 @@ func createDNATTemplate() *template.Template {
 			//End over StMappings
 			"{{end}}" +
 
+			// End print
+			"\n{{end}}" +
+
 			//End
 			"{{end}}" +
 
@@ -623,8 +686,12 @@ func createIPSecPolicyTemplate() *template.Template {
 	}
 
 	Template := template.Must(template.New("ipsecpolicy").Funcs(FuncMap).Parse(
-		"{{with .Config}}{{with .VppConfig}}" +
-			"{{with .IpsecSpds}}\n{{pfx 1}}Security policy database:" +
+		"{{$print := .PrintConf}}" +
+			"{{with .Config}}{{with .VppConfig}}" +
+			"{{with .IpsecSpds}}\n{{pfx 1}}{{setBold \"Security policy database\"}}" +
+
+			"{{if $print}}:" +
+
 			// Iterate over Policy.
 			"{{range .}}" +
 
@@ -661,6 +728,9 @@ func createIPSecPolicyTemplate() *template.Template {
 			// End Iterate over Policy.
 			"{{end}}" +
 
+			// End print
+			"\n{{end}}" +
+
 			"{{end}}" +
 
 			"{{end}}{{end}}"))
@@ -676,8 +746,11 @@ func createIPSecAssociationTemplate() *template.Template {
 	}
 
 	Template := template.Must(template.New("ipsecassociation").Funcs(FuncMap).Parse(
-		"{{with .Config}}{{with .VppConfig}}" +
-			"{{with .IpsecSas}}\n{{pfx 1}}Security associations:" +
+		"{{$print := .PrintConf}}" +
+			"{{with .Config}}{{with .VppConfig}}" +
+			"{{with .IpsecSas}}\n{{pfx 1}}{{setBold \"Security associations\"}}" +
+
+			"{{if $print}}:" +
 
 			// Iterate over Association.
 			"{{range .}}" +
@@ -698,6 +771,9 @@ func createIPSecAssociationTemplate() *template.Template {
 			// End iterate over Association.
 			"{{end}}" +
 
+			// End print
+			"\n{{end}}" +
+
 			"{{end}}" +
 
 			"{{end}}{{end}}"))
@@ -714,9 +790,11 @@ func createlInterfaceTemplate() *template.Template {
 	}
 
 	Template := template.Must(template.New("linterface").Funcs(FuncMap).Parse(
-		"{{$conf := .ShowConf}}" +
+		"{{$conf := .ShowConf}}{{$print := .PrintConf}}" +
 			"{{with .Config}}{{with .LinuxConfig}}" +
-			"{{with .Interfaces}}\n{{pfx 1}}Linux interface:" +
+			"{{with .Interfaces}}\n{{pfx 1}}{{setBold \"Linux interface\"}}" +
+
+			"{{if $print}}:" +
 
 			// Iterate over interface.
 			"{{range .}}" +
@@ -745,6 +823,9 @@ func createlInterfaceTemplate() *template.Template {
 			//End iterate over interface.
 			"{{end}}" +
 
+			// End print
+			"\n{{end}}" +
+
 			"{{end}}" +
 
 			"{{end}}{{end}}"))
@@ -760,9 +841,11 @@ func createlARPTemplate() *template.Template {
 	}
 
 	Template := template.Must(template.New("larp").Funcs(FuncMap).Parse(
-		"{{$conf := .ShowConf}}" +
+		"{{$conf := .ShowConf}}{{$print := .PrintConf}}" +
 			"{{with .Config}}{{with .LinuxConfig}}" +
-			"{{with .ArpEntries}}\n{{pfx 1}}Linux ARP:" +
+			"{{with .ArpEntries}}\n{{pfx 1}}{{setBold \"Linux ARP\"}}" +
+
+			"{{if $print}}:" +
 
 			// Iterate over interface.
 			"{{range .}}\n{{pfx 2}}" +
@@ -773,6 +856,9 @@ func createlARPTemplate() *template.Template {
 
 			//End iterate over interface.
 			"{{end}}" +
+
+			// End print
+			"\n{{end}}" +
 
 			"{{end}}" +
 
@@ -789,8 +875,11 @@ func createlRouteTemplate() *template.Template {
 	}
 
 	Template := template.Must(template.New("lroute").Funcs(FuncMap).Parse(
-		"{{with .Config}}{{with .LinuxConfig}}" +
-			"{{with .Routes}}\n{{pfx 1}}Linux Route:" +
+		"{{$print := .PrintConf}}" +
+			"{{with .Config}}{{with .LinuxConfig}}" +
+			"{{with .Routes}}\n{{pfx 1}}{{setBold \"Linux Route\"}}" +
+
+			"{{if $print}}:" +
 
 			// Iterate over Route.
 			"{{range .}}" +
@@ -807,6 +896,9 @@ func createlRouteTemplate() *template.Template {
 			//End iterate over interface.
 			"{{end}}" +
 
+			// End print
+			"\n{{end}}" +
+
 			"{{end}}{{end}}"))
 
 	return Template
@@ -818,6 +910,7 @@ func (ed EtcdDump) textRenderer(showConf bool, templates []*template.Template) (
 	for _, key := range ed.getSortedKeys() {
 		vd, _ := ed[key]
 		vd.ShowConf = showConf
+		vd.PrintConf = showConf
 
 		for _, templateVal := range templates {
 			err := templateVal.Execute(buffer, vd)
