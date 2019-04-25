@@ -16,6 +16,7 @@ package govppmux
 
 import (
 	"context"
+	"os"
 	"sync"
 	"time"
 
@@ -38,6 +39,10 @@ import (
 
 // Default path to socket for VPP stats
 const defaultStatsSocket = "/run/vpp/stats.sock"
+
+var (
+	disabledSocketClient = os.Getenv("GOVPPMUX_NOSOCK") != ""
+)
 
 // Plugin implements the govppmux plugin interface.
 type Plugin struct {
@@ -83,10 +88,13 @@ type Config struct {
 	HealthCheckReplyTimeout  time.Duration `json:"health-check-reply-timeout"`
 	HealthCheckThreshold     int           `json:"health-check-threshold"`
 	ReplyTimeout             time.Duration `json:"reply-timeout"`
+	// Connect to VPP for configuration requests via the shared memory instead of through the socket.
+	ConnectViaShm bool `json:"connect-via-shm"`
 	// The prefix prepended to the name used for shared memory (SHM) segments. If not set,
 	// shared memory segments are created directly in the SHM directory /dev/shm.
-	ShmPrefix       string `json:"shm-prefix"`
-	StatsSocketName string `json:"stats-socket-name"`
+	ShmPrefix        string `json:"shm-prefix"`
+	BinAPISocketPath string `json:"binapi-socket-path"`
+	StatsSocketPath  string `json:"stats-socket-path"`
 	// How many times can be request resent in case vpp is suddenly disconnected.
 	RetryRequestCount int `json:"retry-request-count"`
 	// Time between request resend attempts. Default is 500ms.
@@ -142,7 +150,12 @@ func (p *Plugin) Init() error {
 	}
 
 	if p.vppAdapter == nil {
-		p.vppAdapter = NewVppAdapter(p.config.ShmPrefix)
+		address := p.config.BinAPISocketPath
+		useShm := disabledSocketClient || p.config.ConnectViaShm
+		if useShm {
+			address = p.config.ShmPrefix
+		}
+		p.vppAdapter = NewVppAdapter(address, useShm)
 	} else {
 		// this is used for testing purposes
 		p.Log.Info("Reusing existing vppAdapter")
@@ -179,8 +192,8 @@ func (p *Plugin) Init() error {
 
 	// Connect to VPP status socket
 	var statsSocket string
-	if p.config.StatsSocketName != "" {
-		statsSocket = p.config.StatsSocketName
+	if p.config.StatsSocketPath != "" {
+		statsSocket = p.config.StatsSocketPath
 	} else {
 		statsSocket = defaultStatsSocket
 	}
