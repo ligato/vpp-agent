@@ -7,6 +7,17 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/ligato/vpp-agent/api/models/linux/interfaces"
+	"github.com/ligato/vpp-agent/api/models/linux/l3"
+
+	vpp_ipsec "github.com/ligato/vpp-agent/api/models/vpp/ipsec"
+
+	"github.com/ligato/vpp-agent/api/models/vpp/acl"
+	"github.com/ligato/vpp-agent/api/models/vpp/interfaces"
+	"github.com/ligato/vpp-agent/api/models/vpp/l2"
+	"github.com/ligato/vpp-agent/api/models/vpp/l3"
+	"github.com/ligato/vpp-agent/api/models/vpp/nat"
+
 	"github.com/ligato/cn-infra/health/statuscheck/model/status"
 	"github.com/logrusorgru/aurora.git"
 
@@ -904,6 +915,75 @@ func createlRouteTemplate() *template.Template {
 	return Template
 }
 
+func printList(data *VppData, buffer *bytes.Buffer) {
+	vppdata := data.Config.GetVppConfig()
+	linuxData := data.Config.GetLinuxConfig()
+
+	if vppdata.GetAcls() != nil {
+		fmt.Fprintf(buffer, "vpp %s\n", vpp_acl.ModelACL.Type)
+	}
+
+	if vppdata.GetArps() != nil {
+		fmt.Fprintf(buffer, "vpp %s\n", vpp_l3.ModelARPEntry.Type)
+	}
+
+	if vppdata.GetBridgeDomains() != nil {
+		fmt.Fprintf(buffer, "vpp %s\n", vpp_l2.ModelBridgeDomain.Type)
+	}
+
+	if vppdata.GetDnat44S() != nil {
+		fmt.Fprintf(buffer, "vpp %s\n", vpp_nat.ModelDNat44.Type)
+	}
+
+	if vppdata.GetFibs() != nil {
+		fmt.Fprintf(buffer, "vpp %s\n", vpp_l2.ModelFIBEntry.Type)
+	}
+
+	if vppdata.GetInterfaces() != nil {
+		fmt.Fprintf(buffer, "vpp %s\n", vpp_interfaces.ModelInterface.Type)
+	}
+
+	if vppdata.GetIpscanNeighbor() != nil {
+		fmt.Fprintf(buffer, "vpp %s\n", vpp_l3.ModelIPScanNeighbor.Type)
+	}
+
+	if vppdata.GetIpsecSas() != nil {
+		fmt.Fprintf(buffer, "vpp %s\n", vpp_ipsec.ModelSecurityAssociation.Type)
+	}
+
+	if vppdata.GetIpsecSpds() != nil {
+		fmt.Fprintf(buffer, "vpp %s\n", vpp_ipsec.ModelSecurityPolicyDatabase.Type)
+	}
+
+	if vppdata.GetNat44Global() != nil {
+		fmt.Fprintf(buffer, "vpp %s\n", vpp_nat.ModelNat44Global.Type)
+	}
+
+	if vppdata.GetProxyArp() != nil {
+		fmt.Fprintf(buffer, "vpp %s\n", vpp_l3.ModelProxyARP.Type)
+	}
+
+	if vppdata.GetRoutes() != nil {
+		fmt.Fprintf(buffer, "vpp %s\n", vpp_l3.ModelRoute.Type)
+	}
+
+	if vppdata.GetXconnectPairs() != nil {
+		fmt.Fprintf(buffer, "vpp %s\n", vpp_l2.ModelXConnectPair.Type)
+	}
+
+	if linuxData.GetRoutes() != nil {
+		fmt.Fprintf(buffer, "linux %s\n", linux_l3.ModelRoute.Type)
+	}
+
+	if linuxData.GetInterfaces() != nil {
+		fmt.Fprintf(buffer, "linux %s\n", linux_interfaces.ModelInterface.Type)
+	}
+
+	if linuxData.GetArpEntries() != nil {
+		fmt.Fprintf(buffer, "linux %s\n", linux_l3.ModelARPEntry.Type)
+	}
+}
+
 // Render data according to templates in text form.
 func (ed EtcdDump) textRenderer(showConf bool, templates []*template.Template) (*bytes.Buffer, error) {
 	buffer := new(bytes.Buffer)
@@ -912,11 +992,15 @@ func (ed EtcdDump) textRenderer(showConf bool, templates []*template.Template) (
 		vd.ShowConf = showConf
 		vd.PrintConf = showConf
 
-		for _, templateVal := range templates {
-			err := templateVal.Execute(buffer, vd)
-			if err != nil {
-				return nil, err
+		if showConf {
+			for _, templateVal := range templates {
+				err := templateVal.Execute(buffer, vd)
+				if err != nil {
+					return nil, err
+				}
 			}
+		} else {
+			printList(vd, buffer)
 		}
 	}
 	return buffer, nil

@@ -3,14 +3,19 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"strings"
+
+	"github.com/ligato/vpp-agent/api/models/vpp/acl"
+
+	linux_interfaces "github.com/ligato/vpp-agent/api/models/linux/interfaces"
+	linux_l3 "github.com/ligato/vpp-agent/api/models/linux/l3"
+
+	"github.com/ligato/vpp-agent/api/models/vpp/ipsec"
+	"github.com/ligato/vpp-agent/api/models/vpp/nat"
+
+	"github.com/ligato/vpp-agent/api/models/vpp/l2"
 
 	"github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-
-	"github.com/ligato/vpp-agent/api/models/linux/interfaces"
-	"github.com/ligato/vpp-agent/api/models/linux/l3"
-	"github.com/ligato/vpp-agent/api/models/vpp/acl"
-	"github.com/ligato/vpp-agent/api/models/vpp/ipsec"
-	"github.com/ligato/vpp-agent/api/models/vpp/l2"
 	"github.com/ligato/vpp-agent/api/models/vpp/l3"
 
 	"github.com/ligato/cn-infra/health/statuscheck/model/status"
@@ -48,173 +53,14 @@ data record (except JSON-formatted output)
 }
 
 var showConfig = &cobra.Command{
-	Use:     "config",
+	Use:     "config [<module name> [<module type>]]",
 	Aliases: []string{""},
 	Short:   "Print list of set configuration data",
 	Long: `
 	Print list of set configuration data
 `,
+
 	Run: configFunction,
-}
-
-var showConfigVpp = &cobra.Command{
-	Use:     "vpp",
-	Aliases: []string{""},
-	Short:   "Print vpp configuration data",
-	Long: `
-	Print vpp configuration data
-`,
-	Run: configVppFunction,
-}
-
-var showConfigLinux = &cobra.Command{
-	Use:     "linux",
-	Aliases: []string{""},
-	Short:   "Print linux configuration data",
-	Long: `
-	Print linux configuration data
-`,
-	Run: configLinuxFunction,
-}
-
-var showConfigAcl = &cobra.Command{
-	Use:     "acl",
-	Aliases: []string{""},
-	Short:   "Print vpp acl configuration data",
-	Long: `
-	Print vpp acl configuration data
-`,
-	Run: aclFunction,
-}
-
-var showConfigBd = &cobra.Command{
-	Use:     "bridgedomain",
-	Aliases: []string{""},
-	Short:   "Print vpp bridge domain configuration data",
-	Long: `
-	Print vpp bridge domain configuration data
-`,
-	Run: bdFunction,
-}
-
-var showConfigFib = &cobra.Command{
-	Use:     "fib",
-	Aliases: []string{""},
-	Short:   "Print vpp fib configuration data",
-	Long: `
-	Print vpp fib configuration data
-`,
-	Run: fibFunction,
-}
-
-var showConfigXconnect = &cobra.Command{
-	Use:     "xconnect",
-	Aliases: []string{""},
-	Short:   "Print vpp xconnect configuration data",
-	Long: `
-	Print vpp xconnect configuration data
-`,
-	Run: xconnectFunction,
-}
-
-var showConfigArp = &cobra.Command{
-	Use:     "arp",
-	Aliases: []string{""},
-	Short:   "Print arp configuration data",
-	Long: `
-	Print vpp arp configuration data
-`,
-	Run: arpFunction,
-}
-
-var showConfigRoute = &cobra.Command{
-	Use:     "route",
-	Aliases: []string{""},
-	Short:   "Print vpp route configuration data",
-	Long: `
-	Print vpp route configuration data
-`,
-	Run: routeFunction,
-}
-
-var showConfigProxyArp = &cobra.Command{
-	Use:     "proxyarp",
-	Aliases: []string{""},
-	Short:   "Print vpp proxy arp configuration data",
-	Long: `
-	Print vpp proxy arp configuration data
-`,
-	Run: proxyArpFunction,
-}
-
-var showConfigInterface = &cobra.Command{
-	Use:     "interface",
-	Aliases: []string{""},
-	Short:   "Print vpp interface configuration data",
-	Long: `
-	Print interface configuration data
-`,
-	Run: ipInterfaceFunction,
-}
-
-var showConfigIpneighbor = &cobra.Command{
-	Use:     "ipneighbor",
-	Aliases: []string{""},
-	Short:   "Print vpp ip neighbor configuration data",
-	Long: `
-	Print ip neighbor configuration data
-`,
-	Run: ipNeighborFunction,
-}
-
-var showConfigSpolicy = &cobra.Command{
-	Use:     "ipsecpolicy",
-	Aliases: []string{""},
-	Short:   "Print vpp ip sec policy configuration data",
-	Long: `
-	Print ip sec policy configuration data
-`,
-	Run: ipSecPolicyFunction,
-}
-
-var showConfigSAss = &cobra.Command{
-	Use:     "ipsecassociation",
-	Aliases: []string{""},
-	Short:   "Print vpp ip sec association configuration data",
-	Long: `
-	Print ip sec association configuration data
-`,
-	Run: ipSecAsssociationFunction,
-}
-
-var showConfigLInterface = &cobra.Command{
-	Use:     "interface",
-	Aliases: []string{""},
-	Short:   "Print interface configuration data",
-	Long: `
-	Print Linux interface configuration data
-`,
-	Run: linterfaceFunction,
-}
-
-var showConfigLArp = &cobra.Command{
-	Use:     "arp",
-	Aliases: []string{""},
-	Short:   "Print Linux arp configuration data",
-	Long: `
-	Print arp configuration data
-`,
-	Run: arpFunction,
-}
-
-var showConfigLRoute = &cobra.Command{
-	Use:     "route",
-	Aliases: []string{""},
-	Short:   "Print Linux route configuration data",
-	Long: `
-	Print Linux route interface configuration data
-`,
-	Run: lrouteFunction,
 }
 
 var (
@@ -222,38 +68,20 @@ var (
 	showConf    bool
 	showConfAll bool
 	showStatus  bool
-	keyPrefix   string
+	keyPrefix   []string
 )
 
 func init() {
 	RootCmd.AddCommand(showCmd)
 	showCmd.AddCommand(showConfig)
-	showConfig.AddCommand(showConfigVpp)
-	showConfig.AddCommand(showConfigLinux)
-	showConfigVpp.AddCommand(showConfigAcl)
-	showConfigVpp.AddCommand(showConfigBd)
-	showConfigVpp.AddCommand(showConfigFib)
-	showConfigVpp.AddCommand(showConfigXconnect)
-	showConfigVpp.AddCommand(showConfigArp)
-	showConfigVpp.AddCommand(showConfigRoute)
-	showConfigVpp.AddCommand(showConfigProxyArp)
-	showConfigVpp.AddCommand(showConfigInterface)
-	showConfigVpp.AddCommand(showConfigIpneighbor)
-	showConfigVpp.AddCommand(showConfigSpolicy)
-	showConfigVpp.AddCommand(showConfigSAss)
-	showConfigLinux.AddCommand(showConfigLInterface)
-	showConfigLinux.AddCommand(showConfigLArp)
-	showConfigLinux.AddCommand(showConfigLRoute)
 	showCmd.PersistentFlags().BoolVar(&showAll, "all", false,
 		"Show all configuration")
 	showConfig.PersistentFlags().BoolVar(&showConfAll, "all", false,
 		"Show all configuration")
-	showConfigVpp.PersistentFlags().BoolVar(&showAll, "all", false,
-		"Show all configuration")
 
 	showConf = false
 	showStatus = true
-	keyPrefix = "config"
+	keyPrefix = append(keyPrefix, "config")
 }
 
 func configFunction(cmd *cobra.Command, args []string) {
@@ -263,143 +91,112 @@ func configFunction(cmd *cobra.Command, args []string) {
 	showFunction(cmd, args)
 }
 
-func configVppFunction(cmd *cobra.Command, args []string) {
-	showConf = true
-	showStatus = false
-	keyPrefix = "config/vpp"
+func setKeyPrefix(args []string) {
+	var modulName, modulType string
 
-	showFunction(cmd, args)
-}
+	modulName = args[0]
+	keyPrefix = nil
 
-func configLinuxFunction(cmd *cobra.Command, args []string) {
-	showConf = true
-	showStatus = false
-	keyPrefix = "config/linux"
+	if len(args) == 1 {
+		keyPrefix = append(keyPrefix, "config/"+modulName)
+		return
+	}
 
-	showFunction(cmd, args)
-}
+	modulType = args[1]
 
-func aclFunction(cmd *cobra.Command, args []string) {
-	showConf = true
-	showStatus = false
-	showConfAll = true
-	keyPrefix = vpp_acl.ModelACL.KeyPrefix()
+	if strings.HasPrefix(vpp_interfaces.ModuleName, modulName) {
+		if strings.HasPrefix(vpp_interfaces.ModelInterface.Type, modulType) {
+			keyPrefix = append(keyPrefix, vpp_interfaces.ModelInterface.KeyPrefix())
+			showConfAll = true
+		}
 
-	showFunction(cmd, args)
-}
+		if strings.HasPrefix(vpp_acl.ModelACL.Type, modulType) {
+			keyPrefix = append(keyPrefix, vpp_acl.ModelACL.KeyPrefix())
+			showConfAll = true
+		}
 
-func arpFunction(cmd *cobra.Command, args []string) {
-	showConf = true
-	showStatus = false
-	showConfAll = true
-	keyPrefix = vpp_l3.ModelARPEntry.KeyPrefix()
+		if strings.HasPrefix(vpp_l2.ModelBridgeDomain.Type, modulType) {
+			keyPrefix = append(keyPrefix, vpp_l2.ModelBridgeDomain.KeyPrefix())
+			showConfAll = true
+		}
 
-	showFunction(cmd, args)
-}
+		if strings.HasPrefix(vpp_l2.ModelFIBEntry.Type, modulType) {
+			keyPrefix = append(keyPrefix, vpp_l2.ModelFIBEntry.KeyPrefix())
+			showConfAll = true
+		}
 
-func bdFunction(cmd *cobra.Command, args []string) {
-	showConf = true
-	showStatus = false
-	showConfAll = true
-	keyPrefix = vpp_l2.ModelBridgeDomain.KeyPrefix()
+		if strings.HasPrefix(vpp_l2.ModelXConnectPair.Type, modulType) {
+			keyPrefix = append(keyPrefix, vpp_l2.ModelXConnectPair.KeyPrefix())
+			showConfAll = true
+		}
 
-	showFunction(cmd, args)
-}
+		if strings.HasPrefix(vpp_l3.ModelRoute.Type, modulType) {
+			keyPrefix = append(keyPrefix, vpp_l3.ModelRoute.KeyPrefix())
+			showConfAll = true
+		}
 
-func fibFunction(cmd *cobra.Command, args []string) {
-	showConf = true
-	showConfAll = true
-	showStatus = false
-	keyPrefix = vpp_l2.ModelFIBEntry.KeyPrefix()
+		if strings.HasPrefix(vpp_l3.ModelARPEntry.Type, modulType) {
+			keyPrefix = append(keyPrefix, vpp_l3.ModelARPEntry.KeyPrefix())
+			showConfAll = true
+		}
 
-	showFunction(cmd, args)
-}
+		if strings.HasPrefix(vpp_l3.ModelProxyARP.Type, modulType) {
+			keyPrefix = append(keyPrefix, vpp_l3.ModelProxyARP.KeyPrefix())
+			showConfAll = true
+		}
 
-func ipInterfaceFunction(cmd *cobra.Command, args []string) {
-	showConf = true
-	showConfAll = true
-	showStatus = false
-	keyPrefix = vpp_interfaces.ModelInterface.KeyPrefix()
+		if strings.HasPrefix(vpp_l3.ModelIPScanNeighbor.Type, modulType) {
+			keyPrefix = append(keyPrefix, vpp_l3.ModelIPScanNeighbor.KeyPrefix())
+			showConfAll = true
+		}
 
-	showFunction(cmd, args)
-}
+		if strings.HasPrefix(vpp_nat.ModelNat44Global.Type, modulType) {
+			keyPrefix = append(keyPrefix, vpp_nat.ModelNat44Global.KeyPrefix())
+			showConfAll = true
+		}
 
-func ipNeighborFunction(cmd *cobra.Command, args []string) {
-	showConf = true
-	showConfAll = true
-	showStatus = false
-	keyPrefix = vpp_l3.ModelIPScanNeighbor.KeyPrefix()
+		if strings.HasPrefix(vpp_nat.ModelDNat44.Type, modulType) {
+			keyPrefix = append(keyPrefix, vpp_nat.ModelDNat44.KeyPrefix())
+			showConfAll = true
+		}
 
-	showFunction(cmd, args)
-}
+		if strings.HasPrefix(vpp_ipsec.ModelSecurityPolicyDatabase.Type, modulType) {
+			keyPrefix = append(keyPrefix, vpp_ipsec.ModelSecurityPolicyDatabase.KeyPrefix())
+			showConfAll = true
+		}
 
-func ipSecAsssociationFunction(cmd *cobra.Command, args []string) {
-	showConf = true
-	showConfAll = true
-	showStatus = false
-	keyPrefix = vpp_ipsec.ModelSecurityAssociation.KeyPrefix()
+		if strings.HasPrefix(vpp_ipsec.ModelSecurityAssociation.Type, modulType) {
+			keyPrefix = append(keyPrefix, vpp_ipsec.ModelSecurityAssociation.KeyPrefix())
+			showConfAll = true
+		}
+	}
 
-	showFunction(cmd, args)
-}
+	if strings.HasPrefix(linux_interfaces.ModuleName, modulName) {
+		if strings.HasPrefix(linux_interfaces.ModelInterface.Type, modulType) {
+			keyPrefix = append(keyPrefix, linux_interfaces.ModelInterface.KeyPrefix())
+			showConfAll = true
+		}
 
-func ipSecPolicyFunction(cmd *cobra.Command, args []string) {
-	showConf = true
-	showConfAll = true
-	showStatus = false
-	keyPrefix = vpp_ipsec.ModelSecurityPolicyDatabase.KeyPrefix()
+		if strings.HasPrefix(linux_l3.ModelARPEntry.Type, modulType) {
+			keyPrefix = append(keyPrefix, linux_l3.ModelARPEntry.KeyPrefix())
+			showConfAll = true
+		}
 
-	showFunction(cmd, args)
-}
-
-func proxyArpFunction(cmd *cobra.Command, args []string) {
-	showConf = true
-	showConfAll = true
-	showStatus = false
-	keyPrefix = vpp_l3.ModelProxyARP.KeyPrefix()
-
-	showFunction(cmd, args)
-}
-
-func routeFunction(cmd *cobra.Command, args []string) {
-	showConf = true
-	showConfAll = true
-	showStatus = false
-	keyPrefix = vpp_l3.ModelRoute.KeyPrefix()
-
-	showFunction(cmd, args)
-}
-
-func xconnectFunction(cmd *cobra.Command, args []string) {
-	showConf = true
-	showConfAll = true
-	showStatus = false
-	keyPrefix = vpp_l2.ModelXConnectPair.KeyPrefix()
-
-	showFunction(cmd, args)
-}
-
-func linterfaceFunction(cmd *cobra.Command, args []string) {
-	showConf = true
-	showConfAll = true
-	showStatus = false
-	keyPrefix = linux_interfaces.ModelInterface.KeyPrefix()
-
-	showFunction(cmd, args)
-}
-
-func lrouteFunction(cmd *cobra.Command, args []string) {
-	showConf = true
-	showConfAll = true
-	showStatus = false
-	keyPrefix = linux_l3.ModelRoute.KeyPrefix()
-
-	showFunction(cmd, args)
+		if strings.HasPrefix(linux_l3.ModelRoute.Type, modulType) {
+			keyPrefix = append(keyPrefix, linux_l3.ModelRoute.KeyPrefix())
+			showConfAll = true
+		}
+	}
 }
 
 func showFunction(cmd *cobra.Command, args []string) {
 	db, err := utils.GetDbForAllAgents(globalFlags.Endpoints)
 	if err != nil {
 		utils.ExitWithError(utils.ExitError, errors.New("Failed to connect to Etcd - "+err.Error()))
+	}
+
+	if len(args) > 0 {
+		setKeyPrefix(args)
 	}
 
 	keyIter, err := db.ListKeys(servicelabel.GetAllAgentsPrefix())
@@ -426,7 +223,9 @@ func showFunction(cmd *cobra.Command, args []string) {
 		}
 
 		if showConf || showAll {
-			printAgentConfig(db1, agentLabel)
+			for _, val := range keyPrefix {
+				printAgentConfig(db1, agentLabel, val)
+			}
 		}
 	}
 }
@@ -462,9 +261,9 @@ func printAgentStatus(db keyval.ProtoBroker, agentLabel string) {
 	}
 }
 
-func printAgentConfig(db keyval.ProtoBroker, agentLabel string) {
+func printAgentConfig(db keyval.ProtoBroker, agentLabel string, kprefix string) {
 
-	keyIter, err := db.ListKeys(keyPrefix)
+	keyIter, err := db.ListKeys(kprefix)
 	if err != nil {
 		utils.ExitWithError(utils.ExitError, errors.New("Failed to get keys - "+err.Error()))
 	}
