@@ -55,9 +55,9 @@ data record (except JSON-formatted output)
 var showConfig = &cobra.Command{
 	Use:     "config [<module name> [<module type>]]",
 	Aliases: []string{""},
-	Short:   "Print list of set configuration data",
+	Short:   "Print list of set configuration type",
 	Long: `
-	Print list of set configuration data
+	Print list of set configuration type.
 `,
 
 	Run: configFunction,
@@ -250,7 +250,7 @@ func printAgentStatus(db keyval.ProtoBroker, agentLabel string) {
 	}
 
 	if len(ed) > 0 {
-		buffer, err := ed.PrintStatus(showAll)
+		buffer, err := ed.PrintStatus()
 		if err == nil {
 			fmt.Fprintf(os.Stdout, buffer.String())
 		} else {
@@ -271,7 +271,7 @@ func printAgentConfig(db keyval.ProtoBroker, agentLabel string, kprefix string) 
 	ed := utils.NewEtcdDump()
 	for {
 		if key, _, done := keyIter.GetNext(); !done {
-			fmt.Printf("Key: '%s'\n", key)
+			//fmt.Printf("Key: '%s'\n", key)
 			if _, err = ed.ReadDataFromDb(db, key, agentLabel); err != nil {
 				utils.ExitWithError(utils.ExitError, err)
 			}

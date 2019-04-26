@@ -46,7 +46,7 @@ func (p pfx) getPrefix(level int) string {
 	return strings.Repeat(" ", level*p.perLevelSpaces)
 }
 
-func (ed EtcdDump) PrintStatus(showConf bool) (*bytes.Buffer, error) {
+func (ed EtcdDump) PrintStatus() (*bytes.Buffer, error) {
 	prefixer = newPrefixer(false, perLevelSpaces)
 
 	stsFuncMap := template.FuncMap{
@@ -75,7 +75,7 @@ func (ed EtcdDump) PrintStatus(showConf bool) (*bytes.Buffer, error) {
 	templates := []*template.Template{}
 	templates = append(templates, stsTemplate)
 
-	return ed.textRenderer(showConf, templates)
+	return ed.textRenderer(true, templates)
 }
 
 func (ed EtcdDump) PrintConfig(showConf bool) (*bytes.Buffer, error) {

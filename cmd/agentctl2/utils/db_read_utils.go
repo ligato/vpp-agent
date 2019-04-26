@@ -47,6 +47,7 @@ type VppData struct {
 	Status    map[string]VppStatusWithMD
 	Config    configurator.Config
 	PrintConf bool
+	ShowEtcd  bool
 	ShowConf  bool
 }
 
@@ -328,6 +329,7 @@ func newVppDataRecord() *VppData {
 		},
 		PrintConf: false,
 		ShowConf:  false,
+		ShowEtcd:  false,
 	}
 }
 
