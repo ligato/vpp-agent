@@ -60,6 +60,11 @@ func (s *Scheduler) executeTransaction(txn *transaction, graphW graph.RWAccess, 
 		op = "simulate transaction"
 	}
 	defer trace.StartRegion(txn.ctx, op).End()
+	if dryRun {
+		defer trackTransactionMethod("simulateTransaction")()
+	} else {
+		defer trackTransactionMethod("executeTransaction")()
+	}
 
 	if s.logGraphWalk {
 		msg := fmt.Sprintf("%s (seqNum=%d)", op, txn.seqNum)

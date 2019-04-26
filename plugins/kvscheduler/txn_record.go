@@ -101,6 +101,7 @@ func (s *Scheduler) preRecordTxnOp(args *applyValueArgs, node graph.Node) *kvs.R
 func (s *Scheduler) preRecordTransaction(txn *transaction, planned kvs.RecordedTxnOps,
 	skippedSimulation bool) *kvs.RecordedTxn {
 	defer trace.StartRegion(txn.ctx, "preRecordTransaction").End()
+	defer trackTransactionMethod("preRecordTransaction")()
 
 	// allocate new transaction record
 	record := &kvs.RecordedTxn{
@@ -163,6 +164,7 @@ func (s *Scheduler) preRecordTransaction(txn *transaction, planned kvs.RecordedT
 // recordTransaction records the finalized transaction (log + in-memory).
 func (s *Scheduler) recordTransaction(txn *transaction, txnRecord *kvs.RecordedTxn, executed kvs.RecordedTxnOps, start, stop time.Time) {
 	defer trace.StartRegion(txn.ctx, "recordTransaction").End()
+	defer trackTransactionMethod("recordTransaction")()
 
 	txnRecord.PreRecord = false
 	txnRecord.Start = start
