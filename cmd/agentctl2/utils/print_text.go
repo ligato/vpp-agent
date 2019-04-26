@@ -90,8 +90,8 @@ func (ed EtcdDump) PrintConfig(showConf bool) (*bytes.Buffer, error) {
 	routeTemplate := createRouteTableTemplate()
 	proxyarpTemplate := createProxyArpTemplate()
 	ipneighbor := createIPScanNeightTemplate()
-	//nat := createNATTemplate()
-	//dnat := createDNATTemplate()
+	nat := createNATTemplate()
+	dnat := createDNATTemplate()
 	spolicy := createIPSecPolicyTemplate()
 	sassociation := createIPSecAssociationTemplate()
 
@@ -104,7 +104,7 @@ func (ed EtcdDump) PrintConfig(showConf bool) (*bytes.Buffer, error) {
 	templates = append(templates, ifTemplate,
 		aclTemplate, bdTemplate, fibTemplate, xconnectTemplate,
 		arpTemplate, routeTemplate, proxyarpTemplate, ipneighbor,
-		/*nat, dnat,*/ spolicy, sassociation, linterface, larp, lroute)
+		nat, dnat, spolicy, sassociation, linterface, larp, lroute)
 
 	return ed.textRenderer(showConf, templates)
 }
@@ -582,40 +582,39 @@ func createIPScanNeightTemplate() *template.Template {
 func createNATTemplate() *template.Template {
 
 	FuncMap := template.FuncMap{
-		"setBold": setBold,
-		"pfx":     getPrefix,
+		"setBold":   setBold,
+		"isEnabled": isEnabled,
+		"pfx":       getPrefix,
 	}
 
 	Template := template.Must(template.New("nat").Funcs(FuncMap).Parse(
 		"{{$print := .PrintConf}}" +
 			"{{with .Config}}{{with .VppConfig}}" +
-			"{{with .NAT}}\n{{pfx 1}}{{setBold \"NAT\"}}" +
+			"{{with .Nat44Global}}\n{{pfx 1}}{{setBold \"Nat44Global\"}}" +
 
 			"{{if $print}}:" +
 
-			"{{with .Label}}\n{{pfx 2}}Label: {{.}}{{end}}" +
+			"\n{{pfx 2}}Forwarding: {{isEnabled .Forwarding}}" +
 
-			//Iterate over StMappings
-			"{{range $StMapName, $StMapData:= .StMappings}}" +
-			"{{with .ExternalInterface}}\n{{pfx 3}}External Interface: {{.}}{{end}}" +
-			"{{with .ExternalIp}}\n{{pfx 3}}External IP: {{.}}{{end}}" +
-			"{{with .ExternalPort}}\n{{pfx 3}}External Port: {{.}}{{end}}" +
-
-			//Iterate over Local IPs
-			"{{range $LocalIPName, $LocalIPData := .LocalIps}}" +
-			"{{with .VrfId}}\n{{pfx 4}}VrfID: {{.}}{{end}}" +
-			"{{with .LocalIp}}\n{{pfx 4}}Local IP: {{.}}{{end}}" +
-			"{{with .LocalPort}}\n{{pfx 4}}Local Port: {{.}}{{end}}" +
-			"{{with .Probability}}\n{{pfx 4}}Probability: {{.}}{{end}}" +
-
-			//End over Local IPs
+			"\n{{pfx 2}}Nat Interfaces:" +
+			"{{range .NatInterfaces}}" +
+			"\n{{pfx 3}}Name: {{.Name}}" +
+			"\n{{pfx 3}}Is Inside: {{isEnabled .IsInside}}" +
+			"\n{{pfx 3}}Output Feature: {{isEnabled .OutputFeature}}" +
 			"{{end}}" +
 
-			"{{with .Protocol}}\n{{pfx 3}}Protocol: {{.}}{{end}}" +
-			"{{with .TwiceNat}}\n{{pfx 3}}Twice Nat: {{.}}{{end}}" +
-			"{{with .SessionAffinity}}\n{{pfx 3}}Session Affinity: {{.}}{{end}}" +
+			"\n{{pfx 2}}Address Pool:" +
+			"{{range .AddressPool}}" +
+			"\n{{pfx 3}}Address: {{.Address}}" +
+			"\n{{pfx 3}}VrfId: {{.VrfId}}" +
+			"\n{{pfx 3}}TwiceNat: {{isEnabled .TwiceNat}}" +
+			"{{end}}" +
 
-			//End StMappings
+			"{{with .VirtualReassembly}}" +
+			"\n{{pfx 3}}Timeout: {{.Timeout}}" +
+			"\n{{pfx 3}}Max Reassemblies: {{.MaxReassemblies}}" +
+			"\n{{pfx 3}}Max Fragments: {{.MaxFragments}}" +
+			"\n{{pfx 3}}Drop Fragments: {{.DropFragments}}" +
 			"{{end}}" +
 
 			// End print
@@ -639,47 +638,54 @@ func createDNATTemplate() *template.Template {
 	Template := template.Must(template.New("dnat").Funcs(FuncMap).Parse(
 		"{{$print := .PrintConf}}" +
 			"{{with .Config}}{{with .VppConfig}}" +
-			"{{with .DNAT}}\n{{pfx 1}}{{setBold \"DNAT\"}}" +
+			"{{with .Dnat44S}}\n{{pfx 1}}{{setBold \"Dnat44\"}}" +
+
+			"{{range .}}" +
 
 			"{{if $print}}:" +
 
-			"{{with .Label}}\n{{pfx 2}}Label: {{.}}{{end}}" +
+			"\n{{pfx 2}}Label: {{.Label}}" +
 
 			//Iterate over StMappings
-			"{{range $StMapName, $StMapData:= .StMappings}}" +
-			"{{with .ExternalInterface}}\n{{pfx 3}}External Interface: {{.}}{{end}}" +
-			"{{with .ExternalIp}}\n{{pfx 3}}External IP: {{.}}{{end}}" +
-			"{{with .ExternalPort}}\n{{pfx 3}}External Port: {{.}}{{end}}" +
+			"\n{{pfx 2}}Static mappings:" +
+			"{{range .StMappings}}" +
+			"\n{{pfx 3}}External Interface: {{.ExternalInterface}}" +
+			"\n{{pfx 3}}External IP: {{.ExternalIp}}" +
+			"\n{{pfx 3}}External Port: {{.ExternalPort}}" +
 
 			//Iterate over Local IPs
-			"{{range $LocalIPName, $LocalIPData := .LocalIps}}" +
-			"{{with .VrfId}}\n{{pfx 4}}VrfID: {{.}}{{end}}" +
-			"{{with .LocalIp}}\n{{pfx 4}}Local IP: {{.}}{{end}}" +
-			"{{with .LocalPort}}\n{{pfx 4}}Local Port: {{.}}{{end}}" +
-			"{{with .Probability}}\n{{pfx 4}}Probability: {{.}}{{end}}" +
+			"\n{{pfx 3}}Local IP:" +
+			"{{range .LocalIps}}" +
+			"\n{{pfx 4}}VrfID: {{.VrfId}}" +
+			"\n{{pfx 4}}Local IP: {{.LocalIp}}" +
+			"\n{{pfx 4}}Local Port: {{.LocalPort}}" +
+			"\n{{pfx 4}}Probability: {{.Probability}}" +
 
 			//End over Local IPs
 			"{{end}}" +
 
-			"{{with .Protocol}}\n{{pfx 3}}Protocol: {{.}}{{end}}" +
-			"{{with .TwiceNat}}\n{{pfx 3}}Twice Nat: {{.}}{{end}}" +
-			"{{with .SessionAffinity}}\n{{pfx 3}}Session Affinity: {{.}}{{end}}" +
+			"\n{{pfx 3}}Protocol: {{.Protocol}}" +
+			"\n{{pfx 3}}Twice Nat: {{.TwiceNat}}" +
+			"\n{{pfx 3}}Session Affinity: {{.SessionAffinity}}" +
 
 			//End StMappings
 			"{{end}}" +
 
 			//Iterate over StMappings
-			"{{range $IdMapName, $IDMapData:= .IdMappings}}" +
-			"{{with .VrfId}}\n{{pfx 4}}VrfID: {{.}}{{end}}" +
-			"{{with .Interface}}\n{{pfx 4}}Interface: {{.}}{{end}}" +
-			"{{with .IPAddress}}\n{{pfx 4}}IP Address: {{.}}{{end}}" +
-			"{{with .Port}}\n{{pfx 4}}Port: {{.}}{{end}}" +
-			"{{with .Protocol}}\n{{pfx 4}}Protocol: {{.}}{{end}}" +
+			"\n{{pfx 2}}Identity Mapping:" +
+			"{{range .IdMappings}}" +
+			"\n{{pfx 4}}VrfID: {{.VrfId}}" +
+			"\n{{pfx 4}}Interface: {{.Interface}}" +
+			"\n{{pfx 4}}IP Address: {{.IpAddress}}" +
+			"\n{{pfx 4}}Port: {{.Port}}" +
+			"\n{{pfx 4}}Protocol: {{.Protocol}}" +
 			//End over StMappings
 			"{{end}}" +
 
 			// End print
 			"\n{{end}}" +
+
+			"{{end}}" +
 
 			//End
 			"{{end}}" +

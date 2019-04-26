@@ -115,11 +115,10 @@ func (ed EtcdDump) ReadDataFromDb(db keyval.ProtoBroker, key string,
 		ed[agent], err = readProxyARPConfigFromDb(db, vd, key)
 	case strings.HasPrefix(key, l3.ModelIPScanNeighbor.KeyPrefix()):
 		ed[agent], err = readIPScanNeightConfigFromDb(db, vd, key)
-		//FIXME: Error in key
-	//case NATPath:
-	//	ed[label], err = readNATConfigFromDb(db, vd, key)
-	//case DNATPath:
-	//	ed[label], err = readDNATConfigFromDb(db, vd, key, params)
+	case strings.HasPrefix(key, nat.ModelNat44Global.KeyPrefix()):
+		ed[agent], err = readNATConfigFromDb(db, vd, key)
+	case strings.HasPrefix(key, nat.ModelDNat44.KeyPrefix()):
+		ed[agent], err = readDNATConfigFromDb(db, vd, key)
 	case strings.HasPrefix(key, ipsec.ModelSecurityPolicyDatabase.KeyPrefix()):
 		ed[agent], err = readIPSecPolicyConfigFromDb(db, vd, key)
 	case strings.HasPrefix(key, ipsec.ModelSecurityAssociation.KeyPrefix()):
@@ -312,7 +311,7 @@ func readLinuxRouteConfigFromDb(db keyval.ProtoBroker, vd *VppData, key string) 
 func readDataFromDb(db keyval.ProtoBroker, key string, obj proto.Message) (bool, int64, error) {
 	found, rev, err := db.GetValue(key, obj)
 	if err != nil {
-		return false, rev, errors.New("Could not read from database, Key:" + key + ", error" + err.Error())
+		return false, rev, errors.New("Could not read from database, Key: " + key + ", error " + err.Error())
 	}
 	if !found {
 		fmt.Printf("WARNING: data for Key '%s' not found\n", key)

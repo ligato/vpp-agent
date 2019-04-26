@@ -271,7 +271,7 @@ func printAgentConfig(db keyval.ProtoBroker, agentLabel string, kprefix string) 
 	ed := utils.NewEtcdDump()
 	for {
 		if key, _, done := keyIter.GetNext(); !done {
-			//fmt.Printf("Key: '%s'\n", key)
+			fmt.Printf("Key: '%s'\n", key)
 			if _, err = ed.ReadDataFromDb(db, key, agentLabel); err != nil {
 				utils.ExitWithError(utils.ExitError, err)
 			}
