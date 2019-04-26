@@ -70,7 +70,7 @@ func (ed EtcdDump) PrintStatus() (*bytes.Buffer, error) {
 			// In case there is no status
 			"{{else}} {{setRed \"INACTIVE\"}}" +
 			// Iterate over status - end of loop
-			"{{end}}\n"))
+			"{{end}}\n\n"))
 
 	templates := []*template.Template{}
 	templates = append(templates, stsTemplate)
@@ -121,7 +121,7 @@ func createACLTemplate() *template.Template {
 	Template := template.Must(template.New("acl").Funcs(FuncMap).Parse(
 		"{{$conf := .ShowConf}}{{$print := .PrintConf}}" +
 			"{{with .Config}}{{with .VppConfig}}" +
-			"{{with .Acls}}\n{{pfx 1}}{{setBold \"ACL\"}}" +
+			"{{with .Acls}}{{pfx 1}}{{setBold \"ACL\"}}" +
 
 			"{{if $print}}:" +
 
@@ -238,7 +238,7 @@ func createACLTemplate() *template.Template {
 			// End print
 			"\n{{end}}" +
 
-			"{{end}}" +
+			"\n{{end}}" +
 			"{{end}}{{end}}"))
 
 	return Template
@@ -260,13 +260,13 @@ func createInterfaceTemplate() *template.Template {
 	Template := template.Must(template.New("interfaces").Funcs(ifFuncMap).Parse(
 		"{{$conf := .ShowConf}}{{$print := .PrintConf}}" +
 			"{{with .Config}}{{with .VppConfig}}" +
-			"{{with .Interfaces}}\n{{pfx 1}}{{setBold \"Interfaces\"}}" +
+			"{{with .Interfaces}}{{pfx 1}}{{setBold \"Interfaces\"}}" +
 
 			"{{if $print}}:" +
 
 			// Iterate over interfaces.
 			"{{range .}}" +
-			"\n{{pfx 2}}{{.Name}}" +
+			"\n{{pfx 2}}Name: {{.Name}}" +
 
 			"{{if $conf}}" +
 			// Interface overall status
@@ -292,7 +292,7 @@ func createInterfaceTemplate() *template.Template {
 			// End print
 			"\n{{end}}" +
 
-			"{{end}}{{end}}" +
+			"\n{{end}}{{end}}" +
 			"{{end}}{{end}}"))
 
 	return Template
@@ -310,7 +310,7 @@ func createBridgeTemplate() *template.Template {
 	Template := template.Must(template.New("bridgeDomains").Funcs(FuncMap).Parse(
 		"{{$conf := .ShowConf}}{{$print := .PrintConf}}" +
 			"{{with .Config}}{{with .VppConfig}}" +
-			"{{with .BridgeDomains}}\n{{pfx 1}}{{setBold \"Bridge\"}}" +
+			"{{with .BridgeDomains}}{{pfx 1}}{{setBold \"Bridge\"}}" +
 
 			"{{if $print}}:" +
 
@@ -322,7 +322,7 @@ func createBridgeTemplate() *template.Template {
 			"\n{{pfx 3}}Forward: {{isEnabled .Forward}}" +
 			"\n{{pfx 3}}Learn: {{isEnabled .Learn}}" +
 			"\n{{pfx 3}}ArpTermination: {{isEnabled .ArpTermination}}" +
-			"\n{{pfx 3}}: {{.MacAge}}" +
+			"\n{{pfx 3}}Mac Age: {{.MacAge}}" +
 
 			//Interate over interfaces.
 			"\n{{pfx 3}}Interfaces:" +
@@ -349,7 +349,7 @@ func createBridgeTemplate() *template.Template {
 			// End print
 			"\n{{end}}" +
 
-			"{{end}}{{end}}" +
+			"\n{{end}}{{end}}" +
 			"{{end}}{{end}}"))
 
 	return Template
@@ -371,7 +371,7 @@ func createFibTableTemplate() *template.Template {
 	Template := template.Must(template.New("fibTable").Funcs(FuncMap).Parse(
 		"{{$print := .PrintConf}}" +
 			"{{with .Config}}{{with .VppConfig}}" +
-			"{{with .Fibs}}\n{{pfx 1}}{{setBold \"Fib Table\"}}" +
+			"{{with .Fibs}}{{pfx 1}}{{setBold \"Fib Table\"}}" +
 
 			"{{if $print}}:" +
 
@@ -389,7 +389,7 @@ func createFibTableTemplate() *template.Template {
 			// End print
 			"\n{{end}}" +
 
-			"{{end}}{{end}}" +
+			"\n{{end}}{{end}}" +
 			"{{end}}"))
 
 	return Template
@@ -405,7 +405,7 @@ func createXconnectTableTemplate() *template.Template {
 	Template := template.Must(template.New("xconnect").Funcs(FuncMap).Parse(
 		"{{$conf := .ShowConf}}{{$print := .PrintConf}}" +
 			"{{with .Config}}{{with .VppConfig}}" +
-			"{{with .XconnectPairs}}\n{{pfx 1}}{{setBold \"Xconnect\"}}" +
+			"{{with .XconnectPairs}}{{pfx 1}}{{setBold \"Xconnect\"}}" +
 
 			"{{if $print}}:" +
 
@@ -426,7 +426,7 @@ func createXconnectTableTemplate() *template.Template {
 			// End print
 			"\n{{end}}" +
 
-			"{{end}}{{end}}" +
+			"\n{{end}}{{end}}" +
 			"{{end}}{{end}}"))
 
 	return Template
@@ -444,7 +444,7 @@ func createArpTableTemplate() *template.Template {
 	Template := template.Must(template.New("arp").Funcs(FuncMap).Parse(
 		"{{$print := .PrintConf}}" +
 			"{{with .Config}}{{with .VppConfig}}" +
-			"{{with .Arps}}\n{{pfx 1}}{{setBold \"ARP\"}}" +
+			"{{with .Arps}}{{pfx 1}}{{setBold \"ARP\"}}" +
 
 			"{{if $print}}:" +
 
@@ -461,7 +461,7 @@ func createArpTableTemplate() *template.Template {
 			"\n{{end}}" +
 
 			//End
-			"{{end}}" +
+			"\n{{end}}" +
 			"{{end}}{{end}}"))
 
 	return Template
@@ -478,7 +478,7 @@ func createRouteTableTemplate() *template.Template {
 	Template := template.Must(template.New("routetable").Funcs(FuncMap).Parse(
 		"{{$print := .PrintConf}}" +
 			"{{with .Config}}{{with .VppConfig}}" +
-			"{{with .Routes}}\n{{pfx 1}}{{setBold \"Route Table\"}}:" +
+			"{{with .Routes}}{{pfx 1}}{{setBold \"Route Table\"}}:" +
 
 			"{{if $print}}:" +
 
@@ -499,7 +499,7 @@ func createRouteTableTemplate() *template.Template {
 			// End print
 			"\n{{end}}" +
 
-			"{{end}}" +
+			"\n{{end}}" +
 
 			"{{end}}{{end}}"))
 
@@ -516,7 +516,7 @@ func createProxyArpTemplate() *template.Template {
 	Template := template.Must(template.New("proxyarp").Funcs(FuncMap).Parse(
 		"{{$print := .PrintConf}}" +
 			"{{with .Config}}{{with .VppConfig}}" +
-			"{{with .ProxyArp}}\n{{pfx 1}}{{setBold \"Proxy ARP\"}}" +
+			"{{with .ProxyArp}}{{pfx 1}}{{setBold \"Proxy ARP\"}}" +
 
 			"{{if $print}}:" +
 
@@ -539,7 +539,7 @@ func createProxyArpTemplate() *template.Template {
 			"\n{{end}}" +
 
 			//End
-			"{{end}}" +
+			"\n{{end}}" +
 
 			"{{end}}{{end}}"))
 
@@ -556,7 +556,7 @@ func createIPScanNeightTemplate() *template.Template {
 	Template := template.Must(template.New("ipscanneigh").Funcs(FuncMap).Parse(
 		"{{$print := .PrintConf}}" +
 			"{{with .Config}}{{with .VppConfig}}" +
-			"{{with .IpscanNeighbor}}\n{{pfx 1}}{{setBold \"IP Neighbor\"}}" +
+			"{{with .IpscanNeighbor}}{{pfx 1}}{{setBold \"IP Neighbor\"}}" +
 
 			"{{if $print}}:" +
 
@@ -572,7 +572,7 @@ func createIPScanNeightTemplate() *template.Template {
 			"\n{{end}}" +
 
 			//End
-			"{{end}}" +
+			"\n{{end}}" +
 
 			"{{end}}{{end}}"))
 
@@ -590,7 +590,7 @@ func createNATTemplate() *template.Template {
 	Template := template.Must(template.New("nat").Funcs(FuncMap).Parse(
 		"{{$print := .PrintConf}}" +
 			"{{with .Config}}{{with .VppConfig}}" +
-			"{{with .Nat44Global}}\n{{pfx 1}}{{setBold \"Nat44Global\"}}" +
+			"{{with .Nat44Global}}{{pfx 1}}{{setBold \"Nat44Global\"}}" +
 
 			"{{if $print}}:" +
 
@@ -621,7 +621,7 @@ func createNATTemplate() *template.Template {
 			"\n{{end}}" +
 
 			//End
-			"{{end}}" +
+			"\n{{end}}" +
 
 			"{{end}}{{end}}"))
 
@@ -638,7 +638,7 @@ func createDNATTemplate() *template.Template {
 	Template := template.Must(template.New("dnat").Funcs(FuncMap).Parse(
 		"{{$print := .PrintConf}}" +
 			"{{with .Config}}{{with .VppConfig}}" +
-			"{{with .Dnat44S}}\n{{pfx 1}}{{setBold \"Dnat44\"}}" +
+			"{{with .Dnat44S}}{{pfx 1}}{{setBold \"Dnat44\"}}" +
 
 			"{{range .}}" +
 
@@ -688,7 +688,7 @@ func createDNATTemplate() *template.Template {
 			"{{end}}" +
 
 			//End
-			"{{end}}" +
+			"\n{{end}}" +
 
 			"{{end}}{{end}}"))
 
@@ -705,7 +705,7 @@ func createIPSecPolicyTemplate() *template.Template {
 	Template := template.Must(template.New("ipsecpolicy").Funcs(FuncMap).Parse(
 		"{{$print := .PrintConf}}" +
 			"{{with .Config}}{{with .VppConfig}}" +
-			"{{with .IpsecSpds}}\n{{pfx 1}}{{setBold \"Security policy database\"}}" +
+			"{{with .IpsecSpds}}{{pfx 1}}{{setBold \"Security policy database\"}}" +
 
 			"{{if $print}}:" +
 
@@ -748,7 +748,7 @@ func createIPSecPolicyTemplate() *template.Template {
 			// End print
 			"\n{{end}}" +
 
-			"{{end}}" +
+			"\n{{end}}" +
 
 			"{{end}}{{end}}"))
 
@@ -765,7 +765,7 @@ func createIPSecAssociationTemplate() *template.Template {
 	Template := template.Must(template.New("ipsecassociation").Funcs(FuncMap).Parse(
 		"{{$print := .PrintConf}}" +
 			"{{with .Config}}{{with .VppConfig}}" +
-			"{{with .IpsecSas}}\n{{pfx 1}}{{setBold \"Security associations\"}}" +
+			"{{with .IpsecSas}}{{pfx 1}}{{setBold \"Security associations\"}}" +
 
 			"{{if $print}}:" +
 
@@ -791,7 +791,7 @@ func createIPSecAssociationTemplate() *template.Template {
 			// End print
 			"\n{{end}}" +
 
-			"{{end}}" +
+			"\n{{end}}" +
 
 			"{{end}}{{end}}"))
 
@@ -809,7 +809,7 @@ func createlInterfaceTemplate() *template.Template {
 	Template := template.Must(template.New("linterface").Funcs(FuncMap).Parse(
 		"{{$conf := .ShowConf}}{{$print := .PrintConf}}" +
 			"{{with .Config}}{{with .LinuxConfig}}" +
-			"{{with .Interfaces}}\n{{pfx 1}}{{setBold \"Linux interface\"}}" +
+			"{{with .Interfaces}}{{pfx 1}}{{setBold \"Linux interface\"}}" +
 
 			"{{if $print}}:" +
 
@@ -843,7 +843,7 @@ func createlInterfaceTemplate() *template.Template {
 			// End print
 			"\n{{end}}" +
 
-			"{{end}}" +
+			"\n{{end}}" +
 
 			"{{end}}{{end}}"))
 
@@ -860,7 +860,7 @@ func createlARPTemplate() *template.Template {
 	Template := template.Must(template.New("larp").Funcs(FuncMap).Parse(
 		"{{$conf := .ShowConf}}{{$print := .PrintConf}}" +
 			"{{with .Config}}{{with .LinuxConfig}}" +
-			"{{with .ArpEntries}}\n{{pfx 1}}{{setBold \"Linux ARP\"}}" +
+			"{{with .ArpEntries}}{{pfx 1}}{{setBold \"Linux ARP\"}}" +
 
 			"{{if $print}}:" +
 
@@ -877,7 +877,7 @@ func createlARPTemplate() *template.Template {
 			// End print
 			"\n{{end}}" +
 
-			"{{end}}" +
+			"\n{{end}}" +
 
 			"{{end}}{{end}}"))
 
@@ -894,7 +894,7 @@ func createlRouteTemplate() *template.Template {
 	Template := template.Must(template.New("lroute").Funcs(FuncMap).Parse(
 		"{{$print := .PrintConf}}" +
 			"{{with .Config}}{{with .LinuxConfig}}" +
-			"{{with .Routes}}\n{{pfx 1}}{{setBold \"Linux Route\"}}" +
+			"{{with .Routes}}{{pfx 1}}{{setBold \"Linux Route\"}}" +
 
 			"{{if $print}}:" +
 
@@ -916,7 +916,7 @@ func createlRouteTemplate() *template.Template {
 			// End print
 			"\n{{end}}" +
 
-			"{{end}}{{end}}"))
+			"{{end}}{{end}}\n"))
 
 	return Template
 }
