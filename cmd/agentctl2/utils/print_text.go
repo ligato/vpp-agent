@@ -94,6 +94,8 @@ func (ed EtcdDump) PrintConfig(showConf bool) (*bytes.Buffer, error) {
 	dnat := createDNATTemplate()
 	spolicy := createIPSecPolicyTemplate()
 	sassociation := createIPSecAssociationTemplate()
+	ipRedirectTemplate := createPuntIPRedirect()
+	toHostTemplate := createPuntToHost()
 
 	linterface := createlInterfaceTemplate()
 	larp := createlARPTemplate()
@@ -104,7 +106,8 @@ func (ed EtcdDump) PrintConfig(showConf bool) (*bytes.Buffer, error) {
 	templates = append(templates, ifTemplate,
 		aclTemplate, bdTemplate, fibTemplate, xconnectTemplate,
 		arpTemplate, routeTemplate, proxyarpTemplate, ipneighbor,
-		nat, dnat, spolicy, sassociation, linterface, larp, lroute)
+		nat, dnat, spolicy, sassociation, ipRedirectTemplate, toHostTemplate,
+		linterface, larp, lroute)
 
 	return ed.textRenderer(showConf, templates)
 }
@@ -786,6 +789,66 @@ func createIPSecAssociationTemplate() *template.Template {
 			"\n{{pfx 3}}Enable Udp Encap: {{.EnableUdpEncap}}" +
 
 			// End iterate over Association.
+			"{{end}}" +
+
+			// End print
+			"\n{{end}}" +
+
+			"\n{{end}}" +
+
+			"{{end}}{{end}}"))
+
+	return Template
+}
+
+func createPuntIPRedirect() *template.Template {
+	FuncMap := template.FuncMap{
+		"setBold": setBold,
+		"pfx":     getPrefix,
+	}
+
+	Template := template.Must(template.New("puntipredirect").Funcs(FuncMap).Parse(
+		"{{$conf := .ShowConf}}{{$print := .PrintConf}}" +
+			"{{with .Config}}{{with .VppConfig}}" +
+			"{{with .PuntIpredirects}}{{pfx 1}}{{setBold \"Punt Ip Redirects\"}}" +
+
+			"{{if $print}}:" +
+
+			"{{range .}}" +
+			"\n{{pfx 2}}L3 Protocol: {{.L3Protocol}}" +
+			"\n{{pfx 2}}Rx Interface: {{.RxInterface}}" +
+			"\n{{pfx 2}}Tx Interface: {{.TxInterface}}" +
+			"\n{{pfx 2}}Next Hop: {{.NextHop}}" +
+			"{{end}}" +
+
+			// End print
+			"\n{{end}}" +
+
+			"\n{{end}}" +
+
+			"{{end}}{{end}}"))
+
+	return Template
+}
+
+func createPuntToHost() *template.Template {
+	FuncMap := template.FuncMap{
+		"setBold": setBold,
+		"pfx":     getPrefix,
+	}
+
+	Template := template.Must(template.New("punttohost").Funcs(FuncMap).Parse(
+		"{{$conf := .ShowConf}}{{$print := .PrintConf}}" +
+			"{{with .Config}}{{with .VppConfig}}" +
+			"{{with .PuntTohosts}}{{pfx 1}}{{setBold \"Punt To Hosts\"}}" +
+
+			"{{if $print}}:" +
+
+			"{{range .}}" +
+			"\n{{pfx 2}}L3 Protocol: {{.L3Protocol}}" +
+			"\n{{pfx 2}}L4 Protocol: {{.L4Protocol}}" +
+			"\n{{pfx 2}}Port: {{.Port}}" +
+			"\n{{pfx 2}}Socket Path: {{.SocketPath}}" +
 			"{{end}}" +
 
 			// End print

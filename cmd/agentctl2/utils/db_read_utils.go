@@ -5,6 +5,8 @@ import (
 	"sort"
 	"strings"
 
+	vpp_punt "github.com/ligato/vpp-agent/api/models/vpp/punt"
+
 	"github.com/ligato/vpp-agent/api/models/linux"
 	"github.com/ligato/vpp-agent/api/models/vpp"
 
@@ -124,6 +126,10 @@ func (ed EtcdDump) ReadDataFromDb(db keyval.ProtoBroker, key string,
 		ed[agent], err = readIPSecPolicyConfigFromDb(db, vd, key)
 	case strings.HasPrefix(key, ipsec.ModelSecurityAssociation.KeyPrefix()):
 		ed[agent], err = readIPSecAssociateConfigFromDb(db, vd, key)
+	case strings.HasPrefix(key, vpp_punt.ModelIPRedirect.KeyPrefix()):
+		ed[agent], err = readIPRedirectConfigFromDb(db, vd, key)
+	case strings.HasPrefix(key, vpp_punt.ModelToHost.KeyPrefix()):
+		ed[agent], err = readIPToHostConfigFromDb(db, vd, key)
 	case strings.HasPrefix(key, linterface.ModelInterface.KeyPrefix()):
 		ed[agent], err = readLinuxInterfaceConfigFromDb(db, vd, key)
 	case strings.HasPrefix(key, ll3.ModelARPEntry.KeyPrefix()):
@@ -275,6 +281,27 @@ func readIPSecAssociateConfigFromDb(db keyval.ProtoBroker, vd *VppData, key stri
 	found, _, err := readDataFromDb(db, key, ipsec)
 	if found && err == nil {
 		vd.Config.VppConfig.IpsecSas = append(vd.Config.VppConfig.IpsecSas, ipsec)
+	}
+	return vd, err
+}
+
+func readIPRedirectConfigFromDb(db keyval.ProtoBroker, vd *VppData, key string) (*VppData, error) {
+	ipRedirect := &vpp_punt.IPRedirect{}
+
+	found, _, err := readDataFromDb(db, key, ipRedirect)
+	if found && err == nil {
+		vd.Config.VppConfig.PuntIpredirects =
+			append(vd.Config.VppConfig.PuntIpredirects, ipRedirect)
+	}
+	return vd, err
+}
+
+func readIPToHostConfigFromDb(db keyval.ProtoBroker, vd *VppData, key string) (*VppData, error) {
+	toHost := &vpp_punt.ToHost{}
+
+	found, _, err := readDataFromDb(db, key, toHost)
+	if found && err == nil {
+		vd.Config.VppConfig.PuntTohosts = append(vd.Config.VppConfig.PuntTohosts, toHost)
 	}
 	return vd, err
 }
