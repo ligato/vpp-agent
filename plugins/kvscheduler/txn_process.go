@@ -17,7 +17,6 @@ package kvscheduler
 import (
 	"context"
 	"runtime/trace"
-	"sync/atomic"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
@@ -93,25 +92,28 @@ func (s *Scheduler) consumeTransactions() {
 			return
 		}
 		s.processTransaction(txn)
-		atomic.AddUint64(&stats.TransactionsProcessed, 1)
 	}
 }
 
 // processTransaction processes transaction in 6 steps:
 //	1. Pre-processing: transaction parameters are initialized, retry operations
 //     are filtered from the obsolete ones and for the resync the graph is refreshed
-//  2. Simulation: simulating transaction without actually executing any of the
+//  2. Ordering: pre-order operations using a heuristic to get the shortest graph
+//     walk in average
+//  3. Simulation: simulating transaction without actually executing any of the
 //     Create/Delete/Update operations in order to obtain the "execution plan"
-//  3. Pre-recording: logging transaction arguments + plan before execution to
+//  4. Pre-recording: logging transaction arguments + plan before execution to
 //     persist some information in case there is a crash during execution
-//  4. Execution: executing the transaction, collecting errors
-//  5. Recording: recording the finalized transaction (log + in-memory)
-//  6. Post-processing: scheduling retry for failed operations, propagating value
+//  5. Execution: executing the transaction, collecting errors
+//  6. Recording: recording the finalized transaction (log + in-memory)
+//  7. Post-processing: scheduling retry for failed operations, propagating value
 //     state updates to the subscribers and returning error/nil to the caller
 //     of blocking commit
+//  8. Update of transaction statistics
 func (s *Scheduler) processTransaction(txn *transaction) {
 	s.txnLock.Lock()
 	defer s.txnLock.Unlock()
+	defer trackTransactionMethod("processTransaction")()
 
 	startTime := time.Now()
 
@@ -154,12 +156,16 @@ func (s *Scheduler) processTransaction(txn *transaction) {
 
 	// 7. Post-processing:
 	s.postProcessTransaction(txn, executedOps)
+
+	// 8. Statistics:
+	updateTransactionStats(executedOps)
 }
 
 // preProcessTransaction initializes transaction parameters, filters obsolete retry
 // operations and refreshes the graph for resync.
 func (s *Scheduler) preProcessTransaction(txn *transaction) (skipExec, skipSimulation, record bool) {
 	defer trace.StartRegion(txn.ctx, "preProcessTransaction").End()
+	defer trackTransactionMethod("preProcessTransaction")()
 
 	// allocate new transaction sequence number
 	txn.seqNum = s.txnSeqNumber
@@ -299,6 +305,7 @@ func (s *Scheduler) preProcessRetryTxn(txn *transaction) (skip bool) {
 // commit.
 func (s *Scheduler) postProcessTransaction(txn *transaction, executed kvs.RecordedTxnOps) {
 	defer trace.StartRegion(txn.ctx, "postProcessTransaction").End()
+	defer trackTransactionMethod("postProcessTransaction")()
 
 	// collect new failures (combining derived with base)
 	toRetry := utils.NewSliceBasedKeySet()
