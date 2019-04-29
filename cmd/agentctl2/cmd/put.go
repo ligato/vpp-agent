@@ -44,7 +44,7 @@ func putFunction(cmd *cobra.Command, args []string) {
 	key := args[0]
 	json := args[1]
 
-	fmt.Printf("key: %s, json: '%s'\n", key, json)
+	fmt.Printf("key: %s, json: %s\n", key, json)
 
 	if !strings.HasPrefix(key, servicelabel.GetAllAgentsPrefix()) {
 		agentLabel := "vpp1"

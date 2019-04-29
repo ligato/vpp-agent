@@ -26,41 +26,41 @@ import (
 func WriteData(db keyval.ProtoTxn, key string, json string) {
 
 	switch {
-	case strings.HasPrefix(key, acl.ModelACL.KeyPrefix()):
+	case strings.Contains(key, acl.ModelACL.KeyPrefix()):
 		writeACLConfigToDb(db, key, json)
-	case strings.HasPrefix(key, interfaces.ModelInterface.KeyPrefix()):
+	case strings.Contains(key, interfaces.ModelInterface.KeyPrefix()):
 		writeInterfaceConfigToDb(db, key, json)
-	case strings.HasPrefix(key, l2.ModelBridgeDomain.KeyPrefix()):
+	case strings.Contains(key, l2.ModelBridgeDomain.KeyPrefix()):
 		writeBridgeDomainConfigToDb(db, key, json)
-	case strings.HasPrefix(key, l2.ModelFIBEntry.KeyPrefix()):
+	case strings.Contains(key, l2.ModelFIBEntry.KeyPrefix()):
 		writeFibTableConfigToDb(db, key, json)
-	case strings.HasPrefix(key, l2.ModelXConnectPair.KeyPrefix()):
+	case strings.Contains(key, l2.ModelXConnectPair.KeyPrefix()):
 		writeXConnectConfigToDb(db, key, json)
-	case strings.HasPrefix(key, l3.ModelARPEntry.KeyPrefix()):
+	case strings.Contains(key, l3.ModelARPEntry.KeyPrefix()):
 		writeARPConfigToDb(db, key, json)
-	case strings.HasPrefix(key, l3.ModelRoute.KeyPrefix()):
+	case strings.Contains(key, l3.ModelRoute.KeyPrefix()):
 		writeRouteConfigToDb(db, key, json)
-	case strings.HasPrefix(key, l3.ModelProxyARP.KeyPrefix()):
+	case strings.Contains(key, l3.ModelProxyARP.KeyPrefix()):
 		writeProxyConfigToDb(db, key, json)
-	case strings.HasPrefix(key, l3.ModelIPScanNeighbor.KeyPrefix()):
+	case strings.Contains(key, l3.ModelIPScanNeighbor.KeyPrefix()):
 		writeIPScanneConfigToDb(db, key, json)
-	case strings.HasPrefix(key, nat.ModelNat44Global.KeyPrefix()):
+	case strings.Contains(key, nat.ModelNat44Global.KeyPrefix()):
 		writeNATConfigToDb(db, key, json)
-	case strings.HasPrefix(key, nat.ModelDNat44.KeyPrefix()):
+	case strings.Contains(key, nat.ModelDNat44.KeyPrefix()):
 		writeDNATConfigToDb(db, key, json)
-	case strings.HasPrefix(key, ipsec.ModelSecurityPolicyDatabase.KeyPrefix()):
+	case strings.Contains(key, ipsec.ModelSecurityPolicyDatabase.KeyPrefix()):
 		writeIPSecPolicyConfigToDb(db, key, json)
-	case strings.HasPrefix(key, ipsec.ModelSecurityAssociation.KeyPrefix()):
+	case strings.Contains(key, ipsec.ModelSecurityAssociation.KeyPrefix()):
 		writeIPSecAssociateConfigToDb(db, key, json)
-	case strings.HasPrefix(key, vpp_punt.ModelIPRedirect.KeyPrefix()):
+	case strings.Contains(key, vpp_punt.ModelIPRedirect.KeyPrefix()):
 		writeIPRedirectConfigToDb(db, key, json)
-	case strings.HasPrefix(key, vpp_punt.ModelToHost.KeyPrefix()):
+	case strings.Contains(key, vpp_punt.ModelToHost.KeyPrefix()):
 		writeToHostConfigToDb(db, key, json)
-	case strings.HasPrefix(key, linterface.ModelInterface.KeyPrefix()):
+	case strings.Contains(key, linterface.ModelInterface.KeyPrefix()):
 		writelInterfaceConfigToDb(db, key, json)
-	case strings.HasPrefix(key, ll3.ModelARPEntry.KeyPrefix()):
+	case strings.Contains(key, ll3.ModelARPEntry.KeyPrefix()):
 		writelARPConfigToDb(db, key, json)
-	case strings.HasPrefix(key, ll3.ModelRoute.KeyPrefix()):
+	case strings.Contains(key, ll3.ModelRoute.KeyPrefix()):
 		writelRouteConfigToDb(db, key, json)
 	default:
 		utils.ExitWithError(utils.ExitInvalidInput,
