@@ -42,21 +42,39 @@ func TestWatchInterfaceEvents(t *testing.T) {
 		Deleted:     1,
 	}
 	var result *vppcalls.InterfaceEvent
-	checkIfState(1, result, eventsChan)
+	Eventually(eventsChan, 2).Should(Receive(&result))
+	Expect(result).To(Equal(&vppcalls.InterfaceEvent{
+		SwIfIndex:  1,
+		AdminState: 1,
+		LinkState:  1,
+		Deleted:    true,
+	}))
+
 	notifChan <- &interfaces.SwInterfaceEvent{
 		SwIfIndex:   2,
 		AdminUpDown: 1,
 		LinkUpDown:  0,
 		Deleted:     1,
 	}
-	checkIfState(2, result, eventsChan)
+	result = &vppcalls.InterfaceEvent{}
+	Eventually(eventsChan, 2).Should(Receive(&result))
+	Expect(result).To(Equal(&vppcalls.InterfaceEvent{SwIfIndex: 2, AdminState: 1, LinkState: 0, Deleted: true}))
+
 	notifChan <- &interfaces.SwInterfaceEvent{
 		SwIfIndex:   3,
 		AdminUpDown: 0,
 		LinkUpDown:  1,
-		Deleted:     1,
+		Deleted:     0,
 	}
-	checkIfState(3, result, eventsChan)
+	result = &vppcalls.InterfaceEvent{}
+	Eventually(eventsChan, 2).Should(Receive(&result))
+	Expect(result).To(Equal(&vppcalls.InterfaceEvent{
+		SwIfIndex:  3,
+		AdminState: 0,
+		LinkState:  1,
+		Deleted:    false,
+	}))
+
 	close(notifChan)
 }
 
@@ -83,69 +101,38 @@ func TestWatchDHCPLeases(t *testing.T) {
 		},
 	}
 	var result *vppcalls.Lease
-	checkDHCPLeases(1, result, leasesChChan)
+	Eventually(leasesChChan, 2).Should(Receive(&result))
+	Expect(result).To(Equal(&vppcalls.Lease{
+		SwIfIndex:     1,
+		State:         1,
+		Hostname:      "host1",
+		HostAddress:   "10.10.10.5/24",
+		RouterAddress: "10.10.10.1/24",
+		HostMac:       "10:10:20:20:30:30",
+	}))
+
 	notifChan <- &dhcp.DHCPComplEvent{
 		PID: 50,
 		Lease: dhcp.DHCPLease{
 			SwIfIndex:     2,
-			State:         1,
+			State:         0,
 			Hostname:      []byte("host2"),
-			IsIPv6:        0,
+			IsIPv6:        1,
 			MaskWidth:     24,
 			HostAddress:   []byte{10, 10, 10, 6},
 			RouterAddress: []byte{10, 10, 10, 1},
 			HostMac:       []byte{16, 16, 32, 32, 64, 64},
 		},
 	}
-	checkDHCPLeases(2, result, leasesChChan)
+	Eventually(leasesChChan, 2).Should(Receive(&result))
+	Expect(result).To(Equal(&vppcalls.Lease{
+		SwIfIndex:     2,
+		Hostname:      "host2",
+		IsIPv6:        true,
+		HostAddress:   "10.10.10.6/24",
+		RouterAddress: "10.10.10.1/24",
+		HostMac:       "10:10:20:20:40:40",
+	}))
+
 	close(leasesChChan)
-}
-
-func checkDHCPLeases(SwIfIndex uint32, result *vppcalls.Lease, leasesChChan <-chan *vppcalls.Lease) {
-	if SwIfIndex == 1 {
-		Eventually(leasesChChan, 2).Should(Receive(&result))
-		Expect(result.SwIfIndex).To(Equal(uint32(1)))
-		Expect(result.State).To(Equal(uint8(1)))
-		Expect(result.Hostname).To(BeEquivalentTo([]byte("host1")))
-		Expect(result.IsIPv6).ToNot(BeTrue())
-		Expect(result.MaskWidth).To(Equal(uint8(0)))
-		Expect(result.HostAddress).To(BeEquivalentTo("10.10.10.5/24"))
-		Expect(result.RouterAddress).To(BeEquivalentTo("10.10.10.1/24"))
-		Expect(result.HostMac).To(BeEquivalentTo("10:10:20:20:30:30"))
-	}
-	if SwIfIndex == 2 {
-		Eventually(leasesChChan, 2).Should(Receive(&result))
-		Expect(result.SwIfIndex).To(Equal(uint32(2)))
-		Expect(result.State).To(Equal(uint8(1)))
-		Expect(result.Hostname).To(BeEquivalentTo([]byte("host2")))
-		Expect(result.IsIPv6).ToNot(BeTrue())
-		Expect(result.MaskWidth).To(Equal(uint8(0)))
-		Expect(result.HostAddress).To(BeEquivalentTo("10.10.10.6/24"))
-		Expect(result.RouterAddress).To(BeEquivalentTo("10.10.10.1/24"))
-		Expect(result.HostMac).To(BeEquivalentTo("10:10:20:20:40:40"))
-	}
-}
-
-func checkIfState(SwIfIndex uint32, result *vppcalls.InterfaceEvent, eventsChan <-chan *vppcalls.InterfaceEvent) {
-	if SwIfIndex == 1 {
-		Eventually(eventsChan, 2).Should(Receive(&result))
-		Expect(result.SwIfIndex).To(Equal(uint32(1)))
-		Expect(result.AdminState).To(Equal(uint8(1)))
-		Expect(result.LinkState).To(Equal(uint8(1)))
-		Expect(result.Deleted).To(BeTrue())
-	}
-	if SwIfIndex == 2 {
-		Eventually(eventsChan, 2).Should(Receive(&result))
-		Expect(result.SwIfIndex).To(Equal(uint32(2)))
-		Expect(result.AdminState).To(Equal(uint8(1)))
-		Expect(result.LinkState).To(Equal(uint8(0)))
-		Expect(result.Deleted).To(BeTrue())
-	}
-	if SwIfIndex == 3 {
-		Eventually(eventsChan, 2).Should(Receive(&result))
-		Expect(result.SwIfIndex).To(Equal(uint32(3)))
-		Expect(result.AdminState).To(Equal(uint8(0)))
-		Expect(result.LinkState).To(Equal(uint8(1)))
-		Expect(result.Deleted).To(BeTrue())
-	}
 }
