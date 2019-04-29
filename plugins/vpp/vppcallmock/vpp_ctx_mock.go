@@ -73,6 +73,8 @@ type mockedChannel struct {
 	Msgs []govppapi.Message
 
 	RetErrs []error
+
+	channel chan govppapi.Message
 }
 
 // SendRequest just save input argument to structure field for future check
@@ -93,6 +95,15 @@ func (m *mockedChannel) SendMultiRequest(msg govppapi.Message) govppapi.MultiReq
 	m.Msg = msg
 	m.Msgs = append(m.Msgs, msg)
 	return m.Channel.SendMultiRequest(msg)
+}
+
+func (m *mockedChannel) SubscribeNotification(notifChan chan govppapi.Message, event govppapi.Message) (govppapi.SubscriptionCtx, error) {
+	m.channel = notifChan
+	return nil, nil
+}
+
+func (m *mockedChannel) GetChannel() chan govppapi.Message {
+	return m.channel
 }
 
 type mockedContext struct {
