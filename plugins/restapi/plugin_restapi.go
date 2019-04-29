@@ -165,10 +165,11 @@ func (p *Plugin) AfterInit() (err error) {
 	//}
 
 	// Telemetry, command, index, tracer
-	p.registerTracerHandler()
 	p.registerTelemetryHandlers()
 	p.registerCommandHandler()
 	p.registerIndexHandlers()
+
+	p.registerStatsHandler()
 
 	return nil
 }
@@ -211,8 +212,9 @@ func getIndexPageItems() map[string][]indexItem {
 			{Name: "Runtime", Path: resturl.TRuntime},
 			{Name: "Node count", Path: resturl.TNodeCount},
 		},
-		"Tracer": {
+		"Stats": {
 			{Name: "VPP Binary API", Path: resturl.Tracer},
+			{Name: "Configurator Stats", Path: resturl.ConfiguratorStats},
 		},
 	}
 	return idxMap
@@ -222,10 +224,11 @@ func getIndexPageItems() map[string][]indexItem {
 // REST security is enabled in plugin
 func getPermissionsGroups() []*access.PermissionGroup {
 	tracerPg := &access.PermissionGroup{
-		Name: "tracer",
+		Name: "stats",
 		Permissions: []*access.PermissionGroup_Permissions{
 			newPermission(resturl.Index, GET),
 			newPermission(resturl.Tracer, GET),
+			newPermission(resturl.ConfiguratorStats, GET),
 		},
 	}
 	telemetryPg := &access.PermissionGroup{

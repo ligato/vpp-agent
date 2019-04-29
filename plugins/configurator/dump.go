@@ -6,12 +6,12 @@ import (
 	"golang.org/x/net/context"
 
 	rpc "github.com/ligato/vpp-agent/api/configurator"
-	"github.com/ligato/vpp-agent/api/models/vpp/acl"
-	"github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	"github.com/ligato/vpp-agent/api/models/vpp/ipsec"
-	"github.com/ligato/vpp-agent/api/models/vpp/l2"
-	"github.com/ligato/vpp-agent/api/models/vpp/l3"
-	"github.com/ligato/vpp-agent/api/models/vpp/punt"
+	vpp_acl "github.com/ligato/vpp-agent/api/models/vpp/acl"
+	vpp_interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
+	vpp_ipsec "github.com/ligato/vpp-agent/api/models/vpp/ipsec"
+	vpp_l2 "github.com/ligato/vpp-agent/api/models/vpp/l2"
+	vpp_l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
+	vpp_punt "github.com/ligato/vpp-agent/api/models/vpp/punt"
 	iflinuxcalls "github.com/ligato/vpp-agent/plugins/linux/ifplugin/linuxcalls"
 	l3linuxcalls "github.com/ligato/vpp-agent/plugins/linux/l3plugin/linuxcalls"
 	aclvppcalls "github.com/ligato/vpp-agent/plugins/vpp/aclplugin/vppcalls"
@@ -40,6 +40,8 @@ type dumpService struct {
 }
 
 func (svc *dumpService) Dump(context.Context, *rpc.DumpRequest) (*rpc.DumpResponse, error) {
+	defer trackOperation("Dump")()
+
 	svc.log.Debugf("Received Dump request..")
 
 	dump := newConfig()
