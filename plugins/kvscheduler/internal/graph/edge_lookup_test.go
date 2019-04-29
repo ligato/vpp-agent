@@ -61,7 +61,7 @@ func TestLookupOverNodeKeys(t *testing.T) {
 
 	mi := newMockIter()
 
-	el := newEdgeLookup()
+	el := newEdgeLookup(nil)
 	Expect(el).ToNot(BeNil())
 
 	el.iterTargets("some-key", false, mi.visitNode)
@@ -151,7 +151,7 @@ func TestLookupOverNodeKeysWithOverlay(t *testing.T) {
 
 	mi := newMockIter()
 
-	el := newEdgeLookup()
+	el := newEdgeLookup(nil)
 	Expect(el).ToNot(BeNil())
 
 	el.addNodeKey("prefix1/node1")
@@ -332,7 +332,7 @@ func TestLookupOverEdges(t *testing.T) {
 
 	mi := newMockIter()
 
-	el := newEdgeLookup()
+	el := newEdgeLookup(nil)
 	Expect(el).ToNot(BeNil())
 
 	el.iterSources("some-key", mi.visitEdge)
@@ -497,7 +497,7 @@ func TestLookupOverEdgesWithOverlay(t *testing.T) {
 
 	mi := newMockIter()
 
-	el := newEdgeLookup()
+	el := newEdgeLookup(nil)
 	Expect(el).ToNot(BeNil())
 
 	el.addEdge(edge{ // "prefix1/node2" -> "prefix1/node1"

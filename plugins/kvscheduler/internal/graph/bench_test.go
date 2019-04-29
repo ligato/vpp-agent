@@ -53,7 +53,7 @@ type scaleCtx struct {
 }
 
 func init() {
-	benchEl = newEdgeLookup()
+	benchEl = newEdgeLookup(nil)
 }
 
 func BenchmarkScaleWithoutRec(b *testing.B) {

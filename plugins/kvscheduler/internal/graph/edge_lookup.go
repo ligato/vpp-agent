@@ -45,6 +45,8 @@ type edgeLookup struct {
 
 	overlay  *edgeLookup
 	underlay *edgeLookup
+
+	methodTracker MethodTracker
 }
 
 type nodeKey struct {
@@ -64,12 +66,13 @@ type edge struct {
 	removed bool
 }
 
-func newEdgeLookup() *edgeLookup {
+func newEdgeLookup(mt MethodTracker) *edgeLookup {
 	return &edgeLookup{
 		nodeKeys:       make([]nodeKey, 0, initNodeKeysCap),
 		nodeKeysMap:    make(map[string]bool),
 		edges:          make([]edge, 0, initEdgesCap),
 		dirDepthBounds: make([]int, 0, initDirDepthBoundsCap),
+		methodTracker:  mt,
 	}
 }
 
@@ -129,6 +132,10 @@ func (el *edgeLookup) saveOverlay() {
 
 // O(log(n))
 func (el *edgeLookup) addNodeKey(key string) {
+	if el.methodTracker != nil {
+		defer el.methodTracker("edgeLookup.addNodeKey")()
+	}
+
 	el.nodeKeysMap[key] = true
 	idx := el.nodeKeyIdx(key)
 	if idx < len(el.nodeKeys) && el.nodeKeys[idx].key == key {
@@ -148,6 +155,10 @@ func (el *edgeLookup) addNodeKey(key string) {
 
 // O(log(n)) amortized
 func (el *edgeLookup) delNodeKey(key string) {
+	if el.methodTracker != nil {
+		defer el.methodTracker("edgeLookup.delNodeKey")()
+	}
+
 	if el.underlay != nil {
 		// this is overlay, remember operation
 		el.nodeKeysMap[key] = false
@@ -175,6 +186,10 @@ func (el *edgeLookup) nodeKeyIdx(key string) int {
 
 // O(log(m))
 func (el *edgeLookup) addEdge(e edge) {
+	if el.methodTracker != nil {
+		defer el.methodTracker("edgeLookup.addEdge")()
+	}
+
 	e.targetKey = trimTrailingDirSep(e.targetKey)
 	dirDepth := getDirDepth(e.targetKey)
 	idx := el.edgeIdx(e, dirDepth)
@@ -204,6 +219,10 @@ func (el *edgeLookup) addEdge(e edge) {
 
 // O(log(m)) amortized
 func (el *edgeLookup) delEdge(e edge) {
+	if el.methodTracker != nil {
+		defer el.methodTracker("edgeLookup.delEdge")()
+	}
+
 	e.targetKey = trimTrailingDirSep(e.targetKey)
 	dirDepth := getDirDepth(e.targetKey)
 	idx := el.edgeIdx(e, dirDepth)
@@ -249,6 +268,10 @@ func (el *edgeLookup) getDirDepthBounds(dirDepth int) (begin, end int) {
 // for prefix: O(log(n)) (assuming O(1) matched keys)
 // for full key: O(1) average, O(n) worst-case
 func (el *edgeLookup) iterTargets(key string, isPrefix bool, cb func(targetNode string)) {
+	if el.methodTracker != nil {
+		defer el.methodTracker("edgeLookup.iterTargets")()
+	}
+
 	if key == "" && isPrefix {
 		// iterate all
 		for i := range el.nodeKeys {
@@ -288,6 +311,9 @@ func (el *edgeLookup) iterTargets(key string, isPrefix bool, cb func(targetNode 
 
 // O(log(m)) (assuming O(1) matched sources)
 func (el *edgeLookup) iterSources(targetKey string, cb func(sourceNode, relation, label string)) {
+	if el.methodTracker != nil {
+		defer el.methodTracker("edgeLookup.iterSources")()
+	}
 	targetKey = trimTrailingDirSep(targetKey)
 
 	var dirDepth int

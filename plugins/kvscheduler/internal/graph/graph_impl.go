@@ -68,7 +68,7 @@ func NewGraph(opts Opts) Graph {
 		permanentInitPeriod: time.Duration(opts.PermanentInitPeriod) * time.Minute,
 		methodTracker:       opts.MethodTracker,
 	}
-	kvgraph.graph = newGraphR()
+	kvgraph.graph = newGraphR(opts.MethodTracker)
 	kvgraph.graph.parent = kvgraph
 	return kvgraph
 }
