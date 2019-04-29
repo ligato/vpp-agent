@@ -116,9 +116,11 @@ func TestLookupOverNodeKeys(t *testing.T) {
 
 	// remove the rest
 	el.delNodeKey("prefix1/node1")
-	Expect(el.nodeKeys).To(HaveLen(1)) // gc-ed
+	Expect(el.nodeKeyData).To(HaveLen(1)) // gc-ed
+	Expect(el.nodeKeyOffset).To(HaveLen(1)) // gc-ed
 	el.delNodeKey("prefix2/node3")
-	Expect(el.nodeKeys).To(HaveLen(0)) // gc-ed
+	Expect(el.nodeKeyData).To(HaveLen(0)) // gc-ed
+	Expect(el.nodeKeyOffset).To(HaveLen(0)) // gc-ed
 
 	// empty prefix (select all)
 	el.iterTargets("", true, mi.visitNode)
@@ -295,14 +297,18 @@ func TestLookupOverNodeKeysWithOverlay(t *testing.T) {
 	Expect(mi.visitedNodes).To(HaveLen(1))
 	Expect(mi.visitedNodes).To(HaveKey("prefix1/node1"))
 	mi.reset()
-	Expect(elOver.nodeKeys).To(HaveLen(1))
-	Expect(el.nodeKeys).To(HaveLen(1))
+	Expect(elOver.nodeKeyData).To(HaveLen(1))
+	Expect(elOver.nodeKeyOffset).To(HaveLen(1))
+	Expect(el.nodeKeyData).To(HaveLen(1))
+	Expect(el.nodeKeyOffset).To(HaveLen(1))
 
 	// remove the last key in overlay, but do not save
 	Expect(el.makeOverlay()).To(Equal(elOver))
 	elOver.delNodeKey("prefix1/node1")
-	Expect(elOver.nodeKeys).To(HaveLen(0))
-	Expect(el.nodeKeys).To(HaveLen(1))
+	Expect(elOver.nodeKeyData).To(HaveLen(0))
+	Expect(elOver.nodeKeyOffset).To(HaveLen(0))
+	Expect(el.nodeKeyData).To(HaveLen(1))
+	Expect(el.nodeKeyOffset).To(HaveLen(1))
 	elOver.iterTargets("", true, mi.visitNode)
 	Expect(mi.visitedNodes).To(BeEmpty())
 
@@ -323,8 +329,10 @@ func TestLookupOverNodeKeysWithOverlay(t *testing.T) {
 	Expect(mi.visitedNodes).To(HaveLen(1))
 	Expect(mi.visitedNodes).To(HaveKey("prefix1/node1"))
 	mi.reset()
-	Expect(elOver.nodeKeys).To(HaveLen(1))
-	Expect(el.nodeKeys).To(HaveLen(1))
+	Expect(elOver.nodeKeyData).To(HaveLen(1))
+	Expect(elOver.nodeKeyOffset).To(HaveLen(1))
+	Expect(el.nodeKeyData).To(HaveLen(1))
+	Expect(el.nodeKeyOffset).To(HaveLen(1))
 }
 
 func TestLookupOverEdges(t *testing.T) {
@@ -381,7 +389,8 @@ func TestLookupOverEdges(t *testing.T) {
 	})
 	Expect(el.verifyDirDepthBounds()).To(BeNil())
 
-	Expect(el.edges).To(HaveLen(5))
+	Expect(el.edgeData).To(HaveLen(5))
+	Expect(el.edgeOffset).To(HaveLen(5))
 
 	el.iterSources("prefix1/node1", mi.visitEdge)
 	Expect(mi.visitedEdges).To(HaveLen(3))
@@ -420,7 +429,8 @@ func TestLookupOverEdges(t *testing.T) {
 		label:      "all",
 	})
 	Expect(el.verifyDirDepthBounds()).To(BeNil())
-	Expect(el.edges).To(HaveLen(5)) // not gc-ed yet
+	Expect(el.edgeData).To(HaveLen(5)) // not gc-ed yet
+	Expect(el.edgeOffset).To(HaveLen(5)) // not gc-ed yet
 
 	el.iterSources("prefix1/node1", mi.visitEdge)
 	Expect(mi.visitedEdges).To(HaveLen(2))
@@ -447,7 +457,8 @@ func TestLookupOverEdges(t *testing.T) {
 		label:      "prefix1 non-empty",
 	})
 	Expect(el.verifyDirDepthBounds()).To(BeNil())
-	Expect(el.edges).To(HaveLen(2)) // gc-ed
+	Expect(el.edgeData).To(HaveLen(2)) // gc-ed
+	Expect(el.edgeOffset).To(HaveLen(2)) // gc-ed
 
 	el.iterSources("prefix1/node1", mi.visitEdge)
 	Expect(mi.visitedEdges).To(HaveLen(1))
@@ -480,7 +491,8 @@ func TestLookupOverEdges(t *testing.T) {
 		label:      "edge to itself",
 	})
 	Expect(el.verifyDirDepthBounds()).To(BeNil())
-	Expect(el.edges).To(BeEmpty()) // gc-ed
+	Expect(el.edgeData).To(BeEmpty()) // gc-ed
+	Expect(el.edgeOffset).To(BeEmpty()) // gc-ed
 
 	el.iterSources("prefix1/node1", mi.visitEdge)
 	Expect(mi.visitedEdges).To(BeEmpty())
@@ -549,8 +561,8 @@ func TestLookupOverEdgesWithOverlay(t *testing.T) {
 	})
 	Expect(elOver.verifyDirDepthBounds()).To(BeNil())
 
-	Expect(el.edges).To(HaveLen(3))
-	Expect(elOver.edges).To(HaveLen(5))
+	Expect(el.edgeData).To(HaveLen(3))
+	Expect(elOver.edgeOffset).To(HaveLen(5))
 
 	// check overlay
 	elOver.iterSources("prefix1/node1", mi.visitEdge)
@@ -624,7 +636,8 @@ func TestLookupOverEdgesWithOverlay(t *testing.T) {
 		label:      "all",
 	})
 	Expect(elOver.verifyDirDepthBounds()).To(BeNil())
-	Expect(elOver.edges).To(HaveLen(5)) // not gc-ed yet
+	Expect(elOver.edgeData).To(HaveLen(5)) // not gc-ed yet
+	Expect(elOver.edgeOffset).To(HaveLen(5)) // not gc-ed yet
 
 	// check overlay
 	elOver.iterSources("prefix1/node1", mi.visitEdge)
@@ -686,8 +699,10 @@ func TestLookupOverEdgesWithOverlay(t *testing.T) {
 		label:      "prefix1 non-empty",
 	})
 	Expect(elOver.verifyDirDepthBounds()).To(BeNil())
-	Expect(elOver.edges).To(HaveLen(2)) // gc-ed
-	Expect(el.edges).To(HaveLen(5))
+	Expect(elOver.edgeData).To(HaveLen(2)) // gc-ed
+	Expect(elOver.edgeOffset).To(HaveLen(2)) // gc-ed
+	Expect(el.edgeOffset).To(HaveLen(5))
+	Expect(el.edgeData).To(HaveLen(5))
 
 	// check overlay
 	elOver.iterSources("prefix1/node1", mi.visitEdge)
