@@ -63,6 +63,17 @@ var showConfig = &cobra.Command{
 	Run: configFunction,
 }
 
+var keyConfig = &cobra.Command{
+	Use:     "key",
+	Aliases: []string{""},
+	Short:   "Print list of stored key",
+	Long: `
+	Print list of stored key.
+`,
+
+	Run: keyFunction,
+}
+
 var (
 	showAll     bool
 	showConf    bool
@@ -74,6 +85,7 @@ var (
 func init() {
 	RootCmd.AddCommand(showCmd)
 	showCmd.AddCommand(showConfig)
+	showCmd.AddCommand(keyConfig)
 	showCmd.PersistentFlags().BoolVar(&showAll, "all", false,
 		"Show all configuration")
 	showConfig.PersistentFlags().BoolVar(&showConfAll, "all", false,
@@ -290,6 +302,31 @@ func printAgentConfig(db keyval.ProtoBroker, agentLabel string, kprefix string) 
 	} else {
 		fmt.Fprintf(os.Stderr, "No data found.\n")
 	}
+}
+
+func keyFunction(cmd *cobra.Command, args []string) {
+	db, err := utils.GetDbForAllAgents(globalFlags.Endpoints)
+	if err != nil {
+		utils.ExitWithError(utils.ExitError, errors.New("Failed to connect to Etcd - "+err.Error()))
+	}
+
+	if len(args) > 0 {
+		setKeyPrefix(args)
+	}
+
+	keyIter, err := db.ListKeys(servicelabel.GetAllAgentsPrefix())
+	if err != nil {
+		utils.ExitWithError(utils.ExitError, errors.New("Failed to get keys - "+err.Error()))
+	}
+
+	for {
+		if key, _, done := keyIter.GetNext(); !done {
+			fmt.Printf("Key: '%s'\n", key)
+			continue
+		}
+		break
+	}
+
 }
 
 func addUniqueString(str string, unique *[]string) {
