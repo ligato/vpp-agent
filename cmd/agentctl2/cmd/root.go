@@ -40,7 +40,7 @@ connect to.`,
   $ ./agentctl show
 
 Do as above, but with a command line flag:
-  $ ./agentctl --endpoints 172.17.0.1:2379 list
+  $ ./agentctl --endpoints 172.17.0.1:2379 show
 `,
 }
 
@@ -48,6 +48,6 @@ func init() {
 	// Root command flags
 	RootCmd.PersistentFlags().StringSliceVarP(&globalFlags.Endpoints,
 		"endpoints", "e", nil, "One or more comma-separated Etcd endpoints.")
-	RootCmd.PersistentFlags().StringVarP(&globalFlags.Label, "label", "l", "",
+	RootCmd.PersistentFlags().StringVarP(&globalFlags.Label, "label", "l", "vpp1",
 		"Agent microservice label (identifies the agent)")
 }

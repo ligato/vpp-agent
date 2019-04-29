@@ -47,14 +47,13 @@ func putFunction(cmd *cobra.Command, args []string) {
 	fmt.Printf("key: %s, json: %s\n", key, json)
 
 	if !strings.HasPrefix(key, servicelabel.GetAllAgentsPrefix()) {
-		agentLabel := "vpp1"
 		tmp := strings.Split(key, "/")
 		if tmp[0] != "config" {
-			agentLabel = tmp[0]
+			globalFlags.Label = tmp[0]
 			key = strings.Join(tmp[1:], "/")
 		}
 
-		db, err = utils.GetDbForOneAgent(globalFlags.Endpoints, agentLabel)
+		db, err = utils.GetDbForOneAgent(globalFlags.Endpoints, globalFlags.Label)
 		if err != nil {
 			utils.ExitWithError(utils.ExitError, errors.New("Failed to connect to Etcd - "+err.Error()))
 		}
