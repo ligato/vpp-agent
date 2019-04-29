@@ -54,10 +54,27 @@ data record (except JSON-formatted output)
 
 var showConfig = &cobra.Command{
 	Use:     "config [<module name> [<module type>]]",
-	Aliases: []string{""},
+	Aliases: []string{"c"},
 	Short:   "Print list of set configuration type",
 	Long: `
-	Print list of set configuration type.
+'show config' prints out Etcd configuration type.
+'show config <module name>' print out Etcd configuration type for set module name
+'show config <module name> <module type>' print out Etcd configuration for set module type
+`,
+	Example: `Specify the Etcd to connect to and run show command:
+	$ export ETCD_ENDPOINTS=172.17.0.1:2379
+	$ ./agentctl2 show config
+OR
+	$ ./agenctl2 show config vpp
+OR
+	$ ./agenctl2 show config vpp route
+
+Do as above, but with a command line flag:
+	$ ./agentctl2 --endpoints 172.17.0.1:2379 show config
+OR
+	$ ./agentctl2 --endpoints 172.17.0.1:2379 show config vpp
+OR
+	$ ./agentctl2 --endpoints 172.17.0.1:2379 show config vpp route
 `,
 
 	Run: configFunction,
