@@ -109,10 +109,12 @@ const (
 	TNodeCount = "/vpp/telemetry/nodecount"
 )
 
-// Tracer
+// Stats
 const (
 	// Traced binary API calls
 	Tracer = "/vpp/binapitrace"
+	// Configurator stats
+	ConfiguratorStats = "/stats/configurator"
 )
 
 // Index

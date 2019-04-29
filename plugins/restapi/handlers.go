@@ -27,6 +27,7 @@ import (
 	"github.com/unrolled/render"
 
 	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
+	"github.com/ligato/vpp-agent/plugins/configurator"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 	"github.com/ligato/vpp-agent/plugins/restapi/resturl"
 )
@@ -189,8 +190,9 @@ func (p *Plugin) registerTelemetryHandlers() {
 }
 
 // Registers Tracer handler
-func (p *Plugin) registerTracerHandler() {
+func (p *Plugin) registerStatsHandler() {
 	p.HTTPHandlers.RegisterHTTPHandler(resturl.Tracer, p.tracerHandler, GET)
+	p.HTTPHandlers.RegisterHTTPHandler(resturl.ConfiguratorStats, p.configuratorStatsHandler, GET)
 }
 
 // Registers command handler
@@ -370,6 +372,19 @@ func (p *Plugin) tracerHandler(formatter *render.Render) http.HandlerFunc {
 		}
 
 		p.logError(formatter.JSON(w, http.StatusOK, entries))
+	}
+}
+
+// configuratorStatsHandler - returns stats for Configurator
+func (p *Plugin) configuratorStatsHandler(formatter *render.Render) http.HandlerFunc {
+	return func(w http.ResponseWriter, req *http.Request) {
+		stats := configurator.GetStats()
+		if stats == nil {
+			p.logError(formatter.JSON(w, http.StatusOK, "Configurator stats not available"))
+			return
+		}
+
+		p.logError(formatter.JSON(w, http.StatusOK, stats))
 	}
 }
 
