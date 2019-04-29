@@ -9,13 +9,13 @@ import (
 
 // RootCmd represents the base command when called without any subcommands.
 var delConfig = &cobra.Command{
-	Use:     "del",
+	Use:     "del <key>",
 	Aliases: []string{"d"},
 	Short:   "Delete configuration file",
 	Long: `
 	Delete configuration file
 `,
-	Args: cobra.MaximumNArgs(1),
+	Args: cobra.RangeArgs(1, 1),
 	Run:  delFunction,
 }
 
