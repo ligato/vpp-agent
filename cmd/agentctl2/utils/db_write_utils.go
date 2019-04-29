@@ -3,6 +3,9 @@ package utils
 import (
 	"context"
 	json2 "encoding/json"
+	"strings"
+
+	vpp_punt "github.com/ligato/vpp-agent/api/models/vpp/punt"
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/cn-infra/db/keyval"
@@ -21,41 +24,47 @@ import (
 )
 
 func WriteData(db keyval.ProtoTxn, key string, json string) {
-	_, dataType, _, _ := ParseKey(key)
 
-	switch dataType {
-	case acl.ModelACL.KeyPrefix():
+	switch {
+	case strings.HasPrefix(key, acl.ModelACL.KeyPrefix()):
 		writeACLConfigToDb(db, key, json)
-	case interfaces.ModelInterface.KeyPrefix():
+	case strings.HasPrefix(key, interfaces.ModelInterface.KeyPrefix()):
 		writeInterfaceConfigToDb(db, key, json)
-	case l2.ModelBridgeDomain.KeyPrefix():
+	case strings.HasPrefix(key, l2.ModelBridgeDomain.KeyPrefix()):
 		writeBridgeDomainConfigToDb(db, key, json)
-	case l2.ModelFIBEntry.KeyPrefix():
+	case strings.HasPrefix(key, l2.ModelFIBEntry.KeyPrefix()):
 		writeFibTableConfigToDb(db, key, json)
-	case l2.ModelXConnectPair.KeyPrefix():
+	case strings.HasPrefix(key, l2.ModelXConnectPair.KeyPrefix()):
 		writeXConnectConfigToDb(db, key, json)
-	case l3.ModelARPEntry.KeyPrefix():
+	case strings.HasPrefix(key, l3.ModelARPEntry.KeyPrefix()):
 		writeARPConfigToDb(db, key, json)
-	case l3.ModelRoute.KeyPrefix():
+	case strings.HasPrefix(key, l3.ModelRoute.KeyPrefix()):
 		writeRouteConfigToDb(db, key, json)
-	case l3.ModelProxyARP.KeyPrefix():
+	case strings.HasPrefix(key, l3.ModelProxyARP.KeyPrefix()):
 		writeProxyConfigToDb(db, key, json)
-	case l3.ModelIPScanNeighbor.KeyPrefix():
+	case strings.HasPrefix(key, l3.ModelIPScanNeighbor.KeyPrefix()):
 		writeIPScanneConfigToDb(db, key, json)
-	case nat.ModelNat44Global.KeyPrefix():
+	case strings.HasPrefix(key, nat.ModelNat44Global.KeyPrefix()):
 		writeNATConfigToDb(db, key, json)
-	case nat.ModelDNat44.KeyPrefix():
+	case strings.HasPrefix(key, nat.ModelDNat44.KeyPrefix()):
 		writeDNATConfigToDb(db, key, json)
-	case ipsec.ModelSecurityPolicyDatabase.KeyPrefix():
+	case strings.HasPrefix(key, ipsec.ModelSecurityPolicyDatabase.KeyPrefix()):
 		writeIPSecPolicyConfigToDb(db, key, json)
-	case ipsec.ModelSecurityAssociation.KeyPrefix():
+	case strings.HasPrefix(key, ipsec.ModelSecurityAssociation.KeyPrefix()):
 		writeIPSecAssociateConfigToDb(db, key, json)
-	case linterface.ModelInterface.KeyPrefix():
+	case strings.HasPrefix(key, vpp_punt.ModelIPRedirect.KeyPrefix()):
+		writeIPRedirectConfigToDb(db, key, json)
+	case strings.HasPrefix(key, vpp_punt.ModelToHost.KeyPrefix()):
+		writeToHostConfigToDb(db, key, json)
+	case strings.HasPrefix(key, linterface.ModelInterface.KeyPrefix()):
 		writelInterfaceConfigToDb(db, key, json)
-	case ll3.ModelARPEntry.KeyPrefix():
+	case strings.HasPrefix(key, ll3.ModelARPEntry.KeyPrefix()):
 		writelARPConfigToDb(db, key, json)
-	case ll3.ModelRoute.KeyPrefix():
+	case strings.HasPrefix(key, ll3.ModelRoute.KeyPrefix()):
 		writelRouteConfigToDb(db, key, json)
+	default:
+		utils.ExitWithError(utils.ExitInvalidInput,
+			errors.New("Unknown input key"))
 	}
 }
 
@@ -315,6 +324,46 @@ func writeIPSecAssociateConfigToDb(db keyval.ProtoTxn, key string, json string) 
 	if err != nil {
 		utils.ExitWithError(utils.ExitError,
 			errors.New("Failed write ipsec association configuration to Etcd - "+err.Error()))
+	}
+}
+
+func writeIPRedirectConfigToDb(db keyval.ProtoTxn, key string, json string) {
+	var err error
+
+	ipa := &vpp_punt.IPRedirect{}
+
+	err = json2.Unmarshal([]byte(json), ipa)
+
+	if err != nil {
+		utils.ExitWithError(utils.ExitError,
+			errors.New("Failed convert ip redirect json format to protobuf - "+err.Error()))
+	}
+
+	err = writeDataToDb(db, key, ipa)
+
+	if err != nil {
+		utils.ExitWithError(utils.ExitError,
+			errors.New("Failed write ip redirect configuration to Etcd - "+err.Error()))
+	}
+}
+
+func writeToHostConfigToDb(db keyval.ProtoTxn, key string, json string) {
+	var err error
+
+	ipa := &vpp_punt.ToHost{}
+
+	err = json2.Unmarshal([]byte(json), ipa)
+
+	if err != nil {
+		utils.ExitWithError(utils.ExitError,
+			errors.New("Failed convert tohost json format to protobuf - "+err.Error()))
+	}
+
+	err = writeDataToDb(db, key, ipa)
+
+	if err != nil {
+		utils.ExitWithError(utils.ExitError,
+			errors.New("Failed write tohost configuration to Etcd - "+err.Error()))
 	}
 }
 

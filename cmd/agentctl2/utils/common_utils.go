@@ -55,130 +55,6 @@ func GetAgentLabel(key string) (agentLabel string) {
 	return agentLabel
 }
 
-// ParseKey parses the etcd Key for the microservice label and the
-// data type encoded in the Key. The function returns the microservice
-// label, the data type and the list of parameters, that contains path
-// segments that follow the data path segment in the Key URL. The
-// parameter list is empty if data path is the Last segment in the
-// Key.
-//
-
-func ParseKey(key string) (label string, dataType string, name string, plugStatCfgRev string) {
-	ps := strings.Split(strings.TrimPrefix(key, servicelabel.GetAllAgentsPrefix()), "/")
-	var plugin, statusConfig, version string
-	var params []string
-	if len(ps) > 0 {
-		label = ps[0]
-	}
-	if len(ps) > 1 {
-		plugin = ps[1]
-		dataType = plugin
-		plugStatCfgRev = dataType
-	}
-	if len(ps) > 2 {
-		statusConfig = ps[2]
-		dataType += "/" + statusConfig
-		plugStatCfgRev = dataType
-
-		if "vpp" == ps[2] {
-			if len(ps) > 3 {
-				version = ps[3]
-				dataType += "/" + version
-			}
-
-			// Recognize key type
-			if "v2" == ps[3] {
-				if len(ps) > 4 {
-					tp := ps[4]
-					dataType += "/" + tp
-				}
-
-				if len(ps) > 5 {
-					dataType += "/"
-					params = ps[5:]
-				} else {
-					params = []string{}
-				}
-			} else {
-				if len(ps) > 4 {
-					version := ps[4]
-					dataType += "/" + version
-				}
-
-				if len(ps) > 5 {
-					tp := ps[5]
-					dataType += "/" + tp
-				}
-
-				if len(ps) > 6 {
-					dataType += "/"
-					params = ps[6:]
-				} else {
-					params = []string{}
-				}
-			}
-		} else if "linux" == ps[2] {
-			if len(ps) > 3 {
-				version = ps[3]
-				dataType += "/" + version
-			}
-
-			if len(ps) > 4 {
-				version := ps[4]
-				dataType += "/" + version
-			}
-
-			if len(ps) > 5 {
-				tp := ps[5]
-				dataType += "/" + tp
-			}
-
-			if len(ps) > 6 {
-				dataType += "/"
-				params = ps[6:]
-			} else {
-				params = []string{}
-			}
-		} else if "status" == ps[2] {
-			if len(ps) > 3 {
-				version = ps[3]
-				dataType += "/" + version
-				plugStatCfgRev = dataType
-			}
-			plugStatCfgRev += "/"
-
-			//TODO: This only add hot, because statistic, need better understand and analyse
-			if len(ps) > 5 {
-				params = ps[5:]
-				params = ps[5:]
-			}
-
-		} else {
-			params = []string{}
-		}
-	} else {
-		params = []string{}
-	}
-
-	return label, dataType, rebuildName(params), plugStatCfgRev
-}
-
-// Reconstruct item name in case it contains slashes.
-func rebuildName(params []string) string {
-	var itemName string
-	if len(params) > 1 {
-		for _, param := range params {
-			itemName = itemName + "/" + param
-		}
-		// Remove the first slash.
-		return itemName[1:]
-	} else if len(params) == 1 {
-		itemName = params[0]
-		return itemName
-	}
-	return itemName
-}
-
 // GetDbForAllAgents opens a connection to etcd, specified in the command line
 // or the "ETCD_ENDPOINTS" environment variable.
 func GetDbForAllAgents(endpoints []string) (*kvproto.ProtoWrapper, error) {
@@ -199,6 +75,29 @@ func GetDbForAllAgents(endpoints []string) (*kvproto.ProtoWrapper, error) {
 	}
 
 	return kvproto.NewProtoWrapperWithSerializer(etcdBroker, &keyval.SerializerJSON{}), nil
+}
+
+// GetDbForOneAgent opens a connection to etcd, specified in the command line
+// or the "ETCD_ENDPOINTS" environment variable.
+func GetDbForOneAgent(endpoints []string, agentLabel string) (keyval.ProtoBroker, error) {
+	if len(endpoints) > 0 {
+		ep := strings.Join(endpoints, ",")
+		os.Setenv("ETCD_ENDPOINTS", ep)
+	}
+
+	cfg := &etcd.Config{}
+	etcdConfig, err := etcd.ConfigToClient(cfg)
+
+	// Log warnings and errors only.
+	log := logrus.DefaultLogger()
+	log.SetLevel(logging.WarnLevel)
+	etcdBroker, err := etcd.NewEtcdConnectionWithBytes(*etcdConfig, log)
+	if err != nil {
+		return nil, err
+	}
+
+	return kvproto.NewProtoWrapperWithSerializer(etcdBroker, &keyval.SerializerJSON{}).
+		NewBroker(servicelabel.GetAllAgentsPrefix() + agentLabel + "/"), nil
 }
 
 func GetModuleName(module proto.Message) string {
