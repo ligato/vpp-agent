@@ -12,9 +12,9 @@ import (
 // RootCmd represents the base command when called without any subcommands.
 var cliConfig = &cobra.Command{
 	Use:   "vppcli",
-	Short: "CLI command for VPP",
+	Short: "CLI command for vppagent",
 	Long: `
-A CLI tool to connect to vpp agent and run VPP CLI command.
+A CLI tool to connect to vppagent and run VPP CLI command.
 Use the 'ETCD_ENDPOINTS'' environment variable or the 'endpoints'
 flag in the command line to specify vppagent instances to
 connect to.
