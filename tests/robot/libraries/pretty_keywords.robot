@@ -37,6 +37,9 @@ Create ${type} ${name} On ${node} With Vrf ${vrf}, IP ${ip}, MAC ${mac}, Key ${k
 Create Tap Interface ${name} On ${node} With Vrf ${vrf}, IP ${ip}, MAC ${mac} And HostIfName ${host_if_name}
     ${out}=    Put TAP Interface With IP    ${node}    ${name}   ${mac}    ${ip}    ${host_if_name}    vrf=${vrf}
 
+Create Tapv2 Interface ${name} On ${node} With Vrf ${vrf}, IP ${ip}, MAC ${mac} And HostIfName ${host_if_name}
+    ${out}=    Put TAPv2 Interface With IP    ${node}    ${name}   ${mac}    ${ip}    ${host_if_name}    vrf=${vrf}
+
 Create Bridge Domain ${name} with Autolearn On ${node} With Interfaces ${interfaces}
     @{ints}=    Split String   ${interfaces}    separator=,${space}
     put bridge domain    ${node}    ${name}   ${ints}

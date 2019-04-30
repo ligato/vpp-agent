@@ -37,6 +37,11 @@ Start Two Agents And Then Configure With Default And Non Default VRF
     Create Master memif0 on agent_vpp_1 with IP ${IP_1}, MAC 02:f1:be:90:00:00, key 1 and m0.sock socket
     Create Slave memif0 on agent_vpp_2 with IP ${IP_2}, MAC 02:f1:be:90:00:02, key 1 and m0.sock socket
 
+    Create VRF Table    node=agent_vpp_1    id=1    protocol=ipv4
+    Create VRF Table    node=agent_vpp_1    id=2    protocol=ipv4
+    Create VRF Table    node=agent_vpp_2    id=1    protocol=ipv4
+    Create VRF Table    node=agent_vpp_2    id=2    protocol=ipv4
+
     Create Master memif1 on agent_vpp_1 with VRF 2, IP ${IP_3}, MAC 02:f1:be:90:02:00, key 1 and m1.sock socket
     Create Slave memif1 on agent_vpp_2 with VRF 2, IP ${IP_4}, MAC 02:f1:be:90:02:02, key 1 and m1.sock socket
 
