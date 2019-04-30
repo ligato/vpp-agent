@@ -5,6 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strings"
+
+	"github.com/ligato/cn-infra/servicelabel"
 
 	"github.com/ligato/vpp-agent/api/models/linux"
 
@@ -181,7 +184,10 @@ var generateLinuxRoutes = &cobra.Command{
 	Run:  linuxRoutesGenerateFunction,
 }
 
-var formatType *string
+var (
+	formatType *string
+	short      bool
+)
 
 func init() {
 	RootCmd.AddCommand(generateConfig)
@@ -202,6 +208,8 @@ func init() {
 	generateConfig.AddCommand(generateLinuxRoutes)
 	formatType = generateConfig.PersistentFlags().String("format", "yaml",
 		"Format:\n\tjson\n\tyaml\n\tproto\n")
+	generateConfig.PersistentFlags().BoolVar(&short, "short", false,
+		"Print command to one line. Work only with json format")
 }
 
 func aclGenerateFunction(cmd *cobra.Command, args []string) {
@@ -280,11 +288,10 @@ func generateFunction(gtype cmd_generator.CommandType) {
 
 }
 
-const prefix string = "/vnf-agent/vpp1/"
+var prefix = servicelabel.GetAllAgentsPrefix() + "vpp1/"
 
 func printJSON(msg proto.Message) {
-
-	js, err := json.MarshalIndent(msg, "", "  ")
+	js, err := json.MarshalIndent(msg, "", " ")
 	key := models.Key(msg)
 
 	if err != nil {
@@ -292,11 +299,18 @@ func printJSON(msg proto.Message) {
 			errors.New("Failed generate json, error: "+err.Error()))
 	}
 
-	fmt.Fprintf(os.Stdout, "%s\n%s\n", prefix+key, js)
+	if !short {
+		fmt.Fprintf(os.Stdout, "%s\n%s\n", prefix+key, js)
+	} else {
+		tmp := strings.Replace(string(js), "\n", "", -1)
+		tmp = strings.Replace(tmp, " ", "", -1)
+		fmt.Fprintf(os.Stdout, "%s %s\n", prefix+key, tmp)
+	}
+
 }
 
 func printYaml(msg proto.Message) {
-	js, err := json.MarshalIndent(msg, "", "  ")
+	js, err := json.MarshalIndent(msg, "", " ")
 
 	if err != nil {
 		utils.ExitWithError(utils.ExitError,

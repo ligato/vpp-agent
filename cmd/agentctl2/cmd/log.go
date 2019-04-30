@@ -15,28 +15,53 @@ import (
 var log = &cobra.Command{
 	Use:     "log",
 	Aliases: []string{"l"},
-	Short:   "Log",
+	Short:   "Show/Set vppagent logs",
 	Long: `
-	Listening log
+A CLI tool to connect to vppagent and show/set vppagent logs.
+Use the 'ETCD_ENDPOINTS'' environment variable or the 'endpoints'
+flag in the command line to specify vppagent instances to
+connect to.
 `,
 }
 
 var logList = &cobra.Command{
-	Use:   "list",
-	Short: "List <logger>",
+	Use:   "list <logget>",
+	Short: "Show vppagent logs",
 	Long: `
-	Listening log
+A CLI tool to connect to vppagent and show vppagent logs.
+Use the 'ETCD_ENDPOINTS'' environment variable or the 'endpoints'
+flag in the command line to specify vppagent instances to
+connect to.
 `,
+	Example: `Specify the vppagent to connect to and show vppagent logs:
+	$ export ETCD_ENDPOINTS=172.17.0.3:9191
+	$ ./agentctl2 log list
+
+Do as above, but with a command line flag:
+  $ ./agentctl2 --endpoints 172.17.0.3:9191 log list
+`,
+
 	Args: cobra.MaximumNArgs(1),
 	Run:  logFunction,
 }
 
 var logSet = &cobra.Command{
-	Use:   "set",
-	Short: "set <looger> <debug|info|warning|error|fatal|panic>",
+	Use:   "set <logger> <debug|info|warning|error|fatal|panic>",
+	Short: "Set vppagent logger type",
 	Long: `
-	Set log
+A CLI tool to connect to vppagent and set vppagent logger type.
+Use the 'ETCD_ENDPOINTS'' environment variable or the 'endpoints'
+flag in the command line to specify vppagent instances to
+connect to.
 `,
+	Example: `Specify the vppagent to connect to and show vppagent logs:
+	$ export ETCD_ENDPOINTS=172.17.0.3:9191
+	$ ./agentctl2 log set agent info
+
+Do as above, but with a command line flag:
+  $ ./agentctl2 --endpoints 172.17.0.3:9191 log set agent info
+`,
+
 	Args: cobra.RangeArgs(2, 2),
 	Run:  setFunction,
 }
@@ -55,6 +80,11 @@ func logFunction(cmd *cobra.Command, args []string) {
 
 	if verbose {
 		fmt.Fprintf(os.Stdout, "%s\n", msg)
+		return
+	}
+
+	if strings.Compare(msg, "404 page not found") == 0 {
+		fmt.Println(msg)
 		return
 	}
 
@@ -90,8 +120,9 @@ func logFunction(cmd *cobra.Command, args []string) {
 
 func printLogList(data utils.LogList) {
 	buffer, err := data.PrintLogList()
-	if err != nil {
+	if err == nil {
 		fmt.Fprintf(os.Stdout, buffer.String())
+		fmt.Printf("\n")
 	} else {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 	}

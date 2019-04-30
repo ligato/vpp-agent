@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/ligato/vpp-agent/cmd/agentctl2/restapi"
 	"github.com/spf13/cobra"
@@ -11,10 +12,21 @@ import (
 // RootCmd represents the base command when called without any subcommands.
 var cliConfig = &cobra.Command{
 	Use:   "vppcli",
-	Short: "CLI command for VPP",
+	Short: "CLI command for vppagent",
 	Long: `
-	Run CLI command for VPP
+A CLI tool to connect to vppagent and run VPP CLI command.
+Use the 'ETCD_ENDPOINTS'' environment variable or the 'endpoints'
+flag in the command line to specify vppagent instances to
+connect to.
 `,
+	Example: `Specify the vppagent to connect to and run VPP CLI command:
+	$ export ETCD_ENDPOINTS=172.17.0.3:9191
+	$ ./agentctl2 vppcli 'show int'
+
+Do as above, but with a command line flag:
+  $ ./agentctl2 --endpoints 172.17.0.3:9191 vppcli 'show int'
+`,
+
 	Args: cobra.MinimumNArgs(1),
 	Run:  cliFunction,
 }
@@ -36,6 +48,6 @@ func cliFunction(cmd *cobra.Command, args []string) {
 
 	resp := restapi.PostMsg(globalFlags.Endpoints, "/vpp/command", msg)
 
-	//TODO: Need format
-	fmt.Fprintf(os.Stdout, "%s\n", resp)
+	tmp := strings.Replace(resp, "\\n", "\n", -1)
+	fmt.Fprintf(os.Stdout, "%s\n", tmp)
 }
