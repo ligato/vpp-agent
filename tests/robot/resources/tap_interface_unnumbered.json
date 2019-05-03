@@ -8,6 +8,7 @@
     "interface_with_ip": "${interface_with_ip_name}"
   },
   "tap": {
+    "version": 2,
     "host_if_name": "${host_if_name}"
   }
 }
