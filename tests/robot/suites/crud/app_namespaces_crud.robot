@@ -71,7 +71,7 @@ Check Default Namespace Was Added
     Should Contain    ${out}    default
 
 Put Interface TAP1 And Namespace NS1 Associated With TAP1 And Check The Namespace Is Present In Namespaces List
-    Put TAP Interface With IP    node=agent_vpp_1    name=${TAP1_NAME}    mac=${TAP1_MAC}    ip=${TAP1_IP}    prefix=${PREFIX}    host_if_name=linux_${TAP1_NAME}
+    Put TAPv2 Interface With IP    node=agent_vpp_1    name=${TAP1_NAME}    mac=${TAP1_MAC}    ip=${TAP1_IP}    prefix=${PREFIX}    host_if_name=linux_${TAP1_NAME}
     Put Application Namespace    node=agent_vpp_1    id=${NS1_ID}    secret=${SECRET1}    interface=${TAP1_NAME}
     ${out}=    vpp_term: Show Application Namespaces    node=agent_vpp_1
     ${out_lines1}=    Get Line Count    ${out}
@@ -97,7 +97,7 @@ Put New NS2 Namespace And Check The Namespace Is Present In Namespaces List And 
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Check Data In Show Application Namespaces Output    agent_vpp_1    ${NS1_ID}    1    ${SECRET2}    ${TAP1_SW_IF_INDEX}
 
 Put Interface TAP2 And Namespace NS3 Associated With TAP2 And Check The Namespace Is Present In Namespaces List
-    Put TAP Interface With IP    node=agent_vpp_1    name=${TAP2_NAME}    mac=${TAP2_MAC}    ip=${TAP2_IP}    prefix=${PREFIX}    host_if_name=linux_${TAP2_NAME}
+    Put TAPv2 Interface With IP    node=agent_vpp_1    name=${TAP2_NAME}    mac=${TAP2_MAC}    ip=${TAP2_IP}    prefix=${PREFIX}    host_if_name=linux_${TAP2_NAME}
     Put Application Namespace    node=agent_vpp_1    id=${NS3_ID}    secret=${SECRET4}    interface=${TAP2_NAME}
     ${out}=    vpp_term: Show Application Namespaces    node=agent_vpp_1
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Check Data In Show Application Namespaces Output    agent_vpp_1    ${NS3_ID}    3    ${SECRET4}    ${TAP2_SW_IF_INDEX}
