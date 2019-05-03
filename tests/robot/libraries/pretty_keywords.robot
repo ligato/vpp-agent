@@ -57,7 +57,7 @@ Create Route On ${node} With IP ${ip}/${prefix} With Next Hop ${next_hop} And Vr
 Create Route On ${node} With IP ${ip}/${prefix} With Next Hop VRF ${next_hop_vrf} From Vrf Id ${id} And Type ${type}
     ${data}=        OperatingSystem.Get File    ${CURDIR}/../../robot/resources/route_to_other_vrf.json
     ${data}=        replace variables           ${data}
-    ${uri}=         Set Variable                /vnf-agent/${node}/config/vpp/${AGENT_VER}/route/vrf/${id}/dst/${ip}/${prefix}/gw/
+    ${uri}=         Set Variable                /vnf-agent/${node}/config/vpp/${AGENT_VER}/route/vrf/${id}/dst/${ip}/${prefix}/gw
     ${out}=         Put Json    ${uri}   ${data}
 
 Create Route On ${node} With IP ${ip}/${prefix} With Vrf Id ${id} With Interface ${interface} And Next Hop ${next_hop}

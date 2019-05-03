@@ -60,10 +60,10 @@ Create Linux Routes
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Check Removed Linux Route    node=agent_vpp_1    namespace=ns1    ip=9.9.9.9
 
 Read Route Information From Setup Database
-    Get Linux Route As Json    node=agent_vpp_1    routename=pingingveth2
-    Get Linux Route As Json    node=agent_vpp_1    routename=pingingveth1
-    Get Linux Route As Json    node=agent_vpp_1    routename=pinginggoogl
-    Get Linux Route As Json    node=agent_vpp_1    routename=pinging9
+    Get Linux Route As Json    node=agent_vpp_1    interface=ns1_veth1    ip=192.168.22.2    prefix=32  #routename=pingingveth2
+    Get Linux Route As Json    node=agent_vpp_1    interface=ns2_veth2    ip=192.168.22.1    prefix=32  #routename=pingingveth1
+    Get Linux Route As Json    node=agent_vpp_1    interface=ns1_veth1    ip=8.8.8.8    prefix=32  #routename=pinginggoogl
+    Get Linux Route As Json    node=agent_vpp_1    interface=ns2_veth2    ip=9.9.9.9    prefix=32  #routename=pinging9
 
 Change Linux Routes Without Deleting Key (Changing Metric)
     # changing of gateway - this is incorrect/ the record would not be put in the database  - Let us change metric
@@ -73,7 +73,7 @@ Change Linux Routes Without Deleting Key (Changing Metric)
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Check Linux Routes Metric    node=agent_vpp_1    namespace=ns1    ip=8.8.8.8    metric=55
 
 Change Linux Routes At First Deleting Key And Putting The Same Secondly Deleting Key Then Putting It To Other Namespace
-    Delete Linux Route    node=agent_vpp_1    routename=pinging9
+    Delete Linux Route    node=agent_vpp_1    interface=ns2_veth2    ip=9.9.9.9    prefix=32    #routename=pinging9
 
 
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Check Removed Linux Route    node=agent_vpp_1    namespace=ns2    ip=9.9.9.9
@@ -84,7 +84,7 @@ Change Linux Routes At First Deleting Key And Putting The Same Secondly Deleting
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Check Linux Routes    node=agent_vpp_1    namespace=ns2    ip=9.9.9.9
 
     # delete again
-    Delete Linux Route    node=agent_vpp_1    routename=pinging9
+    Delete Linux Route    node=agent_vpp_1    interface=ns2_veth2    ip=9.9.9.9    prefix=32    #routename=pinging9
 
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Check Removed Linux Route    node=agent_vpp_1    namespace=ns2    ip=9.9.9.9
 

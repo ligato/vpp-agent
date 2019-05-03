@@ -264,7 +264,7 @@ Delete Linux Interface
 
 Delete Route
     [Arguments]    ${node}    ${id}    ${ip}    ${prefix}
-    ${uri}=    Set Variable                /vnf-agent/${node}/config/vpp/${AGENT_VER}/route/vrf/${id}/dst/${ip}/${prefix}/gw/
+    ${uri}=    Set Variable                /vnf-agent/${node}/config/vpp/${AGENT_VER}/route/vrf/${id}/dst/${ip}/${prefix}/gw
     ${out}=         Delete key  ${uri}
     [Return]       ${out}
 
@@ -415,7 +415,7 @@ Put Veth Interface Via Linux Plugin
 Put Linux Route
     [Arguments]    ${node}    ${namespace}    ${interface}    ${routename}    ${ip}    ${next_hop}    ${prefix}=24    ${metric}=100    ${isdefault}=false
     ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/linux_static_route.json
-    ${uri}=               Set Variable                  /vnf-agent/${node}/config/linux/l3/${AGENT_VER}/route/${routename}
+    ${uri}=               Set Variable                  /vnf-agent/${node}/config/linux/l3/${AGENT_VER}/route/${ip}/${prefix}/${interface}
     ${data}=              Replace Variables             ${data}
     Put Json     ${uri}    ${data}
 
@@ -434,14 +434,14 @@ Put Linux Route Without Interface
     Put Json     ${uri}    ${data}
 
 Delete Linux Route
-    [Arguments]    ${node}    ${routename}
-    ${uri}=               Set Variable                  /vnf-agent/${node}/config/linux/l3/${AGENT_VER}/route/${routename}
+    [Arguments]    ${node}    ${interface}    ${ip}    ${prefix}=24
+    ${uri}=               Set Variable                  /vnf-agent/${node}/config/linux/l3/${AGENT_VER}/route/${ip}/${prefix}/${interface}
     ${out}=      Delete key    ${uri}
     [Return]    ${out}
 
 Get Linux Route As Json
-    [Arguments]    ${node}    ${routename}
-    ${uri}=               Set Variable                  /vnf-agent/${node}/config/linux/l3/${AGENT_VER}/route/${routename}
+    [Arguments]    ${node}    ${interface}    ${ip}    ${prefix}=24
+    ${uri}=               Set Variable                  /vnf-agent/${node}/config/linux/l3/${AGENT_VER}/route/${ip}/${prefix}/${interface}
     ${data}=              Read Key    ${uri}
     ${data}=              Set Variable If      '''${data}'''==""    {}    ${data}
     ${output}=            Evaluate             json.loads('''${data}''')    json
