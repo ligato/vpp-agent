@@ -15,7 +15,10 @@
 package descriptor
 
 import (
+	"fmt"
+	"io/ioutil"
 	"net"
+	"path/filepath"
 	"reflect"
 	"strconv"
 	"strings"
@@ -352,7 +355,38 @@ func (d *InterfaceDescriptor) Create(key string, linuxIf *interfaces.Interface) 
 		d.log.Error(err)
 		return nil, err
 	}
+
+	const (
+		DisableIPv6SysctlTemplate = "net.ipv6.conf.%s.disable_ipv6"
+	)
+	var hasEnabledIPv6 bool
 	for _, ipAddress := range ipAddresses {
+		// Make sure sysctl "disable_ipv6" is 0 if we are about to add
+		// an IPv6 address to the interface
+		if !hasEnabledIPv6 && ipAddress.IP.To16() != nil {
+			// Enabled IPv6 for loopback "lo" and the interface
+			// being configured
+			for _, iface := range [2]string{"lo", hostName} {
+				ipv6SysctlValueName := fmt.Sprintf(DisableIPv6SysctlTemplate, iface)
+
+				// Read current sysctl value
+				value, err := getSysctl(ipv6SysctlValueName)
+				if err != nil || value == "0" {
+					if err != nil {
+						d.log.Warnf("could not read sysctl value for %v: %v", hostName, err)
+					}
+					continue
+				}
+
+				// Write sysctl to enable IPv6
+				_, err = setSysctl(ipv6SysctlValueName, "0")
+				if err != nil {
+					return nil, fmt.Errorf("failed to enable IPv6 for interface %q (%s=%s): %v", iface, ipv6SysctlValueName, value, err)
+				}
+			}
+			hasEnabledIPv6 = true
+		}
+
 		err = d.ifHandler.AddInterfaceIP(hostName, ipAddress)
 		// an attempt to add already assign IP is not considered as error
 		if err != nil && syscall.EEXIST != err {
@@ -1059,4 +1093,25 @@ func isChksmOffloadingOn(offloading interfaces.VethLink_ChecksumOffloading) bool
 		return false
 	}
 	return true
+}
+
+func getSysctl(name string) (string, error) {
+	fullName := filepath.Join("/proc/sys", strings.Replace(name, ".", "/", -1))
+	fullName = filepath.Clean(fullName)
+	data, err := ioutil.ReadFile(fullName)
+	if err != nil {
+		return "", err
+	}
+
+	return string(data[:len(data)-1]), nil
+}
+
+func setSysctl(name, value string) (string, error) {
+	fullName := filepath.Join("/proc/sys", strings.Replace(name, ".", "/", -1))
+	fullName = filepath.Clean(fullName)
+	if err := ioutil.WriteFile(fullName, []byte(value), 0644); err != nil {
+		return "", err
+	}
+
+	return getSysctl(name)
 }
