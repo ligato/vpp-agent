@@ -24,7 +24,7 @@ package vppapiclient
 #include <stdio.h>
 #include <stdint.h>
 #include <arpa/inet.h>
-#include <vpp-api/client/vppapiclient.h>
+#include <vpp-api/client/vppapiclient.h> // VPP has to be installed!
 #include <vpp-api/client/stat_client.h>
 
 static int
@@ -138,13 +138,13 @@ govpp_stat_segment_data_get_combined_counter_index_bytes(stat_segment_data_t *da
 static uint8_t**
 govpp_stat_segment_data_get_name_vector(stat_segment_data_t *data)
 {
-	return data->name_vector;
+	return data->name_vector; // VPP 19.04 is required!
 }
 
 static char*
 govpp_stat_segment_data_get_name_vector_index(stat_segment_data_t *data, int index)
 {
-	return data->name_vector[index];
+	return data->name_vector[index]; // VPP 19.04 is required!
 }
 
 static void
