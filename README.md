@@ -130,7 +130,7 @@ of VNFs based on the VPP Agent:
 
 * [agentctl](cmd/agentctl) - a CLI tool that shows the state of a set of 
    VPP agents can configure the agents
-* [vpp-agent-ctl](cmd/vpp-agent-ctl) - a utility for testing VNF Agent 
+* [vpp-agent-ctl](cmd/vpp-agent-ctl) (DEPRECATED) - a utility for testing VNF Agent 
   configuration. It contains a set of pre-defined configurations that can 
   be sent to the VPP Agent either interactively or in a script. 
 * [docker](docker) - container-based development environment for the VPP
