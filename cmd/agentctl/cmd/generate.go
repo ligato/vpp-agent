@@ -19,8 +19,8 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 
-	"github.com/ligato/vpp-agent/cmd/agentctl2/cmd_generator"
-	"github.com/ligato/vpp-agent/cmd/agentctl2/utils"
+	"github.com/ligato/vpp-agent/cmd/agentctl/cmd_generator"
+	"github.com/ligato/vpp-agent/cmd/agentctl/utils"
 	"github.com/spf13/cobra"
 )
 

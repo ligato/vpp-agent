@@ -22,7 +22,7 @@ import (
 
 	"github.com/ligato/cn-infra/db/keyval"
 	"github.com/ligato/cn-infra/servicelabel"
-	"github.com/ligato/vpp-agent/cmd/agentctl2/utils"
+	"github.com/ligato/vpp-agent/cmd/agentctl/utils"
 	"github.com/spf13/cobra"
 
 	"errors"

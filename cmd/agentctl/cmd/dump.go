@@ -6,9 +6,9 @@ import (
 
 	"github.com/ligato/vpp-agent/api/models/linux"
 	"github.com/ligato/vpp-agent/api/models/vpp"
-	"github.com/ligato/vpp-agent/cmd/agentctl2/utils"
+	"github.com/ligato/vpp-agent/cmd/agentctl/utils"
 
-	"github.com/ligato/vpp-agent/cmd/agentctl2/restapi"
+	"github.com/ligato/vpp-agent/cmd/agentctl/restapi"
 	"github.com/ligato/vpp-agent/plugins/restapi/resturl"
 	"github.com/spf13/cobra"
 )

@@ -5,7 +5,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/ligato/vpp-agent/cmd/agentctl2/restapi"
+	"github.com/ligato/vpp-agent/cmd/agentctl/restapi"
 	"github.com/spf13/cobra"
 )
 
