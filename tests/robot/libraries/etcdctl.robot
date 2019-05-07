@@ -341,7 +341,7 @@ Get BFD Echo Function As Json
 Put ACL TCP
     [Arguments]    ${node}    ${acl_name}    ${egr_intf1}   ${ingr_intf1}    ${acl_action}    ${dest_ntw}    ${src_ntw}    ${dest_port_low}   ${dest_port_up}    ${src_port_low}    ${src_port_up}
     ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/acl_TCP.json
-    ${uri}=               Set Variable          /vnf-agent/${node}/config/vpp/acls/${AGENT_VER}/acl/${acl_name}/
+    ${uri}=               Set Variable          /vnf-agent/${node}/config/vpp/acls/${AGENT_VER}/acl/${acl_name}
     ${data}=              Replace Variables             ${data}
     #OperatingSystem.Create File   ${REPLY_DATA_FOLDER}/reply.json     ${data}
     Put Json     ${uri}    ${data}
@@ -349,7 +349,7 @@ Put ACL TCP
 Put ACL UDP
     [Arguments]    ${node}    ${acl_name}    ${egr_intf1}    ${ingr_intf1}     ${egr_intf2}    ${ingr_intf2}     ${acl_action}    ${dest_ntw}   ${src_ntw}    ${dest_port_low}   ${dest_port_up}    ${src_port_low}    ${src_port_up}
     ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/acl_UDP.json
-    ${uri}=               Set Variable          /vnf-agent/${node}/config/vpp/acls/${AGENT_VER}/acl/${acl_name}/
+    ${uri}=               Set Variable          /vnf-agent/${node}/config/vpp/acls/${AGENT_VER}/acl/${acl_name}
     ${data}=              Replace Variables             ${data}
     #OperatingSystem.Create File   ${REPLY_DATA_FOLDER}/reply.json     ${data}
     Put Json     ${uri}    ${data}
@@ -357,7 +357,7 @@ Put ACL UDP
 Put ACL MACIP
     [Arguments]    ${node}    ${acl_name}    ${egr_intf1}    ${ingr_intf1}    ${acl_action}    ${src_addr}    ${src_addr_prefix}    ${src_mac_addr}   ${src_mac_addr_mask}
     ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/acl_MACIP.json
-    ${uri}=               Set Variable          /vnf-agent/${node}/config/vpp/acls/${AGENT_VER}/acl/${acl_name}/
+    ${uri}=               Set Variable          /vnf-agent/${node}/config/vpp/acls/${AGENT_VER}/acl/${acl_name}
     ${data}=              Replace Variables             ${data}
     #OperatingSystem.Create File   ${REPLY_DATA_FOLDER}/reply.json     ${data}
     Put Json     ${uri}    ${data}
@@ -365,14 +365,14 @@ Put ACL MACIP
 Put ACL ICMP
     [Arguments]    ${node}    ${acl_name}    ${egr_intf1}   ${egr_intf2}    ${ingr_intf1}   ${ingr_intf2}    ${acl_action}   ${dest_ntw}    ${src_ntw}    ${icmpv6}   ${code_range_low}   ${code_range_up}    ${type_range_low}   ${type_range_up}
     ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/acl_ICMP.json
-    ${uri}=               Set Variable          /vnf-agent/${node}/config/vpp/acls/${AGENT_VER}/acl/${acl_name}/
+    ${uri}=               Set Variable          /vnf-agent/${node}/config/vpp/acls/${AGENT_VER}/acl/${acl_name}
     ${data}=              Replace Variables             ${data}
     #OperatingSystem.Create File   ${REPLY_DATA_FOLDER}/reply.json     ${data}
     Put Json     ${uri}    ${data}
 
 Get ACL As Json
     [Arguments]           ${node}  ${acl_name}
-    ${key}=               Set Variable          /vnf-agent/${node}/config/vpp/acls/${AGENT_VER}/acl/${acl_name}/
+    ${key}=               Set Variable          /vnf-agent/${node}/config/vpp/acls/${AGENT_VER}/acl/${acl_name}
     ${data}=              Read Key    ${key}
     ${data}=              Set Variable If      '''${data}'''=="" or '''${data}'''=='None'    {}    ${data}
     #${output}=            Evaluate             json.loads('''${data}''')     json
@@ -401,7 +401,7 @@ etcd: Get ETCD Tree
 
 Delete ACL
     [Arguments]    ${node}    ${name}
-    ${uri}=      Set Variable    /vnf-agent/${node}/config/vpp/acls/${AGENT_VER}/acl/${name}/
+    ${uri}=      Set Variable    /vnf-agent/${node}/config/vpp/acls/${AGENT_VER}/acl/${name}
     ${out}=      Delete key    ${uri}
     [Return]    ${out}
 
