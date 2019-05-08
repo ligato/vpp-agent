@@ -1,0 +1,16 @@
+diff --git b/plugins/vpp/binapi/vpp1904/sr/sr.ba.go a/plugins/vpp/binapi/vpp1904/sr/sr.ba.go
+index e7e0a021..42153a48 100644
+--- b/plugins/vpp/binapi/vpp1904/sr/sr.ba.go
++++ a/plugins/vpp/binapi/vpp1904/sr/sr.ba.go
+@@ -61,9 +61,9 @@ func (*Srv6Sid) GetCrcString() string {
+
+ // Srv6SidList represents VPP binary API type 'srv6_sid_list':
+ type Srv6SidList struct {
+-	NumSids uint8
++	NumSids uint8 `struc:"sizeof=Sids"`
+ 	Weight  uint32
+-	Sids    []Srv6Sid `struc:"[16]Srv6Sid"`
++	Sids    []Srv6Sid
+ }
+
+ func (*Srv6SidList) GetTypeName() string {

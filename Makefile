@@ -131,9 +131,9 @@ get-binapi-generators:
 # Generate binary api
 generate-binapi: get-binapi-generators
 	@echo "=> generating binapi"
-	cd plugins/vpp/binapi && go generate
+	cd plugins/vpp/binapi && go generate ./...
 	@echo "=> applying fix patches"
-	find plugins/vpp/binapi -maxdepth 1 -type f -name '*.patch' -exec patch --no-backup-if-mismatch -p1 -i {} \;
+	find plugins/vpp/binapi -maxdepth 2 -type f -name '*.patch' -exec patch --no-backup-if-mismatch -p1 -i {} \;
 	@echo
 
 get-desc-adapter-generator:
