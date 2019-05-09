@@ -26,10 +26,10 @@ connect to.
 `,
 	Example: `Specify the vppagent to connect to and run VPP CLI command:
 	$ export ETCD_ENDPOINTS=172.17.0.3:9191
-	$ ./agentctl2 dump <dump cmd>
+	$ ./agentctl dump <dump cmd>
 
 Do as above, but with a command line flag:
-  $ ./agentctl2 --endpoints 172.17.0.3:9191 dump <dump cmd>
+  $ ./agentctl --endpoints 172.17.0.3:9191 dump <dump cmd>
 `,
 
 	Args: cobra.MinimumNArgs(2),

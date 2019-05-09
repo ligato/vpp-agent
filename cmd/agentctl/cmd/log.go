@@ -35,10 +35,10 @@ connect to.
 `,
 	Example: `Specify the vppagent to connect to and show vppagent logs:
 	$ export ETCD_ENDPOINTS=172.17.0.3:9191
-	$ ./agentctl2 log list
+	$ ./agentctl log list
 
 Do as above, but with a command line flag:
-  $ ./agentctl2 --endpoints 172.17.0.3:9191 log list
+  $ ./agentctl --endpoints 172.17.0.3:9191 log list
 `,
 
 	Args: cobra.MaximumNArgs(1),
@@ -56,10 +56,10 @@ connect to.
 `,
 	Example: `Specify the vppagent to connect to and show vppagent logs:
 	$ export ETCD_ENDPOINTS=172.17.0.3:9191
-	$ ./agentctl2 log set agent info
+	$ ./agentctl log set agent info
 
 Do as above, but with a command line flag:
-  $ ./agentctl2 --endpoints 172.17.0.3:9191 log set agent info
+  $ ./agentctl --endpoints 172.17.0.3:9191 log set agent info
 `,
 
 	Args: cobra.RangeArgs(2, 2),

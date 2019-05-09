@@ -63,18 +63,18 @@ var showConfig = &cobra.Command{
 `,
 	Example: `Specify the Etcd to connect to and run show command:
 	$ export ETCD_ENDPOINTS=172.17.0.1:2379
-	$ ./agentctl2 show config
+	$ ./agentctl show config
 OR
-	$ ./agenctl2 show config vpp
+	$ ./agenctl show config vpp
 OR
-	$ ./agenctl2 show config vpp route
+	$ ./agenctl show config vpp route
 
 Do as above, but with a command line flag:
-	$ ./agentctl2 --endpoints 172.17.0.1:2379 show config
+	$ ./agentctl --endpoints 172.17.0.1:2379 show config
 OR
-	$ ./agentctl2 --endpoints 172.17.0.1:2379 show config vpp
+	$ ./agentctl --endpoints 172.17.0.1:2379 show config vpp
 OR
-	$ ./agentctl2 --endpoints 172.17.0.1:2379 show config vpp route
+	$ ./agentctl --endpoints 172.17.0.1:2379 show config vpp route
 `,
 
 	Run: configFunction,

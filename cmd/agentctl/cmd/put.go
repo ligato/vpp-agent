@@ -30,7 +30,7 @@ For short key, put command use default microservice label and 'vpp1' as default 
 `,
 	Args: cobra.RangeArgs(2, 2),
 	Example: `  Set route configuration for "vpp1":
-	$ ./agentctl2 -e 172.17.0.3:2379 put /vnf-agent/vpp1/config/vpp/v2/route/vrf/1/dst/10.1.1.3/32/gw/192.168.1.13 '{
+	$ ./agentctl -e 172.17.0.3:2379 put /vnf-agent/vpp1/config/vpp/v2/route/vrf/1/dst/10.1.1.3/32/gw/192.168.1.13 '{
 	"type": 1,
 	"vrf_id": 1,
 	"dst_network": "10.1.1.3/32",
@@ -38,7 +38,7 @@ For short key, put command use default microservice label and 'vpp1' as default 
 }'
 
 Alternative:
-	$ ./agentctl2 put './agentctl2 generate Route --format json --short'
+	$ ./agentctl put './agentctl generate Route --format json --short'
 `,
 
 	Run: putFunction,
