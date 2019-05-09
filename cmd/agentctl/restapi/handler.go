@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/ligato/cn-infra/db/keyval/etcd"
-	"github.com/ligato/vpp-agent/cmd/agentctl2/utils"
+	"github.com/ligato/vpp-agent/cmd/agentctl/utils"
 )
 
 func GetMsg(endpoints []string, path string) string {

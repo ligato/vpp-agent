@@ -5,8 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"html/template"
-
-	"github.com/ligato/vpp-agent/cmd/agentctl/utils"
 )
 
 type logType struct {
@@ -21,7 +19,7 @@ func ConvertToLogList(log string) LogList {
 	err := json.Unmarshal([]byte(log), &data)
 
 	if err != nil {
-		utils.ExitWithError(utils.ExitError,
+		ExitWithError(ExitError,
 			errors.New("Failed conver string to json - "+err.Error()))
 	}
 

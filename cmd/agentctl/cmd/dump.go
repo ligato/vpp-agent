@@ -6,9 +6,9 @@ import (
 
 	"github.com/ligato/vpp-agent/api/models/linux"
 	"github.com/ligato/vpp-agent/api/models/vpp"
-	"github.com/ligato/vpp-agent/cmd/agentctl2/utils"
+	"github.com/ligato/vpp-agent/cmd/agentctl/utils"
 
-	"github.com/ligato/vpp-agent/cmd/agentctl2/restapi"
+	"github.com/ligato/vpp-agent/cmd/agentctl/restapi"
 	"github.com/ligato/vpp-agent/plugins/restapi/resturl"
 	"github.com/spf13/cobra"
 )
@@ -26,10 +26,10 @@ connect to.
 `,
 	Example: `Specify the vppagent to connect to and run VPP CLI command:
 	$ export ETCD_ENDPOINTS=172.17.0.3:9191
-	$ ./agentctl2 dump <dump cmd>
+	$ ./agentctl dump <dump cmd>
 
 Do as above, but with a command line flag:
-  $ ./agentctl2 --endpoints 172.17.0.3:9191 dump <dump cmd>
+  $ ./agentctl --endpoints 172.17.0.3:9191 dump <dump cmd>
 `,
 
 	Args: cobra.MinimumNArgs(2),
