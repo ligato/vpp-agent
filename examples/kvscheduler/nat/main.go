@@ -38,6 +38,12 @@ import (
 /*
 	This example demonstrates natplugin v.2
 
+	Add this config stanza to the VPP startup configuration:
+
+	nat {
+		endpoint-dependent
+	}
+
 	Deploy microservices with servers:
 
 	host-term1$ docker run -it --rm  -e MICROSERVICE_LABEL=microservice-server1 lencomilan/ubuntu /bin/bash
@@ -66,7 +72,7 @@ import (
 
 	# Accessing server 192.168.13.10:8080 running in the host should trigger
 	# source-NAT in the post-routing, i.e. no need to route microservices from the host:
-	host-term3$ nc 192.168.13.10 8080  # host-term3 = microservice-client
+	host-term3$ nc 192.168.13.20 8080  # host-term3 = microservice-client
 */
 
 func main() {
@@ -160,6 +166,7 @@ func testLocalClientWithScheduler() {
 	}
 
 	// data change
+	/* UNCOMMENT TO TEST THE CONFIG CHANGE
 	time.Sleep(time.Second * 10)
 	fmt.Println("=== CHANGE ===")
 
@@ -173,7 +180,7 @@ func testLocalClientWithScheduler() {
 		fmt.Println(err)
 		return
 	}
-
+	*/
 }
 
 const (
@@ -198,11 +205,11 @@ const (
 
 	vppTapServer1LogicalName = "vpp-tap-server1"
 	vppTapServer1IPAddr      = microserviceServer1NetPrefix + "1"
-	vppTapServer1Version     = 1
+	vppTapServer1Version     = 2
 
 	vppTapServer2LogicalName = "vpp-tap-server2"
 	vppTapServer2IPAddr      = microserviceServer2NetPrefix + "1"
-	vppTapServer2Version     = 1
+	vppTapServer2Version     = 2
 
 	linuxTapHostLogicalName = "linux-tap-host"
 	linuxTapHostIPAddr      = hostNetPrefix + "20"
