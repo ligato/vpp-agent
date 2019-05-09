@@ -369,7 +369,12 @@ func (d *InterfaceDescriptor) Validate(key string, intf *interfaces.Interface) e
 		return kvs.NewInvalidValueError(ErrInterfaceNameTooLong, "name")
 	}
 
-	// validate link with type
+	// validate interface type defined
+	if intf.Type == interfaces.Interface_UNDEFINED_TYPE {
+		return kvs.NewInvalidValueError(ErrInterfaceWithoutType, "type")
+	}
+
+	// validate link with interface type
 	linkMismatchErr := kvs.NewInvalidValueError(ErrInterfaceLinkMismatch, "link")
 	switch intf.Link.(type) {
 	case *interfaces.Interface_Sub:
@@ -391,6 +396,23 @@ func (d *InterfaceDescriptor) Validate(key string, intf *interfaces.Interface) e
 	case *interfaces.Interface_Tap:
 		if intf.Type != interfaces.Interface_TAP {
 			return linkMismatchErr
+		}
+	case *interfaces.Interface_Bond:
+		if intf.Type != interfaces.Interface_BOND_INTERFACE {
+			return linkMismatchErr
+		}
+	case *interfaces.Interface_VmxNet3:
+		if intf.Type != interfaces.Interface_VMXNET3_INTERFACE {
+			return linkMismatchErr
+		}
+	case *interfaces.Interface_Ipsec:
+		if intf.Type != interfaces.Interface_IPSEC_TUNNEL {
+			return linkMismatchErr
+		}
+	case nil:
+		if intf.Type != interfaces.Interface_SOFTWARE_LOOPBACK &&
+			intf.Type != interfaces.Interface_DPDK {
+			return errors.Errorf("VPP interface type %s must have link defined", intf.Type)
 		}
 	}
 
@@ -415,8 +437,6 @@ func (d *InterfaceDescriptor) Validate(key string, intf *interfaces.Interface) e
 		if name, ok := d.bondIDs[intf.GetBond().GetId()]; ok && name != intf.GetName() {
 			return kvs.NewInvalidValueError(ErrBondInterfaceIDExists, "link.bond.id")
 		}
-	case interfaces.Interface_UNDEFINED_TYPE:
-		return kvs.NewInvalidValueError(ErrInterfaceWithoutType, "type")
 	}
 
 	// validate unnumbered
@@ -688,21 +708,17 @@ func (d *InterfaceDescriptor) getMemifRingSize(memif *interfaces.MemifLink) uint
 }
 
 // getTapConfig returns the TAP-specific configuration section (handling undefined attributes).
-func getTapConfig(intf *interfaces.Interface) *interfaces.TapLink {
-	tapCfg := &interfaces.TapLink{
-		Version:        intf.GetTap().GetVersion(),
-		HostIfName:     intf.GetTap().GetHostIfName(),
-		ToMicroservice: intf.GetTap().GetToMicroservice(),
-		RxRingSize:     intf.GetTap().GetRxRingSize(),
-		TxRingSize:     intf.GetTap().GetTxRingSize(),
+func getTapConfig(intf *interfaces.Interface) (tapLink *interfaces.TapLink) {
+	tapLink = new(interfaces.TapLink)
+	proto.Merge(tapLink, intf.GetTap())
+
+	if tapLink.Version == 0 {
+		tapLink.Version = 1
 	}
-	if tapCfg.Version == 0 {
-		tapCfg.Version = 1
+	if tapLink.HostIfName == "" {
+		tapLink.HostIfName = generateTAPHostName(intf.Name)
 	}
-	if tapCfg.HostIfName == "" {
-		tapCfg.HostIfName = generateTAPHostName(intf.Name)
-	}
-	return tapCfg
+	return tapLink
 }
 
 // generateTAPHostName (deterministically) generates the host name for a TAP interface.
