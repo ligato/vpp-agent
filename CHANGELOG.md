@@ -43,21 +43,58 @@ RELEASE CHANGELOG TEMPLATE:
 -->
 
 <a name="v2.1.0"></a>
-# [2.1.0](https://github.com/ligato/vpp-agent/compare/v2.0.2...v2.1.0) (2019-05-XX)
+# [2.1.0](https://github.com/ligato/vpp-agent/compare/v2.0.2...v2.1.0) (2019-05-09)
+
+### Compatibility
 - **VPP 19.04** (`v19.04-6-g6f05f724f`, recommended)
-- **VPP 19.01** (backwards compatible)
-- **VPP 18.10** (backwards compatible)
+- **VPP 19.01** (backward compatible)
 - cn-infra v2.1
 - Go 1.11
 
+The VPP 18.10 was deprecated and is no longer compatible.
 
+### BREAKING CHANGES
+* All non-zero VRF tables now must be explicitly created, providing a VRF proto-modeled data to the VPP-Agent. Otherwise, some configuration items will not be created as before (for example interface IP addresses). 
+
+### Bug Fixes
+* VPP ARP `retrieve` now also returns IPv6 entries. 
+
+### New Features
+* [govppmux-plugin][govppmux-plugin]
+  - The GoVPPMux plugin configuration file contains a new option `ConnectViaShm`, which when set to `true` forces connecting to the VPP via shared memory prefix. This is an alternative to environment variable `GOVPPMUX_NOSOCK`.
+* [configurator][configurator-plugin]
+  - The configurator plugin now collects statistics which are available via the `GetStats()` function or via REST on URL `/stats/configurator`.  
+* [kv-scheduler][kv-scheduler]
+  - Added transaction statistics.  
+* [abf-plugin][vpp-abf-plugin]
+  - Added new plugin ABF - ACL-based forwarding, providing an option to configure routing based on matching ACL rules. An ABF entry configures interfaces which will be attached, list of forwarding paths and associated access control list.
+* [if-plugin][vpp-interface-plugin]
+  - Added support for Generic Segmentation Offload (GSO) for TAP interfaces.  
+* [l3-plugin][vpp-l3-plugin]
+  - A new model for VRF tables was introduced. Every VRF is defined by an index and an IP version, a new optional label was added. Configuration types using non-zero VRF now require it to be created, since the VRF is considered a dependency. VRFs with zero-index are present in the VPP by default and do not need to be configured (applies for both, IPv4 and IPv6).
+* [agentctl][agentctl]
+  - This tool becomes obsolete and was completely replaced with a new implementation. Please note that the development of this tool is in the early stages, and functionality is quite limited now. New and improved functionality is planned for the next couple of releases since our goal is to have a single vpp-agent control utility. Because of this, we have also deprecated the [vpp-agent-ctl][vpp-agent-ctl] tool which will be most likely removed in the next release.  
+
+### Improvements
+* [kv-scheduler][kv-scheduler]  
+  - The KV Scheduler received another performance improvements.
+* [if-plugin][vpp-interface-plugin]
+  - Attempt to configure a Bond interface with already existing ID returns a non-retriable error.
+* [linux-if-plugin][linux-interface-plugin]
+  - Before adding an IPv6 address to the Linux interface, the plugins will use `sysctl` to ensure the IPv6 is enabled in the target OS.  
+
+### Docker Images
+- Supervisord is started as a process with PID 1
+
+### Documentation
+- The ligato.io webpage is finally available, check out it [here][ligato.io]! We have also released a [new documentation site][ligato-docs] with a lot of new or updated articles, guides, tutorials and many more. Most of the README.md files scattered across the code were removed or updated and moved to the site.  
 
 <a name="v2.0.2"></a>
 # [2.0.2](https://github.com/ligato/vpp-agent/compare/v2.0.1...v2.0.2) (2019-04-19)
 
 ### Compatibility
 - **VPP 19.01** (updated to `v19.01.1-14-g0f36ef60d`)
-- **VPP 18.10** (backwards compatible)
+- **VPP 18.10** (backward compatible)
 - cn-infra v2.0
 - Go 1.11
 
@@ -68,7 +105,7 @@ This minor release brought compatibility with updated version of the VPP 19.01.
 
 ### Compatibility
 - **VPP 19.01** (compatible by default, recommended)
-- **VPP 18.10** (backwards compatible)
+- **VPP 18.10** (backward compatible)
 - cn-infra v2.0
 - Go 1.11
 
@@ -98,7 +135,7 @@ This minor release brought compatibility with updated version of the VPP 19.01.
 
 ### Compatibility
 - **VPP 19.01** (compatible by default, recommended)
-- **VPP 18.10** (backwards compatible)
+- **VPP 18.10** (backward compatible)
 - cn-infra v2.0
 - Go 1.11
 
@@ -771,6 +808,7 @@ Data replication and events:
   - remote client - for remote configuration of VPP Agent (while integrating for example with control plane)
 
 [agentctl]: cmd/agentctl
+[configurator-plugin]: plugins/configurator
 [consul]: https://www.consul.io/
 [contiv-vpp1810]: https://github.com/vpp-dev/vpp/tree/stable-1801-contiv
 [docker]: docker
@@ -784,6 +822,8 @@ Data replication and events:
 [govppmux-conf]: plugins/govppmux/govpp.conf
 [idx-vpp]: pkg/idxvpp
 [kv-scheduler]: plugins/kvscheduler
+[ligato.io]: https://ligato.io/
+[ligato-docs]: https://docs.ligato.io/en/latest/
 [linux-interface-plugin]: plugins/linux/ifplugin
 [linux-iptables-plugin]: plugins/linux/iptablesplugin
 [linux-l3-plugin]: plugins/linux/l3plugin
@@ -798,6 +838,7 @@ Data replication and events:
 [readme]: README.md
 [rest-plugin]: plugins/restapi
 [sr-plugin]: plugins/vpp/srplugin
+[vpp-abf-plugin]: plugins/vpp/abfplugin
 [vpp-acl-plugin]: plugins/vpp/aclplugin
 [vpp-agent]: cmd/vpp-agent
 [vpp-agent-ctl]: cmd/vpp-agent-ctl
