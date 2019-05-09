@@ -22,6 +22,11 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/tapv2"
 )
 
+// TapFlags definitions from https://github.com/FDio/vpp/blob/stable/1904/src/vnet/devices/tap/tap.h#L33
+const (
+	TapFlagGSO uint32 = 1 << iota
+)
+
 // AddTapInterface implements interface handler.
 func (h *InterfaceVppHandler) AddTapInterface(ifName string, tapIf *interfaces.TapLink) (swIfIdx uint32, err error) {
 	if tapIf == nil || tapIf.HostIfName == "" {
@@ -31,6 +36,11 @@ func (h *InterfaceVppHandler) AddTapInterface(ifName string, tapIf *interfaces.T
 	if tapIf.Version == 1 {
 		return 0, errors.New("tap version 1 has been deprecated")
 	} else if tapIf.Version == 2 {
+		var flags uint32
+		if tapIf.EnableGso {
+			flags |= TapFlagGSO
+		}
+
 		// Configure fast virtio-based TAP interface
 		req := &tapv2.TapCreateV2{
 			ID:            ^uint32(0),
@@ -39,6 +49,7 @@ func (h *InterfaceVppHandler) AddTapInterface(ifName string, tapIf *interfaces.T
 			UseRandomMac:  1,
 			RxRingSz:      uint16(tapIf.RxRingSize),
 			TxRingSz:      uint16(tapIf.TxRingSize),
+			TapFlags:      flags,
 		}
 
 		reply := &tapv2.TapCreateV2Reply{}

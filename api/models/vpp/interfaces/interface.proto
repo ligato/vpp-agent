@@ -134,6 +134,7 @@ message TapLink {
                                        VPP-ifplugin needs to be aware of this dependency) */
     uint32 rx_ring_size = 4;    /* Rx ring buffer size; must be power of 2; default is 256; only for TAP v.2 */
     uint32 tx_ring_size = 5;    /* Tx ring buffer size; must be power of 2; default is 256; only for TAP v.2 */
+    bool enable_gso = 6;        /* Enable GSO */
 }
 
 message IPSecLink {

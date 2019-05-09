@@ -477,8 +477,10 @@ func (h *InterfaceVppHandler) dumpTapDetails(ifs map[uint32]*vppcalls.InterfaceD
 		ifs[tapDetails.SwIfIndex].Interface.Link = &interfaces.Interface_Tap{
 			Tap: &interfaces.TapLink{
 				Version:    2,
-				HostIfName: string(bytes.SplitN(tapDetails.HostIfName, []byte{0x00}, 2)[0]),
-				// Other parameters are not not yet part of the dump.
+				HostIfName: cleanString(tapDetails.HostIfName),
+				RxRingSize: uint32(tapDetails.RxRingSz),
+				TxRingSize: uint32(tapDetails.TxRingSz),
+				EnableGso:  tapDetails.TapFlags&TapFlagGSO == TapFlagGSO,
 			},
 		}
 		ifs[tapDetails.SwIfIndex].Interface.Type = interfaces.Interface_TAP
