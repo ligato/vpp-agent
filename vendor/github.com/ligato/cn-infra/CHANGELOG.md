@@ -1,33 +1,49 @@
+# Release v2.1 (2019-05-09)
+
+## Improvements
+* [Datasync][datasync-plugin]
+  - Added new option `WithClientLifetimeTTL`. This option defines `put` operation for the lifetime of a client (the TTL is not renewed if the client is closed).
+* [ETCD][etcd-plugin]
+  - Support for election mechanism, which determines leader instance for given prefix. Multiple ETCD instances can now compete for leadership. 
+* [Bolt][bolt-plugin]
+  - Some improvements to Bolt watchers were done in order to reduce a number of active go routines
+  
+## Fixed Bugs
+* BoltDB watcher: keys sent to the close channel are now properly prefixed and delivered to the correct go routine so they will not be ignored     
+
+## Documentation
+* Majority of `README.md` files were removed. The content was updated, extended and moved to [Ligato documentation site][ligato-docs].
+
 # Release v2.0 (2019-04-02)
 
 ## Breaking Changes
 * The `ChangeEvent` interface was modified. Before, it returned single value of type `ProtoWatchResp`, now it contains a new method `GetChanges()` which return a list of values of that type. 
 
 ## New Features
-* [Datasync](datasync/README.md)
+* [Datasync][datasync-plugin]
   - The `ChangeEvent` interface provides a new method `GetContext` returning a context associated with the given event. 
   - The `ResyncEvent` interface also provides a new method called `GetContext` returning a context associated with the given resync event.
   - Resync time duration is shown in milliseconds
-* [IdxMap](idxmap/README.md)
+* [IdxMap][index-map]
   - New method `ListFields(string)` in the `NamedMapping` interface providing a map of fields associated with the item identified by the named parameter known as secondary indexes     
-* [GRPC](rpc/grpc)
+* [GRPC][grpc-plugin]
   - Added authentication support for the GRPC plugin
-* [Probe](health/probe)
+* [Probe][probe-plugin]
   - Support for non-fatal errors. The probe plugin keeps a lst of non-fatal plugins. Errors reported from the non-fatal plugin are effectively ignored in the vpp-agent overall status.
-* [BoltDB](db/keyval/bolt)
+* [BoltDB][bolt-plugin]
   - The config file now has an option to filter duplicated notifications.  
 
 ## Improvements
-* [Agent](agent)
+* [Agent][agent-core]
   - `DumpStackTraceOnTimeout` is now disabled by default with possibility to enable it via the environment variable `DUMP_STACK_ON_TIMEOUT`.
   - The agent logs the last plugin in case it fails to start because of the timeout
   - Signal received during startup closes the agent instance
-* [FileDB](db/keyval/filedb)
+* [FileDB][filedb-plugin]
   - If the child process is not detached, the `PDeathSignal` is set preventing the child process to hang
   - The process watcher is started on process start, rather than on process creation
   - A new or an attached process can be created with custom I/O writer
   - Support for environment variables for processes  
-* [Resync](datasync/resync)
+* [Resync][resync-plugin]
   - The resync timeout was split into two values, for ACK timeout set to 10 second (up from 5) and for ACCEPT timeout set to 1 second.   
   
 ## Fixed Bugs
@@ -55,8 +71,8 @@
   The process manager supports all the common commands like restart, termination, kill, wait for process completion, check process liveness or watch its status. More advanced features or options allow to detach the process from a parent, preserve it when an application is restarted or automatic cleanup of zombie processes.
   
 ## New features
-  * Added new plugin allowing usage of a filesystem as the key-value data store. More details in the [readme](db/keyval/filedb/README.md)
-  * Added new plugin for external process management. More information in the [readme](process/README.md)
+  * Added new plugin allowing usage of a filesystem as the key-value data store. More details in the [readme][cn-infra-readme]
+  * Added new plugin for external process management. More information in the [readme][cn-infra-readme]
   * StatusCheck plugin has a new option to define non-fatal plugins. A registered plugin marked as non-fatal is not propagated into overall status.
   * Added watcher for BoltDB database. The BoltDB now supports all the watcher options as other key-value data store plugins.
   
@@ -91,16 +107,16 @@
   and will be extended in the future.
   
 ## New Features
-- [measure](logging/measure)
-  * New component [tracer](logging/measure/tracer.go) was introduced. It serves the similar purpose
-  as the stopwatch. More details in the [readme](logging/measure/README.md)
+- [measure][tracer-plugin]
+  * New component [tracer][tracer-plugin] was introduced. It serves the similar purpose
+  as the stopwatch. More details in the [readme][cn-infra-readme]
   * Stopwatch was removed
-- [statuscheck](health/statuscheck)
+- [statuscheck][statuscheck-plugin]
   * The liveness probe now shows also a state of all registered plugins (not only the overall state)
-- [rest](rpc/rest)
+- [rest][rest-plugin]
   * New security functionality for REST plugin was added. To learn more about it, see the
-  [readme](rpc/rest/README.md#token-based-authorization).  
-- [logging](logging)
+  [readme][cn-infra-readme].  
+- [logging][log-registry]
   * Logger API has two new methods, `SetOutput(<io.Writer>)` to set custom logging output 
   and `SetFormatter(<formatter>)` to set custom formatter before logged to output.   
   
@@ -147,19 +163,19 @@
   cn-infra features, including resync.
   
 ## New Features
-- [agent](agent)
+- [agent][agent-core]
   * Agent uses new concept of flavors. Since all the examples moved to this new plugin
   management, package flavors was removed. Learn more about new flavors 
-  in [readme](agent/README.md)  
-- [cryptodata](db/cryptodata)
+  [here][agent-core]
+- [cryptodata][cryptodata-plugin]
   * New plugin cryptodata contains implementation files for encryption/decryption
-  support. In order to try the functionality, examples for [library](examples/cryptodata-lib) ,
-  [plugin](examples/cryptodata-plugin) and [proto-plugin](examples/cryptodata-proto-plugin) 
+  support. In order to try the functionality, examples for [library][examples-cryptodata-lib] ,
+  [plugin][examples-cryptodata] and [proto-plugin][examples-cryptodata-proto] 
   were added.
-- [boltDB](db/keyval/bolt)
+- [boltDB][bolt-plugin]
   * Added support for the BoltDB keyval database. There is also a new example 
-  for [BoltDB plugin](examples/bolt-plugin).
-- [logging](logging/logrus)   
+  for [BoltDB plugin][examples-bolt].
+- [logging][logrus] 
   * Added support for external hooks   
 
 # Release v1.4.1 (2018-07-23)
@@ -179,12 +195,11 @@
 ## New Features
   * Support for GRPC unix domain socket type. Socket types tcp, tcp4, tcp6, unix 
   and unixpacket can be used with GRPC. Desired socket type and address/file can be 
-  specified via grpc configuration file ([example here](rpc/grpc/grpc.conf)). More
-  information in the [readme](rpc/grpc/README.md)
+  specified via grpc configuration file ([example here][grpc-conf]). More
+  information [here][grpc-plugin]
   * Rest plugin security improved. Security features are the usage of client/server certificates
   (HTTPS) and basic HTTP authentication with username and password. Those features 
-  are disabled by default. Information about how to use it and example can be found in the 
-  [readme](rpc/rest/README.md)
+  are disabled by default. Information about how to use it and example can be found [here][rest-plugin]
   
 ## Other
   * Example configuration files with description were added to every plugin which 
@@ -203,11 +218,11 @@
 
 ## New Features
   * Automatic resync if ETCD was disconnected and connected again. The feature is
-  disabled by default. See [readme](db/keyval/etcd/README.md) to learn how to 
+  disabled by default. See [plugin directory][etcd-plugin] to learn how to 
   enable the feature.
-  * Watch registration [API](datasync/datasync_api.go) now contains new method 
+  * Watch registration [API][datasync-api] now contains new method 
   __Registration()__ allowing to register new key to all adapters.
-  * New plugin for [Consul](db/keyval/consul). See [readme](db/keyval/consul/README.md)
+  * New plugin for Consul. See [plugin directory][consul-plugin]
   for more information.
   * In-memory mapping method __UpdateMetadata()__ now triggers events. Use __IsUpdate()__
   so see if the event comes from the update notification.
@@ -220,7 +235,7 @@
 
 ## New Features
   * Added support for ETCD compacting. Information about how to use 
-    it can be found in the [readme](db/keyval/etcd/README.md)
+    it can be found in the [readme][etcd-plugin]
   * Name-to-index mapping API was extended with new method 'Update'.
     The purpose of the method is to update metadata value under specific
     key without triggering events, so mapping entry can be kept up to date. 
@@ -300,7 +315,7 @@ Added TLS support
 * etcd new feature PutIfNotExists adds key-value pair if the key doesn't exist.
 * feature GetPrevValue() used to obtain previous value from key-value database was returned to API
 * watcher registration object has a new method to close single subscribed key. Key can be un-subscribed in runtime.
-  See example usage in [examples/datasync-plugin](examples/datasync-plugin) for more details  
+  See example usage in [examples/datasync-plugin][examples-datasync] for more details  
 
 ## Documentation
 * improved documentation/code comments in datasync, config and core packages 
@@ -308,10 +323,9 @@ Added TLS support
 # Release v1.0.5 (2017-10-17)
 
 ## Profiling
-* new [logging/measure](logging/measure) - time measurement utility to measure duration of function or 
+* new [logging/measure][tracer-plugin] - time measurement utility to measure duration of function or 
   any part of the code. Use `NewStopwatch(name string, log logging.Logger)` to create an 
-  instance of stopwatch with name, desired logger and table with measured time entries. See 
-  [readme](logging/measure/README.md) for more information.
+  instance of stopwatch with name, desired logger and table with measured time entries. See [plugin folder][tracer-plugin] for more information.
 
 ## Kafka
 * proto_connection.go and bytes_connection.go consolidated, bytes_connection.go now mirrors all
@@ -343,15 +357,15 @@ Added TLS support
 * Logging duration (etcd connection establishment, kafka connection establishment, resync)
 
 ## Plugin Configuration
-* new [examples/configs-plugin](examples/configs-plugin)
+* new [examples/configs-plugin][examples-config]
 * new flag --config-dir=. (by default "." meaning current working directory)
 * configuration files can but not need to have absolute paths anymore (e.g. --kafka-config=kafka.conf)
 * if you put all configuration files (etcd.conf, kafka.conf etc.) in one directory agent will load them
 * if you want to disable configuration file just put empty value for a particular flag (e.g. --kafka-config)
 
 ## Logging
-* [logmanager plugin](logging/logmanager)
-  * new optional flag --logs-config=logs.conf (showcase in [examples/logs-plugin](examples/logs-plugin))
+* [logmanager plugin][logmanager-plugin]
+  * new optional flag --logs-config=logs.conf (showcase in [examples/logs-plugin][examples-logs])
   * this plugin is now part of LocalFlavor (see field Logs) & tries to load configuration
   * HTTP dependency is optional (if it is not set it just does not registers HTTP handlers)
 * logger name added in logger fields (possible to grep only certain logger - effectively by plugin)
@@ -369,7 +383,7 @@ Added TLS support
 * Offset mark is done for hash/default-partitioned messages only. Manually partitioned message's offset
   is not marked.
 * It is possible to start kafka consumer on partition after kafka plugin initialization procedure. New
-  example [post-init-consumer](examples/kafka-plugin/post-init-consumer) was created to show the
+  example [post-init-consumer][examples-kafka-post-init] was created to show the
   functionality
 * fixes inside Mux.NewSyncPublisher() & Mux.NewAsyncPublisher() related to previous partition changes
 * Known Issues:
@@ -377,13 +391,13 @@ Added TLS support
   * TODO Minimalistic examples & documentation for Kafka API will be improved in a later release.
 
 ## Flavors
-* optionally GPRC server can be enabled in [rpc flavor](../v1.0.4/flavors/rpc) using --grpc-port=9111 (or using config gprc.conf)
-* [Flavor interface](../v1.0.4/core/list_flavor_plugin.go) now contains three methods: Plugins(), Inject(), LogRegistry() to standardize these methods over all flavors. Note, LogRegistry() is usually embedded using local flavor.
+* optionally GPRC server can be enabled in rpc flavor (removed in v1.5) using --grpc-port=9111 (or using config gprc.conf)
+* Flavor interface (removed in v1.5) now contains three methods: Plugins(), Inject(), LogRegistry() to standardize these methods over all flavors. Note, LogRegistry() is usually embedded using local flavor.
 
 # Release v1.0.3 (2017-09-08)
-* [FlavorAllConnectors](../v1.0.3/flavors/connectors)
+* FlavorAllConnectors (removed in v1.5)
     * Inlined plugins: ETCD, Kafka, Redis, Cassandra
-* [Kafka Partitions](messaging/kafka)
+* [Kafka Partitions][kafka-plugin]
     * Implemented new methods that allow to specify partitions & offset parameters:
       * publish: Mux.NewSyncPublisherToPartition() & Mux.NewAsyncPublisherToPartition()
       * watch: ProtoWatcher.WatchPartition()
@@ -396,35 +410,74 @@ Added TLS support
 The major themes for Release v1.0.2 are as follows:
 * Libraries (GO Lang packages) for connecting to Data Bases and Message Bus.
   Set of these libraries provides unified client API and configuration for:
-    * [Cassandra](db/sql/cassandra)
-    * [etcd](db/keyval/etcd)
-    * [Redis](db/keyval/redis)
-    * [Kafka](db/)
-* [Data Synchronization](datasync) plugin for watching and writing data asynchronously; it is currently implemented only for the [db/keyval API](db/keyval) API. It facilitates reading of data during startup or after reconnection to a data store and then watching incremental changes.
-* Agent [Core](../v1.0.2/core) that provides plugin lifecycle management
+    * [Cassandra][cassandra-plugin]
+    * [etcd][etcd-plugin]
+    * [Redis][redis-plugin]
+    * [Kafka][kafka-plugin]
+* [Data Synchronization][datasync-plugin] plugin for watching and writing data asynchronously; it is currently implemented only for the [db/keyval API][keyval-api] API. It facilitates reading of data during startup or after reconnection to a data store and then watching incremental changes.
+* Agent [Core][agent-core] that provides plugin lifecycle management
 (initialization and graceful shutdown of plugins) is able to run
-different [flavors](../v1.0.2/flavors) (reusable collection of plugins):
-    * [local flavor](../v1.0.2/flavors/local) - a minimal collection of plugins:
-      * [statuscheck](health/statuscheck)
-      * [servicelabel](servicelabel)
-      * [resync orch](datasync/restsync)
-      * [log registry](logging)
-    * [RPC flavor](../v1.0.2/flavors/rpc) - exposes REST API for all plugins, especially for:
-      * [statuscheck](health/statuscheck) (RPCs probed from systems such as K8s)
-      * [logging](logging/logmanager) (for changing log level at runtime remotely)
+different flavors (removed in v1.5) (reusable collection of plugins):
+    * local flavor - a minimal collection of plugins:
+      * [statuscheck][statuscheck-plugin]
+      * [servicelabel][service-label-plugin]
+      * [resync orch]([datasync-restsync]
+      * [log registry][log-registry]
+    * RPC flavor - exposes REST API for all plugins, especially for:
+      * [statuscheck][statuscheck-plugin] (RPCs probed from systems such as K8s)
+      * [logging][logmanager-plugin] (for changing log level at runtime remotely)
     * connector flavors:
       * Cassandra flavor
       * etcd flavor
       * Redis flavor
       * Kafka flavor
-* [Examples](examples)
-* [Docker](docker) container-based development environment
+* [Examples][examples]:
+* [Docker][docker] container-based development environment
 * Helpers:
-  * [IDX Map](idxmap) is a reusable thread-safe in memory data structure.
+  * [IDX Map][index-map] is a reusable thread-safe in memory data structure.
       This map is designed for sharing key value based data
       (lookup by primary & secondary indexes, plus watching individual changes).
       It is useful for:
       - implementing backend for plugin specific API shared by multiple plugins;
       - caching of a remote data store.
-  * [Config](config): helpers for loading plugin specific configuration.
-  * [Service Label](servicelabel): retrieval of a unique identifier for a CN-Infra based app.
+  * [Config]([config]: helpers for loading plugin specific configuration.
+  * [Service Label][service-label-plugin]: retrieval of a unique identifier for a CN-Infra based app.
+  
+[agent-core]: agent 
+[bolt-plugin]: db/keyval/bolt
+[cassandra-plugin]: db/sql/cassandra
+[cn-infra-readme]: README.md
+[config]: config
+[consul-plugin]: db/keyval/consul
+[cryptodata-plugin]: db/cryptodata
+[datasync-api]: datasync/datasync_api.go
+[datasync-plugin]: datasync
+[datasync-restsync]: datasync/restsync
+[docker]: docker
+[etcd-plugin]: db/keyval/etcd
+[examples]: examples
+[examples-bolt]: examples/bolt-plugin
+[examples-config]: examples/configs-plugin
+[examples-cryptodata]: examples/cryptodata-plugin
+[examples-cryptodata-lib]: examples/cryptodata-lib
+[examples-cryptodata-proto]: examples/cryptodata-proto-plugin
+[examples-datasync]: examples/datasync-plugin
+[examples-kafka-post-init]: examples/kafka-plugin/post-init-consumer
+[examples-logs]: examples/logs-plugin
+[filedb-plugin]: db/keyval/filedb
+[grpc-conf]: rpc/grpc/grpc.conf
+[grpc-plugin]: rpc/grpc
+[index-map]: idxmap
+[kafka-plugin]: messaging/kafka
+[keyval-api]: db/keyval
+[ligato-docs]: https://docs.ligato.io/en/latest/
+[log-registry]: logging
+[logmanager-plugin]: logging/logmanager
+[logrus]: logging/logrus
+[probe-plugin]: health/probe
+[redis-plugin]: db/keyval/redis
+[rest-plugin]: rpc/rest
+[resync-plugin]: datasync/resync
+[service-label-plugin]: servicelabel
+[statuscheck-plugin]: health/statuscheck
+[tracer-plugin]: logging/measure
