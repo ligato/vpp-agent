@@ -30,7 +30,6 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/aclplugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin"
 
-	_ "github.com/ligato/vpp-agent/plugins/vpp/aclplugin/vppcalls/vpp1810"
 	_ "github.com/ligato/vpp-agent/plugins/vpp/aclplugin/vppcalls/vpp1901"
 	_ "github.com/ligato/vpp-agent/plugins/vpp/aclplugin/vppcalls/vpp1904"
 )
