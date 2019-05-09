@@ -12,16 +12,12 @@ required = [
 # Constraints
 
 [[constraint]]
-  branch = "dev"
   name = "github.com/ligato/cn-infra"
+  version = "2.1.0"
 
 [[constraint]]
   branch = "master"
   name =  "git.fd.io/govpp.git"
-
-[[constraint]]
-  branch = "master"
-  name = "github.com/buger/goterm"
 
 [[constraint]]
   name = "github.com/fsouza/go-dockerclient"

@@ -491,7 +491,6 @@
   version = "v1.0"
 
 [[projects]]
-  branch = "dev"
   digest = "1:5485ade83659041e023daf65c3eba8d5799a26f4b6e8883405bbb3d03fbc3d76"
   name = "github.com/ligato/cn-infra"
   packages = [
@@ -535,7 +534,8 @@
     "utils/safeclose",
   ]
   pruneopts = "T"
-  revision = "629254303e0cbd7584398474bb07c13378cf7c20"
+  revision = "ceaf6f4fe9f9fa6aa0629edc20156a969928f0e5"
+  version = "v2.1.0"
 
 [[projects]]
   branch = "master"
