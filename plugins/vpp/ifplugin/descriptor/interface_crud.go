@@ -1,12 +1,8 @@
 package descriptor
 
 import (
-	"net"
-
 	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
-
-	"github.com/ligato/cn-infra/utils/addrs"
 
 	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	"github.com/ligato/vpp-agent/pkg/models"
@@ -144,6 +140,7 @@ func (d *InterfaceDescriptor) Create(key string, intf *interfaces.Interface) (me
 			d.log.Error(err)
 			return nil, err
 		}
+		d.bondIDs[intf.GetBond().GetId()] = intf.GetName()
 	}
 
 	/*
@@ -195,30 +192,6 @@ func (d *InterfaceDescriptor) Create(key string, intf *interfaces.Interface) (me
 		}
 	}
 
-	// convert IP addresses to net.IPNet
-	ipAddresses, err := addrs.StrAddrsToStruct(intf.IpAddresses)
-	if err != nil {
-		err = errors.Errorf("failed to convert %s IP address list to IPNet structures: %v", intf.Name, err)
-		d.log.Error(err)
-		return nil, err
-	}
-
-	// VRF (optional), should be done before IP addresses
-	err = setInterfaceVrf(d.ifHandler, intf.Name, ifIdx, intf.Vrf, ipAddresses)
-	if err != nil {
-		d.log.Error(err)
-		return nil, err
-	}
-
-	// configure IP addresses
-	for _, address := range ipAddresses {
-		if err := d.ifHandler.AddInterfaceIP(ifIdx, address); err != nil {
-			err = errors.Errorf("adding IP address %v to interface %v failed: %v", address, intf.Name, err)
-			d.log.Error(err)
-			return nil, err
-		}
-	}
-
 	// configure MTU. Prefer value in the interface config, otherwise set the plugin-wide
 	// default value if provided.
 	if ifaceSupportsSetMTU(intf) {
@@ -264,35 +237,13 @@ func (d *InterfaceDescriptor) Create(key string, intf *interfaces.Interface) (me
 
 // Delete removes VPP interface.
 func (d *InterfaceDescriptor) Delete(key string, intf *interfaces.Interface, metadata *ifaceidx.IfaceMetadata) error {
+	var err error
 	ifIdx := metadata.SwIfIndex
 
 	// set interface to ADMIN_DOWN unless the type is AF_PACKET_INTERFACE
 	if intf.Type != interfaces.Interface_AF_PACKET {
 		if err := d.ifHandler.InterfaceAdminDown(ifIdx); err != nil {
 			err = errors.Errorf("failed to set interface %s down: %v", intf.Name, err)
-			d.log.Error(err)
-			return err
-		}
-	}
-
-	// remove IP addresses from the interface
-	var nonLocalIPs []string
-	for _, ipAddr := range intf.IpAddresses {
-		ip := net.ParseIP(ipAddr)
-		if !ip.IsLinkLocalUnicast() {
-			nonLocalIPs = append(nonLocalIPs, ipAddr)
-		}
-	}
-	ipAddrs, err := addrs.StrAddrsToStruct(nonLocalIPs)
-	if err != nil {
-		err = errors.Errorf("failed to convert %s IP address list to IPNet structures: %v", intf.Name, err)
-		d.log.Error(err)
-		return err
-	}
-	for _, ipAddr := range ipAddrs {
-		if err = d.ifHandler.DelInterfaceIP(ifIdx, ipAddr); err != nil {
-			err = errors.Errorf("failed to remove IP address %s from interface %s: %v",
-				ipAddr, intf.Name, err)
 			d.log.Error(err)
 			return err
 		}
@@ -321,6 +272,7 @@ func (d *InterfaceDescriptor) Delete(key string, intf *interfaces.Interface, met
 		err = d.ifHandler.DeleteVmxNet3(intf.Name, ifIdx)
 	case interfaces.Interface_BOND_INTERFACE:
 		err = d.ifHandler.DeleteBondInterface(intf.Name, ifIdx)
+		delete(d.bondIDs, intf.GetBond().GetId())
 	}
 	if err != nil {
 		err = errors.Errorf("failed to remove interface %s, index %d: %v", intf.Name, ifIdx, err)
@@ -387,46 +339,6 @@ func (d *InterfaceDescriptor) Update(key string, oldIntf, newIntf *interfaces.In
 		}
 	}
 
-	// calculate diff of IP addresses
-	newIPAddresses, err := addrs.StrAddrsToStruct(newIntf.IpAddresses)
-	if err != nil {
-		err = errors.Errorf("failed to convert %s IP address list to IPNet structures: %v", newIntf.Name, err)
-		d.log.Error(err)
-		return oldMetadata, err
-	}
-	oldIPAddresses, err := addrs.StrAddrsToStruct(oldIntf.IpAddresses)
-	if err != nil {
-		err = errors.Errorf("failed to convert %s IP address list to IPNet structures: %v", oldIntf.Name, err)
-		d.log.Error(err)
-		return oldMetadata, err
-	}
-	del, add := addrs.DiffAddr(newIPAddresses, oldIPAddresses)
-
-	// delete obsolete IP addresses
-	for _, address := range del {
-		err := d.ifHandler.DelInterfaceIP(ifIdx, address)
-		if nil != err {
-			err = errors.Errorf("failed to remove obsolete IP address %v from interface %s: %v",
-				address, newIntf.Name, err)
-			d.log.Error(err)
-			return oldMetadata, err
-		}
-	}
-
-	// add new IP addresses
-	for _, address := range add {
-		err := d.ifHandler.AddInterfaceIP(ifIdx, address)
-		if nil != err {
-			err = errors.Errorf("failed to add new IP addresses %v to interface %s: %v",
-				address, newIntf.Name, err)
-			d.log.Error(err)
-			return oldMetadata, err
-		}
-	}
-
-	// update IP addresses in the metadata
-	oldMetadata.IPAddresses = newIntf.IpAddresses
-
 	// update MTU (except VxLan, IPSec)
 	if ifaceSupportsSetMTU(newIntf) {
 		if newIntf.Mtu != 0 && newIntf.Mtu != oldIntf.Mtu {
@@ -458,6 +370,9 @@ func (d *InterfaceDescriptor) Update(key string, oldIntf, newIntf *interfaces.In
 		}
 	}
 
+	// update metadata
+	oldMetadata.IPAddresses = newIntf.IpAddresses
+	oldMetadata.Vrf = newIntf.Vrf
 	return oldMetadata, nil
 }
 
@@ -491,8 +406,9 @@ func (d *InterfaceDescriptor) Retrieve(correlate []adapter.InterfaceKVWithMetada
 		}
 	}
 
-	// clear the map of ethernet interfaces
+	// clear the map of ethernet interfaces and bond IDs
 	d.ethernetIfs = make(map[string]uint32)
+	d.bondIDs = make(map[uint32]string)
 
 	// dump current state of VPP interfaces
 	vppIfs, err := d.ifHandler.DumpInterfaces()
@@ -519,6 +435,9 @@ func (d *InterfaceDescriptor) Retrieve(correlate []adapter.InterfaceKVWithMetada
 			// untagged interface - generate a logical name for it
 			// (apart from local0 it will get removed by resync)
 			intf.Interface.Name = untaggedIfPreffix + intf.Meta.InternalName
+		}
+		if intf.Interface.Type == interfaces.Interface_BOND_INTERFACE {
+			d.bondIDs[intf.Interface.GetBond().GetId()] = intf.Interface.Name
 		}
 
 		// get TAP host interface name
@@ -588,6 +507,7 @@ func (d *InterfaceDescriptor) Retrieve(correlate []adapter.InterfaceKVWithMetada
 		// add interface record into the dump
 		metadata := &ifaceidx.IfaceMetadata{
 			SwIfIndex:     ifIdx,
+			Vrf:           intf.Interface.Vrf,
 			IPAddresses:   intf.Interface.IpAddresses,
 			TAPHostIfName: tapHostIfName,
 		}

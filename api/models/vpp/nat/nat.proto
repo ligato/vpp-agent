@@ -19,7 +19,10 @@ message Nat44Global {
 
     message Address {
         string address = 1;                     /* IPv4 address. */
-        uint32 vrf_id = 2;                      /* VRF (table) ID. */
+        uint32 vrf_id = 2;                      /* VRF id of tenant, 0xFFFFFFFF means independent of VRF.
+                                                   Non-zero (and not all-ones) VRF has to be explicitly created
+                                                   (see api/models/vpp/l3/vrf.proto).
+                                                 */
         bool twice_nat = 3;                     /* Enable/disable twice NAT. */
     }
     repeated Address address_pool = 3;
@@ -42,7 +45,8 @@ message DNat44 {
         uint32 external_port = 3;            /* Port (do not set for address mapping). */
 
         message LocalIP {
-            uint32 vrf_id = 1;               /* VRF (table) ID. */
+            uint32 vrf_id = 1;               /* VRF (table) ID. Non-zero VRF has to be explicitly created
+                                                (see api/models/vpp/l3/vrf.proto) */
             string local_ip = 2;             /* Local IP address). */
             uint32 local_port = 3;           /* port (do not set for address mapping). */
             uint32 probability = 4;          /* Probability mode. */
@@ -63,7 +67,8 @@ message DNat44 {
     repeated StaticMapping st_mappings = 2;
 
     message IdentityMapping {                /* A list of identity mappings in DNAT. */
-        uint32 vrf_id = 1;                   /* VRF (table) ID. */
+        uint32 vrf_id = 1;                   /* VRF (table) ID. Non-zero VRF has to be explicitly created
+                                                (see api/models/vpp/l3/vrf.proto) */
         string interface = 2;                /* Name of the interface to use address from; preferred over ip_address. */
         string ip_address = 3;               /* IP address. */
         uint32 port = 4;                     /* Port (do not set for address mapping). */

@@ -51,10 +51,6 @@ var (
 	// ErrDuplicateNATAddress is returned when VPP NAT address pool contains duplicate
 	// IP addresses.
 	ErrDuplicateNATAddress = errors.New("Duplicate VPP NAT address")
-
-	// ErrInvalidNATAddress is returned when IP address from VPP NAT address pool
-	// cannot be parsed.
-	ErrInvalidNATAddress = errors.New("Invalid VPP NAT address")
 )
 
 // defaultGlobalCfg is the default NAT44 global configuration.
@@ -75,31 +71,27 @@ type NAT44GlobalDescriptor struct {
 }
 
 // NewNAT44GlobalDescriptor creates a new instance of the NAT44Global descriptor.
-func NewNAT44GlobalDescriptor(natHandler vppcalls.NatVppAPI, log logging.PluginLogger) *NAT44GlobalDescriptor {
-
-	return &NAT44GlobalDescriptor{
+func NewNAT44GlobalDescriptor(natHandler vppcalls.NatVppAPI, log logging.PluginLogger) *kvs.KVDescriptor {
+	ctx := &NAT44GlobalDescriptor{
 		natHandler: natHandler,
 		log:        log.NewLogger("nat44-global-descriptor"),
 	}
-}
 
-// GetDescriptor returns descriptor suitable for registration (via adapter) with
-// the KVScheduler.
-func (d *NAT44GlobalDescriptor) GetDescriptor() *adapter.NAT44GlobalDescriptor {
-	return &adapter.NAT44GlobalDescriptor{
+	typedDescr := &adapter.NAT44GlobalDescriptor{
 		Name:                 NAT44GlobalDescriptorName,
 		NBKeyPrefix:          nat.ModelNat44Global.KeyPrefix(),
 		ValueTypeName:        nat.ModelNat44Global.ProtoName(),
 		KeySelector:          nat.ModelNat44Global.IsKeyValid,
-		ValueComparator:      d.EquivalentNAT44Global,
-		Validate:             d.Validate,
-		Create:               d.Create,
-		Delete:               d.Delete,
-		Update:               d.Update,
-		Retrieve:             d.Retrieve,
-		DerivedValues:        d.DerivedValues,
+		ValueComparator:      ctx.EquivalentNAT44Global,
+		Validate:             ctx.Validate,
+		Create:               ctx.Create,
+		Delete:               ctx.Delete,
+		Update:               ctx.Update,
+		Retrieve:             ctx.Retrieve,
+		DerivedValues:        ctx.DerivedValues,
 		RetrieveDependencies: []string{vpp_ifdescriptor.InterfaceDescriptorName},
 	}
+	return adapter.NewNAT44GlobalDescriptor(typedDescr)
 }
 
 // EquivalentNAT44Global compares two NAT44 global configs for equality.
@@ -111,11 +103,9 @@ func (d *NAT44GlobalDescriptor) EquivalentNAT44Global(key string, oldGlobalCfg, 
 		return false
 	}
 
-	// Note: interfaces are not compared here as they are represented via derived kv-pairs
-
-	// compare address pools
-	obsoleteAddrs, newAddrs := diffNat44AddressPools(oldGlobalCfg.AddressPool, newGlobalCfg.AddressPool)
-	return len(obsoleteAddrs) == 0 && len(newAddrs) == 0
+	// Note: interfaces & addresses are not compared here as they are represented
+	//       via derived kv-pairs
+	return true
 }
 
 // Validate validates VPP NAT44 global configuration.
@@ -152,21 +142,27 @@ func (d *NAT44GlobalDescriptor) Validate(key string, globalCfg *nat.Nat44Global)
 		}
 	}
 
-	// check NAT address pool for invalid addresses and duplicities
-	var ipAddrs []net.IP
+	// check NAT address pool for duplicities
+	var snPool, tnPool []net.IP
 	for _, addr := range globalCfg.AddressPool {
 		ipAddr := net.ParseIP(addr.Address)
 		if ipAddr == nil {
-			return kvs.NewInvalidValueError(ErrInvalidNATAddress,
-				fmt.Sprintf("address_pool.address=%s", addr.Address))
+			// validated by NAT44Address descriptor
+			continue
 		}
-		for _, ipAddr2 := range ipAddrs {
+		var pool *[]net.IP
+		if addr.TwiceNat {
+			pool = &tnPool
+		} else {
+			pool = &snPool
+		}
+		for _, ipAddr2 := range *pool {
 			if ipAddr.Equal(ipAddr2) {
 				return kvs.NewInvalidValueError(ErrDuplicateNATAddress,
 					fmt.Sprintf("address_pool.address=%s", addr.Address))
 			}
 		}
-		ipAddrs = append(ipAddrs, ipAddr)
+		*pool = append(*pool, ipAddr)
 	}
 	return nil
 }
@@ -202,25 +198,6 @@ func (d *NAT44GlobalDescriptor) Update(key string, oldGlobalCfg, newGlobalCfg *n
 		}
 	}
 
-	// update the address pool
-	obsoleteAddrs, newAddrs := diffNat44AddressPools(oldGlobalCfg.AddressPool, newGlobalCfg.AddressPool)
-	// remove obsolete addresses from the pool
-	for _, obsoleteAddr := range obsoleteAddrs {
-		if err = d.natHandler.DelNat44Address(obsoleteAddr.Address, obsoleteAddr.VrfId, obsoleteAddr.TwiceNat); err != nil {
-			err = errors.Errorf("failed to remove address %s from the NAT pool: %v", obsoleteAddr.Address, err)
-			d.log.Error(err)
-			return nil, err
-		}
-	}
-	// add new addresses into the pool
-	for _, newAddr := range newAddrs {
-		if err = d.natHandler.AddNat44Address(newAddr.Address, newAddr.VrfId, newAddr.TwiceNat); err != nil {
-			err = errors.Errorf("failed to add address %s into the NAT pool: %v", newAddr.Address, err)
-			d.log.Error(err)
-			return nil, err
-		}
-	}
-
 	return nil, nil
 }
 
@@ -246,8 +223,17 @@ func (d *NAT44GlobalDescriptor) Retrieve(correlate []adapter.NAT44GlobalKVWithMe
 	return retrieved, nil
 }
 
-// DerivedValues derives nat.NatInterface for every interface with assigned NAT configuration.
+// DerivedValues derives:
+//   - nat.NatAddress for every IP address to be added into the NAT address pool,
+//   - nat.NatInterface for every interface with assigned NAT configuration.
 func (d *NAT44GlobalDescriptor) DerivedValues(key string, globalCfg *nat.Nat44Global) (derValues []kvs.KeyValuePair) {
+	// NAT addresses
+	for _, natAddr := range globalCfg.AddressPool {
+		derValues = append(derValues, kvs.KeyValuePair{
+			Key:   nat.AddressNAT44Key(natAddr.Address, natAddr.TwiceNat),
+			Value: natAddr,
+		})
+	}
 	// NAT interfaces
 	for _, natIface := range globalCfg.NatInterfaces {
 		derValues = append(derValues, kvs.KeyValuePair{
@@ -271,33 +257,4 @@ func getVirtualReassembly(globalCfg *nat.Nat44Global) *nat.VirtualReassembly {
 		return defaultGlobalCfg.VirtualReassembly
 	}
 	return globalCfg.VirtualReassembly
-}
-
-// diffNat44AddressPools compares two address pools.
-func diffNat44AddressPools(oldAddrPool, newAddrPool []*nat.Nat44Global_Address) (obsoleteAddrs, newAddrs []*nat.Nat44Global_Address) {
-	for _, oldAddr := range oldAddrPool {
-		found := false
-		for _, newAddr := range newAddrPool {
-			if proto.Equal(oldAddr, newAddr) {
-				found = true
-				break
-			}
-		}
-		if !found {
-			obsoleteAddrs = append(obsoleteAddrs, oldAddr)
-		}
-	}
-	for _, newAddr := range newAddrPool {
-		found := false
-		for _, oldAddr := range oldAddrPool {
-			if proto.Equal(oldAddr, newAddr) {
-				found = true
-				break
-			}
-		}
-		if !found {
-			newAddrs = append(newAddrs, newAddr)
-		}
-	}
-	return obsoleteAddrs, newAddrs
 }

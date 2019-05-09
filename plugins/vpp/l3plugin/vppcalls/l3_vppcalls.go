@@ -28,6 +28,7 @@ type L3VppAPI interface {
 	ProxyArpVppAPI
 	RouteVppAPI
 	IPNeighVppAPI
+	VrfTableVppAPI
 }
 
 // ArpDetails holds info about ARP entry as a proto model
@@ -146,6 +147,22 @@ type RouteVppRead interface {
 	// DumpRoutes dumps l3 routes from VPP and fills them
 	// into the provided static route map.
 	DumpRoutes() ([]*RouteDetails, error)
+}
+
+// VrfTableVppAPI provides methods for managing VRF tables.
+type VrfTableVppAPI interface {
+	VrfTableVppRead
+
+	// AddVrfTable adds new VRF table.
+	AddVrfTable(table *l3.VrfTable) error
+	// DelVrfTable deletes existing VRF table.
+	DelVrfTable(table *l3.VrfTable) error
+}
+
+// VrfTableVppRead provides read methods for VRF tables.
+type VrfTableVppRead interface {
+	// DumpVrfTables dumps all configured VRF tables.
+	DumpVrfTables() ([]*l3.VrfTable, error)
 }
 
 // IPNeighVppAPI provides methods for managing IP scan neighbor configuration

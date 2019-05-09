@@ -20,6 +20,7 @@ import (
 	"github.com/ligato/cn-infra/db/keyval"
 	"github.com/ligato/vpp-agent/pkg/models"
 
+	abf "github.com/ligato/vpp-agent/api/models/vpp/abf"
 	acl "github.com/ligato/vpp-agent/api/models/vpp/acl"
 	intf "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	ipsec "github.com/ligato/vpp-agent/api/models/vpp/ipsec"
@@ -84,6 +85,12 @@ func (dsl *PutDSL) ACL(val *acl.ACL) vppclient.PutDSL {
 	return dsl
 }
 
+// ABF adds a request to create or update VPP ACL-based forwarding
+func (dsl *PutDSL) ABF(val *abf.ABF) vppclient.PutDSL {
+	dsl.parent.txn.Put(models.Key(val), val)
+	return dsl
+}
+
 // BD adds a request to create or update VPP Bridge Domain.
 func (dsl *PutDSL) BD(val *l2.BridgeDomain) vppclient.PutDSL {
 	dsl.parent.txn.Put(l2.BridgeDomainKey(val.Name), val)
@@ -99,6 +106,12 @@ func (dsl *PutDSL) BDFIB(val *l2.FIBEntry) vppclient.PutDSL {
 // XConnect adds a request to create or update VPP Cross Connect.
 func (dsl *PutDSL) XConnect(val *l2.XConnectPair) vppclient.PutDSL {
 	dsl.parent.txn.Put(l2.XConnectKey(val.ReceiveInterface), val)
+	return dsl
+}
+
+// VrfTable adds a request to create or update VPP VRF table.
+func (dsl *PutDSL) VrfTable(val *l3.VrfTable) vppclient.PutDSL {
+	dsl.parent.txn.Put(l3.VrfTableKey(val.Id, val.Protocol), val)
 	return dsl
 }
 
@@ -190,6 +203,12 @@ func (dsl *DeleteDSL) ACL(aclName string) vppclient.DeleteDSL {
 	return dsl
 }
 
+// ABF adds a request to delete and existing VPP ACL-based forwarding.
+func (dsl *DeleteDSL) ABF(abfIndex uint32) vppclient.DeleteDSL {
+	dsl.parent.txn.Delete(abf.Key(abfIndex))
+	return dsl
+}
+
 // BD adds a request to delete an existing VPP Bridge Domain.
 func (dsl *DeleteDSL) BD(bdName string) vppclient.DeleteDSL {
 	dsl.parent.txn.Delete(l2.BridgeDomainKey(bdName))
@@ -206,6 +225,12 @@ func (dsl *DeleteDSL) BDFIB(bdName string, mac string) vppclient.DeleteDSL {
 // XConnect adds a request to delete an existing VPP Cross Connect.
 func (dsl *DeleteDSL) XConnect(rxIfName string) vppclient.DeleteDSL {
 	dsl.parent.txn.Delete(l2.XConnectKey(rxIfName))
+	return dsl
+}
+
+// VrfTable adds a request to delete existing VPP VRF table.
+func (dsl *DeleteDSL) VrfTable(id uint32, proto l3.VrfTable_Protocol) vppclient.DeleteDSL {
+	dsl.parent.txn.Delete(l3.VrfTableKey(id, proto))
 	return dsl
 }
 

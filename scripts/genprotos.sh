@@ -12,8 +12,7 @@ for proto in $protos; do
 	protoc \
 		--proto_path=${API_DIR} \
 		--proto_path=. \
-		--proto_path=$GOPATH/src/github.com/gogo/protobuf \
-		--proto_path=$GOPATH/src \
+		--proto_path=$GOPATH/src/github.com/ligato/vpp-agent/vendor \
 		--gogo_out=plugins=grpc,\
 Mgoogle/protobuf/any.proto=github.com/gogo/protobuf/types:$GOPATH/src \
 		"${API_DIR}/$proto";

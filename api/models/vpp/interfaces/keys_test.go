@@ -182,31 +182,37 @@ func TestInterfaceAddressKey(t *testing.T) {
 			name:        "IPv4 address",
 			iface:       "memif0",
 			address:     "192.168.1.12/24",
-			expectedKey: "vpp/interface/address/memif0/192.168.1.12/24",
+			expectedKey: "vpp/interface/memif0/address/192.168.1.12/24",
 		},
 		{
 			name:        "IPv6 address",
 			iface:       "memif0",
-			address:     "2001:db8:0000:0000:0000:0000:0000:0000/32",
-			expectedKey: "vpp/interface/address/memif0/2001:db8::/32",
+			address:     "2001:db8::/32",
+			expectedKey: "vpp/interface/memif0/address/2001:db8::/32",
 		},
 		{
 			name:        "invalid interface",
 			iface:       "",
 			address:     "10.10.10.10/32",
-			expectedKey: "vpp/interface/address/<invalid>/10.10.10.10/32",
+			expectedKey: "vpp/interface/<invalid>/address/10.10.10.10/32",
 		},
 		{
 			name:        "invalid address",
 			iface:       "tap0",
 			address:     "invalid-addr",
-			expectedKey: "vpp/interface/address/tap0/<invalid>/<invalid>",
+			expectedKey: "vpp/interface/tap0/address/invalid-addr",
 		},
 		{
 			name:        "missing mask",
 			iface:       "tap1",
 			address:     "10.10.10.10",
-			expectedKey: "vpp/interface/address/tap1/<invalid>/<invalid>",
+			expectedKey: "vpp/interface/tap1/address/10.10.10.10",
+		},
+		{
+			name:        "empty address",
+			iface:       "tap1",
+			address:     "",
+			expectedKey: "vpp/interface/tap1/address/",
 		},
 	}
 	for _, test := range tests {
@@ -228,11 +234,12 @@ func TestParseInterfaceAddressKey(t *testing.T) {
 		expectedIface        string
 		expectedIfaceAddr    string
 		expectedIfaceAddrNet string
+		expectedInvalidIP    bool
 		expectedIsAddrKey    bool
 	}{
 		{
 			name:                 "IPv4 address",
-			key:                  "vpp/interface/address/memif0/192.168.1.12/24",
+			key:                  "vpp/interface/memif0/address/192.168.1.12/24",
 			expectedIface:        "memif0",
 			expectedIfaceAddr:    "192.168.1.12",
 			expectedIfaceAddrNet: "192.168.1.0/24",
@@ -240,7 +247,7 @@ func TestParseInterfaceAddressKey(t *testing.T) {
 		},
 		{
 			name:                 "IPv6 address",
-			key:                  "vpp/interface/address/tap1/2001:db8:85a3::8a2e:370:7334/48",
+			key:                  "vpp/interface/tap1/address/2001:db8:85a3::8a2e:370:7334/48",
 			expectedIface:        "tap1",
 			expectedIfaceAddr:    "2001:db8:85a3::8a2e:370:7334",
 			expectedIfaceAddrNet: "2001:db8:85a3::/48",
@@ -248,7 +255,7 @@ func TestParseInterfaceAddressKey(t *testing.T) {
 		},
 		{
 			name:                 "invalid interface",
-			key:                  "vpp/interface/address/<invalid>/10.10.10.10/30",
+			key:                  "vpp/interface/<invalid>/address/10.10.10.10/30",
 			expectedIface:        "<invalid>",
 			expectedIfaceAddr:    "10.10.10.10",
 			expectedIfaceAddrNet: "10.10.10.8/30",
@@ -256,35 +263,55 @@ func TestParseInterfaceAddressKey(t *testing.T) {
 		},
 		{
 			name:                 "gbe interface",
-			key:                  "vpp/interface/address/GigabitEthernet0/8/0/192.168.5.5/16",
+			key:                  "vpp/interface/GigabitEthernet0/8/0/address/192.168.5.5/16",
 			expectedIface:        "GigabitEthernet0/8/0",
 			expectedIfaceAddr:    "192.168.5.5",
 			expectedIfaceAddrNet: "192.168.0.0/16",
 			expectedIsAddrKey:    true,
 		},
 		{
-			name:                 "not valid key (missing interface)",
-			key:                  "vpp/interface/address//192.168.5.5/16",
-			expectedIface:        "",
-			expectedIfaceAddr:    "",
-			expectedIfaceAddrNet: "",
-			expectedIsAddrKey:    false,
+			name:                 "missing interface",
+			key:                  "vpp/interface//address/192.168.5.5/16",
+			expectedIface:        "<invalid>",
+			expectedIfaceAddr:    "192.168.5.5",
+			expectedIfaceAddrNet: "192.168.0.0/16",
+			expectedIsAddrKey:    true,
 		},
 		{
-			name:                 "not valid key (missing mask)",
-			key:                  "vpp/interface/address/tap3/192.168.5.5",
-			expectedIface:        "",
+			name:                 "not valid IP (missing mask)",
+			key:                  "vpp/interface/tap3/address/192.168.5.5",
+			expectedIface:        "tap3",
 			expectedIfaceAddr:    "",
 			expectedIfaceAddrNet: "",
-			expectedIsAddrKey:    false,
+			expectedInvalidIP:    true,
+			expectedIsAddrKey:    true,
 		},
 		{
-			name:                 "not valid key (missing address and mask)",
-			key:                  "vpp/interface/address/tap3",
-			expectedIface:        "",
+			name:                 "not valid IP for Gbe (missing mask)",
+			key:                  "vpp/interface/Gbe0/1/2/address/192.168.5.5",
+			expectedIface:        "Gbe0/1/2",
 			expectedIfaceAddr:    "",
 			expectedIfaceAddrNet: "",
-			expectedIsAddrKey:    false,
+			expectedInvalidIP:    true,
+			expectedIsAddrKey:    true,
+		},
+		{
+			name:                 "not valid IP (missing address and mask)",
+			key:                  "vpp/interface/tap3/address/",
+			expectedIface:        "tap3",
+			expectedIfaceAddr:    "",
+			expectedIfaceAddrNet: "",
+			expectedInvalidIP:    true,
+			expectedIsAddrKey:    true,
+		},
+		{
+			name:                 "not valid IP for Gbe (missing address and mask)",
+			key:                  "vpp/interface/Gbe0/1/2/address/",
+			expectedIface:        "Gbe0/1/2",
+			expectedIfaceAddr:    "",
+			expectedIfaceAddrNet: "",
+			expectedInvalidIP:    true,
+			expectedIsAddrKey:    true,
 		},
 		{
 			name:                 "not interface address key",
@@ -294,10 +321,28 @@ func TestParseInterfaceAddressKey(t *testing.T) {
 			expectedIfaceAddrNet: "",
 			expectedIsAddrKey:    false,
 		},
+		{
+			name:                 "invalid address",
+			key:                  "vpp/interface/tap3/2/1/address/<invalid>/32",
+			expectedIface:        "tap3/2/1",
+			expectedIfaceAddr:    "",
+			expectedIfaceAddrNet: "",
+			expectedInvalidIP:    true,
+			expectedIsAddrKey:    true,
+		},
+		{
+			name:                 "invalid mask",
+			key:                  "vpp/interface/tap3/address/10.10.10.10/invalid",
+			expectedIface:        "tap3",
+			expectedIfaceAddr:    "",
+			expectedIfaceAddrNet: "",
+			expectedInvalidIP:    true,
+			expectedIsAddrKey:    true,
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			iface, ipAddr, ipAddrNet, isAddrKey := ParseInterfaceAddressKey(test.key)
+			iface, ipAddr, ipAddrNet, invalidIP, isAddrKey := ParseInterfaceAddressKey(test.key)
 			var ipAddrStr, ipAddrNetStr string
 			if ipAddr != nil {
 				ipAddrStr = ipAddr.String()
@@ -308,6 +353,9 @@ func TestParseInterfaceAddressKey(t *testing.T) {
 			if isAddrKey != test.expectedIsAddrKey {
 				t.Errorf("expected isAddrKey: %v\tgot: %v", test.expectedIsAddrKey, isAddrKey)
 			}
+			if invalidIP != test.expectedInvalidIP {
+				t.Errorf("expected invalidIP: %v\tgot: %v", test.expectedInvalidIP, invalidIP)
+			}
 			if iface != test.expectedIface {
 				t.Errorf("expected iface: %s\tgot: %s", test.expectedIface, iface)
 			}
@@ -316,6 +364,327 @@ func TestParseInterfaceAddressKey(t *testing.T) {
 			}
 			if ipAddrNetStr != test.expectedIfaceAddrNet {
 				t.Errorf("expected ipAddrNet: %s\tgot: %s", test.expectedIfaceAddrNet, ipAddrNetStr)
+			}
+		})
+	}
+}
+
+func TestInterfaceVrfTableKey(t *testing.T) {
+	tests := []struct {
+		name        string
+		iface       string
+		vrf         int
+		ipv4        bool
+		ipv6        bool
+		expectedKey string
+	}{
+		{
+			name:        "default IPv4 VRF",
+			iface:       "memif0",
+			vrf:         0,
+			ipv4:        true,
+			expectedKey: "vpp/interface/memif0/vrf/0/ip-version/v4",
+		},
+		{
+			name:        "default IPv6 VRF",
+			iface:       "memif0",
+			vrf:         0,
+			ipv6:        true,
+			expectedKey: "vpp/interface/memif0/vrf/0/ip-version/v6",
+		},
+		{
+			name:        "default VRF for both versions",
+			iface:       "memif0",
+			vrf:         0,
+			ipv4:        true,
+			ipv6:        true,
+			expectedKey: "vpp/interface/memif0/vrf/0/ip-version/both",
+		},
+		{
+			name:        "IPv4 VRF 1",
+			iface:       "memif0",
+			vrf:         1,
+			ipv4:        true,
+			expectedKey: "vpp/interface/memif0/vrf/1/ip-version/v4",
+		},
+		{
+			name:        "IPv6 VRF 1",
+			iface:       "memif0",
+			vrf:         1,
+			ipv6:        true,
+			expectedKey: "vpp/interface/memif0/vrf/1/ip-version/v6",
+		},
+		{
+			name:        "interface name with forward slashes",
+			iface:       "Gbe0/2/1",
+			vrf:         10,
+			ipv4:        true,
+			expectedKey: "vpp/interface/Gbe0/2/1/vrf/10/ip-version/v4",
+		},
+		{
+			name:        "missing interface name",
+			iface:       "",
+			vrf:         10,
+			ipv4:        true,
+			expectedKey: "vpp/interface/<invalid>/vrf/10/ip-version/v4",
+		},
+		{
+			name:        "undefined version",
+			iface:       "memif0",
+			vrf:         10,
+			expectedKey: "vpp/interface/memif0/vrf/10/ip-version/<invalid>",
+		},
+		{
+			name:        "invalid VRF table ID",
+			iface:       "memif0",
+			vrf:         -5,
+			ipv4:        true,
+			expectedKey: "vpp/interface/memif0/vrf/<invalid>/ip-version/v4",
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			key := InterfaceVrfKey(test.iface, test.vrf, test.ipv4, test.ipv6)
+			if key != test.expectedKey {
+				t.Errorf("failed for: iface=%s vrf=%d ipv4=%t ipv6=%t\n"+
+					"expected key:\n\t%q\ngot key:\n\t%q",
+					test.iface, test.vrf, test.ipv4, test.ipv6, test.expectedKey, key)
+			}
+		})
+	}
+}
+
+func TestParseInterfaceVrfKey(t *testing.T) {
+	tests := []struct {
+		name                  string
+		key                   string
+		expectedIface         string
+		expectedVrf           int
+		expectedIpv4          bool
+		expectedIpv6          bool
+		expectedIsIfaceVrfKey bool
+	}{
+		{
+			name:                  "default IPv4 VRF",
+			key:                   "vpp/interface/memif0/vrf/0/ip-version/v4",
+			expectedIface:         "memif0",
+			expectedVrf:           0,
+			expectedIpv4:          true,
+			expectedIsIfaceVrfKey: true,
+		},
+		{
+			name:                  "default IPv6 VRF",
+			key:                   "vpp/interface/memif0/vrf/0/ip-version/v6",
+			expectedIface:         "memif0",
+			expectedVrf:           0,
+			expectedIpv6:          true,
+			expectedIsIfaceVrfKey: true,
+		},
+		{
+			name:                  "IPv4 VRF 1",
+			key:                   "vpp/interface/memif0/vrf/1/ip-version/v4",
+			expectedIface:         "memif0",
+			expectedVrf:           1,
+			expectedIpv4:          true,
+			expectedIsIfaceVrfKey: true,
+		},
+		{
+			name:                  "IPv6 VRF 1",
+			key:                   "vpp/interface/memif0/vrf/1/ip-version/v6",
+			expectedIface:         "memif0",
+			expectedVrf:           1,
+			expectedIpv6:          true,
+			expectedIsIfaceVrfKey: true,
+		},
+		{
+			name:                  "invalid interface name",
+			key:                   "vpp/interface/<invalid>/vrf/1/ip-version/v6",
+			expectedIface:         "<invalid>",
+			expectedVrf:           1,
+			expectedIpv6:          true,
+			expectedIsIfaceVrfKey: true,
+		},
+		{
+			name:                  "invalid ip version",
+			key:                   "vpp/interface/memif0/vrf/1/ip-version/<invalid>",
+			expectedIface:         "memif0",
+			expectedVrf:           1,
+			expectedIsIfaceVrfKey: true,
+		},
+		{
+			name:                  "missing table ID",
+			key:                   "vpp/interface/memif0/vrf//ip-version/v6",
+			expectedIface:         "memif0",
+			expectedVrf:           -1,
+			expectedIpv6:          true,
+			expectedIsIfaceVrfKey: true,
+		},
+		{
+			name:                  "invalid table ID",
+			key:                   "vpp/interface/memif0/vrf/<invalid>/ip-version/v6",
+			expectedIface:         "memif0",
+			expectedVrf:           -1,
+			expectedIpv6:          true,
+			expectedIsIfaceVrfKey: true,
+		},
+		{
+			name:                  "interface name with forward slashes",
+			key:                   "vpp/interface/Gbe1/2/3/vrf/12/ip-version/v6",
+			expectedIface:         "Gbe1/2/3",
+			expectedVrf:           12,
+			expectedIpv6:          true,
+			expectedIsIfaceVrfKey: true,
+		},
+		{
+			name:                  "not vrf table key",
+			key:                   "vpp/config/v2/interface/GigabitEthernet0/8/0",
+			expectedIsIfaceVrfKey: false,
+		},
+		{
+			name:                  "not vrf table key (inherited VRF)",
+			key:                   "vpp/interface/Gbe1/2/3/vrf/from-interface/memif0",
+			expectedIsIfaceVrfKey: false,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			iface, vrf, ipv4, ipv6, isIfaceVrfKey := ParseInterfaceVrfKey(test.key)
+			if isIfaceVrfKey != test.expectedIsIfaceVrfKey {
+				t.Errorf("expected isVrfTableKey: %v\tgot: %v", test.expectedIsIfaceVrfKey, isIfaceVrfKey)
+			}
+			if iface != test.expectedIface {
+				t.Errorf("expected iface: %s\tgot: %s", test.expectedIface, iface)
+			}
+			if vrf != test.expectedVrf {
+				t.Errorf("expected vrf: %d\tgot: %d", test.expectedVrf, vrf)
+			}
+			if ipv4 != test.expectedIpv4 {
+				t.Errorf("expected ipv4: %t\tgot: %t", test.expectedIpv4, ipv4)
+			}
+			if ipv6 != test.expectedIpv6 {
+				t.Errorf("expected ipv6: %t\tgot: %t", test.expectedIpv6, ipv6)
+			}
+		})
+	}
+}
+
+func TestInterfaceInheritedVrfKey(t *testing.T) {
+	tests := []struct {
+		name        string
+		iface       string
+		fromIface   string
+		expectedKey string
+	}{
+		{
+			name:        "memifs",
+			iface:       "memif0",
+			fromIface:   "memif1",
+			expectedKey: "vpp/interface/memif0/vrf/from-interface/memif1",
+		},
+		{
+			name:        "memif and Gbe",
+			iface:       "memif0",
+			fromIface:   "Gbe0/1/2",
+			expectedKey: "vpp/interface/memif0/vrf/from-interface/Gbe0/1/2",
+		},
+		{
+			name:        "Gbe-s",
+			iface:       "Gbe3/4/5",
+			fromIface:   "Gbe0/1/2",
+			expectedKey: "vpp/interface/Gbe3/4/5/vrf/from-interface/Gbe0/1/2",
+		},
+		{
+			name:        "missing interface",
+			iface:       "",
+			fromIface:   "memif1",
+			expectedKey: "vpp/interface/<invalid>/vrf/from-interface/memif1",
+		},
+		{
+			name:        "missing from-interface",
+			iface:       "memif0",
+			fromIface:   "",
+			expectedKey: "vpp/interface/memif0/vrf/from-interface/<invalid>",
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			key := InterfaceInheritedVrfKey(test.iface, test.fromIface)
+			if key != test.expectedKey {
+				t.Errorf("failed for: iface=%s fromIface=%s\n"+
+					"expected key:\n\t%q\ngot key:\n\t%q",
+					test.iface, test.fromIface, test.expectedKey, key)
+			}
+		})
+	}
+}
+
+func TestParseInterfaceInheritedVrfKey(t *testing.T) {
+	tests := []struct {
+		name                       string
+		key                        string
+		expectedIface              string
+		expectedFromIface          string
+		expectedIsIfaceInherVrfKey bool
+	}{
+		{
+			name:                       "memifs",
+			key:                        "vpp/interface/memif0/vrf/from-interface/memif1",
+			expectedIface:              "memif0",
+			expectedFromIface:          "memif1",
+			expectedIsIfaceInherVrfKey: true,
+		},
+		{
+			name:                       "Gbe-s",
+			key:                        "vpp/interface/Gbe1/2/3/vrf/from-interface/Gbe4/5/6",
+			expectedIface:              "Gbe1/2/3",
+			expectedFromIface:          "Gbe4/5/6",
+			expectedIsIfaceInherVrfKey: true,
+		},
+		{
+			name:                       "invalid interface",
+			key:                        "vpp/interface/<invalid>/vrf/from-interface/Gbe4/5/6",
+			expectedIface:              "<invalid>",
+			expectedFromIface:          "Gbe4/5/6",
+			expectedIsIfaceInherVrfKey: true,
+		},
+		{
+			name:                       "invalid from-interface",
+			key:                        "vpp/interface/Gbe1/2/3/vrf/from-interface/<invalid>",
+			expectedIface:              "Gbe1/2/3",
+			expectedFromIface:          "<invalid>",
+			expectedIsIfaceInherVrfKey: true,
+		},
+		{
+			name:                       "missing interface",
+			key:                        "vpp/interface//vrf/from-interface/Gbe4/5/6",
+			expectedIface:              "<invalid>",
+			expectedFromIface:          "Gbe4/5/6",
+			expectedIsIfaceInherVrfKey: true,
+		},
+		{
+			name:                       "missing from-interface",
+			key:                        "vpp/interface/Gbe1/2/3/vrf/from-interface/",
+			expectedIface:              "Gbe1/2/3",
+			expectedFromIface:          "<invalid>",
+			expectedIsIfaceInherVrfKey: true,
+		},
+		{
+			name:                       "not interface inherited-vrf key",
+			key:                        "vpp/interface/memif0/vrf/1/ip-version/v6",
+			expectedIsIfaceInherVrfKey: false,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			iface, fromIface, isIfaceInherVrfKey := ParseInterfaceInheritedVrfKey(test.key)
+			if isIfaceInherVrfKey != test.expectedIsIfaceInherVrfKey {
+				t.Errorf("expected isIfaceInherVrfKey: %v\tgot: %v", test.expectedIsIfaceInherVrfKey, isIfaceInherVrfKey)
+			}
+			if iface != test.expectedIface {
+				t.Errorf("expected iface: %s\tgot: %s", test.expectedIface, iface)
+			}
+			if fromIface != test.expectedFromIface {
+				t.Errorf("expected fromIface: %s\tgot: %s", test.expectedFromIface, fromIface)
 			}
 		})
 	}

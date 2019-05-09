@@ -1,6 +1,6 @@
 {
   "sid": "${sidAddress}",
-  "fib_table_id": ${fibtable},
+  "installation_vrf_id": ${installationVrfId},
   "base_end_function": {
   }
 }

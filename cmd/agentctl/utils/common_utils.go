@@ -18,6 +18,10 @@ import (
 	"os"
 	"strings"
 
+	"github.com/go-errors/errors"
+
+	"github.com/gogo/protobuf/proto"
+
 	"fmt"
 
 	"github.com/ligato/cn-infra/db/keyval"
@@ -26,7 +30,6 @@ import (
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/servicelabel"
-	//"github.com/ligato/vpp-agent/plugins/vpp/model/l3"
 )
 
 // Common exit flags
@@ -41,130 +44,20 @@ const (
 	ExitBadArgs = 128
 )
 
-// ParseKey parses the etcd Key for the microservice label and the
-// data type encoded in the Key. The function returns the microservice
-// label, the data type and the list of parameters, that contains path
-// segments that follow the data path segment in the Key URL. The
-// parameter list is empty if data path is the Last segment in the
-// Key.
-//
-// URI Examples:
-// * /vnf-agent/{agent-label}/vpp/config/v1/interface/{interface-name}
-// * /vnf-agent/{agent-label}/vpp/status/v1/interface/{interface-name}
-// * /vnf-agent/{agent-label}/check/status/v1/agent
-//
-// Explanation of the URI examples:
-// * allAgntsPref   label     plugin stats ver  dataType
-// *                ps[0]      ps[1] ps[2]ps[3] ps[4]
-//
-// Example for dataType ... "check/status/v1/"
-func ParseKey(key string) (label string, dataType string, name string, plugStatCfgRev string) {
+func GetAgentLabel(key string) (agentLabel string) {
 	ps := strings.Split(strings.TrimPrefix(key, servicelabel.GetAllAgentsPrefix()), "/")
-	var plugin, statusConfig, version, localDataType string
-	var params []string
-	if len(ps) > 0 {
-		label = ps[0]
-	}
-	if len(ps) > 1 {
-		plugin = ps[1]
-		dataType = plugin
-		plugStatCfgRev = dataType
-	}
-	if len(ps) > 2 {
-		statusConfig = ps[2]
-		dataType += "/" + statusConfig
-		plugStatCfgRev = dataType
-	}
-	if len(ps) > 3 {
-		version = ps[3]
-		dataType += "/" + version
-		plugStatCfgRev = dataType
-	}
-	plugStatCfgRev += "/"
-
-	if len(ps) > 4 {
-		localDataType = ps[4]
-		dataType += "/" + localDataType
+	if 1 > len(key) {
+		ExitWithError(ExitInvalidInput, errors.New("Wrong key, key: "+key))
 	}
 
-	// In case localDataType is equal to 'bd', or 'interface', or 'vrf', verify
-	// next item to identify error/fib key.
-	if len(ps) > 5 {
-		// Recognize interface error key.
-		if ps[4] == "interface" && ps[5] == "error" {
-			ifaceErrorDataType := ps[5]
-			dataType += "/" + ifaceErrorDataType
-			if len(ps) > 6 {
-				dataType += "/"
-				params = ps[6:]
-			} else {
-				params = []string{}
-			}
+	agentLabel = ps[0]
 
-			return label, dataType, rebuildName(params), plugStatCfgRev
-		}
-		// Recognize bridge domain error key.
-		if ps[4] == "bd" && ps[5] == "error" {
-			bdErrorDataType := ps[5]
-			dataType += "/" + bdErrorDataType
-			if len(ps) > 6 {
-				dataType += "/"
-				params = ps[6:]
-			} else {
-				params = []string{}
-			}
-			return label, dataType, rebuildName(params), plugStatCfgRev
-		}
-		// Recognize FIB key.
-		if len(ps) > 6 && ps[4] == "bd" && ps[6] == "fib" {
-			fibDataType := ps[6]
-			dataType += "/{bd}/" + fibDataType
-
-			if len(ps) > 7 {
-				dataType += "/"
-				params = ps[7:]
-			} else {
-				params = []string{}
-			}
-			return label, dataType, rebuildName(params), plugStatCfgRev
-		}
-		// Recognize static route.
-		/*if len(ps) > 6 && ps[4] == "vrf" && ps[6] == "fib" {
-			dataType += "/" + strings.TrimPrefix(l3.RoutesPrefix, l3.VrfPrefix)
-
-			if len(ps) > 7 {
-				params = append(params, ps[7:]...)
-			}
-			return label, dataType, rebuildName(params), plugStatCfgRev
-		}*/
-		dataType += "/"
-		params = ps[5:]
-	} else {
-		params = []string{}
-	}
-
-	return label, dataType, rebuildName(params), plugStatCfgRev
-}
-
-// Reconstruct item name in case it contains slashes.
-func rebuildName(params []string) string {
-	var itemName string
-	if len(params) > 1 {
-		for _, param := range params {
-			itemName = itemName + "/" + param
-		}
-		// Remove the first slash.
-		return itemName[1:]
-	} else if len(params) == 1 {
-		itemName = params[0]
-		return itemName
-	}
-	return itemName
+	return agentLabel
 }
 
 // GetDbForAllAgents opens a connection to etcd, specified in the command line
 // or the "ETCD_ENDPOINTS" environment variable.
-func GetDbForAllAgents(endpoints []string) (keyval.ProtoBroker, error) {
+func GetDbForAllAgents(endpoints []string) (*kvproto.ProtoWrapper, error) {
 	if len(endpoints) > 0 {
 		ep := strings.Join(endpoints, ",")
 		os.Setenv("ETCD_ENDPOINTS", ep)
@@ -182,7 +75,6 @@ func GetDbForAllAgents(endpoints []string) (keyval.ProtoBroker, error) {
 	}
 
 	return kvproto.NewProtoWrapperWithSerializer(etcdBroker, &keyval.SerializerJSON{}), nil
-
 }
 
 // GetDbForOneAgent opens a connection to etcd, specified in the command line
@@ -206,7 +98,20 @@ func GetDbForOneAgent(endpoints []string, agentLabel string) (keyval.ProtoBroker
 
 	return kvproto.NewProtoWrapperWithSerializer(etcdBroker, &keyval.SerializerJSON{}).
 		NewBroker(servicelabel.GetAllAgentsPrefix() + agentLabel + "/"), nil
+}
 
+func GetModuleName(module proto.Message) string {
+	str := proto.MessageName(module)
+
+	tmp := strings.Split(str, ".")
+
+	outstr := tmp[len(tmp)-1]
+
+	if "linux" == tmp[0] {
+		outstr = "Linux" + outstr
+	}
+
+	return outstr
 }
 
 // ExitWithError is used by all commands to print out an error
@@ -214,17 +119,4 @@ func GetDbForOneAgent(endpoints []string, agentLabel string) (keyval.ProtoBroker
 func ExitWithError(code int, err error) {
 	fmt.Fprintln(os.Stderr, "Error: ", err)
 	os.Exit(code)
-}
-
-func padRight(items []*string, sfx string) {
-	il := 0
-	for _, it := range items {
-		if len(*it) > il {
-			il = len(*it)
-		}
-	}
-	fs := "%" + fmt.Sprintf("-%ds", il+len(sfx))
-	for _, it := range items {
-		*it = fmt.Sprintf(fs, *it+sfx)
-	}
 }

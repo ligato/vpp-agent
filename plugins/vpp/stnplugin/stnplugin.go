@@ -29,8 +29,8 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/stnplugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/vpp/stnplugin/vppcalls"
 
-	_ "github.com/ligato/vpp-agent/plugins/vpp/stnplugin/vppcalls/vpp1810"
 	_ "github.com/ligato/vpp-agent/plugins/vpp/stnplugin/vppcalls/vpp1901"
+	_ "github.com/ligato/vpp-agent/plugins/vpp/stnplugin/vppcalls/vpp1904"
 )
 
 // STNPlugin configures VPP STN rules using GoVPP.

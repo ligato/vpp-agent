@@ -92,6 +92,7 @@ Start Two Agents And Then Configure One With Non Default VRF
     Add Agent VPP Node    agent_vpp_1
     Add Agent VPP Node    agent_vpp_2
     Create Master memif0 on agent_vpp_1 with IP 10.1.1.1, MAC 02:f1:be:90:00:00, key 1 and m0.sock socket
+    Create VRF Table    node=agent_vpp_2    id=2    protocol=ipv4
     Create Slave memif0 on agent_vpp_2 with VRF 2, IP 10.1.1.2, MAC 02:f1:be:90:00:02, key 1 and m0.sock socket
 
     Sleep    14
@@ -124,11 +125,13 @@ Start Three Agents, Then Configure With Interfaces Assigned To Non Default VRF
     Create bridge domain bd2 With Autolearn on agent_vpp_1 with interfaces bvi_loop1, memif1
 
     # prepare second agent
+    Create VRF Table    node=agent_vpp_2    id=2    protocol=ipv4
     Create loopback interface bvi_loop0 on agent_vpp_2 with VRF 2, ip 10.1.1.2/24 and mac 8a:f1:be:90:00:02
     Create Slave memif0 on agent_vpp_2 with MAC 02:f1:be:90:00:02, key 1 and m0.sock socket
     Create bridge domain bd1 With Autolearn on agent_vpp_2 with interfaces bvi_loop0, memif0
 
     # prepare third agent
+    Create VRF Table    node=agent_vpp_3    id=3    protocol=ipv4
     Create loopback interface bvi_loop0 on agent_vpp_3 with VRF 3, ip 20.1.1.2/24 and mac 8a:f1:be:90:00:03
     Create Slave memif0 on agent_vpp_3 with MAC 02:f1:be:90:00:03, key 2 and m1.sock socket
     Create bridge domain bd1 With Autolearn on agent_vpp_3 with interfaces bvi_loop0, memif0

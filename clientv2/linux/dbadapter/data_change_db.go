@@ -19,6 +19,7 @@ import (
 
 	"github.com/ligato/vpp-agent/api/models/linux/interfaces"
 	"github.com/ligato/vpp-agent/api/models/linux/l3"
+	abf "github.com/ligato/vpp-agent/api/models/vpp/abf"
 	acl "github.com/ligato/vpp-agent/api/models/vpp/acl"
 	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	ipsec "github.com/ligato/vpp-agent/api/models/vpp/ipsec"
@@ -107,6 +108,12 @@ func (dsl *PutDSL) ACL(acl *acl.ACL) linuxclient.PutDSL {
 	return dsl
 }
 
+// ABF adds a request to create or update VPP ACL-based forwarding
+func (dsl *PutDSL) ABF(abf *abf.ABF) linuxclient.PutDSL {
+	dsl.vppPut.ABF(abf)
+	return dsl
+}
+
 /*// BfdSession adds a request to create or update VPP bidirectional forwarding
 // detection session.
 func (dsl *PutDSL) BfdSession(val *bfd.SingleHopBFD_Session) linuxclient.PutDSL {
@@ -143,6 +150,12 @@ func (dsl *PutDSL) BDFIB(fib *l2.FIBEntry) linuxclient.PutDSL {
 // XConnect adds a request to create or update VPP Cross Connect.
 func (dsl *PutDSL) XConnect(val *l2.XConnectPair) linuxclient.PutDSL {
 	dsl.vppPut.XConnect(val)
+	return dsl
+}
+
+// VrfTable adds a request to create or update VPP VRF table.
+func (dsl *PutDSL) VrfTable(val *l3.VrfTable) linuxclient.PutDSL {
+	dsl.vppPut.VrfTable(val)
 	return dsl
 }
 
@@ -265,6 +278,12 @@ func (dsl *DeleteDSL) ACL(aclName string) linuxclient.DeleteDSL {
 	return dsl
 }
 
+// ABF adds a request to delete an existing VPP ACL-based forwarding
+func (dsl *DeleteDSL) ABF(abfIndex uint32) linuxclient.DeleteDSL {
+	dsl.vppDelete.ABF(abfIndex)
+	return dsl
+}
+
 /*// BfdSession adds a request to delete an existing VPP bidirectional forwarding
 // detection session.
 func (dsl *DeleteDSL) BfdSession(bfdSessionIfaceName string) linuxclient.DeleteDSL {
@@ -301,6 +320,12 @@ func (dsl *DeleteDSL) BDFIB(bdName string, mac string) linuxclient.DeleteDSL {
 // XConnect adds a request to delete an existing VPP Cross Connect.
 func (dsl *DeleteDSL) XConnect(rxIfaceName string) linuxclient.DeleteDSL {
 	dsl.vppDelete.XConnect(rxIfaceName)
+	return dsl
+}
+
+// VrfTable adds a request to delete existing VPP VRF table.
+func (dsl *DeleteDSL) VrfTable(id uint32, proto l3.VrfTable_Protocol) linuxclient.DeleteDSL {
+	dsl.vppDelete.VrfTable(id, proto)
 	return dsl
 }
 

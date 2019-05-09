@@ -264,7 +264,7 @@ Delete Linux Interface
 
 Delete Route
     [Arguments]    ${node}    ${id}    ${ip}    ${prefix}
-    ${uri}=    Set Variable                /vnf-agent/${node}/config/vpp/${AGENT_VER}/route/vrf/${id}/dst/${ip}/${prefix}/gw/
+    ${uri}=    Set Variable                /vnf-agent/${node}/config/vpp/${AGENT_VER}/route/vrf/${id}/dst/${ip}/${prefix}/gw
     ${out}=         Delete key  ${uri}
     [Return]       ${out}
 
@@ -341,7 +341,7 @@ Get BFD Echo Function As Json
 Put ACL TCP
     [Arguments]    ${node}    ${acl_name}    ${egr_intf1}   ${ingr_intf1}    ${acl_action}    ${dest_ntw}    ${src_ntw}    ${dest_port_low}   ${dest_port_up}    ${src_port_low}    ${src_port_up}
     ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/acl_TCP.json
-    ${uri}=               Set Variable          /vnf-agent/${node}/config/vpp/acls/${AGENT_VER}/acl/${acl_name}/
+    ${uri}=               Set Variable          /vnf-agent/${node}/config/vpp/acls/${AGENT_VER}/acl/${acl_name}
     ${data}=              Replace Variables             ${data}
     #OperatingSystem.Create File   ${REPLY_DATA_FOLDER}/reply.json     ${data}
     Put Json     ${uri}    ${data}
@@ -349,7 +349,7 @@ Put ACL TCP
 Put ACL UDP
     [Arguments]    ${node}    ${acl_name}    ${egr_intf1}    ${ingr_intf1}     ${egr_intf2}    ${ingr_intf2}     ${acl_action}    ${dest_ntw}   ${src_ntw}    ${dest_port_low}   ${dest_port_up}    ${src_port_low}    ${src_port_up}
     ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/acl_UDP.json
-    ${uri}=               Set Variable          /vnf-agent/${node}/config/vpp/acls/${AGENT_VER}/acl/${acl_name}/
+    ${uri}=               Set Variable          /vnf-agent/${node}/config/vpp/acls/${AGENT_VER}/acl/${acl_name}
     ${data}=              Replace Variables             ${data}
     #OperatingSystem.Create File   ${REPLY_DATA_FOLDER}/reply.json     ${data}
     Put Json     ${uri}    ${data}
@@ -357,7 +357,7 @@ Put ACL UDP
 Put ACL MACIP
     [Arguments]    ${node}    ${acl_name}    ${egr_intf1}    ${ingr_intf1}    ${acl_action}    ${src_addr}    ${src_addr_prefix}    ${src_mac_addr}   ${src_mac_addr_mask}
     ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/acl_MACIP.json
-    ${uri}=               Set Variable          /vnf-agent/${node}/config/vpp/acls/${AGENT_VER}/acl/${acl_name}/
+    ${uri}=               Set Variable          /vnf-agent/${node}/config/vpp/acls/${AGENT_VER}/acl/${acl_name}
     ${data}=              Replace Variables             ${data}
     #OperatingSystem.Create File   ${REPLY_DATA_FOLDER}/reply.json     ${data}
     Put Json     ${uri}    ${data}
@@ -365,14 +365,14 @@ Put ACL MACIP
 Put ACL ICMP
     [Arguments]    ${node}    ${acl_name}    ${egr_intf1}   ${egr_intf2}    ${ingr_intf1}   ${ingr_intf2}    ${acl_action}   ${dest_ntw}    ${src_ntw}    ${icmpv6}   ${code_range_low}   ${code_range_up}    ${type_range_low}   ${type_range_up}
     ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/acl_ICMP.json
-    ${uri}=               Set Variable          /vnf-agent/${node}/config/vpp/acls/${AGENT_VER}/acl/${acl_name}/
+    ${uri}=               Set Variable          /vnf-agent/${node}/config/vpp/acls/${AGENT_VER}/acl/${acl_name}
     ${data}=              Replace Variables             ${data}
     #OperatingSystem.Create File   ${REPLY_DATA_FOLDER}/reply.json     ${data}
     Put Json     ${uri}    ${data}
 
 Get ACL As Json
     [Arguments]           ${node}  ${acl_name}
-    ${key}=               Set Variable          /vnf-agent/${node}/config/vpp/acls/${AGENT_VER}/acl/${acl_name}/
+    ${key}=               Set Variable          /vnf-agent/${node}/config/vpp/acls/${AGENT_VER}/acl/${acl_name}
     ${data}=              Read Key    ${key}
     ${data}=              Set Variable If      '''${data}'''=="" or '''${data}'''=='None'    {}    ${data}
     #${output}=            Evaluate             json.loads('''${data}''')     json
@@ -401,7 +401,7 @@ etcd: Get ETCD Tree
 
 Delete ACL
     [Arguments]    ${node}    ${name}
-    ${uri}=      Set Variable    /vnf-agent/${node}/config/vpp/acls/${AGENT_VER}/acl/${name}/
+    ${uri}=      Set Variable    /vnf-agent/${node}/config/vpp/acls/${AGENT_VER}/acl/${name}
     ${out}=      Delete key    ${uri}
     [Return]    ${out}
 
@@ -415,7 +415,7 @@ Put Veth Interface Via Linux Plugin
 Put Linux Route
     [Arguments]    ${node}    ${namespace}    ${interface}    ${routename}    ${ip}    ${next_hop}    ${prefix}=24    ${metric}=100    ${isdefault}=false
     ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/linux_static_route.json
-    ${uri}=               Set Variable                  /vnf-agent/${node}/config/linux/l3/${AGENT_VER}/route/${routename}
+    ${uri}=               Set Variable                  /vnf-agent/${node}/config/linux/l3/${AGENT_VER}/route/${ip}/${prefix}/${interface}
     ${data}=              Replace Variables             ${data}
     Put Json     ${uri}    ${data}
 
@@ -434,14 +434,14 @@ Put Linux Route Without Interface
     Put Json     ${uri}    ${data}
 
 Delete Linux Route
-    [Arguments]    ${node}    ${routename}
-    ${uri}=               Set Variable                  /vnf-agent/${node}/config/linux/l3/${AGENT_VER}/route/${routename}
+    [Arguments]    ${node}    ${interface}    ${ip}    ${prefix}=24
+    ${uri}=               Set Variable                  /vnf-agent/${node}/config/linux/l3/${AGENT_VER}/route/${ip}/${prefix}/${interface}
     ${out}=      Delete key    ${uri}
     [Return]    ${out}
 
 Get Linux Route As Json
-    [Arguments]    ${node}    ${routename}
-    ${uri}=               Set Variable                  /vnf-agent/${node}/config/linux/l3/${AGENT_VER}/route/${routename}
+    [Arguments]    ${node}    ${interface}    ${ip}    ${prefix}=24
+    ${uri}=               Set Variable                  /vnf-agent/${node}/config/linux/l3/${AGENT_VER}/route/${ip}/${prefix}/${interface}
     ${data}=              Read Key    ${uri}
     ${data}=              Set Variable If      '''${data}'''==""    {}    ${data}
     ${output}=            Evaluate             json.loads('''${data}''')    json
@@ -562,7 +562,7 @@ Delete STN Rule
     [Return]    ${out}
 
 Put Local SID With Base End function
-    [Arguments]    ${node}    ${sidAddress}    ${fibtable}
+    [Arguments]    ${node}    ${sidAddress}    ${installationVrfId}
     [Documentation]    Add json to etcd that configurates local SID with base end function.
     ${data}=               OperatingSystem.Get File      ${CURDIR}/../resources/srv6_local_sid_with_base_end_function.json
     ${uri}=                Set Variable                  /vnf-agent/${node}/config/vpp/srv6/${AGENT_VER}/localsid/${sidAddress}
@@ -570,7 +570,7 @@ Put Local SID With Base End function
     Put Json     ${uri}    ${data}
 
 Put Local SID With End.X function
-    [Arguments]    ${node}    ${sidAddress}    ${fibtable}    ${outinterface}    ${nexthop}    ${psp}
+    [Arguments]    ${node}    ${sidAddress}    ${installationVrfId}    ${outinterface}    ${nexthop}    ${psp}
     [Documentation]    Add json to etcd that configurates local SID with X end function.
     ${data}=               OperatingSystem.Get File      ${CURDIR}/../resources/srv6_local_sid_with_x_end_function.json
     ${uri}=                Set Variable                  /vnf-agent/${node}/config/vpp/srv6/${AGENT_VER}/localsid/${sidAddress}
@@ -578,7 +578,7 @@ Put Local SID With End.X function
     Put Json     ${uri}    ${data}
 
 Put Local SID With End.T function
-    [Arguments]    ${node}    ${sidAddress}    ${fibtable}    ${vrfid}    ${psp}
+    [Arguments]    ${node}    ${sidAddress}    ${installationVrfId}    ${vrfid}    ${psp}
     [Documentation]    Add json to etcd that configurates local SID with T end function.
     ${data}=               OperatingSystem.Get File      ${CURDIR}/../resources/srv6_local_sid_with_t_end_function.json
     ${uri}=                Set Variable                  /vnf-agent/${node}/config/vpp/srv6/${AGENT_VER}/localsid/${sidAddress}
@@ -586,7 +586,7 @@ Put Local SID With End.T function
     Put Json     ${uri}    ${data}
 
 Put Local SID With End.DT4 function
-    [Arguments]    ${node}    ${sidAddress}    ${fibtable}    ${vrfid}
+    [Arguments]    ${node}    ${sidAddress}    ${installationVrfId}    ${vrfid}
     [Documentation]    Add json to etcd that configurates local SID with DT4 end function.
     ${data}=               OperatingSystem.Get File      ${CURDIR}/../resources/srv6_local_sid_with_dt4_end_function.json
     ${uri}=                Set Variable                  /vnf-agent/${node}/config/vpp/srv6/${AGENT_VER}/localsid/${sidAddress}
@@ -594,7 +594,7 @@ Put Local SID With End.DT4 function
     Put Json     ${uri}    ${data}
 
 Put Local SID With End.DT6 function
-    [Arguments]    ${node}    ${sidAddress}    ${fibtable}    ${vrfid}
+    [Arguments]    ${node}    ${sidAddress}    ${installationVrfId}    ${vrfid}
     [Documentation]    Add json to etcd that configurates local SID with DT6 end function.
     ${data}=               OperatingSystem.Get File      ${CURDIR}/../resources/srv6_local_sid_with_dt6_end_function.json
     ${uri}=                Set Variable                  /vnf-agent/${node}/config/vpp/srv6/${AGENT_VER}/localsid/${sidAddress}
@@ -602,7 +602,7 @@ Put Local SID With End.DT6 function
     Put Json     ${uri}    ${data}
 
 Put Local SID With End.DX2 function
-    [Arguments]    ${node}    ${sidAddress}    ${fibtable}    ${outinterface}    ${vlantag}=0
+    [Arguments]    ${node}    ${sidAddress}    ${installationVrfId}    ${outinterface}    ${vlantag}=0
     [Documentation]    Add json to etcd that configurates local SID with DX2 end function.
     ${data}=               OperatingSystem.Get File      ${CURDIR}/../resources/srv6_local_sid_with_dx2_end_function.json
     ${uri}=                Set Variable                  /vnf-agent/${node}/config/vpp/srv6/${AGENT_VER}/localsid/${sidAddress}
@@ -610,7 +610,7 @@ Put Local SID With End.DX2 function
     Put Json     ${uri}    ${data}
 
 Put Local SID With End.DX4 function
-    [Arguments]    ${node}    ${sidAddress}    ${fibtable}    ${outinterface}    ${nexthop}
+    [Arguments]    ${node}    ${sidAddress}    ${installationVrfId}    ${outinterface}    ${nexthop}
     [Documentation]    Add json to etcd that configurates local SID with DX4 end function.
     ${data}=               OperatingSystem.Get File      ${CURDIR}/../resources/srv6_local_sid_with_dx4_end_function.json
     ${uri}=                Set Variable                  /vnf-agent/${node}/config/vpp/srv6/${AGENT_VER}/localsid/${sidAddress}
@@ -618,7 +618,7 @@ Put Local SID With End.DX4 function
     Put Json     ${uri}    ${data}
 
 Put Local SID With End.DX6 function
-    [Arguments]    ${node}    ${sidAddress}    ${fibtable}    ${outinterface}    ${nexthop}
+    [Arguments]    ${node}    ${sidAddress}    ${installationVrfId}    ${outinterface}    ${nexthop}
     [Documentation]    Add json to etcd that configurates local SID with DX6 end function.
     ${data}=               OperatingSystem.Get File      ${CURDIR}/../resources/srv6_local_sid_with_dx6_end_function.json
     ${uri}=                Set Variable                  /vnf-agent/${node}/config/vpp/srv6/${AGENT_VER}/localsid/${sidAddress}
@@ -641,7 +641,7 @@ Delete Local SID
     [Return]    ${out}
 
 Put SRv6 Policy
-    [Arguments]    ${node}    ${bsid}    ${fibtable}    ${srhEncapsulation}    ${sprayBehaviour}    ${segmentlists}
+    [Arguments]    ${node}    ${bsid}    ${installationVrfId}    ${srhEncapsulation}    ${sprayBehaviour}    ${segmentlists}
     [Documentation]    Add SRv6 Policy config json to etcd.
     # compute segment lists part of json
     ${SLTemplate}=         OperatingSystem.Get File      ${CURDIR}/../resources/srv6_policy_segmentlist.json
@@ -675,7 +675,7 @@ Delete SRv6 Policy
     [Return]    ${out}
 
 Put SRv6 L3 Steering
-    [Arguments]    ${node}    ${name}    ${bsid}    ${fibtable}    ${prefixAddress}
+    [Arguments]    ${node}    ${name}    ${bsid}    ${installationVrfId}    ${prefixAddress}
     [Documentation]    Add SRv6 steering config json to etcd.
     ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/srv6_steering_l3.json
     ${uri}=               Set Variable                  /vnf-agent/${node}/config/vpp/srv6/${AGENT_VER}/steering/${name}
@@ -695,4 +695,23 @@ Delete SRv6 Steering
     [Documentation]    Delete SRv6 steering config json from etcd.
     ${uri}=     Set Variable           /vnf-agent/${node}/config/vpp/srv6/${AGENT_VER}/steering/${name}
     ${out}=     Delete key    ${uri}
+    [Return]    ${out}
+
+Create VRF Table
+    [Arguments]    ${node}    ${id}    ${protocol}    ${label}=
+    [Documentation]    Add VRF table config json to etcd.
+    ${protocol}=    Convert To Uppercase    ${protocol}
+    ${protocolEnumValue}=       Run Keyword If   '${protocol}'=='IPV6'    Set Variable    1
+    ...    ELSE    Set Variable    0    #IPv4
+    ${data}=    OperatingSystem.Get File    ${CURDIR}/../resources/vrf.json
+    ${uri}=     Set Variable                /vnf-agent/${node}/config/vpp/${AGENT_VER}/vrf-table/id/${id}/protocol/${protocol}
+    ${data}=    Replace Variables           ${data}
+    Put Json     ${uri}    ${data}
+
+Delete VRF Table
+    [Arguments]    ${node}    ${id}    ${protocol}
+    [Documentation]    Delete VRF table config json from etcd.
+    ${protocol}=    Convert To Uppercase    ${protocol}
+    ${uri}=         Set Variable            /vnf-agent/${node}/config/vpp/${AGENT_VER}/vrf-table/id/${id}/protocol/${protocol}
+    ${out}=         Delete key              ${uri}
     [Return]    ${out}

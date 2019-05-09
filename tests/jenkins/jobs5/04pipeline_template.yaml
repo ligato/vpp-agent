@@ -1,0 +1,56 @@
+- job-template:
+    concurrent: true
+    description: |-
+      trigered by successfull "02A. BUILD ARM64 DOCKER IMAGES for ligato vpp_agent"
+      all included  the jenkins jobs run on Jenkins master and contained robot scripts run on {arm64_node}
+      generated on {date_of_jjb_generation}
+      .
+    disabled: false
+    dsl: |
+      {list_of_jenkins_jobs}
+    name: '04{name_of_pipeline}_pipeline'
+    parameters:
+      - choice:
+          choices:
+            - --include ExpectedFailure
+            - --exclude ExpectedFailure
+          description: |-
+            tests with tag ExpectedFailure
+            manual execution - default the test run
+            execution from pipeline - both
+          name: HOWTOBUILD
+      - string:
+          default: TRACE:INFO
+          description: ''
+          name: LOGLEVEL
+          trim: 'true'
+      - string:
+          default: '{local_variables_file}'
+          description: 'ARM64 testing: contivvpp'
+          name: VARIABLES_FILE
+          trim: 'true'
+      - string:
+          default: '{arm64_node}'
+          description: 'to override the settings in VARIABLES_FILE'
+          name: DOCKER_HOST_IP
+          trim: 'true'
+      - string:
+          default: ligato/vpp-agent-arm64:dev
+          description: ''
+          name: IMAGE_NAME
+          trim: 'true'
+    project-type: pipeline
+    properties:
+      - raw:
+          xml: |
+            <hudson.plugins.throttleconcurrents.ThrottleJobProperty plugin="throttle-concurrents@2.0.1">
+            <maxConcurrentPerNode>0</maxConcurrentPerNode>
+            <maxConcurrentTotal>0</maxConcurrentTotal>
+            <categories class="java.util.concurrent.CopyOnWriteArrayList" />
+            <throttleEnabled>false</throttleEnabled>
+            <throttleOption>category</throttleOption>
+            <limitOneJobWithMatchingParams>false</limitOneJobWithMatchingParams>
+            <paramsToUseForLimit />
+            </hudson.plugins.throttleconcurrents.ThrottleJobProperty>
+    sandbox: true
+    triggers: []

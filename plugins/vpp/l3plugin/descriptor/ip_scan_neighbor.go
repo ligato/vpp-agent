@@ -56,29 +56,26 @@ type IPScanNeighborDescriptor struct {
 
 // NewIPScanNeighborDescriptor creates a new instance of the IPScanNeighborDescriptor.
 func NewIPScanNeighborDescriptor(scheduler kvs.KVScheduler,
-	proxyArpHandler vppcalls.IPNeighVppAPI, log logging.PluginLogger) *IPScanNeighborDescriptor {
+	proxyArpHandler vppcalls.IPNeighVppAPI, log logging.PluginLogger) *kvs.KVDescriptor {
 
-	return &IPScanNeighborDescriptor{
+	ctx := &IPScanNeighborDescriptor{
 		scheduler: scheduler,
 		ipNeigh:   proxyArpHandler,
 		log:       log.NewLogger("ip-scan-neigh-descriptor"),
 	}
-}
 
-// GetDescriptor returns descriptor suitable for registration (via adapter) with
-// the KVScheduler.
-func (d *IPScanNeighborDescriptor) GetDescriptor() *adapter.IPScanNeighborDescriptor {
-	return &adapter.IPScanNeighborDescriptor{
+	typedDescr := &adapter.IPScanNeighborDescriptor{
 		Name:            IPScanNeighborDescriptorName,
 		NBKeyPrefix:     l3.ModelIPScanNeighbor.KeyPrefix(),
 		ValueTypeName:   l3.ModelIPScanNeighbor.ProtoName(),
 		KeySelector:     l3.ModelIPScanNeighbor.IsKeyValid,
-		ValueComparator: d.EquivalentIPScanNeighbors,
-		Create:          d.Create,
-		Update:          d.Update,
-		Delete:          d.Delete,
-		Retrieve:        d.Retrieve,
+		ValueComparator: ctx.EquivalentIPScanNeighbors,
+		Create:          ctx.Create,
+		Update:          ctx.Update,
+		Delete:          ctx.Delete,
+		Retrieve:        ctx.Retrieve,
 	}
+	return adapter.NewIPScanNeighborDescriptor(typedDescr)
 }
 
 // EquivalentIPScanNeighbors compares the IP Scan Neighbor values.

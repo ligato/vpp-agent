@@ -20,56 +20,7 @@ package vppapiclient
 #cgo CFLAGS: -DPNG_DEBUG=1
 #cgo LDFLAGS: -lvppapiclient
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <stdint.h>
-#include <arpa/inet.h>
-#include <vpp-api/client/vppapiclient.h>
-
-extern void go_msg_callback(uint16_t msg_id, void* data, size_t size);
-
-typedef struct __attribute__((__packed__)) _req_header {
-    uint16_t msg_id;
-    uint32_t client_index;
-    uint32_t context;
-} req_header_t;
-
-typedef struct __attribute__((__packed__)) _reply_header {
-    uint16_t msg_id;
-} reply_header_t;
-
-static void
-govpp_msg_callback(unsigned char *data, int size)
-{
-    reply_header_t *header = ((reply_header_t *)data);
-    go_msg_callback(ntohs(header->msg_id), data, size);
-}
-
-static int
-govpp_send(uint32_t context, void *data, size_t size)
-{
-	req_header_t *header = ((req_header_t *)data);
-	header->context = htonl(context);
-    return vac_write(data, size);
-}
-
-static int
-govpp_connect(char *shm, int rx_qlen)
-{
-    return vac_connect("govpp", shm, govpp_msg_callback, rx_qlen);
-}
-
-static int
-govpp_disconnect()
-{
-    return vac_disconnect();
-}
-
-static uint32_t
-govpp_get_msg_index(char *name_and_crc)
-{
-    return vac_get_msg_index(name_and_crc);
-}
+#include "vppapiclient_wrapper.h"
 */
 import "C"
 
@@ -81,8 +32,9 @@ import (
 	"time"
 	"unsafe"
 
-	"git.fd.io/govpp.git/adapter"
 	"github.com/fsnotify/fsnotify"
+
+	"git.fd.io/govpp.git/adapter"
 )
 
 var (

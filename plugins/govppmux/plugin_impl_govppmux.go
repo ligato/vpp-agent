@@ -16,6 +16,7 @@ package govppmux
 
 import (
 	"context"
+	"os"
 	"sync"
 	"time"
 
@@ -31,12 +32,16 @@ import (
 
 	"github.com/ligato/vpp-agent/plugins/govppmux/vppcalls"
 
-	_ "github.com/ligato/vpp-agent/plugins/govppmux/vppcalls/vpp1810"
 	_ "github.com/ligato/vpp-agent/plugins/govppmux/vppcalls/vpp1901"
+	_ "github.com/ligato/vpp-agent/plugins/govppmux/vppcalls/vpp1904"
 )
 
 // Default path to socket for VPP stats
 const defaultStatsSocket = "/run/vpp/stats.sock"
+
+var (
+	disabledSocketClient = os.Getenv("GOVPPMUX_NOSOCK") != ""
+)
 
 // Plugin implements the govppmux plugin interface.
 type Plugin struct {
@@ -47,8 +52,12 @@ type Plugin struct {
 	statsConn    govppapi.StatsProvider
 	statsAdapter adapter.StatsAPI
 	vppConChan   chan govpp.ConnectionEvent
+	lastConnErr  error
 
-	lastConnErr error
+	// mu protects fields below (vppInfo, lastEvent)
+	infoMu    sync.Mutex
+	vppInfo   VPPInfo
+	lastEvent govpp.ConnectionEvent
 
 	config *Config
 
@@ -78,10 +87,13 @@ type Config struct {
 	HealthCheckReplyTimeout  time.Duration `json:"health-check-reply-timeout"`
 	HealthCheckThreshold     int           `json:"health-check-threshold"`
 	ReplyTimeout             time.Duration `json:"reply-timeout"`
+	// Connect to VPP for configuration requests via the shared memory instead of through the socket.
+	ConnectViaShm bool `json:"connect-via-shm"`
 	// The prefix prepended to the name used for shared memory (SHM) segments. If not set,
 	// shared memory segments are created directly in the SHM directory /dev/shm.
-	ShmPrefix       string `json:"shm-prefix"`
-	StatsSocketName string `json:"stats-socket-name"`
+	ShmPrefix        string `json:"shm-prefix"`
+	BinAPISocketPath string `json:"binapi-socket-path"`
+	StatsSocketPath  string `json:"stats-socket-path"`
 	// How many times can be request resent in case vpp is suddenly disconnected.
 	RetryRequestCount int `json:"retry-request-count"`
 	// Time between request resend attempts. Default is 500ms.
@@ -137,11 +149,20 @@ func (p *Plugin) Init() error {
 	}
 
 	if p.vppAdapter == nil {
-		p.vppAdapter = NewVppAdapter(p.config.ShmPrefix)
+		address := p.config.BinAPISocketPath
+		useShm := disabledSocketClient || p.config.ConnectViaShm
+		if useShm {
+			address = p.config.ShmPrefix
+		}
+		p.vppAdapter = NewVppAdapter(address, useShm)
 	} else {
 		// this is used for testing purposes
 		p.Log.Info("Reusing existing vppAdapter")
 	}
+
+	// TODO: Async connect & automatic reconnect support is not yet implemented in the agent,
+	// so synchronously wait until connected to VPP.
+	p.Log.Debugf("connecting to VPP..")
 
 	startTime := time.Now()
 	p.vppConn, p.vppConChan, err = govpp.AsyncConnect(p.vppAdapter, p.config.RetryConnectCount, p.config.RetryConnectTimeout)
@@ -149,49 +170,29 @@ func (p *Plugin) Init() error {
 		return err
 	}
 
-	// TODO: Async connect & automatic reconnect support is not yet implemented in the agent,
-	// so synchronously wait until connected to VPP.
-	status := <-p.vppConChan
-	if status.State != govpp.Connected {
-		return errors.New("unable to connect to VPP")
+	// wait for connection event
+	for {
+		event := <-p.vppConChan
+		if event.State == govpp.Connected {
+			break
+		} else if event.State == govpp.Failed || event.State == govpp.Disconnected {
+			return errors.Errorf("unable to establish connection to VPP (%v)", event.Error)
+		} else {
+			p.Log.Debugf("VPP connection state: %+v", event)
+		}
 	}
+
 	vppConnectTime := time.Since(startTime)
+	p.Log.Debugf("connection to VPP established (took %s)", vppConnectTime.Round(time.Millisecond))
 
-	vppAPIChan, err := p.vppConn.NewAPIChannel()
-	if err != nil {
-		p.Log.Error("getting new api channel failed:", err)
-		return err
+	if err := p.updateVPPInfo(p.vppConn); err != nil {
+		return errors.WithMessage(err, "retrieving VPP info failed")
 	}
-	defer vppAPIChan.Close()
-
-	vpeHandler := vppcalls.CompatibleVpeHandler(vppAPIChan)
-
-	ver, err := vpeHandler.GetVersionInfo()
-	if err != nil {
-		p.Log.Errorf("retrieving version info failed: %v", err)
-		return err
-	}
-	info, err := vpeHandler.GetVpeInfo()
-	if err != nil {
-		p.Log.Errorf("retrieving vpe info failed: %v", err)
-		return err
-	}
-	p.Log.Infof("Connected to VPP %v [PID:%d, ClientIdx:%d] (took %s)",
-		ver.Version, info.PID, info.ClientIdx, vppConnectTime.Truncate(time.Millisecond))
-	p.Log.Debugf("loaded module versions: %v", info.ModuleVersions)
-
-	// Register providing status reports (push mode)
-	p.StatusCheck.Register(p.PluginName, nil)
-	p.StatusCheck.ReportStateChange(p.PluginName, statuscheck.OK, nil)
-
-	var ctx context.Context
-	ctx, p.cancel = context.WithCancel(context.Background())
-	go p.handleVPPConnectionEvents(ctx)
 
 	// Connect to VPP status socket
 	var statsSocket string
-	if p.config.StatsSocketName != "" {
-		statsSocket = p.config.StatsSocketName
+	if p.config.StatsSocketPath != "" {
+		statsSocket = p.config.StatsSocketPath
 	} else {
 		statsSocket = defaultStatsSocket
 	}
@@ -202,6 +203,21 @@ func (p *Plugin) Init() error {
 		p.Log.Warnf("Unable to connect to the VPP statistics socket, %v", err)
 		p.statsAdapter = nil
 	}
+
+	return nil
+}
+
+// AfterInit reports status check.
+func (p *Plugin) AfterInit() error {
+	// Register providing status reports (push mode)
+	p.StatusCheck.Register(p.PluginName, nil)
+	p.StatusCheck.ReportStateChange(p.PluginName, statuscheck.OK, nil)
+
+	var ctx context.Context
+	ctx, p.cancel = context.WithCancel(context.Background())
+
+	p.wg.Add(1)
+	go p.handleVPPConnectionEvents(ctx)
 
 	return nil
 }
@@ -317,25 +333,26 @@ func (p *Plugin) GetErrorStats(names ...string) (*govppapi.ErrorStats, error) {
 	return p.statsConn.GetErrorStats()
 }
 
+// GetErrorStats retrieves VPP error counters
+func (p *Plugin) GetBufferStats() (*govppapi.BufferStats, error) {
+	if p.statsConn == nil || p.statsConn.(*govpp.StatsConnection) == nil {
+		return nil, nil
+	}
+	return p.statsConn.GetBufferStats()
+}
+
 // handleVPPConnectionEvents handles VPP connection events.
 func (p *Plugin) handleVPPConnectionEvents(ctx context.Context) {
-	p.wg.Add(1)
 	defer p.wg.Done()
 
 	for {
 		select {
-		case status := <-p.vppConChan:
-			if status.State == govpp.Connected {
-				vppAPIChan, err := p.vppConn.NewAPIChannel()
-				if err != nil {
-					p.Log.Error("getting new api channel failed:", err)
-					return
+		case event := <-p.vppConChan:
+			if event.State == govpp.Connected {
+				if err := p.updateVPPInfo(p.vppConn); err != nil {
+					p.Log.Errorf("updating VPP info failed: %v", err)
 				}
-				defer vppAPIChan.Close()
 
-				vpeHandler := vppcalls.CompatibleVpeHandler(vppAPIChan)
-				vpeHandler.GetVersionInfo()
-				vpeHandler.GetVpeInfo()
 				if p.config.ReconnectResync && p.lastConnErr != nil {
 					p.Log.Info("Starting resync after VPP reconnect")
 					if p.Resync != nil {
@@ -346,13 +363,65 @@ func (p *Plugin) handleVPPConnectionEvents(ctx context.Context) {
 					}
 				}
 				p.StatusCheck.ReportStateChange(p.PluginName, statuscheck.OK, nil)
-			} else {
-				p.lastConnErr = errors.Errorf("VPP disconnected (status: %v)", status)
+			} else if event.State == govpp.Failed || event.State == govpp.Disconnected {
+				p.infoMu.Lock()
+				p.vppInfo.Connected = false
+				p.infoMu.Unlock()
+
+				p.lastConnErr = errors.Errorf("VPP connection lost (event: %+v)", event)
 				p.StatusCheck.ReportStateChange(p.PluginName, statuscheck.Error, p.lastConnErr)
+			} else {
+				p.Log.Debugf("VPP connection state: %+v", event)
 			}
+
+			p.infoMu.Lock()
+			p.lastEvent = event
+			p.infoMu.Unlock()
 
 		case <-ctx.Done():
 			return
 		}
 	}
+}
+
+// VPPInfo returns information about VPP session.
+func (p *Plugin) VPPInfo() (VPPInfo, error) {
+	p.infoMu.Lock()
+	defer p.infoMu.Unlock()
+	return p.vppInfo, nil
+}
+
+func (p *Plugin) updateVPPInfo(provider govppapi.ChannelProvider) error {
+	vppAPIChan, err := provider.NewAPIChannel()
+	if err != nil {
+		return err
+	}
+	defer vppAPIChan.Close()
+
+	vpeHandler := vppcalls.CompatibleVpeHandler(vppAPIChan)
+
+	ver, err := vpeHandler.GetVersionInfo()
+	if err != nil {
+		return err
+	}
+
+	p.Log.Infof("VPP version: %v", ver.Version)
+
+	vpe, err := vpeHandler.GetVpeInfo()
+	if err != nil {
+		return err
+	}
+
+	p.Log.Debugf("VPP session details: PID=%d ClientIdx=%d", vpe.PID, vpe.ClientIdx)
+	p.Log.Debugf("loaded %d VPP modules: %v", len(vpe.ModuleVersions), vpe.ModuleVersions)
+
+	p.infoMu.Lock()
+	p.vppInfo = VPPInfo{
+		Connected:   true,
+		VersionInfo: *ver,
+		VpeInfo:     *vpe,
+	}
+	p.infoMu.Unlock()
+
+	return nil
 }

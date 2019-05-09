@@ -47,14 +47,14 @@ type graphR struct {
 }
 
 // newGraphR creates and initializes a new instance of graphR.
-func newGraphR() *graphR {
+func newGraphR(mt MethodTracker) *graphR {
 	var el *edgeLookup
 	if benchEl != nil {
 		// this is a benchmark
 		el = benchEl
 		el.reset()
 	} else {
-		el = newEdgeLookup()
+		el = newEdgeLookup(mt)
 	}
 	return &graphR{
 		edgeLookup: el,

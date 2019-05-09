@@ -269,6 +269,11 @@ func (t RelationTargetDef) WithKeySelector() bool {
 	return t.Key == "" && t.Selector.KeySelector != nil
 }
 
+// Singleton returns true if the target matches at most one key.
+func (t RelationTargetDef) Singleton() bool {
+	return t.Key != "" || (t.Selector.KeySelector == nil && len(t.Selector.KeyPrefixes) == 0)
+}
+
 // TargetSelector allows to dynamically select a set of target nodes.
 // The selections of KeyPrefixes and KeySelector are **intersected**.
 type TargetSelector struct {

@@ -44,31 +44,28 @@ type ArpDescriptor struct {
 
 // NewArpDescriptor creates a new instance of the ArpDescriptor.
 func NewArpDescriptor(scheduler kvs.KVScheduler,
-	arpHandler vppcalls.ArpVppAPI, log logging.PluginLogger) *ArpDescriptor {
+	arpHandler vppcalls.ArpVppAPI, log logging.PluginLogger) *kvs.KVDescriptor {
 
-	return &ArpDescriptor{
+	ctx := &ArpDescriptor{
 		scheduler:  scheduler,
 		arpHandler: arpHandler,
 		log:        log.NewLogger("arp-descriptor"),
 	}
-}
 
-// GetDescriptor returns descriptor suitable for registration (via adapter) with
-// the KVScheduler.
-func (d *ArpDescriptor) GetDescriptor() *adapter.ARPEntryDescriptor {
-	return &adapter.ARPEntryDescriptor{
+	typedDescr := &adapter.ARPEntryDescriptor{
 		Name:                 ArpDescriptorName,
 		NBKeyPrefix:          l3.ModelARPEntry.KeyPrefix(),
 		ValueTypeName:        l3.ModelARPEntry.ProtoName(),
 		KeySelector:          l3.ModelARPEntry.IsKeyValid,
 		KeyLabel:             l3.ModelARPEntry.StripKeyPrefix,
-		ValueComparator:      d.EquivalentArps,
-		Create:               d.Create,
-		Delete:               d.Delete,
-		Retrieve:             d.Retrieve,
-		Dependencies:         d.Dependencies,
+		ValueComparator:      ctx.EquivalentArps,
+		Create:               ctx.Create,
+		Delete:               ctx.Delete,
+		Retrieve:             ctx.Retrieve,
+		Dependencies:         ctx.Dependencies,
 		RetrieveDependencies: []string{ifdescriptor.InterfaceDescriptorName},
 	}
+	return adapter.NewARPEntryDescriptor(typedDescr)
 }
 
 // EquivalentArps is comparison function for ARP entries.

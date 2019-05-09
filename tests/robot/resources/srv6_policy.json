@@ -1,6 +1,6 @@
 {
   "bsid": "${bsid}",
-  "fib_table_id": ${fibtable},
+  "installation_vrf_id": ${installationVrfId},
   "srh_encapsulation": ${srhEncapsulation},
   "spray_behaviour": ${sprayBehaviour},
   "segmentLists":[

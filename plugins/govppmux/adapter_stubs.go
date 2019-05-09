@@ -22,7 +22,7 @@ import (
 )
 
 // NewVppAdapter returns mock adapter, used for building without vppapiclient library.
-func NewVppAdapter(shmPrefix string) adapter.VppAPI {
+func NewVppAdapter(shmPrefix string, useShm bool) adapter.VppAPI {
 	return govppmock.NewVppAdapter()
 }
 

@@ -114,7 +114,7 @@ vpp_term: Show Bridge-Domain Detail
 vpp_term: Show IPsec
     [Arguments]        ${node}
     [Documentation]    Show IPsec output
-    ${out}=            vpp_term: Issue Command  ${node}    show ipsec
+    ${out}=            vpp_term: Issue Command  ${node}    show ipsec all
     [Return]           ${out}
 
 vpp_term: Check Ping

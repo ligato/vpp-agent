@@ -42,25 +42,21 @@ type NAT44InterfaceDescriptor struct {
 }
 
 // NewNAT44InterfaceDescriptor creates a new instance of the NAT44Interface descriptor.
-func NewNAT44InterfaceDescriptor(natHandler vppcalls.NatVppAPI, log logging.PluginLogger) *NAT44InterfaceDescriptor {
-
-	return &NAT44InterfaceDescriptor{
+func NewNAT44InterfaceDescriptor(natHandler vppcalls.NatVppAPI, log logging.PluginLogger) *kvs.KVDescriptor {
+	ctx := &NAT44InterfaceDescriptor{
 		natHandler: natHandler,
 		log:        log.NewLogger("nat44-iface-descriptor"),
 	}
-}
 
-// GetDescriptor returns descriptor suitable for registration (via adapter) with
-// the KVScheduler.
-func (d *NAT44InterfaceDescriptor) GetDescriptor() *adapter.NAT44InterfaceDescriptor {
-	return &adapter.NAT44InterfaceDescriptor{
+	typedDescr := &adapter.NAT44InterfaceDescriptor{
 		Name:          NAT44InterfaceDescriptorName,
-		KeySelector:   d.IsNAT44InterfaceKey,
+		KeySelector:   ctx.IsNAT44InterfaceKey,
 		ValueTypeName: proto.MessageName(&nat.Nat44Global_Interface{}),
-		Create:        d.Create,
-		Delete:        d.Delete,
-		Dependencies:  d.Dependencies,
+		Create:        ctx.Create,
+		Delete:        ctx.Delete,
+		Dependencies:  ctx.Dependencies,
 	}
+	return adapter.NewNAT44InterfaceDescriptor(typedDescr)
 }
 
 // IsNAT44InterfaceKey returns true if the key is identifying NAT-44 configuration

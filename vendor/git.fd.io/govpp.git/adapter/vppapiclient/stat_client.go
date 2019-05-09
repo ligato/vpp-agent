@@ -20,140 +20,22 @@ package vppapiclient
 #cgo CFLAGS: -DPNG_DEBUG=1
 #cgo LDFLAGS: -lvppapiclient
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <stdint.h>
-#include <arpa/inet.h>
-#include <vpp-api/client/vppapiclient.h>
-#include <vpp-api/client/stat_client.h>
-
-static int
-govpp_stat_connect(char *socket_name)
-{
-	return stat_segment_connect(socket_name);
-}
-
-static void
-govpp_stat_disconnect()
-{
-    stat_segment_disconnect();
-}
-
-static uint32_t*
-govpp_stat_segment_ls(uint8_t ** pattern)
-{
-	return stat_segment_ls(pattern);
-}
-
-static int
-govpp_stat_segment_vec_len(void *vec)
-{
-	return stat_segment_vec_len(vec);
-}
-
-static void
-govpp_stat_segment_vec_free(void *vec)
-{
-	stat_segment_vec_free(vec);
-}
-
-static char*
-govpp_stat_segment_dir_index_to_name(uint32_t *dir, uint32_t index)
-{
-	return stat_segment_index_to_name(dir[index]);
-}
-
-static stat_segment_data_t*
-govpp_stat_segment_dump(uint32_t *counter_vec)
-{
-	return stat_segment_dump(counter_vec);
-}
-
-static stat_segment_data_t
-govpp_stat_segment_dump_index(stat_segment_data_t *data, int index)
-{
-	return data[index];
-}
-
-static int
-govpp_stat_segment_data_type(stat_segment_data_t *data)
-{
-	return data->type;
-}
-
-static double
-govpp_stat_segment_data_get_scalar_value(stat_segment_data_t *data)
-{
-	return data->scalar_value;
-}
-
-static double
-govpp_stat_segment_data_get_error_value(stat_segment_data_t *data)
-{
-	return data->error_value;
-}
-
-static uint64_t**
-govpp_stat_segment_data_get_simple_counter(stat_segment_data_t *data)
-{
-	return data->simple_counter_vec;
-}
-
-static uint64_t*
-govpp_stat_segment_data_get_simple_counter_index(stat_segment_data_t *data, int index)
-{
-	return data->simple_counter_vec[index];
-}
-
-static uint64_t
-govpp_stat_segment_data_get_simple_counter_index_value(stat_segment_data_t *data, int index, int index2)
-{
-	return data->simple_counter_vec[index][index2];
-}
-
-static vlib_counter_t**
-govpp_stat_segment_data_get_combined_counter(stat_segment_data_t *data)
-{
-	return data->combined_counter_vec;
-}
-
-static vlib_counter_t*
-govpp_stat_segment_data_get_combined_counter_index(stat_segment_data_t *data, int index)
-{
-	return data->combined_counter_vec[index];
-}
-
-static uint64_t
-govpp_stat_segment_data_get_combined_counter_index_packets(stat_segment_data_t *data, int index, int index2)
-{
-	return data->combined_counter_vec[index][index2].packets;
-}
-
-static uint64_t
-govpp_stat_segment_data_get_combined_counter_index_bytes(stat_segment_data_t *data, int index, int index2)
-{
-	return data->combined_counter_vec[index][index2].bytes;
-}
-
-static void
-govpp_stat_segment_data_free(stat_segment_data_t *data)
-{
-	stat_segment_data_free(data);
-}
-
-static uint8_t**
-govpp_stat_segment_string_vector(uint8_t ** string_vector, char *string)
-{
-	return stat_segment_string_vector(string_vector, string);
-}
+#include "stat_client_wrapper.h"
 */
 import "C"
+
 import (
+	"errors"
 	"fmt"
 	"os"
 	"unsafe"
 
 	"git.fd.io/govpp.git/adapter"
+)
+
+var (
+	ErrStatDirBusy  = errors.New("stat dir busy")
+	ErrStatDumpBusy = errors.New("stat dump busy")
 )
 
 var (
@@ -207,6 +89,9 @@ func (c *statClient) Disconnect() error {
 
 func (c *statClient) ListStats(patterns ...string) (stats []string, err error) {
 	dir := C.govpp_stat_segment_ls(convertStringSlice(patterns))
+	if dir == nil {
+		return nil, ErrStatDirBusy
+	}
 	defer C.govpp_stat_segment_vec_free(unsafe.Pointer(dir))
 
 	l := C.govpp_stat_segment_vec_len(unsafe.Pointer(dir))
@@ -221,9 +106,15 @@ func (c *statClient) ListStats(patterns ...string) (stats []string, err error) {
 
 func (c *statClient) DumpStats(patterns ...string) (stats []*adapter.StatEntry, err error) {
 	dir := C.govpp_stat_segment_ls(convertStringSlice(patterns))
+	if dir == nil {
+		return nil, ErrStatDirBusy
+	}
 	defer C.govpp_stat_segment_vec_free(unsafe.Pointer(dir))
 
 	dump := C.govpp_stat_segment_dump(dir)
+	if dump == nil {
+		return nil, ErrStatDumpBusy
+	}
 	defer C.govpp_stat_segment_data_free(dump)
 
 	l := C.govpp_stat_segment_vec_len(unsafe.Pointer(dump))
@@ -268,8 +159,21 @@ func (c *statClient) DumpStats(patterns ...string) (stats []*adapter.StatEntry, 
 			}
 			stat.Data = adapter.CombinedCounterStat(vector)
 
+		case adapter.NameVector:
+			length := int(C.govpp_stat_segment_vec_len(unsafe.Pointer(C.govpp_stat_segment_data_get_name_vector(&v))))
+			var vector []adapter.Name
+			for k := 0; k < length; k++ {
+				s := C.govpp_stat_segment_data_get_name_vector_index(&v, C.int(k))
+				var name adapter.Name
+				if s != nil {
+					name = adapter.Name(C.GoString(s))
+				}
+				vector = append(vector, name)
+			}
+			stat.Data = adapter.NameStat(vector)
+
 		default:
-			fmt.Fprintf(os.Stderr, "invalid stat type: %v (%d)", typ, typ)
+			fmt.Fprintf(os.Stderr, "invalid stat type: %v (%v)\n", typ, name)
 			continue
 
 		}

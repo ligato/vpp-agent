@@ -44,7 +44,7 @@ Show Interfaces Before Setup
 
 Add TAP1 Interface
     vpp_term: Interface Not Exists  node=agent_vpp_1    mac=${MAC_TAP1}
-    Put TAP Interface With IP    node=agent_vpp_1    name=${NAME_TAP1}    mac=${MAC_TAP1}    ip=${IP_TAP1}    prefix=${PREFIX}    host_if_name=linux_${NAME_TAP1}
+    Put TAPv2 Interface With IP    node=agent_vpp_1    name=${NAME_TAP1}    mac=${MAC_TAP1}    ip=${IP_TAP1}    prefix=${PREFIX}    host_if_name=linux_${NAME_TAP1}
 
 Check TAP1 Interface Is Created
     ${interfaces}=       vat_term: Interfaces Dump    node=agent_vpp_1
@@ -63,7 +63,7 @@ Check TAP1 Interface Is Still Configured
     ${actual_state}=    vpp_term: Check TAP interface State    agent_vpp_1    ${NAME_TAP1}    mac=${MAC_TAP1}    ipv4=${IP_TAP1}/${PREFIX}    state=${UP_STATE}
 
 Update TAP1 Interface
-    Put TAP Interface With IP    node=agent_vpp_1    name=${NAME_TAP1}    mac=${MAC_TAP1_2}    ip=${IP_TAP1_2}    prefix=${PREFIX}    host_if_name=linux_${NAME_TAP1}
+    Put TAPv2 Interface With IP    node=agent_vpp_1    name=${NAME_TAP1}    mac=${MAC_TAP1_2}    ip=${IP_TAP1_2}    prefix=${PREFIX}    host_if_name=linux_${NAME_TAP1}
 
 Check TAP1_2 Interface Is Created
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Interface Is Created    node=agent_vpp_1    mac=${MAC_TAP1_2}
@@ -74,7 +74,7 @@ Check TAP2 Unnumbered Interface Is Changed
 
 Add TAP3 Interface
     vpp_term: Interface Not Exists  node=agent_vpp_1    mac=${MAC_TAP3}
-    Put TAP Interface With IP    node=agent_vpp_1    name=${NAME_TAP3}    mac=${MAC_TAP3}    ip=${IP_TAP3}    prefix=${PREFIX}    host_if_name=linux_${NAME_TAP3}
+    Put TAPv2 Interface With IP    node=agent_vpp_1    name=${NAME_TAP3}    mac=${MAC_TAP3}    ip=${IP_TAP3}    prefix=${PREFIX}    host_if_name=linux_${NAME_TAP3}
 
 Check TAP3 Interface Is Created
     ${interfaces}=       vat_term: Interfaces Dump    node=agent_vpp_1

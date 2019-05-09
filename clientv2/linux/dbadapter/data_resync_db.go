@@ -19,6 +19,7 @@ import (
 
 	"github.com/ligato/vpp-agent/api/models/linux/interfaces"
 	"github.com/ligato/vpp-agent/api/models/linux/l3"
+	abf "github.com/ligato/vpp-agent/api/models/vpp/abf"
 	acl "github.com/ligato/vpp-agent/api/models/vpp/acl"
 	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	ipsec "github.com/ligato/vpp-agent/api/models/vpp/ipsec"
@@ -91,6 +92,12 @@ func (dsl *DataResyncDSL) ACL(acl *acl.ACL) linuxclient.DataResyncDSL {
 	return dsl
 }
 
+// ABF adds ACL-based forwarding to the RESYNC request.
+func (dsl *DataResyncDSL) ABF(abf *abf.ABF) linuxclient.DataResyncDSL {
+	dsl.vppDataResync.ABF(abf)
+	return dsl
+}
+
 /*// BfdSession adds VPP bidirectional forwarding detection session
 // to the RESYNC request.
 func (dsl *DataResyncDSL) BfdSession(val *bfd.SingleHopBFD_Session) linuxclient.DataResyncDSL {
@@ -127,6 +134,12 @@ func (dsl *DataResyncDSL) BDFIB(fib *l2.FIBEntry) linuxclient.DataResyncDSL {
 // XConnect adds VPP Cross Connect to the RESYNC request.
 func (dsl *DataResyncDSL) XConnect(xcon *l2.XConnectPair) linuxclient.DataResyncDSL {
 	dsl.vppDataResync.XConnect(xcon)
+	return dsl
+}
+
+// VrfTable adds VPP VRF table to the RESYNC request.
+func (dsl *DataResyncDSL) VrfTable(vrfTable *l3.VrfTable) linuxclient.DataResyncDSL {
+	dsl.vppDataResync.VrfTable(vrfTable)
 	return dsl
 }
 

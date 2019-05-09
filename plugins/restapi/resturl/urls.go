@@ -29,6 +29,12 @@ const (
 	LinuxArps = "/dump/linux/v2/arps"
 )
 
+// VPP ABF
+const (
+	// REST ABF
+	ABF = "/dump/vpp/v2/abf"
+)
+
 // VPP ACL
 const (
 	// REST ACL IP prefix
@@ -103,10 +109,12 @@ const (
 	TNodeCount = "/vpp/telemetry/nodecount"
 )
 
-// Tracer
+// Stats
 const (
 	// Traced binary API calls
 	Tracer = "/vpp/binapitrace"
+	// Configurator stats
+	ConfiguratorStats = "/stats/configurator"
 )
 
 // Index

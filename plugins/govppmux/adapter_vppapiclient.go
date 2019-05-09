@@ -17,23 +17,20 @@
 package govppmux
 
 import (
-	"os"
-
 	"git.fd.io/govpp.git/adapter"
 	"git.fd.io/govpp.git/adapter/socketclient"
 	"git.fd.io/govpp.git/adapter/vppapiclient"
 )
 
-var (
-	UseSocketClient = os.Getenv("GOVPPMUX_NOSOCK") == ""
-)
-
 // NewVppAdapter returns real vpp api adapter, used for building with vppapiclient library.
-func NewVppAdapter(shmPrefix string) adapter.VppAPI {
-	if UseSocketClient {
-		return socketclient.NewVppClient("/run/vpp-api.sock")
+func NewVppAdapter(addr string, useShm bool) adapter.VppAPI {
+	if useShm {
+		// addr is used as shm prefix
+		return vppapiclient.NewVppClient(addr)
 	}
-	return vppapiclient.NewVppClient(shmPrefix)
+	// addr is used as socket path
+	return socketclient.NewVppClient(addr)
+
 }
 
 // NewStatsAdapter returns stats vpp api adapter, used for reading statistics with vppapiclient library.

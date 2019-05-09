@@ -49,7 +49,7 @@ Setup Interfaces
     @{ints}=    Create List    vpp1_vxlan1    vpp1_afpacket1
     Put Bridge Domain    node=agent_vpp_1    name=vpp1_bd1    ints=${ints}
     Put Loopback Interface With IP    node=agent_vpp_1    name=vpp1_loop1    mac=12:21:21:11:11:11    ip=${NET3_IP1}
-    Put TAP Interface With IP    node=agent_vpp_1    name=vpp1_tap1    mac=32:21:21:11:11:11    ip=${NET4_IP1}    host_if_name=linux_vpp1_tap1
+    Put TAPv2 Interface With IP    node=agent_vpp_1    name=vpp1_tap1    mac=32:21:21:11:11:11    ip=${NET4_IP1}    host_if_name=linux_vpp1_tap1
 
     Put Memif Interface With IP    node=agent_vpp_2    name=vpp2_memif1    mac=62:62:62:62:62:62    master=false    id=1    ip=${NET1_IP2}
     Put Veth Interface With IP    node=agent_vpp_2    name=vpp2_veth1    mac=22:21:21:21:21:21    peer=vpp2_veth2    ip=${NET2_IP2}
@@ -59,7 +59,7 @@ Setup Interfaces
     @{ints}=    Create List    vpp2_vxlan1    vpp2_afpacket1
     Put Bridge Domain    node=agent_vpp_2    name=vpp2_bd1    ints=${ints}
     Put Loopback Interface With IP    node=agent_vpp_2    name=vpp2_loop1    mac=22:21:21:11:11:11    ip=${NET3_IP2}
-    Put TAP Interface With IP    node=agent_vpp_2    name=vpp2_tap1    mac=32:22:22:11:11:11    ip=${NET4_IP2}    host_if_name=linux_vpp2_tap1
+    Put TAPv2 Interface With IP    node=agent_vpp_2    name=vpp2_tap1    mac=32:22:22:11:11:11    ip=${NET4_IP2}    host_if_name=linux_vpp2_tap1
     Sleep    ${SYNC_SLEEP}
 
 Check Linux Interfaces On VPP1

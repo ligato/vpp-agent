@@ -1,0 +1,171 @@
+- job:
+    block-downstream: false
+    block-upstream: false
+    builders:
+      - shell: |-
+          ####
+          # BEGIN BUILDING OF arm64_local_variables.robot for server contivvpp
+          ####
+          cat << 'InputComesFromHERE' > tests/robot/variables/arm64_local_variables.robot
+          *** Settings ***
+          Resource                          common_variables.robot
+
+          *** Variables ***
+          #${DOCKER_HOST_IP}                 147.75.98.202
+          # 20180907 longer-running robot tests moved to contivvpp ARM64 baremetal server
+          ${DOCKER_HOST_IP}                 147.75.72.194
+          ${DOCKER_HOST_USER}              robotusername
+          ${DOCKER_HOST_PSWD}              robotpassword
+
+          ${AGENT_VPP_IMAGE_NAME}           ligato/vpp-agent-arm64:dev
+          # 20190314 many failures - I try master branch
+          #${AGENT_VPP_IMAGE_NAME}           ligato/vpp-agent-arm64:latest
+
+          # https://quay.io/repository/coreos/etcd?tag=latest&tab=tags
+          # 20180711 ponder to change port because of conflict with kubernetes etcd
+          ${ETCD_SERVER_CREATE}              ${DOCKER_COMMAND} create -p 2379:2379 --name etcd -e ETCDCTL_API=3 -e ETCD_UNSUPPORTED_ARCH=arm64 quay.io/coreos/etcd:v3.3.11-arm64 /usr/local/bin/etcd -advertise-client-urls http://0.0.0.0:2379 -listen-client-urls http://0.0.0.0:2379
+
+          # 20190201 repo https://github.com/spotify/docker-kafka - last change in 2016
+          # built from repository: https://github.com/stanislav-chlebec/docker-kafka.git
+          # 20190201 needs to eliminate personal repo
+          ${KAFKA_SERVER_CREATE}             ${DOCKER_COMMAND} create -it -p 2181:2181 -p 9092:9092 --env ADVERTISED_PORT=9092 --name kafka ligato/kafka-arm64:latest
+
+          # built from repo: https://github.com/ligato/sfc-controller.git // branch:  vpp-agent-2
+          ${SFC_CONTROLLER_IMAGE_NAME}       ligato/sfc-controller-arm64:dev
+
+          ${AGENT_IMAGE_NAME}           ligato/vpp-agent-arm64:dev
+          # 20190314 many failures - I try master branch
+          #${AGENT_IMAGE_NAME}           ligato/vpp-agent-arm64:latest
+
+
+          ${AGENT_LIBMEMIF_IMAGE_NAME}       stanislavchlebec/libmemif-sample-service-arm64:latest
+
+          ${DOCKER_COMMAND}                  docker
+          InputComesFromHERE
+          ####
+          # END BUILDING OF arm64_local_variables.robot for server contivvpp
+          ####
+
+          #cat tests/robot/variables/arm64_local_variables.robot
+          #pybot -v VARIABLES:arm64_local ./tests/robot/suites/crud/tap_crud.robot
+          #exit 0
+
+          #git branch --set-upstream-to=origin/dev dev
+          #git pull --tags
+
+          git status
+
+          #20180629 valid for jenkins master server - folders are directly in docker container
+          #20190201 why ?
+          rm -rf /root/vpp-agent
+          mkdir  /root/vpp-agent
+          cp -r ./. /root/vpp-agent
+
+          #20190201 why ?
+          rm -rf /root/work
+          mkdir  /root/work
+
+          # in working copy of vpp-agent repository
+          cd /root/vpp-agent
+
+          git status
+          git log -n 1
+          git rev-parse HEAD
+
+          #20180914 credetials parametrized
+          sed -i -e "s/robotusername/$robotusername/g" tests/robot/variables/arm64_local_variables.robot
+          sed -i -e "s/robotpassword/$robotpassword/g" tests/robot/variables/arm64_local_variables.robot
+
+          ####
+          # BEGIN BUILDING OF arm64_II_local_variables.robot for server vppagent
+          ####
+          cp tests/robot/variables/arm64_local_variables.robot tests/robot/variables/arm64_II_local_variables.robot
+          sed -i -e 's/147.75.72.194/147.75.98.202/g' tests/robot/variables/arm64_II_local_variables.robot
+          ####
+          # END BUILDING OF arm64_II_local_variables.robot for server vppagent
+          ####
+
+          #20190201 fix failure
+          #No match found for 'etcdmain: ready to serve client requests' in 15 seconds
+          #...
+          #2019-02-01 18:37:32.701319 I | embed: ready to serve client requests
+          #...
+          # in tests/robot/libraries/docker.robot
+          #    ${out}=  Write To Machine Until String    etcd    ${DOCKER_COMMAND} start -i etcd    etcdmain: ready to serve client requests
+          #sed -i -e 's/etcdmain: ready to serve client requests/embed: ready to serve client requests/g' tests/robot/libraries/docker.robot
+          #20190211 WAS FIXED
+
+          ##20190204 attempt to fix failures "failed after retrying for":
+          ## WAIT_TIMEOUT changed from 20s to 600s
+          #find tests/robot/ -name *robot -exec sed -i -e 's/WAIT_TIMEOUT}=     20s/WAIT_TIMEOUT}=     600s/g' {} \;
+          #find tests/robot/ -name *robot -exec sed -i -e 's/WAIT_TIMEOUT}=       20s/WAIT_TIMEOUT}=       600s/g' {} \;
+          #find tests/robot/ -name *robot -exec sed -i -e 's/WAIT_TIMEOUT}=         20s/WAIT_TIMEOUT}=         600s/g' {} \;
+          #
+          ## check TIMEOUT changes
+          #find tests/robot/ -name *robot -exec grep "^\$.*WAIT_TIMEOUT}=     600s.*" {} /dev/null \; | wc -l  ## 68
+          #find tests/robot/ -name *robot -exec grep "^\$.*WAIT_TIMEOUT}=       600s.*" {} /dev/null \; | wc -l  ## 6
+          #find tests/robot/ -name *robot -exec grep "^\$.*WAIT_TIMEOUT}=         600s.*" {} /dev/null \; | wc -l  ## 1
+
+          #list changes in repository
+          git show
+    concurrent: false
+    description: |-
+      ABOUT JENKINS:
+      This job run on Jenkins master (147.75.83.101).
+      Jenkins currently run in docker container:
+      docker run -u root -p 8080:8080 -p 50000:50000 -v jenkins_home:/var/jenkins_home -d  jenkins/jenkins:lts
+      # We use -d to start Jenkins as a service.
+      # jenkins_home -> see: sudo ls /var/lib/docker/volumes/jenkins_home/_data
+      (http://mmorejon.github.io/en/blog/migrate-jenkins-to-a-docker-container/)
+      To manage the situation inside of container use:
+      docker exec -it `docker ps | grep jenkins/jenkins:lts | awk '{print $1}'` bash
+      How to stop: docker stop jenkins/jenkins:lts
+
+      The reason: the repo which is the same for docker building and for all test suites is downloaded only once - the time is saved.
+
+      TODO:
+      parameter hostid
+      conflict ligato/ vpp-agent with contiv/vswitch
+      kafka is builded by me
+    disabled: false
+    name: 01A. PREPARE REPOSITORY INSIDE JENKINS CONTAINER
+    node: master
+    project-type: freestyle
+    properties:
+      - build-discarder:
+          artifact-days-to-keep: -1
+          artifact-num-to-keep: -1
+          days-to-keep: -1
+          num-to-keep: 7
+      - raw:
+          xml: |
+            <hudson.plugins.throttleconcurrents.ThrottleJobProperty plugin="throttle-concurrents@2.0.1">
+            <maxConcurrentPerNode>0</maxConcurrentPerNode>
+            <maxConcurrentTotal>0</maxConcurrentTotal>
+            <categories class="java.util.concurrent.CopyOnWriteArrayList" />
+            <throttleEnabled>false</throttleEnabled>
+            <throttleOption>project</throttleOption>
+            <limitOneJobWithMatchingParams>false</limitOneJobWithMatchingParams>
+            <paramsToUseForLimit />
+            </hudson.plugins.throttleconcurrents.ThrottleJobProperty>
+    publishers: []
+    scm:
+      - git:
+          branches:
+            - refs/heads/dev
+          url: https://github.com/ligato/vpp-agent.git
+    triggers: []
+    wrappers:
+      - raw:
+          xml: |
+            <hudson.plugins.ws__cleanup.PreBuildCleanup plugin="ws-cleanup@0.37">
+            <deleteDirs>false</deleteDirs>
+            <cleanupParameter />
+            <externalDelete />
+            <disableDeferredWipeout>false</disableDeferredWipeout>
+            </hudson.plugins.ws__cleanup.PreBuildCleanup>
+      - credentials-binding:
+          - username-password-separated:
+              credential-id: robot
+              password: robotpassword
+              username: robotusername

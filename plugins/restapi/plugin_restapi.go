@@ -18,6 +18,9 @@ import (
 	"net/http"
 	"sync"
 
+	"github.com/ligato/vpp-agent/plugins/vpp/abfplugin/vppcalls"
+	"github.com/ligato/vpp-agent/plugins/vpp/aclplugin"
+
 	"git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/infra"
 	"github.com/ligato/cn-infra/rpc/rest"
@@ -60,6 +63,7 @@ type Plugin struct {
 	vpeHandler  vpevppcalls.VpeVppAPI
 	teleHandler telemetryvppcalls.TelemetryVppAPI
 	// VPP Handlers
+	abfHandler vppcalls.ABFVppRead
 	aclHandler aclvppcalls.ACLVppRead
 	ifHandler  ifvppcalls.InterfaceVppRead
 	natHandler natvppcalls.NatVppRead
@@ -76,7 +80,8 @@ type Plugin struct {
 type Deps struct {
 	infra.PluginDeps
 	HTTPHandlers rest.HTTPHandlers
-	GoVppmux     govppmux.TraceAPI
+	GoVppmux     govppmux.StatsAPI
+	VPPACLPlugin aclplugin.API
 	VPPIfPlugin  ifplugin.API
 	VPPL2Plugin  *l2plugin.L2Plugin
 }
@@ -108,15 +113,17 @@ func (p *Plugin) Init() (err error) {
 	}
 
 	// VPP Indexes
+	aclIndexes := p.VPPACLPlugin.GetACLIndex()
 	ifIndexes := p.VPPIfPlugin.GetInterfaceIndex()
 	bdIndexes := p.VPPL2Plugin.GetBDIndex()
 	dhcpIndexes := p.VPPIfPlugin.GetDHCPIndex()
 
 	// Initialize handlers
 	p.vpeHandler = vpevppcalls.CompatibleVpeHandler(p.vppChan)
-	p.teleHandler = telemetryvppcalls.CompatibleTelemetryHandler(p.vppChan)
+	p.teleHandler = telemetryvppcalls.CompatibleTelemetryHandler(p.vppChan, p.GoVppmux)
 
 	// VPP handlers
+	p.abfHandler = vppcalls.CompatibleABFVppHandler(p.vppChan, p.dumpChan, aclIndexes, ifIndexes, p.Log)
 	p.aclHandler = aclvppcalls.CompatibleACLVppHandler(p.vppChan, p.dumpChan, ifIndexes, p.Log)
 	p.ifHandler = ifvppcalls.CompatibleInterfaceVppHandler(p.vppChan, p.Log)
 	p.natHandler = natvppcalls.CompatibleNatVppHandler(p.vppChan, ifIndexes, dhcpIndexes, p.Log)
@@ -144,6 +151,7 @@ func (p *Plugin) AfterInit() (err error) {
 	p.Log.Debug("REST API Plugin is up and running")
 
 	// VPP handlers
+	p.registerABFHandler()
 	p.registerAccessListHandlers()
 	p.registerInterfaceHandlers()
 	p.registerNatHandlers()
@@ -157,10 +165,11 @@ func (p *Plugin) AfterInit() (err error) {
 	//}
 
 	// Telemetry, command, index, tracer
-	p.registerTracerHandler()
 	p.registerTelemetryHandlers()
 	p.registerCommandHandler()
 	p.registerIndexHandlers()
+
+	p.registerStatsHandler()
 
 	return nil
 }
@@ -203,8 +212,9 @@ func getIndexPageItems() map[string][]indexItem {
 			{Name: "Runtime", Path: resturl.TRuntime},
 			{Name: "Node count", Path: resturl.TNodeCount},
 		},
-		"Tracer": {
+		"Stats": {
 			{Name: "VPP Binary API", Path: resturl.Tracer},
+			{Name: "Configurator Stats", Path: resturl.ConfiguratorStats},
 		},
 	}
 	return idxMap
@@ -214,10 +224,11 @@ func getIndexPageItems() map[string][]indexItem {
 // REST security is enabled in plugin
 func getPermissionsGroups() []*access.PermissionGroup {
 	tracerPg := &access.PermissionGroup{
-		Name: "tracer",
+		Name: "stats",
 		Permissions: []*access.PermissionGroup_Permissions{
 			newPermission(resturl.Index, GET),
 			newPermission(resturl.Tracer, GET),
+			newPermission(resturl.ConfiguratorStats, GET),
 		},
 	}
 	telemetryPg := &access.PermissionGroup{

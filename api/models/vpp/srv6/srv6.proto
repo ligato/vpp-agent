@@ -9,12 +9,12 @@ option (gogoproto.messagename_all) = true;
 
 message LocalSID {
     string sid = 1;                      /* segment id (IPv6 Address) */
-    /*TODO reevalute fib_table_id meaning -> possible remodeling (vpp docs talk about installing LocalSID always in main FIB table(possible that it means that this setting is DX,DT target FIB table), but code comment talks about this setting as LocalSID installation FIB table)*/
-    uint32 fib_table_id = 2;             /* ID of FIB table where to install localsid entry
+    uint32 installation_vrf_id = 2;      /* ID of IPv6 VRF table where to install LocalSID routing components
                                             (LocalSids with End.AD function ignore this setting due to missing setting
                                             in the API. The End.AD functionality is separated from the SRv6 functionality
                                             and have no binary API. It has only the CLI API and that doesn't have
-                                            the FIB table setting configurable.) */
+                                            the installation vrf id (in VPP API called FIB table) setting configurable.)
+                                            Non-zero VRF has to be explicitly created (see api/models/vpp/l3/vrf.proto) */
 
     /* Configuration for end functions (all end functions are mutually exclusive) */
     oneof end_function {
@@ -29,6 +29,7 @@ message LocalSID {
         EndAD end_function_AD = 11;
     }
 
+    /* TODO recheck whether PSP is not Localsid-scoped setting instead of some-end-functions-scoped setting */
     /* End function behavior of simple endpoint */
     message End {
         bool psp = 1;                    /* use PSP (penultimate segment POP of the SRH) or by default use USP (Ultimate Segment Pop of the SRH) */
@@ -46,7 +47,8 @@ message LocalSID {
         bool psp = 1;                    /* use PSP (penultimate segment POP of the SRH) or by default use USP (Ultimate Segment Pop of the SRH) */
         uint32 vrf_id = 2;               /* vrf index of IPv6 table that should be used for lookup.
                                            vrf_index and fib_table_id should refer to the same routing table. VRF index refer to it from client side
-                                           and FIB table id from VPP-internal side (index of memory allocated structure from pool)(source: https://wiki.fd.io/view/VPP/Per-feature_Notes). */
+                                           and FIB table id from VPP-internal side (index of memory allocated structure from pool)(source: https://wiki.fd.io/view/VPP/Per-feature_Notes).
+                                           Non-zero VRF has to be explicitly created (see api/models/vpp/l3/vrf.proto) */
     }
 
     /* End function behavior of endpoint with decapsulation and Layer-2 cross-connect (or DX2 with egress VLAN rewrite when VLAN notzero - not supported this variant yet)*/
@@ -71,14 +73,16 @@ message LocalSID {
     message EndDT4 {
         uint32 vrf_id = 1;               /* vrf index of IPv4 table that should be used for lookup.
                                             vrf_index and fib_table_id should refer to the same routing table. VRF index refer to it from client side
-                                            and FIB table id from VPP-internal side (index of memory allocated structure from pool)(source: https://wiki.fd.io/view/VPP/Per-feature_Notes). */
+                                            and FIB table id from VPP-internal side (index of memory allocated structure from pool)(source: https://wiki.fd.io/view/VPP/Per-feature_Notes).
+                                            Non-zero VRF has to be explicitly created (see api/models/vpp/l3/vrf.proto) */
     }
 
     /* End function behavior of endpoint with decapsulation and specific IPv6 table lookup*/
     message EndDT6 {
         uint32 vrf_id = 1;               /* vrf index of IPv6 table that should be used for lookup.
                                             vrf_index and fib_table_id should refer to the same routing table. VRF index refer to it from client side
-                                            and FIB table id from VPP-internal side (index of memory allocated structure from pool)(source: https://wiki.fd.io/view/VPP/Per-feature_Notes). */
+                                            and FIB table id from VPP-internal side (index of memory allocated structure from pool)(source: https://wiki.fd.io/view/VPP/Per-feature_Notes).
+                                            Non-zero VRF has to be explicitly created (see api/models/vpp/l3/vrf.proto) */
     }
 
     /* End function behavior of dynamic segment routing proxy endpoint */
@@ -93,7 +97,8 @@ message LocalSID {
 /* Model for SRv6 policy (policy without at least one policy segment is only cached in ligato and not written to VPP)*/
 message Policy {
     string bsid = 1;                     /* binding SID (IPv6 Address) */
-    uint32 fib_table_id = 2;             /* ID of FIB table where to install Policy entry */
+    uint32 installation_vrf_id = 2;      /* ID of IPv6 VRF table where to install Policy routing components (for loadbalancing/spray are used VPP features that are using VRF table)
+                                            Non-zero VRF has to be explicitly created (see api/models/vpp/l3/vrf.proto) */
     bool srh_encapsulation = 3;          /* are SR headers handled by encapsulation? (no means insertion of SR headers) */
     bool spray_behaviour = 4;            /* spray(multicast) to all policy segments? (no means to use PolicySegment.weight to loadbalance traffic)*/
 
@@ -121,11 +126,12 @@ message Steering {
         L3Traffic l3_traffic = 4;
     }
 
-    message L2Traffic {                 /* L2 traffic that should be steered into SR policy */
+    message L2Traffic {                  /* L2 traffic that should be steered into SR policy */
         string interface_name = 1;       /* name of interface with incoming traffic that should be steered to SR policy */
     }
-    message L3Traffic {                 /* L3 traffic that should be steered into SR policy */
-        uint32 fib_table_id = 1;          /* ID of FIB table where to install FIB entry for the BSID */
+    message L3Traffic {                  /* L3 traffic that should be steered into SR policy */
+        uint32 installation_vrf_id = 1;  /* ID of IPv4/IPv6 VRF table where to install L3 Steering routing components (VRF table type (IPv4/IPv6) is decided by prefix_address value)
+                                            Non-zero VRF has to be explicitly created (see api/models/vpp/l3/vrf.proto) */
         string prefix_address = 2;       /* IPv4/IPv6 prefix address(CIRD format) of traffic destination. All traffic with given destination will be steered to given SR policy */
     }
 }

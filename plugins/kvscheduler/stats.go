@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"github.com/ligato/vpp-agent/pkg/metrics"
+	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 )
 
 var (
@@ -32,30 +33,20 @@ func init() {
 	stats.GraphMethods.Methods = make(metrics.Calls)
 	stats.AllDescriptors.Methods = make(metrics.Calls)
 	stats.Descriptors = make(map[string]*StructStats)
-}
-
-/*func GetDescriptorStats() map[string]metrics.Calls {
-	ss := make(map[string]metrics.Calls, len(stats.Descriptors))
-	statsMu.RLock()
-	for d, ds := range stats.Descriptors {
-		cc := make(metrics.Calls, len(ds))
-		for c, cs := range ds {
-			css := *cs
-			cc[c] = &css
-		}
-		ss[d] = cc
+	stats.TxnStats.Methods = make(metrics.Calls)
+	stats.TxnStats.OperationCount = make(map[string]uint64)
+	stats.TxnStats.ValueStateCount = make(map[string]uint64)
+	for state := range kvs.ValueState_value {
+		stats.TxnStats.ValueStateCount[state] = 0
 	}
-	statsMu.RUnlock()
-	return ss
-}*/
-
-/*func GetGraphStats() *metrics.CallStats {
-	s := make(metrics.Calls, len(stats.Descriptors))
-	statsMu.RLock()
-	*s = stats.Graph
-	statsMu.RUnlock()
-	return s
-}*/
+	for op, opVal := range kvs.TxnOperation_name {
+		if op == int32(kvs.TxnOperation_UNDEFINED) ||
+			op == int32(kvs.TxnOperation_VALIDATE) {
+			continue
+		}
+		stats.TxnStats.OperationCount[opVal] = 0
+	}
+}
 
 func GetStats() *Stats {
 	s := new(Stats)
@@ -66,8 +57,7 @@ func GetStats() *Stats {
 }
 
 type Stats struct {
-	TransactionsProcessed uint64
-
+	TxnStats       TxnStats
 	GraphMethods   StructStats
 	AllDescriptors StructStats
 	Descriptors    map[string]*StructStats
@@ -79,16 +69,19 @@ func (s *Stats) addDescriptor(name string) {
 	}
 }
 
+type TxnStats struct {
+	TotalProcessed  uint64
+	OperationCount  map[string]uint64
+	ValueStateCount map[string]uint64
+	ErrorCount      uint64
+	Methods         metrics.Calls
+}
+
 type StructStats struct {
 	Methods metrics.Calls `json:"-,omitempty"`
 }
 
 func (s *StructStats) MarshalJSON() ([]byte, error) {
-	/*d := make(map[string]*metrics.CallStats, len(s.Methods))
-	for _, ms := range s.Methods {
-		m := fmt.Sprintf("%s()", ms.Name)
-		d[m] = ms
-	}*/
 	return json.Marshal(s.Methods)
 }
 
@@ -126,6 +119,35 @@ func trackGraphMethod(m string) func() {
 		statsMu.Lock()
 		method.Increment(took)
 		statsMu.Unlock()
+	}
+}
+
+func trackTransactionMethod(m string) func() {
+	t := time.Now()
+	s := stats.TxnStats
+	return func() {
+		took := time.Since(t)
+		statsMu.Lock()
+		ms, tracked := s.Methods[m]
+		if !tracked {
+			ms = &metrics.CallStats{Name: m}
+			s.Methods[m] = ms
+		}
+		ms.Increment(took)
+		statsMu.Unlock()
+	}
+}
+
+func updateTransactionStats(execOps kvs.RecordedTxnOps) {
+	statsMu.Lock()
+	defer statsMu.Unlock()
+	stats.TxnStats.TotalProcessed++
+	for _, op := range execOps {
+		if op.NewErr != nil {
+			stats.TxnStats.ErrorCount++
+		}
+		stats.TxnStats.OperationCount[op.Operation.String()]++
+		stats.TxnStats.ValueStateCount[op.NewState.String()]++
 	}
 }
 

@@ -26,7 +26,7 @@ import (
 	"github.com/ligato/cn-infra/infra"
 	"github.com/pkg/errors"
 
-	"github.com/ligato/vpp-agent/api/models/vpp/punt"
+	vpp_punt "github.com/ligato/vpp-agent/api/models/vpp/punt"
 	"github.com/ligato/vpp-agent/pkg/models"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
@@ -35,8 +35,8 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/puntplugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/vpp/puntplugin/vppcalls"
 
-	_ "github.com/ligato/vpp-agent/plugins/vpp/puntplugin/vppcalls/vpp1810"
 	_ "github.com/ligato/vpp-agent/plugins/vpp/puntplugin/vppcalls/vpp1901"
+	_ "github.com/ligato/vpp-agent/plugins/vpp/puntplugin/vppcalls/vpp1904"
 )
 
 // PuntPlugin configures VPP punt to host or unix domain socket entries and IP redirect entries using GoVPP.

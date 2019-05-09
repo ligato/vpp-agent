@@ -188,7 +188,7 @@ func (node *node) SetTargets(targetsDef []RelationTargetDef) {
 			}
 			node.addDelEdges(node.targetsDef[j], true)
 			// create new edges
-			if !targetsDef[i].WithKeySelector() {
+			if targetsDef[i].Singleton() {
 				target.MatchingKeys = utils.NewSingletonKeySet("")
 			} else {
 				// selector
@@ -207,7 +207,7 @@ func (node *node) SetTargets(targetsDef []RelationTargetDef) {
 			// new target definition
 			node.addDelEdges(targetsDef[i], false)
 			node.addTargetEntry(i, targetsDef[i].Relation, targetsDef[i].Label,
-				targetsDef[i].WithKeySelector())
+				targetsDef[i].Singleton())
 			target := &node.targets[i]
 			target.ExpectedKey = expectedKey(targetsDef[i])
 			node.iterEveryEdge(targetsDef[i], func(key string) {
@@ -241,7 +241,7 @@ func (node *node) SetTargets(targetsDef []RelationTargetDef) {
 }
 
 // addTargetEntry adds new target entry at the given index.
-func (node *node) addTargetEntry(index int, relation, label string, withSelector bool) {
+func (node *node) addTargetEntry(index int, relation, label string, singleton bool) {
 	node.targets = append(node.targets, Target{})
 	if index < len(node.targets)-1 {
 		copy(node.targets[index+1:], node.targets[index:])
@@ -250,7 +250,7 @@ func (node *node) addTargetEntry(index int, relation, label string, withSelector
 	node.targets[index].Label = label
 	node.targets[index].ExpectedKey = ""
 	node.targets[index].MatchingKeys = utils.NewSliceBasedKeySet()
-	if !withSelector {
+	if singleton {
 		node.targets[index].MatchingKeys = utils.NewSingletonKeySet("")
 	} else {
 		// selector
@@ -329,6 +329,7 @@ func (node *node) addToTargets(node2 *node, target *Target) {
 	if !updated {
 		return
 	}
+	node.graph.unsaved.Add(node.key)
 
 	// update sources of node2
 	node2.addToSources(node, target)

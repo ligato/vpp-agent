@@ -15,16 +15,23 @@
 package descriptor
 
 import (
+	"github.com/pkg/errors"
+
 	"github.com/ligato/cn-infra/logging"
+	"github.com/ligato/vpp-agent/api/models/vpp/l3"
 	srv6 "github.com/ligato/vpp-agent/api/models/vpp/srv6"
 	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/vpp/srplugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/vpp/srplugin/vppcalls"
-	"github.com/pkg/errors"
 )
 
-// PolicyDescriptorName is the name of the descriptor for VPP policies
-const PolicyDescriptorName = "vpp-sr-policy"
+const (
+	// PolicyDescriptorName is the name of the descriptor for VPP SRv6 policies
+	PolicyDescriptorName = "vpp-sr-policy"
+
+	// dependency labels
+	policyVRFDep = "sr-policy-vrf-table-exists"
+)
 
 // PolicyDescriptor teaches KVScheduler how to configure VPP SRv6 policies.
 //
@@ -51,36 +58,34 @@ type PolicyMetadata struct {
 }
 
 // NewPolicyDescriptor creates a new instance of the Srv6 policy descriptor.
-func NewPolicyDescriptor(srHandler vppcalls.SRv6VppAPI, log logging.PluginLogger) *PolicyDescriptor {
-	return &PolicyDescriptor{
+func NewPolicyDescriptor(srHandler vppcalls.SRv6VppAPI, log logging.PluginLogger) *scheduler.KVDescriptor {
+	ctx := &PolicyDescriptor{
 		log:       log.NewLogger("policy-descriptor"),
 		srHandler: srHandler,
 	}
-}
 
-// GetDescriptor returns descriptor suitable for registration (via adapter) with
-// the KVScheduler.
-func (d *PolicyDescriptor) GetDescriptor() *adapter.PolicyDescriptor {
-	return &adapter.PolicyDescriptor{
+	typedDescr := &adapter.PolicyDescriptor{
 		Name:               PolicyDescriptorName,
 		NBKeyPrefix:        srv6.ModelPolicy.KeyPrefix(),
 		ValueTypeName:      srv6.ModelPolicy.ProtoName(),
 		KeySelector:        srv6.ModelPolicy.IsKeyValid,
 		KeyLabel:           srv6.ModelPolicy.StripKeyPrefix,
-		ValueComparator:    d.EquivalentPolicies,
-		Validate:           d.Validate,
-		Create:             d.Create,
-		Delete:             d.Delete,
-		Update:             d.Update,
-		UpdateWithRecreate: d.UpdateWithRecreate,
+		ValueComparator:    ctx.EquivalentPolicies,
+		Validate:           ctx.Validate,
+		Create:             ctx.Create,
+		Delete:             ctx.Delete,
+		Update:             ctx.Update,
+		UpdateWithRecreate: ctx.UpdateWithRecreate,
+		Dependencies:       ctx.Dependencies,
 		WithMetadata:       true,
 	}
+	return adapter.NewPolicyDescriptor(typedDescr)
 }
 
 // Validate validates VPP policies.
 func (d *PolicyDescriptor) Validate(key string, policy *srv6.Policy) error {
-	if policy.GetFibTableId() < 0 {
-		return scheduler.NewInvalidValueError(errors.Errorf("fibtableid can't be lower than zero, input value %v)", policy.GetFibTableId()), "fibtableid")
+	if policy.GetInstallationVrfId() < 0 {
+		return scheduler.NewInvalidValueError(errors.Errorf("installationVrfId can't be lower than zero, input value %v)", policy.GetInstallationVrfId()), "installationVrfId")
 	}
 	_, err := ParseIPv6(policy.GetBsid())
 	if err != nil {
@@ -194,6 +199,16 @@ func (d *PolicyDescriptor) UpdateWithRecreate(key string, oldPolicy, newPolicy *
 	return !d.equivalentPolicyAttributes(oldPolicy, newPolicy) // update with recreate only when policy attributes changes because segment list change can be handled more efficiently
 }
 
+func (d *PolicyDescriptor) Dependencies(key string, policy *srv6.Policy) (dependencies []scheduler.Dependency) {
+	if policy.InstallationVrfId != 0 {
+		dependencies = append(dependencies, scheduler.Dependency{
+			Label: policyVRFDep,
+			Key:   vpp_l3.VrfTableKey(policy.InstallationVrfId, vpp_l3.VrfTable_IPV6),
+		})
+	}
+	return dependencies
+}
+
 // EquivalentPolicies determines whether 2 policies are logically equal. This comparison takes into consideration also
 // semantics that couldn't be modeled into proto models (i.e. SID is IPv6 address and not only string)
 func (d *PolicyDescriptor) EquivalentPolicies(key string, oldPolicy, newPolicy *srv6.Policy) bool {
@@ -202,7 +217,7 @@ func (d *PolicyDescriptor) EquivalentPolicies(key string, oldPolicy, newPolicy *
 }
 
 func (d *PolicyDescriptor) equivalentPolicyAttributes(oldPolicy, newPolicy *srv6.Policy) bool {
-	return oldPolicy.FibTableId == newPolicy.FibTableId &&
+	return oldPolicy.InstallationVrfId == newPolicy.InstallationVrfId &&
 		equivalentSIDs(oldPolicy.Bsid, newPolicy.Bsid) &&
 		oldPolicy.SprayBehaviour == newPolicy.SprayBehaviour &&
 		oldPolicy.SrhEncapsulation == newPolicy.SrhEncapsulation

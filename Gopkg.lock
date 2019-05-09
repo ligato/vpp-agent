@@ -3,7 +3,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:0fffc9a7991139f3766c9df4afedf9ae0f96cf4ae892f22269f02e9c07e690ec"
+  digest = "1:833783cac162a09c16538f5ecf6e03f90d8b09babb4d54497a4102a1444b69ea"
   name = "git.fd.io/govpp.git"
   packages = [
     "adapter",
@@ -18,7 +18,7 @@
     "examples/bin_api/memclnt",
   ]
   pruneopts = "UT"
-  revision = "061dc1ca5dca4f87cb77b0efb4202b2bb863f4cf"
+  revision = "6acebecfc33da246685c1cc14b2fc8bc6be3191b"
 
 [[projects]]
   branch = "master"
@@ -100,14 +100,6 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:c3806bfe3d2c9baa0d4ebd90f0a59c7505969bcaab024b5185d20ccd66c9400c"
-  name = "github.com/buger/goterm"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "6d19e6a8df12fdfc44a90a24b677a6d04a80b91f"
-
-[[projects]]
-  branch = "master"
   digest = "1:1ed8f94f16010f9e1a419a818ec8ed5765d04561e6bfcc872e3a5a16fbae08b2"
   name = "github.com/containerd/console"
   packages = ["."]
@@ -123,11 +115,12 @@
   revision = "b2b946a77f5973f420514090d6f6dd58b08303f0"
 
 [[projects]]
-  digest = "1:7ae4616edd396840ccc1506d287211ef883d3e93604dde0c9d1dd5721bb449d5"
+  digest = "1:ea99507d649edfc9d5cfb1ceaf680545cfb4836a88d80f0de1a2f3781ff1765e"
   name = "github.com/coreos/etcd"
   packages = [
     "auth/authpb",
     "clientv3",
+    "clientv3/concurrency",
     "clientv3/namespace",
     "etcdserver/api/v3rpc/rpctypes",
     "etcdserver/etcdserverpb",
@@ -354,7 +347,7 @@
   version = "v1.1.0"
 
 [[projects]]
-  digest = "1:f5ccd717b5f093cbabc51ee2e7a5979b92f17d217f9031d6d64f337101c408e4"
+  digest = "1:c6e109ed32d266dea072dd6d00e3ee26fb960f86ed0ba7f6a07e5d2bfdeab868"
   name = "github.com/gogo/protobuf"
   packages = [
     "gogoproto",
@@ -388,8 +381,8 @@
     "vanity/command",
   ]
   pruneopts = "T"
-  revision = "4cbf7e384e768b4e01799441fdf2a706a5635ae7"
-  version = "v1.2.0"
+  revision = "ba06b47c162d49f2af050fb4c75bcbc86a159d5c"
+  version = "v1.2.1"
 
 [[projects]]
   digest = "1:a93379ca78a24c7fad97ff3bffdc7f2285ff61f26dd6beedeab0e1391718e95c"
@@ -498,8 +491,8 @@
   version = "v1.0"
 
 [[projects]]
-  branch = "master"
-  digest = "1:f886f7e75be90937b494481fd4ea9a950339ea9c587ad3ab2b932b33ce8c641f"
+  branch = "dev"
+  digest = "1:5485ade83659041e023daf65c3eba8d5799a26f4b6e8883405bbb3d03fbc3d76"
   name = "github.com/ligato/cn-infra"
   packages = [
     "agent",
@@ -542,7 +535,7 @@
     "utils/safeclose",
   ]
   pruneopts = "T"
-  revision = "7728b023d39d088205a27be7cf1048d98467f93d"
+  revision = "629254303e0cbd7584398474bb07c13378cf7c20"
 
 [[projects]]
   branch = "master"
@@ -767,12 +760,12 @@
   revision = "e2704e165165ec55d062f5919b4b29494e9fa790"
 
 [[projects]]
-  digest = "1:274f67cb6fed9588ea2521ecdac05a6d62a8c51c074c1fccc6a49a40ba80e925"
+  branch = "master"
+  digest = "1:a3b8912deeef29007fab9a13a9f21b9e9b59c621a2ed61e2fe7b37320a71fbd5"
   name = "github.com/satori/go.uuid"
   packages = ["."]
   pruneopts = "UT"
-  revision = "f58768cc1a7a7e77a3bd49e98cdd21419399b6a3"
-  version = "v1.2.0"
+  revision = "b2ce2384e17bbe0c6d34077efa39dbab3e09123b"
 
 [[projects]]
   digest = "1:76b02b3f516299ddfed21a4e7ce26cda0b9a57f14575bfe4aa2d644ea0e8e24c"
@@ -999,9 +992,9 @@
     "git.fd.io/govpp.git/api",
     "git.fd.io/govpp.git/cmd/binapi-generator",
     "git.fd.io/govpp.git/core",
-    "github.com/buger/goterm",
     "github.com/coreos/go-iptables/iptables",
     "github.com/fsouza/go-dockerclient",
+    "github.com/ghodss/yaml",
     "github.com/go-errors/errors",
     "github.com/gogo/protobuf/gogoproto",
     "github.com/gogo/protobuf/jsonpb",

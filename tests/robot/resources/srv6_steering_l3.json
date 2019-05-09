@@ -1,7 +1,7 @@
 {
   "name": "${name}",
   "l3_traffic": {
-    "fib_table_id": ${fibtable},
+    "installation_vrf_id": ${installationVrfId},
     "prefix_address": "${prefixAddress}"
   },
   "policy_bsid": "${bsid}"

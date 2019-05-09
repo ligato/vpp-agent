@@ -28,6 +28,8 @@ type configuratorServer struct {
 
 // Get retrieves actual configuration data.
 func (svc *configuratorServer) Get(context.Context, *rpc.GetRequest) (*rpc.GetResponse, error) {
+	defer trackOperation("Get")()
+
 	config := newConfig()
 
 	util.PlaceProtos(svc.dispatch.ListData(), config.LinuxConfig, config.VppConfig)
@@ -39,8 +41,9 @@ func (svc *configuratorServer) Get(context.Context, *rpc.GetRequest) (*rpc.GetRe
 func (svc *configuratorServer) Update(ctx context.Context, req *rpc.UpdateRequest) (*rpc.UpdateResponse, error) {
 	ctx, task := trace.NewTask(ctx, "grpc.Update")
 	defer task.End()
-
 	trace.Logf(ctx, "updateData", "%+v", req)
+
+	defer trackOperation("Update")()
 
 	protos := util.ExtractProtos(req.Update.VppConfig, req.Update.LinuxConfig)
 
@@ -72,6 +75,8 @@ func (svc *configuratorServer) Update(ctx context.Context, req *rpc.UpdateReques
 
 // Delete removes configuration data present in data request from the VPP/linux
 func (svc *configuratorServer) Delete(ctx context.Context, req *rpc.DeleteRequest) (*rpc.DeleteResponse, error) {
+	defer trackOperation("Delete")()
+
 	protos := util.ExtractProtos(req.Delete.VppConfig, req.Delete.LinuxConfig)
 
 	var kvPairs []orchestrator.KeyVal

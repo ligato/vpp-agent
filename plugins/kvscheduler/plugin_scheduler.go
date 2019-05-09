@@ -222,11 +222,21 @@ func (s *Scheduler) Close() error {
 	return nil
 }
 
-// RegisterKVDescriptor registers descriptor for a set of selected
+// RegisterKVDescriptor registers descriptor(s) for a set of selected
 // keys. It should be called in the Init phase of agent plugins.
 // Every key-value pair must have at most one descriptor associated with it
 // (none for derived values expressing properties).
-func (s *Scheduler) RegisterKVDescriptor(descriptor *kvs.KVDescriptor) error {
+func (s *Scheduler) RegisterKVDescriptor(descriptors ...*kvs.KVDescriptor) error {
+	for _, d := range descriptors {
+		err := s.registerKVDescriptor(d)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (s *Scheduler) registerKVDescriptor(descriptor *kvs.KVDescriptor) error {
 	// TODO: validate descriptor
 	if s.registry.GetDescriptor(descriptor.Name) != nil {
 		return kvs.ErrDescriptorExists

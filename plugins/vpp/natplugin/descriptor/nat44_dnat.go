@@ -20,11 +20,13 @@ import (
 	"github.com/pkg/errors"
 
 	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
+	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
 	nat "github.com/ligato/vpp-agent/api/models/vpp/nat"
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	vpp_ifdescriptor "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/descriptor"
 	"github.com/ligato/vpp-agent/plugins/vpp/natplugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/vpp/natplugin/vppcalls"
+	"strconv"
 )
 
 const (
@@ -38,6 +40,7 @@ const (
 
 	// dependency labels
 	mappingInterfaceDep = "interface-exists"
+	mappingVrfDep = "vrf-table-exists"
 )
 
 // A list of non-retriable errors:
@@ -54,33 +57,29 @@ type DNAT44Descriptor struct {
 }
 
 // NewDNAT44Descriptor creates a new instance of the DNAT44 descriptor.
-func NewDNAT44Descriptor(natHandler vppcalls.NatVppAPI, log logging.PluginLogger) *DNAT44Descriptor {
-
-	return &DNAT44Descriptor{
+func NewDNAT44Descriptor(natHandler vppcalls.NatVppAPI, log logging.PluginLogger) *kvs.KVDescriptor {
+	ctx := &DNAT44Descriptor{
 		natHandler: natHandler,
 		log:        log.NewLogger("nat44-dnat-descriptor"),
 	}
-}
-
-// GetDescriptor returns descriptor suitable for registration (via adapter) with
-// the KVScheduler.
-func (d *DNAT44Descriptor) GetDescriptor() *adapter.DNAT44Descriptor {
-	return &adapter.DNAT44Descriptor{
+	
+	typedDescr := &adapter.DNAT44Descriptor{
 		Name:            DNAT44DescriptorName,
 		NBKeyPrefix:     nat.ModelDNat44.KeyPrefix(),
 		ValueTypeName:   nat.ModelDNat44.ProtoName(),
 		KeySelector:     nat.ModelDNat44.IsKeyValid,
 		KeyLabel:        nat.ModelDNat44.StripKeyPrefix,
-		ValueComparator: d.EquivalentDNAT44,
-		Validate:        d.Validate,
-		Create:          d.Create,
-		Delete:          d.Delete,
-		Update:          d.Update,
-		Retrieve:        d.Retrieve,
-		Dependencies:    d.Dependencies,
+		ValueComparator: ctx.EquivalentDNAT44,
+		Validate:        ctx.Validate,
+		Create:          ctx.Create,
+		Delete:          ctx.Delete,
+		Update:          ctx.Update,
+		Retrieve:        ctx.Retrieve,
+		Dependencies:    ctx.Dependencies,
 		// retrieve interfaces and allocated IP addresses first
 		RetrieveDependencies: []string{vpp_ifdescriptor.InterfaceDescriptorName, vpp_ifdescriptor.DHCPDescriptorName},
 	}
+	return adapter.NewDNAT44Descriptor(typedDescr)
 }
 
 // EquivalentDNAT44 compares two instances of DNAT44 for equality.
@@ -215,19 +214,24 @@ func (d *DNAT44Descriptor) Retrieve(correlate []adapter.DNAT44KVWithMetadata) (
 	return retrieved, nil
 }
 
-// Dependencies lists external interfaces from mappings as dependencies.
+// Dependencies lists external interfaces and non-zero VRFs from mappings as dependencies.
 func (d *DNAT44Descriptor) Dependencies(key string, dnat *nat.DNat44) (dependencies []kvs.Dependency) {
-	// collect referenced external interfaces
+	// collect referenced external interfaces and VRFs
 	externalIfaces := make(map[string]struct{})
+	vrfs := make(map[uint32]struct{})
 	for _, mapping := range dnat.StMappings {
 		if mapping.ExternalInterface != "" {
 			externalIfaces[mapping.ExternalInterface] = struct{}{}
+		}
+		for _, localIP := range mapping.LocalIps {
+			vrfs[localIP.VrfId] = struct{}{}
 		}
 	}
 	for _, mapping := range dnat.IdMappings {
 		if mapping.Interface != "" {
 			externalIfaces[mapping.Interface] = struct{}{}
 		}
+		vrfs[mapping.VrfId] = struct{}{}
 	}
 
 	// for every external interface add one dependency
@@ -237,6 +241,17 @@ func (d *DNAT44Descriptor) Dependencies(key string, dnat *nat.DNat44) (dependenc
 			Key:   interfaces.InterfaceKey(externalIface),
 		})
 	}
+	// for every non-zero VRF add one dependency
+	for vrf := range vrfs {
+		if vrf == 0 {
+			continue
+		}
+		dependencies = append(dependencies, kvs.Dependency{
+			Label: mappingVrfDep + "-" + strconv.Itoa(int(vrf)),
+			Key:   l3.VrfTableKey(vrf, l3.VrfTable_IPV4),
+		})
+	}
+
 	return dependencies
 }
 

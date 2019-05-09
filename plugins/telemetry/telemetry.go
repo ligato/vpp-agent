@@ -15,26 +15,28 @@
 package telemetry
 
 import (
+	"context"
+	"fmt"
 	"sync"
 	"time"
 
 	"github.com/ligato/cn-infra/infra"
+	"github.com/ligato/cn-infra/logging"
 	prom "github.com/ligato/cn-infra/rpc/prometheus"
 	"github.com/ligato/cn-infra/servicelabel"
-	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 	"github.com/ligato/vpp-agent/plugins/telemetry/vppcalls"
 
-	_ "github.com/ligato/vpp-agent/plugins/telemetry/vppcalls/vpp1810"
 	_ "github.com/ligato/vpp-agent/plugins/telemetry/vppcalls/vpp1901"
+	_ "github.com/ligato/vpp-agent/plugins/telemetry/vppcalls/vpp1904"
 )
 
 const (
 	// default period between updates
 	defaultUpdatePeriod = time.Second * 30
 	// minimum period between updates
-	minimumUpdatePeriod = time.Second * 5
+	minimumUpdatePeriod = time.Second * 1
 )
 
 // Plugin registers Telemetry Plugin
@@ -57,33 +59,8 @@ type Plugin struct {
 type Deps struct {
 	infra.PluginDeps
 	ServiceLabel servicelabel.ReaderAPI
-	GoVppmux     govppmux.API
+	GoVppmux     govppmux.StatsAPI
 	Prometheus   prom.API
-}
-
-type runtimeStats struct {
-	threadName string
-	threadID   uint
-	itemName   string
-	metrics    map[string]prometheus.Gauge
-}
-
-type memoryStats struct {
-	threadName string
-	threadID   uint
-	metrics    map[string]prometheus.Gauge
-}
-
-type buffersStats struct {
-	threadID  uint
-	itemName  string
-	itemIndex uint
-	metrics   map[string]prometheus.Gauge
-}
-
-type nodeCounterStats struct {
-	itemName string
-	metrics  map[string]prometheus.Gauge
 }
 
 // Init initializes Telemetry Plugin
@@ -156,7 +133,7 @@ func (p *Plugin) periodicUpdates() {
 	}
 	defer vppCh.Close()
 
-	p.handler = vppcalls.CompatibleTelemetryHandler(vppCh)
+	p.handler = vppcalls.CompatibleTelemetryHandler(vppCh, p.GoVppmux)
 
 	p.Log.Debugf("starting periodic updates (%v)", p.updatePeriod)
 
@@ -164,12 +141,24 @@ func (p *Plugin) periodicUpdates() {
 		select {
 		// Delay period between updates
 		case <-time.After(p.updatePeriod):
-			p.updatePrometheus()
+			ctx := context.Background()
+			p.updatePrometheus(ctx)
 
 		// Plugin has stopped.
 		case <-p.quit:
 			p.Log.Debugf("stopping periodic updates")
 			return
 		}
+	}
+}
+
+func (p *Plugin) tracef(f string, a ...interface{}) {
+	if debug && p.Log.GetLevel() >= logging.DebugLevel {
+		s := fmt.Sprintf(f, a...)
+		if len(s) > 250 {
+			p.Log.Debugf("%s... (%d bytes omitted) ...%s", s[:200], len(s)-250, s[len(s)-50:])
+			return
+		}
+		p.Log.Debug(s)
 	}
 }

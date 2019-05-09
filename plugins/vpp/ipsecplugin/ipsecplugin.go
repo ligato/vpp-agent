@@ -32,8 +32,8 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/ipsecplugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/vpp/ipsecplugin/vppcalls"
 
-	_ "github.com/ligato/vpp-agent/plugins/vpp/ipsecplugin/vppcalls/vpp1810"
 	_ "github.com/ligato/vpp-agent/plugins/vpp/ipsecplugin/vppcalls/vpp1901"
+	_ "github.com/ligato/vpp-agent/plugins/vpp/ipsecplugin/vppcalls/vpp1904"
 )
 
 // IPSecPlugin configures VPP security policy databases and security associations using GoVPP.

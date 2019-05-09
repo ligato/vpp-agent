@@ -17,8 +17,7 @@ type NodeStats struct {
 // NodeCounters represents node counters.
 type NodeCounters struct {
 	NodeIndex uint32
-	// TODO: node name is not currently retrievable via stats API (will be most likely added in 19.04)
-	//NodeName string
+	NodeName  string // requires VPP 19.04+
 
 	Clocks   uint64
 	Vectors  uint64
@@ -34,8 +33,7 @@ type InterfaceStats struct {
 // InterfaceCounters represents interface counters.
 type InterfaceCounters struct {
 	InterfaceIndex uint32
-	// TODO: interface name is not currently retrievable via stats API (will be most likely added in 19.04)
-	//InterfaceName string
+	InterfaceName  string // requires VPP 19.04+
 
 	RxPackets uint64
 	RxBytes   uint64
@@ -70,10 +68,24 @@ type ErrorCounter struct {
 	Value       uint64
 }
 
+// BufferStats represents statistics per buffer pool.
+type BufferStats struct {
+	Buffer map[string]BufferPool
+}
+
+// BufferPool represents buffer pool.
+type BufferPool struct {
+	PoolName  string
+	Cached    float64
+	Used      float64
+	Available float64
+}
+
 // StatsProvider provides the methods for getting statistics.
 type StatsProvider interface {
 	GetSystemStats() (*SystemStats, error)
 	GetNodeStats() (*NodeStats, error)
 	GetInterfaceStats() (*InterfaceStats, error)
 	GetErrorStats(names ...string) (*ErrorStats, error)
+	GetBufferStats() (*BufferStats, error)
 }

@@ -20,6 +20,7 @@ import (
 	"github.com/ligato/cn-infra/db/keyval"
 	"github.com/ligato/vpp-agent/pkg/models"
 
+	abf "github.com/ligato/vpp-agent/api/models/vpp/abf"
 	acl "github.com/ligato/vpp-agent/api/models/vpp/acl"
 	intf "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	ipsec "github.com/ligato/vpp-agent/api/models/vpp/ipsec"
@@ -65,6 +66,15 @@ func (dsl *DataResyncDSL) ACL(val *acl.ACL) vppclient.DataResyncDSL {
 	return dsl
 }
 
+// ABF adds ACL-based forwarding to the RESYNC request.
+func (dsl *DataResyncDSL) ABF(val *abf.ABF) vppclient.DataResyncDSL {
+	key := models.Key(val)
+	dsl.txn.Put(key, val)
+	dsl.txnKeys = append(dsl.txnKeys, key)
+
+	return dsl
+}
+
 // BD adds Bridge Domain to the RESYNC request.
 func (dsl *DataResyncDSL) BD(val *l2.BridgeDomain) vppclient.DataResyncDSL {
 	key := l2.BridgeDomainKey(val.Name)
@@ -77,6 +87,15 @@ func (dsl *DataResyncDSL) BD(val *l2.BridgeDomain) vppclient.DataResyncDSL {
 // BDFIB adds Bridge Domain to the RESYNC request.
 func (dsl *DataResyncDSL) BDFIB(val *l2.FIBEntry) vppclient.DataResyncDSL {
 	key := l2.FIBKey(val.BridgeDomain, val.PhysAddress)
+	dsl.txn.Put(key, val)
+	dsl.txnKeys = append(dsl.txnKeys, key)
+
+	return dsl
+}
+
+// VrfTable adds VRF table to the RESYNC request.
+func (dsl *DataResyncDSL) VrfTable(val *l3.VrfTable) vppclient.DataResyncDSL {
+	key := l3.VrfTableKey(val.Id, val.Protocol)
 	dsl.txn.Put(key, val)
 	dsl.txnKeys = append(dsl.txnKeys, key)
 

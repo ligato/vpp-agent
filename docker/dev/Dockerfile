@@ -4,9 +4,9 @@ FROM golang as verify-stage
 
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
-    patch python-pip \
+    patch python3-pip python3 \
  && rm -rf /var/lib/apt/lists/* \
- && pip install ply
+ && pip3 install ply
 
 ARG VPP_REPO_URL
 ARG VPP_COMMIT
@@ -61,22 +61,22 @@ RUN set -eux; \
     git clone "${VPP_REPO_URL}" vpp; \
     cd vpp; \
     git checkout "${VPP_COMMIT}"; \
-    sed -i -e 's/vpp vom japi/vpp/g' build-data/platforms/vpp.mk; \
+    sed -i -e 's/vpp vom/vpp/g' build-data/platforms/vpp.mk; \
     export UNATTENDED=y; \
     make install-dep dpdk-install-dev; \
     if [ -n "${VPP_DEBUG_DEB}" ]; then \
-        make vpp_configure_args_vpp='--disable-japi' build; \
+        make build; \
         make -C build-root PLATFORM=vpp TAG=vpp_debug install-deb; \
     else \
-        make vpp_configure_args_vpp='--disable-japi' build-release pkg-deb; \
+        make build-release pkg-deb; \
     fi; \
     cd build-root; \
-    dpkg -i vpp_*.deb vpp-dev_*.deb vpp-lib_*.deb vpp-plugins_*.deb vpp-dbg_*.deb vpp-api-python_*.deb; \
+    dpkg -i vpp_*.deb libvppinfra_*.deb vpp-dev_*.deb libvppinfra-dev_*.deb  vpp-plugin-core_*.deb vpp-dbg_*.deb vpp-api-python_*.deb; \
     rm -rf .ccache /var/lib/apt/lists/*; \
     find . -type f -name '*.o' -exec rm -rf '{}' \;
 
 # install Go
-ENV GOLANG_VERSION 1.11.5
+ENV GOLANG_VERSION 1.11.8
 ARG GOLANG_OS_ARCH=linux-amd64
 RUN wget -O go.tgz "https://golang.org/dl/go${GOLANG_VERSION}.${GOLANG_OS_ARCH}.tar.gz" \
  && tar -C /usr/local -xzf go.tgz \

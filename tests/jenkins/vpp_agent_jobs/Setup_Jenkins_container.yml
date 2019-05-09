@@ -1,0 +1,60 @@
+- job:
+    block-downstream: false
+    block-upstream: false
+    builders:
+      - shell: "# install sshpass\napt-get update\napt-get install sshpass\n\n# get\
+          \ info about python\npython --version\npip --version | :\n\n# update python\
+          \ libraries\napt-get -y install python-pip\npip install robotframework==3.0.4\n\
+          pip install robotframework-requests==0.4.7\n#pip install robotframework-sshlibrary\n\
+          #https://github.com/robotframework/SSHLibrary/issues/301\npip install robotframework-sshlibrary==3.0.0\n\
+          pip install jenkins-job-builder\npip install jenkins-job-wrecker\npip freeze\n\
+          \n# Andrej Kilv\xE1dy: vpp-agent$ pip freeze\ncat > requirements << TEXT\n\
+          adium-theme-ubuntu==0.3.4\nbeautifulsoup4==4.6.0\ncertifi==2018.4.16\nchardet==3.0.4\n\
+          ecdsa==0.13\nidna==2.6\njsonpatch==1.23\njsonpointer==2.0\nparamiko==1.16.0\n\
+          pycrypto==2.6.1\npygobject==3.20.0\nrequests==2.18.4\nrobotframework==3.0.4\n\
+          robotframework-httplibrary==0.4.2\nrobotframework-requests==0.4.7\nrobotframework-sshlibrary==3.0.0\n\
+          six==1.11.0\nunity-lens-photos==1.0\nurllib3==1.22\nwaitress==1.1.0\nWebOb==1.8.1\n\
+          WebTest==2.0.29\nTEXT\n\n#pip install -r requirements.txt\n\n# install vim\n\
+          apt-get -y install vim\napt-get -y install mc\n\n# allow to open logs files\
+          \ directly from browser\necho \"fix also this:\"\necho \"https://stackoverflow.com/questions/36607394/error-opening-robot-framework-log-failed\"\
+          \n#http://147.75.83.101:8080/script\n#System.setProperty(\"hudson.model.DirectoryBrowserSupport.CSP\"\
+          ,\"sandbox allow-scripts; default-src 'none'; img-src 'self' data: ; style-src\
+          \ 'self' 'unsafe-inline' data: ; script-src 'self' 'unsafe-inline' 'unsafe-eval'\
+          \ ;\")\n\n# timezone fix\necho \"fix also timezone\"\necho \"https://stackoverflow.com/questions/42202070/how-to-change-the-time-zone-in-jenkins\"\
+          \n\n#jenkins-jobs password\necho \"set jenkins jobs password\"\necho \"https://docs.openstack.org/infra/jenkins-job-builder/execution.html\"\
+          \n\n# install helm\n#get https://storage.googleapis.com/kubernetes-helm/helm-v2.10.0-linux-amd64.tar.gz\n\
+          #tar -xvf helm-v2.10.0-linux-amd64.tar.gz\n#echo $PATH\n#cp linux-amd64/helm\
+          \ /bin\n#helm --help\n#rm -rf linux-amd64\n\n#no pybot file !?!?!?!?!\ncat\
+          \ <<PYBOT > /usr/local/bin/pybot\n#!/usr/bin/python\n\nimport sys\nfrom robot\
+          \ import run_cli\n\nrun_cli(sys.argv[1:])\nPYBOT\nchmod 755 /usr/local/bin/pybot\n\
+          \ngit config --global user.email \"stanislav.chlebec@pantheon.tech\"\ngit\
+          \ config --global user.name \"Stanislav Chlebec\""
+    concurrent: false
+    description: |-
+      After docker pull jenkins.jenkins:lts stopped to work sshpass, pip, ...
+      The intention of this Jenkins job is renew some tools *required* by other Jenkins jobs.
+      (Also after killing container these installed tools are lost - there is the need to install them again)
+    disabled: false
+    name: Setup Jenkins container
+    node: master
+    project-type: freestyle
+    properties:
+      - build-discarder:
+          artifact-days-to-keep: -1
+          artifact-num-to-keep: -1
+          days-to-keep: -1
+          num-to-keep: 2
+      - raw:
+          xml: |
+            <hudson.plugins.throttleconcurrents.ThrottleJobProperty plugin="throttle-concurrents@2.0.1">
+            <maxConcurrentPerNode>0</maxConcurrentPerNode>
+            <maxConcurrentTotal>0</maxConcurrentTotal>
+            <categories class="java.util.concurrent.CopyOnWriteArrayList" />
+            <throttleEnabled>false</throttleEnabled>
+            <throttleOption>project</throttleOption>
+            <limitOneJobWithMatchingParams>false</limitOneJobWithMatchingParams>
+            <paramsToUseForLimit />
+            </hudson.plugins.throttleconcurrents.ThrottleJobProperty>
+    publishers: []
+    triggers: []
+    wrappers: []

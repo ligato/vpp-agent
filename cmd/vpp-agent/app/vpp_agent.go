@@ -37,6 +37,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/orchestrator"
 	"github.com/ligato/vpp-agent/plugins/restapi"
 	"github.com/ligato/vpp-agent/plugins/telemetry"
+	"github.com/ligato/vpp-agent/plugins/vpp/abfplugin"
 	"github.com/ligato/vpp-agent/plugins/vpp/aclplugin"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin"
 	"github.com/ligato/vpp-agent/plugins/vpp/ipsecplugin"
@@ -153,6 +154,7 @@ func (VPPAgent) String() string {
 
 // VPP contains all VPP plugins.
 type VPP struct {
+	ABFPlugin   *abfplugin.ABFPlugin
 	ACLPlugin   *aclplugin.ACLPlugin
 	IfPlugin    *ifplugin.IfPlugin
 	IPSecPlugin *ipsecplugin.IPSecPlugin
@@ -166,6 +168,7 @@ type VPP struct {
 
 func DefaultVPP() VPP {
 	return VPP{
+		ABFPlugin:   &abfplugin.DefaultPlugin,
 		ACLPlugin:   &aclplugin.DefaultPlugin,
 		IfPlugin:    &ifplugin.DefaultPlugin,
 		IPSecPlugin: &ipsecplugin.DefaultPlugin,
