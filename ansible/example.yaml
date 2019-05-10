@@ -5,7 +5,7 @@
   tasks:
     - name: Configure memif on VPP
       vpp_etcd:
-        agent_name: "vpp-unit-a"
+        agent_name: "agent-1"
         value_type: "interface"
         value:
           name: "memif1"
@@ -14,12 +14,12 @@
           memif:
             master: false
             id: 1
-            socket_filename: "/run/memif/vpp-unit-a.sock"
+            socket_filename: "/run/memif/agent-1.sock"
         state: "present"
 
     - name: Configure loopback instance 1 on VPP
       vpp_etcd:
-        agent_name: "vpp-unit-a"
+        agent_name: "agent-1"
         value_type: "interface"
         value:
           name: "loop1"
@@ -32,7 +32,7 @@
 
     - name: Configure route (192.168.0.0/16 via null) on VPP
       vpp_etcd:
-        agent_name: "vpp-unit-a"
+        agent_name: "agent-1"
         value_type: "route"
         value:
           type: "DROP"
@@ -68,7 +68,7 @@
             tag_rw_option: "POP1"
         state: "present"
 
-    - name: Make the L2 BR for the lan side comming out of the back side of the VCPEs
+    - name: Configure bridge domain
       vpp_etcd:
         value_type: "bridge-domain"
         value:
