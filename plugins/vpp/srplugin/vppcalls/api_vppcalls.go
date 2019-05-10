@@ -33,8 +33,8 @@ type SRv6VppAPI interface {
 type SRv6VPPWrite interface {
 	// AddLocalSid adds local sid <localSID> into VPP
 	AddLocalSid(localSID *srv6.LocalSID) error
-	// DeleteLocalSid delets local sid given by <sidAddr> in VPP
-	DeleteLocalSid(sidAddr net.IP) error
+	// DeleteLocalSid deletes local sid <localSID> in VPP
+	DeleteLocalSid(localSID *srv6.LocalSID) error
 	// SetEncapsSourceAddress sets for SRv6 in VPP the source address used for encapsulated packet
 	SetEncapsSourceAddress(address string) error
 	// AddPolicy adds SRv6 policy <policy> into VPP (including all policy's segment lists).
