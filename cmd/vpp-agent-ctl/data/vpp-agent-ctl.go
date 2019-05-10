@@ -61,6 +61,8 @@ func NewVppAgentCtl(etcdCfg string, cmdSet []string) (*VppAgentCtlImpl, error) {
 		commands: cmdSet,
 	}
 
+	ctl.Log.Warn("NOTE: the vpp-agent-ctl tool is DEPRECATED and will be removed in the future")
+
 	if err = ctl.serviceLabel.Init(); err != nil {
 		return nil, fmt.Errorf("failed to init servicvice label plugin")
 	}

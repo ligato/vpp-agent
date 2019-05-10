@@ -100,14 +100,6 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:c3806bfe3d2c9baa0d4ebd90f0a59c7505969bcaab024b5185d20ccd66c9400c"
-  name = "github.com/buger/goterm"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "6d19e6a8df12fdfc44a90a24b677a6d04a80b91f"
-
-[[projects]]
-  branch = "master"
   digest = "1:1ed8f94f16010f9e1a419a818ec8ed5765d04561e6bfcc872e3a5a16fbae08b2"
   name = "github.com/containerd/console"
   packages = ["."]
@@ -355,7 +347,7 @@
   version = "v1.1.0"
 
 [[projects]]
-  digest = "1:f5ccd717b5f093cbabc51ee2e7a5979b92f17d217f9031d6d64f337101c408e4"
+  digest = "1:c6e109ed32d266dea072dd6d00e3ee26fb960f86ed0ba7f6a07e5d2bfdeab868"
   name = "github.com/gogo/protobuf"
   packages = [
     "gogoproto",
@@ -389,8 +381,8 @@
     "vanity/command",
   ]
   pruneopts = "T"
-  revision = "4cbf7e384e768b4e01799441fdf2a706a5635ae7"
-  version = "v1.2.0"
+  revision = "ba06b47c162d49f2af050fb4c75bcbc86a159d5c"
+  version = "v1.2.1"
 
 [[projects]]
   digest = "1:a93379ca78a24c7fad97ff3bffdc7f2285ff61f26dd6beedeab0e1391718e95c"
@@ -500,7 +492,7 @@
 
 [[projects]]
   branch = "dev"
-  digest = "1:14123b44f7cd5891c500adedb96f6817f2291e2eb35994dd5952c4bf658625ff"
+  digest = "1:5485ade83659041e023daf65c3eba8d5799a26f4b6e8883405bbb3d03fbc3d76"
   name = "github.com/ligato/cn-infra"
   packages = [
     "agent",
@@ -543,7 +535,7 @@
     "utils/safeclose",
   ]
   pruneopts = "T"
-  revision = "c4fe1a7553d51402cdc59e09460c9b44485f3259"
+  revision = "629254303e0cbd7584398474bb07c13378cf7c20"
 
 [[projects]]
   branch = "master"
@@ -1000,7 +992,6 @@
     "git.fd.io/govpp.git/api",
     "git.fd.io/govpp.git/cmd/binapi-generator",
     "git.fd.io/govpp.git/core",
-    "github.com/buger/goterm",
     "github.com/coreos/go-iptables/iptables",
     "github.com/fsouza/go-dockerclient",
     "github.com/ghodss/yaml",

@@ -24,12 +24,13 @@ import (
 	"sync"
 	"time"
 
+	"github.com/namsral/flag"
+
 	"github.com/ligato/cn-infra/config"
 	"github.com/ligato/cn-infra/infra"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/once"
-	"github.com/namsral/flag"
 )
 
 var agentLogger = logging.DefaultRegistry.NewLogger("agent")

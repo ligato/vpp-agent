@@ -29,6 +29,10 @@ func (h *InterfaceVppHandler) AddTapInterface(ifName string, tapIf *interfaces.T
 	}
 
 	if tapIf.Version == 2 {
+		if tapIf.EnableGso {
+			h.log.Warnf("GSO feature for TAP interface is not supported in VPP 19.01")
+		}
+
 		// Configure fast virtio-based TAP interface
 		req := &tapv2.TapCreateV2{
 			ID:            ^uint32(0),
