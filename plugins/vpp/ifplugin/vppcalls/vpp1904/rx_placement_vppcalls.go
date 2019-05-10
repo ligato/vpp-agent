@@ -15,7 +15,6 @@
 package vpp1904
 
 import (
-	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	binapi_interface "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/interfaces"
 )
 
