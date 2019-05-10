@@ -47,7 +47,7 @@ Add Interfaces For BDs
     Put Afpacket Interface    node=agent_vpp_1    name=vpp1_afpacket1    mac=a2:a1:a1:a1:a1:a1    host_int=vpp1_veth2
     Put VXLan Interface    node=agent_vpp_1    name=vpp1_vxlan1    src=${MEMIF1_IP}    dst=${VXLAN_IP}    vni=5
     Put Loopback Interface With IP    node=agent_vpp_1    name=vpp1_loop1    mac=12:21:21:11:11:11    ip=${LOOPBACK_IP}    prefix=${PREFIX}
-    Put TAP Interface With IP    node=agent_vpp_1    name=vpp1_tap1    mac=32:21:21:11:11:11    ip=${TAP_IP}    host_if_name=linux_vpp1_tap1    prefix=${PREFIX}
+    Put TAPv2 Interface With IP    node=agent_vpp_1    name=vpp1_tap1    mac=32:21:21:11:11:11    ip=${TAP_IP}    host_if_name=linux_vpp1_tap1    prefix=${PREFIX}
     Put Memif Interface With IP    node=agent_vpp_1    name=vpp1_memif2    mac=62:61:61:61:61:62    master=true    id=2    ip=${VXLAN_IP}    prefix=${PREFIX}
     Put VXLan Interface    node=agent_vpp_1    name=vpp1_vxlan2    src=192.168.2.1    dst=192.168.2.2    vni=15
     Put Loopback Interface With IP    node=agent_vpp_1    name=bvi_vpp1_loop2    mac=12:21:21:11:11:12    ip=20.20.2.1
