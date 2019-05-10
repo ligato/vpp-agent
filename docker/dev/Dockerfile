@@ -71,7 +71,7 @@ RUN set -eux; \
         make build-release pkg-deb; \
     fi; \
     cd build-root; \
-    dpkg -i vpp_*.deb libvppinfra_*.deb vpp-dev_*.deb libvppinfra-dev_*.deb  vpp-plugin-core_*.deb vpp-dbg_*.deb vpp-api-python_*.deb; \
+    dpkg -i *.deb; \
     rm -rf .ccache /var/lib/apt/lists/*; \
     find . -type f -name '*.o' -exec rm -rf '{}' \;
 
