@@ -40,27 +40,21 @@ message Interface {
     }
     Unnumbered unnumbered = 9;
 
-    message RxModeSettings {
+    message RxMode {
         // from vpp/build-root/install-vpp-native/vpp/include/vnet/interface.h
-        enum RxModeType {
+        enum Type {
             UNKNOWN = 0;
             POLLING = 1;
             INTERRUPT = 2;
             ADAPTIVE = 3;
             DEFAULT = 4;
         };
-        RxModeType rx_mode = 1;
-        uint32 queue_id  = 2;
-        uint32 queue_id_valid  = 3;
+        Type default_rx_mode = 1; // used for queues not listed in queue_rx_mode
+        map<uint32, Type> queue_rx_mode = 2; // queue ID -> Rx mode
     }
-    RxModeSettings rx_mode_settings = 10;
+    RxMode rx_mode = 10;
 
-    message RxPlacementSettings {
-        uint32 queue = 1;
-        uint32 worker = 2;
-        bool is_main = 3;
-    }
-    RxPlacementSettings rx_placement_settings = 11;
+    map<uint32, uint32> rx_placement = 11; // queue ID -> worker ID (main thread has always ID=0)
 
     oneof link {
         SubInterface sub = 100;         /* sub-interface configuration */
@@ -70,7 +64,7 @@ message Interface {
         VxlanLink vxlan = 104;          /* VXLAN-specific configuration */
         IPSecLink ipsec = 105;          /* IPSec tunnel-specific configuration */
         VmxNet3Link vmx_net3 = 106;     /* VmxNet3-specific configuration */
-        BondLink bond = 107;                 /* Bond interface-specific configuration */
+        BondLink bond = 107;            /* Bond interface-specific configuration */
     };
 };
 

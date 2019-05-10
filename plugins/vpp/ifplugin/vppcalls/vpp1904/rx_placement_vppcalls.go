@@ -20,12 +20,12 @@ import (
 )
 
 // SetRxPlacement implements interface handler.
-func (h *InterfaceVppHandler) SetRxPlacement(ifIdx uint32, rxPlacement *interfaces.Interface_RxPlacementSettings) error {
+func (h *InterfaceVppHandler) SetRxPlacement(ifIdx uint32, queueID, workerID uint32) error {
 	req := &binapi_interface.SwInterfaceSetRxPlacement{
 		SwIfIndex: ifIdx,
-		QueueID:   rxPlacement.Queue,
-		WorkerID:  rxPlacement.Worker,
-		IsMain:    boolToUint(rxPlacement.IsMain),
+		QueueID:   queueID,
+		WorkerID:  workerID,
+		IsMain:    boolToUint(workerID == 0),
 	}
 	reply := &binapi_interface.SwInterfaceSetRxPlacementReply{}
 

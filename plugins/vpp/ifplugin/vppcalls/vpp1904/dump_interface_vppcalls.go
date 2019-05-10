@@ -763,19 +763,23 @@ func (h *InterfaceVppHandler) dumpRxPlacement(ifs map[uint32]*vppcalls.Interface
 		if stop {
 			break
 		}
+
 		ifData, ok := ifs[rxDetails.SwIfIndex]
 		if !ok {
 			h.log.Warnf("Received rx-placement data for unknown interface with index %d", rxDetails.SwIfIndex)
 			continue
 		}
-		ifData.Interface.RxModeSettings = &interfaces.Interface_RxModeSettings{
-			RxMode:  getRxModeType(rxDetails.Mode),
-			QueueId: rxDetails.QueueID,
+		if ifData.Interface.RxMode == nil {
+			ifData.Interface.RxMode = &interfaces.Interface_RxMode{}
 		}
-		ifData.Interface.RxPlacementSettings = &interfaces.Interface_RxPlacementSettings{
-			Queue:  rxDetails.QueueID,
-			Worker: rxDetails.WorkerID,
+		if ifData.Interface.RxMode.QueueRxMode == nil {
+			ifData.Interface.RxMode.QueueRxMode = make(map[uint32]interfaces.Interface_RxMode_Type)
 		}
+		ifData.Interface.RxMode.QueueRxMode[rxDetails.QueueID] = getRxModeType(rxDetails.Mode)
+		if ifData.Interface.RxPlacement == nil {
+			ifData.Interface.RxPlacement = make(map[uint32]uint32)
+		}
+		ifData.Interface.RxPlacement[rxDetails.QueueID] = rxDetails.WorkerID
 	}
 	return nil
 }
@@ -830,18 +834,18 @@ func memifModetoNB(mode uint8) interfaces.MemifLink_MemifMode {
 }
 
 // Convert binary API rx-mode to northbound representation
-func getRxModeType(mode uint8) interfaces.Interface_RxModeSettings_RxModeType {
+func getRxModeType(mode uint8) interfaces.Interface_RxMode_Type {
 	switch mode {
 	case 1:
-		return interfaces.Interface_RxModeSettings_POLLING
+		return interfaces.Interface_RxMode_POLLING
 	case 2:
-		return interfaces.Interface_RxModeSettings_INTERRUPT
+		return interfaces.Interface_RxMode_INTERRUPT
 	case 3:
-		return interfaces.Interface_RxModeSettings_ADAPTIVE
+		return interfaces.Interface_RxMode_ADAPTIVE
 	case 4:
-		return interfaces.Interface_RxModeSettings_DEFAULT
+		return interfaces.Interface_RxMode_DEFAULT
 	default:
-		return interfaces.Interface_RxModeSettings_UNKNOWN
+		return interfaces.Interface_RxMode_UNKNOWN
 	}
 }
 

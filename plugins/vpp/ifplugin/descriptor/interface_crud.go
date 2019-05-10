@@ -1,7 +1,6 @@
 package descriptor
 
 import (
-	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 
 	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
@@ -143,36 +142,16 @@ func (d *InterfaceDescriptor) Create(key string, intf *interfaces.Interface) (me
 		d.bondIDs[intf.GetBond().GetId()] = intf.GetName()
 	}
 
-	/*
-		Rx-mode
-
-		Legend:
-		P - polling
-		I - interrupt
-		A - adaptive
-
-		Interfaces - supported modes:
-			* tap interface - PIA
-			* memory interface - PIA
-			* vxlan tunnel - PIA
-			* software loopback - PIA
-			* ethernet csmad - P
-			* af packet - PIA
-	*/
-	if intf.RxModeSettings != nil {
-		rxMode := getRxMode(intf)
-		err = d.ifHandler.SetRxMode(ifIdx, rxMode)
-		if err != nil {
-			err = errors.Errorf("failed to set Rx-mode for interface %s: %v", intf.Name, err)
-			d.log.Error(err)
-			return nil, err
-		}
+	err = d.configureRxMode(intf, ifIdx, nil)
+	if err != nil {
+		return nil, err
 	}
 
 	// rx-placement
-	if intf.GetRxPlacementSettings() != nil {
-		if err = d.ifHandler.SetRxPlacement(ifIdx, intf.GetRxPlacementSettings()); err != nil {
-			err = errors.Errorf("failed to set rx-placement for interface %s: %v", intf.Name, err)
+	for queue, worker := range intf.GetRxPlacement() {
+		if err = d.ifHandler.SetRxPlacement(ifIdx, queue, worker); err != nil {
+			err = errors.Errorf("failed to set rx-placement for queue %d of the interface %s: %v",
+				queue, intf.Name, err)
 			d.log.Error(err)
 			return nil, err
 		}
@@ -235,6 +214,48 @@ func (d *InterfaceDescriptor) Create(key string, intf *interfaces.Interface) (me
 	return metadata, nil
 }
 
+// configureRxMode (re-)configures Rx mode for the interface.
+func (d *InterfaceDescriptor) configureRxMode(iface *interfaces.Interface, ifIdx uint32,
+	oldMode *interfaces.Interface_RxMode) (err error) {
+
+	newMode := iface.GetRxMode()
+	if newMode == nil {
+		if oldMode != nil {
+			// revert back to default for all queues
+			err = d.ifHandler.SetRxMode(ifIdx, 0, interfaces.Interface_RxMode_DEFAULT, true)
+			if err != nil {
+				err = errors.Errorf("failed to set default Rx-mode for interface %s: %v", iface, err)
+				d.log.Error(err)
+				return err
+			}
+		}
+		return
+	}
+
+	if oldMode != nil || newMode.GetDefaultRxMode() != interfaces.Interface_RxMode_UNKNOWN {
+		// overwrite previous default Rx mode
+		defRxMode := normalizeRxMode(newMode.GetDefaultRxMode(), iface)
+		err = d.ifHandler.SetRxMode(ifIdx, 0, defRxMode, true)
+		if err != nil {
+			err = errors.Errorf("failed to set default Rx-mode for interface %s: %v", iface.Name, err)
+			d.log.Error(err)
+			return err
+		}
+	}
+
+	for queue, rxMode := range newMode.GetQueueRxMode() {
+		err = d.ifHandler.SetRxMode(ifIdx, queue, rxMode, false)
+		if err != nil {
+			err = errors.Errorf("failed to set Rx-mode for queue %d of the interface %s: %v",
+				queue, iface.Name, err)
+			d.log.Error(err)
+			return err
+		}
+	}
+
+	return nil
+}
+
 // Delete removes VPP interface.
 func (d *InterfaceDescriptor) Delete(key string, intf *interfaces.Interface, metadata *ifaceidx.IfaceMetadata) error {
 	var err error
@@ -288,23 +309,22 @@ func (d *InterfaceDescriptor) Update(key string, oldIntf, newIntf *interfaces.In
 	ifIdx := oldMetadata.SwIfIndex
 
 	// rx-mode
-	oldRx := getRxMode(oldIntf)
-	newRx := getRxMode(newIntf)
-	if !proto.Equal(oldRx, newRx) {
-		err = d.ifHandler.SetRxMode(ifIdx, newRx)
+	if !d.equivalentRxMode(oldIntf, newIntf) {
+		err = d.configureRxMode(newIntf, ifIdx, oldIntf.GetRxMode())
 		if err != nil {
-			err = errors.Errorf("failed to modify rx-mode for interface %s: %v", newIntf.Name, err)
-			d.log.Error(err)
 			return oldMetadata, err
 		}
 	}
 
 	// rx-placement
-	if newIntf.GetRxPlacementSettings() != nil && !proto.Equal(getRxPlacement(oldIntf), getRxPlacement(newIntf)) {
-		if err = d.ifHandler.SetRxPlacement(ifIdx, newIntf.GetRxPlacementSettings()); err != nil {
-			err = errors.Errorf("failed to modify rx-placement for interface %s: %v", newIntf.Name, err)
-			d.log.Error(err)
-			return oldMetadata, err
+	if !d.equivalentRxPlacement(oldIntf.GetRxPlacement(), newIntf.GetRxPlacement()) {
+		for queue, worker := range newIntf.GetRxPlacement() {
+			if err = d.ifHandler.SetRxPlacement(ifIdx, queue, worker); err != nil {
+				err = errors.Errorf("failed to set rx-placement for queue %d of the interface %s: %v",
+					queue, newIntf.Name, err)
+				d.log.Error(err)
+				return nil, err
+			}
 		}
 	}
 
