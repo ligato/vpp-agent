@@ -1,0 +1,85 @@
+---
+- hosts: 127.0.0.1
+  connection: local
+
+  tasks:
+
+  - name: Configure memif on VPP
+    vpp_etcd:
+      agent_name: "vpp-unit-a"
+      value_type: "interface"
+      value:
+        name: "memif1"
+        type: "MEMIF"
+        enabled: true
+        memif:
+          master: false
+          id: 1
+          socket_filename: "/run/memif/vpp-unit-a.sock"
+      state: "present"
+
+  - name: Configure loopback instance 1 on VPP
+    vpp_etcd:
+      agent_name: "vpp-unit-a"
+      value_type: "interface"
+      value:
+        name: "loop1"
+        type: "SOFTWARE_LOOPBACK"
+        enabled: true
+        ip_addresses:
+        - "192.168.200.1/24"
+      state: "present"
+
+
+  - name: Configure route (192.168.0.0/16 via null) on VPP
+    vpp_etcd:
+      agent_name: "vpp-unit-a"
+      value_type: "route"
+      value:
+        type: "DROP"
+        dst_network: "192.168.0.0/16"
+        next_hop_addr: "0.0.0.0"
+      state: "present"
+
+  - name: Configure bridge domains on VPP
+    vpp_etcd:
+      value_type: "add-bridge-domain-interface"
+      merge_interfaces: true
+      value:
+        name: "bridge-domain10"
+        flood: true
+        unknown_unicast_flood: true
+        forward: true
+        learn: true
+        mac_age: 5
+        interfaces:
+        - name: "memif-a-0"
+      state: "present"
+
+  - name: Create sub interface 101
+    vpp_etcd:
+      value_type: "interface"
+      value:
+        name: "sub101"
+        type: "SUB_INTERFACE"
+        enabled: true
+        sub:
+          sub_id: "100"
+          parent_name: "Bond1"
+          tag_rw_option: "POP1"
+      state: "present"
+
+  - name: Make the L2 BR for the lan side comming out of the back side of the VCPEs
+    vpp_etcd:
+      value_type: "bridge-domain"
+      value:
+        name: "bridge-domain-101"
+        flood: true
+        unknown_unicast_flood: true
+        forward: true
+        learn: true
+        mac_age: 5
+        interfaces:
+          - name: "memif1"
+          - name: "sub101"
+      state: "present"

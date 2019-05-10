@@ -46,3 +46,10 @@ In case we need to use new .proto files they need to be added to the
 [update_proto_classes.sh](../scripts/update_proto_classes.sh) script.
 and python validation module needs to be written in a similar way as
 [interface.py](action_plugins/plugins/interface.py)
+
+### Usage example
+
+First we need the etcd database to be started and running. Once it is running
+we can start the [exmaple](example.yaml) ansible playbook with following command:
+
+    ansible-playbook example.yaml

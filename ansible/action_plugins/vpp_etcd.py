@@ -49,8 +49,9 @@ class ActionModule(ActionBase):
                     not fname.startswith('__'):
                 pluginmod = __import__(fname[:-3])
                 try:
-                    plugin = pluginmod.plugin_init(plugin_name, values, agent_name, task_vars.get('bridge_connection'),
-                                                   task_vars.get('etcd_port'))
+                    plugin = pluginmod.plugin_init(plugin_name, values, agent_name, task_vars.get('bridge_connection',
+                                                                                                  '172.0.0.1'),
+                                                   task_vars.get('etcd_port', 12379))
                     if plugin:
                         break
                 except AttributeError as s:
@@ -63,8 +64,8 @@ class ActionModule(ActionBase):
 
         values = plugin.validate()
 
-        new_args['host'] = task_vars.get('bridge_connection')    # bridged connection for awx otherwise "172.0.0.1"
-        new_args['port'] = int(task_vars.get('etcd_port'))
+        new_args['host'] = task_vars.get('bridge_connection', '172.0.0.1')    # bridged connection for awx otherwise "172.0.0.1"
+        new_args['port'] = int(task_vars.get('etcd_port', 12379))
         new_args['key'] = plugin.create_key()
 
         new_args['value'] = values
