@@ -20,13 +20,13 @@ import (
 )
 
 // SetRxMode implements interface handler.
-func (h *InterfaceVppHandler) SetRxMode(ifIdx uint32, queueID uint32, rxMode interfaces.Interface_RxMode_Type, isDefaultMode bool) error {
+func (h *InterfaceVppHandler) SetRxMode(ifIdx uint32,rxMode *interfaces.Interface_RxMode) error {
 
 	req := &binapi_interface.SwInterfaceSetRxMode{
 		SwIfIndex:    ifIdx,
-		Mode:         uint8(rxMode),
-		QueueID:      queueID,
-		QueueIDValid: boolToUint(!isDefaultMode),
+		Mode:         uint8(rxMode.Mode),
+		QueueID:      rxMode.Queue,
+		QueueIDValid: boolToUint(!rxMode.DefaultMode),
 	}
 	reply := &binapi_interface.SwInterfaceSetRxModeReply{}
 

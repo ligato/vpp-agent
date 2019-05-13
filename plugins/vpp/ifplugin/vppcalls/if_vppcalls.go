@@ -154,9 +154,9 @@ type InterfaceVppAPI interface {
 	// SetInterfaceMtu calls HwInterfaceSetMtu bin API with desired MTU value.
 	SetInterfaceMtu(ifIdx uint32, mtu uint32) error
 	// SetRxMode calls SwInterfaceSetRxMode bin API
-	SetRxMode(ifIdx uint32, queueID uint32, rxMode interfaces.Interface_RxMode_Type, isDefaultMode bool) error
+	SetRxMode(ifIdx uint32, rxMode *interfaces.Interface_RxMode) error
 	// SetRxPlacement configures rx-placement for interface
-	SetRxPlacement(ifIdx uint32, queueID, workerID uint32) error
+	SetRxPlacement(ifIdx uint32, rxPlacement *interfaces.Interface_RxPlacement) error
 	// SetInterfaceVrf sets VRF table for the interface
 	SetInterfaceVrf(ifaceIndex, vrfID uint32) error
 	// SetInterfaceVrfIPv6 sets IPV6 VRF table for the interface

@@ -49,12 +49,21 @@ message Interface {
             ADAPTIVE = 3;
             DEFAULT = 4;
         };
-        Type default_rx_mode = 1; // used for queues not listed in queue_rx_mode
-        map<uint32, Type> queue_rx_mode = 2; // queue ID -> Rx mode
+        uint32 queue = 1;
+        Type mode = 2;
+        bool default_mode = 3; // if enabled, <queue> will be ignored and the given
+                               // <mode> will be used for all queues without explicitly
+                               // selected Rx mode
     }
-    RxMode rx_mode = 10;
+    repeated RxMode rx_mode = 10;
 
-    map<uint32, uint32> rx_placement = 11; // queue ID -> worker ID (main thread has always ID=0)
+    message RxPlacement {
+        uint32 queue = 1;  // select from interval <0, number-of-queues)
+        uint32 worker = 2; // select from interval <0, number-of-workers)
+        bool main_thread = 3; // let the main thread to process the given queue
+                              //  - if enabled, value of <worker> is ignored
+    }
+    repeated RxPlacement rx_placement = 11;
 
     oneof link {
         SubInterface sub = 100;         /* sub-interface configuration */

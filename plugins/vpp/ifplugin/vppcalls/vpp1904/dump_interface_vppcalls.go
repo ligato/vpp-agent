@@ -771,17 +771,23 @@ func (h *InterfaceVppHandler) dumpRxPlacement(ifs map[uint32]*vppcalls.Interface
 			h.log.Warnf("Received rx-placement data for unknown interface with index %d", rxDetails.SwIfIndex)
 			continue
 		}
-		if ifData.Interface.RxMode == nil {
-			ifData.Interface.RxMode = &interfaces.Interface_RxMode{}
+
+		ifData.Interface.RxMode = append(ifData.Interface.RxMode,
+			&interfaces.Interface_RxMode{
+				Queue: rxDetails.QueueID,
+				Mode:  getRxModeType(rxDetails.Mode),
+			})
+
+		var worker uint32
+		if rxDetails.WorkerID > 0 {
+			worker = rxDetails.WorkerID - 1
 		}
-		if ifData.Interface.RxMode.QueueRxMode == nil {
-			ifData.Interface.RxMode.QueueRxMode = make(map[uint32]interfaces.Interface_RxMode_Type)
-		}
-		ifData.Interface.RxMode.QueueRxMode[rxDetails.QueueID] = getRxModeType(rxDetails.Mode)
-		if ifData.Interface.RxPlacement == nil {
-			ifData.Interface.RxPlacement = make(map[uint32]uint32)
-		}
-		ifData.Interface.RxPlacement[rxDetails.QueueID] = rxDetails.WorkerID
+		ifData.Interface.RxPlacement = append(ifData.Interface.RxPlacement,
+			&interfaces.Interface_RxPlacement{
+				Queue:      rxDetails.QueueID,
+				Worker:     worker,
+				MainThread: rxDetails.WorkerID == 0,
+			})
 	}
 	return nil
 }

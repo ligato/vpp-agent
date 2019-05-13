@@ -16,15 +16,16 @@ package vpp1904
 
 import (
 	binapi_interface "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/interfaces"
+	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 )
 
 // SetRxPlacement implements interface handler.
-func (h *InterfaceVppHandler) SetRxPlacement(ifIdx uint32, queueID, workerID uint32) error {
+func (h *InterfaceVppHandler) SetRxPlacement(ifIdx uint32, rxPlacement *interfaces.Interface_RxPlacement) error {
 	req := &binapi_interface.SwInterfaceSetRxPlacement{
 		SwIfIndex: ifIdx,
-		QueueID:   queueID,
-		WorkerID:  workerID,
-		IsMain:    boolToUint(workerID == 0),
+		QueueID:   rxPlacement.Queue,
+		WorkerID:  rxPlacement.Worker,
+		IsMain:    boolToUint(rxPlacement.MainThread),
 	}
 	reply := &binapi_interface.SwInterfaceSetRxPlacementReply{}
 
