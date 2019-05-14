@@ -48,8 +48,8 @@ COPY --from=devimg \
 # copy configs
 COPY \
     etcd.conf \
-    vpp-plugin.conf \
-    linux-plugin.conf \
+    vpp-ifplugin.conf \
+    linux-ifplugin.conf \
  /opt/vpp-agent/dev/
 
 COPY vpp.conf /etc/vpp/vpp.conf
