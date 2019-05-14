@@ -36,7 +36,7 @@ RUN apt-get update \
     graphviz inetutils-traceroute iproute2 ipsec-tools iputils-ping \
     libapr1 libmbedcrypto1 libmbedtls10 libmbedx509-0 libtool \
     make mc nano netcat python software-properties-common sudo supervisor \
-    telnet unzip wget python-cffi \
+    telnet unzip wget python-cffi python3-cffi \
  && rm -rf /var/lib/apt/lists/*
 
 # install Protobuf
@@ -71,7 +71,7 @@ RUN set -eux; \
         make build-release pkg-deb; \
     fi; \
     cd build-root; \
-    dpkg -i vpp_*.deb libvppinfra_*.deb vpp-dev_*.deb libvppinfra-dev_*.deb  vpp-plugin-core_*.deb vpp-dbg_*.deb vpp-api-python_*.deb; \
+    dpkg -i *.deb; \
     rm -rf .ccache /var/lib/apt/lists/*; \
     find . -type f -name '*.o' -exec rm -rf '{}' \;
 
