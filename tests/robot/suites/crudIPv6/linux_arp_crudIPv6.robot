@@ -65,8 +65,8 @@ Check AFpacket Interface Created
 
 
 Add ARPs
-    Put Linux ARP    agent_vpp_1    vpp1_veth1  veth1_arp  ${ARP_IP1}    32:51:51:51:51:51
-    Put Linux ARP    agent_vpp_1    vpp1_veth2  veth2_arp  ${ARP_IP2}    32:51:51:51:51:52
+    Put Linux ARP    agent_vpp_1    vpp1_veth1  ${ARP_IP1}    32:51:51:51:51:51
+    Put Linux ARP    agent_vpp_1    vpp1_veth2  ${ARP_IP2}    32:51:51:51:51:52
     #Put Linux ARP    agent_vpp_1    eth0        eth_arp  ${ARP_IP2}    32:51:51:51:51:52
 
 Check ARPSs
@@ -76,8 +76,8 @@ Check ARPSs
     #Should Contain     ${out}    ${ARP_IP2} dev eth0 lladdr 32:51:51:51:51:52 PERMANENT
 
 Change ARPs
-    Put Linux ARP    agent_vpp_1    vpp1_veth1  veth1_arp  ${ARP_IP3}    32:61:51:51:51:51
-    Put Linux ARP    agent_vpp_1    vpp1_veth2  veth2_arp  ${ARP_IP4}    32:61:51:51:51:52
+    Put Linux ARP    agent_vpp_1    vpp1_veth1    ${ARP_IP3}    32:61:51:51:51:51
+    Put Linux ARP    agent_vpp_1    vpp1_veth2    ${ARP_IP4}    32:61:51:51:51:52
     #Put Linux ARP    agent_vpp_1    eth0        eth_arp  ${ARP_IP4}    32:61:51:51:51:52
 
 Check ARPSs Again
@@ -87,8 +87,8 @@ Check ARPSs Again
     #Should Contain     ${out}    ${ARP_IP4} dev eth0 lladdr 32:61:51:51:51:52 PERMANENT
 
 Delete ARPs
-    Delete Linux ARP    agent_vpp_1    veth1_arp
-    Delete Linux ARP    agent_vpp_1    veth2_arp
+    Delete Linux ARP    agent_vpp_1    vpp1_veth1    ${ARP_IP3}
+    Delete Linux ARP    agent_vpp_1    vpp1_veth2    ${ARP_IP4}
     #Delete Linux ARP    agent_vpp_1    eth_arp
 
 Check ARPSs After Delete
