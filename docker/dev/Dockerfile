@@ -94,8 +94,8 @@ RUN \
 # copy configs
 COPY \
     docker/dev/etcd.conf \
-    docker/dev/vpp-plugin.conf \
-    docker/dev/linux-plugin.conf \
+    docker/dev/vpp-ifplugin.conf \
+    docker/dev/linux-ifplugin.conf \
     docker/dev/logs.conf \
  ./
 
