@@ -107,6 +107,11 @@ func New() *VPPAgent {
 
 	// No stats publishers by default, use `vpp-ifplugin.conf` config
 	// ifplugin.DefaultPlugin.PublishStatistics = writers
+	ifplugin.DefaultPlugin.DataSyncs = map[string]datasync.KeyProtoValWriter{
+		"etcd":   etcdDataSync,
+		"redis":  redisDataSync,
+		"consul": consulDataSync,
+	}
 
 	// connect IfPlugins for Linux & VPP
 	linux_ifplugin.DefaultPlugin.VppIfPlugin = &ifplugin.DefaultPlugin
