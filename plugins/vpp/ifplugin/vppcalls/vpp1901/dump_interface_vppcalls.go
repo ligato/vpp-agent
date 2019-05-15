@@ -750,8 +750,6 @@ func (h *InterfaceVppHandler) dumpRxPlacement(ifs map[uint32]*vppcalls.Interface
 			break
 		}
 
-		fmt.Printf("Received RX details: %+v\n", rxDetails)
-
 		ifData, ok := ifs[rxDetails.SwIfIndex]
 		if !ok {
 			h.log.Warnf("Received rx-placement data for unknown interface with index %d", rxDetails.SwIfIndex)

@@ -5,50 +5,49 @@ package adapter
 import (
 	"github.com/gogo/protobuf/proto"
 	. "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 )
 
 ////////// type-safe key-value pair with metadata //////////
 
-type InterfaceKVWithMetadata struct {
+type RxPlacementKVWithMetadata struct {
 	Key      string
-	Value    *vpp_interfaces.Interface
-	Metadata *ifaceidx.IfaceMetadata
+	Value    *vpp_interfaces.Interface_RxPlacement
+	Metadata interface{}
 	Origin   ValueOrigin
 }
 
 ////////// type-safe Descriptor structure //////////
 
-type InterfaceDescriptor struct {
+type RxPlacementDescriptor struct {
 	Name                 string
 	KeySelector          KeySelector
 	ValueTypeName        string
 	KeyLabel             func(key string) string
-	ValueComparator      func(key string, oldValue, newValue *vpp_interfaces.Interface) bool
+	ValueComparator      func(key string, oldValue, newValue *vpp_interfaces.Interface_RxPlacement) bool
 	NBKeyPrefix          string
 	WithMetadata         bool
 	MetadataMapFactory   MetadataMapFactory
-	Validate             func(key string, value *vpp_interfaces.Interface) error
-	Create               func(key string, value *vpp_interfaces.Interface) (metadata *ifaceidx.IfaceMetadata, err error)
-	Delete               func(key string, value *vpp_interfaces.Interface, metadata *ifaceidx.IfaceMetadata) error
-	Update               func(key string, oldValue, newValue *vpp_interfaces.Interface, oldMetadata *ifaceidx.IfaceMetadata) (newMetadata *ifaceidx.IfaceMetadata, err error)
-	UpdateWithRecreate   func(key string, oldValue, newValue *vpp_interfaces.Interface, metadata *ifaceidx.IfaceMetadata) bool
-	Retrieve             func(correlate []InterfaceKVWithMetadata) ([]InterfaceKVWithMetadata, error)
+	Validate             func(key string, value *vpp_interfaces.Interface_RxPlacement) error
+	Create               func(key string, value *vpp_interfaces.Interface_RxPlacement) (metadata interface{}, err error)
+	Delete               func(key string, value *vpp_interfaces.Interface_RxPlacement, metadata interface{}) error
+	Update               func(key string, oldValue, newValue *vpp_interfaces.Interface_RxPlacement, oldMetadata interface{}) (newMetadata interface{}, err error)
+	UpdateWithRecreate   func(key string, oldValue, newValue *vpp_interfaces.Interface_RxPlacement, metadata interface{}) bool
+	Retrieve             func(correlate []RxPlacementKVWithMetadata) ([]RxPlacementKVWithMetadata, error)
 	IsRetriableFailure   func(err error) bool
-	DerivedValues        func(key string, value *vpp_interfaces.Interface) []KeyValuePair
-	Dependencies         func(key string, value *vpp_interfaces.Interface) []Dependency
+	DerivedValues        func(key string, value *vpp_interfaces.Interface_RxPlacement) []KeyValuePair
+	Dependencies         func(key string, value *vpp_interfaces.Interface_RxPlacement) []Dependency
 	RetrieveDependencies []string /* descriptor name */
 }
 
 ////////// Descriptor adapter //////////
 
-type InterfaceDescriptorAdapter struct {
-	descriptor *InterfaceDescriptor
+type RxPlacementDescriptorAdapter struct {
+	descriptor *RxPlacementDescriptor
 }
 
-func NewInterfaceDescriptor(typedDescriptor *InterfaceDescriptor) *KVDescriptor {
-	adapter := &InterfaceDescriptorAdapter{descriptor: typedDescriptor}
+func NewRxPlacementDescriptor(typedDescriptor *RxPlacementDescriptor) *KVDescriptor {
+	adapter := &RxPlacementDescriptorAdapter{descriptor: typedDescriptor}
 	descriptor := &KVDescriptor{
 		Name:                 typedDescriptor.Name,
 		KeySelector:          typedDescriptor.KeySelector,
@@ -90,88 +89,88 @@ func NewInterfaceDescriptor(typedDescriptor *InterfaceDescriptor) *KVDescriptor 
 	return descriptor
 }
 
-func (da *InterfaceDescriptorAdapter) ValueComparator(key string, oldValue, newValue proto.Message) bool {
-	typedOldValue, err1 := castInterfaceValue(key, oldValue)
-	typedNewValue, err2 := castInterfaceValue(key, newValue)
+func (da *RxPlacementDescriptorAdapter) ValueComparator(key string, oldValue, newValue proto.Message) bool {
+	typedOldValue, err1 := castRxPlacementValue(key, oldValue)
+	typedNewValue, err2 := castRxPlacementValue(key, newValue)
 	if err1 != nil || err2 != nil {
 		return false
 	}
 	return da.descriptor.ValueComparator(key, typedOldValue, typedNewValue)
 }
 
-func (da *InterfaceDescriptorAdapter) Validate(key string, value proto.Message) (err error) {
-	typedValue, err := castInterfaceValue(key, value)
+func (da *RxPlacementDescriptorAdapter) Validate(key string, value proto.Message) (err error) {
+	typedValue, err := castRxPlacementValue(key, value)
 	if err != nil {
 		return err
 	}
 	return da.descriptor.Validate(key, typedValue)
 }
 
-func (da *InterfaceDescriptorAdapter) Create(key string, value proto.Message) (metadata Metadata, err error) {
-	typedValue, err := castInterfaceValue(key, value)
+func (da *RxPlacementDescriptorAdapter) Create(key string, value proto.Message) (metadata Metadata, err error) {
+	typedValue, err := castRxPlacementValue(key, value)
 	if err != nil {
 		return nil, err
 	}
 	return da.descriptor.Create(key, typedValue)
 }
 
-func (da *InterfaceDescriptorAdapter) Update(key string, oldValue, newValue proto.Message, oldMetadata Metadata) (newMetadata Metadata, err error) {
-	oldTypedValue, err := castInterfaceValue(key, oldValue)
+func (da *RxPlacementDescriptorAdapter) Update(key string, oldValue, newValue proto.Message, oldMetadata Metadata) (newMetadata Metadata, err error) {
+	oldTypedValue, err := castRxPlacementValue(key, oldValue)
 	if err != nil {
 		return nil, err
 	}
-	newTypedValue, err := castInterfaceValue(key, newValue)
+	newTypedValue, err := castRxPlacementValue(key, newValue)
 	if err != nil {
 		return nil, err
 	}
-	typedOldMetadata, err := castInterfaceMetadata(key, oldMetadata)
+	typedOldMetadata, err := castRxPlacementMetadata(key, oldMetadata)
 	if err != nil {
 		return nil, err
 	}
 	return da.descriptor.Update(key, oldTypedValue, newTypedValue, typedOldMetadata)
 }
 
-func (da *InterfaceDescriptorAdapter) Delete(key string, value proto.Message, metadata Metadata) error {
-	typedValue, err := castInterfaceValue(key, value)
+func (da *RxPlacementDescriptorAdapter) Delete(key string, value proto.Message, metadata Metadata) error {
+	typedValue, err := castRxPlacementValue(key, value)
 	if err != nil {
 		return err
 	}
-	typedMetadata, err := castInterfaceMetadata(key, metadata)
+	typedMetadata, err := castRxPlacementMetadata(key, metadata)
 	if err != nil {
 		return err
 	}
 	return da.descriptor.Delete(key, typedValue, typedMetadata)
 }
 
-func (da *InterfaceDescriptorAdapter) UpdateWithRecreate(key string, oldValue, newValue proto.Message, metadata Metadata) bool {
-	oldTypedValue, err := castInterfaceValue(key, oldValue)
+func (da *RxPlacementDescriptorAdapter) UpdateWithRecreate(key string, oldValue, newValue proto.Message, metadata Metadata) bool {
+	oldTypedValue, err := castRxPlacementValue(key, oldValue)
 	if err != nil {
 		return true
 	}
-	newTypedValue, err := castInterfaceValue(key, newValue)
+	newTypedValue, err := castRxPlacementValue(key, newValue)
 	if err != nil {
 		return true
 	}
-	typedMetadata, err := castInterfaceMetadata(key, metadata)
+	typedMetadata, err := castRxPlacementMetadata(key, metadata)
 	if err != nil {
 		return true
 	}
 	return da.descriptor.UpdateWithRecreate(key, oldTypedValue, newTypedValue, typedMetadata)
 }
 
-func (da *InterfaceDescriptorAdapter) Retrieve(correlate []KVWithMetadata) ([]KVWithMetadata, error) {
-	var correlateWithType []InterfaceKVWithMetadata
+func (da *RxPlacementDescriptorAdapter) Retrieve(correlate []KVWithMetadata) ([]KVWithMetadata, error) {
+	var correlateWithType []RxPlacementKVWithMetadata
 	for _, kvpair := range correlate {
-		typedValue, err := castInterfaceValue(kvpair.Key, kvpair.Value)
+		typedValue, err := castRxPlacementValue(kvpair.Key, kvpair.Value)
 		if err != nil {
 			continue
 		}
-		typedMetadata, err := castInterfaceMetadata(kvpair.Key, kvpair.Metadata)
+		typedMetadata, err := castRxPlacementMetadata(kvpair.Key, kvpair.Metadata)
 		if err != nil {
 			continue
 		}
 		correlateWithType = append(correlateWithType,
-			InterfaceKVWithMetadata{
+			RxPlacementKVWithMetadata{
 				Key:      kvpair.Key,
 				Value:    typedValue,
 				Metadata: typedMetadata,
@@ -196,16 +195,16 @@ func (da *InterfaceDescriptorAdapter) Retrieve(correlate []KVWithMetadata) ([]KV
 	return values, err
 }
 
-func (da *InterfaceDescriptorAdapter) DerivedValues(key string, value proto.Message) []KeyValuePair {
-	typedValue, err := castInterfaceValue(key, value)
+func (da *RxPlacementDescriptorAdapter) DerivedValues(key string, value proto.Message) []KeyValuePair {
+	typedValue, err := castRxPlacementValue(key, value)
 	if err != nil {
 		return nil
 	}
 	return da.descriptor.DerivedValues(key, typedValue)
 }
 
-func (da *InterfaceDescriptorAdapter) Dependencies(key string, value proto.Message) []Dependency {
-	typedValue, err := castInterfaceValue(key, value)
+func (da *RxPlacementDescriptorAdapter) Dependencies(key string, value proto.Message) []Dependency {
+	typedValue, err := castRxPlacementValue(key, value)
 	if err != nil {
 		return nil
 	}
@@ -214,19 +213,19 @@ func (da *InterfaceDescriptorAdapter) Dependencies(key string, value proto.Messa
 
 ////////// Helper methods //////////
 
-func castInterfaceValue(key string, value proto.Message) (*vpp_interfaces.Interface, error) {
-	typedValue, ok := value.(*vpp_interfaces.Interface)
+func castRxPlacementValue(key string, value proto.Message) (*vpp_interfaces.Interface_RxPlacement, error) {
+	typedValue, ok := value.(*vpp_interfaces.Interface_RxPlacement)
 	if !ok {
 		return nil, ErrInvalidValueType(key, value)
 	}
 	return typedValue, nil
 }
 
-func castInterfaceMetadata(key string, metadata Metadata) (*ifaceidx.IfaceMetadata, error) {
+func castRxPlacementMetadata(key string, metadata Metadata) (interface{}, error) {
 	if metadata == nil {
 		return nil, nil
 	}
-	typedMetadata, ok := metadata.(*ifaceidx.IfaceMetadata)
+	typedMetadata, ok := metadata.(interface{})
 	if !ok {
 		return nil, ErrInvalidMetadataType(key)
 	}

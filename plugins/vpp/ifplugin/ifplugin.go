@@ -14,6 +14,8 @@
 
 //go:generate descriptor-adapter --descriptor-name Interface  --value-type *vpp_interfaces.Interface --meta-type *ifaceidx.IfaceMetadata --import "ifaceidx" --import "github.com/ligato/vpp-agent/api/models/vpp/interfaces" --output-dir "descriptor"
 //go:generate descriptor-adapter --descriptor-name Unnumbered  --value-type *vpp_interfaces.Interface_Unnumbered --import "github.com/ligato/vpp-agent/api/models/vpp/interfaces" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name RxMode  --value-type *vpp_interfaces.Interface --import "github.com/ligato/vpp-agent/api/models/vpp/interfaces" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name RxPlacement  --value-type *vpp_interfaces.Interface_RxPlacement --import "github.com/ligato/vpp-agent/api/models/vpp/interfaces" --output-dir "descriptor"
 //go:generate descriptor-adapter --descriptor-name BondedInterface  --value-type *vpp_interfaces.BondLink_BondedInterface --import "github.com/ligato/vpp-agent/api/models/vpp/interfaces" --output-dir "descriptor"
 
 package ifplugin
@@ -78,7 +80,8 @@ type IfPlugin struct {
 	dhcpIndex idxmap.NamedMapping
 
 	// descriptors
-	dhcpDescriptor *descriptor.DHCPDescriptor
+	linkStateDescriptor *descriptor.LinkStateDescriptor
+	dhcpDescriptor      *descriptor.DHCPDescriptor
 
 	// from config file
 	defaultMtu uint32
@@ -167,10 +170,17 @@ func (p *IfPlugin) Init() error {
 	}
 	ifaceDescrCtx.SetInterfaceIndex(p.intfIndex)
 
-	//   -> descriptors for derived values
-	var dhcpDescriptor *kvs.KVDescriptor
+	//   -> descriptors for derived values / notifications
+	var (
+		linkStateDescriptor *kvs.KVDescriptor
+		dhcpDescriptor      *kvs.KVDescriptor
+	)
 	dhcpDescriptor, p.dhcpDescriptor = descriptor.NewDHCPDescriptor(p.KVScheduler,
 		p.ifHandler, p.intfIndex, p.Log)
+	linkStateDescriptor, p.linkStateDescriptor = descriptor.NewLinkStateDescriptor(
+		p.KVScheduler, p.intfIndex, p.Log)
+	rxModeDescriptor := descriptor.NewRxModeDescriptor(p.ifHandler, p.intfIndex, p.Log)
+	rxPlacementDescriptor := descriptor.NewRxPlacementDescriptor(p.ifHandler, p.intfIndex, p.Log)
 	addrDescriptor := descriptor.NewInterfaceAddressDescriptor(p.ifHandler, p.intfIndex, p.Log)
 	unIfDescriptor := descriptor.NewUnnumberedIfDescriptor(p.ifHandler, p.intfIndex, p.Log)
 	bondIfDescriptor, _ := descriptor.NewBondedInterfaceDescriptor(p.ifHandler, p.intfIndex, p.Log)
@@ -178,6 +188,9 @@ func (p *IfPlugin) Init() error {
 
 	err = p.KVScheduler.RegisterKVDescriptor(
 		dhcpDescriptor,
+		linkStateDescriptor,
+		rxModeDescriptor,
+		rxPlacementDescriptor,
 		addrDescriptor,
 		unIfDescriptor,
 		bondIfDescriptor,
@@ -201,43 +214,45 @@ func (p *IfPlugin) Init() error {
 
 		p.wg.Add(1)
 		go p.watchStatusEvents()
+	}
 
-		// start interface state publishing
-		p.wg.Add(1)
-		go p.publishIfStateEvents()
+	// start interface state publishing
+	p.wg.Add(1)
+	go p.publishIfStateEvents()
 
-		// start interface state updater
-		p.ifStateChan = make(chan *interfaces.InterfaceNotification, 1000)
-		// Interface state updater
-		p.ifStateUpdater = &InterfaceStateUpdater{}
+	// start interface state updater
+	p.ifStateChan = make(chan *interfaces.InterfaceNotification, 1000)
+	// Interface state updater
+	p.ifStateUpdater = &InterfaceStateUpdater{}
 
-		var n int
-		var t time.Time
-		ifNotifHandler := func(state *interfaces.InterfaceNotification) {
-			select {
-			case p.ifStateChan <- state:
-				// OK
-			default:
-				// full
-				if time.Since(t) > time.Second {
-					p.Log.Debugf("ifStateChan channel is full (%d)", n)
-					n = 0
-				} else {
-					n++
-				}
-				t = time.Now()
+	var n int
+	var t time.Time
+	ifNotifHandler := func(state *interfaces.InterfaceNotification) {
+		select {
+		case p.ifStateChan <- state:
+			// OK
+		default:
+			// full
+			if time.Since(t) > time.Second {
+				p.Log.Debugf("ifStateChan channel is full (%d)", n)
+				n = 0
+			} else {
+				n++
 			}
+			t = time.Now()
 		}
+	}
 
-		if err := p.ifStateUpdater.Init(p.ctx, p.Log, p.KVScheduler, p.GoVppmux, p.intfIndex, ifNotifHandler); err != nil {
-			return err
-		}
+	err = p.ifStateUpdater.Init(p.ctx, p.Log, p.KVScheduler, p.GoVppmux, p.intfIndex,
+		ifNotifHandler, p.publishStats)
+	if err != nil {
+		return err
+	}
 
+	if p.publishStats {
 		if err = p.subscribeWatcher(); err != nil {
 			return err
 		}
-
-		p.Log.Debug("ifStateUpdater Initialized")
 	}
 
 	return nil
@@ -259,11 +274,9 @@ func (p *IfPlugin) subscribeWatcher() (err error) {
 
 // AfterInit delegates the call to ifStateUpdater.
 func (p *IfPlugin) AfterInit() error {
-	if p.publishStats {
-		err := p.ifStateUpdater.AfterInit()
-		if err != nil {
-			return err
-		}
+	err := p.ifStateUpdater.AfterInit()
+	if err != nil {
+		return err
 	}
 
 	if p.StatusCheck != nil {

@@ -98,16 +98,6 @@ var (
 	// ErrInterfaceLinkMismatch is returned when interface type does not match the link configuration.
 	ErrInterfaceLinkMismatch = errors.New("VPP interface type and link configuration do not match")
 
-	// ErrUnsupportedRxMode is returned when the given interface type does not support the chosen
-	// RX mode.
-	ErrUnsupportedRxMode = errors.New("unsupported RX Mode")
-
-	// ErrUndefinedRxMode is returned when the Rx mode is not defined.
-	ErrUndefinedRxMode = errors.New("undefined RX Mode")
-
-	// ErrUnsupportedRxMode is returned when Rx mode has multiple definitions for the same queue.
-	ErrRedefinedRxMode = errors.New("redefined RX Mode")
-
 	// ErrRedefinedRxPlacement is returned when Rx placement has multiple definitions for the same queue.
 	ErrRedefinedRxPlacement = errors.New("redefined RX Placement")
 
@@ -231,19 +221,6 @@ func (d *InterfaceDescriptor) EquivalentInterfaces(key string, oldIntf, newIntf 
 		}
 	}
 
-	// TODO: for TAPv2 the RxMode dump is unstable
-	//       (it goes between POLLING and INTERRUPT, maybe it should actually return ADAPTIVE?)
-	if oldIntf.Type != interfaces.Interface_TAP || oldIntf.GetTap().GetVersion() != 2 {
-		if !d.equivalentRxMode(oldIntf, newIntf) {
-			return false
-		}
-	}
-
-	// handle unspecified Rx placement
-	if d.equivalentRxPlacement(oldIntf.GetRxPlacement(), newIntf.GetRxPlacement()) {
-		return false
-	}
-
 	// handle default/unspecified MTU (except VxLAN and IPSec tunnel)
 	if newIntf.Type != interfaces.Interface_VXLAN_TUNNEL && newIntf.Type != interfaces.Interface_IPSEC_TUNNEL {
 		if d.getInterfaceMTU(newIntf) != 0 && d.getInterfaceMTU(oldIntf) != d.getInterfaceMTU(newIntf) {
@@ -260,78 +237,6 @@ func (d *InterfaceDescriptor) EquivalentInterfaces(key string, oldIntf, newIntf 
 	if !equalStringSets(oldIntf.IpAddresses, newIntf.IpAddresses) {
 		// call Update just to update IP addresses in the metadata
 		return false
-	}
-
-	return true
-}
-
-// equivalentRxMode compares Rx modes for equivalency.
-func (d *InterfaceDescriptor) equivalentRxMode(oldIntf, newIntf *interfaces.Interface) bool {
-	if len(newIntf.GetRxMode()) == 0 {
-		// undefined
-		return true
-	}
-	/* Note: default Rx mode cannot be dumped - compare only if these are two NB
-	   configurations (not a refreshed, i.e. dumped, value).
-	 */
-	oldDefMode := getDefaultRxMode(oldIntf)
-	newDefMode := getDefaultRxMode(newIntf)
-	if oldDefMode != interfaces.Interface_RxMode_UNKNOWN &&
-		newDefMode != interfaces.Interface_RxMode_UNKNOWN {
-		if oldDefMode != newDefMode {
-			return false
-		}
-	}
-	// compare queue-specific RX modes
-	for _, rxMode := range oldIntf.GetRxMode() {
-		if rxMode.DefaultMode {
-			continue
-		}
-		oldMode := normalizeRxMode(rxMode.Mode, oldIntf)
-		newMode := getQueueRxMode(rxMode.Queue, newIntf)
-		if oldMode != newMode {
-			return false
-		}
-	}
-	for _, rxMode := range newIntf.GetRxMode() {
-		if rxMode.DefaultMode {
-			continue
-		}
-		newMode := normalizeRxMode(rxMode.Mode, newIntf)
-		oldMode := getQueueRxMode(rxMode.Queue, oldIntf)
-		if oldMode != newMode {
-			return false
-		}
-	}
-	return true
-}
-
-// equivalentRxMode compares Rx placements for equivalency.
-func (d *InterfaceDescriptor) equivalentRxPlacement(oldPlacement, newPlacement []*interfaces.Interface_RxPlacement) bool {
-	if len(newPlacement) == 0{
-		// undefined
-		return true
-	}
-
-	if len(oldPlacement) != len(newPlacement) {
-		return false
-	}
-
-	for _, old := range oldPlacement {
-		found := false
-		for _, new := range newPlacement {
-			if old.Queue == new.Queue {
-				found = true
-				if (old.MainThread != new.MainThread) ||
-					(!old.MainThread && old.Worker != new.Worker) {
-					return false
-				}
-				break
-			}
-		}
-		if !found {
-			return false
-		}
 	}
 
 	return true
@@ -511,17 +416,6 @@ func (d *InterfaceDescriptor) Validate(key string, intf *interfaces.Interface) e
 		if _, ok := d.ethernetIfs[intf.Name]; !ok {
 			return kvs.NewInvalidValueError(ErrDPDKInterfaceMissing, "name")
 		}
-		for _, rxMode := range intf.GetRxMode() {
-			mode := normalizeRxMode(rxMode.Mode, intf)
-			if mode != interfaces.Interface_RxMode_POLLING {
-				if rxMode.DefaultMode {
-					return kvs.NewInvalidValueError(ErrUnsupportedRxMode,
-						"rx_mode[default]")
-				}
-				return kvs.NewInvalidValueError(ErrUnsupportedRxMode,
-					fmt.Sprintf("rx_mode[.queue=%d]", rxMode.Queue))
-			}
-		}
 	case interfaces.Interface_AF_PACKET:
 		if intf.GetAfpacket().GetHostIfName() == "" {
 			return kvs.NewInvalidValueError(ErrAfPacketWithoutHostName, "link.afpacket.host_if_name")
@@ -539,31 +433,7 @@ func (d *InterfaceDescriptor) Validate(key string, intf *interfaces.Interface) e
 		}
 	}
 
-	// validate Rx Mode
-	for i, rxMode1 := range intf.GetRxMode() {
-		if rxMode1.Mode == interfaces.Interface_RxMode_UNKNOWN {
-			if rxMode1.DefaultMode {
-				return kvs.NewInvalidValueError(ErrUndefinedRxMode,"rx_mode[default]")
-			}
-			return kvs.NewInvalidValueError(ErrUndefinedRxMode,
-				fmt.Sprintf("rx_mode[.queue=%d]", rxMode1.Queue))
-		}
-		for j := i + 1; j < len(intf.GetRxMode()); j++ {
-			rxMode2 := intf.GetRxMode()[j]
-			if rxMode1.DefaultMode != rxMode2.DefaultMode {
-				continue
-			}
-			if rxMode1.DefaultMode {
-				return kvs.NewInvalidValueError(ErrRedefinedRxMode,"rx_mode[default]")
-			}
-			if rxMode1.Queue == rxMode2.Queue {
-				return kvs.NewInvalidValueError(ErrRedefinedRxMode,
-					fmt.Sprintf("rx_mode[.queue=%d]", rxMode1.Queue))
-			}
-		}
-	}
-
-	// validate Rx Placement
+	// validate Rx Placement before it gets derived out
 	for i, rxPlacement1 := range intf.GetRxPlacement() {
 		for j := i + 1; j < len(intf.GetRxPlacement()); j++ {
 			rxPlacement2 := intf.GetRxPlacement()[j]
@@ -664,7 +534,9 @@ func (d *InterfaceDescriptor) Dependencies(key string, intf *interfaces.Interfac
 //  - empty value for enabled DHCP client
 //  - configuration for every slave of a bonded interface
 //  - one empty value for every IP address to be assigned to the interface
-//  - one empty value for VRF table to put the interface into.
+//  - one empty value for VRF table to put the interface into
+//  - one value with interface configuration reduced to RxMode if set
+//  - one Interface_RxPlacement for every queue with configured Rx placement.
 func (d *InterfaceDescriptor) DerivedValues(key string, intf *interfaces.Interface) (derValues []kvs.KeyValuePair) {
 	// unnumbered interface
 	if intf.GetUnnumbered() != nil {
@@ -728,6 +600,26 @@ func (d *InterfaceDescriptor) DerivedValues(key string, intf *interfaces.Interfa
 				Value: &prototypes.Empty{},
 			})
 		}
+	}
+
+	// Rx mode
+	if len(intf.GetRxMode()) > 0 {
+		derValues = append(derValues, kvs.KeyValuePair{
+			Key:   interfaces.RxModeKey(intf.GetName()),
+			Value: &interfaces.Interface{
+				Name:   intf.GetName(),
+				Type:   intf.GetType(),
+				RxMode: intf.GetRxMode(),
+			},
+		})
+	}
+
+	// Rx placement
+	for _, rxPlacement := range intf.GetRxPlacement() {
+		derValues = append(derValues, kvs.KeyValuePair{
+			Key:   interfaces.RxPlacementKey(intf.GetName(), rxPlacement.GetQueue()),
+			Value: rxPlacement,
+		})
 	}
 
 	// TODO: define derived value for UP/DOWN state (needed for subinterfaces)
@@ -799,50 +691,6 @@ func (d *InterfaceDescriptor) getMemifRingSize(memif *interfaces.MemifLink) uint
 		return defaultMemifRingSize
 	}
 	return memif.GetRingSize()
-}
-
-// getQueueRxMode reads RX mode for the given queue from the interface configuration.
-func getQueueRxMode(queue uint32, iface *interfaces.Interface) (mode interfaces.Interface_RxMode_Type) {
-	for _, rxMode := range iface.GetRxMode() {
-		if rxMode.DefaultMode {
-			mode = rxMode.Mode
-			continue // keep looking for a queue-specific RX mode
-		}
-		if rxMode.Queue == queue {
-			mode = rxMode.Mode
-			break
-		}
-	}
-	return normalizeRxMode(mode, iface)
-}
-
-// getDefaultRxMode reads default RX mode from the interface configuration.
-func getDefaultRxMode(iface *interfaces.Interface) (rxMode interfaces.Interface_RxMode_Type) {
-	for _, rxMode := range iface.GetRxMode() {
-		if rxMode.DefaultMode {
-			return normalizeRxMode(rxMode.Mode, iface)
-		}
-	}
-	return interfaces.Interface_RxMode_UNKNOWN
-}
-
-// normalizeRxMode resolves default/undefined Rx mode for specific interfaces.
-func normalizeRxMode(mode interfaces.Interface_RxMode_Type, iface *interfaces.Interface) interfaces.Interface_RxMode_Type {
-	if mode != interfaces.Interface_RxMode_DEFAULT {
-		return mode
-	}
-	switch iface.GetType() {
-	case interfaces.Interface_DPDK:
-		return interfaces.Interface_RxMode_POLLING
-	case interfaces.Interface_AF_PACKET:
-		return interfaces.Interface_RxMode_INTERRUPT
-	case interfaces.Interface_TAP:
-		if iface.GetTap().GetVersion() == 2 {
-			// TAP v2
-			return interfaces.Interface_RxMode_INTERRUPT
-		}
-	}
-	return mode
 }
 
 // getTapConfig returns the TAP-specific configuration section (handling undefined attributes).

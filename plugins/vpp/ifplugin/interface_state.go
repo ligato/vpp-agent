@@ -71,7 +71,7 @@ type InterfaceStateUpdater struct {
 // Init members (channels, maps...) and start go routines
 func (c *InterfaceStateUpdater) Init(ctx context.Context, logger logging.PluginLogger, kvScheduler kvs.KVScheduler,
 	goVppMux govppmux.StatsAPI, swIfIndexes ifaceidx.IfaceMetadataIndex,
-	publishIfState func(notification *intf.InterfaceNotification)) (err error) {
+	publishIfState func(notification *intf.InterfaceNotification), readCounters bool) (err error) {
 
 	// Logger
 	c.log = logger.NewLogger("if-state")
@@ -109,8 +109,10 @@ func (c *InterfaceStateUpdater) Init(ctx context.Context, logger logging.PluginL
 	go c.watchVPPNotifications(childCtx)
 
 	// Periodically read VPP counters and combined counters for VPP statistics
-	c.wg.Add(1)
-	go c.startReadingCounters(childCtx)
+	if readCounters {
+		c.wg.Add(1)
+		go c.startReadingCounters(childCtx)
+	}
 
 	c.wg.Add(1)
 	go c.startUpdatingIfStateDetails(childCtx)

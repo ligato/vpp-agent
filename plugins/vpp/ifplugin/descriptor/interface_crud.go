@@ -142,21 +142,6 @@ func (d *InterfaceDescriptor) Create(key string, intf *interfaces.Interface) (me
 		d.bondIDs[intf.GetBond().GetId()] = intf.GetName()
 	}
 
-	err = d.configureRxMode(intf, ifIdx, false)
-	if err != nil {
-		return nil, err
-	}
-
-	// rx-placement
-	for _, rxPlacement := range intf.GetRxPlacement() {
-		if err = d.ifHandler.SetRxPlacement(ifIdx, rxPlacement); err != nil {
-			err = errors.Errorf("failed to set rx-placement for queue %d of the interface %s: %v",
-				rxPlacement.Queue, intf.Name, err)
-			d.log.Error(err)
-			return nil, err
-		}
-	}
-
 	// MAC address. Note: physical interfaces cannot have the MAC address changed. The bond interface uses its own
 	// binary API call to set MAC address.
 	if intf.GetPhysAddress() != "" &&
@@ -214,58 +199,6 @@ func (d *InterfaceDescriptor) Create(key string, intf *interfaces.Interface) (me
 	return metadata, nil
 }
 
-// configureRxMode (re-)configures Rx mode for the interface.
-func (d *InterfaceDescriptor) configureRxMode(iface *interfaces.Interface, ifIdx uint32,
-	reconfigure bool) (err error) {
-
-	// first, revert back to default for all queues
-	if reconfigure {
-		err = d.ifHandler.SetRxMode(ifIdx, &interfaces.Interface_RxMode{
-			DefaultMode: true,
-			Mode:        normalizeRxMode(interfaces.Interface_RxMode_DEFAULT, iface),
-		})
-		if err != nil {
-			err = errors.Errorf("failed to set default Rx-mode for interface %s: %v", iface, err)
-			d.log.Error(err)
-			return err
-		}
-	}
-
-	if len(iface.GetRxMode()) == 0 {
-		return
-	}
-
-	// configure the default Rx mode
-	defRxMode := getDefaultRxMode(iface)
-	if defRxMode != interfaces.Interface_RxMode_UNKNOWN {
-		err = d.ifHandler.SetRxMode(ifIdx, &interfaces.Interface_RxMode{
-			DefaultMode: true,
-			Mode:        defRxMode,
-		})
-		if err != nil {
-			err = errors.Errorf("failed to set default Rx-mode for interface %s: %v", iface.Name, err)
-			d.log.Error(err)
-			return err
-		}
-	}
-
-	// configure per-queue RX mode
-	for _, rxMode := range iface.GetRxMode() {
-		if rxMode.DefaultMode {
-			continue
-		}
-		err = d.ifHandler.SetRxMode(ifIdx, rxMode)
-		if err != nil {
-			err = errors.Errorf("failed to set Rx-mode for queue %d of the interface %s: %v",
-				rxMode.Queue, iface.Name, err)
-			d.log.Error(err)
-			return err
-		}
-	}
-
-	return nil
-}
-
 // Delete removes VPP interface.
 func (d *InterfaceDescriptor) Delete(key string, intf *interfaces.Interface, metadata *ifaceidx.IfaceMetadata) error {
 	var err error
@@ -317,26 +250,6 @@ func (d *InterfaceDescriptor) Delete(key string, intf *interfaces.Interface, met
 // Update is able to change Type-unspecific attributes.
 func (d *InterfaceDescriptor) Update(key string, oldIntf, newIntf *interfaces.Interface, oldMetadata *ifaceidx.IfaceMetadata) (newMetadata *ifaceidx.IfaceMetadata, err error) {
 	ifIdx := oldMetadata.SwIfIndex
-
-	// rx-mode
-	if !d.equivalentRxMode(oldIntf, newIntf) {
-		err = d.configureRxMode(newIntf, ifIdx, len(oldIntf.GetRxMode()) != 0)
-		if err != nil {
-			return oldMetadata, err
-		}
-	}
-
-	// rx-placement
-	if !d.equivalentRxPlacement(oldIntf.GetRxPlacement(), newIntf.GetRxPlacement()) {
-		for _, rxPlacement := range newIntf.GetRxPlacement() {
-			if err = d.ifHandler.SetRxPlacement(ifIdx, rxPlacement); err != nil {
-				err = errors.Errorf("failed to set rx-placement for queue %d of the interface %s: %v",
-					rxPlacement.Queue, newIntf.Name, err)
-				d.log.Error(err)
-				return nil, err
-			}
-		}
-	}
 
 	// admin status
 	if newIntf.Enabled != oldIntf.Enabled {
@@ -540,6 +453,7 @@ func (d *InterfaceDescriptor) Retrieve(correlate []adapter.InterfaceKVWithMetada
 			Vrf:           intf.Interface.Vrf,
 			IPAddresses:   intf.Interface.IpAddresses,
 			TAPHostIfName: tapHostIfName,
+			LinkIsUp:      intf.Meta.LinkState == 1,
 		}
 		retrieved = append(retrieved, adapter.InterfaceKVWithMetadata{
 			Key:      models.Key(intf.Interface),
