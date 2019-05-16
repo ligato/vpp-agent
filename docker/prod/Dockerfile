@@ -1,68 +1,57 @@
-FROM dev_vpp_agent as devimg
+ARG DEV_IMG=dev_vpp_agent
+FROM ${DEV_IMG} as devimg
 
 FROM ubuntu:18.04 as base
 
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
-     # general tools
-     inetutils-traceroute \
-     iproute2 \
-     iputils-ping \
-     # vpp requirements
-     ca-certificates \
-     libapr1 \
-     libc6 \
-     libmbedcrypto1 \
-     libmbedtls10 \
-     libmbedx509-0 \
-     libnuma1 \
-     openssl \
-     # other
-     ipsec-tools \
-     python \
-     supervisor \
-     netcat \
+		# general tools
+		inetutils-traceroute \
+		iproute2 \
+		iputils-ping \
+		# vpp requirements
+		ca-certificates \
+		libapr1 \
+		libc6 \
+		libmbedcrypto1 \
+		libmbedtls10 \
+		libmbedx509-0 \
+		libnuma1 \
+		openssl \
+		# other
+		python \
+		supervisor \
  && rm -rf /var/lib/apt/lists/*
 
 # install vpp
 COPY --from=devimg \
-    /opt/vpp-agent/dev/vpp/build-root/libvppinfra_*.deb \
-    /opt/vpp-agent/dev/vpp/build-root/vpp-plugin-core_*.deb \
-    /opt/vpp-agent/dev/vpp/build-root/vpp-plugin-dpdk_*.deb \
-    /opt/vpp-agent/dev/vpp/build-root/vpp_*.deb \
+    /vpp/libvppinfra_*.deb \
+    /vpp/vpp-plugin-core_*.deb \
+    /vpp/vpp-plugin-dpdk_*.deb \
+    /vpp/vpp_*.deb \
  /opt/vpp/
 
 RUN cd /opt/vpp/ \
  && dpkg -i *.deb \
  && rm *.deb
 
+# Final image
 FROM scratch
 COPY --from=base / /
 
-# install agent
+# Install agent
 COPY --from=devimg \
+    /go/bin/agentctl \
     /go/bin/vpp-agent \
-    /go/bin/vpp-agent-ctl \
  /bin/
 
-# copy configs
-COPY \
-    etcd.conf \
-    vpp-ifplugin.conf \
-    linux-ifplugin.conf \
- /opt/vpp-agent/dev/
-
+# Copy configs
+COPY etcd.conf /opt/vpp-agent/dev/
 COPY vpp.conf /etc/vpp/vpp.conf
 COPY supervisord.conf /etc/supervisord/supervisord.conf
-
-# copy scripts
-COPY \
-    exec_agent.sh \
-    supervisord_kill.py \
- /usr/bin/
+COPY supervisord_kill.py /usr/bin/
 
 WORKDIR /root/
 
-# run supervisor as the default executable
 CMD rm -f /dev/shm/db /dev/shm/global_vm /dev/shm/vpe-api && \
     exec /usr/bin/supervisord -c /etc/supervisord/supervisord.conf
