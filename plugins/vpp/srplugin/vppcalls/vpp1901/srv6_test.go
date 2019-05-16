@@ -646,25 +646,63 @@ func TestDeleteLocalSID(t *testing.T) {
 	cases := []struct {
 		Name      string
 		Fail      bool
-		Sid       net.IP
+		Input     *srv6.LocalSID
 		MockReply govppapi.Message
 		Verify    func(error, govppapi.Message)
 	}{
 		{
-			Name:      "simple delete of local sid",
-			Sid:       sidA.Addr,
+			Name: "simple delete of local sid (using vrf table with id 0)",
+			Input: &srv6.LocalSID{
+				Sid:               sidToStr(sidA),
+				InstallationVrfId: 0,
+				EndFunction: &srv6.LocalSID_BaseEndFunction{
+					BaseEndFunction: &srv6.LocalSID_End{
+						Psp: true,
+					},
+				},
+			},
 			MockReply: &sr.SrLocalsidAddDelReply{},
 			Verify: func(err error, catchedMsg govppapi.Message) {
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(catchedMsg).To(Equal(&sr.SrLocalsidAddDel{
 					IsDel:    1,
 					Localsid: sidA,
+					FibTable: 0,
 				}))
 			},
 		},
 		{
-			Name:      "failure propagation from VPP",
-			Sid:       sidA.Addr,
+			Name: "simple delete of local sid (using vrf table with nonzero id)",
+			Input: &srv6.LocalSID{
+				Sid:               sidToStr(sidA),
+				InstallationVrfId: 10,
+				EndFunction: &srv6.LocalSID_BaseEndFunction{
+					BaseEndFunction: &srv6.LocalSID_End{
+						Psp: true,
+					},
+				},
+			},
+			MockReply: &sr.SrLocalsidAddDelReply{},
+			Verify: func(err error, catchedMsg govppapi.Message) {
+				Expect(err).ShouldNot(HaveOccurred())
+				Expect(catchedMsg).To(Equal(&sr.SrLocalsidAddDel{
+					IsDel:    1,
+					Localsid: sidA,
+					FibTable: 10,
+				}))
+			},
+		},
+		{
+			Name: "failure propagation from VPP",
+			Input: &srv6.LocalSID{
+				Sid:               sidToStr(sidA),
+				InstallationVrfId: 0,
+				EndFunction: &srv6.LocalSID_BaseEndFunction{
+					BaseEndFunction: &srv6.LocalSID_End{
+						Psp: true,
+					},
+				},
+			},
 			MockReply: &sr.SrLocalsidAddDelReply{Retval: 1},
 			Verify: func(err error, msg govppapi.Message) {
 				Expect(err).Should(HaveOccurred())
@@ -677,20 +715,10 @@ func TestDeleteLocalSID(t *testing.T) {
 		t.Run(td.Name, func(t *testing.T) {
 			ctx, vppCalls := setup(t)
 			defer teardown(ctx)
-			// data and prepare case
-			localsid := &srv6.LocalSID{
-				Sid:               td.Sid.String(),
-				InstallationVrfId: 10,
-				EndFunction: &srv6.LocalSID_BaseEndFunction{
-					BaseEndFunction: &srv6.LocalSID_End{
-						Psp: true,
-					},
-				},
-			}
-			vppCalls.AddLocalSid(localsid)
+			// prepare for case
 			ctx.MockVpp.MockReply(td.MockReply)
 			// make the call and verify
-			err := vppCalls.DeleteLocalSid(td.Sid)
+			err := vppCalls.DeleteLocalSid(td.Input)
 			td.Verify(err, ctx.MockChannel.Msg)
 		})
 	}
