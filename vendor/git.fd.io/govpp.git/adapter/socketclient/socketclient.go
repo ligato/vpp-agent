@@ -171,10 +171,15 @@ func (c *vppClient) connect(sockAddr string) error {
 		return err
 	}
 
-	conn, err := net.DialUnix("unixpacket", nil, addr)
+	conn, err := net.DialUnix("unix", nil, addr)
 	if err != nil {
-		Log.Debugln("Dial error:", err)
-		return err
+		if strings.Contains(err.Error(), "wrong type for socket") {
+			conn, err = net.DialUnix("unixpacket", nil, addr)
+		}
+		if err != nil {
+			Log.Debugln("Dial error:", err)
+			return err
+		}
 	}
 
 	c.conn = conn
