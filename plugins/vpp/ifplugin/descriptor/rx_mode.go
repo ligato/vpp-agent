@@ -211,7 +211,8 @@ func (d *RxModeDescriptor) configureRxMode(iface *interfaces.Interface, op kvs.T
 		})
 		if err != nil {
 			// treat error as warning here
-			d.log.Warn(err)
+			d.log.Warnf("failed to un-configure Rx-mode (%v) - most likely "+
+				"the interface is already without a link", err)
 			err = nil
 		}
 	}

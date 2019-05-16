@@ -336,6 +336,44 @@ func (h *InterfaceVppHandler) DumpDhcpClients() (map[uint32]*vppcalls.Dhcp, erro
 	return dhcpData, nil
 }
 
+// DumpInterfaceStates dumps link and administrative state of every interface.
+func (h *InterfaceVppHandler) DumpInterfaceStates() (map[uint32]*vppcalls.InterfaceState, error) {
+	ifs := make(map[uint32]*vppcalls.InterfaceState)
+
+	reqCtx := h.callsChannel.SendMultiRequest(&binapi_interface.SwInterfaceDump{})
+	for {
+		ifDetails := &binapi_interface.SwInterfaceDetails{}
+		stop, err := reqCtx.ReceiveReply(ifDetails)
+		if stop {
+			break // Break from the loop.
+		}
+		if err != nil {
+			return nil, fmt.Errorf("failed to dump interface: %v", err)
+		}
+
+		ifaceState := &vppcalls.InterfaceState{}
+		switch ifDetails.AdminUpDown {
+		case 0:
+			ifaceState.AdminState = interfaces.InterfaceState_DOWN
+		case 1:
+			ifaceState.AdminState = interfaces.InterfaceState_UP
+		default:
+			ifaceState.AdminState = interfaces.InterfaceState_UNKNOWN_STATUS
+		}
+		switch ifDetails.LinkUpDown {
+		case 0:
+			ifaceState.LinkState = interfaces.InterfaceState_DOWN
+		case 1:
+			ifaceState.LinkState = interfaces.InterfaceState_UP
+		default:
+			ifaceState.LinkState = interfaces.InterfaceState_UNKNOWN_STATUS
+		}
+		ifs[ifDetails.SwIfIndex] = ifaceState
+	}
+
+	return ifs, nil
+}
+
 // Returns true if given interface contains at least one IPv6 address. For VxLAN, source and destination
 // addresses are also checked
 func (h *InterfaceVppHandler) isIpv6Interface(iface *interfaces.Interface) (bool, error) {

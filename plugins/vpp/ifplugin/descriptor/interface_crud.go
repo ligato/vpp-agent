@@ -419,6 +419,31 @@ func (d *InterfaceDescriptor) Retrieve(correlate []adapter.InterfaceKVWithMetada
 					intf.Interface.GetMemif().BufferSize = expCfg.GetMemif().GetBufferSize()
 				}
 			}
+
+			// remove rx-placement entries for queues with configuration not defined by NB
+			rxPlacementDump := intf.Interface.GetRxPlacement()
+			rxPlacementCfg := expCfg.GetRxPlacement()
+			for i := 0; i < len(rxPlacementDump); {
+				queue := rxPlacementDump[i].Queue
+				found := false
+				for j := 0; j < len(rxPlacementCfg); j++ {
+					if rxPlacementCfg[j].Queue == queue {
+						found = true
+						break
+					}
+				}
+				if found {
+					i++
+				} else {
+					rxPlacementDump = append(rxPlacementDump[:i], rxPlacementDump[i+1:]...)
+				}
+			}
+			intf.Interface.RxPlacement = rxPlacementDump
+
+			// remove rx-mode from the dump if it is not configured by NB
+			if len(expCfg.GetRxMode()) == 0 {
+				intf.Interface.RxMode = []*interfaces.Interface_RxMode{}
+			}
 		}
 
 		// verify links between VPP and Linux side

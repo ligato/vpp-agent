@@ -15,12 +15,15 @@
 package descriptor
 
 import (
+	"sync"
+
 	prototypes "github.com/gogo/protobuf/types"
 	"github.com/ligato/cn-infra/logging"
 
 	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
+	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
 )
 
 const (
@@ -33,25 +36,33 @@ const (
 // interfaces.
 type LinkStateDescriptor struct {
 	// input arguments
-	log         logging.Logger
-	kvscheduler kvs.KVScheduler
-	ifaceIdx    ifaceidx.IfaceMetadataIndex
+	log          logging.Logger
+	kvscheduler  kvs.KVScheduler
+	ifaceHandler vppcalls.InterfaceVppAPI
+	ifaceIdx     ifaceidx.IfaceMetadataIndex
+
+	linkStatesMx sync.Mutex
+	linkStates   map[string]bool // interface name -> link is up
 }
 
 // NewLinkStateDescriptor creates a new instance of the Link-State descriptor.
-func NewLinkStateDescriptor(kvscheduler kvs.KVScheduler, ifaceIdx ifaceidx.IfaceMetadataIndex,
-	log logging.PluginLogger) (descr *kvs.KVDescriptor, ctx *LinkStateDescriptor) {
+func NewLinkStateDescriptor(kvscheduler kvs.KVScheduler, ifaceHandler vppcalls.InterfaceVppAPI,
+	ifaceIdx ifaceidx.IfaceMetadataIndex, log logging.PluginLogger) (descr *kvs.KVDescriptor, ctx *LinkStateDescriptor) {
 
 	descrCtx := &LinkStateDescriptor{
 		log:          log.NewLogger("interface-link-state"),
 		kvscheduler:  kvscheduler,
+		ifaceHandler: ifaceHandler,
 		ifaceIdx:     ifaceIdx,
+		linkStates:   make(map[string]bool),
 	}
 	return &kvs.KVDescriptor{
 		Name:                 LinkStateDescriptorName,
 		KeySelector:          descrCtx.IsInterfaceLinkStateKey,
 		Retrieve:             descrCtx.Retrieve,
-		RetrieveDependencies: []string{InterfaceDescriptorName}, // link state read from interface metadata
+		// Retrieve depends on the interface descriptor: interface index is used
+		// to convert sw_if_index to logical interface name
+		RetrieveDependencies: []string{InterfaceDescriptorName},
 	}, descrCtx
 }
 
@@ -65,10 +76,30 @@ func (w *LinkStateDescriptor) IsInterfaceLinkStateKey(key string) bool {
 // Retrieve returns key for every VPP interface describing the state of the link
 // (value is empty).
 func (w *LinkStateDescriptor) Retrieve(correlate []kvs.KVWithMetadata) (values []kvs.KVWithMetadata, err error) {
-	for _, ifaceName := range w.ifaceIdx.ListAllInterfaces() {
-		ifaceMeta, _ := w.ifaceIdx.LookupByName(ifaceName)
+	// TODO: avoid dumping interface details when it was already done in the interface
+	//       descriptor within the same Refresh (e.g. during full resync)
+	//       - e.g. add context to allow sharing of information across Retrieve-s of the same Refresh
+
+	ifaceStates, err := w.ifaceHandler.DumpInterfaceStates()
+	if err != nil {
+		w.log.Error(err)
+		return nil, err
+	}
+
+	w.linkStatesMx.Lock()
+	defer w.linkStatesMx.Unlock()
+	w.linkStates = make(map[string]bool) // clear the map
+
+	for ifaceIdx, ifaceState := range ifaceStates {
+		ifaceName, _, found := w.ifaceIdx.LookupBySwIfIndex(ifaceIdx)
+		if !found {
+			// skip interface not configured by NB (e.g. untouched Gbe interface)
+			continue
+		}
+		linkIsUp := ifaceState.LinkState == interfaces.InterfaceState_UP
+		w.linkStates[ifaceName] = linkIsUp
 		values = append(values, kvs.KVWithMetadata{
-			Key:    interfaces.LinkStateKey(ifaceName, ifaceMeta.LinkIsUp),
+			Key:    interfaces.LinkStateKey(ifaceName, linkIsUp),
 			Value:  &prototypes.Empty{},
 			Origin: kvs.FromSB,
 		})
@@ -79,24 +110,43 @@ func (w *LinkStateDescriptor) Retrieve(correlate []kvs.KVWithMetadata) (values [
 
 // UpdateLinkState notifies scheduler about a change in the link state of an interface.
 func (w *LinkStateDescriptor) UpdateLinkState(ifaceState *interfaces.InterfaceNotification) {
+	w.linkStatesMx.Lock()
+	defer w.linkStatesMx.Unlock()
+
+	var notifs []kvs.KVWithMetadata
 
 	operStatus := ifaceState.State.OperStatus
-	if operStatus == interfaces.InterfaceState_DELETED ||
-		operStatus == interfaces.InterfaceState_UNKNOWN_STATUS {
-		// interface link is neither up nor down
-		w.kvscheduler.PushSBNotification(
-			interfaces.LinkStateKey(ifaceState.State.Name, true),
-			nil,
-			nil)
-		w.kvscheduler.PushSBNotification(
-			interfaces.LinkStateKey(ifaceState.State.Name, false),
-			nil,
-			nil)
-		return
+	ifaceName := ifaceState.State.Name
+	linkWasUp, hadLinkState := w.linkStates[ifaceName]
+	linkIsUp := operStatus == interfaces.InterfaceState_UP
+	toDelete := operStatus == interfaces.InterfaceState_DELETED ||
+		operStatus == interfaces.InterfaceState_UNKNOWN_STATUS
+
+	if toDelete || (hadLinkState && (linkIsUp != linkWasUp)) {
+		if hadLinkState {
+			// remove now obsolete key-value pair
+			notifs = append(notifs, kvs.KVWithMetadata{
+				Key:      interfaces.LinkStateKey(ifaceState.State.Name, linkWasUp),
+				Value:    nil,
+				Metadata: nil,
+			})
+		}
 	}
 
-	w.kvscheduler.PushSBNotification(
-		interfaces.LinkStateKey(ifaceState.State.Name, operStatus == interfaces.InterfaceState_UP),
-		&prototypes.Empty{},
-		nil)
+	if !toDelete && (!hadLinkState || (linkIsUp != linkWasUp)) {
+		// push new key-value pair
+		notifs = append(notifs, kvs.KVWithMetadata{
+			Key:      interfaces.LinkStateKey(ifaceState.State.Name, linkIsUp),
+			Value:    &prototypes.Empty{},
+			Metadata: nil,
+		})
+		w.linkStates[ifaceName] = linkIsUp
+	}
+
+	if len(notifs) != 0 {
+		err := w.kvscheduler.PushSBNotification(notifs...)
+		if err != nil {
+			w.log.Errorf("failed to send notifications to KVScheduler: %v", err)
+		}
+	}
 }

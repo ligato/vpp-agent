@@ -178,7 +178,7 @@ func (p *IfPlugin) Init() error {
 	dhcpDescriptor, p.dhcpDescriptor = descriptor.NewDHCPDescriptor(p.KVScheduler,
 		p.ifHandler, p.intfIndex, p.Log)
 	linkStateDescriptor, p.linkStateDescriptor = descriptor.NewLinkStateDescriptor(
-		p.KVScheduler, p.intfIndex, p.Log)
+		p.KVScheduler, p.ifHandler, p.intfIndex, p.Log)
 	rxModeDescriptor := descriptor.NewRxModeDescriptor(p.ifHandler, p.intfIndex, p.Log)
 	rxPlacementDescriptor := descriptor.NewRxPlacementDescriptor(p.ifHandler, p.intfIndex, p.Log)
 	addrDescriptor := descriptor.NewInterfaceAddressDescriptor(p.ifHandler, p.intfIndex, p.Log)
