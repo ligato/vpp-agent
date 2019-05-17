@@ -129,8 +129,6 @@ Start Containers And Add Nodes
 Configure Environment 2
     [Tags]    setup
     Configure Environment 1
-
-Show Interfaces Before Setup 2
     vpp_term: Show Interfaces    agent_vpp_1
     vpp_term: Show Interfaces    agent_vpp_2
 

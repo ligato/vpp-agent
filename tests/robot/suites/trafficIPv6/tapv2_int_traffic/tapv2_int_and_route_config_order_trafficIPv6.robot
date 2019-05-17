@@ -129,11 +129,6 @@ Configure Environment 2
     [Tags]    setup
     Configure Environment 1
 
-Show Interfaces Before Setup 2
-    vpp_term: Show Interfaces    agent_vpp_1
-    vpp_term: Show Interfaces    agent_vpp_2
-    Write To Machine    vpp_agent_ctl    vpp-agent-ctl ${AGENT_VPP_ETCD_CONF_PATH} -ps
-
 Add Static Route From VPP1 Linux To VPP2 2
     Put Linux Route    node=agent_vpp_1    namespace=${EMPTY}    interface=${NAME_VPP1_TAP1}    routename=${NAME_VPP1_LINUX_TO_VPP2}    ip=${IP_VPP2_TAP1_NETWORK}    next_hop=${EMPTY}
 

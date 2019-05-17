@@ -24,11 +24,8 @@ ${SFC_CONTROLLER_CONF_PATH}        /opt/sfc-controller/dev/sfc.conf
 
 # Variables for container with agent and VPP
 ${AGENT_VPP_IMAGE_NAME}            prod_vpp_agent
-#${AGENT_VPP_ETCD_CONF_PATH}        /opt/vnf-agent/dev/etcd.conf
-#${AGENT_VPP_KAFKA_CONF_PATH}       /opt/vnf-agent/dev/kafka.conf
 ${AGENT_VPP_ETCD_CONF_PATH}        /opt/vpp-agent/dev/etcd.conf
 ${AGENT_VPP_KAFKA_CONF_PATH}       /opt/vpp-agent/dev/kafka.conf
-${VPP_AGENT_CTL_IMAGE_NAME}        ${AGENT_VPP_IMAGE_NAME}
 ${VPP_AGENT_HOST_MEMIF_SOCKET_FOLDER}    /run/vpp
 
 ${VPP_CONF_PATH}                   /etc/vpp/vpp.conf
