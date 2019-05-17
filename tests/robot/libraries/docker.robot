@@ -32,29 +32,6 @@ Add Agent Node Again
     ${hostname}=    Execute On Machine    docker    ${DOCKER_COMMAND} exec ${node} bash -c 'echo $HOSTNAME'
     Set Suite Variable    ${${node}_again_HOSTNAME}    ${hostname}
 
-Add Agent Node With Kafka
-    [Arguments]    ${node}
-    Open SSH Connection    ${node}    ${DOCKER_HOST_IP}    ${DOCKER_HOST_USER}    ${DOCKER_HOST_PSWD}
-    Execute On Machine     ${node}    ${DOCKER_COMMAND} create -e MICROSERVICE_LABEL=${node} --sysctl net.ipv6.conf.all.disable_ipv6=0 -it -p ${${node}_REST_API_HOST_PORT}:${${node}_REST_API_PORT} --name ${node} ${${node}_DOCKER_IMAGE} bash
-    #Execute On Machine     ${node}    ${DOCKER_COMMAND} create -e MICROSERVICE_LABEL=${node} -it -p ${${node}_PING_HOST_PORT}:${${node}_PING_PORT} -p ${${node}_REST_API_HOST_PORT}:${${node}_REST_API_PORT} --name ${node} ${${node}_DOCKER_IMAGE}
-    Write To Machine       ${node}    ${DOCKER_COMMAND} start ${node}
-    Append To List    ${NODES}    ${node}
-    Create Session    ${node}    http://${DOCKER_HOST_IP}:${${node}_REST_API_HOST_PORT}
-    ${hostname}=    Execute On Machine    docker    ${DOCKER_COMMAND} exec ${node} bash -c 'echo $HOSTNAME'
-    Set Suite Variable    ${${node}_HOSTNAME}    ${hostname}
-
-Add Agent Node With Kafka Again
-    [Arguments]    ${node}
-    Open SSH Connection    ${node}_again    ${DOCKER_HOST_IP}    ${DOCKER_HOST_USER}    ${DOCKER_HOST_PSWD}
-    Execute On Machine     ${node}_again    ${DOCKER_COMMAND} create -e MICROSERVICE_LABEL=${node} --sysctl net.ipv6.conf.all.disable_ipv6=0 -it -p ${${node}_AGAIN_REST_API_HOST_PORT}:${${node}_AGAIN_REST_API_PORT} --name ${node}_again ${${node}_DOCKER_IMAGE} bash
-    #Execute On Machine     ${node}    ${DOCKER_COMMAND} create -e MICROSERVICE_LABEL=${node} -it -p ${${node}_PING_HOST_PORT}:${${node}_PING_PORT} -p ${${node}_REST_API_HOST_PORT}:${${node}_REST_API_PORT} --name ${node} ${${node}_DOCKER_IMAGE}
-    Write To Machine       ${node}_again    ${DOCKER_COMMAND} start ${node}_again
-    Append To List    ${NODES}    ${node}_again
-    Create Session    ${node}_again    http://${DOCKER_HOST_IP}:${${node}_REST_API_HOST_PORT}
-    ${hostname}=    Execute On Machine    docker    ${DOCKER_COMMAND} exec ${node} bash -c 'echo $HOSTNAME'
-    Set Suite Variable    ${${node}_again_HOSTNAME}    ${hostname}
-
-
 Add Agent VPP Node
     [Arguments]    ${node}    ${vswitch}=${FALSE}
     ${add_params}=    Set Variable If    ${vswitch}    --pid=host -v "/var/run/docker.sock:/var/run/docker.sock"    ${EMPTY}
@@ -91,22 +68,6 @@ Add Agent VPP Node With Own Vpp Config
     Create Session    ${node}    http://${DOCKER_HOST_IP}:${${node}_REST_API_HOST_PORT}
     ${hostname}=    Execute On Machine    docker    ${DOCKER_COMMAND} exec ${node} bash -c 'echo $HOSTNAME'
     Set Suite Variable    ${${node}_HOSTNAME}    ${hostname}
-
-Add Agent VPP Node With Kafka
-    [Arguments]    ${node}    ${vswitch}=${FALSE}
-    ${add_params}=    Set Variable If    ${vswitch}    --pid=host -v "/var/run/docker.sock:/var/run/docker.sock"    ${EMPTY}
-    Open SSH Connection    ${node}    ${DOCKER_HOST_IP}    ${DOCKER_HOST_USER}    ${DOCKER_HOST_PSWD}
-    Execute On Machine     ${node}    ${DOCKER_COMMAND} create -e MICROSERVICE_LABEL=${node} -e VPP_STATUS_PUBLISHERS=etcd -e INITIAL_LOGLVL=debug --sysctl net.ipv6.conf.all.disable_ipv6=0 -it --privileged -v "${VPP_AGENT_HOST_MEMIF_SOCKET_FOLDER}:${${node}_MEMIF_SOCKET_FOLDER}" -v "${DOCKER_SOCKET_FOLDER}:${${node}_SOCKET_FOLDER}" -p ${${node}_VPP_HOST_PORT}:${${node}_VPP_PORT} -p ${${node}_REST_API_HOST_PORT}:${${node}_REST_API_PORT} --name ${node} ${add_params} ${${node}_DOCKER_IMAGE}
-    Write To Machine       ${node}    ${DOCKER_COMMAND} start ${node}
-    Append To List    ${NODES}    ${node}
-    Open SSH Connection    ${node}_term    ${DOCKER_HOST_IP}    ${DOCKER_HOST_USER}    ${DOCKER_HOST_PSWD}
-    Open SSH Connection    ${node}_vat    ${DOCKER_HOST_IP}    ${DOCKER_HOST_USER}    ${DOCKER_HOST_PSWD}
-    vpp_term: Open VPP Terminal    ${node}
-    vat_term: Open VAT Terminal    ${node}
-    Create Session    ${node}    http://${DOCKER_HOST_IP}:${${node}_REST_API_HOST_PORT}
-    ${hostname}=    Execute On Machine    docker    ${DOCKER_COMMAND} exec ${node} bash -c 'echo $HOSTNAME'
-    Set Suite Variable    ${${node}_HOSTNAME}    ${hostname}
-
 
 Add Agent Libmemif Node
     [Arguments]    ${node}
@@ -280,27 +241,6 @@ Update Agent In Dev Container
     Write To Container Until Prompt    dev    make
     Write To Container Until Prompt    dev    make install
 
-Start Kafka Server
-    Open SSH Connection    kafka    ${DOCKER_HOST_IP}    ${DOCKER_HOST_USER}    ${DOCKER_HOST_PSWD}
-    Execute On Machine    kafka    ${KAFKA_SERVER_CREATE}
-    ${out}=   Write To Machine Until String    kafka    ${DOCKER_COMMAND} start -i kafka   INFO success: kafka entered RUNNING state
-    ${hostname}=    Execute On Machine    docker    ${DOCKER_COMMAND} exec kafka bash -c 'echo $HOSTNAME'
-    Set Suite Variable   ${KAFKA_HOSTNAME}    ${hostname}
-
-Stop Kafka Server
-    Execute On Machine    docker    ${KAFKA_SERVER_DESTROY}
-
-Start VPP Ctl Container
-    [Arguments]            ${command}=bash
-    Open SSH Connection    vpp_agent_ctl    ${DOCKER_HOST_IP}    ${DOCKER_HOST_USER}    ${DOCKER_HOST_PSWD}
-    Execute On Machine     vpp_agent_ctl    ${DOCKER_COMMAND} create -it --name vpp_agent_ctl ${VPP_AGENT_CTL_IMAGE_NAME} ${command}
-    Write To Machine       vpp_agent_ctl    ${DOCKER_COMMAND} start -i vpp_agent_ctl
-    ${hostname}=           Execute On Machine    docker    ${DOCKER_COMMAND} exec vpp_agent_ctl bash -c 'echo $HOSTNAME'
-    Set Suite Variable     ${VPP_AGENT_CTL_HOSTNAME}    ${hostname}
-
-Stop VPP Ctl Container
-    Execute On Machine    docker    ${DOCKER_COMMAND} rm -f vpp_agent_ctl
-
 Start SFC Controller Container With Own Config
     [Arguments]            ${config}
     Open SSH Connection    sfc_controller    ${DOCKER_HOST_IP}    ${DOCKER_HOST_USER}    ${DOCKER_HOST_PSWD}
@@ -308,7 +248,6 @@ Start SFC Controller Container With Own Config
     SSHLibrary.Put_file    ${DATA_FOLDER}/${config}	    /tmp/
     Execute On Machine     sfc_controller    ${DOCKER_COMMAND} cp /tmp/${config} sfc_controller:${SFC_CONTROLLER_CONF_PATH}
     Write To Machine       sfc_controller    ${DOCKER_COMMAND} start -i sfc_controller
-    #Sleep                  400s
     ${hostname}=           Execute On Machine    docker    ${DOCKER_COMMAND} exec sfc_controller sh -c 'echo $HOSTNAME'
     Set Suite Variable     ${SFC_CONTROLLER_HOSTNAME}    ${hostname}
 
