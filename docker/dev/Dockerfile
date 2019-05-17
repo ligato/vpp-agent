@@ -1,5 +1,5 @@
 ARG VPP_IMG=ligato/vpp-base:1904
-FROM ${VPP_IMG} as vppimg
+FROM ${VPP_IMG} AS vppimg
 
 FROM golang:1.11 AS verify-binapi
 
