@@ -1,11 +1,11 @@
-include vpp.env
-
 VERSION ?= $(shell git describe --always --tags --dirty)
 COMMIT  ?= $(shell git rev-parse HEAD)
 DATE    ?= $(shell git log -1 --format="%ct" | xargs -I{} date -d @{} +'%Y-%m-%dT%H:%M%:z')
 
 CNINFRA := github.com/ligato/vpp-agent/vendor/github.com/ligato/cn-infra/agent
 LDFLAGS = -X $(CNINFRA).BuildVersion=$(VERSION) -X $(CNINFRA).CommitHash=$(COMMIT) -X $(CNINFRA).BuildDate=$(DATE)
+
+include vpp.env
 
 ifeq ($(NOSTRIP),)
 LDFLAGS += -w -s
@@ -22,39 +22,32 @@ endif
 
 COVER_DIR ?= /tmp
 
-# Build all
 build: cmd examples
 
-# Clean all
 clean: clean-cmd clean-examples
 
-# Install commands
 agent:
 	@echo "=> installing agent ${VERSION}"
 	@go install -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS} ./cmd/vpp-agent
 
-# Install commands
 install:
 	@echo "=> installing commands ${VERSION}"
 	go install -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS} ./cmd/vpp-agent
 	go install -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS} ./cmd/vpp-agent-ctl
 	go install -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS} ./cmd/agentctl
 
-# Build commands
 cmd:
 	@echo "=> building commands ${VERSION}"
 	cd cmd/vpp-agent 		&& go build -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
 	cd cmd/vpp-agent-ctl	&& go build -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
 	cd cmd/agentctl 		&& go build -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
 
-# Clean commands
 clean-cmd:
 	@echo "=> cleaning command binaries"
 	rm -f ./cmd/vpp-agent/vpp-agent
 	rm -f ./cmd/vpp-agent-ctl/vpp-agent-ctl
 	rm -f ./cmd/agentctl/agentctl
 
-# Build examples
 examples:
 	@echo "=> building examples"
 	cd examples/custom_model	    	 && go build -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
@@ -72,7 +65,6 @@ examples:
 	cd examples/localclient_vpp/nat      && go build -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
 	cd examples/localclient_vpp/plugins	 && go build -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
 
-# Clean examples
 clean-examples:
 	@echo "=> cleaning examples"
 	cd examples/custom_model	    		&& go clean
@@ -90,12 +82,14 @@ clean-examples:
 	cd examples/localclient_vpp/nat      	&& go clean
 	cd examples/localclient_vpp/plugins	 	&& go clean
 
-# Run tests
+# -------------------------------
+#  Testing
+# -------------------------------
+
 test:
 	@echo "=> running unit tests"
 	go test -tags="${GO_BUILD_TAGS}" ./...
 
-# Run coverage report
 test-cover:
 	@echo "=> running unit tests with coverage"
 	go test -tags="${GO_BUILD_TAGS}" -covermode=count -coverprofile=${COVER_DIR}/coverage.out ./...
@@ -109,29 +103,42 @@ test-cover-xml: test-cover
 	gocov convert ${COVER_DIR}/coverage.out | gocov-xml > ${COVER_DIR}/coverage.xml
 	@echo "=> coverage report generated into ${COVER_DIR}/coverage.xml"
 
-# Code generation
+perf:
+	@echo "=> running perf test"
+	./tests/perf/grpc-perf/test.sh 1000
+
+perf-all:
+	@echo "=> running all perf tests"
+	./tests/perf/run_all.sh
+
+# -------------------------------
+#  Code generation
+# -------------------------------
+
 generate: generate-proto generate-binapi generate-desc-adapters
 
-# Get generator tools
 get-proto-generators:
 	@go install ./vendor/github.com/gogo/protobuf/protoc-gen-gogo
 
-# Generate proto models
 generate-proto: get-proto-generators
 	@echo "=> generating proto"
 	./scripts/genprotos.sh
 
-# Get generator tools
 get-binapi-generators:
 	@go install ./vendor/git.fd.io/govpp.git/cmd/binapi-generator
 
-# Generate binary api
 generate-binapi: get-binapi-generators
 	@echo "=> generating binapi"
 	cd plugins/vpp/binapi && go generate ./...
 	@echo "=> applying fix patches"
 	find plugins/vpp/binapi -maxdepth 2 -type f -name '*.patch' -exec patch --no-backup-if-mismatch -p1 -i {} \;
 	@echo
+
+verify-binapi:
+	@echo "=> verifying binary api"
+	docker build -f docker/dev/Dockerfile \
+		--build-arg VPP_IMG=${VPP_IMG} \
+		--target verify-binapi .
 
 get-desc-adapter-generator:
 	@go install ./plugins/kvscheduler/descriptor-adapter
@@ -153,13 +160,6 @@ generate-desc-adapters: get-desc-adapter-generator
 	cd plugins/vpp/srplugin && go generate
 	@echo
 
-verify-binapi:
-	@echo "=> verifying binary api"
-	docker build -f docker/dev/Dockerfile \
-		--build-arg VPP_REPO_URL=${VPP_REPO_URL} \
-		--build-arg VPP_COMMIT=${VPP_COMMIT} \
-		--target verify-stage .
-
 get-bindata:
 	go get -v github.com/jteeuwen/go-bindata/...
 	go get -v github.com/elazarl/go-bindata-assetfs/...
@@ -167,29 +167,32 @@ get-bindata:
 bindata: get-bindata
 	cd plugins/restplugin && go generate
 
-# Get dependency manager tool
+# -------------------------------
+#  Dependencies
+# -------------------------------
+
 get-dep:
 	curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
 	dep version
 
-# Install the project's dependencies
 dep-install: get-dep
 	@echo "=> installing project's dependencies"
 	dep ensure -v
 
-# Update the locked versions of all dependencies
 dep-update: get-dep
 	@echo "=> updating all dependencies"
 	dep ensure -update
 
-# Check state of dependencies
 dep-check: get-dep
 	@echo "=> checking dependencies"
 	dep check
 
+# -------------------------------
+#  Linters
+# -------------------------------
+
 LINTER := $(shell command -v gometalinter 2> /dev/null)
 
-# Get linter tools
 get-linters:
 ifndef LINTER
 	@echo "=> installing linters"
@@ -197,30 +200,46 @@ ifndef LINTER
 	gometalinter --install
 endif
 
-# Run linters
 lint: get-linters
 	@echo "=> running code analysis"
 	./scripts/static_analysis.sh golint vet
 
-# Format code
 format:
 	@echo "=> formatting the code"
 	./scripts/gofmt.sh
 
 MDLINKCHECK := $(shell command -v markdown-link-check 2> /dev/null)
 
-# Get link check tool
 get-linkcheck:
 ifndef MDLINKCHECK
 	sudo apt-get update && sudo apt-get install -y npm
 	npm install -g markdown-link-check@3.6.2
 endif
 
-# Validate links in markdown files
 check-links: get-linkcheck
 	./scripts/check_links.sh
 
-# Travis
+get-yamllint:
+	pip install --user yamllint
+
+yamllint: get-yamllint
+	@echo "=> linting the yaml files"
+	yamllint -c .yamllint.yml $(shell git ls-files '*.yaml' '*.yml' | grep -v 'vendor/')
+
+# -------------------------------
+#  Images
+# -------------------------------
+
+images: dev-image prod-image
+
+dev-image:
+	./docker/dev/build.sh
+
+prod-image:
+	./docker/prod/build.sh
+
+# -------------------------------
+
 travis:
 	@echo "=> TRAVIS: $$TRAVIS_BUILD_STAGE_NAME"
 	@echo "Build: #$$TRAVIS_BUILD_NUMBER ($$TRAVIS_BUILD_ID)"
@@ -234,30 +253,6 @@ travis:
 	@echo "Files:"
 	@echo "$$(git diff --name-only $$TRAVIS_COMMIT_RANGE)"
 
-# Install yamllint
-get-yamllint:
-	pip install --user yamllint
-
-# Lint the yaml files
-yamllint: get-yamllint
-	@echo "=> linting the yaml files"
-	yamllint -c .yamllint.yml $(shell git ls-files '*.yaml' '*.yml' | grep -v 'vendor/')
-
-images: dev-image prod-image
-
-dev-image:
-	./docker/dev/build.sh
-
-prod-image:
-	./docker/prod/build.sh
-
-perf:
-	@echo "=> running perf test"
-	./tests/perf/grpc-perf/test.sh 1000
-
-perf-all:
-	@echo "=> running all perf tests"
-	./tests/perf/run_all.sh
 
 .PHONY: build clean \
 	install cmd examples clean-examples test \
@@ -266,7 +261,7 @@ perf-all:
 	get-dep dep-install dep-update dep-check \
 	get-linters lint format \
 	get-linkcheck check-links \
-	travis \
 	get-yamllint yamllint \
 	images dev-image prod-image \
-	perf perf-all
+	perf perf-all \
+	travis
