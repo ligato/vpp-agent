@@ -128,11 +128,11 @@ const (
 	rxPlacementKeyTemplate = "vpp/interface/{iface}/rx-placement/queue/{queue}"
 )
 
-/* Interface Rx-mode (derived) */
+/* Interface Rx-modes (derived) */
 const (
 	// rxModeKeyTemplate is a template for (derived) key representing
 	// rx-mode configuration for all queues of a given interface.
-	rxModeKeyTemplate = "vpp/interface/{iface}/rx-mode"
+	rxModesKeyTemplate = "vpp/interface/{iface}/rx-modes"
 )
 
 const (
@@ -527,24 +527,23 @@ func ParseRxPlacementKey(key string) (ifaceName string, queue uint32, isRxPlacem
 	return
 }
 
-/* Rx mode (derived) */
+/* Rx modes (derived) */
 
-// RxModeKey returns a key representing rx-mode configuration for all queues
+// RxModesKey returns a key representing rx-mode configuration for all queues
 // of a given interface.
-func RxModeKey(ifaceName string) string {
+func RxModesKey(ifaceName string) string {
 	if ifaceName == "" {
 		ifaceName = InvalidKeyPart
 	}
-	return strings.Replace(rxModeKeyTemplate, "{iface}", ifaceName, 1)
+	return strings.Replace(rxModesKeyTemplate, "{iface}", ifaceName, 1)
 }
 
-// ParseRxModeKey parses key representing rx-mode configuration for all queues
+// ParseRxModesKey parses key representing rx-mode configuration for all queues
 // of a given interface.
-func ParseRxModeKey(key string) (ifaceName string, isRxModeKey bool) {
+func ParseRxModesKey(key string) (ifaceName string, isRxModesKey bool) {
 	if suffix := strings.TrimPrefix(key, "vpp/interface/"); suffix != key {
 		parts := strings.Split(suffix, "/")
-		if len(parts) == 0 || parts[len(parts)-1] != "rx-mode" {
-			isRxModeKey = false
+		if len(parts) == 0 || parts[len(parts)-1] != "rx-modes" {
 			return
 		}
 
@@ -555,7 +554,7 @@ func ParseRxModeKey(key string) (ifaceName string, isRxModeKey bool) {
 			return
 		}
 
-		isRxModeKey = true
+		isRxModesKey = true
 	}
 	return
 }

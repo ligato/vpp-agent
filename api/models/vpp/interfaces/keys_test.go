@@ -889,11 +889,11 @@ func TestLinkStateKey(t *testing.T) {
 
 func TestParseLinkStateKey(t *testing.T) {
 	tests := []struct {
-		name                    string
-		key                     string
-		expectedIface           string
-		expectedIsLinkUp        bool
-		expectedIsLinkStateKey  bool
+		name                   string
+		key                    string
+		expectedIface          string
+		expectedIsLinkUp       bool
+		expectedIsLinkStateKey bool
 	}{
 		{
 			name:                   "link is UP",
@@ -936,7 +936,6 @@ func TestParseLinkStateKey(t *testing.T) {
 			key:                    "vpp/interface/unnumbered/GigabitEthernet0/8/0",
 			expectedIsLinkStateKey: false,
 		},
-
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -1032,7 +1031,7 @@ func TestParseRxPlacementKey(t *testing.T) {
 			expectedIsRxPlacementKey: false,
 		},
 		{
-			name:                    "missing queue",
+			name:                     "missing queue",
 			key:                      "vpp/interface/memif0/rx-placement/",
 			expectedIsRxPlacementKey: false,
 		},
@@ -1053,7 +1052,6 @@ func TestParseRxPlacementKey(t *testing.T) {
 			key:                      "vpp/interface/memif0/link-state/DOWN",
 			expectedIsRxPlacementKey: false,
 		},
-
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -1072,7 +1070,7 @@ func TestParseRxPlacementKey(t *testing.T) {
 	}
 }
 
-func TestRxModeKey(t *testing.T) {
+func TestRxModesKey(t *testing.T) {
 	tests := []struct {
 		name        string
 		iface       string
@@ -1081,22 +1079,22 @@ func TestRxModeKey(t *testing.T) {
 		{
 			name:        "memif",
 			iface:       "memif0",
-			expectedKey: "vpp/interface/memif0/rx-mode",
+			expectedKey: "vpp/interface/memif0/rx-modes",
 		},
 		{
 			name:        "Gbe",
 			iface:       "GigabitEthernet0/8/0",
-			expectedKey: "vpp/interface/GigabitEthernet0/8/0/rx-mode",
+			expectedKey: "vpp/interface/GigabitEthernet0/8/0/rx-modes",
 		},
 		{
 			name:        "invalid interface name",
 			iface:       "",
-			expectedKey: "vpp/interface/<invalid>/rx-mode",
+			expectedKey: "vpp/interface/<invalid>/rx-modes",
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			key := RxModeKey(test.iface)
+			key := RxModesKey(test.iface)
 			if key != test.expectedKey {
 				t.Errorf("failed for: iface=%s\n"+
 					"expected key:\n\t%q\ngot key:\n\t%q",
@@ -1106,47 +1104,47 @@ func TestRxModeKey(t *testing.T) {
 	}
 }
 
-func TestParseRxModeKey(t *testing.T) {
+func TestParseRxModesKey(t *testing.T) {
 	tests := []struct {
-		name                string
-		key                 string
-		expectedIface       string
-		expectedIsRxModeKey bool
+		name                 string
+		key                  string
+		expectedIface        string
+		expectedIsRxModesKey bool
 	}{
 		{
-			name:                "memif",
-			key:                 "vpp/interface/memif0/rx-mode",
-			expectedIface:       "memif0",
-			expectedIsRxModeKey: true,
+			name:                 "memif",
+			key:                  "vpp/interface/memif0/rx-modes",
+			expectedIface:        "memif0",
+			expectedIsRxModesKey: true,
 		},
 		{
-			name:                "Gbe",
-			key:                 "vpp/interface/GigabitEthernet0/8/0/rx-mode",
-			expectedIface:       "GigabitEthernet0/8/0",
-			expectedIsRxModeKey: true,
+			name:                 "Gbe",
+			key:                  "vpp/interface/GigabitEthernet0/8/0/rx-modes",
+			expectedIface:        "GigabitEthernet0/8/0",
+			expectedIsRxModesKey: true,
 		},
 		{
-			name:                "invalid interface name",
-			key:                 "vpp/interface/<invalid>/rx-mode",
-			expectedIsRxModeKey: false,
+			name:                 "invalid interface name",
+			key:                  "vpp/interface/<invalid>/rx-modes",
+			expectedIsRxModesKey: false,
 		},
 		{
-			name:                "missing rx-mode suffix",
-			key:                 "vpp/interface/<invalid>",
-			expectedIsRxModeKey: false,
+			name:                 "missing rx-mode suffix",
+			key:                  "vpp/interface/<invalid>",
+			expectedIsRxModesKey: false,
 		},
 		{
-			name:                "not rx-mode key",
-			key:                 "vpp/interface/memif0/address/192.168.1.12/24",
-			expectedIsRxModeKey: false,
+			name:                 "not rx-mode key",
+			key:                  "vpp/interface/memif0/address/192.168.1.12/24",
+			expectedIsRxModesKey: false,
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			iface, isRxModeKey := ParseRxModeKey(test.key)
-			if isRxModeKey != test.expectedIsRxModeKey {
-				t.Errorf("expected isRxModeKey: %v\tgot: %v",
-					test.expectedIsRxModeKey, isRxModeKey)
+			iface, isRxModesKey := ParseRxModesKey(test.key)
+			if isRxModesKey != test.expectedIsRxModesKey {
+				t.Errorf("expected isRxModesKey: %v\tgot: %v",
+					test.expectedIsRxModesKey, isRxModesKey)
 			}
 			if iface != test.expectedIface {
 				t.Errorf("expected iface: %s\tgot: %s", test.expectedIface, iface)

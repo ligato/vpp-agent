@@ -85,7 +85,7 @@ func NewRxModeDescriptor(ifHandler vppcalls.InterfaceVppAPI, ifIndex ifaceidx.If
 
 // IsInterfaceRxModeKey returns true if the key is identifying RxMode configuration.
 func (d *RxModeDescriptor) IsInterfaceRxModeKey(key string) bool {
-	_, isValid := interfaces.ParseRxModeKey(key)
+	_, isValid := interfaces.ParseRxModesKey(key)
 	return isValid
 }
 

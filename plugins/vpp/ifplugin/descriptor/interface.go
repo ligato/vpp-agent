@@ -605,7 +605,7 @@ func (d *InterfaceDescriptor) DerivedValues(key string, intf *interfaces.Interfa
 	// Rx mode
 	if len(intf.GetRxModes()) > 0 {
 		derValues = append(derValues, kvs.KeyValuePair{
-			Key:   interfaces.RxModeKey(intf.GetName()),
+			Key:   interfaces.RxModesKey(intf.GetName()),
 			Value: &interfaces.Interface{
 				Name:    intf.GetName(),
 				Type:    intf.GetType(),
