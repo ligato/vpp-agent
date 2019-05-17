@@ -494,7 +494,7 @@ func TestDumpInterfacesRxPlacement(t *testing.T) {
 	Expect(intface.GetMemif().Mode).To(Equal(interfaces2.MemifLink_IP))
 	Expect(intface.GetMemif().Master).To(BeFalse())
 
-	rxMode := intface.GetRxMode()
+	rxMode := intface.GetRxModes()
 	Expect(rxMode).To(HaveLen(3))
 	Expect(rxMode[0].Queue).To(BeEquivalentTo(0))
 	Expect(rxMode[0].Mode).To(BeEquivalentTo(interfaces2.Interface_RxMode_ADAPTIVE))
@@ -503,7 +503,7 @@ func TestDumpInterfacesRxPlacement(t *testing.T) {
 	Expect(rxMode[2].Queue).To(BeEquivalentTo(2))
 	Expect(rxMode[2].Mode).To(BeEquivalentTo(interfaces2.Interface_RxMode_POLLING))
 
-	rxPlacement := intface.GetRxPlacement()
+	rxPlacement := intface.GetRxPlacements()
 	Expect(rxPlacement).To(HaveLen(3))
 	Expect(rxPlacement[0].Queue).To(BeEquivalentTo(0))
 	Expect(rxPlacement[0].MainThread).To(BeTrue())

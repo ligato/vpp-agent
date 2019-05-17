@@ -55,7 +55,7 @@ message Interface {
                                // <mode> will be used for all queues without explicitly
                                // selected Rx mode
     }
-    repeated RxMode rx_mode = 10;
+    repeated RxMode rx_modes = 10;
 
     message RxPlacement {
         uint32 queue = 1;  // select from interval <0, number-of-queues)
@@ -63,7 +63,7 @@ message Interface {
         bool main_thread = 3; // let the main thread to process the given queue
                               //  - if enabled, value of <worker> is ignored
     }
-    repeated RxPlacement rx_placement = 11;
+    repeated RxPlacement rx_placements = 11;
 
     oneof link {
         SubInterface sub = 100;         /* sub-interface configuration */

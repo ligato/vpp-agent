@@ -168,12 +168,12 @@ func testLocalClientWithScheduler(kvscheduler kvs_api.KVScheduler) {
 	time.Sleep(time.Second * 10)
 	fmt.Println("=== CHANGE ===")
 
-	myMemif.RxMode[0].Mode = vpp_interfaces.Interface_RxMode_INTERRUPT // change default
-	myMemif.RxMode = append(myMemif.RxMode, &vpp_interfaces.Interface_RxMode{
+	myMemif.RxModes[0].Mode = vpp_interfaces.Interface_RxMode_INTERRUPT // change default
+	myMemif.RxModes = append(myMemif.RxModes, &vpp_interfaces.Interface_RxMode{
 		Queue: 3,
 		Mode:  vpp_interfaces.Interface_RxMode_POLLING,
 	})
-	myMemif.RxPlacement = append(myMemif.RxPlacement, &vpp_interfaces.Interface_RxPlacement{
+	myMemif.RxPlacements = append(myMemif.RxPlacements, &vpp_interfaces.Interface_RxPlacement{
 		Queue:      3,
 		MainThread: true,
 		Worker:     100, // ignored
@@ -194,7 +194,7 @@ func testLocalClientWithScheduler(kvscheduler kvs_api.KVScheduler) {
 
 	myMemif.GetMemif().RxQueues = 5
 	myMemif.GetMemif().TxQueues = 5
-	myMemif.RxPlacement = append(myMemif.RxPlacement, &vpp_interfaces.Interface_RxPlacement{
+	myMemif.RxPlacements = append(myMemif.RxPlacements, &vpp_interfaces.Interface_RxPlacement{
 		Queue:      4,
 		MainThread: true,
 	})
@@ -221,7 +221,7 @@ var (
 		Enabled:     true,
 		IpAddresses: []string{"192.168.1.1/24"},
 
-		RxPlacement: []*vpp_interfaces.Interface_RxPlacement{
+		RxPlacements: []*vpp_interfaces.Interface_RxPlacement{
 			{
 				Queue:  0,
 				Worker: 0,
@@ -236,7 +236,7 @@ var (
 			},
 		},
 
-		RxMode: []*vpp_interfaces.Interface_RxMode{
+		RxModes: []*vpp_interfaces.Interface_RxMode{
 			{
 				DefaultMode: true,
 				Mode:        vpp_interfaces.Interface_RxMode_POLLING,

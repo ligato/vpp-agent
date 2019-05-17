@@ -103,7 +103,7 @@ func (d *RxModeDescriptor) EquivalentRxMode(key string, oldIntf, newIntf *interf
 		}
 	}
 	// compare queue-specific RX modes
-	for _, rxMode := range oldIntf.GetRxMode() {
+	for _, rxMode := range oldIntf.GetRxModes() {
 		if rxMode.DefaultMode {
 			continue
 		}
@@ -113,7 +113,7 @@ func (d *RxModeDescriptor) EquivalentRxMode(key string, oldIntf, newIntf *interf
 			return false
 		}
 	}
-	for _, rxMode := range newIntf.GetRxMode() {
+	for _, rxMode := range newIntf.GetRxModes() {
 		if rxMode.DefaultMode {
 			continue
 		}
@@ -128,7 +128,7 @@ func (d *RxModeDescriptor) EquivalentRxMode(key string, oldIntf, newIntf *interf
 
 // Validate validates Rx mode configuration.
 func (d *RxModeDescriptor) Validate(key string, ifaceWithRxMode *interfaces.Interface) error {
-	for i, rxMode1 := range ifaceWithRxMode.GetRxMode() {
+	for i, rxMode1 := range ifaceWithRxMode.GetRxModes() {
 		if rxMode1.Mode == interfaces.Interface_RxMode_UNKNOWN {
 			if rxMode1.DefaultMode {
 				return kvs.NewInvalidValueError(ErrUndefinedRxMode,"rx_mode[default]")
@@ -136,8 +136,8 @@ func (d *RxModeDescriptor) Validate(key string, ifaceWithRxMode *interfaces.Inte
 			return kvs.NewInvalidValueError(ErrUndefinedRxMode,
 				fmt.Sprintf("rx_mode[.queue=%d]", rxMode1.Queue))
 		}
-		for j := i + 1; j < len(ifaceWithRxMode.GetRxMode()); j++ {
-			rxMode2 := ifaceWithRxMode.GetRxMode()[j]
+		for j := i + 1; j < len(ifaceWithRxMode.GetRxModes()); j++ {
+			rxMode2 := ifaceWithRxMode.GetRxModes()[j]
 			if rxMode1.DefaultMode != rxMode2.DefaultMode {
 				continue
 			}
@@ -152,7 +152,7 @@ func (d *RxModeDescriptor) Validate(key string, ifaceWithRxMode *interfaces.Inte
 	}
 
 	if ifaceWithRxMode.GetType() == interfaces.Interface_DPDK {
-		for _, rxMode := range ifaceWithRxMode.GetRxMode() {
+		for _, rxMode := range ifaceWithRxMode.GetRxModes() {
 			mode := normalizeRxMode(rxMode.Mode, ifaceWithRxMode)
 			if mode != interfaces.Interface_RxMode_POLLING {
 				if rxMode.DefaultMode {
@@ -235,7 +235,7 @@ func (d *RxModeDescriptor) configureRxMode(iface *interfaces.Interface, op kvs.T
 	}
 
 	// configure per-queue RX mode
-	for _, rxMode := range iface.GetRxMode() {
+	for _, rxMode := range iface.GetRxModes() {
 		if rxMode.DefaultMode || rxMode.Mode == defRxMode {
 			continue
 		}
@@ -264,7 +264,7 @@ func (d *RxModeDescriptor) Dependencies(key string, ifaceWithRxMode *interfaces.
 
 // getDefaultRxMode reads default RX mode from the interface configuration.
 func getDefaultRxMode(iface *interfaces.Interface) (rxMode interfaces.Interface_RxMode_Type) {
-	for _, rxMode := range iface.GetRxMode() {
+	for _, rxMode := range iface.GetRxModes() {
 		if rxMode.DefaultMode {
 			return normalizeRxMode(rxMode.Mode, iface)
 		}
@@ -274,7 +274,7 @@ func getDefaultRxMode(iface *interfaces.Interface) (rxMode interfaces.Interface_
 
 // getQueueRxMode reads RX mode for the given queue from the interface configuration.
 func getQueueRxMode(queue uint32, iface *interfaces.Interface) (mode interfaces.Interface_RxMode_Type) {
-	for _, rxMode := range iface.GetRxMode() {
+	for _, rxMode := range iface.GetRxModes() {
 		if rxMode.DefaultMode {
 			mode = rxMode.Mode
 			continue // keep looking for a queue-specific RX mode

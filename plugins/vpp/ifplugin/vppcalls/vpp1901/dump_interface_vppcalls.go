@@ -794,7 +794,7 @@ func (h *InterfaceVppHandler) dumpRxPlacement(ifs map[uint32]*vppcalls.Interface
 			continue
 		}
 
-		ifData.Interface.RxMode = append(ifData.Interface.RxMode,
+		ifData.Interface.RxModes = append(ifData.Interface.RxModes,
 			&interfaces.Interface_RxMode{
 				Queue: rxDetails.QueueID,
 				Mode:  getRxModeType(rxDetails.Mode),
@@ -804,7 +804,7 @@ func (h *InterfaceVppHandler) dumpRxPlacement(ifs map[uint32]*vppcalls.Interface
 		if rxDetails.WorkerID > 0 {
 			worker = rxDetails.WorkerID - 1
 		}
-		ifData.Interface.RxPlacement = append(ifData.Interface.RxPlacement,
+		ifData.Interface.RxPlacements = append(ifData.Interface.RxPlacements,
 			&interfaces.Interface_RxPlacement{
 				Queue:      rxDetails.QueueID,
 				Worker:     worker,

@@ -421,8 +421,8 @@ func (d *InterfaceDescriptor) Retrieve(correlate []adapter.InterfaceKVWithMetada
 			}
 
 			// remove rx-placement entries for queues with configuration not defined by NB
-			rxPlacementDump := intf.Interface.GetRxPlacement()
-			rxPlacementCfg := expCfg.GetRxPlacement()
+			rxPlacementDump := intf.Interface.GetRxPlacements()
+			rxPlacementCfg := expCfg.GetRxPlacements()
 			for i := 0; i < len(rxPlacementDump); {
 				queue := rxPlacementDump[i].Queue
 				found := false
@@ -438,11 +438,11 @@ func (d *InterfaceDescriptor) Retrieve(correlate []adapter.InterfaceKVWithMetada
 					rxPlacementDump = append(rxPlacementDump[:i], rxPlacementDump[i+1:]...)
 				}
 			}
-			intf.Interface.RxPlacement = rxPlacementDump
+			intf.Interface.RxPlacements = rxPlacementDump
 
 			// remove rx-mode from the dump if it is not configured by NB
-			if len(expCfg.GetRxMode()) == 0 {
-				intf.Interface.RxMode = []*interfaces.Interface_RxMode{}
+			if len(expCfg.GetRxModes()) == 0 {
+				intf.Interface.RxModes = []*interfaces.Interface_RxMode{}
 			}
 		}
 

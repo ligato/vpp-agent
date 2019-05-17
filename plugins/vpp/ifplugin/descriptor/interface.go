@@ -434,9 +434,9 @@ func (d *InterfaceDescriptor) Validate(key string, intf *interfaces.Interface) e
 	}
 
 	// validate Rx Placement before it gets derived out
-	for i, rxPlacement1 := range intf.GetRxPlacement() {
-		for j := i + 1; j < len(intf.GetRxPlacement()); j++ {
-			rxPlacement2 := intf.GetRxPlacement()[j]
+	for i, rxPlacement1 := range intf.GetRxPlacements() {
+		for j := i + 1; j < len(intf.GetRxPlacements()); j++ {
+			rxPlacement2 := intf.GetRxPlacements()[j]
 			if rxPlacement1.Queue == rxPlacement2.Queue {
 				return kvs.NewInvalidValueError(ErrRedefinedRxPlacement,
 					fmt.Sprintf("rx_placement[.queue=%d]", rxPlacement1.Queue))
@@ -603,19 +603,19 @@ func (d *InterfaceDescriptor) DerivedValues(key string, intf *interfaces.Interfa
 	}
 
 	// Rx mode
-	if len(intf.GetRxMode()) > 0 {
+	if len(intf.GetRxModes()) > 0 {
 		derValues = append(derValues, kvs.KeyValuePair{
 			Key:   interfaces.RxModeKey(intf.GetName()),
 			Value: &interfaces.Interface{
-				Name:   intf.GetName(),
-				Type:   intf.GetType(),
-				RxMode: intf.GetRxMode(),
+				Name:    intf.GetName(),
+				Type:    intf.GetType(),
+				RxModes: intf.GetRxModes(),
 			},
 		})
 	}
 
 	// Rx placement
-	for _, rxPlacement := range intf.GetRxPlacement() {
+	for _, rxPlacement := range intf.GetRxPlacements() {
 		derValues = append(derValues, kvs.KeyValuePair{
 			Key:   interfaces.RxPlacementKey(intf.GetName(), rxPlacement.GetQueue()),
 			Value: rxPlacement,
