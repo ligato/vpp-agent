@@ -478,7 +478,6 @@ func (d *InterfaceDescriptor) Retrieve(correlate []adapter.InterfaceKVWithMetada
 			Vrf:           intf.Interface.Vrf,
 			IPAddresses:   intf.Interface.IpAddresses,
 			TAPHostIfName: tapHostIfName,
-			LinkIsUp:      intf.Meta.LinkState == 1,
 		}
 		retrieved = append(retrieved, adapter.InterfaceKVWithMetadata{
 			Key:      models.Key(intf.Interface),

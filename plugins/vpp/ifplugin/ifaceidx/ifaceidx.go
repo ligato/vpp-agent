@@ -63,7 +63,6 @@ type IfaceMetadata struct {
 	Vrf           uint32
 	IPAddresses   []string
 	TAPHostIfName string /* host interface name set for the Linux-side of the TAP interface; empty for non-TAPs */
-	LinkIsUp      bool   // Note: this is updated only on refresh! (i.e. suitable to use for Retrieve)
 }
 
 // GetIndex returns sw_if_index assigned to the interface.
