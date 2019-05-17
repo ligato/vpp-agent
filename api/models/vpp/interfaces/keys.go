@@ -109,6 +109,32 @@ const (
 	DHCPLeaseKeyPrefix = "vpp/interface/dhcp-lease/"
 )
 
+/* Interface Link State */
+
+const (
+	// interface link states as described in the keys
+	linkUpState   = "UP"
+	linkDownState = "DOWN"
+
+	// linkStateKeyTemplate is a template for keys representing
+	// the link state of VPP interfaces (up/down).
+	linkStateKeyTemplate = "vpp/interface/{ifName}/link-state/{linkState}"
+)
+
+/* Interface Rx-placement (derived) */
+const (
+	// rxPlacementKeyTemplate is a template for (derived) key representing
+	// rx-placement configured for a given interface queue.
+	rxPlacementKeyTemplate = "vpp/interface/{iface}/rx-placement/queue/{queue}"
+)
+
+/* Interface Rx-modes (derived) */
+const (
+	// rxModeKeyTemplate is a template for (derived) key representing
+	// rx-mode configuration for all queues of a given interface.
+	rxModesKeyTemplate = "vpp/interface/{iface}/rx-modes"
+)
+
 const (
 	// InvalidKeyPart is used in key for parts which are invalid
 	InvalidKeyPart = "<invalid>"
@@ -397,6 +423,138 @@ func DHCPLeaseKey(iface string) string {
 func ParseNameFromDHCPLeaseKey(key string) (iface string, isDHCPLeaseKey bool) {
 	if suffix := strings.TrimPrefix(key, DHCPLeaseKeyPrefix); suffix != key && suffix != "" {
 		return suffix, true
+	}
+	return
+}
+
+/* Link State (notification) */
+
+// LinkStateKey returns key representing link state of a VPP interface.
+func LinkStateKey(ifaceName string, linkIsUp bool) string {
+	if ifaceName == "" {
+		ifaceName = InvalidKeyPart
+	}
+	linkState := linkDownState
+	if linkIsUp {
+		linkState = linkUpState
+	}
+	key := strings.Replace(linkStateKeyTemplate, "{ifName}", ifaceName, 1)
+	key = strings.Replace(key, "{linkState}", linkState, 1)
+	return key
+}
+
+// ParseLinkStateKey parses key representing link state of a VPP interface.
+func ParseLinkStateKey(key string) (ifaceName string, isLinkUp bool, isLinkStateKey bool) {
+	if suffix := strings.TrimPrefix(key, "vpp/interface/"); suffix != key {
+		parts := strings.Split(suffix, "/")
+		linkState := -1
+		for i, part := range parts {
+			if part == "link-state" {
+				linkState = i
+			}
+		}
+		if linkState != len(parts)-2 {
+			return
+		}
+
+		switch parts[len(parts)-1] {
+		case linkDownState:
+		case linkUpState:
+			isLinkUp = true
+		default:
+			return
+		}
+
+		// beware: interface name may contain forward slashes
+		ifaceName = strings.Join(parts[:linkState], "/")
+		if ifaceName == InvalidKeyPart {
+			isLinkUp = false
+			ifaceName = ""
+			return
+		}
+		isLinkStateKey = true
+	}
+	return
+}
+
+/* Rx placement (derived) */
+
+// RxPlacementKey returns a key representing rx-placement configured for a given
+// interface queue.
+func RxPlacementKey(ifaceName string, queue uint32) string {
+	if ifaceName == "" {
+		ifaceName = InvalidKeyPart
+	}
+	key := strings.Replace(rxPlacementKeyTemplate, "{iface}", ifaceName, 1)
+	key = strings.Replace(key, "{queue}", strconv.Itoa(int(queue)), 1)
+	return key
+}
+
+// ParseRxPlacementKey parses key representing rx-placement configured for a given
+// interface queue.
+func ParseRxPlacementKey(key string) (ifaceName string, queue uint32, isRxPlacementKey bool) {
+	if suffix := strings.TrimPrefix(key, "vpp/interface/"); suffix != key {
+		parts := strings.Split(suffix, "/")
+		rxPlacement := -1
+		for i, part := range parts {
+			if part == "rx-placement" {
+				rxPlacement = i
+			}
+		}
+		if rxPlacement != len(parts)-3 {
+			return
+		}
+
+		if parts[len(parts)-2] != "queue" {
+			return
+		}
+
+		queueID, err := strconv.Atoi(parts[len(parts)-1])
+		if err != nil || queueID < 0 {
+			return
+		}
+
+		// beware: interface name may contain forward slashes
+		ifaceName = strings.Join(parts[:rxPlacement], "/")
+		if ifaceName == InvalidKeyPart {
+			ifaceName = ""
+			return
+		}
+
+		queue = uint32(queueID)
+		isRxPlacementKey = true
+	}
+	return
+}
+
+/* Rx modes (derived) */
+
+// RxModesKey returns a key representing rx-mode configuration for all queues
+// of a given interface.
+func RxModesKey(ifaceName string) string {
+	if ifaceName == "" {
+		ifaceName = InvalidKeyPart
+	}
+	return strings.Replace(rxModesKeyTemplate, "{iface}", ifaceName, 1)
+}
+
+// ParseRxModesKey parses key representing rx-mode configuration for all queues
+// of a given interface.
+func ParseRxModesKey(key string) (ifaceName string, isRxModesKey bool) {
+	if suffix := strings.TrimPrefix(key, "vpp/interface/"); suffix != key {
+		parts := strings.Split(suffix, "/")
+		if len(parts) == 0 || parts[len(parts)-1] != "rx-modes" {
+			return
+		}
+
+		// beware: interface name may contain forward slashes
+		ifaceName = strings.Join(parts[:len(parts)-1], "/")
+		if ifaceName == InvalidKeyPart {
+			ifaceName = ""
+			return
+		}
+
+		isRxModesKey = true
 	}
 	return
 }

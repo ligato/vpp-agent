@@ -87,6 +87,12 @@ type Lease struct {
 	HostMac       string
 }
 
+// InterfaceState is a helper function grouping interface state data.
+type InterfaceState struct {
+	AdminState interfaces.InterfaceState_Status
+	LinkState  interfaces.InterfaceState_Status
+}
+
 // InterfaceVppAPI provides methods for creating and managing interface plugin
 type InterfaceVppAPI interface {
 	InterfaceVppRead
@@ -153,10 +159,10 @@ type InterfaceVppAPI interface {
 	RegisterMemifSocketFilename(filename []byte, id uint32) error
 	// SetInterfaceMtu calls HwInterfaceSetMtu bin API with desired MTU value.
 	SetInterfaceMtu(ifIdx uint32, mtu uint32) error
-	// SetRxMode calls SwInterfaceSetRxMode bin
-	SetRxMode(ifIdx uint32, rxModeSettings *interfaces.Interface_RxModeSettings) error
+	// SetRxMode calls SwInterfaceSetRxMode bin API
+	SetRxMode(ifIdx uint32, rxMode *interfaces.Interface_RxMode) error
 	// SetRxPlacement configures rx-placement for interface
-	SetRxPlacement(ifIdx uint32, rxPlacement *interfaces.Interface_RxPlacementSettings) error
+	SetRxPlacement(ifIdx uint32, rxPlacement *interfaces.Interface_RxPlacement) error
 	// SetInterfaceVrf sets VRF table for the interface
 	SetInterfaceVrf(ifaceIndex, vrfID uint32) error
 	// SetInterfaceVrfIPv6 sets IPV6 VRF table for the interface
@@ -191,6 +197,8 @@ type InterfaceVppRead interface {
 	DumpMemifSocketDetails() (map[string]uint32, error)
 	// DumpDhcpClients dumps DHCP-related information for all interfaces.
 	DumpDhcpClients() (map[uint32]*Dhcp, error)
+	// DumpInterfaceStates dumps link and administrative state of every interface.
+	DumpInterfaceStates() (map[uint32]*InterfaceState, error)
 	// WatchInterfaceEvents starts watching for interface events.
 	WatchInterfaceEvents(ch chan<- *InterfaceEvent) error
 	// WatchDHCPLeases starts watching for DHCP leases.

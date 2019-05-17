@@ -18,6 +18,8 @@ import (
 	"net"
 	"testing"
 
+	govppapi "git.fd.io/govpp.git/api"
+
 	interfaces2 "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/dhcp"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/interfaces"
@@ -398,4 +400,118 @@ func TestDumpMemifSocketDetails(t *testing.T) {
 	socketID, ok := result["test"]
 	Expect(ok).To(BeTrue())
 	Expect(socketID).To(Equal(uint32(1)))
+}
+
+func TestDumpInterfacesRxPlacement(t *testing.T) {
+	ctx, ifHandler := ifTestSetup(t)
+	defer ctx.TeardownTestCtx()
+
+	ctx.MockReplies([]*vppcallmock.HandleReplies{
+		{
+			Name: (&interfaces.SwInterfaceDump{}).GetMessageName(),
+			Ping: true,
+			Message: &interfaces.SwInterfaceDetails{
+				InterfaceName: []byte("memif1"),
+			},
+		},
+		{
+			Name:    (&interfaces.SwInterfaceGetTable{}).GetMessageName(),
+			Ping:    false,
+			Message: &interfaces.SwInterfaceGetTableReply{},
+		},
+		{
+			Name:    (&ip.IPAddressDump{}).GetMessageName(),
+			Ping:    true,
+			Message: &ip.IPAddressDetails{},
+		},
+		{
+			Name: (&memif.MemifSocketFilenameDump{}).GetMessageName(),
+			Ping: true,
+			Message: &memif.MemifSocketFilenameDetails{
+				SocketID:       1,
+				SocketFilename: []byte("test"),
+			},
+		},
+		{
+			Name: (&memif.MemifDump{}).GetMessageName(),
+			Ping: true,
+			Message: &memif.MemifDetails{
+				ID:         2,
+				SwIfIndex:  0,
+				Role:       1, // Slave
+				Mode:       1, // IP
+				SocketID:   1,
+				RingSize:   0,
+				BufferSize: 0,
+			},
+		},
+		{
+			Name: (&tap.SwInterfaceTapDump{}).GetMessageName(),
+			Ping: true,
+		},
+		{
+			Name: (&tapv2.SwInterfaceTapV2Dump{}).GetMessageName(),
+			Ping: true,
+		},
+		{
+			Name: (&vxlan.VxlanTunnelDump{}).GetMessageName(),
+			Ping: true,
+		},
+		{
+			Name: (&interfaces.SwInterfaceRxPlacementDump{}).GetMessageName(),
+			Ping: true,
+			Messages: []govppapi.Message{
+				&interfaces.SwInterfaceRxPlacementDetails{
+					SwIfIndex: 0,
+					QueueID:   0,
+					WorkerID:  0, // main thread
+					Mode:      3, // adaptive
+				},
+				&interfaces.SwInterfaceRxPlacementDetails{
+					SwIfIndex: 0,
+					QueueID:   1,
+					WorkerID:  1, // worker 0
+					Mode:      2, // interrupt
+				},
+				&interfaces.SwInterfaceRxPlacementDetails{
+					SwIfIndex: 0,
+					QueueID:   2,
+					WorkerID:  2, // worker 1
+					Mode:      1, // polling
+				},
+			},
+		},
+	})
+
+	intfs, err := ifHandler.DumpInterfaces()
+	Expect(err).To(BeNil())
+	Expect(intfs).To(HaveLen(1))
+	intface := intfs[0].Interface
+
+	// Check memif
+	Expect(intface.GetMemif().SocketFilename).To(Equal("test"))
+	Expect(intface.GetMemif().Id).To(Equal(uint32(2)))
+	Expect(intface.GetMemif().Mode).To(Equal(interfaces2.MemifLink_IP))
+	Expect(intface.GetMemif().Master).To(BeFalse())
+
+	rxMode := intface.GetRxModes()
+	Expect(rxMode).To(HaveLen(3))
+	Expect(rxMode[0].Queue).To(BeEquivalentTo(0))
+	Expect(rxMode[0].Mode).To(BeEquivalentTo(interfaces2.Interface_RxMode_ADAPTIVE))
+	Expect(rxMode[1].Queue).To(BeEquivalentTo(1))
+	Expect(rxMode[1].Mode).To(BeEquivalentTo(interfaces2.Interface_RxMode_INTERRUPT))
+	Expect(rxMode[2].Queue).To(BeEquivalentTo(2))
+	Expect(rxMode[2].Mode).To(BeEquivalentTo(interfaces2.Interface_RxMode_POLLING))
+
+	rxPlacement := intface.GetRxPlacements()
+	Expect(rxPlacement).To(HaveLen(3))
+	Expect(rxPlacement[0].Queue).To(BeEquivalentTo(0))
+	Expect(rxPlacement[0].MainThread).To(BeTrue())
+	Expect(rxPlacement[0].Worker).To(BeEquivalentTo(0))
+	Expect(rxPlacement[1].Queue).To(BeEquivalentTo(1))
+	Expect(rxPlacement[1].MainThread).To(BeFalse())
+	Expect(rxPlacement[1].Worker).To(BeEquivalentTo(0))
+	Expect(rxPlacement[2].Queue).To(BeEquivalentTo(2))
+	Expect(rxPlacement[2].MainThread).To(BeFalse())
+	Expect(rxPlacement[2].Worker).To(BeEquivalentTo(1))
 }

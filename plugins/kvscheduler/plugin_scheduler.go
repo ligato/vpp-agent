@@ -286,19 +286,19 @@ func (s *Scheduler) TransactionBarrier() {
 	s.txnLock.Unlock()
 }
 
-// PushSBNotification notifies about a spontaneous value change in the SB
+// PushSBNotification notifies about a spontaneous value change(s) in the SB
 // plane (i.e. not triggered by NB transaction).
-func (s *Scheduler) PushSBNotification(key string, value proto.Message, metadata kvs.Metadata) error {
+func (s *Scheduler) PushSBNotification(notif... kvs.KVWithMetadata) error {
 	txn := &transaction{
 		txnType: kvs.SBNotification,
-		values: []kvForTxn{
-			{
-				key:      key,
-				value:    value,
-				metadata: metadata,
-				origin:   kvs.FromSB,
-			},
-		},
+	}
+	for _, value := range notif {
+		txn.values = append(txn.values, kvForTxn{
+			key:      value.Key,
+			value:    value.Value,
+			metadata: value.Metadata,
+			origin:   kvs.FromSB,
+		})
 	}
 	return s.enqueueTxn(txn)
 }

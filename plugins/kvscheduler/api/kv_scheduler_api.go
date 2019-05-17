@@ -225,7 +225,9 @@ type KVScheduler interface {
 	// however. For example, notifications for values already created by NB
 	// are ignored. But otherwise, SB values (not managed by NB) are untouched
 	// by reconciliation or any other operation of the scheduler/descriptor.
-	PushSBNotification(key string, value proto.Message, metadata Metadata) error
+	// Note: Origin in KVWithMetadata is ignored and can be left unset
+	// (automatically assumed to be FromSB).
+	PushSBNotification(notif... KVWithMetadata) error
 
 	// GetMetadataMap returns (read-only) map associating value label with value
 	// metadata of a given descriptor.

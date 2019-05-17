@@ -15,17 +15,17 @@
 package vpp1904
 
 import (
-	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	binapi_interface "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/interfaces"
+	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 )
 
 // SetRxPlacement implements interface handler.
-func (h *InterfaceVppHandler) SetRxPlacement(ifIdx uint32, rxPlacement *interfaces.Interface_RxPlacementSettings) error {
+func (h *InterfaceVppHandler) SetRxPlacement(ifIdx uint32, rxPlacement *interfaces.Interface_RxPlacement) error {
 	req := &binapi_interface.SwInterfaceSetRxPlacement{
 		SwIfIndex: ifIdx,
 		QueueID:   rxPlacement.Queue,
 		WorkerID:  rxPlacement.Worker,
-		IsMain:    boolToUint(rxPlacement.IsMain),
+		IsMain:    boolToUint(rxPlacement.MainThread),
 	}
 	reply := &binapi_interface.SwInterfaceSetRxPlacementReply{}
 

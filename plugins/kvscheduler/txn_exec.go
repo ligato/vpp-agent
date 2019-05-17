@@ -558,6 +558,7 @@ func (s *Scheduler) applyUpdate(node graph.NodeRW, txnOp *kvs.RecordedTxnOp, arg
 			return
 		}
 		// create the new revision of the value
+		node = args.graphW.SetNode(args.kv.key)
 		createOp := s.preRecordTxnOp(args, node)
 		createOp.Operation = kvs.TxnOperation_CREATE
 		createOp.PrevValue = nil

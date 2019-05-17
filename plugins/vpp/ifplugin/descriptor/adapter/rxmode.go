@@ -5,22 +5,21 @@ package adapter
 import (
 	"github.com/gogo/protobuf/proto"
 	. "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 )
 
 ////////// type-safe key-value pair with metadata //////////
 
-type InterfaceKVWithMetadata struct {
+type RxModeKVWithMetadata struct {
 	Key      string
 	Value    *vpp_interfaces.Interface
-	Metadata *ifaceidx.IfaceMetadata
+	Metadata interface{}
 	Origin   ValueOrigin
 }
 
 ////////// type-safe Descriptor structure //////////
 
-type InterfaceDescriptor struct {
+type RxModeDescriptor struct {
 	Name                 string
 	KeySelector          KeySelector
 	ValueTypeName        string
@@ -30,11 +29,11 @@ type InterfaceDescriptor struct {
 	WithMetadata         bool
 	MetadataMapFactory   MetadataMapFactory
 	Validate             func(key string, value *vpp_interfaces.Interface) error
-	Create               func(key string, value *vpp_interfaces.Interface) (metadata *ifaceidx.IfaceMetadata, err error)
-	Delete               func(key string, value *vpp_interfaces.Interface, metadata *ifaceidx.IfaceMetadata) error
-	Update               func(key string, oldValue, newValue *vpp_interfaces.Interface, oldMetadata *ifaceidx.IfaceMetadata) (newMetadata *ifaceidx.IfaceMetadata, err error)
-	UpdateWithRecreate   func(key string, oldValue, newValue *vpp_interfaces.Interface, metadata *ifaceidx.IfaceMetadata) bool
-	Retrieve             func(correlate []InterfaceKVWithMetadata) ([]InterfaceKVWithMetadata, error)
+	Create               func(key string, value *vpp_interfaces.Interface) (metadata interface{}, err error)
+	Delete               func(key string, value *vpp_interfaces.Interface, metadata interface{}) error
+	Update               func(key string, oldValue, newValue *vpp_interfaces.Interface, oldMetadata interface{}) (newMetadata interface{}, err error)
+	UpdateWithRecreate   func(key string, oldValue, newValue *vpp_interfaces.Interface, metadata interface{}) bool
+	Retrieve             func(correlate []RxModeKVWithMetadata) ([]RxModeKVWithMetadata, error)
 	IsRetriableFailure   func(err error) bool
 	DerivedValues        func(key string, value *vpp_interfaces.Interface) []KeyValuePair
 	Dependencies         func(key string, value *vpp_interfaces.Interface) []Dependency
@@ -43,12 +42,12 @@ type InterfaceDescriptor struct {
 
 ////////// Descriptor adapter //////////
 
-type InterfaceDescriptorAdapter struct {
-	descriptor *InterfaceDescriptor
+type RxModeDescriptorAdapter struct {
+	descriptor *RxModeDescriptor
 }
 
-func NewInterfaceDescriptor(typedDescriptor *InterfaceDescriptor) *KVDescriptor {
-	adapter := &InterfaceDescriptorAdapter{descriptor: typedDescriptor}
+func NewRxModeDescriptor(typedDescriptor *RxModeDescriptor) *KVDescriptor {
+	adapter := &RxModeDescriptorAdapter{descriptor: typedDescriptor}
 	descriptor := &KVDescriptor{
 		Name:                 typedDescriptor.Name,
 		KeySelector:          typedDescriptor.KeySelector,
@@ -90,88 +89,88 @@ func NewInterfaceDescriptor(typedDescriptor *InterfaceDescriptor) *KVDescriptor 
 	return descriptor
 }
 
-func (da *InterfaceDescriptorAdapter) ValueComparator(key string, oldValue, newValue proto.Message) bool {
-	typedOldValue, err1 := castInterfaceValue(key, oldValue)
-	typedNewValue, err2 := castInterfaceValue(key, newValue)
+func (da *RxModeDescriptorAdapter) ValueComparator(key string, oldValue, newValue proto.Message) bool {
+	typedOldValue, err1 := castRxModeValue(key, oldValue)
+	typedNewValue, err2 := castRxModeValue(key, newValue)
 	if err1 != nil || err2 != nil {
 		return false
 	}
 	return da.descriptor.ValueComparator(key, typedOldValue, typedNewValue)
 }
 
-func (da *InterfaceDescriptorAdapter) Validate(key string, value proto.Message) (err error) {
-	typedValue, err := castInterfaceValue(key, value)
+func (da *RxModeDescriptorAdapter) Validate(key string, value proto.Message) (err error) {
+	typedValue, err := castRxModeValue(key, value)
 	if err != nil {
 		return err
 	}
 	return da.descriptor.Validate(key, typedValue)
 }
 
-func (da *InterfaceDescriptorAdapter) Create(key string, value proto.Message) (metadata Metadata, err error) {
-	typedValue, err := castInterfaceValue(key, value)
+func (da *RxModeDescriptorAdapter) Create(key string, value proto.Message) (metadata Metadata, err error) {
+	typedValue, err := castRxModeValue(key, value)
 	if err != nil {
 		return nil, err
 	}
 	return da.descriptor.Create(key, typedValue)
 }
 
-func (da *InterfaceDescriptorAdapter) Update(key string, oldValue, newValue proto.Message, oldMetadata Metadata) (newMetadata Metadata, err error) {
-	oldTypedValue, err := castInterfaceValue(key, oldValue)
+func (da *RxModeDescriptorAdapter) Update(key string, oldValue, newValue proto.Message, oldMetadata Metadata) (newMetadata Metadata, err error) {
+	oldTypedValue, err := castRxModeValue(key, oldValue)
 	if err != nil {
 		return nil, err
 	}
-	newTypedValue, err := castInterfaceValue(key, newValue)
+	newTypedValue, err := castRxModeValue(key, newValue)
 	if err != nil {
 		return nil, err
 	}
-	typedOldMetadata, err := castInterfaceMetadata(key, oldMetadata)
+	typedOldMetadata, err := castRxModeMetadata(key, oldMetadata)
 	if err != nil {
 		return nil, err
 	}
 	return da.descriptor.Update(key, oldTypedValue, newTypedValue, typedOldMetadata)
 }
 
-func (da *InterfaceDescriptorAdapter) Delete(key string, value proto.Message, metadata Metadata) error {
-	typedValue, err := castInterfaceValue(key, value)
+func (da *RxModeDescriptorAdapter) Delete(key string, value proto.Message, metadata Metadata) error {
+	typedValue, err := castRxModeValue(key, value)
 	if err != nil {
 		return err
 	}
-	typedMetadata, err := castInterfaceMetadata(key, metadata)
+	typedMetadata, err := castRxModeMetadata(key, metadata)
 	if err != nil {
 		return err
 	}
 	return da.descriptor.Delete(key, typedValue, typedMetadata)
 }
 
-func (da *InterfaceDescriptorAdapter) UpdateWithRecreate(key string, oldValue, newValue proto.Message, metadata Metadata) bool {
-	oldTypedValue, err := castInterfaceValue(key, oldValue)
+func (da *RxModeDescriptorAdapter) UpdateWithRecreate(key string, oldValue, newValue proto.Message, metadata Metadata) bool {
+	oldTypedValue, err := castRxModeValue(key, oldValue)
 	if err != nil {
 		return true
 	}
-	newTypedValue, err := castInterfaceValue(key, newValue)
+	newTypedValue, err := castRxModeValue(key, newValue)
 	if err != nil {
 		return true
 	}
-	typedMetadata, err := castInterfaceMetadata(key, metadata)
+	typedMetadata, err := castRxModeMetadata(key, metadata)
 	if err != nil {
 		return true
 	}
 	return da.descriptor.UpdateWithRecreate(key, oldTypedValue, newTypedValue, typedMetadata)
 }
 
-func (da *InterfaceDescriptorAdapter) Retrieve(correlate []KVWithMetadata) ([]KVWithMetadata, error) {
-	var correlateWithType []InterfaceKVWithMetadata
+func (da *RxModeDescriptorAdapter) Retrieve(correlate []KVWithMetadata) ([]KVWithMetadata, error) {
+	var correlateWithType []RxModeKVWithMetadata
 	for _, kvpair := range correlate {
-		typedValue, err := castInterfaceValue(kvpair.Key, kvpair.Value)
+		typedValue, err := castRxModeValue(kvpair.Key, kvpair.Value)
 		if err != nil {
 			continue
 		}
-		typedMetadata, err := castInterfaceMetadata(kvpair.Key, kvpair.Metadata)
+		typedMetadata, err := castRxModeMetadata(kvpair.Key, kvpair.Metadata)
 		if err != nil {
 			continue
 		}
 		correlateWithType = append(correlateWithType,
-			InterfaceKVWithMetadata{
+			RxModeKVWithMetadata{
 				Key:      kvpair.Key,
 				Value:    typedValue,
 				Metadata: typedMetadata,
@@ -196,16 +195,16 @@ func (da *InterfaceDescriptorAdapter) Retrieve(correlate []KVWithMetadata) ([]KV
 	return values, err
 }
 
-func (da *InterfaceDescriptorAdapter) DerivedValues(key string, value proto.Message) []KeyValuePair {
-	typedValue, err := castInterfaceValue(key, value)
+func (da *RxModeDescriptorAdapter) DerivedValues(key string, value proto.Message) []KeyValuePair {
+	typedValue, err := castRxModeValue(key, value)
 	if err != nil {
 		return nil
 	}
 	return da.descriptor.DerivedValues(key, typedValue)
 }
 
-func (da *InterfaceDescriptorAdapter) Dependencies(key string, value proto.Message) []Dependency {
-	typedValue, err := castInterfaceValue(key, value)
+func (da *RxModeDescriptorAdapter) Dependencies(key string, value proto.Message) []Dependency {
+	typedValue, err := castRxModeValue(key, value)
 	if err != nil {
 		return nil
 	}
@@ -214,7 +213,7 @@ func (da *InterfaceDescriptorAdapter) Dependencies(key string, value proto.Messa
 
 ////////// Helper methods //////////
 
-func castInterfaceValue(key string, value proto.Message) (*vpp_interfaces.Interface, error) {
+func castRxModeValue(key string, value proto.Message) (*vpp_interfaces.Interface, error) {
 	typedValue, ok := value.(*vpp_interfaces.Interface)
 	if !ok {
 		return nil, ErrInvalidValueType(key, value)
@@ -222,11 +221,11 @@ func castInterfaceValue(key string, value proto.Message) (*vpp_interfaces.Interf
 	return typedValue, nil
 }
 
-func castInterfaceMetadata(key string, metadata Metadata) (*ifaceidx.IfaceMetadata, error) {
+func castRxModeMetadata(key string, metadata Metadata) (interface{}, error) {
 	if metadata == nil {
 		return nil, nil
 	}
-	typedMetadata, ok := metadata.(*ifaceidx.IfaceMetadata)
+	typedMetadata, ok := metadata.(interface{})
 	if !ok {
 		return nil, ErrInvalidMetadataType(key)
 	}

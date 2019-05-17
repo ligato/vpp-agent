@@ -842,3 +842,313 @@ func TestDHCPLeaseKey(t *testing.T) {
 		})
 	}
 }
+
+func TestLinkStateKey(t *testing.T) {
+	tests := []struct {
+		name        string
+		iface       string
+		linkIsUp    bool
+		expectedKey string
+	}{
+		{
+			name:        "link is UP",
+			iface:       "memif0",
+			linkIsUp:    true,
+			expectedKey: "vpp/interface/memif0/link-state/UP",
+		},
+		{
+			name:        "link is DOWN",
+			iface:       "memif0",
+			linkIsUp:    false,
+			expectedKey: "vpp/interface/memif0/link-state/DOWN",
+		},
+		{
+			name:        "invalid interface name",
+			iface:       "",
+			linkIsUp:    true,
+			expectedKey: "vpp/interface/<invalid>/link-state/UP",
+		},
+		{
+			name:        "Gbe interface",
+			iface:       "GigabitEthernet0/8/0",
+			linkIsUp:    false,
+			expectedKey: "vpp/interface/GigabitEthernet0/8/0/link-state/DOWN",
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			key := LinkStateKey(test.iface, test.linkIsUp)
+			if key != test.expectedKey {
+				t.Errorf("failed for: iface=%s linkIsUp=%v\n"+
+					"expected key:\n\t%q\ngot key:\n\t%q",
+					test.iface, test.linkIsUp, test.expectedKey, key)
+			}
+		})
+	}
+}
+
+func TestParseLinkStateKey(t *testing.T) {
+	tests := []struct {
+		name                   string
+		key                    string
+		expectedIface          string
+		expectedIsLinkUp       bool
+		expectedIsLinkStateKey bool
+	}{
+		{
+			name:                   "link is UP",
+			key:                    "vpp/interface/memif0/link-state/UP",
+			expectedIface:          "memif0",
+			expectedIsLinkUp:       true,
+			expectedIsLinkStateKey: true,
+		},
+		{
+			name:                   "link is DOWN",
+			key:                    "vpp/interface/memif0/link-state/DOWN",
+			expectedIface:          "memif0",
+			expectedIsLinkUp:       false,
+			expectedIsLinkStateKey: true,
+		},
+		{
+			name:                   "invalid interface name",
+			key:                    "vpp/interface/<invalid>/link-state/DOWN",
+			expectedIsLinkStateKey: false,
+		},
+		{
+			name:                   "Gbe interface",
+			key:                    "vpp/interface/GigabitEthernet0/8/0/link-state/UP",
+			expectedIface:          "GigabitEthernet0/8/0",
+			expectedIsLinkUp:       true,
+			expectedIsLinkStateKey: true,
+		},
+		{
+			name:                   "invalid link state",
+			key:                    "vpp/interface/GigabitEthernet0/8/0/link-state/<invalid>",
+			expectedIsLinkStateKey: false,
+		},
+		{
+			name:                   "missing link state",
+			key:                    "vpp/interface/GigabitEthernet0/8/0/link-state",
+			expectedIsLinkStateKey: false,
+		},
+		{
+			name:                   "not link state key",
+			key:                    "vpp/interface/unnumbered/GigabitEthernet0/8/0",
+			expectedIsLinkStateKey: false,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			iface, isLinkUp, isLinkStateKey := ParseLinkStateKey(test.key)
+			if isLinkStateKey != test.expectedIsLinkStateKey {
+				t.Errorf("expected isLinkStateKey: %v\tgot: %v",
+					test.expectedIsLinkStateKey, isLinkStateKey)
+			}
+			if iface != test.expectedIface {
+				t.Errorf("expected iface: %s\tgot: %s", test.expectedIface, iface)
+			}
+			if isLinkUp != test.expectedIsLinkUp {
+				t.Errorf("expected isLinkUp: %t\tgot: %t", test.expectedIsLinkUp, isLinkUp)
+			}
+		})
+	}
+}
+
+func TestRxPlacementKey(t *testing.T) {
+	tests := []struct {
+		name        string
+		iface       string
+		queue       uint32
+		expectedKey string
+	}{
+		{
+			name:        "queue 0",
+			iface:       "memif0",
+			queue:       0,
+			expectedKey: "vpp/interface/memif0/rx-placement/queue/0",
+		},
+		{
+			name:        "queue 1",
+			iface:       "memif0",
+			queue:       1,
+			expectedKey: "vpp/interface/memif0/rx-placement/queue/1",
+		},
+		{
+			name:        "invalid interface name",
+			iface:       "",
+			queue:       1,
+			expectedKey: "vpp/interface/<invalid>/rx-placement/queue/1",
+		},
+		{
+			name:        "Gbe interface",
+			iface:       "GigabitEthernet0/8/0",
+			queue:       2,
+			expectedKey: "vpp/interface/GigabitEthernet0/8/0/rx-placement/queue/2",
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			key := RxPlacementKey(test.iface, test.queue)
+			if key != test.expectedKey {
+				t.Errorf("failed for: iface=%s queue=%d\n"+
+					"expected key:\n\t%q\ngot key:\n\t%q",
+					test.iface, test.queue, test.expectedKey, key)
+			}
+		})
+	}
+}
+
+func TestParseRxPlacementKey(t *testing.T) {
+	tests := []struct {
+		name                     string
+		key                      string
+		expectedIface            string
+		expectedQueue            uint32
+		expectedIsRxPlacementKey bool
+	}{
+		{
+			name:                     "queue 0",
+			key:                      "vpp/interface/memif0/rx-placement/queue/0",
+			expectedIface:            "memif0",
+			expectedQueue:            0,
+			expectedIsRxPlacementKey: true,
+		},
+		{
+			name:                     "queue 1",
+			key:                      "vpp/interface/memif0/rx-placement/queue/1",
+			expectedIface:            "memif0",
+			expectedQueue:            1,
+			expectedIsRxPlacementKey: true,
+		},
+		{
+			name:                     "invalid interface name",
+			key:                      "vpp/interface/<invalid>/rx-placement/queue/1",
+			expectedIsRxPlacementKey: false,
+		},
+		{
+			name:                     "invalid queue",
+			key:                      "vpp/interface/memif0/rx-placement/queue/<invalid>",
+			expectedIsRxPlacementKey: false,
+		},
+		{
+			name:                     "missing queue",
+			key:                      "vpp/interface/memif0/rx-placement/",
+			expectedIsRxPlacementKey: false,
+		},
+		{
+			name:                     "missing queue ID",
+			key:                      "vpp/interface/memif0/rx-placement/queue",
+			expectedIsRxPlacementKey: false,
+		},
+		{
+			name:                     "Gbe interface",
+			key:                      "vpp/interface/GigabitEthernet0/8/0/rx-placement/queue/3",
+			expectedIface:            "GigabitEthernet0/8/0",
+			expectedQueue:            3,
+			expectedIsRxPlacementKey: true,
+		},
+		{
+			name:                     "not rx placement key",
+			key:                      "vpp/interface/memif0/link-state/DOWN",
+			expectedIsRxPlacementKey: false,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			iface, queue, isRxPlacementKey := ParseRxPlacementKey(test.key)
+			if isRxPlacementKey != test.expectedIsRxPlacementKey {
+				t.Errorf("expected isRxPlacementKey: %v\tgot: %v",
+					test.expectedIsRxPlacementKey, isRxPlacementKey)
+			}
+			if queue != test.expectedQueue {
+				t.Errorf("expected queue: %d\tgot: %d", test.expectedQueue, queue)
+			}
+			if iface != test.expectedIface {
+				t.Errorf("expected iface: %s\tgot: %s", test.expectedIface, iface)
+			}
+		})
+	}
+}
+
+func TestRxModesKey(t *testing.T) {
+	tests := []struct {
+		name        string
+		iface       string
+		expectedKey string
+	}{
+		{
+			name:        "memif",
+			iface:       "memif0",
+			expectedKey: "vpp/interface/memif0/rx-modes",
+		},
+		{
+			name:        "Gbe",
+			iface:       "GigabitEthernet0/8/0",
+			expectedKey: "vpp/interface/GigabitEthernet0/8/0/rx-modes",
+		},
+		{
+			name:        "invalid interface name",
+			iface:       "",
+			expectedKey: "vpp/interface/<invalid>/rx-modes",
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			key := RxModesKey(test.iface)
+			if key != test.expectedKey {
+				t.Errorf("failed for: iface=%s\n"+
+					"expected key:\n\t%q\ngot key:\n\t%q",
+					test.iface, test.expectedKey, key)
+			}
+		})
+	}
+}
+
+func TestParseRxModesKey(t *testing.T) {
+	tests := []struct {
+		name                 string
+		key                  string
+		expectedIface        string
+		expectedIsRxModesKey bool
+	}{
+		{
+			name:                 "memif",
+			key:                  "vpp/interface/memif0/rx-modes",
+			expectedIface:        "memif0",
+			expectedIsRxModesKey: true,
+		},
+		{
+			name:                 "Gbe",
+			key:                  "vpp/interface/GigabitEthernet0/8/0/rx-modes",
+			expectedIface:        "GigabitEthernet0/8/0",
+			expectedIsRxModesKey: true,
+		},
+		{
+			name:                 "invalid interface name",
+			key:                  "vpp/interface/<invalid>/rx-modes",
+			expectedIsRxModesKey: false,
+		},
+		{
+			name:                 "missing rx-mode suffix",
+			key:                  "vpp/interface/<invalid>",
+			expectedIsRxModesKey: false,
+		},
+		{
+			name:                 "not rx-mode key",
+			key:                  "vpp/interface/memif0/address/192.168.1.12/24",
+			expectedIsRxModesKey: false,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			iface, isRxModesKey := ParseRxModesKey(test.key)
+			if isRxModesKey != test.expectedIsRxModesKey {
+				t.Errorf("expected isRxModesKey: %v\tgot: %v",
+					test.expectedIsRxModesKey, isRxModesKey)
+			}
+			if iface != test.expectedIface {
+				t.Errorf("expected iface: %s\tgot: %s", test.expectedIface, iface)
+			}
+		})
+	}
+}

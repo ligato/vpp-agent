@@ -1,7 +1,6 @@
 package descriptor
 
 import (
-	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 
 	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
@@ -143,41 +142,6 @@ func (d *InterfaceDescriptor) Create(key string, intf *interfaces.Interface) (me
 		d.bondIDs[intf.GetBond().GetId()] = intf.GetName()
 	}
 
-	/*
-		Rx-mode
-
-		Legend:
-		P - polling
-		I - interrupt
-		A - adaptive
-
-		Interfaces - supported modes:
-			* tap interface - PIA
-			* memory interface - PIA
-			* vxlan tunnel - PIA
-			* software loopback - PIA
-			* ethernet csmad - P
-			* af packet - PIA
-	*/
-	if intf.RxModeSettings != nil {
-		rxMode := getRxMode(intf)
-		err = d.ifHandler.SetRxMode(ifIdx, rxMode)
-		if err != nil {
-			err = errors.Errorf("failed to set Rx-mode for interface %s: %v", intf.Name, err)
-			d.log.Error(err)
-			return nil, err
-		}
-	}
-
-	// rx-placement
-	if intf.GetRxPlacementSettings() != nil {
-		if err = d.ifHandler.SetRxPlacement(ifIdx, intf.GetRxPlacementSettings()); err != nil {
-			err = errors.Errorf("failed to set rx-placement for interface %s: %v", intf.Name, err)
-			d.log.Error(err)
-			return nil, err
-		}
-	}
-
 	// MAC address. Note: physical interfaces cannot have the MAC address changed. The bond interface uses its own
 	// binary API call to set MAC address.
 	if intf.GetPhysAddress() != "" &&
@@ -286,27 +250,6 @@ func (d *InterfaceDescriptor) Delete(key string, intf *interfaces.Interface, met
 // Update is able to change Type-unspecific attributes.
 func (d *InterfaceDescriptor) Update(key string, oldIntf, newIntf *interfaces.Interface, oldMetadata *ifaceidx.IfaceMetadata) (newMetadata *ifaceidx.IfaceMetadata, err error) {
 	ifIdx := oldMetadata.SwIfIndex
-
-	// rx-mode
-	oldRx := getRxMode(oldIntf)
-	newRx := getRxMode(newIntf)
-	if !proto.Equal(oldRx, newRx) {
-		err = d.ifHandler.SetRxMode(ifIdx, newRx)
-		if err != nil {
-			err = errors.Errorf("failed to modify rx-mode for interface %s: %v", newIntf.Name, err)
-			d.log.Error(err)
-			return oldMetadata, err
-		}
-	}
-
-	// rx-placement
-	if newIntf.GetRxPlacementSettings() != nil && !proto.Equal(getRxPlacement(oldIntf), getRxPlacement(newIntf)) {
-		if err = d.ifHandler.SetRxPlacement(ifIdx, newIntf.GetRxPlacementSettings()); err != nil {
-			err = errors.Errorf("failed to modify rx-placement for interface %s: %v", newIntf.Name, err)
-			d.log.Error(err)
-			return oldMetadata, err
-		}
-	}
 
 	// admin status
 	if newIntf.Enabled != oldIntf.Enabled {
@@ -475,6 +418,31 @@ func (d *InterfaceDescriptor) Retrieve(correlate []adapter.InterfaceKVWithMetada
 				if intf.Interface.GetMemif().GetBufferSize() == 0 {
 					intf.Interface.GetMemif().BufferSize = expCfg.GetMemif().GetBufferSize()
 				}
+			}
+
+			// remove rx-placement entries for queues with configuration not defined by NB
+			rxPlacementDump := intf.Interface.GetRxPlacements()
+			rxPlacementCfg := expCfg.GetRxPlacements()
+			for i := 0; i < len(rxPlacementDump); {
+				queue := rxPlacementDump[i].Queue
+				found := false
+				for j := 0; j < len(rxPlacementCfg); j++ {
+					if rxPlacementCfg[j].Queue == queue {
+						found = true
+						break
+					}
+				}
+				if found {
+					i++
+				} else {
+					rxPlacementDump = append(rxPlacementDump[:i], rxPlacementDump[i+1:]...)
+				}
+			}
+			intf.Interface.RxPlacements = rxPlacementDump
+
+			// remove rx-mode from the dump if it is not configured by NB
+			if len(expCfg.GetRxModes()) == 0 {
+				intf.Interface.RxModes = []*interfaces.Interface_RxMode{}
 			}
 		}
 

@@ -19,6 +19,7 @@ import (
 
 	. "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/kvscheduler/internal/utils"
+	"fmt"
 )
 
 const (
@@ -111,8 +112,11 @@ func (reg *registry) GetDescriptorForKey(key string) *KVDescriptor {
 	var keyDescriptor *KVDescriptor
 	for _, descriptor := range reg.descriptors {
 		if descriptor.KeySelector(key) {
+			if keyDescriptor != nil {
+				panic(fmt.Sprintf("key %s is selected by both %s and %s descriptors",
+					key, keyDescriptor.Name, descriptor.Name))
+			}
 			keyDescriptor = descriptor
-			break
 		}
 	}
 	// add entry to cache
