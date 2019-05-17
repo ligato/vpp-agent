@@ -96,6 +96,3 @@ RUN VERSION=$VERSION COMMIT=$COMMIT DATE=$DATE make install
 # run supervisor as the default executable
 CMD rm -f /dev/shm/db /dev/shm/global_vm /dev/shm/vpe-api && \
     exec /usr/bin/supervisord -c /etc/supervisord/supervisord.conf
-
-
-FROM
