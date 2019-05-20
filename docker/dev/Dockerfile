@@ -1,4 +1,4 @@
-ARG VPP_IMG=ligato/vpp-base:1904
+ARG VPP_IMG
 FROM ${VPP_IMG} AS vppimg
 
 FROM golang:1.11 AS verify-binapi
@@ -10,21 +10,21 @@ RUN apt-get update \
 
 WORKDIR /go/src/github.com/ligato/vpp-agent
 
+ARG VPP_BINAPI
+
 COPY plugins/vpp/binapi plugins/vpp/binapi
 COPY vendor vendor
+COPY scripts/genbinapi.sh scripts/genbinapi.sh
 COPY Makefile vpp.env ./
 
 COPY --from=vppimg /usr/share/vpp /usr/share/vpp
-COPY --from=vppimg /vpp/version /vpp/version
 
 RUN cp -r plugins/vpp/binapi /tmp/orig_binapi \
  && make generate-binapi \
  && diff -r plugins/vpp/binapi /tmp/orig_binapi \
- || ( echo "Generated binapi code does not match with VPP version: `cat /vpp/version`!"; exit 1 )
+ || ( echo "Generated binapi does not match used VPP version!"; exit 1 )
 
 FROM ${VPP_IMG} AS devimg
-
-RUN echo "VPP version: `cat /vpp/version`"
 
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
@@ -46,7 +46,6 @@ RUN apt-get update \
 
 # Install Go
 ENV GOLANG_VERSION 1.11.10
-
 RUN set -eux; \
 	dpkgArch="$(dpkg --print-architecture)"; \
 		case "${dpkgArch##*-}" in \
@@ -60,7 +59,6 @@ RUN set -eux; \
 
 ENV GOPATH /go
 ENV PATH $GOPATH/bin:/usr/local/go/bin:$PATH
-
 RUN mkdir -p "$GOPATH/src" "$GOPATH/bin" && chmod -R 777 "$GOPATH"
 
 # Install debugger
