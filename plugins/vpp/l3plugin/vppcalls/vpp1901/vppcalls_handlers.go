@@ -15,16 +15,17 @@
 package vpp1901
 
 import (
+	"fmt"
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
-
 	vpevppcalls "github.com/ligato/vpp-agent/plugins/govppmux/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/govppmux/vppcalls/vpp1901"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/ip"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/vpe"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls"
+	"net"
 )
 
 func init() {
@@ -47,6 +48,7 @@ type L3VppHandler struct {
 	*RouteHandler
 	*IPNeighHandler
 	*VrfTableHandler
+	*DHCPProxyHandler
 }
 
 func NewL3VppHandler(
@@ -58,6 +60,7 @@ func NewL3VppHandler(
 		RouteHandler:       NewRouteVppHandler(ch, ifIdx, log),
 		IPNeighHandler:     NewIPNeighVppHandler(ch, log),
 		VrfTableHandler:    NewVrfTableVppHandler(ch, log),
+		DHCPProxyHandler:   NewDHCPProxyHandler(ch, log),
 	}
 }
 
@@ -93,6 +96,23 @@ type IPNeighHandler struct {
 type VrfTableHandler struct {
 	callsChannel govppapi.Channel
 	log          logging.Logger
+}
+
+// DHCPProxyHandler is accessor for DHCP proxy-related vppcalls methods
+type DHCPProxyHandler struct {
+	callsChannel govppapi.Channel
+	log          logging.Logger
+}
+
+// NewVrfTableVppHandler creates new instance of vrf-table vppcalls handler
+func NewDHCPProxyHandler(callsChan govppapi.Channel, log logging.Logger) *DHCPProxyHandler {
+	if log == nil {
+		log = logrus.NewLogger("dhcp-proxy-handler")
+	}
+	return &DHCPProxyHandler{
+		callsChannel: callsChan,
+		log:          log,
+	}
 }
 
 // NewArpVppHandler creates new instance of IPsec vppcalls handler
@@ -152,6 +172,25 @@ func NewVrfTableVppHandler(callsChan govppapi.Channel, log logging.Logger) *VrfT
 		callsChannel: callsChan,
 		log:          log,
 	}
+}
+
+func ipToAddress(ipstr string) (addr ip.Address, err error) {
+	netIP := net.ParseIP(ipstr)
+	if netIP == nil {
+		return ip.Address{}, fmt.Errorf("invalid IP: %q", ipstr)
+	}
+	if ip4 := netIP.To4(); ip4 == nil {
+		addr.Af = ip.ADDRESS_IP6
+		var ip6addr ip.IP6Address
+		copy(ip6addr[:], netIP.To16())
+		addr.Un.SetIP6(ip6addr)
+	} else {
+		addr.Af = ip.ADDRESS_IP4
+		var ip4addr ip.IP4Address
+		copy(ip4addr[:], ip4)
+		addr.Un.SetIP4(ip4addr)
+	}
+	return
 }
 
 func uintToBool(value uint8) bool {

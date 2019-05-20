@@ -5,50 +5,49 @@ package adapter
 import (
 	"github.com/gogo/protobuf/proto"
 	. "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-	"github.com/ligato/vpp-agent/pkg/idxvpp"
-	"github.com/ligato/vpp-agent/api/models/vpp/ipsec"
+	"github.com/ligato/vpp-agent/api/models/vpp/l3"
 )
 
 ////////// type-safe key-value pair with metadata //////////
 
-type SPDKVWithMetadata struct {
+type DHCPProxyKVWithMetadata struct {
 	Key      string
-	Value    *vpp_ipsec.SecurityPolicyDatabase
-	Metadata *idxvpp.OnlyIndex
+	Value    *vpp_l3.DHCPProxy
+	Metadata interface{}
 	Origin   ValueOrigin
 }
 
 ////////// type-safe Descriptor structure //////////
 
-type SPDDescriptor struct {
+type DHCPProxyDescriptor struct {
 	Name                 string
 	KeySelector          KeySelector
 	ValueTypeName        string
 	KeyLabel             func(key string) string
-	ValueComparator      func(key string, oldValue, newValue *vpp_ipsec.SecurityPolicyDatabase) bool
+	ValueComparator      func(key string, oldValue, newValue *vpp_l3.DHCPProxy) bool
 	NBKeyPrefix          string
 	WithMetadata         bool
 	MetadataMapFactory   MetadataMapFactory
-	Validate             func(key string, value *vpp_ipsec.SecurityPolicyDatabase) error
-	Create               func(key string, value *vpp_ipsec.SecurityPolicyDatabase) (metadata *idxvpp.OnlyIndex, err error)
-	Delete               func(key string, value *vpp_ipsec.SecurityPolicyDatabase, metadata *idxvpp.OnlyIndex) error
-	Update               func(key string, oldValue, newValue *vpp_ipsec.SecurityPolicyDatabase, oldMetadata *idxvpp.OnlyIndex) (newMetadata *idxvpp.OnlyIndex, err error)
-	UpdateWithRecreate   func(key string, oldValue, newValue *vpp_ipsec.SecurityPolicyDatabase, metadata *idxvpp.OnlyIndex) bool
-	Retrieve             func(correlate []SPDKVWithMetadata) ([]SPDKVWithMetadata, error)
+	Validate             func(key string, value *vpp_l3.DHCPProxy) error
+	Create               func(key string, value *vpp_l3.DHCPProxy) (metadata interface{}, err error)
+	Delete               func(key string, value *vpp_l3.DHCPProxy, metadata interface{}) error
+	Update               func(key string, oldValue, newValue *vpp_l3.DHCPProxy, oldMetadata interface{}) (newMetadata interface{}, err error)
+	UpdateWithRecreate   func(key string, oldValue, newValue *vpp_l3.DHCPProxy, metadata interface{}) bool
+	Retrieve             func(correlate []DHCPProxyKVWithMetadata) ([]DHCPProxyKVWithMetadata, error)
 	IsRetriableFailure   func(err error) bool
-	DerivedValues        func(key string, value *vpp_ipsec.SecurityPolicyDatabase) []KeyValuePair
-	Dependencies         func(key string, value *vpp_ipsec.SecurityPolicyDatabase) []Dependency
+	DerivedValues        func(key string, value *vpp_l3.DHCPProxy) []KeyValuePair
+	Dependencies         func(key string, value *vpp_l3.DHCPProxy) []Dependency
 	RetrieveDependencies []string /* descriptor name */
 }
 
 ////////// Descriptor adapter //////////
 
-type SPDDescriptorAdapter struct {
-	descriptor *SPDDescriptor
+type DHCPProxyDescriptorAdapter struct {
+	descriptor *DHCPProxyDescriptor
 }
 
-func NewSPDDescriptor(typedDescriptor *SPDDescriptor) *KVDescriptor {
-	adapter := &SPDDescriptorAdapter{descriptor: typedDescriptor}
+func NewDHCPProxyDescriptor(typedDescriptor *DHCPProxyDescriptor) *KVDescriptor {
+	adapter := &DHCPProxyDescriptorAdapter{descriptor: typedDescriptor}
 	descriptor := &KVDescriptor{
 		Name:                 typedDescriptor.Name,
 		KeySelector:          typedDescriptor.KeySelector,
@@ -90,88 +89,88 @@ func NewSPDDescriptor(typedDescriptor *SPDDescriptor) *KVDescriptor {
 	return descriptor
 }
 
-func (da *SPDDescriptorAdapter) ValueComparator(key string, oldValue, newValue proto.Message) bool {
-	typedOldValue, err1 := castSPDValue(key, oldValue)
-	typedNewValue, err2 := castSPDValue(key, newValue)
+func (da *DHCPProxyDescriptorAdapter) ValueComparator(key string, oldValue, newValue proto.Message) bool {
+	typedOldValue, err1 := castDHCPProxyValue(key, oldValue)
+	typedNewValue, err2 := castDHCPProxyValue(key, newValue)
 	if err1 != nil || err2 != nil {
 		return false
 	}
 	return da.descriptor.ValueComparator(key, typedOldValue, typedNewValue)
 }
 
-func (da *SPDDescriptorAdapter) Validate(key string, value proto.Message) (err error) {
-	typedValue, err := castSPDValue(key, value)
+func (da *DHCPProxyDescriptorAdapter) Validate(key string, value proto.Message) (err error) {
+	typedValue, err := castDHCPProxyValue(key, value)
 	if err != nil {
 		return err
 	}
 	return da.descriptor.Validate(key, typedValue)
 }
 
-func (da *SPDDescriptorAdapter) Create(key string, value proto.Message) (metadata Metadata, err error) {
-	typedValue, err := castSPDValue(key, value)
+func (da *DHCPProxyDescriptorAdapter) Create(key string, value proto.Message) (metadata Metadata, err error) {
+	typedValue, err := castDHCPProxyValue(key, value)
 	if err != nil {
 		return nil, err
 	}
 	return da.descriptor.Create(key, typedValue)
 }
 
-func (da *SPDDescriptorAdapter) Update(key string, oldValue, newValue proto.Message, oldMetadata Metadata) (newMetadata Metadata, err error) {
-	oldTypedValue, err := castSPDValue(key, oldValue)
+func (da *DHCPProxyDescriptorAdapter) Update(key string, oldValue, newValue proto.Message, oldMetadata Metadata) (newMetadata Metadata, err error) {
+	oldTypedValue, err := castDHCPProxyValue(key, oldValue)
 	if err != nil {
 		return nil, err
 	}
-	newTypedValue, err := castSPDValue(key, newValue)
+	newTypedValue, err := castDHCPProxyValue(key, newValue)
 	if err != nil {
 		return nil, err
 	}
-	typedOldMetadata, err := castSPDMetadata(key, oldMetadata)
+	typedOldMetadata, err := castDHCPProxyMetadata(key, oldMetadata)
 	if err != nil {
 		return nil, err
 	}
 	return da.descriptor.Update(key, oldTypedValue, newTypedValue, typedOldMetadata)
 }
 
-func (da *SPDDescriptorAdapter) Delete(key string, value proto.Message, metadata Metadata) error {
-	typedValue, err := castSPDValue(key, value)
+func (da *DHCPProxyDescriptorAdapter) Delete(key string, value proto.Message, metadata Metadata) error {
+	typedValue, err := castDHCPProxyValue(key, value)
 	if err != nil {
 		return err
 	}
-	typedMetadata, err := castSPDMetadata(key, metadata)
+	typedMetadata, err := castDHCPProxyMetadata(key, metadata)
 	if err != nil {
 		return err
 	}
 	return da.descriptor.Delete(key, typedValue, typedMetadata)
 }
 
-func (da *SPDDescriptorAdapter) UpdateWithRecreate(key string, oldValue, newValue proto.Message, metadata Metadata) bool {
-	oldTypedValue, err := castSPDValue(key, oldValue)
+func (da *DHCPProxyDescriptorAdapter) UpdateWithRecreate(key string, oldValue, newValue proto.Message, metadata Metadata) bool {
+	oldTypedValue, err := castDHCPProxyValue(key, oldValue)
 	if err != nil {
 		return true
 	}
-	newTypedValue, err := castSPDValue(key, newValue)
+	newTypedValue, err := castDHCPProxyValue(key, newValue)
 	if err != nil {
 		return true
 	}
-	typedMetadata, err := castSPDMetadata(key, metadata)
+	typedMetadata, err := castDHCPProxyMetadata(key, metadata)
 	if err != nil {
 		return true
 	}
 	return da.descriptor.UpdateWithRecreate(key, oldTypedValue, newTypedValue, typedMetadata)
 }
 
-func (da *SPDDescriptorAdapter) Retrieve(correlate []KVWithMetadata) ([]KVWithMetadata, error) {
-	var correlateWithType []SPDKVWithMetadata
+func (da *DHCPProxyDescriptorAdapter) Retrieve(correlate []KVWithMetadata) ([]KVWithMetadata, error) {
+	var correlateWithType []DHCPProxyKVWithMetadata
 	for _, kvpair := range correlate {
-		typedValue, err := castSPDValue(kvpair.Key, kvpair.Value)
+		typedValue, err := castDHCPProxyValue(kvpair.Key, kvpair.Value)
 		if err != nil {
 			continue
 		}
-		typedMetadata, err := castSPDMetadata(kvpair.Key, kvpair.Metadata)
+		typedMetadata, err := castDHCPProxyMetadata(kvpair.Key, kvpair.Metadata)
 		if err != nil {
 			continue
 		}
 		correlateWithType = append(correlateWithType,
-			SPDKVWithMetadata{
+			DHCPProxyKVWithMetadata{
 				Key:      kvpair.Key,
 				Value:    typedValue,
 				Metadata: typedMetadata,
@@ -196,16 +195,16 @@ func (da *SPDDescriptorAdapter) Retrieve(correlate []KVWithMetadata) ([]KVWithMe
 	return values, err
 }
 
-func (da *SPDDescriptorAdapter) DerivedValues(key string, value proto.Message) []KeyValuePair {
-	typedValue, err := castSPDValue(key, value)
+func (da *DHCPProxyDescriptorAdapter) DerivedValues(key string, value proto.Message) []KeyValuePair {
+	typedValue, err := castDHCPProxyValue(key, value)
 	if err != nil {
 		return nil
 	}
 	return da.descriptor.DerivedValues(key, typedValue)
 }
 
-func (da *SPDDescriptorAdapter) Dependencies(key string, value proto.Message) []Dependency {
-	typedValue, err := castSPDValue(key, value)
+func (da *DHCPProxyDescriptorAdapter) Dependencies(key string, value proto.Message) []Dependency {
+	typedValue, err := castDHCPProxyValue(key, value)
 	if err != nil {
 		return nil
 	}
@@ -214,19 +213,19 @@ func (da *SPDDescriptorAdapter) Dependencies(key string, value proto.Message) []
 
 ////////// Helper methods //////////
 
-func castSPDValue(key string, value proto.Message) (*vpp_ipsec.SecurityPolicyDatabase, error) {
-	typedValue, ok := value.(*vpp_ipsec.SecurityPolicyDatabase)
+func castDHCPProxyValue(key string, value proto.Message) (*vpp_l3.DHCPProxy, error) {
+	typedValue, ok := value.(*vpp_l3.DHCPProxy)
 	if !ok {
 		return nil, ErrInvalidValueType(key, value)
 	}
 	return typedValue, nil
 }
 
-func castSPDMetadata(key string, metadata Metadata) (*idxvpp.OnlyIndex, error) {
+func castDHCPProxyMetadata(key string, metadata Metadata) (interface{}, error) {
 	if metadata == nil {
 		return nil, nil
 	}
-	typedMetadata, ok := metadata.(*idxvpp.OnlyIndex)
+	typedMetadata, ok := metadata.(interface{})
 	if !ok {
 		return nil, ErrInvalidMetadataType(key)
 	}

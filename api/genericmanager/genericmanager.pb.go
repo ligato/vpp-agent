@@ -9,6 +9,8 @@ import (
 	proto "github.com/gogo/protobuf/proto"
 	types "github.com/gogo/protobuf/types"
 	grpc "google.golang.org/grpc"
+	codes "google.golang.org/grpc/codes"
+	status "google.golang.org/grpc/status"
 	math "math"
 )
 
@@ -1241,6 +1243,26 @@ type GenericManagerServer interface {
 	// Subscribe is used for subscribing to events.
 	// Notifications are returned by streaming updates.
 	Subscribe(*SubscribeRequest, GenericManager_SubscribeServer) error
+}
+
+// UnimplementedGenericManagerServer can be embedded to have forward compatible implementations.
+type UnimplementedGenericManagerServer struct {
+}
+
+func (*UnimplementedGenericManagerServer) Capabilities(ctx context.Context, req *CapabilitiesRequest) (*CapabilitiesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Capabilities not implemented")
+}
+func (*UnimplementedGenericManagerServer) SetConfig(ctx context.Context, req *SetConfigRequest) (*SetConfigResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SetConfig not implemented")
+}
+func (*UnimplementedGenericManagerServer) GetConfig(ctx context.Context, req *GetConfigRequest) (*GetConfigResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetConfig not implemented")
+}
+func (*UnimplementedGenericManagerServer) DumpState(ctx context.Context, req *DumpStateRequest) (*DumpStateResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DumpState not implemented")
+}
+func (*UnimplementedGenericManagerServer) Subscribe(req *SubscribeRequest, srv GenericManager_SubscribeServer) error {
+	return status.Errorf(codes.Unimplemented, "method Subscribe not implemented")
 }
 
 func RegisterGenericManagerServer(s *grpc.Server, srv GenericManagerServer) {

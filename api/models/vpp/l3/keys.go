@@ -61,6 +61,12 @@ var (
 	}, models.WithNameTemplate(
 		`id/{{.Id}}/protocol/{{.Protocol}}`,
 	))
+
+	ModelDHCPProxy = models.Register(&DHCPProxy{}, models.Spec{
+		Module:  ModuleName,
+		Type:    "dhcp-proxy",
+		Version: "v2",
+	})
 )
 
 // ProxyARPKey is key for global proxy arp
@@ -96,6 +102,11 @@ func VrfTableKey(id uint32, protocol VrfTable_Protocol) string {
 		Id:       id,
 		Protocol: protocol,
 	})
+}
+
+// DHCPProxyKey is key for DHCP proxy
+func DHCPProxyKey() string {
+	return models.Key(&DHCPProxy{})
 }
 
 const (

@@ -50,7 +50,9 @@ type L3VppHandler struct {
 	*RouteHandler
 	*IPNeighHandler
 	*VrfTableHandler
+	*DHCPProxyHandler
 }
+
 
 func NewL3VppHandler(
 	ch govppapi.Channel, ifIdx ifaceidx.IfaceMetadataIndex, log logging.Logger,
@@ -61,6 +63,7 @@ func NewL3VppHandler(
 		RouteHandler:       NewRouteVppHandler(ch, ifIdx, log),
 		IPNeighHandler:     NewIPNeighVppHandler(ch, log),
 		VrfTableHandler:    NewVrfTableVppHandler(ch, log),
+		DHCPProxyHandler:   NewDHCPProxyHandler(ch, log),
 	}
 }
 
@@ -68,6 +71,12 @@ func NewL3VppHandler(
 type ArpVppHandler struct {
 	callsChannel govppapi.Channel
 	ifIndexes    ifaceidx.IfaceMetadataIndex
+	log          logging.Logger
+}
+
+// DHCPProxyHandler is accessor for DHCP proxy-related vppcalls methods
+type DHCPProxyHandler struct {
+	callsChannel govppapi.Channel
 	log          logging.Logger
 }
 
@@ -152,6 +161,17 @@ func NewVrfTableVppHandler(callsChan govppapi.Channel, log logging.Logger) *VrfT
 		log = logrus.NewLogger("vrf-table-handler")
 	}
 	return &VrfTableHandler{
+		callsChannel: callsChan,
+		log:          log,
+	}
+}
+
+// NewVrfTableVppHandler creates new instance of vrf-table vppcalls handler
+func NewDHCPProxyHandler(callsChan govppapi.Channel, log logging.Logger) *DHCPProxyHandler {
+	if log == nil {
+		log = logrus.NewLogger("dhcp-proxy-handler")
+	}
+	return &DHCPProxyHandler{
 		callsChannel: callsChan,
 		log:          log,
 	}
