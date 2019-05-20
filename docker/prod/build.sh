@@ -12,11 +12,12 @@ case "${buildArch##*-}" in
 esac
 
 echo "==============================================="
-echo "Building prod image: ${IMAGE_TAG:=prod_vpp_agent}"
+echo " Image: ${IMAGE_TAG:=prod_vpp_agent}"
 echo "==============================================="
-echo " dev image: ${DEV_IMG:=dev_vpp_agent}"
-echo "-----------------------------------------------"
+echo " - dev image: ${DEV_IMG:=dev_vpp_agent}"
+echo "==============================================="
 
 docker build -f Dockerfile \
+    --build-arg DEV_IMG=${DEV_IMG} \
 	--tag ${IMAGE_TAG} \
 	${DOCKER_BUILD_ARGS} .

@@ -7,6 +7,12 @@ LDFLAGS = -X $(CNINFRA).BuildVersion=$(VERSION) -X $(CNINFRA).CommitHash=$(COMMI
 
 include vpp.env
 
+ifeq ($(VPP_VERSION),)
+VPP_VERSION = $(VPP_DEFAULT)
+endif
+VPP_IMG:=$(value VPP_IMG_$(VPP_VERSION))
+VPP_BINAPI?=$(value VPP_BINAPI_$(VPP_VERSION))
+
 ifeq ($(NOSTRIP),)
 LDFLAGS += -w -s
 endif
@@ -31,21 +37,18 @@ agent:
 	@go install -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS} ./cmd/vpp-agent
 
 install:
-	@echo "=> installing commands ${VERSION}"
+	@echo "=> installing ${VERSION}"
 	go install -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS} ./cmd/vpp-agent
-	go install -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS} ./cmd/vpp-agent-ctl
 	go install -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS} ./cmd/agentctl
 
 cmd:
-	@echo "=> building commands ${VERSION}"
-	cd cmd/vpp-agent 		&& go build -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
-	cd cmd/vpp-agent-ctl	&& go build -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
-	cd cmd/agentctl 		&& go build -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
+	@echo "=> building ${VERSION}"
+	cd cmd/vpp-agent && go build -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
+	cd cmd/agentctl && go build -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
 
 clean-cmd:
 	@echo "=> cleaning command binaries"
 	rm -f ./cmd/vpp-agent/vpp-agent
-	rm -f ./cmd/vpp-agent-ctl/vpp-agent-ctl
 	rm -f ./cmd/agentctl/agentctl
 
 examples:
@@ -131,15 +134,13 @@ get-binapi-generators:
 
 generate-binapi: get-binapi-generators
 	@echo "=> generating binapi"
-	cd plugins/vpp/binapi && go generate ./...
-	@echo "=> applying fix patches"
-	find plugins/vpp/binapi -maxdepth 2 -type f -name '*.patch' -exec patch --no-backup-if-mismatch -p1 -i {} \;
-	@echo
+	VPP_BINAPI=$(VPP_BINAPI) ./scripts/genbinapi.sh
 
 verify-binapi:
 	@echo "=> verifying binary api"
 	docker build -f docker/dev/Dockerfile \
 		--build-arg VPP_IMG=${VPP_IMG} \
+		--build-arg VPP_BINAPI=${VPP_BINAPI} \
 		--target verify-binapi .
 
 get-desc-adapter-generator:
@@ -235,9 +236,13 @@ yamllint: get-yamllint
 images: dev-image prod-image
 
 dev-image:
-	./docker/dev/build.sh
+	@echo "=> building dev image"
+	VPP_IMG=$(VPP_IMG) VPP_BINAPI=$(VPP_BINAPI) \
+	VERSION=$(VERSION) COMMIT=$(COMMIT) DATE=$(DATE) \
+		./docker/dev/build.sh
 
 prod-image:
+	@echo "=> building prod image"
 	./docker/prod/build.sh
 
 # -------------------------------
