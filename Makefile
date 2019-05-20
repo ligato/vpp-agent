@@ -237,13 +237,15 @@ images: dev-image prod-image
 
 dev-image:
 	@echo "=> building dev image"
-	VPP_IMG=$(VPP_IMG) VPP_BINAPI=$(VPP_BINAPI) \
-	VERSION=$(VERSION) COMMIT=$(COMMIT) DATE=$(DATE) \
+	IMAGE_TAG=$(IMAGE_TAG) \
+		VPP_IMG=$(VPP_IMG) VPP_BINAPI=$(VPP_BINAPI) \
+		VERSION=$(VERSION) COMMIT=$(COMMIT) DATE=$(DATE) \
 		./docker/dev/build.sh
 
 prod-image:
 	@echo "=> building prod image"
-	./docker/prod/build.sh
+	IMAGE_TAG=$(IMAGE_TAG) \
+    	./docker/prod/build.sh
 
 # -------------------------------
 
