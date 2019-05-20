@@ -68,7 +68,10 @@ func (d *DHCPProxyDescriptor) Retrieve(correlate []adapter.DHCPProxyKVWithMetada
 		return nil, err
 	}
 
-
+	if dhcpProxyDetails == nil {
+		return nil, nil
+	}
+	
 	retrieved = append(retrieved, adapter.DHCPProxyKVWithMetadata{
 		Key:    l3.DHCPProxyKey(),
 		Value:  dhcpProxyDetails.DHCPProxy,
