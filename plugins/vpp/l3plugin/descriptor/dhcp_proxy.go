@@ -1,7 +1,6 @@
 package descriptor
 
 import (
-	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/cn-infra/logging"
 	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
@@ -15,14 +14,14 @@ const (
 	DHCPProxyDescriptorName = "dhcp-proxy"
 )
 
-// ProxyArpInterfaceDescriptor teaches KVScheduler how to configure VPP proxy ARP interfaces.
+// DHCPProxyDescriptor teaches KVScheduler how to configure VPP DHCP proxy.
 type DHCPProxyDescriptor struct {
 	log             logging.Logger
 	dhcpProxyHandler vppcalls.DHCPProxyAPI
 	scheduler       kvs.KVScheduler
 }
 
-// NewProxyArpInterfaceDescriptor creates a new instance of the ProxyArpInterfaceDescriptor.
+// NewDHCPProxyDescriptor creates a new instance of the DHCPProxyDescriptor.
 func NewDHCPProxyDescriptor(scheduler kvs.KVScheduler,
 	dhcpProxyHandler vppcalls.DHCPProxyAPI, log logging.PluginLogger) *kvs.KVDescriptor {
 
@@ -33,14 +32,23 @@ func NewDHCPProxyDescriptor(scheduler kvs.KVScheduler,
 	}
 
 	typedDescr := &adapter.DHCPProxyDescriptor{
-		Name: DHCPProxyDescriptorName,
-		KeySelector: l3.ModelRoute.IsKeyValid,
-		ValueTypeName: proto.MessageName(&l3.ProxyARP_Interface{}),
+		Name: 			 DHCPProxyDescriptorName,
+		KeySelector: 	 l3.ModelDHCPProxy.IsKeyValid,
+		KeyLabel: 		 l3.ModelDHCPProxy.StripKeyPrefix,
+		NBKeyPrefix:     l3.ModelDHCPProxy.KeyPrefix(),
+		ValueTypeName:   l3.ModelDHCPProxy.ProtoName(),
 		Create:          ctx.Create,
 		Delete:          ctx.Delete,
 		Retrieve:        ctx.Retrieve,
+		Dependencies: 	 ctx.Dependencies,
 	}
 	return adapter.NewDHCPProxyDescriptor(typedDescr)
+}
+
+// Dependencies lists dependencies for a VPP DHCP proxy.
+func (d *DHCPProxyDescriptor) Dependencies(key string, value *l3.DHCPProxy)  (deps []kvs.Dependency) {
+	//todo implement method
+	return deps
 }
 
 // Create enables VPP DHCP proxy.
@@ -71,7 +79,7 @@ func (d *DHCPProxyDescriptor) Retrieve(correlate []adapter.DHCPProxyKVWithMetada
 	if dhcpProxyDetails == nil {
 		return nil, nil
 	}
-	
+
 	retrieved = append(retrieved, adapter.DHCPProxyKVWithMetadata{
 		Key:    l3.DHCPProxyKey(),
 		Value:  dhcpProxyDetails.DHCPProxy,
