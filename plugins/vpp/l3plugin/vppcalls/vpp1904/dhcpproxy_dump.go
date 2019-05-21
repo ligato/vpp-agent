@@ -1,6 +1,7 @@
 package vpp1904
 
 import (
+	"fmt"
 	vpp_l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/dhcp"
 	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls"
@@ -23,9 +24,9 @@ func (h *DHCPProxyHandler) DumpDHCPProxy() (*vppcalls.DHCPProxyDetails, error) {
 
 		var srcIP string
 		if dhcpProxyDetails.IsIPv6 == 1 {
-			srcIP = net.IP(dhcpProxyDetails.DHCPSrcAddress).To16().String()
+			srcIP = fmt.Sprintf("%s", net.IP(dhcpProxyDetails.DHCPSrcAddress).To16().String())
 		} else {
-			srcIP = net.IP(dhcpProxyDetails.DHCPSrcAddress).To4().String()
+			srcIP = fmt.Sprintf("%s",net.IP(dhcpProxyDetails.DHCPSrcAddress[:4]).To4().String())
 		}
 
 		proxy := &vpp_l3.DHCPProxy{
@@ -36,9 +37,9 @@ func (h *DHCPProxyHandler) DumpDHCPProxy() (*vppcalls.DHCPProxyDetails, error) {
 		for _, server := range dhcpProxyDetails.Servers {
 			var ip string
 			if dhcpProxyDetails.IsIPv6 == 1 {
-				ip = net.IP(server.DHCPServer).To16().String()
+				ip = fmt.Sprintf("%s", net.IP(server.DHCPServer).To16().String())
 			} else {
-				ip = net.IP(server.DHCPServer).To4().String()
+				ip = fmt.Sprintf("%s", net.IP(server.DHCPServer[:4]).To4().String())
 
 			}
 			proxyServer := &vpp_l3.DHCPProxy_DHCPServer{
@@ -53,5 +54,6 @@ func (h *DHCPProxyHandler) DumpDHCPProxy() (*vppcalls.DHCPProxyDetails, error) {
 		}
 	}
 	return entry, nil
+
 
 }
