@@ -25,14 +25,14 @@ func (h *DHCPProxyHandler) DumpDHCPProxy() (*vppcalls.DHCPProxyDetails, error) {
 		srcIP := net.IP(dhcpProxyDetails.DHCPSrcAddress).To4().String()
 
 		proxy := &vpp_l3.DHCPProxy{
-			RxFibId: dhcpProxyDetails.RxVrfID,
+			RxVrfId: dhcpProxyDetails.RxVrfID,
 			SourceIpAddress: srcIP,
 		}
 
 		for _, server := range dhcpProxyDetails.Servers {
 			proxyServer := &vpp_l3.DHCPProxy_DHCPServer{
-				ServerIpAddress: bytesToString(server.DHCPServer),
-				ServerFibId: server.ServerVrfID,
+				IpAddress: bytesToString(server.DHCPServer),
+				VrfId: server.ServerVrfID,
 			}
 			proxy.Servers = append(proxy.Servers, proxyServer)
 		}

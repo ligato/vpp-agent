@@ -53,7 +53,6 @@ type L3VppHandler struct {
 	*DHCPProxyHandler
 }
 
-
 func NewL3VppHandler(
 	ch govppapi.Channel, ifIdx ifaceidx.IfaceMetadataIndex, log logging.Logger,
 ) *L3VppHandler {

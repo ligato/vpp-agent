@@ -1,44 +1,45 @@
 package vpp1901
 
 import (
-	"github.com/ligato/cn-infra/utils/addrs"
 	vpp_l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/dhcp"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/dhcp"
 	"github.com/pkg/errors"
 	"net"
 )
 
 func (h *DHCPProxyHandler) createDeleteDHCPProxy(entry *vpp_l3.DHCPProxy, delete bool) error {
-
-	for _, server := range entry.Servers {
-		_, err := ipToAddress(server.ServerIpAddress)
-		if err != nil {
-			return errors.WithStack(err)
-		}
-	}
-
-	_, err := ipToAddress(entry.SourceIpAddress)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-
-	isIPv6, err := addrs.IsIPv6(entry.SourceIpAddress)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-
 	config := &dhcp.DHCPProxyConfig{
-		RxVrfID:        entry.RxFibId,
-		IsIPv6:         boolToUint(isIPv6),
-		IsAdd: 			boolToUint(!delete),
-		DHCPSrcAddress: net.ParseIP(entry.SourceIpAddress),
+		RxVrfID:        entry.RxVrfId,
+		IsAdd:          boolToUint(!delete),
+	}
+	ipAddr := net.ParseIP(entry.SourceIpAddress)
+	if ipAddr == nil {
+		return errors.Errorf("invalid IP address: %q", entry.SourceIpAddress)
+	}
+
+	if ipAddr.To4() == nil {
+		config.IsIPv6 = 1
+		config.DHCPSrcAddress = []byte(ipAddr.To16())
+	} else {
+		config.IsIPv6 = 1
+		config.DHCPSrcAddress = []byte(ipAddr.To4())
 	}
 
 	for _, server := range entry.Servers {
-		config.ServerVrfID = server.ServerFibId
-		config.DHCPServer = net.ParseIP(server.ServerIpAddress)
+		config.ServerVrfID = server.VrfId
+		config.DHCPServer = []byte(net.ParseIP(server.IpAddress).To4())
+		ipAddr := net.ParseIP(server.IpAddress)
+		if ipAddr == nil {
+			return errors.Errorf("invalid IP address: %q", server.IpAddress)
+		}
+
+		if ipAddr.To4() == nil {
+			config.DHCPServer = []byte(ipAddr.To16())
+		} else {
+			config.DHCPServer = []byte(ipAddr.To4())
+		}
 		reply := &dhcp.DHCPProxyConfigReply{}
-		if err = h.callsChannel.SendRequest(config).ReceiveReply(reply); err != nil {
+		if err := h.callsChannel.SendRequest(config).ReceiveReply(reply); err != nil {
 			return err
 		}
 	}

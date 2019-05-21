@@ -39,11 +39,11 @@ message IPScanNeighbor {
 message DHCPProxy {
 
     message DHCPServer {
-        uint32 server_fib_id = 1;
-        string server_ip_address = 2;
+        uint32 vrf_id = 1;
+        string ip_address = 2;
     }
 
     string source_ip_address = 1;
-    uint32 rx_fib_id = 2;
+    uint32 rx_vrf_id = 2;
     repeated DHCPServer servers = 3;
 }
