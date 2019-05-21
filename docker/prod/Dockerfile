@@ -25,15 +25,14 @@ RUN apt-get update \
 
 # install vpp
 COPY --from=devimg \
-    /vpp/libvppinfra_*.deb \
-    /vpp/vpp-plugin-core_*.deb \
-    /vpp/vpp-plugin-dpdk_*.deb \
-    /vpp/vpp_*.deb \
+    /vpp/*.deb \
  /opt/vpp/
 
 RUN cd /opt/vpp/ \
- && dpkg -i *.deb \
- && rm *.deb
+ && apt-get update \
+ && apt-get install -y ./*.deb \
+ && rm *.deb \
+ && rm -rf /var/lib/apt/lists/*
 
 # Final image
 FROM scratch
