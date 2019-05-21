@@ -21,7 +21,7 @@ func (h *DHCPProxyHandler) createDeleteDHCPProxy(entry *vpp_l3.DHCPProxy, delete
 		config.IsIPv6 = 1
 		config.DHCPSrcAddress = []byte(ipAddr.To16())
 	} else {
-		config.IsIPv6 = 1
+		config.IsIPv6 = 0
 		config.DHCPSrcAddress = []byte(ipAddr.To4())
 	}
 
