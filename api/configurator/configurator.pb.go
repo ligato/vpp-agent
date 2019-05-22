@@ -10,8 +10,6 @@ import (
 	linux "github.com/ligato/vpp-agent/api/models/linux"
 	vpp "github.com/ligato/vpp-agent/api/models/vpp"
 	grpc "google.golang.org/grpc"
-	codes "google.golang.org/grpc/codes"
-	status "google.golang.org/grpc/status"
 	math "math"
 )
 
@@ -758,26 +756,6 @@ type ConfiguratorServer interface {
 	Dump(context.Context, *DumpRequest) (*DumpResponse, error)
 	// Notify is used for subscribing to notifications.
 	Notify(*NotificationRequest, Configurator_NotifyServer) error
-}
-
-// UnimplementedConfiguratorServer can be embedded to have forward compatible implementations.
-type UnimplementedConfiguratorServer struct {
-}
-
-func (*UnimplementedConfiguratorServer) Get(ctx context.Context, req *GetRequest) (*GetResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Get not implemented")
-}
-func (*UnimplementedConfiguratorServer) Update(ctx context.Context, req *UpdateRequest) (*UpdateResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Update not implemented")
-}
-func (*UnimplementedConfiguratorServer) Delete(ctx context.Context, req *DeleteRequest) (*DeleteResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Delete not implemented")
-}
-func (*UnimplementedConfiguratorServer) Dump(ctx context.Context, req *DumpRequest) (*DumpResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Dump not implemented")
-}
-func (*UnimplementedConfiguratorServer) Notify(req *NotificationRequest, srv Configurator_NotifyServer) error {
-	return status.Errorf(codes.Unimplemented, "method Notify not implemented")
 }
 
 func RegisterConfiguratorServer(s *grpc.Server, srv ConfiguratorServer) {

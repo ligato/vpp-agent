@@ -74,16 +74,15 @@ func (d *DHCPProxyDescriptor) Validate(key string, value *l3.DHCPProxy) error {
 	}
 
 	for _, server := range value.Servers {
-		serverIpAddr := net.ParseIP(server.IpAddress)
-		if serverIpAddr == nil {
+		serverIPAddr := net.ParseIP(server.IpAddress)
+		if serverIPAddr == nil {
 			return errors.Errorf("invalid server IP address: %q", server.IpAddress)
 		}
 
-		if ipAddr.To4() != nil && serverIpAddr.To4() == nil || serverIpAddr.To4() != nil && ipAddr.To4() == nil {
+		if ipAddr.To4() != nil && serverIPAddr.To4() == nil || serverIPAddr.To4() != nil && ipAddr.To4() == nil {
 			return errors.Errorf("Server address %s must use same IP protocol as source address %s",
-				serverIpAddr, ipAddr)
+				serverIPAddr, ipAddr)
 		}
-
 	}
 	return nil
 }

@@ -213,9 +213,8 @@ var funcMap = template.FuncMap{
 
 		if ip.To4() == nil {
 			return "IPv6"
-		} else {
-			return "IPv4"
 		}
+		return "IPv4"
 	},
 	"ipnet": func(s string) map[string]interface{} {
 		_, ipNet, _ := net.ParseCIDR(s)

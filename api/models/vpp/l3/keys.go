@@ -107,9 +107,9 @@ func VrfTableKey(id uint32, protocol VrfTable_Protocol) string {
 }
 
 // DHCPProxyKey is key for DHCP proxy
-func DHCPProxyKey(srcIp string) string {
+func DHCPProxyKey(srcIP string) string {
 	return models.Key(&DHCPProxy{
-		SourceIpAddress: srcIp,
+		SourceIpAddress: srcIP,
 	})
 }
 
