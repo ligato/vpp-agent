@@ -15,10 +15,11 @@
 package vpp1904
 
 import (
+	"net"
+
 	vpp_l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/dhcp"
 	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls"
-	"net"
 )
 
 func (h *DHCPProxyHandler) DumpDHCPProxy() ([]*vppcalls.DHCPProxyDetails, error) {
@@ -35,20 +36,20 @@ func (h *DHCPProxyHandler) DumpDHCPProxy() ([]*vppcalls.DHCPProxyDetails, error)
 			return nil, err
 		}
 		proxy := &vpp_l3.DHCPProxy{
-			RxVrfId: dhcpProxyDetails.RxVrfID,
+			RxVrfId:         dhcpProxyDetails.RxVrfID,
 			SourceIpAddress: net.IP(dhcpProxyDetails.DHCPSrcAddress[:4]).To4().String(),
 		}
 
 		for _, server := range dhcpProxyDetails.Servers {
 			proxyServer := &vpp_l3.DHCPProxy_DHCPServer{
 				IpAddress: net.IP(server.DHCPServer[:4]).To4().String(),
-				VrfId: server.ServerVrfID,
+				VrfId:     server.ServerVrfID,
 			}
 			proxy.Servers = append(proxy.Servers, proxyServer)
 		}
 
 		entry = append(entry, &vppcalls.DHCPProxyDetails{
-			DHCPProxy:  proxy,
+			DHCPProxy: proxy,
 		})
 	}
 
@@ -64,19 +65,19 @@ func (h *DHCPProxyHandler) DumpDHCPProxy() ([]*vppcalls.DHCPProxyDetails, error)
 			return nil, err
 		}
 		proxy := &vpp_l3.DHCPProxy{
-			RxVrfId: dhcpProxyDetails.RxVrfID,
+			RxVrfId:         dhcpProxyDetails.RxVrfID,
 			SourceIpAddress: net.IP(dhcpProxyDetails.DHCPSrcAddress).To16().String(),
 		}
 		for _, server := range dhcpProxyDetails.Servers {
 			proxyServer := &vpp_l3.DHCPProxy_DHCPServer{
 				IpAddress: net.IP(server.DHCPServer).To16().String(),
-				VrfId: server.ServerVrfID,
+				VrfId:     server.ServerVrfID,
 			}
 			proxy.Servers = append(proxy.Servers, proxyServer)
 		}
 
 		entry = append(entry, &vppcalls.DHCPProxyDetails{
-			DHCPProxy:  proxy,
+			DHCPProxy: proxy,
 		})
 	}
 	return entry, nil

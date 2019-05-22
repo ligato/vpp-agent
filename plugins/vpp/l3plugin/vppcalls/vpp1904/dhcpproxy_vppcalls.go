@@ -15,16 +15,17 @@
 package vpp1904
 
 import (
+	"net"
+
 	vpp_l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/dhcp"
 	"github.com/pkg/errors"
-	"net"
 )
 
 func (h *DHCPProxyHandler) createDeleteDHCPProxy(entry *vpp_l3.DHCPProxy, delete bool) error {
 	config := &dhcp.DHCPProxyConfig{
-		RxVrfID:        entry.RxVrfId,
-		IsAdd:          boolToUint(!delete),
+		RxVrfID: entry.RxVrfId,
+		IsAdd:   boolToUint(!delete),
 	}
 
 	ipAddr := net.ParseIP(entry.SourceIpAddress)
@@ -40,7 +41,6 @@ func (h *DHCPProxyHandler) createDeleteDHCPProxy(entry *vpp_l3.DHCPProxy, delete
 		config.IsIPv6 = 0
 		config.DHCPSrcAddress = []byte(ipAddr.To4())
 	}
-
 
 	for _, server := range entry.Servers {
 		config.ServerVrfID = server.VrfId
@@ -64,10 +64,9 @@ func (h *DHCPProxyHandler) createDeleteDHCPProxy(entry *vpp_l3.DHCPProxy, delete
 }
 
 func (h *DHCPProxyHandler) CreateDHCPProxy(entry *vpp_l3.DHCPProxy) error {
-	return h.createDeleteDHCPProxy(entry , false)
+	return h.createDeleteDHCPProxy(entry, false)
 }
 
 func (h *DHCPProxyHandler) DeleteDHCPProxy(entry *vpp_l3.DHCPProxy) error {
-	return h.createDeleteDHCPProxy(entry , true)
+	return h.createDeleteDHCPProxy(entry, true)
 }
-

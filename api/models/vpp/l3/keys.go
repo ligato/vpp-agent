@@ -67,7 +67,7 @@ var (
 		Type:    "dhcp-proxy",
 		Version: "v2",
 	}, models.WithNameTemplate(
-		`protocol/{{ protoip .SourceIpAddress}}`,
+		`{{ protoip .SourceIpAddress}}`,
 	))
 )
 

@@ -15,6 +15,8 @@
 package descriptor
 
 import (
+	"net"
+
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/utils/addrs"
 	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
@@ -22,7 +24,6 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls"
 	"github.com/pkg/errors"
-	"net"
 )
 
 const (
@@ -35,9 +36,9 @@ const (
 
 // DHCPProxyDescriptor teaches KVScheduler how to configure VPP DHCP proxy.
 type DHCPProxyDescriptor struct {
-	log             logging.Logger
+	log              logging.Logger
 	dhcpProxyHandler vppcalls.DHCPProxyAPI
-	scheduler       kvs.KVScheduler
+	scheduler        kvs.KVScheduler
 }
 
 // NewDHCPProxyDescriptor creates a new instance of the DHCPProxyDescriptor.
@@ -45,35 +46,51 @@ func NewDHCPProxyDescriptor(scheduler kvs.KVScheduler,
 	dhcpProxyHandler vppcalls.DHCPProxyAPI, log logging.PluginLogger) *kvs.KVDescriptor {
 
 	ctx := &DHCPProxyDescriptor{
-		scheduler:       scheduler,
+		scheduler:        scheduler,
 		dhcpProxyHandler: dhcpProxyHandler,
-		log:             log.NewLogger("dhcp-proxy-descriptor"),
+		log:              log.NewLogger("dhcp-proxy-descriptor"),
 	}
 
 	typedDescr := &adapter.DHCPProxyDescriptor{
-		Name: 			 DHCPProxyDescriptorName,
-		KeySelector: 	 l3.ModelDHCPProxy.IsKeyValid,
-		KeyLabel: 		 l3.ModelDHCPProxy.StripKeyPrefix,
-		NBKeyPrefix:     l3.ModelDHCPProxy.KeyPrefix(),
-		ValueTypeName:   l3.ModelDHCPProxy.ProtoName(),
-		Create:          ctx.Create,
-		Delete:          ctx.Delete,
-		Retrieve:        ctx.Retrieve,
-		Dependencies: 	 ctx.Dependencies,
-		Validate:        ctx.Validate,
+		Name:          DHCPProxyDescriptorName,
+		KeySelector:   l3.ModelDHCPProxy.IsKeyValid,
+		KeyLabel:      l3.ModelDHCPProxy.StripKeyPrefix,
+		NBKeyPrefix:   l3.ModelDHCPProxy.KeyPrefix(),
+		ValueTypeName: l3.ModelDHCPProxy.ProtoName(),
+		Create:        ctx.Create,
+		Delete:        ctx.Delete,
+		Retrieve:      ctx.Retrieve,
+		Dependencies:  ctx.Dependencies,
+		Validate:      ctx.Validate,
 	}
 	return adapter.NewDHCPProxyDescriptor(typedDescr)
 }
 
 func (d *DHCPProxyDescriptor) Validate(key string, value *l3.DHCPProxy) error {
+
 	ipAddr := net.ParseIP(value.SourceIpAddress)
 	if ipAddr == nil {
 		return errors.Errorf("invalid IP address: %q", value.SourceIpAddress)
 	}
 
-	for _,server := range value.Servers {
-		ipAddr = net.ParseIP(server.IpAddress)
-		if ipAddr == nil {
+	isIPv4 := true
+	if ipAddr.To4() == nil {
+		isIPv4 = false
+	}
+
+	for _, server := range value.Servers {
+		serverIpAddr := net.ParseIP(server.IpAddress)
+		if isIPv4 {
+			if serverIpAddr.To4() == nil {
+				return errors.Errorf("Server address must be IPv4 IP address: %q", server.IpAddress)
+			}
+		} else {
+			if serverIpAddr.To16() == nil || serverIpAddr.To16().String() == serverIpAddr.To4().String() {
+				return errors.Errorf("Server address must be IPv6 IP address: %q", server.IpAddress)
+			}
+		}
+
+		if serverIpAddr == nil {
 			return errors.Errorf("invalid IP address: %q", server.IpAddress)
 		}
 	}
@@ -81,7 +98,7 @@ func (d *DHCPProxyDescriptor) Validate(key string, value *l3.DHCPProxy) error {
 }
 
 // Dependencies lists dependencies for a VPP DHCP proxy.
-func (d *DHCPProxyDescriptor) Dependencies(key string, value *l3.DHCPProxy)  (deps []kvs.Dependency) {
+func (d *DHCPProxyDescriptor) Dependencies(key string, value *l3.DHCPProxy) (deps []kvs.Dependency) {
 	// non-zero VRFs
 	var protocol l3.VrfTable_Protocol
 	_, isIPv6, _ := addrs.ParseIPWithPrefix(value.SourceIpAddress)
@@ -147,4 +164,3 @@ func (d *DHCPProxyDescriptor) Retrieve(correlate []adapter.DHCPProxyKVWithMetada
 
 	return retrieved, nil
 }
-

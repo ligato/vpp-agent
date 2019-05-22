@@ -51,7 +51,7 @@ type L3Plugin struct {
 	// descriptors
 	proxyArpIfaceDescriptor  *descriptor.ProxyArpInterfaceDescriptor
 	ipScanNeighborDescriptor *descriptor.IPScanNeighborDescriptor
-	dhcpProxyDescriptor *descriptor.DHCPProxyDescriptor
+	dhcpProxyDescriptor      *descriptor.DHCPProxyDescriptor
 }
 
 // Deps lists dependencies of the interface p.

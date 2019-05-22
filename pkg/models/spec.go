@@ -205,7 +205,7 @@ func NameTemplate(t string) NameFunc {
 }
 
 var funcMap = template.FuncMap{
-	"protoip": func (s string) string {
+	"protoip": func(s string) string {
 		ip := net.ParseIP(s)
 		if ip == nil {
 			return "<invalid>"

@@ -61,7 +61,7 @@ type DHCPProxyRead interface {
 
 // DHCPProxyDetails holds info about DHCP proxy entry as a proto model
 type DHCPProxyDetails struct {
-	DHCPProxy  *l3.DHCPProxy
+	DHCPProxy *l3.DHCPProxy
 }
 
 // ArpVppAPI provides methods for managing ARP entries
