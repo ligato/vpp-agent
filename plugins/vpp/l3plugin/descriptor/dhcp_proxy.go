@@ -70,7 +70,7 @@ func (d *DHCPProxyDescriptor) Validate(key string, value *l3.DHCPProxy) error {
 
 	ipAddr := net.ParseIP(value.SourceIpAddress)
 	if ipAddr == nil {
-		return errors.Errorf("invalid IP address: %q", value.SourceIpAddress)
+		return errors.Errorf("invalid source IP address: %q", value.SourceIpAddress)
 	}
 
 	isIPv4 := true
@@ -81,7 +81,7 @@ func (d *DHCPProxyDescriptor) Validate(key string, value *l3.DHCPProxy) error {
 	for _, server := range value.Servers {
 		serverIpAddr := net.ParseIP(server.IpAddress)
 		if serverIpAddr == nil {
-			return errors.Errorf("invalid IP address: %q", server.IpAddress)
+			return errors.Errorf("invalid server IP address: %q", server.IpAddress)
 		}
 
 		if isIPv4 {
