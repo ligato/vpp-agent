@@ -29,6 +29,7 @@ type L3VppAPI interface {
 	RouteVppAPI
 	IPNeighVppAPI
 	VrfTableVppAPI
+	DHCPProxyAPI
 }
 
 // ArpDetails holds info about ARP entry as a proto model
@@ -40,6 +41,27 @@ type ArpDetails struct {
 // ArpMeta contains interface index of the ARP interface
 type ArpMeta struct {
 	SwIfIndex uint32
+}
+
+// ArpVppAPI provides methods for managing ARP entries
+type DHCPProxyAPI interface {
+	DHCPProxyRead
+
+	// CreateDHCPProxy creates dhcp proxy according to provided input
+	CreateDHCPProxy(entry *l3.DHCPProxy) error
+	// DeleteDHCPProxy deletes created dhcp proxy
+	DeleteDHCPProxy(entry *l3.DHCPProxy) error
+}
+
+// DHCPProxyRead provides read methods for routes
+type DHCPProxyRead interface {
+	// DumpDHCPProxy returns configured DHCP proxy
+	DumpDHCPProxy() ([]*DHCPProxyDetails, error)
+}
+
+// DHCPProxyDetails holds info about DHCP proxy entry as a proto model
+type DHCPProxyDetails struct {
+	DHCPProxy *l3.DHCPProxy
 }
 
 // ArpVppAPI provides methods for managing ARP entries

@@ -18,6 +18,8 @@ import (
 	"fmt"
 	"net"
 
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/dhcp"
+
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
@@ -34,6 +36,7 @@ func init() {
 	var msgs []govppapi.Message
 	msgs = append(msgs, ip.Messages...)
 	msgs = append(msgs, vpe.Messages...)
+	msgs = append(msgs, dhcp.Messages...)
 
 	vppcalls.Versions["vpp1904"] = vppcalls.HandlerVersion{
 		Msgs: msgs,
@@ -50,6 +53,7 @@ type L3VppHandler struct {
 	*RouteHandler
 	*IPNeighHandler
 	*VrfTableHandler
+	*DHCPProxyHandler
 }
 
 func NewL3VppHandler(
@@ -61,6 +65,7 @@ func NewL3VppHandler(
 		RouteHandler:       NewRouteVppHandler(ch, ifIdx, log),
 		IPNeighHandler:     NewIPNeighVppHandler(ch, log),
 		VrfTableHandler:    NewVrfTableVppHandler(ch, log),
+		DHCPProxyHandler:   NewDHCPProxyHandler(ch, log),
 	}
 }
 
@@ -68,6 +73,12 @@ func NewL3VppHandler(
 type ArpVppHandler struct {
 	callsChannel govppapi.Channel
 	ifIndexes    ifaceidx.IfaceMetadataIndex
+	log          logging.Logger
+}
+
+// DHCPProxyHandler is accessor for DHCP proxy-related vppcalls methods
+type DHCPProxyHandler struct {
+	callsChannel govppapi.Channel
 	log          logging.Logger
 }
 
@@ -152,6 +163,17 @@ func NewVrfTableVppHandler(callsChan govppapi.Channel, log logging.Logger) *VrfT
 		log = logrus.NewLogger("vrf-table-handler")
 	}
 	return &VrfTableHandler{
+		callsChannel: callsChan,
+		log:          log,
+	}
+}
+
+// NewVrfTableVppHandler creates new instance of vrf-table vppcalls handler
+func NewDHCPProxyHandler(callsChan govppapi.Channel, log logging.Logger) *DHCPProxyHandler {
+	if log == nil {
+		log = logrus.NewLogger("dhcp-proxy-handler")
+	}
+	return &DHCPProxyHandler{
 		callsChannel: callsChan,
 		log:          log,
 	}

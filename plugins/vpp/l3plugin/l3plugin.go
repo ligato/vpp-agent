@@ -18,6 +18,7 @@
 //go:generate descriptor-adapter --descriptor-name ProxyARPInterface --value-type *vpp_l3.ProxyARP_Interface --import "github.com/ligato/vpp-agent/api/models/vpp/l3" --output-dir "descriptor"
 //go:generate descriptor-adapter --descriptor-name IPScanNeighbor --value-type *vpp_l3.IPScanNeighbor --import "github.com/ligato/vpp-agent/api/models/vpp/l3" --output-dir "descriptor"
 //go:generate descriptor-adapter --descriptor-name VrfTable --value-type *vpp_l3.VrfTable --import "github.com/ligato/vpp-agent/api/models/vpp/l3" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name DHCPProxy --value-type *vpp_l3.DHCPProxy --import "github.com/ligato/vpp-agent/api/models/vpp/l3" --output-dir "descriptor"
 
 package l3plugin
 
@@ -50,6 +51,7 @@ type L3Plugin struct {
 	// descriptors
 	proxyArpIfaceDescriptor  *descriptor.ProxyArpInterfaceDescriptor
 	ipScanNeighborDescriptor *descriptor.IPScanNeighborDescriptor
+	dhcpProxyDescriptor      *descriptor.DHCPProxyDescriptor
 }
 
 // Deps lists dependencies of the interface p.
@@ -80,6 +82,7 @@ func (p *L3Plugin) Init() error {
 	proxyArpIfaceDescriptor := descriptor.NewProxyArpInterfaceDescriptor(p.KVScheduler, p.l3Handler, p.Log)
 	ipScanNeighborDescriptor := descriptor.NewIPScanNeighborDescriptor(p.KVScheduler, p.l3Handler, p.Log)
 	vrfTableDescriptor := descriptor.NewVrfTableDescriptor(p.l3Handler, p.Log)
+	dhcpProxyDescriptor := descriptor.NewDHCPProxyDescriptor(p.KVScheduler, p.l3Handler, p.Log)
 
 	err = p.Deps.KVScheduler.RegisterKVDescriptor(
 		routeDescriptor,
@@ -88,6 +91,7 @@ func (p *L3Plugin) Init() error {
 		proxyArpIfaceDescriptor,
 		ipScanNeighborDescriptor,
 		vrfTableDescriptor,
+		dhcpProxyDescriptor,
 	)
 	if err != nil {
 		return err

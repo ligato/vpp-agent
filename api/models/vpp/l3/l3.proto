@@ -35,3 +35,15 @@ message IPScanNeighbor {
     uint32 scan_int_delay = 5;
     uint32 stale_threshold = 6;
 }
+
+message DHCPProxy {
+
+    message DHCPServer {
+        uint32 vrf_id = 1;
+        string ip_address = 2;
+    }
+
+    string source_ip_address = 1;
+    uint32 rx_vrf_id = 2;
+    repeated DHCPServer servers = 4;
+}
