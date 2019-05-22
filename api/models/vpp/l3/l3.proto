@@ -45,5 +45,5 @@ message DHCPProxy {
 
     string source_ip_address = 1;
     uint32 rx_vrf_id = 2;
-    repeated DHCPServer servers = 3;
+    repeated DHCPServer servers = 4;
 }

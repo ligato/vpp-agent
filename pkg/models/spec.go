@@ -205,6 +205,13 @@ func NameTemplate(t string) NameFunc {
 }
 
 var funcMap = template.FuncMap{
+	"protoip": func (s string) string {
+		if net.ParseIP(s).To4() == nil {
+			return "IPv6"
+		} else {
+			return "IPv4"
+		}
+	},
 	"ipnet": func(s string) map[string]interface{} {
 		_, ipNet, _ := net.ParseCIDR(s)
 		maskSize, _ := ipNet.Mask.Size()

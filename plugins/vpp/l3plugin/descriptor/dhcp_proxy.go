@@ -112,11 +112,13 @@ func (d *DHCPProxyDescriptor) Retrieve(correlate []adapter.DHCPProxyKVWithMetada
 		return nil, nil
 	}
 
-	retrieved = append(retrieved, adapter.DHCPProxyKVWithMetadata{
-		Key:    l3.DHCPProxyKey(),
-		Value:  dhcpProxyDetails.DHCPProxy,
-		Origin: kvs.FromNB,
-	})
+	for _, detail := range dhcpProxyDetails {
+		retrieved = append(retrieved, adapter.DHCPProxyKVWithMetadata{
+			Key:    l3.DHCPProxyKey(detail.DHCPProxy.SourceIpAddress),
+			Value:  detail.DHCPProxy,
+			Origin: kvs.FromNB,
+		})
+	}
 
 	return retrieved, nil
 }

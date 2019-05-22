@@ -56,7 +56,7 @@ type DHCPProxyAPI interface {
 // DHCPProxyRead provides read methods for routes
 type DHCPProxyRead interface {
 	// DumpDHCPProxy returns configured DHCP proxy
-	DumpDHCPProxy() (*DHCPProxyDetails, error)
+	DumpDHCPProxy() ([]*DHCPProxyDetails, error)
 }
 
 // DHCPProxyDetails holds info about DHCP proxy entry as a proto model

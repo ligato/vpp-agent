@@ -66,7 +66,9 @@ var (
 		Module:  ModuleName,
 		Type:    "dhcp-proxy",
 		Version: "v2",
-	})
+	}, models.WithNameTemplate(
+		`protocol/{{ protoip .SourceIpAddress}}`,
+	))
 )
 
 // ProxyARPKey is key for global proxy arp
@@ -105,8 +107,10 @@ func VrfTableKey(id uint32, protocol VrfTable_Protocol) string {
 }
 
 // DHCPProxyKey is key for DHCP proxy
-func DHCPProxyKey() string {
-	return models.Key(&DHCPProxy{})
+func DHCPProxyKey(srcIp string) string {
+	return models.Key(&DHCPProxy{
+		SourceIpAddress: srcIp,
+	})
 }
 
 const (

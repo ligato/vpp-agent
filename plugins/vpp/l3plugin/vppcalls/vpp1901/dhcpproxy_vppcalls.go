@@ -12,7 +12,9 @@ func (h *DHCPProxyHandler) createDeleteDHCPProxy(entry *vpp_l3.DHCPProxy, delete
 		RxVrfID:        entry.RxVrfId,
 		IsAdd:          boolToUint(!delete),
 	}
+
 	ipAddr := net.ParseIP(entry.SourceIpAddress)
+
 	if ipAddr == nil {
 		return errors.Errorf("invalid IP address: %q", entry.SourceIpAddress)
 	}
@@ -25,9 +27,9 @@ func (h *DHCPProxyHandler) createDeleteDHCPProxy(entry *vpp_l3.DHCPProxy, delete
 		config.DHCPSrcAddress = []byte(ipAddr.To4())
 	}
 
+
 	for _, server := range entry.Servers {
 		config.ServerVrfID = server.VrfId
-		config.DHCPServer = []byte(net.ParseIP(server.IpAddress).To4())
 		ipAddr := net.ParseIP(server.IpAddress)
 		if ipAddr == nil {
 			return errors.Errorf("invalid IP address: %q", server.IpAddress)
