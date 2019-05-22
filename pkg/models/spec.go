@@ -206,7 +206,12 @@ func NameTemplate(t string) NameFunc {
 
 var funcMap = template.FuncMap{
 	"protoip": func (s string) string {
-		if net.ParseIP(s).To4() == nil {
+		ip := net.ParseIP(s)
+		if ip == nil {
+			return "<invalid>"
+		}
+
+		if ip.To4() == nil {
 			return "IPv6"
 		} else {
 			return "IPv4"
