@@ -86,11 +86,13 @@ func (d *DHCPProxyDescriptor) Validate(key string, value *l3.DHCPProxy) error {
 
 		if isIPv4 {
 			if serverIpAddr.To4() == nil {
-				return errors.Errorf("Server address must be IPv4 IP address: %q", server.IpAddress)
+				return errors.Errorf("server address must use same IP protocol as source address (IPv4)",
+					server.IpAddress)
 			}
 		} else {
 			if serverIpAddr.To16() == nil || serverIpAddr.To16().String() == serverIpAddr.To4().String() {
-				return errors.Errorf("Server address must be IPv6 IP address: %q", server.IpAddress)
+				return errors.Errorf("server address must use same IP protocol as source address (IPv6)",
+					server.IpAddress)
 			}
 		}
 
