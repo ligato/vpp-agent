@@ -16,22 +16,25 @@ package vpp1901
 
 import (
 	"fmt"
+	"net"
+
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
 	vpevppcalls "github.com/ligato/vpp-agent/plugins/govppmux/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/govppmux/vppcalls/vpp1901"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/dhcp"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/ip"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/vpe"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls"
-	"net"
 )
 
 func init() {
 	var msgs []govppapi.Message
 	msgs = append(msgs, ip.Messages...)
 	msgs = append(msgs, vpe.Messages...)
+	msgs = append(msgs, dhcp.Messages...)
 
 	vppcalls.Versions["vpp1901"] = vppcalls.HandlerVersion{
 		Msgs: msgs,

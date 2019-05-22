@@ -18,6 +18,8 @@ import (
 	"fmt"
 	"net"
 
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/dhcp"
+
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
@@ -34,6 +36,7 @@ func init() {
 	var msgs []govppapi.Message
 	msgs = append(msgs, ip.Messages...)
 	msgs = append(msgs, vpe.Messages...)
+	msgs = append(msgs, dhcp.Messages...)
 
 	vppcalls.Versions["vpp1904"] = vppcalls.HandlerVersion{
 		Msgs: msgs,
