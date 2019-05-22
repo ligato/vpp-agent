@@ -73,27 +73,15 @@ func (d *DHCPProxyDescriptor) Validate(key string, value *l3.DHCPProxy) error {
 		return errors.Errorf("invalid source IP address: %q", value.SourceIpAddress)
 	}
 
-	isIPv4 := true
-	if ipAddr.To4() == nil {
-		isIPv4 = false
-	}
-
 	for _, server := range value.Servers {
 		serverIpAddr := net.ParseIP(server.IpAddress)
 		if serverIpAddr == nil {
 			return errors.Errorf("invalid server IP address: %q", server.IpAddress)
 		}
 
-		if isIPv4 {
-			if serverIpAddr.To4() == nil {
-				return errors.Errorf("server address must use same IP protocol as source address (IPv4)",
-					server.IpAddress)
-			}
-		} else {
-			if serverIpAddr.To16() == nil || serverIpAddr.To16().String() == serverIpAddr.To4().String() {
-				return errors.Errorf("server address must use same IP protocol as source address (IPv6)",
-					server.IpAddress)
-			}
+		if ipAddr.To4() != nil && serverIpAddr.To4() == nil || serverIpAddr.To4() != nil && ipAddr.To4() == nil {
+			return errors.Errorf("Server address %s must use same IP protocol as source address %s",
+				serverIpAddr, ipAddr)
 		}
 
 	}
