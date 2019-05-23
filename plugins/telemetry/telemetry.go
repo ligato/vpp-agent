@@ -17,6 +17,7 @@ package telemetry
 import (
 	"context"
 	"fmt"
+	"os"
 	"sync"
 	"time"
 
@@ -38,6 +39,8 @@ const (
 	// minimum period between updates
 	minimumUpdatePeriod = time.Second * 1
 )
+
+var debug = os.Getenv("DEBUG_TELEMETRY") != ""
 
 // Plugin registers Telemetry Plugin
 type Plugin struct {

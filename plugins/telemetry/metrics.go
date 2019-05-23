@@ -3,25 +3,26 @@ package telemetry
 import (
 	"context"
 	"fmt"
-	"os"
 	"strconv"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
-var (
-	debug = os.Getenv("DEBUG_TELEMETRY") != ""
-)
-
 const (
 	// Registry path for telemetry metrics
 	registryPath = "/metrics/vpp"
 
+	vppMetricsNamespace = "vpp"
+
 	// Metrics label used for agent label
 	agentLabel = "agent"
+)
 
-	// Runtime
+// Runtime metrics
+const (
+	runtimeMetricsNamespace = "runtime"
+
 	runtimeThreadLabel   = "thread"
 	runtimeThreadIDLabel = "threadID"
 	runtimeItemLabel     = "item"
@@ -31,8 +32,12 @@ const (
 	runtimeSuspendsMetric       = "suspends"
 	runtimeClocksMetric         = "clocks"
 	runtimeVectorsPerCallMetric = "vectors_per_call"
+)
 
-	// Memory
+// Memory metrics
+const (
+	memoryMetricsNamespace = "memory"
+
 	memoryThreadLabel   = "thread"
 	memoryThreadIDLabel = "threadID"
 
@@ -44,8 +49,12 @@ const (
 	memoryOverheadMetric  = "overhead"
 	memorySizeMetric      = "size"
 	memoryPagesMetric     = "pages"
+)
 
-	// Buffers
+// Buffers metrics
+const (
+	buffersMetricsNamespace = "buffers"
+
 	buffersThreadIDLabel = "threadID"
 	buffersItemLabel     = "item"
 	buffersIndexLabel    = "index"
@@ -55,14 +64,22 @@ const (
 	buffersFreeMetric     = "free"
 	buffersNumAllocMetric = "num_alloc"
 	buffersNumFreeMetric  = "num_free"
+)
 
-	// Node counters
+// Node metrics
+const (
+	nodeMetricsNamespace = "nodes"
+
 	nodeCounterItemLabel   = "item"
 	nodeCounterReasonLabel = "reason"
 
 	nodeCounterCountMetric = "count"
+)
 
-	// Interfaces
+// Interface metrics
+const (
+	ifMetricsNamespace = "interfaces"
+
 	ifCounterNameLabel  = "name"
 	ifCounterIndexLabel = "index"
 
@@ -130,7 +147,7 @@ type ifCounterStats struct {
 func (p *Plugin) registerPrometheus() error {
 	p.Log.Debugf("registering prometheus registry path: %v", registryPath)
 
-	// Register '/vpp' registry path
+	// Register vpp registry path
 	err := p.Prometheus.NewRegistry(registryPath, promhttp.HandlerOpts{
 		ErrorHandling: promhttp.ContinueOnError,
 	})
@@ -151,8 +168,8 @@ func (p *Plugin) registerPrometheus() error {
 	} {
 		name := metric[0]
 		p.runtimeGaugeVecs[name] = prometheus.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace: "vpp",
-			Subsystem: "runtime",
+			Namespace: vppMetricsNamespace,
+			Subsystem: runtimeMetricsNamespace,
 			Name:      name,
 			Help:      metric[1],
 			ConstLabels: prometheus.Labels{
@@ -186,8 +203,8 @@ func (p *Plugin) registerPrometheus() error {
 	} {
 		name := metric[0]
 		p.memoryGaugeVecs[name] = prometheus.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace: "vpp",
-			Subsystem: "memory",
+			Namespace: vppMetricsNamespace,
+			Subsystem: memoryMetricsNamespace,
 			Name:      name,
 			Help:      metric[1],
 			ConstLabels: prometheus.Labels{
@@ -218,8 +235,8 @@ func (p *Plugin) registerPrometheus() error {
 	} {
 		name := metric[0]
 		p.buffersGaugeVecs[name] = prometheus.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace: "vpp",
-			Subsystem: "buffers",
+			Namespace: vppMetricsNamespace,
+			Subsystem: buffersMetricsNamespace,
 			Name:      name,
 			Help:      metric[1],
 			ConstLabels: prometheus.Labels{
@@ -246,8 +263,8 @@ func (p *Plugin) registerPrometheus() error {
 	} {
 		name := metric[0]
 		p.nodeCounterGaugeVecs[name] = prometheus.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace: "vpp",
-			Subsystem: "node_counter",
+			Namespace: vppMetricsNamespace,
+			Subsystem: nodeMetricsNamespace,
 			Name:      name,
 			Help:      metric[1],
 			ConstLabels: prometheus.Labels{
@@ -285,8 +302,8 @@ func (p *Plugin) registerPrometheus() error {
 	} {
 		name := metric[0]
 		p.ifCounterGaugeVecs[name] = prometheus.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace: "vpp",
-			Subsystem: "interfaces",
+			Namespace: vppMetricsNamespace,
+			Subsystem: ifMetricsNamespace,
 			Name:      name,
 			Help:      metric[1],
 			ConstLabels: prometheus.Labels{
