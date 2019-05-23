@@ -18,6 +18,7 @@ echo " - dev image: ${DEV_IMG:=dev_vpp_agent}"
 echo "==============================================="
 
 docker build -f Dockerfile \
+	--no-cache \
     --build-arg DEV_IMG=${DEV_IMG} \
 	--tag ${IMAGE_TAG} \
 	${DOCKER_BUILD_ARGS} .

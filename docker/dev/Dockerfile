@@ -80,14 +80,14 @@ COPY ./docker/dev/supervisord_kill.py /usr/bin/
 # Build agent
 WORKDIR $GOPATH/src/github.com/ligato/vpp-agent
 
+ARG VERSION=dev
+ARG COMMIT
+ARG DATE
+
 # this prevents buildkit from skipping verify-binapi stage
 COPY --from=verify-binapi $GOPATH/src/github.com/ligato/vpp-agent/plugins/vpp/binapi plugins/vpp/binapi
 
 COPY . ./
-
-ARG VERSION=dev
-ARG COMMIT
-ARG DATE
 
 RUN VERSION=$VERSION COMMIT=$COMMIT DATE=$DATE make install
 
