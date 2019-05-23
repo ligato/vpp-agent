@@ -2,6 +2,7 @@ package telemetry
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"strconv"
 
@@ -60,6 +61,23 @@ const (
 	nodeCounterReasonLabel = "reason"
 
 	nodeCounterCountMetric = "count"
+
+	// Interfaces
+	ifCounterNameLabel  = "name"
+	ifCounterIndexLabel = "index"
+
+	ifCounterRxPackets = "rx_packets"
+	ifCounterRxBytes   = "rx_bytes"
+	ifCounterRxErrors  = "rx_errors"
+	ifCounterTxPackets = "tx_packets"
+	ifCounterTxBytes   = "tx_bytes"
+	ifCounterTxErrors  = "tx_errors"
+	ifCounterDrops     = "drops"
+	ifCounterPunts     = "punts"
+	ifCounterIP4       = "ip4"
+	ifCounterIP6       = "ip6"
+	ifCounterRxNoBuf   = "rx_no_buf"
+	ifCounterRxMiss    = "rx_miss"
 )
 
 type prometheusMetrics struct {
@@ -74,6 +92,9 @@ type prometheusMetrics struct {
 
 	nodeCounterGaugeVecs map[string]*prometheus.GaugeVec
 	nodeCounterStats     map[string]*nodeCounterStats
+
+	ifCounterGaugeVecs map[string]*prometheus.GaugeVec
+	ifCounterStats     map[string]*ifCounterStats
 }
 
 type runtimeStats struct {
@@ -99,6 +120,11 @@ type buffersStats struct {
 type nodeCounterStats struct {
 	itemName string
 	metrics  map[string]prometheus.Gauge
+}
+
+type ifCounterStats struct {
+	name    string
+	metrics map[string]prometheus.Gauge
 }
 
 func (p *Plugin) registerPrometheus() error {
@@ -237,6 +263,45 @@ func (p *Plugin) registerPrometheus() error {
 		}
 	}
 
+	// Interface counter metrics
+	p.ifCounterGaugeVecs = make(map[string]*prometheus.GaugeVec)
+	p.ifCounterStats = make(map[string]*ifCounterStats)
+
+	for _, metric := range [][2]string{
+		{ifCounterRxPackets, "RX packets"},
+		{ifCounterRxBytes, "RX bytes"},
+		{ifCounterRxErrors, "RX errors"},
+		{ifCounterTxPackets, "TX packets"},
+		{ifCounterTxBytes, "TX bytes"},
+		{ifCounterTxErrors, "TX errors"},
+		{ifCounterDrops, "Drops"},
+		{ifCounterPunts, "Punts"},
+		{ifCounterIP4, "IP4"},
+		{ifCounterIP6, "IP6"},
+		{ifCounterRxNoBuf, "RX nobuf"},
+		{ifCounterRxMiss, "RX miss"},
+	} {
+		name := metric[0]
+		p.ifCounterGaugeVecs[name] = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: "vpp",
+			Subsystem: "interfaces",
+			Name:      name,
+			Help:      metric[1],
+			ConstLabels: prometheus.Labels{
+				agentLabel: p.ServiceLabel.GetAgentLabel(),
+			},
+		}, []string{ifCounterNameLabel, ifCounterIndexLabel})
+
+	}
+
+	// register created vectors to prometheus
+	for name, metric := range p.ifCounterGaugeVecs {
+		if err := p.Prometheus.Register(registryPath, metric); err != nil {
+			p.Log.Errorf("failed to register %v metric: %v", name, err)
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -319,36 +384,6 @@ func (p *Plugin) updatePrometheus(ctx context.Context) {
 		}
 	}
 
-	// Update node counters
-	nodeCountersInfo, err := p.handler.GetNodeCounters(ctx)
-	if err != nil {
-		p.Log.Errorf("GetNodeCounters failed: %v", err)
-	} else {
-		p.tracef("node counters info: %+v", nodeCountersInfo)
-		for _, item := range nodeCountersInfo.Counters {
-			stats, ok := p.nodeCounterStats[item.Name]
-			if !ok {
-				stats = &nodeCounterStats{
-					itemName: item.Name,
-					metrics:  map[string]prometheus.Gauge{},
-				}
-
-				// add gauges with corresponding labels into vectors
-				for k, vec := range p.nodeCounterGaugeVecs {
-					stats.metrics[k], err = vec.GetMetricWith(prometheus.Labels{
-						nodeCounterItemLabel:   item.Node,
-						nodeCounterReasonLabel: item.Name,
-					})
-					if err != nil {
-						p.Log.Error(err)
-					}
-				}
-			}
-
-			stats.metrics[nodeCounterCountMetric].Set(float64(item.Value))
-		}
-	}
-
 	// Update memory
 	memoryInfo, err := p.handler.GetMemory(ctx)
 	if err != nil {
@@ -384,6 +419,77 @@ func (p *Plugin) updatePrometheus(ctx context.Context) {
 			stats.metrics[memoryOverheadMetric].Set(float64(thread.Overhead))
 			stats.metrics[memorySizeMetric].Set(float64(thread.Size))
 			stats.metrics[memoryPagesMetric].Set(float64(thread.Pages))
+		}
+	}
+
+	// Update node counters
+	nodeCountersInfo, err := p.handler.GetNodeCounters(ctx)
+	if err != nil {
+		p.Log.Errorf("GetNodeCounters failed: %v", err)
+	} else {
+		p.tracef("node counters info: %+v", nodeCountersInfo)
+		for _, item := range nodeCountersInfo.Counters {
+			stats, ok := p.nodeCounterStats[item.Name]
+			if !ok {
+				stats = &nodeCounterStats{
+					itemName: item.Name,
+					metrics:  map[string]prometheus.Gauge{},
+				}
+
+				// add gauges with corresponding labels into vectors
+				for k, vec := range p.nodeCounterGaugeVecs {
+					stats.metrics[k], err = vec.GetMetricWith(prometheus.Labels{
+						nodeCounterItemLabel:   item.Node,
+						nodeCounterReasonLabel: item.Name,
+					})
+					if err != nil {
+						p.Log.Error(err)
+					}
+				}
+			}
+
+			stats.metrics[nodeCounterCountMetric].Set(float64(item.Value))
+		}
+	}
+
+	// Update interface counters
+	ifStats, err := p.handler.GetInterfaceStats(ctx)
+	if err != nil {
+		p.Log.Errorf("GetInterfaceStats failed: %v", err)
+	} else {
+		p.tracef("interface stats: %+v", ifStats)
+		for _, item := range ifStats.Interfaces {
+			stats, ok := p.ifCounterStats[item.InterfaceName]
+			if !ok {
+				stats = &ifCounterStats{
+					name:    item.InterfaceName,
+					metrics: map[string]prometheus.Gauge{},
+				}
+
+				// add gauges with corresponding labels into vectors
+				for k, vec := range p.ifCounterGaugeVecs {
+					stats.metrics[k], err = vec.GetMetricWith(prometheus.Labels{
+						ifCounterNameLabel:  item.InterfaceName,
+						ifCounterIndexLabel: fmt.Sprint(item.InterfaceIndex),
+					})
+					if err != nil {
+						p.Log.Error(err)
+					}
+				}
+			}
+
+			stats.metrics[ifCounterRxPackets].Set(float64(item.RxPackets))
+			stats.metrics[ifCounterRxBytes].Set(float64(item.RxBytes))
+			stats.metrics[ifCounterRxErrors].Set(float64(item.RxErrors))
+			stats.metrics[ifCounterTxPackets].Set(float64(item.TxPackets))
+			stats.metrics[ifCounterTxBytes].Set(float64(item.TxBytes))
+			stats.metrics[ifCounterTxErrors].Set(float64(item.TxErrors))
+			stats.metrics[ifCounterDrops].Set(float64(item.Drops))
+			stats.metrics[ifCounterPunts].Set(float64(item.Punts))
+			stats.metrics[ifCounterIP4].Set(float64(item.IP4))
+			stats.metrics[ifCounterIP6].Set(float64(item.IP6))
+			stats.metrics[ifCounterRxNoBuf].Set(float64(item.RxNoBuf))
+			stats.metrics[ifCounterRxMiss].Set(float64(item.RxMiss))
 		}
 	}
 }

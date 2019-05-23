@@ -35,6 +35,7 @@ type TelemetryVppAPI interface {
 	GetNodeCounters(context.Context) (*NodeCounterInfo, error)
 	GetRuntimeInfo(context.Context) (*RuntimeInfo, error)
 	GetBuffersInfo(context.Context) (*BuffersInfo, error)
+	GetInterfaceStats(context.Context) (*govppapi.InterfaceStats, error)
 }
 
 // MemoryInfo contains values returned from 'show memory'

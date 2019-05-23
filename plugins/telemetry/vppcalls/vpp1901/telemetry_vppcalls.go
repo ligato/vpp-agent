@@ -53,6 +53,11 @@ func NewTelemetryVppHandler(ch govppapi.Channel, stats govppapi.StatsProvider) *
 	return &TelemetryHandler{ch, stats, vpeHandler}
 }
 
+func (h *TelemetryHandler) GetInterfaceStats(context.Context) (*govppapi.InterfaceStats, error) {
+	// not implemented for 19.01
+	return nil, nil
+}
+
 var (
 	// Regular expression to parse output from `show memory`
 	memoryRe = regexp.MustCompile(

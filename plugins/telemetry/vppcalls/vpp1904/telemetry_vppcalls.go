@@ -112,6 +112,15 @@ func (h *TelemetryHandler) getMemoryCLI(ctx context.Context) (*vppcalls.MemoryIn
 	return info, nil
 }
 
+func (h *TelemetryHandler) GetInterfaceStats(context.Context) (*govppapi.InterfaceStats, error) {
+	stats, err := h.stats.GetInterfaceStats()
+	if err != nil {
+		return nil, err
+	}
+
+	return stats, nil
+}
+
 var (
 	// Regular expression to parse output from `show node counters`
 	nodeCountersRe = regexp.MustCompile(`^\s+(\d+)\s+([\w-\/]+)\s+(.+)$`)
