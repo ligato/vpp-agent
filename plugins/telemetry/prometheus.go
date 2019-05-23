@@ -16,7 +16,7 @@ var (
 
 const (
 	// Registry path for telemetry metrics
-	registryPath = "/vpp"
+	registryPath = "/metrics/vpp"
 
 	// Metrics label used for agent label
 	agentLabel = "agent"
@@ -131,7 +131,9 @@ func (p *Plugin) registerPrometheus() error {
 	p.Log.Debugf("registering prometheus registry path: %v", registryPath)
 
 	// Register '/vpp' registry path
-	err := p.Prometheus.NewRegistry(registryPath, promhttp.HandlerOpts{ErrorHandling: promhttp.ContinueOnError})
+	err := p.Prometheus.NewRegistry(registryPath, promhttp.HandlerOpts{
+		ErrorHandling: promhttp.ContinueOnError,
+	})
 	if err != nil {
 		return err
 	}
