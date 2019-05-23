@@ -73,7 +73,7 @@ const (
 	nodeCounterItemLabel   = "item"
 	nodeCounterReasonLabel = "reason"
 
-	nodeCounterCountMetric = "count"
+	nodeCounterCounterMetric = "counter"
 )
 
 // Interface metrics
@@ -259,7 +259,7 @@ func (p *Plugin) registerPrometheus() error {
 	p.nodeCounterStats = make(map[string]*nodeCounterStats)
 
 	for _, metric := range [][2]string{
-		{nodeCounterCountMetric, "Count"},
+		{nodeCounterCounterMetric, "Counter"},
 	} {
 		name := metric[0]
 		p.nodeCounterGaugeVecs[name] = prometheus.NewGaugeVec(prometheus.GaugeOpts{
@@ -467,7 +467,7 @@ func (p *Plugin) updatePrometheus(ctx context.Context) {
 				}
 			}
 
-			stats.metrics[nodeCounterCountMetric].Set(float64(item.Value))
+			stats.metrics[nodeCounterCounterMetric].Set(float64(item.Value))
 		}
 	}
 
