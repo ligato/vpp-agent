@@ -80,7 +80,7 @@ COPY ./docker/dev/supervisord_kill.py /usr/bin/
 # Build agent
 WORKDIR $GOPATH/src/github.com/ligato/vpp-agent
 
-ARG VERSION=dev
+ARG VERSION
 ARG COMMIT
 ARG DATE
 
