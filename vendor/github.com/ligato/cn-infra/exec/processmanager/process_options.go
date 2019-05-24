@@ -17,7 +17,7 @@ package processmanager
 import (
 	"io"
 
-	"github.com/ligato/cn-infra/processmanager/status"
+	"github.com/ligato/cn-infra/exec/processmanager/status"
 )
 
 // POptions is common object which holds all selected options

@@ -22,8 +22,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/ligato/cn-infra/exec/processmanager/template/model/process"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/processmanager/template/model/process"
 	"github.com/pkg/errors"
 )
 
