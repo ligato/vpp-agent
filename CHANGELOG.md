@@ -5,6 +5,7 @@
 ## Release Notes
 
 - [v2.1.0](#v2.1.0)
+  - [v2.1.1](#v2.1.1)
 - [v2.0.0](#v2.0.0)
   - [v2.0.1](#v2.0.1)
   - [v2.0.2](#v2.0.2)
@@ -42,11 +43,31 @@ RELEASE CHANGELOG TEMPLATE:
 ### Documentation
 -->
 
+
+<a name="v2.1.1"></a>
+# [2.1.1](https://github.com/ligato/vpp-agent/compare/v2.1.0...v2.1.1) (2019-04-05)
+
+### Compatibility
+- **VPP 19.04** (`stable/1904`, recommended)
+- **VPP 19.01** (backward compatible)
+
+### Bug Fixes
+* Fixed IPv6 detection for Linux interfaces (#1355).
+* Fixed config file names for ifplugin in VPP & Linux (#1341).
+* Fixed setting status publishers from env var: `VPP_STATUS_PUBLISHERS`.
+
+### Improvements
+* The start/stop timeouts for agent can be configured using env vars: `START_TIMEOUT=15s` and `STOP_TIMEOUT=5s`, with values parsed as duration.
+* ABF was added to the `ConfigData` message for VPP (#1356).
+  
+### Docker Images
+* Images now install all compiled .deb packages from VPP (including `vpp-plugin-dpdk`).
+
 <a name="v2.1.0"></a>
 # [2.1.0](https://github.com/ligato/vpp-agent/compare/v2.0.2...v2.1.0) (2019-05-09)
 
 ### Compatibility
-- **VPP 19.04** (`v19.04-6-g6f05f724f`, recommended)
+- **VPP 19.04** (`stable/1904`, recommended)
 - **VPP 19.01** (backward compatible)
 - cn-infra v2.1
 - Go 1.11
