@@ -363,7 +363,7 @@ func (d *InterfaceDescriptor) Create(key string, linuxIf *interfaces.Interface) 
 	for _, ipAddress := range ipAddresses {
 		// Make sure sysctl "disable_ipv6" is 0 if we are about to add
 		// an IPv6 address to the interface
-		if !hasEnabledIPv6 && ipAddress.IP.To16() != nil {
+		if !hasEnabledIPv6 && ipAddress.IP != nil && ipAddress.IP.To4() == nil {
 			// Enabled IPv6 for loopback "lo" and the interface
 			// being configured
 			for _, iface := range [2]string{"lo", hostName} {
