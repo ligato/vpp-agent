@@ -17,6 +17,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 
 	"github.com/ligato/cn-infra/db/keyval"
+	abf "github.com/ligato/vpp-agent/api/models/vpp/abf"
 	acl "github.com/ligato/vpp-agent/api/models/vpp/acl"
 	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	ipsec "github.com/ligato/vpp-agent/api/models/vpp/ipsec"
@@ -102,6 +103,8 @@ func (ed EtcdDump) ReadDataFromDb(db keyval.ProtoBroker, key string,
 	switch {
 	case strings.HasPrefix(key, acl.ModelACL.KeyPrefix()):
 		ed[agent], err = readACLConfigFromDb(db, vd, key)
+	case strings.HasPrefix(key, abf.ModelABF.KeyPrefix()):
+		ed[agent], err = readABFConfigFromDb(db, vd, key)
 	case strings.HasPrefix(key, interfaces.ModelInterface.KeyPrefix()):
 		ed[agent], err = readInterfaceConfigFromDb(db, vd, key)
 	case strings.HasPrefix(key, l2.ModelBridgeDomain.KeyPrefix()):
@@ -161,6 +164,16 @@ func readACLConfigFromDb(db keyval.ProtoBroker, vd *VppData, key string) (*VppDa
 	found, _, err := readDataFromDb(db, key, acl)
 	if found && err == nil {
 		vd.Config.VppConfig.Acls = append(vd.Config.VppConfig.Acls, acl)
+	}
+	return vd, err
+}
+
+func readABFConfigFromDb(db keyval.ProtoBroker, vd *VppData, key string) (*VppData, error) {
+	abf := &abf.ABF{}
+
+	found, _, err := readDataFromDb(db, key, abf)
+	if found && err == nil {
+		vd.Config.VppConfig.Abfs = append(vd.Config.VppConfig.Abfs, abf)
 	}
 	return vd, err
 }

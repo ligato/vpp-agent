@@ -6,6 +6,7 @@ import (
 	"golang.org/x/net/context"
 
 	rpc "github.com/ligato/vpp-agent/api/configurator"
+	vpp_abf "github.com/ligato/vpp-agent/api/models/vpp/abf"
 	vpp_acl "github.com/ligato/vpp-agent/api/models/vpp/acl"
 	vpp_interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	vpp_ipsec "github.com/ligato/vpp-agent/api/models/vpp/ipsec"
@@ -14,6 +15,7 @@ import (
 	vpp_punt "github.com/ligato/vpp-agent/api/models/vpp/punt"
 	iflinuxcalls "github.com/ligato/vpp-agent/plugins/linux/ifplugin/linuxcalls"
 	l3linuxcalls "github.com/ligato/vpp-agent/plugins/linux/l3plugin/linuxcalls"
+	abfvppcalls "github.com/ligato/vpp-agent/plugins/vpp/abfplugin/vppcalls"
 	aclvppcalls "github.com/ligato/vpp-agent/plugins/vpp/aclplugin/vppcalls"
 	ifvppcalls "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
 	ipsecvppcalls "github.com/ligato/vpp-agent/plugins/vpp/ipsecplugin/vppcalls"
@@ -28,6 +30,7 @@ type dumpService struct {
 
 	// VPP Handlers
 	aclHandler   aclvppcalls.ACLVppRead
+	abfHandler   abfvppcalls.ABFVppRead
 	ifHandler    ifvppcalls.InterfaceVppRead
 	natHandler   natvppcalls.NatVppRead
 	l2Handler    l2vppcalls.L2VppAPI
@@ -56,6 +59,11 @@ func (svc *dumpService) Dump(context.Context, *rpc.DumpRequest) (*rpc.DumpRespon
 	dump.VppConfig.Acls, err = svc.DumpAcls()
 	if err != nil {
 		svc.log.Errorf("DumpAcls failed: %v", err)
+		return nil, err
+	}
+	dump.VppConfig.Abfs, err = svc.DumpAbfs()
+	if err != nil {
+		svc.log.Errorf("DumpAbfs failed: %v", err)
 		return nil, err
 	}
 	dump.VppConfig.IpsecSpds, err = svc.DumpIPSecSPDs()
@@ -128,6 +136,24 @@ func (svc *dumpService) DumpAcls() ([]*vpp_acl.ACL, error) {
 	}
 
 	return acls, nil
+}
+
+// DumpAbfs reads the ACL-based forwarding and returns data read as an *AbfResponse. If the reading ends up with
+// an error, only the error is send back in the response
+func (svc *dumpService) DumpAbfs() ([]*vpp_abf.ABF, error) {
+	var abfs []*vpp_abf.ABF
+	if svc.abfHandler == nil {
+		return nil, errors.New("abfHandler is not available")
+	}
+	abfPolicy, err := svc.abfHandler.DumpABFPolicy()
+	if err != nil {
+		return nil, err
+	}
+	for _, abfDetails := range abfPolicy {
+		abfs = append(abfs, abfDetails.ABF)
+	}
+
+	return abfs, nil
 }
 
 // DumpInterfaces reads interfaces and returns them as an *InterfaceResponse. If reading ends up with error,

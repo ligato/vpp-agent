@@ -4,6 +4,7 @@ package vpp;
 
 option go_package = "github.com/ligato/vpp-agent/api/models/vpp;vpp";
 
+import "models/vpp/abf/abf.proto";
 import "models/vpp/acl/acl.proto";
 import "models/vpp/interfaces/interface.proto";
 import "models/vpp/interfaces/state.proto";
@@ -21,6 +22,7 @@ message ConfigData {
     repeated interfaces.Interface interfaces = 10;
 
     repeated acl.ACL acls = 20;
+    repeated abf.ABF abfs = 21;
 
     repeated l2.BridgeDomain bridge_domains = 30;
     repeated l2.FIBEntry fibs = 31;
