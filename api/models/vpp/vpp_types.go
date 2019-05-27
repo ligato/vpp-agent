@@ -15,6 +15,7 @@
 package vpp
 
 import (
+	"github.com/ligato/vpp-agent/api/models/vpp/abf"
 	"github.com/ligato/vpp-agent/api/models/vpp/acl"
 	"github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	"github.com/ligato/vpp-agent/api/models/vpp/ipsec"
@@ -28,6 +29,7 @@ import (
 type (
 	// ACL
 	ACL = vpp_acl.ACL
+	ABF = vpp_abf.ABF
 
 	// Interfaces
 	Interface = vpp_interfaces.Interface
