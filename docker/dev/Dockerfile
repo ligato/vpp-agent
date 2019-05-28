@@ -37,9 +37,7 @@ RUN apt-get update \
 		iputils-ping \
 		make \
 		patch \
-		python \
 		sudo \
-		supervisor \
 		unzip \
 		wget \
  && rm -rf /var/lib/apt/lists/*
@@ -71,11 +69,11 @@ COPY \
     ./docker/dev/etcd.conf \
     ./docker/dev/logs.conf \
     ./docker/dev/vpp-ifplugin.conf \
+    ./docker/dev/supervisor.conf \
  /opt/vpp-agent/dev/
 
 COPY ./docker/dev/vpp.conf /etc/vpp/vpp.conf
-COPY ./docker/dev/supervisord.conf /etc/supervisord/supervisord.conf
-COPY ./docker/dev/supervisord_kill.py /usr/bin/
+COPY ./docker/dev/init_hook.sh /usr/bin/
 
 # Build agent
 WORKDIR $GOPATH/src/github.com/ligato/vpp-agent
@@ -91,6 +89,8 @@ COPY . ./
 
 RUN VERSION=$VERSION COMMIT=$COMMIT DATE=$DATE make install
 
+ENV SUPERVISOR_CONFIG=/opt/vpp-agent/dev/supervisor.conf
+
 # run supervisor as the default executable
 CMD rm -f /dev/shm/db /dev/shm/global_vm /dev/shm/vpe-api && \
-    exec /usr/bin/supervisord -c /etc/supervisord/supervisord.conf
+    exec vpp-agent-init
