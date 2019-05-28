@@ -129,11 +129,11 @@ func (p *Plugin) watchEvents() {
 				if x.GetChangeType() != datasync.Delete {
 					kv.Val, err = models.UnmarshalLazyValue(kv.Key, x)
 					if err != nil {
-						p.log.Errorf("unmarshal value for key %s failed: %v", kv.Key, err)
+						p.log.Errorf("decoding value for key %q failed: %v, value: %#v", kv.Key, err, kv.Val)
 						continue
 					}
 					if k := models.Key(kv.Val); k != kv.Key {
-						p.log.Errorf("value for key %s does not match generated model key: %v", kv.Key, k)
+						p.log.Errorf("given value for key %q does not match with generated model key: %q, value: %#v", kv.Key, k, kv.Val)
 						continue
 					}
 				}
