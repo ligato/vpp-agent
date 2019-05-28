@@ -49,12 +49,12 @@ The image tag `latest` is built from **master branch** and `dev` tag is built fr
 For a quick start with the VPP Agent, you can use the pre-built Docker images on DockerHub
 that contain the VPP Agent and VPP: [ligato/vpp-agent][vpp-agent] (or for ARM64: [ligato/vpp-agent-arm64][vpp-agent-arm64]).
 
-0. Start ETCD (for image versions lower than 2.0, the Kafka is required as well) on your host (e.g. in Docker as described [here][etcd-local]).
-   Note: **for ARM64 see the information for [kafka][kafka] and for [etcd][etcd]**.
+0. Start ETCD on your host (e.g. in Docker as described [here][etcd-local]).
+
+   Note: for ARM64 see the information for [etcd][etcd].
 
 1. Run VPP + VPP Agent in a Docker container:
 ```
-docker pull ligato/vpp-agent
 docker run -it --rm --name vpp --privileged ligato/vpp-agent
 ```
 
@@ -75,7 +75,7 @@ See [README][docker-image] of development docker image for more details.
 
 ## Documentation
 
-Detailed documentation for the VPP Agent can be found at [ligato.io/vpp-agent][ligato-docs].
+Extensive documentation for the VPP Agent can be found at [docs.ligato.io](https://docs.ligato.io).
 
 ## Architecture
 
@@ -105,42 +105,6 @@ its management/control planes are implemented using the VNF agent:
 
 ![context](docs/imgs/context.png "VPP Agent & its Plugins on top of cn-infra")
 
-### Plugins
- 
-The set of plugins in the VPP Agent is as follows:
-* [VPP plugins][docs-vpp-punt-plugin] - core plugins providing northbound APIs to _default_ VPP functionality:
-  - [ACL][docs-vpp-acl-plugin]: - VPP Access Lists (VPP ACL plugin) 
-  - [Interfaces][docs-vpp-interface-plugin] - VPP network interfaces (e.g. DPDK, MEMIF, AF_Packet, VXLAN, Loopback..)
-  - [L2][docs-vpp-l2-plugin] - Bridge Domains, L2 cross-connects..
-  - [L3][docs-vpp-l3-plugin] - IP Routes, ARPs, ProxyARPs, VRFs..
-  - [IPSec][docs-vpp-ipsec-plugin] - Security policy databases and policy associations
-  - [Punt][docs-vpp-punt-plugin] - punt to host (directly or via socket), IP redirect
-  - [NAT][docs-vpp-nat-plugin] - network address translation configuration, DNAT44
-  - [SR][docs-vpp-sr-plugin] - segment routing
-* [Linux plugins][docs-linux-plugins] (VETH) - allows optional configuration of Linux virtual ethernet 
-  interfaces
-  - [Interfaces][docs-linux-interface-plugin] - Linux network interfaces (e.g. VETH, TAP..)
-  - [L3][docs-linux-l3-plugin] - IP Routes, ARPs
-  - [NS][docs-linux-ns-plugin] - Linux network namespaces
-* [GoVPPmux][docs-govppmux-plugin] - plugin wrapper around GoVPP. Multiplexes plugins' access to
-  VPP on a single connection.
-* [RESTAPI][docs-rest-plugin] - provides API to retrieve actual state
-* [KVScheduler][docs-kv-scheduler] - synchronizes the *desired state* described by northbound
-  components with the *actual state* of the southbound. 
-
-### Tools
-
-The VPP agent repository also contains tools for building and troubleshooting 
-of VNFs based on the VPP Agent:
-
-* [agentctl][agentctl] - a CLI tool that shows the state of a set of 
-   VPP agents can configure the agents
-* [vpp-agent-ctl](cmd/vpp-agent-ctl) (DEPRECATED) - a utility for testing VNF Agent 
-  configuration. It contains a set of pre-defined configurations that can 
-  be sent to the VPP Agent either interactively or in a script. 
-* [docker][docker] - container-based development environment for the VPP
-  agent and for app/extension plugins.
-
 ## Contributing
 
 If you are interested in contributing, please see the [contribution guidelines][contribution].
@@ -151,22 +115,6 @@ If you are interested in contributing, please see the [contribution guidelines][
 [contribution]: CONTRIBUTING.md
 [docker]: docker
 [docker-image]: http://docs.ligato.io/en/latest/user-guide/get-agent/#build-local-image
-[docs-govppmux-plugin]: https://docs.ligato.io/en/latest/plugins/vpp-plugins/#govppmux-plugin
-[docs-kv-scheduler]: https://docs.ligato.io/en/latest/plugins/kvs-plugin/
-[docs-linux-interface-plugin]: https://docs.ligato.io/en/latest/plugins/linux-plugins/#interface-plugin
-[docs-linux-l3-plugin]: https://docs.ligato.io/en/latest/plugins/linux-plugins/#l3-plugin
-[docs-linux-ns-plugin]: https://docs.ligato.io/en/latest/plugins/linux-plugins/#namespace-plugin
-[docs-linux-plugins]: https://docs.ligato.io/en/latest/plugins/linux-plugins/
-[docs-rest-plugin]: https://docs.ligato.io/en/latest/plugins/connection-plugins/#rest-plugin 
-[docs-vpp-acl-plugin]: https://docs.ligato.io/en/latest/plugins/vpp-plugins/#access-control-lists-plugin
-[docs-vpp-interface-plugin]: https://docs.ligato.io/en/latest/plugins/vpp-plugins/#interface-plugin
-[docs-vpp-l2-plugin]: https://docs.ligato.io/en/latest/plugins/vpp-plugins/#l2-plugin
-[docs-vpp-l3-plugin]: https://docs.ligato.io/en/latest/plugins/vpp-plugins/#l3-plugin
-[docs-vpp-ipsec-plugin]: https://docs.ligato.io/en/latest/plugins/vpp-plugins/#ipsec-plugin
-[docs-vpp-nat-plugin]: https://docs.ligato.io/en/latest/plugins/vpp-plugins/#nat-plugin
-[docs-vpp-plugins]:https://docs.ligato.io/en/latest/plugins/vpp-plugins/
-[docs-vpp-punt-plugin]: https://docs.ligato.io/en/latest/plugins/vpp-plugins/#punt-plugin
-[docs-vpp-sr-plugin]: https://docs.ligato.io/en/latest/plugins/vpp-plugins/#sr-plugin
 [etcd]: docs/arm64/etcd.md
 [etcd-local]: docker/dev/README.md#running-etcd-server-on-local-host
 [govpp]: https://wiki.fd.io/view/GoVPP
