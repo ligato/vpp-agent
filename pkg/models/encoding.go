@@ -113,7 +113,7 @@ func getItemID(pb proto.Message) (*api.Item_ID, error) {
 		return nil, fmt.Errorf("message %s is not registered as model", protoName)
 	}
 
-	name, err := model.nameFunc(pb)
+	name, err := model.name(pb)
 	if err != nil {
 		return nil, err
 	}
