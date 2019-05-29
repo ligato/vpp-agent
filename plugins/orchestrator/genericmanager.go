@@ -80,7 +80,7 @@ func (s *genericManagerSvc) SetConfig(ctx context.Context, req *api.SetConfigReq
 			if err != nil {
 				return nil, status.Error(codes.InvalidArgument, err.Error())
 			}
-			key := model.KeyPrefix() + item.Id.Name
+			key = model.KeyPrefix() + item.Id.Name
 			ops[key] = api.UpdateResult_DELETE
 		} else {
 			return nil, status.Error(codes.InvalidArgument, "ProtoItem has no key or val defined.")
