@@ -1165,7 +1165,6 @@ type IPReassemblyGetReply struct {
 	Retval               int32
 	TimeoutMs            uint32
 	MaxReassemblies      uint32
-	MaxReassemblyLength  uint32
 	ExpireWalkIntervalMs uint32
 	IsIP6                uint8
 }
@@ -1174,7 +1173,7 @@ func (*IPReassemblyGetReply) GetMessageName() string {
 	return "ip_reassembly_get_reply"
 }
 func (*IPReassemblyGetReply) GetCrcString() string {
-	return "c96e518d"
+	return "1f90afd1"
 }
 func (*IPReassemblyGetReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
@@ -1184,7 +1183,6 @@ func (*IPReassemblyGetReply) GetMessageType() api.MessageType {
 type IPReassemblySet struct {
 	TimeoutMs            uint32
 	MaxReassemblies      uint32
-	MaxReassemblyLength  uint32
 	ExpireWalkIntervalMs uint32
 	IsIP6                uint8
 }
@@ -1193,7 +1191,7 @@ func (*IPReassemblySet) GetMessageName() string {
 	return "ip_reassembly_set"
 }
 func (*IPReassemblySet) GetCrcString() string {
-	return "403051cd"
+	return "1db184de"
 }
 func (*IPReassemblySet) GetMessageType() api.MessageType {
 	return api.RequestMessage

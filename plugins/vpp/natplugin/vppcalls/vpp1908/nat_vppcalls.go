@@ -411,7 +411,7 @@ func (h *NatVppHandler) handleNat44IdentityMapping(mapping *nat.DNat44_IdentityM
 }
 
 func setNat44Flags(flags *nat44Flags) natba.NatConfigFlags {
-	flagsCfg := natba.NAT_IS_NONE
+	var flagsCfg natba.NatConfigFlags
 	if flags.isTwiceNat {
 		flagsCfg |= natba.NAT_IS_TWICE_NAT
 	}

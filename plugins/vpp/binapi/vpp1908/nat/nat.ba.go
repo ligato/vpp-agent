@@ -108,7 +108,6 @@ const (
 type NatConfigFlags uint8
 
 const (
-	NAT_IS_NONE           NatConfigFlags = 0
 	NAT_IS_TWICE_NAT      NatConfigFlags = 1
 	NAT_IS_SELF_TWICE_NAT NatConfigFlags = 2
 	NAT_IS_OUT2IN_ONLY    NatConfigFlags = 4

@@ -114,7 +114,7 @@ func TestEnableNat44InterfaceAsOutside(t *testing.T) {
 	Expect(ok).To(BeTrue())
 	Expect(msg).ToNot(BeNil())
 	Expect(msg.IsAdd).To(BeTrue())
-	Expect(msg.Flags).To(BeEquivalentTo(binapi.NAT_IS_NONE))
+	Expect(msg.Flags).To(BeEquivalentTo(0))
 	Expect(msg.SwIfIndex).To(BeEquivalentTo(2))
 }
 
@@ -179,7 +179,7 @@ func TestDisableNat44InterfaceAsOutside(t *testing.T) {
 	Expect(ok).To(BeTrue())
 	Expect(msg).ToNot(BeNil())
 	Expect(msg.IsAdd).To(BeFalse())
-	Expect(msg.Flags).To(BeEquivalentTo(binapi.NAT_IS_NONE))
+	Expect(msg.Flags).To(BeEquivalentTo(0))
 	Expect(msg.SwIfIndex).To(BeEquivalentTo(2))
 }
 
@@ -217,7 +217,7 @@ func TestEnableNat44InterfaceOutputAsOutside(t *testing.T) {
 	Expect(ok).To(BeTrue())
 	Expect(msg).ToNot(BeNil())
 	Expect(msg.IsAdd).To(BeTrue())
-	Expect(msg.Flags).To(BeEquivalentTo(binapi.NAT_IS_NONE))
+	Expect(msg.Flags).To(BeEquivalentTo(0))
 	Expect(msg.SwIfIndex).To(BeEquivalentTo(2))
 }
 
@@ -282,7 +282,7 @@ func TestDisableNat44InterfaceOutputAsOutside(t *testing.T) {
 	Expect(ok).To(BeTrue())
 	Expect(msg).ToNot(BeNil())
 	Expect(msg.IsAdd).To(BeFalse())
-	Expect(msg.Flags).To(BeEquivalentTo(binapi.NAT_IS_NONE))
+	Expect(msg.Flags).To(BeEquivalentTo(0))
 	Expect(msg.SwIfIndex).To(BeEquivalentTo(2))
 }
 
@@ -303,7 +303,7 @@ func TestAddNat44Address(t *testing.T) {
 	Expect(addressTo4IP(msg.FirstIPAddress)).To(BeEquivalentTo(addr.String()))
 	Expect(addressTo4IP(msg.LastIPAddress)).To(BeEquivalentTo(addr.String()))
 	Expect(msg.VrfID).To(BeEquivalentTo(0))
-	Expect(msg.Flags).To(BeEquivalentTo(binapi.NAT_IS_NONE))
+	Expect(msg.Flags).To(BeEquivalentTo(0))
 }
 
 func TestAddNat44AddressError(t *testing.T) {
@@ -350,7 +350,7 @@ func TestDelNat44Address(t *testing.T) {
 	Expect(addressTo4IP(msg.FirstIPAddress)).To(BeEquivalentTo(addr.String()))
 	Expect(addressTo4IP(msg.LastIPAddress)).To(BeEquivalentTo(addr.String()))
 	Expect(msg.VrfID).To(BeEquivalentTo(0))
-	Expect(msg.Flags).To(BeEquivalentTo(binapi.NAT_IS_NONE))
+	Expect(msg.Flags).To(BeEquivalentTo(0))
 }
 
 func TestSetNat44VirtualReassemblyIPv4(t *testing.T) {
@@ -695,7 +695,7 @@ func TestAddNat44IdentityMapping(t *testing.T) {
 	Expect(msg.SwIfIndex).To(BeEquivalentTo(1))
 	Expect(msg.Protocol).To(BeEquivalentTo(17))
 	Expect(msg.Port).To(BeEquivalentTo(9000))
-	Expect(msg.Flags).To(BeEquivalentTo(binapi.NAT_IS_NONE))
+	Expect(msg.Flags).To(BeEquivalentTo(0))
 }
 
 func TestAddNat44IdentityMappingAddrOnly(t *testing.T) {
@@ -750,7 +750,7 @@ func TestAddNat44IdentityMappingNoInterface(t *testing.T) {
 	Expect(addressTo4IP(msg.IPAddress)).To(BeEquivalentTo(address.String()))
 	Expect(msg.Port).To(BeEquivalentTo(8989))
 	Expect(msg.SwIfIndex).To(BeEquivalentTo(vpp1908.NoInterface))
-	Expect(msg.Flags).To(BeEquivalentTo(binapi.NAT_IS_NONE))
+	Expect(msg.Flags).To(BeEquivalentTo(0))
 }
 
 func TestAddNat44IdentityMappingError(t *testing.T) {

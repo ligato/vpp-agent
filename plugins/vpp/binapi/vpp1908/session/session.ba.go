@@ -366,14 +366,13 @@ type ConnectSock struct {
 	Proto              uint8
 	HostnameLen        uint8 `struc:"sizeof=Hostname"`
 	Hostname           []byte
-	TransportOpts      uint64
 }
 
 func (*ConnectSock) GetMessageName() string {
 	return "connect_sock"
 }
 func (*ConnectSock) GetCrcString() string {
-	return "19606426"
+	return "a916aa77"
 }
 func (*ConnectSock) GetMessageType() api.MessageType {
 	return api.RequestMessage
