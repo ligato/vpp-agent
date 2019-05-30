@@ -492,7 +492,7 @@
 
 [[projects]]
   branch = "dev"
-  digest = "1:dd99d2c0ca12a855f6ed76c97aee6804de3929ae216a2972e75a1f9294dcf559"
+  digest = "1:b20db15de753c9aff7d611058a54142ccf122a1065cdf79cf16f1e21108898b7"
   name = "github.com/ligato/cn-infra"
   packages = [
     "agent",
@@ -540,7 +540,7 @@
     "utils/safeclose",
   ]
   pruneopts = "T"
-  revision = "2fd01e5c52cbda989b0bc63982b21b80fa7eddb9"
+  revision = "691b90eac5d48e3d589d7057ce03b1dffdee54fe"
 
 [[projects]]
   branch = "master"

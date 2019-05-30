@@ -42,11 +42,14 @@ type Plugin struct {
 	mx       sync.Mutex
 	programs map[string]*processWithStateChan
 
-	// common channel where all executed programs send their process state
-	hookChan chan *processEvent
+	// hook channel where all executed programs send their process state
+	hookEventChan chan *processEvent
+	hookDoneChan  chan struct{}
 
 	// supervisor configuration
 	config *Config
+
+	wg sync.WaitGroup
 
 	Deps
 }
@@ -62,6 +65,7 @@ type Deps struct {
 type processWithStateChan struct {
 	process   pm.ProcessInstance
 	stateChan chan status.ProcessStatus
+	doneChan  chan struct{}
 	svLogger  *SvLogger
 }
 
@@ -85,7 +89,8 @@ func (p *Plugin) Init() error {
 		return errors.Errorf("supervisor config file not defined or does not contain any program")
 	}
 	p.programs = make(map[string]*processWithStateChan)
-	p.hookChan = make(chan *processEvent)
+	p.hookEventChan = make(chan *processEvent)
+	p.hookDoneChan = make(chan struct{})
 
 	go p.watchEvents()
 	// start programs in another go routine (do not block init since it may take a while)
@@ -97,11 +102,25 @@ func (p *Plugin) Init() error {
 // Close local resources
 func (p *Plugin) Close() error {
 	for _, program := range p.programs {
+		if program.process.IsAlive() {
+			if _, err := program.process.StopAndWait(); err != nil {
+				p.Log.Errorf("failed to stop program %s: %v", program.process.GetName(), err)
+			}
+		}
 		if err := program.svLogger.Close(); err != nil {
 			p.Log.Errorf("failed to close logger: %v", err)
 		}
+		// terminate watcher for given supervisor process
+		close(program.doneChan)
 	}
-	close(p.hookChan)
+
+	// close hook watcher when all programs are terminated
+	p.wg.Wait()
+	close(p.hookEventChan)
+
+	// wait for hook watcher to finish
+	<-p.hookDoneChan
+
 	return nil
 }
 
@@ -153,7 +172,10 @@ func (p *Plugin) execute(program *Program) error {
 	}
 
 	stateChan := make(chan status.ProcessStatus)
-	go p.watch(stateChan, program.Name)
+	doneChan := make(chan struct{})
+
+	p.wg.Add(1)
+	go p.watch(stateChan, doneChan, program.Name)
 
 	var process pm.ProcessInstance
 	if program.Restarts > 0 {
@@ -179,23 +201,31 @@ func (p *Plugin) execute(program *Program) error {
 	p.programs[program.Name] = &processWithStateChan{
 		process:   process,
 		stateChan: stateChan,
+		doneChan:  doneChan,
 		svLogger:  svLogger,
 	}
 
 	return nil
 }
 
-func (p *Plugin) watch(stateChan chan status.ProcessStatus, name string) {
+func (p *Plugin) watch(stateChan chan status.ProcessStatus, doneChan chan struct{}, name string) {
+	defer p.wg.Done()
+
 	for {
-		state, ok := <-stateChan
-		if !ok {
+		select {
+		case state, ok := <-stateChan:
+			if !ok {
+				return
+			}
+
+			// forward info to the hook
+			p.hookEventChan <- &processEvent{
+				name:      name,
+				state:     state,
+				eventType: ProcessStatus,
+			}
+		case <-doneChan:
 			return
-		}
-		// forward info to the hook
-		p.hookChan <- &processEvent{
-			name:      name,
-			state:     state,
-			eventType: ProcessStatus,
 		}
 	}
 }

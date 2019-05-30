@@ -27,8 +27,10 @@ const (
 
 func (p *Plugin) watchEvents() {
 	for {
-		processInfo, ok := <-p.hookChan
+		processInfo, ok := <-p.hookEventChan
 		if !ok {
+			p.Log.Debugf("Supervisor hook watcher ended")
+			close(p.hookDoneChan)
 			return
 		}
 
