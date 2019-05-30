@@ -23,7 +23,7 @@ import (
 )
 
 func main() {
-	a := agent.NewAgent(agent.AllPlugins(sv.NewPlugin()))
+	a := agent.NewAgent(agent.AllPlugins(&sv.DefaultPlugin))
 	if err := a.Run(); err != nil {
 		panic(err)
 	}
