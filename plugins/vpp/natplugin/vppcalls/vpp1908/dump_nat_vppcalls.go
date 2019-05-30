@@ -126,7 +126,7 @@ func (h *NatVppHandler) nat44AddressDump() (addressPool []*nat.Nat44Global_Addre
 		}
 
 		addressPool = append(addressPool, &nat.Nat44Global_Address{
-			Address:  addressTo4IP(msg.IPAddress),
+			Address:  net.IP(msg.IPAddress[:]).String(),
 			VrfId:    msg.VrfID,
 			TwiceNat: getNat44Flags(msg.Flags).isTwiceNat,
 		})
@@ -176,8 +176,8 @@ func (h *NatVppHandler) nat44StaticMappingDump() (entries stMappingMap, err erro
 		if stop {
 			break
 		}
-		lcIPAddress := addressTo4IP(msg.LocalIPAddress)
-		exIPAddress := addressTo4IP(msg.ExternalIPAddress)
+		lcIPAddress := net.IP(msg.LocalIPAddress[:]).String()
+		exIPAddress := net.IP(msg.ExternalIPAddress[:]).String()
 
 		// Parse tag (DNAT label)
 		if _, hasTag := entries[msg.Tag]; !hasTag {
@@ -277,12 +277,12 @@ func (h *NatVppHandler) nat44StaticMappingLbDump() (entries stMappingMap, err er
 		for _, localIPVal := range msg.Locals {
 			locals = append(locals, &nat.DNat44_StaticMapping_LocalIP{
 				VrfId:       localIPVal.VrfID,
-				LocalIp:     addressTo4IP(localIPVal.Addr),
+				LocalIp:     net.IP(localIPVal.Addr[:]).String(),
 				LocalPort:   uint32(localIPVal.Port),
 				Probability: uint32(localIPVal.Probability),
 			})
 		}
-		exIPAddress := addressTo4IP(msg.ExternalAddr)
+		exIPAddress := net.IP(msg.ExternalAddr[:]).String()
 
 		flags := getNat44Flags(msg.Flags)
 
@@ -340,7 +340,7 @@ func (h *NatVppHandler) nat44IdentityMappingDump() (entries idMappingMap, err er
 
 		// Add mapping into the map.
 		mapping := &nat.DNat44_IdentityMapping{
-			IpAddress: addressTo4IP(msg.IPAddress),
+			IpAddress: net.IP(msg.IPAddress[:]).String(),
 			VrfId:     msg.VrfID,
 			Interface: ifaceName,
 			Port:      uint32(msg.Port),
@@ -559,15 +559,6 @@ func getNat44Flags(flags ba_nat.NatConfigFlags) *nat44Flags {
 		natFlags.isTwiceNat = true
 	}
 	return natFlags
-}
-
-func addressTo4IP(address ba_nat.IP4Address) string {
-	ipAddr := make(net.IP, net.IPv4len)
-	copy(ipAddr[:], address[:])
-	if ipAddr.To4() == nil {
-		return ""
-	}
-	return ipAddr.To4().String()
 }
 
 func uintToBool(value uint8) bool {

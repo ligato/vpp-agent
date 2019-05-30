@@ -366,14 +366,11 @@ func natTestSetup(t *testing.T) (*vppcallmock.TestCtx, vppcalls.NatVppAPI, iface
 	natHandler := vpp1908.NewNatVppHandler(ctx.MockChannel, swIfIndexes, dhcpIndexes, log)
 	return ctx, natHandler, swIfIndexes, dhcpIndexes
 }
+
 func ipTo4Address(ipStr string) (addr bin_api.IP4Address) {
 	netIP := net.ParseIP(ipStr)
 	if ip4 := netIP.To4(); ip4 != nil {
-		var ip4Addr bin_api.IP4Address
-		copy(ip4Addr[:], netIP.To4())
-		addr = ip4Addr
-	} else {
-		return addr
+		copy(addr[:], ip4)
 	}
 	return
 }
