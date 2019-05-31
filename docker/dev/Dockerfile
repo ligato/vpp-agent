@@ -34,7 +34,7 @@ RUN cp -r plugins/vpp/binapi /tmp/orig_binapi && \
  		[ -n "$SKIP_CHECK" ] && exit 0; \
  	}
 
-FROM ${VPP_IMG} AS devimg
+FROM vppimg AS devimg
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
 		build-essential \
