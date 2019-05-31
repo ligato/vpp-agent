@@ -16,6 +16,7 @@ package ifplugin
 
 import (
 	"context"
+	"os"
 	"sync"
 	"time"
 
@@ -37,6 +38,8 @@ var (
 
 	// StateUpdateDelay defines delay before dumping states
 	StateUpdateDelay = time.Second * 3
+
+	disableInterfaceStats = os.Getenv("DISABLE_INTERFACE_STATS") != ""
 )
 
 // InterfaceStateUpdater holds state data of all VPP interfaces.
@@ -109,15 +112,15 @@ func (c *InterfaceStateUpdater) Init(ctx context.Context, logger logging.PluginL
 	go c.watchVPPNotifications(childCtx)
 
 	// Periodically read VPP counters and combined counters for VPP statistics
-	if readCounters {
+	if disableInterfaceStats {
+		c.log.Warnf("reading interface stats is disabled!")
+	} else if readCounters {
 		c.wg.Add(1)
 		go c.startReadingCounters(childCtx)
 	}
 
 	c.wg.Add(1)
 	go c.startUpdatingIfStateDetails(childCtx)
-
-	c.log.Info("Interface state updater initialized")
 
 	return nil
 }
