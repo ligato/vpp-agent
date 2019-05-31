@@ -3,8 +3,7 @@ FROM ${DEV_IMG} as devimg
 
 FROM ubuntu:18.04 as base
 
-RUN apt-get update \
- && apt-get install -y --no-install-recommends \
+RUN apt-get update && apt-get install -y --no-install-recommends \
 		# general tools
 		inetutils-traceroute \
 		iproute2 \
@@ -18,12 +17,10 @@ RUN apt-get update \
 		libmbedx509-0 \
 		libnuma1 \
 		openssl \
- && rm -rf /var/lib/apt/lists/*
+ 	&& rm -rf /var/lib/apt/lists/*
 
 # install vpp
-COPY --from=devimg \
-    /vpp/*.deb \
- /opt/vpp/
+COPY --from=devimg /vpp/*.deb /opt/vpp/
 
 RUN cd /opt/vpp/ \
  && apt-get update \

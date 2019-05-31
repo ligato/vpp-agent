@@ -12,6 +12,7 @@ VPP_VERSION = $(VPP_DEFAULT)
 endif
 VPP_IMG:=$(value VPP_IMG_$(VPP_VERSION))
 VPP_BINAPI?=$(value VPP_BINAPI_$(VPP_VERSION))
+SKIP_CHECK?=
 
 ifeq ($(NOSTRIP),)
 LDFLAGS += -w -s
