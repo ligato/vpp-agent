@@ -3,9 +3,11 @@
 
 package phonebook
 
-import proto "github.com/gogo/protobuf/proto"
-import fmt "fmt"
-import math "math"
+import (
+	fmt "fmt"
+	proto "github.com/gogo/protobuf/proto"
+	math "math"
+)
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -31,7 +33,7 @@ func (m *Contact) Reset()         { *m = Contact{} }
 func (m *Contact) String() string { return proto.CompactTextString(m) }
 func (*Contact) ProtoMessage()    {}
 func (*Contact) Descriptor() ([]byte, []int) {
-	return fileDescriptor_phonebook_cda552ced99ecf9b, []int{0}
+	return fileDescriptor_34db5399df65ad55, []int{0}
 }
 func (m *Contact) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Contact.Unmarshal(m, b)
@@ -39,8 +41,8 @@ func (m *Contact) XXX_Unmarshal(b []byte) error {
 func (m *Contact) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Contact.Marshal(b, m, deterministic)
 }
-func (dst *Contact) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Contact.Merge(dst, src)
+func (m *Contact) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Contact.Merge(m, src)
 }
 func (m *Contact) XXX_Size() int {
 	return xxx_messageInfo_Contact.Size(m)
@@ -76,9 +78,9 @@ func init() {
 	proto.RegisterType((*Contact)(nil), "phonebook.Contact")
 }
 
-func init() { proto.RegisterFile("phonebook.proto", fileDescriptor_phonebook_cda552ced99ecf9b) }
+func init() { proto.RegisterFile("phonebook.proto", fileDescriptor_34db5399df65ad55) }
 
-var fileDescriptor_phonebook_cda552ced99ecf9b = []byte{
+var fileDescriptor_34db5399df65ad55 = []byte{
 	// 112 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0xe2, 0x2f, 0xc8, 0xc8, 0xcf,
 	0x4b, 0x4d, 0xca, 0xcf, 0xcf, 0xd6, 0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x17, 0xe2, 0x84, 0x0b, 0x28,

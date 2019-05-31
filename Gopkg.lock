@@ -492,7 +492,7 @@
 
 [[projects]]
   branch = "dev"
-  digest = "1:5485ade83659041e023daf65c3eba8d5799a26f4b6e8883405bbb3d03fbc3d76"
+  digest = "1:b20db15de753c9aff7d611058a54142ccf122a1065cdf79cf16f1e21108898b7"
   name = "github.com/ligato/cn-infra"
   packages = [
     "agent",
@@ -508,6 +508,11 @@
     "db/keyval/etcd",
     "db/keyval/kvproto",
     "db/keyval/redis",
+    "exec/processmanager",
+    "exec/processmanager/status",
+    "exec/processmanager/template",
+    "exec/processmanager/template/model/process",
+    "exec/supervisor",
     "health/probe",
     "health/statuscheck",
     "health/statuscheck/model/status",
@@ -535,7 +540,7 @@
     "utils/safeclose",
   ]
   pruneopts = "T"
-  revision = "629254303e0cbd7584398474bb07c13378cf7c20"
+  revision = "691b90eac5d48e3d589d7057ce03b1dffdee54fe"
 
 [[projects]]
   branch = "master"
@@ -1015,6 +1020,7 @@
     "github.com/ligato/cn-infra/db/keyval/etcd",
     "github.com/ligato/cn-infra/db/keyval/kvproto",
     "github.com/ligato/cn-infra/db/keyval/redis",
+    "github.com/ligato/cn-infra/exec/supervisor",
     "github.com/ligato/cn-infra/health/probe",
     "github.com/ligato/cn-infra/health/statuscheck",
     "github.com/ligato/cn-infra/health/statuscheck/model/status",
