@@ -475,40 +475,44 @@ func (p *Plugin) updatePrometheus(ctx context.Context) {
 	ifStats, err := p.handler.GetInterfaceStats(ctx)
 	if err != nil {
 		p.Log.Errorf("GetInterfaceStats failed: %v", err)
-	} else {
-		p.tracef("interface stats: %+v", ifStats)
-		for _, item := range ifStats.Interfaces {
-			stats, ok := p.ifCounterStats[item.InterfaceName]
-			if !ok {
-				stats = &ifCounterStats{
-					name:    item.InterfaceName,
-					metrics: map[string]prometheus.Gauge{},
-				}
-
-				// add gauges with corresponding labels into vectors
-				for k, vec := range p.ifCounterGaugeVecs {
-					stats.metrics[k], err = vec.GetMetricWith(prometheus.Labels{
-						ifCounterNameLabel:  item.InterfaceName,
-						ifCounterIndexLabel: fmt.Sprint(item.InterfaceIndex),
-					})
-					if err != nil {
-						p.Log.Error(err)
-					}
-				}
+		return
+	}
+	if ifStats == nil {
+		p.Log.Warnf("Received nil stats from context")
+		return
+	}
+	p.tracef("interface stats: %+v", ifStats)
+	for _, item := range ifStats.Interfaces {
+		stats, ok := p.ifCounterStats[item.InterfaceName]
+		if !ok {
+			stats = &ifCounterStats{
+				name:    item.InterfaceName,
+				metrics: map[string]prometheus.Gauge{},
 			}
 
-			stats.metrics[ifCounterRxPackets].Set(float64(item.RxPackets))
-			stats.metrics[ifCounterRxBytes].Set(float64(item.RxBytes))
-			stats.metrics[ifCounterRxErrors].Set(float64(item.RxErrors))
-			stats.metrics[ifCounterTxPackets].Set(float64(item.TxPackets))
-			stats.metrics[ifCounterTxBytes].Set(float64(item.TxBytes))
-			stats.metrics[ifCounterTxErrors].Set(float64(item.TxErrors))
-			stats.metrics[ifCounterDrops].Set(float64(item.Drops))
-			stats.metrics[ifCounterPunts].Set(float64(item.Punts))
-			stats.metrics[ifCounterIP4].Set(float64(item.IP4))
-			stats.metrics[ifCounterIP6].Set(float64(item.IP6))
-			stats.metrics[ifCounterRxNoBuf].Set(float64(item.RxNoBuf))
-			stats.metrics[ifCounterRxMiss].Set(float64(item.RxMiss))
+			// add gauges with corresponding labels into vectors
+			for k, vec := range p.ifCounterGaugeVecs {
+				stats.metrics[k], err = vec.GetMetricWith(prometheus.Labels{
+					ifCounterNameLabel:  item.InterfaceName,
+					ifCounterIndexLabel: fmt.Sprint(item.InterfaceIndex),
+				})
+				if err != nil {
+					p.Log.Error(err)
+				}
+			}
 		}
+
+		stats.metrics[ifCounterRxPackets].Set(float64(item.RxPackets))
+		stats.metrics[ifCounterRxBytes].Set(float64(item.RxBytes))
+		stats.metrics[ifCounterRxErrors].Set(float64(item.RxErrors))
+		stats.metrics[ifCounterTxPackets].Set(float64(item.TxPackets))
+		stats.metrics[ifCounterTxBytes].Set(float64(item.TxBytes))
+		stats.metrics[ifCounterTxErrors].Set(float64(item.TxErrors))
+		stats.metrics[ifCounterDrops].Set(float64(item.Drops))
+		stats.metrics[ifCounterPunts].Set(float64(item.Punts))
+		stats.metrics[ifCounterIP4].Set(float64(item.IP4))
+		stats.metrics[ifCounterIP6].Set(float64(item.IP6))
+		stats.metrics[ifCounterRxNoBuf].Set(float64(item.RxNoBuf))
+		stats.metrics[ifCounterRxMiss].Set(float64(item.RxMiss))
 	}
 }
