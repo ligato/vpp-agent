@@ -59,6 +59,11 @@ const (
 	serviceNoReply       = "null"
 )
 
+// field meta info
+const (
+	fieldMetaLimit = "limit"
+)
+
 // parsePackage parses provided JSON data into objects prepared for code generation
 func parsePackage(ctx *context, jsonRoot *jsongo.JSONNode) (*Package, error) {
 	logf(" %s (version: %s) contains: %d services, %d messages, %d types, %d enums, %d unions, %d aliases",
@@ -438,27 +443,45 @@ func parseField(ctx *context, field *jsongo.JSONNode) (*Field, error) {
 	if !ok {
 		return nil, fmt.Errorf("field name is %T, not a string", field.At(1).Get())
 	}
-	var fieldLength float64
+
+	f := &Field{
+		Name: fieldName,
+		Type: fieldType,
+	}
+
 	if field.Len() >= 3 {
-		fieldLength, ok = field.At(2).Get().(float64)
-		if !ok {
-			return nil, fmt.Errorf("field length is %T, not float64", field.At(2).Get())
+		if field.At(2).GetType() == jsongo.TypeValue {
+			fieldLength, ok := field.At(2).Get().(float64)
+			if !ok {
+				return nil, fmt.Errorf("field length is %T, not float64", field.At(2).Get())
+			}
+			f.Length = int(fieldLength)
+		} else if field.At(2).GetType() == jsongo.TypeMap {
+			fieldMeta := field.At(2)
+
+			for _, key := range fieldMeta.GetKeys() {
+				metaNode := fieldMeta.At(key)
+
+				switch metaName := key.(string); metaName {
+				case fieldMetaLimit:
+					f.Meta.Limit = int(metaNode.Get().(float64))
+				default:
+					log.Warnf("unknown meta info (%s) for field (%s)", metaName, fieldName)
+				}
+			}
+		} else {
+			return nil, errors.New("invalid JSON for field specified")
 		}
 	}
-	var fieldLengthFrom string
 	if field.Len() >= 4 {
-		fieldLengthFrom, ok = field.At(3).Get().(string)
+		fieldLengthFrom, ok := field.At(3).Get().(string)
 		if !ok {
 			return nil, fmt.Errorf("field length from is %T, not a string", field.At(3).Get())
 		}
+		f.SizeFrom = fieldLengthFrom
 	}
 
-	return &Field{
-		Name:     fieldName,
-		Type:     fieldType,
-		Length:   int(fieldLength),
-		SizeFrom: fieldLengthFrom,
-	}, nil
+	return f, nil
 }
 
 // parseService parses VPP binary API service object from JSON node

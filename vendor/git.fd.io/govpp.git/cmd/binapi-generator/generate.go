@@ -591,17 +591,36 @@ func generateField(ctx *context, w io.Writer, fields []Field, i int) {
 	}
 	fmt.Fprintf(w, "\t%s %s", fieldName, fieldType)
 
+	fieldTags := map[string]string{}
+
 	if field.Length > 0 {
 		// fixed size array
-		fmt.Fprintf(w, "\t`struc:\"[%d]%s\"`", field.Length, dataType)
+		fieldTags["struc"] = fmt.Sprintf("[%d]%s", field.Length, dataType)
 	} else {
 		for _, f := range fields {
 			if f.SizeFrom == field.Name {
 				// variable sized array
 				sizeOfName := camelCaseName(f.Name)
-				fmt.Fprintf(w, "\t`struc:\"sizeof=%s\"`", sizeOfName)
+				fieldTags["struc"] = fmt.Sprintf("sizeof=%s", sizeOfName)
 			}
 		}
+	}
+
+	if field.Meta.Limit > 0 {
+		fieldTags["binapi"] = fmt.Sprintf(",limit=%d", field.Meta.Limit)
+	}
+
+	if len(fieldTags) > 0 {
+		fmt.Fprintf(w, "\t`")
+		var i int
+		for n, t := range fieldTags {
+			if i > 0 {
+				fmt.Fprintf(w, " ")
+			}
+			i++
+			fmt.Fprintf(w, `%s:"%s"`, n, t)
+		}
+		fmt.Fprintf(w, "`")
 	}
 
 	fmt.Fprintln(w)

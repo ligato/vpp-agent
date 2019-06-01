@@ -54,6 +54,12 @@ type Field struct {
 	Type     string
 	Length   int
 	SizeFrom string
+	Meta     FieldMeta
+}
+
+// FieldMeta represents VPP binary API meta info for field
+type FieldMeta struct {
+	Limit int
 }
 
 // Union represents VPP binary API union
