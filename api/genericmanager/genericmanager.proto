@@ -52,10 +52,10 @@ service GenericManager {
     // SetConfig is used to update desired configuration.
     rpc SetConfig (SetConfigRequest) returns (SetConfigResponse);
 
-    // GetConfig is used to readt current configuration.
+    // GetConfig is used to read the desired configuration.
     rpc GetConfig (GetConfigRequest) returns (GetConfigResponse);
 
-    // DumpState retrieves the current running state.
+    // DumpState is used to retrieve the actual running state.
     rpc DumpState (DumpStateRequest) returns (DumpStateResponse);
 
     // Subscribe is used for subscribing to events.
@@ -66,7 +66,7 @@ service GenericManager {
 //------------------------------------------------------------------------------
 
 message CapabilitiesRequest {
-    // TODO: query filters
+    // TODO: filters
 }
 message CapabilitiesResponse {
     repeated ModelInfo known_models = 1;
@@ -86,6 +86,9 @@ message SetConfigRequest {
     // (this is also known as Full Resync)
     bool overwrite_all = 2;
 }
+message SetConfigResponse {
+    repeated UpdateResult results = 1;
+}
 
 message UpdateItem {
     // The item describes item to be updated.
@@ -93,10 +96,6 @@ message UpdateItem {
     Item item = 1;
     // The labels can be used to define user-defined labels for item.
     map<string, string> labels = 2;
-}
-
-message SetConfigResponse {
-    repeated UpdateResult results = 1;
 }
 
 message UpdateResult {
@@ -118,25 +117,27 @@ message GetConfigRequest {
     repeated Item.ID ids = 1;
 }
 message GetConfigResponse {
-    message ConfigItem {
-        Item item = 1;
-        ItemStatus status = 2;
-        map<string, string> labels = 3;
-    }
     repeated ConfigItem items = 1;
+}
+
+message ConfigItem {
+    Item item = 1;
+    ItemStatus status = 2;
+    map<string, string> labels = 3;
 }
 
 //------------------------------------------------------------------------------
 
 message DumpStateRequest {
-    repeated string keys = 1;
+    repeated Item.ID ids = 1;
 }
 message DumpStateResponse {
-    message StateItem {
-        Item item = 1;
-        map<string, string> metadata = 2;
-    }
-    repeated StateItem states = 1;
+    repeated StateItem items = 1;
+}
+
+message StateItem {
+    Item item = 1;
+    map<string, string> metadata = 2;
 }
 
 //------------------------------------------------------------------------------

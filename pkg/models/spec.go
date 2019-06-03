@@ -23,6 +23,7 @@ import (
 	"text/template"
 
 	"github.com/gogo/protobuf/proto"
+
 	api "github.com/ligato/vpp-agent/api/genericmanager"
 )
 
@@ -120,6 +121,26 @@ var (
 
 	debugRegister = strings.Contains(os.Getenv("DEBUG_MODELS"), "register")
 )
+
+// RegisteredModels returns all registered modules.
+func RegisteredModels() (models []*api.ModelInfo) {
+	for _, s := range registeredModels {
+		models = append(models, &api.ModelInfo{
+			Model: &api.Model{
+				Module:  s.Module,
+				Type:    s.Type,
+				Version: s.Version,
+			},
+			Info: map[string]string{
+				"nameTemplate": s.nameTemplate,
+				"protoName":    s.protoName,
+				"modelPath":    s.modelPath,
+				"keyPrefix":    s.keyPrefix,
+			},
+		})
+	}
+	return
+}
 
 // Register registers the protobuf message with given model specification.
 func Register(pb proto.Message, spec Spec, opts ...ModelOption) *registeredModel {
