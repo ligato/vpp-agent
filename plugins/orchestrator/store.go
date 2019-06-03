@@ -15,20 +15,22 @@
 package orchestrator
 
 import (
+	"context"
 	"sort"
 
 	"github.com/gogo/protobuf/proto"
 )
 
-// KVDB describes interface for key-value store.
-/*type KVDB interface {
-	Reset(dataSrc string)
+// KVStore describes an interface for key-value store used by dispatcher.
+type KVStore interface {
 	ListAll() KVPairs
 	List(dataSrc string) KVPairs
 	Update(dataSrc, key string, val proto.Message)
 	Delete(dataSrc, key string)
-}*/
+	Reset(dataSrc string)
+}
 
+// memStore is KVStore implementation that stores data in memory.
 type memStore struct {
 	db map[string]KVPairs
 }
@@ -39,12 +41,7 @@ func newMemStore() *memStore {
 	}
 }
 
-// Reset clears all key-value data.
-func (s *memStore) Reset(dataSrc string) {
-	delete(s.db, dataSrc)
-}
-
-// List lists actual key-value pairs.
+// List lists all key-value pairs.
 func (s *memStore) ListAll() KVPairs {
 	var dataSrcs []string
 	for dataSrc := range s.db {
@@ -69,15 +66,33 @@ func (s *memStore) List(dataSrc string) KVPairs {
 	return pairs
 }
 
-// Delete deletes value stored under given key.
-func (s *memStore) Delete(dataSrc, key string) {
-	delete(s.db[dataSrc], key)
-}
-
 // Update updates value stored under key with given value.
 func (s *memStore) Update(dataSrc, key string, val proto.Message) {
 	if _, ok := s.db[dataSrc]; !ok {
 		s.db[dataSrc] = make(KVPairs)
 	}
 	s.db[dataSrc][key] = val
+}
+
+// Delete deletes value stored under given key.
+func (s *memStore) Delete(dataSrc, key string) {
+	delete(s.db[dataSrc], key)
+}
+
+// Reset clears all key-value data.
+func (s *memStore) Reset(dataSrc string) {
+	delete(s.db, dataSrc)
+}
+
+type dataSrcKeyT string
+
+var dataSrcKey = dataSrcKeyT("dataSrc")
+
+func DataSrcContext(ctx context.Context, dataSrc string) context.Context {
+	return context.WithValue(ctx, dataSrcKey, dataSrc)
+}
+
+func DataSrcFromContext(ctx context.Context) (dataSrc string, ok bool) {
+	dataSrc, ok = ctx.Value(dataSrcKey).(string)
+	return
 }

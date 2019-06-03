@@ -21,13 +21,14 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/types"
 
-	api "github.com/ligato/vpp-agent/api/genericmanager"
 	"github.com/ligato/cn-infra/datasync"
+	api "github.com/ligato/vpp-agent/api/genericmanager"
 )
 
 // This constant is used as prefix for TypeUrl when marshalling to Any.
 const ligatoModels = "models.ligato.io/"
 
+// UnmarshalLazyValue is helper function for unmarshalling from datasync.LazyValue.
 func UnmarshalLazyValue(key string, lazy datasync.LazyValue) (proto.Message, error) {
 	for _, model := range registeredModels {
 		if !model.IsKeyValid(key) {
@@ -170,24 +171,4 @@ func ItemKey(item *api.Item) (string, error) {
 	}
 
 	return "", fmt.Errorf("invalid item: %v", item)
-}
-
-// RegisteredModels returns all registered modules.
-func RegisteredModels() (models []*api.ModelInfo) {
-	for _, s := range registeredModels {
-		models = append(models, &api.ModelInfo{
-			Model: &api.Model{
-				Module:  s.Module,
-				Type:    s.Type,
-				Version: s.Version,
-			},
-			Info: map[string]string{
-				"nameTemplate": s.nameTemplate,
-				"protoName":    s.protoName,
-				"modelPath":    s.modelPath,
-				"keyPrefix":    s.keyPrefix,
-			},
-		})
-	}
-	return
 }

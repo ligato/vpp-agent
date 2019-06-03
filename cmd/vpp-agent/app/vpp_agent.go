@@ -100,6 +100,7 @@ func New() *VPPAgent {
 		redisDataSync,
 	}
 	orchestrator.DefaultPlugin.Watcher = watchers
+	orchestrator.DefaultPlugin.StatusPublisher = writers
 
 	ifplugin.DefaultPlugin.Watcher = watchers
 	ifplugin.DefaultPlugin.NotifyStates = ifStatePub
