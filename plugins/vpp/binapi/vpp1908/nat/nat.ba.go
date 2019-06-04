@@ -6,7 +6,7 @@
 
  It contains following objects:
 	 67 services
-	  2 enums
+	  3 enums
 	  3 aliases
 	  6 types
 	  1 union
@@ -104,10 +104,19 @@ const (
 	ADDRESS_IP6 AddressFamily = 1
 )
 
+// IPProto represents VPP binary API enum 'ip_proto':
+type IPProto uint32
+
+const (
+	IP_API_PROTO_TCP IPProto = 6
+	IP_API_PROTO_UDP IPProto = 17
+)
+
 // NatConfigFlags represents VPP binary API enum 'nat_config_flags':
 type NatConfigFlags uint8
 
 const (
+	NAT_IS_NONE           NatConfigFlags = 0
 	NAT_IS_TWICE_NAT      NatConfigFlags = 1
 	NAT_IS_SELF_TWICE_NAT NatConfigFlags = 2
 	NAT_IS_OUT2IN_ONLY    NatConfigFlags = 4

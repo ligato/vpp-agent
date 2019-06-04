@@ -6,7 +6,7 @@
 
  It contains following objects:
 	 14 services
-	  6 enums
+	  7 enums
 	  2 aliases
 	  8 types
 	  1 union
@@ -49,6 +49,14 @@ type AddressFamily uint32
 const (
 	ADDRESS_IP4 AddressFamily = 0
 	ADDRESS_IP6 AddressFamily = 1
+)
+
+// IPProto represents VPP binary API enum 'ip_proto':
+type IPProto uint32
+
+const (
+	IP_API_PROTO_TCP IPProto = 6
+	IP_API_PROTO_UDP IPProto = 17
 )
 
 // IpsecCryptoAlg represents VPP binary API enum 'ipsec_crypto_alg':

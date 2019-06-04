@@ -6,7 +6,7 @@
 
  It contains following objects:
 	 25 services
-	  3 enums
+	  4 enums
 	  3 aliases
 	  7 types
 	  1 union
@@ -73,6 +73,14 @@ const (
 	BRIDGE_API_FLAG_UU_FLOOD BdFlags = 8
 	BRIDGE_API_FLAG_ARP_TERM BdFlags = 16
 	BRIDGE_API_FLAG_ARP_UFWD BdFlags = 32
+)
+
+// IPProto represents VPP binary API enum 'ip_proto':
+type IPProto uint32
+
+const (
+	IP_API_PROTO_TCP IPProto = 6
+	IP_API_PROTO_UDP IPProto = 17
 )
 
 // L2PortType represents VPP binary API enum 'l2_port_type':

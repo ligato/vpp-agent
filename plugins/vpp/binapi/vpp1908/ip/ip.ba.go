@@ -6,7 +6,7 @@
 
  It contains following objects:
 	 44 services
-	  2 enums
+	  3 enums
 	  3 aliases
 	 12 types
 	  1 union
@@ -88,6 +88,14 @@ const (
 	IP_API_NEIGHBOR_FLAG_NONE         IPNeighborFlags = 0
 	IP_API_NEIGHBOR_FLAG_STATIC       IPNeighborFlags = 1
 	IP_API_NEIGHBOR_FLAG_NO_FIB_ENTRY IPNeighborFlags = 2
+)
+
+// IPProto represents VPP binary API enum 'ip_proto':
+type IPProto uint32
+
+const (
+	IP_API_PROTO_TCP IPProto = 6
+	IP_API_PROTO_UDP IPProto = 17
 )
 
 /* Aliases */
@@ -1165,6 +1173,7 @@ type IPReassemblyGetReply struct {
 	Retval               int32
 	TimeoutMs            uint32
 	MaxReassemblies      uint32
+	MaxReassemblyLength  uint32
 	ExpireWalkIntervalMs uint32
 	IsIP6                uint8
 }
@@ -1173,7 +1182,7 @@ func (*IPReassemblyGetReply) GetMessageName() string {
 	return "ip_reassembly_get_reply"
 }
 func (*IPReassemblyGetReply) GetCrcString() string {
-	return "1f90afd1"
+	return "c96e518d"
 }
 func (*IPReassemblyGetReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
@@ -1183,6 +1192,7 @@ func (*IPReassemblyGetReply) GetMessageType() api.MessageType {
 type IPReassemblySet struct {
 	TimeoutMs            uint32
 	MaxReassemblies      uint32
+	MaxReassemblyLength  uint32
 	ExpireWalkIntervalMs uint32
 	IsIP6                uint8
 }
@@ -1191,7 +1201,7 @@ func (*IPReassemblySet) GetMessageName() string {
 	return "ip_reassembly_set"
 }
 func (*IPReassemblySet) GetCrcString() string {
-	return "1db184de"
+	return "403051cd"
 }
 func (*IPReassemblySet) GetMessageType() api.MessageType {
 	return api.RequestMessage
