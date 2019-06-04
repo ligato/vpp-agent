@@ -113,6 +113,8 @@ func (w *LinkStateDescriptor) UpdateLinkState(ifaceState *interfaces.InterfaceNo
 	w.linkStatesMx.Lock()
 	defer w.linkStatesMx.Unlock()
 
+	w.log.Debugf("Updating link state: %+v", ifaceState)
+
 	var notifs []kvs.KVWithMetadata
 
 	operStatus := ifaceState.State.OperStatus
@@ -130,6 +132,7 @@ func (w *LinkStateDescriptor) UpdateLinkState(ifaceState *interfaces.InterfaceNo
 				Value:    nil,
 				Metadata: nil,
 			})
+			delete(w.linkStates, ifaceName)
 		}
 	}
 
