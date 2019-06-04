@@ -27,6 +27,8 @@ import (
 	"github.com/ligato/cn-infra/health/statuscheck"
 	"github.com/ligato/cn-infra/logging/logmanager"
 	"github.com/ligato/cn-infra/messaging/kafka"
+	"github.com/ligato/cn-infra/servicelabel"
+
 	"github.com/ligato/vpp-agent/plugins/vpp/srplugin"
 
 	"github.com/ligato/vpp-agent/plugins/configurator"
@@ -78,6 +80,18 @@ func New() *VPPAgent {
 	consulDataSync := kvdbsync.NewPlugin(kvdbsync.UseKV(&consul.DefaultPlugin))
 	redisDataSync := kvdbsync.NewPlugin(kvdbsync.UseKV(&redis.DefaultPlugin))
 
+	etcdDataSyncGlobal := kvdbsync.NewPlugin(
+		kvdbsync.UseDeps(func(deps *kvdbsync.Deps) {
+			deps.SetName("global-sync")
+			deps.ServiceLabel = servicelabel.NewPlugin(func(plugin *servicelabel.Plugin) {
+				plugin.MicroserviceLabel = "global"
+				plugin.SetName("global-label")
+			},
+			)
+			deps.KvPlugin = &etcd.DefaultPlugin
+		}),
+	)
+
 	writers := datasync.KVProtoWriters{
 		etcdDataSync,
 		consulDataSync,
@@ -95,6 +109,7 @@ func New() *VPPAgent {
 	// Set watcher for KVScheduler.
 	watchers := datasync.KVProtoWatchers{
 		local.DefaultRegistry,
+		etcdDataSyncGlobal,
 		etcdDataSync,
 		consulDataSync,
 		redisDataSync,

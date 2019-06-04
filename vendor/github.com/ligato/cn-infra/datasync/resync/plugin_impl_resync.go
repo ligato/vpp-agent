@@ -75,7 +75,7 @@ func (p *Plugin) Register(resyncName string) Registration {
 
 	if _, found := p.registrations[resyncName]; found {
 		p.Log.WithField("resyncName", resyncName).
-			Panic("You are trying to register same resync twice")
+			Error("You are trying to register same resync twice")
 		return nil
 	}
 	// ensure that resync is triggered in the same order as the plugins were registered
