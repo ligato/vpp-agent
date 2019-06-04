@@ -15,55 +15,29 @@
 package vpp1908
 
 import (
-	"github.com/ligato/vpp-agent/api/models/vpp"
 	vpp_punt "github.com/ligato/vpp-agent/api/models/vpp/punt"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1908/punt"
 	"github.com/ligato/vpp-agent/plugins/vpp/puntplugin/vppcalls"
 )
 
-// FIXME: temporary solutions for providing data in dump
-var socketPathMap = make(map[uint32]*vpp.PuntToHost)
-
 // DumpRegisteredPuntSockets returns punt to host via registered socket entries
-// TODO since the binary API is not available, all data are read from local cache for now
 func (h *PuntVppHandler) DumpRegisteredPuntSockets() (punts []*vppcalls.PuntDetails, err error) {
-	// TODO: use dumps from binapi
-	if _, err := h.dumpPunts(false); err != nil {
+	// TODO: use set_punt dumps from binapi
+	if _, err := h.dumpPunts(); err != nil {
 		h.log.Errorf("punt dump failed: %v", err)
 	}
-	if _, err := h.dumpPunts(true); err != nil {
-		h.log.Errorf("punt dump failed: %v", err)
-	}
-	if _, err := h.dumpPuntSockets(false); err != nil {
+	if punts, err = h.dumpPuntSockets(); err != nil {
 		h.log.Errorf("punt socket dump failed: %v", err)
-	}
-	if _, err := h.dumpPuntSockets(true); err != nil {
-		h.log.Errorf("punt socket dump failed: %v", err)
-	}
-
-	for _, punt := range socketPathMap {
-		punts = append(punts, &vppcalls.PuntDetails{
-			PuntData:   punt,
-			SocketPath: punt.SocketPath,
-		})
-	}
-
-	if len(punts) > 0 {
-		h.log.Warnf("Dump punt socket register: all entries were read from local cache")
 	}
 
 	return punts, nil
 }
 
-func (h *PuntVppHandler) dumpPuntSockets(ipv6 bool) (punts []*vppcalls.PuntDetails, err error) {
-	var info = "IPv4"
-	if ipv6 {
-		info = "IPv6"
-	}
-	h.log.Debugf("=> dumping punt sockets (%s)", info)
+func (h *PuntVppHandler) dumpPuntSockets() (punts []*vppcalls.PuntDetails, err error) {
+	h.log.Debug("=> dumping punt sockets")
 
 	req := h.callsChannel.SendMultiRequest(&punt.PuntSocketDump{
-		IsIPv6: boolToUint(ipv6),
+		Type: punt.PUNT_API_TYPE_L4,
 	})
 	for {
 		d := &punt.PuntSocketDetails{}
@@ -76,31 +50,47 @@ func (h *PuntVppHandler) dumpPuntSockets(ipv6 bool) (punts []*vppcalls.PuntDetai
 		}
 		h.log.Debugf(" - dumped punt socket (%s): %+v", d.Pathname, d.Punt)
 
+		puntL4Data := d.Punt.Punt.GetL4()
 		punts = append(punts, &vppcalls.PuntDetails{
 			PuntData: &vpp_punt.ToHost{
-				Port: uint32(d.Punt.L4Port),
+				Port: uint32(puntL4Data.Port),
 				// FIXME: L3Protocol seems to return 0 when registering ALL
-				L3Protocol: parseL3Proto(d.Punt.IPv),
-				L4Protocol: parseL4Proto(d.Punt.L4Protocol),
+				L3Protocol: parseL3Proto(puntL4Data.Af),
+				L4Protocol: parseL4Proto(puntL4Data.Protocol),
 			},
+			SocketPath: string(d.Pathname),
 		})
 	}
 
 	return punts, nil
 }
 
-func (h *PuntVppHandler) dumpPunts(ipv6 bool) (punts []*vppcalls.PuntDetails, err error) {
-	var info = "IPv4"
-	if ipv6 {
-		info = "IPv6"
+func parseL3Proto(p punt.AddressFamily) vpp_punt.L3Protocol {
+	switch p {
+	case punt.ADDRESS_IP4:
+		return vpp_punt.L3Protocol_IPv4
+	case punt.ADDRESS_IP6:
+		return vpp_punt.L3Protocol_IPv6
 	}
-	h.log.Debugf("=> dumping punts (%s)", info)
+	return vpp_punt.L3Protocol_UNDEFINED_L3
+}
 
-	req := h.callsChannel.SendMultiRequest(&punt.PuntDump{
-		IsIPv6: boolToUint(ipv6),
-	})
+func parseL4Proto(p punt.IPProto) vpp_punt.L4Protocol {
+	switch p {
+	case punt.IP_API_PROTO_TCP:
+		return vpp_punt.L4Protocol_TCP
+	case punt.IP_API_PROTO_UDP:
+		return vpp_punt.L4Protocol_UDP
+	}
+	return vpp_punt.L4Protocol_UNDEFINED_L4
+}
+
+func (h *PuntVppHandler) dumpPunts() (punts []*vppcalls.PuntDetails, err error) {
+	h.log.Debugf("=> dumping punts")
+
+	req := h.callsChannel.SendMultiRequest(&punt.PuntReasonDump{})
 	for {
-		d := &punt.PuntDetails{}
+		d := &punt.PuntReasonDetails{}
 		stop, err := req.ReceiveReply(d)
 		if stop {
 			break
@@ -108,15 +98,16 @@ func (h *PuntVppHandler) dumpPunts(ipv6 bool) (punts []*vppcalls.PuntDetails, er
 		if err != nil {
 			return nil, err
 		}
-		h.log.Debugf(" - dumped punt: %+v", d.Punt)
+		h.log.Debugf(" - dumped punt: %+v", d.Reason)
 
-		punts = append(punts, &vppcalls.PuntDetails{
-			PuntData: &vpp_punt.ToHost{
-				Port:       uint32(d.Punt.L4Port),
-				L3Protocol: parseL3Proto(d.Punt.IPv),
-				L4Protocol: parseL4Proto(d.Punt.L4Protocol),
-			},
-		})
+		// TODO Re-enable with the Punt-To-Host
+		//punts = append(punts, &vppcalls.PuntDetails{
+		//	PuntData: &vpp_punt.ToHost{
+		//		Port:       uint32(d.Punt.L4Port),
+		//		L3Protocol: parseL3Proto(d.Punt.IPv),
+		//		L4Protocol: parseL4Proto(d.Punt.L4Protocol),
+		//	},
+		//})
 	}
 
 	return punts, nil

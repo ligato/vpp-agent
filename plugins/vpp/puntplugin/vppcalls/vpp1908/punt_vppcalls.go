@@ -28,22 +28,37 @@ const PuntSocketHeaderVersion = 1
 
 // AddPunt configures new punt entry
 func (h *PuntVppHandler) AddPunt(p *punt.ToHost) error {
-	return h.handlePuntToHost(p, true)
+	return errors.Errorf("passive punt add is currently now available")
+
+	// return h.addDelPunt(p, true)
 }
 
 // DeletePunt removes punt entry
 func (h *PuntVppHandler) DeletePunt(p *punt.ToHost) error {
-	return h.handlePuntToHost(p, false)
+	return errors.Errorf("passive punt del is currently now available")
+
+	// return h.addDelPunt(p, false)
 }
 
-func (h *PuntVppHandler) handlePuntToHost(toHost *punt.ToHost, isAdd bool) error {
+func (h *PuntVppHandler) addDelPunt(p *punt.ToHost, isAdd bool) error {
+	ipProto := resolveL4Proto(p.L4Protocol)
+	if p.L3Protocol == punt.L3Protocol_IPv4 || p.L3Protocol == punt.L3Protocol_ALL {
+		if err := h.handlePuntToHost(ba_punt.ADDRESS_IP4, ipProto, uint16(p.Port), isAdd); err != nil {
+			return err
+		}
+	}
+	if p.L3Protocol == punt.L3Protocol_IPv6 || p.L3Protocol == punt.L3Protocol_ALL {
+		if err := h.handlePuntToHost(ba_punt.ADDRESS_IP6, ipProto, uint16(p.Port), isAdd); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (h *PuntVppHandler) handlePuntToHost(ipv ba_punt.AddressFamily, ipProto ba_punt.IPProto, port uint16, isAdd bool) error {
 	req := &ba_punt.SetPunt{
 		IsAdd: boolToUint(isAdd),
-		Punt: ba_punt.Punt{
-			IPv:        resolveL3Proto(toHost.L3Protocol),
-			L4Protocol: resolveL4Proto(toHost.L4Protocol),
-			L4Port:     uint16(toHost.Port),
-		},
+		Punt:  getPuntConfig(ipv, ipProto, port),
 	}
 	reply := &ba_punt.SetPuntReply{}
 
@@ -55,16 +70,45 @@ func (h *PuntVppHandler) handlePuntToHost(toHost *punt.ToHost, isAdd bool) error
 	return nil
 }
 
-// RegisterPuntSocket registers new punt to socket
-func (h *PuntVppHandler) RegisterPuntSocket(toHost *punt.ToHost) (string, error) {
+// RegisterPuntSocket registers new punt to unix domain socket entry
+func (h *PuntVppHandler) RegisterPuntSocket(p *punt.ToHost) (pathName string, err error) {
+	ipProto := resolveL4Proto(p.L4Protocol)
+	if p.L3Protocol == punt.L3Protocol_IPv4 || p.L3Protocol == punt.L3Protocol_ALL {
+		if pathName, err = h.handleRegisterPuntSocket(ba_punt.ADDRESS_IP4, ipProto, uint16(p.Port), p.SocketPath); err != nil {
+			return "", err
+		}
+	}
+	if p.L3Protocol == punt.L3Protocol_IPv6 || p.L3Protocol == punt.L3Protocol_ALL {
+		if pathName, err = h.handleRegisterPuntSocket(ba_punt.ADDRESS_IP6, ipProto, uint16(p.Port), p.SocketPath); err != nil {
+			return "", err
+		}
+	}
+
+	return
+}
+
+// DeregisterPuntSocket removes existing punt to socket registration
+func (h *PuntVppHandler) DeregisterPuntSocket(p *punt.ToHost) error {
+	ipProto := resolveL4Proto(p.L4Protocol)
+	if p.L3Protocol == punt.L3Protocol_IPv4 || p.L3Protocol == punt.L3Protocol_ALL {
+		if err := h.handleDeregisterPuntSocket(ba_punt.ADDRESS_IP4, ipProto, uint16(p.Port)); err != nil {
+			return err
+		}
+	}
+	if p.L3Protocol == punt.L3Protocol_IPv6 || p.L3Protocol == punt.L3Protocol_ALL {
+		if err := h.handleDeregisterPuntSocket(ba_punt.ADDRESS_IP6, ipProto, uint16(p.Port)); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (h *PuntVppHandler) handleRegisterPuntSocket(ipv ba_punt.AddressFamily, ipProto ba_punt.IPProto, port uint16, path string) (string, error) {
 	req := &ba_punt.PuntSocketRegister{
 		HeaderVersion: PuntSocketHeaderVersion,
-		Punt: ba_punt.Punt{
-			IPv:        resolveL3Proto(toHost.L3Protocol),
-			L4Protocol: resolveL4Proto(toHost.L4Protocol),
-			L4Port:     uint16(toHost.Port),
-		},
-		Pathname: []byte(toHost.SocketPath),
+		Punt:          getPuntConfig(ipv, ipProto, port),
+		Pathname:      []byte(path),
 	}
 	reply := &ba_punt.PuntSocketRegisterReply{}
 
@@ -72,27 +116,14 @@ func (h *PuntVppHandler) RegisterPuntSocket(toHost *punt.ToHost) (string, error)
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return "", err
 	}
-	h.log.Infof("Punt socket registered with %s", reply.Pathname)
 
-	p := *toHost
-	p.SocketPath = strings.SplitN(string(reply.Pathname), "\x00", 2)[0]
-	socketPathMap[toHost.Port] = &p
-
-	/*if h.RegisterSocketFn != nil {
-		h.RegisterSocketFn(true, toHost, p.SocketPath)
-	}*/
-
-	return p.SocketPath, nil
+	return strings.SplitN(string(reply.Pathname), "\x00", 2)[0], nil
 }
 
-// DeregisterPuntSocket removes existing punt to socket sogistration
-func (h *PuntVppHandler) DeregisterPuntSocket(toHost *punt.ToHost) error {
+// DeregisterPuntSocket removes existing punt to socket registration
+func (h *PuntVppHandler) handleDeregisterPuntSocket(ipv ba_punt.AddressFamily, ipProto ba_punt.IPProto, port uint16) error {
 	req := &ba_punt.PuntSocketDeregister{
-		Punt: ba_punt.Punt{
-			IPv:        resolveL3Proto(toHost.L3Protocol),
-			L4Protocol: resolveL4Proto(toHost.L4Protocol),
-			L4Port:     uint16(toHost.Port),
-		},
+		Punt: getPuntConfig(ipv, ipProto, port),
 	}
 	reply := &ba_punt.PuntSocketDeregisterReply{}
 
@@ -100,15 +131,23 @@ func (h *PuntVppHandler) DeregisterPuntSocket(toHost *punt.ToHost) error {
 		return err
 	}
 
-	/*if h.RegisterSocketFn != nil {
-		if p, ok := socketPathMap[toHost.Port]; ok {
-			h.RegisterSocketFn(false, toHost, p.SocketPath)
-		}
-	}*/
-
-	delete(socketPathMap, toHost.Port)
-
 	return nil
+}
+
+func getPuntConfig(ipv ba_punt.AddressFamily, ipProto ba_punt.IPProto, port uint16) ba_punt.Punt {
+	puntL4 := ba_punt.PuntL4{
+		Af:       ipv,
+		Protocol: ipProto,
+		Port:     port,
+	}
+
+	puntD := ba_punt.Punt{
+		Type: ba_punt.PUNT_API_TYPE_L4,
+	}
+	puntD.Punt.SetL4(puntL4)
+
+	return puntD
+
 }
 
 // AddPuntRedirect adds new redirect entry
@@ -197,46 +236,11 @@ func (h *PuntVppHandler) handlePuntRedirect(punt *punt.IPRedirect, isIPv4, isAdd
 	return nil
 }
 
-func parseL3Proto(p uint8) punt.L3Protocol {
-	switch p {
-	case uint8(punt.L3Protocol_IPv4), uint8(punt.L3Protocol_IPv6):
-		return punt.L3Protocol(p)
-	case ^uint8(0):
-		return punt.L3Protocol_ALL
+func resolveL4Proto(protocol punt.L4Protocol) ba_punt.IPProto {
+	if protocol == punt.L4Protocol_UDP {
+		return ba_punt.IP_API_PROTO_UDP
 	}
-	return punt.L3Protocol_UNDEFINED_L3
-}
-
-func parseL4Proto(p uint8) punt.L4Protocol {
-	switch p {
-	case uint8(punt.L4Protocol_TCP):
-		return punt.L4Protocol_TCP
-	case uint8(punt.L4Protocol_UDP):
-		return punt.L4Protocol_UDP
-	}
-	return punt.L4Protocol_UNDEFINED_L4
-}
-
-func resolveL3Proto(protocol punt.L3Protocol) uint8 {
-	switch protocol {
-	case punt.L3Protocol_IPv4:
-		return uint8(punt.L3Protocol_IPv4)
-	case punt.L3Protocol_IPv6:
-		return uint8(punt.L3Protocol_IPv6)
-	case punt.L3Protocol_ALL:
-		return ^uint8(0) // binary API representation for both protocols
-	}
-	return uint8(punt.L3Protocol_UNDEFINED_L3)
-}
-
-func resolveL4Proto(protocol punt.L4Protocol) uint8 {
-	switch protocol {
-	case punt.L4Protocol_TCP:
-		return uint8(punt.L4Protocol_TCP)
-	case punt.L4Protocol_UDP:
-		return uint8(punt.L4Protocol_UDP)
-	}
-	return uint8(punt.L4Protocol_UNDEFINED_L4)
+	return ba_punt.IP_API_PROTO_TCP
 }
 
 func boolToUint(input bool) uint8 {
