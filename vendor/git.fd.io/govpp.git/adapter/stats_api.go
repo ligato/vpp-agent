@@ -86,7 +86,7 @@ type Name string
 type ScalarStat float64
 
 // ErrorStat represents stat for ErrorIndex.
-type ErrorStat uint64
+type ErrorStat Counter
 
 // SimpleCounterStat represents stat for SimpleCounterVector.
 // The outer array represents workers and the inner array represents interface/node/.. indexes.
