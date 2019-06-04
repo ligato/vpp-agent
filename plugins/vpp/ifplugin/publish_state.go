@@ -99,6 +99,8 @@ func (p *IfPlugin) publishIfStateEvents() {
 			p.publishLock.Lock()
 			key := interfaces.InterfaceStateKey(ifState.State.Name)
 
+			p.Log.Debugf("Publishing interface state: %+v", ifState)
+
 			if p.PublishStatistics != nil {
 				err := p.PublishStatistics.Put(key, ifState.State)
 				if err != nil {
