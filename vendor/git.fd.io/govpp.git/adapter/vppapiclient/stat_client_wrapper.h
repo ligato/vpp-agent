@@ -32,6 +32,10 @@
 #if STAT_VERSION_MAJOR >= 1 && STAT_VERSION_MINOR >= 1
 	#define SUPPORTS_NAME_VECTOR // VPP 19.04 is required!
 #endif
+// Error value was changed into vector in VPP 19.08
+#if STAT_VERSION_MAJOR >= 1 && STAT_VERSION_MINOR >= 2
+	#define SUPPORTS_ERROR_VECTOR // VPP 19.08 is required!
+#endif
 
 static int
 govpp_stat_connect(char *socket_name)
@@ -93,10 +97,18 @@ govpp_stat_segment_data_get_scalar_value(stat_segment_data_t *data)
 	return data->scalar_value;
 }
 
-static double
+static counter_t
 govpp_stat_segment_data_get_error_value(stat_segment_data_t *data)
 {
-	return data->error_value;
+#ifdef SUPPORTS_ERROR_VECTOR
+	counter_t value = 0;
+	int j;
+	for (j = 0; j < stat_segment_vec_len(data->error_vector); j++) // VPP 19.08+ is required!
+    	value += data->error_vector[j];
+	return value;
+#else
+	return data->error_value; // VPP <19.08
+#endif
 }
 
 static uint64_t**
@@ -168,9 +180,9 @@ govpp_stat_segment_data_free(stat_segment_data_t *data)
 }
 
 static uint8_t**
-govpp_stat_segment_string_vector(uint8_t ** string_vector, char *string)
+govpp_stat_segment_string_vector(uint8_t **string_vec, char *s)
 {
-	return stat_segment_string_vector(string_vector, string);
+	return stat_segment_string_vector(string_vec, s);
 }
 
 #endif /* included_stat_client_wrapper_h */

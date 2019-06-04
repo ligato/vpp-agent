@@ -30,14 +30,17 @@ import (
 )
 
 var (
-	inputFile       = flag.String("input-file", "", "Input file with VPP API in JSON format.")
-	inputDir        = flag.String("input-dir", ".", "Input directory with VPP API files in JSON format.")
-	outputDir       = flag.String("output-dir", ".", "Output directory where package folders will be generated.")
-	includeAPIVer   = flag.Bool("include-apiver", false, "Include APIVersion constant for each module.")
-	includeComments = flag.Bool("include-comments", false, "Include JSON API source in comments for each object.")
-	continueOnError = flag.Bool("continue-onerror", false, "Continue with next file on error.")
-	debug           = flag.Bool("debug", false, "Enable debug mode.")
+	inputFile          = flag.String("input-file", "", "Input file with VPP API in JSON format.")
+	inputDir           = flag.String("input-dir", ".", "Input directory with VPP API files in JSON format.")
+	outputDir          = flag.String("output-dir", ".", "Output directory where package folders will be generated.")
+	includeAPIVer      = flag.Bool("include-apiver", false, "Include APIVersion constant for each module.")
+	includeComments    = flag.Bool("include-comments", false, "Include JSON API source in comments for each object.")
+	includeBinapiNames = flag.Bool("include-binapi-names", false, "Include binary API names in struct tag.")
+	continueOnError    = flag.Bool("continue-onerror", false, "Continue with next file on error.")
+	debug              = flag.Bool("debug", debugMode, "Enable debug mode.")
 )
+
+var debugMode = os.Getenv("DEBUG_BINAPI_GENERATOR") != ""
 
 var log = logrus.Logger{
 	Level:     logrus.InfoLevel,
@@ -107,6 +110,7 @@ func generateFromFile(inputFile, outputDir string) error {
 
 	ctx.includeAPIVersionCrc = *includeAPIVer
 	ctx.includeComments = *includeComments
+	ctx.includeBinapiNames = *includeBinapiNames
 
 	// read input file contents
 	ctx.inputData, err = readFile(inputFile)

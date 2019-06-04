@@ -165,16 +165,20 @@ func (c *vppClient) Connect() error {
 }
 
 func (c *vppClient) connect(sockAddr string) error {
-	addr, err := net.ResolveUnixAddr("unixpacket", sockAddr)
-	if err != nil {
-		Log.Debugln("ResolveUnixAddr error:", err)
-		return err
-	}
+	addr := &net.UnixAddr{Name: sockAddr, Net: "unix"}
 
-	conn, err := net.DialUnix("unixpacket", nil, addr)
+	conn, err := net.DialUnix("unix", nil, addr)
 	if err != nil {
-		Log.Debugln("Dial error:", err)
-		return err
+		// we try different type of socket for backwards compatbility with VPP<=19.04
+		if strings.Contains(err.Error(), "wrong type for socket") {
+			addr.Net = "unixpacket"
+			Log.Debugf("%s, retrying connect with type unixpacket", err)
+			conn, err = net.DialUnix("unixpacket", nil, addr)
+		}
+		if err != nil {
+			Log.Debugf("Connecting to socket %s failed: %s", addr, err)
+			return err
+		}
 	}
 
 	c.conn = conn
@@ -271,7 +275,7 @@ func (c *vppClient) Disconnect() error {
 	}
 
 	if err := c.conn.Close(); err != nil {
-		Log.Debugln("Close socket conn failed:", err)
+		Log.Debugln("Closing socket failed:", err)
 		return err
 	}
 
@@ -292,7 +296,7 @@ func (c *vppClient) close() error {
 	// set non-0 context
 	msg[5] = deleteMsgContext
 
-	Log.Debugf("sending socklntDel (%d byes): % 0X\n", len(msg), msg)
+	Log.Debugf("sending socklntDel (%d byes): % 0X", len(msg), msg)
 	if err := c.write(msg); err != nil {
 		Log.Debugln("Write error: ", err)
 		return err
@@ -392,7 +396,7 @@ func (c *vppClient) write(msg []byte) error {
 		if x > len(msg) {
 			x = len(msg)
 		}
-		Log.Debugf("x=%v i=%v len=%v mod=%v\n", x, i, len(msg), len(msg)/c.writer.Size())
+		Log.Debugf("x=%v i=%v len=%v mod=%v", x, i, len(msg), len(msg)/c.writer.Size())
 		if n, err := c.writer.Write(msg[i*c.writer.Size() : x]); err != nil {
 			return err
 		} else {
@@ -414,10 +418,10 @@ type msgHeader struct {
 
 func (c *vppClient) readerLoop() {
 	defer c.wg.Done()
+	defer Log.Debugf("reader quit")
 	for {
 		select {
 		case <-c.quit:
-			Log.Debugf("reader quit")
 			return
 		default:
 		}
@@ -427,7 +431,7 @@ func (c *vppClient) readerLoop() {
 			if isClosedError(err) {
 				return
 			}
-			Log.Debugf("READ FAILED: %v", err)
+			Log.Debugf("read failed: %v", err)
 			continue
 		}
 		h := new(msgHeader)
@@ -460,7 +464,7 @@ func (c *vppClient) read() ([]byte, error) {
 		return nil, nil
 	}
 	if n != 16 {
-		Log.Debug("invalid header data (%d): % 0X", n, header[:n])
+		Log.Debugf("invalid header data (%d): % 0X", n, header[:n])
 		return nil, fmt.Errorf("invalid header (expected 16 bytes, got %d)", n)
 	}
 	Log.Debugf(" - read header %d bytes: % 0X", n, header)
@@ -486,7 +490,6 @@ func (c *vppClient) read() ([]byte, error) {
 		view := msg[n:]
 
 		for remain > 0 {
-
 			nbytes, err := c.reader.Read(view)
 			if err != nil {
 				return nil, err
