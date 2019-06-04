@@ -335,44 +335,6 @@ func (h *InterfaceVppHandler) DumpDhcpClients() (map[uint32]*vppcalls.Dhcp, erro
 	return dhcpData, nil
 }
 
-// DumpInterfaceStates dumps link and administrative state of every interface.
-func (h *InterfaceVppHandler) DumpInterfaceStates() (map[uint32]*vppcalls.InterfaceState, error) {
-	ifs := make(map[uint32]*vppcalls.InterfaceState)
-
-	reqCtx := h.callsChannel.SendMultiRequest(&binapi_interface.SwInterfaceDump{})
-	for {
-		ifDetails := &binapi_interface.SwInterfaceDetails{}
-		stop, err := reqCtx.ReceiveReply(ifDetails)
-		if stop {
-			break // Break from the loop.
-		}
-		if err != nil {
-			return nil, fmt.Errorf("failed to dump interface: %v", err)
-		}
-
-		ifaceState := &vppcalls.InterfaceState{}
-		switch ifDetails.AdminUpDown {
-		case 0:
-			ifaceState.AdminState = interfaces.InterfaceState_DOWN
-		case 1:
-			ifaceState.AdminState = interfaces.InterfaceState_UP
-		default:
-			ifaceState.AdminState = interfaces.InterfaceState_UNKNOWN_STATUS
-		}
-		switch ifDetails.LinkUpDown {
-		case 0:
-			ifaceState.LinkState = interfaces.InterfaceState_DOWN
-		case 1:
-			ifaceState.LinkState = interfaces.InterfaceState_UP
-		default:
-			ifaceState.LinkState = interfaces.InterfaceState_UNKNOWN_STATUS
-		}
-		ifs[ifDetails.SwIfIndex] = ifaceState
-	}
-
-	return ifs, nil
-}
-
 // Returns true if given interface contains at least one IPv6 address. For VxLAN, source and destination
 // addresses are also checked
 func (h *InterfaceVppHandler) isIpv6Interface(iface *interfaces.Interface) (bool, error) {
@@ -803,29 +765,19 @@ func (h *InterfaceVppHandler) dumpRxPlacement(ifs map[uint32]*vppcalls.Interface
 		if stop {
 			break
 		}
-
 		ifData, ok := ifs[rxDetails.SwIfIndex]
 		if !ok {
 			h.log.Warnf("Received rx-placement data for unknown interface with index %d", rxDetails.SwIfIndex)
 			continue
 		}
-
-		ifData.Interface.RxModes = append(ifData.Interface.RxModes,
-			&interfaces.Interface_RxMode{
-				Queue: rxDetails.QueueID,
-				Mode:  getRxModeType(rxDetails.Mode),
-			})
-
-		var worker uint32
-		if rxDetails.WorkerID > 0 {
-			worker = rxDetails.WorkerID - 1
+		ifData.Interface.RxModeSettings = &interfaces.Interface_RxModeSettings{
+			RxMode:  getRxModeType(rxDetails.Mode),
+			QueueId: rxDetails.QueueID,
 		}
-		ifData.Interface.RxPlacements = append(ifData.Interface.RxPlacements,
-			&interfaces.Interface_RxPlacement{
-				Queue:      rxDetails.QueueID,
-				Worker:     worker,
-				MainThread: rxDetails.WorkerID == 0,
-			})
+		ifData.Interface.RxPlacementSettings = &interfaces.Interface_RxPlacementSettings{
+			Queue:  rxDetails.QueueID,
+			Worker: rxDetails.WorkerID,
+		}
 	}
 	return nil
 }
@@ -880,18 +832,18 @@ func memifModetoNB(mode uint8) interfaces.MemifLink_MemifMode {
 }
 
 // Convert binary API rx-mode to northbound representation
-func getRxModeType(mode uint8) interfaces.Interface_RxMode_Type {
+func getRxModeType(mode uint8) interfaces.Interface_RxModeSettings_RxModeType {
 	switch mode {
 	case 1:
-		return interfaces.Interface_RxMode_POLLING
+		return interfaces.Interface_RxModeSettings_POLLING
 	case 2:
-		return interfaces.Interface_RxMode_INTERRUPT
+		return interfaces.Interface_RxModeSettings_INTERRUPT
 	case 3:
-		return interfaces.Interface_RxMode_ADAPTIVE
+		return interfaces.Interface_RxModeSettings_ADAPTIVE
 	case 4:
-		return interfaces.Interface_RxMode_DEFAULT
+		return interfaces.Interface_RxModeSettings_DEFAULT
 	default:
-		return interfaces.Interface_RxMode_UNKNOWN
+		return interfaces.Interface_RxModeSettings_UNKNOWN
 	}
 }
 
