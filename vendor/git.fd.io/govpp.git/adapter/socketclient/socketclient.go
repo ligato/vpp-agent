@@ -464,7 +464,7 @@ func (c *vppClient) read() ([]byte, error) {
 		return nil, nil
 	}
 	if n != 16 {
-		Log.Debug("invalid header data (%d): % 0X", n, header[:n])
+		Log.Debugf("invalid header data (%d): % 0X", n, header[:n])
 		return nil, fmt.Errorf("invalid header (expected 16 bytes, got %d)", n)
 	}
 	Log.Debugf(" - read header %d bytes: % 0X", n, header)

@@ -3,7 +3,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:6699919b652ff92741c506a6873c8eb6f80f3fa377c67b68ecbf800012d709e6"
+  digest = "1:8f096db5c708d280bf1d364dc2dc0d15ea649caa61864eaf7fbf18687f7b6272"
   name = "git.fd.io/govpp.git"
   packages = [
     "adapter",
@@ -18,7 +18,7 @@
     "examples/bin_api/memclnt",
   ]
   pruneopts = "UT"
-  revision = "df781c9bcf64ba93d0ab7ce62573d93c2bf93d4e"
+  revision = "0ff02b6b1f0757f5e4c011457757bd18d0a60f01"
 
 [[projects]]
   branch = "master"

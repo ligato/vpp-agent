@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"io"
 	"path/filepath"
+	"sort"
 	"strings"
 	"unicode"
 )
@@ -41,6 +42,7 @@ type context struct {
 
 	includeAPIVersionCrc bool // include constant with API version CRC string
 	includeComments      bool // include parts of original source in comments
+	includeBinapiNames   bool // include binary API names as struct tag
 
 	moduleName  string // name of the source VPP module
 	packageName string // name of the Go package being generated
@@ -606,19 +608,31 @@ func generateField(ctx *context, w io.Writer, fields []Field, i int) {
 		}
 	}
 
+	if ctx.includeBinapiNames {
+		fieldTags["binapi"] = field.Name
+	}
 	if field.Meta.Limit > 0 {
-		fieldTags["binapi"] = fmt.Sprintf(",limit=%d", field.Meta.Limit)
+		fieldTags["binapi"] = fmt.Sprintf("%s,limit=%d", fieldTags["binapi"], field.Meta.Limit)
 	}
 
 	if len(fieldTags) > 0 {
 		fmt.Fprintf(w, "\t`")
-		var i int
-		for n, t := range fieldTags {
-			if i > 0 {
+		var keys []string
+		for k := range fieldTags {
+			keys = append(keys, k)
+		}
+		sort.Strings(keys)
+		var n int
+		for _, tt := range keys {
+			t, ok := fieldTags[tt]
+			if !ok {
+				continue
+			}
+			if n > 0 {
 				fmt.Fprintf(w, " ")
 			}
-			i++
-			fmt.Fprintf(w, `%s:"%s"`, n, t)
+			n++
+			fmt.Fprintf(w, `%s:"%s"`, tt, t)
 		}
 		fmt.Fprintf(w, "`")
 	}
