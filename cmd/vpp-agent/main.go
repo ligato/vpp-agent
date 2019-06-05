@@ -23,6 +23,8 @@ import (
 	"time"
 
 	"github.com/ligato/cn-infra/agent"
+	"github.com/ligato/cn-infra/datasync/kvdbsync"
+	"github.com/ligato/cn-infra/datasync/resync"
 	"github.com/ligato/cn-infra/logging"
 
 	"github.com/ligato/vpp-agent/cmd/vpp-agent/app"
@@ -39,9 +41,8 @@ const logo = `                                      __
 var (
 	startTimeout = agent.DefaultStartTimeout
 	stopTimeout  = agent.DefaultStopTimeout
-	// FIXME: global flags are not currently compatible with config package (flags are parsed in NewAgent)
-	//startTimeout = flag.Duration("start-timeout", agent.DefaultStartTimeout, "Timeout duration for starting agent.")
-	//stopTimeout  = flag.Duration("stop-timeout", agent.DefaultStopTimeout, "Timeout duration for stopping agent.")
+
+	resyncTimeout = time.Second * 10
 )
 
 var debugging func() func()
@@ -68,12 +69,14 @@ func main() {
 func init() {
 	logging.DefaultLogger.SetOutput(os.Stdout)
 	logging.DefaultLogger.SetLevel(logging.DebugLevel)
-	// Setup start/stop timeouts for agent
+
+	// Overrides for start/stop timeouts of agent
 	if t := os.Getenv("START_TIMEOUT"); t != "" {
 		dur, err := time.ParseDuration(t)
 		if err != nil {
 			log.Fatalf("Invalid duration (%s) for start timeout!", t)
 		} else {
+			log.Printf("setting agent start timeout to: %v (via START_TIMEOUT)", dur)
 			startTimeout = dur
 		}
 	}
@@ -82,7 +85,21 @@ func init() {
 		if err != nil {
 			log.Fatalf("Invalid duration (%s) for stop timeout!", t)
 		} else {
+			log.Printf("setting agent stop timeout to: %v (via STOP_TIMEOUT)", dur)
 			stopTimeout = dur
 		}
 	}
+
+	// Override resync timeouts
+	if t := os.Getenv("RESYNC_TIMEOUT"); t != "" {
+		dur, err := time.ParseDuration(t)
+		if err != nil {
+			log.Fatalf("Invalid duration (%s) for resync timeout!", t)
+		} else {
+			log.Printf("setting resync timeout to: %v (via RESYNC_TIMEOUT)", dur)
+			resyncTimeout = dur
+		}
+	}
+	kvdbsync.ResyncDoneTimeout = resyncTimeout
+	resync.SingleResyncAckTimeout = resyncTimeout
 }
