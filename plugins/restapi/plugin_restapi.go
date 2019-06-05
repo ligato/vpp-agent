@@ -36,10 +36,12 @@ import (
 	aclvppcalls "github.com/ligato/vpp-agent/plugins/vpp/aclplugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin"
 	ifvppcalls "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
+	ipsecvppcalls "github.com/ligato/vpp-agent/plugins/vpp/ipsecplugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/vpp/l2plugin"
 	l2vppcalls "github.com/ligato/vpp-agent/plugins/vpp/l2plugin/vppcalls"
 	l3vppcalls "github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls"
 	natvppcalls "github.com/ligato/vpp-agent/plugins/vpp/natplugin/vppcalls"
+	puntvppcalls "github.com/ligato/vpp-agent/plugins/vpp/puntplugin/vppcalls"
 )
 
 // REST api methods
@@ -63,12 +65,14 @@ type Plugin struct {
 	vpeHandler  vpevppcalls.VpeVppAPI
 	teleHandler telemetryvppcalls.TelemetryVppAPI
 	// VPP Handlers
-	abfHandler vppcalls.ABFVppRead
-	aclHandler aclvppcalls.ACLVppRead
-	ifHandler  ifvppcalls.InterfaceVppRead
-	natHandler natvppcalls.NatVppRead
-	l2Handler  l2vppcalls.L2VppAPI
-	l3Handler  l3vppcalls.L3VppAPI
+	abfHandler   vppcalls.ABFVppRead
+	aclHandler   aclvppcalls.ACLVppRead
+	ifHandler    ifvppcalls.InterfaceVppRead
+	natHandler   natvppcalls.NatVppRead
+	l2Handler    l2vppcalls.L2VppAPI
+	l3Handler    l3vppcalls.L3VppAPI
+	ipSecHandler ipsecvppcalls.IPSecVPPRead
+	puntHandler  puntvppcalls.PuntVPPRead
 	// Linux handlers
 	linuxIfHandler iflinuxcalls.NetlinkAPIRead
 	linuxL3Handler l3linuxcalls.NetlinkAPIRead
@@ -129,6 +133,8 @@ func (p *Plugin) Init() (err error) {
 	p.natHandler = natvppcalls.CompatibleNatVppHandler(p.vppChan, ifIndexes, dhcpIndexes, p.Log)
 	p.l2Handler = l2vppcalls.CompatibleL2VppHandler(p.vppChan, ifIndexes, bdIndexes, p.Log)
 	p.l3Handler = l3vppcalls.CompatibleL3VppHandler(p.vppChan, ifIndexes, p.Log)
+	p.ipSecHandler = ipsecvppcalls.CompatibleIPSecVppHandler(p.vppChan, ifIndexes, p.Log)
+	p.puntHandler = puntvppcalls.CompatiblePuntVppHandler(p.vppChan, ifIndexes, p.Log)
 
 	// Linux handlers
 	//if p.Linux != nil {
@@ -157,6 +163,8 @@ func (p *Plugin) AfterInit() (err error) {
 	p.registerNatHandlers()
 	p.registerL2Handlers()
 	p.registerL3Handlers()
+	p.registerIPSecHandlers()
+	p.registerPuntHandlers()
 
 	// Linux handlers
 	//if p.Linux != nil {
