@@ -15,6 +15,8 @@
 package vpp1908
 
 import (
+	"bytes"
+
 	vpp_punt "github.com/ligato/vpp-agent/api/models/vpp/punt"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1908/punt"
 	"github.com/ligato/vpp-agent/plugins/vpp/puntplugin/vppcalls"
@@ -58,7 +60,7 @@ func (h *PuntVppHandler) dumpPuntSockets() (punts []*vppcalls.PuntDetails, err e
 				L3Protocol: parseL3Proto(puntL4Data.Af),
 				L4Protocol: parseL4Proto(puntL4Data.Protocol),
 			},
-			SocketPath: string(d.Pathname),
+			SocketPath: string(bytes.Trim(d.Pathname, "\x00")),
 		})
 	}
 
