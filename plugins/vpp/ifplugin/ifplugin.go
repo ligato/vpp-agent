@@ -203,12 +203,13 @@ func (p *IfPlugin) Init() error {
 		p.wg.Add(1)
 		go p.watchStatusEvents()
 
+		// start interface state updater
+		p.ifStateChan = make(chan *interfaces.InterfaceNotification, 1000)
+
 		// start interface state publishing
 		p.wg.Add(1)
 		go p.publishIfStateEvents()
 
-		// start interface state updater
-		p.ifStateChan = make(chan *interfaces.InterfaceNotification, 1000)
 		// Interface state updater
 		p.ifStateUpdater = &InterfaceStateUpdater{}
 
