@@ -37,7 +37,12 @@ RUN apt-get update \
     libapr1 libmbedcrypto1 libmbedtls10 libmbedx509-0 libtool \
     make mc nano netcat python software-properties-common sudo supervisor \
     telnet unzip wget python-cffi python3-cffi \
- && rm -rf /var/lib/apt/lists/*
+    gcc-8 g++-8 \
+ && rm -rf /var/lib/apt/lists/* \
+ && rm /usr/bin/gcc \
+ && rm /usr/bin/g++ \
+ && ln -s /usr/bin/gcc-8 /usr/bin/gcc \
+ && ln -s /usr/bin/g++-8 /usr/bin/g++
 
 # install Protobuf
 ARG PROTOC_VERSION=3.6.1
