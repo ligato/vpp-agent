@@ -18,6 +18,7 @@ import (
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/datasync/kvdbsync"
 	"github.com/ligato/cn-infra/datasync/kvdbsync/local"
+	"github.com/ligato/cn-infra/datasync/msgsync"
 	"github.com/ligato/cn-infra/datasync/resync"
 	"github.com/ligato/cn-infra/db/keyval/consul"
 	"github.com/ligato/cn-infra/db/keyval/etcd"
@@ -25,6 +26,7 @@ import (
 	"github.com/ligato/cn-infra/health/probe"
 	"github.com/ligato/cn-infra/health/statuscheck"
 	"github.com/ligato/cn-infra/logging/logmanager"
+	"github.com/ligato/cn-infra/messaging/kafka"
 	"github.com/ligato/vpp-agent/plugins/vpp/srplugin"
 
 	"github.com/ligato/vpp-agent/plugins/configurator"
@@ -83,12 +85,12 @@ func New() *VPPAgent {
 	}
 	statuscheck.DefaultPlugin.Transport = writers
 
-	//ifStatePub := msgsync.NewPlugin(
-	//	msgsync.UseMessaging(&kafka.DefaultPlugin),
-	//	msgsync.UseConf(msgsync.Config{
-	//		Topic: "if_state",
-	//	}),
-	//)
+	ifStatePub := msgsync.NewPlugin(
+		msgsync.UseMessaging(&kafka.DefaultPlugin),
+		msgsync.UseConf(msgsync.Config{
+			Topic: "if_state",
+		}),
+	)
 
 	// Set watcher for KVScheduler.
 	watchers := datasync.KVProtoWatchers{
@@ -101,8 +103,7 @@ func New() *VPPAgent {
 	orchestrator.DefaultPlugin.StatusPublisher = writers
 
 	ifplugin.DefaultPlugin.Watcher = watchers
-	// kafka temporary disabled
-	//ifplugin.DefaultPlugin.NotifyStates = ifStatePub
+	ifplugin.DefaultPlugin.NotifyStates = ifStatePub
 	puntplugin.DefaultPlugin.PublishState = writers
 
 	// No stats publishers by default, use `vpp-ifplugin.conf` config
