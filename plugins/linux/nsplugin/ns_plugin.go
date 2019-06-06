@@ -162,32 +162,47 @@ func (p *NsPlugin) SwitchToNamespace(ctx nsLinuxcalls.NamespaceMgmtCtx, ns *nsmo
 		return func() {}, err
 	}
 
+	l := p.Log.WithFields(logging.Fields{
+		"orig-ns":    origns.String(),
+		"orig-ns-fd": int(origns),
+	})
+	closeNs := func(ns netns.NsHandle) {
+		if err := ns.Close(); err != nil {
+			l.Debugf("closing NsHandle (%v) failed: %v", err)
+		}
+	}
+
 	// Get network namespace file descriptor.
 	nsHandle, err := p.GetNamespaceHandle(ctx, ns)
 	if err != nil {
-		origns.Close()
+		closeNs(origns)
 		return func() {}, err
 	}
-	defer nsHandle.Close()
+	defer closeNs(nsHandle)
 
 	// Lock the OS Thread so we don't accidentally switch namespaces later.
 	ctx.LockOSThread()
 
+	l = p.Log.WithFields(logging.Fields{
+		"ns":         nsHandle.String(),
+		"ns-fd":      int(nsHandle),
+		"orig-ns":    origns.String(),
+		"orig-ns-fd": int(origns),
+	})
+
 	// Switch the namespace.
-	l := p.Log.WithFields(logging.Fields{"ns": nsHandle.String(), "ns-fd": int(nsHandle)})
 	if err := p.sysHandler.SetNamespace(nsHandle); err != nil {
+		l.Errorf("Failed to switch to Linux network namespace (%v): %v", ns, err)
 		ctx.UnlockOSThread()
-		origns.Close()
-		l.Errorf("Failed to switch Linux network namespace (%v): %v", ns, err)
+		closeNs(origns)
 		return func() {}, err
 	}
 
 	return func() {
-		l := p.Log.WithFields(logging.Fields{"orig-ns": origns.String(), "orig-ns-fd": int(origns)})
 		if err := p.sysHandler.SetNamespace(origns); err != nil {
-			l.Errorf("Failed to switch Linux network namespace: %v", err)
+			l.Errorf("Failed to switch to original Linux network namespace: %v", err)
 		}
-		origns.Close()
+		closeNs(origns)
 		ctx.UnlockOSThread()
 	}, nil
 }
