@@ -91,17 +91,15 @@ func (p *Plugin) initKvPlugin() error {
 		return nil
 	}
 
-	agentPrefix := p.ServiceLabel.GetAgentPrefix()
 	p.adapter = &watcher{
-		db:   p.KvPlugin.NewBroker(agentPrefix),
-		dbW:  p.KvPlugin.NewWatcher(agentPrefix),
+		db:   p.KvPlugin.NewBroker(p.ServiceLabel.GetAgentPrefix()),
+		dbW:  p.KvPlugin.NewWatcher(p.ServiceLabel.GetAgentPrefix()),
 		base: p.registry,
 	}
 
 	if p.ResyncOrch != nil {
-		p.Log.Debugf("registering %d subscribers to agent prefix: %s", len(p.registry.Subscriptions()),agentPrefix)
 		for name, sub := range p.registry.Subscriptions() {
-			reg := p.ResyncOrch.Register(p.String()+"/"+ name)
+			reg := p.ResyncOrch.Register(name)
 			_, err := watchAndResyncBrokerKeys(reg, sub.ChangeChan, sub.ResyncChan, sub.CloseChan,
 				p.adapter, sub.KeyPrefixes...)
 			if err != nil {
