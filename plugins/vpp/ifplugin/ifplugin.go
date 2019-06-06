@@ -88,7 +88,6 @@ type IfPlugin struct {
 	defaultMtu uint32
 
 	// state data
-	publishStats     bool
 	publishLock      sync.Mutex
 	statusCheckReg   bool
 	watchStatusReg   datasync.WatchRegistration
@@ -138,10 +137,6 @@ func (p *IfPlugin) Init() error {
 
 	// Read config file and set all related fields
 	p.fromConfigFile()
-
-	// Fills nil dependencies with default values
-	p.publishStats = p.PublishStatistics != nil || p.NotifyStates != nil
-	p.fixNilPointers()
 
 	// VPP channel
 	if p.vppCh, err = p.GoVppmux.NewAPIChannel(); err != nil {
@@ -208,53 +203,60 @@ func (p *IfPlugin) Init() error {
 	}
 	p.dhcpDescriptor.WatchDHCPNotifications(p.ctx)
 
-	// interface state data
-	if p.publishStats {
-		// subscribe & watch for resync of interface state data
+
+	//  -> Interface stats
+
+	var publishKVDB, publishMessaging bool
+	if p.PublishStatistics != nil {
+		publishKVDB = true
+	}
+	if p.NotifyStates != nil {
+		publishMessaging = true
+	}
+	p.fixNilPointers()
+
+	// subscribe and watch for resync events and remove obsolete KV statistics from DB
+	if publishKVDB {
 		p.resyncStatusChan = make(chan datasync.ResyncEvent)
 
 		p.wg.Add(1)
 		go p.watchStatusEvents()
-	}
-
-	// start interface state updater
-	p.ifStateChan = make(chan *interfaces.InterfaceNotification, 1000)
-
-	// start interface state publishing
-	p.wg.Add(1)
-	go p.publishIfStateEvents()
-
-	// Interface state updater
-	p.ifStateUpdater = &InterfaceStateUpdater{}
-
-	var n int
-	var t time.Time
-	ifNotifHandler := func(state *interfaces.InterfaceNotification) {
-		select {
-		case p.ifStateChan <- state:
-			// OK
-		default:
-			// full
-			if time.Since(t) > time.Second {
-				p.Log.Debugf("ifStateChan channel is full (%d)", n)
-				n = 0
-			} else {
-				n++
-			}
-			t = time.Now()
-		}
-	}
-
-	err = p.ifStateUpdater.Init(p.ctx, p.Log, p.KVScheduler, p.GoVppmux, p.intfIndex,
-		ifNotifHandler, p.publishStats)
-	if err != nil {
-		return err
-	}
-
-	if p.publishStats {
 		if err = p.subscribeWatcher(); err != nil {
 			return err
 		}
+	}
+
+	// start interface state publishing
+	ifNotifHandler := func(state *interfaces.InterfaceNotification){}
+	if publishKVDB || publishMessaging {
+		p.ifStateChan = make(chan *interfaces.InterfaceNotification, 1000)
+		p.wg.Add(1)
+		go p.publishIfStateEvents()
+
+		var n int
+		var t time.Time
+		ifNotifHandler = func(state *interfaces.InterfaceNotification) {
+			select {
+			case p.ifStateChan <- state:
+				// OK
+			default:
+				// full
+				if time.Since(t) > time.Second {
+					p.Log.Debugf("ifStateChan channel is full (%d)", n)
+					n = 0
+				} else {
+					n++
+				}
+				t = time.Now()
+			}
+		}
+	}
+
+	// Start interface state updater
+	p.ifStateUpdater = &InterfaceStateUpdater{}
+	err = p.ifStateUpdater.Init(p.ctx, p.Log, p.KVScheduler, p.GoVppmux, p.intfIndex, ifNotifHandler, publishKVDB || publishMessaging)
+	if err != nil {
+		return err
 	}
 
 	return nil
@@ -334,17 +336,21 @@ func (p *IfPlugin) fromConfigFile() {
 		return
 	}
 	if config != nil {
-		publishers := datasync.KVProtoWriters{}
-		for _, pub := range config.StatusPublishers {
-			db, found := p.Deps.DataSyncs[pub]
-			if !found {
-				p.Log.Warnf("Unknown status publisher %q from config", pub)
-				continue
+		// status publishers
+		if len(config.StatusPublishers) > 0 {
+			publishers := datasync.KVProtoWriters{}
+			for _, pub := range config.StatusPublishers {
+				db, found := p.Deps.DataSyncs[pub]
+				if !found {
+					p.Log.Warnf("Unknown status publisher %q from config", pub)
+					continue
+				}
+				publishers = append(publishers, db)
+				p.Log.Infof("Added status publisher %q from config", pub)
 			}
-			publishers = append(publishers, db)
-			p.Log.Infof("Added status publisher %q from config", pub)
+			p.Deps.PublishStatistics = publishers
 		}
-		p.Deps.PublishStatistics = publishers
+		// default mtu
 		if config.MTU != 0 {
 			p.defaultMtu = config.MTU
 			p.Log.Infof("Default MTU set to %v", p.defaultMtu)
