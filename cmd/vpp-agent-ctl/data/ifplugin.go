@@ -15,11 +15,9 @@
 package data
 
 import (
-	"context"
 	linuxIf "github.com/ligato/vpp-agent/api/models/linux/interfaces"
 	"github.com/ligato/vpp-agent/api/models/linux/namespace"
 	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	"strconv"
 )
 
 // InterfacesCtl interface plugin related methods for vpp-agent-ctl (interfaces including linux ones)
@@ -111,7 +109,6 @@ func (ctl *VppAgentCtlImpl) PutTap() error {
 		},
 		Link: &interfaces.Interface_Tap{
 			Tap: &interfaces.TapLink{
-				Version: 2,
 				HostIfName: "tap-host",
 			},
 		},
@@ -193,42 +190,25 @@ func (ctl *VppAgentCtlImpl) DeleteMemoryInterface() error {
 
 // PutVxLan puts VxLAN type interface config to the ETCD
 func (ctl *VppAgentCtlImpl) PutVxLan() error {
-	txn := ctl.broker.NewTxn()
+	vxlan := &interfaces.Interface{
 
-	var first, last int
-	for i := 1; i <= 10000; i++ {
-		last++
-		if last == 255 {
-			last = 1
-			first++
-		}
-		srcAddr := "192.168." + strconv.Itoa(first) + "." + strconv.Itoa(last)
-		dstAddr := "192.168." + strconv.Itoa(first + 1) + "." + strconv.Itoa(last + 1)
-
-		vxlan := &interfaces.Interface{
-			Name:    "vxlan" + strconv.Itoa(i),
-			Type:    interfaces.Interface_VXLAN_TUNNEL,
-			Enabled: true,
-			Link: &interfaces.Interface_Vxlan{
-				Vxlan: &interfaces.VxlanLink{
-					SrcAddress: srcAddr,
-					DstAddress: dstAddr,
-					Vni:        13,
-				},
+		Name:    "vxlan1",
+		Type:    interfaces.Interface_VXLAN_TUNNEL,
+		Enabled: true,
+		IpAddresses: []string{
+			"172.125.40.1/24",
+		},
+		Link: &interfaces.Interface_Vxlan{
+			Vxlan: &interfaces.VxlanLink{
+				SrcAddress: "192.168.42.1",
+				DstAddress: "192.168.42.2",
+				Vni:        13,
 			},
-		}
-
-		ctl.Log.Infof("Interface put: %v", vxlan)
-		txn.Put(interfaces.InterfaceKey(vxlan.Name), vxlan)
-
-		if i%100 == 0 {
-			if err := txn.Commit(context.Background()); err  != nil {
-				ctl.Log.Errorf("err: %v", err)
-			}
-			txn = ctl.broker.NewTxn()
-		}
+		},
 	}
-	return nil
+
+	ctl.Log.Infof("Interface put: %v", vxlan)
+	return ctl.broker.Put(interfaces.InterfaceKey(vxlan.Name), vxlan)
 }
 
 // DeleteVxLan removes VxLAN type interface config from the ETCD
