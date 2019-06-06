@@ -271,7 +271,7 @@ func (d *RuleChainDescriptor) Dependencies(key string, rch *linux_iptables.RuleC
 	}
 
 	// microservice must be available
-	if rch.Namespace.Type == linux_namespace.NetNamespace_MICROSERVICE {
+	if rch.Namespace != nil && rch.Namespace.Type == linux_namespace.NetNamespace_MICROSERVICE {
 		deps = append(deps, kvs.Dependency{
 			Label: microserviceDep + "-" + rch.Namespace.Reference,
 			Key:   linux_namespace.MicroserviceKey(rch.Namespace.Reference),

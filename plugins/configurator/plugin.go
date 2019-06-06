@@ -18,6 +18,8 @@ import (
 	"git.fd.io/govpp.git/api"
 	"github.com/ligato/vpp-agent/api/models/vpp"
 	"github.com/ligato/vpp-agent/plugins/orchestrator"
+	abfvppcalls "github.com/ligato/vpp-agent/plugins/vpp/abfplugin/vppcalls"
+	"github.com/ligato/vpp-agent/plugins/vpp/aclplugin"
 	ipsecvppcalls "github.com/ligato/vpp-agent/plugins/vpp/ipsecplugin/vppcalls"
 	puntvppcalls "github.com/ligato/vpp-agent/plugins/vpp/puntplugin/vppcalls"
 
@@ -51,11 +53,12 @@ type Plugin struct {
 // Deps - dependencies of Plugin
 type Deps struct {
 	infra.PluginDeps
-	GRPCServer  grpc.Server
-	Dispatch    orchestrator.Dispatcher
-	GoVppmux    govppmux.StatsAPI
-	VPPIfPlugin ifplugin.API
-	VPPL2Plugin *l2plugin.L2Plugin
+	GRPCServer   grpc.Server
+	Dispatch     orchestrator.Dispatcher
+	GoVppmux     govppmux.StatsAPI
+	VPPACLPlugin aclplugin.API
+	VPPIfPlugin  ifplugin.API
+	VPPL2Plugin  *l2plugin.L2Plugin
 }
 
 // Init sets plugin child loggers
@@ -103,11 +106,13 @@ func (p *Plugin) initHandlers() (err error) {
 	}
 
 	// VPP Indexes
+	aclIndexes := p.VPPACLPlugin.GetACLIndex()
 	ifIndexes := p.VPPIfPlugin.GetInterfaceIndex()
 	bdIndexes := p.VPPL2Plugin.GetBDIndex()
 	dhcpIndexes := p.VPPIfPlugin.GetDHCPIndex()
 
 	// Initialize VPP handlers
+	p.configurator.abfHandler = abfvppcalls.CompatibleABFVppHandler(p.vppChan, p.dumpChan, aclIndexes, ifIndexes, p.Log)
 	p.configurator.aclHandler = aclvppcalls.CompatibleACLVppHandler(p.vppChan, p.dumpChan, ifIndexes, p.Log)
 	p.configurator.ifHandler = ifvppcalls.CompatibleInterfaceVppHandler(p.vppChan, p.Log)
 	p.configurator.natHandler = natvppcalls.CompatibleNatVppHandler(p.vppChan, ifIndexes, dhcpIndexes, p.Log)

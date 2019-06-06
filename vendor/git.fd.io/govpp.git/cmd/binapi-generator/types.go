@@ -69,8 +69,13 @@ func convertToGoType(ctx *context, binapiType string) (typ string) {
 	return typ
 }
 
-func getSizeOfType(typ *Type) (size int) {
+func getSizeOfType(ctx *context, typ *Type) (size int) {
 	for _, field := range typ.Fields {
+		enum := getEnumByRef(ctx, field.Type)
+		if enum != nil {
+			size += getSizeOfBinapiTypeLength(enum.Type, field.Length)
+			continue
+		}
 		size += getSizeOfBinapiTypeLength(field.Type, field.Length)
 	}
 	return size
@@ -84,7 +89,17 @@ func getSizeOfBinapiTypeLength(typ string, length int) (size int) {
 			return n
 		}
 	}
+
 	return
+}
+
+func getEnumByRef(ctx *context, ref string) *Enum {
+	for _, typ := range ctx.packageData.Enums {
+		if ref == toApiType(typ.Name) {
+			return &typ
+		}
+	}
+	return nil
 }
 
 func getTypeByRef(ctx *context, ref string) *Type {
@@ -109,7 +124,7 @@ func getUnionSize(ctx *context, union *Union) (maxSize int) {
 	for _, field := range union.Fields {
 		typ := getTypeByRef(ctx, field.Type)
 		if typ != nil {
-			if size := getSizeOfType(typ); size > maxSize {
+			if size := getSizeOfType(ctx, typ); size > maxSize {
 				maxSize = size
 			}
 			continue
@@ -125,5 +140,6 @@ func getUnionSize(ctx *context, union *Union) (maxSize int) {
 			continue
 		}
 	}
+	logf("getUnionSize: %s %+v max=%v", union.Name, union.Fields, maxSize)
 	return
 }

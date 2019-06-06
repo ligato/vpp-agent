@@ -151,6 +151,30 @@ func (p *Plugin) registerL3Handlers() {
 	p.registerHTTPHandler(resturl.Routes, GET, func() (interface{}, error) {
 		return p.l3Handler.DumpRoutes()
 	})
+	// GET scan ip neighbor setup
+	p.registerHTTPHandler(resturl.IPScanNeigh, GET, func() (interface{}, error) {
+		return p.l3Handler.GetIPScanNeighbor()
+	})
+}
+
+// Registers IPSec plugin REST handlers
+func (p *Plugin) registerIPSecHandlers() {
+	// GET IPSec SPD entries
+	p.registerHTTPHandler(resturl.SPDs, GET, func() (interface{}, error) {
+		return p.ipSecHandler.DumpIPSecSPD()
+	})
+	// GET IPSec SA entries
+	p.registerHTTPHandler(resturl.SAs, GET, func() (interface{}, error) {
+		return p.ipSecHandler.DumpIPSecSA()
+	})
+}
+
+// Registers punt plugin REST handlers
+func (p *Plugin) registerPuntHandlers() {
+	// GET punt registered socket entries
+	p.registerHTTPHandler(resturl.PuntSocket, GET, func() (interface{}, error) {
+		return p.puntHandler.DumpRegisteredPuntSockets()
+	})
 }
 
 // Registers linux interface plugin REST handlers

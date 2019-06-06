@@ -71,6 +71,13 @@ func (c *statClient) Connect() error {
 		sockName = c.socketName
 	}
 
+	if _, err := os.Stat(sockName); err != nil {
+		if os.IsNotExist(err) {
+			return fmt.Errorf("stats socket file %q does not exists, ensure that VPP is running with `statseg { ... }` section in config", sockName)
+		}
+		return fmt.Errorf("stats socket file error: %v", err)
+	}
+
 	rc := C.govpp_stat_connect(C.CString(sockName))
 	if rc != 0 {
 		return fmt.Errorf("connecting to VPP stats API failed (rc=%v)", rc)

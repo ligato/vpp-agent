@@ -64,8 +64,6 @@ const (
 
 // VPP NAT
 const (
-	// NatURL is a REST path of a NAT
-	NatURL = "/dump/vpp/v2/nat"
 	// NatGlobal is a REST path of a global NAT config
 	NatGlobal = "/dump/vpp/v2/nat/global"
 	// NatDNat is a REST path of a DNAT configurations
@@ -92,6 +90,21 @@ const (
 	PArpIfs = "/dump/vpp/v2/proxyarp/interfaces"
 	// PArpRngs is rest proxy ARP ranges path
 	PArpRngs = "/dump/vpp/v2/proxyarp/ranges"
+	// IPScanNeigh is rest IP scan neighbor setup path
+	IPScanNeigh = "/dump/vpp/v2/ipscanneigh"
+)
+
+// VPP IPSec plugin
+const (
+	// SPDs is rest IPSec security policy database path
+	SPDs = "/dump/vpp/v2/ipsec/spds"
+	// SAs is rest IPSec security association path
+	SAs = "/dump/vpp/v2/ipsec/sas"
+)
+
+const (
+	// PuntSocket is rest punt registered socket path
+	PuntSocket = "/dump/vpp/v2/punt/sockets"
 )
 
 // Command

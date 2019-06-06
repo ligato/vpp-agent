@@ -12,6 +12,7 @@ VPP_VERSION = $(VPP_DEFAULT)
 endif
 VPP_IMG:=$(value VPP_IMG_$(VPP_VERSION))
 VPP_BINAPI?=$(value VPP_BINAPI_$(VPP_VERSION))
+SKIP_CHECK?=
 
 ifeq ($(NOSTRIP),)
 LDFLAGS += -w -s
@@ -39,16 +40,19 @@ agent:
 install:
 	@echo "=> installing ${VERSION}"
 	go install -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS} ./cmd/vpp-agent
+	go install -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS} ./cmd/vpp-agent-init
 	go install -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS} ./cmd/agentctl
 
 cmd:
 	@echo "=> building ${VERSION}"
 	cd cmd/vpp-agent && go build -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
+	cd cmd/vpp-agent-init && go build -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
 	cd cmd/agentctl && go build -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
 
 clean-cmd:
 	@echo "=> cleaning command binaries"
 	rm -f ./cmd/vpp-agent/vpp-agent
+	rm -f ./cmd/vpp-agent/vpp-agent-init
 	rm -f ./cmd/agentctl/agentctl
 
 examples:

@@ -10,6 +10,7 @@ examples/cryptodata-plugin/cryptodata-plugin
 examples/cryptodata-proto-plugin/cryptodata-proto-plugin
 examples/datasync-plugin/datasync-plugin
 examples/etcd-lib/editor/editor
+examples/etcd-lib/election/election
 examples/etcd-lib/view/view
 examples/etcd-lib/watcher/watcher
 examples/flags-lib/flags-lib
@@ -36,6 +37,7 @@ examples/redis-lib/simple/simple
 examples/redis-plugin/redis-plugin
 examples/simple-agent/simple-agent
 examples/statuscheck-plugin/statuscheck-plugin
+examples/supervisor-plugin/supervisor-plugin
 examples/prometheus-plugin/prometheus-plugin
 db/keyval/etcd/examples/phonebook/editor/editor
 db/keyval/etcd/examples/phonebook/view/view

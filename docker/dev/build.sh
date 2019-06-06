@@ -2,9 +2,12 @@
 
 cd "$(dirname "$0")"
 
-set -eu
+set -euo pipefail
 
-[ -n "${VPP_IMG-}" ] || ( echo "VPP_IMG not set, use 'make images' to build docker images" ; exit 1 )
+[ -n "${VPP_IMG-}" ] || {
+  echo "VPP_IMG not set, use 'make images' to build docker images"
+  exit 1
+}
 
 echo "==============================================="
 echo " Image: ${IMAGE_TAG:=dev_vpp_agent}"
@@ -21,11 +24,17 @@ echo " - commit:  ${COMMIT}"
 echo " - date:    ${DATE}"
 echo "==============================================="
 
+set -x
+
 docker build -f Dockerfile \
     --build-arg VPP_IMG=${VPP_IMG} \
     --build-arg VPP_BINAPI=${VPP_BINAPI} \
     --build-arg VERSION=${VERSION} \
     --build-arg COMMIT=${COMMIT} \
     --build-arg DATE=${DATE} \
+    --build-arg SKIP_CHECK=${SKIP_CHECK:-} \
     --tag ${IMAGE_TAG} \
+    --pull \
  ${DOCKER_BUILD_ARGS-} ../..
+
+docker run --rm "${IMAGE_TAG}" vpp-agent -h || true
