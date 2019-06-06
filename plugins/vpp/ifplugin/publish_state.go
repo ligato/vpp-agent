@@ -101,16 +101,18 @@ func (p *IfPlugin) publishIfStateEvents() {
 
 			p.Log.Debugf("Publishing interface state: %+v", ifState)
 
-			err := p.PublishStatistics.Put(key, ifState.State)
-			if err != nil {
-				if lastPublishErr == nil || lastPublishErr.Error() != err.Error() {
-					p.Log.Error(err)
+			if p.PublishStatistics != nil {
+				err := p.PublishStatistics.Put(key, ifState.State)
+				if err != nil {
+					if lastPublishErr == nil || lastPublishErr.Error() != err.Error() {
+						p.Log.Error(err)
+					}
 				}
+				lastPublishErr = err
 			}
-			lastPublishErr = err
 
 			// Marshall data into JSON & send kafka message.
-			if ifState.Type == interfaces.InterfaceNotification_UPDOWN {
+			if p.NotifyStates != nil && ifState.Type == interfaces.InterfaceNotification_UPDOWN {
 				err := p.NotifyStates.Put(key, ifState.State)
 				if err != nil {
 					if lastNotifErr == nil || lastNotifErr.Error() != err.Error() {

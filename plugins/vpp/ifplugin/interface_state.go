@@ -16,6 +16,7 @@ package ifplugin
 
 import (
 	"context"
+	"os"
 	"sync"
 	"time"
 
@@ -37,6 +38,8 @@ var (
 
 	// StateUpdateDelay defines delay before dumping states
 	StateUpdateDelay = time.Second * 3
+
+	disableInterfaceStats = os.Getenv("DISABLE_INTERFACE_STATS") != ""
 )
 
 // InterfaceStateUpdater holds state data of all VPP interfaces.
@@ -45,8 +48,7 @@ type InterfaceStateUpdater struct {
 
 	kvScheduler    kvs.KVScheduler
 	swIfIndexes    ifaceidx.IfaceMetadataIndex
-	publishState   bool
-	ifNotifHandler func(notification *intf.InterfaceNotification)
+	publishIfState func(notification *intf.InterfaceNotification)
 
 	access  sync.Mutex                      // lock for the state data map
 	ifState map[uint32]*intf.InterfaceState // swIfIndex to state data map
@@ -72,7 +74,7 @@ type InterfaceStateUpdater struct {
 // Init members (channels, maps...) and start go routines
 func (c *InterfaceStateUpdater) Init(ctx context.Context, logger logging.PluginLogger, kvScheduler kvs.KVScheduler,
 	goVppMux govppmux.StatsAPI, swIfIndexes ifaceidx.IfaceMetadataIndex,
-	ifNotifHandler func(notification *intf.InterfaceNotification), publishState bool) (err error) {
+	publishIfState func(notification *intf.InterfaceNotification), readCounters bool) (err error) {
 
 	// Logger
 	c.log = logger.NewLogger("if-state")
@@ -81,8 +83,7 @@ func (c *InterfaceStateUpdater) Init(ctx context.Context, logger logging.PluginL
 	c.swIfIndexes = swIfIndexes
 
 	c.kvScheduler = kvScheduler
-	c.ifNotifHandler = ifNotifHandler
-	c.publishState = publishState
+	c.publishIfState = publishIfState
 	c.ifState = make(map[uint32]*intf.InterfaceState)
 
 	c.ifsForUpdate = make(map[uint32]struct{})
@@ -96,39 +97,39 @@ func (c *InterfaceStateUpdater) Init(ctx context.Context, logger logging.PluginL
 	}
 
 	c.ifHandler = vppcalls.CompatibleInterfaceVppHandler(c.vppCh, logger.NewLogger("if-handler"))
+
+	c.ifMetaChan = make(chan ifaceidx.IfaceMetadataDto, 1000)
+	swIfIndexes.WatchInterfaces("ifplugin_ifstate", c.ifMetaChan)
+
 	c.ifEvents = make(chan *vppcalls.InterfaceEvent, 1000)
 
 	// Create child context
 	var childCtx context.Context
 	childCtx, c.cancel = context.WithCancel(ctx)
 
-	// Start watchers
-	if c.publishState {
-		// Watch for incoming notifications
-		c.ifMetaChan = make(chan ifaceidx.IfaceMetadataDto, 1000)
-		swIfIndexes.WatchInterfaces("ifplugin_ifstate", c.ifMetaChan)
+	// Watch for incoming notifications
+	c.wg.Add(1)
+	go c.watchVPPNotifications(childCtx)
 
-		c.wg.Add(1)
-		go c.watchVPPNotifications(childCtx)
-
-		// Periodically read VPP counters and combined counters for VPP statistics
+	// Periodically read VPP counters and combined counters for VPP statistics
+	if disableInterfaceStats {
+		c.log.Warnf("reading interface stats is disabled!")
+	} else if readCounters {
 		c.wg.Add(1)
 		go c.startReadingCounters(childCtx)
-
-		c.wg.Add(1)
-		go c.startUpdatingIfStateDetails(childCtx)
 	}
+
+	c.wg.Add(1)
+	go c.startUpdatingIfStateDetails(childCtx)
 
 	return nil
 }
 
 // AfterInit subscribes for watching VPP notifications on previously initialized channel
 func (c *InterfaceStateUpdater) AfterInit() error {
-	if c.publishState {
-		err := c.subscribeVPPNotifications()
-		if err != nil {
-			return err
-		}
+	err := c.subscribeVPPNotifications()
+	if err != nil {
+		return err
 	}
 	return nil
 }
@@ -247,7 +248,7 @@ func (c *InterfaceStateUpdater) doUpdatesIfStateDetails() {
 		return
 	}
 
-	// we dont want to lock during potentially long dump call
+	// we dont want to lock during potentionally long dump call
 	c.access.Unlock()
 
 	c.log.Debugf("running update for interface state details (%d)", len(c.ifsForUpdate))
@@ -324,7 +325,7 @@ func (c *InterfaceStateUpdater) processInterfaceStatEntry(ifCounters govppapi.In
 		OutBytes:        ifCounters.TxBytes,
 	}
 
-	c.ifNotifHandler(&intf.InterfaceNotification{
+	c.publishIfState(&intf.InterfaceNotification{
 		Type: intf.InterfaceNotification_COUNTERS, State: ifState})
 }
 
@@ -345,7 +346,7 @@ func (c *InterfaceStateUpdater) processIfStateEvent(notif *vppcalls.InterfaceEve
 		ifState.Name, ifState.IfIndex, notif)
 
 	// store data in ETCD
-	c.ifNotifHandler(&intf.InterfaceNotification{
+	c.publishIfState(&intf.InterfaceNotification{
 		Type: intf.InterfaceNotification_UPDOWN, State: ifState})
 }
 
@@ -474,7 +475,7 @@ func (c *InterfaceStateUpdater) updateIfStateDetails(ifDetails *vppcalls.Interfa
 		ifState.Duplex = intf.InterfaceState_UNKNOWN_DUPLEX
 	}
 
-	c.ifNotifHandler(&intf.InterfaceNotification{
+	c.publishIfState(&intf.InterfaceNotification{
 		Type: intf.InterfaceNotification_UNKNOWN, State: ifState})
 }
 
@@ -493,6 +494,6 @@ func (c *InterfaceStateUpdater) setIfStateDeleted(swIfIndex uint32, ifName strin
 	ifState.LastChange = time.Now().Unix()
 
 	// this can be post-processed by multiple plugins
-	c.ifNotifHandler(&intf.InterfaceNotification{
+	c.publishIfState(&intf.InterfaceNotification{
 		Type: intf.InterfaceNotification_UNKNOWN, State: ifState})
 }
