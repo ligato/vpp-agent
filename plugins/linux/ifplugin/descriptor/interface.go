@@ -431,7 +431,7 @@ func (d *InterfaceDescriptor) Delete(key string, linuxIf *interfaces.Interface, 
 	nsCtx := nslinuxcalls.NewNamespaceMgmtCtx()
 	revert, err := d.nsPlugin.SwitchToNamespace(nsCtx, linuxIf.Namespace)
 	if err != nil {
-		d.log.Error(err)
+		d.log.Error("switch to namespace failed:", err)
 		return err
 	}
 	defer revert()
@@ -484,9 +484,8 @@ func (d *InterfaceDescriptor) Update(key string, oldLinuxIf, newLinuxIf *interfa
 
 	// update host name
 	if oldHostName != newHostName {
-		d.ifHandler.RenameInterface(oldHostName, newHostName)
-		if err != nil {
-			d.log.Error(err)
+		if err := d.ifHandler.RenameInterface(oldHostName, newHostName); err != nil {
+			d.log.Error("renaming interface failed:", err)
 			return nil, err
 		}
 	}
@@ -817,6 +816,7 @@ func (d *InterfaceDescriptor) Retrieve(correlate []adapter.InterfaceKVWithMetada
 // present in every <goRoutineIdx>-th network namespace from the list.
 func (d *InterfaceDescriptor) retrieveInterfaces(nsList []*namespace.NetNamespace, goRoutineIdx, goRoutinesCnt int, ch chan<- retrievedIfaces) {
 	var retrieved retrievedIfaces
+
 	agentPrefix := d.serviceLabel.GetAgentPrefix()
 	nsCtx := nslinuxcalls.NewNamespaceMgmtCtx()
 
@@ -825,26 +825,24 @@ func (d *InterfaceDescriptor) retrieveInterfaces(nsList []*namespace.NetNamespac
 		// switch to the namespace
 		revert, err := d.nsPlugin.SwitchToNamespace(nsCtx, nsRef)
 		if err != nil {
-			d.log.WithFields(logging.Fields{
-				"err":       err,
-				"namespace": nsRef,
-			}).Warn("Failed to retrieve interfaces from the namespace")
+			d.log.WithField("namespace", nsRef).
+				Warn("Failed to switch namespace:", err)
 			continue // continue with the next namespace
 		}
 
 		// get all links in the namespace
 		links, err := d.ifHandler.GetLinkList()
 		if err != nil {
+			d.log.Error("Failed to get link list:", err)
 			// switch back to the default namespace before returning error
 			revert()
 			retrieved.err = err
-			d.log.Error(retrieved.err)
 			break
 		}
 
 		// retrieve every interface managed by this agent
 		for _, link := range links {
-			intf := &interfaces.Interface{
+			iface := &interfaces.Interface{
 				Namespace:   nsRef,
 				HostIfName:  link.Attrs().Name,
 				PhysAddress: link.Attrs().HardwareAddr.String(),
@@ -862,18 +860,20 @@ func (d *InterfaceDescriptor) retrieveInterfaces(nsList []*namespace.NetNamespac
 			var vppTapIfName string
 			if link.Type() == (&netlink.Veth{}).Type() {
 				var vethPeerIfName string
-				intf.Type = interfaces.Interface_VETH
-				intf.Name, vethPeerIfName = parseVethAlias(alias)
-				intf.Link = &interfaces.Interface_Veth{
-					Veth: &interfaces.VethLink{PeerIfName: vethPeerIfName}}
+				iface.Type = interfaces.Interface_VETH
+				iface.Name, vethPeerIfName = parseVethAlias(alias)
+				iface.Link = &interfaces.Interface_Veth{
+					Veth: &interfaces.VethLink{PeerIfName: vethPeerIfName},
+				}
 			} else if link.Type() == (&netlink.Tuntap{}).Type() || link.Type() == "tun" /* not defined in vishvananda */ {
-				intf.Type = interfaces.Interface_TAP_TO_VPP
-				intf.Name, vppTapIfName, _ = parseTapAlias(alias)
-				intf.Link = &interfaces.Interface_Tap{
-					Tap: &interfaces.TapLink{VppTapIfName: vppTapIfName}}
+				iface.Type = interfaces.Interface_TAP_TO_VPP
+				iface.Name, vppTapIfName, _ = parseTapAlias(alias)
+				iface.Link = &interfaces.Interface_Tap{
+					Tap: &interfaces.TapLink{VppTapIfName: vppTapIfName},
+				}
 			} else if link.Attrs().Name == defaultLoopbackName {
-				intf.Type = interfaces.Interface_LOOPBACK
-				intf.Name = alias
+				iface.Type = interfaces.Interface_LOOPBACK
+				iface.Name = alias
 			} else {
 				// unsupported interface type supposedly configured by agent => print warning
 				d.log.WithFields(logging.Fields{
@@ -885,18 +885,17 @@ func (d *InterfaceDescriptor) retrieveInterfaces(nsList []*namespace.NetNamespac
 			}
 
 			// skip interfaces with invalid aliases
-			if intf.Name == "" {
+			if iface.Name == "" {
 				continue
 			}
 
 			// read interface status
-			intf.Enabled, err = d.ifHandler.IsInterfaceUp(link.Attrs().Name)
+			iface.Enabled, err = d.ifHandler.IsInterfaceUp(link.Attrs().Name)
 			if err != nil {
 				d.log.WithFields(logging.Fields{
 					"if-host-name": link.Attrs().Name,
 					"namespace":    nsRef,
-					"err":          err,
-				}).Warn("Failed to read interface status")
+				}).Warn("Failed to read interface status:", err)
 			}
 
 			// read assigned IP addresses
@@ -905,8 +904,7 @@ func (d *InterfaceDescriptor) retrieveInterfaces(nsList []*namespace.NetNamespac
 				d.log.WithFields(logging.Fields{
 					"if-host-name": link.Attrs().Name,
 					"namespace":    nsRef,
-					"err":          err,
-				}).Warn("Failed to read IP addresses")
+				}).Warn("Failed to read address list:", err)
 			}
 			for _, address := range addressList {
 				if address.Scope == unix.RT_SCOPE_LINK {
@@ -915,33 +913,31 @@ func (d *InterfaceDescriptor) retrieveInterfaces(nsList []*namespace.NetNamespac
 				}
 				mask, _ := address.Mask.Size()
 				addrStr := address.IP.String() + "/" + strconv.Itoa(mask)
-				intf.IpAddresses = append(intf.IpAddresses, addrStr)
+				iface.IpAddresses = append(iface.IpAddresses, addrStr)
 			}
 
 			// read checksum offloading
-			if intf.Type == interfaces.Interface_VETH {
+			if iface.Type == interfaces.Interface_VETH {
 				rxOn, txOn, err := d.ifHandler.GetChecksumOffloading(link.Attrs().Name)
 				if err != nil {
 					d.log.WithFields(logging.Fields{
 						"if-host-name": link.Attrs().Name,
 						"namespace":    nsRef,
-						"err":          err,
-					}).Warn("Failed to read checksum offloading")
+					}).Warn("Failed to read checksum offloading:", err)
 				} else {
 					if !rxOn {
-						intf.GetVeth().RxChecksumOffloading = interfaces.VethLink_CHKSM_OFFLOAD_DISABLED
+						iface.GetVeth().RxChecksumOffloading = interfaces.VethLink_CHKSM_OFFLOAD_DISABLED
 					}
 					if !txOn {
-						intf.GetVeth().TxChecksumOffloading = interfaces.VethLink_CHKSM_OFFLOAD_DISABLED
+						iface.GetVeth().TxChecksumOffloading = interfaces.VethLink_CHKSM_OFFLOAD_DISABLED
 					}
 				}
 			}
 
 			// build key-value pair for the retrieved interface
 			retrieved.interfaces = append(retrieved.interfaces, adapter.InterfaceKVWithMetadata{
-				//Key:    interfaces.InterfaceKey(intf.Name),
-				Key:    models.Key(intf),
-				Value:  intf,
+				Key:    models.Key(iface),
+				Value:  iface,
 				Origin: kvs.FromNB,
 				Metadata: &ifaceidx.LinuxIfMetadata{
 					LinuxIfIndex: link.Attrs().Index,
