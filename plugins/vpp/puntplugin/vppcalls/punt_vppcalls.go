@@ -22,12 +22,6 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 )
 
-// PuntDetails includes proto-modelled punt object and its socket path
-type PuntDetails struct {
-	PuntData   *punt.ToHost
-	SocketPath string
-}
-
 // PuntVppAPI provides methods for managing VPP punt configuration.
 type PuntVppAPI interface {
 	PuntVPPRead
@@ -49,7 +43,7 @@ type PuntVppAPI interface {
 // PuntVPPRead provides read methods for punt
 type PuntVPPRead interface {
 	// DumpPuntRegisteredSockets returns all punt socket registrations known to the VPP agent
-	DumpRegisteredPuntSockets() ([]*PuntDetails, error)
+	DumpRegisteredPuntSockets() ([]*punt.ToHost, error)
 }
 
 var Versions = map[string]HandlerVersion{}
