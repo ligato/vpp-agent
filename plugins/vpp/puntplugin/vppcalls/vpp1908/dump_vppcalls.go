@@ -15,8 +15,6 @@
 package vpp1908
 
 import (
-	"bytes"
-
 	vpp_punt "github.com/ligato/vpp-agent/api/models/vpp/punt"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1908/punt"
 	"github.com/ligato/vpp-agent/plugins/vpp/puntplugin/vppcalls"
@@ -59,8 +57,10 @@ func (h *PuntVppHandler) dumpPuntSockets() (punts []*vppcalls.PuntDetails, err e
 				// FIXME: L3Protocol seems to return 0 when registering ALL
 				L3Protocol: parseL3Proto(puntL4Data.Af),
 				L4Protocol: parseL4Proto(puntL4Data.Protocol),
+				SocketPath: vppConfigSocketPath,
 			},
-			SocketPath: string(bytes.Trim(d.Pathname, "\x00")),
+			// TODO dumped socket path (configured) can be stored in metadata
+			//SocketPath: string(bytes.Trim(d.Pathname, "\x00")),
 		})
 	}
 

@@ -26,6 +26,10 @@ import (
 
 const PuntSocketHeaderVersion = 1
 
+// Socket path from the VPP startup config file, returned when a punt socket
+// is retrieved. Limited to single entry as supported in the VPP.
+var vppConfigSocketPath string
+
 // AddPunt configures new punt entry
 func (h *PuntVppHandler) AddPunt(p *punt.ToHost) error {
 	return errors.Errorf("passive punt add is currently now available")
@@ -82,6 +86,11 @@ func (h *PuntVppHandler) RegisterPuntSocket(p *punt.ToHost) (pathName string, er
 		if pathName, err = h.handleRegisterPuntSocket(ba_punt.ADDRESS_IP6, ipProto, uint16(p.Port), p.SocketPath); err != nil {
 			return "", err
 		}
+	}
+
+	// VPP startup config socket path name is always the same
+	if vppConfigSocketPath == "" {
+		vppConfigSocketPath = pathName
 	}
 
 	return
