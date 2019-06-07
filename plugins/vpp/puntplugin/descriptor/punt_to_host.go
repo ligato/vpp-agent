@@ -169,12 +169,56 @@ func (d *PuntToHostDescriptor) Retrieve(correlate []adapter.PuntToHostKVWithMeta
 		return nil, err
 	}
 
-	for _, punt := range socks {
+	// 1. Find NB equivalent of the punt entry with L3 set to 'ALL'. If found, cache
+	// the VPP entry. If not found, add to retrieved values.
+	var cachedIpv4, cachedIpv6 []*vppcalls.PuntDetails
+Retrieved:
+	for _, fromVPP := range socks {
+		for _, fromNB := range correlate {
+			if fromNB.Value.L3Protocol != punt.L3Protocol_ALL {
+				continue
+			}
+			if fromVPP.PuntData.Port == fromNB.Value.Port &&
+				fromVPP.PuntData.L4Protocol == fromNB.Value.L4Protocol {
+				if fromVPP.PuntData.L3Protocol == punt.L3Protocol_IPv4 {
+					cachedIpv4 = append(cachedIpv4, fromVPP)
+				}
+				if fromVPP.PuntData.L3Protocol == punt.L3Protocol_IPv6 {
+					cachedIpv6 = append(cachedIpv6, fromVPP)
+				}
+				continue Retrieved
+			}
+		}
 		retrieved = append(retrieved, adapter.PuntToHostKVWithMetadata{
-			Key:    models.Key(punt.PuntData),
-			Value:  punt.PuntData,
+			Key:    models.Key(fromVPP.PuntData),
+			Value:  fromVPP.PuntData,
 			Origin: kvs.FromNB,
 		})
+	}
+
+	// 2. Find pairs of the same config.
+	//
+	// Note: only if both, IPv4 and IPv6 exists the entry is added. Cached IPv4
+	// without IPv6 (and all remaining IPv6) are ignored, causing agent to configure
+	// the missing one and re-configure the existing one.
+	for _, cachedIPv4Punt := range cachedIpv4 {
+		// look for IPv6 counterpart
+		var found bool
+		for _, cachedIPv6Punt := range cachedIpv6 {
+			if cachedIPv4Punt.PuntData.L4Protocol == cachedIPv6Punt.PuntData.L4Protocol &&
+				cachedIPv4Punt.PuntData.Port == cachedIPv6Punt.PuntData.Port {
+				found = true
+			}
+		}
+		// Store as 'ALL entry'
+		if found {
+			cachedIPv4Punt.PuntData.L3Protocol = punt.L3Protocol_ALL
+			retrieved = append(retrieved, adapter.PuntToHostKVWithMetadata{
+				Key:    models.Key(cachedIPv4Punt.PuntData),
+				Value:  cachedIPv4Punt.PuntData,
+				Origin: kvs.FromNB,
+			})
+		}
 	}
 
 	return retrieved, nil

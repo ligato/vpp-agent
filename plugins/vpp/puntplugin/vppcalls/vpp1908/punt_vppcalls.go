@@ -32,14 +32,14 @@ var vppConfigSocketPath string
 
 // AddPunt configures new punt entry
 func (h *PuntVppHandler) AddPunt(p *punt.ToHost) error {
-	return errors.Errorf("passive punt add is currently now available")
+	return errors.Errorf("passive punt add is currently not available")
 
 	// return h.addDelPunt(p, true)
 }
 
 // DeletePunt removes punt entry
 func (h *PuntVppHandler) DeletePunt(p *punt.ToHost) error {
-	return errors.Errorf("passive punt del is currently now available")
+	return errors.Errorf("passive punt del is currently not available")
 
 	// return h.addDelPunt(p, false)
 }
