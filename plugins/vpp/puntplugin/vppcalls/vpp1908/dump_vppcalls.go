@@ -19,10 +19,11 @@ import (
 
 	vpp_punt "github.com/ligato/vpp-agent/api/models/vpp/punt"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1908/punt"
+	"github.com/ligato/vpp-agent/plugins/vpp/puntplugin/vppcalls"
 )
 
 // DumpRegisteredPuntSockets returns punt to host via registered socket entries
-func (h *PuntVppHandler) DumpRegisteredPuntSockets() (punts []*vpp_punt.ToHost, err error) {
+func (h *PuntVppHandler) DumpRegisteredPuntSockets() (punts []*vppcalls.PuntDetails, err error) {
 	// TODO: use set_punt dumps from binapi
 	if _, err := h.dumpPunts(); err != nil {
 		h.log.Errorf("punt dump failed: %v", err)
@@ -34,7 +35,7 @@ func (h *PuntVppHandler) DumpRegisteredPuntSockets() (punts []*vpp_punt.ToHost, 
 	return punts, nil
 }
 
-func (h *PuntVppHandler) dumpPuntSockets() (punts []*vpp_punt.ToHost, err error) {
+func (h *PuntVppHandler) dumpPuntSockets() (punts []*vppcalls.PuntDetails, err error) {
 	h.log.Debug("=> dumping punt sockets")
 
 	req := h.callsChannel.SendMultiRequest(&punt.PuntSocketDump{
@@ -52,17 +53,15 @@ func (h *PuntVppHandler) dumpPuntSockets() (punts []*vpp_punt.ToHost, err error)
 		h.log.Debugf(" - dumped punt socket (%s): %+v", d.Pathname, d.Punt)
 
 		puntL4Data := d.Punt.Punt.GetL4()
-		punts = append(punts, &vpp_punt.ToHost{
-			Port: uint32(puntL4Data.Port),
-			// FIXME: L3Protocol seems to return 0 when registering ALL
-			L3Protocol: parseL3Proto(puntL4Data.Af),
-			L4Protocol: parseL4Proto(puntL4Data.Protocol),
+		punts = append(punts, &vppcalls.PuntDetails{
+			PuntData: &vpp_punt.ToHost{
+				Port: uint32(puntL4Data.Port),
+				// FIXME: L3Protocol seems to return 0 when registering ALL
+				L3Protocol: parseL3Proto(puntL4Data.Af),
+				L4Protocol: parseL4Proto(puntL4Data.Protocol),
+			},
 			SocketPath: string(bytes.Trim(d.Pathname, "\x00")),
 		})
-	}
-
-	for _, puntd := range punts {
-		h.log.Warnf("punts: %v", puntd)
 	}
 
 	return punts, nil
@@ -88,7 +87,7 @@ func parseL4Proto(p punt.IPProto) vpp_punt.L4Protocol {
 	return vpp_punt.L4Protocol_UNDEFINED_L4
 }
 
-func (h *PuntVppHandler) dumpPunts() (punts []*vpp_punt.ToHost, err error) {
+func (h *PuntVppHandler) dumpPunts() (punts []*vppcalls.PuntDetails, err error) {
 	h.log.Debugf("=> dumping punts")
 
 	req := h.callsChannel.SendMultiRequest(&punt.PuntReasonDump{})

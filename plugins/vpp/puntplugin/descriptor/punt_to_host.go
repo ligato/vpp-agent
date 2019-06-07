@@ -164,21 +164,17 @@ func (d *PuntToHostDescriptor) Retrieve(correlate []adapter.PuntToHostKVWithMeta
 	// TODO dump for punt and punt socket register missing in api
 	d.log.Info("Dump punt/socket register is not supported by the VPP")
 
-	pSockets, err := d.puntHandler.DumpRegisteredPuntSockets()
+	socks, err := d.puntHandler.DumpRegisteredPuntSockets()
 	if err != nil {
 		return nil, err
 	}
 
-	for _, pSocket := range pSockets {
+	for _, punt := range socks {
 		retrieved = append(retrieved, adapter.PuntToHostKVWithMetadata{
-			Key:    models.Key(pSocket),
-			Value:  pSocket,
+			Key:    models.Key(punt.PuntData),
+			Value:  punt.PuntData,
 			Origin: kvs.FromNB,
 		})
-	}
-
-	for _, rt := range retrieved {
-		d.log.Warnf("retrieved: %v", rt)
 	}
 
 	return retrieved, nil
