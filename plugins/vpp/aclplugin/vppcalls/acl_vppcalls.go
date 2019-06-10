@@ -115,7 +115,7 @@ type HandlerVersion struct {
 	New  func(govppapi.Channel, ifaceidx.IfaceMetadataIndex) ACLVppAPI
 }
 
-func CompatibleACLVppHandler(ch, dch govppapi.Channel, idx ifaceidx.IfaceMetadataIndex, log logging.Logger) ACLVppAPI {
+func CompatibleACLVppHandler(ch govppapi.Channel, idx ifaceidx.IfaceMetadataIndex, log logging.Logger) ACLVppAPI {
 	if len(Versions) == 0 {
 		// aclplugin is not loaded
 		return nil
