@@ -27,7 +27,6 @@ import (
 	"github.com/ligato/cn-infra/health/statuscheck"
 	"github.com/ligato/cn-infra/logging/logmanager"
 	"github.com/ligato/cn-infra/messaging/kafka"
-	"github.com/ligato/vpp-agent/plugins/vpp/srplugin"
 
 	"github.com/ligato/vpp-agent/plugins/configurator"
 	linux_ifplugin "github.com/ligato/vpp-agent/plugins/linux/ifplugin"
@@ -45,6 +44,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin"
 	"github.com/ligato/vpp-agent/plugins/vpp/natplugin"
 	"github.com/ligato/vpp-agent/plugins/vpp/puntplugin"
+	"github.com/ligato/vpp-agent/plugins/vpp/srplugin"
 	"github.com/ligato/vpp-agent/plugins/vpp/stnplugin"
 )
 

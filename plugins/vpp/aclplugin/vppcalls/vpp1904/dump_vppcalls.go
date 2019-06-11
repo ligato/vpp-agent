@@ -150,7 +150,7 @@ func (h *ACLVppHandler) DumpACLInterfaces(indices []uint32) (map[uint32]*acl.ACL
 	msgIP := &acl_api.ACLInterfaceListDump{
 		SwIfIndex: 0xffffffff, // dump all
 	}
-	reqIP := h.dumpChannel.SendMultiRequest(msgIP)
+	reqIP := h.callsChannel.SendMultiRequest(msgIP)
 	for {
 		replyIP := &acl_api.ACLInterfaceListDetails{}
 		stop, err := reqIP.ReceiveReply(replyIP)
@@ -222,7 +222,7 @@ func (h *ACLVppHandler) DumpMACIPACLInterfaces(indices []uint32) (map[uint32]*ac
 	msgMACIP := &acl_api.MacipACLInterfaceListDump{
 		SwIfIndex: 0xffffffff, // dump all
 	}
-	reqMACIP := h.dumpChannel.SendMultiRequest(msgMACIP)
+	reqMACIP := h.callsChannel.SendMultiRequest(msgMACIP)
 	for {
 		replyMACIP := &acl_api.MacipACLInterfaceListDetails{}
 		stop, err := reqMACIP.ReceiveReply(replyMACIP)
@@ -278,7 +278,7 @@ func (h *ACLVppHandler) DumpIPAcls() (map[vppcalls.ACLMeta][]acl_api.ACLRule, er
 	req := &acl_api.ACLDump{
 		ACLIndex: 0xffffffff,
 	}
-	reqContext := h.dumpChannel.SendMultiRequest(req)
+	reqContext := h.callsChannel.SendMultiRequest(req)
 	for {
 		msg := &acl_api.ACLDetails{}
 		stop, err := reqContext.ReceiveReply(msg)
@@ -307,7 +307,7 @@ func (h *ACLVppHandler) DumpMacIPAcls() (map[vppcalls.ACLMeta][]acl_api.MacipACL
 	req := &acl_api.MacipACLDump{
 		ACLIndex: 0xffffffff,
 	}
-	reqContext := h.dumpChannel.SendMultiRequest(req)
+	reqContext := h.callsChannel.SendMultiRequest(req)
 	for {
 		msg := &acl_api.MacipACLDetails{}
 		stop, err := reqContext.ReceiveReply(msg)
@@ -377,7 +377,7 @@ func (h *ACLVppHandler) DumpInterfaceACLList(swIndex uint32) (*acl_api.ACLInterf
 	}
 	reply := &acl_api.ACLInterfaceListDetails{}
 
-	if err := h.dumpChannel.SendRequest(req).ReceiveReply(reply); err != nil {
+	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return nil, err
 	}
 
@@ -391,7 +391,7 @@ func (h *ACLVppHandler) DumpInterfaceMACIPACLList(swIndex uint32) (*acl_api.Maci
 	}
 	reply := &acl_api.MacipACLInterfaceListDetails{}
 
-	if err := h.dumpChannel.SendRequest(req).ReceiveReply(reply); err != nil {
+	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return nil, err
 	}
 
@@ -404,7 +404,7 @@ func (h *ACLVppHandler) DumpInterfacesLists() ([]*acl_api.ACLInterfaceListDetail
 		SwIfIndex: 0xffffffff, // dump all
 	}
 
-	reqIPACL := h.dumpChannel.SendMultiRequest(msgIPACL)
+	reqIPACL := h.callsChannel.SendMultiRequest(msgIPACL)
 
 	var IPaclInterfaces []*acl_api.ACLInterfaceListDetails
 	for {
@@ -424,7 +424,7 @@ func (h *ACLVppHandler) DumpInterfacesLists() ([]*acl_api.ACLInterfaceListDetail
 		SwIfIndex: 0xffffffff, // dump all
 	}
 
-	reqMACIPACL := h.dumpChannel.SendMultiRequest(msgMACIPACL)
+	reqMACIPACL := h.callsChannel.SendMultiRequest(msgMACIPACL)
 
 	var MACIPaclInterfaces []*acl_api.MacipACLInterfaceListDetails
 	for {
@@ -464,7 +464,7 @@ func (h *ACLVppHandler) getIPACLDetails(idx uint32) (aclRule *acl.ACL, err error
 	}
 
 	reply := &acl_api.ACLDetails{}
-	if err := h.dumpChannel.SendRequest(req).ReceiveReply(reply); err != nil {
+	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return nil, err
 	}
 
@@ -511,7 +511,7 @@ func (h *ACLVppHandler) getMACIPACLDetails(idx uint32) (aclRule *acl.ACL, err er
 	}
 
 	reply := &acl_api.MacipACLDetails{}
-	if err := h.dumpChannel.SendRequest(req).ReceiveReply(reply); err != nil {
+	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return nil, err
 	}
 

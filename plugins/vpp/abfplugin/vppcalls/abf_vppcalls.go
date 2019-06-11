@@ -66,7 +66,7 @@ type HandlerVersion struct {
 	New  func(govppapi.Channel, aclidx.ACLMetadataIndex, ifaceidx.IfaceMetadataIndex) ABFVppAPI
 }
 
-func CompatibleABFVppHandler(ch, dch govppapi.Channel, aclIdx aclidx.ACLMetadataIndex, ifIdx ifaceidx.IfaceMetadataIndex, log logging.Logger) ABFVppAPI {
+func CompatibleABFVppHandler(ch govppapi.Channel, aclIdx aclidx.ACLMetadataIndex, ifIdx ifaceidx.IfaceMetadataIndex, log logging.Logger) ABFVppAPI {
 	if len(Versions) == 0 {
 		// abfplugin is not loaded
 		return nil
