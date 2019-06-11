@@ -21,6 +21,7 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion2 // please upgrade the proto package
 
+// L3Protocol defines Layer 3 protocols.
 type L3Protocol int32
 
 const (
@@ -52,6 +53,7 @@ func (L3Protocol) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_c6553556423e0b80, []int{0}
 }
 
+// L4Protocol defines Layer 4 protocols.
 type L4Protocol int32
 
 const (
@@ -80,16 +82,21 @@ func (L4Protocol) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_c6553556423e0b80, []int{1}
 }
 
-// IPRedirect allows otherwise dropped packet which destination IP address matching some of the VPP addresses
-//to redirect to the defined next hop address via the TX interface
+// IPRedirect allows otherwise dropped packet which destination IP address
+// matching some of the VPP addresses to redirect to the defined next hop address
+// via the TX interface.
 type IPRedirect struct {
-	L3Protocol           L3Protocol `protobuf:"varint,1,opt,name=l3_protocol,json=l3Protocol,proto3,enum=vpp.punt.L3Protocol" json:"l3_protocol,omitempty"`
-	RxInterface          string     `protobuf:"bytes,2,opt,name=rx_interface,json=rxInterface,proto3" json:"rx_interface,omitempty"`
-	TxInterface          string     `protobuf:"bytes,3,opt,name=tx_interface,json=txInterface,proto3" json:"tx_interface,omitempty"`
-	NextHop              string     `protobuf:"bytes,4,opt,name=next_hop,json=nextHop,proto3" json:"next_hop,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}   `json:"-"`
-	XXX_unrecognized     []byte     `json:"-"`
-	XXX_sizecache        int32      `json:"-"`
+	// L3 protocol to be redirected
+	L3Protocol L3Protocol `protobuf:"varint,1,opt,name=l3_protocol,json=l3Protocol,proto3,enum=vpp.punt.L3Protocol" json:"l3_protocol,omitempty"`
+	// Receive interface name. Optional, only redirect traffic incoming from this interface
+	RxInterface string `protobuf:"bytes,2,opt,name=rx_interface,json=rxInterface,proto3" json:"rx_interface,omitempty"`
+	// Transmit interface name
+	TxInterface string `protobuf:"bytes,3,opt,name=tx_interface,json=txInterface,proto3" json:"tx_interface,omitempty"`
+	// Next hop IP where the traffic is redirected
+	NextHop              string   `protobuf:"bytes,4,opt,name=next_hop,json=nextHop,proto3" json:"next_hop,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
 func (m *IPRedirect) Reset()         { *m = IPRedirect{} }
@@ -148,16 +155,25 @@ func (*IPRedirect) XXX_MessageName() string {
 	return "vpp.punt.IPRedirect"
 }
 
-// allows otherwise dropped packet which destination IP address matching some of the VPP interface IP addresses to be
-//punted to the host. L3 and L4 protocols can be used for filtering
+// ToHost allows otherwise dropped packet which destination IP address matching
+// some of the VPP interface IP addresses to be punted to the host.
+// L3 and L4 protocols can be used for filtering */
 type ToHost struct {
-	L3Protocol           L3Protocol `protobuf:"varint,2,opt,name=l3_protocol,json=l3Protocol,proto3,enum=vpp.punt.L3Protocol" json:"l3_protocol,omitempty"`
-	L4Protocol           L4Protocol `protobuf:"varint,3,opt,name=l4_protocol,json=l4Protocol,proto3,enum=vpp.punt.L4Protocol" json:"l4_protocol,omitempty"`
-	Port                 uint32     `protobuf:"varint,4,opt,name=port,proto3" json:"port,omitempty"`
-	SocketPath           string     `protobuf:"bytes,5,opt,name=socket_path,json=socketPath,proto3" json:"socket_path,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}   `json:"-"`
-	XXX_unrecognized     []byte     `json:"-"`
-	XXX_sizecache        int32      `json:"-"`
+	// L3 destination protocol a packet has to match in order to be punted.
+	L3Protocol L3Protocol `protobuf:"varint,2,opt,name=l3_protocol,json=l3Protocol,proto3,enum=vpp.punt.L3Protocol" json:"l3_protocol,omitempty"`
+	// L4 destination protocol a packet has to match.
+	// Currently VPP only supports UDP.
+	L4Protocol L4Protocol `protobuf:"varint,3,opt,name=l4_protocol,json=l4Protocol,proto3,enum=vpp.punt.L4Protocol" json:"l4_protocol,omitempty"`
+	// Destination port
+	Port uint32 `protobuf:"varint,4,opt,name=port,proto3" json:"port,omitempty"`
+	// SocketPath defines path to unix domain socket
+	// used for punt packets to the host.
+	// In dumps, it will actually contain the socket
+	// defined in VPP config under punt section.
+	SocketPath           string   `protobuf:"bytes,5,opt,name=socket_path,json=socketPath,proto3" json:"socket_path,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
 func (m *ToHost) Reset()         { *m = ToHost{} }
@@ -216,8 +232,15 @@ func (*ToHost) XXX_MessageName() string {
 	return "vpp.punt.ToHost"
 }
 
+// Exception allows specifying punt exceptions used for punting packets.
+// The type of exception is defined by reason name.
 type Exception struct {
-	Reason               string   `protobuf:"bytes,1,opt,name=reason,proto3" json:"reason,omitempty"`
+	// Name should contain reason name, e.g. `ipsec4-spi-0`.
+	Reason string `protobuf:"bytes,1,opt,name=reason,proto3" json:"reason,omitempty"`
+	// SocketPath defines path to unix domain socket
+	// used for punt packets to the host.
+	// In dumps, it will actually contain the socket
+	// defined in VPP config under punt section.
 	SocketPath           string   `protobuf:"bytes,2,opt,name=socket_path,json=socketPath,proto3" json:"socket_path,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -266,7 +289,21 @@ func (*Exception) XXX_MessageName() string {
 	return "vpp.punt.Exception"
 }
 
+// Reason represents punt reason used in exceptions.
+// List of known exceptions can be retrieved in VPP CLI
+// with following command:
+//
+// vpp# show punt reasons
+//    [0] ipsec4-spi-0 from:[ipsec ]
+//    [1] ipsec6-spi-0 from:[ipsec ]
+//    [2] ipsec4-spi-o-udp-0 from:[ipsec ]
+//    [3] ipsec4-no-such-tunnel from:[ipsec ]
+//    [4] ipsec6-no-such-tunnel from:[ipsec ]
+//    [5] VXLAN-GBP-no-such-v4-tunnel from:[vxlan-gbp ]
+//    [6] VXLAN-GBP-no-such-v6-tunnel from:[vxlan-gbp ]
+//
 type Reason struct {
+	// Name contains reason name.
 	Name                 string   `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`

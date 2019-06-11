@@ -63,10 +63,10 @@ type PuntVppAPI interface {
 type PuntVPPRead interface {
 	// DumpPuntRegisteredSockets returns all punt socket registrations known to the VPP agent
 	DumpRegisteredPuntSockets() ([]*PuntDetails, error)
-	// DumpPuntReasons returns all known punt reasons from VPP
-	DumpPuntReasons() ([]*ReasonDetails, error)
 	// DumpExceptions dumps punt exceptions
 	DumpExceptions() ([]*ExceptionDetails, error)
+	// DumpPuntReasons returns all known punt reasons from VPP
+	DumpPuntReasons() ([]*ReasonDetails, error)
 }
 
 var Versions = map[string]HandlerVersion{}
