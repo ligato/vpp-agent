@@ -16,8 +16,10 @@ package descriptor
 
 import (
 	"errors"
+	"strings"
 
 	"github.com/ligato/cn-infra/logging"
+
 	punt "github.com/ligato/vpp-agent/api/models/vpp/punt"
 	"github.com/ligato/vpp-agent/pkg/models"
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
@@ -40,6 +42,9 @@ var (
 
 	// ErrPuntWithoutPort is returned when VPP punt has undefined port.
 	ErrPuntWithoutPort = errors.New("VPP punt defined without port")
+
+	// ErrPuntWithoutSocketPath is returned when VPP punt has undefined socket path.
+	ErrPuntWithoutSocketPath = errors.New("VPP punt defined without socket path")
 )
 
 // PuntToHostDescriptor teaches KVScheduler how to configure VPP punt to host or unix domain socket.
@@ -83,6 +88,11 @@ func (d *PuntToHostDescriptor) EquivalentPuntToHost(key string, oldPunt, newPunt
 		oldPunt.Port != newPunt.Port {
 		return false
 	}
+
+	if strings.HasPrefix(oldPunt.SocketPath, "!") {
+		return false
+	}
+
 	return true
 }
 
@@ -109,19 +119,22 @@ func (d *PuntToHostDescriptor) Validate(key string, puntCfg *punt.ToHost) error 
 		return kvs.NewInvalidValueError(ErrPuntWithoutPort, "port")
 	}
 
+	if puntCfg.SocketPath == "" {
+		return kvs.NewInvalidValueError(ErrPuntWithoutSocketPath, "socket_path")
+	}
+
 	return nil
 }
 
 // Create adds new punt to host entry or registers new punt to unix domain socket.
 func (d *PuntToHostDescriptor) Create(key string, punt *punt.ToHost) (interface{}, error) {
-	// add punt to host
-	if punt.SocketPath == "" {
+	/*if punt.SocketPath == "" {
 		if err := d.puntHandler.AddPunt(punt); err != nil {
 			d.log.Error(err)
 			return nil, err
 		}
 		return nil, nil
-	}
+	}*/
 
 	// register punt to socket
 	pathname, err := d.puntHandler.RegisterPuntSocket(punt)
@@ -139,11 +152,16 @@ func (d *PuntToHostDescriptor) Create(key string, punt *punt.ToHost) (interface{
 
 // Delete removes VPP punt configuration.
 func (d *PuntToHostDescriptor) Delete(key string, punt *punt.ToHost, metadata interface{}) error {
-	if punt.SocketPath == "" {
+	/*if punt.SocketPath == "" {
 		if err := d.puntHandler.DeletePunt(punt); err != nil {
 			d.log.Error(err)
 			return err
 		}
+	}*/
+	p := punt
+	if strings.HasPrefix(p.SocketPath, "!") {
+		p = &(*punt)
+		p.SocketPath = strings.TrimPrefix(p.SocketPath, "!")
 	}
 
 	// deregister punt to socket
@@ -161,12 +179,16 @@ func (d *PuntToHostDescriptor) Delete(key string, punt *punt.ToHost, metadata in
 
 // Retrieve returns all configured VPP punt to host entries.
 func (d *PuntToHostDescriptor) Retrieve(correlate []adapter.PuntToHostKVWithMetadata) (retrieved []adapter.PuntToHostKVWithMetadata, err error) {
-	// TODO dump for punt and punt socket register missing in api
-	d.log.Info("Dump punt/socket register is not supported by the VPP")
-
+	// Dump registered punt sockets
 	socks, err := d.puntHandler.DumpRegisteredPuntSockets()
 	if err != nil {
 		return nil, err
+	}
+
+	for _, s := range socks {
+		if s.PuntData.SocketPath == "" && s.SocketPath != "" {
+			s.PuntData.SocketPath = "!" + s.SocketPath
+		}
 	}
 
 	// 1. Find NB equivalent of the punt entry with L3 set to 'ALL'. If found, cache
