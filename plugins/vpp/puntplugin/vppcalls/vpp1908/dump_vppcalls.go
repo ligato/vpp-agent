@@ -22,7 +22,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/puntplugin/vppcalls"
 )
 
-// DumpRegisteredPuntSockets returns punt to host via registered socket entries
+// DumpExceptions returns dump of registered punt exceptions.
 func (h *PuntVppHandler) DumpExceptions() (punts []*vppcalls.ExceptionDetails, err error) {
 	reasons, err := h.dumpPuntReasons()
 	if err != nil {
