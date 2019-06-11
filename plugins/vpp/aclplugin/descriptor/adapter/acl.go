@@ -4,9 +4,9 @@ package adapter
 
 import (
 	"github.com/gogo/protobuf/proto"
-	"github.com/ligato/vpp-agent/api/models/vpp/acl"
 	. "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/vpp/aclplugin/aclidx"
+	"github.com/ligato/vpp-agent/api/models/vpp/acl"
 )
 
 ////////// type-safe key-value pair with metadata //////////

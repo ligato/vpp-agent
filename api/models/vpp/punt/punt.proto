@@ -38,3 +38,13 @@ message ToHost {
 
     string socket_path = 5;         /* Optional, use unix domain socket to punt packets to the host. */
 }
+
+message Exception {
+    string reason = 1;
+
+    string socket_path = 2;
+}
+
+message Reason {
+    string name = 1;
+}

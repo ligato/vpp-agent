@@ -5,50 +5,49 @@ package adapter
 import (
 	"github.com/gogo/protobuf/proto"
 	. "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-	"github.com/ligato/vpp-agent/api/models/linux/interfaces"
-	"github.com/ligato/vpp-agent/plugins/linux/ifplugin/ifaceidx"
+	"github.com/ligato/vpp-agent/api/models/vpp/punt"
 )
 
 ////////// type-safe key-value pair with metadata //////////
 
-type InterfaceKVWithMetadata struct {
+type PuntExceptionKVWithMetadata struct {
 	Key      string
-	Value    *linux_interfaces.Interface
-	Metadata *ifaceidx.LinuxIfMetadata
+	Value    *vpp_punt.Exception
+	Metadata interface{}
 	Origin   ValueOrigin
 }
 
 ////////// type-safe Descriptor structure //////////
 
-type InterfaceDescriptor struct {
+type PuntExceptionDescriptor struct {
 	Name                 string
 	KeySelector          KeySelector
 	ValueTypeName        string
 	KeyLabel             func(key string) string
-	ValueComparator      func(key string, oldValue, newValue *linux_interfaces.Interface) bool
+	ValueComparator      func(key string, oldValue, newValue *vpp_punt.Exception) bool
 	NBKeyPrefix          string
 	WithMetadata         bool
 	MetadataMapFactory   MetadataMapFactory
-	Validate             func(key string, value *linux_interfaces.Interface) error
-	Create               func(key string, value *linux_interfaces.Interface) (metadata *ifaceidx.LinuxIfMetadata, err error)
-	Delete               func(key string, value *linux_interfaces.Interface, metadata *ifaceidx.LinuxIfMetadata) error
-	Update               func(key string, oldValue, newValue *linux_interfaces.Interface, oldMetadata *ifaceidx.LinuxIfMetadata) (newMetadata *ifaceidx.LinuxIfMetadata, err error)
-	UpdateWithRecreate   func(key string, oldValue, newValue *linux_interfaces.Interface, metadata *ifaceidx.LinuxIfMetadata) bool
-	Retrieve             func(correlate []InterfaceKVWithMetadata) ([]InterfaceKVWithMetadata, error)
+	Validate             func(key string, value *vpp_punt.Exception) error
+	Create               func(key string, value *vpp_punt.Exception) (metadata interface{}, err error)
+	Delete               func(key string, value *vpp_punt.Exception, metadata interface{}) error
+	Update               func(key string, oldValue, newValue *vpp_punt.Exception, oldMetadata interface{}) (newMetadata interface{}, err error)
+	UpdateWithRecreate   func(key string, oldValue, newValue *vpp_punt.Exception, metadata interface{}) bool
+	Retrieve             func(correlate []PuntExceptionKVWithMetadata) ([]PuntExceptionKVWithMetadata, error)
 	IsRetriableFailure   func(err error) bool
-	DerivedValues        func(key string, value *linux_interfaces.Interface) []KeyValuePair
-	Dependencies         func(key string, value *linux_interfaces.Interface) []Dependency
+	DerivedValues        func(key string, value *vpp_punt.Exception) []KeyValuePair
+	Dependencies         func(key string, value *vpp_punt.Exception) []Dependency
 	RetrieveDependencies []string /* descriptor name */
 }
 
 ////////// Descriptor adapter //////////
 
-type InterfaceDescriptorAdapter struct {
-	descriptor *InterfaceDescriptor
+type PuntExceptionDescriptorAdapter struct {
+	descriptor *PuntExceptionDescriptor
 }
 
-func NewInterfaceDescriptor(typedDescriptor *InterfaceDescriptor) *KVDescriptor {
-	adapter := &InterfaceDescriptorAdapter{descriptor: typedDescriptor}
+func NewPuntExceptionDescriptor(typedDescriptor *PuntExceptionDescriptor) *KVDescriptor {
+	adapter := &PuntExceptionDescriptorAdapter{descriptor: typedDescriptor}
 	descriptor := &KVDescriptor{
 		Name:                 typedDescriptor.Name,
 		KeySelector:          typedDescriptor.KeySelector,
@@ -90,88 +89,88 @@ func NewInterfaceDescriptor(typedDescriptor *InterfaceDescriptor) *KVDescriptor 
 	return descriptor
 }
 
-func (da *InterfaceDescriptorAdapter) ValueComparator(key string, oldValue, newValue proto.Message) bool {
-	typedOldValue, err1 := castInterfaceValue(key, oldValue)
-	typedNewValue, err2 := castInterfaceValue(key, newValue)
+func (da *PuntExceptionDescriptorAdapter) ValueComparator(key string, oldValue, newValue proto.Message) bool {
+	typedOldValue, err1 := castPuntExceptionValue(key, oldValue)
+	typedNewValue, err2 := castPuntExceptionValue(key, newValue)
 	if err1 != nil || err2 != nil {
 		return false
 	}
 	return da.descriptor.ValueComparator(key, typedOldValue, typedNewValue)
 }
 
-func (da *InterfaceDescriptorAdapter) Validate(key string, value proto.Message) (err error) {
-	typedValue, err := castInterfaceValue(key, value)
+func (da *PuntExceptionDescriptorAdapter) Validate(key string, value proto.Message) (err error) {
+	typedValue, err := castPuntExceptionValue(key, value)
 	if err != nil {
 		return err
 	}
 	return da.descriptor.Validate(key, typedValue)
 }
 
-func (da *InterfaceDescriptorAdapter) Create(key string, value proto.Message) (metadata Metadata, err error) {
-	typedValue, err := castInterfaceValue(key, value)
+func (da *PuntExceptionDescriptorAdapter) Create(key string, value proto.Message) (metadata Metadata, err error) {
+	typedValue, err := castPuntExceptionValue(key, value)
 	if err != nil {
 		return nil, err
 	}
 	return da.descriptor.Create(key, typedValue)
 }
 
-func (da *InterfaceDescriptorAdapter) Update(key string, oldValue, newValue proto.Message, oldMetadata Metadata) (newMetadata Metadata, err error) {
-	oldTypedValue, err := castInterfaceValue(key, oldValue)
+func (da *PuntExceptionDescriptorAdapter) Update(key string, oldValue, newValue proto.Message, oldMetadata Metadata) (newMetadata Metadata, err error) {
+	oldTypedValue, err := castPuntExceptionValue(key, oldValue)
 	if err != nil {
 		return nil, err
 	}
-	newTypedValue, err := castInterfaceValue(key, newValue)
+	newTypedValue, err := castPuntExceptionValue(key, newValue)
 	if err != nil {
 		return nil, err
 	}
-	typedOldMetadata, err := castInterfaceMetadata(key, oldMetadata)
+	typedOldMetadata, err := castPuntExceptionMetadata(key, oldMetadata)
 	if err != nil {
 		return nil, err
 	}
 	return da.descriptor.Update(key, oldTypedValue, newTypedValue, typedOldMetadata)
 }
 
-func (da *InterfaceDescriptorAdapter) Delete(key string, value proto.Message, metadata Metadata) error {
-	typedValue, err := castInterfaceValue(key, value)
+func (da *PuntExceptionDescriptorAdapter) Delete(key string, value proto.Message, metadata Metadata) error {
+	typedValue, err := castPuntExceptionValue(key, value)
 	if err != nil {
 		return err
 	}
-	typedMetadata, err := castInterfaceMetadata(key, metadata)
+	typedMetadata, err := castPuntExceptionMetadata(key, metadata)
 	if err != nil {
 		return err
 	}
 	return da.descriptor.Delete(key, typedValue, typedMetadata)
 }
 
-func (da *InterfaceDescriptorAdapter) UpdateWithRecreate(key string, oldValue, newValue proto.Message, metadata Metadata) bool {
-	oldTypedValue, err := castInterfaceValue(key, oldValue)
+func (da *PuntExceptionDescriptorAdapter) UpdateWithRecreate(key string, oldValue, newValue proto.Message, metadata Metadata) bool {
+	oldTypedValue, err := castPuntExceptionValue(key, oldValue)
 	if err != nil {
 		return true
 	}
-	newTypedValue, err := castInterfaceValue(key, newValue)
+	newTypedValue, err := castPuntExceptionValue(key, newValue)
 	if err != nil {
 		return true
 	}
-	typedMetadata, err := castInterfaceMetadata(key, metadata)
+	typedMetadata, err := castPuntExceptionMetadata(key, metadata)
 	if err != nil {
 		return true
 	}
 	return da.descriptor.UpdateWithRecreate(key, oldTypedValue, newTypedValue, typedMetadata)
 }
 
-func (da *InterfaceDescriptorAdapter) Retrieve(correlate []KVWithMetadata) ([]KVWithMetadata, error) {
-	var correlateWithType []InterfaceKVWithMetadata
+func (da *PuntExceptionDescriptorAdapter) Retrieve(correlate []KVWithMetadata) ([]KVWithMetadata, error) {
+	var correlateWithType []PuntExceptionKVWithMetadata
 	for _, kvpair := range correlate {
-		typedValue, err := castInterfaceValue(kvpair.Key, kvpair.Value)
+		typedValue, err := castPuntExceptionValue(kvpair.Key, kvpair.Value)
 		if err != nil {
 			continue
 		}
-		typedMetadata, err := castInterfaceMetadata(kvpair.Key, kvpair.Metadata)
+		typedMetadata, err := castPuntExceptionMetadata(kvpair.Key, kvpair.Metadata)
 		if err != nil {
 			continue
 		}
 		correlateWithType = append(correlateWithType,
-			InterfaceKVWithMetadata{
+			PuntExceptionKVWithMetadata{
 				Key:      kvpair.Key,
 				Value:    typedValue,
 				Metadata: typedMetadata,
@@ -196,16 +195,16 @@ func (da *InterfaceDescriptorAdapter) Retrieve(correlate []KVWithMetadata) ([]KV
 	return values, err
 }
 
-func (da *InterfaceDescriptorAdapter) DerivedValues(key string, value proto.Message) []KeyValuePair {
-	typedValue, err := castInterfaceValue(key, value)
+func (da *PuntExceptionDescriptorAdapter) DerivedValues(key string, value proto.Message) []KeyValuePair {
+	typedValue, err := castPuntExceptionValue(key, value)
 	if err != nil {
 		return nil
 	}
 	return da.descriptor.DerivedValues(key, typedValue)
 }
 
-func (da *InterfaceDescriptorAdapter) Dependencies(key string, value proto.Message) []Dependency {
-	typedValue, err := castInterfaceValue(key, value)
+func (da *PuntExceptionDescriptorAdapter) Dependencies(key string, value proto.Message) []Dependency {
+	typedValue, err := castPuntExceptionValue(key, value)
 	if err != nil {
 		return nil
 	}
@@ -214,19 +213,19 @@ func (da *InterfaceDescriptorAdapter) Dependencies(key string, value proto.Messa
 
 ////////// Helper methods //////////
 
-func castInterfaceValue(key string, value proto.Message) (*linux_interfaces.Interface, error) {
-	typedValue, ok := value.(*linux_interfaces.Interface)
+func castPuntExceptionValue(key string, value proto.Message) (*vpp_punt.Exception, error) {
+	typedValue, ok := value.(*vpp_punt.Exception)
 	if !ok {
 		return nil, ErrInvalidValueType(key, value)
 	}
 	return typedValue, nil
 }
 
-func castInterfaceMetadata(key string, metadata Metadata) (*ifaceidx.LinuxIfMetadata, error) {
+func castPuntExceptionMetadata(key string, metadata Metadata) (interface{}, error) {
 	if metadata == nil {
 		return nil, nil
 	}
-	typedMetadata, ok := metadata.(*ifaceidx.LinuxIfMetadata)
+	typedMetadata, ok := metadata.(interface{})
 	if !ok {
 		return nil, ErrInvalidMetadataType(key)
 	}
