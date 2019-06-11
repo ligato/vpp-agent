@@ -12,8 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate descriptor-adapter --descriptor-name PuntToHost --value-type *vpp_punt.ToHost --import "github.com/ligato/vpp-agent/api/models/vpp/punt" --output-dir "descriptor"
 //go:generate descriptor-adapter --descriptor-name IPPuntRedirect --value-type *vpp_punt.IPRedirect --import "github.com/ligato/vpp-agent/api/models/vpp/punt" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name PuntToHost --value-type *vpp_punt.ToHost --import "github.com/ligato/vpp-agent/api/models/vpp/punt" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name PuntException --value-type *vpp_punt.Exception --import "github.com/ligato/vpp-agent/api/models/vpp/punt" --output-dir "descriptor"
 
 package puntplugin
 
@@ -51,8 +52,9 @@ type PuntPlugin struct {
 	puntHandler vppcalls.PuntVppAPI
 
 	// descriptors
-	toHostDescriptor     *descriptor.PuntToHostDescriptor
-	ipRedirectDescriptor *descriptor.IPRedirectDescriptor
+	ipRedirectDescriptor    *descriptor.IPRedirectDescriptor
+	toHostDescriptor        *descriptor.PuntToHostDescriptor
+	puntExceptionDescriptor *descriptor.PuntExceptionDescriptor
 }
 
 // Deps lists dependencies of the punt plugin.
@@ -75,6 +77,14 @@ func (p *PuntPlugin) Init() (err error) {
 	// init punt handler
 	p.puntHandler = vppcalls.CompatiblePuntVppHandler(p.vppCh, p.IfPlugin.GetInterfaceIndex(), p.Log)
 
+	// init and register IP punt redirect
+	p.ipRedirectDescriptor = descriptor.NewIPRedirectDescriptor(p.puntHandler, p.Log)
+	ipRedirectDescriptor := adapter.NewIPPuntRedirectDescriptor(p.ipRedirectDescriptor.GetDescriptor())
+	err = p.KVScheduler.RegisterKVDescriptor(ipRedirectDescriptor)
+	if err != nil {
+		return err
+	}
+
 	// init and register punt descriptor
 	p.toHostDescriptor = descriptor.NewPuntToHostDescriptor(p.puntHandler, p.Log)
 	toHostDescriptor := adapter.NewPuntToHostDescriptor(p.toHostDescriptor.GetDescriptor())
@@ -83,10 +93,10 @@ func (p *PuntPlugin) Init() (err error) {
 		return err
 	}
 
-	// init and register IP punt redirect
-	p.ipRedirectDescriptor = descriptor.NewIPRedirectDescriptor(p.puntHandler, p.Log)
-	ipRedirectDescriptor := adapter.NewIPPuntRedirectDescriptor(p.ipRedirectDescriptor.GetDescriptor())
-	err = p.KVScheduler.RegisterKVDescriptor(ipRedirectDescriptor)
+	// init and register punt exception descriptor
+	p.puntExceptionDescriptor = descriptor.NewPuntExceptionDescriptor(p.puntHandler, p.Log)
+	exceptionDescriptor := adapter.NewPuntExceptionDescriptor(p.puntExceptionDescriptor.GetDescriptor())
+	err = p.KVScheduler.RegisterKVDescriptor(exceptionDescriptor)
 	if err != nil {
 		return err
 	}

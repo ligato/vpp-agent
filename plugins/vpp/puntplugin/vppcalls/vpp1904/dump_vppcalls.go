@@ -121,3 +121,13 @@ func (h *PuntVppHandler) dumpPunts(ipv6 bool) (punts []*vppcalls.PuntDetails, er
 
 	return punts, nil
 }
+
+func (h *PuntVppHandler) DumpPuntReasons() ([]*vppcalls.ReasonDetails, error) {
+	h.log.Debugf("punt reasons are not supported")
+	return nil, nil
+}
+
+func (h *PuntVppHandler) DumpExceptions() ([]*vppcalls.ExceptionDetails, error) {
+	h.log.Debugf("punt exceptions are not supported")
+	return nil, nil
+}

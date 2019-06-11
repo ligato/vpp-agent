@@ -41,6 +41,7 @@ message ConfigData {
 
     repeated punt.IPRedirect punt_ipredirects = 70;
     repeated punt.ToHost punt_tohosts = 71;
+    repeated punt.Exception punt_exceptions = 72;
 }
 
 message Notification {

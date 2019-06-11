@@ -22,21 +22,74 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/puntplugin/vppcalls"
 )
 
-// DumpRegisteredPuntSockets returns punt to host via registered socket entries
-func (h *PuntVppHandler) DumpRegisteredPuntSockets() (punts []*vppcalls.PuntDetails, err error) {
-	// TODO: use set_punt dumps from binapi
-	if _, err := h.dumpPunts(); err != nil {
-		h.log.Errorf("punt dump failed: %v", err)
+// DumpExceptions returns dump of registered punt exceptions.
+func (h *PuntVppHandler) DumpExceptions() (punts []*vppcalls.ExceptionDetails, err error) {
+	reasons, err := h.dumpPuntReasons()
+	if err != nil {
+		return nil, err
 	}
-	if punts, err = h.dumpPuntSockets(); err != nil {
-		h.log.Errorf("punt socket dump failed: %v", err)
+	reasonMap := make(map[uint32]string, len(reasons))
+	for _, r := range reasons {
+		reasonMap[r.ID] = r.Reason.Name
+	}
+
+	if punts, err = h.dumpPuntExceptions(reasonMap); err != nil {
+		h.log.Errorf("punt exception dump failed: %v", err)
+		return nil, err
 	}
 
 	return punts, nil
 }
 
-func (h *PuntVppHandler) dumpPuntSockets() (punts []*vppcalls.PuntDetails, err error) {
-	h.log.Debug("=> dumping punt sockets")
+func (h *PuntVppHandler) dumpPuntExceptions(reasons map[uint32]string) (punts []*vppcalls.ExceptionDetails, err error) {
+	h.log.Debug("=> dumping exception punts")
+
+	req := h.callsChannel.SendMultiRequest(&punt.PuntSocketDump{
+		Type: punt.PUNT_API_TYPE_EXCEPTION,
+	})
+	for {
+		d := &punt.PuntSocketDetails{}
+		stop, err := req.ReceiveReply(d)
+		if stop {
+			break
+		}
+		if err != nil {
+			return nil, err
+		}
+
+		if d.Punt.Type != punt.PUNT_API_TYPE_EXCEPTION {
+			h.log.Warnf("VPP returned invalid punt type in exception punt dump: %v", d.Punt.Type)
+			continue
+		}
+
+		puntData := d.Punt.Punt.GetException()
+		reason := reasons[puntData.ID]
+		socketPath := string(bytes.Trim(d.Pathname, "\x00"))
+		h.log.Debugf(" - dumped exception punt: %+v (pathname: %s, reason: %s)", puntData, socketPath, reason)
+
+		punts = append(punts, &vppcalls.ExceptionDetails{
+			Exception: &vpp_punt.Exception{
+				Reason:     reason,
+				SocketPath: vppConfigSocketPath,
+			},
+		})
+	}
+
+	return punts, nil
+}
+
+// DumpRegisteredPuntSockets returns punt to host via registered socket entries
+func (h *PuntVppHandler) DumpRegisteredPuntSockets() (punts []*vppcalls.PuntDetails, err error) {
+	if punts, err = h.dumpPuntL4(); err != nil {
+		h.log.Errorf("punt L4 dump failed: %v", err)
+		return nil, err
+	}
+
+	return punts, nil
+}
+
+func (h *PuntVppHandler) dumpPuntL4() (punts []*vppcalls.PuntDetails, err error) {
+	h.log.Debug("=> dumping L4 punts")
 
 	req := h.callsChannel.SendMultiRequest(&punt.PuntSocketDump{
 		Type: punt.PUNT_API_TYPE_L4,
@@ -50,21 +103,64 @@ func (h *PuntVppHandler) dumpPuntSockets() (punts []*vppcalls.PuntDetails, err e
 		if err != nil {
 			return nil, err
 		}
-		h.log.Debugf(" - dumped punt socket (%s): %+v", d.Pathname, d.Punt)
 
-		puntL4Data := d.Punt.Punt.GetL4()
+		if d.Punt.Type != punt.PUNT_API_TYPE_L4 {
+			h.log.Warnf("VPP returned invalid punt type in L4 punt dump: %v", d.Punt.Type)
+			continue
+		}
+
+		puntData := d.Punt.Punt.GetL4()
+		socketPath := string(bytes.Trim(d.Pathname, "\x00"))
+		h.log.Debugf(" - dumped L4 punt: %+v (pathname: %s)", puntData, socketPath)
+
 		punts = append(punts, &vppcalls.PuntDetails{
 			PuntData: &vpp_punt.ToHost{
-				Port: uint32(puntL4Data.Port),
-				// FIXME: L3Protocol seems to return 0 when registering ALL
-				L3Protocol: parseL3Proto(puntL4Data.Af),
-				L4Protocol: parseL4Proto(puntL4Data.Protocol),
+				Port:       uint32(puntData.Port),
+				L3Protocol: parseL3Proto(puntData.Af),
+				L4Protocol: parseL4Proto(puntData.Protocol),
+				SocketPath: vppConfigSocketPath,
 			},
-			SocketPath: string(bytes.Trim(d.Pathname, "\x00")),
+			SocketPath: socketPath,
 		})
 	}
 
 	return punts, nil
+}
+
+// DumpPuntReasons returns all known punt reasons from VPP
+func (h *PuntVppHandler) DumpPuntReasons() (reasons []*vppcalls.ReasonDetails, err error) {
+	if reasons, err = h.dumpPuntReasons(); err != nil {
+		h.log.Errorf("punt reasons dump failed: %v", err)
+		return nil, err
+	}
+
+	return reasons, nil
+}
+
+func (h *PuntVppHandler) dumpPuntReasons() (reasons []*vppcalls.ReasonDetails, err error) {
+	h.log.Debugf("=> dumping punt reasons")
+
+	req := h.callsChannel.SendMultiRequest(&punt.PuntReasonDump{})
+	for {
+		d := &punt.PuntReasonDetails{}
+		stop, err := req.ReceiveReply(d)
+		if stop {
+			break
+		}
+		if err != nil {
+			return nil, err
+		}
+		h.log.Debugf(" - dumped punt reason: %+v", d.Reason)
+
+		reasons = append(reasons, &vppcalls.ReasonDetails{
+			Reason: &vpp_punt.Reason{
+				Name: d.Reason.Name,
+			},
+			ID: d.Reason.ID,
+		})
+	}
+
+	return reasons, nil
 }
 
 func parseL3Proto(p punt.AddressFamily) vpp_punt.L3Protocol {
@@ -85,32 +181,4 @@ func parseL4Proto(p punt.IPProto) vpp_punt.L4Protocol {
 		return vpp_punt.L4Protocol_UDP
 	}
 	return vpp_punt.L4Protocol_UNDEFINED_L4
-}
-
-func (h *PuntVppHandler) dumpPunts() (punts []*vppcalls.PuntDetails, err error) {
-	h.log.Debugf("=> dumping punts")
-
-	req := h.callsChannel.SendMultiRequest(&punt.PuntReasonDump{})
-	for {
-		d := &punt.PuntReasonDetails{}
-		stop, err := req.ReceiveReply(d)
-		if stop {
-			break
-		}
-		if err != nil {
-			return nil, err
-		}
-		h.log.Debugf(" - dumped punt: %+v", d.Reason)
-
-		// TODO Re-enable with the Punt-To-Host
-		//punts = append(punts, &vppcalls.PuntDetails{
-		//	PuntData: &vpp_punt.ToHost{
-		//		Port:       uint32(d.Punt.L4Port),
-		//		L3Protocol: parseL3Proto(d.Punt.IPv),
-		//		L4Protocol: parseL4Proto(d.Punt.L4Protocol),
-		//	},
-		//})
-	}
-
-	return punts, nil
 }

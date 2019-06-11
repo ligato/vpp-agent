@@ -16,8 +16,10 @@ package descriptor
 
 import (
 	"errors"
+	"strings"
 
 	"github.com/ligato/cn-infra/logging"
+
 	punt "github.com/ligato/vpp-agent/api/models/vpp/punt"
 	"github.com/ligato/vpp-agent/pkg/models"
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
@@ -40,6 +42,9 @@ var (
 
 	// ErrPuntWithoutPort is returned when VPP punt has undefined port.
 	ErrPuntWithoutPort = errors.New("VPP punt defined without port")
+
+	// ErrPuntWithoutSocketPath is returned when VPP punt has undefined socket path.
+	ErrPuntWithoutSocketPath = errors.New("VPP punt defined without socket path")
 )
 
 // PuntToHostDescriptor teaches KVScheduler how to configure VPP punt to host or unix domain socket.
@@ -83,6 +88,11 @@ func (d *PuntToHostDescriptor) EquivalentPuntToHost(key string, oldPunt, newPunt
 		oldPunt.Port != newPunt.Port {
 		return false
 	}
+
+	if strings.HasPrefix(oldPunt.SocketPath, "!") {
+		return false
+	}
+
 	return true
 }
 
@@ -109,19 +119,22 @@ func (d *PuntToHostDescriptor) Validate(key string, puntCfg *punt.ToHost) error 
 		return kvs.NewInvalidValueError(ErrPuntWithoutPort, "port")
 	}
 
+	if puntCfg.SocketPath == "" {
+		return kvs.NewInvalidValueError(ErrPuntWithoutSocketPath, "socket_path")
+	}
+
 	return nil
 }
 
 // Create adds new punt to host entry or registers new punt to unix domain socket.
 func (d *PuntToHostDescriptor) Create(key string, punt *punt.ToHost) (interface{}, error) {
-	// add punt to host
-	if punt.SocketPath == "" {
+	/*if punt.SocketPath == "" {
 		if err := d.puntHandler.AddPunt(punt); err != nil {
 			d.log.Error(err)
 			return nil, err
 		}
 		return nil, nil
-	}
+	}*/
 
 	// register punt to socket
 	pathname, err := d.puntHandler.RegisterPuntSocket(punt)
@@ -139,11 +152,16 @@ func (d *PuntToHostDescriptor) Create(key string, punt *punt.ToHost) (interface{
 
 // Delete removes VPP punt configuration.
 func (d *PuntToHostDescriptor) Delete(key string, punt *punt.ToHost, metadata interface{}) error {
-	if punt.SocketPath == "" {
+	/*if punt.SocketPath == "" {
 		if err := d.puntHandler.DeletePunt(punt); err != nil {
 			d.log.Error(err)
 			return err
 		}
+	}*/
+	p := punt
+	if strings.HasPrefix(p.SocketPath, "!") {
+		p = &(*punt)
+		p.SocketPath = strings.TrimPrefix(p.SocketPath, "!")
 	}
 
 	// deregister punt to socket
@@ -161,20 +179,68 @@ func (d *PuntToHostDescriptor) Delete(key string, punt *punt.ToHost, metadata in
 
 // Retrieve returns all configured VPP punt to host entries.
 func (d *PuntToHostDescriptor) Retrieve(correlate []adapter.PuntToHostKVWithMetadata) (retrieved []adapter.PuntToHostKVWithMetadata, err error) {
-	// TODO dump for punt and punt socket register missing in api
-	d.log.Info("Dump punt/socket register is not supported by the VPP")
-
+	// Dump registered punt sockets
 	socks, err := d.puntHandler.DumpRegisteredPuntSockets()
 	if err != nil {
 		return nil, err
 	}
 
-	for _, punt := range socks {
+	for _, s := range socks {
+		if s.PuntData.SocketPath == "" && s.SocketPath != "" {
+			s.PuntData.SocketPath = "!" + s.SocketPath
+		}
+	}
+
+	// 1. Find NB equivalent of the punt entry with L3 set to 'ALL'. If found, cache
+	// the VPP entry. If not found, add to retrieved values.
+	var cachedIpv4, cachedIpv6 []*vppcalls.PuntDetails
+Retrieved:
+	for _, fromVPP := range socks {
+		for _, fromNB := range correlate {
+			if fromNB.Value.L3Protocol != punt.L3Protocol_ALL {
+				continue
+			}
+			if fromVPP.PuntData.Port == fromNB.Value.Port &&
+				fromVPP.PuntData.L4Protocol == fromNB.Value.L4Protocol {
+				if fromVPP.PuntData.L3Protocol == punt.L3Protocol_IPv4 {
+					cachedIpv4 = append(cachedIpv4, fromVPP)
+				}
+				if fromVPP.PuntData.L3Protocol == punt.L3Protocol_IPv6 {
+					cachedIpv6 = append(cachedIpv6, fromVPP)
+				}
+				continue Retrieved
+			}
+		}
 		retrieved = append(retrieved, adapter.PuntToHostKVWithMetadata{
-			Key:    models.Key(punt.PuntData),
-			Value:  punt.PuntData,
+			Key:    models.Key(fromVPP.PuntData),
+			Value:  fromVPP.PuntData,
 			Origin: kvs.FromNB,
 		})
+	}
+
+	// 2. Find pairs of the same config.
+	//
+	// Note: only if both, IPv4 and IPv6 exists the entry is added. Cached IPv4
+	// without IPv6 (and all remaining IPv6) are ignored, causing agent to configure
+	// the missing one and re-configure the existing one.
+	for _, cachedIPv4Punt := range cachedIpv4 {
+		// look for IPv6 counterpart
+		var found bool
+		for _, cachedIPv6Punt := range cachedIpv6 {
+			if cachedIPv4Punt.PuntData.L4Protocol == cachedIPv6Punt.PuntData.L4Protocol &&
+				cachedIPv4Punt.PuntData.Port == cachedIPv6Punt.PuntData.Port {
+				found = true
+			}
+		}
+		// Store as 'ALL entry'
+		if found {
+			cachedIPv4Punt.PuntData.L3Protocol = punt.L3Protocol_ALL
+			retrieved = append(retrieved, adapter.PuntToHostKVWithMetadata{
+				Key:    models.Key(cachedIPv4Punt.PuntData),
+				Value:  cachedIPv4Punt.PuntData,
+				Origin: kvs.FromNB,
+			})
+		}
 	}
 
 	return retrieved, nil

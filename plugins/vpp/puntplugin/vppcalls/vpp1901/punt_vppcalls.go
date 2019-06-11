@@ -15,6 +15,7 @@
 package vpp1901
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -244,4 +245,12 @@ func boolToUint(input bool) uint8 {
 		return 1
 	}
 	return 0
+}
+
+func (h *PuntVppHandler) AddPuntException(punt *punt.Exception) error {
+	return fmt.Errorf("punt exceptions are not supported")
+}
+
+func (h *PuntVppHandler) DeletePuntException(punt *punt.Exception) error {
+	return fmt.Errorf("punt exceptions are not supported")
 }

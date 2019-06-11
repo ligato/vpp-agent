@@ -1,6 +1,8 @@
 package configurator
 
 import (
+	"errors"
+
 	"github.com/ligato/cn-infra/logging"
 	"golang.org/x/net/context"
 
@@ -122,6 +124,11 @@ func (svc *dumpService) Dump(context.Context, *rpc.DumpRequest) (*rpc.DumpRespon
 	dump.VppConfig.PuntTohosts, err = svc.DumpPunt()
 	if err != nil {
 		svc.log.Errorf("DumpPunt failed: %v", err)
+		return nil, err
+	}
+	dump.VppConfig.PuntExceptions, err = svc.DumpPuntExceptions()
+	if err != nil {
+		svc.log.Errorf("DumpPuntExceptions failed: %v", err)
 		return nil, err
 	}
 
@@ -358,6 +365,22 @@ func (svc *dumpService) DumpPunt() (punts []*vpp_punt.ToHost, err error) {
 	}
 	for _, puntDetails := range dump {
 		punts = append(punts, puntDetails.PuntData)
+	}
+
+	return punts, nil
+}
+
+// DumpPuntExceptions reads VPP Punt exceptions and returns them as an *PuntResponse.
+func (svc *dumpService) DumpPuntExceptions() (punts []*vpp_punt.Exception, err error) {
+	if svc.puntHandler == nil {
+		return nil, errors.New("puntHandler is not available")
+	}
+	dump, err := svc.puntHandler.DumpExceptions()
+	if err != nil {
+		return nil, err
+	}
+	for _, puntDetails := range dump {
+		punts = append(punts, puntDetails.Exception)
 	}
 
 	return punts, nil

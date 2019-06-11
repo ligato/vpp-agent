@@ -28,6 +28,15 @@ type PuntDetails struct {
 	SocketPath string
 }
 
+type ReasonDetails struct {
+	Reason *punt.Reason
+	ID     uint32
+}
+
+type ExceptionDetails struct {
+	Exception *punt.Exception
+}
+
 // PuntVppAPI provides methods for managing VPP punt configuration.
 type PuntVppAPI interface {
 	PuntVPPRead
@@ -44,12 +53,20 @@ type PuntVppAPI interface {
 	AddPuntRedirect(punt *punt.IPRedirect) error
 	// DeletePuntRedirect removes existing redirect entry
 	DeletePuntRedirect(punt *punt.IPRedirect) error
+	// AddPuntException configures new punt exception
+	AddPuntException(punt *punt.Exception) error
+	// DeletePuntException removes punt exception entry
+	DeletePuntException(punt *punt.Exception) error
 }
 
 // PuntVPPRead provides read methods for punt
 type PuntVPPRead interface {
 	// DumpPuntRegisteredSockets returns all punt socket registrations known to the VPP agent
 	DumpRegisteredPuntSockets() ([]*PuntDetails, error)
+	// DumpExceptions dumps punt exceptions
+	DumpExceptions() ([]*ExceptionDetails, error)
+	// DumpPuntReasons returns all known punt reasons from VPP
+	DumpPuntReasons() ([]*ReasonDetails, error)
 }
 
 var Versions = map[string]HandlerVersion{}
