@@ -30,11 +30,7 @@ func init() {
 	vppcalls.Versions["vpp1908"] = vppcalls.HandlerVersion{
 		Msgs: msgs,
 		New: func(ch govppapi.Channel, aclIndexes aclidx.ACLMetadataIndex, ifIndexes ifaceidx.IfaceMetadataIndex) vppcalls.ABFVppAPI {
-			return &ABFVppHandler{
-				callsChannel: ch,
-				aclIndexes:   aclIndexes,
-				ifIndexes:    ifIndexes,
-			}
+			return NewABFVppHandler(ch, aclIndexes, ifIndexes)
 		},
 	}
 }
@@ -47,6 +43,10 @@ type ABFVppHandler struct {
 }
 
 // NewABFVppHandler returns new ABFVppHandler.
-func NewABFVppHandler(calls, dump govppapi.Channel, aclIdx aclidx.ACLMetadataIndex, ifIdx ifaceidx.IfaceMetadataIndex) *ABFVppHandler {
-	return &ABFVppHandler{calls, aclIdx, ifIdx}
+func NewABFVppHandler(calls govppapi.Channel, aclIdx aclidx.ACLMetadataIndex, ifIdx ifaceidx.IfaceMetadataIndex) *ABFVppHandler {
+	return &ABFVppHandler{
+		callsChannel: calls,
+		aclIndexes:   aclIdx,
+		ifIndexes:    ifIdx,
+	}
 }
