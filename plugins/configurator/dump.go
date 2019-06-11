@@ -352,11 +352,14 @@ func (svc *dumpService) DumpPunt() (punts []*vpp_punt.ToHost, err error) {
 		// handler is not available
 		return nil, nil
 	}
-
-	punts, err = svc.puntHandler.DumpRegisteredPuntSockets()
+	dump, err := svc.puntHandler.DumpRegisteredPuntSockets()
 	if err != nil {
 		return nil, err
 	}
+	for _, puntDetails := range dump {
+		punts = append(punts, puntDetails.PuntData)
+	}
+
 	return punts, nil
 }
 
