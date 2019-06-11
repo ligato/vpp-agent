@@ -55,7 +55,7 @@ func (h *ABFVppHandler) dumpABFInterfaces() (map[uint32][]*vpp_abf.ABF_AttachedI
 	abfIfs := make(map[uint32][]*vpp_abf.ABF_AttachedInterface)
 
 	req := &abf.AbfItfAttachDump{}
-	reqCtx := h.dumpChannel.SendMultiRequest(req)
+	reqCtx := h.callsChannel.SendMultiRequest(req)
 
 	for {
 		reply := &abf.AbfItfAttachDetails{}
@@ -93,7 +93,7 @@ func (h *ABFVppHandler) dumpABFInterfaces() (map[uint32][]*vpp_abf.ABF_AttachedI
 func (h *ABFVppHandler) dumpABFPolicy() ([]*vppcalls.ABFDetails, error) {
 	var abfs []*vppcalls.ABFDetails
 	req := &abf.AbfPolicyDump{}
-	reqCtx := h.dumpChannel.SendMultiRequest(req)
+	reqCtx := h.callsChannel.SendMultiRequest(req)
 
 	for {
 		reply := &abf.AbfPolicyDetails{}
