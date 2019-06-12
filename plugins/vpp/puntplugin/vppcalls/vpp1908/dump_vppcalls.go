@@ -16,11 +16,89 @@ package vpp1908
 
 import (
 	"bytes"
+	"net"
 
 	vpp_punt "github.com/ligato/vpp-agent/api/models/vpp/punt"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1908/ip"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1908/punt"
 	"github.com/ligato/vpp-agent/plugins/vpp/puntplugin/vppcalls"
 )
+
+// DumpPuntRedirect dumps ip redirect punts
+func (h *PuntVppHandler) DumpPuntRedirect() (punts []*vpp_punt.IPRedirect, err error) {
+	h.log.Debug("=> dumping IP redirect punts")
+
+	punt4, err := h.dumpPuntRedirect(false)
+	if err != nil {
+		return nil, err
+	}
+	punts = append(punts, punt4...)
+
+	punt6, err := h.dumpPuntRedirect(true)
+	if err != nil {
+		return nil, err
+	}
+	punts = append(punts, punt6...)
+
+	return punts, nil
+}
+
+func (h *PuntVppHandler) dumpPuntRedirect(ipv6 bool) (punts []*vpp_punt.IPRedirect, err error) {
+	h.log.Debugf("dumping IP redirect punts (ipv6: %v)", ipv6)
+
+	req := h.callsChannel.SendMultiRequest(&ip.IPPuntRedirectDump{
+		SwIfIndex: ^uint32(0),
+		IsIPv6:    boolToUint(ipv6),
+	})
+	for {
+		d := &ip.IPPuntRedirectDetails{}
+		stop, err := req.ReceiveReply(d)
+		if stop {
+			break
+		}
+		if err != nil {
+			return nil, err
+		}
+
+		h.log.Debugf(" - ip redirect punt: %+v", d)
+
+		rxIface, _, exists := h.ifIndexes.LookupBySwIfIndex(d.Punt.RxSwIfIndex)
+		if !exists {
+			h.log.Warnf("RX interface (%v) not found", d.Punt.RxSwIfIndex)
+			continue
+		}
+		txIface, _, exists := h.ifIndexes.LookupBySwIfIndex(d.Punt.TxSwIfIndex)
+		if !exists {
+			h.log.Warnf("TX interface (%v) not found", d.Punt.TxSwIfIndex)
+			continue
+		}
+
+		var l3proto vpp_punt.L3Protocol
+		var nextHop string
+
+		if d.Punt.Nh.Af == ip.ADDRESS_IP4 {
+			l3proto = vpp_punt.L3Protocol_IPv4
+			addr := d.Punt.Nh.Un.GetIP4()
+			nextHop = net.IP(addr[:]).To4().String()
+		} else if d.Punt.Nh.Af == ip.ADDRESS_IP6 {
+			l3proto = vpp_punt.L3Protocol_IPv6
+			addr := d.Punt.Nh.Un.GetIP6()
+			nextHop = net.IP(addr[:]).To16().String()
+		} else {
+			h.log.Warnf("invalid address family (%v)", d.Punt.Nh.Af)
+			continue
+		}
+
+		punts = append(punts, &vpp_punt.IPRedirect{
+			L3Protocol:  l3proto,
+			RxInterface: rxIface,
+			TxInterface: txIface,
+			NextHop:     nextHop,
+		})
+	}
+
+	return punts, nil
+}
 
 // DumpExceptions returns dump of registered punt exceptions.
 func (h *PuntVppHandler) DumpExceptions() (punts []*vppcalls.ExceptionDetails, err error) {
@@ -72,6 +150,7 @@ func (h *PuntVppHandler) dumpPuntExceptions(reasons map[uint32]string) (punts []
 				Reason:     reason,
 				SocketPath: vppConfigSocketPath,
 			},
+			SocketPath: socketPath,
 		})
 	}
 

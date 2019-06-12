@@ -89,6 +89,8 @@ func (d *PuntToHostDescriptor) EquivalentPuntToHost(key string, oldPunt, newPunt
 		return false
 	}
 
+	// if the socket path contains '!' as prefix we return false
+	// to force scheduler to recreate (register) punt socket
 	if strings.HasPrefix(oldPunt.SocketPath, "!") {
 		return false
 	}
@@ -119,6 +121,7 @@ func (d *PuntToHostDescriptor) Validate(key string, puntCfg *punt.ToHost) error 
 		return kvs.NewInvalidValueError(ErrPuntWithoutPort, "port")
 	}
 
+	// TODO: maybe this should also have dependency on socket file existing??
 	if puntCfg.SocketPath == "" {
 		return kvs.NewInvalidValueError(ErrPuntWithoutSocketPath, "socket_path")
 	}
@@ -128,14 +131,6 @@ func (d *PuntToHostDescriptor) Validate(key string, puntCfg *punt.ToHost) error 
 
 // Create adds new punt to host entry or registers new punt to unix domain socket.
 func (d *PuntToHostDescriptor) Create(key string, punt *punt.ToHost) (interface{}, error) {
-	/*if punt.SocketPath == "" {
-		if err := d.puntHandler.AddPunt(punt); err != nil {
-			d.log.Error(err)
-			return nil, err
-		}
-		return nil, nil
-	}*/
-
 	// register punt to socket
 	pathname, err := d.puntHandler.RegisterPuntSocket(punt)
 	if err != nil {
@@ -152,12 +147,7 @@ func (d *PuntToHostDescriptor) Create(key string, punt *punt.ToHost) (interface{
 
 // Delete removes VPP punt configuration.
 func (d *PuntToHostDescriptor) Delete(key string, punt *punt.ToHost, metadata interface{}) error {
-	/*if punt.SocketPath == "" {
-		if err := d.puntHandler.DeletePunt(punt); err != nil {
-			d.log.Error(err)
-			return err
-		}
-	}*/
+	// check if the socketpath contains '!' as prefix from retrieve
 	p := punt
 	if strings.HasPrefix(p.SocketPath, "!") {
 		p = &(*punt)
@@ -185,6 +175,10 @@ func (d *PuntToHostDescriptor) Retrieve(correlate []adapter.PuntToHostKVWithMeta
 		return nil, err
 	}
 
+	// for all dumped punts that were not yet registered and for which
+	// the VPP socket is unknown we prepend '!' as prefix
+	// to allow descriptor to recognize this in equivalent
+	// and force recreation or make it possible to delete it
 	for _, s := range socks {
 		if s.PuntData.SocketPath == "" && s.SocketPath != "" {
 			s.PuntData.SocketPath = "!" + s.SocketPath
