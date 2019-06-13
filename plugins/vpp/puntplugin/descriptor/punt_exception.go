@@ -16,8 +16,8 @@ package descriptor
 
 import (
 	"errors"
+	"strings"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/cn-infra/logging"
 
 	punt "github.com/ligato/vpp-agent/api/models/vpp/punt"
@@ -40,6 +40,8 @@ var (
 
 // PuntExceptionDescriptor teaches KVScheduler how to configure VPP putn exception.
 type PuntExceptionDescriptor struct {
+	RegisterSocketFn func(register bool, toHost *punt.Exception, socketPath string)
+
 	// dependencies
 	log         logging.Logger
 	puntHandler vppcalls.PuntVppAPI
@@ -72,7 +74,17 @@ func (d *PuntExceptionDescriptor) GetDescriptor() *adapter.PuntExceptionDescript
 
 // EquivalentPuntException is case-insensitive comparison function for punt.Exception.
 func (d *PuntExceptionDescriptor) EquivalentPuntException(key string, oldPunt, newPunt *punt.Exception) bool {
-	return proto.Equal(oldPunt, newPunt)
+	if oldPunt.Reason != newPunt.Reason {
+		return false
+	}
+
+	// if the socket path contains '!' as prefix we return false
+	// to force scheduler to recreate (register) punt socket
+	if strings.HasPrefix(oldPunt.SocketPath, "!") {
+		return false
+	}
+
+	return true
 }
 
 // Validate validates VPP punt configuration.
@@ -82,16 +94,24 @@ func (d *PuntExceptionDescriptor) Validate(key string, puntCfg *punt.Exception) 
 		return ErrPuntExceptionWithoutReason
 	}
 
+	if puntCfg.SocketPath == "" {
+		return kvs.NewInvalidValueError(ErrPuntWithoutSocketPath, "socket_path")
+	}
+
 	return nil
 }
 
 // Create adds new punt to host entry or registers new punt to unix domain socket.
 func (d *PuntExceptionDescriptor) Create(key string, punt *punt.Exception) (interface{}, error) {
-	// add punt exception
-	err := d.puntHandler.AddPuntException(punt)
+	// register punt exception
+	pathname, err := d.puntHandler.AddPuntException(punt)
 	if err != nil {
 		d.log.Error(err)
 		return nil, err
+	}
+
+	if d.RegisterSocketFn != nil {
+		d.RegisterSocketFn(true, punt, pathname)
 	}
 
 	return nil, nil
@@ -99,11 +119,22 @@ func (d *PuntExceptionDescriptor) Create(key string, punt *punt.Exception) (inte
 
 // Delete removes VPP punt configuration.
 func (d *PuntExceptionDescriptor) Delete(key string, punt *punt.Exception, metadata interface{}) error {
+	// check if the socketpath contains '!' as prefix from retrieve
+	p := punt
+	if strings.HasPrefix(p.SocketPath, "!") {
+		p = &(*punt)
+		p.SocketPath = strings.TrimPrefix(p.SocketPath, "!")
+	}
+
 	// delete punt exception
 	err := d.puntHandler.DeletePuntException(punt)
 	if err != nil {
 		d.log.Error(err)
 		return err
+	}
+
+	if d.RegisterSocketFn != nil {
+		d.RegisterSocketFn(false, punt, "")
 	}
 
 	return nil
@@ -115,6 +146,16 @@ func (d *PuntExceptionDescriptor) Retrieve(correlate []adapter.PuntExceptionKVWi
 	punts, err := d.puntHandler.DumpExceptions()
 	if err != nil {
 		return nil, err
+	}
+
+	// for all dumped punts that were not yet registered and for which
+	// the VPP socket is unknown we prepend '!' as prefix
+	// to allow descriptor to recognize this in equivalent
+	// and force recreation or make it possible to delete it
+	for _, p := range punts {
+		if p.Exception.SocketPath == "" && p.SocketPath != "" {
+			p.Exception.SocketPath = "!" + p.SocketPath
+		}
 	}
 
 	for _, p := range punts {

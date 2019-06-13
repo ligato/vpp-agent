@@ -24,6 +24,11 @@ import (
 // FIXME: temporary solutions for providing data in dump
 var socketPathMap = make(map[uint32]*vpp.PuntToHost)
 
+func (h *PuntVppHandler) DumpPuntRedirect() (punts []*vpp_punt.IPRedirect, err error) {
+	h.log.Debugf("dump for ip redirect punt not implemented")
+	return nil, nil
+}
+
 // DumpRegisteredPuntSockets returns punt to host via registered socket entries
 // TODO since the binary API is not available, all data are read from local cache for now
 func (h *PuntVppHandler) DumpRegisteredPuntSockets() (punts []*vppcalls.PuntDetails, err error) {

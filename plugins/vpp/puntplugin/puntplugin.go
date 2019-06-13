@@ -101,7 +101,7 @@ func (p *PuntPlugin) Init() (err error) {
 		return err
 	}
 
-	// TODO: temporary workaround for publishing registered sockets
+	// FIXME: temporary workaround for publishing registered sockets
 	p.toHostDescriptor.RegisterSocketFn = func(register bool, toHost *vpp_punt.ToHost, socketPath string) {
 		if p.PublishState == nil {
 			return
@@ -110,12 +110,29 @@ func (p *PuntPlugin) Init() (err error) {
 		if register {
 			puntToHost := *toHost
 			puntToHost.SocketPath = socketPath
-			if err := p.PublishState.Put(key, &puntToHost); err != nil {
-				p.Log.Errorf("publishing registered socket failed: %v", err)
+			if err := p.PublishState.Put(key, &puntToHost, datasync.WithClientLifetimeTTL()); err != nil {
+				p.Log.Errorf("publishing registered punt socket failed: %v", err)
 			}
 		} else {
 			if err := p.PublishState.Put(key, nil); err != nil {
-				p.Log.Errorf("publishing unregistered socket failed: %v", err)
+				p.Log.Errorf("publishing unregistered punt socket failed: %v", err)
+			}
+		}
+	}
+	p.puntExceptionDescriptor.RegisterSocketFn = func(register bool, puntExc *vpp_punt.Exception, socketPath string) {
+		if p.PublishState == nil {
+			return
+		}
+		key := strings.Replace(models.Key(puntExc), "config/", "status/", -1)
+		if register {
+			punt := *puntExc
+			punt.SocketPath = socketPath
+			if err := p.PublishState.Put(key, &punt, datasync.WithClientLifetimeTTL()); err != nil {
+				p.Log.Errorf("publishing registered punt exception socket failed: %v", err)
+			}
+		} else {
+			if err := p.PublishState.Put(key, nil); err != nil {
+				p.Log.Errorf("publishing unregistered punt exception socket failed: %v", err)
 			}
 		}
 	}
