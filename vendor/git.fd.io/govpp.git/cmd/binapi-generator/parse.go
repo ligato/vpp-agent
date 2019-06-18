@@ -21,6 +21,7 @@ import (
 	"strings"
 
 	"github.com/bennyscetbun/jsongo"
+	"github.com/sirupsen/logrus"
 )
 
 // top level objects
@@ -32,6 +33,7 @@ const (
 	objServices  = "services"
 	objAliases   = "aliases"
 	vlAPIVersion = "vl_api_version"
+	objOptions   = "options"
 )
 
 // various object fields
@@ -64,11 +66,32 @@ const (
 	fieldMetaLimit = "limit"
 )
 
+// module options
+const (
+	versionOption = "version"
+)
+
 // parsePackage parses provided JSON data into objects prepared for code generation
 func parsePackage(ctx *context, jsonRoot *jsongo.JSONNode) (*Package, error) {
-	logf(" %s (version: %s) contains: %d services, %d messages, %d types, %d enums, %d unions, %d aliases",
+	pkg := Package{
+		RefMap: make(map[string]string),
+	}
+
+	// parse CRC for API version
+	if crc := jsonRoot.At(vlAPIVersion); crc.GetType() == jsongo.TypeValue {
+		pkg.CRC = crc.Get().(string)
+	}
+
+	// parse version string
+	if opt := jsonRoot.Map(objOptions); opt.GetType() == jsongo.TypeMap {
+		if ver := opt.Map(versionOption); ver.GetType() == jsongo.TypeValue {
+			pkg.Version = ver.Get().(string)
+		}
+	}
+
+	logf("parsing package %s (version: %s, CRC: %s) contains: %d services, %d messages, %d types, %d enums, %d unions, %d aliases",
 		ctx.packageName,
-		jsonRoot.Map(vlAPIVersion).Get(),
+		pkg.Version, pkg.CRC,
 		jsonRoot.Map(objServices).Len(),
 		jsonRoot.Map(objMessages).Len(),
 		jsonRoot.Map(objTypes).Len(),
@@ -76,11 +99,6 @@ func parsePackage(ctx *context, jsonRoot *jsongo.JSONNode) (*Package, error) {
 		jsonRoot.Map(objUnions).Len(),
 		jsonRoot.Map(objAliases).Len(),
 	)
-
-	pkg := Package{
-		APIVersion: jsonRoot.Map(vlAPIVersion).Get().(string),
-		RefMap:     make(map[string]string),
-	}
 
 	// parse enums
 	enums := jsonRoot.Map(objEnums)
@@ -201,46 +219,6 @@ func parsePackage(ctx *context, jsonRoot *jsongo.JSONNode) (*Package, error) {
 	return &pkg, nil
 }
 
-// printPackage prints all loaded objects for package
-func printPackage(pkg *Package) {
-	if len(pkg.Enums) > 0 {
-		logf("loaded %d enums:", len(pkg.Enums))
-		for k, enum := range pkg.Enums {
-			logf(" - enum #%d\t%+v", k, enum)
-		}
-	}
-	if len(pkg.Unions) > 0 {
-		logf("loaded %d unions:", len(pkg.Unions))
-		for k, union := range pkg.Unions {
-			logf(" - union #%d\t%+v", k, union)
-		}
-	}
-	if len(pkg.Types) > 0 {
-		logf("loaded %d types:", len(pkg.Types))
-		for _, typ := range pkg.Types {
-			logf(" - type: %q (%d fields)", typ.Name, len(typ.Fields))
-		}
-	}
-	if len(pkg.Messages) > 0 {
-		logf("loaded %d messages:", len(pkg.Messages))
-		for _, msg := range pkg.Messages {
-			logf(" - message: %q (%d fields)", msg.Name, len(msg.Fields))
-		}
-	}
-	if len(pkg.Services) > 0 {
-		logf("loaded %d services:", len(pkg.Services))
-		for _, svc := range pkg.Services {
-			var info string
-			if svc.Stream {
-				info = "(STREAM)"
-			} else if len(svc.Events) > 0 {
-				info = fmt.Sprintf("(EVENTS: %v)", svc.Events)
-			}
-			logf(" - service: %q -> %q %s", svc.RequestType, svc.ReplyType, info)
-		}
-	}
-}
-
 // parseEnum parses VPP binary API enum object from JSON node
 func parseEnum(ctx *context, enumNode *jsongo.JSONNode) (*Enum, error) {
 	if enumNode.Len() == 0 || enumNode.At(0).GetType() != jsongo.TypeValue {
@@ -296,9 +274,9 @@ func parseUnion(ctx *context, unionNode *jsongo.JSONNode) (*Union, error) {
 	if !ok {
 		return nil, fmt.Errorf("union name is %T, not a string", unionNode.At(0).Get())
 	}
-	unionCRC, ok := unionNode.At(unionNode.Len() - 1).At(crcField).Get().(string)
-	if !ok {
-		return nil, fmt.Errorf("union crc invalid or missing")
+	var unionCRC string
+	if unionNode.At(unionNode.Len()-1).GetType() == jsongo.TypeMap {
+		unionCRC = unionNode.At(unionNode.Len() - 1).At(crcField).Get().(string)
 	}
 
 	union := Union{
@@ -306,8 +284,8 @@ func parseUnion(ctx *context, unionNode *jsongo.JSONNode) (*Union, error) {
 		CRC:  unionCRC,
 	}
 
-	// loop through union fields, skip first (name) and last (crc)
-	for j := 1; j < unionNode.Len()-1; j++ {
+	// loop through union fields, skip first (name)
+	for j := 1; j < unionNode.Len(); j++ {
 		if unionNode.At(j).GetType() == jsongo.TypeArray {
 			fieldNode := unionNode.At(j)
 
@@ -333,9 +311,9 @@ func parseType(ctx *context, typeNode *jsongo.JSONNode) (*Type, error) {
 	if !ok {
 		return nil, fmt.Errorf("type name is %T, not a string", typeNode.At(0).Get())
 	}
-	typeCRC, ok := typeNode.At(typeNode.Len() - 1).At(crcField).Get().(string)
-	if !ok {
-		return nil, fmt.Errorf("type crc invalid or missing")
+	var typeCRC string
+	if lastField := typeNode.At(typeNode.Len() - 1); lastField.GetType() == jsongo.TypeMap {
+		typeCRC = lastField.At(crcField).Get().(string)
 	}
 
 	typ := Type{
@@ -343,8 +321,8 @@ func parseType(ctx *context, typeNode *jsongo.JSONNode) (*Type, error) {
 		CRC:  typeCRC,
 	}
 
-	// loop through type fields, skip first (name) and last (crc)
-	for j := 1; j < typeNode.Len()-1; j++ {
+	// loop through type fields, skip first (name)
+	for j := 1; j < typeNode.Len(); j++ {
 		if typeNode.At(j).GetType() == jsongo.TypeArray {
 			fieldNode := typeNode.At(j)
 
@@ -466,7 +444,7 @@ func parseField(ctx *context, field *jsongo.JSONNode) (*Field, error) {
 				case fieldMetaLimit:
 					f.Meta.Limit = int(metaNode.Get().(float64))
 				default:
-					log.Warnf("unknown meta info (%s) for field (%s)", metaName, fieldName)
+					logrus.Warnf("unknown meta info (%s) for field (%s)", metaName, fieldName)
 				}
 			}
 		} else {
@@ -491,7 +469,7 @@ func parseService(ctx *context, svcName string, svcNode *jsongo.JSONNode) (*Serv
 	}
 
 	svc := Service{
-		Name:        ctx.moduleName + "." + svcName,
+		Name:        svcName,
 		RequestType: svcName,
 	}
 
@@ -526,7 +504,7 @@ func parseService(ctx *context, svcName string, svcNode *jsongo.JSONNode) (*Serv
 	if len(svc.Events) > 0 {
 		// EVENT service
 		if !strings.HasPrefix(svc.RequestType, serviceEventPrefix) {
-			log.Debugf("unusual EVENTS service: %+v\n"+
+			logrus.Debugf("unusual EVENTS service: %+v\n"+
 				"- events service %q does not have %q prefix in request.",
 				svc, svc.Name, serviceEventPrefix)
 		}
@@ -534,7 +512,7 @@ func parseService(ctx *context, svcName string, svcNode *jsongo.JSONNode) (*Serv
 		// STREAM service
 		if !strings.HasSuffix(svc.RequestType, serviceDumpSuffix) ||
 			!strings.HasSuffix(svc.ReplyType, serviceDetailsSuffix) {
-			log.Debugf("unusual STREAM service: %+v\n"+
+			logrus.Debugf("unusual STREAM service: %+v\n"+
 				"- stream service %q does not have %q suffix in request or reply does not have %q suffix.",
 				svc, svc.Name, serviceDumpSuffix, serviceDetailsSuffix)
 		}
@@ -542,7 +520,7 @@ func parseService(ctx *context, svcName string, svcNode *jsongo.JSONNode) (*Serv
 		// REQUEST service
 		// some messages might have `null` reply (for example: memclnt)
 		if !strings.HasSuffix(svc.ReplyType, serviceReplySuffix) {
-			log.Debugf("unusual REQUEST service: %+v\n"+
+			logrus.Debugf("unusual REQUEST service: %+v\n"+
 				"- service %q does not have %q suffix in reply.",
 				svc, svc.Name, serviceReplySuffix)
 		}

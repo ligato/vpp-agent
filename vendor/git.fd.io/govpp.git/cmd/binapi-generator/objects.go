@@ -1,15 +1,18 @@
 package main
 
+import "fmt"
+
 // Package represents collection of objects parsed from VPP binary API JSON data
 type Package struct {
-	APIVersion string
-	Services   []Service
-	Enums      []Enum
-	Aliases    []Alias
-	Types      []Type
-	Unions     []Union
-	Messages   []Message
-	RefMap     map[string]string
+	Version  string
+	CRC      string
+	Services []Service
+	Enums    []Enum
+	Aliases  []Alias
+	Types    []Type
+	Unions   []Union
+	Messages []Message
+	RefMap   map[string]string
 }
 
 // Service represents VPP binary API service
@@ -85,3 +88,43 @@ const (
 	eventMessage                      // VPP event message
 	otherMessage                      // other VPP message
 )
+
+// printPackage prints all loaded objects for package
+func printPackage(pkg *Package) {
+	if len(pkg.Enums) > 0 {
+		logf("loaded %d enums:", len(pkg.Enums))
+		for k, enum := range pkg.Enums {
+			logf(" - enum #%d\t%+v", k, enum)
+		}
+	}
+	if len(pkg.Unions) > 0 {
+		logf("loaded %d unions:", len(pkg.Unions))
+		for k, union := range pkg.Unions {
+			logf(" - union #%d\t%+v", k, union)
+		}
+	}
+	if len(pkg.Types) > 0 {
+		logf("loaded %d types:", len(pkg.Types))
+		for _, typ := range pkg.Types {
+			logf(" - type: %q (%d fields)", typ.Name, len(typ.Fields))
+		}
+	}
+	if len(pkg.Messages) > 0 {
+		logf("loaded %d messages:", len(pkg.Messages))
+		for _, msg := range pkg.Messages {
+			logf(" - message: %q (%d fields)", msg.Name, len(msg.Fields))
+		}
+	}
+	if len(pkg.Services) > 0 {
+		logf("loaded %d services:", len(pkg.Services))
+		for _, svc := range pkg.Services {
+			var info string
+			if svc.Stream {
+				info = "(STREAM)"
+			} else if len(svc.Events) > 0 {
+				info = fmt.Sprintf("(EVENTS: %v)", svc.Events)
+			}
+			logf(" - service: %s - %q -> %q %s", svc.Name, svc.RequestType, svc.ReplyType, info)
+		}
+	}
+}
