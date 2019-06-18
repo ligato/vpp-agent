@@ -43,6 +43,14 @@ type MemoryInfo struct {
 	Threads []MemoryThread `json:"threads"`
 }
 
+// GetThreads is safe getter for threads,
+func (i *MemoryInfo) GetThreads() []MemoryThread {
+	if i == nil {
+		return nil
+	}
+	return i.Threads
+}
+
 // MemoryThread represents single thread memory counters
 type MemoryThread struct {
 	ID        uint   `json:"id"`
@@ -63,6 +71,14 @@ type NodeCounterInfo struct {
 	Counters []NodeCounter `json:"counters"`
 }
 
+// GetCounters is safe getter for counters,
+func (i *NodeCounterInfo) GetCounters() []NodeCounter {
+	if i == nil {
+		return nil
+	}
+	return i.Counters
+}
+
 // NodeCounter represents single node counter
 type NodeCounter struct {
 	Value uint64 `json:"value"`
@@ -73,6 +89,14 @@ type NodeCounter struct {
 // RuntimeInfo contains values returned from 'show runtime'
 type RuntimeInfo struct {
 	Threads []RuntimeThread `json:"threads"`
+}
+
+// GetThreads is safe getter for threads,
+func (i *RuntimeInfo) GetThreads() []RuntimeThread {
+	if i == nil {
+		return nil
+	}
+	return i.Threads
 }
 
 // RuntimeThread represents single runtime thread
@@ -106,6 +130,14 @@ type RuntimeItem struct {
 // BuffersInfo contains values returned from 'show buffers'
 type BuffersInfo struct {
 	Items []BuffersItem `json:"items"`
+}
+
+// GetItems is safe getter for items,
+func (i *BuffersInfo) GetItems() []BuffersItem {
+	if i == nil {
+		return nil
+	}
+	return i.Items
 }
 
 // BuffersItem represents single buffers item
