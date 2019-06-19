@@ -47,17 +47,16 @@ var importConfig = &cobra.Command{
 Import configuration from file.
 
 File format:
-	<key1> <value1>
-	<key2> <value2>
-	# ...
-	<keyN> <valueN>
-
-	Empty lines and lines starting with # are ignored.
+  <key1> <value1>
+  <key2> <value2>
+  # ...
+  <keyN> <valueN>
+ 
+  Empty lines and lines starting with # are ignored.
 
 Supported key formats:
-	/vnf-agent/vpp1/config/vpp/v2/interfaces/iface1
-	vpp1/config/vpp/v2/interfaces/iface1
-	config/vpp/v2/interfaces/iface1
+  - /vnf-agent/vpp1/config/vpp/v2/interfaces/iface1
+  - config/vpp/v2/interfaces/iface1
 
 	For short keys, the import command uses microservice label defined with --label.
 `,
@@ -102,13 +101,17 @@ func importFunction(cmd *cobra.Command, args []string) {
 			continue
 		}
 
+		key, err = parseKey(key)
+		if err != nil {
+			utils.ExitWithError(utils.ExitError, fmt.Errorf("parsing key failed: %v", err))
+			return
+		}
+
 		val, err := unmarshalKeyVal(key, data)
 		if err != nil {
 			utils.ExitWithError(utils.ExitError, fmt.Errorf("decoding value failed: %v", err))
 			return
 		}
-
-		key = fullKey(key)
 
 		fmt.Printf("KEY: %s - %v\n", key, val)
 		keyVals[key] = val
@@ -138,18 +141,23 @@ func importFunction(cmd *cobra.Command, args []string) {
 	fmt.Println("OK")
 }
 
-func fullKey(key string) string {
+func parseKey(key string) (string, error) {
 	if strings.HasPrefix(key, servicelabel.GetAllAgentsPrefix()) {
-		return key
+		return key, nil
 	}
-	tmp := strings.Split(key, "/")
-	if tmp[0] != "config" {
-		return servicelabel.GetAllAgentsPrefix() + key
+	if !strings.HasPrefix(key, "config/") {
+		return "", fmt.Errorf("invalid format for key: %q", key)
 	}
-	return path.Join(servicelabel.GetAllAgentsPrefix(), globalFlags.Label, key)
+	return path.Join(servicelabel.GetAllAgentsPrefix(), globalFlags.Label, key), nil
 }
 
-func unmarshalKeyVal(key string, data string) (proto.Message, error) {
+func unmarshalKeyVal(fullKey string, data string) (proto.Message, error) {
+	keyParts := strings.Split(fullKey, "/")
+	if len(keyParts) < 4 || keyParts[0] != "" {
+		return nil, fmt.Errorf("invalid key: %q", fullKey)
+	}
+	key := path.Join(keyParts[3:]...)
+
 	model, err := models.GetModelForKey(key)
 	if err != nil {
 		return nil, err
