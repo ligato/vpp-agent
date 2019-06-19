@@ -18,6 +18,8 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+
+	"github.com/sirupsen/logrus"
 )
 
 // toApiType returns name that is used as type reference in VPP binary API
@@ -62,7 +64,7 @@ func convertToGoType(ctx *context, binapiType string) (typ string) {
 			typ = binapiType
 		default:
 			// fallback type
-			log.Warnf("found unknown VPP binary API type %q, using byte", binapiType)
+			logrus.Warnf("found unknown VPP binary API type %q, using byte", binapiType)
 			typ = "byte"
 		}
 	}

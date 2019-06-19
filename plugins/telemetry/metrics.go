@@ -333,7 +333,7 @@ func (p *Plugin) updatePrometheus(ctx context.Context) {
 		p.Log.Errorf("GetRuntimeInfo failed: %v", err)
 	} else {
 		p.tracef("runtime info: %+v", runtimeInfo)
-		for _, thread := range runtimeInfo.Threads {
+		for _, thread := range runtimeInfo.GetThreads() {
 			for _, item := range thread.Items {
 				stats, ok := p.runtimeStats[item.Name]
 				if !ok {
@@ -372,7 +372,7 @@ func (p *Plugin) updatePrometheus(ctx context.Context) {
 		p.Log.Errorf("GetBuffersInfo failed: %v", err)
 	} else {
 		p.tracef("buffers info: %+v", buffersInfo)
-		for _, item := range buffersInfo.Items {
+		for _, item := range buffersInfo.GetItems() {
 			stats, ok := p.buffersStats[item.Name]
 			if !ok {
 				stats = &buffersStats{
@@ -409,7 +409,7 @@ func (p *Plugin) updatePrometheus(ctx context.Context) {
 		p.Log.Errorf("GetMemory failed: %v", err)
 	} else {
 		p.tracef("memory info: %+v", memoryInfo)
-		for _, thread := range memoryInfo.Threads {
+		for _, thread := range memoryInfo.GetThreads() {
 			stats, ok := p.memoryStats[thread.Name]
 			if !ok {
 				stats = &memoryStats{
@@ -447,7 +447,7 @@ func (p *Plugin) updatePrometheus(ctx context.Context) {
 		p.Log.Errorf("GetNodeCounters failed: %v", err)
 	} else {
 		p.tracef("node counters info: %+v", nodeCountersInfo)
-		for _, item := range nodeCountersInfo.Counters {
+		for _, item := range nodeCountersInfo.GetCounters() {
 			stats, ok := p.nodeCounterStats[item.Name]
 			if !ok {
 				stats = &nodeCounterStats{
@@ -476,43 +476,45 @@ func (p *Plugin) updatePrometheus(ctx context.Context) {
 	if err != nil {
 		p.Log.Errorf("GetInterfaceStats failed: %v", err)
 		return
-	}
-	if ifStats == nil {
-		p.Log.Warnf("Received nil stats from context")
-		return
-	}
-	p.tracef("interface stats: %+v", ifStats)
-	for _, item := range ifStats.Interfaces {
-		stats, ok := p.ifCounterStats[item.InterfaceName]
-		if !ok {
-			stats = &ifCounterStats{
-				name:    item.InterfaceName,
-				metrics: map[string]prometheus.Gauge{},
-			}
+	} else {
+		p.tracef("interface stats: %+v", ifStats)
+		if ifStats == nil {
+			return
+		}
+		for _, item := range ifStats.Interfaces {
+			stats, ok := p.ifCounterStats[item.InterfaceName]
+			if !ok {
+				stats = &ifCounterStats{
+					name:    item.InterfaceName,
+					metrics: map[string]prometheus.Gauge{},
+				}
 
-			// add gauges with corresponding labels into vectors
-			for k, vec := range p.ifCounterGaugeVecs {
-				stats.metrics[k], err = vec.GetMetricWith(prometheus.Labels{
-					ifCounterNameLabel:  item.InterfaceName,
-					ifCounterIndexLabel: fmt.Sprint(item.InterfaceIndex),
-				})
-				if err != nil {
-					p.Log.Error(err)
+				// add gauges with corresponding labels into vectors
+				for k, vec := range p.ifCounterGaugeVecs {
+					stats.metrics[k], err = vec.GetMetricWith(prometheus.Labels{
+						ifCounterNameLabel:  item.InterfaceName,
+						ifCounterIndexLabel: fmt.Sprint(item.InterfaceIndex),
+					})
+					if err != nil {
+						p.Log.Error(err)
+					}
 				}
 			}
-		}
 
-		stats.metrics[ifCounterRxPackets].Set(float64(item.RxPackets))
-		stats.metrics[ifCounterRxBytes].Set(float64(item.RxBytes))
-		stats.metrics[ifCounterRxErrors].Set(float64(item.RxErrors))
-		stats.metrics[ifCounterTxPackets].Set(float64(item.TxPackets))
-		stats.metrics[ifCounterTxBytes].Set(float64(item.TxBytes))
-		stats.metrics[ifCounterTxErrors].Set(float64(item.TxErrors))
-		stats.metrics[ifCounterDrops].Set(float64(item.Drops))
-		stats.metrics[ifCounterPunts].Set(float64(item.Punts))
-		stats.metrics[ifCounterIP4].Set(float64(item.IP4))
-		stats.metrics[ifCounterIP6].Set(float64(item.IP6))
-		stats.metrics[ifCounterRxNoBuf].Set(float64(item.RxNoBuf))
-		stats.metrics[ifCounterRxMiss].Set(float64(item.RxMiss))
+			stats.metrics[ifCounterRxPackets].Set(float64(item.RxPackets))
+			stats.metrics[ifCounterRxBytes].Set(float64(item.RxBytes))
+			stats.metrics[ifCounterRxErrors].Set(float64(item.RxErrors))
+			stats.metrics[ifCounterTxPackets].Set(float64(item.TxPackets))
+			stats.metrics[ifCounterTxBytes].Set(float64(item.TxBytes))
+			stats.metrics[ifCounterTxErrors].Set(float64(item.TxErrors))
+			stats.metrics[ifCounterDrops].Set(float64(item.Drops))
+			stats.metrics[ifCounterPunts].Set(float64(item.Punts))
+			stats.metrics[ifCounterIP4].Set(float64(item.IP4))
+			stats.metrics[ifCounterIP6].Set(float64(item.IP6))
+			stats.metrics[ifCounterRxNoBuf].Set(float64(item.RxNoBuf))
+			stats.metrics[ifCounterRxMiss].Set(float64(item.RxMiss))
+		}
 	}
+
+	p.tracef("update complete")
 }

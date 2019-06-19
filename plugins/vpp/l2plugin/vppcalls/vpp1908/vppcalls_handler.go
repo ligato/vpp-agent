@@ -29,7 +29,7 @@ import (
 
 func init() {
 	vppcalls.Versions["vpp1908"] = vppcalls.HandlerVersion{
-		Msgs: l2ba.Messages,
+		Msgs: l2ba.AllMessages(),
 		New: func(ch govppapi.Channel,
 			ifIdx ifaceidx.IfaceMetadataIndex, bdIdx idxvpp.NameToIndex, log logging.Logger,
 		) vppcalls.L2VppAPI {

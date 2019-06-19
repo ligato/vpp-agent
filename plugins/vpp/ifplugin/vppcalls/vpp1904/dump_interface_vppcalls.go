@@ -670,8 +670,8 @@ func verifyIPSecTunnelDetails(local, remote *ipsec.IpsecSaDetails) error {
 			localIsTunnel, remoteIsTunnel)
 	}
 
-	localSrc, localDst := local.Entry.TunnelSrc.Un.Union_data, local.Entry.TunnelDst.Un.Union_data
-	remoteSrc, remoteDst := remote.Entry.TunnelSrc.Un.Union_data, remote.Entry.TunnelDst.Un.Union_data
+	localSrc, localDst := local.Entry.TunnelSrc.Un.XXX_UnionData, local.Entry.TunnelDst.Un.XXX_UnionData
+	remoteSrc, remoteDst := remote.Entry.TunnelSrc.Un.XXX_UnionData, remote.Entry.TunnelDst.Un.XXX_UnionData
 	if (local.Entry.Flags&ipsec.IPSEC_API_SAD_FLAG_IS_TUNNEL_V6) != (remote.Entry.Flags&ipsec.IPSEC_API_SAD_FLAG_IS_TUNNEL_V6) ||
 		!bytes.Equal(localSrc[:], remoteDst[:]) ||
 		!bytes.Equal(localDst[:], remoteSrc[:]) {

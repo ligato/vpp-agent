@@ -18,7 +18,7 @@ import (
 
 	"git.fd.io/govpp.git/adapter"
 	"git.fd.io/govpp.git/codec"
-	"git.fd.io/govpp.git/examples/bin_api/memclnt"
+	"git.fd.io/govpp.git/examples/binapi/memclnt"
 )
 
 const (

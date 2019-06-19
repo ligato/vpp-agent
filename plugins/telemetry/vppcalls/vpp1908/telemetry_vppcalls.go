@@ -31,8 +31,8 @@ import (
 
 func init() {
 	var msgs []govppapi.Message
-	msgs = append(msgs, memclnt.Messages...)
-	msgs = append(msgs, vpe.Messages...)
+	msgs = append(msgs, memclnt.AllMessages()...)
+	msgs = append(msgs, vpe.AllMessages()...)
 
 	vppcalls.Versions["19.08"] = vppcalls.HandlerVersion{
 		Msgs: msgs,
@@ -139,6 +139,8 @@ func (h *TelemetryHandler) getNodeCountersStats() (*vppcalls.NodeCounterInfo, er
 	errStats, err := h.stats.GetErrorStats()
 	if err != nil {
 		return nil, err
+	} else if errStats == nil {
+		return nil, nil
 	}
 
 	var counters []vppcalls.NodeCounter
@@ -227,6 +229,8 @@ func (h *TelemetryHandler) getRuntimeInfoStats() (*vppcalls.RuntimeInfo, error) 
 	nodeStats, err := h.stats.GetNodeStats()
 	if err != nil {
 		return nil, err
+	} else if nodeStats == nil {
+		return nil, nil
 	}
 
 	var threads []vppcalls.RuntimeThread
@@ -337,6 +341,8 @@ func (h *TelemetryHandler) getBuffersInfoStats() (*vppcalls.BuffersInfo, error) 
 	bufStats, err := h.stats.GetBufferStats()
 	if err != nil {
 		return nil, err
+	} else if bufStats == nil {
+		return nil, nil
 	}
 
 	var items []vppcalls.BuffersItem
