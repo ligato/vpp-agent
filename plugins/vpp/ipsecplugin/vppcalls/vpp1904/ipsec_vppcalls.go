@@ -183,6 +183,25 @@ func (h *IPSecVppHandler) sadAddDelEntry(sa *ipsec.SecurityAssociation, isAdd bo
 	if sa.EnableUdpEncap {
 		flags |= api.IPSEC_API_SAD_FLAG_UDP_ENCAP
 	}
+	var tunnelSrc, tunnelDst api.Address
+	if sa.TunnelSrcAddr != "" {
+		flags |= api.IPSEC_API_SAD_FLAG_IS_TUNNEL
+		isIPv6, err := addrs.IsIPv6(sa.TunnelSrcAddr)
+		if err != nil {
+			return err
+		}
+		if isIPv6 {
+			flags |= api.IPSEC_API_SAD_FLAG_IS_TUNNEL_V6
+		}
+		tunnelSrc, err = IPToAddress(sa.TunnelSrcAddr)
+		if err != nil {
+			return err
+		}
+		tunnelDst, err = IPToAddress(sa.TunnelDstAddr)
+		if err != nil {
+			return err
+		}
+	}
 
 	req := &api.IpsecSadEntryAddDel{
 		IsAdd: boolToUint(isAdd),
@@ -200,26 +219,10 @@ func (h *IPSecVppHandler) sadAddDelEntry(sa *ipsec.SecurityAssociation, isAdd bo
 				Data:   integKey,
 				Length: uint8(len(integKey)),
 			},
-			Flags: flags,
+			TunnelSrc: tunnelSrc,
+			TunnelDst: tunnelDst,
+			Flags:     flags,
 		},
-	}
-	if sa.TunnelSrcAddr != "" {
-		flags |= api.IPSEC_API_SAD_FLAG_IS_TUNNEL
-		isIPv6, err := addrs.IsIPv6(sa.TunnelSrcAddr)
-		if err != nil {
-			return err
-		}
-		if isIPv6 {
-			flags |= api.IPSEC_API_SAD_FLAG_IS_TUNNEL_V6
-		}
-		req.Entry.TunnelSrc, err = IPToAddress(sa.TunnelSrcAddr)
-		if err != nil {
-			return err
-		}
-		req.Entry.TunnelDst, err = IPToAddress(sa.TunnelDstAddr)
-		if err != nil {
-			return err
-		}
 	}
 	reply := &api.IpsecSadEntryAddDelReply{}
 

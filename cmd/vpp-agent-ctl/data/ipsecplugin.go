@@ -88,6 +88,8 @@ func (ctl *VppAgentCtlImpl) PutIPSecSA() error {
 		IntegAlg:       2,
 		IntegKey:       "4339314b55523947594d6d3547666b45764e6a58",
 		EnableUdpEncap: true,
+		//TunnelSrcAddr: "10.0.0.1",
+		//TunnelDstAddr: "20.0.0.1",
 	}
 	sa2 := ipsec.SecurityAssociation{
 		Index:          "2",
@@ -98,6 +100,8 @@ func (ctl *VppAgentCtlImpl) PutIPSecSA() error {
 		IntegAlg:       2,
 		IntegKey:       "4339314b55523947594d6d3547666b45764e6a58",
 		EnableUdpEncap: false,
+		//TunnelSrcAddr: "20.0.0.1",
+		//TunnelDstAddr: "10.0.0.1",
 	}
 
 	ctl.Log.Infof("IPSec SA put: %v", sa1.Index)
