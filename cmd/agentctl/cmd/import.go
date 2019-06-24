@@ -35,8 +35,13 @@ import (
 	"github.com/ligato/vpp-agent/pkg/models"
 )
 
+var (
+	txops uint
+)
+
 func init() {
 	RootCmd.AddCommand(importConfig)
+	importConfig.PersistentFlags().UintVar(&txops, "txops", 128, "Number of OPs per transaction")
 }
 
 var importConfig = &cobra.Command{
@@ -70,6 +75,11 @@ Supported key formats:
 	Run: importFunction,
 }
 
+type keyVal struct {
+	Key string
+	Val proto.Message
+}
+
 func importFunction(cmd *cobra.Command, args []string) {
 	var db keyval.ProtoBroker
 	var err error
@@ -81,7 +91,7 @@ func importFunction(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	keyVals := map[string]proto.Message{}
+	var keyVals []keyVal
 
 	// parse lines
 	lines := bytes.Split(b, []byte("\n"))
@@ -114,7 +124,7 @@ func importFunction(cmd *cobra.Command, args []string) {
 		}
 
 		fmt.Printf("KEY: %s - %v\n", key, val)
-		keyVals[key] = val
+		keyVals = append(keyVals, keyVal{key, val})
 	}
 
 	db, err = utils.GetDbForAllAgents(globalFlags.Endpoints)
@@ -125,17 +135,25 @@ func importFunction(cmd *cobra.Command, args []string) {
 
 	fmt.Printf("importing %d key vals\n", len(keyVals))
 
-	txn := db.NewTxn()
-	for k, v := range keyVals {
-		txn.Put(k, v)
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
-	err = txn.Commit(ctx)
-	cancel()
-	if err != nil {
-		utils.ExitWithError(utils.ExitError, fmt.Errorf("commit failed: %v", err))
-		return
+	var txn = db.NewTxn()
+	ops := 0
+	for i := 0; i < len(keyVals); i++ {
+		keyVal := keyVals[i]
+		txn.Put(keyVal.Key, keyVal.Val)
+		fmt.Printf("PUT %s\n", keyVal.Key)
+		ops++
+		if ops == int(txops) || i+1 == len(keyVals) {
+			fmt.Printf("commiting tx with %d ops\n", ops)
+			ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
+			err = txn.Commit(ctx)
+			cancel()
+			if err != nil {
+				utils.ExitWithError(utils.ExitError, fmt.Errorf("commit failed: %v", err))
+				return
+			}
+			ops = 0
+			txn = db.NewTxn()
+		}
 	}
 
 	fmt.Println("OK")
@@ -172,4 +190,16 @@ func unmarshalKeyVal(fullKey string, data string) (proto.Message, error) {
 		return nil, err
 	}
 	return value, nil
+}
+
+type lazyProto struct {
+	val proto.Message
+}
+
+// GetValue returns the value of the pair.
+func (lazy *lazyProto) GetValue(out proto.Message) error {
+	if lazy.val != nil {
+		proto.Merge(out, lazy.val)
+	}
+	return nil
 }
