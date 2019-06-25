@@ -39,7 +39,8 @@ var (
 	// StateUpdateDelay defines delay before dumping states
 	StateUpdateDelay = time.Second * 3
 
-	disableInterfaceStats = os.Getenv("DISABLE_INTERFACE_STATS") != ""
+	disableInterfaceStats   = os.Getenv("DISABLE_INTERFACE_STATS") != ""
+	disableStatusPublishing = os.Getenv("DISABLE_STATUS_PUBLISHING") != ""
 )
 
 // InterfaceStateUpdater holds state data of all VPP interfaces.
@@ -113,14 +114,18 @@ func (c *InterfaceStateUpdater) Init(ctx context.Context, logger logging.PluginL
 
 	// Periodically read VPP counters and combined counters for VPP statistics
 	if disableInterfaceStats {
-		c.log.Warnf("reading interface stats is disabled!")
+		c.log.Warnf("reading interface stats is DISABLED!")
 	} else if readCounters {
 		c.wg.Add(1)
 		go c.startReadingCounters(childCtx)
 	}
 
-	c.wg.Add(1)
-	go c.startUpdatingIfStateDetails(childCtx)
+	if disableStatusPublishing {
+		c.log.Warnf("publishing interface status is DISABLED!")
+	} else {
+		c.wg.Add(1)
+		go c.startUpdatingIfStateDetails(childCtx)
+	}
 
 	return nil
 }
