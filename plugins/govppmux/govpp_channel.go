@@ -148,8 +148,10 @@ func (r *govppRequestCtx) ReceiveReply(reply govppapi.Message) error {
 		err = r.sendRequest(r.requestMsg).ReceiveReply(reply)
 	}
 
+	atomic.AddUint64(&stats.RequestsDone, 1)
 	if err != nil {
-		atomic.AddUint64(&stats.RequestsFailed, 1)
+		trackError(err.Error())
+		atomic.AddUint64(&stats.RequestsErrors, 1)
 	}
 
 	took := time.Since(r.start)
@@ -184,18 +186,25 @@ func (c *goVppChan) SendMultiRequest(request govppapi.Message) govppapi.MultiReq
 func (r *govppMultirequestCtx) ReceiveReply(reply govppapi.Message) (bool, error) {
 	// Receive reply from original send
 	last, err := r.requestCtx.ReceiveReply(reply)
-	if last {
+	if last || err != nil {
 		took := time.Since(r.start)
 		trackMsgRequestDur(r.requestMsg.GetMessageName(), took)
+
+		atomic.AddUint64(&stats.RequestsDone, 1)
 		if err != nil {
-			atomic.AddUint64(&stats.RequestsFailed, 1)
+			trackError(err.Error())
+			atomic.AddUint64(&stats.RequestsErrors, 1)
 		}
+
 		defer func() {
 			r.task.End()
 			if r.tracer != nil {
 				r.tracer.LogTime(r.requestMsg.GetMessageName(), r.start)
 			}
 		}()
+	} else {
+		atomic.AddUint64(&stats.RequestReplies, 1)
+		trackMsgReply(reply.GetMessageName())
 	}
 	return last, err
 }
