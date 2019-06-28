@@ -28,6 +28,7 @@ import (
 	"github.com/ligato/cn-infra/logging"
 
 	"github.com/ligato/vpp-agent/cmd/vpp-agent/app"
+	"github.com/ligato/vpp-agent/pkg/debug"
 )
 
 const logo = `                                      __
@@ -39,19 +40,21 @@ const logo = `                                      __
 `
 
 var (
+	debugEnabled = os.Getenv("DEBUG_ENABLED") != ""
+
 	startTimeout = agent.DefaultStartTimeout
 	stopTimeout  = agent.DefaultStopTimeout
 
 	resyncTimeout = time.Second * 10
 )
 
-var debugging func() func()
-
 func main() {
 	fmt.Fprintf(os.Stdout, logo, agent.BuildVersion)
 
-	if debugging != nil {
-		defer debugging()()
+	if debugEnabled {
+		logging.DefaultLogger.SetLevel(logging.DebugLevel)
+		logging.DefaultLogger.Debug("DEBUG ENABLED")
+		defer debug.Start().Stop()
 	}
 
 	vppAgent := app.New()
@@ -67,9 +70,6 @@ func main() {
 }
 
 func init() {
-	logging.DefaultLogger.SetOutput(os.Stdout)
-	logging.DefaultLogger.SetLevel(logging.DebugLevel)
-
 	// Overrides for start/stop timeouts of agent
 	if t := os.Getenv("START_TIMEOUT"); t != "" {
 		dur, err := time.ParseDuration(t)

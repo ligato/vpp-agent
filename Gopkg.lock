@@ -713,6 +713,14 @@
   version = "v0.8.1"
 
 [[projects]]
+  digest = "1:447ab23604df9681aabfc6e48dbded59cb933b6eb4224e64d9d037318534b1bd"
+  name = "github.com/pkg/profile"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "f6fe06335df110bcf1ed6d4e852b760bfc15beee"
+  version = "v1.3.0"
+
+[[projects]]
   digest = "1:d14a5f4bfecf017cb780bdde1b6483e5deb87e12c332544d2c430eda58734bcb"
   name = "github.com/prometheus/client_golang"
   packages = [
@@ -1046,6 +1054,7 @@
     "github.com/onsi/gomega",
     "github.com/opencontainers/runc",
     "github.com/pkg/errors",
+    "github.com/pkg/profile",
     "github.com/prometheus/client_golang/prometheus",
     "github.com/prometheus/client_golang/prometheus/promhttp",
     "github.com/spf13/cobra",
