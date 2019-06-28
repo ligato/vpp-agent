@@ -31,6 +31,7 @@ import (
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/logging/measure/model/apitrace"
+	"github.com/ligato/cn-infra/rpc/rest"
 	"github.com/pkg/errors"
 
 	"github.com/ligato/vpp-agent/plugins/govppmux/vppcalls"
@@ -79,8 +80,9 @@ type Plugin struct {
 // so that they do not mix with other plugin fields.
 type Deps struct {
 	infra.PluginDeps
-	StatusCheck statuscheck.PluginStatusWriter
-	Resync      *resync.Plugin
+	HTTPHandlers rest.HTTPHandlers
+	StatusCheck  statuscheck.PluginStatusWriter
+	Resync       *resync.Plugin
 }
 
 // Config groups the configurable parameter of GoVpp.
@@ -151,6 +153,9 @@ func (p *Plugin) Init() error {
 		p.tracer = measure.NewTracer("govpp-mux")
 		p.Log.Info("VPP API trace enabled")
 	}
+
+	// register REST API handlers
+	p.registerHandlers(p.HTTPHandlers)
 
 	if p.vppAdapter == nil {
 		address := p.config.BinAPISocketPath
