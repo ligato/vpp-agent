@@ -27,26 +27,36 @@ import (
 	"github.com/gogo/protobuf/jsonpb"
 	"github.com/gogo/protobuf/proto"
 	"github.com/spf13/cobra"
+	"google.golang.org/grpc"
 
-	"github.com/ligato/cn-infra/db/keyval"
 	"github.com/ligato/cn-infra/servicelabel"
 
+	"github.com/ligato/vpp-agent/api/genericmanager"
+	"github.com/ligato/vpp-agent/client/remoteclient"
 	"github.com/ligato/vpp-agent/cmd/agentctl/utils"
 	"github.com/ligato/vpp-agent/pkg/models"
 )
 
 var (
-	txops uint
+	txops    uint
+	grpcAddr string
+	timeout  uint
 )
 
 func init() {
 	RootCmd.AddCommand(importConfig)
-	importConfig.PersistentFlags().UintVar(&txops, "txops", 128, "Number of OPs per transaction")
+	importConfig.PersistentFlags().UintVar(&txops, "txops", 128,
+		"Number of OPs per transaction")
+	importConfig.PersistentFlags().StringVar(&grpcAddr, "grpc", "",
+		"Address of gRPC server.")
+	importConfig.PersistentFlags().UintVarP(&timeout, "time", "t", 60,
+		"Client timeout in seconds (how long to wait for response from server)")
 }
 
 var importConfig = &cobra.Command{
 	Use:     "import",
 	Aliases: []string{"i"},
+	Args:    cobra.RangeArgs(1, 1),
 	Short:   "Import configuration from file",
 	Long: `
 Import configuration from file.
@@ -63,16 +73,24 @@ Supported key formats:
   - /vnf-agent/vpp1/config/vpp/v2/interfaces/iface1
   - config/vpp/v2/interfaces/iface1
 
-	For short keys, the import command uses microservice label defined with --label.
+  For short keys, the import command uses microservice label defined with --label.
 `,
-	Args: cobra.RangeArgs(1, 1),
 	Example: `  Import configuration from file:
+	
 	$ cat input.txt
 	config/vpp/v2/interfaces/loop1 {"name":"loop1","type":"SOFTWARE_LOOPBACK"}
 	config/vpp/l2/v2/bridge-domain/bd1 {"name":"bd1"}
 	$ agentctl import input.txt
+	
+    Or import via gRPC server:
+	
+	$ agentctl import --grpc=localhost:9111 input.txt
 `,
 	Run: importFunction,
+}
+
+func getTimeout() time.Duration {
+	return time.Second * time.Duration(timeout)
 }
 
 type keyVal struct {
@@ -81,11 +99,10 @@ type keyVal struct {
 }
 
 func importFunction(cmd *cobra.Command, args []string) {
-	var db keyval.ProtoBroker
-	var err error
+	filename := args[0]
 
 	// read file
-	b, err := ioutil.ReadFile(args[0])
+	b, err := ioutil.ReadFile(filename)
 	if err != nil {
 		utils.ExitWithError(utils.ExitError, fmt.Errorf("reading input file failed: %v", err))
 		return
@@ -127,10 +144,55 @@ func importFunction(cmd *cobra.Command, args []string) {
 		keyVals = append(keyVals, keyVal{key, val})
 	}
 
-	db, err = utils.GetDbForAllAgents(globalFlags.Endpoints)
+	if grpcAddr != "" {
+		if err := grpcImport(keyVals); err != nil {
+			utils.ExitWithError(utils.ExitError, fmt.Errorf("import via gRPC failed: %v", err))
+		}
+	} else {
+		if err := etcdImport(keyVals); err != nil {
+			utils.ExitWithError(utils.ExitError, fmt.Errorf("import to Etcd failed: %v", err))
+		}
+	}
+
+	fmt.Println("OK")
+}
+
+func grpcImport(keyVals []keyVal) error {
+	// Set up a connection to the server.
+	conn, err := grpc.Dial(grpcAddr, grpc.WithInsecure())
 	if err != nil {
-		utils.ExitWithError(utils.ExitError, fmt.Errorf("connecting to etcd failed: %v", err))
-		return
+		return fmt.Errorf("connecting to gRPC failed: %v", err)
+	}
+	defer conn.Close()
+
+	c := remoteclient.NewClientGRPC(genericmanager.NewGenericManagerClient(conn))
+
+	fmt.Printf("importing %d key vals\n", len(keyVals))
+
+	req := c.ChangeRequest()
+	for _, keyVal := range keyVals {
+		fmt.Printf(" - %s\n", keyVal.Key)
+		req.Update(keyVal.Val)
+	}
+
+	t := getTimeout()
+	fmt.Printf("sending via gRPC (timeout: %v)\n", t)
+
+	ctx, cancel := context.WithTimeout(context.Background(), t)
+	defer cancel()
+
+	if err := req.Send(ctx); err != nil {
+		return fmt.Errorf("send failed: %v", err)
+	}
+
+	return nil
+}
+
+func etcdImport(keyVals []keyVal) error {
+	// Connect to etcd
+	db, err := utils.GetDbForAllAgents(globalFlags.Endpoints)
+	if err != nil {
+		return fmt.Errorf("connecting to Etcd failed: %v", err)
 	}
 
 	fmt.Printf("importing %d key vals\n", len(keyVals))
@@ -139,24 +201,27 @@ func importFunction(cmd *cobra.Command, args []string) {
 	ops := 0
 	for i := 0; i < len(keyVals); i++ {
 		keyVal := keyVals[i]
+
+		fmt.Printf(" - %s\n", keyVal.Key)
 		txn.Put(keyVal.Key, keyVal.Val)
-		fmt.Printf("PUT %s\n", keyVal.Key)
 		ops++
+
 		if ops == int(txops) || i+1 == len(keyVals) {
 			fmt.Printf("commiting tx with %d ops\n", ops)
-			ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
+
+			ctx, cancel := context.WithTimeout(context.Background(), getTimeout())
 			err = txn.Commit(ctx)
 			cancel()
 			if err != nil {
-				utils.ExitWithError(utils.ExitError, fmt.Errorf("commit failed: %v", err))
-				return
+				return fmt.Errorf("commit failed: %v", err)
 			}
+
 			ops = 0
 			txn = db.NewTxn()
 		}
 	}
 
-	fmt.Println("OK")
+	return nil
 }
 
 func parseKey(key string) (string, error) {

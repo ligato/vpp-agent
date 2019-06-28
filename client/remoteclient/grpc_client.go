@@ -158,9 +158,6 @@ func (r *setConfigRequest) Delete(items ...proto.Message) client.ChangeRequest {
 			return r
 		}
 		r.req.Updates = append(r.req.Updates, &api.UpdateItem{
-			/*Item: &api.Item{
-				Key: item.Key,
-			},*/
 			Item: item,
 		})
 	}

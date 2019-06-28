@@ -17,9 +17,7 @@ package vpp_abf_test
 import (
 	"testing"
 
-	"github.com/ligato/vpp-agent/api/models/vpp/abf"
-
-	"github.com/ligato/vpp-agent/pkg/models"
+	vpp_abf "github.com/ligato/vpp-agent/api/models/vpp/abf"
 )
 
 func TestABFKey(t *testing.T) {
@@ -73,7 +71,7 @@ func TestParseNameFromKey(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			abfIndex, isABFKey := models.Model(&vpp_abf.ABF{}).ParseKey(test.key)
+			abfIndex, isABFKey := vpp_abf.ModelABF.ParseKey(test.key)
 			if isABFKey != test.expectedIsABFKey {
 				t.Errorf("expected isABFKey: %v\tgot: %v", test.expectedIsABFKey, isABFKey)
 			}
