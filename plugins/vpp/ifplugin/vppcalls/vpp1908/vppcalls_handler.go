@@ -37,17 +37,17 @@ import (
 
 func init() {
 	var msgs []govppapi.Message
-	msgs = append(msgs, af_packet.Messages...)
-	msgs = append(msgs, bond.Messages...)
-	msgs = append(msgs, dhcp.Messages...)
-	msgs = append(msgs, interfaces.Messages...)
-	msgs = append(msgs, ip.Messages...)
-	msgs = append(msgs, ipsec.Messages...)
-	msgs = append(msgs, l2.Messages...)
-	msgs = append(msgs, memif.Messages...)
-	msgs = append(msgs, tapv2.Messages...)
-	msgs = append(msgs, vmxnet3.Messages...)
-	msgs = append(msgs, vxlan.Messages...)
+	msgs = append(msgs, af_packet.AllMessages()...)
+	msgs = append(msgs, bond.AllMessages()...)
+	msgs = append(msgs, dhcp.AllMessages()...)
+	msgs = append(msgs, interfaces.AllMessages()...)
+	msgs = append(msgs, ip.AllMessages()...)
+	msgs = append(msgs, ipsec.AllMessages()...)
+	msgs = append(msgs, l2.AllMessages()...)
+	msgs = append(msgs, memif.AllMessages()...)
+	msgs = append(msgs, tapv2.AllMessages()...)
+	msgs = append(msgs, vmxnet3.AllMessages()...)
+	msgs = append(msgs, vxlan.AllMessages()...)
 
 	vppcalls.Versions["vpp1908"] = vppcalls.HandlerVersion{
 		Msgs: msgs,

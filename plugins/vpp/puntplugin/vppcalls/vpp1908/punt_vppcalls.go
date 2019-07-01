@@ -15,6 +15,7 @@
 package vpp1908
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -26,77 +27,100 @@ import (
 
 const PuntSocketHeaderVersion = 1
 
+// Socket path from the VPP startup config file, returned when a punt socket
+// is retrieved. Limited to single entry as supported in the VPP.
+var vppConfigSocketPath string
+
 // AddPunt configures new punt entry
 func (h *PuntVppHandler) AddPunt(p *punt.ToHost) error {
-	return errors.Errorf("passive punt add is currently now available")
-
-	// return h.addDelPunt(p, true)
+	return errors.Errorf("passive punt add is currently not available")
 }
 
 // DeletePunt removes punt entry
 func (h *PuntVppHandler) DeletePunt(p *punt.ToHost) error {
-	return errors.Errorf("passive punt del is currently now available")
-
-	// return h.addDelPunt(p, false)
+	return errors.Errorf("passive punt del is currently not available")
 }
 
-func (h *PuntVppHandler) addDelPunt(p *punt.ToHost, isAdd bool) error {
-	ipProto := resolveL4Proto(p.L4Protocol)
-	if p.L3Protocol == punt.L3Protocol_IPv4 || p.L3Protocol == punt.L3Protocol_ALL {
-		if err := h.handlePuntToHost(ba_punt.ADDRESS_IP4, ipProto, uint16(p.Port), isAdd); err != nil {
-			return err
-		}
-	}
-	if p.L3Protocol == punt.L3Protocol_IPv6 || p.L3Protocol == punt.L3Protocol_ALL {
-		if err := h.handlePuntToHost(ba_punt.ADDRESS_IP6, ipProto, uint16(p.Port), isAdd); err != nil {
-			return err
-		}
-	}
-	return nil
+// AddPuntException adds new punt exception entry
+func (h *PuntVppHandler) AddPuntException(p *punt.Exception) (string, error) {
+	return h.addDelPuntException(p, true)
 }
 
-func (h *PuntVppHandler) handlePuntToHost(ipv ba_punt.AddressFamily, ipProto ba_punt.IPProto, port uint16, isAdd bool) error {
-	req := &ba_punt.SetPunt{
-		IsAdd: boolToUint(isAdd),
-		Punt:  getPuntConfig(ipv, ipProto, port),
-	}
-	reply := &ba_punt.SetPuntReply{}
+// DeletePuntException removes punt exception entry
+func (h *PuntVppHandler) DeletePuntException(p *punt.Exception) error {
+	_, err := h.addDelPuntException(p, false)
+	return err
+}
 
-	h.log.Debugf("Setting punt: %+v", req.Punt)
-	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
-		return err
+func (h *PuntVppHandler) addDelPuntException(p *punt.Exception, isAdd bool) (pathName string, err error) {
+	reasons, err := h.dumpPuntReasons()
+	if err != nil {
+		return "", fmt.Errorf("dumping punt reasons failed: %v", err)
 	}
 
-	return nil
+	var reasonID *uint32
+	for _, r := range reasons {
+		if r.Reason.Name == p.Reason {
+			id := r.ID
+			reasonID = &id
+			break
+		}
+	}
+	if reasonID == nil {
+		return "", fmt.Errorf("punt reason %q not found", p.Reason)
+	}
+
+	baPunt := getPuntExceptionConfig(*reasonID)
+
+	if isAdd {
+		h.log.Debugf("adding punt exception: %+v", p)
+		pathName, err = h.handleRegisterPuntSocket(baPunt, p.SocketPath)
+		if err != nil {
+			return "", err
+		}
+	} else {
+		err = h.handleDeregisterPuntSocket(baPunt)
+		if err != nil {
+			return "", err
+		}
+	}
+
+	return pathName, nil
 }
 
 // RegisterPuntSocket registers new punt to unix domain socket entry
 func (h *PuntVppHandler) RegisterPuntSocket(p *punt.ToHost) (pathName string, err error) {
 	ipProto := resolveL4Proto(p.L4Protocol)
+
 	if p.L3Protocol == punt.L3Protocol_IPv4 || p.L3Protocol == punt.L3Protocol_ALL {
-		if pathName, err = h.handleRegisterPuntSocket(ba_punt.ADDRESS_IP4, ipProto, uint16(p.Port), p.SocketPath); err != nil {
+		baPunt := getPuntL4Config(ba_punt.ADDRESS_IP4, ipProto, uint16(p.Port))
+		if pathName, err = h.handleRegisterPuntSocket(baPunt, p.SocketPath); err != nil {
 			return "", err
 		}
 	}
 	if p.L3Protocol == punt.L3Protocol_IPv6 || p.L3Protocol == punt.L3Protocol_ALL {
-		if pathName, err = h.handleRegisterPuntSocket(ba_punt.ADDRESS_IP6, ipProto, uint16(p.Port), p.SocketPath); err != nil {
+		baPunt := getPuntL4Config(ba_punt.ADDRESS_IP6, ipProto, uint16(p.Port))
+		if pathName, err = h.handleRegisterPuntSocket(baPunt, p.SocketPath); err != nil {
 			return "", err
 		}
 	}
 
-	return
+	return pathName, nil
 }
 
 // DeregisterPuntSocket removes existing punt to socket registration
 func (h *PuntVppHandler) DeregisterPuntSocket(p *punt.ToHost) error {
 	ipProto := resolveL4Proto(p.L4Protocol)
+
 	if p.L3Protocol == punt.L3Protocol_IPv4 || p.L3Protocol == punt.L3Protocol_ALL {
-		if err := h.handleDeregisterPuntSocket(ba_punt.ADDRESS_IP4, ipProto, uint16(p.Port)); err != nil {
+		baPunt := getPuntL4Config(ba_punt.ADDRESS_IP4, ipProto, uint16(p.Port))
+		if err := h.handleDeregisterPuntSocket(baPunt); err != nil {
 			return err
 		}
 	}
 	if p.L3Protocol == punt.L3Protocol_IPv6 || p.L3Protocol == punt.L3Protocol_ALL {
-		if err := h.handleDeregisterPuntSocket(ba_punt.ADDRESS_IP6, ipProto, uint16(p.Port)); err != nil {
+		baPunt := getPuntL4Config(ba_punt.ADDRESS_IP6, ipProto, uint16(p.Port))
+		if err := h.handleDeregisterPuntSocket(baPunt); err != nil {
 			return err
 		}
 	}
@@ -104,26 +128,35 @@ func (h *PuntVppHandler) DeregisterPuntSocket(p *punt.ToHost) error {
 	return nil
 }
 
-func (h *PuntVppHandler) handleRegisterPuntSocket(ipv ba_punt.AddressFamily, ipProto ba_punt.IPProto, port uint16, path string) (string, error) {
+func (h *PuntVppHandler) handleRegisterPuntSocket(punt ba_punt.Punt, path string) (string, error) {
 	req := &ba_punt.PuntSocketRegister{
 		HeaderVersion: PuntSocketHeaderVersion,
-		Punt:          getPuntConfig(ipv, ipProto, port),
+		Punt:          punt,
 		Pathname:      []byte(path),
 	}
 	reply := &ba_punt.PuntSocketRegisterReply{}
 
-	h.log.Debugf("Registering punt socket: %+v (pathname: %s)", req.Punt, req.Pathname)
+	h.log.Debugf("registering punt socket: %+v (pathname: %s)", req.Punt, req.Pathname)
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return "", err
 	}
 
-	return strings.SplitN(string(reply.Pathname), "\x00", 2)[0], nil
+	// socket pathname from VPP config
+	pathName := strings.SplitN(string(reply.Pathname), "\x00", 2)[0]
+
+	// VPP startup config socket path name is always the same
+	if vppConfigSocketPath != pathName {
+		h.log.Debugf("setting vpp punt socket path to: %q (%s)", pathName, vppConfigSocketPath)
+		vppConfigSocketPath = pathName
+	}
+
+	return pathName, nil
 }
 
 // DeregisterPuntSocket removes existing punt to socket registration
-func (h *PuntVppHandler) handleDeregisterPuntSocket(ipv ba_punt.AddressFamily, ipProto ba_punt.IPProto, port uint16) error {
+func (h *PuntVppHandler) handleDeregisterPuntSocket(punt ba_punt.Punt) error {
 	req := &ba_punt.PuntSocketDeregister{
-		Punt: getPuntConfig(ipv, ipProto, port),
+		Punt: punt,
 	}
 	reply := &ba_punt.PuntSocketDeregisterReply{}
 
@@ -134,20 +167,26 @@ func (h *PuntVppHandler) handleDeregisterPuntSocket(ipv ba_punt.AddressFamily, i
 	return nil
 }
 
-func getPuntConfig(ipv ba_punt.AddressFamily, ipProto ba_punt.IPProto, port uint16) ba_punt.Punt {
+func getPuntExceptionConfig(reasonID uint32) ba_punt.Punt {
+	p := ba_punt.PuntException{
+		ID: reasonID,
+	}
+	return ba_punt.Punt{
+		Type: ba_punt.PUNT_API_TYPE_EXCEPTION,
+		Punt: ba_punt.PuntUnionException(p),
+	}
+}
+
+func getPuntL4Config(ipv ba_punt.AddressFamily, ipProto ba_punt.IPProto, port uint16) ba_punt.Punt {
 	puntL4 := ba_punt.PuntL4{
 		Af:       ipv,
 		Protocol: ipProto,
 		Port:     port,
 	}
-
-	puntD := ba_punt.Punt{
+	return ba_punt.Punt{
 		Type: ba_punt.PUNT_API_TYPE_L4,
+		Punt: ba_punt.PuntUnionL4(puntL4),
 	}
-	puntD.Punt.SetL4(puntL4)
-
-	return puntD
-
 }
 
 // AddPuntRedirect adds new redirect entry

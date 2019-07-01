@@ -16,7 +16,9 @@ package govppmux
 
 import (
 	"context"
+	"fmt"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -26,14 +28,17 @@ import (
 	"github.com/ligato/cn-infra/datasync/resync"
 	"github.com/ligato/cn-infra/health/statuscheck"
 	"github.com/ligato/cn-infra/infra"
+	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/logging/measure/model/apitrace"
+	"github.com/ligato/cn-infra/rpc/rest"
 	"github.com/pkg/errors"
 
 	"github.com/ligato/vpp-agent/plugins/govppmux/vppcalls"
 
 	_ "github.com/ligato/vpp-agent/plugins/govppmux/vppcalls/vpp1901"
 	_ "github.com/ligato/vpp-agent/plugins/govppmux/vppcalls/vpp1904"
+	_ "github.com/ligato/vpp-agent/plugins/govppmux/vppcalls/vpp1908"
 )
 
 // Default path to socket for VPP stats
@@ -75,8 +80,9 @@ type Plugin struct {
 // so that they do not mix with other plugin fields.
 type Deps struct {
 	infra.PluginDeps
-	StatusCheck statuscheck.PluginStatusWriter
-	Resync      *resync.Plugin
+	HTTPHandlers rest.HTTPHandlers
+	StatusCheck  statuscheck.PluginStatusWriter
+	Resync       *resync.Plugin
 }
 
 // Config groups the configurable parameter of GoVpp.
@@ -148,6 +154,9 @@ func (p *Plugin) Init() error {
 		p.Log.Info("VPP API trace enabled")
 	}
 
+	// register REST API handlers
+	p.registerHandlers(p.HTTPHandlers)
+
 	if p.vppAdapter == nil {
 		address := p.config.BinAPISocketPath
 		useShm := disabledSocketClient || p.config.ConnectViaShm
@@ -162,9 +171,9 @@ func (p *Plugin) Init() error {
 
 	// TODO: Async connect & automatic reconnect support is not yet implemented in the agent,
 	// so synchronously wait until connected to VPP.
+	startTime := time.Now()
 	p.Log.Debugf("connecting to VPP..")
 
-	startTime := time.Now()
 	p.vppConn, p.vppConChan, err = govpp.AsyncConnect(p.vppAdapter, p.config.RetryConnectCount, p.config.RetryConnectTimeout)
 	if err != nil {
 		return err
@@ -182,10 +191,10 @@ func (p *Plugin) Init() error {
 		}
 	}
 
-	vppConnectTime := time.Since(startTime)
-	p.Log.Debugf("connection to VPP established (took %s)", vppConnectTime.Round(time.Millisecond))
+	connectDur := time.Since(startTime)
+	p.Log.Debugf("connection to VPP established (took %s)", connectDur.Round(time.Millisecond))
 
-	if err := p.updateVPPInfo(p.vppConn); err != nil {
+	if err := p.updateVPPInfo(); err != nil {
 		return errors.WithMessage(err, "retrieving VPP info failed")
 	}
 
@@ -237,6 +246,69 @@ func (p *Plugin) Close() error {
 			}
 		}
 	}()
+
+	return nil
+}
+
+// VPPInfo returns information about VPP session.
+func (p *Plugin) VPPInfo() (VPPInfo, error) {
+	p.infoMu.Lock()
+	defer p.infoMu.Unlock()
+	return p.vppInfo, nil
+}
+
+func (p *Plugin) updateVPPInfo() error {
+	if p.vppConn == nil {
+		return fmt.Errorf("VPP connection is nil")
+	}
+
+	vppAPIChan, err := p.vppConn.NewAPIChannel()
+	if err != nil {
+		return err
+	}
+	defer vppAPIChan.Close()
+
+	vpeHandler := vppcalls.CompatibleVpeHandler(vppAPIChan)
+
+	version, err := vpeHandler.RunCli("show version verbose")
+	if err != nil {
+		p.Log.Warnf("RunCli error: %v", err)
+	} else {
+		p.Log.Debugf("vpp# show version verbose\n%s", version)
+	}
+
+	cmdline, err := vpeHandler.RunCli("show version cmdline")
+	if err != nil {
+		p.Log.Warnf("RunCli error: %v", err)
+	} else {
+		out := strings.Replace(cmdline, "\n", "", -1)
+		p.Log.Debugf("vpp# show version cmdline:\n%s", out)
+	}
+
+	ver, err := vpeHandler.GetVersionInfo()
+	if err != nil {
+		return err
+	}
+
+	p.Log.Infof("VPP version: %v", ver.Version)
+
+	vpe, err := vpeHandler.GetVpeInfo()
+	if err != nil {
+		return err
+	}
+
+	p.Log.WithFields(logging.Fields{
+		"PID":      vpe.PID,
+		"ClientID": vpe.ClientIdx,
+	}).Debugf("loaded %d VPP modules: %v", len(vpe.ModuleVersions), vpe.ModuleVersions)
+
+	p.infoMu.Lock()
+	p.vppInfo = VPPInfo{
+		Connected:   true,
+		VersionInfo: *ver,
+		VpeInfo:     *vpe,
+	}
+	p.infoMu.Unlock()
 
 	return nil
 }
@@ -349,7 +421,7 @@ func (p *Plugin) handleVPPConnectionEvents(ctx context.Context) {
 		select {
 		case event := <-p.vppConChan:
 			if event.State == govpp.Connected {
-				if err := p.updateVPPInfo(p.vppConn); err != nil {
+				if err := p.updateVPPInfo(); err != nil {
 					p.Log.Errorf("updating VPP info failed: %v", err)
 				}
 
@@ -382,46 +454,4 @@ func (p *Plugin) handleVPPConnectionEvents(ctx context.Context) {
 			return
 		}
 	}
-}
-
-// VPPInfo returns information about VPP session.
-func (p *Plugin) VPPInfo() (VPPInfo, error) {
-	p.infoMu.Lock()
-	defer p.infoMu.Unlock()
-	return p.vppInfo, nil
-}
-
-func (p *Plugin) updateVPPInfo(provider govppapi.ChannelProvider) error {
-	vppAPIChan, err := provider.NewAPIChannel()
-	if err != nil {
-		return err
-	}
-	defer vppAPIChan.Close()
-
-	vpeHandler := vppcalls.CompatibleVpeHandler(vppAPIChan)
-
-	ver, err := vpeHandler.GetVersionInfo()
-	if err != nil {
-		return err
-	}
-
-	p.Log.Infof("VPP version: %v", ver.Version)
-
-	vpe, err := vpeHandler.GetVpeInfo()
-	if err != nil {
-		return err
-	}
-
-	p.Log.Debugf("VPP session details: PID=%d ClientIdx=%d", vpe.PID, vpe.ClientIdx)
-	p.Log.Debugf("loaded %d VPP modules: %v", len(vpe.ModuleVersions), vpe.ModuleVersions)
-
-	p.infoMu.Lock()
-	p.vppInfo = VPPInfo{
-		Connected:   true,
-		VersionInfo: *ver,
-		VpeInfo:     *vpe,
-	}
-	p.infoMu.Unlock()
-
-	return nil
 }

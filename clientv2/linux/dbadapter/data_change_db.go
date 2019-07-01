@@ -17,8 +17,8 @@ package dbadapter
 import (
 	"github.com/ligato/cn-infra/db/keyval"
 
-	"github.com/ligato/vpp-agent/api/models/linux/interfaces"
-	"github.com/ligato/vpp-agent/api/models/linux/l3"
+	linux_interfaces "github.com/ligato/vpp-agent/api/models/linux/interfaces"
+	linux_l3 "github.com/ligato/vpp-agent/api/models/linux/l3"
 	abf "github.com/ligato/vpp-agent/api/models/vpp/abf"
 	acl "github.com/ligato/vpp-agent/api/models/vpp/acl"
 	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
@@ -28,9 +28,10 @@ import (
 	nat "github.com/ligato/vpp-agent/api/models/vpp/nat"
 	punt "github.com/ligato/vpp-agent/api/models/vpp/punt"
 	stn "github.com/ligato/vpp-agent/api/models/vpp/stn"
-	"github.com/ligato/vpp-agent/clientv2/linux"
-	"github.com/ligato/vpp-agent/clientv2/vpp"
+	linuxclient "github.com/ligato/vpp-agent/clientv2/linux"
+	vppclient "github.com/ligato/vpp-agent/clientv2/vpp"
 	"github.com/ligato/vpp-agent/clientv2/vpp/dbadapter"
+	"github.com/ligato/vpp-agent/pkg/models"
 )
 
 // NewDataChangeDSL returns a new instance of DataChangeDSL which implements
@@ -237,6 +238,12 @@ func (dsl *PutDSL) PuntToHost(val *punt.ToHost) linuxclient.PutDSL {
 	return dsl
 }
 
+// PuntException adds request to create or update exception to punt specific packets.
+func (dsl *PutDSL) PuntException(val *punt.Exception) linuxclient.PutDSL {
+	dsl.parent.txn.Put(models.Key(val), val)
+	return dsl
+}
+
 // Delete changes the DSL mode to allow removal of an existing configuration.
 func (dsl *PutDSL) Delete() linuxclient.DeleteDSL {
 	return &DeleteDSL{dsl.parent, dsl.vppPut.Delete()}
@@ -405,6 +412,12 @@ func (dsl *DeleteDSL) PuntIPRedirect(l3Proto punt.L3Protocol, txInterface string
 // PuntToHost adds request to delete a rule used to punt L4 traffic to a host.
 func (dsl *DeleteDSL) PuntToHost(l3Proto punt.L3Protocol, l4Proto punt.L4Protocol, port uint32) linuxclient.DeleteDSL {
 	dsl.vppDelete.PuntToHost(l3Proto, l4Proto, port)
+	return dsl
+}
+
+// PuntException adds request to delete exception to punt specific packets.
+func (dsl *DeleteDSL) PuntException(reason string) linuxclient.DeleteDSL {
+	dsl.parent.txn.Delete(punt.ExceptionKey(reason))
 	return dsl
 }
 

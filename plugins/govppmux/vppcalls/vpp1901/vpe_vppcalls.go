@@ -19,6 +19,7 @@ import (
 	"strings"
 
 	govppapi "git.fd.io/govpp.git/api"
+	"github.com/pkg/errors"
 
 	"github.com/ligato/vpp-agent/plugins/govppmux/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/memclnt"
@@ -118,7 +119,7 @@ func (h *VpeHandler) RunCli(cmd string) (string, error) {
 	reply := &vpe.CliInbandReply{}
 
 	if err := h.ch.SendRequest(req).ReceiveReply(reply); err != nil {
-		return "", err
+		return "", errors.Wrapf(err, "running VPP CLI command '%s' failed", cmd)
 	}
 
 	return reply.Reply, nil

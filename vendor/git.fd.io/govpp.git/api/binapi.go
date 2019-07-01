@@ -52,9 +52,6 @@ type Message interface {
 type DataType interface {
 	// GetTypeName returns the original VPP name of the data type, as defined in the VPP API.
 	GetTypeName() string
-
-	// GetCrcString returns the string with CRC checksum of the data type definition (the string represents a hexadecimal number).
-	GetCrcString() string
 }
 
 // ChannelProvider provides the communication channel with govpp core.

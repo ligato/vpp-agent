@@ -1,6 +1,7 @@
 VERSION ?= $(shell git describe --always --tags --dirty)
 COMMIT  ?= $(shell git rev-parse HEAD)
 DATE    ?= $(shell git log -1 --format="%ct" | xargs -I{} date -d @{} +'%Y-%m-%dT%H:%M%:z')
+ARCH    ?= $(shell uname -m)
 
 CNINFRA := github.com/ligato/vpp-agent/vendor/github.com/ligato/cn-infra/agent
 LDFLAGS = -X $(CNINFRA).BuildVersion=$(VERSION) -X $(CNINFRA).CommitHash=$(COMMIT) -X $(CNINFRA).BuildDate=$(DATE)
@@ -11,6 +12,9 @@ ifeq ($(VPP_VERSION),)
 VPP_VERSION = $(VPP_DEFAULT)
 endif
 VPP_IMG:=$(value VPP_IMG_$(VPP_VERSION))
+ifeq (${ARCH}, aarch64)
+VPP_IMG:=$(subst vpp-base,vpp-base-arm64,$(VPP_IMG))
+endif
 VPP_BINAPI?=$(value VPP_BINAPI_$(VPP_VERSION))
 SKIP_CHECK?=
 

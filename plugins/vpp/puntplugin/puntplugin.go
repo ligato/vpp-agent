@@ -12,8 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate descriptor-adapter --descriptor-name PuntToHost --value-type *vpp_punt.ToHost --import "github.com/ligato/vpp-agent/api/models/vpp/punt" --output-dir "descriptor"
 //go:generate descriptor-adapter --descriptor-name IPPuntRedirect --value-type *vpp_punt.IPRedirect --import "github.com/ligato/vpp-agent/api/models/vpp/punt" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name PuntToHost --value-type *vpp_punt.ToHost --import "github.com/ligato/vpp-agent/api/models/vpp/punt" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name PuntException --value-type *vpp_punt.Exception --import "github.com/ligato/vpp-agent/api/models/vpp/punt" --output-dir "descriptor"
 
 package puntplugin
 
@@ -51,8 +52,9 @@ type PuntPlugin struct {
 	puntHandler vppcalls.PuntVppAPI
 
 	// descriptors
-	toHostDescriptor     *descriptor.PuntToHostDescriptor
-	ipRedirectDescriptor *descriptor.IPRedirectDescriptor
+	ipRedirectDescriptor    *descriptor.IPRedirectDescriptor
+	toHostDescriptor        *descriptor.PuntToHostDescriptor
+	puntExceptionDescriptor *descriptor.PuntExceptionDescriptor
 }
 
 // Deps lists dependencies of the punt plugin.
@@ -75,14 +77,6 @@ func (p *PuntPlugin) Init() (err error) {
 	// init punt handler
 	p.puntHandler = vppcalls.CompatiblePuntVppHandler(p.vppCh, p.IfPlugin.GetInterfaceIndex(), p.Log)
 
-	// init and register punt descriptor
-	p.toHostDescriptor = descriptor.NewPuntToHostDescriptor(p.puntHandler, p.Log)
-	toHostDescriptor := adapter.NewPuntToHostDescriptor(p.toHostDescriptor.GetDescriptor())
-	err = p.KVScheduler.RegisterKVDescriptor(toHostDescriptor)
-	if err != nil {
-		return err
-	}
-
 	// init and register IP punt redirect
 	p.ipRedirectDescriptor = descriptor.NewIPRedirectDescriptor(p.puntHandler, p.Log)
 	ipRedirectDescriptor := adapter.NewIPPuntRedirectDescriptor(p.ipRedirectDescriptor.GetDescriptor())
@@ -91,7 +85,23 @@ func (p *PuntPlugin) Init() (err error) {
 		return err
 	}
 
-	// TODO: temporary workaround for publishing registered sockets
+	// init and register punt descriptor
+	p.toHostDescriptor = descriptor.NewPuntToHostDescriptor(p.puntHandler, p.Log)
+	toHostDescriptor := adapter.NewPuntToHostDescriptor(p.toHostDescriptor.GetDescriptor())
+	err = p.KVScheduler.RegisterKVDescriptor(toHostDescriptor)
+	if err != nil {
+		return err
+	}
+
+	// init and register punt exception descriptor
+	p.puntExceptionDescriptor = descriptor.NewPuntExceptionDescriptor(p.puntHandler, p.Log)
+	exceptionDescriptor := adapter.NewPuntExceptionDescriptor(p.puntExceptionDescriptor.GetDescriptor())
+	err = p.KVScheduler.RegisterKVDescriptor(exceptionDescriptor)
+	if err != nil {
+		return err
+	}
+
+	// FIXME: temporary workaround for publishing registered sockets
 	p.toHostDescriptor.RegisterSocketFn = func(register bool, toHost *vpp_punt.ToHost, socketPath string) {
 		if p.PublishState == nil {
 			return
@@ -100,12 +110,29 @@ func (p *PuntPlugin) Init() (err error) {
 		if register {
 			puntToHost := *toHost
 			puntToHost.SocketPath = socketPath
-			if err := p.PublishState.Put(key, &puntToHost); err != nil {
-				p.Log.Errorf("publishing registered socket failed: %v", err)
+			if err := p.PublishState.Put(key, &puntToHost, datasync.WithClientLifetimeTTL()); err != nil {
+				p.Log.Errorf("publishing registered punt socket failed: %v", err)
 			}
 		} else {
 			if err := p.PublishState.Put(key, nil); err != nil {
-				p.Log.Errorf("publishing unregistered socket failed: %v", err)
+				p.Log.Errorf("publishing unregistered punt socket failed: %v", err)
+			}
+		}
+	}
+	p.puntExceptionDescriptor.RegisterSocketFn = func(register bool, puntExc *vpp_punt.Exception, socketPath string) {
+		if p.PublishState == nil {
+			return
+		}
+		key := strings.Replace(models.Key(puntExc), "config/", "status/", -1)
+		if register {
+			punt := *puntExc
+			punt.SocketPath = socketPath
+			if err := p.PublishState.Put(key, &punt, datasync.WithClientLifetimeTTL()); err != nil {
+				p.Log.Errorf("publishing registered punt exception socket failed: %v", err)
+			}
+		} else {
+			if err := p.PublishState.Put(key, nil); err != nil {
+				p.Log.Errorf("publishing unregistered punt exception socket failed: %v", err)
 			}
 		}
 	}

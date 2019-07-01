@@ -16,13 +16,18 @@ package vpp1901
 
 import (
 	"github.com/ligato/vpp-agent/api/models/vpp"
-	"github.com/ligato/vpp-agent/api/models/vpp/punt"
+	vpp_punt "github.com/ligato/vpp-agent/api/models/vpp/punt"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/punt"
 	"github.com/ligato/vpp-agent/plugins/vpp/puntplugin/vppcalls"
 )
 
 // FIXME: temporary solutions for providing data in dump
 var socketPathMap = make(map[uint32]*vpp.PuntToHost)
+
+func (h *PuntVppHandler) DumpPuntRedirect() (punts []*vpp_punt.IPRedirect, err error) {
+	h.log.Debugf("dump for ip redirect punt not implemented")
+	return nil, nil
+}
 
 // DumpRegisteredPuntSockets returns punt to host via registered socket entries
 // TODO since the binary API is not available, all data are read from local cache for now
@@ -120,4 +125,14 @@ func (h *PuntVppHandler) dumpPunts(ipv6 bool) (punts []*vppcalls.PuntDetails, er
 	}
 
 	return punts, nil
+}
+
+func (h *PuntVppHandler) DumpPuntReasons() ([]*vppcalls.ReasonDetails, error) {
+	h.log.Debugf("punt reasons are not supported")
+	return nil, nil
+}
+
+func (h *PuntVppHandler) DumpExceptions() ([]*vppcalls.ExceptionDetails, error) {
+	h.log.Debugf("punt exceptions are not supported")
+	return nil, nil
 }

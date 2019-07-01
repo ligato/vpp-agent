@@ -7,21 +7,17 @@ import (
 	"os"
 	"strings"
 
+	"github.com/ghodss/yaml"
+	"github.com/gogo/protobuf/proto"
+	"github.com/spf13/cobra"
+
 	"github.com/ligato/cn-infra/servicelabel"
 
 	"github.com/ligato/vpp-agent/api/models/linux"
-
 	"github.com/ligato/vpp-agent/api/models/vpp"
-
-	yaml "github.com/ghodss/yaml"
-
-	"github.com/ligato/vpp-agent/pkg/models"
-
-	"github.com/gogo/protobuf/proto"
-
 	"github.com/ligato/vpp-agent/cmd/agentctl/cmd_generator"
 	"github.com/ligato/vpp-agent/cmd/agentctl/utils"
-	"github.com/spf13/cobra"
+	"github.com/ligato/vpp-agent/pkg/models"
 )
 
 // RootCmd represents the base command when called without any subcommands.
@@ -206,8 +202,8 @@ func init() {
 	generateConfig.AddCommand(generateLinuxInterface)
 	generateConfig.AddCommand(generateLinuxARP)
 	generateConfig.AddCommand(generateLinuxRoutes)
-	formatType = generateConfig.PersistentFlags().String("format", "yaml",
-		"Format:\n\tjson\n\tyaml\n\tproto\n")
+	formatType = generateConfig.PersistentFlags().String("format", "json",
+		"Output formats:\n\tjson\n\tyaml\n\tproto\n")
 	generateConfig.PersistentFlags().BoolVar(&short, "short", false,
 		"Print command to one line. Work only with json format")
 }
