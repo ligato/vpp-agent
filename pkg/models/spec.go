@@ -87,6 +87,8 @@ func (m registeredModel) ParseKey(key string) (name string, valid bool) {
 	if name == key || (name == "" && m.nameFunc != nil) {
 		name = strings.TrimPrefix(key, m.modelPath)
 	}
+	// key had the prefix and also either
+	// non-empty name or no name template
 	if name != key && (name != "" || m.nameFunc == nil) {
 		// TODO: validate name?
 		return name, true
