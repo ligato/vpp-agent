@@ -256,15 +256,3 @@ func unmarshalKeyVal(fullKey string, data string) (proto.Message, error) {
 	}
 	return value, nil
 }
-
-type lazyProto struct {
-	val proto.Message
-}
-
-// GetValue returns the value of the pair.
-func (lazy *lazyProto) GetValue(out proto.Message) error {
-	if lazy.val != nil {
-		proto.Merge(out, lazy.val)
-	}
-	return nil
-}
