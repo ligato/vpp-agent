@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// +build !mockvpp
+// +build !mockvpp,vppapiclient
 
 package govppmux
 
@@ -22,7 +22,7 @@ import (
 	"git.fd.io/govpp.git/adapter/vppapiclient"
 )
 
-// NewVppAdapter returns real vpp api adapter, used for building with vppapiclient library.
+// NewVppAdapter returns VPP binary API adapter, implemented as wrapper for vppapiclient library.
 func NewVppAdapter(addr string, useShm bool) adapter.VppAPI {
 	if useShm {
 		// addr is used as shm prefix
@@ -30,10 +30,9 @@ func NewVppAdapter(addr string, useShm bool) adapter.VppAPI {
 	}
 	// addr is used as socket path
 	return socketclient.NewVppClient(addr)
-
 }
 
-// NewStatsAdapter returns stats vpp api adapter, used for reading statistics with vppapiclient library.
+// NewStatsAdapter returns VPP stats API adapter, implemented as wrapper for vppapiclient library.
 func NewStatsAdapter(socketName string) adapter.StatsAPI {
 	return vppapiclient.NewStatClient(socketName)
 }

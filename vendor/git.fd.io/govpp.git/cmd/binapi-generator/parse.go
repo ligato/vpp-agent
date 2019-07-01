@@ -74,6 +74,7 @@ const (
 // parsePackage parses provided JSON data into objects prepared for code generation
 func parsePackage(ctx *context, jsonRoot *jsongo.JSONNode) (*Package, error) {
 	pkg := Package{
+		Name:   ctx.packageName,
 		RefMap: make(map[string]string),
 	}
 
@@ -89,16 +90,11 @@ func parsePackage(ctx *context, jsonRoot *jsongo.JSONNode) (*Package, error) {
 		}
 	}
 
-	logf("parsing package %s (version: %s, CRC: %s) contains: %d services, %d messages, %d types, %d enums, %d unions, %d aliases",
-		ctx.packageName,
-		pkg.Version, pkg.CRC,
-		jsonRoot.Map(objServices).Len(),
-		jsonRoot.Map(objMessages).Len(),
-		jsonRoot.Map(objTypes).Len(),
-		jsonRoot.Map(objEnums).Len(),
-		jsonRoot.Map(objUnions).Len(),
-		jsonRoot.Map(objAliases).Len(),
-	)
+	logf("parsing package %s (version: %s, CRC: %s)", pkg.Name, pkg.Version, pkg.CRC)
+	logf(" consists of:")
+	for _, key := range jsonRoot.GetKeys() {
+		logf("  - %d %s", jsonRoot.At(key).Len(), key)
+	}
 
 	// parse enums
 	enums := jsonRoot.Map(objEnums)

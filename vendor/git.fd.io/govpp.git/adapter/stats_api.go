@@ -15,7 +15,18 @@
 package adapter
 
 import (
+	"errors"
 	"fmt"
+)
+
+var (
+	ErrStatDirBusy  = errors.New("stat dir busy")
+	ErrStatDumpBusy = errors.New("stat dump busy")
+)
+
+var (
+	// DefaultStatsSocket is the default path for the VPP stat socket file.
+	DefaultStatsSocket = "/run/vpp/stats.sock"
 )
 
 // StatsAPI provides connection to VPP stats API.
