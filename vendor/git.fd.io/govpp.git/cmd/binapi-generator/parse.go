@@ -98,7 +98,7 @@ func parsePackage(ctx *context, jsonRoot *jsongo.JSONNode) (*Package, error) {
 
 	// parse enums
 	enums := jsonRoot.Map(objEnums)
-	pkg.Enums = make([]Enum, enums.Len())
+	pkg.Enums = make([]Enum, 0)
 	for i := 0; i < enums.Len(); i++ {
 		enumNode := enums.At(i)
 
@@ -106,8 +106,14 @@ func parsePackage(ctx *context, jsonRoot *jsongo.JSONNode) (*Package, error) {
 		if err != nil {
 			return nil, err
 		}
-		pkg.Enums[i] = *enum
-		pkg.RefMap[toApiType(enum.Name)] = enum.Name
+
+		enumApi := toApiType(enum.Name)
+		if _, ok := pkg.RefMap[enumApi]; ok {
+			logf("enum %v already known", enumApi)
+			continue
+		}
+		pkg.RefMap[enumApi] = enum.Name
+		pkg.Enums = append(pkg.Enums, *enum)
 	}
 	// sort enums
 	sort.SliceStable(pkg.Enums, func(i, j int) bool {
@@ -117,16 +123,22 @@ func parsePackage(ctx *context, jsonRoot *jsongo.JSONNode) (*Package, error) {
 	// parse aliases
 	aliases := jsonRoot.Map(objAliases)
 	if aliases.GetType() == jsongo.TypeMap {
-		pkg.Aliases = make([]Alias, aliases.Len())
-		for i, key := range aliases.GetKeys() {
+		pkg.Aliases = make([]Alias, 0)
+		for _, key := range aliases.GetKeys() {
 			aliasNode := aliases.At(key)
 
 			alias, err := parseAlias(ctx, key.(string), aliasNode)
 			if err != nil {
 				return nil, err
 			}
-			pkg.Aliases[i] = *alias
-			pkg.RefMap[toApiType(alias.Name)] = alias.Name
+
+			aliasApi := toApiType(alias.Name)
+			if _, ok := pkg.RefMap[aliasApi]; ok {
+				logf("alias %v already known", aliasApi)
+				continue
+			}
+			pkg.RefMap[aliasApi] = alias.Name
+			pkg.Aliases = append(pkg.Aliases, *alias)
 		}
 	}
 	// sort aliases to ensure consistent order
@@ -136,7 +148,7 @@ func parsePackage(ctx *context, jsonRoot *jsongo.JSONNode) (*Package, error) {
 
 	// parse types
 	types := jsonRoot.Map(objTypes)
-	pkg.Types = make([]Type, types.Len())
+	pkg.Types = make([]Type, 0)
 	for i := 0; i < types.Len(); i++ {
 		typNode := types.At(i)
 
@@ -144,8 +156,14 @@ func parsePackage(ctx *context, jsonRoot *jsongo.JSONNode) (*Package, error) {
 		if err != nil {
 			return nil, err
 		}
-		pkg.Types[i] = *typ
-		pkg.RefMap[toApiType(typ.Name)] = typ.Name
+
+		typApi := toApiType(typ.Name)
+		if _, ok := pkg.RefMap[typApi]; ok {
+			logf("type %v already known", typApi)
+			continue
+		}
+		pkg.RefMap[typApi] = typ.Name
+		pkg.Types = append(pkg.Types, *typ)
 	}
 	// sort types
 	sort.SliceStable(pkg.Types, func(i, j int) bool {
@@ -154,7 +172,7 @@ func parsePackage(ctx *context, jsonRoot *jsongo.JSONNode) (*Package, error) {
 
 	// parse unions
 	unions := jsonRoot.Map(objUnions)
-	pkg.Unions = make([]Union, unions.Len())
+	pkg.Unions = make([]Union, 0)
 	for i := 0; i < unions.Len(); i++ {
 		unionNode := unions.At(i)
 
@@ -162,8 +180,14 @@ func parsePackage(ctx *context, jsonRoot *jsongo.JSONNode) (*Package, error) {
 		if err != nil {
 			return nil, err
 		}
-		pkg.Unions[i] = *union
-		pkg.RefMap[toApiType(union.Name)] = union.Name
+
+		unionApi := toApiType(union.Name)
+		if _, ok := pkg.RefMap[unionApi]; ok {
+			logf("union %v already known", unionApi)
+			continue
+		}
+		pkg.RefMap[unionApi] = union.Name
+		pkg.Unions = append(pkg.Unions, *union)
 	}
 	// sort unions
 	sort.SliceStable(pkg.Unions, func(i, j int) bool {
