@@ -536,7 +536,9 @@ func (d *InterfaceDescriptor) Dependencies(key string, intf *interfaces.Interfac
 //  - one empty value for every IP address to be assigned to the interface
 //  - one empty value for VRF table to put the interface into
 //  - one value with interface configuration reduced to RxMode if set
-//  - one Interface_RxPlacement for every queue with configured Rx placement.
+//  - one Interface_RxPlacement for every queue with configured Rx placement
+//  - one empty value which will be created once at least one IP address is
+//    assigned to the interface.
 func (d *InterfaceDescriptor) DerivedValues(key string, intf *interfaces.Interface) (derValues []kvs.KeyValuePair) {
 	// unnumbered interface
 	if intf.GetUnnumbered() != nil {
@@ -619,6 +621,14 @@ func (d *InterfaceDescriptor) DerivedValues(key string, intf *interfaces.Interfa
 		derValues = append(derValues, kvs.KeyValuePair{
 			Key:   interfaces.RxPlacementKey(intf.GetName(), rxPlacement.GetQueue()),
 			Value: rxPlacement,
+		})
+	}
+
+	// with-IP address (property)
+	if len(intf.GetIpAddresses()) > 0 {
+		derValues = append(derValues, kvs.KeyValuePair{
+			Key:   interfaces.InterfaceWithIPKey(intf.GetName()),
+			Value: &prototypes.Empty{},
 		})
 	}
 
