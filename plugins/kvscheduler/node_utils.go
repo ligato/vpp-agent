@@ -293,13 +293,13 @@ func isNodeReady(node graph.Node) bool {
 		// for SB values dependencies are not checked
 		return true
 	}
-	ready, _ := isNodeReadyRec(node, 0, make(map[string]int))
+	ready, _ := isNodeReadyRec(node, 0, make(map[string]int), false)
 	return ready
 }
 
 // isNodeReadyRec is a recursive call from within isNodeReady.
 // visited = map{ key -> depth }
-func isNodeReadyRec(node graph.Node, depth int, visited map[string]int) (ready bool, cycleDepth int) {
+func isNodeReadyRec(node graph.Node, depth int, visited map[string]int, checkSCC bool) (ready bool, cycleDepth int) {
 	if targetDepth, wasVisited := visited[node.GetKey()]; wasVisited {
 		return true, targetDepth
 	}
@@ -307,33 +307,47 @@ func isNodeReadyRec(node graph.Node, depth int, visited map[string]int) (ready b
 	visited[node.GetKey()] = depth
 	defer delete(visited, node.GetKey())
 
-	for _, targets := range node.GetTargets(DependencyRelation) {
-		satisfied := false
-		for _, target := range targets.Nodes {
-			if getNodeState(target) == kvs.ValueState_REMOVED {
-				// do not consider values that are (being) removed
-				continue
+	ready = true // for zero dependencies
+	var satisfiedLabel bool
+	cb := func(target graph.Node, label string) (skipLabel, abort bool) {
+		if target == nil { // end of the available targets for this label
+			if !satisfiedLabel {
+				ready = false
+				abort = true
+				return
 			}
-			if isNodeAvailable(target) {
-				satisfied = true
-			}
+			satisfiedLabel = false // clear for the next label
+			return
+		}
 
-			// test if node is inside a strongly-connected component (treated as one node)
-			targetReady, targetCycleDepth := isNodeReadyRec(target, depth+1, visited)
-			if targetReady && targetCycleDepth <= depth {
-				// this node is reachable from the target
-				satisfied = true
-				if targetCycleDepth < cycleDepth {
-					// update how far back in the branch this node can reach following dependencies
-					cycleDepth = targetCycleDepth
-				}
+		if getNodeState(target) == kvs.ValueState_REMOVED {
+			// do not consider values that are (being) removed
+			return
+		}
+
+		if isNodeAvailable(target) {
+			satisfiedLabel = true
+			if !checkSCC {
+				skipLabel = true
+				return
 			}
 		}
-		if !satisfied {
-			return false, cycleDepth
+
+		// test if node is inside a strongly-connected component (treated as one node)
+		targetReady, targetCycleDepth := isNodeReadyRec(target, depth+1, visited, true)
+		if targetReady && targetCycleDepth <= depth {
+			// this node is reachable from the target
+			satisfiedLabel = true
+			if targetCycleDepth < cycleDepth {
+				// update how far back in the branch this node can reach following dependencies
+				cycleDepth = targetCycleDepth
+			}
 		}
+		return
 	}
-	return true, cycleDepth
+
+	node.IterTargets(DependencyRelation, cb)
+	return
 }
 
 func canNodeHaveMetadata(node graph.Node) bool {

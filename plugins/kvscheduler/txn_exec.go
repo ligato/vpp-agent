@@ -341,7 +341,7 @@ func (s *Scheduler) applyDelete(node graph.NodeRW, txnOp *kvs.RecordedTxnOp, arg
 	}
 
 	// update values that depend on this kv-pair
-	depExecs, inheritedErr := s.runDepUpdates(node, args)
+	depExecs, inheritedErr := s.runDepUpdates(node, args, false)
 	executed = append(executed, depExecs...)
 	if inheritedErr != nil {
 		err = inheritedErr
@@ -479,7 +479,7 @@ func (s *Scheduler) applyCreate(node graph.NodeRW, txnOp *kvs.RecordedTxnOp, arg
 	executed = append(executed, txnOp)
 
 	// update values that depend on this kv-pair
-	depExecs, inheritedErr := s.runDepUpdates(node, args)
+	depExecs, inheritedErr := s.runDepUpdates(node, args, true)
 	executed = append(executed, depExecs...)
 	if inheritedErr != nil {
 		err = inheritedErr
@@ -582,7 +582,7 @@ func (s *Scheduler) applyUpdate(node graph.NodeRW, txnOp *kvs.RecordedTxnOp, arg
 	}
 
 	// if the new dependencies are not satisfied => delete and set as pending with the new value
-	if !isNodeReady(node) {
+	if !equivalent && !isNodeReady(node) {
 		node.SetValue(prevValue) // apply delete on the original value
 		delExec, inheritedErr := s.applyDelete(node, txnOp, args, true)
 		executed = append(executed, delExec...)
@@ -745,7 +745,7 @@ func (s *Scheduler) applyDerived(derivedVals []kvForTxn, args *applyValueArgs, c
 }
 
 // runDepUpdates triggers dependency updates on all nodes that depend on the given node.
-func (s *Scheduler) runDepUpdates(node graph.Node, args *applyValueArgs) (executed kvs.RecordedTxnOps, err error) {
+func (s *Scheduler) runDepUpdates(node graph.Node, args *applyValueArgs, forUnavailable bool) (executed kvs.RecordedTxnOps, err error) {
 	if s.logGraphWalk {
 		endLog := s.logNodeVisit("runDepUpdates", args)
 		defer endLog()
@@ -762,6 +762,9 @@ func (s *Scheduler) runDepUpdates(node graph.Node, args *applyValueArgs) (execut
 
 	for _, depNode := range depNodes {
 		if getNodeOrigin(depNode) != kvs.FromNB {
+			continue
+		}
+		if !isNodeAvailable(depNode) != forUnavailable {
 			continue
 		}
 		var value proto.Message
