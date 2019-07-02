@@ -180,12 +180,14 @@ func (p *IfPlugin) Init() error {
 		p.ifHandler, p.intfIndex, p.Log)
 	linkStateDescriptor, p.linkStateDescriptor = descriptor.NewLinkStateDescriptor(
 		p.KVScheduler, p.ifHandler, p.intfIndex, p.Log)
+
 	rxModeDescriptor := descriptor.NewRxModeDescriptor(p.ifHandler, p.intfIndex, p.Log)
 	rxPlacementDescriptor := descriptor.NewRxPlacementDescriptor(p.ifHandler, p.intfIndex, p.Log)
 	addrDescriptor := descriptor.NewInterfaceAddressDescriptor(p.ifHandler, p.intfIndex, p.Log)
 	unIfDescriptor := descriptor.NewUnnumberedIfDescriptor(p.ifHandler, p.intfIndex, p.Log)
 	bondIfDescriptor, _ := descriptor.NewBondedInterfaceDescriptor(p.ifHandler, p.intfIndex, p.Log)
 	vrfDescriptor := descriptor.NewInterfaceVrfDescriptor(p.ifHandler, p.intfIndex, p.Log)
+	withAddrDescriptor := descriptor.NewInterfaceWithAddrDescriptor(p.Log)
 
 	err = p.KVScheduler.RegisterKVDescriptor(
 		dhcpDescriptor,
@@ -196,6 +198,7 @@ func (p *IfPlugin) Init() error {
 		unIfDescriptor,
 		bondIfDescriptor,
 		vrfDescriptor,
+		withAddrDescriptor,
 	)
 	if err != nil {
 		return err

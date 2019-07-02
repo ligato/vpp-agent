@@ -135,6 +135,13 @@ const (
 	rxModesKeyTemplate = "vpp/interface/{iface}/rx-modes"
 )
 
+/* Interface with IP address (derived, property) */
+const (
+	// interfaceWithIPKeyTemplate is a template for keys derived from all interfaces
+	// but created only after at least one IP address is assigned.
+	interfaceWithIPKeyTemplate = "vpp/interface/{iface}/has-IP-address"
+)
+
 const (
 	// InvalidKeyPart is used in key for parts which are invalid
 	InvalidKeyPart = "<invalid>"
@@ -473,6 +480,31 @@ func ParseLinkStateKey(key string) (ifaceName string, isLinkUp bool, isLinkState
 			return
 		}
 		isLinkStateKey = true
+	}
+	return
+}
+
+/* Interface with IP address (derived property) */
+
+// InterfaceWithIPKey returns key derived from every VPP interface but created only
+// after at least one IP address was assigned to it.
+func InterfaceWithIPKey(ifaceName string) string {
+	if ifaceName == "" {
+		ifaceName = InvalidKeyPart
+	}
+	return strings.Replace(interfaceWithIPKeyTemplate, "{iface}", ifaceName, 1)
+}
+
+// ParseInterfaceWithIPKey parses key derived from every VPP interface but created only
+// after at least one IP address was assigned to it
+func ParseInterfaceWithIPKey(key string) (ifaceName string, isInterfaceWithIPKey bool) {
+	if suffix := strings.TrimPrefix(key, "vpp/interface/"); suffix != key {
+		if prefix := strings.TrimSuffix(suffix, "/has-IP-address"); prefix != suffix {
+			if prefix != InvalidKeyPart {
+				ifaceName = prefix
+				isInterfaceWithIPKey = true
+			}
+		}
 	}
 	return
 }
