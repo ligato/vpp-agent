@@ -4,6 +4,7 @@ import "fmt"
 
 // Package represents collection of objects parsed from VPP binary API JSON data
 type Package struct {
+	Name     string
 	Version  string
 	CRC      string
 	Services []Service
@@ -91,32 +92,33 @@ const (
 
 // printPackage prints all loaded objects for package
 func printPackage(pkg *Package) {
+	logf("package: %s %s (%s)", pkg.Name, pkg.Version, pkg.CRC)
 	if len(pkg.Enums) > 0 {
-		logf("loaded %d enums:", len(pkg.Enums))
-		for k, enum := range pkg.Enums {
-			logf(" - enum #%d\t%+v", k, enum)
+		logf(" %d enums:", len(pkg.Enums))
+		for _, enum := range pkg.Enums {
+			logf("  - %s: %+v", enum.Name, enum)
 		}
 	}
 	if len(pkg.Unions) > 0 {
-		logf("loaded %d unions:", len(pkg.Unions))
-		for k, union := range pkg.Unions {
-			logf(" - union #%d\t%+v", k, union)
+		logf(" %d unions:", len(pkg.Unions))
+		for _, union := range pkg.Unions {
+			logf("  - %s: %+v", union.Name, union)
 		}
 	}
 	if len(pkg.Types) > 0 {
-		logf("loaded %d types:", len(pkg.Types))
+		logf(" %d types:", len(pkg.Types))
 		for _, typ := range pkg.Types {
-			logf(" - type: %q (%d fields)", typ.Name, len(typ.Fields))
+			logf("  - %s (%d fields): %+v", typ.Name, len(typ.Fields), typ)
 		}
 	}
 	if len(pkg.Messages) > 0 {
-		logf("loaded %d messages:", len(pkg.Messages))
+		logf(" %d messages:", len(pkg.Messages))
 		for _, msg := range pkg.Messages {
-			logf(" - message: %q (%d fields)", msg.Name, len(msg.Fields))
+			logf("  - %s (%d fields) %s", msg.Name, len(msg.Fields), msg.CRC)
 		}
 	}
 	if len(pkg.Services) > 0 {
-		logf("loaded %d services:", len(pkg.Services))
+		logf(" %d services:", len(pkg.Services))
 		for _, svc := range pkg.Services {
 			var info string
 			if svc.Stream {
@@ -124,7 +126,7 @@ func printPackage(pkg *Package) {
 			} else if len(svc.Events) > 0 {
 				info = fmt.Sprintf("(EVENTS: %v)", svc.Events)
 			}
-			logf(" - service: %s - %q -> %q %s", svc.Name, svc.RequestType, svc.ReplyType, info)
+			logf("  - %s: %q -> %q %s", svc.Name, svc.RequestType, svc.ReplyType, info)
 		}
 	}
 }

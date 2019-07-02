@@ -30,15 +30,18 @@ import (
 )
 
 var (
-	inputFile          = flag.String("input-file", "", "Input file with VPP API in JSON format.")
-	inputDir           = flag.String("input-dir", ".", "Input directory with VPP API files in JSON format.")
-	outputDir          = flag.String("output-dir", ".", "Output directory where package folders will be generated.")
+	theInputFile = flag.String("input-file", "", "Input file with VPP API in JSON format.")
+	theInputDir  = flag.String("input-dir", "/usr/share/vpp/api", "Input directory with VPP API files in JSON format.")
+	theOutputDir = flag.String("output-dir", ".", "Output directory where package folders will be generated.")
+
 	includeAPIVer      = flag.Bool("include-apiver", true, "Include APIVersion constant for each module.")
+	includeServices    = flag.Bool("include-services", true, "Include RPC service api and client implementation.")
 	includeComments    = flag.Bool("include-comments", false, "Include JSON API source in comments for each object.")
 	includeBinapiNames = flag.Bool("include-binapi-names", false, "Include binary API names in struct tag.")
-	includeServices    = flag.Bool("include-services", false, "Include service interface with client implementation.")
-	continueOnError    = flag.Bool("continue-onerror", false, "Continue with next file on error.")
-	debug              = flag.Bool("debug", debugMode, "Enable debug mode.")
+
+	continueOnError = flag.Bool("continue-onerror", false, "Continue with next file on error.")
+
+	debug = flag.Bool("debug", debugMode, "Enable debug mode.")
 )
 
 var debugMode = os.Getenv("DEBUG_BINAPI_GENERATOR") != ""
@@ -49,68 +52,83 @@ func main() {
 		logrus.SetLevel(logrus.DebugLevel)
 	}
 
-	if *inputFile == "" && *inputDir == "" {
-		fmt.Fprintln(os.Stderr, "ERROR: input-file or input-dir must be specified")
+	if err := run(*theInputFile, *theInputDir, *theOutputDir, *continueOnError); err != nil {
+		logrus.Errorln("binapi-generator:", err)
 		os.Exit(1)
-	}
-
-	if *inputFile != "" {
-		// process one input file
-		if err := generateFromFile(*inputFile, *outputDir); err != nil {
-			fmt.Fprintf(os.Stderr, "ERROR: code generation from %s failed: %v\n", *inputFile, err)
-			os.Exit(1)
-		}
-	} else {
-		// process all files in specified directory
-		dir, err := filepath.Abs(*inputDir)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "ERROR: invalid input directory: %v\n", err)
-			os.Exit(1)
-		}
-		files, err := getInputFiles(*inputDir)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "ERROR: problem getting files from input directory: %v\n", err)
-			os.Exit(1)
-		} else if len(files) == 0 {
-			fmt.Fprintf(os.Stderr, "ERROR: no input files found in input directory: %v\n", dir)
-			os.Exit(1)
-		}
-		for _, file := range files {
-			if err := generateFromFile(file, *outputDir); err != nil {
-				fmt.Fprintf(os.Stderr, "ERROR: code generation from %s failed: %v\n", file, err)
-				if *continueOnError {
-					continue
-				}
-				os.Exit(1)
-			}
-		}
 	}
 }
 
+func run(inputFile, inputDir string, outputDir string, continueErr bool) error {
+	if inputFile == "" && inputDir == "" {
+		return fmt.Errorf("input-file or input-dir must be specified")
+	}
+
+	if inputFile != "" {
+		// process one input file
+		if err := generateFromFile(inputFile, outputDir); err != nil {
+			return fmt.Errorf("code generation from %s failed: %v\n", inputFile, err)
+		}
+	} else {
+		// process all files in specified directory
+		dir, err := filepath.Abs(inputDir)
+		if err != nil {
+			return fmt.Errorf("invalid input directory: %v\n", err)
+		}
+		files, err := getInputFiles(inputDir, 1)
+		if err != nil {
+			return fmt.Errorf("problem getting files from input directory: %v\n", err)
+		} else if len(files) == 0 {
+			return fmt.Errorf("no input files found in input directory: %v\n", dir)
+		}
+		for _, file := range files {
+			if err := generateFromFile(file, outputDir); err != nil {
+				if continueErr {
+					logrus.Warnf("code generation from %s failed: %v (error ignored)\n", file, err)
+					continue
+				} else {
+					return fmt.Errorf("code generation from %s failed: %v\n", file, err)
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
 // getInputFiles returns all input files located in specified directory
-func getInputFiles(inputDir string) (res []string, err error) {
-	files, err := ioutil.ReadDir(inputDir)
+func getInputFiles(inputDir string, deep int) (files []string, err error) {
+	entries, err := ioutil.ReadDir(inputDir)
 	if err != nil {
 		return nil, fmt.Errorf("reading directory %s failed: %v", inputDir, err)
 	}
-	for _, f := range files {
-		if strings.HasSuffix(f.Name(), inputFileExt) {
-			res = append(res, filepath.Join(inputDir, f.Name()))
+	for _, e := range entries {
+		if e.IsDir() && deep > 0 {
+			nestedDir := filepath.Join(inputDir, e.Name())
+			if nested, err := getInputFiles(nestedDir, deep-1); err != nil {
+				return nil, err
+			} else {
+				files = append(files, nested...)
+			}
+		} else if strings.HasSuffix(e.Name(), inputFileExt) {
+			files = append(files, filepath.Join(inputDir, e.Name()))
 		}
 	}
-	return res, nil
+	return files, nil
 }
 
 // generateFromFile generates Go package from one input JSON file
 func generateFromFile(inputFile, outputDir string) error {
-	logf("generating from file: %s", inputFile)
-	logf("------------------------------------------------------------")
-	defer logf("------------------------------------------------------------")
-
-	ctx, err := getContext(inputFile, outputDir)
+	// create generator context
+	ctx, err := newContext(inputFile, outputDir)
 	if err != nil {
 		return err
 	}
+
+	logf("------------------------------------------------------------")
+	logf("module: %s", ctx.moduleName)
+	logf(" - input: %s", ctx.inputFile)
+	logf(" - output: %s", ctx.outputFile)
+	logf("------------------------------------------------------------")
 
 	// prepare options
 	ctx.includeAPIVersion = *includeAPIVer
@@ -123,7 +141,6 @@ func generateFromFile(inputFile, outputDir string) error {
 	if err != nil {
 		return fmt.Errorf("reading input file %s failed: %v", ctx.inputFile, err)
 	}
-
 	// parse JSON data into objects
 	jsonRoot := new(jsongo.JSONNode)
 	if err := json.Unmarshal(ctx.inputData, jsonRoot); err != nil {
@@ -154,14 +171,6 @@ func generateFromFile(inputFile, outputDir string) error {
 	cmd := exec.Command("gofmt", "-w", ctx.outputFile)
 	if output, err := cmd.CombinedOutput(); err != nil {
 		return fmt.Errorf("gofmt failed: %v\n%s", err, string(output))
-	}
-
-	// count number of lines in generated output file
-	cmd = exec.Command("wc", "-l", ctx.outputFile)
-	if output, err := cmd.CombinedOutput(); err != nil {
-		logf("wc command failed: %v\n%s", err, string(output))
-	} else {
-		logf("number of generated lines: %s", output)
 	}
 
 	return nil

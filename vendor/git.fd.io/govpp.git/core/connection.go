@@ -174,8 +174,7 @@ func (c *Connection) connectVPP() error {
 	if err := c.vppClient.Connect(); err != nil {
 		return err
 	}
-
-	log.Debugf("Connected to VPP.")
+	log.Debugf("Connected to VPP")
 
 	if err := c.retrieveMessageIDs(); err != nil {
 		c.vppClient.Disconnect()
@@ -202,7 +201,12 @@ func (c *Connection) Disconnect() {
 // disconnectVPP disconnects from VPP in case it is connected.
 func (c *Connection) disconnectVPP() {
 	if atomic.CompareAndSwapUint32(&c.vppConnected, 1, 0) {
-		c.vppClient.Disconnect()
+		log.Debug("Disconnecting from VPP..")
+
+		if err := c.vppClient.Disconnect(); err != nil {
+			log.Debugf("Disconnect from VPP failed: %v", err)
+		}
+		log.Debug("Disconnected from VPP")
 	}
 }
 

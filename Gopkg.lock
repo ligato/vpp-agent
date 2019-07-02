@@ -3,13 +3,14 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:82787d364ee8227b95bfdfa36b9da5bc68bcbb7649fd230e9cbbe0e4a6e4e05d"
+  digest = "1:d938e71b3a2276d831e3e197638b479420084f596bd9c6de04caf5a9813dd462"
   name = "git.fd.io/govpp.git"
   packages = [
     "adapter",
     "adapter/mock",
     "adapter/mock/binapi",
     "adapter/socketclient",
+    "adapter/statsclient",
     "adapter/vppapiclient",
     "api",
     "cmd/binapi-generator",
@@ -18,7 +19,7 @@
     "examples/binapi/memclnt",
   ]
   pruneopts = "UT"
-  revision = "682250e328472e855a4c59e9e5f004473b6af0d3"
+  revision = "d3b84969e8ec5dabfd5fd3038d0fe67309c63168"
 
 [[projects]]
   branch = "master"
@@ -296,6 +297,14 @@
   pruneopts = "UT"
   revision = "8842d40dbf5ee062d80f9dc429db31a0fe0cdc73"
   version = "v1.2.2"
+
+[[projects]]
+  branch = "master"
+  digest = "1:ea797b536b154f62d2e1c49b61d5a1088782111563eb59837ff2b83fd2a65184"
+  name = "github.com/ftrvxmtrx/fd"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "c6d800382fff6dc1412f34269f71b7f83bd059ad"
 
 [[projects]]
   digest = "1:2cd7915ab26ede7d95b8749e6b1f933f1c6d5398030684e6505940a10f31cfda"
@@ -1001,6 +1010,7 @@
     "git.fd.io/govpp.git/adapter",
     "git.fd.io/govpp.git/adapter/mock",
     "git.fd.io/govpp.git/adapter/socketclient",
+    "git.fd.io/govpp.git/adapter/statsclient",
     "git.fd.io/govpp.git/adapter/vppapiclient",
     "git.fd.io/govpp.git/api",
     "git.fd.io/govpp.git/cmd/binapi-generator",
@@ -1039,7 +1049,6 @@
     "github.com/ligato/cn-infra/logging/logmanager",
     "github.com/ligato/cn-infra/logging/logrus",
     "github.com/ligato/cn-infra/logging/measure",
-    "github.com/ligato/cn-infra/logging/measure/model/apitrace",
     "github.com/ligato/cn-infra/messaging/kafka",
     "github.com/ligato/cn-infra/rpc/grpc",
     "github.com/ligato/cn-infra/rpc/prometheus",

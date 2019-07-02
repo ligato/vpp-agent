@@ -41,6 +41,7 @@ func GetStats() *Stats {
 	return s
 }
 
+// Stats defines various statistics for govppmux plugin.
 type Stats struct {
 	ChannelsCreated uint64
 	ChannelsOpen    uint64

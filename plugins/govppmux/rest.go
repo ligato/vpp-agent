@@ -22,18 +22,18 @@ import (
 )
 
 // registerHandlers registers all supported REST APIs.
-func (s *Plugin) registerHandlers(http rest.HTTPHandlers) {
+func (p *Plugin) registerHandlers(http rest.HTTPHandlers) {
 	if http == nil {
-		s.Log.Debug("No http handler provided, skipping registration of REST handlers")
+		p.Log.Debug("No http handler provided, skipping registration of REST handlers")
 		return
 	}
-	http.RegisterHTTPHandler("/govppmux/stats", s.statsHandler, "GET")
+	http.RegisterHTTPHandler("/govppmux/stats", p.statsHandler, "GET")
 }
 
-func (s *Plugin) statsHandler(formatter *render.Render) http.HandlerFunc {
+func (p *Plugin) statsHandler(formatter *render.Render) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		if err := formatter.JSON(w, http.StatusOK, GetStats()); err != nil {
-			s.Log.Warnf("stats handler errored: %v", err)
+			p.Log.Warnf("stats handler errored: %v", err)
 		}
 	}
 }
