@@ -118,7 +118,7 @@ test-cover-xml: test-cover
 
 perf:
 	@echo "=> running perf test"
-	./tests/perf/grpc-perf/test.sh 1000
+	./tests/perf/perf_test.sh grpc-perf 1000
 
 perf-all:
 	@echo "=> running all perf tests"
