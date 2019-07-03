@@ -35,7 +35,7 @@ import (
 	"github.com/ligato/vpp-agent/api/models/vpp"
 	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	ipsec "github.com/ligato/vpp-agent/api/models/vpp/ipsec"
-	"github.com/ligato/vpp-agent/api/models/vpp/l3"
+	vpp_l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
 )
 
 var (
@@ -43,11 +43,13 @@ var (
 	socketType    = flag.String("socket-type", "tcp", "socket type [tcp, tcp4, tcp6, unix, unixpacket]")
 	numClients    = flag.Int("clients", 1, "number of concurrent grpc clients")
 	numTunnels    = flag.Int("tunnels", 100, "number of tunnels to stress per client")
-	numPerRequest = flag.Int("numperreq", 1, "number of tunnels/routes per grpc request")
+	numPerRequest = flag.Int("numperreq", 10, "number of tunnels/routes per grpc request")
+	withIPs       = flag.Bool("with-ips", false, "configure IP address for each tunnel on memif at the end")
 	debug         = flag.Bool("debug", false, "turn on debug dump")
+	timeout       = flag.Uint("timeout", 300, "timeout for requests (in seconds)")
 
-	dialTimeout = time.Second * 2
-	reqTimeout  = time.Second * 10
+	dialTimeout = time.Second * 3
+	reqTimeout  = time.Second * 300
 )
 
 func main() {
@@ -116,6 +118,8 @@ func (p *GRPCStressPlugin) setupInitial() {
 		log.Fatal(err)
 	}
 
+	reqTimeout = time.Second * time.Duration(*timeout)
+
 	client := configurator.NewConfiguratorClient(conn)
 
 	// create a conn/client to create the red/black interfaces
@@ -129,35 +133,33 @@ func (p *GRPCStressPlugin) setupInitial() {
 func (p *GRPCStressPlugin) runGRPCCreateRedBlackMemifs(client configurator.ConfiguratorClient) {
 	p.Log.Infof("Configuring memif interfaces..")
 
-	memifRedInfo := &interfaces.Interface_Memif{
-		Memif: &interfaces.MemifLink{
-			Id:             1000,
-			Master:         false,
-			SocketFilename: "/var/run/memif_k8s-master.sock",
-		},
-	}
 	memIFRed := &interfaces.Interface{
 		Name:        "red",
 		Type:        interfaces.Interface_MEMIF,
+		IpAddresses: []string{"100.0.0.1/24"},
+		Mtu:         9200,
 		Enabled:     true,
-		IpAddresses: []string{"100.100.100.100/24"},
-		Mtu:         9000,
-		Link:        memifRedInfo,
-	}
-	memifBlackInfo := &interfaces.Interface_Memif{
-		Memif: &interfaces.MemifLink{
-			Id:             1001,
-			Master:         false,
-			SocketFilename: "/var/run/memif_k8s-master.sock",
+		Link: &interfaces.Interface_Memif{
+			Memif: &interfaces.MemifLink{
+				Id:             1,
+				Master:         false,
+				SocketFilename: "/var/run/memif_k8s-master.sock",
+			},
 		},
 	}
 	memIFBlack := &interfaces.Interface{
 		Name:        "black",
 		Type:        interfaces.Interface_MEMIF,
+		IpAddresses: []string{"192.168.20.1/24"},
+		Mtu:         9200,
 		Enabled:     true,
-		IpAddresses: []string{"20.20.20.100/24"},
-		Mtu:         9000,
-		Link:        memifBlackInfo,
+		Link: &interfaces.Interface_Memif{
+			Memif: &interfaces.MemifLink{
+				Id:             2,
+				Master:         false,
+				SocketFilename: "/var/run/memif_k8s-master.sock",
+			},
+		},
 	}
 	ifaces := []*interfaces.Interface{memIFRed, memIFBlack}
 
@@ -234,25 +236,38 @@ func (p *GRPCStressPlugin) runGRPCStressCreate(id int, client configurator.Confi
 
 	startTime := time.Now()
 
+	ips := []string{"10.0.0.1/24"}
+
 	for tunNum := 0; tunNum < numTunnels; {
 		if tunNum == numTunnels {
 			break
 		}
+
+		var ifaces []*interfaces.Interface
+		var routes []*vpp_l3.Route
+
 		for req := 0; req < *numPerRequest; req++ {
 			if tunNum == numTunnels {
 				break
 			}
 
+			tunID := id*numTunnels + tunNum
 			tunNum++
 
-			tunID := id*numTunnels + tunNum
+			ipsecTunnelName := fmt.Sprintf("ipsec-%d", tunID)
+
+			ipPart := gen2octets(uint32(tunID))
+			localIP := fmt.Sprintf("100.%s.1", ipPart)
+			remoteIP := fmt.Sprintf("100.%s.254", ipPart)
+
+			ips = append(ips, localIP+"/24")
 
 			ipsecInfo := &interfaces.Interface_Ipsec{
 				Ipsec: &interfaces.IPSecLink{
-					LocalIp:         "100.100.100.100",
-					RemoteIp:        "20." + gen3octets(uint32(tunID)),
-					LocalSpi:        uint32(tunID),
-					RemoteSpi:       uint32(tunID),
+					LocalIp:         localIP,
+					RemoteIp:        remoteIP,
+					LocalSpi:        200000 + uint32(tunID),
+					RemoteSpi:       100000 + uint32(tunID),
 					CryptoAlg:       ipsec.CryptoAlg_AES_CBC_256,
 					LocalCryptoKey:  "0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF",
 					RemoteCryptoKey: "0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF",
@@ -261,7 +276,6 @@ func (p *GRPCStressPlugin) runGRPCStressCreate(id int, client configurator.Confi
 					RemoteIntegKey:  "0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF",
 				},
 			}
-			ipsecTunnelName := fmt.Sprintf("grpc-ipsec-%d", tunID)
 			ipsecTunnel := &interfaces.Interface{
 				Name:    ipsecTunnelName,
 				Type:    interfaces.Interface_IPSEC_TUNNEL,
@@ -272,28 +286,63 @@ func (p *GRPCStressPlugin) runGRPCStressCreate(id int, client configurator.Confi
 				},
 				Link: ipsecInfo,
 			}
-			ifaces := []*interfaces.Interface{ipsecTunnel}
 
 			route := &vpp_l3.Route{
-				DstNetwork:        "30." + gen3octets(uint32(tunID)) + "/32",
-				NextHopAddr:       "172.2.0.1",
+				DstNetwork:        "10." + gen3octets(uint32(tunID)) + "/32",
+				NextHopAddr:       remoteIP,
 				OutgoingInterface: ipsecTunnelName,
 			}
-			routes := []*vpp_l3.Route{route}
 
 			//p.Log.Infof("Creating %s ... client: %d, tunNum: %d", ipsecTunnelName, id, tunNum)
 
-			_, err := client.Update(context.Background(), &configurator.UpdateRequest{
-				Update: &configurator.Config{
-					VppConfig: &vpp.ConfigData{
-						Interfaces: ifaces,
-						Routes:     routes,
-					},
+			ifaces = append(ifaces, ipsecTunnel)
+			routes = append(routes, route)
+		}
+
+		//p.Log.Infof("Creating %d ifaces & %d routes", len(ifaces), len(routes))
+
+		_, err := client.Update(context.Background(), &configurator.UpdateRequest{
+			Update: &configurator.Config{
+				VppConfig: &vpp.ConfigData{
+					Interfaces: ifaces,
+					Routes:     routes,
 				},
-			})
-			if err != nil {
-				log.Fatalf("Error creating tun/route: id/tun=%d/%d, err: %s", id, tunNum, err)
-			}
+			},
+		})
+		if err != nil {
+			log.Fatalf("Error creating tun/route: id/tun=%d/%d, err: %s", id, tunNum, err)
+		}
+	}
+
+	if *withIPs {
+		p.Log.Infof("updating %d ip addresses on memif", len(ips))
+
+		memIFRed := &interfaces.Interface{
+			Name:        "red",
+			Type:        interfaces.Interface_MEMIF,
+			IpAddresses: ips,
+			Mtu:         9000,
+			Enabled:     true,
+			Link: &interfaces.Interface_Memif{
+				Memif: &interfaces.MemifLink{
+					Id:             1,
+					Master:         false,
+					SocketFilename: "/var/run/memif_k8s-master.sock",
+				},
+			},
+		}
+
+		ctx, cancel := context.WithTimeout(context.Background(), reqTimeout)
+		_, err := client.Update(ctx, &configurator.UpdateRequest{
+			Update: &configurator.Config{
+				VppConfig: &vpp.ConfigData{
+					Interfaces: []*interfaces.Interface{memIFRed},
+				},
+			},
+		})
+		cancel()
+		if err != nil {
+			log.Fatalln(err)
 		}
 	}
 
@@ -326,8 +375,9 @@ func (p *GRPCStressPlugin) runGRPCStressCreate(id int, client configurator.Confi
 }
 
 func gen3octets(num uint32) string {
-	return fmt.Sprintf("%d.%d.%d",
-		(num>>16)&0xFF,
-		(num>>8)&0xFF,
-		(num)&0xFF)
+	return fmt.Sprintf("%d.%d.%d", (num>>16)&0xFF, (num>>8)&0xFF, (num)&0xFF)
+}
+
+func gen2octets(num uint32) string {
+	return fmt.Sprintf("%d.%d", (num>>8)&0xFF, (num)&0xFF)
 }
