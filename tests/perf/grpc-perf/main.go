@@ -315,6 +315,8 @@ func (p *GRPCStressPlugin) runGRPCStressCreate(id int, client configurator.Confi
 	}
 
 	if *withIPs {
+		p.Log.Infof("updating %d ip addresses on memif", len(ips))
+
 		memIFRed := &interfaces.Interface{
 			Name:        "red",
 			Type:        interfaces.Interface_MEMIF,
