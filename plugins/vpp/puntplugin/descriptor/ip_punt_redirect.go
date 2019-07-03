@@ -134,7 +134,9 @@ func (d *IPRedirectDescriptor) Delete(key string, redirect *punt.IPRedirect, met
 // Retrieve returns all configured VPP punt to host entries.
 func (d *IPRedirectDescriptor) Retrieve(correlate []adapter.IPPuntRedirectKVWithMetadata) (dump []adapter.IPPuntRedirectKVWithMetadata, err error) {
 	punts, err := d.puntHandler.DumpPuntRedirect()
-	if err != nil {
+	if err == vppcalls.ErrUnsupported {
+		return nil, nil
+	} else if err != nil {
 		d.log.Error(err)
 		return nil, err
 	}
