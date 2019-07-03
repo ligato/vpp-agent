@@ -144,7 +144,9 @@ func (d *PuntExceptionDescriptor) Delete(key string, punt *punt.Exception, metad
 func (d *PuntExceptionDescriptor) Retrieve(correlate []adapter.PuntExceptionKVWithMetadata) (retrieved []adapter.PuntExceptionKVWithMetadata, err error) {
 	// Dump punt exceptions
 	punts, err := d.puntHandler.DumpExceptions()
-	if err != nil {
+	if err == vppcalls.ErrUnsupported {
+		return nil, nil
+	} else if err != nil {
 		return nil, err
 	}
 

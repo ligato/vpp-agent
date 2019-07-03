@@ -58,6 +58,8 @@ func (h *PuntVppHandler) addDelPuntException(p *punt.Exception, isAdd bool) (pat
 		return "", fmt.Errorf("dumping punt reasons failed: %v", err)
 	}
 
+	h.log.Debugf("dumped %d punt reasons: %+v", len(reasons), reasons)
+
 	var reasonID *uint32
 	for _, r := range reasons {
 		if r.Reason.Name == p.Reason {
