@@ -7,7 +7,7 @@ Package l2 is a generated VPP binary API for 'l2' module.
 It consists of:
 	  4 enums
 	  3 aliases
-	  7 types
+	  8 types
 	  1 union
 	 51 messages
 	 25 services
@@ -29,7 +29,7 @@ const (
 	// APIVersion is the API version of this module.
 	APIVersion = "2.2.2"
 	// VersionCrc is the CRC of this module.
-	VersionCrc = 0x44c328e8
+	VersionCrc = 0xbaafc7be
 )
 
 // AddressFamily represents VPP binary API enum 'address_family'.
@@ -179,6 +179,17 @@ func (*Address) GetTypeName() string {
 	return "address"
 }
 
+// BdIPMac represents VPP binary API type 'bd_ip_mac'.
+type BdIPMac struct {
+	BdID uint32
+	IP   Address
+	Mac  MacAddress
+}
+
+func (*BdIPMac) GetTypeName() string {
+	return "bd_ip_mac"
+}
+
 // BridgeDomainSwIf represents VPP binary API type 'bridge_domain_sw_if'.
 type BridgeDomainSwIf struct {
 	Context   uint32
@@ -192,8 +203,8 @@ func (*BridgeDomainSwIf) GetTypeName() string {
 
 // IP4Prefix represents VPP binary API type 'ip4_prefix'.
 type IP4Prefix struct {
-	Prefix IP4Address
-	Len    uint8
+	Address IP4Address
+	Len     uint8
 }
 
 func (*IP4Prefix) GetTypeName() string {
@@ -202,8 +213,8 @@ func (*IP4Prefix) GetTypeName() string {
 
 // IP6Prefix represents VPP binary API type 'ip6_prefix'.
 type IP6Prefix struct {
-	Prefix IP6Address
-	Len    uint8
+	Address IP6Address
+	Len     uint8
 }
 
 func (*IP6Prefix) GetTypeName() string {
@@ -236,8 +247,8 @@ func (*Mprefix) GetTypeName() string {
 
 // Prefix represents VPP binary API type 'prefix'.
 type Prefix struct {
-	Address       Address
-	AddressLength uint8
+	Address Address
+	Len     uint8
 }
 
 func (*Prefix) GetTypeName() string {
@@ -289,17 +300,15 @@ func (u *AddressUnion) GetIP6() (a IP6Address) {
 
 // BdIPMacAddDel represents VPP binary API message 'bd_ip_mac_add_del'.
 type BdIPMacAddDel struct {
-	BdID  uint32
 	IsAdd uint8
-	IP    Address
-	Mac   MacAddress
+	Entry BdIPMac
 }
 
 func (*BdIPMacAddDel) GetMessageName() string {
 	return "bd_ip_mac_add_del"
 }
 func (*BdIPMacAddDel) GetCrcString() string {
-	return "1aabd078"
+	return "97367ad1"
 }
 func (*BdIPMacAddDel) GetMessageType() api.MessageType {
 	return api.RequestMessage
@@ -322,17 +331,14 @@ func (*BdIPMacAddDelReply) GetMessageType() api.MessageType {
 
 // BdIPMacDetails represents VPP binary API message 'bd_ip_mac_details'.
 type BdIPMacDetails struct {
-	BdID       uint32
-	IsIPv6     uint8
-	IPAddress  []byte `struc:"[16]byte"`
-	MacAddress MacAddress
+	Entry BdIPMac
 }
 
 func (*BdIPMacDetails) GetMessageName() string {
 	return "bd_ip_mac_details"
 }
 func (*BdIPMacDetails) GetCrcString() string {
-	return "c05c27de"
+	return "3f1eb886"
 }
 func (*BdIPMacDetails) GetMessageType() api.MessageType {
 	return api.ReplyMessage
