@@ -36,7 +36,7 @@ func (h *InterfaceVppHandler) sendAndLogMessageForVpp(ifIdx uint32, addr string,
 	}
 
 	prefix, _ := IPaddr.Mask.Size()
-	req.Pfx.AddressLength = byte(prefix)
+	req.Pfx.Len = byte(prefix)
 	if isIPv6 {
 		copy(req.Pfx.Address.Un.XXX_UnionData[:], IPaddr.IP.To16())
 		req.Pfx.Address.Af = ip.ADDRESS_IP6
