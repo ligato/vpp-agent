@@ -24,6 +24,16 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1908/abf"
 )
 
+const (
+	// NextHopViaLabelUnset constant has to be assigned into the field next hop  via label
+	// in abf_policy_add_del binary message if next hop via label is not defined.
+	NextHopViaLabelUnset uint32 = 0xfffff + 1
+
+	// ClassifyTableIndexUnset is a default value for field classify_table_index
+	// in abf_policy_add_del binary message.
+	ClassifyTableIndexUnset = ^uint32(0)
+)
+
 // GetAbfVersion retrieves version of the VPP ABF plugin
 func (h *ABFVppHandler) GetAbfVersion() (ver string, err error) {
 	req := &abf.AbfPluginGetVersion{}
@@ -126,24 +136,44 @@ func (h *ABFVppHandler) toFibPaths(abfPaths []*vpp_abf.ABF_ForwardingPath) (fibP
 			SwIfIndex:  ifData.SwIfIndex,
 			Weight:     uint8(abfPath.Weight),
 			Preference: uint8(abfPath.Preference),
-			IsDvr:      boolToUint(abfPath.Dvr),
+			Type:       setFibPathType(abfPath.Dvr),
 		}
-
-		// next hop IP
-		nextHop := net.ParseIP(abfPath.NextHopIp)
-		if nextHop.To4() == nil {
-			nextHop = nextHop.To16()
-			fibPath.Afi = 1
-		} else {
-			nextHop = nextHop.To4()
-			fibPath.Afi = 0
-		}
-		fibPath.NextHop = nextHop
-
+		fibPath.Nh, fibPath.Proto = setFibPathNhAndProto(abfPath.NextHopIp)
 		fibPaths = append(fibPaths, fibPath)
 	}
 
 	return fibPaths
+}
+
+// supported cases are DVR and normal
+func setFibPathType(isDvr bool) abf.FibPathType {
+	if isDvr {
+		return abf.FIB_API_PATH_TYPE_DVR
+	}
+	return abf.FIB_API_PATH_TYPE_NORMAL
+}
+
+// resolve IP address and return FIB path next hop (IP address) and IPv4/IPv6 version
+func setFibPathNhAndProto(ipStr string) (nh abf.FibPathNh, proto abf.FibPathNhProto) {
+	netIP := net.ParseIP(ipStr)
+	if netIP == nil {
+		return
+	}
+	var ipData [16]byte
+	if netIP.To4() == nil {
+		proto = abf.FIB_API_PATH_NH_PROTO_IP6
+		copy(ipData[:], netIP[:])
+	} else {
+		proto = abf.FIB_API_PATH_NH_PROTO_IP4
+		copy(ipData[:], netIP[12:])
+	}
+	return abf.FibPathNh{
+		Address: abf.AddressUnion{
+			XXX_UnionData: ipData,
+		},
+		ViaLabel:           NextHopViaLabelUnset,
+		ClassifyTableIndex: ClassifyTableIndexUnset,
+	}, proto
 }
 
 func boolToUint(input bool) uint8 {

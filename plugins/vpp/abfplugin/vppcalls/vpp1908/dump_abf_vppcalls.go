@@ -122,13 +122,12 @@ func (h *ABFVppHandler) dumpABFPolicy() ([]*vppcalls.ABFDetails, error) {
 
 			// base fields
 			fwdPath := &vpp_abf.ABF_ForwardingPath{
-				NextHopIp:     parseNextHopToString(path.NextHop, path.Afi),
+				NextHopIp:     parseNextHopToString(path.Nh, path.Proto),
 				InterfaceName: ifName,
 				Weight:        uint32(path.Weight),
 				Preference:    uint32(path.Preference),
-				Dvr:           uintToBool(path.IsDvr),
+				Dvr:           isDvr(path.Type),
 			}
-
 			fwdPaths = append(fwdPaths, fwdPath)
 		}
 
@@ -149,17 +148,26 @@ func (h *ABFVppHandler) dumpABFPolicy() ([]*vppcalls.ABFDetails, error) {
 	return abfs, nil
 }
 
-// Parses IP address to string. IP version is read from 'afi' where 1==IPv4 and 2==IPv6
-func parseNextHopToString(nh []byte, IPv uint8) string {
-	var nhIP net.IP = nh
-	if IPv == 1 {
+// returns next hop IP address
+func parseNextHopToString(nh abf.FibPathNh, proto abf.FibPathNhProto) string {
+	var nhIP net.IP = make([]byte, 16)
+	copy(nhIP[:], nh.Address.XXX_UnionData[:])
+	if proto == abf.FIB_API_PATH_NH_PROTO_IP4 {
 		return nhIP[:4].To4().String()
 	}
-	if IPv == 2 {
+	if proto == abf.FIB_API_PATH_NH_PROTO_IP6 {
 		return nhIP.To16().String()
 	}
 
 	return ""
+}
+
+// abf fib currently supports only DVR or normal mode
+func isDvr(pathType abf.FibPathType) (isDvr bool) {
+	if pathType == abf.FIB_API_PATH_TYPE_DVR {
+		return true
+	}
+	return false
 }
 
 func uintToBool(value uint8) bool {
