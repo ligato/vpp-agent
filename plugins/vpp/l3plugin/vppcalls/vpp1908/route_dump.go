@@ -15,9 +15,10 @@
 package vpp1908
 
 import (
-	"bytes"
 	"fmt"
 	"net"
+
+	"github.com/ligato/cn-infra/logging"
 
 	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
 	l3binapi "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1908/ip"
@@ -28,9 +29,9 @@ import (
 func (h *RouteHandler) DumpRoutes() ([]*vppcalls.RouteDetails, error) {
 	var routes []*vppcalls.RouteDetails
 	// Dump IPv4 l3 FIB.
-	reqCtx := h.callsChannel.SendMultiRequest(&l3binapi.IPFibDump{})
+	reqCtx := h.callsChannel.SendMultiRequest(&l3binapi.IPRouteDump{})
 	for {
-		fibDetails := &l3binapi.IPFibDetails{}
+		fibDetails := &l3binapi.IPRouteDetails{}
 		stop, err := reqCtx.ReceiveReply(fibDetails)
 		if stop {
 			break
@@ -38,72 +39,51 @@ func (h *RouteHandler) DumpRoutes() ([]*vppcalls.RouteDetails, error) {
 		if err != nil {
 			return nil, err
 		}
-		ipv4Route, err := h.dumpRouteIPv4Details(fibDetails)
+		ipv4Route, err := h.dumpRouteIPDetails(fibDetails.Route)
 		if err != nil {
 			return nil, err
 		}
 		routes = append(routes, ipv4Route...)
 	}
 
-	// Dump IPv6 l3 FIB.
-	reqCtx = h.callsChannel.SendMultiRequest(&l3binapi.IP6FibDump{})
-	for {
-		fibDetails := &l3binapi.IP6FibDetails{}
-		stop, err := reqCtx.ReceiveReply(fibDetails)
-		if stop {
-			break
-		}
-		if err != nil {
-			return nil, err
-		}
-		ipv6Route, err := h.dumpRouteIPv6Details(fibDetails)
-		if err != nil {
-			return nil, err
-		}
-		routes = append(routes, ipv6Route...)
-	}
-
 	return routes, nil
-}
-
-func (h *RouteHandler) dumpRouteIPv4Details(fibDetails *l3binapi.IPFibDetails) ([]*vppcalls.RouteDetails, error) {
-	return h.dumpRouteIPDetails(fibDetails.TableID, fibDetails.TableName, fibDetails.Address, fibDetails.AddressLength, fibDetails.Path, false)
-}
-
-func (h *RouteHandler) dumpRouteIPv6Details(fibDetails *l3binapi.IP6FibDetails) ([]*vppcalls.RouteDetails, error) {
-	return h.dumpRouteIPDetails(fibDetails.TableID, fibDetails.TableName, fibDetails.Address, fibDetails.AddressLength, fibDetails.Path, true)
 }
 
 // dumpRouteIPDetails processes static route details and returns a route objects. Number of routes returned
 // depends on size of path list.
-func (h *RouteHandler) dumpRouteIPDetails(tableID uint32, tableName []byte, address []byte, prefixLen uint8, paths []l3binapi.FibPath, ipv6 bool) ([]*vppcalls.RouteDetails, error) {
+func (h *RouteHandler) dumpRouteIPDetails(ipRoute l3binapi.IPRoute) ([]*vppcalls.RouteDetails, error) {
 	// Common fields for every route path (destination IP, VRF)
 	var dstIP string
-	if ipv6 {
-		dstIP = fmt.Sprintf("%s/%d", net.IP(address).To16().String(), uint32(prefixLen))
+	netIP := make([]byte, 16)
+	copy(netIP[:], ipRoute.Prefix.Address.Un.XXX_UnionData[:])
+	if ipRoute.Prefix.Address.Af == l3binapi.ADDRESS_IP6 {
+		dstIP = fmt.Sprintf("%s/%d", net.IP(netIP).To16().String(), uint32(ipRoute.Prefix.Len))
 	} else {
-		dstIP = fmt.Sprintf("%s/%d", net.IP(address[:4]).To4().String(), uint32(prefixLen))
+		dstIP = fmt.Sprintf("%s/%d", net.IP(netIP[:4]).To4().String(), uint32(ipRoute.Prefix.Len))
 	}
 
 	var routeDetails []*vppcalls.RouteDetails
 
 	// Paths
-	if len(paths) > 0 {
-		for _, path := range paths {
+	if ipRoute.NPaths > 0 {
+		for _, path := range ipRoute.Paths {
 			// Next hop IP address
 			var nextHopIP string
-			if ipv6 {
-				nextHopIP = fmt.Sprintf("%s", net.IP(path.NextHop).To16().String())
+			netIP := make([]byte, 16)
+			copy(netIP[:], path.Nh.Address.XXX_UnionData[:])
+			logging.DefaultLogger.Warnf("netip: %v, proto %v", path.Nh.Address.XXX_UnionData, path.Proto)
+			if path.Proto == l3binapi.FIB_API_PATH_NH_PROTO_IP6 {
+				nextHopIP = fmt.Sprintf("%s", net.IP(netIP).To16().String())
 			} else {
-				nextHopIP = fmt.Sprintf("%s", net.IP(path.NextHop[:4]).To4().String())
+				nextHopIP = fmt.Sprintf("%s", net.IP(netIP[:4]).To4().String())
 			}
 
 			// Route type (if via VRF is used)
 			var routeType l3.Route_RouteType
 			var viaVrfID uint32
-			if uintToBool(path.IsDrop) {
+			if path.Type == l3binapi.FIB_API_PATH_TYPE_DROP {
 				routeType = l3.Route_DROP
-			} else if path.SwIfIndex == NextHopOutgoingIfUnset && path.TableID != tableID {
+			} else if path.SwIfIndex == NextHopOutgoingIfUnset && path.TableID != ipRoute.TableID {
 				// outgoing interface not specified and path table is not equal to route table id = inter-VRF route
 				routeType = l3.Route_INTER_VRF
 				viaVrfID = path.TableID
@@ -127,7 +107,7 @@ func (h *RouteHandler) dumpRouteIPDetails(tableID uint32, tableName []byte, addr
 			// Route configuration
 			route := &l3.Route{
 				Type:              routeType,
-				VrfId:             tableID,
+				VrfId:             ipRoute.TableID,
 				DstNetwork:        dstIP,
 				NextHopAddr:       nextHopIP,
 				OutgoingInterface: ifName,
@@ -148,21 +128,9 @@ func (h *RouteHandler) dumpRouteIPDetails(tableID uint32, tableName []byte, addr
 
 			// Route metadata
 			meta := &vppcalls.RouteMeta{
-				TableName:         bytesToString(tableName),
-				OutgoingIfIdx:     ifIdx,
-				NextHopID:         path.NextHopID,
-				IsIPv6:            ipv6,
-				RpfID:             path.RpfID,
-				Afi:               path.Afi,
-				IsLocal:           uintToBool(path.IsLocal),
-				IsUDPEncap:        uintToBool(path.IsUDPEncap),
-				IsDvr:             uintToBool(path.IsDvr),
-				IsProhibit:        uintToBool(path.IsProhibit),
-				IsResolveAttached: uintToBool(path.IsResolveAttached),
-				IsResolveHost:     uintToBool(path.IsResolveHost),
-				IsSourceLookup:    uintToBool(path.IsSourceLookup),
-				IsUnreach:         uintToBool(path.IsUnreach),
-				LabelStack:        labelStack,
+				OutgoingIfIdx: ifIdx,
+				RpfID:         path.RpfID,
+				LabelStack:    labelStack,
 			}
 
 			routeDetails = append(routeDetails, &vppcalls.RouteDetails{
@@ -172,18 +140,12 @@ func (h *RouteHandler) dumpRouteIPDetails(tableID uint32, tableName []byte, addr
 		}
 	} else {
 		// Return route without path fields, but this is not a valid configuration
-		h.log.Warnf("Route with destination IP %s (VRF %d) has no path specified", dstIP, tableID)
-		route := &l3.Route{
-			Type:       l3.Route_INTRA_VRF, // default
-			VrfId:      tableID,
-			DstNetwork: dstIP,
-		}
-		meta := &vppcalls.RouteMeta{
-			TableName: string(bytes.SplitN(tableName, []byte{0x00}, 2)[0]),
-		}
 		routeDetails = append(routeDetails, &vppcalls.RouteDetails{
-			Route: route,
-			Meta:  meta,
+			Route: &l3.Route{
+				Type:       l3.Route_INTRA_VRF, // default
+				VrfId:      ipRoute.TableID,
+				DstNetwork: dstIP,
+			},
 		})
 	}
 

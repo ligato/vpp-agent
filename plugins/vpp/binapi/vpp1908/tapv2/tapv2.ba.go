@@ -23,9 +23,9 @@ const (
 	// ModuleName is the name of this module.
 	ModuleName = "tapv2"
 	// APIVersion is the API version of this module.
-	APIVersion = "2.0.0"
+	APIVersion = "2.1.0"
 	// VersionCrc is the CRC of this module.
-	VersionCrc = 0x588529f
+	VersionCrc = 0x25beb6c0
 )
 
 // SwInterfaceTapV2Details represents VPP binary API message 'sw_interface_tap_v2_details'.
@@ -43,6 +43,7 @@ type SwInterfaceTapV2Details struct {
 	HostIP4PrefixLen uint8
 	HostIP6Addr      []byte `struc:"[16]byte"`
 	HostIP6PrefixLen uint8
+	HostMtuSize      uint32
 	TapFlags         uint32
 }
 
@@ -50,7 +51,7 @@ func (*SwInterfaceTapV2Details) GetMessageName() string {
 	return "sw_interface_tap_v2_details"
 }
 func (*SwInterfaceTapV2Details) GetCrcString() string {
-	return "73dbc2d2"
+	return "5ee87a5f"
 }
 func (*SwInterfaceTapV2Details) GetMessageType() api.MessageType {
 	return api.ReplyMessage
@@ -94,6 +95,8 @@ type TapCreateV2 struct {
 	HostIP4Gw        []byte `struc:"[4]byte"`
 	HostIP6GwSet     uint8
 	HostIP6Gw        []byte `struc:"[16]byte"`
+	HostMtuSet       uint8
+	HostMtuSize      uint32
 	Tag              []byte `struc:"[64]byte"`
 	TapFlags         uint32
 }
@@ -102,7 +105,7 @@ func (*TapCreateV2) GetMessageName() string {
 	return "tap_create_v2"
 }
 func (*TapCreateV2) GetCrcString() string {
-	return "eabede03"
+	return "8fa99320"
 }
 func (*TapCreateV2) GetMessageType() api.MessageType {
 	return api.RequestMessage

@@ -54,11 +54,11 @@ func TestAddRoute(t *testing.T) {
 	ctx, _, rtHandler := routeTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&ip.IPAddDelRouteReply{})
+	ctx.MockVpp.MockReply(&ip.IPRouteAddDelReply{})
 	err := rtHandler.VppAddRoute(routes[0])
 	Expect(err).To(Succeed())
 
-	ctx.MockVpp.MockReply(&ip.IPAddDelRouteReply{})
+	ctx.MockVpp.MockReply(&ip.IPRouteAddDelReply{})
 	err = rtHandler.VppAddRoute(routes[2])
 	Expect(err).To(Not(BeNil())) // unknown interface
 }
@@ -68,15 +68,15 @@ func TestDeleteRoute(t *testing.T) {
 	ctx, _, rtHandler := routeTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&ip.IPAddDelRouteReply{})
+	ctx.MockVpp.MockReply(&ip.IPRouteAddDelReply{})
 	err := rtHandler.VppDelRoute(routes[0])
 	Expect(err).To(Succeed())
 
-	ctx.MockVpp.MockReply(&ip.IPAddDelRouteReply{})
+	ctx.MockVpp.MockReply(&ip.IPRouteAddDelReply{})
 	err = rtHandler.VppDelRoute(routes[1])
 	Expect(err).To(Succeed())
 
-	ctx.MockVpp.MockReply(&ip.IPAddDelRouteReply{Retval: 1})
+	ctx.MockVpp.MockReply(&ip.IPRouteAddDelReply{Retval: 1})
 	err = rtHandler.VppDelRoute(routes[0])
 	Expect(err).To(Not(BeNil()))
 }

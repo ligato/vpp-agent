@@ -6,11 +6,11 @@ Package ipsec is a generated VPP binary API for 'ipsec' module.
 
 It consists of:
 	  7 enums
-	  2 aliases
-	  8 types
+	  3 aliases
+	  9 types
 	  1 union
-	 24 messages
-	 12 services
+	 30 messages
+	 15 services
 */
 package ipsec
 
@@ -29,7 +29,7 @@ const (
 	// APIVersion is the API version of this module.
 	APIVersion = "3.0.0"
 	// VersionCrc is the CRC of this module.
-	VersionCrc = 0xaee12632
+	VersionCrc = 0xfc13e31d
 )
 
 // AddressFamily represents VPP binary API enum 'address_family'.
@@ -283,6 +283,9 @@ func (x IpsecSpdAction) String() string {
 	return strconv.Itoa(int(x))
 }
 
+// InterfaceIndex represents VPP binary API alias 'interface_index'.
+type InterfaceIndex uint32
+
 // IP4Address represents VPP binary API alias 'ip4_address'.
 type IP4Address [4]uint8
 
@@ -301,8 +304,8 @@ func (*Address) GetTypeName() string {
 
 // IP4Prefix represents VPP binary API type 'ip4_prefix'.
 type IP4Prefix struct {
-	Prefix IP4Address
-	Len    uint8
+	Address IP4Address
+	Len     uint8
 }
 
 func (*IP4Prefix) GetTypeName() string {
@@ -311,8 +314,8 @@ func (*IP4Prefix) GetTypeName() string {
 
 // IP6Prefix represents VPP binary API type 'ip6_prefix'.
 type IP6Prefix struct {
-	Prefix IP6Address
-	Len    uint8
+	Address IP6Address
+	Len     uint8
 }
 
 func (*IP6Prefix) GetTypeName() string {
@@ -361,6 +364,18 @@ func (*IpsecSpdEntry) GetTypeName() string {
 	return "ipsec_spd_entry"
 }
 
+// IpsecTunnelProtect represents VPP binary API type 'ipsec_tunnel_protect'.
+type IpsecTunnelProtect struct {
+	SwIfIndex InterfaceIndex
+	SaOut     uint32
+	NSaIn     uint8 `struc:"sizeof=SaIn"`
+	SaIn      []uint32
+}
+
+func (*IpsecTunnelProtect) GetTypeName() string {
+	return "ipsec_tunnel_protect"
+}
+
 // Key represents VPP binary API type 'key'.
 type Key struct {
 	Length uint8
@@ -385,8 +400,8 @@ func (*Mprefix) GetTypeName() string {
 
 // Prefix represents VPP binary API type 'prefix'.
 type Prefix struct {
-	Address       Address
-	AddressLength uint8
+	Address Address
+	Len     uint8
 }
 
 func (*Prefix) GetTypeName() string {
@@ -837,6 +852,96 @@ func (*IpsecTunnelIfSetSaReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 
+// IpsecTunnelProtectDel represents VPP binary API message 'ipsec_tunnel_protect_del'.
+type IpsecTunnelProtectDel struct {
+	SwIfIndex InterfaceIndex
+}
+
+func (*IpsecTunnelProtectDel) GetMessageName() string {
+	return "ipsec_tunnel_protect_del"
+}
+func (*IpsecTunnelProtectDel) GetCrcString() string {
+	return "d85aab0d"
+}
+func (*IpsecTunnelProtectDel) GetMessageType() api.MessageType {
+	return api.RequestMessage
+}
+
+// IpsecTunnelProtectDelReply represents VPP binary API message 'ipsec_tunnel_protect_del_reply'.
+type IpsecTunnelProtectDelReply struct {
+	Retval int32
+}
+
+func (*IpsecTunnelProtectDelReply) GetMessageName() string {
+	return "ipsec_tunnel_protect_del_reply"
+}
+func (*IpsecTunnelProtectDelReply) GetCrcString() string {
+	return "e8d4e804"
+}
+func (*IpsecTunnelProtectDelReply) GetMessageType() api.MessageType {
+	return api.ReplyMessage
+}
+
+// IpsecTunnelProtectDetails represents VPP binary API message 'ipsec_tunnel_protect_details'.
+type IpsecTunnelProtectDetails struct {
+	Tun IpsecTunnelProtect
+}
+
+func (*IpsecTunnelProtectDetails) GetMessageName() string {
+	return "ipsec_tunnel_protect_details"
+}
+func (*IpsecTunnelProtectDetails) GetCrcString() string {
+	return "f724bc50"
+}
+func (*IpsecTunnelProtectDetails) GetMessageType() api.MessageType {
+	return api.ReplyMessage
+}
+
+// IpsecTunnelProtectDump represents VPP binary API message 'ipsec_tunnel_protect_dump'.
+type IpsecTunnelProtectDump struct {
+	SwIfIndex InterfaceIndex
+}
+
+func (*IpsecTunnelProtectDump) GetMessageName() string {
+	return "ipsec_tunnel_protect_dump"
+}
+func (*IpsecTunnelProtectDump) GetCrcString() string {
+	return "d85aab0d"
+}
+func (*IpsecTunnelProtectDump) GetMessageType() api.MessageType {
+	return api.RequestMessage
+}
+
+// IpsecTunnelProtectUpdate represents VPP binary API message 'ipsec_tunnel_protect_update'.
+type IpsecTunnelProtectUpdate struct {
+	Tunnel IpsecTunnelProtect
+}
+
+func (*IpsecTunnelProtectUpdate) GetMessageName() string {
+	return "ipsec_tunnel_protect_update"
+}
+func (*IpsecTunnelProtectUpdate) GetCrcString() string {
+	return "316dab99"
+}
+func (*IpsecTunnelProtectUpdate) GetMessageType() api.MessageType {
+	return api.RequestMessage
+}
+
+// IpsecTunnelProtectUpdateReply represents VPP binary API message 'ipsec_tunnel_protect_update_reply'.
+type IpsecTunnelProtectUpdateReply struct {
+	Retval int32
+}
+
+func (*IpsecTunnelProtectUpdateReply) GetMessageName() string {
+	return "ipsec_tunnel_protect_update_reply"
+}
+func (*IpsecTunnelProtectUpdateReply) GetCrcString() string {
+	return "e8d4e804"
+}
+func (*IpsecTunnelProtectUpdateReply) GetMessageType() api.MessageType {
+	return api.ReplyMessage
+}
+
 func init() {
 	api.RegisterMessage((*IpsecBackendDetails)(nil), "ipsec.IpsecBackendDetails")
 	api.RegisterMessage((*IpsecBackendDump)(nil), "ipsec.IpsecBackendDump")
@@ -862,6 +967,12 @@ func init() {
 	api.RegisterMessage((*IpsecTunnelIfAddDelReply)(nil), "ipsec.IpsecTunnelIfAddDelReply")
 	api.RegisterMessage((*IpsecTunnelIfSetSa)(nil), "ipsec.IpsecTunnelIfSetSa")
 	api.RegisterMessage((*IpsecTunnelIfSetSaReply)(nil), "ipsec.IpsecTunnelIfSetSaReply")
+	api.RegisterMessage((*IpsecTunnelProtectDel)(nil), "ipsec.IpsecTunnelProtectDel")
+	api.RegisterMessage((*IpsecTunnelProtectDelReply)(nil), "ipsec.IpsecTunnelProtectDelReply")
+	api.RegisterMessage((*IpsecTunnelProtectDetails)(nil), "ipsec.IpsecTunnelProtectDetails")
+	api.RegisterMessage((*IpsecTunnelProtectDump)(nil), "ipsec.IpsecTunnelProtectDump")
+	api.RegisterMessage((*IpsecTunnelProtectUpdate)(nil), "ipsec.IpsecTunnelProtectUpdate")
+	api.RegisterMessage((*IpsecTunnelProtectUpdateReply)(nil), "ipsec.IpsecTunnelProtectUpdateReply")
 }
 
 // Messages returns list of all messages in this module.
@@ -891,6 +1002,12 @@ func AllMessages() []api.Message {
 		(*IpsecTunnelIfAddDelReply)(nil),
 		(*IpsecTunnelIfSetSa)(nil),
 		(*IpsecTunnelIfSetSaReply)(nil),
+		(*IpsecTunnelProtectDel)(nil),
+		(*IpsecTunnelProtectDelReply)(nil),
+		(*IpsecTunnelProtectDetails)(nil),
+		(*IpsecTunnelProtectDump)(nil),
+		(*IpsecTunnelProtectUpdate)(nil),
+		(*IpsecTunnelProtectUpdateReply)(nil),
 	}
 }
 
@@ -901,6 +1018,7 @@ type RPCService interface {
 	DumpIpsecSpd(ctx context.Context, in *IpsecSpdDump) (RPCService_DumpIpsecSpdClient, error)
 	DumpIpsecSpdInterface(ctx context.Context, in *IpsecSpdInterfaceDump) (RPCService_DumpIpsecSpdInterfaceClient, error)
 	DumpIpsecSpds(ctx context.Context, in *IpsecSpdsDump) (RPCService_DumpIpsecSpdsClient, error)
+	DumpIpsecTunnelProtect(ctx context.Context, in *IpsecTunnelProtectDump) (RPCService_DumpIpsecTunnelProtectClient, error)
 	IpsecInterfaceAddDelSpd(ctx context.Context, in *IpsecInterfaceAddDelSpd) (*IpsecInterfaceAddDelSpdReply, error)
 	IpsecSadEntryAddDel(ctx context.Context, in *IpsecSadEntryAddDel) (*IpsecSadEntryAddDelReply, error)
 	IpsecSelectBackend(ctx context.Context, in *IpsecSelectBackend) (*IpsecSelectBackendReply, error)
@@ -908,6 +1026,8 @@ type RPCService interface {
 	IpsecSpdEntryAddDel(ctx context.Context, in *IpsecSpdEntryAddDel) (*IpsecSpdEntryAddDelReply, error)
 	IpsecTunnelIfAddDel(ctx context.Context, in *IpsecTunnelIfAddDel) (*IpsecTunnelIfAddDelReply, error)
 	IpsecTunnelIfSetSa(ctx context.Context, in *IpsecTunnelIfSetSa) (*IpsecTunnelIfSetSaReply, error)
+	IpsecTunnelProtectDel(ctx context.Context, in *IpsecTunnelProtectDel) (*IpsecTunnelProtectDelReply, error)
+	IpsecTunnelProtectUpdate(ctx context.Context, in *IpsecTunnelProtectUpdate) (*IpsecTunnelProtectUpdateReply, error)
 }
 
 type serviceClient struct {
@@ -1048,6 +1168,32 @@ func (c *serviceClient_DumpIpsecSpdsClient) Recv() (*IpsecSpdsDetails, error) {
 	return m, nil
 }
 
+func (c *serviceClient) DumpIpsecTunnelProtect(ctx context.Context, in *IpsecTunnelProtectDump) (RPCService_DumpIpsecTunnelProtectClient, error) {
+	stream := c.ch.SendMultiRequest(in)
+	x := &serviceClient_DumpIpsecTunnelProtectClient{stream}
+	return x, nil
+}
+
+type RPCService_DumpIpsecTunnelProtectClient interface {
+	Recv() (*IpsecTunnelProtectDetails, error)
+}
+
+type serviceClient_DumpIpsecTunnelProtectClient struct {
+	api.MultiRequestCtx
+}
+
+func (c *serviceClient_DumpIpsecTunnelProtectClient) Recv() (*IpsecTunnelProtectDetails, error) {
+	m := new(IpsecTunnelProtectDetails)
+	stop, err := c.MultiRequestCtx.ReceiveReply(m)
+	if err != nil {
+		return nil, err
+	}
+	if stop {
+		return nil, io.EOF
+	}
+	return m, nil
+}
+
 func (c *serviceClient) IpsecInterfaceAddDelSpd(ctx context.Context, in *IpsecInterfaceAddDelSpd) (*IpsecInterfaceAddDelSpdReply, error) {
 	out := new(IpsecInterfaceAddDelSpdReply)
 	err := c.ch.SendRequest(in).ReceiveReply(out)
@@ -1104,6 +1250,24 @@ func (c *serviceClient) IpsecTunnelIfAddDel(ctx context.Context, in *IpsecTunnel
 
 func (c *serviceClient) IpsecTunnelIfSetSa(ctx context.Context, in *IpsecTunnelIfSetSa) (*IpsecTunnelIfSetSaReply, error) {
 	out := new(IpsecTunnelIfSetSaReply)
+	err := c.ch.SendRequest(in).ReceiveReply(out)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *serviceClient) IpsecTunnelProtectDel(ctx context.Context, in *IpsecTunnelProtectDel) (*IpsecTunnelProtectDelReply, error) {
+	out := new(IpsecTunnelProtectDelReply)
+	err := c.ch.SendRequest(in).ReceiveReply(out)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *serviceClient) IpsecTunnelProtectUpdate(ctx context.Context, in *IpsecTunnelProtectUpdate) (*IpsecTunnelProtectUpdateReply, error) {
+	out := new(IpsecTunnelProtectUpdateReply)
 	err := c.ch.SendRequest(in).ReceiveReply(out)
 	if err != nil {
 		return nil, err

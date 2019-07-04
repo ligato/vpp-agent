@@ -29,7 +29,7 @@ const (
 	// APIVersion is the API version of this module.
 	APIVersion = "5.0.0"
 	// VersionCrc is the CRC of this module.
-	VersionCrc = 0xa3356fd6
+	VersionCrc = 0x7cd9bbbc
 )
 
 // AddressFamily represents VPP binary API enum 'address_family'.
@@ -158,8 +158,8 @@ func (*Address) GetTypeName() string {
 
 // IP4Prefix represents VPP binary API type 'ip4_prefix'.
 type IP4Prefix struct {
-	Prefix IP4Address
-	Len    uint8
+	Address IP4Address
+	Len     uint8
 }
 
 func (*IP4Prefix) GetTypeName() string {
@@ -168,8 +168,8 @@ func (*IP4Prefix) GetTypeName() string {
 
 // IP6Prefix represents VPP binary API type 'ip6_prefix'.
 type IP6Prefix struct {
-	Prefix IP6Address
-	Len    uint8
+	Address IP6Address
+	Len     uint8
 }
 
 func (*IP6Prefix) GetTypeName() string {
@@ -202,8 +202,8 @@ func (*Nat44LbAddrPort) GetTypeName() string {
 
 // Prefix represents VPP binary API type 'prefix'.
 type Prefix struct {
-	Address       Address
-	AddressLength uint8
+	Address Address
+	Len     uint8
 }
 
 func (*Prefix) GetTypeName() string {
@@ -1216,7 +1216,7 @@ func (*Nat64AddDelPrefix) GetMessageName() string {
 	return "nat64_add_del_prefix"
 }
 func (*Nat64AddDelPrefix) GetCrcString() string {
-	return "5d4919d7"
+	return "f1c54efa"
 }
 func (*Nat64AddDelPrefix) GetMessageType() api.MessageType {
 	return api.RequestMessage
@@ -1378,7 +1378,7 @@ func (*Nat64PrefixDetails) GetMessageName() string {
 	return "nat64_prefix_details"
 }
 func (*Nat64PrefixDetails) GetCrcString() string {
-	return "276b9191"
+	return "6e0088d7"
 }
 func (*Nat64PrefixDetails) GetMessageType() api.MessageType {
 	return api.ReplyMessage

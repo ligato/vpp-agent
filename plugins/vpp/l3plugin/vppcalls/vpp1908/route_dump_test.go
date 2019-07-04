@@ -35,13 +35,40 @@ func TestDumpStaticRoutes(t *testing.T) {
 	ifIndexes.Put("if1", &ifaceidx.IfaceMetadata{SwIfIndex: 1})
 	ifIndexes.Put("if2", &ifaceidx.IfaceMetadata{SwIfIndex: 2})
 
-	ctx.MockVpp.MockReply(&ip.IPFibDetails{
-		Path: []ip.FibPath{{SwIfIndex: 2}},
-	})
-	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
-	ctx.MockVpp.MockReply(&ip.IP6FibDetails{
-		Path: []ip.FibPath{{SwIfIndex: 1}},
-	})
+	ctx.MockVpp.MockReply(&ip.IPRouteDetails{
+		Route: ip.IPRoute{
+			Prefix: ip.Prefix{
+				Address: ip.Address{
+					Af: ip.ADDRESS_IP4,
+					Un: ip.AddressUnion{
+						XXX_UnionData: [16]byte{10, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+					},
+				},
+			},
+			Paths: []ip.FibPath{
+				{
+					SwIfIndex: 2,
+				},
+			},
+		},
+	},
+		&ip.IPRouteDetails{
+			Route: ip.IPRoute{
+				Prefix: ip.Prefix{
+					Address: ip.Address{
+						Af: ip.ADDRESS_IP6,
+						Un: ip.AddressUnion{
+							XXX_UnionData: [16]byte{255, 255, 10, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+						},
+					},
+				},
+				Paths: []ip.FibPath{
+					{
+						SwIfIndex: 1,
+					},
+				},
+			},
+		})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 
 	rtDetails, err := l3handler.DumpRoutes()

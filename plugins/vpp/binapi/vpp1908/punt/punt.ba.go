@@ -29,7 +29,7 @@ const (
 	// APIVersion is the API version of this module.
 	APIVersion = "2.1.0"
 	// VersionCrc is the CRC of this module.
-	VersionCrc = 0x7cb64da0
+	VersionCrc = 0xf01c2fb8
 )
 
 // AddressFamily represents VPP binary API enum 'address_family'.
@@ -137,8 +137,8 @@ func (*Address) GetTypeName() string {
 
 // IP4Prefix represents VPP binary API type 'ip4_prefix'.
 type IP4Prefix struct {
-	Prefix IP4Address
-	Len    uint8
+	Address IP4Address
+	Len     uint8
 }
 
 func (*IP4Prefix) GetTypeName() string {
@@ -147,8 +147,8 @@ func (*IP4Prefix) GetTypeName() string {
 
 // IP6Prefix represents VPP binary API type 'ip6_prefix'.
 type IP6Prefix struct {
-	Prefix IP6Address
-	Len    uint8
+	Address IP6Address
+	Len     uint8
 }
 
 func (*IP6Prefix) GetTypeName() string {
@@ -169,8 +169,8 @@ func (*Mprefix) GetTypeName() string {
 
 // Prefix represents VPP binary API type 'prefix'.
 type Prefix struct {
-	Address       Address
-	AddressLength uint8
+	Address Address
+	Len     uint8
 }
 
 func (*Prefix) GetTypeName() string {
