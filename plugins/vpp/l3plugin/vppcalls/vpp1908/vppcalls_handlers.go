@@ -18,6 +18,8 @@ import (
 	"fmt"
 	"net"
 
+	"github.com/ligato/cn-infra/utils/addrs"
+
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1908/dhcp"
 
 	govppapi "git.fd.io/govpp.git/api"
@@ -196,6 +198,30 @@ func ipToAddress(ipstr string) (addr ip.Address, err error) {
 		addr.Un.SetIP4(ip4addr)
 	}
 	return
+}
+
+func networkToPrefix(dstNetwork string) (ip.Prefix, error) {
+	netIP, isIPv6, err := addrs.ParseIPWithPrefix(dstNetwork)
+	if err != nil {
+		return ip.Prefix{}, err
+	}
+	var addr ip.Address
+	if isIPv6 {
+		addr.Af = ip.ADDRESS_IP6
+		var ip6addr ip.IP6Address
+		copy(ip6addr[:], netIP.IP.To16())
+		addr.Un.SetIP6(ip6addr)
+	} else {
+		addr.Af = ip.ADDRESS_IP4
+		var ip4addr ip.IP4Address
+		copy(ip4addr[:], netIP.IP.To4())
+		addr.Un.SetIP4(ip4addr)
+	}
+	mask, _ := netIP.Mask.Size()
+	return ip.Prefix{
+		Address: addr,
+		Len:     uint8(mask),
+	}, nil
 }
 
 func uintToBool(value uint8) bool {

@@ -18,8 +18,6 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/ligato/cn-infra/logging"
-
 	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
 	l3binapi "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1908/ip"
 	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls"
@@ -71,7 +69,6 @@ func (h *RouteHandler) dumpRouteIPDetails(ipRoute l3binapi.IPRoute) ([]*vppcalls
 			var nextHopIP string
 			netIP := make([]byte, 16)
 			copy(netIP[:], path.Nh.Address.XXX_UnionData[:])
-			logging.DefaultLogger.Warnf("netip: %v, proto %v", path.Nh.Address.XXX_UnionData, path.Proto)
 			if path.Proto == l3binapi.FIB_API_PATH_NH_PROTO_IP6 {
 				nextHopIP = fmt.Sprintf("%s", net.IP(netIP).To16().String())
 			} else {

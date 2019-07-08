@@ -40,9 +40,7 @@ func TestDumpStaticRoutes(t *testing.T) {
 			Prefix: ip.Prefix{
 				Address: ip.Address{
 					Af: ip.ADDRESS_IP4,
-					Un: ip.AddressUnion{
-						XXX_UnionData: [16]byte{10, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-					},
+					Un: ip.AddressUnionIP4([4]uint8{10, 0, 0, 1}),
 				},
 			},
 			Paths: []ip.FibPath{
@@ -57,9 +55,7 @@ func TestDumpStaticRoutes(t *testing.T) {
 				Prefix: ip.Prefix{
 					Address: ip.Address{
 						Af: ip.ADDRESS_IP6,
-						Un: ip.AddressUnion{
-							XXX_UnionData: [16]byte{255, 255, 10, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-						},
+						Un: ip.AddressUnionIP6([16]uint8{255, 255, 10, 1}),
 					},
 				},
 				Paths: []ip.FibPath{

@@ -17,8 +17,6 @@ package vpp1908
 import (
 	"net"
 
-	"github.com/ligato/cn-infra/utils/addrs"
-
 	vpp_l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1908/ip"
 	"github.com/pkg/errors"
@@ -68,7 +66,7 @@ func (h *RouteHandler) vppAddDelRoute(route *vpp_l3.Route, rtIfIdx uint32, delet
 		fibPath.TableID = route.VrfId
 	}
 	// Destination address
-	prefix, err := setRoutePrefix(route.DstNetwork)
+	prefix, err := networkToPrefix(route.DstNetwork)
 	if err != nil {
 		return err
 	}
@@ -129,34 +127,6 @@ func setFibPathNhAndProto(ipStr string) (nh ip.FibPathNh, proto ip.FibPathNhProt
 		ViaLabel:           NextHopViaLabelUnset,
 		ClassifyTableIndex: ClassifyTableIndexUnset,
 	}, proto
-}
-
-func setRoutePrefix(dstNetwork string) (ip.Prefix, error) {
-	addr, isIPv6, err := addrs.ParseIPWithPrefix(dstNetwork)
-	if err != nil {
-		return ip.Prefix{}, err
-	}
-	mask, _ := addr.Mask.Size()
-	return ip.Prefix{
-		Address: ip.Address{
-			Af: func(isIPv6 bool) ip.AddressFamily {
-				if isIPv6 {
-					return ip.ADDRESS_IP6
-				}
-				return ip.ADDRESS_IP4
-			}(isIPv6),
-			Un: func(ipAddr []byte) ip.AddressUnion {
-				var addrUnion ip.AddressUnion
-				if isIPv6 {
-					copy(addrUnion.XXX_UnionData[:], ipAddr[:])
-				} else {
-					copy(addrUnion.XXX_UnionData[:], ipAddr[12:])
-				}
-				return addrUnion
-			}(addr.IP),
-		},
-		Len: uint8(mask),
-	}, nil
 }
 
 func (h *RouteHandler) getRouteSwIfIndex(ifName string) (swIfIdx uint32, err error) {

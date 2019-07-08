@@ -125,6 +125,7 @@ func (h *ABFVppHandler) abfAddDelPolicy(policyID, aclID uint32, abfPaths []*vpp_
 }
 
 func (h *ABFVppHandler) toFibPaths(abfPaths []*vpp_abf.ABF_ForwardingPath) (fibPaths []abf.FibPath) {
+	var err error
 	for _, abfPath := range abfPaths {
 		// fib path interface
 		ifData, exists := h.ifIndexes.LookupByName(abfPath.InterfaceName)
@@ -138,7 +139,9 @@ func (h *ABFVppHandler) toFibPaths(abfPaths []*vpp_abf.ABF_ForwardingPath) (fibP
 			Preference: uint8(abfPath.Preference),
 			Type:       setFibPathType(abfPath.Dvr),
 		}
-		fibPath.Nh, fibPath.Proto = setFibPathNhAndProto(abfPath.NextHopIp)
+		if fibPath.Nh, fibPath.Proto, err = setFibPathNhAndProto(abfPath.NextHopIp); err != nil {
+			h.log.Errorf("ABF path next hop error: %v", err)
+		}
 		fibPaths = append(fibPaths, fibPath)
 	}
 
@@ -154,26 +157,28 @@ func setFibPathType(isDvr bool) abf.FibPathType {
 }
 
 // resolve IP address and return FIB path next hop (IP address) and IPv4/IPv6 version
-func setFibPathNhAndProto(ipStr string) (nh abf.FibPathNh, proto abf.FibPathNhProto) {
+func setFibPathNhAndProto(ipStr string) (nh abf.FibPathNh, proto abf.FibPathNhProto, err error) {
 	netIP := net.ParseIP(ipStr)
 	if netIP == nil {
-		return
+		return nh, proto, errors.Errorf("failed to parse next hop IP address %s", ipStr)
 	}
-	var ipData [16]byte
-	if netIP.To4() == nil {
+	var au abf.AddressUnion
+	if ipv4 := netIP.To4(); ipv4 == nil {
+		var address abf.IP6Address
 		proto = abf.FIB_API_PATH_NH_PROTO_IP6
-		copy(ipData[:], netIP[:])
+		copy(address[:], netIP[:])
+		au.SetIP6(address)
 	} else {
+		var address abf.IP4Address
 		proto = abf.FIB_API_PATH_NH_PROTO_IP4
-		copy(ipData[:], netIP[12:])
+		copy(address[:], netIP[12:])
+		au.SetIP4(address)
 	}
 	return abf.FibPathNh{
-		Address: abf.AddressUnion{
-			XXX_UnionData: ipData,
-		},
+		Address:            au,
 		ViaLabel:           NextHopViaLabelUnset,
 		ClassifyTableIndex: ClassifyTableIndexUnset,
-	}, proto
+	}, proto, nil
 }
 
 func boolToUint(input bool) uint8 {

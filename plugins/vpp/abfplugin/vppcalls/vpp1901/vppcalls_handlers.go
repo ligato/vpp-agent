@@ -16,6 +16,7 @@ package vpp1901
 
 import (
 	govppapi "git.fd.io/govpp.git/api"
+	"github.com/ligato/cn-infra/logging"
 
 	"github.com/ligato/vpp-agent/plugins/vpp/abfplugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/vpp/aclplugin/aclidx"
@@ -29,24 +30,26 @@ func init() {
 
 	vppcalls.Versions["vpp1901"] = vppcalls.HandlerVersion{
 		Msgs: msgs,
-		New: func(ch govppapi.Channel, aclIndexes aclidx.ACLMetadataIndex, ifIndexes ifaceidx.IfaceMetadataIndex) vppcalls.ABFVppAPI {
-			return NewABFVppHandler(ch, aclIndexes, ifIndexes)
+		New: func(ch govppapi.Channel, aclIndexes aclidx.ACLMetadataIndex, ifIndexes ifaceidx.IfaceMetadataIndex, log logging.Logger) vppcalls.ABFVppAPI {
+			return NewABFVppHandler(ch, aclIndexes, ifIndexes, log)
 		},
 	}
 }
 
-// ABFVppHandler is accessor for abfrelated vppcalls methods
+// ABFVppHandler is accessor for abf-related vppcalls methods
 type ABFVppHandler struct {
 	callsChannel govppapi.Channel
 	aclIndexes   aclidx.ACLMetadataIndex
 	ifIndexes    ifaceidx.IfaceMetadataIndex
+	log          logging.Logger
 }
 
 // NewABFVppHandler returns new ABFVppHandler.
-func NewABFVppHandler(calls govppapi.Channel, aclIdx aclidx.ACLMetadataIndex, ifIdx ifaceidx.IfaceMetadataIndex) *ABFVppHandler {
+func NewABFVppHandler(calls govppapi.Channel, aclIdx aclidx.ACLMetadataIndex, ifIdx ifaceidx.IfaceMetadataIndex, log logging.Logger) *ABFVppHandler {
 	return &ABFVppHandler{
 		callsChannel: calls,
 		aclIndexes:   aclIdx,
 		ifIndexes:    ifIdx,
+		log:          log,
 	}
 }

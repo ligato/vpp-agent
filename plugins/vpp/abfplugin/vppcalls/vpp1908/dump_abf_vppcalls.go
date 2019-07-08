@@ -150,15 +150,14 @@ func (h *ABFVppHandler) dumpABFPolicy() ([]*vppcalls.ABFDetails, error) {
 
 // returns next hop IP address
 func parseNextHopToString(nh abf.FibPathNh, proto abf.FibPathNhProto) string {
-	var nhIP net.IP = make([]byte, 16)
-	copy(nhIP[:], nh.Address.XXX_UnionData[:])
 	if proto == abf.FIB_API_PATH_NH_PROTO_IP4 {
-		return nhIP[:4].To4().String()
+		addr := nh.Address.GetIP4()
+		return net.IP(addr[:]).To4().String()
 	}
 	if proto == abf.FIB_API_PATH_NH_PROTO_IP6 {
-		return nhIP.To16().String()
+		addr := nh.Address.GetIP6()
+		return net.IP(addr[:]).To16().String()
 	}
-
 	return ""
 }
 
