@@ -17,8 +17,6 @@ package vpp1908
 import (
 	"net"
 
-	"github.com/ligato/cn-infra/logging"
-
 	"github.com/ligato/cn-infra/utils/addrs"
 
 	vpp_l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
@@ -81,8 +79,6 @@ func (h *RouteHandler) vppAddDelRoute(route *vpp_l3.Route, rtIfIdx uint32, delet
 		NPaths:  1,
 		Paths:   []ip.FibPath{fibPath},
 	}
-
-	logging.DefaultLogger.Warnf("route: %v, vrf %v/%v", req.Route, req.Route.TableID, route.VrfId)
 
 	// Send message
 	reply := &ip.IPRouteAddDelReply{}
