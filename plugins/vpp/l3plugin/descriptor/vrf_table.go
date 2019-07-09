@@ -84,7 +84,7 @@ func (d *VrfTableDescriptor) EquivalentVrfTables(key string, oldVrfTable, newVrf
 	return true
 }
 
-// MetadataFactory is a factory for index-map customized for VRFss.
+// MetadataFactory is a factory for index-map customized for VRFs.
 func (d *VrfTableDescriptor) MetadataFactory() idxmap.NamedMappingRW {
 	return vrfidx.NewVRFIndex(d.log, "vpp-vrf-index")
 }

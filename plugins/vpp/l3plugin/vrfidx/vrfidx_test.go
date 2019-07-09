@@ -49,6 +49,9 @@ func TestRegisterAndUnregisterName(t *testing.T) {
 	names := index.ListAllVRFs()
 	Expect(names).To(HaveLen(1))
 	Expect(names).To(ContainElement(vrfName0))
+	indexes := index.ListAllVrfIDs()
+	Expect(indexes).To(HaveLen(1))
+	Expect(indexes).To(ContainElement(idx0))
 
 	// Unregister vrf
 	index.Delete(vrfName0)

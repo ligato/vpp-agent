@@ -41,6 +41,9 @@ type VRFMetadataIndex interface {
 	// ListAllVRFs returns slice of labels of all VRFs in the mapping.
 	ListAllVRFs() (names []string)
 
+	// ListAllVrfIDs returns a list of VRF indexes read from VRF metadata.
+	ListAllVrfIDs() (idList []uint32)
+
 	// WatchVRFs allows to subscribe to watch for changes in the VRF mapping.
 	WatchVRFs(subscriber string, channel chan<- VRFMetadataDto)
 }
@@ -54,7 +57,7 @@ type VRFMetadataIndexRW interface {
 
 // VRFMetadata collects metadata for VPP VRF used in secondary lookups.
 type VRFMetadata struct {
-	Index     uint32
+	Index uint32
 }
 
 // GetIndex returns VRF index.
@@ -92,8 +95,8 @@ func NewVRFIndex(logger logging.Logger, title string) VRFMetadataIndexRW {
 // identified by <label>. If there is no VRF associated with the given
 // name in the mapping, the <exists> is returned as *false* and <metadata>
 // as *nil*.
-func (vfrm *vrfMetadataIndex) LookupByName(name string) (metadata *VRFMetadata, exists bool) {
-	meta, found := vfrm.GetValue(name)
+func (m *vrfMetadataIndex) LookupByName(name string) (metadata *VRFMetadata, exists bool) {
+	meta, found := m.GetValue(name)
 	if found {
 		if typedMeta, ok := meta.(*VRFMetadata); ok {
 			return typedMeta, found
@@ -102,13 +105,13 @@ func (vfrm *vrfMetadataIndex) LookupByName(name string) (metadata *VRFMetadata, 
 	return nil, false
 }
 
-// LookupByIndex retrieves a previously stored VRF identified in
+// LookupByVRFIndex retrieves a previously stored VRF identified in
 // VPP by the given/ <index>.
 // If there is no VRF associated with the given index, <exists> is returned
 // as *false* with <name> and <metadata> both set to empty values.
-func (vrfm *vrfMetadataIndex) LookupByVRFIndex(swIfIndex uint32) (name string, metadata *VRFMetadata, exists bool) {
+func (m *vrfMetadataIndex) LookupByVRFIndex(swIfIndex uint32) (name string, metadata *VRFMetadata, exists bool) {
 	var item idxvpp.WithIndex
-	name, item, exists = vrfm.nameToIndex.LookupByIndex(swIfIndex)
+	name, item, exists = m.nameToIndex.LookupByIndex(swIfIndex)
 	if exists {
 		var isVrfMeta bool
 		metadata, isVrfMeta = item.(*VRFMetadata)
@@ -120,12 +123,24 @@ func (vrfm *vrfMetadataIndex) LookupByVRFIndex(swIfIndex uint32) (name string, m
 }
 
 // ListAllVRFs returns slice of labels of all VRFs in the mapping.
-func (vrfm *vrfMetadataIndex) ListAllVRFs() (names []string) {
-	return vrfm.ListAllNames()
+func (m *vrfMetadataIndex) ListAllVRFs() (names []string) {
+	return m.ListAllNames()
+}
+
+// ListAllVrfIDs returns a list of VRF indexes read from VRF metadata.
+func (m *vrfMetadataIndex) ListAllVrfIDs() (idList []uint32) {
+	for _, vrf := range m.ListAllNames() {
+		vrfMeta, ok := m.nameToIndex.LookupByName(vrf)
+		if vrfMeta == nil || !ok {
+			continue
+		}
+		idList = append(idList, vrfMeta.GetIndex())
+	}
+	return
 }
 
 // WatchVRFs allows to subscribe to watch for changes in the VRF mapping.
-func (vrfm *vrfMetadataIndex) WatchVRFs(subscriber string, channel chan<- VRFMetadataDto) {
+func (m *vrfMetadataIndex) WatchVRFs(subscriber string, channel chan<- VRFMetadataDto) {
 	watcher := func(dto idxmap.NamedMappingGenericEvent) {
 		typedMeta, ok := dto.Value.(*VRFMetadata)
 		if !ok {
@@ -140,11 +155,11 @@ func (vrfm *vrfMetadataIndex) WatchVRFs(subscriber string, channel chan<- VRFMet
 		case channel <- msg:
 			// OK
 		case <-time.After(timeout):
-			vrfm.log.Warnf("Unable to deliver VRF watch notification after %v, channel is full", timeout)
+			m.log.Warnf("Unable to deliver VRF watch notification after %v, channel is full", timeout)
 		}
 	}
-	if err := vrfm.Watch(subscriber, watcher); err != nil {
-		vrfm.log.Error(err)
+	if err := m.Watch(subscriber, watcher); err != nil {
+		m.log.Error(err)
 	}
 }
 

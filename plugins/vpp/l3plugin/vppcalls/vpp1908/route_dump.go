@@ -24,10 +24,34 @@ import (
 )
 
 // DumpRoutes implements route handler.
-func (h *RouteHandler) DumpRoutes() ([]*vppcalls.RouteDetails, error) {
-	var routes []*vppcalls.RouteDetails
-	// Dump IPv4 l3 FIB.
-	reqCtx := h.callsChannel.SendMultiRequest(&l3binapi.IPRouteDump{})
+func (h *RouteHandler) DumpRoutes() (routes []*vppcalls.RouteDetails, err error) {
+	// dump routes for every VRF and for both IP versions
+	for _, vrfID := range h.vrfIndexes.ListAllVrfIDs() {
+		// IPv6
+		ipv6Routes, err := h.dumpRoutesForVrfAndIP(vrfID, true)
+		if err != nil {
+			return nil, err
+		}
+		routes = append(routes, ipv6Routes...)
+		// IPv4
+		ipv4Routes, err := h.dumpRoutesForVrfAndIP(vrfID, false)
+		if err != nil {
+			return nil, err
+		}
+		routes = append(routes, ipv4Routes...)
+
+	}
+	return routes, nil
+}
+
+// dumpRoutesForVrf returns routes for given VRF and IP versiob
+func (h *RouteHandler) dumpRoutesForVrfAndIP(vrfID uint32, isIPv6 bool) (routes []*vppcalls.RouteDetails, err error) {
+	reqCtx := h.callsChannel.SendMultiRequest(&l3binapi.IPRouteDump{
+		Table: l3binapi.IPTable{
+			TableID: vrfID,
+			IsIP6:   boolToUint(isIPv6),
+		},
+	})
 	for {
 		fibDetails := &l3binapi.IPRouteDetails{}
 		stop, err := reqCtx.ReceiveReply(fibDetails)
@@ -35,13 +59,13 @@ func (h *RouteHandler) DumpRoutes() ([]*vppcalls.RouteDetails, error) {
 			break
 		}
 		if err != nil {
-			return nil, err
+			return routes, err
 		}
-		ipv4Route, err := h.dumpRouteIPDetails(fibDetails.Route)
+		ipRoute, err := h.dumpRouteIPDetails(fibDetails.Route)
 		if err != nil {
-			return nil, err
+			return routes, err
 		}
-		routes = append(routes, ipv4Route...)
+		routes = append(routes, ipRoute...)
 	}
 
 	return routes, nil
@@ -53,10 +77,13 @@ func (h *RouteHandler) dumpRouteIPDetails(ipRoute l3binapi.IPRoute) ([]*vppcalls
 	// Common fields for every route path (destination IP, VRF)
 	var dstIP string
 	netIP := make([]byte, 16)
-	copy(netIP[:], ipRoute.Prefix.Address.Un.XXX_UnionData[:])
 	if ipRoute.Prefix.Address.Af == l3binapi.ADDRESS_IP6 {
+		ip6Addr := ipRoute.Prefix.Address.Un.GetIP6()
+		copy(netIP[:], ip6Addr[:])
 		dstIP = fmt.Sprintf("%s/%d", net.IP(netIP).To16().String(), uint32(ipRoute.Prefix.Len))
 	} else {
+		ip4Addr := ipRoute.Prefix.Address.Un.GetIP4()
+		copy(netIP[:], ip4Addr[:])
 		dstIP = fmt.Sprintf("%s/%d", net.IP(netIP[:4]).To4().String(), uint32(ipRoute.Prefix.Len))
 	}
 
@@ -126,8 +153,18 @@ func (h *RouteHandler) dumpRouteIPDetails(ipRoute l3binapi.IPRoute) ([]*vppcalls
 			// Route metadata
 			meta := &vppcalls.RouteMeta{
 				OutgoingIfIdx: ifIdx,
+				IsIPv6:        path.Proto == l3binapi.FIB_API_PATH_NH_PROTO_IP6,
+				NextHopID:     path.Nh.ObjID,
 				RpfID:         path.RpfID,
 				LabelStack:    labelStack,
+			}
+			resolvePathType(meta, path.Type)
+			resolvePathFlags(meta, path.Flags)
+			// Note: VPP does not return table name as in older versions, the field
+			// is filled using index map
+			vrfName, _, exists := h.vrfIndexes.LookupByVRFIndex(ipRoute.TableID)
+			if exists {
+				meta.TableName = vrfName
 			}
 
 			routeDetails = append(routeDetails, &vppcalls.RouteDetails{
@@ -137,6 +174,7 @@ func (h *RouteHandler) dumpRouteIPDetails(ipRoute l3binapi.IPRoute) ([]*vppcalls
 		}
 	} else {
 		// Return route without path fields, but this is not a valid configuration
+		h.log.Warnf("Route with destination IP %s (VRF %d) has no path specified", dstIP, ipRoute.TableID)
 		routeDetails = append(routeDetails, &vppcalls.RouteDetails{
 			Route: &l3.Route{
 				Type:       l3.Route_INTRA_VRF, // default
@@ -147,4 +185,30 @@ func (h *RouteHandler) dumpRouteIPDetails(ipRoute l3binapi.IPRoute) ([]*vppcalls
 	}
 
 	return routeDetails, nil
+}
+
+func resolvePathType(meta *vppcalls.RouteMeta, pathType l3binapi.FibPathType) {
+	switch pathType {
+	case l3binapi.FIB_API_PATH_TYPE_LOCAL:
+		meta.IsLocal = true
+	case l3binapi.FIB_API_PATH_TYPE_UDP_ENCAP:
+		meta.IsUDPEncap = true
+	case l3binapi.FIB_API_PATH_TYPE_ICMP_UNREACH:
+		meta.IsUnreach = true
+	case l3binapi.FIB_API_PATH_TYPE_ICMP_PROHIBIT:
+		meta.IsProhibit = true
+	case l3binapi.FIB_API_PATH_TYPE_DVR:
+		meta.IsDvr = true
+	case l3binapi.FIB_API_PATH_TYPE_SOURCE_LOOKUP:
+		meta.IsSourceLookup = true
+	}
+}
+
+func resolvePathFlags(meta *vppcalls.RouteMeta, pathFlags l3binapi.FibPathFlags) {
+	switch pathFlags {
+	case l3binapi.FIB_API_PATH_FLAG_RESOLVE_VIA_HOST:
+		meta.IsResolveHost = true
+	case l3binapi.FIB_API_PATH_FLAG_RESOLVE_VIA_ATTACHED:
+		meta.IsResolveAttached = true
+	}
 }

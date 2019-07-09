@@ -17,6 +17,8 @@ package vpp1908
 import (
 	"testing"
 
+	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vrfidx"
+
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1908/ip"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1908/vpe"
@@ -29,9 +31,11 @@ import (
 func TestDumpStaticRoutes(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()
-	ifIndexes := ifaceidx.NewIfaceIndex(logrus.NewLogger("test"), "test")
-	l3handler := NewRouteVppHandler(ctx.MockChannel, ifIndexes, logrus.DefaultLogger())
+	ifIndexes := ifaceidx.NewIfaceIndex(logrus.NewLogger("test-if"), "test-if")
+	vrfIndexes := vrfidx.NewVRFIndex(logrus.NewLogger("test-vrf"), "test-vrf")
+	l3handler := NewRouteVppHandler(ctx.MockChannel, ifIndexes, vrfIndexes, logrus.DefaultLogger())
 
+	vrfIndexes.Put("vrf1", &vrfidx.VRFMetadata{Index: 0})
 	ifIndexes.Put("if1", &ifaceidx.IfaceMetadata{SwIfIndex: 1})
 	ifIndexes.Put("if2", &ifaceidx.IfaceMetadata{SwIfIndex: 2})
 
@@ -49,22 +53,23 @@ func TestDumpStaticRoutes(t *testing.T) {
 				},
 			},
 		},
-	},
-		&ip.IPRouteDetails{
-			Route: ip.IPRoute{
-				Prefix: ip.Prefix{
-					Address: ip.Address{
-						Af: ip.ADDRESS_IP6,
-						Un: ip.AddressUnionIP6([16]uint8{255, 255, 10, 1}),
-					},
-				},
-				Paths: []ip.FibPath{
-					{
-						SwIfIndex: 1,
-					},
+	})
+	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
+	ctx.MockVpp.MockReply(&ip.IPRouteDetails{
+		Route: ip.IPRoute{
+			Prefix: ip.Prefix{
+				Address: ip.Address{
+					Af: ip.ADDRESS_IP6,
+					Un: ip.AddressUnionIP6([16]uint8{255, 255, 10, 1}),
 				},
 			},
-		})
+			Paths: []ip.FibPath{
+				{
+					SwIfIndex: 1,
+				},
+			},
+		},
+	})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 
 	rtDetails, err := l3handler.DumpRoutes()

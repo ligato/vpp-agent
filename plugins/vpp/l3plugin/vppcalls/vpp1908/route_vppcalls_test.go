@@ -17,6 +17,8 @@ package vpp1908_test
 import (
 	"testing"
 
+	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vrfidx"
+
 	"github.com/ligato/cn-infra/logging/logrus"
 	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1908/ip"
@@ -85,10 +87,11 @@ func routeTestSetup(t *testing.T) (*vppcallmock.TestCtx, ifvppcalls.InterfaceVpp
 	ctx := vppcallmock.SetupTestCtx(t)
 	log := logrus.NewLogger("test-log")
 	ifHandler := ifvpp1908.NewInterfaceVppHandler(ctx.MockChannel, log)
-	ifIndexes := ifaceidx.NewIfaceIndex(logrus.NewLogger("test"), "test")
+	ifIndexes := ifaceidx.NewIfaceIndex(logrus.NewLogger("test-if"), "test-if")
+	vrfIndexes := vrfidx.NewVRFIndex(logrus.NewLogger("test-vrf"), "test-vrf")
 	ifIndexes.Put("iface1", &ifaceidx.IfaceMetadata{
 		SwIfIndex: 1,
 	})
-	rtHandler := vpp1908.NewRouteVppHandler(ctx.MockChannel, ifIndexes, log)
+	rtHandler := vpp1908.NewRouteVppHandler(ctx.MockChannel, ifIndexes, vrfIndexes, log)
 	return ctx, ifHandler, rtHandler
 }
