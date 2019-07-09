@@ -26,10 +26,11 @@ import (
 	"time"
 
 	govppcore "git.fd.io/govpp.git/core"
-	"github.com/ligato/vpp-agent/plugins/govppmux"
-	ps "github.com/mitchellh/go-ps"
+	"github.com/mitchellh/go-ps"
 	. "github.com/onsi/gomega"
 	"github.com/sirupsen/logrus"
+
+	"github.com/ligato/vpp-agent/plugins/govppmux"
 )
 
 var (
@@ -75,21 +76,6 @@ func setupVPP(t *testing.T) *testCtx {
 			t.Fatalf("VPP is already running, PID: %v", process.Pid())
 		}
 	}
-
-	// remove binapi files from previous run
-	/*var removeFile = func(path string) {
-		if err := os.Remove(path); err == nil {
-			logf("removed file %q", path)
-		} else if !os.IsNotExist(err) {
-			t.Fatalf("removing file %q failed: %v", path, err)
-		}
-	}
-	// rm -f /dev/shm/db /dev/shm/global_vm /dev/shm/vpe-api
-	removeFile("/dev/shm/vpe-api")
-	removeFile("/dev/shm/global_vm")
-	removeFile("/dev/shm/db")*/
-
-	//time.Sleep(time.Millisecond * 250)
 
 	logf("starting VPP process: %q", *vppPath)
 

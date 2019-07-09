@@ -1,6 +1,7 @@
 ---
 dist: xenial
 sudo: required
+services: docker
 
 language: go
 go:
@@ -35,6 +36,7 @@ before_install:
   - go get github.com/mattn/goveralls
 
 script:
+  - make integration-tests
   - make yamllint
   - make check-links || true
   - make lint

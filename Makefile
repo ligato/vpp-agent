@@ -124,6 +124,10 @@ perf-all:
 	@echo "=> running all perf tests"
 	./tests/perf/run_all.sh
 
+integration-tests:
+	@echo "=> running integration tests"
+	./tests/integration/vpp_integration.sh
+
 # -------------------------------
 #  Code generation
 # -------------------------------
