@@ -18,6 +18,8 @@ import (
 	"fmt"
 	"net"
 
+	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vrfidx"
+
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/dhcp"
 
 	govppapi "git.fd.io/govpp.git/api"
@@ -40,7 +42,7 @@ func init() {
 
 	vppcalls.Versions["vpp1904"] = vppcalls.HandlerVersion{
 		Msgs: msgs,
-		New: func(ch govppapi.Channel, ifIdx ifaceidx.IfaceMetadataIndex, log logging.Logger,
+		New: func(ch govppapi.Channel, ifIdx ifaceidx.IfaceMetadataIndex, vrfIdx vrfidx.VRFMetadataIndex, log logging.Logger,
 		) vppcalls.L3VppAPI {
 			return NewL3VppHandler(ch, ifIdx, log)
 		},

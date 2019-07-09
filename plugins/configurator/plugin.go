@@ -35,6 +35,7 @@ import (
 	ipsecvppcalls "github.com/ligato/vpp-agent/plugins/vpp/ipsecplugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/vpp/l2plugin"
 	l2vppcalls "github.com/ligato/vpp-agent/plugins/vpp/l2plugin/vppcalls"
+	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin"
 	l3vppcalls "github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls"
 	natvppcalls "github.com/ligato/vpp-agent/plugins/vpp/natplugin/vppcalls"
 	puntvppcalls "github.com/ligato/vpp-agent/plugins/vpp/puntplugin/vppcalls"
@@ -59,6 +60,7 @@ type Deps struct {
 	VPPACLPlugin aclplugin.API
 	VPPIfPlugin  ifplugin.API
 	VPPL2Plugin  *l2plugin.L2Plugin
+	VPPL3Plugin  l3plugin.API
 }
 
 // Init sets plugin child loggers
@@ -107,6 +109,7 @@ func (p *Plugin) initHandlers() (err error) {
 	dhcpIndexes := p.VPPIfPlugin.GetDHCPIndex()
 	bdIndexes := p.VPPL2Plugin.GetBDIndex()
 	aclIndexes := p.VPPACLPlugin.GetACLIndex() // TODO: make ACL optional
+	vrfIndexes := p.VPPL3Plugin.GetVRFIndex()
 
 	// VPP handlers
 
@@ -119,7 +122,7 @@ func (p *Plugin) initHandlers() (err error) {
 	if p.configurator.l2Handler == nil {
 		p.Log.Info("VPP L2 handler is not available, it will be skipped")
 	}
-	p.configurator.l3Handler = l3vppcalls.CompatibleL3VppHandler(p.vppChan, ifIndexes, p.Log)
+	p.configurator.l3Handler = l3vppcalls.CompatibleL3VppHandler(p.vppChan, ifIndexes, vrfIndexes, p.Log)
 	if p.configurator.l3Handler == nil {
 		p.Log.Info("VPP L3 handler is not available, it will be skipped")
 	}
