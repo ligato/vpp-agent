@@ -29,6 +29,7 @@ import (
 	govppcore "git.fd.io/govpp.git/core"
 	"github.com/mitchellh/go-ps"
 	. "github.com/onsi/gomega"
+	"github.com/sirupsen/logrus"
 
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 )
@@ -44,10 +45,9 @@ var (
 func init() {
 	log.SetFlags(log.Lmicroseconds | log.Lshortfile)
 	flag.Parse()
-	/*if *debug {
-		//govppcore.SetLogLevel(logrus.DebugLevel)
-		logf("debug level enabled")
-	}*/
+	if *debug {
+		govppcore.SetLogLevel(logrus.DebugLevel)
+	}
 }
 
 type testCtx struct {
@@ -176,9 +176,3 @@ func (ctx *testCtx) teardownVPP() {
 	}
 
 }
-
-/*func logf(f string, v ...interface{}) {
-	if *debug {
-		log.Output(2, fmt.Sprintf(f, v...))
-	}
-}*/
