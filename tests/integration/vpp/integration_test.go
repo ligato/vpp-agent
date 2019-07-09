@@ -19,6 +19,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"os"
 	"os/exec"
 	"strings"
 	"syscall"
@@ -56,9 +57,9 @@ type testCtx struct {
 }
 
 func setupVPP(t *testing.T) *testCtx {
-	/*if os.Getenv("TRAVIS") != "" {
+	if os.Getenv("TRAVIS") != "" {
 		t.Skip("skipping test for Travis")
-	}*/
+	}
 	logf("=== VPP setup ===")
 
 	RegisterTestingT(t)
