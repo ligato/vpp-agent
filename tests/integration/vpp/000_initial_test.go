@@ -10,13 +10,7 @@ func TestPing(t *testing.T) {
 	ctx := setupVPP(t)
 	defer ctx.teardownVPP()
 
-	ch, err := ctx.Conn.NewAPIChannel()
-	if err != nil {
-		t.Fatalf("creating channel failed: %v", err)
-	}
-	defer ch.Close()
-
-	h := vppcalls.CompatibleVpeHandler(ch)
+	h := vppcalls.CompatibleVpeHandler(ctx.Chan)
 
 	if err := h.Ping(); err != nil {
 		t.Fatalf("control ping failed: %v", err)
@@ -27,13 +21,7 @@ func TestVersion(t *testing.T) {
 	ctx := setupVPP(t)
 	defer ctx.teardownVPP()
 
-	ch, err := ctx.Conn.NewAPIChannel()
-	if err != nil {
-		t.Fatalf("creating channel failed: %v", err)
-	}
-	defer ch.Close()
-
-	h := vppcalls.CompatibleVpeHandler(ch)
+	h := vppcalls.CompatibleVpeHandler(ctx.Chan)
 
 	info, err := h.GetVersionInfo()
 	if err != nil {

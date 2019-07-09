@@ -17,7 +17,6 @@ package vpp
 import (
 	"bytes"
 	"flag"
-	"fmt"
 	"log"
 	"os"
 	"os/exec"
@@ -26,10 +25,10 @@ import (
 	"testing"
 	"time"
 
+	govppapi "git.fd.io/govpp.git/api"
 	govppcore "git.fd.io/govpp.git/core"
 	"github.com/mitchellh/go-ps"
 	. "github.com/onsi/gomega"
-	"github.com/sirupsen/logrus"
 
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 )
@@ -38,29 +37,32 @@ var (
 	vppPath     = flag.String("vpp-path", "/usr/bin/vpp", "VPP program path")
 	vppConfig   = flag.String("vpp-config", "/etc/vpp/vpp.conf", "VPP config file")
 	vppSockAddr = flag.String("vpp-sock-addr", "", "VPP binapi socket address")
-	debug       = flag.Bool("debug", false, "Turn on debug mode.")
+
+	debug = flag.Bool("debug", false, "Turn on debug mode.")
 )
 
 func init() {
 	log.SetFlags(log.Lmicroseconds | log.Lshortfile)
 	flag.Parse()
-	if *debug {
-		govppcore.SetLogLevel(logrus.DebugLevel)
-	}
+	/*if *debug {
+		//govppcore.SetLogLevel(logrus.DebugLevel)
+		logf("debug level enabled")
+	}*/
 }
 
 type testCtx struct {
+	t              *testing.T
 	VPP            *exec.Cmd
 	stderr, stdout *bytes.Buffer
 	Conn           *govppcore.Connection
-	T              *testing.T
+	Chan           govppapi.Channel
 }
 
 func setupVPP(t *testing.T) *testCtx {
 	if os.Getenv("TRAVIS") != "" {
 		t.Skip("skipping test for Travis")
 	}
-	logf("=== VPP setup ===")
+	t.Logf("=== VPP setup ===")
 
 	RegisterTestingT(t)
 
@@ -71,14 +73,14 @@ func setupVPP(t *testing.T) *testCtx {
 	}
 	for _, process := range processes {
 		if strings.Contains(process.Executable(), "vpp") {
-			logf("- found VPP process: %q (PID: %d)", process.Executable(), process.Pid())
+			t.Logf("- found VPP process: %q (PID: %d)", process.Executable(), process.Pid())
 		}
 		if process.Executable() == *vppPath || process.Executable() == "vpp" || process.Executable() == "vpp_main" {
 			t.Fatalf("VPP is already running, PID: %v", process.Pid())
 		}
 	}
 
-	logf("starting VPP process: %q", *vppPath)
+	t.Logf("starting VPP process: %q", *vppPath)
 
 	cmd := exec.Command(*vppPath, "-c", *vppConfig)
 	var stderr, stdout bytes.Buffer
@@ -95,75 +97,88 @@ func setupVPP(t *testing.T) *testCtx {
 
 	adapter := govppmux.NewVppAdapter(*vppSockAddr, false)
 
-	logf("connecting to VPP..")
+	t.Logf("connecting to VPP..")
+
 	conn, err := govppcore.Connect(adapter)
 	if err != nil {
-		logf("sending KILL signal to VPP")
+		t.Logf("sending KILL signal to VPP")
 		if err := cmd.Process.Kill(); err != nil {
-			logf("KILL FAILED: %v", err)
+			t.Fatalf("killing VPP failed: %v", err)
+		}
+		if state, err := cmd.Process.Wait(); err != nil {
+			t.Logf("VPP process wait failed: %v", err)
+		} else {
+			t.Logf("VPP killed: %v", state)
 		}
 		t.Fatalf("connecting to VPP failed: %v", err)
 	} else {
-		logf("connected successfully")
+		t.Logf("connected to VPP successfully")
+	}
+
+	ch, err := conn.NewAPIChannel()
+	if err != nil {
+		t.Fatalf("creating channel failed: %v", err)
 	}
 
 	return &testCtx{
+		t:      t,
 		VPP:    cmd,
 		stderr: &stderr,
 		stdout: &stdout,
-		T:      t,
 		Conn:   conn,
+		Chan:   ch,
 	}
 }
 
 func (ctx *testCtx) teardownVPP() {
-	logf("--- VPP teardown ---")
+	ctx.t.Logf("--- VPP teardown ---")
 
 	// disconnect sometimes hangs
 	done := make(chan struct{})
 	go func() {
+		ctx.Chan.Close()
 		ctx.Conn.Disconnect()
 		close(done)
 	}()
 	select {
 	case <-done:
-		logf("VPP disconnected")
+		ctx.t.Logf("VPP disconnected")
 
 	case <-time.After(time.Second * 1):
-		logf("VPP disconnect timeout")
+		ctx.t.Logf("VPP disconnect timeout")
 	}
 
 	time.Sleep(time.Millisecond * 100)
 
-	logf("sending SIGTERM to VPP")
+	ctx.t.Logf("sending SIGTERM to VPP")
 	if err := ctx.VPP.Process.Signal(syscall.SIGTERM); err != nil {
-		ctx.T.Fatalf("sending SIGTERM signal to VPP failed: %v", err)
+		ctx.t.Fatalf("sending SIGTERM signal to VPP failed: %v", err)
 	}
 
 	exit := make(chan struct{})
 	go func() {
 		if err := ctx.VPP.Wait(); err != nil {
-			logf("VPP process wait failed: %v", err)
+			ctx.t.Logf("VPP process wait failed: %v", err)
 		}
 		close(exit)
 	}()
 	select {
 	case <-exit:
-		logf("VPP exited")
+		ctx.t.Logf("VPP exited")
 
 	case <-time.After(time.Second * 1):
-		logf("VPP exit timeout")
+		ctx.t.Logf("VPP exit timeout")
 
-		logf("sending SIGKILL to VPP")
+		ctx.t.Logf("sending SIGKILL to VPP")
 		if err := ctx.VPP.Process.Signal(syscall.SIGKILL); err != nil {
-			ctx.T.Fatalf("sending SIGKILL signal to VPP failed: %v", err)
+			ctx.t.Fatalf("sending SIGKILL signal to VPP failed: %v", err)
 		}
 	}
 
 }
 
-func logf(f string, v ...interface{}) {
+/*func logf(f string, v ...interface{}) {
 	if *debug {
 		log.Output(2, fmt.Sprintf(f, v...))
 	}
-}
+}*/
