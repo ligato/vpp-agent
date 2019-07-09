@@ -26,30 +26,22 @@ import (
 // DumpRoutes implements route handler.
 func (h *RouteHandler) DumpRoutes() (routes []*vppcalls.RouteDetails, err error) {
 	// dump routes for every VRF and for both IP versions
-	for _, vrfID := range h.vrfIndexes.ListAllVrfIDs() {
-		// IPv6
-		ipv6Routes, err := h.dumpRoutesForVrfAndIP(vrfID, true)
+	for _, vrfMeta := range h.vrfIndexes.ListAllVrfMetadata() {
+		ipRoutes, err := h.dumpRoutesForVrfAndIP(vrfMeta.GetIndex(), vrfMeta.GetProtocol())
 		if err != nil {
 			return nil, err
 		}
-		routes = append(routes, ipv6Routes...)
-		// IPv4
-		ipv4Routes, err := h.dumpRoutesForVrfAndIP(vrfID, false)
-		if err != nil {
-			return nil, err
-		}
-		routes = append(routes, ipv4Routes...)
-
+		routes = append(routes, ipRoutes...)
 	}
 	return routes, nil
 }
 
 // dumpRoutesForVrf returns routes for given VRF and IP versiob
-func (h *RouteHandler) dumpRoutesForVrfAndIP(vrfID uint32, isIPv6 bool) (routes []*vppcalls.RouteDetails, err error) {
+func (h *RouteHandler) dumpRoutesForVrfAndIP(vrfID uint32, proto l3.VrfTable_Protocol) (routes []*vppcalls.RouteDetails, err error) {
 	reqCtx := h.callsChannel.SendMultiRequest(&l3binapi.IPRouteDump{
 		Table: l3binapi.IPTable{
 			TableID: vrfID,
-			IsIP6:   boolToUint(isIPv6),
+			IsIP6:   protoToUint(proto),
 		},
 	})
 	for {
@@ -59,11 +51,11 @@ func (h *RouteHandler) dumpRoutesForVrfAndIP(vrfID uint32, isIPv6 bool) (routes 
 			break
 		}
 		if err != nil {
-			return routes, err
+			return nil, err
 		}
 		ipRoute, err := h.dumpRouteIPDetails(fibDetails.Route)
 		if err != nil {
-			return routes, err
+			return nil, err
 		}
 		routes = append(routes, ipRoute...)
 	}
@@ -76,15 +68,12 @@ func (h *RouteHandler) dumpRoutesForVrfAndIP(vrfID uint32, isIPv6 bool) (routes 
 func (h *RouteHandler) dumpRouteIPDetails(ipRoute l3binapi.IPRoute) ([]*vppcalls.RouteDetails, error) {
 	// Common fields for every route path (destination IP, VRF)
 	var dstIP string
-	netIP := make([]byte, 16)
 	if ipRoute.Prefix.Address.Af == l3binapi.ADDRESS_IP6 {
 		ip6Addr := ipRoute.Prefix.Address.Un.GetIP6()
-		copy(netIP[:], ip6Addr[:])
-		dstIP = fmt.Sprintf("%s/%d", net.IP(netIP).To16().String(), uint32(ipRoute.Prefix.Len))
+		dstIP = fmt.Sprintf("%s/%d", net.IP(ip6Addr[:]).To16().String(), uint32(ipRoute.Prefix.Len))
 	} else {
 		ip4Addr := ipRoute.Prefix.Address.Un.GetIP4()
-		copy(netIP[:], ip4Addr[:])
-		dstIP = fmt.Sprintf("%s/%d", net.IP(netIP[:4]).To4().String(), uint32(ipRoute.Prefix.Len))
+		dstIP = fmt.Sprintf("%s/%d", net.IP(ip4Addr[:4]).To4().String(), uint32(ipRoute.Prefix.Len))
 	}
 
 	var routeDetails []*vppcalls.RouteDetails
@@ -211,4 +200,11 @@ func resolvePathFlags(meta *vppcalls.RouteMeta, pathFlags l3binapi.FibPathFlags)
 	case l3binapi.FIB_API_PATH_FLAG_RESOLVE_VIA_ATTACHED:
 		meta.IsResolveAttached = true
 	}
+}
+
+func protoToUint(proto l3.VrfTable_Protocol) uint8 {
+	if proto == l3.VrfTable_IPV6 {
+		return 1
+	}
+	return 0
 }

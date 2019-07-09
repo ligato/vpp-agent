@@ -17,6 +17,8 @@ package vrfidx
 import (
 	"time"
 
+	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
+
 	"github.com/ligato/cn-infra/idxmap"
 	"github.com/ligato/cn-infra/logging"
 
@@ -41,8 +43,9 @@ type VRFMetadataIndex interface {
 	// ListAllVRFs returns slice of labels of all VRFs in the mapping.
 	ListAllVRFs() (names []string)
 
-	// ListAllVrfIDs returns a list of VRF indexes read from VRF metadata.
-	ListAllVrfIDs() (idList []uint32)
+	// ListAllVrfMetadata returns a list of VRF metadata - ID/Proto pairs as
+	// read from VRF metadata.
+	ListAllVrfMetadata() (idList []*VRFMetadata)
 
 	// WatchVRFs allows to subscribe to watch for changes in the VRF mapping.
 	WatchVRFs(subscriber string, channel chan<- VRFMetadataDto)
@@ -57,12 +60,18 @@ type VRFMetadataIndexRW interface {
 
 // VRFMetadata collects metadata for VPP VRF used in secondary lookups.
 type VRFMetadata struct {
-	Index uint32
+	Index    uint32
+	Protocol l3.VrfTable_Protocol
 }
 
 // GetIndex returns VRF index.
 func (vrfm *VRFMetadata) GetIndex() uint32 {
 	return vrfm.Index
+}
+
+// GetProtocol returns VRF IP protocol.
+func (vrfm *VRFMetadata) GetProtocol() l3.VrfTable_Protocol {
+	return vrfm.Protocol
 }
 
 // VRFMetadataDto represents an item sent through watch channel in VRFMetadataIndex.
@@ -127,14 +136,15 @@ func (m *vrfMetadataIndex) ListAllVRFs() (names []string) {
 	return m.ListAllNames()
 }
 
-// ListAllVrfIDs returns a list of VRF indexes read from VRF metadata.
-func (m *vrfMetadataIndex) ListAllVrfIDs() (idList []uint32) {
+// ListAllVrfMetadata returns a list of VRF metadata - ID/Proto pairs as
+// read from VRF metadata.
+func (m *vrfMetadataIndex) ListAllVrfMetadata() (metaList []*VRFMetadata) {
 	for _, vrf := range m.ListAllNames() {
-		vrfMeta, ok := m.nameToIndex.LookupByName(vrf)
+		vrfMeta, ok := m.LookupByName(vrf)
 		if vrfMeta == nil || !ok {
 			continue
 		}
-		idList = append(idList, vrfMeta.GetIndex())
+		metaList = append(metaList, vrfMeta)
 	}
 	return
 }

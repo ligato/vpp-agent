@@ -109,7 +109,8 @@ func (d *VrfTableDescriptor) Create(key string, vrfTable *l3.VrfTable) (metadata
 
 	// fill the metadata
 	metadata = &vrfidx.VRFMetadata{
-		Index: vrfTable.Id,
+		Index:    vrfTable.Id,
+		Protocol: vrfTable.Protocol,
 	}
 
 	return metadata, nil
@@ -146,7 +147,8 @@ func (d *VrfTableDescriptor) Retrieve(correlate []adapter.VrfTableKVWithMetadata
 			Key:   l3.VrfTableKey(table.Id, table.Protocol),
 			Value: table,
 			Metadata: &vrfidx.VRFMetadata{
-				Index: table.Id,
+				Index:    table.Id,
+				Protocol: table.Protocol,
 			},
 			Origin: origin,
 		})

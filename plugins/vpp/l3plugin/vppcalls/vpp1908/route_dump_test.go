@@ -15,6 +15,7 @@
 package vpp1908
 
 import (
+	vpp_l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
 	"testing"
 
 	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vrfidx"
@@ -35,7 +36,8 @@ func TestDumpStaticRoutes(t *testing.T) {
 	vrfIndexes := vrfidx.NewVRFIndex(logrus.NewLogger("test-vrf"), "test-vrf")
 	l3handler := NewRouteVppHandler(ctx.MockChannel, ifIndexes, vrfIndexes, logrus.DefaultLogger())
 
-	vrfIndexes.Put("vrf1", &vrfidx.VRFMetadata{Index: 0})
+	vrfIndexes.Put("vrf1-ipv4", &vrfidx.VRFMetadata{Index: 0, Protocol: vpp_l3.VrfTable_IPV4})
+	vrfIndexes.Put("vrf1-ipv6", &vrfidx.VRFMetadata{Index: 0, Protocol: vpp_l3.VrfTable_IPV6})
 	ifIndexes.Put("if1", &ifaceidx.IfaceMetadata{SwIfIndex: 1})
 	ifIndexes.Put("if2", &ifaceidx.IfaceMetadata{SwIfIndex: 2})
 
