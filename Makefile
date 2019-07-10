@@ -187,7 +187,7 @@ bindata: get-bindata
 # -------------------------------
 
 get-dep:
-	curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
+	curl -sSfL https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
 	dep version
 
 dep-install: get-dep
