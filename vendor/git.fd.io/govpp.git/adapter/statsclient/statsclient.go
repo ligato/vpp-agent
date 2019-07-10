@@ -40,7 +40,7 @@ func init() {
 	Log.Out = os.Stdout
 	if Debug {
 		Log.Level = logger.DebugLevel
-		Log.Debug("enabled debug mode")
+		Log.Debug("govpp/statsclient: enabled debug mode")
 	}
 }
 
@@ -62,12 +62,16 @@ func NewStatsClient(sockAddr string) *StatsClient {
 	}
 }
 
-const sockNotFoundWarn = `VPP stats socket not found at: %s!
-	Check if VPP is running with stats segment enabled.
-	To enable it include following section in VPP config:
-	  statseg {
-	    default
-	  }
+const sockNotFoundWarn = `stats socket not found at: %s
+------------------------------------------------------------
+ VPP stats socket is missing!
+ Is VPP running with stats segment enabled?
+
+ To enable it add following section to startup config:
+   statseg {
+     default
+   }
+------------------------------------------------------------
 `
 
 func (c *StatsClient) Connect() error {
@@ -184,7 +188,7 @@ func (c *StatsClient) DumpStats(patterns ...string) (entries []*adapter.StatEntr
 			Data: c.copyData(dirEntry),
 		}
 
-		Log.Debugf("\tentry data: %#v", entry.Data)
+		Log.Debugf("\tentry data: %+v %#v (%T)", entry.Data, entry.Data, entry.Data)
 
 		if nameMatches(entry.Name, patterns) {
 			entries = append(entries, &entry)
@@ -196,119 +200,6 @@ func (c *StatsClient) DumpStats(patterns ...string) (entries []*adapter.StatEntr
 	}
 
 	return entries, nil
-}
-
-func (c *StatsClient) copyData(dirEntry *statSegDirectoryEntry) adapter.Stat {
-	switch typ := adapter.StatType(dirEntry.directoryType); typ {
-	case adapter.ScalarIndex:
-		return adapter.ScalarStat(dirEntry.unionData)
-
-	case adapter.ErrorIndex:
-		_, errOffset, _ := c.readOffsets()
-		offsetVector := unsafe.Pointer(&c.sharedHeader[errOffset])
-		vecLen := vectorLen(offsetVector)
-
-		var errData adapter.Counter
-		for i := uint64(0); i < vecLen; i++ {
-			cb := *(*uint64)(add(offsetVector, uintptr(i)*unsafe.Sizeof(uint64(0))))
-			offset := uintptr(cb) + uintptr(dirEntry.unionData)*unsafe.Sizeof(adapter.Counter(0))
-			val := *(*adapter.Counter)(add(unsafe.Pointer(&c.sharedHeader[0]), offset))
-			errData += val
-		}
-		return adapter.ErrorStat(errData)
-
-	case adapter.SimpleCounterVector:
-		if dirEntry.unionData == 0 {
-			Log.Debugf("\toffset is not valid")
-			break
-		} else if dirEntry.unionData >= uint64(len(c.sharedHeader)) {
-			Log.Debugf("\toffset out of range")
-			break
-		}
-
-		simpleCounter := unsafe.Pointer(&c.sharedHeader[dirEntry.unionData]) // offset
-		vecLen := vectorLen(simpleCounter)
-		offsetVector := add(unsafe.Pointer(&c.sharedHeader[0]), uintptr(dirEntry.offsetVector))
-
-		data := make([][]adapter.Counter, vecLen)
-		for i := uint64(0); i < vecLen; i++ {
-			cb := *(*uint64)(add(offsetVector, uintptr(i)*unsafe.Sizeof(uint64(0))))
-			counterVec := unsafe.Pointer(&c.sharedHeader[uintptr(cb)])
-			vecLen2 := vectorLen(counterVec)
-			for j := uint64(0); j < vecLen2; j++ {
-				offset := uintptr(j) * unsafe.Sizeof(adapter.Counter(0))
-				val := *(*adapter.Counter)(add(counterVec, offset))
-				data[i] = append(data[i], val)
-			}
-		}
-		return adapter.SimpleCounterStat(data)
-
-	case adapter.CombinedCounterVector:
-		if dirEntry.unionData == 0 {
-			Log.Debugf("\toffset is not valid")
-			break
-		} else if dirEntry.unionData >= uint64(len(c.sharedHeader)) {
-			Log.Debugf("\toffset out of range")
-			break
-		}
-
-		combinedCounter := unsafe.Pointer(&c.sharedHeader[dirEntry.unionData]) // offset
-		vecLen := vectorLen(combinedCounter)
-		offsetVector := add(unsafe.Pointer(&c.sharedHeader[0]), uintptr(dirEntry.offsetVector))
-
-		data := make([][]adapter.CombinedCounter, vecLen)
-		for i := uint64(0); i < vecLen; i++ {
-			cb := *(*uint64)(add(offsetVector, uintptr(i)*unsafe.Sizeof(uint64(0))))
-			counterVec := unsafe.Pointer(&c.sharedHeader[uintptr(cb)])
-			vecLen2 := vectorLen(counterVec)
-			for j := uint64(0); j < vecLen2; j++ {
-				offset := uintptr(j) * unsafe.Sizeof(adapter.CombinedCounter{})
-				val := *(*adapter.CombinedCounter)(add(counterVec, offset))
-				data[i] = append(data[i], val)
-			}
-		}
-		return adapter.CombinedCounterStat(data)
-
-	case adapter.NameVector:
-		if dirEntry.unionData == 0 {
-			Log.Debugf("\toffset is not valid")
-			break
-		} else if dirEntry.unionData >= uint64(len(c.sharedHeader)) {
-			Log.Debugf("\toffset out of range")
-			break
-		}
-
-		nameVector := unsafe.Pointer(&c.sharedHeader[dirEntry.unionData]) // offset
-		vecLen := vectorLen(nameVector)
-		offsetVector := add(unsafe.Pointer(&c.sharedHeader[0]), uintptr(dirEntry.offsetVector))
-
-		data := make([]adapter.Name, vecLen)
-		for i := uint64(0); i < vecLen; i++ {
-			cb := *(*uint64)(add(offsetVector, uintptr(i)*unsafe.Sizeof(uint64(0))))
-			if cb == 0 {
-				Log.Debugf("\tname vector cb out of range")
-				continue
-			}
-			nameVec := unsafe.Pointer(&c.sharedHeader[cb])
-			vecLen2 := vectorLen(nameVec)
-
-			var nameStr []byte
-			for j := uint64(0); j < vecLen2; j++ {
-				offset := uintptr(j) * unsafe.Sizeof(byte(0))
-				val := *(*byte)(add(nameVec, offset))
-				if val > 0 {
-					nameStr = append(nameStr, val)
-				}
-			}
-			data[i] = adapter.Name(nameStr)
-		}
-		return adapter.NameStat(data)
-
-	default:
-		Log.Warnf("Unknown type %d for stat entry: %q", dirEntry.directoryType, dirEntry.name)
-	}
-
-	return nil
 }
 
 func nameMatches(name string, patterns []string) bool {
