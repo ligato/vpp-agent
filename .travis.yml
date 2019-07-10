@@ -35,12 +35,13 @@ jobs:
         - make lint
     - stage: check
       env:
-        - VPP_VERSION=1901
-        - VPP_VERSION=1904
-        - VPP_VERSION=1908
+        matrix:
+          - VPP_VERSION=1901
+          - VPP_VERSION=1904
+          - VPP_VERSION=1908
       script:
         - make verify-binapi
-        - make integration-tests
+    - script: make integration-tests
     - stage: test
       script:
         - make test-cover
