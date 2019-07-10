@@ -1,8 +1,10 @@
 ---
 dist: xenial
+sudo: required
+
 language: go
 go: 1.12
-sudo: required
+
 services:
   - docker
 
@@ -28,25 +30,24 @@ stages:
   - Test
   - Build
   - Integration
-  - Integration VPP 19.08
 
 jobs:
   include:
     - stage: Check
       language: shell
-    - name: "Check YAML formatting"
+      name: "Check formatting"
       addons:
         apt:
           packages:
             - npm
-      script: make yamllint
-    - name: "Check Markdown links"
-      script: make check-links || true
+      script:
+        - make yamllint
+        - make check-links || true
     - name: "Go dependency check"
       script: make dep-check
 
     - stage: Test
-    - name: "Code linter"
+      name: "Code linter"
       script: make lint
     - name: "Unit tests"
       before_script:
@@ -56,27 +57,23 @@ jobs:
         - goveralls -coverprofile=/tmp/coverage.out -service=travis-ci
 
     - stage: Build
-    - name: "Build commands"
-      script: make cmd
-    - name: "Build examples"
-      script: make examples
+      script:
+        - make cmd
+        - make examples
 
     - stage: Integration
-    - name: "Verify generated binapi"
-      script: make verify-binapi
-    - name: "VPP integration tests"
-      script: make integration-tests
-    - name: "VPP integration tests"
-      script: make integration-tests
-
-    - stage: Integration VPP 19.08
-      env: VPP_VERSION=1908
-    - name: "Verify generated binapi"
-      script: make verify-binapi
-    - name: "VPP integration tests"
-      script: make integration-tests
-    - name: "VPP integration tests"
-      script: make integration-tests
+      env: VPP_VERSION=1904
+      script:
+        - make verify-binapi
+        - make integration-tests
+    - env: VPP_VERSION=1908
+      script:
+        - make verify-binapi
+        - make integration-tests
+    - env: VPP_VERSION=1901
+      script:
+        - make verify-binapi
+        - make integration-tests
 
 notifications:
   slack:
