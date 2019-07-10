@@ -3,7 +3,8 @@ dist: xenial
 sudo: required
 
 language: go
-go: 1.12
+go:
+  - "1.12.x"
 
 go_import_path: github.com/ligato/vpp-agent
 
@@ -17,13 +18,6 @@ git:
 cache:
   directories:
     - ${HOME}/.cache
-
-#cache:
-#  directories:
-#    - $HOME/.cache/go-build
-#    - $HOME/build-cache
-#    - $HOME/.npm
-#    - $(npm config get prefix)/lib/node_modules
 
 install: true
 
