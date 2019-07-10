@@ -126,7 +126,7 @@ perf-all:
 
 integration-tests:
 	@echo "=> running integration tests"
-	./tests/integration/vpp_integration.sh
+	VPP_IMG=$(VPP_IMG) ./tests/integration/vpp_integration.sh
 
 # -------------------------------
 #  Code generation

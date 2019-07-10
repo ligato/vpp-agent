@@ -80,6 +80,16 @@ func setupVPP(t *testing.T) *testCtx {
 		}
 	}
 
+	// remove binapi files from previous run
+	var removeFile = func(path string) {
+		if err := os.Remove(path); err == nil {
+			t.Logf("removed file %q", path)
+		} else if !os.IsNotExist(err) {
+			t.Fatalf("removing file %q failed: %v", path, err)
+		}
+	}
+	removeFile("/run/vpp-api.sock")
+
 	t.Logf("starting VPP process: %q", *vppPath)
 
 	cmd := exec.Command(*vppPath, "-c", *vppConfig)
@@ -92,13 +102,16 @@ func setupVPP(t *testing.T) *testCtx {
 	if err := cmd.Start(); err != nil {
 		t.Fatalf("starting VPP failed: %v", err)
 	}
-
-	time.Sleep(time.Millisecond * 250)
+	t.Logf("VPP process started (PID: %v)", cmd.Process.Pid)
 
 	adapter := govppmux.NewVppAdapter(*vppSockAddr, false)
+	if err := adapter.WaitReady(); err != nil {
+		t.Logf("WaitReady failed: %v", err)
+	}
+
+	time.Sleep(time.Millisecond * 100)
 
 	t.Logf("connecting to VPP..")
-
 	conn, err := govppcore.Connect(adapter)
 	if err != nil {
 		t.Logf("sending KILL signal to VPP")

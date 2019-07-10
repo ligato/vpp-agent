@@ -5,7 +5,7 @@ services: docker
 
 language: go
 go:
-  - 1.12
+  - 1.12.x
 
 addons:
   apt:
@@ -25,28 +25,47 @@ cache:
     - $HOME/.npm
     - $(npm config get prefix)/lib/node_modules
 
-env:
-  - GO_BUILD_TAGS=mockvpp
+jobs:
+  include:
+    - stage: lint
+      script:
+        - make yamllint
+        - make check-links || true
+        - make dep-check
+        - make lint
+    - stage: check
+      env:
+        - VPP_VERSION=1901
+        - VPP_VERSION=1904
+        - VPP_VERSION=1908
+      script:
+        - make verify-binapi
+        - make integration-tests
+    - stage: test
+      script:
+        - make test-cover
+      after_success:
+        - go get github.com/mattn/goveralls
+        - goveralls -coverprofile=/tmp/coverage.out -service=travis-ci
+    - stage: build
+      script: make
 
-before_install:
-  - make travis
-  - make get-linkcheck
-  - make get-linters
-  - make get-dep
-  - go get github.com/mattn/goveralls
+#before_install:
+#  - make travis
+#  - make get-linkcheck
+#  - make get-linters
+#  - make get-dep
+#  - go get github.com/mattn/goveralls
 
-script:
-  - make integration-tests
-  - make yamllint
-  - make check-links || true
-  - make lint
-  - make dep-check
-  - make verify-binapi
-  - make
-  - make test-cover
-
-after_success:
-  - goveralls -coverprofile=/tmp/coverage.out -service=travis-ci
+#script:
+#  - make integration-tests
+#  - make yamllint
+#  - make check-links || true
+#  - make lint
+#  - make dep-check
+#  - make verify-binapi
+#  - make
+#  - make test-cover
 
 notifications:
   slack:
