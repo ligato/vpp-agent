@@ -26,16 +26,17 @@ cache:
     - $(npm config get prefix)/lib/node_modules
 
 env:
-  - VPP_VERSION=1901
   - VPP_VERSION=1904
   - VPP_VERSION=1908
+  - VPP_VERSION=1901
 
 jobs:
   include:
     - stage: lint
-      env: # OVERWRITE WITH EMPTY
+      name: "YAML lint"
       script: make yamllint
-    - script: make check-links || true
+    - name: "Link check"
+      script: make check-links || true
     - script: make dep-check
     - script: make lint
 
