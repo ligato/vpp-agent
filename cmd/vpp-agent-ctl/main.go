@@ -207,6 +207,10 @@ func do(ctl data.VppAgentCtl) {
 			err = ctl.SetIPScanNeigh()
 		case "-ipscand":
 			err = ctl.UnsetIPScanNeigh()
+		case "-vrf":
+			err = ctl.PutVrf()
+		case "-vrfd":
+			err = ctl.DeleteVrf()
 		// Linux L3 plugin
 		case "-lroute":
 			err = ctl.PutLinuxRoute()

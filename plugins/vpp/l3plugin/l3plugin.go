@@ -17,7 +17,7 @@
 //go:generate descriptor-adapter --descriptor-name ProxyARP --value-type *vpp_l3.ProxyARP --import "github.com/ligato/vpp-agent/api/models/vpp/l3" --output-dir "descriptor"
 //go:generate descriptor-adapter --descriptor-name ProxyARPInterface --value-type *vpp_l3.ProxyARP_Interface --import "github.com/ligato/vpp-agent/api/models/vpp/l3" --output-dir "descriptor"
 //go:generate descriptor-adapter --descriptor-name IPScanNeighbor --value-type *vpp_l3.IPScanNeighbor --import "github.com/ligato/vpp-agent/api/models/vpp/l3" --output-dir "descriptor"
-//go:generate descriptor-adapter --descriptor-name VrfTable --value-type *vpp_l3.VrfTable --import "github.com/ligato/vpp-agent/api/models/vpp/l3" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name VrfTable --value-type *vpp_l3.VrfTable --meta-type *vrfidx.VRFMetadata --import "vrfidx" --import "github.com/ligato/vpp-agent/api/models/vpp/l3" --output-dir "descriptor"
 //go:generate descriptor-adapter --descriptor-name DHCPProxy --value-type *vpp_l3.DHCPProxy --import "github.com/ligato/vpp-agent/api/models/vpp/l3" --output-dir "descriptor"
 
 package l3plugin
@@ -33,6 +33,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin"
 	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/descriptor"
 	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls"
+	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vrfidx"
 
 	_ "github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls/vpp1901"
 	_ "github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls/vpp1904"
@@ -48,6 +49,9 @@ type L3Plugin struct {
 
 	// VPP handler
 	l3Handler vppcalls.L3VppAPI
+
+	// index maps
+	vrfIndex vrfidx.VRFMetadataIndex
 
 	// descriptors
 	proxyArpIfaceDescriptor  *descriptor.ProxyArpInterfaceDescriptor
@@ -74,7 +78,25 @@ func (p *L3Plugin) Init() error {
 	}
 
 	// init handlers
-	p.l3Handler = vppcalls.CompatibleL3VppHandler(p.vppCh, p.IfPlugin.GetInterfaceIndex(), p.Log)
+	p.l3Handler = vppcalls.CompatibleL3VppHandler(p.vppCh, p.IfPlugin.GetInterfaceIndex(), p.vrfIndex, p.Log)
+	if p.l3Handler == nil {
+		return errors.Errorf("could not find compatible L2VppHandler")
+	}
+
+	// init and register VRF descriptor
+	vrfTableDescriptor := descriptor.NewVrfTableDescriptor(p.l3Handler, p.Log)
+	if err = p.Deps.KVScheduler.RegisterKVDescriptor(vrfTableDescriptor); err != nil {
+		return err
+	}
+	metadataMap := p.KVScheduler.GetMetadataMap(vrfTableDescriptor.Name)
+	var withIndex bool
+	p.vrfIndex, withIndex = metadataMap.(vrfidx.VRFMetadataIndex)
+	if !withIndex {
+		return errors.New("missing index with VRF metadata")
+	}
+
+	// set l3 handler again since it was nil before
+	p.l3Handler = vppcalls.CompatibleL3VppHandler(p.vppCh, p.IfPlugin.GetInterfaceIndex(), p.vrfIndex, p.Log)
 
 	// init & register descriptors
 	routeDescriptor := descriptor.NewRouteDescriptor(p.l3Handler, p.Log)
@@ -82,7 +104,6 @@ func (p *L3Plugin) Init() error {
 	proxyArpDescriptor := descriptor.NewProxyArpDescriptor(p.KVScheduler, p.l3Handler, p.Log)
 	proxyArpIfaceDescriptor := descriptor.NewProxyArpInterfaceDescriptor(p.KVScheduler, p.l3Handler, p.Log)
 	ipScanNeighborDescriptor := descriptor.NewIPScanNeighborDescriptor(p.KVScheduler, p.l3Handler, p.Log)
-	vrfTableDescriptor := descriptor.NewVrfTableDescriptor(p.l3Handler, p.Log)
 	dhcpProxyDescriptor := descriptor.NewDHCPProxyDescriptor(p.KVScheduler, p.l3Handler, p.Log)
 
 	err = p.Deps.KVScheduler.RegisterKVDescriptor(
@@ -91,7 +112,6 @@ func (p *L3Plugin) Init() error {
 		proxyArpDescriptor,
 		proxyArpIfaceDescriptor,
 		ipScanNeighborDescriptor,
-		vrfTableDescriptor,
 		dhcpProxyDescriptor,
 	)
 	if err != nil {
@@ -107,4 +127,9 @@ func (p *L3Plugin) AfterInit() error {
 		p.StatusCheck.Register(p.PluginName, nil)
 	}
 	return nil
+}
+
+// GetVRFIndex gives read-only access to map with metadata of all configured VPP VRFs.
+func (p *L3Plugin) GetVRFIndex() vrfidx.VRFMetadataIndex {
+	return p.vrfIndex
 }

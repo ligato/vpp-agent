@@ -115,16 +115,11 @@ func (h *BridgeDomainVppHandler) dumpBridgeDomainMacTable() (map[uint32][]*l2nb.
 
 		// Prepare ARP entry
 		arpEntry := &l2nb.BridgeDomain_ArpTerminationEntry{}
-		var ipAddr net.IP = msg.IPAddress
-		if uintToBool(msg.IsIPv6) {
-			arpEntry.IpAddress = ipAddr.To16().String()
-		} else {
-			arpEntry.IpAddress = ipAddr[:4].To4().String()
-		}
-		arpEntry.PhysAddress = net.HardwareAddr(msg.MacAddress[:]).String()
+		arpEntry.IpAddress = parseAddressToString(msg.Entry.IP)
+		arpEntry.PhysAddress = net.HardwareAddr(msg.Entry.Mac[:]).String()
 
 		// Add ARP entry to result map
-		bdArpTable[msg.BdID] = append(bdArpTable[msg.BdID], arpEntry)
+		bdArpTable[msg.Entry.BdID] = append(bdArpTable[msg.Entry.BdID], arpEntry)
 	}
 
 	return bdArpTable, nil
@@ -234,9 +229,15 @@ func (h *XConnectVppHandler) DumpXConnectPairs() (map[uint32]*vppcalls.XConnectD
 	return xpairs, nil
 }
 
-func uintToBool(value uint8) bool {
-	if value == 0 {
-		return false
+func parseAddressToString(address l2ba.Address) string {
+	var nhIP net.IP = make([]byte, 16)
+	copy(nhIP[:], address.Un.XXX_UnionData[:])
+	if address.Af == l2ba.ADDRESS_IP4 {
+		return nhIP[:4].To4().String()
 	}
-	return true
+	if address.Af == l2ba.ADDRESS_IP6 {
+		return nhIP.To16().String()
+	}
+
+	return ""
 }

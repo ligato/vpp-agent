@@ -143,10 +143,16 @@ func TestDumpBridgeDomainsWithARP(t *testing.T) {
 			Name: (&l2ba.BdIPMacDump{}).GetMessageName(),
 			Ping: true,
 			Message: &l2ba.BdIPMacDetails{
-				BdID:       5,
-				IsIPv6:     0,
-				IPAddress:  []byte{192, 168, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-				MacAddress: l2ba.MacAddress{0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA},
+				Entry: l2ba.BdIPMac{
+					BdID: 5,
+					IP: l2ba.Address{
+						Af: l2ba.ADDRESS_IP4,
+						Un: l2ba.AddressUnionIP4(
+							l2ba.IP4Address{192, 168, 0, 1},
+						),
+					},
+					Mac: l2ba.MacAddress{0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA},
+				},
 			},
 		},
 		{

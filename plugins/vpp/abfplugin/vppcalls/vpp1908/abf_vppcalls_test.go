@@ -75,9 +75,9 @@ func TestAddABFPolicy(t *testing.T) {
 	Expect(req.Policy.ACLIndex).To(Equal(uint32(2)))
 	Expect(req.Policy.NPaths).To(Equal(uint8(2)))
 	Expect(req.Policy.Paths[0].SwIfIndex).To(Equal(uint32(5)))
-	Expect(req.Policy.Paths[0].NextHop[:4]).To(BeEquivalentTo(net.ParseIP("10.0.0.1").To4()))
+	Expect(req.Policy.Paths[0].Nh.Address.GetIP4()).To(BeEquivalentTo(abf.IP4Address([4]uint8{10, 0, 0, 1})))
 	Expect(req.Policy.Paths[1].SwIfIndex).To(Equal(uint32(10)))
-	Expect(req.Policy.Paths[1].NextHop).To(BeEquivalentTo(net.ParseIP("ffff::").To16()))
+	Expect(req.Policy.Paths[1].Nh.Address.GetIP6()).To(BeEquivalentTo(abf.IP6Address([16]uint8{255, 255})))
 }
 
 func TestAddABFPolicyError(t *testing.T) {
@@ -124,9 +124,9 @@ func TestDeleteABFPolicy(t *testing.T) {
 	Expect(req.Policy.PolicyID).To(Equal(uint32(1)))
 	Expect(req.Policy.NPaths).To(Equal(uint8(2)))
 	Expect(req.Policy.Paths[0].SwIfIndex).To(Equal(uint32(5)))
-	Expect(req.Policy.Paths[0].NextHop[:4]).To(BeEquivalentTo(net.ParseIP("10.0.0.1").To4()))
+	Expect(req.Policy.Paths[0].Nh.Address.XXX_UnionData[:4]).To(BeEquivalentTo(net.ParseIP("10.0.0.1").To4()))
 	Expect(req.Policy.Paths[1].SwIfIndex).To(Equal(uint32(10)))
-	Expect(req.Policy.Paths[1].NextHop).To(BeEquivalentTo(net.ParseIP("ffff::").To16()))
+	Expect(req.Policy.Paths[1].Nh.Address.XXX_UnionData[:]).To(BeEquivalentTo(net.ParseIP("ffff::").To16()))
 }
 
 func TestDeleteABFPolicyError(t *testing.T) {
@@ -271,6 +271,6 @@ func abfTestSetup(t *testing.T) (*vppcallmock.TestCtx, vppcalls.ABFVppAPI, iface
 	log := logrus.NewLogger("test-log")
 	aclIdx := aclidx.NewACLIndex(log, "acl-index")
 	ifIdx := ifaceidx.NewIfaceIndex(log, "if-index")
-	abfHandler := NewABFVppHandler(ctx.MockChannel, aclIdx, ifIdx)
+	abfHandler := NewABFVppHandler(ctx.MockChannel, aclIdx, ifIdx, log)
 	return ctx, abfHandler, ifIdx
 }

@@ -44,8 +44,8 @@ func TestAddContainerIP(t *testing.T) {
 	Expect(ok).To(BeTrue())
 	Expect(vppMsg.SwIfIndex).To(BeEquivalentTo(1))
 	Expect(vppMsg.Pfx).To(BeEquivalentTo(ip.Prefix{
-		Address:       ipToAddr("10.0.0.1"),
-		AddressLength: 24,
+		Address: ipToAddr("10.0.0.1"),
+		Len:     24,
 	}))
 	Expect(vppMsg.IsAdd).To(BeEquivalentTo(1))
 }
@@ -63,8 +63,8 @@ func TestAddContainerIPv6(t *testing.T) {
 	Expect(ok).To(BeTrue())
 	Expect(vppMsg.SwIfIndex).To(BeEquivalentTo(1))
 	Expect(vppMsg.Pfx).To(BeEquivalentTo(ip.Prefix{
-		Address:       ipToAddr("2001:db8:0:1:1:1:1:1"),
-		AddressLength: 128,
+		Address: ipToAddr("2001:db8:0:1:1:1:1:1"),
+		Len:     128,
 	}))
 	Expect(vppMsg.IsAdd).To(BeEquivalentTo(1))
 }
@@ -117,8 +117,8 @@ func TestDelContainerIP(t *testing.T) {
 	Expect(ok).To(BeTrue())
 	Expect(vppMsg.SwIfIndex).To(BeEquivalentTo(1))
 	Expect(vppMsg.Pfx).To(BeEquivalentTo(ip.Prefix{
-		Address:       ipToAddr("10.0.0.1"),
-		AddressLength: 24,
+		Address: ipToAddr("10.0.0.1"),
+		Len:     24,
 	}))
 	Expect(vppMsg.IsAdd).To(BeEquivalentTo(0))
 }
@@ -136,8 +136,8 @@ func TestDelContainerIPv6(t *testing.T) {
 	Expect(ok).To(BeTrue())
 	Expect(vppMsg.SwIfIndex).To(BeEquivalentTo(1))
 	Expect(vppMsg.Pfx).To(BeEquivalentTo(ip.Prefix{
-		Address:       ipToAddr("2001:db8:0:1:1:1:1:1"),
-		AddressLength: 128,
+		Address: ipToAddr("2001:db8:0:1:1:1:1:1"),
+		Len:     128,
 	}))
 	Expect(vppMsg.IsAdd).To(BeEquivalentTo(0))
 }

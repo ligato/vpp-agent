@@ -53,6 +53,10 @@ type L3Ctl interface {
 	SetIPScanNeigh() error
 	// UnsetIPScanNeigh removes VPP IP scan neighbor configuration from the ETCD
 	UnsetIPScanNeigh() error
+	// PutVrf puts VPP VRF to the ETCD
+	PutVrf() error
+	// UnsetVrf removes VPP VRF configuration from the ETCD
+	DeleteVrf() error
 	// CreateLinuxArp puts linux ARP entry configuration to the ETCD
 	PutLinuxArp() error
 	// DeleteLinuxArp removes Linux ARP entry configuration from the ETCD
@@ -240,6 +244,27 @@ func (ctl *VppAgentCtlImpl) SetIPScanNeigh() error {
 func (ctl *VppAgentCtlImpl) UnsetIPScanNeigh() error {
 	ctl.Log.Info("IP scan neighbor unset")
 	_, err := ctl.broker.Delete(l3.IPScanNeighborKey())
+	return err
+}
+
+// PutVrf puts VPP VRF to the ETCD
+func (ctl *VppAgentCtlImpl) PutVrf() error {
+	vrf := &l3.VrfTable{
+		Label: "vrf1",
+		Id: 1,
+		Protocol: l3.VrfTable_IPV4,
+	}
+
+	ctl.Log.Info("VRF set")
+	return ctl.broker.Put(l3.VrfTableKey(vrf.Id, vrf.Protocol), vrf)
+}
+
+// DeleteVrf removes VPP VRF configuration from the ETCD
+func (ctl *VppAgentCtlImpl) DeleteVrf() error {
+	vrf := l3.VrfTableKey(1, l3.VrfTable_IPV4)
+
+	ctl.Log.Info("VRF unset")
+	_, err := ctl.broker.Delete(vrf)
 	return err
 }
 
