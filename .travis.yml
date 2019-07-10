@@ -25,29 +25,32 @@ cache:
     - $HOME/.npm
     - $(npm config get prefix)/lib/node_modules
 
+env:
+  - VPP_VERSION=1901
+  - VPP_VERSION=1904
+  - VPP_VERSION=1908
+
 jobs:
   include:
     - stage: lint
-      script:
-        - make yamllint
-        - make check-links || true
-        - make dep-check
-        - make lint
-    - stage: check
-      env:
-        matrix:
-          - VPP_VERSION=1901
-          - VPP_VERSION=1904
-          - VPP_VERSION=1908
+      env: # OVERWRITE WITH EMPTY
+      script: make yamllint
+    - script: make check-links || true
+    - script: make dep-check
+    - script: make lint
+
+    - stage: vpp integration
       script:
         - make verify-binapi
     - script: make integration-tests
-    - stage: test
+
+    - stage: unit tests
       script:
         - make test-cover
       after_success:
         - go get github.com/mattn/goveralls
         - goveralls -coverprofile=/tmp/coverage.out -service=travis-ci
+
     - stage: build
       script: make
 
