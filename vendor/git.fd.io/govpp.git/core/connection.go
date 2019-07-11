@@ -30,8 +30,8 @@ import (
 )
 
 const (
-	DefaultReconnectInterval    = time.Second // default interval between reconnect attempts
-	DefaultMaxReconnectAttempts = 3           // default maximum number of reconnect attempts
+	DefaultReconnectInterval    = time.Second / 2 // default interval between reconnect attempts
+	DefaultMaxReconnectAttempts = 3               // default maximum number of reconnect attempts
 )
 
 var (
@@ -255,7 +255,7 @@ func (c *Connection) releaseAPIChannel(ch *Channel) {
 // connectLoop attempts to connect to VPP until it succeeds.
 // Then it continues with healthCheckLoop.
 func (c *Connection) connectLoop(connChan chan ConnectionEvent) {
-	reconnectAttempts := 0
+	var reconnectAttempts int
 
 	// loop until connected
 	for {
@@ -268,7 +268,7 @@ func (c *Connection) connectLoop(connChan chan ConnectionEvent) {
 			break
 		} else if reconnectAttempts < c.maxAttempts {
 			reconnectAttempts++
-			log.Errorf("connecting failed (attempt %d/%d): %v", reconnectAttempts, c.maxAttempts, err)
+			log.Warnf("connecting failed (attempt %d/%d): %v", reconnectAttempts, c.maxAttempts, err)
 			time.Sleep(c.recInterval)
 		} else {
 			connChan <- ConnectionEvent{Timestamp: time.Now(), State: Failed, Error: err}

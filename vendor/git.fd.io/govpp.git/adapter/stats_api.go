@@ -19,14 +19,14 @@ import (
 	"fmt"
 )
 
-var (
-	ErrStatDirBusy  = errors.New("stat dir busy")
-	ErrStatDumpBusy = errors.New("stat dump busy")
+const (
+	// DefaultStatsSocket defines a default socket file path for VPP stats API.
+	DefaultStatsSocket = "/run/vpp/stats.sock"
 )
 
 var (
-	// DefaultStatsSocket is the default path for the VPP stat socket file.
-	DefaultStatsSocket = "/run/vpp/stats.sock"
+	ErrStatDirBusy  = errors.New("stat dir busy")
+	ErrStatDumpBusy = errors.New("stat dump busy")
 )
 
 // StatsAPI provides connection to VPP stats API.
