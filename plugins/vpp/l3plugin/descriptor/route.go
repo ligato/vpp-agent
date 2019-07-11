@@ -25,6 +25,7 @@ import (
 	"github.com/ligato/cn-infra/logging"
 	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
+	"github.com/ligato/vpp-agent/pkg/models"
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	ifdescriptor "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/descriptor"
 	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/descriptor/adapter"
@@ -140,15 +141,15 @@ func (d *RouteDescriptor) Retrieve(correlate []adapter.RouteKVWithMetadata) (
 	retrieved []adapter.RouteKVWithMetadata, err error,
 ) {
 	// Retrieve VPP route configuration
-	Routes, err := d.routeHandler.DumpRoutes()
+	routes, err := d.routeHandler.DumpRoutes()
 	if err != nil {
 		return nil, errors.Errorf("failed to dump VPP routes: %v", err)
 	}
 
-	for _, Route := range Routes {
+	for _, route := range routes {
 		retrieved = append(retrieved, adapter.RouteKVWithMetadata{
-			Key:    l3.RouteKey(Route.Route.VrfId, Route.Route.DstNetwork, Route.Route.NextHopAddr),
-			Value:  Route.Route,
+			Key:    models.Key(route.Route),
+			Value:  route.Route,
 			Origin: kvs.UnknownOrigin,
 		})
 	}

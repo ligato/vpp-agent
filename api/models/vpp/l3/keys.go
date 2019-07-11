@@ -39,7 +39,7 @@ var (
 		Type:    "route",
 		Version: "v2",
 	}, models.WithNameTemplate(
-		`vrf/{{.VrfId}}/dst/{{with ipnet .DstNetwork}}{{printf "%s/%d" .IP .MaskSize}}{{end}}/gw/{{.NextHopAddr}}`,
+		`{{if .OutgoingInterface}}{{printf "if/%s/" .OutgoingInterface}}{{end}}vrf/{{.VrfId}}/dst/{{with ipnet .DstNetwork}}{{printf "%s/%d" .IP .MaskSize}}{{end}}/gw/{{.NextHopAddr}}`,
 	))
 
 	ModelProxyARP = models.Register(&ProxyARP{}, models.Spec{
@@ -82,8 +82,9 @@ func IPScanNeighborKey() string {
 }
 
 // RouteKey returns the key used in ETCD to store vpp route for vpp instance.
-func RouteKey(vrf uint32, dstNet string, nextHopAddr string) string {
+func RouteKey(iface string, vrf uint32, dstNet string, nextHopAddr string) string {
 	return models.Key(&Route{
+		OutgoingInterface: iface,
 		VrfId:       vrf,
 		DstNetwork:  dstNet,
 		NextHopAddr: nextHopAddr,

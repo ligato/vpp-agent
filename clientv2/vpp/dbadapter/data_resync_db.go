@@ -113,7 +113,7 @@ func (dsl *DataResyncDSL) XConnect(val *l2.XConnectPair) vppclient.DataResyncDSL
 
 // StaticRoute adds L3 Static Route to the RESYNC request.
 func (dsl *DataResyncDSL) StaticRoute(val *l3.Route) vppclient.DataResyncDSL {
-	key := l3.RouteKey(val.VrfId, val.DstNetwork, val.NextHopAddr)
+	key := models.Key(val)
 	dsl.txn.Put(key, val)
 	dsl.txnKeys = append(dsl.txnKeys, key)
 

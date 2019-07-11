@@ -337,8 +337,8 @@ func (dsl *DeleteDSL) VrfTable(id uint32, proto l3.VrfTable_Protocol) linuxclien
 }
 
 // StaticRoute adds a request to delete an existing VPP L3 Static Route.
-func (dsl *DeleteDSL) StaticRoute(vrf uint32, dstAddr string, nextHopAddr string) linuxclient.DeleteDSL {
-	dsl.vppDelete.StaticRoute(vrf, dstAddr, nextHopAddr)
+func (dsl *DeleteDSL) StaticRoute(iface string, vrf uint32, dstAddr string, nextHopAddr string) linuxclient.DeleteDSL {
+	dsl.vppDelete.StaticRoute(iface, vrf, dstAddr, nextHopAddr)
 	return dsl
 }
 

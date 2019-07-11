@@ -17,6 +17,7 @@ package data
 import (
 	linuxL3 "github.com/ligato/vpp-agent/api/models/linux/l3"
 	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
+	"github.com/ligato/vpp-agent/pkg/models"
 )
 
 // L3Ctl L3 plugin related methods for vpp-agent-ctl (including linux)
@@ -74,12 +75,12 @@ func (ctl *VppAgentCtlImpl) PutRoute() error {
 	}
 
 	ctl.Log.Infof("Route put: %v", route)
-	return ctl.broker.Put(l3.RouteKey(route.VrfId, route.DstNetwork, route.NextHopAddr), route)
+	return ctl.broker.Put(models.Key(route), route)
 }
 
 // DeleteRoute removes VPP route configuration from the ETCD
 func (ctl *VppAgentCtlImpl) DeleteRoute() error {
-	routeKey := l3.RouteKey(0, "10.1.1.3/32", "192.168.1.13")
+	routeKey := l3.RouteKey("tap1",0, "10.1.1.3/32", "192.168.1.13")
 
 	ctl.Log.Infof("Route delete: %v", routeKey)
 	_, err := ctl.broker.Delete(routeKey)
@@ -96,12 +97,12 @@ func (ctl *VppAgentCtlImpl) PutInterVrfRoute() error {
 	}
 
 	ctl.Log.Infof("Route put: %v", route)
-	return ctl.broker.Put(l3.RouteKey(route.VrfId, route.DstNetwork, route.NextHopAddr), route)
+	return ctl.broker.Put(models.Key(route), route)
 }
 
 // DeleteInterVrfRoute removes VPP route configuration from the ETCD
 func (ctl *VppAgentCtlImpl) DeleteInterVrfRoute() error {
-	routeKey := l3.RouteKey(0, "1.2.3.4/32", "")
+	routeKey := l3.RouteKey("",0, "1.2.3.4/32", "")
 
 	ctl.Log.Infof("Route delete: %v", routeKey)
 	_, err := ctl.broker.Delete(routeKey)
@@ -119,12 +120,12 @@ func (ctl *VppAgentCtlImpl) PutNextHopRoute() error {
 	}
 
 	ctl.Log.Infof("Route put: %v", route)
-	return ctl.broker.Put(l3.RouteKey(route.VrfId, route.DstNetwork, route.NextHopAddr), route)
+	return ctl.broker.Put(models.Key(route), route)
 }
 
 // DeleteNextHopRoute removes VPP route configuration from the ETCD
 func (ctl *VppAgentCtlImpl) DeleteNextHopRoute() error {
-	routeKey := l3.RouteKey(1, "10.1.1.3/32", "192.168.1.13")
+	routeKey := l3.RouteKey("", 1, "10.1.1.3/32", "192.168.1.13")
 
 	ctl.Log.Infof("Route delete: %v", routeKey)
 	_, err := ctl.broker.Delete(routeKey)

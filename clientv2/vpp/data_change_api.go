@@ -119,7 +119,7 @@ type DeleteDSL interface {
 	// VrfTable adds a request to delete existing VPP VRF table.
 	VrfTable(id uint32, proto l3.VrfTable_Protocol) DeleteDSL
 	// StaticRoute adds a request to delete an existing VPP L3 Static Route.
-	StaticRoute(vrf uint32, dstAddr string, nextHopAddr string) DeleteDSL
+	StaticRoute(iface string, vrf uint32, dstAddr string, nextHopAddr string) DeleteDSL
 	// Arp adds a request to delete an existing VPP L3 ARP.
 	Arp(ifaceName string, ipAddr string) DeleteDSL
 	// ProxyArpInterfaces adds a request to delete an existing VPP L3 proxy ARP interfaces
