@@ -124,6 +124,10 @@ perf-all:
 	@echo "=> running all perf tests"
 	./tests/perf/run_all.sh
 
+integration-tests:
+	@echo "=> running integration tests"
+	VPP_IMG=$(VPP_IMG) ./tests/integration/vpp_integration.sh
+
 # -------------------------------
 #  Code generation
 # -------------------------------
@@ -183,7 +187,7 @@ bindata: get-bindata
 # -------------------------------
 
 get-dep:
-	curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
+	curl -sSfL https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
 	dep version
 
 dep-install: get-dep

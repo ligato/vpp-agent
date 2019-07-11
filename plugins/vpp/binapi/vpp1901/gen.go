@@ -16,6 +16,7 @@ package vpp1901
 
 //go:generate -command binapigen binapi-generator --output-dir=.
 
+//go:generate binapi-generator --input-file=/usr/share/vpp/api/abf.api.json
 //go:generate binapi-generator --input-file=/usr/share/vpp/api/acl.api.json
 //go:generate binapi-generator --input-file=/usr/share/vpp/api/af_packet.api.json
 //go:generate binapi-generator --input-file=/usr/share/vpp/api/bfd.api.json
