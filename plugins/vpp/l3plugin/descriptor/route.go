@@ -23,6 +23,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/ligato/cn-infra/logging"
+	"github.com/ligato/cn-infra/utils/addrs"
 	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
 	"github.com/ligato/vpp-agent/pkg/models"
@@ -30,7 +31,6 @@ import (
 	ifdescriptor "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/descriptor"
 	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls"
-	"github.com/ligato/cn-infra/utils/addrs"
 )
 
 const (
@@ -39,8 +39,8 @@ const (
 
 	// dependency labels
 	routeOutInterfaceDep = "interface-exists"
-	vrfTableDep = "vrf-table-exists"
-	viaVrfTableDep = "via-vrf-table-exists"
+	vrfTableDep          = "vrf-table-exists"
+	viaVrfTableDep       = "via-vrf-table-exists"
 
 	// static route weight by default
 	defaultWeight = 1
@@ -103,18 +103,22 @@ func (d *RouteDescriptor) EquivalentRoutes(key string, oldRoute, newRoute *l3.Ro
 
 // Validate validates VPP static route configuration.
 func (d *RouteDescriptor) Validate(key string, route *l3.Route) (err error) {
+	// validation destination network
 	_, ipNet, err := net.ParseCIDR(route.DstNetwork)
 	if err != nil {
 		return kvs.NewInvalidValueError(err, "dst_network")
 	}
+
+	// validate IP network implied by the IP and prefix length
 	if strings.ToLower(ipNet.String()) != strings.ToLower(route.DstNetwork) {
-		return kvs.NewInvalidValueError(
-			fmt.Errorf("DstNetwork (%s) must represent IP network (%s)", route.DstNetwork, ipNet.String()),
-			"dst_network")
+		e := fmt.Errorf("DstNetwork (%s) must represent IP network (%s)", route.DstNetwork, ipNet.String())
+		return kvs.NewInvalidValueError(e, "dst_network")
 	}
+
+	// TODO: validate mix of IP versions?
+
 	return nil
 }
-
 
 // Create adds VPP static route.
 func (d *RouteDescriptor) Create(key string, route *l3.Route) (metadata interface{}, err error) {

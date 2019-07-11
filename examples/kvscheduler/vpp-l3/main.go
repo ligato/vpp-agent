@@ -115,7 +115,7 @@ func testLocalClientWithScheduler() {
 		StaticRoute(route0).
 		Delete().
 		VppInterface(memif0.Name).
-		StaticRoute(route1.VrfId, route1.DstNetwork, route1.NextHopAddr).
+		StaticRoute(route1.OutgoingInterface, route1.VrfId, route1.DstNetwork, route1.NextHopAddr).
 		Put().
 		Arp(arp0).
 		ProxyArp(proxyArp).

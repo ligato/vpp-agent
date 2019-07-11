@@ -39,7 +39,10 @@ var (
 		Type:    "route",
 		Version: "v2",
 	}, models.WithNameTemplate(
-		`{{if .OutgoingInterface}}{{printf "if/%s/" .OutgoingInterface}}{{end}}vrf/{{.VrfId}}/dst/{{with ipnet .DstNetwork}}{{printf "%s/%d" .IP .MaskSize}}{{end}}/gw/{{.NextHopAddr}}`,
+		`{{if .OutgoingInterface}}{{printf "if/%s/" .OutgoingInterface}}{{end}}`+
+			`vrf/{{.VrfId}}/`+
+			`{{with ipnet .DstNetwork}}{{printf "dst/%s/%d/" .IP .MaskSize}}{{end}}`+
+			`{{if .NextHopAddr}}gw/{{.NextHopAddr}}{{end}}`,
 	))
 
 	ModelProxyARP = models.Register(&ProxyARP{}, models.Spec{
@@ -85,9 +88,9 @@ func IPScanNeighborKey() string {
 func RouteKey(iface string, vrf uint32, dstNet string, nextHopAddr string) string {
 	return models.Key(&Route{
 		OutgoingInterface: iface,
-		VrfId:       vrf,
-		DstNetwork:  dstNet,
-		NextHopAddr: nextHopAddr,
+		VrfId:             vrf,
+		DstNetwork:        dstNet,
+		NextHopAddr:       nextHopAddr,
 	})
 }
 
