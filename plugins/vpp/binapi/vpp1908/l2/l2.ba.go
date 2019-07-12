@@ -5,7 +5,7 @@
 Package l2 is a generated VPP binary API for 'l2' module.
 
 It consists of:
-	  4 enums
+	  6 enums
 	  3 aliases
 	  8 types
 	  1 union
@@ -29,7 +29,7 @@ const (
 	// APIVersion is the API version of this module.
 	APIVersion = "2.2.2"
 	// VersionCrc is the CRC of this module.
-	VersionCrc = 0xbaafc7be
+	VersionCrc = 0x46c9d538
 )
 
 // AddressFamily represents VPP binary API enum 'address_family'.
@@ -99,28 +99,167 @@ func (x BdFlags) String() string {
 	return strconv.Itoa(int(x))
 }
 
+// IPDscp represents VPP binary API enum 'ip_dscp'.
+type IPDscp uint8
+
+const (
+	IP_API_DSCP_CS0  IPDscp = 0
+	IP_API_DSCP_CS1  IPDscp = 8
+	IP_API_DSCP_AF11 IPDscp = 10
+	IP_API_DSCP_AF12 IPDscp = 12
+	IP_API_DSCP_AF13 IPDscp = 14
+	IP_API_DSCP_CS2  IPDscp = 16
+	IP_API_DSCP_AF21 IPDscp = 18
+	IP_API_DSCP_AF22 IPDscp = 20
+	IP_API_DSCP_AF23 IPDscp = 22
+	IP_API_DSCP_CS3  IPDscp = 24
+	IP_API_DSCP_AF31 IPDscp = 26
+	IP_API_DSCP_AF32 IPDscp = 28
+	IP_API_DSCP_AF33 IPDscp = 30
+	IP_API_DSCP_CS4  IPDscp = 32
+	IP_API_DSCP_AF41 IPDscp = 34
+	IP_API_DSCP_AF42 IPDscp = 36
+	IP_API_DSCP_AF43 IPDscp = 38
+	IP_API_DSCP_CS5  IPDscp = 40
+	IP_API_DSCP_EF   IPDscp = 46
+	IP_API_DSCP_CS6  IPDscp = 48
+	IP_API_DSCP_CS7  IPDscp = 50
+)
+
+var IPDscp_name = map[uint8]string{
+	0:  "IP_API_DSCP_CS0",
+	8:  "IP_API_DSCP_CS1",
+	10: "IP_API_DSCP_AF11",
+	12: "IP_API_DSCP_AF12",
+	14: "IP_API_DSCP_AF13",
+	16: "IP_API_DSCP_CS2",
+	18: "IP_API_DSCP_AF21",
+	20: "IP_API_DSCP_AF22",
+	22: "IP_API_DSCP_AF23",
+	24: "IP_API_DSCP_CS3",
+	26: "IP_API_DSCP_AF31",
+	28: "IP_API_DSCP_AF32",
+	30: "IP_API_DSCP_AF33",
+	32: "IP_API_DSCP_CS4",
+	34: "IP_API_DSCP_AF41",
+	36: "IP_API_DSCP_AF42",
+	38: "IP_API_DSCP_AF43",
+	40: "IP_API_DSCP_CS5",
+	46: "IP_API_DSCP_EF",
+	48: "IP_API_DSCP_CS6",
+	50: "IP_API_DSCP_CS7",
+}
+
+var IPDscp_value = map[string]uint8{
+	"IP_API_DSCP_CS0":  0,
+	"IP_API_DSCP_CS1":  8,
+	"IP_API_DSCP_AF11": 10,
+	"IP_API_DSCP_AF12": 12,
+	"IP_API_DSCP_AF13": 14,
+	"IP_API_DSCP_CS2":  16,
+	"IP_API_DSCP_AF21": 18,
+	"IP_API_DSCP_AF22": 20,
+	"IP_API_DSCP_AF23": 22,
+	"IP_API_DSCP_CS3":  24,
+	"IP_API_DSCP_AF31": 26,
+	"IP_API_DSCP_AF32": 28,
+	"IP_API_DSCP_AF33": 30,
+	"IP_API_DSCP_CS4":  32,
+	"IP_API_DSCP_AF41": 34,
+	"IP_API_DSCP_AF42": 36,
+	"IP_API_DSCP_AF43": 38,
+	"IP_API_DSCP_CS5":  40,
+	"IP_API_DSCP_EF":   46,
+	"IP_API_DSCP_CS6":  48,
+	"IP_API_DSCP_CS7":  50,
+}
+
+func (x IPDscp) String() string {
+	s, ok := IPDscp_name[uint8(x)]
+	if ok {
+		return s
+	}
+	return strconv.Itoa(int(x))
+}
+
+// IPEcn represents VPP binary API enum 'ip_ecn'.
+type IPEcn uint8
+
+const (
+	IP_API_ECN_NONE IPEcn = 0
+	IP_API_ECN_ECT0 IPEcn = 1
+	IP_API_ECN_ECT1 IPEcn = 2
+	IP_API_ECN_CE   IPEcn = 3
+)
+
+var IPEcn_name = map[uint8]string{
+	0: "IP_API_ECN_NONE",
+	1: "IP_API_ECN_ECT0",
+	2: "IP_API_ECN_ECT1",
+	3: "IP_API_ECN_CE",
+}
+
+var IPEcn_value = map[string]uint8{
+	"IP_API_ECN_NONE": 0,
+	"IP_API_ECN_ECT0": 1,
+	"IP_API_ECN_ECT1": 2,
+	"IP_API_ECN_CE":   3,
+}
+
+func (x IPEcn) String() string {
+	s, ok := IPEcn_name[uint8(x)]
+	if ok {
+		return s
+	}
+	return strconv.Itoa(int(x))
+}
+
 // IPProto represents VPP binary API enum 'ip_proto'.
 type IPProto uint32
 
 const (
-	IP_API_PROTO_TCP   IPProto = 6
-	IP_API_PROTO_UDP   IPProto = 17
-	IP_API_PROTO_EIGRP IPProto = 88
-	IP_API_PROTO_OSPF  IPProto = 89
+	IP_API_PROTO_HOPOPT   IPProto = 0
+	IP_API_PROTO_ICMP     IPProto = 1
+	IP_API_PROTO_IGMP     IPProto = 2
+	IP_API_PROTO_TCP      IPProto = 6
+	IP_API_PROTO_UDP      IPProto = 17
+	IP_API_PROTO_GRE      IPProto = 47
+	IP_API_PROTO_AH       IPProto = 50
+	IP_API_PROTO_ESP      IPProto = 51
+	IP_API_PROTO_EIGRP    IPProto = 88
+	IP_API_PROTO_OSPF     IPProto = 89
+	IP_API_PROTO_SCTP     IPProto = 132
+	IP_API_PROTO_RESERVED IPProto = 255
 )
 
 var IPProto_name = map[uint32]string{
-	6:  "IP_API_PROTO_TCP",
-	17: "IP_API_PROTO_UDP",
-	88: "IP_API_PROTO_EIGRP",
-	89: "IP_API_PROTO_OSPF",
+	0:   "IP_API_PROTO_HOPOPT",
+	1:   "IP_API_PROTO_ICMP",
+	2:   "IP_API_PROTO_IGMP",
+	6:   "IP_API_PROTO_TCP",
+	17:  "IP_API_PROTO_UDP",
+	47:  "IP_API_PROTO_GRE",
+	50:  "IP_API_PROTO_AH",
+	51:  "IP_API_PROTO_ESP",
+	88:  "IP_API_PROTO_EIGRP",
+	89:  "IP_API_PROTO_OSPF",
+	132: "IP_API_PROTO_SCTP",
+	255: "IP_API_PROTO_RESERVED",
 }
 
 var IPProto_value = map[string]uint32{
-	"IP_API_PROTO_TCP":   6,
-	"IP_API_PROTO_UDP":   17,
-	"IP_API_PROTO_EIGRP": 88,
-	"IP_API_PROTO_OSPF":  89,
+	"IP_API_PROTO_HOPOPT":   0,
+	"IP_API_PROTO_ICMP":     1,
+	"IP_API_PROTO_IGMP":     2,
+	"IP_API_PROTO_TCP":      6,
+	"IP_API_PROTO_UDP":      17,
+	"IP_API_PROTO_GRE":      47,
+	"IP_API_PROTO_AH":       50,
+	"IP_API_PROTO_ESP":      51,
+	"IP_API_PROTO_EIGRP":    88,
+	"IP_API_PROTO_OSPF":     89,
+	"IP_API_PROTO_SCTP":     132,
+	"IP_API_PROTO_RESERVED": 255,
 }
 
 func (x IPProto) String() string {
