@@ -117,7 +117,7 @@ func (dsl *PutDSL) VrfTable(val *l3.VrfTable) vppclient.PutDSL {
 
 // StaticRoute adds a request to create or update VPP L3 Static Route.
 func (dsl *PutDSL) StaticRoute(val *l3.Route) vppclient.PutDSL {
-	dsl.parent.txn.Put(l3.RouteKey(val.VrfId, val.DstNetwork, val.NextHopAddr), val)
+	dsl.parent.txn.Put(models.Key(val), val)
 	return dsl
 }
 
@@ -241,8 +241,8 @@ func (dsl *DeleteDSL) VrfTable(id uint32, proto l3.VrfTable_Protocol) vppclient.
 }
 
 // StaticRoute adds a request to delete an existing VPP L3 Static Route.
-func (dsl *DeleteDSL) StaticRoute(vrf uint32, dstAddr string, nextHopAddr string) vppclient.DeleteDSL {
-	dsl.parent.txn.Delete(l3.RouteKey(vrf, dstAddr, nextHopAddr))
+func (dsl *DeleteDSL) StaticRoute(iface string, vrf uint32, dstAddr string, nextHopAddr string) vppclient.DeleteDSL {
+	dsl.parent.txn.Delete(l3.RouteKey(iface, vrf, dstAddr, nextHopAddr))
 	return dsl
 }
 

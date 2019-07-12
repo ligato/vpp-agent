@@ -161,7 +161,7 @@ func (p *ExamplePlugin) reconfigureVPP(ctx context.Context) {
 			XConnect(&XConMemif1ToMemif2). /* xconnect memif interfaces */
 			BD(&BDLoopback1ToTap1).        /* put loopback and tap1 into the same bridge domain */
 			Delete().
-			StaticRoute(0, "192.168.2.1/32", "192.168.1.1"). /* remove the route going through memif1 */
+			StaticRoute("", 0, "192.168.2.1/32", "192.168.1.1"). /* remove the route going through memif1 */
 			Send().ReceiveReply()
 		if err != nil {
 			logrus.DefaultLogger().Errorf("Failed to reconfigure VPP: %v", err)
@@ -355,10 +355,10 @@ var (
 		MacAge:              0, /* means disable aging */
 		Interfaces: []*l2.BridgeDomain_Interface{
 			{
-				Name: "loopback1",
+				Name:                    "loopback1",
 				BridgedVirtualInterface: true,
 			}, {
-				Name: "tap1",
+				Name:                    "tap1",
 				BridgedVirtualInterface: false,
 			},
 		},

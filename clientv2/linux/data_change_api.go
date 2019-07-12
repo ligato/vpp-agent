@@ -159,7 +159,7 @@ type DeleteDSL interface {
 	// XConnect adds a request to delete an existing VPP Cross Connect.
 	XConnect(rxIfaceName string) DeleteDSL
 	// StaticRoute adds a request to delete an existing VPP L3 Static Route.
-	StaticRoute(vrf uint32, dstAddr string, nextHopAddr string) DeleteDSL
+	StaticRoute(iface string, vrf uint32, dstAddr string, nextHopAddr string) DeleteDSL
 	/*// L4Features adds a request to enable or disable L4 features
 	L4Features() DeleteDSL
 	// AppNamespace adds a request to delete VPP Application namespace
