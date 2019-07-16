@@ -59,6 +59,41 @@ func TestLoopbackInterface(t *testing.T) {
 	}
 }
 
+func TestMemifInterface(t *testing.T) {
+	ctx := setupVPP(t)
+	defer ctx.teardownVPP()
+
+	h := ifplugin_vppcalls.CompatibleInterfaceVppHandler(ctx.Chan, logrus.NewLogger("test"))
+
+	index, err := h.AddMemifInterface("memif1", &vpp_interfaces.MemifLink{
+		Id:     1,
+		Mode:   vpp_interfaces.MemifLink_IP,
+		Secret: "secret",
+		Master: true,
+        }, 0 )
+
+	if err != nil {
+		t.Fatalf("creating memif interface failed: %v", err)
+	}
+	t.Logf("memif index: %+v", index)
+
+	ifaces, err := h.DumpInterfaces()
+	if err != nil {
+		t.Fatalf("dumping interfaces failed: %v", err)
+	}
+	iface, ok := ifaces[index]
+	if !ok {
+		t.Fatalf("Memif interface not found in dump")
+	}
+	t.Logf("interface: %+v", iface.Interface)
+	if iface.Interface.Name != "memif1" {
+		t.Fatalf("expected interface name to be memif1, got %v", iface.Interface.Name)
+	}
+	if iface.Interface.Type != vpp_interfaces.Interface_MEMIF {
+		t.Fatalf("expected interface type to be memif, got %v", iface.Interface.Type)
+	}
+}
+
 func TestRoutes(t *testing.T) {
 	ctx := setupVPP(t)
 	defer ctx.teardownVPP()
