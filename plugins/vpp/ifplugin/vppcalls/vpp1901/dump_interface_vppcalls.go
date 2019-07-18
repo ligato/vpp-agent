@@ -50,7 +50,16 @@ func getMtu(vppMtu uint16) uint32 {
 
 // DumpInterface dumps specific interface.
 func (h *InterfaceVppHandler) DumpInterface(ifIdx uint32) (*vppcalls.InterfaceDetails, error) {
-	return nil, errors.New("not supported")
+	ifaces, err := h.DumpInterfaces()
+	if err != nil {
+		return nil, err
+	}
+
+	iface, ok := ifaces[ifIdx]
+	if !ok {
+		return nil, errors.New("interface index not found in dump")
+	}
+	return iface, nil
 }
 
 // DumpInterfacesByType implements interface handler.
