@@ -36,7 +36,7 @@ else
 	echo >&2 "-------------------------------------------------------------"
 
 	# dump container logs
-	logs=$(docker logs --tail 50 "$cid")
+	logs=$(docker logs --tail 30 "$cid")
 	if [[ -n "$logs" ]]; then
 		echo >&2 "$logs"
 	fi

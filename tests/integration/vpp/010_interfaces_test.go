@@ -28,7 +28,7 @@ func TestInterfaceDump(t *testing.T) {
 	ctx := setupVPP(t)
 	defer ctx.teardownVPP()
 
-	h := ifplugin_vppcalls.CompatibleInterfaceVppHandler(ctx.Chan, logrus.NewLogger("test"))
+	h := ifplugin_vppcalls.CompatibleInterfaceVppHandler(ctx.vppBinapi, logrus.NewLogger("test"))
 
 	ifIdx0, err := h.AddLoopbackInterface("loop0")
 	if err != nil {
@@ -70,7 +70,7 @@ func TestLoopbackInterface(t *testing.T) {
 	ctx := setupVPP(t)
 	defer ctx.teardownVPP()
 
-	h := ifplugin_vppcalls.CompatibleInterfaceVppHandler(ctx.Chan, logrus.NewLogger("test"))
+	h := ifplugin_vppcalls.CompatibleInterfaceVppHandler(ctx.vppBinapi, logrus.NewLogger("test"))
 
 	ifIdx, err := h.AddLoopbackInterface("loop1")
 	if err != nil {
@@ -99,7 +99,7 @@ func TestMemifInterface(t *testing.T) {
 	ctx := setupVPP(t)
 	defer ctx.teardownVPP()
 
-	h := ifplugin_vppcalls.CompatibleInterfaceVppHandler(ctx.Chan, logrus.NewLogger("test"))
+	h := ifplugin_vppcalls.CompatibleInterfaceVppHandler(ctx.vppBinapi, logrus.NewLogger("test"))
 
 	ifIdx, err := h.AddMemifInterface("memif1", &vpp_interfaces.MemifLink{
 		Id:     1,

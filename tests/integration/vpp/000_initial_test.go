@@ -24,7 +24,7 @@ func TestPing(t *testing.T) {
 	ctx := setupVPP(t)
 	defer ctx.teardownVPP()
 
-	h := vppcalls.CompatibleVpeHandler(ctx.Chan)
+	h := vppcalls.CompatibleVpeHandler(ctx.vppBinapi)
 
 	if err := h.Ping(); err != nil {
 		t.Fatalf("control ping failed: %v", err)
@@ -35,7 +35,7 @@ func TestVersion(t *testing.T) {
 	ctx := setupVPP(t)
 	defer ctx.teardownVPP()
 
-	h := vppcalls.CompatibleVpeHandler(ctx.Chan)
+	h := vppcalls.CompatibleVpeHandler(ctx.vppBinapi)
 
 	info, err := h.GetVersionInfo()
 	if err != nil {

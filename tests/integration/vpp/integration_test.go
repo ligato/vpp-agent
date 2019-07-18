@@ -26,6 +26,7 @@ import (
 	"testing"
 	"time"
 
+	"git.fd.io/govpp.git/adapter/statsclient"
 	govppapi "git.fd.io/govpp.git/api"
 	govppcore "git.fd.io/govpp.git/core"
 	"github.com/mitchellh/go-ps"
@@ -44,11 +45,11 @@ var (
 )
 
 const (
-	vppExitTimeout       = time.Second * 1
-	vppBootDelay         = time.Millisecond * 100
-	vppTermDelay         = time.Millisecond * 50
-	vppConnectRetryDelay = time.Second
 	vppConnectRetries    = 3
+	vppConnectRetryDelay = time.Millisecond * 500
+	vppBootDelay         = time.Millisecond * 200
+	vppTermDelay         = time.Millisecond * 50
+	vppExitTimeout       = time.Second * 1
 )
 
 func init() {
@@ -64,14 +65,17 @@ type testCtx struct {
 	VPP            *exec.Cmd
 	stderr, stdout *bytes.Buffer
 	Conn           *govppcore.Connection
-	Chan           govppapi.Channel
+	StatsConn      *govppcore.StatsConnection
+	vppBinapi      govppapi.Channel
+	vppStats       govppapi.StatsProvider
 }
 
 func setupVPP(t *testing.T) *testCtx {
 	if os.Getenv("TRAVIS") != "" {
 		t.Skip("skipping test for Travis")
 	}
-	t.Logf("--- setupVPP ---")
+	t.Logf("--------------")
+	t.Logf("-- setupVPP --")
 
 	RegisterTestingT(t)
 
@@ -100,6 +104,9 @@ func setupVPP(t *testing.T) *testCtx {
 	}
 	// remove binapi files from previous run
 	removeFile(*vppSockAddr)
+	if err := os.Mkdir("/run/vpp", 0755); err != nil && !os.IsExist(err) {
+		t.Logf("mkdir failed: %v", err)
+	}
 
 	var stderr, stdout bytes.Buffer
 	cmd := exec.Command(*vppPath, "-c", *vppConfig)
@@ -127,7 +134,7 @@ func setupVPP(t *testing.T) *testCtx {
 		for i := 1; i <= retries; i++ {
 			conn, err = govppcore.Connect(adapter)
 			if err != nil {
-				t.Logf("connect attempt #%d failed: %v", i, err)
+				t.Logf("attempt #%d failed: %v, retrying in %v", i, err, vppConnectRetryDelay)
 				time.Sleep(vppConnectRetryDelay)
 				continue
 			}
@@ -155,25 +162,34 @@ func setupVPP(t *testing.T) *testCtx {
 		t.Fatalf("creating channel failed: %v", err)
 	}
 
+	statsClient := statsclient.NewStatsClient("")
+	statsConn, err := govppcore.ConnectStats(statsClient)
+	if err != nil {
+		t.Fatalf("connecting to VPP stats API failed: %v", err)
+	}
+
 	t.Logf("---------------")
 
 	return &testCtx{
-		t:      t,
-		VPP:    cmd,
-		stderr: &stderr,
-		stdout: &stdout,
-		Conn:   conn,
-		Chan:   ch,
+		t:         t,
+		VPP:       cmd,
+		stderr:    &stderr,
+		stdout:    &stdout,
+		Conn:      conn,
+		vppBinapi: ch,
+		vppStats:  statsConn,
 	}
 }
 
 func (ctx *testCtx) teardownVPP() {
-	ctx.t.Logf("--- teardownVPP ---")
+	ctx.t.Logf("-----------------")
+	ctx.t.Logf("-- teardownVPP --")
 
 	// disconnect sometimes hangs
 	done := make(chan struct{})
 	go func() {
-		ctx.Chan.Close()
+		ctx.StatsConn.Disconnect()
+		ctx.vppBinapi.Close()
 		ctx.Conn.Disconnect()
 		close(done)
 	}()
