@@ -17,29 +17,33 @@
 package govppmux
 
 import (
+	"fmt"
+	"os"
+
 	"git.fd.io/govpp.git/adapter"
 	"git.fd.io/govpp.git/adapter/socketclient"
 	"git.fd.io/govpp.git/adapter/statsclient"
-	"github.com/ligato/cn-infra/logging"
 )
+
+const noShmWarning = `Using shared memory for VPP binary API is not currently supported in pure Go client!
+
+  To use socket client for VPP binary API (recommended):
+   - unset GOVPPMUX_NOSOCK environment variable
+   - remove these settings from govpp.conf config: shm-prefix, connect-via-shm
+
+  If you still want to use shared memory for VPP binary API:
+   - compile your agent with this build tag: vppapiclient
+   - vppapiclient requires CGo and needs VPP to be installed 
+`
 
 // NewVppAdapter returns VPP binary API adapter, implemented as pure Go client.
 func NewVppAdapter(addr string, useShm bool) adapter.VppAPI {
 	if useShm {
-		logging.Warnf(`Using shared memory for VPP binary API is not currently supported in pure Go client!
-
-	To use socket client for VPP binary API:
-	  - unset GOVPPMUX_NOSOCK environment variable
-	  - remove these settings from govpp.conf config: shm-prefix, connect-via-shm
-
-	If you still want to use shared memory for VPP binary API (not recommended):
-	  - compile your agent with this build tag: vppapiclient
-`)
+		fmt.Fprintf(os.Stderr, noShmWarning)
 		panic("No implementation for shared memory in pure Go client!")
 	}
 	// addr is used as socket path
 	return socketclient.NewVppClient(addr)
-
 }
 
 // NewStatsAdapter returns VPP stats API adapter, implemented as pure Go client.
