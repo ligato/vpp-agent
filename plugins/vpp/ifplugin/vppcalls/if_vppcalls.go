@@ -175,7 +175,7 @@ type InterfaceVppAPI interface {
 	AttachInterfaceToBond(ifIdx, bondIfIdx uint32, isPassive, isLongTimeout bool) error
 	// DetachInterfaceFromBond removes interface slave status from any bond interfaces.
 	DetachInterfaceFromBond(ifIdx uint32) error
-    // SetVLanTagRewrite sets VLan tag rewrite rule for given sub-interface
+	// SetVLanTagRewrite sets VLan tag rewrite rule for given sub-interface
 	SetVLanTagRewrite(ifIdx uint32, subIf *interfaces.SubInterface) error
 }
 
@@ -189,6 +189,8 @@ type InterfaceVppRead interface {
 	DumpInterfaces() (map[uint32]*InterfaceDetails, error)
 	// DumpInterfacesByType returns all VPP interfaces of the specified type
 	DumpInterfacesByType(reqType interfaces.Interface_Type) (map[uint32]*InterfaceDetails, error)
+	// DumpInterface dumps specific interface.
+	DumpInterface(ifIdx uint32) (*InterfaceDetails, error)
 	// GetInterfaceVrf reads VRF table to interface
 	GetInterfaceVrf(ifIdx uint32) (vrfID uint32, err error)
 	// GetInterfaceVrfIPv6 reads IPv6 VRF table to interface
