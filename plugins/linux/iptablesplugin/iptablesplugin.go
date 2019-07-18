@@ -36,7 +36,8 @@ type IPTablesPlugin struct {
 	Deps
 
 	// From configuration file
-	disabled bool
+	disabled    bool
+	configFound bool
 
 	// system handlers
 	iptHandler linuxcalls.IPTablesAPI
@@ -75,7 +76,7 @@ func (p *IPTablesPlugin) Init() error {
 	// init iptables handler
 	p.iptHandler = linuxcalls.NewIPTablesHandler()
 	err = p.iptHandler.Init()
-	if err != nil {
+	if err != nil && p.configFound {
 		// just warn here, iptables / ip6tables just may not be installed - will return
 		// an error by attempt to configure it
 		p.Log.Warnf("Error by initializing iptables handler: %v", err)
@@ -112,5 +113,6 @@ func (p *IPTablesPlugin) retrieveConfig() (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
+	p.configFound = true
 	return config, err
 }
