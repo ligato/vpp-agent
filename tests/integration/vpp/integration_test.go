@@ -17,6 +17,7 @@ package vpp
 import (
 	"bytes"
 	"flag"
+	"fmt"
 	"log"
 	"os"
 	"os/exec"
@@ -42,6 +43,14 @@ var (
 	debug = flag.Bool("debug", false, "Turn on debug mode.")
 )
 
+const (
+	vppExitTimeout       = time.Second * 1
+	vppBootDelay         = time.Millisecond * 100
+	vppTermDelay         = time.Millisecond * 50
+	vppConnectRetryDelay = time.Second
+	vppConnectRetries    = 3
+)
+
 func init() {
 	log.SetFlags(log.Lmicroseconds | log.Lshortfile)
 	flag.Parse()
@@ -62,7 +71,7 @@ func setupVPP(t *testing.T) *testCtx {
 	if os.Getenv("TRAVIS") != "" {
 		t.Skip("skipping test for Travis")
 	}
-	t.Logf("=== VPP setup ===")
+	t.Logf("--- setupVPP ---")
 
 	RegisterTestingT(t)
 
@@ -72,15 +81,16 @@ func setupVPP(t *testing.T) *testCtx {
 		t.Fatalf("listing processes failed: %v", err)
 	}
 	for _, process := range processes {
-		if strings.Contains(process.Executable(), "vpp") {
-			t.Logf("- found VPP process: %q (PID: %d)", process.Executable(), process.Pid())
+		proc := process.Executable()
+		if strings.Contains(proc, "vpp") && process.Pid() != os.Getpid() {
+			t.Logf(" - found process: %+v", process)
 		}
-		if process.Executable() == *vppPath || process.Executable() == "vpp" || process.Executable() == "vpp_main" {
-			t.Fatalf("VPP is already running, PID: %v", process.Pid())
+		switch proc {
+		case *vppPath, "vpp", "vpp_main":
+			t.Fatalf("VPP is already running (PID: %v)", process.Pid())
 		}
 	}
 
-	// remove binapi files from previous run
 	var removeFile = func(path string) {
 		if err := os.Remove(path); err == nil {
 			t.Logf("removed file %q", path)
@@ -88,50 +98,64 @@ func setupVPP(t *testing.T) *testCtx {
 			t.Fatalf("removing file %q failed: %v", path, err)
 		}
 	}
-	removeFile("/run/vpp-api.sock")
+	// remove binapi files from previous run
+	removeFile(*vppSockAddr)
 
-	t.Logf("starting VPP process: %q", *vppPath)
-
-	cmd := exec.Command(*vppPath, "-c", *vppConfig)
 	var stderr, stdout bytes.Buffer
+	cmd := exec.Command(*vppPath, "-c", *vppConfig)
 	cmd.Stderr = &stderr
 	cmd.Stdout = &stdout
 	// ensure that process is killed when current process exits
 	cmd.SysProcAttr = &syscall.SysProcAttr{Pdeathsig: syscall.SIGKILL}
 
+	t.Logf("starting VPP: %v", strings.Join(cmd.Args, " "))
+
 	if err := cmd.Start(); err != nil {
 		t.Fatalf("starting VPP failed: %v", err)
 	}
-	t.Logf("VPP process started (PID: %v)", cmd.Process.Pid)
+	t.Logf("VPP start OK (PID: %v)", cmd.Process.Pid)
 
 	adapter := govppmux.NewVppAdapter(*vppSockAddr, false)
+
+	// wait until the socket is ready
 	if err := adapter.WaitReady(); err != nil {
 		t.Logf("WaitReady failed: %v", err)
 	}
+	time.Sleep(vppBootDelay)
 
-	time.Sleep(time.Millisecond * 100)
-
-	t.Logf("connecting to VPP..")
-	conn, err := govppcore.Connect(adapter)
+	connectRetry := func(retries int) (conn *govppcore.Connection, err error) {
+		for i := 1; i <= retries; i++ {
+			conn, err = govppcore.Connect(adapter)
+			if err != nil {
+				t.Logf("connect attempt #%d failed: %v", i, err)
+				time.Sleep(vppConnectRetryDelay)
+				continue
+			}
+			return
+		}
+		return nil, fmt.Errorf("failed to connect after %d retries", retries)
+	}
+	conn, err := connectRetry(vppConnectRetries)
 	if err != nil {
-		t.Logf("sending KILL signal to VPP")
+		t.Errorf("connecting to VPP failed: %v", err)
 		if err := cmd.Process.Kill(); err != nil {
 			t.Fatalf("killing VPP failed: %v", err)
 		}
 		if state, err := cmd.Process.Wait(); err != nil {
-			t.Logf("VPP process wait failed: %v", err)
+			t.Logf("VPP wait failed: %v", err)
 		} else {
-			t.Logf("VPP killed: %v", state)
+			t.Logf("VPP wait OK: %v", state)
 		}
-		t.Fatalf("connecting to VPP failed: %v", err)
-	} else {
-		t.Logf("connected to VPP successfully")
+		t.FailNow()
 	}
+	t.Logf("VPP connect OK")
 
 	ch, err := conn.NewAPIChannel()
 	if err != nil {
 		t.Fatalf("creating channel failed: %v", err)
 	}
+
+	t.Logf("---------------")
 
 	return &testCtx{
 		t:      t,
@@ -144,7 +168,7 @@ func setupVPP(t *testing.T) *testCtx {
 }
 
 func (ctx *testCtx) teardownVPP() {
-	ctx.t.Logf("--- VPP teardown ---")
+	ctx.t.Logf("--- teardownVPP ---")
 
 	// disconnect sometimes hangs
 	done := make(chan struct{})
@@ -155,19 +179,18 @@ func (ctx *testCtx) teardownVPP() {
 	}()
 	select {
 	case <-done:
-		ctx.t.Logf("VPP disconnected")
+		ctx.t.Logf("VPP disconnect OK")
+		time.Sleep(vppTermDelay)
 
-	case <-time.After(time.Second * 1):
+	case <-time.After(vppExitTimeout):
 		ctx.t.Logf("VPP disconnect timeout")
 	}
 
-	time.Sleep(time.Millisecond * 100)
-
-	ctx.t.Logf("sending SIGTERM to VPP")
 	if err := ctx.VPP.Process.Signal(syscall.SIGTERM); err != nil {
-		ctx.t.Fatalf("sending SIGTERM signal to VPP failed: %v", err)
+		ctx.t.Fatalf("sending SIGTERM to VPP failed: %v", err)
 	}
 
+	// wait until VPP exits
 	exit := make(chan struct{})
 	go func() {
 		if err := ctx.VPP.Wait(); err != nil {
@@ -177,15 +200,15 @@ func (ctx *testCtx) teardownVPP() {
 	}()
 	select {
 	case <-exit:
-		ctx.t.Logf("VPP exited")
+		ctx.t.Logf("VPP exit OK")
 
-	case <-time.After(time.Second * 1):
+	case <-time.After(vppExitTimeout):
 		ctx.t.Logf("VPP exit timeout")
-
-		ctx.t.Logf("sending SIGKILL to VPP")
+		ctx.t.Logf("sending SIGKILL to VPP..")
 		if err := ctx.VPP.Process.Signal(syscall.SIGKILL); err != nil {
-			ctx.t.Fatalf("sending SIGKILL signal to VPP failed: %v", err)
+			ctx.t.Fatalf("sending SIGKILL to VPP failed: %v", err)
 		}
 	}
 
+	ctx.t.Logf("-------------------")
 }

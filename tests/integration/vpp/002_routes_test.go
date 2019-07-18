@@ -20,79 +20,12 @@ import (
 
 	"github.com/ligato/cn-infra/logging/logrus"
 
-	vpp_interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	vpp_l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
-	_ "github.com/ligato/vpp-agent/plugins/vpp/ifplugin"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
-	ifplugin_vppcalls "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
 	_ "github.com/ligato/vpp-agent/plugins/vpp/l3plugin"
 	l3plugin_vppcalls "github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vrfidx"
 )
-
-func TestLoopbackInterface(t *testing.T) {
-	ctx := setupVPP(t)
-	defer ctx.teardownVPP()
-
-	h := ifplugin_vppcalls.CompatibleInterfaceVppHandler(ctx.Chan, logrus.NewLogger("test"))
-
-	index, err := h.AddLoopbackInterface("loop1")
-	if err != nil {
-		t.Fatalf("creating loopback interface failed: %v", err)
-	}
-	t.Logf("loopback index: %+v", index)
-
-	ifaces, err := h.DumpInterfaces()
-	if err != nil {
-		t.Fatalf("dumping interfaces failed: %v", err)
-	}
-	iface, ok := ifaces[index]
-	if !ok {
-		t.Fatalf("loopback interface not found in dump")
-	}
-	t.Logf("interface: %+v", iface.Interface)
-	if iface.Interface.Name != "loop1" {
-		t.Fatalf("expected interface name to be loop1, got %v", iface.Interface.Name)
-	}
-	if iface.Interface.Type != vpp_interfaces.Interface_SOFTWARE_LOOPBACK {
-		t.Fatalf("expected interface type to be loopback, got %v", iface.Interface.Type)
-	}
-}
-
-func TestMemifInterface(t *testing.T) {
-	ctx := setupVPP(t)
-	defer ctx.teardownVPP()
-
-	h := ifplugin_vppcalls.CompatibleInterfaceVppHandler(ctx.Chan, logrus.NewLogger("test"))
-
-	index, err := h.AddMemifInterface("memif1", &vpp_interfaces.MemifLink{
-		Id:     1,
-		Mode:   vpp_interfaces.MemifLink_IP,
-		Secret: "secret",
-		Master: true,
-        }, 0 )
-
-	if err != nil {
-		t.Fatalf("creating memif interface failed: %v", err)
-	}
-	t.Logf("memif index: %+v", index)
-
-	ifaces, err := h.DumpInterfaces()
-	if err != nil {
-		t.Fatalf("dumping interfaces failed: %v", err)
-	}
-	iface, ok := ifaces[index]
-	if !ok {
-		t.Fatalf("Memif interface not found in dump")
-	}
-	t.Logf("interface: %+v", iface.Interface)
-	if iface.Interface.Name != "memif1" {
-		t.Fatalf("expected interface name to be memif1, got %v", iface.Interface.Name)
-	}
-	if iface.Interface.Type != vpp_interfaces.Interface_MEMIF {
-		t.Fatalf("expected interface type to be memif, got %v", iface.Interface.Type)
-	}
-}
 
 func TestRoutes(t *testing.T) {
 	ctx := setupVPP(t)
