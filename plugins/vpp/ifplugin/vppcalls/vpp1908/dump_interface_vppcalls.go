@@ -17,7 +17,9 @@ package vpp1908
 import (
 	"bytes"
 	"encoding/hex"
+	"errors"
 	"fmt"
+	"math"
 	"net"
 	"strings"
 
@@ -46,6 +48,22 @@ func getMtu(vppMtu uint16) uint32 {
 	return uint32(vppMtu)
 }
 
+// DumpInterface dumps specific interface.
+func (h *InterfaceVppHandler) DumpInterface(ifIdx uint32) (*vppcalls.InterfaceDetails, error) {
+	var iface *vppcalls.InterfaceDetails
+
+	ifaces, err := h.dumpInterfaces(ifIdx)
+	if err != nil {
+		return nil, err
+	}
+	iface, ok := ifaces[ifIdx]
+	if !ok {
+		return nil, errors.New("interface not found in dump")
+	}
+
+	return iface, nil
+}
+
 // DumpInterfacesByType implements interface handler.
 func (h *InterfaceVppHandler) DumpInterfacesByType(reqType interfaces.Interface_Type) (map[uint32]*vppcalls.InterfaceDetails, error) {
 	// Dump all
@@ -63,12 +81,19 @@ func (h *InterfaceVppHandler) DumpInterfacesByType(reqType interfaces.Interface_
 	return ifs, nil
 }
 
-func (h *InterfaceVppHandler) dumpInterfaces() (map[uint32]*vppcalls.InterfaceDetails, error) {
+func (h *InterfaceVppHandler) dumpInterfaces(ifIdxs ...uint32) (map[uint32]*vppcalls.InterfaceDetails, error) {
 	// map for the resulting interfaces
 	ifs := make(map[uint32]*vppcalls.InterfaceDetails)
 
+	var ifIdx uint32 = math.MaxUint32
+	if len(ifIdxs) > 0 {
+		ifIdx = ifIdxs[0]
+	}
+
 	// First, dump all interfaces to create initial data.
-	reqCtx := h.callsChannel.SendMultiRequest(&binapi_interface.SwInterfaceDump{})
+	reqCtx := h.callsChannel.SendMultiRequest(&binapi_interface.SwInterfaceDump{
+		SwIfIndex: binapi_interface.InterfaceIndex(ifIdx),
+	})
 	for {
 		ifDetails := &binapi_interface.SwInterfaceDetails{}
 		stop, err := reqCtx.ReceiveReply(ifDetails)

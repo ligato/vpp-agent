@@ -40,6 +40,20 @@ const (
 	DefaultSocketName = adapter.DefaultBinapiSocket
 )
 
+const socketMissing = `
+------------------------------------------------------------
+ VPP binary API socket file %s is missing!
+
+  - is VPP running with socket for binapi enabled?
+  - is the correct socket name configured?
+
+ To enable it add following section to your VPP config:
+   socksvr {
+     default
+   }
+------------------------------------------------------------
+`
+
 var (
 	// DefaultConnectTimeout is default timeout for connecting
 	DefaultConnectTimeout = time.Second * 3
@@ -165,7 +179,13 @@ func (c *vppClient) SetMsgCallback(cb adapter.MsgCallback) {
 }
 
 func (c *vppClient) Connect() error {
-	Log.Debugf("Connecting to: %v", c.sockAddr)
+	// check if socket exists
+	if _, err := os.Stat(c.sockAddr); os.IsNotExist(err) {
+		fmt.Fprintf(os.Stderr, socketMissing, c.sockAddr)
+		return fmt.Errorf("VPP API socket file %s does not exist", c.sockAddr)
+	} else if err != nil {
+		return fmt.Errorf("VPP API socket error: %v", err)
+	}
 
 	if err := c.connect(c.sockAddr); err != nil {
 		return err
@@ -212,12 +232,14 @@ func (c *vppClient) Disconnect() error {
 func (c *vppClient) connect(sockAddr string) error {
 	addr := &net.UnixAddr{Name: sockAddr, Net: "unix"}
 
+	Log.Debugf("Connecting to: %v", c.sockAddr)
+
 	conn, err := net.DialUnix("unix", nil, addr)
 	if err != nil {
 		// we try different type of socket for backwards compatbility with VPP<=19.04
 		if strings.Contains(err.Error(), "wrong type for socket") {
 			addr.Net = "unixpacket"
-			Log.Warnf("%s, retrying connect with type unixpacket", err)
+			Log.Debugf("%s, retrying connect with type unixpacket", err)
 			conn, err = net.DialUnix("unixpacket", nil, addr)
 		}
 		if err != nil {

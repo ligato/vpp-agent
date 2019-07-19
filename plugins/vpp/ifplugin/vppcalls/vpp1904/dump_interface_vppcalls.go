@@ -17,6 +17,7 @@ package vpp1904
 import (
 	"bytes"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"net"
 	"strings"
@@ -44,6 +45,20 @@ func getMtu(vppMtu uint16) uint32 {
 		return 0
 	}
 	return uint32(vppMtu)
+}
+
+// DumpInterface dumps specific interface.
+func (h *InterfaceVppHandler) DumpInterface(ifIdx uint32) (*vppcalls.InterfaceDetails, error) {
+	ifaces, err := h.DumpInterfaces()
+	if err != nil {
+		return nil, err
+	}
+
+	iface, ok := ifaces[ifIdx]
+	if !ok {
+		return nil, errors.New("interface index not found in dump")
+	}
+	return iface, nil
 }
 
 // DumpInterfacesByType implements interface handler.

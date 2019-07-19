@@ -31,7 +31,7 @@ func init() {
 	msgs = append(msgs, vpe.AllMessages()...)
 	msgs = append(msgs, memclnt.AllMessages()...)
 
-	vppcalls.Versions["vpp1908"] = vppcalls.HandlerVersion{
+	vppcalls.Versions["19.08"] = vppcalls.HandlerVersion{
 		Msgs: msgs,
 		New: func(ch govppapi.Channel) vppcalls.VpeVppAPI {
 			return NewVpeHandler(ch)

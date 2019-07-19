@@ -57,8 +57,9 @@ var (
 	// Regular expression to parse output from `show memory`
 	memoryRe = regexp.MustCompile(
 		`Thread\s+(\d+)\s+(\w+).?\s+` +
-			`virtual memory start 0x[0-9abcdef]+, size ([\dkmg\.]+), ([\dkmg\.]+) pages, page size ([\dkmg\.]+)\s+` +
-			`(?:\s+(?:numa [\d]+|not mapped|unknown): [\dkmg\.]+ pages, [\dkmg\.]+\s+)+\s+` +
+			`virtual memory start 0x[0-9a-f]+, size ([\dkmg\.]+), ([\dkmg\.]+) pages, page size ([\dkmg\.]+)\s+` +
+			`(?:page information not available.*\s+)*` +
+			`(?:(?:\s+(?:numa [\d]+|not mapped|unknown): [\dkmg\.]+ pages, [\dkmg\.]+\s+)+\s+)*` +
 			`\s+total: ([\dkmgKMG\.]+), used: ([\dkmgKMG\.]+), free: ([\dkmgKMG\.]+), trimmable: ([\dkmgKMG\.]+)`,
 	)
 )
@@ -69,7 +70,7 @@ func (h *TelemetryHandler) GetMemory(ctx context.Context) (*vppcalls.MemoryInfo,
 }
 
 func (h *TelemetryHandler) getMemoryCLI(ctx context.Context) (*vppcalls.MemoryInfo, error) {
-	data, err := h.vpe.RunCli("show memory")
+	data, err := h.vpe.RunCli("show memory main-heap")
 	if err != nil {
 		return nil, err
 	}
