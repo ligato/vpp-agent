@@ -27,6 +27,25 @@ import (
 	"git.fd.io/govpp.git/adapter"
 )
 
+const (
+	// DefaultSocketName is default VPP stats socket file path.
+	DefaultSocketName = adapter.DefaultStatsSocket
+)
+
+const socketMissing = `
+------------------------------------------------------------
+ VPP stats socket file %s is missing!
+
+  - is VPP running with stats segment enabled?
+  - is the correct socket name configured?
+
+ To enable it add following section to your VPP config:
+   statseg {
+     default
+   }
+------------------------------------------------------------
+`
+
 var (
 	// Debug is global variable that determines debug mode
 	Debug = os.Getenv("DEBUG_GOVPP_STATS") != ""
@@ -55,29 +74,17 @@ type StatsClient struct {
 // NewStatsClient returns new VPP stats API client.
 func NewStatsClient(sockAddr string) *StatsClient {
 	if sockAddr == "" {
-		sockAddr = adapter.DefaultStatsSocket
+		sockAddr = DefaultSocketName
 	}
 	return &StatsClient{
 		sockAddr: sockAddr,
 	}
 }
 
-const sockNotFoundWarn = `stats socket not found at: %s
-------------------------------------------------------------
- VPP stats socket is missing!
- Is VPP running with stats segment enabled?
-
- To enable it add following section to startup config:
-   statseg {
-     default
-   }
-------------------------------------------------------------
-`
-
 func (c *StatsClient) Connect() error {
 	// check if socket exists
 	if _, err := os.Stat(c.sockAddr); os.IsNotExist(err) {
-		Log.Warnf(sockNotFoundWarn, c.sockAddr)
+		fmt.Fprintf(os.Stderr, socketMissing, c.sockAddr)
 		return fmt.Errorf("stats socket file %s does not exist", c.sockAddr)
 	} else if err != nil {
 		return fmt.Errorf("stats socket error: %v", err)
