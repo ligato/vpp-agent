@@ -34,11 +34,12 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/ligato/vpp-agent/plugins/govppmux"
+	"github.com/ligato/vpp-agent/plugins/govppmux/vppcalls"
 )
 
 var (
-	vppPath     = flag.String("vpp-path", "/usr/bin/vpp", "VPP program path")
-	vppConfig   = flag.String("vpp-config", "/etc/vpp/vpp.conf", "VPP config file")
+	vppPath = flag.String("vpp-path", "/usr/bin/vpp", "VPP program path")
+	//vppConfig   = flag.String("vpp-config", "/etc/vpp/vpp.conf", "VPP config file")
 	vppSockAddr = flag.String("vpp-sock-addr", "", "VPP binapi socket address")
 
 	debug = flag.Bool("debug", false, "Turn on debug mode.")
@@ -50,6 +51,28 @@ const (
 	vppBootDelay         = time.Millisecond * 200
 	vppTermDelay         = time.Millisecond * 50
 	vppExitTimeout       = time.Second * 1
+
+	vppConf = `
+		unix {
+			nodaemon
+			cli-listen /run/vpp/cli.sock
+			cli-no-pager
+			log /tmp/vpp.log
+			full-coredump
+		}
+		api-trace {
+			on
+		}
+		socksvr {
+			default
+		}
+		statseg {
+			default
+			per-node-counters on
+		}
+		plugins {
+			plugin dpdk_plugin.so { disable }
+		}`
 )
 
 func init() {
@@ -68,14 +91,14 @@ type testCtx struct {
 	StatsConn      *govppcore.StatsConnection
 	vppBinapi      govppapi.Channel
 	vppStats       govppapi.StatsProvider
+	vpe            vppcalls.VpeVppAPI
+	versionInfo    *vppcalls.VersionInfo
 }
 
 func setupVPP(t *testing.T) *testCtx {
 	if os.Getenv("TRAVIS") != "" {
 		t.Skip("skipping test for Travis")
 	}
-	t.Logf("--------------")
-	t.Logf("-- setupVPP --")
 
 	RegisterTestingT(t)
 
@@ -109,13 +132,14 @@ func setupVPP(t *testing.T) *testCtx {
 	}
 
 	var stderr, stdout bytes.Buffer
-	cmd := exec.Command(*vppPath, "-c", *vppConfig)
+
+	cmd := exec.Command(*vppPath, vppConf) //"-c", *vppConfig)
 	cmd.Stderr = &stderr
 	cmd.Stdout = &stdout
 	// ensure that process is killed when current process exits
 	cmd.SysProcAttr = &syscall.SysProcAttr{Pdeathsig: syscall.SIGKILL}
 
-	t.Logf("starting VPP: %v", strings.Join(cmd.Args, " "))
+	t.Logf("starting VPP")
 
 	if err := cmd.Start(); err != nil {
 		t.Fatalf("starting VPP failed: %v", err)
@@ -162,6 +186,16 @@ func setupVPP(t *testing.T) *testCtx {
 		t.Fatalf("creating channel failed: %v", err)
 	}
 
+	vpeHandler := vppcalls.CompatibleVpeHandler(ch)
+	versionInfo, err := vpeHandler.GetVersionInfo()
+	if err != nil {
+		t.Fatalf("getting version info failed: %v", err)
+	}
+	t.Logf("version info: %+v", versionInfo)
+	if versionInfo.Version == "" {
+		t.Error("invalid version")
+	}
+
 	statsClient := statsclient.NewStatsClient("")
 	statsConn, err := govppcore.ConnectStats(statsClient)
 	if err != nil {
@@ -171,19 +205,20 @@ func setupVPP(t *testing.T) *testCtx {
 	t.Logf("---------------")
 
 	return &testCtx{
-		t:         t,
-		VPP:       cmd,
-		stderr:    &stderr,
-		stdout:    &stdout,
-		Conn:      conn,
-		vppBinapi: ch,
-		vppStats:  statsConn,
+		t:           t,
+		versionInfo: versionInfo,
+		vpe:         vpeHandler,
+		VPP:         cmd,
+		stderr:      &stderr,
+		stdout:      &stdout,
+		Conn:        conn,
+		vppBinapi:   ch,
+		vppStats:    statsConn,
 	}
 }
 
 func (ctx *testCtx) teardownVPP() {
 	ctx.t.Logf("-----------------")
-	ctx.t.Logf("-- teardownVPP --")
 
 	// disconnect sometimes hangs
 	done := make(chan struct{})
@@ -225,6 +260,4 @@ func (ctx *testCtx) teardownVPP() {
 			ctx.t.Fatalf("sending SIGKILL to VPP failed: %v", err)
 		}
 	}
-
-	ctx.t.Logf("-------------------")
 }

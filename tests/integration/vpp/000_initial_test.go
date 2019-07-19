@@ -30,19 +30,3 @@ func TestPing(t *testing.T) {
 		t.Fatalf("control ping failed: %v", err)
 	}
 }
-
-func TestVersion(t *testing.T) {
-	ctx := setupVPP(t)
-	defer ctx.teardownVPP()
-
-	h := vppcalls.CompatibleVpeHandler(ctx.vppBinapi)
-
-	info, err := h.GetVersionInfo()
-	if err != nil {
-		t.Fatalf("getting version info failed: %v", err)
-	}
-	t.Logf("version info: %+v", info)
-	if info.Version == "" {
-		t.Error("invalid version info")
-	}
-}

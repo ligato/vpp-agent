@@ -26,6 +26,10 @@ func TestTelemetryNodeCounters(t *testing.T) {
 	ctx := setupVPP(t)
 	defer ctx.teardownVPP()
 
+	if ctx.versionInfo.Release() <= "19.04" {
+		t.Skipf("SKIP for VPP %s", ctx.versionInfo.Release())
+	}
+
 	h := vppcalls.CompatibleTelemetryHandler(ctx.vppBinapi, ctx.vppStats)
 
 	nodeCounters, err := h.GetNodeCounters(context.Background())

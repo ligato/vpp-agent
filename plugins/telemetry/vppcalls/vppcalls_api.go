@@ -19,6 +19,8 @@ import (
 
 	govppapi "git.fd.io/govpp.git/api"
 	log "github.com/ligato/cn-infra/logging"
+
+	"github.com/ligato/vpp-agent/plugins/govppmux/vppcalls"
 )
 
 var Versions = map[string]HandlerVersion{}
@@ -152,21 +154,22 @@ type BuffersItem struct {
 }
 
 func CompatibleTelemetryHandler(ch govppapi.Channel, vpp govppapi.StatsProvider) TelemetryVppAPI {
-	/*status, err := vpp.VPPInfo()
+	vpe := vppcalls.CompatibleVpeHandler(ch)
+	info, err := vpe.GetVersionInfo()
 	if err != nil {
-		log.Warnf("retrieving VPP status failed: %v", err)
+		log.Warnf("retrieving VPP info failed: %v", err)
 		return nil
 	}
-	if status.Connected {
-		ver := status.GetReleaseVersion()
+	if ver := info.Release(); ver != "" {
+		log.Debug("telemetry checking release: ", ver)
 		if h, ok := Versions[ver]; ok {
 			if err := ch.CheckCompatiblity(h.Msgs...); err != nil {
-				log.Debugf("version %s not compatible", ver)
+				log.Debugf("telemetry version %s not compatible: %v", ver, err)
 			}
-			log.Debug("found compatible version: ", ver)
+			log.Debug("telemetry found compatible release: ", ver)
 			return h.New(ch, vpp)
 		}
-	}*/
+	}
 	for ver, h := range Versions {
 		if err := ch.CheckCompatiblity(h.Msgs...); err != nil {
 			log.Debugf("version %s not compatible", ver)
