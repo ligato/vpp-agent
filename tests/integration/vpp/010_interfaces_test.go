@@ -24,7 +24,7 @@ import (
 	ifplugin_vppcalls "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
 )
 
-func TestInterfaceDump(t *testing.T) {
+func TestInterfaceDumpState(t *testing.T) {
 	ctx := setupVPP(t)
 	defer ctx.teardownVPP()
 
@@ -42,27 +42,29 @@ func TestInterfaceDump(t *testing.T) {
 	}
 	t.Logf("loop1 index: %+v", ifIdx)
 
-	ifaces, err := h.DumpInterfaces()
+	ifaces, err := h.DumpInterfaceStates()
 	if err != nil {
-		t.Fatalf("dumping interfaces failed: %v", err)
+		t.Fatalf("dumping interface states failed: %v", err)
 	}
 	if len(ifaces) != 3 {
-		t.Fatalf("expected 3 interfaces in dump, got %d", len(ifaces))
+		t.Errorf("expected 3 interface states in dump, got: %d", len(ifaces))
 	}
 
-	iface, err := h.DumpInterface(ifIdx)
+	ifaces, err = h.DumpInterfaceStates(ifIdx)
 	if err != nil {
-		t.Fatalf("dumping interface failed: %v", err)
+		t.Fatalf("dumping interface states failed: %v", err)
 	}
-	t.Logf("interface: %+v", iface.Interface)
-	if iface.Interface == nil {
-		t.Fatalf("expected interface, got nil")
+	iface := ifaces[ifIdx]
+	t.Logf("interface state: %+v", iface)
+
+	if iface == nil {
+		t.Fatalf("expected interface, got: nil")
 	}
-	if iface.Interface.Name != "loop1" {
-		t.Errorf("expected interface name to be loop1, got %v", iface.Interface.Name)
+	if iface.InternalName != "loop1" {
+		t.Errorf("expected interface internal name to be loop1, got: %v", iface.InternalName)
 	}
-	if iface.Interface.Type != vpp_interfaces.Interface_SOFTWARE_LOOPBACK {
-		t.Errorf("expected interface type to be loopback, got %v", iface.Interface.Type)
+	if len(iface.PhysAddress) == 0 {
+		t.Errorf("expected interface phys address to not be empty, got: %q", iface.PhysAddress)
 	}
 }
 
@@ -87,11 +89,21 @@ func TestLoopbackInterface(t *testing.T) {
 		t.Fatalf("loopback interface not found in dump")
 	}
 	t.Logf("interface: %+v", iface.Interface)
+
 	if iface.Interface.Name != "loop1" {
-		t.Errorf("expected interface name to be loop1, got %v", iface.Interface.Name)
+		t.Errorf("expected interface name to be loop1, got: %v", iface.Interface.Name)
+	}
+	if iface.Interface.PhysAddress == "" {
+		t.Errorf("expected interface phys address to not be empty, got: %v", iface.Interface.PhysAddress)
+	}
+	if iface.Interface.Enabled == true {
+		t.Errorf("expected interface to not be enabled")
 	}
 	if iface.Interface.Type != vpp_interfaces.Interface_SOFTWARE_LOOPBACK {
-		t.Errorf("expected interface type to be loopback, got %v", iface.Interface.Type)
+		t.Errorf("expected interface type to be SOFTWARE_LOOPBACK, got: %v", iface.Interface.Type)
+	}
+	if iface.Interface.Link != nil {
+		t.Errorf("expected interface link to be nil, got: %T", iface.Interface.Link)
 	}
 }
 
@@ -103,7 +115,7 @@ func TestMemifInterface(t *testing.T) {
 
 	ifIdx, err := h.AddMemifInterface("memif1", &vpp_interfaces.MemifLink{
 		Id:     1,
-		Mode:   vpp_interfaces.MemifLink_IP,
+		Mode:   vpp_interfaces.MemifLink_ETHERNET,
 		Secret: "secret",
 		Master: true,
 	}, 0)
@@ -121,10 +133,21 @@ func TestMemifInterface(t *testing.T) {
 		t.Fatalf("Memif interface not found in dump")
 	}
 	t.Logf("interface: %+v", iface.Interface)
+
 	if iface.Interface.Name != "memif1" {
-		t.Errorf("expected interface name to be memif1, got %v", iface.Interface.Name)
+		t.Errorf("expected interface name to be memif1, got: %v", iface.Interface.Name)
 	}
 	if iface.Interface.Type != vpp_interfaces.Interface_MEMIF {
-		t.Errorf("expected interface type to be memif, got %v", iface.Interface.Type)
+		t.Errorf("expected interface type to be memif, got: %v", iface.Interface.Type)
+	}
+	link, ok := iface.Interface.Link.(*vpp_interfaces.Interface_Memif)
+	if !ok {
+		t.Fatalf("expected interface link to be memif, got: %T", iface.Interface.Link)
+	}
+	if link.Memif.Id != 1 {
+		t.Errorf("expected memif ID to be 1, got: %v", link.Memif.Id)
+	}
+	if link.Memif.Mode != vpp_interfaces.MemifLink_ETHERNET {
+		t.Errorf("expected memif mode to be ETHERNET, got: %v", link.Memif.Mode)
 	}
 }
