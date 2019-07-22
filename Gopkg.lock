@@ -1074,7 +1074,6 @@
     "github.com/pkg/errors",
     "github.com/pkg/profile",
     "github.com/prometheus/client_golang/prometheus",
-    "github.com/prometheus/client_golang/prometheus/promhttp",
     "github.com/sirupsen/logrus",
     "github.com/spf13/cobra",
     "github.com/unrolled/render",
