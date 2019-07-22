@@ -6,12 +6,11 @@ import (
 	"strconv"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 const (
 	// Registry path for telemetry metrics
-	registryPath = "/metrics/vpp"
+	registryPath = "/metrics"
 
 	vppMetricsNamespace = "vpp"
 
@@ -146,14 +145,6 @@ type ifCounterStats struct {
 
 func (p *Plugin) registerPrometheus() error {
 	p.Log.Debugf("registering prometheus registry path: %v", registryPath)
-
-	// Register vpp registry path
-	err := p.Prometheus.NewRegistry(registryPath, promhttp.HandlerOpts{
-		ErrorHandling: promhttp.ContinueOnError,
-	})
-	if err != nil {
-		return err
-	}
 
 	// Runtime metrics
 	p.runtimeGaugeVecs = make(map[string]*prometheus.GaugeVec)
