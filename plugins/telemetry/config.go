@@ -16,12 +16,22 @@ package telemetry
 
 import "time"
 
+const (
+	// default period between updates
+	defaultUpdatePeriod = time.Second * 30
+	// minimum period between updates
+	minimumUpdatePeriod = time.Second * 1
+)
+
 // Config file representation for telemetry plugin
 type Config struct {
 	// Custom polling interval, default value is 30s
 	PollingInterval time.Duration `json:"polling-interval"`
 	// Allows to disable plugin
 	Disabled bool `json:"disabled"`
+	// Skip collecting some of the metrics:
+	// 	runtime, memory, buffers, nodes, interfaces
+	Skipped []string `json:"skipped"`
 }
 
 func defaultConfig() *Config {
