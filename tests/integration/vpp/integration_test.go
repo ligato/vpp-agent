@@ -26,6 +26,7 @@ import (
 	"testing"
 	"time"
 
+	"git.fd.io/govpp.git/adapter/socketclient"
 	"git.fd.io/govpp.git/adapter/statsclient"
 	govppapi "git.fd.io/govpp.git/api"
 	govppcore "git.fd.io/govpp.git/core"
@@ -33,13 +34,12 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/sirupsen/logrus"
 
-	"github.com/ligato/vpp-agent/plugins/govppmux"
 	"github.com/ligato/vpp-agent/plugins/govppmux/vppcalls"
 )
 
 var (
-	vppPath = flag.String("vpp-path", "/usr/bin/vpp", "VPP program path")
-	//vppConfig   = flag.String("vpp-config", "/etc/vpp/vpp.conf", "VPP config file")
+	vppPath     = flag.String("vpp-path", "/usr/bin/vpp", "VPP program path")
+	vppConfig   = flag.String("vpp-config", "", "VPP config file")
 	vppSockAddr = flag.String("vpp-sock-addr", "", "VPP binapi socket address")
 
 	debug = flag.Bool("debug", false, "Turn on debug mode.")
@@ -133,20 +133,23 @@ func setupVPP(t *testing.T) *testCtx {
 
 	var stderr, stdout bytes.Buffer
 
-	cmd := exec.Command(*vppPath, vppConf) //"-c", *vppConfig)
-	cmd.Stderr = &stderr
-	cmd.Stdout = &stdout
+	vppCmd := exec.Command(*vppPath)
+	if *vppConfig != "" {
+		vppCmd.Args = append(vppCmd.Args, "-c", *vppConfig)
+	} else {
+		vppCmd.Args = append(vppCmd.Args, vppConf)
+	}
+	vppCmd.Stderr = &stderr
+	vppCmd.Stdout = &stdout
 	// ensure that process is killed when current process exits
-	cmd.SysProcAttr = &syscall.SysProcAttr{Pdeathsig: syscall.SIGKILL}
-
-	t.Logf("starting VPP")
-
-	if err := cmd.Start(); err != nil {
+	vppCmd.SysProcAttr = &syscall.SysProcAttr{Pdeathsig: syscall.SIGKILL}
+	if err := vppCmd.Start(); err != nil {
 		t.Fatalf("starting VPP failed: %v", err)
 	}
-	t.Logf("VPP start OK (PID: %v)", cmd.Process.Pid)
+	vppPID := uint32(vppCmd.Process.Pid)
+	t.Logf("VPP start OK (PID: %v)", vppPID)
 
-	adapter := govppmux.NewVppAdapter(*vppSockAddr, false)
+	adapter := socketclient.NewVppClient(*vppSockAddr)
 
 	// wait until the socket is ready
 	if err := adapter.WaitReady(); err != nil {
@@ -169,17 +172,16 @@ func setupVPP(t *testing.T) *testCtx {
 	conn, err := connectRetry(vppConnectRetries)
 	if err != nil {
 		t.Errorf("connecting to VPP failed: %v", err)
-		if err := cmd.Process.Kill(); err != nil {
+		if err := vppCmd.Process.Kill(); err != nil {
 			t.Fatalf("killing VPP failed: %v", err)
 		}
-		if state, err := cmd.Process.Wait(); err != nil {
+		if state, err := vppCmd.Process.Wait(); err != nil {
 			t.Logf("VPP wait failed: %v", err)
 		} else {
 			t.Logf("VPP wait OK: %v", state)
 		}
 		t.FailNow()
 	}
-	t.Logf("VPP connect OK")
 
 	ch, err := conn.NewAPIChannel()
 	if err != nil {
@@ -191,9 +193,16 @@ func setupVPP(t *testing.T) *testCtx {
 	if err != nil {
 		t.Fatalf("getting version info failed: %v", err)
 	}
-	t.Logf("version info: %+v", versionInfo)
+	t.Logf("VPP version: %v", versionInfo.Version)
 	if versionInfo.Version == "" {
-		t.Error("invalid version")
+		t.Fatal("expected VPP version to not be empty")
+	}
+	vpeInfo, err := vpeHandler.GetVpeInfo()
+	if err != nil {
+		t.Fatalf("getting vpe info failed: %v", err)
+	}
+	if vpeInfo.PID != vppPID {
+		t.Fatalf("expected VPP PID to be %v, got %v", vppPID, vpeInfo.PID)
 	}
 
 	statsClient := statsclient.NewStatsClient("")
@@ -208,7 +217,7 @@ func setupVPP(t *testing.T) *testCtx {
 		t:           t,
 		versionInfo: versionInfo,
 		vpe:         vpeHandler,
-		VPP:         cmd,
+		VPP:         vppCmd,
 		stderr:      &stderr,
 		stdout:      &stdout,
 		Conn:        conn,
@@ -230,7 +239,6 @@ func (ctx *testCtx) teardownVPP() {
 	}()
 	select {
 	case <-done:
-		ctx.t.Logf("VPP disconnect OK")
 		time.Sleep(vppTermDelay)
 
 	case <-time.After(vppExitTimeout):

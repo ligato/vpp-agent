@@ -17,9 +17,7 @@ package vpp1908
 import (
 	"bytes"
 	"encoding/hex"
-	"errors"
 	"fmt"
-	"math"
 	"net"
 	"strings"
 
@@ -37,6 +35,11 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
 )
 
+const (
+	// allInterfaces defines unspecified interface index
+	allInterfaces = ^uint32(0)
+)
+
 // Default VPP MTU value
 const defaultVPPMtu = 9216
 
@@ -46,22 +49,6 @@ func getMtu(vppMtu uint16) uint32 {
 		return 0
 	}
 	return uint32(vppMtu)
-}
-
-// DumpInterface dumps specific interface.
-func (h *InterfaceVppHandler) DumpInterface(ifIdx uint32) (*vppcalls.InterfaceDetails, error) {
-	var iface *vppcalls.InterfaceDetails
-
-	ifaces, err := h.dumpInterfaces(ifIdx)
-	if err != nil {
-		return nil, err
-	}
-	iface, ok := ifaces[ifIdx]
-	if !ok {
-		return nil, errors.New("interface not found in dump")
-	}
-
-	return iface, nil
 }
 
 // DumpInterfacesByType implements interface handler.
@@ -85,11 +72,10 @@ func (h *InterfaceVppHandler) dumpInterfaces(ifIdxs ...uint32) (map[uint32]*vppc
 	// map for the resulting interfaces
 	ifs := make(map[uint32]*vppcalls.InterfaceDetails)
 
-	var ifIdx uint32 = math.MaxUint32
+	ifIdx := allInterfaces
 	if len(ifIdxs) > 0 {
 		ifIdx = ifIdxs[0]
 	}
-
 	// First, dump all interfaces to create initial data.
 	reqCtx := h.callsChannel.SendMultiRequest(&binapi_interface.SwInterfaceDump{
 		SwIfIndex: binapi_interface.InterfaceIndex(ifIdx),
@@ -98,7 +84,7 @@ func (h *InterfaceVppHandler) dumpInterfaces(ifIdxs ...uint32) (map[uint32]*vppc
 		ifDetails := &binapi_interface.SwInterfaceDetails{}
 		stop, err := reqCtx.ReceiveReply(ifDetails)
 		if stop {
-			break // Break from the loop.
+			break
 		}
 		if err != nil {
 			return nil, fmt.Errorf("failed to dump interface: %v", err)
@@ -109,8 +95,9 @@ func (h *InterfaceVppHandler) dumpInterfaces(ifIdxs ...uint32) (map[uint32]*vppc
 
 		details := &vppcalls.InterfaceDetails{
 			Interface: &interfaces.Interface{
-				Name:        cleanString(ifDetails.Tag),
-				Type:        guessInterfaceType(ifaceName), // the type may be amended later by further dumps
+				Name: cleanString(ifDetails.Tag),
+				// the type may be amended later by further dumps
+				Type:        guessInterfaceType(ifaceName),
 				Enabled:     ifDetails.AdminUpDown > 0,
 				PhysAddress: net.HardwareAddr(ifDetails.L2Address[:ifDetails.L2AddressLength]).String(),
 				Mtu:         getMtu(ifDetails.LinkMtu),
@@ -212,7 +199,7 @@ func (h *InterfaceVppHandler) DumpInterfaces() (map[uint32]*vppcalls.InterfaceDe
 				ifData.Meta.SwIfIndex, err)
 		}
 		ifData.Meta.VrfIPv6 = ipv6Vrf
-		if isIPv6If, err := h.isIpv6Interface(ifData.Interface); err != nil {
+		if isIPv6If, err := isIpv6Interface(ifData.Interface); err != nil {
 			return ifs, err
 		} else if isIPv6If {
 			ifData.Interface.Vrf = ipv6Vrf
@@ -361,46 +348,93 @@ func (h *InterfaceVppHandler) DumpDhcpClients() (map[uint32]*vppcalls.Dhcp, erro
 }
 
 // DumpInterfaceStates dumps link and administrative state of every interface.
-func (h *InterfaceVppHandler) DumpInterfaceStates() (map[uint32]*vppcalls.InterfaceState, error) {
+func (h *InterfaceVppHandler) DumpInterfaceStates(ifIdxs ...uint32) (map[uint32]*vppcalls.InterfaceState, error) {
+	// Dump all interface states if not specified.
+	if len(ifIdxs) == 0 {
+		ifIdxs = []uint32{allInterfaces}
+	}
+
 	ifs := make(map[uint32]*vppcalls.InterfaceState)
+	for _, ifIdx := range ifIdxs {
+		reqCtx := h.callsChannel.SendMultiRequest(&binapi_interface.SwInterfaceDump{
+			SwIfIndex: binapi_interface.InterfaceIndex(ifIdx),
+		})
+		for {
+			ifDetails := &binapi_interface.SwInterfaceDetails{}
+			stop, err := reqCtx.ReceiveReply(ifDetails)
+			if stop {
+				break // Break from the loop.
+			}
+			if err != nil {
+				return nil, fmt.Errorf("failed to dump interface states: %v", err)
+			}
 
-	reqCtx := h.callsChannel.SendMultiRequest(&binapi_interface.SwInterfaceDump{})
-	for {
-		ifDetails := &binapi_interface.SwInterfaceDetails{}
-		stop, err := reqCtx.ReceiveReply(ifDetails)
-		if stop {
-			break // Break from the loop.
-		}
-		if err != nil {
-			return nil, fmt.Errorf("failed to dump interface: %v", err)
-		}
+			physAddr := make(net.HardwareAddr, ifDetails.L2AddressLength)
+			copy(physAddr, ifDetails.L2Address[:])
 
-		ifaceState := &vppcalls.InterfaceState{}
-		switch ifDetails.AdminUpDown {
-		case 0:
-			ifaceState.AdminState = interfaces.InterfaceState_DOWN
-		case 1:
-			ifaceState.AdminState = interfaces.InterfaceState_UP
-		default:
-			ifaceState.AdminState = interfaces.InterfaceState_UNKNOWN_STATUS
+			ifaceState := vppcalls.InterfaceState{
+				SwIfIndex:    ifDetails.SwIfIndex,
+				InternalName: cleanString(ifDetails.InterfaceName),
+				PhysAddress:  physAddr,
+				AdminState:   toInterfaceStatus(ifDetails.AdminUpDown),
+				LinkState:    toInterfaceStatus(ifDetails.LinkUpDown),
+				LinkDuplex:   toLinkDuplex(ifDetails.LinkDuplex),
+				LinkSpeed:    toLinkSpeed(ifDetails.LinkSpeed),
+				LinkMTU:      ifDetails.LinkMtu,
+			}
+			ifs[ifDetails.SwIfIndex] = &ifaceState
 		}
-		switch ifDetails.LinkUpDown {
-		case 0:
-			ifaceState.LinkState = interfaces.InterfaceState_DOWN
-		case 1:
-			ifaceState.LinkState = interfaces.InterfaceState_UP
-		default:
-			ifaceState.LinkState = interfaces.InterfaceState_UNKNOWN_STATUS
-		}
-		ifs[ifDetails.SwIfIndex] = ifaceState
 	}
 
 	return ifs, nil
 }
 
+func toInterfaceStatus(upDown uint8) interfaces.InterfaceState_Status {
+	switch upDown {
+	case 0:
+		return interfaces.InterfaceState_DOWN
+	case 1:
+		return interfaces.InterfaceState_UP
+	default:
+		return interfaces.InterfaceState_UNKNOWN_STATUS
+	}
+}
+
+func toLinkDuplex(duplex uint8) interfaces.InterfaceState_Duplex {
+	switch duplex {
+	case 1:
+		return interfaces.InterfaceState_HALF
+	case 2:
+		return interfaces.InterfaceState_FULL
+	default:
+		return interfaces.InterfaceState_UNKNOWN_DUPLEX
+	}
+}
+
+const megabit = 1000000 // one megabit in bytes
+
+func toLinkSpeed(speed uint32) uint64 {
+	switch speed {
+	case 1:
+		return 10 * megabit // 10M
+	case 2:
+		return 100 * megabit // 100M
+	case 4:
+		return 1000 * megabit // 1G
+	case 8:
+		return 10000 * megabit // 10G
+	case 16:
+		return 40000 * megabit // 40G
+	case 32:
+		return 100000 * megabit // 100G
+	default:
+		return 0
+	}
+}
+
 // Returns true if given interface contains at least one IPv6 address. For VxLAN, source and destination
 // addresses are also checked
-func (h *InterfaceVppHandler) isIpv6Interface(iface *interfaces.Interface) (bool, error) {
+func isIpv6Interface(iface *interfaces.Interface) (bool, error) {
 	if iface.Type == interfaces.Interface_VXLAN_TUNNEL && iface.GetVxlan() != nil {
 		if ipAddress := net.ParseIP(iface.GetVxlan().SrcAddress); ipAddress.To4() == nil {
 			return true, nil
@@ -556,7 +590,9 @@ func (h *InterfaceVppHandler) dumpTapDetails(ifs map[uint32]*vppcalls.InterfaceD
 
 // dumpVxlanDetails dumps VXLAN interface details from VPP and fills them into the provided interface map.
 func (h *InterfaceVppHandler) dumpVxlanDetails(ifs map[uint32]*vppcalls.InterfaceDetails) error {
-	reqCtx := h.callsChannel.SendMultiRequest(&vxlan.VxlanTunnelDump{SwIfIndex: ^uint32(0)})
+	reqCtx := h.callsChannel.SendMultiRequest(&vxlan.VxlanTunnelDump{
+		SwIfIndex: ^uint32(0),
+	})
 	for {
 		vxlanDetails := &vxlan.VxlanTunnelDetails{}
 		stop, err := reqCtx.ReceiveReply(vxlanDetails)
