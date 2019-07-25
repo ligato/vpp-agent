@@ -22,6 +22,7 @@ import (
 
 	vpp_l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
+	ifplugin_vppcalls "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
 	_ "github.com/ligato/vpp-agent/plugins/vpp/l3plugin"
 	l3plugin_vppcalls "github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vrfidx"
@@ -61,5 +62,331 @@ func TestRoutes(t *testing.T) {
 
 	if !hasIPv4 || !hasIPv6 {
 		t.Fatalf("expected dump to contain both IPv4 and IPv6 routes")
+	}
+}
+
+func TestCRUDIPv4Route(t *testing.T) {
+	ctx := setupVPP(t)
+	defer ctx.teardownVPP()
+
+	ih := ifplugin_vppcalls.CompatibleInterfaceVppHandler(ctx.vppBinapi, logrus.NewLogger("test"))
+	ifName := "loop1"
+	ifIdx, err := ih.AddLoopbackInterface(ifName)
+	if err != nil {
+		t.Fatalf("creating interface failed: %v", err)
+	}
+	t.Logf("interface created")
+
+	ifIndexes := ifaceidx.NewIfaceIndex(logrus.NewLogger("test-iface1"), "test-iface1")
+	ifIndexes.Put("loop1", &ifaceidx.IfaceMetadata{
+		SwIfIndex: ifIdx,
+	})
+
+	//vrfMetaIdx := &vrfidx.VRFMetadata{Index: 0}
+	vrfIndexes := vrfidx.NewVRFIndex(logrus.NewLogger("test-vrf"), "test-vrf")
+	vrfIndexes.Put("vrf1-ipv4-vrf0", &vrfidx.VRFMetadata{Index: 0, Protocol: vpp_l3.VrfTable_IPV4})
+	vrfIndexes.Put("vrf1-ipv4-vrf2", &vrfidx.VRFMetadata{Index: 2, Protocol: vpp_l3.VrfTable_IPV4})
+
+	h := l3plugin_vppcalls.CompatibleL3VppHandler(ctx.vppBinapi, ifIndexes, vrfIndexes, logrus.NewLogger("test"))
+
+	routes, errx := h.DumpRoutes()
+	if errx != nil {
+		t.Fatalf("dumping routes failed: %v", err)
+	}
+	routesCnt := len(routes)
+	t.Logf("%d routes dumped", routesCnt)
+
+	newRoute := vpp_l3.Route{VrfId: 0, DstNetwork: "192.168.10.21/24", NextHopAddr: "192.168.30.1", OutgoingInterface: ifName}
+	err = h.VppAddRoute(&newRoute)
+	if err != nil {
+		t.Fatalf("adding route failed: %v", err)
+	}
+	t.Logf("route added: %v", newRoute)
+
+	routes, err = h.DumpRoutes()
+	routesCnt2 := len(routes)
+	if err != nil {
+		t.Fatalf("dumping routes failed: %v", err)
+	}
+	t.Logf("%d routes dumped", routesCnt2)
+
+	if routesCnt+1 != routesCnt2 {
+		t.Errorf("Number of routes after adding of one route is not incremented by 1")
+	}
+
+	newRouteIsPresent := false
+	for _, route := range routes {
+		//t.Logf("%v", route.Route)
+		//t.Logf("%v", &newRoute)
+		//if route.Route == &newRoute {
+		//	newRouteIsPresent = true
+		//}
+
+		if (route.Route.DstNetwork == newRoute.DstNetwork) && (route.Route.NextHopAddr == newRoute.NextHopAddr) && (route.Route.OutgoingInterface == newRoute.OutgoingInterface) {
+			newRouteIsPresent = true
+		}
+	}
+	if !newRouteIsPresent {
+		t.Error("Added route is not present in route dump")
+	}
+
+	err = h.VppDelRoute(&newRoute)
+	if err != nil {
+		t.Fatalf("deleting route failed: %v", err)
+	}
+	t.Logf("route deleted")
+
+	routes, err = h.DumpRoutes()
+	routesCnt3 := len(routes)
+	if err != nil {
+		t.Fatalf("dumping routes failed: %v", err)
+	}
+	t.Logf("%d routes dumped", routesCnt3)
+	if routesCnt2-1 != routesCnt3 {
+		t.Errorf("Number of routes after deleting of one route is not decremented by 1")
+	}
+
+	for _, route := range routes {
+		//if route.Route == &newRoute {
+		//	t.Error("Added route is still present in route dump - should be deleted")
+		//}
+		if (route.Route.DstNetwork == newRoute.DstNetwork) && (route.Route.NextHopAddr == newRoute.NextHopAddr) && (route.Route.OutgoingInterface == newRoute.OutgoingInterface) {
+			t.Error("Added route is still present in route dump - should be deleted")
+		}
+	}
+
+	err = h.AddVrfTable(&vpp_l3.VrfTable{Id: 2, Protocol: vpp_l3.VrfTable_IPV4, Label: "table1"})
+	if err != nil {
+		t.Fatalf("creating vrf table failed: %v", err)
+	}
+	t.Logf("vrf table 2 created")
+
+	routes, errx = h.DumpRoutes()
+	if errx != nil {
+		t.Fatalf("dumping routes failed: %v", err)
+	}
+	routesCnt = len(routes)
+	t.Logf("%d routes dumped", routesCnt)
+
+	newRoute = vpp_l3.Route{VrfId: 2, DstNetwork: "192.168.10.21/24", NextHopAddr: "192.168.30.1", OutgoingInterface: ifName}
+	err = h.VppAddRoute(&newRoute)
+	if err != nil {
+		t.Fatalf("adding route failed: %v", err)
+	}
+	t.Logf("route added: %v", newRoute)
+
+	routes, err = h.DumpRoutes()
+	routesCnt2 = len(routes)
+	if err != nil {
+		t.Fatalf("dumping routes failed: %v", err)
+	}
+	t.Logf("%d routes dumped", routesCnt2)
+
+	if routesCnt+1 != routesCnt2 {
+		t.Errorf("Number of routes after adding of one route is not incremented by 1")
+	}
+
+	newRouteIsPresent = false
+	for _, route := range routes {
+		//t.Logf("%v", route.Route)
+		//t.Logf("%v", &newRoute)
+		//if route.Route == &newRoute {
+		//	newRouteIsPresent = true
+		//}
+
+		if (route.Route.DstNetwork == newRoute.DstNetwork) && (route.Route.NextHopAddr == newRoute.NextHopAddr) && (route.Route.OutgoingInterface == newRoute.OutgoingInterface) {
+			newRouteIsPresent = true
+		}
+	}
+	if !newRouteIsPresent {
+		t.Error("Added route is not present in route dump")
+	}
+
+	err = h.VppDelRoute(&newRoute)
+	if err != nil {
+		t.Fatalf("deleting route failed: %v", err)
+	}
+	t.Logf("route deleted")
+
+	routes, err = h.DumpRoutes()
+	routesCnt3 = len(routes)
+	if err != nil {
+		t.Fatalf("dumping routes failed: %v", err)
+	}
+	t.Logf("%d routes dumped", routesCnt3)
+	if routesCnt2-1 != routesCnt3 {
+		t.Errorf("Number of routes after deleting of one route is not decremented by 1")
+	}
+
+	for _, route := range routes {
+		//if route.Route == &newRoute {
+		//	t.Error("Added route is still present in route dump - should be deleted")
+		//}
+		if (route.Route.DstNetwork == newRoute.DstNetwork) && (route.Route.NextHopAddr == newRoute.NextHopAddr) && (route.Route.OutgoingInterface == newRoute.OutgoingInterface) {
+			t.Error("Added route is still present in route dump - should be deleted")
+		}
+	}
+}
+
+func TestCRUDIPv6Route(t *testing.T) {
+	ctx := setupVPP(t)
+	defer ctx.teardownVPP()
+
+	ih := ifplugin_vppcalls.CompatibleInterfaceVppHandler(ctx.vppBinapi, logrus.NewLogger("test"))
+	ifName := "loop1"
+	ifIdx, err := ih.AddLoopbackInterface(ifName)
+	if err != nil {
+		t.Fatalf("creating interface failed: %v", err)
+	}
+	t.Logf("interface created")
+
+	ifIndexes := ifaceidx.NewIfaceIndex(logrus.NewLogger("test-iface1"), "test-iface1")
+	ifIndexes.Put("loop1", &ifaceidx.IfaceMetadata{
+		SwIfIndex: ifIdx,
+	})
+
+	//vrfMetaIdx := &vrfidx.VRFMetadata{Index: 0}
+	vrfIndexes := vrfidx.NewVRFIndex(logrus.NewLogger("test-vrf"), "test-vrf")
+	vrfIndexes.Put("vrf1-ipv6-vrf0", &vrfidx.VRFMetadata{Index: 0, Protocol: vpp_l3.VrfTable_IPV6})
+	vrfIndexes.Put("vrf1-ipv6-vrf2", &vrfidx.VRFMetadata{Index: 2, Protocol: vpp_l3.VrfTable_IPV6})
+
+	h := l3plugin_vppcalls.CompatibleL3VppHandler(ctx.vppBinapi, ifIndexes, vrfIndexes, logrus.NewLogger("test"))
+
+	routes, errx := h.DumpRoutes()
+	if errx != nil {
+		t.Fatalf("dumping routes failed: %v", err)
+	}
+	routesCnt := len(routes)
+	t.Logf("%d routes dumped", routesCnt)
+
+	newRoute := vpp_l3.Route{VrfId: 0, DstNetwork: "fd30:0:0:1::/64", NextHopAddr: "fd31::1:1:0:0:1", OutgoingInterface: "loop1"}
+	err = h.VppAddRoute(&newRoute)
+	if err != nil {
+		t.Fatalf("adding route failed: %v", err)
+	}
+	t.Logf("route added: %v", newRoute)
+
+	routes, err = h.DumpRoutes()
+	routesCnt2 := len(routes)
+	if err != nil {
+		t.Fatalf("dumping routes failed: %v", err)
+	}
+	t.Logf("%d routes dumped", routesCnt2)
+
+	if routesCnt+1 != routesCnt2 {
+		t.Errorf("Number of routes after adding of one route is not incremented by 1")
+	}
+
+	newRouteIsPresent := false
+	for _, route := range routes {
+		//t.Logf("%v", route.Route)
+		//t.Logf("%v", &newRoute)
+		//if route.Route == &newRoute {
+		//	newRouteIsPresent = true
+		//}
+
+		if (route.Route.DstNetwork == newRoute.DstNetwork) && (route.Route.NextHopAddr == newRoute.NextHopAddr) && (route.Route.OutgoingInterface == newRoute.OutgoingInterface) {
+			newRouteIsPresent = true
+		}
+	}
+	if !newRouteIsPresent {
+		t.Error("Added route is not present in route dump")
+	}
+
+	err = h.VppDelRoute(&newRoute)
+	if err != nil {
+		t.Fatalf("deleting route failed: %v", err)
+	}
+	t.Logf("route deleted")
+
+	routes, err = h.DumpRoutes()
+	routesCnt3 := len(routes)
+	if err != nil {
+		t.Fatalf("dumping routes failed: %v", err)
+	}
+	t.Logf("%d routes dumped", routesCnt3)
+	if routesCnt2-1 != routesCnt3 {
+		t.Errorf("Number of routes after deleting of one route is not decremented by 1")
+	}
+
+	for _, route := range routes {
+		//if route.Route == &newRoute {
+		//	t.Error("Added route is still present in route dump - should be deleted")
+		//}
+		if (route.Route.DstNetwork == newRoute.DstNetwork) && (route.Route.NextHopAddr == newRoute.NextHopAddr) && (route.Route.OutgoingInterface == newRoute.OutgoingInterface) {
+			t.Error("Added route is still present in route dump - should be deleted")
+		}
+	}
+
+	err = h.AddVrfTable(&vpp_l3.VrfTable{Id: 2, Protocol: vpp_l3.VrfTable_IPV6, Label: "table1"})
+	if err != nil {
+		t.Fatalf("creating vrf table failed: %v", err)
+	}
+	t.Logf("vrf table 2 created")
+
+	routes, errx = h.DumpRoutes()
+	if errx != nil {
+		t.Fatalf("dumping routes failed: %v", err)
+	}
+	routesCnt = len(routes)
+	t.Logf("%d routes dumped", routesCnt)
+
+	newRoute = vpp_l3.Route{VrfId: 2, DstNetwork: "fd30:0:0:1::/64", NextHopAddr: "fd31::1:1:0:0:1", OutgoingInterface: "loop1"}
+	err = h.VppAddRoute(&newRoute)
+	if err != nil {
+		t.Fatalf("adding route failed: %v", err)
+	}
+	t.Logf("route added: %v", newRoute)
+
+	routes, err = h.DumpRoutes()
+	routesCnt2 = len(routes)
+	if err != nil {
+		t.Fatalf("dumping routes failed: %v", err)
+	}
+	t.Logf("%d routes dumped", routesCnt2)
+
+	if routesCnt+1 != routesCnt2 {
+		t.Errorf("Number of routes after adding of one route is not incremented by 1")
+	}
+
+	newRouteIsPresent = false
+	for _, route := range routes {
+		//t.Logf("%v", route.Route)
+		//t.Logf("%v", &newRoute)
+		//if route.Route == &newRoute {
+		//	newRouteIsPresent = true
+		//}
+
+		if (route.Route.DstNetwork == newRoute.DstNetwork) && (route.Route.NextHopAddr == newRoute.NextHopAddr) && (route.Route.OutgoingInterface == newRoute.OutgoingInterface) {
+			newRouteIsPresent = true
+		}
+	}
+	if !newRouteIsPresent {
+		t.Error("Added route is not present in route dump")
+	}
+
+	err = h.VppDelRoute(&newRoute)
+	if err != nil {
+		t.Fatalf("deleting route failed: %v", err)
+	}
+	t.Logf("route deleted")
+
+	routes, err = h.DumpRoutes()
+	routesCnt3 = len(routes)
+	if err != nil {
+		t.Fatalf("dumping routes failed: %v", err)
+	}
+	t.Logf("%d routes dumped", routesCnt3)
+	if routesCnt2-1 != routesCnt3 {
+		t.Errorf("Number of routes after deleting of one route is not decremented by 1")
+	}
+
+	for _, route := range routes {
+		//if route.Route == &newRoute {
+		//	t.Error("Added route is still present in route dump - should be deleted")
+		//}
+		if (route.Route.DstNetwork == newRoute.DstNetwork) && (route.Route.NextHopAddr == newRoute.NextHopAddr) && (route.Route.OutgoingInterface == newRoute.OutgoingInterface) {
+			t.Error("Added route is still present in route dump - should be deleted")
+		}
 	}
 }
