@@ -49,9 +49,9 @@ func (t TxnType) String() string {
 	case NBTransaction:
 		return "NB Transaction"
 	case RetryFailedOps:
-		return "RETRY"
+		return "Retry Transaction"
 	}
-	return "UNKNOWN"
+	return "UndefinedTxnType"
 }
 
 // RecordedTxn is used to record executed transaction.
@@ -128,7 +128,7 @@ func (txn *RecordedTxn) StringWithOpts(resultOnly, verbose bool, indent int) str
 	if !resultOnly {
 		// transaction arguments
 		str += indent1 + "* transaction arguments:\n"
-		str += indent2 + fmt.Sprintf("- seq-num: %d\n", txn.SeqNum)
+		str += indent2 + fmt.Sprintf("- seqNum: %d\n", txn.SeqNum)
 		if txn.TxnType == NBTransaction && txn.ResyncType != NotResync {
 			ResyncType := "Full Resync"
 			if txn.ResyncType == DownstreamResync {
