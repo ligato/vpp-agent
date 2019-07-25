@@ -82,7 +82,7 @@ func TestCRUDIPv4Route(t *testing.T) {
 		SwIfIndex: ifIdx,
 	})
 
-	var vrfMetaIdx uint32 = 0
+	var vrfMetaIdx uint32
 	vrfIndexes := vrfidx.NewVRFIndex(logrus.NewLogger("test-vrf"), "test-vrf")
 	vrfIndexes.Put("vrf1-ipv4-vrf0", &vrfidx.VRFMetadata{Index: vrfMetaIdx, Protocol: vpp_l3.VrfTable_IPV4})
 
@@ -230,7 +230,7 @@ func TestCRUDIPv6Route(t *testing.T) {
 		SwIfIndex: ifIdx,
 	})
 
-	var vrfMetaIdx uint32 = 0
+	var vrfMetaIdx uint32
 	vrfIndexes := vrfidx.NewVRFIndex(logrus.NewLogger("test-vrf"), "test-vrf")
 	vrfIndexes.Put("vrf1-ipv6-vrf0", &vrfidx.VRFMetadata{Index: vrfMetaIdx, Protocol: vpp_l3.VrfTable_IPV6})
 
