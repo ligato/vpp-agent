@@ -82,9 +82,9 @@ func TestCRUDIPv4Route(t *testing.T) {
 		SwIfIndex: ifIdx,
 	})
 
-	//vrfMetaIdx := &vrfidx.VRFMetadata{Index: 0}
+	var vrfMetaIdx uint32 = 0
 	vrfIndexes := vrfidx.NewVRFIndex(logrus.NewLogger("test-vrf"), "test-vrf")
-	vrfIndexes.Put("vrf1-ipv4-vrf0", &vrfidx.VRFMetadata{Index: 0, Protocol: vpp_l3.VrfTable_IPV4})
+	vrfIndexes.Put("vrf1-ipv4-vrf0", &vrfidx.VRFMetadata{Index: vrfMetaIdx, Protocol: vpp_l3.VrfTable_IPV4})
 
 	h := l3plugin_vppcalls.CompatibleL3VppHandler(ctx.vppBinapi, ifIndexes, vrfIndexes, logrus.NewLogger("test"))
 
@@ -115,12 +115,6 @@ func TestCRUDIPv4Route(t *testing.T) {
 
 	newRouteIsPresent := false
 	for _, route := range routes {
-		//t.Logf("%v", route.Route)
-		//t.Logf("%v", &newRoute)
-		//if route.Route == &newRoute {
-		//	newRouteIsPresent = true
-		//}
-
 		if (route.Route.DstNetwork == newRoute.DstNetwork) && (route.Route.NextHopAddr == newRoute.NextHopAddr) && (route.Route.OutgoingInterface == newRoute.OutgoingInterface) {
 			newRouteIsPresent = true
 			break
@@ -147,20 +141,18 @@ func TestCRUDIPv4Route(t *testing.T) {
 	}
 
 	for _, route := range routes {
-		//if route.Route == &newRoute {
-		//	t.Error("Added route is still present in route dump - should be deleted")
-		//}
 		if (route.Route.DstNetwork == newRoute.DstNetwork) && (route.Route.NextHopAddr == newRoute.NextHopAddr) && (route.Route.OutgoingInterface == newRoute.OutgoingInterface) {
 			t.Error("Added route is still present in route dump - should be deleted")
 		}
 	}
 
-	err = h.AddVrfTable(&vpp_l3.VrfTable{Id: 2, Protocol: vpp_l3.VrfTable_IPV4, Label: "table1"})
+	vrfMetaIdx = 2
+	err = h.AddVrfTable(&vpp_l3.VrfTable{Id: vrfMetaIdx, Protocol: vpp_l3.VrfTable_IPV4, Label: "table1"})
 	if err != nil {
 		t.Fatalf("creating vrf table failed: %v", err)
 	}
 	t.Logf("vrf table 2 created")
-	vrfIndexes.Put("vrf1-ipv4-vrf2", &vrfidx.VRFMetadata{Index: 2, Protocol: vpp_l3.VrfTable_IPV4})
+	vrfIndexes.Put("vrf1-ipv4-vrf2", &vrfidx.VRFMetadata{Index: vrfMetaIdx, Protocol: vpp_l3.VrfTable_IPV4})
 
 	routes, errx = h.DumpRoutes()
 	if errx != nil {
@@ -189,12 +181,6 @@ func TestCRUDIPv4Route(t *testing.T) {
 
 	newRouteIsPresent = false
 	for _, route := range routes {
-		//t.Logf("%v", route.Route)
-		//t.Logf("%v", &newRoute)
-		//if route.Route == &newRoute {
-		//	newRouteIsPresent = true
-		//}
-
 		if (route.Route.DstNetwork == newRoute.DstNetwork) && (route.Route.NextHopAddr == newRoute.NextHopAddr) && (route.Route.OutgoingInterface == newRoute.OutgoingInterface) {
 			newRouteIsPresent = true
 			break
@@ -221,9 +207,6 @@ func TestCRUDIPv4Route(t *testing.T) {
 	}
 
 	for _, route := range routes {
-		//if route.Route == &newRoute {
-		//	t.Error("Added route is still present in route dump - should be deleted")
-		//}
 		if (route.Route.DstNetwork == newRoute.DstNetwork) && (route.Route.NextHopAddr == newRoute.NextHopAddr) && (route.Route.OutgoingInterface == newRoute.OutgoingInterface) {
 			t.Error("Added route is still present in route dump - should be deleted")
 		}
@@ -247,9 +230,9 @@ func TestCRUDIPv6Route(t *testing.T) {
 		SwIfIndex: ifIdx,
 	})
 
-	//vrfMetaIdx := &vrfidx.VRFMetadata{Index: 0}
+	var vrfMetaIdx uint32 = 0
 	vrfIndexes := vrfidx.NewVRFIndex(logrus.NewLogger("test-vrf"), "test-vrf")
-	vrfIndexes.Put("vrf1-ipv6-vrf0", &vrfidx.VRFMetadata{Index: 0, Protocol: vpp_l3.VrfTable_IPV6})
+	vrfIndexes.Put("vrf1-ipv6-vrf0", &vrfidx.VRFMetadata{Index: vrfMetaIdx, Protocol: vpp_l3.VrfTable_IPV6})
 
 	h := l3plugin_vppcalls.CompatibleL3VppHandler(ctx.vppBinapi, ifIndexes, vrfIndexes, logrus.NewLogger("test"))
 
@@ -280,12 +263,6 @@ func TestCRUDIPv6Route(t *testing.T) {
 
 	newRouteIsPresent := false
 	for _, route := range routes {
-		//t.Logf("%v", route.Route)
-		//t.Logf("%v", &newRoute)
-		//if route.Route == &newRoute {
-		//	newRouteIsPresent = true
-		//}
-
 		if (route.Route.DstNetwork == newRoute.DstNetwork) && (route.Route.NextHopAddr == newRoute.NextHopAddr) && (route.Route.OutgoingInterface == newRoute.OutgoingInterface) {
 			newRouteIsPresent = true
 		}
@@ -311,20 +288,18 @@ func TestCRUDIPv6Route(t *testing.T) {
 	}
 
 	for _, route := range routes {
-		//if route.Route == &newRoute {
-		//	t.Error("Added route is still present in route dump - should be deleted")
-		//}
 		if (route.Route.DstNetwork == newRoute.DstNetwork) && (route.Route.NextHopAddr == newRoute.NextHopAddr) && (route.Route.OutgoingInterface == newRoute.OutgoingInterface) {
 			t.Error("Added route is still present in route dump - should be deleted")
 		}
 	}
 
-	err = h.AddVrfTable(&vpp_l3.VrfTable{Id: 2, Protocol: vpp_l3.VrfTable_IPV6, Label: "table1"})
+	vrfMetaIdx = 2
+	err = h.AddVrfTable(&vpp_l3.VrfTable{Id: vrfMetaIdx, Protocol: vpp_l3.VrfTable_IPV6, Label: "table1"})
 	if err != nil {
 		t.Fatalf("creating vrf table failed: %v", err)
 	}
 	t.Logf("vrf table 2 created")
-	vrfIndexes.Put("vrf1-ipv6-vrf2", &vrfidx.VRFMetadata{Index: 2, Protocol: vpp_l3.VrfTable_IPV6})
+	vrfIndexes.Put("vrf1-ipv6-vrf2", &vrfidx.VRFMetadata{Index: vrfMetaIdx, Protocol: vpp_l3.VrfTable_IPV6})
 
 	routes, errx = h.DumpRoutes()
 	if errx != nil {
@@ -353,12 +328,6 @@ func TestCRUDIPv6Route(t *testing.T) {
 
 	newRouteIsPresent = false
 	for _, route := range routes {
-		//t.Logf("%v", route.Route)
-		//t.Logf("%v", &newRoute)
-		//if route.Route == &newRoute {
-		//	newRouteIsPresent = true
-		//}
-
 		if (route.Route.DstNetwork == newRoute.DstNetwork) && (route.Route.NextHopAddr == newRoute.NextHopAddr) && (route.Route.OutgoingInterface == newRoute.OutgoingInterface) {
 			newRouteIsPresent = true
 		}
@@ -384,9 +353,6 @@ func TestCRUDIPv6Route(t *testing.T) {
 	}
 
 	for _, route := range routes {
-		//if route.Route == &newRoute {
-		//	t.Error("Added route is still present in route dump - should be deleted")
-		//}
 		if (route.Route.DstNetwork == newRoute.DstNetwork) && (route.Route.NextHopAddr == newRoute.NextHopAddr) && (route.Route.OutgoingInterface == newRoute.OutgoingInterface) {
 			t.Error("Added route is still present in route dump - should be deleted")
 		}
