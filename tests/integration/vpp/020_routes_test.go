@@ -70,22 +70,21 @@ func TestCRUDIPv4Route(t *testing.T) {
 	defer ctx.teardownVPP()
 
 	ih := ifplugin_vppcalls.CompatibleInterfaceVppHandler(ctx.vppBinapi, logrus.NewLogger("test"))
-	ifName := "loop1"
+	const ifName = "loop1"
 	ifIdx, err := ih.AddLoopbackInterface(ifName)
 	if err != nil {
 		t.Fatalf("creating interface failed: %v", err)
 	}
-	t.Logf("interface created")
+	t.Logf("interface created %v", ifIdx)
 
 	ifIndexes := ifaceidx.NewIfaceIndex(logrus.NewLogger("test-iface1"), "test-iface1")
-	ifIndexes.Put("loop1", &ifaceidx.IfaceMetadata{
+	ifIndexes.Put(ifName, &ifaceidx.IfaceMetadata{
 		SwIfIndex: ifIdx,
 	})
 
 	//vrfMetaIdx := &vrfidx.VRFMetadata{Index: 0}
 	vrfIndexes := vrfidx.NewVRFIndex(logrus.NewLogger("test-vrf"), "test-vrf")
 	vrfIndexes.Put("vrf1-ipv4-vrf0", &vrfidx.VRFMetadata{Index: 0, Protocol: vpp_l3.VrfTable_IPV4})
-	vrfIndexes.Put("vrf1-ipv4-vrf2", &vrfidx.VRFMetadata{Index: 2, Protocol: vpp_l3.VrfTable_IPV4})
 
 	h := l3plugin_vppcalls.CompatibleL3VppHandler(ctx.vppBinapi, ifIndexes, vrfIndexes, logrus.NewLogger("test"))
 
@@ -101,7 +100,7 @@ func TestCRUDIPv4Route(t *testing.T) {
 	if err != nil {
 		t.Fatalf("adding route failed: %v", err)
 	}
-	t.Logf("route added: %v", newRoute)
+	t.Logf("route added: %+v", newRoute)
 
 	routes, err = h.DumpRoutes()
 	routesCnt2 := len(routes)
@@ -124,6 +123,7 @@ func TestCRUDIPv4Route(t *testing.T) {
 
 		if (route.Route.DstNetwork == newRoute.DstNetwork) && (route.Route.NextHopAddr == newRoute.NextHopAddr) && (route.Route.OutgoingInterface == newRoute.OutgoingInterface) {
 			newRouteIsPresent = true
+			break
 		}
 	}
 	if !newRouteIsPresent {
@@ -160,6 +160,7 @@ func TestCRUDIPv4Route(t *testing.T) {
 		t.Fatalf("creating vrf table failed: %v", err)
 	}
 	t.Logf("vrf table 2 created")
+	vrfIndexes.Put("vrf1-ipv4-vrf2", &vrfidx.VRFMetadata{Index: 2, Protocol: vpp_l3.VrfTable_IPV4})
 
 	routes, errx = h.DumpRoutes()
 	if errx != nil {
@@ -173,7 +174,7 @@ func TestCRUDIPv4Route(t *testing.T) {
 	if err != nil {
 		t.Fatalf("adding route failed: %v", err)
 	}
-	t.Logf("route added: %v", newRoute)
+	t.Logf("route added: %+v", newRoute)
 
 	routes, err = h.DumpRoutes()
 	routesCnt2 = len(routes)
@@ -196,6 +197,7 @@ func TestCRUDIPv4Route(t *testing.T) {
 
 		if (route.Route.DstNetwork == newRoute.DstNetwork) && (route.Route.NextHopAddr == newRoute.NextHopAddr) && (route.Route.OutgoingInterface == newRoute.OutgoingInterface) {
 			newRouteIsPresent = true
+			break
 		}
 	}
 	if !newRouteIsPresent {
@@ -233,22 +235,21 @@ func TestCRUDIPv6Route(t *testing.T) {
 	defer ctx.teardownVPP()
 
 	ih := ifplugin_vppcalls.CompatibleInterfaceVppHandler(ctx.vppBinapi, logrus.NewLogger("test"))
-	ifName := "loop1"
+	const ifName = "loop1"
 	ifIdx, err := ih.AddLoopbackInterface(ifName)
 	if err != nil {
 		t.Fatalf("creating interface failed: %v", err)
 	}
-	t.Logf("interface created")
+	t.Logf("interface created %v", ifIdx)
 
 	ifIndexes := ifaceidx.NewIfaceIndex(logrus.NewLogger("test-iface1"), "test-iface1")
-	ifIndexes.Put("loop1", &ifaceidx.IfaceMetadata{
+	ifIndexes.Put(ifName, &ifaceidx.IfaceMetadata{
 		SwIfIndex: ifIdx,
 	})
 
 	//vrfMetaIdx := &vrfidx.VRFMetadata{Index: 0}
 	vrfIndexes := vrfidx.NewVRFIndex(logrus.NewLogger("test-vrf"), "test-vrf")
 	vrfIndexes.Put("vrf1-ipv6-vrf0", &vrfidx.VRFMetadata{Index: 0, Protocol: vpp_l3.VrfTable_IPV6})
-	vrfIndexes.Put("vrf1-ipv6-vrf2", &vrfidx.VRFMetadata{Index: 2, Protocol: vpp_l3.VrfTable_IPV6})
 
 	h := l3plugin_vppcalls.CompatibleL3VppHandler(ctx.vppBinapi, ifIndexes, vrfIndexes, logrus.NewLogger("test"))
 
@@ -259,12 +260,12 @@ func TestCRUDIPv6Route(t *testing.T) {
 	routesCnt := len(routes)
 	t.Logf("%d routes dumped", routesCnt)
 
-	newRoute := vpp_l3.Route{VrfId: 0, DstNetwork: "fd30:0:0:1::/64", NextHopAddr: "fd31::1:1:0:0:1", OutgoingInterface: "loop1"}
+	newRoute := vpp_l3.Route{VrfId: 0, DstNetwork: "fd30:0:0:1::/64", NextHopAddr: "fd31::1:1:0:0:1", OutgoingInterface: ifName}
 	err = h.VppAddRoute(&newRoute)
 	if err != nil {
 		t.Fatalf("adding route failed: %v", err)
 	}
-	t.Logf("route added: %v", newRoute)
+	t.Logf("route added: %+v", newRoute)
 
 	routes, err = h.DumpRoutes()
 	routesCnt2 := len(routes)
@@ -323,6 +324,7 @@ func TestCRUDIPv6Route(t *testing.T) {
 		t.Fatalf("creating vrf table failed: %v", err)
 	}
 	t.Logf("vrf table 2 created")
+	vrfIndexes.Put("vrf1-ipv6-vrf2", &vrfidx.VRFMetadata{Index: 2, Protocol: vpp_l3.VrfTable_IPV6})
 
 	routes, errx = h.DumpRoutes()
 	if errx != nil {
@@ -331,12 +333,12 @@ func TestCRUDIPv6Route(t *testing.T) {
 	routesCnt = len(routes)
 	t.Logf("%d routes dumped", routesCnt)
 
-	newRoute = vpp_l3.Route{VrfId: 2, DstNetwork: "fd30:0:0:1::/64", NextHopAddr: "fd31::1:1:0:0:1", OutgoingInterface: "loop1"}
+	newRoute = vpp_l3.Route{VrfId: 2, DstNetwork: "fd30:0:0:1::/64", NextHopAddr: "fd31::1:1:0:0:1", OutgoingInterface: ifName}
 	err = h.VppAddRoute(&newRoute)
 	if err != nil {
 		t.Fatalf("adding route failed: %v", err)
 	}
-	t.Logf("route added: %v", newRoute)
+	t.Logf("route added: %+v", newRoute)
 
 	routes, err = h.DumpRoutes()
 	routesCnt2 = len(routes)
