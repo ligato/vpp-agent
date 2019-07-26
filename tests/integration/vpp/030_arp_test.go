@@ -15,7 +15,6 @@
 package vpp
 
 import (
-	//"net"
 	"testing"
 
 	"github.com/ligato/cn-infra/logging/logrus"
@@ -82,8 +81,6 @@ func TestArp(t *testing.T) {
 			arpentriescnt := len(arpentries)
 			t.Logf("%d arpentries dumped", arpentriescnt)
 
-			//newArpEntry := vpp_l3.ARPEntry{Interface: ifName, IpAddress: "192.168.10.21", PhysAddress: "59:6C:45:59:8E:BD", Static: true}
-			//err = h.VppAddArp(&newArpEntry)
 			err = h.VppAddArp(&test.newArpEntry)
 			if err != nil {
 				t.Fatalf("adding arpentry failed: %v", err)
