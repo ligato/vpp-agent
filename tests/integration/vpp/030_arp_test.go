@@ -101,18 +101,9 @@ func TestArp(t *testing.T) {
 			newArpEntryIsPresent := false
 			for _, arpentry := range arpentries {
 				if (arpentry.Arp.Interface == test.newArpEntry.Interface) && (arpentry.Arp.IpAddress == test.newArpEntry.IpAddress) && (strings.ToLower(arpentry.Arp.PhysAddress) == strings.ToLower(test.newArpEntry.PhysAddress)) {
-					if test.newArpEntry.Static {
-						if arpentry.Arp.Static {
-							newArpEntryIsPresent = true
-							break
-						}
-					} else {
-						if !arpentry.Arp.Static {
-							newArpEntryIsPresent = true
-							break
-						}
-
-					}
+					t.Logf("dumped arpentry %+v", arpentry)
+					newArpEntryIsPresent = true
+					break
 				}
 			}
 
