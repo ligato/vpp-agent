@@ -15,9 +15,9 @@
 package vpp
 
 import (
-	"testing"
-
 	"github.com/ligato/cn-infra/logging/logrus"
+	"strings"
+	"testing"
 
 	vpp_l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
@@ -40,7 +40,7 @@ func TestArp(t *testing.T) {
 	t.Logf("interface created %v", ifIdx)
 
 	ifIndexes := ifaceidx.NewIfaceIndex(logrus.NewLogger("test-if"), "test-if")
-	ifIndexes.Put(ifName, &ifaceidx.IfaceMetadata{SwIfIndex: 1})
+	ifIndexes.Put(ifName, &ifaceidx.IfaceMetadata{SwIfIndex: ifIdx})
 	vrfIndexes := vrfidx.NewVRFIndex(logrus.NewLogger("test-vrf"), "test-vrf")
 	vrfIndexes.Put("vrf1-ipv4", &vrfidx.VRFMetadata{Index: 0, Protocol: vpp_l3.VrfTable_IPV4})
 	vrfIndexes.Put("vrf1-ipv6", &vrfidx.VRFMetadata{Index: 0, Protocol: vpp_l3.VrfTable_IPV6})
@@ -85,17 +85,39 @@ func TestArp(t *testing.T) {
 			if err != nil {
 				t.Fatalf("adding arpentry failed: %v", err)
 			}
-			t.Logf("arpentry added %v", test.newArpEntry)
+			t.Logf("arpentry added %+v", test.newArpEntry)
 
 			arpentries, err = h.DumpArpEntries()
 			if err != nil {
 				t.Fatalf("dumping arpentries failed: %v", err)
 			}
-			arpentriescnt = len(arpentries)
-			t.Logf("%d arpentries dumped", arpentriescnt)
+			arpentriescnt2 := len(arpentries)
+			t.Logf("%d arpentries dumped", arpentriescnt2)
 
+			if arpentriescnt+1 != arpentriescnt2 {
+				t.Errorf("Number of arp entries after adding of one arp entry is not incremented by 1")
+			}
+
+			newArpEntryIsPresent := false
 			for _, arpentry := range arpentries {
-				t.Logf(" - arpentry: %+v", arpentry)
+				if (arpentry.Arp.Interface == test.newArpEntry.Interface) && (arpentry.Arp.IpAddress == test.newArpEntry.IpAddress) && (strings.ToLower(arpentry.Arp.PhysAddress) == strings.ToLower(test.newArpEntry.PhysAddress)) {
+					if test.newArpEntry.Static {
+						if arpentry.Arp.Static {
+							newArpEntryIsPresent = true
+							break
+						}
+					} else {
+						if !arpentry.Arp.Static {
+							newArpEntryIsPresent = true
+							break
+						}
+
+					}
+				}
+			}
+
+			if !newArpEntryIsPresent {
+				t.Error("Added arp entry is not present in arp dump")
 			}
 
 			err = h.VppDelArp(&test.newArpEntry)
@@ -108,8 +130,18 @@ func TestArp(t *testing.T) {
 			if err != nil {
 				t.Fatalf("dumping arpentries failed: %v", err)
 			}
-			arpentriescnt = len(arpentries)
-			t.Logf("%d arpentries dumped", arpentriescnt)
+			arpentriescnt3 := len(arpentries)
+			t.Logf("%d arpentries dumped", arpentriescnt3)
+
+			if arpentriescnt2-1 != arpentriescnt3 {
+				t.Errorf("Number of arp entries after deleting of one arp entry is not decremented by 1")
+			}
+
+			for _, arpentry := range arpentries {
+				if (arpentry.Arp.Interface == test.newArpEntry.Interface) && (arpentry.Arp.IpAddress == test.newArpEntry.IpAddress) && (strings.ToLower(arpentry.Arp.PhysAddress) == strings.ToLower(test.newArpEntry.PhysAddress)) {
+					t.Error("Added arp entry is still present in arp dump - should be deleted")
+				}
+			}
 		})
 	}
 }
