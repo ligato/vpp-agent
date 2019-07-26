@@ -15,6 +15,7 @@
 package vpp
 
 import (
+	"net"
 	"testing"
 
 	"github.com/ligato/cn-infra/logging/logrus"
@@ -23,6 +24,34 @@ import (
 	_ "github.com/ligato/vpp-agent/plugins/vpp/ifplugin"
 	ifplugin_vppcalls "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
 )
+
+func TestInterfaceIP(t *testing.T) {
+	ctx := setupVPP(t)
+	defer ctx.teardownVPP()
+
+	h := ifplugin_vppcalls.CompatibleInterfaceVppHandler(ctx.vppBinapi, logrus.NewLogger("test"))
+
+	tests := []struct {
+		name  string
+		ipnet net.IPNet
+	}{
+		{"basic ipv4", net.IPNet{IP: net.IPv4(10, 0, 0, 1), Mask: net.IPMask{255, 255, 255, 0}}},
+		{"basic ipv6", net.IPNet{IP: net.ParseIP("::1"), Mask: net.IPMask{255, 255, 255, 0}}},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			ifIdx, err := h.AddLoopbackInterface("loop0")
+			if err != nil {
+				t.Fatalf("creating loopback interface failed: %v", err)
+			}
+			t.Logf("loop0 index: %+v", ifIdx)
+
+			if err := h.AddInterfaceIP(ifIdx, &test.ipnet); err != nil {
+				t.Fatalf("adding interface IP failed: %v", err)
+			}
+		})
+	}
+}
 
 func TestInterfaceDumpState(t *testing.T) {
 	ctx := setupVPP(t)
