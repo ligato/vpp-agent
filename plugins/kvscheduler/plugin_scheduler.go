@@ -288,7 +288,7 @@ func (s *Scheduler) TransactionBarrier() {
 
 // PushSBNotification notifies about a spontaneous value change(s) in the SB
 // plane (i.e. not triggered by NB transaction).
-func (s *Scheduler) PushSBNotification(notif... kvs.KVWithMetadata) error {
+func (s *Scheduler) PushSBNotification(notif ...kvs.KVWithMetadata) error {
 	txn := &transaction{
 		txnType: kvs.SBNotification,
 	}

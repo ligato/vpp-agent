@@ -68,16 +68,16 @@ func NewRxModeDescriptor(ifHandler vppcalls.InterfaceVppAPI, ifIndex ifaceidx.If
 	}
 
 	typedDescr := &adapter.RxModeDescriptor{
-		Name:            RxModeDescriptorName,
-		KeySelector:     ctx.IsInterfaceRxModeKey,
+		Name:        RxModeDescriptorName,
+		KeySelector: ctx.IsInterfaceRxModeKey,
 		// proto message Interface is only used as container for RxMode
-		ValueTypeName: proto.MessageName(&interfaces.Interface{}),
+		ValueTypeName:   proto.MessageName(&interfaces.Interface{}),
 		ValueComparator: ctx.EquivalentRxMode,
-		Validate:      ctx.Validate,
-		Create:        ctx.Create,
-		Update:        ctx.Update,
-		Delete:        ctx.Delete,
-		Dependencies:  ctx.Dependencies,
+		Validate:        ctx.Validate,
+		Create:          ctx.Create,
+		Update:          ctx.Update,
+		Delete:          ctx.Delete,
+		Dependencies:    ctx.Dependencies,
 	}
 
 	return adapter.NewRxModeDescriptor(typedDescr)
@@ -131,7 +131,7 @@ func (d *RxModeDescriptor) Validate(key string, ifaceWithRxMode *interfaces.Inte
 	for i, rxMode1 := range ifaceWithRxMode.GetRxModes() {
 		if rxMode1.Mode == interfaces.Interface_RxMode_UNKNOWN {
 			if rxMode1.DefaultMode {
-				return kvs.NewInvalidValueError(ErrUndefinedRxMode,"rx_mode[default]")
+				return kvs.NewInvalidValueError(ErrUndefinedRxMode, "rx_mode[default]")
 			}
 			return kvs.NewInvalidValueError(ErrUndefinedRxMode,
 				fmt.Sprintf("rx_mode[.queue=%d]", rxMode1.Queue))
@@ -142,7 +142,7 @@ func (d *RxModeDescriptor) Validate(key string, ifaceWithRxMode *interfaces.Inte
 				continue
 			}
 			if rxMode1.DefaultMode {
-				return kvs.NewInvalidValueError(ErrRedefinedRxMode,"rx_mode[default]")
+				return kvs.NewInvalidValueError(ErrRedefinedRxMode, "rx_mode[default]")
 			}
 			if rxMode1.Queue == rxMode2.Queue {
 				return kvs.NewInvalidValueError(ErrRedefinedRxMode,

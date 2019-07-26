@@ -95,6 +95,9 @@ clean-examples:
 	cd examples/localclient_vpp/nat      	&& go clean
 	cd examples/localclient_vpp/plugins	 	&& go clean
 
+debug-remote:
+	cd ./cmd/vpp-agent && dlv debug --headless --listen=:2345 --api-version=2 --accept-multiclient
+
 # -------------------------------
 #  Testing
 # -------------------------------

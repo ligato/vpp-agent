@@ -27,7 +27,6 @@ import (
 	"github.com/gogo/protobuf/proto"
 	prototypes "github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
-	"github.com/vishvananda/netlink"
 	"golang.org/x/sys/unix"
 
 	"github.com/ligato/cn-infra/idxmap"
@@ -249,28 +248,42 @@ func (d *InterfaceDescriptor) MetadataFactory() idxmap.NamedMappingRW {
 
 // Validate validates Linux interface configuration.
 func (d *InterfaceDescriptor) Validate(key string, linuxIf *interfaces.Interface) error {
+	// validate name (this should never happen, since key is derived from name)
 	if linuxIf.GetName() == "" {
 		return kvs.NewInvalidValueError(ErrInterfaceWithoutName, "name")
 	}
-	addrs := linuxIf.GetIpAddresses()
-	for _, a := range addrs {
+
+	// validate IP addresses
+	for _, a := range linuxIf.GetIpAddresses() {
+		// TODO: perhaps we could assume default mask if there isnt one?
 		if _, _, err := net.ParseCIDR(a); err != nil {
 			return kvs.NewInvalidValueError(ErrInvalidIPWithMask, "ip_addresses")
 		}
 	}
 
-	if linuxIf.GetType() == interfaces.Interface_UNDEFINED {
+	// validate namespace
+	if ns := linuxIf.GetNamespace(); ns != nil {
+		if ns.GetType() == namespace.NetNamespace_UNDEFINED || ns.GetReference() == "" {
+			return kvs.NewInvalidValueError(ErrNamespaceWithoutReference, "namespace")
+		}
+	}
+
+	// validate type
+	switch linuxIf.GetType() {
+	case interfaces.Interface_LOOPBACK:
+		if linuxIf.GetLink() != nil {
+			return kvs.NewInvalidValueError(ErrInterfaceReferenceMismatch, "link")
+		}
+	case interfaces.Interface_TAP_TO_VPP:
+		if d.vppIfPlugin == nil {
+			return ErrTAPRequiresVPPIfPlugin
+		}
+	case interfaces.Interface_UNDEFINED:
 		return kvs.NewInvalidValueError(ErrInterfaceWithoutType, "type")
 	}
-	if linuxIf.GetType() == interfaces.Interface_TAP_TO_VPP && d.vppIfPlugin == nil {
-		return ErrTAPRequiresVPPIfPlugin
-	}
-	if linuxIf.GetNamespace() != nil &&
-		(linuxIf.GetNamespace().GetType() == namespace.NetNamespace_UNDEFINED ||
-			linuxIf.GetNamespace().GetReference() == "") {
-		return kvs.NewInvalidValueError(ErrNamespaceWithoutReference, "namespace")
-	}
-	switch linuxIf.Link.(type) {
+
+	// validate link
+	switch linuxIf.GetLink().(type) {
 	case *interfaces.Interface_Tap:
 		if linuxIf.GetType() != interfaces.Interface_TAP_TO_VPP {
 			return kvs.NewInvalidValueError(ErrInterfaceReferenceMismatch, "link")
@@ -723,6 +736,7 @@ func (d *InterfaceDescriptor) Retrieve(correlate []adapter.InterfaceKVWithMetada
 	// receive results from the go routines
 	ifaces := make(map[string]adapter.InterfaceKVWithMetadata) // interface logical name -> interface data
 	indexes := make(map[int]struct{})                          // already retrieved interfaces by their Linux indexes
+
 	for idx := 0; idx < goRoutinesCnt; idx++ {
 		retrieved := <-ch
 		if retrieved.err != nil {
@@ -732,7 +746,7 @@ func (d *InterfaceDescriptor) Retrieve(correlate []adapter.InterfaceKVWithMetada
 			// skip if this interface was already retrieved and this is not the expected
 			// namespace from correlation - remember, the same namespace may have
 			// multiple different references
-			rewrite := false
+			var rewrite bool
 			if _, alreadyRetrieved := indexes[kv.Metadata.LinuxIfIndex]; alreadyRetrieved {
 				if expCfg, hasExpCfg := ifCfg[kv.Value.Name]; hasExpCfg {
 					if proto.Equal(expCfg.Namespace, kv.Value.Namespace) {
@@ -857,19 +871,23 @@ func (d *InterfaceDescriptor) retrieveInterfaces(nsList []*namespace.NetNamespac
 			alias = strings.TrimPrefix(alias, agentPrefix)
 
 			// parse alias to obtain logical references
-			var vppTapIfName string
-			if link.Type() == (&netlink.Veth{}).Type() {
-				var vethPeerIfName string
+			if link.Type() == "veth" {
 				iface.Type = interfaces.Interface_VETH
+				var vethPeerIfName string
 				iface.Name, vethPeerIfName = parseVethAlias(alias)
 				iface.Link = &interfaces.Interface_Veth{
-					Veth: &interfaces.VethLink{PeerIfName: vethPeerIfName},
+					Veth: &interfaces.VethLink{
+						PeerIfName: vethPeerIfName,
+					},
 				}
-			} else if link.Type() == (&netlink.Tuntap{}).Type() || link.Type() == "tun" /* not defined in vishvananda */ {
+			} else if link.Type() == "tuntap" || link.Type() == "tun" /* not defined in vishvananda */ {
 				iface.Type = interfaces.Interface_TAP_TO_VPP
+				var vppTapIfName string
 				iface.Name, vppTapIfName, _ = parseTapAlias(alias)
 				iface.Link = &interfaces.Interface_Tap{
-					Tap: &interfaces.TapLink{VppTapIfName: vppTapIfName},
+					Tap: &interfaces.TapLink{
+						VppTapIfName: vppTapIfName,
+					},
 				}
 			} else if link.Attrs().Name == defaultLoopbackName {
 				iface.Type = interfaces.Interface_LOOPBACK
@@ -878,9 +896,8 @@ func (d *InterfaceDescriptor) retrieveInterfaces(nsList []*namespace.NetNamespac
 				// unsupported interface type supposedly configured by agent => print warning
 				d.log.WithFields(logging.Fields{
 					"if-host-name": link.Attrs().Name,
-					"if-type":      link.Type(),
 					"namespace":    nsRef,
-				}).Warn("Managed interface of unsupported type")
+				}).Warnf("Managed interface of unsupported type: %s", link.Type())
 				continue
 			}
 
@@ -941,7 +958,7 @@ func (d *InterfaceDescriptor) retrieveInterfaces(nsList []*namespace.NetNamespac
 				Origin: kvs.FromNB,
 				Metadata: &ifaceidx.LinuxIfMetadata{
 					LinuxIfIndex: link.Attrs().Index,
-					VPPTapName:   vppTapIfName,
+					VPPTapName:   iface.GetTap().GetVppTapIfName(),
 					Namespace:    nsRef,
 				},
 			})
@@ -983,8 +1000,7 @@ func (d *InterfaceDescriptor) setInterfaceNamespace(ctx nslinuxcalls.NamespaceMg
 	}
 
 	// Move the interface into the namespace.
-	err = d.ifHandler.SetLinkNamespace(link, ns)
-	if err != nil {
+	if err := d.ifHandler.SetLinkNamespace(link, ns); err != nil {
 		return errors.Errorf("failed to set interface %s file descriptor: %v", link.Attrs().Name, err)
 	}
 
@@ -1009,8 +1025,7 @@ func (d *InterfaceDescriptor) setInterfaceNamespace(ctx nslinuxcalls.NamespaceMg
 		if !isIPv6 && address.IP.IsLinkLocalUnicast() {
 			continue
 		}
-		err = d.ifHandler.AddInterfaceIP(ifName, address)
-		if err != nil {
+		if err := d.ifHandler.AddInterfaceIP(ifName, address); err != nil {
 			if err.Error() == "file exists" {
 				continue
 			}
@@ -1098,7 +1113,6 @@ func getSysctl(name string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-
 	return string(data[:len(data)-1]), nil
 }
 
@@ -1108,6 +1122,5 @@ func setSysctl(name, value string) (string, error) {
 	if err := ioutil.WriteFile(fullName, []byte(value), 0644); err != nil {
 		return "", err
 	}
-
 	return getSysctl(name)
 }

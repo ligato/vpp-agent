@@ -207,7 +207,7 @@ func (s *Scheduler) preProcessNBTransaction(txn *transaction) (skip bool) {
 	}
 
 	// for resync refresh the graph + collect deletes
-	graphW := s.graph.Write(true,false)
+	graphW := s.graph.Write(true, false)
 	defer graphW.Release()
 	s.resyncCount++
 
@@ -344,7 +344,7 @@ func (s *Scheduler) postProcessTransaction(txn *transaction, executed kvs.Record
 	if toRefresh.Length() > 0 {
 		// changes brought by refresh triggered solely for the verification are
 		// not saved into the graph
-		graphW := s.graph.Write(afterErrRefresh,false)
+		graphW := s.graph.Write(afterErrRefresh, false)
 		s.refreshGraph(graphW, toRefresh, nil, afterErrRefresh)
 		s.scheduleRetries(txn, graphW, toRetry)
 
@@ -420,7 +420,7 @@ func (s *Scheduler) postProcessTransaction(txn *transaction, executed kvs.Record
 
 	// delete removed values from the graph after the notifications have been sent
 	if removed.Length() > 0 {
-		graphW := s.graph.Write(true,true)
+		graphW := s.graph.Write(true, true)
 		for _, key := range removed.Iterate() {
 			graphW.DeleteNode(key)
 		}
@@ -429,7 +429,7 @@ func (s *Scheduler) postProcessTransaction(txn *transaction, executed kvs.Record
 }
 
 // scheduleRetries schedules a series of re-try transactions for failed values
-func (s *Scheduler) scheduleRetries(txn *transaction, graphR graph.ReadAccess, toRetry utils.KeySet,) {
+func (s *Scheduler) scheduleRetries(txn *transaction, graphR graph.ReadAccess, toRetry utils.KeySet) {
 	// split values based on the retry metadata
 	retryTxns := make(map[retryTxnMeta]*retryTxn)
 	for _, retryKey := range toRetry.Iterate() {
