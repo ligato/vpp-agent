@@ -23,9 +23,9 @@ const (
 	// ModuleName is the name of this module.
 	ModuleName = "bond"
 	// APIVersion is the API version of this module.
-	APIVersion = "1.0.0"
+	APIVersion = "1.0.1"
 	// VersionCrc is the CRC of this module.
-	VersionCrc = 0xd7e62f79
+	VersionCrc = 0xf29d9886
 )
 
 // BondCreate represents VPP binary API message 'bond_create'.
@@ -35,13 +35,14 @@ type BondCreate struct {
 	MacAddress   []byte `struc:"[6]byte"`
 	Mode         uint8
 	Lb           uint8
+	NumaOnly     uint8
 }
 
 func (*BondCreate) GetMessageName() string {
 	return "bond_create"
 }
 func (*BondCreate) GetCrcString() string {
-	return "3b21645d"
+	return "f19b4ad0"
 }
 func (*BondCreate) GetMessageType() api.MessageType {
 	return api.RequestMessage
@@ -163,6 +164,7 @@ type SwInterfaceBondDetails struct {
 	InterfaceName []byte `struc:"[64]byte"`
 	Mode          uint8
 	Lb            uint8
+	NumaOnly      uint8
 	ActiveSlaves  uint32
 	Slaves        uint32
 }
@@ -171,7 +173,7 @@ func (*SwInterfaceBondDetails) GetMessageName() string {
 	return "sw_interface_bond_details"
 }
 func (*SwInterfaceBondDetails) GetCrcString() string {
-	return "22e48daa"
+	return "a8ac5a5f"
 }
 func (*SwInterfaceBondDetails) GetMessageType() api.MessageType {
 	return api.ReplyMessage
