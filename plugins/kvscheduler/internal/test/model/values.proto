@@ -4,6 +4,7 @@ package model;
 
 message ArrayValue {
     repeated string items = 1;
+    string item_suffix = 2;
 }
 
 message StringValue {

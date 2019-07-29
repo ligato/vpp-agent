@@ -244,7 +244,7 @@ func (op *RecordedTxnOp) StringWithOpts(index int, verbose bool, indent int) str
 		flags = append(flags, "WAS-UNIMPLEMENTED")
 	}
 	//  -> REMOVED / MISSING
-	if op.PrevState == ValueState_REMOVED && !op.IsRecreate {
+	if op.PrevState == ValueState_REMOVED && op.Operation == TxnOperation_DELETE {
 		flags = append(flags, "ALREADY-REMOVED")
 	}
 	if op.PrevState == ValueState_MISSING {

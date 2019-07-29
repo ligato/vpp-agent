@@ -2040,3 +2040,163 @@ func TestFailedDeleteOfDerivedValue(t *testing.T) {
 	err = scheduler.Close()
 	Expect(err).To(BeNil())
 }
+
+func TestFailedRecreateOfDerivedValue(t *testing.T) {
+	RegisterTestingT(t)
+
+	// prepare KV Scheduler
+	scheduler := NewPlugin(UseDeps(func(deps *Deps) {
+		deps.HTTPHandlers = nil
+	}))
+	err := scheduler.Init()
+	Expect(err).To(BeNil())
+
+	// prepare mocks
+	mockSB := test.NewMockSouthbound()
+	// descriptor:
+	descriptor := test.NewMockDescriptor(&KVDescriptor{
+		Name:          descriptor1Name,
+		NBKeyPrefix:   prefixA,
+		KeySelector:   prefixSelector(prefixA),
+		ValueTypeName: proto.MessageName(test.NewArrayValue()),
+		DerivedValues: test.ArrayValueDerBuilder,
+		WithMetadata:  true,
+		UpdateWithRecreate: func(key string, oldValue, newValue proto.Message, metadata Metadata) bool {
+			return key == prefixA+baseValue1+"/item1"
+		},
+	}, mockSB, 0)
+	scheduler.RegisterKVDescriptor(descriptor)
+
+	// run non-resync transaction against empty SB
+	arrayVal1 := test.NewArrayValueWithSuffix("-v1", "item1")
+	schedulerTxn := scheduler.StartNBTransaction()
+	schedulerTxn.SetValue(prefixA+baseValue1, arrayVal1)
+	seqNum, err := schedulerTxn.Commit(testCtx)
+	Expect(seqNum).To(BeEquivalentTo(0))
+	Expect(err).ShouldNot(HaveOccurred())
+
+	// check the state of SB
+	Expect(mockSB.GetKeysWithInvalidData()).To(BeEmpty())
+	// -> base value 1
+	value := mockSB.GetValue(prefixA + baseValue1)
+	Expect(value).ToNot(BeNil())
+	Expect(proto.Equal(value.Value, arrayVal1)).To(BeTrue())
+	Expect(value.Metadata).ToNot(BeNil())
+	Expect(value.Metadata.(test.MetaWithInteger).GetInteger()).To(BeEquivalentTo(0))
+	Expect(value.Origin).To(BeEquivalentTo(FromNB))
+	// -> item1 derived from base value 1
+	value = mockSB.GetValue(prefixA + baseValue1 + "/item1")
+	Expect(value).ToNot(BeNil())
+	Expect(proto.Equal(value.Value, test.NewStringValue("item1-v1"))).To(BeTrue())
+	Expect(value.Metadata).To(BeNil())
+	Expect(value.Origin).To(BeEquivalentTo(FromNB))
+
+	// plan error before 2nd txn
+	failedCreateClb := func() {
+		mockSB.SetValue(prefixA+baseValue1, test.NewArrayValue(),
+			&test.OnlyInteger{Integer: 0}, FromNB, false)
+	}
+	mockSB.PlanError(prefixA+baseValue1+"/item1", nil, nil) // Delete
+	mockSB.PlanError(prefixA+baseValue1+"/item1", errors.New("failed to create value"), failedCreateClb) // (Re)Create
+
+	// run 2nd non-resync transaction that will have errors
+	startTime := time.Now()
+	schedulerTxn2 := scheduler.StartNBTransaction()
+	arrayVal2 := test.NewArrayValueWithSuffix("-v2", "item1")
+	schedulerTxn2.SetValue(prefixA+baseValue1, arrayVal2)
+	seqNum, err = schedulerTxn2.Commit(testCtx)
+	stopTime := time.Now()
+	Expect(seqNum).To(BeEquivalentTo(1))
+	Expect(err).ToNot(BeNil())
+	txnErr := err.(*TransactionError)
+	Expect(txnErr.GetTxnInitError()).ShouldNot(HaveOccurred())
+	kvErrors := txnErr.GetKVErrors()
+	Expect(kvErrors).To(HaveLen(1))
+	Expect(kvErrors[0].Key).To(BeEquivalentTo(prefixA + baseValue1 + "/item1"))
+	Expect(kvErrors[0].TxnOperation).To(BeEquivalentTo(TxnOperation_CREATE))
+	Expect(kvErrors[0].Error.Error()).To(BeEquivalentTo("failed to create value"))
+
+	// check transaction operations
+	txnHistory := scheduler.GetTransactionHistory(time.Time{}, time.Now())
+	Expect(txnHistory).To(HaveLen(2))
+	txn := txnHistory[1]
+	Expect(txn.PreRecord).To(BeFalse())
+	Expect(txn.Start.After(startTime)).To(BeTrue())
+	Expect(txn.Start.Before(txn.Stop)).To(BeTrue())
+	Expect(txn.Stop.Before(stopTime)).To(BeTrue())
+	Expect(txn.SeqNum).To(BeEquivalentTo(1))
+	Expect(txn.TxnType).To(BeEquivalentTo(NBTransaction))
+	Expect(txn.ResyncType).To(BeEquivalentTo(NotResync))
+	Expect(txn.Description).To(BeEmpty())
+	checkRecordedValues(txn.Values, []RecordedKVPair{
+		{Key: prefixA + baseValue1, Value: utils.RecordProtoMessage(arrayVal2), Origin: FromNB},
+	})
+
+	// -> planned
+	txnOps := RecordedTxnOps{
+		{
+			Operation:  TxnOperation_UPDATE,
+			Key:        prefixA + baseValue1,
+			PrevValue:  utils.RecordProtoMessage(arrayVal1),
+			NewValue:   utils.RecordProtoMessage(arrayVal2),
+			PrevState:  ValueState_CONFIGURED,
+			NewState:   ValueState_CONFIGURED,
+		},
+		{
+			Operation:  TxnOperation_DELETE,
+			Key:        prefixA + baseValue1 + "/item1",
+			IsDerived:  true,
+			PrevValue:  utils.RecordProtoMessage(test.NewStringValue("item1-v1")),
+			PrevState:  ValueState_CONFIGURED,
+			NewState:   ValueState_REMOVED,
+			IsRecreate: true,
+		},
+		{
+			Operation:  TxnOperation_CREATE,
+			Key:        prefixA + baseValue1 + "/item1",
+			IsDerived:  true,
+			NewValue:   utils.RecordProtoMessage(test.NewStringValue("item1-v2")),
+			PrevState:  ValueState_REMOVED,
+			NewState:   ValueState_CONFIGURED,
+			IsRecreate: true,
+		},
+	}
+	checkTxnOperations(txn.Planned, txnOps)
+
+	// -> executed
+	txnOps = RecordedTxnOps{
+		{
+			Operation:  TxnOperation_UPDATE,
+			Key:        prefixA + baseValue1,
+			PrevValue:  utils.RecordProtoMessage(arrayVal1),
+			NewValue:   utils.RecordProtoMessage(arrayVal2),
+			PrevState:  ValueState_CONFIGURED,
+			NewState:   ValueState_CONFIGURED,
+		},
+		{
+			Operation:  TxnOperation_DELETE,
+			Key:        prefixA + baseValue1 + "/item1",
+			IsDerived:  true,
+			PrevValue:  utils.RecordProtoMessage(test.NewStringValue("item1-v1")),
+			PrevState:  ValueState_CONFIGURED,
+			NewState:   ValueState_REMOVED,
+			IsRecreate: true,
+		},
+		{
+			Operation:  TxnOperation_CREATE,
+			Key:        prefixA + baseValue1 + "/item1",
+			IsDerived:  true,
+			NewValue:   utils.RecordProtoMessage(test.NewStringValue("item1-v2")),
+			PrevState:  ValueState_REMOVED,
+			NewState:   ValueState_FAILED,
+			NewErr:     errors.New("failed to create value"),
+			IsRecreate: true,
+		},
+	}
+	checkTxnOperations(txn.Executed, txnOps)
+
+	// close scheduler
+	err = scheduler.Close()
+	Expect(err).To(BeNil())
+}
+
