@@ -235,7 +235,7 @@ func (s *Scheduler) applyValue(args *applyValueArgs) (executed kvs.RecordedTxnOp
 	// run selected operation
 	switch txnOp.Operation {
 	case kvs.TxnOperation_DELETE:
-		executed, err = s.applyDelete(node, txnOp, args, args.isDepUpdate)
+		executed, err = s.applyDelete(node, txnOp, args, args.isDepUpdate, false)
 	case kvs.TxnOperation_CREATE:
 		executed, err = s.applyCreate(node, txnOp, args)
 	case kvs.TxnOperation_UPDATE:
@@ -255,7 +255,9 @@ func (s *Scheduler) applyValue(args *applyValueArgs) (executed kvs.RecordedTxnOp
 }
 
 // applyDelete removes value.
-func (s *Scheduler) applyDelete(node graph.NodeRW, txnOp *kvs.RecordedTxnOp, args *applyValueArgs, pending bool) (executed kvs.RecordedTxnOps, err error) {
+func (s *Scheduler) applyDelete(node graph.NodeRW, txnOp *kvs.RecordedTxnOp, args *applyValueArgs,
+	pending, recreate bool) (executed kvs.RecordedTxnOps, err error) {
+
 	if s.logGraphWalk {
 		endLog := s.logNodeVisit("applyDelete", args)
 		defer endLog()
@@ -289,7 +291,7 @@ func (s *Scheduler) applyDelete(node graph.NodeRW, txnOp *kvs.RecordedTxnOp, arg
 			} else {
 				// removed by request
 				txnOp.NewState = kvs.ValueState_REMOVED
-				if args.isDerived {
+				if args.isDerived && !recreate {
 					args.graphW.DeleteNode(args.kv.key)
 				} else {
 					s.updateNodeState(node, txnOp.NewState, args)
@@ -517,7 +519,7 @@ func (s *Scheduler) applyUpdate(node graph.NodeRW, txnOp *kvs.RecordedTxnOp, arg
 	descriptor := s.registry.GetDescriptorForKey(args.kv.key)
 	handler := newDescriptorHandler(descriptor)
 	if !args.dryRun && args.kv.origin == kvs.FromNB {
-		err = handler.validate(node.GetKey(), node.GetValue())
+		err = handler.validate(node.GetKey(), args.kv.value)
 		if err != nil {
 			node.SetValue(args.kv.value) // save the invalid value
 			node.SetFlags(&UnavailValueFlag{})
@@ -551,7 +553,7 @@ func (s *Scheduler) applyUpdate(node graph.NodeRW, txnOp *kvs.RecordedTxnOp, arg
 		delOp := s.preRecordTxnOp(args, node)
 		delOp.Operation = kvs.TxnOperation_DELETE
 		delOp.NewValue = nil
-		delExec, inheritedErr := s.applyDelete(node, delOp, args, false)
+		delExec, inheritedErr := s.applyDelete(node, delOp, args, false, true)
 		executed = append(executed, delExec...)
 		if inheritedErr != nil {
 			err = inheritedErr
@@ -584,7 +586,7 @@ func (s *Scheduler) applyUpdate(node graph.NodeRW, txnOp *kvs.RecordedTxnOp, arg
 	// if the new dependencies are not satisfied => delete and set as pending with the new value
 	if !equivalent && !isNodeReady(node) {
 		node.SetValue(prevValue) // apply delete on the original value
-		delExec, inheritedErr := s.applyDelete(node, txnOp, args, true)
+		delExec, inheritedErr := s.applyDelete(node, txnOp, args, true, false)
 		executed = append(executed, delExec...)
 		if inheritedErr != nil {
 			err = inheritedErr
