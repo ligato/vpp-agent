@@ -17,6 +17,7 @@ package cmd
 import (
 	"os"
 
+	"github.com/ligato/cn-infra/agent"
 	"github.com/spf13/cobra"
 )
 
@@ -32,11 +33,11 @@ var RootCmd = &cobra.Command{
 	Short: "A CLI tool for managing agents.",
 	Example: `Specify the etcd to connect to and list all agents that it knows about:
   $ export ETCD_ENDPOINTS=172.17.0.1:2379
-  $ agentctl show
 
 or with a command line flag:
   $ agentctl --endpoints 172.17.0.1:2379 show
 `,
+	Version: agent.BuildVersion,
 }
 
 func init() {
