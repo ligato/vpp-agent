@@ -210,15 +210,17 @@ func (ms *MockSouthbound) executeChange(descriptor string, opType MockOpType, ke
 		}
 		err := plannedErrors[0].err
 		clb := plannedErrors[0].afterErrClb
-		operation.Err = err
-		ms.opHistory = append(ms.opHistory, operation)
-		ms.Unlock()
+		if err != nil {
+			operation.Err = err
+			ms.opHistory = append(ms.opHistory, operation)
+			ms.Unlock()
 
-		if clb != nil {
-			clb()
+			if clb != nil {
+				clb()
+			}
+
+			return err
 		}
-
-		return err
 	}
 
 	// the simulated operation has succeeded
