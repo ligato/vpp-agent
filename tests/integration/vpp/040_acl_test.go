@@ -355,9 +355,9 @@ func TestAddIPAcl(t *testing.T) {
 	t.Logf("%d acls dumped", len(acls))
 	t.Logf("acls dumped %v", acls)
 
-	for _, acl_record := range acls {
-		t.Logf("%+v", acl_record.ACL)
-		if acl_record.Meta.Index == 0 {
+	for _, aclrecord := range acls {
+		t.Logf("%+v", aclrecord.ACL)
+		if aclrecord.Meta.Index == 0 {
 			t.Fatalf("This acll should be deleted : %v", errx)
 		}
 	}
