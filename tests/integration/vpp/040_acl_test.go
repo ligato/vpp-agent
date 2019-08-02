@@ -271,10 +271,27 @@ func TestCRUDIPAcl(t *testing.T) {
 	t.Logf("%d acls dumped", len(acls))
 	t.Logf("acls dumped %v", acls)
 
+	var rules []*acl.ACL_Rule
 	for _, item := range acls {
-		item2 := item.ACL.GetRules()
-		t.Logf("acls dumped %v", item2)
+		rules = item.ACL.Rules
+		for _, rule := range rules {
+			t.Logf("acls action dumped %v", rule.Action)
 
+		}
+		for _, rule := range rules {
+			t.Logf("acls rule dumped %v", rule.IpRule.GetIp().DestinationNetwork)
+			t.Logf("acls rule dumped %v", rule.IpRule.GetIp().SourceNetwork)
+
+		}
+
+		for _, rule := range rules {
+			t.Logf("acls rule dumped %v", rule.IpRule.GetIcmp())
+
+		}
+		for _, rule := range rules {
+			t.Logf("acls rule dumped %v", rule.IpRule.GetTcp())
+
+		}
 	}
 
 	//json, err := json.MarshalIndent(acls[aclIdx].ACL, "", "  ")
