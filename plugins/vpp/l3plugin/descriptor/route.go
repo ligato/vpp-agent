@@ -72,7 +72,7 @@ func NewRouteDescriptor(
 		Delete:               ctx.Delete,
 		Retrieve:             ctx.Retrieve,
 		Dependencies:         ctx.Dependencies,
-		RetrieveDependencies: []string{ifdescriptor.InterfaceDescriptorName},
+		RetrieveDependencies: []string{ifdescriptor.InterfaceDescriptorName, VrfTableDescriptorName},
 	}
 	return adapter.NewRouteDescriptor(typedDescr)
 }
