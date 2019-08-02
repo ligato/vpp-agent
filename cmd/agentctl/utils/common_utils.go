@@ -15,15 +15,12 @@
 package utils
 
 import (
+	"fmt"
 	"os"
 	"strings"
 
 	"github.com/go-errors/errors"
-
 	"github.com/gogo/protobuf/proto"
-
-	"fmt"
-
 	"github.com/ligato/cn-infra/db/keyval"
 	"github.com/ligato/cn-infra/db/keyval/etcd"
 	"github.com/ligato/cn-infra/db/keyval/kvproto"

@@ -45,18 +45,16 @@ or with a command line flag:
 `,
 		Version: fmt.Sprintf("%s", agent.BuildVersion),
 	}
-	cmd.Name()
 
 	label := defaultLabel
 	if l := os.Getenv("MICROSERVICE_LABEL"); l != "" {
 		label = l
 	}
 
-	cmd.PersistentFlags().StringVarP(&globalFlags.Label,
-		"label", "l", label,
+	// define flags
+	cmd.PersistentFlags().StringVarP(&globalFlags.Label, "label", "l", label,
 		"Microservice label identiying agent instance")
-	cmd.PersistentFlags().StringSliceVarP(&globalFlags.Endpoints,
-		"endpoints", "e", nil,
+	cmd.PersistentFlags().StringSliceVarP(&globalFlags.Endpoints, "endpoints", "e", nil,
 		"Etcd endpoints to connect to (comma-separated)")
 
 	addCommands(cmd)
