@@ -1,30 +1,28 @@
-package cmd
+package commands
 
 import (
+	"errors"
 	"strings"
 
 	"github.com/ligato/cn-infra/db/keyval"
 	"github.com/ligato/cn-infra/servicelabel"
-	"github.com/ligato/vpp-agent/cmd/agentctl/utils"
 	"github.com/spf13/cobra"
 
-	"errors"
+	"github.com/ligato/vpp-agent/cmd/agentctl/utils"
 )
 
-// RootCmd represents the base command when called without any subcommands.
-var delConfig = &cobra.Command{
-	Use:     "del <key>",
-	Aliases: []string{"d"},
-	Short:   "Delete configuration file",
-	Long: `
+func delCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:     "del <key>",
+		Aliases: []string{"d"},
+		Short:   "Delete configuration file",
+		Long: `
 	Delete configuration file
 `,
-	Args: cobra.RangeArgs(1, 1),
-	Run:  delFunction,
-}
-
-func init() {
-	RootCmd.AddCommand(delConfig)
+		Args: cobra.RangeArgs(1, 1),
+		Run:  delFunction,
+	}
+	return cmd
 }
 
 func delFunction(cmd *cobra.Command, args []string) {

@@ -1,4 +1,4 @@
-package cmd
+package commands
 
 import (
 	"errors"
@@ -22,12 +22,12 @@ import (
 	"github.com/ligato/vpp-agent/cmd/agentctl/utils"
 )
 
-// RootCmd represents the base command when called without any subcommands.
-var showCmd = &cobra.Command{
-	Use:     "show",
-	Aliases: []string{"s"},
-	Short:   "Show detailed config and status data",
-	Long: `
+func showCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:     "show",
+		Aliases: []string{"s"},
+		Short:   "Show detailed config and status data",
+		Long: `
 'show' prints out Etcd configuration and status data (where applicable)
 for agents whose microservice label matches the label filter specified
 in the command's '[agent-label-filter] argument. The filter contains a
@@ -43,7 +43,16 @@ exist (i.e. they do not push status records into Etcd) are listed as
 The etcd flag set to true enables the printout of Etcd metadata for each
 data record (except JSON-formatted output)
 `,
-	Run: showFunction,
+		Run: showFunction,
+	}
+
+	cmd.AddCommand(showConfig)
+	cmd.AddCommand(keyConfig)
+
+	cmd.PersistentFlags().BoolVar(&showAll, "all", false,
+		"Show all configuration")
+
+	return cmd
 }
 
 var showConfig = &cobra.Command{
@@ -94,11 +103,6 @@ var (
 )
 
 func init() {
-	RootCmd.AddCommand(showCmd)
-	showCmd.AddCommand(showConfig)
-	showCmd.AddCommand(keyConfig)
-	showCmd.PersistentFlags().BoolVar(&showAll, "all", false,
-		"Show all configuration")
 	showConfig.PersistentFlags().BoolVar(&showConfAll, "all", false,
 		"Show all configuration")
 

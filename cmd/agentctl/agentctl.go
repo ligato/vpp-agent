@@ -1,15 +1,14 @@
 package main
 
 import (
-	"fmt"
 	"os"
 
-	"github.com/ligato/vpp-agent/cmd/agentctl/cmd"
+	"github.com/ligato/vpp-agent/cmd/agentctl/commands"
 )
 
 func main() {
-	if err := cmd.RootCmd.Execute(); err != nil {
-		fmt.Println(err)
+	rootCmd := commands.NewRootCmd("agentctl")
+	if err := rootCmd.Execute(); err != nil {
 		os.Exit(1)
 	}
 }

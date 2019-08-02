@@ -1,4 +1,4 @@
-package cmd
+package commands
 
 import (
 	"encoding/json"
@@ -9,9 +9,8 @@ import (
 
 	"github.com/ghodss/yaml"
 	"github.com/gogo/protobuf/proto"
-	"github.com/spf13/cobra"
-
 	"github.com/ligato/cn-infra/servicelabel"
+	"github.com/spf13/cobra"
 
 	"github.com/ligato/vpp-agent/api/models/linux"
 	"github.com/ligato/vpp-agent/api/models/vpp"
@@ -20,14 +19,34 @@ import (
 	"github.com/ligato/vpp-agent/pkg/models"
 )
 
-// RootCmd represents the base command when called without any subcommands.
-var generateConfig = &cobra.Command{
-	Use:     "generate",
-	Aliases: []string{"g"},
-	Short:   "Generate example command",
-	Long: `
-	Generate example command
-`,
+func generateCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:     "generate",
+		Aliases: []string{"g"},
+		Short:   "Generate example command",
+	}
+	cmd.AddCommand(generateACL)
+	cmd.AddCommand(generateInterface)
+	cmd.AddCommand(generateBd)
+	cmd.AddCommand(generateFib)
+	cmd.AddCommand(generateIPScanNeighbor)
+	cmd.AddCommand(generateNatGlobal)
+	cmd.AddCommand(generateNatDNat)
+	cmd.AddCommand(generateIPSecPolicy)
+	cmd.AddCommand(generateIPSecAssociation)
+	cmd.AddCommand(generateArps)
+	cmd.AddCommand(generateRoutes)
+	cmd.AddCommand(generatePArp)
+	cmd.AddCommand(generateLinuxInterface)
+	cmd.AddCommand(generateLinuxARP)
+	cmd.AddCommand(generateLinuxRoutes)
+
+	formatType = cmd.PersistentFlags().String("format", "json",
+		"Output formats:\n\tjson\n\tyaml\n\tproto\n")
+	cmd.PersistentFlags().BoolVar(&short, "short", false,
+		"Print command to one line. Work only with json format")
+
+	return cmd
 }
 
 var generateACL = &cobra.Command{
@@ -184,29 +203,6 @@ var (
 	formatType *string
 	short      bool
 )
-
-func init() {
-	RootCmd.AddCommand(generateConfig)
-	generateConfig.AddCommand(generateACL)
-	generateConfig.AddCommand(generateInterface)
-	generateConfig.AddCommand(generateBd)
-	generateConfig.AddCommand(generateFib)
-	generateConfig.AddCommand(generateIPScanNeighbor)
-	generateConfig.AddCommand(generateNatGlobal)
-	generateConfig.AddCommand(generateNatDNat)
-	generateConfig.AddCommand(generateIPSecPolicy)
-	generateConfig.AddCommand(generateIPSecAssociation)
-	generateConfig.AddCommand(generateArps)
-	generateConfig.AddCommand(generateRoutes)
-	generateConfig.AddCommand(generatePArp)
-	generateConfig.AddCommand(generateLinuxInterface)
-	generateConfig.AddCommand(generateLinuxARP)
-	generateConfig.AddCommand(generateLinuxRoutes)
-	formatType = generateConfig.PersistentFlags().String("format", "json",
-		"Output formats:\n\tjson\n\tyaml\n\tproto\n")
-	generateConfig.PersistentFlags().BoolVar(&short, "short", false,
-		"Print command to one line. Work only with json format")
-}
 
 func aclGenerateFunction(cmd *cobra.Command, args []string) {
 	generateFunction(cmd_generator.ACL)

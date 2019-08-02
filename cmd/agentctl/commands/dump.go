@@ -1,30 +1,30 @@
-package cmd
+package commands
 
 import (
 	"fmt"
 	"os"
 
+	"github.com/spf13/cobra"
+
 	"github.com/ligato/vpp-agent/api/models/linux"
 	"github.com/ligato/vpp-agent/api/models/vpp"
-	"github.com/ligato/vpp-agent/cmd/agentctl/utils"
-
 	"github.com/ligato/vpp-agent/cmd/agentctl/restapi"
+	"github.com/ligato/vpp-agent/cmd/agentctl/utils"
 	"github.com/ligato/vpp-agent/plugins/restapi/resturl"
-	"github.com/spf13/cobra"
 )
 
-// RootCmd represents the base command when called without any subcommands.
-var dumpCmd = &cobra.Command{
-	Use:     "dump",
-	Aliases: []string{"d"},
-	Short:   "Dump command for vppagent",
-	Long: `
-A Dump tool to connect to vppagent and dump value.
-Use the 'ETCD_ENDPOINTS'' environment variable or the 'endpoints'
-flag in the command line to specify vppagent instances to
-connect to.
-`,
-	Example: `Specify the vppagent to connect to and run VPP CLI command:
+func dumpCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:     "dump",
+		Aliases: []string{"d"},
+		Short:   "Dump command for vppagent",
+		/*Long: `
+		A Dump tool to connect to vppagent and dump value.
+		Use the 'ETCD_ENDPOINTS'' environment variable or the 'endpoints'
+		flag in the command line to specify vppagent instances to
+		connect to.
+		`,*/
+		Example: `Specify the vppagent to connect to and run VPP CLI command:
 	$ export ETCD_ENDPOINTS=172.17.0.3:9191
 	$ ./agentctl dump <dump cmd>
 
@@ -32,7 +32,39 @@ Do as above, but with a command line flag:
   $ ./agentctl --endpoints 172.17.0.3:9191 dump <dump cmd>
 `,
 
-	Args: cobra.MinimumNArgs(2),
+		Args: cobra.MinimumNArgs(2),
+	}
+
+	cmd.AddCommand(dumpLinuxInterface)
+	cmd.AddCommand(dumpLinuxRoutes)
+	cmd.AddCommand(dumpLinuxArps)
+	cmd.AddCommand(dumpACLIP)
+	cmd.AddCommand(dumpACLMACIP)
+	cmd.AddCommand(dumpInterface)
+	cmd.AddCommand(dumpLoopback)
+	cmd.AddCommand(dumpEthernet)
+	cmd.AddCommand(dumpMemif)
+	cmd.AddCommand(dumpTap)
+	cmd.AddCommand(dumpAfPacket)
+	cmd.AddCommand(dumpVxLan)
+	cmd.AddCommand(dumpNatGlobal)
+	cmd.AddCommand(dumpNatDNat)
+	cmd.AddCommand(dumpBd)
+	cmd.AddCommand(dumpFib)
+	cmd.AddCommand(dumpXc)
+	cmd.AddCommand(dumpRoutes)
+	cmd.AddCommand(dumpArps)
+	cmd.AddCommand(dumpPArpIfs)
+	cmd.AddCommand(dumpPArpRngs)
+	cmd.AddCommand(dumpCommand)
+	cmd.AddCommand(dumpTelemetry)
+	cmd.AddCommand(dumpTMemory)
+	cmd.AddCommand(dumpTRuntime)
+	cmd.AddCommand(dumpTNodeCount)
+	cmd.AddCommand(dumpTracer)
+	cmd.AddCommand(dumpIndex)
+
+	return cmd
 }
 
 var dumpLinuxInterface = &cobra.Command{
@@ -313,38 +345,6 @@ var dumpIndex = &cobra.Command{
 `,
 	Args: cobra.MaximumNArgs(0),
 	Run:  indexDumpFunction,
-}
-
-func init() {
-	RootCmd.AddCommand(dumpCmd)
-	dumpCmd.AddCommand(dumpLinuxInterface)
-	dumpCmd.AddCommand(dumpLinuxRoutes)
-	dumpCmd.AddCommand(dumpLinuxArps)
-	dumpCmd.AddCommand(dumpACLIP)
-	dumpCmd.AddCommand(dumpACLMACIP)
-	dumpCmd.AddCommand(dumpInterface)
-	dumpCmd.AddCommand(dumpLoopback)
-	dumpCmd.AddCommand(dumpEthernet)
-	dumpCmd.AddCommand(dumpMemif)
-	dumpCmd.AddCommand(dumpTap)
-	dumpCmd.AddCommand(dumpAfPacket)
-	dumpCmd.AddCommand(dumpVxLan)
-	dumpCmd.AddCommand(dumpNatGlobal)
-	dumpCmd.AddCommand(dumpNatDNat)
-	dumpCmd.AddCommand(dumpBd)
-	dumpCmd.AddCommand(dumpFib)
-	dumpCmd.AddCommand(dumpXc)
-	dumpCmd.AddCommand(dumpRoutes)
-	dumpCmd.AddCommand(dumpArps)
-	dumpCmd.AddCommand(dumpPArpIfs)
-	dumpCmd.AddCommand(dumpPArpRngs)
-	dumpCmd.AddCommand(dumpCommand)
-	dumpCmd.AddCommand(dumpTelemetry)
-	dumpCmd.AddCommand(dumpTMemory)
-	dumpCmd.AddCommand(dumpTRuntime)
-	dumpCmd.AddCommand(dumpTNodeCount)
-	dumpCmd.AddCommand(dumpTracer)
-	dumpCmd.AddCommand(dumpIndex)
 }
 
 func linuxInterfaceDumpFunction(cmd *cobra.Command, args []string) {

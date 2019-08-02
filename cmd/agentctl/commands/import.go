@@ -12,7 +12,7 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 
-package cmd
+package commands
 
 import (
 	"bytes"
@@ -26,10 +26,9 @@ import (
 
 	"github.com/gogo/protobuf/jsonpb"
 	"github.com/gogo/protobuf/proto"
+	"github.com/ligato/cn-infra/servicelabel"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
-
-	"github.com/ligato/cn-infra/servicelabel"
 
 	"github.com/ligato/vpp-agent/api/genericmanager"
 	"github.com/ligato/vpp-agent/client/remoteclient"
@@ -43,22 +42,13 @@ var (
 	timeout  uint
 )
 
-func init() {
-	RootCmd.AddCommand(importConfig)
-	importConfig.PersistentFlags().UintVar(&txops, "txops", 128,
-		"Number of OPs per transaction")
-	importConfig.PersistentFlags().StringVar(&grpcAddr, "grpc", "",
-		"Address of gRPC server.")
-	importConfig.PersistentFlags().UintVarP(&timeout, "time", "t", 60,
-		"Client timeout in seconds (how long to wait for response from server)")
-}
-
-var importConfig = &cobra.Command{
-	Use:     "import",
-	Aliases: []string{"i"},
-	Args:    cobra.RangeArgs(1, 1),
-	Short:   "Import configuration from file",
-	Long: `
+func importCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:     "import",
+		Aliases: []string{"i"},
+		Args:    cobra.RangeArgs(1, 1),
+		Short:   "Import configuration from file",
+		Long: `
 Import configuration from file.
 
 File format:
@@ -75,7 +65,7 @@ Supported key formats:
 
   For short keys, the import command uses microservice label defined with --label.
 `,
-	Example: `  Import configuration from file:
+		Example: `  Import configuration from file:
 	
 	$ cat input.txt
 	config/vpp/v2/interfaces/loop1 {"name":"loop1","type":"SOFTWARE_LOOPBACK"}
@@ -86,7 +76,17 @@ Supported key formats:
 	
 	$ agentctl import --grpc=localhost:9111 input.txt
 `,
-	Run: importFunction,
+		Run: importFunction,
+	}
+
+	cmd.PersistentFlags().UintVar(&txops, "txops", 128,
+		"Number of OPs per transaction")
+	cmd.PersistentFlags().StringVar(&grpcAddr, "grpc", "",
+		"Address of gRPC server.")
+	cmd.PersistentFlags().UintVarP(&timeout, "time", "t", 60,
+		"Client timeout in seconds (how long to wait for response from server)")
+
+	return cmd
 }
 
 func getTimeout() time.Duration {

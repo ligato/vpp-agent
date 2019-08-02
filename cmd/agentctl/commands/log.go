@@ -1,27 +1,33 @@
-package cmd
+package commands
 
 import (
 	"fmt"
 	"os"
 	"strings"
 
-	"github.com/ligato/vpp-agent/cmd/agentctl/utils"
+	"github.com/spf13/cobra"
 
 	"github.com/ligato/vpp-agent/cmd/agentctl/restapi"
-	"github.com/spf13/cobra"
+	"github.com/ligato/vpp-agent/cmd/agentctl/utils"
 )
 
-// RootCmd represents the base command when called without any subcommands.
-var log = &cobra.Command{
-	Use:     "log",
-	Aliases: []string{"l"},
-	Short:   "Show/Set vppagent logs",
-	Long: `
+func logCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:     "log",
+		Aliases: []string{"l"},
+		Short:   "Show/Set vppagent logs",
+		Long: `
 A CLI tool to connect to vppagent and show/set vppagent logs.
 Use the 'ETCD_ENDPOINTS'' environment variable or the 'endpoints'
 flag in the command line to specify vppagent instances to
 connect to.
 `,
+	}
+
+	cmd.AddCommand(logList)
+	cmd.AddCommand(logSet)
+
+	return cmd
 }
 
 var logList = &cobra.Command{
@@ -69,9 +75,6 @@ Do as above, but with a command line flag:
 var verbose bool
 
 func init() {
-	RootCmd.AddCommand(log)
-	log.AddCommand(logList)
-	log.AddCommand(logSet)
 	logList.Flags().BoolVar(&verbose, "v", false, "verbose")
 }
 
