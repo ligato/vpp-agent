@@ -25,6 +25,7 @@ import (
 	_ "github.com/ligato/vpp-agent/plugins/vpp/ifplugin"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	ifplugin_vppcalls "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
+	//	"encoding/json"
 )
 
 var aclNoRules []*acl.ACL_Rule
@@ -225,8 +226,7 @@ var aclMACIPrules = []*acl.ACL_Rule{
 	},
 }
 
-// Test add IP acl rules
-func TestAddIPAcl(t *testing.T) {
+func TestCRUDIPAcl(t *testing.T) {
 	ctx := setupVPP(t)
 	defer ctx.teardownVPP()
 
@@ -249,9 +249,9 @@ func TestAddIPAcl(t *testing.T) {
 		t.Fatalf("handler was not created")
 	}
 
-	acls, errA := h.DumpACL()
-	if errA != nil {
-		t.Fatalf("dumping acls failed: %v", errA)
+	acls, errx := h.DumpACL()
+	if errx != nil {
+		t.Fatalf("dumping acls failed: %v", errx)
 	}
 	t.Logf("%d acls dumped", len(acls))
 	t.Logf("acls dumped %v", acls)
@@ -262,16 +262,39 @@ func TestAddIPAcl(t *testing.T) {
 	if err != nil {
 		t.Fatalf("adding acls failed: %v", err)
 	}
-	t.Logf("%d acl added", aclIdx)
+	t.Logf("acl added - with index %d", aclIdx)
 
-	acls, errx := h.DumpACL()
-
+	acls, errx = h.DumpACL()
 	if errx != nil {
 		t.Fatalf("dumping acls failed: %v", errx)
 	}
 	t.Logf("%d acls dumped", len(acls))
 	t.Logf("acls dumped %v", acls)
 
+	for _, item := range acls {
+		item2 := item.ACL.GetRules()
+		t.Logf("acls dumped %v", item2)
+
+	}
+
+	//json, err := json.MarshalIndent(acls[aclIdx].ACL, "", "  ")
+	if err != nil {
+		//	t.Fatalf("json processing failed: %v", err)
+	}
+	//t.Logf("%v", string(json))
+
+	//t.Logf("%+v", acls[aclIdx].Meta.Index)
+	//t.Logf("%+v", acls[aclIdx].Meta.Tag)
+	//t.Logf("%+v", acls[aclIdx].ACL.GetInterfaces())
+	//t.Logf("%+v", acls[aclIdx].ACL.GetName())
+	//t.Logf("%+v", acls[aclIdx].ACL.GetRules())
+	//t.Logf("%+v", acls[aclIdx].ACL.String())
+	//t.Logf("%+v", acls[aclIdx].ACL.Name)
+	//t.Logf("%+v", acls[aclIdx].ACL.Rules)
+	//t.Logf("%+v", acls[aclIdx].ACL.Interfaces)
+	//t.Logf("%+v", acls[aclIdx].ACL.XXX_MessageName())
+
+	//negative tests - it is expected failure
 	_, err = h.AddACL(aclNoRules, "test1")
 	Expect(err).To(Not(BeNil()))
 	if err != nil {
@@ -296,46 +319,34 @@ func TestAddIPAcl(t *testing.T) {
 		t.Logf("adding acls failed: %v", err)
 	}
 
-	//ctx.MockVpp.MockReply(&acl_api.MacipACLAddReply{})
+	//add the same acls again
 	aclIdx, err = h.AddACL(aclIPrules, "test5")
-	//Expect(err).To(Not(BeNil()))
 	if err != nil {
-		t.Logf("adding acls failed: %v", err)
+		t.Fatalf("adding acls failed: %v", err)
 	}
-	t.Logf("%d acl added", aclIdx)
-
-	//ctx.MockVpp.MockReply(&acl_api.ACLAddReplaceReply{Retval: -1})
-	aclIdx, err = h.AddACL(aclIPrules, "test6")
-	//Expect(err).To(Not(BeNil()))
-	if err != nil {
-		t.Logf("adding acls failed: %v", err)
-	}
-	t.Logf("%d acl added", aclIdx)
+	t.Logf("acl added with index %d", aclIdx)
 
 	acls, errx = h.DumpACL()
-
 	if errx != nil {
 		t.Fatalf("dumping acls failed: %v", errx)
 	}
-	t.Logf("%d acls dumped", len(acls))
-	t.Logf("acls dumped %v", acls)
+	aclCnt := len(acls)
+	t.Logf("%d acls dumped", aclCnt)
+	if aclCnt != 2 {
+		t.Fatalf("THe count of acls should be 2 not %d", aclCnt)
+	}
 
-	//Expect(acls[0].Identifier.ACLIndex).To(Equal(uint32(0)))
-	//Expect(acls[0].vppcalls.ACLDetails.Rules[0].AclAction).To(Equal(uint32(1)))
-	//Expect(acls[1].Identifier.ACLIndex).To(Equal(uint32(1)))
-	//Expect(acls[2].Identifier.ACLIndex).To(Equal(uint32(2)))
-	t.Logf("%+v", acls[0].Meta.Index)
-	t.Logf("%+v", acls[0].Meta.Tag)
-	//t.Logf("%+v", acls[0].ACL.Descriptor())
-	t.Logf("%+v", acls[0].ACL.GetInterfaces())
-	t.Logf("%+v", acls[0].ACL.GetName())
-	t.Logf("%+v", acls[0].ACL.GetRules())
-	//t.Logf("%+v", acls[0].ACL.ProtoMessage())
-	t.Logf("%+v", acls[0].ACL.String())
-	t.Logf("%+v", acls[0].ACL.Name)
-	t.Logf("%+v", acls[0].ACL.Rules)
-	t.Logf("%+v", acls[0].ACL.Interfaces)
-	t.Logf("%+v", acls[0].ACL.XXX_MessageName())
+	//t.Logf("%+v", acls[aclIdx].Meta.Index)
+	//t.Logf("%+v", acls[aclIdx].Meta.Tag)
+
+	//t.Logf("%+v", acls[aclIdx].ACL.GetInterfaces())
+	//t.Logf("%+v", acls[aclIdx].ACL.GetName())
+	//t.Logf("%+v", acls[aclIdx].ACL.GetRules())
+	//t.Logf("%+v", acls[aclIdx].ACL.String())
+	//t.Logf("%+v", acls[aclIdx].ACL.Name)
+	//t.Logf("%+v", acls[aclIdx].ACL.Rules)
+	//t.Logf("%+v", acls[aclIdx].ACL.Interfaces)
+	//t.Logf("%+v", acls[aclIdx].ACL.XXX_MessageName())
 
 	err = h.DeleteACL(5)
 	Expect(err).To(Not(BeNil()))
@@ -415,6 +426,93 @@ func TestAddIPAcl(t *testing.T) {
 	//err = h.ModifyACL(1, aclIPrules, "test_modify4")
 	//Expect(err).To(Not(BeNil()))
 
+}
+
+// Test add MACIP acl rules
+func TestAddMacIPAcl(t *testing.T) {
+	ctx := setupVPP(t)
+	defer ctx.teardownVPP()
+
+	ih := ifplugin_vppcalls.CompatibleInterfaceVppHandler(ctx.vppBinapi, logrus.NewLogger("test"))
+
+	const ifName = "loop1"
+	ifIdx, errI := ih.AddLoopbackInterface(ifName)
+	if errI != nil {
+		t.Fatalf("creating interface failed: %v", errI)
+	}
+	t.Logf("interface created %v", ifIdx)
+
+	ifIndexes := ifaceidx.NewIfaceIndex(logrus.NewLogger("test-iface1"), "test-iface1")
+	ifIndexes.Put(ifName, &ifaceidx.IfaceMetadata{
+		SwIfIndex: ifIdx,
+	})
+
+	h := aclplugin_vppcalls.CompatibleACLVppHandler(ctx.vppBinapi, ifIndexes, logrus.NewLogger("test"))
+	if h == nil {
+		t.Fatalf("handler was not created")
+	}
+
+	aclIndex, err := h.AddMACIPACL(aclMACIPrules, "test6")
+	Expect(err).To(BeNil())
+	Expect(aclIndex).To(BeEquivalentTo(0))
+
+	_, err = h.AddMACIPACL(aclNoRules, "test7")
+	Expect(err).To(Not(BeNil()))
+
+	_, err = h.AddMACIPACL(aclErr4Rules, "test8")
+	Expect(err).To(Not(BeNil()))
+
+	_, err = h.AddMACIPACL(aclErr5Rules, "test9")
+	Expect(err).To(Not(BeNil()))
+
+	_, err = h.AddMACIPACL(aclErr6Rules, "test10")
+	Expect(err).To(Not(BeNil()))
+	Expect(err.Error()).To(BeEquivalentTo("invalid IP address "))
+
+	_, err = h.AddMACIPACL(aclMACIPrules, "test11")
+	Expect(err).To(BeNil())
+
+	_, err = h.AddMACIPACL(aclMACIPrules, "test12")
+	Expect(err).To(BeNil())
+
+	err = h.DeleteMACIPACL(5)
+	Expect(err).To(Not(BeNil()))
+
+	err = h.DeleteMACIPACL(1)
+	Expect(err).To(BeNil())
+
+	rule2modify := []*acl.ACL_Rule{
+		{
+			Action: acl.ACL_Rule_DENY,
+			MacipRule: &acl.ACL_Rule_MacIpRule{
+				SourceAddress:        "192.168.10.1",
+				SourceAddressPrefix:  uint32(24),
+				SourceMacAddress:     "11:44:0A:B8:4A:37",
+				SourceMacAddressMask: "ff:ff:ff:ff:00:00",
+			},
+		},
+		{
+			Action: acl.ACL_Rule_DENY,
+			MacipRule: &acl.ACL_Rule_MacIpRule{
+				SourceAddress:        "dead::2",
+				SourceAddressPrefix:  uint32(64),
+				SourceMacAddress:     "11:44:0A:B8:4A:38",
+				SourceMacAddressMask: "ff:ff:ff:ff:00:00",
+			},
+		},
+	}
+
+	err = h.ModifyMACIPACL(0, rule2modify, "test_modify0")
+	Expect(err).To(BeNil())
+
+	err = h.ModifyMACIPACL(0, aclErr1Rules, "test_modify1")
+	Expect(err).To(Not(BeNil()))
+
+	err = h.ModifyMACIPACL(0, aclMACIPrules, "test_modify4")
+	Expect(err).To(BeNil())
+
+	err = h.ModifyMACIPACL(0, aclIPrules, "test_modify5")
+	Expect(err).To(Not(BeNil()))
 }
 
 func TestAcl(t *testing.T) {
