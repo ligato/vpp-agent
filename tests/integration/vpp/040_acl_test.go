@@ -456,7 +456,6 @@ func TestCRUDIPAcl(t *testing.T) {
 	isForInterface = false
 	var modifiedacl aclplugin_vppcalls.ACLDetails
 	for _, item := range acls {
-		t.Logf("%v", *item)
 		modifiedacl = *item
 		rules = item.ACL.Rules
 		if item.Meta.Index == aclIdx { //&& (aclname2 == item.Meta.Tag) {
@@ -509,23 +508,48 @@ func TestCRUDIPAcl(t *testing.T) {
 	isPresent = false
 	isForInterface = false
 	for _, item := range acls {
-		t.Logf("%v", *item)
-		if *item == modifiedacl {
+		if item.Meta.Index == aclIdx { //&& (aclname2 == item.Meta.Tag) {
+			t.Logf("Found modified ACL aclIPrules with aclName  %v", item.Meta.Tag)
+		}
+		if item.ACL.String() == modifiedacl.ACL.String() {
 			t.Logf("Last update caused no change in acl definition.")
 			break
+		} else {
+			t.Fatalf("Last update caused change in acl definition.")
 		}
 	}
-	if !isPresent {
-		//		t.Fatalf("Configured IP is not present.")
-	} else {
-		t.Logf("Configured IP is present.")
 
+	// DELETE ACL
+	err = h.RemoveACLFromInterfacesAsEgress(aclIdx, []uint32{ifIdx2})
+
+	acls, errx = h.DumpACL()
+	Expect(errx).To(BeNil())
+	aclCnt = len(acls)
+	Expect(aclCnt).Should(Equal(1))
+	t.Logf("%d acls dumped", aclCnt)
+
+	isPresent = false
+	isForInterface = false
+	for _, item := range acls {
+		if item.Meta.Index == aclIdx { //&& (aclname2 == item.Meta.Tag) {
+			t.Logf("Found modified ACL aclIPrules with aclName  %v", item.Meta.Tag)
+		}
+		if item.ACL.Interfaces.String() == "" {
+			t.Logf("Interface assignment was removed")
+		} else {
+			t.Fatalf("Interface assignment was not removed.")
+		}
 	}
-	if isForInterface {
-		t.Logf("dumped acl is correctly assigned to interface %v", ifName2)
-	} else {
-		t.Fatalf("dumped interface is not correctly assigned")
-	}
+
+	err = h.DeleteACL(aclIdx)
+	Expect(err).To(BeNil())
+	t.Logf("deleting acls succeed")
+
+	acls, errx = h.DumpACL()
+	Expect(errx).To(BeNil())
+	aclCnt = len(acls)
+	Expect(aclCnt).Should(Equal(0))
+	t.Logf("%d acls dumped", aclCnt)
 
 }
 
