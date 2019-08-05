@@ -103,6 +103,12 @@ func (dsl *PutDSL) VppInterface(val *interfaces.Interface) linuxclient.PutDSL {
 	return dsl
 }
 
+// VppSpan adds a request to create or update VPP SPAN.
+func (dsl *PutDSL) VppSpan(val *interfaces.Span) linuxclient.PutDSL {
+	dsl.vppPut.Span(val)
+	return dsl
+}
+
 // ACL adds a request to create or update VPP Access Control List.
 func (dsl *PutDSL) ACL(acl *acl.ACL) linuxclient.PutDSL {
 	dsl.vppPut.ACL(acl)
@@ -276,6 +282,12 @@ func (dsl *DeleteDSL) LinuxRoute(dstAddr, outIfaceName string) linuxclient.Delet
 // VppInterface adds a request to delete an existing VPP network interface.
 func (dsl *DeleteDSL) VppInterface(ifaceName string) linuxclient.DeleteDSL {
 	dsl.vppDelete.Interface(ifaceName)
+	return dsl
+}
+
+// VppSpan adds a request to delete VPP SPAN.
+func (dsl *DeleteDSL) VppSpan(val *interfaces.Span) linuxclient.DeleteDSL {
+	dsl.vppDelete.Span(val)
 	return dsl
 }
 
