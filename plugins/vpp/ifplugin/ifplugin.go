@@ -17,6 +17,7 @@
 //go:generate descriptor-adapter --descriptor-name RxMode  --value-type *vpp_interfaces.Interface --import "github.com/ligato/vpp-agent/api/models/vpp/interfaces" --output-dir "descriptor"
 //go:generate descriptor-adapter --descriptor-name RxPlacement  --value-type *vpp_interfaces.Interface_RxPlacement --import "github.com/ligato/vpp-agent/api/models/vpp/interfaces" --output-dir "descriptor"
 //go:generate descriptor-adapter --descriptor-name BondedInterface  --value-type *vpp_interfaces.BondLink_BondedInterface --import "github.com/ligato/vpp-agent/api/models/vpp/interfaces" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name Span  --value-type *vpp_interfaces.Span --import "github.com/ligato/vpp-agent/api/models/vpp/interfaces" --output-dir "descriptor"
 
 package ifplugin
 
@@ -66,6 +67,7 @@ type IfPlugin struct {
 	// descriptors
 	linkStateDescriptor *descriptor.LinkStateDescriptor
 	dhcpDescriptor      *descriptor.DHCPDescriptor
+	spanDescriptor      *descriptor.SpanDescriptor
 
 	// from config file
 	defaultMtu uint32
@@ -165,6 +167,8 @@ func (p *IfPlugin) Init() (err error) {
 	bondIfDescriptor, _ := descriptor.NewBondedInterfaceDescriptor(p.ifHandler, p.intfIndex, p.Log)
 	vrfDescriptor := descriptor.NewInterfaceVrfDescriptor(p.ifHandler, p.intfIndex, p.Log)
 	withAddrDescriptor := descriptor.NewInterfaceWithAddrDescriptor(p.Log)
+	spanDescriptor, spanDescriptorCtx := descriptor.NewSpanDescriptor(p.ifHandler, p.Log)
+	spanDescriptorCtx.SetInterfaceIndex(p.intfIndex)
 
 	err = p.KVScheduler.RegisterKVDescriptor(
 		dhcpDescriptor,
@@ -176,6 +180,7 @@ func (p *IfPlugin) Init() (err error) {
 		bondIfDescriptor,
 		vrfDescriptor,
 		withAddrDescriptor,
+		spanDescriptor,
 	)
 	if err != nil {
 		return err
