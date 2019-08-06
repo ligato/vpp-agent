@@ -390,21 +390,21 @@ func TestCRUDIPAcl(t *testing.T) {
 	t.Logf("deleting acls failed: %v", err)
 
 	// find the acl with aclname test0
-	var foundAclIdx uint32
+	var foundaclidx uint32
 	for _, item := range acls {
 		rules = item.ACL.Rules
 		if aclname == item.Meta.Tag {
-			foundAclIdx = item.Meta.Index
+			foundaclidx = item.Meta.Index
 			break
 		}
 	}
-	err = h.DeleteACL(foundAclIdx)
+	err = h.DeleteACL(foundaclidx)
 	Expect(err).To(Not(BeNil()))
 	t.Logf("deleting acls failed: %v", err)
 
 	// DELETE ACL
-	err = h.RemoveACLFromInterfacesAsIngress(foundAclIdx, []uint32{ifIdx})
-	err = h.DeleteACL(foundAclIdx)
+	err = h.RemoveACLFromInterfacesAsIngress(foundaclidx, []uint32{ifIdx})
+	err = h.DeleteACL(foundaclidx)
 	Expect(err).To(BeNil())
 	t.Logf("deleting acls succeed")
 
@@ -415,7 +415,7 @@ func TestCRUDIPAcl(t *testing.T) {
 	t.Logf("%d acls dumped", aclCnt)
 
 	for _, aclrecord := range acls {
-		if aclrecord.Meta.Index == foundAclIdx {
+		if aclrecord.Meta.Index == foundaclidx {
 			t.Fatalf("This acll should be deleted : %v", errx)
 		}
 	}
