@@ -21,118 +21,87 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/ligato/vpp-agent/cmd/agentctl/restapi"
+	"github.com/ligato/cn-infra/logging"
+	"github.com/ligato/vpp-agent/cmd/agentctl/cli"
 	"github.com/ligato/vpp-agent/cmd/agentctl/utils"
 )
 
-func logCmd() *cobra.Command {
+func NewLogCommand(cli *cli.AgentCli) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "log",
 		Aliases: []string{"l"},
-		Short:   "Show/Set vppagent logs",
-		Long: `
-A CLI tool to connect to vppagent and show/set vppagent logs.
-Use the 'ETCD_ENDPOINTS'' environment variable or the 'endpoints'
-flag in the command line to specify vppagent instances to
-connect to.
-`,
+		Short:   "Manage agent logs",
 	}
+	cmd.AddCommand(
+		newLogListCommand(cli),
+		newLogSetCommand(cli),
+	)
+	return cmd
+}
 
-	cmd.AddCommand(logList)
-	cmd.AddCommand(logSet)
+func newLogListCommand(cli *cli.AgentCli) *cobra.Command {
+	opts := LogListOptions{}
+
+	cmd := &cobra.Command{
+		Use:     "list <logget>",
+		Aliases: []string{"ls"},
+		Short:   "Show vppagent logs",
+		Long: `
+A CLI tool to connect to vppagent and show vppagent logs.
+`,
+		Args: cobra.MaximumNArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			opts.Logger = args[0]
+			return RunLogList(cli, opts)
+		},
+	}
 
 	return cmd
 }
 
-var logList = &cobra.Command{
-	Use:   "list <logget>",
-	Short: "Show vppagent logs",
-	Long: `
-A CLI tool to connect to vppagent and show vppagent logs.
-Use the 'ETCD_ENDPOINTS'' environment variable or the 'endpoints'
-flag in the command line to specify vppagent instances to
-connect to.
-`,
-	Example: `Specify the vppagent to connect to and show vppagent logs:
-	$ export ETCD_ENDPOINTS=172.17.0.3:9191
-	$ ./agentctl log list
-
-Do as above, but with a command line flag:
-  $ ./agentctl --endpoints 172.17.0.3:9191 log list
-`,
-
-	Args: cobra.MaximumNArgs(1),
-	Run:  logFunction,
+type LogListOptions struct {
+	Logger string
 }
 
-var logSet = &cobra.Command{
-	Use:   "set <logger> <debug|info|warning|error|fatal|panic>",
-	Short: "Set vppagent logger type",
-	Long: `
-A CLI tool to connect to vppagent and set vppagent logger type.
-Use the 'ETCD_ENDPOINTS'' environment variable or the 'endpoints'
-flag in the command line to specify vppagent instances to
-connect to.
-`,
-	Example: `Specify the vppagent to connect to and show vppagent logs:
-	$ export ETCD_ENDPOINTS=172.17.0.3:9191
-	$ ./agentctl log set agent info
-
-Do as above, but with a command line flag:
-  $ ./agentctl --endpoints 172.17.0.3:9191 log set agent info
-`,
-
-	Args: cobra.RangeArgs(2, 2),
-	Run:  setFunction,
-}
-
-var verbose bool
-
-func init() {
-	logList.Flags().BoolVar(&verbose, "v", false, "verbose")
-}
-
-func logFunction(cmd *cobra.Command, args []string) {
-	msg := restapi.GetMsg(globalFlags.Endpoints, "/log/list")
-
-	if verbose {
-		fmt.Fprintf(os.Stdout, "%s\n", msg)
-		return
+func RunLogList(cli *cli.AgentCli, opts LogListOptions) error {
+	resp, err := cli.HttpRestGET("/log/list")
+	if err != nil {
+		return fmt.Errorf("HTTP GET request failed: %v", err)
 	}
+	msg := string(resp)
+
+	logging.Debugf("%s\n", msg)
 
 	if strings.Compare(msg, "404 page not found") == 0 {
 		fmt.Println(msg)
-		return
+		return fmt.Errorf("not found")
 	}
 
 	data := utils.ConvertToLogList(msg)
 
-	if 0 == len(data) {
-		fmt.Fprintf(os.Stdout, "No data found.\n")
-		return
+	if len(data) == 0 {
+		return fmt.Errorf("no data found")
 	}
 
-	if 1 != len(args) {
+	if opts.Logger == "" {
 		printLogList(data)
-		return
+		return fmt.Errorf("invalid arguments")
 	}
-
-	logger := args[0]
 
 	tmpData := make(utils.LogList, 0)
 
 	for _, value := range data {
-		if strings.Contains(value.Logger, logger) {
+		if strings.Contains(value.Logger, opts.Logger) {
 			tmpData = append(tmpData, value)
 		}
 	}
 
 	if len(tmpData) == 0 {
-		fmt.Fprintf(os.Stdout, "No data found.\n")
-		return
+		return fmt.Errorf("No data found")
 	}
 
 	printLogList(tmpData)
+	return nil
 }
 
 func printLogList(data utils.LogList) {
@@ -145,9 +114,35 @@ func printLogList(data utils.LogList) {
 	}
 }
 
-func setFunction(cmd *cobra.Command, args []string) {
-	logger := args[0]
-	level := args[1]
+type LogSetOptions struct {
+	Logger string
+	Level  string
+}
 
-	restapi.SetMsg(globalFlags.Endpoints, "/log/"+logger+"/"+level)
+func newLogSetCommand(cli *cli.AgentCli) *cobra.Command {
+	opts := LogSetOptions{}
+	cmd := &cobra.Command{
+		Use:   "set <logger> <debug|info|warning|error|fatal|panic>",
+		Short: "Set vppagent logger type",
+		Long: `
+A CLI tool to connect to vppagent and set vppagent logger type.
+`,
+		Args: cobra.RangeArgs(2, 2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			opts.Logger = args[0]
+			opts.Level = args[1]
+			return RunLogSet(cli, opts)
+		},
+	}
+	return cmd
+}
+
+func RunLogSet(cli *cli.AgentCli, opts LogSetOptions) error {
+	resp, err := cli.HttpRestPUT("/log/"+opts.Logger+"/"+opts.Level, nil)
+	if err != nil {
+		return fmt.Errorf("HTTP PUT request failed: %v", err)
+	}
+
+	logging.Debugf("response: %s\n", resp)
+	return nil
 }

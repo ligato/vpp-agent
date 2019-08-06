@@ -121,6 +121,6 @@ func GetModuleName(module proto.Message) string {
 // ExitWithError is used by all commands to print out an error
 // and exit.
 func ExitWithError(code int, err error) {
-	fmt.Fprintln(os.Stderr, "Error: ", err)
+	fmt.Fprintln(os.Stderr, "ERROR: ", err)
 	os.Exit(code)
 }

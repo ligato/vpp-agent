@@ -12,18 +12,33 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 
-package main
+package commands
 
 import (
+	"fmt"
 	"os"
-
-	"github.com/ligato/vpp-agent/cmd/agentctl/commands"
 )
 
-func main() {
-	cmd := commands.NewAgentctlCommand()
+type ExitError int
 
-	if err := cmd.Execute(); err != nil {
-		os.Exit(-1)
-	}
+// Common exit flags
+const (
+	NoError            = 0
+	ErrorUnspecified   = 1
+	ErrorBadConnection = 2
+	ErrorInvalidInput  = 3
+	ErrorBadFeature    = 4
+	ErrorInterrupted   = 5
+	ErrorIO            = 6
+	ErrorBadArgs       = 128
+)
+
+func ExitWithError(err error) {
+	fmt.Fprintf(os.Stderr, "ERROR: %v\n", err)
+	os.Exit(ErrorUnspecified)
+}
+
+func ExitWithCodeAndError(code int, err error) {
+	fmt.Fprintf(os.Stderr, "ERROR(%d): %v\n", code, err)
+	os.Exit(code)
 }

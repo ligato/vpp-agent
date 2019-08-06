@@ -20,56 +20,77 @@ import (
 
 	"github.com/ligato/cn-infra/agent"
 	"github.com/spf13/cobra"
-)
 
-const defaultLabel = "vpp1"
+	"github.com/ligato/vpp-agent/cmd/agentctl/cli"
+)
 
 var (
-	// globalFlags defines a single type to hold all cobra global flags.
+	// globalFlags defines all global flags.
 	globalFlags struct {
-		Endpoints []string
-		Label     string
+		AgentAddr    string
+		GrpcAddr     string
+		HttpAddr     string
+		ServiceLabel string
+		Endpoints    []string
+
+		Debug bool
 	}
+	agentLabel string
+	agentAddr  = "127.0.0.1"
 )
 
-// NewRootCmd returns new base command.
-func NewRootCmd(name string) *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   name,
-		Short: "A CLI tool for managing agents",
-		Example: `Specify the etcd to connect to and list all agents that it knows about:
- $ export ETCD_ENDPOINTS=172.17.0.1:2379
+func init() {
+	if l := os.Getenv("MICROSERVICE_LABEL"); l != "" {
+		agentLabel = l
+	}
+	if a := os.Getenv("AGENT_ADDR"); a != "" {
+		agentAddr = a
+	}
+}
 
-or with a command line flag:
- $ agentctl --endpoints 172.17.0.1:2379 show
-`,
+// NewAgentctlCommand returns new root command.
+func NewAgentctlCommand() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:     "agentctl",
+		Short:   "agentctl manages vpp-agent instances",
 		Version: fmt.Sprintf("%s", agent.BuildVersion),
 	}
 
-	label := defaultLabel
-	if l := os.Getenv("MICROSERVICE_LABEL"); l != "" {
-		label = l
-	}
+	// define global flags
+	flags := cmd.PersistentFlags()
 
-	// define flags
-	cmd.PersistentFlags().StringVarP(&globalFlags.Label, "label", "l", label,
-		"Microservice label identiying agent instance")
-	cmd.PersistentFlags().StringSliceVarP(&globalFlags.Endpoints, "endpoints", "e", nil,
-		"Etcd endpoints to connect to (comma-separated)")
+	flags.StringVar(&globalFlags.AgentAddr, "addr", agentAddr, "Address on which agent is reachable")
+	flags.StringVar(&globalFlags.GrpcAddr, "grpcaddr", agentAddr+":9111", "gRPC server address")
+	flags.StringVar(&globalFlags.HttpAddr, "httpaddr", agentAddr+":9191", "HTTP server address")
+	flags.StringVar(&globalFlags.ServiceLabel, "label", agentLabel, "Service label for agent instance")
+	flags.StringSliceVar(&globalFlags.Endpoints, "endpoints", nil, "Etcd endpoints to connect to")
 
-	addCommands(cmd)
+	flags.BoolVarP(&globalFlags.Debug, "debug", "D", false, "Enable debug mode")
+
+	cli := cli.NewAgentCli()
+	cli.HttpAddr = globalFlags.HttpAddr
+
+	addCommands(cli, cmd)
+
 	return cmd
 }
 
-func addCommands(cmd *cobra.Command) {
+func addCommands(cli *cli.AgentCli, cmd *cobra.Command) {
 	cmd.AddCommand(
+		configCmd(),
+		NewDumpCommand(cli),
+		NewLogCommand(cli),
 		showCmd(),
 		generateCmd(),
 		putCmd(),
 		delCmd(),
 		importCmd(),
-		dumpCmd(),
-		vppcliCmd(),
-		logCmd(),
+		NewVppcliCommand(cli),
 	)
+}
+
+func Debugf(f string, a ...interface{}) {
+	if globalFlags.Debug {
+		fmt.Fprintf(os.Stderr, "DEBUG: "+f, a...)
+	}
 }

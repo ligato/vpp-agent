@@ -12,18 +12,22 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 
-package main
+package commands
 
-import (
-	"os"
+import "github.com/spf13/cobra"
 
-	"github.com/ligato/vpp-agent/cmd/agentctl/commands"
-)
-
-func main() {
-	cmd := commands.NewAgentctlCommand()
-
-	if err := cmd.Execute(); err != nil {
-		os.Exit(-1)
+func configCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:     "config",
+		Aliases: []string{"c"},
+		Short:   "Manage agent config",
+		RunE:    configRun,
 	}
+
+	return cmd
+}
+
+func configRun(cmd *cobra.Command, args []string) error {
+
+	return nil
 }

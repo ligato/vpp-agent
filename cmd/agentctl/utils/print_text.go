@@ -1130,12 +1130,12 @@ func setOsColor(arg status.OperationalState) string {
 	}
 }
 
-func setStsColor(kind string, arg interfaces.InterfaceState_Status) string {
+func setStsColor(kind string, arg vpp_interfaces.InterfaceState_Status) string {
 	sts := fmt.Sprintf("%s-%s", kind, arg)
 	switch arg {
-	case interfaces.InterfaceState_UP:
+	case vpp_interfaces.InterfaceState_UP:
 		return setGreen(sts)
-	case interfaces.InterfaceState_DOWN:
+	case vpp_interfaces.InterfaceState_DOWN:
 		return setRed(sts)
 	default:
 		return sts

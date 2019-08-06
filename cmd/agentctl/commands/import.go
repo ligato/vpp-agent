@@ -89,10 +89,6 @@ Supported key formats:
 	return cmd
 }
 
-func getTimeout() time.Duration {
-	return time.Second * time.Duration(timeout)
-}
-
 type keyVal struct {
 	Key string
 	Val proto.Message
@@ -231,7 +227,7 @@ func parseKey(key string) (string, error) {
 	if !strings.HasPrefix(key, "config/") {
 		return "", fmt.Errorf("invalid format for key: %q", key)
 	}
-	return path.Join(servicelabel.GetAllAgentsPrefix(), globalFlags.Label, key), nil
+	return path.Join(servicelabel.GetAllAgentsPrefix(), globalFlags.ServiceLabel, key), nil
 }
 
 func unmarshalKeyVal(fullKey string, data string) (proto.Message, error) {
@@ -255,4 +251,8 @@ func unmarshalKeyVal(fullKey string, data string) (proto.Message, error) {
 		return nil, err
 	}
 	return value, nil
+}
+
+func getTimeout() time.Duration {
+	return time.Second * time.Duration(timeout)
 }

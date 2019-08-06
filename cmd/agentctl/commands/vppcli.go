@@ -22,51 +22,47 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/ligato/vpp-agent/cmd/agentctl/restapi"
+	"github.com/ligato/vpp-agent/cmd/agentctl/cli"
 )
 
-func vppcliCmd() *cobra.Command {
+func NewVppcliCommand(cli *cli.AgentCli) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "vppcli",
 		Short: "Execute VPP CLI command",
 		Long: `
 A CLI tool to connect to vppagent and run VPP CLI command.
-Use the 'ETCD_ENDPOINTS'' environment variable or the 'endpoints'
-flag in the command line to specify vppagent instances to
-connect to.
 `,
-		Example: `Specify the vppagent to connect to and run VPP CLI command:
-	$ export ETCD_ENDPOINTS=172.17.0.3:9191
-	$ ./agentctl vppcli 'show int'
+		Example: `Run a VPP CLI command:
+  $ agentctl vppcli show version
 
-Do as above, but with a command line flag:
-  $ ./agentctl --endpoints 172.17.0.3:9191 vppcli 'show int'
+Do same as above, but specify the HTTP address of the agent:
+  $ agentctl --httpaddr 172.17.0.3:9191 vppcli show version
 `,
-
 		Args: cobra.MinimumNArgs(1),
-		RunE: vppcliFunction,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			vppcmd := strings.Join(args, " ")
+			return runVppcli(cli, vppcmd)
+		},
 	}
 	return cmd
 }
 
-func vppcliFunction(cmd *cobra.Command, args []string) error {
-	cli := strings.Join(args, " ")
-	fmt.Fprintf(os.Stdout, "VPP CLI: %s\n", cli)
+func runVppcli(cli *cli.AgentCli, vppcmd string) error {
+	fmt.Fprintf(os.Stdout, "vpp# %s\n", vppcmd)
 
 	data := map[string]interface{}{
-		"vppclicommand": cli,
+		"vppclicommand": vppcmd,
 	}
-
-	b, err := json.MarshalIndent(data, "", "  ")
+	resp, err := cli.HttpRestPOST("/vpp/command", data)
 	if err != nil {
-		return err
+		return fmt.Errorf("HTTP POST request failed: %v", err)
 	}
-	msg := string(b)
 
-	resp := restapi.PostMsg(globalFlags.Endpoints, "/vpp/command", msg)
+	var reply string
+	if err := json.Unmarshal(resp, &reply); err != nil {
+		return fmt.Errorf("decoding reply failed: %v", err)
+	}
 
-	tmp := strings.Replace(resp, "\\n", "\n", -1)
-	fmt.Fprintf(os.Stdout, "%s\n", tmp)
-
+	fmt.Fprintf(os.Stdout, "%s", reply)
 	return nil
 }
