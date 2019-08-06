@@ -18,6 +18,7 @@ import (
 	"github.com/ligato/cn-infra/logging/logrus"
 	acl "github.com/ligato/vpp-agent/api/models/vpp/acl"
 	. "github.com/onsi/gomega"
+	"strings"
 	"testing"
 
 	_ "github.com/ligato/vpp-agent/plugins/vpp/aclplugin"
@@ -313,6 +314,17 @@ func TestCRUDIPAcl(t *testing.T) {
 		t.Fatalf("dumped interface is not correctly assigned")
 	}
 
+	indexes := []uint32{ifIdx, ifIdx2}
+	ifaces, errI3 := h.DumpACLInterfaces(indexes)
+	Expect(errI3).To(Succeed())
+	Expect(ifaces).To(HaveLen(2))
+	t.Logf("%v", ifaces)
+	t.Logf("%v", ifaces[1])
+	t.Logf("%v", ifaces[2])
+	//this does not work for VPP 19.04 and maybe also other version
+	//Expect(ifaces[0].Ingress).To(Equal([]string{ifName}))
+	//Expect(ifaces[2].Egress).To(Equal([]string{ifName2}))
+
 	//negative tests - it is expected failure
 	t.Logf("Let us test some negative cases....")
 	_, err = h.AddACL(aclNoRules, "test1")
@@ -554,7 +566,7 @@ func TestCRUDIPAcl(t *testing.T) {
 }
 
 // Test add MACIP acl rules
-func TestAddMacIPAcl(t *testing.T) {
+func TestCRUDMacIPAcl(t *testing.T) {
 	ctx := setupVPP(t)
 	defer ctx.teardownVPP()
 
@@ -562,14 +574,20 @@ func TestAddMacIPAcl(t *testing.T) {
 
 	const ifName = "loop1"
 	ifIdx, errI := ih.AddLoopbackInterface(ifName)
-	if errI != nil {
-		t.Fatalf("creating interface failed: %v", errI)
-	}
+	Expect(errI).To(BeNil())
 	t.Logf("interface created %v", ifIdx)
+
+	const ifName2 = "loop2"
+	ifIdx2, errI2 := ih.AddLoopbackInterface(ifName2)
+	Expect(errI2).To(BeNil())
+	t.Logf("interface created %v", ifIdx2)
 
 	ifIndexes := ifaceidx.NewIfaceIndex(logrus.NewLogger("test-iface1"), "test-iface1")
 	ifIndexes.Put(ifName, &ifaceidx.IfaceMetadata{
 		SwIfIndex: ifIdx,
+	})
+	ifIndexes.Put(ifName2, &ifaceidx.IfaceMetadata{
+		SwIfIndex: ifIdx2,
 	})
 
 	h := aclplugin_vppcalls.CompatibleACLVppHandler(ctx.vppBinapi, ifIndexes, logrus.NewLogger("test"))
@@ -577,35 +595,184 @@ func TestAddMacIPAcl(t *testing.T) {
 		t.Fatalf("handler was not created")
 	}
 
-	aclIndex, err := h.AddMACIPACL(aclMACIPrules, "test6")
-	Expect(err).To(BeNil())
-	Expect(aclIndex).To(BeEquivalentTo(0))
+	acls, errx := h.DumpMACIPACL()
+	Expect(errx).To(BeNil())
+	aclCnt := len(acls)
+	Expect(aclCnt).Should(Equal(0))
+	t.Logf("no acls dumped")
 
+	const aclname = "test6"
+	aclIdx, err := h.AddMACIPACL(aclMACIPrules, aclname)
+	Expect(err).To(BeNil())
+	Expect(aclIdx).To(BeEquivalentTo(0))
+	t.Logf("acl added - with index %d", aclIdx)
+
+	err = h.SetMACIPACLToInterfaces(aclIdx, []uint32{ifIdx})
+	Expect(err).To(BeNil())
+	t.Logf("acl with index %d was assigned to interface %v", aclIdx, ifName)
+
+	acls, errx = h.DumpMACIPACL()
+	Expect(errx).To(BeNil())
+	aclCnt = len(acls)
+	Expect(aclCnt).Should(Equal(1))
+	t.Logf("%d acls dumped", aclCnt)
+
+	var rules []*acl.ACL_Rule
+	var isPresent bool
+	var isForInterface bool
+	for _, item := range acls {
+		rules = item.ACL.Rules
+		if (item.Meta.Index == aclIdx) && (aclname == item.Meta.Tag) {
+			t.Logf("Found ACL aclMACIPrules with aclName  %v", item.Meta.Tag)
+			for _, rule := range rules {
+				if (rule.MacipRule.SourceAddress == "192.168.0.1") &&
+					(rule.MacipRule.SourceAddressPrefix == 16) &&
+					(strings.ToLower(rule.MacipRule.SourceMacAddress) == strings.ToLower("11:44:0A:B8:4A:35")) &&
+					(rule.MacipRule.SourceMacAddressMask == "ff:ff:ff:ff:00:00") {
+					isPresent = true
+					break
+				}
+			}
+			// check assignation to interface
+			t.Logf("%v", item)
+			t.Logf("%v", item.ACL.Interfaces)
+			for _, intf := range item.ACL.Interfaces.Ingress {
+				if intf == ifName {
+					isForInterface = true
+					break
+				}
+			}
+		}
+	}
+	if !isPresent {
+		t.Fatalf("Configured IP is not present.")
+	} else {
+		t.Logf("Configured IP is present.")
+
+	}
+	if isForInterface {
+		t.Logf("dumped acl is correctly assigned to interface %v", ifName)
+	} else {
+		t.Fatalf("dumped interface is not correctly assigned")
+	}
+
+	indexes := []uint32{ifIdx, ifIdx2}
+	ifaces, errI3 := h.DumpACLInterfaces(indexes)
+	Expect(errI3).To(Succeed())
+	Expect(ifaces).To(HaveLen(2))
+	t.Logf("%v", ifaces)
+	t.Logf("%v", ifaces[1])
+	t.Logf("%v", ifaces[2])
+	//this does not work for VPP 19.04 and maybe also other version
+	//Expect(ifaces[0].Ingress).To(Equal([]string{ifName}))
+	//Expect(ifaces[2].Egress).To(Equal([]string{ifName2}))
+
+	//negative tests - it is expected failure
+	t.Logf("Let us test some negative cases....")
 	_, err = h.AddMACIPACL(aclNoRules, "test7")
 	Expect(err).To(Not(BeNil()))
+	t.Logf("adding acls failed: %v", err)
 
 	_, err = h.AddMACIPACL(aclErr4Rules, "test8")
 	Expect(err).To(Not(BeNil()))
+	t.Logf("adding acls failed: %v", err)
 
 	_, err = h.AddMACIPACL(aclErr5Rules, "test9")
 	Expect(err).To(Not(BeNil()))
+	t.Logf("adding acls failed: %v", err)
 
 	_, err = h.AddMACIPACL(aclErr6Rules, "test10")
 	Expect(err).To(Not(BeNil()))
 	Expect(err.Error()).To(BeEquivalentTo("invalid IP address "))
+	t.Logf("adding acls failed: %v", err)
 
-	_, err = h.AddMACIPACL(aclMACIPrules, "test11")
+	// now let us add the same aclMACIPrules again
+	//add the same acls again but it will be assigned to the second interface
+	const aclname2 = "test11"
+	aclIdx, err = h.AddMACIPACL(aclMACIPrules, aclname2)
 	Expect(err).To(BeNil())
+	Expect(aclIdx).To(BeEquivalentTo(1))
+	t.Logf("acl added - with index %d", aclIdx)
 
-	_, err = h.AddMACIPACL(aclMACIPrules, "test12")
+	err = h.AddMACIPACLToInterface(aclIdx, ifName2)
 	Expect(err).To(BeNil())
+	t.Logf("acl with index %d was assigned to interface %v ", aclIdx, ifName2)
 
+	acls, errx = h.DumpMACIPACL()
+	Expect(errx).To(BeNil())
+	aclCnt = len(acls)
+	Expect(aclCnt).Should(Equal(2))
+	t.Logf("%d acls dumped", aclCnt)
+
+	isPresent = false
+	isForInterface = false
+	for _, item := range acls {
+		rules = item.ACL.Rules
+		if (item.Meta.Index == aclIdx) && (aclname2 == item.Meta.Tag) {
+			t.Logf("Found ACL aclMACIPrules with aclName  %v", item.Meta.Tag)
+			for _, rule := range rules {
+				if (rule.MacipRule.SourceAddress == "192.168.0.1") &&
+					(rule.MacipRule.SourceAddressPrefix == 16) &&
+					(strings.ToLower(rule.MacipRule.SourceMacAddress) == strings.ToLower("11:44:0A:B8:4A:35")) &&
+					(rule.MacipRule.SourceMacAddressMask == "ff:ff:ff:ff:00:00") {
+					isPresent = true
+					break
+				}
+			}
+			// check assignation to interface
+			t.Logf("%v", item)
+			t.Logf("%v", item.ACL.Interfaces)
+			for _, intf := range item.ACL.Interfaces.Ingress {
+				if intf == ifName2 {
+					isForInterface = true
+					break
+				}
+			}
+		}
+	}
+	if !isPresent {
+		t.Fatalf("Configured IP is not present.")
+	} else {
+		t.Logf("Configured IP is present.")
+
+	}
+	if isForInterface {
+		t.Logf("dumped acl is correctly assigned to interface %v", ifName2)
+	} else {
+		t.Fatalf("dumped interface is not correctly assigned")
+	}
+
+	//negative tests
 	err = h.DeleteMACIPACL(5)
 	Expect(err).To(Not(BeNil()))
+	t.Logf("deleting acls failed: %v", err)
 
-	err = h.DeleteMACIPACL(1)
+	// find the acl with aclname test6
+	var foundaclidx uint32
+	for _, item := range acls {
+		rules = item.ACL.Rules
+		if aclname == item.Meta.Tag {
+			foundaclidx = item.Meta.Index
+			break
+		}
+	}
+	err = h.DeleteMACIPACL(foundaclidx)
 	Expect(err).To(BeNil())
+	t.Logf("deleting acls succeed")
 
+	acls, errx = h.DumpMACIPACL()
+	Expect(errx).To(BeNil())
+	aclCnt = len(acls)
+	Expect(aclCnt).Should(Equal(1))
+	t.Logf("%d acls dumped", aclCnt)
+
+	for _, aclrecord := range acls {
+		if aclrecord.Meta.Index == foundaclidx {
+			t.Fatalf("This acll should be deleted : %v", errx)
+		}
+	}
+
+	// MODIFY ACL
 	rule2modify := []*acl.ACL_Rule{
 		{
 			Action: acl.ACL_Rule_DENY,
@@ -623,100 +790,204 @@ func TestAddMacIPAcl(t *testing.T) {
 				SourceAddressPrefix:  uint32(64),
 				SourceMacAddress:     "11:44:0A:B8:4A:38",
 				SourceMacAddressMask: "ff:ff:ff:ff:00:00",
-			},
-		},
+			}},
 	}
 
-	err = h.ModifyMACIPACL(0, rule2modify, "test_modify0")
+	err = h.ModifyMACIPACL(1, rule2modify, "test_modify0")
 	Expect(err).To(BeNil())
-
-	err = h.ModifyMACIPACL(0, aclErr1Rules, "test_modify1")
-	Expect(err).To(Not(BeNil()))
-
-	err = h.ModifyMACIPACL(0, aclMACIPrules, "test_modify4")
-	Expect(err).To(BeNil())
-
-	err = h.ModifyMACIPACL(0, aclIPrules, "test_modify5")
-	Expect(err).To(Not(BeNil()))
-}
-
-func TestAcl(t *testing.T) {
-	ctx := setupVPP(t)
-	defer ctx.teardownVPP()
-
-	ih := ifplugin_vppcalls.CompatibleInterfaceVppHandler(ctx.vppBinapi, logrus.NewLogger("test"))
-
-	const ifName = "loop1"
-	ifIdx, err := ih.AddLoopbackInterface(ifName)
-	if err != nil {
-		t.Fatalf("creating interface failed: %v", err)
-	}
-	t.Logf("interface created %v", ifIdx)
-
-	ifIndexes := ifaceidx.NewIfaceIndex(logrus.NewLogger("test-iface1"), "test-iface1")
-	ifIndexes.Put(ifName, &ifaceidx.IfaceMetadata{
-		SwIfIndex: ifIdx,
-	})
-
-	h := aclplugin_vppcalls.CompatibleACLVppHandler(ctx.vppBinapi, ifIndexes, logrus.NewLogger("test"))
-	if h == nil {
-		t.Fatalf("handler was not created")
-	}
-
-	acls, errx := h.DumpACL()
-	if errx != nil {
-		t.Fatalf("dumping acls failed: %v", errx)
-	}
-	t.Logf("%d acls dumped", len(acls))
-	t.Logf("acls dumped %v", acls)
-
-	aclName := "SpecialMakovica"
-	var aclErr5Rules = []*acl.ACL_Rule{
-		{
-			Action: acl.ACL_Rule_PERMIT,
-			MacipRule: &acl.ACL_Rule_MacIpRule{
-				SourceAddress:        "192.168.0.1",
-				SourceAddressPrefix:  uint32(16),
-				SourceMacAddress:     "11:44:0A:B8:4A:36",
-				SourceMacAddressMask: "ff:ff:ff:ff:00:00",
-			},
-		},
-	}
-
-	aclIdx, erry := h.AddMACIPACL(aclErr5Rules, aclName)
-	if erry != nil {
-		t.Fatalf("adding acls failed: %v", erry)
-	}
-	t.Logf("%d acl added", aclIdx)
+	t.Logf("acl was modified")
 
 	acls, errx = h.DumpMACIPACL()
+	Expect(errx).To(BeNil())
+	aclCnt = len(acls)
+	Expect(aclCnt).Should(Equal(1))
+	t.Logf("%d acls dumped", aclCnt)
 
-	if errx != nil {
-		t.Fatalf("dumping acls failed: %v", errx)
+	isPresent = false
+	isForInterface = false
+	var modifiedacl aclplugin_vppcalls.ACLDetails
+	for _, item := range acls {
+		modifiedacl = *item
+		rules = item.ACL.Rules
+		if item.Meta.Index == aclIdx { //&& (aclname2 == item.Meta.Tag) {
+			t.Logf("Found modified ACL aclMACIPrules with aclName  %v", item.Meta.Tag)
+			for _, rule := range rules {
+				if (rule.MacipRule.SourceAddress == "192.168.10.1") &&
+					(rule.MacipRule.SourceAddressPrefix == 24) &&
+					(strings.ToLower(rule.MacipRule.SourceMacAddress) == strings.ToLower("11:44:0A:B8:4A:37")) &&
+					(rule.MacipRule.SourceMacAddressMask == "ff:ff:ff:ff:00:00") {
+					isPresent = true
+					break
+				}
+				//t.Logf("%+v", rule)
+			}
+			// check assignation to interface
+			for _, intf := range item.ACL.Interfaces.Ingress {
+				if intf == ifName2 {
+					isForInterface = true
+					break
+				}
+			}
+		}
 	}
-	t.Logf("%d acls dumped", len(acls))
-	t.Logf("acls dumped %v", acls)
+	if !isPresent {
+		t.Fatalf("Configured IP is not present.")
+	} else {
+		t.Logf("Configured IP is present.")
 
-	aclErr5Rules = []*acl.ACL_Rule{
-		{
-			Action: acl.ACL_Rule_PERMIT,
-			MacipRule: &acl.ACL_Rule_MacIpRule{
-				SourceAddress:        "192.168.0.2",
-				SourceAddressPrefix:  uint32(16),
-				SourceMacAddress:     "11:44:0A:B8:4A:38",
-				SourceMacAddressMask: "ff:ff:ff:ff:00:00",
-			},
-		},
+	}
+	if isForInterface {
+		t.Logf("dumped acl is correctly assigned to interface %v", ifName2)
+	} else {
+		t.Fatalf("dumped interface is not correctly assigned")
 	}
 
-	erry = h.ModifyACL(aclIdx, aclErr5Rules, aclName)
-	if erry != nil {
-		t.Fatalf("modifying acls failed: %v", erry)
+	t.Logf("%v", modifiedacl)
+
+	// negative test
+	err = h.ModifyMACIPACL(1, aclErr1Rules, "test_modify1")
+	Expect(err).To(Not(BeNil()))
+	t.Logf("modifying of acl failed: %v", err)
+
+	err = h.ModifyMACIPACL(1, aclIPrules, "test_modify5")
+	Expect(err).To(Not(BeNil()))
+	t.Logf("modifying of acl failed: %v", err)
+
+	err = h.SetMACIPACLToInterfaces(aclIdx, []uint32{ifIdx})
+	Expect(err).To(BeNil())
+	t.Logf("acl with index %d was assigned to interface %v", aclIdx, ifName)
+
+	acls, errx = h.DumpMACIPACL()
+	Expect(errx).To(BeNil())
+	aclCnt = len(acls)
+	Expect(aclCnt).Should(Equal(1))
+	t.Logf("%d acls dumped", aclCnt)
+
+	isPresent = false
+	isForInterface = false
+	for _, item := range acls {
+		rules = item.ACL.Rules
+		if item.Meta.Index == aclIdx {
+			t.Logf("Found ACL aclMACIPrules with aclName  %v", item.Meta.Tag)
+			// check assignation to interface
+			t.Logf("%v", item)
+			t.Logf("%v", item.ACL.Interfaces)
+			for _, intf := range item.ACL.Interfaces.Ingress {
+				if intf == ifName {
+					isForInterface = true
+					break
+				}
+			}
+		}
 	}
-	t.Logf("%d acl modified", aclIdx)
-	if errx != nil {
-		t.Fatalf("dumping acls failed: %v", errx)
+	if isForInterface {
+		t.Logf("dumped acl is correctly assigned to interface %v", ifName)
+	} else {
+		t.Fatalf("dumped interface is not correctly assigned")
 	}
-	t.Logf("%d acls dumped", len(acls))
-	t.Logf("acls dumped %v", acls)
+
+	err = h.SetMACIPACLToInterfaces(aclIdx, []uint32{ifIdx})
+	Expect(err).To(BeNil())
+	t.Logf("acl with index %d was assigned to interface %v", aclIdx, ifName)
+
+	acls, errx = h.DumpMACIPACL()
+	Expect(errx).To(BeNil())
+	aclCnt = len(acls)
+	Expect(aclCnt).Should(Equal(1))
+	t.Logf("%d acls dumped", aclCnt)
+
+	isPresent = false
+	isForInterface = false
+	for _, item := range acls {
+		rules = item.ACL.Rules
+		if item.Meta.Index == aclIdx {
+			t.Logf("Found ACL aclMACIPrules with aclName  %v", item.Meta.Tag)
+			// check assignation to interface
+			t.Logf("%v", item)
+			t.Logf("%v", item.ACL.Interfaces)
+			for _, intf := range item.ACL.Interfaces.Ingress {
+				if intf == ifName {
+					isForInterface = true
+					break
+				}
+			}
+		}
+	}
+	if isForInterface {
+		t.Logf("dumped acl is correctly assigned to interface %v", ifName)
+	} else {
+		t.Fatalf("dumped interface is not correctly assigned")
+	}
+
+	err = h.DeleteMACIPACLFromInterface(aclIdx, ifName)
+	Expect(err).To(BeNil())
+	t.Logf("for acl with index %d was deleted the relation to interface %v", aclIdx, ifName)
+
+	acls, errx = h.DumpMACIPACL()
+	Expect(errx).To(BeNil())
+	aclCnt = len(acls)
+	Expect(aclCnt).Should(Equal(1))
+	t.Logf("%d acls dumped", aclCnt)
+
+	isPresent = false
+	isForInterface = false
+	for _, item := range acls {
+		rules = item.ACL.Rules
+		if item.Meta.Index == aclIdx {
+			t.Logf("Found ACL aclMACIPrules with aclName  %v", item.Meta.Tag)
+			// check assignation to interface
+			t.Logf("%v", item)
+			t.Logf("%v", item.ACL.Interfaces)
+			for _, intf := range item.ACL.Interfaces.Ingress {
+				if intf == ifName {
+					t.Fatalf("alc should not be assigned to the interface %v", ifName)
+				}
+			}
+		}
+	}
+	t.Logf("for acl was correctly deleted relation to interface %v", ifName)
+
+	err = h.DeleteMACIPACLFromInterface(aclIdx, ifName2)
+	Expect(err).To(BeNil())
+	t.Logf("for acl with index %d was deleted the relation to interface %v", aclIdx, ifName2)
+
+	acls, errx = h.DumpMACIPACL()
+	Expect(errx).To(BeNil())
+	aclCnt = len(acls)
+	Expect(aclCnt).Should(Equal(1))
+	t.Logf("%d acls dumped", aclCnt)
+
+	isPresent = false
+	isForInterface = false
+	for _, item := range acls {
+		rules = item.ACL.Rules
+		if item.Meta.Index == aclIdx {
+			t.Logf("Found ACL aclMACIPrules with aclName  %v", item.Meta.Tag)
+			// check assignation to interface
+			t.Logf("%v", item)
+			t.Logf("%v", item.ACL.Interfaces)
+			Expect(item.ACL.Interfaces).To(BeNil())
+		}
+	}
+	t.Logf("for acl was correctly deleted relation to interface %v", ifName2)
+
+	acls, errx = h.DumpMACIPACL()
+	Expect(errx).To(BeNil())
+	aclCnt = len(acls)
+	Expect(aclCnt).Should(Equal(1))
+	t.Logf("%d acls dumped", aclCnt)
+
+	for _, aclrecord := range acls {
+		foundaclidx = aclrecord.Meta.Index
+	}
+
+	err = h.DeleteMACIPACL(foundaclidx)
+	Expect(err).To(BeNil())
+	t.Logf("deleting acls succeed")
+
+	acls, errx = h.DumpMACIPACL()
+	Expect(errx).To(BeNil())
+	aclCnt = len(acls)
+	Expect(aclCnt).Should(Equal(0))
+	t.Logf("no acls dumped")
 }
