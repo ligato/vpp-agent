@@ -662,6 +662,7 @@ func (d *InterfaceDescriptor) UpdateWithRecreate(key string, oldLinuxIf, newLinu
 func (d *InterfaceDescriptor) Dependencies(key string, linuxIf *interfaces.Interface) []kvs.Dependency {
 	var dependencies []kvs.Dependency
 
+	// EXISTING depends on a referenced Linux interface in the default namespace
 	if linuxIf.Type == interfaces.Interface_EXISTING {
 		dependencies = append(dependencies, kvs.Dependency{
 			Label: existingHostInterfaceDep,
