@@ -26,12 +26,14 @@ import (
 
 	"github.com/gogo/protobuf/jsonpb"
 	"github.com/gogo/protobuf/proto"
+	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/servicelabel"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
 
 	"github.com/ligato/vpp-agent/api/genericmanager"
 	"github.com/ligato/vpp-agent/client/remoteclient"
+	"github.com/ligato/vpp-agent/cmd/agentctl/cli"
 	"github.com/ligato/vpp-agent/cmd/agentctl/utils"
 	"github.com/ligato/vpp-agent/pkg/models"
 )
@@ -42,14 +44,15 @@ var (
 	timeout  uint
 )
 
-func importCmd() *cobra.Command {
+func NewImportCommand(cli *cli.AgentCli) *cobra.Command {
+	opts := ImportOptions{}
+
 	cmd := &cobra.Command{
 		Use:     "import",
 		Aliases: []string{"i"},
-		Args:    cobra.RangeArgs(1, 1),
+		Args:    cobra.ExactArgs(1),
 		Short:   "Import configuration from file",
-		Long: `
-Import configuration from file.
+		Long: `Import configuration from file.
 
 File format:
   <key1> <value1>
@@ -65,7 +68,7 @@ Supported key formats:
 
   For short keys, the import command uses microservice label defined with --label.
 `,
-		Example: `  Import configuration from file:
+		Example: `Import configuration from file:
 	
 	$ cat input.txt
 	config/vpp/v2/interfaces/loop1 {"name":"loop1","type":"SOFTWARE_LOOPBACK"}
@@ -76,7 +79,10 @@ Supported key formats:
 	
 	$ agentctl import --grpc=localhost:9111 input.txt
 `,
-		Run: importFunction,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			opts.Filename = args[0]
+			return RunImport(cli, opts)
+		},
 	}
 
 	cmd.PersistentFlags().UintVar(&txops, "txops", 128,
@@ -89,23 +95,41 @@ Supported key formats:
 	return cmd
 }
 
+type ImportOptions struct {
+	Filename string
+}
+
+func RunImport(cli *cli.AgentCli, opts ImportOptions) error {
+	b, err := ioutil.ReadFile(opts.Filename)
+	if err != nil {
+		return fmt.Errorf("reading input file failed: %v", err)
+	}
+
+	keyVals, err := parseKeyVals(b)
+	if err != nil {
+		return fmt.Errorf("parsing import input failed: %v", err)
+	}
+
+	if grpcAddr != "" {
+		if err := grpcImport(keyVals); err != nil {
+			return fmt.Errorf("import via gRPC failed: %v", err)
+		}
+	} else {
+		if err := etcdImport(keyVals); err != nil {
+			return fmt.Errorf("import to Etcd failed: %v", err)
+		}
+	}
+
+	logging.Debug("OK")
+	return nil
+}
+
 type keyVal struct {
 	Key string
 	Val proto.Message
 }
 
-func importFunction(cmd *cobra.Command, args []string) {
-	filename := args[0]
-
-	// read file
-	b, err := ioutil.ReadFile(filename)
-	if err != nil {
-		utils.ExitWithError(utils.ExitError, fmt.Errorf("reading input file failed: %v", err))
-		return
-	}
-
-	var keyVals []keyVal
-
+func parseKeyVals(b []byte) (keyVals []keyVal, err error) {
 	// parse lines
 	lines := bytes.Split(b, []byte("\n"))
 	for _, l := range lines {
@@ -126,31 +150,18 @@ func importFunction(cmd *cobra.Command, args []string) {
 
 		key, err = parseKey(key)
 		if err != nil {
-			utils.ExitWithError(utils.ExitError, fmt.Errorf("parsing key failed: %v", err))
-			return
+			return nil, fmt.Errorf("parsing key failed: %v", err)
 		}
 
 		val, err := unmarshalKeyVal(key, data)
 		if err != nil {
-			utils.ExitWithError(utils.ExitError, fmt.Errorf("decoding value failed: %v", err))
-			return
+			return nil, fmt.Errorf("decoding value failed: %v", err)
 		}
 
-		fmt.Printf("KEY: %s - %v\n", key, val)
+		logging.Infof("KEY: %s - %v\n", key, val)
 		keyVals = append(keyVals, keyVal{key, val})
 	}
-
-	if grpcAddr != "" {
-		if err := grpcImport(keyVals); err != nil {
-			utils.ExitWithError(utils.ExitError, fmt.Errorf("import via gRPC failed: %v", err))
-		}
-	} else {
-		if err := etcdImport(keyVals); err != nil {
-			utils.ExitWithError(utils.ExitError, fmt.Errorf("import to Etcd failed: %v", err))
-		}
-	}
-
-	fmt.Println("OK")
+	return
 }
 
 func grpcImport(keyVals []keyVal) error {

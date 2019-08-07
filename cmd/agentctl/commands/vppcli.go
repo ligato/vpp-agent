@@ -41,13 +41,13 @@ Do same as above, but specify the HTTP address of the agent:
 		Args: cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			vppcmd := strings.Join(args, " ")
-			return runVppcli(cli, vppcmd)
+			return RunVppcli(cli, vppcmd)
 		},
 	}
 	return cmd
 }
 
-func runVppcli(cli *cli.AgentCli, vppcmd string) error {
+func RunVppcli(cli *cli.AgentCli, vppcmd string) error {
 	fmt.Fprintf(os.Stdout, "vpp# %s\n", vppcmd)
 
 	data := map[string]interface{}{

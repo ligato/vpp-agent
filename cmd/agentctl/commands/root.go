@@ -77,15 +77,15 @@ func NewAgentctlCommand() *cobra.Command {
 
 func addCommands(cli *cli.AgentCli, cmd *cobra.Command) {
 	cmd.AddCommand(
-		configCmd(),
 		NewDumpCommand(cli),
 		NewLogCommand(cli),
+		NewImportCommand(cli),
+		NewVppcliCommand(cli),
+		configCmd(),
 		showCmd(),
 		generateCmd(),
 		putCmd(),
 		delCmd(),
-		importCmd(),
-		NewVppcliCommand(cli),
 	)
 }
 

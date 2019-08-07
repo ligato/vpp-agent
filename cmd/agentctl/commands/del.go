@@ -45,8 +45,6 @@ func delFunction(cmd *cobra.Command, args []string) {
 
 	key := args[0]
 
-	//fmt.Printf("key: %s\n", key)
-
 	if !strings.HasPrefix(key, servicelabel.GetAllAgentsPrefix()) {
 		tmp := strings.Split(key, "/")
 		if tmp[0] != "config" {
