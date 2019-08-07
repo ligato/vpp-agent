@@ -34,11 +34,30 @@ func (h *InterfaceVppHandler) DelSpan(ifIdxFrom, ifIdxTo uint32, isL2 uint8) err
 	return h.setSpan(ifIdxFrom, ifIdxTo, 0, isL2)
 }
 
-// DumpSpan dumps SPAN table
+// DumpSpan dumps all SPAN table
 func (h *InterfaceVppHandler) DumpSpan() ([]*vppcalls.InterfaceSpanDetails, error) {
 	var spans []*vppcalls.InterfaceSpanDetails
 
-	reqCtx := h.callsChannel.SendMultiRequest(&span.SwInterfaceSpanDump{})
+	isL2Spans, err := h.dumpSpan(&span.SwInterfaceSpanDump{IsL2: 1})
+	if err != nil {
+		return nil, err
+	}
+	spans = append(spans, isL2Spans...)
+
+	isNotL2Spans, err := h.dumpSpan(&span.SwInterfaceSpanDump{IsL2: 0})
+	if err != nil {
+		return nil, err
+	}
+	spans = append(spans, isNotL2Spans...)
+
+	return spans, nil
+}
+
+// dumpIsL2Span returns only SPANs with or without L2 set
+func (h *InterfaceVppHandler) dumpSpan(msg *span.SwInterfaceSpanDump) ([]*vppcalls.InterfaceSpanDetails, error) {
+	var spans []*vppcalls.InterfaceSpanDetails
+
+	reqCtx := h.callsChannel.SendMultiRequest(msg)
 	for {
 		spanDetails := &span.SwInterfaceSpanDetails{}
 		stop, err := reqCtx.ReceiveReply(spanDetails)
@@ -57,6 +76,5 @@ func (h *InterfaceVppHandler) DumpSpan() ([]*vppcalls.InterfaceSpanDetails, erro
 		}
 		spans = append(spans, span)
 	}
-
 	return spans, nil
 }

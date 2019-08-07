@@ -36,6 +36,8 @@ func TestSpan(t *testing.T) {
 		{"enable Tx SPAN", 0, 1, uint8(vpp_interfaces.Span_TX), 0, true, true, false},
 		{"enable Both SPAN", 0, 1, uint8(vpp_interfaces.Span_BOTH), 0, true, true, false},
 		{"disable SPAN", 0, 1, uint8(vpp_interfaces.Span_BOTH), 0, false, false, false},
+		{"enable SPAN with L2 set", 0, 1, uint8(vpp_interfaces.Span_RX), 1, true, true, false},
+		{"disable SPAN with L2 set", 0, 1, uint8(vpp_interfaces.Span_RX), 1, false, false, false},
 		{"enable bad SPAN", 0, 0, uint8(vpp_interfaces.Span_BOTH), 0, false, true, true},
 	}
 
