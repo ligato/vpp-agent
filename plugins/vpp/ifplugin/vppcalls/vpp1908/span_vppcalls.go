@@ -3,7 +3,7 @@ package vpp1908
 import (
 	"fmt"
 
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/span"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1908/span"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
 )
 

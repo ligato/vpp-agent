@@ -31,6 +31,7 @@ package vpp1901
 //go:generate binapi-generator --input-file=/usr/share/vpp/api/nat.api.json
 //go:generate binapi-generator --input-file=/usr/share/vpp/api/punt.api.json
 //go:generate binapi-generator --input-file=/usr/share/vpp/api/session.api.json
+//go:generate binapi-generator --input-file=/usr/share/vpp/api/span.api.json
 //go:generate binapi-generator --input-file=/usr/share/vpp/api/sr.api.json
 //go:generate binapi-generator --input-file=/usr/share/vpp/api/stn.api.json
 //go:generate binapi-generator --input-file=/usr/share/vpp/api/tap.api.json
