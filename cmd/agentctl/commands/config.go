@@ -14,20 +14,172 @@
 
 package commands
 
-import "github.com/spf13/cobra"
+import (
+	"errors"
+	"fmt"
+	"strings"
 
-func configCmd() *cobra.Command {
+	"github.com/ligato/cn-infra/db/keyval"
+	"github.com/ligato/cn-infra/servicelabel"
+	"github.com/spf13/cobra"
+
+	"github.com/ligato/vpp-agent/cmd/agentctl/utils"
+)
+
+func NewConfigCommand(cli *AgentCli) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     "config",
-		Aliases: []string{"c"},
-		Short:   "Manage agent config",
-		RunE:    configRun,
+		Use:   "config",
+		Short: "Manage agent config",
+		Args:  cobra.NoArgs,
 	}
-
+	cmd.AddCommand(
+		newConfigGetCommand(cli),
+		newConfigPutCommand(cli),
+		newConfigDelCommand(cli),
+	)
 	return cmd
 }
 
-func configRun(cmd *cobra.Command, args []string) error {
+func newConfigPutCommand(cli *AgentCli) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:     "put <key> <value>",
+		Aliases: []string{"p"},
+		Short:   "Put config entry into Etcd",
+		Long: `
+Put configuration file to Etcd.
 
-	return nil
+Supported key formats:
+	/vnf-agent/vpp1/config/vpp/v2/interfaces/iface1
+	vpp1/config/vpp/v2/interfaces/iface1
+	config/vpp/v2/interfaces/iface1
+
+For short key, put command use default microservice label and 'vpp1' as default agent label.
+`,
+		Args: cobra.RangeArgs(1, 2),
+		Example: `  Set route configuration for "vpp1":
+	$ agentctl -e 172.17.0.3:2379 config put /vnf-agent/vpp1/config/vpp/v2/route/vrf/1/dst/10.1.1.3/32/gw/192.168.1.13 '{
+	"type": 1,
+	"vrf_id": 1,
+	"dst_network": "10.1.1.3/32",
+	"next_hop_addr": "192.168.1.13"
+}'
+`,
+		Run: putFunction,
+	}
+	return cmd
+}
+
+func putFunction(cmd *cobra.Command, args []string) {
+	var db keyval.ProtoBroker
+	var err error
+	key := args[0]
+	json := args[1]
+
+	Debugf("key: %s, json: %s\n", key, json)
+
+	if !strings.HasPrefix(key, servicelabel.GetAllAgentsPrefix()) {
+		tmp := strings.Split(key, "/")
+		if tmp[0] != "config" {
+			globalFlags.ServiceLabel = tmp[0]
+			key = strings.Join(tmp[1:], "/")
+		}
+
+		db, err = utils.GetDbForOneAgent(globalFlags.Endpoints, globalFlags.ServiceLabel)
+		if err != nil {
+			utils.ExitWithError(utils.ExitError, errors.New("Failed to connect to Etcd - "+err.Error()))
+		}
+	} else {
+		db, err = utils.GetDbForAllAgents(globalFlags.Endpoints)
+		if err != nil {
+			utils.ExitWithError(utils.ExitError, errors.New("Failed to connect to Etcd - "+err.Error()))
+		}
+	}
+
+	utils.WriteData(db.NewTxn(), key, json)
+
+	fmt.Println("Ok")
+}
+
+func newConfigDelCommand(cli *AgentCli) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:     "del <key>",
+		Aliases: []string{"d"},
+		Short:   "Delete config entry from Etcd",
+		Args:    cobra.ExactArgs(1),
+		Run:     delFunction,
+	}
+	return cmd
+}
+
+func delFunction(cmd *cobra.Command, args []string) {
+	var db keyval.ProtoBroker
+	var err error
+
+	key := args[0]
+
+	if !strings.HasPrefix(key, servicelabel.GetAllAgentsPrefix()) {
+		tmp := strings.Split(key, "/")
+		if tmp[0] != "config" {
+			globalFlags.ServiceLabel = tmp[0]
+			key = strings.Join(tmp[1:], "/")
+		}
+
+		db, err = utils.GetDbForOneAgent(globalFlags.Endpoints, globalFlags.ServiceLabel)
+		if err != nil {
+			utils.ExitWithError(utils.ExitError, errors.New("Failed to connect to Etcd - "+err.Error()))
+		}
+	} else {
+		db, err = utils.GetDbForAllAgents(globalFlags.Endpoints)
+		if err != nil {
+			utils.ExitWithError(utils.ExitError, errors.New("Failed to connect to Etcd - "+err.Error()))
+		}
+	}
+
+	utils.DelDataFromDb(db.NewTxn(), key)
+}
+
+func newConfigGetCommand(cli *AgentCli) *cobra.Command {
+	var (
+		prefix bool
+	)
+
+	cmd := &cobra.Command{
+		Use:     "get <key>",
+		Aliases: []string{"g"},
+		Short:   "Get config entry from Etcd",
+		Args:    cobra.ExactArgs(1),
+		Run: func(cmd *cobra.Command, args []string) {
+			key := args[0]
+			runConfigGet(cli, prefix, key)
+		},
+	}
+	cmd.Flags().BoolVarP(&prefix, "prefix", "p", false, "Get keys with matching prefix")
+	return cmd
+}
+
+func runConfigGet(cli *AgentCli, prefix bool, key string) {
+	if prefix {
+		iter, err := cli.KVDB.ListValues(key)
+		if err != nil {
+			utils.ExitWithError(utils.ExitError, errors.New("Failed to list values from Etcd: "+err.Error()))
+			return
+		}
+		for {
+			kv, stop := iter.GetNext()
+			if stop {
+				break
+			}
+			fmt.Printf("%s\n%s\n", kv.GetKey(), kv.GetValue())
+		}
+	} else {
+		value, found, _, err := cli.KVDB.GetValue(key)
+		if err != nil {
+			utils.ExitWithError(utils.ExitError, errors.New("Failed to get value from Etcd: "+err.Error()))
+			return
+		} else if !found {
+			utils.ExitWithError(utils.ExitNotFound, errors.New("key not found"))
+			return
+		}
+		fmt.Printf("%s\n", value)
+	}
 }

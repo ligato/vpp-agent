@@ -22,7 +22,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	models "github.com/ligato/vpp-agent/pkg/models"
+	"github.com/ligato/vpp-agent/pkg/models"
 )
 
 func NewDumpCommand(cli *AgentCli) *cobra.Command {

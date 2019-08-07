@@ -71,7 +71,7 @@ func NewAgentctlCommand() *cobra.Command {
 	flags.StringVar(&globalFlags.GrpcPort, "grpcport", "9111", "gRPC server port")
 	flags.StringVar(&globalFlags.HttpPort, "httpport", "9191", "HTTP server port")
 	flags.StringVar(&globalFlags.ServiceLabel, "label", agentLabel, "Service label for agent instance")
-	flags.StringSliceVar(&globalFlags.Endpoints, "endpoints", endpoints, "Etcd endpoints to connect to")
+	flags.StringSliceVarP(&globalFlags.Endpoints, "endpoints", "e", endpoints, "Etcd endpoints to connect to")
 	flags.BoolVarP(&globalFlags.Debug, "debug", "D", false, "Enable debug mode")
 
 	addCommands(cmd, cli)
@@ -85,11 +85,9 @@ func addCommands(cmd *cobra.Command, cli *AgentCli) {
 		NewLogCommand(cli),
 		NewImportCommand(cli),
 		NewVppcliCommand(cli),
-		configCmd(),
+		NewConfigCommand(cli),
 		showCmd(),
 		generateCmd(),
-		putCmd(),
-		delCmd(),
 	)
 }
 
