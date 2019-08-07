@@ -41,7 +41,7 @@ func rulePerm(permit bool) acl.ACL_Rule_Action {
 }
 
 // helper function which returns ACL_Rule (to avoid of declarating variable)
-func newAclIpRule(permit bool, src, dst string) *acl.ACL_Rule {
+func newACLIPRule(permit bool, src, dst string) *acl.ACL_Rule {
 	return &acl.ACL_Rule{
 		Action: rulePerm(permit),
 		IpRule: &acl.ACL_Rule_IpRule{
@@ -54,7 +54,7 @@ func newAclIpRule(permit bool, src, dst string) *acl.ACL_Rule {
 }
 
 // helper function which returns ACL_Rule (to avoid of declarating variable)
-func newAclIpRuleIcmp(permit, isicmpv6 bool, codefrom, codeto, typefrom, typeto uint32) *acl.ACL_Rule {
+func newACLIPRuleIcmp(permit, isicmpv6 bool, codefrom, codeto, typefrom, typeto uint32) *acl.ACL_Rule {
 	return &acl.ACL_Rule{
 		Action: rulePerm(permit),
 		IpRule: &acl.ACL_Rule_IpRule{
@@ -74,7 +74,7 @@ func newAclIpRuleIcmp(permit, isicmpv6 bool, codefrom, codeto, typefrom, typeto 
 }
 
 // helper function which returns ACL_Rule (to avoid of declarating variable)
-func newAclIpRuleTcp(permit bool, flagsval, flagsmask, srcportfrom, srcportto, destportfrom, destportto uint32) *acl.ACL_Rule {
+func newACLIPRuleTCP(permit bool, flagsval, flagsmask, srcportfrom, srcportto, destportfrom, destportto uint32) *acl.ACL_Rule {
 	return &acl.ACL_Rule{
 		Action: rulePerm(permit),
 		IpRule: &acl.ACL_Rule_IpRule{
@@ -95,7 +95,7 @@ func newAclIpRuleTcp(permit bool, flagsval, flagsmask, srcportfrom, srcportto, d
 }
 
 // helper function which returns ACL_Rule (to avoid of declarating variable)
-func newAclIpRuleUdp(permit bool, srcportfrom, srcportto, destportfrom, destportto uint32) *acl.ACL_Rule {
+func newACLIPRuleUDP(permit bool, srcportfrom, srcportto, destportfrom, destportto uint32) *acl.ACL_Rule {
 	return &acl.ACL_Rule{
 		Action: rulePerm(permit),
 		IpRule: &acl.ACL_Rule_IpRule{
@@ -114,7 +114,7 @@ func newAclIpRuleUdp(permit bool, srcportfrom, srcportto, destportfrom, destport
 }
 
 // helper function which returns ACL_Rule (to avoid of declarating variable)
-func newAclMacIpRule(permit bool, src string, srcPrefix uint32, srcMacAddr string, srcMacMask string) *acl.ACL_Rule {
+func newACLMacIPRule(permit bool, src string, srcPrefix uint32, srcMacAddr string, srcMacMask string) *acl.ACL_Rule {
 	return &acl.ACL_Rule{
 		Action: rulePerm(permit),
 		MacipRule: &acl.ACL_Rule_MacIpRule{
@@ -162,19 +162,19 @@ func TestCRUDIPAcl(t *testing.T) {
 	const aclname = "test0"
 	aclIdx, err := h.AddACL([]*acl.ACL_Rule{
 		//RuleName:  "permitIPv4",
-		newAclIpRule(true, "192.168.1.1/32", "10.20.0.0/24"),
+		newACLIPRule(true, "192.168.1.1/32", "10.20.0.0/24"),
 		//RuleName:  "permitIPv6",
-		newAclIpRule(true, "dead::1/64", "dead::2/64"),
+		newACLIPRule(true, "dead::1/64", "dead::2/64"),
 		//RuleName:  "permitIP",
-		newAclIpRule(true, "", ""),
+		newACLIPRule(true, "", ""),
 		//RuleName:  "denyICMP",
-		newAclIpRuleIcmp(false, false, 150, 250, 1150, 1250),
+		newACLIPRuleIcmp(false, false, 150, 250, 1150, 1250),
 		//RuleName:  "denyICMPv6",
-		newAclIpRuleIcmp(false, true, 150, 250, 1150, 1250),
+		newACLIPRuleIcmp(false, true, 150, 250, 1150, 1250),
 		//RuleName:  "permitTCP",
-		newAclIpRuleTcp(true, 10, 20, 150, 250, 1150, 1250),
+		newACLIPRuleTCP(true, 10, 20, 150, 250, 1150, 1250),
 		//RuleName:  "denyUDP",
-		newAclIpRuleUdp(false, 150, 250, 1150, 1250),
+		newACLIPRuleUDP(false, 150, 250, 1150, 1250),
 	}, aclname)
 	Expect(err).To(BeNil())
 	Expect(aclIdx).To(BeEquivalentTo(0))
@@ -234,15 +234,15 @@ func TestCRUDIPAcl(t *testing.T) {
 	Expect(err).To(Not(BeNil()))
 	t.Logf("adding acls failed: %v", err)
 
-	_, err = h.AddACL([]*acl.ACL_Rule{newAclIpRule(true, ".0.", "10.20.0.0/24")}, "test2")
+	_, err = h.AddACL([]*acl.ACL_Rule{newACLIPRule(true, ".0.", "10.20.0.0/24")}, "test2")
 	Expect(err).To(Not(BeNil()))
 	t.Logf("adding acls failed: %v", err)
 
-	_, err = h.AddACL([]*acl.ACL_Rule{newAclIpRule(true, "192.168.1.1/32", ".0.")}, "test3")
+	_, err = h.AddACL([]*acl.ACL_Rule{newACLIPRule(true, "192.168.1.1/32", ".0.")}, "test3")
 	Expect(err).To(Not(BeNil()))
 	t.Logf("adding acls failed: %v", err)
 
-	_, err = h.AddACL([]*acl.ACL_Rule{newAclIpRule(true, "192.168.1.1/32", "dead::1/64")}, "test4")
+	_, err = h.AddACL([]*acl.ACL_Rule{newACLIPRule(true, "192.168.1.1/32", "dead::1/64")}, "test4")
 	Expect(err).To(Not(BeNil()))
 	t.Logf("adding acls failed: %v", err)
 
@@ -251,19 +251,19 @@ func TestCRUDIPAcl(t *testing.T) {
 	const aclname2 = "test5"
 	aclIdx, err = h.AddACL([]*acl.ACL_Rule{
 		//RuleName:  "permitIPv4",
-		newAclIpRule(true, "192.168.1.1/32", "10.20.0.0/24"),
+		newACLIPRule(true, "192.168.1.1/32", "10.20.0.0/24"),
 		//RuleName:  "permitIPv6",
-		newAclIpRule(true, "dead::1/64", "dead::2/64"),
+		newACLIPRule(true, "dead::1/64", "dead::2/64"),
 		//RuleName:  "permitIP",
-		newAclIpRule(true, "", ""),
+		newACLIPRule(true, "", ""),
 		//RuleName:  "denyICMP",
-		newAclIpRuleIcmp(false, false, 150, 250, 1150, 1250),
+		newACLIPRuleIcmp(false, false, 150, 250, 1150, 1250),
 		//RuleName:  "denyICMPv6",
-		newAclIpRuleIcmp(false, true, 150, 250, 1150, 1250),
+		newACLIPRuleIcmp(false, true, 150, 250, 1150, 1250),
 		//RuleName:  "permitTCP",
-		newAclIpRuleTcp(true, 10, 20, 150, 250, 1150, 1250),
+		newACLIPRuleTCP(true, 10, 20, 150, 250, 1150, 1250),
 		//RuleName:  "denyUDP",
-		newAclIpRuleUdp(false, 150, 250, 1150, 1250),
+		newACLIPRuleUDP(false, 150, 250, 1150, 1250),
 	}, aclname2)
 
 	Expect(err).To(BeNil())
@@ -344,8 +344,8 @@ func TestCRUDIPAcl(t *testing.T) {
 
 	// MODIFY ACL
 	rule2modify := []*acl.ACL_Rule{
-		newAclIpRule(true, "10.20.30.1/32", "10.20.0.0/24"),
-		newAclIpRule(true, "dead:dead::3/64", "dead:dead::4/64"),
+		newACLIPRule(true, "10.20.30.1/32", "10.20.0.0/24"),
+		newACLIPRule(true, "dead:dead::3/64", "dead:dead::4/64"),
 	}
 
 	const aclname4 = "test_modify0"
@@ -392,7 +392,7 @@ func TestCRUDIPAcl(t *testing.T) {
 	Expect(isForInterface).To(BeTrue(), "acl should be assigned to interface")
 
 	// negative test
-	err = h.ModifyACL(1, []*acl.ACL_Rule{newAclIpRule(true, ".0.", "10.20.0.0/24")}, "test_modify1")
+	err = h.ModifyACL(1, []*acl.ACL_Rule{newACLIPRule(true, ".0.", "10.20.0.0/24")}, "test_modify1")
 	Expect(err).To(Not(BeNil()))
 	t.Logf("modifying of acl failed: %v", err)
 
@@ -487,9 +487,9 @@ func TestCRUDMacIPAcl(t *testing.T) {
 	const aclname = "test6"
 	aclIdx, err := h.AddMACIPACL([]*acl.ACL_Rule{
 		//RuleName:  "denyIPv4",
-		newAclMacIpRule(false, "192.168.0.1", 16, "11:44:0A:B8:4A:35", "ff:ff:ff:ff:00:00"),
+		newACLMacIPRule(false, "192.168.0.1", 16, "11:44:0A:B8:4A:35", "ff:ff:ff:ff:00:00"),
 		//RuleName:  "denyIPv6",
-		newAclMacIpRule(false, "dead::1", 64, "11:44:0A:B8:4A:35", "ff:ff:ff:ff:00:00"),
+		newACLMacIPRule(false, "dead::1", 64, "11:44:0A:B8:4A:35", "ff:ff:ff:ff:00:00"),
 	}, aclname)
 	Expect(err).To(BeNil())
 	Expect(aclIdx).To(BeEquivalentTo(0))
@@ -551,15 +551,15 @@ func TestCRUDMacIPAcl(t *testing.T) {
 	Expect(err).To(Not(BeNil()))
 	t.Logf("adding acls failed: %v", err)
 
-	_, err = h.AddMACIPACL([]*acl.ACL_Rule{newAclMacIpRule(true, "192.168.0.1", 16, "", "ff:ff:ff:ff:00:00")}, "test8")
+	_, err = h.AddMACIPACL([]*acl.ACL_Rule{newACLMacIPRule(true, "192.168.0.1", 16, "", "ff:ff:ff:ff:00:00")}, "test8")
 	Expect(err).To(Not(BeNil()))
 	t.Logf("adding acls failed: %v", err)
 
-	_, err = h.AddMACIPACL([]*acl.ACL_Rule{newAclMacIpRule(true, "192.168.0.1", 16, "11:44:0A:B8:4A:36", "")}, "test9")
+	_, err = h.AddMACIPACL([]*acl.ACL_Rule{newACLMacIPRule(true, "192.168.0.1", 16, "11:44:0A:B8:4A:36", "")}, "test9")
 	Expect(err).To(Not(BeNil()))
 	t.Logf("adding acls failed: %v", err)
 
-	_, err = h.AddMACIPACL([]*acl.ACL_Rule{newAclMacIpRule(true, "", 16, "11:44:0A:B8:4A:36", "ff:ff:ff:ff:00:00")}, "test10")
+	_, err = h.AddMACIPACL([]*acl.ACL_Rule{newACLMacIPRule(true, "", 16, "11:44:0A:B8:4A:36", "ff:ff:ff:ff:00:00")}, "test10")
 	Expect(err).To(Not(BeNil()))
 	Expect(err.Error()).To(BeEquivalentTo("invalid IP address "))
 	t.Logf("adding acls failed: %v", err)
@@ -570,9 +570,9 @@ func TestCRUDMacIPAcl(t *testing.T) {
 	const aclname2 = "test11"
 	aclIdx, err = h.AddMACIPACL([]*acl.ACL_Rule{
 		//RuleName:  "denyIPv4",
-		newAclMacIpRule(false, "192.168.0.1", 16, "11:44:0A:B8:4A:35", "ff:ff:ff:ff:00:00"),
+		newACLMacIPRule(false, "192.168.0.1", 16, "11:44:0A:B8:4A:35", "ff:ff:ff:ff:00:00"),
 		//RuleName:  "denyIPv6",
-		newAclMacIpRule(false, "dead::1", 64, "11:44:0A:B8:4A:35", "ff:ff:ff:ff:00:00"),
+		newACLMacIPRule(false, "dead::1", 64, "11:44:0A:B8:4A:35", "ff:ff:ff:ff:00:00"),
 	}, aclname2)
 	Expect(err).To(BeNil())
 	Expect(aclIdx).To(BeEquivalentTo(1))
@@ -648,8 +648,8 @@ func TestCRUDMacIPAcl(t *testing.T) {
 	// MODIFY ACL
 	rule2modify := []*acl.ACL_Rule{
 		// acl.ACL_Rule_DENY
-		newAclMacIpRule(false, "192.168.10.1", 24, "11:44:0A:B8:4A:37", "ff:ff:ff:ff:00:00"),
-		newAclMacIpRule(false, "dead::2", 64, "11:44:0A:B8:4A:38", "ff:ff:ff:ff:00:00"),
+		newACLMacIPRule(false, "192.168.10.1", 24, "11:44:0A:B8:4A:37", "ff:ff:ff:ff:00:00"),
+		newACLMacIPRule(false, "dead::2", 64, "11:44:0A:B8:4A:38", "ff:ff:ff:ff:00:00"),
 	}
 
 	const aclname4 = "test_modify0"
@@ -701,25 +701,25 @@ func TestCRUDMacIPAcl(t *testing.T) {
 	t.Logf("%v", modifiedacl)
 
 	// negative test
-	err = h.ModifyMACIPACL(1, []*acl.ACL_Rule{newAclIpRule(true, ".0.", "10.20.0.0/24")}, "test_modify1")
+	err = h.ModifyMACIPACL(1, []*acl.ACL_Rule{newACLIPRule(true, ".0.", "10.20.0.0/24")}, "test_modify1")
 	Expect(err).To(Not(BeNil()))
 	t.Logf("modifying of acl failed: %v", err)
 
 	err = h.ModifyMACIPACL(1, []*acl.ACL_Rule{
 		//RuleName:  "permitIPv4",
-		newAclIpRule(true, "192.168.1.1/32", "10.20.0.0/24"),
+		newACLIPRule(true, "192.168.1.1/32", "10.20.0.0/24"),
 		//RuleName:  "permitIPv6",
-		newAclIpRule(true, "dead::1/64", "dead::2/64"),
+		newACLIPRule(true, "dead::1/64", "dead::2/64"),
 		//RuleName:  "permitIP",
-		newAclIpRule(true, "", ""),
+		newACLIPRule(true, "", ""),
 		//RuleName:  "denyICMP",
-		newAclIpRuleIcmp(false, false, 150, 250, 1150, 1250),
+		newACLIPRuleIcmp(false, false, 150, 250, 1150, 1250),
 		//RuleName:  "denyICMPv6",
-		newAclIpRuleIcmp(false, true, 150, 250, 1150, 1250),
+		newACLIPRuleIcmp(false, true, 150, 250, 1150, 1250),
 		//RuleName:  "permitTCP",
-		newAclIpRuleTcp(true, 10, 20, 150, 250, 1150, 1250),
+		newACLIPRuleTCP(true, 10, 20, 150, 250, 1150, 1250),
 		//RuleName:  "denyUDP",
-		newAclIpRuleUdp(false, 150, 250, 1150, 1250),
+		newACLIPRuleUDP(false, 150, 250, 1150, 1250),
 	}, "test_modify5")
 	Expect(err).To(Not(BeNil()))
 	t.Logf("modifying of acl failed: %v", err)
