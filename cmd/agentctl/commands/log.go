@@ -68,11 +68,10 @@ func RunLogList(cli *AgentCli, opts LogListOptions) error {
 	if err != nil {
 		return fmt.Errorf("HTTP GET request failed: %v", err)
 	}
+	Debugf("%s", resp)
+
 	msg := string(resp)
-
-	logging.Debugf("%s\n", msg)
-
-	if strings.Compare(msg, "404 page not found") == 0 {
+	if strings.Contains(msg, "404 page not found") {
 		fmt.Println(msg)
 		return fmt.Errorf("not found")
 	}
@@ -80,7 +79,7 @@ func RunLogList(cli *AgentCli, opts LogListOptions) error {
 	data := utils.ConvertToLogList(msg)
 
 	if len(data) == 0 {
-		return fmt.Errorf("no data found")
+		return fmt.Errorf("no logger found")
 	}
 
 	if opts.Logger == "" {
@@ -96,19 +95,13 @@ func RunLogList(cli *AgentCli, opts LogListOptions) error {
 		}
 	}
 
-	if len(tmpData) == 0 {
-		return fmt.Errorf("No data found")
-	}
-
 	printLogList(tmpData)
 	return nil
 }
 
-func printLogList(data utils.LogList) {
-	buffer, err := data.PrintLogList()
-	if err == nil {
-		fmt.Fprintf(os.Stdout, buffer.String())
-	} else {
+func printLogList(list utils.LogList) {
+	err := list.Print(os.Stdout)
+	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 	}
 }
