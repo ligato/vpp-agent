@@ -40,6 +40,51 @@ func NewConfigCommand(cli *AgentCli) *cobra.Command {
 	return cmd
 }
 
+func newConfigGetCommand(cli *AgentCli) *cobra.Command {
+	var (
+		prefix bool
+	)
+	cmd := &cobra.Command{
+		Use:     "get <key>",
+		Aliases: []string{"g"},
+		Short:   "Get config entry from Etcd",
+		Args:    cobra.ExactArgs(1),
+		Run: func(cmd *cobra.Command, args []string) {
+			key := args[0]
+			runConfigGet(cli, prefix, key)
+		},
+	}
+	cmd.Flags().BoolVarP(&prefix, "prefix", "p", false, "Get keys with matching prefix")
+	return cmd
+}
+
+func runConfigGet(cli *AgentCli, prefix bool, key string) {
+	if prefix {
+		iter, err := cli.KVDBClient().ListValues(key)
+		if err != nil {
+			utils.ExitWithError(utils.ExitError, errors.New("Failed to list values from Etcd: "+err.Error()))
+			return
+		}
+		for {
+			kv, stop := iter.GetNext()
+			if stop {
+				break
+			}
+			fmt.Printf("%s\n%s\n", kv.GetKey(), kv.GetValue())
+		}
+	} else {
+		value, found, _, err := cli.KVDBClient().GetValue(key)
+		if err != nil {
+			utils.ExitWithError(utils.ExitError, errors.New("Failed to get value from Etcd: "+err.Error()))
+			return
+		} else if !found {
+			utils.ExitWithError(utils.ExitNotFound, errors.New("key not found"))
+			return
+		}
+		fmt.Printf("%s\n", value)
+	}
+}
+
 func newConfigPutCommand(cli *AgentCli) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "put <key> <value>",
@@ -64,18 +109,20 @@ For short key, put command use default microservice label and 'vpp1' as default 
 	"next_hop_addr": "192.168.1.13"
 }'
 `,
-		Run: putFunction,
+		Run: func(cmd *cobra.Command, args []string) {
+			key := args[0]
+			val := args[1]
+			runConfigPut(cli, key, val)
+		},
 	}
 	return cmd
 }
 
-func putFunction(cmd *cobra.Command, args []string) {
+func runConfigPut(cli *AgentCli, key, value string) {
 	var db keyval.ProtoBroker
 	var err error
-	key := args[0]
-	json := args[1]
 
-	Debugf("key: %s, json: %s\n", key, json)
+	Debugf("PUT: %s\n%s\n", key, value)
 
 	if !strings.HasPrefix(key, servicelabel.GetAllAgentsPrefix()) {
 		tmp := strings.Split(key, "/")
@@ -95,7 +142,7 @@ func putFunction(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	utils.WriteData(db.NewTxn(), key, json)
+	utils.WriteData(db.NewTxn(), key, value)
 
 	fmt.Println("Ok")
 }
@@ -136,50 +183,4 @@ func delFunction(cmd *cobra.Command, args []string) {
 	}
 
 	utils.DelDataFromDb(db.NewTxn(), key)
-}
-
-func newConfigGetCommand(cli *AgentCli) *cobra.Command {
-	var (
-		prefix bool
-	)
-
-	cmd := &cobra.Command{
-		Use:     "get <key>",
-		Aliases: []string{"g"},
-		Short:   "Get config entry from Etcd",
-		Args:    cobra.ExactArgs(1),
-		Run: func(cmd *cobra.Command, args []string) {
-			key := args[0]
-			runConfigGet(cli, prefix, key)
-		},
-	}
-	cmd.Flags().BoolVarP(&prefix, "prefix", "p", false, "Get keys with matching prefix")
-	return cmd
-}
-
-func runConfigGet(cli *AgentCli, prefix bool, key string) {
-	if prefix {
-		iter, err := cli.KVDB.ListValues(key)
-		if err != nil {
-			utils.ExitWithError(utils.ExitError, errors.New("Failed to list values from Etcd: "+err.Error()))
-			return
-		}
-		for {
-			kv, stop := iter.GetNext()
-			if stop {
-				break
-			}
-			fmt.Printf("%s\n%s\n", kv.GetKey(), kv.GetValue())
-		}
-	} else {
-		value, found, _, err := cli.KVDB.GetValue(key)
-		if err != nil {
-			utils.ExitWithError(utils.ExitError, errors.New("Failed to get value from Etcd: "+err.Error()))
-			return
-		} else if !found {
-			utils.ExitWithError(utils.ExitNotFound, errors.New("key not found"))
-			return
-		}
-		fmt.Printf("%s\n", value)
-	}
 }

@@ -18,46 +18,43 @@ import (
 	"fmt"
 	"net/url"
 	"os"
-	"strings"
 
 	"github.com/spf13/cobra"
-
-	"github.com/ligato/vpp-agent/pkg/models"
 )
 
 func NewDumpCommand(cli *AgentCli) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "dump",
 		Aliases: []string{"d"},
-		Short:   "Dump commands",
-		Args:    cobra.MinimumNArgs(2),
+		Short:   "Dump current state",
 	}
 
-	for _, m := range models.RegisteredModels() {
-		protoName := m.Info["protoName"]
-		keyPrefix := m.Info["keyPrefix"]
-		module := strings.Split(m.Model.Module, ".")
-		typ := m.Model.Type
-
-		use := fmt.Sprintf("%s.%s", module[0], typ)
-
-		Debugf("add dump command %q", use)
-
+	for _, model := range cli.AllModels() {
 		c := &cobra.Command{
-			Use:   use,
-			Short: fmt.Sprintf("Dump %s", protoName),
+			Use: model.Name,
+			Aliases: []string{
+				model.Alias,
+				model.ProtoName,
+				model.KeyPrefix,
+			},
+			Short: fmt.Sprintf("Dump for %s model (alias: %s)", model.ProtoName, model.Alias),
 			Args:  cobra.NoArgs,
 			Run: func(cmd *cobra.Command, args []string) {
-				query := fmt.Sprintf(`key-prefix=%s&view=cached`, url.QueryEscape(keyPrefix))
-				resp, err := cli.HttpRestGET("/scheduler/dump?" + query)
-				if err != nil {
-					ExitWithError(err)
-				}
-				fmt.Fprintf(os.Stdout, "%s\n", resp)
+				runDump(cli, model)
 			},
 		}
 		cmd.AddCommand(c)
 	}
 
 	return cmd
+}
+
+func runDump(cli *AgentCli, model modelDetail) {
+	q := fmt.Sprintf(`key-prefix=%s&view=cached`, url.QueryEscape(model.KeyPrefix))
+	resp, err := cli.HttpRestGET("/scheduler/dump?" + q)
+	if err != nil {
+		ExitWithError(err)
+	}
+
+	fmt.Fprintf(os.Stdout, "%s\n", resp)
 }
