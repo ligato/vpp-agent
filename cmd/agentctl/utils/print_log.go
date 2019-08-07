@@ -18,7 +18,9 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"html/template"
+	"text/tabwriter"
 )
 
 type logType struct {
@@ -41,34 +43,32 @@ func ConvertToLogList(log string) LogList {
 }
 
 func (ll LogList) PrintLogList() (*bytes.Buffer, error) {
-
-	logLevel := createLogTypeTemplate()
-
-	templates := []*template.Template{}
-
-	templates = append(templates, logLevel)
-
-	return ll.textRenderer(templates)
+	t := []*template.Template{createLogTypeTemplate()}
+	return ll.textRenderer(t)
 }
 
 func createLogTypeTemplate() *template.Template {
-	Template := template.Must(template.New("log").Parse(
-		"{{with .Logger}}\nLogger: {{.}}{{end}}" +
-			"{{with .Level}}\nLevel: {{.}}{{end}}"))
-
-	return Template
+	t := template.Must(template.New("log").
+		Parse("{{.Logger}}\t{{.Level}}\t.\n"),
+	)
+	return t
 }
 
 func (ll LogList) textRenderer(templates []*template.Template) (*bytes.Buffer, error) {
-	buffer := new(bytes.Buffer)
+	var buffer bytes.Buffer
+	w := tabwriter.NewWriter(&buffer, 0, 0, 2, ' ', 0)
+	fmt.Fprintf(w, " LOGGER\tLEVEL\t\n")
 	for _, value := range ll {
-		for _, templateVal := range templates {
+		/*for _, templateVal := range templates {
 			err := templateVal.Execute(buffer, value)
 			if err != nil {
 				return nil, err
 			}
-		}
+		}*/
+		fmt.Fprintf(w, " %s\t%s\t\n", value.Logger, value.Level)
 	}
-
-	return buffer, nil
+	if err := w.Flush(); err != nil {
+		return nil, err
+	}
+	return &buffer, nil
 }

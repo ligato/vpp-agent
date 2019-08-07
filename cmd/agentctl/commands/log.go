@@ -27,9 +27,8 @@ import (
 
 func NewLogCommand(cli *AgentCli) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     "log",
-		Aliases: []string{"l"},
-		Short:   "Manage agent logs",
+		Use:   "log",
+		Short: "Manage agent logging",
 	}
 	cmd.AddCommand(
 		newLogListCommand(cli),
@@ -42,7 +41,7 @@ func newLogListCommand(cli *AgentCli) *cobra.Command {
 	opts := LogListOptions{}
 
 	cmd := &cobra.Command{
-		Use:     "list <logget>",
+		Use:     "list <logger>",
 		Aliases: []string{"ls"},
 		Short:   "Show vppagent logs",
 		Long: `
@@ -50,7 +49,9 @@ A CLI tool to connect to vppagent and show vppagent logs.
 `,
 		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			opts.Logger = args[0]
+			if len(args) > 0 {
+				opts.Logger = args[0]
+			}
 			return RunLogList(cli, opts)
 		},
 	}
@@ -84,7 +85,7 @@ func RunLogList(cli *AgentCli, opts LogListOptions) error {
 
 	if opts.Logger == "" {
 		printLogList(data)
-		return fmt.Errorf("invalid arguments")
+		return nil
 	}
 
 	tmpData := make(utils.LogList, 0)
@@ -107,7 +108,6 @@ func printLogList(data utils.LogList) {
 	buffer, err := data.PrintLogList()
 	if err == nil {
 		fmt.Fprintf(os.Stdout, buffer.String())
-		fmt.Printf("\n")
 	} else {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 	}
