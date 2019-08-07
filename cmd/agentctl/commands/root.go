@@ -24,32 +24,14 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var (
-	// globalFlags defines all global flags.
-	globalFlags struct {
-		AgentAddr    string
-		GrpcPort     string
-		HttpPort     string
-		ServiceLabel string
-		Endpoints    []string
+var globalFlags struct {
+	AgentHost    string
+	GrpcPort     string
+	HttpPort     string
+	ServiceLabel string
+	Endpoints    []string
 
-		Debug bool
-	}
-	agentLabel string
-	agentAddr  = "127.0.0.1"
-	endpoints  []string
-)
-
-func init() {
-	if l := os.Getenv("MICROSERVICE_LABEL"); l != "" {
-		agentLabel = l
-	}
-	if a := os.Getenv("AGENT_ADDR"); a != "" {
-		agentAddr = a
-	}
-	if e := os.Getenv("ETCD_ENDPOINTS"); e != "" {
-		endpoints = strings.Split(e, ",")
-	}
+	Debug bool
 }
 
 // NewAgentctlCommand returns new root command.
@@ -65,16 +47,24 @@ func NewAgentctlCommand() *cobra.Command {
 		},
 	}
 
-	// define global flags
+	var (
+		serviceLabel  = os.Getenv("MICROSERVICE_LABEL")
+		agentHost     = os.Getenv("AGENT_HOST")
+		etcdEndpoints = strings.Split(os.Getenv("ETCD_ENDPOINTS"), ",")
+	)
+
 	flags := cmd.PersistentFlags()
-	flags.StringVar(&globalFlags.AgentAddr, "addr", agentAddr, "Address on which agent is reachable")
-	flags.StringVar(&globalFlags.GrpcPort, "grpcport", "9111", "gRPC server port")
-	flags.StringVar(&globalFlags.HttpPort, "httpport", "9191", "HTTP server port")
-	flags.StringVar(&globalFlags.ServiceLabel, "label", agentLabel, "Service label for agent instance")
-	flags.StringSliceVarP(&globalFlags.Endpoints, "endpoints", "e", endpoints, "Etcd endpoints to connect to")
+	// global flags
+	flags.StringVarP(&globalFlags.AgentHost, "host", "H", agentHost, "Address on which agent is reachable")
+	flags.StringVar(&globalFlags.GrpcPort, "grpc-port", "9111", "gRPC server port")
+	flags.StringVar(&globalFlags.HttpPort, "http-port", "9191", "HTTP server port")
+	flags.StringVarP(&globalFlags.ServiceLabel, "service-label", "l", serviceLabel, "Service label for agent instance")
+	flags.StringSliceVarP(&globalFlags.Endpoints, "etcd-endpoints", "e", etcdEndpoints, "Etcd endpoints to connect to")
 	flags.BoolVarP(&globalFlags.Debug, "debug", "D", false, "Enable debug mode")
 
 	addCommands(cmd, cli)
+
+	Debugf("cmd: %+v", cmd.Commands())
 
 	return cmd
 }

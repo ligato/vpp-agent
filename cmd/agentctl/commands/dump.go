@@ -31,13 +31,13 @@ func NewDumpCommand(cli *AgentCli) *cobra.Command {
 
 	for _, model := range cli.AllModels() {
 		c := &cobra.Command{
-			Use: model.Name,
+			Use: model.Alias,
 			Aliases: []string{
-				model.Alias,
+				model.Name,
 				model.ProtoName,
 				model.KeyPrefix,
 			},
-			Short: fmt.Sprintf("Dump for %s model (alias: %s)", model.ProtoName, model.Alias),
+			Short: fmt.Sprintf("Dump for %s model (%s)", model.Name, model.ProtoName),
 			Args:  cobra.NoArgs,
 			Run: func(cmd *cobra.Command, args []string) {
 				runDump(cli, model)

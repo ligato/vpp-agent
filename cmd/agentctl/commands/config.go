@@ -29,7 +29,7 @@ import (
 func NewConfigCommand(cli *AgentCli) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "config",
-		Short: "Manage agent config",
+		Short: "Manage agent config data",
 		Args:  cobra.NoArgs,
 	}
 	cmd.AddCommand(
@@ -100,7 +100,6 @@ Supported key formats:
 
 For short key, put command use default microservice label and 'vpp1' as default agent label.
 `,
-		Args: cobra.RangeArgs(1, 2),
 		Example: `  Set route configuration for "vpp1":
 	$ agentctl -e 172.17.0.3:2379 config put /vnf-agent/vpp1/config/vpp/v2/route/vrf/1/dst/10.1.1.3/32/gw/192.168.1.13 '{
 	"type": 1,
@@ -109,6 +108,7 @@ For short key, put command use default microservice label and 'vpp1' as default 
 	"next_hop_addr": "192.168.1.13"
 }'
 `,
+		Args: cobra.RangeArgs(1, 2),
 		Run: func(cmd *cobra.Command, args []string) {
 			key := args[0]
 			val := args[1]
@@ -153,16 +153,17 @@ func newConfigDelCommand(cli *AgentCli) *cobra.Command {
 		Aliases: []string{"d"},
 		Short:   "Delete config entry from Etcd",
 		Args:    cobra.ExactArgs(1),
-		Run:     delFunction,
+		Run: func(cmd *cobra.Command, args []string) {
+			key := args[0]
+			runConfigDel(cli, key)
+		},
 	}
 	return cmd
 }
 
-func delFunction(cmd *cobra.Command, args []string) {
+func runConfigDel(cli *AgentCli, key string) {
 	var db keyval.ProtoBroker
 	var err error
-
-	key := args[0]
 
 	if !strings.HasPrefix(key, servicelabel.GetAllAgentsPrefix()) {
 		tmp := strings.Split(key, "/")
@@ -182,5 +183,8 @@ func delFunction(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	utils.DelDataFromDb(db.NewTxn(), key)
+	err = utils.DelDataFromDb(db.NewTxn(), key)
+	if err != nil {
+		utils.ExitWithError(utils.ExitError, errors.New("Failed to delete from Etcd: "+err.Error()))
+	}
 }

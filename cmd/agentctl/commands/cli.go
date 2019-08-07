@@ -37,7 +37,11 @@ type AgentCli struct {
 func (cli *AgentCli) Initialize() {
 	Debugf("[DEBUG] Initialize - globalsFlags: %+v\n\n", globalFlags)
 
-	httpAddr := net.JoinHostPort(globalFlags.AgentAddr, globalFlags.HttpPort)
+	host := globalFlags.AgentHost
+	if host == "" {
+		host = "127.0.0.1"
+	}
+	httpAddr := net.JoinHostPort(host, globalFlags.HttpPort)
 	cli.RestClient = utils.NewRestClient(httpAddr)
 }
 
