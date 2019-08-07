@@ -17,6 +17,7 @@ package commands
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/ligato/cn-infra/agent"
 	"github.com/spf13/cobra"
@@ -37,6 +38,7 @@ var (
 	}
 	agentLabel string
 	agentAddr  = "127.0.0.1"
+	endpoints  []string
 )
 
 func init() {
@@ -45,6 +47,9 @@ func init() {
 	}
 	if a := os.Getenv("AGENT_ADDR"); a != "" {
 		agentAddr = a
+	}
+	if e := os.Getenv("ETCD_ENDPOINTS"); e != "" {
+		endpoints = strings.Split(e, ",")
 	}
 }
 
@@ -63,7 +68,7 @@ func NewAgentctlCommand() *cobra.Command {
 	flags.StringVar(&globalFlags.GrpcAddr, "grpcaddr", agentAddr+":9111", "gRPC server address")
 	flags.StringVar(&globalFlags.HttpAddr, "httpaddr", agentAddr+":9191", "HTTP server address")
 	flags.StringVar(&globalFlags.ServiceLabel, "label", agentLabel, "Service label for agent instance")
-	flags.StringSliceVar(&globalFlags.Endpoints, "endpoints", nil, "Etcd endpoints to connect to")
+	flags.StringSliceVar(&globalFlags.Endpoints, "endpoints", endpoints, "Etcd endpoints to connect to")
 
 	flags.BoolVarP(&globalFlags.Debug, "debug", "D", false, "Enable debug mode")
 
