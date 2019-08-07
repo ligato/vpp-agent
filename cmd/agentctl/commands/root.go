@@ -35,9 +35,7 @@ var globalFlags struct {
 }
 
 // NewAgentctlCommand returns new root command.
-func NewAgentctlCommand() *cobra.Command {
-	cli := &AgentCli{}
-
+func NewAgentctlCommand(cli *AgentCli) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "agentctl",
 		Short:   "agentctl manages vpp-agent instances",
@@ -75,6 +73,7 @@ func addCommands(cmd *cobra.Command, cli *AgentCli) {
 		NewLogCommand(cli),
 		NewImportCommand(cli),
 		NewVppcliCommand(cli),
+		NewModelCommand(cli),
 		NewConfigCommand(cli),
 		showCmd(),
 		generateCmd(),

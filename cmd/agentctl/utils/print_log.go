@@ -19,11 +19,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"html/template"
 	"io"
 	"sort"
 	_ "sort"
 	"text/tabwriter"
+	"text/template"
 )
 
 type logType struct {
@@ -33,47 +33,36 @@ type logType struct {
 
 type LogList []logType
 
-func (ll LogList) Len() int {
-	return len(ll)
-}
-
-func (ll LogList) Less(i, j int) bool {
-	return ll[i].Logger < ll[j].Logger
-}
-
-func (ll LogList) Swap(i, j int) {
-	ll[i].Logger, ll[j].Logger = ll[j].Logger, ll[i].Logger
-}
-
-func ConvertToLogList(log string) LogList {
+func ConvertToLogList(log string) (LogList, error) {
 	data := make(LogList, 0)
 	err := json.Unmarshal([]byte(log), &data)
 	if err != nil {
-		ExitWithError(ExitError, errors.New("Failed conver string to json - "+err.Error()))
+		return nil, errors.New("Failed conver string to json - " + err.Error())
 	}
 	sort.Sort(data)
-	return data
+	return data, nil
 }
 
 func (ll LogList) Print(w io.Writer) error {
-	const tmpl = " {{.Logger}}\t{{.Level}}\t\n"
-	t := template.Must(template.New("log").Parse(tmpl))
-
+	const tmpl = "{{.Logger}}\t{{.Level}}\t\n"
+	t, err := template.New("log").Parse(tmpl)
+	if err != nil {
+		return err
+	}
 	b, err := ll.render(t)
 	if err != nil {
 		return err
 	}
-
 	_, err = w.Write(b)
 	return err
 }
 
 func (ll LogList) render(t *template.Template) ([]byte, error) {
 	var buffer bytes.Buffer
-	w := tabwriter.NewWriter(&buffer, 0, 0, 2, ' ', 0)
+	w := tabwriter.NewWriter(&buffer, 0, 0, 1, ' ', 0)
 
 	// print header
-	fmt.Fprintf(w, " LOGGER\tLEVEL\t\n")
+	fmt.Fprintf(w, "LOGGER\tLEVEL\t\n")
 
 	// print logger list
 	for _, value := range ll {
@@ -87,4 +76,16 @@ func (ll LogList) render(t *template.Template) ([]byte, error) {
 		return nil, err
 	}
 	return buffer.Bytes(), nil
+}
+
+func (ll LogList) Len() int {
+	return len(ll)
+}
+
+func (ll LogList) Less(i, j int) bool {
+	return ll[i].Logger < ll[j].Logger
+}
+
+func (ll LogList) Swap(i, j int) {
+	ll[i], ll[j] = ll[j], ll[i]
 }

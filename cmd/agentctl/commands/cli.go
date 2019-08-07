@@ -17,6 +17,7 @@ package commands
 import (
 	"fmt"
 	"net"
+	"sort"
 	"strings"
 	"time"
 
@@ -30,8 +31,15 @@ import (
 	"github.com/ligato/vpp-agent/pkg/models"
 )
 
+type Config struct {
+}
+
 type AgentCli struct {
 	*utils.RestClient
+}
+
+func NewAgentCli() *AgentCli {
+	return &AgentCli{}
 }
 
 func (cli *AgentCli) Initialize() {
@@ -66,12 +74,14 @@ func (cli *AgentCli) KVDBClient() keyval.BytesBroker {
 }
 
 type modelDetail struct {
-	Module    []string
-	Type      string
-	Name      string
-	Alias     string
-	ProtoName string
-	KeyPrefix string
+	Module       []string
+	Type         string
+	Version      string
+	Name         string
+	Alias        string
+	ProtoName    string
+	KeyPrefix    string
+	NameTemplate string
 }
 
 func (cli *AgentCli) AllModels() []modelDetail {
@@ -79,25 +89,44 @@ func (cli *AgentCli) AllModels() []modelDetail {
 	for _, m := range models.RegisteredModels() {
 		module := strings.Split(m.Model.Module, ".")
 		typ := m.Model.Type
+		version := m.Model.Version
 
 		name := fmt.Sprintf("%s.%s", m.Model.Module, typ)
 		alias := fmt.Sprintf("%s.%s", module[0], typ)
 
 		protoName := m.Info["protoName"]
 		keyPrefix := m.Info["keyPrefix"]
+		nameTemplate := m.Info["nameTemplate"]
 
 		detail := modelDetail{
-			Module:    module,
-			Type:      typ,
-			Name:      name,
-			Alias:     alias,
-			ProtoName: protoName,
-			KeyPrefix: keyPrefix,
+			Module:       module,
+			Type:         typ,
+			Version:      version,
+			Name:         name,
+			Alias:        alias,
+			ProtoName:    protoName,
+			KeyPrefix:    keyPrefix,
+			NameTemplate: nameTemplate,
 		}
 
 		Debugf(" - model detail: %+v", detail)
 
 		list = append(list, detail)
 	}
+	sort.Sort(modelsByName(list))
 	return list
+}
+
+type modelsByName []modelDetail
+
+func (s modelsByName) Len() int {
+	return len(s)
+}
+
+func (s modelsByName) Less(i, j int) bool {
+	return s[i].Name < s[j].Name
+}
+
+func (s modelsByName) Swap(i, j int) {
+	s[i], s[j] = s[j], s[i]
 }

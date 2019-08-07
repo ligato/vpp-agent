@@ -21,8 +21,9 @@ import (
 )
 
 func main() {
-	cmd := commands.NewAgentctlCommand()
+	cli := commands.NewAgentCli()
 
+	cmd := commands.NewAgentctlCommand(cli)
 	if err := cmd.Execute(); err != nil {
 		os.Exit(-1)
 	}

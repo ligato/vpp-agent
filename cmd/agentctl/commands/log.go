@@ -38,8 +38,9 @@ func NewLogCommand(cli *AgentCli) *cobra.Command {
 }
 
 func newLogListCommand(cli *AgentCli) *cobra.Command {
-	opts := LogListOptions{}
-
+	var (
+		opts LogListOptions
+	)
 	cmd := &cobra.Command{
 		Use:     "list <logger>",
 		Aliases: []string{"ls"},
@@ -55,7 +56,6 @@ A CLI tool to connect to vppagent and show vppagent logs.
 			return RunLogList(cli, opts)
 		},
 	}
-
 	return cmd
 }
 
@@ -76,7 +76,10 @@ func RunLogList(cli *AgentCli, opts LogListOptions) error {
 		return fmt.Errorf("not found")
 	}
 
-	data := utils.ConvertToLogList(msg)
+	data, err := utils.ConvertToLogList(msg)
+	if err != nil {
+		return err
+	}
 
 	if len(data) == 0 {
 		return fmt.Errorf("no logger found")
