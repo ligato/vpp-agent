@@ -71,7 +71,7 @@ func (d *SpanDescriptor) SetInterfaceIndex(intfIndex ifaceidx.IfaceMetadataIndex
 	d.intfIndex = intfIndex
 }
 
-// Validate does.
+// Validate checks if required filed are not empty.
 func (d *SpanDescriptor) Validate(key string, value *interfaces.Span) error {
 	if value.InterfaceFrom == "" && value.InterfaceTo == "" {
 		return kvs.NewInvalidValueError(ErrSpanWithoutInterface,
@@ -86,7 +86,7 @@ func (d *SpanDescriptor) Validate(key string, value *interfaces.Span) error {
 	return nil
 }
 
-// Create does.
+// Create configures SPAN.
 func (d *SpanDescriptor) Create(key string, value *interfaces.Span) (metadata interface{}, err error) {
 	ifaceFrom, found := d.intfIndex.LookupByName(value.InterfaceFrom)
 	if !found {
@@ -117,7 +117,7 @@ func (d *SpanDescriptor) Create(key string, value *interfaces.Span) (metadata in
 	return nil, err
 }
 
-// Delete does.
+// Delete removes SPAN.
 func (d *SpanDescriptor) Delete(key string, value *interfaces.Span, metadata interface{}) error {
 	var err error
 	ifaceFrom, found := d.intfIndex.LookupByName(value.InterfaceFrom)

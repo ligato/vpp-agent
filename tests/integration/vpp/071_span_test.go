@@ -5,6 +5,7 @@ import (
 
 	"github.com/ligato/cn-infra/logging/logrus"
 
+	vpp_interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	_ "github.com/ligato/vpp-agent/plugins/vpp/ifplugin"
 	ifplugin_vppcalls "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
 )
@@ -15,101 +16,73 @@ func TestSpan(t *testing.T) {
 
 	h := ifplugin_vppcalls.CompatibleInterfaceVppHandler(ctx.vppBinapi, logrus.NewLogger("test"))
 
-	// put to API
-	const (
-		stateDisable = iota
-		stateRx
-		stateTx
-		stateBoth
-	)
+	tests := []struct {
+		name string
 
-	// dump interfaces and log them
-	ifaces, err := h.DumpInterfaces()
-	if err != nil {
-		t.Fatalf("dump interfaces failed: %v\n", err)
+		// SPAN params:
+		swIfIndexFrom uint32
+		swIfIndexTo   uint32
+		state         uint8
+		isL2          uint8
+
+		// If dump must return record (true) or empty slice (false):
+		isDump bool
+		// Action:
+		isAdd bool
+		// If action must fail:
+		isFail bool
+	}{
+		{"enable Rx SPAN", 0, 1, uint8(vpp_interfaces.Span_RX), 0, true, true, false},
+		{"enable Tx SPAN", 0, 1, uint8(vpp_interfaces.Span_TX), 0, true, true, false},
+		{"enable Both SPAN", 0, 1, uint8(vpp_interfaces.Span_BOTH), 0, true, true, false},
+		{"disable SPAN", 0, 1, uint8(vpp_interfaces.Span_BOTH), 0, false, false, false},
+		{"enable bad SPAN", 0, 0, uint8(vpp_interfaces.Span_BOTH), 0, false, true, true},
 	}
 
-	for idx, iface := range ifaces {
-		t.Logf("%d. %+v\n", idx, iface)
-	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			var err error
 
-	// test invalid states
+			if test.isAdd {
+				err = h.AddSpan(test.swIfIndexFrom, test.swIfIndexTo, test.state, test.isL2)
+			} else {
+				err = h.DelSpan(test.swIfIndexFrom, test.swIfIndexTo, test.isL2)
+			}
 
-	// -----------------------------------------
-	t.Log("enable SPAN from if0 to if1 Rx only")
-	err = h.AddSpan(0, 1, stateRx, 0)
-	if err != nil {
-		t.Fatalf("enable span failed: %v\n", err)
-	}
+			if test.isFail && err == nil {
+				t.Fatal("must fail, but no error returned from action")
+			} else if !test.isFail && err != nil {
+				t.Fatalf("action failed: %v\n", err)
+			}
 
-	dumpResp, err := h.DumpSpan()
-	if err != nil {
-		t.Fatalf("dump span failed: %v\n", err)
-	}
+			dumpResp, err := h.DumpSpan()
+			if err != nil {
+				t.Fatalf("dump span failed: %v\n", err)
+			}
 
-	if len(dumpResp) != 1 {
-		t.Fatalf("wrong number of SPANs in dump. Expected: 1. Got: %d\n", len(dumpResp))
-	}
+			if test.isDump {
+				if len(dumpResp) != 1 {
+					t.Fatalf("wrong number of SPANs in dump. Expected: 1. Got: %d\n", len(dumpResp))
+				}
 
-	// test other fields in dumpResp[0] too
+				if dumpResp[0].SwIfIndexFrom != test.swIfIndexFrom {
+					t.Fatalf("wrong SwIfIndexFrom. Expected: %d. Got: %d\n", test.swIfIndexFrom, dumpResp[0].SwIfIndexFrom)
+				}
+				if dumpResp[0].SwIfIndexTo != test.swIfIndexTo {
+					t.Fatalf("wrong SwIfIndexTo. Expected: %d. Got: %d\n", test.swIfIndexTo, dumpResp[0].SwIfIndexTo)
+				}
+				if dumpResp[0].State != test.state {
+					t.Fatalf("wrong State. Expected: %d. Got: %d\n", test.state, dumpResp[0].State)
+				}
+				if dumpResp[0].IsL2 != test.isL2 {
+					t.Fatalf("wrong IsL2. Expected: %d. Got: %d\n", test.isL2, dumpResp[0].IsL2)
+				}
+			} else {
+				if len(dumpResp) != 0 {
+					t.Fatalf("wrong number of SPANs in dump. Expected: 0. Got: %d\n", len(dumpResp))
+				}
+			}
 
-	if dumpResp[0].State != stateRx {
-		t.Fatalf("SPAN was created with wrong state. Expected: %d. Got: %d\n", stateRx, dumpResp[0].State)
-	}
-
-	// -----------------------------------------
-	t.Log("update SPAN to forward Tx packets only")
-	err = h.AddSpan(0, 1, stateTx, 0)
-	if err != nil {
-		t.Fatalf("update span failed: %v\n", err)
-	}
-
-	dumpResp, err = h.DumpSpan()
-	if err != nil {
-		t.Fatalf("dump span failed: %v\n", err)
-	}
-
-	if len(dumpResp) != 1 {
-		t.Fatalf("wrong number of SPANs in dump. Expected: 1. Got: %d\n", len(dumpResp))
-	}
-
-	if dumpResp[0].State != stateTx {
-		t.Fatalf("SPAN was not updated. Expected: %d. Got: %d\n", stateTx, dumpResp[0].State)
-	}
-
-	// -----------------------------------------
-	t.Log("update SPAN to forward both Rx and Tx packets")
-	err = h.AddSpan(0, 1, stateBoth, 0)
-	if err != nil {
-		t.Fatalf("update span failed: %v\n", err)
-	}
-
-	dumpResp, err = h.DumpSpan()
-	if err != nil {
-		t.Fatalf("dump span failed: %v\n", err)
-	}
-
-	if len(dumpResp) != 1 {
-		t.Fatalf("wrong number of SPANs in dump. Expected: 1. Got: %d\n", len(dumpResp))
-	}
-
-	if dumpResp[0].State != stateBoth {
-		t.Fatalf("SPAN was not updated. Expected: %d. Got: %d\n", stateBoth, dumpResp[0].State)
-	}
-
-	// -----------------------------------------
-	t.Log("disable SPAN")
-	err = h.DelSpan(0, 1, 0)
-	if err != nil {
-		t.Fatalf("delete span failed: %v\n", err)
-	}
-
-	dumpResp, err = h.DumpSpan()
-	if err != nil {
-		t.Fatalf("dump span failed: %v\n", err)
-	}
-
-	if len(dumpResp) != 0 {
-		t.Fatalf("wrong number of SPANs in dump. Expected: 0. Got: %d\n", len(dumpResp))
+		})
 	}
 }
