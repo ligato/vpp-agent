@@ -33,7 +33,6 @@ import (
 
 	"github.com/ligato/vpp-agent/api/genericmanager"
 	"github.com/ligato/vpp-agent/client/remoteclient"
-	"github.com/ligato/vpp-agent/cmd/agentctl/cli"
 	"github.com/ligato/vpp-agent/cmd/agentctl/utils"
 	"github.com/ligato/vpp-agent/pkg/models"
 )
@@ -44,7 +43,7 @@ var (
 	timeout  uint
 )
 
-func NewImportCommand(cli *cli.AgentCli) *cobra.Command {
+func NewImportCommand(cli *AgentCli) *cobra.Command {
 	opts := ImportOptions{}
 
 	cmd := &cobra.Command{
@@ -99,7 +98,7 @@ type ImportOptions struct {
 	Filename string
 }
 
-func RunImport(cli *cli.AgentCli, opts ImportOptions) error {
+func RunImport(cli *AgentCli, opts ImportOptions) error {
 	b, err := ioutil.ReadFile(opts.Filename)
 	if err != nil {
 		return fmt.Errorf("reading input file failed: %v", err)

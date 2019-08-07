@@ -20,17 +20,16 @@ import (
 	"strings"
 
 	"github.com/ligato/cn-infra/agent"
+	"github.com/ligato/cn-infra/logging"
 	"github.com/spf13/cobra"
-
-	"github.com/ligato/vpp-agent/cmd/agentctl/cli"
 )
 
 var (
 	// globalFlags defines all global flags.
 	globalFlags struct {
 		AgentAddr    string
-		GrpcAddr     string
-		HttpAddr     string
+		GrpcPort     string
+		HttpPort     string
 		ServiceLabel string
 		Endpoints    []string
 
@@ -55,32 +54,32 @@ func init() {
 
 // NewAgentctlCommand returns new root command.
 func NewAgentctlCommand() *cobra.Command {
+	cli := &AgentCli{}
+
 	cmd := &cobra.Command{
 		Use:     "agentctl",
 		Short:   "agentctl manages vpp-agent instances",
 		Version: fmt.Sprintf("%s", agent.BuildVersion),
+		PersistentPreRun: func(cmd *cobra.Command, args []string) {
+			cli.Initialize()
+		},
 	}
 
 	// define global flags
 	flags := cmd.PersistentFlags()
-
 	flags.StringVar(&globalFlags.AgentAddr, "addr", agentAddr, "Address on which agent is reachable")
-	flags.StringVar(&globalFlags.GrpcAddr, "grpcaddr", agentAddr+":9111", "gRPC server address")
-	flags.StringVar(&globalFlags.HttpAddr, "httpaddr", agentAddr+":9191", "HTTP server address")
+	flags.StringVar(&globalFlags.GrpcPort, "grpcport", "9111", "gRPC server port")
+	flags.StringVar(&globalFlags.HttpPort, "httpport", "9191", "HTTP server port")
 	flags.StringVar(&globalFlags.ServiceLabel, "label", agentLabel, "Service label for agent instance")
 	flags.StringSliceVar(&globalFlags.Endpoints, "endpoints", endpoints, "Etcd endpoints to connect to")
-
 	flags.BoolVarP(&globalFlags.Debug, "debug", "D", false, "Enable debug mode")
 
-	cli := cli.NewAgentCli()
-	cli.HttpAddr = globalFlags.HttpAddr
-
-	addCommands(cli, cmd)
+	addCommands(cmd, cli)
 
 	return cmd
 }
 
-func addCommands(cli *cli.AgentCli, cmd *cobra.Command) {
+func addCommands(cmd *cobra.Command, cli *AgentCli) {
 	cmd.AddCommand(
 		NewDumpCommand(cli),
 		NewLogCommand(cli),
@@ -95,7 +94,10 @@ func addCommands(cli *cli.AgentCli, cmd *cobra.Command) {
 }
 
 func Debugf(f string, a ...interface{}) {
-	if globalFlags.Debug {
-		fmt.Fprintf(os.Stderr, "DEBUG: "+f, a...)
+	if globalFlags.Debug || logging.DefaultLogger.GetLevel() >= logging.DebugLevel {
+		if !strings.HasSuffix(f, "\n") {
+			f = f + "\n"
+		}
+		fmt.Printf(f, a...)
 	}
 }

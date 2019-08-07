@@ -12,13 +12,22 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 
-package cli
+package commands
 
-// AgentCli provides client access for the agent API.
+import (
+	"net"
+
+	"github.com/ligato/vpp-agent/cmd/agentctl/utils"
+)
+
 type AgentCli struct {
-	HttpAddr string
+	*utils.RestClient
 }
 
-func NewAgentCli() *AgentCli {
-	return &AgentCli{}
+func (cli *AgentCli) Initialize() {
+	Debugf("[DEBUG] Initialize - globalsFlags: %+v\n\n", globalFlags)
+
+	httpAddr := net.JoinHostPort(globalFlags.AgentAddr, globalFlags.HttpPort)
+
+	cli.RestClient = utils.NewRestClient(httpAddr)
 }

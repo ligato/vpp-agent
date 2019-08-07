@@ -21,11 +21,9 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
-
-	"github.com/ligato/vpp-agent/cmd/agentctl/cli"
 )
 
-func NewVppcliCommand(cli *cli.AgentCli) *cobra.Command {
+func NewVppcliCommand(cli *AgentCli) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "vppcli",
 		Short: "Execute VPP CLI command",
@@ -43,11 +41,12 @@ Do same as above, but specify the HTTP address of the agent:
 			vppcmd := strings.Join(args, " ")
 			return RunVppcli(cli, vppcmd)
 		},
+		SilenceUsage: true,
 	}
 	return cmd
 }
 
-func RunVppcli(cli *cli.AgentCli, vppcmd string) error {
+func RunVppcli(cli *AgentCli, vppcmd string) error {
 	fmt.Fprintf(os.Stdout, "vpp# %s\n", vppcmd)
 
 	data := map[string]interface{}{

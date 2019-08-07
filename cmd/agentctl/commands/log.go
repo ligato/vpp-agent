@@ -22,11 +22,10 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/vpp-agent/cmd/agentctl/cli"
 	"github.com/ligato/vpp-agent/cmd/agentctl/utils"
 )
 
-func NewLogCommand(cli *cli.AgentCli) *cobra.Command {
+func NewLogCommand(cli *AgentCli) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "log",
 		Aliases: []string{"l"},
@@ -39,7 +38,7 @@ func NewLogCommand(cli *cli.AgentCli) *cobra.Command {
 	return cmd
 }
 
-func newLogListCommand(cli *cli.AgentCli) *cobra.Command {
+func newLogListCommand(cli *AgentCli) *cobra.Command {
 	opts := LogListOptions{}
 
 	cmd := &cobra.Command{
@@ -63,7 +62,7 @@ type LogListOptions struct {
 	Logger string
 }
 
-func RunLogList(cli *cli.AgentCli, opts LogListOptions) error {
+func RunLogList(cli *AgentCli, opts LogListOptions) error {
 	resp, err := cli.HttpRestGET("/log/list")
 	if err != nil {
 		return fmt.Errorf("HTTP GET request failed: %v", err)
@@ -119,7 +118,7 @@ type LogSetOptions struct {
 	Level  string
 }
 
-func newLogSetCommand(cli *cli.AgentCli) *cobra.Command {
+func newLogSetCommand(cli *AgentCli) *cobra.Command {
 	opts := LogSetOptions{}
 	cmd := &cobra.Command{
 		Use:   "set <logger> <debug|info|warning|error|fatal|panic>",
@@ -137,7 +136,7 @@ A CLI tool to connect to vppagent and set vppagent logger type.
 	return cmd
 }
 
-func RunLogSet(cli *cli.AgentCli, opts LogSetOptions) error {
+func RunLogSet(cli *AgentCli, opts LogSetOptions) error {
 	resp, err := cli.HttpRestPUT("/log/"+opts.Logger+"/"+opts.Level, nil)
 	if err != nil {
 		return fmt.Errorf("HTTP PUT request failed: %v", err)

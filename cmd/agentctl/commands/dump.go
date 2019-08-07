@@ -22,12 +22,10 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/vpp-agent/cmd/agentctl/cli"
 	models "github.com/ligato/vpp-agent/pkg/models"
 )
 
-func NewDumpCommand(cli *cli.AgentCli) *cobra.Command {
+func NewDumpCommand(cli *AgentCli) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "dump",
 		Aliases: []string{"d"},
@@ -43,7 +41,7 @@ func NewDumpCommand(cli *cli.AgentCli) *cobra.Command {
 
 		use := fmt.Sprintf("%s.%s", module[0], typ)
 
-		logging.Debugf("add dump command %q", use)
+		Debugf("add dump command %q", use)
 
 		c := &cobra.Command{
 			Use:   use,

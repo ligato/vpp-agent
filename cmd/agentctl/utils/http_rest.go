@@ -12,7 +12,7 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 
-package cli
+package utils
 
 import (
 	"bytes"
@@ -24,8 +24,19 @@ import (
 	"github.com/ligato/cn-infra/logging"
 )
 
-func (c *AgentCli) HttpRestGET(path string) ([]byte, error) {
-	a, err := url.Parse("http://" + c.HttpAddr + path)
+// RestClient provides client access for the agent API.
+type RestClient struct {
+	httpAddr string
+}
+
+func NewRestClient(httpAddr string) *RestClient {
+	return &RestClient{
+		httpAddr: httpAddr,
+	}
+}
+
+func (c *RestClient) HttpRestGET(path string) ([]byte, error) {
+	a, err := url.Parse("http://" + c.httpAddr + path)
 	if err != nil {
 		return nil, err
 	}
@@ -46,8 +57,8 @@ func (c *AgentCli) HttpRestGET(path string) ([]byte, error) {
 	return msg, nil
 }
 
-func (c *AgentCli) HttpRestPUT(path string, data interface{}) ([]byte, error) {
-	a, err := url.Parse("http://" + c.HttpAddr + path)
+func (c *RestClient) HttpRestPUT(path string, data interface{}) ([]byte, error) {
+	a, err := url.Parse("http://" + c.httpAddr + path)
 	if err != nil {
 		return nil, err
 	}
@@ -78,8 +89,8 @@ func (c *AgentCli) HttpRestPUT(path string, data interface{}) ([]byte, error) {
 	return msg, nil
 }
 
-func (c *AgentCli) HttpRestPOST(path string, data interface{}) ([]byte, error) {
-	a, err := url.Parse("http://" + c.HttpAddr + path)
+func (c *RestClient) HttpRestPOST(path string, data interface{}) ([]byte, error) {
+	a, err := url.Parse("http://" + c.httpAddr + path)
 	if err != nil {
 		return nil, err
 	}
