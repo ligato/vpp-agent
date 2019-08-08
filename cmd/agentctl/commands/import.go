@@ -157,7 +157,7 @@ func parseKeyVals(b []byte) (keyVals []keyVal, err error) {
 			return nil, fmt.Errorf("decoding value failed: %v", err)
 		}
 
-		logging.Infof("KEY: %s - %v\n", key, val)
+		Debugf("KEY: %s - %v\n", key, val)
 		keyVals = append(keyVals, keyVal{key, val})
 	}
 	return

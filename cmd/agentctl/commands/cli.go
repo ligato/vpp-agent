@@ -84,11 +84,15 @@ type ModelDetail struct {
 	Alias           string
 	ProtoName       string
 	KeyPrefix       string
-	NameTemplate    string
-	ProtoDescriptor *descriptor.DescriptorProto
+	NameTemplate    string                          `json:",omitempty"`
+	ProtoDescriptor *descriptor.DescriptorProto     `json:",omitempty"`
 	ProtoFile       *descriptor.FileDescriptorProto `json:",omitempty"`
-	Location        string
+	Fields          protoFields                     `json:",omitempty"`
+	Proto           string                          `json:",omitempty"`
+	Location        string                          `json:",omitempty"`
 }
+
+type protoFields []*descriptor.FieldDescriptorProto
 
 func (cli *AgentCli) AllModels() []ModelDetail {
 	var list []ModelDetail
@@ -105,19 +109,21 @@ func (cli *AgentCli) AllModels() []ModelDetail {
 		nameTemplate := m.Info["nameTemplate"]
 
 		p := reflect.New(proto.MessageType(protoName)).Elem().Interface().(descriptor.Message)
-		fd, dp := descriptor.ForMessage(p)
+		fd, _ := descriptor.ForMessage(p)
 
 		detail := ModelDetail{
-			Module:          module,
-			Type:            typ,
-			Version:         version,
-			Name:            name,
-			Alias:           alias,
-			ProtoName:       protoName,
-			KeyPrefix:       keyPrefix,
-			NameTemplate:    nameTemplate,
-			ProtoDescriptor: dp,
+			Name:         name,
+			Module:       module,
+			Version:      version,
+			Type:         typ,
+			Alias:        alias,
+			KeyPrefix:    keyPrefix,
+			ProtoName:    protoName,
+			NameTemplate: nameTemplate,
+			//Fields:       dp.GetField(),
+			//ProtoDescriptor: dp,
 			//ProtoFile:       fd,
+			//Proto:    proto.MarshalTextString(fd),
 			Location: fd.GetName(),
 		}
 

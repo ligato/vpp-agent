@@ -75,32 +75,6 @@ func runModelInfo(cli *AgentCli, opts ModelInfoOptions) {
 	fmt.Fprintf(os.Stdout, "%s\n", b)
 }
 
-func filterModelsByPrefix(models []ModelDetail, prefixes []string) []ModelDetail {
-	if len(prefixes) == 0 {
-		return models
-	}
-	var filtered []ModelDetail
-	for _, pref := range prefixes {
-		var model ModelDetail
-		for _, m := range models {
-			if !strings.HasPrefix(m.Name, pref) {
-				continue
-			}
-			if model.Name != "" {
-				ExitWithError(fmt.Errorf("Multiple models found with provided prefix: %s", pref))
-				return nil
-			}
-			model = m
-		}
-		if model.Name == "" {
-			ExitWithError(fmt.Errorf("No model found for provided prefix: %s", pref))
-			return nil
-		}
-		filtered = append(filtered, model)
-	}
-	return filtered
-}
-
 func newModelListCommand(cli *AgentCli) *cobra.Command {
 	var opts ModelListOptions
 
@@ -142,6 +116,32 @@ func runModelList(cli *AgentCli, opts ModelListOptions) {
 		return
 	}
 	fmt.Fprint(os.Stdout, buf.String())
+}
+
+func filterModelsByPrefix(models []ModelDetail, prefixes []string) []ModelDetail {
+	if len(prefixes) == 0 {
+		return models
+	}
+	var filtered []ModelDetail
+	for _, pref := range prefixes {
+		var model ModelDetail
+		for _, m := range models {
+			if !strings.HasPrefix(m.Name, pref) {
+				continue
+			}
+			if model.Name != "" {
+				ExitWithError(fmt.Errorf("Multiple models found with provided prefix: %s", pref))
+				return nil
+			}
+			model = m
+		}
+		if model.Name == "" {
+			ExitWithError(fmt.Errorf("No model found for provided prefix: %s", pref))
+			return nil
+		}
+		filtered = append(filtered, model)
+	}
+	return filtered
 }
 
 func filterModelsByRefs(models []ModelDetail, refs []string) []ModelDetail {
