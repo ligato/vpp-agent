@@ -26,7 +26,7 @@ import (
 
 const (
 	// SpanDescriptorName is the name of the descriptor.
-	SpanDescriptorName = "span"
+	SpanDescriptorName = "vpp-span"
 )
 
 // A list of non-retriable errors:
@@ -50,16 +50,17 @@ func NewSpanDescriptor(spanHandler vppcalls.InterfaceVppAPI, log logging.PluginL
 	}
 
 	typedDescr := &adapter.SpanDescriptor{
-		Name:          SpanDescriptorName,
-		KeySelector:   interfaces.ModelSpan.IsKeyValid,
-		KeyLabel:      interfaces.ModelSpan.StripKeyPrefix,
-		NBKeyPrefix:   interfaces.ModelSpan.KeyPrefix(),
-		ValueTypeName: interfaces.ModelSpan.ProtoName(),
-		Create:        ctx.Create,
-		Delete:        ctx.Delete,
-		Retrieve:      ctx.Retrieve,
-		Validate:      ctx.Validate,
-		Dependencies:  ctx.Dependencies,
+		Name:                 SpanDescriptorName,
+		KeySelector:          interfaces.ModelSpan.IsKeyValid,
+		KeyLabel:             interfaces.ModelSpan.StripKeyPrefix,
+		NBKeyPrefix:          interfaces.ModelSpan.KeyPrefix(),
+		ValueTypeName:        interfaces.ModelSpan.ProtoName(),
+		Create:               ctx.Create,
+		Delete:               ctx.Delete,
+		Retrieve:             ctx.Retrieve,
+		Validate:             ctx.Validate,
+		Dependencies:         ctx.Dependencies,
+		RetrieveDependencies: []string{InterfaceDescriptorName},
 	}
 
 	return adapter.NewSpanDescriptor(typedDescr), ctx
