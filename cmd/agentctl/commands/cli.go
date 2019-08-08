@@ -17,11 +17,14 @@ package commands
 import (
 	"fmt"
 	"net"
+	"reflect"
 	"sort"
 	"strings"
 	"time"
 
 	"github.com/coreos/etcd/clientv3"
+	"github.com/gogo/protobuf/proto"
+	"github.com/gogo/protobuf/protoc-gen-gogo/descriptor"
 	"github.com/ligato/cn-infra/db/keyval"
 	"github.com/ligato/cn-infra/db/keyval/etcd"
 	"github.com/ligato/cn-infra/logging"
@@ -73,19 +76,22 @@ func (cli *AgentCli) KVDBClient() keyval.BytesBroker {
 	return kvdb.NewBroker(globalFlags.ServiceLabel)
 }
 
-type modelDetail struct {
-	Module       []string
-	Type         string
-	Version      string
-	Name         string
-	Alias        string
-	ProtoName    string
-	KeyPrefix    string
-	NameTemplate string
+type ModelDetail struct {
+	Module          []string
+	Type            string
+	Version         string
+	Name            string
+	Alias           string
+	ProtoName       string
+	KeyPrefix       string
+	NameTemplate    string
+	ProtoDescriptor *descriptor.DescriptorProto
+	ProtoFile       *descriptor.FileDescriptorProto `json:",omitempty"`
+	Location        string
 }
 
-func (cli *AgentCli) AllModels() []modelDetail {
-	var list []modelDetail
+func (cli *AgentCli) AllModels() []ModelDetail {
+	var list []ModelDetail
 	for _, m := range models.RegisteredModels() {
 		module := strings.Split(m.Model.Module, ".")
 		typ := m.Model.Type
@@ -98,15 +104,21 @@ func (cli *AgentCli) AllModels() []modelDetail {
 		keyPrefix := m.Info["keyPrefix"]
 		nameTemplate := m.Info["nameTemplate"]
 
-		detail := modelDetail{
-			Module:       module,
-			Type:         typ,
-			Version:      version,
-			Name:         name,
-			Alias:        alias,
-			ProtoName:    protoName,
-			KeyPrefix:    keyPrefix,
-			NameTemplate: nameTemplate,
+		p := reflect.New(proto.MessageType(protoName)).Elem().Interface().(descriptor.Message)
+		fd, dp := descriptor.ForMessage(p)
+
+		detail := ModelDetail{
+			Module:          module,
+			Type:            typ,
+			Version:         version,
+			Name:            name,
+			Alias:           alias,
+			ProtoName:       protoName,
+			KeyPrefix:       keyPrefix,
+			NameTemplate:    nameTemplate,
+			ProtoDescriptor: dp,
+			//ProtoFile:       fd,
+			Location: fd.GetName(),
 		}
 
 		Debugf(" - model detail: %+v", detail)
@@ -117,7 +129,7 @@ func (cli *AgentCli) AllModels() []modelDetail {
 	return list
 }
 
-type modelsByName []modelDetail
+type modelsByName []ModelDetail
 
 func (s modelsByName) Len() int {
 	return len(s)

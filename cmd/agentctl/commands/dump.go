@@ -49,7 +49,7 @@ func NewDumpCommand(cli *AgentCli) *cobra.Command {
 	return cmd
 }
 
-func runDump(cli *AgentCli, model modelDetail) {
+func runDump(cli *AgentCli, model ModelDetail) {
 	q := fmt.Sprintf(`key-prefix=%s&view=cached`, url.QueryEscape(model.KeyPrefix))
 	resp, err := cli.HttpRestGET("/scheduler/dump?" + q)
 	if err != nil {
