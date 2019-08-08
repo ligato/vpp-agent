@@ -162,12 +162,12 @@ func (d *SpanDescriptor) Retrieve(correlate []adapter.SpanKVWithMetadata) (retri
 	for _, s := range spans {
 		nameFrom, _, exists = d.intfIndex.LookupBySwIfIndex(s.SwIfIndexFrom)
 		if !exists {
-			// should this break or error? dunno
+			d.log.Debugf("failed to find interface with index %d", s.SwIfIndexFrom)
 			continue
 		}
 		nameTo, _, exists = d.intfIndex.LookupBySwIfIndex(s.SwIfIndexTo)
 		if !exists {
-			// should this break or error? dunno
+			d.log.Debugf("failed to find interface with index %d", s.SwIfIndexTo)
 			continue
 		}
 		var isL2 bool
