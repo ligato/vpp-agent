@@ -4,6 +4,7 @@
 
 ## Release Notes
 
+- [v2.2.0-beta](#v2.2.0-beta)
 - [v2.1.0](#v2.1.0)
   - [v2.1.1](#v2.1.1)
 - [v2.0.0](#v2.0.0)
@@ -42,6 +43,24 @@ RELEASE CHANGELOG TEMPLATE:
 ### Docker Images
 ### Documentation
 -->
+
+
+<a name="v2.2.0-beta"></a>
+# [2.2.0-beta](https://github.com/ligato/vpp-agent/compare/v2.1.1...v2.2.0-beta) (2019-08-09)
+
+### Compatibility
+- **VPP 19.08** (rc1)
+- **VPP 19.04** (default)
+- **VPP 19.01** (backward compatible)
+
+### Bug Fixes
+* _TBD_
+
+### Improvements
+* _TBD_
+
+### Docker Images
+* Images now use pre-built VPP images from [ligato/vpp-base](https://github.com/ligato/vpp-base)
 
 
 <a name="v2.1.1"></a>
