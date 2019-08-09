@@ -403,6 +403,7 @@ func (d *InterfaceDescriptor) Retrieve(correlate []adapter.InterfaceKVWithMetada
 				// (seemingly uninitialized section of memory is returned)
 				if intf.Interface.GetTap().GetVersion() == 2 {
 					intf.Interface.GetTap().HostIfName = expCfg.GetTap().GetHostIfName()
+					tapHostIfName = expCfg.GetTap().GetHostIfName()
 				}
 
 			}
