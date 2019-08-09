@@ -104,7 +104,7 @@ type InterfaceState struct {
 type InterfaceSpanDetails struct {
 	SwIfIndexFrom uint32
 	SwIfIndexTo   uint32
-	State         uint8
+	Direction     uint8
 	IsL2          uint8
 }
 
@@ -193,7 +193,7 @@ type InterfaceVppAPI interface {
 	// SetVLanTagRewrite sets VLan tag rewrite rule for given sub-interface
 	SetVLanTagRewrite(ifIdx uint32, subIf *interfaces.SubInterface) error
 	// AddSpan creates new span record
-	AddSpan(ifIdxFrom, ifIdxTo uint32, state uint8, isL2 uint8) error
+	AddSpan(ifIdxFrom, ifIdxTo uint32, direction uint8, isL2 uint8) error
 	// DelSpan removes new span record
 	DelSpan(ifIdxFrom, ifIdxTo uint32, isL2 uint8) error
 }

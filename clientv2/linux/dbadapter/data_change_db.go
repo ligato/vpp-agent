@@ -103,8 +103,8 @@ func (dsl *PutDSL) VppInterface(val *interfaces.Interface) linuxclient.PutDSL {
 	return dsl
 }
 
-// VppSpan adds a request to create or update VPP SPAN.
-func (dsl *PutDSL) VppSpan(val *interfaces.Span) linuxclient.PutDSL {
+// Span adds a request to create or update VPP SPAN.
+func (dsl *PutDSL) Span(val *interfaces.Span) linuxclient.PutDSL {
 	dsl.vppPut.Span(val)
 	return dsl
 }
@@ -285,8 +285,8 @@ func (dsl *DeleteDSL) VppInterface(ifaceName string) linuxclient.DeleteDSL {
 	return dsl
 }
 
-// VppSpan adds a request to delete VPP SPAN.
-func (dsl *DeleteDSL) VppSpan(val *interfaces.Span) linuxclient.DeleteDSL {
+// Span adds a request to delete VPP SPAN.
+func (dsl *DeleteDSL) Span(val *interfaces.Span) linuxclient.DeleteDSL {
 	dsl.vppDelete.Span(val)
 	return dsl
 }

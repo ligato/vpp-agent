@@ -8,14 +8,14 @@ import "github.com/gogo/protobuf/gogoproto/gogo.proto";
 option (gogoproto.messagename_all) = true;
 
 message Span {
-    enum State {
+    enum Direction {
         UNKNOWN = 0;
         RX = 1;
         TX = 2;
         BOTH = 3;
     };
-	string interface_from = 1;
+    string interface_from = 1;
     string interface_to = 2;
-    State state = 3;
-	bool is_l2 = 4;
+    Direction direction = 3;
+    bool is_l2 = 4;
 }

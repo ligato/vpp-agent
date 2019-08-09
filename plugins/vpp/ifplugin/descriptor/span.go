@@ -32,6 +32,7 @@ const (
 // A list of non-retriable errors:
 var (
 	ErrSpanWithoutInterface = errors.New("VPP SPAN defined without From/To interface")
+	ErrSpanWithoutDirection = errors.New("VPP SPAN defined without direction (Rx, Tx or Both)")
 )
 
 // SpanDescriptor teaches KVScheduler how to configure VPP SPAN.
@@ -84,6 +85,9 @@ func (d *SpanDescriptor) Validate(key string, value *interfaces.Span) error {
 	if value.InterfaceTo == "" {
 		return kvs.NewInvalidValueError(ErrSpanWithoutInterface, "interface_to")
 	}
+	if value.Direction == interfaces.Span_UNKNOWN {
+		return kvs.NewInvalidValueError(ErrSpanWithoutDirection, "direction")
+	}
 	return nil
 }
 
@@ -108,7 +112,7 @@ func (d *SpanDescriptor) Create(key string, value *interfaces.Span) (metadata in
 		isL2 = 1
 	}
 
-	err = d.spanHandler.AddSpan(ifaceFrom.SwIfIndex, ifaceTo.SwIfIndex, uint8(value.State), isL2)
+	err = d.spanHandler.AddSpan(ifaceFrom.SwIfIndex, ifaceTo.SwIfIndex, uint8(value.Direction), isL2)
 	if err != nil {
 		err = errors.Errorf("failed to add interface span: %v", err)
 		d.log.Error(err)
@@ -181,7 +185,7 @@ func (d *SpanDescriptor) Retrieve(correlate []adapter.SpanKVWithMetadata) (retri
 			Value: &interfaces.Span{
 				InterfaceFrom: nameFrom,
 				InterfaceTo:   nameTo,
-				State:         interfaces.Span_State(s.State),
+				Direction:     interfaces.Span_Direction(s.Direction),
 				IsL2:          isL2,
 			},
 			Origin: kvs.FromNB,

@@ -95,7 +95,7 @@ func testLocalClientWithScheduler() {
 		LinuxInterface(clientLinuxTap).
 		VppInterface(hostVPPTap).
 		VppInterface(clientVPPTap).
-		VppSpan(spanRx).
+		Span(spanRx).
 		Send().ReceiveReply()
 	if err != nil {
 		fmt.Println(err)
@@ -105,21 +105,21 @@ func testLocalClientWithScheduler() {
 	time.Sleep(time.Second * 20)
 	fmt.Println("=== CHANGE ===")
 	txn2 := localclient.DataChangeRequest("span-change")
-	err = txn2.Delete().VppSpan(spanRx).Send().ReceiveReply()
+	err = txn2.Delete().Span(spanRx).Send().ReceiveReply()
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 
 	time.Sleep(time.Second * 20)
-	err = txn2.Put().VppSpan(spanBoth).Send().ReceiveReply()
+	err = txn2.Put().Span(spanBoth).Send().ReceiveReply()
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 
 	time.Sleep(time.Second * 20)
-	err = txn2.Put().VppSpan(spanRx).Send().ReceiveReply()
+	err = txn2.Put().Span(spanRx).Send().ReceiveReply()
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -196,12 +196,12 @@ var (
 	spanRx = &vpp_interfaces.Span{
 		InterfaceFrom: "vpp_span_tap1",
 		InterfaceTo:   "vpp_span_tap2",
-		State:         vpp_interfaces.Span_RX,
+		Direction:     vpp_interfaces.Span_RX,
 	}
 
 	spanBoth = &vpp_interfaces.Span{
 		InterfaceFrom: "vpp_span_tap1",
 		InterfaceTo:   "vpp_span_tap2",
-		State:         vpp_interfaces.Span_BOTH,
+		Direction:     vpp_interfaces.Span_BOTH,
 	}
 )

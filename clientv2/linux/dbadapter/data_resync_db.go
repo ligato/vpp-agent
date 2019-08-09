@@ -87,8 +87,8 @@ func (dsl *DataResyncDSL) VppInterface(intf *interfaces.Interface) linuxclient.D
 	return dsl
 }
 
-// VppSpan adds VPP span to the RESYNC request.
-func (dsl *DataResyncDSL) VppSpan(span *interfaces.Span) linuxclient.DataResyncDSL {
+// Span adds VPP span to the RESYNC request.
+func (dsl *DataResyncDSL) Span(span *interfaces.Span) linuxclient.DataResyncDSL {
 	dsl.vppDataResync.Span(span)
 	return dsl
 }
