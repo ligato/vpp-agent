@@ -7,7 +7,7 @@ Package abf is a generated VPP binary API for 'abf' module.
 It consists of:
 	  7 enums
 	  2 aliases
-	 10 types
+	 11 types
 	  1 union
 	 10 messages
 	  5 services
@@ -29,7 +29,7 @@ const (
 	// APIVersion is the API version of this module.
 	APIVersion = "1.0.0"
 	// VersionCrc is the CRC of this module.
-	VersionCrc = 0x89235b51
+	VersionCrc = 0x96d30784
 )
 
 // AddressFamily represents VPP binary API enum 'address_family'.
@@ -65,18 +65,21 @@ const (
 	FIB_API_PATH_FLAG_NONE                 FibPathFlags = 0
 	FIB_API_PATH_FLAG_RESOLVE_VIA_ATTACHED FibPathFlags = 1
 	FIB_API_PATH_FLAG_RESOLVE_VIA_HOST     FibPathFlags = 2
+	FIB_API_PATH_FLAG_POP_PW_CW            FibPathFlags = 4
 )
 
 var FibPathFlags_name = map[uint32]string{
 	0: "FIB_API_PATH_FLAG_NONE",
 	1: "FIB_API_PATH_FLAG_RESOLVE_VIA_ATTACHED",
 	2: "FIB_API_PATH_FLAG_RESOLVE_VIA_HOST",
+	4: "FIB_API_PATH_FLAG_POP_PW_CW",
 }
 
 var FibPathFlags_value = map[string]uint32{
 	"FIB_API_PATH_FLAG_NONE":                 0,
 	"FIB_API_PATH_FLAG_RESOLVE_VIA_ATTACHED": 1,
 	"FIB_API_PATH_FLAG_RESOLVE_VIA_HOST":     2,
+	"FIB_API_PATH_FLAG_POP_PW_CW":            4,
 }
 
 func (x FibPathFlags) String() string {
@@ -471,6 +474,16 @@ func (*Prefix) GetTypeName() string {
 	return "prefix"
 }
 
+// PrefixMatcher represents VPP binary API type 'prefix_matcher'.
+type PrefixMatcher struct {
+	Le uint8
+	Ge uint8
+}
+
+func (*PrefixMatcher) GetTypeName() string {
+	return "prefix_matcher"
+}
+
 // AddressUnion represents VPP binary API union 'address_union'.
 type AddressUnion struct {
 	XXX_UnionData [16]byte
@@ -612,7 +625,7 @@ func (*AbfPolicyAddDel) GetMessageName() string {
 	return "abf_policy_add_del"
 }
 func (*AbfPolicyAddDel) GetCrcString() string {
-	return "60b0000b"
+	return "d1fc434d"
 }
 func (*AbfPolicyAddDel) GetMessageType() api.MessageType {
 	return api.RequestMessage
@@ -642,7 +655,7 @@ func (*AbfPolicyDetails) GetMessageName() string {
 	return "abf_policy_details"
 }
 func (*AbfPolicyDetails) GetCrcString() string {
-	return "ed2091e2"
+	return "c19593c8"
 }
 func (*AbfPolicyDetails) GetMessageType() api.MessageType {
 	return api.ReplyMessage

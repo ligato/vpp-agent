@@ -7,7 +7,7 @@ Package l2 is a generated VPP binary API for 'l2' module.
 It consists of:
 	  6 enums
 	  3 aliases
-	  8 types
+	  9 types
 	  1 union
 	 51 messages
 	 25 services
@@ -29,7 +29,7 @@ const (
 	// APIVersion is the API version of this module.
 	APIVersion = "2.2.2"
 	// VersionCrc is the CRC of this module.
-	VersionCrc = 0x46c9d538
+	VersionCrc = 0x532950d2
 )
 
 // AddressFamily represents VPP binary API enum 'address_family'.
@@ -392,6 +392,16 @@ type Prefix struct {
 
 func (*Prefix) GetTypeName() string {
 	return "prefix"
+}
+
+// PrefixMatcher represents VPP binary API type 'prefix_matcher'.
+type PrefixMatcher struct {
+	Le uint8
+	Ge uint8
+}
+
+func (*PrefixMatcher) GetTypeName() string {
+	return "prefix_matcher"
 }
 
 // AddressUnion represents VPP binary API union 'address_union'.
