@@ -7,7 +7,7 @@ Package punt is a generated VPP binary API for 'punt' module.
 It consists of:
 	  5 enums
 	  2 aliases
-	 10 types
+	 11 types
 	  2 unions
 	 10 messages
 	  5 services
@@ -29,7 +29,7 @@ const (
 	// APIVersion is the API version of this module.
 	APIVersion = "2.1.0"
 	// VersionCrc is the CRC of this module.
-	VersionCrc = 0xd6aa99ad
+	VersionCrc = 0xd16c6294
 )
 
 // AddressFamily represents VPP binary API enum 'address_family'.
@@ -314,6 +314,16 @@ type Prefix struct {
 
 func (*Prefix) GetTypeName() string {
 	return "prefix"
+}
+
+// PrefixMatcher represents VPP binary API type 'prefix_matcher'.
+type PrefixMatcher struct {
+	Le uint8
+	Ge uint8
+}
+
+func (*PrefixMatcher) GetTypeName() string {
+	return "prefix_matcher"
 }
 
 // Punt represents VPP binary API type 'punt'.

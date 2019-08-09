@@ -5,12 +5,12 @@
 Package nat is a generated VPP binary API for 'nat' module.
 
 It consists of:
-	  5 enums
+	  6 enums
 	  3 aliases
-	  6 types
+	  7 types
 	  1 union
-	135 messages
-	 67 services
+	137 messages
+	 68 services
 */
 package nat
 
@@ -27,9 +27,9 @@ const (
 	// ModuleName is the name of this module.
 	ModuleName = "nat"
 	// APIVersion is the API version of this module.
-	APIVersion = "5.0.0"
+	APIVersion = "5.1.0"
 	// VersionCrc is the CRC of this module.
-	VersionCrc = 0x68a1a63b
+	VersionCrc = 0x11e8f685
 )
 
 // AddressFamily represents VPP binary API enum 'address_family'.
@@ -276,6 +276,44 @@ func (x NatConfigFlags) String() string {
 	return strconv.Itoa(int(x))
 }
 
+// NatLogLevel represents VPP binary API enum 'nat_log_level'.
+type NatLogLevel uint8
+
+const (
+	NAT_LOG_NONE    NatLogLevel = 0
+	NAT_LOG_ERROR   NatLogLevel = 1
+	NAT_LOG_WARNING NatLogLevel = 2
+	NAT_LOG_NOTICE  NatLogLevel = 3
+	NAT_LOG_INFO    NatLogLevel = 4
+	NAT_LOG_DEBUG   NatLogLevel = 5
+)
+
+var NatLogLevel_name = map[uint8]string{
+	0: "NAT_LOG_NONE",
+	1: "NAT_LOG_ERROR",
+	2: "NAT_LOG_WARNING",
+	3: "NAT_LOG_NOTICE",
+	4: "NAT_LOG_INFO",
+	5: "NAT_LOG_DEBUG",
+}
+
+var NatLogLevel_value = map[string]uint8{
+	"NAT_LOG_NONE":    0,
+	"NAT_LOG_ERROR":   1,
+	"NAT_LOG_WARNING": 2,
+	"NAT_LOG_NOTICE":  3,
+	"NAT_LOG_INFO":    4,
+	"NAT_LOG_DEBUG":   5,
+}
+
+func (x NatLogLevel) String() string {
+	s, ok := NatLogLevel_name[uint8(x)]
+	if ok {
+		return s
+	}
+	return strconv.Itoa(int(x))
+}
+
 // InterfaceIndex represents VPP binary API alias 'interface_index'.
 type InterfaceIndex uint32
 
@@ -347,6 +385,16 @@ type Prefix struct {
 
 func (*Prefix) GetTypeName() string {
 	return "prefix"
+}
+
+// PrefixMatcher represents VPP binary API type 'prefix_matcher'.
+type PrefixMatcher struct {
+	Le uint8
+	Ge uint8
+}
+
+func (*PrefixMatcher) GetTypeName() string {
+	return "prefix_matcher"
 }
 
 // AddressUnion represents VPP binary API union 'address_union'.
@@ -2396,6 +2444,36 @@ func (*NatSetAddrAndPortAllocAlgReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 
+// NatSetLogLevel represents VPP binary API message 'nat_set_log_level'.
+type NatSetLogLevel struct {
+	LogLevel NatLogLevel
+}
+
+func (*NatSetLogLevel) GetMessageName() string {
+	return "nat_set_log_level"
+}
+func (*NatSetLogLevel) GetCrcString() string {
+	return "70076bfe"
+}
+func (*NatSetLogLevel) GetMessageType() api.MessageType {
+	return api.RequestMessage
+}
+
+// NatSetLogLevelReply represents VPP binary API message 'nat_set_log_level_reply'.
+type NatSetLogLevelReply struct {
+	Retval int32
+}
+
+func (*NatSetLogLevelReply) GetMessageName() string {
+	return "nat_set_log_level_reply"
+}
+func (*NatSetLogLevelReply) GetCrcString() string {
+	return "e8d4e804"
+}
+func (*NatSetLogLevelReply) GetMessageType() api.MessageType {
+	return api.ReplyMessage
+}
+
 // NatSetMssClamping represents VPP binary API message 'nat_set_mss_clamping'.
 type NatSetMssClamping struct {
 	MssValue uint16
@@ -2724,6 +2802,8 @@ func init() {
 	api.RegisterMessage((*NatReassDump)(nil), "nat.NatReassDump")
 	api.RegisterMessage((*NatSetAddrAndPortAllocAlg)(nil), "nat.NatSetAddrAndPortAllocAlg")
 	api.RegisterMessage((*NatSetAddrAndPortAllocAlgReply)(nil), "nat.NatSetAddrAndPortAllocAlgReply")
+	api.RegisterMessage((*NatSetLogLevel)(nil), "nat.NatSetLogLevel")
+	api.RegisterMessage((*NatSetLogLevelReply)(nil), "nat.NatSetLogLevelReply")
 	api.RegisterMessage((*NatSetMssClamping)(nil), "nat.NatSetMssClamping")
 	api.RegisterMessage((*NatSetMssClampingReply)(nil), "nat.NatSetMssClampingReply")
 	api.RegisterMessage((*NatSetReass)(nil), "nat.NatSetReass")
@@ -2864,6 +2944,8 @@ func AllMessages() []api.Message {
 		(*NatReassDump)(nil),
 		(*NatSetAddrAndPortAllocAlg)(nil),
 		(*NatSetAddrAndPortAllocAlgReply)(nil),
+		(*NatSetLogLevel)(nil),
+		(*NatSetLogLevelReply)(nil),
 		(*NatSetMssClamping)(nil),
 		(*NatSetMssClampingReply)(nil),
 		(*NatSetReass)(nil),
@@ -2943,6 +3025,7 @@ type RPCService interface {
 	NatHaSetListener(ctx context.Context, in *NatHaSetListener) (*NatHaSetListenerReply, error)
 	NatIpfixEnableDisable(ctx context.Context, in *NatIpfixEnableDisable) (*NatIpfixEnableDisableReply, error)
 	NatSetAddrAndPortAllocAlg(ctx context.Context, in *NatSetAddrAndPortAllocAlg) (*NatSetAddrAndPortAllocAlgReply, error)
+	NatSetLogLevel(ctx context.Context, in *NatSetLogLevel) (*NatSetLogLevelReply, error)
 	NatSetMssClamping(ctx context.Context, in *NatSetMssClamping) (*NatSetMssClampingReply, error)
 	NatSetReass(ctx context.Context, in *NatSetReass) (*NatSetReassReply, error)
 	NatSetTimeouts(ctx context.Context, in *NatSetTimeouts) (*NatSetTimeoutsReply, error)
@@ -3866,6 +3949,15 @@ func (c *serviceClient) NatIpfixEnableDisable(ctx context.Context, in *NatIpfixE
 
 func (c *serviceClient) NatSetAddrAndPortAllocAlg(ctx context.Context, in *NatSetAddrAndPortAllocAlg) (*NatSetAddrAndPortAllocAlgReply, error) {
 	out := new(NatSetAddrAndPortAllocAlgReply)
+	err := c.ch.SendRequest(in).ReceiveReply(out)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *serviceClient) NatSetLogLevel(ctx context.Context, in *NatSetLogLevel) (*NatSetLogLevelReply, error) {
+	out := new(NatSetLogLevelReply)
 	err := c.ch.SendRequest(in).ReceiveReply(out)
 	if err != nil {
 		return nil, err

@@ -6,8 +6,8 @@ Package acl is a generated VPP binary API for 'acl' module.
 
 It consists of:
 	  2 types
-	 36 messages
-	 18 services
+	 38 messages
+	 19 services
 */
 package acl
 
@@ -26,7 +26,7 @@ const (
 	// APIVersion is the API version of this module.
 	APIVersion = "1.0.1"
 	// VersionCrc is the CRC of this module.
-	VersionCrc = 0x859a73ee
+	VersionCrc = 0xedb7b898
 )
 
 // ACLRule represents VPP binary API type 'acl_rule'.
@@ -413,6 +413,36 @@ func (*ACLPluginGetVersionReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 
+// ACLStatsIntfCountersEnable represents VPP binary API message 'acl_stats_intf_counters_enable'.
+type ACLStatsIntfCountersEnable struct {
+	Enable bool
+}
+
+func (*ACLStatsIntfCountersEnable) GetMessageName() string {
+	return "acl_stats_intf_counters_enable"
+}
+func (*ACLStatsIntfCountersEnable) GetCrcString() string {
+	return "b3e225d2"
+}
+func (*ACLStatsIntfCountersEnable) GetMessageType() api.MessageType {
+	return api.RequestMessage
+}
+
+// ACLStatsIntfCountersEnableReply represents VPP binary API message 'acl_stats_intf_counters_enable_reply'.
+type ACLStatsIntfCountersEnableReply struct {
+	Retval int32
+}
+
+func (*ACLStatsIntfCountersEnableReply) GetMessageName() string {
+	return "acl_stats_intf_counters_enable_reply"
+}
+func (*ACLStatsIntfCountersEnableReply) GetCrcString() string {
+	return "e8d4e804"
+}
+func (*ACLStatsIntfCountersEnableReply) GetMessageType() api.MessageType {
+	return api.ReplyMessage
+}
+
 // MacipACLAdd represents VPP binary API message 'macip_acl_add'.
 type MacipACLAdd struct {
 	Tag   []byte `struc:"[64]byte"`
@@ -659,6 +689,8 @@ func init() {
 	api.RegisterMessage((*ACLPluginGetConnTableMaxEntriesReply)(nil), "acl.ACLPluginGetConnTableMaxEntriesReply")
 	api.RegisterMessage((*ACLPluginGetVersion)(nil), "acl.ACLPluginGetVersion")
 	api.RegisterMessage((*ACLPluginGetVersionReply)(nil), "acl.ACLPluginGetVersionReply")
+	api.RegisterMessage((*ACLStatsIntfCountersEnable)(nil), "acl.ACLStatsIntfCountersEnable")
+	api.RegisterMessage((*ACLStatsIntfCountersEnableReply)(nil), "acl.ACLStatsIntfCountersEnableReply")
 	api.RegisterMessage((*MacipACLAdd)(nil), "acl.MacipACLAdd")
 	api.RegisterMessage((*MacipACLAddReplace)(nil), "acl.MacipACLAddReplace")
 	api.RegisterMessage((*MacipACLAddReplaceReply)(nil), "acl.MacipACLAddReplaceReply")
@@ -700,6 +732,8 @@ func AllMessages() []api.Message {
 		(*ACLPluginGetConnTableMaxEntriesReply)(nil),
 		(*ACLPluginGetVersion)(nil),
 		(*ACLPluginGetVersionReply)(nil),
+		(*ACLStatsIntfCountersEnable)(nil),
+		(*ACLStatsIntfCountersEnableReply)(nil),
 		(*MacipACLAdd)(nil),
 		(*MacipACLAddReplace)(nil),
 		(*MacipACLAddReplaceReply)(nil),
@@ -732,6 +766,7 @@ type RPCService interface {
 	ACLPluginControlPing(ctx context.Context, in *ACLPluginControlPing) (*ACLPluginControlPingReply, error)
 	ACLPluginGetConnTableMaxEntries(ctx context.Context, in *ACLPluginGetConnTableMaxEntries) (*ACLPluginGetConnTableMaxEntriesReply, error)
 	ACLPluginGetVersion(ctx context.Context, in *ACLPluginGetVersion) (*ACLPluginGetVersionReply, error)
+	ACLStatsIntfCountersEnable(ctx context.Context, in *ACLStatsIntfCountersEnable) (*ACLStatsIntfCountersEnableReply, error)
 	MacipACLAdd(ctx context.Context, in *MacipACLAdd) (*MacipACLAddReply, error)
 	MacipACLAddReplace(ctx context.Context, in *MacipACLAddReplace) (*MacipACLAddReplaceReply, error)
 	MacipACLDel(ctx context.Context, in *MacipACLDel) (*MacipACLDelReply, error)
@@ -942,6 +977,15 @@ func (c *serviceClient) ACLPluginGetConnTableMaxEntries(ctx context.Context, in 
 
 func (c *serviceClient) ACLPluginGetVersion(ctx context.Context, in *ACLPluginGetVersion) (*ACLPluginGetVersionReply, error) {
 	out := new(ACLPluginGetVersionReply)
+	err := c.ch.SendRequest(in).ReceiveReply(out)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *serviceClient) ACLStatsIntfCountersEnable(ctx context.Context, in *ACLStatsIntfCountersEnable) (*ACLStatsIntfCountersEnableReply, error) {
+	out := new(ACLStatsIntfCountersEnableReply)
 	err := c.ch.SendRequest(in).ReceiveReply(out)
 	if err != nil {
 		return nil, err

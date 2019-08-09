@@ -6,7 +6,8 @@ Package vpe is a generated VPP binary API for 'vpe' module.
 
 It consists of:
 	  1 enum
-	  1 type
+	  2 aliases
+	  2 types
 	 26 messages
 	 13 services
 */
@@ -25,9 +26,9 @@ const (
 	// ModuleName is the name of this module.
 	ModuleName = "vpe"
 	// APIVersion is the API version of this module.
-	APIVersion = "1.4.0"
+	APIVersion = "1.5.0"
 	// VersionCrc is the CRC of this module.
-	VersionCrc = 0xf4bcb773
+	VersionCrc = 0x2521f24d
 )
 
 // LogLevel represents VPP binary API enum 'log_level'.
@@ -77,6 +78,12 @@ func (x LogLevel) String() string {
 	return strconv.Itoa(int(x))
 }
 
+// Timedelta represents VPP binary API alias 'timedelta'.
+type Timedelta float64
+
+// Timestamp represents VPP binary API alias 'timestamp'.
+type Timestamp float64
+
 // ThreadData represents VPP binary API type 'thread_data'.
 type ThreadData struct {
 	ID        uint32
@@ -90,6 +97,19 @@ type ThreadData struct {
 
 func (*ThreadData) GetTypeName() string {
 	return "thread_data"
+}
+
+// Version represents VPP binary API type 'version'.
+type Version struct {
+	Major         uint32
+	Minor         uint32
+	Patch         uint32
+	PreRelease    []byte `struc:"[17]byte"`
+	BuildMetadata []byte `struc:"[17]byte"`
+}
+
+func (*Version) GetTypeName() string {
+	return "version"
 }
 
 // AddNodeNext represents VPP binary API message 'add_node_next'.
@@ -374,21 +394,19 @@ func (*GetNodeIndexReply) GetMessageType() api.MessageType {
 
 // LogDetails represents VPP binary API message 'log_details'.
 type LogDetails struct {
-	TimestampTicks   float64
-	Level            LogLevel
-	XXX_TimestampLen uint32 `struc:"sizeof=Timestamp"`
-	Timestamp        string `binapi:",limit=24"`
-	XXX_MsgClassLen  uint32 `struc:"sizeof=MsgClass"`
-	MsgClass         string `binapi:",limit=32"`
-	XXX_MessageLen   uint32 `struc:"sizeof=Message"`
-	Message          string `binapi:",limit=256"`
+	Timestamp       Timestamp
+	Level           LogLevel
+	XXX_MsgClassLen uint32 `struc:"sizeof=MsgClass"`
+	MsgClass        string `binapi:",limit=32"`
+	XXX_MessageLen  uint32 `struc:"sizeof=Message"`
+	Message         string `binapi:",limit=256"`
 }
 
 func (*LogDetails) GetMessageName() string {
 	return "log_details"
 }
 func (*LogDetails) GetCrcString() string {
-	return "91976545"
+	return "4aea1f4d"
 }
 func (*LogDetails) GetMessageType() api.MessageType {
 	return api.ReplyMessage
@@ -396,14 +414,14 @@ func (*LogDetails) GetMessageType() api.MessageType {
 
 // LogDump represents VPP binary API message 'log_dump'.
 type LogDump struct {
-	StartTimestamp float64
+	StartTimestamp Timestamp
 }
 
 func (*LogDump) GetMessageName() string {
 	return "log_dump"
 }
 func (*LogDump) GetCrcString() string {
-	return "74fddb5f"
+	return "e4a022b6"
 }
 func (*LogDump) GetMessageType() api.MessageType {
 	return api.RequestMessage
@@ -475,32 +493,32 @@ func (*ShowVersionReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 
-// ShowVpeSystemTimeTicks represents VPP binary API message 'show_vpe_system_time_ticks'.
-type ShowVpeSystemTimeTicks struct{}
+// ShowVpeSystemTime represents VPP binary API message 'show_vpe_system_time'.
+type ShowVpeSystemTime struct{}
 
-func (*ShowVpeSystemTimeTicks) GetMessageName() string {
-	return "show_vpe_system_time_ticks"
+func (*ShowVpeSystemTime) GetMessageName() string {
+	return "show_vpe_system_time"
 }
-func (*ShowVpeSystemTimeTicks) GetCrcString() string {
+func (*ShowVpeSystemTime) GetCrcString() string {
 	return "51077d14"
 }
-func (*ShowVpeSystemTimeTicks) GetMessageType() api.MessageType {
+func (*ShowVpeSystemTime) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 
-// ShowVpeSystemTimeTicksReply represents VPP binary API message 'show_vpe_system_time_ticks_reply'.
-type ShowVpeSystemTimeTicksReply struct {
-	Retval             int32
-	VpeSystemTimeTicks float64
+// ShowVpeSystemTimeReply represents VPP binary API message 'show_vpe_system_time_reply'.
+type ShowVpeSystemTimeReply struct {
+	Retval        int32
+	VpeSystemTime Timestamp
 }
 
-func (*ShowVpeSystemTimeTicksReply) GetMessageName() string {
-	return "show_vpe_system_time_ticks_reply"
+func (*ShowVpeSystemTimeReply) GetMessageName() string {
+	return "show_vpe_system_time_reply"
 }
-func (*ShowVpeSystemTimeTicksReply) GetCrcString() string {
-	return "5fa0885c"
+func (*ShowVpeSystemTimeReply) GetCrcString() string {
+	return "3b12fb3f"
 }
-func (*ShowVpeSystemTimeTicksReply) GetMessageType() api.MessageType {
+func (*ShowVpeSystemTimeReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 
@@ -529,8 +547,8 @@ func init() {
 	api.RegisterMessage((*ShowThreadsReply)(nil), "vpe.ShowThreadsReply")
 	api.RegisterMessage((*ShowVersion)(nil), "vpe.ShowVersion")
 	api.RegisterMessage((*ShowVersionReply)(nil), "vpe.ShowVersionReply")
-	api.RegisterMessage((*ShowVpeSystemTimeTicks)(nil), "vpe.ShowVpeSystemTimeTicks")
-	api.RegisterMessage((*ShowVpeSystemTimeTicksReply)(nil), "vpe.ShowVpeSystemTimeTicksReply")
+	api.RegisterMessage((*ShowVpeSystemTime)(nil), "vpe.ShowVpeSystemTime")
+	api.RegisterMessage((*ShowVpeSystemTimeReply)(nil), "vpe.ShowVpeSystemTimeReply")
 }
 
 // Messages returns list of all messages in this module.
@@ -560,8 +578,8 @@ func AllMessages() []api.Message {
 		(*ShowThreadsReply)(nil),
 		(*ShowVersion)(nil),
 		(*ShowVersionReply)(nil),
-		(*ShowVpeSystemTimeTicks)(nil),
-		(*ShowVpeSystemTimeTicksReply)(nil),
+		(*ShowVpeSystemTime)(nil),
+		(*ShowVpeSystemTimeReply)(nil),
 	}
 }
 
@@ -579,7 +597,7 @@ type RPCService interface {
 	GetNodeIndex(ctx context.Context, in *GetNodeIndex) (*GetNodeIndexReply, error)
 	ShowThreads(ctx context.Context, in *ShowThreads) (*ShowThreadsReply, error)
 	ShowVersion(ctx context.Context, in *ShowVersion) (*ShowVersionReply, error)
-	ShowVpeSystemTimeTicks(ctx context.Context, in *ShowVpeSystemTimeTicks) (*ShowVpeSystemTimeTicksReply, error)
+	ShowVpeSystemTime(ctx context.Context, in *ShowVpeSystemTime) (*ShowVpeSystemTimeReply, error)
 }
 
 type serviceClient struct {
@@ -715,8 +733,8 @@ func (c *serviceClient) ShowVersion(ctx context.Context, in *ShowVersion) (*Show
 	return out, nil
 }
 
-func (c *serviceClient) ShowVpeSystemTimeTicks(ctx context.Context, in *ShowVpeSystemTimeTicks) (*ShowVpeSystemTimeTicksReply, error) {
-	out := new(ShowVpeSystemTimeTicksReply)
+func (c *serviceClient) ShowVpeSystemTime(ctx context.Context, in *ShowVpeSystemTime) (*ShowVpeSystemTimeReply, error) {
+	out := new(ShowVpeSystemTimeReply)
 	err := c.ch.SendRequest(in).ReceiveReply(out)
 	if err != nil {
 		return nil, err
