@@ -22,7 +22,7 @@ func TestSpan(t *testing.T) {
 		// SPAN params:
 		swIfIndexFrom uint32
 		swIfIndexTo   uint32
-		state         uint8
+		direction     uint8
 		isL2          uint8
 
 		// If dump must return record (true) or empty slice (false):
@@ -46,7 +46,7 @@ func TestSpan(t *testing.T) {
 			var err error
 
 			if test.isAdd {
-				err = h.AddSpan(test.swIfIndexFrom, test.swIfIndexTo, test.state, test.isL2)
+				err = h.AddSpan(test.swIfIndexFrom, test.swIfIndexTo, test.direction, test.isL2)
 			} else {
 				err = h.DelSpan(test.swIfIndexFrom, test.swIfIndexTo, test.isL2)
 			}
@@ -73,8 +73,8 @@ func TestSpan(t *testing.T) {
 				if dumpResp[0].SwIfIndexTo != test.swIfIndexTo {
 					t.Fatalf("wrong SwIfIndexTo. Expected: %d. Got: %d\n", test.swIfIndexTo, dumpResp[0].SwIfIndexTo)
 				}
-				if dumpResp[0].State != test.state {
-					t.Fatalf("wrong State. Expected: %d. Got: %d\n", test.state, dumpResp[0].State)
+				if dumpResp[0].Direction != test.direction {
+					t.Fatalf("wrong Direction. Expected: %d. Got: %d\n", test.direction, dumpResp[0].Direction)
 				}
 				if dumpResp[0].IsL2 != test.isL2 {
 					t.Fatalf("wrong IsL2. Expected: %d. Got: %d\n", test.isL2, dumpResp[0].IsL2)
