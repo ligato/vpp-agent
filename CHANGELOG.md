@@ -54,12 +54,58 @@ RELEASE CHANGELOG TEMPLATE:
 - **VPP 19.01** (backward compatible)
 
 ### Bug Fixes
-* _TBD_
+* Fixed SRv6 localsid delete case for non-zero VRF tables.
+* Fixed interface IPv6 detection in the descriptor.
+* Various bugs fixed in KV scheduler TXN post-processing.
+* Interface plugin config names fixed, no stats publishers are now used by default. Instead, datasync is used (by default ETCD, Redis and Consul).
+* Rx-placement and rx-mode is now correctly dependent on interface link state.
+* Fixed crash for iptables rulechain with default microservice.
+* Punt dump fixed in all supported VPP versions.
+* Removal of registered punt sockets fixed after a resync.
+* Punt socket paths should no longer be unintentionally recreated.
+* IP redirect is now correctly dependent on RX interface.
+* Fixed IPSec security association configuration for tunnel mode.
+* Fixed URL for VPP metrics in telemetry plugin
+* Routes are now properly dependent on VRF.
+
+### New Features
+* Defined new environment variable `DISABLE_INTERFACE_STATS` to generally disable interface plugin stats.
+* Defined new environment variable `RESYNC_TIMEOU` to override default resync timeout. 
+* Added [ETCD ansible python plugin][ansible] with example playbook. Consult [readme](ansible/README.md) for more information.
 
 ### Improvements
-* _TBD_
+* [govppmux-plugin][govppmux-plugin]
+  - GoVPPMux stats can be read with rest under path `/govppmux/stats`.
+  - Added disabling of interface stats via the environment variable `DISABLE_INTERFACE_STATS`.
+  - Added disabling of interface status publishing via environment variable `DISABLE_STATUS_PUBLISHING`.
+* [kv-scheduler][kv-scheduler]
+  - Added some more performance improvements.
+  - The same key can be no more matched by multiple descriptors.
+* [abf-plugin][vpp-abf-plugin]
+  - ABF plugin was added to config data model and is now initialized in configurator.  
+* [if-plugin][vpp-interface-plugin]
+  - Interface rx-placement and rx-mode was enhanced and now allows per-queue configuration.
+  - Added [examples](examples/kvscheduler/rxplacement) for rx-placement and rx-mode.
+* [nat-plugin][vpp-nat-plugin]
+  - NAT example updated for VPP 19.04
+* [l3-plugin][vpp-l3-plugin]  
+  - Route keys were changed to prevent collisions with some types of configuration. Route with outgoing interface now contains the interface name in the key.
+  - Added support for DHCP proxy. A new descriptor allows calling CRUD operations to VPP DHCP proxy servers.
+* [punt-plugin][vpp-punt-plugin]
+  - Added support for Punt exceptions.  
+  - IP redirect dump was implemented for VPP 19.08.
+* [Telemetry][vpp-telemetry]
+  - Interface metrics added to telemetry plugin. Note that the URL for prometheus export was changed to `/metrics/vpp`.
+  - Plugin configuration file now has an option to skip certain metrics.
+* [rest-plugin][rest-plugin]
+  - Added support for IPSec plugin
+  - Added support for punt plugin  
+* [agentctl][agentctl]
+  - We continuously update the new CTL tool. Various bugs were fixed some new features added.
+  - Added new command `import` which can import configuration from file. 
 
 ### Docker Images
+* The supervisor was replaced with VPP-Agent init plugin. 
 * Images now use pre-built VPP images from [ligato/vpp-base](https://github.com/ligato/vpp-base)
 
 
@@ -848,6 +894,7 @@ Data replication and events:
   - remote client - for remote configuration of VPP Agent (while integrating for example with control plane)
 
 [agentctl]: cmd/agentctl
+[ansible]: ansible
 [configurator-plugin]: plugins/configurator
 [consul]: https://www.consul.io/
 [contiv-vpp1810]: https://github.com/vpp-dev/vpp/tree/stable-1801-contiv
