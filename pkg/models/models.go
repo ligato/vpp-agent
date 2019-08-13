@@ -105,3 +105,14 @@ func GetModel(x proto.Message) (registeredModel, error) {
 	}
 	return *model, nil
 }
+
+// GetModelForKey returns registered model for the given key or error.
+func GetModelForKey(key string) (registeredModel, error) {
+	for _, model := range registeredModels {
+		if !model.IsKeyValid(key) {
+			continue
+		}
+		return *model, nil
+	}
+	return registeredModel{}, fmt.Errorf("no model registered for key %s", key)
+}

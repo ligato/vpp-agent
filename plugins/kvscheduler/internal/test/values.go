@@ -33,6 +33,12 @@ func NewArrayValue(items ...string) proto.Message {
 	return &ArrayValue{Items: items}
 }
 
+// NewArrayValue creates a new instance of ArrayValue with a suffix
+// appended into each item value (but not key).
+func NewArrayValueWithSuffix(suffix string, items ...string) proto.Message {
+	return &ArrayValue{Items: items, ItemSuffix: suffix}
+}
+
 // StringValueComparator is (a custom) KVDescriptor.ValueComparator for string values.
 func StringValueComparator(key string, v1, v2 proto.Message) bool {
 	sv1, isStringVal1 := v1.(*StringValue)
@@ -52,7 +58,7 @@ func ArrayValueDerBuilder(key string, value proto.Message) []KeyValuePair {
 		for _, item := range arrayVal.Items {
 			derivedVals = append(derivedVals, KeyValuePair{
 				Key:   key + "/" + item,
-				Value: NewStringValue(item),
+				Value: NewStringValue(item + arrayVal.ItemSuffix),
 			})
 		}
 	}

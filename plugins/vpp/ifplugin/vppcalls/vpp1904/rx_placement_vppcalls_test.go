@@ -23,22 +23,44 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func TestSetRxPlacement(t *testing.T) {
+func TestSetRxPlacementForWorker(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&ifApi.SwInterfaceSetRxPlacementReply{})
 
-	err := ifHandler.SetRxPlacement(1, &interfaces.Interface_RxPlacementSettings{
-		Queue:  1,
-		Worker: 2,
-		IsMain: true,
+	err := ifHandler.SetRxPlacement(1, &interfaces.Interface_RxPlacement{
+		Queue:      1,
+		Worker:     2,
+		MainThread: false,
 	})
 
 	Expect(err).To(BeNil())
 	vppMsg, ok := ctx.MockChannel.Msg.(*ifApi.SwInterfaceSetRxPlacement)
 	Expect(ok).To(BeTrue())
+	Expect(vppMsg.SwIfIndex).To(BeEquivalentTo(1))
 	Expect(vppMsg.QueueID).To(BeEquivalentTo(1))
+	Expect(vppMsg.WorkerID).To(BeEquivalentTo(uint32(2)))
+	Expect(vppMsg.IsMain).To(BeEquivalentTo(uint32(0)))
+}
+
+func TestSetRxPlacementForMainThread(t *testing.T) {
+	ctx, ifHandler := ifTestSetup(t)
+	defer ctx.TeardownTestCtx()
+
+	ctx.MockVpp.MockReply(&ifApi.SwInterfaceSetRxPlacementReply{})
+
+	err := ifHandler.SetRxPlacement(3, &interfaces.Interface_RxPlacement{
+		Queue:      6,
+		Worker:     2, // ignored on the VPP side
+		MainThread: true,
+	})
+
+	Expect(err).To(BeNil())
+	vppMsg, ok := ctx.MockChannel.Msg.(*ifApi.SwInterfaceSetRxPlacement)
+	Expect(ok).To(BeTrue())
+	Expect(vppMsg.SwIfIndex).To(BeEquivalentTo(3))
+	Expect(vppMsg.QueueID).To(BeEquivalentTo(6))
 	Expect(vppMsg.WorkerID).To(BeEquivalentTo(uint32(2)))
 	Expect(vppMsg.IsMain).To(BeEquivalentTo(uint32(1)))
 }
@@ -51,9 +73,10 @@ func TestSetRxPlacementRetval(t *testing.T) {
 		Retval: 1,
 	})
 
-	err := ifHandler.SetRxPlacement(1, &interfaces.Interface_RxPlacementSettings{
-		Queue:  1,
-		Worker: 2,
+	err := ifHandler.SetRxPlacement(1, &interfaces.Interface_RxPlacement{
+		Queue:      1,
+		Worker:     2,
+		MainThread: false,
 	})
 
 	Expect(err).ToNot(BeNil())
@@ -65,9 +88,10 @@ func TestSetRxPlacementError(t *testing.T) {
 
 	ctx.MockVpp.MockReply(&ifApi.SwInterfaceSetRxPlacement{})
 
-	err := ifHandler.SetRxPlacement(1, &interfaces.Interface_RxPlacementSettings{
-		Queue:  1,
-		Worker: 2,
+	err := ifHandler.SetRxPlacement(1, &interfaces.Interface_RxPlacement{
+		Queue:      1,
+		Worker:     2,
+		MainThread: false,
 	})
 
 	Expect(err).ToNot(BeNil())

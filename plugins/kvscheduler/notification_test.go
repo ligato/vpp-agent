@@ -215,8 +215,11 @@ func TestNotifications(t *testing.T) {
 	// send notification
 	startTime = time.Now()
 	mockSB.SetValue(prefixA+baseValue1, test.NewArrayValue("item1"), &test.OnlyInteger{Integer: 10}, FromSB, false)
-	notifError := scheduler.PushSBNotification(prefixA+baseValue1, test.NewArrayValue("item1"),
-		&test.OnlyInteger{Integer: 10})
+	notifError := scheduler.PushSBNotification(KVWithMetadata{
+		Key:      prefixA+baseValue1,
+		Value:    test.NewArrayValue("item1"),
+		Metadata: &test.OnlyInteger{Integer: 10},
+	})
 	Expect(notifError).ShouldNot(HaveOccurred())
 
 	// wait until the notification is processed
@@ -434,8 +437,10 @@ func TestNotifications(t *testing.T) {
 	// send 2nd notification
 	startTime = time.Now()
 	mockSB.SetValue(prefixA+baseValue1, test.NewArrayValue("item1", "item2"), &test.OnlyInteger{Integer: 11}, FromSB, false)
-	notifError = scheduler.PushSBNotification(prefixA+baseValue1, test.NewArrayValue("item1", "item2"),
-		&test.OnlyInteger{Integer: 11})
+	notifError = scheduler.PushSBNotification(KVWithMetadata{
+		Key:      prefixA+baseValue1,
+		Value:    test.NewArrayValue("item1", "item2"),
+		Metadata: &test.OnlyInteger{Integer: 11}})
 	Expect(notifError).ShouldNot(HaveOccurred())
 
 	// wait until the notification is processed
@@ -589,7 +594,11 @@ func TestNotifications(t *testing.T) {
 	// send 3rd notification
 	startTime = time.Now()
 	mockSB.SetValue(prefixA+baseValue1, nil, nil, FromSB, false)
-	notifError = scheduler.PushSBNotification(prefixA+baseValue1, nil, nil)
+	notifError = scheduler.PushSBNotification(KVWithMetadata{
+		Key:      prefixA+baseValue1,
+		Value:    nil,
+		Metadata: nil,
+	})
 	Expect(notifError).ShouldNot(HaveOccurred())
 
 	// wait until the notification is processed
@@ -847,8 +856,11 @@ func TestNotificationsWithRetry(t *testing.T) {
 
 	// send notification
 	startTime := time.Now()
-	notifError := scheduler.PushSBNotification(prefixA+baseValue1, test.NewArrayValue("item1", "item2"),
-		&test.OnlyInteger{Integer: 10})
+	notifError := scheduler.PushSBNotification(KVWithMetadata{
+		Key:      prefixA+baseValue1,
+		Value:    test.NewArrayValue("item1", "item2"),
+		Metadata: &test.OnlyInteger{Integer: 10},
+	})
 	Expect(notifError).ShouldNot(HaveOccurred())
 
 	// wait until the notification is processed

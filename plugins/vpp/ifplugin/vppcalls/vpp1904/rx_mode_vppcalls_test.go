@@ -28,10 +28,10 @@ func TestSetRxMode(t *testing.T) {
 
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetRxModeReply{})
 
-	err := ifHandler.SetRxMode(1, &ifModel.Interface_RxModeSettings{
-		RxMode:       ifModel.Interface_RxModeSettings_DEFAULT,
-		QueueId:      1,
-		QueueIdValid: 2,
+	err := ifHandler.SetRxMode(1, &ifModel.Interface_RxMode{
+		Mode:        ifModel.Interface_RxMode_DEFAULT,
+		Queue:       1,
+		DefaultMode: false,
 	})
 
 	Expect(err).To(BeNil())
@@ -40,7 +40,7 @@ func TestSetRxMode(t *testing.T) {
 	Expect(vppMsg.SwIfIndex).To(BeEquivalentTo(1))
 	Expect(vppMsg.Mode).To(BeEquivalentTo(4))
 	Expect(vppMsg.QueueID).To(BeEquivalentTo(1))
-	Expect(vppMsg.QueueIDValid).To(BeEquivalentTo(2))
+	Expect(vppMsg.QueueIDValid).To(BeEquivalentTo(1))
 }
 
 func TestSetRxModeError(t *testing.T) {
@@ -49,10 +49,10 @@ func TestSetRxModeError(t *testing.T) {
 
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetRxMode{})
 
-	err := ifHandler.SetRxMode(1, &ifModel.Interface_RxModeSettings{
-		RxMode:       ifModel.Interface_RxModeSettings_DEFAULT,
-		QueueId:      1,
-		QueueIdValid: 2,
+	err := ifHandler.SetRxMode(1, &ifModel.Interface_RxMode{
+		Mode:        ifModel.Interface_RxMode_DEFAULT,
+		Queue:       1,
+		DefaultMode: false,
 	})
 
 	Expect(err).ToNot(BeNil())
@@ -66,11 +66,33 @@ func TestSetRxModeRetval(t *testing.T) {
 		Retval: 1,
 	})
 
-	err := ifHandler.SetRxMode(1, &ifModel.Interface_RxModeSettings{
-		RxMode:       ifModel.Interface_RxModeSettings_DEFAULT,
-		QueueId:      1,
-		QueueIdValid: 2,
+	err := ifHandler.SetRxMode(1, &ifModel.Interface_RxMode{
+		Mode:        ifModel.Interface_RxMode_DEFAULT,
+		Queue:       1,
+		DefaultMode: false,
 	})
 
 	Expect(err).ToNot(BeNil())
+}
+
+
+func TestSetDefaultRxMode(t *testing.T) {
+	ctx, ifHandler := ifTestSetup(t)
+	defer ctx.TeardownTestCtx()
+
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetRxModeReply{})
+
+	err := ifHandler.SetRxMode(5, &ifModel.Interface_RxMode{
+		Mode:        ifModel.Interface_RxMode_POLLING,
+		Queue:       10, // ignored on the VPP side
+		DefaultMode: true,
+	})
+
+	Expect(err).To(BeNil())
+	vppMsg, ok := ctx.MockChannel.Msg.(*interfaces.SwInterfaceSetRxMode)
+	Expect(ok).To(BeTrue())
+	Expect(vppMsg.SwIfIndex).To(BeEquivalentTo(5))
+	Expect(vppMsg.Mode).To(BeEquivalentTo(1))
+	Expect(vppMsg.QueueID).To(BeEquivalentTo(10))
+	Expect(vppMsg.QueueIDValid).To(BeEquivalentTo(0))
 }

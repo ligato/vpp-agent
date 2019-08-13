@@ -131,6 +131,11 @@ type RWAccess interface {
 	Save()
 }
 
+// TargetIterator is a callback applied on every target.
+// For each label it will be called n+1 times, where n is the number of targets
+// available for the given label and the extra call will be made with nil target.
+type TargetIterator func (target Node, label string) (skipLabel, abort bool)
+
 // Node is a read-only handle to a single graph node.
 type Node interface {
 	// GetKey returns the key associated with the node.
@@ -152,6 +157,10 @@ type Node interface {
 	// GetTargets returns a set of nodes, indexed by relation labels, that the
 	// edges of the given relation points to.
 	GetTargets(relation string) RuntimeTargets
+
+	// IterTargets allows to iterate over the set of nodes that the edges of the given
+	// relation points to.
+	IterTargets(relation string, callback TargetIterator)
 
 	// GetSources returns edges pointing to this node in the reverse
 	// orientation.

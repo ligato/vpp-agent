@@ -15,6 +15,8 @@
 package vppcalls
 
 import (
+	"errors"
+
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 
@@ -22,9 +24,25 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 )
 
-// PuntDetails includes proto-modelled punt object and its socket path
+var (
+	ErrUnsupported = errors.New("unsupported")
+)
+
+// PuntDetails includes punt model and socket path from VPP.
 type PuntDetails struct {
 	PuntData   *punt.ToHost
+	SocketPath string
+}
+
+// ReasonDetails includes reason model and its matching ID from VPP.
+type ReasonDetails struct {
+	Reason *punt.Reason
+	ID     uint32
+}
+
+// ExceptionDetails include punt model and socket path from VPP.
+type ExceptionDetails struct {
+	Exception  *punt.Exception
 	SocketPath string
 }
 
@@ -44,12 +62,22 @@ type PuntVppAPI interface {
 	AddPuntRedirect(punt *punt.IPRedirect) error
 	// DeletePuntRedirect removes existing redirect entry
 	DeletePuntRedirect(punt *punt.IPRedirect) error
+	// AddPuntException registers new punt exception
+	AddPuntException(punt *punt.Exception) (string, error)
+	// DeletePuntException deregisters punt exception entry
+	DeletePuntException(punt *punt.Exception) error
 }
 
 // PuntVPPRead provides read methods for punt
 type PuntVPPRead interface {
 	// DumpPuntRegisteredSockets returns all punt socket registrations known to the VPP agent
 	DumpRegisteredPuntSockets() ([]*PuntDetails, error)
+	// DumpExceptions dumps punt exceptions
+	DumpExceptions() ([]*ExceptionDetails, error)
+	// DumpPuntReasons returns all known punt reasons from VPP
+	DumpPuntReasons() ([]*ReasonDetails, error)
+	// DumpPuntRedirect dump IP redirect punts
+	DumpPuntRedirect() ([]*punt.IPRedirect, error)
 }
 
 var Versions = map[string]HandlerVersion{}

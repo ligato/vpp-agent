@@ -12,6 +12,8 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 
+package vpp1904
+
 //go:generate -command binapigen binapi-generator --output-dir=.
 
 //go:generate binapigen --input-file=/usr/share/vpp/api/core/af_packet.api.json
@@ -35,5 +37,3 @@
 //go:generate binapigen --input-file=/usr/share/vpp/api/plugins/nat.api.json
 //go:generate binapigen --input-file=/usr/share/vpp/api/plugins/stn.api.json
 //go:generate binapigen --input-file=/usr/share/vpp/api/plugins/vmxnet3.api.json
-
-package vpp1904

@@ -15,14 +15,25 @@
 package orchestrator
 
 import (
+	"os"
+	"strings"
+
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/infra"
+	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/rpc/grpc"
 	"golang.org/x/net/context"
 
 	api "github.com/ligato/vpp-agent/api/genericmanager"
 	"github.com/ligato/vpp-agent/pkg/models"
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
+)
+
+var (
+	// EnableStatusPublishing enables status publishing.
+	EnableStatusPublishing = os.Getenv("ENABLE_STATUS_PUBLISHING") != ""
+
+	debugOrchestrator = os.Getenv("DEBUG_ORCHESTRATOR") != ""
 )
 
 // Plugin implements sync service for GRPC.
@@ -43,17 +54,18 @@ type Plugin struct {
 type Deps struct {
 	infra.PluginDeps
 
-	GRPC        grpc.Server
-	KVScheduler kvs.KVScheduler
-	Watcher     datasync.KeyValProtoWatcher
+	GRPC            grpc.Server
+	KVScheduler     kvs.KVScheduler
+	Watcher         datasync.KeyValProtoWatcher
+	StatusPublisher datasync.KeyProtoValWriter
 }
 
 // Init registers the service to GRPC server.
 func (p *Plugin) Init() (err error) {
 	p.dispatcher = &dispatcher{
-		log:   p.Log.NewLogger("dispatcher"),
-		store: newMemStore(),
-		kvs:   p.KVScheduler,
+		log: logging.DefaultRegistry.NewLogger("dispatcher"),
+		db:  newMemStore(),
+		kvs: p.KVScheduler,
 	}
 
 	// register grpc service
@@ -77,7 +89,6 @@ func (p *Plugin) Init() (err error) {
 
 	var prefixes []string
 	for _, prefix := range nbPrefixes {
-		//prefix = path.Join("config", prefix)
 		p.log.Debugf("- watching NB prefix: %s", prefix)
 		prefixes = append(prefixes, prefix)
 	}
@@ -98,6 +109,10 @@ func (p *Plugin) Init() (err error) {
 // AfterInit subscribes to known NB prefixes.
 func (p *Plugin) AfterInit() (err error) {
 	go p.watchEvents()
+
+	statusChan := make(chan *kvs.BaseValueStatus, 100)
+	p.kvs.WatchValueStatus(statusChan, nil)
+	go p.watchStatus(statusChan)
 
 	return nil
 }
@@ -125,15 +140,13 @@ func (p *Plugin) watchEvents() {
 			var kvPairs []KeyVal
 
 			for _, x := range e.GetChanges() {
-				kv := KeyVal{Key: x.GetKey()}
+				kv := KeyVal{
+					Key: x.GetKey(),
+				}
 				if x.GetChangeType() != datasync.Delete {
 					kv.Val, err = models.UnmarshalLazyValue(kv.Key, x)
 					if err != nil {
-						p.log.Errorf("unmarshal value for key %s failed: %v", kv.Key, err)
-						continue
-					}
-					if k := models.Key(kv.Val); k != kv.Key {
-						p.log.Errorf("value for key %s does not match generated model key: %v", kv.Key, k)
+						p.log.Errorf("decoding value for key %q failed: %v", kv.Key, err)
 						continue
 					}
 				}
@@ -152,11 +165,10 @@ func (p *Plugin) watchEvents() {
 			if ctx == nil {
 				ctx = context.Background()
 			}
-			ctx = DataSrcContext(ctx, "watcher")
+			ctx = DataSrcContext(ctx, "datasync")
 			ctx = kvs.WithRetryDefault(ctx)
 
 			_, err = p.PushData(ctx, kvPairs)
-
 			e.Done(err)
 
 		case e := <-p.resyncChan:
@@ -170,11 +182,7 @@ func (p *Plugin) watchEvents() {
 					key := x.GetKey()
 					val, err := models.UnmarshalLazyValue(key, x)
 					if err != nil {
-						p.log.Errorf("unmarshal value for key %s failed: %v", key, err)
-						continue
-					}
-					if k := models.Key(val); k != key {
-						p.log.Errorf("value for key %s does not match generated model key: %v", key, k)
+						p.log.Errorf("unmarshal value for key %q failed: %v", key, err)
 						continue
 					}
 					kvPairs = append(kvPairs, KeyVal{
@@ -200,13 +208,58 @@ func (p *Plugin) watchEvents() {
 			if ctx == nil {
 				ctx = context.Background()
 			}
-			ctx = DataSrcContext(ctx, "watcher")
+			ctx = DataSrcContext(ctx, "datasync")
 			ctx = kvs.WithResync(ctx, kvs.FullResync, true)
 			ctx = kvs.WithRetryDefault(ctx)
 
 			_, err := p.PushData(ctx, kvPairs)
-
 			e.Done(err)
+
 		}
+	}
+}
+
+func (p *Plugin) watchStatus(ch <-chan *kvs.BaseValueStatus) {
+	for {
+		select {
+		case s := <-ch:
+
+			p.debugf("STATUS: %15s %v ===> %v (%v) %v",
+				s.Value.State, s.Value.Details, s.Value.Key, s.Value.LastOperation, s.Value.Error)
+			for _, dv := range s.DerivedValues {
+				p.debugf(" \t%15s %v ---> %v (%v) %v",
+					dv.State, dv.Details, dv.Key, dv.LastOperation, dv.Error)
+			}
+
+			if EnableStatusPublishing {
+				p.publishStatuses([]Result{
+					{Key: s.Value.Key, Status: s.Value},
+				})
+			}
+		}
+	}
+}
+
+func (p *Plugin) publishStatuses(results []Result) {
+	if p.StatusPublisher == nil {
+		return
+	}
+
+	p.debugf("publishing %d statuses", len(results))
+	for _, res := range results {
+		statusKey := strings.Replace(res.Key, "config/", "config-status/", 1)
+		if statusKey == res.Key {
+			p.debugf("replace for key %q failed", res.Key)
+			continue
+		}
+		if err := p.StatusPublisher.Put(statusKey, res.Status, datasync.WithClientLifetimeTTL()); err != nil {
+			p.debugf("publishing status for key %q failed: %v", statusKey, err)
+		}
+	}
+}
+
+func (p *Plugin) debugf(f string, a ...interface{}) {
+	if debugOrchestrator {
+		p.log.Debugf(f, a...)
 	}
 }

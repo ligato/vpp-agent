@@ -15,39 +15,39 @@
 package cmd
 
 import (
+	"os"
+
 	"github.com/spf13/cobra"
 )
 
 // GlobalFlags defines a single type to hold all cobra global flags.
-type GlobalFlags struct {
+var globalFlags struct {
 	Endpoints []string
 	Label     string
 }
 
-var globalFlags GlobalFlags
-
 // RootCmd represents the base command when called without any subcommands.
 var RootCmd = &cobra.Command{
 	Use:   "agentctl",
-	Short: "A CLI tool for the vnf-agent",
-	Long: `
-A CLI tool to show the state of and to configure agents connected to
-Etcd. Use the 'ETCD_ENDPOINTS'' environment variable or the 'endpoints'
-flag in the command line to specify one or more Etcd instances to
-connect to.`,
+	Short: "A CLI tool for managing agents.",
 	Example: `Specify the etcd to connect to and list all agents that it knows about:
   $ export ETCD_ENDPOINTS=172.17.0.1:2379
-  $ ./agentctl show
+  $ agentctl show
 
-Do as above, but with a command line flag:
-  $ ./agentctl --endpoints 172.17.0.1:2379 show
+or with a command line flag:
+  $ agentctl --endpoints 172.17.0.1:2379 show
 `,
 }
 
 func init() {
-	// Root command flags
+	label := "vpp1"
+	if l := os.Getenv("MICROSERVICE_LABEL"); l != "" {
+		label = l
+	}
 	RootCmd.PersistentFlags().StringSliceVarP(&globalFlags.Endpoints,
-		"endpoints", "e", nil, "One or more comma-separated Etcd endpoints.")
-	RootCmd.PersistentFlags().StringVarP(&globalFlags.Label, "label", "l", "vpp1",
-		"Agent microservice label (identifies the agent)")
+		"endpoints", "e", nil,
+		"One or more comma-separated Etcd endpoints.")
+	RootCmd.PersistentFlags().StringVarP(&globalFlags.Label,
+		"label", "l", label,
+		"Microservice label which identifies the agent.")
 }

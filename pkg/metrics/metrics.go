@@ -16,12 +16,13 @@ package metrics
 
 import (
 	"encoding/json"
+	"math"
 	"sort"
 	"time"
 )
 
 // RoundDuration is the default value used for rounding durations.
-var RoundDuration = time.Microsecond * 10
+var RoundDuration = time.Millisecond * 1
 
 type Calls map[string]*CallStats
 
@@ -32,27 +33,39 @@ func (m Calls) MarshalJSON() ([]byte, error) {
 		calls = append(calls, s)
 	}
 	sort.Slice(calls, func(i, j int) bool {
-		return calls[i].Total > calls[j].Total
+		return calls[i].Count > calls[j].Count
 	})
+
+	/*var buf bytes.Buffer
+	buf.WriteByte('{')
+	for i, c := range calls {
+		if i > 0 {
+			buf.WriteByte(',')
+		}
+		buf.WriteString(fmt.Sprintf(`"%s":{"count":%d}`, c.Name, c.Count))
+	}
+	buf.WriteByte('}')
+	return buf.Bytes(), nil*/
+
 	return json.Marshal(calls)
 }
 
 // CallStats represents generic stats for call metrics.
 type CallStats struct {
-	Name  string `json:",omitempty"`
-	Count uint64
-	Total Duration
-	Avg   Duration
-	Min   Duration
-	Max   Duration
+	Name  string  `json:"name,omitempty"`
+	Count uint64  `json:"count"`
+	Total float64 `json:"total,omitempty"`
+	Avg   float64 `json:"avg,omitempty"`
+	Min   float64 `json:"min,omitempty"`
+	Max   float64 `json:"max,omitempty"`
 }
 
 // Increment increments call count and recalculates durations
 func (m *CallStats) Increment(d time.Duration) {
-	took := Duration(d)
+	took := d.Round(RoundDuration).Seconds()
 	m.Count++
-	m.Total += took
-	m.Avg = m.Total / Duration(m.Count)
+	m.Total = round(m.Total + took)
+	m.Avg = round(m.Total / float64(m.Count))
 	if took > m.Max {
 		m.Max = took
 	}
@@ -61,23 +74,17 @@ func (m *CallStats) Increment(d time.Duration) {
 	}
 }
 
-/*
+func round(n float64) float64 {
+	return math.Round(n*1000) / 1000
+}
+
 // MarshalJSON implements json.Marshaler interface
-func (m *CallStats) MarshalJSON() ([]byte, error) {
+/*func (m *CallStats) MarshalJSON() ([]byte, error) {
 	var d string
 	d = fmt.Sprintf(
-		"count: %d, total: %s (avg/min/max: %s/%s/%s)",
-		m.Count, durStr(m.TotalDur),
-		durStr(m.AvgDur), durStr(m.MinDur), durStr(m.MaxDur),
+		"%s - count: %d, total: %s (avg/min/max: %s/%s/%s)",
+		m.Name, m.Count, durStr(m.Total),
+		durStr(m.Avg), durStr(m.Min), durStr(m.Max),
 	)
 	return json.Marshal(d)
-}
-*/
-
-type Duration time.Duration
-
-// MarshalJSON implements json.Marshaler interface
-func (m *Duration) MarshalJSON() ([]byte, error) {
-	s := time.Duration(*m).Round(RoundDuration).String()
-	return json.Marshal(s)
-}
+}*/

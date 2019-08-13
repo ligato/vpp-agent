@@ -297,10 +297,12 @@ func (d *MicroserviceDescriptor) processNewMicroservice(microserviceLabel string
 
 	// Notify scheduler about new microservice
 	if d.msStateInSync {
-		d.kvscheduler.PushSBNotification(
-			nsmodel.MicroserviceKey(ms.Label),
-			&prototypes.Empty{},
-			nil)
+		d.kvscheduler.PushSBNotification(kvs.KVWithMetadata{
+			Key:      nsmodel.MicroserviceKey(ms.Label),
+			Value:    &prototypes.Empty{},
+			Metadata: nil,
+
+		})
 	}
 }
 
@@ -321,10 +323,11 @@ func (d *MicroserviceDescriptor) processTerminatedMicroservice(id string) {
 
 	// Notify scheduler about terminated microservice
 	if d.msStateInSync {
-		d.kvscheduler.PushSBNotification(
-			nsmodel.MicroserviceKey(ms.Label),
-			nil,
-			nil)
+		d.kvscheduler.PushSBNotification(kvs.KVWithMetadata{
+			Key:      nsmodel.MicroserviceKey(ms.Label),
+			Value:    nil,
+			Metadata: nil,
+		})
 	}
 }
 

@@ -18,6 +18,7 @@ func init() {
 	log.Out = os.Stdout
 	if debug {
 		log.Level = logger.DebugLevel
+		log.Debugf("govpp/core: debug mode enabled")
 	}
 }
 

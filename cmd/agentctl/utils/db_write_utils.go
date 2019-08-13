@@ -23,7 +23,6 @@ import (
 )
 
 func WriteData(db keyval.ProtoTxn, key string, json string) {
-
 	switch {
 	case strings.Contains(key, acl.ModelACL.KeyPrefix()):
 		writeACLConfigToDb(db, key, json)

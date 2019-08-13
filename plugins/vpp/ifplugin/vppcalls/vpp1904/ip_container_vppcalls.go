@@ -38,10 +38,10 @@ func (h *InterfaceVppHandler) sendAndLogMessageForVpp(ifIdx uint32, addr string,
 	prefix, _ := IPaddr.Mask.Size()
 	req.Pfx.AddressLength = byte(prefix)
 	if isIPv6 {
-		copy(req.Pfx.Address.Un.Union_data[:], IPaddr.IP.To16())
+		copy(req.Pfx.Address.Un.XXX_UnionData[:], IPaddr.IP.To16())
 		req.Pfx.Address.Af = ip.ADDRESS_IP6
 	} else {
-		copy(req.Pfx.Address.Un.Union_data[:], IPaddr.IP.To4())
+		copy(req.Pfx.Address.Un.XXX_UnionData[:], IPaddr.IP.To4())
 		req.Pfx.Address.Af = ip.ADDRESS_IP4
 	}
 	reply := &ip.IPContainerProxyAddDelReply{}

@@ -251,10 +251,11 @@ func (w *InterfaceWatcher) notifyScheduler(ifName string, enabled bool) {
 		delete(w.ifaces, ifName)
 	}
 
-	w.kvscheduler.PushSBNotification(
-		ifmodel.InterfaceHostNameKey(ifName),
-		value,
-		nil)
+	w.kvscheduler.PushSBNotification(kvs.KVWithMetadata{
+		Key:      ifmodel.InterfaceHostNameKey(ifName),
+		Value:    value,
+		Metadata: nil,
+	})
 }
 
 func (w *InterfaceWatcher) needsUpdate(ifName string, isEnabled bool) bool {

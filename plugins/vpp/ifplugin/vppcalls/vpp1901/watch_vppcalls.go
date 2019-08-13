@@ -32,7 +32,7 @@ import (
 var InterfaceEventTimeout = time.Second
 
 func (h *InterfaceVppHandler) WatchInterfaceEvents(events chan<- *vppcalls.InterfaceEvent) error {
-	notifChan := make(chan govppapi.Message)
+	notifChan := make(chan govppapi.Message, 10)
 
 	// subscribe for receiving SwInterfaceEvents notifications
 	vppNotifSubs, err := h.callsChannel.SubscribeNotification(notifChan, &binapi_interfaces.SwInterfaceEvent{})

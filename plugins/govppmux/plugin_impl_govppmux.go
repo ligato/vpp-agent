@@ -16,7 +16,9 @@ package govppmux
 
 import (
 	"context"
+	"fmt"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -26,18 +28,17 @@ import (
 	"github.com/ligato/cn-infra/datasync/resync"
 	"github.com/ligato/cn-infra/health/statuscheck"
 	"github.com/ligato/cn-infra/infra"
+	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
-	"github.com/ligato/cn-infra/logging/measure/model/apitrace"
+	"github.com/ligato/cn-infra/rpc/rest"
 	"github.com/pkg/errors"
 
 	"github.com/ligato/vpp-agent/plugins/govppmux/vppcalls"
 
 	_ "github.com/ligato/vpp-agent/plugins/govppmux/vppcalls/vpp1901"
 	_ "github.com/ligato/vpp-agent/plugins/govppmux/vppcalls/vpp1904"
+	_ "github.com/ligato/vpp-agent/plugins/govppmux/vppcalls/vpp1908"
 )
-
-// Default path to socket for VPP stats
-const defaultStatsSocket = "/run/vpp/stats.sock"
 
 var (
 	disabledSocketClient = os.Getenv("GOVPPMUX_NOSOCK") != ""
@@ -75,84 +76,39 @@ type Plugin struct {
 // so that they do not mix with other plugin fields.
 type Deps struct {
 	infra.PluginDeps
-	StatusCheck statuscheck.PluginStatusWriter
-	Resync      *resync.Plugin
-}
-
-// Config groups the configurable parameter of GoVpp.
-type Config struct {
-	TraceEnabled             bool          `json:"trace-enabled"`
-	ReconnectResync          bool          `json:"resync-after-reconnect"`
-	HealthCheckProbeInterval time.Duration `json:"health-check-probe-interval"`
-	HealthCheckReplyTimeout  time.Duration `json:"health-check-reply-timeout"`
-	HealthCheckThreshold     int           `json:"health-check-threshold"`
-	ReplyTimeout             time.Duration `json:"reply-timeout"`
-	// Connect to VPP for configuration requests via the shared memory instead of through the socket.
-	ConnectViaShm bool `json:"connect-via-shm"`
-	// The prefix prepended to the name used for shared memory (SHM) segments. If not set,
-	// shared memory segments are created directly in the SHM directory /dev/shm.
-	ShmPrefix        string `json:"shm-prefix"`
-	BinAPISocketPath string `json:"binapi-socket-path"`
-	StatsSocketPath  string `json:"stats-socket-path"`
-	// How many times can be request resent in case vpp is suddenly disconnected.
-	RetryRequestCount int `json:"retry-request-count"`
-	// Time between request resend attempts. Default is 500ms.
-	RetryRequestTimeout time.Duration `json:"retry-request-timeout"`
-	// How many times can be connection request resent in case the vpp is not reachable.
-	RetryConnectCount int `json:"retry-connect-count"`
-	// Time between connection request resend attempts. Default is 1s.
-	RetryConnectTimeout time.Duration `json:"retry-connect-timeout"`
-}
-
-func defaultConfig() *Config {
-	return &Config{
-		HealthCheckProbeInterval: time.Second,
-		HealthCheckReplyTimeout:  250 * time.Millisecond,
-		HealthCheckThreshold:     1,
-		ReplyTimeout:             time.Second,
-		RetryRequestTimeout:      500 * time.Millisecond,
-		RetryConnectTimeout:      time.Second,
-	}
-}
-
-func (p *Plugin) loadConfig() (*Config, error) {
-	cfg := defaultConfig()
-
-	found, err := p.Cfg.LoadValue(cfg)
-	if err != nil {
-		return nil, err
-	} else if found {
-		p.Log.Debugf("config loaded from file %q", p.Cfg.GetConfigName())
-	} else {
-		p.Log.Debugf("config file %q not found, using default config", p.Cfg.GetConfigName())
-	}
-
-	return cfg, nil
+	HTTPHandlers rest.HTTPHandlers
+	StatusCheck  statuscheck.PluginStatusWriter
+	Resync       *resync.Plugin
 }
 
 // Init is the entry point called by Agent Core. A single binary-API connection to VPP is established.
-func (p *Plugin) Init() error {
-	var err error
-
+func (p *Plugin) Init() (err error) {
 	if p.config, err = p.loadConfig(); err != nil {
 		return err
 	}
 
 	p.Log.Debugf("config: %+v", p.config)
+
 	govpp.HealthCheckProbeInterval = p.config.HealthCheckProbeInterval
 	govpp.HealthCheckReplyTimeout = p.config.HealthCheckReplyTimeout
 	govpp.HealthCheckThreshold = p.config.HealthCheckThreshold
 	govpp.DefaultReplyTimeout = p.config.ReplyTimeout
+
 	if p.config.TraceEnabled {
 		p.tracer = measure.NewTracer("govpp-mux")
 		p.Log.Info("VPP API trace enabled")
 	}
 
+	// register REST API handlers
+	p.registerHandlers(p.HTTPHandlers)
+
 	if p.vppAdapter == nil {
-		address := p.config.BinAPISocketPath
-		useShm := disabledSocketClient || p.config.ConnectViaShm
+		var address string
+		useShm := disabledSocketClient || p.config.ConnectViaShm || p.config.ShmPrefix != ""
 		if useShm {
 			address = p.config.ShmPrefix
+		} else {
+			address = p.config.BinAPISocketPath
 		}
 		p.vppAdapter = NewVppAdapter(address, useShm)
 	} else {
@@ -162,9 +118,9 @@ func (p *Plugin) Init() error {
 
 	// TODO: Async connect & automatic reconnect support is not yet implemented in the agent,
 	// so synchronously wait until connected to VPP.
+	startTime := time.Now()
 	p.Log.Debugf("connecting to VPP..")
 
-	startTime := time.Now()
 	p.vppConn, p.vppConChan, err = govpp.AsyncConnect(p.vppAdapter, p.config.RetryConnectCount, p.config.RetryConnectTimeout)
 	if err != nil {
 		return err
@@ -182,10 +138,10 @@ func (p *Plugin) Init() error {
 		}
 	}
 
-	vppConnectTime := time.Since(startTime)
-	p.Log.Debugf("connection to VPP established (took %s)", vppConnectTime.Round(time.Millisecond))
+	connectDur := time.Since(startTime)
+	p.Log.Debugf("connection to VPP established (took %s)", connectDur.Round(time.Millisecond))
 
-	if err := p.updateVPPInfo(p.vppConn); err != nil {
+	if err := p.updateVPPInfo(); err != nil {
 		return errors.WithMessage(err, "retrieving VPP info failed")
 	}
 
@@ -194,7 +150,7 @@ func (p *Plugin) Init() error {
 	if p.config.StatsSocketPath != "" {
 		statsSocket = p.config.StatsSocketPath
 	} else {
-		statsSocket = defaultStatsSocket
+		statsSocket = adapter.DefaultStatsSocket
 	}
 	statsAdapter := NewStatsAdapter(statsSocket)
 	if statsAdapter == nil {
@@ -241,104 +197,67 @@ func (p *Plugin) Close() error {
 	return nil
 }
 
-// NewAPIChannel returns a new API channel for communication with VPP via govpp core.
-// It uses default buffer sizes for the request and reply Go channels.
-//
-// Example of binary API call from some plugin using GOVPP:
-//      ch, _ := govpp_mux.NewAPIChannel()
-//      ch.SendRequest(req).ReceiveReply
-func (p *Plugin) NewAPIChannel() (govppapi.Channel, error) {
-	ch, err := p.vppConn.NewAPIChannel()
+// VPPInfo returns information about VPP session.
+func (p *Plugin) VPPInfo() (VPPInfo, error) {
+	p.infoMu.Lock()
+	defer p.infoMu.Unlock()
+	return p.vppInfo, nil
+}
+
+func (p *Plugin) updateVPPInfo() error {
+	if p.vppConn == nil {
+		return fmt.Errorf("VPP connection is nil")
+	}
+
+	vppAPIChan, err := p.vppConn.NewAPIChannel()
 	if err != nil {
-		return nil, err
+		return err
 	}
-	retryCfg := retryConfig{
-		p.config.RetryRequestCount,
-		p.config.RetryRequestTimeout,
-	}
-	return newGovppChan(ch, retryCfg, p.tracer), nil
-}
+	defer vppAPIChan.Close()
 
-// NewAPIChannelBuffered returns a new API channel for communication with VPP via govpp core.
-// It allows to specify custom buffer sizes for the request and reply Go channels.
-//
-// Example of binary API call from some plugin using GOVPP:
-//      ch, _ := govpp_mux.NewAPIChannelBuffered(100, 100)
-//      ch.SendRequest(req).ReceiveReply
-func (p *Plugin) NewAPIChannelBuffered(reqChanBufSize, replyChanBufSize int) (govppapi.Channel, error) {
-	ch, err := p.vppConn.NewAPIChannelBuffered(reqChanBufSize, replyChanBufSize)
+	vpeHandler := vppcalls.CompatibleVpeHandler(vppAPIChan)
+
+	version, err := vpeHandler.RunCli("show version verbose")
 	if err != nil {
-		return nil, err
+		p.Log.Warnf("RunCli error: %v", err)
+	} else {
+		p.Log.Debugf("vpp# show version verbose\n%s", version)
 	}
-	retryCfg := retryConfig{
-		p.config.RetryRequestCount,
-		p.config.RetryRequestTimeout,
-	}
-	return newGovppChan(ch, retryCfg, p.tracer), nil
-}
 
-// GetTrace returns all trace entries measured so far
-func (p *Plugin) GetTrace() *apitrace.Trace {
-	if !p.config.TraceEnabled {
-		return nil
+	cmdline, err := vpeHandler.RunCli("show version cmdline")
+	if err != nil {
+		p.Log.Warnf("RunCli error: %v", err)
+	} else {
+		out := strings.Replace(cmdline, "\n", "", -1)
+		p.Log.Debugf("vpp# show version cmdline:\n%s", out)
 	}
-	return p.tracer.Get()
-}
 
-// ListStats returns all stats names
-func (p *Plugin) ListStats(prefixes ...string) ([]string, error) {
-	if p.statsAdapter == nil {
-		return nil, nil
+	ver, err := vpeHandler.GetVersionInfo()
+	if err != nil {
+		return err
 	}
-	return p.statsAdapter.ListStats(prefixes...)
-}
 
-// DumpStats returns all stats with name, type and value
-func (p *Plugin) DumpStats(prefixes ...string) ([]*adapter.StatEntry, error) {
-	if p.statsAdapter == nil {
-		return nil, nil
-	}
-	return p.statsAdapter.DumpStats(prefixes...)
-}
+	p.Log.Infof("VPP version: %v", ver.Version)
 
-// GetSystemStats retrieves system statistics of the connected VPP instance like Vector rate, Input rate, etc.
-func (p *Plugin) GetSystemStats() (*govppapi.SystemStats, error) {
-	if p.statsConn == nil || p.statsConn.(*govpp.StatsConnection) == nil {
-		return nil, nil
+	vpe, err := vpeHandler.GetVpeInfo()
+	if err != nil {
+		return err
 	}
-	return p.statsConn.GetSystemStats()
-}
 
-// GetNodeStats retrieves a list of Node VPP counters (vectors, clocks, ...)
-func (p *Plugin) GetNodeStats() (*govppapi.NodeStats, error) {
-	if p.statsConn == nil || p.statsConn.(*govpp.StatsConnection) == nil {
-		return nil, nil
-	}
-	return p.statsConn.GetNodeStats()
-}
+	p.Log.WithFields(logging.Fields{
+		"PID":      vpe.PID,
+		"ClientID": vpe.ClientIdx,
+	}).Debugf("loaded %d VPP modules: %v", len(vpe.ModuleVersions), vpe.ModuleVersions)
 
-// GetInterfaceStats retrieves all counters related to the VPP interfaces
-func (p *Plugin) GetInterfaceStats() (*govppapi.InterfaceStats, error) {
-	if p.statsConn == nil || p.statsConn.(*govpp.StatsConnection) == nil {
-		return nil, nil
+	p.infoMu.Lock()
+	p.vppInfo = VPPInfo{
+		Connected:   true,
+		VersionInfo: *ver,
+		VpeInfo:     *vpe,
 	}
-	return p.statsConn.GetInterfaceStats()
-}
+	p.infoMu.Unlock()
 
-// GetErrorStats retrieves VPP error counters
-func (p *Plugin) GetErrorStats(names ...string) (*govppapi.ErrorStats, error) {
-	if p.statsConn == nil || p.statsConn.(*govpp.StatsConnection) == nil {
-		return nil, nil
-	}
-	return p.statsConn.GetErrorStats()
-}
-
-// GetErrorStats retrieves VPP error counters
-func (p *Plugin) GetBufferStats() (*govppapi.BufferStats, error) {
-	if p.statsConn == nil || p.statsConn.(*govpp.StatsConnection) == nil {
-		return nil, nil
-	}
-	return p.statsConn.GetBufferStats()
+	return nil
 }
 
 // handleVPPConnectionEvents handles VPP connection events.
@@ -349,7 +268,7 @@ func (p *Plugin) handleVPPConnectionEvents(ctx context.Context) {
 		select {
 		case event := <-p.vppConChan:
 			if event.State == govpp.Connected {
-				if err := p.updateVPPInfo(p.vppConn); err != nil {
+				if err := p.updateVPPInfo(); err != nil {
 					p.Log.Errorf("updating VPP info failed: %v", err)
 				}
 
@@ -382,46 +301,4 @@ func (p *Plugin) handleVPPConnectionEvents(ctx context.Context) {
 			return
 		}
 	}
-}
-
-// VPPInfo returns information about VPP session.
-func (p *Plugin) VPPInfo() (VPPInfo, error) {
-	p.infoMu.Lock()
-	defer p.infoMu.Unlock()
-	return p.vppInfo, nil
-}
-
-func (p *Plugin) updateVPPInfo(provider govppapi.ChannelProvider) error {
-	vppAPIChan, err := provider.NewAPIChannel()
-	if err != nil {
-		return err
-	}
-	defer vppAPIChan.Close()
-
-	vpeHandler := vppcalls.CompatibleVpeHandler(vppAPIChan)
-
-	ver, err := vpeHandler.GetVersionInfo()
-	if err != nil {
-		return err
-	}
-
-	p.Log.Infof("VPP version: %v", ver.Version)
-
-	vpe, err := vpeHandler.GetVpeInfo()
-	if err != nil {
-		return err
-	}
-
-	p.Log.Debugf("VPP session details: PID=%d ClientIdx=%d", vpe.PID, vpe.ClientIdx)
-	p.Log.Debugf("loaded %d VPP modules: %v", len(vpe.ModuleVersions), vpe.ModuleVersions)
-
-	p.infoMu.Lock()
-	p.vppInfo = VPPInfo{
-		Connected:   true,
-		VersionInfo: *ver,
-		VpeInfo:     *vpe,
-	}
-	p.infoMu.Unlock()
-
-	return nil
 }

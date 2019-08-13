@@ -38,7 +38,6 @@ Configure Environment
 
 Show Interfaces Before Setup
     vpp_term: Show Interfaces    agent_vpp_1
-    Write To Machine    vpp_agent_ctl    vpp-agent-ctl ${AGENT_VPP_ETCD_CONF_PATH} -ps
 
 Setup Interfaces
     etcdctl.Put Veth Interface Via Linux Plugin    node=agent_vpp_1    namespace=ns1    name=ns1_veth1    host_if_name=ns1_veth1_linux    mac=d2:74:8c:12:67:d2    peer=ns2_veth2    ip=${VETH_IP1}     prefix=64

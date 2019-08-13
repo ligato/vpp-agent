@@ -1,25 +1,27 @@
 #!/bin/bash
-# Before run of this script you can set environmental variables
-# IMAGE_TAG ... then  export them
-# and to use defined values instead of default ones
 
 cd "$(dirname "$0")"
 
-set -e
+set -euo pipefail
 
-IMAGE_TAG=${IMAGE_TAG:-'prod_vpp_agent'}
-
-BUILDARCH=`uname -m`
-case "$BUILDARCH" in
-  "aarch64" )
-    ;;
-
-  "x86_64" )
-    ;;
-  * )
-    echo "Architecture ${BUILDARCH} is not supported."
-    exit
-    ;;
+buildArch=`uname -m`
+case "${buildArch##*-}" in
+	  aarch64) ;;
+  	x86_64) ;;
+  	*) echo "Current architecture (${buildArch}) is not supported."; exit 2; ;;
 esac
 
-docker build  ${DOCKER_BUILD_ARGS} --tag ${IMAGE_TAG} .
+echo "==============================================="
+echo " Image: ${IMAGE_TAG:=prod_vpp_agent}"
+echo "==============================================="
+echo " - dev image: ${DEV_IMG:=dev_vpp_agent}"
+echo "==============================================="
+
+set -x
+
+docker build -f Dockerfile \
+    --build-arg DEV_IMG=${DEV_IMG} \
+	  --tag ${IMAGE_TAG} \
+ ${DOCKER_BUILD_ARGS-} .
+
+docker run --rm "${IMAGE_TAG}" vpp-agent -h || true

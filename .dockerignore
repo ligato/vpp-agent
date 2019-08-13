@@ -11,3 +11,6 @@ k8s/
 cmd/agentctl/agentctl
 cmd/vpp-agent/vpp-agent
 cmd/vpp-agent-ctl/vpp-agent-ctl
+docker/dev/build.sh
+docker/prod/build.sh
+tests/perf/grpc-perf/grpc-perf

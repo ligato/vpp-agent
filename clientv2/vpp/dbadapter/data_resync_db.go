@@ -29,7 +29,7 @@ import (
 	nat "github.com/ligato/vpp-agent/api/models/vpp/nat"
 	punt "github.com/ligato/vpp-agent/api/models/vpp/punt"
 	stn "github.com/ligato/vpp-agent/api/models/vpp/stn"
-	"github.com/ligato/vpp-agent/clientv2/vpp"
+	vppclient "github.com/ligato/vpp-agent/clientv2/vpp"
 )
 
 // NewDataResyncDSL returns a new instance of DataResyncDSL which implements
@@ -113,7 +113,7 @@ func (dsl *DataResyncDSL) XConnect(val *l2.XConnectPair) vppclient.DataResyncDSL
 
 // StaticRoute adds L3 Static Route to the RESYNC request.
 func (dsl *DataResyncDSL) StaticRoute(val *l3.Route) vppclient.DataResyncDSL {
-	key := l3.RouteKey(val.VrfId, val.DstNetwork, val.NextHopAddr)
+	key := models.Key(val)
 	dsl.txn.Put(key, val)
 	dsl.txnKeys = append(dsl.txnKeys, key)
 
@@ -204,6 +204,15 @@ func (dsl *DataResyncDSL) PuntIPRedirect(val *punt.IPRedirect) vppclient.DataRes
 // PuntToHost adds request to RESYNC a rule used to punt L4 traffic to a host.
 func (dsl *DataResyncDSL) PuntToHost(val *punt.ToHost) vppclient.DataResyncDSL {
 	key := punt.ToHostKey(val.L3Protocol, val.L4Protocol, val.Port)
+	dsl.txn.Put(key, val)
+	dsl.txnKeys = append(dsl.txnKeys, key)
+
+	return dsl
+}
+
+// PuntException adds request to create or update exception to punt specific packets.
+func (dsl *DataResyncDSL) PuntException(val *punt.Exception) vppclient.DataResyncDSL {
+	key := models.Key(val)
 	dsl.txn.Put(key, val)
 	dsl.txnKeys = append(dsl.txnKeys, key)
 

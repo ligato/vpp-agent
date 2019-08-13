@@ -29,7 +29,7 @@ import (
 	nat "github.com/ligato/vpp-agent/api/models/vpp/nat"
 	punt "github.com/ligato/vpp-agent/api/models/vpp/punt"
 	stn "github.com/ligato/vpp-agent/api/models/vpp/stn"
-	"github.com/ligato/vpp-agent/clientv2/vpp"
+	vppclient "github.com/ligato/vpp-agent/clientv2/vpp"
 )
 
 // NewDataChangeDSL returns a new instance of DataChangeDSL which implements
@@ -117,7 +117,7 @@ func (dsl *PutDSL) VrfTable(val *l3.VrfTable) vppclient.PutDSL {
 
 // StaticRoute adds a request to create or update VPP L3 Static Route.
 func (dsl *PutDSL) StaticRoute(val *l3.Route) vppclient.PutDSL {
-	dsl.parent.txn.Put(l3.RouteKey(val.VrfId, val.DstNetwork, val.NextHopAddr), val)
+	dsl.parent.txn.Put(models.Key(val), val)
 	return dsl
 }
 
@@ -181,6 +181,12 @@ func (dsl *PutDSL) PuntToHost(val *punt.ToHost) vppclient.PutDSL {
 	return dsl
 }
 
+// PuntException adds request to create or update exception to punt specific packets.
+func (dsl *PutDSL) PuntException(val *punt.Exception) vppclient.PutDSL {
+	dsl.parent.txn.Put(models.Key(val), val)
+	return dsl
+}
+
 // Delete changes the DSL mode to allow removal of an existing configuration.
 func (dsl *PutDSL) Delete() vppclient.DeleteDSL {
 	return &DeleteDSL{dsl.parent}
@@ -235,8 +241,8 @@ func (dsl *DeleteDSL) VrfTable(id uint32, proto l3.VrfTable_Protocol) vppclient.
 }
 
 // StaticRoute adds a request to delete an existing VPP L3 Static Route.
-func (dsl *DeleteDSL) StaticRoute(vrf uint32, dstAddr string, nextHopAddr string) vppclient.DeleteDSL {
-	dsl.parent.txn.Delete(l3.RouteKey(vrf, dstAddr, nextHopAddr))
+func (dsl *DeleteDSL) StaticRoute(iface string, vrf uint32, dstAddr string, nextHopAddr string) vppclient.DeleteDSL {
+	dsl.parent.txn.Delete(l3.RouteKey(iface, vrf, dstAddr, nextHopAddr))
 	return dsl
 }
 
@@ -297,6 +303,12 @@ func (dsl *DeleteDSL) PuntIPRedirect(l3Proto punt.L3Protocol, txInterface string
 // PuntToHost adds request to delete a rule used to punt L4 traffic to a host.
 func (dsl *DeleteDSL) PuntToHost(l3Proto punt.L3Protocol, l4Proto punt.L4Protocol, port uint32) vppclient.DeleteDSL {
 	dsl.parent.txn.Delete(punt.ToHostKey(l3Proto, l4Proto, port))
+	return dsl
+}
+
+// PuntException adds request to delete exception to punt specific packets.
+func (dsl *DeleteDSL) PuntException(reason string) vppclient.DeleteDSL {
+	dsl.parent.txn.Delete(punt.ExceptionKey(reason))
 	return dsl
 }
 

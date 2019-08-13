@@ -19,8 +19,10 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/cn-infra/logging"
+
 	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	punt "github.com/ligato/vpp-agent/api/models/vpp/punt"
+	"github.com/ligato/vpp-agent/pkg/models"
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/vpp/puntplugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/vpp/puntplugin/vppcalls"
@@ -32,6 +34,7 @@ const (
 
 	// dependency labels
 	ipRedirectTxInterfaceDep = "tx-interface-exists"
+	ipRedirectRxInterfaceDep = "rx-interface-exists"
 )
 
 // A list of non-retriable errors:
@@ -130,16 +133,38 @@ func (d *IPRedirectDescriptor) Delete(key string, redirect *punt.IPRedirect, met
 
 // Retrieve returns all configured VPP punt to host entries.
 func (d *IPRedirectDescriptor) Retrieve(correlate []adapter.IPPuntRedirectKVWithMetadata) (dump []adapter.IPPuntRedirectKVWithMetadata, err error) {
-	// TODO dump for IP redirect missing in api
-	d.log.Info("Dump IP punt redirect is not supported by the VPP")
-	return []adapter.IPPuntRedirectKVWithMetadata{}, nil
+	punts, err := d.puntHandler.DumpPuntRedirect()
+	if err == vppcalls.ErrUnsupported {
+		return nil, nil
+	} else if err != nil {
+		d.log.Error(err)
+		return nil, err
+	}
+
+	for _, p := range punts {
+		dump = append(dump, adapter.IPPuntRedirectKVWithMetadata{
+			Key:    models.Key(p),
+			Value:  p,
+			Origin: kvs.FromNB,
+		})
+	}
+
+	return dump, nil
 }
 
 // Dependencies for IP punt redirect are represented by tx interface
 func (d *IPRedirectDescriptor) Dependencies(key string, redirect *punt.IPRedirect) (dependencies []kvs.Dependency) {
+	// TX interface
 	dependencies = append(dependencies, kvs.Dependency{
 		Label: ipRedirectTxInterfaceDep,
 		Key:   interfaces.InterfaceKey(redirect.TxInterface),
 	})
+	// RX interface
+	if redirect.RxInterface != "" {
+		dependencies = append(dependencies, kvs.Dependency{
+			Label: ipRedirectRxInterfaceDep,
+			Key:   interfaces.InterfaceKey(redirect.RxInterface),
+		})
+	}
 	return dependencies
 }

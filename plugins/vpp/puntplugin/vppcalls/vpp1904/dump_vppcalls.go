@@ -29,16 +29,16 @@ var socketPathMap = make(map[uint32]*vpp.PuntToHost)
 func (h *PuntVppHandler) DumpRegisteredPuntSockets() (punts []*vppcalls.PuntDetails, err error) {
 	// TODO: use dumps from binapi
 	if _, err := h.dumpPunts(false); err != nil {
-		h.log.Errorf("punt dump failed: %v", err)
+		h.log.Debugf("punt dump failed: %v", err)
 	}
 	if _, err := h.dumpPunts(true); err != nil {
-		h.log.Errorf("punt dump failed: %v", err)
+		h.log.Debugf("punt dump failed: %v", err)
 	}
 	if _, err := h.dumpPuntSockets(false); err != nil {
-		h.log.Errorf("punt socket dump failed: %v", err)
+		h.log.Debugf("punt socket dump failed: %v", err)
 	}
 	if _, err := h.dumpPuntSockets(true); err != nil {
-		h.log.Errorf("punt socket dump failed: %v", err)
+		h.log.Debugf("punt socket dump failed: %v", err)
 	}
 
 	for _, punt := range socketPathMap {
@@ -56,12 +56,6 @@ func (h *PuntVppHandler) DumpRegisteredPuntSockets() (punts []*vppcalls.PuntDeta
 }
 
 func (h *PuntVppHandler) dumpPuntSockets(ipv6 bool) (punts []*vppcalls.PuntDetails, err error) {
-	var info = "IPv4"
-	if ipv6 {
-		info = "IPv6"
-	}
-	h.log.Debugf("=> dumping punt sockets (%s)", info)
-
 	req := h.callsChannel.SendMultiRequest(&punt.PuntSocketDump{
 		IsIPv6: boolToUint(ipv6),
 	})
@@ -74,7 +68,6 @@ func (h *PuntVppHandler) dumpPuntSockets(ipv6 bool) (punts []*vppcalls.PuntDetai
 		if err != nil {
 			return nil, err
 		}
-		h.log.Debugf(" - dumped punt socket (%s): %+v", d.Pathname, d.Punt)
 
 		punts = append(punts, &vppcalls.PuntDetails{
 			PuntData: &vpp_punt.ToHost{
@@ -90,12 +83,6 @@ func (h *PuntVppHandler) dumpPuntSockets(ipv6 bool) (punts []*vppcalls.PuntDetai
 }
 
 func (h *PuntVppHandler) dumpPunts(ipv6 bool) (punts []*vppcalls.PuntDetails, err error) {
-	var info = "IPv4"
-	if ipv6 {
-		info = "IPv6"
-	}
-	h.log.Debugf("=> dumping punts (%s)", info)
-
 	req := h.callsChannel.SendMultiRequest(&punt.PuntDump{
 		IsIPv6: boolToUint(ipv6),
 	})
@@ -108,7 +95,6 @@ func (h *PuntVppHandler) dumpPunts(ipv6 bool) (punts []*vppcalls.PuntDetails, er
 		if err != nil {
 			return nil, err
 		}
-		h.log.Debugf(" - dumped punt: %+v", d.Punt)
 
 		punts = append(punts, &vppcalls.PuntDetails{
 			PuntData: &vpp_punt.ToHost{
@@ -120,4 +106,19 @@ func (h *PuntVppHandler) dumpPunts(ipv6 bool) (punts []*vppcalls.PuntDetails, er
 	}
 
 	return punts, nil
+}
+
+func (h *PuntVppHandler) DumpPuntRedirect() (punts []*vpp_punt.IPRedirect, err error) {
+	h.log.Debugf("ip redirect punt not supported in this VPP version")
+	return nil, vppcalls.ErrUnsupported
+}
+
+func (h *PuntVppHandler) DumpPuntReasons() ([]*vppcalls.ReasonDetails, error) {
+	h.log.Debugf("punt reasons are not supported in this VPP version")
+	return nil, vppcalls.ErrUnsupported
+}
+
+func (h *PuntVppHandler) DumpExceptions() ([]*vppcalls.ExceptionDetails, error) {
+	h.log.Debugf("punt exceptions are not supported in this VPP version")
+	return nil, vppcalls.ErrUnsupported
 }

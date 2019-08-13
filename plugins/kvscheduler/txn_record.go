@@ -22,6 +22,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gogo/protobuf/proto"
+
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/kvscheduler/internal/graph"
 	"github.com/ligato/vpp-agent/plugins/kvscheduler/internal/utils"
@@ -76,6 +78,10 @@ func (s *Scheduler) GetRecordedTransaction(SeqNum uint64) (txn *kvs.RecordedTxn)
 // preRecordTxnOp prepares txn operation record - fills attributes that we can even
 // before executing the operation.
 func (s *Scheduler) preRecordTxnOp(args *applyValueArgs, node graph.Node) *kvs.RecordedTxnOp {
+	var prevValue proto.Message
+	if getNodeState(node) != kvs.ValueState_REMOVED {
+		prevValue = utils.RecordProtoMessage(node.GetValue())
+	}
 	prevOrigin := getNodeOrigin(node)
 	if prevOrigin == kvs.UnknownOrigin {
 		// new value
@@ -84,7 +90,7 @@ func (s *Scheduler) preRecordTxnOp(args *applyValueArgs, node graph.Node) *kvs.R
 	_, prevErr := getNodeError(node)
 	return &kvs.RecordedTxnOp{
 		Key:        args.kv.key,
-		PrevValue:  utils.RecordProtoMessage(node.GetValue()),
+		PrevValue:  prevValue,
 		NewValue:   utils.RecordProtoMessage(args.kv.value),
 		PrevState:  getNodeState(node),
 		PrevErr:    prevErr,
@@ -137,21 +143,16 @@ func (s *Scheduler) preRecordTransaction(txn *transaction, planned kvs.RecordedT
 	// if enabled, print txn summary
 	if s.config.PrintTxnSummary {
 		// build header for the log
-		txnInfo := txn.txnType.String()
+		txnInfo := ""
 		if txn.txnType == kvs.NBTransaction && txn.nb.resyncType != kvs.NotResync {
-			resyncType := "Full Resync"
-			if txn.nb.resyncType == kvs.DownstreamResync {
-				resyncType = "SB Sync"
-			}
-			if txn.nb.resyncType == kvs.UpstreamResync {
-				resyncType = "NB Sync"
-			}
-			txnInfo = fmt.Sprintf("%s (%s)", txn.txnType.String(), resyncType)
+			txnInfo = fmt.Sprintf("%s", txn.nb.resyncType.String())
+		} else if txn.txnType == kvs.RetryFailedOps && txn.retry != nil {
+			txnInfo = fmt.Sprintf("retrying TX #%d (attempt %d)", txn.retry.txnSeqNum, txn.retry.attempt)
 		}
+		msg := fmt.Sprintf("#%d - %s", record.SeqNum, txn.txnType.String())
+		n := 115 - len(msg)
 		var buf strings.Builder
 		buf.WriteString("+======================================================================================================================+\n")
-		msg := fmt.Sprintf("Transaction #%d", record.SeqNum)
-		n := 115 - len(msg)
 		buf.WriteString(fmt.Sprintf("| %s %"+strconv.Itoa(n)+"s |\n", msg, txnInfo))
 		buf.WriteString("+======================================================================================================================+\n")
 		buf.WriteString(record.StringWithOpts(false, false, 2))
@@ -172,12 +173,15 @@ func (s *Scheduler) recordTransaction(txn *transaction, txnRecord *kvs.RecordedT
 	txnRecord.Executed = executed
 
 	if s.config.PrintTxnSummary {
+		txnType := txn.txnType.String()
+		msg := fmt.Sprintf("#%d - %s", txnRecord.SeqNum, txnType)
+		elapsed := stop.Sub(start)
+		msg2 := fmt.Sprintf("took %v", elapsed.Round(time.Microsecond*100))
+
 		var buf strings.Builder
 		buf.WriteString("o----------------------------------------------------------------------------------------------------------------------o\n")
 		buf.WriteString(txnRecord.StringWithOpts(true, false, 2))
 		buf.WriteString("x----------------------------------------------------------------------------------------------------------------------x\n")
-		msg := fmt.Sprintf("#%d", txnRecord.SeqNum)
-		msg2 := fmt.Sprintf("took %v", stop.Sub(start).Round(time.Microsecond*100))
 		buf.WriteString(fmt.Sprintf("| %s %"+fmt.Sprint(115-len(msg))+"s |\n", msg, msg2))
 		buf.WriteString("x----------------------------------------------------------------------------------------------------------------------x\n")
 		fmt.Println(buf.String())

@@ -15,7 +15,18 @@
 package adapter
 
 import (
+	"errors"
 	"fmt"
+)
+
+const (
+	// DefaultStatsSocket defines a default socket file path for VPP stats API.
+	DefaultStatsSocket = "/run/vpp/stats.sock"
+)
+
+var (
+	ErrStatDirBusy  = errors.New("stat dir busy")
+	ErrStatDumpBusy = errors.New("stat dump busy")
 )
 
 // StatsAPI provides connection to VPP stats API.
@@ -86,7 +97,7 @@ type Name string
 type ScalarStat float64
 
 // ErrorStat represents stat for ErrorIndex.
-type ErrorStat uint64
+type ErrorStat Counter
 
 // SimpleCounterStat represents stat for SimpleCounterVector.
 // The outer array represents workers and the inner array represents interface/node/.. indexes.
