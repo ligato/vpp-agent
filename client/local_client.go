@@ -24,6 +24,7 @@ import (
 
 	api "github.com/ligato/vpp-agent/api/genericmanager"
 	"github.com/ligato/vpp-agent/pkg/models"
+	orch "github.com/ligato/vpp-agent/plugins/orchestrator"
 )
 
 // LocalClient is global client for direct local access.
@@ -57,7 +58,9 @@ func (c *client) ResyncConfig(items ...proto.Message) error {
 		txn.Put(key, item)
 	}
 
-	return txn.Commit(context.Background())
+	ctx := context.Background()
+	ctx = orch.DataSrcContext(ctx, "localclient")
+	return txn.Commit(ctx)
 }
 
 func (c *client) GetConfig(dsts ...interface{}) error {
@@ -112,6 +115,10 @@ func (r *changeRequest) Delete(items ...proto.Message) ChangeRequest {
 func (r *changeRequest) Send(ctx context.Context) error {
 	if r.err != nil {
 		return r.err
+	}
+	_, withDataSrc := orch.DataSrcFromContext(ctx)
+	if !withDataSrc {
+		ctx = orch.DataSrcContext(ctx, "localclient")
 	}
 	return r.txn.Commit(ctx)
 }
