@@ -270,6 +270,10 @@ func (c *InterfaceStateUpdater) doUpdatesIfStateDetails() {
 
 	c.access.Lock()
 	for _, ifaceDetails := range ifaces {
+		if ifaceDetails == nil {
+			// this interface was removed and the updater hasn't yet received notification
+			continue
+		}
 		c.updateIfStateDetails(ifaceDetails)
 	}
 	c.access.Unlock()
