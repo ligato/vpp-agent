@@ -12,8 +12,8 @@ required = [
 # Constraints
 
 [[constraint]]
-  branch = "dev"
   name = "github.com/ligato/cn-infra"
+  version = "2.1.0"
 
 [[constraint]]
   branch = "master"

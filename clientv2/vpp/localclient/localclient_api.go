@@ -16,8 +16,7 @@ package localclient
 
 import (
 	"github.com/ligato/cn-infra/datasync/kvdbsync/local"
-
-	vppclient "github.com/ligato/vpp-agent/clientv2/vpp"
+	"github.com/ligato/vpp-agent/clientv2/vpp"
 	"github.com/ligato/vpp-agent/clientv2/vpp/dbadapter"
 )
 
@@ -27,7 +26,8 @@ import (
 // DataResyncRequest allows creating a RESYNC request using convenient RESYNC
 // DSL and sending it locally through go channels (i.e. without using Data Store).
 func DataResyncRequest(caller string) vppclient.DataResyncDSL {
-	return dbadapter.NewDataResyncDSL(local.NewProtoTxn(local.Get().PropagateResync), nil /*no need to list anything*/)
+	return dbadapter.NewDataResyncDSL(local.NewProtoTxn(local.Get().PropagateResync),
+		nil /*no need to list anything*/)
 }
 
 // DataChangeRequest allows creating Data Change request(s) using convenient

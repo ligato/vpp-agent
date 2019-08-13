@@ -32,35 +32,31 @@ import (
 	"github.com/ligato/vpp-agent/plugins/restapi/resturl"
 )
 
-var (
-	// ErrHandlerUnavailable represents error returned when particular
-	// handler is not available
-	ErrHandlerUnavailable = errors.New("Handler is not available")
-)
-
 // Registers ABF REST handler
 func (p *Plugin) registerABFHandler() {
+	unavailHandler := errors.New("abfHandler is not available")
 	p.registerHTTPHandler(resturl.ABF, GET, func() (interface{}, error) {
 		if p.abfHandler == nil {
-			return nil, ErrHandlerUnavailable
+			return nil, unavailHandler
 		}
 		return p.abfHandler.DumpABFPolicy()
 	})
 }
 
 // Registers access list REST handlers
-func (p *Plugin) registerACLHandlers() {
+func (p *Plugin) registerAccessListHandlers() {
+	unavailHandler := errors.New("aclHandler is not available")
 	// GET IP ACLs
 	p.registerHTTPHandler(resturl.ACLIP, GET, func() (interface{}, error) {
 		if p.aclHandler == nil {
-			return nil, ErrHandlerUnavailable
+			return nil, unavailHandler
 		}
 		return p.aclHandler.DumpACL()
 	})
 	// GET MACIP ACLs
 	p.registerHTTPHandler(resturl.ACLMACIP, GET, func() (interface{}, error) {
 		if p.aclHandler == nil {
-			return nil, ErrHandlerUnavailable
+			return nil, unavailHandler
 		}
 		return p.aclHandler.DumpMACIPACL()
 	})
@@ -99,18 +95,23 @@ func (p *Plugin) registerInterfaceHandlers() {
 }
 
 // Registers NAT REST handlers
-func (p *Plugin) registerNATHandlers() {
+func (p *Plugin) registerNatHandlers() {
+	unavailHandler := errors.New("natHandler is not available")
+	// GET NAT configuration
+	/*p.registerHTTPHandler(resturl.NatURL, GET, func() (interface{}, error) {
+		return p.natHandler.Nat44Dump()
+	})*/
 	// GET NAT global config
 	p.registerHTTPHandler(resturl.NatGlobal, GET, func() (interface{}, error) {
 		if p.natHandler == nil {
-			return nil, ErrHandlerUnavailable
+			return nil, unavailHandler
 		}
 		return p.natHandler.Nat44GlobalConfigDump()
 	})
 	// GET DNAT config
 	p.registerHTTPHandler(resturl.NatDNat, GET, func() (interface{}, error) {
 		if p.natHandler == nil {
-			return nil, ErrHandlerUnavailable
+			return nil, unavailHandler
 		}
 		return p.natHandler.DNat44Dump()
 	})
@@ -120,23 +121,14 @@ func (p *Plugin) registerNATHandlers() {
 func (p *Plugin) registerL2Handlers() {
 	// GET bridge domains
 	p.registerHTTPHandler(resturl.Bd, GET, func() (interface{}, error) {
-		if p.l2Handler == nil {
-			return nil, ErrHandlerUnavailable
-		}
 		return p.l2Handler.DumpBridgeDomains()
 	})
 	// GET FIB entries
 	p.registerHTTPHandler(resturl.Fib, GET, func() (interface{}, error) {
-		if p.l2Handler == nil {
-			return nil, ErrHandlerUnavailable
-		}
 		return p.l2Handler.DumpL2FIBs()
 	})
 	// GET cross connects
 	p.registerHTTPHandler(resturl.Xc, GET, func() (interface{}, error) {
-		if p.l2Handler == nil {
-			return nil, ErrHandlerUnavailable
-		}
 		return p.l2Handler.DumpXConnectPairs()
 	})
 }
@@ -145,67 +137,19 @@ func (p *Plugin) registerL2Handlers() {
 func (p *Plugin) registerL3Handlers() {
 	// GET ARP entries
 	p.registerHTTPHandler(resturl.Arps, GET, func() (interface{}, error) {
-		if p.l3Handler == nil {
-			return nil, ErrHandlerUnavailable
-		}
 		return p.l3Handler.DumpArpEntries()
 	})
 	// GET proxy ARP interfaces
 	p.registerHTTPHandler(resturl.PArpIfs, GET, func() (interface{}, error) {
-		if p.l3Handler == nil {
-			return nil, ErrHandlerUnavailable
-		}
 		return p.l3Handler.DumpProxyArpInterfaces()
 	})
 	// GET proxy ARP ranges
 	p.registerHTTPHandler(resturl.PArpRngs, GET, func() (interface{}, error) {
-		if p.l3Handler == nil {
-			return nil, ErrHandlerUnavailable
-		}
 		return p.l3Handler.DumpProxyArpRanges()
 	})
 	// GET static routes
 	p.registerHTTPHandler(resturl.Routes, GET, func() (interface{}, error) {
-		if p.l3Handler == nil {
-			return nil, ErrHandlerUnavailable
-		}
 		return p.l3Handler.DumpRoutes()
-	})
-	// GET scan ip neighbor setup
-	p.registerHTTPHandler(resturl.IPScanNeigh, GET, func() (interface{}, error) {
-		if p.l3Handler == nil {
-			return nil, ErrHandlerUnavailable
-		}
-		return p.l3Handler.GetIPScanNeighbor()
-	})
-}
-
-// Registers IPSec plugin REST handlers
-func (p *Plugin) registerIPSecHandlers() {
-	// GET IPSec SPD entries
-	p.registerHTTPHandler(resturl.SPDs, GET, func() (interface{}, error) {
-		if p.ipSecHandler == nil {
-			return nil, ErrHandlerUnavailable
-		}
-		return p.ipSecHandler.DumpIPSecSPD()
-	})
-	// GET IPSec SA entries
-	p.registerHTTPHandler(resturl.SAs, GET, func() (interface{}, error) {
-		if p.ipSecHandler == nil {
-			return nil, ErrHandlerUnavailable
-		}
-		return p.ipSecHandler.DumpIPSecSA()
-	})
-}
-
-// Registers punt plugin REST handlers
-func (p *Plugin) registerPuntHandlers() {
-	// GET punt registered socket entries
-	p.registerHTTPHandler(resturl.PuntSocket, GET, func() (interface{}, error) {
-		if p.puntHandler == nil {
-			return nil, ErrHandlerUnavailable
-		}
-		return p.puntHandler.DumpRegisteredPuntSockets()
 	})
 }
 

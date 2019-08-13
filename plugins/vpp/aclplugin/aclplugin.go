@@ -32,7 +32,6 @@ import (
 
 	_ "github.com/ligato/vpp-agent/plugins/vpp/aclplugin/vppcalls/vpp1901"
 	_ "github.com/ligato/vpp-agent/plugins/vpp/aclplugin/vppcalls/vpp1904"
-	_ "github.com/ligato/vpp-agent/plugins/vpp/aclplugin/vppcalls/vpp1908"
 )
 
 // ACLPlugin is a plugin that manages ACLs.
@@ -40,7 +39,8 @@ type ACLPlugin struct {
 	Deps
 
 	// GoVPP channels
-	vppCh govppapi.Channel
+	vppCh     govppapi.Channel
+	dumpVppCh govppapi.Channel
 
 	aclHandler             vppcalls.ACLVppAPI
 	aclDescriptor          *descriptor.ACLDescriptor
@@ -67,9 +67,12 @@ func (p *ACLPlugin) Init() error {
 	if p.vppCh, err = p.GoVppmux.NewAPIChannel(); err != nil {
 		return errors.Errorf("failed to create GoVPP API channel: %v", err)
 	}
+	if p.dumpVppCh, err = p.GoVppmux.NewAPIChannel(); err != nil {
+		return errors.Errorf("failed to create GoVPP API dump channel: %v", err)
+	}
 
 	// init handlers
-	p.aclHandler = vppcalls.CompatibleACLVppHandler(p.vppCh, p.IfPlugin.GetInterfaceIndex(), p.Log)
+	p.aclHandler = vppcalls.CompatibleACLVppHandler(p.vppCh, p.dumpVppCh, p.IfPlugin.GetInterfaceIndex(), p.Log)
 	if p.aclHandler == nil {
 		return errors.New("aclHandler is not available")
 	}

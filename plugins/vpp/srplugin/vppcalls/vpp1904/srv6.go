@@ -62,21 +62,21 @@ const (
 
 // AddLocalSid adds local sid <localSID> into VPP
 func (h *SRv6VppHandler) AddLocalSid(localSID *srv6.LocalSID) error {
-	return h.addDelLocalSid(false, localSID)
-}
-
-// DeleteLocalSid deletes local sid <localSID> in VPP
-func (h *SRv6VppHandler) DeleteLocalSid(localSID *srv6.LocalSID) error {
-	return h.addDelLocalSid(true, localSID)
-}
-
-func (h *SRv6VppHandler) addDelLocalSid(deletion bool, localSID *srv6.LocalSID) error {
-	h.log.WithFields(logging.Fields{"localSID": localSID.GetSid(), "delete": deletion, "installationVrfID": h.installationVrfID(localSID), "end function": h.endFunction(localSID)}).
-		Debug("Adding/deleting Local SID", localSID.GetSid())
-	sidAddr, err := parseIPv6(localSID.GetSid()) // parsing to get some standard sid form
+	sidAddr, err := parseIPv6(localSID.GetSid())
 	if err != nil {
 		return fmt.Errorf("sid address %s is not IPv6 address: %v", localSID.GetSid(), err) // calls from descriptor are already validated
 	}
+	return h.addDelLocalSid(false, sidAddr, localSID)
+}
+
+// DeleteLocalSid delets local sid given by <sidAddr> in VPP
+func (h *SRv6VppHandler) DeleteLocalSid(sidAddr net.IP) error {
+	return h.addDelLocalSid(true, sidAddr, nil)
+}
+
+func (h *SRv6VppHandler) addDelLocalSid(deletion bool, sidAddr net.IP, localSID *srv6.LocalSID) error {
+	h.log.WithFields(logging.Fields{"localSID": sidAddr, "delete": deletion, "installationVrfID": h.installationVrfID(localSID), "end function": h.endFunction(localSID)}).
+		Debug("Adding/deleting Local SID", sidAddr)
 	if !deletion && localSID.GetEndFunction_AD() != nil {
 		return h.addSRProxy(sidAddr, localSID)
 	}
@@ -84,9 +84,9 @@ func (h *SRv6VppHandler) addDelLocalSid(deletion bool, localSID *srv6.LocalSID) 
 		IsDel:    boolToUint(deletion),
 		Localsid: sr.Srv6Sid{Addr: []byte(sidAddr)},
 	}
-	req.FibTable = localSID.InstallationVrfId // where to install localsid entry/from where to remove installed localsid entry
 	if !deletion {
-		if err := h.writeEndFunction(req, localSID); err != nil {
+		req.FibTable = localSID.InstallationVrfId // where to install localsid entry
+		if err := h.writeEndFunction(req, sidAddr, localSID); err != nil {
 			return err
 		}
 	}
@@ -202,7 +202,7 @@ func (h *SRv6VppHandler) endFunction(localSID *srv6.LocalSID) string {
 	}
 }
 
-func (h *SRv6VppHandler) writeEndFunction(req *sr.SrLocalsidAddDel, localSID *srv6.LocalSID) error {
+func (h *SRv6VppHandler) writeEndFunction(req *sr.SrLocalsidAddDel, sidAddr net.IP, localSID *srv6.LocalSID) error {
 	switch ef := localSID.EndFunction.(type) {
 	case *srv6.LocalSID_BaseEndFunction:
 		req.Behavior = BehaviorEnd
@@ -271,7 +271,7 @@ func (h *SRv6VppHandler) writeEndFunction(req *sr.SrLocalsidAddDel, localSID *sr
 		req.Behavior = BehaviorDT6
 		req.SwIfIndex = ef.EndFunction_DT6.VrfId
 	case nil:
-		return fmt.Errorf("End function not set. Please configure end function for local SID %v ", localSID.GetSid())
+		return fmt.Errorf("End function not set. Please configure end function for local SID %v ", sidAddr)
 	default:
 		return fmt.Errorf("unknown end function (model link type %T)", ef) // EndFunction_AD is handled elsewhere
 	}

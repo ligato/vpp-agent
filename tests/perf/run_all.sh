@@ -1,24 +1,16 @@
 #!/bin/bash
 
-set -euo pipefail
+#set -x
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-cd $SCRIPT_DIR
+cd ${SCRIPT_DIR}/grpc-perf
 
-function run() {
-	test="$1"
-	typ="${2-basic}"
-	requests="${3-${REQUESTS-1000}}"
+source "./test.sh"
 
-	export DEBUG_ENABLED=y
-	export REPORT_DIR="${reports}/${test}_${requests}_${typ}"
-	./perf_test.sh "$test" "$requests"
-}
+run_test 500	
+run_test 1000
+run_test 2000
+run_test 4000
+run_test 8000
 
-export reports="${SCRIPT_DIR}/reports"
-
-run "grpc-perf"
-
-export CLIENT_PARAMS="--with-ips"
-run "grpc-perf" "ips"

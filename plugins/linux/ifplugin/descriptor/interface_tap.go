@@ -27,10 +27,8 @@ import (
 
 // createTAPToVPP moves Linux-side of the VPP-TAP interface to the destination namespace
 // and sets the requested host name, IP addresses, etc.
-func (d *InterfaceDescriptor) createTAPToVPP(
-	nsCtx nslinuxcalls.NamespaceMgmtCtx, key string, linuxIf *interfaces.Interface,
-) (
-	md *ifaceidx.LinuxIfMetadata, err error) {
+func (d *InterfaceDescriptor) createTAPToVPP(nsCtx nslinuxcalls.NamespaceMgmtCtx, key string,
+	linuxIf *interfaces.Interface) (metadata *ifaceidx.LinuxIfMetadata, err error) {
 
 	// determine TAP interface name as set by VPP ifplugin
 	vppTapName := linuxIf.GetTap().GetVppTapIfName()
@@ -47,8 +45,7 @@ func (d *InterfaceDescriptor) createTAPToVPP(
 	agentPrefix := d.serviceLabel.GetAgentPrefix()
 
 	// add alias to associate TAP with the logical name and VPP-TAP reference
-	alias := agentPrefix + getTapAlias(linuxIf, vppTapHostName)
-	err = d.ifHandler.SetInterfaceAlias(vppTapHostName, alias)
+	err = d.ifHandler.SetInterfaceAlias(vppTapHostName, agentPrefix+getTapAlias(linuxIf, vppTapHostName))
 	if err != nil {
 		d.log.Error(err)
 		return nil, err
@@ -70,7 +67,8 @@ func (d *InterfaceDescriptor) createTAPToVPP(
 	defer revert()
 
 	// rename from temporary host name to the request host name
-	if err := d.ifHandler.RenameInterface(vppTapHostName, hostName); err != nil {
+	d.ifHandler.RenameInterface(vppTapHostName, hostName)
+	if err != nil {
 		d.log.Error(err)
 		return nil, err
 	}
@@ -81,12 +79,13 @@ func (d *InterfaceDescriptor) createTAPToVPP(
 		d.log.Error(err)
 		return nil, err
 	}
-
-	return &ifaceidx.LinuxIfMetadata{
+	metadata = &ifaceidx.LinuxIfMetadata{
 		VPPTapName:   vppTapName,
 		Namespace:    linuxIf.Namespace,
 		LinuxIfIndex: link.Attrs().Index,
-	}, nil
+	}
+
+	return metadata, nil
 }
 
 // deleteAutoTAP returns TAP interface back to the default namespace and renames

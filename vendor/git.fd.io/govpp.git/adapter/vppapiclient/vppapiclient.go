@@ -40,7 +40,7 @@ import (
 var (
 	// MaxWaitReady defines maximum duration before waiting for shared memory
 	// segment times out
-	MaxWaitReady = time.Second * 10
+	MaxWaitReady = time.Second * 15
 )
 
 const (
@@ -148,11 +148,12 @@ func (a *vppClient) WaitReady() error {
 		path = filepath.Join(shmDir, a.shmPrefix+"-"+vppShmFile)
 	}
 
-	// check if file already exists
+	// check if file at the path already exists
 	if _, err := os.Stat(path); err == nil {
-		return nil // file exists, we are ready
+		// file exists, we are ready
+		return nil
 	} else if !os.IsNotExist(err) {
-		return err // some other error occurred
+		return err
 	}
 
 	// file does not exist, start watching folder
@@ -167,19 +168,18 @@ func (a *vppClient) WaitReady() error {
 		return err
 	}
 
-	timeout := time.NewTimer(MaxWaitReady)
 	for {
 		select {
-		case <-timeout.C:
-			return fmt.Errorf("timeout waiting (%s) for shm file: %s", MaxWaitReady, path)
-
+		case <-time.After(MaxWaitReady):
+			return fmt.Errorf("waiting for shared memory segment timed out (%s)", MaxWaitReady)
 		case e := <-watcher.Errors:
 			return e
-
 		case ev := <-watcher.Events:
-			if ev.Name == path && (ev.Op&fsnotify.Create) == fsnotify.Create {
-				// file created, we are ready
-				return nil
+			if ev.Name == path {
+				if (ev.Op & fsnotify.Create) == fsnotify.Create {
+					// file was created, we are ready
+					return nil
+				}
 			}
 		}
 	}

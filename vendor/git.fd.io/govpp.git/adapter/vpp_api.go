@@ -18,15 +18,8 @@ import (
 	"errors"
 )
 
-const (
-	// DefaultBinapiSocket defines a default socket file path for VPP binary API.
-	DefaultBinapiSocket = "/run/vpp-api.sock"
-)
-
-var (
-	// ErrNotImplemented is an error returned when missing implementation.
-	ErrNotImplemented = errors.New("not implemented for this OS")
-)
+// ErrNotImplemented is an error returned when missing implementation.
+var ErrNotImplemented = errors.New("not implemented for this OS")
 
 // MsgCallback defines func signature for message callback.
 type MsgCallback func(msgID uint16, data []byte)

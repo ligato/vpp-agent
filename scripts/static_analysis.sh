@@ -24,5 +24,4 @@ gometalinter \
 	--exclude="don't use an underscore in package name" \
 	--exclude="comment" \
 	--exclude="returns unexported" \
-	--exclude="block ends with a return statement" \
 	./...

@@ -165,7 +165,9 @@ func (ctx *TestCtx) MockReplies(dataList []*HandleReplies) {
 				sendControlPing = dataMock.Ping
 				if len(dataMock.Messages) > 0 {
 					log.DefaultLogger().Infof(" MOCK HANDLER: mocking %d messages", len(dataMock.Messages))
-					ctx.MockVpp.MockReply(dataMock.Messages...)
+					for _, msg := range dataMock.Messages {
+						ctx.MockVpp.MockReply(msg)
+					}
 					return nil, 0, false
 				}
 				if dataMock.Message == nil {

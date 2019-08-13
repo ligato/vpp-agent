@@ -21,12 +21,12 @@ import (
 	govppmock "git.fd.io/govpp.git/adapter/mock"
 )
 
-// NewVppAdapter returns mock adapter for VPP binary API.
+// NewVppAdapter returns mock adapter, used for building without vppapiclient library.
 func NewVppAdapter(shmPrefix string, useShm bool) adapter.VppAPI {
 	return govppmock.NewVppAdapter()
 }
 
-// NewStatsAdapter returns mock adapter for VPP stats API.
+// NewStatsAdapter returns stats vpp api adapter, used for reading statistics with vppapiclient library.
 func NewStatsAdapter(socketName string) adapter.StatsAPI {
 	return govppmock.NewStatsAdapter()
 }

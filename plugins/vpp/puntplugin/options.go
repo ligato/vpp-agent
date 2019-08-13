@@ -16,7 +16,6 @@ package puntplugin
 
 import (
 	"github.com/ligato/cn-infra/logging"
-
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 	"github.com/ligato/vpp-agent/plugins/kvscheduler"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin"

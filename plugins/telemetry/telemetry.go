@@ -17,7 +17,6 @@ package telemetry
 import (
 	"context"
 	"fmt"
-	"os"
 	"sync"
 	"time"
 
@@ -31,10 +30,14 @@ import (
 
 	_ "github.com/ligato/vpp-agent/plugins/telemetry/vppcalls/vpp1901"
 	_ "github.com/ligato/vpp-agent/plugins/telemetry/vppcalls/vpp1904"
-	_ "github.com/ligato/vpp-agent/plugins/telemetry/vppcalls/vpp1908"
 )
 
-var debug = os.Getenv("DEBUG_TELEMETRY") != ""
+const (
+	// default period between updates
+	defaultUpdatePeriod = time.Second * 30
+	// minimum period between updates
+	minimumUpdatePeriod = time.Second * 1
+)
 
 // Plugin registers Telemetry Plugin
 type Plugin struct {
@@ -47,7 +50,6 @@ type Plugin struct {
 	// From config file
 	updatePeriod time.Duration
 	disabled     bool
-	skipped      map[string]bool
 
 	wg   sync.WaitGroup
 	quit chan struct{}
@@ -64,7 +66,6 @@ type Deps struct {
 // Init initializes Telemetry Plugin
 func (p *Plugin) Init() error {
 	p.quit = make(chan struct{})
-	p.skipped = make(map[string]bool, 0)
 
 	// Telemetry config file
 	config, err := p.loadConfig()
@@ -86,10 +87,6 @@ func (p *Plugin) Init() error {
 		} else if config.PollingInterval > 0 {
 			p.Log.Warnf("polling period has to be at least %s, using default: %v",
 				minimumUpdatePeriod, defaultUpdatePeriod)
-		}
-		// Store map of skipped metrics
-		for _, skip := range config.Skipped {
-			p.skipped[skip] = true
 		}
 	}
 	// This serves as fallback if the config was not found or if the value is not set in config.

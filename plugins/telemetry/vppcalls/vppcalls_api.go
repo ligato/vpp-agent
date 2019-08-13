@@ -19,8 +19,7 @@ import (
 
 	govppapi "git.fd.io/govpp.git/api"
 	log "github.com/ligato/cn-infra/logging"
-
-	"github.com/ligato/vpp-agent/plugins/govppmux/vppcalls"
+	"github.com/ligato/vpp-agent/plugins/govppmux"
 )
 
 var Versions = map[string]HandlerVersion{}
@@ -36,20 +35,11 @@ type TelemetryVppAPI interface {
 	GetNodeCounters(context.Context) (*NodeCounterInfo, error)
 	GetRuntimeInfo(context.Context) (*RuntimeInfo, error)
 	GetBuffersInfo(context.Context) (*BuffersInfo, error)
-	GetInterfaceStats(context.Context) (*govppapi.InterfaceStats, error)
 }
 
 // MemoryInfo contains values returned from 'show memory'
 type MemoryInfo struct {
 	Threads []MemoryThread `json:"threads"`
-}
-
-// GetThreads is safe getter for threads,
-func (i *MemoryInfo) GetThreads() []MemoryThread {
-	if i == nil {
-		return nil
-	}
-	return i.Threads
 }
 
 // MemoryThread represents single thread memory counters
@@ -72,14 +62,6 @@ type NodeCounterInfo struct {
 	Counters []NodeCounter `json:"counters"`
 }
 
-// GetCounters is safe getter for counters,
-func (i *NodeCounterInfo) GetCounters() []NodeCounter {
-	if i == nil {
-		return nil
-	}
-	return i.Counters
-}
-
 // NodeCounter represents single node counter
 type NodeCounter struct {
 	Value uint64 `json:"value"`
@@ -90,14 +72,6 @@ type NodeCounter struct {
 // RuntimeInfo contains values returned from 'show runtime'
 type RuntimeInfo struct {
 	Threads []RuntimeThread `json:"threads"`
-}
-
-// GetThreads is safe getter for threads,
-func (i *RuntimeInfo) GetThreads() []RuntimeThread {
-	if i == nil {
-		return nil
-	}
-	return i.Threads
 }
 
 // RuntimeThread represents single runtime thread
@@ -133,14 +107,6 @@ type BuffersInfo struct {
 	Items []BuffersItem `json:"items"`
 }
 
-// GetItems is safe getter for items,
-func (i *BuffersInfo) GetItems() []BuffersItem {
-	if i == nil {
-		return nil
-	}
-	return i.Items
-}
-
 // BuffersItem represents single buffers item
 type BuffersItem struct {
 	ThreadID uint   `json:"thread_id"`
@@ -153,20 +119,19 @@ type BuffersItem struct {
 	NumFree  uint64 `json:"num_free"`
 }
 
-func CompatibleTelemetryHandler(ch govppapi.Channel, vpp govppapi.StatsProvider) TelemetryVppAPI {
-	vpe := vppcalls.CompatibleVpeHandler(ch)
-	info, err := vpe.GetVersionInfo()
+func CompatibleTelemetryHandler(ch govppapi.Channel, vpp govppmux.StatsAPI) TelemetryVppAPI {
+	status, err := vpp.VPPInfo()
 	if err != nil {
-		log.Warnf("retrieving VPP info failed: %v", err)
+		log.Warnf("retrieving VPP status failed: %v", err)
 		return nil
 	}
-	if ver := info.Release(); ver != "" {
-		log.Debug("telemetry checking release: ", ver)
+	if status.Connected {
+		ver := status.GetReleaseVersion()
 		if h, ok := Versions[ver]; ok {
 			if err := ch.CheckCompatiblity(h.Msgs...); err != nil {
-				log.Debugf("telemetry version %s not compatible: %v", ver, err)
+				log.Debugf("version %s not compatible", ver)
 			}
-			log.Debug("telemetry found compatible release: ", ver)
+			log.Debug("found compatible version: ", ver)
 			return h.New(ch, vpp)
 		}
 	}

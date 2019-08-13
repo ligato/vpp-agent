@@ -24,12 +24,12 @@ import (
 
 func init() {
 	var msgs []govppapi.Message
-	msgs = append(msgs, acl.AllMessages()...)
+	msgs = append(msgs, acl.Messages...)
 
 	vppcalls.Versions["vpp1901"] = vppcalls.HandlerVersion{
 		Msgs: msgs,
 		New: func(ch govppapi.Channel, ifIdx ifaceidx.IfaceMetadataIndex) vppcalls.ACLVppAPI {
-			return NewACLVppHandler(ch, ifIdx)
+			return NewACLVppHandler(ch, ch, ifIdx)
 		},
 	}
 }
@@ -37,12 +37,14 @@ func init() {
 // ACLVppHandler is accessor for acl-related vppcalls methods
 type ACLVppHandler struct {
 	callsChannel govppapi.Channel
+	dumpChannel  govppapi.Channel
 	ifIndexes    ifaceidx.IfaceMetadataIndex
 }
 
-func NewACLVppHandler(ch govppapi.Channel, ifIdx ifaceidx.IfaceMetadataIndex) *ACLVppHandler {
+func NewACLVppHandler(ch, dch govppapi.Channel, ifIdx ifaceidx.IfaceMetadataIndex) *ACLVppHandler {
 	return &ACLVppHandler{
 		callsChannel: ch,
+		dumpChannel:  dch,
 		ifIndexes:    ifIdx,
 	}
 }

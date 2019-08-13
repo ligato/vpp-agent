@@ -125,7 +125,9 @@ func (d *UnnumberedIfDescriptor) Dependencies(key string, unIntf *interfaces.Int
 	deps = []kvs.Dependency{
 		{
 			Label: unnumberedInterfaceHasIPDep,
-			Key:   interfaces.InterfaceWithIPKey(unIntf.InterfaceWithIp),
+			AnyOf: kvs.AnyOfDependency{
+				KeyPrefixes: []string{interfaces.InterfaceAddressPrefix(unIntf.InterfaceWithIp)},
+			},
 		},
 	}
 

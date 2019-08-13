@@ -21,7 +21,6 @@ import (
 	"strings"
 
 	"github.com/bennyscetbun/jsongo"
-	"github.com/sirupsen/logrus"
 )
 
 // top level objects
@@ -33,7 +32,6 @@ const (
 	objServices  = "services"
 	objAliases   = "aliases"
 	vlAPIVersion = "vl_api_version"
-	objOptions   = "options"
 )
 
 // various object fields
@@ -61,44 +59,27 @@ const (
 	serviceNoReply       = "null"
 )
 
-// field meta info
-const (
-	fieldMetaLimit = "limit"
-)
-
-// module options
-const (
-	versionOption = "version"
-)
-
 // parsePackage parses provided JSON data into objects prepared for code generation
 func parsePackage(ctx *context, jsonRoot *jsongo.JSONNode) (*Package, error) {
+	logf(" %s (version: %s) contains: %d services, %d messages, %d types, %d enums, %d unions, %d aliases",
+		ctx.packageName,
+		jsonRoot.Map(vlAPIVersion).Get(),
+		jsonRoot.Map(objServices).Len(),
+		jsonRoot.Map(objMessages).Len(),
+		jsonRoot.Map(objTypes).Len(),
+		jsonRoot.Map(objEnums).Len(),
+		jsonRoot.Map(objUnions).Len(),
+		jsonRoot.Map(objAliases).Len(),
+	)
+
 	pkg := Package{
-		Name:   ctx.packageName,
-		RefMap: make(map[string]string),
-	}
-
-	// parse CRC for API version
-	if crc := jsonRoot.At(vlAPIVersion); crc.GetType() == jsongo.TypeValue {
-		pkg.CRC = crc.Get().(string)
-	}
-
-	// parse version string
-	if opt := jsonRoot.Map(objOptions); opt.GetType() == jsongo.TypeMap {
-		if ver := opt.Map(versionOption); ver.GetType() == jsongo.TypeValue {
-			pkg.Version = ver.Get().(string)
-		}
-	}
-
-	logf("parsing package %s (version: %s, CRC: %s)", pkg.Name, pkg.Version, pkg.CRC)
-	logf(" consists of:")
-	for _, key := range jsonRoot.GetKeys() {
-		logf("  - %d %s", jsonRoot.At(key).Len(), key)
+		APIVersion: jsonRoot.Map(vlAPIVersion).Get().(string),
+		RefMap:     make(map[string]string),
 	}
 
 	// parse enums
 	enums := jsonRoot.Map(objEnums)
-	pkg.Enums = make([]Enum, 0)
+	pkg.Enums = make([]Enum, enums.Len())
 	for i := 0; i < enums.Len(); i++ {
 		enumNode := enums.At(i)
 
@@ -106,14 +87,8 @@ func parsePackage(ctx *context, jsonRoot *jsongo.JSONNode) (*Package, error) {
 		if err != nil {
 			return nil, err
 		}
-
-		enumApi := toApiType(enum.Name)
-		if _, ok := pkg.RefMap[enumApi]; ok {
-			logf("enum %v already known", enumApi)
-			continue
-		}
-		pkg.RefMap[enumApi] = enum.Name
-		pkg.Enums = append(pkg.Enums, *enum)
+		pkg.Enums[i] = *enum
+		pkg.RefMap[toApiType(enum.Name)] = enum.Name
 	}
 	// sort enums
 	sort.SliceStable(pkg.Enums, func(i, j int) bool {
@@ -123,22 +98,16 @@ func parsePackage(ctx *context, jsonRoot *jsongo.JSONNode) (*Package, error) {
 	// parse aliases
 	aliases := jsonRoot.Map(objAliases)
 	if aliases.GetType() == jsongo.TypeMap {
-		pkg.Aliases = make([]Alias, 0)
-		for _, key := range aliases.GetKeys() {
+		pkg.Aliases = make([]Alias, aliases.Len())
+		for i, key := range aliases.GetKeys() {
 			aliasNode := aliases.At(key)
 
 			alias, err := parseAlias(ctx, key.(string), aliasNode)
 			if err != nil {
 				return nil, err
 			}
-
-			aliasApi := toApiType(alias.Name)
-			if _, ok := pkg.RefMap[aliasApi]; ok {
-				logf("alias %v already known", aliasApi)
-				continue
-			}
-			pkg.RefMap[aliasApi] = alias.Name
-			pkg.Aliases = append(pkg.Aliases, *alias)
+			pkg.Aliases[i] = *alias
+			pkg.RefMap[toApiType(alias.Name)] = alias.Name
 		}
 	}
 	// sort aliases to ensure consistent order
@@ -148,7 +117,7 @@ func parsePackage(ctx *context, jsonRoot *jsongo.JSONNode) (*Package, error) {
 
 	// parse types
 	types := jsonRoot.Map(objTypes)
-	pkg.Types = make([]Type, 0)
+	pkg.Types = make([]Type, types.Len())
 	for i := 0; i < types.Len(); i++ {
 		typNode := types.At(i)
 
@@ -156,14 +125,8 @@ func parsePackage(ctx *context, jsonRoot *jsongo.JSONNode) (*Package, error) {
 		if err != nil {
 			return nil, err
 		}
-
-		typApi := toApiType(typ.Name)
-		if _, ok := pkg.RefMap[typApi]; ok {
-			logf("type %v already known", typApi)
-			continue
-		}
-		pkg.RefMap[typApi] = typ.Name
-		pkg.Types = append(pkg.Types, *typ)
+		pkg.Types[i] = *typ
+		pkg.RefMap[toApiType(typ.Name)] = typ.Name
 	}
 	// sort types
 	sort.SliceStable(pkg.Types, func(i, j int) bool {
@@ -172,7 +135,7 @@ func parsePackage(ctx *context, jsonRoot *jsongo.JSONNode) (*Package, error) {
 
 	// parse unions
 	unions := jsonRoot.Map(objUnions)
-	pkg.Unions = make([]Union, 0)
+	pkg.Unions = make([]Union, unions.Len())
 	for i := 0; i < unions.Len(); i++ {
 		unionNode := unions.At(i)
 
@@ -180,14 +143,8 @@ func parsePackage(ctx *context, jsonRoot *jsongo.JSONNode) (*Package, error) {
 		if err != nil {
 			return nil, err
 		}
-
-		unionApi := toApiType(union.Name)
-		if _, ok := pkg.RefMap[unionApi]; ok {
-			logf("union %v already known", unionApi)
-			continue
-		}
-		pkg.RefMap[unionApi] = union.Name
-		pkg.Unions = append(pkg.Unions, *union)
+		pkg.Unions[i] = *union
+		pkg.RefMap[toApiType(union.Name)] = union.Name
 	}
 	// sort unions
 	sort.SliceStable(pkg.Unions, func(i, j int) bool {
@@ -237,6 +194,46 @@ func parsePackage(ctx *context, jsonRoot *jsongo.JSONNode) (*Package, error) {
 	printPackage(&pkg)
 
 	return &pkg, nil
+}
+
+// printPackage prints all loaded objects for package
+func printPackage(pkg *Package) {
+	if len(pkg.Enums) > 0 {
+		logf("loaded %d enums:", len(pkg.Enums))
+		for k, enum := range pkg.Enums {
+			logf(" - enum #%d\t%+v", k, enum)
+		}
+	}
+	if len(pkg.Unions) > 0 {
+		logf("loaded %d unions:", len(pkg.Unions))
+		for k, union := range pkg.Unions {
+			logf(" - union #%d\t%+v", k, union)
+		}
+	}
+	if len(pkg.Types) > 0 {
+		logf("loaded %d types:", len(pkg.Types))
+		for _, typ := range pkg.Types {
+			logf(" - type: %q (%d fields)", typ.Name, len(typ.Fields))
+		}
+	}
+	if len(pkg.Messages) > 0 {
+		logf("loaded %d messages:", len(pkg.Messages))
+		for _, msg := range pkg.Messages {
+			logf(" - message: %q (%d fields)", msg.Name, len(msg.Fields))
+		}
+	}
+	if len(pkg.Services) > 0 {
+		logf("loaded %d services:", len(pkg.Services))
+		for _, svc := range pkg.Services {
+			var info string
+			if svc.Stream {
+				info = "(STREAM)"
+			} else if len(svc.Events) > 0 {
+				info = fmt.Sprintf("(EVENTS: %v)", svc.Events)
+			}
+			logf(" - service: %q -> %q %s", svc.RequestType, svc.ReplyType, info)
+		}
+	}
 }
 
 // parseEnum parses VPP binary API enum object from JSON node
@@ -294,9 +291,9 @@ func parseUnion(ctx *context, unionNode *jsongo.JSONNode) (*Union, error) {
 	if !ok {
 		return nil, fmt.Errorf("union name is %T, not a string", unionNode.At(0).Get())
 	}
-	var unionCRC string
-	if unionNode.At(unionNode.Len()-1).GetType() == jsongo.TypeMap {
-		unionCRC = unionNode.At(unionNode.Len() - 1).At(crcField).Get().(string)
+	unionCRC, ok := unionNode.At(unionNode.Len() - 1).At(crcField).Get().(string)
+	if !ok {
+		return nil, fmt.Errorf("union crc invalid or missing")
 	}
 
 	union := Union{
@@ -304,8 +301,8 @@ func parseUnion(ctx *context, unionNode *jsongo.JSONNode) (*Union, error) {
 		CRC:  unionCRC,
 	}
 
-	// loop through union fields, skip first (name)
-	for j := 1; j < unionNode.Len(); j++ {
+	// loop through union fields, skip first (name) and last (crc)
+	for j := 1; j < unionNode.Len()-1; j++ {
 		if unionNode.At(j).GetType() == jsongo.TypeArray {
 			fieldNode := unionNode.At(j)
 
@@ -331,9 +328,9 @@ func parseType(ctx *context, typeNode *jsongo.JSONNode) (*Type, error) {
 	if !ok {
 		return nil, fmt.Errorf("type name is %T, not a string", typeNode.At(0).Get())
 	}
-	var typeCRC string
-	if lastField := typeNode.At(typeNode.Len() - 1); lastField.GetType() == jsongo.TypeMap {
-		typeCRC = lastField.At(crcField).Get().(string)
+	typeCRC, ok := typeNode.At(typeNode.Len() - 1).At(crcField).Get().(string)
+	if !ok {
+		return nil, fmt.Errorf("type crc invalid or missing")
 	}
 
 	typ := Type{
@@ -341,8 +338,8 @@ func parseType(ctx *context, typeNode *jsongo.JSONNode) (*Type, error) {
 		CRC:  typeCRC,
 	}
 
-	// loop through type fields, skip first (name)
-	for j := 1; j < typeNode.Len(); j++ {
+	// loop through type fields, skip first (name) and last (crc)
+	for j := 1; j < typeNode.Len()-1; j++ {
 		if typeNode.At(j).GetType() == jsongo.TypeArray {
 			fieldNode := typeNode.At(j)
 
@@ -441,45 +438,27 @@ func parseField(ctx *context, field *jsongo.JSONNode) (*Field, error) {
 	if !ok {
 		return nil, fmt.Errorf("field name is %T, not a string", field.At(1).Get())
 	}
-
-	f := &Field{
-		Name: fieldName,
-		Type: fieldType,
-	}
-
+	var fieldLength float64
 	if field.Len() >= 3 {
-		if field.At(2).GetType() == jsongo.TypeValue {
-			fieldLength, ok := field.At(2).Get().(float64)
-			if !ok {
-				return nil, fmt.Errorf("field length is %T, not float64", field.At(2).Get())
-			}
-			f.Length = int(fieldLength)
-		} else if field.At(2).GetType() == jsongo.TypeMap {
-			fieldMeta := field.At(2)
-
-			for _, key := range fieldMeta.GetKeys() {
-				metaNode := fieldMeta.At(key)
-
-				switch metaName := key.(string); metaName {
-				case fieldMetaLimit:
-					f.Meta.Limit = int(metaNode.Get().(float64))
-				default:
-					logrus.Warnf("unknown meta info (%s) for field (%s)", metaName, fieldName)
-				}
-			}
-		} else {
-			return nil, errors.New("invalid JSON for field specified")
+		fieldLength, ok = field.At(2).Get().(float64)
+		if !ok {
+			return nil, fmt.Errorf("field length is %T, not float64", field.At(2).Get())
 		}
 	}
+	var fieldLengthFrom string
 	if field.Len() >= 4 {
-		fieldLengthFrom, ok := field.At(3).Get().(string)
+		fieldLengthFrom, ok = field.At(3).Get().(string)
 		if !ok {
 			return nil, fmt.Errorf("field length from is %T, not a string", field.At(3).Get())
 		}
-		f.SizeFrom = fieldLengthFrom
 	}
 
-	return f, nil
+	return &Field{
+		Name:     fieldName,
+		Type:     fieldType,
+		Length:   int(fieldLength),
+		SizeFrom: fieldLengthFrom,
+	}, nil
 }
 
 // parseService parses VPP binary API service object from JSON node
@@ -489,7 +468,7 @@ func parseService(ctx *context, svcName string, svcNode *jsongo.JSONNode) (*Serv
 	}
 
 	svc := Service{
-		Name:        svcName,
+		Name:        ctx.moduleName + "." + svcName,
 		RequestType: svcName,
 	}
 
@@ -524,7 +503,7 @@ func parseService(ctx *context, svcName string, svcNode *jsongo.JSONNode) (*Serv
 	if len(svc.Events) > 0 {
 		// EVENT service
 		if !strings.HasPrefix(svc.RequestType, serviceEventPrefix) {
-			logrus.Debugf("unusual EVENTS service: %+v\n"+
+			log.Debugf("unusual EVENTS service: %+v\n"+
 				"- events service %q does not have %q prefix in request.",
 				svc, svc.Name, serviceEventPrefix)
 		}
@@ -532,7 +511,7 @@ func parseService(ctx *context, svcName string, svcNode *jsongo.JSONNode) (*Serv
 		// STREAM service
 		if !strings.HasSuffix(svc.RequestType, serviceDumpSuffix) ||
 			!strings.HasSuffix(svc.ReplyType, serviceDetailsSuffix) {
-			logrus.Debugf("unusual STREAM service: %+v\n"+
+			log.Debugf("unusual STREAM service: %+v\n"+
 				"- stream service %q does not have %q suffix in request or reply does not have %q suffix.",
 				svc, svc.Name, serviceDumpSuffix, serviceDetailsSuffix)
 		}
@@ -540,7 +519,7 @@ func parseService(ctx *context, svcName string, svcNode *jsongo.JSONNode) (*Serv
 		// REQUEST service
 		// some messages might have `null` reply (for example: memclnt)
 		if !strings.HasSuffix(svc.ReplyType, serviceReplySuffix) {
-			logrus.Debugf("unusual REQUEST service: %+v\n"+
+			log.Debugf("unusual REQUEST service: %+v\n"+
 				"- service %q does not have %q suffix in reply.",
 				svc, svc.Name, serviceReplySuffix)
 		}

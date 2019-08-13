@@ -17,7 +17,6 @@ package vppcalls
 import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vrfidx"
 
 	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
@@ -30,7 +29,6 @@ type L3VppAPI interface {
 	RouteVppAPI
 	IPNeighVppAPI
 	VrfTableVppAPI
-	DHCPProxyAPI
 }
 
 // ArpDetails holds info about ARP entry as a proto model
@@ -42,27 +40,6 @@ type ArpDetails struct {
 // ArpMeta contains interface index of the ARP interface
 type ArpMeta struct {
 	SwIfIndex uint32
-}
-
-// ArpVppAPI provides methods for managing ARP entries
-type DHCPProxyAPI interface {
-	DHCPProxyRead
-
-	// CreateDHCPProxy creates dhcp proxy according to provided input
-	CreateDHCPProxy(entry *l3.DHCPProxy) error
-	// DeleteDHCPProxy deletes created dhcp proxy
-	DeleteDHCPProxy(entry *l3.DHCPProxy) error
-}
-
-// DHCPProxyRead provides read methods for routes
-type DHCPProxyRead interface {
-	// DumpDHCPProxy returns configured DHCP proxy
-	DumpDHCPProxy() ([]*DHCPProxyDetails, error)
-}
-
-// DHCPProxyDetails holds info about DHCP proxy entry as a proto model
-type DHCPProxyDetails struct {
-	DHCPProxy *l3.DHCPProxy
 }
 
 // ArpVppAPI provides methods for managing ARP entries
@@ -200,13 +177,12 @@ var Versions = map[string]HandlerVersion{}
 
 type HandlerVersion struct {
 	Msgs []govppapi.Message
-	New  func(govppapi.Channel, ifaceidx.IfaceMetadataIndex, vrfidx.VRFMetadataIndex, logging.Logger) L3VppAPI
+	New  func(govppapi.Channel, ifaceidx.IfaceMetadataIndex, logging.Logger) L3VppAPI
 }
 
 func CompatibleL3VppHandler(
 	ch govppapi.Channel,
 	ifIdx ifaceidx.IfaceMetadataIndex,
-	vrfIdx vrfidx.VRFMetadataIndex,
 	log logging.Logger,
 ) L3VppAPI {
 	for ver, h := range Versions {
@@ -215,7 +191,7 @@ func CompatibleL3VppHandler(
 			continue
 		}
 		log.Debug("found compatible version:", ver)
-		return h.New(ch, ifIdx, vrfIdx, log)
+		return h.New(ch, ifIdx, log)
 	}
 	panic("no compatible version available")
 }

@@ -28,7 +28,7 @@ import (
 
 func init() {
 	var msgs []govppapi.Message
-	msgs = append(msgs, ipsec.AllMessages()...)
+	msgs = append(msgs, ipsec.Messages...)
 
 	vppcalls.Versions["vpp1904"] = vppcalls.HandlerVersion{
 		Msgs: msgs,

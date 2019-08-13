@@ -18,8 +18,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/ligato/cn-infra/idxmap"
-
 	"github.com/pkg/errors"
 
 	"github.com/ligato/cn-infra/logging"
@@ -27,7 +25,6 @@ import (
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls"
-	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vrfidx"
 )
 
 const (
@@ -65,8 +62,6 @@ func NewVrfTableDescriptor(
 		ValueTypeName:      l3.ModelVrfTable.ProtoName(),
 		KeySelector:        l3.ModelVrfTable.IsKeyValid,
 		KeyLabel:           l3.ModelVrfTable.StripKeyPrefix,
-		WithMetadata:       true,
-		MetadataMapFactory: ctx.MetadataFactory,
 		ValueComparator:    ctx.EquivalentVrfTables,
 		Validate:           ctx.Validate,
 		Create:             ctx.Create,
@@ -84,11 +79,6 @@ func (d *VrfTableDescriptor) EquivalentVrfTables(key string, oldVrfTable, newVrf
 	return true
 }
 
-// MetadataFactory is a factory for index-map customized for VRFs.
-func (d *VrfTableDescriptor) MetadataFactory() idxmap.NamedMappingRW {
-	return vrfidx.NewVRFIndex(d.log, "vpp-vrf-index")
-}
-
 // Validate validates configuration of VPP VRF table.
 func (d *VrfTableDescriptor) Validate(key string, vrfTable *l3.VrfTable) (err error) {
 	if len(vrfTable.Label) > labelLengthLimit {
@@ -98,7 +88,7 @@ func (d *VrfTableDescriptor) Validate(key string, vrfTable *l3.VrfTable) (err er
 }
 
 // Create adds VPP VRF table.
-func (d *VrfTableDescriptor) Create(key string, vrfTable *l3.VrfTable) (metadata *vrfidx.VRFMetadata, err error) {
+func (d *VrfTableDescriptor) Create(key string, vrfTable *l3.VrfTable) (metadata interface{}, err error) {
 	if vrfTable.Id == 0 {
 		// nothing to do, automatically created by VPP
 	}
@@ -107,17 +97,11 @@ func (d *VrfTableDescriptor) Create(key string, vrfTable *l3.VrfTable) (metadata
 		return nil, err
 	}
 
-	// fill the metadata
-	metadata = &vrfidx.VRFMetadata{
-		Index:    vrfTable.Id,
-		Protocol: vrfTable.Protocol,
-	}
-
-	return metadata, nil
+	return nil, nil
 }
 
 // Delete removes VPP VRF table.
-func (d *VrfTableDescriptor) Delete(key string, vrfTable *l3.VrfTable, metadata *vrfidx.VRFMetadata) error {
+func (d *VrfTableDescriptor) Delete(key string, vrfTable *l3.VrfTable, metadata interface{}) error {
 	if vrfTable.Id == 0 {
 		// nothing to do, VRF ID=0 always exists
 	}
@@ -144,12 +128,8 @@ func (d *VrfTableDescriptor) Retrieve(correlate []adapter.VrfTableKVWithMetadata
 			origin = kvs.FromNB
 		}
 		retrieved = append(retrieved, adapter.VrfTableKVWithMetadata{
-			Key:   l3.VrfTableKey(table.Id, table.Protocol),
-			Value: table,
-			Metadata: &vrfidx.VRFMetadata{
-				Index:    table.Id,
-				Protocol: table.Protocol,
-			},
+			Key:    l3.VrfTableKey(table.Id, table.Protocol),
+			Value:  table,
 			Origin: origin,
 		})
 	}

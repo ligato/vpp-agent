@@ -4,72 +4,47 @@ sudo: required
 
 language: go
 go:
-  - "1.12.x"
+  - "1.11.x"
+
+addons:
+  apt:
+    packages:
+      - npm
 
 go_import_path: github.com/ligato/vpp-agent
 
-services:
-  - docker
-
 git:
-  depth: 5
+  depth: 10
   submodules: false
 
 cache:
   directories:
-    - ${HOME}/.cache
+    - $HOME/.cache/go-build
+    - $HOME/build-cache
+    - $HOME/.npm
+    - $(npm config get prefix)/lib/node_modules
 
-install: true
+env:
+  - GO_BUILD_TAGS=mockvpp
 
-stages:
-  - Check
-  - Test
-  - Build
-  - Integration
+before_install:
+  - make travis
+  - make get-linkcheck
+  - make get-linters
+  - make get-dep
+  - go get github.com/mattn/goveralls
 
-jobs:
-  include:
-    - stage: Check
-      language: shell
-      name: "Check formatting"
-      addons:
-        apt:
-          packages:
-            - npm
-      script:
-        - make yamllint
-        - make check-links || true
-    - name: "Go dependency check"
-      script: make dep-check
+script:
+  - make yamllint
+  - make check-links || true
+  - make lint
+  - make dep-check
+  - make verify-binapi
+  - make
+  - make test-cover
 
-    - stage: Test
-      name: "Code linter"
-      script: make lint
-    - name: "Unit tests"
-      before_script:
-        - go get github.com/mattn/goveralls
-      script: make test-cover
-      after_success:
-        - goveralls -coverprofile=/tmp/coverage.out -service=travis-ci
-
-    - stage: Build
-      script:
-        - make cmd
-        - make examples
-
-    - stage: Integration
-      env: VPP_VERSION=1904
-      script:
-        - make verify-binapi
-        - make integration-tests
-    - env: VPP_VERSION=1908
-      script:
-        - make verify-binapi
-        - make integration-tests
-    - env: VPP_VERSION=1901
-      script:
-        - make verify-binapi
-        - make integration-tests
+after_success:
+  - goveralls -coverprofile=/tmp/coverage.out -service=travis-ci
 
 notifications:
   slack:

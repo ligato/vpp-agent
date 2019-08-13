@@ -182,8 +182,9 @@ func (d *LocalSIDDescriptor) Create(key string, value *srv6.LocalSID) (metadata 
 
 // Delete removes Local SID from VPP using VPP's binary api
 func (d *LocalSIDDescriptor) Delete(key string, value *srv6.LocalSID, metadata interface{}) error {
-	if err := d.srHandler.DeleteLocalSid(value); err != nil {
-		return errors.Errorf("failed to delete local sid %s: %v", value.GetSid(), err)
+	sid, _ := ParseIPv6(value.GetSid()) // already validated
+	if err := d.srHandler.DeleteLocalSid(sid); err != nil {
+		return errors.Errorf("failed to delete local sid %s: %v", sid.String(), err)
 	}
 	return nil
 }

@@ -1,17 +1,3 @@
-// Copyright (c) 2019 Cisco and/or its affiliates.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at:
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 package socketclient
 
 import (
@@ -32,36 +18,22 @@ import (
 
 	"git.fd.io/govpp.git/adapter"
 	"git.fd.io/govpp.git/codec"
-	"git.fd.io/govpp.git/examples/binapi/memclnt"
+	"git.fd.io/govpp.git/examples/bin_api/memclnt"
 )
 
 const (
-	// DefaultSocketName is default VPP API socket file path.
-	DefaultSocketName = adapter.DefaultBinapiSocket
+	// DefaultSocketName is default VPP API socket file name
+	DefaultSocketName = "/run/vpp-api.sock"
 )
-
-const socketMissing = `
-------------------------------------------------------------
- VPP binary API socket file %s is missing!
-
-  - is VPP running with socket for binapi enabled?
-  - is the correct socket name configured?
-
- To enable it add following section to your VPP config:
-   socksvr {
-     default
-   }
-------------------------------------------------------------
-`
 
 var (
 	// DefaultConnectTimeout is default timeout for connecting
 	DefaultConnectTimeout = time.Second * 3
 	// DefaultDisconnectTimeout is default timeout for discconnecting
-	DefaultDisconnectTimeout = time.Millisecond * 100
+	DefaultDisconnectTimeout = time.Second
 	// MaxWaitReady defines maximum duration before waiting for socket file
 	// times out
-	MaxWaitReady = time.Second * 10
+	MaxWaitReady = time.Second * 15
 	// ClientName is used for identifying client in socket registration
 	ClientName = "govppsock"
 )
@@ -72,8 +44,7 @@ var (
 	// DebugMsgIds is global variable that determines debug mode for msg ids
 	DebugMsgIds = os.Getenv("DEBUG_GOVPP_SOCKMSG") != ""
 
-	// Log is global logger
-	Log = logger.New()
+	Log = logger.New() // global logger
 )
 
 // init initializes global logger, which logs debug level messages to stdout.
@@ -81,16 +52,14 @@ func init() {
 	Log.Out = os.Stdout
 	if Debug {
 		Log.Level = logger.DebugLevel
-		Log.Debug("govpp/socketclient: enabled debug mode")
 	}
 }
 
 type vppClient struct {
 	sockAddr string
-
-	conn   *net.UnixConn
-	reader *bufio.Reader
-	writer *bufio.Writer
+	conn     *net.UnixConn
+	reader   *bufio.Reader
+	writer   *bufio.Writer
 
 	connectTimeout    time.Duration
 	disconnectTimeout time.Duration
@@ -131,43 +100,42 @@ func (c *vppClient) SetDisconnectTimeout(t time.Duration) {
 
 // WaitReady checks socket file existence and waits for it if necessary
 func (c *vppClient) WaitReady() error {
-	// check if socket already exists
+	// check if file at the path already exists
 	if _, err := os.Stat(c.sockAddr); err == nil {
-		return nil // socket exists, we are ready
-	} else if !os.IsNotExist(err) {
-		return err // some other error occurred
+		return nil
+	} else if os.IsExist(err) {
+		return err
 	}
 
-	// socket does not exist, watch for it
+	// if not, watch for it
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		return err
 	}
 	defer func() {
 		if err := watcher.Close(); err != nil {
-			Log.Warnf("failed to close file watcher: %v", err)
+			Log.Errorf("failed to close file watcher: %v", err)
 		}
 	}()
 
-	// start directory watcher
+	// start watching directory
 	if err := watcher.Add(filepath.Dir(c.sockAddr)); err != nil {
 		return err
 	}
 
-	timeout := time.NewTimer(MaxWaitReady)
 	for {
 		select {
-		case <-timeout.C:
-			return fmt.Errorf("timeout waiting (%s) for socket file: %s", MaxWaitReady, c.sockAddr)
-
+		case <-time.After(MaxWaitReady):
+			return fmt.Errorf("waiting for socket file timed out (%s)", MaxWaitReady)
 		case e := <-watcher.Errors:
 			return e
-
 		case ev := <-watcher.Events:
 			Log.Debugf("watcher event: %+v", ev)
-			if ev.Name == c.sockAddr && (ev.Op&fsnotify.Create) == fsnotify.Create {
-				// socket created, we are ready
-				return nil
+			if ev.Name == c.sockAddr {
+				if (ev.Op & fsnotify.Create) == fsnotify.Create {
+					// socket was created, we are ready
+					return nil
+				}
 			}
 		}
 	}
@@ -179,20 +147,13 @@ func (c *vppClient) SetMsgCallback(cb adapter.MsgCallback) {
 }
 
 func (c *vppClient) Connect() error {
-	// check if socket exists
-	if _, err := os.Stat(c.sockAddr); os.IsNotExist(err) {
-		fmt.Fprintf(os.Stderr, socketMissing, c.sockAddr)
-		return fmt.Errorf("VPP API socket file %s does not exist", c.sockAddr)
-	} else if err != nil {
-		return fmt.Errorf("VPP API socket error: %v", err)
-	}
+	Log.Debugf("Connecting to: %v", c.sockAddr)
 
 	if err := c.connect(c.sockAddr); err != nil {
 		return err
 	}
 
 	if err := c.open(); err != nil {
-		c.disconnect()
 		return err
 	}
 
@@ -203,66 +164,25 @@ func (c *vppClient) Connect() error {
 	return nil
 }
 
-func (c *vppClient) Disconnect() error {
-	if c.conn == nil {
-		return nil
-	}
-	Log.Debugf("Disconnecting..")
-
-	close(c.quit)
-
-	if err := c.conn.CloseRead(); err != nil {
-		Log.Debugf("closing read failed: %v", err)
-	}
-
-	// wait for readerLoop to return
-	c.wg.Wait()
-
-	if err := c.close(); err != nil {
-		Log.Debugf("closing failed: %v", err)
-	}
-
-	if err := c.disconnect(); err != nil {
+func (c *vppClient) connect(sockAddr string) error {
+	addr, err := net.ResolveUnixAddr("unixpacket", sockAddr)
+	if err != nil {
+		Log.Debugln("ResolveUnixAddr error:", err)
 		return err
 	}
 
-	return nil
-}
-
-func (c *vppClient) connect(sockAddr string) error {
-	addr := &net.UnixAddr{Name: sockAddr, Net: "unix"}
-
-	Log.Debugf("Connecting to: %v", c.sockAddr)
-
-	conn, err := net.DialUnix("unix", nil, addr)
+	conn, err := net.DialUnix("unixpacket", nil, addr)
 	if err != nil {
-		// we try different type of socket for backwards compatbility with VPP<=19.04
-		if strings.Contains(err.Error(), "wrong type for socket") {
-			addr.Net = "unixpacket"
-			Log.Debugf("%s, retrying connect with type unixpacket", err)
-			conn, err = net.DialUnix("unixpacket", nil, addr)
-		}
-		if err != nil {
-			Log.Debugf("Connecting to socket %s failed: %s", addr, err)
-			return err
-		}
+		Log.Debugln("Dial error:", err)
+		return err
 	}
 
 	c.conn = conn
-	Log.Debugf("Connected to socket (local addr: %v)", c.conn.LocalAddr().(*net.UnixAddr))
-
 	c.reader = bufio.NewReader(c.conn)
 	c.writer = bufio.NewWriter(c.conn)
 
-	return nil
-}
+	Log.Debugf("Connected to socket: %v", addr)
 
-func (c *vppClient) disconnect() error {
-	Log.Debugf("Closing socket")
-	if err := c.conn.Close(); err != nil {
-		Log.Debugln("Closing socket failed:", err)
-		return err
-	}
 	return nil
 }
 
@@ -330,6 +250,34 @@ func (c *vppClient) open() error {
 	return nil
 }
 
+func (c *vppClient) Disconnect() error {
+	if c.conn == nil {
+		return nil
+	}
+	Log.Debugf("Disconnecting..")
+
+	close(c.quit)
+
+	// force readerLoop to timeout
+	if err := c.conn.SetReadDeadline(time.Now()); err != nil {
+		return err
+	}
+
+	// wait for readerLoop to return
+	c.wg.Wait()
+
+	if err := c.close(); err != nil {
+		return err
+	}
+
+	if err := c.conn.Close(); err != nil {
+		Log.Debugln("Close socket conn failed:", err)
+		return err
+	}
+
+	return nil
+}
+
 func (c *vppClient) close() error {
 	msgCodec := new(codec.MsgCodec)
 
@@ -344,7 +292,7 @@ func (c *vppClient) close() error {
 	// set non-0 context
 	msg[5] = deleteMsgContext
 
-	Log.Debugf("sending socklntDel (%d byes): % 0X", len(msg), msg)
+	Log.Debugf("sending socklntDel (%d byes): % 0X\n", len(msg), msg)
 	if err := c.write(msg); err != nil {
 		Log.Debugln("Write error: ", err)
 		return err
@@ -405,7 +353,7 @@ func (c *vppClient) SendMsg(context uint32, data []byte) error {
 	}
 	copy(data[2:], buf.Bytes())
 
-	Log.Debugf("sendMsg (%d) context=%v client=%d: data: % 02X", len(data), context, c.clientIndex, data)
+	Log.Debugf("SendMsg (%d) context=%v client=%d: data: % 02X", len(data), context, c.clientIndex, data)
 
 	if err := c.write(data); err != nil {
 		Log.Debugln("write error: ", err)
@@ -435,24 +383,26 @@ func (c *vppClient) write(msg []byte) error {
 		Log.Debugf(" - header sent (%d/%d): % 0X", n, len(header), header)
 	}
 
-	writerSize := c.writer.Size()
-	for i := 0; i <= len(msg)/writerSize; i++ {
-		x := i*writerSize + writerSize
-		if x > len(msg) {
-			x = len(msg)
-		}
-		Log.Debugf(" - x=%v i=%v len=%v mod=%v", x, i, len(msg), len(msg)/writerSize)
-		if n, err := c.writer.Write(msg[i*writerSize : x]); err != nil {
-			return err
-		} else {
-			Log.Debugf(" - msg sent x=%d (%d/%d): % 0X", x, n, len(msg), msg)
-		}
-	}
 	if err := c.writer.Flush(); err != nil {
 		return err
 	}
 
-	Log.Debugf(" -- write done")
+	for i := 0; i <= len(msg)/c.writer.Size(); i++ {
+		x := i*c.writer.Size() + c.writer.Size()
+		if x > len(msg) {
+			x = len(msg)
+		}
+		Log.Debugf("x=%v i=%v len=%v mod=%v\n", x, i, len(msg), len(msg)/c.writer.Size())
+		if n, err := c.writer.Write(msg[i*c.writer.Size() : x]); err != nil {
+			return err
+		} else {
+			Log.Debugf(" - msg sent x=%d (%d/%d): % 0X", x, n, len(msg), msg)
+		}
+		if err := c.writer.Flush(); err != nil {
+			return err
+		}
+
+	}
 
 	return nil
 }
@@ -464,11 +414,10 @@ type msgHeader struct {
 
 func (c *vppClient) readerLoop() {
 	defer c.wg.Done()
-	defer Log.Debugf("reader quit")
-
 	for {
 		select {
 		case <-c.quit:
+			Log.Debugf("reader quit")
 			return
 		default:
 		}
@@ -478,10 +427,9 @@ func (c *vppClient) readerLoop() {
 			if isClosedError(err) {
 				return
 			}
-			Log.Debugf("read failed: %v", err)
+			Log.Debugf("READ FAILED: %v", err)
 			continue
 		}
-
 		h := new(msgHeader)
 		if err := struc.Unpack(bytes.NewReader(msg), h); err != nil {
 			Log.Debugf("unpacking header failed: %v", err)
@@ -500,22 +448,22 @@ type msgheader struct {
 }
 
 func (c *vppClient) read() ([]byte, error) {
-	Log.Debug(" reading next msg..")
+	Log.Debug("reading next msg..")
 
 	header := make([]byte, 16)
 
 	n, err := io.ReadAtLeast(c.reader, header, 16)
 	if err != nil {
 		return nil, err
-	}
-	if n == 0 {
+	} else if n == 0 {
 		Log.Debugln("zero bytes header")
 		return nil, nil
-	} else if n != 16 {
-		Log.Debugf("invalid header data (%d): % 0X", n, header[:n])
+	}
+	if n != 16 {
+		Log.Debug("invalid header data (%d): % 0X", n, header[:n])
 		return nil, fmt.Errorf("invalid header (expected 16 bytes, got %d)", n)
 	}
-	Log.Debugf(" read header %d bytes: % 0X", n, header)
+	Log.Debugf(" - read header %d bytes: % 0X", n, header)
 
 	h := &msgheader{}
 	if err := struc.Unpack(bytes.NewReader(header[:]), h); err != nil {
@@ -530,7 +478,7 @@ func (c *vppClient) read() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	Log.Debugf(" - read msg %d bytes (%d buffered) % 0X", n, c.reader.Buffered(), msg[:n])
+	Log.Debugf(" - read msg %d bytes (%d buffered)", n, c.reader.Buffered())
 
 	if msgLen > n {
 		remain := msgLen - n
@@ -538,6 +486,7 @@ func (c *vppClient) read() ([]byte, error) {
 		view := msg[n:]
 
 		for remain > 0 {
+
 			nbytes, err := c.reader.Read(view)
 			if err != nil {
 				return nil, err
@@ -551,8 +500,6 @@ func (c *vppClient) read() ([]byte, error) {
 			view = view[nbytes:]
 		}
 	}
-
-	Log.Debugf(" -- read done (buffered: %d)", c.reader.Buffered())
 
 	return msg, nil
 }

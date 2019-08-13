@@ -26,28 +26,27 @@ import (
 	"github.com/ligato/cn-infra/agent"
 	"github.com/ligato/cn-infra/infra"
 	"github.com/ligato/cn-infra/logging/logrus"
+	"github.com/ligato/vpp-agent/api/configurator"
+	"github.com/ligato/vpp-agent/client"
+	"github.com/ligato/vpp-agent/cmd/vpp-agent/app"
+	"github.com/ligato/vpp-agent/examples/custom_model/pb"
+	"github.com/ligato/vpp-agent/plugins/orchestrator"
 	"github.com/namsral/flag"
 	"google.golang.org/grpc"
 
-	"github.com/ligato/vpp-agent/api/genericmanager"
 	"github.com/ligato/vpp-agent/api/models/linux"
-	linux_interfaces "github.com/ligato/vpp-agent/api/models/linux/interfaces"
-	linux_l3 "github.com/ligato/vpp-agent/api/models/linux/l3"
+	"github.com/ligato/vpp-agent/api/models/linux/interfaces"
+	"github.com/ligato/vpp-agent/api/models/linux/l3"
 	"github.com/ligato/vpp-agent/api/models/vpp"
 	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	vpp_l2 "github.com/ligato/vpp-agent/api/models/vpp/l2"
-	"github.com/ligato/vpp-agent/client"
-	"github.com/ligato/vpp-agent/client/remoteclient"
-	"github.com/ligato/vpp-agent/cmd/vpp-agent/app"
-	mymodel "github.com/ligato/vpp-agent/examples/custom_model/pb"
-	"github.com/ligato/vpp-agent/plugins/orchestrator"
+	"github.com/ligato/vpp-agent/api/models/vpp/l2"
 )
 
 var (
-	address    = flag.String("address", "127.0.0.1:9111", "address of GRPC server")
+	address    = flag.String("address", "172.17.0.2:9111", "address of GRPC server")
 	socketType = flag.String("socket-type", "tcp", "socket type [tcp, tcp4, tcp6, unix, unixpacket]")
 
-	dialTimeout = time.Second * 3
+	dialTimeout = time.Second * 2
 )
 
 var exampleFinished = make(chan struct{})
@@ -67,7 +66,7 @@ func main() {
 		agent.QuitOnClose(exampleFinished),
 	)
 	if err := a.Run(); err != nil {
-		log.Fatal(err)
+		log.Fatal()
 	}
 }
 
@@ -110,14 +109,12 @@ func (p *ExamplePlugin) AfterInit() (err error) {
 	go func() {
 		time.Sleep(time.Second)
 
-		// remoteclient
-		c := remoteclient.NewClientGRPC(genericmanager.NewGenericManagerClient(p.conn))
+		//c := remoteclient.NewClientGRPC(api.NewGenericManagerClient(conn))
+		c := client.LocalClient
+
 		demonstrateClient(c)
 
-		//time.Sleep(time.Second * 3)
-
-		// localclient
-		//demonstrateClient(client.LocalClient)
+		time.Sleep(time.Second * 3)
 
 		logrus.DefaultLogger().Info("Closing example")
 		close(exampleFinished)
@@ -140,50 +137,40 @@ func (p *ExamplePlugin) Close() error {
 }
 
 func demonstrateClient(c client.ConfigClient) {
-	tm := proto.TextMarshaler{
-		Compact:   true,
-		ExpandAny: true,
-	}
-	log.SetFlags(log.Lshortfile | log.Lmicroseconds)
-
+	// ==========================================
 	// List known models
-	fmt.Println("# ==========================================")
-	fmt.Println("# List known models..")
-	fmt.Println("# ==========================================")
+	// ==========================================
 	knownModels, err := c.KnownModels()
 	if err != nil {
-		log.Println("KnownModels failed:", err)
+		log.Fatalln(err)
 	}
-	fmt.Printf("listing %d models\n", len(knownModels))
+	fmt.Printf("Listing %d known models..\n", len(knownModels))
 	for _, model := range knownModels {
 		fmt.Printf(" - %v\n", model.String())
 	}
-	time.Sleep(time.Second * 1)
+	time.Sleep(time.Second * 3)
 
+	// ==========================================
 	// Resync config
-	fmt.Println("# ==========================================")
-	fmt.Println("# Requesting config resync..")
-	fmt.Println("# ==========================================")
-	customModel := &mymodel.MyModel{
-		Name: "TheModel",
-	}
+	// ==========================================
+	fmt.Printf("Requesting config resync..\n")
 	err = c.ResyncConfig(
 		memif1, memif2,
 		veth1, veth2,
-		routeX, routeCache,
-		customModel,
+		routeX,
 	)
 	if err != nil {
-		log.Println("ResyncConfig failed:", err)
+		log.Fatalln(err)
 	}
-	time.Sleep(time.Second * 2)
+	time.Sleep(time.Second * 5)
 
+	// ==========================================
 	// Change config
-	fmt.Println("# ==========================================")
-	fmt.Println("# Requesting config change..")
-	fmt.Println("# ==========================================")
+	// ==========================================
+	fmt.Printf("Requesting config change..\n")
 	memif1.Enabled = false
 	memif1.Mtu = 666
+
 	custom := &mymodel.MyModel{
 		Name:  "my1",
 		Mynum: 33,
@@ -195,35 +182,20 @@ func demonstrateClient(c client.ConfigClient) {
 	if err := req.Send(context.Background()); err != nil {
 		log.Fatalln(err)
 	}
-	time.Sleep(time.Second * 2)
+	time.Sleep(time.Second * 5)
 
+	// ==========================================
 	// Get config
-	fmt.Println("# ==========================================")
-	fmt.Println("# Retrieving config..")
-	fmt.Println("# ==========================================")
-	type config struct {
-		VPP      vpp.ConfigData
-		Linux    linux.ConfigData
-		MyModels []*mymodel.MyModel
+	// ==========================================
+	fmt.Printf("Retrieving config..\n")
+	data := &configurator.Config{
+		VppConfig:   &vpp.ConfigData{},
+		LinuxConfig: &linux.ConfigData{},
 	}
-	var cfg config
-	if err := c.GetConfig(&cfg.VPP, &cfg.Linux, &cfg); err != nil {
-		log.Println("GetConfig failed:", err)
+	if err := c.GetConfig(data.VppConfig, data.LinuxConfig); err != nil {
+		log.Fatalln(err)
 	}
-	fmt.Printf("Retrieved config:\n%+v\n", cfg)
-
-	// Dump state
-	fmt.Println("# ==========================================")
-	fmt.Println("# Dumping state..")
-	fmt.Println("# ==========================================")
-	states, err := c.DumpState()
-	if err != nil {
-		log.Println("DumpState failed:", err)
-	}
-	fmt.Printf("Dumping %d states\n", len(states))
-	for _, state := range states {
-		fmt.Printf(" - %v\n", tm.Text(state))
-	}
+	fmt.Printf("Retrieved config:\n%+v\n", proto.MarshalTextString(data))
 }
 
 // Dialer for unix domain socket
@@ -312,18 +284,6 @@ var (
 		DstNetwork:        "192.168.5.0/24",
 		OutgoingInterface: "myVETH1",
 		GwAddr:            "10.10.3.254",
-		Scope:             linux_l3.Route_GLOBAL,
-	}
-	routeCache = &linux.Route{
-		DstNetwork:        "10.10.5.0/24",
-		OutgoingInterface: "if10",
-		GwAddr:            "10.10.5.254",
-		Scope:             linux_l3.Route_GLOBAL,
-	}
-	routeBad = &linux.Route{
-		DstNetwork:        "192.168.6.0/24",
-		OutgoingInterface: "myVETH1",
-		GwAddr:            "10.10.3.2545",
 		Scope:             linux_l3.Route_GLOBAL,
 	}
 )

@@ -61,13 +61,8 @@ func (c *client) ResyncConfig(items ...proto.Message) error {
 }
 
 func (c *client) GetConfig(dsts ...interface{}) error {
-	// TODO: use dispatcher to get config
-	return nil
-}
 
-func (c *client) DumpState() ([]*api.StateItem, error) {
-	// TODO: use dispatcher to dump state
-	return nil, nil
+	return nil
 }
 
 func (c *client) ChangeRequest() ChangeRequest {

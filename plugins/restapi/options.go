@@ -16,7 +16,6 @@ package restapi
 
 import (
 	"github.com/ligato/cn-infra/rpc/rest"
-	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin"
 
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 	"github.com/ligato/vpp-agent/plugins/vpp/aclplugin"
@@ -37,7 +36,6 @@ func NewPlugin(opts ...Option) *Plugin {
 	p.VPPACLPlugin = &aclplugin.DefaultPlugin
 	p.VPPIfPlugin = &ifplugin.DefaultPlugin
 	p.VPPL2Plugin = &l2plugin.DefaultPlugin
-	p.VPPL3Plugin = &l3plugin.DefaultPlugin
 
 	for _, o := range opts {
 		o(p)

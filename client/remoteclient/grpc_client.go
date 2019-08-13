@@ -71,14 +71,7 @@ func (c *grpcClient) GetConfig(dsts ...interface{}) error {
 		return err
 	}
 
-	fmt.Printf("grpcClient.GetConfig: received %d items\n", len(resp.Items))
-	tm := proto.TextMarshaler{
-		Compact:   true,
-		ExpandAny: true,
-	}
-	for _, item := range resp.Items {
-		fmt.Printf(" - %v\n", tm.Text(item))
-	}
+	fmt.Printf("GetConfig: %+v\n", resp)
 
 	protos := map[string]proto.Message{}
 	for _, item := range resp.Items {
@@ -102,26 +95,6 @@ func (c *grpcClient) GetConfig(dsts ...interface{}) error {
 	util.PlaceProtos(protos, dsts...)
 
 	return nil
-}
-
-func (c *grpcClient) DumpState() ([]*client.StateItem, error) {
-	ctx := context.Background()
-
-	resp, err := c.remote.DumpState(ctx, &api.DumpStateRequest{})
-	if err != nil {
-		return nil, err
-	}
-
-	/*lfmt.Printf("grpcClient.DumpState: received %d items\n", len(resp.States))
-	tm := proto.TextMarshaler{
-		Compact:   true,
-		ExpandAny: true,
-	}
-	for _, item := range resp.States {
-		fmt.Printf(" - %v\n", tm.Text(item))
-	}*/
-
-	return resp.GetItems(), nil
 }
 
 type setConfigRequest struct {
@@ -154,10 +127,15 @@ func (r *setConfigRequest) Delete(items ...proto.Message) client.ChangeRequest {
 	for _, protoModel := range items {
 		item, err := models.MarshalItem(protoModel)
 		if err != nil {
-			r.err = err
-			return r
+			if err != nil {
+				r.err = err
+				return r
+			}
 		}
 		r.req.Updates = append(r.req.Updates, &api.UpdateItem{
+			/*Item: &api.Item{
+				Key: item.Key,
+			},*/
 			Item: item,
 		})
 	}

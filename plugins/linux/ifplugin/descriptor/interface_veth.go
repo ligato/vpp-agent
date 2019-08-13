@@ -26,10 +26,8 @@ import (
 
 // createVETH creates a new VETH pair if neither of VETH-ends are configured, or just
 // applies configuration to the unfinished VETH-end with a temporary host name.
-func (d *InterfaceDescriptor) createVETH(
-	nsCtx nslinuxcalls.NamespaceMgmtCtx, key string, linuxIf *interfaces.Interface,
-) (
-	md *ifaceidx.LinuxIfMetadata, err error) {
+func (d *InterfaceDescriptor) createVETH(nsCtx nslinuxcalls.NamespaceMgmtCtx, key string,
+	linuxIf *interfaces.Interface) (metadata *ifaceidx.LinuxIfMetadata, err error) {
 
 	// determine host/logical/temporary interface names
 	hostName := getHostIfName(linuxIf)
@@ -94,11 +92,12 @@ func (d *InterfaceDescriptor) createVETH(
 		d.log.Error(err)
 		return nil, err
 	}
-
-	return &ifaceidx.LinuxIfMetadata{
+	metadata = &ifaceidx.LinuxIfMetadata{
 		Namespace:    linuxIf.Namespace,
 		LinuxIfIndex: link.Attrs().Index,
-	}, nil
+	}
+
+	return metadata, nil
 }
 
 // deleteVETH either un-configures one VETH-end if the other end is still configured, or

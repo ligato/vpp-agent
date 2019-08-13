@@ -15,9 +15,6 @@
 package orchestrator
 
 import (
-	"fmt"
-	"strings"
-
 	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/status"
 	"github.com/ligato/cn-infra/logging"
@@ -43,21 +40,25 @@ func (s *genericManagerSvc) Capabilities(ctx context.Context, req *api.Capabilit
 
 func (s *genericManagerSvc) SetConfig(ctx context.Context, req *api.SetConfigRequest) (*api.SetConfigResponse, error) {
 	s.log.Debug("------------------------------")
-	s.log.Debugf("=> GenericMgr.SetConfig: %d items", len(req.Updates))
+	s.log.Debugf("=> Configurator.SetConfig: %d items", len(req.Updates))
 	s.log.Debug("------------------------------")
 	for _, item := range req.Updates {
 		s.log.Debugf(" - %v", item)
 	}
 	s.log.Debug("------------------------------")
 
+	if req.OverwriteAll {
+		ctx = kvs.WithResync(ctx, kvs.FullResync, true)
+	}
+
 	var ops = make(map[string]api.UpdateResult_Operation)
 	var kvPairs []KeyVal
 
 	for _, update := range req.Updates {
 		item := update.Item
-		if item == nil {
+		/*if item == nil {
 			return nil, status.Error(codes.InvalidArgument, "change item is nil")
-		}
+		}*/
 		var (
 			key string
 			val proto.Message
@@ -79,7 +80,7 @@ func (s *genericManagerSvc) SetConfig(ctx context.Context, req *api.SetConfigReq
 			if err != nil {
 				return nil, status.Error(codes.InvalidArgument, err.Error())
 			}
-			key = model.KeyPrefix() + item.Id.Name
+			key := model.KeyPrefix() + item.Id.Name
 			ops[key] = api.UpdateResult_DELETE
 		} else {
 			return nil, status.Error(codes.InvalidArgument, "ProtoItem has no key or val defined.")
@@ -91,30 +92,21 @@ func (s *genericManagerSvc) SetConfig(ctx context.Context, req *api.SetConfigReq
 	}
 
 	ctx = DataSrcContext(ctx, "grpc")
-	if req.OverwriteAll {
-		ctx = kvs.WithResync(ctx, kvs.FullResync, true)
-	}
-	results, err := s.dispatch.PushData(ctx, kvPairs)
+	kvErrs, err := s.dispatch.PushData(ctx, kvPairs)
 	if err != nil {
 		st := status.New(codes.FailedPrecondition, err.Error())
 		return nil, st.Err()
 	}
 
-	updateResults := []*api.UpdateResult{}
-	for _, res := range results {
-		var msg string
-		if details := res.Status.GetDetails(); len(details) > 0 {
-			msg = strings.Join(res.Status.GetDetails(), ", ")
-		} else {
-			msg = res.Status.GetError()
-		}
-		updateResults = append(updateResults, &api.UpdateResult{
-			Key: res.Key,
+	results := []*api.UpdateResult{}
+	for _, kvErr := range kvErrs {
+		results = append(results, &api.UpdateResult{
+			Key: kvErr.Key,
 			Status: &api.ItemStatus{
-				Status:  res.Status.State.String(),
-				Message: msg,
+				//State:   api.ItemStatus_FAILURE,
+				Message: kvErr.Error.Error(),
 			},
-			//Op: res.Status.LastOperation.String(),
+			Op: ops[kvErr.Key],
 		})
 	}
 
@@ -132,36 +124,19 @@ func (s *genericManagerSvc) SetConfig(ctx context.Context, req *api.SetConfigReq
 		}
 	*/
 
-	return &api.SetConfigResponse{Results: updateResults}, nil
+	return &api.SetConfigResponse{Results: results}, nil
 }
 
 func (s *genericManagerSvc) GetConfig(context.Context, *api.GetConfigRequest) (*api.GetConfigResponse, error) {
-	var items []*api.ConfigItem
+	var items []*api.GetConfigResponse_ConfigItem
 
-	for key, data := range s.dispatch.ListData() {
+	for _, data := range s.dispatch.ListData() {
 		item, err := models.MarshalItem(data)
 		if err != nil {
 			return nil, status.Error(codes.InvalidArgument, err.Error())
 		}
-		var itemStatus *api.ItemStatus
-		st, err := s.dispatch.GetStatus(key)
-		if err != nil {
-			s.log.Warnf("GetStatus failed: %v", err)
-		} else {
-			var msg string
-			if details := st.GetDetails(); len(details) > 0 {
-				msg = strings.Join(st.GetDetails(), ", ")
-			} else {
-				msg = st.GetError()
-			}
-			itemStatus = &api.ItemStatus{
-				Status:  st.GetState().String(),
-				Message: msg,
-			}
-		}
-		items = append(items, &api.ConfigItem{
-			Item:   item,
-			Status: itemStatus,
+		items = append(items, &api.GetConfigResponse_ConfigItem{
+			Item: item,
 		})
 	}
 
@@ -169,30 +144,7 @@ func (s *genericManagerSvc) GetConfig(context.Context, *api.GetConfigRequest) (*
 }
 
 func (s *genericManagerSvc) DumpState(context.Context, *api.DumpStateRequest) (*api.DumpStateResponse, error) {
-	pairs, err := s.dispatch.ListState()
-	if err != nil {
-		return nil, err
-	}
-
-	fmt.Printf("dispatch.ListState: %d pairs", len(pairs))
-	for key, val := range pairs {
-		fmt.Printf(" - [%s] %+v\n", key, proto.CompactTextString(val))
-	}
-
-	var states []*api.StateItem
-	for _, kv := range pairs {
-		item, err := models.MarshalItem(kv)
-		if err != nil {
-			return nil, status.Error(codes.InvalidArgument, err.Error())
-		}
-		meta := map[string]string{}
-		states = append(states, &api.StateItem{
-			Item:     item,
-			Metadata: meta,
-		})
-	}
-
-	return &api.DumpStateResponse{Items: states}, nil
+	return nil, status.Error(codes.Unimplemented, "Not implemented yet")
 }
 
 func (s *genericManagerSvc) Subscribe(req *api.SubscribeRequest, server api.GenericManager_SubscribeServer) error {

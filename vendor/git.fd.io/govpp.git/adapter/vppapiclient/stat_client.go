@@ -25,6 +25,7 @@ package vppapiclient
 import "C"
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"unsafe"
@@ -32,11 +33,21 @@ import (
 	"git.fd.io/govpp.git/adapter"
 )
 
+var (
+	ErrStatDirBusy  = errors.New("stat dir busy")
+	ErrStatDumpBusy = errors.New("stat dump busy")
+)
+
+var (
+	// DefaultStatSocket is the default path for the VPP stat socket file.
+	DefaultStatSocket = "/run/vpp/stats.sock"
+)
+
 // global VPP stats API client, library vppapiclient only supports
 // single connection at a time
 var globalStatClient *statClient
 
-// statClient is the default implementation of StatsAPI.
+// stubStatClient is the default implementation of StatsAPI.
 type statClient struct {
 	socketName string
 }
@@ -55,16 +66,9 @@ func (c *statClient) Connect() error {
 
 	var sockName string
 	if c.socketName == "" {
-		sockName = adapter.DefaultStatsSocket
+		sockName = DefaultStatSocket
 	} else {
 		sockName = c.socketName
-	}
-
-	if _, err := os.Stat(sockName); err != nil {
-		if os.IsNotExist(err) {
-			return fmt.Errorf("stats socket file %q does not exists, ensure that VPP is running with `statseg { ... }` section in config", sockName)
-		}
-		return fmt.Errorf("stats socket file error: %v", err)
 	}
 
 	rc := C.govpp_stat_connect(C.CString(sockName))
@@ -86,7 +90,7 @@ func (c *statClient) Disconnect() error {
 func (c *statClient) ListStats(patterns ...string) (stats []string, err error) {
 	dir := C.govpp_stat_segment_ls(convertStringSlice(patterns))
 	if dir == nil {
-		return nil, adapter.ErrStatDirBusy
+		return nil, ErrStatDirBusy
 	}
 	defer C.govpp_stat_segment_vec_free(unsafe.Pointer(dir))
 
@@ -103,13 +107,13 @@ func (c *statClient) ListStats(patterns ...string) (stats []string, err error) {
 func (c *statClient) DumpStats(patterns ...string) (stats []*adapter.StatEntry, err error) {
 	dir := C.govpp_stat_segment_ls(convertStringSlice(patterns))
 	if dir == nil {
-		return nil, adapter.ErrStatDirBusy
+		return nil, ErrStatDirBusy
 	}
 	defer C.govpp_stat_segment_vec_free(unsafe.Pointer(dir))
 
 	dump := C.govpp_stat_segment_dump(dir)
 	if dump == nil {
-		return nil, adapter.ErrStatDumpBusy
+		return nil, ErrStatDumpBusy
 	}
 	defer C.govpp_stat_segment_data_free(dump)
 

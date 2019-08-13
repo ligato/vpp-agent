@@ -23,7 +23,6 @@ import (
 	"text/template"
 
 	"github.com/gogo/protobuf/proto"
-
 	api "github.com/ligato/vpp-agent/api/genericmanager"
 )
 
@@ -87,8 +86,6 @@ func (m registeredModel) ParseKey(key string) (name string, valid bool) {
 	if name == key || (name == "" && m.nameFunc != nil) {
 		name = strings.TrimPrefix(key, m.modelPath)
 	}
-	// key had the prefix and also either
-	// non-empty name or no name template
 	if name != key && (name != "" || m.nameFunc == nil) {
 		// TODO: validate name?
 		return name, true
@@ -123,26 +120,6 @@ var (
 
 	debugRegister = strings.Contains(os.Getenv("DEBUG_MODELS"), "register")
 )
-
-// RegisteredModels returns all registered modules.
-func RegisteredModels() (models []*api.ModelInfo) {
-	for _, s := range registeredModels {
-		models = append(models, &api.ModelInfo{
-			Model: &api.Model{
-				Module:  s.Module,
-				Type:    s.Type,
-				Version: s.Version,
-			},
-			Info: map[string]string{
-				"nameTemplate": s.nameTemplate,
-				"protoName":    s.protoName,
-				"modelPath":    s.modelPath,
-				"keyPrefix":    s.keyPrefix,
-			},
-		})
-	}
-	return
-}
 
 // Register registers the protobuf message with given model specification.
 func Register(pb proto.Message, spec Spec, opts ...ModelOption) *registeredModel {
@@ -228,32 +205,8 @@ func NameTemplate(t string) NameFunc {
 }
 
 var funcMap = template.FuncMap{
-	"ip": func(s string) string {
-		ip := net.ParseIP(s)
-		if ip == nil {
-			return "<invalid>"
-		}
-		return ip.String()
-	},
-	"protoip": func(s string) string {
-		ip := net.ParseIP(s)
-		if ip == nil {
-			return "<invalid>"
-		}
-
-		if ip.To4() == nil {
-			return "IPv6"
-		}
-		return "IPv4"
-	},
 	"ipnet": func(s string) map[string]interface{} {
-		_, ipNet, err := net.ParseCIDR(s)
-		if err != nil {
-			return map[string]interface{}{
-				"IP":       "<invalid>",
-				"MaskSize": 0,
-			}
-		}
+		_, ipNet, _ := net.ParseCIDR(s)
 		maskSize, _ := ipNet.Mask.Size()
 		return map[string]interface{}{
 			"IP":       ipNet.IP.String(),

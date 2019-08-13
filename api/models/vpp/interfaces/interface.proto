@@ -40,30 +40,27 @@ message Interface {
     }
     Unnumbered unnumbered = 9;
 
-    message RxMode {
+    message RxModeSettings {
         // from vpp/build-root/install-vpp-native/vpp/include/vnet/interface.h
-        enum Type {
+        enum RxModeType {
             UNKNOWN = 0;
             POLLING = 1;
             INTERRUPT = 2;
             ADAPTIVE = 3;
             DEFAULT = 4;
         };
-        uint32 queue = 1;
-        Type mode = 2;
-        bool default_mode = 3; // if enabled, <queue> will be ignored and the given
-                               // <mode> will be used for all queues without explicitly
-                               // selected Rx mode
+        RxModeType rx_mode = 1;
+        uint32 queue_id  = 2;
+        uint32 queue_id_valid  = 3;
     }
-    repeated RxMode rx_modes = 10;
+    RxModeSettings rx_mode_settings = 10;
 
-    message RxPlacement {
-        uint32 queue = 1;  // select from interval <0, number-of-queues)
-        uint32 worker = 2; // select from interval <0, number-of-workers)
-        bool main_thread = 3; // let the main thread to process the given queue
-                              //  - if enabled, value of <worker> is ignored
+    message RxPlacementSettings {
+        uint32 queue = 1;
+        uint32 worker = 2;
+        bool is_main = 3;
     }
-    repeated RxPlacement rx_placements = 11;
+    RxPlacementSettings rx_placement_settings = 11;
 
     oneof link {
         SubInterface sub = 100;         /* sub-interface configuration */
@@ -73,7 +70,7 @@ message Interface {
         VxlanLink vxlan = 104;          /* VXLAN-specific configuration */
         IPSecLink ipsec = 105;          /* IPSec tunnel-specific configuration */
         VmxNet3Link vmx_net3 = 106;     /* VmxNet3-specific configuration */
-        BondLink bond = 107;            /* Bond interface-specific configuration */
+        BondLink bond = 107;                 /* Bond interface-specific configuration */
     };
 };
 

@@ -30,8 +30,8 @@ import (
 )
 
 const (
-	DefaultReconnectInterval    = time.Second / 2 // default interval between reconnect attempts
-	DefaultMaxReconnectAttempts = 3               // default maximum number of reconnect attempts
+	DefaultReconnectInterval    = time.Second // default interval between reconnect attempts
+	DefaultMaxReconnectAttempts = 3           // default maximum number of reconnect attempts
 )
 
 var (
@@ -174,7 +174,8 @@ func (c *Connection) connectVPP() error {
 	if err := c.vppClient.Connect(); err != nil {
 		return err
 	}
-	log.Debugf("Connected to VPP")
+
+	log.Debugf("Connected to VPP.")
 
 	if err := c.retrieveMessageIDs(); err != nil {
 		c.vppClient.Disconnect()
@@ -201,12 +202,7 @@ func (c *Connection) Disconnect() {
 // disconnectVPP disconnects from VPP in case it is connected.
 func (c *Connection) disconnectVPP() {
 	if atomic.CompareAndSwapUint32(&c.vppConnected, 1, 0) {
-		log.Debug("Disconnecting from VPP..")
-
-		if err := c.vppClient.Disconnect(); err != nil {
-			log.Debugf("Disconnect from VPP failed: %v", err)
-		}
-		log.Debug("Disconnected from VPP")
+		c.vppClient.Disconnect()
 	}
 }
 
@@ -255,7 +251,7 @@ func (c *Connection) releaseAPIChannel(ch *Channel) {
 // connectLoop attempts to connect to VPP until it succeeds.
 // Then it continues with healthCheckLoop.
 func (c *Connection) connectLoop(connChan chan ConnectionEvent) {
-	var reconnectAttempts int
+	reconnectAttempts := 0
 
 	// loop until connected
 	for {
@@ -268,7 +264,7 @@ func (c *Connection) connectLoop(connChan chan ConnectionEvent) {
 			break
 		} else if reconnectAttempts < c.maxAttempts {
 			reconnectAttempts++
-			log.Warnf("connecting failed (attempt %d/%d): %v", reconnectAttempts, c.maxAttempts, err)
+			log.Errorf("connecting failed (attempt %d/%d): %v", reconnectAttempts, c.maxAttempts, err)
 			time.Sleep(c.recInterval)
 		} else {
 			connChan <- ConnectionEvent{Timestamp: time.Now(), State: Failed, Error: err}

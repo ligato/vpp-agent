@@ -63,10 +63,10 @@ var Versions = map[string]HandlerVersion{}
 
 type HandlerVersion struct {
 	Msgs []govppapi.Message
-	New  func(govppapi.Channel, aclidx.ACLMetadataIndex, ifaceidx.IfaceMetadataIndex, logging.Logger) ABFVppAPI
+	New  func(govppapi.Channel, aclidx.ACLMetadataIndex, ifaceidx.IfaceMetadataIndex) ABFVppAPI
 }
 
-func CompatibleABFVppHandler(ch govppapi.Channel, aclIdx aclidx.ACLMetadataIndex, ifIdx ifaceidx.IfaceMetadataIndex, log logging.Logger) ABFVppAPI {
+func CompatibleABFVppHandler(ch, dch govppapi.Channel, aclIdx aclidx.ACLMetadataIndex, ifIdx ifaceidx.IfaceMetadataIndex, log logging.Logger) ABFVppAPI {
 	if len(Versions) == 0 {
 		// abfplugin is not loaded
 		return nil
@@ -77,7 +77,7 @@ func CompatibleABFVppHandler(ch govppapi.Channel, aclIdx aclidx.ACLMetadataIndex
 			continue
 		}
 		log.Debug("found compatible version:", ver)
-		return h.New(ch, aclIdx, ifIdx, log)
+		return h.New(ch, aclIdx, ifIdx)
 	}
 	panic("no compatible version available")
 }
