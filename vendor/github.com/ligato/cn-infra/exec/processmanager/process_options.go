@@ -16,6 +16,7 @@ package processmanager
 
 import (
 	"io"
+	"time"
 
 	"github.com/ligato/cn-infra/exec/processmanager/status"
 )
@@ -47,6 +48,10 @@ type POptions struct {
 
 	// auto-terminate
 	autoTerm bool
+
+	// cpu affinity
+	cpuAffinity string
+	cpuAffinityDelay time.Duration
 }
 
 // POption is helper function to set process options
@@ -109,5 +114,13 @@ func Notify(notifyChan chan status.ProcessStatus) POption {
 func AutoTerminate() POption {
 	return func(p *POptions) {
 		p.autoTerm = true
+	}
+}
+
+// CPUAffinityMask allows to set CPU affinity to given process
+func CPUAffinityMask(affinity string, delay time.Duration) POption {
+	return func(p *POptions) {
+		p.cpuAffinity = affinity
+		p.cpuAffinityDelay = delay
 	}
 }
