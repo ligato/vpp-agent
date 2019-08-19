@@ -158,7 +158,7 @@ concrete objects:
   type and registers them with the KVScheduler. It also defines derived values 
   and dependencies for the value type. KVDescriptors are at the core of 
   configurators (plugins)- to learn more, please read how to
-  [implement your own KVDescriptor](Implementing-your-own-KVDescriptor).
+  [implement your own KVDescriptor](kvdescriptor.md).
 
 ### Dependencies
 
