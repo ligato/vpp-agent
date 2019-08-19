@@ -317,7 +317,7 @@ Please note that all optional fields can be left uninitialized (zero values).
 
 * optional attribute, slice of strings
 * if, in order to `Retrieve` values, some other descriptors must have
-  their respective values refreshed first, here you can list them woth this
+  their respective values refreshed first, here you can list them with this
   attribute
 * [for example][vpp-route-retrieve-deps], in order to retrieve routes and
   re-construct their configuration for NB models, interfaces must be retrieved

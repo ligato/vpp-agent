@@ -32,8 +32,8 @@ gradually arose with the set of supported configuration items growing:
 
 ## Basic concepts
 
-KVScheduler uses graph theory concepts to manage dependencies between configuration i
-tems and therir respective proper operation ordering. A level of abstraction is build
+KVScheduler uses graph theory concepts to manage dependencies between configuration 
+items and their respective proper operation ordering. A level of abstraction is build
 on top of configurators (from now on just "plugins"), where the state of the system 
 is modeled as a graph; configuration items are represented as vertices and relations
 between them are represented as edges. The graph is then walked through to generate 
@@ -52,8 +52,8 @@ longer communicate directly, but instead interact with each other through a medi
 (the KVScheduler). Plugins only have to provide CRUD callbacks and describe their 
 dependencies on other plugins through one or more KVDescriptors. The scheduler is 
 then able to plan operations without even knowing what the graph vertices actually
-represent in the configured system. Furthermore, the set of supported configuratio
-n items can be easily extended without altering the transaction processing engine
+represent in the configured system. Furthermore, the set of supported configuration
+items can be easily extended without altering the transaction processing engine
 or increasing the complexity of any of the components - simply by implementing and 
 registering new descriptors.
 
@@ -179,7 +179,7 @@ utilized by the scheduling algorithm:
      immediately (i.e. not pending) when the base value goes away
    - A derived value may be described by a different descriptor than the base 
      value. IT usually represents some property of the base value (that other 
-     values may dependon) or an extra action to be taken when additional 
+     values may depend on) or an extra action to be taken when additional 
      dependencies are met.
 
 ### Diagram
