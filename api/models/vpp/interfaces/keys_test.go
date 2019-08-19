@@ -176,48 +176,63 @@ func TestInterfaceAddressKey(t *testing.T) {
 		name        string
 		iface       string
 		address     string
+		fromDHCP    bool
 		expectedKey string
 	}{
 		{
 			name:        "IPv4 address",
 			iface:       "memif0",
 			address:     "192.168.1.12/24",
-			expectedKey: "vpp/interface/memif0/address/192.168.1.12/24",
+			expectedKey: "vpp/interface/memif0/address/static/192.168.1.12/24",
+		},
+		{
+			name:        "IPv4 address from DHCP",
+			iface:       "memif0",
+			address:     "192.168.1.12/24",
+			fromDHCP:    true,
+			expectedKey: "vpp/interface/memif0/address/from-dhcp/192.168.1.12/24",
 		},
 		{
 			name:        "IPv6 address",
 			iface:       "memif0",
 			address:     "2001:db8::/32",
-			expectedKey: "vpp/interface/memif0/address/2001:db8::/32",
+			expectedKey: "vpp/interface/memif0/address/static/2001:db8::/32",
+		},
+		{
+			name:        "IPv6 address from DHCP",
+			iface:       "memif0",
+			address:     "2001:db8::/32",
+			fromDHCP:    true,
+			expectedKey: "vpp/interface/memif0/address/from-dhcp/2001:db8::/32",
 		},
 		{
 			name:        "invalid interface",
 			iface:       "",
 			address:     "10.10.10.10/32",
-			expectedKey: "vpp/interface/<invalid>/address/10.10.10.10/32",
+			expectedKey: "vpp/interface/<invalid>/address/static/10.10.10.10/32",
 		},
 		{
 			name:        "invalid address",
 			iface:       "tap0",
 			address:     "invalid-addr",
-			expectedKey: "vpp/interface/tap0/address/invalid-addr",
+			expectedKey: "vpp/interface/tap0/address/static/invalid-addr",
 		},
 		{
 			name:        "missing mask",
 			iface:       "tap1",
 			address:     "10.10.10.10",
-			expectedKey: "vpp/interface/tap1/address/10.10.10.10",
+			expectedKey: "vpp/interface/tap1/address/static/10.10.10.10",
 		},
 		{
 			name:        "empty address",
 			iface:       "tap1",
 			address:     "",
-			expectedKey: "vpp/interface/tap1/address/",
+			expectedKey: "vpp/interface/tap1/address/static/",
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			key := InterfaceAddressKey(test.iface, test.address)
+			key := InterfaceAddressKey(test.iface, test.address, test.fromDHCP)
 			if key != test.expectedKey {
 				t.Errorf("failed for: iface=%s address=%s\n"+
 					"expected key:\n\t%q\ngot key:\n\t%q",
@@ -234,28 +249,47 @@ func TestParseInterfaceAddressKey(t *testing.T) {
 		expectedIface        string
 		expectedIfaceAddr    string
 		expectedIfaceAddrNet string
+		expectedFromDHCP     bool
 		expectedInvalidIP    bool
 		expectedIsAddrKey    bool
 	}{
 		{
 			name:                 "IPv4 address",
-			key:                  "vpp/interface/memif0/address/192.168.1.12/24",
+			key:                  "vpp/interface/memif0/address/static/192.168.1.12/24",
 			expectedIface:        "memif0",
 			expectedIfaceAddr:    "192.168.1.12",
 			expectedIfaceAddrNet: "192.168.1.0/24",
 			expectedIsAddrKey:    true,
 		},
 		{
+			name:                 "IPv4 address from DHCP",
+			key:                  "vpp/interface/memif0/address/from-dhcp/192.168.1.12/24",
+			expectedIface:        "memif0",
+			expectedIfaceAddr:    "192.168.1.12",
+			expectedIfaceAddrNet: "192.168.1.0/24",
+			expectedIsAddrKey:    true,
+			expectedFromDHCP:     true,
+		},
+		{
 			name:                 "IPv6 address",
-			key:                  "vpp/interface/tap1/address/2001:db8:85a3::8a2e:370:7334/48",
+			key:                  "vpp/interface/tap1/address/static/2001:db8:85a3::8a2e:370:7334/48",
 			expectedIface:        "tap1",
 			expectedIfaceAddr:    "2001:db8:85a3::8a2e:370:7334",
 			expectedIfaceAddrNet: "2001:db8:85a3::/48",
 			expectedIsAddrKey:    true,
 		},
 		{
+			name:                 "IPv6 address",
+			key:                  "vpp/interface/tap1/address/from-dhcp/2001:db8:85a3::8a2e:370:7334/48",
+			expectedIface:        "tap1",
+			expectedIfaceAddr:    "2001:db8:85a3::8a2e:370:7334",
+			expectedIfaceAddrNet: "2001:db8:85a3::/48",
+			expectedIsAddrKey:    true,
+			expectedFromDHCP:     true,
+		},
+		{
 			name:                 "invalid interface",
-			key:                  "vpp/interface/<invalid>/address/10.10.10.10/30",
+			key:                  "vpp/interface/<invalid>/address/static/10.10.10.10/30",
 			expectedIface:        "<invalid>",
 			expectedIfaceAddr:    "10.10.10.10",
 			expectedIfaceAddrNet: "10.10.10.8/30",
@@ -263,7 +297,7 @@ func TestParseInterfaceAddressKey(t *testing.T) {
 		},
 		{
 			name:                 "gbe interface",
-			key:                  "vpp/interface/GigabitEthernet0/8/0/address/192.168.5.5/16",
+			key:                  "vpp/interface/GigabitEthernet0/8/0/address/static/192.168.5.5/16",
 			expectedIface:        "GigabitEthernet0/8/0",
 			expectedIfaceAddr:    "192.168.5.5",
 			expectedIfaceAddrNet: "192.168.0.0/16",
@@ -271,15 +305,24 @@ func TestParseInterfaceAddressKey(t *testing.T) {
 		},
 		{
 			name:                 "missing interface",
-			key:                  "vpp/interface//address/192.168.5.5/16",
+			key:                  "vpp/interface//address/static/192.168.5.5/16",
 			expectedIface:        "<invalid>",
 			expectedIfaceAddr:    "192.168.5.5",
 			expectedIfaceAddrNet: "192.168.0.0/16",
 			expectedIsAddrKey:    true,
 		},
 		{
+			name:                 "missing interface (from DHCP)",
+			key:                  "vpp/interface//address/from-dhcp/192.168.5.5/16",
+			expectedIface:        "<invalid>",
+			expectedIfaceAddr:    "192.168.5.5",
+			expectedIfaceAddrNet: "192.168.0.0/16",
+			expectedIsAddrKey:    true,
+			expectedFromDHCP:     true,
+		},
+		{
 			name:                 "not valid IP (missing mask)",
-			key:                  "vpp/interface/tap3/address/192.168.5.5",
+			key:                  "vpp/interface/tap3/address/static/192.168.5.5",
 			expectedIface:        "tap3",
 			expectedIfaceAddr:    "",
 			expectedIfaceAddrNet: "",
@@ -287,8 +330,18 @@ func TestParseInterfaceAddressKey(t *testing.T) {
 			expectedIsAddrKey:    true,
 		},
 		{
+			name:                 "not valid IP (missing mask, from DHCP)",
+			key:                  "vpp/interface/tap3/address/from-dhcp/192.168.5.5",
+			expectedIface:        "tap3",
+			expectedIfaceAddr:    "",
+			expectedIfaceAddrNet: "",
+			expectedInvalidIP:    true,
+			expectedIsAddrKey:    true,
+			expectedFromDHCP:     true,
+		},
+		{
 			name:                 "not valid IP for Gbe (missing mask)",
-			key:                  "vpp/interface/Gbe0/1/2/address/192.168.5.5",
+			key:                  "vpp/interface/Gbe0/1/2/address/static/192.168.5.5",
 			expectedIface:        "Gbe0/1/2",
 			expectedIfaceAddr:    "",
 			expectedIfaceAddrNet: "",
@@ -297,7 +350,7 @@ func TestParseInterfaceAddressKey(t *testing.T) {
 		},
 		{
 			name:                 "not valid IP (missing address and mask)",
-			key:                  "vpp/interface/tap3/address/",
+			key:                  "vpp/interface/tap3/address/static/",
 			expectedIface:        "tap3",
 			expectedIfaceAddr:    "",
 			expectedIfaceAddrNet: "",
@@ -305,8 +358,18 @@ func TestParseInterfaceAddressKey(t *testing.T) {
 			expectedIsAddrKey:    true,
 		},
 		{
+			name:                 "not valid IP (missing address and mask, from DHCP)",
+			key:                  "vpp/interface/tap3/address/from-dhcp/",
+			expectedIface:        "tap3",
+			expectedIfaceAddr:    "",
+			expectedIfaceAddrNet: "",
+			expectedInvalidIP:    true,
+			expectedIsAddrKey:    true,
+			expectedFromDHCP:     true,
+		},
+		{
 			name:                 "not valid IP for Gbe (missing address and mask)",
-			key:                  "vpp/interface/Gbe0/1/2/address/",
+			key:                  "vpp/interface/Gbe0/1/2/address/static/",
 			expectedIface:        "Gbe0/1/2",
 			expectedIfaceAddr:    "",
 			expectedIfaceAddrNet: "",
@@ -323,7 +386,7 @@ func TestParseInterfaceAddressKey(t *testing.T) {
 		},
 		{
 			name:                 "invalid address",
-			key:                  "vpp/interface/tap3/2/1/address/<invalid>/32",
+			key:                  "vpp/interface/tap3/2/1/address/static/<invalid>/32",
 			expectedIface:        "tap3/2/1",
 			expectedIfaceAddr:    "",
 			expectedIfaceAddrNet: "",
@@ -332,17 +395,38 @@ func TestParseInterfaceAddressKey(t *testing.T) {
 		},
 		{
 			name:                 "invalid mask",
-			key:                  "vpp/interface/tap3/address/10.10.10.10/invalid",
+			key:                  "vpp/interface/tap3/address/static/10.10.10.10/invalid",
 			expectedIface:        "tap3",
 			expectedIfaceAddr:    "",
 			expectedIfaceAddrNet: "",
 			expectedInvalidIP:    true,
 			expectedIsAddrKey:    true,
 		},
+		{
+			name:                 "invalid address type",
+			key:                  "vpp/interface/memif0/address/<invalid>/192.168.1.12/24",
+			expectedIface:        "memif0",
+			expectedInvalidIP:    true,
+			expectedIsAddrKey:    true,
+		},
+		{
+			name:                 "empty address type",
+			key:                  "vpp/interface/memif0/address//192.168.1.12/24",
+			expectedIface:        "memif0",
+			expectedInvalidIP:    true,
+			expectedIsAddrKey:    true,
+		},
+		{
+			name:                 "missing address type",
+			key:                  "vpp/interface/memif0/address/192.168.1.12/24",
+			expectedIface:        "memif0",
+			expectedInvalidIP:    true,
+			expectedIsAddrKey:    true,
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			iface, ipAddr, ipAddrNet, invalidIP, isAddrKey := ParseInterfaceAddressKey(test.key)
+			iface, ipAddr, ipAddrNet, fromDHCP, invalidIP, isAddrKey := ParseInterfaceAddressKey(test.key)
 			var ipAddrStr, ipAddrNetStr string
 			if ipAddr != nil {
 				ipAddrStr = ipAddr.String()
@@ -352,6 +436,9 @@ func TestParseInterfaceAddressKey(t *testing.T) {
 			}
 			if isAddrKey != test.expectedIsAddrKey {
 				t.Errorf("expected isAddrKey: %v\tgot: %v", test.expectedIsAddrKey, isAddrKey)
+			}
+			if fromDHCP != test.expectedFromDHCP {
+				t.Errorf("expected fromDHCP: %v\tgot: %v", test.expectedFromDHCP, fromDHCP)
 			}
 			if invalidIP != test.expectedInvalidIP {
 				t.Errorf("expected invalidIP: %v\tgot: %v", test.expectedInvalidIP, invalidIP)

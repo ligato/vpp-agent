@@ -34,7 +34,7 @@ const (
 	interfaceInVrfDep = "interface-assigned-to-vrf-table"
 )
 
-// InterfaceAddressDescriptor (un)assigns IP address to/from VPP interface.
+// InterfaceAddressDescriptor (un)assigns (static) IP address to/from VPP interface.
 type InterfaceAddressDescriptor struct {
 	log       logging.Logger
 	ifHandler vppcalls.InterfaceVppAPI
@@ -63,13 +63,13 @@ func NewInterfaceAddressDescriptor(ifHandler vppcalls.InterfaceVppAPI, ifIndex i
 // IsInterfaceVrfKey returns true if the key represents assignment of an IP address
 // to a VPP interface.
 func (d *InterfaceAddressDescriptor) IsInterfaceAddressKey(key string) bool {
-	_, _, _, _, isAddrKey := interfaces.ParseInterfaceAddressKey(key)
-	return isAddrKey
+	_, _, _, fromDHCP, _, isAddrKey := interfaces.ParseInterfaceAddressKey(key)
+	return isAddrKey && !fromDHCP
 }
 
 // Validate validates IP address to be assigned to an interface.
 func (d *InterfaceAddressDescriptor) Validate(key string, emptyVal proto.Message) (err error) {
-	_, _, _, invalidIP, _ := interfaces.ParseInterfaceAddressKey(key)
+	_, _, _, _, invalidIP, _ := interfaces.ParseInterfaceAddressKey(key)
 	if invalidIP {
 		return errors.New("invalid IP address")
 	}
@@ -78,7 +78,7 @@ func (d *InterfaceAddressDescriptor) Validate(key string, emptyVal proto.Message
 
 // Create assigns IP address to an interface.
 func (d *InterfaceAddressDescriptor) Create(key string, emptyVal proto.Message) (metadata kvs.Metadata, err error) {
-	iface, ipAddr, ipAddrNet, _, _ := interfaces.ParseInterfaceAddressKey(key)
+	iface, ipAddr, ipAddrNet, _, _, _ := interfaces.ParseInterfaceAddressKey(key)
 	ipAddrNet.IP = ipAddr
 
 	ifMeta, found := d.ifIndex.LookupByName(iface)
@@ -94,7 +94,7 @@ func (d *InterfaceAddressDescriptor) Create(key string, emptyVal proto.Message) 
 
 // Delete unassigns IP address from an interface.
 func (d *InterfaceAddressDescriptor) Delete(key string, emptyVal proto.Message, metadata kvs.Metadata) (err error) {
-	iface, ipAddr, ipAddrNet, _, _ := interfaces.ParseInterfaceAddressKey(key)
+	iface, ipAddr, ipAddrNet, _, _, _ := interfaces.ParseInterfaceAddressKey(key)
 	ipAddrNet.IP = ipAddr
 
 	if ipAddr.IsLinkLocalUnicast() {
@@ -114,7 +114,7 @@ func (d *InterfaceAddressDescriptor) Delete(key string, emptyVal proto.Message, 
 
 // Dependencies lists assignment of the interface into the VRF table as the only dependency.
 func (d *InterfaceAddressDescriptor) Dependencies(key string, emptyVal proto.Message) []kvs.Dependency {
-	iface, _, _, _, _ := interfaces.ParseInterfaceAddressKey(key)
+	iface, _, _, _, _, _ := interfaces.ParseInterfaceAddressKey(key)
 	return []kvs.Dependency{{
 		Label: interfaceInVrfDep,
 		AnyOf: kvs.AnyOfDependency{
