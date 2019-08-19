@@ -26,7 +26,7 @@ creating a complex dependency tree. In general, it is true that:
 
 This means that VPP binary API calls must be called in a certain order. The VPP agent uses the KV Scheduler to ensure
 this order, managing configuration dependencies and caching configuration items until their dependencies are met.
-Any plugin that configures something that is dependent on some other plugin's configutation items can be registered
+Any plugin that configures something that is dependent on some other plugin's configuration items can be registered
 with the KV scheduler and profit from this functionality. 
  
 First, we define a simple northbound [proto model][1] that we will use in our example plugin. The model defines two
@@ -48,7 +48,7 @@ components - a **descriptor** and an **adapter** for every proto-defined type (p
  
 #### 1. Adapters
  
-Let's start with adapters. The purpose of an adapter is to define conversion methods between uour proto-defined type and
+Let's start with adapters. The purpose of an adapter is to define conversion methods between our proto-defined type and
 a bare `proto.Message` that the KV Scheduler works with. Since this is boilerplate code, the is tooling to auto-generate
 it. The code generator is called `descriptor-adapter` and it can be found [inside the KVScheduler plugin][2]. Build the 
 binary file from the go files inside, and use it to generate the adapters for the `Interface` and `Route` proto messages:
