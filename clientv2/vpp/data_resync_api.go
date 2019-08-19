@@ -35,6 +35,8 @@ import (
 type DataResyncDSL interface {
 	// Interface adds interface to the RESYNC request.
 	Interface(intf *interfaces.Interface) DataResyncDSL
+	// Span adds span to the RESYNC request.
+	Span(intf *interfaces.Span) DataResyncDSL
 	// ACL adds Access Control List to the RESYNC request.
 	ACL(acl *acl.ACL) DataResyncDSL
 	// ABF adds ACL-based forwarding to the RESYNC request.
