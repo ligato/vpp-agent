@@ -267,8 +267,8 @@ func (d *RouteDescriptor) Dependencies(key string, route *linux_l3.Route) []kvs.
 						// GW address is neighbour as told by another link-local route
 						return true
 					}
-					ifName, addr, isAddrKey := ifmodel.ParseInterfaceAddressKey(key)
-					if isAddrKey && ifName == route.OutgoingInterface && addr.Contains(gwAddr) {
+					ifName, _, network, invalidIP, isAddrKey := ifmodel.ParseInterfaceAddressKey(key)
+					if isAddrKey && !invalidIP && ifName == route.OutgoingInterface && network.Contains(gwAddr) {
 						// GW address is inside the local network of the outgoing interface
 						// as given by the assigned IP address
 						return true
