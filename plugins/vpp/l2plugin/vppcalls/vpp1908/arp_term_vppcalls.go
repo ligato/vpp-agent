@@ -21,20 +21,23 @@ import (
 )
 
 func (h *BridgeDomainVppHandler) callBdIPMacAddDel(isAdd bool, bdID uint32, mac string, ip string) error {
-	req := &l2ba.BdIPMacAddDel{
-		BdID:  bdID,
-		IsAdd: boolToUint(isAdd),
+	ipAddr, err := ipToAddress(ip)
+	if err != nil {
+		return err
 	}
-
 	macAddr, err := net.ParseMAC(mac)
 	if err != nil {
 		return err
 	}
-	copy(req.Mac[:], macAddr)
+	bdEntry := l2ba.BdIPMac{
+		BdID: bdID,
+		IP:   ipAddr,
+	}
+	copy(bdEntry.Mac[:], macAddr)
 
-	req.IP, err = ipToAddress(ip)
-	if err != nil {
-		return err
+	req := &l2ba.BdIPMacAddDel{
+		IsAdd: boolToUint(isAdd),
+		Entry: bdEntry,
 	}
 
 	reply := &l2ba.BdIPMacAddDelReply{}

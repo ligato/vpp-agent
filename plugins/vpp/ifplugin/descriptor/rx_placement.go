@@ -15,9 +15,9 @@
 package descriptor
 
 import (
-	"github.com/pkg/errors"
 	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/cn-infra/logging"
+	"github.com/pkg/errors"
 
 	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
@@ -70,8 +70,7 @@ func (d *RxPlacementDescriptor) IsInterfaceRxPlacementKey(key string) bool {
 }
 
 // EquivalentRxMode compares Rx placements for equivalency.
-func (d *RxPlacementDescriptor) EquivalentRxPlacement(key string,
-	oldRxPl, newRxPl *interfaces.Interface_RxPlacement) bool {
+func (d *RxPlacementDescriptor) EquivalentRxPlacement(key string, oldRxPl, newRxPl *interfaces.Interface_RxPlacement) bool {
 
 	if (oldRxPl.MainThread != newRxPl.MainThread) ||
 		(!oldRxPl.MainThread && oldRxPl.Worker != newRxPl.Worker) {
@@ -83,7 +82,7 @@ func (d *RxPlacementDescriptor) EquivalentRxPlacement(key string,
 // Create configures RxPlacement for a given interface queue.
 // Please note the proto message Interface is only used as container for RxMode.
 // Only interface name, type and Rx mode are set.
-func (d *RxPlacementDescriptor) Create(key string, rxPlacement *interfaces.Interface_RxPlacement) (metadata interface{}, err error) {
+func (d *RxPlacementDescriptor) Create(key string, rxPlacement *interfaces.Interface_RxPlacement) (md interface{}, err error) {
 	ifaceName, _, _ := interfaces.ParseRxPlacementKey(key)
 	ifMeta, found := d.ifIndex.LookupByName(ifaceName)
 	if !found {
@@ -108,7 +107,7 @@ func (d *RxPlacementDescriptor) Delete(key string, rxPlacement *interfaces.Inter
 
 // Dependencies informs scheduler that Rx placement configuration cannot be applied
 // until the interface link is UP.
-func (d *RxPlacementDescriptor) Dependencies(key string, rxPlacement *interfaces.Interface_RxPlacement) (deps []kvs.Dependency) {
+func (d *RxPlacementDescriptor) Dependencies(key string, rxPlacement *interfaces.Interface_RxPlacement) []kvs.Dependency {
 	ifaceName, _, _ := interfaces.ParseRxPlacementKey(key)
 	return []kvs.Dependency{
 		{

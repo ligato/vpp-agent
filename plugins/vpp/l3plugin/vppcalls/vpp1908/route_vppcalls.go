@@ -17,7 +17,6 @@ package vpp1908
 import (
 	"net"
 
-	"github.com/ligato/cn-infra/utils/addrs"
 	vpp_l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1908/ip"
 	"github.com/pkg/errors"
@@ -39,54 +38,48 @@ const (
 
 // vppAddDelRoute adds or removes route, according to provided input. Every route has to contain VRF ID (default is 0).
 func (h *RouteHandler) vppAddDelRoute(route *vpp_l3.Route, rtIfIdx uint32, delete bool) error {
-	req := &ip.IPAddDelRoute{}
+	req := &ip.IPRouteAddDel{
+		// Multi path is always true
+		IsMultipath: 1,
+	}
 	if delete {
 		req.IsAdd = 0
 	} else {
 		req.IsAdd = 1
 	}
 
-	// Destination address (route set identifier)
-	parsedDstIP, isIpv6, err := addrs.ParseIPWithPrefix(route.DstNetwork)
+	// Common route parameters
+	fibPath := ip.FibPath{
+		Weight:     uint8(route.Weight),
+		Preference: uint8(route.Preference),
+	}
+	fibPath.Nh, fibPath.Proto = setFibPathNhAndProto(route.NextHopAddr)
+
+	// VRF/Other route parameters based on type
+	if route.Type == vpp_l3.Route_INTER_VRF {
+		fibPath.SwIfIndex = rtIfIdx
+		fibPath.TableID = route.ViaVrfId
+	} else if route.Type == vpp_l3.Route_DROP {
+		fibPath.Type = ip.FIB_API_PATH_TYPE_DROP
+	} else {
+		fibPath.SwIfIndex = rtIfIdx
+		fibPath.TableID = route.VrfId
+	}
+	// Destination address
+	prefix, err := networkToPrefix(route.DstNetwork)
 	if err != nil {
 		return err
 	}
-	parsedNextHopIP := net.ParseIP(route.NextHopAddr)
-	prefix, _ := parsedDstIP.Mask.Size()
-	if isIpv6 {
-		req.IsIPv6 = 1
-		req.DstAddress = []byte(parsedDstIP.IP.To16())
-		req.NextHopAddress = []byte(parsedNextHopIP.To16())
-	} else {
-		req.IsIPv6 = 0
-		req.DstAddress = []byte(parsedDstIP.IP.To4())
-		req.NextHopAddress = []byte(parsedNextHopIP.To4())
+
+	req.Route = ip.IPRoute{
+		TableID: route.VrfId,
+		Prefix:  prefix,
+		NPaths:  1,
+		Paths:   []ip.FibPath{fibPath},
 	}
-	req.DstAddressLength = byte(prefix)
-
-	// Common route parameters
-	req.NextHopWeight = uint8(route.Weight)
-	req.NextHopPreference = uint8(route.Preference)
-	req.NextHopViaLabel = NextHopViaLabelUnset
-	req.ClassifyTableIndex = ClassifyTableIndexUnset
-
-	// VRF/Other route parameters based on type
-	req.TableID = route.VrfId
-	if route.Type == vpp_l3.Route_INTER_VRF {
-		req.NextHopSwIfIndex = rtIfIdx
-		req.NextHopTableID = route.ViaVrfId
-	} else if route.Type == vpp_l3.Route_DROP {
-		req.IsDrop = 1
-	} else {
-		req.NextHopSwIfIndex = rtIfIdx
-		req.NextHopTableID = route.VrfId
-	}
-
-	// Multi path is always true
-	req.IsMultipath = 1
 
 	// Send message
-	reply := &ip.IPAddDelRouteReply{}
+	reply := &ip.IPRouteAddDelReply{}
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	}
@@ -112,6 +105,28 @@ func (h *RouteHandler) VppDelRoute(route *vpp_l3.Route) error {
 	}
 
 	return h.vppAddDelRoute(route, swIfIdx, true)
+}
+
+func setFibPathNhAndProto(ipStr string) (nh ip.FibPathNh, proto ip.FibPathNhProto) {
+	netIP := net.ParseIP(ipStr)
+	if netIP == nil {
+		return
+	}
+	var ipData [16]byte
+	if netIP.To4() == nil {
+		proto = ip.FIB_API_PATH_NH_PROTO_IP6
+		copy(ipData[:], netIP[:])
+	} else {
+		proto = ip.FIB_API_PATH_NH_PROTO_IP4
+		copy(ipData[:], netIP[12:])
+	}
+	return ip.FibPathNh{
+		Address: ip.AddressUnion{
+			XXX_UnionData: ipData,
+		},
+		ViaLabel:           NextHopViaLabelUnset,
+		ClassifyTableIndex: ClassifyTableIndexUnset,
+	}, proto
 }
 
 func (h *RouteHandler) getRouteSwIfIndex(ifName string) (swIfIdx uint32, err error) {

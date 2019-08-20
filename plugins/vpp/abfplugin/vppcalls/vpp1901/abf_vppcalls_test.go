@@ -271,6 +271,6 @@ func abfTestSetup(t *testing.T) (*vppcallmock.TestCtx, vppcalls.ABFVppAPI, iface
 	log := logrus.NewLogger("test-log")
 	aclIdx := aclidx.NewACLIndex(log, "acl-index")
 	ifIdx := ifaceidx.NewIfaceIndex(log, "if-index")
-	abfHandler := NewABFVppHandler(ctx.MockChannel, aclIdx, ifIdx)
+	abfHandler := NewABFVppHandler(ctx.MockChannel, aclIdx, ifIdx, log)
 	return ctx, abfHandler, ifIdx
 }

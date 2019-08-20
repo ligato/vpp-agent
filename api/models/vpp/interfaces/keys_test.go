@@ -1152,3 +1152,86 @@ func TestParseRxModesKey(t *testing.T) {
 		})
 	}
 }
+
+func TestInterfaceWithIPKey(t *testing.T) {
+	tests := []struct {
+		name        string
+		iface       string
+		expectedKey string
+	}{
+		{
+			name:        "memif",
+			iface:       "memif0",
+			expectedKey: "vpp/interface/memif0/has-IP-address",
+		},
+		{
+			name:        "invalid interface name",
+			iface:       "",
+			expectedKey: "vpp/interface/<invalid>/has-IP-address",
+		},
+		{
+			name:        "Gbe interface",
+			iface:       "GigabitEthernet0/8/0",
+			expectedKey: "vpp/interface/GigabitEthernet0/8/0/has-IP-address",
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			key := InterfaceWithIPKey(test.iface)
+			if key != test.expectedKey {
+				t.Errorf("failed for: iface=%s\n"+
+					"expected key:\n\t%q\ngot key:\n\t%q",
+					test.iface, test.expectedKey, key)
+			}
+		})
+	}
+}
+
+func TestParseInterfaceWithIPKey(t *testing.T) {
+	tests := []struct {
+		name                     string
+		key                      string
+		expectedIface            string
+		expectedIsIfaceWithIPKey bool
+	}{
+		{
+			name:                     "memif",
+			key:                      "vpp/interface/memif0/has-IP-address",
+			expectedIface:            "memif0",
+			expectedIsIfaceWithIPKey: true,
+		},
+		{
+			name:                     "Gbe",
+			key:                      "vpp/interface/GigabitEthernet0/8/0/has-IP-address",
+			expectedIface:            "GigabitEthernet0/8/0",
+			expectedIsIfaceWithIPKey: true,
+		},
+		{
+			name:                     "invalid interface name",
+			key:                      "vpp/interface/<invalid>/has-IP-address",
+			expectedIsIfaceWithIPKey: false,
+		},
+		{
+			name:                     "missing has-IP-address suffix",
+			key:                      "vpp/interface/<invalid>",
+			expectedIsIfaceWithIPKey: false,
+		},
+		{
+			name:                     "not has-IP-address key",
+			key:                      "vpp/interface/memif0/address/192.168.1.12/24",
+			expectedIsIfaceWithIPKey: false,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			iface, isInterfaceWithIPKey := ParseInterfaceWithIPKey(test.key)
+			if isInterfaceWithIPKey != test.expectedIsIfaceWithIPKey {
+				t.Errorf("expected isInterfaceWithIPKey: %v\tgot: %v",
+					test.expectedIsIfaceWithIPKey, isInterfaceWithIPKey)
+			}
+			if iface != test.expectedIface {
+				t.Errorf("expected iface: %s\tgot: %s", test.expectedIface, iface)
+			}
+		})
+	}
+}

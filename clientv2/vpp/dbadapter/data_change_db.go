@@ -79,6 +79,13 @@ func (dsl *PutDSL) Interface(val *intf.Interface) vppclient.PutDSL {
 	return dsl
 }
 
+// Span adds VPP span to the change request.
+func (dsl *PutDSL) Span(val *intf.Span) vppclient.PutDSL {
+	key := intf.SpanKey(val.InterfaceFrom, val.InterfaceTo)
+	dsl.parent.txn.Put(key, val)
+	return dsl
+}
+
 // ACL adds a request to create or update VPP Access Control List.
 func (dsl *PutDSL) ACL(val *acl.ACL) vppclient.PutDSL {
 	dsl.parent.txn.Put(acl.Key(val.Name), val)
@@ -117,7 +124,7 @@ func (dsl *PutDSL) VrfTable(val *l3.VrfTable) vppclient.PutDSL {
 
 // StaticRoute adds a request to create or update VPP L3 Static Route.
 func (dsl *PutDSL) StaticRoute(val *l3.Route) vppclient.PutDSL {
-	dsl.parent.txn.Put(l3.RouteKey(val.VrfId, val.DstNetwork, val.NextHopAddr), val)
+	dsl.parent.txn.Put(models.Key(val), val)
 	return dsl
 }
 
@@ -203,6 +210,13 @@ func (dsl *DeleteDSL) Interface(interfaceName string) vppclient.DeleteDSL {
 	return dsl
 }
 
+// Span adds VPP span to the RESYNC request.
+func (dsl *DeleteDSL) Span(val *intf.Span) vppclient.DeleteDSL {
+	key := intf.SpanKey(val.InterfaceFrom, val.InterfaceTo)
+	dsl.parent.txn.Delete(key)
+	return dsl
+}
+
 // ACL adds a request to delete an existing VPP Access Control List.
 func (dsl *DeleteDSL) ACL(aclName string) vppclient.DeleteDSL {
 	dsl.parent.txn.Delete(acl.Key(aclName))
@@ -241,8 +255,8 @@ func (dsl *DeleteDSL) VrfTable(id uint32, proto l3.VrfTable_Protocol) vppclient.
 }
 
 // StaticRoute adds a request to delete an existing VPP L3 Static Route.
-func (dsl *DeleteDSL) StaticRoute(vrf uint32, dstAddr string, nextHopAddr string) vppclient.DeleteDSL {
-	dsl.parent.txn.Delete(l3.RouteKey(vrf, dstAddr, nextHopAddr))
+func (dsl *DeleteDSL) StaticRoute(iface string, vrf uint32, dstAddr string, nextHopAddr string) vppclient.DeleteDSL {
+	dsl.parent.txn.Delete(l3.RouteKey(iface, vrf, dstAddr, nextHopAddr))
 	return dsl
 }
 

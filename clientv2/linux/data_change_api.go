@@ -65,6 +65,8 @@ type PutDSL interface {
 
 	// VppInterface adds a request to create or update VPP network interface.
 	VppInterface(val *vpp_interfaces.Interface) PutDSL
+	// Span adds VPP span to the Put request.
+	Span(span *vpp_interfaces.Span) PutDSL
 	// ACL adds a request to create or update VPP Access Control List.
 	ACL(acl *vpp_acl.ACL) PutDSL
 	// ABF adds a request to create or update VPP ACL-based forwarding.
@@ -136,6 +138,8 @@ type DeleteDSL interface {
 
 	// VppInterface adds a request to delete an existing VPP network interface.
 	VppInterface(ifaceName string) DeleteDSL
+	// Span adds VPP span to the Delete request.
+	Span(span *vpp_interfaces.Span) DeleteDSL
 	// ACL adds a request to delete an existing VPP Access Control List.
 	ACL(aclName string) DeleteDSL
 	// ABF adds a request to delete an existing VPP ACL-based forwarding.
@@ -159,7 +163,7 @@ type DeleteDSL interface {
 	// XConnect adds a request to delete an existing VPP Cross Connect.
 	XConnect(rxIfaceName string) DeleteDSL
 	// StaticRoute adds a request to delete an existing VPP L3 Static Route.
-	StaticRoute(vrf uint32, dstAddr string, nextHopAddr string) DeleteDSL
+	StaticRoute(iface string, vrf uint32, dstAddr string, nextHopAddr string) DeleteDSL
 	/*// L4Features adds a request to enable or disable L4 features
 	L4Features() DeleteDSL
 	// AppNamespace adds a request to delete VPP Application namespace

@@ -32,14 +32,7 @@ import (
 )
 
 var (
-	// PeriodicPollingPeriod between statistics reads
-	// TODO  should be configurable
-	PeriodicPollingPeriod = time.Second * 5
-
-	// StateUpdateDelay defines delay before dumping states
-	StateUpdateDelay = time.Second * 3
-
-	disableInterfaceStats = os.Getenv("DISABLE_INTERFACE_STATS") != ""
+	debugIfStates = os.Getenv("DEBUG_IFSTATES") != ""
 )
 
 // InterfaceStateUpdater holds state data of all VPP interfaces.
@@ -50,8 +43,9 @@ type InterfaceStateUpdater struct {
 	swIfIndexes    ifaceidx.IfaceMetadataIndex
 	publishIfState func(notification *intf.InterfaceNotification)
 
-	access  sync.Mutex                      // lock for the state data map
-	ifState map[uint32]*intf.InterfaceState // swIfIndex to state data map
+	// access guards access to ifState map
+	access  sync.Mutex
+	ifState map[uint32]*intf.InterfaceState // swIfIndex
 
 	goVppMux govppmux.StatsAPI
 
@@ -72,9 +66,11 @@ type InterfaceStateUpdater struct {
 }
 
 // Init members (channels, maps...) and start go routines
-func (c *InterfaceStateUpdater) Init(ctx context.Context, logger logging.PluginLogger, kvScheduler kvs.KVScheduler,
+func (c *InterfaceStateUpdater) Init(ctx context.Context,
+	logger logging.PluginLogger, kvScheduler kvs.KVScheduler,
 	goVppMux govppmux.StatsAPI, swIfIndexes ifaceidx.IfaceMetadataIndex,
-	publishIfState func(notification *intf.InterfaceNotification), readCounters bool) (err error) {
+	publishIfState func(*intf.InterfaceNotification), readCounters bool,
+) (err error) {
 
 	// Logger
 	c.log = logger.NewLogger("if-state")
@@ -113,14 +109,18 @@ func (c *InterfaceStateUpdater) Init(ctx context.Context, logger logging.PluginL
 
 	// Periodically read VPP counters and combined counters for VPP statistics
 	if disableInterfaceStats {
-		c.log.Warnf("reading interface stats is disabled!")
+		c.log.Warnf("reading interface stats is DISABLED!")
 	} else if readCounters {
 		c.wg.Add(1)
 		go c.startReadingCounters(childCtx)
 	}
 
-	c.wg.Add(1)
-	go c.startUpdatingIfStateDetails(childCtx)
+	if disableStatusPublishing {
+		c.log.Warnf("publishing interface status is DISABLED!")
+	} else {
+		c.wg.Add(1)
+		go c.startUpdatingIfStateDetails(childCtx)
+	}
 
 	return nil
 }
@@ -251,24 +251,27 @@ func (c *InterfaceStateUpdater) doUpdatesIfStateDetails() {
 	// we dont want to lock during potentionally long dump call
 	c.access.Unlock()
 
-	c.log.Debugf("running update for interface state details (%d)", len(c.ifsForUpdate))
+	c.log.Debugf("updating interface states for %d interfaces", len(c.ifsForUpdate))
 
-	ifaces, err := c.ifHandler.DumpInterfaces()
+	var ifIdxs []uint32
+	c.access.Lock()
+	for ifIdx := range c.ifsForUpdate {
+		ifIdxs = append(ifIdxs, ifIdx)
+	}
+	// clear interfaces for update
+	c.ifsForUpdate = make(map[uint32]struct{})
+	c.access.Unlock()
+
+	ifaces, err := c.ifHandler.DumpInterfaceStates(ifIdxs...)
 	if err != nil {
-		c.log.Warnf("dump interfaces failed: %v", err)
+		c.log.Warnf("dumping interface states failed: %v", err)
 		return
 	}
 
 	c.access.Lock()
 	for _, ifaceDetails := range ifaces {
-		if _, ok := c.ifsForUpdate[ifaceDetails.Meta.SwIfIndex]; !ok {
-			// not interface for update
-			continue
-		}
 		c.updateIfStateDetails(ifaceDetails)
 	}
-	// clear interfaces for update
-	c.ifsForUpdate = make(map[uint32]struct{})
 	c.access.Unlock()
 }
 
@@ -304,7 +307,6 @@ func (c *InterfaceStateUpdater) doInterfaceStatsRead() {
 
 // processInterfaceStatEntry fills state data for every registered interface and publishes them
 func (c *InterfaceStateUpdater) processInterfaceStatEntry(ifCounters govppapi.InterfaceCounters) {
-
 	ifState, found := c.getIfStateDataWLookup(ifCounters.InterfaceIndex)
 	if !found {
 		return
@@ -326,12 +328,13 @@ func (c *InterfaceStateUpdater) processInterfaceStatEntry(ifCounters govppapi.In
 	}
 
 	c.publishIfState(&intf.InterfaceNotification{
-		Type: intf.InterfaceNotification_COUNTERS, State: ifState})
+		Type:  intf.InterfaceNotification_COUNTERS,
+		State: ifState,
+	})
 }
 
 // processIfStateEvent process a VPP state event notification.
 func (c *InterfaceStateUpdater) processIfStateEvent(notif *vppcalls.InterfaceEvent) {
-
 	c.access.Lock()
 	defer c.access.Unlock()
 
@@ -342,26 +345,28 @@ func (c *InterfaceStateUpdater) processIfStateEvent(notif *vppcalls.InterfaceEve
 	if !found {
 		return
 	}
-	c.log.Debugf("Interface state notification for %s (idx: %d): %+v",
-		ifState.Name, ifState.IfIndex, notif)
+
+	if debugIfStates {
+		c.log.Debugf("Interface state notification for %s (idx: %d): %+v",
+			ifState.Name, ifState.IfIndex, notif)
+	}
 
 	// store data in ETCD
 	c.publishIfState(&intf.InterfaceNotification{
-		Type: intf.InterfaceNotification_UPDOWN, State: ifState})
+		Type:  intf.InterfaceNotification_UPDOWN,
+		State: ifState,
+	})
 }
 
 // getIfStateData returns interface state data structure for the specified interface index and interface name.
 // NOTE: plugin.ifStateData needs to be locked when calling this function!
 func (c *InterfaceStateUpdater) getIfStateData(swIfIndex uint32, ifName string) (*intf.InterfaceState, bool) {
-
 	ifState, ok := c.ifState[swIfIndex]
-
 	// check also if the provided logical name c the same as the one associated
 	// with swIfIndex, because swIfIndexes might be reused
 	if ok && ifState.Name == ifName {
 		return ifState, true
 	}
-
 	return nil, false
 }
 
@@ -391,8 +396,8 @@ func (c *InterfaceStateUpdater) getIfStateDataWLookup(ifIdx uint32) (*intf.Inter
 // updateIfStateFlags updates the interface state data in memory from provided VPP flags message and returns updated state data.
 // NOTE: plugin.ifStateData needs to be locked when calling this function!
 func (c *InterfaceStateUpdater) updateIfStateFlags(vppMsg *vppcalls.InterfaceEvent) (
-	iface *intf.InterfaceState, found bool) {
-
+	iface *intf.InterfaceState, found bool,
+) {
 	ifState, found := c.getIfStateDataWLookup(vppMsg.SwIfIndex)
 	if !found {
 		return nil, false
@@ -417,71 +422,26 @@ func (c *InterfaceStateUpdater) updateIfStateFlags(vppMsg *vppcalls.InterfaceEve
 	return ifState, true
 }
 
-const megabit = 1000000 // One megabit in bytes
-
 // updateIfStateDetails updates the interface state data in memory from provided VPP details message.
-func (c *InterfaceStateUpdater) updateIfStateDetails(ifDetails *vppcalls.InterfaceDetails) {
-
-	ifState, found := c.getIfStateDataWLookup(ifDetails.Meta.SwIfIndex)
+func (c *InterfaceStateUpdater) updateIfStateDetails(ifDetails *vppcalls.InterfaceState) {
+	ifState, found := c.getIfStateDataWLookup(ifDetails.SwIfIndex)
 	if !found {
 		return
 	}
 
-	ifState.InternalName = ifDetails.Meta.InternalName
+	ifState.InternalName = ifDetails.InternalName
+	ifState.PhysAddress = ifDetails.PhysAddress.String()
+	ifState.AdminStatus = ifDetails.AdminState
+	ifState.OperStatus = ifDetails.LinkState
+	ifState.Speed = ifDetails.LinkSpeed
+	ifState.Duplex = ifDetails.LinkDuplex
+	ifState.Mtu = uint32(ifDetails.LinkMTU)
 
-	if ifDetails.Meta.AdminState == 1 {
-		ifState.AdminStatus = intf.InterfaceState_UP
-	} else if ifDetails.Meta.AdminState == 0 {
-		ifState.AdminStatus = intf.InterfaceState_DOWN
-	} else {
-		ifState.AdminStatus = intf.InterfaceState_UNKNOWN_STATUS
-	}
-
-	if ifDetails.Meta.LinkState == 1 {
-		ifState.OperStatus = intf.InterfaceState_UP
-	} else if ifDetails.Meta.LinkState == 0 {
-		ifState.OperStatus = intf.InterfaceState_DOWN
-	} else {
-		ifState.OperStatus = intf.InterfaceState_UNKNOWN_STATUS
-	}
-
-	ifState.PhysAddress = ifDetails.Interface.PhysAddress
-
-	ifState.Mtu = uint32(ifDetails.Meta.LinkMTU)
-
-	switch ifDetails.Meta.LinkSpeed {
-	case 1:
-		ifState.Speed = 10 * megabit // 10M
-	case 2:
-		ifState.Speed = 100 * megabit // 100M
-	case 4:
-		ifState.Speed = 1000 * megabit // 1G
-	case 8:
-		ifState.Speed = 10000 * megabit // 10G
-	case 16:
-		ifState.Speed = 40000 * megabit // 40G
-	case 32:
-		ifState.Speed = 100000 * megabit // 100G
-	default:
-		ifState.Speed = 0
-	}
-
-	switch ifDetails.Meta.LinkSpeed {
-	case 1:
-		ifState.Duplex = intf.InterfaceState_HALF
-	case 2:
-		ifState.Duplex = intf.InterfaceState_FULL
-	default:
-		ifState.Duplex = intf.InterfaceState_UNKNOWN_DUPLEX
-	}
-
-	c.publishIfState(&intf.InterfaceNotification{
-		Type: intf.InterfaceNotification_UNKNOWN, State: ifState})
+	c.publishIfState(&intf.InterfaceNotification{State: ifState})
 }
 
 // setIfStateDeleted marks the interface as deleted in the state data structure in memory.
 func (c *InterfaceStateUpdater) setIfStateDeleted(swIfIndex uint32, ifName string) {
-
 	c.access.Lock()
 	defer c.access.Unlock()
 
@@ -494,6 +454,5 @@ func (c *InterfaceStateUpdater) setIfStateDeleted(swIfIndex uint32, ifName strin
 	ifState.LastChange = time.Now().Unix()
 
 	// this can be post-processed by multiple plugins
-	c.publishIfState(&intf.InterfaceNotification{
-		Type: intf.InterfaceNotification_UNKNOWN, State: ifState})
+	c.publishIfState(&intf.InterfaceNotification{State: ifState})
 }

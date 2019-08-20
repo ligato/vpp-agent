@@ -27,7 +27,6 @@ import (
 	"github.com/gogo/protobuf/proto"
 	prototypes "github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
-	"github.com/vishvananda/netlink"
 	"golang.org/x/sys/unix"
 
 	"github.com/ligato/cn-infra/idxmap"
@@ -63,9 +62,10 @@ const (
 	defaultLoopbackMTU = 65536
 
 	// dependency labels
-	tapInterfaceDep = "vpp-tap-interface-exists"
-	vethPeerDep     = "veth-peer-exists"
-	microserviceDep = "microservice-available"
+	existingHostInterfaceDep = "host-interface-exists"
+	tapInterfaceDep          = "vpp-tap-interface-exists"
+	vethPeerDep              = "veth-peer-exists"
+	microserviceDep          = "microservice-available"
 
 	// suffix attached to logical names of duplicate VETH interfaces
 	vethDuplicateSuffix = "-DUPLICATE"
@@ -107,6 +107,10 @@ var (
 
 	// ErrNamespaceWithoutReference is returned when namespace is missing reference.
 	ErrNamespaceWithoutReference = errors.New("namespace defined without name")
+
+	// ErrExistingWithNamespace is returned when namespace is specified for
+	// EXISTING interface.
+	ErrExistingWithNamespace = errors.New("EXISTING interface defined with namespace")
 
 	// ErrInvalidIPWithMask is returned when address is invalid or mask is missing
 	ErrInvalidIPWithMask = errors.New("IP with mask is not valid")
@@ -249,28 +253,50 @@ func (d *InterfaceDescriptor) MetadataFactory() idxmap.NamedMappingRW {
 
 // Validate validates Linux interface configuration.
 func (d *InterfaceDescriptor) Validate(key string, linuxIf *interfaces.Interface) error {
+	// validate name (this should never happen, since key is derived from name)
 	if linuxIf.GetName() == "" {
 		return kvs.NewInvalidValueError(ErrInterfaceWithoutName, "name")
 	}
-	addrs := linuxIf.GetIpAddresses()
-	for _, a := range addrs {
+
+	// validate IP addresses
+	for _, a := range linuxIf.GetIpAddresses() {
+		// TODO: perhaps we could assume default mask if there isnt one?
 		if _, _, err := net.ParseCIDR(a); err != nil {
 			return kvs.NewInvalidValueError(ErrInvalidIPWithMask, "ip_addresses")
 		}
 	}
 
-	if linuxIf.GetType() == interfaces.Interface_UNDEFINED {
+	// validate namespace
+	if ns := linuxIf.GetNamespace(); ns != nil {
+		if ns.GetType() == namespace.NetNamespace_UNDEFINED || ns.GetReference() == "" {
+			return kvs.NewInvalidValueError(ErrNamespaceWithoutReference, "namespace")
+		}
+	}
+
+	// validate type
+	switch linuxIf.GetType() {
+	case interfaces.Interface_EXISTING:
+		if linuxIf.GetLink() != nil {
+			return kvs.NewInvalidValueError(ErrInterfaceReferenceMismatch, "link")
+		}
+		// For now support only the same namespace as the agent.
+		if linuxIf.GetNamespace() != nil {
+			return kvs.NewInvalidValueError(ErrExistingWithNamespace, "namespace")
+		}
+	case interfaces.Interface_LOOPBACK:
+		if linuxIf.GetLink() != nil {
+			return kvs.NewInvalidValueError(ErrInterfaceReferenceMismatch, "link")
+		}
+	case interfaces.Interface_TAP_TO_VPP:
+		if d.vppIfPlugin == nil {
+			return ErrTAPRequiresVPPIfPlugin
+		}
+	case interfaces.Interface_UNDEFINED:
 		return kvs.NewInvalidValueError(ErrInterfaceWithoutType, "type")
 	}
-	if linuxIf.GetType() == interfaces.Interface_TAP_TO_VPP && d.vppIfPlugin == nil {
-		return ErrTAPRequiresVPPIfPlugin
-	}
-	if linuxIf.GetNamespace() != nil &&
-		(linuxIf.GetNamespace().GetType() == namespace.NetNamespace_UNDEFINED ||
-			linuxIf.GetNamespace().GetReference() == "") {
-		return kvs.NewInvalidValueError(ErrNamespaceWithoutReference, "namespace")
-	}
-	switch linuxIf.Link.(type) {
+
+	// validate link
+	switch linuxIf.GetLink().(type) {
 	case *interfaces.Interface_Tap:
 		if linuxIf.GetType() != interfaces.Interface_TAP_TO_VPP {
 			return kvs.NewInvalidValueError(ErrInterfaceReferenceMismatch, "link")
@@ -309,6 +335,21 @@ func (d *InterfaceDescriptor) Create(key string, linuxIf *interfaces.Interface) 
 		metadata, err = d.createTAPToVPP(nsCtx, key, linuxIf)
 	case interfaces.Interface_LOOPBACK:
 		metadata, err = d.createLoopback(nsCtx, linuxIf)
+	case interfaces.Interface_EXISTING:
+		// We expect that the interface already exists, therefore nothing needs to be done.
+		// We just get the metadata for the interface.
+		getMetadata := func(linuxIf *interfaces.Interface) (*ifaceidx.LinuxIfMetadata, error) {
+			link, err := d.ifHandler.GetLinkByName(getHostIfName(linuxIf))
+			if err != nil {
+				d.log.Error(err)
+				return nil, err
+			}
+			return &ifaceidx.LinuxIfMetadata{
+				Namespace:    linuxIf.Namespace,
+				LinuxIfIndex: link.Attrs().Index,
+			}, nil
+		}
+		metadata, err = getMetadata(linuxIf)
 	default:
 		return nil, ErrUnsupportedLinuxInterfaceType
 	}
@@ -461,6 +502,10 @@ func (d *InterfaceDescriptor) Delete(key string, linuxIf *interfaces.Interface, 
 		return d.deleteAutoTAP(nsCtx, key, linuxIf, metadata)
 	case interfaces.Interface_LOOPBACK:
 		return d.deleteLoopback(nsCtx, linuxIf)
+	case interfaces.Interface_EXISTING:
+		// We only need to unconfigure the interface.
+		// Nothing else needs to be done.
+		return nil
 	}
 
 	err = ErrUnsupportedLinuxInterfaceType
@@ -617,6 +662,14 @@ func (d *InterfaceDescriptor) UpdateWithRecreate(key string, oldLinuxIf, newLinu
 func (d *InterfaceDescriptor) Dependencies(key string, linuxIf *interfaces.Interface) []kvs.Dependency {
 	var dependencies []kvs.Dependency
 
+	// EXISTING depends on a referenced Linux interface in the default namespace
+	if linuxIf.Type == interfaces.Interface_EXISTING {
+		dependencies = append(dependencies, kvs.Dependency{
+			Label: existingHostInterfaceDep,
+			Key:   interfaces.InterfaceHostNameKey(getHostIfName(linuxIf)),
+		})
+	}
+
 	if linuxIf.Type == interfaces.Interface_TAP_TO_VPP {
 		// dependency on VPP TAP
 		dependencies = append(dependencies, kvs.Dependency{
@@ -723,6 +776,7 @@ func (d *InterfaceDescriptor) Retrieve(correlate []adapter.InterfaceKVWithMetada
 	// receive results from the go routines
 	ifaces := make(map[string]adapter.InterfaceKVWithMetadata) // interface logical name -> interface data
 	indexes := make(map[int]struct{})                          // already retrieved interfaces by their Linux indexes
+
 	for idx := 0; idx < goRoutinesCnt; idx++ {
 		retrieved := <-ch
 		if retrieved.err != nil {
@@ -732,7 +786,7 @@ func (d *InterfaceDescriptor) Retrieve(correlate []adapter.InterfaceKVWithMetada
 			// skip if this interface was already retrieved and this is not the expected
 			// namespace from correlation - remember, the same namespace may have
 			// multiple different references
-			rewrite := false
+			var rewrite bool
 			if _, alreadyRetrieved := indexes[kv.Metadata.LinuxIfIndex]; alreadyRetrieved {
 				if expCfg, hasExpCfg := ifCfg[kv.Value.Name]; hasExpCfg {
 					if proto.Equal(expCfg.Namespace, kv.Value.Namespace) {
@@ -857,19 +911,23 @@ func (d *InterfaceDescriptor) retrieveInterfaces(nsList []*namespace.NetNamespac
 			alias = strings.TrimPrefix(alias, agentPrefix)
 
 			// parse alias to obtain logical references
-			var vppTapIfName string
-			if link.Type() == (&netlink.Veth{}).Type() {
-				var vethPeerIfName string
+			if link.Type() == "veth" {
 				iface.Type = interfaces.Interface_VETH
+				var vethPeerIfName string
 				iface.Name, vethPeerIfName = parseVethAlias(alias)
 				iface.Link = &interfaces.Interface_Veth{
-					Veth: &interfaces.VethLink{PeerIfName: vethPeerIfName},
+					Veth: &interfaces.VethLink{
+						PeerIfName: vethPeerIfName,
+					},
 				}
-			} else if link.Type() == (&netlink.Tuntap{}).Type() || link.Type() == "tun" /* not defined in vishvananda */ {
+			} else if link.Type() == "tuntap" || link.Type() == "tun" /* not defined in vishvananda */ {
 				iface.Type = interfaces.Interface_TAP_TO_VPP
+				var vppTapIfName string
 				iface.Name, vppTapIfName, _ = parseTapAlias(alias)
 				iface.Link = &interfaces.Interface_Tap{
-					Tap: &interfaces.TapLink{VppTapIfName: vppTapIfName},
+					Tap: &interfaces.TapLink{
+						VppTapIfName: vppTapIfName,
+					},
 				}
 			} else if link.Attrs().Name == defaultLoopbackName {
 				iface.Type = interfaces.Interface_LOOPBACK
@@ -878,9 +936,8 @@ func (d *InterfaceDescriptor) retrieveInterfaces(nsList []*namespace.NetNamespac
 				// unsupported interface type supposedly configured by agent => print warning
 				d.log.WithFields(logging.Fields{
 					"if-host-name": link.Attrs().Name,
-					"if-type":      link.Type(),
 					"namespace":    nsRef,
-				}).Warn("Managed interface of unsupported type")
+				}).Warnf("Managed interface of unsupported type: %s", link.Type())
 				continue
 			}
 
@@ -941,7 +998,7 @@ func (d *InterfaceDescriptor) retrieveInterfaces(nsList []*namespace.NetNamespac
 				Origin: kvs.FromNB,
 				Metadata: &ifaceidx.LinuxIfMetadata{
 					LinuxIfIndex: link.Attrs().Index,
-					VPPTapName:   vppTapIfName,
+					VPPTapName:   iface.GetTap().GetVppTapIfName(),
 					Namespace:    nsRef,
 				},
 			})
@@ -983,8 +1040,7 @@ func (d *InterfaceDescriptor) setInterfaceNamespace(ctx nslinuxcalls.NamespaceMg
 	}
 
 	// Move the interface into the namespace.
-	err = d.ifHandler.SetLinkNamespace(link, ns)
-	if err != nil {
+	if err := d.ifHandler.SetLinkNamespace(link, ns); err != nil {
 		return errors.Errorf("failed to set interface %s file descriptor: %v", link.Attrs().Name, err)
 	}
 
@@ -1009,8 +1065,7 @@ func (d *InterfaceDescriptor) setInterfaceNamespace(ctx nslinuxcalls.NamespaceMg
 		if !isIPv6 && address.IP.IsLinkLocalUnicast() {
 			continue
 		}
-		err = d.ifHandler.AddInterfaceIP(ifName, address)
-		if err != nil {
+		if err := d.ifHandler.AddInterfaceIP(ifName, address); err != nil {
 			if err.Error() == "file exists" {
 				continue
 			}
@@ -1098,7 +1153,6 @@ func getSysctl(name string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-
 	return string(data[:len(data)-1]), nil
 }
 
@@ -1108,6 +1162,5 @@ func setSysctl(name, value string) (string, error) {
 	if err := ioutil.WriteFile(fullName, []byte(value), 0644); err != nil {
 		return "", err
 	}
-
 	return getSysctl(name)
 }

@@ -31,27 +31,35 @@ func TestDumpVrfTables(t *testing.T) {
 	vthandler := NewVrfTableVppHandler(ctx.MockChannel, logrus.DefaultLogger())
 
 	ctx.MockVpp.MockReply(
-		&ip.IPFibDetails{
-			TableID:   3,
-			TableName: []byte("table3"),
-			Path:      []ip.FibPath{{SwIfIndex: 2}, {SwIfIndex: 4}},
+		&ip.IPTableDetails{
+			Table: ip.IPTable{
+				TableID: 1,
+				Name:    []byte("table3"),
+				IsIP6:   0,
+			},
 		},
-		&ip.IPFibDetails{
-			TableID:   3,
-			TableName: []byte("table3"),
-			Path:      []ip.FibPath{{SwIfIndex: 5}},
+		&ip.IPTableDetails{
+			Table: ip.IPTable{
+				TableID: 2,
+				Name:    []byte("table3"),
+				IsIP6:   0,
+			},
 		},
-		&ip.IPFibDetails{
-			TableID:   2,
-			TableName: []byte("table2"),
-			Path:      []ip.FibPath{{SwIfIndex: 5}},
-		})
+		&ip.IPTableDetails{
+			Table: ip.IPTable{
+				TableID: 3,
+				Name:    []byte("table2"),
+				IsIP6:   1,
+			},
+		},
+	)
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 	ctx.MockVpp.MockReply(
-		&ip.IP6FibDetails{
-			TableID:   2,
-			TableName: []byte("table2"),
-			Path:      []ip.FibPath{{SwIfIndex: 5}},
+		&ip.IPRouteDetails{
+			Route: ip.IPRoute{
+				TableID: 2,
+				Paths:   []ip.FibPath{{SwIfIndex: 5}},
+			},
 		})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 
@@ -62,8 +70,8 @@ func TestDumpVrfTables(t *testing.T) {
 		Expect(vrfTables[1]).To(Equal(&l3.VrfTable{Id: 3, Protocol: l3.VrfTable_IPV4, Label: "table3"}))
 		Expect(vrfTables[0]).To(Equal(&l3.VrfTable{Id: 2, Protocol: l3.VrfTable_IPV4, Label: "table2"}))
 	} else {
-		Expect(vrfTables[0]).To(Equal(&l3.VrfTable{Id: 3, Protocol: l3.VrfTable_IPV4, Label: "table3"}))
-		Expect(vrfTables[1]).To(Equal(&l3.VrfTable{Id: 2, Protocol: l3.VrfTable_IPV4, Label: "table2"}))
+		Expect(vrfTables[0]).To(Equal(&l3.VrfTable{Id: 1, Protocol: l3.VrfTable_IPV4, Label: "table3"}))
+		Expect(vrfTables[1]).To(Equal(&l3.VrfTable{Id: 2, Protocol: l3.VrfTable_IPV4, Label: "table3"}))
 	}
-	Expect(vrfTables[2]).To(Equal(&l3.VrfTable{Id: 2, Protocol: l3.VrfTable_IPV6, Label: "table2"}))
+	Expect(vrfTables[2]).To(Equal(&l3.VrfTable{Id: 3, Protocol: l3.VrfTable_IPV6, Label: "table2"}))
 }

@@ -89,8 +89,23 @@ type Lease struct {
 
 // InterfaceState is a helper function grouping interface state data.
 type InterfaceState struct {
+	SwIfIndex    uint32
+	InternalName string
+	PhysAddress  net.HardwareAddr
+
 	AdminState interfaces.InterfaceState_Status
 	LinkState  interfaces.InterfaceState_Status
+	LinkDuplex interfaces.InterfaceState_Duplex
+	LinkSpeed  uint64
+	LinkMTU    uint16
+}
+
+// InterfaceSpanDetails is a helper struct grouping SPAN data.
+type InterfaceSpanDetails struct {
+	SwIfIndexFrom uint32
+	SwIfIndexTo   uint32
+	Direction     uint8
+	IsL2          uint8
 }
 
 // InterfaceVppAPI provides methods for creating and managing interface plugin
@@ -175,8 +190,12 @@ type InterfaceVppAPI interface {
 	AttachInterfaceToBond(ifIdx, bondIfIdx uint32, isPassive, isLongTimeout bool) error
 	// DetachInterfaceFromBond removes interface slave status from any bond interfaces.
 	DetachInterfaceFromBond(ifIdx uint32) error
-    // SetVLanTagRewrite sets VLan tag rewrite rule for given sub-interface
+	// SetVLanTagRewrite sets VLan tag rewrite rule for given sub-interface
 	SetVLanTagRewrite(ifIdx uint32, subIf *interfaces.SubInterface) error
+	// AddSpan creates new span record
+	AddSpan(ifIdxFrom, ifIdxTo uint32, direction uint8, isL2 uint8) error
+	// DelSpan removes new span record
+	DelSpan(ifIdxFrom, ifIdxTo uint32, isL2 uint8) error
 }
 
 // InterfaceVppRead provides read methods for interface plugin
@@ -189,6 +208,10 @@ type InterfaceVppRead interface {
 	DumpInterfaces() (map[uint32]*InterfaceDetails, error)
 	// DumpInterfacesByType returns all VPP interfaces of the specified type
 	DumpInterfacesByType(reqType interfaces.Interface_Type) (map[uint32]*InterfaceDetails, error)
+	// DumpInterfaceStates dumps link and administrative state of every interface.
+	DumpInterfaceStates(ifIdxs ...uint32) (map[uint32]*InterfaceState, error)
+	// DumpSpan returns all records from span table.
+	DumpSpan() ([]*InterfaceSpanDetails, error)
 	// GetInterfaceVrf reads VRF table to interface
 	GetInterfaceVrf(ifIdx uint32) (vrfID uint32, err error)
 	// GetInterfaceVrfIPv6 reads IPv6 VRF table to interface
@@ -197,8 +220,6 @@ type InterfaceVppRead interface {
 	DumpMemifSocketDetails() (map[string]uint32, error)
 	// DumpDhcpClients dumps DHCP-related information for all interfaces.
 	DumpDhcpClients() (map[uint32]*Dhcp, error)
-	// DumpInterfaceStates dumps link and administrative state of every interface.
-	DumpInterfaceStates() (map[uint32]*InterfaceState, error)
 	// WatchInterfaceEvents starts watching for interface events.
 	WatchInterfaceEvents(ch chan<- *InterfaceEvent) error
 	// WatchDHCPLeases starts watching for DHCP leases.

@@ -93,7 +93,7 @@ func (c *Connection) processRequest(ch *Channel, req *vppRequest) error {
 			"msg_size": len(data),
 			"seq_num":  req.seqNum,
 			"msg_crc":  req.msg.GetCrcString(),
-		}).Debugf("--> govpp send: %s: %+v", req.msg.GetMessageName(), req.msg)
+		}).Debugf("==> govpp send: %s: %+v", req.msg.GetMessageName(), req.msg)
 	}
 
 	// send the request to VPP
@@ -118,7 +118,7 @@ func (c *Connection) processRequest(ch *Channel, req *vppRequest) error {
 			"msg_id":   c.pingReqID,
 			"msg_size": len(pingData),
 			"seq_num":  req.seqNum,
-		}).Debug("  -> sending control ping")
+		}).Debug("--> sending control ping")
 
 		if err := c.vppClient.SendMsg(context, pingData); err != nil {
 			log.WithFields(logger.Fields{
@@ -165,7 +165,7 @@ func (c *Connection) msgCallback(msgID uint16, data []byte) {
 			"is_multi": isMulti,
 			"seq_num":  seqNum,
 			"msg_crc":  msg.GetCrcString(),
-		}).Debugf("<-- govpp recv: %s", msg.GetMessageName())
+		}).Debugf("<== govpp recv: %s", msg.GetMessageName())
 	}
 
 	if context == 0 || c.isNotificationMessage(msgID) {

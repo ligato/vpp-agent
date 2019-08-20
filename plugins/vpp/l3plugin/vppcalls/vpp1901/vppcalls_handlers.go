@@ -25,17 +25,18 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/vpe"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls"
+	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vrfidx"
 )
 
 func init() {
 	var msgs []govppapi.Message
-	msgs = append(msgs, ip.Messages...)
-	msgs = append(msgs, vpe.Messages...)
-	msgs = append(msgs, dhcp.Messages...)
+	msgs = append(msgs, ip.AllMessages()...)
+	msgs = append(msgs, vpe.AllMessages()...)
+	msgs = append(msgs, dhcp.AllMessages()...)
 
 	vppcalls.Versions["vpp1901"] = vppcalls.HandlerVersion{
 		Msgs: msgs,
-		New: func(ch govppapi.Channel, ifIdx ifaceidx.IfaceMetadataIndex, log logging.Logger,
+		New: func(ch govppapi.Channel, ifIdx ifaceidx.IfaceMetadataIndex, vrfIdx vrfidx.VRFMetadataIndex, log logging.Logger,
 		) vppcalls.L3VppAPI {
 			return NewL3VppHandler(ch, ifIdx, log)
 		},

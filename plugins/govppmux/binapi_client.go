@@ -1,16 +1,16 @@
-// Copyright (c) 2018 Cisco and/or its affiliates.
+//  Copyright (c) 2019 Cisco and/or its affiliates.
 //
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at:
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at:
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//      http://www.apache.org/licenses/LICENSE-2.0
 //
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
 
 package govppmux
 
@@ -25,6 +25,42 @@ import (
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
 )
+
+// NewAPIChannel returns a new API channel for communication with VPP via govpp core.
+// It uses default buffer sizes for the request and reply Go channels.
+//
+// Example of binary API call from some plugin using GOVPP:
+//      ch, _ := govpp_mux.NewAPIChannel()
+//      ch.SendRequest(req).ReceiveReply
+func (p *Plugin) NewAPIChannel() (govppapi.Channel, error) {
+	ch, err := p.vppConn.NewAPIChannel()
+	if err != nil {
+		return nil, err
+	}
+	retryCfg := retryConfig{
+		p.config.RetryRequestCount,
+		p.config.RetryRequestTimeout,
+	}
+	return newGovppChan(ch, retryCfg, p.tracer), nil
+}
+
+// NewAPIChannelBuffered returns a new API channel for communication with VPP via govpp core.
+// It allows to specify custom buffer sizes for the request and reply Go channels.
+//
+// Example of binary API call from some plugin using GOVPP:
+//      ch, _ := govpp_mux.NewAPIChannelBuffered(100, 100)
+//      ch.SendRequest(req).ReceiveReply
+func (p *Plugin) NewAPIChannelBuffered(reqChanBufSize, replyChanBufSize int) (govppapi.Channel, error) {
+	ch, err := p.vppConn.NewAPIChannelBuffered(reqChanBufSize, replyChanBufSize)
+	if err != nil {
+		return nil, err
+	}
+	retryCfg := retryConfig{
+		p.config.RetryRequestCount,
+		p.config.RetryRequestTimeout,
+	}
+	return newGovppChan(ch, retryCfg, p.tracer), nil
+}
 
 // goVppChan implements govpp channel interface. Instance is returned by NewAPIChannel() or NewAPIChannelBuffered(),
 // and contains *govpp.channel dynamic type (vppChan field). Implemented methods allow custom handling of low-level
@@ -148,8 +184,10 @@ func (r *govppRequestCtx) ReceiveReply(reply govppapi.Message) error {
 		err = r.sendRequest(r.requestMsg).ReceiveReply(reply)
 	}
 
+	atomic.AddUint64(&stats.RequestsDone, 1)
 	if err != nil {
-		atomic.AddUint64(&stats.RequestsFailed, 1)
+		trackError(err.Error())
+		atomic.AddUint64(&stats.RequestsErrors, 1)
 	}
 
 	took := time.Since(r.start)
@@ -184,18 +222,25 @@ func (c *goVppChan) SendMultiRequest(request govppapi.Message) govppapi.MultiReq
 func (r *govppMultirequestCtx) ReceiveReply(reply govppapi.Message) (bool, error) {
 	// Receive reply from original send
 	last, err := r.requestCtx.ReceiveReply(reply)
-	if last {
+	if last || err != nil {
 		took := time.Since(r.start)
 		trackMsgRequestDur(r.requestMsg.GetMessageName(), took)
+
+		atomic.AddUint64(&stats.RequestsDone, 1)
 		if err != nil {
-			atomic.AddUint64(&stats.RequestsFailed, 1)
+			trackError(err.Error())
+			atomic.AddUint64(&stats.RequestsErrors, 1)
 		}
+
 		defer func() {
 			r.task.End()
 			if r.tracer != nil {
 				r.tracer.LogTime(r.requestMsg.GetMessageName(), r.start)
 			}
 		}()
+	} else {
+		atomic.AddUint64(&stats.RequestReplies, 1)
+		trackMsgReply(reply.GetMessageName())
 	}
 	return last, err
 }

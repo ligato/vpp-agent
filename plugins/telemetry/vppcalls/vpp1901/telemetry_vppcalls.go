@@ -31,8 +31,8 @@ import (
 
 func init() {
 	var msgs []govppapi.Message
-	msgs = append(msgs, memclnt.Messages...)
-	msgs = append(msgs, vpe.Messages...)
+	msgs = append(msgs, memclnt.AllMessages()...)
+	msgs = append(msgs, vpe.AllMessages()...)
 
 	vppcalls.Versions["19.01"] = vppcalls.HandlerVersion{
 		Msgs: msgs,
@@ -63,14 +63,15 @@ var (
 	memoryRe = regexp.MustCompile(
 		`Thread\s+(\d+)\s+(\w+).?\s+` +
 			`virtual memory start 0x[0-9abcdef]+, size ([\dkmg\.]+), ([\dkmg\.]+) pages, page size ([\dkmg\.]+)\s+` +
-			`(?:\s+(?:numa [\d]+|not mapped|unknown): [\dkmg\.]+ pages, [\dkmg\.]+\s+)+\s+` +
+			`(?:page information not available.*\s+)*` +
+			`(?:(?:\s+(?:numa [\d]+|not mapped|unknown): [\dkmg\.]+ pages, [\dkmg\.]+\s+)+\s+)*` +
 			`\s+total: ([\dkmgKMG\.]+), used: ([\dkmgKMG\.]+), free: ([\dkmgKMG\.]+), trimmable: ([\dkmgKMG\.]+)`,
 	)
 )
 
 // GetMemory retrieves `show memory` info.
 func (h *TelemetryHandler) GetMemory(ctx context.Context) (*vppcalls.MemoryInfo, error) {
-	data, err := h.RunCli("show memory")
+	data, err := h.RunCli("show memory main-heap")
 	if err != nil {
 		return nil, err
 	}

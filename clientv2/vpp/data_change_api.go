@@ -55,6 +55,8 @@ type DataChangeDSL interface {
 type PutDSL interface {
 	// Interface adds a request to create or update VPP network interface.
 	Interface(val *interfaces.Interface) PutDSL
+	// Span adds VPP span to the Put request.
+	Span(span *interfaces.Span) PutDSL
 	// ACL adds a request to create or update VPP Access Control List.
 	ACL(acl *acl.ACL) PutDSL
 	// ABF adds a request to create or update VPP ACL-based forwarding.
@@ -105,6 +107,8 @@ type PutDSL interface {
 type DeleteDSL interface {
 	// Interface adds a request to delete an existing VPP network interface.
 	Interface(ifaceName string) DeleteDSL
+	// Span adds VPP span to the Delete request.
+	Span(span *interfaces.Span) DeleteDSL
 	// ACL adds a request to delete an existing VPP Access Control List.
 	ACL(aclName string) DeleteDSL
 	// ABF adds a request to delete and existing VPP Access Control List.
@@ -119,7 +123,7 @@ type DeleteDSL interface {
 	// VrfTable adds a request to delete existing VPP VRF table.
 	VrfTable(id uint32, proto l3.VrfTable_Protocol) DeleteDSL
 	// StaticRoute adds a request to delete an existing VPP L3 Static Route.
-	StaticRoute(vrf uint32, dstAddr string, nextHopAddr string) DeleteDSL
+	StaticRoute(iface string, vrf uint32, dstAddr string, nextHopAddr string) DeleteDSL
 	// Arp adds a request to delete an existing VPP L3 ARP.
 	Arp(ifaceName string, ipAddr string) DeleteDSL
 	// ProxyArpInterfaces adds a request to delete an existing VPP L3 proxy ARP interfaces

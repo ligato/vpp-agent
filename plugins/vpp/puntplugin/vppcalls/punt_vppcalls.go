@@ -15,11 +15,17 @@
 package vppcalls
 
 import (
+	"errors"
+
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 
 	punt "github.com/ligato/vpp-agent/api/models/vpp/punt"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
+)
+
+var (
+	ErrUnsupported = errors.New("unsupported")
 )
 
 // PuntDetails includes punt model and socket path from VPP.

@@ -15,21 +15,23 @@
 package supervisor
 
 import (
+	"fmt"
+	"os"
 	"os/exec"
 )
 
 // Environment variables set for executed hook command
 const (
-	svProcessName  = "SUPERVISOR_PROCESS_NAME="
-	svProcessState = "SUPERVISOR_PROCESS_STATE="
-	seEventType    = "SUPERVISOR_EVENT_TYPE="
+	svProcessName  = "SUPERVISOR_PROCESS_NAME"
+	svProcessState = "SUPERVISOR_PROCESS_STATE"
+	seEventType    = "SUPERVISOR_EVENT_TYPE"
 )
 
 func (p *Plugin) watchEvents() {
 	for {
 		processInfo, ok := <-p.hookEventChan
 		if !ok {
-			p.Log.Debugf("Supervisor hook watcher ended")
+			p.Log.Debugf("supervisor hook watcher ended")
 			close(p.hookDoneChan)
 			return
 		}
@@ -38,16 +40,18 @@ func (p *Plugin) watchEvents() {
 		for _, hook := range p.config.Hooks {
 			cmd := exec.Command(hook.Cmd, hook.CmdArgs...)
 
-			cmd.Env = append(cmd.Env, svProcessName+processInfo.name)
-			cmd.Env = append(cmd.Env, svProcessState+string(processInfo.state))
-			cmd.Env = append(cmd.Env, seEventType+string(processInfo.eventType))
+			cmd.Env = append(os.Environ(),
+				fmt.Sprintf("%s=%v", seEventType, processInfo.eventType),
+				fmt.Sprintf("%s=%v", svProcessName, processInfo.name),
+				fmt.Sprintf("%s=%v", svProcessState, processInfo.state),
+			)
 
 			out, err := cmd.CombinedOutput()
 			if err != nil {
-				p.Log.Errorf("%v", err)
+				p.Log.Errorf("hook failed: %v", err)
 			}
 			if len(out) > 0 {
-				p.Log.Debugf("%s", out)
+				p.Log.Debugf("hook output: %s", out)
 			}
 		}
 	}

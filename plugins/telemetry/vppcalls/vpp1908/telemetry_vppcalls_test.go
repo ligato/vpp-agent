@@ -16,13 +16,14 @@ package vpp1908_test
 
 import (
 	"context"
-	"github.com/ligato/vpp-agent/plugins/telemetry/vppcalls/vpp1908"
 	"testing"
 
+	. "github.com/onsi/gomega"
+
 	"github.com/ligato/vpp-agent/plugins/telemetry/vppcalls"
+	"github.com/ligato/vpp-agent/plugins/telemetry/vppcalls/vpp1908"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1908/vpe"
 	"github.com/ligato/vpp-agent/plugins/vpp/vppcallmock"
-	. "github.com/onsi/gomega"
 )
 
 func TestGetBuffers(t *testing.T) {
@@ -408,6 +409,27 @@ no traced allocations
 				Total:     1e9,
 				Free:      999.73e6,
 				Reclaimed: 996.12e6,
+			},
+		},
+		{
+			name: "19.08 update",
+			reply: `Thread 0 vpp_main
+  virtual memory start 0x7ff41b3ca000, size 1048640k, 262160 pages, page size 4k
+    page information not available (errno 1)
+  total: 1.00G, used: 19.81M, free: 1004.25M, trimmable: 1004.24M
+`,
+			threadCount: 1,
+			threadIdx:   0,
+			thread: vppcalls.MemoryThread{
+				ID:        0,
+				Name:      "vpp_main",
+				Size:      1048.64e6,
+				Pages:     262160,
+				PageSize:  4000,
+				Used:      19.81e6,
+				Total:     1e9,
+				Free:      1004.25e6,
+				Reclaimed: 1004.24e6,
 			},
 		},
 	}

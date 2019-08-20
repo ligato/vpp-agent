@@ -15,18 +15,18 @@
 package vpp1908
 
 import (
+	"bytes"
+
 	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1908/ip"
-	"bytes"
 )
 
 // DumpVrfTables dumps all configured VRF tables.
 func (h *VrfTableHandler) DumpVrfTables() (tables []*l3.VrfTable, err error) {
 	// dump IPv4 VRF tables
-	v4Tables := make(map[uint32]*l3.VrfTable)
-	reqCtx := h.callsChannel.SendMultiRequest(&ip.IPFibDump{})
+	reqCtx := h.callsChannel.SendMultiRequest(&ip.IPTableDump{})
 	for {
-		fibDetails := &ip.IPFibDetails{}
+		fibDetails := &ip.IPTableDetails{}
 		stop, err := reqCtx.ReceiveReply(fibDetails)
 		if stop {
 			break
@@ -34,43 +34,21 @@ func (h *VrfTableHandler) DumpVrfTables() (tables []*l3.VrfTable, err error) {
 		if err != nil {
 			return nil, err
 		}
-		if _, dumped := v4Tables[fibDetails.TableID]; !dumped {
-			v4Tables[fibDetails.TableID] = &l3.VrfTable{
-				Id:       fibDetails.TableID,
-				Protocol: l3.VrfTable_IPV4,
-				Label:    bytesToString(fibDetails.TableName),
-			}
-		}
+		tables = append(tables, &l3.VrfTable{
+			Id:       fibDetails.Table.TableID,
+			Protocol: getTableProto(uintToBool(fibDetails.Table.IsIP6)),
+			Label:    bytesToString(fibDetails.Table.Name),
+		})
 	}
 
-	// dump IPv6 VRF tables
-	v6Tables := make(map[uint32]*l3.VrfTable)
-	reqCtx = h.callsChannel.SendMultiRequest(&ip.IP6FibDump{})
-	for {
-		fibDetails := &ip.IP6FibDetails{}
-		stop, err := reqCtx.ReceiveReply(fibDetails)
-		if stop {
-			break
-		}
-		if err != nil {
-			return nil, err
-		}
-		if _, dumped := v6Tables[fibDetails.TableID]; !dumped {
-			v6Tables[fibDetails.TableID] = &l3.VrfTable{
-				Id:       fibDetails.TableID,
-				Protocol: l3.VrfTable_IPV6,
-				Label:    bytesToString(fibDetails.TableName),
-			}
-		}
-	}
-
-	for _, table := range v4Tables {
-		tables = append(tables, table)
-	}
-	for _, table := range v6Tables {
-		tables = append(tables, table)
-	}
 	return tables, nil
+}
+
+func getTableProto(isIPv6 bool) l3.VrfTable_Protocol {
+	if isIPv6 {
+		return l3.VrfTable_IPV6
+	}
+	return l3.VrfTable_IPV4
 }
 
 func bytesToString(b []byte) string {

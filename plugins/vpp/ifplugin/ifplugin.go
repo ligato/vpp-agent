@@ -17,12 +17,12 @@
 //go:generate descriptor-adapter --descriptor-name RxMode  --value-type *vpp_interfaces.Interface --import "github.com/ligato/vpp-agent/api/models/vpp/interfaces" --output-dir "descriptor"
 //go:generate descriptor-adapter --descriptor-name RxPlacement  --value-type *vpp_interfaces.Interface_RxPlacement --import "github.com/ligato/vpp-agent/api/models/vpp/interfaces" --output-dir "descriptor"
 //go:generate descriptor-adapter --descriptor-name BondedInterface  --value-type *vpp_interfaces.BondLink_BondedInterface --import "github.com/ligato/vpp-agent/api/models/vpp/interfaces" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name Span  --value-type *vpp_interfaces.Span --import "github.com/ligato/vpp-agent/api/models/vpp/interfaces" --output-dir "descriptor"
 
 package ifplugin
 
 import (
 	"context"
-	"os"
 	"sync"
 	"time"
 
@@ -49,22 +49,6 @@ import (
 	_ "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls/vpp1908"
 )
 
-const (
-	// vppStatusPublishersEnv is the name of the environment variable used to
-	// override state publishers from the configuration file.
-	vppStatusPublishersEnv = "VPP_STATUS_PUBLISHERS"
-)
-
-var (
-	// noopWriter (no operation writer) helps avoiding NIL pointer based segmentation fault.
-	// It is used as default if some dependency was not injected.
-	noopWriter = datasync.KVProtoWriters{}
-
-	// noopWatcher (no operation watcher) helps avoiding NIL pointer based segmentation fault.
-	// It is used as default if some dependency was not injected.
-	noopWatcher = datasync.KVProtoWatchers{}
-)
-
 // IfPlugin configures VPP interfaces using GoVPP.
 type IfPlugin struct {
 	Deps
@@ -83,6 +67,7 @@ type IfPlugin struct {
 	// descriptors
 	linkStateDescriptor *descriptor.LinkStateDescriptor
 	dhcpDescriptor      *descriptor.DHCPDescriptor
+	spanDescriptor      *descriptor.SpanDescriptor
 
 	// from config file
 	defaultMtu uint32
@@ -123,21 +108,15 @@ type Deps struct {
 	PushNotification  func(notification *vpp.Notification)
 }
 
-// Config holds the vpp-plugin configuration.
-type Config struct {
-	MTU              uint32   `json:"mtu"`
-	StatusPublishers []string `json:"status-publishers"`
-}
-
 // Init loads configuration file and registers interface-related descriptors.
-func (p *IfPlugin) Init() error {
-	var err error
-
+func (p *IfPlugin) Init() (err error) {
 	// Create plugin context, save cancel function into the plugin handle.
 	p.ctx, p.cancel = context.WithCancel(context.Background())
 
 	// Read config file and set all related fields
-	p.fromConfigFile()
+	if err := p.fromConfigFile(); err != nil {
+		return err
+	}
 
 	// Fills nil dependencies with default values
 	p.publishStats = p.PublishStatistics != nil || p.NotifyStates != nil
@@ -180,12 +159,16 @@ func (p *IfPlugin) Init() error {
 		p.ifHandler, p.intfIndex, p.Log)
 	linkStateDescriptor, p.linkStateDescriptor = descriptor.NewLinkStateDescriptor(
 		p.KVScheduler, p.ifHandler, p.intfIndex, p.Log)
+
 	rxModeDescriptor := descriptor.NewRxModeDescriptor(p.ifHandler, p.intfIndex, p.Log)
 	rxPlacementDescriptor := descriptor.NewRxPlacementDescriptor(p.ifHandler, p.intfIndex, p.Log)
 	addrDescriptor := descriptor.NewInterfaceAddressDescriptor(p.ifHandler, p.intfIndex, p.Log)
 	unIfDescriptor := descriptor.NewUnnumberedIfDescriptor(p.ifHandler, p.intfIndex, p.Log)
 	bondIfDescriptor, _ := descriptor.NewBondedInterfaceDescriptor(p.ifHandler, p.intfIndex, p.Log)
 	vrfDescriptor := descriptor.NewInterfaceVrfDescriptor(p.ifHandler, p.intfIndex, p.Log)
+	withAddrDescriptor := descriptor.NewInterfaceWithAddrDescriptor(p.Log)
+	spanDescriptor, spanDescriptorCtx := descriptor.NewSpanDescriptor(p.ifHandler, p.Log)
+	spanDescriptorCtx.SetInterfaceIndex(p.intfIndex)
 
 	err = p.KVScheduler.RegisterKVDescriptor(
 		dhcpDescriptor,
@@ -196,6 +179,8 @@ func (p *IfPlugin) Init() error {
 		unIfDescriptor,
 		bondIfDescriptor,
 		vrfDescriptor,
+		withAddrDescriptor,
+		spanDescriptor,
 	)
 	if err != nil {
 		return err
@@ -327,11 +312,11 @@ func (p *IfPlugin) SetNotifyService(notify func(notification *vpp.Notification))
 }
 
 // fromConfigFile loads plugin attributes from the configuration file.
-func (p *IfPlugin) fromConfigFile() {
+func (p *IfPlugin) fromConfigFile() error {
 	config, err := p.loadConfig()
 	if err != nil {
 		p.Log.Errorf("Error reading %v config file: %v", p.PluginName, err)
-		return
+		return err
 	}
 	if config != nil {
 		publishers := datasync.KVProtoWriters{}
@@ -350,28 +335,18 @@ func (p *IfPlugin) fromConfigFile() {
 			p.Log.Infof("Default MTU set to %v", p.defaultMtu)
 		}
 	}
+	return nil
 }
 
-// loadConfig loads configuration file.
-func (p *IfPlugin) loadConfig() (*Config, error) {
-	config := &Config{}
+var (
+	// noopWriter (no operation writer) helps avoiding NIL pointer based segmentation fault.
+	// It is used as default if some dependency was not injected.
+	noopWriter = datasync.KVProtoWriters{}
 
-	found, err := p.Cfg.LoadValue(config)
-	if err != nil {
-		return nil, err
-	} else if !found {
-		p.Log.Debugf("%v config not found", p.PluginName)
-		return nil, nil
-	}
-	p.Log.Debugf("%v config found: %+v", p.PluginName, config)
-
-	if pubs := os.Getenv(vppStatusPublishersEnv); pubs != "" {
-		p.Log.Debugf("status publishers from env: %v", pubs)
-		config.StatusPublishers = append(config.StatusPublishers, pubs)
-	}
-
-	return config, err
-}
+	// noopWatcher (no operation watcher) helps avoiding NIL pointer based segmentation fault.
+	// It is used as default if some dependency was not injected.
+	noopWatcher = datasync.KVProtoWatchers{}
+)
 
 // fixNilPointers sets noopWriter & nooWatcher for nil dependencies.
 func (p *IfPlugin) fixNilPointers() {

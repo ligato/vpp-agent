@@ -32,15 +32,17 @@ func TestVppAddArpTerminationTableEntry(t *testing.T) {
 
 	Expect(err).ShouldNot(HaveOccurred())
 	Expect(ctx.MockChannel.Msg).To(Equal(&l2ba.BdIPMacAddDel{
-		BdID:  4,
-		IsAdd: 1,
-		IP: l2ba.Address{
-			Af: l2ba.ADDRESS_IP4,
-			Un: l2ba.AddressUnionIP4(
-				l2ba.IP4Address{192, 168, 4, 4},
-			),
+		Entry: l2ba.BdIPMac{
+			BdID: 4,
+			IP: l2ba.Address{
+				Af: l2ba.ADDRESS_IP4,
+				Un: l2ba.AddressUnionIP4(
+					l2ba.IP4Address{192, 168, 4, 4},
+				),
+			},
+			Mac: l2ba.MacAddress{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF},
 		},
-		Mac: l2ba.MacAddress{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF},
+		IsAdd: 1,
 	}))
 }
 
@@ -54,15 +56,17 @@ func TestVppAddArpTerminationTableEntryIPv6(t *testing.T) {
 
 	Expect(err).ShouldNot(HaveOccurred())
 	Expect(ctx.MockChannel.Msg).To(Equal(&l2ba.BdIPMacAddDel{
-		BdID:  4,
-		IsAdd: 1,
-		IP: l2ba.Address{
-			Af: l2ba.ADDRESS_IP6,
-			Un: l2ba.AddressUnionIP6(
-				l2ba.IP6Address{32, 1, 13, 185, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 84},
-			),
+		Entry: l2ba.BdIPMac{
+			BdID: 4,
+			IP: l2ba.Address{
+				Af: l2ba.ADDRESS_IP6,
+				Un: l2ba.AddressUnionIP6(
+					l2ba.IP6Address{32, 1, 13, 185, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 84},
+				),
+			},
+			Mac: l2ba.MacAddress{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF},
 		},
-		Mac: l2ba.MacAddress{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF},
+		IsAdd: 1,
 	}))
 }
 
@@ -76,15 +80,17 @@ func TestVppRemoveArpTerminationTableEntry(t *testing.T) {
 
 	Expect(err).ShouldNot(HaveOccurred())
 	Expect(ctx.MockChannel.Msg).To(Equal(&l2ba.BdIPMacAddDel{
-		BdID:  4,
-		IsAdd: 0,
-		IP: l2ba.Address{
-			Af: l2ba.ADDRESS_IP4,
-			Un: l2ba.AddressUnionIP4(
-				l2ba.IP4Address{192, 168, 4, 4},
-			),
+		Entry: l2ba.BdIPMac{
+			BdID: 4,
+			IP: l2ba.Address{
+				Af: l2ba.ADDRESS_IP4,
+				Un: l2ba.AddressUnionIP4(
+					l2ba.IP4Address{192, 168, 4, 4},
+				),
+			},
+			Mac: l2ba.MacAddress{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF},
 		},
-		Mac: l2ba.MacAddress{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF},
+		IsAdd: 0,
 	}))
 }
 

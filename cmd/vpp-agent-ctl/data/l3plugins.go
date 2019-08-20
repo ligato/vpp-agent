@@ -17,6 +17,7 @@ package data
 import (
 	linuxL3 "github.com/ligato/vpp-agent/api/models/linux/l3"
 	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
+	"github.com/ligato/vpp-agent/pkg/models"
 )
 
 // L3Ctl L3 plugin related methods for vpp-agent-ctl (including linux)
@@ -53,6 +54,10 @@ type L3Ctl interface {
 	SetIPScanNeigh() error
 	// UnsetIPScanNeigh removes VPP IP scan neighbor configuration from the ETCD
 	UnsetIPScanNeigh() error
+	// PutVrf puts VPP VRF to the ETCD
+	PutVrf() error
+	// UnsetVrf removes VPP VRF configuration from the ETCD
+	DeleteVrf() error
 	// CreateLinuxArp puts linux ARP entry configuration to the ETCD
 	PutLinuxArp() error
 	// DeleteLinuxArp removes Linux ARP entry configuration from the ETCD
@@ -70,12 +75,12 @@ func (ctl *VppAgentCtlImpl) PutRoute() error {
 	}
 
 	ctl.Log.Infof("Route put: %v", route)
-	return ctl.broker.Put(l3.RouteKey(route.VrfId, route.DstNetwork, route.NextHopAddr), route)
+	return ctl.broker.Put(models.Key(route), route)
 }
 
 // DeleteRoute removes VPP route configuration from the ETCD
 func (ctl *VppAgentCtlImpl) DeleteRoute() error {
-	routeKey := l3.RouteKey(0, "10.1.1.3/32", "192.168.1.13")
+	routeKey := l3.RouteKey("tap1",0, "10.1.1.3/32", "192.168.1.13")
 
 	ctl.Log.Infof("Route delete: %v", routeKey)
 	_, err := ctl.broker.Delete(routeKey)
@@ -92,12 +97,12 @@ func (ctl *VppAgentCtlImpl) PutInterVrfRoute() error {
 	}
 
 	ctl.Log.Infof("Route put: %v", route)
-	return ctl.broker.Put(l3.RouteKey(route.VrfId, route.DstNetwork, route.NextHopAddr), route)
+	return ctl.broker.Put(models.Key(route), route)
 }
 
 // DeleteInterVrfRoute removes VPP route configuration from the ETCD
 func (ctl *VppAgentCtlImpl) DeleteInterVrfRoute() error {
-	routeKey := l3.RouteKey(0, "1.2.3.4/32", "")
+	routeKey := l3.RouteKey("",0, "1.2.3.4/32", "")
 
 	ctl.Log.Infof("Route delete: %v", routeKey)
 	_, err := ctl.broker.Delete(routeKey)
@@ -115,12 +120,12 @@ func (ctl *VppAgentCtlImpl) PutNextHopRoute() error {
 	}
 
 	ctl.Log.Infof("Route put: %v", route)
-	return ctl.broker.Put(l3.RouteKey(route.VrfId, route.DstNetwork, route.NextHopAddr), route)
+	return ctl.broker.Put(models.Key(route), route)
 }
 
 // DeleteNextHopRoute removes VPP route configuration from the ETCD
 func (ctl *VppAgentCtlImpl) DeleteNextHopRoute() error {
-	routeKey := l3.RouteKey(1, "10.1.1.3/32", "192.168.1.13")
+	routeKey := l3.RouteKey("", 1, "10.1.1.3/32", "192.168.1.13")
 
 	ctl.Log.Infof("Route delete: %v", routeKey)
 	_, err := ctl.broker.Delete(routeKey)
@@ -240,6 +245,27 @@ func (ctl *VppAgentCtlImpl) SetIPScanNeigh() error {
 func (ctl *VppAgentCtlImpl) UnsetIPScanNeigh() error {
 	ctl.Log.Info("IP scan neighbor unset")
 	_, err := ctl.broker.Delete(l3.IPScanNeighborKey())
+	return err
+}
+
+// PutVrf puts VPP VRF to the ETCD
+func (ctl *VppAgentCtlImpl) PutVrf() error {
+	vrf := &l3.VrfTable{
+		Label: "vrf1",
+		Id: 1,
+		Protocol: l3.VrfTable_IPV4,
+	}
+
+	ctl.Log.Info("VRF set")
+	return ctl.broker.Put(l3.VrfTableKey(vrf.Id, vrf.Protocol), vrf)
+}
+
+// DeleteVrf removes VPP VRF configuration from the ETCD
+func (ctl *VppAgentCtlImpl) DeleteVrf() error {
+	vrf := l3.VrfTableKey(1, l3.VrfTable_IPV4)
+
+	ctl.Log.Info("VRF unset")
+	_, err := ctl.broker.Delete(vrf)
 	return err
 }
 

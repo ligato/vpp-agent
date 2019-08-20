@@ -360,13 +360,13 @@ func (d *InterfaceDescriptor) Validate(key string, intf *interfaces.Interface) e
 	}
 
 	// validate interface type defined
-	if intf.Type == interfaces.Interface_UNDEFINED_TYPE {
+	if intf.GetType() == interfaces.Interface_UNDEFINED_TYPE {
 		return kvs.NewInvalidValueError(ErrInterfaceWithoutType, "type")
 	}
 
 	// validate link with interface type
 	linkMismatchErr := kvs.NewInvalidValueError(ErrInterfaceLinkMismatch, "link")
-	switch intf.Link.(type) {
+	switch intf.GetLink().(type) {
 	case *interfaces.Interface_Sub:
 		if intf.Type != interfaces.Interface_SUB_INTERFACE {
 			return linkMismatchErr
@@ -433,7 +433,7 @@ func (d *InterfaceDescriptor) Validate(key string, intf *interfaces.Interface) e
 		}
 	}
 
-	// validate Rx Placement before it gets derived out
+	// validate rx placements before before deriving
 	for i, rxPlacement1 := range intf.GetRxPlacements() {
 		for j := i + 1; j < len(intf.GetRxPlacements()); j++ {
 			rxPlacement2 := intf.GetRxPlacements()[j]
@@ -536,7 +536,9 @@ func (d *InterfaceDescriptor) Dependencies(key string, intf *interfaces.Interfac
 //  - one empty value for every IP address to be assigned to the interface
 //  - one empty value for VRF table to put the interface into
 //  - one value with interface configuration reduced to RxMode if set
-//  - one Interface_RxPlacement for every queue with configured Rx placement.
+//  - one Interface_RxPlacement for every queue with configured Rx placement
+//  - one empty value which will be created once at least one IP address is
+//    assigned to the interface.
 func (d *InterfaceDescriptor) DerivedValues(key string, intf *interfaces.Interface) (derValues []kvs.KeyValuePair) {
 	// unnumbered interface
 	if intf.GetUnnumbered() != nil {
@@ -605,7 +607,7 @@ func (d *InterfaceDescriptor) DerivedValues(key string, intf *interfaces.Interfa
 	// Rx mode
 	if len(intf.GetRxModes()) > 0 {
 		derValues = append(derValues, kvs.KeyValuePair{
-			Key:   interfaces.RxModesKey(intf.GetName()),
+			Key: interfaces.RxModesKey(intf.GetName()),
 			Value: &interfaces.Interface{
 				Name:    intf.GetName(),
 				Type:    intf.GetType(),
@@ -619,6 +621,14 @@ func (d *InterfaceDescriptor) DerivedValues(key string, intf *interfaces.Interfa
 		derValues = append(derValues, kvs.KeyValuePair{
 			Key:   interfaces.RxPlacementKey(intf.GetName(), rxPlacement.GetQueue()),
 			Value: rxPlacement,
+		})
+	}
+
+	// with-IP address (property)
+	if len(intf.GetIpAddresses()) > 0 {
+		derValues = append(derValues, kvs.KeyValuePair{
+			Key:   interfaces.InterfaceWithIPKey(intf.GetName()),
+			Value: &prototypes.Empty{},
 		})
 	}
 

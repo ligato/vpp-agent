@@ -26,8 +26,6 @@ import (
 
 // DumpPuntRedirect dumps ip redirect punts
 func (h *PuntVppHandler) DumpPuntRedirect() (punts []*vpp_punt.IPRedirect, err error) {
-	h.log.Debug("=> dumping IP redirect punts")
-
 	punt4, err := h.dumpPuntRedirect(false)
 	if err != nil {
 		return nil, err
@@ -44,8 +42,6 @@ func (h *PuntVppHandler) DumpPuntRedirect() (punts []*vpp_punt.IPRedirect, err e
 }
 
 func (h *PuntVppHandler) dumpPuntRedirect(ipv6 bool) (punts []*vpp_punt.IPRedirect, err error) {
-	h.log.Debugf("dumping IP redirect punts (ipv6: %v)", ipv6)
-
 	req := h.callsChannel.SendMultiRequest(&ip.IPPuntRedirectDump{
 		SwIfIndex: ^uint32(0),
 		IsIPv6:    boolToUint(ipv6),
@@ -59,8 +55,6 @@ func (h *PuntVppHandler) dumpPuntRedirect(ipv6 bool) (punts []*vpp_punt.IPRedire
 		if err != nil {
 			return nil, err
 		}
-
-		h.log.Debugf(" - ip redirect punt: %+v", d)
 
 		rxIface, _, exists := h.ifIndexes.LookupBySwIfIndex(d.Punt.RxSwIfIndex)
 		if !exists {
@@ -112,7 +106,6 @@ func (h *PuntVppHandler) DumpExceptions() (punts []*vppcalls.ExceptionDetails, e
 	}
 
 	if punts, err = h.dumpPuntExceptions(reasonMap); err != nil {
-		h.log.Errorf("punt exception dump failed: %v", err)
 		return nil, err
 	}
 
@@ -120,8 +113,6 @@ func (h *PuntVppHandler) DumpExceptions() (punts []*vppcalls.ExceptionDetails, e
 }
 
 func (h *PuntVppHandler) dumpPuntExceptions(reasons map[uint32]string) (punts []*vppcalls.ExceptionDetails, err error) {
-	h.log.Debug("=> dumping exception punts")
-
 	req := h.callsChannel.SendMultiRequest(&punt.PuntSocketDump{
 		Type: punt.PUNT_API_TYPE_EXCEPTION,
 	})
@@ -143,7 +134,6 @@ func (h *PuntVppHandler) dumpPuntExceptions(reasons map[uint32]string) (punts []
 		puntData := d.Punt.Punt.GetException()
 		reason := reasons[puntData.ID]
 		socketPath := string(bytes.Trim(d.Pathname, "\x00"))
-		h.log.Debugf(" - dumped exception punt: %+v (pathname: %s, reason: %s)", puntData, socketPath, reason)
 
 		punts = append(punts, &vppcalls.ExceptionDetails{
 			Exception: &vpp_punt.Exception{
@@ -160,7 +150,6 @@ func (h *PuntVppHandler) dumpPuntExceptions(reasons map[uint32]string) (punts []
 // DumpRegisteredPuntSockets returns punt to host via registered socket entries
 func (h *PuntVppHandler) DumpRegisteredPuntSockets() (punts []*vppcalls.PuntDetails, err error) {
 	if punts, err = h.dumpPuntL4(); err != nil {
-		h.log.Errorf("punt L4 dump failed: %v", err)
 		return nil, err
 	}
 
@@ -168,8 +157,6 @@ func (h *PuntVppHandler) DumpRegisteredPuntSockets() (punts []*vppcalls.PuntDeta
 }
 
 func (h *PuntVppHandler) dumpPuntL4() (punts []*vppcalls.PuntDetails, err error) {
-	h.log.Debug("=> dumping L4 punts")
-
 	req := h.callsChannel.SendMultiRequest(&punt.PuntSocketDump{
 		Type: punt.PUNT_API_TYPE_L4,
 	})
@@ -190,7 +177,6 @@ func (h *PuntVppHandler) dumpPuntL4() (punts []*vppcalls.PuntDetails, err error)
 
 		puntData := d.Punt.Punt.GetL4()
 		socketPath := string(bytes.Trim(d.Pathname, "\x00"))
-		h.log.Debugf(" - dumped L4 punt: %+v (pathname: %s)", puntData, socketPath)
 
 		punts = append(punts, &vppcalls.PuntDetails{
 			PuntData: &vpp_punt.ToHost{
@@ -209,7 +195,6 @@ func (h *PuntVppHandler) dumpPuntL4() (punts []*vppcalls.PuntDetails, err error)
 // DumpPuntReasons returns all known punt reasons from VPP
 func (h *PuntVppHandler) DumpPuntReasons() (reasons []*vppcalls.ReasonDetails, err error) {
 	if reasons, err = h.dumpPuntReasons(); err != nil {
-		h.log.Errorf("punt reasons dump failed: %v", err)
 		return nil, err
 	}
 
@@ -217,8 +202,6 @@ func (h *PuntVppHandler) DumpPuntReasons() (reasons []*vppcalls.ReasonDetails, e
 }
 
 func (h *PuntVppHandler) dumpPuntReasons() (reasons []*vppcalls.ReasonDetails, err error) {
-	h.log.Debugf("=> dumping punt reasons")
-
 	req := h.callsChannel.SendMultiRequest(&punt.PuntReasonDump{})
 	for {
 		d := &punt.PuntReasonDetails{}
@@ -229,7 +212,6 @@ func (h *PuntVppHandler) dumpPuntReasons() (reasons []*vppcalls.ReasonDetails, e
 		if err != nil {
 			return nil, err
 		}
-		h.log.Debugf(" - dumped punt reason: %+v", d.Reason)
 
 		reasons = append(reasons, &vppcalls.ReasonDetails{
 			Reason: &vpp_punt.Reason{

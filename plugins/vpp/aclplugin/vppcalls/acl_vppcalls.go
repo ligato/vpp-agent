@@ -82,13 +82,13 @@ type ACLVppAPI interface {
 	AddACLToInterfaceAsIngress(aclIndex uint32, ifName string) error
 	// AddACLToInterfaceAsEgress adds ACL (L3/L4) to single interface as egress.
 	AddACLToInterfaceAsEgress(aclIndex uint32, ifName string) error
-	// AddACLToInterfaceAsIngress deletes ACL (L3/L4) from single interface as ingress.
+	// DeleteACLFromInterfaceAsIngress deletes ACL (L3/L4) from single interface as ingress.
 	DeleteACLFromInterfaceAsIngress(aclIndex uint32, ifName string) error
-	// AddACLToInterfaceAsEgress deletes ACL (L3/L4) from single interface as egress.
+	// DeleteACLFromInterfaceAsEgress deletes ACL (L3/L4) from single interface as egress.
 	DeleteACLFromInterfaceAsEgress(aclIndex uint32, ifName string) error
-	// AddACLToInterfaceAsIngress adds MACIP ACL (L2) to single interface.
+	// AddMACIPACLToInterface adds MACIP ACL (L2) to single interface.
 	AddMACIPACLToInterface(aclIndex uint32, ifName string) error
-	// AddACLToInterfaceAsEgress deletes MACIP ACL (L2) from single interface.
+	// DeleteMACIPACLFromInterface deletes MACIP ACL (L2) from single interface.
 	DeleteMACIPACLFromInterface(aclIndex uint32, ifName string) error
 }
 

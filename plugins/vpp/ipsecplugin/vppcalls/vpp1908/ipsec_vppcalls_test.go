@@ -244,3 +244,89 @@ func TestVppDelSA(t *testing.T) {
 		},
 	}))
 }
+
+func TestVppAddSATunnelMode(t *testing.T) {
+	ctx, ipSecHandler, _ := ipSecTestSetup(t)
+	defer ctx.TeardownTestCtx()
+
+	ctx.MockVpp.MockReply(&ipsec.IpsecSadEntryAddDelReply{})
+
+	cryptoKey, err := hex.DecodeString("")
+	Expect(err).To(BeNil())
+
+	err = ipSecHandler.AddSA(&ipsec2.SecurityAssociation{
+		Index:         "1",
+		Spi:           uint32(1001),
+		TunnelSrcAddr: "10.1.0.1",
+		TunnelDstAddr: "20.1.0.1",
+	})
+
+	Expect(err).ShouldNot(HaveOccurred())
+	Expect(ctx.MockChannel.Msg).To(BeEquivalentTo(&ipsec.IpsecSadEntryAddDel{
+		IsAdd: 1,
+		Entry: ipsec.IpsecSadEntry{
+			SadID: 1,
+			Spi:   1001,
+			CryptoKey: ipsec.Key{
+				Length: uint8(len(cryptoKey)),
+				Data:   cryptoKey,
+			},
+			IntegrityKey: ipsec.Key{
+				Length: uint8(len(cryptoKey)),
+				Data:   cryptoKey,
+			},
+			TunnelSrc: ipsec.Address{
+				Af: ipsec.ADDRESS_IP4,
+				Un: ipsec.AddressUnion{XXX_UnionData: [16]byte{10, 1, 0, 1}},
+			},
+			TunnelDst: ipsec.Address{
+				Af: ipsec.ADDRESS_IP4,
+				Un: ipsec.AddressUnion{XXX_UnionData: [16]byte{20, 1, 0, 1}},
+			},
+			Flags: ipsec.IPSEC_API_SAD_FLAG_IS_TUNNEL,
+		},
+	}))
+}
+
+func TestVppAddSATunnelModeIPv6(t *testing.T) {
+	ctx, ipSecHandler, _ := ipSecTestSetup(t)
+	defer ctx.TeardownTestCtx()
+
+	ctx.MockVpp.MockReply(&ipsec.IpsecSadEntryAddDelReply{})
+
+	cryptoKey, err := hex.DecodeString("")
+	Expect(err).To(BeNil())
+
+	err = ipSecHandler.AddSA(&ipsec2.SecurityAssociation{
+		Index:         "1",
+		Spi:           uint32(1001),
+		TunnelSrcAddr: "1234::",
+		TunnelDstAddr: "abcd::",
+	})
+
+	Expect(err).ShouldNot(HaveOccurred())
+	Expect(ctx.MockChannel.Msg).To(BeEquivalentTo(&ipsec.IpsecSadEntryAddDel{
+		IsAdd: 1,
+		Entry: ipsec.IpsecSadEntry{
+			SadID: 1,
+			Spi:   1001,
+			CryptoKey: ipsec.Key{
+				Length: uint8(len(cryptoKey)),
+				Data:   cryptoKey,
+			},
+			IntegrityKey: ipsec.Key{
+				Length: uint8(len(cryptoKey)),
+				Data:   cryptoKey,
+			},
+			TunnelSrc: ipsec.Address{
+				Af: ipsec.ADDRESS_IP6,
+				Un: ipsec.AddressUnion{XXX_UnionData: [16]byte{18, 52}},
+			},
+			TunnelDst: ipsec.Address{
+				Af: ipsec.ADDRESS_IP6,
+				Un: ipsec.AddressUnion{XXX_UnionData: [16]byte{171, 205}},
+			},
+			Flags: ipsec.IPSEC_API_SAD_FLAG_IS_TUNNEL | ipsec.IPSEC_API_SAD_FLAG_IS_TUNNEL_V6,
+		},
+	}))
+}

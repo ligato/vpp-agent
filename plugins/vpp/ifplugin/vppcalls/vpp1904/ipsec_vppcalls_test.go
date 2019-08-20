@@ -20,7 +20,7 @@ import (
 
 	. "github.com/onsi/gomega"
 
-	"github.com/ligato/vpp-agent/api/models/vpp/interfaces"
+	vpp_interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/ipsec"
 )
@@ -66,7 +66,7 @@ func TestAddIPSecTunnelInterface(t *testing.T) {
 	Expect(vppMsg.IsAdd).To(Equal(uint8(1)))
 	Expect(vppMsg.AntiReplay).To(Equal(uint8(1)))
 	Expect(vppMsg.LocalIP.Af).To(Equal(ipsec.AddressFamily(0)))
-	Expect(vppMsg.LocalIP.Un).To(BeEquivalentTo(ipsec.AddressUnion{Union_data: [16]byte{10, 10, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}}))
+	Expect(vppMsg.LocalIP.Un).To(BeEquivalentTo(ipsec.AddressUnion{XXX_UnionData: [16]byte{10, 10, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}}))
 	Expect(vppMsg.LocalSpi).To(Equal(uint32(1500)))
 	Expect(vppMsg.RemoteSpi).To(Equal(uint32(2000)))
 	Expect(vppMsg.CryptoAlg).To(Equal(uint8(9)))

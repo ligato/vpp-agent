@@ -21,6 +21,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/aclplugin"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin"
 	"github.com/ligato/vpp-agent/plugins/vpp/l2plugin"
+	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin"
 )
 
 // DefaultPlugin is default instance of Plugin
@@ -37,6 +38,7 @@ func NewPlugin(opts ...Option) *Plugin {
 	p.VPPACLPlugin = &aclplugin.DefaultPlugin
 	p.VPPIfPlugin = &ifplugin.DefaultPlugin
 	p.VPPL2Plugin = &l2plugin.DefaultPlugin
+	p.VPPL3Plugin = &l3plugin.DefaultPlugin
 
 	for _, o := range opts {
 		o(p)

@@ -31,10 +31,12 @@ func (h *VrfTableHandler) DelVrfTable(table *l3.VrfTable) error {
 
 func (h *VrfTableHandler) addDelVrfTable(table *l3.VrfTable, isAdd bool) error {
 	req := &ip.IPTableAddDel{
-		TableID: table.Id,
-		IsIPv6:  boolToUint(table.GetProtocol() == l3.VrfTable_IPV6),
-		Name:    []byte(table.Label),
-		IsAdd:   boolToUint(isAdd),
+		Table: ip.IPTable{
+			TableID: table.Id,
+			IsIP6:   boolToUint(table.GetProtocol() == l3.VrfTable_IPV6),
+			Name:    []byte(table.Label),
+		},
+		IsAdd: boolToUint(isAdd),
 	}
 	reply := &ip.IPTableAddDelReply{}
 

@@ -15,7 +15,6 @@
 package vpp1904
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -23,6 +22,7 @@ import (
 	punt "github.com/ligato/vpp-agent/api/models/vpp/punt"
 	ba_ip "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/ip"
 	ba_punt "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/punt"
+	"github.com/ligato/vpp-agent/plugins/vpp/puntplugin/vppcalls"
 )
 
 const PuntSocketHeaderVersion = 1
@@ -73,7 +73,7 @@ func (h *PuntVppHandler) RegisterPuntSocket(toHost *punt.ToHost) (string, error)
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return "", err
 	}
-	h.log.Infof("Punt socket registered with %s", reply.Pathname)
+	h.log.Debugf("Punt socket registered with %s", reply.Pathname)
 
 	p := *toHost
 	p.SocketPath = strings.SplitN(string(reply.Pathname), "\x00", 2)[0]
@@ -188,6 +188,14 @@ func (h *PuntVppHandler) handlePuntRedirect(punt *punt.IPRedirect, isIPv4, isAdd
 	return nil
 }
 
+func (h *PuntVppHandler) AddPuntException(punt *punt.Exception) (string, error) {
+	return "", vppcalls.ErrUnsupported
+}
+
+func (h *PuntVppHandler) DeletePuntException(punt *punt.Exception) error {
+	return vppcalls.ErrUnsupported
+}
+
 func parseL3Proto(p uint8) punt.L3Protocol {
 	switch p {
 	case uint8(punt.L3Protocol_IPv4), uint8(punt.L3Protocol_IPv6):
@@ -235,12 +243,4 @@ func boolToUint(input bool) uint8 {
 		return 1
 	}
 	return 0
-}
-
-func (h *PuntVppHandler) AddPuntException(punt *punt.Exception) (string, error) {
-	return "", fmt.Errorf("punt exceptions are not supported")
-}
-
-func (h *PuntVppHandler) DeletePuntException(punt *punt.Exception) error {
-	return fmt.Errorf("punt exceptions are not supported")
 }

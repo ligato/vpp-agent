@@ -103,6 +103,12 @@ func (dsl *PutDSL) VppInterface(val *interfaces.Interface) linuxclient.PutDSL {
 	return dsl
 }
 
+// Span adds a request to create or update VPP SPAN.
+func (dsl *PutDSL) Span(val *interfaces.Span) linuxclient.PutDSL {
+	dsl.vppPut.Span(val)
+	return dsl
+}
+
 // ACL adds a request to create or update VPP Access Control List.
 func (dsl *PutDSL) ACL(acl *acl.ACL) linuxclient.PutDSL {
 	dsl.vppPut.ACL(acl)
@@ -279,6 +285,12 @@ func (dsl *DeleteDSL) VppInterface(ifaceName string) linuxclient.DeleteDSL {
 	return dsl
 }
 
+// Span adds a request to delete VPP SPAN.
+func (dsl *DeleteDSL) Span(val *interfaces.Span) linuxclient.DeleteDSL {
+	dsl.vppDelete.Span(val)
+	return dsl
+}
+
 // ACL adds a request to delete an existing VPP Access Control List.
 func (dsl *DeleteDSL) ACL(aclName string) linuxclient.DeleteDSL {
 	dsl.vppDelete.ACL(aclName)
@@ -337,8 +349,8 @@ func (dsl *DeleteDSL) VrfTable(id uint32, proto l3.VrfTable_Protocol) linuxclien
 }
 
 // StaticRoute adds a request to delete an existing VPP L3 Static Route.
-func (dsl *DeleteDSL) StaticRoute(vrf uint32, dstAddr string, nextHopAddr string) linuxclient.DeleteDSL {
-	dsl.vppDelete.StaticRoute(vrf, dstAddr, nextHopAddr)
+func (dsl *DeleteDSL) StaticRoute(iface string, vrf uint32, dstAddr string, nextHopAddr string) linuxclient.DeleteDSL {
+	dsl.vppDelete.StaticRoute(iface, vrf, dstAddr, nextHopAddr)
 	return dsl
 }
 

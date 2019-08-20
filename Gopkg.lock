@@ -3,22 +3,23 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:8f096db5c708d280bf1d364dc2dc0d15ea649caa61864eaf7fbf18687f7b6272"
+  digest = "1:576638fbd32f0237520d280e7df80092293efd6780f639546bb258768f150c83"
   name = "git.fd.io/govpp.git"
   packages = [
     "adapter",
     "adapter/mock",
     "adapter/mock/binapi",
     "adapter/socketclient",
+    "adapter/statsclient",
     "adapter/vppapiclient",
     "api",
     "cmd/binapi-generator",
     "codec",
     "core",
-    "examples/bin_api/memclnt",
+    "examples/binapi/memclnt",
   ]
   pruneopts = "UT"
-  revision = "0ff02b6b1f0757f5e4c011457757bd18d0a60f01"
+  revision = "bde85d422c7949ec32fb067e9c36320ccc47fb9e"
 
 [[projects]]
   branch = "master"
@@ -298,6 +299,14 @@
   version = "v1.2.2"
 
 [[projects]]
+  branch = "master"
+  digest = "1:ea797b536b154f62d2e1c49b61d5a1088782111563eb59837ff2b83fd2a65184"
+  name = "github.com/ftrvxmtrx/fd"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "c6d800382fff6dc1412f34269f71b7f83bd059ad"
+
+[[projects]]
   digest = "1:2cd7915ab26ede7d95b8749e6b1f933f1c6d5398030684e6505940a10f31cfda"
   name = "github.com/ghodss/yaml"
   packages = ["."]
@@ -492,7 +501,7 @@
 
 [[projects]]
   branch = "dev"
-  digest = "1:b20db15de753c9aff7d611058a54142ccf122a1065cdf79cf16f1e21108898b7"
+  digest = "1:4d2e7fcb1a326a41736b49d9215b847c9aa9fc300575a6dc2d8b51af841f1b07"
   name = "github.com/ligato/cn-infra"
   packages = [
     "agent",
@@ -540,7 +549,7 @@
     "utils/safeclose",
   ]
   pruneopts = "T"
-  revision = "691b90eac5d48e3d589d7057ce03b1dffdee54fe"
+  revision = "b526ab9270244d46b2f0764ae4a512d16b2dbacb"
 
 [[projects]]
   branch = "master"
@@ -573,6 +582,14 @@
   packages = ["."]
   pruneopts = "UT"
   revision = "3864e76763d94a6df2f9960b16a20a33da9f9a66"
+
+[[projects]]
+  branch = "master"
+  digest = "1:d0c95a34e79df79eb96ca870d6b6fc43361d34c9c05495f93a5ad0077f7bbb24"
+  name = "github.com/mitchellh/go-ps"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "4fdf99ab29366514c69ccccddab5dc58b8d84062"
 
 [[projects]]
   branch = "master"
@@ -711,6 +728,14 @@
   pruneopts = "UT"
   revision = "ba968bfe8b2f7e042a574c888954fccecfa385b4"
   version = "v0.8.1"
+
+[[projects]]
+  digest = "1:447ab23604df9681aabfc6e48dbded59cb933b6eb4224e64d9d037318534b1bd"
+  name = "github.com/pkg/profile"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "f6fe06335df110bcf1ed6d4e852b760bfc15beee"
+  version = "v1.3.0"
 
 [[projects]]
   digest = "1:d14a5f4bfecf017cb780bdde1b6483e5deb87e12c332544d2c430eda58734bcb"
@@ -993,6 +1018,7 @@
     "git.fd.io/govpp.git/adapter",
     "git.fd.io/govpp.git/adapter/mock",
     "git.fd.io/govpp.git/adapter/socketclient",
+    "git.fd.io/govpp.git/adapter/statsclient",
     "git.fd.io/govpp.git/adapter/vppapiclient",
     "git.fd.io/govpp.git/api",
     "git.fd.io/govpp.git/cmd/binapi-generator",
@@ -1031,7 +1057,6 @@
     "github.com/ligato/cn-infra/logging/logmanager",
     "github.com/ligato/cn-infra/logging/logrus",
     "github.com/ligato/cn-infra/logging/measure",
-    "github.com/ligato/cn-infra/logging/measure/model/apitrace",
     "github.com/ligato/cn-infra/messaging/kafka",
     "github.com/ligato/cn-infra/rpc/grpc",
     "github.com/ligato/cn-infra/rpc/prometheus",
@@ -1042,12 +1067,14 @@
     "github.com/ligato/cn-infra/utils/safeclose",
     "github.com/logrusorgru/aurora.git",
     "github.com/lunixbochs/struc",
+    "github.com/mitchellh/go-ps",
     "github.com/namsral/flag",
     "github.com/onsi/gomega",
     "github.com/opencontainers/runc",
     "github.com/pkg/errors",
+    "github.com/pkg/profile",
     "github.com/prometheus/client_golang/prometheus",
-    "github.com/prometheus/client_golang/prometheus/promhttp",
+    "github.com/sirupsen/logrus",
     "github.com/spf13/cobra",
     "github.com/unrolled/render",
     "github.com/vishvananda/netlink",

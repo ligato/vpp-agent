@@ -26,21 +26,21 @@ import (
 	"github.com/ligato/cn-infra/agent"
 	"github.com/ligato/cn-infra/infra"
 	"github.com/ligato/cn-infra/logging/logrus"
-	"github.com/ligato/vpp-agent/api/genericmanager"
-	"github.com/ligato/vpp-agent/client"
-	"github.com/ligato/vpp-agent/client/remoteclient"
-	"github.com/ligato/vpp-agent/cmd/vpp-agent/app"
-	mymodel "github.com/ligato/vpp-agent/examples/custom_model/pb"
-	"github.com/ligato/vpp-agent/plugins/orchestrator"
 	"github.com/namsral/flag"
 	"google.golang.org/grpc"
 
+	"github.com/ligato/vpp-agent/api/genericmanager"
 	"github.com/ligato/vpp-agent/api/models/linux"
 	linux_interfaces "github.com/ligato/vpp-agent/api/models/linux/interfaces"
 	linux_l3 "github.com/ligato/vpp-agent/api/models/linux/l3"
 	"github.com/ligato/vpp-agent/api/models/vpp"
 	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	vpp_l2 "github.com/ligato/vpp-agent/api/models/vpp/l2"
+	"github.com/ligato/vpp-agent/client"
+	"github.com/ligato/vpp-agent/client/remoteclient"
+	"github.com/ligato/vpp-agent/cmd/vpp-agent/app"
+	mymodel "github.com/ligato/vpp-agent/examples/custom_model/pb"
+	"github.com/ligato/vpp-agent/plugins/orchestrator"
 )
 
 var (

@@ -90,6 +90,32 @@ func (node *nodeR) GetTargets(relation string) (runtimeTargets RuntimeTargets) {
 	return runtimeTargets
 }
 
+// IterTargets allows to iterate over the set of nodes that the edges of the given
+// relation points to.
+func (node *nodeR) IterTargets(relation string, callback TargetIterator) {
+	for i := node.targets.RelationBegin(relation); i < len(node.targets); i++ {
+		if node.targets[i].Relation != relation {
+			break
+		}
+		for _, key := range node.targets[i].MatchingKeys.Iterate() {
+			skipLabel, abort := callback(node.graph.nodes[key], node.targets[i].Label)
+			if abort {
+				return
+			}
+			if skipLabel {
+				// no more targets from this label to iterate through
+				// (just the closing nil one)
+				break
+			}
+		}
+		// mark the end of the targets for the given label with nil target
+		_, abort := callback(nil, node.targets[i].Label)
+		if abort {
+			return
+		}
+	}
+}
+
 // GetSources returns edges pointing to this node in the reverse
 // orientation.
 func (node *nodeR) GetSources(relation string) (runtimeTargets RuntimeTargets) {

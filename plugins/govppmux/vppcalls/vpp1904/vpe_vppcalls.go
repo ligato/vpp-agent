@@ -28,10 +28,10 @@ import (
 
 func init() {
 	var msgs []govppapi.Message
-	msgs = append(msgs, vpe.Messages...)
-	msgs = append(msgs, memclnt.Messages...)
+	msgs = append(msgs, vpe.AllMessages()...)
+	msgs = append(msgs, memclnt.AllMessages()...)
 
-	vppcalls.Versions["vpp1904"] = vppcalls.HandlerVersion{
+	vppcalls.Versions["19.04"] = vppcalls.HandlerVersion{
 		Msgs: msgs,
 		New: func(ch govppapi.Channel) vppcalls.VpeVppAPI {
 			return NewVpeHandler(ch)

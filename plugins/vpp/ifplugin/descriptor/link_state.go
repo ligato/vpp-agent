@@ -57,9 +57,9 @@ func NewLinkStateDescriptor(kvscheduler kvs.KVScheduler, ifaceHandler vppcalls.I
 		linkStates:   make(map[string]bool),
 	}
 	return &kvs.KVDescriptor{
-		Name:                 LinkStateDescriptorName,
-		KeySelector:          descrCtx.IsInterfaceLinkStateKey,
-		Retrieve:             descrCtx.Retrieve,
+		Name:        LinkStateDescriptorName,
+		KeySelector: descrCtx.IsInterfaceLinkStateKey,
+		Retrieve:    descrCtx.Retrieve,
 		// Retrieve depends on the interface descriptor: interface index is used
 		// to convert sw_if_index to logical interface name
 		RetrieveDependencies: []string{InterfaceDescriptorName},
@@ -78,7 +78,7 @@ func (w *LinkStateDescriptor) IsInterfaceLinkStateKey(key string) bool {
 func (w *LinkStateDescriptor) Retrieve(correlate []kvs.KVWithMetadata) (values []kvs.KVWithMetadata, err error) {
 	// TODO: avoid dumping interface details when it was already done in the interface
 	//       descriptor within the same Refresh (e.g. during full resync)
-	//       - e.g. add context to allow sharing of information across Retrieve-s of the same Refresh
+	//       - e.g. add context to allow sharing of information across Retrieve(s) of the same Refresh
 
 	ifaceStates, err := w.ifaceHandler.DumpInterfaceStates()
 	if err != nil {
@@ -112,8 +112,6 @@ func (w *LinkStateDescriptor) Retrieve(correlate []kvs.KVWithMetadata) (values [
 func (w *LinkStateDescriptor) UpdateLinkState(ifaceState *interfaces.InterfaceNotification) {
 	w.linkStatesMx.Lock()
 	defer w.linkStatesMx.Unlock()
-
-	w.log.Debugf("Updating link state: %+v", ifaceState)
 
 	var notifs []kvs.KVWithMetadata
 
