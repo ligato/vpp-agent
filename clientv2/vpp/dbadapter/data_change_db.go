@@ -30,6 +30,7 @@ import (
 	punt "github.com/ligato/vpp-agent/api/models/vpp/punt"
 	stn "github.com/ligato/vpp-agent/api/models/vpp/stn"
 	vppclient "github.com/ligato/vpp-agent/clientv2/vpp"
+	orch "github.com/ligato/vpp-agent/plugins/orchestrator"
 )
 
 // NewDataChangeDSL returns a new instance of DataChangeDSL which implements
@@ -69,7 +70,9 @@ func (dsl *DataChangeDSL) Delete() vppclient.DeleteDSL {
 
 // Send propagates requested changes to the plugins.
 func (dsl *DataChangeDSL) Send() vppclient.Reply {
-	err := dsl.txn.Commit(context.Background())
+	ctx := context.Background()
+	ctx = orch.DataSrcContext(ctx, "localclient")
+	err := dsl.txn.Commit(ctx)
 	return &Reply{err}
 }
 
