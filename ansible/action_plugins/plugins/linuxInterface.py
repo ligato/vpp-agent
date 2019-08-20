@@ -13,29 +13,29 @@
 # limitations under the License.
 
 import json
-
 from google.protobuf.json_format import MessageToJson, Parse
 
-from action_plugins.pout.models.vpp.interfaces.interface_pb2 import Interface
+from action_plugins.pout.models.linux.interfaces.interface_pb2 import Interface
 
 
-def plugin_init(name, values, agent_name, ip ,port):
-    if name == 'interface':
-        return InterfaceValidation(values, agent_name)
+def plugin_init(name, values, agent_name, ip, port):
+    if name == 'linuxInterface':
+        return LinuxInterfaceValidation(values, agent_name)
     else:
         return False
 
 
-class InterfaceValidation:
+class LinuxInterfaceValidation:
 
     def __init__(self, values, agent_name):
         self.values = values
         self.agent_name =agent_name
 
+
     def validate(self):
-        interface = Interface()
-        Parse(json.dumps(self.values), interface)
-        return MessageToJson(interface, preserving_proto_field_name=True, indent=None)
+        dhcp_proxy = Interface()
+        Parse(json.dumps(self.values), dhcp_proxy)
+        return MessageToJson(dhcp_proxy, preserving_proto_field_name=True, indent=None)
 
     def create_key(self):
-        return "/vnf-agent/{}/config/vpp/v2/interfaces/{}".format(self.agent_name, self.values['name'])
+        return "/vnf-agent/{}/config/linux/interfaces/v2/interface/{}".format(self.agent_name, self.values['name'])

@@ -17,11 +17,14 @@ import json
 from google.protobuf.json_format import MessageToJson, Parse
 
 from action_plugins.pout.models.vpp.nat.nat_pb2 import Nat44Global
+from action_plugins.pout.models.vpp.nat.nat_pb2 import DNat44
 
 
 def plugin_init(name, values, agent_name, ip, port):
     if name == 'nat':
         return NatValidation(values, agent_name)
+    elif name == 'dnat':
+        DNatValidation(values, agent_name)
     else:
         return False
 
@@ -30,12 +33,27 @@ class NatValidation:
 
     def __init__(self, values, agent_name):
         self.values = values
-        self.agent_name =agent_name
+        self.agent_name = agent_name
 
     def validate(self):
         nat = Nat44Global()
         Parse(json.dumps(self.values), nat)
-        return MessageToJson(nat, indent=None)
+        return MessageToJson(nat, preserving_proto_field_name=True, indent=None)
 
     def create_key(self):
         return "/vnf-agent/{}/config/vpp/nat/v2/nat44-global".format(self.agent_name)
+
+
+class DNatValidation:
+
+    def __init__(self, values, agent_name):
+        self.values = values
+        self.agent_name = agent_name
+
+    def validate(self):
+        nat = DNat44()
+        Parse(json.dumps(self.values), nat)
+        return MessageToJson(nat, preserving_proto_field_name=True, indent=None)
+
+    def create_key(self):
+        return "/vnf-agent/{}/config/vpp/nat/v2/dnat44/{}".format(self.agent_name, self.values['label'])
