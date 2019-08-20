@@ -38,7 +38,7 @@ class NatValidation:
     def validate(self):
         nat = Nat44Global()
         Parse(json.dumps(self.values), nat)
-        return MessageToJson(nat, indent=None)
+        return MessageToJson(nat, preserving_proto_field_name=True, indent=None)
 
     def create_key(self):
         return "/vnf-agent/{}/config/vpp/nat/v2/nat44-global".format(self.agent_name)
@@ -53,7 +53,7 @@ class DNatValidation:
     def validate(self):
         nat = DNat44()
         Parse(json.dumps(self.values), nat)
-        return MessageToJson(nat, indent=None)
+        return MessageToJson(nat, preserving_proto_field_name=True, indent=None)
 
     def create_key(self):
         return "/vnf-agent/{}/config/vpp/nat/v2/dnat44/{}".format(self.agent_name, self.values['label'])

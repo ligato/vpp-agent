@@ -40,7 +40,7 @@ class BridgeDomainValidation:
     def validate(self):
         bridgeDomain = BridgeDomain()
         Parse(json.dumps(self.values), bridgeDomain)
-        return MessageToJson(bridgeDomain, indent=None)
+        return MessageToJson(bridgeDomain, preserving_proto_field_name=True, indent=None)
 
     def create_key(self):
         return "/vnf-agent/{}/config/vpp/l2/v2/bridge-domain/{}".format(self.agent_name, self.values['name'])
@@ -69,7 +69,7 @@ class AddBridgeDomainInterfaceValidation:
 
         bridgeDomain = BridgeDomain()
         Parse(json.dumps(val), bridgeDomain)
-        return MessageToJson(bridgeDomain, indent=None)
+        return MessageToJson(bridgeDomain, preserving_proto_field_name=True, indent=None)
 
     def create_key(self):
         return "/vnf-agent/{}/config/vpp/l2/v2/bridge-domain/{}".format(self.agent_name, self.values['name'])
@@ -94,7 +94,7 @@ class RemoveBridgeDomainInterfaceValidation:
 
         bridgeDomain = BridgeDomain()
         Parse(json.dumps(val), bridgeDomain)
-        return MessageToJson(bridgeDomain, indent=None)
+        return MessageToJson(bridgeDomain, preserving_proto_field_name=True, indent=None)
 
     def create_key(self):
         return "/vnf-agent/{}/config/vpp/l2/v2/bridge-domain/{}".format(self.agent_name, self.values['name'])

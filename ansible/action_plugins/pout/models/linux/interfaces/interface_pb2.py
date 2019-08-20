@@ -21,7 +21,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   package='linux.interfaces',
   syntax='proto3',
   serialized_options=_b('ZHgithub.com/ligato/vpp-agent/api/models/linux/interfaces;linux_interfaces\310\343\036\001'),
-  serialized_pb=_b('\n\'models/linux/interfaces/interface.proto\x12\x10linux.interfaces\x1a-github.com/gogo/protobuf/gogoproto/gogo.proto\x1a&models/linux/namespace/namespace.proto\"\xf8\x02\n\tInterface\x12\x0c\n\x04name\x18\x01 \x01(\t\x12.\n\x04type\x18\x02 \x01(\x0e\x32 .linux.interfaces.Interface.Type\x12\x30\n\tnamespace\x18\x03 \x01(\x0b\x32\x1d.linux.namespace.NetNamespace\x12\x14\n\x0chost_if_name\x18\x04 \x01(\t\x12\x0f\n\x07\x65nabled\x18\x05 \x01(\x08\x12\x14\n\x0cip_addresses\x18\x06 \x03(\t\x12\x14\n\x0cphys_address\x18\x07 \x01(\t\x12\x0b\n\x03mtu\x18\x08 \x01(\r\x12*\n\x04veth\x18\x14 \x01(\x0b\x32\x1a.linux.interfaces.VethLinkH\x00\x12(\n\x03tap\x18\x15 \x01(\x0b\x32\x19.linux.interfaces.TapLinkH\x00\"=\n\x04Type\x12\r\n\tUNDEFINED\x10\x00\x12\x08\n\x04VETH\x10\x01\x12\x0e\n\nTAP_TO_VPP\x10\x02\x12\x0c\n\x08LOOPBACK\x10\x03\x42\x06\n\x04link\"\xa6\x02\n\x08VethLink\x12\x14\n\x0cpeer_if_name\x18\x01 \x01(\t\x12M\n\x16rx_checksum_offloading\x18\x02 \x01(\x0e\x32-.linux.interfaces.VethLink.ChecksumOffloading\x12M\n\x16tx_checksum_offloading\x18\x03 \x01(\x0e\x32-.linux.interfaces.VethLink.ChecksumOffloading\"f\n\x12\x43hecksumOffloading\x12\x19\n\x15\x43HKSM_OFFLOAD_DEFAULT\x10\x00\x12\x19\n\x15\x43HKSM_OFFLOAD_ENABLED\x10\x01\x12\x1a\n\x16\x43HKSM_OFFLOAD_DISABLED\x10\x02\"\"\n\x07TapLink\x12\x17\n\x0fvpp_tap_if_name\x18\x01 \x01(\tBNZHgithub.com/ligato/vpp-agent/api/models/linux/interfaces;linux_interfaces\xc8\xe3\x1e\x01\x62\x06proto3')
+  serialized_pb=_b('\n\'models/linux/interfaces/interface.proto\x12\x10linux.interfaces\x1a-github.com/gogo/protobuf/gogoproto/gogo.proto\x1a&models/linux/namespace/namespace.proto\"\x86\x03\n\tInterface\x12\x0c\n\x04name\x18\x01 \x01(\t\x12.\n\x04type\x18\x02 \x01(\x0e\x32 .linux.interfaces.Interface.Type\x12\x30\n\tnamespace\x18\x03 \x01(\x0b\x32\x1d.linux.namespace.NetNamespace\x12\x14\n\x0chost_if_name\x18\x04 \x01(\t\x12\x0f\n\x07\x65nabled\x18\x05 \x01(\x08\x12\x14\n\x0cip_addresses\x18\x06 \x03(\t\x12\x14\n\x0cphys_address\x18\x07 \x01(\t\x12\x0b\n\x03mtu\x18\x08 \x01(\r\x12*\n\x04veth\x18\x14 \x01(\x0b\x32\x1a.linux.interfaces.VethLinkH\x00\x12(\n\x03tap\x18\x15 \x01(\x0b\x32\x19.linux.interfaces.TapLinkH\x00\"K\n\x04Type\x12\r\n\tUNDEFINED\x10\x00\x12\x08\n\x04VETH\x10\x01\x12\x0e\n\nTAP_TO_VPP\x10\x02\x12\x0c\n\x08LOOPBACK\x10\x03\x12\x0c\n\x08\x45XISTING\x10\x04\x42\x06\n\x04link\"\xa6\x02\n\x08VethLink\x12\x14\n\x0cpeer_if_name\x18\x01 \x01(\t\x12M\n\x16rx_checksum_offloading\x18\x02 \x01(\x0e\x32-.linux.interfaces.VethLink.ChecksumOffloading\x12M\n\x16tx_checksum_offloading\x18\x03 \x01(\x0e\x32-.linux.interfaces.VethLink.ChecksumOffloading\"f\n\x12\x43hecksumOffloading\x12\x19\n\x15\x43HKSM_OFFLOAD_DEFAULT\x10\x00\x12\x19\n\x15\x43HKSM_OFFLOAD_ENABLED\x10\x01\x12\x1a\n\x16\x43HKSM_OFFLOAD_DISABLED\x10\x02\"\"\n\x07TapLink\x12\x17\n\x0fvpp_tap_if_name\x18\x01 \x01(\tBNZHgithub.com/ligato/vpp-agent/api/models/linux/interfaces;linux_interfaces\xc8\xe3\x1e\x01\x62\x06proto3')
   ,
   dependencies=[github_dot_com_dot_gogo_dot_protobuf_dot_gogoproto_dot_gogo__pb2.DESCRIPTOR,models_dot_linux_dot_namespace_dot_namespace__pb2.DESCRIPTOR,])
 
@@ -49,11 +49,15 @@ _INTERFACE_TYPE = _descriptor.EnumDescriptor(
       name='LOOPBACK', index=3, number=3,
       serialized_options=None,
       type=None),
+    _descriptor.EnumValueDescriptor(
+      name='EXISTING', index=4, number=4,
+      serialized_options=None,
+      type=None),
   ],
   containing_type=None,
   serialized_options=None,
   serialized_start=456,
-  serialized_end=517,
+  serialized_end=531,
 )
 _sym_db.RegisterEnumDescriptor(_INTERFACE_TYPE)
 
@@ -78,8 +82,8 @@ _VETHLINK_CHECKSUMOFFLOADING = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   serialized_options=None,
-  serialized_start=720,
-  serialized_end=822,
+  serialized_start=734,
+  serialized_end=836,
 )
 _sym_db.RegisterEnumDescriptor(_VETHLINK_CHECKSUMOFFLOADING)
 
@@ -178,7 +182,7 @@ _INTERFACE = _descriptor.Descriptor(
       index=0, containing_type=None, fields=[]),
   ],
   serialized_start=149,
-  serialized_end=525,
+  serialized_end=539,
 )
 
 
@@ -223,8 +227,8 @@ _VETHLINK = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=528,
-  serialized_end=822,
+  serialized_start=542,
+  serialized_end=836,
 )
 
 
@@ -254,8 +258,8 @@ _TAPLINK = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=824,
-  serialized_end=858,
+  serialized_start=838,
+  serialized_end=872,
 )
 
 _INTERFACE.fields_by_name['type'].enum_type = _INTERFACE_TYPE
