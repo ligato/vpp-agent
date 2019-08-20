@@ -110,6 +110,7 @@ func (ctl *VppAgentCtlImpl) PutTap() error {
 		Link: &interfaces.Interface_Tap{
 			Tap: &interfaces.TapLink{
 				HostIfName: "tap-host",
+				Version: 2,
 			},
 		},
 	}

@@ -53,7 +53,7 @@ Show Interfaces Before Setup
 
 Add VPP1_TAP1 Interface And Check It Was Created
     vpp_term: Interface Not Exists  node=agent_vpp_1    mac=${MAC_VPP1_TAP1}
-    Put TAP Interface With IP    node=agent_vpp_1    name=${NAME_VPP1_TAP1}    mac=${MAC_VPP1_TAP1}    ip=${IP_VPP1_TAP1}    prefix=${PREFIX}    host_if_name=linux_${NAME_VPP1_TAP1}
+    Put TAPv2 Interface With IP    node=agent_vpp_1    name=${NAME_VPP1_TAP1}    mac=${MAC_VPP1_TAP1}    ip=${IP_VPP1_TAP1}    prefix=${PREFIX}    host_if_name=linux_${NAME_VPP1_TAP1}
     linux: Set Host TAP Interface    node=agent_vpp_1    host_if_name=linux_${NAME_VPP1_TAP1}    ip=${IP_LINUX_VPP1_TAP1}    prefix=${PREFIX}
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Interface Is Created    node=agent_vpp_1    mac=${MAC_VPP1_TAP1}
     ${actual_state}=    vpp_term: Check TAP Interface State    agent_vpp_1    ${NAME_VPP1_TAP1}    mac=${MAC_VPP1_TAP1}    ipv4=${IP_VPP1_TAP1}/${PREFIX}    state=${UP_STATE}
@@ -65,7 +65,7 @@ Add VPP1_memif1 Interface
 
 Add VPP2_TAP1 Interface And Check It Was Created
     vpp_term: Interface Not Exists  node=agent_vpp_2    mac=${MAC_VPP2_TAP1}
-    Put TAP Interface With IP    node=agent_vpp_2    name=${NAME_VPP2_TAP1}    mac=${MAC_VPP2_TAP1}    ip=${IP_VPP2_TAP1}    prefix=${PREFIX}    host_if_name=linux_${NAME_VPP2_TAP1}
+    Put TAPv2 Interface With IP    node=agent_vpp_2    name=${NAME_VPP2_TAP1}    mac=${MAC_VPP2_TAP1}    ip=${IP_VPP2_TAP1}    prefix=${PREFIX}    host_if_name=linux_${NAME_VPP2_TAP1}
     linux: Set Host TAP Interface    node=agent_vpp_2    host_if_name=linux_${NAME_VPP2_TAP1}    ip=${IP_LINUX_VPP2_TAP1}    prefix=${PREFIX}
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Interface Is Created    node=agent_vpp_2    mac=${MAC_VPP2_TAP1}
     ${actual_state}=    vpp_term: Check TAP Interface State    agent_vpp_2    ${NAME_VPP2_TAP1}    mac=${MAC_VPP2_TAP1}    ipv4=${IP_VPP2_TAP1}/${PREFIX}    state=${UP_STATE}
@@ -134,7 +134,6 @@ Configure Environment 2
 Show Interfaces Before Setup 2
     vpp_term: Show Interfaces    agent_vpp_1
     vpp_term: Show Interfaces    agent_vpp_2
-    Write To Machine    vpp_agent_ctl    vpp-agent-ctl ${AGENT_VPP_ETCD_CONF_PATH} -ps
 
 Add Static Route From VPP1 Linux To VPP2 2
     Put Linux Route    node=agent_vpp_1    namespace=${EMPTY}    interface=${NAME_VPP1_TAP1}    routename=${NAME_VPP1_LINUX_TO_VPP2}    ip=${IP_VPP2_TAP1_NETWORK}    next_hop=${EMPTY}
@@ -150,7 +149,7 @@ Add Static Route From VPP2 To VPP1 2
 
 Add VPP1_TAP1 Interface And Check It Was Created 2
     vpp_term: Interface Not Exists  node=agent_vpp_1    mac=${MAC_VPP1_TAP1}
-    Put TAP Interface With IP    node=agent_vpp_1    name=${NAME_VPP1_TAP1}    mac=${MAC_VPP1_TAP1}    ip=${IP_VPP1_TAP1}    prefix=${PREFIX}    host_if_name=linux_${NAME_VPP1_TAP1}
+    Put TAPv2 Interface With IP    node=agent_vpp_1    name=${NAME_VPP1_TAP1}    mac=${MAC_VPP1_TAP1}    ip=${IP_VPP1_TAP1}    prefix=${PREFIX}    host_if_name=linux_${NAME_VPP1_TAP1}
     linux: Set Host TAP Interface    node=agent_vpp_1    host_if_name=linux_${NAME_VPP1_TAP1}    ip=${IP_LINUX_VPP1_TAP1}    prefix=${PREFIX}
     vpp_term: Interface Is Created    node=agent_vpp_1    mac=${MAC_VPP1_TAP1}
     ${actual_state}=    vpp_term: Check TAP Interface State    agent_vpp_1    ${NAME_VPP1_TAP1}    mac=${MAC_VPP1_TAP1}    ipv4=${IP_VPP1_TAP1}/${PREFIX}    state=${UP_STATE}
@@ -162,7 +161,7 @@ Add VPP1_memif1 Interface 2
 
 Add VPP2_TAP1 Interface And Check It Was Created 2
     vpp_term: Interface Not Exists  node=agent_vpp_2    mac=${MAC_VPP2_TAP1}
-    Put TAP Interface With IP    node=agent_vpp_2    name=${NAME_VPP2_TAP1}    mac=${MAC_VPP2_TAP1}    ip=${IP_VPP2_TAP1}    prefix=${PREFIX}    host_if_name=linux_${NAME_VPP2_TAP1}
+    Put TAPv2 Interface With IP    node=agent_vpp_2    name=${NAME_VPP2_TAP1}    mac=${MAC_VPP2_TAP1}    ip=${IP_VPP2_TAP1}    prefix=${PREFIX}    host_if_name=linux_${NAME_VPP2_TAP1}
     linux: Set Host TAP Interface    node=agent_vpp_2    host_if_name=linux_${NAME_VPP2_TAP1}    ip=${IP_LINUX_VPP2_TAP1}    prefix=${PREFIX}
     vpp_term: Interface Is Created    node=agent_vpp_2    mac=${MAC_VPP2_TAP1}
     ${actual_state}=    vpp_term: Check TAP Interface State    agent_vpp_2    ${NAME_VPP2_TAP1}    mac=${MAC_VPP2_TAP1}    ipv4=${IP_VPP2_TAP1}/${PREFIX}    state=${UP_STATE}

@@ -5,6 +5,7 @@ package adapter
 import (
 	"github.com/gogo/protobuf/proto"
 	. "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
+	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vrfidx"
 	"github.com/ligato/vpp-agent/api/models/vpp/l3"
 )
 
@@ -13,7 +14,7 @@ import (
 type VrfTableKVWithMetadata struct {
 	Key      string
 	Value    *vpp_l3.VrfTable
-	Metadata interface{}
+	Metadata *vrfidx.VRFMetadata
 	Origin   ValueOrigin
 }
 
@@ -29,10 +30,10 @@ type VrfTableDescriptor struct {
 	WithMetadata         bool
 	MetadataMapFactory   MetadataMapFactory
 	Validate             func(key string, value *vpp_l3.VrfTable) error
-	Create               func(key string, value *vpp_l3.VrfTable) (metadata interface{}, err error)
-	Delete               func(key string, value *vpp_l3.VrfTable, metadata interface{}) error
-	Update               func(key string, oldValue, newValue *vpp_l3.VrfTable, oldMetadata interface{}) (newMetadata interface{}, err error)
-	UpdateWithRecreate   func(key string, oldValue, newValue *vpp_l3.VrfTable, metadata interface{}) bool
+	Create               func(key string, value *vpp_l3.VrfTable) (metadata *vrfidx.VRFMetadata, err error)
+	Delete               func(key string, value *vpp_l3.VrfTable, metadata *vrfidx.VRFMetadata) error
+	Update               func(key string, oldValue, newValue *vpp_l3.VrfTable, oldMetadata *vrfidx.VRFMetadata) (newMetadata *vrfidx.VRFMetadata, err error)
+	UpdateWithRecreate   func(key string, oldValue, newValue *vpp_l3.VrfTable, metadata *vrfidx.VRFMetadata) bool
 	Retrieve             func(correlate []VrfTableKVWithMetadata) ([]VrfTableKVWithMetadata, error)
 	IsRetriableFailure   func(err error) bool
 	DerivedValues        func(key string, value *vpp_l3.VrfTable) []KeyValuePair
@@ -221,11 +222,11 @@ func castVrfTableValue(key string, value proto.Message) (*vpp_l3.VrfTable, error
 	return typedValue, nil
 }
 
-func castVrfTableMetadata(key string, metadata Metadata) (interface{}, error) {
+func castVrfTableMetadata(key string, metadata Metadata) (*vrfidx.VRFMetadata, error) {
 	if metadata == nil {
 		return nil, nil
 	}
-	typedMetadata, ok := metadata.(interface{})
+	typedMetadata, ok := metadata.(*vrfidx.VRFMetadata)
 	if !ok {
 		return nil, ErrInvalidMetadataType(key)
 	}

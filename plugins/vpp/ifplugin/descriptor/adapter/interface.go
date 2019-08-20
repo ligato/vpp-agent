@@ -4,9 +4,9 @@ package adapter
 
 import (
 	"github.com/gogo/protobuf/proto"
-	"github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	. "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
+	"github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 )
 
 ////////// type-safe key-value pair with metadata //////////

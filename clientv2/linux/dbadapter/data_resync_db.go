@@ -17,8 +17,8 @@ package dbadapter
 import (
 	"github.com/ligato/cn-infra/db/keyval"
 
-	"github.com/ligato/vpp-agent/api/models/linux/interfaces"
-	"github.com/ligato/vpp-agent/api/models/linux/l3"
+	linux_interfaces "github.com/ligato/vpp-agent/api/models/linux/interfaces"
+	linux_l3 "github.com/ligato/vpp-agent/api/models/linux/l3"
 	abf "github.com/ligato/vpp-agent/api/models/vpp/abf"
 	acl "github.com/ligato/vpp-agent/api/models/vpp/acl"
 	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
@@ -28,9 +28,10 @@ import (
 	nat "github.com/ligato/vpp-agent/api/models/vpp/nat"
 	punt "github.com/ligato/vpp-agent/api/models/vpp/punt"
 	stn "github.com/ligato/vpp-agent/api/models/vpp/stn"
-	"github.com/ligato/vpp-agent/clientv2/linux"
-	"github.com/ligato/vpp-agent/clientv2/vpp"
+	linuxclient "github.com/ligato/vpp-agent/clientv2/linux"
+	vppclient "github.com/ligato/vpp-agent/clientv2/vpp"
 	"github.com/ligato/vpp-agent/clientv2/vpp/dbadapter"
+	"github.com/ligato/vpp-agent/pkg/models"
 )
 
 // NewDataResyncDSL returns a new instance of DataResyncDSL which implements
@@ -219,6 +220,15 @@ func (dsl *DataResyncDSL) PuntIPRedirect(val *punt.IPRedirect) linuxclient.DataR
 // PuntToHost adds request to RESYNC a rule used to punt L4 traffic to a host.
 func (dsl *DataResyncDSL) PuntToHost(val *punt.ToHost) linuxclient.DataResyncDSL {
 	dsl.vppDataResync.PuntToHost(val)
+	return dsl
+}
+
+// PuntException adds request to create or update exception to punt specific packets.
+func (dsl *DataResyncDSL) PuntException(val *punt.Exception) linuxclient.DataResyncDSL {
+	key := models.Key(val)
+	dsl.txn.Put(key, val)
+	dsl.txnKeys = append(dsl.txnKeys, key)
+
 	return dsl
 }
 

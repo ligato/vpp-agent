@@ -15,6 +15,14 @@ type VersionInfo struct {
 	BuildDirectory string
 }
 
+// Release returns version in shortened format YY.MM that describes release.
+func (v VersionInfo) Release() string {
+	if len(v.Version) < 5 {
+		return ""
+	}
+	return v.Version[:5]
+}
+
 // VpeInfo contains information about VPP connection and process.
 type VpeInfo struct {
 	PID            uint32

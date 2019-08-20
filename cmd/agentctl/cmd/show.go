@@ -1,31 +1,25 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"strings"
 
-	"github.com/ligato/vpp-agent/api/models/vpp/acl"
+	"github.com/ligato/cn-infra/db/keyval"
+	"github.com/ligato/cn-infra/health/statuscheck/model/status"
+	"github.com/ligato/cn-infra/servicelabel"
+	"github.com/spf13/cobra"
 
 	linux_interfaces "github.com/ligato/vpp-agent/api/models/linux/interfaces"
 	linux_l3 "github.com/ligato/vpp-agent/api/models/linux/l3"
-
-	"github.com/ligato/vpp-agent/api/models/vpp/ipsec"
-	"github.com/ligato/vpp-agent/api/models/vpp/nat"
-
-	"github.com/ligato/vpp-agent/api/models/vpp/l2"
-
-	"github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	"github.com/ligato/vpp-agent/api/models/vpp/l3"
-
-	"github.com/ligato/cn-infra/health/statuscheck/model/status"
-
-	"github.com/ligato/cn-infra/db/keyval"
-	"github.com/ligato/cn-infra/servicelabel"
+	vpp_acl "github.com/ligato/vpp-agent/api/models/vpp/acl"
+	vpp_interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
+	vpp_ipsec "github.com/ligato/vpp-agent/api/models/vpp/ipsec"
+	vpp_l2 "github.com/ligato/vpp-agent/api/models/vpp/l2"
+	vpp_l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
+	vpp_nat "github.com/ligato/vpp-agent/api/models/vpp/nat"
 	"github.com/ligato/vpp-agent/cmd/agentctl/utils"
-	"github.com/spf13/cobra"
-
-	"errors"
 )
 
 // RootCmd represents the base command when called without any subcommands.

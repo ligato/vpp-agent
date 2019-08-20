@@ -233,7 +233,7 @@ func setupACLTest(t *testing.T) *testCtx {
 	ctx := vppcallmock.SetupTestCtx(t)
 
 	ifaceIdx := ifaceidx.NewIfaceIndex(logrus.NewLogger("test"), "test")
-	aclHandler := NewACLVppHandler(ctx.MockChannel, ctx.MockChannel, ifaceIdx)
+	aclHandler := NewACLVppHandler(ctx.MockChannel, ifaceIdx)
 
 	return &testCtx{
 		TestCtx:    ctx,

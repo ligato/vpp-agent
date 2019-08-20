@@ -27,7 +27,6 @@ import (
 	"github.com/ligato/cn-infra/db/keyval"
 	"github.com/ligato/cn-infra/db/keyval/etcd"
 	"github.com/ligato/cn-infra/db/keyval/kvproto"
-	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/servicelabel"
 )
@@ -65,10 +64,14 @@ func GetDbForAllAgents(endpoints []string) (*kvproto.ProtoWrapper, error) {
 
 	cfg := &etcd.Config{}
 	etcdConfig, err := etcd.ConfigToClient(cfg)
+	if err != nil {
+		return nil, err
+	}
 
 	// Log warnings and errors only.
-	log := logrus.DefaultLogger()
-	log.SetLevel(logging.WarnLevel)
+	log := logrus.NewLogger("etcd")
+	//log.SetLevel(logging.WarnLevel)
+
 	etcdBroker, err := etcd.NewEtcdConnectionWithBytes(*etcdConfig, log)
 	if err != nil {
 		return nil, err
@@ -87,10 +90,14 @@ func GetDbForOneAgent(endpoints []string, agentLabel string) (keyval.ProtoBroker
 
 	cfg := &etcd.Config{}
 	etcdConfig, err := etcd.ConfigToClient(cfg)
+	if err != nil {
+		return nil, err
+	}
 
 	// Log warnings and errors only.
-	log := logrus.DefaultLogger()
-	log.SetLevel(logging.WarnLevel)
+	log := logrus.NewLogger("etcd")
+	//log.SetLevel(logging.WarnLevel)
+
 	etcdBroker, err := etcd.NewEtcdConnectionWithBytes(*etcdConfig, log)
 	if err != nil {
 		return nil, err

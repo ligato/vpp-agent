@@ -15,8 +15,8 @@
 package linuxclient
 
 import (
-	"github.com/ligato/vpp-agent/api/models/linux/interfaces"
-	"github.com/ligato/vpp-agent/api/models/linux/l3"
+	linux_interfaces "github.com/ligato/vpp-agent/api/models/linux/interfaces"
+	linux_l3 "github.com/ligato/vpp-agent/api/models/linux/l3"
 	vpp_abf "github.com/ligato/vpp-agent/api/models/vpp/abf"
 	vpp_acl "github.com/ligato/vpp-agent/api/models/vpp/acl"
 	vpp_interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
@@ -92,6 +92,8 @@ type DataResyncDSL interface {
 	PuntIPRedirect(val *punt.IPRedirect) DataResyncDSL
 	// PuntToHost adds request to RESYNC a rule used to punt L4 traffic to a host.
 	PuntToHost(val *punt.ToHost) DataResyncDSL
+	// PuntException adds request to create or update exception to punt specific packets.
+	PuntException(val *punt.Exception) DataResyncDSL
 
 	// Send propagates the RESYNC request to the plugins.
 	Send() vpp_clientv2.Reply

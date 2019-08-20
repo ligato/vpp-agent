@@ -3,9 +3,11 @@
 
 package flight
 
-import proto "github.com/gogo/protobuf/proto"
-import fmt "fmt"
-import math "math"
+import (
+	fmt "fmt"
+	proto "github.com/gogo/protobuf/proto"
+	math "math"
+)
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -29,6 +31,7 @@ var Status_name = map[int32]string{
 	0: "arrival",
 	1: "departure",
 }
+
 var Status_value = map[string]int32{
 	"arrival":   0,
 	"departure": 1,
@@ -37,8 +40,9 @@ var Status_value = map[string]int32{
 func (x Status) String() string {
 	return proto.EnumName(Status_name, int32(x))
 }
+
 func (Status) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_flight_0c5676b36c22befc, []int{0}
+	return fileDescriptor_b735ae5a59da2a5a, []int{0}
 }
 
 type Info struct {
@@ -55,7 +59,7 @@ func (m *Info) Reset()         { *m = Info{} }
 func (m *Info) String() string { return proto.CompactTextString(m) }
 func (*Info) ProtoMessage()    {}
 func (*Info) Descriptor() ([]byte, []int) {
-	return fileDescriptor_flight_0c5676b36c22befc, []int{0}
+	return fileDescriptor_b735ae5a59da2a5a, []int{0}
 }
 func (m *Info) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Info.Unmarshal(m, b)
@@ -63,8 +67,8 @@ func (m *Info) XXX_Unmarshal(b []byte) error {
 func (m *Info) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Info.Marshal(b, m, deterministic)
 }
-func (dst *Info) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Info.Merge(dst, src)
+func (m *Info) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Info.Merge(m, src)
 }
 func (m *Info) XXX_Size() int {
 	return xxx_messageInfo_Info.Size(m)
@@ -104,13 +108,13 @@ func (m *Info) GetPriority() uint32 {
 }
 
 func init() {
-	proto.RegisterType((*Info)(nil), "flight.Info")
 	proto.RegisterEnum("flight.Status", Status_name, Status_value)
+	proto.RegisterType((*Info)(nil), "flight.Info")
 }
 
-func init() { proto.RegisterFile("flight.proto", fileDescriptor_flight_0c5676b36c22befc) }
+func init() { proto.RegisterFile("flight.proto", fileDescriptor_b735ae5a59da2a5a) }
 
-var fileDescriptor_flight_0c5676b36c22befc = []byte{
+var fileDescriptor_b735ae5a59da2a5a = []byte{
 	// 172 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x3c, 0xce, 0xc1, 0x0a, 0x82, 0x40,
 	0x10, 0x06, 0xe0, 0xb6, 0x64, 0xcd, 0x29, 0x45, 0xe6, 0x10, 0x4b, 0x27, 0x89, 0x08, 0xe9, 0xe0,

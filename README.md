@@ -121,7 +121,7 @@ If you are interested in contributing, please see the [contribution guidelines][
 [kafka]: docs/arm64/kafka.md
 [ligato-docs]: http://docs.ligato.io/
 [protobufs]: https://developers.google.com/protocol-buffers/
-[vnf]: https://github.com/ligato/cn-infra/blob/master/docs/readmes/cn_virtual_function.md
+[vnf]: https://docs.ligato.io/en/latest/intro/glossary/#cnf
 [vpp]: https://fd.io/technology/#vpp
 [vpp-agent]: https://hub.docker.com/r/ligato/vpp-agent
 [vpp-agent-arm64]: https://hub.docker.com/r/ligato/vpp-agent-arm64

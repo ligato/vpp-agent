@@ -19,6 +19,7 @@ import (
 	"strings"
 
 	govppapi "git.fd.io/govpp.git/api"
+	"github.com/pkg/errors"
 
 	"github.com/ligato/vpp-agent/plugins/govppmux/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/memclnt"
@@ -27,10 +28,10 @@ import (
 
 func init() {
 	var msgs []govppapi.Message
-	msgs = append(msgs, vpe.Messages...)
-	msgs = append(msgs, memclnt.Messages...)
+	msgs = append(msgs, vpe.AllMessages()...)
+	msgs = append(msgs, memclnt.AllMessages()...)
 
-	vppcalls.Versions["vpp1904"] = vppcalls.HandlerVersion{
+	vppcalls.Versions["19.04"] = vppcalls.HandlerVersion{
 		Msgs: msgs,
 		New: func(ch govppapi.Channel) vppcalls.VpeVppAPI {
 			return NewVpeHandler(ch)
@@ -118,7 +119,7 @@ func (h *VpeHandler) RunCli(cmd string) (string, error) {
 	reply := &vpe.CliInbandReply{}
 
 	if err := h.ch.SendRequest(req).ReceiveReply(reply); err != nil {
-		return "", err
+		return "", errors.Wrapf(err, "running VPP CLI command '%s' failed", cmd)
 	}
 
 	return reply.Reply, nil

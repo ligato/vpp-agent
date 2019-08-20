@@ -17,6 +17,7 @@ package govppmux
 import (
 	"github.com/ligato/cn-infra/datasync/resync"
 	"github.com/ligato/cn-infra/health/statuscheck"
+	"github.com/ligato/cn-infra/rpc/rest"
 )
 
 // DefaultPlugin is default instance of Plugin
@@ -27,6 +28,7 @@ func NewPlugin(opts ...Option) *Plugin {
 	p := &Plugin{}
 
 	p.PluginName = "govpp"
+	p.HTTPHandlers = &rest.DefaultPlugin
 	p.StatusCheck = &statuscheck.DefaultPlugin
 	p.Resync = &resync.DefaultPlugin
 

@@ -10,7 +10,6 @@ ETCD_SERVER_DESTROY = 'sudo docker rm -f etcd'
 KAFKA_SERVER_CREATE = 'sudo docker run -itd -p 2181:2181 -p 9092:9092  --env ADVERTISED_PORT=9092 --name kafka spotify/kafka'
 KAFKA_SERVER_DESTROY = 'sudo docker rm -f kafka'
 
-VPP_AGENT_CTL_IMAGE_NAME = 'containers.cisco.com/amarcine/prod_vpp_agent_shrink'
 AGENT_VPP_IMAGE_NAME = 'containers.cisco.com/amarcine/prod_vpp_agent_shrink'
 AGENT_VPP_ETCD_CONF_PATH = '/opt/vnf-agent/dev/etcd.conf'
 

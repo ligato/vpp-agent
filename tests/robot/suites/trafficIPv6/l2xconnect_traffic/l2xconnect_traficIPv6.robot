@@ -33,6 +33,7 @@ Create 2 Loopbacks And Memifs And BD On VPP1
     Create loopback interface bvi_loop0 on agent_vpp_1 with ip ${IP_1}/64 and mac 8a:f1:be:90:00:00
     Create Master memif0 on agent_vpp_1 with MAC 02:f1:be:90:02:00, key 2 and m1.sock socket
     Create Bridge Domain bd1 With Autolearn On agent_vpp_1 with interfaces bvi_loop0, memif0
+    Create VRF Table    node=agent_vpp_1    id=20    protocol=ipv6
     Put Loopback Interface With IP    node=agent_vpp_1    name=bvi_loop1    mac=8a:f1:be:90:01:00    ip=${IP_2}    prefix=64    vrf=20    enabled=true
     Put Memif Interface    node=agent_vpp_1    name=memif1    mac=02:f1:be:90:03:00    master=true    id=3       socket=m2.sock    vrf=20
     Create Bridge Domain bd2 With Autolearn On agent_vpp_1 with interfaces bvi_loop1, memif1
@@ -40,6 +41,7 @@ Create 2 Loopbacks And Memifs And BD On VPP1
 
 Create 2 Memifs On VPP3
     Create Slave memif0 on agent_vpp_3 with MAC 02:f1:be:90:00:03, key 2 and m1.sock socket
+    Create VRF Table    node=agent_vpp_3    id=20    protocol=ipv6
     Put Memif Interface    node=agent_vpp_3    name=memif1    mac=02:f1:be:90:03:03    master=false    id=3       socket=m2.sock    vrf=20
     Sleep    2s
 

@@ -7,6 +7,7 @@ option go_package = "github.com/ligato/vpp-agent/api/models/vpp/punt;vpp_punt";
 import "github.com/gogo/protobuf/gogoproto/gogo.proto";
 option (gogoproto.messagename_all) = true;
 
+// L3Protocol defines Layer 3 protocols.
 enum L3Protocol {
     UNDEFINED_L3 = 0;
     IPv4 = 4;
@@ -14,27 +15,73 @@ enum L3Protocol {
     ALL = 10;
 }
 
+// L4Protocol defines Layer 4 protocols.
 enum L4Protocol {
     UNDEFINED_L4 = 0;
     TCP = 6;
     UDP = 17;
 }
 
-/* IPRedirect allows otherwise dropped packet which destination IP address matching some of the VPP addresses
-to redirect to the defined next hop address via the TX interface */
+// IPRedirect allows otherwise dropped packet which destination IP address
+// matching some of the VPP addresses to redirect to the defined next hop address
+// via the TX interface.
 message IPRedirect {
-    L3Protocol l3_protocol = 1; /* L3 protocol */
-    string rx_interface = 2;    /* Receive interface name. Optional, only redirect traffic incoming from this interface */
-    string tx_interface = 3;    /* Transmit interface name */
-    string next_hop = 4;        /* Next hop IP where the traffic is redirected */
+    // L3 protocol to be redirected
+    L3Protocol l3_protocol = 1;
+    // Receive interface name. Optional, only redirect traffic incoming from this interface
+    string rx_interface = 2;
+    // Transmit interface name
+    string tx_interface = 3;
+    // Next hop IP where the traffic is redirected
+    string next_hop = 4;
 }
 
-/* allows otherwise dropped packet which destination IP address matching some of the VPP interface IP addresses to be
-punted to the host. L3 and L4 protocols can be used for filtering */
+// ToHost allows otherwise dropped packet which destination IP address matching
+// some of the VPP interface IP addresses to be punted to the host.
+// L3 and L4 protocols can be used for filtering */
 message ToHost {
-    L3Protocol l3_protocol = 2;     /* L3 destination protocol a packet has to match in order to be punted */
-    L4Protocol l4_protocol = 3;     /* L4 destination protocol a packet has to match. Currently VPP only supports UDP */
-    uint32 port = 4;                /* Destination port */
+    // L3 destination protocol a packet has to match in order to be punted.
+    L3Protocol l3_protocol = 2;
+    // L4 destination protocol a packet has to match.
+    // Currently VPP only supports UDP.
+    L4Protocol l4_protocol = 3;
+    // Destination port
+    uint32 port = 4;
 
-    string socket_path = 5;         /* Optional, use unix domain socket to punt packets to the host. */
+    // SocketPath defines path to unix domain socket
+    // used for punt packets to the host.
+    // In dumps, it will actually contain the socket
+    // defined in VPP config under punt section.
+    string socket_path = 5;
+}
+
+// Exception allows specifying punt exceptions used for punting packets.
+// The type of exception is defined by reason name.
+message Exception {
+    // Name should contain reason name, e.g. `ipsec4-spi-0`.
+    string reason = 1;
+
+    // SocketPath defines path to unix domain socket
+    // used for punt packets to the host.
+    // In dumps, it will actually contain the socket
+    // defined in VPP config under punt section.
+    string socket_path = 2;
+}
+
+// Reason represents punt reason used in exceptions.
+// List of known exceptions can be retrieved in VPP CLI
+// with following command:
+//
+// vpp# show punt reasons
+//    [0] ipsec4-spi-0 from:[ipsec ]
+//    [1] ipsec6-spi-0 from:[ipsec ]
+//    [2] ipsec4-spi-o-udp-0 from:[ipsec ]
+//    [3] ipsec4-no-such-tunnel from:[ipsec ]
+//    [4] ipsec6-no-such-tunnel from:[ipsec ]
+//    [5] VXLAN-GBP-no-such-v4-tunnel from:[vxlan-gbp ]
+//    [6] VXLAN-GBP-no-such-v6-tunnel from:[vxlan-gbp ]
+//
+message Reason {
+    // Name contains reason name.
+    string name = 1;
 }

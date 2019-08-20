@@ -18,80 +18,118 @@ import (
 	"testing"
 
 	. "github.com/onsi/gomega"
+
+	"github.com/ligato/vpp-agent/pkg/models"
 )
 
-/*func TestRouteKey(t *testing.T) {
+func TestRouteKey(t *testing.T) {
 	tests := []struct {
 		name        string
-		vrf         uint32
-		dstNet      string
-		nextHopAddr string
+		route       Route
 		expectedKey string
 	}{
 		{
-			name:        "route-ipv4",
-			vrf:         0,
-			dstNet:      "10.10.0.0/24",
-			nextHopAddr: "",
-			expectedKey: "vpp/config/v2/route/vrf/0/dst/10.10.0.0/24/gw/0.0.0.0",
+			"route-ipv4",
+			Route{
+				VrfId:             0,
+				DstNetwork:        "10.10.0.0/24",
+				NextHopAddr:       "0.0.0.0",
+				OutgoingInterface: "",
+			},
+			"config/vpp/v2/route/vrf/0/dst/10.10.0.0/24/gw/0.0.0.0",
 		},
 		{
-			name:        "dst-network-address",
-			vrf:         0,
-			dstNet:      "10.10.0.255/24",
-			nextHopAddr: "",
-			expectedKey: "vpp/config/v2/route/vrf/0/dst/10.10.0.0/24/gw/0.0.0.0",
+			"route-ipv6",
+			Route{
+				VrfId:             0,
+				DstNetwork:        "2001:DB8::0001/32",
+				NextHopAddr:       "0.0.0.0",
+				OutgoingInterface: "",
+			},
+			"config/vpp/v2/route/vrf/0/dst/2001:db8::/32/gw/0.0.0.0",
 		},
 		{
-			name:        "zero-next-hop",
-			vrf:         0,
-			dstNet:      "10.10.0.1/24",
-			nextHopAddr: "0.0.0.0",
-			expectedKey: "vpp/config/v2/route/vrf/0/dst/10.10.0.0/24/gw/0.0.0.0",
+			"route-ipv4-interface",
+			Route{
+				VrfId:             0,
+				DstNetwork:        "10.10.0.0/24",
+				NextHopAddr:       "0.0.0.0",
+				OutgoingInterface: "iface1",
+			},
+			"config/vpp/v2/route/if/iface1/vrf/0/dst/10.10.0.0/24/gw/0.0.0.0",
 		},
 		{
-			name:        "non-zero-vrf",
-			vrf:         1,
-			dstNet:      "10.10.0.1/24",
-			nextHopAddr: "0.0.0.0",
-			expectedKey: "vpp/config/v2/route/vrf/1/dst/10.10.0.0/24/gw/0.0.0.0",
+			"route-ipv6-interface",
+			Route{
+				VrfId:             0,
+				DstNetwork:        "2001:DB8::0001/32",
+				NextHopAddr:       "0.0.0.0",
+				OutgoingInterface: "iface1",
+			},
+			"config/vpp/v2/route/if/iface1/vrf/0/dst/2001:db8::/32/gw/0.0.0.0",
 		},
 		{
-			name:        "invalid-dst-net-empty-gw",
-			dstNet:      "INVALID",
-			expectedKey: "vpp/config/v2/route/vrf/0/dst/<invalid>/<invalid>/gw/<invalid>",
+			"route-invalid-ip",
+			Route{
+				VrfId:             0,
+				DstNetwork:        "INVALID",
+				NextHopAddr:       "0.0.0.0",
+				OutgoingInterface: "",
+			},
+			"config/vpp/v2/route/vrf/0/dst/<invalid>/0/gw/0.0.0.0",
 		},
 		{
-			name:        "invalid-next-hop",
-			dstNet:      "10.10.0.1/24",
-			nextHopAddr: "INVALID",
-			expectedKey: "vpp/config/v2/route/vrf/0/dst/10.10.0.0/24/gw/<invalid>",
+			"route-invalid-gw",
+			Route{
+				VrfId:             0,
+				DstNetwork:        "10.10.10.0/32",
+				NextHopAddr:       "INVALID",
+				OutgoingInterface: "",
+			},
+			"config/vpp/v2/route/vrf/0/dst/10.10.10.0/32/gw/INVALID",
 		},
 		{
-			name:        "invalid-dst-net-valid-gw",
-			dstNet:      "INVALID",
-			nextHopAddr: "1.2.3.4",
-			expectedKey: "vpp/config/v2/route/vrf/0/dst/<invalid>/<invalid>/gw/1.2.3.4",
+			"route-dstnetwork",
+			Route{
+				VrfId:             0,
+				DstNetwork:        "10.10.0.5/24",
+				NextHopAddr:       "0.0.0.0",
+				OutgoingInterface: "",
+			},
+			"config/vpp/v2/route/vrf/0/dst/10.10.0.0/24/gw/0.0.0.0",
 		},
 		{
-			name:        "route-ipv6",
-			dstNet:      "2001:DB8::0001/32",
-			nextHopAddr: "",
-			expectedKey: "vpp/config/v2/route/vrf/0/dst/2001:db8::/32/gw/::",
+			"route-gw-empty",
+			Route{
+				VrfId:             0,
+				DstNetwork:        "10.0.0.0/8",
+				NextHopAddr:       "",
+				OutgoingInterface: "",
+			},
+			"config/vpp/v2/route/vrf/0/dst/10.0.0.0/8",
+		},
+		{
+			"route-vrf",
+			Route{
+				VrfId:             3,
+				DstNetwork:        "10.0.0.0/8",
+				NextHopAddr:       "",
+				OutgoingInterface: "",
+			},
+			"config/vpp/v2/route/vrf/3/dst/10.0.0.0/8",
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			key := RouteKey(test.vrf, test.dstNet, test.nextHopAddr)
+			key := models.Key(&test.route)
 			if key != test.expectedKey {
-				t.Errorf("failed for: vrf=%d dstNet=%q nextHop=%q\n"+
+				t.Errorf("failed key for route: %+v\n"+
 					"expected key:\n\t%q\ngot key:\n\t%q",
-					test.vrf, test.dstNet, test.nextHopAddr, test.expectedKey, key)
+					test.route, test.expectedKey, key)
 			}
 		})
 	}
 }
-*/
 
 // TestParseRouteKey test different cases for ParseRouteKey(...)
 func TestParseRouteKey(t *testing.T) {

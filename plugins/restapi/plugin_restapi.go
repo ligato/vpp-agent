@@ -18,9 +18,6 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/ligato/vpp-agent/plugins/vpp/abfplugin/vppcalls"
-	"github.com/ligato/vpp-agent/plugins/vpp/aclplugin"
-
 	"git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/infra"
 	"github.com/ligato/cn-infra/rpc/rest"
@@ -33,13 +30,18 @@ import (
 	l3linuxcalls "github.com/ligato/vpp-agent/plugins/linux/l3plugin/linuxcalls"
 	"github.com/ligato/vpp-agent/plugins/restapi/resturl"
 	telemetryvppcalls "github.com/ligato/vpp-agent/plugins/telemetry/vppcalls"
+	abfvppcalls "github.com/ligato/vpp-agent/plugins/vpp/abfplugin/vppcalls"
+	"github.com/ligato/vpp-agent/plugins/vpp/aclplugin"
 	aclvppcalls "github.com/ligato/vpp-agent/plugins/vpp/aclplugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin"
 	ifvppcalls "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
+	ipsecvppcalls "github.com/ligato/vpp-agent/plugins/vpp/ipsecplugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/vpp/l2plugin"
 	l2vppcalls "github.com/ligato/vpp-agent/plugins/vpp/l2plugin/vppcalls"
+	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin"
 	l3vppcalls "github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls"
 	natvppcalls "github.com/ligato/vpp-agent/plugins/vpp/natplugin/vppcalls"
+	puntvppcalls "github.com/ligato/vpp-agent/plugins/vpp/puntplugin/vppcalls"
 )
 
 // REST api methods
@@ -56,19 +58,20 @@ type Plugin struct {
 	index *index
 
 	// Channels
-	vppChan  api.Channel
-	dumpChan api.Channel
+	vppChan api.Channel
 
 	// Handlers
 	vpeHandler  vpevppcalls.VpeVppAPI
 	teleHandler telemetryvppcalls.TelemetryVppAPI
 	// VPP Handlers
-	abfHandler vppcalls.ABFVppRead
-	aclHandler aclvppcalls.ACLVppRead
-	ifHandler  ifvppcalls.InterfaceVppRead
-	natHandler natvppcalls.NatVppRead
-	l2Handler  l2vppcalls.L2VppAPI
-	l3Handler  l3vppcalls.L3VppAPI
+	abfHandler   abfvppcalls.ABFVppRead
+	aclHandler   aclvppcalls.ACLVppRead
+	ifHandler    ifvppcalls.InterfaceVppRead
+	natHandler   natvppcalls.NatVppRead
+	l2Handler    l2vppcalls.L2VppAPI
+	l3Handler    l3vppcalls.L3VppAPI
+	ipSecHandler ipsecvppcalls.IPSecVPPRead
+	puntHandler  puntvppcalls.PuntVPPRead
 	// Linux handlers
 	linuxIfHandler iflinuxcalls.NetlinkAPIRead
 	linuxL3Handler l3linuxcalls.NetlinkAPIRead
@@ -84,6 +87,7 @@ type Deps struct {
 	VPPACLPlugin aclplugin.API
 	VPPIfPlugin  ifplugin.API
 	VPPL2Plugin  *l2plugin.L2Plugin
+	VPPL3Plugin  *l3plugin.L3Plugin
 }
 
 // index defines map of main index page entries
@@ -99,42 +103,67 @@ type indexItem struct {
 
 // Init initializes the Rest Plugin
 func (p *Plugin) Init() (err error) {
-	// Check VPP dependency
-	/*if p.VPP == nil {
-		return fmt.Errorf("REST plugin requires VPP plugin API")
-	}*/
-
 	// VPP channels
 	if p.vppChan, err = p.GoVppmux.NewAPIChannel(); err != nil {
 		return err
 	}
-	if p.dumpChan, err = p.GoVppmux.NewAPIChannel(); err != nil {
-		return err
-	}
 
 	// VPP Indexes
-	aclIndexes := p.VPPACLPlugin.GetACLIndex()
 	ifIndexes := p.VPPIfPlugin.GetInterfaceIndex()
 	bdIndexes := p.VPPL2Plugin.GetBDIndex()
 	dhcpIndexes := p.VPPIfPlugin.GetDHCPIndex()
+	aclIndexes := p.VPPACLPlugin.GetACLIndex() // TODO: make ACL optional
+	vrfIndexes := p.VPPL3Plugin.GetVRFIndex()
 
-	// Initialize handlers
+	// Initialize VPP handlers
 	p.vpeHandler = vpevppcalls.CompatibleVpeHandler(p.vppChan)
+	if p.vpeHandler == nil {
+		p.Log.Info("VPP main handler is not available, it will be skipped")
+	}
 	p.teleHandler = telemetryvppcalls.CompatibleTelemetryHandler(p.vppChan, p.GoVppmux)
+	if p.teleHandler == nil {
+		p.Log.Info("VPP Telemetry handler is not available, it will be skipped")
+	}
 
-	// VPP handlers
-	p.abfHandler = vppcalls.CompatibleABFVppHandler(p.vppChan, p.dumpChan, aclIndexes, ifIndexes, p.Log)
-	p.aclHandler = aclvppcalls.CompatibleACLVppHandler(p.vppChan, p.dumpChan, ifIndexes, p.Log)
+	// core
 	p.ifHandler = ifvppcalls.CompatibleInterfaceVppHandler(p.vppChan, p.Log)
-	p.natHandler = natvppcalls.CompatibleNatVppHandler(p.vppChan, ifIndexes, dhcpIndexes, p.Log)
+	if p.ifHandler == nil {
+		p.Log.Info("VPP Interface handler is not available, it will be skipped")
+	}
 	p.l2Handler = l2vppcalls.CompatibleL2VppHandler(p.vppChan, ifIndexes, bdIndexes, p.Log)
-	p.l3Handler = l3vppcalls.CompatibleL3VppHandler(p.vppChan, ifIndexes, p.Log)
+	if p.l2Handler == nil {
+		p.Log.Info("VPP L2 handler is not available, it will be skipped")
+	}
+	p.l3Handler = l3vppcalls.CompatibleL3VppHandler(p.vppChan, ifIndexes, vrfIndexes, p.Log)
+	if p.l3Handler == nil {
+		p.Log.Info("VPP L3 handler is not available, it will be skipped")
+	}
+	p.ipSecHandler = ipsecvppcalls.CompatibleIPSecVppHandler(p.vppChan, ifIndexes, p.Log)
+	if p.ipSecHandler == nil {
+		p.Log.Info("VPP IPSec handler is not available, it will be skipped")
+	}
+
+	// plugins (might not be available - disabled)
+	p.abfHandler = abfvppcalls.CompatibleABFVppHandler(p.vppChan, aclIndexes, ifIndexes, p.Log)
+	if p.abfHandler == nil {
+		p.Log.Infof("ABF handler is not available, it will be skipped")
+	}
+	p.aclHandler = aclvppcalls.CompatibleACLVppHandler(p.vppChan, ifIndexes, p.Log)
+	if p.aclHandler == nil {
+		p.Log.Infof("ACL handler is not available, it will be skipped")
+	}
+	p.natHandler = natvppcalls.CompatibleNatVppHandler(p.vppChan, ifIndexes, dhcpIndexes, p.Log)
+	if p.natHandler == nil {
+		p.Log.Infof("NAT handler is not available, it will be skipped")
+	}
+	p.puntHandler = puntvppcalls.CompatiblePuntVppHandler(p.vppChan, ifIndexes, p.Log)
+	if p.puntHandler == nil {
+		p.Log.Infof("Punt handler is not available, it will be skipped")
+	}
 
 	// Linux handlers
-	//if p.Linux != nil {
 	p.linuxIfHandler = iflinuxcalls.NewNetLinkHandler()
 	p.linuxL3Handler = l3linuxcalls.NewNetLinkHandler()
-	//}
 
 	p.index = &index{
 		ItemMap: getIndexPageItems(),
@@ -151,24 +180,27 @@ func (p *Plugin) AfterInit() (err error) {
 	p.Log.Debug("REST API Plugin is up and running")
 
 	// VPP handlers
-	p.registerABFHandler()
-	p.registerAccessListHandlers()
-	p.registerInterfaceHandlers()
-	p.registerNatHandlers()
-	p.registerL2Handlers()
-	p.registerL3Handlers()
-
-	// Linux handlers
-	//if p.Linux != nil {
-	p.registerLinuxInterfaceHandlers()
-	p.registerLinuxL3Handlers()
-	//}
-
-	// Telemetry, command, index, tracer
 	p.registerTelemetryHandlers()
 	p.registerCommandHandler()
-	p.registerIndexHandlers()
 
+	// core
+	p.registerInterfaceHandlers()
+	p.registerL2Handlers()
+	p.registerL3Handlers()
+	p.registerIPSecHandlers()
+
+	// plugins
+	p.registerABFHandler()
+	p.registerACLHandlers()
+	p.registerNATHandlers()
+	p.registerPuntHandlers()
+
+	// Linux handlers
+	p.registerLinuxInterfaceHandlers()
+	p.registerLinuxL3Handlers()
+
+	// Index and stats handlers
+	p.registerIndexHandlers()
 	p.registerStatsHandler()
 
 	return nil
@@ -176,7 +208,7 @@ func (p *Plugin) AfterInit() (err error) {
 
 // Close is used to clean up resources used by Plugin
 func (p *Plugin) Close() (err error) {
-	return safeclose.Close(p.vppChan, p.dumpChan)
+	return safeclose.Close(p.vppChan)
 }
 
 // Fill index item lists
@@ -245,6 +277,7 @@ func getPermissionsGroups() []*access.PermissionGroup {
 		Name: "dump",
 		Permissions: []*access.PermissionGroup_Permissions{
 			newPermission(resturl.Index, GET),
+			newPermission(resturl.ABF, GET),
 			newPermission(resturl.ACLIP, GET),
 			newPermission(resturl.ACLMACIP, GET),
 			newPermission(resturl.Interface, GET),

@@ -13,7 +13,7 @@ a pre-existing physical device or interface created by an external process or
 an administrator during the agent run-time. In such cases, however, there would
 be no key-value pair to reference from within `AF-Packet` dependencies. Therefore,
 KVScheduler allows to notify about external objects through 
-`PushSBNotification(key, value, metadata)` method. Values received through
+`PushSBNotification(notification...)` method. Values received through
 notifications are denoted as `OBTAINED` and will not be removed by resync even
 though they are not requested to be configured by NB. Obtained values are
 allowed to have their own descriptors, but from the CRUD operations only

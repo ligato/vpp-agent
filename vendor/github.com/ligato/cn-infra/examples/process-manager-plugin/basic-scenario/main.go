@@ -24,9 +24,9 @@ import (
 	"time"
 
 	"github.com/ligato/cn-infra/agent"
+	pm "github.com/ligato/cn-infra/exec/processmanager"
+	"github.com/ligato/cn-infra/exec/processmanager/status"
 	"github.com/ligato/cn-infra/logging"
-	pm "github.com/ligato/cn-infra/processmanager"
-	"github.com/ligato/cn-infra/processmanager/status"
 	"github.com/pkg/errors"
 )
 

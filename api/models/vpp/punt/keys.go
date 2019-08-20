@@ -22,13 +22,6 @@ import (
 const ModuleName = "vpp"
 
 var (
-	ModelToHost = models.Register(&ToHost{}, models.Spec{
-		Module:  ModuleName,
-		Type:    "tohost",
-		Version: "v2",
-	}, models.WithNameTemplate(
-		"l3/{{.L3Protocol}}/l4/{{.L4Protocol}}/port/{{.Port}}",
-	))
 	ModelIPRedirect = models.Register(&IPRedirect{}, models.Spec{
 		Module:  ModuleName,
 		Type:    "ipredirect",
@@ -36,7 +29,29 @@ var (
 	}, models.WithNameTemplate(
 		"l3/{{.L3Protocol}}/tx/{{.TxInterface}}",
 	))
+	ModelToHost = models.Register(&ToHost{}, models.Spec{
+		Module:  ModuleName,
+		Type:    "tohost",
+		Version: "v2",
+	}, models.WithNameTemplate(
+		"l3/{{.L3Protocol}}/l4/{{.L4Protocol}}/port/{{.Port}}",
+	))
+	ModelException = models.Register(&Exception{}, models.Spec{
+		Module:  ModuleName,
+		Type:    "exception",
+		Version: "v2",
+	}, models.WithNameTemplate(
+		"reason/{{.Reason}}",
+	))
 )
+
+// IPRedirectKey returns key representing IP punt redirect configuration.
+func IPRedirectKey(l3Proto L3Protocol, txIf string) string {
+	return models.Key(&IPRedirect{
+		L3Protocol:  l3Proto,
+		TxInterface: txIf,
+	})
+}
 
 // ToHostKey returns key representing punt to host/socket configuration.
 func ToHostKey(l3Proto L3Protocol, l4Proto L4Protocol, port uint32) string {
@@ -47,10 +62,8 @@ func ToHostKey(l3Proto L3Protocol, l4Proto L4Protocol, port uint32) string {
 	})
 }
 
-// IPRedirectKey returns key representing IP punt redirect configuration.
-func IPRedirectKey(l3Proto L3Protocol, txIf string) string {
-	return models.Key(&IPRedirect{
-		L3Protocol:  l3Proto,
-		TxInterface: txIf,
+func ExceptionKey(reason string) string {
+	return models.Key(&Exception{
+		Reason: reason,
 	})
 }

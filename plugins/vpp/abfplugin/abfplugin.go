@@ -31,6 +31,7 @@ import (
 
 	_ "github.com/ligato/vpp-agent/plugins/vpp/abfplugin/vppcalls/vpp1901"
 	_ "github.com/ligato/vpp-agent/plugins/vpp/abfplugin/vppcalls/vpp1904"
+	_ "github.com/ligato/vpp-agent/plugins/vpp/abfplugin/vppcalls/vpp1908"
 )
 
 // ABFPlugin is a plugin that manages ACL-based forwarding.
@@ -38,8 +39,7 @@ type ABFPlugin struct {
 	Deps
 
 	// GoVPP channels
-	vppCh     govppapi.Channel
-	dumpVppCh govppapi.Channel
+	vppCh govppapi.Channel
 
 	abfHandler             vppcalls.ABFVppAPI
 	abfDescriptor          *descriptor.ABFDescriptor
@@ -67,12 +67,9 @@ func (p *ABFPlugin) Init() error {
 	if p.vppCh, err = p.GoVppmux.NewAPIChannel(); err != nil {
 		return errors.Errorf("failed to create GoVPP API channel: %v", err)
 	}
-	if p.dumpVppCh, err = p.GoVppmux.NewAPIChannel(); err != nil {
-		return errors.Errorf("failed to create GoVPP API dump channel: %v", err)
-	}
 
 	// init handler
-	p.abfHandler = vppcalls.CompatibleABFVppHandler(p.vppCh, p.dumpVppCh, p.ACLPlugin.GetACLIndex(), p.IfPlugin.GetInterfaceIndex(), p.Log)
+	p.abfHandler = vppcalls.CompatibleABFVppHandler(p.vppCh, p.ACLPlugin.GetACLIndex(), p.IfPlugin.GetInterfaceIndex(), p.Log)
 	if p.abfHandler == nil {
 		return errors.New("abfHandler is not available")
 	}

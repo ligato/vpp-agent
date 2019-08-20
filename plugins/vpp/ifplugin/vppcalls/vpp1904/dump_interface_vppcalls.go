@@ -187,7 +187,7 @@ func (h *InterfaceVppHandler) DumpInterfaces() (map[uint32]*vppcalls.InterfaceDe
 				ifData.Meta.SwIfIndex, err)
 		}
 		ifData.Meta.VrfIPv6 = ipv6Vrf
-		if isIPv6If, err := h.isIpv6Interface(ifData.Interface); err != nil {
+		if isIPv6If, err := isIpv6Interface(ifData.Interface); err != nil {
 			return ifs, err
 		} else if isIPv6If {
 			ifData.Interface.Vrf = ipv6Vrf
@@ -335,9 +335,100 @@ func (h *InterfaceVppHandler) DumpDhcpClients() (map[uint32]*vppcalls.Dhcp, erro
 	return dhcpData, nil
 }
 
+// DumpInterfaceStates dumps link and administrative state of every interface.
+func (h *InterfaceVppHandler) DumpInterfaceStates(ifIdxs ...uint32) (map[uint32]*vppcalls.InterfaceState, error) {
+	ifs := make(map[uint32]*vppcalls.InterfaceState)
+
+	// initialize the requested interface indexes to nil
+	for _, ifIdx := range ifIdxs {
+		ifs[ifIdx] = nil
+	}
+
+	reqCtx := h.callsChannel.SendMultiRequest(&binapi_interface.SwInterfaceDump{})
+	for {
+		ifDetails := &binapi_interface.SwInterfaceDetails{}
+		stop, err := reqCtx.ReceiveReply(ifDetails)
+		if stop {
+			break // Break from the loop.
+		}
+		if err != nil {
+			return nil, fmt.Errorf("failed to dump interface: %v", err)
+		}
+
+		// when dumping specific list of interfaces..
+		if len(ifIdxs) != 0 {
+			// and current ifIdx was not initialized..
+			if _, ok := ifs[ifDetails.SwIfIndex]; !ok {
+				// then skip processing it to omit it from results
+				continue
+			}
+		}
+
+		physAddr := make(net.HardwareAddr, ifDetails.L2AddressLength)
+		copy(physAddr, ifDetails.L2Address[:])
+
+		ifaceState := vppcalls.InterfaceState{
+			SwIfIndex:    ifDetails.SwIfIndex,
+			InternalName: cleanString(ifDetails.InterfaceName),
+			PhysAddress:  physAddr,
+			AdminState:   toInterfaceStatus(ifDetails.AdminUpDown),
+			LinkState:    toInterfaceStatus(ifDetails.LinkUpDown),
+			LinkDuplex:   toLinkDuplex(ifDetails.LinkDuplex),
+			LinkSpeed:    toLinkSpeed(ifDetails.LinkSpeed),
+			LinkMTU:      ifDetails.LinkMtu,
+		}
+		ifs[ifDetails.SwIfIndex] = &ifaceState
+	}
+
+	return ifs, nil
+}
+
+func toInterfaceStatus(upDown uint8) interfaces.InterfaceState_Status {
+	switch upDown {
+	case 0:
+		return interfaces.InterfaceState_DOWN
+	case 1:
+		return interfaces.InterfaceState_UP
+	default:
+		return interfaces.InterfaceState_UNKNOWN_STATUS
+	}
+}
+
+func toLinkDuplex(duplex uint8) interfaces.InterfaceState_Duplex {
+	switch duplex {
+	case 1:
+		return interfaces.InterfaceState_HALF
+	case 2:
+		return interfaces.InterfaceState_FULL
+	default:
+		return interfaces.InterfaceState_UNKNOWN_DUPLEX
+	}
+}
+
+const megabit = 1000000 // one megabit in bytes
+
+func toLinkSpeed(speed uint32) uint64 {
+	switch speed {
+	case 1:
+		return 10 * megabit // 10M
+	case 2:
+		return 100 * megabit // 100M
+	case 4:
+		return 1000 * megabit // 1G
+	case 8:
+		return 10000 * megabit // 10G
+	case 16:
+		return 40000 * megabit // 40G
+	case 32:
+		return 100000 * megabit // 100G
+	default:
+		return 0
+	}
+}
+
 // Returns true if given interface contains at least one IPv6 address. For VxLAN, source and destination
 // addresses are also checked
-func (h *InterfaceVppHandler) isIpv6Interface(iface *interfaces.Interface) (bool, error) {
+func isIpv6Interface(iface *interfaces.Interface) (bool, error) {
 	if iface.Type == interfaces.Interface_VXLAN_TUNNEL && iface.GetVxlan() != nil {
 		if ipAddress := net.ParseIP(iface.GetVxlan().SrcAddress); ipAddress.To4() == nil {
 			return true, nil
@@ -632,8 +723,8 @@ func verifyIPSecTunnelDetails(local, remote *ipsec.IpsecSaDetails) error {
 			localIsTunnel, remoteIsTunnel)
 	}
 
-	localSrc, localDst := local.Entry.TunnelSrc.Un.Union_data, local.Entry.TunnelDst.Un.Union_data
-	remoteSrc, remoteDst := remote.Entry.TunnelSrc.Un.Union_data, remote.Entry.TunnelDst.Un.Union_data
+	localSrc, localDst := local.Entry.TunnelSrc.Un.XXX_UnionData, local.Entry.TunnelDst.Un.XXX_UnionData
+	remoteSrc, remoteDst := remote.Entry.TunnelSrc.Un.XXX_UnionData, remote.Entry.TunnelDst.Un.XXX_UnionData
 	if (local.Entry.Flags&ipsec.IPSEC_API_SAD_FLAG_IS_TUNNEL_V6) != (remote.Entry.Flags&ipsec.IPSEC_API_SAD_FLAG_IS_TUNNEL_V6) ||
 		!bytes.Equal(localSrc[:], remoteDst[:]) ||
 		!bytes.Equal(localDst[:], remoteSrc[:]) {
@@ -765,19 +856,29 @@ func (h *InterfaceVppHandler) dumpRxPlacement(ifs map[uint32]*vppcalls.Interface
 		if stop {
 			break
 		}
+
 		ifData, ok := ifs[rxDetails.SwIfIndex]
 		if !ok {
 			h.log.Warnf("Received rx-placement data for unknown interface with index %d", rxDetails.SwIfIndex)
 			continue
 		}
-		ifData.Interface.RxModeSettings = &interfaces.Interface_RxModeSettings{
-			RxMode:  getRxModeType(rxDetails.Mode),
-			QueueId: rxDetails.QueueID,
+
+		ifData.Interface.RxModes = append(ifData.Interface.RxModes,
+			&interfaces.Interface_RxMode{
+				Queue: rxDetails.QueueID,
+				Mode:  getRxModeType(rxDetails.Mode),
+			})
+
+		var worker uint32
+		if rxDetails.WorkerID > 0 {
+			worker = rxDetails.WorkerID - 1
 		}
-		ifData.Interface.RxPlacementSettings = &interfaces.Interface_RxPlacementSettings{
-			Queue:  rxDetails.QueueID,
-			Worker: rxDetails.WorkerID,
-		}
+		ifData.Interface.RxPlacements = append(ifData.Interface.RxPlacements,
+			&interfaces.Interface_RxPlacement{
+				Queue:      rxDetails.QueueID,
+				Worker:     worker,
+				MainThread: rxDetails.WorkerID == 0,
+			})
 	}
 	return nil
 }
@@ -832,18 +933,18 @@ func memifModetoNB(mode uint8) interfaces.MemifLink_MemifMode {
 }
 
 // Convert binary API rx-mode to northbound representation
-func getRxModeType(mode uint8) interfaces.Interface_RxModeSettings_RxModeType {
+func getRxModeType(mode uint8) interfaces.Interface_RxMode_Type {
 	switch mode {
 	case 1:
-		return interfaces.Interface_RxModeSettings_POLLING
+		return interfaces.Interface_RxMode_POLLING
 	case 2:
-		return interfaces.Interface_RxModeSettings_INTERRUPT
+		return interfaces.Interface_RxMode_INTERRUPT
 	case 3:
-		return interfaces.Interface_RxModeSettings_ADAPTIVE
+		return interfaces.Interface_RxMode_ADAPTIVE
 	case 4:
-		return interfaces.Interface_RxModeSettings_DEFAULT
+		return interfaces.Interface_RxMode_DEFAULT
 	default:
-		return interfaces.Interface_RxModeSettings_UNKNOWN
+		return interfaces.Interface_RxMode_UNKNOWN
 	}
 }
 
