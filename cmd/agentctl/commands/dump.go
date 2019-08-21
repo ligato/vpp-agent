@@ -35,6 +35,7 @@ import (
 
 func NewDumpCommand(cli *AgentCli) *cobra.Command {
 	var opts DumpOptions
+
 	cmd := &cobra.Command{
 		Use:     "dump [model]",
 		Aliases: []string{"d"},
@@ -59,23 +60,6 @@ func NewDumpCommand(cli *AgentCli) *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVarP(&opts.View, "view", "v", "cached", "Dump view type: cached, NB, SB")
-	/*for _, model := range cli.AllModels() {
-		m := model
-		c := &cobra.Command{
-			Use: model.Alias,
-			Aliases: []string{
-				model.Name,
-				model.ProtoName,
-				model.KeyPrefix,
-			},
-			Short: fmt.Sprintf("Dump for %s model (%s)", model.Name, model.ProtoName),
-			Args:  cobra.NoArgs,
-			Run: func(cmd *cobra.Command, args []string) {
-				runDump(cli, m)
-			},
-		}
-		cmd.AddCommand(c)
-	}*/
 	return cmd
 }
 
@@ -104,11 +88,23 @@ func runDump(cli *AgentCli, opts DumpOptions) {
 	if err != nil {
 		ExitWithError(err)
 	}
+
 	sort.Sort(dumpByKey(dump))
-	printDump(dump)
+	printDumpTable(dump)
 }
 
-func printDump(dump []api.KVWithMetadata) {
+// printDumpTable prints dump data using table format
+//
+// KEY                                        VALUE                        ORIGIN    METADATA
+// config/vpp/v2/interfaces/UNTAGGED-local0   [vpp.interfaces.Interface]   from-SB   map[IPAddresses:<nil> SwIfIndex:0 TAPHostIfName: Vrf:0]
+// name: "UNTAGGED-local0"
+// type: SOFTWARE_LOOPBACK
+//
+// config/vpp/v2/interfaces/loop1             [vpp.interfaces.Interface]   from-NB   map[IPAddresses:<nil> SwIfIndex:1 TAPHostIfName: Vrf:0]
+// name: "loop1"
+// type: SOFTWARE_LOOPBACK
+//
+func printDumpTable(dump []api.KVWithMetadata) {
 	var buf bytes.Buffer
 	w := tabwriter.NewWriter(&buf, 0, 0, 3, ' ', 0)
 	fmt.Fprintf(w, "KEY\tVALUE\tORIGIN\tMETADATA\t\n")
