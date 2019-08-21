@@ -46,7 +46,7 @@ func NewAgentCli() *AgentCli {
 }
 
 func (cli *AgentCli) Initialize() {
-	Debugf("Initialize - globalsFlags: %+v\n\n", global)
+	Debugf("Initialize - globals: %+v\n\n", global)
 
 	host := global.AgentHost
 	if host == "" {

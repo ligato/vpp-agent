@@ -84,7 +84,7 @@ func AddCommands(cmd *cobra.Command, cli *AgentCli) {
 		NewLogCommand(cli),
 		NewImportCommand(cli),
 		NewVppCommand(cli),
-		NewModelCommand(cli),
+		NewDumpCommand(cli),
 		NewConfigCommand(cli),
 		showCmd(),
 		generateCmd(),
