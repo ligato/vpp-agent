@@ -33,6 +33,7 @@ import (
 	linux_iptablesplugin "github.com/ligato/vpp-agent/plugins/linux/iptablesplugin"
 	linux_l3plugin "github.com/ligato/vpp-agent/plugins/linux/l3plugin"
 	linux_nsplugin "github.com/ligato/vpp-agent/plugins/linux/nsplugin"
+	"github.com/ligato/vpp-agent/plugins/netalloc"
 	"github.com/ligato/vpp-agent/plugins/orchestrator"
 	"github.com/ligato/vpp-agent/plugins/restapi"
 	"github.com/ligato/vpp-agent/plugins/telemetry"
@@ -54,11 +55,12 @@ import (
 type VPPAgent struct {
 	LogManager *logmanager.Plugin
 
-	// VPP & Linux are first to ensure that
+	// VPP & Linux (and other plugins with descriptors) are first to ensure that
 	// all their descriptors are registered to KVScheduler
 	// before orchestrator that starts watch for their NB key prefixes.
 	VPP
 	Linux
+	Netalloc *netalloc.Plugin
 
 	Orchestrator *orchestrator.Plugin
 
@@ -130,6 +132,7 @@ func New() *VPPAgent {
 		RedisDataSync:  redisDataSync,
 		VPP:            vpp,
 		Linux:          linux,
+		Netalloc:       &netalloc.DefaultPlugin,
 		Configurator:   &configurator.DefaultPlugin,
 		RESTAPI:        &restapi.DefaultPlugin,
 		Probe:          &probe.DefaultPlugin,

@@ -24,6 +24,7 @@ import (
 
 	rpc "github.com/ligato/vpp-agent/api/configurator"
 	"github.com/ligato/vpp-agent/api/models/linux"
+	"github.com/ligato/vpp-agent/api/models/netalloc"
 	"github.com/ligato/vpp-agent/api/models/vpp"
 	"github.com/ligato/vpp-agent/pkg/models"
 	"github.com/ligato/vpp-agent/pkg/util"
@@ -117,7 +118,8 @@ func (svc *configuratorServer) Delete(ctx context.Context, req *rpc.DeleteReques
 
 func newConfig() *rpc.Config {
 	return &rpc.Config{
-		LinuxConfig: &linux.ConfigData{},
-		VppConfig:   &vpp.ConfigData{},
+		LinuxConfig:    &linux.ConfigData{},
+		VppConfig:      &vpp.ConfigData{},
+		NetallocConfig: &netalloc.ConfigData{},
 	}
 }
