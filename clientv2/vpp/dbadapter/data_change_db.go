@@ -82,6 +82,13 @@ func (dsl *PutDSL) Interface(val *intf.Interface) vppclient.PutDSL {
 	return dsl
 }
 
+// Span adds VPP span to the change request.
+func (dsl *PutDSL) Span(val *intf.Span) vppclient.PutDSL {
+	key := intf.SpanKey(val.InterfaceFrom, val.InterfaceTo)
+	dsl.parent.txn.Put(key, val)
+	return dsl
+}
+
 // ACL adds a request to create or update VPP Access Control List.
 func (dsl *PutDSL) ACL(val *acl.ACL) vppclient.PutDSL {
 	dsl.parent.txn.Put(acl.Key(val.Name), val)
@@ -203,6 +210,13 @@ func (dsl *PutDSL) Send() vppclient.Reply {
 // Interface adds a request to delete an existing VPP network interface.
 func (dsl *DeleteDSL) Interface(interfaceName string) vppclient.DeleteDSL {
 	dsl.parent.txn.Delete(intf.InterfaceKey(interfaceName))
+	return dsl
+}
+
+// Span adds VPP span to the RESYNC request.
+func (dsl *DeleteDSL) Span(val *intf.Span) vppclient.DeleteDSL {
+	key := intf.SpanKey(val.InterfaceFrom, val.InterfaceTo)
+	dsl.parent.txn.Delete(key)
 	return dsl
 }
 

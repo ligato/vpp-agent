@@ -58,6 +58,15 @@ func (dsl *DataResyncDSL) Interface(val *intf.Interface) vppclient.DataResyncDSL
 	return dsl
 }
 
+// Span adds VPP span to the RESYNC request.
+func (dsl *DataResyncDSL) Span(val *intf.Span) vppclient.DataResyncDSL {
+	key := intf.SpanKey(val.InterfaceFrom, val.InterfaceTo)
+	dsl.txn.Put(key, val)
+	dsl.txnKeys = append(dsl.txnKeys, key)
+
+	return dsl
+}
+
 // ACL adds Access Control List to the RESYNC request.
 func (dsl *DataResyncDSL) ACL(val *acl.ACL) vppclient.DataResyncDSL {
 	key := acl.Key(val.Name)

@@ -57,5 +57,5 @@ embed the VPP Agent directly into the netplugin process as a new driver
 for VPP-based networking. Using the Local client v1 the driver is able
 to propagate the configuration into the Agent via Go channels.
 
-![embeded deployment](imgs/deployment_embeded.png)
+![embedded deployment](imgs/deployment_embeded.png)
 TBD links to the code
