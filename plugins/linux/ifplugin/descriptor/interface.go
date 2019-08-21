@@ -18,7 +18,6 @@ import (
 	"io/ioutil"
 	"net"
 	"path/filepath"
-	"reflect"
 	"strconv"
 	"strings"
 
@@ -32,7 +31,6 @@ import (
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/servicelabel"
-	"github.com/ligato/cn-infra/utils/addrs"
 
 	interfaces "github.com/ligato/vpp-agent/api/models/linux/interfaces"
 	namespace "github.com/ligato/vpp-agent/api/models/linux/namespace"
@@ -233,18 +231,6 @@ func (d *InterfaceDescriptor) EquivalentInterfaces(key string, oldIntf, newIntf 
 	// compare MAC addresses case-insensitively (also handle unspecified MAC address)
 	if newIntf.PhysAddress != "" &&
 		strings.ToLower(oldIntf.PhysAddress) != strings.ToLower(newIntf.PhysAddress) {
-		return false
-	}
-
-	// order-irrelevant comparison of IP addresses
-	oldIntfAddrs, err1 := addrs.StrAddrsToStruct(oldIntf.IpAddresses)
-	newIntfAddrs, err2 := addrs.StrAddrsToStruct(newIntf.IpAddresses)
-	if err1 != nil || err2 != nil {
-		// one or both of the configurations are invalid, compare lazily
-		return reflect.DeepEqual(oldIntf.IpAddresses, newIntf.IpAddresses)
-	}
-	obsolete, new := addrs.DiffAddr(oldIntfAddrs, newIntfAddrs)
-	if len(obsolete) != 0 || len(new) != 0 {
 		return false
 	}
 
@@ -888,6 +874,7 @@ func (d *InterfaceDescriptor) retrieveInterfaces(nsList []*namespace.NetNamespac
 					LinuxIfIndex: link.Attrs().Index,
 					VPPTapName:   iface.GetTap().GetVppTapIfName(),
 					Namespace:    nsRef,
+					HostIfName:   link.Attrs().Name,
 				},
 			})
 		}
@@ -918,6 +905,7 @@ func (d *InterfaceDescriptor) retrieveExistingInterfaces(expected map[string]*in
 		}
 		iface := &interfaces.Interface{
 			Name:        expCfg.GetName(),
+			Type:        interfaces.Interface_EXISTING,
 			HostIfName:  link.Attrs().Name,
 			PhysAddress: link.Attrs().HardwareAddr.String(),
 			Mtu:         uint32(link.Attrs().MTU),
@@ -934,6 +922,7 @@ func (d *InterfaceDescriptor) retrieveExistingInterfaces(expected map[string]*in
 			Origin: kvs.FromNB,
 			Metadata: &ifaceidx.LinuxIfMetadata{
 				LinuxIfIndex: link.Attrs().Index,
+				HostIfName:   link.Attrs().Name,
 			},
 		})
 	}
