@@ -23,34 +23,76 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func NewVppcliCommand(cli *AgentCli) *cobra.Command {
+func NewVppCommand(cli *AgentCli) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "vppcli",
-		Short: "Execute VPP CLI command",
-		Long: `
-A CLI tool to connect to vppagent and run VPP CLI command.
-`,
-		Example: `Run a VPP CLI command:
-  $ agentctl vppcli show version
+		Use:   "vpp",
+		Short: "Manage VPP instance",
+	}
+	cmd.AddCommand(
+		newVppCliCommand(cli),
+		newVppInfoCommand(cli),
+	)
+	return cmd
+}
 
-Do same as above, but specify the HTTP address of the agent:
-  $ agentctl --httpaddr 172.17.0.3:9191 vppcli show version
+func newVppCliCommand(cli *AgentCli) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "cli",
+		Short: "Execute VPP CLI command",
+		Example: `
+ To run a VPP CLI command:
+  $ agentctl vpp cli show version
+
+ Do same as above, but specify the HTTP address of the agent:
+  $ agentctl --httpaddr 172.17.0.3:9191 vpp cli show version
 `,
 		Args: cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			vppcmd := strings.Join(args, " ")
-			return RunVppcli(cli, vppcmd)
+			return runVppCli(cli, vppcmd)
 		},
 		SilenceUsage: true,
 	}
 	return cmd
 }
 
-func RunVppcli(cli *AgentCli, vppcmd string) error {
-	fmt.Fprintf(os.Stdout, "vpp# %s\n", vppcmd)
+func runVppCli(cli *AgentCli, vppcmd string) error {
+	fmt.Fprintf(os.Stdout, "# %s\n", vppcmd)
 
 	data := map[string]interface{}{
 		"vppclicommand": vppcmd,
+	}
+	resp, err := cli.HttpRestPOST("/vpp/command", data)
+	if err != nil {
+		return fmt.Errorf("HTTP POST request failed: %v", err)
+	}
+
+	var reply string
+	if err := json.Unmarshal(resp, &reply); err != nil {
+		return fmt.Errorf("decoding reply failed: %v", err)
+	}
+
+	fmt.Fprintf(os.Stdout, "%s", reply)
+	return nil
+}
+
+func newVppInfoCommand(cli *AgentCli) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:     "info",
+		Aliases: []string{"i"},
+		Short:   "Retrieve info about VPP",
+		Args:    cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return runVppInfo(cli)
+		},
+		SilenceUsage: true,
+	}
+	return cmd
+}
+
+func runVppInfo(cli *AgentCli) error {
+	data := map[string]interface{}{
+		"vppclicommand": "show version verbose",
 	}
 	resp, err := cli.HttpRestPOST("/vpp/command", data)
 	if err != nil {

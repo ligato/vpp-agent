@@ -19,6 +19,7 @@ import (
 	"net/url"
 	"os"
 
+	"github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/spf13/cobra"
 )
 
@@ -50,8 +51,11 @@ func NewDumpCommand(cli *AgentCli) *cobra.Command {
 }
 
 func runDump(cli *AgentCli, model ModelDetail) {
-	q := fmt.Sprintf(`key-prefix=%s&view=cached`, url.QueryEscape(model.KeyPrefix))
-	resp, err := cli.HttpRestGET("/scheduler/dump?" + q)
+	dumpView := api.CachedView
+	q := fmt.Sprintf(`/scheduler/dump?key-prefix=%s&view=%s`,
+		url.QueryEscape(model.KeyPrefix), url.QueryEscape(dumpView.String()))
+
+	resp, err := cli.HttpRestGET(q)
 	if err != nil {
 		ExitWithError(err)
 	}

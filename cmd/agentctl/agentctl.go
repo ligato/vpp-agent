@@ -23,7 +23,7 @@ import (
 func main() {
 	cli := commands.NewAgentCli()
 
-	cmd := commands.NewAgentctlCommand(cli)
+	cmd := commands.NewRootCommand(cli)
 	if err := cmd.Execute(); err != nil {
 		os.Exit(-1)
 	}

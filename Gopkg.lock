@@ -101,6 +101,14 @@
 
 [[projects]]
   branch = "master"
+  digest = "1:083caed86277ee2b48cc2dd692321170ac5cbbca3d08cf2259a8b82c0cb0dee7"
+  name = "github.com/common-nighthawk/go-figure"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "67e0ed34491ae997c83c5aa2a1cae2cfd4b4ac41"
+
+[[projects]]
+  branch = "master"
   digest = "1:1ed8f94f16010f9e1a419a818ec8ed5765d04561e6bfcc872e3a5a16fbae08b2"
   name = "github.com/containerd/console"
   packages = ["."]
@@ -1023,6 +1031,7 @@
     "git.fd.io/govpp.git/api",
     "git.fd.io/govpp.git/cmd/binapi-generator",
     "git.fd.io/govpp.git/core",
+    "github.com/common-nighthawk/go-figure",
     "github.com/coreos/etcd/clientv3",
     "github.com/coreos/go-iptables/iptables",
     "github.com/fsouza/go-dockerclient",

@@ -196,7 +196,7 @@ func grpcImport(keyVals []keyVal) error {
 
 func etcdImport(keyVals []keyVal) error {
 	// Connect to etcd
-	db, err := utils.GetDbForAllAgents(globalFlags.Endpoints)
+	db, err := utils.GetDbForAllAgents(global.Endpoints)
 	if err != nil {
 		return fmt.Errorf("connecting to Etcd failed: %v", err)
 	}
@@ -237,7 +237,7 @@ func parseKey(key string) (string, error) {
 	if !strings.HasPrefix(key, "config/") {
 		return "", fmt.Errorf("invalid format for key: %q", key)
 	}
-	return path.Join(servicelabel.GetAllAgentsPrefix(), globalFlags.ServiceLabel, key), nil
+	return path.Join(servicelabel.GetAllAgentsPrefix(), global.ServiceLabel, key), nil
 }
 
 func unmarshalKeyVal(fullKey string, data string) (proto.Message, error) {

@@ -46,20 +46,20 @@ func NewAgentCli() *AgentCli {
 }
 
 func (cli *AgentCli) Initialize() {
-	Debugf("[DEBUG] Initialize - globalsFlags: %+v\n\n", globalFlags)
+	Debugf("Initialize - globalsFlags: %+v\n\n", global)
 
-	host := globalFlags.AgentHost
+	host := global.AgentHost
 	if host == "" {
 		host = "127.0.0.1"
 	}
-	httpAddr := net.JoinHostPort(host, globalFlags.HttpPort)
+	httpAddr := net.JoinHostPort(host, global.HttpPort)
 	cli.RestClient = utils.NewRestClient(httpAddr)
 }
 
 func (cli *AgentCli) KVDBClient() keyval.BytesBroker {
 	etcdCfg := etcd.ClientConfig{
 		Config: &clientv3.Config{
-			Endpoints:   globalFlags.Endpoints,
+			Endpoints:   global.Endpoints,
 			DialTimeout: time.Second * 3,
 		},
 		OpTimeout: time.Second * 10,
@@ -73,7 +73,7 @@ func (cli *AgentCli) KVDBClient() keyval.BytesBroker {
 		ExitWithError(err)
 	}
 
-	return kvdb.NewBroker(globalFlags.ServiceLabel)
+	return kvdb.NewBroker(global.ServiceLabel)
 }
 
 type ModelDetail struct {
@@ -96,7 +96,11 @@ type protoFields []*descriptor.FieldDescriptorProto
 
 func (cli *AgentCli) AllModels() []ModelDetail {
 	var list []ModelDetail
-	for _, m := range models.RegisteredModels() {
+
+	registeredModels := models.RegisteredModels()
+	Debugf("found %d registered models", len(registeredModels))
+
+	for _, m := range registeredModels {
 		module := strings.Split(m.Model.Module, ".")
 		typ := m.Model.Type
 		version := m.Model.Version

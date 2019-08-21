@@ -231,7 +231,7 @@ func setKeyPrefix(args []string) {
 }
 
 func showFunction(cmd *cobra.Command, args []string) {
-	db, err := utils.GetDbForAllAgents(globalFlags.Endpoints)
+	db, err := utils.GetDbForAllAgents(global.Endpoints)
 	if err != nil {
 		utils.ExitWithError(utils.ExitError, errors.New("Failed to connect to Etcd - "+err.Error()))
 	}
@@ -334,7 +334,7 @@ func printAgentConfig(db keyval.ProtoBroker, agentLabel string, kprefix string) 
 }
 
 func keyFunction(cmd *cobra.Command, args []string) {
-	db, err := utils.GetDbForAllAgents(globalFlags.Endpoints)
+	db, err := utils.GetDbForAllAgents(global.Endpoints)
 	if err != nil {
 		utils.ExitWithError(utils.ExitError, errors.New("Failed to connect to Etcd - "+err.Error()))
 	}

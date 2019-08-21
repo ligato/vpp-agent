@@ -127,16 +127,16 @@ func runConfigPut(cli *AgentCli, key, value string) {
 	if !strings.HasPrefix(key, servicelabel.GetAllAgentsPrefix()) {
 		tmp := strings.Split(key, "/")
 		if tmp[0] != "config" {
-			globalFlags.ServiceLabel = tmp[0]
+			global.ServiceLabel = tmp[0]
 			key = strings.Join(tmp[1:], "/")
 		}
 
-		db, err = utils.GetDbForOneAgent(globalFlags.Endpoints, globalFlags.ServiceLabel)
+		db, err = utils.GetDbForOneAgent(global.Endpoints, global.ServiceLabel)
 		if err != nil {
 			utils.ExitWithError(utils.ExitError, errors.New("Failed to connect to Etcd - "+err.Error()))
 		}
 	} else {
-		db, err = utils.GetDbForAllAgents(globalFlags.Endpoints)
+		db, err = utils.GetDbForAllAgents(global.Endpoints)
 		if err != nil {
 			utils.ExitWithError(utils.ExitError, errors.New("Failed to connect to Etcd - "+err.Error()))
 		}
@@ -168,16 +168,16 @@ func runConfigDel(cli *AgentCli, key string) {
 	if !strings.HasPrefix(key, servicelabel.GetAllAgentsPrefix()) {
 		tmp := strings.Split(key, "/")
 		if tmp[0] != "config" {
-			globalFlags.ServiceLabel = tmp[0]
+			global.ServiceLabel = tmp[0]
 			key = strings.Join(tmp[1:], "/")
 		}
 
-		db, err = utils.GetDbForOneAgent(globalFlags.Endpoints, globalFlags.ServiceLabel)
+		db, err = utils.GetDbForOneAgent(global.Endpoints, global.ServiceLabel)
 		if err != nil {
 			utils.ExitWithError(utils.ExitError, errors.New("Failed to connect to Etcd - "+err.Error()))
 		}
 	} else {
-		db, err = utils.GetDbForAllAgents(globalFlags.Endpoints)
+		db, err = utils.GetDbForAllAgents(global.Endpoints)
 		if err != nil {
 			utils.ExitWithError(utils.ExitError, errors.New("Failed to connect to Etcd - "+err.Error()))
 		}
