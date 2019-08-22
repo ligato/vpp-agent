@@ -8,7 +8,7 @@ import (
 )
 
 // AddressAllocator provides methods for descriptors of other plugins to reference
-// and obtain allocated address.
+// and obtain allocated addresses.
 //
 // For example, if a model of some configuration item contains field IpAddress
 // (of type string) which could reference allocated IP address (assigned to non
@@ -98,16 +98,17 @@ type AddressAllocator interface{
 	// using methods from the net package and returned in the requested form.
 	// For ADDR_ONLY address form, the returned <addr> will have the mask unset
 	// and the IP address should be accessed as <addr>.IP
-	GetOrParseIPAddress(addrOrAllocRef string, defaultIface string, addrForm netalloc.IPAddressForm) (
+	GetOrParseIPAddress(addrOrAllocRef string, ifaceName string, addrForm netalloc.IPAddressForm) (
 		addr *net.IPNet, err error)
 
-	// CorrelateRetrievedIPs should be used in Retrieve to correlate one or more
-	// retrieved IP addresses with the expected configuration. The method will
-	// replace retrieved addresses with the corresponding allocation references
-	// from the expected configuration if there are any.
+	// CorrelateRetrievedIPs should be used in Retrieve to correlate one or group
+	// of (model-wise indistinguishable) retrieved IP addresses with the expected
+	// configuration. The method will replace retrieved addresses with the
+	// corresponding allocation references from the expected configuration if
+	// there are any.
 	// The method returns one IP address or address-allocation reference for every
 	// address from <retrievedAddrs>.
-	CorrelateRetrievedIPs(expAddrsOrRefs []string, retrievedAddrs []string, defaultIface string,
+	CorrelateRetrievedIPs(expAddrsOrRefs []string, retrievedAddrs []string, ifaceName string,
 		addrForm netalloc.IPAddressForm) []string
 
 	// TBD: MAC addresses

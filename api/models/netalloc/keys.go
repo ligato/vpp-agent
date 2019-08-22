@@ -20,15 +20,22 @@ import (
 	"github.com/ligato/vpp-agent/pkg/models"
 )
 
-// ModuleName is the module name used for models of the netalloc plugin.
-const ModuleName = "netalloc"
+const (
+	// ModuleName is the module name used for models of the netalloc plugin.
+	ModuleName = "netalloc"
+
+	// AllocRefPrefix is a prefix added in front of references to allocated objects.
+	AllocRefPrefix = "alloc:"
+)
 
 var (
 	ModelAddressAllocation = models.Register(&AddressAllocation{}, models.Spec{
 		Module:  ModuleName,
 		Version: "v1",
 		Type:    "address",
-	})
+	}, models.WithNameTemplate(
+		"{{.AddressType}}/network/{{.NetworkName}}/interface/{{.InterfaceName}}",
+	))
 )
 
 // AddrAllocMetadata stores allocated address already parsed from string.

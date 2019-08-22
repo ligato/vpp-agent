@@ -83,35 +83,40 @@ func (d *AddrAllocDescriptor) parseAddr(addrAlloc *netalloc.AddressAllocation) (
 	case netalloc.AddressType_IPV6_ADDR:
 		fallthrough
 	case netalloc.AddressType_IPV6_GW:
-		if strings.Contains(addrAlloc.Address, "/") {
-			// IP with mask
-			ip, ipNet, err := net.ParseCIDR(addrAlloc.Address)
-			if err != nil {
-				return nil, err
-			}
-			ipNet.IP = ip
-			return &netalloc.AddrAllocMetadata{IPAddr: ipNet}, nil
-		} else {
-			// IP without mask
-			defaultIpv4Mask := net.CIDRMask(32, 32)
-			defaultIpv6Mask := net.CIDRMask(128, 128)
-
-			ip := net.ParseIP(addrAlloc.Address)
-			if ip == nil {
-				return nil, fmt.Errorf("invalid IP address: %s", addrAlloc.Address)
-			}
-			if ip.To4() != nil {
-				// IPv4 address
-				return &netalloc.AddrAllocMetadata{
-					IPAddr: &net.IPNet{IP: ip.To4(), Mask: defaultIpv4Mask}}, nil
-			} else {
-				// IPv6 address
-				return &netalloc.AddrAllocMetadata{
-					IPAddr: &net.IPNet{IP: ip, Mask: defaultIpv6Mask}}, nil
-			}
+		ipNet, err := ParseIPAddr(addrAlloc.Address)
+		if err != nil {
+			return nil, err
 		}
-	default:
-		return nil, fmt.Errorf("address of undefined type: %s", addrAlloc.Address)
+		return &netalloc.AddrAllocMetadata{IPAddr: ipNet}, nil
 	}
-	return nil, nil
+	return nil, fmt.Errorf("address of undefined type: %s", addrAlloc.Address)
+}
+
+// ParseIPAddr parses IP address from string.
+func ParseIPAddr(addr string) (ipNet *net.IPNet, err error) {
+	if strings.Contains(addr, "/") {
+		// IP with mask
+		ip, ipNet, err := net.ParseCIDR(addr)
+		if err != nil {
+			return nil, err
+		}
+		ipNet.IP = ip
+		return ipNet, nil
+	}
+
+	// IP without mask
+	defaultIpv4Mask := net.CIDRMask(32, 32)
+	defaultIpv6Mask := net.CIDRMask(128, 128)
+
+	ip := net.ParseIP(addr)
+	if ip == nil {
+		return nil, fmt.Errorf("invalid IP address: %s", addr)
+	}
+	if ip.To4() != nil {
+		// IPv4 address
+		return &net.IPNet{IP: ip.To4(), Mask: defaultIpv4Mask}, nil
+	}
+
+	// IPv6 address
+	return &net.IPNet{IP: ip, Mask: defaultIpv6Mask}, nil
 }
