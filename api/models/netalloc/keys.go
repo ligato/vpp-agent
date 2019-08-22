@@ -34,5 +34,5 @@ var (
 // AddrAllocMetadata stores allocated address already parsed from string.
 type AddrAllocMetadata struct {
 	IPAddr *net.IPNet
-	HwAddr net.HardwareAddr
+	// TBD: HwAddr net.HardwareAddr
 }

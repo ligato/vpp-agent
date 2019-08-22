@@ -15,6 +15,10 @@
 package descriptor
 
 import (
+	"fmt"
+	"net"
+	"strings"
+
 	"github.com/ligato/cn-infra/logging"
 
 	"github.com/ligato/vpp-agent/api/models/netalloc"
@@ -55,18 +59,59 @@ func NewAddrAllocDescriptor(log logging.PluginLogger) (descr *kvs.KVDescriptor) 
 
 // Validate checks if the address can be parsed.
 func (d *AddrAllocDescriptor) Validate(key string, addrAlloc *netalloc.AddressAllocation) (err error) {
-	// TODO
-	return nil
+	_, err = d.parseAddr(addrAlloc)
+	return err
 }
 
 // Create parses the address and stores it into the metadata.
 func (d *AddrAllocDescriptor) Create(key string, addrAlloc *netalloc.AddressAllocation) (metadata *netalloc.AddrAllocMetadata, err error) {
-	// TODO
-	return nil, err
+	return d.parseAddr(addrAlloc)
 }
 
 // Delete is NOOP.
 func (d *AddrAllocDescriptor) Delete(key string, addrAlloc *netalloc.AddressAllocation, metadata *netalloc.AddrAllocMetadata) (err error) {
-	// TODO
 	return err
+}
+
+// parseAddr tries to parse the allocated address.
+func (d *AddrAllocDescriptor) parseAddr(addrAlloc *netalloc.AddressAllocation) (parsed *netalloc.AddrAllocMetadata, err error) {
+	switch addrAlloc.AddressType {
+	case netalloc.AddressType_IPV4_ADDR:
+		fallthrough
+	case netalloc.AddressType_IPV4_GW:
+		fallthrough
+	case netalloc.AddressType_IPV6_ADDR:
+		fallthrough
+	case netalloc.AddressType_IPV6_GW:
+		if strings.Contains(addrAlloc.Address, "/") {
+			// IP with mask
+			ip, ipNet, err := net.ParseCIDR(addrAlloc.Address)
+			if err != nil {
+				return nil, err
+			}
+			ipNet.IP = ip
+			return &netalloc.AddrAllocMetadata{IPAddr: ipNet}, nil
+		} else {
+			// IP without mask
+			defaultIpv4Mask := net.CIDRMask(32, 32)
+			defaultIpv6Mask := net.CIDRMask(128, 128)
+
+			ip := net.ParseIP(addrAlloc.Address)
+			if ip == nil {
+				return nil, fmt.Errorf("invalid IP address: %s", addrAlloc.Address)
+			}
+			if ip.To4() != nil {
+				// IPv4 address
+				return &netalloc.AddrAllocMetadata{
+					IPAddr: &net.IPNet{IP: ip.To4(), Mask: defaultIpv4Mask}}, nil
+			} else {
+				// IPv6 address
+				return &netalloc.AddrAllocMetadata{
+					IPAddr: &net.IPNet{IP: ip, Mask: defaultIpv6Mask}}, nil
+			}
+		}
+	default:
+		return nil, fmt.Errorf("address of undefined type: %s", addrAlloc.Address)
+	}
+	return nil, nil
 }
