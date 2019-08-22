@@ -34,6 +34,7 @@ import (
 	linux_ifdescriptor "github.com/ligato/vpp-agent/plugins/linux/ifplugin/descriptor"
 	linux_ifaceidx "github.com/ligato/vpp-agent/plugins/linux/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/linux/nsplugin"
+	"github.com/ligato/vpp-agent/plugins/netalloc"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
@@ -119,6 +120,7 @@ type InterfaceDescriptor struct {
 	// dependencies
 	log       logging.Logger
 	ifHandler vppcalls.InterfaceVppAPI
+	addrAlloc netalloc.AddressAllocator
 
 	// optional dependencies, provide if AFPacket and/or TAP+TAP_TO_VPP interfaces are used
 	linuxIfPlugin  LinuxPluginAPI
@@ -148,13 +150,14 @@ type NetlinkAPI interface {
 }
 
 // NewInterfaceDescriptor creates a new instance of the Interface descriptor.
-func NewInterfaceDescriptor(ifHandler vppcalls.InterfaceVppAPI, defaultMtu uint32,
-	linuxIfHandler NetlinkAPI, linuxIfPlugin LinuxPluginAPI, nsPlugin nsplugin.API,
+func NewInterfaceDescriptor(ifHandler vppcalls.InterfaceVppAPI, addrAlloc netalloc.AddressAllocator,
+	defaultMtu uint32, linuxIfHandler NetlinkAPI, linuxIfPlugin LinuxPluginAPI, nsPlugin nsplugin.API,
 	log logging.PluginLogger) (descr *kvs.KVDescriptor, ctx *InterfaceDescriptor) {
 
 	// descriptor context
 	ctx = &InterfaceDescriptor{
 		ifHandler:       ifHandler,
+		addrAlloc:       addrAlloc,
 		defaultMtu:      defaultMtu,
 		linuxIfPlugin:   linuxIfPlugin,
 		linuxIfHandler:  linuxIfHandler,
@@ -496,8 +499,12 @@ func (d *InterfaceDescriptor) Dependencies(key string, intf *interfaces.Interfac
 				AnyOf: kvs.AnyOfDependency{
 					KeyPrefixes: []string{interfaces.InterfaceAddressPrefix(vxlanMulticast)},
 					KeySelector: func(key string) bool {
-						_, ifaceAddr, _, _, _, _ := interfaces.ParseInterfaceAddressKey(key)
-						return ifaceAddr != nil && ifaceAddr.IsMulticast()
+						_, ifaceAddr, source, _, _ := interfaces.ParseInterfaceAddressKey(key)
+						if source != interfaces.IPAddressAllocReq {
+							ip, _, err := net.ParseCIDR(ifaceAddr)
+							return err == nil && ip.IsMulticast()
+						}
+						return false
 					},
 				},
 			})
@@ -569,7 +576,7 @@ func (d *InterfaceDescriptor) DerivedValues(key string, intf *interfaces.Interfa
 	// IP addresses
 	for _, ipAddr := range intf.IpAddresses {
 		derValues = append(derValues, kvs.KeyValuePair{
-			Key:   interfaces.InterfaceAddressKey(intf.Name, ipAddr, false),
+			Key:   interfaces.InterfaceAddressKey(intf.Name, ipAddr, interfaces.IPAddressStatic),
 			Value: &prototypes.Empty{},
 		})
 	}

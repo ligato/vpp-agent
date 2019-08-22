@@ -202,7 +202,8 @@ func (d *DHCPDescriptor) DerivedValues(key string, dhcpData proto.Message) (derV
 		if ok && dhcpLease.HostIpAddress != "" {
 			return []kvs.KeyValuePair{
 				{
-					Key:   interfaces.InterfaceAddressKey(dhcpLease.InterfaceName, dhcpLease.HostIpAddress, true),
+					Key: interfaces.InterfaceAddressKey(dhcpLease.InterfaceName, dhcpLease.HostIpAddress,
+						interfaces.IPAddressFromDHCP),
 					Value: &prototypes.Empty{},
 				},
 			}

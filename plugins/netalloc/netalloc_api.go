@@ -85,7 +85,7 @@ type AddressAllocator interface{
 	// returns the corresponding dependency to be passed further into KVScheduler
 	// from the descriptor. Otherwise <hasAllocDep> is returned as false, and
 	// <allocRef> should be an actual address and not a reference.
-	GetAddressAllocDep(addrOrAllocRef, ifaceName string) (
+	GetAddressAllocDep(addrOrAllocRef, ifaceName, depLabelPrefix string) (
 		dep kvs.Dependency, hasAllocDep bool)
 
 	// ValidateIPAddress checks validity of address reference or, if <addrOrAllocRef>

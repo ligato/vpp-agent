@@ -75,7 +75,7 @@ func (p *Plugin) Close() error {
 // returns the corresponding dependency to be passed further into KVScheduler
 // from the descriptor. Otherwise <hasAllocDep> is returned as false, and
 // <allocRef> should be an actual address and not a reference.
-func (p *Plugin) GetAddressAllocDep(addrOrAllocRef, ifaceName string) (
+func (p *Plugin) GetAddressAllocDep(addrOrAllocRef, ifaceName, depLabelPrefix string) (
 	dep kvs.Dependency, hasAllocDep bool) {
 
 	network, iface, addrType, isRef, err := p.parseAddrAllocRef(addrOrAllocRef, ifaceName)
@@ -84,7 +84,7 @@ func (p *Plugin) GetAddressAllocDep(addrOrAllocRef, ifaceName string) (
 	}
 
 	return kvs.Dependency{
-		Label: addrOrAllocRef,
+		Label: depLabelPrefix + addrOrAllocRef,
 		Key: models.Key(&netalloc.AddressAllocation{
 			NetworkName:   network,
 			InterfaceName: iface,

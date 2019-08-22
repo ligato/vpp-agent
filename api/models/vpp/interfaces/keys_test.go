@@ -176,67 +176,109 @@ func TestInterfaceAddressKey(t *testing.T) {
 		name        string
 		iface       string
 		address     string
-		fromDHCP    bool
+		source      IPAddressSource
 		expectedKey string
 	}{
 		{
 			name:        "IPv4 address",
 			iface:       "memif0",
 			address:     "192.168.1.12/24",
+			source:      IPAddressStatic,
 			expectedKey: "vpp/interface/memif0/address/static/192.168.1.12/24",
 		},
 		{
 			name:        "IPv4 address from DHCP",
 			iface:       "memif0",
 			address:     "192.168.1.12/24",
-			fromDHCP:    true,
+			source:      IPAddressFromDHCP,
 			expectedKey: "vpp/interface/memif0/address/from-dhcp/192.168.1.12/24",
 		},
 		{
 			name:        "IPv6 address",
 			iface:       "memif0",
 			address:     "2001:db8::/32",
+			source:      IPAddressStatic,
 			expectedKey: "vpp/interface/memif0/address/static/2001:db8::/32",
 		},
 		{
 			name:        "IPv6 address from DHCP",
 			iface:       "memif0",
 			address:     "2001:db8::/32",
-			fromDHCP:    true,
+			source:      IPAddressFromDHCP,
 			expectedKey: "vpp/interface/memif0/address/from-dhcp/2001:db8::/32",
 		},
 		{
 			name:        "invalid interface",
 			iface:       "",
 			address:     "10.10.10.10/32",
+			source:      IPAddressStatic,
 			expectedKey: "vpp/interface/<invalid>/address/static/10.10.10.10/32",
+		},
+		{
+			name:        "missing source",
+			iface:       "memif1",
+			address:     "10.10.10.10/32",
+			source:      "",
+			expectedKey: "vpp/interface/memif1/address/<invalid>/10.10.10.10/32",
 		},
 		{
 			name:        "invalid address",
 			iface:       "tap0",
 			address:     "invalid-addr",
+			source:      IPAddressStatic,
 			expectedKey: "vpp/interface/tap0/address/static/invalid-addr",
 		},
 		{
 			name:        "missing mask",
 			iface:       "tap1",
 			address:     "10.10.10.10",
+			source:      IPAddressStatic,
 			expectedKey: "vpp/interface/tap1/address/static/10.10.10.10",
 		},
 		{
 			name:        "empty address",
 			iface:       "tap1",
 			address:     "",
+			source:      IPAddressStatic,
 			expectedKey: "vpp/interface/tap1/address/static/",
 		},
+		{
+			name:        "IPv4 address requested from netalloc",
+			iface:       "memif0",
+			address:     "alloc:net1",
+			source:      IPAddressStatic,
+			expectedKey: "vpp/interface/memif0/address/alloc-request/alloc:net1",
+		},
+		{
+			name:        "IPv4 address allocated from netalloc",
+			iface:       "memif0",
+			address:     "10.10.10.10/24",
+			source:      IPAddressAllocated,
+			expectedKey: "vpp/interface/memif0/address/allocated/10.10.10.10/24",
+		},
+		{
+			name:        "IPv6 address requested from netalloc",
+			iface:       "memif0",
+			address:     "alloc:net1/IPV6_ADDR",
+			source:      IPAddressStatic,
+			expectedKey: "vpp/interface/memif0/address/alloc-request/alloc:net1/IPV6_ADDR",
+		},
+		{
+			name:        "IPv6 address allocated from netalloc",
+			iface:       "memif0",
+			address:     "2001:db8::/32",
+			source:      IPAddressAllocated,
+			expectedKey: "vpp/interface/memif0/address/allocated/2001:db8::/32",
+		},
+
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			key := InterfaceAddressKey(test.iface, test.address, test.fromDHCP)
+			key := InterfaceAddressKey(test.iface, test.address, test.source)
 			if key != test.expectedKey {
-				t.Errorf("failed for: iface=%s address=%s\n"+
+				t.Errorf("failed for: iface=%s address=%s source=%s\n"+
 					"expected key:\n\t%q\ngot key:\n\t%q",
-					test.iface, test.address, test.expectedKey, key)
+					test.iface, test.address, string(test.source), test.expectedKey, key)
 			}
 		})
 	}
@@ -244,136 +286,137 @@ func TestInterfaceAddressKey(t *testing.T) {
 
 func TestParseInterfaceAddressKey(t *testing.T) {
 	tests := []struct {
-		name                 string
-		key                  string
-		expectedIface        string
-		expectedIfaceAddr    string
-		expectedIfaceAddrNet string
-		expectedFromDHCP     bool
-		expectedInvalidIP    bool
-		expectedIsAddrKey    bool
+		name               string
+		key                string
+		expectedIface      string
+		expectedIfaceAddr  string
+		expectedSource     IPAddressSource
+		expectedInvalidKey bool
+		expectedIsAddrKey  bool
 	}{
 		{
 			name:                 "IPv4 address",
 			key:                  "vpp/interface/memif0/address/static/192.168.1.12/24",
 			expectedIface:        "memif0",
-			expectedIfaceAddr:    "192.168.1.12",
-			expectedIfaceAddrNet: "192.168.1.0/24",
+			expectedIfaceAddr:    "192.168.1.12/24",
+			expectedSource:       IPAddressStatic,
 			expectedIsAddrKey:    true,
 		},
 		{
 			name:                 "IPv4 address from DHCP",
 			key:                  "vpp/interface/memif0/address/from-dhcp/192.168.1.12/24",
 			expectedIface:        "memif0",
-			expectedIfaceAddr:    "192.168.1.12",
-			expectedIfaceAddrNet: "192.168.1.0/24",
+			expectedIfaceAddr:    "192.168.1.12/24",
+			expectedSource:       IPAddressFromDHCP,
 			expectedIsAddrKey:    true,
-			expectedFromDHCP:     true,
+		},
+		{
+			name:                 "IPv4 address requested from Netalloc",
+			key:                  "vpp/interface/memif0/address/alloc-request/alloc:net1",
+			expectedIface:        "memif0",
+			expectedIfaceAddr:    "alloc:net1",
+			expectedSource:       IPAddressAllocReq,
+			expectedIsAddrKey:    true,
+		},
+		{
+			name:                 "IPv4 address allocated from Netalloc",
+			key:                  "vpp/interface/memif0/address/allocated/192.168.1.12/24",
+			expectedIface:        "memif0",
+			expectedIfaceAddr:    "192.168.1.12/24",
+			expectedSource:       IPAddressAllocated,
+			expectedIsAddrKey:    true,
 		},
 		{
 			name:                 "IPv6 address",
 			key:                  "vpp/interface/tap1/address/static/2001:db8:85a3::8a2e:370:7334/48",
 			expectedIface:        "tap1",
-			expectedIfaceAddr:    "2001:db8:85a3::8a2e:370:7334",
-			expectedIfaceAddrNet: "2001:db8:85a3::/48",
+			expectedIfaceAddr:    "2001:db8:85a3::8a2e:370:7334/48",
+			expectedSource:       IPAddressStatic,
 			expectedIsAddrKey:    true,
 		},
 		{
-			name:                 "IPv6 address",
+			name:                 "IPv6 address requested from netalloc",
+			key:                  "vpp/interface/tap1/address/alloc-request/alloc:net1/IPV6_ADDR",
+			expectedIface:        "tap1",
+			expectedIfaceAddr:    "alloc:net1/IPV6_ADDR",
+			expectedSource:       IPAddressAllocReq,
+			expectedIsAddrKey:    true,
+		},
+		{
+			name:                 "IPv6 address allocated from netalloc",
+			key:                  "vpp/interface/tap1/address/allocated/2001:db8:85a3::8a2e:370:7334/48",
+			expectedIface:        "tap1",
+			expectedIfaceAddr:    "2001:db8:85a3::8a2e:370:7334/48",
+			expectedSource:       IPAddressAllocated,
+			expectedIsAddrKey:    true,
+		},
+		{
+			name:                 "IPv6 address from DHCP",
 			key:                  "vpp/interface/tap1/address/from-dhcp/2001:db8:85a3::8a2e:370:7334/48",
 			expectedIface:        "tap1",
-			expectedIfaceAddr:    "2001:db8:85a3::8a2e:370:7334",
-			expectedIfaceAddrNet: "2001:db8:85a3::/48",
+			expectedIfaceAddr:    "2001:db8:85a3::8a2e:370:7334/48",
+			expectedSource:       IPAddressFromDHCP,
 			expectedIsAddrKey:    true,
-			expectedFromDHCP:     true,
 		},
 		{
 			name:                 "invalid interface",
 			key:                  "vpp/interface/<invalid>/address/static/10.10.10.10/30",
 			expectedIface:        "<invalid>",
-			expectedIfaceAddr:    "10.10.10.10",
-			expectedIfaceAddrNet: "10.10.10.8/30",
+			expectedIfaceAddr:    "10.10.10.10/30",
+			expectedSource:       IPAddressStatic,
 			expectedIsAddrKey:    true,
 		},
 		{
 			name:                 "gbe interface",
 			key:                  "vpp/interface/GigabitEthernet0/8/0/address/static/192.168.5.5/16",
 			expectedIface:        "GigabitEthernet0/8/0",
-			expectedIfaceAddr:    "192.168.5.5",
-			expectedIfaceAddrNet: "192.168.0.0/16",
+			expectedIfaceAddr:    "192.168.5.5/16",
+			expectedSource:       IPAddressStatic,
 			expectedIsAddrKey:    true,
 		},
 		{
 			name:                 "missing interface",
 			key:                  "vpp/interface//address/static/192.168.5.5/16",
 			expectedIface:        "<invalid>",
-			expectedIfaceAddr:    "192.168.5.5",
-			expectedIfaceAddrNet: "192.168.0.0/16",
+			expectedIfaceAddr:    "192.168.5.5/16",
+			expectedSource:       IPAddressStatic,
+			expectedInvalidKey:   true,
 			expectedIsAddrKey:    true,
 		},
 		{
 			name:                 "missing interface (from DHCP)",
 			key:                  "vpp/interface//address/from-dhcp/192.168.5.5/16",
 			expectedIface:        "<invalid>",
-			expectedIfaceAddr:    "192.168.5.5",
-			expectedIfaceAddrNet: "192.168.0.0/16",
-			expectedIsAddrKey:    true,
-			expectedFromDHCP:     true,
-		},
-		{
-			name:                 "not valid IP (missing mask)",
-			key:                  "vpp/interface/tap3/address/static/192.168.5.5",
-			expectedIface:        "tap3",
-			expectedIfaceAddr:    "",
-			expectedIfaceAddrNet: "",
-			expectedInvalidIP:    true,
+			expectedIfaceAddr:    "192.168.5.5/16",
+			expectedSource:       IPAddressFromDHCP,
+			expectedInvalidKey:   true,
 			expectedIsAddrKey:    true,
 		},
 		{
-			name:                 "not valid IP (missing mask, from DHCP)",
-			key:                  "vpp/interface/tap3/address/from-dhcp/192.168.5.5",
-			expectedIface:        "tap3",
-			expectedIfaceAddr:    "",
-			expectedIfaceAddrNet: "",
-			expectedInvalidIP:    true,
-			expectedIsAddrKey:    true,
-			expectedFromDHCP:     true,
-		},
-		{
-			name:                 "not valid IP for Gbe (missing mask)",
-			key:                  "vpp/interface/Gbe0/1/2/address/static/192.168.5.5",
-			expectedIface:        "Gbe0/1/2",
-			expectedIfaceAddr:    "",
-			expectedIfaceAddrNet: "",
-			expectedInvalidIP:    true,
-			expectedIsAddrKey:    true,
-		},
-		{
-			name:                 "not valid IP (missing address and mask)",
+			name:                 "missing IP",
 			key:                  "vpp/interface/tap3/address/static/",
 			expectedIface:        "tap3",
 			expectedIfaceAddr:    "",
-			expectedIfaceAddrNet: "",
-			expectedInvalidIP:    true,
+			expectedSource:       IPAddressStatic,
+			expectedInvalidKey:   true,
 			expectedIsAddrKey:    true,
 		},
 		{
-			name:                 "not valid IP (missing address and mask, from DHCP)",
+			name:                 "missing IP (from DHCP)",
 			key:                  "vpp/interface/tap3/address/from-dhcp/",
 			expectedIface:        "tap3",
 			expectedIfaceAddr:    "",
-			expectedIfaceAddrNet: "",
-			expectedInvalidIP:    true,
+			expectedSource:       IPAddressFromDHCP,
+			expectedInvalidKey:   true,
 			expectedIsAddrKey:    true,
-			expectedFromDHCP:     true,
 		},
 		{
-			name:                 "not valid IP for Gbe (missing address and mask)",
+			name:                 "missing IP for Gbe",
 			key:                  "vpp/interface/Gbe0/1/2/address/static/",
 			expectedIface:        "Gbe0/1/2",
 			expectedIfaceAddr:    "",
-			expectedIfaceAddrNet: "",
-			expectedInvalidIP:    true,
+			expectedSource:       IPAddressStatic,
+			expectedInvalidKey:   true,
 			expectedIsAddrKey:    true,
 		},
 		{
@@ -381,76 +424,47 @@ func TestParseInterfaceAddressKey(t *testing.T) {
 			key:                  "vpp/config/v2/interface/GigabitEthernet0/8/0",
 			expectedIface:        "",
 			expectedIfaceAddr:    "",
-			expectedIfaceAddrNet: "",
 			expectedIsAddrKey:    false,
 		},
 		{
-			name:                 "invalid address",
-			key:                  "vpp/interface/tap3/2/1/address/static/<invalid>/32",
-			expectedIface:        "tap3/2/1",
-			expectedIfaceAddr:    "",
-			expectedIfaceAddrNet: "",
-			expectedInvalidIP:    true,
-			expectedIsAddrKey:    true,
+			name:               "invalid address type",
+			key:                "vpp/interface/memif0/address/<invalid>/192.168.1.12/24",
+			expectedIface:      "memif0",
+			expectedInvalidKey: true,
+			expectedIsAddrKey:  true,
 		},
 		{
-			name:                 "invalid mask",
-			key:                  "vpp/interface/tap3/address/static/10.10.10.10/invalid",
-			expectedIface:        "tap3",
-			expectedIfaceAddr:    "",
-			expectedIfaceAddrNet: "",
-			expectedInvalidIP:    true,
-			expectedIsAddrKey:    true,
+			name:               "empty address type",
+			key:                "vpp/interface/memif0/address//192.168.1.12/24",
+			expectedIface:      "memif0",
+			expectedInvalidKey: true,
+			expectedIsAddrKey:  true,
 		},
 		{
-			name:                 "invalid address type",
-			key:                  "vpp/interface/memif0/address/<invalid>/192.168.1.12/24",
-			expectedIface:        "memif0",
-			expectedInvalidIP:    true,
-			expectedIsAddrKey:    true,
-		},
-		{
-			name:                 "empty address type",
-			key:                  "vpp/interface/memif0/address//192.168.1.12/24",
-			expectedIface:        "memif0",
-			expectedInvalidIP:    true,
-			expectedIsAddrKey:    true,
-		},
-		{
-			name:                 "missing address type",
-			key:                  "vpp/interface/memif0/address/192.168.1.12/24",
-			expectedIface:        "memif0",
-			expectedInvalidIP:    true,
-			expectedIsAddrKey:    true,
+			name:               "missing address type",
+			key:                "vpp/interface/memif0/address/192.168.1.12/24",
+			expectedIface:      "memif0",
+			expectedInvalidKey: true,
+			expectedIsAddrKey:  true,
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			iface, ipAddr, ipAddrNet, fromDHCP, invalidIP, isAddrKey := ParseInterfaceAddressKey(test.key)
-			var ipAddrStr, ipAddrNetStr string
-			if ipAddr != nil {
-				ipAddrStr = ipAddr.String()
-			}
-			if ipAddrNet != nil {
-				ipAddrNetStr = ipAddrNet.String()
-			}
+			iface, ipAddr, source, invalidKey, isAddrKey := ParseInterfaceAddressKey(test.key)
 			if isAddrKey != test.expectedIsAddrKey {
 				t.Errorf("expected isAddrKey: %v\tgot: %v", test.expectedIsAddrKey, isAddrKey)
 			}
-			if fromDHCP != test.expectedFromDHCP {
-				t.Errorf("expected fromDHCP: %v\tgot: %v", test.expectedFromDHCP, fromDHCP)
+			if source != test.expectedSource {
+				t.Errorf("expected source: %v\tgot: %v", test.expectedSource, source)
 			}
-			if invalidIP != test.expectedInvalidIP {
-				t.Errorf("expected invalidIP: %v\tgot: %v", test.expectedInvalidIP, invalidIP)
+			if invalidKey != test.expectedInvalidKey {
+				t.Errorf("expected invalidKey: %v\tgot: %v", test.expectedInvalidKey, invalidKey)
 			}
 			if iface != test.expectedIface {
 				t.Errorf("expected iface: %s\tgot: %s", test.expectedIface, iface)
 			}
-			if ipAddrStr != test.expectedIfaceAddr {
-				t.Errorf("expected ipAddr: %s\tgot: %s", test.expectedIface, ipAddrStr)
-			}
-			if ipAddrNetStr != test.expectedIfaceAddrNet {
-				t.Errorf("expected ipAddrNet: %s\tgot: %s", test.expectedIfaceAddrNet, ipAddrNetStr)
+			if ipAddr != test.expectedIfaceAddr {
+				t.Errorf("expected ipAddr: %s\tgot: %s", test.expectedIfaceAddr, ipAddr)
 			}
 		})
 	}
