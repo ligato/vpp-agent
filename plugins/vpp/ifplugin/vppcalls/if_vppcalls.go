@@ -100,6 +100,14 @@ type InterfaceState struct {
 	LinkMTU    uint16
 }
 
+// InterfaceSpanDetails is a helper struct grouping SPAN data.
+type InterfaceSpanDetails struct {
+	SwIfIndexFrom uint32
+	SwIfIndexTo   uint32
+	Direction     uint8
+	IsL2          uint8
+}
+
 // GreTunnelDetails is something
 type GreTunnelDetails struct {
 	SwIfIndex  uint32
@@ -196,7 +204,10 @@ type InterfaceVppAPI interface {
 	DetachInterfaceFromBond(ifIdx uint32) error
 	// SetVLanTagRewrite sets VLan tag rewrite rule for given sub-interface
 	SetVLanTagRewrite(ifIdx uint32, subIf *interfaces.SubInterface) error
-
+	// AddSpan creates new span record
+	AddSpan(ifIdxFrom, ifIdxTo uint32, direction uint8, isL2 uint8) error
+	// DelSpan removes new span record
+	DelSpan(ifIdxFrom, ifIdxTo uint32, isL2 uint8) error
 	// AddGreTunnel adds new GRE interface.
 	AddGreTunnel(ifName string, greLink *interfaces.GreLink) (uint32, error)
 	// DelGreTunnel removes GRE interface.
@@ -217,6 +228,8 @@ type InterfaceVppRead interface {
 	DumpInterfacesByType(reqType interfaces.Interface_Type) (map[uint32]*InterfaceDetails, error)
 	// DumpInterfaceStates dumps link and administrative state of every interface.
 	DumpInterfaceStates(ifIdxs ...uint32) (map[uint32]*InterfaceState, error)
+	// DumpSpan returns all records from span table.
+	DumpSpan() ([]*InterfaceSpanDetails, error)
 	// GetInterfaceVrf reads VRF table to interface
 	GetInterfaceVrf(ifIdx uint32) (vrfID uint32, err error)
 	// GetInterfaceVrfIPv6 reads IPv6 VRF table to interface

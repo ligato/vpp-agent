@@ -165,7 +165,10 @@ func (p *Plugin) watchEvents() {
 			if ctx == nil {
 				ctx = context.Background()
 			}
-			ctx = DataSrcContext(ctx, "datasync")
+			_, withDataSrc := DataSrcFromContext(ctx)
+			if !withDataSrc {
+				ctx = DataSrcContext(ctx, "datasync")
+			}
 			ctx = kvs.WithRetryDefault(ctx)
 
 			_, err = p.PushData(ctx, kvPairs)
@@ -208,7 +211,10 @@ func (p *Plugin) watchEvents() {
 			if ctx == nil {
 				ctx = context.Background()
 			}
-			ctx = DataSrcContext(ctx, "datasync")
+			_, withDataSrc := DataSrcFromContext(ctx)
+			if !withDataSrc {
+				ctx = DataSrcContext(ctx, "datasync")
+			}
 			ctx = kvs.WithResync(ctx, kvs.FullResync, true)
 			ctx = kvs.WithRetryDefault(ctx)
 

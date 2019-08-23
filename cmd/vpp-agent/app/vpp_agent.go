@@ -55,7 +55,7 @@ type VPPAgent struct {
 	LogManager *logmanager.Plugin
 
 	// VPP & Linux are first to ensure that
-	// all their descriptors are regitered to KVScheduler
+	// all their descriptors are registered to KVScheduler
 	// before orchestrator that starts watch for their NB key prefixes.
 	VPP
 	Linux

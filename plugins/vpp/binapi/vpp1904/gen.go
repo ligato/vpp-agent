@@ -28,6 +28,7 @@ package vpp1904
 //go:generate binapigen --input-file=/usr/share/vpp/api/core/memclnt.api.json
 //go:generate binapigen --input-file=/usr/share/vpp/api/core/punt.api.json
 //go:generate binapigen --input-file=/usr/share/vpp/api/core/session.api.json
+//go:generate binapigen --input-file=/usr/share/vpp/api/core/span.api.json
 //go:generate binapigen --input-file=/usr/share/vpp/api/core/sr.api.json
 //go:generate binapigen --input-file=/usr/share/vpp/api/core/tapv2.api.json
 //go:generate binapigen --input-file=/usr/share/vpp/api/core/vpe.api.json

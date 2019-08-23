@@ -7,6 +7,7 @@ option go_package = "github.com/ligato/vpp-agent/api/models/vpp;vpp";
 import "models/vpp/abf/abf.proto";
 import "models/vpp/acl/acl.proto";
 import "models/vpp/interfaces/interface.proto";
+import "models/vpp/interfaces/span.proto";
 import "models/vpp/interfaces/state.proto";
 import "models/vpp/ipsec/ipsec.proto";
 import "models/vpp/l2/bridge-domain.proto";
@@ -15,11 +16,14 @@ import "models/vpp/l2/xconnect.proto";
 import "models/vpp/l3/arp.proto";
 import "models/vpp/l3/l3.proto";
 import "models/vpp/l3/route.proto";
+import "models/vpp/l3/vrf.proto";
 import "models/vpp/nat/nat.proto";
 import "models/vpp/punt/punt.proto";
+import "models/vpp/srv6/srv6.proto";
 
 message ConfigData {
     repeated interfaces.Interface interfaces = 10;
+    repeated interfaces.Span spans = 11;
 
     repeated acl.ACL acls = 20;
     repeated abf.ABF abfs = 21;
@@ -32,6 +36,7 @@ message ConfigData {
     repeated l3.ARPEntry arps = 41;
     l3.ProxyARP proxy_arp = 42;
     l3.IPScanNeighbor ipscan_neighbor = 43;
+    repeated l3.VrfTable vrfs = 44;
 
     nat.Nat44Global nat44_global = 50;
     repeated nat.DNat44 dnat44s = 51;
@@ -42,6 +47,10 @@ message ConfigData {
     repeated punt.IPRedirect punt_ipredirects = 70;
     repeated punt.ToHost punt_tohosts = 71;
     repeated punt.Exception punt_exceptions = 72;
+
+    repeated srv6.LocalSID srv6_localsids = 80;
+    repeated srv6.Policy srv6_policies = 81;
+    repeated srv6.Steering srv6_steerings = 82;
 }
 
 message Notification {

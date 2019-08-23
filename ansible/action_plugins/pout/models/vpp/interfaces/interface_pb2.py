@@ -21,15 +21,15 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   package='vpp.interfaces',
   syntax='proto3',
   serialized_options=_b('ZDgithub.com/ligato/vpp-agent/api/models/vpp/interfaces;vpp_interfaces\310\343\036\001'),
-  serialized_pb=_b('\n%models/vpp/interfaces/interface.proto\x12\x0evpp.interfaces\x1a-github.com/gogo/protobuf/gogoproto/gogo.proto\x1a\x1cmodels/vpp/ipsec/ipsec.proto\"\xf9\t\n\tInterface\x12\x0c\n\x04name\x18\x01 \x01(\t\x12,\n\x04type\x18\x02 \x01(\x0e\x32\x1e.vpp.interfaces.Interface.Type\x12\x0f\n\x07\x65nabled\x18\x03 \x01(\x08\x12\x14\n\x0cphys_address\x18\x04 \x01(\t\x12\x14\n\x0cip_addresses\x18\x05 \x03(\t\x12\x0b\n\x03vrf\x18\x06 \x01(\r\x12\x17\n\x0fset_dhcp_client\x18\x07 \x01(\x08\x12\x0b\n\x03mtu\x18\x08 \x01(\r\x12\x38\n\nunnumbered\x18\t \x01(\x0b\x32$.vpp.interfaces.Interface.Unnumbered\x12\x42\n\x10rx_mode_settings\x18\n \x01(\x0b\x32(.vpp.interfaces.Interface.RxModeSettings\x12L\n\x15rx_placement_settings\x18\x0b \x01(\x0b\x32-.vpp.interfaces.Interface.RxPlacementSettings\x12+\n\x03sub\x18\x64 \x01(\x0b\x32\x1c.vpp.interfaces.SubInterfaceH\x00\x12*\n\x05memif\x18\x65 \x01(\x0b\x32\x19.vpp.interfaces.MemifLinkH\x00\x12\x30\n\x08\x61\x66packet\x18\x66 \x01(\x0b\x32\x1c.vpp.interfaces.AfpacketLinkH\x00\x12&\n\x03tap\x18g \x01(\x0b\x32\x17.vpp.interfaces.TapLinkH\x00\x12*\n\x05vxlan\x18h \x01(\x0b\x32\x19.vpp.interfaces.VxlanLinkH\x00\x12*\n\x05ipsec\x18i \x01(\x0b\x32\x19.vpp.interfaces.IPSecLinkH\x00\x12/\n\x08vmx_net3\x18j \x01(\x0b\x32\x1b.vpp.interfaces.VmxNet3LinkH\x00\x12(\n\x04\x62ond\x18k \x01(\x0b\x32\x18.vpp.interfaces.BondLinkH\x00\x1a\'\n\nUnnumbered\x12\x19\n\x11interface_with_ip\x18\x01 \x01(\t\x1a\xd2\x01\n\x0eRxModeSettings\x12\x44\n\x07rx_mode\x18\x01 \x01(\x0e\x32\x33.vpp.interfaces.Interface.RxModeSettings.RxModeType\x12\x10\n\x08queue_id\x18\x02 \x01(\r\x12\x16\n\x0equeue_id_valid\x18\x03 \x01(\r\"P\n\nRxModeType\x12\x0b\n\x07UNKNOWN\x10\x00\x12\x0b\n\x07POLLING\x10\x01\x12\r\n\tINTERRUPT\x10\x02\x12\x0c\n\x08\x41\x44\x41PTIVE\x10\x03\x12\x0b\n\x07\x44\x45\x46\x41ULT\x10\x04\x1a\x45\n\x13RxPlacementSettings\x12\r\n\x05queue\x18\x01 \x01(\r\x12\x0e\n\x06worker\x18\x02 \x01(\r\x12\x0f\n\x07is_main\x18\x03 \x01(\x08\"\xc0\x01\n\x04Type\x12\x12\n\x0eUNDEFINED_TYPE\x10\x00\x12\x11\n\rSUB_INTERFACE\x10\x01\x12\x15\n\x11SOFTWARE_LOOPBACK\x10\x02\x12\x08\n\x04\x44PDK\x10\x03\x12\t\n\x05MEMIF\x10\x04\x12\x07\n\x03TAP\x10\x05\x12\r\n\tAF_PACKET\x10\x06\x12\x10\n\x0cVXLAN_TUNNEL\x10\x07\x12\x10\n\x0cIPSEC_TUNNEL\x10\x08\x12\x15\n\x11VMXNET3_INTERFACE\x10\t\x12\x12\n\x0e\x42OND_INTERFACE\x10\nB\x06\n\x04link\"\xbc\x02\n\x0cSubInterface\x12\x13\n\x0bparent_name\x18\x01 \x01(\t\x12\x0e\n\x06sub_id\x18\x02 \x01(\r\x12\x45\n\rtag_rw_option\x18\x03 \x01(\x0e\x32..vpp.interfaces.SubInterface.TagRewriteOptions\x12\x12\n\npush_dot1q\x18\x04 \x01(\x08\x12\x0c\n\x04tag1\x18\x05 \x01(\r\x12\x0c\n\x04tag2\x18\x06 \x01(\r\"\x8f\x01\n\x11TagRewriteOptions\x12\x0c\n\x08\x44ISABLED\x10\x00\x12\t\n\x05PUSH1\x10\x01\x12\t\n\x05PUSH2\x10\x02\x12\x08\n\x04POP1\x10\x03\x12\x08\n\x04POP2\x10\x04\x12\x0f\n\x0bTRANSLATE11\x10\x05\x12\x0f\n\x0bTRANSLATE12\x10\x06\x12\x0f\n\x0bTRANSLATE21\x10\x07\x12\x0f\n\x0bTRANSLATE22\x10\x08\"\x85\x02\n\tMemifLink\x12\x31\n\x04mode\x18\x01 \x01(\x0e\x32#.vpp.interfaces.MemifLink.MemifMode\x12\x0e\n\x06master\x18\x02 \x01(\x08\x12\n\n\x02id\x18\x03 \x01(\r\x12\x17\n\x0fsocket_filename\x18\x04 \x01(\t\x12\x0e\n\x06secret\x18\x05 \x01(\t\x12\x11\n\tring_size\x18\x06 \x01(\r\x12\x13\n\x0b\x62uffer_size\x18\x07 \x01(\r\x12\x11\n\trx_queues\x18\x08 \x01(\r\x12\x11\n\ttx_queues\x18\t \x01(\r\"2\n\tMemifMode\x12\x0c\n\x08\x45THERNET\x10\x00\x12\x06\n\x02IP\x10\x01\x12\x0f\n\x0bPUNT_INJECT\x10\x02\"U\n\tVxlanLink\x12\x13\n\x0bsrc_address\x18\x01 \x01(\t\x12\x13\n\x0b\x64st_address\x18\x02 \x01(\t\x12\x0b\n\x03vni\x18\x03 \x01(\r\x12\x11\n\tmulticast\x18\x04 \x01(\t\"$\n\x0c\x41\x66packetLink\x12\x14\n\x0chost_if_name\x18\x01 \x01(\t\"u\n\x07TapLink\x12\x0f\n\x07version\x18\x01 \x01(\r\x12\x14\n\x0chost_if_name\x18\x02 \x01(\t\x12\x17\n\x0fto_microservice\x18\x03 \x01(\t\x12\x14\n\x0crx_ring_size\x18\x04 \x01(\r\x12\x14\n\x0ctx_ring_size\x18\x05 \x01(\r\"\xcd\x02\n\tIPSecLink\x12\x0b\n\x03\x65sn\x18\x02 \x01(\x08\x12\x13\n\x0b\x61nti_replay\x18\x03 \x01(\x08\x12\x10\n\x08local_ip\x18\x04 \x01(\t\x12\x11\n\tremote_ip\x18\x05 \x01(\t\x12\x11\n\tlocal_spi\x18\x06 \x01(\r\x12\x12\n\nremote_spi\x18\x07 \x01(\r\x12(\n\ncrypto_alg\x18\x08 \x01(\x0e\x32\x14.vpp.ipsec.CryptoAlg\x12\x18\n\x10local_crypto_key\x18\t \x01(\t\x12\x19\n\x11remote_crypto_key\x18\n \x01(\t\x12&\n\tinteg_alg\x18\x0b \x01(\x0e\x32\x13.vpp.ipsec.IntegAlg\x12\x17\n\x0flocal_integ_key\x18\x0c \x01(\t\x12\x18\n\x10remote_integ_key\x18\r \x01(\t\x12\x18\n\x10\x65nable_udp_encap\x18\x0e \x01(\x08\"F\n\x0bVmxNet3Link\x12\x13\n\x0b\x65nable_elog\x18\x02 \x01(\x08\x12\x10\n\x08rxq_size\x18\x03 \x01(\r\x12\x10\n\x08txq_size\x18\x04 \x01(\r\"\x8c\x03\n\x08\x42ondLink\x12\n\n\x02id\x18\x01 \x01(\r\x12+\n\x04mode\x18\x03 \x01(\x0e\x32\x1d.vpp.interfaces.BondLink.Mode\x12\x30\n\x02lb\x18\x04 \x01(\x0e\x32$.vpp.interfaces.BondLink.LoadBalance\x12\x43\n\x11\x62onded_interfaces\x18\x0c \x03(\x0b\x32(.vpp.interfaces.BondLink.BondedInterface\x1aL\n\x0f\x42ondedInterface\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x12\n\nis_passive\x18\x02 \x01(\x08\x12\x17\n\x0fis_long_timeout\x18\x03 \x01(\x08\"Y\n\x04Mode\x12\x0b\n\x07UNKNOWN\x10\x00\x12\x0f\n\x0bROUND_ROBIN\x10\x01\x12\x11\n\rACTIVE_BACKUP\x10\x02\x12\x07\n\x03XOR\x10\x03\x12\r\n\tBROADCAST\x10\x04\x12\x08\n\x04LACP\x10\x05\"\'\n\x0bLoadBalance\x12\x06\n\x02L2\x10\x00\x12\x07\n\x03L34\x10\x01\x12\x07\n\x03L23\x10\x02\x42JZDgithub.com/ligato/vpp-agent/api/models/vpp/interfaces;vpp_interfaces\xc8\xe3\x1e\x01\x62\x06proto3')
+  serialized_pb=_b('\n%models/vpp/interfaces/interface.proto\x12\x0evpp.interfaces\x1a-github.com/gogo/protobuf/gogoproto/gogo.proto\x1a\x1cmodels/vpp/ipsec/ipsec.proto\"\xb1\t\n\tInterface\x12\x0c\n\x04name\x18\x01 \x01(\t\x12,\n\x04type\x18\x02 \x01(\x0e\x32\x1e.vpp.interfaces.Interface.Type\x12\x0f\n\x07\x65nabled\x18\x03 \x01(\x08\x12\x14\n\x0cphys_address\x18\x04 \x01(\t\x12\x14\n\x0cip_addresses\x18\x05 \x03(\t\x12\x0b\n\x03vrf\x18\x06 \x01(\r\x12\x17\n\x0fset_dhcp_client\x18\x07 \x01(\x08\x12\x0b\n\x03mtu\x18\x08 \x01(\r\x12\x38\n\nunnumbered\x18\t \x01(\x0b\x32$.vpp.interfaces.Interface.Unnumbered\x12\x32\n\x08rx_modes\x18\n \x03(\x0b\x32 .vpp.interfaces.Interface.RxMode\x12<\n\rrx_placements\x18\x0b \x03(\x0b\x32%.vpp.interfaces.Interface.RxPlacement\x12+\n\x03sub\x18\x64 \x01(\x0b\x32\x1c.vpp.interfaces.SubInterfaceH\x00\x12*\n\x05memif\x18\x65 \x01(\x0b\x32\x19.vpp.interfaces.MemifLinkH\x00\x12\x30\n\x08\x61\x66packet\x18\x66 \x01(\x0b\x32\x1c.vpp.interfaces.AfpacketLinkH\x00\x12&\n\x03tap\x18g \x01(\x0b\x32\x17.vpp.interfaces.TapLinkH\x00\x12*\n\x05vxlan\x18h \x01(\x0b\x32\x19.vpp.interfaces.VxlanLinkH\x00\x12*\n\x05ipsec\x18i \x01(\x0b\x32\x19.vpp.interfaces.IPSecLinkH\x00\x12/\n\x08vmx_net3\x18j \x01(\x0b\x32\x1b.vpp.interfaces.VmxNet3LinkH\x00\x12(\n\x04\x62ond\x18k \x01(\x0b\x32\x18.vpp.interfaces.BondLinkH\x00\x1a\'\n\nUnnumbered\x12\x19\n\x11interface_with_ip\x18\x01 \x01(\t\x1a\xae\x01\n\x06RxMode\x12\r\n\x05queue\x18\x01 \x01(\r\x12\x33\n\x04mode\x18\x02 \x01(\x0e\x32%.vpp.interfaces.Interface.RxMode.Type\x12\x14\n\x0c\x64\x65\x66\x61ult_mode\x18\x03 \x01(\x08\"J\n\x04Type\x12\x0b\n\x07UNKNOWN\x10\x00\x12\x0b\n\x07POLLING\x10\x01\x12\r\n\tINTERRUPT\x10\x02\x12\x0c\n\x08\x41\x44\x41PTIVE\x10\x03\x12\x0b\n\x07\x44\x45\x46\x41ULT\x10\x04\x1a\x41\n\x0bRxPlacement\x12\r\n\x05queue\x18\x01 \x01(\r\x12\x0e\n\x06worker\x18\x02 \x01(\r\x12\x13\n\x0bmain_thread\x18\x03 \x01(\x08\"\xc0\x01\n\x04Type\x12\x12\n\x0eUNDEFINED_TYPE\x10\x00\x12\x11\n\rSUB_INTERFACE\x10\x01\x12\x15\n\x11SOFTWARE_LOOPBACK\x10\x02\x12\x08\n\x04\x44PDK\x10\x03\x12\t\n\x05MEMIF\x10\x04\x12\x07\n\x03TAP\x10\x05\x12\r\n\tAF_PACKET\x10\x06\x12\x10\n\x0cVXLAN_TUNNEL\x10\x07\x12\x10\n\x0cIPSEC_TUNNEL\x10\x08\x12\x15\n\x11VMXNET3_INTERFACE\x10\t\x12\x12\n\x0e\x42OND_INTERFACE\x10\nB\x06\n\x04link\"\xbc\x02\n\x0cSubInterface\x12\x13\n\x0bparent_name\x18\x01 \x01(\t\x12\x0e\n\x06sub_id\x18\x02 \x01(\r\x12\x45\n\rtag_rw_option\x18\x03 \x01(\x0e\x32..vpp.interfaces.SubInterface.TagRewriteOptions\x12\x12\n\npush_dot1q\x18\x04 \x01(\x08\x12\x0c\n\x04tag1\x18\x05 \x01(\r\x12\x0c\n\x04tag2\x18\x06 \x01(\r\"\x8f\x01\n\x11TagRewriteOptions\x12\x0c\n\x08\x44ISABLED\x10\x00\x12\t\n\x05PUSH1\x10\x01\x12\t\n\x05PUSH2\x10\x02\x12\x08\n\x04POP1\x10\x03\x12\x08\n\x04POP2\x10\x04\x12\x0f\n\x0bTRANSLATE11\x10\x05\x12\x0f\n\x0bTRANSLATE12\x10\x06\x12\x0f\n\x0bTRANSLATE21\x10\x07\x12\x0f\n\x0bTRANSLATE22\x10\x08\"\x85\x02\n\tMemifLink\x12\x31\n\x04mode\x18\x01 \x01(\x0e\x32#.vpp.interfaces.MemifLink.MemifMode\x12\x0e\n\x06master\x18\x02 \x01(\x08\x12\n\n\x02id\x18\x03 \x01(\r\x12\x17\n\x0fsocket_filename\x18\x04 \x01(\t\x12\x0e\n\x06secret\x18\x05 \x01(\t\x12\x11\n\tring_size\x18\x06 \x01(\r\x12\x13\n\x0b\x62uffer_size\x18\x07 \x01(\r\x12\x11\n\trx_queues\x18\x08 \x01(\r\x12\x11\n\ttx_queues\x18\t \x01(\r\"2\n\tMemifMode\x12\x0c\n\x08\x45THERNET\x10\x00\x12\x06\n\x02IP\x10\x01\x12\x0f\n\x0bPUNT_INJECT\x10\x02\"U\n\tVxlanLink\x12\x13\n\x0bsrc_address\x18\x01 \x01(\t\x12\x13\n\x0b\x64st_address\x18\x02 \x01(\t\x12\x0b\n\x03vni\x18\x03 \x01(\r\x12\x11\n\tmulticast\x18\x04 \x01(\t\"$\n\x0c\x41\x66packetLink\x12\x14\n\x0chost_if_name\x18\x01 \x01(\t\"\x89\x01\n\x07TapLink\x12\x0f\n\x07version\x18\x01 \x01(\r\x12\x14\n\x0chost_if_name\x18\x02 \x01(\t\x12\x17\n\x0fto_microservice\x18\x03 \x01(\t\x12\x14\n\x0crx_ring_size\x18\x04 \x01(\r\x12\x14\n\x0ctx_ring_size\x18\x05 \x01(\r\x12\x12\n\nenable_gso\x18\x06 \x01(\x08\"\xcd\x02\n\tIPSecLink\x12\x0b\n\x03\x65sn\x18\x02 \x01(\x08\x12\x13\n\x0b\x61nti_replay\x18\x03 \x01(\x08\x12\x10\n\x08local_ip\x18\x04 \x01(\t\x12\x11\n\tremote_ip\x18\x05 \x01(\t\x12\x11\n\tlocal_spi\x18\x06 \x01(\r\x12\x12\n\nremote_spi\x18\x07 \x01(\r\x12(\n\ncrypto_alg\x18\x08 \x01(\x0e\x32\x14.vpp.ipsec.CryptoAlg\x12\x18\n\x10local_crypto_key\x18\t \x01(\t\x12\x19\n\x11remote_crypto_key\x18\n \x01(\t\x12&\n\tinteg_alg\x18\x0b \x01(\x0e\x32\x13.vpp.ipsec.IntegAlg\x12\x17\n\x0flocal_integ_key\x18\x0c \x01(\t\x12\x18\n\x10remote_integ_key\x18\r \x01(\t\x12\x18\n\x10\x65nable_udp_encap\x18\x0e \x01(\x08\"F\n\x0bVmxNet3Link\x12\x13\n\x0b\x65nable_elog\x18\x02 \x01(\x08\x12\x10\n\x08rxq_size\x18\x03 \x01(\r\x12\x10\n\x08txq_size\x18\x04 \x01(\r\"\x8c\x03\n\x08\x42ondLink\x12\n\n\x02id\x18\x01 \x01(\r\x12+\n\x04mode\x18\x03 \x01(\x0e\x32\x1d.vpp.interfaces.BondLink.Mode\x12\x30\n\x02lb\x18\x04 \x01(\x0e\x32$.vpp.interfaces.BondLink.LoadBalance\x12\x43\n\x11\x62onded_interfaces\x18\x0c \x03(\x0b\x32(.vpp.interfaces.BondLink.BondedInterface\x1aL\n\x0f\x42ondedInterface\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x12\n\nis_passive\x18\x02 \x01(\x08\x12\x17\n\x0fis_long_timeout\x18\x03 \x01(\x08\"Y\n\x04Mode\x12\x0b\n\x07UNKNOWN\x10\x00\x12\x0f\n\x0bROUND_ROBIN\x10\x01\x12\x11\n\rACTIVE_BACKUP\x10\x02\x12\x07\n\x03XOR\x10\x03\x12\r\n\tBROADCAST\x10\x04\x12\x08\n\x04LACP\x10\x05\"\'\n\x0bLoadBalance\x12\x06\n\x02L2\x10\x00\x12\x07\n\x03L34\x10\x01\x12\x07\n\x03L23\x10\x02\x42JZDgithub.com/ligato/vpp-agent/api/models/vpp/interfaces;vpp_interfaces\xc8\xe3\x1e\x01\x62\x06proto3')
   ,
   dependencies=[github_dot_com_dot_gogo_dot_protobuf_dot_gogoproto_dot_gogo__pb2.DESCRIPTOR,models_dot_vpp_dot_ipsec_dot_ipsec__pb2.DESCRIPTOR,])
 
 
 
-_INTERFACE_RXMODESETTINGS_RXMODETYPE = _descriptor.EnumDescriptor(
-  name='RxModeType',
-  full_name='vpp.interfaces.Interface.RxModeSettings.RxModeType',
+_INTERFACE_RXMODE_TYPE = _descriptor.EnumDescriptor(
+  name='Type',
+  full_name='vpp.interfaces.Interface.RxMode.Type',
   filename=None,
   file=DESCRIPTOR,
   values=[
@@ -56,10 +56,10 @@ _INTERFACE_RXMODESETTINGS_RXMODETYPE = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   serialized_options=None,
-  serialized_start=1054,
-  serialized_end=1134,
+  serialized_start=992,
+  serialized_end=1066,
 )
-_sym_db.RegisterEnumDescriptor(_INTERFACE_RXMODESETTINGS_RXMODETYPE)
+_sym_db.RegisterEnumDescriptor(_INTERFACE_RXMODE_TYPE)
 
 _INTERFACE_TYPE = _descriptor.EnumDescriptor(
   name='Type',
@@ -114,8 +114,8 @@ _INTERFACE_TYPE = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   serialized_options=None,
-  serialized_start=1208,
-  serialized_end=1400,
+  serialized_start=1136,
+  serialized_end=1328,
 )
 _sym_db.RegisterEnumDescriptor(_INTERFACE_TYPE)
 
@@ -164,8 +164,8 @@ _SUBINTERFACE_TAGREWRITEOPTIONS = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   serialized_options=None,
-  serialized_start=1584,
-  serialized_end=1727,
+  serialized_start=1512,
+  serialized_end=1655,
 )
 _sym_db.RegisterEnumDescriptor(_SUBINTERFACE_TAGREWRITEOPTIONS)
 
@@ -190,8 +190,8 @@ _MEMIFLINK_MEMIFMODE = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   serialized_options=None,
-  serialized_start=1941,
-  serialized_end=1991,
+  serialized_start=1869,
+  serialized_end=1919,
 )
 _sym_db.RegisterEnumDescriptor(_MEMIFLINK_MEMIFMODE)
 
@@ -228,8 +228,8 @@ _BONDLINK_MODE = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   serialized_options=None,
-  serialized_start=2912,
-  serialized_end=3001,
+  serialized_start=2861,
+  serialized_end=2950,
 )
 _sym_db.RegisterEnumDescriptor(_BONDLINK_MODE)
 
@@ -254,8 +254,8 @@ _BONDLINK_LOADBALANCE = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   serialized_options=None,
-  serialized_start=3003,
-  serialized_end=3042,
+  serialized_start=2952,
+  serialized_end=2991,
 )
 _sym_db.RegisterEnumDescriptor(_BONDLINK_LOADBALANCE)
 
@@ -286,35 +286,35 @@ _INTERFACE_UNNUMBERED = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=882,
-  serialized_end=921,
+  serialized_start=850,
+  serialized_end=889,
 )
 
-_INTERFACE_RXMODESETTINGS = _descriptor.Descriptor(
-  name='RxModeSettings',
-  full_name='vpp.interfaces.Interface.RxModeSettings',
+_INTERFACE_RXMODE = _descriptor.Descriptor(
+  name='RxMode',
+  full_name='vpp.interfaces.Interface.RxMode',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='rx_mode', full_name='vpp.interfaces.Interface.RxModeSettings.rx_mode', index=0,
-      number=1, type=14, cpp_type=8, label=1,
+      name='queue', full_name='vpp.interfaces.Interface.RxMode.queue', index=0,
+      number=1, type=13, cpp_type=3, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='queue_id', full_name='vpp.interfaces.Interface.RxModeSettings.queue_id', index=1,
-      number=2, type=13, cpp_type=3, label=1,
+      name='mode', full_name='vpp.interfaces.Interface.RxMode.mode', index=1,
+      number=2, type=14, cpp_type=8, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='queue_id_valid', full_name='vpp.interfaces.Interface.RxModeSettings.queue_id_valid', index=2,
-      number=3, type=13, cpp_type=3, label=1,
-      has_default_value=False, default_value=0,
+      name='default_mode', full_name='vpp.interfaces.Interface.RxMode.default_mode', index=2,
+      number=3, type=8, cpp_type=7, label=1,
+      has_default_value=False, default_value=False,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
@@ -323,7 +323,7 @@ _INTERFACE_RXMODESETTINGS = _descriptor.Descriptor(
   ],
   nested_types=[],
   enum_types=[
-    _INTERFACE_RXMODESETTINGS_RXMODETYPE,
+    _INTERFACE_RXMODE_TYPE,
   ],
   serialized_options=None,
   is_extendable=False,
@@ -331,33 +331,33 @@ _INTERFACE_RXMODESETTINGS = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=924,
-  serialized_end=1134,
+  serialized_start=892,
+  serialized_end=1066,
 )
 
-_INTERFACE_RXPLACEMENTSETTINGS = _descriptor.Descriptor(
-  name='RxPlacementSettings',
-  full_name='vpp.interfaces.Interface.RxPlacementSettings',
+_INTERFACE_RXPLACEMENT = _descriptor.Descriptor(
+  name='RxPlacement',
+  full_name='vpp.interfaces.Interface.RxPlacement',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='queue', full_name='vpp.interfaces.Interface.RxPlacementSettings.queue', index=0,
+      name='queue', full_name='vpp.interfaces.Interface.RxPlacement.queue', index=0,
       number=1, type=13, cpp_type=3, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='worker', full_name='vpp.interfaces.Interface.RxPlacementSettings.worker', index=1,
+      name='worker', full_name='vpp.interfaces.Interface.RxPlacement.worker', index=1,
       number=2, type=13, cpp_type=3, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='is_main', full_name='vpp.interfaces.Interface.RxPlacementSettings.is_main', index=2,
+      name='main_thread', full_name='vpp.interfaces.Interface.RxPlacement.main_thread', index=2,
       number=3, type=8, cpp_type=7, label=1,
       has_default_value=False, default_value=False,
       message_type=None, enum_type=None, containing_type=None,
@@ -375,8 +375,8 @@ _INTERFACE_RXPLACEMENTSETTINGS = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1136,
-  serialized_end=1205,
+  serialized_start=1068,
+  serialized_end=1133,
 )
 
 _INTERFACE = _descriptor.Descriptor(
@@ -450,16 +450,16 @@ _INTERFACE = _descriptor.Descriptor(
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='rx_mode_settings', full_name='vpp.interfaces.Interface.rx_mode_settings', index=9,
-      number=10, type=11, cpp_type=10, label=1,
-      has_default_value=False, default_value=None,
+      name='rx_modes', full_name='vpp.interfaces.Interface.rx_modes', index=9,
+      number=10, type=11, cpp_type=10, label=3,
+      has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='rx_placement_settings', full_name='vpp.interfaces.Interface.rx_placement_settings', index=10,
-      number=11, type=11, cpp_type=10, label=1,
-      has_default_value=False, default_value=None,
+      name='rx_placements', full_name='vpp.interfaces.Interface.rx_placements', index=10,
+      number=11, type=11, cpp_type=10, label=3,
+      has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
@@ -522,7 +522,7 @@ _INTERFACE = _descriptor.Descriptor(
   ],
   extensions=[
   ],
-  nested_types=[_INTERFACE_UNNUMBERED, _INTERFACE_RXMODESETTINGS, _INTERFACE_RXPLACEMENTSETTINGS, ],
+  nested_types=[_INTERFACE_UNNUMBERED, _INTERFACE_RXMODE, _INTERFACE_RXPLACEMENT, ],
   enum_types=[
     _INTERFACE_TYPE,
   ],
@@ -536,7 +536,7 @@ _INTERFACE = _descriptor.Descriptor(
       index=0, containing_type=None, fields=[]),
   ],
   serialized_start=135,
-  serialized_end=1408,
+  serialized_end=1336,
 )
 
 
@@ -602,8 +602,8 @@ _SUBINTERFACE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1411,
-  serialized_end=1727,
+  serialized_start=1339,
+  serialized_end=1655,
 )
 
 
@@ -690,8 +690,8 @@ _MEMIFLINK = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1730,
-  serialized_end=1991,
+  serialized_start=1658,
+  serialized_end=1919,
 )
 
 
@@ -742,8 +742,8 @@ _VXLANLINK = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1993,
-  serialized_end=2078,
+  serialized_start=1921,
+  serialized_end=2006,
 )
 
 
@@ -773,8 +773,8 @@ _AFPACKETLINK = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2080,
-  serialized_end=2116,
+  serialized_start=2008,
+  serialized_end=2044,
 )
 
 
@@ -820,6 +820,13 @@ _TAPLINK = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='enable_gso', full_name='vpp.interfaces.TapLink.enable_gso', index=5,
+      number=6, type=8, cpp_type=7, label=1,
+      has_default_value=False, default_value=False,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
@@ -832,8 +839,8 @@ _TAPLINK = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2118,
-  serialized_end=2235,
+  serialized_start=2047,
+  serialized_end=2184,
 )
 
 
@@ -947,8 +954,8 @@ _IPSECLINK = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2238,
-  serialized_end=2571,
+  serialized_start=2187,
+  serialized_end=2520,
 )
 
 
@@ -992,8 +999,8 @@ _VMXNET3LINK = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2573,
-  serialized_end=2643,
+  serialized_start=2522,
+  serialized_end=2592,
 )
 
 
@@ -1037,8 +1044,8 @@ _BONDLINK_BONDEDINTERFACE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2834,
-  serialized_end=2910,
+  serialized_start=2783,
+  serialized_end=2859,
 )
 
 _BONDLINK = _descriptor.Descriptor(
@@ -1090,19 +1097,19 @@ _BONDLINK = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2646,
-  serialized_end=3042,
+  serialized_start=2595,
+  serialized_end=2991,
 )
 
 _INTERFACE_UNNUMBERED.containing_type = _INTERFACE
-_INTERFACE_RXMODESETTINGS.fields_by_name['rx_mode'].enum_type = _INTERFACE_RXMODESETTINGS_RXMODETYPE
-_INTERFACE_RXMODESETTINGS.containing_type = _INTERFACE
-_INTERFACE_RXMODESETTINGS_RXMODETYPE.containing_type = _INTERFACE_RXMODESETTINGS
-_INTERFACE_RXPLACEMENTSETTINGS.containing_type = _INTERFACE
+_INTERFACE_RXMODE.fields_by_name['mode'].enum_type = _INTERFACE_RXMODE_TYPE
+_INTERFACE_RXMODE.containing_type = _INTERFACE
+_INTERFACE_RXMODE_TYPE.containing_type = _INTERFACE_RXMODE
+_INTERFACE_RXPLACEMENT.containing_type = _INTERFACE
 _INTERFACE.fields_by_name['type'].enum_type = _INTERFACE_TYPE
 _INTERFACE.fields_by_name['unnumbered'].message_type = _INTERFACE_UNNUMBERED
-_INTERFACE.fields_by_name['rx_mode_settings'].message_type = _INTERFACE_RXMODESETTINGS
-_INTERFACE.fields_by_name['rx_placement_settings'].message_type = _INTERFACE_RXPLACEMENTSETTINGS
+_INTERFACE.fields_by_name['rx_modes'].message_type = _INTERFACE_RXMODE
+_INTERFACE.fields_by_name['rx_placements'].message_type = _INTERFACE_RXPLACEMENT
 _INTERFACE.fields_by_name['sub'].message_type = _SUBINTERFACE
 _INTERFACE.fields_by_name['memif'].message_type = _MEMIFLINK
 _INTERFACE.fields_by_name['afpacket'].message_type = _AFPACKETLINK
@@ -1168,17 +1175,17 @@ Interface = _reflection.GeneratedProtocolMessageType('Interface', (_message.Mess
     ))
   ,
 
-  RxModeSettings = _reflection.GeneratedProtocolMessageType('RxModeSettings', (_message.Message,), dict(
-    DESCRIPTOR = _INTERFACE_RXMODESETTINGS,
+  RxMode = _reflection.GeneratedProtocolMessageType('RxMode', (_message.Message,), dict(
+    DESCRIPTOR = _INTERFACE_RXMODE,
     __module__ = 'models.vpp.interfaces.interface_pb2'
-    # @@protoc_insertion_point(class_scope:vpp.interfaces.Interface.RxModeSettings)
+    # @@protoc_insertion_point(class_scope:vpp.interfaces.Interface.RxMode)
     ))
   ,
 
-  RxPlacementSettings = _reflection.GeneratedProtocolMessageType('RxPlacementSettings', (_message.Message,), dict(
-    DESCRIPTOR = _INTERFACE_RXPLACEMENTSETTINGS,
+  RxPlacement = _reflection.GeneratedProtocolMessageType('RxPlacement', (_message.Message,), dict(
+    DESCRIPTOR = _INTERFACE_RXPLACEMENT,
     __module__ = 'models.vpp.interfaces.interface_pb2'
-    # @@protoc_insertion_point(class_scope:vpp.interfaces.Interface.RxPlacementSettings)
+    # @@protoc_insertion_point(class_scope:vpp.interfaces.Interface.RxPlacement)
     ))
   ,
   DESCRIPTOR = _INTERFACE,
@@ -1187,8 +1194,8 @@ Interface = _reflection.GeneratedProtocolMessageType('Interface', (_message.Mess
   ))
 _sym_db.RegisterMessage(Interface)
 _sym_db.RegisterMessage(Interface.Unnumbered)
-_sym_db.RegisterMessage(Interface.RxModeSettings)
-_sym_db.RegisterMessage(Interface.RxPlacementSettings)
+_sym_db.RegisterMessage(Interface.RxMode)
+_sym_db.RegisterMessage(Interface.RxPlacement)
 
 SubInterface = _reflection.GeneratedProtocolMessageType('SubInterface', (_message.Message,), dict(
   DESCRIPTOR = _SUBINTERFACE,

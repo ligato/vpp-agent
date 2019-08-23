@@ -45,6 +45,8 @@ type DataResyncDSL interface {
 
 	// VppInterface adds VPP interface to the RESYNC request.
 	VppInterface(intf *vpp_interfaces.Interface) DataResyncDSL
+	// Span adds VPP span to the RESYNC request.
+	Span(span *vpp_interfaces.Span) DataResyncDSL
 	// ACL adds VPP Access Control List to the RESYNC request.
 	ACL(acl *vpp_acl.ACL) DataResyncDSL
 	// ABF adds ACL-based forwarding to the RESYNC request.

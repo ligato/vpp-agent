@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package vpp.interfaces;
+
+option go_package = "github.com/ligato/vpp-agent/api/models/vpp/interfaces;vpp_interfaces";
+
+import "github.com/gogo/protobuf/gogoproto/gogo.proto";
+option (gogoproto.messagename_all) = true;
+
+message Span {
+    enum Direction {
+        UNKNOWN = 0;
+        RX = 1;
+        TX = 2;
+        BOTH = 3;
+    };
+    string interface_from = 1;
+    string interface_to = 2;
+    Direction direction = 3;
+    bool is_l2 = 4;
+}
