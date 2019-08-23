@@ -112,10 +112,9 @@ type InterfaceSpanDetails struct {
 type GreTunnelDetails struct {
 	SwIfIndex  uint32
 	Instance   uint32
-	IsIPv6     uint8
 	TunnelType uint8
-	SrcAddress string
-	DstAddress string
+	SrcAddress net.IP
+	DstAddress net.IP
 	OuterFibID uint32
 	SessionID  uint16
 }

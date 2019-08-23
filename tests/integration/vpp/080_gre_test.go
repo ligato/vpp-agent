@@ -24,8 +24,8 @@ func TestGre(t *testing.T) {
 			name: "create ERSPAN GRE tunnel with IPv4",
 			greLink: &interfaces.GreLink{
 				TunnelType: interfaces.GreLink_ERSPAN,
-				SrcAddr:    "10.10.10.10",
-				DstAddr:    "20.20.20.20",
+				SrcAddr:    "2000::8:23",
+				DstAddr:    "2019::8:23",
 			},
 			isFail: false,
 		},
@@ -35,7 +35,7 @@ func TestGre(t *testing.T) {
 				TunnelType: interfaces.GreLink_ERSPAN,
 				SrcAddr:    "10.10.10.10",
 				DstAddr:    "20.20.20.20",
-				SessionID:  1024,
+				SessionId:  1024,
 			},
 			isFail: true,
 		},
@@ -71,7 +71,7 @@ func TestGre(t *testing.T) {
 			greLink: &interfaces.GreLink{
 				TunnelType: interfaces.GreLink_ERSPAN,
 				SrcAddr:    "10.10.10.10",
-				DstAddr:    "2019::08:23",
+				DstAddr:    "2019::8:23",
 			},
 			isFail: true,
 		},
@@ -101,17 +101,17 @@ func TestGre(t *testing.T) {
 			if uint8(test.greLink.TunnelType) != gre.TunnelType {
 				t.Fatalf("expected tunnel type address <%d>, got: <%d>", test.greLink.TunnelType, gre.TunnelType)
 			}
-			if test.greLink.SrcAddr != gre.SrcAddress {
+			if test.greLink.SrcAddr != gre.SrcAddress.String() {
 				t.Fatalf("expected source address <%s>, got: <%s>", test.greLink.SrcAddr, gre.SrcAddress)
 			}
-			if test.greLink.DstAddr != gre.DstAddress {
+			if test.greLink.DstAddr != gre.DstAddress.String() {
 				t.Fatalf("expected destination address <%s>, got: <%s>", test.greLink.DstAddr, gre.DstAddress)
 			}
-			if test.greLink.OuterFibID != gre.OuterFibID {
-				t.Fatalf("expected outer FIB id <%d>, got: <%d>", test.greLink.OuterFibID, gre.OuterFibID)
+			if test.greLink.OuterFibId != gre.OuterFibID {
+				t.Fatalf("expected outer FIB id <%d>, got: <%d>", test.greLink.OuterFibId, gre.OuterFibID)
 			}
-			if uint16(test.greLink.SessionID) != gre.SessionID {
-				t.Fatalf("expected session id <%d>, got: <%d>", test.greLink.SessionID, gre.SessionID)
+			if uint16(test.greLink.SessionId) != gre.SessionID {
+				t.Fatalf("expected session id <%d>, got: <%d>", test.greLink.SessionId, gre.SessionID)
 			}
 		})
 	}

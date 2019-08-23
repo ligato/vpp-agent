@@ -27,7 +27,7 @@ func (h *InterfaceVppHandler) greAddDelTunnel(isAdd uint8, greLink *interfaces.G
 		return 0, err
 	}
 
-	if greLink.TunnelType == interfaces.GreLink_ERSPAN && greLink.SessionID > 1023 {
+	if greLink.TunnelType == interfaces.GreLink_ERSPAN && greLink.SessionId > 1023 {
 		err := errors.New("set session id for ERSPAN tunnel type")
 		return 0, err
 	}
@@ -35,8 +35,8 @@ func (h *InterfaceVppHandler) greAddDelTunnel(isAdd uint8, greLink *interfaces.G
 		IsAdd:      isAdd,
 		TunnelType: uint8(greLink.TunnelType),
 		Instance:   ^uint32(0),
-		OuterFibID: greLink.OuterFibID,
-		SessionID:  uint16(greLink.SessionID),
+		OuterFibID: greLink.OuterFibId,
+		SessionID:  uint16(greLink.SessionId),
 	}
 
 	var isSrcIPv6, isDstIPv6 bool
@@ -103,19 +103,18 @@ func (h *InterfaceVppHandler) DumpGre(ifIdx uint32) ([]*vppcalls.GreTunnelDetail
 			return nil, fmt.Errorf("failed to dump span: %v", err)
 		}
 
-		var srcAddr, dstAddr string
+		var srcAddr, dstAddr net.IP
 		if greDetails.IsIPv6 == 1 {
-			srcAddr = net.IP(greDetails.SrcAddress).To16().String()
-			dstAddr = net.IP(greDetails.DstAddress).To16().String()
+			srcAddr = net.IP(greDetails.SrcAddress)
+			dstAddr = net.IP(greDetails.DstAddress)
 		} else {
-			srcAddr = net.IP(greDetails.SrcAddress[:4]).To4().String()
-			dstAddr = net.IP(greDetails.DstAddress[:4]).To4().String()
+			srcAddr = net.IP(greDetails.SrcAddress[:4])
+			dstAddr = net.IP(greDetails.DstAddress[:4])
 		}
 
 		gre := &vppcalls.GreTunnelDetails{
 			SwIfIndex:  greDetails.SwIfIndex,
 			Instance:   greDetails.Instance,
-			IsIPv6:     greDetails.IsIPv6,
 			TunnelType: greDetails.TunnelType,
 			SrcAddress: srcAddr,
 			DstAddress: dstAddr,

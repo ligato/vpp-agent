@@ -22,7 +22,7 @@ message Interface {
         IPSEC_TUNNEL = 8;
         VMXNET3_INTERFACE = 9;
         BOND_INTERFACE = 10;
-        GRE = 11;
+        GRE_TUNNEL = 11;
     };
 
     // Name is mandatory field representing logical name for the interface.
@@ -98,6 +98,7 @@ message Interface {
         IPSecLink ipsec = 105;
         VmxNet3Link vmx_net3 = 106;
         BondLink bond = 107;
+        GreLink gre = 108;
     };
 };
 
@@ -237,6 +238,6 @@ message GreLink {
     Type tunnel_type = 1;
     string src_addr = 2; 
     string dst_addr = 3;
-    uint32 outerFibID = 4;
-    uint32 sessionID = 5;
+    uint32 outer_fib_id = 4;
+    uint32 session_id = 5;
 }

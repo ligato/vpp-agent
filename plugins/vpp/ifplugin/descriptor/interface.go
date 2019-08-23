@@ -406,7 +406,7 @@ func (d *InterfaceDescriptor) Validate(key string, intf *interfaces.Interface) e
 			return linkMismatchErr
 		}
 	case *interfaces.Interface_Gre:
-		if intf.Type != interfaces.Interface_GRE {
+		if intf.Type != interfaces.Interface_GRE_TUNNEL {
 			return linkMismatchErr
 		}
 	case nil:
@@ -434,7 +434,7 @@ func (d *InterfaceDescriptor) Validate(key string, intf *interfaces.Interface) e
 		if name, ok := d.bondIDs[intf.GetBond().GetId()]; ok && name != intf.GetName() {
 			return kvs.NewInvalidValueError(ErrBondInterfaceIDExists, "link.bond.id")
 		}
-	case interfaces.Interface_GRE:
+	case interfaces.Interface_GRE_TUNNEL:
 		if intf.GetGre().SrcAddr == "" {
 			return kvs.NewInvalidValueError(ErrGreSrcAddrMissing, "link.gre.src_addr")
 		}

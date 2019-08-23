@@ -141,7 +141,7 @@ func (d *InterfaceDescriptor) Create(key string, intf *interfaces.Interface) (me
 		}
 		d.bondIDs[intf.GetBond().GetId()] = intf.GetName()
 
-	case interfaces.Interface_GRE:
+	case interfaces.Interface_GRE_TUNNEL:
 		ifIdx, err = d.ifHandler.AddGreTunnel(intf.Name, intf.GetGre())
 		if err != nil {
 			d.log.Error(err)
@@ -244,7 +244,7 @@ func (d *InterfaceDescriptor) Delete(key string, intf *interfaces.Interface, met
 	case interfaces.Interface_BOND_INTERFACE:
 		err = d.ifHandler.DeleteBondInterface(intf.Name, ifIdx)
 		delete(d.bondIDs, intf.GetBond().GetId())
-	case interfaces.Interface_GRE:
+	case interfaces.Interface_GRE_TUNNEL:
 		_, err = d.ifHandler.DelGreTunnel(intf.Name, intf.GetGre())
 	}
 	if err != nil {
