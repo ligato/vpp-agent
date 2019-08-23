@@ -20,7 +20,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
-	"strings"
+	"bytes"
 
 	"github.com/ligato/cn-infra/infra"
 
@@ -29,7 +29,7 @@ import (
 	"github.com/ligato/vpp-agent/pkg/models"
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/netalloc/descriptor"
-	"bytes"
+	"github.com/ligato/vpp-agent/plugins/netalloc/utils"
 )
 
 // Plugin implements network allocation features.
@@ -78,7 +78,7 @@ func (p *Plugin) Close() error {
 func (p *Plugin) GetAddressAllocDep(addrOrAllocRef, ifaceName, depLabelPrefix string) (
 	dep kvs.Dependency, hasAllocDep bool) {
 
-	network, iface, addrType, isRef, err := p.parseAddrAllocRef(addrOrAllocRef, ifaceName)
+	network, iface, addrType, isRef, err := utils.ParseAddrAllocRef(addrOrAllocRef, ifaceName)
 	if !isRef || err != nil {
 		return kvs.Dependency{}, false
 	}
@@ -96,12 +96,12 @@ func (p *Plugin) GetAddressAllocDep(addrOrAllocRef, ifaceName, depLabelPrefix st
 // ValidateIPAddress checks validity of address reference or, if <addrOrAllocRef>
 // already contains an actual IP address, it tries to parse it.
 func (p *Plugin) ValidateIPAddress(addrOrAllocRef, ifaceName string) error {
-	_, _, _, isRef, err := p.parseAddrAllocRef(addrOrAllocRef, ifaceName)
+	_, _, _, isRef, err := utils.ParseAddrAllocRef(addrOrAllocRef, ifaceName)
 	if isRef {
 		return err
 	}
 
-	_, err = descriptor.ParseIPAddr(addrOrAllocRef)
+	_, err = utils.ParseIPAddr(addrOrAllocRef)
 	return err
 }
 
@@ -114,7 +114,7 @@ func (p *Plugin) ValidateIPAddress(addrOrAllocRef, ifaceName string) error {
 func (p *Plugin) GetOrParseIPAddress(addrOrAllocRef string, ifaceName string,
 	addrForm netalloc.IPAddressForm) (addr *net.IPNet, err error) {
 
-	network, iface, addrType, isRef, err := p.parseAddrAllocRef(addrOrAllocRef, ifaceName)
+	network, iface, addrType, isRef, err := utils.ParseAddrAllocRef(addrOrAllocRef, ifaceName)
 	if isRef && err != nil {
 		return nil, err
 	}
@@ -136,15 +136,15 @@ func (p *Plugin) GetOrParseIPAddress(addrOrAllocRef string, ifaceName string,
 			return nil, fmt.Errorf("invalid type of metadata stored for address allocation '%s'",
 				allocName)
 		}
-		return p.getIPAddrInGivenForm(allocMeta.IPAddr, addrForm), nil
+		return utils.GetIPAddrInGivenForm(allocMeta.IPAddr, addrForm), nil
 	}
 
 	// not a reference - try to parse the address
-	ipAddr, err := descriptor.ParseIPAddr(addrOrAllocRef)
+	ipAddr, err := utils.ParseIPAddr(addrOrAllocRef)
 	if err != nil {
 		return nil, err
 	}
-	return p.getIPAddrInGivenForm(ipAddr, addrForm), nil
+	return utils.GetIPAddrInGivenForm(ipAddr, addrForm), nil
 }
 
 // CorrelateRetrievedIPs should be used in Retrieve to correlate one or group
@@ -163,7 +163,7 @@ func (p *Plugin) CorrelateRetrievedIPs(expAddrsOrRefs []string, retrievedAddrs [
 	}
 
 	for _, addr := range retrievedAddrs {
-		ipAddr, err := descriptor.ParseIPAddr(addr)
+		ipAddr, err := utils.ParseIPAddr(addr)
 		if err != nil {
 			// invalid - do not try to correlate, just return as is
 			correlated = append(correlated, addr)
@@ -190,79 +190,4 @@ func (p *Plugin) CorrelateRetrievedIPs(expAddrsOrRefs []string, retrievedAddrs [
 		}
 	}
 	return nil
-}
-
-// parseAddrAllocRef parses reference to allocated address.
-func (p *Plugin) parseAddrAllocRef(addrAllocRef, expIface string) (
-	network, iface string, addrType netalloc.AddressType, isRef bool, err error) {
-
-	if !strings.HasPrefix(addrAllocRef, netalloc.AllocRefPrefix) {
-		isRef = false
-		return
-	}
-
-	isRef = true
-	addrAllocRef = strings.TrimPrefix(addrAllocRef, netalloc.AllocRefPrefix)
-	parts := strings.Split(addrAllocRef, "/")
-
-	// parse network name
-	network = parts[0]
-	parts = parts[1:]
-	if network == "" {
-		err = fmt.Errorf("address allocation reference with empty network name: %s",
-			addrAllocRef)
-		return
-	}
-
-	// parse address type
-	if len(parts) > 0 {
-		lastPart := parts[len(parts)-1]
-		addrType = netalloc.AddressType(netalloc.AddressType_value[lastPart])
-	}
-	if addrType == netalloc.AddressType_UNDEFINED {
-		addrType = netalloc.AddressType_IPV4_ADDR // default
-	} else {
-		parts = parts[:len(parts)-1]
-	}
-
-	if len(parts) > 0 {
-		iface = strings.Join(parts, "/")
-		if expIface != "" && iface != expIface {
-			err = fmt.Errorf("expected different interface name in the address allocation "+
-				"reference: %s (expected=%s vs. actual=%s)", addrAllocRef, expIface, iface)
-			return
-		}
-	} else {
-		if expIface == "" {
-			err = fmt.Errorf("missing interface name in the address allocation reference: %s",
-				addrAllocRef)
-			return
-		} else {
-			iface = expIface
-		}
-	}
-	return
-}
-
-// getAddrInGivenForm returns IP address in the requested form.
-func (p *Plugin) getIPAddrInGivenForm(addr *net.IPNet, form netalloc.IPAddressForm) *net.IPNet {
-
-	switch form {
-	case netalloc.IPAddressForm_DEFAULT:
-		fallthrough
-	case netalloc.IPAddressForm_ADDR_ONLY:
-		return &net.IPNet{IP: addr.IP}
-	case netalloc.IPAddressForm_ADDR_WITH_MASK:
-		return addr
-	case netalloc.IPAddressForm_ADDR_NET:
-		return &net.IPNet{IP: addr.IP.Mask(addr.Mask), Mask: addr.Mask}
-	case netalloc.IPAddressForm_SINGLE_ADDR_NET:
-		allOnesIpv4 := net.CIDRMask(32, 32)
-		allOnesIpv6 := net.CIDRMask(128, 128)
-		if addr.IP.To4() != nil {
-			return &net.IPNet{IP: addr.IP, Mask: allOnesIpv4}
-		}
-		return &net.IPNet{IP: addr.IP, Mask: allOnesIpv6}
-	}
-	return addr
 }
