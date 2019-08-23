@@ -39,7 +39,7 @@ func NewDumpCommand(cli *AgentCli) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "dump MODEL",
 		Aliases: []string{"d"},
-		Short:   "Dump actual state view",
+		Short:   "Dump running state",
 		Example: `
  To dump VPP interfaces run:
   $ agentctl dump vpp.interfaces
@@ -75,7 +75,7 @@ func runDump(cli *AgentCli, opts DumpOptions) {
 
 	var modelKeyPrefix string
 	for _, m := range cli.AllModels() {
-		if model == m.Alias || model == m.Name {
+		if (m.Alias != "" && model == m.Alias) || model == m.Name {
 			modelKeyPrefix = m.KeyPrefix
 			break
 		}

@@ -27,8 +27,9 @@ import (
 )
 
 func NewGenerateCommand(cli *AgentCli) *cobra.Command {
-	var opts GenerateOptions
-
+	var (
+		opts GenerateOptions
+	)
 	cmd := &cobra.Command{
 		Use:     "generate MODEL",
 		Aliases: []string{"gen"},
@@ -40,10 +41,11 @@ func NewGenerateCommand(cli *AgentCli) *cobra.Command {
 		},
 		DisableFlagsInUseLine: true,
 	}
-	cmd.PersistentFlags().StringVarP(&opts.Format, "format", "f", "json",
+	flags := cmd.Flags()
+	flags.StringVarP(&opts.Format, "format", "f", "json",
 		"Output formats: json, yaml")
-	cmd.PersistentFlags().BoolVar(&opts.OneLine, "oneline", false,
-		"Print output as single line. Works only with json format")
+	flags.BoolVar(&opts.OneLine, "oneline", false,
+		"Print output as single line (only json format)")
 	return cmd
 }
 
@@ -73,6 +75,7 @@ func runGenerate(cli *AgentCli, opts GenerateOptions) {
 	var err error
 
 	switch strings.ToLower(opts.Format) {
+
 	case "j", "json":
 		m := jsonpb.Marshaler{
 			EnumsAsInts:  false,
@@ -85,6 +88,7 @@ func runGenerate(cli *AgentCli, opts GenerateOptions) {
 		if err != nil {
 			ExitWithError(fmt.Errorf("Encoding to json failed: %v", err))
 		}
+
 	case "y", "yaml":
 		m := jsonpb.Marshaler{
 			EnumsAsInts:  false,
@@ -95,19 +99,21 @@ func runGenerate(cli *AgentCli, opts GenerateOptions) {
 		}
 		out, err = m.MarshalToString(modelInstance)
 		if err != nil {
-			ExitWithError(fmt.Errorf("Encoding to json failed: %v", err))
+			ExitWithError(fmt.Errorf("encoding to json failed: %v", err))
 		}
 		b, err := yaml.JSONToYAML([]byte(out))
 		if err != nil {
 			ExitWithError(fmt.Errorf("Encoding to yaml failed: %v", err))
 		}
 		out = string(b)
+
 	case "p", "proto":
 		m := proto.TextMarshaler{
 			Compact:   false,
 			ExpandAny: false,
 		}
 		out = m.Text(modelInstance)
+
 	default:
 		ExitWithError(fmt.Errorf("Unknown format: %s", opts.Format))
 	}
