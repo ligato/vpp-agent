@@ -45,7 +45,7 @@ func NewRootCommand(cli *AgentCli) *cobra.Command {
 
 func newRootCommand(cli *AgentCli, name string) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     name,
+		Use:     fmt.Sprintf("agentctl [OPTIONS] "),
 		Short:   fmt.Sprintf("%s manages Ligato agents", name),
 		Long:    figure.NewFigure(name, "", false).String(),
 		Version: fmt.Sprintf("%s (%s)", agent.BuildVersion, agent.CommitHash),
@@ -53,7 +53,10 @@ func newRootCommand(cli *AgentCli, name string) *cobra.Command {
 			cli.Init()
 			Debugf("running command: %s\n\n", cmd.CommandPath())
 		},
+		DisableFlagsInUseLine: true,
+		TraverseChildren:      true,
 	}
+	cmd.SetUsageTemplate(usageTemplate)
 	AddFlags(cmd)
 	AddCommands(cmd, cli)
 	return cmd
@@ -95,3 +98,35 @@ func Debugf(f string, a ...interface{}) {
 		fmt.Printf("[DEBUG] "+f, a...)
 	}
 }
+
+var usageTemplate = `Usage:
+
+{{- if .Runnable}}
+  {{.UseLine}}{{end}}{{if .HasAvailableSubCommands}}
+  {{.CommandPath}}{{- if .HasAvailableLocalFlags}} [OPTIONS]{{end}} COMMAND{{end}}
+
+{{- if gt .Aliases 0}}
+
+Aliases:
+  {{.NameAndAliases}}
+
+{{- end}}
+{{- if .HasExample}}
+
+Examples:
+{{.Example}}
+
+{{- end}}
+{{- if .HasAvailableSubCommands}}
+
+Commands:{{range .Commands}}{{if (or .IsAvailableCommand (eq .Name "help"))}}
+  {{rpad .Name .NamePadding }} {{.Short}}{{end}}{{end}}{{end}}{{if .HasAvailableLocalFlags}}
+
+Options:
+{{.LocalFlags.FlagUsages | trimTrailingWhitespaces}}{{end}}{{if .HasHelpSubCommands}}
+
+Additional help topics:{{range .Commands}}{{if .IsAdditionalHelpTopicCommand}}
+  {{rpad .CommandPath .CommandPathPadding}} {{.Short}}{{end}}{{end}}{{end}}{{if .HasAvailableSubCommands}}
+
+Run "{{.CommandPath}} COMMAND --help" for more information about a command.{{end}}
+`

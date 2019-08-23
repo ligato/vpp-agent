@@ -30,7 +30,7 @@ func NewGenerateCommand(cli *AgentCli) *cobra.Command {
 	var opts GenerateOptions
 
 	cmd := &cobra.Command{
-		Use:     "generate [model]",
+		Use:     "generate MODEL",
 		Aliases: []string{"gen"},
 		Short:   "Generate config samples",
 		Args:    cobra.ExactArgs(1),
@@ -38,6 +38,7 @@ func NewGenerateCommand(cli *AgentCli) *cobra.Command {
 			opts.Model = args[0]
 			runGenerate(cli, opts)
 		},
+		DisableFlagsInUseLine: true,
 	}
 	cmd.PersistentFlags().StringVarP(&opts.Format, "format", "f", "json",
 		"Output formats: json, yaml")

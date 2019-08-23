@@ -42,7 +42,7 @@ func newModelInfoCommand(cli *AgentCli) *cobra.Command {
 	var opts ModelInfoOptions
 
 	cmd := &cobra.Command{
-		Use:     "info NAME [NAME...]",
+		Use:     "info [NAME...]",
 		Aliases: []string{"i"},
 		Short:   "Display detailed on one or more models",
 		Args:    cobra.ArbitraryArgs,
@@ -76,7 +76,7 @@ func newModelListCommand(cli *AgentCli) *cobra.Command {
 	var opts ModelListOptions
 
 	cmd := &cobra.Command{
-		Use:     "ls [patterns]",
+		Use:     "ls [PATTERN]",
 		Aliases: []string{"list"},
 		Short:   "List models",
 		Args:    cobra.ArbitraryArgs,

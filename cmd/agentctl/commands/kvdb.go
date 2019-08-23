@@ -38,8 +38,10 @@ func NewKvdbCommand(cli *AgentCli) *cobra.Command {
 }
 
 func newKvdbListCommand(cli *AgentCli) *cobra.Command {
+	var keysOnly bool
+
 	cmd := &cobra.Command{
-		Use:     "list <key-prefix>",
+		Use:     "list [PREFIX]",
 		Aliases: []string{"l"},
 		Short:   "List key-value entries from KVDB",
 		Args:    cobra.RangeArgs(0, 1),
@@ -48,33 +50,49 @@ func newKvdbListCommand(cli *AgentCli) *cobra.Command {
 			if len(args) > 0 {
 				key = args[0]
 			}
-			runKvdbList(cli, key)
+			runKvdbList(cli, key, keysOnly)
 		},
 	}
+	cmd.Flags().BoolVar(&keysOnly, "keys-only", false, "List only the keys")
 	return cmd
 }
 
-func runKvdbList(cli *AgentCli, key string) {
+func runKvdbList(cli *AgentCli, key string, keysOnly bool) {
 	Debugf("kvdb.List- KEY: %s\n", key)
 
 	kvdb := cli.NewKVDBClient()
-	iter, err := kvdb.ListValues(key)
-	if err != nil {
-		ExitWithError(errors.New("Failed to list values from Etcd: " + err.Error()))
-		return
-	}
-	for {
-		kv, stop := iter.GetNext()
-		if stop {
-			break
+	if keysOnly {
+		iter, err := kvdb.ListKeys(key)
+		if err != nil {
+			ExitWithError(errors.New("Failed to list values from Etcd: " + err.Error()))
+			return
 		}
-		fmt.Printf("%s\n%s\n", kv.GetKey(), kv.GetValue())
+		for {
+			key, _, stop := iter.GetNext()
+			if stop {
+				break
+			}
+			fmt.Printf("%s\n", key)
+		}
+	} else {
+		iter, err := kvdb.ListValues(key)
+		if err != nil {
+			ExitWithError(errors.New("Failed to list values from Etcd: " + err.Error()))
+			return
+		}
+		for {
+			kv, stop := iter.GetNext()
+			if stop {
+				break
+			}
+			fmt.Printf("%s\n%s\n", kv.GetKey(), kv.GetValue())
+		}
 	}
 }
 
 func newKvdbGetCommand(cli *AgentCli) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     "get <key>",
+		Use:     "get KEY",
 		Aliases: []string{"g"},
 		Short:   "Get key-value entry from KVDB",
 		Args:    cobra.ExactArgs(1),
@@ -105,7 +123,7 @@ func runKvdbGet(cli *AgentCli, key string) {
 
 func newKvdbPutCommand(cli *AgentCli) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     "put <key> <value>",
+		Use:     "put KEY VALUE",
 		Aliases: []string{"p"},
 		Short:   "Put key-value entry into KVDB",
 		Long: `
@@ -150,7 +168,7 @@ func runKvdbPut(cli *AgentCli, key, value string) {
 
 func newKvdbDelCommand(cli *AgentCli) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     "del <key>",
+		Use:     "del KEY",
 		Aliases: []string{"d"},
 		Short:   "Delete key-value entry from KVDB",
 		Args:    cobra.ExactArgs(1),

@@ -96,12 +96,19 @@ func getKVDBPrefix(label string) string {
 	return prefix
 }
 
-func prepareKey(key string) string {
+func ensureAllAgentsPrefix(key string) string {
+	if strings.HasPrefix(key, servicelabel.GetAllAgentsPrefix()) {
+		return key
+	}
+	return path.Join(servicelabel.GetAllAgentsPrefix(), key)
+}
+
+func completeFullKey(key string) string {
 	if strings.HasPrefix(key, servicelabel.GetAllAgentsPrefix()) {
 		return key
 	}
 	if global.ServiceLabel == "" {
-		ExitWithError(fmt.Errorf("service label is not defined, cannot get complete key for: %s", key))
+		ExitWithError(fmt.Errorf("service label is not defined, cannot get complete key"))
 	}
 	key = path.Join(servicelabel.GetAllAgentsPrefix(), global.ServiceLabel, key)
 	return key
@@ -113,32 +120,37 @@ type kvdbClient struct {
 }
 
 func (k *kvdbClient) Put(key string, data []byte, opts ...datasync.PutOption) (err error) {
-	key = prepareKey(key)
+	key = completeFullKey(key)
 	Debugf("kvdbClient.Put: %s", key)
+
 	return k.BytesBroker.Put(key, data, opts...)
 }
 
 func (k *kvdbClient) GetValue(key string) (data []byte, found bool, revision int64, err error) {
-	key = prepareKey(key)
+	key = completeFullKey(key)
 	Debugf("kvdbClient.GetValue: %s", key)
+
 	return k.BytesBroker.GetValue(key)
 }
 
-func (k *kvdbClient) ListValues(key string) (keyval.BytesKeyValIterator, error) {
-	key = prepareKey(key)
-	Debugf("kvdbClient.ListValues: %s", key)
-	return k.BytesBroker.ListValues(key)
+func (k *kvdbClient) ListValues(prefix string) (keyval.BytesKeyValIterator, error) {
+	prefix = ensureAllAgentsPrefix(prefix)
+	Debugf("kvdbClient.ListValues: %s", prefix)
+
+	return k.BytesBroker.ListValues(prefix)
 }
 
-func (k *kvdbClient) ListKeys(key string) (keyval.BytesKeyIterator, error) {
-	key = prepareKey(key)
-	Debugf("kvdbClient.ListKeys: %s", key)
-	return k.BytesBroker.ListKeys(key)
+func (k *kvdbClient) ListKeys(prefix string) (keyval.BytesKeyIterator, error) {
+	prefix = ensureAllAgentsPrefix(prefix)
+	Debugf("kvdbClient.ListKeys: %s", prefix)
+
+	return k.BytesBroker.ListKeys(prefix)
 }
 
 func (k *kvdbClient) Delete(key string, opts ...datasync.DelOption) (existed bool, err error) {
-	key = prepareKey(key)
+	key = completeFullKey(key)
 	Debugf("kvdbClient.Delete: %s", key)
+
 	return k.BytesBroker.Delete(key, opts...)
 }
 
