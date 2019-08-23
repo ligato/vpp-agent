@@ -45,6 +45,7 @@ import (
 	nsdescriptor "github.com/ligato/vpp-agent/plugins/linux/nsplugin/descriptor"
 	nslinuxcalls "github.com/ligato/vpp-agent/plugins/linux/nsplugin/linuxcalls"
 	"github.com/ligato/vpp-agent/plugins/netalloc"
+	netalloc_descr "github.com/ligato/vpp-agent/plugins/netalloc/descriptor"
 	vpp_ifaceidx "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 )
 
@@ -181,7 +182,10 @@ func NewInterfaceDescriptor(
 		IsRetriableFailure:   ctx.IsRetriableFailure,
 		DerivedValues:        ctx.DerivedValues,
 		Dependencies:         ctx.Dependencies,
-		RetrieveDependencies: []string{nsdescriptor.MicroserviceDescriptorName},
+		RetrieveDependencies: []string{
+			// refresh the pool of allocated addresses first
+			netalloc_descr.AddrAllocDescriptorName,
+			nsdescriptor.MicroserviceDescriptorName},
 	}
 	descr = adapter.NewInterfaceDescriptor(typedDescr)
 	return

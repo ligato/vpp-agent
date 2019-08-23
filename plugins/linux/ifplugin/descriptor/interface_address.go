@@ -61,11 +61,12 @@ func NewInterfaceAddressDescriptor(nsPlugin nsplugin.API, addrAlloc netalloc.Add
 		log:       log.NewLogger("interface-address-descriptor"),
 	}
 	descr = &kvs.KVDescriptor{
-		Name:        InterfaceAddressDescriptorName,
-		KeySelector: ctx.IsInterfaceAddressKey,
-		Validate:    ctx.Validate,
-		Create:      ctx.Create,
-		Delete:      ctx.Delete,
+		Name:         InterfaceAddressDescriptorName,
+		KeySelector:  ctx.IsInterfaceAddressKey,
+		Validate:     ctx.Validate,
+		Create:       ctx.Create,
+		Delete:       ctx.Delete,
+		Dependencies: ctx.Dependencies,
 	}
 	return
 }
@@ -182,4 +183,15 @@ func (d *InterfaceAddressDescriptor) Delete(key string, emptyVal proto.Message, 
 
 	err = d.ifHandler.DelInterfaceIP(ifMeta.HostIfName, ipAddr)
 	return err
+}
+
+// Dependencies mentions potential allocation of the IP address as dependency.
+func (d *InterfaceAddressDescriptor) Dependencies(key string, emptyVal proto.Message) (deps []kvs.Dependency) {
+	iface, addr, _, _, _ := interfaces.ParseInterfaceAddressKey(key)
+	allocDep, hasAllocDep := d.addrAlloc.GetAddressAllocDep(addr, iface, "")
+	if hasAllocDep {
+		deps = append(deps, allocDep)
+	}
+
+	return deps
 }

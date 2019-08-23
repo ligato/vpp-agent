@@ -36,6 +36,7 @@ import (
 	linux_ifaceidx "github.com/ligato/vpp-agent/plugins/linux/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/linux/nsplugin"
 	"github.com/ligato/vpp-agent/plugins/netalloc"
+	netalloc_descr "github.com/ligato/vpp-agent/plugins/netalloc/descriptor"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
@@ -187,8 +188,11 @@ func NewInterfaceDescriptor(ifHandler vppcalls.InterfaceVppAPI, addrAlloc netall
 		Retrieve:           ctx.Retrieve,
 		Dependencies:       ctx.Dependencies,
 		DerivedValues:      ctx.DerivedValues,
-		// If Linux-IfPlugin is loaded, dump it first.
-		RetrieveDependencies: []string{linux_ifdescriptor.InterfaceDescriptorName},
+		RetrieveDependencies: []string{
+			// refresh the pool of allocated addresses first
+			netalloc_descr.AddrAllocDescriptorName,
+			// If Linux-IfPlugin is loaded, dump it first.
+			linux_ifdescriptor.InterfaceDescriptorName},
 	}
 	descr = adapter.NewInterfaceDescriptor(typedDescr)
 	return

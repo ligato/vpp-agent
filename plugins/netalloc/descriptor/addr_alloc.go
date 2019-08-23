@@ -51,6 +51,7 @@ func NewAddrAllocDescriptor(log logging.PluginLogger) (descr *kvs.KVDescriptor) 
 		Validate:      ctx.Validate,
 		Create:        ctx.Create,
 		Delete:        ctx.Delete,
+		Retrieve:      ctx.Retrieve,
 	}
 	descr = adapter.NewAddrAllocDescriptor(typedDescr)
 	return
@@ -70,6 +71,22 @@ func (d *AddrAllocDescriptor) Create(key string, addrAlloc *netalloc.AddressAllo
 // Delete is NOOP.
 func (d *AddrAllocDescriptor) Delete(key string, addrAlloc *netalloc.AddressAllocation, metadata *netalloc.AddrAllocMetadata) (err error) {
 	return err
+}
+
+// Retrieve always returns what is expected to exists since Create doesn't really change
+// anything in SB.
+func (d *AddrAllocDescriptor) Retrieve(correlate []adapter.AddrAllocKVWithMetadata) (valid []adapter.AddrAllocKVWithMetadata, err error) {
+	for _, addrAlloc := range correlate {
+		if meta, err := d.parseAddr(addrAlloc.Value); err == nil {
+			valid = append(valid, adapter.AddrAllocKVWithMetadata{
+				Key:      addrAlloc.Key,
+				Value:    addrAlloc.Value,
+				Metadata: meta,
+				Origin:   kvs.FromNB,
+			})
+		}
+	}
+	return valid, nil
 }
 
 // parseAddr tries to parse the allocated address.

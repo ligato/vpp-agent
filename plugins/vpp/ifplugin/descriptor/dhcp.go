@@ -24,6 +24,7 @@ import (
 	"github.com/ligato/cn-infra/logging"
 	"github.com/pkg/errors"
 
+	"github.com/ligato/vpp-agent/api/models/netalloc"
 	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
@@ -203,7 +204,7 @@ func (d *DHCPDescriptor) DerivedValues(key string, dhcpData proto.Message) (derV
 			return []kvs.KeyValuePair{
 				{
 					Key: interfaces.InterfaceAddressKey(dhcpLease.InterfaceName, dhcpLease.HostIpAddress,
-						interfaces.IPAddressFromDHCP),
+						netalloc.IPAddressSource_FROM_DHCP),
 					Value: &prototypes.Empty{},
 				},
 			}

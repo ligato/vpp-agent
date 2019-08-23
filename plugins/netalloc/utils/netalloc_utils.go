@@ -92,8 +92,8 @@ func ParseAddrAllocRef(addrAllocRef, expIface string) (
 // GetIPAddrInGivenForm returns IP address in the requested form.
 func GetIPAddrInGivenForm(addr *net.IPNet, form netalloc.IPAddressForm) *net.IPNet {
 	switch form {
-	case netalloc.IPAddressForm_DEFAULT:
-		fallthrough
+	case netalloc.IPAddressForm_UNDEFINED_FORM:
+		return addr
 	case netalloc.IPAddressForm_ADDR_ONLY:
 		return &net.IPNet{IP: addr.IP}
 	case netalloc.IPAddressForm_ADDR_WITH_MASK:

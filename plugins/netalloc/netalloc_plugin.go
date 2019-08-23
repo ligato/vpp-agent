@@ -196,5 +196,5 @@ func (p *Plugin) CorrelateRetrievedIPs(expAddrsOrRefs []string, retrievedAddrs [
 			correlated = append(correlated, addr)
 		}
 	}
-	return nil
+	return correlated
 }
