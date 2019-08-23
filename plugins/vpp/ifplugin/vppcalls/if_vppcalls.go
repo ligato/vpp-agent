@@ -100,6 +100,18 @@ type InterfaceState struct {
 	LinkMTU    uint16
 }
 
+// GreTunnelDetails is something
+type GreTunnelDetails struct {
+	SwIfIndex  uint32
+	Instance   uint32
+	IsIPv6     uint8
+	TunnelType uint8
+	SrcAddress string
+	DstAddress string
+	OuterFibID uint32
+	SessionID  uint16
+}
+
 // InterfaceVppAPI provides methods for creating and managing interface plugin
 type InterfaceVppAPI interface {
 	InterfaceVppRead
@@ -184,6 +196,13 @@ type InterfaceVppAPI interface {
 	DetachInterfaceFromBond(ifIdx uint32) error
 	// SetVLanTagRewrite sets VLan tag rewrite rule for given sub-interface
 	SetVLanTagRewrite(ifIdx uint32, subIf *interfaces.SubInterface) error
+
+	// AddGreTunnel adds new GRE interface.
+	AddGreTunnel(ifName string, greLink *interfaces.GreLink) (uint32, error)
+	// DelGreTunnel removes GRE interface.
+	DelGreTunnel(ifName string, greLink *interfaces.GreLink) (uint32, error)
+	// DumpGre dumps GRE interface (TODO: move this to `DumpInterfaceByType`).
+	DumpGre(ifIdx uint32) ([]*GreTunnelDetails, error)
 }
 
 // InterfaceVppRead provides read methods for interface plugin
