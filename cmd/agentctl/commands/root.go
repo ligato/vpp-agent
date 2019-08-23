@@ -23,6 +23,7 @@ import (
 	"github.com/ligato/cn-infra/agent"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 // RootName defines default name used for root command
@@ -54,21 +55,25 @@ func newRootCommand(cli *AgentCli, name string) *cobra.Command {
 			Debugf("running command: %s\n\n", cmd.CommandPath())
 		},
 		DisableFlagsInUseLine: true,
-		TraverseChildren:      true,
 	}
+
 	cmd.SetUsageTemplate(usageTemplate)
-	AddFlags(cmd)
-	AddCommands(cmd, cli)
+
+	flags := cmd.PersistentFlags()
+
+	SetupRootFlags(flags)
+	AddRootCommands(cmd, cli)
+
 	return cmd
 }
 
-func AddFlags(cmd *cobra.Command) {
+func SetupRootFlags(flags *pflag.FlagSet) {
 	var (
 		serviceLabel  = os.Getenv("MICROSERVICE_LABEL")
 		agentHost     = os.Getenv("AGENT_HOST")
 		etcdEndpoints = strings.Split(os.Getenv("ETCD_ENDPOINTS"), ",")
 	)
-	flags := cmd.PersistentFlags()
+
 	flags.StringVarP(&global.AgentHost, "host", "H", agentHost, "Address on which agent is reachable")
 	flags.StringVar(&global.PortGRPC, "grpc-port", "9111", "gRPC server port")
 	flags.StringVar(&global.PortHTTP, "http-port", "9191", "HTTP server port")
@@ -77,7 +82,7 @@ func AddFlags(cmd *cobra.Command) {
 	flags.BoolVarP(&global.Debug, "debug", "D", false, "Enable debug mode")
 }
 
-func AddCommands(cmd *cobra.Command, cli *AgentCli) {
+func AddRootCommands(cmd *cobra.Command, cli *AgentCli) {
 	cmd.AddCommand(
 		NewModelCommand(cli),
 		NewLogCommand(cli),

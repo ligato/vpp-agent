@@ -33,10 +33,10 @@ const logo = `
 func main() {
 	cli := commands.NewAgentCli()
 
-	cmd := commands.NewRootCommand(cli)
-	cmd.Long = logo
+	agentCtl := commands.NewRootCommand(cli)
+	agentCtl.Long = logo
 
-	if err := cmd.Execute(); err != nil {
+	if err := agentCtl.Execute(); err != nil {
 		os.Exit(-1)
 	}
 }

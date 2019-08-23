@@ -50,7 +50,7 @@ func NewImportCommand(cli *AgentCli) *cobra.Command {
 		Use:     "import [file]",
 		Aliases: []string{"i"},
 		Args:    cobra.ExactArgs(1),
-		Short:   "Import configuration from file",
+		Short:   "Import config data from file",
 		Example: `
  Import file contents example:
   $ cat input.txt

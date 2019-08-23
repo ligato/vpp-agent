@@ -33,34 +33,36 @@ func NewModelCommand(cli *AgentCli) *cobra.Command {
 	}
 	cmd.AddCommand(
 		newModelListCommand(cli),
-		newModelInfoCommand(cli),
+		newModelInspectCommand(cli),
 	)
 	return cmd
 }
 
-func newModelInfoCommand(cli *AgentCli) *cobra.Command {
-	var opts ModelInfoOptions
+func newModelInspectCommand(cli *AgentCli) *cobra.Command {
+	var opts ModelInspectOptions
 
 	cmd := &cobra.Command{
-		Use:     "info [NAME...]",
+		Use:     "inspect MODEL [MODEL...]",
 		Aliases: []string{"i"},
-		Short:   "Display detailed on one or more models",
-		Args:    cobra.ArbitraryArgs,
+		Short:   "Display detailed information on one or more models",
+		Args:    cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 			opts.Names = args
-			runModelInfo(cli, opts)
+			runModelInspect(cli, opts)
 		},
+		DisableFlagsInUseLine: true,
 	}
-	cmd.Flags().StringVar(&opts.Format, "format", "", "Format for the output")
+	// TODO: add support for custom formatting instead of json
+	//cmd.Flags().StringVar(&opts.Format, "format", "", "Format for the output")
 	return cmd
 }
 
-type ModelInfoOptions struct {
+type ModelInspectOptions struct {
 	Names  []string
 	Format string
 }
 
-func runModelInfo(cli *AgentCli, opts ModelInfoOptions) {
+func runModelInspect(cli *AgentCli, opts ModelInspectOptions) {
 	models := filterModelsByPrefix(cli.AllModels(), opts.Names)
 
 	Debugf("models: %+v", models)
@@ -69,6 +71,7 @@ func runModelInfo(cli *AgentCli, opts ModelInfoOptions) {
 	if err != nil {
 		ExitWithError(fmt.Errorf("Encoding data failed: %v", err))
 	}
+
 	fmt.Fprintf(os.Stdout, "%s\n", b)
 }
 
@@ -77,15 +80,15 @@ func newModelListCommand(cli *AgentCli) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:     "ls [PATTERN]",
-		Aliases: []string{"list"},
+		Aliases: []string{"list", "l"},
 		Short:   "List models",
 		Args:    cobra.ArbitraryArgs,
 		Run: func(cmd *cobra.Command, args []string) {
 			opts.Refs = args
 			runModelList(cli, opts)
 		},
+		DisableFlagsInUseLine: true,
 	}
-	cmd.Flags().BoolVar(&opts.NoTrunc, "no-trunc", false, "Disable truncing output")
 	return cmd
 }
 
@@ -102,10 +105,6 @@ func runModelList(cli *AgentCli, opts ModelListOptions) {
 	models := filterModelsByRefs(cli.AllModels(), opts.Refs)
 
 	for _, model := range models {
-		nameTemplate := model.NameTemplate
-		if !opts.NoTrunc && len(nameTemplate) > 51 {
-			nameTemplate = fmt.Sprintf("%s…", nameTemplate[:50])
-		}
 		fmt.Fprintf(w, "%s\t%s\t%s\t\n",
 			model.Name, model.KeyPrefix, model.ProtoName)
 	}

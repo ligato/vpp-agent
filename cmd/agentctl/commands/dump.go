@@ -37,7 +37,7 @@ func NewDumpCommand(cli *AgentCli) *cobra.Command {
 	var opts DumpOptions
 
 	cmd := &cobra.Command{
-		Use:     "dump [model]",
+		Use:     "dump MODEL",
 		Aliases: []string{"d"},
 		Short:   "Dump actual state view",
 		Example: `
@@ -58,6 +58,7 @@ func NewDumpCommand(cli *AgentCli) *cobra.Command {
 			opts.Models = args
 			runDump(cli, opts)
 		},
+		DisableFlagsInUseLine: true,
 	}
 	cmd.Flags().StringVarP(&opts.View, "view", "v", "cached", "Dump view type: cached, NB, SB")
 	return cmd
