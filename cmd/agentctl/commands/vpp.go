@@ -62,7 +62,7 @@ func runVppCli(cli *AgentCli, vppcmd string) error {
 	data := map[string]interface{}{
 		"vppclicommand": vppcmd,
 	}
-	resp, err := cli.HttpRestPOST("/vpp/command", data)
+	resp, err := cli.POST("/vpp/command", data)
 	if err != nil {
 		return fmt.Errorf("HTTP POST request failed: %v", err)
 	}
@@ -94,7 +94,7 @@ func runVppInfo(cli *AgentCli) error {
 	data := map[string]interface{}{
 		"vppclicommand": "show version verbose",
 	}
-	resp, err := cli.HttpRestPOST("/vpp/command", data)
+	resp, err := cli.POST("/vpp/command", data)
 	if err != nil {
 		return fmt.Errorf("HTTP POST request failed: %v", err)
 	}

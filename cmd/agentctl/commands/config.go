@@ -17,88 +17,105 @@ package commands
 import (
 	"errors"
 	"fmt"
-	"strings"
 
-	"github.com/ligato/cn-infra/db/keyval"
-	"github.com/ligato/cn-infra/servicelabel"
 	"github.com/spf13/cobra"
-
-	"github.com/ligato/vpp-agent/cmd/agentctl/utils"
 )
 
-func NewConfigCommand(cli *AgentCli) *cobra.Command {
+func NewKvdbCommand(cli *AgentCli) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "config",
-		Short: "Manage agent config data",
-		Args:  cobra.NoArgs,
+		Use:     "kvdb",
+		Aliases: []string{"kv"},
+		Short:   "Manage agent data in KVDB",
+		Args:    cobra.NoArgs,
 	}
 	cmd.AddCommand(
-		newConfigGetCommand(cli),
-		newConfigPutCommand(cli),
-		newConfigDelCommand(cli),
+		newKvdbListCommand(cli),
+		newKvdbGetCommand(cli),
+		newKvdbPutCommand(cli),
+		newKvdbDelCommand(cli),
 	)
 	return cmd
 }
 
-func newConfigGetCommand(cli *AgentCli) *cobra.Command {
-	var (
-		prefix bool
-	)
+func newKvdbListCommand(cli *AgentCli) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:     "list <key-prefix>",
+		Aliases: []string{"l"},
+		Short:   "List key-value entries from KVDB",
+		Args:    cobra.RangeArgs(0, 1),
+		Run: func(cmd *cobra.Command, args []string) {
+			var key string
+			if len(args) > 0 {
+				key = args[0]
+			}
+			runKvdbList(cli, key)
+		},
+	}
+	return cmd
+}
+
+func runKvdbList(cli *AgentCli, key string) {
+	Debugf("kvdb.List- KEY: %s\n", key)
+
+	kvdb := cli.NewKVDBClient()
+	iter, err := kvdb.ListValues(key)
+	if err != nil {
+		ExitWithError(errors.New("Failed to list values from Etcd: " + err.Error()))
+		return
+	}
+	for {
+		kv, stop := iter.GetNext()
+		if stop {
+			break
+		}
+		fmt.Printf("%s\n%s\n", kv.GetKey(), kv.GetValue())
+	}
+}
+
+func newKvdbGetCommand(cli *AgentCli) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "get <key>",
 		Aliases: []string{"g"},
-		Short:   "Get config entry from Etcd",
+		Short:   "Get key-value entry from KVDB",
 		Args:    cobra.ExactArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 			key := args[0]
-			runConfigGet(cli, prefix, key)
+			runKvdbGet(cli, key)
 		},
 	}
-	cmd.Flags().BoolVarP(&prefix, "prefix", "p", false, "Get keys with matching prefix")
 	return cmd
 }
 
-func runConfigGet(cli *AgentCli, prefix bool, key string) {
-	if prefix {
-		iter, err := cli.KVDBClient().ListValues(key)
-		if err != nil {
-			utils.ExitWithError(utils.ExitError, errors.New("Failed to list values from Etcd: "+err.Error()))
-			return
-		}
-		for {
-			kv, stop := iter.GetNext()
-			if stop {
-				break
-			}
-			fmt.Printf("%s\n%s\n", kv.GetKey(), kv.GetValue())
-		}
-	} else {
-		value, found, _, err := cli.KVDBClient().GetValue(key)
-		if err != nil {
-			utils.ExitWithError(utils.ExitError, errors.New("Failed to get value from Etcd: "+err.Error()))
-			return
-		} else if !found {
-			utils.ExitWithError(utils.ExitNotFound, errors.New("key not found"))
-			return
-		}
-		fmt.Printf("%s\n", value)
+func runKvdbGet(cli *AgentCli, key string) {
+	Debugf("kvdb.Get - KEY: %s\n", key)
+
+	kvdb := cli.NewKVDBClient()
+
+	value, found, _, err := kvdb.GetValue(key)
+	if err != nil {
+		ExitWithError(errors.New("Failed to get value from Etcd: " + err.Error()))
+		return
+	} else if !found {
+		ExitWithError(errors.New("key not found"))
+		return
 	}
+
+	fmt.Printf("%s\n", value)
 }
 
-func newConfigPutCommand(cli *AgentCli) *cobra.Command {
+func newKvdbPutCommand(cli *AgentCli) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "put <key> <value>",
 		Aliases: []string{"p"},
-		Short:   "Put config entry into Etcd",
+		Short:   "Put key-value entry into KVDB",
 		Long: `
 Put configuration file to Etcd.
 
 Supported key formats:
 	/vnf-agent/vpp1/config/vpp/v2/interfaces/iface1
-	vpp1/config/vpp/v2/interfaces/iface1
 	config/vpp/v2/interfaces/iface1
 
-For short key, put command use default microservice label and 'vpp1' as default agent label.
+For short key, put command use default microservice label.
 `,
 		Example: `  Set route configuration for "vpp1":
 	$ agentctl -e 172.17.0.3:2379 config put /vnf-agent/vpp1/config/vpp/v2/route/vrf/1/dst/10.1.1.3/32/gw/192.168.1.13 '{
@@ -112,79 +129,54 @@ For short key, put command use default microservice label and 'vpp1' as default 
 		Run: func(cmd *cobra.Command, args []string) {
 			key := args[0]
 			val := args[1]
-			runConfigPut(cli, key, val)
+			runKvdbPut(cli, key, val)
 		},
 	}
 	return cmd
 }
 
-func runConfigPut(cli *AgentCli, key, value string) {
-	var db keyval.ProtoBroker
-	var err error
+func runKvdbPut(cli *AgentCli, key, value string) {
+	Debugf("kvdb.Put - KEY: %s VAL: %s\n", key, value)
 
-	Debugf("PUT: %s\n%s\n", key, value)
+	kvdb := cli.NewKVDBClient()
 
-	if !strings.HasPrefix(key, servicelabel.GetAllAgentsPrefix()) {
-		tmp := strings.Split(key, "/")
-		if tmp[0] != "config" {
-			global.ServiceLabel = tmp[0]
-			key = strings.Join(tmp[1:], "/")
-		}
-
-		db, err = utils.GetDbForOneAgent(global.Endpoints, global.ServiceLabel)
-		if err != nil {
-			utils.ExitWithError(utils.ExitError, errors.New("Failed to connect to Etcd - "+err.Error()))
-		}
-	} else {
-		db, err = utils.GetDbForAllAgents(global.Endpoints)
-		if err != nil {
-			utils.ExitWithError(utils.ExitError, errors.New("Failed to connect to Etcd - "+err.Error()))
-		}
+	data := []byte(value)
+	if err := kvdb.Put(key, data); err != nil {
+		ExitWithError(err)
 	}
 
-	utils.WriteData(db.NewTxn(), key, value)
-
-	fmt.Println("Ok")
+	fmt.Println("OK")
 }
 
-func newConfigDelCommand(cli *AgentCli) *cobra.Command {
+func newKvdbDelCommand(cli *AgentCli) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "del <key>",
 		Aliases: []string{"d"},
-		Short:   "Delete config entry from Etcd",
+		Short:   "Delete key-value entry from KVDB",
 		Args:    cobra.ExactArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 			key := args[0]
-			runConfigDel(cli, key)
+			runKvdbDel(cli, key)
 		},
 	}
 	return cmd
 }
 
-func runConfigDel(cli *AgentCli, key string) {
-	var db keyval.ProtoBroker
-	var err error
+func runKvdbDel(cli *AgentCli, key string) {
+	Debugf("kvdb.Del - KEY: %s \n", key)
 
-	if !strings.HasPrefix(key, servicelabel.GetAllAgentsPrefix()) {
-		tmp := strings.Split(key, "/")
-		if tmp[0] != "config" {
-			global.ServiceLabel = tmp[0]
-			key = strings.Join(tmp[1:], "/")
-		}
+	kvdb := cli.NewKVDBClient()
 
-		db, err = utils.GetDbForOneAgent(global.Endpoints, global.ServiceLabel)
-		if err != nil {
-			utils.ExitWithError(utils.ExitError, errors.New("Failed to connect to Etcd - "+err.Error()))
-		}
-	} else {
-		db, err = utils.GetDbForAllAgents(global.Endpoints)
-		if err != nil {
-			utils.ExitWithError(utils.ExitError, errors.New("Failed to connect to Etcd - "+err.Error()))
-		}
+	if _, found, _, err := kvdb.GetValue(key); err != nil {
+		ExitWithError(err)
+	} else if !found {
+		ExitWithError(fmt.Errorf("key does not exist"))
 	}
 
-	err = utils.DelDataFromDb(db.NewTxn(), key)
+	_, err := kvdb.Delete(key) // FIXME: existed can never be true, missing WithPrevKV() option
 	if err != nil {
-		utils.ExitWithError(utils.ExitError, errors.New("Failed to delete from Etcd: "+err.Error()))
+		ExitWithError(err)
 	}
+
+	fmt.Println("OK")
 }

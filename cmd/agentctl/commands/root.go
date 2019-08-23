@@ -30,8 +30,8 @@ var RootName = "agentctl"
 
 var global struct {
 	AgentHost    string
-	GrpcPort     string
-	HttpPort     string
+	PortGRPC     string
+	PortHTTP     string
 	ServiceLabel string
 	Endpoints    []string
 
@@ -50,16 +50,12 @@ func newRootCommand(cli *AgentCli, name string) *cobra.Command {
 		Long:    figure.NewFigure(name, "", false).String(),
 		Version: fmt.Sprintf("%s (%s)", agent.BuildVersion, agent.CommitHash),
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
-			Debugf("cmd %s: %+v", cmd.Name(), cmd.Commands())
-			cli.Initialize()
+			cli.Init()
+			Debugf("running command: %s\n\n", cmd.CommandPath())
 		},
 	}
-
 	AddFlags(cmd)
 	AddCommands(cmd, cli)
-
-	Debugf("cmd.Commands: %+v", cmd.Commands())
-
 	return cmd
 }
 
@@ -71,8 +67,8 @@ func AddFlags(cmd *cobra.Command) {
 	)
 	flags := cmd.PersistentFlags()
 	flags.StringVarP(&global.AgentHost, "host", "H", agentHost, "Address on which agent is reachable")
-	flags.StringVar(&global.GrpcPort, "grpc-port", "9111", "gRPC server port")
-	flags.StringVar(&global.HttpPort, "http-port", "9191", "HTTP server port")
+	flags.StringVar(&global.PortGRPC, "grpc-port", "9111", "gRPC server port")
+	flags.StringVar(&global.PortHTTP, "http-port", "9191", "HTTP server port")
 	flags.StringVarP(&global.ServiceLabel, "service-label", "l", serviceLabel, "Service label for agent instance")
 	flags.StringSliceVarP(&global.Endpoints, "etcd-endpoints", "e", etcdEndpoints, "Etcd endpoints to connect to")
 	flags.BoolVarP(&global.Debug, "debug", "D", false, "Enable debug mode")
@@ -85,7 +81,7 @@ func AddCommands(cmd *cobra.Command, cli *AgentCli) {
 		NewImportCommand(cli),
 		NewVppCommand(cli),
 		NewDumpCommand(cli),
-		NewConfigCommand(cli),
+		NewKvdbCommand(cli),
 		showCmd(),
 		generateCmd(),
 	)

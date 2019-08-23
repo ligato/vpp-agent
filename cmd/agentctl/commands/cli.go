@@ -17,6 +17,7 @@ package commands
 import (
 	"fmt"
 	"net"
+	"path"
 	"reflect"
 	"sort"
 	"strings"
@@ -25,55 +26,124 @@ import (
 	"github.com/coreos/etcd/clientv3"
 	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/protoc-gen-gogo/descriptor"
+	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/db/keyval"
 	"github.com/ligato/cn-infra/db/keyval/etcd"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
+	"github.com/ligato/cn-infra/servicelabel"
 
 	"github.com/ligato/vpp-agent/cmd/agentctl/utils"
 	"github.com/ligato/vpp-agent/pkg/models"
 )
 
-type Config struct {
-}
-
 type AgentCli struct {
-	*utils.RestClient
+	*utils.HTTPClient
 }
 
 func NewAgentCli() *AgentCli {
 	return &AgentCli{}
 }
 
-func (cli *AgentCli) Initialize() {
-	Debugf("Initialize - globals: %+v\n\n", global)
+func (cli *AgentCli) Init() {
+	Debugf("init cli - global flags: %+v\n", global)
 
 	host := global.AgentHost
 	if host == "" {
 		host = "127.0.0.1"
 	}
-	httpAddr := net.JoinHostPort(host, global.HttpPort)
-	cli.RestClient = utils.NewRestClient(httpAddr)
+	httpAddr := net.JoinHostPort(host, global.PortHTTP)
+	cli.HTTPClient = utils.NewHTTPClient(httpAddr)
 }
 
-func (cli *AgentCli) KVDBClient() keyval.BytesBroker {
-	etcdCfg := etcd.ClientConfig{
-		Config: &clientv3.Config{
-			Endpoints:   global.Endpoints,
-			DialTimeout: time.Second * 3,
-		},
-		OpTimeout: time.Second * 10,
-	}
+func (cli *AgentCli) NewKVDBClient() keyval.BytesBroker {
+	etcdCfg := getEtcdConfig()
 
 	log := logrus.NewLogger("etcd")
-	log.SetLevel(logging.WarnLevel)
+	if global.Debug {
+		log.SetLevel(logging.DebugLevel)
+	} else {
+		log.SetLevel(logging.WarnLevel)
+	}
 
 	kvdb, err := etcd.NewEtcdConnectionWithBytes(etcdCfg, log)
 	if err != nil {
 		ExitWithError(err)
 	}
 
-	return kvdb.NewBroker(global.ServiceLabel)
+	/* prefix := getKVDBPrefix(label)
+	   Debugf("kvdb prefix: %s", prefix)
+	   broker := kvdb.NewBroker(prefix)*/
+
+	return &kvdbClient{kvdb}
+}
+
+func getEtcdConfig() etcd.ClientConfig {
+	cfg := etcd.ClientConfig{
+		Config: &clientv3.Config{
+			Endpoints:   global.Endpoints,
+			DialTimeout: time.Second * 3,
+		},
+		OpTimeout: time.Second * 10,
+	}
+	return cfg
+}
+
+func getKVDBPrefix(label string) string {
+	prefix := servicelabel.GetAllAgentsPrefix()
+	if label != "" {
+		prefix += label
+	}
+	if !strings.HasSuffix(prefix, "/") {
+		prefix += "/"
+	}
+	return prefix
+}
+
+func prepareKey(key string) string {
+	if strings.HasPrefix(key, servicelabel.GetAllAgentsPrefix()) {
+		return key
+	}
+	if global.ServiceLabel == "" {
+		ExitWithError(fmt.Errorf("service label is not defined, cannot get complete key for: %s", key))
+	}
+	key = path.Join(servicelabel.GetAllAgentsPrefix(), global.ServiceLabel, key)
+	return key
+}
+
+// kvdbClient provides client access to the KVDB server.
+type kvdbClient struct {
+	keyval.BytesBroker
+}
+
+func (k *kvdbClient) Put(key string, data []byte, opts ...datasync.PutOption) (err error) {
+	key = prepareKey(key)
+	Debugf("kvdbClient.Put: %s", key)
+	return k.BytesBroker.Put(key, data, opts...)
+}
+
+func (k *kvdbClient) GetValue(key string) (data []byte, found bool, revision int64, err error) {
+	key = prepareKey(key)
+	Debugf("kvdbClient.GetValue: %s", key)
+	return k.BytesBroker.GetValue(key)
+}
+
+func (k *kvdbClient) ListValues(key string) (keyval.BytesKeyValIterator, error) {
+	key = prepareKey(key)
+	Debugf("kvdbClient.ListValues: %s", key)
+	return k.BytesBroker.ListValues(key)
+}
+
+func (k *kvdbClient) ListKeys(key string) (keyval.BytesKeyIterator, error) {
+	key = prepareKey(key)
+	Debugf("kvdbClient.ListKeys: %s", key)
+	return k.BytesBroker.ListKeys(key)
+}
+
+func (k *kvdbClient) Delete(key string, opts ...datasync.DelOption) (existed bool, err error) {
+	key = prepareKey(key)
+	Debugf("kvdbClient.Delete: %s", key)
+	return k.BytesBroker.Delete(key, opts...)
 }
 
 type ModelDetail struct {

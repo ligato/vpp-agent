@@ -65,9 +65,6 @@ func runModelInfo(cli *AgentCli, opts ModelInfoOptions) {
 
 	Debugf("models: %+v", models)
 
-	//m := jsonpb.Marshaler{Indent: "  "}
-	//b, err := m.MarshalToString(models)
-
 	b, err := json.MarshalIndent(models, "", "  ")
 	if err != nil {
 		ExitWithError(fmt.Errorf("Encoding data failed: %v", err))

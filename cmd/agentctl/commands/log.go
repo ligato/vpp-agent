@@ -64,7 +64,7 @@ type LogListOptions struct {
 }
 
 func RunLogList(cli *AgentCli, opts LogListOptions) error {
-	resp, err := cli.HttpRestGET("/log/list")
+	resp, err := cli.GET("/log/list")
 	if err != nil {
 		return fmt.Errorf("HTTP GET request failed: %v", err)
 	}
@@ -133,7 +133,7 @@ A CLI tool to connect to vppagent and set vppagent logger type.
 }
 
 func RunLogSet(cli *AgentCli, opts LogSetOptions) error {
-	resp, err := cli.HttpRestPUT("/log/"+opts.Logger+"/"+opts.Level, nil)
+	resp, err := cli.PUT("/log/"+opts.Logger+"/"+opts.Level, nil)
 	if err != nil {
 		return fmt.Errorf("HTTP PUT request failed: %v", err)
 	}

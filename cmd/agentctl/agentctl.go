@@ -20,10 +20,22 @@ import (
 	"github.com/ligato/vpp-agent/cmd/agentctl/commands"
 )
 
+const logo = `
+     ___                    __  ________  __
+    /   | ____ ____  ____  / /_/ ____/ /_/ /
+   / /| |/ __ '/ _ \/ __ \/ __/ /   / __/ / 
+  / ___ / /_/ /  __/ / / / /_/ /___/ /_/ /  
+ /_/  |_\__, /\___/_/ /_/\__/\____/\__/_/   
+       /____/
+
+`
+
 func main() {
 	cli := commands.NewAgentCli()
 
 	cmd := commands.NewRootCommand(cli)
+	cmd.Long = logo
+
 	if err := cmd.Execute(); err != nil {
 		os.Exit(-1)
 	}

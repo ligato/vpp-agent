@@ -137,7 +137,7 @@ func dumpKeyPrefix(cli *AgentCli, keyPrefix string, dumpView string) ([]api.KVWi
 	q := fmt.Sprintf(`/scheduler/dump?key-prefix=%s&view=%s`,
 		url.QueryEscape(keyPrefix), url.QueryEscape(dumpView))
 
-	resp, err := cli.HttpRestGET(q)
+	resp, err := cli.GET(q)
 	if err != nil {
 		return nil, err
 	}

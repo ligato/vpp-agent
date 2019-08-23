@@ -47,36 +47,41 @@ func NewImportCommand(cli *AgentCli) *cobra.Command {
 	opts := ImportOptions{}
 
 	cmd := &cobra.Command{
-		Use:     "import",
+		Use:     "import [file]",
 		Aliases: []string{"i"},
 		Args:    cobra.ExactArgs(1),
 		Short:   "Import configuration from file",
-		Long: `Import configuration from file.
+		Example: `
+ Import file contents example:
+  $ cat input.txt
+  config/vpp/v2/interfaces/loop1 {"name":"loop1","type":"SOFTWARE_LOOPBACK"}
+  config/vpp/l2/v2/bridge-domain/bd1 {"name":"bd1"}
 
-File format:
-  <key1> <value1>
-  <key2> <value2>
-  # ...
-  <keyN> <valueN>
+ To import it into Etcd, run:
+  $ agentctl import input.txt
+
+ To import it via gRPC, use --grpc flag:
+  $ agentctl import --grpc=localhost:9111 input.txt
+
+FILE FORMAT
+
+ Contents of the import file must contain single key-value pair per line:
+
+    <key1> <value1>
+    <key2> <value2>
+    ...
+    <keyN> <valueN>
+
+ Empty lines and lines starting with '#' are ignored.
+
+KEY FORMAT
+
+ Keys can be defined in two ways:
+
+    - full: 	/vnf-agent/vpp1/config/vpp/v2/interfaces/iface1
+    - short:	config/vpp/v2/interfaces/iface1
  
-  Empty lines and lines starting with # are ignored.
-
-Supported key formats:
-  - /vnf-agent/vpp1/config/vpp/v2/interfaces/iface1
-  - config/vpp/v2/interfaces/iface1
-
-  For short keys, the import command uses microservice label defined with --label.
-`,
-		Example: `Import configuration from file:
-	
-	$ cat input.txt
-	config/vpp/v2/interfaces/loop1 {"name":"loop1","type":"SOFTWARE_LOOPBACK"}
-	config/vpp/l2/v2/bridge-domain/bd1 {"name":"bd1"}
-	$ agentctl import input.txt
-	
-    Or import via gRPC server:
-	
-	$ agentctl import --grpc=localhost:9111 input.txt
+ For short keys, the import command uses microservice label defined with --label.
 `,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			opts.Filename = args[0]

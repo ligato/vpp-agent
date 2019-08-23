@@ -24,24 +24,24 @@ import (
 	"github.com/ligato/cn-infra/logging"
 )
 
-// RestClient provides client access for the agent API.
-type RestClient struct {
-	httpAddr string
+// HTTPClient provides client access to the HTTP server in agent.
+type HTTPClient struct {
+	addr string
 }
 
-func NewRestClient(httpAddr string) *RestClient {
-	return &RestClient{
-		httpAddr: httpAddr,
+func NewHTTPClient(httpAddr string) *HTTPClient {
+	return &HTTPClient{
+		addr: httpAddr,
 	}
 }
 
-func (c *RestClient) HttpRestGET(path string) ([]byte, error) {
-	a, err := url.Parse("http://" + c.httpAddr + path)
+func (c *HTTPClient) GET(path string) ([]byte, error) {
+	a, err := url.Parse("http://" + c.addr + path)
 	if err != nil {
 		return nil, err
 	}
 
-	logging.Debugf("HttpRestGET: %q", a.String())
+	logging.Debugf("GET: %q", a.String())
 
 	resp, err := http.Get(a.String())
 	if err != nil {
@@ -53,12 +53,11 @@ func (c *RestClient) HttpRestGET(path string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	return msg, nil
 }
 
-func (c *RestClient) HttpRestPUT(path string, data interface{}) ([]byte, error) {
-	a, err := url.Parse("http://" + c.httpAddr + path)
+func (c *HTTPClient) PUT(path string, data interface{}) ([]byte, error) {
+	a, err := url.Parse("http://" + c.addr + path)
 	if err != nil {
 		return nil, err
 	}
@@ -85,12 +84,11 @@ func (c *RestClient) HttpRestPUT(path string, data interface{}) ([]byte, error) 
 	if err != nil {
 		return nil, err
 	}
-
 	return msg, nil
 }
 
-func (c *RestClient) HttpRestPOST(path string, data interface{}) ([]byte, error) {
-	a, err := url.Parse("http://" + c.httpAddr + path)
+func (c *HTTPClient) POST(path string, data interface{}) ([]byte, error) {
+	a, err := url.Parse("http://" + c.addr + path)
 	if err != nil {
 		return nil, err
 	}
@@ -110,6 +108,5 @@ func (c *RestClient) HttpRestPOST(path string, data interface{}) ([]byte, error)
 	if err != nil {
 		return nil, err
 	}
-
 	return msg, nil
 }
