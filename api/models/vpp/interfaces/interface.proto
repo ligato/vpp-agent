@@ -24,14 +24,32 @@ message Interface {
         BOND_INTERFACE = 10;
     };
 
-    string name = 1;                   /* Logical interface name unique across all configured interfaces (mandatory) */
+    // Name is mandatory field representing logical name for the interface.
+    // It must be unique across all configured interfaces.
+    string name = 1;
+
+    // Type represents the type of interface and it must match with actual Link.
     Type type = 2;
+
+    // Enabled controls if the interface should be UP.
     bool enabled = 3;
+
+    // PhysAddress represents physical address (MAC) of the interface.
+    // Random address will be assigned if left empty.
     string phys_address = 4;
-    repeated string ip_addresses = 5;  /* IP addresses in the format <ipAddress>/<ipPrefix> */
-    uint32 vrf = 6;  /* Non-zero VRF has to be explicitly created (see api/models/vpp/l3/vrf.proto).
-                        Ignored for unnumbered interface - the VRF configuration is inherited from
-                        the referenced numbered interface.*/
+
+    // IPAddresses define list of IP addresses for the interface and must be
+    // defined in the following format: <ipAddress>/<ipPrefix>.
+    // Interface IP address can be also allocated via netalloc plugin and
+    // referenced here, see: api/models/netalloc/netalloc.proto
+    repeated string ip_addresses = 5;
+
+    // Vrf defines the ID of VRF table that the interface is assigned to.
+    // The VRF table must be explicitely configured (see api/models/vpp/l3/vrf.proto).
+    // When using unnumbered interface the actual vrf is inherited from
+    // the interface referenced by the numbered interface and this field is ignored.
+    uint32 vrf = 6;
+
     bool set_dhcp_client = 7;
     uint32 mtu = 8;
 
@@ -41,7 +59,9 @@ message Interface {
     Unnumbered unnumbered = 9;
 
     message RxMode {
-        // from vpp/build-root/install-vpp-native/vpp/include/vnet/interface.h
+        uint32 queue = 1;
+
+        // Type definition is from: vpp/include/vnet/interface.h
         enum Type {
             UNKNOWN = 0;
             POLLING = 1;
@@ -49,34 +69,40 @@ message Interface {
             ADAPTIVE = 3;
             DEFAULT = 4;
         };
-        uint32 queue = 1;
         Type mode = 2;
-        bool default_mode = 3; // if enabled, <queue> will be ignored and the given
-                               // <mode> will be used for all queues without explicitly
-                               // selected Rx mode
+
+        // DefaultMode, if set to true, the <queue> field will be ignored
+        // and the <mode> will be used as a default for all the queues.
+        bool default_mode = 3;
     }
-    repeated RxMode rx_modes = 10;
+    repeated RxMode rx_modes = 12;
 
     message RxPlacement {
-        uint32 queue = 1;  // select from interval <0, number-of-queues)
-        uint32 worker = 2; // select from interval <0, number-of-workers)
-        bool main_thread = 3; // let the main thread to process the given queue
-                              //  - if enabled, value of <worker> is ignored
+        // select from interval <0, number-of-queues)
+        uint32 queue = 1;
+        // select from interval <0, number-of-workers)
+        uint32 worker = 2;
+        // let the main thread to process the given queue
+        //  - if enabled, value of <worker> is ignored
+        bool main_thread = 3;
     }
-    repeated RxPlacement rx_placements = 11;
+    repeated RxPlacement rx_placements = 13;
 
+    // Link defines configuration for specific interface types.
+    // It can be nil for some interfaces types like: loopback and DPDK.
     oneof link {
-        SubInterface sub = 100;         /* sub-interface configuration */
-        MemifLink memif = 101;          /* memif-specific configuration */
-        AfpacketLink afpacket = 102;    /* AF-packet-specific configuration */
-        TapLink tap = 103;              /* TAP-specific configuration */
-        VxlanLink vxlan = 104;          /* VXLAN-specific configuration */
-        IPSecLink ipsec = 105;          /* IPSec tunnel-specific configuration */
-        VmxNet3Link vmx_net3 = 106;     /* VmxNet3-specific configuration */
-        BondLink bond = 107;            /* Bond interface-specific configuration */
+        SubInterface sub = 100;
+        MemifLink memif = 101;
+        AfpacketLink afpacket = 102;
+        TapLink tap = 103;
+        VxlanLink vxlan = 104;
+        IPSecLink ipsec = 105;
+        VmxNet3Link vmx_net3 = 106;
+        BondLink bond = 107;
     };
 };
 
+// SubInterface defines configuration for interface type: SUB_INTERFACE
 message SubInterface {
     string parent_name = 1;                 /* Name of the parent (super) interface */
     uint32 sub_id = 2;                      /* SubInterface ID, used as VLAN */
@@ -97,6 +123,7 @@ message SubInterface {
     uint32 tag2 = 6;                        /* Second tag (required for PUSH2 and any TRANSLATE) */
 }
 
+// MemifLink defines configuration for interface type: MEMIF
 message MemifLink {
     enum MemifMode {
         ETHERNET = 0;
@@ -114,6 +141,7 @@ message MemifLink {
     uint32 tx_queues = 9;       /* number of tx queues (only valid for slave) */
 }
 
+// VxlanLink defines configuration for interface type: VXLAN_TUNNEL
 message VxlanLink {
     string src_address = 1;  /* source VTEP address */
     string dst_address = 2;  /* destination VTEP address */
@@ -121,10 +149,12 @@ message VxlanLink {
     string multicast = 4;    /* multicast interface */
 }
 
+// AfpacketLink defines configuration for interface type: AF_PACKET
 message AfpacketLink {
     string host_if_name = 1; /* name of the host interface to bind to (mandatory) */
 }
 
+// TapLink defines configuration for interface type: TAP
 message TapLink {
     uint32 version = 1;         /* 1 / unset = use the original TAP interface; 2 = use a fast virtio-based TAP */
     string host_if_name = 2;    /* name of the TAP interface in the host OS;
@@ -140,6 +170,7 @@ message TapLink {
     bool enable_gso = 6;        /* Enable GSO */
 }
 
+// IPSecLink defines configuration for interface type: IPSEC_TUNNEL
 message IPSecLink {
     bool esn = 2;                       /* Extended sequence number */
     bool anti_replay = 3;               /* Anti replay option */
@@ -159,6 +190,7 @@ message IPSecLink {
     bool enable_udp_encap = 14;         /* Enable UDP encapsulation */
 }
 
+// VmxNet3Link defines configuration for interface type: VMXNET3_INTERFACE
 /* PCI address (unsigned 32bit int) is derived from vmxnet3 interface name. It is expected that the interface
        name is in format "vmxnet3-<d>/<b>/<s>/<f>", where 'd' stands for domain (max ffff), 'b' is bus (max ff),
        's' is slot (max 1f) and 'f is function' (max 7). All values are base 16 */
@@ -168,8 +200,10 @@ message VmxNet3Link {
     uint32 txq_size = 4;    /* transmit queue size (default is 1024) */
 }
 
+// BondLink defines configuration for interface type: BOND_INTERFACE
 message BondLink {
     uint32 id = 1;
+
     enum Mode {
       UNKNOWN = 0;
       ROUND_ROBIN = 1;
@@ -179,6 +213,7 @@ message BondLink {
       LACP = 5;
     }
     Mode mode = 3;
+
     enum LoadBalance {
         L2 = 0;
         L34 = 1;
