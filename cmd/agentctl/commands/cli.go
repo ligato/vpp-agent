@@ -71,10 +71,6 @@ func (cli *AgentCli) NewKVDBClient() keyval.BytesBroker {
 		ExitWithError(err)
 	}
 
-	/* prefix := getKVDBPrefix(label)
-	   Debugf("kvdb prefix: %s", prefix)
-	   broker := kvdb.NewBroker(prefix)*/
-
 	return &kvdbClient{kvdb}
 }
 
@@ -147,14 +143,14 @@ func (k *kvdbClient) Delete(key string, opts ...datasync.DelOption) (existed boo
 }
 
 type ModelDetail struct {
-	Module          []string
+	Name            string
+	Module          string
 	Type            string
 	Version         string
-	Name            string
-	Alias           string
-	ProtoName       string
+	Alias           string `json:",omitempty"`
 	KeyPrefix       string
-	NameTemplate    string                          `json:",omitempty"`
+	NameTemplate    string `json:",omitempty"`
+	ProtoName       string
 	ProtoDescriptor *descriptor.DescriptorProto     `json:",omitempty"`
 	ProtoFile       *descriptor.FileDescriptorProto `json:",omitempty"`
 	Fields          protoFields                     `json:",omitempty"`
@@ -177,6 +173,9 @@ func (cli *AgentCli) AllModels() []ModelDetail {
 
 		name := fmt.Sprintf("%s.%s", m.Model.Module, typ)
 		alias := fmt.Sprintf("%s.%s", module[0], typ)
+		if alias == name {
+			alias = ""
+		}
 
 		protoName := m.Info["protoName"]
 		keyPrefix := m.Info["keyPrefix"]
@@ -187,7 +186,7 @@ func (cli *AgentCli) AllModels() []ModelDetail {
 
 		detail := ModelDetail{
 			Name:         name,
-			Module:       module,
+			Module:       m.Model.Module,
 			Version:      version,
 			Type:         typ,
 			Alias:        alias,

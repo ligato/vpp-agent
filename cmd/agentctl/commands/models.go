@@ -97,7 +97,7 @@ type ModelListOptions struct {
 func runModelList(cli *AgentCli, opts ModelListOptions) {
 	var buf bytes.Buffer
 	w := tabwriter.NewWriter(&buf, 0, 0, 2, ' ', 0)
-	fmt.Fprintf(w, "MODEL\tVERSION\tPROTOBUF\tKEY PREFIX\tNAME TEMPLATE\t\n")
+	fmt.Fprintf(w, "MODEL\tKEY PREFIX\tPROTO NAME\t\n")
 
 	models := filterModelsByRefs(cli.AllModels(), opts.Refs)
 
@@ -106,8 +106,8 @@ func runModelList(cli *AgentCli, opts ModelListOptions) {
 		if !opts.NoTrunc && len(nameTemplate) > 51 {
 			nameTemplate = fmt.Sprintf("%s…", nameTemplate[:50])
 		}
-		fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t\n",
-			model.Name, model.Version, model.ProtoName, model.KeyPrefix, nameTemplate)
+		fmt.Fprintf(w, "%s\t%s\t%s\t\n",
+			model.Name, model.KeyPrefix, model.ProtoName)
 	}
 	if err := w.Flush(); err != nil {
 		return

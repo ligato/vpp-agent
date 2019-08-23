@@ -41,6 +41,7 @@ func showCmd() *cobra.Command {
 		Use:     "show",
 		Aliases: []string{"s"},
 		Short:   "Show detailed config and status data",
+		Hidden:  true,
 		Long: `
 'show' prints out Etcd configuration and status data (where applicable)
 for agents whose microservice label matches the label filter specified

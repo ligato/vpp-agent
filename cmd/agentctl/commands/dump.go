@@ -74,7 +74,7 @@ func runDump(cli *AgentCli, opts DumpOptions) {
 
 	var modelKeyPrefix string
 	for _, m := range cli.AllModels() {
-		if model == m.Alias {
+		if model == m.Alias || model == m.Name {
 			modelKeyPrefix = m.KeyPrefix
 			break
 		}

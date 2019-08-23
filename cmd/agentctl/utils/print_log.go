@@ -61,10 +61,9 @@ func (ll LogList) render(t *template.Template) ([]byte, error) {
 	var buffer bytes.Buffer
 	w := tabwriter.NewWriter(&buffer, 0, 0, 1, ' ', 0)
 
-	// print header
+	// print logger table
 	fmt.Fprintf(w, "LOGGER\tLEVEL\t\n")
 
-	// print logger list
 	for _, value := range ll {
 		err := t.Execute(w, value)
 		if err != nil {
