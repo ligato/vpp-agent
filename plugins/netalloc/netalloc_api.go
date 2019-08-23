@@ -16,7 +16,7 @@ import (
 // for that item would implement some of the methods as follows:
 //
 //     func (d *Descriptor) Validate(key string, intf *mymodel.MyModel) error {
-//         err := d.netallocPlugin.ValidateIPAddress(item.IpAddress, "")
+//         err := d.netallocPlugin.ValidateIPAddress(item.IpAddress, "", "IpAddress")
 //         if err != nil {
 //             return err
 //         }
@@ -25,7 +25,7 @@ import (
 //     func (d *Descriptor) Dependencies(key string, item *mymodel.MyModel) (dependencies []kvs.Dependency) {
 //         // Note: it is actually preferred to derive the IP address into a separate key-value
 //         //       pair and assign the allocation dependency to it rather than to the entire configuration item
-//         dep, hasAllocDep := d.netallocPlugin.GetAddressAllocDep(item.IpAddress, "")
+//         dep, hasAllocDep := d.netallocPlugin.GetAddressAllocDep(item.IpAddress, "", "")
 //         if hasAllocDep {
 //             dependencies = append(dependencies, dep)
 //         }
@@ -38,7 +38,6 @@ import (
 //             d.log.Error(err)
 //             return nil, err
 //         }
-//         // item.IpAddress should contain IP address
 //         fmt.Printf("Assign IP address: %v", addr.IP)
 //         ...
 //     }
@@ -49,7 +48,6 @@ import (
 //             d.log.Error(err)
 //             return nil, err
 //         }
-//         // item.IpAddress should contain IP address
 //         fmt.Printf("Un-assign IP address: %v", addr.IP)
 //         ...
 //     }
