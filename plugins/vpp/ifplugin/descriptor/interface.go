@@ -109,6 +109,12 @@ var (
 
 	// ErrBondInterfaceIDExists is returned when the bond interface uses existing ID value
 	ErrBondInterfaceIDExists = errors.Errorf("Bond interface ID already exists")
+
+	// ErrGreSrcAddrMissing is returned when source address was not set or set to an empty string.
+	ErrGreSrcAddrMissing = errors.Errorf("missing source address for GRE tunnel")
+
+	// ErrGreDstAddrMissing is returned when destination address was not set or set to an empty string.
+	ErrGreDstAddrMissing = errors.Errorf("missing destination address for GRE tunnel")
 )
 
 // InterfaceDescriptor teaches KVScheduler how to configure VPP interfaces.
@@ -399,6 +405,10 @@ func (d *InterfaceDescriptor) Validate(key string, intf *interfaces.Interface) e
 		if intf.Type != interfaces.Interface_IPSEC_TUNNEL {
 			return linkMismatchErr
 		}
+	case *interfaces.Interface_Gre:
+		if intf.Type != interfaces.Interface_GRE {
+			return linkMismatchErr
+		}
 	case nil:
 		if intf.Type != interfaces.Interface_SOFTWARE_LOOPBACK &&
 			intf.Type != interfaces.Interface_DPDK {
@@ -423,6 +433,13 @@ func (d *InterfaceDescriptor) Validate(key string, intf *interfaces.Interface) e
 	case interfaces.Interface_BOND_INTERFACE:
 		if name, ok := d.bondIDs[intf.GetBond().GetId()]; ok && name != intf.GetName() {
 			return kvs.NewInvalidValueError(ErrBondInterfaceIDExists, "link.bond.id")
+		}
+	case interfaces.Interface_GRE:
+		if intf.GetGre().SrcAddr == "" {
+			return kvs.NewInvalidValueError(ErrGreSrcAddrMissing, "link.gre.src_addr")
+		}
+		if intf.GetGre().DstAddr == "" {
+			return kvs.NewInvalidValueError(ErrGreDstAddrMissing, "link.gre.dst_addr")
 		}
 	}
 
