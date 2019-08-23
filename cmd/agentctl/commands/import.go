@@ -29,7 +29,6 @@ import (
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/servicelabel"
 	"github.com/spf13/cobra"
-	"google.golang.org/grpc"
 
 	"github.com/ligato/vpp-agent/api/genericmanager"
 	"github.com/ligato/vpp-agent/client/remoteclient"
@@ -37,30 +36,24 @@ import (
 	"github.com/ligato/vpp-agent/pkg/models"
 )
 
-var (
-	txops    uint
-	grpcAddr string
-	timeout  uint
-)
-
 func NewImportCommand(cli *AgentCli) *cobra.Command {
-	opts := ImportOptions{}
+	var (
+		opts    ImportOptions
+		timeout uint
+	)
 
 	cmd := &cobra.Command{
-		Use:     "import [file]",
-		Aliases: []string{"i"},
-		Args:    cobra.ExactArgs(1),
-		Short:   "Import config data from file",
+		Use:   "import file",
+		Args:  cobra.ExactArgs(1),
+		Short: "Import config data from file",
 		Example: `
- Import file contents example:
+ To import file contents into Etcd, run:
   $ cat input.txt
   config/vpp/v2/interfaces/loop1 {"name":"loop1","type":"SOFTWARE_LOOPBACK"}
   config/vpp/l2/v2/bridge-domain/bd1 {"name":"bd1"}
-
- To import it into Etcd, run:
   $ agentctl import input.txt
 
- To import it via gRPC, use --grpc flag:
+ To import it via gRPC, include --grpc flag:
   $ agentctl import --grpc=localhost:9111 input.txt
 
 FILE FORMAT
@@ -83,44 +76,94 @@ KEY FORMAT
  
  For short keys, the import command uses microservice label defined with --label.
 `,
+
 		RunE: func(cmd *cobra.Command, args []string) error {
-			opts.Filename = args[0]
+			opts.InputFile = args[0]
+			opts.Timeout = time.Second * time.Duration(timeout)
 			return RunImport(cli, opts)
 		},
 	}
 
-	cmd.PersistentFlags().UintVar(&txops, "txops", 128,
-		"Number of OPs per transaction")
-	cmd.PersistentFlags().StringVar(&grpcAddr, "grpc", "",
-		"Address of gRPC server.")
-	cmd.PersistentFlags().UintVarP(&timeout, "time", "t", 60,
-		"Client timeout in seconds (how long to wait for response from server)")
+	flags := cmd.Flags()
+	flags.UintVar(&opts.TxOps, "txops", 128, "Number of ops per transaction")
+	flags.UintVarP(&timeout, "time", "t", 30, "Timeout (in seconds) to wait for server response")
+	flags.BoolVar(&opts.ViaGrpc, "grpc", false, "Enable to import config via gRPC")
 
 	return cmd
 }
 
 type ImportOptions struct {
-	Filename string
+	InputFile string
+	TxOps     uint
+	Timeout   time.Duration
+	ViaGrpc   bool
 }
 
 func RunImport(cli *AgentCli, opts ImportOptions) error {
-	b, err := ioutil.ReadFile(opts.Filename)
+	b, err := ioutil.ReadFile(opts.InputFile)
 	if err != nil {
 		return fmt.Errorf("reading input file failed: %v", err)
 	}
 
 	keyVals, err := parseKeyVals(b)
 	if err != nil {
-		return fmt.Errorf("parsing import input failed: %v", err)
+		return fmt.Errorf("parsing import data failed: %v", err)
 	}
 
-	if grpcAddr != "" {
-		if err := grpcImport(keyVals); err != nil {
-			return fmt.Errorf("import via gRPC failed: %v", err)
+	if opts.ViaGrpc {
+		// Set up a connection to the server.
+		conn := cli.NewGRPCClient()
+		defer conn.Close()
+
+		c := remoteclient.NewClientGRPC(genericmanager.NewGenericManagerClient(conn))
+
+		fmt.Printf("importing %d key vals\n", len(keyVals))
+
+		req := c.ChangeRequest()
+		for _, keyVal := range keyVals {
+			fmt.Printf(" - %s\n", keyVal.Key)
+			req.Update(keyVal.Val)
 		}
+
+		fmt.Printf("sending via gRPC\n")
+
+		ctx, cancel := context.WithTimeout(context.Background(), opts.Timeout)
+		defer cancel()
+
+		if err := req.Send(ctx); err != nil {
+			return fmt.Errorf("send failed: %v", err)
+		}
+
 	} else {
-		if err := etcdImport(keyVals); err != nil {
-			return fmt.Errorf("import to Etcd failed: %v", err)
+		db, err := utils.GetDbForAllAgents(global.Endpoints)
+		if err != nil {
+			return fmt.Errorf("connecting to Etcd failed: %v", err)
+		}
+
+		fmt.Printf("importing %d key vals\n", len(keyVals))
+
+		var txn = db.NewTxn()
+		ops := 0
+		for i := 0; i < len(keyVals); i++ {
+			keyVal := keyVals[i]
+
+			fmt.Printf(" - %s\n", keyVal.Key)
+			txn.Put(keyVal.Key, keyVal.Val)
+			ops++
+
+			if ops == int(opts.TxOps) || i+1 == len(keyVals) {
+				fmt.Printf("commiting tx with %d ops\n", ops)
+
+				ctx, cancel := context.WithTimeout(context.Background(), opts.Timeout)
+				err = txn.Commit(ctx)
+				cancel()
+				if err != nil {
+					return fmt.Errorf("commit failed: %v", err)
+				}
+
+				ops = 0
+				txn = db.NewTxn()
+			}
 		}
 	}
 
@@ -152,10 +195,9 @@ func parseKeyVals(b []byte) (keyVals []keyVal, err error) {
 			continue
 		}
 
-		key, err = parseKey(key)
-		if err != nil {
-			return nil, fmt.Errorf("parsing key failed: %v", err)
-		}
+		Debugf("parse line: %s %s\n", key, data)
+
+		key = completeFullKey(key)
 
 		val, err := unmarshalKeyVal(key, data)
 		if err != nil {
@@ -166,73 +208,6 @@ func parseKeyVals(b []byte) (keyVals []keyVal, err error) {
 		keyVals = append(keyVals, keyVal{key, val})
 	}
 	return
-}
-
-func grpcImport(keyVals []keyVal) error {
-	// Set up a connection to the server.
-	conn, err := grpc.Dial(grpcAddr, grpc.WithInsecure())
-	if err != nil {
-		return fmt.Errorf("connecting to gRPC failed: %v", err)
-	}
-	defer conn.Close()
-
-	c := remoteclient.NewClientGRPC(genericmanager.NewGenericManagerClient(conn))
-
-	fmt.Printf("importing %d key vals\n", len(keyVals))
-
-	req := c.ChangeRequest()
-	for _, keyVal := range keyVals {
-		fmt.Printf(" - %s\n", keyVal.Key)
-		req.Update(keyVal.Val)
-	}
-
-	t := getTimeout()
-	fmt.Printf("sending via gRPC (timeout: %v)\n", t)
-
-	ctx, cancel := context.WithTimeout(context.Background(), t)
-	defer cancel()
-
-	if err := req.Send(ctx); err != nil {
-		return fmt.Errorf("send failed: %v", err)
-	}
-
-	return nil
-}
-
-func etcdImport(keyVals []keyVal) error {
-	// Connect to etcd
-	db, err := utils.GetDbForAllAgents(global.Endpoints)
-	if err != nil {
-		return fmt.Errorf("connecting to Etcd failed: %v", err)
-	}
-
-	fmt.Printf("importing %d key vals\n", len(keyVals))
-
-	var txn = db.NewTxn()
-	ops := 0
-	for i := 0; i < len(keyVals); i++ {
-		keyVal := keyVals[i]
-
-		fmt.Printf(" - %s\n", keyVal.Key)
-		txn.Put(keyVal.Key, keyVal.Val)
-		ops++
-
-		if ops == int(txops) || i+1 == len(keyVals) {
-			fmt.Printf("commiting tx with %d ops\n", ops)
-
-			ctx, cancel := context.WithTimeout(context.Background(), getTimeout())
-			err = txn.Commit(ctx)
-			cancel()
-			if err != nil {
-				return fmt.Errorf("commit failed: %v", err)
-			}
-
-			ops = 0
-			txn = db.NewTxn()
-		}
-	}
-
-	return nil
 }
 
 func parseKey(key string) (string, error) {
@@ -246,11 +221,7 @@ func parseKey(key string) (string, error) {
 }
 
 func unmarshalKeyVal(fullKey string, data string) (proto.Message, error) {
-	keyParts := strings.Split(fullKey, "/")
-	if len(keyParts) < 4 || keyParts[0] != "" {
-		return nil, fmt.Errorf("invalid key: %q", fullKey)
-	}
-	key := path.Join(keyParts[3:]...)
+	key := stripAgentPrefix(fullKey)
 
 	model, err := models.GetModelForKey(key)
 	if err != nil {
@@ -266,8 +237,4 @@ func unmarshalKeyVal(fullKey string, data string) (proto.Message, error) {
 		return nil, err
 	}
 	return value, nil
-}
-
-func getTimeout() time.Duration {
-	return time.Second * time.Duration(timeout)
 }

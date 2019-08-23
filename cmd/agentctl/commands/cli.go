@@ -32,6 +32,7 @@ import (
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/servicelabel"
+	"google.golang.org/grpc"
 
 	"github.com/ligato/vpp-agent/cmd/agentctl/utils"
 	"github.com/ligato/vpp-agent/pkg/models"
@@ -56,6 +57,17 @@ func (cli *AgentCli) Init() {
 	cli.HTTPClient = utils.NewHTTPClient(httpAddr)
 }
 
+func (cli *AgentCli) NewGRPCClient() *grpc.ClientConn {
+	addr := net.JoinHostPort(global.AgentHost, global.PortGRPC)
+
+	conn, err := grpc.Dial(addr, grpc.WithInsecure())
+	if err != nil {
+		ExitWithError(fmt.Errorf("connecting to gRPC failed: %v", err))
+	}
+
+	return conn
+}
+
 func (cli *AgentCli) NewKVDBClient() keyval.BytesBroker {
 	etcdCfg := getEtcdConfig()
 
@@ -68,7 +80,7 @@ func (cli *AgentCli) NewKVDBClient() keyval.BytesBroker {
 
 	kvdb, err := etcd.NewEtcdConnectionWithBytes(etcdCfg, log)
 	if err != nil {
-		ExitWithError(err)
+		ExitWithError(fmt.Errorf("connecting to Etcd failed: %v", err))
 	}
 
 	return &kvdbClient{kvdb}
@@ -83,17 +95,6 @@ func getEtcdConfig() etcd.ClientConfig {
 		OpTimeout: time.Second * 10,
 	}
 	return cfg
-}
-
-func getKVDBPrefix(label string) string {
-	prefix := servicelabel.GetAllAgentsPrefix()
-	if label != "" {
-		prefix += label
-	}
-	if !strings.HasSuffix(prefix, "/") {
-		prefix += "/"
-	}
-	return prefix
 }
 
 func ensureAllAgentsPrefix(key string) string {
@@ -112,6 +113,17 @@ func completeFullKey(key string) string {
 	}
 	key = path.Join(servicelabel.GetAllAgentsPrefix(), global.ServiceLabel, key)
 	return key
+}
+
+func stripAgentPrefix(key string) string {
+	if !strings.HasPrefix(key, servicelabel.GetAllAgentsPrefix()) {
+		return key
+	}
+	keyParts := strings.Split(key, "/")
+	if len(keyParts) < 4 || keyParts[0] != "" {
+		return path.Join(keyParts[2:]...)
+	}
+	return path.Join(keyParts[3:]...)
 }
 
 // kvdbClient provides client access to the KVDB server.
