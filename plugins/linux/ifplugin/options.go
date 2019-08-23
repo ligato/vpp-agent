@@ -6,6 +6,7 @@ import (
 	"github.com/ligato/cn-infra/servicelabel"
 	"github.com/ligato/vpp-agent/plugins/kvscheduler"
 	"github.com/ligato/vpp-agent/plugins/linux/nsplugin"
+	"github.com/ligato/vpp-agent/plugins/netalloc"
 )
 
 // DefaultPlugin is a default instance of IfPlugin.
@@ -18,6 +19,7 @@ func NewPlugin(opts ...Option) *IfPlugin {
 	p.PluginName = "linux-ifplugin"
 	p.KVScheduler = &kvscheduler.DefaultPlugin
 	p.NsPlugin = &nsplugin.DefaultPlugin
+	p.AddrAlloc = &netalloc.DefaultPlugin
 	p.ServiceLabel = &servicelabel.DefaultPlugin
 
 	for _, o := range opts {

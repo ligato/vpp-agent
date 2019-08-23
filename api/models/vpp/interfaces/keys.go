@@ -20,8 +20,8 @@ import (
 
 	"github.com/gogo/protobuf/jsonpb"
 
-	"github.com/ligato/vpp-agent/pkg/models"
 	"github.com/ligato/vpp-agent/api/models/netalloc"
+	"github.com/ligato/vpp-agent/pkg/models"
 )
 
 // ModuleName is the module name used for models.
@@ -78,16 +78,6 @@ const (
 	// IP addresses to an interface.
 	addressKeyTemplate = addressKeyPrefix + "{address-source}/{address}"
 )
-
-type IPAddressSource string
-
-const (
-	IPAddressStatic    IPAddressSource = "static"
-	IPAddressAllocReq  IPAddressSource = "alloc-request"
-	IPAddressFromDHCP  IPAddressSource = "from-dhcp"
-	IPAddressAllocated IPAddressSource = "allocated"
-)
-
 
 /* Interface VRF (derived) */
 const (
@@ -207,18 +197,19 @@ func InterfaceAddressPrefix(iface string) string {
 }
 
 // InterfaceAddressKey returns key representing IP address assigned to VPP interface.
-func InterfaceAddressKey(iface string, address string, source IPAddressSource) string {
+func InterfaceAddressKey(iface string, address string, source netalloc.IPAddressSource) string {
 	if iface == "" {
 		iface = InvalidKeyPart
 	}
 
-	src := string(source)
+	src := source.String()
 	if src == "" {
 		src = InvalidKeyPart
 	}
 	if strings.HasPrefix(address, netalloc.AllocRefPrefix) {
-		src = string(IPAddressAllocReq)
+		src = netalloc.IPAddressSource_ALLOC_REF.String()
 	}
+	src = strings.ToLower(src)
 
 	// construct key without validating the IP address
 	key := strings.Replace(addressKeyTemplate, "{iface}", iface, 1)
@@ -229,7 +220,7 @@ func InterfaceAddressKey(iface string, address string, source IPAddressSource) s
 
 // ParseInterfaceAddressKey parses interface address from key derived
 // from interface by InterfaceAddressKey().
-func ParseInterfaceAddressKey(key string) (iface, address string, source IPAddressSource, invalidKey, isAddrKey bool) {
+func ParseInterfaceAddressKey(key string) (iface, address string, source netalloc.IPAddressSource, invalidKey, isAddrKey bool) {
 	parts := strings.Split(key, "/")
 	if len(parts) < 4 || parts[0] != "vpp" || parts[1] != "interface" {
 		return
@@ -259,19 +250,15 @@ func ParseInterfaceAddressKey(key string) (iface, address string, source IPAddre
 		invalidKey = true
 		return
 	}
-	switch parts[addrIdx+1] {
-	case string(IPAddressStatic):
-		fallthrough
-	case string(IPAddressAllocReq):
-		fallthrough
-	case string(IPAddressFromDHCP):
-		fallthrough
-	case string(IPAddressAllocated):
-		source = IPAddressSource(parts[addrIdx+1])
-	default:
+
+	// parse address source
+	src := strings.ToUpper(parts[addrIdx+1])
+	srcInt, validSrc := netalloc.IPAddressSource_value[src]
+	if !validSrc {
 		invalidKey = true
 		return
 	}
+	source = netalloc.IPAddressSource(srcInt)
 
 	// return address as is (not parsed - this is done by the netalloc plugin)
 	address = strings.Join(parts[addrIdx+2:], "/")

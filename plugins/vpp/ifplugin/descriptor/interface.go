@@ -28,6 +28,7 @@ import (
 
 	linux_intf "github.com/ligato/vpp-agent/api/models/linux/interfaces"
 	linux_ns "github.com/ligato/vpp-agent/api/models/linux/namespace"
+	netalloc_api "github.com/ligato/vpp-agent/api/models/netalloc"
 	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
@@ -500,7 +501,7 @@ func (d *InterfaceDescriptor) Dependencies(key string, intf *interfaces.Interfac
 					KeyPrefixes: []string{interfaces.InterfaceAddressPrefix(vxlanMulticast)},
 					KeySelector: func(key string) bool {
 						_, ifaceAddr, source, _, _ := interfaces.ParseInterfaceAddressKey(key)
-						if source != interfaces.IPAddressAllocReq {
+						if source != netalloc_api.IPAddressSource_ALLOC_REF {
 							ip, _, err := net.ParseCIDR(ifaceAddr)
 							return err == nil && ip.IsMulticast()
 						}
@@ -576,7 +577,7 @@ func (d *InterfaceDescriptor) DerivedValues(key string, intf *interfaces.Interfa
 	// IP addresses
 	for _, ipAddr := range intf.IpAddresses {
 		derValues = append(derValues, kvs.KeyValuePair{
-			Key:   interfaces.InterfaceAddressKey(intf.Name, ipAddr, interfaces.IPAddressStatic),
+			Key:   interfaces.InterfaceAddressKey(intf.Name, ipAddr, netalloc_api.IPAddressSource_STATIC),
 			Value: &prototypes.Empty{},
 		})
 	}

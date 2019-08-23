@@ -72,7 +72,7 @@ func NewInterfaceAddressDescriptor(ifHandler vppcalls.InterfaceVppAPI, addrAlloc
 func (d *InterfaceAddressDescriptor) IsInterfaceAddressKey(key string) bool {
 	_, _, source, _, isAddrKey := interfaces.ParseInterfaceAddressKey(key)
 	return isAddrKey &&
-		(source == interfaces.IPAddressStatic || source == interfaces.IPAddressAllocReq)
+		(source == netalloc_api.IPAddressSource_STATIC || source == netalloc_api.IPAddressSource_ALLOC_REF)
 }
 
 // Validate validates IP address to be assigned to an interface.
@@ -82,7 +82,7 @@ func (d *InterfaceAddressDescriptor) Validate(key string, emptyVal proto.Message
 		return errors.New("invalid key")
 	}
 
-	return d.addrAlloc.ValidateIPAddress(addr, iface)
+	return d.addrAlloc.ValidateIPAddress(addr, iface, "ip_addresses")
 }
 
 // Create assigns IP address to an interface.
@@ -153,10 +153,10 @@ func (d *InterfaceAddressDescriptor) Dependencies(key string, emptyVal proto.Mes
 // DerivedValues derives allocated IP address as PROPERTY (if netalloc was used).
 func (d *InterfaceAddressDescriptor) DerivedValues(key string, emptyVal proto.Message) (derValues []kvs.KeyValuePair) {
 	iface, addr, source, _, _ := interfaces.ParseInterfaceAddressKey(key)
-	if source == interfaces.IPAddressAllocReq {
+	if source == netalloc_api.IPAddressSource_ALLOC_REF {
 		ipAddr, _ := d.addrAlloc.GetOrParseIPAddress(addr, iface, netalloc_api.IPAddressForm_ADDR_WITH_MASK)
 		derValues = append(derValues, kvs.KeyValuePair{
-			Key:   interfaces.InterfaceAddressKey(iface, ipAddr.String(), interfaces.IPAddressAllocated),
+			Key:   interfaces.InterfaceAddressKey(iface, ipAddr.String(), netalloc_api.IPAddressSource_ALLOCATED),
 			Value: &prototypes.Empty{},
 		})
 	}

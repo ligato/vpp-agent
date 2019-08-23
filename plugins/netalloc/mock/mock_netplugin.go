@@ -45,13 +45,19 @@ func (p *NetAlloc) GetAddressAllocDep(addrOrAllocRef, ifaceName, depLabelPrefix 
 
 // ValidateIPAddress checks validity of address reference or, if <addrOrAllocRef>
 // already contains an actual IP address, it tries to parse it.
-func (p *NetAlloc) ValidateIPAddress(addrOrAllocRef, ifaceName string) error {
+func (p *NetAlloc) ValidateIPAddress(addrOrAllocRef, ifaceName, fieldName string) error {
 	_, _, _, isRef, err := utils.ParseAddrAllocRef(addrOrAllocRef, ifaceName)
-	if isRef {
-		return err
+	if !isRef {
+		_, err = utils.ParseIPAddr(addrOrAllocRef)
 	}
-	_, err = utils.ParseIPAddr(addrOrAllocRef)
-	return err
+	if err != nil {
+		if fieldName != "" {
+			return kvs.NewInvalidValueError(err, fieldName)
+		} else {
+			return kvs.NewInvalidValueError(err)
+		}
+	}
+	return nil
 }
 
 // GetOrParseIPAddress tries to get allocated IP address referenced by

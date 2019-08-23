@@ -3,8 +3,8 @@ package netalloc
 import (
 	"net"
 
-	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/api/models/netalloc"
+	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 )
 
 // AddressAllocator provides methods for descriptors of other plugins to reference
@@ -79,7 +79,7 @@ import (
 //         }
 //     }
 //
-type AddressAllocator interface{
+type AddressAllocator interface {
 	// GetAddressAllocDep reads what can be potentially a reference to an allocated
 	// address (of any type). If <allocRef> is indeed a reference, the function
 	// returns the corresponding dependency to be passed further into KVScheduler
@@ -90,7 +90,7 @@ type AddressAllocator interface{
 
 	// ValidateIPAddress checks validity of address reference or, if <addrOrAllocRef>
 	// already contains an actual IP address, it tries to parse it.
-	ValidateIPAddress(addrOrAllocRef, ifaceName string) error
+	ValidateIPAddress(addrOrAllocRef, ifaceName, fieldName string) error
 
 	// GetOrParseIPAddress tries to get allocated IP address referenced by
 	// <addrOrAllocRef> in the requested form. But if the string contains

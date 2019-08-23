@@ -3,8 +3,8 @@ package descriptor
 import (
 	"github.com/pkg/errors"
 
-	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	"github.com/ligato/vpp-agent/api/models/netalloc"
+	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	"github.com/ligato/vpp-agent/pkg/models"
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	nslinuxcalls "github.com/ligato/vpp-agent/plugins/linux/nsplugin/linuxcalls"

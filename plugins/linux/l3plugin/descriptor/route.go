@@ -26,8 +26,10 @@ import (
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/utils/addrs"
 
+	"github.com/docker/docker/api/types/network"
 	ifmodel "github.com/ligato/vpp-agent/api/models/linux/interfaces"
 	"github.com/ligato/vpp-agent/api/models/linux/l3"
+	"github.com/ligato/vpp-agent/api/models/netalloc"
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/linux/ifplugin"
 	ifdescriptor "github.com/ligato/vpp-agent/plugins/linux/ifplugin/descriptor"
@@ -267,11 +269,13 @@ func (d *RouteDescriptor) Dependencies(key string, route *linux_l3.Route) []kvs.
 						// GW address is neighbour as told by another link-local route
 						return true
 					}
-					ifName, _, network, invalidIP, isAddrKey := ifmodel.ParseInterfaceAddressKey(key)
-					if isAddrKey && !invalidIP && ifName == route.OutgoingInterface && network.Contains(gwAddr) {
-						// GW address is inside the local network of the outgoing interface
-						// as given by the assigned IP address
-						return true
+					ifName, address, source, _, isAddrKey := ifmodel.ParseInterfaceAddressKey(key)
+					if isAddrKey && source != netalloc.IPAddressSource_ALLOC_REF {
+						if _, network, err := net.ParseCIDR(address); err == nil && network.Contains(gwAddr) {
+							// GW address is inside the local network of the outgoing interface
+							// as given by the assigned IP address
+							return true
+						}
 					}
 					return false
 				},

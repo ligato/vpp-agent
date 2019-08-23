@@ -47,7 +47,7 @@ enum AddressType {
 // IPAddressForm can be used in descriptors whose models reference allocated IP
 // addresses, to ask for a specific form in which the address should applied.
 enum IPAddressForm {
-    UNDEFINED = 0;
+    UNDEFINED_FORM = 0;
 
     // ADDR_ONLY = apply address without mask, e.g. 192.168.2.5
     ADDR_ONLY = 1;
@@ -64,6 +64,25 @@ enum IPAddressForm {
     // /128 for IPv6)
     SINGLE_ADDR_NET = 4;
 };
+
+// IPAddressSource can be used to remember the source of an IP address.
+// (e.g. to distinguish allocated IP addresses from statically defined ones)
+enum IPAddressSource {
+    UNDEFINED_SOURCE = 0;
+
+    // STATIC is IP address statically assigned in the NB configuration.
+    STATIC = 1;
+
+    // FROM_DHCP is set when IP address is obtained from DHCP.
+    FROM_DHCP = 2;
+
+    // ALLOC_REF is a reference inside NB configuration to an allocated
+    // IP address.
+    ALLOC_REF = 3;
+
+    // ALLOCATED IP address via netalloc.
+    ALLOCATED = 4;
+}
 
 // AddressAllocation represents a single allocated IP address.
 //
