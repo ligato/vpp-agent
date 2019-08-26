@@ -450,7 +450,7 @@ func (d *InterfaceDescriptor) Retrieve(correlate []adapter.InterfaceKVWithMetada
 			// correlate references to allocated IP addresses
 			intf.Interface.IpAddresses = d.addrAlloc.CorrelateRetrievedIPs(
 				expCfg.IpAddresses, intf.Interface.IpAddresses,
-				intf.Interface.Name, false, netalloc.IPAddressForm_ADDR_WITH_MASK)
+				intf.Interface.Name, netalloc.IPAddressForm_ADDR_WITH_MASK)
 		}
 
 		// verify links between VPP and Linux side

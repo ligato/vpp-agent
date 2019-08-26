@@ -10,7 +10,9 @@ import (
 
 // ParseIPAddr parses IP address from string.
 func ParseIPAddr(addr string, expNet *net.IPNet) (ipNet *net.IPNet, fromExpNet bool, err error) {
-	expNet = &net.IPNet{IP: expNet.IP.Mask(expNet.Mask), Mask: expNet.Mask}
+	if expNet != nil {
+		expNet = &net.IPNet{IP: expNet.IP.Mask(expNet.Mask), Mask: expNet.Mask}
+	}
 
 	if strings.Contains(addr, "/") {
 		// IP with mask
@@ -18,8 +20,14 @@ func ParseIPAddr(addr string, expNet *net.IPNet) (ipNet *net.IPNet, fromExpNet b
 		if err != nil {
 			return nil, false, err
 		}
+		if ip.To4() != nil {
+			ip = ip.To4()
+		}
 		ipNet.IP = ip
-		return ipNet, expNet.Contains(ip), nil
+		if expNet != nil {
+			fromExpNet = expNet.Contains(ip)
+		}
+		return ipNet, fromExpNet, nil
 	}
 
 	// IP without mask
@@ -27,10 +35,13 @@ func ParseIPAddr(addr string, expNet *net.IPNet) (ipNet *net.IPNet, fromExpNet b
 	if ip == nil {
 		return nil, false, fmt.Errorf("invalid IP address: %s", addr)
 	}
+	if ip.To4() != nil {
+		ip = ip.To4()
+	}
 	if expNet != nil {
 		if expNet.Contains(ip) {
 			// IP address from the expected network
-			return &net.IPNet{IP: ip.To4(), Mask: expNet.Mask}, true,nil
+			return &net.IPNet{IP: ip, Mask: expNet.Mask}, true,nil
 		}
 	}
 
@@ -49,7 +60,7 @@ func ParseIPAddr(addr string, expNet *net.IPNet) (ipNet *net.IPNet, fromExpNet b
 
 // ParseAddrAllocRef parses reference to allocated address.
 func ParseAddrAllocRef(addrAllocRef, expIface string) (
-	network, iface string, isRef bool, err error) {
+	network, iface string, isGW, isRef bool, err error) {
 
 	if !strings.HasPrefix(addrAllocRef, netalloc.AllocRefPrefix) {
 		isRef = false
@@ -58,9 +69,13 @@ func ParseAddrAllocRef(addrAllocRef, expIface string) (
 
 	isRef = true
 	addrAllocRef = strings.TrimPrefix(addrAllocRef, netalloc.AllocRefPrefix)
-	parts := strings.SplitN(addrAllocRef, "/", 2)
+	if strings.HasSuffix(addrAllocRef, netalloc.AllocRefGWSuffix) {
+		addrAllocRef = strings.TrimSuffix(addrAllocRef, netalloc.AllocRefGWSuffix)
+		isGW = true
+	}
 
 	// parse network name
+	parts := strings.SplitN(addrAllocRef, "/", 2)
 	network = parts[0]
 	if network == "" {
 		err = fmt.Errorf("address allocation reference with empty network name: %s",
@@ -68,6 +83,7 @@ func ParseAddrAllocRef(addrAllocRef, expIface string) (
 		return
 	}
 
+	// parse interface name
 	if len(parts) == 2 {
 		iface = parts[1]
 		if expIface != "" && iface != expIface {
@@ -93,7 +109,12 @@ func GetIPAddrInGivenForm(addr *net.IPNet, form netalloc.IPAddressForm) *net.IPN
 	case netalloc.IPAddressForm_UNDEFINED_FORM:
 		return addr
 	case netalloc.IPAddressForm_ADDR_ONLY:
-		return &net.IPNet{IP: addr.IP}
+		zeroMaskIpv4 := net.CIDRMask(0, 32)
+		zeroMaskIpv6 := net.CIDRMask(0, 128)
+		if addr.IP.To4() != nil {
+			return &net.IPNet{IP: addr.IP, Mask: zeroMaskIpv4}
+		}
+		return &net.IPNet{IP: addr.IP, Mask: zeroMaskIpv6}
 	case netalloc.IPAddressForm_ADDR_WITH_MASK:
 		return addr
 	case netalloc.IPAddressForm_ADDR_NET:

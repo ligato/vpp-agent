@@ -64,11 +64,16 @@ enum IPAddressSource {
 // To reference allocated address, instead of entering specific IP address
 // for interface/route/ARP/..., use one of the following string templates
 // prefixed with netalloc keyword "alloc" followed by colon:
-//  a) full reference:
+//  a) reference IP address allocated for an interface:
 //        "alloc:<network_name>/<interface_name>"
 //  b) when interface is given (e.g. when asked for IP from interface model),
 //     interface_name can be omitted:
 //        "alloc:<network_name>"
+//  c) reference default gateway IP address assigned to an interface:
+//        "alloc:<network_name>/<interface_name>/GW"
+//  d) when asking for GW IP for interface which is given, interface_name
+//     can be omitted:
+//        "alloc:<network_name>/GW"
 message IPAllocation {
     // NetworkName is some label assigned to the network where the IP address
     // was assigned to the given interface.

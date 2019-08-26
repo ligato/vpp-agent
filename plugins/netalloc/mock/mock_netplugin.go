@@ -8,11 +8,21 @@ import (
 	"github.com/ligato/vpp-agent/pkg/models"
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/netalloc/utils"
+	plugin "github.com/ligato/vpp-agent/plugins/netalloc"
 )
 
 // NetAlloc is a mock version of the netplugin, suitable for unit testing.
 type NetAlloc struct {
-	allocated map[string]*netalloc.IPAllocMetadata // allocation name -> parsed address
+	realNetAlloc *plugin.Plugin
+	allocated    map[string]*netalloc.IPAllocMetadata // allocation name -> parsed address
+}
+
+// NewMockNetAlloc is a constructor for mock netalloc plugin.
+func NewMockNetAlloc() *NetAlloc {
+	return &NetAlloc{
+		realNetAlloc: &plugin.Plugin{},
+		allocated:    make(map[string]*netalloc.IPAllocMetadata),
+	}
 }
 
 // Allocate simulates allocation of an IP address.
@@ -50,10 +60,15 @@ func (p *NetAlloc) Deallocate(network, ifaceName string) {
 	delete(p.allocated, allocName)
 }
 
+// CreateAddressAllocRef creates reference to an allocated IP address.
+func (p *NetAlloc) CreateAddressAllocRef(network, iface string, getGW bool) string {
+	return p.realNetAlloc.CreateAddressAllocRef(network, iface, getGW)
+}
+
 // ParseAddressAllocRef parses reference to an allocated IP address.
 func (p *NetAlloc) ParseAddressAllocRef(addrAllocRef, expIface string) (
-	network, iface string, isRef bool, err error) {
-	return utils.ParseAddrAllocRef(addrAllocRef, expIface)
+	network, iface string, isGW, isRef bool, err error) {
+	return p.realNetAlloc.ParseAddressAllocRef(addrAllocRef, expIface)
 }
 
 // GetAddressAllocDep is not implemented here.
@@ -64,19 +79,8 @@ func (p *NetAlloc) GetAddressAllocDep(addrOrAllocRef, ifaceName, depLabelPrefix 
 
 // ValidateIPAddress checks validity of address reference or, if <addrOrAllocRef>
 // already contains an actual IP address, it tries to parse it.
-func (p *NetAlloc) ValidateIPAddress(addrOrAllocRef, ifaceName, fieldName string) error {
-	_, _, isRef, err := utils.ParseAddrAllocRef(addrOrAllocRef, ifaceName)
-	if !isRef {
-		_, _, err = utils.ParseIPAddr(addrOrAllocRef, nil)
-	}
-	if err != nil {
-		if fieldName != "" {
-			return kvs.NewInvalidValueError(err, fieldName)
-		} else {
-			return kvs.NewInvalidValueError(err)
-		}
-	}
-	return nil
+func (p *NetAlloc) ValidateIPAddress(addrOrAllocRef, ifaceName, fieldName string, gwCheck plugin.GwValidityCheck) error {
+	return p.realNetAlloc.ValidateIPAddress(addrOrAllocRef, ifaceName, fieldName, gwCheck)
 }
 
 // GetOrParseIPAddress tries to get allocated interface (or GW) IP address
@@ -86,9 +90,9 @@ func (p *NetAlloc) ValidateIPAddress(addrOrAllocRef, ifaceName, fieldName string
 // For ADDR_ONLY address form, the returned <addr> will have the mask unset
 // and the IP address should be accessed as <addr>.IP
 func (p *NetAlloc) GetOrParseIPAddress(addrOrAllocRef string, ifaceName string,
-	getGW bool, addrForm netalloc.IPAddressForm) (addr *net.IPNet, err error) {
+	addrForm netalloc.IPAddressForm) (addr *net.IPNet, err error) {
 
-	network, iface, isRef, err := utils.ParseAddrAllocRef(addrOrAllocRef, ifaceName)
+	network, iface, getGW, isRef, err := utils.ParseAddrAllocRef(addrOrAllocRef, ifaceName)
 	if isRef && err != nil {
 		return nil, err
 	}
@@ -122,6 +126,6 @@ func (p *NetAlloc) GetOrParseIPAddress(addrOrAllocRef string, ifaceName string,
 
 // CorrelateRetrievedIPs is not implemented here.
 func (p *NetAlloc) CorrelateRetrievedIPs(expAddrsOrRefs []string, retrievedAddrs []string,
-	ifaceName string, areGWs bool, addrForm netalloc.IPAddressForm) (correlated []string) {
+	ifaceName string, addrForm netalloc.IPAddressForm) (correlated []string) {
 	return retrievedAddrs
 }

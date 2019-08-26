@@ -15,8 +15,6 @@
 package linux_l3
 
 import (
-	"net"
-	"strconv"
 	"strings"
 
 	"github.com/ligato/vpp-agent/pkg/models"
@@ -37,7 +35,8 @@ var (
 		Version: "v2",
 		Type:    "route",
 	}, models.WithNameTemplate(
-		`{{with ipnet .DstNetwork}}{{printf "%s/%d" .IP .MaskSize}}{{end}}/{{.OutgoingInterface}}`,
+		`{{with ipnet .DstNetwork}}{{printf "%s/%d" .IP .MaskSize}}`+
+			`{{else}}{{.DstNetwork}}{{end}}/{{.OutgoingInterface}}`,
 	))
 )
 
@@ -64,14 +63,16 @@ const (
 	LinkLocalRouteKeyPrefix = "linux/link-local-route/"
 
 	// staticLinkLocalRouteKeyTemplate is a template for key derived from link-local route.
-	linkLocalRouteKeyTemplate = LinkLocalRouteKeyPrefix + "{out-intf}/{dest-net}/{dest-mask}"
+	linkLocalRouteKeyTemplate = LinkLocalRouteKeyPrefix + "{out-iface}/dest-address/{dest-address}"
 )
 
 /* Link-local Route (derived) */
 
 // StaticLinkLocalRouteKey returns a derived key used to represent link-local route.
 func StaticLinkLocalRouteKey(dstAddr, outgoingInterface string) string {
-	return RouteKeyFromTemplate(linkLocalRouteKeyTemplate, dstAddr, outgoingInterface)
+	key := strings.Replace(linkLocalRouteKeyTemplate, "{dest-address}", dstAddr, 1)
+	key = strings.Replace(key, "{out-iface}", outgoingInterface, 1)
+	return key
 }
 
 // StaticLinkLocalRoutePrefix returns longest-common prefix of keys representing
@@ -81,42 +82,18 @@ func StaticLinkLocalRoutePrefix(outgoingInterface string) string {
 }
 
 // ParseStaticLinkLocalRouteKey parses route attributes from a key derived from link-local route.
-func ParseStaticLinkLocalRouteKey(key string) (dstNetAddr *net.IPNet, outgoingInterface string, isRouteKey bool) {
-	return parseRouteFromKeySuffix(key, LinkLocalRouteKeyPrefix, "invalid Linux link-local Route key: ")
-}
+func ParseStaticLinkLocalRouteKey(key string) (dstAddr string, outgoingInterface string, isRouteKey bool) {
+	if strings.HasPrefix(key, LinkLocalRouteKeyPrefix) {
+		routeSuffix := strings.TrimPrefix(key, LinkLocalRouteKeyPrefix)
+		parts := strings.Split(routeSuffix, "/dest-address/")
 
-/* Route helpers */
-
-// RouteKeyFromTemplate fills key template with route attributes.
-func RouteKeyFromTemplate(template, dstAddr, outgoingInterface string) string {
-	_, dstNet, _ := net.ParseCIDR(dstAddr)
-	dstNetAddr := dstNet.IP.String()
-	dstNetMask, _ := dstNet.Mask.Size()
-	key := strings.Replace(template, "{dest-net}", dstNetAddr, 1)
-	key = strings.Replace(key, "{dest-mask}", strconv.Itoa(dstNetMask), 1)
-	key = strings.Replace(key, "{out-intf}", outgoingInterface, 1)
-	return key
-}
-
-// parseRouteFromKeySuffix parses destination network and outgoing interface from a route key suffix.
-func parseRouteFromKeySuffix(key, prefix, errPrefix string) (dstNetAddr *net.IPNet, outgoingInterface string, isRouteKey bool) {
-	var err error
-	if strings.HasPrefix(key, prefix) {
-		routeSuffix := strings.TrimPrefix(key, prefix)
-		routeComps := strings.Split(routeSuffix, "/")
-
-		// beware: interface name may contain forward slashes
-		if len(routeComps) < 3 {
-			return nil, "", false
+		if len(parts) != 2 {
+			return "", "", false
 		}
-		lastIdx := len(routeComps) - 1
-		_, dstNetAddr, err = net.ParseCIDR(routeComps[lastIdx-1] + "/" + routeComps[lastIdx])
-		if err != nil {
-			return nil, "", false
-		}
-		outgoingInterface = strings.Join(routeComps[:lastIdx-1], "/")
+		outgoingInterface = parts[0]
+		dstAddr = parts[1]
 		isRouteKey = true
 		return
 	}
-	return nil, "", false
+	return "", "", false
 }

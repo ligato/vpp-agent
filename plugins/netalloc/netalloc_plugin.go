@@ -70,9 +70,21 @@ func (p *Plugin) Close() error {
 	return nil
 }
 
+// CreateAddressAllocRef creates reference to an allocated IP address.
+func (p *Plugin) CreateAddressAllocRef(network, iface string, getGW bool) string {
+	ref := netalloc.AllocRefPrefix + network
+	if iface != "" {
+		ref += "/" + iface
+	}
+	if getGW {
+		ref += netalloc.AllocRefGWSuffix
+	}
+	return ref
+}
+
 // ParseAddressAllocRef parses reference to an allocated IP address.
 func (p *Plugin) ParseAddressAllocRef(addrAllocRef, expIface string) (
-	network, iface string, isRef bool, err error) {
+	network, iface string, isGW, isRef bool, err error) {
 	return utils.ParseAddrAllocRef(addrAllocRef, expIface)
 }
 
@@ -84,7 +96,7 @@ func (p *Plugin) ParseAddressAllocRef(addrAllocRef, expIface string) (
 func (p *Plugin) GetAddressAllocDep(addrOrAllocRef, ifaceName, depLabelPrefix string) (
 	dep kvs.Dependency, hasAllocDep bool) {
 
-	network, iface, isRef, err := utils.ParseAddrAllocRef(addrOrAllocRef, ifaceName)
+	network, iface, _, isRef, err := utils.ParseAddrAllocRef(addrOrAllocRef, ifaceName)
 	if !isRef || err != nil {
 		return kvs.Dependency{}, false
 	}
@@ -100,10 +112,21 @@ func (p *Plugin) GetAddressAllocDep(addrOrAllocRef, ifaceName, depLabelPrefix st
 
 // ValidateIPAddress checks validity of address reference or, if <addrOrAllocRef>
 // already contains an actual IP address, it tries to parse it.
-func (p *Plugin) ValidateIPAddress(addrOrAllocRef, ifaceName, fieldName string) error {
-	_, _, isRef, err := utils.ParseAddrAllocRef(addrOrAllocRef, ifaceName)
+func (p *Plugin) ValidateIPAddress(addrOrAllocRef, ifaceName, fieldName string, gwCheck GwValidityCheck) error {
+	_, _, isGW, isRef, err := utils.ParseAddrAllocRef(addrOrAllocRef, ifaceName)
 	if !isRef {
 		_, _, err = utils.ParseIPAddr(addrOrAllocRef, nil)
+	} else if err == nil {
+		switch gwCheck {
+		case GWRefRequired:
+			if !isGW {
+				err = errors.New("expected GW address reference")
+			}
+		case GwRefUnexpected:
+			if isGW {
+				err = errors.New("expected non-GW address reference")
+			}
+		}
 	}
 	if err != nil {
 		if fieldName != "" {
@@ -122,9 +145,9 @@ func (p *Plugin) ValidateIPAddress(addrOrAllocRef, ifaceName, fieldName string) 
 // For ADDR_ONLY address form, the returned <addr> will have the mask unset
 // and the IP address should be accessed as <addr>.IP
 func (p *Plugin) GetOrParseIPAddress(addrOrAllocRef string, ifaceName string,
-	getGW bool, addrForm netalloc.IPAddressForm) (addr *net.IPNet, err error) {
+	addrForm netalloc.IPAddressForm) (addr *net.IPNet, err error) {
 
-	network, iface, isRef, err := utils.ParseAddrAllocRef(addrOrAllocRef, ifaceName)
+	network, iface, getGW, isRef, err := utils.ParseAddrAllocRef(addrOrAllocRef, ifaceName)
 	if isRef && err != nil {
 		return nil, err
 	}
@@ -171,11 +194,11 @@ func (p *Plugin) GetOrParseIPAddress(addrOrAllocRef string, ifaceName string,
 // The method returns one IP address or address-allocation reference for every
 // address from <retrievedAddrs>.
 func (p *Plugin) CorrelateRetrievedIPs(expAddrsOrRefs []string, retrievedAddrs []string,
-	ifaceName string, areGWs bool, addrForm netalloc.IPAddressForm) (correlated []string) {
+	ifaceName string, addrForm netalloc.IPAddressForm) (correlated []string) {
 
 	expParsed := make([]*net.IPNet, len(expAddrsOrRefs))
 	for i, addr := range expAddrsOrRefs {
-		expParsed[i], _ = p.GetOrParseIPAddress(addr, ifaceName, areGWs, addrForm)
+		expParsed[i], _ = p.GetOrParseIPAddress(addr, ifaceName, addrForm)
 	}
 
 	for _, addr := range retrievedAddrs {

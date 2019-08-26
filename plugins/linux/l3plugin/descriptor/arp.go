@@ -131,7 +131,7 @@ func (d *ARPDescriptor) Validate(key string, arp *l3.ARPEntry) (err error) {
 	if arp.HwAddress == "" {
 		return kvs.NewInvalidValueError(ErrARPWithoutHwAddr, "hw_address")
 	}
-	return d.addrAlloc.ValidateIPAddress(arp.IpAddress, "", "ip_address")
+	return d.addrAlloc.ValidateIPAddress(arp.IpAddress, "", "ip_address", netalloc.GWRefAllowed)
 }
 
 // Create creates ARP entry.
@@ -170,7 +170,7 @@ func (d *ARPDescriptor) updateARPEntry(arp *l3.ARPEntry, actionName string, acti
 	neigh.LinkIndex = ifMeta.LinuxIfIndex
 
 	// set IP address
-	ipAddr, err := d.addrAlloc.GetOrParseIPAddress(arp.IpAddress, "", false,
+	ipAddr, err := d.addrAlloc.GetOrParseIPAddress(arp.IpAddress, "",
 		netalloc_api.IPAddressForm_ADDR_ONLY)
 	if err != nil {
 		d.log.Error(err)
@@ -292,7 +292,9 @@ func (d *ARPDescriptor) Retrieve(correlate []adapter.ARPKVWithMetadata) ([]adapt
 			if expCfg, hasExpCfg := expCfg[hwLabel(arp.Value)]; hasExpCfg {
 				arp.Value.IpAddress = d.addrAlloc.CorrelateRetrievedIPs(
 					[]string{expCfg.IpAddress}, []string{arp.Value.IpAddress},
-					"", false, netalloc_api.IPAddressForm_ADDR_ONLY)[0]
+					"", netalloc_api.IPAddressForm_ADDR_ONLY)[0]
+				// recreate key in case the IP address was replaced with a netalloc link
+				arp.Key = l3.ArpKey(arp.Value.Interface, arp.Value.IpAddress)
 			}
 			values = append(values, arp)
 		}

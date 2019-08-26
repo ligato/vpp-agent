@@ -56,14 +56,23 @@ func (Route_Scope) EnumDescriptor() ([]byte, []int) {
 }
 
 type Route struct {
-	OutgoingInterface    string      `protobuf:"bytes,1,opt,name=outgoing_interface,json=outgoingInterface,proto3" json:"outgoing_interface,omitempty"`
-	Scope                Route_Scope `protobuf:"varint,2,opt,name=scope,proto3,enum=linux.l3.Route_Scope" json:"scope,omitempty"`
-	DstNetwork           string      `protobuf:"bytes,3,opt,name=dst_network,json=dstNetwork,proto3" json:"dst_network,omitempty"`
-	GwAddr               string      `protobuf:"bytes,4,opt,name=gw_addr,json=gwAddr,proto3" json:"gw_addr,omitempty"`
-	Metric               uint32      `protobuf:"varint,5,opt,name=metric,proto3" json:"metric,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}    `json:"-"`
-	XXX_unrecognized     []byte      `json:"-"`
-	XXX_sizecache        int32       `json:"-"`
+	// Outgoing interface logical name (mandatory).
+	OutgoingInterface string `protobuf:"bytes,1,opt,name=outgoing_interface,json=outgoingInterface,proto3" json:"outgoing_interface,omitempty"`
+	// The scope of the area where the link is valid.
+	Scope Route_Scope `protobuf:"varint,2,opt,name=scope,proto3,enum=linux.l3.Route_Scope" json:"scope,omitempty"`
+	// Destination network address in the format <address>/<prefix> (mandatory)
+	// Address can be also allocated via netalloc plugin and referenced here,
+	// see: api/models/netalloc/netalloc.proto
+	DstNetwork string `protobuf:"bytes,3,opt,name=dst_network,json=dstNetwork,proto3" json:"dst_network,omitempty"`
+	// Gateway IP address (without mask, optional).
+	// Address can be also allocated via netalloc plugin and referenced here,
+	// see: api/models/netalloc/netalloc.proto
+	GwAddr string `protobuf:"bytes,4,opt,name=gw_addr,json=gwAddr,proto3" json:"gw_addr,omitempty"`
+	// routing metric (weight)
+	Metric               uint32   `protobuf:"varint,5,opt,name=metric,proto3" json:"metric,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
 func (m *Route) Reset()         { *m = Route{} }

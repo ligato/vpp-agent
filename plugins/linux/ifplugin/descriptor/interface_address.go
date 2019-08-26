@@ -93,7 +93,7 @@ func (d *InterfaceAddressDescriptor) Validate(key string, emptyVal proto.Message
 		return errors.New("invalid key")
 	}
 
-	return d.addrAlloc.ValidateIPAddress(addr, iface, "ip_addresses")
+	return d.addrAlloc.ValidateIPAddress(addr, iface, "ip_addresses", netalloc.GwRefUnexpected)
 }
 
 // Create assigns IP address to an interface.
@@ -107,8 +107,7 @@ func (d *InterfaceAddressDescriptor) Create(key string, emptyVal proto.Message) 
 		return nil, err
 	}
 
-	ipAddr, err := d.addrAlloc.GetOrParseIPAddress(addr, iface, false,
-		netalloc_api.IPAddressForm_ADDR_WITH_MASK)
+	ipAddr, err := d.addrAlloc.GetOrParseIPAddress(addr, iface, netalloc_api.IPAddressForm_ADDR_WITH_MASK)
 	if err != nil {
 		d.log.Error(err)
 		return nil, err
@@ -167,8 +166,7 @@ func (d *InterfaceAddressDescriptor) Delete(key string, emptyVal proto.Message, 
 		return err
 	}
 
-	ipAddr, err := d.addrAlloc.GetOrParseIPAddress(addr, iface, false,
-		netalloc_api.IPAddressForm_ADDR_WITH_MASK)
+	ipAddr, err := d.addrAlloc.GetOrParseIPAddress(addr, iface, netalloc_api.IPAddressForm_ADDR_WITH_MASK)
 	if err != nil {
 		d.log.Error(err)
 		return err

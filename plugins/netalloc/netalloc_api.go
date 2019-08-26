@@ -7,6 +7,19 @@ import (
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 )
 
+
+// GwValidityCheck is used in ValidateIPAddress to tell if a GW reference is (un)expected/required.
+type GwValidityCheck int
+const (
+	// GWRefAllowed is used when it doesn't matter if reference points to interface
+	// address or GW address.
+	GWRefAllowed GwValidityCheck = iota
+	// GWRefAllowed is used when an IP address reference should point to GW address.
+	GWRefRequired
+	// GwRefUnexpected is used when an IP address reference should not point to GW address.
+	GwRefUnexpected
+)
+
 // AddressAllocator provides methods for descriptors of other plugins to reference
 // and obtain allocated addresses.
 //
@@ -33,7 +46,7 @@ import (
 //     }
 //
 //     func (d *Descriptor) Create(key string, item *mymodel.MyModel) (metadata interface{}, err error) {
-//         addr, err := d.netallocPlugin.GetOrParseIPAddress(item.IpAddress, "", false, netalloc.ADDR_ONLY)
+//         addr, err := d.netallocPlugin.GetOrParseIPAddress(item.IpAddress, "", netalloc.ADDR_ONLY)
 //         if err != nil {
 //             d.log.Error(err)
 //             return nil, err
@@ -43,7 +56,7 @@ import (
 //     }
 //
 //     func (d *Descriptor) Delete(key string, item *mymodel.MyModel) (err error) {
-//         addr, err := d.netallocPlugin.GetOrParseIPAddress(item.IpAddress, "", false, netalloc.ADDR_ONLY)
+//         addr, err := d.netallocPlugin.GetOrParseIPAddress(item.IpAddress, "", netalloc.ADDR_ONLY)
 //         if err != nil {
 //             d.log.Error(err)
 //             return nil, err
@@ -53,12 +66,12 @@ import (
 //     }
 //
 //     func (d *Descriptor) Update(key string, oldItem, newItem *mymodel.MyModel, oldMetadata interface{}) (newMetadata interface{}, err error) { {
-//         prevAddr, err := d.netallocPlugin.GetOrParseIPAddress(oldItem.IpAddress, "", false, netalloc.ADDR_ONLY)
+//         prevAddr, err := d.netallocPlugin.GetOrParseIPAddress(oldItem.IpAddress, "", netalloc.ADDR_ONLY)
 //         if err != nil {
 //             d.log.Error(err)
 //             return nil, err
 //         }
-//         newAddr, err := d.netallocPlugin.GetOrParseIPAddress(newItem.IpAddress, "", false, netalloc.ADDR_ONLY)
+//         newAddr, err := d.netallocPlugin.GetOrParseIPAddress(newItem.IpAddress, "", netalloc.ADDR_ONLY)
 //         if err != nil {
 //             d.log.Error(err)
 //             return nil, err
@@ -73,7 +86,7 @@ import (
 //         for _, item := range retrieved {
 //             // get expected item configuration ... (store to expCfg)
 //             item.IpAddress = d.netallocPlugin.CorrelateRetrievedIPs(
-//                 []string{expCfg.IpAddress}, []string{item.IpAddress}, "", false, netalloc.ADDR_ONLY)[0]
+//                 []string{expCfg.IpAddress}, []string{item.IpAddress}, "", netalloc.ADDR_ONLY)[0]
 //         }
 //     }
 //
@@ -81,9 +94,12 @@ import (
 // (for IP allocations, the descriptor name is stored in the constant IPAllocDescriptorName
 // defined in plugins/netalloc/descriptor)
 type AddressAllocator interface {
+	// CreateAddressAllocRef creates reference to an allocated IP address.
+	CreateAddressAllocRef(network, iface string, getGW bool) string
+
 	// ParseAddressAllocRef parses reference to an allocated IP address.
 	ParseAddressAllocRef(addrAllocRef, expIface string) (
-		network, iface string, isRef bool, err error)
+		network, iface string, isGW, isRef bool, err error)
 
 	// GetAddressAllocDep reads what can be potentially a reference to an allocated
 	// IP address. If <allocRef> is indeed a reference, the function returns
@@ -95,7 +111,7 @@ type AddressAllocator interface {
 
 	// ValidateIPAddress checks validity of address reference or, if <addrOrAllocRef>
 	// already contains an actual IP address, it tries to parse it.
-	ValidateIPAddress(addrOrAllocRef, expIface, fieldName string) error
+	ValidateIPAddress(addrOrAllocRef, expIface, fieldName string, gwCheck GwValidityCheck) error
 
 	// GetOrParseIPAddress tries to get allocated interface (or GW) IP address
 	// referenced by <addrOrAllocRef> in the requested form. But if the string
@@ -103,7 +119,7 @@ type AddressAllocator interface {
 	// using methods from the net package and returned in the requested form.
 	// For ADDR_ONLY address form, the returned <addr> will have the mask unset
 	// and the IP address should be accessed as <addr>.IP
-	GetOrParseIPAddress(addrOrAllocRef string, expIface string, getGW bool, addrForm netalloc.IPAddressForm) (
+	GetOrParseIPAddress(addrOrAllocRef string, expIface string, addrForm netalloc.IPAddressForm) (
 		addr *net.IPNet, err error)
 
 	// CorrelateRetrievedIPs should be used in Retrieve to correlate one or group
@@ -114,5 +130,5 @@ type AddressAllocator interface {
 	// The method returns one IP address or address-allocation reference for every
 	// address from <retrievedAddrs>.
 	CorrelateRetrievedIPs(expAddrsOrRefs []string, retrievedAddrs []string, expIface string,
-		areGWs bool, addrForm netalloc.IPAddressForm) []string
+		addrForm netalloc.IPAddressForm) []string
 }

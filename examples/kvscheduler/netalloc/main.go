@@ -15,10 +15,10 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"log"
 	"time"
+	"context"
 
 	"github.com/ligato/cn-infra/agent"
 	"github.com/ligato/vpp-agent/client"
@@ -37,7 +37,6 @@ import (
 
 /*
 	This example demonstrates netalloc plugin (topology disassociated from the addressing).
-	Note: currently only interface IP addresses support the allocation features.
 */
 
 func main() {
@@ -127,7 +126,6 @@ func demonstrateNetalloc() {
 		fmt.Println(err)
 		return
 	}
-
 }
 
 const (
@@ -142,6 +140,7 @@ const (
 
 	afPacketLogicalName = "myAFPacket"
 	afPacketIPAddr      = "10.11.1.2"
+	afPacketHWAddr      = "a7:35:45:55:65:75"
 
 	vppTapLogicalName = "myVPPTap"
 	vppTapIPAddr      = "10.11.2.2"
@@ -155,8 +154,6 @@ const (
 	microserviceNetMask = "/30"
 	mycroservice1       = "microservice1"
 	mycroservice2       = "microservice2"
-	microservice1Net    = "10.11.1.0" + microserviceNetMask
-	microservice2Net    = "10.11.2.0" + microserviceNetMask
 
 	mycroservice2Mtu = 1700
 
@@ -225,21 +222,21 @@ var (
 
 	arpForVeth1 = &linux_l3.ARPEntry{
 		Interface: veth1LogicalName,
-		IpAddress: vppTapIPAddr,
+		IpAddress: "alloc:" + networkName + "/" + vppTapLogicalName,
 		HwAddress: vppTapHwAddr,
 	}
 
 	linkRouteToMs2 = &linux_l3.Route{
 		OutgoingInterface: veth1LogicalName,
 		Scope:             linux_l3.Route_LINK,
-		DstNetwork:        vppTapIPAddr + "/32",
+		DstNetwork:        "alloc:" + networkName + "/" + veth1LogicalName + "/GW",
 	}
 
 	routeToMs2 = &linux_l3.Route{
 		OutgoingInterface: veth1LogicalName,
 		Scope:             linux_l3.Route_GLOBAL,
-		DstNetwork:        microservice2Net,
-		GwAddr:            vppTapIPAddr,
+		DstNetwork:        "alloc:" + networkName + "/" + linuxTapLogicalName,
+		GwAddr:            "alloc:" + networkName + "/GW",
 		Metric:            routeMetric,
 	}
 
@@ -258,7 +255,7 @@ var (
 		Name:        afPacketLogicalName,
 		Type:        vpp_interfaces.Interface_AF_PACKET,
 		Enabled:     true,
-		PhysAddress: "a7:35:45:55:65:75",
+		PhysAddress: afPacketHWAddr,
 		IpAddresses: []string{
 			"alloc:" + networkName,
 		},
@@ -312,21 +309,21 @@ var (
 
 	arpForLinuxTap = &linux_l3.ARPEntry{
 		Interface: linuxTapLogicalName,
-		IpAddress: afPacketIPAddr,
-		HwAddress: "a7:35:45:55:65:75",
+		IpAddress: "alloc:" + networkName + "/" + afPacketLogicalName,
+		HwAddress: afPacketHWAddr,
 	}
 
 	linkRouteToMs1 = &linux_l3.Route{
 		OutgoingInterface: linuxTapLogicalName,
 		Scope:             linux_l3.Route_LINK,
-		DstNetwork:        afPacketIPAddr + "/32",
+		DstNetwork:        "alloc:" + networkName + "/" + linuxTapLogicalName + "/GW",
 	}
 
 	routeToMs1 = &linux_l3.Route{
 		OutgoingInterface: linuxTapLogicalName,
 		Scope:             linux_l3.Route_GLOBAL,
-		DstNetwork:        microservice1Net,
-		GwAddr:            afPacketIPAddr,
+		DstNetwork:        "alloc:" + networkName + "/" + veth1LogicalName,
+		GwAddr:            "alloc:" + networkName + "/GW",
 		Metric:            routeMetric,
 	}
 )

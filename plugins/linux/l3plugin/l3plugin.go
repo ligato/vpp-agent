@@ -23,7 +23,6 @@ import (
 
 	"github.com/ligato/vpp-agent/plugins/linux/ifplugin"
 	"github.com/ligato/vpp-agent/plugins/linux/l3plugin/descriptor"
-	"github.com/ligato/vpp-agent/plugins/linux/l3plugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/linux/l3plugin/linuxcalls"
 	"github.com/ligato/vpp-agent/plugins/linux/nsplugin"
 	"github.com/ligato/vpp-agent/plugins/netalloc"
@@ -86,8 +85,8 @@ func (p *L3Plugin) Init() error {
 	arpDescriptor := descriptor.NewARPDescriptor(
 		p.KVScheduler, p.IfPlugin, p.NsPlugin, p.AddrAlloc, p.l3Handler, p.Log, config.GoRoutinesCnt)
 
-	routeDescriptor := adapter.NewRouteDescriptor(descriptor.NewRouteDescriptor(
-		p.KVScheduler, p.IfPlugin, p.NsPlugin, p.l3Handler, p.Log, config.GoRoutinesCnt).GetDescriptor())
+	routeDescriptor := descriptor.NewRouteDescriptor(
+		p.KVScheduler, p.IfPlugin, p.NsPlugin, p.AddrAlloc, p.l3Handler, p.Log, config.GoRoutinesCnt)
 
 	err = p.Deps.KVScheduler.RegisterKVDescriptor(arpDescriptor)
 	if err != nil {

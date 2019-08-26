@@ -27,6 +27,10 @@ const (
 
 	// AllocRefPrefix is a prefix added in front of references to allocated objects.
 	AllocRefPrefix = "alloc:"
+
+	// AllocRefGWSuffix is a suffix added at the back of the reference when address
+	// of the default gateway is requested (instead of interface IP address).
+	AllocRefGWSuffix = "/GW"
 )
 
 var (
