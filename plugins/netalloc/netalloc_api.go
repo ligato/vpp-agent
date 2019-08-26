@@ -77,6 +77,9 @@ import (
 //         }
 //     }
 //
+// Also don't forget to include netalloc descriptors in the list of "RetrieveDependencies"
+// (for IP allocations, the descriptor name is stored in the constant IPAllocDescriptorName
+// defined in plugins/netalloc/descriptor)
 type AddressAllocator interface {
 	// ParseAddressAllocRef parses reference to an allocated IP address.
 	ParseAddressAllocRef(addrAllocRef, expIface string) (

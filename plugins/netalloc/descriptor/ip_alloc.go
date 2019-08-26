@@ -15,7 +15,10 @@
 package descriptor
 
 import (
+	"net"
+
 	"github.com/ligato/cn-infra/logging"
+	prototypes "github.com/gogo/protobuf/types"
 
 	"github.com/ligato/vpp-agent/api/models/netalloc"
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
@@ -57,13 +60,14 @@ func NewAddrAllocDescriptor(log logging.PluginLogger) (descr *kvs.KVDescriptor) 
 
 // Validate checks if the address can be parsed.
 func (d *IPAllocDescriptor) Validate(key string, addrAlloc *netalloc.IPAllocation) (err error) {
-	_, err = d.parseAddr(addrAlloc)
+	_, _, err = d.parseAddr(addrAlloc)
 	return err
 }
 
 // Create parses the address and stores it into the metadata.
 func (d *IPAllocDescriptor) Create(key string, addrAlloc *netalloc.IPAllocation) (metadata *netalloc.IPAllocMetadata, err error) {
-	return d.parseAddr(addrAlloc)
+	metadata, _, err = d.parseAddr(addrAlloc)
+	return
 }
 
 // Delete is NOOP.
@@ -71,11 +75,24 @@ func (d *IPAllocDescriptor) Delete(key string, addrAlloc *netalloc.IPAllocation,
 	return err
 }
 
+// DerivedValues derives "neighbour-gateway" key if GW is a neighbour of the interface
+// (addresses are from the same IP network).
+func (d *IPAllocDescriptor) DerivedValues(key string, addrAlloc *netalloc.IPAllocation) (derValues []kvs.KeyValuePair) {
+	_, neighGw, _ := d.parseAddr(addrAlloc)
+	if neighGw {
+		derValues = append(derValues, kvs.KeyValuePair{
+			Key:   netalloc.NeighGwKey(addrAlloc.NetworkName, addrAlloc.InterfaceName),
+			Value: &prototypes.Empty{},
+		})
+	}
+	return derValues
+}
+
 // Retrieve always returns what is expected to exists since Create doesn't really change
 // anything in SB.
 func (d *IPAllocDescriptor) Retrieve(correlate []adapter.IPAllocKVWithMetadata) (valid []adapter.IPAllocKVWithMetadata, err error) {
 	for _, addrAlloc := range correlate {
-		if meta, err := d.parseAddr(addrAlloc.Value); err == nil {
+		if meta, _, err := d.parseAddr(addrAlloc.Value); err == nil {
 			valid = append(valid, adapter.IPAllocKVWithMetadata{
 				Key:      addrAlloc.Key,
 				Value:    addrAlloc.Value,
@@ -88,15 +105,17 @@ func (d *IPAllocDescriptor) Retrieve(correlate []adapter.IPAllocKVWithMetadata) 
 }
 
 // parseAddr tries to parse the allocated address.
-func (d *IPAllocDescriptor) parseAddr(addrAlloc *netalloc.IPAllocation) (parsed *netalloc.IPAllocMetadata, err error) {
-	ifaceAddr, err := utils.ParseIPAddr(addrAlloc.Address, nil)
+func (d *IPAllocDescriptor) parseAddr(addrAlloc *netalloc.IPAllocation) (parsed *netalloc.IPAllocMetadata, neighGw bool, err error) {
+	ifaceAddr, _, err := utils.ParseIPAddr(addrAlloc.Address, nil)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
-	gwAddr, err := utils.ParseIPAddr(addrAlloc.Gw, ifaceAddr)
-	if err != nil {
-		return nil, err
+	var gwAddr *net.IPNet
+	if addrAlloc.Gw != "" {
+		gwAddr, neighGw, err = utils.ParseIPAddr(addrAlloc.Gw, ifaceAddr)
+		if err != nil {
+			return nil, false, err
+		}
 	}
-
-	return &netalloc.IPAllocMetadata{IfaceAddr: ifaceAddr, GwAddr: gwAddr}, nil
+	return &netalloc.IPAllocMetadata{IfaceAddr: ifaceAddr, GwAddr: gwAddr}, neighGw,nil
 }

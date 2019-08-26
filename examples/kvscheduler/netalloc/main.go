@@ -98,7 +98,7 @@ func demonstrateNetalloc() {
 
 	err := client.LocalClient.ResyncConfig(
 		// addresses
-		veth1Addr, veth1Gw, afpacketAddr, linuxTapAddr, linuxTapGw, vppTapAddr,
+		veth1Addr, afpacketAddr, linuxTapAddr, vppTapAddr,
 		// topology
 		veth2, veth1, linuxTap, arpForVeth1, arpForLinuxTap,
 		linkRouteToMs1, routeToMs1, linkRouteToMs2, routeToMs2,
@@ -166,52 +166,36 @@ const (
 // ADRESSING
 
 var (
-	veth1Addr = &netalloc.AddressAllocation{
+	veth1Addr = &netalloc.IPAllocation{
 		NetworkName:   networkName,
 		InterfaceName: veth1LogicalName,
-		AddressType:   netalloc.AddressType_IPV4_ADDR,
 		Address:       veth1IPAddr + microserviceNetMask,
+		Gw:            vppTapIPAddr,
 	}
 
-	veth1Addr2 = &netalloc.AddressAllocation{
+	veth1Addr2 = &netalloc.IPAllocation{
 		NetworkName:   networkName,
 		InterfaceName: veth1LogicalName,
-		AddressType:   netalloc.AddressType_IPV4_ADDR,
 		Address:       veth1IPAddr2 + microserviceNetMask,
+		Gw:            vppTapIPAddr,
 	}
 
-	veth1Gw = &netalloc.AddressAllocation{
-		NetworkName:   networkName,
-		InterfaceName: veth1LogicalName,
-		AddressType:   netalloc.AddressType_IPV4_GW,
-		Address:       vppTapIPAddr,
-	}
-
-	afpacketAddr = &netalloc.AddressAllocation{
+	afpacketAddr = &netalloc.IPAllocation{
 		NetworkName:   networkName,
 		InterfaceName: afPacketLogicalName,
-		AddressType:   netalloc.AddressType_IPV4_ADDR,
 		Address:       afPacketIPAddr + microserviceNetMask,
 	}
 
-	linuxTapAddr = &netalloc.AddressAllocation{
+	linuxTapAddr = &netalloc.IPAllocation{
 		NetworkName:   networkName,
 		InterfaceName: linuxTapLogicalName,
-		AddressType:   netalloc.AddressType_IPV4_ADDR,
 		Address:       linuxTapIPAddr + microserviceNetMask,
+		Gw:            afPacketIPAddr,
 	}
 
-	linuxTapGw = &netalloc.AddressAllocation{
-		NetworkName:   networkName,
-		InterfaceName: linuxTapLogicalName,
-		AddressType:   netalloc.AddressType_IPV4_GW,
-		Address:       afPacketIPAddr,
-	}
-
-	vppTapAddr = &netalloc.AddressAllocation{
+	vppTapAddr = &netalloc.IPAllocation{
 		NetworkName:   networkName,
 		InterfaceName: vppTapLogicalName,
-		AddressType:   netalloc.AddressType_IPV4_ADDR,
 		Address:       vppTapIPAddr + microserviceNetMask,
 	}
 )

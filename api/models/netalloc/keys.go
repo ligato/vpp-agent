@@ -16,6 +16,7 @@ package netalloc
 
 import (
 	"net"
+	"strings"
 
 	"github.com/ligato/vpp-agent/pkg/models"
 )
@@ -37,6 +38,23 @@ var (
 		"network/{{.NetworkName}}/interface/{{.InterfaceName}}",
 	))
 )
+
+const (
+	/* neighbour gateway (derived) */
+
+	// neighGwKeyTemplate is a template for keys derived from IP allocations
+	// where GW is a neighbour of the interface (addresses are from the same
+	// IP network).
+	neighGwKeyTemplate = "netalloc/neigh-gw/network/{network}/interface/{iface}"
+)
+
+// NeighGwKey returns a derived key used to represent IP allocation where
+// GW is a neighbour of the interface (addresses are from the same IP network).
+func NeighGwKey(network, iface string) string {
+	key := strings.Replace(neighGwKeyTemplate, "{network}", network, 1)
+	key = strings.Replace(key, "{iface}", iface, 1)
+	return key
+}
 
 // IPAllocMetadata stores allocated IP address already parsed from string.
 type IPAllocMetadata struct {

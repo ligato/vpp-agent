@@ -103,7 +103,7 @@ func (p *Plugin) GetAddressAllocDep(addrOrAllocRef, ifaceName, depLabelPrefix st
 func (p *Plugin) ValidateIPAddress(addrOrAllocRef, ifaceName, fieldName string) error {
 	_, _, isRef, err := utils.ParseAddrAllocRef(addrOrAllocRef, ifaceName)
 	if !isRef {
-		_, err = utils.ParseIPAddr(addrOrAllocRef, nil)
+		_, _, err = utils.ParseIPAddr(addrOrAllocRef, nil)
 	}
 	if err != nil {
 		if fieldName != "" {
@@ -146,13 +146,17 @@ func (p *Plugin) GetOrParseIPAddress(addrOrAllocRef string, ifaceName string,
 				allocName)
 		}
 		if getGW {
+			if allocMeta.GwAddr == nil {
+				return nil, fmt.Errorf("gw address is not defined for IP address allocation '%s'",
+					allocName)
+			}
 			return utils.GetIPAddrInGivenForm(allocMeta.GwAddr, addrForm), nil
 		}
 		return utils.GetIPAddrInGivenForm(allocMeta.IfaceAddr, addrForm), nil
 	}
 
 	// not a reference - try to parse the address
-	ipAddr, err := utils.ParseIPAddr(addrOrAllocRef, nil)
+	ipAddr, _, err := utils.ParseIPAddr(addrOrAllocRef, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -175,7 +179,7 @@ func (p *Plugin) CorrelateRetrievedIPs(expAddrsOrRefs []string, retrievedAddrs [
 	}
 
 	for _, addr := range retrievedAddrs {
-		ipAddr, err := utils.ParseIPAddr(addr, nil)
+		ipAddr, _, err := utils.ParseIPAddr(addr, nil)
 		if err != nil {
 			// invalid - do not try to correlate, just return as is
 			correlated = append(correlated, addr)

@@ -17,19 +17,25 @@ type NetAlloc struct {
 
 // Allocate simulates allocation of an IP address.
 func (p *NetAlloc) Allocate(network, ifaceName, address, gw string) {
+	var (
+		gwAddr *net.IPNet
+		err    error
+	)
 	addrAlloc := &netalloc.IPAllocation{
 		NetworkName:   network,
 		InterfaceName: ifaceName,
 	}
 	allocName := models.Name(addrAlloc)
 
-	ifaceAddr, err := utils.ParseIPAddr(address, nil)
+	ifaceAddr, _, err := utils.ParseIPAddr(address, nil)
 	if err != nil {
 		panic(err)
 	}
-	gwAddr, err := utils.ParseIPAddr(gw, ifaceAddr)
-	if err != nil {
-		panic(err)
+	if gw != "" {
+		gwAddr, _, err = utils.ParseIPAddr(gw, ifaceAddr)
+		if err != nil {
+			panic(err)
+		}
 	}
 	p.allocated[allocName] = &netalloc.IPAllocMetadata{IfaceAddr: ifaceAddr, GwAddr: gwAddr}
 }
@@ -61,7 +67,7 @@ func (p *NetAlloc) GetAddressAllocDep(addrOrAllocRef, ifaceName, depLabelPrefix 
 func (p *NetAlloc) ValidateIPAddress(addrOrAllocRef, ifaceName, fieldName string) error {
 	_, _, isRef, err := utils.ParseAddrAllocRef(addrOrAllocRef, ifaceName)
 	if !isRef {
-		_, err = utils.ParseIPAddr(addrOrAllocRef, nil)
+		_, _, err = utils.ParseIPAddr(addrOrAllocRef, nil)
 	}
 	if err != nil {
 		if fieldName != "" {
@@ -98,13 +104,16 @@ func (p *NetAlloc) GetOrParseIPAddress(addrOrAllocRef string, ifaceName string,
 			return nil, errors.New("address is not allocated")
 		}
 		if getGW {
+			if allocation.GwAddr == nil {
+				return nil, errors.New("gw address is not defined")
+			}
 			return utils.GetIPAddrInGivenForm(allocation.GwAddr, addrForm), nil
 		}
 		return utils.GetIPAddrInGivenForm(allocation.IfaceAddr, addrForm), nil
 	}
 
 	// try to parse the address
-	ipAddr, err := utils.ParseIPAddr(addrOrAllocRef, nil)
+	ipAddr, _, err := utils.ParseIPAddr(addrOrAllocRef, nil)
 	if err != nil {
 		return nil, err
 	}

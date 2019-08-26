@@ -26,6 +26,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/linux/l3plugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/linux/l3plugin/linuxcalls"
 	"github.com/ligato/vpp-agent/plugins/linux/nsplugin"
+	"github.com/ligato/vpp-agent/plugins/netalloc"
 )
 
 const (
@@ -55,6 +56,7 @@ type Deps struct {
 	KVScheduler kvs.KVScheduler
 	NsPlugin    nsplugin.API
 	IfPlugin    ifplugin.API
+	AddrAlloc   netalloc.AddressAllocator
 }
 
 // Config holds the l3plugin configuration.
@@ -81,8 +83,8 @@ func (p *L3Plugin) Init() error {
 	p.l3Handler = linuxcalls.NewNetLinkHandler()
 
 	// init & register descriptors
-	arpDescriptor := adapter.NewARPDescriptor(descriptor.NewARPDescriptor(
-		p.KVScheduler, p.IfPlugin, p.NsPlugin, p.l3Handler, p.Log, config.GoRoutinesCnt).GetDescriptor())
+	arpDescriptor := descriptor.NewARPDescriptor(
+		p.KVScheduler, p.IfPlugin, p.NsPlugin, p.AddrAlloc, p.l3Handler, p.Log, config.GoRoutinesCnt)
 
 	routeDescriptor := adapter.NewRouteDescriptor(descriptor.NewRouteDescriptor(
 		p.KVScheduler, p.IfPlugin, p.NsPlugin, p.l3Handler, p.Log, config.GoRoutinesCnt).GetDescriptor())

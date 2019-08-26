@@ -9,27 +9,28 @@ import (
 )
 
 // ParseIPAddr parses IP address from string.
-func ParseIPAddr(addr string, expNet *net.IPNet) (ipNet *net.IPNet, err error) {
+func ParseIPAddr(addr string, expNet *net.IPNet) (ipNet *net.IPNet, fromExpNet bool, err error) {
+	expNet = &net.IPNet{IP: expNet.IP.Mask(expNet.Mask), Mask: expNet.Mask}
+
 	if strings.Contains(addr, "/") {
 		// IP with mask
 		ip, ipNet, err := net.ParseCIDR(addr)
 		if err != nil {
-			return nil, err
+			return nil, false, err
 		}
 		ipNet.IP = ip
-		return ipNet, nil
+		return ipNet, expNet.Contains(ip), nil
 	}
 
 	// IP without mask
 	ip := net.ParseIP(addr)
 	if ip == nil {
-		return nil, fmt.Errorf("invalid IP address: %s", addr)
+		return nil, false, fmt.Errorf("invalid IP address: %s", addr)
 	}
 	if expNet != nil {
-		expNet = &net.IPNet{IP: expNet.IP.Mask(expNet.Mask), Mask: expNet.Mask}
 		if expNet.Contains(ip) {
 			// IP address from the expected network
-			return &net.IPNet{IP: ip.To4(), Mask: expNet.Mask}, nil
+			return &net.IPNet{IP: ip.To4(), Mask: expNet.Mask}, true,nil
 		}
 	}
 
@@ -39,11 +40,11 @@ func ParseIPAddr(addr string, expNet *net.IPNet) (ipNet *net.IPNet, err error) {
 
 	if ip.To4() != nil {
 		// IPv4 address
-		return &net.IPNet{IP: ip.To4(), Mask: defaultIpv4Mask}, nil
+		return &net.IPNet{IP: ip.To4(), Mask: defaultIpv4Mask}, false, nil
 	}
 
 	// IPv6 address
-	return &net.IPNet{IP: ip, Mask: defaultIpv6Mask}, nil
+	return &net.IPNet{IP: ip, Mask: defaultIpv6Mask}, false,nil
 }
 
 // ParseAddrAllocRef parses reference to allocated address.
