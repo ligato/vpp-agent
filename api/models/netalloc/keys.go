@@ -29,17 +29,17 @@ const (
 )
 
 var (
-	ModelAddressAllocation = models.Register(&AddressAllocation{}, models.Spec{
+	ModelIPAllocation = models.Register(&IPAllocation{}, models.Spec{
 		Module:  ModuleName,
 		Version: "v1",
-		Type:    "address",
+		Type:    "ip",
 	}, models.WithNameTemplate(
-		"{{.AddressType}}/network/{{.NetworkName}}/interface/{{.InterfaceName}}",
+		"network/{{.NetworkName}}/interface/{{.InterfaceName}}",
 	))
 )
 
-// AddrAllocMetadata stores allocated address already parsed from string.
-type AddrAllocMetadata struct {
-	IPAddr *net.IPNet
-	// TBD: HwAddr net.HardwareAddr
+// IPAllocMetadata stores allocated IP address already parsed from string.
+type IPAllocMetadata struct {
+	IfaceAddr *net.IPNet
+	GwAddr    *net.IPNet
 }

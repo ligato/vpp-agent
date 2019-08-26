@@ -9,7 +9,7 @@ import (
 )
 
 // ParseIPAddr parses IP address from string.
-func ParseIPAddr(addr string) (ipNet *net.IPNet, err error) {
+func ParseIPAddr(addr string, expNet *net.IPNet) (ipNet *net.IPNet, err error) {
 	if strings.Contains(addr, "/") {
 		// IP with mask
 		ip, ipNet, err := net.ParseCIDR(addr)
@@ -21,13 +21,22 @@ func ParseIPAddr(addr string) (ipNet *net.IPNet, err error) {
 	}
 
 	// IP without mask
-	defaultIpv4Mask := net.CIDRMask(32, 32)
-	defaultIpv6Mask := net.CIDRMask(128, 128)
-
 	ip := net.ParseIP(addr)
 	if ip == nil {
 		return nil, fmt.Errorf("invalid IP address: %s", addr)
 	}
+	if expNet != nil {
+		expNet = &net.IPNet{IP: expNet.IP.Mask(expNet.Mask), Mask: expNet.Mask}
+		if expNet.Contains(ip) {
+			// IP address from the expected network
+			return &net.IPNet{IP: ip.To4(), Mask: expNet.Mask}, nil
+		}
+	}
+
+	// use all-ones mask
+	defaultIpv4Mask := net.CIDRMask(32, 32)
+	defaultIpv6Mask := net.CIDRMask(128, 128)
+
 	if ip.To4() != nil {
 		// IPv4 address
 		return &net.IPNet{IP: ip.To4(), Mask: defaultIpv4Mask}, nil
@@ -39,7 +48,7 @@ func ParseIPAddr(addr string) (ipNet *net.IPNet, err error) {
 
 // ParseAddrAllocRef parses reference to allocated address.
 func ParseAddrAllocRef(addrAllocRef, expIface string) (
-	network, iface string, addrType netalloc.AddressType, isRef bool, err error) {
+	network, iface string, isRef bool, err error) {
 
 	if !strings.HasPrefix(addrAllocRef, netalloc.AllocRefPrefix) {
 		isRef = false
@@ -48,30 +57,18 @@ func ParseAddrAllocRef(addrAllocRef, expIface string) (
 
 	isRef = true
 	addrAllocRef = strings.TrimPrefix(addrAllocRef, netalloc.AllocRefPrefix)
-	parts := strings.Split(addrAllocRef, "/")
+	parts := strings.SplitN(addrAllocRef, "/", 2)
 
 	// parse network name
 	network = parts[0]
-	parts = parts[1:]
 	if network == "" {
 		err = fmt.Errorf("address allocation reference with empty network name: %s",
 			addrAllocRef)
 		return
 	}
 
-	// parse address type
-	if len(parts) > 0 {
-		lastPart := parts[len(parts)-1]
-		addrType = netalloc.AddressType(netalloc.AddressType_value[lastPart])
-	}
-	if addrType == netalloc.AddressType_UNDEFINED {
-		addrType = netalloc.AddressType_IPV4_ADDR // default
-	} else {
-		parts = parts[:len(parts)-1]
-	}
-
-	if len(parts) > 0 {
-		iface = strings.Join(parts, "/")
+	if len(parts) == 2 {
+		iface = parts[1]
 		if expIface != "" && iface != expIface {
 			err = fmt.Errorf("expected different interface name in the address allocation "+
 				"reference: %s (expected=%s vs. actual=%s)", addrAllocRef, expIface, iface)

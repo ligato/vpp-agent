@@ -33,7 +33,7 @@ import (
 //     }
 //
 //     func (d *Descriptor) Create(key string, item *mymodel.MyModel) (metadata interface{}, err error) {
-//         addr, err := d.netallocPlugin.GetOrParseIPAddress(item.IpAddress, "", netalloc.ADDR_ONLY)
+//         addr, err := d.netallocPlugin.GetOrParseIPAddress(item.IpAddress, "", false, netalloc.ADDR_ONLY)
 //         if err != nil {
 //             d.log.Error(err)
 //             return nil, err
@@ -43,7 +43,7 @@ import (
 //     }
 //
 //     func (d *Descriptor) Delete(key string, item *mymodel.MyModel) (err error) {
-//         addr, err := d.netallocPlugin.GetOrParseIPAddress(item.IpAddress, "", netalloc.ADDR_ONLY)
+//         addr, err := d.netallocPlugin.GetOrParseIPAddress(item.IpAddress, "", false, netalloc.ADDR_ONLY)
 //         if err != nil {
 //             d.log.Error(err)
 //             return nil, err
@@ -53,12 +53,12 @@ import (
 //     }
 //
 //     func (d *Descriptor) Update(key string, oldItem, newItem *mymodel.MyModel, oldMetadata interface{}) (newMetadata interface{}, err error) { {
-//         prevAddr, err := d.netallocPlugin.GetOrParseIPAddress(oldItem.IpAddress, "", netalloc.ADDR_ONLY)
+//         prevAddr, err := d.netallocPlugin.GetOrParseIPAddress(oldItem.IpAddress, "", false, netalloc.ADDR_ONLY)
 //         if err != nil {
 //             d.log.Error(err)
 //             return nil, err
 //         }
-//         newAddr, err := d.netallocPlugin.GetOrParseIPAddress(newItem.IpAddress, "", netalloc.ADDR_ONLY)
+//         newAddr, err := d.netallocPlugin.GetOrParseIPAddress(newItem.IpAddress, "", false, netalloc.ADDR_ONLY)
 //         if err != nil {
 //             d.log.Error(err)
 //             return nil, err
@@ -68,46 +68,48 @@ import (
 //     }
 //
 //     func (d *Descriptor) Retrieve(correlate []adapter.MyModelKVWithMetadata) (retrieved []adapter.MyModelKVWithMetadata, err error) {
-//         // retrieve instances of mymodel.MyModel ...
-//         // replace actual IP address with reference if it was used
+//         // Retrieve instances of mymodel.MyModel ...
+//         // Use CorrelateRetrievedIPs to replace actual IP address with reference if it was used.
 //         for _, item := range retrieved {
 //             // get expected item configuration ... (store to expCfg)
 //             item.IpAddress = d.netallocPlugin.CorrelateRetrievedIPs(
-//                 []string{expCfg.IpAddress}, []string{item.IpAddress}, "", netalloc.ADDR_ONLY)[0]
+//                 []string{expCfg.IpAddress}, []string{item.IpAddress}, "", false, netalloc.ADDR_ONLY)[0]
 //         }
 //     }
 //
 type AddressAllocator interface {
+	// ParseAddressAllocRef parses reference to an allocated IP address.
+	ParseAddressAllocRef(addrAllocRef, expIface string) (
+		network, iface string, isRef bool, err error)
+
 	// GetAddressAllocDep reads what can be potentially a reference to an allocated
-	// address (of any type). If <allocRef> is indeed a reference, the function
-	// returns the corresponding dependency to be passed further into KVScheduler
+	// IP address. If <allocRef> is indeed a reference, the function returns
+	// the corresponding dependency to be passed further into KVScheduler
 	// from the descriptor. Otherwise <hasAllocDep> is returned as false, and
 	// <allocRef> should be an actual address and not a reference.
-	GetAddressAllocDep(addrOrAllocRef, ifaceName, depLabelPrefix string) (
+	GetAddressAllocDep(addrOrAllocRef, expIface, depLabelPrefix string) (
 		dep kvs.Dependency, hasAllocDep bool)
 
 	// ValidateIPAddress checks validity of address reference or, if <addrOrAllocRef>
 	// already contains an actual IP address, it tries to parse it.
-	ValidateIPAddress(addrOrAllocRef, ifaceName, fieldName string) error
+	ValidateIPAddress(addrOrAllocRef, expIface, fieldName string) error
 
-	// GetOrParseIPAddress tries to get allocated IP address referenced by
-	// <addrOrAllocRef> in the requested form. But if the string contains
-	// an actual IP address instead of a reference, the address is parsed
+	// GetOrParseIPAddress tries to get allocated interface (or GW) IP address
+	// referenced by <addrOrAllocRef> in the requested form. But if the string
+	// contains/ an actual IP address instead of a reference, the address is parsed
 	// using methods from the net package and returned in the requested form.
 	// For ADDR_ONLY address form, the returned <addr> will have the mask unset
 	// and the IP address should be accessed as <addr>.IP
-	GetOrParseIPAddress(addrOrAllocRef string, ifaceName string, addrForm netalloc.IPAddressForm) (
+	GetOrParseIPAddress(addrOrAllocRef string, expIface string, getGW bool, addrForm netalloc.IPAddressForm) (
 		addr *net.IPNet, err error)
 
 	// CorrelateRetrievedIPs should be used in Retrieve to correlate one or group
-	// of (model-wise indistinguishable) retrieved IP addresses with the expected
-	// configuration. The method will replace retrieved addresses with the
-	// corresponding allocation references from the expected configuration if
-	// there are any.
+	// of (model-wise indistinguishable) retrieved interface or GW IP addresses
+	// with the expected configuration. The method will replace retrieved addresses
+	// with the corresponding allocation references from the expected configuration
+	// if there are any.
 	// The method returns one IP address or address-allocation reference for every
 	// address from <retrievedAddrs>.
-	CorrelateRetrievedIPs(expAddrsOrRefs []string, retrievedAddrs []string, ifaceName string,
-		addrForm netalloc.IPAddressForm) []string
-
-	// TBD: MAC addresses
+	CorrelateRetrievedIPs(expAddrsOrRefs []string, retrievedAddrs []string, expIface string,
+		areGWs bool, addrForm netalloc.IPAddressForm) []string
 }

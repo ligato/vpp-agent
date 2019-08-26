@@ -111,7 +111,7 @@ func demonstrateNetalloc() {
 	fmt.Println("=== CHANGE ===")
 	time.Sleep(time.Second * 5)
 	err = client.LocalClient.ChangeRequest().
-		Update(veth1Addr2).
+		Delete(veth1Addr).
 		Send(context.Background())
 	if err != nil {
 		fmt.Println(err)

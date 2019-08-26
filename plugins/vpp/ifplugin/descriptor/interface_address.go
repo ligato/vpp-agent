@@ -16,7 +16,6 @@ package descriptor
 
 import (
 	"github.com/gogo/protobuf/proto"
-	prototypes "github.com/gogo/protobuf/types"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/pkg/errors"
 
@@ -96,7 +95,8 @@ func (d *InterfaceAddressDescriptor) Create(key string, emptyVal proto.Message) 
 		return nil, err
 	}
 
-	ipAddr, err := d.addrAlloc.GetOrParseIPAddress(addr, iface, netalloc_api.IPAddressForm_ADDR_WITH_MASK)
+	ipAddr, err := d.addrAlloc.GetOrParseIPAddress(addr, iface, false,
+		netalloc_api.IPAddressForm_ADDR_WITH_MASK)
 	if err != nil {
 		d.log.Error(err)
 		return nil, err
@@ -117,7 +117,8 @@ func (d *InterfaceAddressDescriptor) Delete(key string, emptyVal proto.Message, 
 		return err
 	}
 
-	ipAddr, err := d.addrAlloc.GetOrParseIPAddress(addr, iface, netalloc_api.IPAddressForm_ADDR_WITH_MASK)
+	ipAddr, err := d.addrAlloc.GetOrParseIPAddress(addr, iface, false,
+		netalloc_api.IPAddressForm_ADDR_WITH_MASK)
 	if err != nil {
 		d.log.Error(err)
 		return err
@@ -148,17 +149,4 @@ func (d *InterfaceAddressDescriptor) Dependencies(key string, emptyVal proto.Mes
 	}
 
 	return deps
-}
-
-// DerivedValues derives allocated IP address as PROPERTY (if netalloc was used).
-func (d *InterfaceAddressDescriptor) DerivedValues(key string, emptyVal proto.Message) (derValues []kvs.KeyValuePair) {
-	iface, addr, source, _, _ := interfaces.ParseInterfaceAddressKey(key)
-	if source == netalloc_api.IPAddressSource_ALLOC_REF {
-		ipAddr, _ := d.addrAlloc.GetOrParseIPAddress(addr, iface, netalloc_api.IPAddressForm_ADDR_WITH_MASK)
-		derValues = append(derValues, kvs.KeyValuePair{
-			Key:   interfaces.InterfaceAddressKey(iface, ipAddr.String(), netalloc_api.IPAddressSource_ALLOCATED),
-			Value: &prototypes.Empty{},
-		})
-	}
-	return derValues
 }

@@ -12,29 +12,42 @@ import (
 
 // NetAlloc is a mock version of the netplugin, suitable for unit testing.
 type NetAlloc struct {
-	allocated map[string]string // allocation name -> address
+	allocated map[string]*netalloc.IPAllocMetadata // allocation name -> parsed address
 }
 
-// Allocate simulates allocation of an address.
-func (p *NetAlloc) Allocate(network, ifaceName, address string, addrType netalloc.AddressType) {
-	addrAlloc := &netalloc.AddressAllocation{
+// Allocate simulates allocation of an IP address.
+func (p *NetAlloc) Allocate(network, ifaceName, address, gw string) {
+	addrAlloc := &netalloc.IPAllocation{
 		NetworkName:   network,
 		InterfaceName: ifaceName,
-		AddressType:   addrType,
 	}
 	allocName := models.Name(addrAlloc)
-	p.allocated[allocName] = address
+
+	ifaceAddr, err := utils.ParseIPAddr(address, nil)
+	if err != nil {
+		panic(err)
+	}
+	gwAddr, err := utils.ParseIPAddr(gw, ifaceAddr)
+	if err != nil {
+		panic(err)
+	}
+	p.allocated[allocName] = &netalloc.IPAllocMetadata{IfaceAddr: ifaceAddr, GwAddr: gwAddr}
 }
 
-// Deallocate simulates de-allocation of an address.
-func (p *NetAlloc) Deallocate(network, ifaceName string, addrType netalloc.AddressType) {
-	addrAlloc := &netalloc.AddressAllocation{
+// Deallocate simulates de-allocation of an IP address.
+func (p *NetAlloc) Deallocate(network, ifaceName string) {
+	addrAlloc := &netalloc.IPAllocation{
 		NetworkName:   network,
 		InterfaceName: ifaceName,
-		AddressType:   addrType,
 	}
 	allocName := models.Name(addrAlloc)
 	delete(p.allocated, allocName)
+}
+
+// ParseAddressAllocRef parses reference to an allocated IP address.
+func (p *NetAlloc) ParseAddressAllocRef(addrAllocRef, expIface string) (
+	network, iface string, isRef bool, err error) {
+	return utils.ParseAddrAllocRef(addrAllocRef, expIface)
 }
 
 // GetAddressAllocDep is not implemented here.
@@ -46,9 +59,9 @@ func (p *NetAlloc) GetAddressAllocDep(addrOrAllocRef, ifaceName, depLabelPrefix 
 // ValidateIPAddress checks validity of address reference or, if <addrOrAllocRef>
 // already contains an actual IP address, it tries to parse it.
 func (p *NetAlloc) ValidateIPAddress(addrOrAllocRef, ifaceName, fieldName string) error {
-	_, _, _, isRef, err := utils.ParseAddrAllocRef(addrOrAllocRef, ifaceName)
+	_, _, isRef, err := utils.ParseAddrAllocRef(addrOrAllocRef, ifaceName)
 	if !isRef {
-		_, err = utils.ParseIPAddr(addrOrAllocRef)
+		_, err = utils.ParseIPAddr(addrOrAllocRef, nil)
 	}
 	if err != nil {
 		if fieldName != "" {
@@ -60,36 +73,38 @@ func (p *NetAlloc) ValidateIPAddress(addrOrAllocRef, ifaceName, fieldName string
 	return nil
 }
 
-// GetOrParseIPAddress tries to get allocated IP address referenced by
-// <addrOrAllocRef> in the requested form. But if the string contains
-// an actual IP address instead of a reference, the address is parsed
+// GetOrParseIPAddress tries to get allocated interface (or GW) IP address
+// referenced by <addrOrAllocRef> in the requested form. But if the string
+// contains/ an actual IP address instead of a reference, the address is parsed
 // using methods from the net package and returned in the requested form.
 // For ADDR_ONLY address form, the returned <addr> will have the mask unset
 // and the IP address should be accessed as <addr>.IP
-func (p *NetAlloc) GetOrParseIPAddress(addrOrAllocRef string, ifaceName string, addrForm netalloc.IPAddressForm) (
-	addr *net.IPNet, err error) {
+func (p *NetAlloc) GetOrParseIPAddress(addrOrAllocRef string, ifaceName string,
+	getGW bool, addrForm netalloc.IPAddressForm) (addr *net.IPNet, err error) {
 
-	network, iface, addrType, isRef, err := utils.ParseAddrAllocRef(addrOrAllocRef, ifaceName)
+	network, iface, isRef, err := utils.ParseAddrAllocRef(addrOrAllocRef, ifaceName)
 	if isRef && err != nil {
 		return nil, err
 	}
 
 	if isRef {
 		// de-reference
-		allocName := models.Name(&netalloc.AddressAllocation{
+		allocName := models.Name(&netalloc.IPAllocation{
 			NetworkName:   network,
 			InterfaceName: iface,
-			AddressType:   addrType,
 		})
-		address, found := p.allocated[allocName]
+		allocation, found := p.allocated[allocName]
 		if !found {
 			return nil, errors.New("address is not allocated")
 		}
-		addrOrAllocRef = address
+		if getGW {
+			return utils.GetIPAddrInGivenForm(allocation.GwAddr, addrForm), nil
+		}
+		return utils.GetIPAddrInGivenForm(allocation.IfaceAddr, addrForm), nil
 	}
 
 	// try to parse the address
-	ipAddr, err := utils.ParseIPAddr(addrOrAllocRef)
+	ipAddr, err := utils.ParseIPAddr(addrOrAllocRef, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -97,7 +112,7 @@ func (p *NetAlloc) GetOrParseIPAddress(addrOrAllocRef string, ifaceName string, 
 }
 
 // CorrelateRetrievedIPs is not implemented here.
-func (p *NetAlloc) CorrelateRetrievedIPs(expAddrsOrRefs []string, retrievedAddrs []string, ifaceName string,
-	addrForm netalloc.IPAddressForm) []string {
+func (p *NetAlloc) CorrelateRetrievedIPs(expAddrsOrRefs []string, retrievedAddrs []string,
+	ifaceName string, areGWs bool, addrForm netalloc.IPAddressForm) (correlated []string) {
 	return retrievedAddrs
 }

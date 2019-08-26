@@ -10,44 +10,44 @@ import (
 
 ////////// type-safe key-value pair with metadata //////////
 
-type AddrAllocKVWithMetadata struct {
+type IPAllocKVWithMetadata struct {
 	Key      string
-	Value    *netalloc.AddressAllocation
-	Metadata *netalloc.AddrAllocMetadata
+	Value    *netalloc.IPAllocation
+	Metadata *netalloc.IPAllocMetadata
 	Origin   ValueOrigin
 }
 
 ////////// type-safe Descriptor structure //////////
 
-type AddrAllocDescriptor struct {
+type IPAllocDescriptor struct {
 	Name                 string
 	KeySelector          KeySelector
 	ValueTypeName        string
 	KeyLabel             func(key string) string
-	ValueComparator      func(key string, oldValue, newValue *netalloc.AddressAllocation) bool
+	ValueComparator      func(key string, oldValue, newValue *netalloc.IPAllocation) bool
 	NBKeyPrefix          string
 	WithMetadata         bool
 	MetadataMapFactory   MetadataMapFactory
-	Validate             func(key string, value *netalloc.AddressAllocation) error
-	Create               func(key string, value *netalloc.AddressAllocation) (metadata *netalloc.AddrAllocMetadata, err error)
-	Delete               func(key string, value *netalloc.AddressAllocation, metadata *netalloc.AddrAllocMetadata) error
-	Update               func(key string, oldValue, newValue *netalloc.AddressAllocation, oldMetadata *netalloc.AddrAllocMetadata) (newMetadata *netalloc.AddrAllocMetadata, err error)
-	UpdateWithRecreate   func(key string, oldValue, newValue *netalloc.AddressAllocation, metadata *netalloc.AddrAllocMetadata) bool
-	Retrieve             func(correlate []AddrAllocKVWithMetadata) ([]AddrAllocKVWithMetadata, error)
+	Validate             func(key string, value *netalloc.IPAllocation) error
+	Create               func(key string, value *netalloc.IPAllocation) (metadata *netalloc.IPAllocMetadata, err error)
+	Delete               func(key string, value *netalloc.IPAllocation, metadata *netalloc.IPAllocMetadata) error
+	Update               func(key string, oldValue, newValue *netalloc.IPAllocation, oldMetadata *netalloc.IPAllocMetadata) (newMetadata *netalloc.IPAllocMetadata, err error)
+	UpdateWithRecreate   func(key string, oldValue, newValue *netalloc.IPAllocation, metadata *netalloc.IPAllocMetadata) bool
+	Retrieve             func(correlate []IPAllocKVWithMetadata) ([]IPAllocKVWithMetadata, error)
 	IsRetriableFailure   func(err error) bool
-	DerivedValues        func(key string, value *netalloc.AddressAllocation) []KeyValuePair
-	Dependencies         func(key string, value *netalloc.AddressAllocation) []Dependency
+	DerivedValues        func(key string, value *netalloc.IPAllocation) []KeyValuePair
+	Dependencies         func(key string, value *netalloc.IPAllocation) []Dependency
 	RetrieveDependencies []string /* descriptor name */
 }
 
 ////////// Descriptor adapter //////////
 
-type AddrAllocDescriptorAdapter struct {
-	descriptor *AddrAllocDescriptor
+type IPAllocDescriptorAdapter struct {
+	descriptor *IPAllocDescriptor
 }
 
-func NewAddrAllocDescriptor(typedDescriptor *AddrAllocDescriptor) *KVDescriptor {
-	adapter := &AddrAllocDescriptorAdapter{descriptor: typedDescriptor}
+func NewIPAllocDescriptor(typedDescriptor *IPAllocDescriptor) *KVDescriptor {
+	adapter := &IPAllocDescriptorAdapter{descriptor: typedDescriptor}
 	descriptor := &KVDescriptor{
 		Name:                 typedDescriptor.Name,
 		KeySelector:          typedDescriptor.KeySelector,
@@ -89,88 +89,88 @@ func NewAddrAllocDescriptor(typedDescriptor *AddrAllocDescriptor) *KVDescriptor 
 	return descriptor
 }
 
-func (da *AddrAllocDescriptorAdapter) ValueComparator(key string, oldValue, newValue proto.Message) bool {
-	typedOldValue, err1 := castAddrAllocValue(key, oldValue)
-	typedNewValue, err2 := castAddrAllocValue(key, newValue)
+func (da *IPAllocDescriptorAdapter) ValueComparator(key string, oldValue, newValue proto.Message) bool {
+	typedOldValue, err1 := castIPAllocValue(key, oldValue)
+	typedNewValue, err2 := castIPAllocValue(key, newValue)
 	if err1 != nil || err2 != nil {
 		return false
 	}
 	return da.descriptor.ValueComparator(key, typedOldValue, typedNewValue)
 }
 
-func (da *AddrAllocDescriptorAdapter) Validate(key string, value proto.Message) (err error) {
-	typedValue, err := castAddrAllocValue(key, value)
+func (da *IPAllocDescriptorAdapter) Validate(key string, value proto.Message) (err error) {
+	typedValue, err := castIPAllocValue(key, value)
 	if err != nil {
 		return err
 	}
 	return da.descriptor.Validate(key, typedValue)
 }
 
-func (da *AddrAllocDescriptorAdapter) Create(key string, value proto.Message) (metadata Metadata, err error) {
-	typedValue, err := castAddrAllocValue(key, value)
+func (da *IPAllocDescriptorAdapter) Create(key string, value proto.Message) (metadata Metadata, err error) {
+	typedValue, err := castIPAllocValue(key, value)
 	if err != nil {
 		return nil, err
 	}
 	return da.descriptor.Create(key, typedValue)
 }
 
-func (da *AddrAllocDescriptorAdapter) Update(key string, oldValue, newValue proto.Message, oldMetadata Metadata) (newMetadata Metadata, err error) {
-	oldTypedValue, err := castAddrAllocValue(key, oldValue)
+func (da *IPAllocDescriptorAdapter) Update(key string, oldValue, newValue proto.Message, oldMetadata Metadata) (newMetadata Metadata, err error) {
+	oldTypedValue, err := castIPAllocValue(key, oldValue)
 	if err != nil {
 		return nil, err
 	}
-	newTypedValue, err := castAddrAllocValue(key, newValue)
+	newTypedValue, err := castIPAllocValue(key, newValue)
 	if err != nil {
 		return nil, err
 	}
-	typedOldMetadata, err := castAddrAllocMetadata(key, oldMetadata)
+	typedOldMetadata, err := castIPAllocMetadata(key, oldMetadata)
 	if err != nil {
 		return nil, err
 	}
 	return da.descriptor.Update(key, oldTypedValue, newTypedValue, typedOldMetadata)
 }
 
-func (da *AddrAllocDescriptorAdapter) Delete(key string, value proto.Message, metadata Metadata) error {
-	typedValue, err := castAddrAllocValue(key, value)
+func (da *IPAllocDescriptorAdapter) Delete(key string, value proto.Message, metadata Metadata) error {
+	typedValue, err := castIPAllocValue(key, value)
 	if err != nil {
 		return err
 	}
-	typedMetadata, err := castAddrAllocMetadata(key, metadata)
+	typedMetadata, err := castIPAllocMetadata(key, metadata)
 	if err != nil {
 		return err
 	}
 	return da.descriptor.Delete(key, typedValue, typedMetadata)
 }
 
-func (da *AddrAllocDescriptorAdapter) UpdateWithRecreate(key string, oldValue, newValue proto.Message, metadata Metadata) bool {
-	oldTypedValue, err := castAddrAllocValue(key, oldValue)
+func (da *IPAllocDescriptorAdapter) UpdateWithRecreate(key string, oldValue, newValue proto.Message, metadata Metadata) bool {
+	oldTypedValue, err := castIPAllocValue(key, oldValue)
 	if err != nil {
 		return true
 	}
-	newTypedValue, err := castAddrAllocValue(key, newValue)
+	newTypedValue, err := castIPAllocValue(key, newValue)
 	if err != nil {
 		return true
 	}
-	typedMetadata, err := castAddrAllocMetadata(key, metadata)
+	typedMetadata, err := castIPAllocMetadata(key, metadata)
 	if err != nil {
 		return true
 	}
 	return da.descriptor.UpdateWithRecreate(key, oldTypedValue, newTypedValue, typedMetadata)
 }
 
-func (da *AddrAllocDescriptorAdapter) Retrieve(correlate []KVWithMetadata) ([]KVWithMetadata, error) {
-	var correlateWithType []AddrAllocKVWithMetadata
+func (da *IPAllocDescriptorAdapter) Retrieve(correlate []KVWithMetadata) ([]KVWithMetadata, error) {
+	var correlateWithType []IPAllocKVWithMetadata
 	for _, kvpair := range correlate {
-		typedValue, err := castAddrAllocValue(kvpair.Key, kvpair.Value)
+		typedValue, err := castIPAllocValue(kvpair.Key, kvpair.Value)
 		if err != nil {
 			continue
 		}
-		typedMetadata, err := castAddrAllocMetadata(kvpair.Key, kvpair.Metadata)
+		typedMetadata, err := castIPAllocMetadata(kvpair.Key, kvpair.Metadata)
 		if err != nil {
 			continue
 		}
 		correlateWithType = append(correlateWithType,
-			AddrAllocKVWithMetadata{
+			IPAllocKVWithMetadata{
 				Key:      kvpair.Key,
 				Value:    typedValue,
 				Metadata: typedMetadata,
@@ -195,16 +195,16 @@ func (da *AddrAllocDescriptorAdapter) Retrieve(correlate []KVWithMetadata) ([]KV
 	return values, err
 }
 
-func (da *AddrAllocDescriptorAdapter) DerivedValues(key string, value proto.Message) []KeyValuePair {
-	typedValue, err := castAddrAllocValue(key, value)
+func (da *IPAllocDescriptorAdapter) DerivedValues(key string, value proto.Message) []KeyValuePair {
+	typedValue, err := castIPAllocValue(key, value)
 	if err != nil {
 		return nil
 	}
 	return da.descriptor.DerivedValues(key, typedValue)
 }
 
-func (da *AddrAllocDescriptorAdapter) Dependencies(key string, value proto.Message) []Dependency {
-	typedValue, err := castAddrAllocValue(key, value)
+func (da *IPAllocDescriptorAdapter) Dependencies(key string, value proto.Message) []Dependency {
+	typedValue, err := castIPAllocValue(key, value)
 	if err != nil {
 		return nil
 	}
@@ -213,19 +213,19 @@ func (da *AddrAllocDescriptorAdapter) Dependencies(key string, value proto.Messa
 
 ////////// Helper methods //////////
 
-func castAddrAllocValue(key string, value proto.Message) (*netalloc.AddressAllocation, error) {
-	typedValue, ok := value.(*netalloc.AddressAllocation)
+func castIPAllocValue(key string, value proto.Message) (*netalloc.IPAllocation, error) {
+	typedValue, ok := value.(*netalloc.IPAllocation)
 	if !ok {
 		return nil, ErrInvalidValueType(key, value)
 	}
 	return typedValue, nil
 }
 
-func castAddrAllocMetadata(key string, metadata Metadata) (*netalloc.AddrAllocMetadata, error) {
+func castIPAllocMetadata(key string, metadata Metadata) (*netalloc.IPAllocMetadata, error) {
 	if metadata == nil {
 		return nil, nil
 	}
-	typedMetadata, ok := metadata.(*netalloc.AddrAllocMetadata)
+	typedMetadata, ok := metadata.(*netalloc.IPAllocMetadata)
 	if !ok {
 		return nil, ErrInvalidMetadataType(key)
 	}

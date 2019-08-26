@@ -22,28 +22,6 @@ option go_package = "github.com/ligato/vpp-agent/api/models/netalloc";
 import "github.com/gogo/protobuf/gogoproto/gogo.proto";
 option (gogoproto.messagename_all) = true;
 
-// AddressType lists all different types of addresses that can be allocated
-// and referenced from models of other plugins.
-enum AddressType {
-    UNDEFINED = 0;
-
-    // IPV4_ADDR = IPv4 address of an interface
-    IPV4_ADDR = 1;
-
-    // IPV4_GW = IPv4 address of a gateway set for a given interface
-    IPV4_GW = 2;
-
-    // IPV6_ADDR = IPv6 address of an interface
-    IPV6_ADDR = 3;
-
-    // IPV6_GW = IPv6 address of a gateway set for a given interface
-    IPV6_GW = 4;
-
-    // TBD: HW addresses have to be first derived out in order to be dependant
-    //      on allocation
-    // HW_ADDR = 5;
-};
-
 // IPAddressForm can be used in descriptors whose models reference allocated IP
 // addresses, to ask for a specific form in which the address should applied.
 enum IPAddressForm {
@@ -79,28 +57,19 @@ enum IPAddressSource {
     // ALLOC_REF is a reference inside NB configuration to an allocated
     // IP address.
     ALLOC_REF = 3;
-
-    // ALLOCATED IP address via netalloc.
-    ALLOCATED = 4;
 }
 
-// AddressAllocation represents a single allocated IP address.
+// IPAllocation represents a single allocated IP address.
 //
 // To reference allocated address, instead of entering specific IP address
-// for interface/route/ARP/..., use one of the following string templates prefixed
-// with netalloc keyword "alloc":
-//  a) full reference (for available address types see AddressType above):
-//        "alloc:<network_name>/<interface_name>/<address_type>"
-//  b) IPv4 is the default address to pick up, so for IPv4 the <address-type>
-//     can be omitted:
+// for interface/route/ARP/..., use one of the following string templates
+// prefixed with netalloc keyword "alloc" followed by colon:
+//  a) full reference:
 //        "alloc:<network_name>/<interface_name>"
-//  c) when interface is given (e.g. when asked for IP from interface model),
+//  b) when interface is given (e.g. when asked for IP from interface model),
 //     interface_name can be omitted:
-//        "alloc:<network_name>/<address_type>"
-//  d) when interface is given and IPv4 address is requested, then just specify
-//      the network name:
 //        "alloc:<network_name>"
-message AddressAllocation {
+message IPAllocation {
     // NetworkName is some label assigned to the network where the IP address
     // was assigned to the given interface.
     // In theory, interface can have multiple IP adresses or there can be multiple
@@ -112,18 +81,23 @@ message AddressAllocation {
     // address is allocated.
     string interface_name = 2;
 
-    // AddressType specifies the type of the address assigned to the interface.
-    AddressType address_type = 3;
-
-    // Address is IP or MAC or address of some other type, as given by AddressType
-    // (see the field above).
-    // If address is IP address but without a mask, the all-ones mask (/32 for
+    // Address is an IP addres allocated to the interface inside the given
+    // network.
+    // If the address is specified without a mask, the all-ones mask (/32 for
     // IPv4, /128 for IPv6) will be assumed.
     string address = 4;
+
+    // Gw is the address of the default gateway assigned to the interface in
+    // the given network.
+    // If the address is specified without a mask, then either:
+    //  a) the mask of the <address> is used provided that GW IP falls into the
+    //     same network IP range, or
+    //  b) the all-ones mask is used otherwise
+    string gw = 5;
 }
 
 // ConfigData wraps all configuration items exported by netalloc.
-// TBD: VXLAN VNIs, memif IDs, etc.
+// TBD: MACs, VXLAN VNIs, memif IDs, etc.
 message ConfigData {
-    repeated AddressAllocation addresses = 10;
+    repeated IPAllocation ip_addresses = 10;
 }

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate descriptor-adapter --descriptor-name AddrAlloc --value-type *netalloc.AddressAllocation --meta-type *netalloc.AddrAllocMetadata --import "github.com/ligato/vpp-agent/api/models/netalloc" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name IPAlloc --value-type *netalloc.IPAllocation --meta-type *netalloc.IPAllocMetadata --import "github.com/ligato/vpp-agent/api/models/netalloc" --output-dir "descriptor"
 
 package netalloc
 
@@ -37,9 +37,9 @@ import (
 type Plugin struct {
 	Deps
 
-	// address allocation
-	addrAllocDescriptor *kvs.KVDescriptor
-	addrIndex           idxmap.NamedMapping
+	// IP address allocation
+	ipAllocDescriptor *kvs.KVDescriptor
+	ipIndex           idxmap.NamedMapping
 }
 
 // Deps lists dependencies of the netalloc plugin.
@@ -51,15 +51,15 @@ type Deps struct {
 // Init initializes netalloc descriptors.
 func (p *Plugin) Init() error {
 	// init & register descriptors
-	p.addrAllocDescriptor = descriptor.NewAddrAllocDescriptor(p.Log)
-	err := p.Deps.KVScheduler.RegisterKVDescriptor(p.addrAllocDescriptor)
+	p.ipAllocDescriptor = descriptor.NewAddrAllocDescriptor(p.Log)
+	err := p.Deps.KVScheduler.RegisterKVDescriptor(p.ipAllocDescriptor)
 	if err != nil {
 		return err
 	}
 
 	// obtain map with metadata of allocated addresses
-	p.addrIndex = p.KVScheduler.GetMetadataMap(descriptor.AddrAllocDescriptorName)
-	if p.addrIndex == nil {
+	p.ipIndex = p.KVScheduler.GetMetadataMap(descriptor.IPAllocDescriptorName)
+	if p.ipIndex == nil {
 		return errors.New("missing index with metadata of allocated addresses")
 	}
 	return nil
@@ -70,25 +70,30 @@ func (p *Plugin) Close() error {
 	return nil
 }
 
+// ParseAddressAllocRef parses reference to an allocated IP address.
+func (p *Plugin) ParseAddressAllocRef(addrAllocRef, expIface string) (
+	network, iface string, isRef bool, err error) {
+	return utils.ParseAddrAllocRef(addrAllocRef, expIface)
+}
+
 // GetAddressAllocDep reads what can be potentially a reference to an allocated
-// address (of any type). If <allocRef> is indeed a reference, the function
-// returns the corresponding dependency to be passed further into KVScheduler
+// IP address. If <allocRef> is indeed a reference, the function returns
+// the corresponding dependency to be passed further into KVScheduler
 // from the descriptor. Otherwise <hasAllocDep> is returned as false, and
 // <allocRef> should be an actual address and not a reference.
 func (p *Plugin) GetAddressAllocDep(addrOrAllocRef, ifaceName, depLabelPrefix string) (
 	dep kvs.Dependency, hasAllocDep bool) {
 
-	network, iface, addrType, isRef, err := utils.ParseAddrAllocRef(addrOrAllocRef, ifaceName)
+	network, iface, isRef, err := utils.ParseAddrAllocRef(addrOrAllocRef, ifaceName)
 	if !isRef || err != nil {
 		return kvs.Dependency{}, false
 	}
 
 	return kvs.Dependency{
 		Label: depLabelPrefix + addrOrAllocRef,
-		Key: models.Key(&netalloc.AddressAllocation{
+		Key: models.Key(&netalloc.IPAllocation{
 			NetworkName:   network,
 			InterfaceName: iface,
-			AddressType:   addrType,
 		}),
 	}, true
 }
@@ -96,11 +101,10 @@ func (p *Plugin) GetAddressAllocDep(addrOrAllocRef, ifaceName, depLabelPrefix st
 // ValidateIPAddress checks validity of address reference or, if <addrOrAllocRef>
 // already contains an actual IP address, it tries to parse it.
 func (p *Plugin) ValidateIPAddress(addrOrAllocRef, ifaceName, fieldName string) error {
-	_, _, _, isRef, err := utils.ParseAddrAllocRef(addrOrAllocRef, ifaceName)
+	_, _, isRef, err := utils.ParseAddrAllocRef(addrOrAllocRef, ifaceName)
 	if !isRef {
-		_, err = utils.ParseIPAddr(addrOrAllocRef)
+		_, err = utils.ParseIPAddr(addrOrAllocRef, nil)
 	}
-
 	if err != nil {
 		if fieldName != "" {
 			return kvs.NewInvalidValueError(err, fieldName)
@@ -108,46 +112,47 @@ func (p *Plugin) ValidateIPAddress(addrOrAllocRef, ifaceName, fieldName string) 
 			return kvs.NewInvalidValueError(err)
 		}
 	}
-
 	return nil
 }
 
-// GetOrParseIPAddress tries to get allocated IP address referenced by
-// <addrOrAllocRef> in the requested form. But if the string contains
-// an actual IP address instead of a reference, the address is parsed
+// GetOrParseIPAddress tries to get allocated interface (or GW) IP address
+// referenced by <addrOrAllocRef> in the requested form. But if the string
+// contains/ an actual IP address instead of a reference, the address is parsed
 // using methods from the net package and returned in the requested form.
 // For ADDR_ONLY address form, the returned <addr> will have the mask unset
 // and the IP address should be accessed as <addr>.IP
 func (p *Plugin) GetOrParseIPAddress(addrOrAllocRef string, ifaceName string,
-	addrForm netalloc.IPAddressForm) (addr *net.IPNet, err error) {
+	getGW bool, addrForm netalloc.IPAddressForm) (addr *net.IPNet, err error) {
 
-	network, iface, addrType, isRef, err := utils.ParseAddrAllocRef(addrOrAllocRef, ifaceName)
+	network, iface, isRef, err := utils.ParseAddrAllocRef(addrOrAllocRef, ifaceName)
 	if isRef && err != nil {
 		return nil, err
 	}
 
 	if isRef {
-		// reference to (to-be) allocated IP address
-		allocName := models.Name(&netalloc.AddressAllocation{
+		// reference to allocated IP address
+		allocName := models.Name(&netalloc.IPAllocation{
 			NetworkName:   network,
 			InterfaceName: iface,
-			AddressType:   addrType,
 		})
-		allocVal, found := p.addrIndex.GetValue(allocName)
+		allocVal, found := p.ipIndex.GetValue(allocName)
 		if !found {
-			return nil, fmt.Errorf("failed to find metadata for address allocation '%s'",
+			return nil, fmt.Errorf("failed to find metadata for IP address allocation '%s'",
 				allocName)
 		}
-		allocMeta, ok := allocVal.(*netalloc.AddrAllocMetadata)
+		allocMeta, ok := allocVal.(*netalloc.IPAllocMetadata)
 		if !ok {
-			return nil, fmt.Errorf("invalid type of metadata stored for address allocation '%s'",
+			return nil, fmt.Errorf("invalid type of metadata stored for IP address allocation '%s'",
 				allocName)
 		}
-		return utils.GetIPAddrInGivenForm(allocMeta.IPAddr, addrForm), nil
+		if getGW {
+			return utils.GetIPAddrInGivenForm(allocMeta.GwAddr, addrForm), nil
+		}
+		return utils.GetIPAddrInGivenForm(allocMeta.IfaceAddr, addrForm), nil
 	}
 
 	// not a reference - try to parse the address
-	ipAddr, err := utils.ParseIPAddr(addrOrAllocRef)
+	ipAddr, err := utils.ParseIPAddr(addrOrAllocRef, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -155,22 +160,22 @@ func (p *Plugin) GetOrParseIPAddress(addrOrAllocRef string, ifaceName string,
 }
 
 // CorrelateRetrievedIPs should be used in Retrieve to correlate one or group
-// of (model-wise indistinguishable) retrieved IP addresses with the expected
-// configuration. The method will replace retrieved addresses with the
-// corresponding allocation references from the expected configuration if
-// there are any.
+// of (model-wise indistinguishable) retrieved interface or GW IP addresses
+// with the expected configuration. The method will replace retrieved addresses
+// with the corresponding allocation references from the expected configuration
+// if there are any.
 // The method returns one IP address or address-allocation reference for every
 // address from <retrievedAddrs>.
 func (p *Plugin) CorrelateRetrievedIPs(expAddrsOrRefs []string, retrievedAddrs []string,
-	ifaceName string, addrForm netalloc.IPAddressForm) (correlated []string) {
+	ifaceName string, areGWs bool, addrForm netalloc.IPAddressForm) (correlated []string) {
 
 	expParsed := make([]*net.IPNet, len(expAddrsOrRefs))
 	for i, addr := range expAddrsOrRefs {
-		expParsed[i], _ = p.GetOrParseIPAddress(addr, ifaceName, addrForm)
+		expParsed[i], _ = p.GetOrParseIPAddress(addr, ifaceName, areGWs, addrForm)
 	}
 
 	for _, addr := range retrievedAddrs {
-		ipAddr, err := utils.ParseIPAddr(addr)
+		ipAddr, err := utils.ParseIPAddr(addr, nil)
 		if err != nil {
 			// invalid - do not try to correlate, just return as is
 			correlated = append(correlated, addr)

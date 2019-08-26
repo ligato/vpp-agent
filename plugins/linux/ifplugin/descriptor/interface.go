@@ -183,8 +183,8 @@ func NewInterfaceDescriptor(
 		DerivedValues:        ctx.DerivedValues,
 		Dependencies:         ctx.Dependencies,
 		RetrieveDependencies: []string{
-			// refresh the pool of allocated addresses first
-			netalloc_descr.AddrAllocDescriptorName,
+			// refresh the pool of allocated IP addresses first
+			netalloc_descr.IPAllocDescriptorName,
 			nsdescriptor.MicroserviceDescriptorName},
 	}
 	descr = adapter.NewInterfaceDescriptor(typedDescr)
@@ -784,7 +784,7 @@ func (d *InterfaceDescriptor) Retrieve(correlate []adapter.InterfaceKVWithMetada
 		if expCfg, hasExpCfg := ifCfg[kv.Value.Name]; hasExpCfg {
 			kv.Value.IpAddresses = d.addrAlloc.CorrelateRetrievedIPs(
 				expCfg.IpAddresses, kv.Value.IpAddresses,
-				kv.Value.Name, netalloc_api.IPAddressForm_ADDR_WITH_MASK)
+				kv.Value.Name, false, netalloc_api.IPAddressForm_ADDR_WITH_MASK)
 		}
 	}
 

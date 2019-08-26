@@ -189,8 +189,8 @@ func NewInterfaceDescriptor(ifHandler vppcalls.InterfaceVppAPI, addrAlloc netall
 		Dependencies:       ctx.Dependencies,
 		DerivedValues:      ctx.DerivedValues,
 		RetrieveDependencies: []string{
-			// refresh the pool of allocated addresses first
-			netalloc_descr.AddrAllocDescriptorName,
+			// refresh the pool of allocated IP addresses first
+			netalloc_descr.IPAllocDescriptorName,
 			// If Linux-IfPlugin is loaded, dump it first.
 			linux_ifdescriptor.InterfaceDescriptorName},
 	}
@@ -509,6 +509,8 @@ func (d *InterfaceDescriptor) Dependencies(key string, intf *interfaces.Interfac
 							ip, _, err := net.ParseCIDR(ifaceAddr)
 							return err == nil && ip.IsMulticast()
 						}
+						// TODO: handle the case when multicast IP address is allocated
+						// via netalloc (too specific to bother until really needed)
 						return false
 					},
 				},
