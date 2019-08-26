@@ -38,6 +38,29 @@ type BytesBroker interface {
 	Delete(key string, opts ...datasync.DelOption) (existed bool, err error)
 }
 
+// BytesBrokerWithAtomic extends BytesBroker with atomic operations.
+// Currently only etcd plugin supports atomic operations.
+type BytesBrokerWithAtomic interface {
+	BytesBroker
+
+	// PutIfNotExists puts given key-value pair into the datastore if there is no value set for the key.
+	// If the put was successful, <succeeded> is returned as true. If the key already exists, <succeeded> is returned
+	// as false and the value for the key is untouched.
+	PutIfNotExists(key string, data []byte) (succeeded bool, err error)
+
+	// CompareAndSwap compares the value currently stored under the given key with the expected <oldData>,
+	// and only if the expected and actual data match, the value is then changed to <newData>. The comparison and the
+	// value change are executed together in a single transaction and cannot be interleaved with another operation for
+	// that key.
+	CompareAndSwap(key string, oldData, newData []byte) (swapped bool, err error)
+
+	// CompareAndDelete compares the value currently stored under the given key with the expected <data>,
+	// and only if the expected and actual data match, the value is then removed from the datastore. The comparison and
+	// the value removal are executed together in a single transaction and cannot be interleaved with another operation
+	// for that key.
+	CompareAndDelete(key string, data []byte) (deleted bool, err error)
+}
+
 // BytesTxn allows to group operations into the transaction.
 // Transaction executes multiple operations in a more efficient way in contrast
 // to executing them one by one.
