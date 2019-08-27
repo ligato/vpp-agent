@@ -26,6 +26,7 @@ stages:
   - Test
   - Build
   - Integration
+  - E2E
 
 jobs:
   include:
@@ -70,6 +71,17 @@ jobs:
       script:
         - make verify-binapi
         - make integration-tests
+
+    - stage: E2E
+      env: VPP_VERSION=1904
+      script:
+        - make e2e-tests
+    - env: VPP_VERSION=1908
+      script:
+        - make e2e-tests
+    - env: VPP_VERSION=1901
+      script:
+        - make e2e-tests
 
 notifications:
   slack:

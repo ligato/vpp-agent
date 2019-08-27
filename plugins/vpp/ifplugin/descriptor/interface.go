@@ -770,6 +770,11 @@ func equalStringSets(set1, set2 []string) bool {
 // contains IPv4 and/or IPv6 type addresses
 func getIPAddressVersions(ipAddrs []string) (hasIPv4, hasIPv6 bool) {
 	for _, ip := range ipAddrs {
+		if strings.HasPrefix(ip, netalloc_api.AllocRefPrefix) {
+			// TODO: figure out how to define VRF-related dependencies with netalloc'd addresses
+			//       - for now assume it is only used with IPv4
+			hasIPv4 = true
+		}
 		if strings.Contains(ip, ":") {
 			hasIPv6 = true
 		} else {

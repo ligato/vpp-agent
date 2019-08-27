@@ -250,25 +250,11 @@ func TestInterfaceAddressKey(t *testing.T) {
 			expectedKey: "vpp/interface/memif0/address/alloc_ref/alloc:net1",
 		},
 		{
-			name:        "IPv4 address allocated from netalloc",
-			iface:       "memif0",
-			address:     "10.10.10.10/24",
-			source:      netalloc.IPAddressSource_ALLOCATED,
-			expectedKey: "vpp/interface/memif0/address/allocated/10.10.10.10/24",
-		},
-		{
 			name:        "IPv6 address requested from netalloc",
 			iface:       "memif0",
 			address:     "alloc:net1/IPV6_ADDR",
 			source:      netalloc.IPAddressSource_STATIC,
 			expectedKey: "vpp/interface/memif0/address/alloc_ref/alloc:net1/IPV6_ADDR",
-		},
-		{
-			name:        "IPv6 address allocated from netalloc",
-			iface:       "memif0",
-			address:     "2001:db8::/32",
-			source:      netalloc.IPAddressSource_ALLOCATED,
-			expectedKey: "vpp/interface/memif0/address/allocated/2001:db8::/32",
 		},
 	}
 	for _, test := range tests {
@@ -318,14 +304,6 @@ func TestParseInterfaceAddressKey(t *testing.T) {
 			expectedIsAddrKey: true,
 		},
 		{
-			name:              "IPv4 address allocated from Netalloc",
-			key:               "vpp/interface/memif0/address/allocated/192.168.1.12/24",
-			expectedIface:     "memif0",
-			expectedIfaceAddr: "192.168.1.12/24",
-			expectedSource:    netalloc.IPAddressSource_ALLOCATED,
-			expectedIsAddrKey: true,
-		},
-		{
 			name:              "IPv6 address",
 			key:               "vpp/interface/tap1/address/static/2001:db8:85a3::8a2e:370:7334/48",
 			expectedIface:     "tap1",
@@ -339,14 +317,6 @@ func TestParseInterfaceAddressKey(t *testing.T) {
 			expectedIface:     "tap1",
 			expectedIfaceAddr: "alloc:net1/IPV6_ADDR",
 			expectedSource:    netalloc.IPAddressSource_ALLOC_REF,
-			expectedIsAddrKey: true,
-		},
-		{
-			name:              "IPv6 address allocated from netalloc",
-			key:               "vpp/interface/tap1/address/allocated/2001:db8:85a3::8a2e:370:7334/48",
-			expectedIface:     "tap1",
-			expectedIfaceAddr: "2001:db8:85a3::8a2e:370:7334/48",
-			expectedSource:    netalloc.IPAddressSource_ALLOCATED,
 			expectedIsAddrKey: true,
 		},
 		{

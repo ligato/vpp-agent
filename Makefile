@@ -131,6 +131,10 @@ integration-tests:
 	@echo "=> running integration tests"
 	VPP_IMG=$(VPP_IMG) ./tests/integration/vpp_integration.sh
 
+e2e-tests:
+	@echo "=> running end-to-end tests"
+	VPP_IMG=$(VPP_IMG) ./tests/e2e/run_e2e.sh
+
 # -------------------------------
 #  Code generation
 # -------------------------------

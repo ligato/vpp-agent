@@ -53,6 +53,7 @@ func NewAddrAllocDescriptor(log logging.PluginLogger) (descr *kvs.KVDescriptor) 
 		Create:        ctx.Create,
 		Delete:        ctx.Delete,
 		Retrieve:      ctx.Retrieve,
+		DerivedValues: ctx.DerivedValues,
 	}
 	descr = adapter.NewIPAllocDescriptor(typedDescr)
 	return
