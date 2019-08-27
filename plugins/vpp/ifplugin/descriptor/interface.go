@@ -283,6 +283,10 @@ func (d *InterfaceDescriptor) equivalentTypeSpecificConfig(oldIntf, newIntf *int
 		if !d.equivalentBond(oldIntf.GetBond(), newIntf.GetBond()) {
 			return false
 		}
+	case interfaces.Interface_GRE_TUNNEL:
+		if !proto.Equal(oldIntf.GetGre(), newIntf.GetGre()) {
+			return false
+		}
 	}
 	return true
 }
