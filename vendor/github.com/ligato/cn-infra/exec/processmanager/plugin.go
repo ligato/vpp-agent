@@ -18,6 +18,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"time"
 
 	"github.com/ligato/cn-infra/exec/processmanager/status"
 	"github.com/ligato/cn-infra/exec/processmanager/template"
@@ -78,8 +79,6 @@ type Config struct {
 // Init reads plugin config file for process template path. If exists, plugin initializes template reader, reads
 // all existing templates and initializes them. Those marked as 'run on startup' are immediately started
 func (p *Plugin) Init() error {
-	p.Log.Debugf("Initializing process manager plugin")
-
 	templatePath, err := p.getPMConfig()
 	if err != nil {
 		return err
@@ -328,7 +327,9 @@ func (p *Plugin) processToTemplate(pr *Process) (*process.Template, error) {
 			}
 			return true
 		}(pr.options.notifyChan),
-		AutoTerminate: pr.options.autoTerm,
+		AutoTerminate:    pr.options.autoTerm,
+		CpuAffinity:      pr.options.cpuAffinity,
+		CpuAffinityDelay: pr.options.cpuAffinityDelay.String(),
 	}
 
 	return &process.Template{
@@ -349,29 +350,31 @@ func (p *Plugin) templateToProcess(tmp *process.Template) (*Process, error) {
 
 	pOptions := &POptions{}
 	if tmp.POptions != nil {
-		pOptions.args = tmp.POptions.Args
+		pOptions.args = tmp.POptions.GetArgs()
 		pOptions.outWriter = func(isSet bool) io.Writer {
 			if isSet {
 				return os.Stdout
 			}
 			return nil
-		}(tmp.POptions.OutWriter)
+		}(tmp.POptions.GetOutWriter())
 		pOptions.errWriter = func(isSet bool) io.Writer {
 			if isSet {
 				return os.Stderr
 			}
 			return nil
-		}(tmp.POptions.ErrWriter)
-		pOptions.detach = tmp.POptions.Detach
-		pOptions.restart = tmp.POptions.Restart
-		pOptions.runOnStartup = tmp.POptions.RunOnStartup
+		}(tmp.POptions.GetErrWriter())
+		pOptions.detach = tmp.POptions.GetDetach()
+		pOptions.restart = tmp.POptions.GetRestart()
+		pOptions.runOnStartup = tmp.POptions.GetRunOnStartup()
 		pOptions.notifyChan = func(notify bool) chan status.ProcessStatus {
 			if notify {
 				return make(chan status.ProcessStatus)
 			}
 			return nil
-		}(tmp.POptions.Notify)
-		pOptions.autoTerm = tmp.POptions.AutoTerminate
+		}(tmp.POptions.GetNotify())
+		pOptions.autoTerm = tmp.POptions.GetAutoTerminate()
+		pOptions.cpuAffinity = tmp.POptions.GetCpuAffinity()
+		pOptions.cpuAffinityDelay = p.parseDuration(tmp.POptions.GetCpuAffinityDelay())
 	}
 
 	return &Process{
@@ -385,4 +388,13 @@ func (p *Plugin) templateToProcess(tmp *process.Template) (*Process, error) {
 		},
 		cancelChan: make(chan struct{}),
 	}, nil
+}
+
+func (p *Plugin) parseDuration(durationStr string) (duration time.Duration) {
+	var err error
+	duration, err = time.ParseDuration(durationStr)
+	if err != nil {
+		p.Log.Errorf("failed to parse duration %s: %v", err)
+	}
+	return
 }

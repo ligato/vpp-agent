@@ -18,6 +18,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -79,6 +80,15 @@ func (p *Process) startProcess() (cmd *exec.Cmd, err error) {
 	// now the process is running, start the status watcher
 	if !p.isWatched {
 		go p.watch()
+	}
+
+	// set process CPU lock in another go routine
+	// since it may contain delayed startup
+	if p.options.cpuAffinity != "" {
+		go func() {
+			time.Sleep(p.options.cpuAffinityDelay)
+			p.setProcessCPUAffinity(cmd)
+		}()
 	}
 
 	if cmd.Process != nil {
@@ -149,7 +159,7 @@ func (p *Process) isAlive() bool {
 	return true
 }
 
-// WaitOnCommand waits until the command completes
+// waits until the command completes
 func (p *Process) waitOnProcess() (*os.ProcessState, error) {
 	if p.command == nil || p.command.Process == nil {
 		return &os.ProcessState{}, nil
@@ -158,7 +168,7 @@ func (p *Process) waitOnProcess() (*os.ProcessState, error) {
 	return p.command.Process.Wait()
 }
 
-// Delete stops the process and internal watcher
+// stops the process and internal watcher
 func (p *Process) deleteProcess() error {
 	if p.command == nil || p.command.Process == nil {
 		return nil
@@ -173,13 +183,34 @@ func (p *Process) deleteProcess() error {
 	return nil
 }
 
-// WaitOnCommand waits until the command completes
+// sends custom signal to process
 func (p *Process) signalToProcess(signal os.Signal) error {
 	if p.command == nil || p.command.Process == nil {
-		p.log.Warn("Attempt to send signal to non-running process")
+		err := errors.Errorf("attempt to send signal to non-running process")
+		p.log.Error(err)
+		return err
 	}
 
 	return p.command.Process.Signal(signal)
+}
+
+// setProcessCpuAffinity process CPU affinity. Unsuccessful CPU assignment does not return error
+// (message is only printed).
+func (p *Process) setProcessCPUAffinity(cmd *exec.Cmd) {
+	if cmd == nil || cmd.Process == nil || p.options == nil || p.options.cpuAffinity == "" {
+		return
+	}
+	if _, err := strconv.ParseUint(p.options.cpuAffinity, 16, 64); err != nil {
+		p.log.Errorf("Provided CPU affinity value %s for process %s is not valid (error: %v)",
+			p.options.cpuAffinity, "supervisor", err)
+		return
+	}
+	if _, err := exec.Command("taskset", "-p", p.options.cpuAffinity,
+		strconv.Itoa(cmd.Process.Pid)).Output(); err != nil {
+		p.log.Errorf("Failed to assign CPU affinity to process %s: %v", "supervisor", err)
+		return
+	}
+	p.log.Warnf("CPU affinity %s set to process %s", p.options.cpuAffinity, p.name)
 }
 
 // Periodically tries to 'ping' process. If the process is unresponsive, marks it as terminated. Otherwise the process

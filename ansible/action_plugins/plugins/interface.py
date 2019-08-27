@@ -35,7 +35,7 @@ class InterfaceValidation:
     def validate(self):
         interface = Interface()
         Parse(json.dumps(self.values), interface)
-        return MessageToJson(interface, indent=None)
+        return MessageToJson(interface, preserving_proto_field_name=True, indent=None)
 
     def create_key(self):
         return "/vnf-agent/{}/config/vpp/v2/interfaces/{}".format(self.agent_name, self.values['name'])

@@ -30,6 +30,7 @@ import (
 	punt "github.com/ligato/vpp-agent/api/models/vpp/punt"
 	stn "github.com/ligato/vpp-agent/api/models/vpp/stn"
 	vppclient "github.com/ligato/vpp-agent/clientv2/vpp"
+	orch "github.com/ligato/vpp-agent/plugins/orchestrator"
 )
 
 // NewDataResyncDSL returns a new instance of DataResyncDSL which implements
@@ -51,6 +52,15 @@ type DataResyncDSL struct {
 // Interface adds VPP interface to the RESYNC request.
 func (dsl *DataResyncDSL) Interface(val *intf.Interface) vppclient.DataResyncDSL {
 	key := intf.InterfaceKey(val.Name)
+	dsl.txn.Put(key, val)
+	dsl.txnKeys = append(dsl.txnKeys, key)
+
+	return dsl
+}
+
+// Span adds VPP span to the RESYNC request.
+func (dsl *DataResyncDSL) Span(val *intf.Span) vppclient.DataResyncDSL {
+	key := intf.SpanKey(val.InterfaceFrom, val.InterfaceTo)
 	dsl.txn.Put(key, val)
 	dsl.txnKeys = append(dsl.txnKeys, key)
 
@@ -283,7 +293,9 @@ func (dsl *DataResyncDSL) Send() vppclient.Reply {
 		break
 	}
 
-	err := dsl.txn.Commit(context.Background())
+	ctx := context.Background()
+	ctx = orch.DataSrcContext(ctx, "localclient")
+	err := dsl.txn.Commit(ctx)
 
 	return &Reply{err: err}
 }

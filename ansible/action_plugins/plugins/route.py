@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import json
-from enum import Enum
 
 from google.protobuf.json_format import MessageToJson, Parse
 
@@ -36,7 +35,7 @@ class RouteValidation:
     def validate(self):
         route = Route()
         Parse(json.dumps(self.values), route)
-        return MessageToJson(route, indent=None)
+        return MessageToJson(route, preserving_proto_field_name=True, indent=None)
 
     def create_key(self):
         return "/vnf-agent/{}/config/vpp/v2/route/vrf/{}/dst/{}/gw/{}".format(self.agent_name,

@@ -33,6 +33,12 @@ var (
 		Version: "v2",
 		Type:    "interfaces",
 	})
+
+	ModelSpan = models.Register(&Span{}, models.Spec{
+		Module:  ModuleName,
+		Version: "v2",
+		Type:    "span",
+	}, models.WithNameTemplate("{{.InterfaceFrom}}/to/{{.InterfaceTo}}"))
 )
 
 // InterfaceKey returns the key used in NB DB to store the configuration of the
@@ -40,6 +46,15 @@ var (
 func InterfaceKey(name string) string {
 	return models.Key(&Interface{
 		Name: name,
+	})
+}
+
+// SpanKey returns the key used in NB DB to store the configuration of the
+// given vpp span.
+func SpanKey(ifaceFrom, ifaceTo string) string {
+	return models.Key(&Span{
+		InterfaceFrom: ifaceFrom,
+		InterfaceTo:   ifaceTo,
 	})
 }
 

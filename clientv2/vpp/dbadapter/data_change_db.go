@@ -30,6 +30,7 @@ import (
 	punt "github.com/ligato/vpp-agent/api/models/vpp/punt"
 	stn "github.com/ligato/vpp-agent/api/models/vpp/stn"
 	vppclient "github.com/ligato/vpp-agent/clientv2/vpp"
+	orch "github.com/ligato/vpp-agent/plugins/orchestrator"
 )
 
 // NewDataChangeDSL returns a new instance of DataChangeDSL which implements
@@ -69,13 +70,22 @@ func (dsl *DataChangeDSL) Delete() vppclient.DeleteDSL {
 
 // Send propagates requested changes to the plugins.
 func (dsl *DataChangeDSL) Send() vppclient.Reply {
-	err := dsl.txn.Commit(context.Background())
+	ctx := context.Background()
+	ctx = orch.DataSrcContext(ctx, "localclient")
+	err := dsl.txn.Commit(ctx)
 	return &Reply{err}
 }
 
 // Interface adds a request to create or update VPP network interface.
 func (dsl *PutDSL) Interface(val *intf.Interface) vppclient.PutDSL {
 	dsl.parent.txn.Put(intf.InterfaceKey(val.Name), val)
+	return dsl
+}
+
+// Span adds VPP span to the change request.
+func (dsl *PutDSL) Span(val *intf.Span) vppclient.PutDSL {
+	key := intf.SpanKey(val.InterfaceFrom, val.InterfaceTo)
+	dsl.parent.txn.Put(key, val)
 	return dsl
 }
 
@@ -200,6 +210,13 @@ func (dsl *PutDSL) Send() vppclient.Reply {
 // Interface adds a request to delete an existing VPP network interface.
 func (dsl *DeleteDSL) Interface(interfaceName string) vppclient.DeleteDSL {
 	dsl.parent.txn.Delete(intf.InterfaceKey(interfaceName))
+	return dsl
+}
+
+// Span adds VPP span to the RESYNC request.
+func (dsl *DeleteDSL) Span(val *intf.Span) vppclient.DeleteDSL {
+	key := intf.SpanKey(val.InterfaceFrom, val.InterfaceTo)
+	dsl.parent.txn.Delete(key)
 	return dsl
 }
 
