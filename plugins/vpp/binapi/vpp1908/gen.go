@@ -20,6 +20,7 @@ package vpp1908
 //go:generate binapigen --input-file=/usr/share/vpp/api/core/bfd.api.json
 //go:generate binapigen --input-file=/usr/share/vpp/api/core/bond.api.json
 //go:generate binapigen --input-file=/usr/share/vpp/api/core/dhcp.api.json
+//go:generate binapigen --input-file=/usr/share/vpp/api/core/gre.api.json
 //go:generate binapigen --input-file=/usr/share/vpp/api/core/interface.api.json
 //go:generate binapigen --input-file=/usr/share/vpp/api/core/ip.api.json
 //go:generate binapigen --input-file=/usr/share/vpp/api/core/ipsec.api.json

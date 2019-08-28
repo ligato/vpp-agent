@@ -2,15 +2,18 @@ package vpp1908
 
 import (
 	"errors"
-	"fmt"
 	"net"
 
 	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/gre"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1908/gre"
 )
 
-func (h *InterfaceVppHandler) greAddDelTunnel(isAdd uint8, greLink *interfaces.GreLink) (uint32, error) {
+func (h *InterfaceVppHandler) greAddDelTunnel(isAdd bool, greLink *interfaces.GreLink) (uint32, error) {
+	if greLink.TunnelType == interfaces.GreLink_UNKNOWN {
+		err := errors.New("bad GRE tunnel type")
+		return 0, err
+	}
+
 	greSource := net.ParseIP(greLink.SrcAddr)
 	if greSource == nil {
 		err := errors.New("bad source address for GRE tunnel")
@@ -31,9 +34,21 @@ func (h *InterfaceVppHandler) greAddDelTunnel(isAdd uint8, greLink *interfaces.G
 		err := errors.New("set session id for ERSPAN tunnel type")
 		return 0, err
 	}
-	req := &gre.GreAddDelTunnel{
-		IsAdd:      isAdd,
-		TunnelType: uint8(greLink.TunnelType),
+
+	var tt gre.GreTunnelType
+	switch uint8(greLink.TunnelType - 1) {
+	case 0:
+		tt = gre.GRE_API_TUNNEL_TYPE_L3
+	case 1:
+		tt = gre.GRE_API_TUNNEL_TYPE_TEB
+	case 2:
+		tt = gre.GRE_API_TUNNEL_TYPE_ERSPAN
+	default:
+		return 0, errors.New("bad GRE tunnel type")
+	}
+
+	tunnel := gre.GreTunnel{
+		Type:       tt,
 		Instance:   ^uint32(0),
 		OuterFibID: greLink.OuterFibId,
 		SessionID:  uint16(greLink.SessionId),
@@ -52,25 +67,46 @@ func (h *InterfaceVppHandler) greAddDelTunnel(isAdd uint8, greLink *interfaces.G
 	}
 
 	if isSrcIPv6 {
-		req.SrcAddress = []byte(greSource.To16())
-		req.DstAddress = []byte(greDestination.To16())
-		req.IsIPv6 = 1
+		var src, dst [16]uint8
+		copy(src[:], []byte(greSource.To16()))
+		copy(dst[:], []byte(greDestination.To16()))
+		tunnel.Src = gre.Address{
+			Af: gre.ADDRESS_IP6,
+			Un: gre.AddressUnionIP6(gre.IP6Address(src)),
+		}
+		tunnel.Dst = gre.Address{
+			Af: gre.ADDRESS_IP6,
+			Un: gre.AddressUnionIP6(gre.IP6Address(dst)),
+		}
 	} else {
-		req.SrcAddress = []byte(greSource.To4())
-		req.DstAddress = []byte(greDestination.To4())
+		var src, dst [4]uint8
+		copy(src[:], []byte(greSource.To4()))
+		copy(dst[:], []byte(greDestination.To4()))
+		tunnel.Src = gre.Address{
+			Af: gre.ADDRESS_IP4,
+			Un: gre.AddressUnionIP4(gre.IP4Address(src)),
+		}
+		tunnel.Dst = gre.Address{
+			Af: gre.ADDRESS_IP4,
+			Un: gre.AddressUnionIP4(gre.IP4Address(dst)),
+		}
 	}
 
-	reply := &gre.GreAddDelTunnelReply{}
+	req := &gre.GreTunnelAddDel{
+		IsAdd:  isAdd,
+		Tunnel: tunnel,
+	}
+	reply := &gre.GreTunnelAddDelReply{}
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return 0, err
 	}
-	return reply.SwIfIndex, nil
+	return uint32(reply.SwIfIndex), nil
 }
 
 // AddGreTunnel adds new GRE interface.
 func (h *InterfaceVppHandler) AddGreTunnel(ifName string, greLink *interfaces.GreLink) (uint32, error) {
-	swIfIndex, err := h.greAddDelTunnel(1, greLink)
+	swIfIndex, err := h.greAddDelTunnel(true, greLink)
 	if err != nil {
 		return 0, err
 	}
@@ -79,49 +115,9 @@ func (h *InterfaceVppHandler) AddGreTunnel(ifName string, greLink *interfaces.Gr
 
 // DelGreTunnel removes GRE interface.
 func (h *InterfaceVppHandler) DelGreTunnel(ifName string, greLink *interfaces.GreLink) (uint32, error) {
-	swIfIndex, err := h.greAddDelTunnel(0, greLink)
+	swIfIndex, err := h.greAddDelTunnel(false, greLink)
 	if err != nil {
 		return 0, err
 	}
 	return swIfIndex, h.RemoveInterfaceTag(ifName, swIfIndex)
-}
-
-// DumpGre dumps GRE interface.
-func (h *InterfaceVppHandler) DumpGre(ifIdx uint32) ([]*vppcalls.GreTunnelDetails, error) {
-	var gres []*vppcalls.GreTunnelDetails
-	reqCtx := h.callsChannel.SendMultiRequest(&gre.GreTunnelDump{
-		SwIfIndex: ifIdx,
-	})
-
-	for {
-		greDetails := &gre.GreTunnelDetails{}
-		stop, err := reqCtx.ReceiveReply(greDetails)
-		if stop {
-			break
-		}
-		if err != nil {
-			return nil, fmt.Errorf("failed to dump span: %v", err)
-		}
-
-		var srcAddr, dstAddr net.IP
-		if greDetails.IsIPv6 == 1 {
-			srcAddr = net.IP(greDetails.SrcAddress)
-			dstAddr = net.IP(greDetails.DstAddress)
-		} else {
-			srcAddr = net.IP(greDetails.SrcAddress[:4])
-			dstAddr = net.IP(greDetails.DstAddress[:4])
-		}
-
-		gre := &vppcalls.GreTunnelDetails{
-			SwIfIndex:  greDetails.SwIfIndex,
-			Instance:   greDetails.Instance,
-			TunnelType: greDetails.TunnelType,
-			SrcAddress: srcAddr,
-			DstAddress: dstAddr,
-			OuterFibID: greDetails.OuterFibID,
-			SessionID:  greDetails.SessionID,
-		}
-		gres = append(gres, gre)
-	}
-	return gres, nil
 }

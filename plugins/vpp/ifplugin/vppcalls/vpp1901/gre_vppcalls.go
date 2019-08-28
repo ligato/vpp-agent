@@ -2,15 +2,18 @@ package vpp1901
 
 import (
 	"errors"
-	"fmt"
 	"net"
 
 	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/gre"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/gre"
 )
 
 func (h *InterfaceVppHandler) greAddDelTunnel(isAdd uint8, greLink *interfaces.GreLink) (uint32, error) {
+	if greLink.TunnelType == interfaces.GreLink_UNKNOWN {
+		err := errors.New("bad GRE tunnel type")
+		return 0, err
+	}
+
 	greSource := net.ParseIP(greLink.SrcAddr)
 	if greSource == nil {
 		err := errors.New("bad source address for GRE tunnel")
@@ -33,7 +36,7 @@ func (h *InterfaceVppHandler) greAddDelTunnel(isAdd uint8, greLink *interfaces.G
 	}
 	req := &gre.GreAddDelTunnel{
 		IsAdd:      isAdd,
-		TunnelType: uint8(greLink.TunnelType),
+		TunnelType: uint8(greLink.TunnelType - 1),
 		Instance:   ^uint32(0),
 		OuterFibID: greLink.OuterFibId,
 		SessionID:  uint16(greLink.SessionId),
@@ -84,44 +87,4 @@ func (h *InterfaceVppHandler) DelGreTunnel(ifName string, greLink *interfaces.Gr
 		return 0, err
 	}
 	return swIfIndex, h.RemoveInterfaceTag(ifName, swIfIndex)
-}
-
-// DumpGre dumps GRE interface.
-func (h *InterfaceVppHandler) DumpGre(ifIdx uint32) ([]*vppcalls.GreTunnelDetails, error) {
-	var gres []*vppcalls.GreTunnelDetails
-	reqCtx := h.callsChannel.SendMultiRequest(&gre.GreTunnelDump{
-		SwIfIndex: ifIdx,
-	})
-
-	for {
-		greDetails := &gre.GreTunnelDetails{}
-		stop, err := reqCtx.ReceiveReply(greDetails)
-		if stop {
-			break
-		}
-		if err != nil {
-			return nil, fmt.Errorf("failed to dump span: %v", err)
-		}
-
-		var srcAddr, dstAddr net.IP
-		if greDetails.IsIPv6 == 1 {
-			srcAddr = net.IP(greDetails.SrcAddress)
-			dstAddr = net.IP(greDetails.DstAddress)
-		} else {
-			srcAddr = net.IP(greDetails.SrcAddress[:4])
-			dstAddr = net.IP(greDetails.DstAddress[:4])
-		}
-
-		gre := &vppcalls.GreTunnelDetails{
-			SwIfIndex:  greDetails.SwIfIndex,
-			Instance:   greDetails.Instance,
-			TunnelType: greDetails.TunnelType,
-			SrcAddress: srcAddr,
-			DstAddress: dstAddr,
-			OuterFibID: greDetails.OuterFibID,
-			SessionID:  greDetails.SessionID,
-		}
-		gres = append(gres, gre)
-	}
-	return gres, nil
 }
