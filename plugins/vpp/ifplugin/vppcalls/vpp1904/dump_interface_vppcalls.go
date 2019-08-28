@@ -1053,7 +1053,7 @@ func getGreTunnelType(tt uint8) interfaces.GreLink_Type {
 	case 2:
 		return interfaces.GreLink_ERSPAN
 	default:
-		return interfaces.GreLink_L3
+		return interfaces.GreLink_UNKNOWN
 	}
 }
 

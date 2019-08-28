@@ -211,8 +211,6 @@ type InterfaceVppAPI interface {
 	AddGreTunnel(ifName string, greLink *interfaces.GreLink) (uint32, error)
 	// DelGreTunnel removes GRE interface.
 	DelGreTunnel(ifName string, greLink *interfaces.GreLink) (uint32, error)
-	// DumpGre dumps GRE interface (TODO: move this to `DumpInterfaceByType`).
-	DumpGre(ifIdx uint32) ([]*GreTunnelDetails, error)
 }
 
 // InterfaceVppRead provides read methods for interface plugin

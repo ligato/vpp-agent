@@ -110,6 +110,9 @@ var (
 	// ErrBondInterfaceIDExists is returned when the bond interface uses existing ID value
 	ErrBondInterfaceIDExists = errors.Errorf("Bond interface ID already exists")
 
+	// ErrGreBadTunnelType is returned when tunnel type for GRE was not set or set to UNKNOWN
+	ErrGreBadTunnelType = errors.Errorf("bad tunnel type for GRE")
+
 	// ErrGreSrcAddrMissing is returned when source address was not set or set to an empty string.
 	ErrGreSrcAddrMissing = errors.Errorf("missing source address for GRE tunnel")
 
@@ -439,6 +442,9 @@ func (d *InterfaceDescriptor) Validate(key string, intf *interfaces.Interface) e
 			return kvs.NewInvalidValueError(ErrBondInterfaceIDExists, "link.bond.id")
 		}
 	case interfaces.Interface_GRE_TUNNEL:
+		if intf.GetGre().TunnelType == interfaces.GreLink_UNKNOWN {
+			return kvs.NewInvalidValueError(ErrGreBadTunnelType, "link.gre.tunnel_type")
+		}
 		if intf.GetGre().SrcAddr == "" {
 			return kvs.NewInvalidValueError(ErrGreSrcAddrMissing, "link.gre.src_addr")
 		}

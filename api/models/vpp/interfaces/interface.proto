@@ -231,9 +231,10 @@ message BondLink {
 
 message GreLink {
     enum Type {
-        L3 = 0; // L3 GRE (i.e. this tunnel is in L3 mode)
-        TEB = 1; // Transparent Ethernet Bridging - the tunnel is in L2 mode
-        ERSPAN = 2; // ERSPAN - the tunnel is for port mirror SPAN output
+        UNKNOWN = 0;
+        L3 = 1; // L3 GRE (i.e. this tunnel is in L3 mode)
+        TEB = 2; // Transparent Ethernet Bridging - the tunnel is in L2 mode
+        ERSPAN = 3; // ERSPAN - the tunnel is for port mirror SPAN output
     };
     Type tunnel_type = 1;
     string src_addr = 2; 
