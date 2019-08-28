@@ -6,10 +6,9 @@ import (
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/health/statuscheck"
 	"github.com/ligato/cn-infra/health/statuscheck/model/status"
-	"github.com/pkg/errors"
-
 	"github.com/ligato/vpp-agent/api/models/vpp"
 	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
+	"github.com/pkg/errors"
 )
 
 // watchStatusEvents watches for resync event of interface state data.
@@ -140,11 +139,11 @@ func (p *IfPlugin) publishIfStateEvents() {
 					p.Log.Debugf("Updating link state: %+v", ifState)
 				}
 				p.linkStateDescriptor.UpdateLinkState(ifState)
-				if p.PushNotification != nil {
-					p.PushNotification(&vpp.Notification{
-						Interface: ifState,
-					})
-				}
+			}
+			if p.PushNotification != nil {
+				p.PushNotification(&vpp.Notification{
+					Interface: ifState,
+				})
 			}
 
 			p.publishLock.Unlock()
