@@ -106,7 +106,8 @@ func TestGre(t *testing.T) {
 	}
 	for i, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			ifIdx, err := h.AddGreTunnel(fmt.Sprintf("test%d", i), test.greLink)
+			ifName := fmt.Sprintf("test%d", i)
+			ifIdx, err := h.AddGreTunnel(ifName, test.greLink)
 
 			if err != nil {
 				if test.isFail {
@@ -144,6 +145,20 @@ func TestGre(t *testing.T) {
 			}
 			if test.greLink.SessionId != gre.SessionId {
 				t.Fatalf("expected session id <%d>, got: <%d>", test.greLink.SessionId, gre.SessionId)
+			}
+
+			ifIdx, err = h.DelGreTunnel(ifName, test.greLink)
+			if err != nil {
+				t.Fatalf("delete GRE tunnel failed: %v\n", err)
+			}
+
+			ifaces, err = h.DumpInterfaces()
+			if err != nil {
+				t.Fatalf("dumping interfaces failed: %v", err)
+			}
+			iface, ok = ifaces[ifIdx]
+			if ok {
+				t.Fatalf("GRE interface was found in dump")
 			}
 		})
 	}
