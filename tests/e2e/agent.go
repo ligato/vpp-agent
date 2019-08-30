@@ -107,7 +107,7 @@ func setupAgent(inSync chan struct{}) *vppAgent {
 // resetDefaultPlugins re-creates all the default plugins to ensure that
 // agent restarts into a clean state. Alternatively, we could avoid default
 // instances and create all the plugins using NewPlugin() methods instead, but
-// that would be boilerplate...
+// that would be more boilerplate...
 func resetDefaultPlugins() {
 	// common
 	local.DefaultRegistry = syncbase.NewRegistry()
