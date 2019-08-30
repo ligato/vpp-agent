@@ -136,23 +136,24 @@ func InterfaceAddressKey(ifName string, address string) string {
 
 // ParseInterfaceAddressKey parses interface address from key derived
 // from interface by InterfaceAddressKey().
-func ParseInterfaceAddressKey(key string) (ifName string, ifAddr *net.IPNet, isAddrKey bool) {
+func ParseInterfaceAddressKey(key string) (ifName string, ipAddr net.IP, ipAddrNet *net.IPNet, invalidIP bool, isAddrKey bool) {
 	var err error
 	if strings.HasPrefix(key, InterfaceAddressKeyPrefix) {
 		keySuffix := strings.TrimPrefix(key, InterfaceAddressKeyPrefix)
 		keyComps := strings.Split(keySuffix, "/")
 		if len(keyComps) != 3 {
-			return "", nil, false
+			return "", nil, nil, true, true
 		}
-		_, ifAddr, err = net.ParseCIDR(keyComps[1] + "/" + keyComps[2])
+		ipAddr, ipAddrNet, err = net.ParseCIDR(keyComps[1] + "/" + keyComps[2])
 		if err != nil {
-			return "", nil, false
+			return "", nil, nil, true, true
 		}
 		ifName = keyComps[0]
 		isAddrKey = true
+		invalidIP = false
 		return
 	}
-	return "", nil, false
+	return "", nil, nil, false, false
 }
 
 // MarshalJSON ensures that field of type 'oneOf' is correctly marshaled

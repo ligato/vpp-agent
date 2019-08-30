@@ -33,6 +33,10 @@ message Interface {
         VethLink veth = 20;             /* VETH-specific configuration */
         TapLink tap = 21;               /* TAP_TO_VPP-specific configuration */
     };
+    bool link_only = 9;                 /* Configure/Resync link only.
+                                           IP/MAC addresses are expected to be configured
+                                           externally - i.e. by a different agent
+                                           or manually via CLI. */
 };
 
 message VethLink {

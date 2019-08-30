@@ -496,7 +496,7 @@ func (d *InterfaceDescriptor) Dependencies(key string, intf *interfaces.Interfac
 				AnyOf: kvs.AnyOfDependency{
 					KeyPrefixes: []string{interfaces.InterfaceAddressPrefix(vxlanMulticast)},
 					KeySelector: func(key string) bool {
-						_, ifaceAddr, _, _, _ := interfaces.ParseInterfaceAddressKey(key)
+						_, ifaceAddr, _, _, _, _ := interfaces.ParseInterfaceAddressKey(key)
 						return ifaceAddr != nil && ifaceAddr.IsMulticast()
 					},
 				},
@@ -569,7 +569,7 @@ func (d *InterfaceDescriptor) DerivedValues(key string, intf *interfaces.Interfa
 	// IP addresses
 	for _, ipAddr := range intf.IpAddresses {
 		derValues = append(derValues, kvs.KeyValuePair{
-			Key:   interfaces.InterfaceAddressKey(intf.Name, ipAddr),
+			Key:   interfaces.InterfaceAddressKey(intf.Name, ipAddr, false),
 			Value: &prototypes.Empty{},
 		})
 	}
