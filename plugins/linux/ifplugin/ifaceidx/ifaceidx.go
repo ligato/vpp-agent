@@ -59,6 +59,7 @@ type LinuxIfMetadata struct {
 	LinuxIfIndex int
 	VPPTapName   string // empty for VETHs
 	Namespace    *linux_namespace.NetNamespace
+	HostIfName   string
 }
 
 // LinuxIfMetadataIndexDto represents an item sent through watch channel in LinuxIfMetadataIndex.

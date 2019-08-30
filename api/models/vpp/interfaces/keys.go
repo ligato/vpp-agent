@@ -72,9 +72,14 @@ const (
 
 /* Interface Address (derived) */
 const (
+	addressKeyPrefix = "vpp/interface/{iface}/address/"
+
 	// addressKeyTemplate is a template for (derived) key representing assigned
 	// IP addresses to an interface.
-	addressKeyTemplate = "vpp/interface/{iface}/address/{address}"
+	addressKeyTemplate = addressKeyPrefix + "{address-type}/{address}"
+
+	addressStatic = "static"
+	addressFromDHCP = "from-dhcp"
 )
 
 /* Interface VRF (derived) */
@@ -188,24 +193,34 @@ func InterfaceStateKey(iface string) string {
 // InterfaceAddressPrefix returns longest-common prefix of keys representing
 // assigned IP addresses to a specific VPP interface.
 func InterfaceAddressPrefix(iface string) string {
-	return InterfaceAddressKey(iface, "")
+	if iface == "" {
+		iface = InvalidKeyPart
+	}
+	return strings.Replace(addressKeyPrefix, "{iface}", iface, 1)
 }
 
 // InterfaceAddressKey returns key representing IP address assigned to VPP interface.
-func InterfaceAddressKey(iface string, address string) string {
+func InterfaceAddressKey(iface string, address string, fromDHCP bool) string {
 	if iface == "" {
 		iface = InvalidKeyPart
 	}
 
 	// construct key without validating the IP address
 	key := strings.Replace(addressKeyTemplate, "{iface}", iface, 1)
+	if fromDHCP {
+		key = strings.Replace(key, "{address-type}", addressFromDHCP, 1)
+	} else {
+		key = strings.Replace(key, "{address-type}", addressStatic, 1)
+	}
 	key = strings.Replace(key, "{address}", address, 1)
 	return key
 }
 
 // ParseInterfaceAddressKey parses interface address from key derived
 // from interface by InterfaceAddressKey().
-func ParseInterfaceAddressKey(key string) (iface string, ipAddr net.IP, ipAddrNet *net.IPNet, invalidIP, isAddrKey bool) {
+func ParseInterfaceAddressKey(key string) (iface string, ipAddr net.IP, ipAddrNet *net.IPNet,
+	fromDHCP, invalidIP, isAddrKey bool) {
+
 	parts := strings.Split(key, "/")
 	if len(parts) < 4 || parts[0] != "vpp" || parts[1] != "interface" {
 		return
@@ -229,9 +244,23 @@ func ParseInterfaceAddressKey(key string) (iface string, ipAddr net.IP, ipAddrNe
 		iface = InvalidKeyPart
 	}
 
+	// parse address type
+	if addrIdx == len(parts)-1 {
+		invalidIP = true
+		return
+	}
+	switch parts[addrIdx+1] {
+	case addressStatic:
+	case addressFromDHCP:
+		fromDHCP = true
+	default:
+		invalidIP = true
+		return
+	}
+
 	// parse IP address
 	var err error
-	ipAddr, ipAddrNet, err = net.ParseCIDR(strings.Join(parts[addrIdx+1:], "/"))
+	ipAddr, ipAddrNet, err = net.ParseCIDR(strings.Join(parts[addrIdx+2:], "/"))
 	if err != nil {
 		invalidIP = true
 	}

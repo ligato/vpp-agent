@@ -24,7 +24,6 @@ import (
 
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/linux/ifplugin/descriptor"
-	"github.com/ligato/vpp-agent/plugins/linux/ifplugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/linux/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/linux/ifplugin/linuxcalls"
 	"github.com/ligato/vpp-agent/plugins/linux/nsplugin"
@@ -47,8 +46,9 @@ type IfPlugin struct {
 	ifHandler linuxcalls.NetlinkAPI
 
 	// descriptors
-	ifDescriptor *descriptor.InterfaceDescriptor
-	ifWatcher    *descriptor.InterfaceWatcher
+	ifDescriptor     *descriptor.InterfaceDescriptor
+	ifWatcher        *descriptor.InterfaceWatcher
+	ifAddrDescriptor *descriptor.InterfaceAddressDescriptor
 
 	// index map
 	ifIndex ifaceidx.LinuxIfMetadataIndex
@@ -88,10 +88,18 @@ func (p *IfPlugin) Init() error {
 	p.ifHandler = linuxcalls.NewNetLinkHandler()
 
 	// init & register descriptors
-	p.ifDescriptor = descriptor.NewInterfaceDescriptor(p.KVScheduler,
+	var ifDescriptor *kvs.KVDescriptor
+	ifDescriptor, p.ifDescriptor = descriptor.NewInterfaceDescriptor(p.KVScheduler,
 		p.ServiceLabel, p.NsPlugin, p.VppIfPlugin, p.ifHandler, p.Log, config.GoRoutinesCnt)
-	ifDescriptor := adapter.NewInterfaceDescriptor(p.ifDescriptor.GetDescriptor())
 	err = p.Deps.KVScheduler.RegisterKVDescriptor(ifDescriptor)
+	if err != nil {
+		return err
+	}
+
+	var addrDescriptor *kvs.KVDescriptor
+	addrDescriptor, p.ifAddrDescriptor = descriptor.NewInterfaceAddressDescriptor(p.NsPlugin,
+		p.ifHandler, p.Log)
+	err = p.Deps.KVScheduler.RegisterKVDescriptor(addrDescriptor)
 	if err != nil {
 		return err
 	}
@@ -112,6 +120,7 @@ func (p *IfPlugin) Init() error {
 
 	// pass read-only index map to descriptors
 	p.ifDescriptor.SetInterfaceIndex(p.ifIndex)
+	p.ifAddrDescriptor.SetInterfaceIndex(p.ifIndex)
 
 	// start interface watching
 	if err = p.ifWatcher.StartWatching(); err != nil {
