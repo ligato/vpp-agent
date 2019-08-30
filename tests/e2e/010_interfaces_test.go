@@ -30,6 +30,11 @@ import (
 
 // TODO: running downstream resync in-between restarts/re-creates seems to break stuff (for now commented out)
 
+const (
+	msUpdateTimeout  = time.Second * 6
+	recreateTimeout  = time.Second * 6
+)
+
 // connect VPP with a microservice via TAP interface
 func TestTapInterfaceConn(t *testing.T) {
 	ctx := setupE2E(t)
@@ -43,8 +48,6 @@ func TestTapInterfaceConn(t *testing.T) {
 		linuxTapIP       = "192.168.1.2"
 		netMask          = "/30"
 		msName           = "microservice1"
-		msUpdateTimeout  = time.Second * 3
-		recreateTimeout  = time.Second * 3
 	)
 
 	vppTap := &vpp_interfaces.Interface{
@@ -163,8 +166,6 @@ func TestAfPacketInterfaceConn(t *testing.T) {
 		veth2IP          = "192.168.1.2"
 		netMask          = "/30"
 		msName           = "microservice1"
-		msUpdateTimeout  = time.Second * 3
-		recreateTimeout  = time.Second * 3
 	)
 
 	afPacket := &vpp_interfaces.Interface{

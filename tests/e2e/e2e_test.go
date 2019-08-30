@@ -308,7 +308,7 @@ func (ctx *testCtx) pingFromMsClb(msName, dstAddress string) func() error {
 }
 
 // pingFromVPP pings <dstAddress> from inside the VPP.
-func (ctx *testCtx) pingFromVPP(destAddress string, allowedLoss ...int) error {
+func (ctx *testCtx) pingFromVPP(destAddress string) error {
 	var stdout bytes.Buffer
 
 	// run ping on VPP using vppctl
@@ -328,11 +328,7 @@ func (ctx *testCtx) pingFromVPP(destAddress string, allowedLoss ...int) error {
 	ctx.t.Logf("VPP ping %s: sent=%d, received=%d, loss=%d%%",
 		destAddress, sent, recv, loss)
 
-	maxLoss := 49 // by default at least half of the packets should ge through
-	if len(allowedLoss) > 0 {
-		maxLoss = allowedLoss[0]
-	}
-	if sent == 0 || loss > maxLoss {
+	if sent == 0 || loss >= 50 {
 		return fmt.Errorf("failed to ping '%s': %s", destAddress, matches[0])
 	}
 	return nil

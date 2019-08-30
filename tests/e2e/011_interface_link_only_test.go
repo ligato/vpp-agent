@@ -17,7 +17,6 @@ package e2e
 import (
 	"context"
 	"testing"
-	"time"
 
 	. "github.com/onsi/gomega"
 
@@ -47,7 +46,6 @@ func TestLinkOnly(t *testing.T) {
 		linuxTapHwExternal = "44:44:44:55:55:55"
 		netMask            = "/24"
 		msName             = "microservice1"
-		msUpdateTimeout    = time.Second * 3
 	)
 
 	vppTap := &vpp_interfaces.Interface{

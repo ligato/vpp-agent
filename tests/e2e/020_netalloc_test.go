@@ -17,7 +17,6 @@ package e2e
 import (
 	"context"
 	"testing"
-	"time"
 
 	. "github.com/onsi/gomega"
 
@@ -58,7 +57,6 @@ func TestIPWithNeighGW(t *testing.T) {
 		linuxTapHw       = "cc:cc:cc:dd:dd:dd"
 		netMask          = "/24"
 		msName           = "microservice1"
-		msUpdateTimeout  = time.Second * 3
 	)
 
 	// ------- addresses:
@@ -181,9 +179,9 @@ func TestIPWithNeighGW(t *testing.T) {
 	ctx.startMicroservice(msName)
 	checkItemsAreConfigured(true, true)
 
-	// check connection with ping (3 packets will get lost before tables are refreshed)
-	Expect(ctx.pingFromVPP(linuxTapIP, 60)).To(BeNil())
-	Expect(ctx.pingFromVPP(linuxTapIP, 0)).To(BeNil())
+	// check connection with ping (few packets will get lost before tables are refreshed)
+	ctx.pingFromVPP(linuxTapIP)
+	Expect(ctx.pingFromVPP(linuxTapIP)).To(BeNil())
 	Expect(ctx.pingFromMs(msName, vppLoopIP)).To(BeNil())
 	Expect(ctx.agentInSync()).To(BeTrue())
 
@@ -258,7 +256,6 @@ func TestIPWithNonLocalGW(t *testing.T) {
 		vppNetMask       = "/24"
 		linuxNetMask     = "/32"
 		msName           = "microservice1"
-		msUpdateTimeout  = time.Second * 3
 	)
 
 	// ------- addresses:
@@ -387,9 +384,9 @@ func TestIPWithNonLocalGW(t *testing.T) {
 	ctx.startMicroservice(msName)
 	checkItemsAreConfigured(true, true)
 
-	// check connection with ping (3 packets will get lost before tables are refreshed)
-	Expect(ctx.pingFromVPP(linuxTapIP, 60)).To(BeNil())
-	Expect(ctx.pingFromVPP(linuxTapIP, 0)).To(BeNil())
+	// check connection with ping (few packets will get lost before tables are refreshed)
+	ctx.pingFromVPP(linuxTapIP)
+	Expect(ctx.pingFromVPP(linuxTapIP)).To(BeNil())
 	Expect(ctx.pingFromMs(msName, vppLoopIP)).To(BeNil())
 	Expect(ctx.agentInSync()).To(BeTrue())
 
