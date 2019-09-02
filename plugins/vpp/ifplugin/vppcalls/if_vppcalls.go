@@ -108,6 +108,17 @@ type InterfaceSpanDetails struct {
 	IsL2          uint8
 }
 
+// GreTunnelDetails is something
+type GreTunnelDetails struct {
+	SwIfIndex  uint32
+	Instance   uint32
+	TunnelType uint8
+	SrcAddress net.IP
+	DstAddress net.IP
+	OuterFibID uint32
+	SessionID  uint16
+}
+
 // InterfaceVppAPI provides methods for creating and managing interface plugin
 type InterfaceVppAPI interface {
 	InterfaceVppRead
@@ -196,6 +207,10 @@ type InterfaceVppAPI interface {
 	AddSpan(ifIdxFrom, ifIdxTo uint32, direction uint8, isL2 uint8) error
 	// DelSpan removes new span record
 	DelSpan(ifIdxFrom, ifIdxTo uint32, isL2 uint8) error
+	// AddGreTunnel adds new GRE interface.
+	AddGreTunnel(ifName string, greLink *interfaces.GreLink) (uint32, error)
+	// DelGreTunnel removes GRE interface.
+	DelGreTunnel(ifName string, greLink *interfaces.GreLink) (uint32, error)
 }
 
 // InterfaceVppRead provides read methods for interface plugin
