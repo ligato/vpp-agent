@@ -125,9 +125,9 @@ func (h *SRv6VppHandler) addSRProxy(sidAddr net.IP, localSID *srv6.LocalSID) err
 	// add SR-proxy using VPP CLI
 	var cmd string
 	if strings.TrimSpace(localSID.GetEndFunction_AD().L3ServiceAddress) == "" { // L2 service
-		cmd = fmt.Sprintf("sr localsid address %v behavior end.ad oif %v iif %v", sidAddr, outInterface, inInterface)
+		cmd = fmt.Sprintf("sr localsid address %v fib-table %v behavior end.ad oif %v iif %v", sidAddr, localSID.InstallationVrfId, outInterface, inInterface)
 	} else { // L3 service
-		cmd = fmt.Sprintf("sr localsid address %v behavior end.ad nh %v oif %v iif %v", sidAddr, localSID.GetEndFunction_AD().L3ServiceAddress, outInterface, inInterface)
+		cmd = fmt.Sprintf("sr localsid address %v fib-table %v behavior end.ad nh %v oif %v iif %v", sidAddr, localSID.InstallationVrfId, localSID.GetEndFunction_AD().L3ServiceAddress, outInterface, inInterface)
 	}
 	data, err := h.RunCli(cmd)
 	if err != nil {
