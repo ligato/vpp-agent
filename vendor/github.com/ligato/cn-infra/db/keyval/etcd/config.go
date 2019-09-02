@@ -43,6 +43,7 @@ type Config struct {
 	AllowDelayedStart     bool          `json:"allow-delayed-start"`
 	ReconnectInterval     time.Duration `json:"reconnect-interval"`
 	SessionTTL            int           `json:"session-ttl"`
+	ExpandEnvVars         bool          `json:"expand-env-variables"`
 }
 
 // ClientConfig extends clientv3.Config with configuration options introduced
@@ -57,6 +58,11 @@ type ClientConfig struct {
 	// SessionTTL is default TTL (in seconds) used by client in RunElection or WithClientLifetimeTTL put option.
 	// Once given number of seconds elapses without value's lease renewal the value is removed.
 	SessionTTL int
+
+	// ExpandEnvVars, if enabled, will cause the JSON value serializer to replace ${var} or $var in received JSON
+	// data according to the values of the current environment variables. References to undefined variables are replaced
+	// by the empty string.
+	ExpandEnvVars bool
 }
 
 const (
@@ -110,6 +116,8 @@ func ConfigToClient(yc *Config) (*ClientConfig, error) {
 			cfg.Endpoints = []string{"127.0.0.1:2379"}
 		}
 	}
+
+	cfg.ExpandEnvVars = yc.ExpandEnvVars || os.Getenv("ETCD_EXPAND_ENV_VARS") != ""
 
 	if yc.InsecureTransport {
 		cfg.TLS = nil
