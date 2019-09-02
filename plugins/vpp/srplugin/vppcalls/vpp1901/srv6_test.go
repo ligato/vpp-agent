@@ -275,7 +275,7 @@ func TestAddLocalSID(t *testing.T) {
 				},
 			},
 			Expected: &vpe.CliInband{
-				Cmd: fmt.Sprintf("sr localsid address %v behavior end.ad nh %v oif %v iif %v", sidToStr(sidA), nextHopIPv4.String(), memif1, memif2),
+				Cmd: fmt.Sprintf("sr localsid address %v fib-table 10 behavior end.ad nh %v oif %v iif %v", sidToStr(sidA), nextHopIPv4.String(), memif1, memif2),
 			},
 		},
 		{
@@ -296,7 +296,7 @@ func TestAddLocalSID(t *testing.T) {
 				},
 			},
 			Expected: &vpe.CliInband{
-				Cmd: fmt.Sprintf("sr localsid address %v behavior end.ad oif %v iif %v", sidToStr(sidA), memif1, memif2),
+				Cmd: fmt.Sprintf("sr localsid address %v fib-table 10 behavior end.ad oif %v iif %v", sidToStr(sidA), memif1, memif2),
 			},
 		},
 		{
@@ -318,7 +318,7 @@ func TestAddLocalSID(t *testing.T) {
 				},
 			},
 			Expected: &vpe.CliInband{
-				Cmd: fmt.Sprintf("sr localsid address %v behavior end.ad nh %v oif %v iif %v", sidToStr(sidA), nextHopIPv4.String(), "local0", "tap0"),
+				Cmd: fmt.Sprintf("sr localsid address %v fib-table 10 behavior end.ad nh %v oif %v iif %v", sidToStr(sidA), nextHopIPv4.String(), "local0", "tap0"),
 			},
 		},
 		{
@@ -340,7 +340,7 @@ func TestAddLocalSID(t *testing.T) {
 				},
 			},
 			Expected: &vpe.CliInband{
-				Cmd: fmt.Sprintf("sr localsid address %v behavior end.ad nh %v oif %v iif %v", sidToStr(sidA), nextHopIPv4.String(), "host0", "vxlan0"),
+				Cmd: fmt.Sprintf("sr localsid address %v fib-table 10 behavior end.ad nh %v oif %v iif %v", sidToStr(sidA), nextHopIPv4.String(), "host0", "vxlan0"),
 			},
 		},
 		{
@@ -362,7 +362,7 @@ func TestAddLocalSID(t *testing.T) {
 				},
 			},
 			Expected: &vpe.CliInband{
-				Cmd: fmt.Sprintf("sr localsid address %v behavior end.ad nh %v oif %v iif %v", sidToStr(sidA), nextHopIPv4.String(), "ipsec0", "vmxnet3-0"),
+				Cmd: fmt.Sprintf("sr localsid address %v fib-table 10 behavior end.ad nh %v oif %v iif %v", sidToStr(sidA), nextHopIPv4.String(), "ipsec0", "vmxnet3-0"),
 			},
 		},
 		{
@@ -384,7 +384,7 @@ func TestAddLocalSID(t *testing.T) {
 				},
 			},
 			Expected: &vpe.CliInband{
-				Cmd: fmt.Sprintf("sr localsid address %v behavior end.ad nh %v oif %v iif %v", sidToStr(sidA), nextHopIPv4.String(), "loop0", "unknown0"),
+				Cmd: fmt.Sprintf("sr localsid address %v fib-table 10 behavior end.ad nh %v oif %v iif %v", sidToStr(sidA), nextHopIPv4.String(), "loop0", "unknown0"),
 			},
 		},
 		{
