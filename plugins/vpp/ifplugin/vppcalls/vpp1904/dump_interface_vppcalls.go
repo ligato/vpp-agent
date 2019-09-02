@@ -25,6 +25,7 @@ import (
 	vpp_ipsec "github.com/ligato/vpp-agent/api/models/vpp/ipsec"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/bond"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/dhcp"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/gre"
 	binapi_interface "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/ip"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/ipsec"
@@ -240,6 +241,11 @@ func (h *InterfaceVppHandler) DumpInterfaces() (map[uint32]*vppcalls.InterfaceDe
 	}
 
 	err = h.dumpBondDetails(ifs)
+	if err != nil {
+		return nil, err
+	}
+
+	err = h.dumpGreDetails(ifs)
 	if err != nil {
 		return nil, err
 	}
@@ -820,6 +826,41 @@ func (h *InterfaceVppHandler) dumpBondDetails(ifs map[uint32]*vppcalls.Interface
 	return nil
 }
 
+func (h *InterfaceVppHandler) dumpGreDetails(ifs map[uint32]*vppcalls.InterfaceDetails) error {
+	reqCtx := h.callsChannel.SendMultiRequest(&gre.GreTunnelDump{SwIfIndex: ^uint32(0)})
+	for {
+		greDetails := &gre.GreTunnelDetails{}
+		stop, err := reqCtx.ReceiveReply(greDetails)
+		if stop {
+			break
+		}
+		if err != nil {
+			return fmt.Errorf("failed to dump span: %v", err)
+		}
+
+		var srcAddr, dstAddr net.IP
+		if greDetails.IsIPv6 == 1 {
+			srcAddr = net.IP(greDetails.SrcAddress)
+			dstAddr = net.IP(greDetails.DstAddress)
+		} else {
+			srcAddr = net.IP(greDetails.SrcAddress[:4])
+			dstAddr = net.IP(greDetails.DstAddress[:4])
+		}
+
+		ifs[greDetails.SwIfIndex].Interface.Link = &interfaces.Interface_Gre{
+			Gre: &interfaces.GreLink{
+				TunnelType: getGreTunnelType(greDetails.TunnelType),
+				SrcAddr:    srcAddr.String(),
+				DstAddr:    dstAddr.String(),
+				OuterFibId: greDetails.OuterFibID,
+				SessionId:  uint32(greDetails.SessionID),
+			},
+		}
+		ifs[greDetails.SwIfIndex].Interface.Type = interfaces.Interface_GRE_TUNNEL
+	}
+	return nil
+}
+
 // dumpUnnumberedDetails returns a map of unnumbered interface indexes, every with interface index of element with IP
 func (h *InterfaceVppHandler) dumpUnnumberedDetails() (map[uint32]uint32, error) {
 	unIfMap := make(map[uint32]uint32) // unnumbered/ip-interface
@@ -913,6 +954,9 @@ func guessInterfaceType(ifName string) interfaces.Interface_Type {
 	case strings.HasPrefix(ifName, "Bond"):
 		return interfaces.Interface_BOND_INTERFACE
 
+	case strings.HasPrefix(ifName, "gre"):
+		return interfaces.Interface_GRE_TUNNEL
+
 	default:
 		return interfaces.Interface_DPDK
 	}
@@ -997,6 +1041,19 @@ func getTagRwOption(op uint32) interfaces.SubInterface_TagRewriteOptions {
 		return interfaces.SubInterface_TRANSLATE22
 	default: // disabled
 		return interfaces.SubInterface_DISABLED
+	}
+}
+
+func getGreTunnelType(tt uint8) interfaces.GreLink_Type {
+	switch tt {
+	case 0:
+		return interfaces.GreLink_L3
+	case 1:
+		return interfaces.GreLink_TEB
+	case 2:
+		return interfaces.GreLink_ERSPAN
+	default:
+		return interfaces.GreLink_UNKNOWN
 	}
 }
 
