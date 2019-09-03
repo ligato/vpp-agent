@@ -15,6 +15,7 @@
 package commands
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"strings"
@@ -133,11 +134,27 @@ A CLI tool to connect to vppagent and set vppagent logger type.
 }
 
 func RunLogSet(cli *AgentCli, opts LogSetOptions) error {
-	resp, err := cli.PUT("/log/"+opts.Logger+"/"+opts.Level, nil)
+	data, err := cli.PUT("/log/"+opts.Logger+"/"+opts.Level, nil)
 	if err != nil {
 		return fmt.Errorf("HTTP PUT request failed: %v", err)
 	}
 
-	logging.Debugf("response: %s\n", resp)
+	type response struct {
+		Logger string `json:"logger,omitempty"`
+		Level  string `json:"level,omitempty"`
+		Error  string `json:"Error,omitempty"`
+	}
+	var resp response
+	if err := json.Unmarshal(data, &resp); err != nil {
+		return err
+	}
+	logging.Debugf("response: %+v\n", resp)
+
+	if resp.Error != "" {
+		return fmt.Errorf("SERVER: %s", resp.Error)
+	}
+
+	fmt.Fprintf(os.Stdout, "logger %s has been set to level %s\n", resp.Logger, resp.Level)
+
 	return nil
 }
