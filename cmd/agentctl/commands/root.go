@@ -26,6 +26,11 @@ import (
 	"github.com/spf13/pflag"
 )
 
+const (
+	defaultGrpcPort = "9111"
+	defaultHttpPort = "9191"
+)
+
 // RootName defines default name used for root command
 var RootName = "agentctl"
 
@@ -73,12 +78,17 @@ func SetupRootFlags(flags *pflag.FlagSet) {
 		agentHost     = os.Getenv("AGENT_HOST")
 		etcdEndpoints = strings.Split(os.Getenv("ETCD_ENDPOINTS"), ",")
 	)
-
-	flags.StringVarP(&global.AgentHost, "host", "H", agentHost, "Address on which agent is reachable")
-	flags.StringVar(&global.PortGRPC, "grpc-port", "9111", "gRPC server port")
-	flags.StringVar(&global.PortHTTP, "http-port", "9191", "HTTP server port")
-	flags.StringVarP(&global.ServiceLabel, "service-label", "l", serviceLabel, "Service label for agent instance")
-	flags.StringSliceVarP(&global.Endpoints, "etcd-endpoints", "e", etcdEndpoints, "Etcd endpoints to connect to")
+	if agentHost == "" {
+		agentHost = "127.0.0.1"
+	}
+	if len(etcdEndpoints) == 0 || etcdEndpoints[0] == "" {
+		etcdEndpoints = []string{"127.0.0.1:2379"}
+	}
+	flags.StringSliceVarP(&global.Endpoints, "etcd-endpoints", "e", etcdEndpoints, "Etcd endpoints to connect to, defaults to env var ETCD_ENDPOINTS")
+	flags.StringVarP(&global.AgentHost, "host", "H", agentHost, "Address on which agent is reachable, defaults to env var AGENT_HOST")
+	flags.StringVar(&global.PortGRPC, "grpc-port", defaultGrpcPort, "gRPC server port")
+	flags.StringVar(&global.PortHTTP, "http-port", defaultHttpPort, "HTTP server port")
+	flags.StringVarP(&global.ServiceLabel, "service-label", "l", serviceLabel, "Service label for agent instance, defaults to env var MICROSERVICE_LABEL")
 	flags.BoolVarP(&global.Debug, "debug", "D", false, "Enable debug mode")
 }
 

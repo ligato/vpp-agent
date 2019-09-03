@@ -49,11 +49,7 @@ func NewAgentCli() *AgentCli {
 func (cli *AgentCli) Init() {
 	Debugf("init cli - global flags: %+v\n", global)
 
-	host := global.AgentHost
-	if host == "" {
-		host = "127.0.0.1"
-	}
-	httpAddr := net.JoinHostPort(host, global.PortHTTP)
+	httpAddr := net.JoinHostPort(global.AgentHost, global.PortHTTP)
 	cli.HTTPClient = utils.NewHTTPClient(httpAddr)
 }
 
@@ -69,7 +65,7 @@ func (cli *AgentCli) NewGRPCClient() *grpc.ClientConn {
 }
 
 func (cli *AgentCli) NewKVDBClient() keyval.BytesBroker {
-	etcdCfg := getEtcdConfig()
+	etcdCfg := getEtcdConfig(global.Endpoints)
 
 	log := logrus.NewLogger("etcd")
 	if global.Debug {
@@ -86,10 +82,10 @@ func (cli *AgentCli) NewKVDBClient() keyval.BytesBroker {
 	return &kvdbClient{kvdb}
 }
 
-func getEtcdConfig() etcd.ClientConfig {
+func getEtcdConfig(endpoints []string) etcd.ClientConfig {
 	cfg := etcd.ClientConfig{
 		Config: &clientv3.Config{
-			Endpoints:   global.Endpoints,
+			Endpoints:   endpoints,
 			DialTimeout: time.Second * 3,
 		},
 		OpTimeout: time.Second * 10,
