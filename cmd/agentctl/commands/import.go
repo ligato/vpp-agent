@@ -74,7 +74,7 @@ KEY FORMAT
     - full: 	/vnf-agent/vpp1/config/vpp/v2/interfaces/iface1
     - short:	config/vpp/v2/interfaces/iface1
  
- For short keys, the import command uses microservice label defined with --label.
+ For short keys, the import command uses microservice label defined with --service-label.
 `,
 
 		RunE: func(cmd *cobra.Command, args []string) error {
