@@ -20,6 +20,7 @@ import (
 	"testing"
 
 	vpp_l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
+	netalloc_mock "github.com/ligato/vpp-agent/plugins/netalloc/mock"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	ifplugin_vppcalls "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
 	_ "github.com/ligato/vpp-agent/plugins/vpp/l3plugin"
@@ -45,7 +46,8 @@ func TestArp(t *testing.T) {
 	vrfIndexes.Put("vrf1-ipv4", &vrfidx.VRFMetadata{Index: 0, Protocol: vpp_l3.VrfTable_IPV4})
 	vrfIndexes.Put("vrf1-ipv6", &vrfidx.VRFMetadata{Index: 0, Protocol: vpp_l3.VrfTable_IPV6})
 
-	h := l3plugin_vppcalls.CompatibleL3VppHandler(ctx.vppBinapi, ifIndexes, vrfIndexes, logrus.NewLogger("test"))
+	h := l3plugin_vppcalls.CompatibleL3VppHandler(ctx.vppBinapi, ifIndexes, vrfIndexes,
+		netalloc_mock.NewMockNetAlloc(), logrus.NewLogger("test"))
 
 	tests := []struct {
 		name        string

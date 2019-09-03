@@ -25,6 +25,7 @@ import (
 	"github.com/ligato/vpp-agent/api/models/linux/namespace"
 	"github.com/ligato/vpp-agent/api/models/netalloc"
 	"github.com/ligato/vpp-agent/api/models/vpp/interfaces"
+	"github.com/ligato/vpp-agent/api/models/vpp/l3"
 	"github.com/ligato/vpp-agent/client"
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 )
@@ -141,12 +142,11 @@ func TestIPWithNeighGW(t *testing.T) {
 		vppLoopAddr, vppTapAddr, linuxTapAddr,
 		vppLoop, vppTap, linuxTap,
 		linuxArp, linuxRoute,
-
 	).Send(context.Background())
 	Expect(err).To(BeNil())
 
-	// configured immediately:
 	checkItemsAreConfigured := func(msRestart, withLoopAddr bool) {
+		// configured immediately:
 		if withLoopAddr {
 			Expect(ctx.getValueState(vppLoopAddr)).To(Equal(kvs.ValueState_CONFIGURED))
 		}
@@ -347,12 +347,11 @@ func TestIPWithNonLocalGW(t *testing.T) {
 		vppLoopAddr, vppTapAddr, linuxTapAddr,
 		vppLoop, vppTap, linuxTap,
 		linuxArp, linuxRoute, linuxLinkRoute,
-
 	).Send(context.Background())
 	Expect(err).To(BeNil())
 
-	// configured immediately:
 	checkItemsAreConfigured := func(msRestart, withLinkRoute bool) {
+		// configured immediately:
 		Expect(ctx.getValueState(vppLoopAddr)).To(Equal(kvs.ValueState_CONFIGURED))
 		Expect(ctx.getValueState(vppTapAddr)).To(Equal(kvs.ValueState_CONFIGURED))
 		Expect(ctx.getValueState(linuxTapAddr)).To(Equal(kvs.ValueState_CONFIGURED))
@@ -425,5 +424,207 @@ func TestIPWithNonLocalGW(t *testing.T) {
 	// cannot ping anymore from any of the sides
 	Expect(ctx.pingFromVPP(linuxTapIP2)).ToNot(BeNil())
 	Expect(ctx.pingFromMs(msName, vppLoopIP2)).ToNot(BeNil())
+	Expect(ctx.agentInSync()).To(BeTrue())
+}
+
+// test IP address allocation using the netalloc plugin for VPP routes mainly.
+//
+// topology + addressing:
+//  VPP tap (192.168.11.1/24) <--> Linux tap (192.168.11.2/24) <--> Linux loop (192.168.20.1/24, 10.10.10.10/32)
+//
+// topology + addressing AFTER CHANGE:
+//  VPP tap (192.168.12.1/24) <--> Linux tap (192.168.12.2/24) <--> Linux loop (192.168.30.1/24, 10.10.10.10/32)
+func TestVPPRoutesWithNetalloc(t *testing.T) {
+	ctx := setupE2E(t)
+	defer ctx.teardownE2E()
+
+	const (
+		network1Name     = "net1"
+		network2Name     = "net2"
+		vppTapName       = "vpp-tap"
+		linuxTapName     = "linux-tap"
+		linuxTapHostname = "tap"
+		linuxLoopName    = "linux-loop"
+		vppTapIP         = "192.168.11.1"
+		vppTapIP2        = "192.168.12.1"
+		linuxTapIP       = "192.168.11.2"
+		linuxTapIP2      = "192.168.12.2"
+		linuxLoopNet1IP  = "192.168.20.1"
+		linuxLoopNet1IP2 = "192.168.30.1"
+		linuxLoopNet2IP  = "10.10.10.10"
+		net1Mask         = "/24"
+		net2Mask         = "/32"
+		msName           = "microservice1"
+	)
+
+	// ------- addresses:
+
+	vppTapAddr := &netalloc.IPAllocation{
+		NetworkName:   network1Name,
+		InterfaceName: vppTapName,
+		Address:       vppTapIP + net1Mask,
+		Gw:            linuxTapIP,
+	}
+
+	linuxTapAddr := &netalloc.IPAllocation{
+		NetworkName:   network1Name,
+		InterfaceName: linuxTapName,
+		Address:       linuxTapIP + net1Mask,
+		Gw:            vppTapIP,
+	}
+
+	linuxLoopNet1Addr := &netalloc.IPAllocation{
+		NetworkName:   network1Name,
+		InterfaceName: linuxLoopName,
+		Address:       linuxLoopNet1IP + net1Mask,
+	}
+
+	linuxLoopNet2Addr := &netalloc.IPAllocation{
+		NetworkName:   network2Name,
+		InterfaceName: linuxLoopName,
+		Address:       linuxLoopNet2IP + net2Mask,
+	}
+
+	// ------- network items:
+
+	vppTap := &vpp_interfaces.Interface{
+		Name:        vppTapName,
+		Type:        vpp_interfaces.Interface_TAP,
+		Enabled:     true,
+		IpAddresses: []string{"alloc:" + network1Name},
+		Link: &vpp_interfaces.Interface_Tap{
+			Tap: &vpp_interfaces.TapLink{
+				Version:        2,
+				ToMicroservice: msNamePrefix + msName,
+			},
+		},
+	}
+
+	linuxTap := &linux_interfaces.Interface{
+		Name:        linuxTapName,
+		Type:        linux_interfaces.Interface_TAP_TO_VPP,
+		Enabled:     true,
+		IpAddresses: []string{"alloc:" + network1Name},
+		HostIfName:  linuxTapHostname,
+		Link: &linux_interfaces.Interface_Tap{
+			Tap: &linux_interfaces.TapLink{
+				VppTapIfName: vppTapName,
+			},
+		},
+		Namespace: &linux_namespace.NetNamespace{
+			Type:      linux_namespace.NetNamespace_MICROSERVICE,
+			Reference: msNamePrefix + msName,
+		},
+	}
+
+	linuxLoop := &linux_interfaces.Interface{
+		Name:        linuxLoopName,
+		Type:        linux_interfaces.Interface_LOOPBACK,
+		Enabled:     true,
+		IpAddresses: []string{
+			"127.0.0.1/8", "alloc:" + network1Name, "alloc:" + network2Name},
+		HostIfName:  linuxLoopName,
+		Namespace: &linux_namespace.NetNamespace{
+			Type:      linux_namespace.NetNamespace_MICROSERVICE,
+			Reference: msNamePrefix + msName,
+		},
+	}
+
+	vppRouteLoopNet1 := &vpp_l3.Route{
+		OutgoingInterface: vppTapName,
+		DstNetwork:        "alloc:" + network1Name + "/" + linuxLoopName,
+		NextHopAddr:       "alloc:" + network1Name + "/GW",
+	}
+
+	vppRouteLoopNet2 := &vpp_l3.Route{
+		OutgoingInterface: vppTapName,
+		DstNetwork:        "alloc:" + network2Name + "/" + linuxLoopName,
+		NextHopAddr:       "alloc:" + network1Name + "/GW",
+	}
+
+	ctx.startMicroservice(msName)
+	req := client.LocalClient.ChangeRequest()
+	err := req.Update(
+		vppTapAddr, linuxTapAddr, linuxLoopNet1Addr, linuxLoopNet2Addr,
+		vppTap, linuxTap, linuxLoop,
+		vppRouteLoopNet1, vppRouteLoopNet2,
+	).Send(context.Background())
+	Expect(err).To(BeNil())
+
+	checkItemsAreConfigured := func(msRestart, withLoopNet2Addr bool) {
+		// configured immediately:
+		if withLoopNet2Addr {
+			Expect(ctx.getValueState(linuxLoopNet2Addr)).To(Equal(kvs.ValueState_CONFIGURED))
+		}
+		Expect(ctx.getValueState(vppTapAddr)).To(Equal(kvs.ValueState_CONFIGURED))
+		Expect(ctx.getValueState(linuxTapAddr)).To(Equal(kvs.ValueState_CONFIGURED))
+		Expect(ctx.getValueState(linuxLoopNet1Addr)).To(Equal(kvs.ValueState_CONFIGURED))
+		// the rest depends on the microservice
+		if msRestart {
+			Eventually(ctx.getValueStateClb(vppTap), msUpdateTimeout).Should(Equal(kvs.ValueState_CONFIGURED))
+		} else {
+			Expect(ctx.getValueState(vppTap)).To(Equal(kvs.ValueState_CONFIGURED))
+		}
+		Expect(ctx.getValueState(linuxTap)).To(Equal(kvs.ValueState_CONFIGURED))
+		Expect(ctx.getValueState(linuxLoop)).To(Equal(kvs.ValueState_CONFIGURED))
+		Expect(ctx.getValueState(vppRouteLoopNet1)).To(Equal(kvs.ValueState_CONFIGURED))
+		if withLoopNet2Addr {
+			Expect(ctx.getValueState(vppRouteLoopNet2)).To(Equal(kvs.ValueState_CONFIGURED))
+		} else {
+			Expect(ctx.getValueState(vppRouteLoopNet2)).To(Equal(kvs.ValueState_PENDING))
+		}
+	}
+	checkItemsAreConfigured(true, true)
+
+	// check connection with ping
+	Expect(ctx.pingFromVPP(linuxLoopNet1IP)).To(BeNil())
+	Expect(ctx.pingFromVPP(linuxLoopNet2IP)).To(BeNil())
+	Expect(ctx.agentInSync()).To(BeTrue())
+
+	// restart microservice
+	ctx.stopMicroservice(msName)
+	ctx.startMicroservice(msName)
+	checkItemsAreConfigured(true, true)
+
+	// check connection with ping (few packets will get lost before tables are refreshed)
+	ctx.pingFromVPP(linuxLoopNet1IP)
+	ctx.pingFromVPP(linuxLoopNet2IP)
+	Expect(ctx.pingFromVPP(linuxLoopNet1IP)).To(BeNil())
+	Expect(ctx.pingFromVPP(linuxLoopNet2IP)).To(BeNil())
+	Expect(ctx.agentInSync()).To(BeTrue())
+
+	// change IP addresses - the network items should be re-created
+	linuxLoopNet1Addr.Address = linuxLoopNet1IP2 + net1Mask
+	vppTapAddr.Address = vppTapIP2 + net1Mask
+	vppTapAddr.Gw = linuxTapIP2
+	linuxTapAddr.Address = linuxTapIP2 + net1Mask
+	linuxTapAddr.Gw = vppTapIP2
+
+	req = client.LocalClient.ChangeRequest()
+	err = req.Update(
+		linuxLoopNet1Addr, vppTapAddr, linuxTapAddr,
+	).Send(context.Background())
+	Expect(err).To(BeNil())
+	checkItemsAreConfigured(false, true)
+
+	// check connection with ping
+	Expect(ctx.pingFromVPP(linuxLoopNet1IP)).ToNot(BeNil())
+	Expect(ctx.pingFromVPP(linuxLoopNet1IP2)).To(BeNil())
+	Expect(ctx.pingFromVPP(linuxLoopNet2IP)).To(BeNil())
+	Expect(ctx.agentInSync()).To(BeTrue())
+
+	// de-allocate loopback IP in net2 - the connection to that IP should not work anymore
+	req = client.LocalClient.ChangeRequest()
+	err = req.Delete(
+		linuxLoopNet2Addr,
+	).Send(context.Background())
+	Expect(err).To(BeNil())
+
+	// loopback is still created but without IP and route is pending
+	checkItemsAreConfigured(false, false)
+
+	// can ping loop1, but cannot ping loop2
+	Expect(ctx.pingFromVPP(linuxLoopNet1IP2)).To(BeNil())
+	Expect(ctx.pingFromVPP(linuxLoopNet2IP)).ToNot(BeNil())
 	Expect(ctx.agentInSync()).To(BeTrue())
 }

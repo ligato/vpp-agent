@@ -34,6 +34,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/descriptor"
 	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vrfidx"
+	"github.com/ligato/vpp-agent/plugins/netalloc"
 
 	_ "github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls/vpp1901"
 	_ "github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls/vpp1904"
@@ -65,6 +66,7 @@ type Deps struct {
 	KVScheduler kvs.KVScheduler
 	GoVppmux    govppmux.API
 	IfPlugin    ifplugin.API
+	AddrAlloc   netalloc.AddressAllocator
 	StatusCheck statuscheck.PluginStatusWriter // optional
 }
 
@@ -78,9 +80,10 @@ func (p *L3Plugin) Init() error {
 	}
 
 	// init handlers
-	p.l3Handler = vppcalls.CompatibleL3VppHandler(p.vppCh, p.IfPlugin.GetInterfaceIndex(), p.vrfIndex, p.Log)
+	p.l3Handler = vppcalls.CompatibleL3VppHandler(p.vppCh, p.IfPlugin.GetInterfaceIndex(),
+		p.vrfIndex, p.AddrAlloc, p.Log)
 	if p.l3Handler == nil {
-		return errors.Errorf("could not find compatible L2VppHandler")
+		return errors.Errorf("could not find compatible L3VppHandler")
 	}
 
 	// init and register VRF descriptor
@@ -95,11 +98,12 @@ func (p *L3Plugin) Init() error {
 		return errors.New("missing index with VRF metadata")
 	}
 
-	// set l3 handler again since it was nil before
-	p.l3Handler = vppcalls.CompatibleL3VppHandler(p.vppCh, p.IfPlugin.GetInterfaceIndex(), p.vrfIndex, p.Log)
+	// set l3 handler again since VRF index was nil before
+	p.l3Handler = vppcalls.CompatibleL3VppHandler(p.vppCh, p.IfPlugin.GetInterfaceIndex(),
+		p.vrfIndex, p.AddrAlloc, p.Log)
 
 	// init & register descriptors
-	routeDescriptor := descriptor.NewRouteDescriptor(p.l3Handler, p.Log)
+	routeDescriptor := descriptor.NewRouteDescriptor(p.l3Handler, p.AddrAlloc, p.Log)
 	arpDescriptor := descriptor.NewArpDescriptor(p.KVScheduler, p.l3Handler, p.Log)
 	proxyArpDescriptor := descriptor.NewProxyArpDescriptor(p.KVScheduler, p.l3Handler, p.Log)
 	proxyArpIfaceDescriptor := descriptor.NewProxyArpInterfaceDescriptor(p.KVScheduler, p.l3Handler, p.Log)

@@ -28,6 +28,7 @@ import (
 
 	vpevppcalls "github.com/ligato/vpp-agent/plugins/govppmux/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/govppmux/vppcalls/vpp1904"
+	"github.com/ligato/vpp-agent/plugins/netalloc"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/ip"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/vpe"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
@@ -42,9 +43,10 @@ func init() {
 
 	vppcalls.Versions["vpp1904"] = vppcalls.HandlerVersion{
 		Msgs: msgs,
-		New: func(ch govppapi.Channel, ifIdx ifaceidx.IfaceMetadataIndex, vrfIdx vrfidx.VRFMetadataIndex, log logging.Logger,
+		New: func(ch govppapi.Channel, ifIdx ifaceidx.IfaceMetadataIndex, vrfIdx vrfidx.VRFMetadataIndex,
+			addrAlloc netalloc.AddressAllocator, log logging.Logger,
 		) vppcalls.L3VppAPI {
-			return NewL3VppHandler(ch, ifIdx, log)
+			return NewL3VppHandler(ch, ifIdx, addrAlloc, log)
 		},
 	}
 }
@@ -59,12 +61,12 @@ type L3VppHandler struct {
 }
 
 func NewL3VppHandler(
-	ch govppapi.Channel, ifIdx ifaceidx.IfaceMetadataIndex, log logging.Logger,
+	ch govppapi.Channel, ifIdx ifaceidx.IfaceMetadataIndex, addrAlloc netalloc.AddressAllocator, log logging.Logger,
 ) *L3VppHandler {
 	return &L3VppHandler{
 		ArpVppHandler:      NewArpVppHandler(ch, ifIdx, log),
 		ProxyArpVppHandler: NewProxyArpVppHandler(ch, ifIdx, log),
-		RouteHandler:       NewRouteVppHandler(ch, ifIdx, log),
+		RouteHandler:       NewRouteVppHandler(ch, ifIdx, addrAlloc, log),
 		IPNeighHandler:     NewIPNeighVppHandler(ch, log),
 		VrfTableHandler:    NewVrfTableVppHandler(ch, log),
 		DHCPProxyHandler:   NewDHCPProxyHandler(ch, log),
@@ -95,6 +97,7 @@ type ProxyArpVppHandler struct {
 type RouteHandler struct {
 	callsChannel govppapi.Channel
 	ifIndexes    ifaceidx.IfaceMetadataIndex
+	addrAlloc    netalloc.AddressAllocator
 	log          logging.Logger
 }
 
@@ -136,13 +139,15 @@ func NewProxyArpVppHandler(callsChan govppapi.Channel, ifIndexes ifaceidx.IfaceM
 }
 
 // NewRouteVppHandler creates new instance of route vppcalls handler
-func NewRouteVppHandler(callsChan govppapi.Channel, ifIndexes ifaceidx.IfaceMetadataIndex, log logging.Logger) *RouteHandler {
+func NewRouteVppHandler(callsChan govppapi.Channel, ifIndexes ifaceidx.IfaceMetadataIndex,
+	addrAlloc netalloc.AddressAllocator, log logging.Logger) *RouteHandler {
 	if log == nil {
 		log = logrus.NewLogger("route-handler")
 	}
 	return &RouteHandler{
 		callsChannel: callsChan,
 		ifIndexes:    ifIndexes,
+		addrAlloc:    addrAlloc,
 		log:          log,
 	}
 }

@@ -19,6 +19,7 @@ import (
 	"net"
 	"strings"
 
+	"github.com/gogo/protobuf/proto"
 	prototypes "github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/vishvananda/netlink"
@@ -28,6 +29,8 @@ import (
 
 	ifmodel "github.com/ligato/vpp-agent/api/models/linux/interfaces"
 	"github.com/ligato/vpp-agent/api/models/linux/l3"
+	netalloc_api "github.com/ligato/vpp-agent/api/models/netalloc"
+	"github.com/ligato/vpp-agent/pkg/models"
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/linux/ifplugin"
 	ifdescriptor "github.com/ligato/vpp-agent/plugins/linux/ifplugin/descriptor"
@@ -37,7 +40,6 @@ import (
 	nslinuxcalls "github.com/ligato/vpp-agent/plugins/linux/nsplugin/linuxcalls"
 	"github.com/ligato/vpp-agent/plugins/netalloc"
 	netalloc_descr "github.com/ligato/vpp-agent/plugins/netalloc/descriptor"
-	netalloc_api "github.com/ligato/vpp-agent/api/models/netalloc"
 )
 
 const (
@@ -97,19 +99,19 @@ func NewRouteDescriptor(
 		log:           log.NewLogger("route-descriptor"),
 	}
 	typedDescr := &adapter.RouteDescriptor{
-		Name:                 RouteDescriptorName,
-		NBKeyPrefix:          linux_l3.ModelRoute.KeyPrefix(),
-		ValueTypeName:        linux_l3.ModelRoute.ProtoName(),
-		KeySelector:          linux_l3.ModelRoute.IsKeyValid,
-		KeyLabel:             linux_l3.ModelRoute.StripKeyPrefix,
-		ValueComparator:      ctx.EquivalentRoutes,
-		Validate:             ctx.Validate,
-		Create:               ctx.Create,
-		Delete:               ctx.Delete,
-		Update:               ctx.Update,
-		Retrieve:             ctx.Retrieve,
-		DerivedValues:        ctx.DerivedValues,
-		Dependencies:         ctx.Dependencies,
+		Name:            RouteDescriptorName,
+		NBKeyPrefix:     linux_l3.ModelRoute.KeyPrefix(),
+		ValueTypeName:   linux_l3.ModelRoute.ProtoName(),
+		KeySelector:     linux_l3.ModelRoute.IsKeyValid,
+		KeyLabel:        linux_l3.ModelRoute.StripKeyPrefix,
+		ValueComparator: ctx.EquivalentRoutes,
+		Validate:        ctx.Validate,
+		Create:          ctx.Create,
+		Delete:          ctx.Delete,
+		Update:          ctx.Update,
+		Retrieve:        ctx.Retrieve,
+		DerivedValues:   ctx.DerivedValues,
+		Dependencies:    ctx.Dependencies,
 		RetrieveDependencies: []string{
 			netalloc_descr.IPAllocDescriptorName,
 			ifdescriptor.InterfaceDescriptorName},
@@ -276,7 +278,7 @@ func (d *RouteDescriptor) Dependencies(key string, route *linux_l3.Route) []kvs.
 		})
 		dependencies = append(dependencies, kvs.Dependency{
 			Label: allocatedAddrAttached,
-			Key:   ifmodel.InterfaceAddressKey(
+			Key: ifmodel.InterfaceAddressKey(
 				route.OutgoingInterface, d.addrAlloc.CreateAddressAllocRef(network, "", false),
 				netalloc_api.IPAddressSource_ALLOC_REF),
 		})
@@ -364,14 +366,10 @@ func (d *RouteDescriptor) Retrieve(correlate []adapter.RouteKVWithMetadata) ([]a
 		if err == nil {
 			gwAddr = parsed.IP.String()
 		}
-		route := &linux_l3.Route{
-			OutgoingInterface: kv.Value.OutgoingInterface,
-			Scope:             kv.Value.Scope,
-			Metric:            kv.Value.Metric,
-			DstNetwork:        dstNetwork,
-			GwAddr:            gwAddr,
-		}
-		key := linux_l3.RouteKey(route.DstNetwork, route.OutgoingInterface)
+		route := proto.Clone(kv.Value).(*linux_l3.Route)
+		route.DstNetwork = dstNetwork
+		route.GwAddr = gwAddr
+		key := models.Key(route)
 		expCfg[key] = route
 		nbCfg[key] = kv.Value
 	}
@@ -405,10 +403,10 @@ func (d *RouteDescriptor) Retrieve(correlate []adapter.RouteKVWithMetadata) ([]a
 		for _, route := range retrieved.routes {
 			key := linux_l3.RouteKey(route.Value.DstNetwork, route.Value.OutgoingInterface)
 			if expCfg, hasExpCfg := expCfg[key]; hasExpCfg {
-				if d.EquivalentRoutes(key, expCfg, route.Value) {
+				if d.EquivalentRoutes(key, route.Value, expCfg) {
 					route.Value = nbCfg[key]
 					// recreate the key in case the dest. IP was replaced with netalloc link
-					route.Key = linux_l3.RouteKey(route.Value.DstNetwork, route.Value.OutgoingInterface)
+					route.Key = models.Key(route.Value)
 				}
 			}
 			values = append(values, route)
