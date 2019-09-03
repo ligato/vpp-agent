@@ -18,6 +18,7 @@ import (
 	"bufio"
 	"log"
 	"os"
+	"sync"
 
 	"github.com/pkg/errors"
 )
@@ -25,6 +26,7 @@ import (
 // SvLogger is a logger object compatible with the process manager. It uses
 // writer to print log to stdout or a file
 type SvLogger struct {
+	mx sync.Mutex
 	writer *bufio.Writer
 
 	file *os.File
@@ -50,6 +52,9 @@ func NewSvLogger(logfilePath string) (svLogger *SvLogger, err error) {
 
 // Write message to the file or stdout
 func (l *SvLogger) Write(p []byte) (n int, err error) {
+	l.mx.Lock()
+	defer l.mx.Unlock()
+
 	return l.writer.Write(p)
 }
 

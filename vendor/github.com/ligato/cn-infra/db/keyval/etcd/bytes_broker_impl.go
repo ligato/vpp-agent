@@ -187,6 +187,28 @@ func (pdb *BytesBrokerWatcherEtcd) Watch(resp func(keyval.BytesWatchResp), close
 	return nil
 }
 
+// PutIfNotExists puts given key-value pair into etcd if there is no value set for the key. If the put was successful
+// succeeded is true. If the key already exists succeeded is false and the value for the key is untouched.
+func (pdb *BytesBrokerWatcherEtcd) PutIfNotExists(key string, data []byte) (succeeded bool, err error) {
+	return putIfNotExistsInternal(pdb.kv, key, data)
+}
+
+// CompareAndSwap compares the value currently stored under the given key with the expected <oldData>,
+// and only if the expected and actual data match, the value is then changed to <newData>. The comparison and the
+// value change are executed together in a single transaction and cannot be interleaved with another operation for
+// that key.
+func (pdb *BytesBrokerWatcherEtcd) CompareAndSwap(key string, oldData, newData []byte) (swapped bool, err error) {
+	return compareAndSwapInternal(pdb.kv, key, oldData, newData, false)
+}
+
+// CompareAndDelete compares the value currently stored under the given key with the expected <data>,
+// and only if the expected and actual data match, the value is then removed from the datastore. The comparison and the
+// value removal are executed together in a single transaction and cannot be interleaved with another operation for
+// that key.
+func (pdb *BytesBrokerWatcherEtcd) CompareAndDelete(key string, data []byte) (succeeded bool, err error) {
+	return compareAndSwapInternal(pdb.kv, key, data, nil, true)
+}
+
 func handleWatchEvent(log logging.Logger, resp func(keyval.BytesWatchResp), ev *clientv3.Event) {
 	var prevKvValue []byte
 	if ev.PrevKv != nil {
@@ -326,11 +348,48 @@ func putInternal(log logging.Logger, kv clientv3.KV, lessor clientv3.Lease, opTi
 
 // PutIfNotExists puts given key-value pair into etcd if there is no value set for the key. If the put was successful
 // succeeded is true. If the key already exists succeeded is false and the value for the key is untouched.
-func (db *BytesConnectionEtcd) PutIfNotExists(key string, binData []byte) (succeeded bool, err error) {
+func (db *BytesConnectionEtcd) PutIfNotExists(key string, data []byte) (succeeded bool, err error) {
+	return putIfNotExistsInternal(db.etcdClient, key, data)
+}
+
+func putIfNotExistsInternal(kv clientv3.KV, key string, data []byte) (succeeded bool, err error) {
 	// if key doesn't exist its version is equal to 0
-	response, err := db.etcdClient.Txn(context.Background()).
+	response, err := kv.Txn(context.Background()).
 		If(clientv3.Compare(clientv3.Version(key), "=", 0)).
-		Then(clientv3.OpPut(key, string(binData))).
+		Then(clientv3.OpPut(key, string(data))).
+		Commit()
+	if err != nil {
+		return false, err
+	}
+	return response.Succeeded, nil
+}
+
+// CompareAndSwap compares the value currently stored under the given key with the expected <oldData>,
+// and only if the expected and actual data match, the value is then changed to <newData>. The comparison and the
+// value change are executed together in a single transaction and cannot be interleaved with another operation for
+// that key.
+func (db *BytesConnectionEtcd) CompareAndSwap(key string, oldData, newData []byte) (succeeded bool, err error) {
+	return compareAndSwapInternal(db.etcdClient, key, oldData, newData, false)
+}
+
+// CompareAndDelete compares the value currently stored under the given key with the expected <data>,
+// and only if the expected and actual data match, the value is then removed from the datastore. The comparison and the
+// value removal are executed together in a single transaction and cannot be interleaved with another operation for
+// that key.
+func (db *BytesConnectionEtcd) CompareAndDelete(key string, data []byte) (succeeded bool, err error) {
+	return compareAndSwapInternal(db.etcdClient, key, data, nil, true)
+}
+
+func compareAndSwapInternal(kv clientv3.KV, key string, oldData, newData []byte, del bool) (succeeded bool, err error) {
+	var operation clientv3.Op
+	if del {
+		operation = clientv3.OpDelete(key)
+	} else {
+		operation = clientv3.OpPut(key, string(newData))
+	}
+	response, err := kv.Txn(context.Background()).
+		If(clientv3.Compare(clientv3.Value(key), "=", string(oldData))).
+		Then(operation).
 		Commit()
 	if err != nil {
 		return false, err

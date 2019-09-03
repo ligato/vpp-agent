@@ -107,7 +107,7 @@ func (p *Plugin) Init() (err error) {
 	}
 
 	// If successful, configure and return
-	p.configureConnection()
+	p.configureConnection(etcdClientCfg.ExpandEnvVars)
 
 	// Mark p as connected at this point
 	p.connected = true
@@ -140,6 +140,13 @@ func (p *Plugin) NewWatcher(keyPrefix string) keyval.ProtoWatcher {
 	return p.protoWrapper.NewWatcher(keyPrefix)
 }
 
+// NewBrokerWithAtomic creates new instance of prefixed (byte-oriented) broker with atomic operations.
+// It is equivalent to: RawAccess().NewBroker(keyPrefix).(keyval.BytesBrokerWithAtomic), but the presence of this
+// method can be used as a compile-time check for the support of atomic operations (of an injected dependency).
+func (p *Plugin) NewBrokerWithAtomic(keyPrefix string) keyval.BytesBrokerWithAtomic {
+	return p.connection.NewBroker(keyPrefix).(keyval.BytesBrokerWithAtomic)
+}
+
 // RawAccess allows to access data in the database as raw bytes (i.e. not formatted by protobuf).
 func (p *Plugin) RawAccess() keyval.KvBytesPlugin {
 	return p.connection
@@ -168,15 +175,6 @@ func (p *Plugin) OnConnect(callback func() error) {
 // GetPluginName returns name of the plugin
 func (p *Plugin) GetPluginName() infra.PluginName {
 	return p.PluginName
-}
-
-// PutIfNotExists puts given key-value pair into etcd if there is no value set for the key. If the put was successful
-// succeeded is true. If the key already exists succeeded is false and the value for the key is untouched.
-func (p *Plugin) PutIfNotExists(key string, value []byte) (succeeded bool, err error) {
-	if p.connection != nil {
-		return p.connection.PutIfNotExists(key, value)
-	}
-	return false, fmt.Errorf("connection is not established")
 }
 
 // CampaignInElection starts campaign in leader election on a given prefix. Multiple instances can compete on a given prefix.
@@ -216,19 +214,19 @@ func (p *Plugin) etcdReconnectionLoop(clientCfg *ClientConfig) {
 		if err != nil {
 			continue
 		}
-		p.setupPostInitConnection()
+		p.setupPostInitConnection(clientCfg.ExpandEnvVars)
 		return
 	}
 }
 
-func (p *Plugin) setupPostInitConnection() {
+func (p *Plugin) setupPostInitConnection(expandEnvVars bool) {
 	p.Log.Infof("ETCD server %s connected", p.config.Endpoints)
 
 	p.Lock()
 	defer p.Unlock()
 
 	// Configure connection and set as connected
-	p.configureConnection()
+	p.configureConnection(expandEnvVars)
 	p.connected = true
 
 	// Execute callback functions (if any)
@@ -246,7 +244,7 @@ func (p *Plugin) setupPostInitConnection() {
 }
 
 // If ETCD is connected, complete all other procedures
-func (p *Plugin) configureConnection() {
+func (p *Plugin) configureConnection(expandEnvVars bool) {
 	if p.config.AutoCompact > 0 {
 		if p.config.AutoCompact < time.Duration(time.Minute*60) {
 			p.Log.Warnf("Auto compact option for ETCD is set to less than 60 minutes!")
@@ -257,7 +255,7 @@ func (p *Plugin) configureConnection() {
 	if p.Serializer != nil {
 		serializer = p.Serializer
 	} else {
-		serializer = &keyval.SerializerJSON{}
+		serializer = &keyval.SerializerJSON{ExpandEnvVars: expandEnvVars}
 	}
 	p.protoWrapper = kvproto.NewProtoWrapper(p.connection, serializer)
 }

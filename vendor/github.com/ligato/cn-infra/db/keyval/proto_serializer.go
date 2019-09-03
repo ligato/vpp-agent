@@ -16,6 +16,7 @@ package keyval
 
 import (
 	"bytes"
+	"os"
 
 	"github.com/gogo/protobuf/jsonpb"
 	"github.com/gogo/protobuf/proto"
@@ -50,11 +51,17 @@ func (sp *SerializerProto) Marshal(message proto.Message) ([]byte, error) {
 }
 
 // SerializerJSON serializes proto message using JSON serializer.
-type SerializerJSON struct{}
+type SerializerJSON struct{
+	ExpandEnvVars bool
+}
 
 // Unmarshal deserializes data from slice of bytes into the provided protobuf
 // message using jsonpb marshaller to correctly unmarshal protobuf data.
 func (sj *SerializerJSON) Unmarshal(data []byte, protoData proto.Message) error {
+	if sj.ExpandEnvVars {
+		expandedData := os.ExpandEnv(string(data))
+		return jsonpb.Unmarshal(bytes.NewBufferString(expandedData), protoData)
+	}
 	return jsonpb.Unmarshal(bytes.NewBuffer(data), protoData)
 }
 

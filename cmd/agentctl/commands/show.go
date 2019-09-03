@@ -1,4 +1,18 @@
-package cmd
+//  Copyright (c) 2019 Cisco and/or its affiliates.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at:
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+
+package commands
 
 import (
 	"errors"
@@ -22,12 +36,13 @@ import (
 	"github.com/ligato/vpp-agent/cmd/agentctl/utils"
 )
 
-// RootCmd represents the base command when called without any subcommands.
-var showCmd = &cobra.Command{
-	Use:     "show",
-	Aliases: []string{"s"},
-	Short:   "Show detailed config and status data",
-	Long: `
+func showCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:     "show",
+		Aliases: []string{"s"},
+		Short:   "Show detailed config and status data",
+		Hidden:  true,
+		Long: `
 'show' prints out Etcd configuration and status data (where applicable)
 for agents whose microservice label matches the label filter specified
 in the command's '[agent-label-filter] argument. The filter contains a
@@ -43,7 +58,16 @@ exist (i.e. they do not push status records into Etcd) are listed as
 The etcd flag set to true enables the printout of Etcd metadata for each
 data record (except JSON-formatted output)
 `,
-	Run: showFunction,
+		Run: showFunction,
+	}
+
+	cmd.AddCommand(showConfig)
+	cmd.AddCommand(keyConfig)
+
+	cmd.PersistentFlags().BoolVar(&showAll, "all", false,
+		"Show all configuration")
+
+	return cmd
 }
 
 var showConfig = &cobra.Command{
@@ -94,11 +118,6 @@ var (
 )
 
 func init() {
-	RootCmd.AddCommand(showCmd)
-	showCmd.AddCommand(showConfig)
-	showCmd.AddCommand(keyConfig)
-	showCmd.PersistentFlags().BoolVar(&showAll, "all", false,
-		"Show all configuration")
 	showConfig.PersistentFlags().BoolVar(&showConfAll, "all", false,
 		"Show all configuration")
 
@@ -213,7 +232,7 @@ func setKeyPrefix(args []string) {
 }
 
 func showFunction(cmd *cobra.Command, args []string) {
-	db, err := utils.GetDbForAllAgents(globalFlags.Endpoints)
+	db, err := utils.GetDbForAllAgents(global.Endpoints)
 	if err != nil {
 		utils.ExitWithError(utils.ExitError, errors.New("Failed to connect to Etcd - "+err.Error()))
 	}
@@ -316,7 +335,7 @@ func printAgentConfig(db keyval.ProtoBroker, agentLabel string, kprefix string) 
 }
 
 func keyFunction(cmd *cobra.Command, args []string) {
-	db, err := utils.GetDbForAllAgents(globalFlags.Endpoints)
+	db, err := utils.GetDbForAllAgents(global.Endpoints)
 	if err != nil {
 		utils.ExitWithError(utils.ExitError, errors.New("Failed to connect to Etcd - "+err.Error()))
 	}
