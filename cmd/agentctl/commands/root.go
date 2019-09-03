@@ -27,8 +27,8 @@ import (
 )
 
 const (
-	defaultGrpcPort = "9111"
-	defaultHttpPort = "9191"
+	defaultPortGRPC = "9111"
+	defaultPortHTTP = "9191"
 )
 
 // RootName defines default name used for root command
@@ -86,8 +86,8 @@ func SetupRootFlags(flags *pflag.FlagSet) {
 	}
 	flags.StringSliceVarP(&global.Endpoints, "etcd-endpoints", "e", etcdEndpoints, "Etcd endpoints to connect to, default from ETCD_ENDPOINTS env var")
 	flags.StringVarP(&global.AgentHost, "host", "H", agentHost, "Address on which agent is reachable, default from AGENT_HOST env var")
-	flags.StringVar(&global.PortGRPC, "grpc-port", defaultGrpcPort, "gRPC server port")
-	flags.StringVar(&global.PortHTTP, "http-port", defaultHttpPort, "HTTP server port")
+	flags.StringVar(&global.PortGRPC, "grpc-port", defaultPortGRPC, "gRPC server port")
+	flags.StringVar(&global.PortHTTP, "http-port", defaultPortHTTP, "HTTP server port")
 	flags.StringVar(&global.ServiceLabel, "service-label", serviceLabel, "Service label for specific agent instance, default from MICROSERVICE_LABEL env var")
 	flags.BoolVarP(&global.Debug, "debug", "D", false, "Enable debug mode")
 }
