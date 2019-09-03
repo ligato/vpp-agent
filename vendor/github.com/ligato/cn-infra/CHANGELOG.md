@@ -1,3 +1,26 @@
+# Release v2.2 (2019-08-23)
+
+## Major Topics
+
+**Supervisor plugin**
+A new supervisor plugin was introduced, effectively capable to replace supervisord-based environment. The plugin defines a configuration file with a list of programs started by the so-called supervisor agent, or agent-init. More information is available is Ligato [documentation for supervisor plugin][docs-supervisor].
+
+## New Features
+* [Supervisor-plugin][supervisor-plugin]
+  - A new management plugin can start other processes, including other agents or VPP. Every process must specify a unique `name`, `executable-path` and `executable-args` (arguments) if they are used. 
+  - Base logging is done to the standard output/err. Instead, all the output can be written to the file, defining file path in `logfile-path` within the supervisor config file. 
+  - Every process can now have the CPU affinity set. Use `cpu-affinity-mask` field to set hexadecimal CPU mask (the same format as Linux command `taskset`). Another field, `cpu-affinity-setup-delay` can postpone CPU affinity configuration by a given time.
+  - Hooks are executed for specific process events, like a change of the process state. Every hook is executed in supervisor environment with several environment variables set. See the [documentation][docs-supervisor] for more information.
+
+## Improvements
+* [ETCD][etcd-plugin]
+  - Now supports atomic operations with interface `BytesBrokerWithAtomic`. Also the new API method `CompareAndSwap` was added.
+  - Added option to use 'expand' environment variable which replaces `$var` in received JSON data.
+  - Option to set own serialized as a plugin dependency.
+  - New method `RawAccess()` accesses data in the database as bytes (i.e. not formatted as protobuf).
+* [Process-manager][process-manager]
+  - Now uses a buffered writer to put logs to either stdout/stderr or to file. The file is written if the field `logfile-path` is set.
+
 # Release v2.1 (2019-05-09)
 
 ## Improvements
@@ -454,6 +477,7 @@ different flavors (removed in v1.5) (reusable collection of plugins):
 [datasync-plugin]: datasync
 [datasync-restsync]: datasync/restsync
 [docker]: docker
+[docs-supervisor]: https://docs.ligato.io/en/latest/plugins/infra-plugins/#supervisor
 [etcd-plugin]: db/keyval/etcd
 [examples]: examples
 [examples-bolt]: examples/bolt-plugin
@@ -475,9 +499,11 @@ different flavors (removed in v1.5) (reusable collection of plugins):
 [logmanager-plugin]: logging/logmanager
 [logrus]: logging/logrus
 [probe-plugin]: health/probe
+[process-manager]: exec/processmanager
 [redis-plugin]: db/keyval/redis
 [rest-plugin]: rpc/rest
 [resync-plugin]: datasync/resync
 [service-label-plugin]: servicelabel
 [statuscheck-plugin]: health/statuscheck
+[supervisor-plugin]: exec/supervisor
 [tracer-plugin]: logging/measure

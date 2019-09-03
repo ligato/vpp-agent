@@ -1,3 +1,17 @@
+//  Copyright (c) 2019 Cisco and/or its affiliates.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at:
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+
 package utils
 
 import (
@@ -7,21 +21,17 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/ligato/vpp-agent/api/models/linux/interfaces"
-	"github.com/ligato/vpp-agent/api/models/linux/l3"
-
-	vpp_ipsec "github.com/ligato/vpp-agent/api/models/vpp/ipsec"
-
-	"github.com/ligato/vpp-agent/api/models/vpp/acl"
-	"github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	"github.com/ligato/vpp-agent/api/models/vpp/l2"
-	"github.com/ligato/vpp-agent/api/models/vpp/l3"
-	"github.com/ligato/vpp-agent/api/models/vpp/nat"
-
 	"github.com/ligato/cn-infra/health/statuscheck/model/status"
 	"github.com/logrusorgru/aurora.git"
 
-	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
+	linux_interfaces "github.com/ligato/vpp-agent/api/models/linux/interfaces"
+	linux_l3 "github.com/ligato/vpp-agent/api/models/linux/l3"
+	vpp_acl "github.com/ligato/vpp-agent/api/models/vpp/acl"
+	vpp_interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
+	vpp_ipsec "github.com/ligato/vpp-agent/api/models/vpp/ipsec"
+	vpp_l2 "github.com/ligato/vpp-agent/api/models/vpp/l2"
+	vpp_l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
+	vpp_nat "github.com/ligato/vpp-agent/api/models/vpp/nat"
 )
 
 const perLevelSpaces = 3
@@ -1120,12 +1130,12 @@ func setOsColor(arg status.OperationalState) string {
 	}
 }
 
-func setStsColor(kind string, arg interfaces.InterfaceState_Status) string {
+func setStsColor(kind string, arg vpp_interfaces.InterfaceState_Status) string {
 	sts := fmt.Sprintf("%s-%s", kind, arg)
 	switch arg {
-	case interfaces.InterfaceState_UP:
+	case vpp_interfaces.InterfaceState_UP:
 		return setGreen(sts)
-	case interfaces.InterfaceState_DOWN:
+	case vpp_interfaces.InterfaceState_DOWN:
 		return setRed(sts)
 	default:
 		return sts

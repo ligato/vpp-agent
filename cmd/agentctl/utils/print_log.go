@@ -1,10 +1,29 @@
+//  Copyright (c) 2019 Cisco and/or its affiliates.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at:
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+
 package utils
 
 import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"html/template"
+	"fmt"
+	"io"
+	"sort"
+	_ "sort"
+	"text/tabwriter"
+	"text/template"
 )
 
 type logType struct {
@@ -14,47 +33,58 @@ type logType struct {
 
 type LogList []logType
 
-func ConvertToLogList(log string) LogList {
+func ConvertToLogList(log string) (LogList, error) {
 	data := make(LogList, 0)
 	err := json.Unmarshal([]byte(log), &data)
-
 	if err != nil {
-		ExitWithError(ExitError,
-			errors.New("Failed conver string to json - "+err.Error()))
+		return nil, errors.New("Failed conver string to json - " + err.Error())
 	}
-
-	return data
+	sort.Sort(data)
+	return data, nil
 }
 
-func (ll LogList) PrintLogList() (*bytes.Buffer, error) {
-
-	logLevel := createLogTypeTemplate()
-
-	templates := []*template.Template{}
-
-	templates = append(templates, logLevel)
-
-	return ll.textRenderer(templates)
+func (ll LogList) Print(w io.Writer) error {
+	const tmpl = "{{.Logger}}\t{{.Level}}\t\n"
+	t, err := template.New("log").Parse(tmpl)
+	if err != nil {
+		return err
+	}
+	b, err := ll.render(t)
+	if err != nil {
+		return err
+	}
+	_, err = w.Write(b)
+	return err
 }
 
-func createLogTypeTemplate() *template.Template {
-	Template := template.Must(template.New("log").Parse(
-		"{{with .Logger}}\nLogger: {{.}}{{end}}" +
-			"{{with .Level}}\nLevel: {{.}}{{end}}"))
+func (ll LogList) render(t *template.Template) ([]byte, error) {
+	var buffer bytes.Buffer
+	w := tabwriter.NewWriter(&buffer, 0, 0, 1, ' ', 0)
 
-	return Template
-}
+	// print logger table
+	fmt.Fprintf(w, "LOGGER\tLEVEL\t\n")
 
-func (ll LogList) textRenderer(templates []*template.Template) (*bytes.Buffer, error) {
-	buffer := new(bytes.Buffer)
 	for _, value := range ll {
-		for _, templateVal := range templates {
-			err := templateVal.Execute(buffer, value)
-			if err != nil {
-				return nil, err
-			}
+		err := t.Execute(w, value)
+		if err != nil {
+			return nil, err
 		}
 	}
 
-	return buffer, nil
+	if err := w.Flush(); err != nil {
+		return nil, err
+	}
+	return buffer.Bytes(), nil
+}
+
+func (ll LogList) Len() int {
+	return len(ll)
+}
+
+func (ll LogList) Less(i, j int) bool {
+	return ll[i].Logger < ll[j].Logger
+}
+
+func (ll LogList) Swap(i, j int) {
+	ll[i], ll[j] = ll[j], ll[i]
 }

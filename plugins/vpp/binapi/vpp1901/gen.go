@@ -22,6 +22,7 @@ package vpp1901
 //go:generate binapi-generator --input-file=/usr/share/vpp/api/bfd.api.json
 //go:generate binapi-generator --input-file=/usr/share/vpp/api/bond.api.json
 //go:generate binapi-generator --input-file=/usr/share/vpp/api/dhcp.api.json
+//go:generate binapi-generator --input-file=/usr/share/vpp/api/gre.api.json
 //go:generate binapi-generator --input-file=/usr/share/vpp/api/interface.api.json
 //go:generate binapi-generator --input-file=/usr/share/vpp/api/ip.api.json
 //go:generate binapi-generator --input-file=/usr/share/vpp/api/ipsec.api.json

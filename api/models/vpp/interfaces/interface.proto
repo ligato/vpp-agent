@@ -22,6 +22,7 @@ message Interface {
         IPSEC_TUNNEL = 8;
         VMXNET3_INTERFACE = 9;
         BOND_INTERFACE = 10;
+        GRE_TUNNEL = 11;
     };
 
     // Name is mandatory field representing logical name for the interface.
@@ -99,6 +100,7 @@ message Interface {
         IPSecLink ipsec = 105;
         VmxNet3Link vmx_net3 = 106;
         BondLink bond = 107;
+        GreLink gre = 108;
     };
 };
 
@@ -227,4 +229,18 @@ message BondLink {
         bool is_long_timeout = 3;
     }
     repeated BondedInterface bonded_interfaces = 12;
+}
+
+message GreLink {
+    enum Type {
+        UNKNOWN = 0;
+        L3 = 1; // L3 GRE (i.e. this tunnel is in L3 mode)
+        TEB = 2; // Transparent Ethernet Bridging - the tunnel is in L2 mode
+        ERSPAN = 3; // ERSPAN - the tunnel is for port mirror SPAN output
+    };
+    Type tunnel_type = 1;
+    string src_addr = 2; 
+    string dst_addr = 3;
+    uint32 outer_fib_id = 4;
+    uint32 session_id = 5;
 }
