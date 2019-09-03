@@ -53,7 +53,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
  	&& rm -rf /var/lib/apt/lists/*
 
 # Install Go
-ENV GOLANG_VERSION 1.12.7
+ENV GOLANG_VERSION 1.12.9
 RUN set -eux; \
 	dpkgArch="$(dpkg --print-architecture)"; \
 		case "${dpkgArch##*-}" in \
