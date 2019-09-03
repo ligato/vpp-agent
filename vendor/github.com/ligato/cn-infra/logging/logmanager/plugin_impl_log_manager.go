@@ -119,7 +119,7 @@ func (p *Plugin) Init() error {
 //   > curl -X PUT http://localhost:<port>/log/<logger-name>/<log-level>
 func (p *Plugin) AfterInit() error {
 	if p.HTTP != nil {
-		p.HTTP.RegisterHTTPHandler(fmt.Sprintf("/log/{%s}/{%s:debug|info|warn|error|fatal|panic}",
+		p.HTTP.RegisterHTTPHandler(fmt.Sprintf("/log/{%s}/{%s}",
 			loggerVarName, levelVarName), p.logLevelHandler, "PUT")
 		p.HTTP.RegisterHTTPHandler("/log/list", p.listLoggersHandler, "GET")
 	}
@@ -161,7 +161,7 @@ func (p *Plugin) logLevelHandler(formatter *render.Render) http.HandlerFunc {
 		}
 		err := p.setLoggerLogLevel(vars[loggerVarName], vars[levelVarName])
 		if err != nil {
-			formatter.JSON(w, http.StatusNotFound,
+			formatter.JSON(w, http.StatusInternalServerError,
 				struct{ Error string }{err.Error()})
 			return
 		}

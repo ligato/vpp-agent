@@ -106,3 +106,7 @@ required = [
   [[prune.project]]
     name = "github.com/gogo/protobuf"
     unused-packages = false
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/common-nighthawk/go-figure"

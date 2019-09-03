@@ -15,18 +15,16 @@
 package utils
 
 import (
+	"fmt"
 	"os"
 	"strings"
 
 	"github.com/go-errors/errors"
-
 	"github.com/gogo/protobuf/proto"
-
-	"fmt"
-
 	"github.com/ligato/cn-infra/db/keyval"
 	"github.com/ligato/cn-infra/db/keyval/etcd"
 	"github.com/ligato/cn-infra/db/keyval/kvproto"
+	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/servicelabel"
 )
@@ -40,6 +38,7 @@ const (
 	ExitBadFeature
 	ExitInterrupted
 	ExitIO
+	ExitNotFound
 	ExitBadArgs = 128
 )
 
@@ -70,7 +69,7 @@ func GetDbForAllAgents(endpoints []string) (*kvproto.ProtoWrapper, error) {
 
 	// Log warnings and errors only.
 	log := logrus.NewLogger("etcd")
-	//log.SetLevel(logging.WarnLevel)
+	log.SetLevel(logging.WarnLevel)
 
 	etcdBroker, err := etcd.NewEtcdConnectionWithBytes(*etcdConfig, log)
 	if err != nil {
@@ -96,7 +95,7 @@ func GetDbForOneAgent(endpoints []string, agentLabel string) (keyval.ProtoBroker
 
 	// Log warnings and errors only.
 	log := logrus.NewLogger("etcd")
-	//log.SetLevel(logging.WarnLevel)
+	log.SetLevel(logging.WarnLevel)
 
 	etcdBroker, err := etcd.NewEtcdConnectionWithBytes(*etcdConfig, log)
 	if err != nil {
@@ -121,9 +120,8 @@ func GetModuleName(module proto.Message) string {
 	return outstr
 }
 
-// ExitWithError is used by all commands to print out an error
-// and exit.
+// ExitWithError is used by all commands to print out an error and exit.
 func ExitWithError(code int, err error) {
-	fmt.Fprintln(os.Stderr, "Error: ", err)
+	fmt.Fprintf(os.Stderr, "ERROR: %v\n", err)
 	os.Exit(code)
 }

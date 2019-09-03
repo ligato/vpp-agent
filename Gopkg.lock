@@ -101,6 +101,14 @@
 
 [[projects]]
   branch = "master"
+  digest = "1:083caed86277ee2b48cc2dd692321170ac5cbbca3d08cf2259a8b82c0cb0dee7"
+  name = "github.com/common-nighthawk/go-figure"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "67e0ed34491ae997c83c5aa2a1cae2cfd4b4ac41"
+
+[[projects]]
+  branch = "master"
   digest = "1:1ed8f94f16010f9e1a419a818ec8ed5765d04561e6bfcc872e3a5a16fbae08b2"
   name = "github.com/containerd/console"
   packages = ["."]
@@ -501,7 +509,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:3aa6d22f84c3f331446b0884cc55cbf1c35b10d837f80fc67939a46656ef1540"
+  digest = "1:8248e3b2ba1bf3862bd01a38e58b6c448475f7d1ee62be14cb68a43881f9f28f"
   name = "github.com/ligato/cn-infra"
   packages = [
     "agent",
@@ -549,7 +557,7 @@
     "utils/safeclose",
   ]
   pruneopts = "T"
-  revision = "61443bee9914521191283f41c8715c41aaaa47f4"
+  revision = "9bb0e395ce981f921420130be6d13a1582ed99f1"
 
 [[projects]]
   branch = "master"
@@ -1023,6 +1031,8 @@
     "git.fd.io/govpp.git/api",
     "git.fd.io/govpp.git/cmd/binapi-generator",
     "git.fd.io/govpp.git/core",
+    "github.com/common-nighthawk/go-figure",
+    "github.com/coreos/etcd/clientv3",
     "github.com/coreos/go-iptables/iptables",
     "github.com/fsouza/go-dockerclient",
     "github.com/ghodss/yaml",
@@ -1031,6 +1041,7 @@
     "github.com/gogo/protobuf/jsonpb",
     "github.com/gogo/protobuf/proto",
     "github.com/gogo/protobuf/protoc-gen-gogo",
+    "github.com/gogo/protobuf/protoc-gen-gogo/descriptor",
     "github.com/gogo/protobuf/types",
     "github.com/gogo/status",
     "github.com/ligato/cn-infra/agent",
@@ -1076,6 +1087,7 @@
     "github.com/prometheus/client_golang/prometheus",
     "github.com/sirupsen/logrus",
     "github.com/spf13/cobra",
+    "github.com/spf13/pflag",
     "github.com/unrolled/render",
     "github.com/vishvananda/netlink",
     "github.com/vishvananda/netns",
