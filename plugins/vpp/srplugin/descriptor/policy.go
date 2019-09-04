@@ -17,6 +17,7 @@ package descriptor
 import (
 	"github.com/pkg/errors"
 
+	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/vpp-agent/api/models/vpp/l3"
 	srv6 "github.com/ligato/vpp-agent/api/models/vpp/srv6"
@@ -54,7 +55,7 @@ type PolicyDescriptor struct {
 
 // PolicyMetadata are Policy-related metadata that KVscheduler bundles with Policy data. They are served by KVScheduler in Create/Update descriptor methods.
 type PolicyMetadata struct {
-	segmentListIndexes map[*srv6.Policy_SegmentList]uint32
+	segmentListIndexes map[string]uint32 // map[marshalled segment list]index in policy
 }
 
 // NewPolicyDescriptor creates a new instance of the Srv6 policy descriptor.
@@ -122,9 +123,9 @@ func (d *PolicyDescriptor) Create(key string, policy *srv6.Policy) (metadata int
 	}
 
 	// retrieve from VPP indexes of just added Policy/Segment Lists and store it as metadata
-	_, slIndexes, err := d.srHandler.RetrievePolicyIndexInfo(policy)
+	slIndexes, err := d.policyIndexInfo(policy)
 	if err != nil {
-		return nil, errors.Errorf("can't retrieve indexes of created srv6 policy with bsid %v : %v", policy.GetBsid(), err)
+		return nil, errors.Wrapf(err, "can't retrieve indexes of created srv6 policy with bsid %v", policy.GetBsid())
 	}
 	metadata = &PolicyMetadata{
 		segmentListIndexes: slIndexes,
@@ -172,7 +173,7 @@ func (d *PolicyDescriptor) Update(key string, oldPolicy, newPolicy *srv6.Policy,
 	// remove old segment lists not present in newPolicy
 	slIndexes := oldMetadata.(*PolicyMetadata).segmentListIndexes
 	for _, sl := range removePool {
-		index, exists := slIndexes[sl]
+		index, exists := slIndexes[proto.CompactTextString(sl)]
 		if !exists {
 			return nil, errors.Errorf("failed update policy: failed to find index for segment list "+
 				"%+v in policy with bsid %v (metadata segment list indexes: %+v)", sl, oldPolicy.GetBsid(), slIndexes)
@@ -183,15 +184,28 @@ func (d *PolicyDescriptor) Update(key string, oldPolicy, newPolicy *srv6.Policy,
 	}
 
 	// update metadata be recreation it from scratch
-	_, slIndexes, err = d.srHandler.RetrievePolicyIndexInfo(newPolicy)
+	slIndexes, err = d.policyIndexInfo(newPolicy)
 	if err != nil {
-		return nil, errors.Errorf("can't retrieve indexes of updated srv6 policy with bsid %v : %v", newPolicy.GetBsid(), err)
+		return nil, errors.Wrapf(err, "can't retrieve indexes of updated srv6 policy with bsid %v", newPolicy.GetBsid())
 	}
 	newMetadata = &PolicyMetadata{
 		segmentListIndexes: slIndexes,
 	}
 
 	return newMetadata, nil
+}
+
+// policyIndexInfo retrieves indexes for segment lists of given policy
+func (d *PolicyDescriptor) policyIndexInfo(policy *srv6.Policy) (map[string]uint32, error) {
+	_, indexes, err := d.srHandler.RetrievePolicyIndexInfo(policy)
+	if err != nil {
+		return nil, errors.Wrapf(err, "can't retrieve indexes of srv6 policy with bsid %v from vpp", policy.GetBsid())
+	}
+	result := make(map[string]uint32)
+	for slist, index := range indexes {
+		result[proto.CompactTextString(slist)] = index
+	}
+	return result, nil
 }
 
 // UpdateWithRecreate define whether update case should be handled by complete policy recreation
