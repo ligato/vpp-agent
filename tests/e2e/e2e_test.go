@@ -16,10 +16,10 @@ package e2e
 
 import (
 	"bytes"
-	"context"
 	"flag"
 	"fmt"
 	"log"
+	"net/url"
 	"os"
 	"os/exec"
 	"regexp"
@@ -28,33 +28,35 @@ import (
 	"testing"
 	"time"
 
-	govppapi "git.fd.io/govpp.git/api"
-	govppcore "git.fd.io/govpp.git/core"
+	"encoding/json"
 	"github.com/fsouza/go-dockerclient"
 	"github.com/gogo/protobuf/proto"
 	"github.com/mitchellh/go-ps"
 	. "github.com/onsi/gomega"
-	"github.com/sirupsen/logrus"
+	"google.golang.org/grpc"
 
-	vnf_agent "github.com/ligato/cn-infra/agent"
+	"github.com/ligato/vpp-agent/cmd/agentctl/utils"
 	"github.com/ligato/vpp-agent/pkg/models"
-	"github.com/ligato/vpp-agent/plugins/govppmux/vppcalls"
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
+	nslinuxcalls "github.com/ligato/vpp-agent/plugins/linux/nsplugin/linuxcalls"
+	"github.com/ligato/vpp-agent/client"
+	"github.com/ligato/vpp-agent/api/genericmanager"
+	"github.com/ligato/vpp-agent/client/remoteclient"
 )
 
 var (
-	vppPath     = flag.String("vpp-path", "/usr/bin/vpp", "VPP program path")
-	vppConfig   = flag.String("vpp-config", "", "VPP config file")
-	vppSockAddr = flag.String("vpp-sock-addr", "", "VPP binapi socket address")
-
-	debug = flag.Bool("debug", false, "Turn on debug mode.")
+	vppPath       = flag.String("vpp-path", "/usr/bin/vpp", "VPP program path")
+	vppConfig     = flag.String("vpp-config", "", "VPP config file")
+	vppSockAddr   = flag.String("vpp-sock-addr", "", "VPP binapi socket address")
+	agentHTTPPort = flag.Int("agent-http-port", 9191, "VPP-Agent HTTP port")
+	agentGrpcPort = flag.Int("agent-grpc-port", 9111, "VPP-Agent GRPC port")
 
 	vppPingRegexp = regexp.MustCompile("Statistics: ([0-9]+) sent, ([0-9]+) received, ([0-9]+)% packet loss")
 )
 
 const (
 	agentResyncTimeout = time.Second * 15
-	vppExitTimeout     = time.Second * 1
+	processExitTimeout = time.Second * 3
 
 	vppConf = `
 		unix {
@@ -82,21 +84,18 @@ const (
 func init() {
 	log.SetFlags(log.Lmicroseconds | log.Lshortfile)
 	flag.Parse()
-	if *debug {
-		govppcore.SetLogLevel(logrus.DebugLevel)
-	}
 }
 
 type testCtx struct {
-	t                    *testing.T
-	VPP                  *exec.Cmd
-	vppStderr, vppStdout *bytes.Buffer
-	plugins              *vppAgent
-	agent                vnf_agent.Agent
-	dockerClient         *docker.Client
-	microservices        map[string]*microservice
-	vppChan              govppapi.Channel
-	vpe                  vppcalls.VpeVppAPI
+	t             *testing.T
+	VPP           *exec.Cmd
+	agent         *exec.Cmd
+	dockerClient  *docker.Client
+	microservices map[string]*microservice
+	nsCalls       nslinuxcalls.NetworkNamespaceAPI
+	httpClient    *utils.HTTPClient
+	grpcConn      *grpc.ClientConn
+	grpcClient    client.ConfigClient
 }
 
 func setupE2E(t *testing.T) *testCtx {
@@ -116,91 +115,57 @@ func setupE2E(t *testing.T) *testCtx {
 	resetMicroservices(t, dockerClient)
 
 	// check if VPP process is not running already
-	processes, err := ps.Processes()
-	if err != nil {
-		t.Fatalf("listing processes failed: %v", err)
-	}
-	for _, process := range processes {
-		proc := process.Executable()
-		if strings.Contains(proc, "vpp") && process.Pid() != os.Getpid() {
-			t.Logf(" - found process: %+v", process)
-		}
-		switch proc {
-		case *vppPath, "vpp", "vpp_main":
-			t.Fatalf("VPP is already running (PID: %v)", process.Pid())
-		}
-	}
+	assertProcessNotRunning(t, "vpp", "vpp_main", *vppPath)
 
-	var removeFile = func(path string) {
-		if err := os.Remove(path); err == nil {
-			t.Logf("removed file %q", path)
-		} else if !os.IsNotExist(err) {
-			t.Fatalf("removing file %q failed: %v", path, err)
-		}
-	}
 	// remove binapi files from previous run
 	if *vppSockAddr != "" {
-		removeFile(*vppSockAddr)
+		removeFile(t, *vppSockAddr)
 	}
 	if err := os.Mkdir("/run/vpp", 0755); err != nil && !os.IsExist(err) {
 		t.Logf("mkdir failed: %v", err)
 	}
 
-	var stderr, stdout bytes.Buffer
-	vppCmd := exec.Command(*vppPath)
+	// start VPP process
+	var vppArgs []string
 	if *vppConfig != "" {
-		vppCmd.Args = append(vppCmd.Args, "-c", *vppConfig)
+		vppArgs = []string{"-c", *vppConfig}
 	} else {
-		vppCmd.Args = append(vppCmd.Args, vppConf)
+		vppArgs = []string{vppConf}
 	}
-	vppCmd.Stderr = &stderr
-	vppCmd.Stdout = &stdout
-
-	// ensure that process is killed when current process exits
-	vppCmd.SysProcAttr = &syscall.SysProcAttr{Pdeathsig: syscall.SIGKILL}
-	if err := vppCmd.Start(); err != nil {
-		t.Fatalf("starting VPP failed: %v", err)
-	}
-	vppPID := uint32(vppCmd.Process.Pid)
-	t.Logf("VPP start OK (PID: %v)", vppPID)
+	vppCmd := startProcess(t, "VPP", *vppPath, vppArgs...)
 
 	// start the agent
-	inSync := make(chan struct{})
-	plugins := setupAgent(inSync)
-	agent := vnf_agent.NewAgent(
-		vnf_agent.AllPlugins(plugins),
-	)
-	go func() {
-		if err := agent.Run(); err != nil {
-			t.Fatalf("agent failed with error: %v", err)
-		}
-	}()
-	select {
-	case <-inSync:
-		t.Logf("agent is in-sync with VPP")
+	assertProcessNotRunning(t, "vpp_agent")
+	agentCmd := startProcess(t, "VPP-Agent", "/vpp-agent")
 
-	case <-time.After(agentResyncTimeout):
-		t.Fatal("agent resync timeout")
-	}
+	// TODO: wait for agent to initialize
+	time.Sleep(time.Second * 3)
 
-	// create VPE handler just in case some test needs to run VPP CLIs, etc.
-	vppChan, err := plugins.GoVppMux.NewAPIChannel()
+	// prepare HTTP client for access to REST API of the agent
+	httpAddr := fmt.Sprintf(":%d", *agentHTTPPort)
+	httpClient := utils.NewHTTPClient(httpAddr)
+
+	// connect with agent via GRPC
+	grpcAddr := fmt.Sprintf(":%d", *agentGrpcPort)
+	grpcConn, err := grpc.Dial(grpcAddr, grpc.WithInsecure())
 	if err != nil {
-		t.Fatalf("failed to create channel to VPP: %v", err)
+		t.Fatalf("Failed to connect to VPP-agent via gRPC: %v", err)
 	}
-	vpe := vppcalls.CompatibleVpeHandler(vppChan)
+	grpcClient := remoteclient.NewClientGRPC(genericmanager.NewGenericManagerClient(grpcConn))
+
+	// run initial resync
+	syncAgent(t, httpClient)
 
 	return &testCtx{
 		t:             t,
 		VPP:           vppCmd,
-		vppStderr:     &stderr,
-		vppStdout:     &stdout,
 		dockerClient:  dockerClient,
-		plugins:       plugins,
-		agent:         agent,
+		agent:         agentCmd,
 		microservices: make(map[string]*microservice),
-		vppChan:       vppChan,
-		vpe:           vpe,
+		nsCalls:       nslinuxcalls.NewSystemHandler(),
+		httpClient:    httpClient,
+		grpcConn:      grpcConn,
+		grpcClient:    grpcClient,
 	}
 }
 
@@ -212,51 +177,19 @@ func (ctx *testCtx) teardownE2E() {
 		ctx.stopMicroservice(msName)
 	}
 
-	// stop the agent
-	if err := ctx.agent.Stop(); err != nil {
-		ctx.t.Fatalf("agent shutdown failed: %v", err)
-	} else {
-		ctx.t.Logf("agent shutdown OK")
-	}
+	// close gRPC connection
+	ctx.grpcConn.Close()
+
+	// terminate agent
+	stopProcess(ctx.t, ctx.agent, "VPP-Agent")
 
 	// terminate VPP
-	ctx.vppChan.Close()
-	if err := ctx.VPP.Process.Signal(syscall.SIGTERM); err != nil {
-		ctx.t.Fatalf("sending SIGTERM to VPP failed: %v", err)
-	}
-
-	// wait until VPP exits
-	exit := make(chan struct{})
-	go func() {
-		if err := ctx.VPP.Wait(); err != nil {
-			ctx.t.Logf("VPP process wait failed: %v", err)
-		}
-		close(exit)
-	}()
-	select {
-	case <-exit:
-		ctx.t.Logf("VPP exit OK")
-
-	case <-time.After(vppExitTimeout):
-		ctx.t.Logf("VPP exit timeout")
-		ctx.t.Logf("sending SIGKILL to VPP..")
-		if err := ctx.VPP.Process.Signal(syscall.SIGKILL); err != nil {
-			ctx.t.Fatalf("sending SIGKILL to VPP failed: %v", err)
-		}
-	}
+	stopProcess(ctx.t, ctx.VPP, "VPP")
 }
 
 // syncAgent runs downstream resync and returns the list of executed operations.
 func (ctx *testCtx) syncAgent() (executed kvs.RecordedTxnOps) {
-	txn := ctx.plugins.KvScheduler.StartNBTransaction()
-	txnCtx := context.Background()
-	txnCtx = kvs.WithResync(txnCtx, kvs.DownstreamResync, true)
-	txnSeqNum, err := txn.Commit(txnCtx)
-	if err != nil {
-		ctx.t.Fatalf("failed to sync agent with VPP: %v", err)
-	}
-	txnRec := ctx.plugins.KvScheduler.GetRecordedTransaction(txnSeqNum)
-	return txnRec.Executed
+	return syncAgent(ctx.t, ctx.httpClient)
 }
 
 // agentInSync checks if the agent NB config and the SB state (VPP+Linux)
@@ -272,7 +205,7 @@ func (ctx *testCtx) agentInSync() bool {
 }
 
 func (ctx *testCtx) startMicroservice(msName string) (ms *microservice) {
-	ms = createMicroservice(ctx.t, msName, ctx.dockerClient, ctx.plugins.NSPlugin)
+	ms = createMicroservice(ctx.t, msName, ctx.dockerClient, ctx.nsCalls)
 	ctx.microservices[msName] = ms
 	return ms
 }
@@ -349,12 +282,22 @@ func (ctx *testCtx) testConnection(fromMs, toMs, dstAddr, listenAddr string, por
 
 func (ctx *testCtx) getValueState(value proto.Message) kvs.ValueState {
 	key := models.Key(value)
-	status := ctx.plugins.KvScheduler.GetValueStatus(key)
-	return status.GetValue().GetState()
+	return ctx.getValueStateByKey(key)
 }
 
 func (ctx *testCtx) getValueStateByKey(key string) kvs.ValueState {
-	status := ctx.plugins.KvScheduler.GetValueStatus(key)
+	q := fmt.Sprintf(`/scheduler/status?key=%s`, url.QueryEscape(key))
+	resp, err := ctx.httpClient.GET(q)
+	if err != nil {
+		ctx.t.Fatalf("Request to obtain value status has failed: %v", err)
+	}
+	status := kvs.BaseValueStatus{}
+	if err := json.Unmarshal(resp, &status); err != nil {
+		ctx.t.Fatalf("Reply with value status cannot be decoded: %v", err)
+	}
+	if status.GetValue().GetKey() != key {
+		ctx.t.Fatalf("Received value status for unexpected key: %v", status)
+	}
 	return status.GetValue().GetState()
 }
 
@@ -363,5 +306,90 @@ func (ctx *testCtx) getValueStateByKey(key string) kvs.ValueState {
 func (ctx *testCtx) getValueStateClb(value proto.Message) func() kvs.ValueState {
 	return func() kvs.ValueState {
 		return ctx.getValueState(value)
+	}
+}
+
+func syncAgent(t *testing.T, httpClient *utils.HTTPClient) (executed kvs.RecordedTxnOps) {
+	resp, err := httpClient.POST("/scheduler/downstream-resync", struct{}{})
+	if err != nil {
+		t.Fatalf("Downstream resync request has failed: %v", err)
+	}
+	txn := kvs.RecordedTxn{}
+	if err := json.Unmarshal(resp, &txn); err != nil {
+		t.Fatalf("Downstream resync reply cannot be decoded: %v", err)
+	}
+	if txn.Start.IsZero() {
+		t.Fatalf("Downstream resync returned empty transaction record: %v", txn)
+	}
+	return txn.Executed
+}
+
+func assertProcessNotRunning(t *testing.T, name string, aliases ...string) {
+	processes, err := ps.Processes()
+	if err != nil {
+		t.Fatalf("listing processes failed: %v", err)
+	}
+	for _, process := range processes {
+		proc := process.Executable()
+		if strings.Contains(proc, name) && process.Pid() != os.Getpid() {
+			t.Logf(" - found process: %+v", process)
+		}
+		aliases := append(aliases, name)
+		for _, alias := range aliases {
+			if alias == proc {
+				t.Fatalf("%s is already running (PID: %v)", name, process.Pid())
+			}
+		}
+	}
+}
+
+func startProcess(t *testing.T, name, path string, args ...string) *exec.Cmd {
+	cmd := exec.Command(path)
+	cmd.Args = append(cmd.Args, args...)
+	cmd.Stderr = os.Stderr
+	cmd.Stdout = os.Stdout
+
+	// ensure that process is killed when current process exits
+	cmd.SysProcAttr = &syscall.SysProcAttr{Pdeathsig: syscall.SIGKILL}
+	if err := cmd.Start(); err != nil {
+		t.Fatalf("starting %s failed: %v", name, err)
+	}
+	pid := uint32(cmd.Process.Pid)
+	t.Logf("%s start OK (PID: %v)", name, pid)
+	return cmd
+}
+
+func stopProcess(t *testing.T, cmd *exec.Cmd, name string) {
+	// terminate process
+	if err := cmd.Process.Signal(syscall.SIGTERM); err != nil {
+		t.Fatalf("sending SIGTERM to %s failed: %v", name, err)
+	}
+
+	// wait until process exits
+	exit := make(chan struct{})
+	go func() {
+		if err := cmd.Wait(); err != nil {
+			t.Logf("%s process wait failed: %v", name, err)
+		}
+		close(exit)
+	}()
+	select {
+	case <-exit:
+		t.Logf("%s exit OK", name)
+
+	case <-time.After(processExitTimeout):
+		t.Logf("%s exit timeout", name)
+		t.Logf("sending SIGKILL to %s..", name)
+		if err := cmd.Process.Signal(syscall.SIGKILL); err != nil {
+			t.Fatalf("sending SIGKILL to %s failed: %v", name, err)
+		}
+	}
+}
+
+func removeFile(t *testing.T, path string) {
+	if err := os.Remove(path); err == nil {
+		t.Logf("removed file %q", path)
+	} else if !os.IsNotExist(err) {
+		t.Fatalf("removing file %q failed: %v", path, err)
 	}
 }

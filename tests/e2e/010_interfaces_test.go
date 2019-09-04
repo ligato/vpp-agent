@@ -24,7 +24,6 @@ import (
 	"github.com/ligato/vpp-agent/api/models/linux/interfaces"
 	"github.com/ligato/vpp-agent/api/models/linux/namespace"
 	"github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	"github.com/ligato/vpp-agent/client"
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 )
 
@@ -80,7 +79,7 @@ func TestTapInterfaceConn(t *testing.T) {
 	}
 
 	ctx.startMicroservice(msName)
-	req := client.LocalClient.ChangeRequest()
+	req := ctx.grpcClient.ChangeRequest()
 	err := req.Update(
 		vppTap,
 		linuxTap,
@@ -111,7 +110,7 @@ func TestTapInterfaceConn(t *testing.T) {
 	}
 
 	// re-create VPP TAP
-	req = client.LocalClient.ChangeRequest()
+	req = ctx.grpcClient.ChangeRequest()
 	err = req.Delete(
 		vppTap,
 	).Send(context.Background())
@@ -120,7 +119,7 @@ func TestTapInterfaceConn(t *testing.T) {
 	Expect(ctx.pingFromVPP(linuxTapIP)).ToNot(BeNil())
 	Expect(ctx.pingFromMs(msName, vppTapIP)).ToNot(BeNil())
 
-	req = client.LocalClient.ChangeRequest()
+	req = ctx.grpcClient.ChangeRequest()
 	err = req.Update(
 		vppTap,
 	).Send(context.Background())
@@ -131,7 +130,7 @@ func TestTapInterfaceConn(t *testing.T) {
 	//Expect(ctx.agentInSync()).To(BeTrue())
 
 	// re-create Linux TAP
-	req = client.LocalClient.ChangeRequest()
+	req = ctx.grpcClient.ChangeRequest()
 	err = req.Delete(
 		linuxTap,
 	).Send(context.Background())
@@ -140,7 +139,7 @@ func TestTapInterfaceConn(t *testing.T) {
 	Expect(ctx.pingFromVPP(linuxTapIP)).ToNot(BeNil())
 	Expect(ctx.pingFromMs(msName, vppTapIP)).ToNot(BeNil())
 
-	req = client.LocalClient.ChangeRequest()
+	req = ctx.grpcClient.ChangeRequest()
 	err = req.Update(
 		linuxTap,
 	).Send(context.Background())
@@ -208,7 +207,7 @@ func TestAfPacketInterfaceConn(t *testing.T) {
 	}
 
 	ctx.startMicroservice(msName)
-	req := client.LocalClient.ChangeRequest()
+	req := ctx.grpcClient.ChangeRequest()
 	err := req.Update(
 		afPacket,
 		veth1,
@@ -243,7 +242,7 @@ func TestAfPacketInterfaceConn(t *testing.T) {
 	}
 
 	// re-create AF-PACKET
-	req = client.LocalClient.ChangeRequest()
+	req = ctx.grpcClient.ChangeRequest()
 	err = req.Delete(
 		afPacket,
 	).Send(context.Background())
@@ -252,7 +251,7 @@ func TestAfPacketInterfaceConn(t *testing.T) {
 	Expect(ctx.pingFromVPP(veth2IP)).ToNot(BeNil())
 	Expect(ctx.pingFromMs(msName, afPacketIP)).ToNot(BeNil())
 
-	req = client.LocalClient.ChangeRequest()
+	req = ctx.grpcClient.ChangeRequest()
 	err = req.Update(
 		afPacket,
 	).Send(context.Background())
@@ -263,7 +262,7 @@ func TestAfPacketInterfaceConn(t *testing.T) {
 	//Expect(ctx.agentInSync()).To(BeTrue())
 
 	// re-create VETH
-	req = client.LocalClient.ChangeRequest()
+	req = ctx.grpcClient.ChangeRequest()
 	err = req.Delete(
 		veth2,
 	).Send(context.Background())
@@ -272,7 +271,7 @@ func TestAfPacketInterfaceConn(t *testing.T) {
 	Expect(ctx.pingFromVPP(veth2IP)).ToNot(BeNil())
 	Expect(ctx.pingFromMs(msName, afPacketIP)).ToNot(BeNil())
 
-	req = client.LocalClient.ChangeRequest()
+	req = ctx.grpcClient.ChangeRequest()
 	err = req.Update(
 		veth2,
 	).Send(context.Background())

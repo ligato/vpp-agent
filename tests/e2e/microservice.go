@@ -6,12 +6,11 @@ import (
 	"regexp"
 	"strconv"
 	"testing"
-	//"os/exec"
+	"runtime"
 
 	"github.com/fsouza/go-dockerclient"
+	"github.com/vishvananda/netns"
 
-	"github.com/ligato/vpp-agent/api/models/linux/namespace"
-	"github.com/ligato/vpp-agent/plugins/linux/nsplugin"
 	nslinuxcalls "github.com/ligato/vpp-agent/plugins/linux/nsplugin/linuxcalls"
 )
 
@@ -32,10 +31,10 @@ type microservice struct {
 	name         string
 	dockerClient *docker.Client
 	container    *docker.Container
-	nsPlugin     nsplugin.API
+	nsCalls      nslinuxcalls.NetworkNamespaceAPI
 }
 
-func createMicroservice(t *testing.T, msName string, dockerClient *docker.Client, nsPlugin nsplugin.API) *microservice {
+func createMicroservice(t *testing.T, msName string, dockerClient *docker.Client, nsCalls nslinuxcalls.NetworkNamespaceAPI) *microservice {
 	container, err := dockerClient.CreateContainer(docker.CreateContainerOptions{
 		Name: msNamePrefix + msName,
 		Config: &docker.Config{
@@ -65,7 +64,7 @@ func createMicroservice(t *testing.T, msName string, dockerClient *docker.Client
 		name:         msName,
 		container:    container,
 		dockerClient: dockerClient,
-		nsPlugin:     nsPlugin,
+		nsCalls:      nsCalls,
 	}
 }
 
@@ -136,18 +135,31 @@ func (ms *microservice) exec(cmdName string, args ...string) (output string, err
 // enterNetNs enters the **network** namespace of the microservice (other namespaces
 // remain unchanged). Leave using the returned callback.
 func (ms *microservice) enterNetNs() (exitNetNs func()) {
-	var err error
-	nsCtx := nslinuxcalls.NewNamespaceMgmtCtx()
-	exitNetNs, err = ms.nsPlugin.SwitchToNamespace(nsCtx,
-		&linux_namespace.NetNamespace{
-			Type:      linux_namespace.NetNamespace_MICROSERVICE,
-			Reference: msNamePrefix + ms.name,
-		})
+	origns, err := netns.Get()
+	if err != nil {
+		ms.t.Fatalf("failed to obtain current network namespace: %v", err)
+	}
+	nsHandle, err := ms.nsCalls.GetNamespaceFromPid(ms.container.State.Pid)
+	if err != nil {
+		ms.t.Fatalf("failed to obtain handle for network namespace of microservice '%s': %v",
+			ms.name, err)
+	}
+	defer nsHandle.Close()
+
+	runtime.LockOSThread()
+	err = ms.nsCalls.SetNamespace(nsHandle)
 	if err != nil {
 		ms.t.Fatalf("failed to enter network namespace of microservice '%s': %v",
 			ms.name, err)
 	}
-	return
+	return func() {
+		err = ms.nsCalls.SetNamespace(origns)
+		if err != nil {
+			ms.t.Fatalf("failed to return back to the original network namespace: %v", err)
+		}
+		origns.Close()
+		runtime.UnlockOSThread()
+	}
 }
 
 // ping <destAddress> from inside of the microservice.

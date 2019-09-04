@@ -23,7 +23,6 @@ import (
 	"github.com/ligato/vpp-agent/api/models/linux/interfaces"
 	"github.com/ligato/vpp-agent/api/models/linux/namespace"
 	"github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	"github.com/ligato/vpp-agent/client"
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/linux/ifplugin/linuxcalls"
 	"github.com/ligato/vpp-agent/plugins/netalloc/utils"
@@ -80,7 +79,7 @@ func TestLinkOnly(t *testing.T) {
 	}
 
 	ms := ctx.startMicroservice(msName)
-	req := client.LocalClient.ChangeRequest()
+	req := ctx.grpcClient.ChangeRequest()
 	err := req.Update(
 		vppTap,
 		linuxTap,

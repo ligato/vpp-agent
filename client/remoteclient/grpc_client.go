@@ -157,6 +157,7 @@ func (r *setConfigRequest) Delete(items ...proto.Message) client.ChangeRequest {
 			r.err = err
 			return r
 		}
+		item.Data = nil // delete
 		r.req.Updates = append(r.req.Updates, &api.UpdateItem{
 			Item: item,
 		})

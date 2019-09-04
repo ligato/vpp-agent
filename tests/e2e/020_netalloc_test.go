@@ -16,6 +16,8 @@ package e2e
 
 import (
 	"context"
+	"os"
+	"strings"
 	"testing"
 
 	. "github.com/onsi/gomega"
@@ -26,7 +28,6 @@ import (
 	"github.com/ligato/vpp-agent/api/models/netalloc"
 	"github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	"github.com/ligato/vpp-agent/api/models/vpp/l3"
-	"github.com/ligato/vpp-agent/client"
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 )
 
@@ -137,7 +138,7 @@ func TestIPWithNeighGW(t *testing.T) {
 	}
 
 	ctx.startMicroservice(msName)
-	req := client.LocalClient.ChangeRequest()
+	req := ctx.grpcClient.ChangeRequest()
 	err := req.Update(
 		vppLoopAddr, vppTapAddr, linuxTapAddr,
 		vppLoop, vppTap, linuxTap,
@@ -192,7 +193,7 @@ func TestIPWithNeighGW(t *testing.T) {
 	linuxTapAddr.Address = linuxTapIP2 + netMask
 	linuxTapAddr.Gw = vppTapIP2
 
-	req = client.LocalClient.ChangeRequest()
+	req = ctx.grpcClient.ChangeRequest()
 	err = req.Update(
 		vppLoopAddr, vppTapAddr, linuxTapAddr,
 	).Send(context.Background())
@@ -208,7 +209,7 @@ func TestIPWithNeighGW(t *testing.T) {
 	Expect(ctx.agentInSync()).To(BeTrue())
 
 	// de-allocate loopback IP - the connection should not work anymore
-	req = client.LocalClient.ChangeRequest()
+	req = ctx.grpcClient.ChangeRequest()
 	err = req.Delete(
 		vppLoopAddr,
 	).Send(context.Background())
@@ -342,7 +343,7 @@ func TestIPWithNonLocalGW(t *testing.T) {
 	}
 
 	ctx.startMicroservice(msName)
-	req := client.LocalClient.ChangeRequest()
+	req := ctx.grpcClient.ChangeRequest()
 	err := req.Update(
 		vppLoopAddr, vppTapAddr, linuxTapAddr,
 		vppLoop, vppTap, linuxTap,
@@ -396,7 +397,7 @@ func TestIPWithNonLocalGW(t *testing.T) {
 	linuxTapAddr.Address = linuxTapIP2 + linuxNetMask
 	linuxTapAddr.Gw = vppTapIP2
 
-	req = client.LocalClient.ChangeRequest()
+	req = ctx.grpcClient.ChangeRequest()
 	err = req.Update(
 		vppLoopAddr, vppTapAddr, linuxTapAddr,
 	).Send(context.Background())
@@ -412,7 +413,7 @@ func TestIPWithNonLocalGW(t *testing.T) {
 	Expect(ctx.agentInSync()).To(BeTrue())
 
 	// remove link route - this should make the GW for linux TAP non-routable
-	req = client.LocalClient.ChangeRequest()
+	req = ctx.grpcClient.ChangeRequest()
 	err = req.Delete(
 		linuxLinkRoute,
 	).Send(context.Background())
@@ -518,12 +519,11 @@ func TestVPPRoutesWithNetalloc(t *testing.T) {
 	}
 
 	linuxLoop := &linux_interfaces.Interface{
-		Name:        linuxLoopName,
-		Type:        linux_interfaces.Interface_LOOPBACK,
-		Enabled:     true,
+		Name:    linuxLoopName,
+		Type:    linux_interfaces.Interface_LOOPBACK,
+		Enabled: true,
 		IpAddresses: []string{
 			"127.0.0.1/8", "alloc:" + network1Name, "alloc:" + network2Name},
-		HostIfName:  linuxLoopName,
 		Namespace: &linux_namespace.NetNamespace{
 			Type:      linux_namespace.NetNamespace_MICROSERVICE,
 			Reference: msNamePrefix + msName,
@@ -543,7 +543,7 @@ func TestVPPRoutesWithNetalloc(t *testing.T) {
 	}
 
 	ctx.startMicroservice(msName)
-	req := client.LocalClient.ChangeRequest()
+	req := ctx.grpcClient.ChangeRequest()
 	err := req.Update(
 		vppTapAddr, linuxTapAddr, linuxLoopNet1Addr, linuxLoopNet2Addr,
 		vppTap, linuxTap, linuxLoop,
@@ -581,6 +581,14 @@ func TestVPPRoutesWithNetalloc(t *testing.T) {
 	Expect(ctx.pingFromVPP(linuxLoopNet2IP)).To(BeNil())
 	Expect(ctx.agentInSync()).To(BeTrue())
 
+	if strings.HasSuffix(os.Getenv("VPP_IMG"), "19.08") {
+		// TODO: we cannot handle microservice restarts in 19.08 since the TAP interface
+		// attached to the stopped microservice is automatically removed, but not the
+		// associated routes and it is not possible to remove/update them
+		// Waiting for reaction from VPP dev...
+		return
+	}
+
 	// restart microservice
 	ctx.stopMicroservice(msName)
 	ctx.startMicroservice(msName)
@@ -600,7 +608,7 @@ func TestVPPRoutesWithNetalloc(t *testing.T) {
 	linuxTapAddr.Address = linuxTapIP2 + net1Mask
 	linuxTapAddr.Gw = vppTapIP2
 
-	req = client.LocalClient.ChangeRequest()
+	req = ctx.grpcClient.ChangeRequest()
 	err = req.Update(
 		linuxLoopNet1Addr, vppTapAddr, linuxTapAddr,
 	).Send(context.Background())
@@ -614,7 +622,7 @@ func TestVPPRoutesWithNetalloc(t *testing.T) {
 	Expect(ctx.agentInSync()).To(BeTrue())
 
 	// de-allocate loopback IP in net2 - the connection to that IP should not work anymore
-	req = client.LocalClient.ChangeRequest()
+	req = ctx.grpcClient.ChangeRequest()
 	err = req.Delete(
 		linuxLoopNet2Addr,
 	).Send(context.Background())

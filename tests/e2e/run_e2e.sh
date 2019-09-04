@@ -3,17 +3,23 @@ set -eu
 
 # compile test
 go test -c ./tests/e2e -o ./tests/e2e/e2e.test
+go build -v -o ./tests/e2e/vpp-agent ./cmd/vpp-agent
 
 # start vpp image
 cid=$(docker run -d -it \
 	-v $(pwd)/tests/e2e/e2e.test:/e2e.test:ro \
+	-v $(pwd)/tests/e2e/vpp-agent:/vpp-agent:ro \
+	-v $(pwd)/tests/e2e/grpc.conf:/etc/grpc.conf:ro \
 	-v /var/run/docker.sock:/var/run/docker.sock \
 	--label e2e.test="$*" \
 	--pid="host" \
 	--privileged \
+	--env KVSCHEDULER_GRAPHDUMP=true \
+	--env VPP_IMG="$VPP_IMG" \
+	--env GRPC_CONFIG=/etc/grpc.conf \
 	${DOCKER_ARGS-} \
 	"$VPP_IMG" bash)
-#	--env KVSCHEDULER_GRAPHDUMP=true \
+
 
 on_exit() {
 	docker stop -t 2 "$cid" >/dev/null
