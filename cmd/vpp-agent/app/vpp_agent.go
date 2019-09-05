@@ -54,6 +54,7 @@ import (
 // Note: the plugin itself is loaded after all its dependencies. It means that the VPP plugin is first in the list
 // despite it needs to be loaded after the linux plugin.
 type VPPAgent struct {
+	infra.PluginName
 	LogManager *logmanager.Plugin
 
 	// VPP & Linux (and other plugins with descriptors) are first to ensure that
@@ -127,6 +128,7 @@ func New() *VPPAgent {
 	linux := DefaultLinux()
 
 	return &VPPAgent{
+		PluginName:     "VPPAgent",
 		LogManager:     &logmanager.DefaultPlugin,
 		Orchestrator:   &orchestrator.DefaultPlugin,
 		ETCDDataSync:   etcdDataSync,
@@ -145,8 +147,8 @@ func New() *VPPAgent {
 
 // Init initializes main plugin.
 func (a *VPPAgent) Init() error {
-	a.StatusCheck.Register(a.pluginName(), nil)
-	a.StatusCheck.ReportStateChange(a.pluginName(), statuscheck.Init, nil)
+	a.StatusCheck.Register(a.PluginName, nil)
+	a.StatusCheck.ReportStateChange(a.PluginName, statuscheck.Init, nil)
 	return nil
 }
 
@@ -155,22 +157,13 @@ func (a *VPPAgent) AfterInit() error {
 	// manually start resync after all plugins started
 	resync.DefaultPlugin.DoResync()
 	//orchestrator.DefaultPlugin.InitialSync()
-	a.StatusCheck.ReportStateChange(a.pluginName(), statuscheck.OK, nil)
+	a.StatusCheck.ReportStateChange(a.PluginName, statuscheck.OK, nil)
 	return nil
 }
 
 // Close could close used resources.
 func (VPPAgent) Close() error {
 	return nil
-}
-
-// String returns name of the plugin.
-func (VPPAgent) String() string {
-	return "VPPAgent"
-}
-
-func (a *VPPAgent) pluginName() infra.PluginName {
-	return infra.PluginName(a.String())
 }
 
 // VPP contains all VPP plugins.

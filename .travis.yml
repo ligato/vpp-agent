@@ -26,7 +26,8 @@ stages:
   - Test
   - Build
   - Integration
-  - E2E
+  - name: E2E
+    if: type IN (cron) OR (type IN (push) AND branch IN (master, dev))
 
 jobs:
   include:
