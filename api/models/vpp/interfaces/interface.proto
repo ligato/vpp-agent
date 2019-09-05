@@ -143,10 +143,22 @@ message MemifLink {
 
 // VxlanLink defines configuration for interface type: VXLAN_TUNNEL
 message VxlanLink {
+    message Gpe {
+        enum Protocol {
+            UNKNOWN = 0;
+            IP4 = 1;
+            IP6 = 2;
+            ETHERNET = 3;
+            NSH = 4;
+        };
+        uint32 decap_vrf_id = 4;
+        Protocol protocol = 5;
+    }
     string src_address = 1;  /* source VTEP address */
     string dst_address = 2;  /* destination VTEP address */
     uint32 vni = 3;          /* VXLAN Network Identifier */
     string multicast = 4;    /* multicast interface */
+    Gpe gpe = 5;
 }
 
 // AfpacketLink defines configuration for interface type: AF_PACKET
