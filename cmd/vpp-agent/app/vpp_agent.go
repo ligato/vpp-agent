@@ -25,6 +25,7 @@ import (
 	"github.com/ligato/cn-infra/db/keyval/redis"
 	"github.com/ligato/cn-infra/health/probe"
 	"github.com/ligato/cn-infra/health/statuscheck"
+	"github.com/ligato/cn-infra/infra"
 	"github.com/ligato/cn-infra/logging/logmanager"
 	"github.com/ligato/cn-infra/messaging/kafka"
 
@@ -71,6 +72,7 @@ type VPPAgent struct {
 	Configurator *configurator.Plugin
 	RESTAPI      *restapi.Plugin
 	Probe        *probe.Plugin
+	StatusCheck  *statuscheck.Plugin
 	Telemetry    *telemetry.Plugin
 }
 
@@ -136,20 +138,24 @@ func New() *VPPAgent {
 		Configurator:   &configurator.DefaultPlugin,
 		RESTAPI:        &restapi.DefaultPlugin,
 		Probe:          &probe.DefaultPlugin,
+		StatusCheck:    &statuscheck.DefaultPlugin,
 		Telemetry:      &telemetry.DefaultPlugin,
 	}
 }
 
 // Init initializes main plugin.
-func (VPPAgent) Init() error {
+func (a *VPPAgent) Init() error {
+	a.StatusCheck.Register(a.pluginName(), nil)
+	a.StatusCheck.ReportStateChange(a.pluginName(), statuscheck.Init, nil)
 	return nil
 }
 
 // AfterInit executes resync.
-func (VPPAgent) AfterInit() error {
+func (a *VPPAgent) AfterInit() error {
 	// manually start resync after all plugins started
 	resync.DefaultPlugin.DoResync()
 	//orchestrator.DefaultPlugin.InitialSync()
+	a.StatusCheck.ReportStateChange(a.pluginName(), statuscheck.OK, nil)
 	return nil
 }
 
@@ -161,6 +167,10 @@ func (VPPAgent) Close() error {
 // String returns name of the plugin.
 func (VPPAgent) String() string {
 	return "VPPAgent"
+}
+
+func (a *VPPAgent) pluginName() infra.PluginName {
+	return infra.PluginName(a.String())
 }
 
 // VPP contains all VPP plugins.

@@ -31,17 +31,19 @@ import (
 	"encoding/json"
 	"github.com/fsouza/go-dockerclient"
 	"github.com/gogo/protobuf/proto"
+	"github.com/ligato/cn-infra/health/probe"
 	"github.com/mitchellh/go-ps"
 	. "github.com/onsi/gomega"
 	"google.golang.org/grpc"
 
+	"github.com/ligato/cn-infra/health/statuscheck/model/status"
+	"github.com/ligato/vpp-agent/api/genericmanager"
+	"github.com/ligato/vpp-agent/client"
+	"github.com/ligato/vpp-agent/client/remoteclient"
 	"github.com/ligato/vpp-agent/cmd/agentctl/utils"
 	"github.com/ligato/vpp-agent/pkg/models"
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	nslinuxcalls "github.com/ligato/vpp-agent/plugins/linux/nsplugin/linuxcalls"
-	"github.com/ligato/vpp-agent/client"
-	"github.com/ligato/vpp-agent/api/genericmanager"
-	"github.com/ligato/vpp-agent/client/remoteclient"
 )
 
 var (
@@ -55,7 +57,7 @@ var (
 )
 
 const (
-	agentResyncTimeout = time.Second * 15
+	agentInitTimeout   = time.Second * 15
 	processExitTimeout = time.Second * 3
 
 	vppConf = `
@@ -138,12 +140,11 @@ func setupE2E(t *testing.T) *testCtx {
 	assertProcessNotRunning(t, "vpp_agent")
 	agentCmd := startProcess(t, "VPP-Agent", "/vpp-agent")
 
-	// TODO: wait for agent to initialize
-	time.Sleep(time.Second * 3)
-
 	// prepare HTTP client for access to REST API of the agent
 	httpAddr := fmt.Sprintf(":%d", *agentHTTPPort)
 	httpClient := utils.NewHTTPClient(httpAddr)
+
+	waitUntilAgentReady(t, httpClient)
 
 	// connect with agent via GRPC
 	grpcAddr := fmt.Sprintf(":%d", *agentGrpcPort)
@@ -322,6 +323,32 @@ func syncAgent(t *testing.T, httpClient *utils.HTTPClient) (executed kvs.Recorde
 		t.Fatalf("Downstream resync returned empty transaction record: %v", txn)
 	}
 	return txn.Executed
+}
+
+func waitUntilAgentReady(t *testing.T, httpClient *utils.HTTPClient) {
+	start := time.Now()
+	for {
+		select {
+		case <-time.After(100 * time.Millisecond):
+			if time.Since(start) > agentInitTimeout {
+				t.Fatalf("agent failed to initialize within the timeout period of %v",
+					agentInitTimeout)
+			}
+			resp, err := httpClient.GET("/readiness")
+			if err != nil {
+				continue
+			}
+			agentStatus := probe.ExposedStatus{}
+			if err := json.Unmarshal(resp, &agentStatus); err != nil {
+				t.Fatalf("Agent readiness reply cannot be decoded: %v", err)
+			}
+			if agentStatus, ok := agentStatus.PluginStatus["VPPAgent"]; ok {
+				if agentStatus.State == status.OperationalState_OK {
+					return
+				}
+			}
+		}
+	}
 }
 
 func assertProcessNotRunning(t *testing.T, name string, aliases ...string) {

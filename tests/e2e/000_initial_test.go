@@ -16,7 +16,6 @@ package e2e
 
 import (
 	"testing"
-	"time"
 
 	. "github.com/onsi/gomega"
 
@@ -39,7 +38,6 @@ func TestStartStopMicroservice(t *testing.T) {
 	msState := func() kvs.ValueState {
 		return ctx.getValueStateByKey(key)
 	}
-	msUpdateTimeout := time.Second * 3
 
 	ctx.startMicroservice(msName)
 	Eventually(msState, msUpdateTimeout).Should(Equal(kvs.ValueState_OBTAINED))
