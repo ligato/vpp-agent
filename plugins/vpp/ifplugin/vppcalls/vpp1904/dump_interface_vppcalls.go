@@ -639,7 +639,7 @@ func (h *InterfaceVppHandler) dumpVxlanDetails(ifs map[uint32]*vppcalls.Interfac
 	return nil
 }
 
-// dumpVxlanDetails dumps VXLAN interface details from VPP and fills them into the provided interface map.
+// dumpVxlanDetails dumps VXLAN-GPE interface details from VPP and fills them into the provided interface map.
 func (h *InterfaceVppHandler) dumpVxLanGpeDetails(ifs map[uint32]*vppcalls.InterfaceDetails) error {
 	reqCtx := h.callsChannel.SendMultiRequest(&vxlan_gpe.VxlanGpeTunnelDump{SwIfIndex: ^uint32(0)})
 	for {

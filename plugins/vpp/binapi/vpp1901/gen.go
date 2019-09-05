@@ -40,3 +40,4 @@ package vpp1901
 //go:generate binapi-generator --input-file=/usr/share/vpp/api/vmxnet3.api.json
 //go:generate binapi-generator --input-file=/usr/share/vpp/api/vpe.api.json
 //go:generate binapi-generator --input-file=/usr/share/vpp/api/vxlan.api.json
+//go:generate binapi-generator --input-file=/usr/share/vpp/api/vxlan_gpe.api.json

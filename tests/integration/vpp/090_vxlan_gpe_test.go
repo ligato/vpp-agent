@@ -70,14 +70,14 @@ func TestVxlanGpe(t *testing.T) {
 			for _, i := range ifaces {
 				t.Logf("\t%+v\n", i)
 			}
-
-			vxlanGpes, err := h.DumpVxLanGpe(^uint32(0))
-			if err != nil {
-				t.Fatalf("dumping VxLAN-GPE failed: %v", err)
+			iface, ok := ifaces[ifIdx]
+			if !ok {
+				t.Fatalf("VxLAN-GPE interface was not found in dump")
 			}
-			t.Logf("VxLAN-GPE tunnels:")
-			for _, i := range vxlanGpes {
-				t.Logf("\t%+v\n", i)
+
+			vxLan := iface.Interface.GetVxlan()
+			if test.vxLan.SrcAddress != vxLan.SrcAddress {
+				t.Fatalf("expected source address <%s>, got: <%s>", test.vxLan.SrcAddress, vxLan.SrcAddress)
 			}
 
 			err = h.DelVxLanGpeTunnel(ifName, test.vxLan)
@@ -94,13 +94,8 @@ func TestVxlanGpe(t *testing.T) {
 				t.Logf("\t%+v\n", i)
 			}
 
-			vxlanGpes, err = h.DumpVxLanGpe(^uint32(0))
-			if err != nil {
-				t.Fatalf("dumping VxLAN-GPE failed: %v", err)
-			}
-			t.Logf("VxLAN-GPE tunnels:")
-			for _, i := range vxlanGpes {
-				t.Logf("\t%+v\n", i)
+			if _, ok := ifaces[ifIdx]; ok {
+				t.Fatalf("VxLAN-GPE interface was found in dump after removing")
 			}
 		})
 	}

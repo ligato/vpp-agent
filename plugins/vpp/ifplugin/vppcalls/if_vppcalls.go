@@ -21,7 +21,6 @@ import (
 	"github.com/ligato/cn-infra/logging"
 
 	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/vxlan_gpe"
 )
 
 // InterfaceDetails is the wrapper structure for the interface northbound API structure.
@@ -205,7 +204,6 @@ type InterfaceVppAPI interface {
 	// VxLAN-GPE
 	AddVxLanGpeTunnel(ifName string, vrf, multicastIf uint32, vxLan *interfaces.VxlanLink) (uint32, error)
 	DelVxLanGpeTunnel(ifName string, vxLan *interfaces.VxlanLink) error
-	DumpVxLanGpe(ifIdx uint32) ([]*vxlan_gpe.VxlanGpeTunnelDetails, error)
 }
 
 // InterfaceVppRead provides read methods for interface plugin

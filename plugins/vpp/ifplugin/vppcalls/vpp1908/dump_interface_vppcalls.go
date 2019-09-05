@@ -23,6 +23,7 @@ import (
 
 	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	vpp_ipsec "github.com/ligato/vpp-agent/api/models/vpp/ipsec"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/vxlan_gpe"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1908/bond"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1908/dhcp"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1908/gre"
@@ -180,6 +181,10 @@ func (h *InterfaceVppHandler) DumpInterfaces() (map[uint32]*vppcalls.InterfaceDe
 
 	// dump VXLAN details before VRFs (used by isIpv6Interface)
 	err = h.dumpVxlanDetails(ifs)
+	if err != nil {
+		return nil, err
+	}
+	err = h.dumpVxLanGpeDetails(ifs)
 	if err != nil {
 		return nil, err
 	}
@@ -644,6 +649,53 @@ func (h *InterfaceVppHandler) dumpVxlanDetails(ifs map[uint32]*vppcalls.Interfac
 	return nil
 }
 
+// dumpVxlanDetails dumps VXLAN-GPE interface details from VPP and fills them into the provided interface map.
+func (h *InterfaceVppHandler) dumpVxLanGpeDetails(ifs map[uint32]*vppcalls.InterfaceDetails) error {
+	reqCtx := h.callsChannel.SendMultiRequest(&vxlan_gpe.VxlanGpeTunnelDump{SwIfIndex: ^uint32(0)})
+	for {
+		vxlanGpeDetails := &vxlan_gpe.VxlanGpeTunnelDetails{}
+		stop, err := reqCtx.ReceiveReply(vxlanGpeDetails)
+		if stop {
+			break // Break from the loop.
+		}
+		if err != nil {
+			return fmt.Errorf("failed to dump VxLAN-GPE tunnel interface details: %v", err)
+		}
+		_, ifIdxExists := ifs[vxlanGpeDetails.SwIfIndex]
+		if !ifIdxExists {
+			continue
+		}
+		// Multicast interface
+		var multicastIfName string
+		_, exists := ifs[vxlanGpeDetails.McastSwIfIndex]
+		if exists {
+			multicastIfName = ifs[vxlanGpeDetails.McastSwIfIndex].Interface.Name
+		}
+
+		vxLan := &interfaces.VxlanLink{
+			Multicast: multicastIfName,
+			Vni:       vxlanGpeDetails.Vni,
+			Gpe: &interfaces.VxlanLink_Gpe{
+				DecapVrfId: vxlanGpeDetails.DecapVrfID,
+				Protocol:   getVxLanGpeProtocol(vxlanGpeDetails.Protocol),
+			},
+		}
+
+		if vxlanGpeDetails.IsIPv6 == 1 {
+			vxLan.SrcAddress = net.IP(vxlanGpeDetails.Local).To16().String()
+			vxLan.DstAddress = net.IP(vxlanGpeDetails.Remote).To16().String()
+		} else {
+			vxLan.SrcAddress = net.IP(vxlanGpeDetails.Local[:4]).To4().String()
+			vxLan.DstAddress = net.IP(vxlanGpeDetails.Remote[:4]).To4().String()
+		}
+
+		ifs[vxlanGpeDetails.SwIfIndex].Interface.Link = &interfaces.Interface_Vxlan{Vxlan: vxLan}
+		ifs[vxlanGpeDetails.SwIfIndex].Interface.Type = interfaces.Interface_VXLAN_TUNNEL
+	}
+
+	return nil
+}
+
 // dumpIPSecTunnelDetails dumps IPSec tunnel interfaces from the VPP and fills them into the provided interface map.
 func (h *InterfaceVppHandler) dumpIPSecTunnelDetails(ifs map[uint32]*vppcalls.InterfaceDetails) error {
 	// tunnel interfaces are a part of security association dump
@@ -1076,6 +1128,21 @@ func getGreTunnelType(tt gre.GreTunnelType) interfaces.GreLink_Type {
 		return interfaces.GreLink_ERSPAN
 	default:
 		return interfaces.GreLink_UNKNOWN
+	}
+}
+
+func getVxLanGpeProtocol(p uint8) interfaces.VxlanLink_Gpe_Protocol {
+	switch p {
+	case 1:
+		return interfaces.VxlanLink_Gpe_IP4
+	case 2:
+		return interfaces.VxlanLink_Gpe_IP6
+	case 3:
+		return interfaces.VxlanLink_Gpe_ETHERNET
+	case 4:
+		return interfaces.VxlanLink_Gpe_NSH
+	default:
+		return interfaces.VxlanLink_Gpe_UNKNOWN
 	}
 }
 
