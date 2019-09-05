@@ -478,9 +478,9 @@ func (s *Scheduler) statusGetHandler(formatter *render.Render) http.HandlerFunc 
 			descriptor = s.getDescriptorForKeyPrefix(keyPrefix)
 			if descriptor == "" {
 				err = errors.New("unknown key prefix")
+				s.logError(formatter.JSON(w, http.StatusInternalServerError, errorString{err.Error()}))
+				return
 			}
-			s.logError(formatter.JSON(w, http.StatusInternalServerError, errorString{err.Error()}))
-			return
 		}
 
 		var nodes []graph.Node
