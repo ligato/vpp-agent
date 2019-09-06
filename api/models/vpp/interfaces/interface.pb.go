@@ -286,15 +286,17 @@ type Interface struct {
 	// Name is mandatory field representing logical name for the interface.
 	// It must be unique across all configured interfaces.
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	// Type represents the type of interface and It must match with actual Link.
+	// Type represents the type of interface and it must match with actual Link.
 	Type Interface_Type `protobuf:"varint,2,opt,name=type,proto3,enum=vpp.interfaces.Interface_Type" json:"type,omitempty"`
-	// Enabled controls if the interface should be
+	// Enabled controls if the interface should be UP.
 	Enabled bool `protobuf:"varint,3,opt,name=enabled,proto3" json:"enabled,omitempty"`
 	// PhysAddress represents physical address (MAC) of the interface.
 	// Random address will be assigned if left empty.
 	PhysAddress string `protobuf:"bytes,4,opt,name=phys_address,json=physAddress,proto3" json:"phys_address,omitempty"`
 	// IPAddresses define list of IP addresses for the interface and must be
-	// defined in the following format: <ipAddress>/<ipPrefix>
+	// defined in the following format: <ipAddress>/<ipPrefix>.
+	// Interface IP address can be also allocated via netalloc plugin and
+	// referenced here, see: api/models/netalloc/netalloc.proto
 	IpAddresses []string `protobuf:"bytes,5,rep,name=ip_addresses,json=ipAddresses,proto3" json:"ip_addresses,omitempty"`
 	// Vrf defines the ID of VRF table that the interface is assigned to.
 	// The VRF table must be explicitely configured (see api/models/vpp/l3/vrf.proto).

@@ -17,6 +17,7 @@ package vpp1908
 import (
 	"net"
 
+	"github.com/ligato/vpp-agent/api/models/netalloc"
 	vpp_l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1908/ip"
 	"github.com/pkg/errors"
@@ -53,7 +54,14 @@ func (h *RouteHandler) vppAddDelRoute(route *vpp_l3.Route, rtIfIdx uint32, delet
 		Weight:     uint8(route.Weight),
 		Preference: uint8(route.Preference),
 	}
-	fibPath.Nh, fibPath.Proto = setFibPathNhAndProto(route.NextHopAddr)
+	if route.NextHopAddr != "" {
+		nextHop, err := h.addrAlloc.GetOrParseIPAddress(route.NextHopAddr,
+			route.OutgoingInterface, netalloc.IPAddressForm_ADDR_ONLY)
+		if err != nil {
+			return err
+		}
+		fibPath.Nh, fibPath.Proto = setFibPathNhAndProto(nextHop.IP)
+	}
 
 	// VRF/Other route parameters based on type
 	if route.Type == vpp_l3.Route_INTER_VRF {
@@ -66,10 +74,12 @@ func (h *RouteHandler) vppAddDelRoute(route *vpp_l3.Route, rtIfIdx uint32, delet
 		fibPath.TableID = route.VrfId
 	}
 	// Destination address
-	prefix, err := networkToPrefix(route.DstNetwork)
+	dstNet, err := h.addrAlloc.GetOrParseIPAddress(route.DstNetwork,
+		"", netalloc.IPAddressForm_ADDR_NET)
 	if err != nil {
 		return err
 	}
+	prefix := networkToPrefix(dstNet)
 
 	req.Route = ip.IPRoute{
 		TableID: route.VrfId,
@@ -107,18 +117,14 @@ func (h *RouteHandler) VppDelRoute(route *vpp_l3.Route) error {
 	return h.vppAddDelRoute(route, swIfIdx, true)
 }
 
-func setFibPathNhAndProto(ipStr string) (nh ip.FibPathNh, proto ip.FibPathNhProto) {
-	netIP := net.ParseIP(ipStr)
-	if netIP == nil {
-		return
-	}
+func setFibPathNhAndProto(netIP net.IP) (nh ip.FibPathNh, proto ip.FibPathNhProto) {
 	var ipData [16]byte
 	if netIP.To4() == nil {
 		proto = ip.FIB_API_PATH_NH_PROTO_IP6
 		copy(ipData[:], netIP[:])
 	} else {
 		proto = ip.FIB_API_PATH_NH_PROTO_IP4
-		copy(ipData[:], netIP[12:])
+		copy(ipData[:], netIP.To4()[:])
 	}
 	return ip.FibPathNh{
 		Address: ip.AddressUnion{

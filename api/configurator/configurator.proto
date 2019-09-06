@@ -6,11 +6,13 @@ option go_package = "github.com/ligato/vpp-agent/api/configurator;configurator";
 
 import "models/vpp/vpp.proto";
 import "models/linux/linux.proto";
+import "models/netalloc/netalloc.proto";
 
 // Config groups all supported config data into single message.
 message Config {
     vpp.ConfigData vpp_config = 1;
     linux.ConfigData linux_config = 2;
+    netalloc.ConfigData netalloc_config = 3;
 }
 
 // Notification groups all notification data into single message.

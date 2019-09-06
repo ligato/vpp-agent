@@ -16,6 +16,7 @@ package ifaceidx
 
 import (
 	"time"
+	"github.com/gogo/protobuf/proto"
 
 	"github.com/ligato/cn-infra/idxmap"
 	"github.com/ligato/cn-infra/idxmap/mem"
@@ -38,6 +39,13 @@ type LinuxIfMetadataIndex interface {
 	// If there is no such interface, <exists> is returned as *false* with <name>
 	// and <metadata> both set to empty values.
 	LookupByVPPTap(vppTapName string) (name string, metadata *LinuxIfMetadata, exists bool)
+
+	// LookupByHostName retrieves a previously configured Linux interface
+	// by the host interface name inside the given namespace.
+	// If there is no such interface, <exists> is returned as *false* with <name>
+	// and <metadata> both set to empty values.
+	LookupByHostName(hostname string, ns *linux_namespace.NetNamespace) (name string,
+		metadata *LinuxIfMetadata, exists bool)
 
 	// ListAllInterfaces returns slice of names of all interfaces in the mapping.
 	ListAllInterfaces() (names []string)
@@ -80,6 +88,10 @@ const (
 	// tapVPPNameIndexKey is used as a secondary key used to search TAP_TO_VPP
 	// interface by the logical name of the VPP-side of the TAP.
 	tapVPPNameIndexKey = "tap-vpp-name"
+
+	// hostNameIndexKey is used as a secondary key used to search Linux
+	// interfaces by the host interface name.
+	hostNameIndexKey = "host-iface-name"
 )
 
 // NewLinuxIfIndex creates a new instance implementing LinuxIfMetadataIndexRW.
@@ -116,6 +128,27 @@ func (ifmx *linuxIfMetadataIndex) LookupByVPPTap(vppTapName string) (name string
 	if found {
 		if ifMeta, ok := untypedMeta.(*LinuxIfMetadata); ok {
 			return res[0], ifMeta, found
+		}
+	}
+	return
+}
+
+// LookupByHostName retrieves a previously configured Linux interface
+// by the host interface name inside the given namespace.
+// If there is no such interface, <exists> is returned as *false* with <name>
+// and <metadata> both set to empty values.
+func (ifmx *linuxIfMetadataIndex) LookupByHostName(hostname string, ns *linux_namespace.NetNamespace) (
+	name string, metadata *LinuxIfMetadata, exists bool) {
+
+	res := ifmx.ListNames(hostNameIndexKey, hostname)
+	for _, iface := range res {
+		untypedMeta, found := ifmx.GetValue(iface)
+		if found {
+			if ifMeta, ok := untypedMeta.(*LinuxIfMetadata); ok {
+				if proto.Equal(ns, ifMeta.Namespace) {
+					return iface, ifMeta, true
+				}
+			}
 		}
 	}
 	return
@@ -159,5 +192,7 @@ func indexMetadata(metaData interface{}) map[string][]string {
 	if ifMeta.VPPTapName != "" {
 		indexes[tapVPPNameIndexKey] = []string{ifMeta.VPPTapName}
 	}
+	indexes[hostNameIndexKey] = []string{ifMeta.HostIfName}
+
 	return indexes
 }

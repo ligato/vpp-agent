@@ -18,6 +18,7 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vrfidx"
+	"github.com/ligato/vpp-agent/plugins/netalloc"
 
 	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
@@ -200,13 +201,15 @@ var Versions = map[string]HandlerVersion{}
 
 type HandlerVersion struct {
 	Msgs []govppapi.Message
-	New  func(govppapi.Channel, ifaceidx.IfaceMetadataIndex, vrfidx.VRFMetadataIndex, logging.Logger) L3VppAPI
+	New  func(govppapi.Channel, ifaceidx.IfaceMetadataIndex, vrfidx.VRFMetadataIndex,
+		netalloc.AddressAllocator, logging.Logger) L3VppAPI
 }
 
 func CompatibleL3VppHandler(
 	ch govppapi.Channel,
 	ifIdx ifaceidx.IfaceMetadataIndex,
 	vrfIdx vrfidx.VRFMetadataIndex,
+	addrAlloc netalloc.AddressAllocator,
 	log logging.Logger,
 ) L3VppAPI {
 	for ver, h := range Versions {
@@ -215,7 +218,7 @@ func CompatibleL3VppHandler(
 			continue
 		}
 		log.Debug("found compatible version:", ver)
-		return h.New(ch, ifIdx, vrfIdx, log)
+		return h.New(ch, ifIdx, vrfIdx, addrAlloc, log)
 	}
 	panic("no compatible version available")
 }

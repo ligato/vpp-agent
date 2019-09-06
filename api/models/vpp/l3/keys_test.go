@@ -137,9 +137,9 @@ func TestParseRouteKey(t *testing.T) {
 		name                string
 		routeKey            string
 		expectedIsRouteKey  bool
+		expectedOutIface    string
 		expectedVrfIndex    string
-		expectedDstNetAddr  string
-		expectedDstNetMask  int
+		expectedDstNet      string
 		expectedNextHopAddr string
 	}{
 		{
@@ -147,8 +147,16 @@ func TestParseRouteKey(t *testing.T) {
 			routeKey:            "config/vpp/v2/route/vrf/0/dst/10.10.0.0/16/gw/0.0.0.0",
 			expectedIsRouteKey:  true,
 			expectedVrfIndex:    "0",
-			expectedDstNetAddr:  "10.10.0.0",
-			expectedDstNetMask:  16,
+			expectedDstNet:      "10.10.0.0/16",
+			expectedNextHopAddr: "0.0.0.0",
+		},
+		{
+			name:                "route-ipv4 with interface",
+			routeKey:            "config/vpp/v2/route/if/Gbe0/8/0/vrf/0/dst/10.10.0.0/16/gw/0.0.0.0",
+			expectedIsRouteKey:  true,
+			expectedOutIface:    "Gbe0/8/0",
+			expectedVrfIndex:    "0",
+			expectedDstNet:      "10.10.0.0/16",
 			expectedNextHopAddr: "0.0.0.0",
 		},
 		{
@@ -156,14 +164,15 @@ func TestParseRouteKey(t *testing.T) {
 			routeKey:            "config/vpp/v2/route/vrf/0/dst/2001:db8::/32/gw/::",
 			expectedIsRouteKey:  true,
 			expectedVrfIndex:    "0",
-			expectedDstNetAddr:  "2001:db8::",
-			expectedDstNetMask:  32,
+			expectedDstNet:      "2001:db8::/32",
 			expectedNextHopAddr: "::",
 		},
 		{
-			name:               "invalid-key",
+			name:               "undefined interface and GW",
 			routeKey:           "config/vpp/v2/route/vrf/0/dst/2001:db8::/32/",
-			expectedIsRouteKey: false,
+			expectedIsRouteKey:  true,
+			expectedVrfIndex:    "0",
+			expectedDstNet:      "2001:db8::/32",
 		},
 		{
 			name:               "invalid-key-missing-dst",
@@ -174,12 +183,12 @@ func TestParseRouteKey(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			RegisterTestingT(t)
-			vrfIndex, dstNetAddr, dstNetMask, nextHopAddr, isRouteKey := ParseRouteKey(test.routeKey)
+			outIface, vrfIndex, dstNet, nextHopAddr, isRouteKey := ParseRouteKey(test.routeKey)
 			Expect(isRouteKey).To(BeEquivalentTo(test.expectedIsRouteKey), "Route/Non-route key should be properly detected")
 			if isRouteKey {
+				Expect(outIface).To(BeEquivalentTo(test.expectedOutIface), "outgoing interface should be properly extracted by parsing route key")
 				Expect(vrfIndex).To(BeEquivalentTo(test.expectedVrfIndex), "VRF should be properly extracted by parsing route key")
-				Expect(dstNetAddr).To(BeEquivalentTo(test.expectedDstNetAddr), "Destination network address should be properly extracted by parsing route key")
-				Expect(dstNetMask).To(BeEquivalentTo(test.expectedDstNetMask), "Destination network mask should be properly extracted by parsing route key")
+				Expect(dstNet).To(BeEquivalentTo(test.expectedDstNet), "Destination network should be properly extracted by parsing route key")
 				Expect(nextHopAddr).To(BeEquivalentTo(test.expectedNextHopAddr), "Next hop address should be properly extracted by parsing route key")
 			}
 		})

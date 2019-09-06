@@ -16,7 +16,6 @@ package vpp_l3
 
 import (
 	"fmt"
-	"strconv"
 	"strings"
 
 	"github.com/ligato/vpp-agent/pkg/models"
@@ -41,7 +40,8 @@ var (
 	}, models.WithNameTemplate(
 		`{{if .OutgoingInterface}}{{printf "if/%s/" .OutgoingInterface}}{{end}}`+
 			`vrf/{{.VrfId}}/`+
-			`{{with ipnet .DstNetwork}}{{printf "dst/%s/%d/" .IP .MaskSize}}{{end}}`+
+			`{{with ipnet .DstNetwork}}{{printf "dst/%s/%d/" .IP .MaskSize}}`+
+			`{{else}}{{printf "dst/%s/" .DstNetwork}}{{end}}` +
 			`{{if .NextHopAddr}}gw/{{.NextHopAddr}}{{end}}`,
 	))
 
@@ -144,17 +144,38 @@ func RouteVrfPrefix(vrf uint32) string {
 }
 
 // ParseRouteKey parses VRF label and route address from a route key.
-func ParseRouteKey(key string) (vrfIndex string, dstNetAddr string, dstNetMask int, nextHopAddr string, isRouteKey bool) {
+func ParseRouteKey(key string) (outIface, vrfIndex, dstNet, nextHopAddr string, isRouteKey bool) {
 	if routeKey := strings.TrimPrefix(key, ModelRoute.KeyPrefix()); routeKey != key {
+		var foundVrf, foundDst bool
 		keyParts := strings.Split(routeKey, "/")
-		if len(keyParts) >= 7 &&
-			keyParts[0] == "vrf" &&
-			keyParts[2] == "dst" &&
-			keyParts[5] == "gw" {
-			if mask, err := strconv.Atoi(keyParts[4]); err == nil {
-				return keyParts[1], keyParts[3], mask, keyParts[6], true
-			}
+		outIface, _ = getRouteKeyItem(keyParts, "if", "vrf")
+		vrfIndex, foundVrf = getRouteKeyItem(keyParts, "vrf", "dst")
+		dstNet, foundDst = getRouteKeyItem(keyParts, "dst", "gw")
+		nextHopAddr, _ = getRouteKeyItem(keyParts, "gw", "")
+		if foundDst && foundVrf {
+			isRouteKey = true
+			return
 		}
 	}
-	return "", "", 0, "", false
+	return "", "", "", "", false
+}
+
+func getRouteKeyItem(items []string, itemLabel, nextItemLabel string) (value string, found bool) {
+	begin := len(items)
+	end := len(items)
+	for i, item := range items {
+		if item == itemLabel {
+			begin = i+1
+		}
+		if nextItemLabel != "" && item == nextItemLabel {
+			end = i
+			break
+		}
+	}
+	if begin < end {
+		value = strings.Join(items[begin:end], "/")
+		value = strings.TrimSuffix(value, "/")
+		return value, true
+	}
+	return "", false
 }

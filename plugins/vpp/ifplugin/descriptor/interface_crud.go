@@ -3,6 +3,7 @@ package descriptor
 import (
 	"github.com/pkg/errors"
 
+	"github.com/ligato/vpp-agent/api/models/netalloc"
 	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	"github.com/ligato/vpp-agent/pkg/models"
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
@@ -454,6 +455,11 @@ func (d *InterfaceDescriptor) Retrieve(correlate []adapter.InterfaceKVWithMetada
 			if len(expCfg.GetRxModes()) == 0 {
 				intf.Interface.RxModes = []*interfaces.Interface_RxMode{}
 			}
+
+			// correlate references to allocated IP addresses
+			intf.Interface.IpAddresses = d.addrAlloc.CorrelateRetrievedIPs(
+				expCfg.IpAddresses, intf.Interface.IpAddresses,
+				intf.Interface.Name, netalloc.IPAddressForm_ADDR_WITH_MASK)
 		}
 
 		// verify links between VPP and Linux side

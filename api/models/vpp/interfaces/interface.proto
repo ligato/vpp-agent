@@ -29,10 +29,10 @@ message Interface {
     // It must be unique across all configured interfaces.
     string name = 1;
 
-    // Type represents the type of interface and It must match with actual Link.
+    // Type represents the type of interface and it must match with actual Link.
     Type type = 2;
 
-    // Enabled controls if the interface should be
+    // Enabled controls if the interface should be UP.
     bool enabled = 3;
 
     // PhysAddress represents physical address (MAC) of the interface.
@@ -40,7 +40,9 @@ message Interface {
     string phys_address = 4;
 
     // IPAddresses define list of IP addresses for the interface and must be
-    // defined in the following format: <ipAddress>/<ipPrefix>
+    // defined in the following format: <ipAddress>/<ipPrefix>.
+    // Interface IP address can be also allocated via netalloc plugin and
+    // referenced here, see: api/models/netalloc/netalloc.proto
     repeated string ip_addresses = 5;
 
     // Vrf defines the ID of VRF table that the interface is assigned to.

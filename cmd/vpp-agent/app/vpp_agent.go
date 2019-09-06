@@ -25,6 +25,7 @@ import (
 	"github.com/ligato/cn-infra/db/keyval/redis"
 	"github.com/ligato/cn-infra/health/probe"
 	"github.com/ligato/cn-infra/health/statuscheck"
+	"github.com/ligato/cn-infra/infra"
 	"github.com/ligato/cn-infra/logging/logmanager"
 	"github.com/ligato/cn-infra/messaging/kafka"
 
@@ -33,6 +34,7 @@ import (
 	linux_iptablesplugin "github.com/ligato/vpp-agent/plugins/linux/iptablesplugin"
 	linux_l3plugin "github.com/ligato/vpp-agent/plugins/linux/l3plugin"
 	linux_nsplugin "github.com/ligato/vpp-agent/plugins/linux/nsplugin"
+	"github.com/ligato/vpp-agent/plugins/netalloc"
 	"github.com/ligato/vpp-agent/plugins/orchestrator"
 	"github.com/ligato/vpp-agent/plugins/restapi"
 	"github.com/ligato/vpp-agent/plugins/telemetry"
@@ -52,13 +54,15 @@ import (
 // Note: the plugin itself is loaded after all its dependencies. It means that the VPP plugin is first in the list
 // despite it needs to be loaded after the linux plugin.
 type VPPAgent struct {
+	infra.PluginName
 	LogManager *logmanager.Plugin
 
-	// VPP & Linux are first to ensure that
+	// VPP & Linux (and other plugins with descriptors) are first to ensure that
 	// all their descriptors are registered to KVScheduler
 	// before orchestrator that starts watch for their NB key prefixes.
 	VPP
 	Linux
+	Netalloc *netalloc.Plugin
 
 	Orchestrator *orchestrator.Plugin
 
@@ -69,6 +73,7 @@ type VPPAgent struct {
 	Configurator *configurator.Plugin
 	RESTAPI      *restapi.Plugin
 	Probe        *probe.Plugin
+	StatusCheck  *statuscheck.Plugin
 	Telemetry    *telemetry.Plugin
 }
 
@@ -123,6 +128,7 @@ func New() *VPPAgent {
 	linux := DefaultLinux()
 
 	return &VPPAgent{
+		PluginName:     "VPPAgent",
 		LogManager:     &logmanager.DefaultPlugin,
 		Orchestrator:   &orchestrator.DefaultPlugin,
 		ETCDDataSync:   etcdDataSync,
@@ -130,34 +136,34 @@ func New() *VPPAgent {
 		RedisDataSync:  redisDataSync,
 		VPP:            vpp,
 		Linux:          linux,
+		Netalloc:       &netalloc.DefaultPlugin,
 		Configurator:   &configurator.DefaultPlugin,
 		RESTAPI:        &restapi.DefaultPlugin,
 		Probe:          &probe.DefaultPlugin,
+		StatusCheck:    &statuscheck.DefaultPlugin,
 		Telemetry:      &telemetry.DefaultPlugin,
 	}
 }
 
 // Init initializes main plugin.
-func (VPPAgent) Init() error {
+func (a *VPPAgent) Init() error {
+	a.StatusCheck.Register(a.PluginName, nil)
+	a.StatusCheck.ReportStateChange(a.PluginName, statuscheck.Init, nil)
 	return nil
 }
 
 // AfterInit executes resync.
-func (VPPAgent) AfterInit() error {
+func (a *VPPAgent) AfterInit() error {
 	// manually start resync after all plugins started
 	resync.DefaultPlugin.DoResync()
 	//orchestrator.DefaultPlugin.InitialSync()
+	a.StatusCheck.ReportStateChange(a.PluginName, statuscheck.OK, nil)
 	return nil
 }
 
 // Close could close used resources.
 func (VPPAgent) Close() error {
 	return nil
-}
-
-// String returns name of the plugin.
-func (VPPAgent) String() string {
-	return "VPPAgent"
 }
 
 // VPP contains all VPP plugins.

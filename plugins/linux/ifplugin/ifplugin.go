@@ -27,6 +27,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/linux/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/linux/ifplugin/linuxcalls"
 	"github.com/ligato/vpp-agent/plugins/linux/nsplugin"
+	"github.com/ligato/vpp-agent/plugins/netalloc"
 )
 
 const (
@@ -60,6 +61,7 @@ type Deps struct {
 	ServiceLabel servicelabel.ReaderAPI
 	KVScheduler  kvs.KVScheduler
 	NsPlugin     nsplugin.API
+	AddrAlloc    netalloc.AddressAllocator
 	VppIfPlugin  descriptor.VPPIfPluginAPI /* mandatory if TAP_TO_VPP interfaces are used */
 }
 
@@ -90,7 +92,7 @@ func (p *IfPlugin) Init() error {
 	// init & register descriptors
 	var ifDescriptor *kvs.KVDescriptor
 	ifDescriptor, p.ifDescriptor = descriptor.NewInterfaceDescriptor(p.KVScheduler,
-		p.ServiceLabel, p.NsPlugin, p.VppIfPlugin, p.ifHandler, p.Log, config.GoRoutinesCnt)
+		p.ServiceLabel, p.NsPlugin, p.VppIfPlugin, p.AddrAlloc, p.ifHandler, p.Log, config.GoRoutinesCnt)
 	err = p.Deps.KVScheduler.RegisterKVDescriptor(ifDescriptor)
 	if err != nil {
 		return err
@@ -98,7 +100,7 @@ func (p *IfPlugin) Init() error {
 
 	var addrDescriptor *kvs.KVDescriptor
 	addrDescriptor, p.ifAddrDescriptor = descriptor.NewInterfaceAddressDescriptor(p.NsPlugin,
-		p.ifHandler, p.Log)
+		p.AddrAlloc, p.ifHandler, p.Log)
 	err = p.Deps.KVScheduler.RegisterKVDescriptor(addrDescriptor)
 	if err != nil {
 		return err

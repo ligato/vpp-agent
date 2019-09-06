@@ -23,6 +23,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	ifvppcalls "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
 	ifvpp1904 "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls/vpp1904"
+	netallock_mock "github.com/ligato/vpp-agent/plugins/netalloc/mock"
 	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls/vpp1904"
 	"github.com/ligato/vpp-agent/plugins/vpp/vppcallmock"
@@ -89,6 +90,6 @@ func routeTestSetup(t *testing.T) (*vppcallmock.TestCtx, ifvppcalls.InterfaceVpp
 	ifIndexes.Put("iface1", &ifaceidx.IfaceMetadata{
 		SwIfIndex: 1,
 	})
-	rtHandler := vpp1904.NewRouteVppHandler(ctx.MockChannel, ifIndexes, log)
+	rtHandler := vpp1904.NewRouteVppHandler(ctx.MockChannel, ifIndexes, netallock_mock.NewMockNetAlloc(), log)
 	return ctx, ifHandler, rtHandler
 }

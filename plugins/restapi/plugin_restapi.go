@@ -28,6 +28,7 @@ import (
 	vpevppcalls "github.com/ligato/vpp-agent/plugins/govppmux/vppcalls"
 	iflinuxcalls "github.com/ligato/vpp-agent/plugins/linux/ifplugin/linuxcalls"
 	l3linuxcalls "github.com/ligato/vpp-agent/plugins/linux/l3plugin/linuxcalls"
+	"github.com/ligato/vpp-agent/plugins/netalloc"
 	"github.com/ligato/vpp-agent/plugins/restapi/resturl"
 	telemetryvppcalls "github.com/ligato/vpp-agent/plugins/telemetry/vppcalls"
 	abfvppcalls "github.com/ligato/vpp-agent/plugins/vpp/abfplugin/vppcalls"
@@ -84,6 +85,7 @@ type Deps struct {
 	infra.PluginDeps
 	HTTPHandlers rest.HTTPHandlers
 	GoVppmux     govppmux.StatsAPI
+	AddrAlloc    netalloc.AddressAllocator
 	VPPACLPlugin aclplugin.API
 	VPPIfPlugin  ifplugin.API
 	VPPL2Plugin  *l2plugin.L2Plugin
@@ -134,7 +136,7 @@ func (p *Plugin) Init() (err error) {
 	if p.l2Handler == nil {
 		p.Log.Info("VPP L2 handler is not available, it will be skipped")
 	}
-	p.l3Handler = l3vppcalls.CompatibleL3VppHandler(p.vppChan, ifIndexes, vrfIndexes, p.Log)
+	p.l3Handler = l3vppcalls.CompatibleL3VppHandler(p.vppChan, ifIndexes, vrfIndexes, p.AddrAlloc, p.Log)
 	if p.l3Handler == nil {
 		p.Log.Info("VPP L3 handler is not available, it will be skipped")
 	}

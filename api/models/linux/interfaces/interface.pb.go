@@ -85,22 +85,39 @@ func (VethLink_ChecksumOffloading) EnumDescriptor() ([]byte, []int) {
 }
 
 type Interface struct {
-	Name        string                  `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	Type        Interface_Type          `protobuf:"varint,2,opt,name=type,proto3,enum=linux.interfaces.Interface_Type" json:"type,omitempty"`
-	Namespace   *namespace.NetNamespace `protobuf:"bytes,3,opt,name=namespace,proto3" json:"namespace,omitempty"`
-	HostIfName  string                  `protobuf:"bytes,4,opt,name=host_if_name,json=hostIfName,proto3" json:"host_if_name,omitempty"`
-	Enabled     bool                    `protobuf:"varint,5,opt,name=enabled,proto3" json:"enabled,omitempty"`
-	IpAddresses []string                `protobuf:"bytes,6,rep,name=ip_addresses,json=ipAddresses,proto3" json:"ip_addresses,omitempty"`
-	PhysAddress string                  `protobuf:"bytes,7,opt,name=phys_address,json=physAddress,proto3" json:"phys_address,omitempty"`
-	Mtu         uint32                  `protobuf:"varint,8,opt,name=mtu,proto3" json:"mtu,omitempty"`
+	// Name is mandatory field representing logical name for the interface.
+	// It must be unique across all configured interfaces.
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	// Type represents the type of interface and It must match with actual Link.
+	Type Interface_Type `protobuf:"varint,2,opt,name=type,proto3,enum=linux.interfaces.Interface_Type" json:"type,omitempty"`
+	// Namespace is a reference to a Linux network namespace where the interface
+	// should be put into.
+	Namespace *namespace.NetNamespace `protobuf:"bytes,3,opt,name=namespace,proto3" json:"namespace,omitempty"`
+	// Name of the interface in the host OS. If not set, the host name will be
+	// the same as the interface logical name.
+	HostIfName string `protobuf:"bytes,4,opt,name=host_if_name,json=hostIfName,proto3" json:"host_if_name,omitempty"`
+	// Enabled controls if the interface should be UP.
+	Enabled bool `protobuf:"varint,5,opt,name=enabled,proto3" json:"enabled,omitempty"`
+	// IPAddresses define list of IP addresses for the interface and must be
+	// defined in the following format: <ipAddress>/<ipPrefix>.
+	// Interface IP address can be also allocated via netalloc plugin and
+	// referenced here, see: api/models/netalloc/netalloc.proto
+	IpAddresses []string `protobuf:"bytes,6,rep,name=ip_addresses,json=ipAddresses,proto3" json:"ip_addresses,omitempty"`
+	// PhysAddress represents physical address (MAC) of the interface.
+	// Random address will be assigned if left empty.
+	PhysAddress string `protobuf:"bytes,7,opt,name=phys_address,json=physAddress,proto3" json:"phys_address,omitempty"`
+	// MTU is the maximum transmission unit value.
+	Mtu uint32 `protobuf:"varint,8,opt,name=mtu,proto3" json:"mtu,omitempty"`
 	// Types that are valid to be assigned to Link:
 	//	*Interface_Veth
 	//	*Interface_Tap
-	Link                 isInterface_Link `protobuf_oneof:"link"`
-	LinkOnly             bool             `protobuf:"varint,9,opt,name=link_only,json=linkOnly,proto3" json:"link_only,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
-	XXX_unrecognized     []byte           `json:"-"`
-	XXX_sizecache        int32            `json:"-"`
+	Link isInterface_Link `protobuf_oneof:"link"`
+	// Configure/Resync link only. IP/MAC addresses are expected to be configured
+	// externally - i.e. by a different agent or manually via CLI.
+	LinkOnly             bool     `protobuf:"varint,9,opt,name=link_only,json=linkOnly,proto3" json:"link_only,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
 func (m *Interface) Reset()         { *m = Interface{} }
@@ -304,8 +321,11 @@ func (*Interface) XXX_MessageName() string {
 }
 
 type VethLink struct {
-	PeerIfName           string                      `protobuf:"bytes,1,opt,name=peer_if_name,json=peerIfName,proto3" json:"peer_if_name,omitempty"`
+	// Name of the VETH peer, i.e. other end of the linux veth (mandatory for VETH)
+	PeerIfName string `protobuf:"bytes,1,opt,name=peer_if_name,json=peerIfName,proto3" json:"peer_if_name,omitempty"`
+	// Checksum offloading - Rx side (enabled by default)
 	RxChecksumOffloading VethLink_ChecksumOffloading `protobuf:"varint,2,opt,name=rx_checksum_offloading,json=rxChecksumOffloading,proto3,enum=linux.interfaces.VethLink_ChecksumOffloading" json:"rx_checksum_offloading,omitempty"`
+	// Checksum offloading - Tx side (enabled by default)
 	TxChecksumOffloading VethLink_ChecksumOffloading `protobuf:"varint,3,opt,name=tx_checksum_offloading,json=txChecksumOffloading,proto3,enum=linux.interfaces.VethLink_ChecksumOffloading" json:"tx_checksum_offloading,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                    `json:"-"`
 	XXX_unrecognized     []byte                      `json:"-"`
@@ -362,6 +382,7 @@ func (*VethLink) XXX_MessageName() string {
 }
 
 type TapLink struct {
+	// Logical name of the VPP TAP interface (mandatory for TAP_TO_VPP)
 	VppTapIfName         string   `protobuf:"bytes,1,opt,name=vpp_tap_if_name,json=vppTapIfName,proto3" json:"vpp_tap_if_name,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`

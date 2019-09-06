@@ -26,12 +26,15 @@ import (
 
 	ifmodel "github.com/ligato/vpp-agent/api/models/linux/interfaces"
 	l3 "github.com/ligato/vpp-agent/api/models/linux/l3"
+	netalloc_api "github.com/ligato/vpp-agent/api/models/netalloc"
 	"github.com/ligato/vpp-agent/plugins/linux/ifplugin"
 	ifdescriptor "github.com/ligato/vpp-agent/plugins/linux/ifplugin/descriptor"
 	"github.com/ligato/vpp-agent/plugins/linux/l3plugin/descriptor/adapter"
 	l3linuxcalls "github.com/ligato/vpp-agent/plugins/linux/l3plugin/linuxcalls"
 	"github.com/ligato/vpp-agent/plugins/linux/nsplugin"
 	nslinuxcalls "github.com/ligato/vpp-agent/plugins/linux/nsplugin/linuxcalls"
+	"github.com/ligato/vpp-agent/plugins/netalloc"
+	netalloc_descr "github.com/ligato/vpp-agent/plugins/netalloc/descriptor"
 )
 
 const (
@@ -53,9 +56,6 @@ var (
 	// interface reference.
 	ErrARPWithoutInterface = errors.New("Linux ARP entry defined without interface reference")
 
-	// ErrARPWithoutIP is returned when Linux ARP configuration is missing IP address.
-	ErrARPWithoutIP = errors.New("Linux ARP entry defined without IP address")
-
 	// ErrARPWithInvalidIP is returned when Linux ARP configuration contains IP address that cannot be parsed.
 	ErrARPWithInvalidIP = errors.New("Linux ARP entry defined with invalid IP address")
 
@@ -73,6 +73,7 @@ type ARPDescriptor struct {
 	l3Handler l3linuxcalls.NetlinkAPI
 	ifPlugin  ifplugin.API
 	nsPlugin  nsplugin.API
+	addrAlloc netalloc.AddressAllocator
 	scheduler kvs.KVScheduler
 
 	// parallelization of the Retrieve operation
@@ -81,53 +82,45 @@ type ARPDescriptor struct {
 
 // NewARPDescriptor creates a new instance of the ARP descriptor.
 func NewARPDescriptor(
-	scheduler kvs.KVScheduler, ifPlugin ifplugin.API, nsPlugin nsplugin.API,
-	l3Handler l3linuxcalls.NetlinkAPI, log logging.PluginLogger, goRoutinesCnt int) *ARPDescriptor {
+	scheduler kvs.KVScheduler, ifPlugin ifplugin.API, nsPlugin nsplugin.API, addrAlloc netalloc.AddressAllocator,
+	l3Handler l3linuxcalls.NetlinkAPI, log logging.PluginLogger, goRoutinesCnt int) *kvs.KVDescriptor {
 
-	return &ARPDescriptor{
+	ctx := &ARPDescriptor{
 		scheduler:     scheduler,
 		l3Handler:     l3Handler,
 		ifPlugin:      ifPlugin,
 		nsPlugin:      nsPlugin,
+		addrAlloc:     addrAlloc,
 		goRoutinesCnt: goRoutinesCnt,
 		log:           log.NewLogger("arp-descriptor"),
 	}
-}
 
-// GetDescriptor returns descriptor suitable for registration (via adapter) with
-// the KVScheduler.
-func (d *ARPDescriptor) GetDescriptor() *adapter.ARPDescriptor {
-	return &adapter.ARPDescriptor{
+	typedDescr := &adapter.ARPDescriptor{
 		Name:                 ARPDescriptorName,
 		NBKeyPrefix:          l3.ModelARPEntry.KeyPrefix(),
 		ValueTypeName:        l3.ModelARPEntry.ProtoName(),
 		KeySelector:          l3.ModelARPEntry.IsKeyValid,
 		KeyLabel:             l3.ModelARPEntry.StripKeyPrefix,
-		ValueComparator:      d.EquivalentARPs,
-		Validate:             d.Validate,
-		Create:               d.Create,
-		Delete:               d.Delete,
-		Update:               d.Update,
-		Retrieve:             d.Retrieve,
-		Dependencies:         d.Dependencies,
-		RetrieveDependencies: []string{ifdescriptor.InterfaceDescriptorName},
+		ValueComparator:      ctx.EquivalentARPs,
+		Validate:             ctx.Validate,
+		Create:               ctx.Create,
+		Delete:               ctx.Delete,
+		Update:               ctx.Update,
+		Retrieve:             ctx.Retrieve,
+		Dependencies:         ctx.Dependencies,
+		RetrieveDependencies: []string{
+			netalloc_descr.IPAllocDescriptorName,
+			ifdescriptor.InterfaceDescriptorName},
 	}
+	return adapter.NewARPDescriptor(typedDescr)
 }
 
 // EquivalentARPs is case-insensitive comparison function for l3.LinuxARPEntry.
+// Only MAC addresses are compared - interface and IP address are part of the key
+// which is already given to be the same for the two values.
 func (d *ARPDescriptor) EquivalentARPs(key string, oldArp, NewArp *l3.ARPEntry) bool {
-	// interfaces compared as usually:
-	if oldArp.Interface != NewArp.Interface {
-		return false
-	}
-
 	// compare MAC addresses case-insensitively
-	if strings.ToLower(oldArp.HwAddress) != strings.ToLower(NewArp.HwAddress) {
-		return false
-	}
-
-	// compare IP addresses converted to net.IPNet
-	return equalAddrs(oldArp.IpAddress, NewArp.IpAddress)
+	return strings.ToLower(oldArp.HwAddress) == strings.ToLower(NewArp.HwAddress)
 }
 
 // Validate validates ARP entry configuration.
@@ -135,13 +128,10 @@ func (d *ARPDescriptor) Validate(key string, arp *l3.ARPEntry) (err error) {
 	if arp.Interface == "" {
 		return kvs.NewInvalidValueError(ErrARPWithoutInterface, "interface")
 	}
-	if arp.IpAddress == "" {
-		return kvs.NewInvalidValueError(ErrARPWithoutIP, "ip_address")
-	}
 	if arp.HwAddress == "" {
 		return kvs.NewInvalidValueError(ErrARPWithoutHwAddr, "hw_address")
 	}
-	return nil
+	return d.addrAlloc.ValidateIPAddress(arp.IpAddress, "", "ip_address", netalloc.GWRefAllowed)
 }
 
 // Create creates ARP entry.
@@ -180,13 +170,13 @@ func (d *ARPDescriptor) updateARPEntry(arp *l3.ARPEntry, actionName string, acti
 	neigh.LinkIndex = ifMeta.LinuxIfIndex
 
 	// set IP address
-	ipAddr := net.ParseIP(arp.IpAddress)
-	if ipAddr == nil {
-		err = ErrARPWithInvalidIP
+	ipAddr, err := d.addrAlloc.GetOrParseIPAddress(arp.IpAddress, "",
+		netalloc_api.IPAddressForm_ADDR_ONLY)
+	if err != nil {
 		d.log.Error(err)
 		return err
 	}
-	neigh.IP = ipAddr
+	neigh.IP = ipAddr.IP
 
 	// set MAC address
 	mac, err := net.ParseMAC(arp.HwAddress)
@@ -229,11 +219,11 @@ func (d *ARPDescriptor) updateARPEntry(arp *l3.ARPEntry, actionName string, acti
 }
 
 // Dependencies lists dependencies for a Linux ARP entry.
-func (d *ARPDescriptor) Dependencies(key string, arp *l3.ARPEntry) []kvs.Dependency {
+func (d *ARPDescriptor) Dependencies(key string, arp *l3.ARPEntry) (deps []kvs.Dependency) {
 	// the associated interface must exist, but also must be UP and have at least
 	// one IP address assigned (to be in the L3 mode)
 	if arp.Interface != "" {
-		return []kvs.Dependency{
+		deps = []kvs.Dependency{
 			{
 				Label: arpInterfaceDep,
 				Key:   ifmodel.InterfaceStateKey(arp.Interface, true),
@@ -246,7 +236,12 @@ func (d *ARPDescriptor) Dependencies(key string, arp *l3.ARPEntry) []kvs.Depende
 			},
 		}
 	}
-	return nil
+	// if IP is only a symlink to netalloc address pool, then wait for it to be allocated first
+	allocDep, hasAllocDep := d.addrAlloc.GetAddressAllocDep(arp.IpAddress, "", "")
+	if hasAllocDep {
+		deps = append(deps, allocDep)
+	}
+	return deps
 }
 
 // retrievedARPs is used as the return value sent via channel by retrieveARPs().
@@ -258,6 +253,15 @@ type retrievedARPs struct {
 // Retrieve returns all ARP entries associated with interfaces managed by this agent.
 func (d *ARPDescriptor) Retrieve(correlate []adapter.ARPKVWithMetadata) ([]adapter.ARPKVWithMetadata, error) {
 	var values []adapter.ARPKVWithMetadata
+
+	hwLabel := func(arp *l3.ARPEntry) string {
+		return arp.Interface + "/" + strings.ToLower(arp.HwAddress)
+	}
+	expCfg := make(map[string]*l3.ARPEntry) // Interface+MAC -> expected ARP config
+	for _, kv := range correlate {
+		expCfg[hwLabel(kv.Value)] = kv.Value
+	}
+
 	interfaces := d.ifPlugin.GetInterfaceIndex().ListAllInterfaces()
 	goRoutinesCnt := len(interfaces) / minWorkForGoRoutine
 	if goRoutinesCnt == 0 {
@@ -283,7 +287,17 @@ func (d *ARPDescriptor) Retrieve(correlate []adapter.ARPKVWithMetadata) ([]adapt
 		if retrieved.err != nil {
 			return values, retrieved.err
 		}
-		values = append(values, retrieved.arps...)
+		// correlate IP addresses with netalloc references (if any) from the expected config
+		for _, arp := range retrieved.arps {
+			if expCfg, hasExpCfg := expCfg[hwLabel(arp.Value)]; hasExpCfg {
+				arp.Value.IpAddress = d.addrAlloc.CorrelateRetrievedIPs(
+					[]string{expCfg.IpAddress}, []string{arp.Value.IpAddress},
+					"", netalloc_api.IPAddressForm_ADDR_ONLY)[0]
+				// recreate key in case the IP address was replaced with a netalloc link
+				arp.Key = l3.ArpKey(arp.Value.Interface, arp.Value.IpAddress)
+			}
+			values = append(values, arp)
+		}
 	}
 
 	return values, nil

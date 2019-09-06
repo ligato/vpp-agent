@@ -34,6 +34,7 @@ import (
 
 	interfaces "github.com/ligato/vpp-agent/api/models/linux/interfaces"
 	namespace "github.com/ligato/vpp-agent/api/models/linux/namespace"
+	netalloc_api "github.com/ligato/vpp-agent/api/models/netalloc"
 	vpp_intf "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	"github.com/ligato/vpp-agent/pkg/models"
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
@@ -43,6 +44,8 @@ import (
 	"github.com/ligato/vpp-agent/plugins/linux/nsplugin"
 	nsdescriptor "github.com/ligato/vpp-agent/plugins/linux/nsplugin/descriptor"
 	nslinuxcalls "github.com/ligato/vpp-agent/plugins/linux/nsplugin/linuxcalls"
+	"github.com/ligato/vpp-agent/plugins/netalloc"
+	netalloc_descr "github.com/ligato/vpp-agent/plugins/netalloc/descriptor"
 	vpp_ifaceidx "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 )
 
@@ -127,6 +130,7 @@ type InterfaceDescriptor struct {
 	nsPlugin     nsplugin.API
 	vppIfPlugin  VPPIfPluginAPI
 	scheduler    kvs.KVScheduler
+	addrAlloc    netalloc.AddressAllocator
 
 	// runtime
 	intfIndex ifaceidx.LinuxIfMetadataIndex
@@ -145,8 +149,8 @@ type VPPIfPluginAPI interface {
 // NewInterfaceDescriptor creates a new instance of the Interface descriptor.
 func NewInterfaceDescriptor(
 	scheduler kvs.KVScheduler, serviceLabel servicelabel.ReaderAPI, nsPlugin nsplugin.API,
-	vppIfPlugin VPPIfPluginAPI, ifHandler iflinuxcalls.NetlinkAPI, log logging.PluginLogger,
-	goRoutinesCnt int) (descr *kvs.KVDescriptor, ctx *InterfaceDescriptor) {
+	vppIfPlugin VPPIfPluginAPI, addrAlloc netalloc.AddressAllocator, ifHandler iflinuxcalls.NetlinkAPI,
+	log logging.PluginLogger, goRoutinesCnt int) (descr *kvs.KVDescriptor, ctx *InterfaceDescriptor) {
 
 	// descriptor context
 	ctx = &InterfaceDescriptor{
@@ -154,30 +158,34 @@ func NewInterfaceDescriptor(
 		ifHandler:     ifHandler,
 		nsPlugin:      nsPlugin,
 		vppIfPlugin:   vppIfPlugin,
+		addrAlloc:     addrAlloc,
 		serviceLabel:  serviceLabel,
 		goRoutinesCnt: goRoutinesCnt,
 		log:           log.NewLogger("if-descriptor"),
 	}
 
 	typedDescr := &adapter.InterfaceDescriptor{
-		Name:                 InterfaceDescriptorName,
-		NBKeyPrefix:          interfaces.ModelInterface.KeyPrefix(),
-		ValueTypeName:        interfaces.ModelInterface.ProtoName(),
-		KeySelector:          interfaces.ModelInterface.IsKeyValid,
-		KeyLabel:             interfaces.ModelInterface.StripKeyPrefix,
-		ValueComparator:      ctx.EquivalentInterfaces,
-		WithMetadata:         true,
-		MetadataMapFactory:   ctx.MetadataFactory,
-		Validate:             ctx.Validate,
-		Create:               ctx.Create,
-		Delete:               ctx.Delete,
-		Update:               ctx.Update,
-		UpdateWithRecreate:   ctx.UpdateWithRecreate,
-		Retrieve:             ctx.Retrieve,
-		IsRetriableFailure:   ctx.IsRetriableFailure,
-		DerivedValues:        ctx.DerivedValues,
-		Dependencies:         ctx.Dependencies,
-		RetrieveDependencies: []string{nsdescriptor.MicroserviceDescriptorName},
+		Name:               InterfaceDescriptorName,
+		NBKeyPrefix:        interfaces.ModelInterface.KeyPrefix(),
+		ValueTypeName:      interfaces.ModelInterface.ProtoName(),
+		KeySelector:        interfaces.ModelInterface.IsKeyValid,
+		KeyLabel:           interfaces.ModelInterface.StripKeyPrefix,
+		ValueComparator:    ctx.EquivalentInterfaces,
+		WithMetadata:       true,
+		MetadataMapFactory: ctx.MetadataFactory,
+		Validate:           ctx.Validate,
+		Create:             ctx.Create,
+		Delete:             ctx.Delete,
+		Update:             ctx.Update,
+		UpdateWithRecreate: ctx.UpdateWithRecreate,
+		Retrieve:           ctx.Retrieve,
+		IsRetriableFailure: ctx.IsRetriableFailure,
+		DerivedValues:      ctx.DerivedValues,
+		Dependencies:       ctx.Dependencies,
+		RetrieveDependencies: []string{
+			// refresh the pool of allocated IP addresses first
+			netalloc_descr.IPAllocDescriptorName,
+			nsdescriptor.MicroserviceDescriptorName},
 	}
 	descr = adapter.NewInterfaceDescriptor(typedDescr)
 	return
@@ -247,14 +255,6 @@ func (d *InterfaceDescriptor) Validate(key string, linuxIf *interfaces.Interface
 	// validate name (this should never happen, since key is derived from name)
 	if linuxIf.GetName() == "" {
 		return kvs.NewInvalidValueError(ErrInterfaceWithoutName, "name")
-	}
-
-	// validate IP addresses
-	for _, a := range linuxIf.GetIpAddresses() {
-		// TODO: perhaps we could assume default mask if there isnt one?
-		if _, _, err := net.ParseCIDR(a); err != nil {
-			return kvs.NewInvalidValueError(ErrInvalidIPWithMask, "ip_addresses")
-		}
 	}
 
 	// validate namespace
@@ -608,7 +608,7 @@ func (d *InterfaceDescriptor) DerivedValues(key string, linuxIf *interfaces.Inte
 		// IP addresses
 		for _, ipAddr := range linuxIf.IpAddresses {
 			derValues = append(derValues, kvs.KeyValuePair{
-				Key:   interfaces.InterfaceAddressKey(linuxIf.Name, ipAddr),
+				Key:   interfaces.InterfaceAddressKey(linuxIf.Name, ipAddr, netalloc_api.IPAddressSource_STATIC),
 				Value: &prototypes.Empty{},
 			})
 		}
@@ -777,6 +777,15 @@ func (d *InterfaceDescriptor) Retrieve(correlate []adapter.InterfaceKVWithMetada
 	}
 	for _, kv := range existingIfaces {
 		values = append(values, kv)
+	}
+
+	// correlate IP addresses with netalloc references from the expected config
+	for _, kv := range values {
+		if expCfg, hasExpCfg := ifCfg[kv.Value.Name]; hasExpCfg {
+			kv.Value.IpAddresses = d.addrAlloc.CorrelateRetrievedIPs(
+				expCfg.IpAddresses, kv.Value.IpAddresses,
+				kv.Value.Name, netalloc_api.IPAddressForm_ADDR_WITH_MASK)
+		}
 	}
 
 	return values, nil
