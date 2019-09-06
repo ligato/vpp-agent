@@ -19,8 +19,10 @@ import (
 	"github.com/ligato/cn-infra/logging"
 	"github.com/pkg/errors"
 
+	netalloc_api "github.com/ligato/vpp-agent/api/models/netalloc"
 	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
+	"github.com/ligato/vpp-agent/plugins/netalloc"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
 )
@@ -39,15 +41,17 @@ type InterfaceAddressDescriptor struct {
 	log       logging.Logger
 	ifHandler vppcalls.InterfaceVppAPI
 	ifIndex   ifaceidx.IfaceMetadataIndex
+	addrAlloc netalloc.AddressAllocator
 }
 
 // NewInterfaceAddressDescriptor creates a new instance of InterfaceAddressDescriptor.
-func NewInterfaceAddressDescriptor(ifHandler vppcalls.InterfaceVppAPI, ifIndex ifaceidx.IfaceMetadataIndex,
-	log logging.PluginLogger) *kvs.KVDescriptor {
+func NewInterfaceAddressDescriptor(ifHandler vppcalls.InterfaceVppAPI, addrAlloc netalloc.AddressAllocator,
+	ifIndex ifaceidx.IfaceMetadataIndex, log logging.PluginLogger) *kvs.KVDescriptor {
 
 	descrCtx := &InterfaceAddressDescriptor{
 		ifHandler: ifHandler,
 		ifIndex:   ifIndex,
+		addrAlloc: addrAlloc,
 		log:       log.NewLogger("interface-address-descriptor"),
 	}
 	return &kvs.KVDescriptor{
@@ -61,25 +65,28 @@ func NewInterfaceAddressDescriptor(ifHandler vppcalls.InterfaceVppAPI, ifIndex i
 }
 
 // IsInterfaceVrfKey returns true if the key represents assignment of an IP address
-// to a VPP interface.
+// to a VPP interface (that needs to be applied). KVs representing addresses
+// already allocated from netalloc plugin or obtained from a DHCP server are
+// excluded.
 func (d *InterfaceAddressDescriptor) IsInterfaceAddressKey(key string) bool {
-	_, _, _, fromDHCP, _, isAddrKey := interfaces.ParseInterfaceAddressKey(key)
-	return isAddrKey && !fromDHCP
+	_, _, source, _, isAddrKey := interfaces.ParseInterfaceAddressKey(key)
+	return isAddrKey &&
+		(source == netalloc_api.IPAddressSource_STATIC || source == netalloc_api.IPAddressSource_ALLOC_REF)
 }
 
 // Validate validates IP address to be assigned to an interface.
 func (d *InterfaceAddressDescriptor) Validate(key string, emptyVal proto.Message) (err error) {
-	_, _, _, _, invalidIP, _ := interfaces.ParseInterfaceAddressKey(key)
-	if invalidIP {
-		return errors.New("invalid IP address")
+	iface, addr, _, invalidKey, _ := interfaces.ParseInterfaceAddressKey(key)
+	if invalidKey {
+		return errors.New("invalid key")
 	}
-	return nil
+
+	return d.addrAlloc.ValidateIPAddress(addr, iface, "ip_addresses", netalloc.GwRefUnexpected)
 }
 
 // Create assigns IP address to an interface.
 func (d *InterfaceAddressDescriptor) Create(key string, emptyVal proto.Message) (metadata kvs.Metadata, err error) {
-	iface, ipAddr, ipAddrNet, _, _, _ := interfaces.ParseInterfaceAddressKey(key)
-	ipAddrNet.IP = ipAddr
+	iface, addr, _, _, _ := interfaces.ParseInterfaceAddressKey(key)
 
 	ifMeta, found := d.ifIndex.LookupByName(iface)
 	if !found {
@@ -88,18 +95,19 @@ func (d *InterfaceAddressDescriptor) Create(key string, emptyVal proto.Message) 
 		return nil, err
 	}
 
-	err = d.ifHandler.AddInterfaceIP(ifMeta.SwIfIndex, ipAddrNet)
+	ipAddr, err := d.addrAlloc.GetOrParseIPAddress(addr, iface, netalloc_api.IPAddressForm_ADDR_WITH_MASK)
+	if err != nil {
+		d.log.Error(err)
+		return nil, err
+	}
+
+	err = d.ifHandler.AddInterfaceIP(ifMeta.SwIfIndex, ipAddr)
 	return nil, err
 }
 
 // Delete unassigns IP address from an interface.
 func (d *InterfaceAddressDescriptor) Delete(key string, emptyVal proto.Message, metadata kvs.Metadata) (err error) {
-	iface, ipAddr, ipAddrNet, _, _, _ := interfaces.ParseInterfaceAddressKey(key)
-	ipAddrNet.IP = ipAddr
-
-	if ipAddr.IsLinkLocalUnicast() {
-		return nil
-	}
+	iface, addr, _, _, _ := interfaces.ParseInterfaceAddressKey(key)
 
 	ifMeta, found := d.ifIndex.LookupByName(iface)
 	if !found {
@@ -108,17 +116,35 @@ func (d *InterfaceAddressDescriptor) Delete(key string, emptyVal proto.Message, 
 		return err
 	}
 
-	err = d.ifHandler.DelInterfaceIP(ifMeta.SwIfIndex, ipAddrNet)
+	ipAddr, err := d.addrAlloc.GetOrParseIPAddress(addr, iface, netalloc_api.IPAddressForm_ADDR_WITH_MASK)
+	if err != nil {
+		d.log.Error(err)
+		return err
+	}
+
+	if ipAddr.IP.IsLinkLocalUnicast() {
+		return nil
+	}
+
+	err = d.ifHandler.DelInterfaceIP(ifMeta.SwIfIndex, ipAddr)
 	return err
 }
 
-// Dependencies lists assignment of the interface into the VRF table as the only dependency.
+// Dependencies lists assignment of the interface into the VRF table and potential
+// allocation of the IP address as dependencies.
 func (d *InterfaceAddressDescriptor) Dependencies(key string, emptyVal proto.Message) []kvs.Dependency {
-	iface, _, _, _, _, _ := interfaces.ParseInterfaceAddressKey(key)
-	return []kvs.Dependency{{
+	iface, addr, _, _, _ := interfaces.ParseInterfaceAddressKey(key)
+	deps := []kvs.Dependency{{
 		Label: interfaceInVrfDep,
 		AnyOf: kvs.AnyOfDependency{
 			KeyPrefixes: []string{interfaces.InterfaceVrfKeyPrefix(iface)},
 		},
 	}}
+
+	allocDep, hasAllocDep := d.addrAlloc.GetAddressAllocDep(addr, iface, "")
+	if hasAllocDep {
+		deps = append(deps, allocDep)
+	}
+
+	return deps
 }

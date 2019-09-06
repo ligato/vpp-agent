@@ -28,12 +28,15 @@ import (
 
 	linux_intf "github.com/ligato/vpp-agent/api/models/linux/interfaces"
 	linux_ns "github.com/ligato/vpp-agent/api/models/linux/namespace"
+	netalloc_api "github.com/ligato/vpp-agent/api/models/netalloc"
 	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	linux_ifdescriptor "github.com/ligato/vpp-agent/plugins/linux/ifplugin/descriptor"
 	linux_ifaceidx "github.com/ligato/vpp-agent/plugins/linux/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/linux/nsplugin"
+	"github.com/ligato/vpp-agent/plugins/netalloc"
+	netalloc_descr "github.com/ligato/vpp-agent/plugins/netalloc/descriptor"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
@@ -128,6 +131,7 @@ type InterfaceDescriptor struct {
 	// dependencies
 	log       logging.Logger
 	ifHandler vppcalls.InterfaceVppAPI
+	addrAlloc netalloc.AddressAllocator
 
 	// optional dependencies, provide if AFPacket and/or TAP+TAP_TO_VPP interfaces are used
 	linuxIfPlugin  LinuxPluginAPI
@@ -157,13 +161,14 @@ type NetlinkAPI interface {
 }
 
 // NewInterfaceDescriptor creates a new instance of the Interface descriptor.
-func NewInterfaceDescriptor(ifHandler vppcalls.InterfaceVppAPI, defaultMtu uint32,
-	linuxIfHandler NetlinkAPI, linuxIfPlugin LinuxPluginAPI, nsPlugin nsplugin.API,
+func NewInterfaceDescriptor(ifHandler vppcalls.InterfaceVppAPI, addrAlloc netalloc.AddressAllocator,
+	defaultMtu uint32, linuxIfHandler NetlinkAPI, linuxIfPlugin LinuxPluginAPI, nsPlugin nsplugin.API,
 	log logging.PluginLogger) (descr *kvs.KVDescriptor, ctx *InterfaceDescriptor) {
 
 	// descriptor context
 	ctx = &InterfaceDescriptor{
 		ifHandler:       ifHandler,
+		addrAlloc:       addrAlloc,
 		defaultMtu:      defaultMtu,
 		linuxIfPlugin:   linuxIfPlugin,
 		linuxIfHandler:  linuxIfHandler,
@@ -192,8 +197,11 @@ func NewInterfaceDescriptor(ifHandler vppcalls.InterfaceVppAPI, defaultMtu uint3
 		Retrieve:           ctx.Retrieve,
 		Dependencies:       ctx.Dependencies,
 		DerivedValues:      ctx.DerivedValues,
-		// If Linux-IfPlugin is loaded, dump it first.
-		RetrieveDependencies: []string{linux_ifdescriptor.InterfaceDescriptorName},
+		RetrieveDependencies: []string{
+			// refresh the pool of allocated IP addresses first
+			netalloc_descr.IPAllocDescriptorName,
+			// If Linux-IfPlugin is loaded, dump it first.
+			linux_ifdescriptor.InterfaceDescriptorName},
 	}
 	descr = adapter.NewInterfaceDescriptor(typedDescr)
 	return
@@ -523,8 +531,14 @@ func (d *InterfaceDescriptor) Dependencies(key string, intf *interfaces.Interfac
 				AnyOf: kvs.AnyOfDependency{
 					KeyPrefixes: []string{interfaces.InterfaceAddressPrefix(vxlanMulticast)},
 					KeySelector: func(key string) bool {
-						_, ifaceAddr, _, _, _, _ := interfaces.ParseInterfaceAddressKey(key)
-						return ifaceAddr != nil && ifaceAddr.IsMulticast()
+						_, ifaceAddr, source, _, _ := interfaces.ParseInterfaceAddressKey(key)
+						if source != netalloc_api.IPAddressSource_ALLOC_REF {
+							ip, _, err := net.ParseCIDR(ifaceAddr)
+							return err == nil && ip.IsMulticast()
+						}
+						// TODO: handle the case when multicast IP address is allocated
+						// via netalloc (too specific to bother until really needed)
+						return false
 					},
 				},
 			})
@@ -596,7 +610,7 @@ func (d *InterfaceDescriptor) DerivedValues(key string, intf *interfaces.Interfa
 	// IP addresses
 	for _, ipAddr := range intf.IpAddresses {
 		derValues = append(derValues, kvs.KeyValuePair{
-			Key:   interfaces.InterfaceAddressKey(intf.Name, ipAddr, false),
+			Key:   interfaces.InterfaceAddressKey(intf.Name, ipAddr, netalloc_api.IPAddressSource_STATIC),
 			Value: &prototypes.Empty{},
 		})
 	}
@@ -783,6 +797,11 @@ func equalStringSets(set1, set2 []string) bool {
 // contains IPv4 and/or IPv6 type addresses
 func getIPAddressVersions(ipAddrs []string) (hasIPv4, hasIPv6 bool) {
 	for _, ip := range ipAddrs {
+		if strings.HasPrefix(ip, netalloc_api.AllocRefPrefix) {
+			// TODO: figure out how to define VRF-related dependencies with netalloc'd addresses
+			//       - for now assume it is only used with IPv4
+			hasIPv4 = true
+		}
 		if strings.Contains(ip, ":") {
 			hasIPv6 = true
 		} else {

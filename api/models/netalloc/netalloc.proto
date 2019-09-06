@@ -1,0 +1,111 @@
+syntax = "proto3";
+
+// Netalloc allows to disassociate topology from addressing in the network
+// configuration. Instead of inserting specific IP/MAC addresses, VXLAN VNIs, etc.,
+// into the configuration data for interfaces, routes, ARPs and other network
+// objects, the addresses can be symbolic references into the pool of allocated
+// addresses known to the netalloc plugin.
+//
+// The ability to separate addresses from the rest of the network configuration
+// is especially useful in scenarios where address allocations are provided
+// externally, for example by another control-plane agent, IPAM tool or by CNI
+// in containerized environments.
+//
+// But for now, only model for IP address allocations has been implemented.
+// To allocate a new IP address, an instance of the proto message IPAllocation
+// should be submitted into the vpp-agent through one of the supported NB
+// transports (etcd, GRPC, ...) under the corresponding key. Network object which
+// references (to-be or already) allocated address will have a dependency on the
+// corresponding key-value instance of IPAllocation and will read and apply the
+// address only once it is available.
+package netalloc;
+
+option go_package = "github.com/ligato/vpp-agent/api/models/netalloc";
+
+import "github.com/gogo/protobuf/gogoproto/gogo.proto";
+option (gogoproto.messagename_all) = true;
+
+// IPAddressForm can be used in descriptors whose models reference allocated IP
+// addresses, to ask for a specific form in which the address should applied.
+enum IPAddressForm {
+    UNDEFINED_FORM = 0;
+
+    // ADDR_ONLY = apply address without mask, e.g. 192.168.2.5
+    ADDR_ONLY = 1;
+
+    // ADDR_WITH_MASK = apply address including the mask of the network,
+    // e.g. 192.168.2.5/24
+    ADDR_WITH_MASK = 2;
+
+    // ADDR_NET = apply network implied by the address,
+    // e.g. for 192.168.2.10/24 apply 192.168.2.0/24
+    ADDR_NET = 3;
+
+    // SINGLE_ADDR_NET = apply address with an all-ones mask (i.e. /32 for IPv4,
+    // /128 for IPv6)
+    SINGLE_ADDR_NET = 4;
+};
+
+// IPAddressSource can be used to remember the source of an IP address.
+// (e.g. to distinguish allocated IP addresses from statically defined ones)
+enum IPAddressSource {
+    UNDEFINED_SOURCE = 0;
+
+    // STATIC is IP address statically assigned in the NB configuration.
+    STATIC = 1;
+
+    // FROM_DHCP is set when IP address is obtained from DHCP.
+    FROM_DHCP = 2;
+
+    // ALLOC_REF is a reference inside NB configuration to an allocated
+    // IP address.
+    ALLOC_REF = 3;
+}
+
+// IPAllocation represents a single allocated IP address.
+//
+// To reference allocated address, instead of entering specific IP address
+// for interface/route/ARP/..., use one of the following string templates
+// prefixed with netalloc keyword "alloc" followed by colon:
+//  a) reference IP address allocated for an interface:
+//        "alloc:<network_name>/<interface_name>"
+//  b) when interface is given (e.g. when asked for IP from interface model),
+//     interface_name can be omitted:
+//        "alloc:<network_name>"
+//  c) reference default gateway IP address assigned to an interface:
+//        "alloc:<network_name>/<interface_name>/GW"
+//  d) when asking for GW IP for interface which is given, interface_name
+//     can be omitted:
+//        "alloc:<network_name>/GW"
+message IPAllocation {
+    // NetworkName is some label assigned to the network where the IP address
+    // was assigned to the given interface.
+    // In theory, interface can have multiple IP adresses or there can be multiple
+    // address allocators and the network name allows to separate them.
+    // The network name is not allowed to contain forward slashes.
+    string network_name = 1;
+
+    // InterfaceName is the logical VPP or Linux interface name for which the
+    // address is allocated.
+    string interface_name = 2;
+
+    // Address is an IP addres allocated to the interface inside the given
+    // network.
+    // If the address is specified without a mask, the all-ones mask (/32 for
+    // IPv4, /128 for IPv6) will be assumed.
+    string address = 4;
+
+    // Gw is the address of the default gateway assigned to the interface in
+    // the given network.
+    // If the address is specified without a mask, then either:
+    //  a) the mask of the <address> is used provided that GW IP falls into the
+    //     same network IP range, or
+    //  b) the all-ones mask is used otherwise
+    string gw = 5;
+}
+
+// ConfigData wraps all configuration items exported by netalloc.
+// TBD: MACs, VXLAN VNIs, memif IDs, etc.
+message ConfigData {
+    repeated IPAllocation ip_addresses = 10;
+}

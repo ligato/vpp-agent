@@ -94,6 +94,7 @@ func (s *genericManagerSvc) SetConfig(ctx context.Context, req *api.SetConfigReq
 	if req.OverwriteAll {
 		ctx = kvs.WithResync(ctx, kvs.FullResync, true)
 	}
+	ctx = kvs.WithRetryDefault(ctx)
 	results, err := s.dispatch.PushData(ctx, kvPairs)
 	if err != nil {
 		st := status.New(codes.FailedPrecondition, err.Error())

@@ -34,14 +34,14 @@ const (
 // InterfaceWithAddrDescriptor assigns property key-value pairs to interfaces
 // with at least one IP address.
 type InterfaceWithAddrDescriptor struct {
-	log       logging.Logger
+	log logging.Logger
 }
 
 // NewInterfaceWithAddrDescriptor creates a new instance of InterfaceWithAddrDescriptor.
 func NewInterfaceWithAddrDescriptor(log logging.PluginLogger) *kvs.KVDescriptor {
 
 	descrCtx := &InterfaceWithAddrDescriptor{
-		log:       log.NewLogger("interface-has-address-descriptor"),
+		log: log.NewLogger("interface-has-address-descriptor"),
 	}
 	return &kvs.KVDescriptor{
 		Name:         InterfaceWithAddressDescriptorName,
@@ -82,4 +82,3 @@ func (d *InterfaceWithAddrDescriptor) Dependencies(key string, emptyVal proto.Me
 		},
 	}
 }
-

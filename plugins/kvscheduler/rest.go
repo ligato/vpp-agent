@@ -62,7 +62,7 @@ const (
 	// keyTimelineURL is URL used to obtain timeline of value changes for a given key.
 	keyTimelineURL = urlPrefix + "key-timeline"
 
-	// keyArg is the name of the argument used to define key for "key-timeline" API.
+	// keyArg is the name of the argument used to define key for "key-timeline" and "status" API.
 	keyArg = "key"
 
 	// graphSnapshotURL is URL used to obtain graph snapshot from a given point in time.
@@ -355,16 +355,17 @@ func (s *Scheduler) downstreamResyncPostHandler(formatter *render.Render) http.H
 		if retry {
 			ctx = kvs.WithRetryDefault(ctx)
 		}
-		_, err := s.StartNBTransaction().Commit(ctx)
+		seqNum, err := s.StartNBTransaction().Commit(ctx)
 		if err != nil {
 			s.logError(formatter.JSON(w, http.StatusInternalServerError, errorString{err.Error()}))
 			return
 		}
-		s.logError(formatter.Text(w, http.StatusOK, "SB was successfully synchronized with KVScheduler\n"))
+		txn := s.GetRecordedTransaction(seqNum)
+		s.logError(formatter.JSON(w, http.StatusOK, txn))
 	}
 }
 
-func parseDumpAndStatusCommonArgs(args url.Values) (descriptor, keyPrefix string, err error) {
+func parseDumpAndStatusCommonArgs(args url.Values) (descriptor, keyPrefix, key string, err error) {
 	// parse optional *descriptor* argument
 	descriptors, withDescriptor := args[descriptorArg]
 	if withDescriptor && len(descriptors) != 1 {
@@ -384,6 +385,16 @@ func parseDumpAndStatusCommonArgs(args url.Values) (descriptor, keyPrefix string
 	if withKeyPrefix {
 		keyPrefix = keyPrefixes[0]
 	}
+
+	// parse optional *key* argument
+	keys, withKey := args[keyArg]
+	if withKey && len(keys) != 1 {
+		err = errors.New("key argument listed more than once")
+		return
+	}
+	if withKey {
+		key = keys[0]
+	}
 	return
 }
 
@@ -392,7 +403,7 @@ func (s *Scheduler) dumpGetHandler(formatter *render.Render) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		args := req.URL.Query()
 
-		descriptor, keyPrefix, err := parseDumpAndStatusCommonArgs(args)
+		descriptor, keyPrefix, _, err := parseDumpAndStatusCommonArgs(args)
 		if err != nil {
 			s.logError(formatter.JSON(w, http.StatusInternalServerError, errorString{err.Error()}))
 			return
@@ -448,7 +459,7 @@ func (s *Scheduler) statusGetHandler(formatter *render.Render) http.HandlerFunc 
 	return func(w http.ResponseWriter, req *http.Request) {
 		args := req.URL.Query()
 
-		descriptor, keyPrefix, err := parseDumpAndStatusCommonArgs(args)
+		descriptor, keyPrefix, key, err := parseDumpAndStatusCommonArgs(args)
 		if err != nil {
 			s.logError(formatter.JSON(w, http.StatusInternalServerError, errorString{err.Error()}))
 			return
@@ -457,13 +468,19 @@ func (s *Scheduler) statusGetHandler(formatter *render.Render) http.HandlerFunc 
 		graphR := s.graph.Read()
 		defer graphR.Release()
 
+		if key != "" {
+			singleStatus := getValueStatus(graphR.GetNode(key), key)
+			s.logError(formatter.JSON(w, http.StatusOK, singleStatus))
+			return
+		}
+
 		if descriptor == "" && keyPrefix != "" {
 			descriptor = s.getDescriptorForKeyPrefix(keyPrefix)
 			if descriptor == "" {
 				err = errors.New("unknown key prefix")
+				s.logError(formatter.JSON(w, http.StatusInternalServerError, errorString{err.Error()}))
+				return
 			}
-			s.logError(formatter.JSON(w, http.StatusInternalServerError, errorString{err.Error()}))
-			return
 		}
 
 		var nodes []graph.Node
