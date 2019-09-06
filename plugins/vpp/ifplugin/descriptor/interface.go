@@ -123,6 +123,9 @@ var (
 	// ErrVxLanGpeBadProtocol is returned when protocol for VxLAN-GPE was not set or set to UNKNOWN.
 	ErrVxLanGpeBadProtocol = errors.Errorf("bad protocol for VxLAN-GPE")
 
+	// ErrVxLanGpeNonZeroDecapVrfID is returned when DecapVrfId was not zero for protocols other than IP4 or IP6.
+	ErrVxLanGpeNonZeroDecapVrfID = errors.Errorf("DecapVrfId must be zero for protocols other than IP4 or IP6")
+
 	// ErrVxLanSrcAddrMissing is returned when source address was not set or set to an empty string.
 	ErrVxLanSrcAddrMissing = errors.Errorf("missing source address for VxLAN tunnel")
 
@@ -485,10 +488,17 @@ func (d *InterfaceDescriptor) Validate(key string, intf *interfaces.Interface) e
 			return kvs.NewInvalidValueError(ErrVxLanDstAddrBad, "link.vxlan.dst_address")
 		}
 
-		if intf.GetVxlan().Gpe != nil {
-			if intf.GetVxlan().Gpe.Protocol == interfaces.VxlanLink_Gpe_UNKNOWN {
+		if gpe := intf.GetVxlan().Gpe; gpe != nil {
+			if gpe.Protocol == interfaces.VxlanLink_Gpe_UNKNOWN {
 				return kvs.NewInvalidValueError(ErrVxLanGpeBadProtocol, "link.vxlan.gpe.protocol")
 			}
+
+			// DecapVrfId must be zero if the protocol being encapsulated is not IP4 or IP6.
+			isIP46 := gpe.Protocol == interfaces.VxlanLink_Gpe_IP4 || gpe.Protocol == interfaces.VxlanLink_Gpe_IP6
+			if !isIP46 && gpe.DecapVrfId != 0 {
+				return kvs.NewInvalidValueError(ErrVxLanGpeNonZeroDecapVrfID, "link.vxlan.gpe.decap_vrf_id")
+			}
+
 		}
 	}
 
@@ -584,8 +594,7 @@ func (d *InterfaceDescriptor) Dependencies(key string, intf *interfaces.Interfac
 		}
 
 		if gpe := intf.GetVxlan().Gpe; gpe != nil {
-			isIP46 := gpe.Protocol == interfaces.VxlanLink_Gpe_IP4 || gpe.Protocol == interfaces.VxlanLink_Gpe_IP6
-			if isIP46 && gpe.DecapVrfId != 0 {
+			if gpe.DecapVrfId != 0 {
 				var protocol l3.VrfTable_Protocol
 				if gpe.Protocol == interfaces.VxlanLink_Gpe_IP6 {
 					protocol = l3.VrfTable_IPV6
