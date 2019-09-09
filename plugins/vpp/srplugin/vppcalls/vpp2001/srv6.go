@@ -155,10 +155,11 @@ func (h *SRv6VppHandler) interfaceNameMapping() (map[string]string, error) {
 		}
 
 		// extract and compute names
-		ligatoName := ifDetails.Tag
-		vppInternalName := ifDetails.InterfaceName
+		ligatoName := strings.TrimRight(ifDetails.Tag, "\x00")
+		vppInternalName := strings.TrimRight(ifDetails.InterfaceName, "\x00")
 		if ifDetails.SupSwIfIndex == uint32(ifDetails.SwIfIndex) && // no subinterface (subinterface are not DPDK)
-			guessInterfaceType(string(ifDetails.InterfaceName)) == nbint.Interface_DPDK { // fill name for physical interfaces (they are mostly without tag)
+			guessInterfaceType(strings.TrimRight(ifDetails.InterfaceName, "\x00")) == nbint.Interface_DPDK {
+			// fill name for physical interfaces (they are mostly without tag)
 			ligatoName = vppInternalName
 		}
 

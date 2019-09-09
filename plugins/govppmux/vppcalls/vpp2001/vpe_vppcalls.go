@@ -97,8 +97,7 @@ func (h *VpeHandler) GetVpeInfo() (*vppcalls.VpeInfo, error) {
 		}
 
 		for _, v := range reply.APIVersions {
-			name := v.Name
-			name = strings.TrimSuffix(name, ".api")
+			name := strings.TrimSuffix(strings.TrimRight(v.Name, "\x00"), ".api")
 			info.ModuleVersions = append(info.ModuleVersions, vppcalls.ModuleVersion{
 				Name:  name,
 				Major: v.Major,
