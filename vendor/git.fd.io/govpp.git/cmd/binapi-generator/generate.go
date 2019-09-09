@@ -568,26 +568,31 @@ func generateField(ctx *context, w io.Writer, fields []Field, i int) {
 	fieldName := strings.TrimPrefix(field.Name, "_")
 	fieldName = camelCaseName(fieldName)
 
-	// generate length field for strings
-	if field.Type == "string" {
-		fmt.Fprintf(w, "\tXXX_%sLen uint32 `struc:\"sizeof=%s\"`\n", fieldName, fieldName)
-	}
-
 	dataType := convertToGoType(ctx, field.Type)
 	fieldType := dataType
+
+	// generate length field for strings
+	if field.Type == "string" && field.Length == 0 {
+		fmt.Fprintf(w, "\tXXX_%sLen uint32 `struc:\"sizeof=%s\"`\n", fieldName, fieldName)
+	}
 
 	// check if it is array
 	if field.Length > 0 || field.SizeFrom != "" {
 		if dataType == "uint8" {
 			dataType = "byte"
 		}
-		fieldType = "[]" + dataType
+		if dataType == "string" && field.SpecifiedLen {
+			fieldType = "string"
+			dataType = "byte"
+		} else {
+			fieldType = "[]" + dataType
+		}
 	}
 	fmt.Fprintf(w, "\t%s %s", fieldName, fieldType)
 
 	fieldTags := map[string]string{}
 
-	if field.Length > 0 {
+	if field.Length > 0 && field.SpecifiedLen {
 		// fixed size array
 		fieldTags["struc"] = fmt.Sprintf("[%d]%s", field.Length, dataType)
 	} else {

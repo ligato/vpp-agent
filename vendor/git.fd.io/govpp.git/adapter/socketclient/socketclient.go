@@ -32,27 +32,13 @@ import (
 
 	"git.fd.io/govpp.git/adapter"
 	"git.fd.io/govpp.git/codec"
-	"git.fd.io/govpp.git/examples/binapi/memclnt"
 )
 
 const (
 	// DefaultSocketName is default VPP API socket file path.
 	DefaultSocketName = adapter.DefaultBinapiSocket
+	legacySocketName  = "/run/vpp-api.sock"
 )
-
-const socketMissing = `
-------------------------------------------------------------
- VPP binary API socket file %s is missing!
-
-  - is VPP running with socket for binapi enabled?
-  - is the correct socket name configured?
-
- To enable it add following section to your VPP config:
-   socksvr {
-     default
-   }
-------------------------------------------------------------
-`
 
 var (
 	// DefaultConnectTimeout is default timeout for connecting
@@ -83,6 +69,27 @@ func init() {
 		Log.Level = logger.DebugLevel
 		Log.Debug("govpp/socketclient: enabled debug mode")
 	}
+}
+
+const socketMissing = `
+------------------------------------------------------------
+ No socket file found at: %s
+ VPP binary API socket file is missing!
+
+  - is VPP running with socket for binapi enabled?
+  - is the correct socket name configured?
+
+ To enable it add following section to your VPP config:
+   socksvr {
+     default
+   }
+------------------------------------------------------------
+`
+
+var warnOnce sync.Once
+
+func (c *vppClient) printMissingSocketMsg() {
+	fmt.Fprintf(os.Stderr, socketMissing, c.sockAddr)
 }
 
 type vppClient struct {
@@ -129,6 +136,32 @@ func (c *vppClient) SetDisconnectTimeout(t time.Duration) {
 	c.disconnectTimeout = t
 }
 
+func (c *vppClient) SetMsgCallback(cb adapter.MsgCallback) {
+	Log.Debug("SetMsgCallback")
+	c.cb = cb
+}
+
+func (c *vppClient) checkLegacySocket() bool {
+	if c.sockAddr == legacySocketName {
+		return false
+	}
+	Log.Debugf("checking legacy socket: %s", legacySocketName)
+	// check if socket exists
+	if _, err := os.Stat(c.sockAddr); err == nil {
+		return false // socket exists
+	} else if !os.IsNotExist(err) {
+		return false // some other error occurred
+	}
+	// check if legacy socket exists
+	if _, err := os.Stat(legacySocketName); err == nil {
+		// legacy socket exists, update sockAddr
+		c.sockAddr = legacySocketName
+		return true
+	}
+	// no socket socket found
+	return false
+}
+
 // WaitReady checks socket file existence and waits for it if necessary
 func (c *vppClient) WaitReady() error {
 	// check if socket already exists
@@ -136,6 +169,10 @@ func (c *vppClient) WaitReady() error {
 		return nil // socket exists, we are ready
 	} else if !os.IsNotExist(err) {
 		return err // some other error occurred
+	}
+
+	if c.checkLegacySocket() {
+		return nil
 	}
 
 	// socket does not exist, watch for it
@@ -158,6 +195,9 @@ func (c *vppClient) WaitReady() error {
 	for {
 		select {
 		case <-timeout.C:
+			if c.checkLegacySocket() {
+				return nil
+			}
 			return fmt.Errorf("timeout waiting (%s) for socket file: %s", MaxWaitReady, c.sockAddr)
 
 		case e := <-watcher.Errors:
@@ -173,15 +213,12 @@ func (c *vppClient) WaitReady() error {
 	}
 }
 
-func (c *vppClient) SetMsgCallback(cb adapter.MsgCallback) {
-	Log.Debug("SetMsgCallback")
-	c.cb = cb
-}
-
 func (c *vppClient) Connect() error {
+	c.checkLegacySocket()
+
 	// check if socket exists
 	if _, err := os.Stat(c.sockAddr); os.IsNotExist(err) {
-		fmt.Fprintf(os.Stderr, socketMissing, c.sockAddr)
+		warnOnce.Do(c.printMissingSocketMsg)
 		return fmt.Errorf("VPP API socket file %s does not exist", c.sockAddr)
 	} else if err != nil {
 		return fmt.Errorf("VPP API socket error: %v", err)
@@ -275,9 +312,7 @@ const (
 func (c *vppClient) open() error {
 	msgCodec := new(codec.MsgCodec)
 
-	req := &memclnt.SockclntCreate{
-		Name: []byte(ClientName),
-	}
+	req := &SockclntCreate{Name: ClientName}
 	msg, err := msgCodec.EncodeMsg(req, sockCreateMsgId)
 	if err != nil {
 		Log.Debugln("Encode error:", err)
@@ -305,7 +340,7 @@ func (c *vppClient) open() error {
 		return err
 	}
 
-	reply := new(memclnt.SockclntCreateReply)
+	reply := new(SockclntCreateReply)
 	if err := msgCodec.DecodeMsg(msgReply, reply); err != nil {
 		Log.Println("Decode error:", err)
 		return err
@@ -317,7 +352,8 @@ func (c *vppClient) open() error {
 	c.clientIndex = reply.Index
 	c.msgTable = make(map[string]uint16, reply.Count)
 	for _, x := range reply.MessageTable {
-		name := string(bytes.TrimSuffix(bytes.Split(x.Name, []byte{0x00})[0], []byte{0x13}))
+		msgName := strings.Split(x.Name, "\x00")[0]
+		name := strings.TrimSuffix(msgName, "\x13")
 		c.msgTable[name] = x.Index
 		if strings.HasPrefix(name, "sockclnt_delete_") {
 			c.sockDelMsgId = x.Index
@@ -333,7 +369,7 @@ func (c *vppClient) open() error {
 func (c *vppClient) close() error {
 	msgCodec := new(codec.MsgCodec)
 
-	req := &memclnt.SockclntDelete{
+	req := &SockclntDelete{
 		Index: c.clientIndex,
 	}
 	msg, err := msgCodec.EncodeMsg(req, c.sockDelMsgId)
@@ -368,7 +404,7 @@ func (c *vppClient) close() error {
 		return err
 	}
 
-	reply := new(memclnt.SockclntDeleteReply)
+	reply := new(SockclntDeleteReply)
 	if err := msgCodec.DecodeMsg(msgReply, reply); err != nil {
 		Log.Debugln("Decode error:", err)
 		return err

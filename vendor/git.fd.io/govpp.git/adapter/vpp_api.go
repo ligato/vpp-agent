@@ -20,7 +20,7 @@ import (
 
 const (
 	// DefaultBinapiSocket defines a default socket file path for VPP binary API.
-	DefaultBinapiSocket = "/run/vpp-api.sock"
+	DefaultBinapiSocket = "/run/vpp/api.sock"
 )
 
 var (
