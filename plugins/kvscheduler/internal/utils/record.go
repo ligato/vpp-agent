@@ -59,7 +59,6 @@ func (p *RecordedProtoMessage) MarshalJSON() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	fmt.Printf("MARSHALLED: %s\n", string(pwn))
 	return pwn, nil
 }
 
@@ -67,7 +66,6 @@ func (p *RecordedProtoMessage) MarshalJSON() ([]byte, error) {
 // The jsonpb package produces a different output than the standard "encoding/json"
 // package, which does not operate correctly on protocol buffers.
 func (p *RecordedProtoMessage) UnmarshalJSON(data []byte) error {
-	fmt.Printf("UNMARSHALL: %s\n", string(data))
 	pwn := ProtoWithName{}
 	err := json.Unmarshal(data, &pwn)
 	if err != nil {
