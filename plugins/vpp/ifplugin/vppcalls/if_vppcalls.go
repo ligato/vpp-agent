@@ -132,6 +132,10 @@ type InterfaceVppAPI interface {
 	AddVxLanTunnel(ifName string, vrf, multicastIf uint32, vxLan *interfaces.VxlanLink) (swIndex uint32, err error)
 	// DeleteVxLanTunnel calls AddDelVxLanTunnelReq with flag add=0.
 	DeleteVxLanTunnel(ifName string, idx, vrf uint32, vxLan *interfaces.VxlanLink) error
+	// AddVxLanGpeTunnel creates VxLAN-GPE tunnel.
+	AddVxLanGpeTunnel(ifName string, vrf, multicastIf uint32, vxLan *interfaces.VxlanLink) (uint32, error)
+	// DeleteVxLanGpeTunnel removes VxLAN-GPE tunnel.
+	DeleteVxLanGpeTunnel(ifName string, vxLan *interfaces.VxlanLink) error
 	// AddIPSecTunnelInterface adds a new IPSec tunnel interface
 	AddIPSecTunnelInterface(ifName string, ipSecLink *interfaces.IPSecLink) (uint32, error)
 	// DeleteIPSecTunnelInterface removes existing IPSec tunnel interface
@@ -200,10 +204,6 @@ type InterfaceVppAPI interface {
 	AddGreTunnel(ifName string, greLink *interfaces.GreLink) (uint32, error)
 	// DelGreTunnel removes GRE interface.
 	DelGreTunnel(ifName string, greLink *interfaces.GreLink) (uint32, error)
-
-	// VxLAN-GPE
-	AddVxLanGpeTunnel(ifName string, vrf, multicastIf uint32, vxLan *interfaces.VxlanLink) (uint32, error)
-	DelVxLanGpeTunnel(ifName string, vxLan *interfaces.VxlanLink) error
 }
 
 // InterfaceVppRead provides read methods for interface plugin

@@ -235,7 +235,7 @@ func (d *InterfaceDescriptor) Delete(key string, intf *interfaces.Interface, met
 		if intf.GetVxlan().Gpe == nil {
 			err = d.ifHandler.DeleteVxLanTunnel(intf.Name, ifIdx, intf.Vrf, intf.GetVxlan())
 		} else {
-			err = d.ifHandler.DelVxLanGpeTunnel(intf.Name, intf.GetVxlan())
+			err = d.ifHandler.DeleteVxLanGpeTunnel(intf.Name, intf.GetVxlan())
 		}
 	case interfaces.Interface_SOFTWARE_LOOPBACK:
 		err = d.ifHandler.DeleteLoopbackInterface(intf.Name, ifIdx)

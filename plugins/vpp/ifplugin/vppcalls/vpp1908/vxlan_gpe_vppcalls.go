@@ -54,8 +54,8 @@ func (h *InterfaceVppHandler) AddVxLanGpeTunnel(ifName string, vrf, multicastIf 
 	return swIfIndex, h.SetInterfaceTag(ifName, swIfIndex)
 }
 
-// DelVxLanGpeTunnel removes VxLAN-GPE interface.
-func (h *InterfaceVppHandler) DelVxLanGpeTunnel(ifName string, vxLan *interfaces.VxlanLink) error {
+// DeleteVxLanGpeTunnel removes VxLAN-GPE interface.
+func (h *InterfaceVppHandler) DeleteVxLanGpeTunnel(ifName string, vxLan *interfaces.VxlanLink) error {
 	swIfIndex, err := h.vxLanGpeAddDelTunnel(0, vxLan, 0, 0)
 	if err != nil {
 		return err

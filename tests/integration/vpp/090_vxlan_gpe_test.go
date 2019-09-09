@@ -134,7 +134,7 @@ func TestVxlanGpe(t *testing.T) {
 				t.Fatalf("expected VxLAN-GPE DecapVrfId <%d>, got: <%d>", test.vxLan.Gpe.DecapVrfId, vxLan.Gpe.DecapVrfId)
 			}
 
-			err = h.DelVxLanGpeTunnel(ifName, test.vxLan)
+			err = h.DeleteVxLanGpeTunnel(ifName, test.vxLan)
 			if err != nil {
 				t.Fatalf("delete VxLAN-GPE tunnel failed: %v\n", err)
 			}
