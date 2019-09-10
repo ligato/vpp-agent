@@ -15,11 +15,12 @@
 package vpp
 
 import (
+	"strings"
+	"testing"
+
 	"github.com/ligato/cn-infra/logging/logrus"
 	acl "github.com/ligato/vpp-agent/api/models/vpp/acl"
 	. "github.com/onsi/gomega"
-	"strings"
-	"testing"
 
 	_ "github.com/ligato/vpp-agent/plugins/vpp/aclplugin"
 	aclplugin_vppcalls "github.com/ligato/vpp-agent/plugins/vpp/aclplugin/vppcalls"
@@ -165,8 +166,6 @@ func TestCRUDIPAcl(t *testing.T) {
 		newACLIPRule(true, "192.168.1.1/32", "10.20.0.0/24"),
 		//RuleName:  "permitIPv6",
 		newACLIPRule(true, "dead::1/64", "dead::2/64"),
-		//RuleName:  "permitIP",
-		newACLIPRule(true, "", ""),
 		//RuleName:  "denyICMP",
 		newACLIPRuleIcmp(false, false, 150, 250, 1150, 1250),
 		//RuleName:  "denyICMPv6",
@@ -246,6 +245,10 @@ func TestCRUDIPAcl(t *testing.T) {
 	Expect(err).To(Not(BeNil()))
 	t.Logf("adding acls failed: %v", err)
 
+	_, err = h.AddACL([]*acl.ACL_Rule{newACLIPRule(true, "", "")}, "test4")
+	Expect(err).To(Not(BeNil()))
+	t.Logf("adding acls failed: %v", err)
+
 	//add the same acls again but it will be assigned to the second interface
 	t.Log("Now let us add the second acl to the second interface")
 	const aclname2 = "test5"
@@ -254,8 +257,6 @@ func TestCRUDIPAcl(t *testing.T) {
 		newACLIPRule(true, "192.168.1.1/32", "10.20.0.0/24"),
 		//RuleName:  "permitIPv6",
 		newACLIPRule(true, "dead::1/64", "dead::2/64"),
-		//RuleName:  "permitIP",
-		newACLIPRule(true, "", ""),
 		//RuleName:  "denyICMP",
 		newACLIPRuleIcmp(false, false, 150, 250, 1150, 1250),
 		//RuleName:  "denyICMPv6",
