@@ -66,6 +66,18 @@ var aclErr3Rules = []*acl.ACL_Rule{
 var aclErr4Rules = []*acl.ACL_Rule{
 	{
 		Action: acl.ACL_Rule_PERMIT,
+		IpRule: &acl.ACL_Rule_IpRule{
+			Ip: &acl.ACL_Rule_IpRule_Ip{
+				SourceNetwork:      "",
+				DestinationNetwork: "",
+			},
+		},
+	},
+}
+
+var aclErr5Rules = []*acl.ACL_Rule{
+	{
+		Action: acl.ACL_Rule_PERMIT,
 		MacipRule: &acl.ACL_Rule_MacIpRule{
 			SourceAddress:        "192.168.0.1",
 			SourceAddressPrefix:  uint32(16),
@@ -75,7 +87,7 @@ var aclErr4Rules = []*acl.ACL_Rule{
 	},
 }
 
-var aclErr5Rules = []*acl.ACL_Rule{
+var aclErr6Rules = []*acl.ACL_Rule{
 	{
 		Action: acl.ACL_Rule_PERMIT,
 		MacipRule: &acl.ACL_Rule_MacIpRule{
@@ -87,7 +99,7 @@ var aclErr5Rules = []*acl.ACL_Rule{
 	},
 }
 
-var aclErr6Rules = []*acl.ACL_Rule{
+var aclErr7Rules = []*acl.ACL_Rule{
 	{
 		Action: acl.ACL_Rule_PERMIT,
 		MacipRule: &acl.ACL_Rule_MacIpRule{
@@ -117,16 +129,6 @@ var aclIPrules = []*acl.ACL_Rule{
 			Ip: &acl.ACL_Rule_IpRule_Ip{
 				SourceNetwork:      "dead::1/64",
 				DestinationNetwork: "dead::2/64",
-			},
-		},
-	},
-	{
-		//RuleName:  "permitIP",
-		Action: acl.ACL_Rule_PERMIT,
-		IpRule: &acl.ACL_Rule_IpRule{
-			Ip: &acl.ACL_Rule_IpRule_Ip{
-				SourceNetwork:      "",
-				DestinationNetwork: "",
 			},
 		},
 	},
@@ -268,6 +270,9 @@ func TestAddIPAcl(t *testing.T) {
 	_, err = ctx.aclHandler.AddACL(aclErr3Rules, "test4")
 	Expect(err).To(Not(BeNil()))
 
+	_, err = ctx.aclHandler.AddACL(aclErr4Rules, "test5")
+	Expect(err).To(Not(BeNil()))
+
 	ctx.MockVpp.MockReply(&vpp_acl.MacipACLAddReply{})
 	_, err = ctx.aclHandler.AddACL(aclIPrules, "test5")
 	Expect(err).To(Not(BeNil()))
@@ -290,13 +295,13 @@ func TestAddMacIPAcl(t *testing.T) {
 	_, err = ctx.aclHandler.AddMACIPACL(aclNoRules, "test7")
 	Expect(err).To(Not(BeNil()))
 
-	_, err = ctx.aclHandler.AddMACIPACL(aclErr4Rules, "test8")
+	_, err = ctx.aclHandler.AddMACIPACL(aclErr5Rules, "test8")
 	Expect(err).To(Not(BeNil()))
 
-	_, err = ctx.aclHandler.AddMACIPACL(aclErr5Rules, "test9")
+	_, err = ctx.aclHandler.AddMACIPACL(aclErr6Rules, "test9")
 	Expect(err).To(Not(BeNil()))
 
-	_, err = ctx.aclHandler.AddMACIPACL(aclErr6Rules, "test10")
+	_, err = ctx.aclHandler.AddMACIPACL(aclErr7Rules, "test10")
 	Expect(err).To(Not(BeNil()))
 	Expect(err.Error()).To(BeEquivalentTo("invalid IP address "))
 
