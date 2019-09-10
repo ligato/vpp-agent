@@ -18,12 +18,12 @@ import (
 	"net"
 
 	"github.com/ligato/cn-infra/utils/addrs"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/interfaces"
+	vpp_ifs "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/interfaces"
 )
 
 func (h *InterfaceVppHandler) addDelInterfaceIP(ifIdx uint32, addr *net.IPNet, isAdd bool) error {
-	req := &interfaces.SwInterfaceAddDelAddress{
-		SwIfIndex: interfaces.InterfaceIndex(ifIdx),
+	req := &vpp_ifs.SwInterfaceAddDelAddress{
+		SwIfIndex: vpp_ifs.InterfaceIndex(ifIdx),
 		IsAdd:     isAdd,
 	}
 
@@ -33,15 +33,15 @@ func (h *InterfaceVppHandler) addDelInterfaceIP(ifIdx uint32, addr *net.IPNet, i
 	}
 	if isIPv6 {
 		copy(req.Prefix.Address.Un.XXX_UnionData[:], addr.IP.To16())
-		req.Prefix.Address.Af = interfaces.ADDRESS_IP6
+		req.Prefix.Address.Af = vpp_ifs.ADDRESS_IP6
 	} else {
 		copy(req.Prefix.Address.Un.XXX_UnionData[:], addr.IP.To4())
-		req.Prefix.Address.Af = interfaces.ADDRESS_IP4
+		req.Prefix.Address.Af = vpp_ifs.ADDRESS_IP4
 	}
 	prefix, _ := addr.Mask.Size()
 	req.Prefix.Len = byte(prefix)
 
-	reply := &interfaces.SwInterfaceAddDelAddressReply{}
+	reply := &vpp_ifs.SwInterfaceAddDelAddressReply{}
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
@@ -50,24 +50,21 @@ func (h *InterfaceVppHandler) addDelInterfaceIP(ifIdx uint32, addr *net.IPNet, i
 	return nil
 }
 
-// AddInterfaceIP implements interface handler.
 func (h *InterfaceVppHandler) AddInterfaceIP(ifIdx uint32, addr *net.IPNet) error {
 	return h.addDelInterfaceIP(ifIdx, addr, true)
 }
 
-// DelInterfaceIP implements interface handler.
 func (h *InterfaceVppHandler) DelInterfaceIP(ifIdx uint32, addr *net.IPNet) error {
 	return h.addDelInterfaceIP(ifIdx, addr, false)
 }
 
 func (h *InterfaceVppHandler) setUnsetUnnumberedIP(uIfIdx uint32, ifIdxWithIP uint32, isAdd bool) error {
-	// Prepare the message.
-	req := &interfaces.SwInterfaceSetUnnumbered{
-		SwIfIndex:           interfaces.InterfaceIndex(ifIdxWithIP),
-		UnnumberedSwIfIndex: interfaces.InterfaceIndex(uIfIdx),
+	req := &vpp_ifs.SwInterfaceSetUnnumbered{
+		SwIfIndex:           vpp_ifs.InterfaceIndex(ifIdxWithIP),
+		UnnumberedSwIfIndex: vpp_ifs.InterfaceIndex(uIfIdx),
 		IsAdd:               isAdd,
 	}
-	reply := &interfaces.SwInterfaceSetUnnumberedReply{}
+	reply := &vpp_ifs.SwInterfaceSetUnnumberedReply{}
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
@@ -76,12 +73,10 @@ func (h *InterfaceVppHandler) setUnsetUnnumberedIP(uIfIdx uint32, ifIdxWithIP ui
 	return nil
 }
 
-// SetUnnumberedIP implements interface handler.
 func (h *InterfaceVppHandler) SetUnnumberedIP(uIfIdx uint32, ifIdxWithIP uint32) error {
 	return h.setUnsetUnnumberedIP(uIfIdx, ifIdxWithIP, true)
 }
 
-// UnsetUnnumberedIP implements interface handler.
 func (h *InterfaceVppHandler) UnsetUnnumberedIP(uIfIdx uint32) error {
 	return h.setUnsetUnnumberedIP(uIfIdx, 0, false)
 }

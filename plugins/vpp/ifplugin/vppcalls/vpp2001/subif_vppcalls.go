@@ -15,17 +15,17 @@
 package vpp2001
 
 import (
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/interfaces"
+	vpp_ifs "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/interfaces"
 )
 
 // CreateSubif creates sub interface.
 func (h *InterfaceVppHandler) CreateSubif(ifIdx, vlanID uint32) (uint32, error) {
-	req := &interfaces.CreateVlanSubif{
-		SwIfIndex: interfaces.InterfaceIndex(ifIdx),
+	req := &vpp_ifs.CreateVlanSubif{
+		SwIfIndex: vpp_ifs.InterfaceIndex(ifIdx),
 		VlanID:    vlanID,
 	}
 
-	reply := &interfaces.CreateVlanSubifReply{}
+	reply := &vpp_ifs.CreateVlanSubifReply{}
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return 0, err
 	}
@@ -35,11 +35,11 @@ func (h *InterfaceVppHandler) CreateSubif(ifIdx, vlanID uint32) (uint32, error) 
 
 // DeleteSubif deletes sub interface.
 func (h *InterfaceVppHandler) DeleteSubif(ifIdx uint32) error {
-	req := &interfaces.DeleteSubif{
-		SwIfIndex: interfaces.InterfaceIndex(ifIdx),
+	req := &vpp_ifs.DeleteSubif{
+		SwIfIndex: vpp_ifs.InterfaceIndex(ifIdx),
 	}
 
-	reply := &interfaces.DeleteSubifReply{}
+	reply := &vpp_ifs.DeleteSubifReply{}
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	}

@@ -18,8 +18,8 @@ import (
 	"errors"
 	"fmt"
 
-	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/tapv2"
+	ifs "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
+	vpp_tapv2 "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/tapv2"
 )
 
 // TapFlags definitions from https://github.com/FDio/vpp/blob/stable/2001/src/vnet/devices/tap/tap.h#L33
@@ -27,8 +27,7 @@ const (
 	TapFlagGSO uint32 = 1 << iota
 )
 
-// AddTapInterface implements interface handler.
-func (h *InterfaceVppHandler) AddTapInterface(ifName string, tapIf *interfaces.TapLink) (swIfIdx uint32, err error) {
+func (h *InterfaceVppHandler) AddTapInterface(ifName string, tapIf *ifs.TapLink) (swIfIdx uint32, err error) {
 	if tapIf == nil || tapIf.HostIfName == "" {
 		return 0, errors.New("host interface name was not provided for the TAP interface")
 	}
@@ -42,7 +41,7 @@ func (h *InterfaceVppHandler) AddTapInterface(ifName string, tapIf *interfaces.T
 		}
 
 		// Configure fast virtio-based TAP interface
-		req := &tapv2.TapCreateV2{
+		req := &vpp_tapv2.TapCreateV2{
 			ID:            ^uint32(0),
 			HostIfName:    []byte(tapIf.HostIfName),
 			HostIfNameSet: 1,
@@ -52,7 +51,7 @@ func (h *InterfaceVppHandler) AddTapInterface(ifName string, tapIf *interfaces.T
 			TapFlags:      flags,
 		}
 
-		reply := &tapv2.TapCreateV2Reply{}
+		reply := &vpp_tapv2.TapCreateV2Reply{}
 		if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 			return 0, err
 		}
@@ -64,16 +63,15 @@ func (h *InterfaceVppHandler) AddTapInterface(ifName string, tapIf *interfaces.T
 	return swIfIdx, h.SetInterfaceTag(ifName, swIfIdx)
 }
 
-// DeleteTapInterface implements interface handler.
 func (h *InterfaceVppHandler) DeleteTapInterface(ifName string, idx uint32, version uint32) error {
 	if version == 1 {
 		return errors.New("tap version 1 has been deprecated")
 	} else if version == 2 {
-		req := &tapv2.TapDeleteV2{
+		req := &vpp_tapv2.TapDeleteV2{
 			SwIfIndex: idx,
 		}
 
-		reply := &tapv2.TapDeleteV2Reply{}
+		reply := &vpp_tapv2.TapDeleteV2Reply{}
 		if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 			return err
 		}

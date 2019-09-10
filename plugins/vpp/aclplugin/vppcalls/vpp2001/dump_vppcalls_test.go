@@ -19,7 +19,7 @@ import (
 
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/plugins/vpp/aclplugin/vppcalls"
-	acl_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/acl"
+	vpp_acl "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/acl"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/vpe"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	. "github.com/onsi/gomega"
@@ -30,7 +30,7 @@ func TestGetIPRuleMatch(t *testing.T) {
 	ctx := setupACLTest(t)
 	defer ctx.teardownACLTest()
 
-	icmpV4Rule := ctx.aclHandler.getIPRuleMatches(acl_api.ACLRule{
+	icmpV4Rule := ctx.aclHandler.getIPRuleMatches(vpp_acl.ACLRule{
 		SrcIPAddr:      []byte{10, 0, 0, 1},
 		SrcIPPrefixLen: 24,
 		DstIPAddr:      []byte{20, 0, 0, 1},
@@ -41,7 +41,7 @@ func TestGetIPRuleMatch(t *testing.T) {
 		t.Fatal("should have icmp match")
 	}
 
-	icmpV6Rule := ctx.aclHandler.getIPRuleMatches(acl_api.ACLRule{
+	icmpV6Rule := ctx.aclHandler.getIPRuleMatches(vpp_acl.ACLRule{
 		IsIPv6:         1,
 		SrcIPAddr:      []byte{'d', 'e', 'd', 'd', 1},
 		SrcIPPrefixLen: 64,
@@ -53,7 +53,7 @@ func TestGetIPRuleMatch(t *testing.T) {
 		t.Fatal("should have icmpv6 match")
 	}
 
-	tcpRule := ctx.aclHandler.getIPRuleMatches(acl_api.ACLRule{
+	tcpRule := ctx.aclHandler.getIPRuleMatches(vpp_acl.ACLRule{
 		SrcIPAddr:      []byte{10, 0, 0, 1},
 		SrcIPPrefixLen: 24,
 		DstIPAddr:      []byte{20, 0, 0, 1},
@@ -64,7 +64,7 @@ func TestGetIPRuleMatch(t *testing.T) {
 		t.Fatal("should have tcp match")
 	}
 
-	udpRule := ctx.aclHandler.getIPRuleMatches(acl_api.ACLRule{
+	udpRule := ctx.aclHandler.getIPRuleMatches(vpp_acl.ACLRule{
 		SrcIPAddr:      []byte{10, 0, 0, 1},
 		SrcIPPrefixLen: 24,
 		DstIPAddr:      []byte{20, 0, 0, 1},
@@ -81,7 +81,7 @@ func TestGetMACIPRuleMatches(t *testing.T) {
 	ctx := setupACLTest(t)
 	defer ctx.teardownACLTest()
 
-	macipV4Rule := ctx.aclHandler.getMACIPRuleMatches(acl_api.MacipACLRule{
+	macipV4Rule := ctx.aclHandler.getMACIPRuleMatches(vpp_acl.MacipACLRule{
 		IsPermit:       1,
 		SrcMac:         []byte{2, 'd', 'e', 'a', 'd', 2},
 		SrcMacMask:     []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff},
@@ -91,7 +91,7 @@ func TestGetMACIPRuleMatches(t *testing.T) {
 	if macipV4Rule.GetSourceMacAddress() == "" {
 		t.Fatal("should have mac match")
 	}
-	macipV6Rule := ctx.aclHandler.getMACIPRuleMatches(acl_api.MacipACLRule{
+	macipV6Rule := ctx.aclHandler.getMACIPRuleMatches(vpp_acl.MacipACLRule{
 		IsPermit:       0,
 		IsIPv6:         1,
 		SrcMac:         []byte{2, 'd', 'e', 'a', 'd', 2},
@@ -110,26 +110,26 @@ func TestDumpIPACL(t *testing.T) {
 	defer ctx.teardownACLTest()
 
 	ctx.MockVpp.MockReply(
-		&acl_api.ACLDetails{
+		&vpp_acl.ACLDetails{
 			ACLIndex: 0,
 			Tag:      []byte{'a', 'c', 'l', '1'},
 			Count:    1,
-			R:        []acl_api.ACLRule{{IsPermit: 1}},
+			R:        []vpp_acl.ACLRule{{IsPermit: 1}},
 		},
-		&acl_api.ACLDetails{
+		&vpp_acl.ACLDetails{
 			ACLIndex: 1,
 			Tag:      []byte{'a', 'c', 'l', '2'},
 			Count:    2,
-			R:        []acl_api.ACLRule{{IsPermit: 0}, {IsPermit: 2}},
+			R:        []vpp_acl.ACLRule{{IsPermit: 0}, {IsPermit: 2}},
 		},
-		&acl_api.ACLDetails{
+		&vpp_acl.ACLDetails{
 			ACLIndex: 2,
 			Tag:      []byte{'a', 'c', 'l', '3'},
 			Count:    3,
-			R:        []acl_api.ACLRule{{IsPermit: 0}, {IsPermit: 1}, {IsPermit: 2}},
+			R:        []vpp_acl.ACLRule{{IsPermit: 0}, {IsPermit: 1}, {IsPermit: 2}},
 		})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
-	ctx.MockVpp.MockReply(&acl_api.ACLInterfaceListDetails{
+	ctx.MockVpp.MockReply(&vpp_acl.ACLInterfaceListDetails{
 		SwIfIndex: 1,
 		Count:     2,
 		NInput:    1,
@@ -154,26 +154,26 @@ func TestDumpMACIPACL(t *testing.T) {
 	defer ctx.teardownACLTest()
 
 	ctx.MockVpp.MockReply(
-		&acl_api.MacipACLDetails{
+		&vpp_acl.MacipACLDetails{
 			ACLIndex: 0,
 			Tag:      []byte{'a', 'c', 'l', '1'},
 			Count:    1,
-			R:        []acl_api.MacipACLRule{{IsPermit: 1}},
+			R:        []vpp_acl.MacipACLRule{{IsPermit: 1}},
 		},
-		&acl_api.MacipACLDetails{
+		&vpp_acl.MacipACLDetails{
 			ACLIndex: 1,
 			Tag:      []byte{'a', 'c', 'l', '2'},
 			Count:    2,
-			R:        []acl_api.MacipACLRule{{IsPermit: 0}, {IsPermit: 2}},
+			R:        []vpp_acl.MacipACLRule{{IsPermit: 0}, {IsPermit: 2}},
 		},
-		&acl_api.MacipACLDetails{
+		&vpp_acl.MacipACLDetails{
 			ACLIndex: 2,
 			Tag:      []byte{'a', 'c', 'l', '3'},
 			Count:    3,
-			R:        []acl_api.MacipACLRule{{IsPermit: 0}, {IsPermit: 1}, {IsPermit: 2}},
+			R:        []vpp_acl.MacipACLRule{{IsPermit: 0}, {IsPermit: 1}, {IsPermit: 2}},
 		})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
-	ctx.MockVpp.MockReply(&acl_api.MacipACLInterfaceListDetails{
+	ctx.MockVpp.MockReply(&vpp_acl.MacipACLInterfaceListDetails{
 		SwIfIndex: 1,
 		Count:     2,
 		Acls:      []uint32{0, 2},
@@ -197,7 +197,7 @@ func TestDumpACLInterfaces(t *testing.T) {
 	ctx := setupACLTest(t)
 	defer ctx.teardownACLTest()
 
-	ctx.MockVpp.MockReply(&acl_api.ACLInterfaceListDetails{
+	ctx.MockVpp.MockReply(&vpp_acl.ACLInterfaceListDetails{
 		SwIfIndex: 1,
 		Count:     2,
 		NInput:    1,
@@ -220,7 +220,7 @@ func TestDumpMACIPACLInterfaces(t *testing.T) {
 	ctx := setupACLTest(t)
 	defer ctx.teardownACLTest()
 
-	ctx.MockVpp.MockReply(&acl_api.MacipACLInterfaceListDetails{
+	ctx.MockVpp.MockReply(&vpp_acl.MacipACLInterfaceListDetails{
 		SwIfIndex: 1,
 		Count:     2,
 		Acls:      []uint32{0, 1},
@@ -244,10 +244,10 @@ func TestDumpIPAcls(t *testing.T) {
 	ctx := setupACLTest(t)
 	defer ctx.teardownACLTest()
 
-	ctx.MockVpp.MockReply(&acl_api.ACLDetails{
+	ctx.MockVpp.MockReply(&vpp_acl.ACLDetails{
 		ACLIndex: 0,
 		Count:    1,
-		R:        []acl_api.ACLRule{{IsPermit: 1}},
+		R:        []vpp_acl.ACLRule{{IsPermit: 1}},
 	})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 
@@ -261,10 +261,10 @@ func TestDumpMacIPAcls(t *testing.T) {
 	ctx := setupACLTest(t)
 	defer ctx.teardownACLTest()
 
-	ctx.MockVpp.MockReply(&acl_api.MacipACLDetails{
+	ctx.MockVpp.MockReply(&vpp_acl.MacipACLDetails{
 		ACLIndex: 0,
 		Count:    1,
-		R:        []acl_api.MacipACLRule{{IsPermit: 1}},
+		R:        []vpp_acl.MacipACLRule{{IsPermit: 1}},
 	})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 
@@ -277,21 +277,21 @@ func TestDumpInterfaceIPAcls(t *testing.T) {
 	ctx := setupACLTest(t)
 	defer ctx.teardownACLTest()
 
-	ctx.MockVpp.MockReply(&acl_api.ACLInterfaceListDetails{
+	ctx.MockVpp.MockReply(&vpp_acl.ACLInterfaceListDetails{
 		SwIfIndex: 0,
 		Count:     2,
 		NInput:    1,
 		Acls:      []uint32{0, 1},
 	})
-	ctx.MockVpp.MockReply(&acl_api.ACLDetails{
+	ctx.MockVpp.MockReply(&vpp_acl.ACLDetails{
 		ACLIndex: 0,
 		Count:    1,
-		R:        []acl_api.ACLRule{{IsPermit: 1}, {IsPermit: 0}},
+		R:        []vpp_acl.ACLRule{{IsPermit: 1}, {IsPermit: 0}},
 	})
-	ctx.MockVpp.MockReply(&acl_api.ACLDetails{
+	ctx.MockVpp.MockReply(&vpp_acl.ACLDetails{
 		ACLIndex: 1,
 		Count:    1,
-		R:        []acl_api.ACLRule{{IsPermit: 2}, {IsPermit: 0}},
+		R:        []vpp_acl.ACLRule{{IsPermit: 2}, {IsPermit: 0}},
 	})
 
 	ACLs, err := ctx.aclHandler.DumpInterfaceACLs(0)
@@ -303,20 +303,20 @@ func TestDumpInterfaceMACIPAcls(t *testing.T) {
 	ctx := setupACLTest(t)
 	defer ctx.teardownACLTest()
 
-	ctx.MockVpp.MockReply(&acl_api.MacipACLInterfaceListDetails{
+	ctx.MockVpp.MockReply(&vpp_acl.MacipACLInterfaceListDetails{
 		SwIfIndex: 0,
 		Count:     2,
 		Acls:      []uint32{0, 1},
 	})
-	ctx.MockVpp.MockReply(&acl_api.MacipACLDetails{
+	ctx.MockVpp.MockReply(&vpp_acl.MacipACLDetails{
 		ACLIndex: 0,
 		Count:    1,
-		R:        []acl_api.MacipACLRule{{IsPermit: 1}, {IsPermit: 0}},
+		R:        []vpp_acl.MacipACLRule{{IsPermit: 1}, {IsPermit: 0}},
 	})
-	ctx.MockVpp.MockReply(&acl_api.MacipACLDetails{
+	ctx.MockVpp.MockReply(&vpp_acl.MacipACLDetails{
 		ACLIndex: 1,
 		Count:    1,
-		R:        []acl_api.MacipACLRule{{IsPermit: 2}, {IsPermit: 1}},
+		R:        []vpp_acl.MacipACLRule{{IsPermit: 2}, {IsPermit: 1}},
 	})
 
 	ACLs, err := ctx.aclHandler.DumpInterfaceMACIPACLs(0)
@@ -328,7 +328,7 @@ func TestDumpInterface(t *testing.T) {
 	ctx := setupACLTest(t)
 	defer ctx.teardownACLTest()
 
-	ctx.MockVpp.MockReply(&acl_api.ACLInterfaceListDetails{
+	ctx.MockVpp.MockReply(&vpp_acl.ACLInterfaceListDetails{
 		SwIfIndex: 0,
 		Count:     2,
 		NInput:    1,
@@ -338,12 +338,12 @@ func TestDumpInterface(t *testing.T) {
 	Expect(err).To(BeNil())
 	Expect(IPacls.Acls).To(HaveLen(2))
 
-	ctx.MockVpp.MockReply(&acl_api.ACLInterfaceListDetails{})
+	ctx.MockVpp.MockReply(&vpp_acl.ACLInterfaceListDetails{})
 	IPacls, err = ctx.aclHandler.DumpInterfaceACLList(0)
 	Expect(err).To(BeNil())
 	Expect(IPacls.Acls).To(HaveLen(0))
 
-	ctx.MockVpp.MockReply(&acl_api.MacipACLInterfaceListDetails{
+	ctx.MockVpp.MockReply(&vpp_acl.MacipACLInterfaceListDetails{
 		SwIfIndex: 0,
 		Count:     2,
 		Acls:      []uint32{0, 1},
@@ -352,7 +352,7 @@ func TestDumpInterface(t *testing.T) {
 	Expect(err).To(BeNil())
 	Expect(MACIPacls.Acls).To(HaveLen(2))
 
-	ctx.MockVpp.MockReply(&acl_api.MacipACLInterfaceListDetails{})
+	ctx.MockVpp.MockReply(&vpp_acl.MacipACLInterfaceListDetails{})
 	MACIPacls, err = ctx.aclHandler.DumpInterfaceMACIPACLList(0)
 	Expect(err).To(BeNil())
 	Expect(MACIPacls.Acls).To(HaveLen(0))
@@ -363,31 +363,31 @@ func TestDumpInterfaces(t *testing.T) {
 	defer ctx.teardownACLTest()
 
 	ctx.MockVpp.MockReply(
-		&acl_api.ACLInterfaceListDetails{
+		&vpp_acl.ACLInterfaceListDetails{
 			SwIfIndex: 0,
 			Count:     2,
 			NInput:    1,
 			Acls:      []uint32{0, 1},
 		},
-		&acl_api.ACLInterfaceListDetails{
+		&vpp_acl.ACLInterfaceListDetails{
 			SwIfIndex: 1,
 			Count:     1,
 			NInput:    1,
 			Acls:      []uint32{2},
 		},
-		&acl_api.ACLInterfaceListDetails{
+		&vpp_acl.ACLInterfaceListDetails{
 			SwIfIndex: 2,
 			Count:     2,
 			NInput:    1,
 			Acls:      []uint32{3, 4},
 		})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
-	ctx.MockVpp.MockReply(&acl_api.MacipACLInterfaceListDetails{
+	ctx.MockVpp.MockReply(&vpp_acl.MacipACLInterfaceListDetails{
 		SwIfIndex: 3,
 		Count:     2,
 		Acls:      []uint32{6, 7},
 	},
-		&acl_api.MacipACLInterfaceListDetails{
+		&vpp_acl.MacipACLInterfaceListDetails{
 			SwIfIndex: 4,
 			Count:     1,
 			Acls:      []uint32{5},

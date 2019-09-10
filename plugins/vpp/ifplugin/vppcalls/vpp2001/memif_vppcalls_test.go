@@ -17,9 +17,9 @@ package vpp2001_test
 import (
 	"testing"
 
-	ifModel "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/memif"
+	ifs "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
+	vpp_ifs "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/interfaces"
+	vpp_memif "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/memif"
 	. "github.com/onsi/gomega"
 )
 
@@ -27,14 +27,14 @@ func TestAddMasterMemifInterface(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&memif.MemifCreateReply{
+	ctx.MockVpp.MockReply(&vpp_memif.MemifCreateReply{
 		SwIfIndex: 1,
 	})
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
+	ctx.MockVpp.MockReply(&vpp_ifs.SwInterfaceTagAddDelReply{})
 
-	swIfIdx, err := ifHandler.AddMemifInterface("memif", &ifModel.MemifLink{
+	swIfIdx, err := ifHandler.AddMemifInterface("memif", &ifs.MemifLink{
 		Id:     1,
-		Mode:   ifModel.MemifLink_IP,
+		Mode:   ifs.MemifLink_IP,
 		Secret: "secret",
 		Master: true,
 	}, 5)
@@ -43,7 +43,7 @@ func TestAddMasterMemifInterface(t *testing.T) {
 	Expect(swIfIdx).To(BeEquivalentTo(1))
 	var msgCheck bool
 	for _, msg := range ctx.MockChannel.Msgs {
-		vppMsg, ok := msg.(*memif.MemifCreate)
+		vppMsg, ok := msg.(*vpp_memif.MemifCreate)
 		if ok {
 			Expect(vppMsg.ID).To(BeEquivalentTo(1))
 			Expect(vppMsg.Mode).To(BeEquivalentTo(1))
@@ -61,14 +61,14 @@ func TestAddMasterMemifInterfaceAsSlave(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&memif.MemifCreateReply{
+	ctx.MockVpp.MockReply(&vpp_memif.MemifCreateReply{
 		SwIfIndex: 1,
 	})
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
+	ctx.MockVpp.MockReply(&vpp_ifs.SwInterfaceTagAddDelReply{})
 
-	swIfIdx, err := ifHandler.AddMemifInterface("memif", &ifModel.MemifLink{
+	swIfIdx, err := ifHandler.AddMemifInterface("memif", &ifs.MemifLink{
 		Id:     1,
-		Mode:   ifModel.MemifLink_IP,
+		Mode:   ifs.MemifLink_IP,
 		Secret: "secret",
 		Master: false,
 	}, 5)
@@ -77,7 +77,7 @@ func TestAddMasterMemifInterfaceAsSlave(t *testing.T) {
 	Expect(swIfIdx).To(BeEquivalentTo(1))
 	var msgCheck bool
 	for _, msg := range ctx.MockChannel.Msgs {
-		vppMsg, ok := msg.(*memif.MemifCreate)
+		vppMsg, ok := msg.(*vpp_memif.MemifCreate)
 		if ok {
 			Expect(vppMsg.Role).To(BeEquivalentTo(1))
 			msgCheck = true
@@ -90,12 +90,12 @@ func TestAddMasterMemifInterfaceError(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&memif.MemifCreate{})
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
+	ctx.MockVpp.MockReply(&vpp_memif.MemifCreate{})
+	ctx.MockVpp.MockReply(&vpp_ifs.SwInterfaceTagAddDelReply{})
 
-	_, err := ifHandler.AddMemifInterface("memif", &ifModel.MemifLink{
+	_, err := ifHandler.AddMemifInterface("memif", &ifs.MemifLink{
 		Id:     1,
-		Mode:   ifModel.MemifLink_IP,
+		Mode:   ifs.MemifLink_IP,
 		Secret: "secret",
 		Master: false,
 	}, 5)
@@ -107,14 +107,14 @@ func TestAddMasterMemifInterfaceRetval(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&memif.MemifCreateReply{
+	ctx.MockVpp.MockReply(&vpp_memif.MemifCreateReply{
 		Retval: 1,
 	})
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
+	ctx.MockVpp.MockReply(&vpp_ifs.SwInterfaceTagAddDelReply{})
 
-	_, err := ifHandler.AddMemifInterface("memif", &ifModel.MemifLink{
+	_, err := ifHandler.AddMemifInterface("memif", &ifs.MemifLink{
 		Id:     1,
-		Mode:   ifModel.MemifLink_IP,
+		Mode:   ifs.MemifLink_IP,
 		Secret: "secret",
 		Master: false,
 	}, 5)
@@ -126,8 +126,8 @@ func TestDeleteMemifInterface(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&memif.MemifDeleteReply{})
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
+	ctx.MockVpp.MockReply(&vpp_memif.MemifDeleteReply{})
+	ctx.MockVpp.MockReply(&vpp_ifs.SwInterfaceTagAddDelReply{})
 
 	err := ifHandler.DeleteMemifInterface("memif", 1)
 
@@ -138,8 +138,8 @@ func TestDeleteMemifInterfaceError(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&memif.MemifDelete{})
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
+	ctx.MockVpp.MockReply(&vpp_memif.MemifDelete{})
+	ctx.MockVpp.MockReply(&vpp_ifs.SwInterfaceTagAddDelReply{})
 
 	err := ifHandler.DeleteMemifInterface("memif", 1)
 
@@ -150,10 +150,10 @@ func TestDeleteMemifInterfaceRetval(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&memif.MemifDeleteReply{
+	ctx.MockVpp.MockReply(&vpp_memif.MemifDeleteReply{
 		Retval: 1,
 	})
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
+	ctx.MockVpp.MockReply(&vpp_ifs.SwInterfaceTagAddDelReply{})
 
 	err := ifHandler.DeleteMemifInterface("memif", 1)
 
@@ -164,12 +164,12 @@ func TestRegisterMemifSocketFilename(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&memif.MemifSocketFilenameAddDelReply{})
+	ctx.MockVpp.MockReply(&vpp_memif.MemifSocketFilenameAddDelReply{})
 
 	err := ifHandler.RegisterMemifSocketFilename([]byte("filename"), 1)
 
 	Expect(err).To(BeNil())
-	vppMsg, ok := ctx.MockChannel.Msg.(*memif.MemifSocketFilenameAddDel)
+	vppMsg, ok := ctx.MockChannel.Msg.(*vpp_memif.MemifSocketFilenameAddDel)
 	Expect(ok).To(BeTrue())
 	Expect(vppMsg.IsAdd).To(BeEquivalentTo(1))
 	Expect(vppMsg.SocketID).To(BeEquivalentTo(1))
@@ -180,7 +180,7 @@ func TestRegisterMemifSocketFilenameError(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&memif.MemifSocketFilenameAddDel{})
+	ctx.MockVpp.MockReply(&vpp_memif.MemifSocketFilenameAddDel{})
 
 	err := ifHandler.RegisterMemifSocketFilename([]byte("filename"), 1)
 
@@ -191,7 +191,7 @@ func TestRegisterMemifSocketFilenameRetval(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&memif.MemifSocketFilenameAddDelReply{
+	ctx.MockVpp.MockReply(&vpp_memif.MemifSocketFilenameAddDelReply{
 		Retval: 1,
 	})
 

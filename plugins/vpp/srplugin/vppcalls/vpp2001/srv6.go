@@ -23,10 +23,10 @@ import (
 	"strings"
 
 	"github.com/ligato/cn-infra/logging"
-	nbint "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
+	ifs "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	srv6 "github.com/ligato/vpp-agent/api/models/vpp/srv6"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/sr"
+	vpp_ifs "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/interfaces"
+	vpp_sr "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/sr"
 )
 
 // Constants for behavior function hardcoded into VPP (there can be also custom behavior functions implemented as VPP plugins)
@@ -79,9 +79,9 @@ func (h *SRv6VppHandler) addDelLocalSid(deletion bool, localSID *srv6.LocalSID) 
 	if !deletion && localSID.GetEndFunction_AD() != nil {
 		return h.addSRProxy(sidAddr, localSID)
 	}
-	req := &sr.SrLocalsidAddDel{
+	req := &vpp_sr.SrLocalsidAddDel{
 		IsDel:    boolToUint(deletion),
-		Localsid: sr.Srv6Sid{Addr: []byte(sidAddr)},
+		Localsid: vpp_sr.Srv6Sid{Addr: []byte(sidAddr)},
 	}
 	req.FibTable = localSID.InstallationVrfId // where to install localsid entry/from where to remove installed localsid entry
 	if !deletion {
@@ -89,7 +89,7 @@ func (h *SRv6VppHandler) addDelLocalSid(deletion bool, localSID *srv6.LocalSID) 
 			return err
 		}
 	}
-	reply := &sr.SrLocalsidAddDelReply{}
+	reply := &vpp_sr.SrLocalsidAddDelReply{}
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
@@ -141,11 +141,11 @@ func (h *SRv6VppHandler) addSRProxy(sidAddr net.IP, localSID *srv6.LocalSID) err
 // interfaceNameMapping dumps from VPP internal names of interfaces and uses them to produce mapping from ligato interface names to vpp internal names.
 func (h *SRv6VppHandler) interfaceNameMapping() (map[string]string, error) {
 	mapping := make(map[string]string)
-	reqCtx := h.callsChannel.SendMultiRequest(&interfaces.SwInterfaceDump{})
+	reqCtx := h.callsChannel.SendMultiRequest(&vpp_ifs.SwInterfaceDump{})
 
 	for {
 		// get next interface info
-		ifDetails := &interfaces.SwInterfaceDetails{}
+		ifDetails := &vpp_ifs.SwInterfaceDetails{}
 		stop, err := reqCtx.ReceiveReply(ifDetails)
 		if stop {
 			break // Break from the loop.
@@ -158,7 +158,7 @@ func (h *SRv6VppHandler) interfaceNameMapping() (map[string]string, error) {
 		ligatoName := strings.TrimRight(ifDetails.Tag, "\x00")
 		vppInternalName := strings.TrimRight(ifDetails.InterfaceName, "\x00")
 		if ifDetails.SupSwIfIndex == uint32(ifDetails.SwIfIndex) && // no subinterface (subinterface are not DPDK)
-			guessInterfaceType(strings.TrimRight(ifDetails.InterfaceName, "\x00")) == nbint.Interface_DPDK {
+			guessInterfaceType(strings.TrimRight(ifDetails.InterfaceName, "\x00")) == ifs.Interface_DPDK {
 			// fill name for physical interfaces (they are mostly without tag)
 			ligatoName = vppInternalName
 		}
@@ -202,7 +202,7 @@ func (h *SRv6VppHandler) endFunction(localSID *srv6.LocalSID) string {
 	}
 }
 
-func (h *SRv6VppHandler) writeEndFunction(req *sr.SrLocalsidAddDel, localSID *srv6.LocalSID) error {
+func (h *SRv6VppHandler) writeEndFunction(req *vpp_sr.SrLocalsidAddDel, localSID *srv6.LocalSID) error {
 	switch ef := localSID.EndFunction.(type) {
 	case *srv6.LocalSID_BaseEndFunction:
 		req.Behavior = BehaviorEnd
@@ -286,10 +286,10 @@ func (h *SRv6VppHandler) SetEncapsSourceAddress(address string) error {
 	if err != nil {
 		return err
 	}
-	req := &sr.SrSetEncapSource{
+	req := &vpp_sr.SrSetEncapSource{
 		EncapsSource: []byte(ipAddress),
 	}
-	reply := &sr.SrSetEncapSourceReply{}
+	reply := &vpp_sr.SrSetEncapSourceReply{}
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
@@ -329,14 +329,14 @@ func (h *SRv6VppHandler) addBasePolicyWithFirstSegmentList(policy *srv6.Policy) 
 		return err
 	}
 	// Note: Weight in sr.SrPolicyAdd is leftover from API changes that moved weight into sr.Srv6SidList (it is weight of sid list not of the whole policy)
-	req := &sr.SrPolicyAdd{
+	req := &vpp_sr.SrPolicyAdd{
 		BsidAddr: []byte(bindingSid),
 		Sids:     *sids,
 		IsEncap:  boolToUint(policy.SrhEncapsulation),
 		Type:     boolToUint(policy.SprayBehaviour),
 		FibTable: policy.InstallationVrfId,
 	}
-	reply := &sr.SrPolicyAddReply{}
+	reply := &vpp_sr.SrPolicyAddReply{}
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
@@ -363,10 +363,10 @@ func (h *SRv6VppHandler) addOtherSegmentLists(policy *srv6.Policy) error {
 // DeletePolicy deletes SRv6 policy given by binding SID <bindingSid>
 func (h *SRv6VppHandler) DeletePolicy(bindingSid net.IP) error {
 	h.log.Debugf("Deleting SR policy with binding SID %v ", bindingSid)
-	req := &sr.SrPolicyDel{
-		BsidAddr: sr.Srv6Sid{Addr: []byte(bindingSid)}, // TODO add ability to define policy also by index (SrPolicyIndex)
+	req := &vpp_sr.SrPolicyDel{
+		BsidAddr: vpp_sr.Srv6Sid{Addr: []byte(bindingSid)}, // TODO add ability to define policy also by index (SrPolicyIndex)
 	}
-	reply := &sr.SrPolicyDelReply{}
+	reply := &vpp_sr.SrPolicyDelReply{}
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
@@ -413,7 +413,7 @@ func (h *SRv6VppHandler) modPolicy(operation uint8, policy *srv6.Policy, segment
 	}
 
 	// Note: Weight in sr.SrPolicyMod is leftover from API changes that moved weight into sr.Srv6SidList (it is weight of sid list not of the whole policy)
-	req := &sr.SrPolicyMod{
+	req := &vpp_sr.SrPolicyMod{
 		BsidAddr:  []byte(bindingSid), // TODO add ability to define policy also by index (SrPolicyIndex)
 		Operation: operation,
 		Sids:      *sids,
@@ -423,7 +423,7 @@ func (h *SRv6VppHandler) modPolicy(operation uint8, policy *srv6.Policy, segment
 		req.SlIndex = segmentListIndex
 	}
 
-	reply := &sr.SrPolicyModReply{}
+	reply := &vpp_sr.SrPolicyModReply{}
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
@@ -434,8 +434,8 @@ func (h *SRv6VppHandler) modPolicy(operation uint8, policy *srv6.Policy, segment
 	return nil
 }
 
-func (h *SRv6VppHandler) convertPolicySegment(segmentList *srv6.Policy_SegmentList) (*sr.Srv6SidList, error) {
-	var segments []sr.Srv6Sid
+func (h *SRv6VppHandler) convertPolicySegment(segmentList *srv6.Policy_SegmentList) (*vpp_sr.Srv6SidList, error) {
+	var segments []vpp_sr.Srv6Sid
 	for _, sid := range segmentList.Segments {
 		// parse to IPv6 address
 		parserSid, err := parseIPv6(sid)
@@ -444,13 +444,13 @@ func (h *SRv6VppHandler) convertPolicySegment(segmentList *srv6.Policy_SegmentLi
 		}
 
 		// add sid to segment list
-		ipv6Segment := sr.Srv6Sid{
+		ipv6Segment := vpp_sr.Srv6Sid{
 			Addr: make([]byte, 16), // sr.Srv6Sid.Addr = [16]byte
 		}
 		copy(ipv6Segment.Addr, parserSid)
 		segments = append(segments, ipv6Segment)
 	}
-	return &sr.Srv6SidList{
+	return &vpp_sr.Srv6SidList{
 		NumSids: uint8(len(segments)),
 		Sids:    segments,
 		Weight:  segmentList.Weight,
@@ -572,7 +572,7 @@ func (h *SRv6VppHandler) addDelSteering(delete bool, steering *srv6.Steering) er
 	default:
 		return fmt.Errorf("unknown traffic type (link type %+v)", t)
 	}
-	req := &sr.SrSteeringAddDel{
+	req := &vpp_sr.SrSteeringAddDel{
 		IsDel:         boolToUint(delete),
 		TableID:       tableID,
 		BsidAddr:      policyBSIDAddr, // policy (to which we want to steer routing into) identified by policy binding sid (alternativelly it can be used policy index)
@@ -582,7 +582,7 @@ func (h *SRv6VppHandler) addDelSteering(delete bool, steering *srv6.Steering) er
 		MaskWidth:     maskWidth,      // destination ip prefix mask (L3 traffic type only)
 		SwIfIndex:     intIndex,       // incoming interface (L2 traffic type only)
 	}
-	reply := &sr.SrSteeringAddDelReply{}
+	reply := &vpp_sr.SrSteeringAddDelReply{}
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
@@ -621,24 +621,24 @@ func parseIPv6(str string) (net.IP, error) {
 // guessInterfaceType attempts to guess the correct interface type from its internal name (as given by VPP).
 // This is required mainly for those interface types, that do not provide dump binary API,
 // such as loopback of af_packet.
-func guessInterfaceType(ifName string) nbint.Interface_Type {
+func guessInterfaceType(ifName string) ifs.Interface_Type {
 	switch {
 	case strings.HasPrefix(ifName, "loop"),
 		strings.HasPrefix(ifName, "local"):
-		return nbint.Interface_SOFTWARE_LOOPBACK
+		return ifs.Interface_SOFTWARE_LOOPBACK
 	case strings.HasPrefix(ifName, "memif"):
-		return nbint.Interface_MEMIF
+		return ifs.Interface_MEMIF
 	case strings.HasPrefix(ifName, "tap"):
-		return nbint.Interface_TAP
+		return ifs.Interface_TAP
 	case strings.HasPrefix(ifName, "host"):
-		return nbint.Interface_AF_PACKET
+		return ifs.Interface_AF_PACKET
 	case strings.HasPrefix(ifName, "vxlan"):
-		return nbint.Interface_VXLAN_TUNNEL
+		return ifs.Interface_VXLAN_TUNNEL
 	case strings.HasPrefix(ifName, "ipsec"):
-		return nbint.Interface_IPSEC_TUNNEL
+		return ifs.Interface_IPSEC_TUNNEL
 	case strings.HasPrefix(ifName, "vmxnet3"):
-		return nbint.Interface_VMXNET3_INTERFACE
+		return ifs.Interface_VMXNET3_INTERFACE
 	default:
-		return nbint.Interface_DPDK
+		return ifs.Interface_DPDK
 	}
 }

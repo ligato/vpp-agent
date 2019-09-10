@@ -17,7 +17,7 @@ package vpp2001_test
 import (
 	"testing"
 
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/interfaces"
+	vpp_ifs "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/interfaces"
 	. "github.com/onsi/gomega"
 )
 
@@ -25,10 +25,10 @@ func TestAddLoopbackInterface(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&interfaces.CreateLoopbackReply{
+	ctx.MockVpp.MockReply(&vpp_ifs.CreateLoopbackReply{
 		SwIfIndex: 1,
 	})
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
+	ctx.MockVpp.MockReply(&vpp_ifs.SwInterfaceTagAddDelReply{})
 
 	swIfIdx, err := ifHandler.AddLoopbackInterface("loopback")
 
@@ -40,7 +40,7 @@ func TestAddLoopbackInterfaceError(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&interfaces.CreateLoopback{})
+	ctx.MockVpp.MockReply(&vpp_ifs.CreateLoopback{})
 
 	swIfIdx, err := ifHandler.AddLoopbackInterface("loopback")
 
@@ -52,7 +52,7 @@ func TestAddLoopbackInterfaceRetval(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&interfaces.CreateLoopbackReply{
+	ctx.MockVpp.MockReply(&vpp_ifs.CreateLoopbackReply{
 		Retval: 1,
 	})
 
@@ -66,8 +66,8 @@ func TestDeleteLoopbackInterface(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&interfaces.DeleteLoopbackReply{})
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
+	ctx.MockVpp.MockReply(&vpp_ifs.DeleteLoopbackReply{})
+	ctx.MockVpp.MockReply(&vpp_ifs.SwInterfaceTagAddDelReply{})
 
 	err := ifHandler.DeleteLoopbackInterface("loopback", 1)
 
@@ -78,7 +78,7 @@ func TestDeleteLoopbackInterfaceError(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&interfaces.DeleteLoopback{})
+	ctx.MockVpp.MockReply(&vpp_ifs.DeleteLoopback{})
 
 	err := ifHandler.DeleteLoopbackInterface("loopback", 1)
 
@@ -89,7 +89,7 @@ func TestDeleteLoopbackInterfaceRetval(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&interfaces.DeleteLoopbackReply{
+	ctx.MockVpp.MockReply(&vpp_ifs.DeleteLoopbackReply{
 		Retval: 1,
 	})
 

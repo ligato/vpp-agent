@@ -19,16 +19,16 @@ import (
 	"github.com/ligato/cn-infra/logging"
 	vpe_vppcalls "github.com/ligato/vpp-agent/plugins/govppmux/vppcalls"
 	vpe_vpp2001 "github.com/ligato/vpp-agent/plugins/govppmux/vppcalls/vpp2001"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/sr"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/vpe"
+	vpp_sr "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/sr"
+	vpp_vpe "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/vpe"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/srplugin/vppcalls"
 )
 
 func init() {
 	var msgs []govppapi.Message
-	msgs = append(msgs, sr.AllMessages()...)
-	msgs = append(msgs, vpe.AllMessages()...) // using also vpe -> need to have correct vpp version also for vpe
+	msgs = append(msgs, vpp_sr.AllMessages()...)
+	msgs = append(msgs, vpp_vpe.AllMessages()...) // using also vpe -> need to have correct vpp version also for vpe
 
 	vppcalls.Versions["vpp2001"] = vppcalls.HandlerVersion{
 		Msgs: msgs,

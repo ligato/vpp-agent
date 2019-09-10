@@ -22,9 +22,9 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging/logrus"
 	srv6 "github.com/ligato/vpp-agent/api/models/vpp/srv6"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/sr"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/vpe"
+	vpp_ifs "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/interfaces"
+	vpp_sr "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/sr"
+	vpp_vpe "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/vpe"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/srplugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/vpp/srplugin/vppcalls/vpp2001"
@@ -75,7 +75,7 @@ func TestAddLocalSID(t *testing.T) {
 					},
 				},
 			},
-			Expected: &sr.SrLocalsidAddDel{
+			Expected: &vpp_sr.SrLocalsidAddDel{
 				IsDel:    0,
 				Localsid: sidA,
 				Behavior: vpp2001.BehaviorEnd,
@@ -96,7 +96,7 @@ func TestAddLocalSID(t *testing.T) {
 					},
 				},
 			},
-			Expected: &sr.SrLocalsidAddDel{
+			Expected: &vpp_sr.SrLocalsidAddDel{
 				IsDel:     0,
 				Localsid:  sidA,
 				Behavior:  vpp2001.BehaviorX,
@@ -119,7 +119,7 @@ func TestAddLocalSID(t *testing.T) {
 					},
 				},
 			},
-			Expected: &sr.SrLocalsidAddDel{
+			Expected: &vpp_sr.SrLocalsidAddDel{
 				IsDel:     0,
 				Localsid:  sidA,
 				Behavior:  vpp2001.BehaviorX,
@@ -141,7 +141,7 @@ func TestAddLocalSID(t *testing.T) {
 					},
 				},
 			},
-			Expected: &sr.SrLocalsidAddDel{
+			Expected: &vpp_sr.SrLocalsidAddDel{
 				IsDel:     0,
 				Localsid:  sidA,
 				Behavior:  vpp2001.BehaviorT,
@@ -162,7 +162,7 @@ func TestAddLocalSID(t *testing.T) {
 					},
 				},
 			},
-			Expected: &sr.SrLocalsidAddDel{
+			Expected: &vpp_sr.SrLocalsidAddDel{
 				IsDel:     0,
 				Localsid:  sidA,
 				Behavior:  vpp2001.BehaviorDX2,
@@ -184,7 +184,7 @@ func TestAddLocalSID(t *testing.T) {
 					},
 				},
 			},
-			Expected: &sr.SrLocalsidAddDel{
+			Expected: &vpp_sr.SrLocalsidAddDel{
 				IsDel:     0,
 				Localsid:  sidA,
 				Behavior:  vpp2001.BehaviorDX4,
@@ -206,7 +206,7 @@ func TestAddLocalSID(t *testing.T) {
 					},
 				},
 			},
-			Expected: &sr.SrLocalsidAddDel{
+			Expected: &vpp_sr.SrLocalsidAddDel{
 				IsDel:     0,
 				Localsid:  sidA,
 				Behavior:  vpp2001.BehaviorDX6,
@@ -227,7 +227,7 @@ func TestAddLocalSID(t *testing.T) {
 					},
 				},
 			},
-			Expected: &sr.SrLocalsidAddDel{
+			Expected: &vpp_sr.SrLocalsidAddDel{
 				IsDel:     0,
 				Localsid:  sidA,
 				Behavior:  vpp2001.BehaviorDT4,
@@ -247,7 +247,7 @@ func TestAddLocalSID(t *testing.T) {
 					},
 				},
 			},
-			Expected: &sr.SrLocalsidAddDel{
+			Expected: &vpp_sr.SrLocalsidAddDel{
 				IsDel:     0,
 				Localsid:  sidA,
 				Behavior:  vpp2001.BehaviorDT6,
@@ -260,8 +260,8 @@ func TestAddLocalSID(t *testing.T) {
 			Name:    "addition with endAD behaviour (+ memif interface name translation)",
 			cliMode: true,
 			MockInterfaceDump: []govppapi.Message{
-				&interfaces.SwInterfaceDetails{Tag: ifaceA, InterfaceName: memif1},
-				&interfaces.SwInterfaceDetails{Tag: ifaceB, InterfaceName: memif2},
+				&vpp_ifs.SwInterfaceDetails{Tag: ifaceA, InterfaceName: memif1},
+				&vpp_ifs.SwInterfaceDetails{Tag: ifaceB, InterfaceName: memif2},
 			},
 			Input: &srv6.LocalSID{
 				Sid:               sidToStr(sidA),
@@ -274,7 +274,7 @@ func TestAddLocalSID(t *testing.T) {
 					},
 				},
 			},
-			Expected: &vpe.CliInband{
+			Expected: &vpp_vpe.CliInband{
 				Cmd: fmt.Sprintf("sr localsid address %v fib-table 10 behavior end.ad nh %v oif %v iif %v", sidToStr(sidA), nextHopIPv4.String(), memif1, memif2),
 			},
 		},
@@ -282,8 +282,8 @@ func TestAddLocalSID(t *testing.T) {
 			Name:    "addition with endAD behaviour for L2 sr-unaware service",
 			cliMode: true,
 			MockInterfaceDump: []govppapi.Message{
-				&interfaces.SwInterfaceDetails{Tag: ifaceA, InterfaceName: memif1},
-				&interfaces.SwInterfaceDetails{Tag: ifaceB, InterfaceName: memif2},
+				&vpp_ifs.SwInterfaceDetails{Tag: ifaceA, InterfaceName: memif1},
+				&vpp_ifs.SwInterfaceDetails{Tag: ifaceB, InterfaceName: memif2},
 			},
 			Input: &srv6.LocalSID{
 				Sid:               sidToStr(sidA),
@@ -295,7 +295,7 @@ func TestAddLocalSID(t *testing.T) {
 					},
 				},
 			},
-			Expected: &vpe.CliInband{
+			Expected: &vpp_vpe.CliInband{
 				Cmd: fmt.Sprintf("sr localsid address %v fib-table 10 behavior end.ad oif %v iif %v", sidToStr(sidA), memif1, memif2),
 			},
 		},
@@ -303,8 +303,8 @@ func TestAddLocalSID(t *testing.T) {
 			Name:    "etcd-to-vpp-internal interface name translation for endAD behaviour (local and tap kind of interfaces)",
 			cliMode: true,
 			MockInterfaceDump: []govppapi.Message{
-				&interfaces.SwInterfaceDetails{Tag: ifaceA, InterfaceName: "local0"},
-				&interfaces.SwInterfaceDetails{Tag: ifaceB, InterfaceName: "tap0"},
+				&vpp_ifs.SwInterfaceDetails{Tag: ifaceA, InterfaceName: "local0"},
+				&vpp_ifs.SwInterfaceDetails{Tag: ifaceB, InterfaceName: "tap0"},
 			},
 			Input: &srv6.LocalSID{
 				Sid:               sidToStr(sidA),
@@ -317,7 +317,7 @@ func TestAddLocalSID(t *testing.T) {
 					},
 				},
 			},
-			Expected: &vpe.CliInband{
+			Expected: &vpp_vpe.CliInband{
 				Cmd: fmt.Sprintf("sr localsid address %v fib-table 10 behavior end.ad nh %v oif %v iif %v", sidToStr(sidA), nextHopIPv4.String(), "local0", "tap0"),
 			},
 		},
@@ -325,8 +325,8 @@ func TestAddLocalSID(t *testing.T) {
 			Name:    "etcd-to-vpp-internal interface name translation for endAD behaviour (host and vxlan kind of interfaces)",
 			cliMode: true,
 			MockInterfaceDump: []govppapi.Message{
-				&interfaces.SwInterfaceDetails{Tag: ifaceA, InterfaceName: "host0"},
-				&interfaces.SwInterfaceDetails{Tag: ifaceB, InterfaceName: "vxlan0"},
+				&vpp_ifs.SwInterfaceDetails{Tag: ifaceA, InterfaceName: "host0"},
+				&vpp_ifs.SwInterfaceDetails{Tag: ifaceB, InterfaceName: "vxlan0"},
 			},
 			Input: &srv6.LocalSID{
 				Sid:               sidToStr(sidA),
@@ -339,7 +339,7 @@ func TestAddLocalSID(t *testing.T) {
 					},
 				},
 			},
-			Expected: &vpe.CliInband{
+			Expected: &vpp_vpe.CliInband{
 				Cmd: fmt.Sprintf("sr localsid address %v fib-table 10 behavior end.ad nh %v oif %v iif %v", sidToStr(sidA), nextHopIPv4.String(), "host0", "vxlan0"),
 			},
 		},
@@ -347,8 +347,8 @@ func TestAddLocalSID(t *testing.T) {
 			Name:    "etcd-to-vpp-internal interface name translation for endAD behaviour (ipsec and vmxnet3 kind of interfaces)",
 			cliMode: true,
 			MockInterfaceDump: []govppapi.Message{
-				&interfaces.SwInterfaceDetails{Tag: ifaceA, InterfaceName: "ipsec0"},
-				&interfaces.SwInterfaceDetails{Tag: ifaceB, InterfaceName: "vmxnet3-0"},
+				&vpp_ifs.SwInterfaceDetails{Tag: ifaceA, InterfaceName: "ipsec0"},
+				&vpp_ifs.SwInterfaceDetails{Tag: ifaceB, InterfaceName: "vmxnet3-0"},
 			},
 			Input: &srv6.LocalSID{
 				Sid:               sidToStr(sidA),
@@ -361,7 +361,7 @@ func TestAddLocalSID(t *testing.T) {
 					},
 				},
 			},
-			Expected: &vpe.CliInband{
+			Expected: &vpp_vpe.CliInband{
 				Cmd: fmt.Sprintf("sr localsid address %v fib-table 10 behavior end.ad nh %v oif %v iif %v", sidToStr(sidA), nextHopIPv4.String(), "ipsec0", "vmxnet3-0"),
 			},
 		},
@@ -369,8 +369,8 @@ func TestAddLocalSID(t *testing.T) {
 			Name:    "etcd-to-vpp-internal interface name translation for endAD behaviour (loop and unknown kind of interfaces)",
 			cliMode: true,
 			MockInterfaceDump: []govppapi.Message{
-				&interfaces.SwInterfaceDetails{Tag: ifaceA, InterfaceName: "loop0"},
-				&interfaces.SwInterfaceDetails{Tag: ifaceB, InterfaceName: "unknown0"},
+				&vpp_ifs.SwInterfaceDetails{Tag: ifaceA, InterfaceName: "loop0"},
+				&vpp_ifs.SwInterfaceDetails{Tag: ifaceB, InterfaceName: "unknown0"},
 			},
 			Input: &srv6.LocalSID{
 				Sid:               sidToStr(sidA),
@@ -383,7 +383,7 @@ func TestAddLocalSID(t *testing.T) {
 					},
 				},
 			},
-			Expected: &vpe.CliInband{
+			Expected: &vpp_vpe.CliInband{
 				Cmd: fmt.Sprintf("sr localsid address %v fib-table 10 behavior end.ad nh %v oif %v iif %v", sidToStr(sidA), nextHopIPv4.String(), "loop0", "unknown0"),
 			},
 		},
@@ -415,8 +415,8 @@ func TestAddLocalSID(t *testing.T) {
 			ExpectFailure: true,
 			cliMode:       true,
 			MockInterfaceDump: []govppapi.Message{
-				&interfaces.SwInterfaceDetails{Tag: ifaceA, InterfaceName: memif1},
-				&interfaces.SwInterfaceDetails{Tag: ifaceB, InterfaceName: memif2},
+				&vpp_ifs.SwInterfaceDetails{Tag: ifaceA, InterfaceName: memif1},
+				&vpp_ifs.SwInterfaceDetails{Tag: ifaceB, InterfaceName: memif2},
 			},
 			Input: &srv6.LocalSID{
 				Sid:               sidToStr(sidA),
@@ -452,7 +452,7 @@ func TestAddLocalSID(t *testing.T) {
 			ExpectFailure: true,
 			cliMode:       true,
 			MockInterfaceDump: []govppapi.Message{
-				&interfaces.SwInterfaceDetails{Tag: ifaceB, InterfaceName: memif2},
+				&vpp_ifs.SwInterfaceDetails{Tag: ifaceB, InterfaceName: memif2},
 			},
 			Input: &srv6.LocalSID{
 				Sid:               sidToStr(sidA),
@@ -471,7 +471,7 @@ func TestAddLocalSID(t *testing.T) {
 			ExpectFailure: true,
 			cliMode:       true,
 			MockInterfaceDump: []govppapi.Message{
-				&interfaces.SwInterfaceDetails{Tag: ifaceA, InterfaceName: memif1},
+				&vpp_ifs.SwInterfaceDetails{Tag: ifaceA, InterfaceName: memif1},
 			},
 			Input: &srv6.LocalSID{
 				Sid:               sidToStr(sidA),
@@ -608,23 +608,23 @@ func TestAddLocalSID(t *testing.T) {
 			// prepare reply
 			if td.MockInterfaceDump != nil {
 				if td.FailInVPPDump {
-					ctx.MockVpp.MockReply(&sr.SrPolicyDelReply{}) //unexpected type of message creates error (swInterfaceDetail doesn't have way how to indicate failure)
+					ctx.MockVpp.MockReply(&vpp_sr.SrPolicyDelReply{}) //unexpected type of message creates error (swInterfaceDetail doesn't have way how to indicate failure)
 				} else {
 					ctx.MockVpp.MockReply(td.MockInterfaceDump...)
-					ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
+					ctx.MockVpp.MockReply(&vpp_vpe.ControlPingReply{})
 				}
 			}
 			if td.cliMode && !td.FailInVPPDump { // SR-proxy can be set only using VPP CLI (-> using VPE binary API to deliver command to VPP)
 				if td.FailInVPP {
-					ctx.MockVpp.MockReply(&vpe.CliInbandReply{Retval: 1})
+					ctx.MockVpp.MockReply(&vpp_vpe.CliInbandReply{Retval: 1})
 				} else {
-					ctx.MockVpp.MockReply(&vpe.CliInbandReply{})
+					ctx.MockVpp.MockReply(&vpp_vpe.CliInbandReply{})
 				}
 			} else { // normal SR binary API
 				if td.FailInVPP {
-					ctx.MockVpp.MockReply(&sr.SrLocalsidAddDelReply{Retval: 1})
+					ctx.MockVpp.MockReply(&vpp_sr.SrLocalsidAddDelReply{Retval: 1})
 				} else {
-					ctx.MockVpp.MockReply(&sr.SrLocalsidAddDelReply{})
+					ctx.MockVpp.MockReply(&vpp_sr.SrLocalsidAddDelReply{})
 				}
 			}
 			// make the call
@@ -661,10 +661,10 @@ func TestDeleteLocalSID(t *testing.T) {
 					},
 				},
 			},
-			MockReply: &sr.SrLocalsidAddDelReply{},
+			MockReply: &vpp_sr.SrLocalsidAddDelReply{},
 			Verify: func(err error, catchedMsg govppapi.Message) {
 				Expect(err).ShouldNot(HaveOccurred())
-				Expect(catchedMsg).To(Equal(&sr.SrLocalsidAddDel{
+				Expect(catchedMsg).To(Equal(&vpp_sr.SrLocalsidAddDel{
 					IsDel:    1,
 					Localsid: sidA,
 					FibTable: 0,
@@ -682,10 +682,10 @@ func TestDeleteLocalSID(t *testing.T) {
 					},
 				},
 			},
-			MockReply: &sr.SrLocalsidAddDelReply{},
+			MockReply: &vpp_sr.SrLocalsidAddDelReply{},
 			Verify: func(err error, catchedMsg govppapi.Message) {
 				Expect(err).ShouldNot(HaveOccurred())
-				Expect(catchedMsg).To(Equal(&sr.SrLocalsidAddDel{
+				Expect(catchedMsg).To(Equal(&vpp_sr.SrLocalsidAddDel{
 					IsDel:    1,
 					Localsid: sidA,
 					FibTable: 10,
@@ -703,7 +703,7 @@ func TestDeleteLocalSID(t *testing.T) {
 					},
 				},
 			},
-			MockReply: &sr.SrLocalsidAddDelReply{Retval: 1},
+			MockReply: &vpp_sr.SrLocalsidAddDelReply{Retval: 1},
 			Verify: func(err error, msg govppapi.Message) {
 				Expect(err).Should(HaveOccurred())
 			},
@@ -737,10 +737,10 @@ func TestSetEncapsSourceAddress(t *testing.T) {
 		{
 			Name:      "simple SetEncapsSourceAddress",
 			Address:   nextHop.String(),
-			MockReply: &sr.SrSetEncapSourceReply{},
+			MockReply: &vpp_sr.SrSetEncapSourceReply{},
 			Verify: func(err error, catchedMsg govppapi.Message) {
 				Expect(err).ShouldNot(HaveOccurred())
-				Expect(catchedMsg).To(Equal(&sr.SrSetEncapSource{
+				Expect(catchedMsg).To(Equal(&vpp_sr.SrSetEncapSource{
 					EncapsSource: nextHop,
 				}))
 			},
@@ -748,7 +748,7 @@ func TestSetEncapsSourceAddress(t *testing.T) {
 		{
 			Name:      "invalid IP address",
 			Address:   invalidIPAddress,
-			MockReply: &sr.SrSetEncapSourceReply{},
+			MockReply: &vpp_sr.SrSetEncapSourceReply{},
 			Verify: func(err error, catchedMsg govppapi.Message) {
 				Expect(err).Should(HaveOccurred())
 			},
@@ -756,7 +756,7 @@ func TestSetEncapsSourceAddress(t *testing.T) {
 		{
 			Name:      "failure propagation from VPP",
 			Address:   nextHop.String(),
-			MockReply: &sr.SrSetEncapSourceReply{Retval: 1},
+			MockReply: &vpp_sr.SrSetEncapSourceReply{Retval: 1},
 			Verify: func(err error, msg govppapi.Message) {
 				Expect(err).Should(HaveOccurred())
 			},
@@ -789,19 +789,19 @@ func TestAddPolicy(t *testing.T) {
 		{
 			Name:        "simple SetAddPolicy",
 			Policy:      policy(sidA.Addr, 10, false, true, policySegmentList(1, sidA.Addr, sidB.Addr, sidC.Addr)),
-			MockReplies: []govppapi.Message{&sr.SrPolicyAddReply{}},
+			MockReplies: []govppapi.Message{&vpp_sr.SrPolicyAddReply{}},
 			Verify: func(err error, catchedMsgs []govppapi.Message) {
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(catchedMsgs).To(HaveLen(1))
-				Expect(catchedMsgs[0]).To(Equal(&sr.SrPolicyAdd{
+				Expect(catchedMsgs[0]).To(Equal(&vpp_sr.SrPolicyAdd{
 					BsidAddr: sidA.Addr,
 					FibTable: 10, // installationVrfId
 					Type:     boolToUint(false),
 					IsEncap:  boolToUint(true),
-					Sids: sr.Srv6SidList{
+					Sids: vpp_sr.Srv6SidList{
 						Weight:  1,
 						NumSids: 3,
-						Sids:    []sr.Srv6Sid{{Addr: sidA.Addr}, {Addr: sidB.Addr}, {Addr: sidC.Addr}},
+						Sids:    []vpp_sr.Srv6Sid{{Addr: sidA.Addr}, {Addr: sidB.Addr}, {Addr: sidC.Addr}},
 					},
 				}))
 			},
@@ -810,29 +810,29 @@ func TestAddPolicy(t *testing.T) {
 			Name: "adding policy with multiple segment lists",
 			Policy: policy(sidA.Addr, 10, false, true,
 				policySegmentList(1, sidA.Addr, sidB.Addr, sidC.Addr), policySegmentList(1, sidB.Addr, sidC.Addr, sidA.Addr)),
-			MockReplies: []govppapi.Message{&sr.SrPolicyAddReply{}, &sr.SrPolicyModReply{}},
+			MockReplies: []govppapi.Message{&vpp_sr.SrPolicyAddReply{}, &vpp_sr.SrPolicyModReply{}},
 			Verify: func(err error, catchedMsgs []govppapi.Message) {
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(catchedMsgs).To(HaveLen(2))
-				Expect(catchedMsgs[0]).To(Equal(&sr.SrPolicyAdd{
+				Expect(catchedMsgs[0]).To(Equal(&vpp_sr.SrPolicyAdd{
 					BsidAddr: sidA.Addr,
 					FibTable: 10, // installationVrfId
 					Type:     boolToUint(false),
 					IsEncap:  boolToUint(true),
-					Sids: sr.Srv6SidList{
+					Sids: vpp_sr.Srv6SidList{
 						Weight:  1,
 						NumSids: 3,
-						Sids:    []sr.Srv6Sid{{Addr: sidA.Addr}, {Addr: sidB.Addr}, {Addr: sidC.Addr}},
+						Sids:    []vpp_sr.Srv6Sid{{Addr: sidA.Addr}, {Addr: sidB.Addr}, {Addr: sidC.Addr}},
 					},
 				}))
-				Expect(catchedMsgs[1]).To(Equal(&sr.SrPolicyMod{
+				Expect(catchedMsgs[1]).To(Equal(&vpp_sr.SrPolicyMod{
 					BsidAddr:  sidA.Addr,
 					Operation: vpp2001.AddSRList,
 					FibTable:  10, // installationVrfId
-					Sids: sr.Srv6SidList{
+					Sids: vpp_sr.Srv6SidList{
 						Weight:  1,
 						NumSids: 3,
-						Sids:    []sr.Srv6Sid{{Addr: sidB.Addr}, {Addr: sidC.Addr}, {Addr: sidA.Addr}},
+						Sids:    []vpp_sr.Srv6Sid{{Addr: sidB.Addr}, {Addr: sidC.Addr}, {Addr: sidA.Addr}},
 					},
 				}))
 			},
@@ -840,7 +840,7 @@ func TestAddPolicy(t *testing.T) {
 		{
 			Name:        "failing when adding policy with empty segment lists",
 			Policy:      policy(sidA.Addr, 10, false, true),
-			MockReplies: []govppapi.Message{&sr.SrPolicyAddReply{}},
+			MockReplies: []govppapi.Message{&vpp_sr.SrPolicyAddReply{}},
 			Verify: func(err error, catchedMsgs []govppapi.Message) {
 				Expect(err).Should(HaveOccurred())
 			},
@@ -853,13 +853,13 @@ func TestAddPolicy(t *testing.T) {
 				SprayBehaviour:    false,
 				SrhEncapsulation:  true,
 				SegmentLists: []*srv6.Policy_SegmentList{
-					&srv6.Policy_SegmentList{
+					{
 						Weight:   1,
 						Segments: []string{sidToStr(sidA), invalidIPAddress, sidToStr(sidC)},
 					},
 				},
 			},
-			MockReplies: []govppapi.Message{&sr.SrPolicyAddReply{}},
+			MockReplies: []govppapi.Message{&vpp_sr.SrPolicyAddReply{}},
 			Verify: func(err error, catchedMsgs []govppapi.Message) {
 				Expect(err).Should(HaveOccurred())
 			},
@@ -871,7 +871,7 @@ func TestAddPolicy(t *testing.T) {
 					Weight:   1,
 					Segments: []string{sidToStr(sidA), invalidIPAddress, sidToStr(sidC)},
 				}),
-			MockReplies: []govppapi.Message{&sr.SrPolicyAddReply{}},
+			MockReplies: []govppapi.Message{&vpp_sr.SrPolicyAddReply{}},
 			Verify: func(err error, catchedMsgs []govppapi.Message) {
 				Expect(err).Should(HaveOccurred())
 			},
@@ -884,7 +884,7 @@ func TestAddPolicy(t *testing.T) {
 					Weight:   1,
 					Segments: []string{sidToStr(sidA), invalidIPAddress, sidToStr(sidC)},
 				}),
-			MockReplies: []govppapi.Message{&sr.SrPolicyAddReply{}, &sr.SrPolicyModReply{}},
+			MockReplies: []govppapi.Message{&vpp_sr.SrPolicyAddReply{}, &vpp_sr.SrPolicyModReply{}},
 			Verify: func(err error, catchedMsgs []govppapi.Message) {
 				Expect(err).Should(HaveOccurred())
 			},
@@ -892,7 +892,7 @@ func TestAddPolicy(t *testing.T) {
 		{
 			Name:        "failure propagation from VPP",
 			Policy:      policy(sidA.Addr, 0, true, true, policySegmentList(1, sidA.Addr, sidB.Addr, sidC.Addr)),
-			MockReplies: []govppapi.Message{&sr.SrPolicyAddReply{Retval: 1}},
+			MockReplies: []govppapi.Message{&vpp_sr.SrPolicyAddReply{Retval: 1}},
 			Verify: func(err error, msgs []govppapi.Message) {
 				Expect(err).Should(HaveOccurred())
 			},
@@ -926,10 +926,10 @@ func TestDeletePolicy(t *testing.T) {
 		{
 			Name:      "simple delete of policy",
 			BSID:      sidA.Addr,
-			MockReply: &sr.SrPolicyDelReply{},
+			MockReply: &vpp_sr.SrPolicyDelReply{},
 			Verify: func(err error, catchedMsg govppapi.Message) {
 				Expect(err).ShouldNot(HaveOccurred())
-				Expect(catchedMsg).To(Equal(&sr.SrPolicyDel{
+				Expect(catchedMsg).To(Equal(&vpp_sr.SrPolicyDel{
 					BsidAddr: sidA,
 				}))
 			},
@@ -937,7 +937,7 @@ func TestDeletePolicy(t *testing.T) {
 		{
 			Name:      "failure propagation from VPP",
 			BSID:      sidA.Addr,
-			MockReply: &sr.SrPolicyDelReply{Retval: 1},
+			MockReply: &vpp_sr.SrPolicyDelReply{Retval: 1},
 			Verify: func(err error, msg govppapi.Message) {
 				Expect(err).Should(HaveOccurred())
 			},
@@ -974,17 +974,17 @@ func TestAddPolicySegmentList(t *testing.T) {
 			Name:              "simple addition of policy segment",
 			Policy:            policy(sidA.Addr, 10, false, true),
 			PolicySegmentList: policySegmentList(1, sidA.Addr, sidB.Addr, sidC.Addr),
-			MockReply:         &sr.SrPolicyModReply{},
+			MockReply:         &vpp_sr.SrPolicyModReply{},
 			Verify: func(err error, catchedMsg govppapi.Message) {
 				Expect(err).ShouldNot(HaveOccurred())
-				Expect(catchedMsg).To(Equal(&sr.SrPolicyMod{
+				Expect(catchedMsg).To(Equal(&vpp_sr.SrPolicyMod{
 					BsidAddr:  sidA.Addr,
 					Operation: vpp2001.AddSRList,
 					FibTable:  10, // installationVrfId
-					Sids: sr.Srv6SidList{
+					Sids: vpp_sr.Srv6SidList{
 						Weight:  1,
 						NumSids: 3,
-						Sids:    []sr.Srv6Sid{{Addr: sidA.Addr}, {Addr: sidB.Addr}, {Addr: sidC.Addr}},
+						Sids:    []vpp_sr.Srv6Sid{{Addr: sidA.Addr}, {Addr: sidB.Addr}, {Addr: sidC.Addr}},
 					},
 				}))
 			},
@@ -996,7 +996,7 @@ func TestAddPolicySegmentList(t *testing.T) {
 				Weight:   1,
 				Segments: []string{sidToStr(sidA), invalidIPAddress, sidToStr(sidC)},
 			},
-			MockReply: &sr.SrPolicyModReply{},
+			MockReply: &vpp_sr.SrPolicyModReply{},
 			Verify: func(err error, catchedMsg govppapi.Message) {
 				Expect(err).Should(HaveOccurred())
 			},
@@ -1010,7 +1010,7 @@ func TestAddPolicySegmentList(t *testing.T) {
 				SrhEncapsulation:  true,
 			},
 			PolicySegmentList: policySegmentList(1, sidA.Addr, sidB.Addr, sidC.Addr),
-			MockReply:         &sr.SrPolicyModReply{},
+			MockReply:         &vpp_sr.SrPolicyModReply{},
 			Verify: func(err error, catchedMsg govppapi.Message) {
 				Expect(err).Should(HaveOccurred())
 			},
@@ -1019,7 +1019,7 @@ func TestAddPolicySegmentList(t *testing.T) {
 			Name:              "failure propagation from VPP",
 			Policy:            policy(sidA.Addr, 0, true, true),
 			PolicySegmentList: policySegmentList(1, sidA.Addr, sidB.Addr, sidC.Addr),
-			MockReply:         &sr.SrPolicyModReply{Retval: 1},
+			MockReply:         &vpp_sr.SrPolicyModReply{Retval: 1},
 			Verify: func(err error, msg govppapi.Message) {
 				Expect(err).Should(HaveOccurred())
 			},
@@ -1055,18 +1055,18 @@ func TestDeletePolicySegmentList(t *testing.T) {
 			Policy:            policy(sidA.Addr, 10, false, true, policySegmentList(1, sidA.Addr, sidB.Addr, sidC.Addr)),
 			PolicySegmentList: policySegmentList(1, sidA.Addr, sidB.Addr, sidC.Addr),
 			SegmentIndex:      111,
-			MockReply:         &sr.SrPolicyModReply{},
+			MockReply:         &vpp_sr.SrPolicyModReply{},
 			Verify: func(err error, catchedMsg govppapi.Message) {
 				Expect(err).ShouldNot(HaveOccurred())
-				Expect(catchedMsg).To(Equal(&sr.SrPolicyMod{
+				Expect(catchedMsg).To(Equal(&vpp_sr.SrPolicyMod{
 					BsidAddr:  sidA.Addr,
 					Operation: vpp2001.DeleteSRList,
 					SlIndex:   111,
 					FibTable:  10, // installationVrfId
-					Sids: sr.Srv6SidList{
+					Sids: vpp_sr.Srv6SidList{
 						Weight:  1,
 						NumSids: 3,
-						Sids:    []sr.Srv6Sid{{Addr: sidA.Addr}, {Addr: sidB.Addr}, {Addr: sidC.Addr}},
+						Sids:    []vpp_sr.Srv6Sid{{Addr: sidA.Addr}, {Addr: sidB.Addr}, {Addr: sidC.Addr}},
 					},
 				}))
 			},
@@ -1083,7 +1083,7 @@ func TestDeletePolicySegmentList(t *testing.T) {
 				Segments: []string{sidToStr(sidA), invalidIPAddress, sidToStr(sidC)},
 			},
 			SegmentIndex: 111,
-			MockReply:    &sr.SrPolicyModReply{},
+			MockReply:    &vpp_sr.SrPolicyModReply{},
 			Verify: func(err error, catchedMsg govppapi.Message) {
 				Expect(err).Should(HaveOccurred())
 			},
@@ -1093,7 +1093,7 @@ func TestDeletePolicySegmentList(t *testing.T) {
 			Policy:            policy(sidA.Addr, 0, true, true, policySegmentList(1, sidA.Addr, sidB.Addr, sidC.Addr)),
 			PolicySegmentList: policySegmentList(1, sidA.Addr, sidB.Addr, sidC.Addr),
 			SegmentIndex:      111,
-			MockReply:         &sr.SrPolicyModReply{Retval: 1},
+			MockReply:         &vpp_sr.SrPolicyModReply{Retval: 1},
 			Verify: func(err error, msg govppapi.Message) {
 				Expect(err).Should(HaveOccurred())
 			},
@@ -1148,10 +1148,10 @@ func testAddRemoveSteering(t *testing.T, removal bool) {
 					},
 				},
 			},
-			MockReply: &sr.SrSteeringAddDelReply{},
+			MockReply: &vpp_sr.SrSteeringAddDelReply{},
 			Verify: func(err error, catchedMsg govppapi.Message) {
 				Expect(err).ShouldNot(HaveOccurred())
-				Expect(catchedMsg).To(Equal(&sr.SrSteeringAddDel{
+				Expect(catchedMsg).To(Equal(&vpp_sr.SrSteeringAddDel{
 					IsDel:         boolToUint(removal),
 					BsidAddr:      sidA.Addr,
 					SrPolicyIndex: uint32(0),
@@ -1175,10 +1175,10 @@ func testAddRemoveSteering(t *testing.T, removal bool) {
 					},
 				},
 			},
-			MockReply: &sr.SrSteeringAddDelReply{},
+			MockReply: &vpp_sr.SrSteeringAddDelReply{},
 			Verify: func(err error, catchedMsg govppapi.Message) {
 				Expect(err).ShouldNot(HaveOccurred())
-				Expect(catchedMsg).To(Equal(&sr.SrSteeringAddDel{
+				Expect(catchedMsg).To(Equal(&vpp_sr.SrSteeringAddDel{
 					IsDel:         boolToUint(removal),
 					BsidAddr:      sidA.Addr,
 					SrPolicyIndex: uint32(0),
@@ -1201,10 +1201,10 @@ func testAddRemoveSteering(t *testing.T, removal bool) {
 					},
 				},
 			},
-			MockReply: &sr.SrSteeringAddDelReply{},
+			MockReply: &vpp_sr.SrSteeringAddDelReply{},
 			Verify: func(err error, catchedMsg govppapi.Message) {
 				Expect(err).ShouldNot(HaveOccurred())
-				Expect(catchedMsg).To(Equal(&sr.SrSteeringAddDel{
+				Expect(catchedMsg).To(Equal(&vpp_sr.SrSteeringAddDel{
 					IsDel:         boolToUint(removal),
 					BsidAddr:      sidA.Addr,
 					SrPolicyIndex: uint32(0),
@@ -1226,10 +1226,10 @@ func testAddRemoveSteering(t *testing.T, removal bool) {
 					},
 				},
 			},
-			MockReply: &sr.SrSteeringAddDelReply{},
+			MockReply: &vpp_sr.SrSteeringAddDelReply{},
 			Verify: func(err error, catchedMsg govppapi.Message) {
 				Expect(err).ShouldNot(HaveOccurred())
-				Expect(catchedMsg).To(Equal(&sr.SrSteeringAddDel{
+				Expect(catchedMsg).To(Equal(&vpp_sr.SrSteeringAddDel{
 					IsDel:         boolToUint(removal),
 					BsidAddr:      nil,
 					SrPolicyIndex: uint32(20),
@@ -1250,7 +1250,7 @@ func testAddRemoveSteering(t *testing.T, removal bool) {
 					},
 				},
 			},
-			MockReply: &sr.SrSteeringAddDelReply{},
+			MockReply: &vpp_sr.SrSteeringAddDelReply{},
 			Verify: func(err error, catchedMsg govppapi.Message) {
 				Expect(err).Should(HaveOccurred())
 			},
@@ -1262,7 +1262,7 @@ func testAddRemoveSteering(t *testing.T, removal bool) {
 					PolicyBsid: sidToStr(sidA),
 				},
 			},
-			MockReply: &sr.SrSteeringAddDelReply{},
+			MockReply: &vpp_sr.SrSteeringAddDelReply{},
 			Verify: func(err error, catchedMsg govppapi.Message) {
 				Expect(err).Should(HaveOccurred())
 			},
@@ -1280,7 +1280,7 @@ func testAddRemoveSteering(t *testing.T, removal bool) {
 					},
 				},
 			},
-			MockReply: &sr.SrSteeringAddDelReply{},
+			MockReply: &vpp_sr.SrSteeringAddDelReply{},
 			Verify: func(err error, catchedMsg govppapi.Message) {
 				Expect(err).Should(HaveOccurred())
 			},
@@ -1297,7 +1297,7 @@ func testAddRemoveSteering(t *testing.T, removal bool) {
 					},
 				},
 			},
-			MockReply: &sr.SrSteeringAddDelReply{},
+			MockReply: &vpp_sr.SrSteeringAddDelReply{},
 			Verify: func(err error, catchedMsg govppapi.Message) {
 				Expect(err).Should(HaveOccurred())
 			},
@@ -1315,7 +1315,7 @@ func testAddRemoveSteering(t *testing.T, removal bool) {
 					},
 				},
 			},
-			MockReply: &sr.SrSteeringAddDelReply{},
+			MockReply: &vpp_sr.SrSteeringAddDelReply{},
 			Verify: func(err error, catchedMsg govppapi.Message) {
 				Expect(err).Should(HaveOccurred())
 			},
@@ -1333,7 +1333,7 @@ func testAddRemoveSteering(t *testing.T, removal bool) {
 					},
 				},
 			},
-			MockReply: &sr.SrSteeringAddDelReply{Retval: 1},
+			MockReply: &vpp_sr.SrSteeringAddDelReply{Retval: 1},
 			Verify: func(err error, msg govppapi.Message) {
 				Expect(err).Should(HaveOccurred())
 			},
@@ -1394,7 +1394,7 @@ func TestRetrievePolicyIndexInfo(t *testing.T) {
 		{
 			Name:   "basic successful index retrieval",
 			Policy: policy(sidA.Addr, 10, false, true, segmentListABC, segmentListBBC),
-			MockReply: &vpe.CliInbandReply{
+			MockReply: &vpp_vpe.CliInbandReply{
 				Reply:  correctCLIOutput,
 				Retval: 0,
 			},
@@ -1404,13 +1404,13 @@ func TestRetrievePolicyIndexInfo(t *testing.T) {
 		{
 			Name:             "failure propagation from VPP",
 			Policy:           policy(sidA.Addr, 10, false, true, segmentListABC, segmentListBBC),
-			MockReply:        &vpe.CliInbandReply{Retval: 1},
+			MockReply:        &vpp_vpe.CliInbandReply{Retval: 1},
 			ExpectingFailure: true,
 		},
 		{
 			Name:   "searching for not existing policy ",
 			Policy: policy(sidC.Addr, 10, false, true, segmentListABC, segmentListBBC),
-			MockReply: &vpe.CliInbandReply{
+			MockReply: &vpp_vpe.CliInbandReply{
 				Reply:  correctCLIOutput,
 				Retval: 0,
 			},
@@ -1419,7 +1419,7 @@ func TestRetrievePolicyIndexInfo(t *testing.T) {
 		{
 			Name:   "searching for not existing policy segment list",
 			Policy: policy(sidA.Addr, 10, false, true, notExistingSegmentListCCC),
-			MockReply: &vpe.CliInbandReply{
+			MockReply: &vpp_vpe.CliInbandReply{
 				Reply:  correctCLIOutput,
 				Retval: 0,
 			},
@@ -1434,7 +1434,7 @@ func TestRetrievePolicyIndexInfo(t *testing.T) {
 			// prepare reply, make call and verify
 			ctx.MockVpp.MockReply(td.MockReply)
 			resultPolicyIndex, resultSlIndexes, err := vppCalls.RetrievePolicyIndexInfo(td.Policy)
-			Expect(ctx.MockChannel.Msg).To(Equal(&vpe.CliInband{
+			Expect(ctx.MockChannel.Msg).To(Equal(&vpp_vpe.CliInband{
 				Cmd: "sh sr policies",
 			}))
 			if td.ExpectingFailure {
@@ -1461,12 +1461,12 @@ func teardown(ctx *vppcallmock.TestCtx) {
 	ctx.TeardownTestCtx()
 }
 
-func sid(str string) *sr.Srv6Sid {
+func sid(str string) *vpp_sr.Srv6Sid {
 	bsid, err := parseIPv6(str)
 	if err != nil {
 		panic(fmt.Sprintf("can't parse %q into SRv6 BSID (IPv6 address)", str))
 	}
-	return &sr.Srv6Sid{
+	return &vpp_sr.Srv6Sid{
 		Addr: bsid,
 	}
 }
@@ -1513,7 +1513,7 @@ func boolToUint(input bool) uint8 {
 	return uint8(0)
 }
 
-func sidToStr(sid sr.Srv6Sid) string {
+func sidToStr(sid vpp_sr.Srv6Sid) string {
 	return srv6.SID(sid.Addr).String()
 }
 

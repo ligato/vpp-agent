@@ -15,37 +15,33 @@
 package vpp2001
 
 import (
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/interfaces"
+	vpp_ifs "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/interfaces"
 )
 
-// SetInterfaceVrf implements interface handler.
 func (h *InterfaceVppHandler) SetInterfaceVrf(ifIdx, vrfID uint32) error {
 	return h.setInterfaceVrf(ifIdx, vrfID, false)
 }
 
-// SetInterfaceVrfIPv6 implements interface handler.
 func (h *InterfaceVppHandler) SetInterfaceVrfIPv6(ifIdx, vrfID uint32) error {
 	return h.setInterfaceVrf(ifIdx, vrfID, true)
 }
 
-// GetInterfaceVrf implements interface handler.
 func (h *InterfaceVppHandler) GetInterfaceVrf(ifIdx uint32) (vrfID uint32, err error) {
 	return h.getInterfaceVrf(ifIdx, false)
 }
 
-// GetInterfaceVrfIPv6 implements interface handler.
 func (h *InterfaceVppHandler) GetInterfaceVrfIPv6(ifIdx uint32) (vrfID uint32, err error) {
 	return h.getInterfaceVrf(ifIdx, true)
 }
 
 // Interface is set to VRF table. Table IP version has to be defined.
 func (h *InterfaceVppHandler) setInterfaceVrf(ifIdx, vrfID uint32, isIPv6 bool) error {
-	req := &interfaces.SwInterfaceSetTable{
-		SwIfIndex: interfaces.InterfaceIndex(ifIdx),
+	req := &vpp_ifs.SwInterfaceSetTable{
+		SwIfIndex: vpp_ifs.InterfaceIndex(ifIdx),
 		VrfID:     vrfID,
 		IsIPv6:    isIPv6,
 	}
-	reply := &interfaces.SwInterfaceSetTableReply{}
+	reply := &vpp_ifs.SwInterfaceSetTableReply{}
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
@@ -58,11 +54,11 @@ func (h *InterfaceVppHandler) setInterfaceVrf(ifIdx, vrfID uint32, isIPv6 bool) 
 
 // Returns VRF ID for provided interface.
 func (h *InterfaceVppHandler) getInterfaceVrf(ifIdx uint32, isIPv6 bool) (vrfID uint32, err error) {
-	req := &interfaces.SwInterfaceGetTable{
-		SwIfIndex: interfaces.InterfaceIndex(ifIdx),
+	req := &vpp_ifs.SwInterfaceGetTable{
+		SwIfIndex: vpp_ifs.InterfaceIndex(ifIdx),
 		IsIPv6:    isIPv6,
 	}
-	reply := &interfaces.SwInterfaceGetTableReply{}
+	reply := &vpp_ifs.SwInterfaceGetTableReply{}
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return 0, err

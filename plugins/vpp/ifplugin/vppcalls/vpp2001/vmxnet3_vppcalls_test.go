@@ -17,9 +17,9 @@ package vpp2001_test
 import (
 	"testing"
 
-	ifModel "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/vmxnet3"
+	ifs "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
+	vpp_ifs "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/interfaces"
+	vpp_vmxnet3 "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/vmxnet3"
 	. "github.com/onsi/gomega"
 )
 
@@ -27,12 +27,12 @@ func TestAddVmxNet3Interface(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&vmxnet3.Vmxnet3CreateReply{
+	ctx.MockVpp.MockReply(&vpp_vmxnet3.Vmxnet3CreateReply{
 		SwIfIndex: 1,
 	})
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
+	ctx.MockVpp.MockReply(&vpp_ifs.SwInterfaceTagAddDelReply{})
 
-	swIfIdx, err := ifHandler.AddVmxNet3("vmxnet3-face/be/1c/4", &ifModel.VmxNet3Link{
+	swIfIdx, err := ifHandler.AddVmxNet3("vmxnet3-face/be/1c/4", &ifs.VmxNet3Link{
 		EnableElog: true,
 		RxqSize:    2048,
 		TxqSize:    512,
@@ -41,7 +41,7 @@ func TestAddVmxNet3Interface(t *testing.T) {
 	Expect(swIfIdx).To(BeEquivalentTo(1))
 	var msgCheck bool
 	for _, msg := range ctx.MockChannel.Msgs {
-		vppMsg, ok := msg.(*vmxnet3.Vmxnet3Create)
+		vppMsg, ok := msg.(*vpp_vmxnet3.Vmxnet3Create)
 		if ok {
 			Expect(vppMsg.PciAddr).To(BeEquivalentTo(2629761742))
 			Expect(vppMsg.EnableElog).To(BeEquivalentTo(1))
@@ -57,10 +57,10 @@ func TestAddVmxNet3InterfacePCIErr(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&vmxnet3.Vmxnet3CreateReply{
+	ctx.MockVpp.MockReply(&vpp_vmxnet3.Vmxnet3CreateReply{
 		SwIfIndex: 1,
 	})
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
+	ctx.MockVpp.MockReply(&vpp_ifs.SwInterfaceTagAddDelReply{})
 
 	// Name in incorrect format
 	_, err := ifHandler.AddVmxNet3("vmxnet3-a/14/19", nil)
@@ -71,7 +71,7 @@ func TestAddVmxNet3InterfaceRetval(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&vmxnet3.Vmxnet3CreateReply{
+	ctx.MockVpp.MockReply(&vpp_vmxnet3.Vmxnet3CreateReply{
 		Retval: 1,
 	})
 
@@ -83,16 +83,16 @@ func TestDelVmxNet3Interface(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&vmxnet3.Vmxnet3DeleteReply{
+	ctx.MockVpp.MockReply(&vpp_vmxnet3.Vmxnet3DeleteReply{
 		Retval: 0,
 	})
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
+	ctx.MockVpp.MockReply(&vpp_ifs.SwInterfaceTagAddDelReply{})
 
 	err := ifHandler.DeleteVmxNet3("vmxnet3-a/14/19/1e", 1)
 	Expect(err).To(BeNil())
 	var msgCheck bool
 	for _, msg := range ctx.MockChannel.Msgs {
-		vppMsg, ok := msg.(*vmxnet3.Vmxnet3Delete)
+		vppMsg, ok := msg.(*vpp_vmxnet3.Vmxnet3Delete)
 		if ok {
 			Expect(vppMsg.SwIfIndex).To(BeEquivalentTo(1))
 			msgCheck = true
@@ -105,7 +105,7 @@ func TestDelVmxNet3InterfaceRetval(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&vmxnet3.Vmxnet3DeleteReply{
+	ctx.MockVpp.MockReply(&vpp_vmxnet3.Vmxnet3DeleteReply{
 		Retval: 1,
 	})
 

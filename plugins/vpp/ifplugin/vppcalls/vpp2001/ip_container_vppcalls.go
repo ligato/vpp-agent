@@ -16,7 +16,7 @@ package vpp2001
 
 import (
 	"github.com/ligato/cn-infra/utils/addrs"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/ip"
+	vpp_ip "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/ip"
 )
 
 const (
@@ -25,7 +25,7 @@ const (
 )
 
 func (h *InterfaceVppHandler) sendAndLogMessageForVpp(ifIdx uint32, addr string, isAdd uint8) error {
-	req := &ip.IPContainerProxyAddDel{
+	req := &vpp_ip.IPContainerProxyAddDel{
 		SwIfIndex: ifIdx,
 		IsAdd:     isAdd,
 	}
@@ -39,12 +39,12 @@ func (h *InterfaceVppHandler) sendAndLogMessageForVpp(ifIdx uint32, addr string,
 	req.Pfx.Len = byte(prefix)
 	if isIPv6 {
 		copy(req.Pfx.Address.Un.XXX_UnionData[:], IPaddr.IP.To16())
-		req.Pfx.Address.Af = ip.ADDRESS_IP6
+		req.Pfx.Address.Af = vpp_ip.ADDRESS_IP6
 	} else {
 		copy(req.Pfx.Address.Un.XXX_UnionData[:], IPaddr.IP.To4())
-		req.Pfx.Address.Af = ip.ADDRESS_IP4
+		req.Pfx.Address.Af = vpp_ip.ADDRESS_IP4
 	}
-	reply := &ip.IPContainerProxyAddDelReply{}
+	reply := &vpp_ip.IPContainerProxyAddDelReply{}
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
@@ -53,12 +53,10 @@ func (h *InterfaceVppHandler) sendAndLogMessageForVpp(ifIdx uint32, addr string,
 	return nil
 }
 
-// AddContainerIP implements interface handler.
 func (h *InterfaceVppHandler) AddContainerIP(ifIdx uint32, addr string) error {
 	return h.sendAndLogMessageForVpp(ifIdx, addr, addContainerIP)
 }
 
-// DelContainerIP implements interface handler.
 func (h *InterfaceVppHandler) DelContainerIP(ifIdx uint32, addr string) error {
 	return h.sendAndLogMessageForVpp(ifIdx, addr, removeContainerIP)
 }

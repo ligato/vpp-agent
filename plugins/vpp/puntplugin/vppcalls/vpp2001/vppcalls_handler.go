@@ -21,16 +21,16 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 
-	ba_ip "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/ip"
-	ba_punt "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/punt"
+	vpp_ip "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/ip"
+	vpp_punt "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/punt"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/puntplugin/vppcalls"
 )
 
 func init() {
 	var msgs []govppapi.Message
-	msgs = append(msgs, ba_ip.AllMessages()...)
-	msgs = append(msgs, ba_punt.AllMessages()...)
+	msgs = append(msgs, vpp_ip.AllMessages()...)
+	msgs = append(msgs, vpp_punt.AllMessages()...)
 
 	vppcalls.Versions["vpp2001"] = vppcalls.HandlerVersion{
 		Msgs: msgs,
@@ -58,19 +58,19 @@ func NewPuntVppHandler(
 	}
 }
 
-func ipToAddress(ipstr string) (addr ba_ip.Address, err error) {
+func ipToAddress(ipstr string) (addr vpp_ip.Address, err error) {
 	netIP := net.ParseIP(ipstr)
 	if netIP == nil {
-		return ba_ip.Address{}, fmt.Errorf("invalid IP: %q", ipstr)
+		return vpp_ip.Address{}, fmt.Errorf("invalid IP: %q", ipstr)
 	}
 	if ip4 := netIP.To4(); ip4 == nil {
-		addr.Af = ba_ip.ADDRESS_IP6
-		var ip6addr ba_ip.IP6Address
+		addr.Af = vpp_ip.ADDRESS_IP6
+		var ip6addr vpp_ip.IP6Address
 		copy(ip6addr[:], netIP.To16())
 		addr.Un.SetIP6(ip6addr)
 	} else {
-		addr.Af = ba_ip.ADDRESS_IP4
-		var ip4addr ba_ip.IP4Address
+		addr.Af = vpp_ip.ADDRESS_IP4
+		var ip4addr vpp_ip.IP4Address
 		copy(ip4addr[:], ip4)
 		addr.Un.SetIP4(ip4addr)
 	}

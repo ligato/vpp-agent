@@ -19,19 +19,18 @@ import (
 
 	"github.com/pkg/errors"
 
-	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/vmxnet3"
+	ifs "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
+	vpp_vmxnet3 "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/vmxnet3"
 )
 
-// AddVmxNet3 implements interface handler
-func (h *InterfaceVppHandler) AddVmxNet3(ifName string, vmxNet3 *interfaces.VmxNet3Link) (swIdx uint32, err error) {
+func (h *InterfaceVppHandler) AddVmxNet3(ifName string, vmxNet3 *ifs.VmxNet3Link) (swIdx uint32, err error) {
 	var pci uint32
 	pci, err = derivePCI(ifName)
 	if err != nil {
 		return 0, err
 	}
 
-	req := &vmxnet3.Vmxnet3Create{
+	req := &vpp_vmxnet3.Vmxnet3Create{
 		PciAddr: pci,
 	}
 	// Optional arguments
@@ -41,7 +40,7 @@ func (h *InterfaceVppHandler) AddVmxNet3(ifName string, vmxNet3 *interfaces.VmxN
 		req.TxqSize = uint16(vmxNet3.TxqSize)
 	}
 
-	reply := &vmxnet3.Vmxnet3CreateReply{}
+	reply := &vpp_vmxnet3.Vmxnet3CreateReply{}
 	if err = h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return 0, errors.Errorf(err.Error())
 	}
@@ -49,12 +48,11 @@ func (h *InterfaceVppHandler) AddVmxNet3(ifName string, vmxNet3 *interfaces.VmxN
 	return reply.SwIfIndex, h.SetInterfaceTag(ifName, reply.SwIfIndex)
 }
 
-// DeleteVmxNet3 implements interface handler
 func (h *InterfaceVppHandler) DeleteVmxNet3(ifName string, ifIdx uint32) error {
-	req := &vmxnet3.Vmxnet3Delete{
+	req := &vpp_vmxnet3.Vmxnet3Delete{
 		SwIfIndex: ifIdx,
 	}
-	reply := &vmxnet3.Vmxnet3DeleteReply{}
+	reply := &vpp_vmxnet3.Vmxnet3DeleteReply{}
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return errors.Errorf(err.Error())
 	}

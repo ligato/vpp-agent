@@ -22,7 +22,7 @@ import (
 	"github.com/pkg/errors"
 
 	ipsec "github.com/ligato/vpp-agent/api/models/vpp/ipsec"
-	api "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/ipsec"
+	vpp_ipsec "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/ipsec"
 )
 
 // AddSPD implements IPSec handler.
@@ -74,11 +74,11 @@ func (h *IPSecVppHandler) DeleteSA(sa *ipsec.SecurityAssociation) error {
 }
 
 func (h *IPSecVppHandler) spdAddDel(spdID uint32, isAdd bool) error {
-	req := &api.IpsecSpdAddDel{
+	req := &vpp_ipsec.IpsecSpdAddDel{
 		IsAdd: boolToUint(isAdd),
 		SpdID: spdID,
 	}
-	reply := &api.IpsecSpdAddDelReply{}
+	reply := &vpp_ipsec.IpsecSpdAddDelReply{}
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
@@ -88,9 +88,9 @@ func (h *IPSecVppHandler) spdAddDel(spdID uint32, isAdd bool) error {
 }
 
 func (h *IPSecVppHandler) spdAddDelEntry(spdID, saID uint32, spd *ipsec.SecurityPolicyDatabase_PolicyEntry, isAdd bool) error {
-	req := &api.IpsecSpdEntryAddDel{
+	req := &vpp_ipsec.IpsecSpdEntryAddDel{
 		IsAdd: boolToUint(isAdd),
-		Entry: api.IpsecSpdEntry{
+		Entry: vpp_ipsec.IpsecSpdEntry{
 			SpdID:           spdID,
 			Priority:        spd.Priority,
 			IsOutbound:      boolToUint(spd.IsOutbound),
@@ -99,7 +99,7 @@ func (h *IPSecVppHandler) spdAddDelEntry(spdID, saID uint32, spd *ipsec.Security
 			RemotePortStop:  uint16(spd.RemotePortStop),
 			LocalPortStart:  uint16(spd.LocalPortStart),
 			LocalPortStop:   uint16(spd.LocalPortStop),
-			Policy:          api.IpsecSpdAction(spd.Action),
+			Policy:          vpp_ipsec.IpsecSpdAction(spd.Action),
 			SaID:            saID,
 		},
 	}
@@ -128,7 +128,7 @@ func (h *IPSecVppHandler) spdAddDelEntry(spdID, saID uint32, spd *ipsec.Security
 		return err
 	}
 
-	reply := &api.IpsecSpdEntryAddDelReply{}
+	reply := &vpp_ipsec.IpsecSpdEntryAddDelReply{}
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	}
@@ -144,12 +144,12 @@ func ipOr(s, o string) string {
 }
 
 func (h *IPSecVppHandler) interfaceAddDelSpd(spdID, swIfIdx uint32, isAdd bool) error {
-	req := &api.IpsecInterfaceAddDelSpd{
+	req := &vpp_ipsec.IpsecInterfaceAddDelSpd{
 		IsAdd:     boolToUint(isAdd),
 		SwIfIndex: swIfIdx,
 		SpdID:     spdID,
 	}
-	reply := &api.IpsecInterfaceAddDelSpdReply{}
+	reply := &vpp_ipsec.IpsecInterfaceAddDelSpdReply{}
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
@@ -173,25 +173,25 @@ func (h *IPSecVppHandler) sadAddDelEntry(sa *ipsec.SecurityAssociation, isAdd bo
 		return err
 	}
 
-	var flags api.IpsecSadFlags
+	var flags vpp_ipsec.IpsecSadFlags
 	if sa.UseEsn {
-		flags |= api.IPSEC_API_SAD_FLAG_USE_ESN
+		flags |= vpp_ipsec.IPSEC_API_SAD_FLAG_USE_ESN
 	}
 	if sa.UseAntiReplay {
-		flags |= api.IPSEC_API_SAD_FLAG_USE_ANTI_REPLAY
+		flags |= vpp_ipsec.IPSEC_API_SAD_FLAG_USE_ANTI_REPLAY
 	}
 	if sa.EnableUdpEncap {
-		flags |= api.IPSEC_API_SAD_FLAG_UDP_ENCAP
+		flags |= vpp_ipsec.IPSEC_API_SAD_FLAG_UDP_ENCAP
 	}
-	var tunnelSrc, tunnelDst api.Address
+	var tunnelSrc, tunnelDst vpp_ipsec.Address
 	if sa.TunnelSrcAddr != "" {
-		flags |= api.IPSEC_API_SAD_FLAG_IS_TUNNEL
+		flags |= vpp_ipsec.IPSEC_API_SAD_FLAG_IS_TUNNEL
 		isIPv6, err := addrs.IsIPv6(sa.TunnelSrcAddr)
 		if err != nil {
 			return err
 		}
 		if isIPv6 {
-			flags |= api.IPSEC_API_SAD_FLAG_IS_TUNNEL_V6
+			flags |= vpp_ipsec.IPSEC_API_SAD_FLAG_IS_TUNNEL_V6
 		}
 		tunnelSrc, err = IPToAddress(sa.TunnelSrcAddr)
 		if err != nil {
@@ -203,19 +203,19 @@ func (h *IPSecVppHandler) sadAddDelEntry(sa *ipsec.SecurityAssociation, isAdd bo
 		}
 	}
 
-	req := &api.IpsecSadEntryAddDel{
+	req := &vpp_ipsec.IpsecSadEntryAddDel{
 		IsAdd: boolToUint(isAdd),
-		Entry: api.IpsecSadEntry{
+		Entry: vpp_ipsec.IpsecSadEntry{
 			SadID:           uint32(saID),
 			Spi:             sa.Spi,
-			Protocol:        api.IpsecProto(sa.Protocol),
-			CryptoAlgorithm: api.IpsecCryptoAlg(sa.CryptoAlg),
-			CryptoKey: api.Key{
+			Protocol:        vpp_ipsec.IpsecProto(sa.Protocol),
+			CryptoAlgorithm: vpp_ipsec.IpsecCryptoAlg(sa.CryptoAlg),
+			CryptoKey: vpp_ipsec.Key{
 				Data:   cryptoKey,
 				Length: uint8(len(cryptoKey)),
 			},
-			IntegrityAlgorithm: api.IpsecIntegAlg(sa.IntegAlg),
-			IntegrityKey: api.Key{
+			IntegrityAlgorithm: vpp_ipsec.IpsecIntegAlg(sa.IntegAlg),
+			IntegrityKey: vpp_ipsec.Key{
 				Data:   integKey,
 				Length: uint8(len(integKey)),
 			},
@@ -224,7 +224,7 @@ func (h *IPSecVppHandler) sadAddDelEntry(sa *ipsec.SecurityAssociation, isAdd bo
 			Flags:     flags,
 		},
 	}
-	reply := &api.IpsecSadEntryAddDelReply{}
+	reply := &vpp_ipsec.IpsecSadEntryAddDelReply{}
 
 	if err = h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err

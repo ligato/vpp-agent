@@ -15,16 +15,15 @@
 package vpp2001
 
 import (
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/interfaces"
+	vpp_ifs "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/interfaces"
 )
 
-// SetInterfaceMtu implements interface handler.
 func (h *InterfaceVppHandler) SetInterfaceMtu(ifIdx uint32, mtu uint32) error {
-	req := &interfaces.HwInterfaceSetMtu{
-		SwIfIndex: interfaces.InterfaceIndex(ifIdx),
+	req := &vpp_ifs.HwInterfaceSetMtu{
+		SwIfIndex: vpp_ifs.InterfaceIndex(ifIdx),
 		Mtu:       uint16(mtu),
 	}
-	reply := &interfaces.HwInterfaceSetMtuReply{}
+	reply := &vpp_ifs.HwInterfaceSetMtuReply{}
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err

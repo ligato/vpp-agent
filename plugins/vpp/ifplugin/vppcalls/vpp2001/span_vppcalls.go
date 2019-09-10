@@ -3,19 +3,19 @@ package vpp2001
 import (
 	"fmt"
 
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/span"
+	vpp_span "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/span"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
 )
 
 // SetSpan enables or disables SPAN on interface
 func (h *InterfaceVppHandler) setSpan(ifIdxFrom, ifIdxTo uint32, state, isL2 uint8) error {
-	req := &span.SwInterfaceSpanEnableDisable{
+	req := &vpp_span.SwInterfaceSpanEnableDisable{
 		SwIfIndexFrom: ifIdxFrom,
 		SwIfIndexTo:   ifIdxTo,
 		State:         state,
 		IsL2:          isL2,
 	}
-	reply := &span.SwInterfaceSpanEnableDisableReply{}
+	reply := &vpp_span.SwInterfaceSpanEnableDisableReply{}
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
@@ -38,13 +38,13 @@ func (h *InterfaceVppHandler) DelSpan(ifIdxFrom, ifIdxTo uint32, isL2 uint8) err
 func (h *InterfaceVppHandler) DumpSpan() ([]*vppcalls.InterfaceSpanDetails, error) {
 	var spans []*vppcalls.InterfaceSpanDetails
 
-	isL2Spans, err := h.dumpSpan(&span.SwInterfaceSpanDump{IsL2: 1})
+	isL2Spans, err := h.dumpSpan(&vpp_span.SwInterfaceSpanDump{IsL2: 1})
 	if err != nil {
 		return nil, err
 	}
 	spans = append(spans, isL2Spans...)
 
-	isNotL2Spans, err := h.dumpSpan(&span.SwInterfaceSpanDump{IsL2: 0})
+	isNotL2Spans, err := h.dumpSpan(&vpp_span.SwInterfaceSpanDump{IsL2: 0})
 	if err != nil {
 		return nil, err
 	}
@@ -54,12 +54,12 @@ func (h *InterfaceVppHandler) DumpSpan() ([]*vppcalls.InterfaceSpanDetails, erro
 }
 
 // dumpIsL2Span returns only SPANs with or without L2 set
-func (h *InterfaceVppHandler) dumpSpan(msg *span.SwInterfaceSpanDump) ([]*vppcalls.InterfaceSpanDetails, error) {
+func (h *InterfaceVppHandler) dumpSpan(msg *vpp_span.SwInterfaceSpanDump) ([]*vppcalls.InterfaceSpanDetails, error) {
 	var spans []*vppcalls.InterfaceSpanDetails
 
 	reqCtx := h.callsChannel.SendMultiRequest(msg)
 	for {
-		spanDetails := &span.SwInterfaceSpanDetails{}
+		spanDetails := &vpp_span.SwInterfaceSpanDetails{}
 		stop, err := reqCtx.ReceiveReply(spanDetails)
 		if stop {
 			break

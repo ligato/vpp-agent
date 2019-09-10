@@ -19,7 +19,7 @@ import (
 
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging/logrus"
-	l2ba "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/l2"
+	vpp_l2 "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/l2"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/l2plugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/vpp/l2plugin/vppcalls/vpp2001"
@@ -32,24 +32,24 @@ var inTestDataXConnect = []struct {
 	transmitIfaceIndex string
 	message            govppapi.Message
 }{
-	{"rxIf1", "txIf1", &l2ba.SwInterfaceSetL2XconnectReply{}},
-	{"rxIf2", "txIf2", &l2ba.SwInterfaceSetL2XconnectReply{Retval: 1}},
-	{"rxIf2", "txIf2", &l2ba.BridgeDomainAddDelReply{}},
+	{"rxIf1", "txIf1", &vpp_l2.SwInterfaceSetL2XconnectReply{}},
+	{"rxIf2", "txIf2", &vpp_l2.SwInterfaceSetL2XconnectReply{Retval: 1}},
+	{"rxIf2", "txIf2", &vpp_l2.BridgeDomainAddDelReply{}},
 }
 
 var outTestDataXConnect = []struct {
-	outData    *l2ba.SwInterfaceSetL2Xconnect
+	outData    *vpp_l2.SwInterfaceSetL2Xconnect
 	isResultOk bool
 }{
-	{&l2ba.SwInterfaceSetL2Xconnect{
+	{&vpp_l2.SwInterfaceSetL2Xconnect{
 		RxSwIfIndex: 100,
 		TxSwIfIndex: 200,
 	}, true},
-	{&l2ba.SwInterfaceSetL2Xconnect{
+	{&vpp_l2.SwInterfaceSetL2Xconnect{
 		RxSwIfIndex: 101,
 		TxSwIfIndex: 201,
 	}, false},
-	{&l2ba.SwInterfaceSetL2Xconnect{
+	{&vpp_l2.SwInterfaceSetL2Xconnect{
 		RxSwIfIndex: 101,
 		TxSwIfIndex: 201,
 	}, false},

@@ -17,7 +17,7 @@ package vpp2001_test
 import (
 	"testing"
 
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/interfaces"
+	vpp_ifs "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/interfaces"
 	. "github.com/onsi/gomega"
 )
 
@@ -25,7 +25,7 @@ func TestGetInterfaceVRF(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceGetTableReply{
+	ctx.MockVpp.MockReply(&vpp_ifs.SwInterfaceGetTableReply{
 		VrfID: 1,
 	})
 
@@ -38,7 +38,7 @@ func TestGetInterfaceIPv6VRF(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceGetTableReply{
+	ctx.MockVpp.MockReply(&vpp_ifs.SwInterfaceGetTableReply{
 		VrfID: 1,
 	})
 
@@ -51,7 +51,7 @@ func TestGetInterfaceVRFError(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceGetTable{})
+	ctx.MockVpp.MockReply(&vpp_ifs.SwInterfaceGetTable{})
 
 	_, err := ifHandler.GetInterfaceVrf(1)
 	Expect(err).ToNot(BeNil())
@@ -61,7 +61,7 @@ func TestGetInterfaceVRFRetval(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceGetTableReply{
+	ctx.MockVpp.MockReply(&vpp_ifs.SwInterfaceGetTableReply{
 		Retval: 1,
 	})
 
@@ -73,11 +73,11 @@ func TestSetInterfaceVRF(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetTableReply{})
+	ctx.MockVpp.MockReply(&vpp_ifs.SwInterfaceSetTableReply{})
 
 	err := ifHandler.SetInterfaceVrf(1, 2)
 	Expect(err).To(BeNil())
-	vppMsg, ok := ctx.MockChannel.Msg.(*interfaces.SwInterfaceSetTable)
+	vppMsg, ok := ctx.MockChannel.Msg.(*vpp_ifs.SwInterfaceSetTable)
 	Expect(ok).To(BeTrue())
 	Expect(vppMsg.SwIfIndex).To(BeEquivalentTo(1))
 	Expect(vppMsg.VrfID).To(BeEquivalentTo(2))
@@ -87,11 +87,11 @@ func TestSetInterfaceIPv6VRF(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetTableReply{})
+	ctx.MockVpp.MockReply(&vpp_ifs.SwInterfaceSetTableReply{})
 
 	err := ifHandler.SetInterfaceVrfIPv6(1, 2)
 	Expect(err).To(BeNil())
-	vppMsg, ok := ctx.MockChannel.Msg.(*interfaces.SwInterfaceSetTable)
+	vppMsg, ok := ctx.MockChannel.Msg.(*vpp_ifs.SwInterfaceSetTable)
 	Expect(ok).To(BeTrue())
 	Expect(vppMsg.SwIfIndex).To(BeEquivalentTo(1))
 	Expect(vppMsg.VrfID).To(BeEquivalentTo(2))
@@ -102,7 +102,7 @@ func TestSetInterfaceVRFError(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetTable{})
+	ctx.MockVpp.MockReply(&vpp_ifs.SwInterfaceSetTable{})
 
 	err := ifHandler.SetInterfaceVrf(1, 2)
 	Expect(err).To(HaveOccurred())
@@ -112,7 +112,7 @@ func TestSetInterfaceVRFRetval(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetTableReply{
+	ctx.MockVpp.MockReply(&vpp_ifs.SwInterfaceSetTableReply{
 		Retval: 1,
 	})
 

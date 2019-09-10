@@ -20,7 +20,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	l2 "github.com/ligato/vpp-agent/api/models/vpp/l2"
-	l2ba "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/l2"
+	vpp_l2 "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/l2"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 )
 
@@ -30,7 +30,7 @@ func TestAddInterfaceToBridgeDomain(t *testing.T) {
 
 	ifaceIdx.Put("if1", &ifaceidx.IfaceMetadata{SwIfIndex: 1})
 
-	ctx.MockVpp.MockReply(&l2ba.SwInterfaceSetL2BridgeReply{})
+	ctx.MockVpp.MockReply(&vpp_l2.SwInterfaceSetL2BridgeReply{})
 	err := bdHandler.AddInterfaceToBridgeDomain(1, &l2.BridgeDomain_Interface{
 		Name:                    "if1",
 		BridgedVirtualInterface: true,
@@ -40,11 +40,11 @@ func TestAddInterfaceToBridgeDomain(t *testing.T) {
 	Expect(err).To(BeNil())
 	Expect(ctx.MockChannel.Msgs).To(HaveLen(1))
 	msg := ctx.MockChannel.Msgs[0]
-	Expect(msg).To(BeEquivalentTo(&l2ba.SwInterfaceSetL2Bridge{
+	Expect(msg).To(BeEquivalentTo(&vpp_l2.SwInterfaceSetL2Bridge{
 		RxSwIfIndex: uint32(1),
 		BdID:        1,
 		Shg:         uint8(0),
-		PortType:    l2ba.L2_API_PORT_TYPE_BVI,
+		PortType:    vpp_l2.L2_API_PORT_TYPE_BVI,
 		Enable:      1,
 	}))
 }
@@ -55,7 +55,7 @@ func TestAddMissingInterfaceToBridgeDomain(t *testing.T) {
 
 	// missing: ifaceIdx.Put("if1", &ifaceidx.IfaceMetadata{SwIfIndex: 1})
 
-	ctx.MockVpp.MockReply(&l2ba.SwInterfaceSetL2BridgeReply{})
+	ctx.MockVpp.MockReply(&vpp_l2.SwInterfaceSetL2BridgeReply{})
 	err := bdHandler.AddInterfaceToBridgeDomain(1, &l2.BridgeDomain_Interface{
 		Name:                    "if1",
 		BridgedVirtualInterface: true,
@@ -72,7 +72,7 @@ func TestAddInterfaceToBridgeDomainWithError(t *testing.T) {
 
 	ifaceIdx.Put("if1", &ifaceidx.IfaceMetadata{SwIfIndex: 1})
 
-	ctx.MockVpp.MockReply(&l2ba.SwInterfaceSetL2Bridge{}) // wrong reply message type
+	ctx.MockVpp.MockReply(&vpp_l2.SwInterfaceSetL2Bridge{}) // wrong reply message type
 	err := bdHandler.AddInterfaceToBridgeDomain(1, &l2.BridgeDomain_Interface{
 		Name:                    "if1",
 		BridgedVirtualInterface: true,
@@ -89,7 +89,7 @@ func TestAddInterfaceToBridgeDomainWithNonZeroRetval(t *testing.T) {
 
 	ifaceIdx.Put("if1", &ifaceidx.IfaceMetadata{SwIfIndex: 1})
 
-	ctx.MockVpp.MockReply(&l2ba.SwInterfaceSetL2BridgeReply{
+	ctx.MockVpp.MockReply(&vpp_l2.SwInterfaceSetL2BridgeReply{
 		Retval: 1,
 	})
 	err := bdHandler.AddInterfaceToBridgeDomain(1, &l2.BridgeDomain_Interface{
@@ -108,7 +108,7 @@ func TestDeleteInterfaceFromBridgeDomain(t *testing.T) {
 
 	ifaceIdx.Put("if1", &ifaceidx.IfaceMetadata{SwIfIndex: 10})
 
-	ctx.MockVpp.MockReply(&l2ba.SwInterfaceSetL2BridgeReply{})
+	ctx.MockVpp.MockReply(&vpp_l2.SwInterfaceSetL2BridgeReply{})
 	err := bdHandler.DeleteInterfaceFromBridgeDomain(4, &l2.BridgeDomain_Interface{
 		Name:              "if1",
 		SplitHorizonGroup: 12,
@@ -117,11 +117,11 @@ func TestDeleteInterfaceFromBridgeDomain(t *testing.T) {
 	Expect(err).To(BeNil())
 	Expect(ctx.MockChannel.Msgs).To(HaveLen(1))
 	msg := ctx.MockChannel.Msgs[0]
-	Expect(msg).To(BeEquivalentTo(&l2ba.SwInterfaceSetL2Bridge{
+	Expect(msg).To(BeEquivalentTo(&vpp_l2.SwInterfaceSetL2Bridge{
 		RxSwIfIndex: uint32(10),
 		BdID:        4,
 		Shg:         uint8(12),
-		PortType:    l2ba.L2_API_PORT_TYPE_NORMAL,
+		PortType:    vpp_l2.L2_API_PORT_TYPE_NORMAL,
 		Enable:      0,
 	}))
 }
@@ -132,7 +132,7 @@ func TestDeleteMissingInterfaceFromBridgeDomain(t *testing.T) {
 
 	// missing: ifaceIdx.Put("if1", &ifaceidx.IfaceMetadata{SwIfIndex: 10})
 
-	ctx.MockVpp.MockReply(&l2ba.SwInterfaceSetL2BridgeReply{})
+	ctx.MockVpp.MockReply(&vpp_l2.SwInterfaceSetL2BridgeReply{})
 	err := bdHandler.DeleteInterfaceFromBridgeDomain(4, &l2.BridgeDomain_Interface{
 		Name:              "if1",
 		SplitHorizonGroup: 12,

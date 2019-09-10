@@ -15,15 +15,15 @@
 package vpp2001
 
 import (
-	vpp_l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
+	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
 	"testing"
 
 	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vrfidx"
 
 	"github.com/ligato/cn-infra/logging/logrus"
 	netallock_mock "github.com/ligato/vpp-agent/plugins/netalloc/mock"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/ip"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/vpe"
+	vpp_ip "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/ip"
+	vpp_vpe "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/vpe"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/vppcallmock"
 	. "github.com/onsi/gomega"
@@ -38,43 +38,43 @@ func TestDumpStaticRoutes(t *testing.T) {
 	l3handler := NewRouteVppHandler(ctx.MockChannel, ifIndexes, vrfIndexes, netallock_mock.NewMockNetAlloc(),
 		logrus.DefaultLogger())
 
-	vrfIndexes.Put("vrf1-ipv4", &vrfidx.VRFMetadata{Index: 0, Protocol: vpp_l3.VrfTable_IPV4})
-	vrfIndexes.Put("vrf1-ipv6", &vrfidx.VRFMetadata{Index: 0, Protocol: vpp_l3.VrfTable_IPV6})
+	vrfIndexes.Put("vrf1-ipv4", &vrfidx.VRFMetadata{Index: 0, Protocol: l3.VrfTable_IPV4})
+	vrfIndexes.Put("vrf1-ipv6", &vrfidx.VRFMetadata{Index: 0, Protocol: l3.VrfTable_IPV6})
 	ifIndexes.Put("if1", &ifaceidx.IfaceMetadata{SwIfIndex: 1})
 	ifIndexes.Put("if2", &ifaceidx.IfaceMetadata{SwIfIndex: 2})
 
-	ctx.MockVpp.MockReply(&ip.IPRouteDetails{
-		Route: ip.IPRoute{
-			Prefix: ip.Prefix{
-				Address: ip.Address{
-					Af: ip.ADDRESS_IP4,
-					Un: ip.AddressUnionIP4([4]uint8{10, 0, 0, 1}),
+	ctx.MockVpp.MockReply(&vpp_ip.IPRouteDetails{
+		Route: vpp_ip.IPRoute{
+			Prefix: vpp_ip.Prefix{
+				Address: vpp_ip.Address{
+					Af: vpp_ip.ADDRESS_IP4,
+					Un: vpp_ip.AddressUnionIP4([4]uint8{10, 0, 0, 1}),
 				},
 			},
-			Paths: []ip.FibPath{
+			Paths: []vpp_ip.FibPath{
 				{
 					SwIfIndex: 2,
 				},
 			},
 		},
 	})
-	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
-	ctx.MockVpp.MockReply(&ip.IPRouteDetails{
-		Route: ip.IPRoute{
-			Prefix: ip.Prefix{
-				Address: ip.Address{
-					Af: ip.ADDRESS_IP6,
-					Un: ip.AddressUnionIP6([16]uint8{255, 255, 10, 1}),
+	ctx.MockVpp.MockReply(&vpp_vpe.ControlPingReply{})
+	ctx.MockVpp.MockReply(&vpp_ip.IPRouteDetails{
+		Route: vpp_ip.IPRoute{
+			Prefix: vpp_ip.Prefix{
+				Address: vpp_ip.Address{
+					Af: vpp_ip.ADDRESS_IP6,
+					Un: vpp_ip.AddressUnionIP6([16]uint8{255, 255, 10, 1}),
 				},
 			},
-			Paths: []ip.FibPath{
+			Paths: []vpp_ip.FibPath{
 				{
 					SwIfIndex: 1,
 				},
 			},
 		},
 	})
-	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
+	ctx.MockVpp.MockReply(&vpp_vpe.ControlPingReply{})
 
 	rtDetails, err := l3handler.DumpRoutes()
 	Expect(err).To(Succeed())

@@ -19,8 +19,8 @@ import (
 
 	"github.com/ligato/cn-infra/logging/logrus"
 	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/ip"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/vpe"
+	vpp_ip "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/ip"
+	vpp_vpe "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/vpe"
 	"github.com/ligato/vpp-agent/plugins/vpp/vppcallmock"
 	. "github.com/onsi/gomega"
 )
@@ -31,37 +31,37 @@ func TestDumpVrfTables(t *testing.T) {
 	vthandler := NewVrfTableVppHandler(ctx.MockChannel, logrus.DefaultLogger())
 
 	ctx.MockVpp.MockReply(
-		&ip.IPTableDetails{
-			Table: ip.IPTable{
+		&vpp_ip.IPTableDetails{
+			Table: vpp_ip.IPTable{
 				TableID: 1,
 				Name:    []byte("table3"),
 				IsIP6:   0,
 			},
 		},
-		&ip.IPTableDetails{
-			Table: ip.IPTable{
+		&vpp_ip.IPTableDetails{
+			Table: vpp_ip.IPTable{
 				TableID: 2,
 				Name:    []byte("table3"),
 				IsIP6:   0,
 			},
 		},
-		&ip.IPTableDetails{
-			Table: ip.IPTable{
+		&vpp_ip.IPTableDetails{
+			Table: vpp_ip.IPTable{
 				TableID: 3,
 				Name:    []byte("table2"),
 				IsIP6:   1,
 			},
 		},
 	)
-	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
+	ctx.MockVpp.MockReply(&vpp_vpe.ControlPingReply{})
 	ctx.MockVpp.MockReply(
-		&ip.IPRouteDetails{
-			Route: ip.IPRoute{
+		&vpp_ip.IPRouteDetails{
+			Route: vpp_ip.IPRoute{
 				TableID: 2,
-				Paths:   []ip.FibPath{{SwIfIndex: 5}},
+				Paths:   []vpp_ip.FibPath{{SwIfIndex: 5}},
 			},
 		})
-	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
+	ctx.MockVpp.MockReply(&vpp_vpe.ControlPingReply{})
 
 	vrfTables, err := vthandler.DumpVrfTables()
 	Expect(err).To(Succeed())

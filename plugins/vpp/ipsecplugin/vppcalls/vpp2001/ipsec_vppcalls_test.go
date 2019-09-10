@@ -20,8 +20,8 @@ import (
 	"testing"
 
 	"github.com/ligato/cn-infra/logging/logrus"
-	ipsec2 "github.com/ligato/vpp-agent/api/models/vpp/ipsec"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/ipsec"
+	ipsec "github.com/ligato/vpp-agent/api/models/vpp/ipsec"
+	vpp_ipsec "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/ipsec"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/ipsecplugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/vpp/ipsecplugin/vppcalls/vpp2001"
@@ -29,7 +29,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func ipToAddr(ip string) ipsec.Address {
+func ipToAddr(ip string) vpp_ipsec.Address {
 	addr, err := vpp2001.IPToAddress(ip)
 	if err != nil {
 		panic(fmt.Sprintf("invalid IP: %s", ip))
@@ -41,12 +41,12 @@ func TestVppAddSPD(t *testing.T) {
 	ctx, ipSecHandler, _ := ipSecTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&ipsec.IpsecSpdAddDelReply{})
+	ctx.MockVpp.MockReply(&vpp_ipsec.IpsecSpdAddDelReply{})
 
 	err := ipSecHandler.AddSPD(10)
 
 	Expect(err).ShouldNot(HaveOccurred())
-	Expect(ctx.MockChannel.Msg).To(BeEquivalentTo(&ipsec.IpsecSpdAddDel{
+	Expect(ctx.MockChannel.Msg).To(BeEquivalentTo(&vpp_ipsec.IpsecSpdAddDel{
 		IsAdd: 1,
 		SpdID: 10,
 	}))
@@ -56,12 +56,12 @@ func TestVppDelSPD(t *testing.T) {
 	ctx, ipSecHandler, _ := ipSecTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&ipsec.IpsecSpdAddDelReply{})
+	ctx.MockVpp.MockReply(&vpp_ipsec.IpsecSpdAddDelReply{})
 
 	err := ipSecHandler.DeleteSPD(10)
 
 	Expect(err).ShouldNot(HaveOccurred())
-	Expect(ctx.MockChannel.Msg).To(BeEquivalentTo(&ipsec.IpsecSpdAddDel{
+	Expect(ctx.MockChannel.Msg).To(BeEquivalentTo(&vpp_ipsec.IpsecSpdAddDel{
 		IsAdd: 0,
 		SpdID: 10,
 	}))
@@ -71,18 +71,18 @@ func TestVppAddSPDEntry(t *testing.T) {
 	ctx, ipSecHandler, _ := ipSecTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&ipsec.IpsecSpdEntryAddDelReply{})
+	ctx.MockVpp.MockReply(&vpp_ipsec.IpsecSpdEntryAddDelReply{})
 
-	err := ipSecHandler.AddSPDEntry(10, 5, &ipsec2.SecurityPolicyDatabase_PolicyEntry{
+	err := ipSecHandler.AddSPDEntry(10, 5, &ipsec.SecurityPolicyDatabase_PolicyEntry{
 		SaIndex:    "5",
 		Priority:   10,
 		IsOutbound: true,
 	})
 
 	Expect(err).ShouldNot(HaveOccurred())
-	Expect(ctx.MockChannel.Msg).To(BeEquivalentTo(&ipsec.IpsecSpdEntryAddDel{
+	Expect(ctx.MockChannel.Msg).To(BeEquivalentTo(&vpp_ipsec.IpsecSpdEntryAddDel{
 		IsAdd: 1,
-		Entry: ipsec.IpsecSpdEntry{
+		Entry: vpp_ipsec.IpsecSpdEntry{
 			SpdID:              10,
 			SaID:               5,
 			Priority:           10,
@@ -101,18 +101,18 @@ func TestVppDelSPDEntry(t *testing.T) {
 	ctx, ipSecHandler, _ := ipSecTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&ipsec.IpsecSpdEntryAddDelReply{})
+	ctx.MockVpp.MockReply(&vpp_ipsec.IpsecSpdEntryAddDelReply{})
 
-	err := ipSecHandler.DeleteSPDEntry(10, 2, &ipsec2.SecurityPolicyDatabase_PolicyEntry{
+	err := ipSecHandler.DeleteSPDEntry(10, 2, &ipsec.SecurityPolicyDatabase_PolicyEntry{
 		SaIndex:    "2",
 		Priority:   5,
 		IsOutbound: true,
 	})
 
 	Expect(err).ShouldNot(HaveOccurred())
-	Expect(ctx.MockChannel.Msg).To(BeEquivalentTo(&ipsec.IpsecSpdEntryAddDel{
+	Expect(ctx.MockChannel.Msg).To(BeEquivalentTo(&vpp_ipsec.IpsecSpdEntryAddDel{
 		IsAdd: 0,
-		Entry: ipsec.IpsecSpdEntry{
+		Entry: vpp_ipsec.IpsecSpdEntry{
 			SpdID:              10,
 			SaID:               2,
 			Priority:           5,
@@ -131,16 +131,16 @@ func TestVppInterfaceAddSPD(t *testing.T) {
 	ctx, ipSecHandler, ifIndex := ipSecTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&ipsec.IpsecInterfaceAddDelSpdReply{})
+	ctx.MockVpp.MockReply(&vpp_ipsec.IpsecInterfaceAddDelSpdReply{})
 
 	ifIndex.Put("if1", &ifaceidx.IfaceMetadata{SwIfIndex: 2})
 
-	err := ipSecHandler.AddSPDInterface(10, &ipsec2.SecurityPolicyDatabase_Interface{
+	err := ipSecHandler.AddSPDInterface(10, &ipsec.SecurityPolicyDatabase_Interface{
 		Name: "if1",
 	})
 
 	Expect(err).ShouldNot(HaveOccurred())
-	Expect(ctx.MockChannel.Msg).To(BeEquivalentTo(&ipsec.IpsecInterfaceAddDelSpd{
+	Expect(ctx.MockChannel.Msg).To(BeEquivalentTo(&vpp_ipsec.IpsecInterfaceAddDelSpd{
 		IsAdd:     1,
 		SpdID:     10,
 		SwIfIndex: 2,
@@ -151,16 +151,16 @@ func TestVppInterfaceDelSPD(t *testing.T) {
 	ctx, ipSecHandler, ifIndex := ipSecTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&ipsec.IpsecInterfaceAddDelSpdReply{})
+	ctx.MockVpp.MockReply(&vpp_ipsec.IpsecInterfaceAddDelSpdReply{})
 
 	ifIndex.Put("if1", &ifaceidx.IfaceMetadata{SwIfIndex: 2})
 
-	err := ipSecHandler.DeleteSPDInterface(10, &ipsec2.SecurityPolicyDatabase_Interface{
+	err := ipSecHandler.DeleteSPDInterface(10, &ipsec.SecurityPolicyDatabase_Interface{
 		Name: "if1",
 	})
 
 	Expect(err).ShouldNot(HaveOccurred())
-	Expect(ctx.MockChannel.Msg).To(BeEquivalentTo(&ipsec.IpsecInterfaceAddDelSpd{
+	Expect(ctx.MockChannel.Msg).To(BeEquivalentTo(&vpp_ipsec.IpsecInterfaceAddDelSpd{
 		IsAdd:     0,
 		SpdID:     10,
 		SwIfIndex: 2,
@@ -179,12 +179,12 @@ func TestVppAddSA(t *testing.T) {
 	ctx, ipSecHandler, _ := ipSecTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&ipsec.IpsecSadEntryAddDelReply{})
+	ctx.MockVpp.MockReply(&vpp_ipsec.IpsecSadEntryAddDelReply{})
 
 	cryptoKey, err := hex.DecodeString("")
 	Expect(err).To(BeNil())
 
-	err = ipSecHandler.AddSA(&ipsec2.SecurityAssociation{
+	err = ipSecHandler.AddSA(&ipsec.SecurityAssociation{
 		Index:         "1",
 		Spi:           uint32(1001),
 		UseEsn:        true,
@@ -192,20 +192,20 @@ func TestVppAddSA(t *testing.T) {
 	})
 
 	Expect(err).ShouldNot(HaveOccurred())
-	Expect(ctx.MockChannel.Msg).To(BeEquivalentTo(&ipsec.IpsecSadEntryAddDel{
+	Expect(ctx.MockChannel.Msg).To(BeEquivalentTo(&vpp_ipsec.IpsecSadEntryAddDel{
 		IsAdd: 1,
-		Entry: ipsec.IpsecSadEntry{
+		Entry: vpp_ipsec.IpsecSadEntry{
 			SadID: 1,
 			Spi:   1001,
-			CryptoKey: ipsec.Key{
+			CryptoKey: vpp_ipsec.Key{
 				Length: uint8(len(cryptoKey)),
 				Data:   cryptoKey,
 			},
-			IntegrityKey: ipsec.Key{
+			IntegrityKey: vpp_ipsec.Key{
 				Length: uint8(len(cryptoKey)),
 				Data:   cryptoKey,
 			},
-			Flags: ipsec.IPSEC_API_SAD_FLAG_USE_ESN | ipsec.IPSEC_API_SAD_FLAG_USE_ANTI_REPLAY,
+			Flags: vpp_ipsec.IPSEC_API_SAD_FLAG_USE_ESN | vpp_ipsec.IPSEC_API_SAD_FLAG_USE_ANTI_REPLAY,
 		},
 	}))
 }
@@ -214,12 +214,12 @@ func TestVppDelSA(t *testing.T) {
 	ctx, ipSecHandler, _ := ipSecTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&ipsec.IpsecSadEntryAddDelReply{})
+	ctx.MockVpp.MockReply(&vpp_ipsec.IpsecSadEntryAddDelReply{})
 
 	cryptoKey, err := hex.DecodeString("")
 	Expect(err).To(BeNil())
 
-	err = ipSecHandler.DeleteSA(&ipsec2.SecurityAssociation{
+	err = ipSecHandler.DeleteSA(&ipsec.SecurityAssociation{
 		Index:         "1",
 		Spi:           uint32(1001),
 		UseEsn:        true,
@@ -227,20 +227,20 @@ func TestVppDelSA(t *testing.T) {
 	})
 
 	Expect(err).ShouldNot(HaveOccurred())
-	Expect(ctx.MockChannel.Msg).To(BeEquivalentTo(&ipsec.IpsecSadEntryAddDel{
+	Expect(ctx.MockChannel.Msg).To(BeEquivalentTo(&vpp_ipsec.IpsecSadEntryAddDel{
 		IsAdd: 0,
-		Entry: ipsec.IpsecSadEntry{
+		Entry: vpp_ipsec.IpsecSadEntry{
 			SadID: 1,
 			Spi:   1001,
-			CryptoKey: ipsec.Key{
+			CryptoKey: vpp_ipsec.Key{
 				Length: uint8(len(cryptoKey)),
 				Data:   cryptoKey,
 			},
-			IntegrityKey: ipsec.Key{
+			IntegrityKey: vpp_ipsec.Key{
 				Length: uint8(len(cryptoKey)),
 				Data:   cryptoKey,
 			},
-			Flags: ipsec.IPSEC_API_SAD_FLAG_USE_ESN | ipsec.IPSEC_API_SAD_FLAG_USE_ANTI_REPLAY,
+			Flags: vpp_ipsec.IPSEC_API_SAD_FLAG_USE_ESN | vpp_ipsec.IPSEC_API_SAD_FLAG_USE_ANTI_REPLAY,
 		},
 	}))
 }
@@ -249,12 +249,12 @@ func TestVppAddSATunnelMode(t *testing.T) {
 	ctx, ipSecHandler, _ := ipSecTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&ipsec.IpsecSadEntryAddDelReply{})
+	ctx.MockVpp.MockReply(&vpp_ipsec.IpsecSadEntryAddDelReply{})
 
 	cryptoKey, err := hex.DecodeString("")
 	Expect(err).To(BeNil())
 
-	err = ipSecHandler.AddSA(&ipsec2.SecurityAssociation{
+	err = ipSecHandler.AddSA(&ipsec.SecurityAssociation{
 		Index:         "1",
 		Spi:           uint32(1001),
 		TunnelSrcAddr: "10.1.0.1",
@@ -262,28 +262,28 @@ func TestVppAddSATunnelMode(t *testing.T) {
 	})
 
 	Expect(err).ShouldNot(HaveOccurred())
-	Expect(ctx.MockChannel.Msg).To(BeEquivalentTo(&ipsec.IpsecSadEntryAddDel{
+	Expect(ctx.MockChannel.Msg).To(BeEquivalentTo(&vpp_ipsec.IpsecSadEntryAddDel{
 		IsAdd: 1,
-		Entry: ipsec.IpsecSadEntry{
+		Entry: vpp_ipsec.IpsecSadEntry{
 			SadID: 1,
 			Spi:   1001,
-			CryptoKey: ipsec.Key{
+			CryptoKey: vpp_ipsec.Key{
 				Length: uint8(len(cryptoKey)),
 				Data:   cryptoKey,
 			},
-			IntegrityKey: ipsec.Key{
+			IntegrityKey: vpp_ipsec.Key{
 				Length: uint8(len(cryptoKey)),
 				Data:   cryptoKey,
 			},
-			TunnelSrc: ipsec.Address{
-				Af: ipsec.ADDRESS_IP4,
-				Un: ipsec.AddressUnion{XXX_UnionData: [16]byte{10, 1, 0, 1}},
+			TunnelSrc: vpp_ipsec.Address{
+				Af: vpp_ipsec.ADDRESS_IP4,
+				Un: vpp_ipsec.AddressUnion{XXX_UnionData: [16]byte{10, 1, 0, 1}},
 			},
-			TunnelDst: ipsec.Address{
-				Af: ipsec.ADDRESS_IP4,
-				Un: ipsec.AddressUnion{XXX_UnionData: [16]byte{20, 1, 0, 1}},
+			TunnelDst: vpp_ipsec.Address{
+				Af: vpp_ipsec.ADDRESS_IP4,
+				Un: vpp_ipsec.AddressUnion{XXX_UnionData: [16]byte{20, 1, 0, 1}},
 			},
-			Flags: ipsec.IPSEC_API_SAD_FLAG_IS_TUNNEL,
+			Flags: vpp_ipsec.IPSEC_API_SAD_FLAG_IS_TUNNEL,
 		},
 	}))
 }
@@ -292,12 +292,12 @@ func TestVppAddSATunnelModeIPv6(t *testing.T) {
 	ctx, ipSecHandler, _ := ipSecTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&ipsec.IpsecSadEntryAddDelReply{})
+	ctx.MockVpp.MockReply(&vpp_ipsec.IpsecSadEntryAddDelReply{})
 
 	cryptoKey, err := hex.DecodeString("")
 	Expect(err).To(BeNil())
 
-	err = ipSecHandler.AddSA(&ipsec2.SecurityAssociation{
+	err = ipSecHandler.AddSA(&ipsec.SecurityAssociation{
 		Index:         "1",
 		Spi:           uint32(1001),
 		TunnelSrcAddr: "1234::",
@@ -305,28 +305,28 @@ func TestVppAddSATunnelModeIPv6(t *testing.T) {
 	})
 
 	Expect(err).ShouldNot(HaveOccurred())
-	Expect(ctx.MockChannel.Msg).To(BeEquivalentTo(&ipsec.IpsecSadEntryAddDel{
+	Expect(ctx.MockChannel.Msg).To(BeEquivalentTo(&vpp_ipsec.IpsecSadEntryAddDel{
 		IsAdd: 1,
-		Entry: ipsec.IpsecSadEntry{
+		Entry: vpp_ipsec.IpsecSadEntry{
 			SadID: 1,
 			Spi:   1001,
-			CryptoKey: ipsec.Key{
+			CryptoKey: vpp_ipsec.Key{
 				Length: uint8(len(cryptoKey)),
 				Data:   cryptoKey,
 			},
-			IntegrityKey: ipsec.Key{
+			IntegrityKey: vpp_ipsec.Key{
 				Length: uint8(len(cryptoKey)),
 				Data:   cryptoKey,
 			},
-			TunnelSrc: ipsec.Address{
-				Af: ipsec.ADDRESS_IP6,
-				Un: ipsec.AddressUnion{XXX_UnionData: [16]byte{18, 52}},
+			TunnelSrc: vpp_ipsec.Address{
+				Af: vpp_ipsec.ADDRESS_IP6,
+				Un: vpp_ipsec.AddressUnion{XXX_UnionData: [16]byte{18, 52}},
 			},
-			TunnelDst: ipsec.Address{
-				Af: ipsec.ADDRESS_IP6,
-				Un: ipsec.AddressUnion{XXX_UnionData: [16]byte{171, 205}},
+			TunnelDst: vpp_ipsec.Address{
+				Af: vpp_ipsec.ADDRESS_IP6,
+				Un: vpp_ipsec.AddressUnion{XXX_UnionData: [16]byte{171, 205}},
 			},
-			Flags: ipsec.IPSEC_API_SAD_FLAG_IS_TUNNEL | ipsec.IPSEC_API_SAD_FLAG_IS_TUNNEL_V6,
+			Flags: vpp_ipsec.IPSEC_API_SAD_FLAG_IS_TUNNEL | vpp_ipsec.IPSEC_API_SAD_FLAG_IS_TUNNEL_V6,
 		},
 	}))
 }

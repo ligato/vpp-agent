@@ -17,7 +17,7 @@ package vpp2001
 import (
 	"testing"
 
-	acl_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/acl"
+	vpp_acl "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/acl"
 	. "github.com/onsi/gomega"
 )
 
@@ -26,49 +26,49 @@ func TestRequestSetACLToInterfaces(t *testing.T) {
 	ctx := setupACLTest(t)
 	defer ctx.teardownACLTest()
 
-	ctx.MockVpp.MockReply(&acl_api.ACLInterfaceListDetails{
+	ctx.MockVpp.MockReply(&vpp_acl.ACLInterfaceListDetails{
 		SwIfIndex: 0,
 		Count:     1,
 		NInput:    1,
 		Acls:      []uint32{0, 1},
 	})
-	ctx.MockVpp.MockReply(&acl_api.ACLInterfaceSetACLListReply{})
+	ctx.MockVpp.MockReply(&vpp_acl.ACLInterfaceSetACLListReply{})
 	err := ctx.aclHandler.SetACLToInterfacesAsIngress(0, []uint32{0})
 	Expect(err).To(BeNil())
 
-	ctx.MockVpp.MockReply(&acl_api.ACLInterfaceListDetails{
+	ctx.MockVpp.MockReply(&vpp_acl.ACLInterfaceListDetails{
 		SwIfIndex: 0,
 		Count:     1,
 		NInput:    1,
 		Acls:      []uint32{0, 1},
 	})
-	ctx.MockVpp.MockReply(&acl_api.ACLInterfaceSetACLListReply{})
+	ctx.MockVpp.MockReply(&vpp_acl.ACLInterfaceSetACLListReply{})
 	err = ctx.aclHandler.SetACLToInterfacesAsEgress(0, []uint32{0})
 	Expect(err).To(BeNil())
 
 	// error cases
 
-	ctx.MockVpp.MockReply(&acl_api.ACLInterfaceSetACLListReply{})
+	ctx.MockVpp.MockReply(&vpp_acl.ACLInterfaceSetACLListReply{})
 	err = ctx.aclHandler.SetACLToInterfacesAsIngress(0, []uint32{0})
 	Expect(err).To(Not(BeNil()))
 
-	ctx.MockVpp.MockReply(&acl_api.ACLInterfaceListDetails{
+	ctx.MockVpp.MockReply(&vpp_acl.ACLInterfaceListDetails{
 		SwIfIndex: 0,
 		Count:     1,
 		NInput:    1,
 		Acls:      []uint32{0, 1},
 	})
-	ctx.MockVpp.MockReply(&acl_api.MacipACLAddReplaceReply{})
+	ctx.MockVpp.MockReply(&vpp_acl.MacipACLAddReplaceReply{})
 	err = ctx.aclHandler.SetACLToInterfacesAsIngress(0, []uint32{0})
 	Expect(err).To(Not(BeNil()))
 
-	ctx.MockVpp.MockReply(&acl_api.ACLInterfaceListDetails{
+	ctx.MockVpp.MockReply(&vpp_acl.ACLInterfaceListDetails{
 		SwIfIndex: 0,
 		Count:     1,
 		NInput:    1,
 		Acls:      []uint32{0, 1},
 	})
-	ctx.MockVpp.MockReply(&acl_api.ACLInterfaceSetACLListReply{Retval: -1})
+	ctx.MockVpp.MockReply(&vpp_acl.ACLInterfaceSetACLListReply{Retval: -1})
 	err = ctx.aclHandler.SetACLToInterfacesAsIngress(0, []uint32{0})
 	Expect(err).To(Not(BeNil()))
 }
@@ -78,49 +78,49 @@ func TestRequestRemoveInterfacesFromACL(t *testing.T) {
 	ctx := setupACLTest(t)
 	defer ctx.teardownACLTest()
 
-	ctx.MockVpp.MockReply(&acl_api.ACLInterfaceListDetails{
+	ctx.MockVpp.MockReply(&vpp_acl.ACLInterfaceListDetails{
 		SwIfIndex: 0,
 		Count:     1,
 		NInput:    1,
 		Acls:      []uint32{0, 1},
 	})
-	ctx.MockVpp.MockReply(&acl_api.ACLInterfaceSetACLListReply{})
+	ctx.MockVpp.MockReply(&vpp_acl.ACLInterfaceSetACLListReply{})
 	err := ctx.aclHandler.RemoveACLFromInterfacesAsIngress(0, []uint32{0})
 	Expect(err).To(BeNil())
 
-	ctx.MockVpp.MockReply(&acl_api.ACLInterfaceListDetails{
+	ctx.MockVpp.MockReply(&vpp_acl.ACLInterfaceListDetails{
 		SwIfIndex: 0,
 		Count:     1,
 		NInput:    1,
 		Acls:      []uint32{0, 1},
 	})
-	ctx.MockVpp.MockReply(&acl_api.ACLInterfaceSetACLListReply{})
+	ctx.MockVpp.MockReply(&vpp_acl.ACLInterfaceSetACLListReply{})
 	err = ctx.aclHandler.RemoveACLFromInterfacesAsEgress(0, []uint32{0})
 	Expect(err).To(BeNil())
 
 	// error cases
 
-	ctx.MockVpp.MockReply(&acl_api.ACLInterfaceSetACLListReply{})
+	ctx.MockVpp.MockReply(&vpp_acl.ACLInterfaceSetACLListReply{})
 	err = ctx.aclHandler.RemoveACLFromInterfacesAsEgress(0, []uint32{0})
 	Expect(err).To(Not(BeNil()))
 
-	ctx.MockVpp.MockReply(&acl_api.ACLInterfaceListDetails{
+	ctx.MockVpp.MockReply(&vpp_acl.ACLInterfaceListDetails{
 		SwIfIndex: 0,
 		Count:     1,
 		NInput:    1,
 		Acls:      []uint32{0, 1},
 	})
-	ctx.MockVpp.MockReply(&acl_api.MacipACLAddReplaceReply{})
+	ctx.MockVpp.MockReply(&vpp_acl.MacipACLAddReplaceReply{})
 	err = ctx.aclHandler.RemoveACLFromInterfacesAsEgress(0, []uint32{0})
 	Expect(err).To(Not(BeNil()))
 
-	ctx.MockVpp.MockReply(&acl_api.ACLInterfaceListDetails{
+	ctx.MockVpp.MockReply(&vpp_acl.ACLInterfaceListDetails{
 		SwIfIndex: 0,
 		Count:     1,
 		NInput:    1,
 		Acls:      []uint32{0, 1},
 	})
-	ctx.MockVpp.MockReply(&acl_api.ACLInterfaceSetACLListReply{Retval: -1})
+	ctx.MockVpp.MockReply(&vpp_acl.ACLInterfaceSetACLListReply{Retval: -1})
 	err = ctx.aclHandler.RemoveACLFromInterfacesAsEgress(0, []uint32{0})
 	Expect(err).To(Not(BeNil()))
 }
@@ -130,17 +130,17 @@ func TestSetMacIPAclToInterface(t *testing.T) {
 	ctx := setupACLTest(t)
 	defer ctx.teardownACLTest()
 
-	ctx.MockVpp.MockReply(&acl_api.MacipACLInterfaceAddDelReply{})
+	ctx.MockVpp.MockReply(&vpp_acl.MacipACLInterfaceAddDelReply{})
 	err := ctx.aclHandler.SetMACIPACLToInterfaces(0, []uint32{0})
 	Expect(err).To(BeNil())
 
 	// error cases
 
-	ctx.MockVpp.MockReply(&acl_api.MacipACLAddReplaceReply{})
+	ctx.MockVpp.MockReply(&vpp_acl.MacipACLAddReplaceReply{})
 	err = ctx.aclHandler.SetMACIPACLToInterfaces(0, []uint32{0})
 	Expect(err).To(Not(BeNil()))
 
-	ctx.MockVpp.MockReply(&acl_api.MacipACLInterfaceAddDelReply{Retval: -1})
+	ctx.MockVpp.MockReply(&vpp_acl.MacipACLInterfaceAddDelReply{Retval: -1})
 	err = ctx.aclHandler.SetMACIPACLToInterfaces(0, []uint32{0})
 	Expect(err).To(Not(BeNil()))
 }
@@ -150,17 +150,17 @@ func TestRemoveMacIPIngressACLFromInterfaces(t *testing.T) {
 	ctx := setupACLTest(t)
 	defer ctx.teardownACLTest()
 
-	ctx.MockVpp.MockReply(&acl_api.MacipACLInterfaceAddDelReply{})
+	ctx.MockVpp.MockReply(&vpp_acl.MacipACLInterfaceAddDelReply{})
 	err := ctx.aclHandler.RemoveMACIPACLFromInterfaces(1, []uint32{0})
 	Expect(err).To(BeNil())
 
 	// error cases
 
-	ctx.MockVpp.MockReply(&acl_api.MacipACLAddReplaceReply{})
+	ctx.MockVpp.MockReply(&vpp_acl.MacipACLAddReplaceReply{})
 	err = ctx.aclHandler.RemoveMACIPACLFromInterfaces(0, []uint32{0})
 	Expect(err).To(Not(BeNil()))
 
-	ctx.MockVpp.MockReply(&acl_api.MacipACLInterfaceAddDelReply{Retval: -1})
+	ctx.MockVpp.MockReply(&vpp_acl.MacipACLInterfaceAddDelReply{Retval: -1})
 	err = ctx.aclHandler.RemoveMACIPACLFromInterfaces(0, []uint32{0})
 	Expect(err).To(Not(BeNil()))
 }

@@ -17,7 +17,7 @@ package vpp2001_test
 import (
 	"testing"
 
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/interfaces"
+	vpp_ifs "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/interfaces"
 	. "github.com/onsi/gomega"
 )
 
@@ -25,12 +25,12 @@ func TestSetInterfaceMtu(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&interfaces.HwInterfaceSetMtuReply{})
+	ctx.MockVpp.MockReply(&vpp_ifs.HwInterfaceSetMtuReply{})
 
 	err := ifHandler.SetInterfaceMtu(1, 1500)
 
 	Expect(err).To(BeNil())
-	vppMsg, ok := ctx.MockChannel.Msg.(*interfaces.HwInterfaceSetMtu)
+	vppMsg, ok := ctx.MockChannel.Msg.(*vpp_ifs.HwInterfaceSetMtu)
 	Expect(ok).To(BeTrue())
 	Expect(vppMsg.SwIfIndex).To(BeEquivalentTo(1))
 	Expect(vppMsg.Mtu).To(BeEquivalentTo(1500))
@@ -40,7 +40,7 @@ func TestSetInterfaceMtuError(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&interfaces.HwInterfaceSetMtu{})
+	ctx.MockVpp.MockReply(&vpp_ifs.HwInterfaceSetMtu{})
 
 	err := ifHandler.SetInterfaceMtu(1, 1500)
 
@@ -51,7 +51,7 @@ func TestSetInterfaceMtuRetval(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&interfaces.HwInterfaceSetMtuReply{
+	ctx.MockVpp.MockReply(&vpp_ifs.HwInterfaceSetMtuReply{
 		Retval: 1,
 	})
 

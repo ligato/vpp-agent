@@ -17,8 +17,8 @@ package vpp2001_test
 import (
 	"testing"
 
-	ifModel "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/interfaces"
+	ifs "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
+	vpp_ifs "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/interfaces"
 	. "github.com/onsi/gomega"
 )
 
@@ -26,16 +26,16 @@ func TestSetRxMode(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetRxModeReply{})
+	ctx.MockVpp.MockReply(&vpp_ifs.SwInterfaceSetRxModeReply{})
 
-	err := ifHandler.SetRxMode(1, &ifModel.Interface_RxMode{
-		Mode:        ifModel.Interface_RxMode_DEFAULT,
+	err := ifHandler.SetRxMode(1, &ifs.Interface_RxMode{
+		Mode:        ifs.Interface_RxMode_DEFAULT,
 		Queue:       1,
 		DefaultMode: false,
 	})
 
 	Expect(err).To(BeNil())
-	vppMsg, ok := ctx.MockChannel.Msg.(*interfaces.SwInterfaceSetRxMode)
+	vppMsg, ok := ctx.MockChannel.Msg.(*vpp_ifs.SwInterfaceSetRxMode)
 	Expect(ok).To(BeTrue())
 	Expect(vppMsg.SwIfIndex).To(BeEquivalentTo(1))
 	Expect(vppMsg.Mode).To(BeEquivalentTo(4))
@@ -47,10 +47,10 @@ func TestSetRxModeError(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetRxMode{})
+	ctx.MockVpp.MockReply(&vpp_ifs.SwInterfaceSetRxMode{})
 
-	err := ifHandler.SetRxMode(1, &ifModel.Interface_RxMode{
-		Mode:        ifModel.Interface_RxMode_DEFAULT,
+	err := ifHandler.SetRxMode(1, &ifs.Interface_RxMode{
+		Mode:        ifs.Interface_RxMode_DEFAULT,
 		Queue:       1,
 		DefaultMode: false,
 	})
@@ -62,12 +62,12 @@ func TestSetRxModeRetval(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetRxModeReply{
+	ctx.MockVpp.MockReply(&vpp_ifs.SwInterfaceSetRxModeReply{
 		Retval: 1,
 	})
 
-	err := ifHandler.SetRxMode(1, &ifModel.Interface_RxMode{
-		Mode:        ifModel.Interface_RxMode_DEFAULT,
+	err := ifHandler.SetRxMode(1, &ifs.Interface_RxMode{
+		Mode:        ifs.Interface_RxMode_DEFAULT,
 		Queue:       1,
 		DefaultMode: false,
 	})
@@ -75,21 +75,20 @@ func TestSetRxModeRetval(t *testing.T) {
 	Expect(err).ToNot(BeNil())
 }
 
-
 func TestSetDefaultRxMode(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetRxModeReply{})
+	ctx.MockVpp.MockReply(&vpp_ifs.SwInterfaceSetRxModeReply{})
 
-	err := ifHandler.SetRxMode(5, &ifModel.Interface_RxMode{
-		Mode:        ifModel.Interface_RxMode_POLLING,
+	err := ifHandler.SetRxMode(5, &ifs.Interface_RxMode{
+		Mode:        ifs.Interface_RxMode_POLLING,
 		Queue:       10, // ignored on the VPP side
 		DefaultMode: true,
 	})
 
 	Expect(err).To(BeNil())
-	vppMsg, ok := ctx.MockChannel.Msg.(*interfaces.SwInterfaceSetRxMode)
+	vppMsg, ok := ctx.MockChannel.Msg.(*vpp_ifs.SwInterfaceSetRxMode)
 	Expect(ok).To(BeTrue())
 	Expect(vppMsg.SwIfIndex).To(BeEquivalentTo(5))
 	Expect(vppMsg.Mode).To(BeEquivalentTo(1))

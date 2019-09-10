@@ -15,19 +15,19 @@
 package vpp2001
 
 import (
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/dhcp"
+	vpp_dhcp "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/dhcp"
 )
 
 func (h *InterfaceVppHandler) handleInterfaceDHCP(ifIdx uint32, hostName string, isAdd bool) error {
-	req := &dhcp.DHCPClientConfig{
+	req := &vpp_dhcp.DHCPClientConfig{
 		IsAdd: boolToUint(isAdd),
-		Client: dhcp.DHCPClient{
+		Client: vpp_dhcp.DHCPClient{
 			SwIfIndex:     ifIdx,
 			Hostname:      []byte(hostName),
 			WantDHCPEvent: 1,
 		},
 	}
-	reply := &dhcp.DHCPClientConfigReply{}
+	reply := &vpp_dhcp.DHCPClientConfigReply{}
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
@@ -36,12 +36,10 @@ func (h *InterfaceVppHandler) handleInterfaceDHCP(ifIdx uint32, hostName string,
 	return nil
 }
 
-// SetInterfaceAsDHCPClient implements interface handler.
 func (h *InterfaceVppHandler) SetInterfaceAsDHCPClient(ifIdx uint32, hostName string) error {
 	return h.handleInterfaceDHCP(ifIdx, hostName, true)
 }
 
-// UnsetInterfaceAsDHCPClient implements interface handler.
 func (h *InterfaceVppHandler) UnsetInterfaceAsDHCPClient(ifIdx uint32, hostName string) error {
 	return h.handleInterfaceDHCP(ifIdx, hostName, false)
 }

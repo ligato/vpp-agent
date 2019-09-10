@@ -15,19 +15,18 @@
 package vpp2001
 
 import (
-	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	binapi_interface "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/interfaces"
+	ifs "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
+	vpp_ifs "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/interfaces"
 )
 
-// SetRxPlacement implements interface handler.
-func (h *InterfaceVppHandler) SetRxPlacement(ifIdx uint32, rxPlacement *interfaces.Interface_RxPlacement) error {
-	req := &binapi_interface.SwInterfaceSetRxPlacement{
-		SwIfIndex: binapi_interface.InterfaceIndex(ifIdx),
+func (h *InterfaceVppHandler) SetRxPlacement(ifIdx uint32, rxPlacement *ifs.Interface_RxPlacement) error {
+	req := &vpp_ifs.SwInterfaceSetRxPlacement{
+		SwIfIndex: vpp_ifs.InterfaceIndex(ifIdx),
 		QueueID:   rxPlacement.Queue,
 		WorkerID:  rxPlacement.Worker,
 		IsMain:    rxPlacement.MainThread,
 	}
-	reply := &binapi_interface.SwInterfaceSetRxPlacementReply{}
+	reply := &vpp_ifs.SwInterfaceSetRxPlacementReply{}
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err

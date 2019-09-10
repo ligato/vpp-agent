@@ -22,7 +22,7 @@ import (
 	"github.com/ligato/cn-infra/logging/logrus"
 	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
 	netallock_mock "github.com/ligato/vpp-agent/plugins/netalloc/mock"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/ip"
+	vpp_ip "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/ip"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	ifvppcalls "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
 	ifvpp2001 "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls/vpp2001"
@@ -57,11 +57,11 @@ func TestAddRoute(t *testing.T) {
 	ctx, _, rtHandler := routeTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&ip.IPRouteAddDelReply{})
+	ctx.MockVpp.MockReply(&vpp_ip.IPRouteAddDelReply{})
 	err := rtHandler.VppAddRoute(routes[0])
 	Expect(err).To(Succeed())
 
-	ctx.MockVpp.MockReply(&ip.IPRouteAddDelReply{})
+	ctx.MockVpp.MockReply(&vpp_ip.IPRouteAddDelReply{})
 	err = rtHandler.VppAddRoute(routes[2])
 	Expect(err).To(Not(BeNil())) // unknown interface
 }
@@ -71,15 +71,15 @@ func TestDeleteRoute(t *testing.T) {
 	ctx, _, rtHandler := routeTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&ip.IPRouteAddDelReply{})
+	ctx.MockVpp.MockReply(&vpp_ip.IPRouteAddDelReply{})
 	err := rtHandler.VppDelRoute(routes[0])
 	Expect(err).To(Succeed())
 
-	ctx.MockVpp.MockReply(&ip.IPRouteAddDelReply{})
+	ctx.MockVpp.MockReply(&vpp_ip.IPRouteAddDelReply{})
 	err = rtHandler.VppDelRoute(routes[1])
 	Expect(err).To(Succeed())
 
-	ctx.MockVpp.MockReply(&ip.IPRouteAddDelReply{Retval: 1})
+	ctx.MockVpp.MockReply(&vpp_ip.IPRouteAddDelReply{Retval: 1})
 	err = rtHandler.VppDelRoute(routes[0])
 	Expect(err).To(Not(BeNil()))
 }

@@ -18,7 +18,7 @@ import (
 	"net"
 
 	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/ip"
+	vpp_ip "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/ip"
 	"github.com/pkg/errors"
 )
 
@@ -29,15 +29,15 @@ func (h *ArpVppHandler) vppAddDelArp(entry *l3.ARPEntry, delete bool) error {
 		return errors.Errorf("interface %s not found", entry.Interface)
 	}
 
-	var flags ip.IPNeighborFlags
-	flags |= ip.IP_API_NEIGHBOR_FLAG_NO_FIB_ENTRY
+	var flags vpp_ip.IPNeighborFlags
+	flags |= vpp_ip.IP_API_NEIGHBOR_FLAG_NO_FIB_ENTRY
 	if entry.Static {
-		flags |= ip.IP_API_NEIGHBOR_FLAG_STATIC
+		flags |= vpp_ip.IP_API_NEIGHBOR_FLAG_STATIC
 	}
 
-	req := &ip.IPNeighborAddDel{
+	req := &vpp_ip.IPNeighborAddDel{
 		IsAdd: boolToUint(!delete),
-		Neighbor: ip.IPNeighbor{
+		Neighbor: vpp_ip.IPNeighbor{
 			SwIfIndex: meta.SwIfIndex,
 			Flags:     flags,
 		},
@@ -55,7 +55,7 @@ func (h *ArpVppHandler) vppAddDelArp(entry *l3.ARPEntry, delete bool) error {
 	}
 	copy(req.Neighbor.MacAddress[:], macAddr)
 
-	reply := &ip.IPNeighborAddDelReply{}
+	reply := &vpp_ip.IPNeighborAddDelReply{}
 	if err = h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	}

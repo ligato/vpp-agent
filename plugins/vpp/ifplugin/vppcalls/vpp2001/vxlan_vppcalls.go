@@ -18,12 +18,12 @@ import (
 	"fmt"
 	"net"
 
-	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/vxlan"
+	ifs "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
+	vpp_vxlan "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/vxlan"
 )
 
-func (h *InterfaceVppHandler) addDelVxLanTunnel(vxLan *interfaces.VxlanLink, vrf, multicastIf uint32, isAdd bool) (swIdx uint32, err error) {
-	req := &vxlan.VxlanAddDelTunnel{
+func (h *InterfaceVppHandler) addDelVxLanTunnel(vxLan *ifs.VxlanLink, vrf, multicastIf uint32, isAdd bool) (swIdx uint32, err error) {
+	req := &vpp_vxlan.VxlanAddDelTunnel{
 		IsAdd:          boolToUint(isAdd),
 		Vni:            vxLan.Vni,
 		DecapNextIndex: 0xFFFFFFFF,
@@ -48,7 +48,7 @@ func (h *InterfaceVppHandler) addDelVxLanTunnel(vxLan *interfaces.VxlanLink, vrf
 	req.SrcAddress = []byte(srcAddr)
 	req.DstAddress = []byte(dstAddr)
 
-	reply := &vxlan.VxlanAddDelTunnelReply{}
+	reply := &vpp_vxlan.VxlanAddDelTunnelReply{}
 	if err = h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return 0, err
 	}
@@ -57,7 +57,7 @@ func (h *InterfaceVppHandler) addDelVxLanTunnel(vxLan *interfaces.VxlanLink, vrf
 }
 
 // AddVxLanTunnel implements VxLan handler.
-func (h *InterfaceVppHandler) AddVxLanTunnel(ifName string, vrf, multicastIf uint32, vxLan *interfaces.VxlanLink) (swIndex uint32, err error) {
+func (h *InterfaceVppHandler) AddVxLanTunnel(ifName string, vrf, multicastIf uint32, vxLan *ifs.VxlanLink) (swIndex uint32, err error) {
 	swIfIdx, err := h.addDelVxLanTunnel(vxLan, vrf, multicastIf, true)
 	if err != nil {
 		return 0, err
@@ -66,7 +66,7 @@ func (h *InterfaceVppHandler) AddVxLanTunnel(ifName string, vrf, multicastIf uin
 }
 
 // DeleteVxLanTunnel implements VxLan handler.
-func (h *InterfaceVppHandler) DeleteVxLanTunnel(ifName string, idx, vrf uint32, vxLan *interfaces.VxlanLink) error {
+func (h *InterfaceVppHandler) DeleteVxLanTunnel(ifName string, idx, vrf uint32, vxLan *ifs.VxlanLink) error {
 	// Multicast does not need to be set
 	if _, err := h.addDelVxLanTunnel(vxLan, vrf, 0, false); err != nil {
 		return err

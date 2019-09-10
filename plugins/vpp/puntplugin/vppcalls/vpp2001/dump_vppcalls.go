@@ -18,14 +18,14 @@ import (
 	"bytes"
 	"net"
 
-	vpp_punt "github.com/ligato/vpp-agent/api/models/vpp/punt"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/ip"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/punt"
+	punt "github.com/ligato/vpp-agent/api/models/vpp/punt"
+	vpp_ip "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/ip"
+	vpp_punt "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/punt"
 	"github.com/ligato/vpp-agent/plugins/vpp/puntplugin/vppcalls"
 )
 
 // DumpPuntRedirect dumps ip redirect punts
-func (h *PuntVppHandler) DumpPuntRedirect() (punts []*vpp_punt.IPRedirect, err error) {
+func (h *PuntVppHandler) DumpPuntRedirect() (punts []*punt.IPRedirect, err error) {
 	punt4, err := h.dumpPuntRedirect(false)
 	if err != nil {
 		return nil, err
@@ -41,13 +41,13 @@ func (h *PuntVppHandler) DumpPuntRedirect() (punts []*vpp_punt.IPRedirect, err e
 	return punts, nil
 }
 
-func (h *PuntVppHandler) dumpPuntRedirect(ipv6 bool) (punts []*vpp_punt.IPRedirect, err error) {
-	req := h.callsChannel.SendMultiRequest(&ip.IPPuntRedirectDump{
+func (h *PuntVppHandler) dumpPuntRedirect(ipv6 bool) (punts []*punt.IPRedirect, err error) {
+	req := h.callsChannel.SendMultiRequest(&vpp_ip.IPPuntRedirectDump{
 		SwIfIndex: ^uint32(0),
 		IsIPv6:    boolToUint(ipv6),
 	})
 	for {
-		d := &ip.IPPuntRedirectDetails{}
+		d := &vpp_ip.IPPuntRedirectDetails{}
 		stop, err := req.ReceiveReply(d)
 		if stop {
 			break
@@ -67,15 +67,15 @@ func (h *PuntVppHandler) dumpPuntRedirect(ipv6 bool) (punts []*vpp_punt.IPRedire
 			continue
 		}
 
-		var l3proto vpp_punt.L3Protocol
+		var l3proto punt.L3Protocol
 		var nextHop string
 
-		if d.Punt.Nh.Af == ip.ADDRESS_IP4 {
-			l3proto = vpp_punt.L3Protocol_IPv4
+		if d.Punt.Nh.Af == vpp_ip.ADDRESS_IP4 {
+			l3proto = punt.L3Protocol_IPv4
 			addr := d.Punt.Nh.Un.GetIP4()
 			nextHop = net.IP(addr[:]).To4().String()
-		} else if d.Punt.Nh.Af == ip.ADDRESS_IP6 {
-			l3proto = vpp_punt.L3Protocol_IPv6
+		} else if d.Punt.Nh.Af == vpp_ip.ADDRESS_IP6 {
+			l3proto = punt.L3Protocol_IPv6
 			addr := d.Punt.Nh.Un.GetIP6()
 			nextHop = net.IP(addr[:]).To16().String()
 		} else {
@@ -83,7 +83,7 @@ func (h *PuntVppHandler) dumpPuntRedirect(ipv6 bool) (punts []*vpp_punt.IPRedire
 			continue
 		}
 
-		punts = append(punts, &vpp_punt.IPRedirect{
+		punts = append(punts, &punt.IPRedirect{
 			L3Protocol:  l3proto,
 			RxInterface: rxIface,
 			TxInterface: txIface,
@@ -113,11 +113,11 @@ func (h *PuntVppHandler) DumpExceptions() (punts []*vppcalls.ExceptionDetails, e
 }
 
 func (h *PuntVppHandler) dumpPuntExceptions(reasons map[uint32]string) (punts []*vppcalls.ExceptionDetails, err error) {
-	req := h.callsChannel.SendMultiRequest(&punt.PuntSocketDump{
-		Type: punt.PUNT_API_TYPE_EXCEPTION,
+	req := h.callsChannel.SendMultiRequest(&vpp_punt.PuntSocketDump{
+		Type: vpp_punt.PUNT_API_TYPE_EXCEPTION,
 	})
 	for {
-		d := &punt.PuntSocketDetails{}
+		d := &vpp_punt.PuntSocketDetails{}
 		stop, err := req.ReceiveReply(d)
 		if stop {
 			break
@@ -126,7 +126,7 @@ func (h *PuntVppHandler) dumpPuntExceptions(reasons map[uint32]string) (punts []
 			return nil, err
 		}
 
-		if d.Punt.Type != punt.PUNT_API_TYPE_EXCEPTION {
+		if d.Punt.Type != vpp_punt.PUNT_API_TYPE_EXCEPTION {
 			h.log.Warnf("VPP returned invalid punt type in exception punt dump: %v", d.Punt.Type)
 			continue
 		}
@@ -136,7 +136,7 @@ func (h *PuntVppHandler) dumpPuntExceptions(reasons map[uint32]string) (punts []
 		socketPath := string(bytes.Trim(d.Pathname, "\x00"))
 
 		punts = append(punts, &vppcalls.ExceptionDetails{
-			Exception: &vpp_punt.Exception{
+			Exception: &punt.Exception{
 				Reason:     reason,
 				SocketPath: vppConfigSocketPath,
 			},
@@ -157,11 +157,11 @@ func (h *PuntVppHandler) DumpRegisteredPuntSockets() (punts []*vppcalls.PuntDeta
 }
 
 func (h *PuntVppHandler) dumpPuntL4() (punts []*vppcalls.PuntDetails, err error) {
-	req := h.callsChannel.SendMultiRequest(&punt.PuntSocketDump{
-		Type: punt.PUNT_API_TYPE_L4,
+	req := h.callsChannel.SendMultiRequest(&vpp_punt.PuntSocketDump{
+		Type: vpp_punt.PUNT_API_TYPE_L4,
 	})
 	for {
-		d := &punt.PuntSocketDetails{}
+		d := &vpp_punt.PuntSocketDetails{}
 		stop, err := req.ReceiveReply(d)
 		if stop {
 			break
@@ -170,7 +170,7 @@ func (h *PuntVppHandler) dumpPuntL4() (punts []*vppcalls.PuntDetails, err error)
 			return nil, err
 		}
 
-		if d.Punt.Type != punt.PUNT_API_TYPE_L4 {
+		if d.Punt.Type != vpp_punt.PUNT_API_TYPE_L4 {
 			h.log.Warnf("VPP returned invalid punt type in L4 punt dump: %v", d.Punt.Type)
 			continue
 		}
@@ -179,7 +179,7 @@ func (h *PuntVppHandler) dumpPuntL4() (punts []*vppcalls.PuntDetails, err error)
 		socketPath := string(bytes.Trim(d.Pathname, "\x00"))
 
 		punts = append(punts, &vppcalls.PuntDetails{
-			PuntData: &vpp_punt.ToHost{
+			PuntData: &punt.ToHost{
 				Port:       uint32(puntData.Port),
 				L3Protocol: parseL3Proto(puntData.Af),
 				L4Protocol: parseL4Proto(puntData.Protocol),
@@ -202,9 +202,9 @@ func (h *PuntVppHandler) DumpPuntReasons() (reasons []*vppcalls.ReasonDetails, e
 }
 
 func (h *PuntVppHandler) dumpPuntReasons() (reasons []*vppcalls.ReasonDetails, err error) {
-	req := h.callsChannel.SendMultiRequest(&punt.PuntReasonDump{})
+	req := h.callsChannel.SendMultiRequest(&vpp_punt.PuntReasonDump{})
 	for {
-		d := &punt.PuntReasonDetails{}
+		d := &vpp_punt.PuntReasonDetails{}
 		stop, err := req.ReceiveReply(d)
 		if stop {
 			break
@@ -214,7 +214,7 @@ func (h *PuntVppHandler) dumpPuntReasons() (reasons []*vppcalls.ReasonDetails, e
 		}
 
 		reasons = append(reasons, &vppcalls.ReasonDetails{
-			Reason: &vpp_punt.Reason{
+			Reason: &punt.Reason{
 				Name: d.Reason.Name,
 			},
 			ID: d.Reason.ID,
@@ -224,22 +224,22 @@ func (h *PuntVppHandler) dumpPuntReasons() (reasons []*vppcalls.ReasonDetails, e
 	return reasons, nil
 }
 
-func parseL3Proto(p punt.AddressFamily) vpp_punt.L3Protocol {
+func parseL3Proto(p vpp_punt.AddressFamily) punt.L3Protocol {
 	switch p {
-	case punt.ADDRESS_IP4:
-		return vpp_punt.L3Protocol_IPv4
-	case punt.ADDRESS_IP6:
-		return vpp_punt.L3Protocol_IPv6
+	case vpp_punt.ADDRESS_IP4:
+		return punt.L3Protocol_IPv4
+	case vpp_punt.ADDRESS_IP6:
+		return punt.L3Protocol_IPv6
 	}
-	return vpp_punt.L3Protocol_UNDEFINED_L3
+	return punt.L3Protocol_UNDEFINED_L3
 }
 
-func parseL4Proto(p punt.IPProto) vpp_punt.L4Protocol {
+func parseL4Proto(p vpp_punt.IPProto) punt.L4Protocol {
 	switch p {
-	case punt.IP_API_PROTO_TCP:
-		return vpp_punt.L4Protocol_TCP
-	case punt.IP_API_PROTO_UDP:
-		return vpp_punt.L4Protocol_UDP
+	case vpp_punt.IP_API_PROTO_TCP:
+		return punt.L4Protocol_TCP
+	case vpp_punt.IP_API_PROTO_UDP:
+		return punt.L4Protocol_UDP
 	}
-	return vpp_punt.L4Protocol_UNDEFINED_L4
+	return punt.L4Protocol_UNDEFINED_L4
 }

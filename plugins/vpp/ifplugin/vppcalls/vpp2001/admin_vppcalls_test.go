@@ -18,7 +18,7 @@ import (
 	"testing"
 
 	"github.com/ligato/cn-infra/logging/logrus"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/interfaces"
+	vpp_ifs "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls/vpp2001"
 	"github.com/ligato/vpp-agent/plugins/vpp/vppcallmock"
@@ -29,22 +29,22 @@ func TestInterfaceAdminDown(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
+	ctx.MockVpp.MockReply(&vpp_ifs.SwInterfaceSetFlagsReply{})
 	err := ifHandler.InterfaceAdminDown(1)
 
 	Expect(err).To(BeNil())
-	vppMsg, ok := ctx.MockChannel.Msg.(*interfaces.SwInterfaceSetFlags)
+	vppMsg, ok := ctx.MockChannel.Msg.(*vpp_ifs.SwInterfaceSetFlags)
 	Expect(ok).To(BeTrue())
 	Expect(vppMsg).NotTo(BeNil())
-	Expect(vppMsg.SwIfIndex).To(Equal(interfaces.InterfaceIndex(1)))
-	Expect(vppMsg.Flags).To(Equal(interfaces.IfStatusFlags(0)))
+	Expect(vppMsg.SwIfIndex).To(Equal(vpp_ifs.InterfaceIndex(1)))
+	Expect(vppMsg.Flags).To(Equal(vpp_ifs.IfStatusFlags(0)))
 }
 
 func TestInterfaceAdminDownError(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&interfaces.HwInterfaceSetMtuReply{})
+	ctx.MockVpp.MockReply(&vpp_ifs.HwInterfaceSetMtuReply{})
 	err := ifHandler.InterfaceAdminDown(1)
 
 	Expect(err).ToNot(BeNil())
@@ -54,7 +54,7 @@ func TestInterfaceAdminDownRetval(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{
+	ctx.MockVpp.MockReply(&vpp_ifs.SwInterfaceSetFlagsReply{
 		Retval: 1,
 	})
 	err := ifHandler.InterfaceAdminDown(1)
@@ -66,22 +66,22 @@ func TestInterfaceAdminUp(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
+	ctx.MockVpp.MockReply(&vpp_ifs.SwInterfaceSetFlagsReply{})
 	err := ifHandler.InterfaceAdminUp(1)
 
 	Expect(err).ShouldNot(HaveOccurred())
-	vppMsg, ok := ctx.MockChannel.Msg.(*interfaces.SwInterfaceSetFlags)
+	vppMsg, ok := ctx.MockChannel.Msg.(*vpp_ifs.SwInterfaceSetFlags)
 	Expect(ok).To(BeTrue())
 	Expect(vppMsg).NotTo(BeNil())
-	Expect(vppMsg.SwIfIndex).To(Equal(interfaces.InterfaceIndex(1)))
-	Expect(vppMsg.Flags).To(Equal(interfaces.IF_STATUS_API_FLAG_ADMIN_UP))
+	Expect(vppMsg.SwIfIndex).To(Equal(vpp_ifs.InterfaceIndex(1)))
+	Expect(vppMsg.Flags).To(Equal(vpp_ifs.IF_STATUS_API_FLAG_ADMIN_UP))
 }
 
 func TestInterfaceAdminUpError(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&interfaces.HwInterfaceSetMtuReply{})
+	ctx.MockVpp.MockReply(&vpp_ifs.HwInterfaceSetMtuReply{})
 	err := ifHandler.InterfaceAdminDown(1)
 
 	Expect(err).ToNot(BeNil())
@@ -91,7 +91,7 @@ func TestInterfaceAdminUpRetval(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{
+	ctx.MockVpp.MockReply(&vpp_ifs.SwInterfaceSetFlagsReply{
 		Retval: 1,
 	})
 	err := ifHandler.InterfaceAdminDown(1)
@@ -103,15 +103,15 @@ func TestInterfaceSetTag(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
+	ctx.MockVpp.MockReply(&vpp_ifs.SwInterfaceTagAddDelReply{})
 	err := ifHandler.SetInterfaceTag("tag", 1)
 
 	Expect(err).To(BeNil())
-	vppMsg, ok := ctx.MockChannel.Msg.(*interfaces.SwInterfaceTagAddDel)
+	vppMsg, ok := ctx.MockChannel.Msg.(*vpp_ifs.SwInterfaceTagAddDel)
 	Expect(ok).To(BeTrue())
 	Expect(vppMsg).NotTo(BeNil())
 	Expect(vppMsg.Tag).To(BeEquivalentTo("tag"))
-	Expect(vppMsg.SwIfIndex).To(Equal(interfaces.InterfaceIndex(1)))
+	Expect(vppMsg.SwIfIndex).To(Equal(vpp_ifs.InterfaceIndex(1)))
 	Expect(vppMsg.IsAdd).To(BeTrue())
 }
 
@@ -119,7 +119,7 @@ func TestInterfaceSetTagError(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&interfaces.HwInterfaceSetMtuReply{})
+	ctx.MockVpp.MockReply(&vpp_ifs.HwInterfaceSetMtuReply{})
 	err := ifHandler.SetInterfaceTag("tag", 1)
 
 	Expect(err).ToNot(BeNil())
@@ -129,7 +129,7 @@ func TestInterfaceSetTagRetval(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{
+	ctx.MockVpp.MockReply(&vpp_ifs.SwInterfaceTagAddDelReply{
 		Retval: 1,
 	})
 	err := ifHandler.SetInterfaceTag("tag", 1)
@@ -141,11 +141,11 @@ func TestInterfaceRemoveTag(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
+	ctx.MockVpp.MockReply(&vpp_ifs.SwInterfaceTagAddDelReply{})
 	err := ifHandler.RemoveInterfaceTag("tag", 1)
 
 	Expect(err).To(BeNil())
-	vppMsg, ok := ctx.MockChannel.Msg.(*interfaces.SwInterfaceTagAddDel)
+	vppMsg, ok := ctx.MockChannel.Msg.(*vpp_ifs.SwInterfaceTagAddDel)
 	Expect(ok).To(BeTrue())
 	Expect(vppMsg).NotTo(BeNil())
 	Expect(vppMsg.Tag).To(BeEquivalentTo("tag"))
@@ -156,7 +156,7 @@ func TestInterfaceRemoveTagError(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&interfaces.HwInterfaceSetMtuReply{})
+	ctx.MockVpp.MockReply(&vpp_ifs.HwInterfaceSetMtuReply{})
 	err := ifHandler.RemoveInterfaceTag("tag", 1)
 
 	Expect(err).ToNot(BeNil())
@@ -166,7 +166,7 @@ func TestInterfaceRemoveTagRetval(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{
+	ctx.MockVpp.MockReply(&vpp_ifs.SwInterfaceTagAddDelReply{
 		Retval: 1,
 	})
 	err := ifHandler.RemoveInterfaceTag("tag", 1)

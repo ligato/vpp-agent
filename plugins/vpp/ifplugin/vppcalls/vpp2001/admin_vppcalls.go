@@ -15,35 +15,31 @@
 package vpp2001
 
 import (
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/interfaces"
+	vpp_ifs "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/interfaces"
 )
 
-// InterfaceAdminDown implements interface handler.
 func (h *InterfaceVppHandler) InterfaceAdminDown(ifIdx uint32) error {
 	return h.interfaceSetFlags(ifIdx, false)
 }
 
-// InterfaceAdminUp implements interface handler.
 func (h *InterfaceVppHandler) InterfaceAdminUp(ifIdx uint32) error {
 	return h.interfaceSetFlags(ifIdx, true)
 }
 
-// SetInterfaceTag implements interface handler.
 func (h *InterfaceVppHandler) SetInterfaceTag(tag string, ifIdx uint32) error {
-	return h.handleInterfaceTag(tag, interfaces.InterfaceIndex(ifIdx), true)
+	return h.handleInterfaceTag(tag, vpp_ifs.InterfaceIndex(ifIdx), true)
 }
 
-// RemoveInterfaceTag implements interface handler.
 func (h *InterfaceVppHandler) RemoveInterfaceTag(tag string, ifIdx uint32) error {
-	return h.handleInterfaceTag(tag, interfaces.InterfaceIndex(ifIdx), false)
+	return h.handleInterfaceTag(tag, vpp_ifs.InterfaceIndex(ifIdx), false)
 }
 
 func (h *InterfaceVppHandler) interfaceSetFlags(ifIdx uint32, adminUp bool) error {
-	req := &interfaces.SwInterfaceSetFlags{
-		SwIfIndex: interfaces.InterfaceIndex(ifIdx),
+	req := &vpp_ifs.SwInterfaceSetFlags{
+		SwIfIndex: vpp_ifs.InterfaceIndex(ifIdx),
 		Flags:     setAdminUpFlag(adminUp),
 	}
-	reply := &interfaces.SwInterfaceSetFlagsReply{}
+	reply := &vpp_ifs.SwInterfaceSetFlagsReply{}
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
@@ -52,8 +48,8 @@ func (h *InterfaceVppHandler) interfaceSetFlags(ifIdx uint32, adminUp bool) erro
 	return nil
 }
 
-func (h *InterfaceVppHandler) handleInterfaceTag(tag string, ifIdx interfaces.InterfaceIndex, isAdd bool) error {
-	req := &interfaces.SwInterfaceTagAddDel{
+func (h *InterfaceVppHandler) handleInterfaceTag(tag string, ifIdx vpp_ifs.InterfaceIndex, isAdd bool) error {
+	req := &vpp_ifs.SwInterfaceTagAddDel{
 		Tag:   tag,
 		IsAdd: isAdd,
 	}
@@ -62,7 +58,7 @@ func (h *InterfaceVppHandler) handleInterfaceTag(tag string, ifIdx interfaces.In
 	if isAdd {
 		req.SwIfIndex = ifIdx
 	}
-	reply := &interfaces.SwInterfaceTagAddDelReply{}
+	reply := &vpp_ifs.SwInterfaceTagAddDelReply{}
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
@@ -71,9 +67,9 @@ func (h *InterfaceVppHandler) handleInterfaceTag(tag string, ifIdx interfaces.In
 	return nil
 }
 
-func setAdminUpFlag(adminUp bool) interfaces.IfStatusFlags {
+func setAdminUpFlag(adminUp bool) vpp_ifs.IfStatusFlags {
 	if adminUp {
-		return interfaces.IF_STATUS_API_FLAG_ADMIN_UP
+		return vpp_ifs.IF_STATUS_API_FLAG_ADMIN_UP
 	}
 	return 0
 }

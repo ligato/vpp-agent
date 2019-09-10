@@ -20,7 +20,7 @@ import (
 	"github.com/pkg/errors"
 
 	l2 "github.com/ligato/vpp-agent/api/models/vpp/l2"
-	l2ba "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/l2"
+	vpp_l2 "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/l2"
 )
 
 // AddInterfaceToBridgeDomain puts interface into bridge domain.
@@ -49,7 +49,7 @@ func (h *BridgeDomainVppHandler) DeleteInterfaceFromBridgeDomain(bdIdx uint32, i
 
 func (h *BridgeDomainVppHandler) addDelInterfaceToBridgeDomain(bdIdx uint32, ifaceCfg *l2.BridgeDomain_Interface,
 	ifIdx uint32, add bool) error {
-	req := &l2ba.SwInterfaceSetL2Bridge{
+	req := &vpp_l2.SwInterfaceSetL2Bridge{
 		BdID:        bdIdx,
 		RxSwIfIndex: ifIdx,
 		Shg:         uint8(ifaceCfg.SplitHorizonGroup),
@@ -57,9 +57,9 @@ func (h *BridgeDomainVppHandler) addDelInterfaceToBridgeDomain(bdIdx uint32, ifa
 	}
 	// Set as BVI.
 	if ifaceCfg.BridgedVirtualInterface {
-		req.PortType = l2ba.L2_API_PORT_TYPE_BVI
+		req.PortType = vpp_l2.L2_API_PORT_TYPE_BVI
 	}
-	reply := &l2ba.SwInterfaceSetL2BridgeReply{}
+	reply := &vpp_l2.SwInterfaceSetL2BridgeReply{}
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return fmt.Errorf("%s returned error: %v", reply.GetMessageName(), err)

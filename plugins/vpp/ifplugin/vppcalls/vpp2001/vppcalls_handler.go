@@ -21,39 +21,39 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/af_packet"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/bond"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/dhcp"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/gre"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/ip"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/ipsec"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/l2"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/memif"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/span"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/tapv2"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/vmxnet3"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/vpe"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/vxlan"
+	vpp_afpacket "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/af_packet"
+	vpp_bond "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/bond"
+	vpp_dhcp "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/dhcp"
+	vpp_gre "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/gre"
+	vpp_ifs "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/interfaces"
+	vpp_ip "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/ip"
+	vpp_ipsec "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/ipsec"
+	vpp_l2 "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/l2"
+	vpp_memif "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/memif"
+	vpp_span "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/span"
+	vpp_tapv2 "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/tapv2"
+	vpp_vmxnet3 "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/vmxnet3"
+	vpp_vpe "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/vpe"
+	vpp_vxlan "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/vxlan"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
 )
 
 func init() {
 	var msgs []govppapi.Message
-	msgs = append(msgs, af_packet.AllMessages()...)
-	msgs = append(msgs, bond.AllMessages()...)
-	msgs = append(msgs, dhcp.AllMessages()...)
-	msgs = append(msgs, gre.AllMessages()...)
-	msgs = append(msgs, interfaces.AllMessages()...)
-	msgs = append(msgs, ip.AllMessages()...)
-	msgs = append(msgs, ipsec.AllMessages()...)
-	msgs = append(msgs, l2.AllMessages()...)
-	msgs = append(msgs, memif.AllMessages()...)
-	msgs = append(msgs, span.AllMessages()...)
-	msgs = append(msgs, tapv2.AllMessages()...)
-	msgs = append(msgs, vmxnet3.AllMessages()...)
-	msgs = append(msgs, vpe.AllMessages()...)
-	msgs = append(msgs, vxlan.AllMessages()...)
+	msgs = append(msgs, vpp_afpacket.AllMessages()...)
+	msgs = append(msgs, vpp_bond.AllMessages()...)
+	msgs = append(msgs, vpp_dhcp.AllMessages()...)
+	msgs = append(msgs, vpp_gre.AllMessages()...)
+	msgs = append(msgs, vpp_ifs.AllMessages()...)
+	msgs = append(msgs, vpp_ip.AllMessages()...)
+	msgs = append(msgs, vpp_ipsec.AllMessages()...)
+	msgs = append(msgs, vpp_l2.AllMessages()...)
+	msgs = append(msgs, vpp_memif.AllMessages()...)
+	msgs = append(msgs, vpp_span.AllMessages()...)
+	msgs = append(msgs, vpp_tapv2.AllMessages()...)
+	msgs = append(msgs, vpp_vmxnet3.AllMessages()...)
+	msgs = append(msgs, vpp_vpe.AllMessages()...)
+	msgs = append(msgs, vpp_vxlan.AllMessages()...)
 
 	vppcalls.Versions["vpp2001"] = vppcalls.HandlerVersion{
 		Msgs: msgs,
@@ -74,19 +74,20 @@ func NewInterfaceVppHandler(ch govppapi.Channel, log logging.Logger) *InterfaceV
 	return &InterfaceVppHandler{ch, log}
 }
 
-func IPToAddress(ipstr string) (addr ip.Address, err error) {
-	netIP := net.ParseIP(ipstr)
+// IPToAddress converts string type IP address to VPP ip.api address representation
+func IPToAddress(ipStr string) (addr vpp_ip.Address, err error) {
+	netIP := net.ParseIP(ipStr)
 	if netIP == nil {
-		return ip.Address{}, fmt.Errorf("invalid IP: %q", ipstr)
+		return vpp_ip.Address{}, fmt.Errorf("invalid IP: %q", ipStr)
 	}
 	if ip4 := netIP.To4(); ip4 == nil {
-		addr.Af = ip.ADDRESS_IP6
-		var ip6addr ip.IP6Address
+		addr.Af = vpp_ip.ADDRESS_IP6
+		var ip6addr vpp_ip.IP6Address
 		copy(ip6addr[:], netIP.To16())
 		addr.Un.SetIP6(ip6addr)
 	} else {
-		addr.Af = ip.ADDRESS_IP4
-		var ip4addr ip.IP4Address
+		addr.Af = vpp_ip.ADDRESS_IP4
+		var ip4addr vpp_ip.IP4Address
 		copy(ip4addr[:], ip4)
 		addr.Un.SetIP4(ip4addr)
 	}

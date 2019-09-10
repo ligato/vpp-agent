@@ -22,7 +22,7 @@ import (
 	"github.com/pkg/errors"
 
 	ipsec "github.com/ligato/vpp-agent/api/models/vpp/ipsec"
-	ipsecapi "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/ipsec"
+	vpp_ipsec "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/ipsec"
 	"github.com/ligato/vpp-agent/plugins/vpp/ipsecplugin/vppcalls"
 )
 
@@ -45,7 +45,7 @@ func (h *IPSecVppHandler) DumpIPSecSAWithIndex(saID uint32) (saList []*vppcalls.
 		}
 
 		var tunnelSrcAddr, tunnelDstAddr net.IP
-		if saData.Entry.TunnelDst.Af == ipsecapi.ADDRESS_IP6 {
+		if saData.Entry.TunnelDst.Af == vpp_ipsec.ADDRESS_IP6 {
 			src := saData.Entry.TunnelSrc.Un.GetIP6()
 			dst := saData.Entry.TunnelDst.Un.GetIP6()
 			tunnelSrcAddr, tunnelDstAddr = net.IP(src[:]), net.IP(dst[:])
@@ -63,11 +63,11 @@ func (h *IPSecVppHandler) DumpIPSecSAWithIndex(saID uint32) (saList []*vppcalls.
 			CryptoKey:      hex.EncodeToString(saData.Entry.CryptoKey.Data[:saData.Entry.CryptoKey.Length]),
 			IntegAlg:       ipsec.IntegAlg(saData.Entry.IntegrityAlgorithm),
 			IntegKey:       hex.EncodeToString(saData.Entry.IntegrityKey.Data[:saData.Entry.IntegrityKey.Length]),
-			UseEsn:         (saData.Entry.Flags & ipsecapi.IPSEC_API_SAD_FLAG_USE_ESN) != 0,
-			UseAntiReplay:  (saData.Entry.Flags & ipsecapi.IPSEC_API_SAD_FLAG_USE_ANTI_REPLAY) != 0,
+			UseEsn:         (saData.Entry.Flags & vpp_ipsec.IPSEC_API_SAD_FLAG_USE_ESN) != 0,
+			UseAntiReplay:  (saData.Entry.Flags & vpp_ipsec.IPSEC_API_SAD_FLAG_USE_ANTI_REPLAY) != 0,
 			TunnelSrcAddr:  tunnelSrcAddr.String(),
 			TunnelDstAddr:  tunnelDstAddr.String(),
-			EnableUdpEncap: (saData.Entry.Flags & ipsecapi.IPSEC_API_SAD_FLAG_UDP_ENCAP) != 0,
+			EnableUdpEncap: (saData.Entry.Flags & vpp_ipsec.IPSEC_API_SAD_FLAG_UDP_ENCAP) != 0,
 		}
 		meta := &vppcalls.IPSecSaMeta{
 			SaID:           saData.Entry.SadID,
@@ -103,14 +103,14 @@ func (h *IPSecVppHandler) DumpIPSecSPD() (spdList []*vppcalls.IPSecSpdDetails, e
 			Index: strconv.Itoa(spdIdx),
 		}
 
-		req := &ipsecapi.IpsecSpdDump{
+		req := &vpp_ipsec.IpsecSpdDump{
 			SpdID: uint32(spdIdx),
 			SaID:  ^uint32(0),
 		}
 		requestCtx := h.callsChannel.SendMultiRequest(req)
 
 		for {
-			spdDetails := &ipsecapi.IpsecSpdDetails{}
+			spdDetails := &vpp_ipsec.IpsecSpdDetails{}
 			stop, err := requestCtx.ReceiveReply(spdDetails)
 			if stop {
 				break
@@ -145,8 +145,6 @@ func (h *IPSecVppHandler) DumpIPSecSPD() (spdList []*vppcalls.IPSecSpdDetails, e
 			meta := &vppcalls.SpdMeta{
 				SaID:   spdDetails.Entry.SaID,
 				Policy: uint8(spdDetails.Entry.Policy),
-				//Bytes:   spdDetails.Bytes,
-				//Packets: spdDetails.Packets,
 			}
 			metadata[strconv.Itoa(int(spdDetails.Entry.SaID))] = meta
 		}
@@ -166,11 +164,11 @@ func (h *IPSecVppHandler) dumpSpdIndexes() (map[int]uint32, error) {
 	// SPD index to number of policies
 	spdIndexes := make(map[int]uint32)
 
-	req := &ipsecapi.IpsecSpdsDump{}
+	req := &vpp_ipsec.IpsecSpdsDump{}
 	reqCtx := h.callsChannel.SendMultiRequest(req)
 
 	for {
-		spdDetails := &ipsecapi.IpsecSpdsDetails{}
+		spdDetails := &vpp_ipsec.IpsecSpdsDetails{}
 		stop, err := reqCtx.ReceiveReply(spdDetails)
 		if stop {
 			break
@@ -186,14 +184,14 @@ func (h *IPSecVppHandler) dumpSpdIndexes() (map[int]uint32, error) {
 }
 
 // Get all security association (used also for tunnel interfaces) in binary api format
-func (h *IPSecVppHandler) dumpSecurityAssociations(saID uint32) (saList []*ipsecapi.IpsecSaDetails, err error) {
-	req := &ipsecapi.IpsecSaDump{
+func (h *IPSecVppHandler) dumpSecurityAssociations(saID uint32) (saList []*vpp_ipsec.IpsecSaDetails, err error) {
+	req := &vpp_ipsec.IpsecSaDump{
 		SaID: saID,
 	}
 	requestCtx := h.callsChannel.SendMultiRequest(req)
 
 	for {
-		saDetails := &ipsecapi.IpsecSaDetails{}
+		saDetails := &vpp_ipsec.IpsecSaDetails{}
 		stop, err := requestCtx.ReceiveReply(saDetails)
 		if stop {
 			break

@@ -17,13 +17,13 @@ package vpp2001
 import (
 	"net"
 
-	vpp_l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/dhcp"
+	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
+	vpp_dhcp "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/dhcp"
 	"github.com/pkg/errors"
 )
 
-func (h *DHCPProxyHandler) createDeleteDHCPProxy(entry *vpp_l3.DHCPProxy, delete bool) error {
-	config := &dhcp.DHCPProxyConfig{
+func (h *DHCPProxyHandler) createDeleteDHCPProxy(entry *l3.DHCPProxy, delete bool) error {
+	config := &vpp_dhcp.DHCPProxyConfig{
 		RxVrfID: entry.RxVrfId,
 		IsAdd:   boolToUint(!delete),
 	}
@@ -54,7 +54,7 @@ func (h *DHCPProxyHandler) createDeleteDHCPProxy(entry *vpp_l3.DHCPProxy, delete
 		} else {
 			config.DHCPServer = []byte(ipAddr.To4())
 		}
-		reply := &dhcp.DHCPProxyConfigReply{}
+		reply := &vpp_dhcp.DHCPProxyConfigReply{}
 		if err := h.callsChannel.SendRequest(config).ReceiveReply(reply); err != nil {
 			return err
 		}
@@ -63,10 +63,10 @@ func (h *DHCPProxyHandler) createDeleteDHCPProxy(entry *vpp_l3.DHCPProxy, delete
 	return nil
 }
 
-func (h *DHCPProxyHandler) CreateDHCPProxy(entry *vpp_l3.DHCPProxy) error {
+func (h *DHCPProxyHandler) CreateDHCPProxy(entry *l3.DHCPProxy) error {
 	return h.createDeleteDHCPProxy(entry, false)
 }
 
-func (h *DHCPProxyHandler) DeleteDHCPProxy(entry *vpp_l3.DHCPProxy) error {
+func (h *DHCPProxyHandler) DeleteDHCPProxy(entry *l3.DHCPProxy) error {
 	return h.createDeleteDHCPProxy(entry, true)
 }

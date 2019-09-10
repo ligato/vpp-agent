@@ -20,8 +20,6 @@ import (
 
 	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vrfidx"
 
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/dhcp"
-
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
@@ -29,17 +27,18 @@ import (
 	vpevppcalls "github.com/ligato/vpp-agent/plugins/govppmux/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/govppmux/vppcalls/vpp2001"
 	"github.com/ligato/vpp-agent/plugins/netalloc"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/ip"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/vpe"
+	vpp_dhcp "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/dhcp"
+	vpp_ip "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/ip"
+	vpp_vpe "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/vpe"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls"
 )
 
 func init() {
 	var msgs []govppapi.Message
-	msgs = append(msgs, ip.AllMessages()...)
-	msgs = append(msgs, vpe.AllMessages()...)
-	msgs = append(msgs, dhcp.AllMessages()...)
+	msgs = append(msgs, vpp_ip.AllMessages()...)
+	msgs = append(msgs, vpp_vpe.AllMessages()...)
+	msgs = append(msgs, vpp_dhcp.AllMessages()...)
 
 	vppcalls.Versions["vpp2001"] = vppcalls.HandlerVersion{
 		Msgs: msgs,
@@ -189,40 +188,40 @@ func NewDHCPProxyHandler(callsChan govppapi.Channel, log logging.Logger) *DHCPPr
 	}
 }
 
-func ipToAddress(ipstr string) (addr ip.Address, err error) {
+func ipToAddress(ipstr string) (addr vpp_ip.Address, err error) {
 	netIP := net.ParseIP(ipstr)
 	if netIP == nil {
-		return ip.Address{}, fmt.Errorf("invalid IP: %q", ipstr)
+		return vpp_ip.Address{}, fmt.Errorf("invalid IP: %q", ipstr)
 	}
 	if ip4 := netIP.To4(); ip4 == nil {
-		addr.Af = ip.ADDRESS_IP6
-		var ip6addr ip.IP6Address
+		addr.Af = vpp_ip.ADDRESS_IP6
+		var ip6addr vpp_ip.IP6Address
 		copy(ip6addr[:], netIP.To16())
 		addr.Un.SetIP6(ip6addr)
 	} else {
-		addr.Af = ip.ADDRESS_IP4
-		var ip4addr ip.IP4Address
+		addr.Af = vpp_ip.ADDRESS_IP4
+		var ip4addr vpp_ip.IP4Address
 		copy(ip4addr[:], ip4)
 		addr.Un.SetIP4(ip4addr)
 	}
 	return
 }
 
-func networkToPrefix(dstNetwork *net.IPNet) ip.Prefix {
-	var addr ip.Address
+func networkToPrefix(dstNetwork *net.IPNet) vpp_ip.Prefix {
+	var addr vpp_ip.Address
 	if dstNetwork.IP.To4() == nil {
-		addr.Af = ip.ADDRESS_IP6
-		var ip6addr ip.IP6Address
+		addr.Af = vpp_ip.ADDRESS_IP6
+		var ip6addr vpp_ip.IP6Address
 		copy(ip6addr[:], dstNetwork.IP.To16())
 		addr.Un.SetIP6(ip6addr)
 	} else {
-		addr.Af = ip.ADDRESS_IP4
-		var ip4addr ip.IP4Address
+		addr.Af = vpp_ip.ADDRESS_IP4
+		var ip4addr vpp_ip.IP4Address
 		copy(ip4addr[:], dstNetwork.IP.To4())
 		addr.Un.SetIP4(ip4addr)
 	}
 	mask, _ := dstNetwork.Mask.Size()
-	return ip.Prefix{
+	return vpp_ip.Prefix{
 		Address: addr,
 		Len:     uint8(mask),
 	}

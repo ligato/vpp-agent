@@ -20,9 +20,9 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	. "github.com/onsi/gomega"
 
-	l2nb "github.com/ligato/vpp-agent/api/models/vpp/l2"
+	l2 "github.com/ligato/vpp-agent/api/models/vpp/l2"
 	"github.com/ligato/vpp-agent/pkg/idxvpp"
-	l2ba "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/l2"
+	vpp_l2 "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/l2"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/vpe"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/l2plugin/vppcalls"
@@ -30,18 +30,18 @@ import (
 )
 
 var testDataInMessagesBDs = []govppapi.Message{
-	&l2ba.BridgeDomainDetails{
+	&vpp_l2.BridgeDomainDetails{
 		BdID:  4,
 		Flood: 1, UuFlood: 1, Forward: 1, Learn: 1, ArpTerm: 1, MacAge: 140,
-		SwIfDetails: []l2ba.BridgeDomainSwIf{
+		SwIfDetails: []vpp_l2.BridgeDomainSwIf{
 			{SwIfIndex: 5},
 			{SwIfIndex: 7},
 		},
 	},
-	&l2ba.BridgeDomainDetails{
+	&vpp_l2.BridgeDomainDetails{
 		BdID:  5,
 		Flood: 0, UuFlood: 0, Forward: 0, Learn: 0, ArpTerm: 0, MacAge: 141,
-		SwIfDetails: []l2ba.BridgeDomainSwIf{
+		SwIfDetails: []vpp_l2.BridgeDomainSwIf{
 			{SwIfIndex: 5},
 			{SwIfIndex: 8},
 		},
@@ -50,14 +50,14 @@ var testDataInMessagesBDs = []govppapi.Message{
 
 var testDataOutMessage = []*vppcalls.BridgeDomainDetails{
 	{
-		Bd: &l2nb.BridgeDomain{
+		Bd: &l2.BridgeDomain{
 			Flood:               true,
 			UnknownUnicastFlood: true,
 			Forward:             true,
 			Learn:               true,
 			ArpTermination:      true,
 			MacAge:              140,
-			Interfaces: []*l2nb.BridgeDomain_Interface{
+			Interfaces: []*l2.BridgeDomain_Interface{
 				{
 					Name: "if1",
 				},
@@ -70,14 +70,14 @@ var testDataOutMessage = []*vppcalls.BridgeDomainDetails{
 			BdID: 4,
 		},
 	}, {
-		Bd: &l2nb.BridgeDomain{
+		Bd: &l2.BridgeDomain{
 			Flood:               false,
 			UnknownUnicastFlood: false,
 			Forward:             false,
 			Learn:               false,
 			ArpTermination:      false,
 			MacAge:              141,
-			Interfaces: []*l2nb.BridgeDomain_Interface{
+			Interfaces: []*l2.BridgeDomain_Interface{
 				{
 					Name: "if1",
 				},
@@ -85,7 +85,7 @@ var testDataOutMessage = []*vppcalls.BridgeDomainDetails{
 					Name: "if3",
 				},
 			},
-			ArpTerminationTable: []*l2nb.BridgeDomain_ArpTerminationEntry{
+			ArpTerminationTable: []*l2.BridgeDomain_ArpTerminationEntry{
 				{
 					IpAddress:   "192.168.0.1",
 					PhysAddress: "aa:aa:aa:aa:aa:aa",
@@ -108,12 +108,12 @@ func TestDumpBridgeDomains(t *testing.T) {
 
 	ctx.MockReplies([]*vppcallmock.HandleReplies{
 		{
-			Name:    (&l2ba.BdIPMacDump{}).GetMessageName(),
+			Name:    (&vpp_l2.BdIPMacDump{}).GetMessageName(),
 			Ping:    true,
-			Message: &l2ba.BdIPMacDetails{},
+			Message: &vpp_l2.BdIPMacDetails{},
 		},
 		{
-			Name:    (&l2ba.BridgeDomainDump{}).GetMessageName(),
+			Name:    (&vpp_l2.BridgeDomainDump{}).GetMessageName(),
 			Ping:    true,
 			Message: testDataInMessagesBDs[0],
 		},
@@ -125,7 +125,7 @@ func TestDumpBridgeDomains(t *testing.T) {
 	Expect(bridgeDomains).To(HaveLen(1))
 	Expect(bridgeDomains[0]).To(Equal(testDataOutMessage[0]))
 
-	ctx.MockVpp.MockReply(&l2ba.BridgeDomainAddDelReply{})
+	ctx.MockVpp.MockReply(&vpp_l2.BridgeDomainAddDelReply{})
 	_, err = bdHandler.DumpBridgeDomains()
 	Expect(err).Should(HaveOccurred())
 }
@@ -140,23 +140,23 @@ func TestDumpBridgeDomainsWithARP(t *testing.T) {
 
 	ctx.MockReplies([]*vppcallmock.HandleReplies{
 		{
-			Name: (&l2ba.BdIPMacDump{}).GetMessageName(),
+			Name: (&vpp_l2.BdIPMacDump{}).GetMessageName(),
 			Ping: true,
-			Message: &l2ba.BdIPMacDetails{
-				Entry: l2ba.BdIPMac{
+			Message: &vpp_l2.BdIPMacDetails{
+				Entry: vpp_l2.BdIPMac{
 					BdID: 5,
-					IP: l2ba.Address{
-						Af: l2ba.ADDRESS_IP4,
-						Un: l2ba.AddressUnionIP4(
-							l2ba.IP4Address{192, 168, 0, 1},
+					IP: vpp_l2.Address{
+						Af: vpp_l2.ADDRESS_IP4,
+						Un: vpp_l2.AddressUnionIP4(
+							vpp_l2.IP4Address{192, 168, 0, 1},
 						),
 					},
-					Mac: l2ba.MacAddress{0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA},
+					Mac: vpp_l2.MacAddress{0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA},
 				},
 			},
 		},
 		{
-			Name:    (&l2ba.BridgeDomainDump{}).GetMessageName(),
+			Name:    (&vpp_l2.BridgeDomainDump{}).GetMessageName(),
 			Ping:    true,
 			Message: testDataInMessagesBDs[1],
 		},
@@ -168,18 +168,18 @@ func TestDumpBridgeDomainsWithARP(t *testing.T) {
 	Expect(bridgeDomains).To(HaveLen(1))
 	Expect(bridgeDomains[0]).To(Equal(testDataOutMessage[1]))
 
-	ctx.MockVpp.MockReply(&l2ba.BridgeDomainAddDelReply{})
+	ctx.MockVpp.MockReply(&vpp_l2.BridgeDomainAddDelReply{})
 	_, err = bdHandler.DumpBridgeDomains()
 	Expect(err).Should(HaveOccurred())
 }
 
 var testDataInMessagesFIBs = []govppapi.Message{
-	&l2ba.L2FibTableDetails{
+	&vpp_l2.L2FibTableDetails{
 		BdID:   10,
 		Mac:    []byte{0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA},
 		BviMac: 0, SwIfIndex: ^uint32(0), FilterMac: 1, StaticMac: 0,
 	},
-	&l2ba.L2FibTableDetails{
+	&vpp_l2.L2FibTableDetails{
 		BdID:   20,
 		Mac:    []byte{0xBB, 0xBB, 0xBB, 0xBB, 0xBB, 0xBB},
 		BviMac: 1, SwIfIndex: 1, FilterMac: 0, StaticMac: 1,
@@ -188,10 +188,10 @@ var testDataInMessagesFIBs = []govppapi.Message{
 
 var testDataOutFIBs = []*vppcalls.FibTableDetails{
 	{
-		Fib: &l2nb.FIBEntry{
+		Fib: &l2.FIBEntry{
 			PhysAddress:             "aa:aa:aa:aa:aa:aa",
 			BridgeDomain:            "bd1",
-			Action:                  l2nb.FIBEntry_DROP,
+			Action:                  l2.FIBEntry_DROP,
 			StaticConfig:            false,
 			BridgedVirtualInterface: false,
 			OutgoingInterface:       "",
@@ -202,10 +202,10 @@ var testDataOutFIBs = []*vppcalls.FibTableDetails{
 		},
 	},
 	{
-		Fib: &l2nb.FIBEntry{
+		Fib: &l2.FIBEntry{
 			PhysAddress:             "bb:bb:bb:bb:bb:bb",
 			BridgeDomain:            "bd2",
-			Action:                  l2nb.FIBEntry_FORWARD,
+			Action:                  l2.FIBEntry_FORWARD,
 			StaticConfig:            true,
 			BridgedVirtualInterface: true,
 			OutgoingInterface:       "if1",
@@ -237,17 +237,17 @@ func TestDumpFIBTableEntries(t *testing.T) {
 	Expect(fibTable["aa:aa:aa:aa:aa:aa"]).To(Equal(testDataOutFIBs[0]))
 	Expect(fibTable["bb:bb:bb:bb:bb:bb"]).To(Equal(testDataOutFIBs[1]))
 
-	ctx.MockVpp.MockReply(&l2ba.BridgeDomainAddDelReply{})
+	ctx.MockVpp.MockReply(&vpp_l2.BridgeDomainAddDelReply{})
 	_, err = fibHandler.DumpL2FIBs()
 	Expect(err).Should(HaveOccurred())
 }
 
 var testDataInXConnect = []govppapi.Message{
-	&l2ba.L2XconnectDetails{
+	&vpp_l2.L2XconnectDetails{
 		RxSwIfIndex: 1,
 		TxSwIfIndex: 2,
 	},
-	&l2ba.L2XconnectDetails{
+	&vpp_l2.L2XconnectDetails{
 		RxSwIfIndex: 3,
 		TxSwIfIndex: 4,
 	},
@@ -255,7 +255,7 @@ var testDataInXConnect = []govppapi.Message{
 
 var testDataOutXconnect = []*vppcalls.XConnectDetails{
 	{
-		Xc: &l2nb.XConnectPair{
+		Xc: &l2.XConnectPair{
 			ReceiveInterface:  "if1",
 			TransmitInterface: "if2",
 		},
@@ -265,7 +265,7 @@ var testDataOutXconnect = []*vppcalls.XConnectDetails{
 		},
 	},
 	{
-		Xc: &l2nb.XConnectPair{
+		Xc: &l2.XConnectPair{
 			ReceiveInterface:  "if3",
 			TransmitInterface: "if4",
 		},
@@ -298,7 +298,7 @@ func TestDumpXConnectPairs(t *testing.T) {
 	Expect(xConnectPairs[1]).To(Equal(testDataOutXconnect[0]))
 	Expect(xConnectPairs[3]).To(Equal(testDataOutXconnect[1]))
 
-	ctx.MockVpp.MockReply(&l2ba.BridgeDomainAddDelReply{})
+	ctx.MockVpp.MockReply(&vpp_l2.BridgeDomainAddDelReply{})
 	_, err = xcHandler.DumpXConnectPairs()
 	Expect(err).Should(HaveOccurred())
 }

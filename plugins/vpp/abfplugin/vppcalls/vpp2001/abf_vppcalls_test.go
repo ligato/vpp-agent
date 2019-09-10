@@ -21,10 +21,10 @@ import (
 	"github.com/ligato/cn-infra/logging/logrus"
 	. "github.com/onsi/gomega"
 
-	vpp_abf "github.com/ligato/vpp-agent/api/models/vpp/abf"
+	abf "github.com/ligato/vpp-agent/api/models/vpp/abf"
 	"github.com/ligato/vpp-agent/plugins/vpp/abfplugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/vpp/aclplugin/aclidx"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/abf"
+	vpp_abf "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/abf"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/vppcallmock"
 )
@@ -33,7 +33,7 @@ func TestGetABFVersion(t *testing.T) {
 	ctx, abfHandler, _ := abfTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&abf.AbfPluginGetVersionReply{
+	ctx.MockVpp.MockReply(&vpp_abf.AbfPluginGetVersionReply{
 		Major: 1,
 		Minor: 0,
 	})
@@ -47,7 +47,7 @@ func TestAddABFPolicy(t *testing.T) {
 	ctx, abfHandler, ifIndexes := abfTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&abf.AbfPolicyAddDelReply{})
+	ctx.MockVpp.MockReply(&vpp_abf.AbfPolicyAddDelReply{})
 
 	ifIndexes.Put("if1", &ifaceidx.IfaceMetadata{
 		SwIfIndex: 5,
@@ -56,7 +56,7 @@ func TestAddABFPolicy(t *testing.T) {
 		SwIfIndex: 10,
 	})
 
-	err := abfHandler.AddAbfPolicy(1, 2, []*vpp_abf.ABF_ForwardingPath{
+	err := abfHandler.AddAbfPolicy(1, 2, []*abf.ABF_ForwardingPath{
 		{
 			InterfaceName: "if1",
 			NextHopIp:     "10.0.0.1",
@@ -68,23 +68,23 @@ func TestAddABFPolicy(t *testing.T) {
 	})
 
 	Expect(err).To(BeNil())
-	req, ok := ctx.MockChannel.Msg.(*abf.AbfPolicyAddDel)
+	req, ok := ctx.MockChannel.Msg.(*vpp_abf.AbfPolicyAddDel)
 	Expect(ok).To(BeTrue())
 	Expect(req.IsAdd).To(Equal(uint8(1)))
 	Expect(req.Policy.PolicyID).To(Equal(uint32(1)))
 	Expect(req.Policy.ACLIndex).To(Equal(uint32(2)))
 	Expect(req.Policy.NPaths).To(Equal(uint8(2)))
 	Expect(req.Policy.Paths[0].SwIfIndex).To(Equal(uint32(5)))
-	Expect(req.Policy.Paths[0].Nh.Address.GetIP4()).To(BeEquivalentTo(abf.IP4Address([4]uint8{10, 0, 0, 1})))
+	Expect(req.Policy.Paths[0].Nh.Address.GetIP4()).To(BeEquivalentTo(vpp_abf.IP4Address([4]uint8{10, 0, 0, 1})))
 	Expect(req.Policy.Paths[1].SwIfIndex).To(Equal(uint32(10)))
-	Expect(req.Policy.Paths[1].Nh.Address.GetIP6()).To(BeEquivalentTo(abf.IP6Address([16]uint8{255, 255})))
+	Expect(req.Policy.Paths[1].Nh.Address.GetIP6()).To(BeEquivalentTo(vpp_abf.IP6Address([16]uint8{255, 255})))
 }
 
 func TestAddABFPolicyError(t *testing.T) {
 	ctx, abfHandler, _ := abfTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&abf.AbfPolicyAddDelReply{
+	ctx.MockVpp.MockReply(&vpp_abf.AbfPolicyAddDelReply{
 		Retval: 1,
 	})
 
@@ -97,7 +97,7 @@ func TestDeleteABFPolicy(t *testing.T) {
 	ctx, abfHandler, ifIndexes := abfTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&abf.AbfPolicyAddDelReply{})
+	ctx.MockVpp.MockReply(&vpp_abf.AbfPolicyAddDelReply{})
 
 	ifIndexes.Put("if1", &ifaceidx.IfaceMetadata{
 		SwIfIndex: 5,
@@ -106,7 +106,7 @@ func TestDeleteABFPolicy(t *testing.T) {
 		SwIfIndex: 10,
 	})
 
-	err := abfHandler.DeleteAbfPolicy(1, []*vpp_abf.ABF_ForwardingPath{
+	err := abfHandler.DeleteAbfPolicy(1, []*abf.ABF_ForwardingPath{
 		{
 			InterfaceName: "if1",
 			NextHopIp:     "10.0.0.1",
@@ -118,7 +118,7 @@ func TestDeleteABFPolicy(t *testing.T) {
 	})
 
 	Expect(err).To(BeNil())
-	req, ok := ctx.MockChannel.Msg.(*abf.AbfPolicyAddDel)
+	req, ok := ctx.MockChannel.Msg.(*vpp_abf.AbfPolicyAddDel)
 	Expect(ok).To(BeTrue())
 	Expect(req.IsAdd).To(Equal(uint8(0)))
 	Expect(req.Policy.PolicyID).To(Equal(uint32(1)))
@@ -133,7 +133,7 @@ func TestDeleteABFPolicyError(t *testing.T) {
 	ctx, abfHandler, _ := abfTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&abf.AbfPolicyAddDelReply{
+	ctx.MockVpp.MockReply(&vpp_abf.AbfPolicyAddDelReply{
 		Retval: 1,
 	})
 
@@ -146,12 +146,12 @@ func TestAttachABFInterfaceIPv4(t *testing.T) {
 	ctx, abfHandler, _ := abfTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&abf.AbfItfAttachAddDelReply{})
+	ctx.MockVpp.MockReply(&vpp_abf.AbfItfAttachAddDelReply{})
 
 	err := abfHandler.AbfAttachInterfaceIPv4(1, 2, 3)
 
 	Expect(err).To(BeNil())
-	req, ok := ctx.MockChannel.Msg.(*abf.AbfItfAttachAddDel)
+	req, ok := ctx.MockChannel.Msg.(*vpp_abf.AbfItfAttachAddDel)
 	Expect(ok).To(BeTrue())
 	Expect(req.IsAdd).To(Equal(uint8(1)))
 	Expect(req.Attach.PolicyID).To(Equal(uint32(1)))
@@ -164,7 +164,7 @@ func TestAttachABFInterfaceIPv4Error(t *testing.T) {
 	ctx, abfHandler, _ := abfTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&abf.AbfItfAttachAddDelReply{
+	ctx.MockVpp.MockReply(&vpp_abf.AbfItfAttachAddDelReply{
 		Retval: -1,
 	})
 
@@ -177,12 +177,12 @@ func TestAttachABFInterfaceIPv6(t *testing.T) {
 	ctx, abfHandler, _ := abfTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&abf.AbfItfAttachAddDelReply{})
+	ctx.MockVpp.MockReply(&vpp_abf.AbfItfAttachAddDelReply{})
 
 	err := abfHandler.AbfAttachInterfaceIPv6(1, 2, 3)
 
 	Expect(err).To(BeNil())
-	req, ok := ctx.MockChannel.Msg.(*abf.AbfItfAttachAddDel)
+	req, ok := ctx.MockChannel.Msg.(*vpp_abf.AbfItfAttachAddDel)
 	Expect(ok).To(BeTrue())
 	Expect(req.IsAdd).To(Equal(uint8(1)))
 	Expect(req.Attach.PolicyID).To(Equal(uint32(1)))
@@ -195,7 +195,7 @@ func TestAttachABFInterfaceIPv6Error(t *testing.T) {
 	ctx, abfHandler, _ := abfTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&abf.AbfItfAttachAddDelReply{
+	ctx.MockVpp.MockReply(&vpp_abf.AbfItfAttachAddDelReply{
 		Retval: -1,
 	})
 
@@ -208,12 +208,12 @@ func TestDetachABFInterfaceIPv4(t *testing.T) {
 	ctx, abfHandler, _ := abfTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&abf.AbfItfAttachAddDelReply{})
+	ctx.MockVpp.MockReply(&vpp_abf.AbfItfAttachAddDelReply{})
 
 	err := abfHandler.AbfDetachInterfaceIPv4(1, 2, 3)
 
 	Expect(err).To(BeNil())
-	req, ok := ctx.MockChannel.Msg.(*abf.AbfItfAttachAddDel)
+	req, ok := ctx.MockChannel.Msg.(*vpp_abf.AbfItfAttachAddDel)
 	Expect(ok).To(BeTrue())
 	Expect(req.IsAdd).To(Equal(uint8(0)))
 	Expect(req.Attach.PolicyID).To(Equal(uint32(1)))
@@ -226,7 +226,7 @@ func TestDetachABFInterfaceIPv4Error(t *testing.T) {
 	ctx, abfHandler, _ := abfTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&abf.AbfItfAttachAddDelReply{
+	ctx.MockVpp.MockReply(&vpp_abf.AbfItfAttachAddDelReply{
 		Retval: -1,
 	})
 
@@ -239,12 +239,12 @@ func TestDetachABFInterfaceIPv6(t *testing.T) {
 	ctx, abfHandler, _ := abfTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&abf.AbfItfAttachAddDelReply{})
+	ctx.MockVpp.MockReply(&vpp_abf.AbfItfAttachAddDelReply{})
 
 	err := abfHandler.AbfDetachInterfaceIPv6(1, 2, 3)
 
 	Expect(err).To(BeNil())
-	req, ok := ctx.MockChannel.Msg.(*abf.AbfItfAttachAddDel)
+	req, ok := ctx.MockChannel.Msg.(*vpp_abf.AbfItfAttachAddDel)
 	Expect(ok).To(BeTrue())
 	Expect(req.IsAdd).To(Equal(uint8(0)))
 	Expect(req.Attach.PolicyID).To(Equal(uint32(1)))
@@ -257,7 +257,7 @@ func TestDetachABFInterfaceIPv6Error(t *testing.T) {
 	ctx, abfHandler, _ := abfTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&abf.AbfItfAttachAddDelReply{
+	ctx.MockVpp.MockReply(&vpp_abf.AbfItfAttachAddDelReply{
 		Retval: -1,
 	})
 

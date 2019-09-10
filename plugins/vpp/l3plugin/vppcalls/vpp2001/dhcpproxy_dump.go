@@ -17,16 +17,16 @@ package vpp2001
 import (
 	"net"
 
-	vpp_l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/dhcp"
+	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
+	vpp_dhcp "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/dhcp"
 	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls"
 )
 
 func (h *DHCPProxyHandler) DumpDHCPProxy() ([]*vppcalls.DHCPProxyDetails, error) {
 	var entry []*vppcalls.DHCPProxyDetails
-	reqCtx := h.callsChannel.SendMultiRequest(&dhcp.DHCPProxyDump{IsIP6: 0})
+	reqCtx := h.callsChannel.SendMultiRequest(&vpp_dhcp.DHCPProxyDump{IsIP6: 0})
 	for {
-		dhcpProxyDetails := &dhcp.DHCPProxyDetails{}
+		dhcpProxyDetails := &vpp_dhcp.DHCPProxyDetails{}
 		stop, err := reqCtx.ReceiveReply(dhcpProxyDetails)
 		if stop {
 			break
@@ -35,13 +35,13 @@ func (h *DHCPProxyHandler) DumpDHCPProxy() ([]*vppcalls.DHCPProxyDetails, error)
 			h.log.Error(err)
 			return nil, err
 		}
-		proxy := &vpp_l3.DHCPProxy{
+		proxy := &l3.DHCPProxy{
 			RxVrfId:         dhcpProxyDetails.RxVrfID,
 			SourceIpAddress: net.IP(dhcpProxyDetails.DHCPSrcAddress[:4]).To4().String(),
 		}
 
 		for _, server := range dhcpProxyDetails.Servers {
-			proxyServer := &vpp_l3.DHCPProxy_DHCPServer{
+			proxyServer := &l3.DHCPProxy_DHCPServer{
 				IpAddress: net.IP(server.DHCPServer[:4]).To4().String(),
 				VrfId:     server.ServerVrfID,
 			}
@@ -53,9 +53,9 @@ func (h *DHCPProxyHandler) DumpDHCPProxy() ([]*vppcalls.DHCPProxyDetails, error)
 		})
 	}
 
-	reqCtx = h.callsChannel.SendMultiRequest(&dhcp.DHCPProxyDump{IsIP6: 1})
+	reqCtx = h.callsChannel.SendMultiRequest(&vpp_dhcp.DHCPProxyDump{IsIP6: 1})
 	for {
-		dhcpProxyDetails := &dhcp.DHCPProxyDetails{}
+		dhcpProxyDetails := &vpp_dhcp.DHCPProxyDetails{}
 		stop, err := reqCtx.ReceiveReply(dhcpProxyDetails)
 		if stop {
 			break
@@ -64,12 +64,12 @@ func (h *DHCPProxyHandler) DumpDHCPProxy() ([]*vppcalls.DHCPProxyDetails, error)
 			h.log.Error(err)
 			return nil, err
 		}
-		proxy := &vpp_l3.DHCPProxy{
+		proxy := &l3.DHCPProxy{
 			RxVrfId:         dhcpProxyDetails.RxVrfID,
 			SourceIpAddress: net.IP(dhcpProxyDetails.DHCPSrcAddress).To16().String(),
 		}
 		for _, server := range dhcpProxyDetails.Servers {
-			proxyServer := &vpp_l3.DHCPProxy_DHCPServer{
+			proxyServer := &l3.DHCPProxy_DHCPServer{
 				IpAddress: net.IP(server.DHCPServer).To16().String(),
 				VrfId:     server.ServerVrfID,
 			}

@@ -18,12 +18,12 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/ip"
+	vpp_ip "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/ip"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls/vpp2001"
 	. "github.com/onsi/gomega"
 )
 
-func ipToAddr(ip string) ip.Address {
+func ipToAddr(ip string) vpp_ip.Address {
 	addr, err := vpp2001.IPToAddress(ip)
 	if err != nil {
 		panic(fmt.Sprintf("invalid IP: %s", ip))
@@ -35,15 +35,15 @@ func TestAddContainerIP(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
+	ctx.MockVpp.MockReply(&vpp_ip.IPContainerProxyAddDelReply{})
 
 	err := ifHandler.AddContainerIP(1, "10.0.0.1/24")
 
 	Expect(err).To(BeNil())
-	vppMsg, ok := ctx.MockChannel.Msg.(*ip.IPContainerProxyAddDel)
+	vppMsg, ok := ctx.MockChannel.Msg.(*vpp_ip.IPContainerProxyAddDel)
 	Expect(ok).To(BeTrue())
 	Expect(vppMsg.SwIfIndex).To(BeEquivalentTo(1))
-	Expect(vppMsg.Pfx).To(BeEquivalentTo(ip.Prefix{
+	Expect(vppMsg.Pfx).To(BeEquivalentTo(vpp_ip.Prefix{
 		Address: ipToAddr("10.0.0.1"),
 		Len:     24,
 	}))
@@ -54,15 +54,15 @@ func TestAddContainerIPv6(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
+	ctx.MockVpp.MockReply(&vpp_ip.IPContainerProxyAddDelReply{})
 
 	err := ifHandler.AddContainerIP(1, "2001:db8:0:1:1:1:1:1/128")
 
 	Expect(err).To(BeNil())
-	vppMsg, ok := ctx.MockChannel.Msg.(*ip.IPContainerProxyAddDel)
+	vppMsg, ok := ctx.MockChannel.Msg.(*vpp_ip.IPContainerProxyAddDel)
 	Expect(ok).To(BeTrue())
 	Expect(vppMsg.SwIfIndex).To(BeEquivalentTo(1))
-	Expect(vppMsg.Pfx).To(BeEquivalentTo(ip.Prefix{
+	Expect(vppMsg.Pfx).To(BeEquivalentTo(vpp_ip.Prefix{
 		Address: ipToAddr("2001:db8:0:1:1:1:1:1"),
 		Len:     128,
 	}))
@@ -73,7 +73,7 @@ func TestAddContainerIPInvalidIP(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&ip.IPAddressDetails{})
+	ctx.MockVpp.MockReply(&vpp_ip.IPAddressDetails{})
 
 	err := ifHandler.AddContainerIP(1, "invalid-ip")
 
@@ -84,7 +84,7 @@ func TestAddContainerIPError(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&ip.IPAddressDetails{})
+	ctx.MockVpp.MockReply(&vpp_ip.IPAddressDetails{})
 
 	err := ifHandler.AddContainerIP(1, "10.0.0.1/24")
 
@@ -95,7 +95,7 @@ func TestAddContainerIPRetval(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{
+	ctx.MockVpp.MockReply(&vpp_ip.IPContainerProxyAddDelReply{
 		Retval: 1,
 	})
 
@@ -108,15 +108,15 @@ func TestDelContainerIP(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
+	ctx.MockVpp.MockReply(&vpp_ip.IPContainerProxyAddDelReply{})
 
 	err := ifHandler.DelContainerIP(1, "10.0.0.1/24")
 
 	Expect(err).To(BeNil())
-	vppMsg, ok := ctx.MockChannel.Msg.(*ip.IPContainerProxyAddDel)
+	vppMsg, ok := ctx.MockChannel.Msg.(*vpp_ip.IPContainerProxyAddDel)
 	Expect(ok).To(BeTrue())
 	Expect(vppMsg.SwIfIndex).To(BeEquivalentTo(1))
-	Expect(vppMsg.Pfx).To(BeEquivalentTo(ip.Prefix{
+	Expect(vppMsg.Pfx).To(BeEquivalentTo(vpp_ip.Prefix{
 		Address: ipToAddr("10.0.0.1"),
 		Len:     24,
 	}))
@@ -127,15 +127,15 @@ func TestDelContainerIPv6(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
+	ctx.MockVpp.MockReply(&vpp_ip.IPContainerProxyAddDelReply{})
 
 	err := ifHandler.DelContainerIP(1, "2001:db8:0:1:1:1:1:1/128")
 
 	Expect(err).To(BeNil())
-	vppMsg, ok := ctx.MockChannel.Msg.(*ip.IPContainerProxyAddDel)
+	vppMsg, ok := ctx.MockChannel.Msg.(*vpp_ip.IPContainerProxyAddDel)
 	Expect(ok).To(BeTrue())
 	Expect(vppMsg.SwIfIndex).To(BeEquivalentTo(1))
-	Expect(vppMsg.Pfx).To(BeEquivalentTo(ip.Prefix{
+	Expect(vppMsg.Pfx).To(BeEquivalentTo(vpp_ip.Prefix{
 		Address: ipToAddr("2001:db8:0:1:1:1:1:1"),
 		Len:     128,
 	}))
@@ -146,7 +146,7 @@ func TestDelContainerIPError(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&ip.IPAddressDetails{})
+	ctx.MockVpp.MockReply(&vpp_ip.IPAddressDetails{})
 
 	err := ifHandler.DelContainerIP(1, "10.0.0.1/24")
 
@@ -157,7 +157,7 @@ func TestDelContainerIPRetval(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{
+	ctx.MockVpp.MockReply(&vpp_ip.IPContainerProxyAddDelReply{
 		Retval: 1,
 	})
 

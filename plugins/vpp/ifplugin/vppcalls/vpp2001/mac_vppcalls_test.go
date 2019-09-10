@@ -15,10 +15,10 @@
 package vpp2001_test
 
 import (
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls/vpp2001"
 	"testing"
 
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/interfaces"
+	vpp_ifs "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/interfaces"
+	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls/vpp2001"
 	. "github.com/onsi/gomega"
 )
 
@@ -26,14 +26,14 @@ func TestSetInterfaceMac(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetMacAddressReply{})
+	ctx.MockVpp.MockReply(&vpp_ifs.SwInterfaceSetMacAddressReply{})
 
 	mac, err := vpp2001.ParseMAC("65:77:BF:72:C9:8D")
 	Expect(err).To(BeNil())
 	err = ifHandler.SetInterfaceMac(1, "65:77:BF:72:C9:8D")
 	Expect(err).To(BeNil())
 
-	vppMsg, ok := ctx.MockChannel.Msg.(*interfaces.SwInterfaceSetMacAddress)
+	vppMsg, ok := ctx.MockChannel.Msg.(*vpp_ifs.SwInterfaceSetMacAddress)
 	Expect(ok).To(BeTrue())
 	Expect(vppMsg.SwIfIndex).To(BeEquivalentTo(1))
 	Expect(vppMsg.MacAddress).To(BeEquivalentTo(mac))
@@ -43,7 +43,7 @@ func TestSetInterfaceInvalidMac(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetMacAddress{})
+	ctx.MockVpp.MockReply(&vpp_ifs.SwInterfaceSetMacAddress{})
 
 	err := ifHandler.SetInterfaceMac(1, "invalid-mac")
 
@@ -54,7 +54,7 @@ func TestSetInterfaceMacError(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetMacAddress{})
+	ctx.MockVpp.MockReply(&vpp_ifs.SwInterfaceSetMacAddress{})
 
 	err := ifHandler.SetInterfaceMac(1, "65:77:BF:72:C9:8D")
 
@@ -65,7 +65,7 @@ func TestSetInterfaceMacRetval(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetMacAddressReply{
+	ctx.MockVpp.MockReply(&vpp_ifs.SwInterfaceSetMacAddressReply{
 		Retval: 1,
 	})
 

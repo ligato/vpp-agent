@@ -21,7 +21,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/ip"
+	vpp_ip "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/ip"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls/vpp2001"
@@ -56,17 +56,17 @@ func TestAddArp(t *testing.T) {
 
 	ifIndexes.Put("if1", &ifaceidx.IfaceMetadata{SwIfIndex: 1})
 
-	ctx.MockVpp.MockReply(&ip.IPNeighborAddDelReply{})
+	ctx.MockVpp.MockReply(&vpp_ip.IPNeighborAddDelReply{})
 	err := arpHandler.VppAddArp(arpEntries[0])
 	Expect(err).To(Succeed())
-	ctx.MockVpp.MockReply(&ip.IPNeighborAddDelReply{})
+	ctx.MockVpp.MockReply(&vpp_ip.IPNeighborAddDelReply{})
 	err = arpHandler.VppAddArp(arpEntries[1])
 	Expect(err).To(Succeed())
-	ctx.MockVpp.MockReply(&ip.IPNeighborAddDelReply{})
+	ctx.MockVpp.MockReply(&vpp_ip.IPNeighborAddDelReply{})
 	err = arpHandler.VppAddArp(arpEntries[2])
 	Expect(err).To(Succeed())
 
-	ctx.MockVpp.MockReply(&ip.IPNeighborAddDelReply{Retval: 1})
+	ctx.MockVpp.MockReply(&vpp_ip.IPNeighborAddDelReply{Retval: 1})
 	err = arpHandler.VppAddArp(arpEntries[0])
 	Expect(err).NotTo(BeNil())
 }
@@ -78,7 +78,7 @@ func TestDelArp(t *testing.T) {
 
 	ifIndexes.Put("if1", &ifaceidx.IfaceMetadata{SwIfIndex: 1})
 
-	ctx.MockVpp.MockReply(&ip.IPNeighborAddDelReply{})
+	ctx.MockVpp.MockReply(&vpp_ip.IPNeighborAddDelReply{})
 	err := arpHandler.VppDelArp(arpEntries[0])
 	Expect(err).To(Succeed())
 }

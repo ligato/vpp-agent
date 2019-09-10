@@ -18,7 +18,7 @@ import (
 	"net"
 	"testing"
 
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/interfaces"
+	vpp_ifs "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/interfaces"
 	. "github.com/onsi/gomega"
 )
 
@@ -28,17 +28,17 @@ func TestAddInterfaceIP(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
+	ctx.MockVpp.MockReply(&vpp_ifs.SwInterfaceAddDelAddressReply{})
 
 	_, ipNet, err := net.ParseCIDR("10.0.0.1/24")
 	Expect(err).To(BeNil())
 	err = ifHandler.AddInterfaceIP(1, ipNet)
 
 	Expect(err).To(BeNil())
-	vppMsg, ok := ctx.MockChannel.Msg.(*interfaces.SwInterfaceAddDelAddress)
+	vppMsg, ok := ctx.MockChannel.Msg.(*vpp_ifs.SwInterfaceAddDelAddress)
 	Expect(ok).To(BeTrue())
 	Expect(vppMsg.SwIfIndex).To(BeEquivalentTo(1))
-	Expect(vppMsg.Prefix.Address.Af).To(BeEquivalentTo(interfaces.ADDRESS_IP4))
+	Expect(vppMsg.Prefix.Address.Af).To(BeEquivalentTo(vpp_ifs.ADDRESS_IP4))
 	copy(ipv4Addr[:], ipNet.IP.To4())
 	Expect(vppMsg.Prefix.Address.Un.GetIP4()).To(BeEquivalentTo(ipv4Addr))
 	Expect(vppMsg.Prefix.Len).To(BeEquivalentTo(24))
@@ -52,17 +52,17 @@ func TestAddInterfaceIPv6(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
+	ctx.MockVpp.MockReply(&vpp_ifs.SwInterfaceAddDelAddressReply{})
 
 	_, ipNet, err := net.ParseCIDR("2001:db8:0:1:1:1:1:1/128")
 	Expect(err).To(BeNil())
 	err = ifHandler.AddInterfaceIP(1, ipNet)
 
 	Expect(err).To(BeNil())
-	vppMsg, ok := ctx.MockChannel.Msg.(*interfaces.SwInterfaceAddDelAddress)
+	vppMsg, ok := ctx.MockChannel.Msg.(*vpp_ifs.SwInterfaceAddDelAddress)
 	Expect(ok).To(BeTrue())
 	Expect(vppMsg.SwIfIndex).To(BeEquivalentTo(1))
-	Expect(vppMsg.Prefix.Address.Af).To(BeEquivalentTo(interfaces.ADDRESS_IP6))
+	Expect(vppMsg.Prefix.Address.Af).To(BeEquivalentTo(vpp_ifs.ADDRESS_IP6))
 	copy(ipv6Addr[:], ipNet.IP.To16())
 	Expect(vppMsg.Prefix.Address.Un.GetIP6()).To(BeEquivalentTo(ipv6Addr))
 	Expect(vppMsg.Prefix.Len).To(BeEquivalentTo(128))
@@ -74,7 +74,7 @@ func TestAddInterfaceInvalidIP(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
+	ctx.MockVpp.MockReply(&vpp_ifs.SwInterfaceAddDelAddressReply{})
 
 	err := ifHandler.AddInterfaceIP(1, &net.IPNet{
 		IP: []byte("invalid-ip"),
@@ -89,7 +89,7 @@ func TestAddInterfaceIPError(t *testing.T) {
 
 	_, ipNet, err := net.ParseCIDR("10.0.0.1/24")
 	Expect(err).To(BeNil())
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddress{})
+	ctx.MockVpp.MockReply(&vpp_ifs.SwInterfaceAddDelAddress{})
 
 	err = ifHandler.AddInterfaceIP(1, ipNet)
 
@@ -102,7 +102,7 @@ func TestAddInterfaceIPRetval(t *testing.T) {
 
 	_, ipNet, err := net.ParseCIDR("10.0.0.1/24")
 	Expect(err).To(BeNil())
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{
+	ctx.MockVpp.MockReply(&vpp_ifs.SwInterfaceAddDelAddressReply{
 		Retval: 1,
 	})
 
@@ -117,17 +117,17 @@ func TestDelInterfaceIP(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
+	ctx.MockVpp.MockReply(&vpp_ifs.SwInterfaceAddDelAddressReply{})
 
 	_, ipNet, err := net.ParseCIDR("10.0.0.1/24")
 	Expect(err).To(BeNil())
 	err = ifHandler.DelInterfaceIP(1, ipNet)
 
 	Expect(err).To(BeNil())
-	vppMsg, ok := ctx.MockChannel.Msg.(*interfaces.SwInterfaceAddDelAddress)
+	vppMsg, ok := ctx.MockChannel.Msg.(*vpp_ifs.SwInterfaceAddDelAddress)
 	Expect(ok).To(BeTrue())
 	Expect(vppMsg.SwIfIndex).To(BeEquivalentTo(1))
-	Expect(vppMsg.Prefix.Address.Af).To(BeEquivalentTo(interfaces.ADDRESS_IP4))
+	Expect(vppMsg.Prefix.Address.Af).To(BeEquivalentTo(vpp_ifs.ADDRESS_IP4))
 	copy(ipv4Addr[:], ipNet.IP.To4())
 	Expect(vppMsg.Prefix.Address.Un.GetIP4()).To(BeEquivalentTo(ipv4Addr))
 	Expect(vppMsg.Prefix.Len).To(BeEquivalentTo(24))
@@ -141,17 +141,17 @@ func TestDelInterfaceIPv6(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
+	ctx.MockVpp.MockReply(&vpp_ifs.SwInterfaceAddDelAddressReply{})
 
 	_, ipNet, err := net.ParseCIDR("2001:db8:0:1:1:1:1:1/128")
 	Expect(err).To(BeNil())
 	err = ifHandler.DelInterfaceIP(1, ipNet)
 
 	Expect(err).To(BeNil())
-	vppMsg, ok := ctx.MockChannel.Msg.(*interfaces.SwInterfaceAddDelAddress)
+	vppMsg, ok := ctx.MockChannel.Msg.(*vpp_ifs.SwInterfaceAddDelAddress)
 	Expect(ok).To(BeTrue())
 	Expect(vppMsg.SwIfIndex).To(BeEquivalentTo(1))
-	Expect(vppMsg.Prefix.Address.Af).To(BeEquivalentTo(interfaces.ADDRESS_IP6))
+	Expect(vppMsg.Prefix.Address.Af).To(BeEquivalentTo(vpp_ifs.ADDRESS_IP6))
 	copy(ipv6Addr[:], ipNet.IP.To16())
 	Expect(vppMsg.Prefix.Address.Un.GetIP6()).To(BeEquivalentTo(ipv6Addr))
 	Expect(vppMsg.Prefix.Len).To(BeEquivalentTo(128))
@@ -163,7 +163,7 @@ func TestDelInterfaceInvalidIP(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
+	ctx.MockVpp.MockReply(&vpp_ifs.SwInterfaceAddDelAddressReply{})
 
 	err := ifHandler.DelInterfaceIP(1, &net.IPNet{
 		IP: []byte("invalid-ip"),
@@ -178,7 +178,7 @@ func TestDelInterfaceIPError(t *testing.T) {
 
 	_, ipNet, err := net.ParseCIDR("10.0.0.1/24")
 	Expect(err).To(BeNil())
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddress{})
+	ctx.MockVpp.MockReply(&vpp_ifs.SwInterfaceAddDelAddress{})
 
 	err = ifHandler.DelInterfaceIP(1, ipNet)
 
@@ -191,7 +191,7 @@ func TestDelInterfaceIPRetval(t *testing.T) {
 
 	_, ipNet, err := net.ParseCIDR("10.0.0.1/24")
 	Expect(err).To(BeNil())
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{
+	ctx.MockVpp.MockReply(&vpp_ifs.SwInterfaceAddDelAddressReply{
 		Retval: 1,
 	})
 
@@ -204,12 +204,12 @@ func TestSetUnnumberedIP(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetUnnumberedReply{})
+	ctx.MockVpp.MockReply(&vpp_ifs.SwInterfaceSetUnnumberedReply{})
 
 	err := ifHandler.SetUnnumberedIP(1, 2)
 
 	Expect(err).To(BeNil())
-	vppMsg, ok := ctx.MockChannel.Msg.(*interfaces.SwInterfaceSetUnnumbered)
+	vppMsg, ok := ctx.MockChannel.Msg.(*vpp_ifs.SwInterfaceSetUnnumbered)
 	Expect(ok).To(BeTrue())
 	Expect(vppMsg.SwIfIndex).To(BeEquivalentTo(2))
 	Expect(vppMsg.UnnumberedSwIfIndex).To(BeEquivalentTo(1))
@@ -220,7 +220,7 @@ func TestSetUnnumberedIPError(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetUnnumbered{})
+	ctx.MockVpp.MockReply(&vpp_ifs.SwInterfaceSetUnnumbered{})
 
 	err := ifHandler.SetUnnumberedIP(1, 2)
 
@@ -231,7 +231,7 @@ func TestSetUnnumberedIPRetval(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetUnnumberedReply{
+	ctx.MockVpp.MockReply(&vpp_ifs.SwInterfaceSetUnnumberedReply{
 		Retval: 1,
 	})
 
@@ -244,12 +244,12 @@ func TestUnsetUnnumberedIP(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetUnnumberedReply{})
+	ctx.MockVpp.MockReply(&vpp_ifs.SwInterfaceSetUnnumberedReply{})
 
 	err := ifHandler.UnsetUnnumberedIP(1)
 
 	Expect(err).To(BeNil())
-	vppMsg, ok := ctx.MockChannel.Msg.(*interfaces.SwInterfaceSetUnnumbered)
+	vppMsg, ok := ctx.MockChannel.Msg.(*vpp_ifs.SwInterfaceSetUnnumbered)
 	Expect(ok).To(BeTrue())
 	Expect(vppMsg.SwIfIndex).To(BeEquivalentTo(0))
 	Expect(vppMsg.UnnumberedSwIfIndex).To(BeEquivalentTo(1))
@@ -260,7 +260,7 @@ func TestUnsetUnnumberedIPError(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetUnnumbered{})
+	ctx.MockVpp.MockReply(&vpp_ifs.SwInterfaceSetUnnumbered{})
 
 	err := ifHandler.UnsetUnnumberedIP(1)
 
@@ -271,7 +271,7 @@ func TestUnsetUnnumberedIPRetval(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetUnnumberedReply{
+	ctx.MockVpp.MockReply(&vpp_ifs.SwInterfaceSetUnnumberedReply{
 		Retval: 1,
 	})
 

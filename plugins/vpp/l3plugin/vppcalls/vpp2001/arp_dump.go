@@ -18,7 +18,7 @@ import (
 	"net"
 
 	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
-	l3binapi "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/ip"
+	vpp_ip "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/ip"
 	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls"
 )
 
@@ -37,13 +37,13 @@ func (h *ArpVppHandler) DumpArpEntries() ([]*vppcalls.ArpDetails, error) {
 
 func (h *ArpVppHandler) dumpArpEntries(isIPv6 bool) ([]*vppcalls.ArpDetails, error) {
 	var entries []*vppcalls.ArpDetails
-	reqCtx := h.callsChannel.SendMultiRequest(&l3binapi.IPNeighborDump{
+	reqCtx := h.callsChannel.SendMultiRequest(&vpp_ip.IPNeighborDump{
 		SwIfIndex: 0xffffffff, // Send multirequest to get all ARP entries for given IP version
 		IsIPv6:    boolToUint(isIPv6),
 	})
 
 	for {
-		arpDetails := &l3binapi.IPNeighborDetails{}
+		arpDetails := &vpp_ip.IPNeighborDetails{}
 		stop, err := reqCtx.ReceiveReply(arpDetails)
 		if stop {
 			break
@@ -60,7 +60,7 @@ func (h *ArpVppHandler) dumpArpEntries(isIPv6 bool) ([]*vppcalls.ArpDetails, err
 		}
 		// IP & MAC address
 		var ip string
-		if arpDetails.Neighbor.IPAddress.Af == l3binapi.ADDRESS_IP6 {
+		if arpDetails.Neighbor.IPAddress.Af == vpp_ip.ADDRESS_IP6 {
 			addr := arpDetails.Neighbor.IPAddress.Un.GetIP6()
 			ip = net.IP(addr[:]).To16().String()
 		} else {
@@ -73,7 +73,7 @@ func (h *ArpVppHandler) dumpArpEntries(isIPv6 bool) ([]*vppcalls.ArpDetails, err
 			Interface:   ifName,
 			IpAddress:   ip,
 			PhysAddress: net.HardwareAddr(arpDetails.Neighbor.MacAddress[:]).String(),
-			Static:      arpDetails.Neighbor.Flags&l3binapi.IP_API_NEIGHBOR_FLAG_STATIC != 0,
+			Static:      arpDetails.Neighbor.Flags&vpp_ip.IP_API_NEIGHBOR_FLAG_STATIC != 0,
 		}
 		// ARP meta
 		meta := &vppcalls.ArpMeta{

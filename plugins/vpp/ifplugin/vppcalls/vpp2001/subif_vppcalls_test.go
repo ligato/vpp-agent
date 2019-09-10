@@ -17,30 +17,30 @@ package vpp2001_test
 import (
 	"testing"
 
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/interfaces"
+	vpp_ifs "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/interfaces"
 	. "github.com/onsi/gomega"
 )
 
 func TestCreateSubif(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
-	ctx.MockVpp.MockReply(&interfaces.CreateVlanSubifReply{
+	ctx.MockVpp.MockReply(&vpp_ifs.CreateVlanSubifReply{
 		SwIfIndex: 2,
 	})
 	swifindex, err := ifHandler.CreateSubif(5, 32)
 	Expect(err).To(BeNil())
 	Expect(swifindex).To(Equal(uint32(2)))
-	vppMsg, ok := ctx.MockChannel.Msg.(*interfaces.CreateVlanSubif)
+	vppMsg, ok := ctx.MockChannel.Msg.(*vpp_ifs.CreateVlanSubif)
 	Expect(ok).To(BeTrue())
 	Expect(vppMsg).ToNot(BeNil())
-	Expect(vppMsg.SwIfIndex).To(Equal(interfaces.InterfaceIndex(5)))
+	Expect(vppMsg.SwIfIndex).To(Equal(vpp_ifs.InterfaceIndex(5)))
 	Expect(vppMsg.VlanID).To(Equal(uint32(32)))
 }
 
 func TestCreateSubifError(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
-	ctx.MockVpp.MockReply(&interfaces.CreateVlanSubifReply{
+	ctx.MockVpp.MockReply(&vpp_ifs.CreateVlanSubifReply{
 		SwIfIndex: 2,
 		Retval:    9,
 	})
@@ -52,21 +52,21 @@ func TestCreateSubifError(t *testing.T) {
 func TestDeleteSubif(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
-	ctx.MockVpp.MockReply(&interfaces.DeleteSubifReply{
+	ctx.MockVpp.MockReply(&vpp_ifs.DeleteSubifReply{
 		Retval: 2,
 	})
 	err := ifHandler.DeleteSubif(5)
 	Expect(err).ToNot(BeNil())
-	vppMsg, ok := ctx.MockChannel.Msg.(*interfaces.DeleteSubif)
+	vppMsg, ok := ctx.MockChannel.Msg.(*vpp_ifs.DeleteSubif)
 	Expect(ok).To(BeTrue())
 	Expect(vppMsg).ToNot(BeNil())
-	Expect(vppMsg.SwIfIndex).To(Equal(interfaces.InterfaceIndex(5)))
+	Expect(vppMsg.SwIfIndex).To(Equal(vpp_ifs.InterfaceIndex(5)))
 }
 
 func TestDeleteSubifError(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
-	ctx.MockVpp.MockReply(&interfaces.DeleteSubifReply{
+	ctx.MockVpp.MockReply(&vpp_ifs.DeleteSubifReply{
 		Retval: 2,
 	})
 	err := ifHandler.DeleteSubif(5)

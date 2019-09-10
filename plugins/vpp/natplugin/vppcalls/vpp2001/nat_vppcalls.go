@@ -21,7 +21,7 @@ import (
 	"github.com/pkg/errors"
 
 	nat "github.com/ligato/vpp-agent/api/models/vpp/nat"
-	natba "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/nat"
+	vpp_nat "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/nat"
 )
 
 // Num protocol representation
@@ -33,7 +33,7 @@ const (
 
 const (
 	// NoInterface is sw-if-idx which means 'no interface'
-	NoInterface = natba.InterfaceIndex(^uint32(0))
+	NoInterface = vpp_nat.InterfaceIndex(^uint32(0))
 	// Maximal length of tag
 	maxTagLen = 64
 )
@@ -52,10 +52,10 @@ type nat44Flags struct {
 
 // SetNat44Forwarding configures NAT44 forwarding.
 func (h *NatVppHandler) SetNat44Forwarding(enableFwd bool) error {
-	req := &natba.Nat44ForwardingEnableDisable{
+	req := &vpp_nat.Nat44ForwardingEnableDisable{
 		Enable: enableFwd,
 	}
-	reply := &natba.Nat44ForwardingEnableDisableReply{}
+	reply := &vpp_nat.Nat44ForwardingEnableDisableReply{}
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
@@ -140,12 +140,12 @@ func (h *NatVppHandler) handleNat44Interface(iface string, isInside, isAdd bool)
 		return errors.New("failed to get interface metadata")
 	}
 
-	req := &natba.Nat44InterfaceAddDelFeature{
-		SwIfIndex: natba.InterfaceIndex(ifaceMeta.SwIfIndex),
+	req := &vpp_nat.Nat44InterfaceAddDelFeature{
+		SwIfIndex: vpp_nat.InterfaceIndex(ifaceMeta.SwIfIndex),
 		Flags:     setNat44Flags(&nat44Flags{isInside: isInside}),
 		IsAdd:     isAdd,
 	}
-	reply := &natba.Nat44InterfaceAddDelFeatureReply{}
+	reply := &vpp_nat.Nat44InterfaceAddDelFeatureReply{}
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
@@ -162,12 +162,12 @@ func (h *NatVppHandler) handleNat44InterfaceOutputFeature(iface string, isInside
 		return errors.New("failed to get interface metadata")
 	}
 
-	req := &natba.Nat44InterfaceAddDelOutputFeature{
-		SwIfIndex: natba.InterfaceIndex(ifaceMeta.SwIfIndex),
+	req := &vpp_nat.Nat44InterfaceAddDelOutputFeature{
+		SwIfIndex: vpp_nat.InterfaceIndex(ifaceMeta.SwIfIndex),
 		Flags:     setNat44Flags(&nat44Flags{isInside: isInside}),
 		IsAdd:     isAdd,
 	}
-	reply := &natba.Nat44InterfaceAddDelOutputFeatureReply{}
+	reply := &vpp_nat.Nat44InterfaceAddDelOutputFeatureReply{}
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
@@ -183,14 +183,14 @@ func (h *NatVppHandler) handleNat44AddressPool(address string, vrf uint32, twice
 		return errors.Errorf("unable to parse address %s from the NAT pool: %v", address, err)
 	}
 
-	req := &natba.Nat44AddDelAddressRange{
+	req := &vpp_nat.Nat44AddDelAddressRange{
 		FirstIPAddress: ipAddr,
 		LastIPAddress:  ipAddr,
 		VrfID:          vrf,
 		Flags:          setNat44Flags(&nat44Flags{isTwiceNat: twiceNat}),
 		IsAdd:          isAdd,
 	}
-	reply := &natba.Nat44AddDelAddressRangeReply{}
+	reply := &vpp_nat.Nat44AddDelAddressRangeReply{}
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
@@ -201,14 +201,14 @@ func (h *NatVppHandler) handleNat44AddressPool(address string, vrf uint32, twice
 
 // Calls VPP binary API to setup NAT virtual reassembly
 func (h *NatVppHandler) handleNatVirtualReassembly(vrCfg *nat.VirtualReassembly, isIpv6 bool) error {
-	req := &natba.NatSetReass{
+	req := &vpp_nat.NatSetReass{
 		Timeout:  vrCfg.Timeout,
 		MaxReass: uint16(vrCfg.MaxReassemblies),
 		MaxFrag:  uint8(vrCfg.MaxFragments),
 		DropFrag: boolToUint(vrCfg.DropFragments),
 		IsIP6:    isIpv6,
 	}
-	reply := &natba.NatSetReassReply{}
+	reply := &vpp_nat.NatSetReassReply{}
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
@@ -220,7 +220,7 @@ func (h *NatVppHandler) handleNatVirtualReassembly(vrCfg *nat.VirtualReassembly,
 // Calls VPP binary API to add/remove NAT44 static mapping
 func (h *NatVppHandler) handleNat44StaticMapping(mapping *nat.DNat44_StaticMapping, dnatLabel string, isAdd bool) error {
 	var ifIdx = NoInterface
-	var exIPAddr natba.IP4Address
+	var exIPAddr vpp_nat.IP4Address
 
 	// check tag length limit
 	if err := checkTagLength(dnatLabel); err != nil {
@@ -244,7 +244,7 @@ func (h *NatVppHandler) handleNat44StaticMapping(mapping *nat.DNat44_StaticMappi
 			return errors.Errorf("cannot configure static mapping for DNAT %s: required external interface %s is missing",
 				dnatLabel, mapping.ExternalInterface)
 		}
-		ifIdx = natba.InterfaceIndex(ifMeta.SwIfIndex)
+		ifIdx = vpp_nat.InterfaceIndex(ifMeta.SwIfIndex)
 	} else {
 		// Parse external IP address
 		exIPAddr, err = ipTo4Address(mapping.ExternalIp)
@@ -260,7 +260,7 @@ func (h *NatVppHandler) handleNat44StaticMapping(mapping *nat.DNat44_StaticMappi
 		addrOnly = true
 	}
 
-	req := &natba.Nat44AddDelStaticMapping{
+	req := &vpp_nat.Nat44AddDelStaticMapping{
 		Tag:               dnatLabel,
 		LocalIPAddress:    lcIPAddr,
 		ExternalIPAddress: exIPAddr,
@@ -281,7 +281,7 @@ func (h *NatVppHandler) handleNat44StaticMapping(mapping *nat.DNat44_StaticMappi
 		req.ExternalPort = uint16(mapping.ExternalPort)
 	}
 
-	reply := &natba.Nat44AddDelStaticMappingReply{}
+	reply := &vpp_nat.Nat44AddDelStaticMappingReply{}
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
@@ -310,7 +310,7 @@ func (h *NatVppHandler) handleNat44StaticMappingLb(mapping *nat.DNat44_StaticMap
 	}
 
 	// Transform local IP/Ports
-	var locals []natba.Nat44LbAddrPort
+	var locals []vpp_nat.Nat44LbAddrPort
 	for _, local := range mapping.LocalIps {
 		if local.LocalPort == 0 {
 			return errors.Errorf("cannot set local IP/Port for DNAT mapping %s: port is missing",
@@ -323,7 +323,7 @@ func (h *NatVppHandler) handleNat44StaticMappingLb(mapping *nat.DNat44_StaticMap
 				dnatLabel, local.LocalIp, err)
 		}
 
-		locals = append(locals, natba.Nat44LbAddrPort{
+		locals = append(locals, vpp_nat.Nat44LbAddrPort{
 			Addr:        localIP,
 			Port:        uint16(local.LocalPort),
 			Probability: uint8(local.Probability),
@@ -331,7 +331,7 @@ func (h *NatVppHandler) handleNat44StaticMappingLb(mapping *nat.DNat44_StaticMap
 		})
 	}
 
-	req := &natba.Nat44AddDelLbStaticMapping{
+	req := &vpp_nat.Nat44AddDelLbStaticMapping{
 		Tag:    dnatLabel,
 		Locals: locals,
 		//LocalNum:     uint32(len(locals)), // should not be needed (will be set by struc)
@@ -347,7 +347,7 @@ func (h *NatVppHandler) handleNat44StaticMappingLb(mapping *nat.DNat44_StaticMap
 		Affinity: mapping.SessionAffinity,
 	}
 
-	reply := &natba.Nat44AddDelLbStaticMappingReply{}
+	reply := &vpp_nat.Nat44AddDelLbStaticMappingReply{}
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
@@ -359,7 +359,7 @@ func (h *NatVppHandler) handleNat44StaticMappingLb(mapping *nat.DNat44_StaticMap
 // Calls VPP binary API to add/remove NAT44 identity mapping.
 func (h *NatVppHandler) handleNat44IdentityMapping(mapping *nat.DNat44_IdentityMapping, dnatLabel string, isAdd bool) (err error) {
 	var ifIdx = NoInterface
-	var ipAddr natba.IP4Address
+	var ipAddr vpp_nat.IP4Address
 
 	// check tag length limit
 	if err := checkTagLength(dnatLabel); err != nil {
@@ -373,7 +373,7 @@ func (h *NatVppHandler) handleNat44IdentityMapping(mapping *nat.DNat44_IdentityM
 			return errors.Errorf("failed to configure identity mapping for DNAT %s: addressed interface %s does not exist",
 				dnatLabel, mapping.Interface)
 		}
-		ifIdx = natba.InterfaceIndex(ifMeta.SwIfIndex)
+		ifIdx = vpp_nat.InterfaceIndex(ifMeta.SwIfIndex)
 	}
 
 	if ifIdx == NoInterface {
@@ -390,7 +390,7 @@ func (h *NatVppHandler) handleNat44IdentityMapping(mapping *nat.DNat44_IdentityM
 		addrOnly = true
 	}
 
-	req := &natba.Nat44AddDelIdentityMapping{
+	req := &vpp_nat.Nat44AddDelIdentityMapping{
 		Tag:       dnatLabel,
 		Flags:     setNat44Flags(&nat44Flags{isAddrOnly: addrOnly}),
 		IPAddress: ipAddr,
@@ -401,7 +401,7 @@ func (h *NatVppHandler) handleNat44IdentityMapping(mapping *nat.DNat44_IdentityM
 		IsAdd:     isAdd,
 	}
 
-	reply := &natba.Nat44AddDelIdentityMappingReply{}
+	reply := &vpp_nat.Nat44AddDelIdentityMappingReply{}
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
@@ -410,46 +410,46 @@ func (h *NatVppHandler) handleNat44IdentityMapping(mapping *nat.DNat44_IdentityM
 	return nil
 }
 
-func setNat44Flags(flags *nat44Flags) natba.NatConfigFlags {
-	var flagsCfg natba.NatConfigFlags
+func setNat44Flags(flags *nat44Flags) vpp_nat.NatConfigFlags {
+	var flagsCfg vpp_nat.NatConfigFlags
 	if flags.isTwiceNat {
-		flagsCfg |= natba.NAT_IS_TWICE_NAT
+		flagsCfg |= vpp_nat.NAT_IS_TWICE_NAT
 	}
 	if flags.isSelfTwiceNat {
-		flagsCfg |= natba.NAT_IS_SELF_TWICE_NAT
+		flagsCfg |= vpp_nat.NAT_IS_SELF_TWICE_NAT
 	}
 	if flags.isOut2In {
-		flagsCfg |= natba.NAT_IS_OUT2IN_ONLY
+		flagsCfg |= vpp_nat.NAT_IS_OUT2IN_ONLY
 	}
 	if flags.isAddrOnly {
-		flagsCfg |= natba.NAT_IS_ADDR_ONLY
+		flagsCfg |= vpp_nat.NAT_IS_ADDR_ONLY
 	}
 	if flags.isOutside {
-		flagsCfg |= natba.NAT_IS_OUTSIDE
+		flagsCfg |= vpp_nat.NAT_IS_OUTSIDE
 	}
 	if flags.isInside {
-		flagsCfg |= natba.NAT_IS_INSIDE
+		flagsCfg |= vpp_nat.NAT_IS_INSIDE
 	}
 	if flags.isStatic {
-		flagsCfg |= natba.NAT_IS_STATIC
+		flagsCfg |= vpp_nat.NAT_IS_STATIC
 	}
 	if flags.isExtHostValid {
-		flagsCfg |= natba.NAT_IS_EXT_HOST_VALID
+		flagsCfg |= vpp_nat.NAT_IS_EXT_HOST_VALID
 	}
 	return flagsCfg
 }
 
-func ipTo4Address(ipStr string) (addr natba.IP4Address, err error) {
+func ipTo4Address(ipStr string) (addr vpp_nat.IP4Address, err error) {
 	netIP := net.ParseIP(ipStr)
 	if netIP == nil {
-		return natba.IP4Address{}, fmt.Errorf("invalid IP: %q", ipStr)
+		return vpp_nat.IP4Address{}, fmt.Errorf("invalid IP: %q", ipStr)
 	}
 	if ip4 := netIP.To4(); ip4 != nil {
-		var ip4Addr natba.IP4Address
+		var ip4Addr vpp_nat.IP4Address
 		copy(ip4Addr[:], netIP.To4())
 		addr = ip4Addr
 	} else {
-		return natba.IP4Address{}, fmt.Errorf("required IPv4, provided: %q", ipStr)
+		return vpp_nat.IP4Address{}, fmt.Errorf("required IPv4, provided: %q", ipStr)
 	}
 	return
 }

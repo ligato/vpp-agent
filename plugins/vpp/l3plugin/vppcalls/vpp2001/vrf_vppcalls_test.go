@@ -19,7 +19,7 @@ import (
 
 	"github.com/ligato/cn-infra/logging/logrus"
 	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/ip"
+	vpp_ip "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/ip"
 	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls/vpp2001"
 	"github.com/ligato/vpp-agent/plugins/vpp/vppcallmock"
@@ -49,40 +49,40 @@ func TestAddVrfTable(t *testing.T) {
 	ctx, vtHandler := vrfTableTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&ip.IPTableAddDelReply{})
+	ctx.MockVpp.MockReply(&vpp_ip.IPTableAddDelReply{})
 	err := vtHandler.AddVrfTable(vrfTables[0])
 	Expect(err).To(Succeed())
 
-	vppMsg, ok := ctx.MockChannel.Msg.(*ip.IPTableAddDel)
+	vppMsg, ok := ctx.MockChannel.Msg.(*vpp_ip.IPTableAddDel)
 	Expect(ok).To(BeTrue())
 	Expect(vppMsg.Table.TableID).To(BeEquivalentTo(1))
 	Expect(vppMsg.Table.IsIP6).To(BeEquivalentTo(0))
 	Expect(vppMsg.IsAdd).To(BeEquivalentTo(1))
 	Expect(vppMsg.Table.Name).To(BeEquivalentTo([]byte("table1")))
 
-	ctx.MockVpp.MockReply(&ip.IPTableAddDelReply{})
+	ctx.MockVpp.MockReply(&vpp_ip.IPTableAddDelReply{})
 	err = vtHandler.AddVrfTable(vrfTables[1])
 	Expect(err).To(Succeed())
 
-	vppMsg, ok = ctx.MockChannel.Msg.(*ip.IPTableAddDel)
+	vppMsg, ok = ctx.MockChannel.Msg.(*vpp_ip.IPTableAddDel)
 	Expect(ok).To(BeTrue())
 	Expect(vppMsg.Table.TableID).To(BeEquivalentTo(1))
 	Expect(vppMsg.Table.IsIP6).To(BeEquivalentTo(1))
 	Expect(vppMsg.IsAdd).To(BeEquivalentTo(1))
 	Expect(vppMsg.Table.Name).To(BeEquivalentTo([]byte("table1")))
 
-	ctx.MockVpp.MockReply(&ip.IPTableAddDelReply{})
+	ctx.MockVpp.MockReply(&vpp_ip.IPTableAddDelReply{})
 	err = vtHandler.AddVrfTable(vrfTables[2])
 	Expect(err).To(Succeed())
 
-	vppMsg, ok = ctx.MockChannel.Msg.(*ip.IPTableAddDel)
+	vppMsg, ok = ctx.MockChannel.Msg.(*vpp_ip.IPTableAddDel)
 	Expect(ok).To(BeTrue())
 	Expect(vppMsg.Table.TableID).To(BeEquivalentTo(2))
 	Expect(vppMsg.Table.IsIP6).To(BeEquivalentTo(1))
 	Expect(vppMsg.IsAdd).To(BeEquivalentTo(1))
 	Expect(vppMsg.Table.Name).To(BeEquivalentTo([]byte("table2")))
 
-	ctx.MockVpp.MockReply(&ip.IPTableAddDelReply{Retval: 1})
+	ctx.MockVpp.MockReply(&vpp_ip.IPTableAddDelReply{Retval: 1})
 	err = vtHandler.AddVrfTable(vrfTables[0])
 	Expect(err).To(Not(BeNil()))
 }
@@ -92,40 +92,40 @@ func TestDeleteVrfTable(t *testing.T) {
 	ctx, vtHandler := vrfTableTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&ip.IPTableAddDelReply{})
+	ctx.MockVpp.MockReply(&vpp_ip.IPTableAddDelReply{})
 	err := vtHandler.DelVrfTable(vrfTables[0])
 	Expect(err).To(Succeed())
 
-	vppMsg, ok := ctx.MockChannel.Msg.(*ip.IPTableAddDel)
+	vppMsg, ok := ctx.MockChannel.Msg.(*vpp_ip.IPTableAddDel)
 	Expect(ok).To(BeTrue())
 	Expect(vppMsg.Table.TableID).To(BeEquivalentTo(1))
 	Expect(vppMsg.Table.IsIP6).To(BeEquivalentTo(0))
 	Expect(vppMsg.IsAdd).To(BeEquivalentTo(0))
 	Expect(vppMsg.Table.Name).To(BeEquivalentTo([]byte("table1")))
 
-	ctx.MockVpp.MockReply(&ip.IPTableAddDelReply{})
+	ctx.MockVpp.MockReply(&vpp_ip.IPTableAddDelReply{})
 	err = vtHandler.DelVrfTable(vrfTables[1])
 	Expect(err).To(Succeed())
 
-	vppMsg, ok = ctx.MockChannel.Msg.(*ip.IPTableAddDel)
+	vppMsg, ok = ctx.MockChannel.Msg.(*vpp_ip.IPTableAddDel)
 	Expect(ok).To(BeTrue())
 	Expect(vppMsg.Table.TableID).To(BeEquivalentTo(1))
 	Expect(vppMsg.Table.IsIP6).To(BeEquivalentTo(1))
 	Expect(vppMsg.IsAdd).To(BeEquivalentTo(0))
 	Expect(vppMsg.Table.Name).To(BeEquivalentTo([]byte("table1")))
 
-	ctx.MockVpp.MockReply(&ip.IPTableAddDelReply{})
+	ctx.MockVpp.MockReply(&vpp_ip.IPTableAddDelReply{})
 	err = vtHandler.DelVrfTable(vrfTables[2])
 	Expect(err).To(Succeed())
 
-	vppMsg, ok = ctx.MockChannel.Msg.(*ip.IPTableAddDel)
+	vppMsg, ok = ctx.MockChannel.Msg.(*vpp_ip.IPTableAddDel)
 	Expect(ok).To(BeTrue())
 	Expect(vppMsg.Table.TableID).To(BeEquivalentTo(2))
 	Expect(vppMsg.Table.IsIP6).To(BeEquivalentTo(1))
 	Expect(vppMsg.IsAdd).To(BeEquivalentTo(0))
 	Expect(vppMsg.Table.Name).To(BeEquivalentTo([]byte("table2")))
 
-	ctx.MockVpp.MockReply(&ip.IPTableAddDelReply{Retval: 1})
+	ctx.MockVpp.MockReply(&vpp_ip.IPTableAddDelReply{Retval: 1})
 	err = vtHandler.DelVrfTable(vrfTables[0])
 	Expect(err).To(Not(BeNil()))
 }

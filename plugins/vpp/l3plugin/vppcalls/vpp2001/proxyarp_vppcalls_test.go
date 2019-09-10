@@ -18,7 +18,7 @@ import (
 	"testing"
 
 	"github.com/ligato/cn-infra/logging/logrus"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/ip"
+	vpp_ip "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/ip"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls/vpp2001"
@@ -33,15 +33,15 @@ func TestProxyArp(t *testing.T) {
 
 	ifIndexes.Put("if1", &ifaceidx.IfaceMetadata{SwIfIndex: 1})
 
-	ctx.MockVpp.MockReply(&ip.ProxyArpIntfcEnableDisableReply{})
+	ctx.MockVpp.MockReply(&vpp_ip.ProxyArpIntfcEnableDisableReply{})
 	err := pArpHandler.EnableProxyArpInterface("if1")
 	Expect(err).To(Succeed())
 
-	ctx.MockVpp.MockReply(&ip.ProxyArpIntfcEnableDisableReply{})
+	ctx.MockVpp.MockReply(&vpp_ip.ProxyArpIntfcEnableDisableReply{})
 	err = pArpHandler.DisableProxyArpInterface("if1")
 	Expect(err).To(Succeed())
 
-	ctx.MockVpp.MockReply(&ip.ProxyArpIntfcEnableDisableReply{Retval: 1})
+	ctx.MockVpp.MockReply(&vpp_ip.ProxyArpIntfcEnableDisableReply{Retval: 1})
 	err = pArpHandler.DisableProxyArpInterface("if1")
 	Expect(err).NotTo(BeNil())
 }
@@ -51,15 +51,15 @@ func TestProxyArpRange(t *testing.T) {
 	ctx, _, _, pArpHandler := pArpTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&ip.ProxyArpAddDelReply{})
+	ctx.MockVpp.MockReply(&vpp_ip.ProxyArpAddDelReply{})
 	err := pArpHandler.AddProxyArpRange([]byte{192, 168, 10, 20}, []byte{192, 168, 10, 30})
 	Expect(err).To(Succeed())
 
-	ctx.MockVpp.MockReply(&ip.ProxyArpAddDelReply{})
+	ctx.MockVpp.MockReply(&vpp_ip.ProxyArpAddDelReply{})
 	err = pArpHandler.DeleteProxyArpRange([]byte{192, 168, 10, 23}, []byte{192, 168, 10, 27})
 	Expect(err).To(Succeed())
 
-	ctx.MockVpp.MockReply(&ip.ProxyArpAddDelReply{Retval: 1})
+	ctx.MockVpp.MockReply(&vpp_ip.ProxyArpAddDelReply{Retval: 1})
 	err = pArpHandler.AddProxyArpRange([]byte{192, 168, 10, 23}, []byte{192, 168, 10, 27})
 	Expect(err).To(Not(BeNil()))
 }

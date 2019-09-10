@@ -18,10 +18,9 @@ import (
 	"fmt"
 	"net"
 
-	vpp_abf "github.com/ligato/vpp-agent/api/models/vpp/abf"
-
 	"github.com/go-errors/errors"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/abf"
+	abf "github.com/ligato/vpp-agent/api/models/vpp/abf"
+	vpp_abf "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/abf"
 )
 
 const (
@@ -36,8 +35,8 @@ const (
 
 // GetAbfVersion retrieves version of the VPP ABF plugin
 func (h *ABFVppHandler) GetAbfVersion() (ver string, err error) {
-	req := &abf.AbfPluginGetVersion{}
-	reply := &abf.AbfPluginGetVersionReply{}
+	req := &vpp_abf.AbfPluginGetVersion{}
+	reply := &vpp_abf.AbfPluginGetVersionReply{}
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return "", err
@@ -47,7 +46,7 @@ func (h *ABFVppHandler) GetAbfVersion() (ver string, err error) {
 }
 
 // AddAbfPolicy creates new ABF entry together with a list of forwarding paths
-func (h *ABFVppHandler) AddAbfPolicy(policyID, aclID uint32, abfPaths []*vpp_abf.ABF_ForwardingPath) error {
+func (h *ABFVppHandler) AddAbfPolicy(policyID, aclID uint32, abfPaths []*abf.ABF_ForwardingPath) error {
 	if err := h.abfAddDelPolicy(policyID, aclID, abfPaths, true); err != nil {
 		return errors.Errorf("failed to add ABF policy %d (ACL: %v): %v", policyID, aclID, err)
 	}
@@ -55,7 +54,7 @@ func (h *ABFVppHandler) AddAbfPolicy(policyID, aclID uint32, abfPaths []*vpp_abf
 }
 
 // DeleteAbfPolicy removes existing ABF entry
-func (h *ABFVppHandler) DeleteAbfPolicy(policyID uint32, abfPaths []*vpp_abf.ABF_ForwardingPath) error {
+func (h *ABFVppHandler) DeleteAbfPolicy(policyID uint32, abfPaths []*abf.ABF_ForwardingPath) error {
 	if err := h.abfAddDelPolicy(policyID, 0, abfPaths, false); err != nil {
 		return errors.Errorf("failed to delete ABF policy %d: %v", policyID, err)
 	}
@@ -95,36 +94,36 @@ func (h *ABFVppHandler) AbfDetachInterfaceIPv6(policyID, ifIdx, priority uint32)
 }
 
 func (h *ABFVppHandler) abfAttachDetachInterface(policyID, ifIdx, priority uint32, isAdd, isIPv6 bool) error {
-	req := &abf.AbfItfAttachAddDel{
+	req := &vpp_abf.AbfItfAttachAddDel{
 		IsAdd: boolToUint(isAdd),
-		Attach: abf.AbfItfAttach{
+		Attach: vpp_abf.AbfItfAttach{
 			PolicyID:  policyID,
 			SwIfIndex: ifIdx,
 			Priority:  priority,
 			IsIPv6:    boolToUint(isIPv6),
 		},
 	}
-	reply := &abf.AbfItfAttachAddDelReply{}
+	reply := &vpp_abf.AbfItfAttachAddDelReply{}
 
 	return h.callsChannel.SendRequest(req).ReceiveReply(reply)
 }
 
-func (h *ABFVppHandler) abfAddDelPolicy(policyID, aclID uint32, abfPaths []*vpp_abf.ABF_ForwardingPath, isAdd bool) error {
-	req := &abf.AbfPolicyAddDel{
+func (h *ABFVppHandler) abfAddDelPolicy(policyID, aclID uint32, abfPaths []*abf.ABF_ForwardingPath, isAdd bool) error {
+	req := &vpp_abf.AbfPolicyAddDel{
 		IsAdd: boolToUint(isAdd),
-		Policy: abf.AbfPolicy{
+		Policy: vpp_abf.AbfPolicy{
 			PolicyID: policyID,
 			ACLIndex: aclID,
 			Paths:    h.toFibPaths(abfPaths),
 			NPaths:   uint8(len(abfPaths)),
 		},
 	}
-	reply := &abf.AbfPolicyAddDelReply{}
+	reply := &vpp_abf.AbfPolicyAddDelReply{}
 
 	return h.callsChannel.SendRequest(req).ReceiveReply(reply)
 }
 
-func (h *ABFVppHandler) toFibPaths(abfPaths []*vpp_abf.ABF_ForwardingPath) (fibPaths []abf.FibPath) {
+func (h *ABFVppHandler) toFibPaths(abfPaths []*abf.ABF_ForwardingPath) (fibPaths []vpp_abf.FibPath) {
 	var err error
 	for _, abfPath := range abfPaths {
 		// fib path interface
@@ -133,7 +132,7 @@ func (h *ABFVppHandler) toFibPaths(abfPaths []*vpp_abf.ABF_ForwardingPath) (fibP
 			continue
 		}
 
-		fibPath := abf.FibPath{
+		fibPath := vpp_abf.FibPath{
 			SwIfIndex:  ifData.SwIfIndex,
 			Weight:     uint8(abfPath.Weight),
 			Preference: uint8(abfPath.Preference),
@@ -149,32 +148,32 @@ func (h *ABFVppHandler) toFibPaths(abfPaths []*vpp_abf.ABF_ForwardingPath) (fibP
 }
 
 // supported cases are DVR and normal
-func setFibPathType(isDvr bool) abf.FibPathType {
+func setFibPathType(isDvr bool) vpp_abf.FibPathType {
 	if isDvr {
-		return abf.FIB_API_PATH_TYPE_DVR
+		return vpp_abf.FIB_API_PATH_TYPE_DVR
 	}
-	return abf.FIB_API_PATH_TYPE_NORMAL
+	return vpp_abf.FIB_API_PATH_TYPE_NORMAL
 }
 
 // resolve IP address and return FIB path next hop (IP address) and IPv4/IPv6 version
-func setFibPathNhAndProto(ipStr string) (nh abf.FibPathNh, proto abf.FibPathNhProto, err error) {
+func setFibPathNhAndProto(ipStr string) (nh vpp_abf.FibPathNh, proto vpp_abf.FibPathNhProto, err error) {
 	netIP := net.ParseIP(ipStr)
 	if netIP == nil {
 		return nh, proto, errors.Errorf("failed to parse next hop IP address %s", ipStr)
 	}
-	var au abf.AddressUnion
+	var au vpp_abf.AddressUnion
 	if ipv4 := netIP.To4(); ipv4 == nil {
-		var address abf.IP6Address
-		proto = abf.FIB_API_PATH_NH_PROTO_IP6
+		var address vpp_abf.IP6Address
+		proto = vpp_abf.FIB_API_PATH_NH_PROTO_IP6
 		copy(address[:], netIP[:])
 		au.SetIP6(address)
 	} else {
-		var address abf.IP4Address
-		proto = abf.FIB_API_PATH_NH_PROTO_IP4
+		var address vpp_abf.IP4Address
+		proto = vpp_abf.FIB_API_PATH_NH_PROTO_IP4
 		copy(address[:], netIP[12:])
 		au.SetIP4(address)
 	}
-	return abf.FibPathNh{
+	return vpp_abf.FibPathNh{
 		Address:            au,
 		ViaLabel:           NextHopViaLabelUnset,
 		ClassifyTableIndex: ClassifyTableIndexUnset,

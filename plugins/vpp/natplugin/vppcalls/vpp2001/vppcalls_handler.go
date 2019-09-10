@@ -20,13 +20,13 @@ import (
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/vpp-agent/plugins/vpp/natplugin/vppcalls"
 
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/nat"
+	vpp_nat "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/nat"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 )
 
 func init() {
 	var msgs []govppapi.Message
-	msgs = append(msgs, nat.AllMessages()...)
+	msgs = append(msgs, vpp_nat.AllMessages()...)
 
 	vppcalls.Versions["vpp2001"] = vppcalls.HandlerVersion{
 		Msgs: msgs,

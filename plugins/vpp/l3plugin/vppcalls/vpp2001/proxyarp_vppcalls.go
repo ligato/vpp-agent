@@ -15,7 +15,7 @@
 package vpp2001
 
 import (
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/ip"
+	vpp_ip "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/ip"
 	"github.com/pkg/errors"
 )
 
@@ -46,12 +46,12 @@ func (h *ProxyArpVppHandler) vppAddDelProxyArpInterface(ifName string, enable bo
 		return errors.Errorf("interface %s not found", ifName)
 	}
 
-	req := &ip.ProxyArpIntfcEnableDisable{
+	req := &vpp_ip.ProxyArpIntfcEnableDisable{
 		EnableDisable: boolToUint(enable),
 		SwIfIndex:     meta.SwIfIndex,
 	}
 
-	reply := &ip.ProxyArpIntfcEnableDisableReply{}
+	reply := &vpp_ip.ProxyArpIntfcEnableDisableReply{}
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	}
@@ -63,18 +63,18 @@ func (h *ProxyArpVppHandler) vppAddDelProxyArpInterface(ifName string, enable bo
 
 // vppAddDelProxyArpRange adds or removes proxy ARP range according to provided input
 func (h *ProxyArpVppHandler) vppAddDelProxyArpRange(firstIP, lastIP []byte, isAdd bool) error {
-	proxy := ip.ProxyArp{
+	proxy := vpp_ip.ProxyArp{
 		TableID: 0, // TODO: add support for VRF
 	}
 	copy(proxy.Low[:], firstIP)
 	copy(proxy.Hi[:], lastIP)
 
-	req := &ip.ProxyArpAddDel{
+	req := &vpp_ip.ProxyArpAddDel{
 		IsAdd: boolToUint(isAdd),
 		Proxy: proxy,
 	}
 
-	reply := &ip.ProxyArpAddDelReply{}
+	reply := &vpp_ip.ProxyArpAddDelReply{}
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	}

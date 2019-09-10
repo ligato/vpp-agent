@@ -17,7 +17,7 @@ package vpp2001
 import (
 	"errors"
 
-	l2ba "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/l2"
+	vpp_l2 "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/l2"
 )
 
 // AddL2XConnect creates xConnect between two existing interfaces.
@@ -44,12 +44,12 @@ func (h *XConnectVppHandler) addDelXConnect(rxIface, txIface string, enable bool
 	}
 
 	// add/del xConnect pair
-	req := &l2ba.SwInterfaceSetL2Xconnect{
+	req := &vpp_l2.SwInterfaceSetL2Xconnect{
 		Enable:      boolToUint(enable),
 		TxSwIfIndex: txIfaceMeta.GetIndex(),
 		RxSwIfIndex: rxIfaceMeta.GetIndex(),
 	}
-	reply := &l2ba.SwInterfaceSetL2XconnectReply{}
+	reply := &vpp_l2.SwInterfaceSetL2XconnectReply{}
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err

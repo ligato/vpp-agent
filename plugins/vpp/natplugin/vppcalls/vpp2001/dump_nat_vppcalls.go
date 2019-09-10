@@ -22,9 +22,9 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 
-	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
+	ifs "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	nat "github.com/ligato/vpp-agent/api/models/vpp/nat"
-	ba_nat "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/nat"
+	vpp_nat "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/nat"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 )
 
@@ -112,11 +112,11 @@ func (h *NatVppHandler) DNat44Dump() (dnats []*nat.DNat44, err error) {
 
 // nat44AddressDump returns NAT44 address pool configured in the VPP.
 func (h *NatVppHandler) nat44AddressDump() (addressPool []*nat.Nat44Global_Address, err error) {
-	req := &ba_nat.Nat44AddressDump{}
+	req := &vpp_nat.Nat44AddressDump{}
 	reqContext := h.callsChannel.SendMultiRequest(req)
 
 	for {
-		msg := &ba_nat.Nat44AddressDetails{}
+		msg := &vpp_nat.Nat44AddressDetails{}
 		stop, err := reqContext.ReceiveReply(msg)
 		if err != nil {
 			return nil, fmt.Errorf("failed to dump NAT44 Address pool: %v", err)
@@ -137,8 +137,8 @@ func (h *NatVppHandler) nat44AddressDump() (addressPool []*nat.Nat44Global_Addre
 
 // virtualReassemblyDump returns current NAT virtual-reassembly configuration.
 func (h *NatVppHandler) virtualReassemblyDump() (vrIPv4 *nat.VirtualReassembly, vrIPv6 *nat.VirtualReassembly, err error) {
-	req := &ba_nat.NatGetReass{}
-	reply := &ba_nat.NatGetReassReply{}
+	req := &vpp_nat.NatGetReass{}
+	reply := &vpp_nat.NatGetReassReply{}
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return nil, nil, fmt.Errorf("failed to get NAT virtual reassembly configuration: %v", err)
@@ -164,11 +164,11 @@ func (h *NatVppHandler) virtualReassemblyDump() (vrIPv4 *nat.VirtualReassembly, 
 func (h *NatVppHandler) nat44StaticMappingDump() (entries stMappingMap, err error) {
 	entries = make(stMappingMap)
 	childMappings := make(stMappingMap)
-	req := &ba_nat.Nat44StaticMappingDump{}
+	req := &vpp_nat.Nat44StaticMappingDump{}
 	reqContext := h.callsChannel.SendMultiRequest(req)
 
 	for {
-		msg := &ba_nat.Nat44StaticMappingDetails{}
+		msg := &vpp_nat.Nat44StaticMappingDetails{}
 		stop, err := reqContext.ReceiveReply(msg)
 		if err != nil {
 			return nil, fmt.Errorf("failed to dump NAT44 static mapping: %v", err)
@@ -255,11 +255,11 @@ func (h *NatVppHandler) nat44StaticMappingDump() (entries stMappingMap, err erro
 // nat44StaticMappingLbDump returns a map of NAT44 static mapping with load balancing sorted by tags.
 func (h *NatVppHandler) nat44StaticMappingLbDump() (entries stMappingMap, err error) {
 	entries = make(stMappingMap)
-	req := &ba_nat.Nat44LbStaticMappingDump{}
+	req := &vpp_nat.Nat44LbStaticMappingDump{}
 	reqContext := h.callsChannel.SendMultiRequest(req)
 
 	for {
-		msg := &ba_nat.Nat44LbStaticMappingDetails{}
+		msg := &vpp_nat.Nat44LbStaticMappingDetails{}
 		stop, err := reqContext.ReceiveReply(msg)
 		if err != nil {
 			return nil, fmt.Errorf("failed to dump NAT44 lb-static mapping: %v", err)
@@ -307,11 +307,11 @@ func (h *NatVppHandler) nat44StaticMappingLbDump() (entries stMappingMap, err er
 func (h *NatVppHandler) nat44IdentityMappingDump() (entries idMappingMap, err error) {
 	entries = make(idMappingMap)
 	childMappings := make(idMappingMap)
-	req := &ba_nat.Nat44IdentityMappingDump{}
+	req := &vpp_nat.Nat44IdentityMappingDump{}
 	reqContext := h.callsChannel.SendMultiRequest(req)
 
 	for {
-		msg := &ba_nat.Nat44IdentityMappingDetails{}
+		msg := &vpp_nat.Nat44IdentityMappingDetails{}
 		stop, err := reqContext.ReceiveReply(msg)
 		if err != nil {
 			return nil, fmt.Errorf("failed to dump NAT44 identity mapping: %v", err)
@@ -387,11 +387,11 @@ func (h *NatVppHandler) nat44IdentityMappingDump() (entries idMappingMap, err er
 func (h *NatVppHandler) nat44InterfaceDump() (interfaces []*nat.Nat44Global_Interface, err error) {
 
 	/* dump non-Output interfaces first */
-	req1 := &ba_nat.Nat44InterfaceDump{}
+	req1 := &vpp_nat.Nat44InterfaceDump{}
 	reqContext := h.callsChannel.SendMultiRequest(req1)
 
 	for {
-		msg := &ba_nat.Nat44InterfaceDetails{}
+		msg := &vpp_nat.Nat44InterfaceDetails{}
 		stop, err := reqContext.ReceiveReply(msg)
 		if err != nil {
 			return nil, fmt.Errorf("failed to dump NAT44 interface: %v", err)
@@ -423,11 +423,11 @@ func (h *NatVppHandler) nat44InterfaceDump() (interfaces []*nat.Nat44Global_Inte
 	}
 
 	/* dump Output interfaces next */
-	req2 := &ba_nat.Nat44InterfaceOutputFeatureDump{}
+	req2 := &vpp_nat.Nat44InterfaceOutputFeatureDump{}
 	reqContext = h.callsChannel.SendMultiRequest(req2)
 
 	for {
-		msg := &ba_nat.Nat44InterfaceOutputFeatureDetails{}
+		msg := &vpp_nat.Nat44InterfaceOutputFeatureDetails{}
 		stop, err := reqContext.ReceiveReply(msg)
 		if err != nil {
 			return nil, fmt.Errorf("failed to dump NAT44 interface output feature: %v", err)
@@ -457,9 +457,9 @@ func (h *NatVppHandler) nat44InterfaceDump() (interfaces []*nat.Nat44Global_Inte
 
 // Nat44IsForwardingEnabled checks if the NAT44 forwarding is enabled.
 func (h *NatVppHandler) isNat44ForwardingEnabled() (isEnabled bool, err error) {
-	req := &ba_nat.Nat44ForwardingIsEnabled{}
+	req := &vpp_nat.Nat44ForwardingIsEnabled{}
 
-	reply := &ba_nat.Nat44ForwardingIsEnabledReply{}
+	reply := &vpp_nat.Nat44ForwardingIsEnabledReply{}
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return false, fmt.Errorf("failed to dump NAT44 forwarding: %v", err)
 	}
@@ -472,7 +472,7 @@ func (h *NatVppHandler) getInterfaceIPAddresses(ifaceName string, ifaceMeta *ifa
 	ipAddrNets := ifaceMeta.IPAddresses
 	dhcpLease, hasDHCPLease := h.dhcpIndex.GetValue(ifaceName)
 	if hasDHCPLease {
-		lease := dhcpLease.(*interfaces.DHCPLease)
+		lease := dhcpLease.(*ifs.DHCPLease)
 		ipAddrNets = append(ipAddrNets, lease.HostIpAddress)
 	}
 	for _, ipAddrNet := range ipAddrNets {
@@ -535,30 +535,30 @@ func getOrCreateDNAT(dnats dnatMap, label string) *nat.DNat44 {
 	return dnats[label]
 }
 
-func getNat44Flags(flags ba_nat.NatConfigFlags) *nat44Flags {
+func getNat44Flags(flags vpp_nat.NatConfigFlags) *nat44Flags {
 	natFlags := &nat44Flags{}
-	if flags&ba_nat.NAT_IS_EXT_HOST_VALID != 0 {
+	if flags&vpp_nat.NAT_IS_EXT_HOST_VALID != 0 {
 		natFlags.isExtHostValid = true
 	}
-	if flags&ba_nat.NAT_IS_STATIC != 0 {
+	if flags&vpp_nat.NAT_IS_STATIC != 0 {
 		natFlags.isStatic = true
 	}
-	if flags&ba_nat.NAT_IS_INSIDE != 0 {
+	if flags&vpp_nat.NAT_IS_INSIDE != 0 {
 		natFlags.isInside = true
 	}
-	if flags&ba_nat.NAT_IS_OUTSIDE != 0 {
+	if flags&vpp_nat.NAT_IS_OUTSIDE != 0 {
 		natFlags.isOutside = true
 	}
-	if flags&ba_nat.NAT_IS_ADDR_ONLY != 0 {
+	if flags&vpp_nat.NAT_IS_ADDR_ONLY != 0 {
 		natFlags.isAddrOnly = true
 	}
-	if flags&ba_nat.NAT_IS_OUT2IN_ONLY != 0 {
+	if flags&vpp_nat.NAT_IS_OUT2IN_ONLY != 0 {
 		natFlags.isOut2In = true
 	}
-	if flags&ba_nat.NAT_IS_SELF_TWICE_NAT != 0 {
+	if flags&vpp_nat.NAT_IS_SELF_TWICE_NAT != 0 {
 		natFlags.isSelfTwiceNat = true
 	}
-	if flags&ba_nat.NAT_IS_TWICE_NAT != 0 {
+	if flags&vpp_nat.NAT_IS_TWICE_NAT != 0 {
 		natFlags.isTwiceNat = true
 	}
 	return natFlags

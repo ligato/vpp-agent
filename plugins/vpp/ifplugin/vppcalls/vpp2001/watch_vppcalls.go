@@ -24,8 +24,8 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/pkg/errors"
 
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/dhcp"
-	binapi_interfaces "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/interfaces"
+	vpp_dhcp "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/dhcp"
+	vpp_ifs "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
 )
 
@@ -35,7 +35,7 @@ func (h *InterfaceVppHandler) WatchInterfaceEvents(events chan<- *vppcalls.Inter
 	notifChan := make(chan govppapi.Message, 10)
 
 	// subscribe for receiving SwInterfaceEvents notifications
-	vppNotifSubs, err := h.callsChannel.SubscribeNotification(notifChan, &binapi_interfaces.SwInterfaceEvent{})
+	vppNotifSubs, err := h.callsChannel.SubscribeNotification(notifChan, &vpp_ifs.SwInterfaceEvent{})
 	if err != nil {
 		return errors.Errorf("failed to subscribe VPP notification (sw_interface_event): %v", err)
 	}
@@ -49,7 +49,7 @@ func (h *InterfaceVppHandler) WatchInterfaceEvents(events chan<- *vppcalls.Inter
 					h.log.Debugf("interface notification channel was closed")
 					return
 				}
-				ifEvent, ok := e.(*binapi_interfaces.SwInterfaceEvent)
+				ifEvent, ok := e.(*vpp_ifs.SwInterfaceEvent)
 				if !ok {
 					continue
 				}
@@ -73,8 +73,8 @@ func (h *InterfaceVppHandler) WatchInterfaceEvents(events chan<- *vppcalls.Inter
 	}()
 
 	// enable interface state notifications from VPP
-	wantIfEventsReply := &binapi_interfaces.WantInterfaceEventsReply{}
-	err = h.callsChannel.SendRequest(&binapi_interfaces.WantInterfaceEvents{
+	wantIfEventsReply := &vpp_ifs.WantInterfaceEventsReply{}
+	err = h.callsChannel.SendRequest(&vpp_ifs.WantInterfaceEvents{
 		PID:           uint32(os.Getpid()),
 		EnableDisable: 1,
 	}).ReceiveReply(wantIfEventsReply)
@@ -93,7 +93,7 @@ func (h *InterfaceVppHandler) WatchDHCPLeases(leasesCh chan<- *vppcalls.Lease) e
 	notifChan := make(chan govppapi.Message)
 
 	// subscribe for receiving SwInterfaceEvents notifications
-	vppNotifSubs, err := h.callsChannel.SubscribeNotification(notifChan, &dhcp.DHCPComplEvent{})
+	vppNotifSubs, err := h.callsChannel.SubscribeNotification(notifChan, &vpp_dhcp.DHCPComplEvent{})
 	if err != nil {
 		return errors.Errorf("failed to subscribe VPP notification (sw_interface_event): %v", err)
 	}
@@ -103,7 +103,7 @@ func (h *InterfaceVppHandler) WatchDHCPLeases(leasesCh chan<- *vppcalls.Lease) e
 		for {
 			select {
 			case e := <-notifChan:
-				dhcpEvent, ok := e.(*dhcp.DHCPComplEvent)
+				dhcpEvent, ok := e.(*vpp_dhcp.DHCPComplEvent)
 				if !ok {
 					continue
 				}

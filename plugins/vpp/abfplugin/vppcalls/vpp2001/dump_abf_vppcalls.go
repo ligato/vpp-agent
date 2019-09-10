@@ -17,9 +17,9 @@ package vpp2001
 import (
 	"net"
 
-	vpp_abf "github.com/ligato/vpp-agent/api/models/vpp/abf"
+	abf "github.com/ligato/vpp-agent/api/models/vpp/abf"
 	"github.com/ligato/vpp-agent/plugins/vpp/abfplugin/vppcalls"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/abf"
+	vpp_abf "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/abf"
 )
 
 // placeholder for unknown names
@@ -50,15 +50,15 @@ func (h *ABFVppHandler) DumpABFPolicy() ([]*vppcalls.ABFDetails, error) {
 	return abfPolicy, nil
 }
 
-func (h *ABFVppHandler) dumpABFInterfaces() (map[uint32][]*vpp_abf.ABF_AttachedInterface, error) {
+func (h *ABFVppHandler) dumpABFInterfaces() (map[uint32][]*abf.ABF_AttachedInterface, error) {
 	// ABF index <-> attached interfaces
-	abfIfs := make(map[uint32][]*vpp_abf.ABF_AttachedInterface)
+	abfIfs := make(map[uint32][]*abf.ABF_AttachedInterface)
 
-	req := &abf.AbfItfAttachDump{}
+	req := &vpp_abf.AbfItfAttachDump{}
 	reqCtx := h.callsChannel.SendMultiRequest(req)
 
 	for {
-		reply := &abf.AbfItfAttachDetails{}
+		reply := &vpp_abf.AbfItfAttachDetails{}
 		last, err := reqCtx.ReceiveReply(reply)
 		if err != nil {
 			return nil, err
@@ -74,7 +74,7 @@ func (h *ABFVppHandler) dumpABFInterfaces() (map[uint32][]*vpp_abf.ABF_AttachedI
 		}
 
 		// attached interface entry
-		attached := &vpp_abf.ABF_AttachedInterface{
+		attached := &abf.ABF_AttachedInterface{
 			InputInterface: ifName,
 			Priority:       reply.Attach.Priority,
 			IsIpv6:         uintToBool(reply.Attach.IsIPv6),
@@ -82,7 +82,7 @@ func (h *ABFVppHandler) dumpABFInterfaces() (map[uint32][]*vpp_abf.ABF_AttachedI
 
 		_, ok := abfIfs[reply.Attach.PolicyID]
 		if !ok {
-			abfIfs[reply.Attach.PolicyID] = []*vpp_abf.ABF_AttachedInterface{}
+			abfIfs[reply.Attach.PolicyID] = []*abf.ABF_AttachedInterface{}
 		}
 		abfIfs[reply.Attach.PolicyID] = append(abfIfs[reply.Attach.PolicyID], attached)
 	}
@@ -92,11 +92,11 @@ func (h *ABFVppHandler) dumpABFInterfaces() (map[uint32][]*vpp_abf.ABF_AttachedI
 
 func (h *ABFVppHandler) dumpABFPolicy() ([]*vppcalls.ABFDetails, error) {
 	var abfs []*vppcalls.ABFDetails
-	req := &abf.AbfPolicyDump{}
+	req := &vpp_abf.AbfPolicyDump{}
 	reqCtx := h.callsChannel.SendMultiRequest(req)
 
 	for {
-		reply := &abf.AbfPolicyDetails{}
+		reply := &vpp_abf.AbfPolicyDetails{}
 		last, err := reqCtx.ReceiveReply(reply)
 		if err != nil {
 			return nil, err
@@ -112,7 +112,7 @@ func (h *ABFVppHandler) dumpABFPolicy() ([]*vppcalls.ABFDetails, error) {
 		}
 
 		// paths
-		var fwdPaths []*vpp_abf.ABF_ForwardingPath
+		var fwdPaths []*abf.ABF_ForwardingPath
 		for _, path := range reply.Policy.Paths {
 			// interface name
 			ifName, _, exists := h.ifIndexes.LookupBySwIfIndex(path.SwIfIndex)
@@ -121,7 +121,7 @@ func (h *ABFVppHandler) dumpABFPolicy() ([]*vppcalls.ABFDetails, error) {
 			}
 
 			// base fields
-			fwdPath := &vpp_abf.ABF_ForwardingPath{
+			fwdPath := &abf.ABF_ForwardingPath{
 				NextHopIp:     parseNextHopToString(path.Nh, path.Proto),
 				InterfaceName: ifName,
 				Weight:        uint32(path.Weight),
@@ -132,7 +132,7 @@ func (h *ABFVppHandler) dumpABFPolicy() ([]*vppcalls.ABFDetails, error) {
 		}
 
 		abfData := &vppcalls.ABFDetails{
-			ABF: &vpp_abf.ABF{
+			ABF: &abf.ABF{
 				Index:           reply.Policy.PolicyID,
 				AclName:         aclName,
 				ForwardingPaths: fwdPaths,
@@ -149,21 +149,21 @@ func (h *ABFVppHandler) dumpABFPolicy() ([]*vppcalls.ABFDetails, error) {
 }
 
 // returns next hop IP address
-func parseNextHopToString(nh abf.FibPathNh, proto abf.FibPathNhProto) string {
-	if proto == abf.FIB_API_PATH_NH_PROTO_IP4 {
+func parseNextHopToString(nh vpp_abf.FibPathNh, proto vpp_abf.FibPathNhProto) string {
+	if proto == vpp_abf.FIB_API_PATH_NH_PROTO_IP4 {
 		addr := nh.Address.GetIP4()
 		return net.IP(addr[:]).To4().String()
 	}
-	if proto == abf.FIB_API_PATH_NH_PROTO_IP6 {
+	if proto == vpp_abf.FIB_API_PATH_NH_PROTO_IP6 {
 		addr := nh.Address.GetIP6()
 		return net.IP(addr[:]).To16().String()
 	}
 	return ""
 }
 
-// abf fib currently supports only DVR or normal mode
-func isDvr(pathType abf.FibPathType) (isDvr bool) {
-	if pathType == abf.FIB_API_PATH_TYPE_DVR {
+// ABF fib currently supports only DVR or normal mode
+func isDvr(pathType vpp_abf.FibPathType) (isDvr bool) {
+	if pathType == vpp_abf.FIB_API_PATH_TYPE_DVR {
 		return true
 	}
 	return false

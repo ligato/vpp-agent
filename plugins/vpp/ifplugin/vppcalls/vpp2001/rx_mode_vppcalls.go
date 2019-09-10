@@ -15,20 +15,19 @@
 package vpp2001
 
 import (
-	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	binapi_interface "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/interfaces"
+	ifs "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
+	vpp_ifs "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/interfaces"
 )
 
-// SetRxMode implements interface handler.
-func (h *InterfaceVppHandler) SetRxMode(ifIdx uint32, rxMode *interfaces.Interface_RxMode) error {
+func (h *InterfaceVppHandler) SetRxMode(ifIdx uint32, rxMode *ifs.Interface_RxMode) error {
 
-	req := &binapi_interface.SwInterfaceSetRxMode{
-		SwIfIndex:    binapi_interface.InterfaceIndex(ifIdx),
+	req := &vpp_ifs.SwInterfaceSetRxMode{
+		SwIfIndex:    vpp_ifs.InterfaceIndex(ifIdx),
 		Mode:         setRxMode(rxMode.Mode),
 		QueueID:      rxMode.Queue,
 		QueueIDValid: !rxMode.DefaultMode,
 	}
-	reply := &binapi_interface.SwInterfaceSetRxModeReply{}
+	reply := &vpp_ifs.SwInterfaceSetRxModeReply{}
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
@@ -37,17 +36,17 @@ func (h *InterfaceVppHandler) SetRxMode(ifIdx uint32, rxMode *interfaces.Interfa
 	return nil
 }
 
-func setRxMode(mode interfaces.Interface_RxMode_Type) binapi_interface.RxMode {
+func setRxMode(mode ifs.Interface_RxMode_Type) vpp_ifs.RxMode {
 	switch mode {
-	case interfaces.Interface_RxMode_POLLING:
-		return binapi_interface.RX_MODE_API_POLLING
-	case interfaces.Interface_RxMode_INTERRUPT:
-		return binapi_interface.RX_MODE_API_INTERRUPT
-	case interfaces.Interface_RxMode_ADAPTIVE:
-		return binapi_interface.RX_MODE_API_ADAPTIVE
-	case interfaces.Interface_RxMode_DEFAULT:
-		return binapi_interface.RX_MODE_API_DEFAULT
+	case ifs.Interface_RxMode_POLLING:
+		return vpp_ifs.RX_MODE_API_POLLING
+	case ifs.Interface_RxMode_INTERRUPT:
+		return vpp_ifs.RX_MODE_API_INTERRUPT
+	case ifs.Interface_RxMode_ADAPTIVE:
+		return vpp_ifs.RX_MODE_API_ADAPTIVE
+	case ifs.Interface_RxMode_DEFAULT:
+		return vpp_ifs.RX_MODE_API_DEFAULT
 	default:
-		return binapi_interface.RX_MODE_API_UNKNOWN
+		return vpp_ifs.RX_MODE_API_UNKNOWN
 	}
 }

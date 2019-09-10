@@ -18,15 +18,15 @@ import (
 	"bytes"
 
 	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/ip"
+	vpp_ip "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/ip"
 )
 
 // DumpVrfTables dumps all configured VRF tables.
 func (h *VrfTableHandler) DumpVrfTables() (tables []*l3.VrfTable, err error) {
 	// dump IPv4 VRF tables
-	reqCtx := h.callsChannel.SendMultiRequest(&ip.IPTableDump{})
+	reqCtx := h.callsChannel.SendMultiRequest(&vpp_ip.IPTableDump{})
 	for {
-		fibDetails := &ip.IPTableDetails{}
+		fibDetails := &vpp_ip.IPTableDetails{}
 		stop, err := reqCtx.ReceiveReply(fibDetails)
 		if stop {
 			break

@@ -17,9 +17,8 @@ package vpp2001_test
 import (
 	"testing"
 
-	ifApi "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/interfaces"
-
-	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
+	ifs "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
+	vpp_ifs "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/interfaces"
 	. "github.com/onsi/gomega"
 )
 
@@ -27,16 +26,16 @@ func TestSetRxPlacementForWorker(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&ifApi.SwInterfaceSetRxPlacementReply{})
+	ctx.MockVpp.MockReply(&vpp_ifs.SwInterfaceSetRxPlacementReply{})
 
-	err := ifHandler.SetRxPlacement(1, &interfaces.Interface_RxPlacement{
+	err := ifHandler.SetRxPlacement(1, &ifs.Interface_RxPlacement{
 		Queue:      1,
 		Worker:     2,
 		MainThread: false,
 	})
 
 	Expect(err).To(BeNil())
-	vppMsg, ok := ctx.MockChannel.Msg.(*ifApi.SwInterfaceSetRxPlacement)
+	vppMsg, ok := ctx.MockChannel.Msg.(*vpp_ifs.SwInterfaceSetRxPlacement)
 	Expect(ok).To(BeTrue())
 	Expect(vppMsg.SwIfIndex).To(BeEquivalentTo(1))
 	Expect(vppMsg.QueueID).To(BeEquivalentTo(1))
@@ -48,16 +47,16 @@ func TestSetRxPlacementForMainThread(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&ifApi.SwInterfaceSetRxPlacementReply{})
+	ctx.MockVpp.MockReply(&vpp_ifs.SwInterfaceSetRxPlacementReply{})
 
-	err := ifHandler.SetRxPlacement(3, &interfaces.Interface_RxPlacement{
+	err := ifHandler.SetRxPlacement(3, &ifs.Interface_RxPlacement{
 		Queue:      6,
 		Worker:     2, // ignored on the VPP side
 		MainThread: true,
 	})
 
 	Expect(err).To(BeNil())
-	vppMsg, ok := ctx.MockChannel.Msg.(*ifApi.SwInterfaceSetRxPlacement)
+	vppMsg, ok := ctx.MockChannel.Msg.(*vpp_ifs.SwInterfaceSetRxPlacement)
 	Expect(ok).To(BeTrue())
 	Expect(vppMsg.SwIfIndex).To(BeEquivalentTo(3))
 	Expect(vppMsg.QueueID).To(BeEquivalentTo(6))
@@ -69,11 +68,11 @@ func TestSetRxPlacementRetval(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&ifApi.SwInterfaceSetRxPlacementReply{
+	ctx.MockVpp.MockReply(&vpp_ifs.SwInterfaceSetRxPlacementReply{
 		Retval: 1,
 	})
 
-	err := ifHandler.SetRxPlacement(1, &interfaces.Interface_RxPlacement{
+	err := ifHandler.SetRxPlacement(1, &ifs.Interface_RxPlacement{
 		Queue:      1,
 		Worker:     2,
 		MainThread: false,
@@ -86,9 +85,9 @@ func TestSetRxPlacementError(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&ifApi.SwInterfaceSetRxPlacement{})
+	ctx.MockVpp.MockReply(&vpp_ifs.SwInterfaceSetRxPlacement{})
 
-	err := ifHandler.SetRxPlacement(1, &interfaces.Interface_RxPlacement{
+	err := ifHandler.SetRxPlacement(1, &ifs.Interface_RxPlacement{
 		Queue:      1,
 		Worker:     2,
 		MainThread: false,

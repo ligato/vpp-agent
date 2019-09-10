@@ -17,7 +17,7 @@ package vpp2001
 import (
 	"net"
 
-	l2ba "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/l2"
+	vpp_l2 "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/l2"
 )
 
 func (h *BridgeDomainVppHandler) callBdIPMacAddDel(isAdd bool, bdID uint32, mac string, ip string) error {
@@ -29,18 +29,18 @@ func (h *BridgeDomainVppHandler) callBdIPMacAddDel(isAdd bool, bdID uint32, mac 
 	if err != nil {
 		return err
 	}
-	bdEntry := l2ba.BdIPMac{
+	bdEntry := vpp_l2.BdIPMac{
 		BdID: bdID,
 		IP:   ipAddr,
 	}
 	copy(bdEntry.Mac[:], macAddr)
 
-	req := &l2ba.BdIPMacAddDel{
+	req := &vpp_l2.BdIPMacAddDel{
 		IsAdd: boolToUint(isAdd),
 		Entry: bdEntry,
 	}
 
-	reply := &l2ba.BdIPMacAddDelReply{}
+	reply := &vpp_l2.BdIPMacAddDelReply{}
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	}

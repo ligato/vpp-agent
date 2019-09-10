@@ -18,14 +18,14 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/stn"
+	vpp_stn "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/stn"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/stnplugin/vppcalls"
 )
 
 func init() {
 	var msgs []govppapi.Message
-	msgs = append(msgs, stn.AllMessages()...)
+	msgs = append(msgs, vpp_stn.AllMessages()...)
 
 	vppcalls.Versions["vpp2001"] = vppcalls.HandlerVersion{
 		Msgs: msgs,

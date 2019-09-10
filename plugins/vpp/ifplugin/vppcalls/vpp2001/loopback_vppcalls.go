@@ -15,13 +15,12 @@
 package vpp2001
 
 import (
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/interfaces"
+	vpp_ifs "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/interfaces"
 )
 
-// AddLoopbackInterface implements interface handler.
 func (h *InterfaceVppHandler) AddLoopbackInterface(ifName string) (swIndex uint32, err error) {
-	req := &interfaces.CreateLoopback{}
-	reply := &interfaces.CreateLoopbackReply{}
+	req := &vpp_ifs.CreateLoopback{}
+	reply := &vpp_ifs.CreateLoopbackReply{}
 
 	if err = h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return 0, err
@@ -30,13 +29,12 @@ func (h *InterfaceVppHandler) AddLoopbackInterface(ifName string) (swIndex uint3
 	return uint32(reply.SwIfIndex), h.SetInterfaceTag(ifName, uint32(reply.SwIfIndex))
 }
 
-// DeleteLoopbackInterface implements interface handler.
 func (h *InterfaceVppHandler) DeleteLoopbackInterface(ifName string, idx uint32) error {
 	// Prepare the message.
-	req := &interfaces.DeleteLoopback{
-		SwIfIndex: interfaces.InterfaceIndex(idx),
+	req := &vpp_ifs.DeleteLoopback{
+		SwIfIndex: vpp_ifs.InterfaceIndex(idx),
 	}
-	reply := &interfaces.DeleteLoopbackReply{}
+	reply := &vpp_ifs.DeleteLoopbackReply{}
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err

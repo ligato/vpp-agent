@@ -17,7 +17,7 @@ package vpp2001
 import (
 	"fmt"
 
-	acl_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/acl"
+	vpp_acl "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/acl"
 )
 
 // SetACLToInterfacesAsIngress implements ACL handler.
@@ -64,13 +64,13 @@ func (h *ACLVppHandler) AddACLToInterfaceAsIngress(aclIndex uint32, ifName strin
 	}
 	ifIdx := meta.SwIfIndex
 
-	req := &acl_api.ACLInterfaceAddDel{
+	req := &vpp_acl.ACLInterfaceAddDel{
 		ACLIndex:  aclIndex,
 		IsAdd:     1,
 		SwIfIndex: ifIdx,
 		IsInput:   1,
 	}
-	reply := &acl_api.ACLInterfaceAddDelReply{}
+	reply := &vpp_acl.ACLInterfaceAddDelReply{}
 
 	err := h.callsChannel.SendRequest(req).ReceiveReply(reply)
 	if err != nil {
@@ -88,13 +88,13 @@ func (h *ACLVppHandler) AddACLToInterfaceAsEgress(aclIndex uint32, ifName string
 	}
 	ifIdx := meta.SwIfIndex
 
-	req := &acl_api.ACLInterfaceAddDel{
+	req := &vpp_acl.ACLInterfaceAddDel{
 		ACLIndex:  aclIndex,
 		IsAdd:     1,
 		SwIfIndex: ifIdx,
 		IsInput:   0,
 	}
-	reply := &acl_api.ACLInterfaceAddDelReply{}
+	reply := &vpp_acl.ACLInterfaceAddDelReply{}
 
 	err := h.callsChannel.SendRequest(req).ReceiveReply(reply)
 	if err != nil {
@@ -112,13 +112,13 @@ func (h *ACLVppHandler) DeleteACLFromInterfaceAsIngress(aclIndex uint32, ifName 
 	}
 	ifIdx := meta.SwIfIndex
 
-	req := &acl_api.ACLInterfaceAddDel{
+	req := &vpp_acl.ACLInterfaceAddDel{
 		ACLIndex:  aclIndex,
 		IsAdd:     0,
 		SwIfIndex: ifIdx,
 		IsInput:   1,
 	}
-	reply := &acl_api.ACLInterfaceAddDelReply{}
+	reply := &vpp_acl.ACLInterfaceAddDelReply{}
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return fmt.Errorf("failed to delete interface %d from ACL (L3/L4) %d as ingress: %v", ifIdx, aclIndex, err)
@@ -135,13 +135,13 @@ func (h *ACLVppHandler) DeleteACLFromInterfaceAsEgress(aclIndex uint32, ifName s
 	}
 	ifIdx := meta.SwIfIndex
 
-	req := &acl_api.ACLInterfaceAddDel{
+	req := &vpp_acl.ACLInterfaceAddDel{
 		ACLIndex:  aclIndex,
 		IsAdd:     0,
 		SwIfIndex: ifIdx,
 		IsInput:   0,
 	}
-	reply := &acl_api.ACLInterfaceAddDelReply{}
+	reply := &vpp_acl.ACLInterfaceAddDelReply{}
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return fmt.Errorf("failed to delete interface %d from ACL (L3/L4) %d as egress: %v", ifIdx, aclIndex, err)
@@ -158,12 +158,12 @@ func (h *ACLVppHandler) AddMACIPACLToInterface(aclIndex uint32, ifName string) e
 	}
 	ifIdx := meta.SwIfIndex
 
-	req := &acl_api.MacipACLInterfaceAddDel{
+	req := &vpp_acl.MacipACLInterfaceAddDel{
 		ACLIndex:  aclIndex,
 		IsAdd:     1,
 		SwIfIndex: ifIdx,
 	}
-	reply := &acl_api.MacipACLInterfaceAddDelReply{}
+	reply := &vpp_acl.MacipACLInterfaceAddDelReply{}
 
 	err := h.callsChannel.SendRequest(req).ReceiveReply(reply)
 	if err != nil {
@@ -181,12 +181,12 @@ func (h *ACLVppHandler) DeleteMACIPACLFromInterface(aclIndex uint32, ifName stri
 	}
 	ifIdx := meta.SwIfIndex
 
-	req := &acl_api.MacipACLInterfaceAddDel{
+	req := &vpp_acl.MacipACLInterfaceAddDel{
 		ACLIndex:  aclIndex,
 		IsAdd:     0,
 		SwIfIndex: ifIdx,
 	}
-	reply := &acl_api.MacipACLInterfaceAddDelReply{}
+	reply := &vpp_acl.MacipACLInterfaceAddDelReply{}
 
 	err := h.callsChannel.SendRequest(req).ReceiveReply(reply)
 	if err != nil {
@@ -199,12 +199,12 @@ func (h *ACLVppHandler) DeleteMACIPACLFromInterface(aclIndex uint32, ifName stri
 // SetMACIPACLToInterfaces implements ACL handler.
 func (h *ACLVppHandler) SetMACIPACLToInterfaces(aclIndex uint32, ifIndices []uint32) error {
 	for _, ingressIfIdx := range ifIndices {
-		req := &acl_api.MacipACLInterfaceAddDel{
+		req := &vpp_acl.MacipACLInterfaceAddDel{
 			ACLIndex:  aclIndex,
 			IsAdd:     1,
 			SwIfIndex: ingressIfIdx,
 		}
-		reply := &acl_api.MacipACLInterfaceAddDelReply{}
+		reply := &vpp_acl.MacipACLInterfaceAddDelReply{}
 
 		err := h.callsChannel.SendRequest(req).ReceiveReply(reply)
 		if err != nil {
@@ -218,12 +218,12 @@ func (h *ACLVppHandler) SetMACIPACLToInterfaces(aclIndex uint32, ifIndices []uin
 // RemoveMACIPACLFromInterfaces implements ACL handler.
 func (h *ACLVppHandler) RemoveMACIPACLFromInterfaces(removedACLIndex uint32, ifIndices []uint32) error {
 	for _, ifIdx := range ifIndices {
-		req := &acl_api.MacipACLInterfaceAddDel{
+		req := &vpp_acl.MacipACLInterfaceAddDel{
 			ACLIndex:  removedACLIndex,
 			SwIfIndex: ifIdx,
 			IsAdd:     0,
 		}
-		reply := &acl_api.MacipACLInterfaceAddDelReply{}
+		reply := &vpp_acl.MacipACLInterfaceAddDelReply{}
 
 		if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 			return fmt.Errorf("failed to remove L2 ACL %d from interface %d: %v", removedACLIndex, ifIdx, err)
@@ -273,13 +273,13 @@ func (h *ACLVppHandler) requestSetACLToInterfaces(logicalReq *aclInterfaceLogica
 			}
 		}
 
-		msg := &acl_api.ACLInterfaceSetACLList{
+		msg := &vpp_acl.ACLInterfaceSetACLList{
 			Acls:      ACLs,
 			Count:     uint8(len(ACLs)),
 			SwIfIndex: aclIfIdx,
 			NInput:    nInput,
 		}
-		reply := &acl_api.ACLInterfaceSetACLListReply{}
+		reply := &vpp_acl.ACLInterfaceSetACLListReply{}
 
 		err = h.callsChannel.SendRequest(msg).ReceiveReply(reply)
 		if err != nil {
@@ -320,14 +320,14 @@ func (h *ACLVppHandler) requestRemoveInterfacesFromACL(logicalReq *aclInterfaceL
 			}
 		}
 
-		msg := &acl_api.ACLInterfaceSetACLList{
+		msg := &vpp_acl.ACLInterfaceSetACLList{
 			Acls:      ACLs,
 			Count:     uint8(len(ACLs)),
 			SwIfIndex: aclIfIdx,
 			NInput:    nInput,
 		}
 
-		reply := &acl_api.ACLInterfaceSetACLListReply{}
+		reply := &vpp_acl.ACLInterfaceSetACLListReply{}
 		err = h.callsChannel.SendRequest(msg).ReceiveReply(reply)
 		if err != nil {
 			wasErr = err

@@ -17,7 +17,7 @@ package vpp2001_test
 import (
 	"testing"
 
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/dhcp"
+	vpp_dhcp "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/dhcp"
 	. "github.com/onsi/gomega"
 )
 
@@ -25,12 +25,12 @@ func TestSetInterfaceAsDHCPClient(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&dhcp.DHCPClientConfigReply{})
+	ctx.MockVpp.MockReply(&vpp_dhcp.DHCPClientConfigReply{})
 
 	err := ifHandler.SetInterfaceAsDHCPClient(1, "hostName")
 
 	Expect(err).To(BeNil())
-	vppMsg, ok := ctx.MockChannel.Msg.(*dhcp.DHCPClientConfig)
+	vppMsg, ok := ctx.MockChannel.Msg.(*vpp_dhcp.DHCPClientConfig)
 	Expect(ok).To(BeTrue())
 	Expect(vppMsg.Client.SwIfIndex).To(BeEquivalentTo(1))
 	Expect(vppMsg.Client.Hostname).To(BeEquivalentTo([]byte("hostName")))
@@ -42,7 +42,7 @@ func TestSetInterfaceAsDHCPClientError(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&dhcp.DHCPComplEvent{})
+	ctx.MockVpp.MockReply(&vpp_dhcp.DHCPComplEvent{})
 
 	err := ifHandler.SetInterfaceAsDHCPClient(1, "hostName")
 
@@ -53,7 +53,7 @@ func TestSetInterfaceAsDHCPClientRetval(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&dhcp.DHCPClientConfigReply{
+	ctx.MockVpp.MockReply(&vpp_dhcp.DHCPClientConfigReply{
 		Retval: 1,
 	})
 
@@ -66,12 +66,12 @@ func TestUnsetInterfaceAsDHCPClient(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&dhcp.DHCPClientConfigReply{})
+	ctx.MockVpp.MockReply(&vpp_dhcp.DHCPClientConfigReply{})
 
 	err := ifHandler.UnsetInterfaceAsDHCPClient(1, "hostName")
 
 	Expect(err).To(BeNil())
-	vppMsg, ok := ctx.MockChannel.Msg.(*dhcp.DHCPClientConfig)
+	vppMsg, ok := ctx.MockChannel.Msg.(*vpp_dhcp.DHCPClientConfig)
 	Expect(ok).To(BeTrue())
 	Expect(vppMsg.Client.SwIfIndex).To(BeEquivalentTo(1))
 	Expect(vppMsg.Client.Hostname).To(BeEquivalentTo([]byte("hostName")))
@@ -83,7 +83,7 @@ func TestUnsetInterfaceAsDHCPClientError(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&dhcp.DHCPComplEvent{})
+	ctx.MockVpp.MockReply(&vpp_dhcp.DHCPComplEvent{})
 
 	err := ifHandler.UnsetInterfaceAsDHCPClient(1, "hostName")
 
@@ -94,7 +94,7 @@ func TestUnsetInterfaceAsDHCPClientRetval(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&dhcp.DHCPClientConfigReply{
+	ctx.MockVpp.MockReply(&vpp_dhcp.DHCPClientConfigReply{
 		Retval: 1,
 	})
 

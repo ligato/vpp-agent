@@ -16,7 +16,7 @@ package vpp2001
 
 import (
 	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/ip"
+	vpp_ip "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/ip"
 )
 
 // AddVrfTable adds new VRF table.
@@ -30,15 +30,15 @@ func (h *VrfTableHandler) DelVrfTable(table *l3.VrfTable) error {
 }
 
 func (h *VrfTableHandler) addDelVrfTable(table *l3.VrfTable, isAdd bool) error {
-	req := &ip.IPTableAddDel{
-		Table: ip.IPTable{
+	req := &vpp_ip.IPTableAddDel{
+		Table: vpp_ip.IPTable{
 			TableID: table.Id,
 			IsIP6:   boolToUint(table.GetProtocol() == l3.VrfTable_IPV6),
 			Name:    []byte(table.Label),
 		},
 		IsAdd: boolToUint(isAdd),
 	}
-	reply := &ip.IPTableAddDelReply{}
+	reply := &vpp_ip.IPTableAddDelReply{}
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err

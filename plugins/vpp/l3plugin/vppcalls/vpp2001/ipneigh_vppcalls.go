@@ -19,13 +19,13 @@ import (
 	"strconv"
 
 	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/ip"
+	vpp_ip "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/ip"
 	"github.com/pkg/errors"
 )
 
 // SetIPScanNeighbor implements ip neigh  handler.
 func (h *IPNeighHandler) SetIPScanNeighbor(data *l3.IPScanNeighbor) error {
-	req := &ip.IPScanNeighborEnableDisable{
+	req := &vpp_ip.IPScanNeighborEnableDisable{
 		Mode:           uint8(data.Mode),
 		ScanInterval:   uint8(data.ScanInterval),
 		MaxProcTime:    uint8(data.MaxProcTime),
@@ -33,7 +33,7 @@ func (h *IPNeighHandler) SetIPScanNeighbor(data *l3.IPScanNeighbor) error {
 		ScanIntDelay:   uint8(data.ScanIntDelay),
 		StaleThreshold: uint8(data.StaleThreshold),
 	}
-	reply := &ip.IPScanNeighborEnableDisableReply{}
+	reply := &vpp_ip.IPScanNeighborEnableDisableReply{}
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err

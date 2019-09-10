@@ -20,13 +20,13 @@ import (
 
 	"github.com/ligato/vpp-agent/plugins/vpp/abfplugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/vpp/aclplugin/aclidx"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/abf"
+	vpp_abf "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/abf"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 )
 
 func init() {
 	var msgs []govppapi.Message
-	msgs = append(msgs, abf.AllMessages()...)
+	msgs = append(msgs, vpp_abf.AllMessages()...)
 
 	vppcalls.Versions["vpp2001"] = vppcalls.HandlerVersion{
 		Msgs: msgs,

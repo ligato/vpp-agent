@@ -19,7 +19,7 @@ import (
 
 	"github.com/ligato/cn-infra/logging/logrus"
 	acl "github.com/ligato/vpp-agent/api/models/vpp/acl"
-	acl_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/acl"
+	vpp_acl "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/acl"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/vppcallmock"
 	. "github.com/onsi/gomega"
@@ -250,7 +250,7 @@ func (ctx *testCtx) teardownACLTest() {
 func TestAddIPAcl(t *testing.T) {
 	ctx := setupACLTest(t)
 	defer ctx.teardownACLTest()
-	ctx.MockVpp.MockReply(&acl_api.ACLAddReplaceReply{})
+	ctx.MockVpp.MockReply(&vpp_acl.ACLAddReplaceReply{})
 
 	aclIndex, err := ctx.aclHandler.AddACL(aclIPrules, "test0")
 	Expect(err).To(BeNil())
@@ -268,11 +268,11 @@ func TestAddIPAcl(t *testing.T) {
 	_, err = ctx.aclHandler.AddACL(aclErr3Rules, "test4")
 	Expect(err).To(Not(BeNil()))
 
-	ctx.MockVpp.MockReply(&acl_api.MacipACLAddReply{})
+	ctx.MockVpp.MockReply(&vpp_acl.MacipACLAddReply{})
 	_, err = ctx.aclHandler.AddACL(aclIPrules, "test5")
 	Expect(err).To(Not(BeNil()))
 
-	ctx.MockVpp.MockReply(&acl_api.ACLAddReplaceReply{Retval: -1})
+	ctx.MockVpp.MockReply(&vpp_acl.ACLAddReplaceReply{Retval: -1})
 	_, err = ctx.aclHandler.AddACL(aclIPrules, "test6")
 	Expect(err).To(Not(BeNil()))
 }
@@ -281,7 +281,7 @@ func TestAddIPAcl(t *testing.T) {
 func TestAddMacIPAcl(t *testing.T) {
 	ctx := setupACLTest(t)
 	defer ctx.teardownACLTest()
-	ctx.MockVpp.MockReply(&acl_api.MacipACLAddReply{})
+	ctx.MockVpp.MockReply(&vpp_acl.MacipACLAddReply{})
 
 	aclIndex, err := ctx.aclHandler.AddMACIPACL(aclMACIPrules, "test6")
 	Expect(err).To(BeNil())
@@ -300,11 +300,11 @@ func TestAddMacIPAcl(t *testing.T) {
 	Expect(err).To(Not(BeNil()))
 	Expect(err.Error()).To(BeEquivalentTo("invalid IP address "))
 
-	ctx.MockVpp.MockReply(&acl_api.ACLAddReplaceReply{})
+	ctx.MockVpp.MockReply(&vpp_acl.ACLAddReplaceReply{})
 	_, err = ctx.aclHandler.AddMACIPACL(aclMACIPrules, "test11")
 	Expect(err).To(Not(BeNil()))
 
-	ctx.MockVpp.MockReply(&acl_api.MacipACLAddReply{Retval: -1})
+	ctx.MockVpp.MockReply(&vpp_acl.MacipACLAddReply{Retval: -1})
 	_, err = ctx.aclHandler.AddMACIPACL(aclMACIPrules, "test12")
 	Expect(err).To(Not(BeNil()))
 }
@@ -313,7 +313,7 @@ func TestAddMacIPAcl(t *testing.T) {
 func TestDeleteIPAcl(t *testing.T) {
 	ctx := setupACLTest(t)
 	defer ctx.teardownACLTest()
-	ctx.MockVpp.MockReply(&acl_api.ACLAddReplaceReply{})
+	ctx.MockVpp.MockReply(&vpp_acl.ACLAddReplaceReply{})
 
 	aclIndex, err := ctx.aclHandler.AddACL(aclIPrules, "test_del0")
 	Expect(err).To(BeNil())
@@ -331,20 +331,20 @@ func TestDeleteIPAcl(t *testing.T) {
 		},
 	}
 
-	ctx.MockVpp.MockReply(&acl_api.ACLAddReplaceReply{ACLIndex: 1})
+	ctx.MockVpp.MockReply(&vpp_acl.ACLAddReplaceReply{ACLIndex: 1})
 	aclIndex, err = ctx.aclHandler.AddACL(rule2del, "test_del1")
 	Expect(err).To(BeNil())
 	Expect(aclIndex).To(BeEquivalentTo(1))
 
-	ctx.MockVpp.MockReply(&acl_api.ACLAddReplaceReply{})
+	ctx.MockVpp.MockReply(&vpp_acl.ACLAddReplaceReply{})
 	err = ctx.aclHandler.DeleteACL(5)
 	Expect(err).To(Not(BeNil()))
 
-	ctx.MockVpp.MockReply(&acl_api.ACLDelReply{Retval: -1})
+	ctx.MockVpp.MockReply(&vpp_acl.ACLDelReply{Retval: -1})
 	err = ctx.aclHandler.DeleteACL(5)
 	Expect(err).To(Not(BeNil()))
 
-	ctx.MockVpp.MockReply(&acl_api.ACLDelReply{})
+	ctx.MockVpp.MockReply(&vpp_acl.ACLDelReply{})
 	err = ctx.aclHandler.DeleteACL(1)
 	Expect(err).To(BeNil())
 }
@@ -353,7 +353,7 @@ func TestDeleteIPAcl(t *testing.T) {
 func TestDeleteMACIPAcl(t *testing.T) {
 	ctx := setupACLTest(t)
 	defer ctx.teardownACLTest()
-	ctx.MockVpp.MockReply(&acl_api.MacipACLAddReply{})
+	ctx.MockVpp.MockReply(&vpp_acl.MacipACLAddReply{})
 
 	aclIndex, err := ctx.aclHandler.AddMACIPACL(aclMACIPrules, "test_del2")
 	Expect(err).To(BeNil())
@@ -371,20 +371,20 @@ func TestDeleteMACIPAcl(t *testing.T) {
 		},
 	}
 
-	ctx.MockVpp.MockReply(&acl_api.MacipACLAddReply{ACLIndex: 1})
+	ctx.MockVpp.MockReply(&vpp_acl.MacipACLAddReply{ACLIndex: 1})
 	aclIndex, err = ctx.aclHandler.AddMACIPACL(rule2del, "test_del3")
 	Expect(err).To(BeNil())
 	Expect(aclIndex).To(BeEquivalentTo(1))
 
-	ctx.MockVpp.MockReply(&acl_api.MacipACLAddReply{})
+	ctx.MockVpp.MockReply(&vpp_acl.MacipACLAddReply{})
 	err = ctx.aclHandler.DeleteMACIPACL(5)
 	Expect(err).To(Not(BeNil()))
 
-	ctx.MockVpp.MockReply(&acl_api.MacipACLDelReply{Retval: -1})
+	ctx.MockVpp.MockReply(&vpp_acl.MacipACLDelReply{Retval: -1})
 	err = ctx.aclHandler.DeleteMACIPACL(5)
 	Expect(err).To(Not(BeNil()))
 
-	ctx.MockVpp.MockReply(&acl_api.MacipACLDelReply{})
+	ctx.MockVpp.MockReply(&vpp_acl.MacipACLDelReply{})
 	err = ctx.aclHandler.DeleteMACIPACL(1)
 	Expect(err).To(BeNil())
 }
@@ -393,7 +393,7 @@ func TestDeleteMACIPAcl(t *testing.T) {
 func TestModifyIPAcl(t *testing.T) {
 	ctx := setupACLTest(t)
 	defer ctx.teardownACLTest()
-	ctx.MockVpp.MockReply(&acl_api.ACLAddReplaceReply{})
+	ctx.MockVpp.MockReply(&vpp_acl.ACLAddReplaceReply{})
 
 	aclIndex, err := ctx.aclHandler.AddACL(aclIPrules, "test_modify")
 	Expect(err).To(BeNil())
@@ -420,7 +420,7 @@ func TestModifyIPAcl(t *testing.T) {
 		},
 	}
 
-	ctx.MockVpp.MockReply(&acl_api.ACLAddReplaceReply{})
+	ctx.MockVpp.MockReply(&vpp_acl.ACLAddReplaceReply{})
 	err = ctx.aclHandler.ModifyACL(0, rule2modify, "test_modify0")
 	Expect(err).To(BeNil())
 
@@ -430,11 +430,11 @@ func TestModifyIPAcl(t *testing.T) {
 	err = ctx.aclHandler.ModifyACL(0, aclNoRules, "test_modify2")
 	Expect(err).To(BeNil())
 
-	ctx.MockVpp.MockReply(&acl_api.MacipACLAddReplaceReply{})
+	ctx.MockVpp.MockReply(&vpp_acl.MacipACLAddReplaceReply{})
 	err = ctx.aclHandler.ModifyACL(0, aclIPrules, "test_modify3")
 	Expect(err).To(Not(BeNil()))
 
-	ctx.MockVpp.MockReply(&acl_api.ACLAddReplaceReply{Retval: -1})
+	ctx.MockVpp.MockReply(&vpp_acl.ACLAddReplaceReply{Retval: -1})
 	err = ctx.aclHandler.ModifyACL(0, aclIPrules, "test_modify4")
 	Expect(err).To(Not(BeNil()))
 }
@@ -443,7 +443,7 @@ func TestModifyIPAcl(t *testing.T) {
 func TestModifyMACIPAcl(t *testing.T) {
 	ctx := setupACLTest(t)
 	defer ctx.teardownACLTest()
-	ctx.MockVpp.MockReply(&acl_api.MacipACLAddReply{})
+	ctx.MockVpp.MockReply(&vpp_acl.MacipACLAddReply{})
 
 	aclIndex, err := ctx.aclHandler.AddMACIPACL(aclMACIPrules, "test_modify")
 	Expect(err).To(BeNil())
@@ -470,18 +470,18 @@ func TestModifyMACIPAcl(t *testing.T) {
 		},
 	}
 
-	ctx.MockVpp.MockReply(&acl_api.MacipACLAddReplaceReply{})
+	ctx.MockVpp.MockReply(&vpp_acl.MacipACLAddReplaceReply{})
 	err = ctx.aclHandler.ModifyMACIPACL(0, rule2modify, "test_modify0")
 	Expect(err).To(BeNil())
 
 	err = ctx.aclHandler.ModifyMACIPACL(0, aclErr1Rules, "test_modify1")
 	Expect(err).To(Not(BeNil()))
 
-	ctx.MockVpp.MockReply(&acl_api.MacipACLAddReplaceReply{})
+	ctx.MockVpp.MockReply(&vpp_acl.MacipACLAddReplaceReply{})
 	err = ctx.aclHandler.ModifyMACIPACL(0, aclIPrules, "test_modify3")
 	Expect(err).To(Not(BeNil()))
 
-	ctx.MockVpp.MockReply(&acl_api.MacipACLAddReplaceReply{Retval: -1})
+	ctx.MockVpp.MockReply(&vpp_acl.MacipACLAddReplaceReply{Retval: -1})
 	err = ctx.aclHandler.ModifyMACIPACL(0, aclIPrules, "test_modify4")
 	Expect(err).To(Not(BeNil()))
 }

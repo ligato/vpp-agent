@@ -17,9 +17,9 @@ package vpp2001_test
 import (
 	"testing"
 
-	ifModel "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/tapv2"
+	ifs "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
+	vpp_ifs "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/interfaces"
+	vpp_tapv2 "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/tapv2"
 	. "github.com/onsi/gomega"
 )
 
@@ -27,12 +27,12 @@ func TestAddTapInterfaceV2(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&tapv2.TapCreateV2Reply{
+	ctx.MockVpp.MockReply(&vpp_tapv2.TapCreateV2Reply{
 		SwIfIndex: 1,
 	})
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
+	ctx.MockVpp.MockReply(&vpp_ifs.SwInterfaceTagAddDelReply{})
 
-	swIfIdx, err := ifHandler.AddTapInterface("tapIf", &ifModel.TapLink{
+	swIfIdx, err := ifHandler.AddTapInterface("tapIf", &ifs.TapLink{
 		Version:    2,
 		HostIfName: "hostIf",
 		RxRingSize: 1,
@@ -42,7 +42,7 @@ func TestAddTapInterfaceV2(t *testing.T) {
 	Expect(swIfIdx).To(BeEquivalentTo(1))
 	var msgCheck bool
 	for _, msg := range ctx.MockChannel.Msgs {
-		vppMsg, ok := msg.(*tapv2.TapCreateV2)
+		vppMsg, ok := msg.(*vpp_tapv2.TapCreateV2)
 		if ok {
 			Expect(vppMsg.UseRandomMac).To(BeEquivalentTo(1))
 			Expect(vppMsg.HostIfName).To(BeEquivalentTo([]byte("hostIf")))
@@ -56,14 +56,14 @@ func TestDeleteTapInterfaceV2(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&tapv2.TapDeleteV2Reply{})
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
+	ctx.MockVpp.MockReply(&vpp_tapv2.TapDeleteV2Reply{})
+	ctx.MockVpp.MockReply(&vpp_ifs.SwInterfaceTagAddDelReply{})
 
 	err := ifHandler.DeleteTapInterface("tapIf", 1, 2)
 	Expect(err).To(BeNil())
 	var msgCheck bool
 	for _, msg := range ctx.MockChannel.Msgs {
-		vppMsg, ok := msg.(*tapv2.TapDeleteV2)
+		vppMsg, ok := msg.(*vpp_tapv2.TapDeleteV2)
 		if ok {
 			Expect(vppMsg.SwIfIndex).To(BeEquivalentTo(1))
 			msgCheck = true

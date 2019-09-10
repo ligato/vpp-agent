@@ -22,7 +22,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	stn "github.com/ligato/vpp-agent/api/models/vpp/stn"
-	api "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/stn"
+	vpp_stn "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/stn"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/stnplugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/vpp/stnplugin/vppcalls/vpp2001"
@@ -35,7 +35,7 @@ func TestAddStnRule(t *testing.T) {
 
 	ifIndexes.Put("if1", &ifaceidx.IfaceMetadata{SwIfIndex: 1})
 
-	ctx.MockVpp.MockReply(&api.StnAddDelRuleReply{})
+	ctx.MockVpp.MockReply(&vpp_stn.StnAddDelRuleReply{})
 
 	err := stnHandler.AddSTNRule(&stn.Rule{
 		Interface: "if1",
@@ -43,7 +43,7 @@ func TestAddStnRule(t *testing.T) {
 	})
 
 	Expect(err).To(BeNil())
-	vppMsg, ok := ctx.MockChannel.Msg.(*api.StnAddDelRule)
+	vppMsg, ok := ctx.MockChannel.Msg.(*vpp_stn.StnAddDelRule)
 	Expect(ok).To(BeTrue())
 	Expect(vppMsg.SwIfIndex).To(BeEquivalentTo(1))
 	Expect(vppMsg.IPAddress).To(BeEquivalentTo(net.ParseIP("10.0.0.1").To4()))
@@ -57,7 +57,7 @@ func TestAddStnRuleIPv6(t *testing.T) {
 
 	ifIndexes.Put("if1", &ifaceidx.IfaceMetadata{SwIfIndex: 1})
 
-	ctx.MockVpp.MockReply(&api.StnAddDelRuleReply{})
+	ctx.MockVpp.MockReply(&vpp_stn.StnAddDelRuleReply{})
 
 	err := stnHandler.AddSTNRule(&stn.Rule{
 		Interface: "if1",
@@ -65,7 +65,7 @@ func TestAddStnRuleIPv6(t *testing.T) {
 	})
 
 	Expect(err).To(BeNil())
-	vppMsg, ok := ctx.MockChannel.Msg.(*api.StnAddDelRule)
+	vppMsg, ok := ctx.MockChannel.Msg.(*vpp_stn.StnAddDelRule)
 	Expect(ok).To(BeTrue())
 	Expect(vppMsg.SwIfIndex).To(BeEquivalentTo(1))
 	Expect(vppMsg.IPAddress).To(BeEquivalentTo(net.ParseIP("2001:db8:0:1:1:1:1:1").To16()))
@@ -79,7 +79,7 @@ func TestAddStnRuleInvalidIP(t *testing.T) {
 
 	ifIndexes.Put("if1", &ifaceidx.IfaceMetadata{SwIfIndex: 1})
 
-	ctx.MockVpp.MockReply(&api.StnAddDelRuleReply{})
+	ctx.MockVpp.MockReply(&vpp_stn.StnAddDelRuleReply{})
 
 	err := stnHandler.AddSTNRule(&stn.Rule{
 		Interface: "if1",
@@ -95,7 +95,7 @@ func TestAddStnRuleError(t *testing.T) {
 
 	ifIndexes.Put("if1", &ifaceidx.IfaceMetadata{SwIfIndex: 1})
 
-	ctx.MockVpp.MockReply(&api.StnAddDelRule{})
+	ctx.MockVpp.MockReply(&vpp_stn.StnAddDelRule{})
 
 	err := stnHandler.AddSTNRule(&stn.Rule{
 		Interface: "if1",
@@ -111,7 +111,7 @@ func TestAddStnRuleRetval(t *testing.T) {
 
 	ifIndexes.Put("if1", &ifaceidx.IfaceMetadata{SwIfIndex: 1})
 
-	ctx.MockVpp.MockReply(&api.StnAddDelRuleReply{
+	ctx.MockVpp.MockReply(&vpp_stn.StnAddDelRuleReply{
 		Retval: 1,
 	})
 
@@ -129,7 +129,7 @@ func TestDelStnRule(t *testing.T) {
 
 	ifIndexes.Put("if1", &ifaceidx.IfaceMetadata{SwIfIndex: 1})
 
-	ctx.MockVpp.MockReply(&api.StnAddDelRuleReply{})
+	ctx.MockVpp.MockReply(&vpp_stn.StnAddDelRuleReply{})
 
 	err := stnHandler.DeleteSTNRule(&stn.Rule{
 		Interface: "if1",
@@ -137,7 +137,7 @@ func TestDelStnRule(t *testing.T) {
 	})
 
 	Expect(err).To(BeNil())
-	vppMsg, ok := ctx.MockChannel.Msg.(*api.StnAddDelRule)
+	vppMsg, ok := ctx.MockChannel.Msg.(*vpp_stn.StnAddDelRule)
 	Expect(ok).To(BeTrue())
 	Expect(vppMsg.IsAdd).To(BeEquivalentTo(0))
 }

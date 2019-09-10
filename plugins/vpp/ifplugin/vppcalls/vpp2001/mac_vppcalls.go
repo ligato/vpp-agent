@@ -18,20 +18,19 @@ import (
 	"net"
 
 	"github.com/go-errors/errors"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/interfaces"
+	vpp_ifs "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/interfaces"
 )
 
-// SetInterfaceMac implements interface handler.
 func (h *InterfaceVppHandler) SetInterfaceMac(ifIdx uint32, macAddress string) error {
 	mac, err := ParseMAC(macAddress)
 	if err != nil {
 		return err
 	}
-	req := &interfaces.SwInterfaceSetMacAddress{
-		SwIfIndex:  interfaces.InterfaceIndex(ifIdx),
+	req := &vpp_ifs.SwInterfaceSetMacAddress{
+		SwIfIndex:  vpp_ifs.InterfaceIndex(ifIdx),
 		MacAddress: mac,
 	}
-	reply := &interfaces.SwInterfaceSetMacAddressReply{}
+	reply := &vpp_ifs.SwInterfaceSetMacAddressReply{}
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err

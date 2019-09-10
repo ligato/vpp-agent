@@ -17,7 +17,7 @@ package vpp2001_test
 import (
 	"testing"
 
-	l2ba "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/l2"
+	vpp_l2 "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/l2"
 	. "github.com/onsi/gomega"
 )
 
@@ -25,22 +25,22 @@ func TestVppAddArpTerminationTableEntry(t *testing.T) {
 	ctx, bdHandler, _ := bdTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&l2ba.BdIPMacAddDelReply{})
+	ctx.MockVpp.MockReply(&vpp_l2.BdIPMacAddDelReply{})
 
 	err := bdHandler.AddArpTerminationTableEntry(
 		4, "FF:FF:FF:FF:FF:FF", "192.168.4.4")
 
 	Expect(err).ShouldNot(HaveOccurred())
-	Expect(ctx.MockChannel.Msg).To(Equal(&l2ba.BdIPMacAddDel{
-		Entry: l2ba.BdIPMac{
+	Expect(ctx.MockChannel.Msg).To(Equal(&vpp_l2.BdIPMacAddDel{
+		Entry: vpp_l2.BdIPMac{
 			BdID: 4,
-			IP: l2ba.Address{
-				Af: l2ba.ADDRESS_IP4,
-				Un: l2ba.AddressUnionIP4(
-					l2ba.IP4Address{192, 168, 4, 4},
+			IP: vpp_l2.Address{
+				Af: vpp_l2.ADDRESS_IP4,
+				Un: vpp_l2.AddressUnionIP4(
+					vpp_l2.IP4Address{192, 168, 4, 4},
 				),
 			},
-			Mac: l2ba.MacAddress{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF},
+			Mac: vpp_l2.MacAddress{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF},
 		},
 		IsAdd: 1,
 	}))
@@ -50,21 +50,21 @@ func TestVppAddArpTerminationTableEntryIPv6(t *testing.T) {
 	ctx, bdHandler, _ := bdTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&l2ba.BdIPMacAddDelReply{})
+	ctx.MockVpp.MockReply(&vpp_l2.BdIPMacAddDelReply{})
 
 	err := bdHandler.AddArpTerminationTableEntry(4, "FF:FF:FF:FF:FF:FF", "2001:db9::54")
 
 	Expect(err).ShouldNot(HaveOccurred())
-	Expect(ctx.MockChannel.Msg).To(Equal(&l2ba.BdIPMacAddDel{
-		Entry: l2ba.BdIPMac{
+	Expect(ctx.MockChannel.Msg).To(Equal(&vpp_l2.BdIPMacAddDel{
+		Entry: vpp_l2.BdIPMac{
 			BdID: 4,
-			IP: l2ba.Address{
-				Af: l2ba.ADDRESS_IP6,
-				Un: l2ba.AddressUnionIP6(
-					l2ba.IP6Address{32, 1, 13, 185, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 84},
+			IP: vpp_l2.Address{
+				Af: vpp_l2.ADDRESS_IP6,
+				Un: vpp_l2.AddressUnionIP6(
+					vpp_l2.IP6Address{32, 1, 13, 185, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 84},
 				),
 			},
-			Mac: l2ba.MacAddress{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF},
+			Mac: vpp_l2.MacAddress{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF},
 		},
 		IsAdd: 1,
 	}))
@@ -74,21 +74,21 @@ func TestVppRemoveArpTerminationTableEntry(t *testing.T) {
 	ctx, bdHandler, _ := bdTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&l2ba.BdIPMacAddDelReply{})
+	ctx.MockVpp.MockReply(&vpp_l2.BdIPMacAddDelReply{})
 
 	err := bdHandler.RemoveArpTerminationTableEntry(4, "FF:FF:FF:FF:FF:FF", "192.168.4.4")
 
 	Expect(err).ShouldNot(HaveOccurred())
-	Expect(ctx.MockChannel.Msg).To(Equal(&l2ba.BdIPMacAddDel{
-		Entry: l2ba.BdIPMac{
+	Expect(ctx.MockChannel.Msg).To(Equal(&vpp_l2.BdIPMacAddDel{
+		Entry: vpp_l2.BdIPMac{
 			BdID: 4,
-			IP: l2ba.Address{
-				Af: l2ba.ADDRESS_IP4,
-				Un: l2ba.AddressUnionIP4(
-					l2ba.IP4Address{192, 168, 4, 4},
+			IP: vpp_l2.Address{
+				Af: vpp_l2.ADDRESS_IP4,
+				Un: vpp_l2.AddressUnionIP4(
+					vpp_l2.IP4Address{192, 168, 4, 4},
 				),
 			},
-			Mac: l2ba.MacAddress{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF},
+			Mac: vpp_l2.MacAddress{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF},
 		},
 		IsAdd: 0,
 	}))
@@ -98,7 +98,7 @@ func TestVppArpTerminationTableEntryMacError(t *testing.T) {
 	ctx, bdHandler, _ := bdTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&l2ba.BdIPMacAddDelReply{})
+	ctx.MockVpp.MockReply(&vpp_l2.BdIPMacAddDelReply{})
 
 	err := bdHandler.AddArpTerminationTableEntry(4, "in:va:li:d:ma:c", "192.168.4.4")
 	Expect(err).Should(HaveOccurred())
@@ -111,7 +111,7 @@ func TestVppArpTerminationTableEntryIpError(t *testing.T) {
 	ctx, bdHandler, _ := bdTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&l2ba.BdIPMacAddDelReply{})
+	ctx.MockVpp.MockReply(&vpp_l2.BdIPMacAddDelReply{})
 
 	err := bdHandler.AddArpTerminationTableEntry(4, "FF:FF:FF:FF:FF:FF", "")
 	Expect(err).Should(HaveOccurred())
@@ -124,14 +124,14 @@ func TestVppArpTerminationTableEntryError(t *testing.T) {
 	ctx, bdHandler, _ := bdTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&l2ba.BdIPMacAddDelReply{
+	ctx.MockVpp.MockReply(&vpp_l2.BdIPMacAddDelReply{
 		Retval: 1,
 	})
 
 	err := bdHandler.AddArpTerminationTableEntry(4, "FF:FF:FF:FF:FF:FF", "192.168.4.4")
 	Expect(err).Should(HaveOccurred())
 
-	ctx.MockVpp.MockReply(&l2ba.BridgeDomainAddDelReply{})
+	ctx.MockVpp.MockReply(&vpp_l2.BridgeDomainAddDelReply{})
 
 	err = bdHandler.RemoveArpTerminationTableEntry(4, "FF:FF:FF:FF:FF:FF", "192.168.4.4")
 	Expect(err).Should(HaveOccurred())

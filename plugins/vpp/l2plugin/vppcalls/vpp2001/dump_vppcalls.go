@@ -21,8 +21,8 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/l2plugin/vppcalls"
 	"github.com/pkg/errors"
 
-	l2nb "github.com/ligato/vpp-agent/api/models/vpp/l2"
-	l2ba "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/l2"
+	l2 "github.com/ligato/vpp-agent/api/models/vpp/l2"
+	vpp_l2 "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/l2"
 )
 
 // DumpBridgeDomains implements bridge domain handler.
@@ -37,10 +37,10 @@ func (h *BridgeDomainVppHandler) DumpBridgeDomains() ([]*vppcalls.BridgeDomainDe
 	var bds []*vppcalls.BridgeDomainDetails
 
 	// dump bridge domains
-	reqCtx := h.callsChannel.SendMultiRequest(&l2ba.BridgeDomainDump{BdID: ^uint32(0)})
+	reqCtx := h.callsChannel.SendMultiRequest(&vpp_l2.BridgeDomainDump{BdID: ^uint32(0)})
 
 	for {
-		bdDetails := &l2ba.BridgeDomainDetails{}
+		bdDetails := &vpp_l2.BridgeDomainDetails{}
 		stop, err := reqCtx.ReceiveReply(bdDetails)
 		if stop {
 			break
@@ -51,7 +51,7 @@ func (h *BridgeDomainVppHandler) DumpBridgeDomains() ([]*vppcalls.BridgeDomainDe
 
 		// bridge domain metadata
 		bdData := &vppcalls.BridgeDomainDetails{
-			Bd: &l2nb.BridgeDomain{
+			Bd: &l2.BridgeDomain{
 				Name:                string(bytes.Replace(bdDetails.BdTag, []byte{0x00}, []byte{}, -1)),
 				Flood:               bdDetails.Flood > 0,
 				UnknownUnicastFlood: bdDetails.UuFlood > 0,
@@ -78,7 +78,7 @@ func (h *BridgeDomainVppHandler) DumpBridgeDomains() ([]*vppcalls.BridgeDomainDe
 				bvi = true
 			}
 			// add interface entry
-			bdData.Bd.Interfaces = append(bdData.Bd.Interfaces, &l2nb.BridgeDomain_Interface{
+			bdData.Bd.Interfaces = append(bdData.Bd.Interfaces, &l2.BridgeDomain_Interface{
 				Name:                    ifaceName,
 				BridgedVirtualInterface: bvi,
 				SplitHorizonGroup:       uint32(iface.Shg),
@@ -98,13 +98,13 @@ func (h *BridgeDomainVppHandler) DumpBridgeDomains() ([]*vppcalls.BridgeDomainDe
 }
 
 // Reads ARP termination table from all bridge domains. Result is then added to bridge domains.
-func (h *BridgeDomainVppHandler) dumpBridgeDomainMacTable() (map[uint32][]*l2nb.BridgeDomain_ArpTerminationEntry, error) {
-	bdArpTable := make(map[uint32][]*l2nb.BridgeDomain_ArpTerminationEntry)
-	req := &l2ba.BdIPMacDump{BdID: ^uint32(0)}
+func (h *BridgeDomainVppHandler) dumpBridgeDomainMacTable() (map[uint32][]*l2.BridgeDomain_ArpTerminationEntry, error) {
+	bdArpTable := make(map[uint32][]*l2.BridgeDomain_ArpTerminationEntry)
+	req := &vpp_l2.BdIPMacDump{BdID: ^uint32(0)}
 
 	reqCtx := h.callsChannel.SendMultiRequest(req)
 	for {
-		msg := &l2ba.BdIPMacDetails{}
+		msg := &vpp_l2.BdIPMacDetails{}
 		stop, err := reqCtx.ReceiveReply(msg)
 		if err != nil {
 			return nil, err
@@ -114,7 +114,7 @@ func (h *BridgeDomainVppHandler) dumpBridgeDomainMacTable() (map[uint32][]*l2nb.
 		}
 
 		// Prepare ARP entry
-		arpEntry := &l2nb.BridgeDomain_ArpTerminationEntry{}
+		arpEntry := &l2.BridgeDomain_ArpTerminationEntry{}
 		arpEntry.IpAddress = parseAddressToString(msg.Entry.IP)
 		arpEntry.PhysAddress = net.HardwareAddr(msg.Entry.Mac[:]).String()
 
@@ -131,9 +131,9 @@ func (h *FIBVppHandler) DumpL2FIBs() (map[string]*vppcalls.FibTableDetails, erro
 	// map for the resulting FIBs
 	fibs := make(map[string]*vppcalls.FibTableDetails)
 
-	reqCtx := h.callsChannel.SendMultiRequest(&l2ba.L2FibTableDump{BdID: ^uint32(0)})
+	reqCtx := h.callsChannel.SendMultiRequest(&vpp_l2.L2FibTableDump{BdID: ^uint32(0)})
 	for {
-		fibDetails := &l2ba.L2FibTableDetails{}
+		fibDetails := &vpp_l2.L2FibTableDetails{}
 		stop, err := reqCtx.ReceiveReply(fibDetails)
 		if stop {
 			break // Break from the loop.
@@ -143,16 +143,16 @@ func (h *FIBVppHandler) DumpL2FIBs() (map[string]*vppcalls.FibTableDetails, erro
 		}
 
 		mac := net.HardwareAddr(fibDetails.Mac).String()
-		var action l2nb.FIBEntry_Action
+		var action l2.FIBEntry_Action
 		if fibDetails.FilterMac > 0 {
-			action = l2nb.FIBEntry_DROP
+			action = l2.FIBEntry_DROP
 		} else {
-			action = l2nb.FIBEntry_FORWARD
+			action = l2.FIBEntry_FORWARD
 		}
 
 		// Interface name (only for FORWARD entries)
 		var ifName string
-		if action == l2nb.FIBEntry_FORWARD {
+		if action == l2.FIBEntry_FORWARD {
 			var exists bool
 			ifName, _, exists = h.ifIndexes.LookupBySwIfIndex(fibDetails.SwIfIndex)
 			if !exists {
@@ -168,7 +168,7 @@ func (h *FIBVppHandler) DumpL2FIBs() (map[string]*vppcalls.FibTableDetails, erro
 		}
 
 		fibs[mac] = &vppcalls.FibTableDetails{
-			Fib: &l2nb.FIBEntry{
+			Fib: &l2.FIBEntry{
 				PhysAddress:             mac,
 				BridgeDomain:            bdName,
 				Action:                  action,
@@ -191,9 +191,9 @@ func (h *XConnectVppHandler) DumpXConnectPairs() (map[uint32]*vppcalls.XConnectD
 	// map for the resulting xconnect pairs
 	xpairs := make(map[uint32]*vppcalls.XConnectDetails)
 
-	reqCtx := h.callsChannel.SendMultiRequest(&l2ba.L2XconnectDump{})
+	reqCtx := h.callsChannel.SendMultiRequest(&vpp_l2.L2XconnectDump{})
 	for {
-		pairs := &l2ba.L2XconnectDetails{}
+		pairs := &vpp_l2.L2XconnectDetails{}
 		stop, err := reqCtx.ReceiveReply(pairs)
 		if stop {
 			break
@@ -215,7 +215,7 @@ func (h *XConnectVppHandler) DumpXConnectPairs() (map[uint32]*vppcalls.XConnectD
 		}
 
 		xpairs[pairs.RxSwIfIndex] = &vppcalls.XConnectDetails{
-			Xc: &l2nb.XConnectPair{
+			Xc: &l2.XConnectPair{
 				ReceiveInterface:  rxIfaceName,
 				TransmitInterface: txIfaceName,
 			},
@@ -229,13 +229,13 @@ func (h *XConnectVppHandler) DumpXConnectPairs() (map[uint32]*vppcalls.XConnectD
 	return xpairs, nil
 }
 
-func parseAddressToString(address l2ba.Address) string {
+func parseAddressToString(address vpp_l2.Address) string {
 	var nhIP net.IP = make([]byte, 16)
 	copy(nhIP[:], address.Un.XXX_UnionData[:])
-	if address.Af == l2ba.ADDRESS_IP4 {
+	if address.Af == vpp_l2.ADDRESS_IP4 {
 		return nhIP[:4].To4().String()
 	}
-	if address.Af == l2ba.ADDRESS_IP6 {
+	if address.Af == vpp_l2.ADDRESS_IP6 {
 		return nhIP.To16().String()
 	}
 

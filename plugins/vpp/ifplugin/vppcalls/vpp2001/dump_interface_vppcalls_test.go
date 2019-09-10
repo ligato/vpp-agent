@@ -15,21 +15,20 @@
 package vpp2001_test
 
 import (
-	"github.com/ligato/cn-infra/logging/logrus"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls/vpp2001"
 	"net"
 	"testing"
 
 	govppapi "git.fd.io/govpp.git/api"
 
-	interfaces2 "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/dhcp"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/ip"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/memif"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/tapv2"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/vpe"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/vxlan"
+	ifs "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
+	vpp_dhcp "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/dhcp"
+	vpp_interfaces "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/interfaces"
+	vpp_ip "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/ip"
+	vpp_memif "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/memif"
+	vpp_tapv2 "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/tapv2"
+	vpp_vpe "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/vpe"
+	vpp_vxlan "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/vxlan"
+	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls/vpp2001"
 	"github.com/ligato/vpp-agent/plugins/vpp/vppcallmock"
 	. "github.com/onsi/gomega"
 )
@@ -44,38 +43,38 @@ func TestDumpInterfacesVxLan(t *testing.T) {
 
 	ctx.MockReplies([]*vppcallmock.HandleReplies{
 		{
-			Name: (&interfaces.SwInterfaceDump{}).GetMessageName(),
+			Name: (&vpp_interfaces.SwInterfaceDump{}).GetMessageName(),
 			Ping: true,
-			Message: &interfaces.SwInterfaceDetails{
+			Message: &vpp_interfaces.SwInterfaceDetails{
 				InterfaceName: "vxlan1",
 			},
 		},
 		{
-			Name:    (&interfaces.SwInterfaceGetTable{}).GetMessageName(),
+			Name:    (&vpp_interfaces.SwInterfaceGetTable{}).GetMessageName(),
 			Ping:    false,
-			Message: &interfaces.SwInterfaceGetTableReply{},
+			Message: &vpp_interfaces.SwInterfaceGetTableReply{},
 		},
 		{
-			Name:    (&ip.IPAddressDump{}).GetMessageName(),
+			Name:    (&vpp_ip.IPAddressDump{}).GetMessageName(),
 			Ping:    true,
-			Message: &ip.IPAddressDetails{},
+			Message: &vpp_ip.IPAddressDetails{},
 		},
 		{
-			Name: (&memif.MemifSocketFilenameDump{}).GetMessageName(),
+			Name: (&vpp_memif.MemifSocketFilenameDump{}).GetMessageName(),
 			Ping: true,
 		},
 		{
-			Name: (&memif.MemifDump{}).GetMessageName(),
+			Name: (&vpp_memif.MemifDump{}).GetMessageName(),
 			Ping: true,
 		},
 		{
-			Name: (&tapv2.SwInterfaceTapV2Dump{}).GetMessageName(),
+			Name: (&vpp_tapv2.SwInterfaceTapV2Dump{}).GetMessageName(),
 			Ping: true,
 		},
 		{
-			Name: (&vxlan.VxlanTunnelDump{}).GetMessageName(),
+			Name: (&vpp_vxlan.VxlanTunnelDump{}).GetMessageName(),
 			Ping: true,
-			Message: &vxlan.VxlanTunnelDetails{
+			Message: &vpp_vxlan.VxlanTunnelDetails{
 				IsIPv6:     1,
 				SwIfIndex:  0,
 				SrcAddress: ipv61Parse,
@@ -101,36 +100,36 @@ func TestDumpInterfacesHost(t *testing.T) {
 
 	ctx.MockReplies([]*vppcallmock.HandleReplies{
 		{
-			Name: (&interfaces.SwInterfaceDump{}).GetMessageName(),
+			Name: (&vpp_interfaces.SwInterfaceDump{}).GetMessageName(),
 			Ping: true,
-			Message: &interfaces.SwInterfaceDetails{
+			Message: &vpp_interfaces.SwInterfaceDetails{
 				InterfaceName: "host-localhost",
 			},
 		},
 		{
-			Name:    (&interfaces.SwInterfaceGetTable{}).GetMessageName(),
+			Name:    (&vpp_interfaces.SwInterfaceGetTable{}).GetMessageName(),
 			Ping:    false,
-			Message: &interfaces.SwInterfaceGetTableReply{},
+			Message: &vpp_interfaces.SwInterfaceGetTableReply{},
 		},
 		{
-			Name:    (&ip.IPAddressDump{}).GetMessageName(),
+			Name:    (&vpp_ip.IPAddressDump{}).GetMessageName(),
 			Ping:    true,
-			Message: &ip.IPAddressDetails{},
+			Message: &vpp_ip.IPAddressDetails{},
 		},
 		{
-			Name: (&memif.MemifSocketFilenameDump{}).GetMessageName(),
+			Name: (&vpp_memif.MemifSocketFilenameDump{}).GetMessageName(),
 			Ping: true,
 		},
 		{
-			Name: (&memif.MemifDump{}).GetMessageName(),
+			Name: (&vpp_memif.MemifDump{}).GetMessageName(),
 			Ping: true,
 		},
 		{
-			Name: (&tapv2.SwInterfaceTapV2Dump{}).GetMessageName(),
+			Name: (&vpp_tapv2.SwInterfaceTapV2Dump{}).GetMessageName(),
 			Ping: true,
 		},
 		{
-			Name: (&vxlan.VxlanTunnelDump{}).GetMessageName(),
+			Name: (&vpp_vxlan.VxlanTunnelDump{}).GetMessageName(),
 			Ping: true,
 		},
 	})
@@ -141,7 +140,6 @@ func TestDumpInterfacesHost(t *testing.T) {
 	intface := intfs[0].Interface
 
 	// Check interface data
-	logrus.DefaultLogger().Warnf("%q vs %q", intface.GetAfpacket().HostIfName, "localhost")
 	Expect(intface.GetAfpacket().HostIfName).To(Equal("localhost"))
 }
 
@@ -152,34 +150,34 @@ func TestDumpInterfacesMemif(t *testing.T) {
 
 	ctx.MockReplies([]*vppcallmock.HandleReplies{
 		{
-			Name: (&interfaces.SwInterfaceDump{}).GetMessageName(),
+			Name: (&vpp_interfaces.SwInterfaceDump{}).GetMessageName(),
 			Ping: true,
-			Message: &interfaces.SwInterfaceDetails{
+			Message: &vpp_interfaces.SwInterfaceDetails{
 				InterfaceName: "memif1",
 			},
 		},
 		{
-			Name:    (&interfaces.SwInterfaceGetTable{}).GetMessageName(),
+			Name:    (&vpp_interfaces.SwInterfaceGetTable{}).GetMessageName(),
 			Ping:    false,
-			Message: &interfaces.SwInterfaceGetTableReply{},
+			Message: &vpp_interfaces.SwInterfaceGetTableReply{},
 		},
 		{
-			Name:    (&ip.IPAddressDump{}).GetMessageName(),
+			Name:    (&vpp_ip.IPAddressDump{}).GetMessageName(),
 			Ping:    true,
-			Message: &ip.IPAddressDetails{},
+			Message: &vpp_ip.IPAddressDetails{},
 		},
 		{
-			Name: (&memif.MemifSocketFilenameDump{}).GetMessageName(),
+			Name: (&vpp_memif.MemifSocketFilenameDump{}).GetMessageName(),
 			Ping: true,
-			Message: &memif.MemifSocketFilenameDetails{
+			Message: &vpp_memif.MemifSocketFilenameDetails{
 				SocketID:       1,
 				SocketFilename: []byte("test"),
 			},
 		},
 		{
-			Name: (&memif.MemifDump{}).GetMessageName(),
+			Name: (&vpp_memif.MemifDump{}).GetMessageName(),
 			Ping: true,
-			Message: &memif.MemifDetails{
+			Message: &vpp_memif.MemifDetails{
 				ID:         2,
 				SwIfIndex:  0,
 				Role:       1, // Slave
@@ -190,11 +188,11 @@ func TestDumpInterfacesMemif(t *testing.T) {
 			},
 		},
 		{
-			Name: (&tapv2.SwInterfaceTapV2Dump{}).GetMessageName(),
+			Name: (&vpp_tapv2.SwInterfaceTapV2Dump{}).GetMessageName(),
 			Ping: true,
 		},
 		{
-			Name: (&vxlan.VxlanTunnelDump{}).GetMessageName(),
+			Name: (&vpp_vxlan.VxlanTunnelDump{}).GetMessageName(),
 			Ping: true,
 		},
 	})
@@ -207,7 +205,7 @@ func TestDumpInterfacesMemif(t *testing.T) {
 	// Check memif
 	Expect(intface.GetMemif().SocketFilename).To(Equal("test"))
 	Expect(intface.GetMemif().Id).To(Equal(uint32(2)))
-	Expect(intface.GetMemif().Mode).To(Equal(interfaces2.MemifLink_IP))
+	Expect(intface.GetMemif().Mode).To(Equal(ifs.MemifLink_IP))
 	Expect(intface.GetMemif().Master).To(BeFalse())
 }
 
@@ -220,49 +218,49 @@ func TestDumpInterfacesTap2(t *testing.T) {
 
 	ctx.MockReplies([]*vppcallmock.HandleReplies{
 		{
-			Name: (&interfaces.SwInterfaceDump{}).GetMessageName(),
+			Name: (&vpp_interfaces.SwInterfaceDump{}).GetMessageName(),
 			Ping: true,
-			Message: &interfaces.SwInterfaceDetails{
+			Message: &vpp_interfaces.SwInterfaceDetails{
 				SwIfIndex:     0,
 				InterfaceName: "tap2",
 				Tag:           "mytap2",
-				Flags:         interfaces.IF_STATUS_API_FLAG_ADMIN_UP,
+				Flags:         vpp_interfaces.IF_STATUS_API_FLAG_ADMIN_UP,
 				LinkMtu:       9216,
 				L2Address:     hwAddr1Parse,
 			},
 		},
 		{
-			Name: (&interfaces.SwInterfaceGetTable{}).GetMessageName(),
+			Name: (&vpp_interfaces.SwInterfaceGetTable{}).GetMessageName(),
 			Ping: false,
-			Message: &interfaces.SwInterfaceGetTableReply{
+			Message: &vpp_interfaces.SwInterfaceGetTableReply{
 				Retval: 0,
 				VrfID:  42,
 			},
 		},
 		{
-			Name:    (&ip.IPAddressDump{}).GetMessageName(),
+			Name:    (&vpp_ip.IPAddressDump{}).GetMessageName(),
 			Ping:    true,
-			Message: &ip.IPAddressDetails{},
+			Message: &vpp_ip.IPAddressDetails{},
 		},
 		{
-			Name: (&dhcp.DHCPClientDump{}).GetMessageName(),
+			Name: (&vpp_dhcp.DHCPClientDump{}).GetMessageName(),
 			Ping: true,
-			Message: &dhcp.DHCPClientDetails{
-				Client: dhcp.DHCPClient{
+			Message: &vpp_dhcp.DHCPClientDetails{
+				Client: vpp_dhcp.DHCPClient{
 					SwIfIndex: 0,
 				},
 			},
 		},
 		{
-			Name: (&tapv2.SwInterfaceTapV2Dump{}).GetMessageName(),
+			Name: (&vpp_tapv2.SwInterfaceTapV2Dump{}).GetMessageName(),
 			Ping: true,
-			Message: &tapv2.SwInterfaceTapV2Details{
+			Message: &vpp_tapv2.SwInterfaceTapV2Details{
 				SwIfIndex:  0,
 				HostIfName: []byte("taptap2"),
 			},
 		},
 		{
-			Name: (&vxlan.VxlanTunnelDump{}).GetMessageName(),
+			Name: (&vpp_vxlan.VxlanTunnelDump{}).GetMessageName(),
 			Ping: true,
 		},
 	})
@@ -275,7 +273,7 @@ func TestDumpInterfacesTap2(t *testing.T) {
 	intMeta := intfs[0].Meta
 
 	// This is last checked type, so it will be equal to that
-	Expect(intface.Type).To(Equal(interfaces2.Interface_TAP))
+	Expect(intface.Type).To(Equal(ifs.Interface_TAP))
 	Expect(intface.PhysAddress).To(Equal("01:23:45:67:89:ab"))
 	Expect(intface.Name).To(Equal("mytap2"))
 	Expect(intface.Mtu).To(Equal(uint32(0))) // default mtu
@@ -293,12 +291,12 @@ func TestDumpMemifSocketDetails(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&memif.MemifSocketFilenameDetails{
+	ctx.MockVpp.MockReply(&vpp_memif.MemifSocketFilenameDetails{
 		SocketID:       1,
 		SocketFilename: []byte("test"),
 	})
 
-	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
+	ctx.MockVpp.MockReply(&vpp_vpe.ControlPingReply{})
 
 	result, err := ifHandler.DumpMemifSocketDetails()
 	Expect(err).To(BeNil())
@@ -315,34 +313,34 @@ func TestDumpInterfacesRxPlacement(t *testing.T) {
 
 	ctx.MockReplies([]*vppcallmock.HandleReplies{
 		{
-			Name: (&interfaces.SwInterfaceDump{}).GetMessageName(),
+			Name: (&vpp_interfaces.SwInterfaceDump{}).GetMessageName(),
 			Ping: true,
-			Message: &interfaces.SwInterfaceDetails{
+			Message: &vpp_interfaces.SwInterfaceDetails{
 				InterfaceName: "memif1",
 			},
 		},
 		{
-			Name:    (&interfaces.SwInterfaceGetTable{}).GetMessageName(),
+			Name:    (&vpp_interfaces.SwInterfaceGetTable{}).GetMessageName(),
 			Ping:    false,
-			Message: &interfaces.SwInterfaceGetTableReply{},
+			Message: &vpp_interfaces.SwInterfaceGetTableReply{},
 		},
 		{
-			Name:    (&ip.IPAddressDump{}).GetMessageName(),
+			Name:    (&vpp_ip.IPAddressDump{}).GetMessageName(),
 			Ping:    true,
-			Message: &ip.IPAddressDetails{},
+			Message: &vpp_ip.IPAddressDetails{},
 		},
 		{
-			Name: (&memif.MemifSocketFilenameDump{}).GetMessageName(),
+			Name: (&vpp_memif.MemifSocketFilenameDump{}).GetMessageName(),
 			Ping: true,
-			Message: &memif.MemifSocketFilenameDetails{
+			Message: &vpp_memif.MemifSocketFilenameDetails{
 				SocketID:       1,
 				SocketFilename: []byte("test"),
 			},
 		},
 		{
-			Name: (&memif.MemifDump{}).GetMessageName(),
+			Name: (&vpp_memif.MemifDump{}).GetMessageName(),
 			Ping: true,
-			Message: &memif.MemifDetails{
+			Message: &vpp_memif.MemifDetails{
 				ID:         2,
 				SwIfIndex:  0,
 				Role:       1, // Slave
@@ -353,30 +351,30 @@ func TestDumpInterfacesRxPlacement(t *testing.T) {
 			},
 		},
 		{
-			Name: (&tapv2.SwInterfaceTapV2Dump{}).GetMessageName(),
+			Name: (&vpp_tapv2.SwInterfaceTapV2Dump{}).GetMessageName(),
 			Ping: true,
 		},
 		{
-			Name: (&vxlan.VxlanTunnelDump{}).GetMessageName(),
+			Name: (&vpp_vxlan.VxlanTunnelDump{}).GetMessageName(),
 			Ping: true,
 		},
 		{
-			Name: (&interfaces.SwInterfaceRxPlacementDump{}).GetMessageName(),
+			Name: (&vpp_interfaces.SwInterfaceRxPlacementDump{}).GetMessageName(),
 			Ping: true,
 			Messages: []govppapi.Message{
-				&interfaces.SwInterfaceRxPlacementDetails{
+				&vpp_interfaces.SwInterfaceRxPlacementDetails{
 					SwIfIndex: 0,
 					QueueID:   0,
 					WorkerID:  0, // main thread
 					Mode:      3, // adaptive
 				},
-				&interfaces.SwInterfaceRxPlacementDetails{
+				&vpp_interfaces.SwInterfaceRxPlacementDetails{
 					SwIfIndex: 0,
 					QueueID:   1,
 					WorkerID:  1, // worker 0
 					Mode:      2, // interrupt
 				},
-				&interfaces.SwInterfaceRxPlacementDetails{
+				&vpp_interfaces.SwInterfaceRxPlacementDetails{
 					SwIfIndex: 0,
 					QueueID:   2,
 					WorkerID:  2, // worker 1
@@ -394,17 +392,17 @@ func TestDumpInterfacesRxPlacement(t *testing.T) {
 	// Check memif
 	Expect(intface.GetMemif().SocketFilename).To(Equal("test"))
 	Expect(intface.GetMemif().Id).To(Equal(uint32(2)))
-	Expect(intface.GetMemif().Mode).To(Equal(interfaces2.MemifLink_IP))
+	Expect(intface.GetMemif().Mode).To(Equal(ifs.MemifLink_IP))
 	Expect(intface.GetMemif().Master).To(BeFalse())
 
 	rxMode := intface.GetRxModes()
 	Expect(rxMode).To(HaveLen(3))
 	Expect(rxMode[0].Queue).To(BeEquivalentTo(0))
-	Expect(rxMode[0].Mode).To(BeEquivalentTo(interfaces2.Interface_RxMode_ADAPTIVE))
+	Expect(rxMode[0].Mode).To(BeEquivalentTo(ifs.Interface_RxMode_ADAPTIVE))
 	Expect(rxMode[1].Queue).To(BeEquivalentTo(1))
-	Expect(rxMode[1].Mode).To(BeEquivalentTo(interfaces2.Interface_RxMode_INTERRUPT))
+	Expect(rxMode[1].Mode).To(BeEquivalentTo(ifs.Interface_RxMode_INTERRUPT))
 	Expect(rxMode[2].Queue).To(BeEquivalentTo(2))
-	Expect(rxMode[2].Mode).To(BeEquivalentTo(interfaces2.Interface_RxMode_POLLING))
+	Expect(rxMode[2].Mode).To(BeEquivalentTo(ifs.Interface_RxMode_POLLING))
 
 	rxPlacement := intface.GetRxPlacements()
 	Expect(rxPlacement).To(HaveLen(3))

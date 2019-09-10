@@ -21,17 +21,17 @@ import (
 	"github.com/pkg/errors"
 
 	stn "github.com/ligato/vpp-agent/api/models/vpp/stn"
-	api "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/stn"
+	vpp_stn "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/stn"
 )
 
 // DumpSTNRules implements STN handler, it returns all STN rules present on the VPP
 func (h *StnVppHandler) DumpSTNRules() ([]*vppcalls.StnDetails, error) {
 	var stnDetails []*vppcalls.StnDetails
 
-	req := &api.StnRulesDump{}
+	req := &vpp_stn.StnRulesDump{}
 	reqCtx := h.callsChannel.SendMultiRequest(req)
 	for {
-		msg := &api.StnRulesDetails{}
+		msg := &vpp_stn.StnRulesDetails{}
 		stop, err := reqCtx.ReceiveReply(msg)
 		if stop {
 			break

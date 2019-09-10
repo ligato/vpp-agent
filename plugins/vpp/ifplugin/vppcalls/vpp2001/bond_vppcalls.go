@@ -17,13 +17,12 @@ package vpp2001
 import (
 	"net"
 
-	if_model "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/bond"
+	ifs "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
+	vpp_bond "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/bond"
 )
 
-// AddBondInterface implements interface handler.
-func (h *InterfaceVppHandler) AddBondInterface(ifName string, mac string, bondLink *if_model.BondLink) (uint32, error) {
-	req := &bond.BondCreate{
+func (h *InterfaceVppHandler) AddBondInterface(ifName string, mac string, bondLink *ifs.BondLink) (uint32, error) {
+	req := &vpp_bond.BondCreate{
 		ID:   bondLink.Id,
 		Mode: getBondMode(bondLink.Mode),
 		Lb:   getLoadBalance(bondLink.Lb),
@@ -37,7 +36,7 @@ func (h *InterfaceVppHandler) AddBondInterface(ifName string, mac string, bondLi
 		req.MacAddress = parsedMac
 	}
 
-	reply := &bond.BondCreateReply{}
+	reply := &vpp_bond.BondCreateReply{}
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return 0, err
 	}
@@ -45,12 +44,11 @@ func (h *InterfaceVppHandler) AddBondInterface(ifName string, mac string, bondLi
 	return reply.SwIfIndex, h.SetInterfaceTag(ifName, reply.SwIfIndex)
 }
 
-// DeleteBondInterface implements interface handler.
 func (h *InterfaceVppHandler) DeleteBondInterface(ifName string, ifIdx uint32) error {
-	req := &bond.BondDelete{
+	req := &vpp_bond.BondDelete{
 		SwIfIndex: ifIdx,
 	}
-	reply := &bond.BondDeleteReply{}
+	reply := &vpp_bond.BondDeleteReply{}
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	}
@@ -58,17 +56,17 @@ func (h *InterfaceVppHandler) DeleteBondInterface(ifName string, ifIdx uint32) e
 	return h.RemoveInterfaceTag(ifName, ifIdx)
 }
 
-func getBondMode(mode if_model.BondLink_Mode) uint8 {
+func getBondMode(mode ifs.BondLink_Mode) uint8 {
 	switch mode {
-	case if_model.BondLink_ROUND_ROBIN:
+	case ifs.BondLink_ROUND_ROBIN:
 		return 1
-	case if_model.BondLink_ACTIVE_BACKUP:
+	case ifs.BondLink_ACTIVE_BACKUP:
 		return 2
-	case if_model.BondLink_XOR:
+	case ifs.BondLink_XOR:
 		return 3
-	case if_model.BondLink_BROADCAST:
+	case ifs.BondLink_BROADCAST:
 		return 4
-	case if_model.BondLink_LACP:
+	case ifs.BondLink_LACP:
 		return 5
 	default:
 		// UNKNOWN
@@ -76,15 +74,14 @@ func getBondMode(mode if_model.BondLink_Mode) uint8 {
 	}
 }
 
-// AttachInterfaceToBond implements interface handler.
 func (h *InterfaceVppHandler) AttachInterfaceToBond(ifIdx, bondIfIdx uint32, isPassive, isLongTimeout bool) error {
-	req := &bond.BondEnslave{
+	req := &vpp_bond.BondEnslave{
 		SwIfIndex:     ifIdx,
 		BondSwIfIndex: bondIfIdx,
 		IsPassive:     boolToUint(isPassive),
 		IsLongTimeout: boolToUint(isLongTimeout),
 	}
-	reply := &bond.BondEnslaveReply{}
+	reply := &vpp_bond.BondEnslaveReply{}
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	}
@@ -92,23 +89,22 @@ func (h *InterfaceVppHandler) AttachInterfaceToBond(ifIdx, bondIfIdx uint32, isP
 	return nil
 }
 
-// DetachInterfaceFromBond implements interface handler
 func (h *InterfaceVppHandler) DetachInterfaceFromBond(ifIdx uint32) error {
-	req := &bond.BondDetachSlave{
+	req := &vpp_bond.BondDetachSlave{
 		SwIfIndex: ifIdx,
 	}
-	reply := &bond.BondDetachSlaveReply{}
+	reply := &vpp_bond.BondDetachSlaveReply{}
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	}
 	return nil
 }
 
-func getLoadBalance(lb if_model.BondLink_LoadBalance) uint8 {
+func getLoadBalance(lb ifs.BondLink_LoadBalance) uint8 {
 	switch lb {
-	case if_model.BondLink_L34:
+	case ifs.BondLink_L34:
 		return 1
-	case if_model.BondLink_L23:
+	case ifs.BondLink_L23:
 		return 2
 	default:
 		// L2

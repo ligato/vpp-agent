@@ -34,7 +34,7 @@ func init() {
 	msgs = append(msgs, memclnt.AllMessages()...)
 	msgs = append(msgs, vpe.AllMessages()...)
 
-	vppcalls.Versions["19.08"] = vppcalls.HandlerVersion{
+	vppcalls.Versions["20.01"] = vppcalls.HandlerVersion{
 		Msgs: msgs,
 		New: func(ch govppapi.Channel, stats govppapi.StatsProvider) vppcalls.TelemetryVppAPI {
 			return NewTelemetryVppHandler(ch, stats)
@@ -244,7 +244,6 @@ func (h *TelemetryHandler) getRuntimeInfoStats() (*vppcalls.RuntimeInfo, error) 
 		thread.Items = append(thread.Items, vppcalls.RuntimeItem{
 			Index: uint(node.NodeIndex),
 			Name:  node.NodeName,
-			//State:          fields[1],
 			Calls:          node.Calls,
 			Vectors:        node.Vectors,
 			Suspends:       node.Suspends,

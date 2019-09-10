@@ -21,14 +21,14 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/ipsec"
+	vpp_ipsec "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/ipsec"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/ipsecplugin/vppcalls"
 )
 
 func init() {
 	var msgs []govppapi.Message
-	msgs = append(msgs, ipsec.AllMessages()...)
+	msgs = append(msgs, vpp_ipsec.AllMessages()...)
 
 	vppcalls.Versions["vpp2001"] = vppcalls.HandlerVersion{
 		Msgs: msgs,
@@ -49,8 +49,8 @@ func NewIPSecVppHandler(ch govppapi.Channel, ifIdx ifaceidx.IfaceMetadataIndex, 
 	return &IPSecVppHandler{ch, ifIdx, log}
 }
 
-func ipsecAddrToIP(addr ipsec.Address) net.IP {
-	if addr.Af == ipsec.ADDRESS_IP6 {
+func ipsecAddrToIP(addr vpp_ipsec.Address) net.IP {
+	if addr.Af == vpp_ipsec.ADDRESS_IP6 {
 		addrIP := addr.Un.GetIP6()
 		return net.IP(addrIP[:])
 	}
@@ -58,19 +58,19 @@ func ipsecAddrToIP(addr ipsec.Address) net.IP {
 	return net.IP(addrIP[:])
 }
 
-func IPToAddress(ipstr string) (addr ipsec.Address, err error) {
+func IPToAddress(ipstr string) (addr vpp_ipsec.Address, err error) {
 	netIP := net.ParseIP(ipstr)
 	if netIP == nil {
-		return ipsec.Address{}, fmt.Errorf("invalid IP: %q", ipstr)
+		return vpp_ipsec.Address{}, fmt.Errorf("invalid IP: %q", ipstr)
 	}
 	if ip4 := netIP.To4(); ip4 == nil {
-		addr.Af = ipsec.ADDRESS_IP6
-		var ip6addr ipsec.IP6Address
+		addr.Af = vpp_ipsec.ADDRESS_IP6
+		var ip6addr vpp_ipsec.IP6Address
 		copy(ip6addr[:], netIP.To16())
 		addr.Un.SetIP6(ip6addr)
 	} else {
-		addr.Af = ipsec.ADDRESS_IP4
-		var ip4addr ipsec.IP4Address
+		addr.Af = vpp_ipsec.ADDRESS_IP4
+		var ip4addr vpp_ipsec.IP4Address
 		copy(ip4addr[:], ip4)
 		addr.Un.SetIP4(ip4addr)
 	}

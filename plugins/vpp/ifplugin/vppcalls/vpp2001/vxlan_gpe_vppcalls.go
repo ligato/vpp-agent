@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"net"
 
-	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/vxlan_gpe"
+	ifs "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
+	vpp_gpe "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/vxlan_gpe"
 )
 
-func (h *InterfaceVppHandler) vxLanGpeAddDelTunnel(isAdd uint8, vxLan *interfaces.VxlanLink, vrf, multicastIf uint32) (uint32, error) {
-	req := &vxlan_gpe.VxlanGpeAddDelTunnel{
+func (h *InterfaceVppHandler) vxLanGpeAddDelTunnel(isAdd uint8, vxLan *ifs.VxlanLink, vrf, multicastIf uint32) (uint32, error) {
+	req := &vpp_gpe.VxlanGpeAddDelTunnel{
 		McastSwIfIndex: multicastIf,
 		EncapVrfID:     vrf,
 		DecapVrfID:     vxLan.Gpe.DecapVrfId,
@@ -37,7 +37,7 @@ func (h *InterfaceVppHandler) vxLanGpeAddDelTunnel(isAdd uint8, vxLan *interface
 	req.Local = []byte(srcAddr)
 	req.Remote = []byte(dstAddr)
 
-	reply := &vxlan_gpe.VxlanGpeAddDelTunnelReply{}
+	reply := &vpp_gpe.VxlanGpeAddDelTunnelReply{}
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return 0, err
@@ -46,7 +46,7 @@ func (h *InterfaceVppHandler) vxLanGpeAddDelTunnel(isAdd uint8, vxLan *interface
 }
 
 // AddVxLanGpeTunnel adds new VxLAN-GPE interface.
-func (h *InterfaceVppHandler) AddVxLanGpeTunnel(ifName string, vrf, multicastIf uint32, vxLan *interfaces.VxlanLink) (uint32, error) {
+func (h *InterfaceVppHandler) AddVxLanGpeTunnel(ifName string, vrf, multicastIf uint32, vxLan *ifs.VxlanLink) (uint32, error) {
 	swIfIndex, err := h.vxLanGpeAddDelTunnel(1, vxLan, vrf, multicastIf)
 	if err != nil {
 		return 0, err
@@ -55,7 +55,7 @@ func (h *InterfaceVppHandler) AddVxLanGpeTunnel(ifName string, vrf, multicastIf 
 }
 
 // DeleteVxLanGpeTunnel removes VxLAN-GPE interface.
-func (h *InterfaceVppHandler) DeleteVxLanGpeTunnel(ifName string, vxLan *interfaces.VxlanLink) error {
+func (h *InterfaceVppHandler) DeleteVxLanGpeTunnel(ifName string, vxLan *ifs.VxlanLink) error {
 	swIfIndex, err := h.vxLanGpeAddDelTunnel(0, vxLan, 0, 0)
 	if err != nil {
 		return err

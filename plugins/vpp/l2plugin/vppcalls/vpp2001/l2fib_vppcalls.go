@@ -18,21 +18,21 @@ import (
 	"errors"
 	"net"
 
-	l2nb "github.com/ligato/vpp-agent/api/models/vpp/l2"
-	l2ba "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/l2"
+	l2 "github.com/ligato/vpp-agent/api/models/vpp/l2"
+	vpp_l2 "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/l2"
 )
 
 // AddL2FIB creates L2 FIB table entry.
-func (h *FIBVppHandler) AddL2FIB(fib *l2nb.FIBEntry) error {
+func (h *FIBVppHandler) AddL2FIB(fib *l2.FIBEntry) error {
 	return h.l2fibAddDel(fib, true)
 }
 
 // DeleteL2FIB removes existing L2 FIB table entry.
-func (h *FIBVppHandler) DeleteL2FIB(fib *l2nb.FIBEntry) error {
+func (h *FIBVppHandler) DeleteL2FIB(fib *l2.FIBEntry) error {
 	return h.l2fibAddDel(fib, false)
 }
 
-func (h *FIBVppHandler) l2fibAddDel(fib *l2nb.FIBEntry, isAdd bool) (err error) {
+func (h *FIBVppHandler) l2fibAddDel(fib *l2.FIBEntry, isAdd bool) (err error) {
 	// get bridge domain metadata
 	bdMeta, found := h.bdIndexes.LookupByName(fib.BridgeDomain)
 	if !found {
@@ -41,7 +41,7 @@ func (h *FIBVppHandler) l2fibAddDel(fib *l2nb.FIBEntry, isAdd bool) (err error) 
 
 	// get outgoing interface index
 	swIfIndex := ^uint32(0) // ~0 is used by DROP entries
-	if fib.Action == l2nb.FIBEntry_FORWARD {
+	if fib.Action == l2.FIBEntry_FORWARD {
 		ifaceMeta, found := h.ifIndexes.LookupByName(fib.OutgoingInterface)
 		if !found {
 			return errors.New("failed to get interface metadata")
@@ -59,16 +59,16 @@ func (h *FIBVppHandler) l2fibAddDel(fib *l2nb.FIBEntry, isAdd bool) (err error) 
 	}
 
 	// add L2 FIB
-	req := &l2ba.L2fibAddDel{
+	req := &vpp_l2.L2fibAddDel{
 		IsAdd:     boolToUint(isAdd),
 		Mac:       mac,
 		BdID:      bdMeta.GetIndex(),
 		SwIfIndex: swIfIndex,
 		BviMac:    boolToUint(fib.BridgedVirtualInterface),
 		StaticMac: boolToUint(fib.StaticConfig),
-		FilterMac: boolToUint(fib.Action == l2nb.FIBEntry_DROP),
+		FilterMac: boolToUint(fib.Action == l2.FIBEntry_DROP),
 	}
-	reply := &l2ba.L2fibAddDelReply{}
+	reply := &vpp_l2.L2fibAddDelReply{}
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err

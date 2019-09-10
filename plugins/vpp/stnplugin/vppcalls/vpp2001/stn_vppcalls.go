@@ -21,7 +21,7 @@ import (
 	"github.com/pkg/errors"
 
 	stn "github.com/ligato/vpp-agent/api/models/vpp/stn"
-	api "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/stn"
+	vpp_stn "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/stn"
 )
 
 // AddSTNRule implements STN handler, adds a new STN rule to the VPP.
@@ -65,13 +65,13 @@ func (h *StnVppHandler) addDelStnRule(stnRule *stn.Rule, isAdd bool) error {
 	}
 
 	// add STN rule
-	req := &api.StnAddDelRule{
+	req := &vpp_stn.StnAddDelRule{
 		IsIP4:     isIPv4,
 		IPAddress: byteIP,
 		SwIfIndex: swIfIndex,
 		IsAdd:     boolToUint(isAdd),
 	}
-	reply := &api.StnAddDelRuleReply{}
+	reply := &vpp_stn.StnAddDelRuleReply{}
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err

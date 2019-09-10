@@ -498,27 +498,6 @@ func TestGetNodeCounters(t *testing.T) {
 		Node:  "cdp-input",
 		Name:  "good cdp packets (processed)",
 	}))
-
-	/*Expect(info.Counters[0]).To(Equal(vppcalls.NodeCounter{
-		Value: 32,
-		Name:  "ipsec-output-ip4/IPSec policy protect",
-	}))
-	Expect(info.Counters[6]).To(Equal(vppcalls.NodeCounter{
-		Value: 1,
-		Name:  "arp-input/ARP replies sent",
-	}))
-	Expect(info.Counters[7]).To(Equal(vppcalls.NodeCounter{
-		Value: 4,
-		Name:  "ip4-input/ip4 spoofed local-address packet drops",
-	}))
-	Expect(info.Counters[8]).To(Equal(vppcalls.NodeCounter{
-		Value: 2,
-		Name:  "memif1/1-output/interface is down",
-	}))
-	Expect(info.Counters[9]).To(Equal(vppcalls.NodeCounter{
-		Value: 1,
-		Name:  "cdp-input/good cdp packets (processed)",
-	}))*/
 }
 
 func testSetup(t *testing.T) (*vppcallmock.TestCtx, vppcalls.TelemetryVppAPI) {

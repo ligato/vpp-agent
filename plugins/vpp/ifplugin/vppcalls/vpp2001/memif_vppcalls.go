@@ -15,13 +15,12 @@
 package vpp2001
 
 import (
-	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/memif"
+	ifs "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
+	vpp_memif "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/memif"
 )
 
-// AddMemifInterface implements interface handler.
-func (h *InterfaceVppHandler) AddMemifInterface(ifName string, memIface *interfaces.MemifLink, socketID uint32) (swIdx uint32, err error) {
-	req := &memif.MemifCreate{
+func (h *InterfaceVppHandler) AddMemifInterface(ifName string, memIface *ifs.MemifLink, socketID uint32) (swIdx uint32, err error) {
+	req := &vpp_memif.MemifCreate{
 		ID:         memIface.Id,
 		Mode:       uint8(memIface.Mode),
 		Secret:     []byte(memIface.Secret),
@@ -43,7 +42,7 @@ func (h *InterfaceVppHandler) AddMemifInterface(ifName string, memIface *interfa
 	if req.TxQueues == 0 {
 		req.TxQueues = 1
 	}
-	reply := &memif.MemifCreateReply{}
+	reply := &vpp_memif.MemifCreateReply{}
 
 	if err = h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return 0, err
@@ -52,12 +51,11 @@ func (h *InterfaceVppHandler) AddMemifInterface(ifName string, memIface *interfa
 	return reply.SwIfIndex, h.SetInterfaceTag(ifName, reply.SwIfIndex)
 }
 
-// DeleteMemifInterface implements interface handler.
 func (h *InterfaceVppHandler) DeleteMemifInterface(ifName string, idx uint32) error {
-	req := &memif.MemifDelete{
+	req := &vpp_memif.MemifDelete{
 		SwIfIndex: idx,
 	}
-	reply := &memif.MemifDeleteReply{}
+	reply := &vpp_memif.MemifDeleteReply{}
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
@@ -66,14 +64,13 @@ func (h *InterfaceVppHandler) DeleteMemifInterface(ifName string, idx uint32) er
 	return h.RemoveInterfaceTag(ifName, idx)
 }
 
-// RegisterMemifSocketFilename implements interface handler.
 func (h *InterfaceVppHandler) RegisterMemifSocketFilename(filename []byte, id uint32) error {
-	req := &memif.MemifSocketFilenameAddDel{
+	req := &vpp_memif.MemifSocketFilenameAddDel{
 		SocketFilename: filename,
 		SocketID:       id,
 		IsAdd:          1, // sockets can be added only
 	}
-	reply := &memif.MemifSocketFilenameAddDelReply{}
+	reply := &vpp_memif.MemifSocketFilenameAddDelReply{}
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
