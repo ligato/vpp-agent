@@ -260,7 +260,7 @@ func (c *Connection) connectLoop(connChan chan ConnectionEvent) {
 	// loop until connected
 	for {
 		if err := c.vppClient.WaitReady(); err != nil {
-			log.Warnf("wait ready failed: %v", err)
+			log.Debugf("wait ready failed: %v", err)
 		}
 		if err := c.connectVPP(); err == nil {
 			// signal connected event

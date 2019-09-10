@@ -3,7 +3,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:576638fbd32f0237520d280e7df80092293efd6780f639546bb258768f150c83"
+  digest = "1:7c5998a39c19c89a2f16e00c57e983589ce84b4c5c982e0529eafda2f02a89b9"
   name = "git.fd.io/govpp.git"
   packages = [
     "adapter",
@@ -16,10 +16,10 @@
     "cmd/binapi-generator",
     "codec",
     "core",
-    "examples/binapi/memclnt",
+    "version",
   ]
   pruneopts = "UT"
-  revision = "bde85d422c7949ec32fb067e9c36320ccc47fb9e"
+  revision = "48198748bdfcc7d30c794cdac19de822da53f840"
 
 [[projects]]
   branch = "master"

@@ -257,7 +257,7 @@ func (ch *Channel) receiveReplyInternal(msg api.Message, expSeqNum uint16) (last
 		case vppReply := <-ch.replyChan:
 			ignore, lastReplyReceived, err = ch.processReply(vppReply, expSeqNum, msg)
 			if ignore {
-				logrus.WithFields(logrus.Fields{
+				log.WithFields(logrus.Fields{
 					"expSeqNum": expSeqNum,
 					"channel":   ch.id,
 				}).Warnf("ignoring received reply: %+v (expecting: %s)", vppReply, msg.GetMessageName())
@@ -266,7 +266,7 @@ func (ch *Channel) receiveReplyInternal(msg api.Message, expSeqNum uint16) (last
 			return lastReplyReceived, err
 
 		case <-timer.C:
-			logrus.WithFields(logrus.Fields{
+			log.WithFields(logrus.Fields{
 				"expSeqNum": expSeqNum,
 				"channel":   ch.id,
 			}).Debugf("timeout (%v) waiting for reply: %s", ch.replyTimeout, msg.GetMessageName())
@@ -281,7 +281,7 @@ func (ch *Channel) processReply(reply *vppReply, expSeqNum uint16, msg api.Messa
 	cmpSeqNums := compareSeqNumbers(reply.seqNum, expSeqNum)
 	if cmpSeqNums == -1 {
 		// reply received too late, ignore the message
-		logrus.WithField("seqNum", reply.seqNum).
+		log.WithField("seqNum", reply.seqNum).
 			Warn("Received reply to an already closed binary API request")
 		ignore = true
 		return

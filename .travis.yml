@@ -68,7 +68,7 @@ jobs:
       script:
         - make verify-binapi
         - make integration-tests
-    - env: VPP_VERSION=1901
+    - env: VPP_VERSION=2001
       script:
         - make verify-binapi
         - make integration-tests
@@ -80,7 +80,7 @@ jobs:
     - env: VPP_VERSION=1908
       script:
         - make e2e-tests
-    - env: VPP_VERSION=1901
+    - env: VPP_VERSION=2001
       script:
         - make e2e-tests
 
