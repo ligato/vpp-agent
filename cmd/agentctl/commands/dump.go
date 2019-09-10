@@ -29,7 +29,6 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/spf13/cobra"
 
-	"github.com/ligato/vpp-agent/pkg/models"
 	"github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 )
 
@@ -50,8 +49,8 @@ func NewDumpCommand(cli *AgentCli) *cobra.Command {
  For a list of all supported models that can be dumped run:
   $ agentctl model list
 
- To specify the HTTP address of the agent use --httpaddr flag:
-  $ agentctl --httpaddr 172.17.0.3:9191 dump vpp.interfaces
+ To specify the HTTP address of the agent use --host flag:
+  $ agentctl --host 172.17.0.3 dump vpp.interfaces
 `,
 		Args: cobra.ExactArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
@@ -129,9 +128,13 @@ func printDumpTable(dump []api.KVWithMetadata) {
 }
 
 func dumpKeyPrefix(cli *AgentCli, keyPrefix string, dumpView string) ([]api.KVWithMetadata, error) {
+	type ProtoWithName struct {
+		ProtoMsgName string
+		ProtoMsgData string
+	}
 	type KVWithMetadata struct {
 		api.KVWithMetadata
-		Value json.RawMessage
+		Value ProtoWithName
 	}
 	var kvdump []KVWithMetadata
 
@@ -152,17 +155,15 @@ func dumpKeyPrefix(cli *AgentCli, keyPrefix string, dumpView string) ([]api.KVWi
 	var dump []api.KVWithMetadata
 	for _, kvd := range kvdump {
 		d := kvd.KVWithMetadata
-		key := d.Key
-		model, err := models.GetModelForKey(key)
-		if err != nil {
-			return nil, err
+		if kvd.Value.ProtoMsgName == "" {
+			return nil, fmt.Errorf("empty proto message name for key %s", d.Key)
 		}
-		valueType := proto.MessageType(model.ProtoName())
+		valueType := proto.MessageType(kvd.Value.ProtoMsgName)
 		if valueType == nil {
-			return nil, fmt.Errorf("unknown proto message defined for key %s", key)
+			return nil, fmt.Errorf("unknown proto message defined for key %s", d.Key)
 		}
 		d.Value = reflect.New(valueType.Elem()).Interface().(proto.Message)
-		if err := jsonpb.Unmarshal(bytes.NewReader(kvd.Value), d.Value); err != nil {
+		if err = jsonpb.UnmarshalString(kvd.Value.ProtoMsgData, d.Value); err != nil {
 			return nil, fmt.Errorf("decoding reply failed: %v", err)
 		}
 		dump = append(dump, d)
