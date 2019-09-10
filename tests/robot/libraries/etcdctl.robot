@@ -1,9 +1,10 @@
 [Documentation]     Keywords for working with VPP Ctl container
 
 *** Settings ***
-Library        etcdctl.py
 Library        String
 
+Library        etcdctl.py
+Library        vpp_term.py
 *** Variables ***
 
 *** Keywords ***
@@ -442,17 +443,26 @@ Get Linux Route As Json
 
 Check ACL Reply
     [Arguments]         ${node}    ${acl_name}   ${reply_json}    ${reply_term}    ${api_h}=$(API_HANDLER}
+    [Documentation]     Get ACL data from VAT terminal and verify response against expected data.
     ${acl_d}=           Get ACL As Json    ${node}    ${acl_name}
     ${term_d}=          vat_term: Check ACL     ${node}    ${acl_name}
-    ${term_d_lines}=    Split To Lines    ${term_d}
     ${data}=            OperatingSystem.Get File    ${reply_json}
     ${data}=            Replace Variables      ${data}
     Should Be Equal     ${data}   ${acl_d}
     ${data}=            OperatingSystem.Get File    ${reply_term}
     ${data}=            Replace Variables      ${data}
-    ${t_data_lines}=    Split To Lines    ${data}
-    List Should Contain Sub List    ${term_d_lines}    ${t_data_lines}
+    Verify API Response    ${term_d}    ${data}
 
+Check ACL All Reply
+    [Arguments]         ${node}    ${reply_json}     ${reply_term}
+    ${acl_d}=           Get All ACL As Json    ${node}
+    ${term_d}=          vat_term: Check All ACL     ${node}
+    ${data}=            OperatingSystem.Get File    ${reply_json}
+    ${data}=            Replace Variables      ${data}
+    Should Be Equal     ${data}   ${acl_d}
+    ${data}=            OperatingSystem.Get File    ${reply_term}
+    ${data}=            Replace Variables      ${data}
+    Verify API Response    ${term_d}    ${data}
 
 Put ARP
     [Arguments]    ${node}    ${interface}    ${ipv4}    ${MAC}    ${static}
