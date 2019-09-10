@@ -23,7 +23,6 @@ import (
 
 	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	vpp_ipsec "github.com/ligato/vpp-agent/api/models/vpp/ipsec"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/vxlan_gpe"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1908/bond"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1908/dhcp"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1908/gre"
@@ -34,6 +33,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1908/tapv2"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1908/vmxnet3"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1908/vxlan"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1908/vxlan_gpe"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
 )
 
@@ -105,17 +105,17 @@ func (h *InterfaceVppHandler) dumpInterfaces(ifIdxs ...uint32) (map[uint32]*vppc
 				Mtu:         getMtu(ifDetails.LinkMtu),
 			},
 			Meta: &vppcalls.InterfaceMeta{
-				SwIfIndex:    ifDetails.SwIfIndex,
-				SupSwIfIndex: ifDetails.SupSwIfIndex,
-				L2Address:    l2addr,
-				InternalName: ifaceName,
-				AdminState:   ifDetails.AdminUpDown,
-				LinkState:    ifDetails.LinkUpDown,
-				LinkDuplex:   ifDetails.LinkDuplex,
-				LinkMTU:      ifDetails.LinkMtu,
-				LinkSpeed:    ifDetails.LinkSpeed,
-				SubID:        ifDetails.SubID,
-				Tag:          cleanString(ifDetails.Tag),
+				SwIfIndex:      ifDetails.SwIfIndex,
+				SupSwIfIndex:   ifDetails.SupSwIfIndex,
+				L2Address:      l2addr,
+				InternalName:   ifaceName,
+				IsAdminStateUp: uintToBool(ifDetails.AdminUpDown),
+				IsLinkStateUp:  uintToBool(ifDetails.LinkUpDown),
+				LinkDuplex:     uint32(ifDetails.LinkDuplex),
+				LinkMTU:        ifDetails.LinkMtu,
+				LinkSpeed:      ifDetails.LinkSpeed,
+				SubID:          ifDetails.SubID,
+				Tag:            cleanString(ifDetails.Tag),
 			},
 		}
 

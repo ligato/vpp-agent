@@ -31,17 +31,17 @@ type InterfaceDetails struct {
 
 // InterfaceMeta is combination of proto-modelled Interface data and VPP provided metadata
 type InterfaceMeta struct {
-	SwIfIndex    uint32           `json:"sw_if_index"`
-	SupSwIfIndex uint32           `json:"sub_sw_if_index"`
-	L2Address    net.HardwareAddr `json:"l2_address"`
-	InternalName string           `json:"internal_name"`
-	AdminState   uint8            `json:"admin_state"`
-	LinkState    uint8            `json:"link_state"`
-	LinkDuplex   uint8            `json:"link_duplex"`
-	LinkMTU      uint16           `json:"link_mtu"`
-	LinkSpeed    uint32           `json:"link_speed"`
-	SubID        uint32           `json:"sub_id"`
-	Tag          string           `json:"tag"`
+	SwIfIndex      uint32           `json:"sw_if_index"`
+	SupSwIfIndex   uint32           `json:"sub_sw_if_index"`
+	L2Address      net.HardwareAddr `json:"l2_address"`
+	InternalName   string           `json:"internal_name"`
+	IsAdminStateUp bool             `json:"is_admin_state_up"`
+	IsLinkStateUp  bool             `json:"is_link_state_up"`
+	LinkDuplex     uint32           `json:"link_duplex"`
+	LinkMTU        uint16           `json:"link_mtu"`
+	LinkSpeed      uint32           `json:"link_speed"`
+	SubID          uint32           `json:"sub_id"`
+	Tag            string           `json:"tag"`
 	// dhcp
 	Dhcp *Dhcp `json:"dhcp"`
 	// vrf

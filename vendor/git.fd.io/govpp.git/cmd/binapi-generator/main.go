@@ -27,6 +27,8 @@ import (
 
 	"github.com/bennyscetbun/jsongo"
 	"github.com/sirupsen/logrus"
+
+	"git.fd.io/govpp.git/version"
 )
 
 var (
@@ -40,16 +42,40 @@ var (
 	includeBinapiNames = flag.Bool("include-binapi-names", false, "Include binary API names in struct tag.")
 
 	continueOnError = flag.Bool("continue-onerror", false, "Continue with next file on error.")
+	debugMode       = flag.Bool("debug", os.Getenv("GOVPP_DEBUG") != "", "Enable debug mode.")
 
-	debug = flag.Bool("debug", debugMode, "Enable debug mode.")
+	printVersion = flag.Bool("version", false, "Prints current version and exits.")
 )
-
-var debugMode = os.Getenv("DEBUG_BINAPI_GENERATOR") != ""
 
 func main() {
 	flag.Parse()
-	if *debug {
+
+	if flag.NArg() > 1 {
+		flag.Usage()
+		os.Exit(1)
+	}
+
+	if flag.NArg() > 0 {
+		switch cmd := flag.Arg(0); cmd {
+		case "version":
+			fmt.Fprintln(os.Stdout, version.Verbose())
+			os.Exit(0)
+
+		default:
+			fmt.Fprintf(os.Stderr, "unknown command: %s\n", cmd)
+			flag.Usage()
+			os.Exit(2)
+		}
+	}
+
+	if *printVersion {
+		fmt.Fprintln(os.Stdout, version.Info())
+		os.Exit(0)
+	}
+
+	if *debugMode {
 		logrus.SetLevel(logrus.DebugLevel)
+		logrus.Info("debug mode enabled")
 	}
 
 	if err := run(*theInputFile, *theInputDir, *theOutputDir, *continueOnError); err != nil {
@@ -116,6 +142,14 @@ func getInputFiles(inputDir string, deep int) (files []string, err error) {
 	return files, nil
 }
 
+func parseInputJSON(inputData []byte) (*jsongo.JSONNode, error) {
+	jsonRoot := new(jsongo.JSONNode)
+	if err := json.Unmarshal(inputData, jsonRoot); err != nil {
+		return nil, fmt.Errorf("unmarshalling JSON failed: %v", err)
+	}
+	return jsonRoot, nil
+}
+
 // generateFromFile generates Go package from one input JSON file
 func generateFromFile(inputFile, outputDir string) error {
 	// create generator context
@@ -142,9 +176,9 @@ func generateFromFile(inputFile, outputDir string) error {
 		return fmt.Errorf("reading input file %s failed: %v", ctx.inputFile, err)
 	}
 	// parse JSON data into objects
-	jsonRoot := new(jsongo.JSONNode)
-	if err := json.Unmarshal(ctx.inputData, jsonRoot); err != nil {
-		return fmt.Errorf("unmarshalling JSON failed: %v", err)
+	jsonRoot, err := parseInputJSON(ctx.inputData)
+	if err != nil {
+		return fmt.Errorf("parsing JSON input failed: %v", err)
 	}
 	ctx.packageData, err = parsePackage(ctx, jsonRoot)
 	if err != nil {
@@ -177,7 +211,7 @@ func generateFromFile(inputFile, outputDir string) error {
 }
 
 func logf(f string, v ...interface{}) {
-	if *debug {
+	if *debugMode {
 		logrus.Debugf(f, v...)
 	}
 }

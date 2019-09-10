@@ -372,6 +372,16 @@ func (a *VppAdapter) MockReplyHandler(replyHandler ReplyHandler) {
 	a.mode = useReplyHandlers
 }
 
+// MockClearReplyHanders clears all reply handlers that were registered
+// Will also set the mode to useReplyHandlers
+func (a *VppAdapter) MockClearReplyHandlers () {
+	a.repliesLock.Lock()
+	defer a.repliesLock.Unlock()
+
+	a.replyHandlers = a.replyHandlers[:0]
+	a.mode = useReplyHandlers
+}
+
 func setSeqNum(context uint32, seqNum uint16) (newContext uint32) {
 	context &= 0xffff0000
 	context |= uint32(seqNum)

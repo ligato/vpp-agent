@@ -45,9 +45,9 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
 
-	_ "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls/vpp1901"
 	_ "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls/vpp1904"
 	_ "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls/vpp1908"
+	_ "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls/vpp2001"
 )
 
 // IfPlugin configures VPP interfaces using GoVPP.
