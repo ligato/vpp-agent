@@ -108,17 +108,6 @@ type InterfaceSpanDetails struct {
 	IsL2          uint8
 }
 
-// GreTunnelDetails is something
-type GreTunnelDetails struct {
-	SwIfIndex  uint32
-	Instance   uint32
-	TunnelType uint8
-	SrcAddress net.IP
-	DstAddress net.IP
-	OuterFibID uint32
-	SessionID  uint16
-}
-
 // InterfaceVppAPI provides methods for creating and managing interface plugin
 type InterfaceVppAPI interface {
 	InterfaceVppRead
@@ -143,6 +132,10 @@ type InterfaceVppAPI interface {
 	AddVxLanTunnel(ifName string, vrf, multicastIf uint32, vxLan *interfaces.VxlanLink) (swIndex uint32, err error)
 	// DeleteVxLanTunnel calls AddDelVxLanTunnelReq with flag add=0.
 	DeleteVxLanTunnel(ifName string, idx, vrf uint32, vxLan *interfaces.VxlanLink) error
+	// AddVxLanGpeTunnel creates VxLAN-GPE tunnel.
+	AddVxLanGpeTunnel(ifName string, vrf, multicastIf uint32, vxLan *interfaces.VxlanLink) (uint32, error)
+	// DeleteVxLanGpeTunnel removes VxLAN-GPE tunnel.
+	DeleteVxLanGpeTunnel(ifName string, vxLan *interfaces.VxlanLink) error
 	// AddIPSecTunnelInterface adds a new IPSec tunnel interface
 	AddIPSecTunnelInterface(ifName string, ipSecLink *interfaces.IPSecLink) (uint32, error)
 	// DeleteIPSecTunnelInterface removes existing IPSec tunnel interface

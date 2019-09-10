@@ -50,6 +50,7 @@ const (
 	afPacketHostInterfaceDep = "afpacket-host-interface-exists"
 	vxlanMulticastDep        = "vxlan-multicast-interface-exists"
 	vxlanVrfTableDep         = "vrf-table-for-vxlan-exists"
+	vxlanGpeVrfTableDep      = "vrf-table-for-vxlan-gpe-exists"
 	microserviceDep          = "microservice-available"
 	parentInterfaceDep       = "parent-interface-exists"
 
@@ -121,6 +122,24 @@ var (
 
 	// ErrGreDstAddrMissing is returned when destination address was not set or set to an empty string.
 	ErrGreDstAddrMissing = errors.Errorf("missing destination address for GRE tunnel")
+
+	// ErrVxLanGpeBadProtocol is returned when protocol for VxLAN-GPE was not set or set to UNKNOWN.
+	ErrVxLanGpeBadProtocol = errors.Errorf("bad protocol for VxLAN-GPE")
+
+	// ErrVxLanGpeNonZeroDecapVrfID is returned when DecapVrfId was not zero for protocols other than IP4 or IP6.
+	ErrVxLanGpeNonZeroDecapVrfID = errors.Errorf("DecapVrfId must be zero for protocols other than IP4 or IP6")
+
+	// ErrVxLanSrcAddrMissing is returned when source address was not set or set to an empty string.
+	ErrVxLanSrcAddrMissing = errors.Errorf("missing source address for VxLAN tunnel")
+
+	// ErrVxLanDstAddrMissing is returned when destination address was not set or set to an empty string.
+	ErrVxLanDstAddrMissing = errors.Errorf("missing destination address for VxLAN tunnel")
+
+	// ErrVxLanDstAddrBad is returned when destination address was not set to valid IP address.
+	ErrVxLanDstAddrBad = errors.Errorf("bad destination address for VxLAN tunnel")
+
+	// ErrVxLanMulticastIntfMissing is returned when interface for multicast was not specified.
+	ErrVxLanMulticastIntfMissing = errors.Errorf("missing multicast interface name for VxLAN tunnel")
 )
 
 // InterfaceDescriptor teaches KVScheduler how to configure VPP interfaces.
@@ -459,6 +478,36 @@ func (d *InterfaceDescriptor) Validate(key string, intf *interfaces.Interface) e
 		if intf.GetGre().DstAddr == "" {
 			return kvs.NewInvalidValueError(ErrGreDstAddrMissing, "link.gre.dst_addr")
 		}
+	case interfaces.Interface_VXLAN_TUNNEL:
+		if intf.GetVxlan().SrcAddress == "" {
+			return kvs.NewInvalidValueError(ErrVxLanSrcAddrMissing, "link.vxlan.src_address")
+		}
+		if intf.GetVxlan().DstAddress == "" {
+			return kvs.NewInvalidValueError(ErrVxLanDstAddrMissing, "link.vxlan.dst_address")
+		}
+
+		if dst := net.ParseIP(intf.GetVxlan().DstAddress); dst != nil {
+			// if destination address is multicast then `Multicast` field must contain interface name.
+			if dst.IsMulticast() && intf.GetVxlan().Multicast == "" {
+				return kvs.NewInvalidValueError(ErrVxLanMulticastIntfMissing, "link.vxlan.multicast")
+			}
+		} else {
+			// destination address is not valid IP address.
+			return kvs.NewInvalidValueError(ErrVxLanDstAddrBad, "link.vxlan.dst_address")
+		}
+
+		if gpe := intf.GetVxlan().Gpe; gpe != nil {
+			if gpe.Protocol == interfaces.VxlanLink_Gpe_UNKNOWN {
+				return kvs.NewInvalidValueError(ErrVxLanGpeBadProtocol, "link.vxlan.gpe.protocol")
+			}
+
+			// DecapVrfId must be zero if the protocol being encapsulated is not IP4 or IP6.
+			isIP46 := gpe.Protocol == interfaces.VxlanLink_Gpe_IP4 || gpe.Protocol == interfaces.VxlanLink_Gpe_IP6
+			if !isIP46 && gpe.DecapVrfId != 0 {
+				return kvs.NewInvalidValueError(ErrVxLanGpeNonZeroDecapVrfID, "link.vxlan.gpe.decap_vrf_id")
+			}
+
+		}
 	}
 
 	// validate unnumbered
@@ -557,6 +606,20 @@ func (d *InterfaceDescriptor) Dependencies(key string, intf *interfaces.Interfac
 				Key:   l3.VrfTableKey(intf.GetVrf(), protocol),
 			})
 		}
+
+		if gpe := intf.GetVxlan().Gpe; gpe != nil {
+			if gpe.DecapVrfId != 0 {
+				var protocol l3.VrfTable_Protocol
+				if gpe.Protocol == interfaces.VxlanLink_Gpe_IP6 {
+					protocol = l3.VrfTable_IPV6
+				}
+				dependencies = append(dependencies, kvs.Dependency{
+					Label: vxlanGpeVrfTableDep,
+					Key:   l3.VrfTableKey(gpe.DecapVrfId, protocol),
+				})
+			}
+		}
+
 	case interfaces.Interface_SUB_INTERFACE:
 		// SUB_INTERFACE requires parent interface
 		if parentName := intf.GetSub().GetParentName(); parentName != "" {

@@ -75,7 +75,12 @@ func (d *InterfaceDescriptor) Create(key string, intf *interfaces.Interface) (me
 			}
 			multicastIfIdx = multicastMeta.SwIfIndex
 		}
-		ifIdx, err = d.ifHandler.AddVxLanTunnel(intf.Name, intf.GetVrf(), multicastIfIdx, intf.GetVxlan())
+
+		if intf.GetVxlan().Gpe == nil {
+			ifIdx, err = d.ifHandler.AddVxLanTunnel(intf.Name, intf.GetVrf(), multicastIfIdx, intf.GetVxlan())
+		} else {
+			ifIdx, err = d.ifHandler.AddVxLanGpeTunnel(intf.Name, intf.GetVrf(), multicastIfIdx, intf.GetVxlan())
+		}
 		if err != nil {
 			d.log.Error(err)
 			return nil, err
@@ -228,7 +233,11 @@ func (d *InterfaceDescriptor) Delete(key string, intf *interfaces.Interface, met
 	case interfaces.Interface_MEMIF:
 		err = d.ifHandler.DeleteMemifInterface(intf.Name, ifIdx)
 	case interfaces.Interface_VXLAN_TUNNEL:
-		err = d.ifHandler.DeleteVxLanTunnel(intf.Name, ifIdx, intf.Vrf, intf.GetVxlan())
+		if intf.GetVxlan().Gpe == nil {
+			err = d.ifHandler.DeleteVxLanTunnel(intf.Name, ifIdx, intf.Vrf, intf.GetVxlan())
+		} else {
+			err = d.ifHandler.DeleteVxLanGpeTunnel(intf.Name, intf.GetVxlan())
+		}
 	case interfaces.Interface_SOFTWARE_LOOPBACK:
 		err = d.ifHandler.DeleteLoopbackInterface(intf.Name, ifIdx)
 	case interfaces.Interface_DPDK:
