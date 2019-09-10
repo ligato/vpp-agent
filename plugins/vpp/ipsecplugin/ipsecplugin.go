@@ -32,7 +32,6 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/ipsecplugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/vpp/ipsecplugin/vppcalls"
 
-	_ "github.com/ligato/vpp-agent/plugins/vpp/ipsecplugin/vppcalls/vpp1901"
 	_ "github.com/ligato/vpp-agent/plugins/vpp/ipsecplugin/vppcalls/vpp1904"
 	_ "github.com/ligato/vpp-agent/plugins/vpp/ipsecplugin/vppcalls/vpp1908"
 	_ "github.com/ligato/vpp-agent/plugins/vpp/ipsecplugin/vppcalls/vpp2001"

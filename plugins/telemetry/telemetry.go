@@ -29,7 +29,6 @@ import (
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 	"github.com/ligato/vpp-agent/plugins/telemetry/vppcalls"
 
-	_ "github.com/ligato/vpp-agent/plugins/telemetry/vppcalls/vpp1901"
 	_ "github.com/ligato/vpp-agent/plugins/telemetry/vppcalls/vpp1904"
 	_ "github.com/ligato/vpp-agent/plugins/telemetry/vppcalls/vpp1908"
 	_ "github.com/ligato/vpp-agent/plugins/telemetry/vppcalls/vpp2001"

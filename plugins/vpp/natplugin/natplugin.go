@@ -32,7 +32,6 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/natplugin/descriptor"
 	"github.com/ligato/vpp-agent/plugins/vpp/natplugin/vppcalls"
 
-	_ "github.com/ligato/vpp-agent/plugins/vpp/natplugin/vppcalls/vpp1901"
 	_ "github.com/ligato/vpp-agent/plugins/vpp/natplugin/vppcalls/vpp1904"
 	_ "github.com/ligato/vpp-agent/plugins/vpp/natplugin/vppcalls/vpp1908"
 	_ "github.com/ligato/vpp-agent/plugins/vpp/natplugin/vppcalls/vpp2001"

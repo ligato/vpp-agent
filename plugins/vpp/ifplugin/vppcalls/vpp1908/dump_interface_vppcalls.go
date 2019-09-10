@@ -23,7 +23,6 @@ import (
 
 	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	vpp_ipsec "github.com/ligato/vpp-agent/api/models/vpp/ipsec"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/vxlan_gpe"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1908/bond"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1908/dhcp"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1908/gre"
@@ -34,6 +33,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1908/tapv2"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1908/vmxnet3"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1908/vxlan"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1908/vxlan_gpe"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
 )
 

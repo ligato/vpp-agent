@@ -33,7 +33,6 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/l2plugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/vpp/l2plugin/vppcalls"
 
-	_ "github.com/ligato/vpp-agent/plugins/vpp/l2plugin/vppcalls/vpp1901"
 	_ "github.com/ligato/vpp-agent/plugins/vpp/l2plugin/vppcalls/vpp1904"
 	_ "github.com/ligato/vpp-agent/plugins/vpp/l2plugin/vppcalls/vpp1908"
 	_ "github.com/ligato/vpp-agent/plugins/vpp/l2plugin/vppcalls/vpp2001"

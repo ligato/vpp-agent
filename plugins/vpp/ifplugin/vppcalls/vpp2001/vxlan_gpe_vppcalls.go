@@ -1,11 +1,11 @@
-package vpp1901
+package vpp2001
 
 import (
 	"fmt"
 	"net"
 
 	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1901/vxlan_gpe"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/vxlan_gpe"
 )
 
 func (h *InterfaceVppHandler) vxLanGpeAddDelTunnel(isAdd uint8, vxLan *interfaces.VxlanLink, vrf, multicastIf uint32) (uint32, error) {

@@ -33,6 +33,7 @@ package vpp2001
 //go:generate binapigen --input-file=/usr/share/vpp/api/core/tapv2.api.json
 //go:generate binapigen --input-file=/usr/share/vpp/api/core/vpe.api.json
 //go:generate binapigen --input-file=/usr/share/vpp/api/core/vxlan.api.json
+//go:generate binapigen --input-file=/usr/share/vpp/api/core/vxlan_gpe.api.json
 //go:generate binapigen --input-file=/usr/share/vpp/api/plugins/abf.api.json
 //go:generate binapigen --input-file=/usr/share/vpp/api/plugins/acl.api.json
 //go:generate binapigen --input-file=/usr/share/vpp/api/plugins/memif.api.json

@@ -29,7 +29,6 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/aclplugin"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin"
 
-	_ "github.com/ligato/vpp-agent/plugins/vpp/abfplugin/vppcalls/vpp1901"
 	_ "github.com/ligato/vpp-agent/plugins/vpp/abfplugin/vppcalls/vpp1904"
 	_ "github.com/ligato/vpp-agent/plugins/vpp/abfplugin/vppcalls/vpp1908"
 	_ "github.com/ligato/vpp-agent/plugins/vpp/abfplugin/vppcalls/vpp2001"
