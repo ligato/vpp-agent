@@ -19,7 +19,6 @@ Test Teardown     TestTeardown
 ${REPLY_DATA_FOLDER}            ${CURDIR}/replyACL
 ${VARIABLES}=       common
 ${ENV}=             common
-${api_handler}=     222
 ${ACL1_NAME}=       acl1_tcp
 ${ACL2_NAME}=       acl2_tcp
 ${ACL3_NAME}=       acl3_UDP
@@ -158,20 +157,6 @@ Check All 6 ACLs Added
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Check ACL All Reply    agent_vpp_1     ${REPLY_DATA_FOLDER}/reply_aclIPv6_all.txt        ${REPLY_DATA_FOLDER}/reply_aclIPv6_all_term.txt
 
 *** Keywords ***
-
-Check ACL All Reply
-    [Arguments]         ${node}    ${reply_json}     ${reply_term}
-    ${acl_d}=           Get All ACL As Json    ${node}
-    ${term_d}=          vat_term: Check All ACL     ${node}
-    ${term_d_lines}=    Split To Lines    ${term_d}
-    ${data}=            OperatingSystem.Get File    ${reply_json}
-    ${data}=            Replace Variables      ${data}
-    Should Be Equal     ${data}   ${acl_d}
-    ${data}=            OperatingSystem.Get File    ${reply_term}
-    ${data}=            Replace Variables      ${data}
-    ${t_data_lines}=    Split To Lines    ${data}
-    List Should Contain Sub List    ${term_d_lines}    ${t_data_lines}
-
 
 TestSetup
     Make Datastore Snapshots    ${TEST_NAME}_test_setup
