@@ -72,7 +72,7 @@ vpp_term: Show Interfaces Address
 vpp_term: Show Hardware
     [Arguments]        ${node}    ${interface}=${EMPTY}
     [Documentation]    Show interfaces hardware through vpp terminal
-    ${out}=            vpp_term: Issue Command  ${node}   sh h ${interface}
+    ${out}=            vpp_term: Issue Command  ${node}   show hardware ${interface}
     [Return]           ${out}
 
 vpp_term: Show IP Fib
@@ -141,28 +141,35 @@ vpp_term: Check No Ping Within Interface
     Should Not Contain     ${out}    from ${ip}
     Should Contain    ${out}    100% packet loss
 
-vpp_term: Check Interface Presence
-    [Arguments]        ${node}     ${mac}    ${status}=${TRUE}
+vpp_term: Check Interface Is Present
+    [Arguments]        ${node}     ${mac}
     [Documentation]    Checking if specified interface with mac exists in VPP
     ${ints}=           vpp_term: Show Hardware    ${node}
     ${result}=         Run Keyword And Return Status    Should Contain    ${ints}    ${mac}
-    Should Be Equal    ${result}    ${status}
+    Should Be Equal    ${result}    ${TRUE}    values=False    msg=Interface with MAC address ${mac} not present on VPP.
+
+vpp_term: Check Interface Is Not Present
+    [Arguments]        ${node}     ${mac}
+    [Documentation]    Checking if specified interface with mac exists in VPP
+    ${ints}=           vpp_term: Show Hardware    ${node}
+    ${result}=         Run Keyword And Return Status    Should Contain    ${ints}    ${mac}
+    Should Be Equal    ${result}    ${FALSE}    values=False    msg=Interface with MAC address ${mac} is present on VPP but shouldn't.
 
 vpp_term: Interface Is Created
     [Arguments]    ${node}    ${mac}
-    Wait Until Keyword Succeeds    ${interface_timeout}   3s    vpp_term: Check Interface Presence    ${node}    ${mac}
+    Wait Until Keyword Succeeds    ${interface_timeout}   3s    vpp_term: Check Interface Is Present    ${node}    ${mac}
 
 vpp_term: Interface Is Deleted
     [Arguments]    ${node}    ${mac}
-    Wait Until Keyword Succeeds    ${interface_timeout}   3s    vpp_term: Check Interface Presence    ${node}    ${mac}    ${FALSE}
+    Wait Until Keyword Succeeds    ${interface_timeout}   3s    vpp_term: Check Interface Is Not Present    ${node}    ${mac}
 
 vpp_term: Interface Exists
     [Arguments]    ${node}    ${mac}
-    vpp_term: Check Interface Presence    ${node}    ${mac}
+    vpp_term: Check Interface Is Present    ${node}    ${mac}
 
 vpp_term: Interface Not Exists
     [Arguments]    ${node}    ${mac}
-    vpp_term: Check Interface Presence    ${node}    ${mac}    ${FALSE}
+    vpp_term: Check Interface Is Not Present    ${node}    ${mac}
 
 vpp_term: Check Interface UpDown Status
     [Arguments]          ${node}     ${interface}    ${status}=1
