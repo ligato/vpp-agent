@@ -24,13 +24,13 @@ Add SA1 Into VPP
     IP Sec On agent_vpp_1 Should Not Contain SA sa 1
     Create IPsec With SA And Json  agent_vpp_1   sa10   ipsec-sa.json  10  1001  4a506a794f574265564551694d653768  4339314b55523947594d6d3547666b45764e6a58
 #    Create IPsec On agent_vpp_1 With SA sa10 And Json ipsec-sa.json
-    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    IP Sec On agent_vpp_1 Should Contain SA [0] sa 0xa spi 1001
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    IP Sec On agent_vpp_1 Should Contain SA [0] sa 10 (0xa) spi 1001
 
 Add SA2 Into VPP
     IP Sec On agent_vpp_1 Should Not Contain SA sa 2
     Create IPsec With SA And Json  agent_vpp_1   sa20   ipsec-sa.json  20  1000  4a506a794f574265564551694d653768  4339314b55523947594d6d3547666b45764e6a58
 #    Create IPsec On agent_vpp_1 With SA sa20 And Json ipsec-sa20.json
-    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    IP Sec On agent_vpp_1 Should Contain SA [1] sa 0x14 spi 1000
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    IP Sec On agent_vpp_1 Should Contain SA [1] sa 20 (0x14) spi 1000
 
 Add SPD1 Into VPP
     IP Sec On agent_vpp_1 Should Not Contain SA spd 1
@@ -43,12 +43,12 @@ Check IPsec config_1 On VPP
 Add SA3 Into VPP
     IP Sec On agent_vpp_1 Should Not Contain SA sa 3
     Create IPsec With SA And Json  agent_vpp_1   sa30   ipsec-sa.json  30  1003  4a506a794f574265564551694d653770  4339314b55523947594d6d3547666b45764e6a60
-    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    IP Sec On agent_vpp_1 Should Contain SA [2] sa 0x1e spi 1003
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    IP Sec On agent_vpp_1 Should Contain SA [2] sa 30 (0x1e) spi 1003
 
 Add SA4 Into VPP
     IP Sec On agent_vpp_1 Should Not Contain SA sa 4
     Create IPsec With SA And Json  agent_vpp_1   sa40   ipsec-sa.json  40  1002  4a506a794f574265564551694d653770  4339314b55523947594d6d3547666b45764e6a60
-    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    IP Sec On agent_vpp_1 Should Contain SA [3] sa 0x28 spi 1002
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    IP Sec On agent_vpp_1 Should Contain SA [3] sa 40 (0x28) spi 1002
 
 Add SPD2 Into VPP
     IP Sec On agent_vpp_1 Should Not Contain SA spd 2
