@@ -35,6 +35,7 @@ func TestSpan(t *testing.T) {
 
 	const (
 		msName     = "microservice1"
+		fullMsName = msNamePrefix + msName
 		srcTapName = "vpp_span_src"
 		dstTapName = "vpp_span_dst"
 	)
@@ -77,7 +78,7 @@ func TestSpan(t *testing.T) {
 		Link: &vpp_interfaces.Interface_Tap{
 			Tap: &vpp_interfaces.TapLink{
 				Version:        2,
-				ToMicroservice: msNamePrefix + msName,
+				ToMicroservice: fullMsName,
 			},
 		},
 	}
@@ -96,7 +97,7 @@ func TestSpan(t *testing.T) {
 		},
 		Namespace: &linux_ns.NetNamespace{
 			Type:      linux_ns.NetNamespace_MICROSERVICE,
-			Reference: msNamePrefix + msName,
+			Reference: fullMsName,
 		},
 	}
 
@@ -109,56 +110,77 @@ func TestSpan(t *testing.T) {
 	ctx.startMicroservice(msName)
 	req := ctx.grpcClient.ChangeRequest()
 	err := req.Update(dstTap, dstLinuxTap, spanRx).Send(context.Background())
-	Expect(err).To(BeNil())
+	Expect(err).To(BeNil(), "Sending change request failed with err")
 
-	Eventually(ctx.getValueStateClb(dstTap), msUpdateTimeout).Should(Equal(kvs.ValueState_CONFIGURED))
+	Eventually(ctx.getValueStateClb(dstTap), msUpdateTimeout).Should(
+		Equal(kvs.ValueState_CONFIGURED),
+		"Destination TAP is not configured",
+	)
 
-	// While one of the end of span is missing, its state must be `PENDING`
-	// in this case, source (`from`) interface is missing
-	Expect(ctx.getValueState(spanRx)).To(Equal(kvs.ValueState_PENDING))
+	Expect(ctx.getValueState(spanRx)).To(
+		Equal(kvs.ValueState_PENDING),
+		"SPAN is not in a `PENDING` state, but `InterfaceFrom` is not ready",
+	)
 
 	req = ctx.grpcClient.ChangeRequest()
 	err = req.Update(srcTap, srcLinuxTap).Send(context.Background())
 	Expect(err).To(BeNil())
 
-	Eventually(ctx.getValueStateClb(srcTap), msUpdateTimeout).Should(Equal(kvs.ValueState_CONFIGURED))
+	Eventually(ctx.getValueStateClb(srcTap), msUpdateTimeout).Should(
+		Equal(kvs.ValueState_CONFIGURED),
+		"Source TAP is not configured",
+	)
 
-	// When both ends for span are configured, span must be `CONFIGURED` also
-	Expect(ctx.getValueState(spanRx)).To(Equal(kvs.ValueState_CONFIGURED))
+	Expect(ctx.getValueState(spanRx)).To(
+		Equal(kvs.ValueState_CONFIGURED),
+		"SPAN is not in a `CONFIGURED` state, but both interfaces are ready",
+	)
 
 	ctx.stopMicroservice(msName)
-	Eventually(ctx.getValueStateClb(dstTap), msUpdateTimeout).Should(Equal(kvs.ValueState_PENDING))
+	Eventually(ctx.getValueStateClb(dstTap), msUpdateTimeout).Should(
+		Equal(kvs.ValueState_PENDING),
+		"Destination TAP must be in a `PENDING` state, after its microservice stops",
+	)
 
-	// While one of the end of span is missing, its state must be `PENDING`
-	// in this case, destination (`to`) interface is missing
-	Expect(ctx.getValueState(spanRx)).To(Equal(kvs.ValueState_PENDING))
+	Expect(ctx.getValueState(spanRx)).To(
+		Equal(kvs.ValueState_PENDING),
+		"SPAN is not in a `PENDING` state, but `InterfaceTo` is not ready",
+	)
 
-	// Check output of `show span` command
+	// Check `show int span` output
 	var stdout bytes.Buffer
 	cmd := exec.Command("vppctl", "show", "int", "span")
 	cmd.Stdout = &stdout
 	err = cmd.Run()
-	Expect(err).To(BeNil())
-	output := stdout.String()
-	space := regexp.MustCompile(`\s+`)
-	s := space.ReplaceAllString(output, " ")
-	Expect(s).To(Equal(""))
+	Expect(err).To(BeNil(), "Running `show int span` failed with err")
+	Expect(stdout.Len()).To(
+		Equal(0),
+		"Expected empty output from `show int span` command",
+	)
 
-	// Get back our container and configure destination interface again
+	// Start container and configure destination interface again
 	ctx.startMicroservice(msName)
 
-	Eventually(ctx.getValueStateClb(dstTap), msUpdateTimeout).Should(Equal(kvs.ValueState_CONFIGURED))
+	Eventually(ctx.getValueStateClb(dstTap), msUpdateTimeout).Should(
+		Equal(kvs.ValueState_CONFIGURED),
+		"Destination TAP expected to be configured",
+	)
 
-	// Everything must be ready for span to be `CONFIGURED`
-	Expect(ctx.getValueState(spanRx)).To(Equal(kvs.ValueState_CONFIGURED))
+	Expect(ctx.getValueState(spanRx)).To(
+		Equal(kvs.ValueState_CONFIGURED),
+		"SPAN is not in a `CONFIGURED` state, but both interfaces are ready",
+	)
 
-	// Check output of `show span` command
+	// Check `show int span` output
 	stdout.Reset()
 	cmd = exec.Command("vppctl", "show", "int", "span")
 	cmd.Stdout = &stdout
 	err = cmd.Run()
-	Expect(err).To(BeNil())
-	output = stdout.String()
-	s = space.ReplaceAllString(output, " ")
-	Expect(s).To(Equal("Source Destination Device L2 tap1 tap0 ( rx) ( none) "))
+	Expect(err).To(BeNil(), "Running `show int span` failed with err")
+	output := stdout.String()
+	s := regexp.MustCompile(`\s+`).ReplaceAllString(output, " ")
+	Expect(s).To(
+		Equal("Source Destination Device L2 tap1 tap0 ( rx) ( none) "),
+		"Output of `show int span` didn't match to expected",
+	)
 }
