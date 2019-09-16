@@ -3,12 +3,14 @@ set -eu
 
 # compile test
 go test -c ./tests/e2e -o ./tests/e2e/e2e.test
-go build -v -o ./tests/e2e/vpp-agent ./cmd/vpp-agent
+go build -v -o ./tests/e2e/exec/vpp-agent ./cmd/vpp-agent
+go build -v -o ./tests/e2e/exec/agentctl ./cmd/agentctl
 
 # start vpp image
 cid=$(docker run -d -it \
 	-v $(pwd)/tests/e2e/e2e.test:/e2e.test:ro \
-	-v $(pwd)/tests/e2e/vpp-agent:/vpp-agent:ro \
+	-v $(pwd)/tests/e2e/exec/vpp-agent:/vpp-agent:ro \
+	-v $(pwd)/tests/e2e/exec/agentctl:/agentctl:ro \
 	-v $(pwd)/tests/e2e/grpc.conf:/etc/grpc.conf:ro \
 	-v /var/run/docker.sock:/var/run/docker.sock \
 	--label e2e.test="$*" \

@@ -12,6 +12,7 @@
 /examples/**/*
 !/examples/**/
 !/examples/**/*.*
+/tests/e2e/exec/*
 
 # test results
 /tests/perf/grpc-perf/grpc-perf
