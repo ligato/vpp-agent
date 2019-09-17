@@ -50,7 +50,7 @@ kubectl get pods
 kubectl describe pods
 ```
 
-Write some config into ETCD (using etcd.conf that refers to the port 22379):
+Write some config into ETCD (using etcd.conf that refers to the port 22379) with agentctl:
 ```
 export ETCD_CONFIG=./etcd.conf
 ../../cmd/vpp-agent-ctl/topology.sh

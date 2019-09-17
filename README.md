@@ -125,4 +125,3 @@ If you are interested in contributing, please see the [contribution guidelines][
 [vpp]: https://fd.io/technology/#vpp
 [vpp-agent]: https://hub.docker.com/r/ligato/vpp-agent
 [vpp-agent-arm64]: https://hub.docker.com/r/ligato/vpp-agent-arm64
-[vpp-agent-ctl]: cmd/vpp-agent-ctl
