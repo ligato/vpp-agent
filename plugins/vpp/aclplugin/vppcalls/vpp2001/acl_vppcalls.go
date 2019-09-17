@@ -312,7 +312,7 @@ func icmpACL(icmpRule *acl.ACL_Rule_IpRule_Icmp, aclRule *vpp_acl.ACLRule) *vpp_
 		aclRule.SrcportOrIcmptypeLast = uint16(icmpRule.IcmpTypeRange.Last)
 		// ICMPv6 code range
 		aclRule.DstportOrIcmpcodeFirst = uint16(icmpRule.IcmpCodeRange.First)
-		aclRule.DstportOrIcmpcodeLast = uint16(icmpRule.IcmpCodeRange.First)
+		aclRule.DstportOrIcmpcodeLast = uint16(icmpRule.IcmpCodeRange.Last)
 	} else {
 		aclRule.Proto = vppcalls.ICMPv4Proto // IANA ICMPv4
 		aclRule.IsIPv6 = 0
