@@ -139,12 +139,12 @@ var aclIPrules = []*acl.ACL_Rule{
 			Icmp: &acl.ACL_Rule_IpRule_Icmp{
 				Icmpv6: false,
 				IcmpCodeRange: &acl.ACL_Rule_IpRule_Icmp_Range{
-					First: 150,
-					Last:  250,
+					First: 1,
+					Last:  2,
 				},
 				IcmpTypeRange: &acl.ACL_Rule_IpRule_Icmp_Range{
-					First: 1150,
-					Last:  1250,
+					First: 3,
+					Last:  4,
 				},
 			},
 		},
@@ -156,12 +156,12 @@ var aclIPrules = []*acl.ACL_Rule{
 			Icmp: &acl.ACL_Rule_IpRule_Icmp{
 				Icmpv6: true,
 				IcmpCodeRange: &acl.ACL_Rule_IpRule_Icmp_Range{
-					First: 150,
-					Last:  250,
+					First: 10,
+					Last:  20,
 				},
 				IcmpTypeRange: &acl.ACL_Rule_IpRule_Icmp_Range{
-					First: 1150,
-					Last:  1250,
+					First: 30,
+					Last:  40,
 				},
 			},
 		},

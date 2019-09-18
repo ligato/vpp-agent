@@ -167,9 +167,9 @@ func TestCRUDIPAcl(t *testing.T) {
 		//RuleName:  "permitIPv6",
 		newACLIPRule(true, "dead::1/64", "dead::2/64"),
 		//RuleName:  "denyICMP",
-		newACLIPRuleIcmp(false, false, 150, 250, 1150, 1250),
+		newACLIPRuleIcmp(false, false, 10, 20, 30, 40),
 		//RuleName:  "denyICMPv6",
-		newACLIPRuleIcmp(false, true, 150, 250, 1150, 1250),
+		newACLIPRuleIcmp(false, true, 10, 20, 30, 40),
 		//RuleName:  "permitTCP",
 		newACLIPRuleTCP(true, 10, 20, 150, 250, 1150, 1250),
 		//RuleName:  "denyUDP",
@@ -189,21 +189,30 @@ func TestCRUDIPAcl(t *testing.T) {
 	t.Log("amount of acls dumped: 1")
 
 	var rules []*acl.ACL_Rule
-	var isPresent bool
-	var isForInterface bool
+	var isIPRulePresent, isICMPRulePresent, isICMP6RulePresent, isForInterface bool
 	for _, item := range acls {
 		rules = item.ACL.Rules
 		if (item.Meta.Index == aclIdx) && (aclname == item.Meta.Tag) {
 			t.Logf("found ACL \"%v\"", item.Meta.Tag)
 			for _, rule := range rules {
-				//t.Logf("%+v", rule)
+				t.Logf("%+v", rule)
 				//here maybe all rules should be checked
 				if (rule.IpRule.GetIp().SourceNetwork == "192.168.1.1/32") &&
 					(rule.IpRule.GetIp().DestinationNetwork == "10.20.0.0/24") {
-					isPresent = true
-					break
+					isIPRulePresent = true
+				}
+				if (rule.IpRule.GetIcmp().GetIcmpCodeRange().GetFirst() == 10) &&
+					(rule.IpRule.GetIcmp().GetIcmpCodeRange().GetLast() == 20) &&
+					(rule.IpRule.GetIcmp().GetIcmpTypeRange().GetFirst() == 30) &&
+					(rule.IpRule.GetIcmp().GetIcmpTypeRange().GetLast() == 40) {
+					if rule.IpRule.GetIcmp().GetIcmpv6() {
+						isICMP6RulePresent = true
+					} else {
+						isICMPRulePresent = true
+					}
 				}
 			}
+
 			// check assignation to interface
 			for _, intf := range item.ACL.Interfaces.Ingress {
 				if intf == ifName {
@@ -213,7 +222,9 @@ func TestCRUDIPAcl(t *testing.T) {
 			}
 		}
 	}
-	Expect(isPresent).To(BeTrue(), "Configured IP should be present")
+	Expect(isIPRulePresent).To(BeTrue(), "Configured IP rule should be present")
+	Expect(isICMPRulePresent).To(BeTrue(), "Configured ICMP rule should be present")
+	Expect(isICMP6RulePresent).To(BeTrue(), "Configured ICMPv6 rule should be present")
 	Expect(isForInterface).To(BeTrue(), "acl should be assigned to interface")
 
 	indexes := []uint32{ifIdx, ifIdx2}
@@ -258,9 +269,9 @@ func TestCRUDIPAcl(t *testing.T) {
 		//RuleName:  "permitIPv6",
 		newACLIPRule(true, "dead::1/64", "dead::2/64"),
 		//RuleName:  "denyICMP",
-		newACLIPRuleIcmp(false, false, 150, 250, 1150, 1250),
+		newACLIPRuleIcmp(false, false, 11, 21, 31, 41),
 		//RuleName:  "denyICMPv6",
-		newACLIPRuleIcmp(false, true, 150, 250, 1150, 1250),
+		newACLIPRuleIcmp(false, true, 11, 21, 31, 41),
 		//RuleName:  "permitTCP",
 		newACLIPRuleTCP(true, 10, 20, 150, 250, 1150, 1250),
 		//RuleName:  "denyUDP",
@@ -280,7 +291,9 @@ func TestCRUDIPAcl(t *testing.T) {
 	Expect(acls).Should(HaveLen(2))
 	t.Log("amount of acls dumped: 2")
 
-	isPresent = false
+	isIPRulePresent = false
+	isICMPRulePresent = false
+	isICMP6RulePresent = false
 	isForInterface = false
 	for _, item := range acls {
 		rules = item.ACL.Rules
@@ -290,8 +303,17 @@ func TestCRUDIPAcl(t *testing.T) {
 				//t.Logf("%+v", rule)
 				if (rule.IpRule.GetIp().SourceNetwork == "192.168.1.1/32") &&
 					(rule.IpRule.GetIp().DestinationNetwork == "10.20.0.0/24") {
-					isPresent = true
-					break
+					isIPRulePresent = true
+				}
+				if (rule.IpRule.GetIcmp().GetIcmpCodeRange().GetFirst() == 11) &&
+					(rule.IpRule.GetIcmp().GetIcmpCodeRange().GetLast() == 21) &&
+					(rule.IpRule.GetIcmp().GetIcmpTypeRange().GetFirst() == 31) &&
+					(rule.IpRule.GetIcmp().GetIcmpTypeRange().GetLast() == 41) {
+					if rule.IpRule.GetIcmp().GetIcmpv6() {
+						isICMP6RulePresent = true
+					} else {
+						isICMPRulePresent = true
+					}
 				}
 			}
 			// check assignation to interface
@@ -303,7 +325,9 @@ func TestCRUDIPAcl(t *testing.T) {
 			}
 		}
 	}
-	Expect(isPresent).To(BeTrue(), "Configured IP should be present")
+	Expect(isIPRulePresent).To(BeTrue(), "Configured IP should be present")
+	Expect(isICMPRulePresent).To(BeTrue(), "Configured ICMP rule should be present")
+	Expect(isICMP6RulePresent).To(BeTrue(), "Configured ICMPv6 rule should be present")
 	Expect(isForInterface).To(BeTrue(), "acl should be assigned to interface")
 
 	//negative tests
@@ -347,6 +371,7 @@ func TestCRUDIPAcl(t *testing.T) {
 	rule2modify := []*acl.ACL_Rule{
 		newACLIPRule(true, "10.20.30.1/32", "10.20.0.0/24"),
 		newACLIPRule(true, "dead:dead::3/64", "dead:dead::4/64"),
+		newACLIPRuleIcmp(true, false, 15, 25, 35, 45),
 	}
 
 	const aclname4 = "test_modify0"
@@ -359,7 +384,8 @@ func TestCRUDIPAcl(t *testing.T) {
 	Expect(acls).Should(HaveLen(1))
 	t.Log("amount of acls dumped: 1")
 
-	isPresent = false
+	isIPRulePresent = false
+	isICMPRulePresent = false
 	isForInterface = false
 	var modifiedacl aclplugin_vppcalls.ACLDetails
 	for _, item := range acls {
@@ -376,8 +402,17 @@ func TestCRUDIPAcl(t *testing.T) {
 				//here maybe should be checked all rules
 				if (rule.IpRule.GetIp().SourceNetwork == "10.20.30.1/32") &&
 					(rule.IpRule.GetIp().DestinationNetwork == "10.20.0.0/24") {
-					isPresent = true
-					break
+					isIPRulePresent = true
+				}
+				if (rule.IpRule.GetIcmp().GetIcmpCodeRange().GetFirst() == 15) &&
+					(rule.IpRule.GetIcmp().GetIcmpCodeRange().GetLast() == 25) &&
+					(rule.IpRule.GetIcmp().GetIcmpTypeRange().GetFirst() == 35) &&
+					(rule.IpRule.GetIcmp().GetIcmpTypeRange().GetLast() == 45) {
+					if rule.IpRule.GetIcmp().GetIcmpv6() {
+						isICMP6RulePresent = true
+					} else {
+						isICMPRulePresent = true
+					}
 				}
 			}
 			// check assignation to interface
@@ -389,7 +424,8 @@ func TestCRUDIPAcl(t *testing.T) {
 			}
 		}
 	}
-	Expect(isPresent).To(BeTrue(), "Configured IP should be present")
+	Expect(isIPRulePresent).To(BeTrue(), "Configured IP should be present")
+	Expect(isICMPRulePresent).To(BeTrue(), "Configured ICMP rule should be present")
 	Expect(isForInterface).To(BeTrue(), "acl should be assigned to interface")
 
 	// negative test
@@ -407,7 +443,7 @@ func TestCRUDIPAcl(t *testing.T) {
 	Expect(acls).Should(HaveLen(1))
 	t.Log("amount of acls dumped: 1")
 
-	isPresent = false
+	isIPRulePresent = false
 	isForInterface = false
 	for _, item := range acls {
 		if item.Meta.Index == aclIdx && (aclname4 == item.Meta.Tag) {
@@ -428,7 +464,7 @@ func TestCRUDIPAcl(t *testing.T) {
 	Expect(acls).Should(HaveLen(1))
 	t.Log("amount of acls dumped: 1")
 
-	isPresent = false
+	isIPRulePresent = false
 	isForInterface = false
 	for _, item := range acls {
 		if item.Meta.Index == aclIdx { //&& (aclname2 == item.Meta.Tag) {
