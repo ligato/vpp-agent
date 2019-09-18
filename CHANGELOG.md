@@ -182,7 +182,7 @@ The VPP 18.10 was deprecated and is no longer compatible.
 * [l3-plugin][vpp-l3-plugin]
   - A new model for VRF tables was introduced. Every VRF is defined by an index and an IP version, a new optional label was added. Configuration types using non-zero VRF now require it to be created, since the VRF is considered a dependency. VRFs with zero-index are present in the VPP by default and do not need to be configured (applies for both, IPv4 and IPv6).
 * [agentctl][agentctl]
-  - This tool becomes obsolete and was completely replaced with a new implementation. Please note that the development of this tool is in the early stages, and functionality is quite limited now. New and improved functionality is planned for the next couple of releases since our goal is to have a single vpp-agent control utility. Because of this, we have also deprecated the [vpp-agent-ctl][vpp-agent-ctl] tool which will be most likely removed in the next release.  
+  - This tool becomes obsolete and was completely replaced with a new implementation. Please note that the development of this tool is in the early stages, and functionality is quite limited now. New and improved functionality is planned for the next couple of releases since our goal is to have a single vpp-agent control utility. Because of this, we have also deprecated the vpp-agent-ctl tool which will be most likely removed in the next release.  
 
 ### Improvements
 * [kv-scheduler][kv-scheduler]  
@@ -673,7 +673,7 @@ The vpp-agent is now using custom VPP branch [stable-1801-contiv][contiv-vpp1810
 ### Improvements
 - [aclplugin][agentctl]
   * Removed configuration order of interfaces. The access list can be now configured even if interfaces do not exist yet, and add them later.
-- [vpp-agent-ctl][vpp-agent-ctl]
+- vpp-agent-ctl
   * The vpp-agent-ctl was refactored and command info was updated.
 
 ### Docker Images
@@ -952,7 +952,6 @@ Data replication and events:
 [vpp-abf-plugin]: plugins/vpp/abfplugin
 [vpp-acl-plugin]: plugins/vpp/aclplugin
 [vpp-agent]: cmd/vpp-agent
-[vpp-agent-ctl]: cmd/vpp-agent-ctl
 [vpp-conf-file]: docker/dev/vpp.conf
 [vpp-interface-plugin]: plugins/vpp/ifplugin
 [vpp-issue-1280]: https://jira.fd.io/browse/VPP-1280
