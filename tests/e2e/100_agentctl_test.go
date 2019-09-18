@@ -29,178 +29,194 @@ import (
 func TestAgentCtl(t *testing.T) {
 	ctx := setupE2E(t)
 	defer ctx.teardownE2E()
-	Expect(true).To(BeTrue())
 
 	var cmd *exec.Cmd
 	var err error
 	var stdout, stderr bytes.Buffer
-	var output string
 	var matched bool
 
-	// Test if executable is present
-	cmd = exec.Command("/agentctl")
-	cmd.Stdout = &stdout
-	err = cmd.Run()
-	Expect(err).To(BeNil())
-	Expect(stdout.Len()).To(Not(BeZero()))
+	// file created below is required to test `import` action
+	err = createFileWithContent(
+		"/tmp/config1",
+		`config/vpp/v2/interfaces/tap1 {"name":"tap1", "type":"TAP", "enabled":true, "ip_addresses":["10.10.10.10/24"], "tap":{"version": "2"}}`,
+	)
+	Expect(err).To(BeNil(), "Failed to create file required by one of the tests")
 
-	// command: `agentctl dump vpp.interfaces`
-	// expecting at least one interface with `type: SOFTWARE_LOOPBACK`
-	stdout.Reset()
-	cmd = exec.Command("/agentctl", "dump", "vpp.interfaces")
-	cmd.Stdout = &stdout
-	err = cmd.Run()
-	Expect(err).To(BeNil())
-	output = stdout.String()
-	Expect(strings.Contains(output, "type: SOFTWARE_LOOPBACK")).To(BeTrue())
+	tests := []struct {
+		name                 string
+		cmd                  string
+		expectErr            bool
+		expectNotEmptyStdout bool
+		expectStdout         string
+		expectInStdout       string
+		expectReStdout       string
+		expectInStderr       string
+	}{
+		{
+			name:                 "Check if executable is present",
+			expectNotEmptyStdout: true,
+		},
+		{
+			name:           "Test `dump` action",
+			cmd:            "dump vpp.interfaces",
+			expectInStdout: "type: SOFTWARE_LOOPBACK",
+		},
+		{
+			name:                 "Test `generate` action",
+			cmd:                  "generate vpp.interfaces",
+			expectNotEmptyStdout: true,
+		},
+		{
+			// This test depends on file (/tmp/config1) which was created before.
+			name:           "Test `import` action",
+			cmd:            "import /tmp/config1 --service-label vpp1",
+			expectErr:      true,
+			expectInStderr: "connecting to Etcd failed",
+		},
+		{
+			// This test depends on file (/tmp/config1) which was created before.
+			name:         "Test `import` action (grpc)",
+			cmd:          "import /tmp/config1 --service-label vpp1 --grpc",
+			expectStdout: "importing 1 key vals\n - /vnf-agent/vpp1/config/vpp/v2/interfaces/tap1\nsending via gRPC\n",
+		},
+		{
+			name:           "Test `kvdb list` action",
+			cmd:            "kvdb list",
+			expectErr:      true,
+			expectInStderr: "connecting to Etcd failed",
+		},
+		{
+			name:           "Test `log list` action",
+			cmd:            "log list",
+			expectReStdout: `agent\s+info`,
+		},
+		{
+			name:         "Test `log set` action",
+			cmd:          "log set agent debug",
+			expectStdout: "logger agent has been set to level debug\n",
+		},
+		{
+			// This test depends on previous one.
+			name:           "Test `log list` action",
+			cmd:            "log list",
+			expectReStdout: `agent\s+debug`,
+		},
+		{
+			name:           "Test `model ls` action",
+			cmd:            "model ls",
+			expectReStdout: `linux.interfaces.interface\s+config/linux/interfaces/v2/interface/\s+linux.interfaces.Interface`,
+		},
+		{
+			name:           "Test `model inspect` action",
+			cmd:            "model inspect vpp.interfaces",
+			expectInStdout: `"KeyPrefix": "config/vpp/v2/interfaces/",`,
+		},
+		{
+			name:           "Test `status` action",
+			cmd:            "status",
+			expectReStdout: `vpp.interfaces\s+UNTAGGED-local0\s+obtained`,
+		},
+		{
+			name:           "Test `vpp info` action",
+			cmd:            "vpp info",
+			expectReStdout: `Version:\s+v\d{2}\.\d{2}`,
+		},
+		{
+			name:           "Test `vpp cli` action",
+			cmd:            "vpp cli sh int",
+			expectReStdout: `local0\s+0\s+down\s+0/0/0/0`,
+		},
+	}
 
-	// command: `agentctl generate vpp.interfaces`
-	// expecting not empty output
-	stdout.Reset()
-	cmd = exec.Command("/agentctl", "generate", "vpp.interfaces")
-	cmd.Stdout = &stdout
-	err = cmd.Run()
-	Expect(err).To(BeNil())
-	Expect(stdout.Len()).To(Not(BeZero()))
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			// Reset both buffers to be empty before test
+			stdout.Reset()
+			stderr.Reset()
 
-	// command: `agentctl help`
-	// expecting not empty output
-	stdout.Reset()
-	cmd = exec.Command("/agentctl", "help")
-	cmd.Stdout = &stdout
-	err = cmd.Run()
-	Expect(err).To(BeNil())
-	Expect(stdout.Len()).To(Not(BeZero()))
+			// Run command
+			cmd = exec.Command("/agentctl", strings.Split(test.cmd, " ")...)
+			cmd.Stdout = &stdout
+			cmd.Stderr = &stderr
+			err = cmd.Run()
 
-	// command: `agentctl import /tmp/config1`
-	// expecting it to fail due to missing ETCD
-	f, err := os.Create("/tmp/config1")
-	Expect(err).To(BeNil())
+			if test.expectErr {
+				Expect(err).To(
+					Not(BeNil()),
+					"------\nCommand `%s` should fail\n------",
+					test.cmd,
+				)
+			} else {
+				Expect(err).To(
+					BeNil(),
+					"------\nCommand `%s` should not fail. Got err: %v\nStderr:\n%s\n------",
+					test.cmd,
+					err,
+					stderr.String(),
+				)
+			}
+
+			// Check STDOUT:
+			if test.expectNotEmptyStdout {
+				Expect(stdout.Len()).To(
+					Not(BeZero()),
+					"------\nStdout should not be empty\n------",
+				)
+			}
+
+			if test.expectStdout != "" {
+				Expect(stdout.String()).To(
+					Equal(test.expectStdout),
+					"------\nWant stdout: \n%s\nGot stdout: \n%s\n------",
+					test.expectStdout,
+					stdout.String(),
+				)
+			}
+
+			if test.expectInStdout != "" {
+				Expect(strings.Contains(stdout.String(), test.expectInStdout)).To(
+					BeTrue(),
+					"------\nWant in stdout: \n%s\nGot stdout: \n%s\n------",
+					test.expectInStdout,
+					stdout.String(),
+				)
+			}
+
+			if test.expectReStdout != "" {
+				matched, err = regexp.MatchString(test.expectReStdout, stdout.String())
+				Expect(err).To(BeNil())
+				Expect(matched).To(
+					BeTrue(),
+					"------\nWant stdout to contain any match of the regular expression: \n`%s`\nGot stdout: \n%s\n------",
+					test.expectReStdout,
+					stdout.String(),
+				)
+			}
+
+			// Check STDERR:
+			if test.expectInStderr != "" {
+				Expect(strings.Contains(stderr.String(), test.expectInStderr)).To(
+					BeTrue(),
+					"------\nWant in stderr: \n%s\nGot stderr: \n%s\n------",
+					test.expectInStderr,
+					stderr.String(),
+				)
+			}
+		})
+	}
+}
+
+func createFileWithContent(path, content string) error {
+	f, err := os.Create(path)
+	if err != nil {
+		return err
+	}
 	w := bufio.NewWriter(f)
-	_, err = w.WriteString(`config/vpp/v2/interfaces/tap2 {"name":"tap2", "type":"TAP", "enabled":true, "ip_addresses":["10.10.10.10/24"], "tap":{"version": "2"}}`)
-	Expect(err).To(BeNil())
+	_, err = w.WriteString(content)
+	if err != nil {
+		return err
+	}
 	w.Flush()
-	stdout.Reset()
-	stderr.Reset()
-	cmd = exec.Command("/agentctl", "import", "/tmp/config1", "--service-label", "vpp1")
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
-	err = cmd.Run()
-	Expect(err).To(Not(BeNil()))
-	Expect(stdout.Len()).To(BeZero())
-	output = stderr.String()
-	Expect(strings.Contains(output, "Error: connecting to Etcd failed:")).To(BeTrue())
 
-	// command: `agentctl import /tmp/config1 --grpc`
-	// expecting to successfully send txn
-	stdout.Reset()
-	cmd = exec.Command("/agentctl", "import", "/tmp/config1", "--service-label", "vpp1", "--grpc")
-	cmd.Stdout = &stdout
-	err = cmd.Run()
-	Expect(err).To(BeNil())
-	Expect(stdout.String()).To(Equal("importing 1 key vals\n - /vnf-agent/vpp1/config/vpp/v2/interfaces/tap2\nsending via gRPC\n"))
-
-	// command: `agentctl kvdb list`
-	// expecting it to fail due to missing ETCD
-	stdout.Reset()
-	stderr.Reset()
-	cmd = exec.Command("/agentctl", "kvdb", "list")
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
-	err = cmd.Run()
-	Expect(err).To(Not(BeNil()))
-	Expect(stdout.Len()).To(BeZero())
-	output = stderr.String()
-	Expect(strings.Contains(output, "ERROR: connecting to Etcd failed:")).To(BeTrue())
-
-	// command: `agentctl log list`
-	// expecting level of logger `agent` is `info`
-	stdout.Reset()
-	cmd = exec.Command("/agentctl", "log", "list")
-	cmd.Stdout = &stdout
-	err = cmd.Run()
-	Expect(err).To(BeNil())
-	output = stdout.String()
-	matched, err = regexp.MatchString(`agent\s+info`, output)
-	Expect(err).To(BeNil())
-	Expect(matched).To(BeTrue())
-
-	// command: `agentctl log set agent debug`
-	// expecting to change log level of `agent`
-	stdout.Reset()
-	cmd = exec.Command("/agentctl", "log", "set", "agent", "debug")
-	cmd.Stdout = &stdout
-	err = cmd.Run()
-	Expect(err).To(BeNil())
-	Expect(stdout.String()).To(Equal("logger agent has been set to level debug\n"))
-
-	// command: `agentctl log list`
-	// expecting level of logger `agent` is `debug`
-	stdout.Reset()
-	cmd = exec.Command("/agentctl", "log", "list")
-	cmd.Stdout = &stdout
-	err = cmd.Run()
-	Expect(err).To(BeNil())
-	output = stdout.String()
-	matched, err = regexp.MatchString(`agent\s+debug`, output)
-	Expect(err).To(BeNil())
-	Expect(matched).To(BeTrue())
-
-	// command: `agentctl model ls`
-	// expecting to find at least info about linux interfaces
-	stdout.Reset()
-	cmd = exec.Command("/agentctl", "model", "ls")
-	cmd.Stdout = &stdout
-	err = cmd.Run()
-	Expect(err).To(BeNil())
-	output = stdout.String()
-	matched, err = regexp.MatchString(`linux.interfaces.interface\s+config/linux/interfaces/v2/interface/\s+linux.interfaces.Interface`, output)
-	Expect(err).To(BeNil())
-	Expect(matched).To(BeTrue())
-
-	// command: `agentctl model inspect vpp.interfaces`
-	// expecting to find at least `KeyPrefix` of `vpp.interfaces` model
-	stdout.Reset()
-	cmd = exec.Command("/agentctl", "model", "inspect", "vpp.interfaces")
-	cmd.Stdout = &stdout
-	err = cmd.Run()
-	Expect(err).To(BeNil())
-	output = stdout.String()
-	Expect(strings.Contains(output, `"KeyPrefix": "config/vpp/v2/interfaces/",`)).To(BeTrue())
-
-	// command: `agentctl status`
-	// expecting to find `UNTAGGED-local0` obtained vpp interface
-	stdout.Reset()
-	cmd = exec.Command("/agentctl", "status")
-	cmd.Stdout = &stdout
-	err = cmd.Run()
-	Expect(err).To(BeNil())
-	output = stdout.String()
-	matched, err = regexp.MatchString(`vpp.interfaces\s+UNTAGGED-local0\s+obtained`, output)
-	Expect(err).To(BeNil())
-	Expect(matched).To(BeTrue())
-
-	// command: `agentctl vpp info`
-	// expecting to find at least Version of VPP
-	stdout.Reset()
-	cmd = exec.Command("/agentctl", "vpp", "info")
-	cmd.Stdout = &stdout
-	err = cmd.Run()
-	Expect(err).To(BeNil())
-	output = stdout.String()
-	matched, err = regexp.MatchString(`Version:\s+v\d{2}\.\d{2}`, output)
-	Expect(err).To(BeNil())
-	Expect(matched).To(BeTrue())
-
-	// command: `agentctl vpp cli sh int`
-	// expecting to find `local0` interface in output of executed vpp cli command
-	stdout.Reset()
-	cmd = exec.Command("/agentctl", "vpp", "cli", "sh", "int")
-	cmd.Stdout = &stdout
-	err = cmd.Run()
-	Expect(err).To(BeNil())
-	output = stdout.String()
-	matched, err = regexp.MatchString(`local0\s+0\s+down\s+0/0/0/0`, output)
-	Expect(err).To(BeNil())
-	Expect(matched).To(BeTrue())
+	return nil
 }
