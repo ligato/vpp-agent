@@ -17,11 +17,11 @@ Use the [agentctl](../../cmd/agentctl) to put data:
 Call the agent via ETCD using the testing client:
 ```
 agentctl kvdb put /vnf-agent/vpp1/config/vpp/v2/route/vrf/1/dst/10.1.1.3/32/gw/192.168.1.13 '{
-	"type": 1,
-	"vrf_id": 1,
 	"dst_network": "10.1.1.3/32",
 	"next_hop_addr": "192.168.1.13"
 }'
+
+agentctl kvdb del /vnf-agent/vpp1/config/vpp/v2/route/vrf/1/dst/10.1.1.3/32/gw/192.168.1.13
 ```
 **Note for ARM64:**
 
