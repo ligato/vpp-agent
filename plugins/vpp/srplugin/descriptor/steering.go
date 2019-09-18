@@ -217,12 +217,12 @@ func (d *SteeringDescriptor) Dependencies(key string, steering *srv6.Steering) (
 		}
 	}
 	// Interface dependency
-	if t, isL2Traffic := steering.Traffic.(*srv6.Steering_L2Traffic_); isL2Traffic {
-		intfaceName := strings.TrimSpace(t.L2Traffic.InterfaceName)
-		if len(intfaceName) > 0 {
+	if l2Traffic := steering.GetL2Traffic(); l2Traffic != nil {
+		interfaceName := strings.TrimSpace(l2Traffic.InterfaceName)
+		if len(interfaceName) > 0 {
 			dependencies = append(dependencies, scheduler.Dependency{
 				Label: steeringInterfaceDep,
-				Key:   vpp_interfaces.InterfaceKey(intfaceName),
+				Key:   vpp_interfaces.InterfaceKey(interfaceName),
 			})
 		}
 	}
