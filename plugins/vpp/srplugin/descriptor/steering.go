@@ -20,14 +20,14 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/pkg/errors"
-
 	"github.com/ligato/cn-infra/logging"
+	vpp_interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	"github.com/ligato/vpp-agent/api/models/vpp/l3"
 	srv6 "github.com/ligato/vpp-agent/api/models/vpp/srv6"
 	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/vpp/srplugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/vpp/srplugin/vppcalls"
+	"github.com/pkg/errors"
 )
 
 const (
@@ -35,8 +35,9 @@ const (
 	SteeringDescriptorName = "vpp-sr-steering"
 
 	// dependency labels
-	policyExistsDep = "sr-policy-for-steering-exists"
-	steeringVRFDep  = "sr-steering-vrf-table-exists"
+	policyExistsDep      = "sr-policy-for-steering-exists"
+	steeringVRFDep       = "sr-steering-vrf-table-exists"
+	steeringInterfaceDep = "sr-steering-l2-interface-exists"
 )
 
 // SteeringDescriptor teaches KVScheduler how to configure VPP SRv6 steering.
@@ -212,6 +213,16 @@ func (d *SteeringDescriptor) Dependencies(key string, steering *srv6.Steering) (
 			dependencies = append(dependencies, scheduler.Dependency{
 				Label: steeringVRFDep,
 				Key:   vpp_l3.VrfTableKey(tableID, tableProto),
+			})
+		}
+	}
+	// Interface dependency
+	if l2Traffic := steering.GetL2Traffic(); l2Traffic != nil {
+		interfaceName := strings.TrimSpace(l2Traffic.InterfaceName)
+		if len(interfaceName) > 0 {
+			dependencies = append(dependencies, scheduler.Dependency{
+				Label: steeringInterfaceDep,
+				Key:   vpp_interfaces.InterfaceKey(interfaceName),
 			})
 		}
 	}
