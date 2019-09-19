@@ -43,9 +43,9 @@ def Find_MAC_In_Text(text):
 def Parse_ARP(info, intf, ip, mac):
     for line in info.splitlines():
         if intf in line and ip in line and mac in line:
-            print "ARP Found:"+line
+            print("ARP Found:"+line)
             return True
-    print "ARP Found"
+    print("ARP Found")
     return False
 
 
@@ -65,42 +65,3 @@ def parse_stn_rule(info):
             pass
 
     return state['ip_address'], state['iface'], state['next_node']
-
-def verify_api_response(data, response):
-    """Verify VAT terminal response against expected data.
-
-    :param data: Expected data.
-    :param response: Data in API response.
-    :type data: str
-    :type response: str
-    :raises RuntimeError: If the response does not match expected data.
-    """
-
-    data_lines = data.splitlines()
-    response_lines = response.splitlines()
-
-    # Strip API name and handler ID from the response
-    for index, line in enumerate(response_lines):
-        if line.startswith("vl_api"):
-            parts = line.split(":")
-            response_lines[index] = ":".join(parts[2:])
-
-    # Strip API name and handler ID from expected data
-    for index, line in enumerate(data_lines):
-        if line.startswith("vl_api"):
-            parts = line.split(":")
-            data_lines[index] = ":".join(parts[2:])
-
-    # Strip whitespaces
-    data_lines = [x.strip() for x in data_lines]
-    response_lines = [x.strip() for x in response_lines]
-
-    for data_line in data_lines:
-        if data_line in response_lines:
-            logger.trace("Data line '''{line}''' matched to response line.".format(line=data_line))
-        else:
-            logger.debug("full response: '''{response}'''".format(response=response_lines))
-            raise RuntimeError(
-                "Expected data line '''{line}''' not present in response."
-                    .format(line=data_line)
-            )

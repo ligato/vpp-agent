@@ -255,12 +255,6 @@ vpp_term: Check TAP IP6 Interface State
     List Should Contain Sub List    ${actual_state}    ${desired_state}
     [Return]             ${actual_state}
 
-vpp_term: Show ACL
-    [Arguments]        ${node}
-    [Documentation]    Show ACLs through vpp terminal
-    ${out}=            vpp_term: Issue Command  ${node}   sh acl-plugin acl
-    [Return]           ${out}
-
 vpp_term: Add Route
     [Arguments]    ${node}    ${destination_ip}    ${prefix}    ${next_hop_ip}
     [Documentation]    Add ip route through vpp terminal.

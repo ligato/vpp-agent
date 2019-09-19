@@ -1,0 +1,2 @@
+count 1 tag {{{acl_name}}}
+          0: {ip_version} {acl_action} src {src_net} dst {dst_net} proto {protocol} sport {src_port_range} dport {dst_port_range} {flags} {mask}
