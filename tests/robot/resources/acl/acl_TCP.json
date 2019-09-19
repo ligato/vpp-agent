@@ -25,8 +25,8 @@
                         "lower_port": ${src_port_low},
                         "upper_port": ${src_port_up}
                     },
-                    "tcp_flags_mask": 20,
-                    "tcp_flags_value": 10
+                    "tcp_flags_mask": ${tcp_flags_mask},
+                    "tcp_flags_value": ${tcp_flags_value}
                 }
             }
         }
