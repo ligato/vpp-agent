@@ -39,7 +39,9 @@ import (
 )
 
 type AgentCli struct {
-	*utils.HTTPClient
+	host string
+
+	httpClient *utils.HTTPClient
 }
 
 func NewAgentCli() *AgentCli {
@@ -50,7 +52,14 @@ func (cli *AgentCli) Init() {
 	Debugf("init cli - global flags: %+v\n", global)
 
 	httpAddr := net.JoinHostPort(global.AgentHost, global.PortHTTP)
-	cli.HTTPClient = utils.NewHTTPClient(httpAddr)
+
+	cli.httpClient = utils.NewHTTPClient(httpAddr)
+
+	log := logrus.NewLogger("http-client")
+	if global.Debug {
+		log.SetLevel(logging.DebugLevel)
+	}
+	cli.httpClient.Log = log
 }
 
 func (cli *AgentCli) NewGRPCClient() *grpc.ClientConn {
@@ -67,7 +76,7 @@ func (cli *AgentCli) NewGRPCClient() *grpc.ClientConn {
 func (cli *AgentCli) NewKVDBClient() keyval.BytesBroker {
 	etcdCfg := getEtcdConfig(global.Endpoints)
 
-	log := logrus.NewLogger("etcd")
+	log := logrus.NewLogger("kvdb-client")
 	if global.Debug {
 		log.SetLevel(logging.DebugLevel)
 	} else {

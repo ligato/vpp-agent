@@ -17,6 +17,8 @@ package utils
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -26,83 +28,78 @@ import (
 
 // HTTPClient provides client access to the HTTP server in agent.
 type HTTPClient struct {
-	addr string
+	AgentHost string
+
+	httpClient *http.Client
+
+	Log logging.Logger
 }
 
 func NewHTTPClient(httpAddr string) *HTTPClient {
+	httpClient := &http.Client{}
 	return &HTTPClient{
-		addr: httpAddr,
+		AgentHost:  httpAddr,
+		httpClient: httpClient,
+	}
+}
+
+func (c *HTTPClient) debugf(f string, a ...interface{}) {
+	if c.Log != nil {
+		c.Log.Debugf(f, a...)
 	}
 }
 
 func (c *HTTPClient) GET(path string) ([]byte, error) {
-	a, err := url.Parse("http://" + c.addr + path)
-	if err != nil {
-		return nil, err
-	}
-
-	logging.Debugf("GET: %q", a.String())
-
-	resp, err := http.Get(a.String())
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	msg, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-	return msg, nil
+	return c.send(http.MethodGet, path, nil)
 }
 
 func (c *HTTPClient) PUT(path string, data interface{}) ([]byte, error) {
-	a, err := url.Parse("http://" + c.addr + path)
-	if err != nil {
-		return nil, err
-	}
-
-	b, err := json.MarshalIndent(data, "", "  ")
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest(http.MethodPut, a.String(), bytes.NewReader(b))
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Set("Content-Type", "application/json")
-
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return nil, err
-	}
-
-	defer resp.Body.Close()
-
-	msg, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-	return msg, nil
+	return c.send(http.MethodPut, path, data)
 }
 
 func (c *HTTPClient) POST(path string, data interface{}) ([]byte, error) {
-	a, err := url.Parse("http://" + c.addr + path)
+	return c.send(http.MethodPost, path, data)
+}
+
+func (c *HTTPClient) send(method, path string, data interface{}) ([]byte, error) {
+	u, err := url.Parse("http://" + c.AgentHost + path)
 	if err != nil {
 		return nil, err
 	}
 
-	b, err := json.MarshalIndent(data, "", "  ")
+	var b []byte
+	var r io.Reader
+
+	if data != nil {
+		b, err = json.MarshalIndent(data, "", "  ")
+		if err != nil {
+			return nil, err
+		}
+		r = bytes.NewReader(b)
+	}
+
+	req, err := http.NewRequest(method, u.String(), r)
 	if err != nil {
 		return nil, err
 	}
 
-	resp, err := http.Post(a.String(), "application/json", bytes.NewReader(b))
+	req.Header.Set("Content-Type", "application/json")
+
+	c.debugf("=> sending request: %s %s (%d bytes) request body:", req.Method, req.URL, req.ContentLength)
+	c.debugf("request body:%s", b)
+
+	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
+
+	c.debugf("<= received response: %v (%d)", resp.Status, resp.StatusCode)
+	c.debugf("response body: %+v", resp)
+
+	if resp.StatusCode > 400 {
+		return nil, fmt.Errorf("response status: %s (%d)", resp.Status, resp.StatusCode)
+	}
 
 	msg, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
