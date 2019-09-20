@@ -45,7 +45,7 @@ agent: ## Build agent
 	@echo "=> installing agent ${VERSION}"
 	@go install -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS} ./cmd/vpp-agent
 
-agentctl: # Build agentctl
+agentctl: ## Build agentctl
 	@echo "=> installing agentctl ${VERSION}"
 	@go install -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS} ./cmd/agentctl
 
