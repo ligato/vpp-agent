@@ -51,7 +51,7 @@ func NewRootCommand(cli *AgentCli) *cobra.Command {
 
 func newRootCommand(cli *AgentCli, name string) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     fmt.Sprintf("agentctl [OPTIONS] "),
+		Use:     fmt.Sprintf("%s [OPTIONS] ", name),
 		Short:   fmt.Sprintf("%s manages Ligato agents", name),
 		Long:    figure.NewFigure(name, "", false).String(),
 		Version: fmt.Sprintf("%s (%s)", agent.BuildVersion, agent.CommitHash),
@@ -65,8 +65,8 @@ func newRootCommand(cli *AgentCli, name string) *cobra.Command {
 	cmd.SetUsageTemplate(usageTemplate)
 
 	flags := cmd.PersistentFlags()
-
 	SetupRootFlags(flags)
+
 	AddRootCommands(cmd, cli)
 
 	return cmd
