@@ -1,14 +1,21 @@
 #!/bin/bash
 set -eu
 
+if [ ! -d /tmp/e2e-coverage ]; then
+	mkdir /tmp/e2e-coverage
+elif [ "$(ls -A /tmp/e2e-coverage)" ]; then
+	rm -f /tmp/e2e-coverage/*
+fi
+
 # compile test
 go test -c ./tests/e2e -o ./tests/e2e/e2e.test
-go build -v -o ./tests/e2e/vpp-agent ./cmd/vpp-agent
+go test -covermode=count -coverpkg="github.com/ligato/vpp-agent/..." -c ./cmd/vpp-agent -o ./tests/e2e/vpp-agent
 
 # start vpp image
 cid=$(docker run -d -it \
 	-v $(pwd)/tests/e2e/e2e.test:/e2e.test:ro \
 	-v $(pwd)/tests/e2e/vpp-agent:/vpp-agent:ro \
+	-v /tmp/e2e-coverage:/tmp/e2e-coverage \
 	-v $(pwd)/tests/e2e/grpc.conf:/etc/grpc.conf:ro \
 	-v /var/run/docker.sock:/var/run/docker.sock \
 	--label e2e.test="$*" \
@@ -22,6 +29,8 @@ cid=$(docker run -d -it \
 
 
 on_exit() {
+	go get github.com/wadey/gocovmerge
+	find /tmp/e2e-coverage -type f | xargs gocovmerge > /tmp/e2e-all.out
 	docker stop -t 2 "$cid" >/dev/null
 	docker rm "$cid" >/dev/null
 }

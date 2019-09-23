@@ -139,7 +139,8 @@ func setupE2E(t *testing.T) *testCtx {
 
 	// start the agent
 	assertProcessNotRunning(t, "vpp_agent")
-	agentCmd := startProcess(t, "VPP-Agent", "/vpp-agent")
+	e2eCovPath := fmt.Sprintf("/tmp/e2e-coverage/%d.out", time.Now().Unix())
+	agentCmd := startProcess(t, "VPP-Agent", "/vpp-agent", "-test.coverprofile="+e2eCovPath)
 
 	// prepare HTTP client for access to REST API of the agent
 	httpAddr := fmt.Sprintf(":%d", *agentHTTPPort)
