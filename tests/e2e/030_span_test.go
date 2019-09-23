@@ -15,9 +15,7 @@
 package e2e
 
 import (
-	"bytes"
 	"context"
-	"os/exec"
 	"regexp"
 	"testing"
 
@@ -148,12 +146,9 @@ func TestSpan(t *testing.T) {
 	)
 
 	// Check `show int span` output
-	var stdout bytes.Buffer
-	cmd := exec.Command("vppctl", "show", "int", "span")
-	cmd.Stdout = &stdout
-	err = cmd.Run()
+	stdout, err := ctx.execVppctl("show", "int", "span")
 	Expect(err).To(BeNil(), "Running `show int span` failed with err")
-	Expect(stdout.Len()).To(
+	Expect(len(stdout)).To(
 		Equal(0),
 		"Expected empty output from `show int span` command",
 	)
@@ -172,13 +167,9 @@ func TestSpan(t *testing.T) {
 	)
 
 	// Check `show int span` output
-	stdout.Reset()
-	cmd = exec.Command("vppctl", "show", "int", "span")
-	cmd.Stdout = &stdout
-	err = cmd.Run()
+	stdout, err = ctx.execVppctl("show", "int", "span")
 	Expect(err).To(BeNil(), "Running `show int span` failed with err")
-	output := stdout.String()
-	s := regexp.MustCompile(`\s+`).ReplaceAllString(output, " ")
+	s := regexp.MustCompile(`\s+`).ReplaceAllString(stdout, " ")
 	Expect(s).To(
 		Equal("Source Destination Device L2 tap1 tap0 ( rx) ( none) "),
 		"Output of `show int span` didn't match to expected",
