@@ -27,6 +27,16 @@ import (
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 )
 
+const (
+	showBdMacOff =
+"  BD-ID   Index   BSN  Age(min)  Learning  U-Forwrd   UU-Flood   Flooding  ARP-Term  arp-ufwd   BVI-Intf \r\n"+
+"    1       1      0     off        on        on       flood        on       off       off       loop0"
+
+	showBdMac10min =
+"  BD-ID   Index   BSN  Age(min)  Learning  U-Forwrd   UU-Flood   Flooding  ARP-Term  arp-ufwd   BVI-Intf \r\n"+
+"    2       1      1      10        on        on       flood        on       off       off       loop0"
+)
+
 // connect microservices into the same L2 network segment via bridge domain
 // and TAP interfaces.
 func TestBridgeDomainWithTAPs(t *testing.T) {
@@ -157,6 +167,12 @@ func TestBridgeDomainWithTAPs(t *testing.T) {
 	Eventually(ctx.getValueStateClb(vppTap2), msUpdateTimeout).Should(Equal(kvs.ValueState_CONFIGURED),
 		"TAP attached to a newly started microservice2 should be eventually configured")
 
+	stdout, err := ctx.execVppctl("show", "bridge-domain")
+	Expect(err).To(BeNil(), "Running `vppctl show bridge-domain` failed")
+	Expect(stdout).To(ContainSubstring(showBdMacOff),
+		"Unexpected output from `vppctl show bridge-domain`",
+	)
+
 	checkPings := func(ms1Down bool) {
 		if !ms1Down {
 			Expect(ctx.pingFromMs(ms1Name, vppLoopbackIP)).To(BeNil())
@@ -211,6 +227,12 @@ func TestBridgeDomainWithTAPs(t *testing.T) {
 	).Send(context.Background())
 	Expect(err).To(BeNil(), "Transaction updating BD failed")
 	checkPings(false)
+
+	stdout, err = ctx.execVppctl("show", "bridge-domain")
+	Expect(err).To(BeNil(), "Running `vppctl show bridge-domain` failed")
+	Expect(stdout).To(ContainSubstring(showBdMac10min),
+		"Unexpected output from `vppctl show bridge-domain`",
+	)
 }
 
 // connect microservices into the same L2 network segment via bridge domain
@@ -371,6 +393,12 @@ func TestBridgeDomainWithAfPackets(t *testing.T) {
 	Eventually(ctx.getValueStateClb(afPacket2), msUpdateTimeout).Should(Equal(kvs.ValueState_CONFIGURED),
 		"AF-PACKET attached to a newly started microservice2 should be eventually configured")
 
+	stdout, err := ctx.execVppctl("show", "bridge-domain")
+	Expect(err).To(BeNil(), "Running `vppctl show bridge-domain` failed")
+	Expect(stdout).To(ContainSubstring(showBdMacOff),
+		"Unexpected output from `vppctl show bridge-domain`",
+	)
+
 	checkPings := func(ms1Down bool) {
 		if !ms1Down {
 			Expect(ctx.pingFromMs(ms1Name, vppLoopbackIP)).To(BeNil())
@@ -433,4 +461,10 @@ func TestBridgeDomainWithAfPackets(t *testing.T) {
 	).Send(context.Background())
 	Expect(err).To(BeNil(), "Transaction updating BD failed")
 	checkPings(false)
+
+	stdout, err = ctx.execVppctl("show", "bridge-domain")
+	Expect(err).To(BeNil(), "Running `vppctl show bridge-domain` failed")
+	Expect(stdout).To(ContainSubstring(showBdMac10min),
+		"Unexpected output from `vppctl show bridge-domain`",
+	)
 }
