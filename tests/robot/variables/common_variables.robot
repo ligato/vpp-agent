@@ -3,6 +3,7 @@ ${DOCKER_HOST_IP}                  192.168.1.67
 ${DOCKER_HOST_USER}                frinx
 ${DOCKER_HOST_PSWD}                frinx
 ${DOCKER_SOCKET_FOLDER}            /tmp/vpp_socket
+${DOCKER_PAPI_FOLDER}              /tmp/papi
 ${DOCKER_WORKDIR}                  /tmp
 ${DOCKER_COMMAND}                  sudo docker
 ${DOCKER_PHYSICAL_INT_1}           0000:00:09.0
@@ -39,6 +40,7 @@ ${AGENT_VPP_1_SOCKET_FOLDER}       /tmp
 ${AGENT_VPP_1_MEMIF_SOCKET_FOLDER}    /run/vpp
 ${AGENT_VPP_1_VPP_TERM_PROMPT}     vpp#
 ${AGENT_VPP_1_VPP_VAT_PROMPT}      vat#
+${AGENT_VPP_1_PAPI_FOLDER}         /opt
 
 ${AGENT_VPP_2_DOCKER_IMAGE}        ${AGENT_VPP_IMAGE_NAME}
 ${AGENT_VPP_2_VPP_PORT}            5002
@@ -49,6 +51,7 @@ ${AGENT_VPP_2_SOCKET_FOLDER}       /tmp
 ${AGENT_VPP_2_MEMIF_SOCKET_FOLDER}    /run/vpp
 ${AGENT_VPP_2_VPP_TERM_PROMPT}     vpp#
 ${AGENT_VPP_2_VPP_VAT_PROMPT}      vat#
+${AGENT_VPP_2_PAPI_FOLDER}         /opt
 
 ${AGENT_VPP_3_DOCKER_IMAGE}        ${AGENT_VPP_IMAGE_NAME}
 ${AGENT_VPP_3_VPP_PORT}            5002
@@ -59,6 +62,7 @@ ${AGENT_VPP_3_SOCKET_FOLDER}       /tmp
 ${AGENT_VPP_3_MEMIF_SOCKET_FOLDER}    /run/vpp
 ${AGENT_VPP_3_VPP_TERM_PROMPT}     vpp#
 ${AGENT_VPP_3_VPP_VAT_PROMPT}      vat#
+${AGENT_VPP_3_PAPI_FOLDER}         /opt
 
 ${AGENT_VPP_4_DOCKER_IMAGE}        ${AGENT_VPP_IMAGE_NAME}
 ${AGENT_VPP_4_VPP_PORT}            5002
@@ -69,6 +73,7 @@ ${AGENT_VPP_4_SOCKET_FOLDER}       /tmp
 ${AGENT_VPP_4_MEMIF_SOCKET_FOLDER}    /run/vpp
 ${AGENT_VPP_4_VPP_TERM_PROMPT}     vpp#
 ${AGENT_VPP_4_VPP_VAT_PROMPT}      vat#
+${AGENT_VPP_4_PAPI_FOLDER}         /opt
 
 # Variables for container with agent and without vpp
 #${AGENT_IMAGE_NAME}                ligato/dev-cn-infra:latest

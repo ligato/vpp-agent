@@ -6,6 +6,8 @@ Library       RequestsLibrary
 Library       SSHLibrary            timeout=15s    loglevel=TRACE
 Library       DateTime
 
+Resource      vat_term.robot
+
 *** Variables ***
 ${timeout_etcd}=      30s
 
@@ -42,10 +44,12 @@ Add Agent VPP Node
     Open SSH Connection    ${node}_term    ${DOCKER_HOST_IP}    ${DOCKER_HOST_USER}    ${DOCKER_HOST_PSWD}
     Open SSH Connection    ${node}_vat    ${DOCKER_HOST_IP}    ${DOCKER_HOST_USER}    ${DOCKER_HOST_PSWD}
     vpp_term: Open VPP Terminal    ${node}
+    #TODO: do not open VAT terminal once we don't need it anymore
     vat_term: Open VAT Terminal    ${node}
     Create Session    ${node}    http://${DOCKER_HOST_IP}:${${node}_REST_API_HOST_PORT}
     ${hostname}=    Execute On Machine    docker    ${DOCKER_COMMAND} exec ${node} bash -c 'echo $HOSTNAME'
     Set Suite Variable    ${${node}_HOSTNAME}    ${hostname}
+    Execute On Machine    docker    docker cp ${DOCKER_PAPI_FOLDER}/vpp_api_executor.py ${node}:${${node}_PAPI_FOLDER}/vpp_api_executor.py
 
 Add Agent VPP Node With Own Vpp Config
     [Arguments]    ${node}    ${vpp_conf_file}    ${vswitch}=${FALSE}
@@ -68,6 +72,7 @@ Add Agent VPP Node With Own Vpp Config
     Create Session    ${node}    http://${DOCKER_HOST_IP}:${${node}_REST_API_HOST_PORT}
     ${hostname}=    Execute On Machine    docker    ${DOCKER_COMMAND} exec ${node} bash -c 'echo $HOSTNAME'
     Set Suite Variable    ${${node}_HOSTNAME}    ${hostname}
+    Execute On Machine    docker    docker cp ${DOCKER_PAPI_FOLDER}/vpp_api_executor.py ${node}:${${node}_PAPI_FOLDER}/vpp_api_executor.py
 
 Add Agent Libmemif Node
     [Arguments]    ${node}
@@ -105,6 +110,7 @@ Add Agent VPP Node With Physical Int
     Create Session    ${node}    http://${DOCKER_HOST_IP}:${${node}_REST_API_HOST_PORT}
     ${hostname}=    Execute On Machine    docker    ${DOCKER_COMMAND} exec ${node} bash -c 'echo $HOSTNAME'
     Set Suite Variable    ${${node}_HOSTNAME}    ${hostname}
+    Execute On Machine    docker    docker cp ${DOCKER_PAPI_FOLDER}/vpp_api_executor.py ${node}:${${node}_PAPI_FOLDER}/vpp_api_executor.py
 
 Remove All Nodes
     :FOR    ${id}    IN    @{NODES}
