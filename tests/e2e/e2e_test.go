@@ -51,6 +51,7 @@ var (
 	vppPath       = flag.String("vpp-path", "/usr/bin/vpp", "VPP program path")
 	vppConfig     = flag.String("vpp-config", "", "VPP config file")
 	vppSockAddr   = flag.String("vpp-sock-addr", "", "VPP binapi socket address")
+	covPath       = flag.String("cov", "", "Path to collect coverage data")
 	agentHTTPPort = flag.Int("agent-http-port", 9191, "VPP-Agent HTTP port")
 	agentGrpcPort = flag.Int("agent-grpc-port", 9111, "VPP-Agent GRPC port")
 
@@ -139,8 +140,15 @@ func setupE2E(t *testing.T) *testCtx {
 
 	// start the agent
 	assertProcessNotRunning(t, "vpp_agent")
-	e2eCovPath := fmt.Sprintf("/tmp/e2e-coverage/%d.out", time.Now().Unix())
-	agentCmd := startProcess(t, "VPP-Agent", "/vpp-agent", "-test.coverprofile="+e2eCovPath)
+
+	var agentArgs []string
+
+	if *covPath != "" {
+		e2eCovPath := fmt.Sprintf("%s/%d.out", *covPath, time.Now().Unix())
+		agentArgs = []string{"-test.coverprofile", e2eCovPath}
+	}
+
+	agentCmd := startProcess(t, "VPP-Agent", "/vpp-agent", agentArgs...)
 
 	// prepare HTTP client for access to REST API of the agent
 	httpAddr := fmt.Sprintf(":%d", *agentHTTPPort)
