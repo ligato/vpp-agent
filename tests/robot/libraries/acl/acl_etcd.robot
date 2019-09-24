@@ -108,10 +108,6 @@ Get ACL As Json
     ${key}=               Set Variable          /vnf-agent/${node}/config/vpp/acls/${AGENT_VER}/acl/${acl_name}
     ${data}=              Read Key    ${key}
     ${data}=              Set Variable If      '''${data}'''=="" or '''${data}'''=='None'    {}    ${data}
-    #${output}=            Evaluate             json.loads('''${data}''')     json
-    #log                   ${output}
-    OperatingSystem.Create File   ${REPLY_DATA_FOLDER}/reply_${acl_name}.json    ${data}
-    #[Return]              ${output}
     [Return]              ${data}
 
 Get All ACL As Json
@@ -120,10 +116,6 @@ Get All ACL As Json
     #${data}=              etcd: Get ETCD Tree    ${key}
     ${data}=              Read Key    ${key}    true
     ${data}=              Set Variable If      '''${data}'''=="" or '''${data}'''=='None'    {}    ${data}
-    #${output}=            Evaluate             json.loads('''${data}''')     json
-    #log                   ${output}
-    OperatingSystem.Create File   ${REPLY_DATA_FOLDER}/reply_acl_all.json    ${data}
-    #[Return]              ${output}
     [Return]              ${data}
 
 Delete ACL
