@@ -25,7 +25,7 @@ const (
 	// APIVersion is the API version of this module.
 	APIVersion = "1.6.0"
 	// VersionCrc is the CRC of this module.
-	VersionCrc = 0x9570a9fb
+	VersionCrc = 0x85cc1e49
 )
 
 // AppCutThroughRegistrationAdd represents VPP binary API message 'app_cut_through_registration_add'.
@@ -348,16 +348,16 @@ type ConnectSock struct {
 	IP                 []byte `struc:"[16]byte"`
 	Port               uint16
 	Proto              uint8
+	ParentHandle       uint64
 	HostnameLen        uint8 `struc:"sizeof=Hostname"`
 	Hostname           []byte
-	ParentHandle       uint64
 }
 
 func (*ConnectSock) GetMessageName() string {
 	return "connect_sock"
 }
 func (*ConnectSock) GetCrcString() string {
-	return "af27d10c"
+	return "d2b460ca"
 }
 func (*ConnectSock) GetMessageType() api.MessageType {
 	return api.RequestMessage
