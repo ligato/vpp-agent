@@ -111,7 +111,7 @@ func TestInterfaceSetTag(t *testing.T) {
 	Expect(ok).To(BeTrue())
 	Expect(vppMsg).NotTo(BeNil())
 	Expect(vppMsg.Tag).To(BeEquivalentTo("tag"))
-	Expect(vppMsg.SwIfIndex).To(Equal(uint32(1)))
+	Expect(vppMsg.SwIfIndex).To(Equal(interfaces.InterfaceIndex(1)))
 }
 
 func TestInterfaceSetTagError(t *testing.T) {
@@ -148,7 +148,7 @@ func TestInterfaceRemoveTag(t *testing.T) {
 	Expect(ok).To(BeTrue())
 	Expect(vppMsg).NotTo(BeNil())
 	Expect(vppMsg.Tag).To(BeEquivalentTo("tag"))
-	Expect(vppMsg.IsAdd).To(Equal(uint8(0)))
+	Expect(vppMsg.IsAdd).To(BeFalse())
 }
 
 func TestInterfaceRemoveTagError(t *testing.T) {
