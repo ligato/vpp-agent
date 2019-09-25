@@ -92,12 +92,12 @@ func (h *InterfaceVppHandler) dumpInterfaces(ifIdxs ...uint32) (map[uint32]*vppc
 			return nil, fmt.Errorf("failed to dump interface: %v", err)
 		}
 
-		ifaceName := cleanString(ifDetails.InterfaceName)
+		ifaceName := strings.TrimRight(ifDetails.InterfaceName, "\x00")
 		l2addr := net.HardwareAddr(ifDetails.L2Address[:ifDetails.L2AddressLength])
 
 		details := &vppcalls.InterfaceDetails{
 			Interface: &interfaces.Interface{
-				Name: cleanString(ifDetails.Tag),
+				Name: strings.TrimRight(ifDetails.Tag, "\x00"),
 				// the type may be amended later by further dumps
 				Type:        guessInterfaceType(ifaceName),
 				Enabled:     ifDetails.AdminUpDown > 0,
@@ -115,7 +115,7 @@ func (h *InterfaceVppHandler) dumpInterfaces(ifIdxs ...uint32) (map[uint32]*vppc
 				LinkMTU:        ifDetails.LinkMtu,
 				LinkSpeed:      ifDetails.LinkSpeed,
 				SubID:          ifDetails.SubID,
-				Tag:            cleanString(ifDetails.Tag),
+				Tag:            strings.TrimRight(ifDetails.Tag, "\x00"),
 			},
 		}
 
@@ -385,7 +385,7 @@ func (h *InterfaceVppHandler) DumpInterfaceStates(ifIdxs ...uint32) (map[uint32]
 
 			ifaceState := vppcalls.InterfaceState{
 				SwIfIndex:    ifDetails.SwIfIndex,
-				InternalName: cleanString(ifDetails.InterfaceName),
+				InternalName: strings.TrimRight(ifDetails.InterfaceName, "\x00"),
 				PhysAddress:  physAddr,
 				AdminState:   toInterfaceStatus(ifDetails.AdminUpDown),
 				LinkState:    toInterfaceStatus(ifDetails.LinkUpDown),

@@ -6,7 +6,7 @@ Package nat is a generated VPP binary API for 'nat' module.
 
 It consists of:
 	  6 enums
-	  3 aliases
+	  6 aliases
 	  7 types
 	  1 union
 	137 messages
@@ -27,9 +27,9 @@ const (
 	// ModuleName is the name of this module.
 	ModuleName = "nat"
 	// APIVersion is the API version of this module.
-	APIVersion = "5.1.0"
+	APIVersion = "5.2.0"
 	// VersionCrc is the CRC of this module.
-	VersionCrc = 0x11e8f685
+	VersionCrc = 0x950e6e7d
 )
 
 // AddressFamily represents VPP binary API enum 'address_family'.
@@ -314,14 +314,23 @@ func (x NatLogLevel) String() string {
 	return strconv.Itoa(int(x))
 }
 
+// AddressWithPrefix represents VPP binary API alias 'address_with_prefix'.
+type AddressWithPrefix Prefix
+
 // InterfaceIndex represents VPP binary API alias 'interface_index'.
 type InterfaceIndex uint32
 
 // IP4Address represents VPP binary API alias 'ip4_address'.
 type IP4Address [4]uint8
 
+// IP4AddressWithPrefix represents VPP binary API alias 'ip4_address_with_prefix'.
+type IP4AddressWithPrefix IP4Prefix
+
 // IP6Address represents VPP binary API alias 'ip6_address'.
 type IP6Address [16]uint8
+
+// IP6AddressWithPrefix represents VPP binary API alias 'ip6_address_with_prefix'.
+type IP6AddressWithPrefix IP6Prefix
 
 // Address represents VPP binary API type 'address'.
 type Address struct {
@@ -451,7 +460,7 @@ func (*DsliteAddDelPoolAddrRange) GetMessageName() string {
 	return "dslite_add_del_pool_addr_range"
 }
 func (*DsliteAddDelPoolAddrRange) GetCrcString() string {
-	return "b3e85e4d"
+	return "c448457a"
 }
 func (*DsliteAddDelPoolAddrRange) GetMessageType() api.MessageType {
 	return api.RequestMessage
@@ -481,7 +490,7 @@ func (*DsliteAddressDetails) GetMessageName() string {
 	return "dslite_address_details"
 }
 func (*DsliteAddressDetails) GetCrcString() string {
-	return "9ed18b19"
+	return "ec26d648"
 }
 func (*DsliteAddressDetails) GetMessageType() api.MessageType {
 	return api.ReplyMessage
@@ -524,7 +533,7 @@ func (*DsliteGetAftrAddrReply) GetMessageName() string {
 	return "dslite_get_aftr_addr_reply"
 }
 func (*DsliteGetAftrAddrReply) GetCrcString() string {
-	return "c4b65514"
+	return "38e30db1"
 }
 func (*DsliteGetAftrAddrReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
@@ -554,7 +563,7 @@ func (*DsliteGetB4AddrReply) GetMessageName() string {
 	return "dslite_get_b4_addr_reply"
 }
 func (*DsliteGetB4AddrReply) GetCrcString() string {
-	return "c4b65514"
+	return "38e30db1"
 }
 func (*DsliteGetB4AddrReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
@@ -570,7 +579,7 @@ func (*DsliteSetAftrAddr) GetMessageName() string {
 	return "dslite_set_aftr_addr"
 }
 func (*DsliteSetAftrAddr) GetCrcString() string {
-	return "ac3d29bd"
+	return "1e955f8d"
 }
 func (*DsliteSetAftrAddr) GetMessageType() api.MessageType {
 	return api.RequestMessage
@@ -601,7 +610,7 @@ func (*DsliteSetB4Addr) GetMessageName() string {
 	return "dslite_set_b4_addr"
 }
 func (*DsliteSetB4Addr) GetCrcString() string {
-	return "ac3d29bd"
+	return "1e955f8d"
 }
 func (*DsliteSetB4Addr) GetMessageType() api.MessageType {
 	return api.RequestMessage
@@ -635,7 +644,7 @@ func (*Nat44AddDelAddressRange) GetMessageName() string {
 	return "nat44_add_del_address_range"
 }
 func (*Nat44AddDelAddressRange) GetCrcString() string {
-	return "b9406f1f"
+	return "d4c7568c"
 }
 func (*Nat44AddDelAddressRange) GetMessageType() api.MessageType {
 	return api.RequestMessage
@@ -658,22 +667,21 @@ func (*Nat44AddDelAddressRangeReply) GetMessageType() api.MessageType {
 
 // Nat44AddDelIdentityMapping represents VPP binary API message 'nat44_add_del_identity_mapping'.
 type Nat44AddDelIdentityMapping struct {
-	IsAdd      bool
-	Flags      NatConfigFlags
-	IPAddress  IP4Address
-	Protocol   uint8
-	Port       uint16
-	SwIfIndex  InterfaceIndex
-	VrfID      uint32
-	XXX_TagLen uint32 `struc:"sizeof=Tag"`
-	Tag        string
+	IsAdd     bool
+	Flags     NatConfigFlags
+	IPAddress IP4Address
+	Protocol  uint8
+	Port      uint16
+	SwIfIndex InterfaceIndex
+	VrfID     uint32
+	Tag       string `struc:"[64]byte"`
 }
 
 func (*Nat44AddDelIdentityMapping) GetMessageName() string {
 	return "nat44_add_del_identity_mapping"
 }
 func (*Nat44AddDelIdentityMapping) GetCrcString() string {
-	return "27cfdf6a"
+	return "8e12743f"
 }
 func (*Nat44AddDelIdentityMapping) GetMessageType() api.MessageType {
 	return api.RequestMessage
@@ -705,7 +713,7 @@ func (*Nat44AddDelInterfaceAddr) GetMessageName() string {
 	return "nat44_add_del_interface_addr"
 }
 func (*Nat44AddDelInterfaceAddr) GetCrcString() string {
-	return "296a5cc4"
+	return "fc835325"
 }
 func (*Nat44AddDelInterfaceAddr) GetMessageType() api.MessageType {
 	return api.RequestMessage
@@ -734,17 +742,16 @@ type Nat44AddDelLbStaticMapping struct {
 	ExternalPort uint16
 	Protocol     uint8
 	Affinity     uint32
+	Tag          string `struc:"[64]byte"`
 	LocalNum     uint32 `struc:"sizeof=Locals"`
 	Locals       []Nat44LbAddrPort
-	XXX_TagLen   uint32 `struc:"sizeof=Tag"`
-	Tag          string
 }
 
 func (*Nat44AddDelLbStaticMapping) GetMessageName() string {
 	return "nat44_add_del_lb_static_mapping"
 }
 func (*Nat44AddDelLbStaticMapping) GetCrcString() string {
-	return "fdbafb24"
+	return "53b24611"
 }
 func (*Nat44AddDelLbStaticMapping) GetMessageType() api.MessageType {
 	return api.RequestMessage
@@ -776,15 +783,14 @@ type Nat44AddDelStaticMapping struct {
 	ExternalPort      uint16
 	ExternalSwIfIndex InterfaceIndex
 	VrfID             uint32
-	XXX_TagLen        uint32 `struc:"sizeof=Tag"`
-	Tag               string
+	Tag               string `struc:"[64]byte"`
 }
 
 func (*Nat44AddDelStaticMapping) GetMessageName() string {
 	return "nat44_add_del_static_mapping"
 }
 func (*Nat44AddDelStaticMapping) GetCrcString() string {
-	return "e26e4d05"
+	return "e165e83b"
 }
 func (*Nat44AddDelStaticMapping) GetMessageType() api.MessageType {
 	return api.RequestMessage
@@ -816,7 +822,7 @@ func (*Nat44AddressDetails) GetMessageName() string {
 	return "nat44_address_details"
 }
 func (*Nat44AddressDetails) GetCrcString() string {
-	return "5839c1a8"
+	return "45410ac4"
 }
 func (*Nat44AddressDetails) GetMessageType() api.MessageType {
 	return api.ReplyMessage
@@ -850,7 +856,7 @@ func (*Nat44DelSession) GetMessageName() string {
 	return "nat44_del_session"
 }
 func (*Nat44DelSession) GetCrcString() string {
-	return "138f3174"
+	return "4c49c387"
 }
 func (*Nat44DelSession) GetMessageType() api.MessageType {
 	return api.RequestMessage
@@ -931,21 +937,20 @@ func (*Nat44ForwardingIsEnabledReply) GetMessageType() api.MessageType {
 
 // Nat44IdentityMappingDetails represents VPP binary API message 'nat44_identity_mapping_details'.
 type Nat44IdentityMappingDetails struct {
-	Flags      NatConfigFlags
-	IPAddress  IP4Address
-	Protocol   uint8
-	Port       uint16
-	SwIfIndex  InterfaceIndex
-	VrfID      uint32
-	XXX_TagLen uint32 `struc:"sizeof=Tag"`
-	Tag        string
+	Flags     NatConfigFlags
+	IPAddress IP4Address
+	Protocol  uint8
+	Port      uint16
+	SwIfIndex InterfaceIndex
+	VrfID     uint32
+	Tag       string `struc:"[64]byte"`
 }
 
 func (*Nat44IdentityMappingDetails) GetMessageName() string {
 	return "nat44_identity_mapping_details"
 }
 func (*Nat44IdentityMappingDetails) GetCrcString() string {
-	return "ede3c486"
+	return "36d21351"
 }
 func (*Nat44IdentityMappingDetails) GetMessageType() api.MessageType {
 	return api.ReplyMessage
@@ -975,7 +980,7 @@ func (*Nat44InterfaceAddDelFeature) GetMessageName() string {
 	return "nat44_interface_add_del_feature"
 }
 func (*Nat44InterfaceAddDelFeature) GetCrcString() string {
-	return "ef3edad1"
+	return "f3699b83"
 }
 func (*Nat44InterfaceAddDelFeature) GetMessageType() api.MessageType {
 	return api.RequestMessage
@@ -1007,7 +1012,7 @@ func (*Nat44InterfaceAddDelOutputFeature) GetMessageName() string {
 	return "nat44_interface_add_del_output_feature"
 }
 func (*Nat44InterfaceAddDelOutputFeature) GetCrcString() string {
-	return "ef3edad1"
+	return "f3699b83"
 }
 func (*Nat44InterfaceAddDelOutputFeature) GetMessageType() api.MessageType {
 	return api.RequestMessage
@@ -1038,7 +1043,7 @@ func (*Nat44InterfaceAddrDetails) GetMessageName() string {
 	return "nat44_interface_addr_details"
 }
 func (*Nat44InterfaceAddrDetails) GetCrcString() string {
-	return "053725cb"
+	return "3e687514"
 }
 func (*Nat44InterfaceAddrDetails) GetMessageType() api.MessageType {
 	return api.ReplyMessage
@@ -1067,7 +1072,7 @@ func (*Nat44InterfaceDetails) GetMessageName() string {
 	return "nat44_interface_details"
 }
 func (*Nat44InterfaceDetails) GetCrcString() string {
-	return "c363a3de"
+	return "5d286289"
 }
 func (*Nat44InterfaceDetails) GetMessageType() api.MessageType {
 	return api.ReplyMessage
@@ -1096,7 +1101,7 @@ func (*Nat44InterfaceOutputFeatureDetails) GetMessageName() string {
 	return "nat44_interface_output_feature_details"
 }
 func (*Nat44InterfaceOutputFeatureDetails) GetCrcString() string {
-	return "c363a3de"
+	return "5d286289"
 }
 func (*Nat44InterfaceOutputFeatureDetails) GetMessageType() api.MessageType {
 	return api.ReplyMessage
@@ -1128,7 +1133,7 @@ func (*Nat44LbStaticMappingAddDelLocal) GetMessageName() string {
 	return "nat44_lb_static_mapping_add_del_local"
 }
 func (*Nat44LbStaticMappingAddDelLocal) GetCrcString() string {
-	return "5d9011ee"
+	return "2910a151"
 }
 func (*Nat44LbStaticMappingAddDelLocal) GetMessageType() api.MessageType {
 	return api.RequestMessage
@@ -1156,17 +1161,16 @@ type Nat44LbStaticMappingDetails struct {
 	Protocol     uint8
 	Flags        NatConfigFlags
 	Affinity     uint32
+	Tag          string `struc:"[64]byte"`
 	LocalNum     uint32 `struc:"sizeof=Locals"`
 	Locals       []Nat44LbAddrPort
-	XXX_TagLen   uint32 `struc:"sizeof=Tag"`
-	Tag          string
 }
 
 func (*Nat44LbStaticMappingDetails) GetMessageName() string {
 	return "nat44_lb_static_mapping_details"
 }
 func (*Nat44LbStaticMappingDetails) GetCrcString() string {
-	return "561d7343"
+	return "2267b9e8"
 }
 func (*Nat44LbStaticMappingDetails) GetMessageType() api.MessageType {
 	return api.ReplyMessage
@@ -1195,15 +1199,14 @@ type Nat44StaticMappingDetails struct {
 	ExternalPort      uint16
 	ExternalSwIfIndex InterfaceIndex
 	VrfID             uint32
-	XXX_TagLen        uint32 `struc:"sizeof=Tag"`
-	Tag               string
+	Tag               string `struc:"[64]byte"`
 }
 
 func (*Nat44StaticMappingDetails) GetMessageName() string {
 	return "nat44_static_mapping_details"
 }
 func (*Nat44StaticMappingDetails) GetCrcString() string {
-	return "68e5b3cc"
+	return "1a433ef7"
 }
 func (*Nat44StaticMappingDetails) GetMessageType() api.MessageType {
 	return api.ReplyMessage
@@ -1234,7 +1237,7 @@ func (*Nat44UserDetails) GetMessageName() string {
 	return "nat44_user_details"
 }
 func (*Nat44UserDetails) GetCrcString() string {
-	return "e35837b4"
+	return "355896c2"
 }
 func (*Nat44UserDetails) GetMessageType() api.MessageType {
 	return api.ReplyMessage
@@ -1274,7 +1277,7 @@ func (*Nat44UserSessionDetails) GetMessageName() string {
 	return "nat44_user_session_details"
 }
 func (*Nat44UserSessionDetails) GetCrcString() string {
-	return "1d185082"
+	return "1965fd69"
 }
 func (*Nat44UserSessionDetails) GetMessageType() api.MessageType {
 	return api.ReplyMessage
@@ -1290,7 +1293,7 @@ func (*Nat44UserSessionDump) GetMessageName() string {
 	return "nat44_user_session_dump"
 }
 func (*Nat44UserSessionDump) GetCrcString() string {
-	return "69c0a6a5"
+	return "e1899c98"
 }
 func (*Nat44UserSessionDump) GetMessageType() api.MessageType {
 	return api.RequestMessage
@@ -1307,7 +1310,7 @@ func (*Nat64AddDelInterface) GetMessageName() string {
 	return "nat64_add_del_interface"
 }
 func (*Nat64AddDelInterface) GetCrcString() string {
-	return "ef3edad1"
+	return "f3699b83"
 }
 func (*Nat64AddDelInterface) GetMessageType() api.MessageType {
 	return api.RequestMessage
@@ -1323,7 +1326,7 @@ func (*Nat64AddDelInterfaceAddr) GetMessageName() string {
 	return "nat64_add_del_interface_addr"
 }
 func (*Nat64AddDelInterfaceAddr) GetCrcString() string {
-	return "2667112d"
+	return "47d6e753"
 }
 func (*Nat64AddDelInterfaceAddr) GetMessageType() api.MessageType {
 	return api.RequestMessage
@@ -1371,7 +1374,7 @@ func (*Nat64AddDelPoolAddrRange) GetMessageName() string {
 	return "nat64_add_del_pool_addr_range"
 }
 func (*Nat64AddDelPoolAddrRange) GetCrcString() string {
-	return "0d7c833f"
+	return "21234ef3"
 }
 func (*Nat64AddDelPoolAddrRange) GetMessageType() api.MessageType {
 	return api.RequestMessage
@@ -1403,7 +1406,7 @@ func (*Nat64AddDelPrefix) GetMessageName() string {
 	return "nat64_add_del_prefix"
 }
 func (*Nat64AddDelPrefix) GetCrcString() string {
-	return "f1c54efa"
+	return "727b2f4c"
 }
 func (*Nat64AddDelPrefix) GetMessageType() api.MessageType {
 	return api.RequestMessage
@@ -1439,7 +1442,7 @@ func (*Nat64AddDelStaticBib) GetMessageName() string {
 	return "nat64_add_del_static_bib"
 }
 func (*Nat64AddDelStaticBib) GetCrcString() string {
-	return "42a44519"
+	return "90fae58a"
 }
 func (*Nat64AddDelStaticBib) GetMessageType() api.MessageType {
 	return api.RequestMessage
@@ -1476,7 +1479,7 @@ func (*Nat64BibDetails) GetMessageName() string {
 	return "nat64_bib_details"
 }
 func (*Nat64BibDetails) GetCrcString() string {
-	return "776fd58a"
+	return "62c8541d"
 }
 func (*Nat64BibDetails) GetMessageType() api.MessageType {
 	return api.ReplyMessage
@@ -1507,7 +1510,7 @@ func (*Nat64InterfaceDetails) GetMessageName() string {
 	return "nat64_interface_details"
 }
 func (*Nat64InterfaceDetails) GetCrcString() string {
-	return "c363a3de"
+	return "5d286289"
 }
 func (*Nat64InterfaceDetails) GetMessageType() api.MessageType {
 	return api.ReplyMessage
@@ -1536,7 +1539,7 @@ func (*Nat64PoolAddrDetails) GetMessageName() string {
 	return "nat64_pool_addr_details"
 }
 func (*Nat64PoolAddrDetails) GetCrcString() string {
-	return "36f4365b"
+	return "9bb99cdb"
 }
 func (*Nat64PoolAddrDetails) GetMessageType() api.MessageType {
 	return api.ReplyMessage
@@ -1565,7 +1568,7 @@ func (*Nat64PrefixDetails) GetMessageName() string {
 	return "nat64_prefix_details"
 }
 func (*Nat64PrefixDetails) GetCrcString() string {
-	return "6e0088d7"
+	return "20568de3"
 }
 func (*Nat64PrefixDetails) GetMessageType() api.MessageType {
 	return api.ReplyMessage
@@ -1601,7 +1604,7 @@ func (*Nat64StDetails) GetMessageName() string {
 	return "nat64_st_details"
 }
 func (*Nat64StDetails) GetCrcString() string {
-	return "7c5125d0"
+	return "c770d620"
 }
 func (*Nat64StDetails) GetMessageType() api.MessageType {
 	return api.ReplyMessage
@@ -1633,7 +1636,7 @@ func (*Nat66AddDelInterface) GetMessageName() string {
 	return "nat66_add_del_interface"
 }
 func (*Nat66AddDelInterface) GetCrcString() string {
-	return "ef3edad1"
+	return "f3699b83"
 }
 func (*Nat66AddDelInterface) GetMessageType() api.MessageType {
 	return api.RequestMessage
@@ -1666,7 +1669,7 @@ func (*Nat66AddDelStaticMapping) GetMessageName() string {
 	return "nat66_add_del_static_mapping"
 }
 func (*Nat66AddDelStaticMapping) GetCrcString() string {
-	return "1c15424e"
+	return "fb64e50b"
 }
 func (*Nat66AddDelStaticMapping) GetMessageType() api.MessageType {
 	return api.RequestMessage
@@ -1697,7 +1700,7 @@ func (*Nat66InterfaceDetails) GetMessageName() string {
 	return "nat66_interface_details"
 }
 func (*Nat66InterfaceDetails) GetCrcString() string {
-	return "c363a3de"
+	return "5d286289"
 }
 func (*Nat66InterfaceDetails) GetMessageType() api.MessageType {
 	return api.ReplyMessage
@@ -1729,7 +1732,7 @@ func (*Nat66StaticMappingDetails) GetMessageName() string {
 	return "nat66_static_mapping_details"
 }
 func (*Nat66StaticMappingDetails) GetCrcString() string {
-	return "5e1189f9"
+	return "5c568448"
 }
 func (*Nat66StaticMappingDetails) GetMessageType() api.MessageType {
 	return api.ReplyMessage
@@ -1791,7 +1794,7 @@ func (*NatDetAddDelMap) GetMessageName() string {
 	return "nat_det_add_del_map"
 }
 func (*NatDetAddDelMap) GetCrcString() string {
-	return "04b76549"
+	return "112fde05"
 }
 func (*NatDetAddDelMap) GetMessageType() api.MessageType {
 	return api.RequestMessage
@@ -1824,7 +1827,7 @@ func (*NatDetCloseSessionIn) GetMessageName() string {
 	return "nat_det_close_session_in"
 }
 func (*NatDetCloseSessionIn) GetCrcString() string {
-	return "fedaebae"
+	return "0a10ef64"
 }
 func (*NatDetCloseSessionIn) GetMessageType() api.MessageType {
 	return api.RequestMessage
@@ -1857,7 +1860,7 @@ func (*NatDetCloseSessionOut) GetMessageName() string {
 	return "nat_det_close_session_out"
 }
 func (*NatDetCloseSessionOut) GetCrcString() string {
-	return "be61efd5"
+	return "c1b6cbfb"
 }
 func (*NatDetCloseSessionOut) GetMessageType() api.MessageType {
 	return api.RequestMessage
@@ -1887,7 +1890,7 @@ func (*NatDetForward) GetMessageName() string {
 	return "nat_det_forward"
 }
 func (*NatDetForward) GetCrcString() string {
-	return "347c6d3e"
+	return "7f8a89cd"
 }
 func (*NatDetForward) GetMessageType() api.MessageType {
 	return api.RequestMessage
@@ -1905,7 +1908,7 @@ func (*NatDetForwardReply) GetMessageName() string {
 	return "nat_det_forward_reply"
 }
 func (*NatDetForwardReply) GetCrcString() string {
-	return "d64bcb1b"
+	return "a8ccbdc0"
 }
 func (*NatDetForwardReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
@@ -1926,7 +1929,7 @@ func (*NatDetMapDetails) GetMessageName() string {
 	return "nat_det_map_details"
 }
 func (*NatDetMapDetails) GetCrcString() string {
-	return "5cd9ca79"
+	return "88000ee1"
 }
 func (*NatDetMapDetails) GetMessageType() api.MessageType {
 	return api.ReplyMessage
@@ -1955,7 +1958,7 @@ func (*NatDetReverse) GetMessageName() string {
 	return "nat_det_reverse"
 }
 func (*NatDetReverse) GetCrcString() string {
-	return "c99c32db"
+	return "a7573fe1"
 }
 func (*NatDetReverse) GetMessageType() api.MessageType {
 	return api.RequestMessage
@@ -1971,7 +1974,7 @@ func (*NatDetReverseReply) GetMessageName() string {
 	return "nat_det_reverse_reply"
 }
 func (*NatDetReverseReply) GetCrcString() string {
-	return "0ce4aee6"
+	return "34066d48"
 }
 func (*NatDetReverseReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
@@ -1991,7 +1994,7 @@ func (*NatDetSessionDetails) GetMessageName() string {
 	return "nat_det_session_details"
 }
 func (*NatDetSessionDetails) GetCrcString() string {
-	return "31da0ce5"
+	return "27f3c171"
 }
 func (*NatDetSessionDetails) GetMessageType() api.MessageType {
 	return api.ReplyMessage
@@ -2006,7 +2009,7 @@ func (*NatDetSessionDump) GetMessageName() string {
 	return "nat_det_session_dump"
 }
 func (*NatDetSessionDump) GetCrcString() string {
-	return "4e489ac2"
+	return "e45a3af7"
 }
 func (*NatDetSessionDump) GetMessageType() api.MessageType {
 	return api.RequestMessage
@@ -2197,7 +2200,7 @@ func (*NatHaGetFailoverReply) GetMessageName() string {
 	return "nat_ha_get_failover_reply"
 }
 func (*NatHaGetFailoverReply) GetCrcString() string {
-	return "d4cb310a"
+	return "a67d8752"
 }
 func (*NatHaGetFailoverReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
@@ -2228,7 +2231,7 @@ func (*NatHaGetListenerReply) GetMessageName() string {
 	return "nat_ha_get_listener_reply"
 }
 func (*NatHaGetListenerReply) GetCrcString() string {
-	return "fb8786ad"
+	return "123ea41f"
 }
 func (*NatHaGetListenerReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
@@ -2292,7 +2295,7 @@ func (*NatHaSetFailover) GetMessageName() string {
 	return "nat_ha_set_failover"
 }
 func (*NatHaSetFailover) GetCrcString() string {
-	return "a5d89e59"
+	return "718246af"
 }
 func (*NatHaSetFailover) GetMessageType() api.MessageType {
 	return api.RequestMessage
@@ -2324,7 +2327,7 @@ func (*NatHaSetListener) GetMessageName() string {
 	return "nat_ha_set_listener"
 }
 func (*NatHaSetListener) GetCrcString() string {
-	return "ddf1d491"
+	return "e4a8cb4e"
 }
 func (*NatHaSetListener) GetMessageType() api.MessageType {
 	return api.RequestMessage
@@ -2390,7 +2393,7 @@ func (*NatReassDetails) GetMessageName() string {
 	return "nat_reass_details"
 }
 func (*NatReassDetails) GetCrcString() string {
-	return "43dc3cc2"
+	return "dbef31be"
 }
 func (*NatReassDetails) GetMessageType() api.MessageType {
 	return api.ReplyMessage
@@ -2651,15 +2654,14 @@ func (*NatShowConfigReply) GetMessageType() api.MessageType {
 type NatWorkerDetails struct {
 	WorkerIndex uint32
 	LcoreID     uint32
-	XXX_NameLen uint32 `struc:"sizeof=Name"`
-	Name        string
+	Name        string `struc:"[64]byte"`
 }
 
 func (*NatWorkerDetails) GetMessageName() string {
 	return "nat_worker_details"
 }
 func (*NatWorkerDetails) GetCrcString() string {
-	return "9922dabd"
+	return "84bf06fc"
 }
 func (*NatWorkerDetails) GetMessageType() api.MessageType {
 	return api.ReplyMessage

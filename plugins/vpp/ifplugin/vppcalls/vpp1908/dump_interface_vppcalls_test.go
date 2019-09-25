@@ -45,7 +45,7 @@ func TestDumpInterfacesVxLan(t *testing.T) {
 			Name: (&interfaces.SwInterfaceDump{}).GetMessageName(),
 			Ping: true,
 			Message: &interfaces.SwInterfaceDetails{
-				InterfaceName: []byte("vxlan1"),
+				InterfaceName: "vxlan1",
 			},
 		},
 		{
@@ -102,7 +102,7 @@ func TestDumpInterfacesHost(t *testing.T) {
 			Name: (&interfaces.SwInterfaceDump{}).GetMessageName(),
 			Ping: true,
 			Message: &interfaces.SwInterfaceDetails{
-				InterfaceName: []byte("host-localhost"),
+				InterfaceName: "host-localhost",
 			},
 		},
 		{
@@ -152,7 +152,7 @@ func TestDumpInterfacesMemif(t *testing.T) {
 			Name: (&interfaces.SwInterfaceDump{}).GetMessageName(),
 			Ping: true,
 			Message: &interfaces.SwInterfaceDetails{
-				InterfaceName: []byte("memif1"),
+				InterfaceName: "memif1",
 			},
 		},
 		{
@@ -221,8 +221,8 @@ func TestDumpInterfacesTap2(t *testing.T) {
 			Ping: true,
 			Message: &interfaces.SwInterfaceDetails{
 				SwIfIndex:       0,
-				InterfaceName:   []byte("tap2"),
-				Tag:             []byte("mytap2"),
+				InterfaceName:   "tap2",
+				Tag:             "mytap2",
 				AdminUpDown:     1,
 				LinkMtu:         9216, // Default MTU
 				L2Address:       hwAddr1Parse,
@@ -316,7 +316,7 @@ func TestDumpInterfacesRxPlacement(t *testing.T) {
 			Name: (&interfaces.SwInterfaceDump{}).GetMessageName(),
 			Ping: true,
 			Message: &interfaces.SwInterfaceDetails{
-				InterfaceName: []byte("memif1"),
+				InterfaceName: "memif1",
 			},
 		},
 		{
