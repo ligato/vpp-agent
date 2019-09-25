@@ -53,6 +53,54 @@ func TestInterfaceIP(t *testing.T) {
 	}
 }
 
+func TestInterfaceEnabledField(t *testing.T) {
+	ctx := setupVPP(t)
+	defer ctx.teardownVPP()
+
+	h := ifplugin_vppcalls.CompatibleInterfaceVppHandler(ctx.vppBinapi, logrus.NewLogger("test"))
+	ifIdx0, err := h.AddLoopbackInterface("loop0")
+	if err != nil {
+		t.Fatalf("creating loopback interface failed: %v", err)
+	}
+	ifaces, err := h.DumpInterfaces()
+	if err != nil {
+		t.Fatalf("dumping interfaces failed: %v", err)
+	}
+	iface := ifaces[ifIdx0]
+
+	if iface.Interface.Enabled != false {
+		t.Fatalf("expected interface to not be enabled")
+	}
+
+	err = h.InterfaceAdminUp(ifIdx0)
+	if err != nil {
+		t.Fatalf("enabling interface failed: %v", err)
+	}
+	ifaces, err = h.DumpInterfaces()
+	if err != nil {
+		t.Fatalf("dumping interfaces failed: %v", err)
+	}
+	iface = ifaces[ifIdx0]
+
+	if iface.Interface.Enabled != true {
+		t.Fatalf("expected interface to be enabled")
+	}
+
+	err = h.InterfaceAdminDown(ifIdx0)
+	if err != nil {
+		t.Fatalf("disabling interface failed: %v", err)
+	}
+	ifaces, err = h.DumpInterfaces()
+	if err != nil {
+		t.Fatalf("dumping interfaces failed: %v", err)
+	}
+	iface = ifaces[ifIdx0]
+
+	if iface.Interface.Enabled != false {
+		t.Fatalf("expected interface to not be enabled")
+	}
+}
+
 func TestInterfaceDumpState(t *testing.T) {
 	ctx := setupVPP(t)
 	defer ctx.teardownVPP()

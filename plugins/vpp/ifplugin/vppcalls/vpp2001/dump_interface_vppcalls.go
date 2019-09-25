@@ -1151,7 +1151,9 @@ func ifAPIFlagState(flags vpp_ifs.IfStatusFlags) uint32 {
 	if flags == vpp_ifs.IF_STATUS_API_FLAG_ADMIN_UP {
 		return 1
 	} else if flags == vpp_ifs.IF_STATUS_API_FLAG_LINK_UP {
-		return 2
+		return 0
+	} else if flags == 3 {
+		return 3
 	}
 	return 0
 }
