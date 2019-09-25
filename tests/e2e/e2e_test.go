@@ -29,7 +29,8 @@ import (
 	"time"
 
 	"encoding/json"
-	"github.com/fsouza/go-dockerclient"
+
+	docker "github.com/fsouza/go-dockerclient"
 	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/cn-infra/health/probe"
 	"github.com/mitchellh/go-ps"
@@ -205,6 +206,18 @@ func (ctx *testCtx) agentInSync() bool {
 	return true
 }
 
+// execVppctl returns output from vppctl for given action and arguments.
+func (ctx *testCtx) execVppctl(action string, args ...string) (string, error) {
+	var stdout bytes.Buffer
+	command := append([]string{action}, args...)
+	cmd := exec.Command("vppctl", command...)
+	cmd.Stdout = &stdout
+	if err := cmd.Run(); err != nil {
+		return "", fmt.Errorf("could not execute `vppctl %s`: %v", strings.Join(command, " "), err)
+	}
+	return stdout.String(), nil
+}
+
 func (ctx *testCtx) startMicroservice(msName string) (ms *microservice) {
 	ms = createMicroservice(ctx.t, msName, ctx.dockerClient, ctx.nsCalls)
 	ctx.microservices[msName] = ms
@@ -243,19 +256,15 @@ func (ctx *testCtx) pingFromMsClb(msName, dstAddress string) func() error {
 
 // pingFromVPP pings <dstAddress> from inside the VPP.
 func (ctx *testCtx) pingFromVPP(destAddress string) error {
-	var stdout bytes.Buffer
-
 	// run ping on VPP using vppctl
-	cmd := exec.Command("vppctl", "ping", destAddress)
-	cmd.Stdout = &stdout
-	err := cmd.Run()
+	stdout, err := ctx.execVppctl("ping", destAddress)
 	if err != nil {
 		return err
 	}
 
 	// parse output
-	matches := vppPingRegexp.FindStringSubmatch(stdout.String())
-	sent, recv, loss, err := parsePingOutput(stdout.String(), matches)
+	matches := vppPingRegexp.FindStringSubmatch(stdout)
+	sent, recv, loss, err := parsePingOutput(stdout, matches)
 	if err != nil {
 		return err
 	}
