@@ -27,7 +27,7 @@ stages:
   - Build
   - Integration
   - name: E2E
-    if: type IN (cron) OR (type IN (push) AND branch IN (master, dev))
+    if: ( type = push AND branch IN (master, dev) ) OR ( type IN (cron, api) ) OR ( commit_message =~ /^(test-e2e)/ )
 
 jobs:
   include:
