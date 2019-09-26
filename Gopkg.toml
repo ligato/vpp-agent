@@ -28,10 +28,6 @@ required = [
   version = "1.2.0"
 
 [[constraint]]
-  branch = "master"
-  name = "github.com/logrusorgru/aurora.git"
-
-[[constraint]]
   name = "github.com/namsral/flag"
   version = "1.7.4-pre"
 
@@ -106,7 +102,3 @@ required = [
   [[prune.project]]
     name = "github.com/gogo/protobuf"
     unused-packages = false
-
-[[constraint]]
-  branch = "master"
-  name = "github.com/common-nighthawk/go-figure"

@@ -16,31 +16,31 @@ package commands
 
 import (
 	"bytes"
-	"encoding/json"
+	"context"
 	"fmt"
-	"net/url"
 	"os"
 	"strings"
 	"text/tabwriter"
 
 	"github.com/spf13/cobra"
 
+	"github.com/ligato/vpp-agent/api/types"
+	agentcli "github.com/ligato/vpp-agent/cmd/agentctl/cli"
 	"github.com/ligato/vpp-agent/pkg/models"
 	"github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 )
 
-func NewStatusCommand(cli *AgentCli) *cobra.Command {
+func NewStatusCommand(cli agentcli.Cli) *cobra.Command {
 	var opts StatusOptions
 
 	cmd := &cobra.Command{
 		Use:   "status",
 		Short: "Retrieve agent status",
 		Args:  cobra.RangeArgs(0, 1),
-		Run: func(cmd *cobra.Command, args []string) {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			opts.Models = args
-			runStatus(cli, opts)
+			return runStatus(cli, opts)
 		},
-		DisableFlagsInUseLine: true,
 	}
 	return cmd
 }
@@ -49,26 +49,37 @@ type StatusOptions struct {
 	Models []string
 }
 
-func runStatus(cli *AgentCli, opts StatusOptions) {
+func runStatus(cli agentcli.Cli, opts StatusOptions) error {
 	var model string
 	if len(opts.Models) > 0 {
 		model = opts.Models[0]
 	}
 
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	allModels, err := cli.Client().ModelList(ctx, types.ModelListOptions{})
+	if err != nil {
+		return err
+	}
+
 	var modelKeyPrefix string
-	for _, m := range cli.AllModels() {
+	for _, m := range allModels {
 		if (m.Alias != "" && model == m.Alias) || model == m.Name {
 			modelKeyPrefix = m.KeyPrefix
 			break
 		}
 	}
 
-	status, err := statusKeyPrefix(cli, modelKeyPrefix)
+	status, err := cli.Client().SchedulerStatus(ctx, types.SchedulerStatusOptions{
+		KeyPrefix: modelKeyPrefix,
+	})
 	if err != nil {
-		ExitWithError(err)
+		return err
 	}
 
 	printStatusTable(status)
+	return nil
 }
 
 // printStatusTable prints status data using table format
@@ -118,21 +129,4 @@ func printStatusTable(status []*api.BaseValueStatus) {
 		return
 	}
 	fmt.Fprint(os.Stdout, buf.String())
-}
-
-func statusKeyPrefix(cli *AgentCli, keyPrefix string) ([]*api.BaseValueStatus, error) {
-	q := fmt.Sprintf(`/scheduler/status?key-prefix=%s`, url.QueryEscape(keyPrefix))
-	resp, err := cli.GET(q)
-	if err != nil {
-		return nil, err
-	}
-
-	Debugf("status resp: %s\n", resp)
-
-	var status []*api.BaseValueStatus
-	if err := json.Unmarshal(resp, &status); err != nil {
-		return nil, fmt.Errorf("decoding reply failed: %v", err)
-	}
-
-	return status, nil
 }

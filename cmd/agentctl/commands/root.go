@@ -16,83 +16,194 @@ package commands
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"strings"
 
-	"github.com/common-nighthawk/go-figure"
-	"github.com/ligato/cn-infra/agent"
-	"github.com/ligato/cn-infra/logging"
+	"github.com/docker/docker/pkg/term"
+	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
+
+	"github.com/ligato/cn-infra/agent"
+	"github.com/ligato/cn-infra/logging"
+
+	"github.com/ligato/vpp-agent/cmd/agentctl/cli"
+	"github.com/ligato/vpp-agent/pkg/debug"
 )
 
-const (
-	defaultPortGRPC = "9111"
-	defaultPortHTTP = "9191"
+var (
+	// RootName defines default name used for the root command.
+	RootName = "agentctl"
 )
 
-// RootName defines default name used for root command
-var RootName = "agentctl"
-
-var global struct {
-	AgentHost    string
-	PortGRPC     string
-	PortHTTP     string
-	ServiceLabel string
-	Endpoints    []string
-
-	Debug bool
-}
-
-// NewRootCommand returns new root command.
-func NewRootCommand(cli *AgentCli) *cobra.Command {
-	return newRootCommand(cli, RootName)
-}
-
-func newRootCommand(cli *AgentCli, name string) *cobra.Command {
-	cmd := &cobra.Command{
-		Use:     fmt.Sprintf("%s [OPTIONS] ", name),
-		Short:   fmt.Sprintf("%s manages Ligato agents", name),
-		Long:    figure.NewFigure(name, "", false).String(),
-		Version: fmt.Sprintf("%s (%s)", agent.BuildVersion, agent.CommitHash),
-		PersistentPreRun: func(cmd *cobra.Command, args []string) {
-			cli.Init()
-			Debugf("running command: %s\n\n", cmd.CommandPath())
-		},
-		DisableFlagsInUseLine: true,
+// NewAgentCli creates new AgentCli with opts and configures log output to error stream.
+func NewAgentCli(opts ...cli.AgentCliOption) *cli.AgentCli {
+	agentCli, err := cli.NewAgentCli(opts...)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
 	}
-
-	cmd.SetUsageTemplate(usageTemplate)
-
-	flags := cmd.PersistentFlags()
-	SetupRootFlags(flags)
-
-	AddRootCommands(cmd, cli)
-
-	return cmd
+	logrus.SetOutput(agentCli.Err())
+	logging.DefaultLogger.SetOutput(agentCli.Err())
+	return agentCli
 }
 
-func SetupRootFlags(flags *pflag.FlagSet) {
+// NewRootCommand is helper for default initialization process for root command.
+// Returs cobra command which is ready to be executed.
+func NewRootCommand(agentCli *cli.AgentCli) (*cobra.Command, error) {
+	root := NewRoot(agentCli)
+	cmd, err := root.SetupCommand()
+	if err != nil {
+		return nil, err
+	}
+	if err := root.Initialize(); err != nil {
+		return nil, err
+	}
+	return cmd, nil
+}
+
+// SetupCommand handles global flags and Initialize should be
+// called before executing returned cobra command.
+func (root *Root) SetupCommand() (*cobra.Command, error) {
+	cmd, args, err := root.HandleGlobalFlags()
+	if err != nil {
+		return nil, err
+	}
+	if debug.IsEnabledFor("flags") {
+		cmd.DebugFlags()
+	}
+	cmd.SetArgs(args)
+	return cmd, nil
+}
+
+// NewRoot returns new Root using RootName for name.
+func NewRoot(agentCli *cli.AgentCli) *Root {
+	return NewRootNamed(RootName, agentCli)
+}
+
+// NewRootNamed returns new Root named with name.
+func NewRootNamed(name string, agentCli *cli.AgentCli) *Root {
 	var (
-		serviceLabel  = os.Getenv("MICROSERVICE_LABEL")
-		agentHost     = os.Getenv("AGENT_HOST")
-		etcdEndpoints = strings.Split(os.Getenv("ETCD_ENDPOINTS"), ",")
+		opts    *cli.ClientOptions
+		flags   *pflag.FlagSet
+		helpCmd *cobra.Command
 	)
-	if agentHost == "" {
-		agentHost = "127.0.0.1"
+	cmd := &cobra.Command{
+		Use:                   fmt.Sprintf("%s [OPTIONS] COMMAND [ARG...]", name),
+		Short:                 "A CLI app for managing Ligato agents",
+		SilenceUsage:          true,
+		SilenceErrors:         true,
+		TraverseChildren:      true,
+		DisableFlagsInUseLine: true,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if len(args) == 0 {
+				return ShowHelp(agentCli.Err())(cmd, args)
+			}
+			return fmt.Errorf("%[1]s: '%[2]s' is not a %[1]s command.\nSee '%[1]s --help'", name, args[0])
+		},
+		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+			logrus.Debugf("running command: %q", cmd.CommandPath())
+			// TODO: isSupported?
+			return nil
+		},
+		Version: fmt.Sprintf("%s, commit %s", agent.BuildVersion, agent.CommitHash),
 	}
-	if len(etcdEndpoints) == 0 || etcdEndpoints[0] == "" {
-		etcdEndpoints = []string{"127.0.0.1:2379"}
-	}
-	flags.StringSliceVarP(&global.Endpoints, "etcd-endpoints", "e", etcdEndpoints, "Etcd endpoints to connect to, default from ETCD_ENDPOINTS env var")
-	flags.StringVarP(&global.AgentHost, "host", "H", agentHost, "Address on which agent is reachable, default from AGENT_HOST env var")
-	flags.StringVar(&global.PortGRPC, "grpc-port", defaultPortGRPC, "gRPC server port")
-	flags.StringVar(&global.PortHTTP, "http-port", defaultPortHTTP, "HTTP server port")
-	flags.StringVar(&global.ServiceLabel, "service-label", serviceLabel, "Service label for specific agent instance, default from MICROSERVICE_LABEL env var")
-	flags.BoolVarP(&global.Debug, "debug", "D", false, "Enable debug mode")
+
+	opts, flags, helpCmd = SetupRootCommand(cmd)
+	flags.BoolP("version", "v", false, "Print version info and quit")
+
+	cmd.SetHelpCommand(helpCmd)
+
+	cmd.SetOutput(agentCli.Out())
+	AddBaseCommands(cmd, agentCli)
+
+	DisableFlagsInUseLine(cmd)
+
+	return newRoot(cmd, agentCli, opts, flags)
 }
 
-func AddRootCommands(cmd *cobra.Command, cli *AgentCli) {
+// Root encapsulates a top-level cobra command (either agentctl or custom one).
+type Root struct {
+	cmd      *cobra.Command
+	agentCli *cli.AgentCli
+	opts     *cli.ClientOptions
+	flags    *pflag.FlagSet
+	args     []string
+}
+
+func newRoot(cmd *cobra.Command, agentCli *cli.AgentCli, opts *cli.ClientOptions, flags *pflag.FlagSet) *Root {
+	return &Root{cmd, agentCli, opts, flags, os.Args[1:]}
+}
+
+// HandleGlobalFlags takes care of parsing global flags defined on the
+// command, it returns the underlying cobra command and the args it
+// will be called with (or an error).
+//
+// On success the caller is responsible for calling Initialize()
+// before calling `Execute` on the returned command.
+func (root *Root) HandleGlobalFlags() (*cobra.Command, []string, error) {
+	cmd := root.cmd
+	flags := pflag.NewFlagSet(cmd.Name(), pflag.ContinueOnError)
+	flags.SetInterspersed(false)
+
+	// We need the single parse to see both sets of flags.
+	flags.AddFlagSet(cmd.Flags())
+	flags.AddFlagSet(cmd.PersistentFlags())
+	// Now parse the global flags, up to (but not including) the
+	// first command. The result will be that all the remaining
+	// arguments are in `flags.Args()`.
+	if err := flags.Parse(root.args); err != nil {
+		// Our FlagErrorFunc uses the cli, make sure it is initialized
+		if err := root.Initialize(); err != nil {
+			return nil, nil, err
+		}
+		return nil, nil, cmd.FlagErrorFunc()(cmd, err)
+	}
+
+	return cmd, flags.Args(), nil
+}
+
+// Initialize finalises global option parsing and initializes the agentctl client.
+func (root *Root) Initialize(ops ...cli.InitializeOpt) error {
+	root.opts.SetDefaultOptions(root.flags)
+	return root.agentCli.Initialize(root.opts, ops...)
+}
+
+// SetupRootCommand setups cobra command and returns CLI client options, flags and help command.
+func SetupRootCommand(rootCmd *cobra.Command) (*cli.ClientOptions, *pflag.FlagSet, *cobra.Command) {
+	opts := cli.NewClientOptions()
+
+	flags := rootCmd.Flags()
+	opts.InstallFlags(flags)
+
+	setFlagGlobal(flags, "service-label")
+	setFlagGlobal(flags, "etcd-endpoints")
+	setFlagGlobal(flags, "host")
+
+	cobra.AddTemplateFunc("add", func(a, b int) int { return a + b })
+	cobra.AddTemplateFunc("hasSubCommands", hasSubCommands)
+	cobra.AddTemplateFunc("hasManagementSubCommands", hasManagementSubCommands)
+	cobra.AddTemplateFunc("operationSubCommands", operationSubCommands)
+	cobra.AddTemplateFunc("managementSubCommands", managementSubCommands)
+	cobra.AddTemplateFunc("wrappedFlagUsages", wrappedFlagUsages)
+	cobra.AddTemplateFunc("wrappedGlobalFlagUsages", wrappedGlobalFlagUsages)
+
+	rootCmd.SetUsageTemplate(usageTemplate)
+	rootCmd.SetHelpTemplate(helpTemplate)
+	rootCmd.SetFlagErrorFunc(FlagErrorFunc)
+	rootCmd.SetHelpCommand(helpCommand)
+
+	rootCmd.PersistentFlags().BoolP("help", "h", false, "Print usage")
+	rootCmd.PersistentFlags().MarkShorthandDeprecated("help", "please use --help")
+	rootCmd.PersistentFlags().Lookup("help").Hidden = true
+
+	return opts, flags, helpCommand
+}
+
+// AddBaseCommands adds all base commands to cmd.
+func AddBaseCommands(cmd *cobra.Command, cli cli.Cli) {
 	cmd.AddCommand(
 		NewModelCommand(cli),
 		NewLogCommand(cli),
@@ -102,50 +213,173 @@ func AddRootCommands(cmd *cobra.Command, cli *AgentCli) {
 		NewKvdbCommand(cli),
 		NewGenerateCommand(cli),
 		NewStatusCommand(cli),
-		showCmd(),
 	)
 }
 
-func Debugf(f string, a ...interface{}) {
-	if global.Debug || logging.DefaultLogger.GetLevel() >= logging.DebugLevel {
-		if !strings.HasSuffix(f, "\n") {
-			f = f + "\n"
+func setFlagGlobal(flags *pflag.FlagSet, name string) {
+	_ = flags.SetAnnotation(name, "global", []string{"yes"})
+}
+
+func isFlagGlobal(flag *pflag.Flag) bool {
+	return strings.Join(flag.Annotations["global"], ",") == "yes"
+}
+
+func hasSubCommands(cmd *cobra.Command) bool {
+	return len(operationSubCommands(cmd)) > 0
+}
+
+func hasManagementSubCommands(cmd *cobra.Command) bool {
+	return len(managementSubCommands(cmd)) > 0
+}
+
+func operationSubCommands(cmd *cobra.Command) []*cobra.Command {
+	cmds := []*cobra.Command{}
+	for _, sub := range cmd.Commands() {
+		if sub.IsAvailableCommand() && !sub.HasSubCommands() {
+			cmds = append(cmds, sub)
 		}
-		fmt.Printf("[DEBUG] "+f, a...)
 	}
+	return cmds
+}
+
+func wrappedFlagUsages(cmd *cobra.Command) string {
+	width := 80
+	if ws, err := term.GetWinsize(0); err == nil {
+		width = int(ws.Width)
+	}
+	return cmd.Flags().FlagUsagesWrapped(width - 1)
+}
+
+func wrappedGlobalFlagUsages(cmd *cobra.Command) string {
+	width := 80
+	if ws, err := term.GetWinsize(0); err == nil {
+		width = int(ws.Width)
+	}
+	flags := pflag.NewFlagSet(cmd.Name(), pflag.ContinueOnError)
+	cmd.Root().Flags().VisitAll(func(flag *pflag.Flag) {
+		if isFlagGlobal(flag) {
+			flags.AddFlag(flag)
+		}
+	})
+	return flags.FlagUsagesWrapped(width - 1)
+}
+
+func managementSubCommands(cmd *cobra.Command) []*cobra.Command {
+	var cmds []*cobra.Command
+	for _, sub := range cmd.Commands() {
+		if sub.IsAvailableCommand() && sub.HasSubCommands() {
+			cmds = append(cmds, sub)
+		}
+	}
+	return cmds
+}
+
+// FlagErrorFunc returns status error when err is not nil.
+// It includes usage string and error message.
+func FlagErrorFunc(cmd *cobra.Command, err error) error {
+	if err == nil {
+		return nil
+	}
+	var usage string
+	if cmd.HasSubCommands() {
+		usage = "\n\n" + cmd.UsageString()
+	}
+	return StatusError{
+		Status:     fmt.Sprintf("%s\nSee '%s --help'.%s", err, cmd.CommandPath(), usage),
+		StatusCode: 125,
+	}
+}
+
+// ShowHelp shows the command help.
+func ShowHelp(out io.Writer) func(*cobra.Command, []string) error {
+	return func(cmd *cobra.Command, args []string) error {
+		cmd.SetOutput(out)
+		cmd.HelpFunc()(cmd, args)
+		return nil
+	}
+}
+
+// VisitAll will traverse all commands from the root.
+// This is different from the VisitAll of cobra.Command where only parents
+// are checked.
+func VisitAll(root *cobra.Command, fn func(*cobra.Command)) {
+	for _, cmd := range root.Commands() {
+		VisitAll(cmd, fn)
+	}
+	fn(root)
+}
+
+// DisableFlagsInUseLine sets the DisableFlagsInUseLine flag on all
+// commands within the tree rooted at cmd.
+func DisableFlagsInUseLine(cmd *cobra.Command) {
+	VisitAll(cmd, func(ccmd *cobra.Command) {
+		// do not add a `[flags]` to the end of the usage line.
+		ccmd.DisableFlagsInUseLine = true
+	})
+}
+
+var helpCommand = &cobra.Command{
+	Use:               "help [command]",
+	Short:             "Help about the command",
+	PersistentPreRun:  func(cmd *cobra.Command, args []string) {},
+	PersistentPostRun: func(cmd *cobra.Command, args []string) {},
+	RunE: func(c *cobra.Command, args []string) error {
+		cmd, args, e := c.Root().Find(args)
+		if cmd == nil || e != nil || len(args) > 0 {
+			return errors.Errorf("unknown help topic: %v", strings.Join(args, " "))
+		}
+		helpFunc := cmd.HelpFunc()
+		helpFunc(cmd, args)
+		return nil
+	},
 }
 
 var usageTemplate = `Usage:
 
-{{- if .Runnable}}
-  {{.UseLine}}{{end}}{{if .HasAvailableSubCommands}}
-  {{.CommandPath}}{{- if .HasAvailableLocalFlags}} [OPTIONS]{{end}} COMMAND{{end}}
+{{- if not .HasSubCommands}}	{{.UseLine}}{{end}}
+{{- if .HasSubCommands}}	{{ .CommandPath}}{{- if .HasAvailableFlags}} [OPTIONS]{{end}} COMMAND{{ end}}
 
+{{if ne .Long ""}}{{ .Long  | trimRightSpace }}{{else }}{{ .Short | trimRightSpace }}
+
+{{- end}}
 {{- if gt .Aliases 0}}
 
-Aliases:
+ALIASES
   {{.NameAndAliases}}
 
 {{- end}}
 {{- if .HasExample}}
 
-Examples:
-{{.Example}}
+EXAMPLES
+{{ .Example | trimRightSpace}}
 
 {{- end}}
-{{- if .HasAvailableSubCommands}}
+{{- if .HasAvailableFlags}}
 
-Commands:{{range .Commands}}{{if (or .IsAvailableCommand (eq .Name "help"))}}
-  {{rpad .Name .NamePadding }} {{.Short}}{{end}}{{end}}{{end}}{{if .HasAvailableLocalFlags}}
+OPTIONS
+{{ wrappedFlagUsages . | trimRightSpace}}
 
-Options:
-{{.LocalFlags.FlagUsages | trimTrailingWhitespaces}}{{end}}{{if .HasAvailableInheritedFlags}}
+{{- end}}
+{{- if .HasInheritedFlags}}
 
-Global Flags:
-{{.InheritedFlags.FlagUsages | trimTrailingWhitespaces}}{{end}}{{if .HasHelpSubCommands}}
+GLOBAL OPTIONS:
+{{ wrappedGlobalFlagUsages . | trimRightSpace}}
 
-Additional help topics:{{range .Commands}}{{if .IsAdditionalHelpTopicCommand}}
-  {{rpad .CommandPath .CommandPathPadding}} {{.Short}}{{end}}{{end}}{{end}}{{if .HasAvailableSubCommands}}
+{{- end}}
+{{- if .HasSubCommands }}
 
-Run "{{.CommandPath}} COMMAND --help" for more information about a command.{{end}}
+COMMANDS
+
+{{- range .Commands }}
+  {{rpad .Name (add .NamePadding 1)}}{{.Short}}
+{{- end}}
+
+{{- end}}
+{{- if .HasSubCommands }}
+
+Run '{{.CommandPath}} COMMAND --help' for more information on a command.
+{{- end}}
 `
+
+var helpTemplate = `
+{{if or .Runnable .HasSubCommands}}{{.UsageString}}{{end}}`

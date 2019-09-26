@@ -15,18 +15,22 @@
 package commands
 
 import (
+	"context"
 	"fmt"
-	"os"
 	"reflect"
 	"strings"
 
 	"github.com/ghodss/yaml"
 	"github.com/gogo/protobuf/jsonpb"
 	"github.com/gogo/protobuf/proto"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+
+	"github.com/ligato/vpp-agent/api/types"
+	agentcli "github.com/ligato/vpp-agent/cmd/agentctl/cli"
 )
 
-func NewGenerateCommand(cli *AgentCli) *cobra.Command {
+func NewGenerateCommand(cli agentcli.Cli) *cobra.Command {
 	var (
 		opts GenerateOptions
 	)
@@ -35,11 +39,10 @@ func NewGenerateCommand(cli *AgentCli) *cobra.Command {
 		Aliases: []string{"gen"},
 		Short:   "Generate config samples",
 		Args:    cobra.ExactArgs(1),
-		Run: func(cmd *cobra.Command, args []string) {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			opts.Model = args[0]
-			runGenerate(cli, opts)
+			return runGenerate(cli, opts)
 		},
-		DisableFlagsInUseLine: true,
 	}
 	flags := cmd.Flags()
 	flags.StringVarP(&opts.Format, "format", "f", "json",
@@ -55,24 +58,31 @@ type GenerateOptions struct {
 	OneLine bool
 }
 
-func runGenerate(cli *AgentCli, opts GenerateOptions) {
-	modelList := filterModelsByRefs(cli.AllModels(), []string{opts.Model})
+func runGenerate(cli agentcli.Cli, opts GenerateOptions) error {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
-	if len(modelList) == 0 {
-		ExitWithError(fmt.Errorf("no model found for: %s", opts.Model))
+	allModels, err := cli.Client().ModelList(ctx, types.ModelListOptions{})
+	if err != nil {
+		return err
 	}
 
-	Debugf("models: %+v", modelList)
+	modelList := filterModelsByRefs(allModels, []string{opts.Model})
+
+	if len(modelList) == 0 {
+		return fmt.Errorf("no model found for: %s", opts.Model)
+	}
+
+	logrus.Debugf("models: %+v", modelList)
 	model := modelList[0]
 
 	valueType := proto.MessageType(model.ProtoName)
 	if valueType == nil {
-		ExitWithError(fmt.Errorf("unknown proto message defined for: %s", model.ProtoName))
+		return fmt.Errorf("unknown proto message defined for: %s", model.ProtoName)
 	}
 	modelInstance := reflect.New(valueType.Elem()).Interface().(proto.Message)
 
 	var out string
-	var err error
 
 	switch strings.ToLower(opts.Format) {
 	case "j", "json":
@@ -85,7 +95,7 @@ func runGenerate(cli *AgentCli, opts GenerateOptions) {
 		}
 		out, err = m.MarshalToString(modelInstance)
 		if err != nil {
-			ExitWithError(fmt.Errorf("Encoding to json failed: %v", err))
+			return fmt.Errorf("Encoding to json failed: %v", err)
 		}
 	case "y", "yaml":
 		m := jsonpb.Marshaler{
@@ -97,11 +107,11 @@ func runGenerate(cli *AgentCli, opts GenerateOptions) {
 		}
 		out, err = m.MarshalToString(modelInstance)
 		if err != nil {
-			ExitWithError(fmt.Errorf("encoding to json failed: %v", err))
+			return fmt.Errorf("encoding to json failed: %v", err)
 		}
 		b, err := yaml.JSONToYAML([]byte(out))
 		if err != nil {
-			ExitWithError(fmt.Errorf("Encoding to yaml failed: %v", err))
+			return fmt.Errorf("Encoding to yaml failed: %v", err)
 		}
 		out = string(b)
 	case "p", "proto":
@@ -111,8 +121,9 @@ func runGenerate(cli *AgentCli, opts GenerateOptions) {
 		}
 		out = m.Text(modelInstance)
 	default:
-		ExitWithError(fmt.Errorf("Unknown format: %s", opts.Format))
+		return fmt.Errorf("Unknown format: %s", opts.Format)
 	}
 
-	fmt.Fprintf(os.Stdout, "%s\n", out)
+	fmt.Fprintf(cli.Out(), "%s\n", out)
+	return nil
 }

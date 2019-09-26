@@ -14,6 +14,7 @@
 
 package commands
 
+/*
 import (
 	"errors"
 	"fmt"
@@ -369,3 +370,4 @@ func addUniqueString(str string, unique *[]string) {
 
 	*unique = append(*unique, str)
 }
+*/

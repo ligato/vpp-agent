@@ -15,18 +15,19 @@
 package commands
 
 import (
-	"encoding/json"
+	"context"
 	"fmt"
-	"os"
+	"io"
 	"strings"
+	"text/tabwriter"
 
 	"github.com/spf13/cobra"
 
-	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/vpp-agent/cmd/agentctl/utils"
+	"github.com/ligato/vpp-agent/api/types"
+	agentcli "github.com/ligato/vpp-agent/cmd/agentctl/cli"
 )
 
-func NewLogCommand(cli *AgentCli) *cobra.Command {
+func NewLogCommand(cli agentcli.Cli) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "log",
 		Short: "Manage agent logging",
@@ -38,7 +39,7 @@ func NewLogCommand(cli *AgentCli) *cobra.Command {
 	return cmd
 }
 
-func newLogListCommand(cli *AgentCli) *cobra.Command {
+func newLogListCommand(cli agentcli.Cli) *cobra.Command {
 	var (
 		opts LogListOptions
 	)
@@ -52,7 +53,7 @@ A CLI tool to connect to vppagent and show vppagent logs.
 		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) > 0 {
-				opts.Logger = args[0]
+				opts.Name = args[0]
 			}
 			return RunLogList(cli, opts)
 		},
@@ -61,61 +62,47 @@ A CLI tool to connect to vppagent and show vppagent logs.
 }
 
 type LogListOptions struct {
-	Logger string
+	Name string
 }
 
-func RunLogList(cli *AgentCli, opts LogListOptions) error {
-	resp, err := cli.GET("/log/list")
-	if err != nil {
-		return fmt.Errorf("HTTP GET request failed: %v", err)
-	}
-	Debugf("%s", resp)
+func RunLogList(cli agentcli.Cli, opts LogListOptions) error {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
-	msg := string(resp)
-	if strings.Contains(msg, "404 page not found") {
-		fmt.Println(msg)
-		return fmt.Errorf("not found")
-	}
-
-	data, err := utils.ConvertToLogList(msg)
+	loggers, err := cli.Client().LoggerList(ctx, types.LoggerListOptions{
+		Name: opts.Name,
+	})
 	if err != nil {
 		return err
 	}
 
-	if len(data) == 0 {
+	if len(loggers) == 0 {
 		return fmt.Errorf("no logger found")
 	}
 
-	if opts.Logger == "" {
-		printLogList(data)
-		return nil
-	}
-
-	tmpData := make(utils.LogList, 0)
-
-	for _, value := range data {
-		if strings.Contains(value.Logger, opts.Logger) {
-			tmpData = append(tmpData, value)
+	var filtered []types.Logger
+	for _, value := range loggers {
+		if opts.Name == "" || strings.Contains(value.Logger, opts.Name) {
+			filtered = append(filtered, value)
 		}
 	}
+	printLoggerList(cli.Out(), filtered)
 
-	printLogList(tmpData)
 	return nil
 }
 
-func printLogList(list utils.LogList) {
-	err := list.Print(os.Stdout)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+func printLoggerList(out io.Writer, list []types.Logger) {
+	w := tabwriter.NewWriter(out, 0, 0, 1, ' ', 0)
+	fmt.Fprintf(w, "LOGGER\tLEVEL\t\n")
+	for _, l := range list {
+		fmt.Fprintf(w, "%s\t%s\t\n", l.Logger, l.Level)
+	}
+	if err := w.Flush(); err != nil {
+		return
 	}
 }
 
-type LogSetOptions struct {
-	Logger string
-	Level  string
-}
-
-func newLogSetCommand(cli *AgentCli) *cobra.Command {
+func newLogSetCommand(cli agentcli.Cli) *cobra.Command {
 	opts := LogSetOptions{}
 	cmd := &cobra.Command{
 		Use:   "set <logger> <debug|info|warning|error|fatal|panic>",
@@ -133,28 +120,21 @@ A CLI tool to connect to vppagent and set vppagent logger type.
 	return cmd
 }
 
-func RunLogSet(cli *AgentCli, opts LogSetOptions) error {
-	data, err := cli.PUT("/log/"+opts.Logger+"/"+opts.Level, nil)
-	if err != nil {
-		return fmt.Errorf("HTTP PUT request failed: %v", err)
-	}
+type LogSetOptions struct {
+	Logger string
+	Level  string
+}
 
-	type response struct {
-		Logger string `json:"logger,omitempty"`
-		Level  string `json:"level,omitempty"`
-		Error  string `json:"Error,omitempty"`
-	}
-	var resp response
-	if err := json.Unmarshal(data, &resp); err != nil {
+func RunLogSet(cli agentcli.Cli, opts LogSetOptions) error {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	err := cli.Client().LoggerSet(ctx, opts.Logger, opts.Level)
+	if err != nil {
 		return err
 	}
-	logging.Debugf("response: %+v\n", resp)
 
-	if resp.Error != "" {
-		return fmt.Errorf("SERVER: %s", resp.Error)
-	}
-
-	fmt.Fprintf(os.Stdout, "logger %s has been set to level %s\n", resp.Logger, resp.Level)
+	fmt.Fprintf(cli.Out(), "logger %s has been set to level %s\n", opts.Logger, opts.Level)
 
 	return nil
 }

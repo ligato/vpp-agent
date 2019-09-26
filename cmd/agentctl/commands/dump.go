@@ -16,23 +16,23 @@ package commands
 
 import (
 	"bytes"
-	"encoding/json"
+	"context"
 	"fmt"
-	"net/url"
+	"io"
 	"os"
-	"reflect"
 	"sort"
 	"strings"
 	"text/tabwriter"
 
-	"github.com/gogo/protobuf/jsonpb"
 	"github.com/gogo/protobuf/proto"
 	"github.com/spf13/cobra"
 
+	"github.com/ligato/vpp-agent/api/types"
+	agentcli "github.com/ligato/vpp-agent/cmd/agentctl/cli"
 	"github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 )
 
-func NewDumpCommand(cli *AgentCli) *cobra.Command {
+func NewDumpCommand(cli agentcli.Cli) *cobra.Command {
 	var opts DumpOptions
 
 	cmd := &cobra.Command{
@@ -53,11 +53,10 @@ func NewDumpCommand(cli *AgentCli) *cobra.Command {
   $ agentctl --host 172.17.0.3 dump vpp.interfaces
 `,
 		Args: cobra.ExactArgs(1),
-		Run: func(cmd *cobra.Command, args []string) {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			opts.Models = args
-			runDump(cli, opts)
+			return runDump(cli, opts)
 		},
-		DisableFlagsInUseLine: true,
 	}
 	cmd.Flags().StringVarP(&opts.View, "view", "v", "cached", "Dump view type: cached, NB, SB")
 	return cmd
@@ -68,12 +67,20 @@ type DumpOptions struct {
 	View   string
 }
 
-func runDump(cli *AgentCli, opts DumpOptions) {
+func runDump(cli agentcli.Cli, opts DumpOptions) error {
 	dumpView := opts.View
 	model := opts.Models[0]
 
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	allModels, err := cli.Client().ModelList(ctx, types.ModelListOptions{})
+	if err != nil {
+		return err
+	}
+
 	var modelKeyPrefix string
-	for _, m := range cli.AllModels() {
+	for _, m := range allModels {
 		if (m.Alias != "" && model == m.Alias) || model == m.Name {
 			modelKeyPrefix = m.KeyPrefix
 			break
@@ -81,16 +88,21 @@ func runDump(cli *AgentCli, opts DumpOptions) {
 	}
 	if modelKeyPrefix == "" {
 		fmt.Fprintf(os.Stderr, "No model found for: %q\n", model)
-		ExitWithError(fmt.Errorf("no such model"))
+		return fmt.Errorf("no such model")
 	}
 
-	dump, err := dumpKeyPrefix(cli, modelKeyPrefix, dumpView)
+	dump, err := cli.Client().SchedulerDump(ctx, types.SchedulerDumpOptions{
+		KeyPrefix: modelKeyPrefix,
+		View:      dumpView,
+	})
 	if err != nil {
-		ExitWithError(err)
+		return err
 	}
 
 	sort.Sort(dumpByKey(dump))
-	printDumpTable(dump)
+	printDumpTable(cli.Out(), dump)
+
+	return nil
 }
 
 // printDumpTable prints dump data using table format
@@ -104,7 +116,7 @@ func runDump(cli *AgentCli, opts DumpOptions) {
 // name: "loop1"
 // type: SOFTWARE_LOOPBACK
 //
-func printDumpTable(dump []api.KVWithMetadata) {
+func printDumpTable(out io.Writer, dump []api.KVWithMetadata) {
 	var buf bytes.Buffer
 	w := tabwriter.NewWriter(&buf, 0, 0, 3, ' ', 0)
 	fmt.Fprintf(w, "KEY\tVALUE\tORIGIN\tMETADATA\t\n")
@@ -124,10 +136,10 @@ func printDumpTable(dump []api.KVWithMetadata) {
 	if err := w.Flush(); err != nil {
 		return
 	}
-	fmt.Fprint(os.Stdout, buf.String())
+	fmt.Fprint(out, buf.String())
 }
 
-func dumpKeyPrefix(cli *AgentCli, keyPrefix string, dumpView string) ([]api.KVWithMetadata, error) {
+/*func dumpKeyPrefix(cli agentcli.Cli, keyPrefix string, dumpView string) ([]api.KVWithMetadata, error) {
 	type ProtoWithName struct {
 		ProtoMsgName string
 		ProtoMsgData string
@@ -152,24 +164,7 @@ func dumpKeyPrefix(cli *AgentCli, keyPrefix string, dumpView string) ([]api.KVWi
 		return nil, fmt.Errorf("decoding reply failed: %v", err)
 	}
 
-	var dump []api.KVWithMetadata
-	for _, kvd := range kvdump {
-		d := kvd.KVWithMetadata
-		if kvd.Value.ProtoMsgName == "" {
-			return nil, fmt.Errorf("empty proto message name for key %s", d.Key)
-		}
-		valueType := proto.MessageType(kvd.Value.ProtoMsgName)
-		if valueType == nil {
-			return nil, fmt.Errorf("unknown proto message defined for key %s", d.Key)
-		}
-		d.Value = reflect.New(valueType.Elem()).Interface().(proto.Message)
-		if err = jsonpb.UnmarshalString(kvd.Value.ProtoMsgData, d.Value); err != nil {
-			return nil, fmt.Errorf("decoding reply failed: %v", err)
-		}
-		dump = append(dump, d)
-	}
-	return dump, nil
-}
+}*/
 
 type dumpByKey []api.KVWithMetadata
 

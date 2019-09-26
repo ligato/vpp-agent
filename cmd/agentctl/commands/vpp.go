@@ -15,15 +15,16 @@
 package commands
 
 import (
-	"encoding/json"
+	"context"
 	"fmt"
-	"os"
 	"strings"
 
 	"github.com/spf13/cobra"
+
+	agentcli "github.com/ligato/vpp-agent/cmd/agentctl/cli"
 )
 
-func NewVppCommand(cli *AgentCli) *cobra.Command {
+func NewVppCommand(cli agentcli.Cli) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "vpp",
 		Short: "Manage VPP instance",
@@ -35,10 +36,11 @@ func NewVppCommand(cli *AgentCli) *cobra.Command {
 	return cmd
 }
 
-func newVppCliCommand(cli *AgentCli) *cobra.Command {
+func newVppCliCommand(cli agentcli.Cli) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "cli",
-		Short: "Execute VPP CLI command",
+		Use:     "cli",
+		Aliases: []string{"c"},
+		Short:   "Execute VPP CLI command",
 		Example: `
  To run a VPP CLI command:
   $ agentctl vpp cli show version
@@ -56,27 +58,22 @@ func newVppCliCommand(cli *AgentCli) *cobra.Command {
 	return cmd
 }
 
-func runVppCli(cli *AgentCli, vppcmd string) error {
-	fmt.Fprintf(os.Stdout, "# %s\n", vppcmd)
+func runVppCli(cli agentcli.Cli, vppcmd string) error {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
-	data := map[string]interface{}{
-		"vppclicommand": vppcmd,
-	}
-	resp, err := cli.POST("/vpp/command", data)
+	fmt.Fprintf(cli.Out(), "vpp# %s\n", vppcmd)
+
+	reply, err := cli.Client().VppRunCli(ctx, vppcmd)
 	if err != nil {
-		return fmt.Errorf("HTTP POST request failed: %v", err)
+		return err
 	}
 
-	var reply string
-	if err := json.Unmarshal(resp, &reply); err != nil {
-		return fmt.Errorf("decoding reply failed: %v", err)
-	}
-
-	fmt.Fprintf(os.Stdout, "%s", reply)
+	fmt.Fprintf(cli.Out(), "%s", reply)
 	return nil
 }
 
-func newVppInfoCommand(cli *AgentCli) *cobra.Command {
+func newVppInfoCommand(cli agentcli.Cli) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "info",
 		Aliases: []string{"i"},
@@ -90,20 +87,15 @@ func newVppInfoCommand(cli *AgentCli) *cobra.Command {
 	return cmd
 }
 
-func runVppInfo(cli *AgentCli) error {
-	data := map[string]interface{}{
-		"vppclicommand": "show version verbose",
-	}
-	resp, err := cli.POST("/vpp/command", data)
+func runVppInfo(cli agentcli.Cli) error {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	reply, err := cli.Client().VppRunCli(ctx, "show version verbose")
 	if err != nil {
-		return fmt.Errorf("HTTP POST request failed: %v", err)
+		return err
 	}
 
-	var reply string
-	if err := json.Unmarshal(resp, &reply); err != nil {
-		return fmt.Errorf("decoding reply failed: %v", err)
-	}
-
-	fmt.Fprintf(os.Stdout, "%s", reply)
+	fmt.Fprintf(cli.Out(), "%s", reply)
 	return nil
 }

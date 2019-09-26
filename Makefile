@@ -276,7 +276,7 @@ prod-image: ## Build production image
 
 
 .PHONY: help \
-	build clean install \
+	agent agentctl build clean install \
 	cmd examples clean-examples \
 	test test-cover test-cover-html test-cover-xml \
 	generate genereate-binapi generate-proto get-binapi-generators get-proto-generators \

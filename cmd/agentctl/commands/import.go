@@ -28,20 +28,18 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/servicelabel"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
-	"github.com/ligato/vpp-agent/api/genericmanager"
-	"github.com/ligato/vpp-agent/client/remoteclient"
-	"github.com/ligato/vpp-agent/cmd/agentctl/utils"
+	agentcli "github.com/ligato/vpp-agent/cmd/agentctl/cli"
 	"github.com/ligato/vpp-agent/pkg/models"
 )
 
-func NewImportCommand(cli *AgentCli) *cobra.Command {
+func NewImportCommand(cli agentcli.Cli) *cobra.Command {
 	var (
 		opts    ImportOptions
 		timeout uint
 	)
-
 	cmd := &cobra.Command{
 		Use:   "import file",
 		Args:  cobra.ExactArgs(1),
@@ -99,23 +97,18 @@ type ImportOptions struct {
 	ViaGrpc   bool
 }
 
-func RunImport(cli *AgentCli, opts ImportOptions) error {
-	b, err := ioutil.ReadFile(opts.InputFile)
-	if err != nil {
-		return fmt.Errorf("reading input file failed: %v", err)
-	}
-
-	keyVals, err := parseKeyVals(b)
+func RunImport(cli agentcli.Cli, opts ImportOptions) error {
+	keyVals, err := parseImportFile(opts.InputFile)
 	if err != nil {
 		return fmt.Errorf("parsing import data failed: %v", err)
 	}
 
 	if opts.ViaGrpc {
 		// Set up a connection to the server.
-		conn := cli.NewGRPCClient()
-		defer conn.Close()
-
-		c := remoteclient.NewClientGRPC(genericmanager.NewGenericManagerClient(conn))
+		c, err := cli.Client().ConfigClient()
+		if err != nil {
+			return err
+		}
 
 		fmt.Printf("importing %d key vals\n", len(keyVals))
 
@@ -135,9 +128,9 @@ func RunImport(cli *AgentCli, opts ImportOptions) error {
 		}
 
 	} else {
-		db, err := utils.GetDbForAllAgents(global.Endpoints)
+		db, err := cli.KVProtoBroker()
 		if err != nil {
-			return fmt.Errorf("connecting to Etcd failed: %v", err)
+			return fmt.Errorf("connecting to KVDB failed: %v", err)
 		}
 
 		fmt.Printf("importing %d key vals\n", len(keyVals))
@@ -176,7 +169,11 @@ type keyVal struct {
 	Val proto.Message
 }
 
-func parseKeyVals(b []byte) (keyVals []keyVal, err error) {
+func parseImportFile(importFile string) (keyVals []keyVal, err error) {
+	b, err := ioutil.ReadFile(importFile)
+	if err != nil {
+		return nil, fmt.Errorf("reading input file failed: %v", err)
+	}
 	// parse lines
 	lines := bytes.Split(b, []byte("\n"))
 	for _, l := range lines {
@@ -195,29 +192,19 @@ func parseKeyVals(b []byte) (keyVals []keyVal, err error) {
 			continue
 		}
 
-		Debugf("parse line: %s %s\n", key, data)
+		logrus.Debugf("parse line: %s %s\n", key, data)
 
-		key = completeFullKey(key)
+		//key = completeFullKey(key)
 
 		val, err := unmarshalKeyVal(key, data)
 		if err != nil {
 			return nil, fmt.Errorf("decoding value failed: %v", err)
 		}
 
-		Debugf("KEY: %s - %v\n", key, val)
+		logrus.Debugf("KEY: %s - %v\n", key, val)
 		keyVals = append(keyVals, keyVal{key, val})
 	}
 	return
-}
-
-func parseKey(key string) (string, error) {
-	if strings.HasPrefix(key, servicelabel.GetAllAgentsPrefix()) {
-		return key, nil
-	}
-	if !strings.HasPrefix(key, "config/") {
-		return "", fmt.Errorf("invalid format for key: %q", key)
-	}
-	return path.Join(servicelabel.GetAllAgentsPrefix(), global.ServiceLabel, key), nil
 }
 
 func unmarshalKeyVal(fullKey string, data string) (proto.Message, error) {
@@ -237,4 +224,15 @@ func unmarshalKeyVal(fullKey string, data string) (proto.Message, error) {
 		return nil, err
 	}
 	return value, nil
+}
+
+func stripAgentPrefix(key string) string {
+	if !strings.HasPrefix(key, servicelabel.GetAllAgentsPrefix()) {
+		return key
+	}
+	keyParts := strings.Split(key, "/")
+	if len(keyParts) < 4 || keyParts[0] != "" {
+		return path.Join(keyParts[2:]...)
+	}
+	return path.Join(keyParts[3:]...)
 }
