@@ -1135,17 +1135,11 @@ func getVxLanGpeProtocol(p uint8) ifs.VxlanLink_Gpe_Protocol {
 }
 
 func isAdminStateUp(flags vpp_ifs.IfStatusFlags) bool {
-	if flags&vpp_ifs.IF_STATUS_API_FLAG_ADMIN_UP == 0 {
-		return false
-	}
-	return true
+	return flags&vpp_ifs.IF_STATUS_API_FLAG_ADMIN_UP != 0
 }
 
 func isLinkStateUp(flags vpp_ifs.IfStatusFlags) bool {
-	if flags&vpp_ifs.IF_STATUS_API_FLAG_LINK_UP == 0 {
-		return false
-	}
-	return true
+	return flags&vpp_ifs.IF_STATUS_API_FLAG_LINK_UP != 0
 }
 
 func adminStateToInterfaceStatus(flags vpp_ifs.IfStatusFlags) ifs.InterfaceState_Status {
