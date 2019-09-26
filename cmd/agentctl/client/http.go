@@ -39,24 +39,12 @@ func (c *Client) post(ctx context.Context, path string, query url.Values, obj in
 	return c.sendRequest(ctx, "POST", path, query, body, headers)
 }
 
-func (c *Client) postRaw(ctx context.Context, path string, query url.Values, body io.Reader, headers map[string][]string) (serverResponse, error) {
-	return c.sendRequest(ctx, "POST", path, query, body, headers)
-}
-
 func (c *Client) put(ctx context.Context, path string, query url.Values, obj interface{}, headers map[string][]string) (serverResponse, error) {
 	body, headers, err := encodeBody(obj, headers)
 	if err != nil {
 		return serverResponse{}, err
 	}
 	return c.sendRequest(ctx, "PUT", path, query, body, headers)
-}
-
-func (c *Client) putRaw(ctx context.Context, path string, query url.Values, body io.Reader, headers map[string][]string) (serverResponse, error) {
-	return c.sendRequest(ctx, "PUT", path, query, body, headers)
-}
-
-func (c *Client) delete(ctx context.Context, path string, query url.Values, headers map[string][]string) (serverResponse, error) {
-	return c.sendRequest(ctx, "DELETE", path, query, nil, headers)
 }
 
 type headers map[string][]string
@@ -132,7 +120,7 @@ func (c *Client) doRequest(ctx context.Context, req *http.Request) (serverRespon
 		if err != nil {
 			logrus.Debugf("<= http response ERROR: %v", err)
 		} else {
-			logrus.Debugf("<= http response (statusCode %v)%s", serverResp.statusCode)
+			logrus.Debugf("<= http response (statusCode %v)", serverResp.statusCode)
 		}
 	}()
 
@@ -256,7 +244,7 @@ func encodeData(data interface{}) (*bytes.Buffer, error) {
 func ensureReaderClosed(response serverResponse) {
 	if response.body != nil {
 		// Drain up to 512 bytes and close the body to let the Transport reuse the connection
-		io.CopyN(ioutil.Discard, response.body, 512)
-		response.body.Close()
+		_, _ = io.CopyN(ioutil.Discard, response.body, 512)
+		_ = response.body.Close()
 	}
 }

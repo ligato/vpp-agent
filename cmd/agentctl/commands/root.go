@@ -196,7 +196,7 @@ func SetupRootCommand(rootCmd *cobra.Command) (*cli.ClientOptions, *pflag.FlagSe
 	rootCmd.SetHelpCommand(helpCommand)
 
 	rootCmd.PersistentFlags().BoolP("help", "h", false, "Print usage")
-	rootCmd.PersistentFlags().MarkShorthandDeprecated("help", "please use --help")
+	_ = rootCmd.PersistentFlags().MarkShorthandDeprecated("help", "please use --help")
 	rootCmd.PersistentFlags().Lookup("help").Hidden = true
 
 	return opts, flags, helpCommand

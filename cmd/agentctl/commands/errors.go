@@ -48,7 +48,7 @@ func (e StatusError) String() string {
 }
 
 func (e StatusError) Error() string {
-	return fmt.Sprintf("%s", e.Status)
+	return fmt.Sprintf("%s (%d)", e.Status, e.StatusCode)
 }
 
 func ExitCode(err error) int {

@@ -89,13 +89,13 @@ func (c *Client) LoggerSet(ctx context.Context, logger, level string) error {
 		return fmt.Errorf("HTTP POST request failed: %v", err)
 	}
 
-	type response struct {
+	type Response struct {
 		Logger string `json:"logger,omitempty"`
 		Level  string `json:"level,omitempty"`
 		Error  string `json:"Error,omitempty"`
 	}
 
-	var loggerSetResponse response
+	var loggerSetResponse Response
 	if err := json.NewDecoder(resp.body).Decode(&resp); err != nil {
 		return fmt.Errorf("decoding reply failed: %v", err)
 	}

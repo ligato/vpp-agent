@@ -32,6 +32,8 @@ import (
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/servicelabel"
+	"github.com/ligato/vpp-agent/pkg/debug"
+
 	"google.golang.org/grpc"
 
 	"github.com/ligato/vpp-agent/api"
@@ -130,10 +132,11 @@ func defaultHTTPClient(host string) (*http.Client, error) {
 		return nil, err
 	}
 	transport := new(http.Transport)
-	sockets.ConfigureTransport(transport, u.Scheme, u.Host)
+	if err := sockets.ConfigureTransport(transport, u.Scheme, u.Host); err != nil {
+		return nil, err
+	}
 	return &http.Client{
 		Transport: transport,
-		//CheckRedirect: CheckRedirect,
 	}, nil
 }
 
@@ -264,11 +267,11 @@ func (c *Client) KVDBClient() (keyval.BytesBroker, error) {
 	etcdCfg := getEtcdConfig(c.endpoints)
 
 	log := logrus.NewLogger("kvdb-client")
-	/*if cli..Debug {
+	if debug.IsEnabledFor("kvdb") {
 		log.SetLevel(logging.DebugLevel)
 	} else {
 		log.SetLevel(logging.WarnLevel)
-	}*/
+	}
 	kvdb, err := etcd.NewEtcdConnectionWithBytes(etcdCfg, log)
 	if err != nil {
 		return nil, fmt.Errorf("connecting to Etcd failed: %v", err)

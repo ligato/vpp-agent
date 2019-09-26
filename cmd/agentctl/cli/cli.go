@@ -16,17 +16,14 @@ package cli
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io"
 	"net"
 	"net/http"
-	"os"
 	"runtime"
 
 	"github.com/docker/cli/cli/streams"
 	"github.com/docker/docker/pkg/term"
-	"github.com/docker/go-connections/tlsconfig"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/sirupsen/logrus"
 
@@ -151,19 +148,6 @@ type ServerInfo struct {
 // ClientInfo stores details about the supported features of the client
 type ClientInfo struct {
 	DefaultVersion string
-}
-
-func getServerHost(hosts []string, tlsOptions *tlsconfig.Options) (string, error) {
-	var host string
-	switch len(hosts) {
-	case 0:
-		host = os.Getenv("AGENT_HOST")
-	case 1:
-		host = hosts[0]
-	default:
-		return "", errors.New("Please specify only one -H")
-	}
-	return ParseHost(tlsOptions != nil, host)
 }
 
 // UserAgent returns the user agent string used for making API requests
