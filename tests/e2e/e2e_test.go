@@ -15,10 +15,15 @@
 package e2e
 
 import (
+	"bufio"
 	"bytes"
+	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
+	"io"
 	"log"
+	"net"
 	"net/url"
 	"os"
 	"os/exec"
@@ -28,9 +33,7 @@ import (
 	"testing"
 	"time"
 
-	"encoding/json"
-
-	docker "github.com/fsouza/go-dockerclient"
+	"github.com/fsouza/go-dockerclient"
 	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/cn-infra/health/probe"
 	"github.com/mitchellh/go-ps"
@@ -135,11 +138,11 @@ func setupE2E(t *testing.T) *testCtx {
 	} else {
 		vppArgs = []string{vppConf}
 	}
-	vppCmd := startProcess(t, "VPP", *vppPath, vppArgs...)
+	vppCmd := startProcess(t, "VPP", nil, os.Stdout, os.Stderr, *vppPath, vppArgs...)
 
 	// start the agent
 	assertProcessNotRunning(t, "vpp_agent")
-	agentCmd := startProcess(t, "VPP-Agent", "/vpp-agent")
+	agentCmd := startProcess(t, "VPP-Agent", nil, os.Stdout, os.Stderr, "/vpp-agent")
 
 	// prepare HTTP client for access to REST API of the agent
 	httpAddr := fmt.Sprintf(":%d", *agentHTTPPort)
@@ -285,9 +288,68 @@ func (ctx *testCtx) pingFromVPPClb(destAddress string) func() error {
 	}
 }
 
-func (ctx *testCtx) testConnection(fromMs, toMs, dstAddr, listenAddr string, port uint16, udp bool) error {
-	// TODO (run nc client and server)
-	return nil
+func (ctx *testCtx) testConnection(fromMs, toMs, toAddr, listenAddr string,
+	toPort, listenPort uint16, udp bool) error {
+
+	const (
+		connTimeout     = 3 * time.Second
+		srvExitTimeout  = 500 * time.Millisecond
+		reqData         = "Hi server!"
+		respData        = "Hi client!"
+	)
+
+	clientMs, found := ctx.microservices[fromMs]
+	if !found {
+		// bug inside a test
+		ctx.t.Fatalf("cannot run TCP/UDP client from unknown microservice '%s'", fromMs)
+	}
+	serverMs, found := ctx.microservices[toMs]
+	if !found {
+		// bug inside a test
+		ctx.t.Fatalf("cannot run TCP/UDP server inside unknown microservice '%s'", toMs)
+	}
+
+	srvRet := make(chan error, 1)
+	srvCtx, cancelSrv := context.WithCancel(context.Background())
+	runServer := func() {
+		if udp {
+			simpleUdpServer(srvCtx, serverMs, fmt.Sprintf("%s:%d", listenAddr, listenPort),
+				reqData, respData, srvRet)
+		} else {
+			simpleTcpServer(srvCtx, serverMs, fmt.Sprintf("%s:%d", listenAddr, listenPort),
+				reqData, respData, srvRet)
+		}
+		close(srvRet)
+	}
+
+	clientRet := make(chan error, 1)
+	runClient := func() {
+		if udp {
+			simpleUdpClient(clientMs, fmt.Sprintf("%s:%d", toAddr, toPort),
+				reqData, respData, connTimeout, clientRet)
+		} else {
+			simpleTcpClient(clientMs, fmt.Sprintf("%s:%d", toAddr, toPort),
+				reqData, respData, connTimeout, clientRet)
+		}
+		close(clientRet)
+	}
+
+	go runServer()
+	go runClient()
+	err := <-clientRet
+
+	// give server some time to exit gracefully, then force it to stop
+	var srvErr error
+	select {
+	case srvErr = <-srvRet:
+	case <-time.After(srvExitTimeout):
+		cancelSrv()
+		srvErr = <-srvRet
+	}
+	if err == nil {
+		err = srvErr
+	}
+	return err
 }
 
 func (ctx *testCtx) getValueState(value proto.Message) kvs.ValueState {
@@ -320,7 +382,7 @@ func (ctx *testCtx) getValueStateClb(value proto.Message) func() kvs.ValueState 
 }
 
 func syncAgent(t *testing.T, httpClient *utils.HTTPClient) (executed kvs.RecordedTxnOps) {
-	resp, err := httpClient.POST("/scheduler/downstream-resync", struct{}{})
+	resp, err := httpClient.POST("/scheduler/downstream-resync?retry=true", struct{}{})
 	if err != nil {
 		t.Fatalf("Downstream resync request has failed: %v", err)
 	}
@@ -379,11 +441,20 @@ func assertProcessNotRunning(t *testing.T, name string, aliases ...string) {
 	}
 }
 
-func startProcess(t *testing.T, name, path string, args ...string) *exec.Cmd {
+func startProcess(t *testing.T, name string, stdin io.Reader, stdout, stderr io.Writer,
+	path string, args ...string) *exec.Cmd {
+
 	cmd := exec.Command(path)
 	cmd.Args = append(cmd.Args, args...)
-	cmd.Stderr = os.Stderr
-	cmd.Stdout = os.Stdout
+	if stdin != nil {
+		cmd.Stdin = stdin
+	}
+	if stdout != nil {
+		cmd.Stderr = stdout
+	}
+	if stderr != nil {
+		cmd.Stdout = stderr
+	}
 
 	// ensure that process is killed when current process exits
 	cmd.SysProcAttr = &syscall.SysProcAttr{Pdeathsig: syscall.SIGKILL}
@@ -396,6 +467,7 @@ func startProcess(t *testing.T, name, path string, args ...string) *exec.Cmd {
 }
 
 func stopProcess(t *testing.T, cmd *exec.Cmd, name string) {
+
 	// terminate process
 	if err := cmd.Process.Signal(syscall.SIGTERM); err != nil {
 		t.Fatalf("sending SIGTERM to %s failed: %v", name, err)
@@ -419,6 +491,218 @@ func stopProcess(t *testing.T, cmd *exec.Cmd, name string) {
 		if err := cmd.Process.Signal(syscall.SIGKILL); err != nil {
 			t.Fatalf("sending SIGKILL to %s failed: %v", name, err)
 		}
+	}
+}
+
+// TCP or UDP connection request
+type connectionRequest struct {
+	conn net.Conn
+	err  error
+}
+
+func simpleTcpServer(ctx context.Context, ms *microservice, addr string, expReqMsg, respMsg string, done chan<- error) {
+	// move to the network namespace where server should listen
+	exitNetNs := ms.enterNetNs()
+	defer exitNetNs()
+
+	listener, err := net.Listen("tcp", addr)
+	if err != nil {
+		done <- err
+		return
+	}
+	defer listener.Close()
+
+	// accept single connection
+	newConn := make(chan connectionRequest, 1)
+	go func() {
+		conn, err := listener.Accept()
+		newConn <- connectionRequest{conn: conn, err: err}
+		close(newConn)
+	}()
+
+	// wait for connection
+	var cr connectionRequest
+	select {
+	case <-ctx.Done():
+		done <- fmt.Errorf("tcp server listening on %s was canceled", addr)
+		return
+	case cr = <-newConn:
+		if cr.err != nil {
+			done <- fmt.Errorf("accept failed with: %v", cr.err)
+			return
+		}
+		defer cr.conn.Close()
+	}
+
+	// communicate with the client
+	commRv := make(chan error, 1)
+	go func() {
+		defer close(commRv)
+		// receive message from the client
+		message, err := bufio.NewReader(cr.conn).ReadString('\n')
+		if err != nil {
+			commRv <- fmt.Errorf("failed to read data from client: %v", err)
+			return
+		}
+		// send response to the client
+		_, err = cr.conn.Write([]byte(respMsg + "\n"))
+		if err != nil {
+			commRv <- fmt.Errorf("failed to send data to client: %v", err)
+			return
+		}
+		// check if the exchanged data are as expected
+		message = strings.TrimRight(message, "\n")
+		if message != expReqMsg {
+			commRv <- fmt.Errorf("unexpected message received from client ('%s' vs. '%s')",
+				message, expReqMsg)
+			return
+		}
+		commRv <- nil
+	}()
+
+	// wait for the message exchange to execute
+	select {
+	case <-ctx.Done():
+		done <- fmt.Errorf("tcp server listening on %s was canceled", addr)
+	case err = <-commRv:
+		done <- err
+	}
+}
+
+func simpleUdpServer(ctx context.Context, ms *microservice, addr string, expReqMsg, respMsg string, done chan<- error) {
+	const maxBufferSize = 1024
+	// move to the network namespace where server should listen
+	exitNetNs := ms.enterNetNs()
+	defer exitNetNs()
+
+	conn, err := net.ListenPacket("udp", addr)
+	if err != nil {
+		done <- err
+		return
+	}
+	defer conn.Close()
+
+	// communicate with the client
+	commRv := make(chan error, 1)
+	go func() {
+		defer close(commRv)
+		// receive message from the client
+		buffer := make([]byte, maxBufferSize)
+		n, addr, err := conn.ReadFrom(buffer)
+		if err != nil {
+			commRv <- fmt.Errorf("failed to read data from client: %v", err)
+			return
+		}
+		message := string(buffer[:n])
+		// send response to the client
+		n, err = conn.WriteTo([]byte(respMsg + "\n"), addr)
+		if err != nil {
+			commRv <- fmt.Errorf("failed to send data to client: %v", err)
+			return
+		}
+		// check if the exchanged data are as expected
+		message = strings.TrimRight(message, "\n")
+		if message != expReqMsg {
+			commRv <- fmt.Errorf("unexpected message received from client ('%s' vs. '%s')",
+				message, expReqMsg)
+			return
+		}
+		commRv <- nil
+	}()
+
+	// wait for the message exchange to execute
+	select {
+	case <-ctx.Done():
+		done <- fmt.Errorf("udp server listening on %s was canceled", addr)
+	case err = <-commRv:
+		done <- err
+	}
+}
+
+func simpleTcpClient(ms *microservice, addr string, reqMsg, expRespMsg string, timeout time.Duration, done chan<- error) {
+	// try to connect with the server
+	newConn := make(chan connectionRequest, 1)
+	go func() {
+		// move to the network namespace from which the connection should be initiated
+		exitNetNs := ms.enterNetNs()
+		defer exitNetNs()
+		conn, err := net.Dial("tcp", addr)
+		newConn <- connectionRequest{conn: conn, err: err}
+		close(newConn)
+	}()
+
+	simpleTcpOrUdpClient(newConn, addr, reqMsg, expRespMsg, timeout, done)
+}
+
+func simpleUdpClient(ms *microservice, addr string, reqMsg, expRespMsg string, timeout time.Duration, done chan<- error) {
+	// try to connect with the server
+	newConn := make(chan connectionRequest, 1)
+	go func() {
+		// move to the network namespace from which the connection should be initiated
+		exitNetNs := ms.enterNetNs()
+		defer exitNetNs()
+		udpAddr, err := net.ResolveUDPAddr("udp", addr)
+		if err != nil {
+			newConn <- connectionRequest{conn: nil, err: err}
+		} else {
+			conn, err := net.DialUDP("udp", nil, udpAddr)
+			newConn <- connectionRequest{conn: conn, err: err}
+		}
+		close(newConn)
+	}()
+
+	simpleTcpOrUdpClient(newConn, addr, reqMsg, expRespMsg, timeout, done)
+}
+
+func simpleTcpOrUdpClient(newConn chan connectionRequest, addr, reqMsg, expRespMsg string,
+	timeout time.Duration, done chan<- error) {
+
+	// wait for connection
+	var cr connectionRequest
+	select {
+	case <-time.After(timeout):
+		done <- fmt.Errorf("connection to %s timed out", addr)
+		return
+	case cr = <-newConn:
+		if cr.err != nil {
+			done <- fmt.Errorf("dial failed with: %v", cr.err)
+			return
+		}
+		defer cr.conn.Close()
+	}
+
+	// communicate with the server
+	commRv := make(chan error, 1)
+	go func() {
+		defer close(commRv)
+		// send message to the server
+		_, err := fmt.Fprintf(cr.conn, reqMsg + "\n")
+		if err != nil {
+			commRv <- fmt.Errorf("failed to send data to the server: %v", err)
+			return
+		}
+		// listen for reply
+		message, err := bufio.NewReader(cr.conn).ReadString('\n')
+		if err != nil {
+			commRv <- fmt.Errorf("failed to read data from server: %v", err)
+			return
+		}
+		// check if the exchanged data are as expected
+		message = strings.TrimRight(message, "\n")
+		if message != expRespMsg {
+			commRv <- fmt.Errorf("unexpected message received from server ('%s' vs. '%s')",
+				message, expRespMsg)
+			return
+		}
+		commRv <- nil
+	}()
+
+	// wait for the message exchange to execute
+	select {
+	case <-time.After(timeout):
+		done <- fmt.Errorf("communication with %s timed out", addr)
+	case err := <-commRv:
+		done <- err
 	}
 }
 

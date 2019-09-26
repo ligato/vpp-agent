@@ -192,6 +192,7 @@ func TestBridgeDomainWithTAPs(t *testing.T) {
 		Expect(ctx.pingFromVPP(linuxTap2IP)).To(BeNil())
 	}
 	checkPings(false)
+	Expect(ctx.agentInSync()).To(BeTrue(), "Agent is not in-sync")
 
 	// kill one of the microservices
 	ctx.stopMicroservice(ms1Name)
@@ -209,6 +210,7 @@ func TestBridgeDomainWithTAPs(t *testing.T) {
 		"BD is not configured")
 
 	checkPings(true)
+	Expect(ctx.agentInSync()).To(BeTrue(), "Agent is not in-sync")
 
 	// restart the microservice
 	ctx.startMicroservice(ms1Name)
@@ -218,6 +220,7 @@ func TestBridgeDomainWithTAPs(t *testing.T) {
 		"Linux-TAP attached to a re-started microservice1 is not configured")
 
 	checkPings(false)
+	Expect(ctx.agentInSync()).To(BeTrue(), "Agent is not in-sync")
 
 	// change bridge domain config to trigger re-creation
 	bd.MacAge = 10
@@ -227,6 +230,7 @@ func TestBridgeDomainWithTAPs(t *testing.T) {
 	).Send(context.Background())
 	Expect(err).To(BeNil(), "Transaction updating BD failed")
 	checkPings(false)
+	Expect(ctx.agentInSync()).To(BeTrue(), "Agent is not in-sync")
 
 	stdout, err = ctx.execVppctl("show", "bridge-domain")
 	Expect(err).To(BeNil(), "Running `vppctl show bridge-domain` failed")
@@ -418,6 +422,7 @@ func TestBridgeDomainWithAfPackets(t *testing.T) {
 		Expect(ctx.pingFromVPP(veth2IP)).To(BeNil())
 	}
 	checkPings(false)
+	Expect(ctx.agentInSync()).To(BeTrue(), "Agent is not in-sync")
 
 	// kill one of the microservices
 	// - both AF-PACKET and VETH use separate "Eventually" assertion since
@@ -441,6 +446,7 @@ func TestBridgeDomainWithAfPackets(t *testing.T) {
 		"BD is not configured")
 
 	checkPings(true)
+	Expect(ctx.agentInSync()).To(BeTrue(), "Agent is not in-sync")
 
 	// restart the microservice
 	ctx.startMicroservice(ms1Name)
@@ -452,6 +458,7 @@ func TestBridgeDomainWithAfPackets(t *testing.T) {
 		"VETH attached to re-started microservice1 is not configured")
 
 	checkPings(false)
+	Expect(ctx.agentInSync()).To(BeTrue(), "Agent is not in-sync")
 
 	// change bridge domain config to trigger re-creation
 	bd.MacAge = 10
@@ -461,6 +468,7 @@ func TestBridgeDomainWithAfPackets(t *testing.T) {
 	).Send(context.Background())
 	Expect(err).To(BeNil(), "Transaction updating BD failed")
 	checkPings(false)
+	Expect(ctx.agentInSync()).To(BeTrue(), "Agent is not in-sync")
 
 	stdout, err = ctx.execVppctl("show", "bridge-domain")
 	Expect(err).To(BeNil(), "Running `vppctl show bridge-domain` failed")
