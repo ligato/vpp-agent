@@ -53,25 +53,34 @@ func TestInterfaceIP(t *testing.T) {
 	}
 }
 
-func TestInterfaceEnabledField(t *testing.T) {
+func TestInterfaceEnabledFieldWithLoopback(t *testing.T) {
 	ctx := setupVPP(t)
 	defer ctx.teardownVPP()
 
 	h := ifplugin_vppcalls.CompatibleInterfaceVppHandler(ctx.vppBinapi, logrus.NewLogger("test"))
+
 	ifIdx0, err := h.AddLoopbackInterface("loop0")
 	if err != nil {
 		t.Fatalf("creating loopback interface failed: %v", err)
 	}
+
+	// Test after creation
 	ifaces, err := h.DumpInterfaces()
 	if err != nil {
 		t.Fatalf("dumping interfaces failed: %v", err)
 	}
 	iface := ifaces[ifIdx0]
-
 	if iface.Interface.Enabled != false {
 		t.Fatalf("expected interface to not be enabled")
 	}
+	if iface.Meta.IsAdminStateUp != false {
+		t.Fatalf("expected interface admin state to be down")
+	}
+	if iface.Meta.IsLinkStateUp != false {
+		t.Fatalf("expected interface link state to be down")
+	}
 
+	// Set AdminUp and test again
 	err = h.InterfaceAdminUp(ifIdx0)
 	if err != nil {
 		t.Fatalf("enabling interface failed: %v", err)
@@ -81,11 +90,17 @@ func TestInterfaceEnabledField(t *testing.T) {
 		t.Fatalf("dumping interfaces failed: %v", err)
 	}
 	iface = ifaces[ifIdx0]
-
 	if iface.Interface.Enabled != true {
 		t.Fatalf("expected interface to be enabled")
 	}
+	if iface.Meta.IsAdminStateUp != true {
+		t.Fatalf("expected interface admin state to be up")
+	}
+	if iface.Meta.IsLinkStateUp != true {
+		t.Fatalf("expected interface link state to be up")
+	}
 
+	// Set AdminDown and test again
 	err = h.InterfaceAdminDown(ifIdx0)
 	if err != nil {
 		t.Fatalf("disabling interface failed: %v", err)
@@ -95,9 +110,98 @@ func TestInterfaceEnabledField(t *testing.T) {
 		t.Fatalf("dumping interfaces failed: %v", err)
 	}
 	iface = ifaces[ifIdx0]
-
 	if iface.Interface.Enabled != false {
 		t.Fatalf("expected interface to not be enabled")
+	}
+	if iface.Meta.IsAdminStateUp != false {
+		t.Fatalf("expected interface admin state to be down")
+	}
+	if iface.Meta.IsLinkStateUp != false {
+		t.Fatalf("expected interface link state to be down")
+	}
+}
+
+// reason to do same test with Memif is because unlike
+// loopback interface after calling InterfaceAdminUp
+// memif should keep link state down
+func TestInterfaceEnabledFieldWithMemif(t *testing.T) {
+	ctx := setupVPP(t)
+	defer ctx.teardownVPP()
+
+	h := ifplugin_vppcalls.CompatibleInterfaceVppHandler(ctx.vppBinapi, logrus.NewLogger("test"))
+
+	err := h.RegisterMemifSocketFilename([]byte("/tmp/memif1.sock"), 2)
+	if err != nil {
+		t.Fatalf("registering memif socket filename faild: %v", err)
+	}
+	memifIdx, err := h.AddMemifInterface(
+		"memif1",
+		&vpp_interfaces.MemifLink{
+			Id:             1,
+			Master:         true,
+			Secret:         "secret",
+			SocketFilename: "/tmp/memif1.sock",
+		},
+		2,
+	)
+	if err != nil {
+		t.Fatalf("creating memif interface failed: %v", err)
+	}
+
+	// Test after creation
+	ifaces, err := h.DumpInterfaces()
+	if err != nil {
+		t.Fatalf("dumping interfaces failed: %v", err)
+	}
+	iface := ifaces[memifIdx]
+	if iface.Interface.Enabled != false {
+		t.Fatalf("expected interface to not be enabled")
+	}
+	if iface.Meta.IsAdminStateUp != false {
+		t.Fatalf("expected interface admin state to be down")
+	}
+	if iface.Meta.IsLinkStateUp != false {
+		t.Fatalf("expected interface link state to be down")
+	}
+
+	// Set AdminUp and test again
+	err = h.InterfaceAdminUp(memifIdx)
+	if err != nil {
+		t.Fatalf("enabling interface failed: %v", err)
+	}
+	ifaces, err = h.DumpInterfaces()
+	if err != nil {
+		t.Fatalf("dumping interfaces failed: %v", err)
+	}
+	iface = ifaces[memifIdx]
+	if iface.Interface.Enabled != true {
+		t.Fatalf("expected interface to be enabled")
+	}
+	if iface.Meta.IsAdminStateUp != true {
+		t.Fatalf("expected interface admin state to be up")
+	}
+	if iface.Meta.IsLinkStateUp != false {
+		t.Fatalf("expected interface link state to be down")
+	}
+
+	// Set AdminDown and test again
+	err = h.InterfaceAdminDown(memifIdx)
+	if err != nil {
+		t.Fatalf("disabling interface failed: %v", err)
+	}
+	ifaces, err = h.DumpInterfaces()
+	if err != nil {
+		t.Fatalf("dumping interfaces failed: %v", err)
+	}
+	iface = ifaces[memifIdx]
+	if iface.Interface.Enabled != false {
+		t.Fatalf("expected interface to not be enabled")
+	}
+	if iface.Meta.IsAdminStateUp != false {
+		t.Fatalf("expected interface admin state to be down")
+	}
+	if iface.Meta.IsLinkStateUp != false {
+		t.Fatalf("expected interface link state to be down")
 	}
 }
 
