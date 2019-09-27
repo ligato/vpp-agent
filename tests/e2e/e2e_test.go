@@ -89,11 +89,11 @@ const (
 			endpoint-dependent
 		}`
 
-    // VPP input nodes for packet tracing
-    tapv2InputNode    = "virtio-input"
-    tapv1InputNode    = "tapcli-rx"
-    afPacketInputNode = "af-packet-input"
-    memifInputNode    = "memif-input"
+	// VPP input nodes for packet tracing (uncomment when needed)
+	tapv2InputNode = "virtio-input"
+	//tapv1InputNode    = "tapcli-rx"
+	//afPacketInputNode = "af-packet-input"
+	//memifInputNode    = "memif-input"
 )
 
 func init() {
@@ -650,7 +650,7 @@ func simpleUdpServer(ctx context.Context, ms *microservice, addr string, expReqM
 		}
 		message := string(buffer[:n])
 		// send response to the client
-		n, err = conn.WriteTo([]byte(respMsg+"\n"), addr)
+		_, err = conn.WriteTo([]byte(respMsg+"\n"), addr)
 		if err != nil {
 			commRv <- fmt.Errorf("failed to send data to client: %v", err)
 			return
