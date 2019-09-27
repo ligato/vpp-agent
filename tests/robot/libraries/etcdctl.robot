@@ -403,15 +403,6 @@ Set L4 Features On Node
     ${data}=              Replace Variables             ${data}
     Put Json     ${uri}    ${data}
 
-Put Application Namespace
-    [Arguments]    ${node}    ${id}    ${secret}    ${interface}
-    [Documentation]    Put application namespace config json to etcd.
-    ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/app_namespace.json
-    ${uri}=               Set Variable                  /vnf-agent/${node}/config/vpp/${AGENT_VER}/l4/namespaces/${id}
-    ${data}=              Replace Variables             ${data}
-    Put Json     ${uri}    ${data}
-
-
 Delete ARP
     [Arguments]    ${node}    ${interface}    ${ipv4}
     ${uri}=               Set Variable                  /vnf-agent/${node}/config/vpp/${AGENT_VER}/arp/${interface}/${ipv4}
