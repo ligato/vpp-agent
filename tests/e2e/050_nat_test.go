@@ -197,9 +197,9 @@ func TestSourceNAT(t *testing.T) {
 	).Send(context.Background())
 	Expect(err).ToNot(HaveOccurred(), "Transaction creating public and private networks failed")
 
-	Eventually(ctx.getValueStateClb(vppTap1), msUpdateTimeout).Should(Equal(kvs.ValueState_CONFIGURED),
+	Eventually(ctx.getValueStateClb(vppTap1)).Should(Equal(kvs.ValueState_CONFIGURED),
 		"TAP attached to a newly started microservice1 should be eventually configured")
-	Eventually(ctx.getValueStateClb(vppTap2), msUpdateTimeout).Should(Equal(kvs.ValueState_CONFIGURED),
+	Eventually(ctx.getValueStateClb(vppTap2)).Should(Equal(kvs.ValueState_CONFIGURED),
 		"TAP attached to a newly started microservice2 should be eventually configured")
 
 	// check configuration
@@ -231,10 +231,10 @@ func TestSourceNAT(t *testing.T) {
 
 	// restart microservice with S-NAT attached
 	ctx.stopMicroservice(ms1Name)
-	Eventually(ctx.getValueStateClb(vppTap1), msUpdateTimeout).Should(Equal(kvs.ValueState_PENDING),
+	Eventually(ctx.getValueStateClb(vppTap1)).Should(Equal(kvs.ValueState_PENDING),
 		"Without microservice, the associated VPP-TAP should be pending")
 	ctx.startMicroservice(ms1Name)
-	Eventually(ctx.getValueStateClb(vppTap1), msUpdateTimeout).Should(Equal(kvs.ValueState_CONFIGURED),
+	Eventually(ctx.getValueStateClb(vppTap1)).Should(Equal(kvs.ValueState_CONFIGURED),
 		"VPP-TAP attached to a re-started microservice1 should be eventually configured")
 
 	// check configuration
@@ -464,9 +464,9 @@ func TestNATStaticMappings(t *testing.T) {
 	).Send(context.Background())
 	Expect(err).ToNot(HaveOccurred(), "Transaction creating public and private networks failed")
 
-	Eventually(ctx.getValueStateClb(vppTap1), msUpdateTimeout).Should(Equal(kvs.ValueState_CONFIGURED),
+	Eventually(ctx.getValueStateClb(vppTap1)).Should(Equal(kvs.ValueState_CONFIGURED),
 		"TAP attached to a newly started microservice1 should be eventually configured")
-	Eventually(ctx.getValueStateClb(vppTap2), msUpdateTimeout).Should(Equal(kvs.ValueState_CONFIGURED),
+	Eventually(ctx.getValueStateClb(vppTap2)).Should(Equal(kvs.ValueState_CONFIGURED),
 		"TAP attached to a newly started microservice2 should be eventually configured")
 
 	// check configuration
@@ -499,15 +499,15 @@ func TestNATStaticMappings(t *testing.T) {
 	// restart both microservices
 	ctx.stopMicroservice(ms1Name)
 	ctx.stopMicroservice(ms2Name)
-	Eventually(ctx.getValueStateClb(vppTap1), msUpdateTimeout).Should(Equal(kvs.ValueState_PENDING),
+	Eventually(ctx.getValueStateClb(vppTap1)).Should(Equal(kvs.ValueState_PENDING),
 		"Without microservice, the associated VPP-TAP should be pending")
-	Eventually(ctx.getValueStateClb(vppTap2), msUpdateTimeout).Should(Equal(kvs.ValueState_PENDING),
+	Eventually(ctx.getValueStateClb(vppTap2)).Should(Equal(kvs.ValueState_PENDING),
 		"Without microservice, the associated VPP-TAP should be pending")
 	ctx.startMicroservice(ms1Name)
 	ctx.startMicroservice(ms2Name)
-	Eventually(ctx.getValueStateClb(vppTap1), msUpdateTimeout).Should(Equal(kvs.ValueState_CONFIGURED),
+	Eventually(ctx.getValueStateClb(vppTap1)).Should(Equal(kvs.ValueState_CONFIGURED),
 		"VPP-TAP attached to a re-started microservice1 should be eventually configured")
-	Eventually(ctx.getValueStateClb(vppTap2), msUpdateTimeout).Should(Equal(kvs.ValueState_CONFIGURED),
+	Eventually(ctx.getValueStateClb(vppTap2)).Should(Equal(kvs.ValueState_CONFIGURED),
 		"VPP-TAP attached to a re-started microservice1 should be eventually configured")
 
 	// check configuration

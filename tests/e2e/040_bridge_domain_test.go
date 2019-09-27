@@ -162,9 +162,9 @@ func TestBridgeDomainWithTAPs(t *testing.T) {
 
 	Expect(ctx.getValueState(vppLoop)).To(Equal(kvs.ValueState_CONFIGURED),
 		"BD BVI should be configured even before microservices start")
-	Eventually(ctx.getValueStateClb(vppTap1), msUpdateTimeout).Should(Equal(kvs.ValueState_CONFIGURED),
+	Eventually(ctx.getValueStateClb(vppTap1)).Should(Equal(kvs.ValueState_CONFIGURED),
 		"TAP attached to a newly started microservice1 should be eventually configured")
-	Eventually(ctx.getValueStateClb(vppTap2), msUpdateTimeout).Should(Equal(kvs.ValueState_CONFIGURED),
+	Eventually(ctx.getValueStateClb(vppTap2)).Should(Equal(kvs.ValueState_CONFIGURED),
 		"TAP attached to a newly started microservice2 should be eventually configured")
 
 	stdout, err := ctx.execVppctl("show", "bridge-domain")
@@ -196,7 +196,7 @@ func TestBridgeDomainWithTAPs(t *testing.T) {
 
 	// kill one of the microservices
 	ctx.stopMicroservice(ms1Name)
-	Eventually(ctx.getValueStateClb(vppTap1), msUpdateTimeout).Should(Equal(kvs.ValueState_PENDING),
+	Eventually(ctx.getValueStateClb(vppTap1)).Should(Equal(kvs.ValueState_PENDING),
 		"Without microservice, the associated VPP-TAP should be pending")
 	Expect(ctx.getValueState(linuxTap1)).To(Equal(kvs.ValueState_PENDING),
 		"Without microservice, the associated LinuxTAP should be pending")
@@ -214,7 +214,7 @@ func TestBridgeDomainWithTAPs(t *testing.T) {
 
 	// restart the microservice
 	ctx.startMicroservice(ms1Name)
-	Eventually(ctx.getValueStateClb(vppTap1), msUpdateTimeout).Should(Equal(kvs.ValueState_CONFIGURED),
+	Eventually(ctx.getValueStateClb(vppTap1)).Should(Equal(kvs.ValueState_CONFIGURED),
 		"VPP-TAP attached to a re-started microservice1 should be eventually configured")
 	Expect(ctx.getValueState(linuxTap1)).To(Equal(kvs.ValueState_CONFIGURED),
 		"Linux-TAP attached to a re-started microservice1 is not configured")
@@ -392,9 +392,9 @@ func TestBridgeDomainWithAfPackets(t *testing.T) {
 
 	Expect(ctx.getValueState(vppLoop)).To(Equal(kvs.ValueState_CONFIGURED),
 		"BD BVI should be configured even before microservices start")
-	Eventually(ctx.getValueStateClb(afPacket1), msUpdateTimeout).Should(Equal(kvs.ValueState_CONFIGURED),
+	Eventually(ctx.getValueStateClb(afPacket1)).Should(Equal(kvs.ValueState_CONFIGURED),
 		"AF-PACKET attached to a newly started microservice1 should be eventually configured")
-	Eventually(ctx.getValueStateClb(afPacket2), msUpdateTimeout).Should(Equal(kvs.ValueState_CONFIGURED),
+	Eventually(ctx.getValueStateClb(afPacket2)).Should(Equal(kvs.ValueState_CONFIGURED),
 		"AF-PACKET attached to a newly started microservice2 should be eventually configured")
 
 	stdout, err := ctx.execVppctl("show", "bridge-domain")
@@ -428,9 +428,9 @@ func TestBridgeDomainWithAfPackets(t *testing.T) {
 	// - both AF-PACKET and VETH use separate "Eventually" assertion since
 	//   they react to different SB notifications
 	ctx.stopMicroservice(ms1Name)
-	Eventually(ctx.getValueStateClb(afPacket1), msUpdateTimeout).Should(Equal(kvs.ValueState_PENDING),
+	Eventually(ctx.getValueStateClb(afPacket1)).Should(Equal(kvs.ValueState_PENDING),
 		"Without microservice, the associated AF-PACKET should be pending")
-	Eventually(ctx.getValueStateClb(veth1a), msUpdateTimeout).Should(Equal(kvs.ValueState_PENDING),
+	Eventually(ctx.getValueStateClb(veth1a)).Should(Equal(kvs.ValueState_PENDING),
 		"Without microservice, the associated VETH should be pending")
 	Expect(ctx.getValueState(veth1b)).To(Equal(kvs.ValueState_PENDING),
 		"Without microservice, the associated VETH should be pending")
@@ -450,7 +450,7 @@ func TestBridgeDomainWithAfPackets(t *testing.T) {
 
 	// restart the microservice
 	ctx.startMicroservice(ms1Name)
-	Eventually(ctx.getValueStateClb(afPacket1), msUpdateTimeout).Should(Equal(kvs.ValueState_CONFIGURED),
+	Eventually(ctx.getValueStateClb(afPacket1)).Should(Equal(kvs.ValueState_CONFIGURED),
 		"AF-PACKET attached to a re-started microservice1 should be eventually configured")
 	Expect(ctx.getValueState(veth1a)).To(Equal(kvs.ValueState_CONFIGURED),
 		"VETH attached to re-started microservice1 is not configured")
