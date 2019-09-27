@@ -375,7 +375,7 @@ func (ctx *testCtx) testConnection(fromMs, toMs, toAddr, listenAddr string,
 		protocol, fromMs, toAddr, toPort, toMs, listenAddr, listenPort)
 	stopPacketTrace()
 	fmt.Printf(
-		"%s connection <from-ms=%s, dest=%s:%d, to-ms=%s, server=%s:%d> outcome: %s",
+		"%s connection <from-ms=%s, dest=%s:%d, to-ms=%s, server=%s:%d> outcome: %s\n",
 		protocol, fromMs, toAddr, toPort, toMs, listenAddr, listenPort, outcome)
 	return err
 }

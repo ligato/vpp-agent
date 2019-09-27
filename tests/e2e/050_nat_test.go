@@ -225,6 +225,7 @@ func TestSourceNAT(t *testing.T) {
 		sourceNat,
 	).Send(context.Background())
 	Expect(err).ToNot(HaveOccurred(), "Transaction creating S-NAT failed")
+	checkConfig(true)
 	checkConn(true)
 	Expect(ctx.agentInSync()).To(BeTrue(), "Agent is not in-sync")
 
@@ -491,6 +492,7 @@ func TestNATStaticMappings(t *testing.T) {
 		tcpSvc, udpSvc,
 	).Send(context.Background())
 	Expect(err).ToNot(HaveOccurred(), "Transaction creating NAT static mappings failed")
+	checkConfig(true)
 	checkConn(true)
 	Expect(ctx.agentInSync()).To(BeTrue(), "Agent is not in-sync")
 
