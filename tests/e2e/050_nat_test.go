@@ -359,7 +359,7 @@ func TestNATStaticMappings(t *testing.T) {
 		},
 	}
 
-	showTcpSvc := fmt.Sprintf("tcp local %s:%d external %s:%d vrf 0  out2in-only",
+	showTCPSvc := fmt.Sprintf("tcp local %s:%d external %s:%d vrf 0  out2in-only",
 		linuxTap2IP, tcpSvcLocalPort, tcpSvcExtIP, tcpSvcExtPort)
 	tcpSvc := &vpp_nat.DNat44{
 		Label: tcpSvcLabel,
@@ -378,7 +378,7 @@ func TestNATStaticMappings(t *testing.T) {
 		},
 	}
 
-	showUdpSvc := fmt.Sprintf("udp local %s:%d external %s:%d vrf 0  out2in-only",
+	showUDPSvc := fmt.Sprintf("udp local %s:%d external %s:%d vrf 0  out2in-only",
 		linuxTap2IP, udpSvcLocalPort, udpSvcExtIP, udpSvcExtPort)
 	udpSvc := &vpp_nat.DNat44{
 		Label: udpSvcLabel,
@@ -428,10 +428,10 @@ func TestNATStaticMappings(t *testing.T) {
 		}
 		stdout, err := ctx.execVppctl("show", "nat44", "static", "mappings")
 		Expect(err).ToNot(HaveOccurred(), "Running `vppctl show nat44 addresses` failed")
-		Expect(stdout).To(substringMatcher(showTcpSvc, !isConfigured),
+		Expect(stdout).To(substringMatcher(showTCPSvc, !isConfigured),
 			"Unexpected TCP static mapping configuration",
 		)
-		Expect(stdout).To(substringMatcher(showUdpSvc, !isConfigured),
+		Expect(stdout).To(substringMatcher(showUDPSvc, !isConfigured),
 			"Unexpected UDP static mapping configuration",
 		)
 	}

@@ -322,10 +322,10 @@ func (ctx *testCtx) testConnection(fromMs, toMs, toAddr, listenAddr string,
 	srvCtx, cancelSrv := context.WithCancel(context.Background())
 	runServer := func() {
 		if udp {
-			simpleUdpServer(srvCtx, serverMs, fmt.Sprintf("%s:%d", listenAddr, listenPort),
+			simpleUDPServer(srvCtx, serverMs, fmt.Sprintf("%s:%d", listenAddr, listenPort),
 				reqData, respData, srvRet)
 		} else {
-			simpleTcpServer(srvCtx, serverMs, fmt.Sprintf("%s:%d", listenAddr, listenPort),
+			simpleTCPServer(srvCtx, serverMs, fmt.Sprintf("%s:%d", listenAddr, listenPort),
 				reqData, respData, srvRet)
 		}
 		close(srvRet)
@@ -334,10 +334,10 @@ func (ctx *testCtx) testConnection(fromMs, toMs, toAddr, listenAddr string,
 	clientRet := make(chan error, 1)
 	runClient := func() {
 		if udp {
-			simpleUdpClient(clientMs, fmt.Sprintf("%s:%d", toAddr, toPort),
+			simpleUDPClient(clientMs, fmt.Sprintf("%s:%d", toAddr, toPort),
 				reqData, respData, connTimeout, clientRet)
 		} else {
-			simpleTcpClient(clientMs, fmt.Sprintf("%s:%d", toAddr, toPort),
+			simpleTCPClient(clientMs, fmt.Sprintf("%s:%d", toAddr, toPort),
 				reqData, respData, connTimeout, clientRet)
 		}
 		close(clientRet)
@@ -557,7 +557,7 @@ type connectionRequest struct {
 	err  error
 }
 
-func simpleTcpServer(ctx context.Context, ms *microservice, addr string, expReqMsg, respMsg string, done chan<- error) {
+func simpleTCPServer(ctx context.Context, ms *microservice, addr string, expReqMsg, respMsg string, done chan<- error) {
 	// move to the network namespace where server should listen
 	exitNetNs := ms.enterNetNs()
 	defer exitNetNs()
@@ -626,7 +626,7 @@ func simpleTcpServer(ctx context.Context, ms *microservice, addr string, expReqM
 	}
 }
 
-func simpleUdpServer(ctx context.Context, ms *microservice, addr string, expReqMsg, respMsg string, done chan<- error) {
+func simpleUDPServer(ctx context.Context, ms *microservice, addr string, expReqMsg, respMsg string, done chan<- error) {
 	const maxBufferSize = 1024
 	// move to the network namespace where server should listen
 	exitNetNs := ms.enterNetNs()
@@ -676,7 +676,7 @@ func simpleUdpServer(ctx context.Context, ms *microservice, addr string, expReqM
 	}
 }
 
-func simpleTcpClient(ms *microservice, addr string, reqMsg, expRespMsg string, timeout time.Duration, done chan<- error) {
+func simpleTCPClient(ms *microservice, addr string, reqMsg, expRespMsg string, timeout time.Duration, done chan<- error) {
 	// try to connect with the server
 	newConn := make(chan connectionRequest, 1)
 	go func() {
@@ -688,10 +688,10 @@ func simpleTcpClient(ms *microservice, addr string, reqMsg, expRespMsg string, t
 		close(newConn)
 	}()
 
-	simpleTcpOrUdpClient(newConn, addr, reqMsg, expRespMsg, timeout, done)
+	simpleTCPOrUDPClient(newConn, addr, reqMsg, expRespMsg, timeout, done)
 }
 
-func simpleUdpClient(ms *microservice, addr string, reqMsg, expRespMsg string, timeout time.Duration, done chan<- error) {
+func simpleUDPClient(ms *microservice, addr string, reqMsg, expRespMsg string, timeout time.Duration, done chan<- error) {
 	// try to connect with the server
 	newConn := make(chan connectionRequest, 1)
 	go func() {
@@ -708,10 +708,10 @@ func simpleUdpClient(ms *microservice, addr string, reqMsg, expRespMsg string, t
 		close(newConn)
 	}()
 
-	simpleTcpOrUdpClient(newConn, addr, reqMsg, expRespMsg, timeout, done)
+	simpleTCPOrUDPClient(newConn, addr, reqMsg, expRespMsg, timeout, done)
 }
 
-func simpleTcpOrUdpClient(newConn chan connectionRequest, addr, reqMsg, expRespMsg string,
+func simpleTCPOrUDPClient(newConn chan connectionRequest, addr, reqMsg, expRespMsg string,
 	timeout time.Duration, done chan<- error) {
 
 	// wait for connection
