@@ -318,7 +318,6 @@ func TestL3ACLs(t *testing.T) {
 		}
 		stdout, err := ctx.execVppctl("show", "acl-plugin", "acl")
 		Expect(err).ToNot(HaveOccurred(), "Running `vppctl show acl-plugin acl` failed")
-		fmt.Println(stdout)
 		Expect(stdout).To(substringMatcher(showMs1IngressACL, !aclsConfigured),
 			"Unexpected ACL configuration")
 		Expect(stdout).To(substringMatcher(showMs1EgressACL, !aclsConfigured),
