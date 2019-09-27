@@ -108,70 +108,50 @@ func TestSpan(t *testing.T) {
 	ctx.startMicroservice(msName)
 	req := ctx.grpcClient.ChangeRequest()
 	err := req.Update(dstTap, dstLinuxTap, spanRx).Send(context.Background())
-	Expect(err).To(BeNil(), "Sending change request failed with err")
+	Expect(err).ToNot(HaveOccurred(), "Sending change request failed with err")
 
-	Eventually(ctx.getValueStateClb(dstTap), msUpdateTimeout).Should(
-		Equal(kvs.ValueState_CONFIGURED),
-		"Destination TAP is not configured",
-	)
+	Eventually(ctx.getValueStateClb(dstTap)).Should(Equal(kvs.ValueState_CONFIGURED),
+		"Destination TAP is not configured")
 
-	Expect(ctx.getValueState(spanRx)).To(
-		Equal(kvs.ValueState_PENDING),
-		"SPAN is not in a `PENDING` state, but `InterfaceFrom` is not ready",
-	)
+	Expect(ctx.getValueState(spanRx)).To(Equal(kvs.ValueState_PENDING),
+		"SPAN is not in a `PENDING` state, but `InterfaceFrom` is not ready")
 
 	req = ctx.grpcClient.ChangeRequest()
 	err = req.Update(srcTap, srcLinuxTap).Send(context.Background())
-	Expect(err).To(BeNil())
+	Expect(err).ToNot(HaveOccurred())
 
-	Eventually(ctx.getValueStateClb(srcTap), msUpdateTimeout).Should(
-		Equal(kvs.ValueState_CONFIGURED),
-		"Source TAP is not configured",
-	)
+	Eventually(ctx.getValueStateClb(srcTap)).Should(Equal(kvs.ValueState_CONFIGURED),
+		"Source TAP is not configured")
 
-	Expect(ctx.getValueState(spanRx)).To(
-		Equal(kvs.ValueState_CONFIGURED),
-		"SPAN is not in a `CONFIGURED` state, but both interfaces are ready",
-	)
+	Expect(ctx.getValueState(spanRx)).To(Equal(kvs.ValueState_CONFIGURED),
+		"SPAN is not in a `CONFIGURED` state, but both interfaces are ready")
 
 	ctx.stopMicroservice(msName)
-	Eventually(ctx.getValueStateClb(dstTap), msUpdateTimeout).Should(
-		Equal(kvs.ValueState_PENDING),
-		"Destination TAP must be in a `PENDING` state, after its microservice stops",
-	)
+	Eventually(ctx.getValueStateClb(dstTap)).Should(Equal(kvs.ValueState_PENDING),
+		"Destination TAP must be in a `PENDING` state, after its microservice stops")
 
-	Expect(ctx.getValueState(spanRx)).To(
-		Equal(kvs.ValueState_PENDING),
-		"SPAN is not in a `PENDING` state, but `InterfaceTo` is not ready",
-	)
+	Expect(ctx.getValueState(spanRx)).To(Equal(kvs.ValueState_PENDING),
+		"SPAN is not in a `PENDING` state, but `InterfaceTo` is not ready")
 
 	// Check `show int span` output
 	stdout, err := ctx.execVppctl("show", "int", "span")
-	Expect(err).To(BeNil(), "Running `show int span` failed with err")
-	Expect(len(stdout)).To(
-		Equal(0),
-		"Expected empty output from `show int span` command",
-	)
+	Expect(err).ToNot(HaveOccurred(), "Running `show int span` failed with err")
+	Expect(stdout).To(HaveLen(0),
+		"Expected empty output from `show int span` command")
 
 	// Start container and configure destination interface again
 	ctx.startMicroservice(msName)
 
-	Eventually(ctx.getValueStateClb(dstTap), msUpdateTimeout).Should(
-		Equal(kvs.ValueState_CONFIGURED),
-		"Destination TAP expected to be configured",
-	)
+	Eventually(ctx.getValueStateClb(dstTap)).Should(Equal(kvs.ValueState_CONFIGURED),
+		"Destination TAP expected to be configured")
 
-	Expect(ctx.getValueState(spanRx)).To(
-		Equal(kvs.ValueState_CONFIGURED),
-		"SPAN is not in a `CONFIGURED` state, but both interfaces are ready",
-	)
+	Expect(ctx.getValueState(spanRx)).To(Equal(kvs.ValueState_CONFIGURED),
+		"SPAN is not in a `CONFIGURED` state, but both interfaces are ready")
 
 	// Check `show int span` output
 	stdout, err = ctx.execVppctl("show", "int", "span")
-	Expect(err).To(BeNil(), "Running `show int span` failed with err")
+	Expect(err).ToNot(HaveOccurred(), "Running `show int span` failed with err")
 	s := regexp.MustCompile(`\s+`).ReplaceAllString(stdout, " ")
-	Expect(s).To(
-		Equal("Source Destination Device L2 tap1 tap0 ( rx) ( none) "),
-		"Output of `show int span` didn't match to expected",
-	)
+	Expect(s).To(Equal("Source Destination Device L2 tap1 tap0 ( rx) ( none) "),
+		"Output of `show int span` didn't match to expected")
 }

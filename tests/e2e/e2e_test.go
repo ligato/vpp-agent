@@ -35,19 +35,22 @@ import (
 
 	"github.com/fsouza/go-dockerclient"
 	"github.com/gogo/protobuf/proto"
-	"github.com/ligato/cn-infra/health/probe"
 	"github.com/mitchellh/go-ps"
 	. "github.com/onsi/gomega"
 	"google.golang.org/grpc"
 
+	"github.com/ligato/cn-infra/logging"
+	"github.com/ligato/cn-infra/logging/logrus"
+
+	"github.com/ligato/cn-infra/health/probe"
 	"github.com/ligato/cn-infra/health/statuscheck/model/status"
 	"github.com/ligato/vpp-agent/api/genericmanager"
 	"github.com/ligato/vpp-agent/client"
 	"github.com/ligato/vpp-agent/client/remoteclient"
-	"github.com/ligato/vpp-agent/cmd/agentctl/utils"
 	"github.com/ligato/vpp-agent/pkg/models"
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	nslinuxcalls "github.com/ligato/vpp-agent/plugins/linux/nsplugin/linuxcalls"
+	"github.com/ligato/vpp-agent/tests/e2e/utils"
 )
 
 var (
@@ -56,13 +59,16 @@ var (
 	vppSockAddr   = flag.String("vpp-sock-addr", "", "VPP binapi socket address")
 	agentHTTPPort = flag.Int("agent-http-port", 9191, "VPP-Agent HTTP port")
 	agentGrpcPort = flag.Int("agent-grpc-port", 9111, "VPP-Agent GRPC port")
+	debugHTTP     = flag.Bool("debug-http", false, "Enable HTTP client debugging")
 
 	vppPingRegexp = regexp.MustCompile("Statistics: ([0-9]+) sent, ([0-9]+) received, ([0-9]+)% packet loss")
 )
 
 const (
-	agentInitTimeout   = time.Second * 15
-	processExitTimeout = time.Second * 3
+	agentInitTimeout     = time.Second * 15
+	processExitTimeout   = time.Second * 3
+	checkPollingInterval = time.Millisecond * 100
+	checkTimeout         = time.Second * 6
 
 	vppConf = `
 		unix {
@@ -98,7 +104,6 @@ const (
 
 func init() {
 	log.SetFlags(log.Lmicroseconds | log.Lshortfile)
-	flag.Parse()
 }
 
 type testCtx struct {
@@ -118,6 +123,9 @@ func setupE2E(t *testing.T) *testCtx {
 		t.Skip("skipping test for Travis")
 	}
 	RegisterTestingT(t)
+
+	SetDefaultEventuallyPollingInterval(checkPollingInterval)
+	SetDefaultEventuallyTimeout(checkTimeout)
 
 	// connect to the docker daemon
 	dockerClient, err := docker.NewClientFromEnv()
@@ -156,6 +164,11 @@ func setupE2E(t *testing.T) *testCtx {
 	// prepare HTTP client for access to REST API of the agent
 	httpAddr := fmt.Sprintf(":%d", *agentHTTPPort)
 	httpClient := utils.NewHTTPClient(httpAddr)
+
+	if *debugHTTP {
+		httpClient.Log = logrus.NewLogger("http-client")
+		httpClient.Log.SetLevel(logging.DebugLevel)
+	}
 
 	waitUntilAgentReady(t, httpClient)
 
@@ -457,7 +470,7 @@ func waitUntilAgentReady(t *testing.T, httpClient *utils.HTTPClient) {
 	start := time.Now()
 	for {
 		select {
-		case <-time.After(100 * time.Millisecond):
+		case <-time.After(checkPollingInterval):
 			if time.Since(start) > agentInitTimeout {
 				t.Fatalf("agent failed to initialize within the timeout period of %v",
 					agentInitTimeout)
@@ -472,6 +485,7 @@ func waitUntilAgentReady(t *testing.T, httpClient *utils.HTTPClient) {
 			}
 			if agentStatus, ok := agentStatus.PluginStatus["VPPAgent"]; ok {
 				if agentStatus.State == status.OperationalState_OK {
+					t.Logf("agent ready, took %v", time.Since(start))
 					return
 				}
 			}
