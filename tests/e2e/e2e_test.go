@@ -353,6 +353,8 @@ func (ctx *testCtx) testConnection(fromMs, toMs, toAddr, listenAddr string,
 	var srvErr error
 	select {
 	case srvErr = <-srvRet:
+		// now that server exited, mark context as done
+		cancelSrv()
 	case <-time.After(srvExitTimeout):
 		cancelSrv()
 		srvErr = <-srvRet
