@@ -185,7 +185,7 @@ func TestL3ACLs(t *testing.T) {
 			"          0: ipv4 deny src %s dst 0.0.0.0/0 proto 17 sport 0-65535 dport %d\r\n"+
 			"          1: ipv4 deny src 0.0.0.0/0 dst 0.0.0.0/0 proto 1 sport 0-255 dport 0-255\r\n"+
 			"          2: ipv4 permit src 0.0.0.0/0 dst 0.0.0.0/0 proto 0 sport 0 dport 0\r\n",
-			ms2Net, ms1BlockedUDPPort)
+		ms2Net, ms1BlockedUDPPort)
 
 	// microservice2 is not allowed to ping microservice1 and it also cannot
 	// send UDP packet to port 9000
@@ -241,7 +241,7 @@ func TestL3ACLs(t *testing.T) {
 		"{ms2-ingress}\r\n"+
 			"          0: ipv4 deny src 0.0.0.0/0 dst %s proto 6 sport 0-65535 dport 0-1023\r\n"+
 			"          1: ipv4 permit src 0.0.0.0/0 dst 0.0.0.0/0 proto 0 sport 0 dport 0\r\n",
-			ms1Net)
+		ms1Net)
 
 	// microservice2 is not allowed to initiate TCP connections to ms1 on well-known
 	// ports (<1024)
@@ -277,7 +277,7 @@ func TestL3ACLs(t *testing.T) {
 		"{ms2-egress}\r\n"+
 			"          0: ipv4 deny src %s/32 dst 0.0.0.0/0 proto 6 sport 0-65535 dport %d\r\n"+
 			"          1: ipv4 permit src 0.0.0.0/0 dst 0.0.0.0/0 proto 0 sport 0 dport 0\r\n",
-			linuxTap1IP, ms2BlockedTCPPort)
+		linuxTap1IP, ms2BlockedTCPPort)
 
 	// microservice1 is not allowed to connect to microservice2 on TCP port 8000
 	ms2EgressACL := &vpp_acl.ACL{

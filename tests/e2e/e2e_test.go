@@ -784,3 +784,38 @@ func removeFile(t *testing.T, path string) {
 		t.Fatalf("removing file %q failed: %v", path, err)
 	}
 }
+
+// parseVPPTable parses table returned by one of the VPP show commands.
+func parseVPPTable(table string) (parsed []map[string]string) {
+	lines := strings.Split(table, "\r\n")
+	if len(lines) == 0 {
+		return
+	}
+	head := lines[0]
+	rows := lines[1:]
+
+	var columns []string
+	for _, column := range strings.Split(head, " ") {
+		if column != "" {
+			columns = append(columns, column)
+		}
+	}
+	for _, row := range rows {
+		parsedRow := make(map[string]string)
+		i := 0
+		for _, cell := range strings.Split(row, " ") {
+			if cell == "" {
+				continue
+			}
+			if i >= len(columns) {
+				break
+			}
+			parsedRow[columns[i]] = cell
+			i++
+		}
+		if len(parsedRow) > 0 {
+			parsed = append(parsed, parsedRow)
+		}
+	}
+	return
+}

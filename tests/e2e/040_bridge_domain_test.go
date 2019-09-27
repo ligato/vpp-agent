@@ -27,15 +27,22 @@ import (
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 )
 
-const (
-	showBdMacOff =
-"  BD-ID   Index   BSN  Age(min)  Learning  U-Forwrd   UU-Flood   Flooding  ARP-Term  arp-ufwd   BVI-Intf \r\n"+
-"    1       1      0     off        on        on       flood        on       off       off       loop0"
-
-	showBdMac10min =
-"  BD-ID   Index   BSN  Age(min)  Learning  U-Forwrd   UU-Flood   Flooding  ARP-Term  arp-ufwd   BVI-Intf \r\n"+
-"    2       1      1      10        on        on       flood        on       off       off       loop0"
-)
+func checkBDConfig(ctx *testCtx, ageOff bool) {
+	stdout, err := ctx.execVppctl("show", "bridge-domain")
+	Expect(err).To(BeNil(), "Running `vppctl show bridge-domain` failed")
+	bds := parseVPPTable(stdout)
+	Expect(bds).To(HaveLen(1), "Not exactly one bridge domain configured")
+	bd := bds[0]
+	if ageOff {
+		Expect(bd["Age(min)"]).To(Equal("off"))
+	} else {
+		Expect(bd["Age(min)"]).To(Equal("10"))
+	}
+	Expect(bd["Learning"]).To(Equal("on"))
+	Expect(bd["UU-Flood"]).To(Equal("flood"))
+	Expect(bd["Flooding"]).To(Equal("on"))
+	Expect(bd["U-Forwrd"]).To(Equal("on"))
+}
 
 // connect microservices into the same L2 network segment via bridge domain
 // and TAP interfaces.
@@ -147,6 +154,25 @@ func TestBridgeDomainWithTAPs(t *testing.T) {
 		},
 	}
 
+	checkPings := func(ms1Down bool) {
+		if !ms1Down {
+			Expect(ctx.pingFromMs(ms1Name, vppLoopbackIP)).To(BeNil())
+			Expect(ctx.pingFromMs(ms1Name, linuxTap2IP)).To(BeNil())
+		}
+		Expect(ctx.pingFromMs(ms2Name, vppLoopbackIP)).To(BeNil())
+		if ms1Down {
+			Expect(ctx.pingFromMs(ms2Name, linuxTap1IP)).ToNot(BeNil())
+		} else {
+			Expect(ctx.pingFromMs(ms2Name, linuxTap1IP)).To(BeNil())
+		}
+		if ms1Down {
+			Expect(ctx.pingFromVPP(linuxTap1IP)).ToNot(BeNil())
+		} else {
+			Expect(ctx.pingFromVPP(linuxTap1IP)).To(BeNil())
+		}
+		Expect(ctx.pingFromVPP(linuxTap2IP)).To(BeNil())
+	}
+
 	ctx.startMicroservice(ms1Name)
 	ctx.startMicroservice(ms2Name)
 	req := ctx.grpcClient.ChangeRequest()
@@ -167,38 +193,17 @@ func TestBridgeDomainWithTAPs(t *testing.T) {
 	Eventually(ctx.getValueStateClb(vppTap2)).Should(Equal(kvs.ValueState_CONFIGURED),
 		"TAP attached to a newly started microservice2 should be eventually configured")
 
-	stdout, err := ctx.execVppctl("show", "bridge-domain")
-	Expect(err).To(BeNil(), "Running `vppctl show bridge-domain` failed")
-	Expect(stdout).To(ContainSubstring(showBdMacOff),
-		"Unexpected output from `vppctl show bridge-domain`",
-	)
-
-	checkPings := func(ms1Down bool) {
-		if !ms1Down {
-			Expect(ctx.pingFromMs(ms1Name, vppLoopbackIP)).To(BeNil())
-			Expect(ctx.pingFromMs(ms1Name, linuxTap2IP)).To(BeNil())
-		}
-		Expect(ctx.pingFromMs(ms2Name, vppLoopbackIP)).To(BeNil())
-		if ms1Down {
-			Expect(ctx.pingFromMs(ms2Name, linuxTap1IP)).ToNot(BeNil())
-		} else {
-			Expect(ctx.pingFromMs(ms2Name, linuxTap1IP)).To(BeNil())
-		}
-		if ms1Down {
-			Expect(ctx.pingFromVPP(linuxTap1IP)).ToNot(BeNil())
-		} else {
-			Expect(ctx.pingFromVPP(linuxTap1IP)).To(BeNil())
-		}
-		Expect(ctx.pingFromVPP(linuxTap2IP)).To(BeNil())
-	}
+	checkBDConfig(ctx, true)
 	checkPings(false)
 	Expect(ctx.agentInSync()).To(BeTrue(), "Agent is not in-sync")
 
 	// kill one of the microservices
+	// - "Eventually" is also used with linuxTap1 to wait for retry txn that
+	//   will change state from RETRYING to PENDING
 	ctx.stopMicroservice(ms1Name)
 	Eventually(ctx.getValueStateClb(vppTap1)).Should(Equal(kvs.ValueState_PENDING),
 		"Without microservice, the associated VPP-TAP should be pending")
-	Expect(ctx.getValueState(linuxTap1)).To(Equal(kvs.ValueState_PENDING),
+	Eventually(ctx.getValueStateClb(linuxTap1)).Should(Equal(kvs.ValueState_PENDING),
 		"Without microservice, the associated LinuxTAP should be pending")
 	Expect(ctx.getValueState(vppTap2)).To(Equal(kvs.ValueState_CONFIGURED),
 		"VPP-TAP attached to running microservice is not configured")
@@ -232,11 +237,7 @@ func TestBridgeDomainWithTAPs(t *testing.T) {
 	checkPings(false)
 	Expect(ctx.agentInSync()).To(BeTrue(), "Agent is not in-sync")
 
-	stdout, err = ctx.execVppctl("show", "bridge-domain")
-	Expect(err).ToNot(HaveOccurred(), "Running `vppctl show bridge-domain` failed")
-	Expect(stdout).To(ContainSubstring(showBdMac10min),
-		"Unexpected output from `vppctl show bridge-domain`",
-	)
+	checkBDConfig(ctx, false)
 }
 
 // connect microservices into the same L2 network segment via bridge domain
@@ -246,19 +247,19 @@ func TestBridgeDomainWithAfPackets(t *testing.T) {
 	defer ctx.teardownE2E()
 
 	const (
-		afPacket1Name     = "vpp-afpacket1"
-		veth1AName        = "vpp-veth-1a"
-		veth1BName        = "vpp-veth-1b"
-		veth1AHostname    = "veth1a"
-		veth1BHostname    = "veth1b"
-		veth1IP           = "192.168.1.2"
+		afPacket1Name  = "vpp-afpacket1"
+		veth1AName     = "vpp-veth-1a"
+		veth1BName     = "vpp-veth-1b"
+		veth1AHostname = "veth1a"
+		veth1BHostname = "veth1b"
+		veth1IP        = "192.168.1.2"
 
-		afPacket2Name     = "vpp-afpacket2"
-		veth2AName        = "vpp-veth-2a"
-		veth2BName        = "vpp-veth-2b"
-		veth2AHostname    = "veth2a"
-		veth2BHostname    = "veth2b"
-		veth2IP           = "192.168.1.3"
+		afPacket2Name  = "vpp-afpacket2"
+		veth2AName     = "vpp-veth-2a"
+		veth2BName     = "vpp-veth-2b"
+		veth2AHostname = "veth2a"
+		veth2BHostname = "veth2b"
+		veth2IP        = "192.168.1.3"
 
 		vppLoopbackName = "loop1"
 		vppLoopbackIP   = "192.168.1.1"
@@ -270,9 +271,9 @@ func TestBridgeDomainWithAfPackets(t *testing.T) {
 	)
 
 	afPacket1 := &vpp_interfaces.Interface{
-		Name:        afPacket1Name,
-		Type:        vpp_interfaces.Interface_AF_PACKET,
-		Enabled:     true,
+		Name:    afPacket1Name,
+		Type:    vpp_interfaces.Interface_AF_PACKET,
+		Enabled: true,
 		Link: &vpp_interfaces.Interface_Afpacket{
 			Afpacket: &vpp_interfaces.AfpacketLink{
 				HostIfName: veth1BHostname,
@@ -310,9 +311,9 @@ func TestBridgeDomainWithAfPackets(t *testing.T) {
 	}
 
 	afPacket2 := &vpp_interfaces.Interface{
-		Name:        afPacket2Name,
-		Type:        vpp_interfaces.Interface_AF_PACKET,
-		Enabled:     true,
+		Name:    afPacket2Name,
+		Type:    vpp_interfaces.Interface_AF_PACKET,
+		Enabled: true,
 		Link: &vpp_interfaces.Interface_Afpacket{
 			Afpacket: &vpp_interfaces.AfpacketLink{
 				HostIfName: veth2BHostname,
@@ -377,6 +378,25 @@ func TestBridgeDomainWithAfPackets(t *testing.T) {
 		},
 	}
 
+	checkPings := func(ms1Down bool) {
+		if !ms1Down {
+			Expect(ctx.pingFromMs(ms1Name, vppLoopbackIP)).To(Succeed())
+			Expect(ctx.pingFromMs(ms1Name, veth2IP)).To(Succeed())
+		}
+		Expect(ctx.pingFromMs(ms2Name, vppLoopbackIP)).To(Succeed())
+		if ms1Down {
+			Expect(ctx.pingFromMs(ms2Name, veth1IP)).ToNot(Succeed())
+		} else {
+			Expect(ctx.pingFromMs(ms2Name, veth1IP)).To(Succeed())
+		}
+		if ms1Down {
+			Expect(ctx.pingFromVPP(veth1IP)).ToNot(Succeed())
+		} else {
+			Expect(ctx.pingFromVPP(veth1IP)).To(Succeed())
+		}
+		Expect(ctx.pingFromVPP(veth2IP)).To(Succeed())
+	}
+
 	ctx.startMicroservice(ms1Name)
 	ctx.startMicroservice(ms2Name)
 	req := ctx.grpcClient.ChangeRequest()
@@ -397,30 +417,7 @@ func TestBridgeDomainWithAfPackets(t *testing.T) {
 	Eventually(ctx.getValueStateClb(afPacket2)).Should(Equal(kvs.ValueState_CONFIGURED),
 		"AF-PACKET attached to a newly started microservice2 should be eventually configured")
 
-	stdout, err := ctx.execVppctl("show", "bridge-domain")
-	Expect(err).ToNot(HaveOccurred(), "Running `vppctl show bridge-domain` failed")
-	Expect(stdout).To(ContainSubstring(showBdMacOff),
-		"Unexpected output from `vppctl show bridge-domain`",
-	)
-
-	checkPings := func(ms1Down bool) {
-		if !ms1Down {
-			Expect(ctx.pingFromMs(ms1Name, vppLoopbackIP)).To(Succeed())
-			Expect(ctx.pingFromMs(ms1Name, veth2IP)).To(Succeed())
-		}
-		Expect(ctx.pingFromMs(ms2Name, vppLoopbackIP)).To(Succeed())
-		if ms1Down {
-			Expect(ctx.pingFromMs(ms2Name, veth1IP)).ToNot(Succeed())
-		} else {
-			Expect(ctx.pingFromMs(ms2Name, veth1IP)).To(Succeed())
-		}
-		if ms1Down {
-			Expect(ctx.pingFromVPP(veth1IP)).ToNot(Succeed())
-		} else {
-			Expect(ctx.pingFromVPP(veth1IP)).To(Succeed())
-		}
-		Expect(ctx.pingFromVPP(veth2IP)).To(Succeed())
-	}
+	checkBDConfig(ctx, true)
 	checkPings(false)
 	Expect(ctx.agentInSync()).To(BeTrue(), "Agent is not in-sync")
 
@@ -470,9 +467,5 @@ func TestBridgeDomainWithAfPackets(t *testing.T) {
 	checkPings(false)
 	Expect(ctx.agentInSync()).To(BeTrue(), "Agent is not in-sync")
 
-	stdout, err = ctx.execVppctl("show", "bridge-domain")
-	Expect(err).ToNot(HaveOccurred(), "Running `vppctl show bridge-domain` failed")
-	Expect(stdout).To(ContainSubstring(showBdMac10min),
-		"Unexpected output from `vppctl show bridge-domain`",
-	)
+	checkBDConfig(ctx, false)
 }

@@ -26,9 +26,9 @@ import (
 	"github.com/ligato/vpp-agent/api/models/linux/l3"
 	"github.com/ligato/vpp-agent/api/models/linux/namespace"
 	"github.com/ligato/vpp-agent/api/models/vpp/interfaces"
+	"github.com/ligato/vpp-agent/api/models/vpp/l3"
 	"github.com/ligato/vpp-agent/api/models/vpp/nat"
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-	"github.com/ligato/vpp-agent/api/models/vpp/l3"
 )
 
 // Simulate public and private networks using two microservices and test
@@ -243,7 +243,6 @@ func TestSourceNAT(t *testing.T) {
 	Expect(ctx.agentInSync()).To(BeTrue(), "Agent is not in-sync")
 }
 
-
 // Simulate use-case in which a service located in a private network is published
 // on a publicly accessible IP address.
 func TestNATStaticMappings(t *testing.T) {
@@ -349,12 +348,12 @@ func TestNATStaticMappings(t *testing.T) {
 		Forwarding: true,
 		NatInterfaces: []*vpp_nat.Nat44Global_Interface{
 			{
-				Name:          vppTap1Name,
-				IsInside:      false,
+				Name:     vppTap1Name,
+				IsInside: false,
 			},
 			{
-				Name:          vppTap2Name,
-				IsInside:      true,
+				Name:     vppTap2Name,
+				IsInside: true,
 			},
 		},
 	}
@@ -460,7 +459,7 @@ func TestNATStaticMappings(t *testing.T) {
 		ms2DefaultRoute,
 		svcExtIPsProxyArp,
 		natGlobal,
-		tcpSvc,	udpSvc,
+		tcpSvc, udpSvc,
 	).Send(context.Background())
 	Expect(err).ToNot(HaveOccurred(), "Transaction creating public and private networks failed")
 
@@ -515,4 +514,3 @@ func TestNATStaticMappings(t *testing.T) {
 	checkConn(true)
 	Expect(ctx.agentInSync()).To(BeTrue(), "Agent is not in-sync")
 }
-
