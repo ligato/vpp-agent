@@ -194,9 +194,7 @@ func TestIPWithNeighGW(t *testing.T) {
 	linuxTapAddr.Gw = vppTapIP2
 
 	req = ctx.grpcClient.ChangeRequest()
-	err = req.Update(
-		vppLoopAddr, vppTapAddr, linuxTapAddr,
-	).Send(context.Background())
+	err = req.Update(vppLoopAddr, vppTapAddr, linuxTapAddr).Send(context.Background())
 	Expect(err).ToNot(HaveOccurred())
 	checkItemsAreConfigured(false, true)
 
@@ -210,9 +208,7 @@ func TestIPWithNeighGW(t *testing.T) {
 
 	// de-allocate loopback IP - the connection should not work anymore
 	req = ctx.grpcClient.ChangeRequest()
-	err = req.Delete(
-		vppLoopAddr,
-	).Send(context.Background())
+	err = req.Delete(vppLoopAddr).Send(context.Background())
 	Expect(err).ToNot(HaveOccurred())
 
 	// loopback is still created but without IP and route is pending
@@ -398,9 +394,7 @@ func TestIPWithNonLocalGW(t *testing.T) {
 	linuxTapAddr.Gw = vppTapIP2
 
 	req = ctx.grpcClient.ChangeRequest()
-	err = req.Update(
-		vppLoopAddr, vppTapAddr, linuxTapAddr,
-	).Send(context.Background())
+	err = req.Update(vppLoopAddr, vppTapAddr, linuxTapAddr).Send(context.Background())
 	Expect(err).ToNot(HaveOccurred())
 	checkItemsAreConfigured(false, true)
 
@@ -607,9 +601,7 @@ func TestVPPRoutesWithNetalloc(t *testing.T) {
 	linuxTapAddr.Gw = vppTapIP2
 
 	req = ctx.grpcClient.ChangeRequest()
-	err = req.Update(
-		linuxLoopNet1Addr, vppTapAddr, linuxTapAddr,
-	).Send(context.Background())
+	err = req.Update(linuxLoopNet1Addr, vppTapAddr, linuxTapAddr).Send(context.Background())
 	Expect(err).ToNot(HaveOccurred())
 	checkItemsAreConfigured(false, true)
 
@@ -621,9 +613,7 @@ func TestVPPRoutesWithNetalloc(t *testing.T) {
 
 	// de-allocate loopback IP in net2 - the connection to that IP should not work anymore
 	req = ctx.grpcClient.ChangeRequest()
-	err = req.Delete(
-		linuxLoopNet2Addr,
-	).Send(context.Background())
+	err = req.Delete(linuxLoopNet2Addr).Send(context.Background())
 	Expect(err).ToNot(HaveOccurred())
 
 	// loopback is still created but without IP and route is pending

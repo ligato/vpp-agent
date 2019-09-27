@@ -55,7 +55,7 @@ var (
 	vppSockAddr   = flag.String("vpp-sock-addr", "", "VPP binapi socket address")
 	agentHTTPPort = flag.Int("agent-http-port", 9191, "VPP-Agent HTTP port")
 	agentGrpcPort = flag.Int("agent-grpc-port", 9111, "VPP-Agent GRPC port")
-	debugHttp     = flag.Bool("debug-http", false, "Enable HTTP client debugging")
+	debugHTTP     = flag.Bool("debug-http", false, "Enable HTTP client debugging")
 
 	vppPingRegexp = regexp.MustCompile("Statistics: ([0-9]+) sent, ([0-9]+) received, ([0-9]+)% packet loss")
 )
@@ -152,7 +152,7 @@ func setupE2E(t *testing.T) *testCtx {
 	httpAddr := fmt.Sprintf(":%d", *agentHTTPPort)
 	httpClient := utils.NewHTTPClient(httpAddr)
 
-	if *debugHttp {
+	if *debugHTTP {
 		httpClient.Log = logrus.NewLogger("http-client")
 		httpClient.Log.SetLevel(logging.DebugLevel)
 	}
