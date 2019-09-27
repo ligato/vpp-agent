@@ -158,7 +158,7 @@ func TestSourceNAT(t *testing.T) {
 			}
 		}
 		stdout, err := ctx.execVppctl("show", "nat44", "addresses")
-		Expect(err).To(BeNil(), "Running `vppctl show nat44 addresses` failed")
+		Expect(err).ToNot(HaveOccurred(), "Running `vppctl show nat44 addresses` failed")
 		Expect(stdout).To(substringMatcher(sNatAddr1, !isConfigured),
 			"Unexpected S-NAT address configuration",
 		)
@@ -171,9 +171,9 @@ func TestSourceNAT(t *testing.T) {
 	}
 
 	checkConn := func(shouldSucceed bool) {
-		expected := BeNil()
+		expected := Succeed()
 		if !shouldSucceed {
-			expected = Not(BeNil())
+			expected = Not(Succeed())
 		}
 		Expect(ctx.pingFromMs(ms2Name, linuxTap1IP)).To(expected)
 
@@ -195,7 +195,7 @@ func TestSourceNAT(t *testing.T) {
 		ms2DefaultRoute,
 		sourceNat,
 	).Send(context.Background())
-	Expect(err).To(BeNil(), "Transaction creating public and private networks failed")
+	Expect(err).ToNot(HaveOccurred(), "Transaction creating public and private networks failed")
 
 	Eventually(ctx.getValueStateClb(vppTap1), msUpdateTimeout).Should(Equal(kvs.ValueState_CONFIGURED),
 		"TAP attached to a newly started microservice1 should be eventually configured")
@@ -212,7 +212,7 @@ func TestSourceNAT(t *testing.T) {
 	err = req.Delete(
 		sourceNat,
 	).Send(context.Background())
-	Expect(err).To(BeNil(), "Transaction removing S-NAT failed")
+	Expect(err).ToNot(HaveOccurred(), "Transaction removing S-NAT failed")
 
 	// check configuration
 	checkConfig(false)
@@ -224,7 +224,7 @@ func TestSourceNAT(t *testing.T) {
 	err = req.Update(
 		sourceNat,
 	).Send(context.Background())
-	Expect(err).To(BeNil(), "Transaction creating S-NAT failed")
+	Expect(err).ToNot(HaveOccurred(), "Transaction creating S-NAT failed")
 	checkConn(true)
 	Expect(ctx.agentInSync()).To(BeTrue(), "Agent is not in-sync")
 
@@ -426,7 +426,7 @@ func TestNATStaticMappings(t *testing.T) {
 			}
 		}
 		stdout, err := ctx.execVppctl("show", "nat44", "static", "mappings")
-		Expect(err).To(BeNil(), "Running `vppctl show nat44 addresses` failed")
+		Expect(err).ToNot(HaveOccurred(), "Running `vppctl show nat44 addresses` failed")
 		Expect(stdout).To(substringMatcher(showTcpSvc, !isConfigured),
 			"Unexpected TCP static mapping configuration",
 		)
@@ -436,9 +436,9 @@ func TestNATStaticMappings(t *testing.T) {
 	}
 
 	checkConn := func(shouldSucceed bool) {
-		expected := BeNil()
+		expected := Succeed()
 		if !shouldSucceed {
-			expected = Not(BeNil())
+			expected = Not(Succeed())
 		}
 
 		Expect(ctx.testConnection(ms1Name, ms2Name, tcpSvcExtIP, linuxTap2IP,
@@ -461,7 +461,7 @@ func TestNATStaticMappings(t *testing.T) {
 		natGlobal,
 		tcpSvc,	udpSvc,
 	).Send(context.Background())
-	Expect(err).To(BeNil(), "Transaction creating public and private networks failed")
+	Expect(err).ToNot(HaveOccurred(), "Transaction creating public and private networks failed")
 
 	Eventually(ctx.getValueStateClb(vppTap1), msUpdateTimeout).Should(Equal(kvs.ValueState_CONFIGURED),
 		"TAP attached to a newly started microservice1 should be eventually configured")
@@ -478,7 +478,7 @@ func TestNATStaticMappings(t *testing.T) {
 	err = req.Delete(
 		tcpSvc, udpSvc,
 	).Send(context.Background())
-	Expect(err).To(BeNil(), "Transaction removing NAT static mappings failed")
+	Expect(err).ToNot(HaveOccurred(), "Transaction removing NAT static mappings failed")
 
 	// check configuration
 	checkConfig(false)
@@ -490,7 +490,7 @@ func TestNATStaticMappings(t *testing.T) {
 	err = req.Update(
 		tcpSvc, udpSvc,
 	).Send(context.Background())
-	Expect(err).To(BeNil(), "Transaction creating NAT static mappings failed")
+	Expect(err).ToNot(HaveOccurred(), "Transaction creating NAT static mappings failed")
 	checkConn(true)
 	Expect(ctx.agentInSync()).To(BeTrue(), "Agent is not in-sync")
 

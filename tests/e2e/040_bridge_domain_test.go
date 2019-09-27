@@ -228,12 +228,12 @@ func TestBridgeDomainWithTAPs(t *testing.T) {
 	err = req.Update(
 		bd,
 	).Send(context.Background())
-	Expect(err).To(BeNil(), "Transaction updating BD failed")
+	Expect(err).ToNot(HaveOccurred(), "Transaction updating BD failed")
 	checkPings(false)
 	Expect(ctx.agentInSync()).To(BeTrue(), "Agent is not in-sync")
 
 	stdout, err = ctx.execVppctl("show", "bridge-domain")
-	Expect(err).To(BeNil(), "Running `vppctl show bridge-domain` failed")
+	Expect(err).ToNot(HaveOccurred(), "Running `vppctl show bridge-domain` failed")
 	Expect(stdout).To(ContainSubstring(showBdMac10min),
 		"Unexpected output from `vppctl show bridge-domain`",
 	)
@@ -388,7 +388,7 @@ func TestBridgeDomainWithAfPackets(t *testing.T) {
 		vppLoop,
 		bd,
 	).Send(context.Background())
-	Expect(err).To(BeNil(), "Transaction creating BD with AF-PACKETs failed")
+	Expect(err).ToNot(HaveOccurred(), "Transaction creating BD with AF-PACKETs failed")
 
 	Expect(ctx.getValueState(vppLoop)).To(Equal(kvs.ValueState_CONFIGURED),
 		"BD BVI should be configured even before microservices start")
@@ -398,28 +398,28 @@ func TestBridgeDomainWithAfPackets(t *testing.T) {
 		"AF-PACKET attached to a newly started microservice2 should be eventually configured")
 
 	stdout, err := ctx.execVppctl("show", "bridge-domain")
-	Expect(err).To(BeNil(), "Running `vppctl show bridge-domain` failed")
+	Expect(err).ToNot(HaveOccurred(), "Running `vppctl show bridge-domain` failed")
 	Expect(stdout).To(ContainSubstring(showBdMacOff),
 		"Unexpected output from `vppctl show bridge-domain`",
 	)
 
 	checkPings := func(ms1Down bool) {
 		if !ms1Down {
-			Expect(ctx.pingFromMs(ms1Name, vppLoopbackIP)).To(BeNil())
-			Expect(ctx.pingFromMs(ms1Name, veth2IP)).To(BeNil())
+			Expect(ctx.pingFromMs(ms1Name, vppLoopbackIP)).To(Succeed())
+			Expect(ctx.pingFromMs(ms1Name, veth2IP)).To(Succeed())
 		}
-		Expect(ctx.pingFromMs(ms2Name, vppLoopbackIP)).To(BeNil())
+		Expect(ctx.pingFromMs(ms2Name, vppLoopbackIP)).To(Succeed())
 		if ms1Down {
-			Expect(ctx.pingFromMs(ms2Name, veth1IP)).ToNot(BeNil())
+			Expect(ctx.pingFromMs(ms2Name, veth1IP)).ToNot(Succeed())
 		} else {
-			Expect(ctx.pingFromMs(ms2Name, veth1IP)).To(BeNil())
+			Expect(ctx.pingFromMs(ms2Name, veth1IP)).To(Succeed())
 		}
 		if ms1Down {
-			Expect(ctx.pingFromVPP(veth1IP)).ToNot(BeNil())
+			Expect(ctx.pingFromVPP(veth1IP)).ToNot(Succeed())
 		} else {
-			Expect(ctx.pingFromVPP(veth1IP)).To(BeNil())
+			Expect(ctx.pingFromVPP(veth1IP)).To(Succeed())
 		}
-		Expect(ctx.pingFromVPP(veth2IP)).To(BeNil())
+		Expect(ctx.pingFromVPP(veth2IP)).To(Succeed())
 	}
 	checkPings(false)
 	Expect(ctx.agentInSync()).To(BeTrue(), "Agent is not in-sync")
@@ -466,12 +466,12 @@ func TestBridgeDomainWithAfPackets(t *testing.T) {
 	err = req.Update(
 		bd,
 	).Send(context.Background())
-	Expect(err).To(BeNil(), "Transaction updating BD failed")
+	Expect(err).ToNot(HaveOccurred(), "Transaction updating BD failed")
 	checkPings(false)
 	Expect(ctx.agentInSync()).To(BeTrue(), "Agent is not in-sync")
 
 	stdout, err = ctx.execVppctl("show", "bridge-domain")
-	Expect(err).To(BeNil(), "Running `vppctl show bridge-domain` failed")
+	Expect(err).ToNot(HaveOccurred(), "Running `vppctl show bridge-domain` failed")
 	Expect(stdout).To(ContainSubstring(showBdMac10min),
 		"Unexpected output from `vppctl show bridge-domain`",
 	)
