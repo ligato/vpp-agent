@@ -18,8 +18,8 @@ ${IP1}=                fd31::1:1:0:0:1
 ${IP2}=                fd31::1:1:0:0:2
 ${IPNET1}=             fd30:0:0:1::
 ${IPNET2}=             fd31:0:0:1::
-${WAIT_TIMEOUT}=       20s
-${SYNC_SLEEP}=         2s
+${WAIT_TIMEOUT}=       10s
+${SYNC_SLEEP}=         1s
 
 *** Test Cases ***
 # CRUD tests for routing
@@ -71,24 +71,24 @@ Add VRF Table In Background While Creating Interface Memif
     Then IP6 Fib Table 0 On agent_vpp_1 Should Contain Route With IP ${IP1}/128
     # this will transfer interface to newly-in-background-created non default vrf table
     Then Create Master memif0 on agent_vpp_1 with VRF 2, IP ${IP1}, MAC 02:f1:be:90:00:00, key 1 and m0.sock socket
-    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    IP6 Fib Table 2 On agent_vpp_1 Should Contain Route With IP ${IP1}/128
+    IP6 Fib Table 2 On agent_vpp_1 Should Contain Route With IP ${IP1}/128
     Then IP6 Fib Table 0 On agent_vpp_1 Should Not Contain Route With IP ${IP1}/128
     # this will transfer interface to other newly-in-background-created non default vrf table
     Then Create Master memif0 on agent_vpp_1 with VRF 1, IP ${IP1}, MAC 02:f1:be:90:00:00, key 1 and m0.sock socket
-    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    IP6 Fib Table 1 On agent_vpp_1 Should Contain Route With IP ${IP1}/128
+    IP6 Fib Table 1 On agent_vpp_1 Should Contain Route With IP ${IP1}/128
     Then IP6 Fib Table 0 On agent_vpp_1 Should Not Contain Route With IP ${IP1}/128
     # this will remove non default vrf table in background - N/A
     # Then IP6 Fib Table 2 On agent_vpp_1 Should Be Empty - N/A
     Then IP6 Fib Table 2 On agent_vpp_1 Should Not Contain Route With IP ${IP1}/128
     # this will transfer interface to existing non default vrf table
     Then Create Master memif0 on agent_vpp_1 with VRF 2, IP ${IP1}, MAC 02:f1:be:90:00:00, key 1 and m0.sock socket
-    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    IP6 Fib Table 2 On agent_vpp_1 Should Contain Route With IP ${IP1}/128
+    IP6 Fib Table 2 On agent_vpp_1 Should Contain Route With IP ${IP1}/128
     Then IP6 Fib Table 0 On agent_vpp_1 Should Not Contain Route With IP ${IP1}/128
     Then IP6 Fib Table 1 On agent_vpp_1 Should Not Contain Route With IP ${IP1}/128
     # this will transfer interface to default vrf table
     Then Create Master memif0 on agent_vpp_1 with IP ${IP1}, MAC 02:f1:be:90:00:00, key 1 and m0.sock socket
     # 10 nov 2017 this will fail for memif - reason is that Create Master memif0 does not transfer interface to the VRF table 0
-    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    IP6 Fib Table 0 On agent_vpp_1 Should Contain Route With IP ${IP1}/128
+    IP6 Fib Table 0 On agent_vpp_1 Should Contain Route With IP ${IP1}/128
     Then IP6 Fib Table 1 On agent_vpp_1 Should Not Contain Route With IP ${IP1}/128
     # 10 nov 2017 this will fail for memif - reason is that Create Master memif0 does not transfer interface to the VRF table 0
     Then IP6 Fib Table 2 On agent_vpp_1 Should Not Contain Route With IP ${IP1}/128
@@ -107,23 +107,23 @@ Add VRF Table In Background While Creating Interface Tap
     Then IP6 Fib Table 0 On agent_vpp_1 Should Contain Route With IP ${IP1}/128
     # this will transfer interface to newly-in-background-created non default vrf table
     Then Create Tapv2 Interface tap0 On agent_vpp_1 With Vrf 2, IP ${IP1}, MAC 02:f1:be:90:00:00 And HostIfName linux_tap0
-    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    IP6 Fib Table 2 On agent_vpp_1 Should Contain Route With IP ${IP1}/128
+    IP6 Fib Table 2 On agent_vpp_1 Should Contain Route With IP ${IP1}/128
     Then IP6 Fib Table 0 On agent_vpp_1 Should Not Contain Route With IP ${IP1}/128
     # this will transfer interface to other newly-in-background-created non default vrf table
     Then Create Tapv2 Interface tap0 On agent_vpp_1 With Vrf 1, IP ${IP1}, MAC 02:f1:be:90:00:00 And HostIfName linux_tap0
-    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    IP6 Fib Table 1 On agent_vpp_1 Should Contain Route With IP ${IP1}/128
+    IP6 Fib Table 1 On agent_vpp_1 Should Contain Route With IP ${IP1}/128
     Then IP6 Fib Table 0 On agent_vpp_1 Should Not Contain Route With IP ${IP1}/128
     # this will remove non default vrf table in background - N/A
     # Then IP6 Fib Table 2 On agent_vpp_1 Should Be Empty - N/A
     Then IP6 Fib Table 2 On agent_vpp_1 Should Not Contain Route With IP ${IP1}/128
     # this will transfer interface to existing non default vrf table
     Then Create Tapv2 Interface tap0 On agent_vpp_1 With Vrf 2, IP ${IP1}, MAC 02:f1:be:90:00:00 And HostIfName linux_tap0
-    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    IP6 Fib Table 2 On agent_vpp_1 Should Contain Route With IP ${IP1}/128
+    IP6 Fib Table 2 On agent_vpp_1 Should Contain Route With IP ${IP1}/128
     Then IP6 Fib Table 0 On agent_vpp_1 Should Not Contain Route With IP ${IP1}/128
     Then IP6 Fib Table 1 On agent_vpp_1 Should Not Contain Route With IP ${IP1}/128
     # this will transfer interface to default vrf table
     Then Create Tapv2 Interface tap0 On agent_vpp_1 With Vrf 0, IP ${IP1}, MAC 02:f1:be:90:00:00 And HostIfName linux_tap0
-    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    IP6 Fib Table 0 On agent_vpp_1 Should Contain Route With IP ${IP1}/128
+    IP6 Fib Table 0 On agent_vpp_1 Should Contain Route With IP ${IP1}/128
     Then IP6 Fib Table 1 On agent_vpp_1 Should Not Contain Route With IP ${IP1}/128
     Then IP6 Fib Table 2 On agent_vpp_1 Should Not Contain Route With IP ${IP1}/128
 
@@ -140,37 +140,47 @@ Add VRF Table In Background While Creating Interface VXLAN
     Create VRF Table    node=agent_vpp_1    id=2    protocol=ipv6
     Show IP6 Fib On agent_vpp_1
     Show Interfaces Address On agent_vpp_1
-    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    IP6 Fib Table 0 On agent_vpp_1 Should Contain Route With IP ${IP2}/128
+    IP6 Fib Table 0 On agent_vpp_1 Should Contain Route With IP ${IP2}/128
     # this will transfer interface to newly-in-background-created non default vrf table
     Put VXLan Interface    node=agent_vpp_1    name=vpp1_vxlan1    src=${IP1}    dst=${IP2}    vni=5    vrf=2
     Write To Machine    agent_vpp_1_term    show vxlan tunnel
     Show IP6 Fib On agent_vpp_1
     Show Interfaces Address On agent_vpp_1
-    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    IP6 Fib Table 2 On agent_vpp_1 Should Contain Route With IP ${IP2}/128
+    IP6 Fib Table 2 On agent_vpp_1 Should Contain Route With IP ${IP2}/128
     # this will transfer interface to other newly-in-background-created non default vrf table
     Put VXLan Interface    node=agent_vpp_1    name=vpp1_vxlan1    src=${IP1}    dst=${IP2}    vni=5    vrf=1
     Write To Machine    agent_vpp_1_term    show vxlan tunnel
     Show IP6 Fib On agent_vpp_1
     Show Interfaces Address On agent_vpp_1
-    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    IP6 Fib Table 1 On agent_vpp_1 Should Contain Route With IP ${IP2}/128
+    IP6 Fib Table 1 On agent_vpp_1 Should Contain Route With IP ${IP2}/128
     # this will transfer interface to existing non default vrf table
     Put VXLan Interface    node=agent_vpp_1    name=vpp1_vxlan1    src=${IP1}    dst=${IP2}    vni=5    vrf=2
     Write To Machine    agent_vpp_1_term    show vxlan tunnel
     Show IP6 Fib On agent_vpp_1
     Show Interfaces Address On agent_vpp_1
-    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    IP6 Fib Table 2 On agent_vpp_1 Should Contain Route With IP ${IP2}/128
+    IP6 Fib Table 2 On agent_vpp_1 Should Contain Route With IP ${IP2}/128
     # this will transfer interface to default vrf table
     Put VXLan Interface    node=agent_vpp_1    name=vpp1_vxlan1    src=${IP1}    dst=${IP2}    vni=5    vrf=0
     Write To Machine    agent_vpp_1_term    show vxlan tunnel
     Show IP6 Fib On agent_vpp_1
     Show Interfaces Address On agent_vpp_1
-    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    IP6 Fib Table 0 On agent_vpp_1 Should Contain Route With IP ${IP2}/128
+    IP6 Fib Table 0 On agent_vpp_1 Should Contain Route With IP ${IP2}/128
 
 *** Keywords ***
 IP6 Fib On ${node} Should Not Contain Route With IP ${ip}/${prefix}
-    ${out}=    vpp_term: Show IP6 Fib    ${node}
-    Should Not Match Regexp    ${out}  ${ip}\\/${prefix}\\s*unicast\\-ip6-chain\\s*\\[\\@0\\]:\\ dpo-load-balance:\\ \\[proto:ip6\\ index:\\d+\\ buckets:\\d+\\ uRPF:\\d+\\ to:\\[0:0\\]\\]
+    Wait Until Keyword Succeeds    ${WAIT_TIMEOUT}    ${SYNC_SLEEP}
+    ...    Check Route Is Not In IP6 FIB Table    ${node}    ${ip}    ${prefix}
 
 IP6 Fib On ${node} Should Contain Route With IP ${ip}/${prefix}
+    Wait Until Keyword Succeeds    ${WAIT_TIMEOUT}    ${SYNC_SLEEP}
+    ...    Check Route Is In IP6 FIB Table    ${node}    ${ip}    ${prefix}
+
+Check Route Is In IP6 FIB Table
+    [Arguments]    ${node}    ${ip}    ${prefix}
     ${out}=    vpp_term: Show IP6 Fib    ${node}
     Should Match Regexp        ${out}  ${ip}\\/${prefix}\\s*unicast\\-ip6-chain\\s*\\[\\@0\\]:\\ dpo-load-balance:\\ \\[proto:ip6\\ index:\\d+\\ buckets:\\d+\\ uRPF:\\d+\\ to:\\[0:0\\]\\]
+
+Check Route Is Not In IP6 FIB Table
+    [Arguments]    ${node}    ${ip}    ${prefix}
+    ${out}=    vpp_term: Show IP6 Fib    ${node}
+    Should Not Match Regexp    ${out}  ${ip}\\/${prefix}\\s*unicast\\-ip6-chain\\s*\\[\\@0\\]:\\ dpo-load-balance:\\ \\[proto:ip6\\ index:\\d+\\ buckets:\\d+\\ uRPF:\\d+\\ to:\\[0:0\\]\\]
