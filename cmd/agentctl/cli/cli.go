@@ -18,7 +18,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"net/http"
 	"runtime"
 
 	"github.com/docker/cli/cli/streams"
@@ -129,12 +128,11 @@ func (cli *AgentCli) KVProtoBroker() (keyval.ProtoBroker, error) {
 	if err != nil {
 		return nil, fmt.Errorf("connecting to KVBDB failed: %v", err)
 	}
-	return jsonProtoBroker(kvdb.(keyval.CoreBrokerWatcher)), nil
+	return jsonProtoBroker(kvdb), nil
 }
 
 func jsonProtoBroker(broker keyval.CoreBrokerWatcher) keyval.ProtoBroker {
-	protoBroker := kvproto.NewProtoWrapper(broker, &keyval.SerializerJSON{})
-	return protoBroker
+	return kvproto.NewProtoWrapper(broker, &keyval.SerializerJSON{})
 }
 
 // ServerInfo stores details about the supported features and platform of the
@@ -186,22 +184,14 @@ func (cli *AgentCli) Initialize(opts *ClientOptions, ops ...InitializeOpt) error
 }
 
 func newAPIClient(opts *ClientOptions) (client.APIClient, error) {
-	httpClient := &http.Client{
-		// No tls
-		// No proxy
-		Transport: &http.Transport{},
-	}
 	clientOpts := []client.Opt{
-		client.WithHTTPClient(httpClient),
 		client.WithHost(opts.AgentHost),
 		client.WithEtcdEndpoints(opts.Endpoints),
 		client.WithServiceLabel(opts.ServiceLabel),
 	}
-	var customHeaders map[string]string
-	if customHeaders == nil {
-		customHeaders = map[string]string{}
+	var customHeaders = map[string]string{
+		"User-Agent": UserAgent(),
 	}
-	customHeaders["User-Agent"] = UserAgent()
 	clientOpts = append(clientOpts, client.WithHTTPHeaders(customHeaders))
 
 	return client.NewClientWithOpts(clientOpts...)

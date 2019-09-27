@@ -19,6 +19,8 @@ import (
 
 	"github.com/docker/cli/cli/streams"
 	"github.com/docker/docker/pkg/term"
+
+	"github.com/ligato/vpp-agent/cmd/agentctl/client"
 )
 
 // AgentCliOption applies a modification on a AgentCli.
@@ -65,6 +67,14 @@ func WithOutputStream(out io.Writer) AgentCliOption {
 func WithErrorStream(err io.Writer) AgentCliOption {
 	return func(cli *AgentCli) error {
 		cli.err = err
+		return nil
+	}
+}
+
+// WithClient sets an APIClient.
+func WithClient(c client.APIClient) AgentCliOption {
+	return func(cli *AgentCli) error {
+		cli.client = c
 		return nil
 	}
 }

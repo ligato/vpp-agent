@@ -24,7 +24,7 @@ type APIClient interface {
 
 	AgentHost() string
 	ClientVersion() string
-	KVDBClient() (keyval.BytesBroker, error)
+	KVDBClient() (KVDBAPIClient, error)
 	GRPCConn() (*grpc.ClientConn, error)
 	HTTPClient() *http.Client
 	ServerVersion(ctx context.Context) (types.Version, error)
@@ -54,4 +54,8 @@ type SchedulerAPIClient interface {
 // VppAPIClient
 type VppAPIClient interface {
 	VppRunCli(ctx context.Context, cmd string) (reply string, err error)
+}
+
+type KVDBAPIClient interface {
+	keyval.CoreBrokerWatcher
 }

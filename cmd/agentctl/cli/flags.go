@@ -14,9 +14,6 @@ import (
 )
 
 const (
-	defaultAgentHost    = "127.0.0.1"
-	defaultPortGRPC     = "9111"
-	defaultPortHTTP     = "9191"
 	defaultEtcdEndpoint = "127.0.0.1:2379"
 )
 
@@ -41,8 +38,8 @@ type ClientOptions struct {
 	LogLevel string
 
 	AgentHost    string
-	PortGRPC     string
-	PortHTTP     string
+	PortGRPC     int
+	PortHTTP     int
 	ServiceLabel string
 	Endpoints    []string
 
@@ -63,8 +60,8 @@ func (opts *ClientOptions) InstallFlags(flags *pflag.FlagSet) {
 	flags.StringVarP(&opts.LogLevel, "log-level", "l", "", `Set the logging level ("debug"|"info"|"warn"|"error"|"fatal")`)
 
 	flags.StringVarP(&opts.AgentHost, "host", "H", agentHost, "Address on which agent is reachable, default from AGENT_HOST env var")
-	flags.StringVar(&opts.PortGRPC, "grpc-port", defaultPortGRPC, "gRPC server port")
-	flags.StringVar(&opts.PortHTTP, "http-port", defaultPortHTTP, "HTTP server port")
+	flags.IntVar(&opts.PortGRPC, "grpc-port", client.DefaultPortGRPC, "gRPC server port")
+	flags.IntVar(&opts.PortHTTP, "http-port", client.DefaultPortHTTP, "HTTP server port")
 	flags.StringVar(&opts.ServiceLabel, "service-label", serviceLabel, "Service label for specific agent instance, default from MICROSERVICE_LABEL env var")
 	flags.StringSliceVarP(&opts.Endpoints, "etcd-endpoints", "e", etcdEndpoints, "Etcd endpoints to connect to, default from ETCD_ENDPOINTS env var")
 }
@@ -72,7 +69,8 @@ func (opts *ClientOptions) InstallFlags(flags *pflag.FlagSet) {
 // SetDefaultOptions sets default values for options after flag parsing is
 // complete
 func (opts *ClientOptions) SetDefaultOptions(flags *pflag.FlagSet) {
-	// no-op
+	client.DefaultPortHTTP = opts.PortHTTP
+	client.DefaultPortHTTP = opts.PortHTTP
 }
 
 // SetLogLevel sets the logrus logging level

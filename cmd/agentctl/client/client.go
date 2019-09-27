@@ -26,12 +26,10 @@ import (
 	"github.com/coreos/etcd/clientv3"
 	"google.golang.org/grpc"
 
-	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/db/keyval"
 	"github.com/ligato/cn-infra/db/keyval/etcd"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
-	"github.com/ligato/cn-infra/servicelabel"
 
 	"github.com/ligato/vpp-agent/api"
 	"github.com/ligato/vpp-agent/api/genericmanager"
@@ -43,8 +41,9 @@ import (
 
 var (
 	DefaultAgentHost = "localhost"
-	DefaultPortGRPC  = 9111
-	DefaultPortHTTP  = 9191
+
+	DefaultPortGRPC = 9111
+	DefaultPortHTTP = 9191
 )
 
 var _ APIClient = (*Client)(nil)
@@ -81,7 +80,7 @@ func NewClientWithOpts(ops ...Opt) (*Client, error) {
 	c := &Client{
 		host:       DefaultAgentHost,
 		version:    api.DefaultVersion,
-		httpClient: &http.Client{},
+		httpClient: defaultHttpClient(),
 		proto:      "tcp",
 		scheme:     "http",
 	}
@@ -221,28 +220,25 @@ func (c *Client) negotiateAPIVersionPing(p types.Ping) {
 	}
 }
 
-func (c *Client) KVDBClient() (keyval.BytesBroker, error) {
-	etcdCfg := getEtcdConfig(c.endpoints)
+func (c *Client) KVDBClient() (KVDBAPIClient, error) {
+	kvdb, err := ConnectEtcd(c.endpoints)
+	if err != nil {
+		return nil, fmt.Errorf("connecting to Etcd failed: %v", err)
+	}
+	return NewKVDBClient(kvdb, c.serviceLabel), nil
+}
 
-	log := logrus.NewLogger("kvdb-client")
+func defaultHttpClient() *http.Client {
+	return &http.Client{}
+}
+
+func ConnectEtcd(endpoints []string) (keyval.CoreBrokerWatcher, error) {
+	log := logrus.NewLogger("etcd-client")
 	if debug.IsEnabledFor("kvdb") {
 		log.SetLevel(logging.DebugLevel)
 	} else {
 		log.SetLevel(logging.WarnLevel)
 	}
-	kvdb, err := etcd.NewEtcdConnectionWithBytes(etcdCfg, log)
-	if err != nil {
-		return nil, fmt.Errorf("connecting to Etcd failed: %v", err)
-	}
-
-	kvdbc := &kvdbClient{
-		BytesBroker:  kvdb,
-		serviceLabel: c.serviceLabel,
-	}
-	return kvdbc, nil
-}
-
-func getEtcdConfig(endpoints []string) etcd.ClientConfig {
 	cfg := etcd.ClientConfig{
 		Config: &clientv3.Config{
 			Endpoints:   endpoints,
@@ -250,73 +246,9 @@ func getEtcdConfig(endpoints []string) etcd.ClientConfig {
 		},
 		OpTimeout: time.Second * 10,
 	}
-	return cfg
-}
-
-// kvdbClient provides client access to the KVDB server.
-type kvdbClient struct {
-	keyval.BytesBroker
-	serviceLabel string
-}
-
-func (k *kvdbClient) Put(key string, data []byte, opts ...datasync.PutOption) (err error) {
-	key, err = k.completeFullKey(key)
+	kvdb, err := etcd.NewEtcdConnectionWithBytes(cfg, log)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	logging.Debugf("kvdbClient.Put: %s", key)
-
-	return k.BytesBroker.Put(key, data, opts...)
-}
-
-func (k *kvdbClient) GetValue(key string) (data []byte, found bool, revision int64, err error) {
-	key, err = k.completeFullKey(key)
-	if err != nil {
-		return nil, false, 0, err
-	}
-	logging.Debugf("kvdbClient.GetValue: %s", key)
-
-	return k.BytesBroker.GetValue(key)
-}
-
-func (k *kvdbClient) ListValues(prefix string) (keyval.BytesKeyValIterator, error) {
-	prefix = ensureAllAgentsPrefix(prefix)
-	logging.Debugf("kvdbClient.ListValues: %s", prefix)
-
-	return k.BytesBroker.ListValues(prefix)
-}
-
-func (k *kvdbClient) ListKeys(prefix string) (keyval.BytesKeyIterator, error) {
-	prefix = ensureAllAgentsPrefix(prefix)
-	logging.Debugf("kvdbClient.ListKeys: %s", prefix)
-
-	return k.BytesBroker.ListKeys(prefix)
-}
-
-func (k *kvdbClient) Delete(key string, opts ...datasync.DelOption) (existed bool, err error) {
-	key, err = k.completeFullKey(key)
-	if err != nil {
-		return false, err
-	}
-	logging.Debugf("kvdbClient.Delete: %s", key)
-
-	return k.BytesBroker.Delete(key, opts...)
-}
-
-func (k *kvdbClient) completeFullKey(key string) (string, error) {
-	if strings.HasPrefix(key, servicelabel.GetAllAgentsPrefix()) {
-		return key, nil
-	}
-	if k.serviceLabel == "" {
-		return "", fmt.Errorf("service label is not defined, cannot get complete key")
-	}
-	key = path.Join(servicelabel.GetAllAgentsPrefix(), k.serviceLabel, key)
-	return key, nil
-}
-
-func ensureAllAgentsPrefix(key string) string {
-	if strings.HasPrefix(key, servicelabel.GetAllAgentsPrefix()) {
-		return key
-	}
-	return path.Join(servicelabel.GetAllAgentsPrefix(), key)
+	return kvdb, nil
 }
