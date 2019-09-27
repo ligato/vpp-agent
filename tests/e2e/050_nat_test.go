@@ -28,6 +28,7 @@ import (
 	"github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	"github.com/ligato/vpp-agent/api/models/vpp/nat"
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
+	"github.com/ligato/vpp-agent/api/models/vpp/l3"
 )
 
 // Simulate public and private networks using two microservices and test
@@ -159,13 +160,13 @@ func TestSourceNAT(t *testing.T) {
 		stdout, err := ctx.execVppctl("show", "nat44", "addresses")
 		Expect(err).To(BeNil(), "Running `vppctl show nat44 addresses` failed")
 		Expect(stdout).To(substringMatcher(sNatAddr1, !isConfigured),
-			"Unexpected S-NAT address configuration`",
+			"Unexpected S-NAT address configuration",
 		)
 		Expect(stdout).To(substringMatcher(sNatAddr2, !isConfigured),
-			"Unexpected S-NAT address configuration`",
+			"Unexpected S-NAT address configuration",
 		)
 		Expect(stdout).To(substringMatcher(sNatAddr3, !isConfigured),
-			"Unexpected S-NAT address configuration`",
+			"Unexpected S-NAT address configuration",
 		)
 	}
 
@@ -176,25 +177,10 @@ func TestSourceNAT(t *testing.T) {
 		}
 		Expect(ctx.pingFromMs(ms2Name, linuxTap1IP)).To(expected)
 
-		// TODO: remove trace
-		_, err := ctx.execVppctl("clear trace")
-		Expect(err).To(BeNil())
-		_, err = ctx.execVppctl("trace add", "virtio-input 100")
-		Expect(err).To(BeNil())
-
-		tcpConnStatus := ctx.testConnection(ms2Name, ms1Name, linuxTap1IP, linuxTap1IP,
-			8000, 8000, false)
-		udpConnStatus := ctx.testConnection(ms2Name, ms1Name, linuxTap1IP, linuxTap1IP,
-			8000, 8000, true)
-
-		stdout, err := ctx.execVppctl("show trace")
-		Expect(err).To(BeNil())
-		fmt.Println(stdout)
-
-		Expect(tcpConnStatus).To(expected)
-		fmt.Println(">> TCP CONNECTION STATUS", tcpConnStatus)
-		Expect(udpConnStatus).To(expected)
-		fmt.Println(">> UDP CONNECTION STATUS", udpConnStatus)
+		Expect(ctx.testConnection(ms2Name, ms1Name, linuxTap1IP, linuxTap1IP,
+			8000, 8000, false, tapv2InputNode)).To(expected)
+		Expect(ctx.testConnection(ms2Name, ms1Name, linuxTap1IP, linuxTap1IP,
+			8000, 8000, true, tapv2InputNode)).To(expected)
 	}
 
 	ctx.startMicroservice(ms1Name)
@@ -284,7 +270,7 @@ func TestNATStaticMappings(t *testing.T) {
 		tcpSvcExtPort   = 8888
 		tcpSvcLocalPort = 8000
 		udpSvcLabel     = "udp-service"
-		udpSvcExtIP     = "80.80.80.30"
+		udpSvcExtIP     = "80.80.80.50"
 		udpSvcExtPort   = 9999
 		udpSvcLocalPort = 9000
 
@@ -351,6 +337,13 @@ func TestNATStaticMappings(t *testing.T) {
 		},
 	}
 
+	ms2DefaultRoute := &linux_l3.Route{
+		OutgoingInterface: linuxTap2Name,
+		Scope:             linux_l3.Route_GLOBAL,
+		DstNetwork:        "0.0.0.0/0",
+		GwAddr:            vppTap2IP,
+	}
+
 	natGlobal := &vpp_nat.Nat44Global{
 		Forwarding: true,
 		NatInterfaces: []*vpp_nat.Nat44Global_Interface{
@@ -364,7 +357,9 @@ func TestNATStaticMappings(t *testing.T) {
 			},
 		},
 	}
-	
+
+	showTcpSvc := fmt.Sprintf("tcp local %s:%d external %s:%d vrf 0  out2in-only",
+		linuxTap2IP, tcpSvcLocalPort, tcpSvcExtIP, tcpSvcExtPort)
 	tcpSvc := &vpp_nat.DNat44{
 		Label: tcpSvcLabel,
 		StMappings: []*vpp_nat.DNat44_StaticMapping{
@@ -382,6 +377,8 @@ func TestNATStaticMappings(t *testing.T) {
 		},
 	}
 
+	showUdpSvc := fmt.Sprintf("udp local %s:%d external %s:%d vrf 0  out2in-only",
+		linuxTap2IP, udpSvcLocalPort, udpSvcExtIP, udpSvcExtPort)
 	udpSvc := &vpp_nat.DNat44{
 		Label: udpSvcLabel,
 		StMappings: []*vpp_nat.DNat44_StaticMapping{
@@ -399,6 +396,27 @@ func TestNATStaticMappings(t *testing.T) {
 		},
 	}
 
+	// without proxy ARP, the client running from microservice1 (public net),
+	// will not get any response for ARP requests concerning service external IPs
+	// from VPP
+	svcExtIPsProxyArp := &vpp_l3.ProxyARP{
+		Interfaces: []*vpp_l3.ProxyARP_Interface{
+			{
+				Name: vppTap1Name,
+			},
+		},
+		Ranges: []*vpp_l3.ProxyARP_Range{
+			{
+				FirstIpAddr: tcpSvcExtIP,
+				LastIpAddr:  tcpSvcExtIP,
+			},
+			{
+				FirstIpAddr: udpSvcExtIP,
+				LastIpAddr:  udpSvcExtIP,
+			},
+		},
+	}
+
 	checkConfig := func(isConfigured bool) {
 		substringMatcher := func(substring string, negative bool) types.GomegaMatcher {
 			if negative {
@@ -409,11 +427,11 @@ func TestNATStaticMappings(t *testing.T) {
 		}
 		stdout, err := ctx.execVppctl("show", "nat44", "static", "mappings")
 		Expect(err).To(BeNil(), "Running `vppctl show nat44 addresses` failed")
-		Expect(stdout).To(substringMatcher("bla bla", !isConfigured),
-			"Unexpected S-NAT address configuration`",
+		Expect(stdout).To(substringMatcher(showTcpSvc, !isConfigured),
+			"Unexpected TCP static mapping configuration",
 		)
-		Expect(stdout).To(substringMatcher("bla bla", !isConfigured),
-			"Unexpected S-NAT address configuration`",
+		Expect(stdout).To(substringMatcher(showUdpSvc, !isConfigured),
+			"Unexpected UDP static mapping configuration",
 		)
 	}
 
@@ -423,25 +441,10 @@ func TestNATStaticMappings(t *testing.T) {
 			expected = Not(BeNil())
 		}
 
-		// TODO: remove trace
-		_, err := ctx.execVppctl("clear trace")
-		Expect(err).To(BeNil())
-		_, err = ctx.execVppctl("trace add", "virtio-input 100")
-		Expect(err).To(BeNil())
-
-		tcpConnStatus := ctx.testConnection(ms1Name, ms2Name, tcpSvcExtIP, linuxTap2IP,
-			tcpSvcExtPort, tcpSvcLocalPort, false)
-		udpConnStatus := ctx.testConnection(ms1Name, ms2Name, udpSvcExtIP, linuxTap2IP,
-			udpSvcExtPort, udpSvcLocalPort, false)
-
-		stdout, err := ctx.execVppctl("show trace")
-		Expect(err).To(BeNil())
-		fmt.Println(stdout)
-
-		Expect(tcpConnStatus).To(expected)
-		fmt.Println(">> TCP CONNECTION STATUS", tcpConnStatus)
-		Expect(udpConnStatus).To(expected)
-		fmt.Println(">> UDP CONNECTION STATUS", udpConnStatus)
+		Expect(ctx.testConnection(ms1Name, ms2Name, tcpSvcExtIP, linuxTap2IP,
+			tcpSvcExtPort, tcpSvcLocalPort, false, tapv2InputNode)).To(expected)
+		Expect(ctx.testConnection(ms1Name, ms2Name, udpSvcExtIP, linuxTap2IP,
+			udpSvcExtPort, udpSvcLocalPort, true, tapv2InputNode)).To(expected)
 	}
 
 	ctx.startMicroservice(ms1Name)
@@ -453,6 +456,8 @@ func TestNATStaticMappings(t *testing.T) {
 		linuxTap1,
 		vppTap2,
 		linuxTap2,
+		ms2DefaultRoute,
+		svcExtIPsProxyArp,
 		natGlobal,
 		tcpSvc,	udpSvc,
 	).Send(context.Background())

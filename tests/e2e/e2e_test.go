@@ -84,7 +84,16 @@ const (
 		}
 		plugins {
 			plugin dpdk_plugin.so { disable }
+		}
+		nat {
+			endpoint-dependent
 		}`
+
+    // VPP input nodes for packet tracing
+    tapv2InputNode    = "virtio-input"
+    tapv1InputNode    = "tapcli-rx"
+    afPacketInputNode = "af-packet-input"
+    memifInputNode    = "memif-input"
 )
 
 func init() {
@@ -289,7 +298,7 @@ func (ctx *testCtx) pingFromVPPClb(destAddress string) func() error {
 }
 
 func (ctx *testCtx) testConnection(fromMs, toMs, toAddr, listenAddr string,
-	toPort, listenPort uint16, udp bool) error {
+	toPort, listenPort uint16, udp bool, traceVPPNodes ...string) error {
 
 	const (
 		connTimeout    = 3 * time.Second
@@ -334,6 +343,8 @@ func (ctx *testCtx) testConnection(fromMs, toMs, toAddr, listenAddr string,
 		close(clientRet)
 	}
 
+	stopPacketTrace := ctx.startPacketTrace(traceVPPNodes...)
+
 	go runServer()
 	go runClient()
 	err := <-clientRet
@@ -349,6 +360,23 @@ func (ctx *testCtx) testConnection(fromMs, toMs, toAddr, listenAddr string,
 	if err == nil {
 		err = srvErr
 	}
+
+	// log info about connection
+	protocol := "TCP"
+	if udp {
+		protocol = "UDP"
+	}
+	outcome := "OK"
+	if err != nil {
+		outcome = err.Error()
+	}
+	fmt.Printf(
+		"%s connection <from-ms=%s, dest=%s:%d, to-ms=%s, server=%s:%d> packet trace:\n",
+		protocol, fromMs, toAddr, toPort, toMs, listenAddr, listenPort)
+	stopPacketTrace()
+	fmt.Printf(
+		"%s connection <from-ms=%s, dest=%s:%d, to-ms=%s, server=%s:%d> outcome: %s",
+		protocol, fromMs, toAddr, toPort, toMs, listenAddr, listenPort, outcome)
 	return err
 }
 
@@ -378,6 +406,33 @@ func (ctx *testCtx) getValueStateByKey(key string) kvs.ValueState {
 func (ctx *testCtx) getValueStateClb(value proto.Message) func() kvs.ValueState {
 	return func() kvs.ValueState {
 		return ctx.getValueState(value)
+	}
+}
+
+func (ctx *testCtx) startPacketTrace(nodes ...string) (stopTrace func()) {
+	const maxPackets = 100
+	for i, node := range nodes {
+		if i == 0 {
+			_, err := ctx.execVppctl("clear trace")
+			if err != nil {
+				ctx.t.Fatalf("Failed to clear the packet trace: %v", err)
+			}
+		}
+		_, err := ctx.execVppctl("trace add", fmt.Sprintf("%s %d", node, maxPackets))
+		if err != nil {
+			ctx.t.Fatalf("Failed to add packet trace for node '%s': %v", node, err)
+		}
+	}
+
+	return func() {
+		if len(nodes) == 0 {
+			return
+		}
+		stdout, err := ctx.execVppctl("show trace")
+		if err != nil {
+			ctx.t.Fatalf("Failed to show packet trace: %v", err)
+		}
+		fmt.Println(stdout)
 	}
 }
 
