@@ -27,61 +27,10 @@ import (
 	"github.com/spf13/pflag"
 
 	"github.com/ligato/cn-infra/agent"
-	"github.com/ligato/cn-infra/logging"
+	"github.com/ligato/vpp-agent/pkg/debug"
 
 	"github.com/ligato/vpp-agent/cmd/agentctl/cli"
-	"github.com/ligato/vpp-agent/pkg/debug"
 )
-
-var (
-	// RootName defines default name used for the root command.
-	RootName = "agentctl"
-)
-
-// NewAgentCli creates new AgentCli with opts and configures log output to error stream.
-func NewAgentCli(opts ...cli.AgentCliOption) *cli.AgentCli {
-	agentCli, err := cli.NewAgentCli(opts...)
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
-	}
-	logrus.SetOutput(agentCli.Err())
-	logging.DefaultLogger.SetOutput(agentCli.Err())
-	return agentCli
-}
-
-// NewRootCommand is helper for default initialization process for root command.
-// Returs cobra command which is ready to be executed.
-func NewRootCommand(agentCli *cli.AgentCli) (*cobra.Command, error) {
-	root := NewRoot(agentCli)
-	cmd, err := root.SetupCommand()
-	if err != nil {
-		return nil, err
-	}
-	if err := root.Initialize(); err != nil {
-		return nil, err
-	}
-	return cmd, nil
-}
-
-// SetupCommand handles global flags and Initialize should be
-// called before executing returned cobra command.
-func (root *Root) SetupCommand() (*cobra.Command, error) {
-	cmd, args, err := root.HandleGlobalFlags()
-	if err != nil {
-		return nil, err
-	}
-	if debug.IsEnabledFor("flags") {
-		cmd.DebugFlags()
-	}
-	cmd.SetArgs(args)
-	return cmd, nil
-}
-
-// NewRoot returns new Root using RootName for name.
-func NewRoot(agentCli *cli.AgentCli) *Root {
-	return NewRootNamed(RootName, agentCli)
-}
 
 // NewRootNamed returns new Root named with name.
 func NewRootNamed(name string, agentCli *cli.AgentCli) *Root {
@@ -122,6 +71,20 @@ func NewRootNamed(name string, agentCli *cli.AgentCli) *Root {
 	DisableFlagsInUseLine(cmd)
 
 	return newRoot(cmd, agentCli, opts, flags)
+}
+
+// PrepareCommand handles global flags and Initialize should be
+// called before executing returned cobra command.
+func (root *Root) PrepareCommand() (*cobra.Command, error) {
+	cmd, args, err := root.HandleGlobalFlags()
+	if err != nil {
+		return nil, err
+	}
+	if debug.IsEnabledFor("flags") {
+		cmd.DebugFlags()
+	}
+	cmd.SetArgs(args)
+	return cmd, nil
 }
 
 // Root encapsulates a top-level cobra command (either agentctl or custom one).
@@ -200,20 +163,6 @@ func SetupRootCommand(rootCmd *cobra.Command) (*cli.ClientOptions, *pflag.FlagSe
 	rootCmd.PersistentFlags().Lookup("help").Hidden = true
 
 	return opts, flags, helpCommand
-}
-
-// AddBaseCommands adds all base commands to cmd.
-func AddBaseCommands(cmd *cobra.Command, cli cli.Cli) {
-	cmd.AddCommand(
-		NewModelCommand(cli),
-		NewLogCommand(cli),
-		NewImportCommand(cli),
-		NewVppCommand(cli),
-		NewDumpCommand(cli),
-		NewKvdbCommand(cli),
-		NewGenerateCommand(cli),
-		NewStatusCommand(cli),
-	)
 }
 
 func setFlagGlobal(flags *pflag.FlagSet, name string) {

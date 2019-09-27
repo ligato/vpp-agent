@@ -16,7 +16,6 @@ package client
 
 import (
 	"context"
-	"crypto/tls"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -25,29 +24,27 @@ import (
 	"time"
 
 	"github.com/coreos/etcd/clientv3"
-	"github.com/docker/go-connections/sockets"
+	"google.golang.org/grpc"
+
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/db/keyval"
 	"github.com/ligato/cn-infra/db/keyval/etcd"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/servicelabel"
-	"github.com/ligato/vpp-agent/pkg/debug"
-
-	"google.golang.org/grpc"
 
 	"github.com/ligato/vpp-agent/api"
 	"github.com/ligato/vpp-agent/api/genericmanager"
 	"github.com/ligato/vpp-agent/api/types"
 	"github.com/ligato/vpp-agent/client"
 	"github.com/ligato/vpp-agent/client/remoteclient"
+	"github.com/ligato/vpp-agent/pkg/debug"
 )
 
-const (
-	DefaultAgentHost = "tcp://localhost:9191"
-
-	defaultProto = "http"
-	defaultAddr  = "localhost:9191"
+var (
+	DefaultAgentHost = "localhost"
+	DefaultPortGRPC  = 9111
+	DefaultPortHTTP  = 9191
 )
 
 var _ APIClient = (*Client)(nil)
@@ -61,11 +58,13 @@ type Client struct {
 	addr     string
 	basePath string
 
-	grpcClient   *grpc.ClientConn
 	grpcAddr     string
-	httpClient   *http.Client
+	httpAddr     string
 	endpoints    []string
 	serviceLabel string
+
+	grpcClient *grpc.ClientConn
+	httpClient *http.Client
 
 	customHTTPHeaders map[string]string
 	version           string
@@ -79,65 +78,19 @@ func NewClient(host string) (*Client, error) {
 }
 
 func NewClientWithOpts(ops ...Opt) (*Client, error) {
-	httpClient, err := defaultHTTPClient(DefaultAgentHost)
-	if err != nil {
-		return nil, err
-	}
 	c := &Client{
-		host: DefaultAgentHost,
-		//version:    api.DefaultVersion,
-		httpClient: httpClient,
-		proto:      defaultProto,
-		addr:       defaultAddr,
+		host:       DefaultAgentHost,
+		version:    api.DefaultVersion,
+		httpClient: &http.Client{},
+		proto:      "tcp",
+		scheme:     "http",
 	}
 	for _, op := range ops {
 		if err := op(c); err != nil {
 			return nil, err
 		}
 	}
-
-	if _, ok := c.httpClient.Transport.(http.RoundTripper); !ok {
-		return nil, fmt.Errorf("unable to verify TLS configuration, invalid transport %v", c.httpClient.Transport)
-	}
-	if c.scheme == "" {
-		c.scheme = "http"
-
-		tlsConfig := resolveTLSConfig(c.httpClient.Transport)
-		if tlsConfig != nil {
-			// TODO(stevvooe): This isn't really the right way to write clients in Go.
-			// `NewClient` should probably only take an `*http.Client` and work from there.
-			// Unfortunately, the model of having a host-ish/url-thingy as the connection
-			// string has us confusing protocol and transport layers. We continue doing
-			// this to avoid breaking existing clients but this should be addressed.
-			c.scheme = "https"
-		}
-	}
 	return c, nil
-}
-
-// resolveTLSConfig attempts to resolve the TLS configuration from the
-// RoundTripper.
-func resolveTLSConfig(transport http.RoundTripper) *tls.Config {
-	switch tr := transport.(type) {
-	case *http.Transport:
-		return tr.TLSClientConfig
-	default:
-		return nil
-	}
-}
-
-func defaultHTTPClient(host string) (*http.Client, error) {
-	u, err := ParseHostURL(host)
-	if err != nil {
-		return nil, err
-	}
-	transport := new(http.Transport)
-	if err := sockets.ConfigureTransport(transport, u.Scheme, u.Host); err != nil {
-		return nil, err
-	}
-	return &http.Client{
-		Transport: transport,
-	}, nil
 }
 
 func (c *Client) ConfigClient() (client.ConfigClient, error) {
@@ -163,25 +116,11 @@ func (c *Client) Close() error {
 		t.CloseIdleConnections()
 	}
 	if c.grpcClient != nil {
-		c.grpcClient.Close()
+		if err := c.grpcClient.Close(); err != nil {
+			return err
+		}
 	}
 	return nil
-}
-
-// getAPIPath returns the versioned request path to call the api.
-// It appends the query parameters to the path if they are not empty.
-func (c *Client) getAPIPath(ctx context.Context, p string, query url.Values) string {
-	var apiPath string
-	if c.negotiateVersion && !c.negotiated {
-		c.NegotiateAPIVersion(ctx)
-	}
-	if c.version != "" {
-		v := strings.TrimPrefix(c.version, "v")
-		apiPath = path.Join(c.basePath, "/v"+v, p)
-	} else {
-		apiPath = path.Join(c.basePath, p)
-	}
-	return (&url.URL{Path: apiPath, RawQuery: query.Encode()}).String()
 }
 
 func (c *Client) GRPCConn() (*grpc.ClientConn, error) {
@@ -204,6 +143,9 @@ func (c *Client) HTTPClient() *http.Client {
 // ParseHostURL parses a url string, validates the string is a host url, and
 // returns the parsed URL
 func ParseHostURL(host string) (*url.URL, error) {
+	if !strings.Contains(host, "://") {
+		host = "tcp://" + host
+	}
 	protoAddrParts := strings.SplitN(host, "://", 2)
 	if len(protoAddrParts) == 1 {
 		return nil, fmt.Errorf("unable to parse agent host `%s`", host)
@@ -223,6 +165,22 @@ func ParseHostURL(host string) (*url.URL, error) {
 		Host:   addr,
 		Path:   basePath,
 	}, nil
+}
+
+// getAPIPath returns the versioned request path to call the api.
+// It appends the query parameters to the path if they are not empty.
+func (c *Client) getAPIPath(ctx context.Context, p string, query url.Values) string {
+	var apiPath string
+	if c.negotiateVersion && !c.negotiated {
+		c.NegotiateAPIVersion(ctx)
+	}
+	if c.version != "" {
+		v := strings.TrimPrefix(c.version, "v")
+		apiPath = path.Join(c.basePath, "/v"+v, p)
+	} else {
+		apiPath = path.Join(c.basePath, p)
+	}
+	return (&url.URL{Path: apiPath, RawQuery: query.Encode()}).String()
 }
 
 func (c *Client) NegotiateAPIVersion(ctx context.Context) {

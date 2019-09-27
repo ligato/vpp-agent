@@ -78,12 +78,12 @@ func (c *Client) buildRequest(method, path string, body io.Reader, headers heade
 	req = c.addHeaders(req, headers)
 
 	if c.proto == "unix" || c.proto == "npipe" {
-		// For local communications, it doesn't matter what the host is. We just
-		// need a valid and meaningful host name. (See #189)
+		// For local communications, it doesn't matter what the host is.
+		// We just need a valid and meaningful host name.
 		req.Host = "ligato-agent"
 	}
 
-	req.URL.Host = c.addr
+	req.URL.Host = c.httpAddr
 	req.URL.Scheme = c.scheme
 
 	if expectedPayload && req.Header.Get("Content-Type") == "" {

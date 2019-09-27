@@ -18,17 +18,15 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"net"
 	"net/http"
 	"runtime"
 
 	"github.com/docker/cli/cli/streams"
 	"github.com/docker/docker/pkg/term"
-	"github.com/ligato/cn-infra/logging"
-	"github.com/sirupsen/logrus"
 
 	"github.com/ligato/cn-infra/db/keyval"
 	"github.com/ligato/cn-infra/db/keyval/kvproto"
+	"github.com/ligato/cn-infra/logging"
 
 	"github.com/ligato/vpp-agent/api"
 	"github.com/ligato/vpp-agent/cmd/agentctl/client"
@@ -169,8 +167,7 @@ func (cli *AgentCli) Initialize(opts *ClientOptions, ops ...InitializeOpt) error
 	}
 	if opts.Debug {
 		debug.Enable()
-		logrus.SetLevel(logrus.DebugLevel)
-		logging.DefaultLogger.SetLevel(logging.DebugLevel)
+		SetLogLevel("debug")
 	} else {
 		SetLogLevel(opts.LogLevel)
 	}
@@ -194,10 +191,9 @@ func newAPIClient(opts *ClientOptions) (client.APIClient, error) {
 		// No proxy
 		Transport: &http.Transport{},
 	}
-	grpcAddr := net.JoinHostPort(opts.AgentHost, opts.PortGRPC)
 	clientOpts := []client.Opt{
 		client.WithHTTPClient(httpClient),
-		client.WithGRPCAddr(grpcAddr),
+		client.WithHost(opts.AgentHost),
 		client.WithEtcdEndpoints(opts.Endpoints),
 		client.WithServiceLabel(opts.ServiceLabel),
 	}

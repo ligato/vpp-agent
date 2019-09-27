@@ -51,6 +51,7 @@ func (e StatusError) Error() string {
 	return fmt.Sprintf("%s (%d)", e.Status, e.StatusCode)
 }
 
+// ExitCode returns proper exit code for err or 0 if err is nil.
 func ExitCode(err error) int {
 	if err == nil {
 		return 0

@@ -6,9 +6,11 @@ import (
 	"strings"
 
 	"github.com/docker/go-connections/tlsconfig"
-	"github.com/ligato/cn-infra/logging"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/pflag"
+
+	"github.com/ligato/cn-infra/logging"
+	"github.com/ligato/vpp-agent/cmd/agentctl/client"
 )
 
 const (
@@ -26,7 +28,7 @@ var (
 
 func init() {
 	if agentHost == "" {
-		agentHost = defaultAgentHost
+		agentHost = client.DefaultAgentHost
 	}
 	if len(etcdEndpoints) == 0 || etcdEndpoints[0] == "" {
 		etcdEndpoints = []string{defaultEtcdEndpoint}

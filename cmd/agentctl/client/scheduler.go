@@ -56,7 +56,7 @@ func (c *Client) SchedulerDump(ctx context.Context, opts types.SchedulerDumpOpti
 	return dump, nil
 }
 
-func (c *Client) SchedulerStatus(ctx context.Context, opts types.SchedulerStatusOptions) ([]*api.BaseValueStatus, error) {
+func (c *Client) SchedulerValues(ctx context.Context, opts types.SchedulerValuesOptions) ([]*api.BaseValueStatus, error) {
 	query := url.Values{}
 	query.Set("key-prefix", opts.KeyPrefix)
 

@@ -91,11 +91,17 @@ func runVppInfo(cli agentcli.Cli) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	reply, err := cli.Client().VppRunCli(ctx, "show version verbose")
+	version, err := cli.Client().VppRunCli(ctx, "show version verbose")
 	if err != nil {
 		return err
 	}
+	fmt.Fprintf(cli.Out(), "VERSION:\n%s\n", version)
 
-	fmt.Fprintf(cli.Out(), "%s", reply)
+	config, err := cli.Client().VppRunCli(ctx, "show version cmdline")
+	if err != nil {
+		return err
+	}
+	fmt.Fprintf(cli.Out(), "CONFIG:\n%s\n", config)
+
 	return nil
 }

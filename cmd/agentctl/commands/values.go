@@ -18,7 +18,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"os"
+	"io"
 	"strings"
 	"text/tabwriter"
 
@@ -30,26 +30,26 @@ import (
 	"github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 )
 
-func NewStatusCommand(cli agentcli.Cli) *cobra.Command {
-	var opts StatusOptions
+func NewValuesCommand(cli agentcli.Cli) *cobra.Command {
+	var opts ValuesOptions
 
 	cmd := &cobra.Command{
-		Use:   "status",
-		Short: "Retrieve agent status",
+		Use:   "values [model]",
+		Short: "Retrieve values from scheduler",
 		Args:  cobra.RangeArgs(0, 1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			opts.Models = args
-			return runStatus(cli, opts)
+			return runValues(cli, opts)
 		},
 	}
 	return cmd
 }
 
-type StatusOptions struct {
+type ValuesOptions struct {
 	Models []string
 }
 
-func runStatus(cli agentcli.Cli, opts StatusOptions) error {
+func runValues(cli agentcli.Cli, opts ValuesOptions) error {
 	var model string
 	if len(opts.Models) > 0 {
 		model = opts.Models[0]
@@ -78,13 +78,17 @@ func runStatus(cli agentcli.Cli, opts StatusOptions) error {
 		return err
 	}
 
-	printStatusTable(status)
+	if err := printValuesTable(cli.Out(), status); err != nil {
+		return err
+	}
+
 	return nil
 }
 
-// printStatusTable prints status data using table format
-func printStatusTable(status []*api.BaseValueStatus) {
+// printValuesTable prints values data using table format
+func printValuesTable(out io.Writer, status []*api.BaseValueStatus) error {
 	var buf bytes.Buffer
+
 	w := tabwriter.NewWriter(&buf, 10, 0, 3, ' ', 0)
 	fmt.Fprintf(w, "MODEL\tNAME\tSTATE\tDETAILS\tLAST OP\tERROR\t\n")
 
@@ -126,7 +130,8 @@ func printStatusTable(status []*api.BaseValueStatus) {
 		}
 	}
 	if err := w.Flush(); err != nil {
-		return
+		return err
 	}
-	fmt.Fprint(os.Stdout, buf.String())
+	_, err := buf.WriteTo(out)
+	return err
 }

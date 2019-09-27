@@ -1,12 +1,12 @@
 package client
 
 import (
+	"net"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 
-	"github.com/docker/go-connections/sockets"
-	"github.com/pkg/errors"
 	"google.golang.org/grpc"
 )
 
@@ -41,19 +41,9 @@ func WithHost(host string) Opt {
 		c.host = host
 		c.proto = hostURL.Scheme
 		c.addr = hostURL.Host
+		c.grpcAddr = net.JoinHostPort(c.host, strconv.Itoa(DefaultPortGRPC))
+		c.httpAddr = net.JoinHostPort(c.host, strconv.Itoa(DefaultPortHTTP))
 		c.basePath = hostURL.Path
-		if transport, ok := c.httpClient.Transport.(*http.Transport); ok {
-			return sockets.ConfigureTransport(transport, c.proto, c.addr)
-		}
-		return errors.Errorf("cannot apply host to transport: %T", c.httpClient.Transport)
-	}
-}
-
-func WithGRPCAddr(addr string) Opt {
-	return func(c *Client) error {
-		if addr != "" {
-			c.grpcAddr = addr
-		}
 		return nil
 	}
 }

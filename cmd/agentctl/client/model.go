@@ -11,6 +11,7 @@ import (
 
 	"github.com/ligato/vpp-agent/api/genericmanager"
 	"github.com/ligato/vpp-agent/api/types"
+	"github.com/ligato/vpp-agent/pkg/debug"
 )
 
 func (c *Client) ModelList(ctx context.Context, opts types.ModelListOptions) ([]types.Model, error) {
@@ -24,8 +25,10 @@ func (c *Client) ModelList(ctx context.Context, opts types.ModelListOptions) ([]
 	}
 
 	logrus.Debugf("retrieved %d known models", len(knownModels))
-	for _, m := range knownModels {
-		logrus.Debug(proto.CompactTextString(&m))
+	if debug.IsEnabledFor("models") {
+		for _, m := range knownModels {
+			logrus.Debug(proto.CompactTextString(&m))
+		}
 	}
 
 	allModels := convertModels(knownModels)

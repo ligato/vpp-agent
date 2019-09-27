@@ -48,7 +48,7 @@ type ModelAPIClient interface {
 // SchedulerAPIClient defines API client methods for the scheduler
 type SchedulerAPIClient interface {
 	SchedulerDump(ctx context.Context, opts types.SchedulerDumpOptions) ([]api.KVWithMetadata, error)
-	SchedulerStatus(ctx context.Context, opts types.SchedulerStatusOptions) ([]*api.BaseValueStatus, error)
+	SchedulerValues(ctx context.Context, opts types.SchedulerValuesOptions) ([]*api.BaseValueStatus, error)
 }
 
 // VppAPIClient

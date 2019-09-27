@@ -15,5 +15,5 @@
 package api
 
 const (
-	DefaultVersion = "0.1"
+	DefaultVersion = ""
 )
