@@ -20,9 +20,9 @@ import (
 
 	. "github.com/onsi/gomega"
 
-	"github.com/ligato/vpp-agent/api/models/linux/interfaces"
-	"github.com/ligato/vpp-agent/api/models/linux/namespace"
-	"github.com/ligato/vpp-agent/api/models/vpp/interfaces"
+	linux_interfaces "github.com/ligato/vpp-agent/api/models/linux/interfaces"
+	linux_namespace "github.com/ligato/vpp-agent/api/models/linux/namespace"
+	vpp_interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/linux/ifplugin/linuxcalls"
 	"github.com/ligato/vpp-agent/plugins/netalloc/utils"
@@ -84,16 +84,16 @@ func TestLinkOnly(t *testing.T) {
 		vppTap,
 		linuxTap,
 	).Send(context.Background())
-	Expect(err).To(BeNil())
+	Expect(err).ToNot(HaveOccurred())
 
-	Eventually(ctx.getValueStateClb(vppTap), msUpdateTimeout).Should(Equal(kvs.ValueState_CONFIGURED))
+	Eventually(ctx.getValueStateClb(vppTap)).Should(Equal(kvs.ValueState_CONFIGURED))
 	Expect(ctx.getValueState(linuxTap)).To(Equal(kvs.ValueState_CONFIGURED))
-	Expect(ctx.pingFromVPP(linuxTapIPIgnored)).ToNot(BeNil()) // IP address was not set
+	Expect(ctx.pingFromVPP(linuxTapIPIgnored)).NotTo(Succeed()) // IP address was not set
 
 	ifHandler := linuxcalls.NewNetLinkHandler()
 	hasIP := func(ipAddr string) bool {
 		addrs, err := ifHandler.GetAddressList(linuxTapHostname)
-		Expect(err).To(BeNil())
+		Expect(err).ToNot(HaveOccurred())
 		for _, addr := range addrs {
 			if addr.IP.String() == ipAddr {
 				return true
@@ -108,11 +108,11 @@ func TestLinkOnly(t *testing.T) {
 
 	// set IP and MAC addresses from outside of the agent
 	ipAddr, _, err := utils.ParseIPAddr(linuxTapIPExternal+netMask, nil)
-	Expect(err).To(BeNil())
+	Expect(err).ToNot(HaveOccurred())
 	err = ifHandler.AddInterfaceIP(linuxTapHostname, ipAddr)
-	Expect(err).To(BeNil())
+	Expect(err).ToNot(HaveOccurred())
 	err = ifHandler.SetInterfaceMac(linuxTapHostname, linuxTapHwExternal)
-	Expect(err).To(BeNil())
+	Expect(err).ToNot(HaveOccurred())
 	leaveMs()
 
 	// run downstream resync
@@ -121,12 +121,12 @@ func TestLinkOnly(t *testing.T) {
 	Expect(hasIP(linuxTapIPIgnored)).To(BeFalse())
 	Expect(hasIP(linuxTapIPExternal)).To(BeTrue())
 	link, err := ifHandler.GetLinkByName(linuxTapHostname)
-	Expect(err).To(BeNil())
+	Expect(err).ToNot(HaveOccurred())
 	Expect(link).ToNot(BeNil())
 	Expect(link.Attrs().HardwareAddr.String()).To(Equal(linuxTapHwExternal))
 	leaveMs()
 
 	// test with ping
-	Expect(ctx.pingFromVPP(linuxTapIPExternal)).To(BeNil())
-	Expect(ctx.pingFromMs(msName, vppTapIP)).To(BeNil())
+	Expect(ctx.pingFromVPP(linuxTapIPExternal)).To(Succeed())
+	Expect(ctx.pingFromMs(msName, vppTapIP)).To(Succeed())
 }
