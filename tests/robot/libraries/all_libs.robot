@@ -17,5 +17,6 @@ Resource    etcdctl.robot
 Resource    rest_api.robot
 Resource    vxlan.robot
 Resource    linux.robot
+Resource    vpp_api.robot
 # Resource    kubernetes/all_kube_libs.robot
 Resource    SshCommons.robot

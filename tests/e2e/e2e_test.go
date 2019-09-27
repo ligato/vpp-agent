@@ -292,10 +292,10 @@ func (ctx *testCtx) testConnection(fromMs, toMs, toAddr, listenAddr string,
 	toPort, listenPort uint16, udp bool) error {
 
 	const (
-		connTimeout     = 3 * time.Second
-		srvExitTimeout  = 500 * time.Millisecond
-		reqData         = "Hi server!"
-		respData        = "Hi client!"
+		connTimeout    = 3 * time.Second
+		srvExitTimeout = 500 * time.Millisecond
+		reqData        = "Hi server!"
+		respData       = "Hi client!"
 	)
 
 	clientMs, found := ctx.microservices[fromMs]
@@ -595,7 +595,7 @@ func simpleUdpServer(ctx context.Context, ms *microservice, addr string, expReqM
 		}
 		message := string(buffer[:n])
 		// send response to the client
-		n, err = conn.WriteTo([]byte(respMsg + "\n"), addr)
+		n, err = conn.WriteTo([]byte(respMsg+"\n"), addr)
 		if err != nil {
 			commRv <- fmt.Errorf("failed to send data to client: %v", err)
 			return
@@ -676,7 +676,7 @@ func simpleTcpOrUdpClient(newConn chan connectionRequest, addr, reqMsg, expRespM
 	go func() {
 		defer close(commRv)
 		// send message to the server
-		_, err := fmt.Fprintf(cr.conn, reqMsg + "\n")
+		_, err := fmt.Fprintf(cr.conn, reqMsg+"\n")
 		if err != nil {
 			commRv <- fmt.Errorf("failed to send data to the server: %v", err)
 			return

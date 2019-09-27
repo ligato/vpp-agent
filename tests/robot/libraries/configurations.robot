@@ -3,6 +3,7 @@
 *** Settings ***
 
 *** Keywords ***
+#TODO: use descriptive names instead of numbers
 
 Configure Environment 1
     Add Agent VPP Node    agent_vpp_1

@@ -1,13 +1,17 @@
 *** Settings ***
 Library      OperatingSystem
-#Library      RequestsLibrary
-#Library      SSHLibrary      timeout=60s
-#Library      String
 Library      Collections
 
 Resource     ../../variables/${VARIABLES}_variables.robot
 
-Resource     ../../libraries/all_libs.robot
+Resource     ../../variables/${VARIABLES}_variables.robot
+
+Resource     ../../libraries/vpp_api.robot
+Resource     ../../libraries/vpp_term.robot
+Resource     ../../libraries/docker.robot
+Resource     ../../libraries/setup-teardown.robot
+Resource     ../../libraries/configurations.robot
+
 Resource     ../../libraries/acl/acl_etcd.robot
 Resource     ../../libraries/acl/acl_vpp.robot
 
@@ -18,28 +22,22 @@ Test Setup        TestSetup
 Test Teardown     TestTeardown
 
 *** Variables ***
-${VARIABLES}=       common
-${ENV}=             common
-${ACL1_NAME}=       acl1_tcp
-${ACL2_NAME}=       acl2_tcp
-${ACL3_NAME}=       acl3_UDP
-${ACL4_NAME}=       acl4_UDP
-${ACL5_NAME}=       acl5_ICMP
-${ACL6_NAME}=       acl6_ICMP
+${VARIABLES}=        common
+${ENV}=              common
+${ACL1_NAME}=        acl1_tcp
+${ACL2_NAME}=        acl2_tcp
+${ACL3_NAME}=        acl3_UDP
+${ACL4_NAME}=        acl4_UDP
+${ACL5_NAME}=        acl5_ICMP
+${ACL6_NAME}=        acl6_ICMP
 ${E_INTF1}=
 ${I_INTF1}=
 ${E_INTF2}=
 ${I_INTF2}=
-#${RULE_NM1_1}=         acl1_rule1
-#${RULE_NM2_1}=         acl2_rule1
-#${RULE_NM3_1}=         acl3_rule1
-#${RULE_NM4_1}=         acl4_rule1
-#${RULE_NM5_1}=         acl5_rule1
-#${RULE_NM6_1}=         acl6_rule1
-${ACTION_DENY}=     1
-${ACTION_PERMIT}=   2
-${DEST_NTW}=        fd30:0000:0000:0001:000e:0000:0000:0000/64
-${SRC_NTW}=         fd30:0000:0000:0001:000e:0000:0000:0000/64
+${ACTION_DENY}=      1
+${ACTION_PERMIT}=    2
+${DEST_NTW}=         fd30:0:0:1:e::/64
+${SRC_NTW}=          fd30:0:0:1:e::/64
 ${1DEST_PORT_L}=     80
 ${1DEST_PORT_U}=     1000
 ${1SRC_PORT_L}=      10
@@ -329,6 +327,9 @@ Check All 6 ACLs Added
     ...    ${ICMP_v6}
     ...    ${ICMP_CODE_L}   ${ICMP_CODE_U}
     ...    ${ICMP_TYPE_L}   ${ICMP_TYPE_U}
+
+# TODO: add tests for MACIP case
+# TODO: test ingress/egress interfaces
 
 *** Keywords ***
 

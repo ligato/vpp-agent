@@ -12,7 +12,7 @@ Library      acl_utils.py
 
 vpp_term: ACL Dump
     [Arguments]        ${node}
-    [Documentation]    Executing command acl_dump
+    [Documentation]    Execute command acl_dump
     ${out}=            vpp_term: Issue Command  ${node}  show acl-plugin acl
     ${out_data_vpp}=   Strip String     ${out}
     ${out_data}=       Remove String     ${out_data_vpp}    vpp#${SPACE}   vpp#
@@ -21,72 +21,76 @@ vpp_term: ACL Dump
 Check ACL in VPP - TCP
     [Arguments]    ${node}    ${acl_name}    ${egr_intf1}   ${ingr_intf1}
     ...    ${acl_action}    ${dest_ntw}    ${src_ntw}    ${dest_port_low}
-    ...    ${dest_port_up}    ${src_port_low}    ${src_port_up}
+    ...    ${dest_port_high}    ${src_port_low}    ${src_port_high}
     ...    ${tcp_flags_mask}    ${tcp_flags_value}
     [Documentation]
-    ...    Get ACL data from VPP terminal
+    ...    Get ACL data from VPP API
     ...    and verify response against expected data.
-    ${term_d}=          vpp_term: ACL Dump     ${node}
-    ${term_d}=          Filter ACL By Name      ${term_d}    ${acl_name}
-    ${data}=            OperatingSystem.Get File      ${CURDIR}/../../resources/acl/acl_TCP_response_term.txt
-    ${data}=            Replace ACL Variables TCP    ${data}    ${acl_name}
-    ...    ${egr_intf1}   ${ingr_intf1}
-    ...    ${acl_action}
-    ...    ${dest_ntw}    ${src_ntw}
-    ...    ${dest_port_low}    ${dest_port_up}
-    ...    ${src_port_low}    ${src_port_up}
-    ...    ${tcp_flags_mask}    ${tcp_flags_value}
-    Should Be Equal    ${term_d}    ${data}
+    ${api_dump_list}=    vpp_api: ACL Dump                     ${node}
+    ${api_dump}=         Filter ACL Dump By Name               ${api_dump_list}    ${acl_name}
+    Should Be Equal                ${api_dump["acl_name"]}                ${acl_name}
+    Should Be Equal As Integers    ${api_dump["acl_action"]}              ${acl_action}
+    Should Be Equal As Integers    ${api_dump["protocol"]}                6
+    Should Be Equal                ${api_dump["destination_network"]}     ${dest_ntw}
+    Should Be Equal                ${api_dump["source_network"]}          ${src_ntw}
+    Should Be Equal As Integers    ${api_dump["destination_port_low"]}    ${dest_port_low}
+    Should Be Equal As Integers    ${api_dump["destination_port_high"]}   ${dest_port_high}
+    Should Be Equal As Integers    ${api_dump["source_port_low"]}         ${src_port_low}
+    Should Be Equal As Integers    ${api_dump["source_port_high"]}        ${src_port_high}
+    Should Be Equal As Integers    ${api_dump["tcp_flags_mask"]}          ${tcp_flags_mask}
+    Should Be Equal As Integers    ${api_dump["tcp_flags_value"]}         ${tcp_flags_value}
 
 Check ACL in VPP - UDP
     [Arguments]    ${node}    ${acl_name}    ${egr_intf1}   ${ingr_intf1}
     ...    ${egr_intf2}   ${ingr_intf2}
     ...    ${acl_action}    ${dest_ntw}    ${src_ntw}    ${dest_port_low}
-    ...    ${dest_port_up}    ${src_port_low}    ${src_port_up}
+    ...    ${dest_port_high}    ${src_port_low}    ${src_port_high}
     [Documentation]
-    ...    Get ACL data from VPP terminal
+    ...    Get ACL data from VPP API
     ...    and verify response against expected data.
-    ${term_d}=          vpp_term: ACL Dump     ${node}
-    ${term_d}=          Filter ACL By Name      ${term_d}    ${acl_name}
-    ${data}=            OperatingSystem.Get File     ${CURDIR}/../../resources/acl/acl_UDP_response_term.txt
-    ${data}=            Replace ACL Variables UDP    ${data}    ${acl_name}
-    ...    ${egr_intf1}   ${ingr_intf1}
-    ...    ${acl_action}
-    ...    ${dest_ntw}    ${src_ntw}
-    ...    ${dest_port_low}    ${dest_port_up}
-    ...    ${src_port_low}    ${src_port_up}
-    Should Be Equal    ${term_d}    ${data}
+    ${api_dump_list}=    vpp_api: ACL Dump     ${node}
+    ${api_dump}=         Filter ACL Dump By Name    ${api_dump_list}      ${acl_name}
+    Should Be Equal                ${api_dump["acl_name"]}                ${acl_name}
+    Should Be Equal As Integers    ${api_dump["acl_action"]}              ${acl_action}
+    Should Be Equal As Integers    ${api_dump["protocol"]}                17
+    Should Be Equal                ${api_dump["destination_network"]}     ${dest_ntw}
+    Should Be Equal                ${api_dump["source_network"]}          ${src_ntw}
+    Should Be Equal As Integers    ${api_dump["destination_port_low"]}    ${dest_port_low}
+    Should Be Equal As Integers    ${api_dump["destination_port_high"]}   ${dest_port_high}
+    Should Be Equal As Integers    ${api_dump["source_port_low"]}         ${src_port_low}
+    Should Be Equal As Integers    ${api_dump["source_port_high"]}        ${src_port_high}
 
 Check ACL in VPP - ICMP
     [Arguments]    ${node}    ${acl_name}    ${egr_intf1}   ${ingr_intf1}
     ...    ${acl_action}    ${dest_ntw}    ${src_ntw}
     ...    ${icmpv6}
-    ...    ${icmp_range_low}    ${icmp_range_high}
-    ...    ${icmpv6_range_low}    ${icmpv6_range_high}
+    ...    ${icmp_code_low}    ${icmp_code_high}
+    ...    ${icmp_type_low}    ${icmp_type_high}
     [Documentation]
-    ...    Get ACL data from VPP terminal
+    ...    Get ACL data from VPP API
     ...    and verify response against expected data.
-    ${term_d}=          vpp_term: ACL Dump     ${node}
-    ${term_d}=          Filter ACL By Name      ${term_d}    ${acl_name}
-    ${data}=            OperatingSystem.Get File     ${CURDIR}/../../resources/acl/acl_ICMP_response_term.txt
-    ${data}=            Replace ACL Variables ICMP    ${data}    ${acl_name}
-    ...    ${egr_intf1}   ${ingr_intf1}
-    ...    ${acl_action}
-    ...    ${dest_ntw}    ${src_ntw}
-    ...    ${icmpv6}
-    ...    ${icmp_range_low}    ${icmp_range_high}
-    ...    ${icmpv6_range_low}    ${icmpv6_range_high}
-    Should Be Equal    ${term_d}    ${data}
-
-vpp_term: Show ACL
-    [Arguments]        ${node}
-    [Documentation]    Show ACLs through vpp terminal
-    ${out}=            vpp_term: Issue Command  ${node}   sh acl-plugin acl
-    [Return]           ${out}
+    ${protocol}=    Set Variable If    "${icmpv6}" == "true"    58    1
+    ${api_dump_list}=    vpp_api: ACL Dump     ${node}
+    ${api_dump}=         Filter ACL Dump By Name    ${api_dump_list}    ${acl_name}
+    Should Be Equal                ${api_dump["acl_name"]}                ${acl_name}
+    Should Be Equal As Integers    ${api_dump["acl_action"]}              ${acl_action}
+    Should Be Equal As Integers    ${api_dump["protocol"]}                ${protocol}
+    Should Be Equal                ${api_dump["destination_network"]}     ${dest_ntw}
+    Should Be Equal                ${api_dump["source_network"]}          ${src_ntw}
+    Should Be Equal As Integers    ${api_dump["icmp_code_low"]}           ${icmp_code_low}
+    Should Be Equal As Integers    ${api_dump["icmp_code_high"]}          ${icmp_code_high}
+    Should Be Equal As Integers    ${api_dump["icmp_type_low"]}           ${icmp_type_low}
+    Should Be Equal As Integers    ${api_dump["icmp_type_high"]}          ${icmp_type_high}
 
 ACL in VPP should not exist
     [Arguments]    ${node}    ${acl_name}
-    ${term_d}=          vpp_term: ACL Dump     ${node}
+    ${term_d}=          vpp_api: ACL Dump     ${node}
     Run Keyword And Expect Error
-    ...    ACL name ${acl_name} not found in response data.
-    ...    Filter ACL By Name    ${term_d}    ${acl_name}
+    ...    ACL not found by name ${acl_name}.
+    ...    Filter ACL Dump By Name    ${term_d}    ${acl_name}
+
+vpp_api: ACL Dump
+    [Arguments]        ${node}
+    [Documentation]    Executing command acl_dump
+    ${out}=            ACL Dump    ${DOCKER_HOST_IP}    ${DOCKER_HOST_USER}    ${DOCKER_HOST_PSWD}    ${node}
+    [Return]           ${out}

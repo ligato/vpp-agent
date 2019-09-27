@@ -105,7 +105,7 @@ func (h *InterfaceVppHandler) dumpInterfaces(ifIdxs ...uint32) (map[uint32]*vppc
 				Name: strings.TrimRight(ifDetails.Tag, "\x00"),
 				// the type may be amended later by further dumps
 				Type:        guessInterfaceType(ifaceName),
-				Enabled:     ifAPIFlagState(ifDetails.Flags) > 0,
+				Enabled:     isAdminStateUp(ifDetails.Flags),
 				PhysAddress: net.HardwareAddr(ifDetails.L2Address[:]).String(),
 				Mtu:         getMtu(ifDetails.LinkMtu),
 			},
@@ -114,8 +114,8 @@ func (h *InterfaceVppHandler) dumpInterfaces(ifIdxs ...uint32) (map[uint32]*vppc
 				SupSwIfIndex:   ifDetails.SupSwIfIndex,
 				L2Address:      physAddr,
 				InternalName:   ifaceName,
-				IsAdminStateUp: ifAPIFlagState(ifDetails.Flags) > 0,
-				IsLinkStateUp:  ifAPIFlagState(ifDetails.Flags) > 1,
+				IsAdminStateUp: isAdminStateUp(ifDetails.Flags),
+				IsLinkStateUp:  isLinkStateUp(ifDetails.Flags),
 				LinkDuplex:     uint32(ifDetails.LinkDuplex),
 				LinkMTU:        ifDetails.LinkMtu,
 				LinkSpeed:      ifDetails.LinkSpeed,
@@ -391,8 +391,8 @@ func (h *InterfaceVppHandler) DumpInterfaceStates(ifIdxs ...uint32) (map[uint32]
 				SwIfIndex:    uint32(ifDetails.SwIfIndex),
 				InternalName: strings.TrimRight(ifDetails.InterfaceName, "\x00"),
 				PhysAddress:  physAddr,
-				AdminState:   toInterfaceStatus(ifDetails.Flags),
-				LinkState:    toInterfaceStatus(ifDetails.Flags),
+				AdminState:   adminStateToInterfaceStatus(ifDetails.Flags),
+				LinkState:    linkStateToInterfaceStatus(ifDetails.Flags),
 				LinkDuplex:   toLinkDuplex(ifDetails.LinkDuplex),
 				LinkSpeed:    toLinkSpeed(ifDetails.LinkSpeed),
 				LinkMTU:      ifDetails.LinkMtu,
@@ -402,19 +402,6 @@ func (h *InterfaceVppHandler) DumpInterfaceStates(ifIdxs ...uint32) (map[uint32]
 	}
 
 	return ifStates, nil
-}
-
-func toInterfaceStatus(flags vpp_ifs.IfStatusFlags) ifs.InterfaceState_Status {
-	switch flags {
-	case 0:
-		return ifs.InterfaceState_DOWN
-	case 1:
-		return ifs.InterfaceState_UP // admin state
-	case 2:
-		return ifs.InterfaceState_UP // link state
-	default:
-		return ifs.InterfaceState_UNKNOWN_STATUS
-	}
 }
 
 func toLinkDuplex(duplex vpp_ifs.LinkDuplex) ifs.InterfaceState_Duplex {
@@ -1147,13 +1134,26 @@ func getVxLanGpeProtocol(p uint8) ifs.VxlanLink_Gpe_Protocol {
 	}
 }
 
-func ifAPIFlagState(flags vpp_ifs.IfStatusFlags) uint32 {
-	if flags == vpp_ifs.IF_STATUS_API_FLAG_ADMIN_UP {
-		return 1
-	} else if flags == vpp_ifs.IF_STATUS_API_FLAG_LINK_UP {
-		return 2
+func isAdminStateUp(flags vpp_ifs.IfStatusFlags) bool {
+	return flags&vpp_ifs.IF_STATUS_API_FLAG_ADMIN_UP != 0
+}
+
+func isLinkStateUp(flags vpp_ifs.IfStatusFlags) bool {
+	return flags&vpp_ifs.IF_STATUS_API_FLAG_LINK_UP != 0
+}
+
+func adminStateToInterfaceStatus(flags vpp_ifs.IfStatusFlags) ifs.InterfaceState_Status {
+	if isAdminStateUp(flags) {
+		return ifs.InterfaceState_UP
 	}
-	return 0
+	return ifs.InterfaceState_DOWN
+}
+
+func linkStateToInterfaceStatus(flags vpp_ifs.IfStatusFlags) ifs.InterfaceState_Status {
+	if isLinkStateUp(flags) {
+		return ifs.InterfaceState_UP
+	}
+	return ifs.InterfaceState_DOWN
 }
 
 func uintToBool(value uint8) bool {

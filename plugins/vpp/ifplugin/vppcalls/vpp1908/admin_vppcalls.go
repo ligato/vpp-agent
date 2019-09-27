@@ -54,13 +54,13 @@ func (h *InterfaceVppHandler) interfaceSetFlags(ifIdx uint32, adminUp bool) erro
 
 func (h *InterfaceVppHandler) handleInterfaceTag(tag string, ifIdx uint32, isAdd bool) error {
 	req := &interfaces.SwInterfaceTagAddDel{
-		Tag:   []byte(tag),
-		IsAdd: boolToUint(isAdd),
+		Tag:   tag,
+		IsAdd: isAdd,
 	}
 	// For some reason, if deleting tag, the software interface index has to be 0 and only name should be set.
 	// Otherwise reply returns with error core -2 (incorrect sw_if_idx)
 	if isAdd {
-		req.SwIfIndex = ifIdx
+		req.SwIfIndex = interfaces.InterfaceIndex(ifIdx)
 	}
 	reply := &interfaces.SwInterfaceTagAddDelReply{}
 

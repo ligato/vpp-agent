@@ -24,9 +24,9 @@ const (
 	// ModuleName is the name of this module.
 	ModuleName = "interface"
 	// APIVersion is the API version of this module.
-	APIVersion = "2.3.1"
+	APIVersion = "3.1.1"
 	// VersionCrc is the CRC of this module.
-	VersionCrc = 0x6aab37be
+	VersionCrc = 0xbfceada9
 )
 
 // InterfaceIndex represents VPP binary API alias 'interface_index'.
@@ -394,7 +394,6 @@ type SwInterfaceDetails struct {
 	SupSwIfIndex      uint32
 	L2AddressLength   uint32
 	L2Address         []byte `struc:"[8]byte"`
-	InterfaceName     []byte `struc:"[64]byte"`
 	AdminUpDown       uint8
 	LinkUpDown        uint8
 	LinkDuplex        uint8
@@ -415,19 +414,20 @@ type SwInterfaceDetails struct {
 	VtrPushDot1q      uint32
 	VtrTag1           uint32
 	VtrTag2           uint32
-	Tag               []byte `struc:"[64]byte"`
 	OuterTag          uint16
 	BDmac             []byte `struc:"[6]byte"`
 	BSmac             []byte `struc:"[6]byte"`
 	BVlanid           uint16
 	ISid              uint32
+	InterfaceName     string `struc:"[64]byte"`
+	Tag               string `struc:"[64]byte"`
 }
 
 func (*SwInterfaceDetails) GetMessageName() string {
 	return "sw_interface_details"
 }
 func (*SwInterfaceDetails) GetCrcString() string {
-	return "e4ee7eb6"
+	return "52a9262e"
 }
 func (*SwInterfaceDetails) GetMessageType() api.MessageType {
 	return api.ReplyMessage
@@ -435,16 +435,17 @@ func (*SwInterfaceDetails) GetMessageType() api.MessageType {
 
 // SwInterfaceDump represents VPP binary API message 'sw_interface_dump'.
 type SwInterfaceDump struct {
-	SwIfIndex       InterfaceIndex
-	NameFilterValid uint8
-	NameFilter      []byte `struc:"[49]byte"`
+	SwIfIndex         InterfaceIndex
+	NameFilterValid   bool
+	XXX_NameFilterLen uint32 `struc:"sizeof=NameFilter"`
+	NameFilter        string
 }
 
 func (*SwInterfaceDump) GetMessageName() string {
 	return "sw_interface_dump"
 }
 func (*SwInterfaceDump) GetCrcString() string {
-	return "052753c5"
+	return "aa610c27"
 }
 func (*SwInterfaceDump) GetMessageType() api.MessageType {
 	return api.RequestMessage
@@ -821,16 +822,16 @@ func (*SwInterfaceSetUnnumberedReply) GetMessageType() api.MessageType {
 
 // SwInterfaceTagAddDel represents VPP binary API message 'sw_interface_tag_add_del'.
 type SwInterfaceTagAddDel struct {
-	IsAdd     uint8
-	SwIfIndex uint32
-	Tag       []byte `struc:"[64]byte"`
+	IsAdd     bool
+	SwIfIndex InterfaceIndex
+	Tag       string `struc:"[64]byte"`
 }
 
 func (*SwInterfaceTagAddDel) GetMessageName() string {
 	return "sw_interface_tag_add_del"
 }
 func (*SwInterfaceTagAddDel) GetCrcString() string {
-	return "14cc636c"
+	return "426f8bc1"
 }
 func (*SwInterfaceTagAddDel) GetMessageType() api.MessageType {
 	return api.RequestMessage
