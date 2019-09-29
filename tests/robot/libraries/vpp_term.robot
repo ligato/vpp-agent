@@ -286,28 +286,6 @@ vpp_term: Set ARP
     [Documentation]    Sets ARP (IPv4 neighbors)
     vpp_term: Issue Command  ${node}   set ip arp ${interface} ${ipv4} ${MAC}
 
-vpp_term: Show Application Namespaces
-    [Arguments]        ${node}
-    [Documentation]    Show application namespaces through vpp terminal
-    ${out}=            vpp_term: Issue Command  ${node}   sh app ns
-    [Return]           ${out}
-
-vpp_term: Return Data From Show Application Namespaces Output
-    [Arguments]    ${node}    ${id}
-    [Documentation]    Returns a list containing namespace id, index, namespace secret and sw_if_index of an
-    ...   interface associated with the namespace.
-    ${out}=    vpp_term: Show Application Namespaces    ${node}
-    ${out_line}=    Get Lines Containing String    ${out}    ${id}
-    ${out_data}=    Split String    ${out_line}
-    [Return]    ${out_data}
-
-vpp_term: Check Data In Show Application Namespaces Output
-    [Arguments]    ${node}    ${id}    @{desired_state}
-    [Documentation]    Desired data is a list variable containing namespace index, namespace secret and sw_if_index of an
-    ...   interface associated with the namespace.
-    ${actual_state}=    vpp_term: Return Data From Show Application Namespaces Output    ${node}    ${id}
-    List Should Contain Sub List    ${actual_state}    ${desired_state}
-
 vpp_term: Show Interface Mode
     [Arguments]        ${node}
     [Documentation]    vpp_term: Show Interfaces Mode
