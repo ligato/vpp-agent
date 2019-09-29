@@ -5,9 +5,10 @@ import (
 	"os"
 
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/vpp-agent/cmd/agentctl/cli"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+
+	"github.com/ligato/vpp-agent/cmd/agentctl/cli"
 )
 
 var (

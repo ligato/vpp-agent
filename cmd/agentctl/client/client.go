@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"github.com/coreos/etcd/clientv3"
+	"github.com/docker/docker/api/types/versions"
 	"google.golang.org/grpc"
 
 	"github.com/ligato/cn-infra/db/keyval"
@@ -40,7 +41,8 @@ import (
 )
 
 var (
-	DefaultAgentHost = "localhost"
+	// DefaultAgentHost defines default host address for agent
+	DefaultAgentHost = "127.0.0.1"
 
 	DefaultPortGRPC = 9111
 	DefaultPortHTTP = 9191
@@ -72,10 +74,17 @@ type Client struct {
 	negotiated        bool
 }
 
+// NewClient returns client with host option.
 func NewClient(host string) (*Client, error) {
 	return NewClientWithOpts(WithHost(host))
 }
 
+// NewClientFromEnv returns client with options from environment.
+func NewClientFromEnv() (*Client, error) {
+	return NewClientWithOpts(FromEnv)
+}
+
+// NewClientWithOpts returns client with ops applied.
 func NewClientWithOpts(ops ...Opt) (*Client, error) {
 	c := &Client{
 		host:       DefaultAgentHost,
@@ -209,9 +218,9 @@ func (c *Client) negotiateAPIVersionPing(p types.Ping) {
 	}
 
 	// if server version is lower than the client version, downgrade
-	/*if versions.LessThan(p.APIVersion, cli.version) {
-		cli.version = p.APIVersion
-	}*/
+	if versions.LessThan(p.APIVersion, c.version) {
+		c.version = p.APIVersion
+	}
 
 	// Store the results, so that automatic API version negotiation (if enabled)
 	// won't be performed on the next request.
@@ -226,10 +235,6 @@ func (c *Client) KVDBClient() (KVDBAPIClient, error) {
 		return nil, fmt.Errorf("connecting to Etcd failed: %v", err)
 	}
 	return NewKVDBClient(kvdb, c.serviceLabel), nil
-}
-
-func defaultHttpClient() *http.Client {
-	return &http.Client{}
 }
 
 func ConnectEtcd(endpoints []string) (keyval.CoreBrokerWatcher, error) {
@@ -251,4 +256,8 @@ func ConnectEtcd(endpoints []string) (keyval.CoreBrokerWatcher, error) {
 		return nil, err
 	}
 	return kvdb, nil
+}
+
+func defaultHttpClient() *http.Client {
+	return &http.Client{}
 }

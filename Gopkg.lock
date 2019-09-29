@@ -225,11 +225,10 @@
   revision = "3dfb26ab3cbf961298f8ce3f94659b5fe4146ceb"
 
 [[projects]]
-  digest = "1:b6b5c3e8da0fb8073cd2886ba249a40f4402b4391ca6eba905a142cceea97a12"
+  digest = "1:d5e6a6adf47d002b580ed83f13493f6d4a7a891954bda48454b5876c0bd83460"
   name = "github.com/docker/go-connections"
   packages = [
     "nat",
-    "sockets",
     "tlsconfig",
   ]
   pruneopts = "UT"
@@ -903,7 +902,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:802bb1a0a62e31fa1016d219c2b64e2d048d328831e4f7e31ed261fe7e915dd3"
+  digest = "1:6b9d693aad7155c20f594c83ffb8e4dc74db309236a99459a384f57264dbad24"
   name = "golang.org/x/net"
   packages = [
     "context",
@@ -914,9 +913,7 @@
     "http2",
     "http2/hpack",
     "idna",
-    "internal/socks",
     "internal/timeseries",
-    "proxy",
     "trace",
   ]
   pruneopts = "UT"
@@ -1034,8 +1031,8 @@
     "github.com/coreos/etcd/clientv3",
     "github.com/coreos/go-iptables/iptables",
     "github.com/docker/cli/cli/streams",
+    "github.com/docker/docker/api/types/versions",
     "github.com/docker/docker/pkg/term",
-    "github.com/docker/go-connections/sockets",
     "github.com/docker/go-connections/tlsconfig",
     "github.com/fsouza/go-dockerclient",
     "github.com/ghodss/yaml",

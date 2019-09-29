@@ -10,6 +10,7 @@ import (
 	"github.com/spf13/pflag"
 
 	"github.com/ligato/cn-infra/logging"
+
 	"github.com/ligato/vpp-agent/cmd/agentctl/client"
 )
 
