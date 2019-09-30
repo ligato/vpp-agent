@@ -76,8 +76,11 @@ def _convert_reply(api_r):
                 except ipaddress.AddressValueError:
                     # maybe it's not an IP address after all
                     pass
+            elif len(val) in (6, 8):
+                # Probably a padded MAC address(8) or "Dmac, Smac, etc."??(6)
+                return val.hex()
 
-            # strip null byte padding from some fields, such as acl_dump "tag"
+            # strip null byte padding from some fields, such as tag or name
             while val.endswith(b"\x00"):
                 val = val[:-1]
             return str(val, "ascii")
@@ -92,7 +95,7 @@ def _convert_reply(api_r):
                 return item_dict
             else:
                 # just a simple string
-                return binascii.hexlify(str(val))
+                return str(val)
         # Next handles parameters not supporting preferred integer or string
         # representation to get it logged
         elif hasattr(val, '__repr__'):
