@@ -81,12 +81,6 @@ func (c *Client) LoggerList(ctx context.Context, opts types.LoggerListOptions) (
 	return loggers, nil
 }
 
-type Response struct {
-	Logger string `json:"logger,omitempty"`
-	Level  string `json:"level,omitempty"`
-	Error  string `json:"Error,omitempty"`
-}
-
 func (c *Client) LoggerSet(ctx context.Context, logger, level string) error {
 	urlPath := "/log/" + logger + "/" + level
 
@@ -95,8 +89,14 @@ func (c *Client) LoggerSet(ctx context.Context, logger, level string) error {
 		return fmt.Errorf("HTTP POST request failed: %v", err)
 	}
 
+	type Response struct {
+		Logger string `json:"logger,omitempty"`
+		Level  string `json:"level,omitempty"`
+		Error  string `json:"Error,omitempty"`
+	}
+
 	var loggerSetResponse Response
-	if err := json.NewDecoder(resp.body).Decode(&resp); err != nil {
+	if err := json.NewDecoder(resp.body).Decode(&loggerSetResponse); err != nil {
 		return fmt.Errorf("decoding reply failed: %v", err)
 	}
 	if loggerSetResponse.Error != "" {
