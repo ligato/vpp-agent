@@ -93,9 +93,12 @@ func runGenerate(cli agentcli.Cli, opts GenerateOptions) error {
 			OrigName:     true,
 			AnyResolver:  nil,
 		}
+		if opts.OneLine {
+			m.Indent = ""
+		}
 		out, err = m.MarshalToString(modelInstance)
 		if err != nil {
-			return fmt.Errorf("Encoding to json failed: %v", err)
+			return fmt.Errorf("encoding to json failed: %v", err)
 		}
 	case "y", "yaml":
 		m := jsonpb.Marshaler{
@@ -111,7 +114,7 @@ func runGenerate(cli agentcli.Cli, opts GenerateOptions) error {
 		}
 		b, err := yaml.JSONToYAML([]byte(out))
 		if err != nil {
-			return fmt.Errorf("Encoding to yaml failed: %v", err)
+			return fmt.Errorf("encoding to yaml failed: %v", err)
 		}
 		out = string(b)
 	case "p", "proto":
@@ -121,7 +124,7 @@ func runGenerate(cli agentcli.Cli, opts GenerateOptions) error {
 		}
 		out = m.Text(modelInstance)
 	default:
-		return fmt.Errorf("Unknown format: %s", opts.Format)
+		return fmt.Errorf("unknown format: %s", opts.Format)
 	}
 
 	fmt.Fprintf(cli.Out(), "%s\n", out)

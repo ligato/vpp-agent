@@ -126,7 +126,6 @@ func runModelList(cli agentcli.Cli, opts ModelListOptions) error {
 	var buf bytes.Buffer
 	w := tabwriter.NewWriter(&buf, 0, 0, 2, ' ', 0)
 	fmt.Fprintf(w, "MODEL\tKEY PREFIX\tPROTO NAME\t\n")
-
 	for _, model := range models {
 		fmt.Fprintf(w, "%s\t%s\t%s\t\n",
 			model.Name, model.KeyPrefix, model.ProtoName)

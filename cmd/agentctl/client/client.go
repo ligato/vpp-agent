@@ -89,7 +89,7 @@ func NewClientWithOpts(ops ...Opt) (*Client, error) {
 	c := &Client{
 		host:       DefaultAgentHost,
 		version:    api.DefaultVersion,
-		httpClient: defaultHttpClient(),
+		httpClient: defaultHTTPClient(),
 		proto:      "tcp",
 		scheme:     "http",
 	}
@@ -99,6 +99,10 @@ func NewClientWithOpts(ops ...Opt) (*Client, error) {
 		}
 	}
 	return c, nil
+}
+
+func defaultHTTPClient() *http.Client {
+	return &http.Client{}
 }
 
 func (c *Client) ConfigClient() (client.ConfigClient, error) {
@@ -256,8 +260,4 @@ func ConnectEtcd(endpoints []string) (keyval.CoreBrokerWatcher, error) {
 		return nil, err
 	}
 	return kvdb, nil
-}
-
-func defaultHttpClient() *http.Client {
-	return &http.Client{}
 }

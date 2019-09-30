@@ -15,119 +15,65 @@
 package commands
 
 import (
-	"bytes"
 	"context"
-	"fmt"
-	"os"
-	"strings"
-	"text/tabwriter"
 
 	"github.com/spf13/cobra"
 
-	"github.com/ligato/vpp-agent/api/types"
 	agentcli "github.com/ligato/vpp-agent/cmd/agentctl/cli"
-	"github.com/ligato/vpp-agent/pkg/models"
-	"github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 )
 
 func NewStatusCommand(cli agentcli.Cli) *cobra.Command {
-	var opts StatusOptions
-
+	var (
+		opts StatusOptions
+	)
 	cmd := &cobra.Command{
 		Use:   "status",
 		Short: "Retrieve agent status",
 		Args:  cobra.RangeArgs(0, 1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			opts.Models = args
 			return runStatus(cli, opts)
 		},
-		Hidden: true,
 	}
+	flags := cmd.Flags()
+	flags.StringVarP(&opts.Format, "format", "f", "", "Format output")
 	return cmd
 }
 
 type StatusOptions struct {
-	Models []string
+	Format string
 }
 
 func runStatus(cli agentcli.Cli, opts StatusOptions) error {
-	var model string
-	if len(opts.Models) > 0 {
-		model = opts.Models[0]
-	}
-
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	allModels, err := cli.Client().ModelList(ctx, types.ModelListOptions{})
+	status, err := cli.Client().Status(ctx)
 	if err != nil {
 		return err
 	}
 
-	var modelKeyPrefix string
-	for _, m := range allModels {
-		if (m.Alias != "" && model == m.Alias) || model == m.Name {
-			modelKeyPrefix = m.KeyPrefix
-			break
-		}
+	format := opts.Format
+	if len(format) == 0 {
+		format = defaultFormatStatus
 	}
 
-	status, err := cli.Client().SchedulerValues(ctx, types.SchedulerValuesOptions{
-		KeyPrefix: modelKeyPrefix,
-	})
-	if err != nil {
+	if err := formatAsTemplate(cli.Out(), format, status); err != nil {
 		return err
 	}
 
-	printStatusTable(status)
 	return nil
 }
 
-// printStatusTable prints status data using table format
-func printStatusTable(status []*api.BaseValueStatus) {
-	var buf bytes.Buffer
-	w := tabwriter.NewWriter(&buf, 10, 0, 3, ' ', 0)
-	fmt.Fprintf(w, "MODEL\tNAME\tSTATE\tDETAILS\tLAST OP\tERROR\t\n")
+const defaultFormatStatus = `AGENT
+       State: {{.AgentStatus.State}}
+     Version: {{.AgentStatus.BuildVersion}}
+     Started: {{epoch .AgentStatus.StartTime}} ({{ago (epoch .AgentStatus.StartTime)}} ago)
+  
+ Last change: {{ago (epoch .AgentStatus.LastChange)}}
+ Last update: {{ago (epoch .AgentStatus.LastUpdate)}}
 
-	var printVal = func(val *api.ValueStatus) {
-		var (
-			model string
-			name  string
-		)
-
-		m, err := models.GetModelForKey(val.Key)
-		if err != nil {
-			name = val.Key
-		} else {
-			model = fmt.Sprintf("%s.%s", m.Module, m.Type)
-			name = m.StripKeyPrefix(val.Key)
-		}
-
-		var lastOp string
-		if val.LastOperation != api.TxnOperation_UNDEFINED {
-			lastOp = val.LastOperation.String()
-		}
-		state := val.State.String()
-		if val.State == api.ValueState_OBTAINED {
-			state = strings.ToLower(state)
-		}
-
-		var details string
-		if len(val.Details) > 0 {
-			details = strings.Join(val.Details, ", ")
-		}
-
-		fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\t\n", model, name, state, details, lastOp, val.Error)
-	}
-
-	for _, d := range status {
-		printVal(d.Value)
-		for _, v := range d.DerivedValues {
-			printVal(v)
-		}
-	}
-	if err := w.Flush(); err != nil {
-		return
-	}
-	fmt.Fprint(os.Stdout, buf.String())
-}
+PLUGINS
+{{- range $name, $plugin := .PluginStatus}}
+   {{$name}}: {{$plugin.State}}
+{{- end}}
+`

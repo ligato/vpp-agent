@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/ligato/cn-infra/db/keyval"
+	"github.com/ligato/cn-infra/health/probe"
 
 	"github.com/ligato/vpp-agent/api/types"
 	"github.com/ligato/vpp-agent/client"
@@ -35,8 +36,9 @@ type APIClient interface {
 
 // SystemAPIClient defines API client methods for the system
 type InfraAPIClient interface {
+	Status(ctx context.Context) (*probe.ExposedStatus, error)
 	Ping(ctx context.Context) (types.Ping, error)
-	LoggerList(ctx context.Context, opts types.LoggerListOptions) ([]types.Logger, error)
+	LoggerList(ctx context.Context) ([]types.Logger, error)
 	LoggerSet(ctx context.Context, logger, level string) error
 }
 
@@ -51,7 +53,7 @@ type SchedulerAPIClient interface {
 	SchedulerValues(ctx context.Context, opts types.SchedulerValuesOptions) ([]*api.BaseValueStatus, error)
 }
 
-// VppAPIClient
+// VppAPIClient defines API client methods for the VPP
 type VppAPIClient interface {
 	VppRunCli(ctx context.Context, cmd string) (reply string, err error)
 }

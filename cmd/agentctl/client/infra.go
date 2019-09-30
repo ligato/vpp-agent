@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"path"
 
+	"github.com/ligato/cn-infra/health/probe"
 	"github.com/ligato/vpp-agent/api/types"
 	"github.com/sirupsen/logrus"
 )
@@ -67,7 +68,7 @@ func (c *Client) ServerVersion(ctx context.Context) (types.Version, error) {
 	return server, err
 }
 
-func (c *Client) LoggerList(ctx context.Context, opts types.LoggerListOptions) ([]types.Logger, error) {
+func (c *Client) LoggerList(ctx context.Context) ([]types.Logger, error) {
 	resp, err := c.get(ctx, "/log/list", nil, nil)
 	if err != nil {
 		return nil, fmt.Errorf("HTTP POST request failed: %v", err)
@@ -104,4 +105,18 @@ func (c *Client) LoggerSet(ctx context.Context, logger, level string) error {
 	}
 
 	return nil
+}
+
+func (c *Client) Status(ctx context.Context) (*probe.ExposedStatus, error) {
+	resp, err := c.get(ctx, "/readiness", nil, nil)
+	if err != nil {
+		return nil, fmt.Errorf("HTTP POST request failed: %v", err)
+	}
+
+	var status probe.ExposedStatus
+	if err := json.NewDecoder(resp.body).Decode(&status); err != nil {
+		return nil, fmt.Errorf("decoding reply failed: %v", err)
+	}
+
+	return &status, nil
 }

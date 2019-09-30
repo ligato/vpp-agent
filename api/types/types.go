@@ -35,10 +35,6 @@ type Ping struct {
 	OSType     string
 }
 
-type LoggerListOptions struct {
-	Name string
-}
-
 type Logger struct {
 	Logger string `json:"logger,omitempty"`
 	Level  string `json:"level,omitempty"`

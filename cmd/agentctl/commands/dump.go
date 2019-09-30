@@ -19,7 +19,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"os"
 	"sort"
 	"strings"
 	"text/tabwriter"
@@ -44,7 +43,7 @@ func NewDumpCommand(cli agentcli.Cli) *cobra.Command {
 
  To use different dump view use --view flag:
   $ {{.CommandPath}} --view=NB vpp.interfaces`,
-		Args: cobra.ExactArgs(1),
+		Args: cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			opts.Models = args
 			return runDump(cli, opts)
@@ -79,8 +78,7 @@ func runDump(cli agentcli.Cli, opts DumpOptions) error {
 		}
 	}
 	if modelKeyPrefix == "" {
-		fmt.Fprintf(os.Stderr, "No model found for: %q\n", model)
-		return fmt.Errorf("no such model")
+		return fmt.Errorf("no such model: %q", model)
 	}
 
 	dump, err := cli.Client().SchedulerDump(ctx, types.SchedulerDumpOptions{

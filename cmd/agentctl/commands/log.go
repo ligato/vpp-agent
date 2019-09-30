@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"sort"
 	"strings"
 	"text/tabwriter"
 
@@ -44,9 +45,9 @@ func newLogListCommand(cli agentcli.Cli) *cobra.Command {
 		opts LogListOptions
 	)
 	cmd := &cobra.Command{
-		Use:     "list <logger>",
+		Use:     "list [logger]",
 		Aliases: []string{"ls"},
-		Short:   "Show vppagent logs",
+		Short:   "List agent loggers",
 		Args:    cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) > 0 {
@@ -66,9 +67,7 @@ func RunLogList(cli agentcli.Cli, opts LogListOptions) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	loggers, err := cli.Client().LoggerList(ctx, types.LoggerListOptions{
-		Name: opts.Name,
-	})
+	loggers, err := cli.Client().LoggerList(ctx)
 	if err != nil {
 		return err
 	}
@@ -83,6 +82,7 @@ func RunLogList(cli agentcli.Cli, opts LogListOptions) error {
 			filtered = append(filtered, value)
 		}
 	}
+	sort.Sort(sortedLoggers(filtered))
 	printLoggerList(cli.Out(), filtered)
 
 	return nil
@@ -99,12 +99,26 @@ func printLoggerList(out io.Writer, list []types.Logger) {
 	}
 }
 
+type sortedLoggers []types.Logger
+
+func (ll sortedLoggers) Len() int {
+	return len(ll)
+}
+
+func (ll sortedLoggers) Less(i, j int) bool {
+	return ll[i].Logger < ll[j].Logger
+}
+
+func (ll sortedLoggers) Swap(i, j int) {
+	ll[i], ll[j] = ll[j], ll[i]
+}
+
 func newLogSetCommand(cli agentcli.Cli) *cobra.Command {
 	opts := LogSetOptions{}
 	cmd := &cobra.Command{
 		Use:   "set <logger> <debug|info|warning|error|fatal|panic>",
-		Short: "Set vppagent logger type",
-		Args:  cobra.RangeArgs(2, 2),
+		Short: "Set agent logger level",
+		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			opts.Logger = args[0]
 			opts.Level = args[1]
