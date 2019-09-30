@@ -370,8 +370,10 @@ class PapiExecutor(object):
             try:
                 json_data = json.loads(stdout)
             except ValueError:
-                logger.error("An error occured while processing the PAPI "
-                             "request:\n{rqst}".format(rqst=local_list))
+                logger.error(
+                    "An error occured while processing the PAPI reply:\n"
+                    "stdout: {stdout}\n"
+                    "stderr: {stderr}".format(stdout=stdout, stderr=stderr))
                 raise
             for data in json_data:
                 try:
