@@ -16,29 +16,51 @@ package commands
 
 import (
 	"fmt"
-	"os"
+	"strings"
 )
 
-type ExitError int
+// Errors is a list of errors.
+// Useful in a loop if you don't want to return the error right away and you want to display after the loop,
+// all the errors that happened during the loop.
+type Errors []error
 
-// Common exit flags
-const (
-	NoError            = 0
-	ErrorUnspecified   = 1
-	ErrorBadConnection = 2
-	ErrorInvalidInput  = 3
-	ErrorBadFeature    = 4
-	ErrorInterrupted   = 5
-	ErrorIO            = 6
-	ErrorBadArgs       = 128
-)
+func (errList Errors) Error() string {
+	if len(errList) < 1 {
+		return ""
+	}
 
-func ExitWithError(err error) {
-	fmt.Fprintf(os.Stderr, "ERROR: %v\n", err)
-	os.Exit(ErrorUnspecified)
+	out := make([]string, len(errList))
+	for i := range errList {
+		out[i] = errList[i].Error()
+	}
+	return strings.Join(out, ", ")
 }
 
-func ExitWithCodeAndError(code int, err error) {
-	fmt.Fprintf(os.Stderr, "ERROR(%d): %v\n", code, err)
-	os.Exit(code)
+// StatusError reports an unsuccessful exit by a command.
+type StatusError struct {
+	Status     string
+	StatusCode int
+}
+
+func (e StatusError) String() string {
+	return fmt.Sprintf("Status: %s, Code: %d", e.Status, e.StatusCode)
+}
+
+func (e StatusError) Error() string {
+	return fmt.Sprintf("%s (%d)", e.Status, e.StatusCode)
+}
+
+// ExitCode returns proper exit code for err or 0 if err is nil.
+func ExitCode(err error) int {
+	if err == nil {
+		return 0
+	}
+	if sterr, ok := err.(StatusError); ok {
+		// StatusError should only be used for errors, and all errors should
+		// have a non-zero exit status, so never exit with 0
+		if sterr.StatusCode != 0 {
+			return sterr.StatusCode
+		}
+	}
+	return 1
 }

@@ -15,5 +15,5 @@
 // Package cmd is the parent of packages that are used to build various
 // executables from VPP Agent sources. VPP Agent sources are used
 // to build the executables for VPP Agent itself and tools, such
-// as agentctl or vpp-agent-ctl.
+// as agentctl.
 package cmd

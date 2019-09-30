@@ -40,18 +40,15 @@ const logo = `                                      __
 `
 
 var (
-	debugEnabled = os.Getenv("DEBUG_ENABLED") != ""
-
-	startTimeout = agent.DefaultStartTimeout
-	stopTimeout  = agent.DefaultStopTimeout
-
+	startTimeout  = agent.DefaultStartTimeout
+	stopTimeout   = agent.DefaultStopTimeout
 	resyncTimeout = time.Second * 10
 )
 
 func main() {
 	fmt.Fprintf(os.Stdout, logo, agent.BuildVersion)
 
-	if debugEnabled {
+	if debug.IsEnabled() {
 		logging.DefaultLogger.SetLevel(logging.DebugLevel)
 		logging.DefaultLogger.Debug("DEBUG ENABLED")
 		defer debug.Start().Stop()

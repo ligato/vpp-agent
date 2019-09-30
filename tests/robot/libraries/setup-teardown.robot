@@ -28,7 +28,7 @@ Testsuite Setup
     Start ETCD Server
     Get Env And SW Version      docker
     Make Datastore Snapshots    startup
-
+    Copy File To Machine    docker    ${CURDIR}/../tools/vpp_api_executor.py    ${DOCKER_PAPI_FOLDER}/vpp_api_executor.py
 
 Testsuite Teardown
     Make Datastore Snapshots    teardown

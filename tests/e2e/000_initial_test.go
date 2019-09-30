@@ -40,7 +40,7 @@ func TestStartStopMicroservice(t *testing.T) {
 	}
 
 	ctx.startMicroservice(msName)
-	Eventually(msState, msUpdateTimeout).Should(Equal(kvs.ValueState_OBTAINED))
+	Eventually(msState).Should(Equal(kvs.ValueState_OBTAINED))
 	ctx.stopMicroservice(msName)
-	Eventually(msState, msUpdateTimeout).Should(Equal(kvs.ValueState_NONEXISTENT))
+	Eventually(msState).Should(Equal(kvs.ValueState_NONEXISTENT))
 }

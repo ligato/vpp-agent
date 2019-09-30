@@ -180,9 +180,10 @@ func (h *NatVppHandler) nat44StaticMappingDump() (entries stMappingMap, err erro
 		exIPAddress := net.IP(msg.ExternalIPAddress[:]).String()
 
 		// Parse tag (DNAT label)
-		if _, hasTag := entries[msg.Tag]; !hasTag {
-			entries[msg.Tag] = []*nat.DNat44_StaticMapping{}
-			childMappings[msg.Tag] = []*nat.DNat44_StaticMapping{}
+		tag := strings.TrimRight(msg.Tag, "\x00")
+		if _, hasTag := entries[tag]; !hasTag {
+			entries[tag] = []*nat.DNat44_StaticMapping{}
+			childMappings[tag] = []*nat.DNat44_StaticMapping{}
 		}
 
 		// resolve interface name
@@ -218,7 +219,7 @@ func (h *NatVppHandler) nat44StaticMappingDump() (entries stMappingMap, err erro
 			// if there is only one backend the affinity can not be set
 			SessionAffinity: 0,
 		}
-		entries[msg.Tag] = append(entries[msg.Tag], mapping)
+		entries[tag] = append(entries[tag], mapping)
 
 		if msg.ExternalSwIfIndex != NoInterface {
 			// collect auto-generated "child" mappings (interface replaced with every assigned IP address)
@@ -226,7 +227,7 @@ func (h *NatVppHandler) nat44StaticMappingDump() (entries stMappingMap, err erro
 				childMapping := proto.Clone(mapping).(*nat.DNat44_StaticMapping)
 				childMapping.ExternalIp = ipAddr
 				childMapping.ExternalInterface = ""
-				childMappings[msg.Tag] = append(childMappings[msg.Tag], childMapping)
+				childMappings[tag] = append(childMappings[tag], childMapping)
 			}
 		}
 	}
@@ -268,8 +269,9 @@ func (h *NatVppHandler) nat44StaticMappingLbDump() (entries stMappingMap, err er
 		}
 
 		// Parse tag (DNAT label)
-		if _, hasTag := entries[msg.Tag]; !hasTag {
-			entries[msg.Tag] = []*nat.DNat44_StaticMapping{}
+		tag := strings.TrimRight(msg.Tag, "\x00")
+		if _, hasTag := entries[tag]; !hasTag {
+			entries[tag] = []*nat.DNat44_StaticMapping{}
 		}
 
 		// Prepare localIPs
@@ -295,7 +297,7 @@ func (h *NatVppHandler) nat44StaticMappingLbDump() (entries stMappingMap, err er
 			TwiceNat:        h.getTwiceNatMode(flags.isTwiceNat, flags.isSelfTwiceNat),
 			SessionAffinity: msg.Affinity,
 		}
-		entries[msg.Tag] = append(entries[msg.Tag], mapping)
+		entries[tag] = append(entries[tag], mapping)
 	}
 
 	return entries, nil
@@ -319,9 +321,10 @@ func (h *NatVppHandler) nat44IdentityMappingDump() (entries idMappingMap, err er
 		}
 
 		// Parse tag (DNAT label)
-		if _, hasTag := entries[msg.Tag]; !hasTag {
-			entries[msg.Tag] = []*nat.DNat44_IdentityMapping{}
-			childMappings[msg.Tag] = []*nat.DNat44_IdentityMapping{}
+		tag := strings.TrimRight(msg.Tag, "\x00")
+		if _, hasTag := entries[tag]; !hasTag {
+			entries[tag] = []*nat.DNat44_IdentityMapping{}
+			childMappings[tag] = []*nat.DNat44_IdentityMapping{}
 		}
 
 		// resolve interface name
@@ -346,7 +349,7 @@ func (h *NatVppHandler) nat44IdentityMappingDump() (entries idMappingMap, err er
 			Port:      uint32(msg.Port),
 			Protocol:  h.protocolNumberToNBValue(msg.Protocol),
 		}
-		entries[msg.Tag] = append(entries[msg.Tag], mapping)
+		entries[tag] = append(entries[tag], mapping)
 
 		if msg.SwIfIndex != NoInterface {
 			// collect auto-generated "child" mappings (interface replaced with every assigned IP address)
@@ -354,7 +357,7 @@ func (h *NatVppHandler) nat44IdentityMappingDump() (entries idMappingMap, err er
 				childMapping := proto.Clone(mapping).(*nat.DNat44_IdentityMapping)
 				childMapping.IpAddress = ipAddr
 				childMapping.Interface = ""
-				childMappings[msg.Tag] = append(childMappings[msg.Tag], childMapping)
+				childMappings[tag] = append(childMappings[tag], childMapping)
 			}
 		}
 	}

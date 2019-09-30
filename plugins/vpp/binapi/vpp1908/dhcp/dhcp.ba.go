@@ -6,7 +6,7 @@ Package dhcp is a generated VPP binary API for 'dhcp' module.
 
 It consists of:
 	  4 enums
-	  2 aliases
+	  5 aliases
 	 12 types
 	  1 union
 	 25 messages
@@ -29,7 +29,7 @@ const (
 	// APIVersion is the API version of this module.
 	APIVersion = "2.0.1"
 	// VersionCrc is the CRC of this module.
-	VersionCrc = 0xbc570632
+	VersionCrc = 0xe086f3df
 )
 
 // AddressFamily represents VPP binary API enum 'address_family'.
@@ -229,11 +229,20 @@ func (x IPProto) String() string {
 	return strconv.Itoa(int(x))
 }
 
+// AddressWithPrefix represents VPP binary API alias 'address_with_prefix'.
+type AddressWithPrefix Prefix
+
 // IP4Address represents VPP binary API alias 'ip4_address'.
 type IP4Address [4]uint8
 
+// IP4AddressWithPrefix represents VPP binary API alias 'ip4_address_with_prefix'.
+type IP4AddressWithPrefix IP4Prefix
+
 // IP6Address represents VPP binary API alias 'ip6_address'.
 type IP6Address [16]uint8
+
+// IP6AddressWithPrefix represents VPP binary API alias 'ip6_address_with_prefix'.
+type IP6AddressWithPrefix IP6Prefix
 
 // Address represents VPP binary API type 'address'.
 type Address struct {
