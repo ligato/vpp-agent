@@ -41,6 +41,7 @@ func NewStatusCommand(cli agentcli.Cli) *cobra.Command {
 			opts.Models = args
 			return runStatus(cli, opts)
 		},
+		Hidden: true,
 	}
 	return cmd
 }

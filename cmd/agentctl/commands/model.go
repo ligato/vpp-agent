@@ -23,10 +23,11 @@ import (
 	"strings"
 	"text/tabwriter"
 
-	"github.com/ligato/vpp-agent/api/types"
-	agentcli "github.com/ligato/vpp-agent/cmd/agentctl/cli"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+
+	"github.com/ligato/vpp-agent/api/types"
+	agentcli "github.com/ligato/vpp-agent/cmd/agentctl/cli"
 )
 
 func NewModelCommand(cli agentcli.Cli) *cobra.Command {
@@ -42,8 +43,9 @@ func NewModelCommand(cli agentcli.Cli) *cobra.Command {
 }
 
 func newModelInspectCommand(cli agentcli.Cli) *cobra.Command {
-	var opts ModelInspectOptions
-
+	var (
+		opts ModelInspectOptions
+	)
 	cmd := &cobra.Command{
 		Use:     "inspect MODEL [MODEL...]",
 		Aliases: []string{"i"},
@@ -82,7 +84,7 @@ func runModelInspect(cli agentcli.Cli, opts ModelInspectOptions) error {
 
 	b, err := json.MarshalIndent(models, "", "  ")
 	if err != nil {
-		return fmt.Errorf("Encoding data failed: %v", err)
+		return fmt.Errorf("encoding data failed: %v", err)
 	}
 
 	fmt.Fprintf(cli.Out(), "%s\n", b)

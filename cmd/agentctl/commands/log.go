@@ -47,10 +47,7 @@ func newLogListCommand(cli agentcli.Cli) *cobra.Command {
 		Use:     "list <logger>",
 		Aliases: []string{"ls"},
 		Short:   "Show vppagent logs",
-		Long: `
-A CLI tool to connect to vppagent and show vppagent logs.
-`,
-		Args: cobra.MaximumNArgs(1),
+		Args:    cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) > 0 {
 				opts.Name = args[0]
@@ -107,10 +104,7 @@ func newLogSetCommand(cli agentcli.Cli) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "set <logger> <debug|info|warning|error|fatal|panic>",
 		Short: "Set vppagent logger type",
-		Long: `
-A CLI tool to connect to vppagent and set vppagent logger type.
-`,
-		Args: cobra.RangeArgs(2, 2),
+		Args:  cobra.RangeArgs(2, 2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			opts.Logger = args[0]
 			opts.Level = args[1]

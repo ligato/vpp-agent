@@ -44,9 +44,9 @@ func newKvdbListCommand(cli agentcli.Cli) *cobra.Command {
 	var keysOnly bool
 
 	cmd := &cobra.Command{
-		Use:     "list [PREFIX]",
-		Aliases: []string{"l"},
-		Short:   "List key-value entries from KVDB",
+		Use:     "list [flags] [PREFIX]",
+		Aliases: []string{"ls", "l"},
+		Short:   "List key-value entries",
 		Args:    cobra.RangeArgs(0, 1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			var key string
@@ -70,7 +70,7 @@ func runKvdbList(cli agentcli.Cli, key string, keysOnly bool) error {
 	if keysOnly {
 		iter, err := kvdb.ListKeys(key)
 		if err != nil {
-			return errors.New("Failed to list values from Etcd: " + err.Error())
+			return errors.New("failed to list values from KVDB: " + err.Error())
 		}
 		for {
 			key, _, stop := iter.GetNext()
@@ -82,7 +82,7 @@ func runKvdbList(cli agentcli.Cli, key string, keysOnly bool) error {
 	} else {
 		iter, err := kvdb.ListValues(key)
 		if err != nil {
-			return errors.New("Failed to list values from Etcd: " + err.Error())
+			return errors.New("failed to list values from KVDB: " + err.Error())
 		}
 		for {
 			kv, stop := iter.GetNext()
@@ -99,7 +99,7 @@ func newKvdbGetCommand(cli agentcli.Cli) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "get KEY",
 		Aliases: []string{"g"},
-		Short:   "Get key-value entry from KVDB",
+		Short:   "Get key-value entry",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			key := args[0]
@@ -132,7 +132,7 @@ func newKvdbPutCommand(cli agentcli.Cli) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "put KEY VALUE",
 		Aliases: []string{"p"},
-		Short:   "Put key-value entry into KVDB",
+		Short:   "Put key-value entry",
 		Long: `
 Put configuration file to Etcd.
 
@@ -143,7 +143,7 @@ Supported key formats:
 For short key, put command use default microservice label.
 `,
 		Example: `  Set route configuration for "vpp1":
-	$ agentctl -e 172.17.0.3:2379 config put /vnf-agent/vpp1/config/vpp/v2/route/vrf/1/dst/10.1.1.3/32/gw/192.168.1.13 '{
+	$ {{.CommandPath}} /vnf-agent/vpp1/config/vpp/v2/route/vrf/1/dst/10.1.1.3/32/gw/192.168.1.13 '{
 	"type": 1,
 	"vrf_id": 1,
 	"dst_network": "10.1.1.3/32",
@@ -181,7 +181,7 @@ func newKvdbDelCommand(cli agentcli.Cli) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "del KEY",
 		Aliases: []string{"d"},
-		Short:   "Delete key-value entry from KVDB",
+		Short:   "Delete key-value entry",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			key := args[0]

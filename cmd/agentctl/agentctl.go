@@ -18,7 +18,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/ligato/vpp-agent/cmd/agentctl/cli"
+	agentcli "github.com/ligato/vpp-agent/cmd/agentctl/cli"
 	"github.com/ligato/vpp-agent/cmd/agentctl/commands"
 )
 
@@ -32,7 +32,7 @@ const logo = `
 
 `
 
-func runAgentctl(cli *cli.AgentCli) error {
+func runAgentctl(cli *agentcli.AgentCli) error {
 	cmd, err := commands.NewRootCommand(cli)
 	if err != nil {
 		return err
@@ -42,10 +42,10 @@ func runAgentctl(cli *cli.AgentCli) error {
 }
 
 func main() {
-	agentCli := commands.NewAgentCli()
+	cli := commands.NewAgentCli()
 
-	if err := runAgentctl(agentCli); err != nil {
-		fmt.Fprintln(agentCli.Err(), err.Error())
+	if err := runAgentctl(cli); err != nil {
+		fmt.Fprintln(cli.Err(), err)
 		os.Exit(commands.ExitCode(err))
 	}
 }

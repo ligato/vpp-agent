@@ -15,21 +15,23 @@
 package commands
 
 import (
+	"bytes"
 	"fmt"
+	"html/template"
 	"io"
 	"os"
 	"strings"
 
 	"github.com/docker/docker/pkg/term"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
 	"github.com/ligato/cn-infra/agent"
-	"github.com/ligato/vpp-agent/pkg/debug"
+	"github.com/ligato/cn-infra/logging"
 
 	"github.com/ligato/vpp-agent/cmd/agentctl/cli"
+	"github.com/ligato/vpp-agent/pkg/debug"
 )
 
 // NewRootNamed returns new Root named with name.
@@ -40,7 +42,7 @@ func NewRootNamed(name string, agentCli *cli.AgentCli) *Root {
 		helpCmd *cobra.Command
 	)
 	cmd := &cobra.Command{
-		Use:                   fmt.Sprintf("%s [OPTIONS] COMMAND [ARG...]", name),
+		Use:                   fmt.Sprintf("%s [options]", name),
 		Short:                 "A CLI app for managing Ligato agents",
 		SilenceUsage:          true,
 		SilenceErrors:         true,
@@ -53,7 +55,7 @@ func NewRootNamed(name string, agentCli *cli.AgentCli) *Root {
 			return fmt.Errorf("%[1]s: '%[2]s' is not a %[1]s command.\nSee '%[1]s --help'", name, args[0])
 		},
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-			logrus.Debugf("running command: %q", cmd.CommandPath())
+			logging.Debugf("running command: %q\n", cmd.CommandPath())
 			// TODO: isSupported?
 			return nil
 		},
@@ -61,11 +63,14 @@ func NewRootNamed(name string, agentCli *cli.AgentCli) *Root {
 	}
 
 	opts, flags, helpCmd = SetupRootCommand(cmd)
+
 	flags.BoolP("version", "v", false, "Print version info and quit")
+	flags.BoolVarP(&opts.Debug, "debug", "D", false, "Enable debug mode")
+	flags.StringVarP(&opts.LogLevel, "log-level", "l", "", `Set the logging level ("debug"|"info"|"warn"|"error"|"fatal")`)
 
 	cmd.SetHelpCommand(helpCmd)
-
 	cmd.SetOutput(agentCli.Out())
+
 	AddBaseCommands(cmd, agentCli)
 
 	DisableFlagsInUseLine(cmd)
@@ -138,18 +143,10 @@ func (root *Root) Initialize(ops ...cli.InitializeOpt) error {
 func SetupRootCommand(rootCmd *cobra.Command) (*cli.ClientOptions, *pflag.FlagSet, *cobra.Command) {
 	opts := cli.NewClientOptions()
 
-	flags := rootCmd.Flags()
-	opts.InstallFlags(flags)
-
-	setFlagGlobal(flags, "service-label")
-	setFlagGlobal(flags, "etcd-endpoints")
-	setFlagGlobal(flags, "host")
+	opts.InstallFlags(rootCmd.PersistentFlags())
 
 	cobra.AddTemplateFunc("add", func(a, b int) int { return a + b })
-	cobra.AddTemplateFunc("hasSubCommands", hasSubCommands)
-	cobra.AddTemplateFunc("hasManagementSubCommands", hasManagementSubCommands)
-	cobra.AddTemplateFunc("operationSubCommands", operationSubCommands)
-	cobra.AddTemplateFunc("managementSubCommands", managementSubCommands)
+	cobra.AddTemplateFunc("cmdExample", cmdExample)
 	cobra.AddTemplateFunc("wrappedFlagUsages", wrappedFlagUsages)
 	cobra.AddTemplateFunc("wrappedGlobalFlagUsages", wrappedGlobalFlagUsages)
 
@@ -162,65 +159,7 @@ func SetupRootCommand(rootCmd *cobra.Command) (*cli.ClientOptions, *pflag.FlagSe
 	_ = rootCmd.PersistentFlags().MarkShorthandDeprecated("help", "please use --help")
 	rootCmd.PersistentFlags().Lookup("help").Hidden = true
 
-	return opts, flags, helpCommand
-}
-
-func setFlagGlobal(flags *pflag.FlagSet, name string) {
-	_ = flags.SetAnnotation(name, "global", []string{"yes"})
-}
-
-func isFlagGlobal(flag *pflag.Flag) bool {
-	return strings.Join(flag.Annotations["global"], ",") == "yes"
-}
-
-func hasSubCommands(cmd *cobra.Command) bool {
-	return len(operationSubCommands(cmd)) > 0
-}
-
-func hasManagementSubCommands(cmd *cobra.Command) bool {
-	return len(managementSubCommands(cmd)) > 0
-}
-
-func operationSubCommands(cmd *cobra.Command) []*cobra.Command {
-	cmds := []*cobra.Command{}
-	for _, sub := range cmd.Commands() {
-		if sub.IsAvailableCommand() && !sub.HasSubCommands() {
-			cmds = append(cmds, sub)
-		}
-	}
-	return cmds
-}
-
-func wrappedFlagUsages(cmd *cobra.Command) string {
-	width := 80
-	if ws, err := term.GetWinsize(0); err == nil {
-		width = int(ws.Width)
-	}
-	return cmd.Flags().FlagUsagesWrapped(width - 1)
-}
-
-func wrappedGlobalFlagUsages(cmd *cobra.Command) string {
-	width := 80
-	if ws, err := term.GetWinsize(0); err == nil {
-		width = int(ws.Width)
-	}
-	flags := pflag.NewFlagSet(cmd.Name(), pflag.ContinueOnError)
-	cmd.Root().Flags().VisitAll(func(flag *pflag.Flag) {
-		if isFlagGlobal(flag) {
-			flags.AddFlag(flag)
-		}
-	})
-	return flags.FlagUsagesWrapped(width - 1)
-}
-
-func managementSubCommands(cmd *cobra.Command) []*cobra.Command {
-	var cmds []*cobra.Command
-	for _, sub := range cmd.Commands() {
-		if sub.IsAvailableCommand() && sub.HasSubCommands() {
-			cmds = append(cmds, sub)
-		}
-	}
-	return cmds
+	return opts, rootCmd.Flags(), helpCommand
 }
 
 // FlagErrorFunc returns status error when err is not nil.
@@ -284,9 +223,8 @@ var helpCommand = &cobra.Command{
 }
 
 var usageTemplate = `Usage:
-
 {{- if not .HasSubCommands}}	{{.UseLine}}{{end}}
-{{- if .HasSubCommands}}	{{ .CommandPath}}{{- if .HasAvailableFlags}} [OPTIONS]{{end}} COMMAND{{ end}}
+{{- if .HasAvailableSubCommands}}	{{ .CommandPath}}{{- if .HasAvailableFlags}} [options]{{end}} COMMAND{{ end}}
 
 {{if ne .Long ""}}{{ .Long  | trimRightSpace }}{{else }}{{ .Short | trimRightSpace }}
 
@@ -300,28 +238,28 @@ ALIASES
 {{- if .HasExample}}
 
 EXAMPLES
-{{ .Example | trimRightSpace}}
+{{ cmdExample . | trimRightSpace}}
 
 {{- end}}
-{{- if .HasAvailableFlags}}
+{{- if .HasAvailableSubCommands }}
 
-OPTIONS
+COMMANDS
+
+{{- range .Commands }}{{- if .IsAvailableCommand}}
+  {{rpad .Name (add .NamePadding 1)}}{{.Short}}
+{{- end}}{{- end}}
+
+{{- end}}
+{{- if .HasLocalFlags}}
+
+OPTIONS:
 {{ wrappedFlagUsages . | trimRightSpace}}
 
 {{- end}}
 {{- if .HasInheritedFlags}}
 
-GLOBAL OPTIONS:
+GLOBALS:
 {{ wrappedGlobalFlagUsages . | trimRightSpace}}
-
-{{- end}}
-{{- if .HasSubCommands }}
-
-COMMANDS
-
-{{- range .Commands }}
-  {{rpad .Name (add .NamePadding 1)}}{{.Short}}
-{{- end}}
 
 {{- end}}
 {{- if .HasSubCommands }}
@@ -331,4 +269,30 @@ Run '{{.CommandPath}} COMMAND --help' for more information on a command.
 `
 
 var helpTemplate = `
-{{if or .Runnable .HasSubCommands}}{{.UsageString}}{{end}}`
+{{- if or .Runnable .HasSubCommands}}{{.UsageString}}{{end}}`
+
+func cmdExample(cmd *cobra.Command) string {
+	t := template.New("example")
+	template.Must(t.Parse(cmd.Example))
+	var b bytes.Buffer
+	if err := t.Execute(&b, cmd); err != nil {
+		panic(err)
+	}
+	return b.String()
+}
+
+func wrappedFlagUsages(cmd *cobra.Command) string {
+	width := 80
+	if ws, err := term.GetWinsize(0); err == nil {
+		width = int(ws.Width)
+	}
+	return cmd.LocalFlags().FlagUsagesWrapped(width - 1)
+}
+
+func wrappedGlobalFlagUsages(cmd *cobra.Command) string {
+	width := 80
+	if ws, err := term.GetWinsize(0); err == nil {
+		width = int(ws.Width)
+	}
+	return cmd.InheritedFlags().FlagUsagesWrapped(width - 1)
+}

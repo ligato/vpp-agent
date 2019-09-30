@@ -16,7 +16,6 @@ package commands
 
 import (
 	"fmt"
-	"os"
 	"strings"
 )
 
@@ -60,7 +59,7 @@ func ExitCode(err error) int {
 		// StatusError should only be used for errors, and all errors should
 		// have a non-zero exit status, so never exit with 0
 		if sterr.StatusCode != 0 {
-			os.Exit(sterr.StatusCode)
+			return sterr.StatusCode
 		}
 	}
 	return 1

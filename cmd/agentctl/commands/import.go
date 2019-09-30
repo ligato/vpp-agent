@@ -49,31 +49,29 @@ func NewImportCommand(cli agentcli.Cli) *cobra.Command {
   $ cat input.txt
   config/vpp/v2/interfaces/loop1 {"name":"loop1","type":"SOFTWARE_LOOPBACK"}
   config/vpp/l2/v2/bridge-domain/bd1 {"name":"bd1"}
-  $ agentctl import input.txt
+  
+  $ {{.CommandPath}} input.txt
 
  To import it via gRPC, include --grpc flag:
-  $ agentctl import --grpc=localhost:9111 input.txt
+  $ {{.CommandPath}} --grpc=localhost:9111 input.txt
 
-FILE FORMAT
-
- Contents of the import file must contain single key-value pair per line:
+ FILE FORMAT
+    Contents of the import file must contain single key-value pair per line:
 
     <key1> <value1>
     <key2> <value2>
     ...
     <keyN> <valueN>
 
- Empty lines and lines starting with '#' are ignored.
+    Empty lines and lines starting with '#' are ignored.
 
-KEY FORMAT
-
- Keys can be defined in two ways:
+ KEY FORMAT
+    Keys can be defined in two ways:
 
     - full: 	/vnf-agent/vpp1/config/vpp/v2/interfaces/iface1
     - short:	config/vpp/v2/interfaces/iface1
  
- For short keys, the import command uses microservice label defined with --service-label.
-`,
+    For short keys, the import command uses microservice label defined with --service-label.`,
 
 		RunE: func(cmd *cobra.Command, args []string) error {
 			opts.InputFile = args[0]

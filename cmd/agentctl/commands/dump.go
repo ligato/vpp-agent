@@ -36,29 +36,21 @@ func NewDumpCommand(cli agentcli.Cli) *cobra.Command {
 	var opts DumpOptions
 
 	cmd := &cobra.Command{
-		Use:     "dump MODEL",
-		Aliases: []string{"d"},
-		Short:   "Dump running state",
+		Use:   "dump MODEL",
+		Short: "Dump running state",
 		Example: `
  To dump VPP interfaces run:
-  $ agentctl dump vpp.interfaces
+  $ {{.CommandPath}} vpp.interfaces
 
  To use different dump view use --view flag:
-  $ agentctl dump --view=NB vpp.interfaces
-
- For a list of all supported models that can be dumped run:
-  $ agentctl model list
-
- To specify the HTTP address of the agent use --host flag:
-  $ agentctl --host 172.17.0.3 dump vpp.interfaces
-`,
+  $ {{.CommandPath}} --view=NB vpp.interfaces`,
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			opts.Models = args
 			return runDump(cli, opts)
 		},
 	}
-	cmd.Flags().StringVarP(&opts.View, "view", "v", "cached", "Dump view type: cached, NB, SB")
+	cmd.Flags().StringVar(&opts.View, "view", "cached", "Dump view type: cached, NB, SB")
 	return cmd
 }
 
@@ -138,33 +130,6 @@ func printDumpTable(out io.Writer, dump []api.KVWithMetadata) {
 	}
 	fmt.Fprint(out, buf.String())
 }
-
-/*func dumpKeyPrefix(cli agentcli.Cli, keyPrefix string, dumpView string) ([]api.KVWithMetadata, error) {
-	type ProtoWithName struct {
-		ProtoMsgName string
-		ProtoMsgData string
-	}
-	type KVWithMetadata struct {
-		api.KVWithMetadata
-		Value ProtoWithName
-	}
-	var kvdump []KVWithMetadata
-
-	q := fmt.Sprintf(`/scheduler/dump?key-prefix=%s&view=%s`,
-		url.QueryEscape(keyPrefix), url.QueryEscape(dumpView))
-
-	resp, err := cli.GET(q)
-	if err != nil {
-		return nil, err
-	}
-
-	Debugf("dump respo: %s\n", resp)
-
-	if err := json.Unmarshal(resp, &kvdump); err != nil {
-		return nil, fmt.Errorf("decoding reply failed: %v", err)
-	}
-
-}*/
 
 type dumpByKey []api.KVWithMetadata
 
