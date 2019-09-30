@@ -250,6 +250,7 @@ func (ctx *testCtx) startMicroservice(msName string) (ms *microservice) {
 }
 
 func (ctx *testCtx) stopMicroservice(msName string) {
+	ctx.t.Helper()
 	ms, found := ctx.microservices[msName]
 	if !found {
 		// bug inside a test
@@ -263,6 +264,7 @@ func (ctx *testCtx) stopMicroservice(msName string) {
 
 // pingFromMs pings <dstAddress> from the microservice <msName>
 func (ctx *testCtx) pingFromMs(msName, dstAddress string) error {
+	ctx.t.Helper()
 	ms, found := ctx.microservices[msName]
 	if !found {
 		// bug inside a test
@@ -312,6 +314,7 @@ func (ctx *testCtx) pingFromVPPClb(destAddress string) func() error {
 
 func (ctx *testCtx) testConnection(fromMs, toMs, toAddr, listenAddr string,
 	toPort, listenPort uint16, udp bool, traceVPPNodes ...string) error {
+	ctx.t.Helper()
 
 	const (
 		connTimeout    = 3 * time.Second
@@ -366,7 +369,8 @@ func (ctx *testCtx) testConnection(fromMs, toMs, toAddr, listenAddr string,
 	var srvErr error
 	select {
 	case srvErr = <-srvRet:
-		// now that server exited, mark context as done
+		// now that the client has read all the data, the server is safe to stop
+		// and close the connection
 		cancelSrv()
 	case <-time.After(srvExitTimeout):
 		cancelSrv()
@@ -635,9 +639,13 @@ func simpleTCPServer(ctx context.Context, ms *microservice, addr string, expReqM
 	select {
 	case <-ctx.Done():
 		done <- fmt.Errorf("tcp server listening on %s was canceled", addr)
+		return
 	case err = <-commRv:
 		done <- err
 	}
+
+	// do not close until client confirms reception of the message
+	<-ctx.Done()
 }
 
 func simpleUDPServer(ctx context.Context, ms *microservice, addr string, expReqMsg, respMsg string, done chan<- error) {
@@ -685,9 +693,13 @@ func simpleUDPServer(ctx context.Context, ms *microservice, addr string, expReqM
 	select {
 	case <-ctx.Done():
 		done <- fmt.Errorf("udp server listening on %s was canceled", addr)
+		return
 	case err = <-commRv:
 		done <- err
 	}
+
+	// do not close until client confirms reception of the message
+	<-ctx.Done()
 }
 
 func simpleTCPClient(ms *microservice, addr string, reqMsg, expRespMsg string, timeout time.Duration, done chan<- error) {
@@ -697,8 +709,16 @@ func simpleTCPClient(ms *microservice, addr string, reqMsg, expRespMsg string, t
 		// move to the network namespace from which the connection should be initiated
 		exitNetNs := ms.enterNetNs()
 		defer exitNetNs()
-		conn, err := net.Dial("tcp", addr)
-		newConn <- connectionRequest{conn: conn, err: err}
+		start := time.Now()
+		for {
+			conn, err := net.Dial("tcp", addr)
+			if err != nil && time.Since(start) < timeout {
+				time.Sleep(checkPollingInterval)
+				continue
+			}
+			newConn <- connectionRequest{conn: conn, err: err}
+			break
+		}
 		close(newConn)
 	}()
 
@@ -716,8 +736,16 @@ func simpleUDPClient(ms *microservice, addr string, reqMsg, expRespMsg string, t
 		if err != nil {
 			newConn <- connectionRequest{conn: nil, err: err}
 		} else {
-			conn, err := net.DialUDP("udp", nil, udpAddr)
-			newConn <- connectionRequest{conn: conn, err: err}
+			start := time.Now()
+			for {
+				conn, err := net.DialUDP("udp", nil, udpAddr)
+				if err != nil && time.Since(start) < timeout {
+					time.Sleep(checkPollingInterval)
+					continue
+				}
+				newConn <- connectionRequest{conn: conn, err: err}
+				break
+			}
 		}
 		close(newConn)
 	}()
@@ -753,10 +781,19 @@ func simpleTCPOrUDPClient(newConn chan connectionRequest, addr, reqMsg, expRespM
 			return
 		}
 		// listen for reply
-		message, err := bufio.NewReader(cr.conn).ReadString('\n')
-		if err != nil {
-			commRv <- fmt.Errorf("failed to read data from server: %v", err)
-			return
+		start := time.Now()
+		var message string
+		for {
+			message, err = bufio.NewReader(cr.conn).ReadString('\n')
+			if err != nil && time.Since(start) < timeout {
+				time.Sleep(checkPollingInterval)
+				continue
+			}
+			if err != nil {
+				commRv <- fmt.Errorf("failed to read data from server: %v", err)
+				return
+			}
+			break
 		}
 		// check if the exchanged data are as expected
 		message = strings.TrimRight(message, "\n")

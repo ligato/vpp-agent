@@ -19,7 +19,6 @@ import (
 	"testing"
 
 	. "github.com/onsi/gomega"
-	"github.com/onsi/gomega/types"
 
 	"fmt"
 	"github.com/ligato/vpp-agent/api/models/linux/interfaces"
@@ -29,6 +28,10 @@ import (
 	"github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 )
+
+func vppACLs(ctx *testCtx) (string, error) {
+	return ctx.execVppctl("show", "acl-plugin", "acl")
+}
 
 // Test access control between microservices connected over VPP on the L3 layer.
 func TestL3ACLs(t *testing.T) {
@@ -155,9 +158,6 @@ func TestL3ACLs(t *testing.T) {
 		UpperPort: uint32(^uint16(0)),
 	}
 
-	showMs1IngressACL := "{ms1-ingress}\r\n" +
-		"          0: ipv4 permit+reflect src 0.0.0.0/0 dst 0.0.0.0/0 proto 0 sport 0 dport 0\r\n"
-
 	// connections initiated from microservice1 should not be blocked by
 	// ACL on the egress side (from the VPP point of view)
 	ms1IngressACL := &vpp_acl.ACL{
@@ -179,13 +179,8 @@ func TestL3ACLs(t *testing.T) {
 			},
 		},
 	}
-
-	showMs1EgressACL := fmt.Sprintf(
-		"{ms1-egress}\r\n"+
-			"          0: ipv4 deny src %s dst 0.0.0.0/0 proto 17 sport 0-65535 dport %d\r\n"+
-			"          1: ipv4 deny src 0.0.0.0/0 dst 0.0.0.0/0 proto 1 sport 0-255 dport 0-255\r\n"+
-			"          2: ipv4 permit src 0.0.0.0/0 dst 0.0.0.0/0 proto 0 sport 0 dport 0\r\n",
-		ms2Net, ms1BlockedUDPPort)
+	showMs1IngressACL := "{ms1-ingress}\r\n" +
+		"          0: ipv4 permit+reflect src 0.0.0.0/0 dst 0.0.0.0/0 proto 0 sport 0 dport 0\r\n"
 
 	// microservice2 is not allowed to ping microservice1 and it also cannot
 	// send UDP packet to port 9000
@@ -236,12 +231,12 @@ func TestL3ACLs(t *testing.T) {
 			},
 		},
 	}
-
-	showMs2IngressACL := fmt.Sprintf(
-		"{ms2-ingress}\r\n"+
-			"          0: ipv4 deny src 0.0.0.0/0 dst %s proto 6 sport 0-65535 dport 0-1023\r\n"+
-			"          1: ipv4 permit src 0.0.0.0/0 dst 0.0.0.0/0 proto 0 sport 0 dport 0\r\n",
-		ms1Net)
+	showMs1EgressACL := fmt.Sprintf(
+		"{ms1-egress}\r\n"+
+			"          0: ipv4 deny src %s dst 0.0.0.0/0 proto 17 sport 0-65535 dport %d\r\n"+
+			"          1: ipv4 deny src 0.0.0.0/0 dst 0.0.0.0/0 proto 1 sport 0-255 dport 0-255\r\n"+
+			"          2: ipv4 permit src 0.0.0.0/0 dst 0.0.0.0/0 proto 0 sport 0 dport 0\r\n",
+		ms2Net, ms1BlockedUDPPort)
 
 	// microservice2 is not allowed to initiate TCP connections to ms1 on well-known
 	// ports (<1024)
@@ -272,12 +267,11 @@ func TestL3ACLs(t *testing.T) {
 			},
 		},
 	}
-
-	showMs2EgressACL := fmt.Sprintf(
-		"{ms2-egress}\r\n"+
-			"          0: ipv4 deny src %s/32 dst 0.0.0.0/0 proto 6 sport 0-65535 dport %d\r\n"+
+	showMs2IngressACL := fmt.Sprintf(
+		"{ms2-ingress}\r\n"+
+			"          0: ipv4 deny src 0.0.0.0/0 dst %s proto 6 sport 0-65535 dport 0-1023\r\n"+
 			"          1: ipv4 permit src 0.0.0.0/0 dst 0.0.0.0/0 proto 0 sport 0 dport 0\r\n",
-		linuxTap1IP, ms2BlockedTCPPort)
+		ms1Net)
 
 	// microservice1 is not allowed to connect to microservice2 on TCP port 8000
 	ms2EgressACL := &vpp_acl.ACL{
@@ -307,28 +301,13 @@ func TestL3ACLs(t *testing.T) {
 			},
 		},
 	}
+	showMs2EgressACL := fmt.Sprintf(
+		"{ms2-egress}\r\n"+
+			"          0: ipv4 deny src %s/32 dst 0.0.0.0/0 proto 6 sport 0-65535 dport %d\r\n"+
+			"          1: ipv4 permit src 0.0.0.0/0 dst 0.0.0.0/0 proto 0 sport 0 dport 0\r\n",
+		linuxTap1IP, ms2BlockedTCPPort)
 
-	checkConfig := func(aclsConfigured bool) {
-		substringMatcher := func(substring string, negative bool) types.GomegaMatcher {
-			if negative {
-				return Not(ContainSubstring(substring))
-			} else {
-				return ContainSubstring(substring)
-			}
-		}
-		stdout, err := ctx.execVppctl("show", "acl-plugin", "acl")
-		Expect(err).ToNot(HaveOccurred(), "Running `vppctl show acl-plugin acl` failed")
-		Expect(stdout).To(substringMatcher(showMs1IngressACL, !aclsConfigured),
-			"Unexpected ACL configuration")
-		Expect(stdout).To(substringMatcher(showMs1EgressACL, !aclsConfigured),
-			"Unexpected ACL configuration")
-		Expect(stdout).To(substringMatcher(showMs2IngressACL, !aclsConfigured),
-			"Unexpected ACL configuration")
-		Expect(stdout).To(substringMatcher(showMs2EgressACL, !aclsConfigured),
-			"Unexpected ACL configuration")
-	}
-
-	checkConn := func(aclsConfigured bool) {
+	checkAccess := func(aclsConfigured bool) {
 		beAllowed := Succeed()
 		beBlocked := Not(Succeed())
 		if !aclsConfigured {
@@ -336,37 +315,39 @@ func TestL3ACLs(t *testing.T) {
 		}
 
 		// ICMP
-		Expect(ctx.pingFromMs(ms1Name, linuxTap2IP)).To(beAllowed) // reflected by ms1IngressACL
-		Expect(ctx.pingFromMs(ms2Name, linuxTap1IP)).To(beBlocked) // blocked by ms1EgressACL
+		ExpectWithOffset(1, ctx.pingFromMs(ms1Name, linuxTap2IP)).To(beAllowed) // reflected by ms1IngressACL
+		ExpectWithOffset(1, ctx.pingFromMs(ms2Name, linuxTap1IP)).To(beBlocked) // blocked by ms1EgressACL
 
 		// TCP
-		Expect(ctx.testConnection(ms1Name, ms2Name, linuxTap2IP, linuxTap2IP,
+		ExpectWithOffset(1, ctx.testConnection(ms1Name, ms2Name, linuxTap2IP, linuxTap2IP,
 			ms2BlockedTCPPort, ms2BlockedTCPPort, false, tapv2InputNode)).To(beBlocked) // blocked by ms2EgressACL
-		Expect(ctx.testConnection(ms1Name, ms2Name, linuxTap2IP, linuxTap2IP,
+		ExpectWithOffset(1, ctx.testConnection(ms1Name, ms2Name, linuxTap2IP, linuxTap2IP,
 			8080, 8080, false, tapv2InputNode)).To(beAllowed)
-		Expect(ctx.testConnection(ms1Name, ms2Name, linuxTap2IP, linuxTap2IP,
+		ExpectWithOffset(1, ctx.testConnection(ms1Name, ms2Name, linuxTap2IP, linuxTap2IP,
 			80, 80, false, tapv2InputNode)).To(beAllowed)
-		Expect(ctx.testConnection(ms2Name, ms1Name, linuxTap1IP, linuxTap1IP,
+		ExpectWithOffset(1, ctx.testConnection(ms2Name, ms1Name, linuxTap1IP, linuxTap1IP,
 			ms2BlockedTCPPort, ms2BlockedTCPPort, false, tapv2InputNode)).To(beAllowed)
-		Expect(ctx.testConnection(ms2Name, ms1Name, linuxTap1IP, linuxTap1IP,
+		ExpectWithOffset(1, ctx.testConnection(ms2Name, ms1Name, linuxTap1IP, linuxTap1IP,
 			8080, 8080, false, tapv2InputNode)).To(beAllowed)
-		Expect(ctx.testConnection(ms2Name, ms1Name, linuxTap1IP, linuxTap1IP,
+		ExpectWithOffset(1, ctx.testConnection(ms2Name, ms1Name, linuxTap1IP, linuxTap1IP,
 			80, 80, false, tapv2InputNode)).To(beBlocked) // blocked by ms2IngressACL
 
 		// UDP
-		Expect(ctx.testConnection(ms1Name, ms2Name, linuxTap2IP, linuxTap2IP,
+		ExpectWithOffset(1, ctx.testConnection(ms1Name, ms2Name, linuxTap2IP, linuxTap2IP,
 			ms1BlockedUDPPort, ms1BlockedUDPPort, true, tapv2InputNode)).To(beAllowed)
-		Expect(ctx.testConnection(ms1Name, ms2Name, linuxTap2IP, linuxTap2IP,
+		ExpectWithOffset(1, ctx.testConnection(ms1Name, ms2Name, linuxTap2IP, linuxTap2IP,
 			9999, 9999, true, tapv2InputNode)).To(beAllowed)
-		Expect(ctx.testConnection(ms2Name, ms1Name, linuxTap1IP, linuxTap1IP,
+		ExpectWithOffset(1, ctx.testConnection(ms2Name, ms1Name, linuxTap1IP, linuxTap1IP,
 			ms1BlockedUDPPort, ms1BlockedUDPPort, true, tapv2InputNode)).To(beBlocked) // blocked by ms1EgressACL
-		Expect(ctx.testConnection(ms2Name, ms1Name, linuxTap1IP, linuxTap1IP,
+		ExpectWithOffset(1, ctx.testConnection(ms2Name, ms1Name, linuxTap1IP, linuxTap1IP,
 			9999, 9999, true, tapv2InputNode)).To(beAllowed)
 	}
 
 	ctx.startMicroservice(ms1Name)
 	ctx.startMicroservice(ms2Name)
-	checkConfig(false)
+	Expect(vppACLs(ctx)).ShouldNot(SatisfyAny(
+		ContainSubstring(showMs1IngressACL), ContainSubstring(showMs1EgressACL),
+		ContainSubstring(showMs2IngressACL), ContainSubstring(showMs2EgressACL)))
 	req := ctx.grpcClient.ChangeRequest()
 	err := req.Update(
 		vppTap1,
@@ -384,9 +365,10 @@ func TestL3ACLs(t *testing.T) {
 	Eventually(ctx.getValueStateClb(vppTap2)).Should(Equal(kvs.ValueState_CONFIGURED),
 		"TAP attached to a newly started microservice2 should be eventually configured")
 
-	// check configuration
-	checkConfig(true)
-	checkConn(true)
+	Expect(vppACLs(ctx)).Should(SatisfyAll(
+		ContainSubstring(showMs1IngressACL), ContainSubstring(showMs1EgressACL),
+		ContainSubstring(showMs2IngressACL), ContainSubstring(showMs2EgressACL)))
+	checkAccess(true)
 	Expect(ctx.agentInSync()).To(BeTrue(), "Agent is not in-sync")
 
 	// remove ACL configuration
@@ -397,9 +379,10 @@ func TestL3ACLs(t *testing.T) {
 	).Send(context.Background())
 	Expect(err).ToNot(HaveOccurred(), "Transaction removing ACLs failed")
 
-	// check configuration
-	checkConfig(false)
-	checkConn(false)
+	Expect(vppACLs(ctx)).ShouldNot(SatisfyAny(
+		ContainSubstring(showMs1IngressACL), ContainSubstring(showMs1EgressACL),
+		ContainSubstring(showMs2IngressACL), ContainSubstring(showMs2EgressACL)))
+	checkAccess(false)
 	Expect(ctx.agentInSync()).To(BeTrue(), "Agent is not in-sync")
 
 	// get back the ACL configuration
@@ -409,8 +392,11 @@ func TestL3ACLs(t *testing.T) {
 		ms2IngressACL, ms2EgressACL,
 	).Send(context.Background())
 	Expect(err).ToNot(HaveOccurred(), "Transaction creating ACLs failed")
-	checkConfig(true)
-	checkConn(true)
+
+	Expect(vppACLs(ctx)).Should(SatisfyAll(
+		ContainSubstring(showMs1IngressACL), ContainSubstring(showMs1EgressACL),
+		ContainSubstring(showMs2IngressACL), ContainSubstring(showMs2EgressACL)))
+	checkAccess(true)
 	Expect(ctx.agentInSync()).To(BeTrue(), "Agent is not in-sync")
 
 	// restart both microservices
@@ -427,9 +413,10 @@ func TestL3ACLs(t *testing.T) {
 	Eventually(ctx.getValueStateClb(vppTap2)).Should(Equal(kvs.ValueState_CONFIGURED),
 		"VPP-TAP attached to a re-started microservice1 should be eventually configured")
 
-	// check configuration
-	checkConfig(true)
-	checkConn(true)
+	Expect(vppACLs(ctx)).Should(SatisfyAll(
+		ContainSubstring(showMs1IngressACL), ContainSubstring(showMs1EgressACL),
+		ContainSubstring(showMs2IngressACL), ContainSubstring(showMs2EgressACL)))
+	checkAccess(true)
 	Expect(ctx.agentInSync()).To(BeTrue(), "Agent is not in-sync")
 
 }

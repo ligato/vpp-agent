@@ -16,9 +16,11 @@ package e2e
 
 import (
 	"context"
+	"strconv"
 	"testing"
 
 	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/types"
 
 	"github.com/ligato/vpp-agent/api/models/linux/interfaces"
 	"github.com/ligato/vpp-agent/api/models/linux/namespace"
@@ -27,21 +29,33 @@ import (
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 )
 
-func checkBDConfig(ctx *testCtx, ageOff bool) {
+func bridgeDomains(ctx *testCtx) ([]map[string]string, error) {
 	stdout, err := ctx.execVppctl("show", "bridge-domain")
-	Expect(err).To(BeNil(), "Running `vppctl show bridge-domain` failed")
-	bds := parseVPPTable(stdout)
-	Expect(bds).To(HaveLen(1), "Not exactly one bridge domain configured")
-	bd := bds[0]
-	if ageOff {
-		Expect(bd["Age(min)"]).To(Equal("off"))
-	} else {
-		Expect(bd["Age(min)"]).To(Equal("10"))
+	if err != nil {
+		return nil, err
 	}
-	Expect(bd["Learning"]).To(Equal("on"))
-	Expect(bd["UU-Flood"]).To(Equal("flood"))
-	Expect(bd["Flooding"]).To(Equal("on"))
-	Expect(bd["U-Forwrd"]).To(Equal("on"))
+	return parseVPPTable(stdout), nil
+}
+
+func bdAgeIs(min int) types.GomegaMatcher {
+	if min == 0 {
+		return HaveKeyWithValue("Age(min)", "off")
+	}
+	return HaveKeyWithValue("Age(min)", strconv.Itoa(min))
+}
+
+func bdWithFlooding() types.GomegaMatcher {
+	return And(
+		HaveKeyWithValue("UU-Flood", "flood"),
+		HaveKeyWithValue("Flooding", "on"))
+}
+
+func bdWithForwarding() types.GomegaMatcher {
+	return HaveKeyWithValue("U-Forwrd", "on")
+}
+
+func bdWithLearning() types.GomegaMatcher {
+	return HaveKeyWithValue("Learning", "on")
 }
 
 // connect microservices into the same L2 network segment via bridge domain
@@ -154,25 +168,6 @@ func TestBridgeDomainWithTAPs(t *testing.T) {
 		},
 	}
 
-	checkPings := func(ms1Down bool) {
-		if !ms1Down {
-			Expect(ctx.pingFromMs(ms1Name, vppLoopbackIP)).To(BeNil())
-			Expect(ctx.pingFromMs(ms1Name, linuxTap2IP)).To(BeNil())
-		}
-		Expect(ctx.pingFromMs(ms2Name, vppLoopbackIP)).To(BeNil())
-		if ms1Down {
-			Expect(ctx.pingFromMs(ms2Name, linuxTap1IP)).ToNot(BeNil())
-		} else {
-			Expect(ctx.pingFromMs(ms2Name, linuxTap1IP)).To(BeNil())
-		}
-		if ms1Down {
-			Expect(ctx.pingFromVPP(linuxTap1IP)).ToNot(BeNil())
-		} else {
-			Expect(ctx.pingFromVPP(linuxTap1IP)).To(BeNil())
-		}
-		Expect(ctx.pingFromVPP(linuxTap2IP)).To(BeNil())
-	}
-
 	ctx.startMicroservice(ms1Name)
 	ctx.startMicroservice(ms2Name)
 	req := ctx.grpcClient.ChangeRequest()
@@ -193,8 +188,18 @@ func TestBridgeDomainWithTAPs(t *testing.T) {
 	Eventually(ctx.getValueStateClb(vppTap2)).Should(Equal(kvs.ValueState_CONFIGURED),
 		"TAP attached to a newly started microservice2 should be eventually configured")
 
-	checkBDConfig(ctx, true)
-	checkPings(false)
+	bds, err := bridgeDomains(ctx)
+	Expect(err).ToNot(HaveOccurred())
+	Expect(bds).To(HaveLen(1))
+	Expect(bds[0]).To(SatisfyAll(
+		bdAgeIs(0), bdWithFlooding(), bdWithForwarding(), bdWithLearning()))
+
+	Expect(ctx.pingFromMs(ms2Name, linuxTap1IP)).To(Succeed())
+	Expect(ctx.pingFromMs(ms1Name, linuxTap2IP)).To(Succeed())
+	Expect(ctx.pingFromMs(ms1Name, vppLoopbackIP)).To(Succeed())
+	Expect(ctx.pingFromMs(ms2Name, vppLoopbackIP)).To(Succeed())
+	Expect(ctx.pingFromVPP(linuxTap1IP)).To(Succeed())
+	Expect(ctx.pingFromVPP(linuxTap2IP)).To(Succeed())
 	Expect(ctx.agentInSync()).To(BeTrue(), "Agent is not in-sync")
 
 	// kill one of the microservices
@@ -214,7 +219,10 @@ func TestBridgeDomainWithTAPs(t *testing.T) {
 	Expect(ctx.getValueState(bd)).To(Equal(kvs.ValueState_CONFIGURED),
 		"BD is not configured")
 
-	checkPings(true)
+	Expect(ctx.pingFromMs(ms2Name, linuxTap1IP)).ToNot(Succeed())
+	Expect(ctx.pingFromMs(ms2Name, vppLoopbackIP)).To(Succeed())
+	Expect(ctx.pingFromVPP(linuxTap1IP)).ToNot(Succeed())
+	Expect(ctx.pingFromVPP(linuxTap2IP)).To(Succeed())
 	Expect(ctx.agentInSync()).To(BeTrue(), "Agent is not in-sync")
 
 	// restart the microservice
@@ -224,7 +232,12 @@ func TestBridgeDomainWithTAPs(t *testing.T) {
 	Expect(ctx.getValueState(linuxTap1)).To(Equal(kvs.ValueState_CONFIGURED),
 		"Linux-TAP attached to a re-started microservice1 is not configured")
 
-	checkPings(false)
+	Expect(ctx.pingFromMs(ms2Name, linuxTap1IP)).To(Succeed())
+	Expect(ctx.pingFromMs(ms1Name, linuxTap2IP)).To(Succeed())
+	Expect(ctx.pingFromMs(ms1Name, vppLoopbackIP)).To(Succeed())
+	Expect(ctx.pingFromMs(ms2Name, vppLoopbackIP)).To(Succeed())
+	Expect(ctx.pingFromVPP(linuxTap1IP)).To(Succeed())
+	Expect(ctx.pingFromVPP(linuxTap2IP)).To(Succeed())
 	Expect(ctx.agentInSync()).To(BeTrue(), "Agent is not in-sync")
 
 	// change bridge domain config to trigger re-creation
@@ -234,10 +247,20 @@ func TestBridgeDomainWithTAPs(t *testing.T) {
 		bd,
 	).Send(context.Background())
 	Expect(err).ToNot(HaveOccurred(), "Transaction updating BD failed")
-	checkPings(false)
+
+	Expect(ctx.pingFromMs(ms2Name, linuxTap1IP)).To(Succeed())
+	Expect(ctx.pingFromMs(ms1Name, linuxTap2IP)).To(Succeed())
+	Expect(ctx.pingFromMs(ms1Name, vppLoopbackIP)).To(Succeed())
+	Expect(ctx.pingFromMs(ms2Name, vppLoopbackIP)).To(Succeed())
+	Expect(ctx.pingFromVPP(linuxTap1IP)).To(Succeed())
+	Expect(ctx.pingFromVPP(linuxTap2IP)).To(Succeed())
 	Expect(ctx.agentInSync()).To(BeTrue(), "Agent is not in-sync")
 
-	checkBDConfig(ctx, false)
+	bds, err = bridgeDomains(ctx)
+	Expect(err).ToNot(HaveOccurred())
+	Expect(bds).To(HaveLen(1))
+	Expect(bds[0]).To(SatisfyAll(
+		bdAgeIs(10), bdWithFlooding(), bdWithForwarding(), bdWithLearning()))
 }
 
 // connect microservices into the same L2 network segment via bridge domain
@@ -378,25 +401,6 @@ func TestBridgeDomainWithAfPackets(t *testing.T) {
 		},
 	}
 
-	checkPings := func(ms1Down bool) {
-		if !ms1Down {
-			Expect(ctx.pingFromMs(ms1Name, vppLoopbackIP)).To(Succeed())
-			Expect(ctx.pingFromMs(ms1Name, veth2IP)).To(Succeed())
-		}
-		Expect(ctx.pingFromMs(ms2Name, vppLoopbackIP)).To(Succeed())
-		if ms1Down {
-			Expect(ctx.pingFromMs(ms2Name, veth1IP)).ToNot(Succeed())
-		} else {
-			Expect(ctx.pingFromMs(ms2Name, veth1IP)).To(Succeed())
-		}
-		if ms1Down {
-			Expect(ctx.pingFromVPP(veth1IP)).ToNot(Succeed())
-		} else {
-			Expect(ctx.pingFromVPP(veth1IP)).To(Succeed())
-		}
-		Expect(ctx.pingFromVPP(veth2IP)).To(Succeed())
-	}
-
 	ctx.startMicroservice(ms1Name)
 	ctx.startMicroservice(ms2Name)
 	req := ctx.grpcClient.ChangeRequest()
@@ -417,8 +421,18 @@ func TestBridgeDomainWithAfPackets(t *testing.T) {
 	Eventually(ctx.getValueStateClb(afPacket2)).Should(Equal(kvs.ValueState_CONFIGURED),
 		"AF-PACKET attached to a newly started microservice2 should be eventually configured")
 
-	checkBDConfig(ctx, true)
-	checkPings(false)
+	bds, err := bridgeDomains(ctx)
+	Expect(err).ToNot(HaveOccurred())
+	Expect(bds).To(HaveLen(1))
+	Expect(bds[0]).To(SatisfyAll(
+		bdAgeIs(0), bdWithFlooding(), bdWithForwarding(), bdWithLearning()))
+
+	Expect(ctx.pingFromMs(ms2Name, veth1IP)).To(Succeed())
+	Expect(ctx.pingFromMs(ms1Name, veth2IP)).To(Succeed())
+	Expect(ctx.pingFromMs(ms1Name, vppLoopbackIP)).To(Succeed())
+	Expect(ctx.pingFromMs(ms2Name, vppLoopbackIP)).To(Succeed())
+	Expect(ctx.pingFromVPP(veth1IP)).To(Succeed())
+	Expect(ctx.pingFromVPP(veth2IP)).To(Succeed())
 	Expect(ctx.agentInSync()).To(BeTrue(), "Agent is not in-sync")
 
 	// kill one of the microservices
@@ -442,7 +456,10 @@ func TestBridgeDomainWithAfPackets(t *testing.T) {
 	Expect(ctx.getValueState(bd)).To(Equal(kvs.ValueState_CONFIGURED),
 		"BD is not configured")
 
-	checkPings(true)
+	Expect(ctx.pingFromMs(ms2Name, veth1IP)).ToNot(Succeed())
+	Expect(ctx.pingFromMs(ms2Name, vppLoopbackIP)).To(Succeed())
+	Expect(ctx.pingFromVPP(veth1IP)).ToNot(Succeed())
+	Expect(ctx.pingFromVPP(veth2IP)).To(Succeed())
 	Expect(ctx.agentInSync()).To(BeTrue(), "Agent is not in-sync")
 
 	// restart the microservice
@@ -454,7 +471,12 @@ func TestBridgeDomainWithAfPackets(t *testing.T) {
 	Expect(ctx.getValueState(veth1b)).To(Equal(kvs.ValueState_CONFIGURED),
 		"VETH attached to re-started microservice1 is not configured")
 
-	checkPings(false)
+	Expect(ctx.pingFromMs(ms2Name, veth1IP)).To(Succeed())
+	Expect(ctx.pingFromMs(ms1Name, veth2IP)).To(Succeed())
+	Expect(ctx.pingFromMs(ms1Name, vppLoopbackIP)).To(Succeed())
+	Expect(ctx.pingFromMs(ms2Name, vppLoopbackIP)).To(Succeed())
+	Expect(ctx.pingFromVPP(veth1IP)).To(Succeed())
+	Expect(ctx.pingFromVPP(veth2IP)).To(Succeed())
 	Expect(ctx.agentInSync()).To(BeTrue(), "Agent is not in-sync")
 
 	// change bridge domain config to trigger re-creation
@@ -464,8 +486,18 @@ func TestBridgeDomainWithAfPackets(t *testing.T) {
 		bd,
 	).Send(context.Background())
 	Expect(err).ToNot(HaveOccurred(), "Transaction updating BD failed")
-	checkPings(false)
-	Expect(ctx.agentInSync()).To(BeTrue(), "Agent is not in-sync")
 
-	checkBDConfig(ctx, false)
+	bds, err = bridgeDomains(ctx)
+	Expect(err).ToNot(HaveOccurred())
+	Expect(bds).To(HaveLen(1))
+	Expect(bds[0]).To(SatisfyAll(
+		bdAgeIs(10), bdWithFlooding(), bdWithForwarding(), bdWithLearning()))
+
+	Expect(ctx.pingFromMs(ms2Name, veth1IP)).To(Succeed())
+	Expect(ctx.pingFromMs(ms1Name, veth2IP)).To(Succeed())
+	Expect(ctx.pingFromMs(ms1Name, vppLoopbackIP)).To(Succeed())
+	Expect(ctx.pingFromMs(ms2Name, vppLoopbackIP)).To(Succeed())
+	Expect(ctx.pingFromVPP(veth1IP)).To(Succeed())
+	Expect(ctx.pingFromVPP(veth2IP)).To(Succeed())
+	Expect(ctx.agentInSync()).To(BeTrue(), "Agent is not in-sync")
 }

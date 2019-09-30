@@ -16,11 +16,9 @@ package e2e
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	. "github.com/onsi/gomega"
-	"github.com/onsi/gomega/types"
 
 	"github.com/ligato/vpp-agent/api/models/linux/interfaces"
 	"github.com/ligato/vpp-agent/api/models/linux/l3"
@@ -149,43 +147,25 @@ func TestSourceNAT(t *testing.T) {
 		},
 	}
 
-	checkConfig := func(isConfigured bool) {
-		substringMatcher := func(substring string, negative bool) types.GomegaMatcher {
-			if negative {
-				return Not(ContainSubstring(substring))
-			} else {
-				return ContainSubstring(substring)
-			}
-		}
-		stdout, err := ctx.execVppctl("show", "nat44", "addresses")
-		Expect(err).ToNot(HaveOccurred(), "Running `vppctl show nat44 addresses` failed")
-		Expect(stdout).To(substringMatcher(sNatAddr1, !isConfigured),
-			"Unexpected S-NAT address configuration",
-		)
-		Expect(stdout).To(substringMatcher(sNatAddr2, !isConfigured),
-			"Unexpected S-NAT address configuration",
-		)
-		Expect(stdout).To(substringMatcher(sNatAddr3, !isConfigured),
-			"Unexpected S-NAT address configuration",
-		)
+	nat44Addresses := func() (string, error) {
+		return ctx.execVppctl("show", "nat44", "addresses")
 	}
-
-	checkConn := func(shouldSucceed bool) {
-		expected := Succeed()
-		if !shouldSucceed {
-			expected = Not(Succeed())
-		}
-		Expect(ctx.pingFromMs(ms2Name, linuxTap1IP)).To(expected)
-
-		Expect(ctx.testConnection(ms2Name, ms1Name, linuxTap1IP, linuxTap1IP,
-			8000, 8000, false, tapv2InputNode)).To(expected)
-		Expect(ctx.testConnection(ms2Name, ms1Name, linuxTap1IP, linuxTap1IP,
-			8000, 8000, true, tapv2InputNode)).To(expected)
+	connectTCP := func() error {
+		return ctx.testConnection(ms2Name, ms1Name, linuxTap1IP, linuxTap1IP,
+			8000, 8000, false, tapv2InputNode)
+	}
+	connectUDP := func() error {
+		return ctx.testConnection(ms2Name, ms1Name, linuxTap1IP, linuxTap1IP,
+			8000, 8000, true, tapv2InputNode)
+	}
+	ping := func() error {
+		return ctx.pingFromMs(ms2Name, linuxTap1IP)
 	}
 
 	ctx.startMicroservice(ms1Name)
 	ctx.startMicroservice(ms2Name)
-	checkConfig(false)
+	Expect(nat44Addresses()).ShouldNot(SatisfyAny(
+		ContainSubstring(sNatAddr1), ContainSubstring(sNatAddr2), ContainSubstring(sNatAddr3)))
 	req := ctx.grpcClient.ChangeRequest()
 	err := req.Update(
 		vppTap1,
@@ -202,9 +182,11 @@ func TestSourceNAT(t *testing.T) {
 	Eventually(ctx.getValueStateClb(vppTap2)).Should(Equal(kvs.ValueState_CONFIGURED),
 		"TAP attached to a newly started microservice2 should be eventually configured")
 
-	// check configuration
-	checkConfig(true)
-	checkConn(true)
+	Expect(nat44Addresses()).Should(SatisfyAll(
+		ContainSubstring(sNatAddr1), ContainSubstring(sNatAddr2), ContainSubstring(sNatAddr3)))
+	Expect(ping()).Should(Succeed())
+	Expect(connectTCP()).Should(Succeed())
+	Expect(connectUDP()).Should(Succeed())
 	Expect(ctx.agentInSync()).To(BeTrue(), "Agent is not in-sync")
 
 	// remove S-NAT configuration
@@ -215,8 +197,11 @@ func TestSourceNAT(t *testing.T) {
 	Expect(err).ToNot(HaveOccurred(), "Transaction removing S-NAT failed")
 
 	// check configuration
-	checkConfig(false)
-	checkConn(false)
+	Expect(nat44Addresses()).ShouldNot(SatisfyAny(
+		ContainSubstring(sNatAddr1), ContainSubstring(sNatAddr2), ContainSubstring(sNatAddr3)))
+	Expect(ping()).ShouldNot(Succeed())
+	Expect(connectTCP()).ShouldNot(Succeed())
+	Expect(connectUDP()).ShouldNot(Succeed())
 	Expect(ctx.agentInSync()).To(BeTrue(), "Agent is not in-sync")
 
 	// get back the S-NAT configuration
@@ -225,8 +210,12 @@ func TestSourceNAT(t *testing.T) {
 		sourceNat,
 	).Send(context.Background())
 	Expect(err).ToNot(HaveOccurred(), "Transaction creating S-NAT failed")
-	checkConfig(true)
-	checkConn(true)
+
+	Expect(nat44Addresses()).Should(SatisfyAll(
+		ContainSubstring(sNatAddr1), ContainSubstring(sNatAddr2), ContainSubstring(sNatAddr3)))
+	Expect(ping()).Should(Succeed())
+	Expect(connectTCP()).Should(Succeed())
+	Expect(connectUDP()).Should(Succeed())
 	Expect(ctx.agentInSync()).To(BeTrue(), "Agent is not in-sync")
 
 	// restart microservice with S-NAT attached
@@ -237,9 +226,11 @@ func TestSourceNAT(t *testing.T) {
 	Eventually(ctx.getValueStateClb(vppTap1)).Should(Equal(kvs.ValueState_CONFIGURED),
 		"VPP-TAP attached to a re-started microservice1 should be eventually configured")
 
-	// check configuration
-	checkConfig(true)
-	checkConn(true)
+	Expect(nat44Addresses()).Should(SatisfyAll(
+		ContainSubstring(sNatAddr1), ContainSubstring(sNatAddr2), ContainSubstring(sNatAddr3)))
+	Expect(ping()).Should(Succeed())
+	Expect(connectTCP()).Should(Succeed())
+	Expect(connectUDP()).Should(Succeed())
 	Expect(ctx.agentInSync()).To(BeTrue(), "Agent is not in-sync")
 }
 
@@ -358,8 +349,6 @@ func TestNATStaticMappings(t *testing.T) {
 		},
 	}
 
-	showTCPSvc := fmt.Sprintf("tcp local %s:%d external %s:%d vrf 0  out2in-only",
-		linuxTap2IP, tcpSvcLocalPort, tcpSvcExtIP, tcpSvcExtPort)
 	tcpSvc := &vpp_nat.DNat44{
 		Label: tcpSvcLabel,
 		StMappings: []*vpp_nat.DNat44_StaticMapping{
@@ -377,8 +366,6 @@ func TestNATStaticMappings(t *testing.T) {
 		},
 	}
 
-	showUDPSvc := fmt.Sprintf("udp local %s:%d external %s:%d vrf 0  out2in-only",
-		linuxTap2IP, udpSvcLocalPort, udpSvcExtIP, udpSvcExtPort)
 	udpSvc := &vpp_nat.DNat44{
 		Label: udpSvcLabel,
 		StMappings: []*vpp_nat.DNat44_StaticMapping{
@@ -417,39 +404,29 @@ func TestNATStaticMappings(t *testing.T) {
 		},
 	}
 
-	checkConfig := func(isConfigured bool) {
-		substringMatcher := func(substring string, negative bool) types.GomegaMatcher {
-			if negative {
-				return Not(ContainSubstring(substring))
-			} else {
-				return ContainSubstring(substring)
-			}
-		}
-		stdout, err := ctx.execVppctl("show", "nat44", "static", "mappings")
-		Expect(err).ToNot(HaveOccurred(), "Running `vppctl show nat44 addresses` failed")
-		Expect(stdout).To(substringMatcher(showTCPSvc, !isConfigured),
-			"Unexpected TCP static mapping configuration",
-		)
-		Expect(stdout).To(substringMatcher(showUDPSvc, !isConfigured),
-			"Unexpected UDP static mapping configuration",
-		)
+	staticMappings := func() (string, error) {
+		return ctx.execVppctl("show", "nat44", "static", "mappings")
 	}
+	containTCP := ContainSubstring(
+		"tcp local %s:%d external %s:%d vrf 0  out2in-only",
+		linuxTap2IP, tcpSvcLocalPort, tcpSvcExtIP, tcpSvcExtPort)
 
-	checkConn := func(shouldSucceed bool) {
-		expected := Succeed()
-		if !shouldSucceed {
-			expected = Not(Succeed())
-		}
+	containUDP := ContainSubstring(
+		"udp local %s:%d external %s:%d vrf 0  out2in-only",
+		linuxTap2IP, udpSvcLocalPort, udpSvcExtIP, udpSvcExtPort)
 
-		Expect(ctx.testConnection(ms1Name, ms2Name, tcpSvcExtIP, linuxTap2IP,
-			tcpSvcExtPort, tcpSvcLocalPort, false, tapv2InputNode)).To(expected)
-		Expect(ctx.testConnection(ms1Name, ms2Name, udpSvcExtIP, linuxTap2IP,
-			udpSvcExtPort, udpSvcLocalPort, true, tapv2InputNode)).To(expected)
+	connectTCP := func() error {
+		return ctx.testConnection(ms1Name, ms2Name, tcpSvcExtIP, linuxTap2IP,
+			tcpSvcExtPort, tcpSvcLocalPort, false, tapv2InputNode)
+	}
+	connectUDP := func() error {
+		return ctx.testConnection(ms1Name, ms2Name, udpSvcExtIP, linuxTap2IP,
+			udpSvcExtPort, udpSvcLocalPort, true, tapv2InputNode)
 	}
 
 	ctx.startMicroservice(ms1Name)
 	ctx.startMicroservice(ms2Name)
-	checkConfig(false)
+	Expect(staticMappings()).ShouldNot(SatisfyAny(containTCP, containUDP))
 	req := ctx.grpcClient.ChangeRequest()
 	err := req.Update(
 		vppTap1,
@@ -468,9 +445,9 @@ func TestNATStaticMappings(t *testing.T) {
 	Eventually(ctx.getValueStateClb(vppTap2)).Should(Equal(kvs.ValueState_CONFIGURED),
 		"TAP attached to a newly started microservice2 should be eventually configured")
 
-	// check configuration
-	checkConfig(true)
-	checkConn(true)
+	Expect(staticMappings()).Should(SatisfyAll(containTCP, containUDP))
+	Expect(connectTCP()).Should(Succeed())
+	Expect(connectUDP()).Should(Succeed())
 	Expect(ctx.agentInSync()).To(BeTrue(), "Agent is not in-sync")
 
 	// remove static mappings
@@ -480,9 +457,9 @@ func TestNATStaticMappings(t *testing.T) {
 	).Send(context.Background())
 	Expect(err).ToNot(HaveOccurred(), "Transaction removing NAT static mappings failed")
 
-	// check configuration
-	checkConfig(false)
-	checkConn(false)
+	Expect(staticMappings()).ShouldNot(SatisfyAny(containTCP, containUDP))
+	Expect(connectTCP()).ShouldNot(Succeed())
+	Expect(connectUDP()).ShouldNot(Succeed())
 	Expect(ctx.agentInSync()).To(BeTrue(), "Agent is not in-sync")
 
 	// get back the NAT configuration
@@ -491,8 +468,10 @@ func TestNATStaticMappings(t *testing.T) {
 		tcpSvc, udpSvc,
 	).Send(context.Background())
 	Expect(err).ToNot(HaveOccurred(), "Transaction creating NAT static mappings failed")
-	checkConfig(true)
-	checkConn(true)
+
+	Expect(staticMappings()).Should(SatisfyAll(containTCP, containUDP))
+	Expect(connectTCP()).Should(Succeed())
+	Expect(connectUDP()).Should(Succeed())
 	Expect(ctx.agentInSync()).To(BeTrue(), "Agent is not in-sync")
 
 	// restart both microservices
@@ -509,8 +488,8 @@ func TestNATStaticMappings(t *testing.T) {
 	Eventually(ctx.getValueStateClb(vppTap2)).Should(Equal(kvs.ValueState_CONFIGURED),
 		"VPP-TAP attached to a re-started microservice1 should be eventually configured")
 
-	// check configuration
-	checkConfig(true)
-	checkConn(true)
+	Expect(staticMappings()).Should(SatisfyAll(containTCP, containUDP))
+	Expect(connectTCP()).Should(Succeed())
+	Expect(connectUDP()).Should(Succeed())
 	Expect(ctx.agentInSync()).To(BeTrue(), "Agent is not in-sync")
 }
