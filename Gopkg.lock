@@ -1079,6 +1079,7 @@
     "github.com/mitchellh/go-ps",
     "github.com/namsral/flag",
     "github.com/onsi/gomega",
+    "github.com/onsi/gomega/types",
     "github.com/opencontainers/runc",
     "github.com/pkg/errors",
     "github.com/pkg/profile",
