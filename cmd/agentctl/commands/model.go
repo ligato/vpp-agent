@@ -108,8 +108,7 @@ func newModelListCommand(cli agentcli.Cli) *cobra.Command {
 }
 
 type ModelListOptions struct {
-	Refs    []string
-	NoTrunc bool
+	Refs []string
 }
 
 func runModelList(cli agentcli.Cli, opts ModelListOptions) error {
