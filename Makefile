@@ -45,7 +45,7 @@ agent: ## Build agent
 	@echo "=> installing agent ${VERSION}"
 	@go install -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS} ./cmd/vpp-agent
 
-agentctl: # Build agentctl
+agentctl: ## Build agentctl
 	@echo "=> installing agentctl ${VERSION}"
 	@go install -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS} ./cmd/agentctl
 
@@ -276,7 +276,7 @@ prod-image: ## Build production image
 
 
 .PHONY: help \
-	build clean install \
+	agent agentctl build clean install \
 	cmd examples clean-examples \
 	test test-cover test-cover-html test-cover-xml \
 	generate genereate-binapi generate-proto get-binapi-generators get-proto-generators \

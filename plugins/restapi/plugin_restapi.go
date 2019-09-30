@@ -179,8 +179,6 @@ func (p *Plugin) Init() (err error) {
 
 // AfterInit is used to register HTTP handlers
 func (p *Plugin) AfterInit() (err error) {
-	p.Log.Debug("REST API Plugin is up and running")
-
 	// VPP handlers
 	p.registerTelemetryHandlers()
 	p.registerCommandHandler()
