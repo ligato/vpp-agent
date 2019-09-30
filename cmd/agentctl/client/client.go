@@ -145,7 +145,7 @@ func (c *Client) GRPCConn() (*grpc.ClientConn, error) {
 }
 
 func (c *Client) HTTPClient() *http.Client {
-	return &*c.httpClient
+	return c.httpClient
 }
 
 // ParseHostURL parses a url string, validates the string is a host url, and
