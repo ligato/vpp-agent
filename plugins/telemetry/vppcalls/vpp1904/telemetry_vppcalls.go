@@ -237,6 +237,10 @@ func (h *TelemetryHandler) getRuntimeInfoStats() (*vppcalls.RuntimeInfo, error) 
 	}
 
 	for _, node := range nodeStats.Nodes {
+		vpc := 0.0
+		if node.Vectors != 0 && node.Calls != 0 {
+			vpc = float64(node.Vectors) / float64(node.Calls)
+		}
 		thread.Items = append(thread.Items, vppcalls.RuntimeItem{
 			Index: uint(node.NodeIndex),
 			Name:  node.NodeName,
@@ -245,7 +249,7 @@ func (h *TelemetryHandler) getRuntimeInfoStats() (*vppcalls.RuntimeInfo, error) 
 			Vectors:        node.Vectors,
 			Suspends:       node.Suspends,
 			Clocks:         float64(node.Clocks),
-			VectorsPerCall: float64(node.Vectors) / float64(node.Calls),
+			VectorsPerCall: vpc,
 		})
 	}
 
