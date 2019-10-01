@@ -101,6 +101,7 @@ func (h *InterfaceVppHandler) dumpInterfaces() (map[uint32]*vppcalls.InterfaceDe
 				IsLinkStateUp:  uintToBool(ifDetails.LinkUpDown),
 				LinkDuplex:     uint32(ifDetails.LinkDuplex),
 				LinkMTU:        ifDetails.LinkMtu,
+				MTU:            ifDetails.Mtu,
 				LinkSpeed:      ifDetails.LinkSpeed,
 				SubID:          ifDetails.SubID,
 				Tag:            cleanString(ifDetails.Tag),
