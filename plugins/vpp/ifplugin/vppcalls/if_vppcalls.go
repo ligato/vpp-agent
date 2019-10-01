@@ -39,6 +39,7 @@ type InterfaceMeta struct {
 	IsLinkStateUp  bool             `json:"is_link_state_up"`
 	LinkDuplex     uint32           `json:"link_duplex"`
 	LinkMTU        uint16           `json:"link_mtu"`
+	MTU            []uint32         `json:"mtu"`
 	LinkSpeed      uint32           `json:"link_speed"`
 	SubID          uint32           `json:"sub_id"`
 	Tag            string           `json:"tag"`
