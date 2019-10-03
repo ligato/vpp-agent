@@ -287,51 +287,6 @@ Delete Nat Global
     ${out}=         Delete key  ${uri}
     [Return]       ${out}
 
-Put BFD Session
-    [Arguments]    ${node}    ${session_name}    ${min_tx_interval}    ${dest_adr}    ${detect_multiplier}    ${interface}    ${min_rx_interval}    ${source_adr}   ${enabled}    ${auth_key_id}=0    ${BFD_auth_key_id}=0
-    ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/bfd_session.json
-    ${uri}=               Set Variable                  /vnf-agent/${node}/config/vpp/${AGENT_VER}/bfd/session/${session_name}
-    ${data}=              Replace Variables             ${data}
-    Put Json     ${uri}    ${data}
-
-Put BFD Authentication Key
-    [Arguments]    ${node}    ${key_name}    ${auth_type}    ${id}    ${secret}
-    ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/bfd_key.json
-    ${uri}=               Set Variable                  /vnf-agent/${node}/config/vpp/${AGENT_VER}/bfd/auth-key/${key_name}
-    ${data}=              Replace Variables             ${data}
-    Put Json     ${uri}    ${data}
-
-Put BFD Echo Function
-    [Arguments]    ${node}    ${echo_func_name}    ${source_intf}
-    ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/bfd_echo_function.json
-    ${uri}=               Set Variable                  /vnf-agent/${node}/config/vpp/${AGENT_VER}/bfd/echo-function
-    ${data}=              Replace Variables             ${data}
-    Put Json     ${uri}    ${data}
-
-Get BFD Session As Json
-    [Arguments]    ${node}    ${session_name}
-    ${key}=               Set Variable            /vnf-agent/${node}/config/vpp/${AGENT_VER}/bfd/session/${session_name}
-    ${data}=              Read Key    ${key}
-    ${data}=              Set Variable If      '''${data}'''==""    {}    ${data}
-    ${output}=            Evaluate             json.loads('''${data}''')    json
-    [Return]              ${output}
-
-Get BFD Authentication Key As Json
-    [Arguments]    ${node}    ${key_name}
-    ${key}=               Set Variable          /vnf-agent/${node}/config/vpp/${AGENT_VER}/bfd/auth-key/${key_name}
-    ${data}=              Read Key    ${key}
-    ${data}=              Set Variable If      '''${data}'''==""    {}    ${data}
-    ${output}=            Evaluate             json.loads('''${data}''')    json
-    [Return]              ${output}
-
-Get BFD Echo Function As Json
-    [Arguments]    ${node}
-    ${key}=               Set Variable          /vnf-agent/${node}/config/vpp/${AGENT_VER}/bfd/echo-function
-    ${data}=              Read Key    ${key}
-    ${data}=              Set Variable If      '''${data}'''==""    {}    ${data}
-    ${output}=            Evaluate             json.loads('''${data}''')    json
-    [Return]              ${output}
-
 etcd: Get ETCD Tree
     [Arguments]           ${key}
     ${command}=         Set Variable    ${DOCKER_COMMAND} exec etcd etcdctl get --prefix="true" ${key}
@@ -402,15 +357,6 @@ Set L4 Features On Node
     ${uri}=               Set Variable                  /vnf-agent/${node}/config/vpp/${AGENT_VER}/l4/features/feature
     ${data}=              Replace Variables             ${data}
     Put Json     ${uri}    ${data}
-
-Put Application Namespace
-    [Arguments]    ${node}    ${id}    ${secret}    ${interface}
-    [Documentation]    Put application namespace config json to etcd.
-    ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/app_namespace.json
-    ${uri}=               Set Variable                  /vnf-agent/${node}/config/vpp/${AGENT_VER}/l4/namespaces/${id}
-    ${data}=              Replace Variables             ${data}
-    Put Json     ${uri}    ${data}
-
 
 Delete ARP
     [Arguments]    ${node}    ${interface}    ${ipv4}

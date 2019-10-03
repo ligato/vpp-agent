@@ -1,4 +1,0 @@
-{
-  "name": "${echo_func_name}",
-  "echo_source_interface": "${source_intf}"
-}

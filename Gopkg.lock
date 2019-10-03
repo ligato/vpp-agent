@@ -101,14 +101,6 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:083caed86277ee2b48cc2dd692321170ac5cbbca3d08cf2259a8b82c0cb0dee7"
-  name = "github.com/common-nighthawk/go-figure"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "67e0ed34491ae997c83c5aa2a1cae2cfd4b4ac41"
-
-[[projects]]
-  branch = "master"
   digest = "1:1ed8f94f16010f9e1a419a818ec8ed5765d04561e6bfcc872e3a5a16fbae08b2"
   name = "github.com/containerd/console"
   packages = ["."]
@@ -194,7 +186,15 @@
   version = "v3.2.0"
 
 [[projects]]
-  digest = "1:4ec8504b68b75f562efc4b291cba33194f88eaa4e68d9fc449e5b7ca68539329"
+  digest = "1:8c823b7b5ac50866dfea7f81e0fa35da896c3f8ea1cdf35d64318d7c5fd23ee8"
+  name = "github.com/docker/cli"
+  packages = ["cli/streams"]
+  pruneopts = "UT"
+  revision = "578ab52ece34b084621954e0b543003410cdbe84"
+  version = "v19.03.2"
+
+[[projects]]
+  digest = "1:0e34c6bf2318d1a846abf5f766d17926bab1040236ce6aa623dd574732e1c855"
   name = "github.com/docker/docker"
   packages = [
     "api/types",
@@ -218,14 +218,19 @@
     "pkg/pools",
     "pkg/stdcopy",
     "pkg/system",
+    "pkg/term",
+    "pkg/term/windows",
   ]
   pruneopts = "UT"
   revision = "3dfb26ab3cbf961298f8ce3f94659b5fe4146ceb"
 
 [[projects]]
-  digest = "1:87dcb59127512b84097086504c16595cf8fef35b9e0bfca565dfc06e198158d7"
+  digest = "1:d5e6a6adf47d002b580ed83f13493f6d4a7a891954bda48454b5876c0bd83460"
   name = "github.com/docker/go-connections"
-  packages = ["nat"]
+  packages = [
+    "nat",
+    "tlsconfig",
+  ]
   pruneopts = "UT"
   revision = "3ede32e2033de7505e6500d6c868c2b9ed9f169d"
   version = "v0.3.0"
@@ -558,14 +563,6 @@
   ]
   pruneopts = "T"
   revision = "9bb0e395ce981f921420130be6d13a1582ed99f1"
-
-[[projects]]
-  branch = "master"
-  digest = "1:7616dd8d9ddca4d4d8aa0e3793f66015c8c8bf9a3f2387be6be59347f43a75c0"
-  name = "github.com/logrusorgru/aurora.git"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "d694e6f975a9109e2b063829d563a7c153c4b53c"
 
 [[projects]]
   branch = "master"
@@ -1031,9 +1028,12 @@
     "git.fd.io/govpp.git/api",
     "git.fd.io/govpp.git/cmd/binapi-generator",
     "git.fd.io/govpp.git/core",
-    "github.com/common-nighthawk/go-figure",
     "github.com/coreos/etcd/clientv3",
     "github.com/coreos/go-iptables/iptables",
+    "github.com/docker/cli/cli/streams",
+    "github.com/docker/docker/api/types/versions",
+    "github.com/docker/docker/pkg/term",
+    "github.com/docker/go-connections/tlsconfig",
     "github.com/fsouza/go-dockerclient",
     "github.com/ghodss/yaml",
     "github.com/go-errors/errors",
@@ -1041,7 +1041,6 @@
     "github.com/gogo/protobuf/jsonpb",
     "github.com/gogo/protobuf/proto",
     "github.com/gogo/protobuf/protoc-gen-gogo",
-    "github.com/gogo/protobuf/protoc-gen-gogo/descriptor",
     "github.com/gogo/protobuf/types",
     "github.com/gogo/status",
     "github.com/ligato/cn-infra/agent",
@@ -1076,11 +1075,11 @@
     "github.com/ligato/cn-infra/servicelabel",
     "github.com/ligato/cn-infra/utils/addrs",
     "github.com/ligato/cn-infra/utils/safeclose",
-    "github.com/logrusorgru/aurora.git",
     "github.com/lunixbochs/struc",
     "github.com/mitchellh/go-ps",
     "github.com/namsral/flag",
     "github.com/onsi/gomega",
+    "github.com/onsi/gomega/types",
     "github.com/opencontainers/runc",
     "github.com/pkg/errors",
     "github.com/pkg/profile",

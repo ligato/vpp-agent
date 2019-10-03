@@ -15,11 +15,15 @@
 package e2e
 
 import (
+	"bufio"
 	"bytes"
+	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io"
 	"log"
+	"net"
 	"net/url"
 	"os"
 	"os/exec"
@@ -87,7 +91,16 @@ const (
 		}
 		plugins {
 			plugin dpdk_plugin.so { disable }
+		}
+		nat {
+			endpoint-dependent
 		}`
+
+	// VPP input nodes for packet tracing (uncomment when needed)
+	tapv2InputNode = "virtio-input"
+	//tapv1InputNode    = "tapcli-rx"
+	//afPacketInputNode = "af-packet-input"
+	//memifInputNode    = "memif-input"
 )
 
 func init() {
@@ -143,7 +156,7 @@ func setupE2E(t *testing.T) *testCtx {
 	} else {
 		vppArgs = []string{vppConf}
 	}
-	vppCmd := startProcess(t, "VPP", *vppPath, vppArgs...)
+	vppCmd := startProcess(t, "VPP", nil, os.Stdout, os.Stderr, *vppPath, vppArgs...)
 
 	// start the agent
 	assertProcessNotRunning(t, "vpp_agent")
@@ -154,8 +167,7 @@ func setupE2E(t *testing.T) *testCtx {
 		e2eCovPath := fmt.Sprintf("%s/%d.out", *covPath, time.Now().Unix())
 		agentArgs = []string{"-test.coverprofile", e2eCovPath}
 	}
-
-	agentCmd := startProcess(t, "VPP-Agent", "/vpp-agent", agentArgs...)
+	agentCmd := startProcess(t, "VPP-Agent", nil, os.Stdout, os.Stderr, "/vpp-agent", agentArgs...)
 
 	// prepare HTTP client for access to REST API of the agent
 	httpAddr := fmt.Sprintf(":%d", *agentHTTPPort)
@@ -246,6 +258,7 @@ func (ctx *testCtx) startMicroservice(msName string) (ms *microservice) {
 }
 
 func (ctx *testCtx) stopMicroservice(msName string) {
+	ctx.t.Helper()
 	ms, found := ctx.microservices[msName]
 	if !found {
 		// bug inside a test
@@ -259,6 +272,7 @@ func (ctx *testCtx) stopMicroservice(msName string) {
 
 // pingFromMs pings <dstAddress> from the microservice <msName>
 func (ctx *testCtx) pingFromMs(msName, dstAddress string) error {
+	ctx.t.Helper()
 	ms, found := ctx.microservices[msName]
 	if !found {
 		// bug inside a test
@@ -306,10 +320,92 @@ func (ctx *testCtx) pingFromVPPClb(destAddress string) func() error {
 	}
 }
 
-/*func (ctx *testCtx) testConnection(fromMs, toMs, dstAddr, listenAddr string, port uint16, udp bool) error {
-	// TODO (run nc client and server)
-	return nil
-}*/
+func (ctx *testCtx) testConnection(fromMs, toMs, toAddr, listenAddr string,
+	toPort, listenPort uint16, udp bool, traceVPPNodes ...string) error {
+	ctx.t.Helper()
+
+	const (
+		connTimeout    = 3 * time.Second
+		srvExitTimeout = 500 * time.Millisecond
+		reqData        = "Hi server!"
+		respData       = "Hi client!"
+	)
+
+	clientMs, found := ctx.microservices[fromMs]
+	if !found {
+		// bug inside a test
+		ctx.t.Fatalf("cannot run TCP/UDP client from unknown microservice '%s'", fromMs)
+	}
+	serverMs, found := ctx.microservices[toMs]
+	if !found {
+		// bug inside a test
+		ctx.t.Fatalf("cannot run TCP/UDP server inside unknown microservice '%s'", toMs)
+	}
+
+	srvRet := make(chan error, 1)
+	srvCtx, cancelSrv := context.WithCancel(context.Background())
+	runServer := func() {
+		if udp {
+			simpleUDPServer(srvCtx, serverMs, fmt.Sprintf("%s:%d", listenAddr, listenPort),
+				reqData, respData, srvRet)
+		} else {
+			simpleTCPServer(srvCtx, serverMs, fmt.Sprintf("%s:%d", listenAddr, listenPort),
+				reqData, respData, srvRet)
+		}
+		close(srvRet)
+	}
+
+	clientRet := make(chan error, 1)
+	runClient := func() {
+		if udp {
+			simpleUDPClient(clientMs, fmt.Sprintf("%s:%d", toAddr, toPort),
+				reqData, respData, connTimeout, clientRet)
+		} else {
+			simpleTCPClient(clientMs, fmt.Sprintf("%s:%d", toAddr, toPort),
+				reqData, respData, connTimeout, clientRet)
+		}
+		close(clientRet)
+	}
+
+	stopPacketTrace := ctx.startPacketTrace(traceVPPNodes...)
+
+	go runServer()
+	go runClient()
+	err := <-clientRet
+
+	// give server some time to exit gracefully, then force it to stop
+	var srvErr error
+	select {
+	case srvErr = <-srvRet:
+		// now that the client has read all the data, the server is safe to stop
+		// and close the connection
+		cancelSrv()
+	case <-time.After(srvExitTimeout):
+		cancelSrv()
+		srvErr = <-srvRet
+	}
+	if err == nil {
+		err = srvErr
+	}
+
+	// log info about connection
+	protocol := "TCP"
+	if udp {
+		protocol = "UDP"
+	}
+	outcome := "OK"
+	if err != nil {
+		outcome = err.Error()
+	}
+	fmt.Printf(
+		"%s connection <from-ms=%s, dest=%s:%d, to-ms=%s, server=%s:%d> packet trace:\n",
+		protocol, fromMs, toAddr, toPort, toMs, listenAddr, listenPort)
+	stopPacketTrace()
+	fmt.Printf(
+		"%s connection <from-ms=%s, dest=%s:%d, to-ms=%s, server=%s:%d> outcome: %s\n",
+		protocol, fromMs, toAddr, toPort, toMs, listenAddr, listenPort, outcome)
+	return err
+}
 
 func (ctx *testCtx) getValueState(value proto.Message) kvs.ValueState {
 	key := models.Key(value)
@@ -340,8 +436,35 @@ func (ctx *testCtx) getValueStateClb(value proto.Message) func() kvs.ValueState 
 	}
 }
 
+func (ctx *testCtx) startPacketTrace(nodes ...string) (stopTrace func()) {
+	const maxPackets = 100
+	for i, node := range nodes {
+		if i == 0 {
+			_, err := ctx.execVppctl("clear trace")
+			if err != nil {
+				ctx.t.Fatalf("Failed to clear the packet trace: %v", err)
+			}
+		}
+		_, err := ctx.execVppctl("trace add", fmt.Sprintf("%s %d", node, maxPackets))
+		if err != nil {
+			ctx.t.Fatalf("Failed to add packet trace for node '%s': %v", node, err)
+		}
+	}
+
+	return func() {
+		if len(nodes) == 0 {
+			return
+		}
+		stdout, err := ctx.execVppctl("show trace")
+		if err != nil {
+			ctx.t.Fatalf("Failed to show packet trace: %v", err)
+		}
+		fmt.Println(stdout)
+	}
+}
+
 func syncAgent(t *testing.T, httpClient *utils.HTTPClient) (executed kvs.RecordedTxnOps) {
-	resp, err := httpClient.POST("/scheduler/downstream-resync", struct{}{})
+	resp, err := httpClient.POST("/scheduler/downstream-resync?retry=true", struct{}{})
 	if err != nil {
 		t.Fatalf("Downstream resync request has failed: %v", err)
 	}
@@ -401,11 +524,20 @@ func assertProcessNotRunning(t *testing.T, name string, aliases ...string) {
 	}
 }
 
-func startProcess(t *testing.T, name, path string, args ...string) *exec.Cmd {
+func startProcess(t *testing.T, name string, stdin io.Reader, stdout, stderr io.Writer,
+	path string, args ...string) *exec.Cmd {
+
 	cmd := exec.Command(path)
 	cmd.Args = append(cmd.Args, args...)
-	cmd.Stderr = os.Stderr
-	cmd.Stdout = os.Stdout
+	if stdin != nil {
+		cmd.Stdin = stdin
+	}
+	if stdout != nil {
+		cmd.Stderr = stdout
+	}
+	if stderr != nil {
+		cmd.Stdout = stderr
+	}
 
 	// ensure that process is killed when current process exits
 	cmd.SysProcAttr = &syscall.SysProcAttr{Pdeathsig: syscall.SIGKILL}
@@ -418,6 +550,7 @@ func startProcess(t *testing.T, name, path string, args ...string) *exec.Cmd {
 }
 
 func stopProcess(t *testing.T, cmd *exec.Cmd, name string) {
+
 	// terminate process
 	if err := cmd.Process.Signal(syscall.SIGTERM); err != nil {
 		t.Fatalf("sending SIGTERM to %s failed: %v", name, err)
@@ -444,10 +577,290 @@ func stopProcess(t *testing.T, cmd *exec.Cmd, name string) {
 	}
 }
 
+// TCP or UDP connection request
+type connectionRequest struct {
+	conn net.Conn
+	err  error
+}
+
+func simpleTCPServer(ctx context.Context, ms *microservice, addr string, expReqMsg, respMsg string, done chan<- error) {
+	// move to the network namespace where server should listen
+	exitNetNs := ms.enterNetNs()
+	defer exitNetNs()
+
+	listener, err := net.Listen("tcp", addr)
+	if err != nil {
+		done <- err
+		return
+	}
+	defer listener.Close()
+
+	// accept single connection
+	newConn := make(chan connectionRequest, 1)
+	go func() {
+		conn, err := listener.Accept()
+		newConn <- connectionRequest{conn: conn, err: err}
+		close(newConn)
+	}()
+
+	// wait for connection
+	var cr connectionRequest
+	select {
+	case <-ctx.Done():
+		done <- fmt.Errorf("tcp server listening on %s was canceled", addr)
+		return
+	case cr = <-newConn:
+		if cr.err != nil {
+			done <- fmt.Errorf("accept failed with: %v", cr.err)
+			return
+		}
+		defer cr.conn.Close()
+	}
+
+	// communicate with the client
+	commRv := make(chan error, 1)
+	go func() {
+		defer close(commRv)
+		// receive message from the client
+		message, err := bufio.NewReader(cr.conn).ReadString('\n')
+		if err != nil {
+			commRv <- fmt.Errorf("failed to read data from client: %v", err)
+			return
+		}
+		// send response to the client
+		_, err = cr.conn.Write([]byte(respMsg + "\n"))
+		if err != nil {
+			commRv <- fmt.Errorf("failed to send data to client: %v", err)
+			return
+		}
+		// check if the exchanged data are as expected
+		message = strings.TrimRight(message, "\n")
+		if message != expReqMsg {
+			commRv <- fmt.Errorf("unexpected message received from client ('%s' vs. '%s')",
+				message, expReqMsg)
+			return
+		}
+		commRv <- nil
+	}()
+
+	// wait for the message exchange to execute
+	select {
+	case <-ctx.Done():
+		done <- fmt.Errorf("tcp server listening on %s was canceled", addr)
+		return
+	case err = <-commRv:
+		done <- err
+	}
+
+	// do not close until client confirms reception of the message
+	<-ctx.Done()
+}
+
+func simpleUDPServer(ctx context.Context, ms *microservice, addr string, expReqMsg, respMsg string, done chan<- error) {
+	const maxBufferSize = 1024
+	// move to the network namespace where server should listen
+	exitNetNs := ms.enterNetNs()
+	defer exitNetNs()
+
+	conn, err := net.ListenPacket("udp", addr)
+	if err != nil {
+		done <- err
+		return
+	}
+	defer conn.Close()
+
+	// communicate with the client
+	commRv := make(chan error, 1)
+	go func() {
+		defer close(commRv)
+		// receive message from the client
+		buffer := make([]byte, maxBufferSize)
+		n, addr, err := conn.ReadFrom(buffer)
+		if err != nil {
+			commRv <- fmt.Errorf("failed to read data from client: %v", err)
+			return
+		}
+		message := string(buffer[:n])
+		// send response to the client
+		_, err = conn.WriteTo([]byte(respMsg+"\n"), addr)
+		if err != nil {
+			commRv <- fmt.Errorf("failed to send data to client: %v", err)
+			return
+		}
+		// check if the exchanged data are as expected
+		message = strings.TrimRight(message, "\n")
+		if message != expReqMsg {
+			commRv <- fmt.Errorf("unexpected message received from client ('%s' vs. '%s')",
+				message, expReqMsg)
+			return
+		}
+		commRv <- nil
+	}()
+
+	// wait for the message exchange to execute
+	select {
+	case <-ctx.Done():
+		done <- fmt.Errorf("udp server listening on %s was canceled", addr)
+		return
+	case err = <-commRv:
+		done <- err
+	}
+
+	// do not close until client confirms reception of the message
+	<-ctx.Done()
+}
+
+func simpleTCPClient(ms *microservice, addr string, reqMsg, expRespMsg string, timeout time.Duration, done chan<- error) {
+	// try to connect with the server
+	newConn := make(chan connectionRequest, 1)
+	go func() {
+		// move to the network namespace from which the connection should be initiated
+		exitNetNs := ms.enterNetNs()
+		defer exitNetNs()
+		start := time.Now()
+		for {
+			conn, err := net.Dial("tcp", addr)
+			if err != nil && time.Since(start) < timeout {
+				time.Sleep(checkPollingInterval)
+				continue
+			}
+			newConn <- connectionRequest{conn: conn, err: err}
+			break
+		}
+		close(newConn)
+	}()
+
+	simpleTCPOrUDPClient(newConn, addr, reqMsg, expRespMsg, timeout, done)
+}
+
+func simpleUDPClient(ms *microservice, addr string, reqMsg, expRespMsg string, timeout time.Duration, done chan<- error) {
+	// try to connect with the server
+	newConn := make(chan connectionRequest, 1)
+	go func() {
+		// move to the network namespace from which the connection should be initiated
+		exitNetNs := ms.enterNetNs()
+		defer exitNetNs()
+		udpAddr, err := net.ResolveUDPAddr("udp", addr)
+		if err != nil {
+			newConn <- connectionRequest{conn: nil, err: err}
+		} else {
+			start := time.Now()
+			for {
+				conn, err := net.DialUDP("udp", nil, udpAddr)
+				if err != nil && time.Since(start) < timeout {
+					time.Sleep(checkPollingInterval)
+					continue
+				}
+				newConn <- connectionRequest{conn: conn, err: err}
+				break
+			}
+		}
+		close(newConn)
+	}()
+
+	simpleTCPOrUDPClient(newConn, addr, reqMsg, expRespMsg, timeout, done)
+}
+
+func simpleTCPOrUDPClient(newConn chan connectionRequest, addr, reqMsg, expRespMsg string,
+	timeout time.Duration, done chan<- error) {
+
+	// wait for connection
+	var cr connectionRequest
+	select {
+	case <-time.After(timeout):
+		done <- fmt.Errorf("connection to %s timed out", addr)
+		return
+	case cr = <-newConn:
+		if cr.err != nil {
+			done <- fmt.Errorf("dial failed with: %v", cr.err)
+			return
+		}
+		defer cr.conn.Close()
+	}
+
+	// communicate with the server
+	commRv := make(chan error, 1)
+	go func() {
+		defer close(commRv)
+		// send message to the server
+		_, err := fmt.Fprintf(cr.conn, reqMsg+"\n")
+		if err != nil {
+			commRv <- fmt.Errorf("failed to send data to the server: %v", err)
+			return
+		}
+		// listen for reply
+		start := time.Now()
+		var message string
+		for {
+			message, err = bufio.NewReader(cr.conn).ReadString('\n')
+			if err != nil && time.Since(start) < timeout {
+				time.Sleep(checkPollingInterval)
+				continue
+			}
+			if err != nil {
+				commRv <- fmt.Errorf("failed to read data from server: %v", err)
+				return
+			}
+			break
+		}
+		// check if the exchanged data are as expected
+		message = strings.TrimRight(message, "\n")
+		if message != expRespMsg {
+			commRv <- fmt.Errorf("unexpected message received from server ('%s' vs. '%s')",
+				message, expRespMsg)
+			return
+		}
+		commRv <- nil
+	}()
+
+	// wait for the message exchange to execute
+	select {
+	case <-time.After(timeout):
+		done <- fmt.Errorf("communication with %s timed out", addr)
+	case err := <-commRv:
+		done <- err
+	}
+}
+
 func removeFile(t *testing.T, path string) {
 	if err := os.Remove(path); err == nil {
 		t.Logf("removed file %q", path)
 	} else if !os.IsNotExist(err) {
 		t.Fatalf("removing file %q failed: %v", path, err)
 	}
+}
+
+// parseVPPTable parses table returned by one of the VPP show commands.
+func parseVPPTable(table string) (parsed []map[string]string) {
+	lines := strings.Split(table, "\r\n")
+	if len(lines) == 0 {
+		return
+	}
+	head := lines[0]
+	rows := lines[1:]
+
+	var columns []string
+	for _, column := range strings.Split(head, " ") {
+		if column != "" {
+			columns = append(columns, column)
+		}
+	}
+	for _, row := range rows {
+		parsedRow := make(map[string]string)
+		i := 0
+		for _, cell := range strings.Split(row, " ") {
+			if cell == "" {
+				continue
+			}
+			if i >= len(columns) {
+				break
+			}
+			parsedRow[columns[i]] = cell
+			i++
+		}
+		if len(parsedRow) > 0 {
+			parsed = append(parsed, parsedRow)
+		}
+	}
+	return
 }
