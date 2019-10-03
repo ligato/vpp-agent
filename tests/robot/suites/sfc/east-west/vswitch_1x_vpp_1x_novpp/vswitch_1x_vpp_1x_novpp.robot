@@ -121,8 +121,6 @@ Show Interfaces And Other Objects
     Write To Machine    agent_vpp_2_term    show br
     Write To Machine    agent_vpp_1_term    show br 1 detail
     Write To Machine    agent_vpp_2_term    show br 1 detail
-    Write To Machine    agent_vpp_1_term    show vxlan tunnel
-    Write To Machine    agent_vpp_2_term    show vxlan tunnel
     Write To Machine    agent_vpp_1_term    show err
     Write To Machine    agent_vpp_2_term    show err
     vat_term: Interfaces Dump    agent_vpp_1
