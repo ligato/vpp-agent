@@ -1,4 +1,4 @@
-[Documentation]     Keywords for working with afpacket interfaces using VPP API
+[Documentation]     Keywords for working with loopback interfaces using VPP API
 
 *** Settings ***
 Resource    ../vpp_api.robot
@@ -10,14 +10,12 @@ ${bd_timeout}=            15s
 
 *** Keywords ***
 
-vpp_api: Check Afpacket Interface State
+vpp_api: Check Loopback Interface State
     [Arguments]          ${node}    ${name}    @{desired_state}
     ${internal_name}=    Get Interface Internal Name    ${node}    ${name}
     ${int_state}=        vpp_api: Get Interface State By Name    ${node}    ${internal_name}
     ${ipv4_list}=        vpp_term: Get Interface IPs    ${node}    ${internal_name}
     ${ipv6_list}=        vpp_term: Get Interface IP6 IPs    ${node}    ${internal_name}
-    ${config}=           Get VPP Interface Config As Json    ${node}    ${name}
-    ${host_int}=         Set Variable    ${config["afpacket"]["host_if_name"]}
     ${enabled}=          Set Variable    ${int_state["admin_up_down"]}
     ${mtu}=              Set Variable    ${int_state["mtu"][0]}
     ${str_mac}=          Set Variable    ${int_state["l2_address"]}

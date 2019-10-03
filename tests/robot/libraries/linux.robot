@@ -160,3 +160,12 @@ linux: Delete Route
     [Arguments]    ${node}    ${destination_ip}    ${prefix}    ${next_hop_ip}
     Execute In Container    ${node}    ip route del ${destination_ip}/${prefix} via ${next_hop_ip}
 
+linux: Check ARP
+    [Arguments]        ${node}      ${interface}    ${ipv4}     ${MAC}    ${presence}
+    [Documentation]    Check ARP presence in linux
+    ${out}=            Execute In Container    ${node}    cat /proc/net/arp
+    ${arps}=           Parse Linux ARP Entries    ${out}
+    ${wanted}=         Create Dictionary    interface=${interface}    ip_addr=${ipv4}    mac_addr=${MAC}
+    Run Keyword If     "${presence}" == "True"
+    ...    Should Contain     ${arps}    ${wanted}
+    ...    ELSE    Should Not Contain    ${arps}    ${wanted}

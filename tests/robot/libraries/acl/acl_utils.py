@@ -1,8 +1,9 @@
+import vpp_api
+
 from robot.api import logger
 
 
 def acl_dump(host, username, password, node):
-    import vpp_api
 
     # Use max uint32 value to dump all ACLs
     int_max = 4294967295

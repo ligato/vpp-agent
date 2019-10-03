@@ -58,3 +58,21 @@ def Check_Linux_Interface_IP_Presence(data, mac, ip):
     else:
         return False
 
+
+def parse_linux_arp_entries(data):
+
+    entries = []
+
+    for line in data.splitlines():
+        if "ip address" in line.lower():
+            # skip column headers line
+            continue
+        entry_data = line.split()
+        entry = {
+            "interface": entry_data[5],
+            "ip_addr": entry_data[0],
+            "mac_addr": entry_data[3]
+        }
+        entries.append(entry)
+
+    return entries

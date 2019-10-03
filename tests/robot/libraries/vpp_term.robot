@@ -224,6 +224,23 @@ vpp_term: Show Memif
     ${out}=            vpp_term: Issue Command  ${node}   sh memif ${interface}
     [Return]           ${out}
 
+vpp_term: Check Memif Interface State
+    [Arguments]          ${node}    ${name}    @{desired_state}
+    ${internal_name}=    Get Interface Internal Name    ${node}    ${name}
+    ${memif_info}=       vpp_term: Show Memif    ${node}    ${internal_name}
+    ${memif_state}=      Parse Memif Info    ${memif_info}
+    ${ipv4_list}=        vpp_term: Get Interface IPs    ${node}    ${internal_name}
+    ${ipv6_list}=        vpp_term: Get Interface IP6 IPs    ${node}    ${internal_name}
+    ${mac}=              vpp_term: Get Interface MAC    ${node}    ${internal_name}
+    ${actual_state}=     Create List    mac=${mac}
+    :FOR    ${ip}    IN    @{ipv4_list}
+    \    Append To List    ${actual_state}    ipv4=${ip}
+    :FOR    ${ip}    IN    @{ipv6_list}
+    \    Append To List    ${actual_state}    ipv6=${ip}
+    Append To List       ${actual_state}    @{memif_state}
+    List Should Contain Sub List    ${actual_state}    ${desired_state}
+    [Return]             ${actual_state}
+
 vpp_term: Check TAP Interface State
     [Arguments]          ${node}    ${name}    @{desired_state}
     Sleep                 10s    Time to let etcd to get state of newly setup tap interface.

@@ -233,7 +233,6 @@ Show Interfaces And Other Objects
     Write To Machine    agent_vpp_1_term    show h
     Write To Machine    agent_vpp_1_term    show br
     Write To Machine    agent_vpp_1_term    show br 1 detail
-    Write To Machine    agent_vpp_1_term    show vxlan tunnel
     Write To Machine    agent_vpp_1_term    show err
     vpp_term: Show L2fib    agent_vpp_1
     vpp_term: Show IP Fib Table    agent_vpp_1   0
