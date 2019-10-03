@@ -7,6 +7,7 @@ Library      OperatingSystem
 Resource     ../../../variables/${VARIABLES}_variables.robot
 
 Resource     ../../../libraries/all_libs.robot
+Resource     ../../libraries/interface/vxlan.robot
 
 Force Tags        traffic     IPv6    ExpectedFailure
 Suite Setup       Testsuite Setup

@@ -7,6 +7,7 @@ Library      OperatingSystem
 Resource     ../../variables/${VARIABLES}_variables.robot
 
 Resource     ../../libraries/all_libs.robot
+Resource     ../../libraries/interface/vxlan.robot
 
 Force Tags        crud     IPv6    ExpectedFailure
 Suite Setup       Testsuite Setup
@@ -87,7 +88,7 @@ Check That BD2 Is Not Affected By Updating BD1
 
 Delete VXLan1 Interface
     Delete VPP Interface    node=agent_vpp_1    name=vpp1_vxlan1
-    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vxlan: Tunnel Is Deleted    node=agent_vpp_1    src=192.168.1.1    dst=192.168.1.2    vni=5
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    VXLan Tunnel Is Deleted    node=agent_vpp_1    src=192.168.1.1    dst=192.168.1.2    vni=5
 
 Check That VXLan1 Interface Is Deleted From BD1
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vat_term: BD Is Deleted    agent_vpp_1    vpp1_memif1    vpp1_vxlan1    bvi_vpp1_loop2
@@ -95,7 +96,7 @@ Check That VXLan1 Interface Is Deleted From BD1
 
 Read VXLan1 Interface
     Put VXLan Interface    node=agent_vpp_1    name=vpp1_vxlan1    src=192.168.1.1    dst=192.168.1.2    vni=5
-    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vxlan: Tunnel Is Created    node=agent_vpp_1    src=192.168.1.1    dst=192.168.1.2    vni=5
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    VXLan Tunnel Is Created    node=agent_vpp_1    src=192.168.1.1    dst=192.168.1.2    vni=5
 
 Check That VXLan1 Interface Is Added To BD1
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vat_term: Check Bridge Domain State    agent_vpp_1  vpp1_bd1  flood=0  unicast=0  forward=0  learn=0  arp_term=0  interface=vpp1_memif1  interface=vpp1_vxlan1  interface=bvi_vpp1_loop2  bvi_int=bvi_vpp1_loop2

@@ -7,6 +7,7 @@ Library      OperatingSystem
 Resource     ../../variables/${VARIABLES}_variables.robot
 
 Resource     ../../libraries/all_libs.robot
+Resource     ../../libraries/interface/vxlan.robot
 
 Force Tags        crud     IPv6
 Suite Setup       Testsuite Setup
@@ -35,17 +36,17 @@ Show Interfaces Before Setup
     vpp_term: Show Interfaces    agent_vpp_1
 
 Add First VXLan Interface
-    vxlan: Tunnel Not Exists    node=agent_vpp_1    src=${IP1}    dst=${IP2}    vni=15
+    VXLan Tunnel Not Exists    node=agent_vpp_1    src=${IP1}    dst=${IP2}    vni=15
     Put VXLan Interface    node=agent_vpp_1    name=vpp1_vxlan1    src=${IP1}    dst=${IP2}    vni=15
 
-    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vxlan: Tunnel Is Created    node=agent_vpp_1    src=${IP1}    dst=${IP2}    vni=15
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    VXLan Tunnel Is Created    node=agent_vpp_1    src=${IP1}    dst=${IP2}    vni=15
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vat_term: Check VXLan Interface State    agent_vpp_1    vpp1_vxlan1    enabled=1    src=${IP1}    dst=${IP2}    vni=15
 
 Add Second VXLan Interface
-    vxlan: Tunnel Not Exists    node=agent_vpp_1    src=${IP3}    dst=${IP4}    vni=25
+    VXLan Tunnel Not Exists    node=agent_vpp_1    src=${IP3}    dst=${IP4}    vni=25
     Put VXLan Interface    node=agent_vpp_1    name=vpp1_vxlan2    src=${IP3}    dst=${IP4}    vni=25
 
-    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vxlan: Tunnel Is Created    node=agent_vpp_1    src=${IP3}    dst=${IP4}    vni=25
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    VXLan Tunnel Is Created    node=agent_vpp_1    src=${IP3}    dst=${IP4}    vni=25
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vat_term: Check VXLan Interface State    agent_vpp_1    vpp1_vxlan2    enabled=1    src=${IP3}    dst=${IP4}    vni=25
 
 Check That First VXLan Interface Is Still Configured
@@ -54,8 +55,8 @@ Check That First VXLan Interface Is Still Configured
 Update First VXLan Interface
     Put VXLan Interface    node=agent_vpp_1    name=vpp1_vxlan1    src=${IP10}    dst=${IP20}    vni=150
 
-    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vxlan: Tunnel Is Deleted    node=agent_vpp_1    src=${IP1}    dst=${IP2}    vni=15
-    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vxlan: Tunnel Is Created    node=agent_vpp_1    src=${IP10}    dst=${IP20}    vni=150
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    VXLan Tunnel Is Deleted    node=agent_vpp_1    src=${IP1}    dst=${IP2}    vni=15
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    VXLan Tunnel Is Created    node=agent_vpp_1    src=${IP10}    dst=${IP20}    vni=150
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vat_term: Check VXLan Interface State    agent_vpp_1    vpp1_vxlan1    enabled=1    src=${IP10}    dst=${IP20}    vni=150
 
 Check That Second VXLan Interface Is Not Changed
@@ -64,7 +65,7 @@ Check That Second VXLan Interface Is Not Changed
 Delete First VXLan Interface
     Delete VPP Interface    node=agent_vpp_1    name=vpp1_vxlan1
 
-    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vxlan: Tunnel Is Deleted    node=agent_vpp_1    src=${IP10}    dst=${IP20}    vni=150
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    VXLan Tunnel Is Deleted    node=agent_vpp_1    src=${IP10}    dst=${IP20}    vni=150
 
 Check That Second VXLan Interface Is Still Configured
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vat_term: Check VXLan Interface State    agent_vpp_1    vpp1_vxlan2    enabled=1    src=${IP3}    dst=${IP4}    vni=25

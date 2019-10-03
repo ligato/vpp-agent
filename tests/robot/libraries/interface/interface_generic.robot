@@ -1,4 +1,4 @@
-[Documentation]     Keywords for working with VAT terminal
+[Documentation]     Keywords for working with interfaces using VPP API
 
 *** Settings ***
 Library     interface_generic.py
