@@ -22,8 +22,8 @@ package netalloc;
 
 option go_package = "github.com/ligato/vpp-agent/api/models/netalloc";
 
-import "github.com/gogo/protobuf/gogoproto/gogo.proto";
-option (gogoproto.messagename_all) = true;
+//import "github.com/gogo/protobuf/gogoproto/gogo.proto";
+//option (gogoproto.messagename_all) = true;
 
 // IPAddressForm can be used in descriptors whose models reference allocated IP
 // addresses, to ask for a specific form in which the address should applied.

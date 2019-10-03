@@ -19,8 +19,8 @@ import (
 	"net"
 	"strings"
 
-	"github.com/gogo/protobuf/proto"
-	prototypes "github.com/gogo/protobuf/types"
+	"github.com/golang/protobuf/proto"
+	prototypes "github.com/golang/protobuf/ptypes/empty"
 	"github.com/pkg/errors"
 	"github.com/vishvananda/netlink"
 
@@ -28,7 +28,7 @@ import (
 	"github.com/ligato/cn-infra/utils/addrs"
 
 	ifmodel "github.com/ligato/vpp-agent/api/models/linux/interfaces"
-	"github.com/ligato/vpp-agent/api/models/linux/l3"
+	linux_l3 "github.com/ligato/vpp-agent/api/models/linux/l3"
 	netalloc_api "github.com/ligato/vpp-agent/api/models/netalloc"
 	"github.com/ligato/vpp-agent/pkg/models"
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"

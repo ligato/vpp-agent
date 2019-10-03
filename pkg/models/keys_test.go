@@ -17,8 +17,8 @@ package models_test
 import (
 	"testing"
 
-	"github.com/gogo/protobuf/proto"
-	"github.com/ligato/vpp-agent/api/models/linux/interfaces"
+	"github.com/golang/protobuf/proto"
+	linux_interfaces "github.com/ligato/vpp-agent/api/models/linux/interfaces"
 	"github.com/ligato/vpp-agent/pkg/models"
 )
 

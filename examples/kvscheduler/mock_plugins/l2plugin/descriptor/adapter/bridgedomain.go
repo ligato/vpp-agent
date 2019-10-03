@@ -3,10 +3,10 @@
 package adapter
 
 import (
-	"github.com/gogo/protobuf/proto"
-	. "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-	"github.com/ligato/vpp-agent/examples/kvscheduler/mock_plugins/l2plugin/model"
+	"github.com/golang/protobuf/proto"
+	mock_l2 "github.com/ligato/vpp-agent/examples/kvscheduler/mock_plugins/l2plugin/model"
 	"github.com/ligato/vpp-agent/pkg/idxvpp"
+	. "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 )
 
 ////////// type-safe key-value pair with metadata //////////

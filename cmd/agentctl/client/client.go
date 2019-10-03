@@ -135,6 +135,10 @@ func (c *Client) Close() error {
 	return nil
 }
 
+func (c *Client) GRPCAddr() (string, error) {
+	return c.grpcAddr, nil
+}
+
 func (c *Client) GRPCConn() (*grpc.ClientConn, error) {
 	if c.grpcClient == nil {
 		logging.Debugf("dialing grpc address: %v", c.grpcAddr)

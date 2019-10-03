@@ -19,8 +19,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/gogo/protobuf/proto"
-	prototypes "github.com/gogo/protobuf/types"
+	"github.com/golang/protobuf/proto"
+	prototypes "github.com/golang/protobuf/ptypes/empty"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/pkg/errors"
 

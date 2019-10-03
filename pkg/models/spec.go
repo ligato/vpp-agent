@@ -18,11 +18,12 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"reflect"
 	"regexp"
 	"strings"
 	"text/template"
 
-	"github.com/gogo/protobuf/proto"
+	"github.com/golang/protobuf/proto"
 
 	api "github.com/ligato/vpp-agent/api/genericmanager"
 )
@@ -118,8 +119,9 @@ func (m registeredModel) name(x proto.Message) (string, error) {
 }
 
 var (
-	registeredModels = make(map[string]*registeredModel)
-	modelPaths       = make(map[string]string)
+	registeredModels = make(map[reflect.Type]*registeredModel)
+	//registeredModels = make(map[string]*registeredModel)
+	modelPaths = make(map[string]reflect.Type)
 
 	debugRegister = strings.Contains(os.Getenv("DEBUG_MODELS"), "register")
 )
@@ -151,14 +153,22 @@ func Register(pb proto.Message, spec Spec, opts ...ModelOption) *registeredModel
 		protoName: proto.MessageName(pb),
 	}
 
-	// Check proto message name
-	if model.protoName == "" {
-		panic(fmt.Sprintf("empty proto message name for type: %T\n\n\tPlease ensure your .proto file contains: 'option (gogoproto.messagename_all) = true'", pb))
-	}
+	t := reflect.TypeOf(pb)
+	/*fmt.Printf("t = %v\n", t)
+	fmt.Printf("t = %+v\n", t)
+	fmt.Printf("t = %v\n", t.PkgPath())*/
 
 	// Check duplicate registration
-	if _, ok := registeredModels[model.protoName]; ok {
+	if _, ok := registeredModels[t]; ok {
 		panic(fmt.Sprintf("proto message %q already registered", model.protoName))
+	}
+
+	fmt.Printf("registering model: %v\n", t)
+
+	// Check proto message name
+	if model.protoName == "" {
+		//panic(fmt.Sprintf("empty proto message name for type: %T\n\n\tPlease ensure your .proto file contains: 'option (gogoproto.messagename_all) = true'", pb))
+		//fmt.Printf("empty proto message name for type: %T\n\n\tPlease ensure your .proto file contains: 'option (gogoproto.messagename_all) = true'", pb)
 	}
 
 	// Validate model spec
@@ -177,6 +187,7 @@ func Register(pb proto.Message, spec Spec, opts ...ModelOption) *registeredModel
 	if pn, ok := modelPaths[model.modelPath]; ok {
 		panic(fmt.Sprintf("path prefix %q already used by: %s", model.modelPath, pn))
 	}
+
 	modulePath := strings.Replace(spec.Module, ".", "/", -1)
 	model.keyPrefix = fmt.Sprintf("config/%s/%s/%s/", modulePath, spec.Version, spec.Type)
 
@@ -196,8 +207,8 @@ func Register(pb proto.Message, spec Spec, opts ...ModelOption) *registeredModel
 		model.keyPrefix = strings.TrimSuffix(model.keyPrefix, "/")
 	}
 
-	registeredModels[model.protoName] = model
-	modelPaths[model.modelPath] = model.protoName
+	registeredModels[t] = model
+	modelPaths[model.modelPath] = t
 
 	if debugRegister {
 		fmt.Printf("- registered model: %+v\t%q\n", model, model.modelPath)

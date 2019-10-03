@@ -18,7 +18,7 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/gogo/protobuf/proto"
+	"github.com/golang/protobuf/proto"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/vpp-agent/pkg/models"
 	"github.com/pkg/errors"

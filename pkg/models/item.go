@@ -18,8 +18,8 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/gogo/protobuf/proto"
-	"github.com/gogo/protobuf/types"
+	"github.com/golang/protobuf/proto"
+	types "github.com/golang/protobuf/ptypes"
 
 	"github.com/ligato/cn-infra/datasync"
 	api "github.com/ligato/vpp-agent/api/genericmanager"
@@ -51,13 +51,17 @@ func UnmarshalLazyValue(key string, lazy datasync.LazyValue) (proto.Message, err
 
 // Unmarshal is helper function for unmarshalling items.
 func UnmarshalItem(m *api.Item) (proto.Message, error) {
-	protoName, err := types.AnyMessageName(m.GetData().GetAny())
-	if err != nil {
-		return nil, err
+	version := m.GetId().GetModel().GetVersion()
+	module := m.GetId().GetModel().GetModule()
+	typ := m.GetId().GetModel().GetType()
+	modelPath := buildModelPath(version, module, typ)
+	t, ok := modelPaths[modelPath] //types.AnyMessageName(m.GetData().GetAny())
+	if !ok {
+		return nil, fmt.Errorf("no found model for path: %q", modelPath)
 	}
-	model, found := registeredModels[protoName]
+	model, found := registeredModels[t]
 	if !found {
-		return nil, fmt.Errorf("message %s is not registered as model", protoName)
+		return nil, fmt.Errorf("message %s is not registered as model", t)
 	}
 
 	itemModel := m.Id.Model
@@ -108,10 +112,11 @@ func MarshalItem(pb proto.Message) (*api.Item, error) {
 }
 
 func getItemID(pb proto.Message) (*api.Item_ID, error) {
-	protoName := proto.MessageName(pb)
-	model, found := registeredModels[protoName]
+	//protoName := proto.MessageName(pb)
+	t := reflect.TypeOf(pb)
+	model, found := registeredModels[t]
 	if !found {
-		return nil, fmt.Errorf("message %s is not registered as model", protoName)
+		return nil, fmt.Errorf("message %s is not registered as model", t)
 	}
 
 	name, err := model.name(pb)
@@ -146,9 +151,9 @@ func ModelForItem(item *api.Item) (registeredModel, error) {
 	}
 	if id := item.GetId(); id != nil {
 		modelPath := getModelPath(id.Model)
-		protoName, found := modelPaths[modelPath]
+		t, found := modelPaths[modelPath]
 		if found {
-			model, _ := registeredModels[protoName]
+			model, _ := registeredModels[t]
 			return *model, nil
 		}
 	}
@@ -162,9 +167,9 @@ func ItemKey(item *api.Item) (string, error) {
 	}
 	if id := item.GetId(); id != nil {
 		modelPath := getModelPath(id.Model)
-		protoName, found := modelPaths[modelPath]
+		t, found := modelPaths[modelPath]
 		if found {
-			model, _ := registeredModels[protoName]
+			model, _ := registeredModels[t]
 			key := model.KeyPrefix() + id.Name
 			return key, nil
 		}

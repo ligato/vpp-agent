@@ -17,7 +17,7 @@ package descriptor
 import (
 	"sync"
 
-	prototypes "github.com/gogo/protobuf/types"
+	prototypes "github.com/golang/protobuf/ptypes/empty"
 	"github.com/ligato/cn-infra/logging"
 
 	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"

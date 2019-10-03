@@ -15,9 +15,11 @@
 package descriptor
 
 import (
-	"github.com/gogo/protobuf/proto"
+	"github.com/golang/protobuf/proto"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/pkg/errors"
+
+	"strconv"
 
 	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
@@ -26,7 +28,6 @@ import (
 	vpp_ifdescriptor "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/descriptor"
 	"github.com/ligato/vpp-agent/plugins/vpp/natplugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/vpp/natplugin/vppcalls"
-	"strconv"
 )
 
 const (
@@ -40,7 +41,7 @@ const (
 
 	// dependency labels
 	mappingInterfaceDep = "interface-exists"
-	mappingVrfDep = "vrf-table-exists"
+	mappingVrfDep       = "vrf-table-exists"
 )
 
 // A list of non-retriable errors:
@@ -62,7 +63,7 @@ func NewDNAT44Descriptor(natHandler vppcalls.NatVppAPI, log logging.PluginLogger
 		natHandler: natHandler,
 		log:        log.NewLogger("nat44-dnat-descriptor"),
 	}
-	
+
 	typedDescr := &adapter.DNAT44Descriptor{
 		Name:            DNAT44DescriptorName,
 		NBKeyPrefix:     nat.ModelDNat44.KeyPrefix(),

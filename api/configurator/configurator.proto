@@ -8,6 +8,10 @@ import "models/vpp/vpp.proto";
 import "models/linux/linux.proto";
 import "models/netalloc/netalloc.proto";
 
+//import weak "github.com/gogo/protobuf/gogoproto/gogo.proto";
+//option (gogoproto.messagename_all) = true;
+//option (gogoproto.goproto_registration) = true;
+
 // Config groups all supported config data into single message.
 message Config {
     vpp.ConfigData vpp_config = 1;
@@ -35,7 +39,7 @@ service Configurator {
     // Get is used for listing desired config.
     rpc Get(GetRequest) returns (GetResponse);
 
-    // Update is used for updating desired config.
+    // Update is used for updating desired config.l
     rpc Update(UpdateRequest) returns (UpdateResponse);
 
     // Delete is used for deleting desired config.

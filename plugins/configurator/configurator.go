@@ -17,10 +17,10 @@ package configurator
 import (
 	"runtime/trace"
 
-	"github.com/gogo/status"
 	"github.com/ligato/cn-infra/logging"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	rpc "github.com/ligato/vpp-agent/api/configurator"
 	"github.com/ligato/vpp-agent/api/models/linux"

@@ -17,10 +17,10 @@ package graph
 import (
 	"bytes"
 	"fmt"
-	"time"
 	"sort"
+	"time"
 
-	"github.com/gogo/protobuf/proto"
+	"github.com/golang/protobuf/proto"
 
 	"github.com/ligato/cn-infra/idxmap"
 	. "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
@@ -134,7 +134,7 @@ type RWAccess interface {
 // TargetIterator is a callback applied on every target.
 // For each label it will be called n+1 times, where n is the number of targets
 // available for the given label and the extra call will be made with nil target.
-type TargetIterator func (target Node, label string) (skipLabel, abort bool)
+type TargetIterator func(target Node, label string) (skipLabel, abort bool)
 
 // Node is a read-only handle to a single graph node.
 type Node interface {
@@ -416,7 +416,7 @@ type RecordedNode struct {
 	Flags            RecordedFlags
 	MetadataFields   map[string][]string // field name -> values
 	Targets          Targets
-	TargetUpdateOnly bool                // true if only runtime Targets have changed since the last rev
+	TargetUpdateOnly bool // true if only runtime Targets have changed since the last rev
 }
 
 // GetFlag returns reference to the given flag or nil if the node didn't have

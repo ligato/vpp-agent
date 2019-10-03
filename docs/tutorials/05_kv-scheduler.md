@@ -39,8 +39,8 @@ northbound proto models, the Orchestrator needs message names to be present in t
 message names are present in proto messages we must use the following special protobuf option (together with its
 import):
 ```proto
-import "github.com/gogo/protobuf/gogoproto/gogo.proto";
-option (gogoproto.messagename_all) = true;
+//import "github.com/gogo/protobuf/gogoproto/gogo.proto";
+//option (gogoproto.messagename_all) = true;
 ```
 
 In order to register our Hello World plugin with the scheduler and to work with our new model, we need two new 

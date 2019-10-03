@@ -21,8 +21,9 @@ import (
 	"path"
 
 	"github.com/ligato/cn-infra/health/probe"
-	"github.com/ligato/vpp-agent/api/types"
 	"github.com/sirupsen/logrus"
+
+	"github.com/ligato/vpp-agent/api/types"
 )
 
 // Ping pings the server and returns the value of the "API-Version" headers.

@@ -17,8 +17,9 @@ package models
 import (
 	"fmt"
 	"path"
+	"reflect"
 
-	"github.com/gogo/protobuf/proto"
+	"github.com/golang/protobuf/proto"
 )
 
 // Key is a shorthand for the GetKey for avoid error checking.
@@ -98,10 +99,11 @@ func GetPath(x proto.Message) (string, error) {
 
 // GetModel returns registered model for the given proto message.
 func GetModel(x proto.Message) (registeredModel, error) {
-	protoName := proto.MessageName(x)
-	model, found := registeredModels[protoName]
+	//protoName := proto.MessageName(x)
+	t := reflect.TypeOf(x)
+	model, found := registeredModels[t]
 	if !found {
-		return registeredModel{}, fmt.Errorf("no model registered for %s", protoName)
+		return registeredModel{}, fmt.Errorf("no model registered for %s", t)
 	}
 	return *model, nil
 }

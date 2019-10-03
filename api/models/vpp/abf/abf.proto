@@ -4,8 +4,8 @@ package vpp.abf;
 
 option go_package = "github.com/ligato/vpp-agent/api/models/vpp/abf;vpp_abf";
 
-import "github.com/gogo/protobuf/gogoproto/gogo.proto";
-option (gogoproto.messagename_all) = true;
+//import "github.com/gogo/protobuf/gogoproto/gogo.proto";
+//option (gogoproto.messagename_all) = true;
 
 // ACL based forwarding
 message ABF {

@@ -4,8 +4,8 @@ package vpp.punt;
 
 option go_package = "github.com/ligato/vpp-agent/api/models/vpp/punt;vpp_punt";
 
-import "github.com/gogo/protobuf/gogoproto/gogo.proto";
-option (gogoproto.messagename_all) = true;
+//import "github.com/gogo/protobuf/gogoproto/gogo.proto";
+//option (gogoproto.messagename_all) = true;
 
 // L3Protocol defines Layer 3 protocols.
 enum L3Protocol {

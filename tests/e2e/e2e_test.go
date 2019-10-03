@@ -34,7 +34,7 @@ import (
 	"time"
 
 	docker "github.com/fsouza/go-dockerclient"
-	"github.com/gogo/protobuf/proto"
+	"github.com/golang/protobuf/proto"
 	"github.com/mitchellh/go-ps"
 	. "github.com/onsi/gomega"
 	"google.golang.org/grpc"

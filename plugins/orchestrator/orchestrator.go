@@ -27,6 +27,7 @@ import (
 	api "github.com/ligato/vpp-agent/api/genericmanager"
 	"github.com/ligato/vpp-agent/pkg/models"
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
+	"google.golang.org/grpc/reflection"
 )
 
 var (
@@ -113,6 +114,11 @@ func (p *Plugin) AfterInit() (err error) {
 	statusChan := make(chan *kvs.BaseValueStatus, 100)
 	p.kvs.WatchValueStatus(statusChan, nil)
 	go p.watchStatus(statusChan)
+
+	reflection.Register(p.GRPC.GetServer())
+	/*if _, err := grpcreflect.LoadServiceDescriptors(p.GRPC.GetServer()); err != nil {
+		return err
+	}*/
 
 	return nil
 }

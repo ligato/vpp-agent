@@ -3,10 +3,10 @@
 package adapter
 
 import (
-	"github.com/gogo/protobuf/proto"
+	"github.com/golang/protobuf/proto"
+	vpp_abf "github.com/ligato/vpp-agent/api/models/vpp/abf"
 	. "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/vpp/abfplugin/abfidx"
-	"github.com/ligato/vpp-agent/api/models/vpp/abf"
 )
 
 ////////// type-safe key-value pair with metadata //////////
