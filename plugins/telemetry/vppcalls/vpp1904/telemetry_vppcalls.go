@@ -46,11 +46,21 @@ type TelemetryHandler struct {
 	ch    govppapi.Channel
 	stats govppapi.StatsProvider
 	vpe   vpevppcalls.VpeVppAPI
+
+	sysStats  govppapi.SystemStats
+	ifStats   govppapi.InterfaceStats
+	nodeStats govppapi.NodeStats
+	errStats  govppapi.ErrorStats
+	bufStats  govppapi.BufferStats
 }
 
 func NewTelemetryVppHandler(ch govppapi.Channel, stats govppapi.StatsProvider) *TelemetryHandler {
 	vpeHandler := vpp1904.NewVpeHandler(ch)
-	return &TelemetryHandler{ch, stats, vpeHandler}
+	return &TelemetryHandler{
+		ch:    ch,
+		stats: stats,
+		vpe:   vpeHandler,
+	}
 }
 
 var (
@@ -114,12 +124,12 @@ func (h *TelemetryHandler) getMemoryCLI(ctx context.Context) (*vppcalls.MemoryIn
 }
 
 func (h *TelemetryHandler) GetInterfaceStats(context.Context) (*govppapi.InterfaceStats, error) {
-	stats, err := h.stats.GetInterfaceStats()
+	err := h.stats.GetInterfaceStats(&h.ifStats)
 	if err != nil {
 		return nil, err
 	}
 
-	return stats, nil
+	return &h.ifStats, nil
 }
 
 var (
@@ -137,14 +147,14 @@ func (h *TelemetryHandler) GetNodeCounters(ctx context.Context) (*vppcalls.NodeC
 
 // GetNodeCounters retrieves node counters info.
 func (h *TelemetryHandler) getNodeCountersStats() (*vppcalls.NodeCounterInfo, error) {
-	errStats, err := h.stats.GetErrorStats()
+	err := h.stats.GetErrorStats(&h.errStats)
 	if err != nil {
 		return nil, err
 	}
 
 	var counters []vppcalls.NodeCounter
 
-	for _, c := range errStats.Errors {
+	for _, c := range h.errStats.Errors {
 		node, reason := SplitErrorName(c.CounterName)
 		counters = append(counters, vppcalls.NodeCounter{
 			Value: c.Value,
@@ -225,7 +235,7 @@ func (h *TelemetryHandler) GetRuntimeInfo(ctx context.Context) (*vppcalls.Runtim
 
 // GetRuntimeInfo retrieves how runtime info.
 func (h *TelemetryHandler) getRuntimeInfoStats() (*vppcalls.RuntimeInfo, error) {
-	nodeStats, err := h.stats.GetNodeStats()
+	err := h.stats.GetNodeStats(&h.nodeStats)
 	if err != nil {
 		return nil, err
 	}
@@ -236,7 +246,7 @@ func (h *TelemetryHandler) getRuntimeInfoStats() (*vppcalls.RuntimeInfo, error) 
 		Name: "ALL",
 	}
 
-	for _, node := range nodeStats.Nodes {
+	for _, node := range h.nodeStats.Nodes {
 		vpc := 0.0
 		if node.Vectors != 0 && node.Calls != 0 {
 			vpc = float64(node.Vectors) / float64(node.Calls)
@@ -339,14 +349,14 @@ func (h *TelemetryHandler) GetBuffersInfo(ctx context.Context) (*vppcalls.Buffer
 }
 
 func (h *TelemetryHandler) getBuffersInfoStats() (*vppcalls.BuffersInfo, error) {
-	bufStats, err := h.stats.GetBufferStats()
+	err := h.stats.GetBufferStats(&h.bufStats)
 	if err != nil {
 		return nil, err
 	}
 
 	var items []vppcalls.BuffersItem
 
-	for _, c := range bufStats.Buffer {
+	for _, c := range h.bufStats.Buffer {
 		items = append(items, vppcalls.BuffersItem{
 			Name:  c.PoolName,
 			Alloc: uint64(c.Used),
