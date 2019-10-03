@@ -501,28 +501,6 @@ func TestGetNodeCounters(t *testing.T) {
 
 func testSetup(t *testing.T) (*vppcallmock.TestCtx, vppcalls.TelemetryVppAPI) {
 	ctx := vppcallmock.SetupTestCtx(t)
-	handler := vpp1904.NewTelemetryVppHandler(ctx.MockChannel, nil)
+	handler := vpp1904.NewTelemetryVppHandler(ctx.MockChannel)
 	return ctx, handler
-}
-
-func TestSplitErrorName(t *testing.T) {
-	tests := []struct {
-		name               string
-		input              string
-		expNode, expReason string
-	}{
-		{"basic", "ipsec-input-ip4/IPSEC pkts received", "ipsec-input-ip4", "IPSEC pkts received"},
-		{"ifname", "memif1/1001-output/interface is down", "memif1/1001-output", "interface is down"},
-		{"reslash", "tcp6-input/inconsistent ip/tcp lengths", "tcp6-input", "inconsistent ip/tcp lengths"},
-		{"toomany", "memif1/1001-output/Unrecognized / unknown chunk or chunk-state mismatch", "memif1/1001-output", "Unrecognized / unknown chunk or chunk-state mismatch"},
-	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			RegisterTestingT(t)
-
-			node, reason := vpp1904.SplitErrorName(test.input)
-			Expect(node).To(Equal(test.expNode))
-			Expect(reason).To(Equal(test.expReason))
-		})
-	}
 }

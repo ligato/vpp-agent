@@ -22,6 +22,7 @@ import (
 	"strings"
 
 	govppapi "git.fd.io/govpp.git/api"
+
 	vpevppcalls "github.com/ligato/vpp-agent/plugins/govppmux/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/govppmux/vppcalls/vpp1908"
 	"github.com/ligato/vpp-agent/plugins/telemetry/vppcalls"
@@ -36,31 +37,24 @@ func init() {
 
 	vppcalls.Versions["19.08"] = vppcalls.HandlerVersion{
 		Msgs: msgs,
-		New: func(ch govppapi.Channel, stats govppapi.StatsProvider) vppcalls.TelemetryVppAPI {
-			return NewTelemetryVppHandler(ch, stats)
+		New: func(ch govppapi.Channel) vppcalls.TelemetryVppAPI {
+			return NewTelemetryVppHandler(ch)
 		},
 	}
 }
 
 type TelemetryHandler struct {
-	ch    govppapi.Channel
-	stats govppapi.StatsProvider
-	vpe   vpevppcalls.VpeVppAPI
-
-	sysStats  govppapi.SystemStats
-	ifStats   govppapi.InterfaceStats
-	nodeStats govppapi.NodeStats
-	errStats  govppapi.ErrorStats
-	bufStats  govppapi.BufferStats
+	vpe vpevppcalls.VpeVppAPI
 }
 
-func NewTelemetryVppHandler(ch govppapi.Channel, stats govppapi.StatsProvider) *TelemetryHandler {
-	vpeHandler := vpp1908.NewVpeHandler(ch)
+func NewTelemetryVppHandler(ch govppapi.Channel) *TelemetryHandler {
 	return &TelemetryHandler{
-		ch:    ch,
-		stats: stats,
-		vpe:   vpeHandler,
+		vpe: vpp1908.NewVpeHandler(ch),
 	}
+}
+
+func (h *TelemetryHandler) GetSystemStats(context.Context) (*govppapi.SystemStats, error) {
+	return nil, nil
 }
 
 var (
@@ -76,16 +70,11 @@ var (
 
 // GetMemory retrieves `show memory` info.
 func (h *TelemetryHandler) GetMemory(ctx context.Context) (*vppcalls.MemoryInfo, error) {
-	return h.getMemoryCLI(ctx)
-}
-
-func (h *TelemetryHandler) getMemoryCLI(ctx context.Context) (*vppcalls.MemoryInfo, error) {
-	data, err := h.vpe.RunCli("show memory main-heap")
+	input, err := h.vpe.RunCli("show memory main-heap")
 	if err != nil {
 		return nil, err
 	}
 
-	input := string(data)
 	threadMatches := memoryRe.FindAllStringSubmatch(input, -1)
 
 	if len(threadMatches) == 0 && input != "" {
@@ -124,12 +113,7 @@ func (h *TelemetryHandler) getMemoryCLI(ctx context.Context) (*vppcalls.MemoryIn
 }
 
 func (h *TelemetryHandler) GetInterfaceStats(context.Context) (*govppapi.InterfaceStats, error) {
-	err := h.stats.GetInterfaceStats(&h.ifStats)
-	if err != nil {
-		return nil, err
-	}
-
-	return &h.ifStats, nil
+	return nil, nil
 }
 
 var (
@@ -139,39 +123,6 @@ var (
 
 // GetNodeCounters retrieves node counters info.
 func (h *TelemetryHandler) GetNodeCounters(ctx context.Context) (*vppcalls.NodeCounterInfo, error) {
-	if h.stats == nil {
-		return h.getNodeCountersCLI()
-	}
-	return h.getNodeCountersStats()
-}
-
-// GetNodeCounters retrieves node counters info.
-func (h *TelemetryHandler) getNodeCountersStats() (*vppcalls.NodeCounterInfo, error) {
-	err := h.stats.GetErrorStats(&h.errStats)
-	if err != nil {
-		return nil, err
-	}
-
-	var counters []vppcalls.NodeCounter
-
-	for _, c := range h.errStats.Errors {
-		node, reason := SplitErrorName(c.CounterName)
-		counters = append(counters, vppcalls.NodeCounter{
-			Value: c.Value,
-			Node:  node,
-			Name:  reason,
-		})
-	}
-
-	info := &vppcalls.NodeCounterInfo{
-		Counters: counters,
-	}
-
-	return info, nil
-}
-
-// GetNodeCounters retrieves node counters info.
-func (h *TelemetryHandler) getNodeCountersCLI() (*vppcalls.NodeCounterInfo, error) {
 	data, err := h.vpe.RunCli("show node counters")
 	if err != nil {
 		return nil, err
@@ -227,59 +178,11 @@ var (
 
 // GetRuntimeInfo retrieves how runtime info.
 func (h *TelemetryHandler) GetRuntimeInfo(ctx context.Context) (*vppcalls.RuntimeInfo, error) {
-	if h.stats == nil {
-		return h.getRuntimeInfoCLI()
-	}
-	return h.getRuntimeInfoStats()
-}
-
-// GetRuntimeInfo retrieves how runtime info.
-func (h *TelemetryHandler) getRuntimeInfoStats() (*vppcalls.RuntimeInfo, error) {
-	err := h.stats.GetNodeStats(&h.nodeStats)
+	input, err := h.vpe.RunCli("show runtime")
 	if err != nil {
 		return nil, err
 	}
 
-	var threads []vppcalls.RuntimeThread
-
-	thread := vppcalls.RuntimeThread{
-		Name: "ALL",
-	}
-
-	for _, node := range h.nodeStats.Nodes {
-		vpc := 0.0
-		if node.Vectors != 0 && node.Calls != 0 {
-			vpc = float64(node.Vectors) / float64(node.Calls)
-		}
-		thread.Items = append(thread.Items, vppcalls.RuntimeItem{
-			Index: uint(node.NodeIndex),
-			Name:  node.NodeName,
-			//State:          fields[1],
-			Calls:          node.Calls,
-			Vectors:        node.Vectors,
-			Suspends:       node.Suspends,
-			Clocks:         float64(node.Clocks),
-			VectorsPerCall: vpc,
-		})
-	}
-
-	threads = append(threads, thread)
-
-	info := &vppcalls.RuntimeInfo{
-		Threads: threads,
-	}
-
-	return info, nil
-}
-
-// GetRuntimeInfo retrieves how runtime info.
-func (h *TelemetryHandler) getRuntimeInfoCLI() (*vppcalls.RuntimeInfo, error) {
-	data, err := h.vpe.RunCli("show runtime")
-	if err != nil {
-		return nil, err
-	}
-
-	input := string(data)
 	threadMatches := runtimeRe.FindAllStringSubmatch(input, -1)
 
 	if len(threadMatches) == 0 && input != "" {
@@ -342,37 +245,6 @@ var (
 
 // GetBuffersInfo retrieves buffers info from VPP.
 func (h *TelemetryHandler) GetBuffersInfo(ctx context.Context) (*vppcalls.BuffersInfo, error) {
-	if h.stats == nil {
-		return h.getBuffersInfoCLI()
-	}
-	return h.getBuffersInfoStats()
-}
-
-func (h *TelemetryHandler) getBuffersInfoStats() (*vppcalls.BuffersInfo, error) {
-	err := h.stats.GetNodeStats(&h.nodeStats)
-	if err != nil {
-		return nil, err
-	}
-
-	var items []vppcalls.BuffersItem
-
-	for _, c := range h.bufStats.Buffer {
-		items = append(items, vppcalls.BuffersItem{
-			Name:  c.PoolName,
-			Alloc: uint64(c.Used),
-			Free:  uint64(c.Available),
-			//Cached:  c.Cached,
-		})
-	}
-
-	info := &vppcalls.BuffersInfo{
-		Items: items,
-	}
-
-	return info, nil
-}
-
-func (h *TelemetryHandler) getBuffersInfoCLI() (*vppcalls.BuffersInfo, error) {
 	data, err := h.vpe.RunCli("show buffers")
 	if err != nil {
 		return nil, err
@@ -439,34 +311,4 @@ func strToFloat64(s string) float64 {
 
 func strToUint64(s string) uint64 {
 	return uint64(strToFloat64(s))
-}
-
-var (
-	errorNameLikeMemifRe   = regexp.MustCompile(`^[A-Za-z0-9-]+([0-9]+\/[0-9]+|pg\/stream)`)
-	errorNameLikeGigabitRe = regexp.MustCompile(`^[A-Za-z0-9]+[0-9a-f]+(\/[0-9a-f]+){2}`)
-)
-
-func SplitErrorName(str string) (node, reason string) {
-	parts := strings.Split(str, "/")
-	switch len(parts) {
-	case 1:
-		return parts[0], ""
-	case 2:
-		return parts[0], parts[1]
-	case 3:
-		if strings.Contains(parts[1], " ") {
-			return parts[0], strings.Join(parts[1:], "/")
-		}
-		if errorNameLikeMemifRe.MatchString(str) {
-			return strings.Join(parts[:2], "/"), parts[2]
-		}
-	default:
-		if strings.Contains(parts[2], " ") {
-			return strings.Join(parts[:2], "/"), strings.Join(parts[2:], "/")
-		}
-		if errorNameLikeGigabitRe.MatchString(str) {
-			return strings.Join(parts[:3], "/"), strings.Join(parts[3:], "/")
-		}
-	}
-	return strings.Join(parts[:len(parts)-1], "/"), parts[len(parts)-1]
 }
