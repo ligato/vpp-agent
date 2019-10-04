@@ -25,39 +25,39 @@ func (s *statsPollerServer) PollStats(req *configurator.PollStatsRequest, svr co
 
 	period := time.Duration(req.PeriodSec) * time.Second
 	tick := time.NewTicker(period)
+	defer tick.Stop()
 
 	s.log.Debugf("starting to poll stats every %v", period)
 	for {
-		select {
-		case <-tick.C:
-			pollSeq++
-			s.log.WithField("seq", pollSeq).Debugf("polling stats..")
+		pollSeq++
+		s.log.WithField("seq", pollSeq).Debugf("polling stats..")
 
-			vppStatsCh := make(chan vpp.Stats)
-			var vppStatsErr error
-			go func() {
-				vppStatsErr = s.streamVppStats(vppStatsCh)
-			}()
-			for vppStats := range vppStatsCh {
-				VppStats := vppStats
-				s.log.Debugf("sending vpp stats: %v", VppStats)
+		vppStatsCh := make(chan vpp.Stats)
+		var vppStatsErr error
+		go func() {
+			vppStatsErr = s.streamVppStats(vppStatsCh)
+		}()
+		for vppStats := range vppStatsCh {
+			VppStats := vppStats
+			s.log.Debugf("sending vpp stats: %v", VppStats)
 
-				if err := svr.Send(&configurator.PollStatsResponse{
-					PollSeq: pollSeq,
-					Stats: &configurator.Stats{
-						Stats: &configurator.Stats_VppStats{VppStats: &VppStats},
-					},
-				}); err != nil {
-					s.log.Errorf("sending stats failed: %v", err)
-					return nil
-				}
-			}
-
-			if vppStatsErr != nil {
-				s.log.Errorf("polling vpp stats failed: %v", vppStatsErr)
-				return vppStatsErr
+			if err := svr.Send(&configurator.PollStatsResponse{
+				PollSeq: pollSeq,
+				Stats: &configurator.Stats{
+					Stats: &configurator.Stats_VppStats{VppStats: &VppStats},
+				},
+			}); err != nil {
+				s.log.Errorf("sending stats failed: %v", err)
+				return nil
 			}
 		}
+
+		if vppStatsErr != nil {
+			s.log.Errorf("polling vpp stats failed: %v", vppStatsErr)
+			return vppStatsErr
+		}
+
+		<-tick.C
 	}
 }
 
