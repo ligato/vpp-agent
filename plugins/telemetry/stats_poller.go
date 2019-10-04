@@ -42,6 +42,7 @@ func (s *statsPollerServer) PollStats(req *configurator.PollStatsRequest, svr co
 		var vppStatsErr error
 		go func() {
 			vppStatsErr = s.streamVppStats(vppStatsCh)
+			close(vppStatsCh)
 		}()
 		for vppStats := range vppStatsCh {
 			VppStats := vppStats
@@ -103,8 +104,6 @@ func (s *statsPollerServer) streamVppStats(ch chan vpp.Stats) error {
 		}
 		ch <- vppStats
 	}
-
-	close(ch)
 
 	return nil
 }
