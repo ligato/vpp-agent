@@ -23,9 +23,11 @@ import (
 
 	"github.com/ligato/cn-infra/infra"
 	"github.com/ligato/cn-infra/logging"
+	"github.com/ligato/cn-infra/rpc/grpc"
 	prom "github.com/ligato/cn-infra/rpc/prometheus"
 	"github.com/ligato/cn-infra/servicelabel"
 
+	"github.com/ligato/vpp-agent/api/configurator"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 	"github.com/ligato/vpp-agent/plugins/telemetry/vppcalls"
 
@@ -42,6 +44,7 @@ type Plugin struct {
 
 	handler vppcalls.TelemetryVppAPI
 
+	statsPollerServer
 	prometheusMetrics
 
 	// From config file
@@ -59,6 +62,7 @@ type Deps struct {
 	ServiceLabel servicelabel.ReaderAPI
 	GoVppmux     govppmux.StatsAPI
 	Prometheus   prom.API
+	GRPC         grpc.Server
 }
 
 // Init initializes Telemetry Plugin
@@ -101,6 +105,11 @@ func (p *Plugin) Init() error {
 		return err
 	}
 
+	p.statsPollerServer.log = p.Log.NewLogger("stats-poller")
+	if err := p.setupStatsPoller(); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -112,6 +121,26 @@ func (p *Plugin) AfterInit() error {
 	}
 
 	p.startPeriodicUpdates()
+
+	return nil
+}
+
+func (p *Plugin) setupStatsPoller() error {
+	vppCh, err := p.GoVppmux.NewAPIChannel()
+	if err != nil {
+		return err
+	}
+	defer vppCh.Close()
+
+	h := vppcalls.CompatibleTelemetryHandler(vppCh, p.GoVppmux)
+	if h == nil {
+		return err
+	}
+	p.statsPollerServer.handler = h
+
+	if p.GRPC != nil && p.GRPC.GetServer() != nil {
+		configurator.RegisterStatsPollerServer(p.GRPC.GetServer(), &p.statsPollerServer)
+	}
 
 	return nil
 }
