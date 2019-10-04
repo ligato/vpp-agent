@@ -4,6 +4,7 @@
 
 ## Release Notes
 
+- [v2.3.0](#v2.3.0)
 - [v2.2.0](#v2.2.0)
 - [v2.2.0-beta](#v2.2.0-beta)
 - [v2.1.0](#v2.1.0)
@@ -45,6 +46,48 @@ RELEASE CHANGELOG TEMPLATE:
 ### Documentation
 -->
 
+<a name="v2.3.0"></a>
+# [2.3.0](https://github.com/ligato/vpp-agent/compare/v2.2.0...v2.3.0) (2019-10-04)
+
+### Compatibility
+- **VPP 20.01** (20.01-rc0~161-ge5948fb49~b3570)
+- **VPP 19.08.1** (default)
+- **VPP 19.04** (backward compatible)
+- cn-infra v2.2
+
+VPP support for version 19.08 was updated to 19.08.1. 
+Support for 19.01 was dropped in this release. 
+
+### Bug Fixes
+* Linux interfaces with 'EXISTING' type should be resynced properly.
+* Resolved issue with SRv6 removal.
+* AgentCTL dump command fixed.
+* ACL ICMP rule is now properly configured and data can be obtained using the ACL dump.
+* Missing dependency for SRv6 L2 steering fixed.
+* Fixed issue with possible division by zero and missing interface MTU.
+
+### New Features
+* [netalloc-plugin][netalloc-plugin]
+  - A new plugin called netalloc which allows disassociating topology from addressing in the network configuration. Interfaces, routes and other network objects' addresses can be symbolic references into the pool of allocated addresses known to netalloc plugin. See [model][netalloc-plugin-model] for more information.
+* [if-plugin][vpp-interface-plugin]
+  - Added support for GRE tunnel interfaces. Choose the `GRE_TUNNEL` interface type with appropriate link data.
+* [agentctl][agentctl]
+  - Many new features and enhancements added to the AgentCTL:
+    * version is defined as a parameter for root command instead of the separate command  
+    * ETCD endpoints can be defined via the `ETCD_ENDPOINTS` environment variable
+    * sub-command `config` supports `get/put/del` commands
+    * `model` sub-commands improved
+    * added VPP command to manage VPP instance
+  Additionally, starting with this release the AgentCTL is a VPP-Agent main control tool and the vpp-agent-ctl was definitely removed.      
+
+### Improvements
+Many end-to-end tests introduced, gradually increasing VPP-Agent stability.
+* [if-plugin][vpp-interface-plugin]
+  - IP addresses assigned by the DHCP are excluded from the interface address descriptor.
+  - VPP-Agent now processes status change notifications labeled by the VPP as UNKNOWN.
+* [sr-plugin][sr-plugin]
+  - SRv6 dynamic proxy routing now can be connected to a non-zero VRF table.   
+  
 <a name="v2.2.0"></a>
 # [2.2.0](https://github.com/ligato/vpp-agent/compare/v2.2.0-beta...v2.2.0) (2019-08-26)
 
@@ -940,6 +983,8 @@ Data replication and events:
 [linux-ns-plugin]: plugins/linux/nsplugin
 [linux-plugins]: plugins/linux
 [nat-proto]: api/models/vpp/nat/nat.proto
+[netalloc-plugin]: plugins/netalloc
+[netalloc-plugin-model]: api/models/netalloc/netalloc.proto
 [ns-plugin]: plugins/linux/nsplugin
 [ns-proto]: api/models/linux/namespace/namespace.proto
 [models]: api/models
