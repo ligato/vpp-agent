@@ -6,7 +6,9 @@ import (
 	"time"
 
 	"git.fd.io/govpp.git/api"
+	"github.com/gogo/status"
 	"github.com/ligato/cn-infra/logging"
+	"google.golang.org/grpc/codes"
 
 	"github.com/ligato/vpp-agent/api/configurator"
 	"github.com/ligato/vpp-agent/api/models/vpp"
@@ -23,7 +25,11 @@ type statsPollerServer struct {
 func (s *statsPollerServer) PollStats(req *configurator.PollStatsRequest, svr configurator.StatsPoller_PollStatsServer) error {
 	var pollSeq uint32
 
+	if req.PeriodSec == 0 {
+		return status.Error(codes.InvalidArgument, "PeriodSec must be greater than 0")
+	}
 	period := time.Duration(req.PeriodSec) * time.Second
+
 	tick := time.NewTicker(period)
 	defer tick.Stop()
 
