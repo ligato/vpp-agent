@@ -23,15 +23,15 @@ import (
 	"github.com/ligato/vpp-agent/plugins/govppmux/vppcalls"
 )
 
-var Versions = map[string]HandlerVersion{}
-
-type HandlerVersion struct {
-	Msgs []govppapi.Message
-	New  func(govppapi.Channel, govppapi.StatsProvider) TelemetryVppAPI
-}
+var (
+	// FallbackToCli defines wether should telemetry handler
+	// fallback to parsing stats from CLI output.
+	FallbackToCli = true
+)
 
 // TelemetryVppAPI provides API for retrieving telemetry data from VPP.
 type TelemetryVppAPI interface {
+	GetSystemStats(context.Context) (*govppapi.SystemStats, error)
 	GetMemory(context.Context) (*MemoryInfo, error)
 	GetNodeCounters(context.Context) (*NodeCounterInfo, error)
 	GetRuntimeInfo(context.Context) (*RuntimeInfo, error)
@@ -39,7 +39,7 @@ type TelemetryVppAPI interface {
 	GetInterfaceStats(context.Context) (*govppapi.InterfaceStats, error)
 }
 
-// MemoryInfo contains values returned from 'show memory'
+// MemoryInfo contains memory thread info.
 type MemoryInfo struct {
 	Threads []MemoryThread `json:"threads"`
 }
@@ -67,7 +67,7 @@ type MemoryThread struct {
 	PageSize  uint64 `json:"page_size"`
 }
 
-// NodeErrorCounterInfo contains values returned from 'show node counters'
+// NodeErrorCounterInfo contains node counters info.
 type NodeCounterInfo struct {
 	Counters []NodeCounter `json:"counters"`
 }
@@ -92,7 +92,7 @@ type RuntimeInfo struct {
 	Threads []RuntimeThread `json:"threads"`
 }
 
-// GetThreads is safe getter for threads,
+// GetThreads is safe getter for threads.
 func (i *RuntimeInfo) GetThreads() []RuntimeThread {
 	if i == nil {
 		return nil
@@ -153,7 +153,20 @@ type BuffersItem struct {
 	NumFree  uint64 `json:"num_free"`
 }
 
-func CompatibleTelemetryHandler(ch govppapi.Channel, vpp govppapi.StatsProvider) TelemetryVppAPI {
+var Versions = map[string]HandlerVersion{}
+
+type HandlerVersion struct {
+	Msgs []govppapi.Message
+	New  func(govppapi.Channel) TelemetryVppAPI
+}
+
+func CompatibleTelemetryHandler(ch govppapi.Channel, stats govppapi.StatsProvider) TelemetryVppAPI {
+	if stats != nil {
+		return NewTelemetryVppStats(stats)
+	} else if !FallbackToCli {
+		log.Warnf("stats unavailable and fallback to CLI disabled for telemetry")
+		return nil
+	}
 	vpe := vppcalls.CompatibleVpeHandler(ch)
 	info, err := vpe.GetVersionInfo()
 	if err != nil {
@@ -167,16 +180,17 @@ func CompatibleTelemetryHandler(ch govppapi.Channel, vpp govppapi.StatsProvider)
 				log.Debugf("telemetry version %s not compatible: %v", ver, err)
 			}
 			log.Debug("telemetry found compatible release: ", ver)
-			return h.New(ch, vpp)
+			return h.New(ch)
 		}
 	}
 	for ver, h := range Versions {
 		if err := ch.CheckCompatiblity(h.Msgs...); err != nil {
-			log.Debugf("version %s not compatible", ver)
+			log.Debugf("version %s not compatible: %v", ver, err)
 			continue
 		}
 		log.Debug("found compatible version: ", ver)
-		return h.New(ch, vpp)
+		return h.New(ch)
 	}
-	panic("no compatible version available")
+	// no compatible version found
+	return nil
 }

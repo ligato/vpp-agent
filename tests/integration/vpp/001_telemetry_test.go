@@ -45,24 +45,21 @@ func TestTelemetryNodeCounters(t *testing.T) {
 	}
 }
 
-func TestTelemetryMemory(t *testing.T) {
+func TestTelemetryInterfacStats(t *testing.T) {
 	ctx := setupVPP(t)
 	defer ctx.teardownVPP()
 
 	h := vppcalls.CompatibleTelemetryHandler(ctx.vppBinapi, ctx.vppStats)
 
-	memStats, err := h.GetMemory(context.Background())
+	ifStats, err := h.GetInterfaceStats(context.Background())
 	if err != nil {
-		t.Fatalf("getting memory stats failed: %v", err)
+		t.Fatalf("getting interface stats failed: %v", err)
 	}
-	t.Logf("retrieved memory stats: %+v", memStats)
-	if memStats.Threads == nil {
-		t.Fatal("expected memory stats, got nil")
+	t.Logf("retrieved interface stats: %+v", ifStats)
+	if ifStats.Interfaces == nil {
+		t.Fatal("expected interface stats, got nil")
 	}
-	if len(memStats.Threads) == 0 {
-		t.Fatalf("expected memory stats length > 0, got %v", len(memStats.Threads))
-	}
-	if memStats.Threads[0].Total == 0 {
-		t.Errorf("expected memory stats - total > 0, got %v", memStats.Threads[0].Total)
+	if len(ifStats.Interfaces) == 0 {
+		t.Fatalf("expected memory stats length > 0, got %v", len(ifStats.Interfaces))
 	}
 }

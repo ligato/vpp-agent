@@ -57,6 +57,7 @@ type InterfaceStateUpdater struct {
 
 	ifsForUpdate   map[uint32]struct{}
 	lastIfCounters map[uint32]govppapi.InterfaceCounters
+	ifStats        govppapi.InterfaceStats
 
 	lastIfNotif time.Time
 	lastIfMeta  time.Time
@@ -290,16 +291,16 @@ func (c *InterfaceStateUpdater) doInterfaceStatsRead() {
 		return
 	}
 
-	ifStats, err := c.goVppMux.GetInterfaceStats()
+	err := c.goVppMux.GetInterfaceStats(&c.ifStats)
 	if err != nil {
 		// TODO add some counter to prevent it log forever
 		c.log.Errorf("failed to read statistics data: %v", err)
 	}
-	if ifStats == nil || len(ifStats.Interfaces) == 0 {
+	if len(c.ifStats.Interfaces) == 0 {
 		return
 	}
 
-	for i, ifCounters := range ifStats.Interfaces {
+	for i, ifCounters := range c.ifStats.Interfaces {
 		index := uint32(i)
 		if last, ok := c.lastIfCounters[index]; ok && last == ifCounters {
 			continue
@@ -325,10 +326,10 @@ func (c *InterfaceStateUpdater) processInterfaceStatEntry(ifCounters govppapi.In
 		InMissPackets:   ifCounters.RxMiss,
 		InErrorPackets:  ifCounters.RxErrors,
 		OutErrorPackets: ifCounters.TxErrors,
-		InPackets:       ifCounters.RxPackets,
-		InBytes:         ifCounters.RxBytes,
-		OutPackets:      ifCounters.TxPackets,
-		OutBytes:        ifCounters.TxBytes,
+		InPackets:       ifCounters.Rx.Packets,
+		InBytes:         ifCounters.Rx.Bytes,
+		OutPackets:      ifCounters.Tx.Packets,
+		OutBytes:        ifCounters.Tx.Bytes,
 	}
 
 	c.publishIfState(&intf.InterfaceNotification{

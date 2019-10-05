@@ -56,3 +56,7 @@ message ConfigData {
 message Notification {
     interfaces.InterfaceNotification interface = 1;
 }
+
+message Stats {
+    interfaces.InterfaceStats interface = 1;
+}
