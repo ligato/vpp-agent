@@ -22,10 +22,10 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/types"
 
-	"github.com/ligato/vpp-agent/api/models/linux/interfaces"
-	"github.com/ligato/vpp-agent/api/models/linux/namespace"
-	"github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	"github.com/ligato/vpp-agent/api/models/vpp/l2"
+	linux_interfaces "github.com/ligato/vpp-agent/api/models/linux/interfaces"
+	linux_namespace "github.com/ligato/vpp-agent/api/models/linux/namespace"
+	vpp_interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
+	vpp_l2 "github.com/ligato/vpp-agent/api/models/vpp/l2"
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 )
 
@@ -232,7 +232,9 @@ func TestBridgeDomainWithTAPs(t *testing.T) {
 	Expect(ctx.getValueState(linuxTap1)).To(Equal(kvs.ValueState_CONFIGURED),
 		"Linux-TAP attached to a re-started microservice1 is not configured")
 
-	Expect(ctx.pingFromMs(ms2Name, linuxTap1IP)).To(Succeed())
+	// Waiting for TAP interface after restart
+	// See: https://github.com/ligato/vpp-agent/issues/1489
+	Eventually(ctx.pingFromMsClb(ms2Name, linuxTap1IP), "18s", "2s").Should(Succeed())
 	Expect(ctx.pingFromMs(ms1Name, linuxTap2IP)).To(Succeed())
 	Expect(ctx.pingFromMs(ms1Name, vppLoopbackIP)).To(Succeed())
 	Expect(ctx.pingFromMs(ms2Name, vppLoopbackIP)).To(Succeed())
@@ -471,7 +473,9 @@ func TestBridgeDomainWithAfPackets(t *testing.T) {
 	Expect(ctx.getValueState(veth1b)).To(Equal(kvs.ValueState_CONFIGURED),
 		"VETH attached to re-started microservice1 is not configured")
 
-	Expect(ctx.pingFromMs(ms2Name, veth1IP)).To(Succeed())
+	// Waiting for AF-PACKET interface after restart
+	// See: https://github.com/ligato/vpp-agent/issues/1489
+	Eventually(ctx.pingFromMsClb(ms2Name, veth1IP), "18s", "2s").Should(Succeed())
 	Expect(ctx.pingFromMs(ms1Name, veth2IP)).To(Succeed())
 	Expect(ctx.pingFromMs(ms1Name, vppLoopbackIP)).To(Succeed())
 	Expect(ctx.pingFromMs(ms2Name, vppLoopbackIP)).To(Succeed())
