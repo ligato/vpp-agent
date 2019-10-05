@@ -86,7 +86,7 @@ func (c *statClient) Disconnect() error {
 func (c *statClient) ListStats(patterns ...string) (stats []string, err error) {
 	dir := C.govpp_stat_segment_ls(convertStringSlice(patterns))
 	if dir == nil {
-		return nil, adapter.ErrStatDirBusy
+		return nil, adapter.ErrStatsDataBusy
 	}
 	defer C.govpp_stat_segment_vec_free(unsafe.Pointer(dir))
 
@@ -100,16 +100,16 @@ func (c *statClient) ListStats(patterns ...string) (stats []string, err error) {
 	return stats, nil
 }
 
-func (c *statClient) DumpStats(patterns ...string) (stats []*adapter.StatEntry, err error) {
+func (c *statClient) DumpStats(patterns ...string) (stats []adapter.StatEntry, err error) {
 	dir := C.govpp_stat_segment_ls(convertStringSlice(patterns))
 	if dir == nil {
-		return nil, adapter.ErrStatDirBusy
+		return nil, adapter.ErrStatsDataBusy
 	}
 	defer C.govpp_stat_segment_vec_free(unsafe.Pointer(dir))
 
 	dump := C.govpp_stat_segment_dump(dir)
 	if dump == nil {
-		return nil, adapter.ErrStatDumpBusy
+		return nil, adapter.ErrStatsDataBusy
 	}
 	defer C.govpp_stat_segment_data_free(dump)
 
@@ -120,8 +120,8 @@ func (c *statClient) DumpStats(patterns ...string) (stats []*adapter.StatEntry, 
 		name := C.GoString(nameChar)
 		typ := adapter.StatType(C.govpp_stat_segment_data_type(&v))
 
-		stat := &adapter.StatEntry{
-			Name: name,
+		stat := adapter.StatEntry{
+			Name: []byte(name),
 			Type: typ,
 		}
 
@@ -147,10 +147,10 @@ func (c *statClient) DumpStats(patterns ...string) (stats []*adapter.StatEntry, 
 			vector := make([][]adapter.CombinedCounter, length)
 			for k := 0; k < length; k++ {
 				for j := 0; j < int(C.govpp_stat_segment_vec_len(unsafe.Pointer(C.govpp_stat_segment_data_get_combined_counter_index(&v, C.int(k))))); j++ {
-					vector[k] = append(vector[k], adapter.CombinedCounter{
-						Packets: adapter.Counter(C.govpp_stat_segment_data_get_combined_counter_index_packets(&v, C.int(k), C.int(j))),
-						Bytes:   adapter.Counter(C.govpp_stat_segment_data_get_combined_counter_index_bytes(&v, C.int(k), C.int(j))),
-					})
+					vector[k] = append(vector[k], adapter.CombinedCounter([2]uint64{
+						uint64(C.govpp_stat_segment_data_get_combined_counter_index_packets(&v, C.int(k), C.int(j))),
+						uint64(C.govpp_stat_segment_data_get_combined_counter_index_bytes(&v, C.int(k), C.int(j))),
+					}))
 				}
 			}
 			stat.Data = adapter.CombinedCounterStat(vector)
@@ -178,6 +178,14 @@ func (c *statClient) DumpStats(patterns ...string) (stats []*adapter.StatEntry, 
 	}
 
 	return stats, nil
+}
+
+func (c *statClient) PrepareDir(prefixes ...string) (*adapter.StatDir, error) {
+	return nil, adapter.ErrNotImplemented
+}
+
+func (c *statClient) UpdateDir(dir *adapter.StatDir) error {
+	return adapter.ErrNotImplemented
 }
 
 func convertStringSlice(strs []string) **C.uint8_t {

@@ -29,7 +29,7 @@ func (p *Plugin) ListStats(prefixes ...string) ([]string, error) {
 }
 
 // DumpStats returns all stats with name, type and value
-func (p *Plugin) DumpStats(prefixes ...string) ([]*adapter.StatEntry, error) {
+func (p *Plugin) DumpStats(prefixes ...string) ([]adapter.StatEntry, error) {
 	if p.statsAdapter == nil {
 		return nil, nil
 	}
@@ -37,41 +37,41 @@ func (p *Plugin) DumpStats(prefixes ...string) ([]*adapter.StatEntry, error) {
 }
 
 // GetSystemStats retrieves system statistics of the connected VPP instance like Vector rate, Input rate, etc.
-func (p *Plugin) GetSystemStats() (*govppapi.SystemStats, error) {
+func (p *Plugin) GetSystemStats(stats *govppapi.SystemStats) error {
 	if p.statsConn == nil || p.statsConn.(*govpp.StatsConnection) == nil {
-		return nil, nil
+		return nil
 	}
-	return p.statsConn.GetSystemStats()
+	return p.statsConn.GetSystemStats(stats)
 }
 
 // GetNodeStats retrieves a list of Node VPP counters (vectors, clocks, ...)
-func (p *Plugin) GetNodeStats() (*govppapi.NodeStats, error) {
+func (p *Plugin) GetNodeStats(stats *govppapi.NodeStats) error {
 	if p.statsConn == nil || p.statsConn.(*govpp.StatsConnection) == nil {
-		return nil, nil
+		return nil
 	}
-	return p.statsConn.GetNodeStats()
+	return p.statsConn.GetNodeStats(stats)
 }
 
 // GetInterfaceStats retrieves all counters related to the VPP interfaces
-func (p *Plugin) GetInterfaceStats() (*govppapi.InterfaceStats, error) {
+func (p *Plugin) GetInterfaceStats(stats *govppapi.InterfaceStats) error {
 	if p.statsConn == nil || p.statsConn.(*govpp.StatsConnection) == nil {
-		return nil, nil
+		return nil
 	}
-	return p.statsConn.GetInterfaceStats()
+	return p.statsConn.GetInterfaceStats(stats)
 }
 
 // GetErrorStats retrieves VPP error counters
-func (p *Plugin) GetErrorStats(names ...string) (*govppapi.ErrorStats, error) {
+func (p *Plugin) GetErrorStats(stats *govppapi.ErrorStats) error {
 	if p.statsConn == nil || p.statsConn.(*govpp.StatsConnection) == nil {
-		return nil, nil
+		return nil
 	}
-	return p.statsConn.GetErrorStats()
+	return p.statsConn.GetErrorStats(stats)
 }
 
 // GetErrorStats retrieves VPP error counters
-func (p *Plugin) GetBufferStats() (*govppapi.BufferStats, error) {
+func (p *Plugin) GetBufferStats(stats *govppapi.BufferStats) error {
 	if p.statsConn == nil || p.statsConn.(*govpp.StatsConnection) == nil {
-		return nil, nil
+		return nil
 	}
-	return p.statsConn.GetBufferStats()
+	return p.statsConn.GetBufferStats(stats)
 }
