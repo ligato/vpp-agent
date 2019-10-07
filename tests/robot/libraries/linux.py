@@ -60,7 +60,13 @@ def Check_Linux_Interface_IP_Presence(data, mac, ip):
 
 
 def parse_linux_arp_entries(data):
+    """Parse output of arp command and return list of ARP entries.
 
+    :param data: output of 'arp' command.
+    :type data: str
+    :returns: Parsed ARP entries.
+    :rtype: list of dict
+    """
     entries = []
 
     for line in data.splitlines():
@@ -79,7 +85,13 @@ def parse_linux_arp_entries(data):
 
 
 def parse_linux_ipv6_neighbor_entries(data):
+    """Parse output of ip neighbor command and return list of neighbor entries.
 
+    :param data: output of 'ip neighbor' command.
+    :type data: str
+    :returns: Parsed neighbor entries.
+    :rtype: list of dict
+    """
     entries = []
 
     for line in data.splitlines():
