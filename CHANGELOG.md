@@ -50,7 +50,7 @@ RELEASE CHANGELOG TEMPLATE:
 # [2.3.0](https://github.com/ligato/vpp-agent/compare/v2.2.0...v2.3.0) (2019-10-04)
 
 ### Compatibility
-- **VPP 20.01** (20.01-rc0~161-ge5948fb49~b3570)
+- **VPP 20.01** (`20.01-rc0~161-ge5948fb49~b3570`)
 - **VPP 19.08.1** (default)
 - **VPP 19.04** (backward compatible)
 - cn-infra v2.2
