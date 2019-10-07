@@ -114,7 +114,7 @@ If you are interested in contributing, please see the [contribution guidelines][
 [contiv-vpp]: https://github.com/contiv/vpp
 [contribution]: CONTRIBUTING.md
 [docker]: docker
-[docker-image]: http://docs.ligato.io/en/latest/user-guide/get-agent/#build-local-image
+[docker-image]: https://docs.ligato.io/en/latest/user-guide/get-vpp-agent/#local-image-build
 [etcd]: docs/arm64/etcd.md
 [etcd-local]: docker/dev/README.md#running-etcd-server-on-local-host
 [govpp]: https://wiki.fd.io/view/GoVPP
