@@ -54,6 +54,7 @@ func TestAgentCtl(t *testing.T) {
 	}{
 		{
 			name:                 "Check if executable is present",
+			cmd:                  "--help",
 			expectNotEmptyStdout: true,
 		},
 		{
@@ -62,11 +63,53 @@ func TestAgentCtl(t *testing.T) {
 			expectInStdout: "type: SOFTWARE_LOOPBACK",
 		},
 		{
+			name:           "Test `dump` action with bad model",
+			cmd:            "dump NoSuchModel",
+			expectErr:      true,
+			expectInStderr: "no such model: \"NoSuchModel\"",
+		},
+		{
+			name:           "Test `dump --view=SB` action",
+			cmd:            "dump vpp.interfaces --view=SB",
+			expectInStdout: "type: SOFTWARE_LOOPBACK",
+		},
+		{
+			name:           "Test `dump --view=NB` action",
+			cmd:            "dump vpp.interfaces --view=NB",
+			expectReStdout: `KEY\s+VALUE\s+ORIGIN\s+METADATA`,
+		},
+		{
+			name:           "Test `dump --view=cached` action",
+			cmd:            "dump vpp.interfaces --view=cached",
+			expectInStdout: "type: SOFTWARE_LOOPBACK",
+		},
+		{
 			name:                 "Test `generate` action",
 			cmd:                  "generate vpp.interfaces",
 			expectNotEmptyStdout: true,
 		},
 		{
+			name:           "Test `generate` action with not exsiting model",
+			cmd:            "generate NoSuchModel",
+			expectErr:      true,
+			expectInStderr: "no model found for: NoSuchModel",
+		},
+		{
+			name:           "Test `generate` action to yaml",
+			cmd:            "generate vpp.interfaces -f=yaml",
+			expectInStdout: "type: UNDEFINED_TYPE",
+		},
+		{
+			name:           "Test `generate` action to json",
+			cmd:            "generate vpp.interfaces -f=json",
+			expectInStdout: `"type": "UNDEFINED_TYPE",`,
+		},
+		{
+			name:           "Test `generate` action to json (oneline)",
+			cmd:            "generate vpp.interfaces -f=json --oneline",
+			expectInStdout: `{"name":"","type":"UNDEFINED_TYPE",`,
+		},
+		/*{
 			// This test depends on file (/tmp/config1) which was created before.
 			name:           "Test `import` action",
 			cmd:            "import /tmp/config1 --service-label vpp1",
@@ -78,7 +121,7 @@ func TestAgentCtl(t *testing.T) {
 			name:         "Test `import` action (grpc)",
 			cmd:          "import /tmp/config1 --service-label vpp1 --grpc",
 			expectStdout: "importing 1 key vals\n - /vnf-agent/vpp1/config/vpp/v2/interfaces/tap1\nsending via gRPC\n",
-		},
+		},*/
 		{
 			name:           "Test `kvdb list` action",
 			cmd:            "kvdb list",
@@ -112,9 +155,36 @@ func TestAgentCtl(t *testing.T) {
 			expectInStdout: `"KeyPrefix": "config/vpp/v2/interfaces/",`,
 		},
 		{
+			name:           "Test `model inspect` action (no models)",
+			cmd:            "model inspect NoSuchModel",
+			expectErr:      true,
+			expectInStderr: "No model found for provided prefix: NoSuchModel",
+		},
+		{
+			name:           "Test `model inspect` action (multiple models)",
+			cmd:            "model inspect vpp.",
+			expectErr:      true,
+			expectInStderr: "Multiple models found with provided prefix: vpp.",
+		},
+		{
 			name:           "Test `status` action",
 			cmd:            "status",
+			expectInStdout: `State: OK`,
+		},
+		{
+			name:         "Test `status` action (with format)",
+			cmd:          "status -f {{.AgentStatus.State}}",
+			expectStdout: "OK",
+		},
+		{
+			name:           "Test `values` action",
+			cmd:            "values",
 			expectReStdout: `vpp.interfaces\s+UNTAGGED-local0\s+obtained`,
+		},
+		{
+			name:           "Test `values` action (with model)",
+			cmd:            "values vpp.proxyarp-global",
+			expectReStdout: `vpp.proxyarp-global\s+obtained `,
 		},
 		{
 			name:           "Test `vpp info` action",
@@ -141,65 +211,52 @@ func TestAgentCtl(t *testing.T) {
 			err = cmd.Run()
 
 			if test.expectErr {
-				Expect(err).To(
-					Not(BeNil()),
-					"------\nCommand `%s` should fail\n------",
+				Expect(err).To(Not(BeNil()),
+					"Command `%s` should fail\n",
 					test.cmd,
 				)
 			} else {
-				Expect(err).To(
-					BeNil(),
-					"------\nCommand `%s` should not fail. Got err: %v\nStderr:\n%s\n------",
-					test.cmd,
-					err,
-					stderr.String(),
+				Expect(err).To(BeNil(),
+					"Command `%s` should not fail. Got err: %v\nStderr:\n%s\n",
+					test.cmd, err, stderr.String(),
 				)
 			}
 
 			// Check STDOUT:
 			if test.expectNotEmptyStdout {
-				Expect(stdout.Len()).To(
-					Not(BeZero()),
-					"------\nStdout should not be empty\n------",
+				Expect(stdout.Len()).To(Not(BeZero()),
+					"Stdout should not be empty\n",
 				)
 			}
 
 			if test.expectStdout != "" {
-				Expect(stdout.String()).To(
-					Equal(test.expectStdout),
-					"------\nWant stdout: \n%s\nGot stdout: \n%s\n------",
-					test.expectStdout,
-					stdout.String(),
+				Expect(stdout.String()).To(Equal(test.expectStdout),
+					"Want stdout: \n%s\nGot stdout: \n%s\n",
+					test.expectStdout, stdout.String(),
 				)
 			}
 
 			if test.expectInStdout != "" {
-				Expect(strings.Contains(stdout.String(), test.expectInStdout)).To(
-					BeTrue(),
-					"------\nWant in stdout: \n%s\nGot stdout: \n%s\n------",
-					test.expectInStdout,
-					stdout.String(),
+				Expect(strings.Contains(stdout.String(), test.expectInStdout)).To(BeTrue(),
+					"Want in stdout: \n%s\nGot stdout: \n%s\n",
+					test.expectInStdout, stdout.String(),
 				)
 			}
 
 			if test.expectReStdout != "" {
 				matched, err = regexp.MatchString(test.expectReStdout, stdout.String())
 				Expect(err).To(BeNil())
-				Expect(matched).To(
-					BeTrue(),
-					"------\nWant stdout to contain any match of the regular expression: \n`%s`\nGot stdout: \n%s\n------",
-					test.expectReStdout,
-					stdout.String(),
+				Expect(matched).To(BeTrue(),
+					"Want stdout to contain any match of the regular expression: \n`%s`\nGot stdout: \n%s\n",
+					test.expectReStdout, stdout.String(),
 				)
 			}
 
 			// Check STDERR:
 			if test.expectInStderr != "" {
-				Expect(strings.Contains(stderr.String(), test.expectInStderr)).To(
-					BeTrue(),
-					"------\nWant in stderr: \n%s\nGot stderr: \n%s\n------",
-					test.expectInStderr,
-					stderr.String(),
+				Expect(strings.Contains(stderr.String(), test.expectInStderr)).To(BeTrue(),
+					"Want in stderr: \n%s\nGot stderr: \n%s\n",
+					test.expectInStderr, stderr.String(),
 				)
 			}
 		})
