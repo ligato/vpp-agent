@@ -1,8 +1,5 @@
 *** Settings ***
 Library      OperatingSystem
-#Library      RequestsLibrary
-#Library      SSHLibrary      timeout=60s
-#Library      String
 
 Resource     ../../variables/${VARIABLES}_variables.robot
 
@@ -41,8 +38,8 @@ ${VXLAN_IP_SRC}=         fd31::1:1:0:0:1
 ${VXLAN_IP_DST}=         fd31::1:1:0:0:2
 ${LOOPBACK_IP}=          fd32::1:1:0:0:1
 ${TAP_IP}=               fd33::1:1:0:0:1
-${ARP1_IP}=              155.155.155.155
-${ARP2_IP}=              155.155.155.150
+${ARP1_IP}=              ab:cd:12:34::
+${ARP2_IP}=              ab:cd:12:35::
 ${ARP1_MAC}=             32:51:51:51:51:51
 ${ARP2_MAC}=             32:51:51:51:51:52
 ${ARP1_MAC_MODIFIED}=    32:51:51:51:51:53
@@ -138,58 +135,58 @@ Add ARPs
 
 Check Memif ARP
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}
-    ...    vpp_term: Check ARP   agent_vpp_1     vpp1_memif1
+    ...    vpp_term: Check IPv6 Neighbor   agent_vpp_1     vpp1_memif1
     ...    ${ARP1_IP}    ${ARP1_MAC}    True
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}
-    ...    vpp_term: Check ARP   agent_vpp_1     vpp1_memif1
+    ...    vpp_term: Check IPv6 Neighbor   agent_vpp_1     vpp1_memif1
     ...    ${ARP2_IP}    ${ARP2_MAC}    True
 
 Check Veth1 ARP
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}
-    ...    linux: Check ARP    agent_vpp_1    vpp1_veth1
+    ...    linux: Check IPv6 Neighbor    agent_vpp_1    vpp1_veth1
     ...    ${ARP1_IP}    ${ARP1_MAC}    True
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}
-    ...    linux: Check ARP    agent_vpp_1    vpp1_veth1
+    ...    linux: Check IPv6 Neighbor    agent_vpp_1    vpp1_veth1
     ...    ${ARP2_IP}    ${ARP2_MAC}    True
 
 Check Veth2 ARP
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}
-    ...    linux: Check ARP    agent_vpp_1    vpp1_veth2
+    ...    linux: Check IPv6 Neighbor    agent_vpp_1    vpp1_veth2
     ...    ${ARP1_IP}    ${ARP1_MAC}    True
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}
-    ...    linux: Check ARP    agent_vpp_1    vpp1_veth2
+    ...    linux: Check IPv6 Neighbor    agent_vpp_1    vpp1_veth2
     ...    ${ARP2_IP}    ${ARP2_MAC}    True
 
 Check VXLan ARP
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}
-    ...    vpp_term: Check ARP    agent_vpp_1    vpp1_vxlan1
+    ...    vpp_term: Check IPv6 Neighbor    agent_vpp_1    vpp1_vxlan1
     ...    ${ARP1_IP}    ${ARP1_MAC}    True
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}
-    ...    vpp_term: Check ARP    agent_vpp_1    vpp1_vxlan1
+    ...    vpp_term: Check IPv6 Neighbor    agent_vpp_1    vpp1_vxlan1
     ...    ${ARP2_IP}    ${ARP2_MAC}    True
 
 Check Loopback ARP
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}
-    ...    vpp_term: Check ARP    agent_vpp_1    vpp1_loop1
+    ...    vpp_term: Check IPv6 Neighbor    agent_vpp_1    vpp1_loop1
     ...    ${ARP1_IP}   ${ARP1_MAC}    True
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}
-    ...    vpp_term: Check ARP    agent_vpp_1    vpp1_loop1
+    ...    vpp_term: Check IPv6 Neighbor    agent_vpp_1    vpp1_loop1
     ...    ${ARP2_IP}   ${ARP2_MAC}    True
 
 Check TAP ARP
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}
-    ...    vpp_term: Check ARP    agent_vpp_1    vpp1_tap1
+    ...    vpp_term: Check IPv6 Neighbor    agent_vpp_1    vpp1_tap1
     ...    ${ARP1_IP}   ${ARP1_MAC}    True
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}
-    ...    vpp_term: Check ARP    agent_vpp_1    vpp1_tap1
+    ...    vpp_term: Check IPv6 Neighbor    agent_vpp_1    vpp1_tap1
     ...    ${ARP2_IP}   ${ARP2_MAC}    True
 
 Check Afpacket ARP
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}
-    ...    vpp_term: Check ARP    agent_vpp_1    vpp1_afpacket1
+    ...    vpp_term: Check IPv6 Neighbor    agent_vpp_1    vpp1_afpacket1
     ...    ${ARP1_IP}   ${ARP1_MAC}    True
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}
-    ...    vpp_term: Check ARP    agent_vpp_1    vpp1_afpacket1
+    ...    vpp_term: Check IPv6 Neighbor    agent_vpp_1    vpp1_afpacket1
     ...    ${ARP2_IP}   ${ARP2_MAC}    True
 
 Modify ARPs
@@ -205,58 +202,58 @@ Modify ARPs
 
 Check Memif ARP After Modify
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}
-    ...    vpp_term: Check ARP   agent_vpp_1     vpp1_memif1
+    ...    vpp_term: Check IPv6 Neighbor   agent_vpp_1     vpp1_memif1
     ...    ${ARP1_IP}    ${ARP1_MAC_MODIFIED}    True
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}
-    ...    vpp_term: Check ARP   agent_vpp_1     vpp1_memif1
+    ...    vpp_term: Check IPv6 Neighbor   agent_vpp_1     vpp1_memif1
     ...    ${ARP1_IP}    ${ARP1_MAC}    False
 
 Check Veth1 ARP After Modify
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}
-    ...    linux: Check ARP    agent_vpp_1    vpp1_veth1
+    ...    linux: Check IPv6 Neighbor    agent_vpp_1    vpp1_veth1
     ...    ${ARP1_IP}    ${ARP1_MAC_MODIFIED}    True
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}
-    ...    linux: Check ARP    agent_vpp_1    vpp1_veth1
+    ...    linux: Check IPv6 Neighbor    agent_vpp_1    vpp1_veth1
     ...    ${ARP1_IP}    ${ARP1_MAC}    False
 
 Check Veth2 ARP After Modify
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}
-    ...    linux: Check ARP    agent_vpp_1    vpp1_veth2
+    ...    linux: Check IPv6 Neighbor    agent_vpp_1    vpp1_veth2
     ...    ${ARP1_IP}    ${ARP1_MAC_MODIFIED}    True
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}
-    ...    linux: Check ARP    agent_vpp_1    vpp1_veth2
+    ...    linux: Check IPv6 Neighbor    agent_vpp_1    vpp1_veth2
     ...    ${ARP1_IP}    ${ARP1_MAC}    False
 
 Check VXLan ARP After Modify
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}
-    ...    vpp_term: Check ARP    agent_vpp_1    vpp1_vxlan1
+    ...    vpp_term: Check IPv6 Neighbor    agent_vpp_1    vpp1_vxlan1
     ...    ${ARP1_IP}    ${ARP1_MAC_MODIFIED}    True
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}
-    ...    linux: Check ARP    agent_vpp_1    vpp1_veth1
+    ...    linux: Check IPv6 Neighbor    agent_vpp_1    vpp1_veth1
     ...    ${ARP1_IP}    ${ARP1_MAC}    False
 
 Check Loopback ARP After Modify
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}
-    ...    vpp_term: Check ARP    agent_vpp_1    vpp1_loop1
+    ...    vpp_term: Check IPv6 Neighbor    agent_vpp_1    vpp1_loop1
     ...    ${ARP1_IP}    ${ARP1_MAC_MODIFIED}    True
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}
-    ...    linux: Check ARP    agent_vpp_1    vpp1_veth1
+    ...    linux: Check IPv6 Neighbor    agent_vpp_1    vpp1_veth1
     ...    ${ARP1_IP}    ${ARP1_MAC}    False
 
 Check TAP ARP After Modify
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}
-    ...    vpp_term: Check ARP    agent_vpp_1    vpp1_tap1
+    ...    vpp_term: Check IPv6 Neighbor    agent_vpp_1    vpp1_tap1
     ...    ${ARP1_IP}    ${ARP1_MAC_MODIFIED}    True
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}
-    ...    linux: Check ARP    agent_vpp_1    vpp1_veth1
+    ...    linux: Check IPv6 Neighbor    agent_vpp_1    vpp1_veth1
     ...    ${ARP1_IP}    ${ARP1_MAC}    False
 
 Check Afpacket ARP After Modify
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}
-    ...    vpp_term: Check ARP    agent_vpp_1    vpp1_afpacket1
+    ...    vpp_term: Check IPv6 Neighbor    agent_vpp_1    vpp1_afpacket1
     ...    ${ARP1_IP}    ${ARP1_MAC_MODIFIED}    True
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}
-    ...    linux: Check ARP    agent_vpp_1    vpp1_veth1
+    ...    linux: Check IPv6 Neighbor    agent_vpp_1    vpp1_veth1
     ...    ${ARP1_IP}    ${ARP1_MAC}    False
 
 Delete ARPs
@@ -274,58 +271,58 @@ Delete ARPs
 
 Check Memif ARP After Delete
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}
-    ...    vpp_term: Check ARP   agent_vpp_1     vpp1_memif1
+    ...    vpp_term: Check IPv6 Neighbor   agent_vpp_1     vpp1_memif1
     ...    ${ARP1_IP}    ${ARP1_MAC_MODIFIED}    True
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}
-    ...    vpp_term: Check ARP   agent_vpp_1     vpp1_memif1
+    ...    vpp_term: Check IPv6 Neighbor   agent_vpp_1     vpp1_memif1
     ...    ${ARP2_IP}    ${ARP2_MAC}    False
 
 Check Veth1 ARP After Delete
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}
-    ...    linux: Check ARP    agent_vpp_1    vpp1_veth1
+    ...    linux: Check IPv6 Neighbor    agent_vpp_1    vpp1_veth1
     ...    ${ARP1_IP}    ${ARP1_MAC_MODIFIED}    True
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}
-    ...    linux: Check ARP    agent_vpp_1    vpp1_veth1
+    ...    linux: Check IPv6 Neighbor    agent_vpp_1    vpp1_veth1
     ...    ${ARP1_IP}    ${ARP2_MAC}    False
 
 Check Veth2 ARP After Delete
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}
-    ...    linux: Check ARP    agent_vpp_1    vpp1_veth2
+    ...    linux: Check IPv6 Neighbor    agent_vpp_1    vpp1_veth2
     ...    ${ARP1_IP}    ${ARP1_MAC_MODIFIED}    True
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}
-    ...    linux: Check ARP    agent_vpp_1    vpp1_veth2
+    ...    linux: Check IPv6 Neighbor    agent_vpp_1    vpp1_veth2
     ...    ${ARP1_IP}    ${ARP2_MAC}    False
 
 Check VXLan ARP After Delete
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}
-    ...    vpp_term: Check ARP    agent_vpp_1    vpp1_vxlan1
+    ...    vpp_term: Check IPv6 Neighbor    agent_vpp_1    vpp1_vxlan1
     ...    ${ARP1_IP}    ${ARP1_MAC_MODIFIED}    True
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}
-    ...    vpp_term: Check ARP    agent_vpp_1    vpp1_vxlan1
+    ...    vpp_term: Check IPv6 Neighbor    agent_vpp_1    vpp1_vxlan1
     ...    ${ARP2_IP}    ${ARP2_MAC}    False
 
 Check Loopback ARP After Delete
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}
-    ...    vpp_term: Check ARP    agent_vpp_1    vpp1_loop1
+    ...    vpp_term: Check IPv6 Neighbor    agent_vpp_1    vpp1_loop1
     ...    ${ARP1_IP}   ${ARP1_MAC_MODIFIED}    True
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}
-    ...    vpp_term: Check ARP    agent_vpp_1    vpp1_loop1
+    ...    vpp_term: Check IPv6 Neighbor    agent_vpp_1    vpp1_loop1
     ...    ${ARP2_IP}   ${ARP2_MAC}    False
 
 Check TAP ARP After Delete
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}
-    ...    vpp_term: Check ARP    agent_vpp_1    vpp1_tap1
+    ...    vpp_term: Check IPv6 Neighbor    agent_vpp_1    vpp1_tap1
     ...    ${ARP1_IP}   ${ARP1_MAC_MODIFIED}    True
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}
-    ...    vpp_term: Check ARP    agent_vpp_1    vpp1_tap1
+    ...    vpp_term: Check IPv6 Neighbor    agent_vpp_1    vpp1_tap1
     ...    ${ARP2_IP}   ${ARP2_MAC}    False
 
 Check Afpacket ARP After Delete
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}
-    ...    vpp_term: Check ARP    agent_vpp_1    vpp1_afpacket1
+    ...    vpp_term: Check IPv6 Neighbor    agent_vpp_1    vpp1_afpacket1
     ...    ${ARP1_IP}   ${ARP1_MAC_MODIFIED}    True
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}
-    ...    vpp_term: Check ARP    agent_vpp_1    vpp1_afpacket1
+    ...    vpp_term: Check IPv6 Neighbor    agent_vpp_1    vpp1_afpacket1
     ...    ${ARP2_IP}   ${ARP2_MAC}    False
 
 

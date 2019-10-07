@@ -51,6 +51,17 @@ def Parse_ARP(info, intf, ip, mac):
 
 # input - output from sh ip arp command
 # output - state info list
+def parse_neighbor(info, intf, ip, mac):
+    for line in info.splitlines():
+        if intf in line and ip in line and mac in line:
+            print("Neighbor Found:"+line)
+            return True
+    print("Neighbor Found")
+    return False
+
+
+# input - output from sh ip arp command
+# output - state info list
 def parse_stn_rule(info):
     state = {}
     for line in info.splitlines():

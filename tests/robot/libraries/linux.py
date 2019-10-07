@@ -76,3 +76,23 @@ def parse_linux_arp_entries(data):
         entries.append(entry)
 
     return entries
+
+
+def parse_linux_ipv6_neighbor_entries(data):
+
+    entries = []
+
+    for line in data.splitlines():
+        if "ip address" in line.lower():
+            # skip column headers line
+            continue
+        entry_data = line.split()
+        entry = {
+            "interface": entry_data[2],
+            "ip_addr": entry_data[0],
+            "mac_addr": entry_data[4]
+        }
+        entries.append(entry)
+
+    return entries
+
