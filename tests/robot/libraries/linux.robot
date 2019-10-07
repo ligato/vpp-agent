@@ -25,12 +25,19 @@ linux: Check Veth Interface State
     List Should Contain Sub List    ${actual_state}    ${desired_state}
     [Return]             ${actual_state}
 
-linux: Check Interface Presence
-    [Arguments]        ${node}     ${mac}    ${status}=${TRUE}
+linux: Check Interface Is Present
+    [Arguments]        ${node}     ${mac}
     [Documentation]    Checking if specified interface with mac exists in linux
     ${ints}=           linux: Get Linux Interfaces    ${node}
     ${result}=         Check Linux Interface Presence    ${ints}    ${mac}
-    Should Be Equal    ${result}    ${status}
+    Should Be Equal    ${result}    ${TRUE}    values=False    msg=Interface with MAC ${mac} is not present in Linux.
+
+linux: Check Interface Is Not Present
+    [Arguments]        ${node}     ${mac}
+    [Documentation]    Checking if specified interface with mac exists in linux
+    ${ints}=           linux: Get Linux Interfaces    ${node}
+    ${result}=         Check Linux Interface Presence    ${ints}    ${mac}
+    Should Be Equal    ${result}    ${FALSE}    values=False    msg=Interface with MAC ${mac} is present in Linux but shouldn't.
 
 linux: Check Interface With IP Presence
     [Arguments]        ${node}     ${mac}    ${ip}      ${status}=${TRUE}
@@ -41,7 +48,7 @@ linux: Check Interface With IP Presence
 
 linux: Interface Is Created
     [Arguments]    ${node}    ${mac}                    
-    Wait Until Keyword Succeeds    ${interface_timeout}   3s    linux: Check Interface Presence    ${node}    ${mac}
+    Wait Until Keyword Succeeds    ${interface_timeout}   3s    linux: Check Interface Is Present    ${node}    ${mac}
 
 linux: Interface With IP Is Created
     [Arguments]    ${node}    ${mac}    ${ipv4}
@@ -49,7 +56,7 @@ linux: Interface With IP Is Created
 
 linux: Interface Is Deleted
     [Arguments]    ${node}    ${mac}                    
-    Wait Until Keyword Succeeds    ${interface_timeout}   3s    linux: Check Interface Presence    ${node}    ${mac}    ${FALSE}
+    Wait Until Keyword Succeeds    ${interface_timeout}   3s    linux: Check Interface Is Not Present    ${node}    ${mac}
 
 linux: Interface With IP Is Deleted
     [Arguments]    ${node}    ${mac}   ${ipv4}
@@ -57,11 +64,11 @@ linux: Interface With IP Is Deleted
 
 linux: Interface Exists
     [Arguments]    ${node}    ${mac}
-    linux: Check Interface Presence    ${node}    ${mac}
+    linux: Check Interface Is Present    ${node}    ${mac}
 
 linux: Interface Not Exists
     [Arguments]    ${node}    ${mac}
-    linux: Check Interface Presence    ${node}    ${mac}    ${FALSE}
+    linux: Check Interface Is Not Present    ${node}    ${mac}
 
 linux: Check Ping
     [Arguments]        ${node}    ${ip}    ${count}=5
@@ -153,3 +160,12 @@ linux: Delete Route
     [Arguments]    ${node}    ${destination_ip}    ${prefix}    ${next_hop_ip}
     Execute In Container    ${node}    ip route del ${destination_ip}/${prefix} via ${next_hop_ip}
 
+linux: Check ARP
+    [Arguments]        ${node}      ${interface}    ${ipv4}     ${MAC}    ${presence}
+    [Documentation]    Check ARP presence in linux
+    ${out}=            Execute In Container    ${node}    cat /proc/net/arp
+    ${arps}=           Parse Linux ARP Entries    ${out}
+    ${wanted}=         Create Dictionary    interface=${interface}    ip_addr=${ipv4}    mac_addr=${MAC}
+    Run Keyword If     "${presence}" == "True"
+    ...    Should Contain     ${arps}    ${wanted}
+    ...    ELSE    Should Not Contain    ${arps}    ${wanted}

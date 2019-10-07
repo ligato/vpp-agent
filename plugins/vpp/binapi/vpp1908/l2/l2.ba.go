@@ -6,7 +6,7 @@ Package l2 is a generated VPP binary API for 'l2' module.
 
 It consists of:
 	  6 enums
-	  3 aliases
+	  6 aliases
 	  9 types
 	  1 union
 	 51 messages
@@ -29,7 +29,7 @@ const (
 	// APIVersion is the API version of this module.
 	APIVersion = "2.2.2"
 	// VersionCrc is the CRC of this module.
-	VersionCrc = 0x532950d2
+	VersionCrc = 0xe72421e9
 )
 
 // AddressFamily represents VPP binary API enum 'address_family'.
@@ -299,11 +299,20 @@ func (x L2PortType) String() string {
 	return strconv.Itoa(int(x))
 }
 
+// AddressWithPrefix represents VPP binary API alias 'address_with_prefix'.
+type AddressWithPrefix Prefix
+
 // IP4Address represents VPP binary API alias 'ip4_address'.
 type IP4Address [4]uint8
 
+// IP4AddressWithPrefix represents VPP binary API alias 'ip4_address_with_prefix'.
+type IP4AddressWithPrefix IP4Prefix
+
 // IP6Address represents VPP binary API alias 'ip6_address'.
 type IP6Address [16]uint8
+
+// IP6AddressWithPrefix represents VPP binary API alias 'ip6_address_with_prefix'.
+type IP6AddressWithPrefix IP6Prefix
 
 // MacAddress represents VPP binary API alias 'mac_address'.
 type MacAddress [6]uint8
@@ -457,7 +466,7 @@ func (*BdIPMacAddDel) GetMessageName() string {
 	return "bd_ip_mac_add_del"
 }
 func (*BdIPMacAddDel) GetCrcString() string {
-	return "97367ad1"
+	return "25bf4063"
 }
 func (*BdIPMacAddDel) GetMessageType() api.MessageType {
 	return api.RequestMessage
@@ -487,7 +496,7 @@ func (*BdIPMacDetails) GetMessageName() string {
 	return "bd_ip_mac_details"
 }
 func (*BdIPMacDetails) GetCrcString() string {
-	return "3f1eb886"
+	return "a52f8044"
 }
 func (*BdIPMacDetails) GetMessageType() api.MessageType {
 	return api.ReplyMessage
@@ -693,7 +702,7 @@ func (*BviCreate) GetMessageName() string {
 	return "bvi_create"
 }
 func (*BviCreate) GetCrcString() string {
-	return "27a79e9e"
+	return "f5398559"
 }
 func (*BviCreate) GetMessageType() api.MessageType {
 	return api.RequestMessage

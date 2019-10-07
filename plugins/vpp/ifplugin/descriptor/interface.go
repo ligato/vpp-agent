@@ -28,12 +28,15 @@ import (
 
 	linux_intf "github.com/ligato/vpp-agent/api/models/linux/interfaces"
 	linux_ns "github.com/ligato/vpp-agent/api/models/linux/namespace"
+	netalloc_api "github.com/ligato/vpp-agent/api/models/netalloc"
 	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	linux_ifdescriptor "github.com/ligato/vpp-agent/plugins/linux/ifplugin/descriptor"
 	linux_ifaceidx "github.com/ligato/vpp-agent/plugins/linux/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/linux/nsplugin"
+	"github.com/ligato/vpp-agent/plugins/netalloc"
+	netalloc_descr "github.com/ligato/vpp-agent/plugins/netalloc/descriptor"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
@@ -47,6 +50,7 @@ const (
 	afPacketHostInterfaceDep = "afpacket-host-interface-exists"
 	vxlanMulticastDep        = "vxlan-multicast-interface-exists"
 	vxlanVrfTableDep         = "vrf-table-for-vxlan-exists"
+	vxlanGpeVrfTableDep      = "vrf-table-for-vxlan-gpe-exists"
 	microserviceDep          = "microservice-available"
 	parentInterfaceDep       = "parent-interface-exists"
 
@@ -109,6 +113,33 @@ var (
 
 	// ErrBondInterfaceIDExists is returned when the bond interface uses existing ID value
 	ErrBondInterfaceIDExists = errors.Errorf("Bond interface ID already exists")
+
+	// ErrGreBadTunnelType is returned when tunnel type for GRE was not set or set to UNKNOWN
+	ErrGreBadTunnelType = errors.Errorf("bad tunnel type for GRE")
+
+	// ErrGreSrcAddrMissing is returned when source address was not set or set to an empty string.
+	ErrGreSrcAddrMissing = errors.Errorf("missing source address for GRE tunnel")
+
+	// ErrGreDstAddrMissing is returned when destination address was not set or set to an empty string.
+	ErrGreDstAddrMissing = errors.Errorf("missing destination address for GRE tunnel")
+
+	// ErrVxLanGpeBadProtocol is returned when protocol for VxLAN-GPE was not set or set to UNKNOWN.
+	ErrVxLanGpeBadProtocol = errors.Errorf("bad protocol for VxLAN-GPE")
+
+	// ErrVxLanGpeNonZeroDecapVrfID is returned when DecapVrfId was not zero for protocols other than IP4 or IP6.
+	ErrVxLanGpeNonZeroDecapVrfID = errors.Errorf("DecapVrfId must be zero for protocols other than IP4 or IP6")
+
+	// ErrVxLanSrcAddrMissing is returned when source address was not set or set to an empty string.
+	ErrVxLanSrcAddrMissing = errors.Errorf("missing source address for VxLAN tunnel")
+
+	// ErrVxLanDstAddrMissing is returned when destination address was not set or set to an empty string.
+	ErrVxLanDstAddrMissing = errors.Errorf("missing destination address for VxLAN tunnel")
+
+	// ErrVxLanDstAddrBad is returned when destination address was not set to valid IP address.
+	ErrVxLanDstAddrBad = errors.Errorf("bad destination address for VxLAN tunnel")
+
+	// ErrVxLanMulticastIntfMissing is returned when interface for multicast was not specified.
+	ErrVxLanMulticastIntfMissing = errors.Errorf("missing multicast interface name for VxLAN tunnel")
 )
 
 // InterfaceDescriptor teaches KVScheduler how to configure VPP interfaces.
@@ -119,6 +150,7 @@ type InterfaceDescriptor struct {
 	// dependencies
 	log       logging.Logger
 	ifHandler vppcalls.InterfaceVppAPI
+	addrAlloc netalloc.AddressAllocator
 
 	// optional dependencies, provide if AFPacket and/or TAP+TAP_TO_VPP interfaces are used
 	linuxIfPlugin  LinuxPluginAPI
@@ -148,13 +180,14 @@ type NetlinkAPI interface {
 }
 
 // NewInterfaceDescriptor creates a new instance of the Interface descriptor.
-func NewInterfaceDescriptor(ifHandler vppcalls.InterfaceVppAPI, defaultMtu uint32,
-	linuxIfHandler NetlinkAPI, linuxIfPlugin LinuxPluginAPI, nsPlugin nsplugin.API,
+func NewInterfaceDescriptor(ifHandler vppcalls.InterfaceVppAPI, addrAlloc netalloc.AddressAllocator,
+	defaultMtu uint32, linuxIfHandler NetlinkAPI, linuxIfPlugin LinuxPluginAPI, nsPlugin nsplugin.API,
 	log logging.PluginLogger) (descr *kvs.KVDescriptor, ctx *InterfaceDescriptor) {
 
 	// descriptor context
 	ctx = &InterfaceDescriptor{
 		ifHandler:       ifHandler,
+		addrAlloc:       addrAlloc,
 		defaultMtu:      defaultMtu,
 		linuxIfPlugin:   linuxIfPlugin,
 		linuxIfHandler:  linuxIfHandler,
@@ -183,8 +216,11 @@ func NewInterfaceDescriptor(ifHandler vppcalls.InterfaceVppAPI, defaultMtu uint3
 		Retrieve:           ctx.Retrieve,
 		Dependencies:       ctx.Dependencies,
 		DerivedValues:      ctx.DerivedValues,
-		// If Linux-IfPlugin is loaded, dump it first.
-		RetrieveDependencies: []string{linux_ifdescriptor.InterfaceDescriptorName},
+		RetrieveDependencies: []string{
+			// refresh the pool of allocated IP addresses first
+			netalloc_descr.IPAllocDescriptorName,
+			// If Linux-IfPlugin is loaded, dump it first.
+			linux_ifdescriptor.InterfaceDescriptorName},
 	}
 	descr = adapter.NewInterfaceDescriptor(typedDescr)
 	return
@@ -275,6 +311,10 @@ func (d *InterfaceDescriptor) equivalentTypeSpecificConfig(oldIntf, newIntf *int
 		}
 	case interfaces.Interface_BOND_INTERFACE:
 		if !d.equivalentBond(oldIntf.GetBond(), newIntf.GetBond()) {
+			return false
+		}
+	case interfaces.Interface_GRE_TUNNEL:
+		if !proto.Equal(oldIntf.GetGre(), newIntf.GetGre()) {
 			return false
 		}
 	}
@@ -399,6 +439,10 @@ func (d *InterfaceDescriptor) Validate(key string, intf *interfaces.Interface) e
 		if intf.Type != interfaces.Interface_IPSEC_TUNNEL {
 			return linkMismatchErr
 		}
+	case *interfaces.Interface_Gre:
+		if intf.Type != interfaces.Interface_GRE_TUNNEL {
+			return linkMismatchErr
+		}
 	case nil:
 		if intf.Type != interfaces.Interface_SOFTWARE_LOOPBACK &&
 			intf.Type != interfaces.Interface_DPDK {
@@ -423,6 +467,46 @@ func (d *InterfaceDescriptor) Validate(key string, intf *interfaces.Interface) e
 	case interfaces.Interface_BOND_INTERFACE:
 		if name, ok := d.bondIDs[intf.GetBond().GetId()]; ok && name != intf.GetName() {
 			return kvs.NewInvalidValueError(ErrBondInterfaceIDExists, "link.bond.id")
+		}
+	case interfaces.Interface_GRE_TUNNEL:
+		if intf.GetGre().TunnelType == interfaces.GreLink_UNKNOWN {
+			return kvs.NewInvalidValueError(ErrGreBadTunnelType, "link.gre.tunnel_type")
+		}
+		if intf.GetGre().SrcAddr == "" {
+			return kvs.NewInvalidValueError(ErrGreSrcAddrMissing, "link.gre.src_addr")
+		}
+		if intf.GetGre().DstAddr == "" {
+			return kvs.NewInvalidValueError(ErrGreDstAddrMissing, "link.gre.dst_addr")
+		}
+	case interfaces.Interface_VXLAN_TUNNEL:
+		if intf.GetVxlan().SrcAddress == "" {
+			return kvs.NewInvalidValueError(ErrVxLanSrcAddrMissing, "link.vxlan.src_address")
+		}
+		if intf.GetVxlan().DstAddress == "" {
+			return kvs.NewInvalidValueError(ErrVxLanDstAddrMissing, "link.vxlan.dst_address")
+		}
+
+		if dst := net.ParseIP(intf.GetVxlan().DstAddress); dst != nil {
+			// if destination address is multicast then `Multicast` field must contain interface name.
+			if dst.IsMulticast() && intf.GetVxlan().Multicast == "" {
+				return kvs.NewInvalidValueError(ErrVxLanMulticastIntfMissing, "link.vxlan.multicast")
+			}
+		} else {
+			// destination address is not valid IP address.
+			return kvs.NewInvalidValueError(ErrVxLanDstAddrBad, "link.vxlan.dst_address")
+		}
+
+		if gpe := intf.GetVxlan().Gpe; gpe != nil {
+			if gpe.Protocol == interfaces.VxlanLink_Gpe_UNKNOWN {
+				return kvs.NewInvalidValueError(ErrVxLanGpeBadProtocol, "link.vxlan.gpe.protocol")
+			}
+
+			// DecapVrfId must be zero if the protocol being encapsulated is not IP4 or IP6.
+			isIP46 := gpe.Protocol == interfaces.VxlanLink_Gpe_IP4 || gpe.Protocol == interfaces.VxlanLink_Gpe_IP6
+			if !isIP46 && gpe.DecapVrfId != 0 {
+				return kvs.NewInvalidValueError(ErrVxLanGpeNonZeroDecapVrfID, "link.vxlan.gpe.decap_vrf_id")
+			}
+
 		}
 	}
 
@@ -496,8 +580,14 @@ func (d *InterfaceDescriptor) Dependencies(key string, intf *interfaces.Interfac
 				AnyOf: kvs.AnyOfDependency{
 					KeyPrefixes: []string{interfaces.InterfaceAddressPrefix(vxlanMulticast)},
 					KeySelector: func(key string) bool {
-						_, ifaceAddr, _, _, _ := interfaces.ParseInterfaceAddressKey(key)
-						return ifaceAddr != nil && ifaceAddr.IsMulticast()
+						_, ifaceAddr, source, _, _ := interfaces.ParseInterfaceAddressKey(key)
+						if source != netalloc_api.IPAddressSource_ALLOC_REF {
+							ip, _, err := net.ParseCIDR(ifaceAddr)
+							return err == nil && ip.IsMulticast()
+						}
+						// TODO: handle the case when multicast IP address is allocated
+						// via netalloc (too specific to bother until really needed)
+						return false
 					},
 				},
 			})
@@ -516,6 +606,20 @@ func (d *InterfaceDescriptor) Dependencies(key string, intf *interfaces.Interfac
 				Key:   l3.VrfTableKey(intf.GetVrf(), protocol),
 			})
 		}
+
+		if gpe := intf.GetVxlan().Gpe; gpe != nil {
+			if gpe.DecapVrfId != 0 {
+				var protocol l3.VrfTable_Protocol
+				if gpe.Protocol == interfaces.VxlanLink_Gpe_IP6 {
+					protocol = l3.VrfTable_IPV6
+				}
+				dependencies = append(dependencies, kvs.Dependency{
+					Label: vxlanGpeVrfTableDep,
+					Key:   l3.VrfTableKey(gpe.DecapVrfId, protocol),
+				})
+			}
+		}
+
 	case interfaces.Interface_SUB_INTERFACE:
 		// SUB_INTERFACE requires parent interface
 		if parentName := intf.GetSub().GetParentName(); parentName != "" {
@@ -569,7 +673,7 @@ func (d *InterfaceDescriptor) DerivedValues(key string, intf *interfaces.Interfa
 	// IP addresses
 	for _, ipAddr := range intf.IpAddresses {
 		derValues = append(derValues, kvs.KeyValuePair{
-			Key:   interfaces.InterfaceAddressKey(intf.Name, ipAddr),
+			Key:   interfaces.InterfaceAddressKey(intf.Name, ipAddr, netalloc_api.IPAddressSource_STATIC),
 			Value: &prototypes.Empty{},
 		})
 	}
@@ -756,6 +860,11 @@ func equalStringSets(set1, set2 []string) bool {
 // contains IPv4 and/or IPv6 type addresses
 func getIPAddressVersions(ipAddrs []string) (hasIPv4, hasIPv6 bool) {
 	for _, ip := range ipAddrs {
+		if strings.HasPrefix(ip, netalloc_api.AllocRefPrefix) {
+			// TODO: figure out how to define VRF-related dependencies with netalloc'd addresses
+			//       - for now assume it is only used with IPv4
+			hasIPv4 = true
+		}
 		if strings.Contains(ip, ":") {
 			hasIPv6 = true
 		} else {

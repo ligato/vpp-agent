@@ -15,11 +15,11 @@
 package linux_interfaces
 
 import (
-	"net"
 	"strings"
 
 	"github.com/gogo/protobuf/jsonpb"
 
+	"github.com/ligato/vpp-agent/api/models/netalloc"
 	"github.com/ligato/vpp-agent/pkg/models"
 )
 
@@ -64,13 +64,18 @@ const (
 
 	/* Interface Address (derived) */
 
-	// InterfaceAddressKeyPrefix is used as a common prefix for keys derived from
+	// interfaceAddressKeyPrefix is used as a common prefix for keys derived from
 	// interfaces to represent assigned IP addresses.
-	InterfaceAddressKeyPrefix = "linux/interface/address/"
+	interfaceAddressKeyPrefix = "linux/interface/{iface}/address/"
 
 	// interfaceAddressKeyTemplate is a template for (derived) key representing IP address
 	// (incl. mask) assigned to a Linux interface (referenced by the logical name).
-	interfaceAddressKeyTemplate = InterfaceAddressKeyPrefix + "{ifName}/{addr}/{mask}"
+	interfaceAddressKeyTemplate = interfaceAddressKeyPrefix + "{address-source}/{address}"
+)
+
+const (
+	// InvalidKeyPart is used in key for parts which are invalid
+	InvalidKeyPart = "<invalid>"
 )
 
 /* Interface host-name (default ns only, notifications) */
@@ -117,42 +122,82 @@ func ParseInterfaceStateKey(key string) (ifName string, ifIsUp bool, isStateKey 
 // InterfaceAddressPrefix returns longest-common prefix of keys representing
 // assigned IP addresses to a specific Linux interface.
 func InterfaceAddressPrefix(iface string) string {
-	return InterfaceAddressKeyPrefix + iface + "/"
+	if iface == "" {
+		iface = InvalidKeyPart
+	}
+	return strings.Replace(interfaceAddressKeyPrefix, "{iface}", iface, 1)
 }
 
 // InterfaceAddressKey returns key representing IP address assigned to Linux interface.
-func InterfaceAddressKey(ifName string, address string) string {
-	var mask string
-	addrComps := strings.Split(address, "/")
-	addr := addrComps[0]
-	if len(addrComps) > 1 {
-		mask = addrComps[1]
+func InterfaceAddressKey(iface string, address string, source netalloc.IPAddressSource) string {
+	if iface == "" {
+		iface = InvalidKeyPart
 	}
-	key := strings.Replace(interfaceAddressKeyTemplate, "{ifName}", ifName, 1)
-	key = strings.Replace(key, "{addr}", addr, 1)
-	key = strings.Replace(key, "{mask}", mask, 1)
+
+	src := source.String()
+	if src == "" {
+		src = InvalidKeyPart
+	}
+	if strings.HasPrefix(address, netalloc.AllocRefPrefix) {
+		src = netalloc.IPAddressSource_ALLOC_REF.String()
+	}
+	src = strings.ToLower(src)
+
+	// construct key without validating the IP address
+	key := strings.Replace(interfaceAddressKeyTemplate, "{iface}", iface, 1)
+	key = strings.Replace(key, "{address-source}", src, 1)
+	key = strings.Replace(key, "{address}", address, 1)
 	return key
 }
 
 // ParseInterfaceAddressKey parses interface address from key derived
 // from interface by InterfaceAddressKey().
-func ParseInterfaceAddressKey(key string) (ifName string, ifAddr *net.IPNet, isAddrKey bool) {
-	var err error
-	if strings.HasPrefix(key, InterfaceAddressKeyPrefix) {
-		keySuffix := strings.TrimPrefix(key, InterfaceAddressKeyPrefix)
-		keyComps := strings.Split(keySuffix, "/")
-		if len(keyComps) != 3 {
-			return "", nil, false
-		}
-		_, ifAddr, err = net.ParseCIDR(keyComps[1] + "/" + keyComps[2])
-		if err != nil {
-			return "", nil, false
-		}
-		ifName = keyComps[0]
-		isAddrKey = true
+func ParseInterfaceAddressKey(key string) (iface, address string, source netalloc.IPAddressSource, invalidKey, isAddrKey bool) {
+	parts := strings.Split(key, "/")
+	if len(parts) < 4 || parts[0] != "linux" || parts[1] != "interface" {
 		return
 	}
-	return "", nil, false
+
+	addrIdx := -1
+	for idx, part := range parts {
+		if part == "address" {
+			addrIdx = idx
+			break
+		}
+	}
+	if addrIdx == -1 {
+		return
+	}
+	isAddrKey = true
+
+	// parse interface name
+	iface = strings.Join(parts[2:addrIdx], "/")
+	if iface == "" {
+		iface = InvalidKeyPart
+		invalidKey = true
+	}
+
+	// parse address type
+	if addrIdx == len(parts)-1 {
+		invalidKey = true
+		return
+	}
+
+	// parse address source
+	src := strings.ToUpper(parts[addrIdx+1])
+	srcInt, validSrc := netalloc.IPAddressSource_value[src]
+	if !validSrc {
+		invalidKey = true
+		return
+	}
+	source = netalloc.IPAddressSource(srcInt)
+
+	// return address as is (not parsed - this is done by the netalloc plugin)
+	address = strings.Join(parts[addrIdx+2:], "/")
+	if address == "" {
+		invalidKey = true
+	}
+	return
 }
 
 // MarshalJSON ensures that field of type 'oneOf' is correctly marshaled

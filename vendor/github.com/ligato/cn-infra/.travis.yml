@@ -4,14 +4,14 @@ sudo: required
 
 language: go
 go:
-  - 1.10.x
+  - "1.12.x"
+
+go_import_path: github.com/ligato/cn-infra
 
 addons:
   apt:
     packages:
       - npm
-
-go_import_path: github.com/ligato/cn-infra
 
 git:
   depth: 1
@@ -33,3 +33,10 @@ script:
 
 after_success:
   - goveralls -coverprofile=/tmp/coverage.out -service=travis-ci
+
+notifications:
+  slack:
+    rooms:
+      - ligato:QNOK2VgHH6k40T8nQxmSgRmo
+    on_success: change
+    on_failure: always

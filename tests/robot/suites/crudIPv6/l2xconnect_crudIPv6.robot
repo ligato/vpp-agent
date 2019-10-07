@@ -7,6 +7,7 @@ Library      OperatingSystem
 Resource     ../../variables/${VARIABLES}_variables.robot
 
 Resource     ../../libraries/all_libs.robot
+Resource     ../../libraries/interface/vxlan.robot
 
 Force Tags        crud     IPv6
 Suite Setup       Testsuite Setup
@@ -64,7 +65,7 @@ Add VXLan Interface
     Put VXLan Interface    node=agent_vpp_1    name=vpp1_vxlan1    src=${MEMIF_IP}    dst=${VXLAN_IP}    vni=5
 
 Check VXLan Interface Created
-    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vxlan: Tunnel Is Created    node=agent_vpp_1    src=${MEMIF_IP}    dst=${VXLAN_IP}    vni=5
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    VXLan Tunnel Is Created    node=agent_vpp_1    src=${MEMIF_IP}    dst=${VXLAN_IP}    vni=5
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vat_term: Check VXLan Interface State    agent_vpp_1    vpp1_vxlan1    enabled=1    src=${MEMIF_IP}    dst=${VXLAN_IP}    vni=5
 
 Add Loopback1 Interface

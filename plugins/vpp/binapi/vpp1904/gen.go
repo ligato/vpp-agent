@@ -17,21 +17,21 @@ package vpp1904
 //go:generate -command binapigen binapi-generator --output-dir=.
 
 //go:generate binapigen --input-file=/usr/share/vpp/api/core/af_packet.api.json
-//go:generate binapigen --input-file=/usr/share/vpp/api/core/bfd.api.json
 //go:generate binapigen --input-file=/usr/share/vpp/api/core/bond.api.json
 //go:generate binapigen --input-file=/usr/share/vpp/api/core/dhcp.api.json
+//go:generate binapigen --input-file=/usr/share/vpp/api/core/gre.api.json
 //go:generate binapigen --input-file=/usr/share/vpp/api/core/interface.api.json
 //go:generate binapigen --input-file=/usr/share/vpp/api/core/ip.api.json
 //go:generate binapigen --input-file=/usr/share/vpp/api/core/ipsec.api.json
 //go:generate binapigen --input-file=/usr/share/vpp/api/core/l2.api.json
 //go:generate binapigen --input-file=/usr/share/vpp/api/core/memclnt.api.json
 //go:generate binapigen --input-file=/usr/share/vpp/api/core/punt.api.json
-//go:generate binapigen --input-file=/usr/share/vpp/api/core/session.api.json
 //go:generate binapigen --input-file=/usr/share/vpp/api/core/span.api.json
 //go:generate binapigen --input-file=/usr/share/vpp/api/core/sr.api.json
 //go:generate binapigen --input-file=/usr/share/vpp/api/core/tapv2.api.json
 //go:generate binapigen --input-file=/usr/share/vpp/api/core/vpe.api.json
 //go:generate binapigen --input-file=/usr/share/vpp/api/core/vxlan.api.json
+//go:generate binapigen --input-file=/usr/share/vpp/api/core/vxlan_gpe.api.json
 //go:generate binapigen --input-file=/usr/share/vpp/api/plugins/abf.api.json
 //go:generate binapigen --input-file=/usr/share/vpp/api/plugins/acl.api.json
 //go:generate binapigen --input-file=/usr/share/vpp/api/plugins/memif.api.json

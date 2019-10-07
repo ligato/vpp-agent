@@ -8,7 +8,8 @@ import "github.com/gogo/protobuf/gogoproto/gogo.proto";
 option (gogoproto.messagename_all) = true;
 
 message Route {
-    string outgoing_interface = 1; /* outgoing interface logical name (mandatory) */
+    // Outgoing interface logical name (mandatory).
+    string outgoing_interface = 1;
 
     enum Scope {
         UNDEFINED = 0;
@@ -17,9 +18,19 @@ message Route {
         LINK = 3;
         HOST = 4;
     }
-    Scope scope = 2;               /* the scope of the area where the link is valid */
+    // The scope of the area where the link is valid.
+    Scope scope = 2;
 
-    string dst_network = 3;        /* destination network address in the format <address>/<prefix> (mandatory) */
-    string gw_addr = 4;            /* gateway IP address */
-    uint32 metric = 5;             /* routing metric (weight) */
+    // Destination network address in the format <address>/<prefix> (mandatory)
+    // Address can be also allocated via netalloc plugin and referenced here,
+    // see: api/models/netalloc/netalloc.proto
+    string dst_network = 3;
+
+    // Gateway IP address (without mask, optional).
+    // Address can be also allocated via netalloc plugin and referenced here,
+    // see: api/models/netalloc/netalloc.proto
+    string gw_addr = 4;
+
+    // routing metric (weight)
+    uint32 metric = 5;
 }

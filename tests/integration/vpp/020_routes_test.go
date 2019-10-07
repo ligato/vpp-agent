@@ -21,6 +21,7 @@ import (
 	"github.com/ligato/cn-infra/logging/logrus"
 
 	vpp_l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
+	netalloc_mock "github.com/ligato/vpp-agent/plugins/netalloc/mock"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	ifplugin_vppcalls "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
 	_ "github.com/ligato/vpp-agent/plugins/vpp/l3plugin"
@@ -37,7 +38,8 @@ func TestRoutes(t *testing.T) {
 	vrfIndexes.Put("vrf1-ipv4", &vrfidx.VRFMetadata{Index: 0, Protocol: vpp_l3.VrfTable_IPV4})
 	vrfIndexes.Put("vrf1-ipv6", &vrfidx.VRFMetadata{Index: 0, Protocol: vpp_l3.VrfTable_IPV6})
 
-	h := l3plugin_vppcalls.CompatibleL3VppHandler(ctx.vppBinapi, ifIndexes, vrfIndexes, logrus.NewLogger("test"))
+	h := l3plugin_vppcalls.CompatibleL3VppHandler(ctx.vppBinapi, ifIndexes, vrfIndexes,
+		netalloc_mock.NewMockNetAlloc(), logrus.NewLogger("test"))
 
 	routes, err := h.DumpRoutes()
 	if err != nil {
@@ -86,7 +88,8 @@ func TestCRUDIPv4Route(t *testing.T) {
 	vrfIndexes := vrfidx.NewVRFIndex(logrus.NewLogger("test-vrf"), "test-vrf")
 	vrfIndexes.Put("vrf1-ipv4-vrf0", &vrfidx.VRFMetadata{Index: vrfMetaIdx, Protocol: vpp_l3.VrfTable_IPV4})
 
-	h := l3plugin_vppcalls.CompatibleL3VppHandler(ctx.vppBinapi, ifIndexes, vrfIndexes, logrus.NewLogger("test"))
+	h := l3plugin_vppcalls.CompatibleL3VppHandler(ctx.vppBinapi, ifIndexes, vrfIndexes,
+		netalloc_mock.NewMockNetAlloc(), logrus.NewLogger("test"))
 
 	routes, errx := h.DumpRoutes()
 	if errx != nil {
@@ -95,7 +98,7 @@ func TestCRUDIPv4Route(t *testing.T) {
 	routesCnt := len(routes)
 	t.Logf("%d routes dumped", routesCnt)
 
-	newRoute := vpp_l3.Route{VrfId: 0, DstNetwork: "192.168.10.21/24", NextHopAddr: "192.168.30.1", OutgoingInterface: ifName}
+	newRoute := vpp_l3.Route{VrfId: 0, DstNetwork: "192.168.10.0/24", NextHopAddr: "192.168.30.1", OutgoingInterface: ifName}
 	err = h.VppAddRoute(&newRoute)
 	if err != nil {
 		t.Fatalf("adding route failed: %v", err)
@@ -161,7 +164,7 @@ func TestCRUDIPv4Route(t *testing.T) {
 	routesCnt = len(routes)
 	t.Logf("%d routes dumped", routesCnt)
 
-	newRoute = vpp_l3.Route{VrfId: 2, DstNetwork: "192.168.10.21/24", NextHopAddr: "192.168.30.1", OutgoingInterface: ifName}
+	newRoute = vpp_l3.Route{VrfId: 2, DstNetwork: "192.168.10.0/24", NextHopAddr: "192.168.30.1", OutgoingInterface: ifName}
 	err = h.VppAddRoute(&newRoute)
 	if err != nil {
 		t.Fatalf("adding route failed: %v", err)
@@ -234,7 +237,8 @@ func TestCRUDIPv6Route(t *testing.T) {
 	vrfIndexes := vrfidx.NewVRFIndex(logrus.NewLogger("test-vrf"), "test-vrf")
 	vrfIndexes.Put("vrf1-ipv6-vrf0", &vrfidx.VRFMetadata{Index: vrfMetaIdx, Protocol: vpp_l3.VrfTable_IPV6})
 
-	h := l3plugin_vppcalls.CompatibleL3VppHandler(ctx.vppBinapi, ifIndexes, vrfIndexes, logrus.NewLogger("test"))
+	h := l3plugin_vppcalls.CompatibleL3VppHandler(ctx.vppBinapi, ifIndexes, vrfIndexes,
+		netalloc_mock.NewMockNetAlloc(), logrus.NewLogger("test"))
 
 	routes, errx := h.DumpRoutes()
 	if errx != nil {

@@ -247,17 +247,23 @@ var funcMap = template.FuncMap{
 		return "IPv4"
 	},
 	"ipnet": func(s string) map[string]interface{} {
+		if strings.HasPrefix(s, "alloc:") {
+			// reference to IP address allocated via netalloc
+			return nil
+		}
 		_, ipNet, err := net.ParseCIDR(s)
 		if err != nil {
 			return map[string]interface{}{
 				"IP":       "<invalid>",
 				"MaskSize": 0,
+				"AllocRef": "",
 			}
 		}
 		maskSize, _ := ipNet.Mask.Size()
 		return map[string]interface{}{
 			"IP":       ipNet.IP.String(),
 			"MaskSize": maskSize,
+			"AllocRef": "",
 		}
 	},
 }

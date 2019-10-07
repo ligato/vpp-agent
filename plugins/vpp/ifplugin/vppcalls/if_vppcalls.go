@@ -31,17 +31,18 @@ type InterfaceDetails struct {
 
 // InterfaceMeta is combination of proto-modelled Interface data and VPP provided metadata
 type InterfaceMeta struct {
-	SwIfIndex    uint32           `json:"sw_if_index"`
-	SupSwIfIndex uint32           `json:"sub_sw_if_index"`
-	L2Address    net.HardwareAddr `json:"l2_address"`
-	InternalName string           `json:"internal_name"`
-	AdminState   uint8            `json:"admin_state"`
-	LinkState    uint8            `json:"link_state"`
-	LinkDuplex   uint8            `json:"link_duplex"`
-	LinkMTU      uint16           `json:"link_mtu"`
-	LinkSpeed    uint32           `json:"link_speed"`
-	SubID        uint32           `json:"sub_id"`
-	Tag          string           `json:"tag"`
+	SwIfIndex      uint32           `json:"sw_if_index"`
+	SupSwIfIndex   uint32           `json:"sub_sw_if_index"`
+	L2Address      net.HardwareAddr `json:"l2_address"`
+	InternalName   string           `json:"internal_name"`
+	IsAdminStateUp bool             `json:"is_admin_state_up"`
+	IsLinkStateUp  bool             `json:"is_link_state_up"`
+	LinkDuplex     uint32           `json:"link_duplex"`
+	LinkMTU        uint16           `json:"link_mtu"`
+	MTU            []uint32         `json:"mtu"`
+	LinkSpeed      uint32           `json:"link_speed"`
+	SubID          uint32           `json:"sub_id"`
+	Tag            string           `json:"tag"`
 	// dhcp
 	Dhcp *Dhcp `json:"dhcp"`
 	// vrf
@@ -132,6 +133,10 @@ type InterfaceVppAPI interface {
 	AddVxLanTunnel(ifName string, vrf, multicastIf uint32, vxLan *interfaces.VxlanLink) (swIndex uint32, err error)
 	// DeleteVxLanTunnel calls AddDelVxLanTunnelReq with flag add=0.
 	DeleteVxLanTunnel(ifName string, idx, vrf uint32, vxLan *interfaces.VxlanLink) error
+	// AddVxLanGpeTunnel creates VxLAN-GPE tunnel.
+	AddVxLanGpeTunnel(ifName string, vrf, multicastIf uint32, vxLan *interfaces.VxlanLink) (uint32, error)
+	// DeleteVxLanGpeTunnel removes VxLAN-GPE tunnel.
+	DeleteVxLanGpeTunnel(ifName string, vxLan *interfaces.VxlanLink) error
 	// AddIPSecTunnelInterface adds a new IPSec tunnel interface
 	AddIPSecTunnelInterface(ifName string, ipSecLink *interfaces.IPSecLink) (uint32, error)
 	// DeleteIPSecTunnelInterface removes existing IPSec tunnel interface
@@ -196,6 +201,10 @@ type InterfaceVppAPI interface {
 	AddSpan(ifIdxFrom, ifIdxTo uint32, direction uint8, isL2 uint8) error
 	// DelSpan removes new span record
 	DelSpan(ifIdxFrom, ifIdxTo uint32, isL2 uint8) error
+	// AddGreTunnel adds new GRE interface.
+	AddGreTunnel(ifName string, greLink *interfaces.GreLink) (uint32, error)
+	// DelGreTunnel removes GRE interface.
+	DelGreTunnel(ifName string, greLink *interfaces.GreLink) (uint32, error)
 }
 
 // InterfaceVppRead provides read methods for interface plugin

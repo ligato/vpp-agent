@@ -260,8 +260,8 @@ func TestAddLocalSID(t *testing.T) {
 			Name:    "addition with endAD behaviour (+ memif interface name translation)",
 			cliMode: true,
 			MockInterfaceDump: []govppapi.Message{
-				&interfaces.SwInterfaceDetails{Tag: toIFaceByte(ifaceA), InterfaceName: toIFaceByte(memif1)},
-				&interfaces.SwInterfaceDetails{Tag: toIFaceByte(ifaceB), InterfaceName: toIFaceByte(memif2)},
+				&interfaces.SwInterfaceDetails{Tag: ifaceA, InterfaceName: memif1},
+				&interfaces.SwInterfaceDetails{Tag: ifaceB, InterfaceName: memif2},
 			},
 			Input: &srv6.LocalSID{
 				Sid:               sidToStr(sidA),
@@ -275,15 +275,15 @@ func TestAddLocalSID(t *testing.T) {
 				},
 			},
 			Expected: &vpe.CliInband{
-				Cmd: fmt.Sprintf("sr localsid address %v behavior end.ad nh %v oif %v iif %v", sidToStr(sidA), nextHopIPv4.String(), memif1, memif2),
+				Cmd: fmt.Sprintf("sr localsid address %v fib-table 10 behavior end.ad nh %v oif %v iif %v", sidToStr(sidA), nextHopIPv4.String(), memif1, memif2),
 			},
 		},
 		{
 			Name:    "addition with endAD behaviour for L2 sr-unaware service",
 			cliMode: true,
 			MockInterfaceDump: []govppapi.Message{
-				&interfaces.SwInterfaceDetails{Tag: toIFaceByte(ifaceA), InterfaceName: toIFaceByte(memif1)},
-				&interfaces.SwInterfaceDetails{Tag: toIFaceByte(ifaceB), InterfaceName: toIFaceByte(memif2)},
+				&interfaces.SwInterfaceDetails{Tag: ifaceA, InterfaceName: memif1},
+				&interfaces.SwInterfaceDetails{Tag: ifaceB, InterfaceName: memif2},
 			},
 			Input: &srv6.LocalSID{
 				Sid:               sidToStr(sidA),
@@ -296,15 +296,15 @@ func TestAddLocalSID(t *testing.T) {
 				},
 			},
 			Expected: &vpe.CliInband{
-				Cmd: fmt.Sprintf("sr localsid address %v behavior end.ad oif %v iif %v", sidToStr(sidA), memif1, memif2),
+				Cmd: fmt.Sprintf("sr localsid address %v fib-table 10 behavior end.ad oif %v iif %v", sidToStr(sidA), memif1, memif2),
 			},
 		},
 		{
 			Name:    "etcd-to-vpp-internal interface name translation for endAD behaviour (local and tap kind of interfaces)",
 			cliMode: true,
 			MockInterfaceDump: []govppapi.Message{
-				&interfaces.SwInterfaceDetails{Tag: toIFaceByte(ifaceA), InterfaceName: toIFaceByte("local0")},
-				&interfaces.SwInterfaceDetails{Tag: toIFaceByte(ifaceB), InterfaceName: toIFaceByte("tap0")},
+				&interfaces.SwInterfaceDetails{Tag: ifaceA, InterfaceName: "local0"},
+				&interfaces.SwInterfaceDetails{Tag: ifaceB, InterfaceName: "tap0"},
 			},
 			Input: &srv6.LocalSID{
 				Sid:               sidToStr(sidA),
@@ -318,15 +318,15 @@ func TestAddLocalSID(t *testing.T) {
 				},
 			},
 			Expected: &vpe.CliInband{
-				Cmd: fmt.Sprintf("sr localsid address %v behavior end.ad nh %v oif %v iif %v", sidToStr(sidA), nextHopIPv4.String(), "local0", "tap0"),
+				Cmd: fmt.Sprintf("sr localsid address %v fib-table 10 behavior end.ad nh %v oif %v iif %v", sidToStr(sidA), nextHopIPv4.String(), "local0", "tap0"),
 			},
 		},
 		{
 			Name:    "etcd-to-vpp-internal interface name translation for endAD behaviour (host and vxlan kind of interfaces)",
 			cliMode: true,
 			MockInterfaceDump: []govppapi.Message{
-				&interfaces.SwInterfaceDetails{Tag: toIFaceByte(ifaceA), InterfaceName: toIFaceByte("host0")},
-				&interfaces.SwInterfaceDetails{Tag: toIFaceByte(ifaceB), InterfaceName: toIFaceByte("vxlan0")},
+				&interfaces.SwInterfaceDetails{Tag: ifaceA, InterfaceName: "host0"},
+				&interfaces.SwInterfaceDetails{Tag: ifaceB, InterfaceName: "vxlan0"},
 			},
 			Input: &srv6.LocalSID{
 				Sid:               sidToStr(sidA),
@@ -340,15 +340,15 @@ func TestAddLocalSID(t *testing.T) {
 				},
 			},
 			Expected: &vpe.CliInband{
-				Cmd: fmt.Sprintf("sr localsid address %v behavior end.ad nh %v oif %v iif %v", sidToStr(sidA), nextHopIPv4.String(), "host0", "vxlan0"),
+				Cmd: fmt.Sprintf("sr localsid address %v fib-table 10 behavior end.ad nh %v oif %v iif %v", sidToStr(sidA), nextHopIPv4.String(), "host0", "vxlan0"),
 			},
 		},
 		{
 			Name:    "etcd-to-vpp-internal interface name translation for endAD behaviour (ipsec and vmxnet3 kind of interfaces)",
 			cliMode: true,
 			MockInterfaceDump: []govppapi.Message{
-				&interfaces.SwInterfaceDetails{Tag: toIFaceByte(ifaceA), InterfaceName: toIFaceByte("ipsec0")},
-				&interfaces.SwInterfaceDetails{Tag: toIFaceByte(ifaceB), InterfaceName: toIFaceByte("vmxnet3-0")},
+				&interfaces.SwInterfaceDetails{Tag: ifaceA, InterfaceName: "ipsec0"},
+				&interfaces.SwInterfaceDetails{Tag: ifaceB, InterfaceName: "vmxnet3-0"},
 			},
 			Input: &srv6.LocalSID{
 				Sid:               sidToStr(sidA),
@@ -362,15 +362,15 @@ func TestAddLocalSID(t *testing.T) {
 				},
 			},
 			Expected: &vpe.CliInband{
-				Cmd: fmt.Sprintf("sr localsid address %v behavior end.ad nh %v oif %v iif %v", sidToStr(sidA), nextHopIPv4.String(), "ipsec0", "vmxnet3-0"),
+				Cmd: fmt.Sprintf("sr localsid address %v fib-table 10 behavior end.ad nh %v oif %v iif %v", sidToStr(sidA), nextHopIPv4.String(), "ipsec0", "vmxnet3-0"),
 			},
 		},
 		{
 			Name:    "etcd-to-vpp-internal interface name translation for endAD behaviour (loop and unknown kind of interfaces)",
 			cliMode: true,
 			MockInterfaceDump: []govppapi.Message{
-				&interfaces.SwInterfaceDetails{Tag: toIFaceByte(ifaceA), InterfaceName: toIFaceByte("loop0")},
-				&interfaces.SwInterfaceDetails{Tag: toIFaceByte(ifaceB), InterfaceName: toIFaceByte("unknown0")},
+				&interfaces.SwInterfaceDetails{Tag: ifaceA, InterfaceName: "loop0"},
+				&interfaces.SwInterfaceDetails{Tag: ifaceB, InterfaceName: "unknown0"},
 			},
 			Input: &srv6.LocalSID{
 				Sid:               sidToStr(sidA),
@@ -384,7 +384,7 @@ func TestAddLocalSID(t *testing.T) {
 				},
 			},
 			Expected: &vpe.CliInband{
-				Cmd: fmt.Sprintf("sr localsid address %v behavior end.ad nh %v oif %v iif %v", sidToStr(sidA), nextHopIPv4.String(), "loop0", "unknown0"),
+				Cmd: fmt.Sprintf("sr localsid address %v fib-table 10 behavior end.ad nh %v oif %v iif %v", sidToStr(sidA), nextHopIPv4.String(), "loop0", "unknown0"),
 			},
 		},
 		{
@@ -415,8 +415,8 @@ func TestAddLocalSID(t *testing.T) {
 			ExpectFailure: true,
 			cliMode:       true,
 			MockInterfaceDump: []govppapi.Message{
-				&interfaces.SwInterfaceDetails{Tag: toIFaceByte(ifaceA), InterfaceName: toIFaceByte(memif1)},
-				&interfaces.SwInterfaceDetails{Tag: toIFaceByte(ifaceB), InterfaceName: toIFaceByte(memif2)},
+				&interfaces.SwInterfaceDetails{Tag: ifaceA, InterfaceName: memif1},
+				&interfaces.SwInterfaceDetails{Tag: ifaceB, InterfaceName: memif2},
 			},
 			Input: &srv6.LocalSID{
 				Sid:               sidToStr(sidA),
@@ -452,7 +452,7 @@ func TestAddLocalSID(t *testing.T) {
 			ExpectFailure: true,
 			cliMode:       true,
 			MockInterfaceDump: []govppapi.Message{
-				&interfaces.SwInterfaceDetails{Tag: toIFaceByte(ifaceB), InterfaceName: toIFaceByte(memif2)},
+				&interfaces.SwInterfaceDetails{Tag: ifaceB, InterfaceName: memif2},
 			},
 			Input: &srv6.LocalSID{
 				Sid:               sidToStr(sidA),
@@ -471,7 +471,7 @@ func TestAddLocalSID(t *testing.T) {
 			ExpectFailure: true,
 			cliMode:       true,
 			MockInterfaceDump: []govppapi.Message{
-				&interfaces.SwInterfaceDetails{Tag: toIFaceByte(ifaceA), InterfaceName: toIFaceByte(memif1)},
+				&interfaces.SwInterfaceDetails{Tag: ifaceA, InterfaceName: memif1},
 			},
 			Input: &srv6.LocalSID{
 				Sid:               sidToStr(sidA),
@@ -1515,9 +1515,4 @@ func boolToUint(input bool) uint8 {
 
 func sidToStr(sid sr.Srv6Sid) string {
 	return srv6.SID(sid.Addr).String()
-}
-
-// toIFaceByte converts value to byte representation as returned by VPP binary api in case of interface info (string bytes + 1 zero byte)
-func toIFaceByte(val string) []byte {
-	return append([]byte(val), 0x00)
 }

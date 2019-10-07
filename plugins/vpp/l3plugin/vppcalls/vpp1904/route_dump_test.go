@@ -18,6 +18,7 @@ import (
 	"testing"
 
 	"github.com/ligato/cn-infra/logging/logrus"
+	netallock_mock "github.com/ligato/vpp-agent/plugins/netalloc/mock"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/ip"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/vpe"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
@@ -30,7 +31,8 @@ func TestDumpStaticRoutes(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()
 	ifIndexes := ifaceidx.NewIfaceIndex(logrus.NewLogger("test"), "test")
-	l3handler := NewRouteVppHandler(ctx.MockChannel, ifIndexes, logrus.DefaultLogger())
+	l3handler := NewRouteVppHandler(ctx.MockChannel, ifIndexes, netallock_mock.NewMockNetAlloc(),
+		logrus.DefaultLogger())
 
 	ifIndexes.Put("if1", &ifaceidx.IfaceMetadata{SwIfIndex: 1})
 	ifIndexes.Put("if2", &ifaceidx.IfaceMetadata{SwIfIndex: 2})

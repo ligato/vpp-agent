@@ -19,8 +19,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gogo/protobuf/proto"
-
 	"github.com/ligato/vpp-agent/plugins/kvscheduler/internal/utils"
 )
 
@@ -84,8 +82,8 @@ type RecordedTxnOp struct {
 	Key       string
 
 	// changes
-	PrevValue proto.Message
-	NewValue  proto.Message
+	PrevValue *utils.RecordedProtoMessage
+	NewValue  *utils.RecordedProtoMessage
 	PrevState ValueState
 	NewState  ValueState
 	PrevErr   error
@@ -103,7 +101,7 @@ type RecordedTxnOp struct {
 // RecordedKVPair is used to record key-value pair.
 type RecordedKVPair struct {
 	Key    string
-	Value  proto.Message
+	Value  *utils.RecordedProtoMessage
 	Origin ValueOrigin
 }
 

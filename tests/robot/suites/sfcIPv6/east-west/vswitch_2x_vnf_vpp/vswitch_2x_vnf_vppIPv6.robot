@@ -98,9 +98,6 @@ Check Stuff
     Write To Machine    agent_vpp_1_term    show br 1 detail
     Write To Machine    agent_vpp_2_term    show br 1 detail
     Write To Machine    agent_vpp_3_term    show br 1 detail
-    Write To Machine    agent_vpp_1_term    show vxlan tunnel
-    Write To Machine    agent_vpp_2_term    show vxlan tunnel
-    Write To Machine    agent_vpp_3_term    show vxlan tunnel
     Write To Machine    agent_vpp_1_term    show err
     Write To Machine    agent_vpp_2_term    show err
     Write To Machine    agent_vpp_3_term    show err

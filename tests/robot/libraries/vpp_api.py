@@ -1,494 +1,395 @@
-import os
-import fnmatch
-import time
-from hook import Hook
-from collections import deque
+#!/usr/bin/env python3
 
-# Sphinx creates auto-generated documentation by importing the python source
-# files and collecting the docstrings from them. The NO_VPP_PAPI flag allows
-# the vpp_papi_provider.py file to be importable without having to build
-# the whole vpp api if the user only wishes to generate the test documentation.
-do_import = True
-try:
-    no_vpp_papi = os.getenv("NO_VPP_PAPI")
-    if no_vpp_papi == "1":
-        do_import = False
-except:
-    pass
+# Copyright (c) 2019 Cisco and/or its affiliates.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at:
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
-if do_import:
-    from vpp_papi import VPP
+import binascii
+import json
 
+from paramiko import SSHClient, AutoAddPolicy
 
-class UnexpectedApiReturnValueError(Exception):
-    """ exception raised when the API return value is unexpected """
-    pass
+from robot.api import logger
+
+CLIENT_NAME = 'ligato_papi'
 
 
-class VppPapiProvider(object):
-    """VPP-api provider using vpp-papi
-    @property hook: hook object providing before and after api/cli hooks
+class vpp_api(object):
+    @staticmethod
+    def execute_api(host, username, password, node, command, **arguments):
+        with PapiExecutor(host, username, password, node) as papi_exec:
+            papi_resp = papi_exec.add(command, **arguments).get_replies()
+
+        return papi_resp.reply
+
+
+class PapiResponse(object):
+    """Class for metadata specifying the Papi reply, stdout, stderr and return
+    code.
     """
 
-    _zero, _negative = range(2)
+    def __init__(self, papi_reply=None, stdout="", stderr="", requests=None):
+        """Construct the Papi response by setting the values needed.
 
-    def __init__(self, name, shm_prefix, test_class, read_timeout):
-        self.hook = Hook("vpp-papi-provider")
-        self.name = name
-        self.shm_prefix = shm_prefix
-        self.test_class = test_class
-        self._expect_api_retval = self._zero
-        self._expect_stack = []
-        jsonfiles = []
+        :param papi_reply: API reply from last executed PAPI command(s).
+        :param stdout: stdout from last executed PAPI command(s).
+        :param stderr: stderr from last executed PAPI command(s).
+        :param requests: List of used PAPI requests. It is used while verifying
+            replies. If None, expected replies must be provided for verify_reply
+            and verify_replies methods.
+        :type papi_reply: list or None
+        :type stdout: str
+        :type stderr: str
+        :type requests: list
+        """
 
-        install_dir = os.getenv('VPP_TEST_INSTALL_PATH')
-        for root, dirnames, filenames in os.walk(install_dir):
-            for filename in fnmatch.filter(filenames, '*.api.json'):
-                jsonfiles.append(os.path.join(root, filename))
+        # API reply from last executed PAPI command(s).
+        self.reply = papi_reply
 
-        self.vpp = VPP(jsonfiles, logger=test_class.logger,
-                       read_timeout=read_timeout)
-        self._events = deque()
+        # stdout from last executed PAPI command(s).
+        self.stdout = stdout
+
+        # stderr from last executed PAPI command(s).
+        self.stderr = stderr
+
+        # List of used PAPI requests.
+        self.requests = requests
+
+        # List of expected PAPI replies. It is used while verifying replies.
+        if self.requests:
+            self.expected_replies = \
+                ["{rqst}_reply".format(rqst=rqst) for rqst in self.requests]
+
+    def __str__(self):
+        """Return string with human readable description of the PapiResponse.
+
+        :returns: Readable description.
+        :rtype: str
+        """
+        return (
+            "papi_reply={papi_reply},stdout={stdout},stderr={stderr},"
+            "requests={requests}").format(
+            papi_reply=self.reply, stdout=self.stdout, stderr=self.stderr,
+            requests=self.requests)
+
+    def __repr__(self):
+        """Return string executable as Python constructor call.
+
+        :returns: Executable constructor call.
+        :rtype: str
+        """
+        return "PapiResponse({str})".format(str=str(self))
+
+
+class PapiExecutor(object):
+    """Contains methods for executing VPP Python API commands on DUTs.
+
+    Note: Use only with "with" statement, e.g.:
+
+        with PapiExecutor(node) as papi_exec:
+            papi_resp = papi_exec.add('show_version').get_replies(err_msg)
+
+    This class processes three classes of VPP PAPI methods:
+    1. simple request / reply: method='request',
+    2. dump functions: method='dump',
+    3. vpp-stats: method='stats'.
+
+    The recommended ways of use are (examples):
+
+    1. Simple request / reply
+
+    a. One request with no arguments:
+
+        with PapiExecutor(node) as papi_exec:
+            data = papi_exec.add('show_version').get_replies().\
+                verify_reply()
+
+    b. Three requests with arguments, the second and the third ones are the same
+       but with different arguments.
+
+        with PapiExecutor(node) as papi_exec:
+            data = papi_exec.add(cmd1, **args1).add(cmd2, **args2).\
+                add(cmd2, **args3).get_replies(err_msg).verify_replies()
+
+    2. Dump functions
+
+        cmd = 'sw_interface_rx_placement_dump'
+        with PapiExecutor(node) as papi_exec:
+            papi_resp = papi_exec.add(cmd, sw_if_index=ifc['vpp_sw_index']).\
+                get_dump(err_msg)
+
+    3. vpp-stats
+
+        path = ['^/if', '/err/ip4-input', '/sys/node/ip4-input']
+
+        with PapiExecutor(node) as papi_exec:
+            data = papi_exec.add(api_name='vpp-stats', path=path).get_stats()
+
+        print('RX interface core 0, sw_if_index 0:\n{0}'.\
+            format(data[0]['/if/rx'][0][0]))
+
+        or
+
+        path_1 = ['^/if', ]
+        path_2 = ['^/if', '/err/ip4-input', '/sys/node/ip4-input']
+
+        with PapiExecutor(node) as papi_exec:
+            data = papi_exec.add('vpp-stats', path=path_1).\
+                add('vpp-stats', path=path_2).get_stats()
+
+        print('RX interface core 0, sw_if_index 0:\n{0}'.\
+            format(data[1]['/if/rx'][0][0]))
+
+        Note: In this case, when PapiExecutor method 'add' is used:
+        - its parameter 'csit_papi_command' is used only to keep information
+          that vpp-stats are requested. It is not further processed but it is
+          included in the PAPI history this way:
+          vpp-stats(path=['^/if', '/err/ip4-input', '/sys/node/ip4-input'])
+          Always use csit_papi_command="vpp-stats" if the VPP PAPI method
+          is "stats".
+        - the second parameter must be 'path' as it is used by PapiExecutor
+          method 'add'.
+    """
+
+    def __init__(self, host, username, password, node):
+        """Initialization.
+        """
+
+        # Node to run command(s) on.
+        self.host = host
+        self.node = node
+        self.username = username
+        self.password = password
+
+        self._ssh = SSHClient()
+        self._ssh.set_missing_host_key_policy(AutoAddPolicy())
+
+        # The list of PAPI commands to be executed on the node.
+        self._api_command_list = list()
 
     def __enter__(self):
+        try:
+            self._ssh.connect(self.host, username=self.username, password=self.password)
+        except IOError:
+            raise RuntimeError("Cannot open SSH connection to host {host} to "
+                               "execute PAPI command(s)".
+                               format(host=self.host))
         return self
 
-    def expect_negative_api_retval(self):
-        """ Expect API failure """
-        self._expect_stack.append(self._expect_api_retval)
-        self._expect_api_retval = self._negative
-        return self
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self._ssh.close()
 
-    def expect_zero_api_retval(self):
-        """ Expect API success """
-        self._expect_stack.append(self._expect_api_retval)
-        self._expect_api_retval = self._zero
-        return self
+    def add(self, csit_papi_command="vpp-stats", **kwargs):
+        """Add next command to internal command list; return self.
 
-    def __exit__(self, exc_type, exc_value, traceback):
-        self._expect_api_retval = self._expect_stack.pop()
+        The argument name 'csit_papi_command' must be unique enough as it cannot
+        be repeated in kwargs.
 
-    def connect(self):
-        """Connect the API to VPP"""
-        self.vpp.connect(self.name, self.shm_prefix)
-        self.papi = self.vpp.api
-        self.vpp.register_event_callback(self)
-
-    def disconnect(self):
-        """Disconnect the API from VPP"""
-        self.vpp.disconnect()
-
-    def api(self, api_fn, api_args, expected_retval=0):
-        """ Call API function and check it's return value.
-        Call the appropriate hooks before and after the API call
-        :param api_fn: API function to call
-        :param api_args: tuple of API function arguments
-        :param expected_retval: Expected return value (Default value = 0)
-        :returns: reply from the API
+        :param csit_papi_command: VPP API command.
+        :param kwargs: Optional key-value arguments.
+        :type csit_papi_command: str
+        :type kwargs: dict
+        :returns: self, so that method chaining is possible.
+        :rtype: PapiExecutor
         """
-        self.hook.before_api(api_fn.__name__, api_args)
-        reply = api_fn(**api_args)
-        if self._expect_api_retval == self._negative:
-            if hasattr(reply, 'retval') and reply.retval >= 0:
-                msg = "API call passed unexpectedly: expected negative "\
-                    "return value instead of %d in %s" % \
-                    (reply.retval, repr(reply))
-                self.test_class.logger.info(msg)
-                raise UnexpectedApiReturnValueError(msg)
-        elif self._expect_api_retval == self._zero:
-            if hasattr(reply, 'retval') and reply.retval != expected_retval:
-                msg = "API call failed, expected %d return value instead "\
-                    "of %d in %s" % (expected_retval, reply.retval,
-                                     repr(reply))
-                self.test_class.logger.info(msg)
-                raise UnexpectedApiReturnValueError(msg)
+        self._api_command_list.append(dict(api_name=csit_papi_command,
+                                           api_args=kwargs))
+        return self
+
+    def get_replies(self,
+                    process_reply=True, ignore_errors=False, timeout=120):
+        """Get reply/replies from VPP Python API.
+
+        :param process_reply: Process PAPI reply if True.
+        :param ignore_errors: If true, the errors in the reply are ignored.
+        :param timeout: Timeout in seconds.
+        :type process_reply: bool
+        :type ignore_errors: bool
+        :type timeout: int
+        :returns: Papi response including: papi reply, stdout, stderr and
+            return code.
+        :rtype: PapiResponse
+        """
+        return self._execute(
+            method='request', process_reply=process_reply,
+            ignore_errors=ignore_errors, timeout=timeout)
+
+    @staticmethod
+    def _process_api_data(api_d):
+        """Process API data for smooth converting to JSON string.
+
+        Apply binascii.hexlify() method for string values.
+
+        :param api_d: List of APIs with their arguments.
+        :type api_d: list
+        :returns: List of APIs with arguments pre-processed for JSON.
+        :rtype: list
+        """
+
+        def process_value(val):
+            """Process value.
+
+            :param val: Value to be processed.
+            :type val: object
+            :returns: Processed value.
+            :rtype: dict or str or int
+            """
+            if isinstance(val, dict):
+                val_dict = dict()
+                for val_k, val_v in val.items():
+                    val_dict[str(val_k)] = process_value(val_v)
+                return val_dict
+            else:
+                return binascii.hexlify(val) if isinstance(val, str) else val
+
+        api_data_processed = list()
+        for api in api_d:
+            api_args_processed = dict()
+            for a_k, a_v in api["api_args"].iteritems():
+                api_args_processed[str(a_k)] = process_value(a_v)
+            api_data_processed.append(dict(api_name=api["api_name"],
+                                           api_args=api_args_processed))
+        return api_data_processed
+
+    @staticmethod
+    def _revert_api_reply(api_r):
+        """Process API reply / a part of API reply.
+
+        Apply binascii.unhexlify() method for unicode values.
+
+        :param api_r: API reply.
+        :type api_r: dict
+        :returns: Processed API reply / a part of API reply.
+        :rtype: dict
+        """
+        reply_dict = dict()
+        reply_value = dict()
+        for reply_key, reply_v in api_r.items():
+            for a_k, a_v in reply_v.iteritems():
+                reply_value[a_k] = binascii.unhexlify(a_v) \
+                    if isinstance(a_v, str) else a_v
+            reply_dict[reply_key] = reply_value
+        return reply_dict
+
+    def _process_reply(self, api_reply):
+        """Process API reply.
+
+        :param api_reply: API reply.
+        :type api_reply: dict or list of dict
+        :returns: Processed API reply.
+        :rtype: list or dict
+        """
+        if isinstance(api_reply, list):
+            reverted_reply = [self._revert_api_reply(a_r) for a_r in api_reply]
         else:
-            raise Exception("Internal error, unexpected value for "
-                            "self._expect_api_retval %s" %
-                            self._expect_api_retval)
-        self.hook.after_api(api_fn.__name__, api_args)
-        return reply
+            reverted_reply = self._revert_api_reply(api_reply)
+        return reverted_reply
 
-    def cli(self, cli):
-        """ Execute a CLI, calling the before/after hooks appropriately.
-        :param cli: CLI to execute
-        :returns: CLI output
-        """
-        self.hook.before_cli(cli)
-        cli += '\n'
-        r = self.papi.cli_inband(length=len(cli), cmd=cli)
-        self.hook.after_cli(cli)
-        if hasattr(r, 'reply'):
-            return r.reply.decode().rstrip('\x00')
+    def _execute_papi(self, api_data, method='request', timeout=120):
+        """Execute PAPI command(s) on remote node and store the result.
 
-    def ppcli(self, cli):
-        """ Helper method to print CLI command in case of info logging level.
-        :param cli: CLI to execute
-        :returns: CLI output
-        """
-        return cli + "\n" + str(self.cli(cli))
-
-    def sw_interface_dump(self, filter=None):
-        """
-        :param filter:  (Default value = None)
-        """
-        if filter is not None:
-            args = {"name_filter_valid": 1, "name_filter": filter}
-        else:
-            args = {}
-        return self.api(self.papi.sw_interface_dump, args)
-
-    def ip_unnumbered_dump(self, sw_if_index=0xffffffff):
-        return self.api(self.papi.ip_unnumbered_dump,
-                        {'sw_if_index': sw_if_index})
-
-    def bridge_domain_dump(self, bd_id=0):
-        """
-        :param int bd_id: Bridge domain ID. (Default value = 0 => dump of all
-            existing bridge domains returned)
-        :return: Dictionary of bridge domain(s) data.
-        """
-        return self.api(self.papi.bridge_domain_dump,
-                        {'bd_id': bd_id})
-
-    def ip_fib_dump(self):
-        return self.api(self.papi.ip_fib_dump, {})
-
-    def ip6_fib_dump(self):
-        return self.api(self.papi.ip6_fib_dump, {})
-
-    def ip_neighbor_dump(self,
-                         sw_if_index,
-                         is_ipv6=0):
-        """ Return IP neighbor dump.
-        :param sw_if_index:
-        :param int is_ipv6: 1 for IPv6 neighbor, 0 for IPv4. (Default = 0)
+        :param api_data: List of APIs with their arguments.
+        :param method: VPP Python API method. Supported methods are: 'request',
+            'dump' and 'stats'.
+        :param timeout: Timeout in seconds.
+        :type api_data: list
+        :type method: str
+        :type timeout: int
+        :returns: Stdout and stderr.
+        :rtype: 2-tuple of str
+        :raises SSHTimeout: If PAPI command(s) execution has timed out.
+        :raises RuntimeError: If PAPI executor failed due to another reason.
+        :raises AssertionError: If PAPI command(s) execution has failed.
         """
 
-    def ip_dump(self,
-                is_ipv6=0,
-                ):
-        """ Return IP dump.
-        :param int is_ipv6: 1 for IPv6 neighbor, 0 for IPv4. (Default = 0)
+        if not api_data:
+            RuntimeError("No API data provided.")
+
+        json_data = json.dumps(api_data) \
+            if method in ("stats", "stats_request") \
+            else json.dumps(self._process_api_data(api_data))
+
+        cmd = "docker exec {node} python3 {fw_dir}/{papi_provider} --data '{json}'". \
+            format(node=self.node,
+                   fw_dir="/opt",
+                   papi_provider="vpp_api_executor.py",
+                   json=json_data)
+        logger.debug(cmd)
+        stdin, stdout, stderr = self._ssh.exec_command(
+            cmd, timeout=timeout)
+        stdout = stdout.read()
+        stderr = stderr.read()
+        return stdout, stderr
+
+    def _execute(self, method='request', process_reply=True,
+                 ignore_errors=False, timeout=120):
+        """Turn internal command list into proper data and execute; return
+        PAPI response.
+
+        This method also clears the internal command list.
+
+        IMPORTANT!
+        Do not use this method in L1 keywords. Use:
+        - get_stats()
+        - get_replies()
+        - get_dump()
+
+        :param method: VPP Python API method. Supported methods are: 'request',
+            'dump' and 'stats'.
+        :param process_reply: Process PAPI reply if True.
+        :param ignore_errors: If true, the errors in the reply are ignored.
+        :param timeout: Timeout in seconds.
+        :type method: str
+        :type process_reply: bool
+        :type ignore_errors: bool
+        :type timeout: int
+        :returns: Papi response including: papi reply, stdout, stderr and
+            return code.
+        :rtype: PapiResponse
+        :raises KeyError: If the reply is not correct.
         """
 
-        return self.api(
-            self.papi.ip_dump,
-            {'is_ipv6': is_ipv6,
-             }
-        )
+        local_list = self._api_command_list
 
-    def udp_encap_dump(self):
-        return self.api(self.papi.udp_encap_dump, {})
+        # Clear first as execution may fail.
+        self._api_command_list = list()
 
-    def mpls_fib_dump(self):
-        return self.api(self.papi.mpls_fib_dump, {})
+        stdout, stderr = self._execute_papi(
+            local_list, method=method, timeout=timeout)
+        papi_reply = list()
+        if process_reply:
+            try:
+                json_data = json.loads(stdout)
+            except ValueError:
+                logger.error(
+                    "An error occured while processing the PAPI reply:\n"
+                    "stdout: {stdout}\n"
+                    "stderr: {stderr}".format(stdout=stdout, stderr=stderr))
+                raise
+            for data in json_data:
+                try:
+                    api_reply_processed = dict(
+                        api_name=data["api_name"],
+                        api_reply=self._process_reply(data["api_reply"]))
+                except KeyError:
+                    if ignore_errors:
+                        continue
+                    else:
+                        raise
+                papi_reply.append(api_reply_processed)
 
-    def mpls_tunnel_dump(self, sw_if_index=0xffffffff):
-        return self.api(self.papi.mpls_tunnel_dump,
-                        {'sw_if_index': sw_if_index})
+        # Log processed papi reply to be able to check API replies changes
+        logger.debug("Processed PAPI reply: {reply}".format(reply=papi_reply))
 
-    def nat44_address_dump(self):
-        """Dump NAT44 addresses
-        :return: Dictionary of NAT44 addresses
-        """
-        return self.api(self.papi.nat44_address_dump, {})
-
-    def nat44_interface_dump(self):
-        """Dump interfaces with NAT44 feature
-        :return: Dictionary of interfaces with NAT44 feature
-        """
-        return self.api(self.papi.nat44_interface_dump, {})
-
-    def nat44_interface_output_feature_dump(self):
-        """Dump interfaces with NAT44 output feature
-        :return: Dictionary of interfaces with NAT44 output feature
-        """
-        return self.api(self.papi.nat44_interface_output_feature_dump, {})
-
-    def nat44_static_mapping_dump(self):
-        """Dump NAT44 static mappings
-        :return: Dictionary of NAT44 static mappings
-        """
-        return self.api(self.papi.nat44_static_mapping_dump, {})
-
-    def nat44_identity_mapping_dump(self):
-        """Dump NAT44 identity mappings
-        :return: Dictionary of NAT44 identity mappings
-        """
-        return self.api(self.papi.nat44_identity_mapping_dump, {})
-
-    def nat44_interface_addr_dump(self):
-        """Dump NAT44 addresses interfaces
-        :return: Dictionary of NAT44 addresses interfaces
-        """
-        return self.api(self.papi.nat44_interface_addr_dump, {})
-
-    def nat44_user_session_dump(
-            self,
-            ip_address,
-            vrf_id):
-        """Dump NAT44 user's sessions
-        :param ip_address: ip adress of the user to be dumped
-        :param cpu_index: cpu_index on which the user is
-        :param vrf_id: VRF ID
-        :return: Dictionary of S-NAT sessions
-        """
-        return self.api(
-            self.papi.nat44_user_session_dump,
-            {'ip_address': ip_address,
-             'vrf_id': vrf_id})
-
-    def nat44_user_dump(self):
-        """Dump NAT44 users
-        :return: Dictionary of NAT44 users
-        """
-        return self.api(self.papi.nat44_user_dump, {})
-
-    def nat44_lb_static_mapping_dump(self):
-        """Dump NAT44 load balancing static mappings
-        :return: Dictionary of NAT44 load balancing static mapping
-        """
-        return self.api(self.papi.nat44_lb_static_mapping_dump, {})
-
-    def nat_reass_dump(self):
-        """Dump NAT virtual fragmentation reassemblies
-        :return: Dictionary of NAT virtual fragmentation reassemblies
-        """
-        return self.api(self.papi.nat_reass_dump, {})
-
-    def nat_det_map_dump(self):
-        """Dump deterministic NAT mappings
-        :return: Dictionary of deterministic NAT mappings
-        """
-        return self.api(self.papi.nat_det_map_dump, {})
-
-    def nat_det_session_dump(
-            self,
-            user_addr):
-        """Dump deterministic NAT sessions belonging to a user
-        :param user_addr - inside IP address of the user
-        :return: Dictionary of deterministic NAT sessions
-        """
-        return self.api(
-            self.papi.nat_det_session_dump,
-            {'is_nat44': 1,
-             'user_addr': user_addr})
-
-    def nat64_pool_addr_dump(self):
-        """Dump NAT64 pool addresses
-        :return: Dictionary of NAT64 pool addresses
-        """
-        return self.api(self.papi.nat64_pool_addr_dump, {})
-
-    def nat64_interface_dump(self):
-        """Dump interfaces with NAT64 feature
-        :return: Dictionary of interfaces with NAT64 feature
-        """
-        return self.api(self.papi.nat64_interface_dump, {})
-
-    def nat64_bib_dump(self, protocol=255):
-        """Dump NAT64 BIB
-        :param protocol: IP protocol (Default value = 255, all BIBs)
-        :returns: Dictionary of NAT64 BIB entries
-        """
-        return self.api(self.papi.nat64_bib_dump, {'proto': protocol})
-
-    def nat64_st_dump(self, protocol=255):
-        """Dump NAT64 session table
-        :param protocol: IP protocol (Default value = 255, all STs)
-        :returns: Dictionary of NAT64 sesstion table entries
-        """
-        return self.api(self.papi.nat64_st_dump, {'proto': protocol})
-
-    def nat64_prefix_dump(self):
-        """Dump NAT64 prefix
-        :returns: Dictionary of NAT64 prefixes
-        """
-        return self.api(self.papi.nat64_prefix_dump, {})
-
-    def nat66_interface_dump(self):
-        """Dump interfaces with NAT66 feature
-        :return: Dictionary of interfaces with NAT66 feature
-        """
-        return self.api(self.papi.nat66_interface_dump, {})
-
-    def nat66_static_mapping_dump(self):
-        """Dump NAT66 static mappings
-        :return: Dictionary of NAT66 static mappings
-        """
-        return self.api(self.papi.nat66_static_mapping_dump, {})
-
-    def bfd_udp_session_dump(self):
-        return self.api(self.papi.bfd_udp_session_dump, {})
-
-    def bfd_auth_keys_dump(self):
-        return self.api(self.papi.bfd_auth_keys_dump, {})
-
-    def dhcp_client_dump(self):
-        return self.api(self.papi.dhcp_client_dump, {})
-
-    def mfib_signal_dump(self):
-        return self.api(self.papi.mfib_signal_dump, {})
-
-    def ip_mfib_dump(self):
-        return self.api(self.papi.ip_mfib_dump, {})
-
-    def ip6_mfib_dump(self):
-        return self.api(self.papi.ip6_mfib_dump, {})
-
-    def lisp_locator_set_dump(self):
-        return self.api(self.papi.lisp_locator_set_dump, {})
-
-
-    def lisp_locator_dump(self, is_index_set, ls_name=None, ls_index=0):
-        return self.api(
-            self.papi.lisp_locator_dump,
-            {
-                'is_index_set': is_index_set,
-                'ls_name': ls_name,
-                'ls_index': ls_index,
-            })
-
-    def lisp_eid_table_dump(self,
-                            eid_set=0,
-                            prefix_length=0,
-                            vni=0,
-                            eid_type=0,
-                            eid=None,
-                            filter_opt=0):
-        return self.api(
-            self.papi.lisp_eid_table_dump,
-            {
-                'eid_set': eid_set,
-                'prefix_length': prefix_length,
-                'vni': vni,
-                'eid_type': eid_type,
-                'eid': eid,
-                'filter': filter_opt,
-            })
-
-    def vxlan_gbp_tunnel_dump(self, sw_if_index=0xffffffff):
-        return self.api(self.papi.vxlan_gbp_tunnel_dump,
-                        {'sw_if_index': sw_if_index})
-
-    def acl_dump(self, acl_index, expected_retval=0):
-        return self.api(self.papi.acl_dump,
-                        {'acl_index': acl_index},
-                        expected_retval=expected_retval)
-
-    def acl_interface_list_dump(self, sw_if_index=0xFFFFFFFF,
-                                expected_retval=0):
-        return self.api(self.papi.acl_interface_list_dump,
-                        {'sw_if_index': sw_if_index},
-                        expected_retval=expected_retval)
-
-
-    def macip_acl_dump(self, acl_index=4294967295):
-        """ Return MACIP acl dump
-        """
-        return self.api(
-            self.papi.macip_acl_dump, {'acl_index': acl_index})
-
-    def bier_table_dump(self):
-        return self.api(self.papi.bier_table_dump, {})
-
-    def bier_route_dump(self, bti):
-        return self.api(
-            self.papi.bier_route_dump,
-            {'br_tbl_id': {"bt_set": bti.set_id,
-                           "bt_sub_domain": bti.sub_domain_id,
-                           "bt_hdr_len_    def bier_disp_table_add_del(self,
-                                bdti,
-                                is_add=1):
-        """ BIER Disposition Table add/del """
-        return self.api(
-            self.papi.bier_disp_table_add_del,
-            {'bdt_tbl_id': bdti,
-             'bdt_is_add': is_add})id": bti.hdr_len_id}})
-
-    def bier_imp_dump(self):
-        return self.api(self.papi.bier_imp_dump, {})
-
-    def bier_disp_table_dump(self):
-        return self.api(self.papi.bier_disp_table_dump, {})
-
-    def bier_disp_entry_dump(self, bdti):
-        return self.api(
-            self.papi.bier_disp_entry_dump,
-            {'bde_tbl_id': bdti})
-
-    def gbp_endpoint_dump(self):
-        """ GBP endpoint Dump """
-        return self.api(self.papi.gbp_endpoint_dump, {})
-
-    def gbp_endpoint_group_dump(self):
-        """ GBP endpoint group Dump """
-        return self.api(self.papi.gbp_endpoint_group_dump, {})
-
-    def gbp_recirc_dump(self):
-        """ GBP recirc Dump """
-        return self.api(self.papi.gbp_recirc_dump, {})
-
-
-
-    def gbp_subnet_dump(self):
-        """ GBP Subnet Dump """
-        return self.api(self.papi.gbp_subnet_dump, {})
-
-    def gbp_contract_dump(self):
-        """ GBP contract Dump """
-        return self.api(self.papi.gbp_contract_dump, {})
-
-
-    def igmp_dump(self, sw_if_index=None):
-        """ Dump all (S,G) interface configurations """
-        if sw_if_index is None:
-            sw_if_index = 0xffffffff
-        return self.api(self.papi.igmp_dump,
-                        {'sw_if_index': sw_if_index})
-
-
-    def sw_interface_slave_dump(
-            self,
-            sw_if_index):
-        """
-        :param sw_if_index: bond sw_if_index
-        """
-        return self.api(self.papi.sw_interface_slave_dump,
-                        {'sw_if_index': sw_if_index})
-
-    def sw_interface_bond_dump(
-            self):
-        """
-        """
-        return self.api(self.papi.sw_interface_bond_dump,
-                        {})
-
-    def sw_interface_vhost_user_dump(
-            self):
-        """
-        """
-        return self.api(self.papi.sw_interface_vhost_user_dump,
-                        {})
-
-    def abf_policy_dump(self):
-        return self.api(
-            self.papi.abf_policy_dump, {})
-
-    def abf_itf_attach_dump(self):
-        return self.api(
-            self.papi.abf_itf_attach_dump, {})
-
-    def pipe_dump(self):
-        return self.api(self.papi.pipe_dump, {})
-
-    def memif_dump(self):
-        return self.api(self.papi.memif_dump, {})
-
-    def memif_socket_filename_dump(self):
-        return self.api(self.papi.memif_socket_filename_dump, {})
-
-    def svs_dump(self):
-        return self.api(self.papi.svs_dump, {})
-
+        return PapiResponse(
+            papi_reply=papi_reply, stdout=stdout, stderr=stderr,
+            requests=[rqst["api_name"] for rqst in local_list])

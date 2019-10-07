@@ -72,7 +72,7 @@ vpp_term: Show Interfaces Address
 vpp_term: Show Hardware
     [Arguments]        ${node}    ${interface}=${EMPTY}
     [Documentation]    Show interfaces hardware through vpp terminal
-    ${out}=            vpp_term: Issue Command  ${node}   sh h ${interface}
+    ${out}=            vpp_term: Issue Command  ${node}   show hardware ${interface}
     [Return]           ${out}
 
 vpp_term: Show IP Fib
@@ -141,28 +141,35 @@ vpp_term: Check No Ping Within Interface
     Should Not Contain     ${out}    from ${ip}
     Should Contain    ${out}    100% packet loss
 
-vpp_term: Check Interface Presence
-    [Arguments]        ${node}     ${mac}    ${status}=${TRUE}
+vpp_term: Check Interface Is Present
+    [Arguments]        ${node}     ${mac}
     [Documentation]    Checking if specified interface with mac exists in VPP
     ${ints}=           vpp_term: Show Hardware    ${node}
     ${result}=         Run Keyword And Return Status    Should Contain    ${ints}    ${mac}
-    Should Be Equal    ${result}    ${status}
+    Should Be Equal    ${result}    ${TRUE}    values=False    msg=Interface with MAC address ${mac} not present on VPP.
+
+vpp_term: Check Interface Is Not Present
+    [Arguments]        ${node}     ${mac}
+    [Documentation]    Checking if specified interface with mac exists in VPP
+    ${ints}=           vpp_term: Show Hardware    ${node}
+    ${result}=         Run Keyword And Return Status    Should Contain    ${ints}    ${mac}
+    Should Be Equal    ${result}    ${FALSE}    values=False    msg=Interface with MAC address ${mac} is present on VPP but shouldn't.
 
 vpp_term: Interface Is Created
     [Arguments]    ${node}    ${mac}
-    Wait Until Keyword Succeeds    ${interface_timeout}   3s    vpp_term: Check Interface Presence    ${node}    ${mac}
+    Wait Until Keyword Succeeds    ${interface_timeout}   3s    vpp_term: Check Interface Is Present    ${node}    ${mac}
 
 vpp_term: Interface Is Deleted
     [Arguments]    ${node}    ${mac}
-    Wait Until Keyword Succeeds    ${interface_timeout}   3s    vpp_term: Check Interface Presence    ${node}    ${mac}    ${FALSE}
+    Wait Until Keyword Succeeds    ${interface_timeout}   3s    vpp_term: Check Interface Is Not Present    ${node}    ${mac}
 
 vpp_term: Interface Exists
     [Arguments]    ${node}    ${mac}
-    vpp_term: Check Interface Presence    ${node}    ${mac}
+    vpp_term: Check Interface Is Present    ${node}    ${mac}
 
 vpp_term: Interface Not Exists
     [Arguments]    ${node}    ${mac}
-    vpp_term: Check Interface Presence    ${node}    ${mac}    ${FALSE}
+    vpp_term: Check Interface Is Not Present    ${node}    ${mac}
 
 vpp_term: Check Interface UpDown Status
     [Arguments]          ${node}     ${interface}    ${status}=1
@@ -217,6 +224,23 @@ vpp_term: Show Memif
     ${out}=            vpp_term: Issue Command  ${node}   sh memif ${interface}
     [Return]           ${out}
 
+vpp_term: Check Memif Interface State
+    [Arguments]          ${node}    ${name}    @{desired_state}
+    ${internal_name}=    Get Interface Internal Name    ${node}    ${name}
+    ${memif_info}=       vpp_term: Show Memif    ${node}    ${internal_name}
+    ${memif_state}=      Parse Memif Info    ${memif_info}
+    ${ipv4_list}=        vpp_term: Get Interface IPs    ${node}    ${internal_name}
+    ${ipv6_list}=        vpp_term: Get Interface IP6 IPs    ${node}    ${internal_name}
+    ${mac}=              vpp_term: Get Interface MAC    ${node}    ${internal_name}
+    ${actual_state}=     Create List    mac=${mac}
+    :FOR    ${ip}    IN    @{ipv4_list}
+    \    Append To List    ${actual_state}    ipv4=${ip}
+    :FOR    ${ip}    IN    @{ipv6_list}
+    \    Append To List    ${actual_state}    ipv6=${ip}
+    Append To List       ${actual_state}    @{memif_state}
+    List Should Contain Sub List    ${actual_state}    ${desired_state}
+    [Return]             ${actual_state}
+
 vpp_term: Check TAP Interface State
     [Arguments]          ${node}    ${name}    @{desired_state}
     Sleep                 10s    Time to let etcd to get state of newly setup tap interface.
@@ -248,12 +272,6 @@ vpp_term: Check TAP IP6 Interface State
     List Should Contain Sub List    ${actual_state}    ${desired_state}
     [Return]             ${actual_state}
 
-vpp_term: Show ACL
-    [Arguments]        ${node}
-    [Documentation]    Show ACLs through vpp terminal
-    ${out}=            vpp_term: Issue Command  ${node}   sh acl-plugin acl
-    [Return]           ${out}
-
 vpp_term: Add Route
     [Arguments]    ${node}    ${destination_ip}    ${prefix}    ${next_hop_ip}
     [Documentation]    Add ip route through vpp terminal.
@@ -284,28 +302,6 @@ vpp_term: Set ARP
     [Arguments]        ${node}      ${interface}    ${ipv4}     ${MAC}
     [Documentation]    Sets ARP (IPv4 neighbors)
     vpp_term: Issue Command  ${node}   set ip arp ${interface} ${ipv4} ${MAC}
-
-vpp_term: Show Application Namespaces
-    [Arguments]        ${node}
-    [Documentation]    Show application namespaces through vpp terminal
-    ${out}=            vpp_term: Issue Command  ${node}   sh app ns
-    [Return]           ${out}
-
-vpp_term: Return Data From Show Application Namespaces Output
-    [Arguments]    ${node}    ${id}
-    [Documentation]    Returns a list containing namespace id, index, namespace secret and sw_if_index of an
-    ...   interface associated with the namespace.
-    ${out}=    vpp_term: Show Application Namespaces    ${node}
-    ${out_line}=    Get Lines Containing String    ${out}    ${id}
-    ${out_data}=    Split String    ${out_line}
-    [Return]    ${out_data}
-
-vpp_term: Check Data In Show Application Namespaces Output
-    [Arguments]    ${node}    ${id}    @{desired_state}
-    [Documentation]    Desired data is a list variable containing namespace index, namespace secret and sw_if_index of an
-    ...   interface associated with the namespace.
-    ${actual_state}=    vpp_term: Return Data From Show Application Namespaces Output    ${node}    ${id}
-    List Should Contain Sub List    ${actual_state}    ${desired_state}
 
 vpp_term: Show Interface Mode
     [Arguments]        ${node}

@@ -228,9 +228,7 @@ func (h *ACLVppHandler) transformACLMacIPRules(rules []*acl.ACL_Rule) (aclMacIPR
 func ipACL(ipRule *acl.ACL_Rule_IpRule_Ip, aclRule *aclapi.ACLRule) (*aclapi.ACLRule, error) {
 	var (
 		err        error
-		srcIP      net.IP
 		srcNetwork *net.IPNet
-		dstIP      net.IP
 		dstNetwork *net.IPNet
 		srcMask    uint8
 		dstMask    uint8
@@ -238,50 +236,60 @@ func ipACL(ipRule *acl.ACL_Rule_IpRule_Ip, aclRule *aclapi.ACLRule) (*aclapi.ACL
 
 	if strings.TrimSpace(ipRule.SourceNetwork) != "" {
 		// Resolve source address
-		srcIP, srcNetwork, err = net.ParseCIDR(ipRule.SourceNetwork)
+		_, srcNetwork, err = net.ParseCIDR(ipRule.SourceNetwork)
 		if err != nil {
 			return nil, err
 		}
-		if srcIP.To4() == nil && srcIP.To16() == nil {
+		if srcNetwork == nil {
+			srcNetwork = &net.IPNet{}
+		}
+		if srcNetwork.IP.To4() == nil && srcNetwork.IP.To16() == nil {
 			return aclRule, fmt.Errorf("source address %v is invalid", ipRule.SourceNetwork)
 		}
 		maskSize, _ := srcNetwork.Mask.Size()
 		srcMask = uint8(maskSize)
+	} else {
+		return aclRule, fmt.Errorf("source address is empty")
 	}
 
 	if strings.TrimSpace(ipRule.DestinationNetwork) != "" {
 		// Resolve destination address
-		dstIP, dstNetwork, err = net.ParseCIDR(ipRule.DestinationNetwork)
+		_, dstNetwork, err = net.ParseCIDR(ipRule.DestinationNetwork)
 		if err != nil {
 			return nil, err
 		}
-		if dstIP.To4() == nil && dstIP.To16() == nil {
+		if dstNetwork == nil {
+			dstNetwork = &net.IPNet{}
+		}
+		if dstNetwork.IP.To4() == nil && dstNetwork.IP.To16() == nil {
 			return aclRule, fmt.Errorf("destination address %v is invalid", ipRule.DestinationNetwork)
 		}
 		maskSize, _ := dstNetwork.Mask.Size()
 		dstMask = uint8(maskSize)
+	} else {
+		return aclRule, fmt.Errorf("destination address is empty")
 	}
 
 	// Check IP version (they should be the same), beware: IPv4 address can be converted to IPv6.
-	if (srcIP.To4() != nil && dstIP.To4() == nil && dstIP.To16() != nil) ||
-		(srcIP.To4() == nil && srcIP.To16() != nil && dstIP.To4() != nil) {
+	if (srcNetwork.IP.To4() != nil && dstNetwork.IP.To4() == nil && dstNetwork.IP.To16() != nil) ||
+		(srcNetwork.IP.To4() == nil && srcNetwork.IP.To16() != nil && dstNetwork.IP.To4() != nil) {
 		return aclRule, fmt.Errorf("source address %v and destionation address %v have different IP versions",
 			ipRule.SourceNetwork, ipRule.DestinationNetwork)
 	}
 
-	if srcIP.To4() != nil || dstIP.To4() != nil {
+	if srcNetwork.IP.To4() != nil || dstNetwork.IP.To4() != nil {
 		// Ipv4 case
 		aclRule.IsIPv6 = 0
-		aclRule.SrcIPAddr = srcIP.To4()
+		aclRule.SrcIPAddr = srcNetwork.IP.To4()
 		aclRule.SrcIPPrefixLen = srcMask
-		aclRule.DstIPAddr = dstIP.To4()
+		aclRule.DstIPAddr = dstNetwork.IP.To4()
 		aclRule.DstIPPrefixLen = dstMask
-	} else if srcIP.To16() != nil || dstIP.To16() != nil {
+	} else if srcNetwork.IP.To16() != nil || dstNetwork.IP.To16() != nil {
 		// Ipv6 case
 		aclRule.IsIPv6 = 1
-		aclRule.SrcIPAddr = srcIP.To16()
+		aclRule.SrcIPAddr = srcNetwork.IP.To16()
 		aclRule.SrcIPPrefixLen = srcMask
-		aclRule.DstIPAddr = dstIP.To16()
+		aclRule.DstIPAddr = dstNetwork.IP.To16()
 		aclRule.DstIPPrefixLen = dstMask
 	} else {
 		// Both empty
@@ -304,7 +312,7 @@ func icmpACL(icmpRule *acl.ACL_Rule_IpRule_Icmp, aclRule *aclapi.ACLRule) *aclap
 		aclRule.SrcportOrIcmptypeLast = uint16(icmpRule.IcmpTypeRange.Last)
 		// ICMPv6 code range
 		aclRule.DstportOrIcmpcodeFirst = uint16(icmpRule.IcmpCodeRange.First)
-		aclRule.DstportOrIcmpcodeLast = uint16(icmpRule.IcmpCodeRange.First)
+		aclRule.DstportOrIcmpcodeLast = uint16(icmpRule.IcmpCodeRange.Last)
 	} else {
 		aclRule.Proto = vppcalls.ICMPv4Proto // IANA ICMPv4
 		aclRule.IsIPv6 = 0

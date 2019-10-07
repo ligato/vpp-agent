@@ -20,6 +20,7 @@ import (
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 	"github.com/ligato/vpp-agent/plugins/kvscheduler"
+	"github.com/ligato/vpp-agent/plugins/netalloc"
 )
 
 // DefaultPlugin is a default instance of IfPlugin.
@@ -33,6 +34,7 @@ func NewPlugin(opts ...Option) *IfPlugin {
 	p.StatusCheck = &statuscheck.DefaultPlugin
 	p.KVScheduler = &kvscheduler.DefaultPlugin
 	p.GoVppmux = &govppmux.DefaultPlugin
+	p.AddrAlloc = &netalloc.DefaultPlugin
 
 	for _, o := range opts {
 		o(p)

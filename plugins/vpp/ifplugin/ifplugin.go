@@ -40,13 +40,14 @@ import (
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	linux_ifcalls "github.com/ligato/vpp-agent/plugins/linux/ifplugin/linuxcalls"
 	"github.com/ligato/vpp-agent/plugins/linux/nsplugin"
+	"github.com/ligato/vpp-agent/plugins/netalloc"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/descriptor"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
 
-	_ "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls/vpp1901"
 	_ "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls/vpp1904"
 	_ "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls/vpp1908"
+	_ "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls/vpp2001"
 )
 
 // IfPlugin configures VPP interfaces using GoVPP.
@@ -92,6 +93,7 @@ type Deps struct {
 	infra.PluginDeps
 	KVScheduler kvs.KVScheduler
 	GoVppmux    govppmux.StatsAPI
+	AddrAlloc   netalloc.AddressAllocator
 
 	/*	LinuxIfPlugin and NsPlugin deps are optional,
 		but they are required if AFPacket or TAP+TAP_TO_VPP interfaces are used. */
@@ -137,7 +139,7 @@ func (p *IfPlugin) Init() (err error) {
 
 	//   -> base interface descriptor
 	ifaceDescriptor, ifaceDescrCtx := descriptor.NewInterfaceDescriptor(p.ifHandler,
-		p.defaultMtu, p.linuxIfHandler, p.LinuxIfPlugin, p.NsPlugin, p.Log)
+		p.AddrAlloc, p.defaultMtu, p.linuxIfHandler, p.LinuxIfPlugin, p.NsPlugin, p.Log)
 	err = p.KVScheduler.RegisterKVDescriptor(ifaceDescriptor)
 	if err != nil {
 		return err
@@ -162,7 +164,7 @@ func (p *IfPlugin) Init() (err error) {
 
 	rxModeDescriptor := descriptor.NewRxModeDescriptor(p.ifHandler, p.intfIndex, p.Log)
 	rxPlacementDescriptor := descriptor.NewRxPlacementDescriptor(p.ifHandler, p.intfIndex, p.Log)
-	addrDescriptor := descriptor.NewInterfaceAddressDescriptor(p.ifHandler, p.intfIndex, p.Log)
+	addrDescriptor := descriptor.NewInterfaceAddressDescriptor(p.ifHandler, p.AddrAlloc, p.intfIndex, p.Log)
 	unIfDescriptor := descriptor.NewUnnumberedIfDescriptor(p.ifHandler, p.intfIndex, p.Log)
 	bondIfDescriptor, _ := descriptor.NewBondedInterfaceDescriptor(p.ifHandler, p.intfIndex, p.Log)
 	vrfDescriptor := descriptor.NewInterfaceVrfDescriptor(p.ifHandler, p.intfIndex, p.Log)

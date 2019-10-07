@@ -63,7 +63,8 @@ const (
 
 // field meta info
 const (
-	fieldMetaLimit = "limit"
+	fieldMetaLimit   = "limit"
+	fieldMetaDefault = "default"
 )
 
 // module options
@@ -448,13 +449,16 @@ func parseField(ctx *context, field *jsongo.JSONNode) (*Field, error) {
 	}
 
 	if field.Len() >= 3 {
-		if field.At(2).GetType() == jsongo.TypeValue {
+		switch field.At(2).GetType() {
+		case jsongo.TypeValue:
 			fieldLength, ok := field.At(2).Get().(float64)
 			if !ok {
 				return nil, fmt.Errorf("field length is %T, not float64", field.At(2).Get())
 			}
 			f.Length = int(fieldLength)
-		} else if field.At(2).GetType() == jsongo.TypeMap {
+			f.SpecifiedLen = true
+
+		case jsongo.TypeMap:
 			fieldMeta := field.At(2)
 
 			for _, key := range fieldMeta.GetKeys() {
@@ -463,11 +467,13 @@ func parseField(ctx *context, field *jsongo.JSONNode) (*Field, error) {
 				switch metaName := key.(string); metaName {
 				case fieldMetaLimit:
 					f.Meta.Limit = int(metaNode.Get().(float64))
+				case fieldMetaDefault:
+					f.Meta.Default = metaNode.Get().(float64)
 				default:
 					logrus.Warnf("unknown meta info (%s) for field (%s)", metaName, fieldName)
 				}
 			}
-		} else {
+		default:
 			return nil, errors.New("invalid JSON for field specified")
 		}
 	}

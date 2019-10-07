@@ -22,16 +22,17 @@ message Interface {
         IPSEC_TUNNEL = 8;
         VMXNET3_INTERFACE = 9;
         BOND_INTERFACE = 10;
+        GRE_TUNNEL = 11;
     };
 
     // Name is mandatory field representing logical name for the interface.
     // It must be unique across all configured interfaces.
     string name = 1;
 
-    // Type represents the type of interface and It must match with actual Link.
+    // Type represents the type of interface and it must match with actual Link.
     Type type = 2;
 
-    // Enabled controls if the interface should be
+    // Enabled controls if the interface should be UP.
     bool enabled = 3;
 
     // PhysAddress represents physical address (MAC) of the interface.
@@ -39,7 +40,9 @@ message Interface {
     string phys_address = 4;
 
     // IPAddresses define list of IP addresses for the interface and must be
-    // defined in the following format: <ipAddress>/<ipPrefix>
+    // defined in the following format: <ipAddress>/<ipPrefix>.
+    // Interface IP address can be also allocated via netalloc plugin and
+    // referenced here, see: api/models/netalloc/netalloc.proto
     repeated string ip_addresses = 5;
 
     // Vrf defines the ID of VRF table that the interface is assigned to.
@@ -76,11 +79,11 @@ message Interface {
     repeated RxMode rx_modes = 12;
 
     message RxPlacement {
-        // select from interval <0, number-of-queues)
+        // Select from interval <0, number-of-queues)
         uint32 queue = 1;
-        // select from interval <0, number-of-workers)
+        // Select from interval <0, number-of-workers)
         uint32 worker = 2;
-        // let the main thread to process the given queue
+        // Let the main thread to process the given queue
         //  - if enabled, value of <worker> is ignored
         bool main_thread = 3;
     }
@@ -97,14 +100,18 @@ message Interface {
         IPSecLink ipsec = 105;
         VmxNet3Link vmx_net3 = 106;
         BondLink bond = 107;
+        GreLink gre = 108;
     };
 };
 
 // SubInterface defines configuration for interface type: SUB_INTERFACE
 message SubInterface {
-    string parent_name = 1;                 /* Name of the parent (super) interface */
-    uint32 sub_id = 2;                      /* SubInterface ID, used as VLAN */
-    enum TagRewriteOptions {                /* VLAN tag rewrite rule applied for given tag for sub-interface */
+    // Name of the parent (super) interface
+    string parent_name = 1;
+    // SubInterface ID, used as VLAN
+    uint32 sub_id = 2;
+    // VLAN tag rewrite rule applied for given tag for sub-interface
+    enum TagRewriteOptions {
         DISABLED = 0;
         PUSH1 = 1;
         PUSH2 = 2;
@@ -116,9 +123,12 @@ message SubInterface {
         TRANSLATE22 = 8;
     }
     TagRewriteOptions tag_rw_option = 3;
-    bool push_dot1q = 4;                    /* Set ether-type of the first tag to dot1q if true, dot1ad otherwise */
-    uint32 tag1 = 5;                        /* First tag (required for PUSH1 and any TRANSLATE) */
-    uint32 tag2 = 6;                        /* Second tag (required for PUSH2 and any TRANSLATE) */
+    // Set ether-type of the first tag to dot1q if true, dot1ad otherwise
+    bool push_dot1q = 4;
+    // First tag (required for PUSH1 and any TRANSLATE)
+    uint32 tag1 = 5;
+    // Second tag (required for PUSH2 and any TRANSLATE)
+    uint32 tag2 = 6;
 }
 
 // MemifLink defines configuration for interface type: MEMIF
@@ -130,72 +140,111 @@ message MemifLink {
     }
     MemifMode mode = 1;
     bool master = 2;
-    uint32 id = 3;              /* 32bit integer used to authenticate and match opposite sides of the connection */
-    string socket_filename = 4; /* filename of the socket used for connection establishment */
+    // Id is a 32bit integer used to authenticate and match opposite sides of the connection
+    uint32 id = 3;
+    // Filename of the socket used for connection establishment
+    string socket_filename = 4;
     string secret = 5;
-    uint32 ring_size = 6;       /* the number of entries of RX/TX rings */
-    uint32 buffer_size = 7;     /* size of the buffer allocated for each ring entry */
-    uint32 rx_queues = 8;       /* number of rx queues (only valid for slave) */
-    uint32 tx_queues = 9;       /* number of tx queues (only valid for slave) */
+    // The number of entries of RX/TX rings
+    uint32 ring_size = 6;
+    // Size of the buffer allocated for each ring entry
+    uint32 buffer_size = 7;
+    // Number of rx queues (only valid for slave)
+    uint32 rx_queues = 8;
+    // Number of tx queues (only valid for slave)
+    uint32 tx_queues = 9;
 }
 
 // VxlanLink defines configuration for interface type: VXLAN_TUNNEL
 message VxlanLink {
-    string src_address = 1;  /* source VTEP address */
-    string dst_address = 2;  /* destination VTEP address */
-    uint32 vni = 3;          /* VXLAN Network Identifier */
-    string multicast = 4;    /* multicast interface */
+    // SrcAddress is source VTEP address
+    string src_address = 1;  
+    // DstAddress is destination VTEP address
+    string dst_address = 2; 
+    // Vni stands for VXLAN Network Identifier 
+    uint32 vni = 3;     
+    // Multicast defines name of multicast interface     
+    string multicast = 4;    
+
+    // Gpe (Generic Protocol Extension) allows encapsulating not only Ethernet frame payload.
+    message Gpe {
+        enum Protocol {
+            UNKNOWN = 0;
+            IP4 = 1;
+            IP6 = 2;
+            ETHERNET = 3;
+            NSH = 4;
+        };
+        uint32 decap_vrf_id = 1;
+        // Protocol defines encapsulated protocol
+        Protocol protocol = 2;
+    }
+    Gpe gpe = 5;
 }
 
 // AfpacketLink defines configuration for interface type: AF_PACKET
 message AfpacketLink {
-    string host_if_name = 1; /* name of the host interface to bind to (mandatory) */
+    // Name of the host interface to bind to (mandatory)
+    string host_if_name = 1;
 }
 
 // TapLink defines configuration for interface type: TAP
 message TapLink {
-    uint32 version = 1;         /* 1 / unset = use the original TAP interface; 2 = use a fast virtio-based TAP */
-    string host_if_name = 2;    /* name of the TAP interface in the host OS;
-                                   if empty, it will be auto-generated (suitable for combination with TAP_TO_VPP
-                                   interface from Linux ifplugin, because then this name is only temporary anyway)
-                                */
-    string to_microservice = 3; /* if TAP connects VPP with microservice, fill this parameter with the target
-                                       microservice name - should match with the namespace reference of the associated
-                                       TAP_TO_VPP interface (it is still moved to the namespace by Linux-ifplugin but
-                                       VPP-ifplugin needs to be aware of this dependency) */
-    uint32 rx_ring_size = 4;    /* Rx ring buffer size; must be power of 2; default is 256; only for TAP v.2 */
-    uint32 tx_ring_size = 5;    /* Tx ring buffer size; must be power of 2; default is 256; only for TAP v.2 */
-    bool enable_gso = 6;        /* Enable GSO */
+    // 1 / unset = use the original TAP interface; 2 = use a fast virtio-based TAP
+    uint32 version = 1;     
+    // Name of the TAP interface in the host OS;
+    // if empty, it will be auto-generated (suitable for combination with TAP_TO_VPP
+    // interface from Linux ifplugin, because then this name is only temporary anyway)
+    string host_if_name = 2;
+    // If TAP connects VPP with microservice, fill this parameter with the target
+    // microservice name - should match with the namespace reference of the associated
+    // TAP_TO_VPP interface (it is still moved to the namespace by Linux-ifplugin but
+    // VPP-ifplugin needs to be aware of this dependency)
+    string to_microservice = 3; 
+    // Rx ring buffer size; must be power of 2; default is 256; only for TAP v.2
+    uint32 rx_ring_size = 4;
+    // Tx ring buffer size; must be power of 2; default is 256; only for TAP v.2
+    uint32 tx_ring_size = 5;
+    bool enable_gso = 6;
 }
 
 // IPSecLink defines configuration for interface type: IPSEC_TUNNEL
 message IPSecLink {
-    bool esn = 2;                       /* Extended sequence number */
-    bool anti_replay = 3;               /* Anti replay option */
-    string local_ip = 4;                /* Local IP address */
-    string remote_ip = 5;               /* Remote IP address */
-    uint32 local_spi = 6;               /* Local security parameter index */
-    uint32 remote_spi = 7;              /* Remote security parameter index */
+    // Extended sequence number
+    bool esn = 2;
+    // Anti replay option
+    bool anti_replay = 3;
+    string local_ip = 4;
+    string remote_ip = 5;
+    // Local security parameter index
+    uint32 local_spi = 6;
+    // Remote security parameter index
+    uint32 remote_spi = 7;
 
-    ipsec.CryptoAlg crypto_alg = 8;     /* Cryptographic algorithm for encryption */
+    // Cryptographic algorithm for encryption
+    ipsec.CryptoAlg crypto_alg = 8;
     string local_crypto_key = 9;
     string remote_crypto_key = 10;
 
-    ipsec.IntegAlg integ_alg = 11;      /* Cryptographic algorithm for authentication */
+    // Cryptographic algorithm for authentication
+    ipsec.IntegAlg integ_alg = 11;
     string local_integ_key = 12;
     string remote_integ_key = 13;
 
-    bool enable_udp_encap = 14;         /* Enable UDP encapsulation */
+    bool enable_udp_encap = 14;
 }
 
 // VmxNet3Link defines configuration for interface type: VMXNET3_INTERFACE
-/* PCI address (unsigned 32bit int) is derived from vmxnet3 interface name. It is expected that the interface
-       name is in format "vmxnet3-<d>/<b>/<s>/<f>", where 'd' stands for domain (max ffff), 'b' is bus (max ff),
-       's' is slot (max 1f) and 'f is function' (max 7). All values are base 16 */
+// PCI address (unsigned 32bit int) is derived from vmxnet3 interface name. It is expected that the interface
+// name is in format "vmxnet3-<d>/<b>/<s>/<f>", where 'd' stands for domain (max ffff), 'b' is bus (max ff),
+// 's' is slot (max 1f) and 'f is function' (max 7). All values are base 16
 message VmxNet3Link {
-    bool enable_elog = 2;   /* turn on elog */
-    uint32 rxq_size = 3;    /* receive queue size (default is 1024) */
-    uint32 txq_size = 4;    /* transmit queue size (default is 1024) */
+    // Turn on elog
+    bool enable_elog = 2;
+    // Receive queue size (default is 1024)
+    uint32 rxq_size = 3;
+    // Transmit queue size (default is 1024)
+    uint32 txq_size = 4;
 }
 
 // BondLink defines configuration for interface type: BOND_INTERFACE
@@ -217,7 +266,8 @@ message BondLink {
         L34 = 1;
         L23 = 2;
     }
-    LoadBalance lb = 4; // Load balance is optional and valid only for XOR and LACP modes
+    // Load balance is optional and valid only for XOR and LACP modes
+    LoadBalance lb = 4;
 
     message BondedInterface {
         string name = 1;
@@ -225,4 +275,21 @@ message BondLink {
         bool is_long_timeout = 3;
     }
     repeated BondedInterface bonded_interfaces = 12;
+}
+
+message GreLink {
+    enum Type {
+        UNKNOWN = 0;
+        // L3 GRE (i.e. this tunnel is in L3 mode)
+        L3 = 1; 
+        // TEB - Transparent Ethernet Bridging - the tunnel is in L2 mode
+        TEB = 2; 
+        // ERSPAN - the tunnel is for port mirror SPAN output
+        ERSPAN = 3; 
+    };
+    Type tunnel_type = 1;
+    string src_addr = 2; 
+    string dst_addr = 3;
+    uint32 outer_fib_id = 4;
+    uint32 session_id = 5;
 }

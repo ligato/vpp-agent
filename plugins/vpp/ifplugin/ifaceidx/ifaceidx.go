@@ -61,7 +61,7 @@ type IfaceMetadataIndexRW interface {
 type IfaceMetadata struct {
 	SwIfIndex     uint32
 	Vrf           uint32
-	IPAddresses   []string
+	IPAddresses   []string // TODO: update from interfaceAddress descriptor with real IPs (not netalloc links)
 	TAPHostIfName string /* host interface name set for the Linux-side of the TAP interface; empty for non-TAPs */
 }
 

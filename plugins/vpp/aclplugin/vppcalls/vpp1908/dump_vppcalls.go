@@ -629,8 +629,14 @@ func (h *ACLVppHandler) getUDPMatchRule(r acl_api.ACLRule) *acl.ACL_Rule_IpRule_
 func (h *ACLVppHandler) getIcmpMatchRule(r acl_api.ACLRule) *acl.ACL_Rule_IpRule_Icmp {
 	icmp := &acl.ACL_Rule_IpRule_Icmp{
 		Icmpv6:        r.IsIPv6 > 0,
-		IcmpCodeRange: &acl.ACL_Rule_IpRule_Icmp_Range{},
-		IcmpTypeRange: &acl.ACL_Rule_IpRule_Icmp_Range{},
+		IcmpCodeRange: &acl.ACL_Rule_IpRule_Icmp_Range{
+			First: uint32(r.DstportOrIcmpcodeFirst),
+			Last:  uint32(r.DstportOrIcmpcodeLast),
+		},
+		IcmpTypeRange: &acl.ACL_Rule_IpRule_Icmp_Range{
+			First: uint32(r.SrcportOrIcmptypeFirst),
+			Last:  uint32(r.SrcportOrIcmptypeLast),
+		},
 	}
 	return icmp
 }

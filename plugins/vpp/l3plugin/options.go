@@ -20,6 +20,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 	"github.com/ligato/vpp-agent/plugins/kvscheduler"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin"
+	"github.com/ligato/vpp-agent/plugins/netalloc"
 )
 
 // DefaultPlugin is a default instance of IfPlugin.
@@ -34,6 +35,7 @@ func NewPlugin(opts ...Option) *L3Plugin {
 	p.KVScheduler = &kvscheduler.DefaultPlugin
 	p.GoVppmux = &govppmux.DefaultPlugin
 	p.IfPlugin = &ifplugin.DefaultPlugin
+	p.AddrAlloc = &netalloc.DefaultPlugin
 
 	for _, o := range opts {
 		o(p)

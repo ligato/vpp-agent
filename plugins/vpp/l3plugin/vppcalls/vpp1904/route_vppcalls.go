@@ -17,8 +17,8 @@ package vpp1904
 import (
 	"net"
 
-	"github.com/ligato/cn-infra/utils/addrs"
-	vpp_l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
+	"github.com/ligato/vpp-agent/api/models/netalloc"
+	"github.com/ligato/vpp-agent/api/models/vpp/l3"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/ip"
 	"github.com/pkg/errors"
 )
@@ -47,12 +47,25 @@ func (h *RouteHandler) vppAddDelRoute(route *vpp_l3.Route, rtIfIdx uint32, delet
 	}
 
 	// Destination address (route set identifier)
-	parsedDstIP, isIpv6, err := addrs.ParseIPWithPrefix(route.DstNetwork)
+	parsedDstIP, err := h.addrAlloc.GetOrParseIPAddress(route.DstNetwork,
+		"", netalloc.IPAddressForm_ADDR_NET)
 	if err != nil {
 		return err
 	}
-	parsedNextHopIP := net.ParseIP(route.NextHopAddr)
+	isIpv6 := parsedDstIP.IP.To4() == nil
 	prefix, _ := parsedDstIP.Mask.Size()
+
+	// Next Hop IP address
+	var parsedNextHopIP net.IP
+	if route.NextHopAddr != "" {
+		nextHopIPNet, err := h.addrAlloc.GetOrParseIPAddress(route.NextHopAddr,
+			route.OutgoingInterface, netalloc.IPAddressForm_ADDR_ONLY)
+		if err != nil {
+			return err
+		}
+		parsedNextHopIP = nextHopIPNet.IP
+	}
+
 	if isIpv6 {
 		req.IsIPv6 = 1
 		req.DstAddress = []byte(parsedDstIP.IP.To16())

@@ -21,11 +21,15 @@ import (
 
 // ProtoToString converts proto message to string.
 func ProtoToString(msg proto.Message) string {
+	if recProto, wrapped := msg.(*RecordedProtoMessage); wrapped {
+		if recProto != nil {
+			msg = recProto.Message
+		} else {
+			msg = nil
+		}
+	}
 	if msg == nil {
 		return "<NIL>"
-	}
-	if recProto, wrapped := msg.(*RecordedProtoMessage); wrapped {
-		msg = recProto.Message
 	}
 	if _, isEmpty := msg.(*prototypes.Empty); isEmpty {
 		return "<EMPTY>"

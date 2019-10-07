@@ -4,6 +4,8 @@
 #Library       String
 #Library       RequestsLibrary
 Library       SSHLibrary            timeout=15 seconds       loglevel=TRACE
+Library       DateTime
+Library       Process
 
 *** Keywords ***
 Execute On Machine     [Arguments]              ${machine}               ${command}               ${log}=true
@@ -70,3 +72,7 @@ Write To Machine Until String
                        Append To File           ${RESULTS_FOLDER_SUITE}/output_${machine}.log    *** Time:${currdate} Response: ${out}${out2}${\n}
                        [Return]                 ${out}${out2}
 
+Copy File To Machine
+                       [Arguments]              ${machine}    ${local_path}    ${remote_path}
+                       Switch Connection        ${machine}
+                       ${out}   ${stderr}=      Put File    ${local_path}    ${remote_path}    mode=0777

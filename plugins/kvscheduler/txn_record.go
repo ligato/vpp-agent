@@ -22,8 +22,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gogo/protobuf/proto"
-
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/kvscheduler/internal/graph"
 	"github.com/ligato/vpp-agent/plugins/kvscheduler/internal/utils"
@@ -78,7 +76,7 @@ func (s *Scheduler) GetRecordedTransaction(SeqNum uint64) (txn *kvs.RecordedTxn)
 // preRecordTxnOp prepares txn operation record - fills attributes that we can even
 // before executing the operation.
 func (s *Scheduler) preRecordTxnOp(args *applyValueArgs, node graph.Node) *kvs.RecordedTxnOp {
-	var prevValue proto.Message
+	var prevValue *utils.RecordedProtoMessage
 	if getNodeState(node) != kvs.ValueState_REMOVED {
 		prevValue = utils.RecordProtoMessage(node.GetValue())
 	}

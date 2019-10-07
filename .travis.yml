@@ -26,6 +26,8 @@ stages:
   - Test
   - Build
   - Integration
+  - name: E2E
+    if: ( type = push AND branch IN (master, dev) ) OR ( type IN (cron, api) ) OR ( commit_message =~ /^(test-e2e)/ )
 
 jobs:
   include:
@@ -66,10 +68,21 @@ jobs:
       script:
         - make verify-binapi
         - make integration-tests
-    - env: VPP_VERSION=1901
+    - env: VPP_VERSION=2001
       script:
         - make verify-binapi
         - make integration-tests
+
+    - stage: E2E
+      env: VPP_VERSION=1904
+      script:
+        - make e2e-tests
+    - env: VPP_VERSION=1908
+      script:
+        - make e2e-tests
+    - env: VPP_VERSION=2001
+      script:
+        - make e2e-tests
 
 notifications:
   slack:

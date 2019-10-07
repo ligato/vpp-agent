@@ -1,5 +1,7 @@
 # input - output from sh int addr
 # output - list of words containing ip/prefix
+from robot.api import logger
+
 def Find_IPV4_In_Text(text):
     ipv4 = []
     for word in text.split():
@@ -41,9 +43,9 @@ def Find_MAC_In_Text(text):
 def Parse_ARP(info, intf, ip, mac):
     for line in info.splitlines():
         if intf in line and ip in line and mac in line:
-            print "ARP Found:"+line
+            print("ARP Found:"+line)
             return True
-    print "ARP Found"
+    print("ARP Found")
     return False
 
 

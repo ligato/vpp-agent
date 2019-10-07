@@ -1,9 +1,10 @@
 [Documentation]     Keywords for working with VPP Ctl container
 
 *** Settings ***
-Library        etcdctl.py
 Library        String
 
+Library        etcdctl.py
+Library        vpp_term.py
 *** Variables ***
 
 *** Keywords ***
@@ -257,7 +258,7 @@ Delete Linux Interface
 
 Delete Route
     [Arguments]    ${node}    ${id}    ${ip}    ${prefix}
-    ${uri}=    Set Variable                /vnf-agent/${node}/config/vpp/${AGENT_VER}/route/vrf/${id}/dst/${ip}/${prefix}/gw
+    ${uri}=    Set Variable                /vnf-agent/${node}/config/vpp/${AGENT_VER}/route/vrf/${id}/dst/${ip}/${prefix}
     ${out}=         Delete key  ${uri}
     [Return]       ${out}
 
@@ -286,117 +287,11 @@ Delete Nat Global
     ${out}=         Delete key  ${uri}
     [Return]       ${out}
 
-Put BFD Session
-    [Arguments]    ${node}    ${session_name}    ${min_tx_interval}    ${dest_adr}    ${detect_multiplier}    ${interface}    ${min_rx_interval}    ${source_adr}   ${enabled}    ${auth_key_id}=0    ${BFD_auth_key_id}=0
-    ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/bfd_session.json
-    ${uri}=               Set Variable                  /vnf-agent/${node}/config/vpp/${AGENT_VER}/bfd/session/${session_name}
-    ${data}=              Replace Variables             ${data}
-    Put Json     ${uri}    ${data}
-
-Put BFD Authentication Key
-    [Arguments]    ${node}    ${key_name}    ${auth_type}    ${id}    ${secret}
-    ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/bfd_key.json
-    ${uri}=               Set Variable                  /vnf-agent/${node}/config/vpp/${AGENT_VER}/bfd/auth-key/${key_name}
-    ${data}=              Replace Variables             ${data}
-    Put Json     ${uri}    ${data}
-
-Put BFD Echo Function
-    [Arguments]    ${node}    ${echo_func_name}    ${source_intf}
-    ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/bfd_echo_function.json
-    ${uri}=               Set Variable                  /vnf-agent/${node}/config/vpp/${AGENT_VER}/bfd/echo-function
-    ${data}=              Replace Variables             ${data}
-    Put Json     ${uri}    ${data}
-
-Get BFD Session As Json
-    [Arguments]    ${node}    ${session_name}
-    ${key}=               Set Variable            /vnf-agent/${node}/config/vpp/${AGENT_VER}/bfd/session/${session_name}
-    ${data}=              Read Key    ${key}
-    ${data}=              Set Variable If      '''${data}'''==""    {}    ${data}
-    ${output}=            Evaluate             json.loads('''${data}''')    json
-    [Return]              ${output}
-
-Get BFD Authentication Key As Json
-    [Arguments]    ${node}    ${key_name}
-    ${key}=               Set Variable          /vnf-agent/${node}/config/vpp/${AGENT_VER}/bfd/auth-key/${key_name}
-    ${data}=              Read Key    ${key}
-    ${data}=              Set Variable If      '''${data}'''==""    {}    ${data}
-    ${output}=            Evaluate             json.loads('''${data}''')    json
-    [Return]              ${output}
-
-Get BFD Echo Function As Json
-    [Arguments]    ${node}
-    ${key}=               Set Variable          /vnf-agent/${node}/config/vpp/${AGENT_VER}/bfd/echo-function
-    ${data}=              Read Key    ${key}
-    ${data}=              Set Variable If      '''${data}'''==""    {}    ${data}
-    ${output}=            Evaluate             json.loads('''${data}''')    json
-    [Return]              ${output}
-
-Put ACL TCP
-    [Arguments]    ${node}    ${acl_name}    ${egr_intf1}   ${ingr_intf1}    ${acl_action}    ${dest_ntw}    ${src_ntw}    ${dest_port_low}   ${dest_port_up}    ${src_port_low}    ${src_port_up}
-    ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/acl_TCP.json
-    ${uri}=               Set Variable          /vnf-agent/${node}/config/vpp/acls/${AGENT_VER}/acl/${acl_name}
-    ${data}=              Replace Variables             ${data}
-    #OperatingSystem.Create File   ${REPLY_DATA_FOLDER}/reply.json     ${data}
-    Put Json     ${uri}    ${data}
-
-Put ACL UDP
-    [Arguments]    ${node}    ${acl_name}    ${egr_intf1}    ${ingr_intf1}     ${egr_intf2}    ${ingr_intf2}     ${acl_action}    ${dest_ntw}   ${src_ntw}    ${dest_port_low}   ${dest_port_up}    ${src_port_low}    ${src_port_up}
-    ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/acl_UDP.json
-    ${uri}=               Set Variable          /vnf-agent/${node}/config/vpp/acls/${AGENT_VER}/acl/${acl_name}
-    ${data}=              Replace Variables             ${data}
-    #OperatingSystem.Create File   ${REPLY_DATA_FOLDER}/reply.json     ${data}
-    Put Json     ${uri}    ${data}
-
-Put ACL MACIP
-    [Arguments]    ${node}    ${acl_name}    ${egr_intf1}    ${ingr_intf1}    ${acl_action}    ${src_addr}    ${src_addr_prefix}    ${src_mac_addr}   ${src_mac_addr_mask}
-    ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/acl_MACIP.json
-    ${uri}=               Set Variable          /vnf-agent/${node}/config/vpp/acls/${AGENT_VER}/acl/${acl_name}
-    ${data}=              Replace Variables             ${data}
-    #OperatingSystem.Create File   ${REPLY_DATA_FOLDER}/reply.json     ${data}
-    Put Json     ${uri}    ${data}
-
-Put ACL ICMP
-    [Arguments]    ${node}    ${acl_name}    ${egr_intf1}   ${egr_intf2}    ${ingr_intf1}   ${ingr_intf2}    ${acl_action}   ${dest_ntw}    ${src_ntw}    ${icmpv6}   ${code_range_low}   ${code_range_up}    ${type_range_low}   ${type_range_up}
-    ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/acl_ICMP.json
-    ${uri}=               Set Variable          /vnf-agent/${node}/config/vpp/acls/${AGENT_VER}/acl/${acl_name}
-    ${data}=              Replace Variables             ${data}
-    #OperatingSystem.Create File   ${REPLY_DATA_FOLDER}/reply.json     ${data}
-    Put Json     ${uri}    ${data}
-
-Get ACL As Json
-    [Arguments]           ${node}  ${acl_name}
-    ${key}=               Set Variable          /vnf-agent/${node}/config/vpp/acls/${AGENT_VER}/acl/${acl_name}
-    ${data}=              Read Key    ${key}
-    ${data}=              Set Variable If      '''${data}'''=="" or '''${data}'''=='None'    {}    ${data}
-    #${output}=            Evaluate             json.loads('''${data}''')     json
-    #log                   ${output}
-    OperatingSystem.Create File   ${REPLY_DATA_FOLDER}/reply_${acl_name}.json    ${data}
-    #[Return]              ${output}
-    [Return]              ${data}
-
-Get All ACL As Json
-    [Arguments]           ${node}
-    ${key}=               Set Variable          /vnf-agent/${node}/config/vpp/acls/${AGENT_VER}/acl
-    #${data}=              etcd: Get ETCD Tree    ${key}
-    ${data}=              Read Key    ${key}    true
-    ${data}=              Set Variable If      '''${data}'''=="" or '''${data}'''=='None'    {}    ${data}
-    #${output}=            Evaluate             json.loads('''${data}''')     json
-    #log                   ${output}
-    OperatingSystem.Create File   ${REPLY_DATA_FOLDER}/reply_acl_all.json    ${data}
-    #[Return]              ${output}
-    [Return]              ${data}
-
 etcd: Get ETCD Tree
     [Arguments]           ${key}
     ${command}=         Set Variable    ${DOCKER_COMMAND} exec etcd etcdctl get --prefix="true" ${key}
     ${out}=             Execute On Machine    docker    ${command}    log=false
     [Return]            ${out}
-
-Delete ACL
-    [Arguments]    ${node}    ${name}
-    ${uri}=      Set Variable    /vnf-agent/${node}/config/vpp/acls/${AGENT_VER}/acl/${name}
-    ${out}=      Delete key    ${uri}
-    [Return]    ${out}
 
 Put Veth Interface Via Linux Plugin
     [Arguments]    ${node}    ${namespace}    ${name}    ${host_if_name}    ${mac}    ${peer}    ${ip}    ${prefix}=24    ${mtu}=1500    ${enabled}=true
@@ -440,20 +335,6 @@ Get Linux Route As Json
     ${output}=            Evaluate             json.loads('''${data}''')    json
     [Return]              ${output}
 
-Check ACL Reply
-    [Arguments]         ${node}    ${acl_name}   ${reply_json}    ${reply_term}    ${api_h}=$(API_HANDLER}
-    ${acl_d}=           Get ACL As Json    ${node}    ${acl_name}
-    ${term_d}=          vat_term: Check ACL     ${node}    ${acl_name}
-    ${term_d_lines}=    Split To Lines    ${term_d}
-    ${data}=            OperatingSystem.Get File    ${reply_json}
-    ${data}=            Replace Variables      ${data}
-    Should Be Equal     ${data}   ${acl_d}
-    ${data}=            OperatingSystem.Get File    ${reply_term}
-    ${data}=            Replace Variables      ${data}
-    ${t_data_lines}=    Split To Lines    ${data}
-    List Should Contain Sub List    ${term_d_lines}    ${t_data_lines}
-
-
 Put ARP
     [Arguments]    ${node}    ${interface}    ${ipv4}    ${MAC}    ${static}
     ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/arp.json
@@ -476,15 +357,6 @@ Set L4 Features On Node
     ${uri}=               Set Variable                  /vnf-agent/${node}/config/vpp/${AGENT_VER}/l4/features/feature
     ${data}=              Replace Variables             ${data}
     Put Json     ${uri}    ${data}
-
-Put Application Namespace
-    [Arguments]    ${node}    ${id}    ${secret}    ${interface}
-    [Documentation]    Put application namespace config json to etcd.
-    ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/app_namespace.json
-    ${uri}=               Set Variable                  /vnf-agent/${node}/config/vpp/${AGENT_VER}/l4/namespaces/${id}
-    ${data}=              Replace Variables             ${data}
-    Put Json     ${uri}    ${data}
-
 
 Delete ARP
     [Arguments]    ${node}    ${interface}    ${ipv4}
