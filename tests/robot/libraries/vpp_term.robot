@@ -280,7 +280,7 @@ vpp_term: Add Route
 vpp_term: Show ARP
     [Arguments]        ${node}
     [Documentation]    Show ARPs through vpp terminal
-    ${out}=            vpp_term: Issue Command  ${node}   sh ip arp
+    ${out}=            vpp_term: Issue Command  ${node}   show ip arp
     #OperatingSystem.Create File   ${REPLY_DATA_FOLDER}/reply_arp.json    ${out}
     [Return]           ${out}
 
@@ -289,9 +289,24 @@ vpp_term: Check ARP
     [Documentation]    Check ARPs presence on interface
     ${out}=            vpp_term: Show ARP    ${node}
     ${internal_name}=    Get Interface Internal Name    ${node}    ${interface}
-    #Should Not Be Equal      ${internal_name}    ${None}
     ${status}=         Run Keyword If     '${internal_name}'!='${None}'  Parse ARP    ${out}   ${internal_name}   ${ipv4}     ${MAC}   ELSE    Set Variable   False
     Should Be Equal As Strings   ${status}   ${presence}
+
+vpp_term: Show IPv6 Neighbor
+    [Arguments]        ${node}
+    [Documentation]    Show Neighbbor list through vpp terminal
+    ${out}=            vpp_term: Issue Command  ${node}   show ip6 neighbors
+    #OperatingSystem.Create File   ${REPLY_DATA_FOLDER}/reply_arp.json    ${out}
+    [Return]           ${out}
+
+vpp_term: Check IPv6 Neighbor
+    [Arguments]        ${node}      ${interface}    ${ip_address}    ${mac_address}    ${presence}
+    [Documentation]    Check IPv6 neighbor presence on interface
+    ${out}=            vpp_term: Show IPv6 neighbor    ${node}
+    ${internal_name}=    Get Interface Internal Name    ${node}    ${interface}
+    ${status}=         Run Keyword If     '${internal_name}'!='${None}'  Parse Neighbor    ${out}   ${internal_name}   ${ip_address}     ${mac_address}   ELSE    Set Variable   False
+    Should Be Equal As Strings   ${status}   ${presence}
+
 
 vpp_term: Set IPv6 neighbor
     [Arguments]        ${node}      ${interface}    ${ipv6}     ${MAC}

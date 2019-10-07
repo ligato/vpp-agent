@@ -40,12 +40,51 @@ def Find_MAC_In_Text(text):
 
 # input - output from sh ip arp command
 # output - state info list
-def Parse_ARP(info, intf, ip, mac):
+def parse_arp(info, intf, ip, mac):
+    """Parse ARP list from vpp console and find a specific entry using the provided arguments.
+
+    :param info: ARP list from VPP console.
+    :param intf: VPP-internal name of the interface configured with this ARP entry.
+    :param ip: IP address of the ARP entry.
+    :param mac: MAC address of the ARP entry.
+    :type info: str
+    :type intf: str
+    :type ip: str
+    :type mac: str
+    :returns: True if a matching entry is found, else False
+    :rtype: bool
+    """
+
+    for line in info.splitlines():
+            if intf in line and ip in line and mac in line:
+                print("ARP Found:"+line)
+                return True
+    logger.debug("ARP not Found")
+    return False
+
+
+# input - output from sh ip arp command
+# output - state info list
+def parse_neighbor(info, intf, ip, mac):
+    """Parse neighbor list from vpp console and find a specific entry using the provided arguments.
+
+    :param info: Neighbor list from VPP console.
+    :param intf: VPP-internal name of the interface configured with this neighbor.
+    :param ip: IP address of the neighbor entry.
+    :param mac: MAC address of the neighbor entry.
+    :type info: str
+    :type intf: str
+    :type ip: str
+    :type mac: str
+    :returns: True if a matching entry is found, else False
+    :rtype: bool
+    """
+
     for line in info.splitlines():
         if intf in line and ip in line and mac in line:
-            print("ARP Found:"+line)
+            print("Neighbor Found:"+line)
             return True
-    print("ARP Found")
+    logger.debug("Neighbor not Found")
     return False
 
 
