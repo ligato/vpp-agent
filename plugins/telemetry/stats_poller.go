@@ -6,9 +6,9 @@ import (
 	"time"
 
 	"git.fd.io/govpp.git/api"
-	"github.com/gogo/status"
 	"github.com/ligato/cn-infra/logging"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"github.com/ligato/vpp-agent/api/configurator"
 	"github.com/ligato/vpp-agent/api/models/vpp"
