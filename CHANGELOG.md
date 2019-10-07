@@ -65,6 +65,7 @@ Support for 19.01 was dropped in this release.
 * ACL ICMP rule is now properly configured and data can be obtained using the ACL dump.
 * Missing dependency for SRv6 L2 steering fixed.
 * Fixed issue with possible division by zero and missing interface MTU.
+* Namespace plugin uses a Docker event listener instead of periodical polling. This should prevent cases where quickly started microservice container was not detected.
 
 ### New Features
 * [netalloc-plugin][netalloc-plugin]
@@ -85,6 +86,8 @@ Many end-to-end tests introduced, gradually increasing VPP-Agent stability.
 * [if-plugin][vpp-interface-plugin]
   - IP addresses assigned by the DHCP are excluded from the interface address descriptor.
   - VPP-Agent now processes status change notifications labeled by the VPP as UNKNOWN.
+* [ns-plugin][linux-ns-plugin]
+  - Dockerclient microservice polling replaced with an event listener.   
 * [sr-plugin][sr-plugin]
   - SRv6 dynamic proxy routing now can be connected to a non-zero VRF table.   
   
