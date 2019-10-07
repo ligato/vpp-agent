@@ -8,10 +8,6 @@ import "models/vpp/vpp.proto";
 import "models/linux/linux.proto";
 import "models/netalloc/netalloc.proto";
 
-//import weak "github.com/gogo/protobuf/gogoproto/gogo.proto";
-//option (gogoproto.messagename_all) = true;
-//option (gogoproto.goproto_registration) = true;
-
 // Config groups all supported config data into single message.
 message Config {
     vpp.ConfigData vpp_config = 1;
@@ -24,12 +20,6 @@ message Notification {
     oneof notification {
         vpp.Notification vpp_notification = 1;
         linux.Notification linux_notification = 2;
-    }
-}
-
-message Stats {
-    oneof stats {
-        vpp.Stats vpp_stats = 1;
     }
 }
 
@@ -104,21 +94,4 @@ message NotificationResponse {
     uint32 next_idx = 1;
     // Notification data
     Notification notification = 2;
-}
-
-// StatsPoller provides operations for retrieving statistics.
-service StatsPoller {
-    // PollStats is used for polling metrics using poll period.
-    rpc PollStats(PollStatsRequest) returns (stream PollStatsResponse) {};
-}
-
-message PollStatsRequest {
-    // PeriodSec defines polling period (in seconds)
-    uint32 period_sec = 1;
-}
-
-
-message PollStatsResponse {
-    uint32 poll_seq = 1;
-    Stats stats = 2;
 }
