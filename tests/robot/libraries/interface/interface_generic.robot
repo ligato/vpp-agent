@@ -23,6 +23,13 @@ vpp_api: Get Interface Index
     ${index}=          Get Interface Index From API    ${out[0]["api_reply"]}    ${name}
     [Return]           ${index}
 
+vpp_api: Get Interface Name
+    [Arguments]        ${node}    ${index}
+    [Documentation]    Return interface index with specified name
+    ${out}=            vpp_api: Interfaces Dump    ${node}
+    ${index}=          Get Interface Name From API    ${out[0]["api_reply"]}    ${index}
+    [Return]           ${index}
+
 vpp_api: Get Interface State By Name
     [Arguments]        ${node}    ${name}
     ${out}=            vpp_api: Interfaces Dump    ${node}
