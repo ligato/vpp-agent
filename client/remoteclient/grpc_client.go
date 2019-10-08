@@ -2,7 +2,6 @@ package remoteclient
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/golang/protobuf/proto"
 
@@ -71,15 +70,6 @@ func (c *grpcClient) GetConfig(dsts ...interface{}) error {
 		return err
 	}
 
-	fmt.Printf("grpcClient.GetConfig: received %d items\n", len(resp.Items))
-	tm := proto.TextMarshaler{
-		Compact:   true,
-		ExpandAny: true,
-	}
-	for _, item := range resp.Items {
-		fmt.Printf(" - %v\n", tm.Text(item))
-	}
-
 	protos := map[string]proto.Message{}
 	for _, item := range resp.Items {
 		val, err := models.UnmarshalItem(item.Item)
@@ -111,15 +101,6 @@ func (c *grpcClient) DumpState() ([]*client.StateItem, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	/*lfmt.Printf("grpcClient.DumpState: received %d items\n", len(resp.States))
-	tm := proto.TextMarshaler{
-		Compact:   true,
-		ExpandAny: true,
-	}
-	for _, item := range resp.States {
-		fmt.Printf(" - %v\n", tm.Text(item))
-	}*/
 
 	return resp.GetItems(), nil
 }
