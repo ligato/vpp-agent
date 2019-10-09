@@ -171,7 +171,7 @@ func TestDumpInterfacesMemif(t *testing.T) {
 			Ping: true,
 			Message: &vpp_memif.MemifSocketFilenameDetails{
 				SocketID:       1,
-				SocketFilename: []byte("test"),
+				SocketFilename: "test",
 			},
 		},
 		{
@@ -293,7 +293,7 @@ func TestDumpMemifSocketDetails(t *testing.T) {
 
 	ctx.MockVpp.MockReply(&vpp_memif.MemifSocketFilenameDetails{
 		SocketID:       1,
-		SocketFilename: []byte("test"),
+		SocketFilename: "test",
 	})
 
 	ctx.MockVpp.MockReply(&vpp_vpe.ControlPingReply{})
@@ -334,7 +334,7 @@ func TestDumpInterfacesRxPlacement(t *testing.T) {
 			Ping: true,
 			Message: &vpp_memif.MemifSocketFilenameDetails{
 				SocketID:       1,
-				SocketFilename: []byte("test"),
+				SocketFilename: "test",
 			},
 		},
 		{

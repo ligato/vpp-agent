@@ -15,8 +15,9 @@
 package vpp2001_test
 
 import (
-	"net"
 	"testing"
+
+	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls/vpp2001"
 
 	ifs "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	vpp_afpacket "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/af_packet"
@@ -43,9 +44,9 @@ func TestAddAfPacketInterface(t *testing.T) {
 			vppMsg, ok := msg.(*vpp_afpacket.AfPacketCreate)
 			Expect(ok).To(BeTrue())
 			Expect(vppMsg).To(Equal(&vpp_afpacket.AfPacketCreate{
-				HostIfName:      []byte("host1"),
-				HwAddr:          nil,
-				UseRandomHwAddr: 1,
+				HostIfName:      "host1",
+				HwAddr:          vpp_afpacket.MacAddress{},
+				UseRandomHwAddr: true,
 			}))
 		}
 	}
@@ -98,7 +99,7 @@ func TestDeleteAfPacketInterface(t *testing.T) {
 			vppMsg, ok := msg.(*vpp_afpacket.AfPacketDelete)
 			Expect(ok).To(BeTrue())
 			Expect(vppMsg).To(Equal(&vpp_afpacket.AfPacketDelete{
-				HostIfName: []byte("host1"),
+				HostIfName: "host1",
 			}))
 		}
 	}
@@ -148,7 +149,7 @@ func TestAddAfPacketInterfaceMac(t *testing.T) {
 	Expect(ifIndex).ToNot(BeNil())
 	Expect(len(ctx.MockChannel.Msgs)).To(BeEquivalentTo(2))
 
-	mac, err := net.ParseMAC("a2:01:01:01:01:01")
+	mac, err := vpp2001.ParseMAC("a2:01:01:01:01:01")
 	Expect(err).To(BeNil())
 
 	for i, msg := range ctx.MockChannel.Msgs {
@@ -156,9 +157,9 @@ func TestAddAfPacketInterfaceMac(t *testing.T) {
 			vppMsg, ok := msg.(*vpp_afpacket.AfPacketCreate)
 			Expect(ok).To(BeTrue())
 			Expect(vppMsg).To(Equal(&vpp_afpacket.AfPacketCreate{
-				HostIfName:      []byte("host1"),
+				HostIfName:      "host1",
 				HwAddr:          mac,
-				UseRandomHwAddr: 0,
+				UseRandomHwAddr: false,
 			}))
 		}
 	}

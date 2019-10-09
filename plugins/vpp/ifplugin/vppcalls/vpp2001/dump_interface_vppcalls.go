@@ -296,7 +296,7 @@ func (h *InterfaceVppHandler) DumpMemifSocketDetails() (map[string]uint32, error
 			return memifSocketMap, fmt.Errorf("failed to dump memif socket filename details: %v", err)
 		}
 
-		filename := string(bytes.SplitN(socketDetails.SocketFilename, []byte{0x00}, 2)[0])
+		filename := strings.TrimRight(socketDetails.SocketFilename, "\x00")
 		memifSocketMap[filename] = socketDetails.SocketID
 	}
 
@@ -322,39 +322,29 @@ func (h *InterfaceVppHandler) DumpDhcpClients() (map[uint32]*vppcalls.Dhcp, erro
 		client := dhcpDetails.Client
 		lease := dhcpDetails.Lease
 
-		var hostMac net.HardwareAddr = lease.HostMac
-		var hostAddr, routerAddr string
-		if uintToBool(lease.IsIPv6) {
-			hostAddr = fmt.Sprintf("%s/%d", net.IP(lease.HostAddress).To16().String(), uint32(lease.MaskWidth))
-			routerAddr = fmt.Sprintf("%s/%d", net.IP(lease.RouterAddress).To16().String(), uint32(lease.MaskWidth))
-		} else {
-			hostAddr = fmt.Sprintf("%s/%d", net.IP(lease.HostAddress[:4]).To4().String(), uint32(lease.MaskWidth))
-			routerAddr = fmt.Sprintf("%s/%d", net.IP(lease.RouterAddress[:4]).To4().String(), uint32(lease.MaskWidth))
-		}
-
 		// DHCP client data
 		dhcpClient := &vppcalls.Client{
-			SwIfIndex:        client.SwIfIndex,
-			Hostname:         string(bytes.SplitN(client.Hostname, []byte{0x00}, 2)[0]),
+			SwIfIndex:        uint32(client.SwIfIndex),
+			Hostname:         strings.TrimRight(client.Hostname, "\x00"),
 			ID:               string(bytes.SplitN(client.ID, []byte{0x00}, 2)[0]),
-			WantDhcpEvent:    uintToBool(client.WantDHCPEvent),
-			SetBroadcastFlag: uintToBool(client.SetBroadcastFlag),
+			WantDhcpEvent:    client.WantDHCPEvent,
+			SetBroadcastFlag: client.SetBroadcastFlag,
 			PID:              client.PID,
 		}
 
 		// DHCP lease data
 		dhcpLease := &vppcalls.Lease{
-			SwIfIndex:     lease.SwIfIndex,
-			State:         lease.State,
-			Hostname:      string(bytes.SplitN(lease.Hostname, []byte{0x00}, 2)[0]),
-			IsIPv6:        uintToBool(lease.IsIPv6),
-			HostAddress:   hostAddr,
-			RouterAddress: routerAddr,
-			HostMac:       hostMac.String(),
+			SwIfIndex:     uint32(lease.SwIfIndex),
+			State:         uint8(lease.State),
+			Hostname:      strings.TrimRight(lease.Hostname, "\x00"),
+			IsIPv6:        lease.IsIPv6,
+			HostAddress:   dhcpAddressToString(lease.HostAddress, uint32(lease.MaskWidth), lease.IsIPv6),
+			RouterAddress: dhcpAddressToString(lease.RouterAddress, uint32(lease.MaskWidth), lease.IsIPv6),
+			HostMac:       net.HardwareAddr(lease.HostMac[:]).String(),
 		}
 
 		// DHCP metadata
-		dhcpData[client.SwIfIndex] = &vppcalls.Dhcp{
+		dhcpData[uint32(client.SwIfIndex)] = &vppcalls.Dhcp{
 			Client: dhcpClient,
 			Lease:  dhcpLease,
 		}
@@ -526,11 +516,11 @@ func (h *InterfaceVppHandler) dumpMemifDetails(interfaces map[uint32]*vppcalls.I
 		if err != nil {
 			return fmt.Errorf("failed to dump memif interface: %v", err)
 		}
-		_, ifIdxExists := interfaces[memifDetails.SwIfIndex]
+		_, ifIdxExists := interfaces[uint32(memifDetails.SwIfIndex)]
 		if !ifIdxExists {
 			continue
 		}
-		interfaces[memifDetails.SwIfIndex].Interface.Link = &ifs.Interface_Memif{
+		interfaces[uint32(memifDetails.SwIfIndex)].Interface.Link = &ifs.Interface_Memif{
 			Memif: &ifs.MemifLink{
 				Master: memifDetails.Role == 0,
 				Mode:   memifModetoNB(memifDetails.Mode),
@@ -553,7 +543,7 @@ func (h *InterfaceVppHandler) dumpMemifDetails(interfaces map[uint32]*vppcalls.I
 				//TxQueues:
 			},
 		}
-		interfaces[memifDetails.SwIfIndex].Interface.Type = ifs.Interface_MEMIF
+		interfaces[uint32(memifDetails.SwIfIndex)].Interface.Type = ifs.Interface_MEMIF
 	}
 
 	return nil
@@ -838,25 +828,27 @@ func (h *InterfaceVppHandler) dumpBondDetails(interfaces map[uint32]*vppcalls.In
 		if stop {
 			break
 		}
-		_, ifIdxExists := interfaces[bondDetails.SwIfIndex]
+		_, ifIdxExists := interfaces[uint32(bondDetails.SwIfIndex)]
 		if !ifIdxExists {
 			continue
 		}
-		interfaces[bondDetails.SwIfIndex].Interface.Link = &ifs.Interface_Bond{
+		interfaces[uint32(bondDetails.SwIfIndex)].Interface.Link = &ifs.Interface_Bond{
 			Bond: &ifs.BondLink{
 				Id:   bondDetails.ID,
 				Mode: getBondIfMode(bondDetails.Mode),
 				Lb:   getBondLoadBalance(bondDetails.Lb),
 			},
 		}
-		interfaces[bondDetails.SwIfIndex].Interface.Type = ifs.Interface_BOND_INTERFACE
-		bondIndexes = append(bondIndexes, bondDetails.SwIfIndex)
+		interfaces[uint32(bondDetails.SwIfIndex)].Interface.Type = ifs.Interface_BOND_INTERFACE
+		bondIndexes = append(bondIndexes, uint32(bondDetails.SwIfIndex))
 	}
 
 	// get slave interfaces for bonds
 	for _, bondIdx := range bondIndexes {
 		var bondSlaves []*ifs.BondLink_BondedInterface
-		reqSlCtx := h.callsChannel.SendMultiRequest(&vpp_bond.SwInterfaceSlaveDump{SwIfIndex: bondIdx})
+		reqSlCtx := h.callsChannel.SendMultiRequest(&vpp_bond.SwInterfaceSlaveDump{
+			SwIfIndex: vpp_bond.InterfaceIndex(bondIdx),
+		})
 		for {
 			slaveDetails := &vpp_bond.SwInterfaceSlaveDetails{}
 			stop, err := reqSlCtx.ReceiveReply(slaveDetails)
@@ -866,14 +858,14 @@ func (h *InterfaceVppHandler) dumpBondDetails(interfaces map[uint32]*vppcalls.In
 			if stop {
 				break
 			}
-			slaveIf, ifIdxExists := interfaces[slaveDetails.SwIfIndex]
+			slaveIf, ifIdxExists := interfaces[uint32(slaveDetails.SwIfIndex)]
 			if !ifIdxExists {
 				continue
 			}
 			bondSlaves = append(bondSlaves, &ifs.BondLink_BondedInterface{
 				Name:          slaveIf.Interface.Name,
-				IsPassive:     uintToBool(slaveDetails.IsPassive),
-				IsLongTimeout: uintToBool(slaveDetails.IsLongTimeout),
+				IsPassive:     slaveDetails.IsPassive,
+				IsLongTimeout: slaveDetails.IsLongTimeout,
 			})
 			interfaces[bondIdx].Interface.GetBond().BondedInterfaces = bondSlaves
 		}
@@ -992,6 +984,15 @@ func (h *InterfaceVppHandler) dumpRxPlacement(interfaces map[uint32]*vppcalls.In
 	return nil
 }
 
+func dhcpAddressToString(address vpp_dhcp.Address, maskWidth uint32, isIPv6 bool) string {
+	dhcpIpByte := make([]byte, 16)
+	copy(dhcpIpByte[:], address.Un.XXX_UnionData[:])
+	if isIPv6 {
+		return fmt.Sprintf("%s/%d", net.IP(dhcpIpByte).To16().String(), maskWidth)
+	}
+	return fmt.Sprintf("%s/%d", net.IP(dhcpIpByte[:4]).To4().String(), maskWidth)
+}
+
 // guessInterfaceType attempts to guess the correct interface type from its internal name (as given by VPP).
 // This is required mainly for those interface types, that do not provide dump binary API,
 // such as loopback of af_packet.
@@ -1028,11 +1029,11 @@ func guessInterfaceType(ifName string) ifs.Interface_Type {
 }
 
 // memifModetoNB converts binary API type of memif mode to the northbound API type memif mode.
-func memifModetoNB(mode uint8) ifs.MemifLink_MemifMode {
+func memifModetoNB(mode vpp_memif.MemifMode) ifs.MemifLink_MemifMode {
 	switch mode {
-	case 1:
+	case vpp_memif.MEMIF_MODE_API_IP:
 		return ifs.MemifLink_IP
-	case 2:
+	case vpp_memif.MEMIF_MODE_API_PUNT_INJECT:
 		return ifs.MemifLink_PUNT_INJECT
 	default:
 		return ifs.MemifLink_ETHERNET
@@ -1055,17 +1056,17 @@ func getRxModeType(mode vpp_ifs.RxMode) ifs.Interface_RxMode_Type {
 	}
 }
 
-func getBondIfMode(mode uint8) ifs.BondLink_Mode {
+func getBondIfMode(mode vpp_bond.BondMode) ifs.BondLink_Mode {
 	switch mode {
-	case 1:
+	case vpp_bond.BOND_API_MODE_ROUND_ROBIN:
 		return ifs.BondLink_ROUND_ROBIN
-	case 2:
+	case vpp_bond.BOND_API_MODE_ACTIVE_BACKUP:
 		return ifs.BondLink_ACTIVE_BACKUP
-	case 3:
+	case vpp_bond.BOND_API_MODE_XOR:
 		return ifs.BondLink_XOR
-	case 4:
+	case vpp_bond.BOND_API_MODE_BROADCAST:
 		return ifs.BondLink_BROADCAST
-	case 5:
+	case vpp_bond.BOND_API_MODE_LACP:
 		return ifs.BondLink_LACP
 	default:
 		// UNKNOWN
@@ -1073,12 +1074,18 @@ func getBondIfMode(mode uint8) ifs.BondLink_Mode {
 	}
 }
 
-func getBondLoadBalance(lb uint8) ifs.BondLink_LoadBalance {
+func getBondLoadBalance(lb vpp_bond.BondLbAlgo) ifs.BondLink_LoadBalance {
 	switch lb {
-	case 1:
+	case vpp_bond.BOND_API_LB_ALGO_L34:
 		return ifs.BondLink_L34
-	case 2:
+	case vpp_bond.BOND_API_LB_ALGO_L23:
 		return ifs.BondLink_L23
+	case vpp_bond.BOND_API_LB_ALGO_RR:
+		return ifs.BondLink_RR
+	case vpp_bond.BOND_API_LB_ALGO_BC:
+		return ifs.BondLink_BC
+	case vpp_bond.BOND_API_LB_ALGO_AB:
+		return ifs.BondLink_AB
 	default:
 		return ifs.BondLink_L2
 	}

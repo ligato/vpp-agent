@@ -25,7 +25,7 @@ import (
 func (h *DHCPProxyHandler) createDeleteDHCPProxy(entry *l3.DHCPProxy, delete bool) error {
 	config := &vpp_dhcp.DHCPProxyConfig{
 		RxVrfID: entry.RxVrfId,
-		IsAdd:   boolToUint(!delete),
+		IsAdd:   !delete,
 	}
 
 	ipAddr := net.ParseIP(entry.SourceIpAddress)
@@ -35,11 +35,11 @@ func (h *DHCPProxyHandler) createDeleteDHCPProxy(entry *l3.DHCPProxy, delete boo
 	}
 
 	if ipAddr.To4() == nil {
-		config.IsIPv6 = 1
-		config.DHCPSrcAddress = []byte(ipAddr.To16())
+		copy(config.DHCPSrcAddress.Un.XXX_UnionData[:], ipAddr.To16())
+		config.DHCPSrcAddress.Af = vpp_dhcp.ADDRESS_IP6
 	} else {
-		config.IsIPv6 = 0
-		config.DHCPSrcAddress = []byte(ipAddr.To4())
+		copy(config.DHCPSrcAddress.Un.XXX_UnionData[:], ipAddr.To4())
+		config.DHCPSrcAddress.Af = vpp_dhcp.ADDRESS_IP4
 	}
 
 	for _, server := range entry.Servers {
@@ -50,9 +50,11 @@ func (h *DHCPProxyHandler) createDeleteDHCPProxy(entry *l3.DHCPProxy, delete boo
 		}
 
 		if ipAddr.To4() == nil {
-			config.DHCPServer = []byte(ipAddr.To16())
+			copy(config.DHCPServer.Un.XXX_UnionData[:], ipAddr.To16())
+			config.DHCPServer.Af = vpp_dhcp.ADDRESS_IP6
 		} else {
-			config.DHCPServer = []byte(ipAddr.To4())
+			copy(config.DHCPServer.Un.XXX_UnionData[:], ipAddr.To4())
+			config.DHCPServer.Af = vpp_dhcp.ADDRESS_IP4
 		}
 		reply := &vpp_dhcp.DHCPProxyConfigReply{}
 		if err := h.callsChannel.SendRequest(config).ReceiveReply(reply); err != nil {

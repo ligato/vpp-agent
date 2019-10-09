@@ -34,8 +34,8 @@ func TestSetInterfaceAsDHCPClient(t *testing.T) {
 	Expect(ok).To(BeTrue())
 	Expect(vppMsg.Client.SwIfIndex).To(BeEquivalentTo(1))
 	Expect(vppMsg.Client.Hostname).To(BeEquivalentTo([]byte("hostName")))
-	Expect(vppMsg.Client.WantDHCPEvent).To(BeEquivalentTo(1))
-	Expect(vppMsg.IsAdd).To(BeEquivalentTo(1))
+	Expect(vppMsg.Client.WantDHCPEvent).To(BeTrue())
+	Expect(vppMsg.IsAdd).To(BeTrue())
 }
 
 func TestSetInterfaceAsDHCPClientError(t *testing.T) {
@@ -75,8 +75,8 @@ func TestUnsetInterfaceAsDHCPClient(t *testing.T) {
 	Expect(ok).To(BeTrue())
 	Expect(vppMsg.Client.SwIfIndex).To(BeEquivalentTo(1))
 	Expect(vppMsg.Client.Hostname).To(BeEquivalentTo([]byte("hostName")))
-	Expect(vppMsg.Client.WantDHCPEvent).To(BeEquivalentTo(1))
-	Expect(vppMsg.IsAdd).To(BeEquivalentTo(0))
+	Expect(vppMsg.Client.WantDHCPEvent).To(BeTrue())
+	Expect(vppMsg.IsAdd).To(BeFalse())
 }
 
 func TestUnsetInterfaceAsDHCPClientError(t *testing.T) {

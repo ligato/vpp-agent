@@ -24,7 +24,7 @@ import (
 
 func (h *DHCPProxyHandler) DumpDHCPProxy() ([]*vppcalls.DHCPProxyDetails, error) {
 	var entry []*vppcalls.DHCPProxyDetails
-	reqCtx := h.callsChannel.SendMultiRequest(&vpp_dhcp.DHCPProxyDump{IsIP6: 0})
+	reqCtx := h.callsChannel.SendMultiRequest(&vpp_dhcp.DHCPProxyDump{})
 	for {
 		dhcpProxyDetails := &vpp_dhcp.DHCPProxyDetails{}
 		stop, err := reqCtx.ReceiveReply(dhcpProxyDetails)
@@ -37,12 +37,12 @@ func (h *DHCPProxyHandler) DumpDHCPProxy() ([]*vppcalls.DHCPProxyDetails, error)
 		}
 		proxy := &l3.DHCPProxy{
 			RxVrfId:         dhcpProxyDetails.RxVrfID,
-			SourceIpAddress: net.IP(dhcpProxyDetails.DHCPSrcAddress[:4]).To4().String(),
+			SourceIpAddress: addressToString(dhcpProxyDetails.DHCPSrcAddress),
 		}
 
 		for _, server := range dhcpProxyDetails.Servers {
 			proxyServer := &l3.DHCPProxy_DHCPServer{
-				IpAddress: net.IP(server.DHCPServer[:4]).To4().String(),
+				IpAddress: addressToString(server.DHCPServer),
 				VrfId:     server.ServerVrfID,
 			}
 			proxy.Servers = append(proxy.Servers, proxyServer)
@@ -53,7 +53,7 @@ func (h *DHCPProxyHandler) DumpDHCPProxy() ([]*vppcalls.DHCPProxyDetails, error)
 		})
 	}
 
-	reqCtx = h.callsChannel.SendMultiRequest(&vpp_dhcp.DHCPProxyDump{IsIP6: 1})
+	reqCtx = h.callsChannel.SendMultiRequest(&vpp_dhcp.DHCPProxyDump{IsIP6: true})
 	for {
 		dhcpProxyDetails := &vpp_dhcp.DHCPProxyDetails{}
 		stop, err := reqCtx.ReceiveReply(dhcpProxyDetails)
@@ -66,11 +66,11 @@ func (h *DHCPProxyHandler) DumpDHCPProxy() ([]*vppcalls.DHCPProxyDetails, error)
 		}
 		proxy := &l3.DHCPProxy{
 			RxVrfId:         dhcpProxyDetails.RxVrfID,
-			SourceIpAddress: net.IP(dhcpProxyDetails.DHCPSrcAddress).To16().String(),
+			SourceIpAddress: addressToString(dhcpProxyDetails.DHCPSrcAddress),
 		}
 		for _, server := range dhcpProxyDetails.Servers {
 			proxyServer := &l3.DHCPProxy_DHCPServer{
-				IpAddress: net.IP(server.DHCPServer).To16().String(),
+				IpAddress: addressToString(server.DHCPServer),
 				VrfId:     server.ServerVrfID,
 			}
 			proxy.Servers = append(proxy.Servers, proxyServer)
@@ -81,5 +81,13 @@ func (h *DHCPProxyHandler) DumpDHCPProxy() ([]*vppcalls.DHCPProxyDetails, error)
 		})
 	}
 	return entry, nil
+}
 
+func addressToString(address vpp_dhcp.Address) string {
+	ipByte := make([]byte, 16)
+	copy(ipByte[:], address.Un.XXX_UnionData[:])
+	if address.Af == vpp_dhcp.ADDRESS_IP6 {
+		return net.IP(ipByte).To16().String()
+	}
+	return net.IP(ipByte).To4().String()
 }
