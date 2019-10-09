@@ -6,7 +6,7 @@ Package abf is a generated VPP binary API for 'abf' module.
 
 It consists of:
 	  7 enums
-	  2 aliases
+	  5 aliases
 	 11 types
 	  1 union
 	 10 messages
@@ -26,10 +26,8 @@ import (
 const (
 	// ModuleName is the name of this module.
 	ModuleName = "abf"
-	// APIVersion is the API version of this module.
-	APIVersion = "1.0.0"
 	// VersionCrc is the CRC of this module.
-	VersionCrc = 0x96d30784
+	VersionCrc = 0xb229ea7c
 )
 
 // AddressFamily represents VPP binary API enum 'address_family'.
@@ -349,11 +347,20 @@ func (x IPProto) String() string {
 	return strconv.Itoa(int(x))
 }
 
+// AddressWithPrefix represents VPP binary API alias 'address_with_prefix'.
+type AddressWithPrefix Prefix
+
 // IP4Address represents VPP binary API alias 'ip4_address'.
 type IP4Address [4]uint8
 
+// IP4AddressWithPrefix represents VPP binary API alias 'ip4_address_with_prefix'.
+type IP4AddressWithPrefix IP4Prefix
+
 // IP6Address represents VPP binary API alias 'ip6_address'.
 type IP6Address [16]uint8
+
+// IP6AddressWithPrefix represents VPP binary API alias 'ip6_address_with_prefix'.
+type IP6AddressWithPrefix IP6Prefix
 
 // AbfItfAttach represents VPP binary API type 'abf_itf_attach'.
 type AbfItfAttach struct {
@@ -625,7 +632,7 @@ func (*AbfPolicyAddDel) GetMessageName() string {
 	return "abf_policy_add_del"
 }
 func (*AbfPolicyAddDel) GetCrcString() string {
-	return "d1fc434d"
+	return "a74e4bb7"
 }
 func (*AbfPolicyAddDel) GetMessageType() api.MessageType {
 	return api.RequestMessage
@@ -655,7 +662,7 @@ func (*AbfPolicyDetails) GetMessageName() string {
 	return "abf_policy_details"
 }
 func (*AbfPolicyDetails) GetCrcString() string {
-	return "c19593c8"
+	return "6769e504"
 }
 func (*AbfPolicyDetails) GetMessageType() api.MessageType {
 	return api.ReplyMessage

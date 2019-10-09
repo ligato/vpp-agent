@@ -25,10 +25,8 @@ import (
 const (
 	// ModuleName is the name of this module.
 	ModuleName = "vpe"
-	// APIVersion is the API version of this module.
-	APIVersion = "1.6.0"
 	// VersionCrc is the CRC of this module.
-	VersionCrc = 0x1bf55581
+	VersionCrc = 0xc6c0bcf6
 )
 
 // LogLevel represents VPP binary API enum 'log_level'.
@@ -404,7 +402,7 @@ func (*LogDetails) GetMessageName() string {
 	return "log_details"
 }
 func (*LogDetails) GetCrcString() string {
-	return "ed1e1ac4"
+	return "255827a1"
 }
 func (*LogDetails) GetMessageType() api.MessageType {
 	return api.ReplyMessage
@@ -419,7 +417,7 @@ func (*LogDump) GetMessageName() string {
 	return "log_dump"
 }
 func (*LogDump) GetCrcString() string {
-	return "e4a022b6"
+	return "6ab31753"
 }
 func (*LogDump) GetMessageType() api.MessageType {
 	return api.RequestMessage
@@ -510,7 +508,7 @@ func (*ShowVpeSystemTimeReply) GetMessageName() string {
 	return "show_vpe_system_time_reply"
 }
 func (*ShowVpeSystemTimeReply) GetCrcString() string {
-	return "3b12fb3f"
+	return "7ffd8193"
 }
 func (*ShowVpeSystemTimeReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage

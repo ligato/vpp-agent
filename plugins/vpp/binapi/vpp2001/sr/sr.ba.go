@@ -23,10 +23,8 @@ import (
 const (
 	// ModuleName is the name of this module.
 	ModuleName = "sr"
-	// APIVersion is the API version of this module.
-	APIVersion = "1.2.0"
 	// VersionCrc is the CRC of this module.
-	VersionCrc = 0xaa3993c3
+	VersionCrc = 0x1217b243
 )
 
 // SrIP6Address represents VPP binary API type 'sr_ip6_address'.

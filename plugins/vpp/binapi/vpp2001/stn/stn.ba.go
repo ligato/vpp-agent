@@ -22,10 +22,8 @@ import (
 const (
 	// ModuleName is the name of this module.
 	ModuleName = "stn"
-	// APIVersion is the API version of this module.
-	APIVersion = "1.0.0"
 	// VersionCrc is the CRC of this module.
-	VersionCrc = 0x7bef82b9
+	VersionCrc = 0xd96edf6e
 )
 
 // StnAddDelRule represents VPP binary API message 'stn_add_del_rule'.

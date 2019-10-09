@@ -22,10 +22,8 @@ import (
 const (
 	// ModuleName is the name of this module.
 	ModuleName = "span"
-	// APIVersion is the API version of this module.
-	APIVersion = "1.0.0"
 	// VersionCrc is the CRC of this module.
-	VersionCrc = 0x2a11ff26
+	VersionCrc = 0x10769b5
 )
 
 // SwInterfaceSpanDetails represents VPP binary API message 'sw_interface_span_details'.

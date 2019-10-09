@@ -5,8 +5,8 @@
 Package dhcp is a generated VPP binary API for 'dhcp' module.
 
 It consists of:
-	  4 enums
-	  2 aliases
+	 13 enums
+	  7 aliases
 	 12 types
 	  1 union
 	 25 messages
@@ -26,10 +26,8 @@ import (
 const (
 	// ModuleName is the name of this module.
 	ModuleName = "dhcp"
-	// APIVersion is the API version of this module.
-	APIVersion = "2.0.1"
 	// VersionCrc is the CRC of this module.
-	VersionCrc = 0xbc570632
+	VersionCrc = 0x46777165
 )
 
 // AddressFamily represents VPP binary API enum 'address_family'.
@@ -52,6 +50,152 @@ var AddressFamily_value = map[string]uint32{
 
 func (x AddressFamily) String() string {
 	s, ok := AddressFamily_name[uint32(x)]
+	if ok {
+		return s
+	}
+	return strconv.Itoa(int(x))
+}
+
+// DHCPClientState represents VPP binary API enum 'dhcp_client_state'.
+type DHCPClientState uint32
+
+const (
+	DHCP_CLIENT_STATE_API_DISCOVER DHCPClientState = 1
+	DHCP_CLIENT_STATE_API_REQUEST  DHCPClientState = 2
+	DHCP_CLIENT_STATE_API_BOUND    DHCPClientState = 3
+)
+
+var DHCPClientState_name = map[uint32]string{
+	1: "DHCP_CLIENT_STATE_API_DISCOVER",
+	2: "DHCP_CLIENT_STATE_API_REQUEST",
+	3: "DHCP_CLIENT_STATE_API_BOUND",
+}
+
+var DHCPClientState_value = map[string]uint32{
+	"DHCP_CLIENT_STATE_API_DISCOVER": 1,
+	"DHCP_CLIENT_STATE_API_REQUEST":  2,
+	"DHCP_CLIENT_STATE_API_BOUND":    3,
+}
+
+func (x DHCPClientState) String() string {
+	s, ok := DHCPClientState_name[uint32(x)]
+	if ok {
+		return s
+	}
+	return strconv.Itoa(int(x))
+}
+
+// Dhcpv6MsgType represents VPP binary API enum 'dhcpv6_msg_type'.
+type Dhcpv6MsgType uint32
+
+const (
+	DHCPV6_MSG_API_SOLICIT             Dhcpv6MsgType = 1
+	DHCPV6_MSG_API_ADVERTISE           Dhcpv6MsgType = 2
+	DHCPV6_MSG_API_REQUEST             Dhcpv6MsgType = 3
+	DHCPV6_MSG_API_CONFIRM             Dhcpv6MsgType = 4
+	DHCPV6_MSG_API_RENEW               Dhcpv6MsgType = 5
+	DHCPV6_MSG_API_REBIND              Dhcpv6MsgType = 6
+	DHCPV6_MSG_API_REPLY               Dhcpv6MsgType = 7
+	DHCPV6_MSG_API_RELEASE             Dhcpv6MsgType = 8
+	DHCPV6_MSG_API_DECLINE             Dhcpv6MsgType = 9
+	DHCPV6_MSG_API_RECONFIGURE         Dhcpv6MsgType = 10
+	DHCPV6_MSG_API_INFORMATION_REQUEST Dhcpv6MsgType = 11
+	DHCPV6_MSG_API_RELAY_FORW          Dhcpv6MsgType = 12
+	DHCPV6_MSG_API_RELAY_REPL          Dhcpv6MsgType = 13
+)
+
+var Dhcpv6MsgType_name = map[uint32]string{
+	1:  "DHCPV6_MSG_API_SOLICIT",
+	2:  "DHCPV6_MSG_API_ADVERTISE",
+	3:  "DHCPV6_MSG_API_REQUEST",
+	4:  "DHCPV6_MSG_API_CONFIRM",
+	5:  "DHCPV6_MSG_API_RENEW",
+	6:  "DHCPV6_MSG_API_REBIND",
+	7:  "DHCPV6_MSG_API_REPLY",
+	8:  "DHCPV6_MSG_API_RELEASE",
+	9:  "DHCPV6_MSG_API_DECLINE",
+	10: "DHCPV6_MSG_API_RECONFIGURE",
+	11: "DHCPV6_MSG_API_INFORMATION_REQUEST",
+	12: "DHCPV6_MSG_API_RELAY_FORW",
+	13: "DHCPV6_MSG_API_RELAY_REPL",
+}
+
+var Dhcpv6MsgType_value = map[string]uint32{
+	"DHCPV6_MSG_API_SOLICIT":             1,
+	"DHCPV6_MSG_API_ADVERTISE":           2,
+	"DHCPV6_MSG_API_REQUEST":             3,
+	"DHCPV6_MSG_API_CONFIRM":             4,
+	"DHCPV6_MSG_API_RENEW":               5,
+	"DHCPV6_MSG_API_REBIND":              6,
+	"DHCPV6_MSG_API_REPLY":               7,
+	"DHCPV6_MSG_API_RELEASE":             8,
+	"DHCPV6_MSG_API_DECLINE":             9,
+	"DHCPV6_MSG_API_RECONFIGURE":         10,
+	"DHCPV6_MSG_API_INFORMATION_REQUEST": 11,
+	"DHCPV6_MSG_API_RELAY_FORW":          12,
+	"DHCPV6_MSG_API_RELAY_REPL":          13,
+}
+
+func (x Dhcpv6MsgType) String() string {
+	s, ok := Dhcpv6MsgType_name[uint32(x)]
+	if ok {
+		return s
+	}
+	return strconv.Itoa(int(x))
+}
+
+// IfStatusFlags represents VPP binary API enum 'if_status_flags'.
+type IfStatusFlags uint32
+
+const (
+	IF_STATUS_API_FLAG_ADMIN_UP IfStatusFlags = 1
+	IF_STATUS_API_FLAG_LINK_UP  IfStatusFlags = 2
+)
+
+var IfStatusFlags_name = map[uint32]string{
+	1: "IF_STATUS_API_FLAG_ADMIN_UP",
+	2: "IF_STATUS_API_FLAG_LINK_UP",
+}
+
+var IfStatusFlags_value = map[string]uint32{
+	"IF_STATUS_API_FLAG_ADMIN_UP": 1,
+	"IF_STATUS_API_FLAG_LINK_UP":  2,
+}
+
+func (x IfStatusFlags) String() string {
+	s, ok := IfStatusFlags_name[uint32(x)]
+	if ok {
+		return s
+	}
+	return strconv.Itoa(int(x))
+}
+
+// IfType represents VPP binary API enum 'if_type'.
+type IfType uint32
+
+const (
+	IF_API_TYPE_HARDWARE IfType = 1
+	IF_API_TYPE_SUB      IfType = 2
+	IF_API_TYPE_P2P      IfType = 3
+	IF_API_TYPE_PIPE     IfType = 4
+)
+
+var IfType_name = map[uint32]string{
+	1: "IF_API_TYPE_HARDWARE",
+	2: "IF_API_TYPE_SUB",
+	3: "IF_API_TYPE_P2P",
+	4: "IF_API_TYPE_PIPE",
+}
+
+var IfType_value = map[string]uint32{
+	"IF_API_TYPE_HARDWARE": 1,
+	"IF_API_TYPE_SUB":      2,
+	"IF_API_TYPE_P2P":      3,
+	"IF_API_TYPE_PIPE":     4,
+}
+
+func (x IfType) String() string {
+	s, ok := IfType_name[uint32(x)]
 	if ok {
 		return s
 	}
@@ -229,11 +373,207 @@ func (x IPProto) String() string {
 	return strconv.Itoa(int(x))
 }
 
+// LinkDuplex represents VPP binary API enum 'link_duplex'.
+type LinkDuplex uint32
+
+const (
+	LINK_DUPLEX_API_UNKNOWN LinkDuplex = 0
+	LINK_DUPLEX_API_HALF    LinkDuplex = 1
+	LINK_DUPLEX_API_FULL    LinkDuplex = 2
+)
+
+var LinkDuplex_name = map[uint32]string{
+	0: "LINK_DUPLEX_API_UNKNOWN",
+	1: "LINK_DUPLEX_API_HALF",
+	2: "LINK_DUPLEX_API_FULL",
+}
+
+var LinkDuplex_value = map[string]uint32{
+	"LINK_DUPLEX_API_UNKNOWN": 0,
+	"LINK_DUPLEX_API_HALF":    1,
+	"LINK_DUPLEX_API_FULL":    2,
+}
+
+func (x LinkDuplex) String() string {
+	s, ok := LinkDuplex_name[uint32(x)]
+	if ok {
+		return s
+	}
+	return strconv.Itoa(int(x))
+}
+
+// MtuProto represents VPP binary API enum 'mtu_proto'.
+type MtuProto uint32
+
+const (
+	MTU_PROTO_API_L3   MtuProto = 1
+	MTU_PROTO_API_IP4  MtuProto = 2
+	MTU_PROTO_API_IP6  MtuProto = 3
+	MTU_PROTO_API_MPLS MtuProto = 4
+	MTU_PROTO_API_N    MtuProto = 5
+)
+
+var MtuProto_name = map[uint32]string{
+	1: "MTU_PROTO_API_L3",
+	2: "MTU_PROTO_API_IP4",
+	3: "MTU_PROTO_API_IP6",
+	4: "MTU_PROTO_API_MPLS",
+	5: "MTU_PROTO_API_N",
+}
+
+var MtuProto_value = map[string]uint32{
+	"MTU_PROTO_API_L3":   1,
+	"MTU_PROTO_API_IP4":  2,
+	"MTU_PROTO_API_IP6":  3,
+	"MTU_PROTO_API_MPLS": 4,
+	"MTU_PROTO_API_N":    5,
+}
+
+func (x MtuProto) String() string {
+	s, ok := MtuProto_name[uint32(x)]
+	if ok {
+		return s
+	}
+	return strconv.Itoa(int(x))
+}
+
+// RxMode represents VPP binary API enum 'rx_mode'.
+type RxMode uint32
+
+const (
+	RX_MODE_API_UNKNOWN   RxMode = 0
+	RX_MODE_API_POLLING   RxMode = 1
+	RX_MODE_API_INTERRUPT RxMode = 2
+	RX_MODE_API_ADAPTIVE  RxMode = 3
+	RX_MODE_API_DEFAULT   RxMode = 4
+)
+
+var RxMode_name = map[uint32]string{
+	0: "RX_MODE_API_UNKNOWN",
+	1: "RX_MODE_API_POLLING",
+	2: "RX_MODE_API_INTERRUPT",
+	3: "RX_MODE_API_ADAPTIVE",
+	4: "RX_MODE_API_DEFAULT",
+}
+
+var RxMode_value = map[string]uint32{
+	"RX_MODE_API_UNKNOWN":   0,
+	"RX_MODE_API_POLLING":   1,
+	"RX_MODE_API_INTERRUPT": 2,
+	"RX_MODE_API_ADAPTIVE":  3,
+	"RX_MODE_API_DEFAULT":   4,
+}
+
+func (x RxMode) String() string {
+	s, ok := RxMode_name[uint32(x)]
+	if ok {
+		return s
+	}
+	return strconv.Itoa(int(x))
+}
+
+// SubIfFlags represents VPP binary API enum 'sub_if_flags'.
+type SubIfFlags uint32
+
+const (
+	SUB_IF_API_FLAG_NO_TAGS           SubIfFlags = 1
+	SUB_IF_API_FLAG_ONE_TAG           SubIfFlags = 2
+	SUB_IF_API_FLAG_TWO_TAGS          SubIfFlags = 4
+	SUB_IF_API_FLAG_DOT1AD            SubIfFlags = 8
+	SUB_IF_API_FLAG_EXACT_MATCH       SubIfFlags = 16
+	SUB_IF_API_FLAG_DEFAULT           SubIfFlags = 32
+	SUB_IF_API_FLAG_OUTER_VLAN_ID_ANY SubIfFlags = 64
+	SUB_IF_API_FLAG_INNER_VLAN_ID_ANY SubIfFlags = 128
+	SUB_IF_API_FLAG_MASK_VNET         SubIfFlags = 254
+	SUB_IF_API_FLAG_DOT1AH            SubIfFlags = 256
+)
+
+var SubIfFlags_name = map[uint32]string{
+	1:   "SUB_IF_API_FLAG_NO_TAGS",
+	2:   "SUB_IF_API_FLAG_ONE_TAG",
+	4:   "SUB_IF_API_FLAG_TWO_TAGS",
+	8:   "SUB_IF_API_FLAG_DOT1AD",
+	16:  "SUB_IF_API_FLAG_EXACT_MATCH",
+	32:  "SUB_IF_API_FLAG_DEFAULT",
+	64:  "SUB_IF_API_FLAG_OUTER_VLAN_ID_ANY",
+	128: "SUB_IF_API_FLAG_INNER_VLAN_ID_ANY",
+	254: "SUB_IF_API_FLAG_MASK_VNET",
+	256: "SUB_IF_API_FLAG_DOT1AH",
+}
+
+var SubIfFlags_value = map[string]uint32{
+	"SUB_IF_API_FLAG_NO_TAGS":           1,
+	"SUB_IF_API_FLAG_ONE_TAG":           2,
+	"SUB_IF_API_FLAG_TWO_TAGS":          4,
+	"SUB_IF_API_FLAG_DOT1AD":            8,
+	"SUB_IF_API_FLAG_EXACT_MATCH":       16,
+	"SUB_IF_API_FLAG_DEFAULT":           32,
+	"SUB_IF_API_FLAG_OUTER_VLAN_ID_ANY": 64,
+	"SUB_IF_API_FLAG_INNER_VLAN_ID_ANY": 128,
+	"SUB_IF_API_FLAG_MASK_VNET":         254,
+	"SUB_IF_API_FLAG_DOT1AH":            256,
+}
+
+func (x SubIfFlags) String() string {
+	s, ok := SubIfFlags_name[uint32(x)]
+	if ok {
+		return s
+	}
+	return strconv.Itoa(int(x))
+}
+
+// VssType represents VPP binary API enum 'vss_type'.
+type VssType uint32
+
+const (
+	VSS_TYPE_API_ASCII   VssType = 0
+	VSS_TYPE_API_VPN_ID  VssType = 1
+	VSS_TYPE_API_INVALID VssType = 123
+	VSS_TYPE_API_DEFAULT VssType = 255
+)
+
+var VssType_name = map[uint32]string{
+	0:   "VSS_TYPE_API_ASCII",
+	1:   "VSS_TYPE_API_VPN_ID",
+	123: "VSS_TYPE_API_INVALID",
+	255: "VSS_TYPE_API_DEFAULT",
+}
+
+var VssType_value = map[string]uint32{
+	"VSS_TYPE_API_ASCII":   0,
+	"VSS_TYPE_API_VPN_ID":  1,
+	"VSS_TYPE_API_INVALID": 123,
+	"VSS_TYPE_API_DEFAULT": 255,
+}
+
+func (x VssType) String() string {
+	s, ok := VssType_name[uint32(x)]
+	if ok {
+		return s
+	}
+	return strconv.Itoa(int(x))
+}
+
+// AddressWithPrefix represents VPP binary API alias 'address_with_prefix'.
+type AddressWithPrefix Prefix
+
+// InterfaceIndex represents VPP binary API alias 'interface_index'.
+type InterfaceIndex uint32
+
 // IP4Address represents VPP binary API alias 'ip4_address'.
 type IP4Address [4]uint8
 
+// IP4AddressWithPrefix represents VPP binary API alias 'ip4_address_with_prefix'.
+type IP4AddressWithPrefix IP4Prefix
+
 // IP6Address represents VPP binary API alias 'ip6_address'.
 type IP6Address [16]uint8
+
+// IP6AddressWithPrefix represents VPP binary API alias 'ip6_address_with_prefix'.
+type IP6AddressWithPrefix IP6Prefix
+
+// MacAddress represents VPP binary API alias 'mac_address'.
+type MacAddress [6]uint8
 
 // Address represents VPP binary API type 'address'.
 type Address struct {
@@ -247,7 +587,7 @@ func (*Address) GetTypeName() string {
 
 // DHCP6AddressInfo represents VPP binary API type 'dhcp6_address_info'.
 type DHCP6AddressInfo struct {
-	Address       []byte `struc:"[16]byte"`
+	Address       IP6Address
 	ValidTime     uint32
 	PreferredTime uint32
 }
@@ -258,8 +598,7 @@ func (*DHCP6AddressInfo) GetTypeName() string {
 
 // DHCP6PdPrefixInfo represents VPP binary API type 'dhcp6_pd_prefix_info'.
 type DHCP6PdPrefixInfo struct {
-	Prefix        []byte `struc:"[16]byte"`
-	PrefixLength  uint8
+	Prefix        IP6Prefix
 	ValidTime     uint32
 	PreferredTime uint32
 }
@@ -270,11 +609,11 @@ func (*DHCP6PdPrefixInfo) GetTypeName() string {
 
 // DHCPClient represents VPP binary API type 'dhcp_client'.
 type DHCPClient struct {
-	SwIfIndex        uint32
-	Hostname         []byte `struc:"[64]byte"`
+	SwIfIndex        InterfaceIndex
+	Hostname         string `struc:"[64]byte"`
 	ID               []byte `struc:"[64]byte"`
-	WantDHCPEvent    uint8
-	SetBroadcastFlag uint8
+	WantDHCPEvent    bool
+	SetBroadcastFlag bool
 	Dscp             IPDscp
 	PID              uint32
 }
@@ -285,15 +624,15 @@ func (*DHCPClient) GetTypeName() string {
 
 // DHCPLease represents VPP binary API type 'dhcp_lease'.
 type DHCPLease struct {
-	SwIfIndex     uint32
-	State         uint8
-	Hostname      []byte `struc:"[64]byte"`
-	IsIPv6        uint8
+	SwIfIndex     InterfaceIndex
+	State         DHCPClientState
+	IsIPv6        bool
+	Hostname      string `struc:"[64]byte"`
 	MaskWidth     uint8
-	HostAddress   []byte `struc:"[16]byte"`
-	RouterAddress []byte `struc:"[16]byte"`
-	HostMac       []byte `struc:"[6]byte"`
-	Count         uint8  `struc:"sizeof=DomainServer"`
+	HostAddress   Address
+	RouterAddress Address
+	HostMac       MacAddress
+	Count         uint8 `struc:"sizeof=DomainServer"`
 	DomainServer  []DomainServer
 }
 
@@ -304,7 +643,7 @@ func (*DHCPLease) GetTypeName() string {
 // DHCPServer represents VPP binary API type 'dhcp_server'.
 type DHCPServer struct {
 	ServerVrfID uint32
-	DHCPServer  []byte `struc:"[16]byte"`
+	DHCPServer  Address
 }
 
 func (*DHCPServer) GetTypeName() string {
@@ -313,7 +652,7 @@ func (*DHCPServer) GetTypeName() string {
 
 // DomainServer represents VPP binary API type 'domain_server'.
 type DomainServer struct {
-	Address []byte `struc:"[16]byte"`
+	Address Address
 }
 
 func (*DomainServer) GetTypeName() string {
@@ -417,14 +756,14 @@ func (u *AddressUnion) GetIP6() (a IP6Address) {
 
 // DHCP6ClientsEnableDisable represents VPP binary API message 'dhcp6_clients_enable_disable'.
 type DHCP6ClientsEnableDisable struct {
-	Enable uint8
+	Enable bool
 }
 
 func (*DHCP6ClientsEnableDisable) GetMessageName() string {
 	return "dhcp6_clients_enable_disable"
 }
 func (*DHCP6ClientsEnableDisable) GetCrcString() string {
-	return "8050327d"
+	return "b3e225d2"
 }
 func (*DHCP6ClientsEnableDisable) GetMessageType() api.MessageType {
 	return api.RequestMessage
@@ -478,9 +817,9 @@ func (*DHCP6DuidLlSetReply) GetMessageType() api.MessageType {
 // DHCP6PdReplyEvent represents VPP binary API message 'dhcp6_pd_reply_event'.
 type DHCP6PdReplyEvent struct {
 	PID             uint32
-	SwIfIndex       uint32
+	SwIfIndex       InterfaceIndex
 	ServerIndex     uint32
-	MsgType         uint8
+	MsgType         Dhcpv6MsgType
 	T1              uint32
 	T2              uint32
 	InnerStatusCode uint16
@@ -494,7 +833,7 @@ func (*DHCP6PdReplyEvent) GetMessageName() string {
 	return "dhcp6_pd_reply_event"
 }
 func (*DHCP6PdReplyEvent) GetCrcString() string {
-	return "0e53217a"
+	return "cb3e462b"
 }
 func (*DHCP6PdReplyEvent) GetMessageType() api.MessageType {
 	return api.EventMessage
@@ -502,14 +841,14 @@ func (*DHCP6PdReplyEvent) GetMessageType() api.MessageType {
 
 // DHCP6PdSendClientMessage represents VPP binary API message 'dhcp6_pd_send_client_message'.
 type DHCP6PdSendClientMessage struct {
-	SwIfIndex   uint32
+	SwIfIndex   InterfaceIndex
 	ServerIndex uint32
 	Irt         uint32
 	Mrt         uint32
 	Mrc         uint32
 	Mrd         uint32
-	Stop        uint8
-	MsgType     uint8
+	Stop        bool
+	MsgType     Dhcpv6MsgType
 	T1          uint32
 	T2          uint32
 	NPrefixes   uint32 `struc:"sizeof=Prefixes"`
@@ -520,7 +859,7 @@ func (*DHCP6PdSendClientMessage) GetMessageName() string {
 	return "dhcp6_pd_send_client_message"
 }
 func (*DHCP6PdSendClientMessage) GetCrcString() string {
-	return "dadbfe97"
+	return "064badb8"
 }
 func (*DHCP6PdSendClientMessage) GetMessageType() api.MessageType {
 	return api.RequestMessage
@@ -544,9 +883,9 @@ func (*DHCP6PdSendClientMessageReply) GetMessageType() api.MessageType {
 // DHCP6ReplyEvent represents VPP binary API message 'dhcp6_reply_event'.
 type DHCP6ReplyEvent struct {
 	PID             uint32
-	SwIfIndex       uint32
+	SwIfIndex       InterfaceIndex
 	ServerIndex     uint32
-	MsgType         uint8
+	MsgType         Dhcpv6MsgType
 	T1              uint32
 	T2              uint32
 	InnerStatusCode uint16
@@ -560,7 +899,7 @@ func (*DHCP6ReplyEvent) GetMessageName() string {
 	return "dhcp6_reply_event"
 }
 func (*DHCP6ReplyEvent) GetCrcString() string {
-	return "8a34e0f5"
+	return "9f3af9e5"
 }
 func (*DHCP6ReplyEvent) GetMessageType() api.MessageType {
 	return api.EventMessage
@@ -568,14 +907,14 @@ func (*DHCP6ReplyEvent) GetMessageType() api.MessageType {
 
 // DHCP6SendClientMessage represents VPP binary API message 'dhcp6_send_client_message'.
 type DHCP6SendClientMessage struct {
-	SwIfIndex   uint32
+	SwIfIndex   InterfaceIndex
 	ServerIndex uint32
 	Irt         uint32
 	Mrt         uint32
 	Mrc         uint32
 	Mrd         uint32
-	Stop        uint8
-	MsgType     uint8
+	Stop        bool
+	MsgType     Dhcpv6MsgType
 	T1          uint32
 	T2          uint32
 	NAddresses  uint32 `struc:"sizeof=Addresses"`
@@ -586,7 +925,7 @@ func (*DHCP6SendClientMessage) GetMessageName() string {
 	return "dhcp6_send_client_message"
 }
 func (*DHCP6SendClientMessage) GetCrcString() string {
-	return "993f872f"
+	return "f6f14ef0"
 }
 func (*DHCP6SendClientMessage) GetMessageType() api.MessageType {
 	return api.RequestMessage
@@ -609,7 +948,7 @@ func (*DHCP6SendClientMessageReply) GetMessageType() api.MessageType {
 
 // DHCPClientConfig represents VPP binary API message 'dhcp_client_config'.
 type DHCPClientConfig struct {
-	IsAdd  uint8
+	IsAdd  bool
 	Client DHCPClient
 }
 
@@ -617,7 +956,7 @@ func (*DHCPClientConfig) GetMessageName() string {
 	return "dhcp_client_config"
 }
 func (*DHCPClientConfig) GetCrcString() string {
-	return "87a429e7"
+	return "959b80a3"
 }
 func (*DHCPClientConfig) GetMessageType() api.MessageType {
 	return api.RequestMessage
@@ -648,7 +987,7 @@ func (*DHCPClientDetails) GetMessageName() string {
 	return "dhcp_client_details"
 }
 func (*DHCPClientDetails) GetCrcString() string {
-	return "4a95a2ad"
+	return "acd82f5a"
 }
 func (*DHCPClientDetails) GetMessageType() api.MessageType {
 	return api.ReplyMessage
@@ -677,7 +1016,7 @@ func (*DHCPComplEvent) GetMessageName() string {
 	return "dhcp_compl_event"
 }
 func (*DHCPComplEvent) GetCrcString() string {
-	return "ed1e53d7"
+	return "e908fd1d"
 }
 func (*DHCPComplEvent) GetMessageType() api.MessageType {
 	return api.EventMessage
@@ -687,17 +1026,16 @@ func (*DHCPComplEvent) GetMessageType() api.MessageType {
 type DHCPProxyConfig struct {
 	RxVrfID        uint32
 	ServerVrfID    uint32
-	IsIPv6         uint8
-	IsAdd          uint8
-	DHCPServer     []byte `struc:"[16]byte"`
-	DHCPSrcAddress []byte `struc:"[16]byte"`
+	IsAdd          bool
+	DHCPServer     Address
+	DHCPSrcAddress Address
 }
 
 func (*DHCPProxyConfig) GetMessageName() string {
 	return "dhcp_proxy_config"
 }
 func (*DHCPProxyConfig) GetCrcString() string {
-	return "6af4b645"
+	return "6767230e"
 }
 func (*DHCPProxyConfig) GetMessageType() api.MessageType {
 	return api.RequestMessage
@@ -723,11 +1061,11 @@ type DHCPProxyDetails struct {
 	RxVrfID        uint32
 	VssOui         uint32
 	VssFibID       uint32
-	VssType        uint8
-	VssVPNAsciiID  []byte `struc:"[129]byte"`
-	IsIPv6         uint8
-	DHCPSrcAddress []byte `struc:"[16]byte"`
-	Count          uint8  `struc:"sizeof=Servers"`
+	VssType        VssType
+	IsIPv6         bool
+	VssVPNAsciiID  string `struc:"[129]byte"`
+	DHCPSrcAddress Address
+	Count          uint8 `struc:"sizeof=Servers"`
 	Servers        []DHCPServer
 }
 
@@ -735,7 +1073,7 @@ func (*DHCPProxyDetails) GetMessageName() string {
 	return "dhcp_proxy_details"
 }
 func (*DHCPProxyDetails) GetCrcString() string {
-	return "e6c45917"
+	return "ce16f044"
 }
 func (*DHCPProxyDetails) GetMessageType() api.MessageType {
 	return api.ReplyMessage
@@ -743,14 +1081,14 @@ func (*DHCPProxyDetails) GetMessageType() api.MessageType {
 
 // DHCPProxyDump represents VPP binary API message 'dhcp_proxy_dump'.
 type DHCPProxyDump struct {
-	IsIP6 uint8
+	IsIP6 bool
 }
 
 func (*DHCPProxyDump) GetMessageName() string {
 	return "dhcp_proxy_dump"
 }
 func (*DHCPProxyDump) GetCrcString() string {
-	return "6fe91190"
+	return "5c5b063f"
 }
 func (*DHCPProxyDump) GetMessageType() api.MessageType {
 	return api.RequestMessage
@@ -759,19 +1097,19 @@ func (*DHCPProxyDump) GetMessageType() api.MessageType {
 // DHCPProxySetVss represents VPP binary API message 'dhcp_proxy_set_vss'.
 type DHCPProxySetVss struct {
 	TblID      uint32
-	VssType    uint8
-	VPNAsciiID []byte `struc:"[129]byte"`
+	VssType    VssType
+	VPNAsciiID string `struc:"[129]byte"`
 	Oui        uint32
 	VPNIndex   uint32
-	IsIPv6     uint8
-	IsAdd      uint8
+	IsIPv6     bool
+	IsAdd      bool
 }
 
 func (*DHCPProxySetVss) GetMessageName() string {
 	return "dhcp_proxy_set_vss"
 }
 func (*DHCPProxySetVss) GetCrcString() string {
-	return "606535aa"
+	return "50537301"
 }
 func (*DHCPProxySetVss) GetMessageType() api.MessageType {
 	return api.RequestMessage
@@ -794,7 +1132,7 @@ func (*DHCPProxySetVssReply) GetMessageType() api.MessageType {
 
 // WantDHCP6PdReplyEvents represents VPP binary API message 'want_dhcp6_pd_reply_events'.
 type WantDHCP6PdReplyEvents struct {
-	EnableDisable uint8
+	EnableDisable bool
 	PID           uint32
 }
 
@@ -802,7 +1140,7 @@ func (*WantDHCP6PdReplyEvents) GetMessageName() string {
 	return "want_dhcp6_pd_reply_events"
 }
 func (*WantDHCP6PdReplyEvents) GetCrcString() string {
-	return "05b454b5"
+	return "c5e2af94"
 }
 func (*WantDHCP6PdReplyEvents) GetMessageType() api.MessageType {
 	return api.RequestMessage

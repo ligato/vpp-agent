@@ -22,10 +22,8 @@ import (
 const (
 	// ModuleName is the name of this module.
 	ModuleName = "tapv2"
-	// APIVersion is the API version of this module.
-	APIVersion = "2.1.0"
 	// VersionCrc is the CRC of this module.
-	VersionCrc = 0x25beb6c0
+	VersionCrc = 0x41375eca
 )
 
 // SwInterfaceTapV2Details represents VPP binary API message 'sw_interface_tap_v2_details'.
