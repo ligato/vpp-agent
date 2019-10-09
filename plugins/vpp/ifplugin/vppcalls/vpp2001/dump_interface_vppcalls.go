@@ -985,12 +985,12 @@ func (h *InterfaceVppHandler) dumpRxPlacement(interfaces map[uint32]*vppcalls.In
 }
 
 func dhcpAddressToString(address vpp_dhcp.Address, maskWidth uint32, isIPv6 bool) string {
-	dhcpIpByte := make([]byte, 16)
-	copy(dhcpIpByte[:], address.Un.XXX_UnionData[:])
+	dhcpIPByte := make([]byte, 16)
+	copy(dhcpIPByte[:], address.Un.XXX_UnionData[:])
 	if isIPv6 {
-		return fmt.Sprintf("%s/%d", net.IP(dhcpIpByte).To16().String(), maskWidth)
+		return fmt.Sprintf("%s/%d", net.IP(dhcpIPByte).To16().String(), maskWidth)
 	}
-	return fmt.Sprintf("%s/%d", net.IP(dhcpIpByte[:4]).To4().String(), maskWidth)
+	return fmt.Sprintf("%s/%d", net.IP(dhcpIPByte[:4]).To4().String(), maskWidth)
 }
 
 // guessInterfaceType attempts to guess the correct interface type from its internal name (as given by VPP).
