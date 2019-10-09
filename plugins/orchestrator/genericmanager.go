@@ -75,7 +75,7 @@ func (s *genericManagerSvc) SetConfig(ctx context.Context, req *api.SetConfigReq
 			}
 			ops[key] = api.UpdateResult_UPDATE
 		} else if item.Id != nil {
-			model, err := models.ModelForItem(item)
+			model, err := models.GetModelForItem(item)
 			if err != nil {
 				return nil, status.Error(codes.InvalidArgument, err.Error())
 			}

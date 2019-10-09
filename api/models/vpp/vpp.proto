@@ -3,10 +3,6 @@ syntax = "proto3";
 package vpp;
 option go_package = "github.com/ligato/vpp-agent/api/models/vpp;vpp";
 
-//import "github.com/gogo/protobuf/gogoproto/gogo.proto";
-//option (gogoproto.messagename_all) = true;
-//option (gogoproto.goproto_registration) = true;
-
 import "models/vpp/abf/abf.proto";
 import "models/vpp/acl/acl.proto";
 import "models/vpp/interfaces/interface.proto";

@@ -4,9 +4,6 @@ package vpp.srv6;
 
 option go_package = "github.com/ligato/vpp-agent/api/models/vpp/srv6;vpp_srv6";
 
-//import "github.com/gogo/protobuf/gogoproto/gogo.proto";
-//option (gogoproto.messagename_all) = true;
-
 message LocalSID {
     string sid = 1;                      /* segment id (IPv6 Address) */
     uint32 installation_vrf_id = 2;      /* ID of IPv6 VRF table where to install LocalSID routing components

@@ -13,7 +13,7 @@
 // limitations under the License.
 
 // Generate golang code from the protobuf model of our mock interfaces:
-//go:generate protoc --proto_path=model --proto_path=$GOPATH/src --gogo_out=model model/interface.proto
+//go:generate protoc --proto_path=model --proto_path=$GOPATH/src --go_out=model model/interface.proto
 
 // Generate adapter for the descriptor of our mock interfaces:
 //go:generate descriptor-adapter --descriptor-name Interface  --value-type *mock_interfaces.Interface --meta-type *idxvpp.OnlyIndex --import "model" --import "github.com/ligato/vpp-agent/pkg/idxvpp" --output-dir "descriptor"

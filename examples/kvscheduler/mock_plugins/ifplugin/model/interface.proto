@@ -2,12 +2,6 @@ syntax = "proto3";
 
 package mock.interfaces;
 
-// generate method XXX_MessageName() for every defined proto message, which
-// the agent needs to obtain the message name inside init(), even before the
-// message type is registered with proto.RegisterType()
-//import "github.com/gogo/protobuf/gogoproto/gogo.proto";
-//option (gogoproto.messagename_all) = true;
-
 message Interface {
     enum Type {
         UNDEFINED_TYPE = 0;

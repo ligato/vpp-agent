@@ -27,7 +27,6 @@ type APIClient interface {
 	ClientVersion() string
 	KVDBClient() (KVDBAPIClient, error)
 	GRPCConn() (*grpc.ClientConn, error)
-	GRPCAddr() (string, error)
 	HTTPClient() *http.Client
 	ServerVersion(ctx context.Context) (types.Version, error)
 	NegotiateAPIVersion(ctx context.Context)

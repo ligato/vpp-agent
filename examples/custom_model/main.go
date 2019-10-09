@@ -43,6 +43,8 @@ import (
 	"github.com/ligato/vpp-agent/plugins/orchestrator"
 )
 
+//go:generate protoc --proto_path=pb --proto_path=$GOPATH/src --go_out=pb pb/model.proto
+
 var (
 	address    = flag.String("address", "127.0.0.1:9111", "address of GRPC server")
 	socketType = flag.String("socket-type", "tcp", "socket type [tcp, tcp4, tcp6, unix, unixpacket]")

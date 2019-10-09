@@ -393,6 +393,7 @@
     "ptypes/empty",
     "ptypes/struct",
     "ptypes/timestamp",
+    "ptypes/wrappers",
   ]
   pruneopts = "T"
   revision = "6c65a5562fc06764971b7c5d05c76c75e84bdbf7"
@@ -423,14 +424,6 @@
   version = "v1.6.2"
 
 [[projects]]
-  digest = "1:e62657cca9badaa308d86e7716083e4c5933bb78e30a17743fc67f50be26f6f4"
-  name = "github.com/gorilla/websocket"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "c3e18be99d19e6b3e8f1559eea2c161a665c4b6b"
-  version = "v1.4.1"
-
-[[projects]]
   digest = "1:a93a4de7b00fb9cc952bc0483e9a32cd273adbbd7f3282bfe89656b2f88fb08c"
   name = "github.com/grpc-ecosystem/go-grpc-middleware"
   packages = [
@@ -451,28 +444,12 @@
   version = "v1.2.2"
 
 [[projects]]
-  digest = "1:0ade334594e69404d80d9d323445d2297ff8161637f9b2d347cc6973d2d6f05b"
-  name = "github.com/hashicorp/errwrap"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "8a6fb523712970c966eefc6b39ed2c5e74880354"
-  version = "v1.0.0"
-
-[[projects]]
   branch = "master"
   digest = "1:77cb3be9b21ba7f1a4701e870c84ea8b66e7d74c7c8951c58155fdadae9414ec"
   name = "github.com/hashicorp/go-cleanhttp"
   packages = ["."]
   pruneopts = "UT"
   revision = "d5fe4b57a186c716b0e00b8c301cbd9b4182694d"
-
-[[projects]]
-  digest = "1:f668349b83f7d779567c880550534addeca7ebadfdcf44b0b9c39be61864b4b7"
-  name = "github.com/hashicorp/go-multierror"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "886a7fbe3eb1c874d46f623bfa70af45f425b3d1"
-  version = "v1.0.0"
 
 [[projects]]
   branch = "master"
@@ -507,41 +484,19 @@
   version = "v1.0"
 
 [[projects]]
-  digest = "1:1403497bdb813f510a7f6a051c26f93be98608a2165587ce71aad6bac3dd387c"
+  digest = "1:cc2a8dfa41c27d7ca26165db5d49815f48ff6995096812d81392542d2139fd2c"
   name = "github.com/jhump/protoreflect"
   packages = [
+    "codec",
     "desc",
     "desc/internal",
+    "dynamic",
     "grpcreflect",
     "internal",
   ]
   pruneopts = "UT"
   revision = "c67d679c9f863957281faba646d790dbab6cf3b3"
   version = "v1.5.0"
-
-[[projects]]
-  digest = "1:2f7ad24d2671a26fb01d6ec70bdbd4183a91ebe54a9801d62d5fcab3df6029e4"
-  name = "github.com/ktr0731/evans"
-  packages = [
-    "grpc",
-    "grpc/grpcreflection",
-    "logger",
-  ]
-  pruneopts = "UT"
-  revision = "76fa7aec542e8d297bb08b6d70d3d8541bee78b7"
-  version = "v0.8.3"
-
-[[projects]]
-  branch = "master"
-  digest = "1:4ea16ddcbebfb8d8210f2c9f281de9dfedab57bb603b2502502345bc6945b0c2"
-  name = "github.com/ktr0731/grpc-web-go-client"
-  packages = [
-    "grpcweb",
-    "grpcweb/grpcweb_reflection_v1alpha",
-    "grpcweb/transport",
-  ]
-  pruneopts = "UT"
-  revision = "c24452752d525d78fcdef772f2dd516b7ebba1f2"
 
 [[projects]]
   branch = "master"
@@ -1004,7 +959,7 @@
   revision = "c66870c02cf823ceb633bcd05be3c7cda29976f4"
 
 [[projects]]
-  digest = "1:0ec9638f2f33fe189c653c2b2cdde4e2089922b3fa565b056a0e18256f2bc64c"
+  digest = "1:fbdce2fee46de3a5d4f324eee12c3f39c479c07e64f966bdde89bddf15887913"
   name = "google.golang.org/grpc"
   packages = [
     ".",
@@ -1015,7 +970,6 @@
     "connectivity",
     "credentials",
     "encoding",
-    "encoding/gzip",
     "encoding/proto",
     "grpclog",
     "health/grpc_health_v1",
@@ -1071,7 +1025,6 @@
     "github.com/fsouza/go-dockerclient",
     "github.com/ghodss/yaml",
     "github.com/go-errors/errors",
-    "github.com/gogo/protobuf/gogoproto",
     "github.com/golang/protobuf/jsonpb",
     "github.com/golang/protobuf/proto",
     "github.com/golang/protobuf/protoc-gen-go",
@@ -1079,8 +1032,8 @@
     "github.com/golang/protobuf/ptypes",
     "github.com/golang/protobuf/ptypes/any",
     "github.com/golang/protobuf/ptypes/empty",
+    "github.com/jhump/protoreflect/dynamic",
     "github.com/jhump/protoreflect/grpcreflect",
-    "github.com/ktr0731/evans/grpc",
     "github.com/ligato/cn-infra/agent",
     "github.com/ligato/cn-infra/config",
     "github.com/ligato/cn-infra/datasync",

@@ -75,12 +75,14 @@ const (
 		}`
 )
 
-func init() {
+func TestMain(m *testing.M) {
 	log.SetFlags(log.Lmicroseconds | log.Lshortfile)
 	flag.Parse()
 	if *debug {
 		govppcore.SetLogLevel(logrus.DebugLevel)
 	}
+	result := m.Run()
+	os.Exit(result)
 }
 
 type testCtx struct {

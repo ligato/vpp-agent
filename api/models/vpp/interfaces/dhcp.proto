@@ -4,9 +4,6 @@ package vpp.interfaces;
 
 option go_package = "github.com/ligato/vpp-agent/api/models/vpp/interfaces;vpp_interfaces";
 
-//import "github.com/gogo/protobuf/gogoproto/gogo.proto";
-//option (gogoproto.messagename_all) = true;
-
 /* DHCPLease is a notification, i.e. flows from SB upwards */
 message DHCPLease {
 	string interface_name = 1;

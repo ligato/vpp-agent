@@ -4,9 +4,6 @@ package vpp.acl;
 
 option go_package = "github.com/ligato/vpp-agent/api/models/vpp/acl;vpp_acl";
 
-//import "github.com/gogo/protobuf/gogoproto/gogo.proto";
-//option (gogoproto.messagename_all) = true;
-
 // Access Control List (ACL)
 message ACL {
     // The name of an access list. A device MAY restrict the length

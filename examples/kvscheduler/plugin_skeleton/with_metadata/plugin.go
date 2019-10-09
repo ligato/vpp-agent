@@ -60,9 +60,8 @@ Beware: Extensive copy-pasting is actually a bad practise, so use the skeleton
         scratch, using the skeleton only as a reference.
 *******************************************************************************/
 
-
 // (*) generate golang code from your protobuf models here:
-//go:generate protoc --proto_path=model --proto_path=$GOPATH/src --gogo_out=model model/model.proto
+//go:generate protoc --proto_path=model --proto_path=$GOPATH/src --go_out=model model/model.proto
 
 // (**) generate adapter(s) for your descriptor(s) here:
 //go:generate descriptor-adapter --descriptor-name Skeleton --value-type *model.ValueSkeleton --meta-type *metaidx.SkeletonMetadata --import "model" --import "metaidx" --output-dir "descriptor"

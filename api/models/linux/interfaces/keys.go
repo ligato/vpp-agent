@@ -201,7 +201,7 @@ func ParseInterfaceAddressKey(key string) (iface, address string, source netallo
 }
 
 // MarshalJSON ensures that field of type 'oneOf' is correctly marshaled
-// by using gogo lib marshaller
+// by using protobuf json marshaller
 func (m *Interface) MarshalJSON() ([]byte, error) {
 	marshaller := &jsonpb.Marshaler{}
 	str, err := marshaller.MarshalToString(m)

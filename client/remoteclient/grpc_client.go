@@ -80,8 +80,7 @@ func (c *grpcClient) GetConfig(dsts ...interface{}) error {
 		if data := item.Item.GetData(); data != nil {
 			key, err = models.GetKey(val)
 		} else {
-			// protos[item.Item.Key] = val
-			key, err = models.ItemKey(item.Item)
+			key, err = models.GetKeyForItem(item.Item)
 		}
 		if err != nil {
 			return err

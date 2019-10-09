@@ -3,10 +3,6 @@ syntax = "proto3";
 package genericmanager;
 option go_package = "github.com/ligato/vpp-agent/api/genericmanager";
 
-//import weak "github.com/gogo/protobuf/gogoproto/gogo.proto";
-//option (gogoproto.messagename_all) = true;
-//option (gogoproto.goproto_registration) = true;
-
 import "google/protobuf/any.proto";
 
 // Model represents a model description to for recognizing

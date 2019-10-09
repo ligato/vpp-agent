@@ -4,9 +4,9 @@ package adapter
 
 import (
 	"github.com/golang/protobuf/proto"
-	mock_interfaces "github.com/ligato/vpp-agent/examples/kvscheduler/mock_plugins/ifplugin/model"
-	"github.com/ligato/vpp-agent/pkg/idxvpp"
 	. "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
+	"github.com/ligato/vpp-agent/examples/kvscheduler/mock_plugins/ifplugin/model"
+	"github.com/ligato/vpp-agent/pkg/idxvpp"
 )
 
 ////////// type-safe key-value pair with metadata //////////
