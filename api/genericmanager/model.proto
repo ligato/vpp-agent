@@ -1,0 +1,43 @@
+syntax = "proto3";
+
+package genericmanager;
+option go_package = "github.com/ligato/vpp-agent/api/genericmanager";
+
+import "google/protobuf/any.proto";
+
+// ModelSpec defines a model specification for recognizing models.
+message ModelSpec {
+    // Module describes group of the model.
+    string module = 1;
+    // Version describes concrete version of the model schema.
+    string version = 2;
+    // Type describes name of type described by this model.
+    string type = 3;
+    // Class describes purpose for the model.
+    string class = 4;
+}
+
+message ModelDescriptor {
+    ModelSpec spec = 1;
+    string proto_name = 2;
+
+    //string go_type = 3;
+    //map<string, string> info = 2;
+
+    message Option {
+        string option = 1;
+        string value = 2;
+    }
+    repeated Option options = 3;
+}
+
+message ModelItem {
+    string name = 1;
+    string model = 2;
+
+    // Data represents encoded data for an item.
+    oneof Data {
+        google.protobuf.Any any = 3;
+        //string jsonpb = 4;
+    }
+}

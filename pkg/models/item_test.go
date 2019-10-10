@@ -18,15 +18,53 @@ import (
 	"testing"
 
 	"github.com/golang/protobuf/proto"
-	linux_interfaces "github.com/ligato/vpp-agent/api/models/linux/interfaces"
+	. "github.com/onsi/gomega"
+
 	"github.com/ligato/vpp-agent/pkg/models"
+	testmodel "github.com/ligato/vpp-agent/pkg/models/testdata/testmodel"
 )
 
-func TestEncoding(t *testing.T) {
-	in := &linux_interfaces.Interface{
-		Name: "testName",
-		Type: linux_interfaces.Interface_VETH,
+func TestEncode(t *testing.T) {
+	tc := setupTest(t)
+	defer tc.teardownTest()
+
+	instance := &testmodel.Basic{
+		Name:           "basic1",
+		ValueInt:       -20,
+		ValueUint:      3,
+		ValueInt64:     99000000123,
+		RepeatedString: []string{"alpha", "beta", "gama"},
 	}
+	t.Logf("instance: %#v", instance)
+
+	item, err := models.MarshalItem(instance)
+	if err != nil {
+		t.Fatalf("marshal error: %v", err)
+	}
+	t.Logf("marshalled:\n%+v", proto.MarshalTextString(item))
+
+	tc.Expect(item.GetData().GetAny().GetTypeUrl()).
+		To(Equal("models.ligato.io/models.testmodel.Basic"))
+
+	out, err := models.UnmarshalItem(item)
+	if err != nil {
+		t.Fatalf("unmarshal error: %v", err)
+	}
+	t.Logf("unmarshalled:\n%+v", proto.MarshalTextString(out))
+}
+
+func TestDecode(t *testing.T) {
+	tc := setupTest(t)
+	defer tc.teardownTest()
+
+	in := &testmodel.Basic{
+		Name:           "basic1",
+		ValueInt:       -20,
+		ValueUint:      3,
+		ValueInt64:     99000000123,
+		RepeatedString: []string{"alpha", "beta", "gama"},
+	}
+	t.Logf("in: %#v", in)
 
 	item, err := models.MarshalItem(in)
 	if err != nil {
@@ -34,11 +72,19 @@ func TestEncoding(t *testing.T) {
 	}
 	t.Logf("marshalled:\n%+v", proto.MarshalTextString(item))
 
+	tc.Expect(item.GetId().GetModel()).To(Equal("module.basic"))
+	tc.Expect(item.GetId().GetName()).To(Equal("basic1"))
+
+	tc.Expect(item.GetData().GetAny().GetTypeUrl()).
+		To(Equal("models.ligato.io/models.testmodel.Basic"))
+
 	out, err := models.UnmarshalItem(item)
 	if err != nil {
 		t.Fatalf("unmarshal error: %v", err)
 	}
 	t.Logf("unmarshalled:\n%+v", proto.MarshalTextString(out))
+
+	tc.Expect(proto.Equal(in, out)).To(BeTrue())
 }
 
 /*func TestKeys(t *testing.T) {
@@ -135,7 +181,7 @@ func TestEncoding(t *testing.T) {
 			if key != test.expectedKey {
 				t.Errorf("expected key: \n%q\ngot: \n%q", test.expectedKey, key)
 			} else {
-				spec := models.Model(test.model)
+				spec := models.RegisteredModel(test.model)
 				t.Logf("key: %q (%v)\n", key, spec)
 			}
 		})

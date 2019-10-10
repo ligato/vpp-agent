@@ -27,6 +27,35 @@ import (
 // This constant is used as prefix for TypeUrl when marshalling to Any.
 const ligatoModels = "models.ligato.io/"
 
+// Marshal is helper function for marshalling model instance into item.
+func MarshalItem(pb proto.Message) (*api.Item, error) {
+	model, err := GetModelFor(pb)
+	if err != nil {
+		return nil, err
+	}
+	name, err := model.instanceName(pb)
+	if err != nil {
+		return nil, err
+	}
+
+	any, err := types.MarshalAny(pb)
+	if err != nil {
+		return nil, err
+	}
+	any.TypeUrl = ligatoModels + proto.MessageName(pb)
+
+	item := &api.Item{
+		Id: &api.Item_ID{
+			Model: model.Name(),
+			Name:  name,
+		},
+		Data: &api.Data{
+			Any: any,
+		},
+	}
+	return item, nil
+}
+
 // Unmarshal is helper function for unmarshalling items.
 func UnmarshalItem(item *api.Item) (proto.Message, error) {
 	_, err := GetModelForItem(item)
@@ -41,63 +70,15 @@ func UnmarshalItem(item *api.Item) (proto.Message, error) {
 	return any.Message, nil
 }
 
-// Marshal is helper function for marshalling items.
-func MarshalItem(pb proto.Message) (*api.Item, error) {
-	model, err := GetModelFor(pb)
-	if err != nil {
-		return nil, err
-	}
-	name, err := model.name(pb)
-	if err != nil {
-		return nil, err
-	}
-
-	any, err := types.MarshalAny(pb)
-	if err != nil {
-		return nil, err
-	}
-	any.TypeUrl = ligatoModels + proto.MessageName(pb)
-
-	item := &api.Item{
-		Id: &api.Item_ID{
-			Model: &api.Model{
-				Module:  model.Module,
-				Version: model.Version,
-				Type:    model.Type,
-			},
-			Name: name,
-		},
-		Data: &api.Data{
-			Any: any,
-		},
-	}
-	return item, nil
-}
-
-type model interface {
-	GetModule() string
-	GetVersion() string
-	GetType() string
-}
-
-func getModelPath(m model) string {
-	return buildModelPath(m.GetVersion(), m.GetModule(), m.GetType())
-}
-
 // GetModelForItem returns model for given item.
-func GetModelForItem(item *api.Item) (Model, error) {
+func GetModelForItem(item *api.Item) (RegisteredModel, error) {
 	if item.GetId() == nil {
-		return Model{}, fmt.Errorf("item id is nil")
+		return RegisteredModel{}, fmt.Errorf("item id is nil")
 	}
-	itemModel := item.GetId().GetModel()
-	model, err := GetModel(getModelPath(itemModel))
+	modelPath := item.GetId().GetModel()
+	model, err := GetModel(modelPath)
 	if err != nil {
-		return Model{}, err
-	}
-	if itemModel.GetModule() != model.Module ||
-		itemModel.GetVersion() != model.Version ||
-		itemModel.GetType() != model.Type {
-		return Model{}, fmt.Errorf("item model does not match the one registered (%+v)", itemModel)
+		return RegisteredModel{}, err
 	}
 	// TODO: check prefix in type url?
 	return model, nil
@@ -109,6 +90,6 @@ func GetKeyForItem(item *api.Item) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	key := path.Join(model.keyPrefix, item.GetId().GetName())
+	key := path.Join(model.KeyPrefix(), item.GetId().GetName())
 	return key, nil
 }

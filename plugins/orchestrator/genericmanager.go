@@ -35,8 +35,19 @@ type genericManagerSvc struct {
 }
 
 func (s *genericManagerSvc) Capabilities(ctx context.Context, req *api.CapabilitiesRequest) (*api.CapabilitiesResponse, error) {
+	var infos []*api.ModelInfo
+	for _, model := range models.RegisteredModels() {
+		infos = append(infos, &api.ModelInfo{
+			Spec: (*api.ModelSpec)(model.Spec()),
+			Info: map[string]string{
+				"nameTemplate": model.NameTemplate(),
+				"protoName":    model.ProtoName(),
+				"goType":       model.GoType(),
+			},
+		})
+	}
 	resp := &api.CapabilitiesResponse{
-		KnownModels: models.RegisteredModels(),
+		KnownModels: infos,
 	}
 	return resp, nil
 }

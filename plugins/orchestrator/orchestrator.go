@@ -24,11 +24,11 @@ import (
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/rpc/grpc"
 	"golang.org/x/net/context"
+	"google.golang.org/grpc/reflection"
 
 	api "github.com/ligato/vpp-agent/api/genericmanager"
 	"github.com/ligato/vpp-agent/pkg/models"
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-	"google.golang.org/grpc/reflection"
 )
 
 var (

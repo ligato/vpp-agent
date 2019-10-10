@@ -4,23 +4,13 @@ package genericmanager;
 option go_package = "github.com/ligato/vpp-agent/api/genericmanager";
 
 import "google/protobuf/any.proto";
-
-// Model represents a model description to for recognizing
-// different item types.
-message Model {
-    // Module describes group of the model.
-    string module = 1;
-    // Version describes concrete version of the model schema.
-    string version = 2;
-    // Type describes name of type described by this model.
-    string type = 3;
-}
+import "genericmanager/model.proto";
 
 // Item represents single instance described by the Model.
 message Item {
     // ID represents identifier for distinguishing items.
     message ID {
-        Model model = 1;
+        string model = 1;
         string name = 2;
     }
 
@@ -30,7 +20,9 @@ message Item {
 
 // Data represents encoded data for an item.
 message Data {
-    google.protobuf.Any any = 1;
+    oneof union {
+        google.protobuf.Any any = 1;
+    }
 }
 
 // Item status describes status of an item.
@@ -68,12 +60,12 @@ message CapabilitiesRequest {
     // TODO: filters
 }
 message CapabilitiesResponse {
-    repeated ModelInfo known_models = 1;
+    repeated Model known_models = 1;
     repeated string active_modules = 2;
 }
 
 message ModelInfo {
-    Model model = 1;
+    ModelSpec spec = 1;
     map<string, string> info = 2;
 }
 
