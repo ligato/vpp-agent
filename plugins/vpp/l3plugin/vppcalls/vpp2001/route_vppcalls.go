@@ -117,8 +117,21 @@ func (h *RouteHandler) VppDelRoute(route *l3.Route) error {
 }
 
 func setFibPathNhAndProto(netIP net.IP) (nh vpp_ip.FibPathNh, proto vpp_ip.FibPathNhProto) {
+	var addrUnion vpp_ip.AddressUnion
+	if netIP.To4() == nil {
+		proto = vpp_ip.FIB_API_PATH_NH_PROTO_IP6
+		var ip6addr vpp_ip.IP6Address
+		copy(ip6addr[:], netIP.To16())
+		addrUnion.SetIP6(ip6addr)
+	} else {
+		proto = vpp_ip.FIB_API_PATH_NH_PROTO_IP4
+		var ip4addr vpp_ip.IP4Address
+		copy(ip4addr[:], netIP.To4())
+		addrUnion.SetIP4(ip4addr)
+	}
+
 	return vpp_ip.FibPathNh{
-		Address:            netIPToAddress(netIP).Un,
+		Address:            addrUnion,
 		ViaLabel:           NextHopViaLabelUnset,
 		ClassifyTableIndex: ClassifyTableIndexUnset,
 	}, proto
@@ -132,21 +145,6 @@ func (h *RouteHandler) getRouteSwIfIndex(ifName string) (swIfIdx uint32, err err
 			return 0, errors.Errorf("interface %s not found", ifName)
 		}
 		swIfIdx = meta.SwIfIndex
-	}
-	return
-}
-
-func netIPToAddress(address net.IP) (ipAddr vpp_ip.Address) {
-	if address.To4() == nil {
-		ipAddr.Af = vpp_ip.ADDRESS_IP6
-		var ip6addr vpp_ip.IP6Address
-		copy(ip6addr[:], address.To16())
-		ipAddr.Un.SetIP6(ip6addr)
-	} else {
-		ipAddr.Af = vpp_ip.ADDRESS_IP4
-		var ip4addr vpp_ip.IP4Address
-		copy(ip4addr[:], address.To4())
-		ipAddr.Un.SetIP4(ip4addr)
 	}
 	return
 }

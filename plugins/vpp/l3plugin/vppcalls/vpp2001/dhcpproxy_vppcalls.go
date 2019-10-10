@@ -28,16 +28,14 @@ func (h *DHCPProxyHandler) createDeleteDHCPProxy(entry *l3.DHCPProxy, delete boo
 		RxVrfID: entry.RxVrfId,
 		IsAdd:   !delete,
 	}
-	config.DHCPSrcAddress, err = ipToDHCPAddress(entry.SourceIpAddress)
-
+	if config.DHCPSrcAddress, err = ipToDHCPAddress(entry.SourceIpAddress); err != nil {
+		return errors.Errorf("Invalid source IP address: %q", entry.SourceIpAddress)
+	}
 	for _, server := range entry.Servers {
 		config.ServerVrfID = server.VrfId
-		ipAddr := net.ParseIP(server.IpAddress)
-		if ipAddr == nil {
+		if config.DHCPServer, err = ipToDHCPAddress(server.IpAddress); err != nil {
 			return errors.Errorf("Invalid server IP address: %q", server.IpAddress)
 		}
-		config.DHCPServer, err = ipToDHCPAddress(server.IpAddress)
-
 		reply := &vpp_dhcp.DHCPProxyConfigReply{}
 		if err := h.callsChannel.SendRequest(config).ReceiveReply(reply); err != nil {
 			return err
