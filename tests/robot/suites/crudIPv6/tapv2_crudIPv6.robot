@@ -6,7 +6,15 @@ Library      OperatingSystem
 
 Resource     ../../variables/${VARIABLES}_variables.robot
 
-Resource     ../../libraries/all_libs.robot
+Resource     ../../libraries/vpp_api.robot
+Resource     ../../libraries/vpp_term.robot
+Resource     ../../libraries/docker.robot
+Resource     ../../libraries/setup-teardown.robot
+Resource     ../../libraries/configurations.robot
+Resource     ../../libraries/etcdctl.robot
+Resource     ../../libraries/linux.robot
+
+Resource     ../../libraries/interface/interface_generic.robot
 
 Force Tags        crud     IPv6
 Suite Setup       Testsuite Setup
@@ -30,6 +38,7 @@ ${MTU}=              4800
 ${UP_STATE}=         up
 ${WAIT_TIMEOUT}=     20s
 ${SYNC_SLEEP}=       3s
+
 *** Test Cases ***
 Configure Environment
     [Tags]    setup
@@ -40,42 +49,55 @@ Show Interfaces Before Setup
 
 Add TAP1v2 Interface
     vpp_term: Interface Not Exists  node=agent_vpp_1    mac=${MAC_TAP1}
-    Put TAPv2 Interface With IP    node=agent_vpp_1    name=${NAME_TAP1}    mac=${MAC_TAP1}    ip=${IP_TAP1}    prefix=${PREFIX}    host_if_name=linux_${NAME_TAP1}
+    Put TAPv2 Interface With IP    node=agent_vpp_1    name=${NAME_TAP1}    mac=${MAC_TAP1}
+    ...    ip=${IP_TAP1}    prefix=${PREFIX}    host_if_name=linux_${NAME_TAP1}
 
 Check TAP1v2 Interface Is Created
-    ${interfaces}=       vat_term: Interfaces Dump    node=agent_vpp_1
-    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Interface Is Created    node=agent_vpp_1    mac=${MAC_TAP1}
-    ${actual_state}=    vpp_term: Check TAPv2 IP6 interface State    agent_vpp_1    ${NAME_TAP1}    mac=${MAC_TAP1}    ipv6=${IP_TAP1}/${PREFIX}    state=${UP_STATE}
+    ${interfaces}=       vpp_api: Interfaces Dump    node=agent_vpp_1
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}
+    ...    vpp_term: Interface Is Created    node=agent_vpp_1    mac=${MAC_TAP1}
+    ${actual_state}=    vpp_term: Check TAPv2 IP6 interface State    agent_vpp_1    ${NAME_TAP1}
+    ...    mac=${MAC_TAP1}    ipv6=${IP_TAP1}/${PREFIX}    state=${UP_STATE}
 
 Add TAP2v2 Interface
     vpp_term: Interface Not Exists  node=agent_vpp_1    mac=${MAC_TAP2}
-    Put TAPv2 Interface With IP    node=agent_vpp_1    name=${NAME_TAP2}    mac=${MAC_TAP2}    ip=${IP_TAP2}    prefix=${PREFIX}    host_if_name=linux_${NAME_TAP2}
+    Put TAPv2 Interface With IP    node=agent_vpp_1    name=${NAME_TAP2}    mac=${MAC_TAP2}
+    ...    ip=${IP_TAP2}    prefix=${PREFIX}    host_if_name=linux_${NAME_TAP2}
 
 Check TAP2v2 Interface Is Created
-    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Interface Is Created    node=agent_vpp_1    mac=${MAC_TAP2}
-    ${actual_state}=    vpp_term: Check TAPv2 IP6 interface State    agent_vpp_1    ${NAME_TAP2}    mac=${MAC_TAP2}    ipv6=${IP_TAP2}/${PREFIX}    state=${UP_STATE}
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}
+    ...    vpp_term: Interface Is Created    node=agent_vpp_1    mac=${MAC_TAP2}
+    ${actual_state}=    vpp_term: Check TAPv2 IP6 interface State    agent_vpp_1    ${NAME_TAP2}
+    ...    mac=${MAC_TAP2}    ipv6=${IP_TAP2}/${PREFIX}    state=${UP_STATE}
 
 Check TAP1v2 Interface Is Still Configured
-    ${actual_state}=    vpp_term: Check TAPv2 IP6 interface State    agent_vpp_1    ${NAME_TAP1}    mac=${MAC_TAP1}    ipv6=${IP_TAP1}/${PREFIX}    state=${UP_STATE}
+    ${actual_state}=    vpp_term: Check TAPv2 IP6 interface State    agent_vpp_1    ${NAME_TAP1}
+    ...    mac=${MAC_TAP1}    ipv6=${IP_TAP1}/${PREFIX}    state=${UP_STATE}
 
 Update TAP1v2 Interface
-    Put TAPv2 Interface With IP    node=agent_vpp_1    name=${NAME_TAP1}    mac=${MAC_TAP1_2}    ip=${IP_TAP1_2}    prefix=${PREFIX}    host_if_name=linux_${NAME_TAP1}
+    Put TAPv2 Interface With IP    node=agent_vpp_1    name=${NAME_TAP1}    mac=${MAC_TAP1_2}
+    ...    ip=${IP_TAP1_2}    prefix=${PREFIX}    host_if_name=linux_${NAME_TAP1}
 
 Check TAP1_2v2 Interface Is Created
-    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Interface Is Created    node=agent_vpp_1    mac=${MAC_TAP1_2}
-    ${actual_state}=    vpp_term: Check TAPv2 IP6 interface State    agent_vpp_1    ${NAME_TAP1}    mac=${MAC_TAP1_2}    ipv6=${IP_TAP1_2}/${PREFIX}    state=${UP_STATE}
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}
+    ...    vpp_term: Interface Is Created    node=agent_vpp_1    mac=${MAC_TAP1_2}
+    ${actual_state}=    vpp_term: Check TAPv2 IP6 interface State    agent_vpp_1    ${NAME_TAP1}
+    ...    mac=${MAC_TAP1_2}    ipv6=${IP_TAP1_2}/${PREFIX}    state=${UP_STATE}
 
 Check TAP2v2 Interface Has Not Changed
-    ${actual_state}=    vpp_term: Check TAPv2 IP6 interface State    agent_vpp_1    ${NAME_TAP2}    mac=${MAC_TAP2}    ipv6=${IP_TAP2}/${PREFIX}    state=${UP_STATE}
+    ${actual_state}=    vpp_term: Check TAPv2 IP6 interface State    agent_vpp_1    ${NAME_TAP2}
+    ...    mac=${MAC_TAP2}    ipv6=${IP_TAP2}/${PREFIX}    state=${UP_STATE}
 
 Delete TAP1_2v2 Interface
     Delete VPP Interface    agent_vpp_1    ${NAME_TAP1}
 
 Check TAP1_2v2 Interface Has Been Deleted
-    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Interface Not Exists  node=agent_vpp_1    mac=${MAC_TAP1_2}
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}
+    ...    vpp_term: Interface Not Exists  node=agent_vpp_1    mac=${MAC_TAP1_2}
 
 Check TAP2 Interface Is Still Configured
-    ${actual_state}=    vpp_term: Check TAPv2 IP6 interface State    agent_vpp_1    ${NAME_TAP2}    mac=${MAC_TAP2}    ipv6=${IP_TAP2}/${PREFIX}    state=${UP_STATE}
+    ${actual_state}=    vpp_term: Check TAPv2 IP6 interface State    agent_vpp_1    ${NAME_TAP2}
+    ...    mac=${MAC_TAP2}    ipv6=${IP_TAP2}/${PREFIX}    state=${UP_STATE}
 
 Show Interfaces And Other Objects After Setup
     vpp_term: Show Interfaces    agent_vpp_1
@@ -84,7 +106,7 @@ Show Interfaces And Other Objects After Setup
     Write To Machine    agent_vpp_1_term    show br
     Write To Machine    agent_vpp_1_term    show br 1 detail
     Write To Machine    agent_vpp_1_term    show err
-    vat_term: Interfaces Dump    agent_vpp_1
+    vpp_api: Interfaces Dump    agent_vpp_1
     Execute In Container    agent_vpp_1    ip a
 
 *** Keywords ***
