@@ -47,7 +47,7 @@ import (
 
 	_ "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls/vpp1904"
 	_ "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls/vpp1908"
-	_ "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls/vpp2001"
+	_ "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls/vpp2001_324"
 )
 
 // IfPlugin configures VPP interfaces using GoVPP.
