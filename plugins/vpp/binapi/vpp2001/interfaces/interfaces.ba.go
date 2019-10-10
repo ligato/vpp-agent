@@ -6,7 +6,7 @@ Package interfaces is a generated VPP binary API for 'interface' module.
 
 It consists of:
 	 10 enums
-	  4 aliases
+	  7 aliases
 	  6 types
 	  1 union
 	 51 messages
@@ -26,10 +26,8 @@ import (
 const (
 	// ModuleName is the name of this module.
 	ModuleName = "interface"
-	// APIVersion is the API version of this module.
-	APIVersion = "3.1.0"
 	// VersionCrc is the CRC of this module.
-	VersionCrc = 0xd61ab705
+	VersionCrc = 0x8c9928df
 )
 
 // AddressFamily represents VPP binary API enum 'address_family'.
@@ -436,14 +434,23 @@ func (x SubIfFlags) String() string {
 	return strconv.Itoa(int(x))
 }
 
+// AddressWithPrefix represents VPP binary API alias 'address_with_prefix'.
+type AddressWithPrefix Prefix
+
 // InterfaceIndex represents VPP binary API alias 'interface_index'.
 type InterfaceIndex uint32
 
 // IP4Address represents VPP binary API alias 'ip4_address'.
 type IP4Address [4]uint8
 
+// IP4AddressWithPrefix represents VPP binary API alias 'ip4_address_with_prefix'.
+type IP4AddressWithPrefix IP4Prefix
+
 // IP6Address represents VPP binary API alias 'ip6_address'.
 type IP6Address [16]uint8
+
+// IP6AddressWithPrefix represents VPP binary API alias 'ip6_address_with_prefix'.
+type IP6AddressWithPrefix IP6Prefix
 
 // MacAddress represents VPP binary API alias 'mac_address'.
 type MacAddress [6]uint8
@@ -563,7 +570,7 @@ func (*CollectDetailedInterfaceStats) GetMessageName() string {
 	return "collect_detailed_interface_stats"
 }
 func (*CollectDetailedInterfaceStats) GetCrcString() string {
-	return "35049db2"
+	return "5501adee"
 }
 func (*CollectDetailedInterfaceStats) GetMessageType() api.MessageType {
 	return api.RequestMessage
@@ -593,7 +600,7 @@ func (*CreateLoopback) GetMessageName() string {
 	return "create_loopback"
 }
 func (*CreateLoopback) GetCrcString() string {
-	return "16e13d38"
+	return "42bb5d22"
 }
 func (*CreateLoopback) GetMessageType() api.MessageType {
 	return api.RequestMessage
@@ -610,7 +617,7 @@ func (*CreateLoopbackInstance) GetMessageName() string {
 	return "create_loopback_instance"
 }
 func (*CreateLoopbackInstance) GetCrcString() string {
-	return "c9794285"
+	return "d36a3ee2"
 }
 func (*CreateLoopbackInstance) GetMessageType() api.MessageType {
 	return api.RequestMessage
@@ -626,7 +633,7 @@ func (*CreateLoopbackInstanceReply) GetMessageName() string {
 	return "create_loopback_instance_reply"
 }
 func (*CreateLoopbackInstanceReply) GetCrcString() string {
-	return "903324db"
+	return "5383d31f"
 }
 func (*CreateLoopbackInstanceReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
@@ -642,7 +649,7 @@ func (*CreateLoopbackReply) GetMessageName() string {
 	return "create_loopback_reply"
 }
 func (*CreateLoopbackReply) GetCrcString() string {
-	return "903324db"
+	return "5383d31f"
 }
 func (*CreateLoopbackReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
@@ -661,7 +668,7 @@ func (*CreateSubif) GetMessageName() string {
 	return "create_subif"
 }
 func (*CreateSubif) GetCrcString() string {
-	return "a51a5dd3"
+	return "cb371063"
 }
 func (*CreateSubif) GetMessageType() api.MessageType {
 	return api.RequestMessage
@@ -677,7 +684,7 @@ func (*CreateSubifReply) GetMessageName() string {
 	return "create_subif_reply"
 }
 func (*CreateSubifReply) GetCrcString() string {
-	return "903324db"
+	return "5383d31f"
 }
 func (*CreateSubifReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
@@ -693,7 +700,7 @@ func (*CreateVlanSubif) GetMessageName() string {
 	return "create_vlan_subif"
 }
 func (*CreateVlanSubif) GetCrcString() string {
-	return "bc534dd3"
+	return "af34ac8b"
 }
 func (*CreateVlanSubif) GetMessageType() api.MessageType {
 	return api.RequestMessage
@@ -709,7 +716,7 @@ func (*CreateVlanSubifReply) GetMessageName() string {
 	return "create_vlan_subif_reply"
 }
 func (*CreateVlanSubifReply) GetCrcString() string {
-	return "903324db"
+	return "5383d31f"
 }
 func (*CreateVlanSubifReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
@@ -724,7 +731,7 @@ func (*DeleteLoopback) GetMessageName() string {
 	return "delete_loopback"
 }
 func (*DeleteLoopback) GetCrcString() string {
-	return "d85aab0d"
+	return "f9e6675e"
 }
 func (*DeleteLoopback) GetMessageType() api.MessageType {
 	return api.RequestMessage
@@ -754,7 +761,7 @@ func (*DeleteSubif) GetMessageName() string {
 	return "delete_subif"
 }
 func (*DeleteSubif) GetCrcString() string {
-	return "d85aab0d"
+	return "f9e6675e"
 }
 func (*DeleteSubif) GetMessageType() api.MessageType {
 	return api.RequestMessage
@@ -785,7 +792,7 @@ func (*HwInterfaceSetMtu) GetMessageName() string {
 	return "hw_interface_set_mtu"
 }
 func (*HwInterfaceSetMtu) GetCrcString() string {
-	return "e6c533aa"
+	return "e6746899"
 }
 func (*HwInterfaceSetMtu) GetMessageType() api.MessageType {
 	return api.RequestMessage
@@ -816,7 +823,7 @@ func (*InterfaceNameRenumber) GetMessageName() string {
 	return "interface_name_renumber"
 }
 func (*InterfaceNameRenumber) GetCrcString() string {
-	return "642d5410"
+	return "2b8858b8"
 }
 func (*InterfaceNameRenumber) GetMessageType() api.MessageType {
 	return api.RequestMessage
@@ -842,14 +849,14 @@ type SwInterfaceAddDelAddress struct {
 	SwIfIndex InterfaceIndex
 	IsAdd     bool
 	DelAll    bool
-	Prefix    Prefix
+	Prefix    AddressWithPrefix
 }
 
 func (*SwInterfaceAddDelAddress) GetMessageName() string {
 	return "sw_interface_add_del_address"
 }
 func (*SwInterfaceAddDelAddress) GetCrcString() string {
-	return "43a487bd"
+	return "5803d5c4"
 }
 func (*SwInterfaceAddDelAddress) GetMessageType() api.MessageType {
 	return api.RequestMessage
@@ -879,7 +886,7 @@ func (*SwInterfaceClearStats) GetMessageName() string {
 	return "sw_interface_clear_stats"
 }
 func (*SwInterfaceClearStats) GetCrcString() string {
-	return "d85aab0d"
+	return "f9e6675e"
 }
 func (*SwInterfaceClearStats) GetMessageType() api.MessageType {
 	return api.RequestMessage
@@ -933,7 +940,7 @@ func (*SwInterfaceDetails) GetMessageName() string {
 	return "sw_interface_details"
 }
 func (*SwInterfaceDetails) GetCrcString() string {
-	return "e67d02b6"
+	return "077403e2"
 }
 func (*SwInterfaceDetails) GetMessageType() api.MessageType {
 	return api.ReplyMessage
@@ -951,7 +958,7 @@ func (*SwInterfaceDump) GetMessageName() string {
 	return "sw_interface_dump"
 }
 func (*SwInterfaceDump) GetCrcString() string {
-	return "4ecaa564"
+	return "aa610c27"
 }
 func (*SwInterfaceDump) GetMessageType() api.MessageType {
 	return api.RequestMessage
@@ -969,7 +976,7 @@ func (*SwInterfaceEvent) GetMessageName() string {
 	return "sw_interface_event"
 }
 func (*SwInterfaceEvent) GetCrcString() string {
-	return "a98c55b5"
+	return "f709f78d"
 }
 func (*SwInterfaceEvent) GetMessageType() api.MessageType {
 	return api.EventMessage
@@ -984,7 +991,7 @@ func (*SwInterfaceGetMacAddress) GetMessageName() string {
 	return "sw_interface_get_mac_address"
 }
 func (*SwInterfaceGetMacAddress) GetCrcString() string {
-	return "d85aab0d"
+	return "f9e6675e"
 }
 func (*SwInterfaceGetMacAddress) GetMessageType() api.MessageType {
 	return api.RequestMessage
@@ -1000,7 +1007,7 @@ func (*SwInterfaceGetMacAddressReply) GetMessageName() string {
 	return "sw_interface_get_mac_address_reply"
 }
 func (*SwInterfaceGetMacAddressReply) GetCrcString() string {
-	return "f7723cdb"
+	return "40ef2c08"
 }
 func (*SwInterfaceGetMacAddressReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
@@ -1016,7 +1023,7 @@ func (*SwInterfaceGetTable) GetMessageName() string {
 	return "sw_interface_get_table"
 }
 func (*SwInterfaceGetTable) GetCrcString() string {
-	return "6cfbc675"
+	return "2d033de4"
 }
 func (*SwInterfaceGetTable) GetMessageType() api.MessageType {
 	return api.RequestMessage
@@ -1050,7 +1057,7 @@ func (*SwInterfaceRxPlacementDetails) GetMessageName() string {
 	return "sw_interface_rx_placement_details"
 }
 func (*SwInterfaceRxPlacementDetails) GetCrcString() string {
-	return "93d413ec"
+	return "f6d7d024"
 }
 func (*SwInterfaceRxPlacementDetails) GetMessageType() api.MessageType {
 	return api.RequestMessage
@@ -1065,7 +1072,7 @@ func (*SwInterfaceRxPlacementDump) GetMessageName() string {
 	return "sw_interface_rx_placement_dump"
 }
 func (*SwInterfaceRxPlacementDump) GetCrcString() string {
-	return "d85aab0d"
+	return "f9e6675e"
 }
 func (*SwInterfaceRxPlacementDump) GetMessageType() api.MessageType {
 	return api.RequestMessage
@@ -1081,7 +1088,7 @@ func (*SwInterfaceSetFlags) GetMessageName() string {
 	return "sw_interface_set_flags"
 }
 func (*SwInterfaceSetFlags) GetCrcString() string {
-	return "b2dc5eb2"
+	return "6a2b491a"
 }
 func (*SwInterfaceSetFlags) GetMessageType() api.MessageType {
 	return api.RequestMessage
@@ -1112,7 +1119,7 @@ func (*SwInterfaceSetIPDirectedBroadcast) GetMessageName() string {
 	return "sw_interface_set_ip_directed_broadcast"
 }
 func (*SwInterfaceSetIPDirectedBroadcast) GetCrcString() string {
-	return "4ea0cbc4"
+	return "ae6cfcfb"
 }
 func (*SwInterfaceSetIPDirectedBroadcast) GetMessageType() api.MessageType {
 	return api.RequestMessage
@@ -1143,7 +1150,7 @@ func (*SwInterfaceSetMacAddress) GetMessageName() string {
 	return "sw_interface_set_mac_address"
 }
 func (*SwInterfaceSetMacAddress) GetCrcString() string {
-	return "5b2186bf"
+	return "6aca746a"
 }
 func (*SwInterfaceSetMacAddress) GetMessageType() api.MessageType {
 	return api.RequestMessage
@@ -1174,7 +1181,7 @@ func (*SwInterfaceSetMtu) GetMessageName() string {
 	return "sw_interface_set_mtu"
 }
 func (*SwInterfaceSetMtu) GetCrcString() string {
-	return "e768babe"
+	return "5cbe85e5"
 }
 func (*SwInterfaceSetMtu) GetMessageType() api.MessageType {
 	return api.RequestMessage
@@ -1207,7 +1214,7 @@ func (*SwInterfaceSetRxMode) GetMessageName() string {
 	return "sw_interface_set_rx_mode"
 }
 func (*SwInterfaceSetRxMode) GetCrcString() string {
-	return "9897721c"
+	return "780f5cee"
 }
 func (*SwInterfaceSetRxMode) GetMessageType() api.MessageType {
 	return api.RequestMessage
@@ -1240,7 +1247,7 @@ func (*SwInterfaceSetRxPlacement) GetMessageName() string {
 	return "sw_interface_set_rx_placement"
 }
 func (*SwInterfaceSetRxPlacement) GetCrcString() string {
-	return "e462d0d9"
+	return "db65f3c9"
 }
 func (*SwInterfaceSetRxPlacement) GetMessageType() api.MessageType {
 	return api.RequestMessage
@@ -1272,7 +1279,7 @@ func (*SwInterfaceSetTable) GetMessageName() string {
 	return "sw_interface_set_table"
 }
 func (*SwInterfaceSetTable) GetCrcString() string {
-	return "2d412a82"
+	return "df42a577"
 }
 func (*SwInterfaceSetTable) GetMessageType() api.MessageType {
 	return api.RequestMessage
@@ -1304,7 +1311,7 @@ func (*SwInterfaceSetUnnumbered) GetMessageName() string {
 	return "sw_interface_set_unnumbered"
 }
 func (*SwInterfaceSetUnnumbered) GetCrcString() string {
-	return "61e660a5"
+	return "938ef33b"
 }
 func (*SwInterfaceSetUnnumbered) GetMessageType() api.MessageType {
 	return api.RequestMessage
@@ -1336,7 +1343,7 @@ func (*SwInterfaceTagAddDel) GetMessageName() string {
 	return "sw_interface_tag_add_del"
 }
 func (*SwInterfaceTagAddDel) GetCrcString() string {
-	return "7b32df5b"
+	return "426f8bc1"
 }
 func (*SwInterfaceTagAddDel) GetMessageType() api.MessageType {
 	return api.RequestMessage

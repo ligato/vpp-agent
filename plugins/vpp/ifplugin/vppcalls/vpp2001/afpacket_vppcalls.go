@@ -15,8 +15,6 @@
 package vpp2001
 
 import (
-	"net"
-
 	ifs "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	vpp_afpacket "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/af_packet"
 )
@@ -24,12 +22,12 @@ import (
 // AddAfPacketInterface implements AfPacket handler.
 func (h *InterfaceVppHandler) AddAfPacketInterface(ifName string, hwAddr string, afPacketIntf *ifs.AfpacketLink) (swIndex uint32, err error) {
 	req := &vpp_afpacket.AfPacketCreate{
-		HostIfName: []byte(afPacketIntf.HostIfName),
+		HostIfName: afPacketIntf.HostIfName,
 	}
 	if hwAddr == "" {
-		req.UseRandomHwAddr = 1
+		req.UseRandomHwAddr = true
 	} else {
-		mac, err := net.ParseMAC(hwAddr)
+		mac, err := ParseMAC(hwAddr)
 		if err != nil {
 			return 0, err
 		}
@@ -41,13 +39,13 @@ func (h *InterfaceVppHandler) AddAfPacketInterface(ifName string, hwAddr string,
 		return 0, err
 	}
 
-	return reply.SwIfIndex, h.SetInterfaceTag(ifName, reply.SwIfIndex)
+	return uint32(reply.SwIfIndex), h.SetInterfaceTag(ifName, uint32(reply.SwIfIndex))
 }
 
 // DeleteAfPacketInterface implements AfPacket handler.
 func (h *InterfaceVppHandler) DeleteAfPacketInterface(ifName string, idx uint32, afPacketIntf *ifs.AfpacketLink) error {
 	req := &vpp_afpacket.AfPacketDelete{
-		HostIfName: []byte(afPacketIntf.HostIfName),
+		HostIfName: afPacketIntf.HostIfName,
 	}
 	reply := &vpp_afpacket.AfPacketDeleteReply{}
 

@@ -265,6 +265,9 @@ message BondLink {
         L2 = 0;
         L34 = 1;
         L23 = 2;
+        RR = 3;     // Round robin
+        BC = 4;     // Broadcast
+        AB = 5;     // Active backup
     }
     // Load balance is optional and valid only for XOR and LACP modes
     LoadBalance lb = 4;

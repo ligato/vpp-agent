@@ -15,10 +15,9 @@
 package vpp2001
 
 import (
-	"bytes"
-	"fmt"
 	"net"
 	"os"
+	"strings"
 	"time"
 
 	govppapi "git.fd.io/govpp.git/api"
@@ -108,22 +107,14 @@ func (h *InterfaceVppHandler) WatchDHCPLeases(leasesCh chan<- *vppcalls.Lease) e
 					continue
 				}
 				lease := dhcpEvent.Lease
-				var hostAddr, routerAddr string
-				if uintToBool(lease.IsIPv6) {
-					hostAddr = fmt.Sprintf("%s/%d", net.IP(lease.HostAddress).To16().String(), uint32(lease.MaskWidth))
-					routerAddr = fmt.Sprintf("%s/%d", net.IP(lease.RouterAddress).To16().String(), uint32(lease.MaskWidth))
-				} else {
-					hostAddr = fmt.Sprintf("%s/%d", net.IP(lease.HostAddress[:4]).To4().String(), uint32(lease.MaskWidth))
-					routerAddr = fmt.Sprintf("%s/%d", net.IP(lease.RouterAddress[:4]).To4().String(), uint32(lease.MaskWidth))
-				}
 				leasesCh <- &vppcalls.Lease{
-					SwIfIndex:     lease.SwIfIndex,
-					State:         lease.State,
-					Hostname:      string(bytes.SplitN(lease.Hostname, []byte{0x00}, 2)[0]),
-					IsIPv6:        uintToBool(lease.IsIPv6),
-					HostAddress:   hostAddr,
-					RouterAddress: routerAddr,
-					HostMac:       net.HardwareAddr(lease.HostMac).String(),
+					SwIfIndex:     uint32(lease.SwIfIndex),
+					State:         uint8(lease.State),
+					Hostname:      strings.TrimRight(lease.Hostname, "\x00"),
+					IsIPv6:        lease.IsIPv6,
+					HostAddress:   dhcpAddressToString(lease.HostAddress, uint32(lease.MaskWidth), lease.IsIPv6),
+					RouterAddress: dhcpAddressToString(lease.RouterAddress, uint32(lease.MaskWidth), lease.IsIPv6),
+					HostMac:       net.HardwareAddr(lease.HostMac[:]).String(),
 				}
 			}
 		}

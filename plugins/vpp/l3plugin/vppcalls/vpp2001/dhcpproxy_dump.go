@@ -22,64 +22,58 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls"
 )
 
-func (h *DHCPProxyHandler) DumpDHCPProxy() ([]*vppcalls.DHCPProxyDetails, error) {
-	var entry []*vppcalls.DHCPProxyDetails
-	reqCtx := h.callsChannel.SendMultiRequest(&vpp_dhcp.DHCPProxyDump{IsIP6: 0})
-	for {
-		dhcpProxyDetails := &vpp_dhcp.DHCPProxyDetails{}
-		stop, err := reqCtx.ReceiveReply(dhcpProxyDetails)
-		if stop {
-			break
-		}
-		if err != nil {
-			h.log.Error(err)
-			return nil, err
-		}
-		proxy := &l3.DHCPProxy{
-			RxVrfId:         dhcpProxyDetails.RxVrfID,
-			SourceIpAddress: net.IP(dhcpProxyDetails.DHCPSrcAddress[:4]).To4().String(),
-		}
-
-		for _, server := range dhcpProxyDetails.Servers {
-			proxyServer := &l3.DHCPProxy_DHCPServer{
-				IpAddress: net.IP(server.DHCPServer[:4]).To4().String(),
-				VrfId:     server.ServerVrfID,
-			}
-			proxy.Servers = append(proxy.Servers, proxyServer)
-		}
-
-		entry = append(entry, &vppcalls.DHCPProxyDetails{
-			DHCPProxy: proxy,
-		})
+func (h *DHCPProxyHandler) DumpDHCPProxy() (entry []*vppcalls.DHCPProxyDetails, err error) {
+	ipv4Entries, err := h.dumpDHCPProxyForIPVersion(false)
+	if err != nil {
+		return nil, err
+	}
+	entry = append(entry, ipv4Entries...)
+	ipv6Entries, err := h.dumpDHCPProxyForIPVersion(true)
+	if err != nil {
+		return nil, err
 	}
 
-	reqCtx = h.callsChannel.SendMultiRequest(&vpp_dhcp.DHCPProxyDump{IsIP6: 1})
-	for {
-		dhcpProxyDetails := &vpp_dhcp.DHCPProxyDetails{}
-		stop, err := reqCtx.ReceiveReply(dhcpProxyDetails)
-		if stop {
-			break
-		}
-		if err != nil {
-			h.log.Error(err)
-			return nil, err
-		}
-		proxy := &l3.DHCPProxy{
-			RxVrfId:         dhcpProxyDetails.RxVrfID,
-			SourceIpAddress: net.IP(dhcpProxyDetails.DHCPSrcAddress).To16().String(),
-		}
-		for _, server := range dhcpProxyDetails.Servers {
-			proxyServer := &l3.DHCPProxy_DHCPServer{
-				IpAddress: net.IP(server.DHCPServer).To16().String(),
-				VrfId:     server.ServerVrfID,
-			}
-			proxy.Servers = append(proxy.Servers, proxyServer)
-		}
-
-		entry = append(entry, &vppcalls.DHCPProxyDetails{
-			DHCPProxy: proxy,
-		})
-	}
+	entry = append(entry, ipv6Entries...)
 	return entry, nil
+}
 
+func (h *DHCPProxyHandler) dumpDHCPProxyForIPVersion(isIPv6 bool) (entry []*vppcalls.DHCPProxyDetails, err error) {
+	reqCtx := h.callsChannel.SendMultiRequest(&vpp_dhcp.DHCPProxyDump{IsIP6: isIPv6})
+	for {
+		dhcpProxyDetails := &vpp_dhcp.DHCPProxyDetails{}
+		stop, err := reqCtx.ReceiveReply(dhcpProxyDetails)
+		if stop {
+			break
+		}
+		if err != nil {
+			h.log.Error(err)
+			return nil, err
+		}
+		proxy := &l3.DHCPProxy{
+			RxVrfId:         dhcpProxyDetails.RxVrfID,
+			SourceIpAddress: addressToString(dhcpProxyDetails.DHCPSrcAddress),
+		}
+
+		for _, server := range dhcpProxyDetails.Servers {
+			proxyServer := &l3.DHCPProxy_DHCPServer{
+				IpAddress: addressToString(server.DHCPServer),
+				VrfId:     server.ServerVrfID,
+			}
+			proxy.Servers = append(proxy.Servers, proxyServer)
+		}
+
+		entry = append(entry, &vppcalls.DHCPProxyDetails{
+			DHCPProxy: proxy,
+		})
+	}
+	return
+}
+
+func addressToString(address vpp_dhcp.Address) string {
+	if address.Af == vpp_dhcp.ADDRESS_IP6 {
+		ipAddr := address.Un.GetIP6()
+		return net.IP(ipAddr[:]).To16().String()
+	}
+	ipAddr := address.Un.GetIP4()
+	return net.IP(ipAddr[:]).To4().String()
 }

@@ -117,18 +117,21 @@ func (h *RouteHandler) VppDelRoute(route *l3.Route) error {
 }
 
 func setFibPathNhAndProto(netIP net.IP) (nh vpp_ip.FibPathNh, proto vpp_ip.FibPathNhProto) {
-	var ipData [16]byte
+	var addrUnion vpp_ip.AddressUnion
 	if netIP.To4() == nil {
 		proto = vpp_ip.FIB_API_PATH_NH_PROTO_IP6
-		copy(ipData[:], netIP[:])
+		var ip6addr vpp_ip.IP6Address
+		copy(ip6addr[:], netIP.To16())
+		addrUnion.SetIP6(ip6addr)
 	} else {
 		proto = vpp_ip.FIB_API_PATH_NH_PROTO_IP4
-		copy(ipData[:], netIP.To4()[:])
+		var ip4addr vpp_ip.IP4Address
+		copy(ip4addr[:], netIP.To4())
+		addrUnion.SetIP4(ip4addr)
 	}
+
 	return vpp_ip.FibPathNh{
-		Address: vpp_ip.AddressUnion{
-			XXX_UnionData: ipData,
-		},
+		Address:            addrUnion,
 		ViaLabel:           NextHopViaLabelUnset,
 		ClassifyTableIndex: ClassifyTableIndexUnset,
 	}, proto

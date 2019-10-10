@@ -23,10 +23,8 @@ import (
 const (
 	// ModuleName is the name of this module.
 	ModuleName = "vmxnet3"
-	// APIVersion is the API version of this module.
-	APIVersion = "1.0.1"
 	// VersionCrc is the CRC of this module.
-	VersionCrc = 0x402d34e6
+	VersionCrc = 0xd126c788
 )
 
 // Vmxnet3RxList represents VPP binary API type 'vmxnet3_rx_list'.

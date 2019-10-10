@@ -31,13 +31,7 @@ func (h *InterfaceVppHandler) addDelInterfaceIP(ifIdx uint32, addr *net.IPNet, i
 	if err != nil {
 		return err
 	}
-	if isIPv6 {
-		copy(req.Prefix.Address.Un.XXX_UnionData[:], addr.IP.To16())
-		req.Prefix.Address.Af = vpp_ifs.ADDRESS_IP6
-	} else {
-		copy(req.Prefix.Address.Un.XXX_UnionData[:], addr.IP.To4())
-		req.Prefix.Address.Af = vpp_ifs.ADDRESS_IP4
-	}
+	req.Prefix.Address = ipToAddress(addr, isIPv6)
 	prefix, _ := addr.Mask.Size()
 	req.Prefix.Len = byte(prefix)
 
@@ -79,4 +73,19 @@ func (h *InterfaceVppHandler) SetUnnumberedIP(uIfIdx uint32, ifIdxWithIP uint32)
 
 func (h *InterfaceVppHandler) UnsetUnnumberedIP(uIfIdx uint32) error {
 	return h.setUnsetUnnumberedIP(uIfIdx, 0, false)
+}
+
+func ipToAddress(address *net.IPNet, isIPv6 bool) (ipAddr vpp_ifs.Address) {
+	if isIPv6 {
+		ipAddr.Af = vpp_ifs.ADDRESS_IP6
+		var ip6addr vpp_ifs.IP6Address
+		copy(ip6addr[:], address.IP.To16())
+		ipAddr.Un.SetIP6(ip6addr)
+	} else {
+		ipAddr.Af = vpp_ifs.ADDRESS_IP4
+		var ip4addr vpp_ifs.IP4Address
+		copy(ip4addr[:], address.IP.To4())
+		ipAddr.Un.SetIP4(ip4addr)
+	}
+	return
 }

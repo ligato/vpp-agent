@@ -166,14 +166,14 @@ func TestRegisterMemifSocketFilename(t *testing.T) {
 
 	ctx.MockVpp.MockReply(&memif.MemifSocketFilenameAddDelReply{})
 
-	err := ifHandler.RegisterMemifSocketFilename([]byte("filename"), 1)
+	err := ifHandler.RegisterMemifSocketFilename("filename", 1)
 
 	Expect(err).To(BeNil())
 	vppMsg, ok := ctx.MockChannel.Msg.(*memif.MemifSocketFilenameAddDel)
 	Expect(ok).To(BeTrue())
 	Expect(vppMsg.IsAdd).To(BeEquivalentTo(1))
 	Expect(vppMsg.SocketID).To(BeEquivalentTo(1))
-	Expect(vppMsg.SocketFilename).To(BeEquivalentTo([]byte("filename")))
+	Expect(vppMsg.SocketFilename).To(BeEquivalentTo("filename"))
 }
 
 func TestRegisterMemifSocketFilenameError(t *testing.T) {
@@ -182,7 +182,7 @@ func TestRegisterMemifSocketFilenameError(t *testing.T) {
 
 	ctx.MockVpp.MockReply(&memif.MemifSocketFilenameAddDel{})
 
-	err := ifHandler.RegisterMemifSocketFilename([]byte("filename"), 1)
+	err := ifHandler.RegisterMemifSocketFilename("filename", 1)
 
 	Expect(err).ToNot(BeNil())
 }
@@ -195,7 +195,7 @@ func TestRegisterMemifSocketFilenameRetval(t *testing.T) {
 		Retval: 1,
 	})
 
-	err := ifHandler.RegisterMemifSocketFilename([]byte("filename"), 1)
+	err := ifHandler.RegisterMemifSocketFilename("filename", 1)
 
 	Expect(err).ToNot(BeNil())
 }
