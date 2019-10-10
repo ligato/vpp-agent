@@ -23,10 +23,8 @@ import (
 const (
 	// ModuleName is the name of this module.
 	ModuleName = "memclnt"
-	// APIVersion is the API version of this module.
-	APIVersion = "2.1.0"
 	// VersionCrc is the CRC of this module.
-	VersionCrc = 0x4b04e3e8
+	VersionCrc = 0x7c47de3a
 )
 
 // MessageTableEntry represents VPP binary API type 'message_table_entry'.

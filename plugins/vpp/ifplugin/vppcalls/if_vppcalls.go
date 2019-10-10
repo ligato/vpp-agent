@@ -176,7 +176,7 @@ type InterfaceVppAPI interface {
 	// SetInterfaceMac calls SwInterfaceSetMacAddress bin API.
 	SetInterfaceMac(ifIdx uint32, macAddress string) error
 	// RegisterMemifSocketFilename registers new socket file name with provided ID.
-	RegisterMemifSocketFilename(filename []byte, id uint32) error
+	RegisterMemifSocketFilename(filename string, id uint32) error
 	// SetInterfaceMtu calls HwInterfaceSetMtu bin API with desired MTU value.
 	SetInterfaceMtu(ifIdx uint32, mtu uint32) error
 	// SetRxMode calls SwInterfaceSetRxMode bin API

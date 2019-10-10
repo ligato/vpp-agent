@@ -20,11 +20,11 @@ import (
 
 func (h *InterfaceVppHandler) handleInterfaceDHCP(ifIdx uint32, hostName string, isAdd bool) error {
 	req := &vpp_dhcp.DHCPClientConfig{
-		IsAdd: boolToUint(isAdd),
+		IsAdd: isAdd,
 		Client: vpp_dhcp.DHCPClient{
-			SwIfIndex:     ifIdx,
-			Hostname:      []byte(hostName),
-			WantDHCPEvent: 1,
+			SwIfIndex:     vpp_dhcp.InterfaceIndex(ifIdx),
+			Hostname:      hostName,
+			WantDHCPEvent: true,
 		},
 	}
 	reply := &vpp_dhcp.DHCPClientConfigReply{}

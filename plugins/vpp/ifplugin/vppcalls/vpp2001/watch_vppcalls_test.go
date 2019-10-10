@@ -15,6 +15,7 @@
 package vpp2001_test
 
 import (
+	"net"
 	"testing"
 
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/interfaces"
@@ -84,21 +85,25 @@ func TestWatchDHCPLeases(t *testing.T) {
 	Expect(notifChan).ToNot(BeNil())
 	Expect(err).To(BeNil())
 
+	var hostAddr, routerAddr [16]byte
+	copy(hostAddr[:], net.ParseIP("10.10.10.5").To4())
+	copy(routerAddr[:], net.ParseIP("10.10.10.1").To4())
+
 	notifChan <- &dhcp.DHCPComplEvent{
 		PID: 50,
 		Lease: dhcp.DHCPLease{
 			SwIfIndex:     1,
 			State:         1,
-			Hostname:      []byte("host1"),
-			IsIPv6:        0,
+			Hostname:      "host1",
+			IsIPv6:        false,
 			MaskWidth:     24,
-			HostAddress:   []byte{10, 10, 10, 5},
-			RouterAddress: []byte{10, 10, 10, 1},
-			HostMac:       []byte{16, 16, 32, 32, 48, 48},
+			HostAddress:   dhcp.Address{Un: dhcp.AddressUnion{XXX_UnionData: hostAddr}},
+			RouterAddress: dhcp.Address{Un: dhcp.AddressUnion{XXX_UnionData: routerAddr}},
+			HostMac:       [6]byte{16, 16, 32, 32, 48, 48},
 		},
 	}
 	var result *vppcalls.Lease
-	Eventually(leasesChChan, 2).Should(Receive(&result))
+	Eventually(leasesChChan, 50).Should(Receive(&result))
 	Expect(result).To(Equal(&vppcalls.Lease{
 		SwIfIndex:     1,
 		State:         1,
@@ -108,17 +113,20 @@ func TestWatchDHCPLeases(t *testing.T) {
 		HostMac:       "10:10:20:20:30:30",
 	}))
 
+	copy(hostAddr[:], net.ParseIP("1234::").To16())
+	copy(routerAddr[:], net.ParseIP("abcd::").To16())
+
 	notifChan <- &dhcp.DHCPComplEvent{
 		PID: 50,
 		Lease: dhcp.DHCPLease{
 			SwIfIndex:     2,
 			State:         0,
-			Hostname:      []byte("host2"),
-			IsIPv6:        1,
-			MaskWidth:     24,
-			HostAddress:   []byte{10, 10, 10, 6},
-			RouterAddress: []byte{10, 10, 10, 1},
-			HostMac:       []byte{16, 16, 32, 32, 64, 64},
+			Hostname:      "host2",
+			IsIPv6:        true,
+			MaskWidth:     64,
+			HostAddress:   dhcp.Address{Un: dhcp.AddressUnion{XXX_UnionData: hostAddr}},
+			RouterAddress: dhcp.Address{Un: dhcp.AddressUnion{XXX_UnionData: routerAddr}},
+			HostMac:       [6]byte{16, 16, 32, 32, 64, 64},
 		},
 	}
 	Eventually(leasesChChan, 2).Should(Receive(&result))
@@ -126,8 +134,8 @@ func TestWatchDHCPLeases(t *testing.T) {
 		SwIfIndex:     2,
 		Hostname:      "host2",
 		IsIPv6:        true,
-		HostAddress:   "10.10.10.6/24",
-		RouterAddress: "10.10.10.1/24",
+		HostAddress:   "1234::/64",
+		RouterAddress: "abcd::/64",
 		HostMac:       "10:10:20:20:40:40",
 	}))
 

@@ -5,8 +5,8 @@
 Package ip is a generated VPP binary API for 'ip' module.
 
 It consists of:
-	  9 enums
-	  3 aliases
+	 10 enums
+	  6 aliases
 	 17 types
 	  1 union
 	 93 messages
@@ -26,10 +26,8 @@ import (
 const (
 	// ModuleName is the name of this module.
 	ModuleName = "ip"
-	// APIVersion is the API version of this module.
-	APIVersion = "3.0.0"
 	// VersionCrc is the CRC of this module.
-	VersionCrc = 0x902699f5
+	VersionCrc = 0x33782748
 )
 
 // AddressFamily represents VPP binary API enum 'address_family'.
@@ -378,6 +376,32 @@ func (x IPProto) String() string {
 	return strconv.Itoa(int(x))
 }
 
+// IPReassType represents VPP binary API enum 'ip_reass_type'.
+type IPReassType uint32
+
+const (
+	IP_REASS_TYPE_FULL            IPReassType = 0
+	IP_REASS_TYPE_SHALLOW_VIRTUAL IPReassType = 1
+)
+
+var IPReassType_name = map[uint32]string{
+	0: "IP_REASS_TYPE_FULL",
+	1: "IP_REASS_TYPE_SHALLOW_VIRTUAL",
+}
+
+var IPReassType_value = map[string]uint32{
+	"IP_REASS_TYPE_FULL":            0,
+	"IP_REASS_TYPE_SHALLOW_VIRTUAL": 1,
+}
+
+func (x IPReassType) String() string {
+	s, ok := IPReassType_name[uint32(x)]
+	if ok {
+		return s
+	}
+	return strconv.Itoa(int(x))
+}
+
 // MfibItfFlags represents VPP binary API enum 'mfib_itf_flags'.
 type MfibItfFlags uint32
 
@@ -416,11 +440,20 @@ func (x MfibItfFlags) String() string {
 	return strconv.Itoa(int(x))
 }
 
+// AddressWithPrefix represents VPP binary API alias 'address_with_prefix'.
+type AddressWithPrefix Prefix
+
 // IP4Address represents VPP binary API alias 'ip4_address'.
 type IP4Address [4]uint8
 
+// IP4AddressWithPrefix represents VPP binary API alias 'ip4_address_with_prefix'.
+type IP4AddressWithPrefix IP4Prefix
+
 // IP6Address represents VPP binary API alias 'ip6_address'.
 type IP6Address [16]uint8
+
+// IP6AddressWithPrefix represents VPP binary API alias 'ip6_address_with_prefix'.
+type IP6AddressWithPrefix IP6Prefix
 
 // MacAddress represents VPP binary API alias 'mac_address'.
 type MacAddress [6]uint8
@@ -745,7 +778,7 @@ func (*IP4ArpEvent) GetMessageName() string {
 	return "ip4_arp_event"
 }
 func (*IP4ArpEvent) GetCrcString() string {
-	return "72cdde7c"
+	return "efad00cd"
 }
 func (*IP4ArpEvent) GetMessageType() api.MessageType {
 	return api.EventMessage
@@ -764,7 +797,7 @@ func (*IP6NdEvent) GetMessageName() string {
 	return "ip6_nd_event"
 }
 func (*IP6NdEvent) GetCrcString() string {
-	return "3a23e7d4"
+	return "d676f6ca"
 }
 func (*IP6NdEvent) GetMessageType() api.MessageType {
 	return api.EventMessage
@@ -788,7 +821,7 @@ func (*IP6RaEvent) GetMessageName() string {
 	return "ip6_ra_event"
 }
 func (*IP6RaEvent) GetCrcString() string {
-	return "34c9ddac"
+	return "170493ab"
 }
 func (*IP6RaEvent) GetMessageType() api.MessageType {
 	return api.EventMessage
@@ -805,7 +838,7 @@ func (*IP6ndProxyAddDel) GetMessageName() string {
 	return "ip6nd_proxy_add_del"
 }
 func (*IP6ndProxyAddDel) GetCrcString() string {
-	return "bff10d55"
+	return "b431d174"
 }
 func (*IP6ndProxyAddDel) GetMessageType() api.MessageType {
 	return api.RequestMessage
@@ -836,7 +869,7 @@ func (*IP6ndProxyDetails) GetMessageName() string {
 	return "ip6nd_proxy_details"
 }
 func (*IP6ndProxyDetails) GetCrcString() string {
-	return "bbbd7894"
+	return "46bfb684"
 }
 func (*IP6ndProxyDetails) GetMessageType() api.MessageType {
 	return api.ReplyMessage
@@ -893,14 +926,14 @@ func (*IP6ndSendRouterSolicitationReply) GetMessageType() api.MessageType {
 // IPAddressDetails represents VPP binary API message 'ip_address_details'.
 type IPAddressDetails struct {
 	SwIfIndex uint32
-	Prefix    Prefix
+	Prefix    AddressWithPrefix
 }
 
 func (*IPAddressDetails) GetMessageName() string {
 	return "ip_address_details"
 }
 func (*IPAddressDetails) GetCrcString() string {
-	return "2f1dbc7d"
+	return "7002eee7"
 }
 func (*IPAddressDetails) GetMessageType() api.MessageType {
 	return api.ReplyMessage
@@ -933,7 +966,7 @@ func (*IPContainerProxyAddDel) GetMessageName() string {
 	return "ip_container_proxy_add_del"
 }
 func (*IPContainerProxyAddDel) GetCrcString() string {
-	return "5ba831f3"
+	return "630352c5"
 }
 func (*IPContainerProxyAddDel) GetMessageType() api.MessageType {
 	return api.RequestMessage
@@ -964,7 +997,7 @@ func (*IPContainerProxyDetails) GetMessageName() string {
 	return "ip_container_proxy_details"
 }
 func (*IPContainerProxyDetails) GetCrcString() string {
-	return "2f1dbc7d"
+	return "550a6c28"
 }
 func (*IPContainerProxyDetails) GetMessageType() api.MessageType {
 	return api.ReplyMessage
@@ -1025,7 +1058,7 @@ func (*IPMrouteAddDel) GetMessageName() string {
 	return "ip_mroute_add_del"
 }
 func (*IPMrouteAddDel) GetCrcString() string {
-	return "997baab2"
+	return "edbca49e"
 }
 func (*IPMrouteAddDel) GetMessageType() api.MessageType {
 	return api.RequestMessage
@@ -1056,7 +1089,7 @@ func (*IPMrouteDetails) GetMessageName() string {
 	return "ip_mroute_details"
 }
 func (*IPMrouteDetails) GetCrcString() string {
-	return "39405e5a"
+	return "c1cb4b44"
 }
 func (*IPMrouteDetails) GetMessageType() api.MessageType {
 	return api.ReplyMessage
@@ -1115,7 +1148,7 @@ func (*IPNeighborAddDel) GetMessageName() string {
 	return "ip_neighbor_add_del"
 }
 func (*IPNeighborAddDel) GetCrcString() string {
-	return "7a68a3c4"
+	return "029dad44"
 }
 func (*IPNeighborAddDel) GetMessageType() api.MessageType {
 	return api.RequestMessage
@@ -1146,7 +1179,7 @@ func (*IPNeighborDetails) GetMessageName() string {
 	return "ip_neighbor_details"
 }
 func (*IPNeighborDetails) GetCrcString() string {
-	return "4a05f212"
+	return "c1a190ed"
 }
 func (*IPNeighborDetails) GetMessageType() api.MessageType {
 	return api.ReplyMessage
@@ -1178,7 +1211,7 @@ func (*IPProbeNeighbor) GetMessageName() string {
 	return "ip_probe_neighbor"
 }
 func (*IPProbeNeighbor) GetCrcString() string {
-	return "2736142d"
+	return "37bc128d"
 }
 func (*IPProbeNeighbor) GetMessageType() api.MessageType {
 	return api.RequestMessage
@@ -1241,7 +1274,7 @@ func (*IPPuntRedirect) GetMessageName() string {
 	return "ip_punt_redirect"
 }
 func (*IPPuntRedirect) GetCrcString() string {
-	return "70b793c6"
+	return "f9ea79a8"
 }
 func (*IPPuntRedirect) GetMessageType() api.MessageType {
 	return api.RequestMessage
@@ -1256,7 +1289,7 @@ func (*IPPuntRedirectDetails) GetMessageName() string {
 	return "ip_punt_redirect_details"
 }
 func (*IPPuntRedirectDetails) GetCrcString() string {
-	return "07e504f8"
+	return "d6441360"
 }
 func (*IPPuntRedirectDetails) GetMessageType() api.MessageType {
 	return api.ReplyMessage
@@ -1298,13 +1331,14 @@ type IPReassemblyEnableDisable struct {
 	SwIfIndex uint32
 	EnableIP4 uint8
 	EnableIP6 uint8
+	Type      IPReassType
 }
 
 func (*IPReassemblyEnableDisable) GetMessageName() string {
 	return "ip_reassembly_enable_disable"
 }
 func (*IPReassemblyEnableDisable) GetCrcString() string {
-	return "bb8dc5d0"
+	return "12ef7dec"
 }
 func (*IPReassemblyEnableDisable) GetMessageType() api.MessageType {
 	return api.RequestMessage
@@ -1328,13 +1362,14 @@ func (*IPReassemblyEnableDisableReply) GetMessageType() api.MessageType {
 // IPReassemblyGet represents VPP binary API message 'ip_reassembly_get'.
 type IPReassemblyGet struct {
 	IsIP6 uint8
+	Type  IPReassType
 }
 
 func (*IPReassemblyGet) GetMessageName() string {
 	return "ip_reassembly_get"
 }
 func (*IPReassemblyGet) GetCrcString() string {
-	return "6fe91190"
+	return "73987e62"
 }
 func (*IPReassemblyGet) GetMessageType() api.MessageType {
 	return api.RequestMessage
@@ -1367,13 +1402,14 @@ type IPReassemblySet struct {
 	MaxReassemblyLength  uint32
 	ExpireWalkIntervalMs uint32
 	IsIP6                uint8
+	Type                 IPReassType
 }
 
 func (*IPReassemblySet) GetMessageName() string {
 	return "ip_reassembly_set"
 }
 func (*IPReassemblySet) GetCrcString() string {
-	return "403051cd"
+	return "1a5003a3"
 }
 func (*IPReassemblySet) GetMessageType() api.MessageType {
 	return api.RequestMessage
@@ -1405,7 +1441,7 @@ func (*IPRouteAddDel) GetMessageName() string {
 	return "ip_route_add_del"
 }
 func (*IPRouteAddDel) GetCrcString() string {
-	return "83e086ce"
+	return "5ceee41c"
 }
 func (*IPRouteAddDel) GetMessageType() api.MessageType {
 	return api.RequestMessage
@@ -1436,7 +1472,7 @@ func (*IPRouteDetails) GetMessageName() string {
 	return "ip_route_details"
 }
 func (*IPRouteDetails) GetCrcString() string {
-	return "acdee858"
+	return "d1ffaae1"
 }
 func (*IPRouteDetails) GetMessageType() api.MessageType {
 	return api.ReplyMessage
@@ -1506,7 +1542,7 @@ func (*IPSourceAndPortRangeCheckAddDel) GetMessageName() string {
 	return "ip_source_and_port_range_check_add_del"
 }
 func (*IPSourceAndPortRangeCheckAddDel) GetCrcString() string {
-	return "b50ed159"
+	return "97e10a78"
 }
 func (*IPSourceAndPortRangeCheckAddDel) GetMessageType() api.MessageType {
 	return api.RequestMessage
@@ -1697,7 +1733,7 @@ func (*MfibSignalDetails) GetMessageName() string {
 	return "mfib_signal_details"
 }
 func (*MfibSignalDetails) GetCrcString() string {
-	return "cd461bfa"
+	return "697ab6b4"
 }
 func (*MfibSignalDetails) GetMessageType() api.MessageType {
 	return api.ReplyMessage
@@ -1726,7 +1762,7 @@ func (*ProxyArpAddDel) GetMessageName() string {
 	return "proxy_arp_add_del"
 }
 func (*ProxyArpAddDel) GetCrcString() string {
-	return "93a0e853"
+	return "320b4c54"
 }
 func (*ProxyArpAddDel) GetMessageType() api.MessageType {
 	return api.RequestMessage
@@ -1756,7 +1792,7 @@ func (*ProxyArpDetails) GetMessageName() string {
 	return "proxy_arp_details"
 }
 func (*ProxyArpDetails) GetCrcString() string {
-	return "2515902a"
+	return "9228c150"
 }
 func (*ProxyArpDetails) GetMessageType() api.MessageType {
 	return api.ReplyMessage
@@ -2057,7 +2093,7 @@ func (*SwInterfaceIP6ndRaPrefix) GetMessageName() string {
 	return "sw_interface_ip6nd_ra_prefix"
 }
 func (*SwInterfaceIP6ndRaPrefix) GetCrcString() string {
-	return "0f759f82"
+	return "6449c040"
 }
 func (*SwInterfaceIP6ndRaPrefix) GetMessageType() api.MessageType {
 	return api.RequestMessage
@@ -2089,7 +2125,7 @@ func (*WantIP4ArpEvents) GetMessageName() string {
 	return "want_ip4_arp_events"
 }
 func (*WantIP4ArpEvents) GetCrcString() string {
-	return "70fd7195"
+	return "2678f421"
 }
 func (*WantIP4ArpEvents) GetMessageType() api.MessageType {
 	return api.RequestMessage
@@ -2121,7 +2157,7 @@ func (*WantIP6NdEvents) GetMessageName() string {
 	return "want_ip6_nd_events"
 }
 func (*WantIP6NdEvents) GetCrcString() string {
-	return "ba330719"
+	return "08283da1"
 }
 func (*WantIP6NdEvents) GetMessageType() api.MessageType {
 	return api.RequestMessage

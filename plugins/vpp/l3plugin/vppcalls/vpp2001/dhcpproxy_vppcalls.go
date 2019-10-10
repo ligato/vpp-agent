@@ -15,6 +15,7 @@
 package vpp2001
 
 import (
+	"fmt"
 	"net"
 
 	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
@@ -22,37 +23,18 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (h *DHCPProxyHandler) createDeleteDHCPProxy(entry *l3.DHCPProxy, delete bool) error {
+func (h *DHCPProxyHandler) createDeleteDHCPProxy(entry *l3.DHCPProxy, delete bool) (err error) {
 	config := &vpp_dhcp.DHCPProxyConfig{
 		RxVrfID: entry.RxVrfId,
-		IsAdd:   boolToUint(!delete),
+		IsAdd:   !delete,
 	}
-
-	ipAddr := net.ParseIP(entry.SourceIpAddress)
-
-	if ipAddr == nil {
+	if config.DHCPSrcAddress, err = ipToDHCPAddress(entry.SourceIpAddress); err != nil {
 		return errors.Errorf("Invalid source IP address: %q", entry.SourceIpAddress)
 	}
-
-	if ipAddr.To4() == nil {
-		config.IsIPv6 = 1
-		config.DHCPSrcAddress = []byte(ipAddr.To16())
-	} else {
-		config.IsIPv6 = 0
-		config.DHCPSrcAddress = []byte(ipAddr.To4())
-	}
-
 	for _, server := range entry.Servers {
 		config.ServerVrfID = server.VrfId
-		ipAddr := net.ParseIP(server.IpAddress)
-		if ipAddr == nil {
+		if config.DHCPServer, err = ipToDHCPAddress(server.IpAddress); err != nil {
 			return errors.Errorf("Invalid server IP address: %q", server.IpAddress)
-		}
-
-		if ipAddr.To4() == nil {
-			config.DHCPServer = []byte(ipAddr.To16())
-		} else {
-			config.DHCPServer = []byte(ipAddr.To4())
 		}
 		reply := &vpp_dhcp.DHCPProxyConfigReply{}
 		if err := h.callsChannel.SendRequest(config).ReceiveReply(reply); err != nil {
@@ -69,4 +51,23 @@ func (h *DHCPProxyHandler) CreateDHCPProxy(entry *l3.DHCPProxy) error {
 
 func (h *DHCPProxyHandler) DeleteDHCPProxy(entry *l3.DHCPProxy) error {
 	return h.createDeleteDHCPProxy(entry, true)
+}
+
+func ipToDHCPAddress(address string) (dhcpAddr vpp_dhcp.Address, err error) {
+	netIP := net.ParseIP(address)
+	if netIP == nil {
+		return vpp_dhcp.Address{}, fmt.Errorf("invalid IP: %q", address)
+	}
+	if ip4 := netIP.To4(); ip4 == nil {
+		dhcpAddr.Af = vpp_dhcp.ADDRESS_IP6
+		var ip6addr vpp_dhcp.IP6Address
+		copy(ip6addr[:], netIP.To16())
+		dhcpAddr.Un.SetIP6(ip6addr)
+	} else {
+		dhcpAddr.Af = vpp_dhcp.ADDRESS_IP4
+		var ip4addr vpp_dhcp.IP4Address
+		copy(ip4addr[:], ip4)
+		dhcpAddr.Un.SetIP4(ip4addr)
+	}
+	return
 }

@@ -15,8 +15,6 @@
 package vpp2001
 
 import (
-	"net"
-
 	ifs "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	vpp_bond "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/bond"
 )
@@ -28,11 +26,11 @@ func (h *InterfaceVppHandler) AddBondInterface(ifName string, mac string, bondLi
 		Lb:   getLoadBalance(bondLink.Lb),
 	}
 	if mac != "" {
-		parsedMac, err := net.ParseMAC(mac)
+		parsedMac, err := ParseMAC(mac)
 		if err != nil {
 			return 0, err
 		}
-		req.UseCustomMac = 1
+		req.UseCustomMac = true
 		req.MacAddress = parsedMac
 	}
 
@@ -41,12 +39,12 @@ func (h *InterfaceVppHandler) AddBondInterface(ifName string, mac string, bondLi
 		return 0, err
 	}
 
-	return reply.SwIfIndex, h.SetInterfaceTag(ifName, reply.SwIfIndex)
+	return uint32(reply.SwIfIndex), h.SetInterfaceTag(ifName, uint32(reply.SwIfIndex))
 }
 
 func (h *InterfaceVppHandler) DeleteBondInterface(ifName string, ifIdx uint32) error {
 	req := &vpp_bond.BondDelete{
-		SwIfIndex: ifIdx,
+		SwIfIndex: vpp_bond.InterfaceIndex(ifIdx),
 	}
 	reply := &vpp_bond.BondDeleteReply{}
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
@@ -56,18 +54,18 @@ func (h *InterfaceVppHandler) DeleteBondInterface(ifName string, ifIdx uint32) e
 	return h.RemoveInterfaceTag(ifName, ifIdx)
 }
 
-func getBondMode(mode ifs.BondLink_Mode) uint8 {
+func getBondMode(mode ifs.BondLink_Mode) vpp_bond.BondMode {
 	switch mode {
 	case ifs.BondLink_ROUND_ROBIN:
-		return 1
+		return vpp_bond.BOND_API_MODE_ROUND_ROBIN
 	case ifs.BondLink_ACTIVE_BACKUP:
-		return 2
+		return vpp_bond.BOND_API_MODE_ACTIVE_BACKUP
 	case ifs.BondLink_XOR:
-		return 3
+		return vpp_bond.BOND_API_MODE_XOR
 	case ifs.BondLink_BROADCAST:
-		return 4
+		return vpp_bond.BOND_API_MODE_BROADCAST
 	case ifs.BondLink_LACP:
-		return 5
+		return vpp_bond.BOND_API_MODE_LACP
 	default:
 		// UNKNOWN
 		return 0
@@ -76,10 +74,10 @@ func getBondMode(mode ifs.BondLink_Mode) uint8 {
 
 func (h *InterfaceVppHandler) AttachInterfaceToBond(ifIdx, bondIfIdx uint32, isPassive, isLongTimeout bool) error {
 	req := &vpp_bond.BondEnslave{
-		SwIfIndex:     ifIdx,
-		BondSwIfIndex: bondIfIdx,
-		IsPassive:     boolToUint(isPassive),
-		IsLongTimeout: boolToUint(isLongTimeout),
+		SwIfIndex:     vpp_bond.InterfaceIndex(ifIdx),
+		BondSwIfIndex: vpp_bond.InterfaceIndex(bondIfIdx),
+		IsPassive:     isPassive,
+		IsLongTimeout: isLongTimeout,
 	}
 	reply := &vpp_bond.BondEnslaveReply{}
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
@@ -91,7 +89,7 @@ func (h *InterfaceVppHandler) AttachInterfaceToBond(ifIdx, bondIfIdx uint32, isP
 
 func (h *InterfaceVppHandler) DetachInterfaceFromBond(ifIdx uint32) error {
 	req := &vpp_bond.BondDetachSlave{
-		SwIfIndex: ifIdx,
+		SwIfIndex: vpp_bond.InterfaceIndex(ifIdx),
 	}
 	reply := &vpp_bond.BondDetachSlaveReply{}
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
@@ -100,12 +98,18 @@ func (h *InterfaceVppHandler) DetachInterfaceFromBond(ifIdx uint32) error {
 	return nil
 }
 
-func getLoadBalance(lb ifs.BondLink_LoadBalance) uint8 {
+func getLoadBalance(lb ifs.BondLink_LoadBalance) vpp_bond.BondLbAlgo {
 	switch lb {
 	case ifs.BondLink_L34:
-		return 1
+		return vpp_bond.BOND_API_LB_ALGO_L34
 	case ifs.BondLink_L23:
-		return 2
+		return vpp_bond.BOND_API_LB_ALGO_L23
+	case ifs.BondLink_RR:
+		return vpp_bond.BOND_API_LB_ALGO_RR
+	case ifs.BondLink_BC:
+		return vpp_bond.BOND_API_LB_ALGO_BC
+	case ifs.BondLink_AB:
+		return vpp_bond.BOND_API_LB_ALGO_AB
 	default:
 		// L2
 		return 0

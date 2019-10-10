@@ -23,10 +23,8 @@ import (
 const (
 	// ModuleName is the name of this module.
 	ModuleName = "acl"
-	// APIVersion is the API version of this module.
-	APIVersion = "1.0.1"
 	// VersionCrc is the CRC of this module.
-	VersionCrc = 0xedb7b898
+	VersionCrc = 0x11c5c1e5
 )
 
 // ACLRule represents VPP binary API type 'acl_rule'.

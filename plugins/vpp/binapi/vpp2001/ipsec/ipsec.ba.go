@@ -6,7 +6,7 @@ Package ipsec is a generated VPP binary API for 'ipsec' module.
 
 It consists of:
 	 15 enums
-	  3 aliases
+	  6 aliases
 	 10 types
 	  1 union
 	 30 messages
@@ -26,10 +26,8 @@ import (
 const (
 	// ModuleName is the name of this module.
 	ModuleName = "ipsec"
-	// APIVersion is the API version of this module.
-	APIVersion = "3.0.0"
 	// VersionCrc is the CRC of this module.
-	VersionCrc = 0x912fd030
+	VersionCrc = 0x377b9da2
 )
 
 // AddressFamily represents VPP binary API enum 'address_family'.
@@ -629,14 +627,23 @@ func (x SubIfFlags) String() string {
 	return strconv.Itoa(int(x))
 }
 
+// AddressWithPrefix represents VPP binary API alias 'address_with_prefix'.
+type AddressWithPrefix Prefix
+
 // InterfaceIndex represents VPP binary API alias 'interface_index'.
 type InterfaceIndex uint32
 
 // IP4Address represents VPP binary API alias 'ip4_address'.
 type IP4Address [4]uint8
 
+// IP4AddressWithPrefix represents VPP binary API alias 'ip4_address_with_prefix'.
+type IP4AddressWithPrefix IP4Prefix
+
 // IP6Address represents VPP binary API alias 'ip6_address'.
 type IP6Address [16]uint8
+
+// IP6AddressWithPrefix represents VPP binary API alias 'ip6_address_with_prefix'.
+type IP6AddressWithPrefix IP6Prefix
 
 // Address represents VPP binary API type 'address'.
 type Address struct {
@@ -1009,7 +1016,7 @@ func (*IpsecSpdDetails) GetMessageName() string {
 	return "ipsec_spd_details"
 }
 func (*IpsecSpdDetails) GetCrcString() string {
-	return "06df7fb3"
+	return "021e2c20"
 }
 func (*IpsecSpdDetails) GetMessageType() api.MessageType {
 	return api.ReplyMessage
@@ -1041,7 +1048,7 @@ func (*IpsecSpdEntryAddDel) GetMessageName() string {
 	return "ipsec_spd_entry_add_del"
 }
 func (*IpsecSpdEntryAddDel) GetCrcString() string {
-	return "6bc6a3b5"
+	return "db217840"
 }
 func (*IpsecSpdEntryAddDel) GetMessageType() api.MessageType {
 	return api.RequestMessage
@@ -1154,7 +1161,7 @@ func (*IpsecTunnelIfAddDel) GetMessageName() string {
 	return "ipsec_tunnel_if_add_del"
 }
 func (*IpsecTunnelIfAddDel) GetCrcString() string {
-	return "aa539b47"
+	return "d5a98274"
 }
 func (*IpsecTunnelIfAddDel) GetMessageType() api.MessageType {
 	return api.RequestMessage
@@ -1217,7 +1224,7 @@ func (*IpsecTunnelProtectDel) GetMessageName() string {
 	return "ipsec_tunnel_protect_del"
 }
 func (*IpsecTunnelProtectDel) GetCrcString() string {
-	return "d85aab0d"
+	return "f9e6675e"
 }
 func (*IpsecTunnelProtectDel) GetMessageType() api.MessageType {
 	return api.RequestMessage
@@ -1247,7 +1254,7 @@ func (*IpsecTunnelProtectDetails) GetMessageName() string {
 	return "ipsec_tunnel_protect_details"
 }
 func (*IpsecTunnelProtectDetails) GetCrcString() string {
-	return "f724bc50"
+	return "7520eefe"
 }
 func (*IpsecTunnelProtectDetails) GetMessageType() api.MessageType {
 	return api.ReplyMessage
@@ -1262,7 +1269,7 @@ func (*IpsecTunnelProtectDump) GetMessageName() string {
 	return "ipsec_tunnel_protect_dump"
 }
 func (*IpsecTunnelProtectDump) GetCrcString() string {
-	return "d85aab0d"
+	return "f9e6675e"
 }
 func (*IpsecTunnelProtectDump) GetMessageType() api.MessageType {
 	return api.RequestMessage
@@ -1277,7 +1284,7 @@ func (*IpsecTunnelProtectUpdate) GetMessageName() string {
 	return "ipsec_tunnel_protect_update"
 }
 func (*IpsecTunnelProtectUpdate) GetCrcString() string {
-	return "316dab99"
+	return "eccbc177"
 }
 func (*IpsecTunnelProtectUpdate) GetMessageType() api.MessageType {
 	return api.RequestMessage

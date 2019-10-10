@@ -22,8 +22,8 @@ import (
 func (h *InterfaceVppHandler) AddMemifInterface(ifName string, memIface *ifs.MemifLink, socketID uint32) (swIdx uint32, err error) {
 	req := &vpp_memif.MemifCreate{
 		ID:         memIface.Id,
-		Mode:       uint8(memIface.Mode),
-		Secret:     []byte(memIface.Secret),
+		Mode:       memifMode(memIface.Mode),
+		Secret:     memIface.Secret,
 		SocketID:   socketID,
 		BufferSize: uint16(memIface.BufferSize),
 		RingSize:   memIface.RingSize,
@@ -48,12 +48,12 @@ func (h *InterfaceVppHandler) AddMemifInterface(ifName string, memIface *ifs.Mem
 		return 0, err
 	}
 
-	return reply.SwIfIndex, h.SetInterfaceTag(ifName, reply.SwIfIndex)
+	return uint32(reply.SwIfIndex), h.SetInterfaceTag(ifName, uint32(reply.SwIfIndex))
 }
 
 func (h *InterfaceVppHandler) DeleteMemifInterface(ifName string, idx uint32) error {
 	req := &vpp_memif.MemifDelete{
-		SwIfIndex: idx,
+		SwIfIndex: vpp_memif.InterfaceIndex(idx),
 	}
 	reply := &vpp_memif.MemifDeleteReply{}
 
@@ -64,11 +64,11 @@ func (h *InterfaceVppHandler) DeleteMemifInterface(ifName string, idx uint32) er
 	return h.RemoveInterfaceTag(ifName, idx)
 }
 
-func (h *InterfaceVppHandler) RegisterMemifSocketFilename(filename []byte, id uint32) error {
+func (h *InterfaceVppHandler) RegisterMemifSocketFilename(filename string, id uint32) error {
 	req := &vpp_memif.MemifSocketFilenameAddDel{
 		SocketFilename: filename,
 		SocketID:       id,
-		IsAdd:          1, // sockets can be added only
+		IsAdd:          true, // sockets can be added only
 	}
 	reply := &vpp_memif.MemifSocketFilenameAddDelReply{}
 
@@ -77,4 +77,15 @@ func (h *InterfaceVppHandler) RegisterMemifSocketFilename(filename []byte, id ui
 	}
 
 	return nil
+}
+
+func memifMode(mode ifs.MemifLink_MemifMode) vpp_memif.MemifMode {
+	switch mode {
+	case ifs.MemifLink_IP:
+		return vpp_memif.MEMIF_MODE_API_IP
+	case ifs.MemifLink_PUNT_INJECT:
+		return vpp_memif.MEMIF_MODE_API_PUNT_INJECT
+	default:
+		return vpp_memif.MEMIF_MODE_API_ETHERNET
+	}
 }
