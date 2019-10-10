@@ -34,7 +34,6 @@ var (
 
 // Registry defines model registry for managing registered models.
 type Registry struct {
-	name             string
 	registeredModels map[reflect.Type]*Model
 	modelPaths       map[string]*Model
 }
@@ -114,11 +113,11 @@ func (r *Registry) Register(pb proto.Message, spec Spec, opts ...ModelOption) (*
 	}
 
 	// Check proto message name
-	if model.protoName == "" {
-		// We do not want to panic anymore, because model might be registered in same package.
-		//panic(fmt.Sprintf("empty proto message name for type: %T\n\n\tPlease ensure your .proto file contains: 'option (gogoproto.messagename_all) = true'", pb))
-		//fmt.Printf("empty proto message name for type: %T\n\n\tPlease ensure your .proto file contains: 'option (gogoproto.messagename_all) = true'", pb)
-	}
+	//if model.protoName == "" {
+	// We do not want to panic anymore, because model might be registered in same package.
+	//panic(fmt.Sprintf("empty proto message name for type: %T\n\n\tPlease ensure your .proto file contains: 'option (gogoproto.messagename_all) = true'", pb))
+	//fmt.Printf("empty proto message name for type: %T\n\n\tPlease ensure your .proto file contains: 'option (gogoproto.messagename_all) = true'", pb)
+	//}
 
 	// Validate model spec
 	if !validModule.MatchString(spec.Module) {
