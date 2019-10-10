@@ -1000,6 +1000,7 @@
     "github.com/hashicorp/consul/testutil",
     "github.com/howeyc/crc16",
     "github.com/maraino/go-mock",
+    "github.com/mitchellh/mapstructure",
     "github.com/namsral/flag",
     "github.com/onsi/gomega",
     "github.com/pkg/errors",
