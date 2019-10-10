@@ -24,7 +24,7 @@ import (
 
 func (h *DHCPProxyHandler) DumpDHCPProxy() ([]*vppcalls.DHCPProxyDetails, error) {
 	var entry []*vppcalls.DHCPProxyDetails
-	reqCtx := h.callsChannel.SendMultiRequest(&vpp_dhcp.DHCPProxyDump{})
+	reqCtx := h.callsChannel.SendMultiRequest(&vpp_dhcp.DHCPProxyDump{IsIP6: false})
 	for {
 		dhcpProxyDetails := &vpp_dhcp.DHCPProxyDetails{}
 		stop, err := reqCtx.ReceiveReply(dhcpProxyDetails)
