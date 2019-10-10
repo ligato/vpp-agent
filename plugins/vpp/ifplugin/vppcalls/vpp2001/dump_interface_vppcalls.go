@@ -296,7 +296,7 @@ func (h *InterfaceVppHandler) DumpMemifSocketDetails() (map[string]uint32, error
 			return memifSocketMap, fmt.Errorf("failed to dump memif socket filename details: %v", err)
 		}
 
-		filename := strings.TrimRight(socketDetails.SocketFilename, "\x00")
+		filename := strings.SplitN(socketDetails.SocketFilename, "\x00", 2)[0]
 		memifSocketMap[filename] = socketDetails.SocketID
 	}
 

@@ -84,10 +84,10 @@ func (h *DHCPProxyHandler) DumpDHCPProxy() ([]*vppcalls.DHCPProxyDetails, error)
 }
 
 func addressToString(address vpp_dhcp.Address) string {
-	ipByte := make([]byte, 16)
-	copy(ipByte[:], address.Un.XXX_UnionData[:])
 	if address.Af == vpp_dhcp.ADDRESS_IP6 {
-		return net.IP(ipByte).To16().String()
+		ipAddr := address.Un.GetIP6()
+		return net.IP(ipAddr[:]).To16().String()
 	}
-	return net.IP(ipByte).To4().String()
+	ipAddr := address.Un.GetIP4()
+	return net.IP(ipAddr[:]).To4().String()
 }

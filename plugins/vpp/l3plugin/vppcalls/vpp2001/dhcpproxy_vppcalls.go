@@ -15,6 +15,7 @@
 package vpp2001
 
 import (
+	"fmt"
 	"net"
 
 	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
@@ -22,25 +23,12 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (h *DHCPProxyHandler) createDeleteDHCPProxy(entry *l3.DHCPProxy, delete bool) error {
+func (h *DHCPProxyHandler) createDeleteDHCPProxy(entry *l3.DHCPProxy, delete bool) (err error) {
 	config := &vpp_dhcp.DHCPProxyConfig{
 		RxVrfID: entry.RxVrfId,
 		IsAdd:   !delete,
 	}
-
-	ipAddr := net.ParseIP(entry.SourceIpAddress)
-
-	if ipAddr == nil {
-		return errors.Errorf("Invalid source IP address: %q", entry.SourceIpAddress)
-	}
-
-	if ipAddr.To4() == nil {
-		copy(config.DHCPSrcAddress.Un.XXX_UnionData[:], ipAddr.To16())
-		config.DHCPSrcAddress.Af = vpp_dhcp.ADDRESS_IP6
-	} else {
-		copy(config.DHCPSrcAddress.Un.XXX_UnionData[:], ipAddr.To4())
-		config.DHCPSrcAddress.Af = vpp_dhcp.ADDRESS_IP4
-	}
+	config.DHCPSrcAddress, err = ipToDHCPAddress(entry.SourceIpAddress)
 
 	for _, server := range entry.Servers {
 		config.ServerVrfID = server.VrfId
@@ -48,14 +36,8 @@ func (h *DHCPProxyHandler) createDeleteDHCPProxy(entry *l3.DHCPProxy, delete boo
 		if ipAddr == nil {
 			return errors.Errorf("Invalid server IP address: %q", server.IpAddress)
 		}
+		config.DHCPServer, err = ipToDHCPAddress(server.IpAddress)
 
-		if ipAddr.To4() == nil {
-			copy(config.DHCPServer.Un.XXX_UnionData[:], ipAddr.To16())
-			config.DHCPServer.Af = vpp_dhcp.ADDRESS_IP6
-		} else {
-			copy(config.DHCPServer.Un.XXX_UnionData[:], ipAddr.To4())
-			config.DHCPServer.Af = vpp_dhcp.ADDRESS_IP4
-		}
 		reply := &vpp_dhcp.DHCPProxyConfigReply{}
 		if err := h.callsChannel.SendRequest(config).ReceiveReply(reply); err != nil {
 			return err
@@ -71,4 +53,23 @@ func (h *DHCPProxyHandler) CreateDHCPProxy(entry *l3.DHCPProxy) error {
 
 func (h *DHCPProxyHandler) DeleteDHCPProxy(entry *l3.DHCPProxy) error {
 	return h.createDeleteDHCPProxy(entry, true)
+}
+
+func ipToDHCPAddress(address string) (dhcpAddr vpp_dhcp.Address, err error) {
+	netIP := net.ParseIP(address)
+	if netIP == nil {
+		return vpp_dhcp.Address{}, fmt.Errorf("invalid IP: %q", address)
+	}
+	if ip4 := netIP.To4(); ip4 == nil {
+		dhcpAddr.Af = vpp_dhcp.ADDRESS_IP6
+		var ip6addr vpp_dhcp.IP6Address
+		copy(ip6addr[:], netIP.To16())
+		dhcpAddr.Un.SetIP6(ip6addr)
+	} else {
+		dhcpAddr.Af = vpp_dhcp.ADDRESS_IP4
+		var ip4addr vpp_dhcp.IP4Address
+		copy(ip4addr[:], ip4)
+		dhcpAddr.Un.SetIP4(ip4addr)
+	}
+	return
 }
