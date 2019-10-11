@@ -94,6 +94,7 @@ func (m *ModelSpec) GetClass() string {
 
 // ModelDescriptor defines model descriptor to describe a model.
 type ModelDescriptor struct {
+	// Spec is a specificaiton the model was registered with.
 	Spec *ModelSpec `protobuf:"bytes,1,opt,name=spec,proto3" json:"spec,omitempty"`
 	// ProtoName is a name of protobuf message representing the model.
 	ProtoName            string                    `protobuf:"bytes,2,opt,name=proto_name,json=protoName,proto3" json:"proto_name,omitempty"`
