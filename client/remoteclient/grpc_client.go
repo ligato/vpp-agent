@@ -37,7 +37,7 @@ func (c *grpcClient) KnownModels(class string) ([]*client.ModelInfo, error) {
 		return nil, err
 	}
 
-	var modules []*generic.ModelDescriptor
+	var modules []*client.ModelInfo
 	for _, info := range resp.KnownModels {
 		modules = append(modules, info)
 	}
