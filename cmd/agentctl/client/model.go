@@ -2,16 +2,15 @@ package client
 
 import (
 	"context"
-	"fmt"
 	"sort"
-	"strings"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/sirupsen/logrus"
 
-	"github.com/ligato/vpp-agent/api/genericmanager"
+	"github.com/ligato/vpp-agent/api/generic"
 	"github.com/ligato/vpp-agent/api/types"
 	"github.com/ligato/vpp-agent/pkg/debug"
+	"github.com/ligato/vpp-agent/pkg/models"
 )
 
 func (c *Client) ModelList(ctx context.Context, opts types.ModelListOptions) ([]types.Model, error) {
@@ -27,7 +26,7 @@ func (c *Client) ModelList(ctx context.Context, opts types.ModelListOptions) ([]
 	logrus.Debugf("retrieved %d known models", len(knownModels))
 	if debug.IsEnabledFor("models") {
 		for _, m := range knownModels {
-			logrus.Debug(proto.CompactTextString(&m))
+			logrus.Debug(proto.CompactTextString(m))
 		}
 	}
 
@@ -37,37 +36,28 @@ func (c *Client) ModelList(ctx context.Context, opts types.ModelListOptions) ([]
 	return allModels, nil
 }
 
-func convertModels(knownModels []genericmanager.ModelInfo) []types.Model {
+func convertModels(knownModels []*generic.ModelDescriptor) []types.Model {
 	allModels := make([]types.Model, len(knownModels))
 	for i, m := range knownModels {
-		module := strings.Split(m.Model.Module, ".")
-		typ := m.Model.Type
-		version := m.Model.Version
+		spec := models.Spec(*m.Spec)
 
-		name := fmt.Sprintf("%s.%s", m.Model.Module, typ)
-		alias := fmt.Sprintf("%s.%s", module[0], typ)
-		if alias == name {
-			alias = ""
+		protoName := m.ProtoName
+		keyPrefix := spec.KeyPrefix()
+		var nameTemplate string
+		for _, o := range m.Options {
+			if o.Key == "nameTemplate" && len(o.Values) > 0 {
+				nameTemplate = o.Values[0]
+			}
 		}
 
-		protoName := m.Info["protoName"]
-		keyPrefix := m.Info["keyPrefix"]
-		nameTemplate := m.Info["nameTemplate"]
-
-		//p := reflect.New(proto.MessageType(protoName)).Elem().Interface().(descriptor.Message)
-		//fd, _ := descriptor.ForMessage(p)
-
 		model := types.Model{
-			Name:         name,
-			Module:       m.Model.Module,
-			Version:      version,
-			Type:         typ,
-			Alias:        alias,
+			Name:         spec.ModelName(),
+			Module:       m.Spec.Module,
+			Version:      m.Spec.Version,
+			Type:         m.Spec.Type,
 			KeyPrefix:    keyPrefix,
 			ProtoName:    protoName,
 			NameTemplate: nameTemplate,
-			//Proto:    proto.MarshalTextString(fd),
-			//ProtoFile: fd.GetName(),
 		}
 		allModels[i] = model
 	}

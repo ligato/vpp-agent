@@ -19,6 +19,8 @@ import (
 	"strings"
 
 	"github.com/golang/protobuf/proto"
+
+	"github.com/ligato/vpp-agent/api/generic"
 )
 
 // RegisteredModel represents a registered model.
@@ -34,6 +36,18 @@ type RegisteredModel struct {
 func (m RegisteredModel) Spec() *Spec {
 	spec := m.spec
 	return &spec
+}
+
+// ModelDescriptor returns descriptor for the model.
+func (m RegisteredModel) ModelDescriptor() *generic.ModelDescriptor {
+	return &generic.ModelDescriptor{
+		Spec:      (*generic.ModelSpec)(m.Spec()),
+		ProtoName: m.ProtoName(),
+		Options: []*generic.ModelDescriptor_Option{
+			{Key: "nameTemplate", Values: []string{m.NameTemplate()}},
+			{Key: "goType", Values: []string{m.GoType()}},
+		},
+	}
 }
 
 // NewInstance creates new instance value for model type.

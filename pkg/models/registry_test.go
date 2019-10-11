@@ -42,12 +42,7 @@ func TestRegister(t *testing.T) {
 	registered := RegisteredModels()
 	g.Expect(registered).To(HaveLen(1))
 
-	//model := registered[0].GetSpec()
 	g.Expect(proto.Equal(registered[0].Spec().Proto(), basicModel.Spec().Proto())).To(BeTrue())
-	/*g.Expect(model.GetModule()).To(BeEquivalentTo(basicModel.Spec().Module))
-	g.Expect(model.GetVersion()).To(BeEquivalentTo(basicModel.Spec().Version))
-	g.Expect(model.GetType()).To(BeEquivalentTo(basicModel.Spec().Type))
-	g.Expect(model.GetClass()).To(BeEquivalentTo(basicModel.Spec().Class))*/
 }
 
 func TestRegisterDuplicate(t *testing.T) {

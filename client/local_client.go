@@ -22,7 +22,7 @@ import (
 	"github.com/ligato/cn-infra/datasync/syncbase"
 	"github.com/ligato/cn-infra/db/keyval"
 
-	api "github.com/ligato/vpp-agent/api/genericmanager"
+	"github.com/ligato/vpp-agent/api/generic"
 	"github.com/ligato/vpp-agent/pkg/models"
 	orch "github.com/ligato/vpp-agent/plugins/orchestrator"
 )
@@ -39,10 +39,10 @@ func NewClient(factory ProtoTxnFactory) ConfigClient {
 	return &client{factory}
 }
 
-func (c *client) KnownModels() ([]api.ModelInfo, error) {
-	var modules []api.ModelInfo
+func (c *client) KnownModels() ([]*ModelInfo, error) {
+	var modules []*ModelInfo
 	for _, info := range models.RegisteredModels() {
-		modules = append(modules, *info)
+		modules = append(modules, info.ModelDescriptor())
 	}
 	return modules, nil
 }
@@ -68,7 +68,7 @@ func (c *client) GetConfig(dsts ...interface{}) error {
 	return nil
 }
 
-func (c *client) DumpState() ([]*api.StateItem, error) {
+func (c *client) DumpState() ([]*generic.StateItem, error) {
 	// TODO: use dispatcher to dump state
 	return nil, nil
 }

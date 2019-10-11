@@ -5,7 +5,7 @@ import (
 	"regexp"
 	"strings"
 
-	api "github.com/ligato/vpp-agent/api/genericmanager"
+	api "github.com/ligato/vpp-agent/api/generic"
 )
 
 var (

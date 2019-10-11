@@ -21,7 +21,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	types "github.com/golang/protobuf/ptypes"
 
-	api "github.com/ligato/vpp-agent/api/genericmanager"
+	api "github.com/ligato/vpp-agent/api/generic"
 )
 
 // This constant is used as prefix for TypeUrl when marshalling to Any.
@@ -50,7 +50,7 @@ func MarshalItem(pb proto.Message) (*api.Item, error) {
 			Name:  name,
 		},
 		Data: &api.Data{
-			Any: any,
+			Union: &api.Data_Any{Any: any},
 		},
 	}
 	return item, nil

@@ -26,7 +26,7 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/reflection"
 
-	api "github.com/ligato/vpp-agent/api/genericmanager"
+	"github.com/ligato/vpp-agent/api/generic"
 	"github.com/ligato/vpp-agent/pkg/models"
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 )
@@ -42,7 +42,7 @@ var (
 type Plugin struct {
 	Deps
 
-	manager *genericManagerSvc
+	manager *genericService
 
 	// datasync channels
 	changeChan   chan datasync.ChangeEvent
@@ -71,13 +71,13 @@ func (p *Plugin) Init() (err error) {
 	}
 
 	// register grpc service
-	p.manager = &genericManagerSvc{
+	p.manager = &genericService{
 		log:      p.log,
 		dispatch: p.dispatcher,
 	}
 
 	if grpcServer := p.GRPC.GetServer(); grpcServer != nil {
-		api.RegisterGenericManagerServer(grpcServer, p.manager)
+		generic.RegisterManagerServer(grpcServer, p.manager)
 	} else {
 		p.log.Infof("grpc server not available")
 	}

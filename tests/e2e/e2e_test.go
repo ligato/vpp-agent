@@ -44,7 +44,6 @@ import (
 
 	"github.com/ligato/cn-infra/health/probe"
 	"github.com/ligato/cn-infra/health/statuscheck/model/status"
-	"github.com/ligato/vpp-agent/api/genericmanager"
 	"github.com/ligato/vpp-agent/client"
 	"github.com/ligato/vpp-agent/client/remoteclient"
 	"github.com/ligato/vpp-agent/pkg/models"
@@ -186,7 +185,7 @@ func setupE2E(t *testing.T) *testCtx {
 	if err != nil {
 		t.Fatalf("Failed to connect to VPP-agent via gRPC: %v", err)
 	}
-	grpcClient := remoteclient.NewClientGRPC(genericmanager.NewGenericManagerClient(grpcConn))
+	grpcClient := remoteclient.NewClientGRPC(grpcConn)
 
 	// run initial resync
 	syncAgent(t, httpClient)

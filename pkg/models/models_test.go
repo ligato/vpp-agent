@@ -34,11 +34,14 @@ func TestKey(t *testing.T) {
 		instance  *testmodel.Basic
 		expectKey string
 	}{
-		{"named", &testmodel.Basic{Name: "basic0"}, "config/module/v1/basic/basic0"},
+		{"named",
+			&testmodel.Basic{Name: "basic0"},
+			"config/module/v1/basic/basic0",
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-
+			tc.Expect(models.GetKey(test.instance)).To(Equal(test.expectKey))
 		})
 	}
 }
@@ -61,6 +64,4 @@ func setupTest(t *testing.T) *testContext {
 
 	return &testContext{GomegaWithT: g}
 }
-func (tc *testContext) teardownTest() {
-
-}
+func (tc *testContext) teardownTest() {}

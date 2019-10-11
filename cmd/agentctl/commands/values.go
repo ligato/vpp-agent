@@ -102,7 +102,7 @@ func printValuesTable(out io.Writer, status []*api.BaseValueStatus) error {
 		if err != nil {
 			name = val.Key
 		} else {
-			model = fmt.Sprintf("%s.%s", m.Module, m.Type)
+			model = m.Spec().ModelName()
 			name = m.StripKeyPrefix(val.Key)
 		}
 

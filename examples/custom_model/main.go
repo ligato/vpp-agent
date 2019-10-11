@@ -29,7 +29,6 @@ import (
 	"github.com/namsral/flag"
 	"google.golang.org/grpc"
 
-	"github.com/ligato/vpp-agent/api/genericmanager"
 	"github.com/ligato/vpp-agent/api/models/linux"
 	linux_interfaces "github.com/ligato/vpp-agent/api/models/linux/interfaces"
 	linux_l3 "github.com/ligato/vpp-agent/api/models/linux/l3"
@@ -113,7 +112,7 @@ func (p *ExamplePlugin) AfterInit() (err error) {
 		time.Sleep(time.Second)
 
 		// remoteclient
-		c := remoteclient.NewClientGRPC(genericmanager.NewGenericManagerClient(p.conn))
+		c := remoteclient.NewClientGRPC(p.conn)
 		demonstrateClient(c)
 
 		//time.Sleep(time.Second * 3)

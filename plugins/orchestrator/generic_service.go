@@ -24,35 +24,28 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	api "github.com/ligato/vpp-agent/api/genericmanager"
+	"github.com/ligato/vpp-agent/api/generic"
 	"github.com/ligato/vpp-agent/pkg/models"
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 )
 
-type genericManagerSvc struct {
+type genericService struct {
 	log      logging.Logger
 	dispatch Dispatcher
 }
 
-func (s *genericManagerSvc) Capabilities(ctx context.Context, req *api.CapabilitiesRequest) (*api.CapabilitiesResponse, error) {
-	var infos []*api.ModelInfo
+func (s *genericService) KnownModels(ctx context.Context, req *generic.KnownModelsRequest) (*generic.KnownModelsResponse, error) {
+	var infos []*generic.ModelDescriptor
 	for _, model := range models.RegisteredModels() {
-		infos = append(infos, &api.ModelInfo{
-			Spec: (*api.ModelSpec)(model.Spec()),
-			Info: map[string]string{
-				"nameTemplate": model.NameTemplate(),
-				"protoName":    model.ProtoName(),
-				"goType":       model.GoType(),
-			},
-		})
+		infos = append(infos, model.ModelDescriptor())
 	}
-	resp := &api.CapabilitiesResponse{
+	resp := &generic.KnownModelsResponse{
 		KnownModels: infos,
 	}
 	return resp, nil
 }
 
-func (s *genericManagerSvc) SetConfig(ctx context.Context, req *api.SetConfigRequest) (*api.SetConfigResponse, error) {
+func (s *genericService) SetConfig(ctx context.Context, req *generic.SetConfigRequest) (*generic.SetConfigResponse, error) {
 	s.log.Debug("------------------------------")
 	s.log.Debugf("=> GenericMgr.SetConfig: %d items", len(req.Updates))
 	s.log.Debug("------------------------------")
@@ -61,7 +54,7 @@ func (s *genericManagerSvc) SetConfig(ctx context.Context, req *api.SetConfigReq
 	}
 	s.log.Debug("------------------------------")
 
-	var ops = make(map[string]api.UpdateResult_Operation)
+	var ops = make(map[string]generic.UpdateResult_Operation)
 	var kvPairs []KeyVal
 
 	for _, update := range req.Updates {
@@ -84,14 +77,14 @@ func (s *genericManagerSvc) SetConfig(ctx context.Context, req *api.SetConfigReq
 			if err != nil {
 				return nil, status.Error(codes.InvalidArgument, err.Error())
 			}
-			ops[key] = api.UpdateResult_UPDATE
+			ops[key] = generic.UpdateResult_UPDATE
 		} else if item.Id != nil {
 			model, err := models.GetModelForItem(item)
 			if err != nil {
 				return nil, status.Error(codes.InvalidArgument, err.Error())
 			}
 			key = model.KeyPrefix() + item.Id.Name
-			ops[key] = api.UpdateResult_DELETE
+			ops[key] = generic.UpdateResult_DELETE
 		} else {
 			return nil, status.Error(codes.InvalidArgument, "ProtoItem has no key or val defined.")
 		}
@@ -112,7 +105,7 @@ func (s *genericManagerSvc) SetConfig(ctx context.Context, req *api.SetConfigReq
 		return nil, st.Err()
 	}
 
-	updateResults := []*api.UpdateResult{}
+	updateResults := []*generic.UpdateResult{}
 	for _, res := range results {
 		var msg string
 		if details := res.Status.GetDetails(); len(details) > 0 {
@@ -120,9 +113,9 @@ func (s *genericManagerSvc) SetConfig(ctx context.Context, req *api.SetConfigReq
 		} else {
 			msg = res.Status.GetError()
 		}
-		updateResults = append(updateResults, &api.UpdateResult{
+		updateResults = append(updateResults, &generic.UpdateResult{
 			Key: res.Key,
-			Status: &api.ItemStatus{
+			Status: &generic.ItemStatus{
 				Status:  res.Status.State.String(),
 				Message: msg,
 			},
@@ -144,18 +137,18 @@ func (s *genericManagerSvc) SetConfig(ctx context.Context, req *api.SetConfigReq
 		}
 	*/
 
-	return &api.SetConfigResponse{Results: updateResults}, nil
+	return &generic.SetConfigResponse{Results: updateResults}, nil
 }
 
-func (s *genericManagerSvc) GetConfig(context.Context, *api.GetConfigRequest) (*api.GetConfigResponse, error) {
-	var items []*api.ConfigItem
+func (s *genericService) GetConfig(context.Context, *generic.GetConfigRequest) (*generic.GetConfigResponse, error) {
+	var items []*generic.ConfigItem
 
 	for key, data := range s.dispatch.ListData() {
 		item, err := models.MarshalItem(data)
 		if err != nil {
 			return nil, status.Error(codes.InvalidArgument, err.Error())
 		}
-		var itemStatus *api.ItemStatus
+		var itemStatus *generic.ItemStatus
 		st, err := s.dispatch.GetStatus(key)
 		if err != nil {
 			s.log.Warnf("GetStatus failed: %v", err)
@@ -166,21 +159,21 @@ func (s *genericManagerSvc) GetConfig(context.Context, *api.GetConfigRequest) (*
 			} else {
 				msg = st.GetError()
 			}
-			itemStatus = &api.ItemStatus{
+			itemStatus = &generic.ItemStatus{
 				Status:  st.GetState().String(),
 				Message: msg,
 			}
 		}
-		items = append(items, &api.ConfigItem{
+		items = append(items, &generic.ConfigItem{
 			Item:   item,
 			Status: itemStatus,
 		})
 	}
 
-	return &api.GetConfigResponse{Items: items}, nil
+	return &generic.GetConfigResponse{Items: items}, nil
 }
 
-func (s *genericManagerSvc) DumpState(context.Context, *api.DumpStateRequest) (*api.DumpStateResponse, error) {
+func (s *genericService) DumpState(context.Context, *generic.DumpStateRequest) (*generic.DumpStateResponse, error) {
 	pairs, err := s.dispatch.ListState()
 	if err != nil {
 		return nil, err
@@ -191,22 +184,22 @@ func (s *genericManagerSvc) DumpState(context.Context, *api.DumpStateRequest) (*
 		fmt.Printf(" - [%s] %+v\n", key, proto.CompactTextString(val))
 	}
 
-	var states []*api.StateItem
+	var states []*generic.StateItem
 	for _, kv := range pairs {
 		item, err := models.MarshalItem(kv)
 		if err != nil {
 			return nil, status.Error(codes.InvalidArgument, err.Error())
 		}
 		meta := map[string]string{}
-		states = append(states, &api.StateItem{
+		states = append(states, &generic.StateItem{
 			Item:     item,
 			Metadata: meta,
 		})
 	}
 
-	return &api.DumpStateResponse{Items: states}, nil
+	return &generic.DumpStateResponse{Items: states}, nil
 }
 
-func (s *genericManagerSvc) Subscribe(req *api.SubscribeRequest, server api.GenericManager_SubscribeServer) error {
+func (s *genericService) Subscribe(req *generic.SubscribeRequest, server generic.Manager_SubscribeServer) error {
 	return status.Error(codes.Unimplemented, "Not implemented yet")
 }

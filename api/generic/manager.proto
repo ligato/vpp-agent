@@ -1,10 +1,9 @@
 syntax = "proto3";
 
-package genericmanager;
-option go_package = "github.com/ligato/vpp-agent/api/genericmanager";
+package generic;
+option go_package = "github.com/ligato/vpp-agent/api/generic";
 
 import "google/protobuf/any.proto";
-import "genericmanager/model.proto";
 
 // Item represents single instance described by the Model.
 message Item {
@@ -33,13 +32,9 @@ message ItemStatus {
 
 //------------------------------------------------------------------------------
 
-// GenericManager defines the RPC methods for managing config
+// Manager defines the RPC methods for managing config
 // using generic model, allowing extending with custom models.
-service GenericManager {
-    // Capabilities returns information about service capabilities
-    // including list of models supported by the server.
-    rpc Capabilities (CapabilitiesRequest) returns (CapabilitiesResponse);
-
+service Manager {
     // SetConfig is used to update desired configuration.
     rpc SetConfig (SetConfigRequest) returns (SetConfigResponse);
 
@@ -52,21 +47,6 @@ service GenericManager {
     // Subscribe is used for subscribing to events.
     // Notifications are returned by streaming updates.
     rpc Subscribe (SubscribeRequest) returns (stream SubscribeResponse);
-}
-
-//------------------------------------------------------------------------------
-
-message CapabilitiesRequest {
-    // TODO: filters
-}
-message CapabilitiesResponse {
-    repeated Model known_models = 1;
-    repeated string active_modules = 2;
-}
-
-message ModelInfo {
-    ModelSpec spec = 1;
-    map<string, string> info = 2;
 }
 
 //------------------------------------------------------------------------------

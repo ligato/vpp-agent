@@ -19,17 +19,17 @@ import (
 
 	"github.com/golang/protobuf/proto"
 
-	api "github.com/ligato/vpp-agent/api/genericmanager"
+	"github.com/ligato/vpp-agent/api/generic"
 )
 
-type ModelInfo = api.ModelInfo
+type ModelInfo = generic.ModelDescriptor
 
-type StateItem = api.StateItem
+type StateItem = generic.StateItem
 
 // ConfigClient defines the client-side interface for config.
 type ConfigClient interface {
 	// KnownModels retrieves list of known modules.
-	KnownModels() ([]ModelInfo, error)
+	KnownModels() ([]*ModelInfo, error)
 
 	// ChangeRequest returns transaction for changing config.
 	ChangeRequest() ChangeRequest
