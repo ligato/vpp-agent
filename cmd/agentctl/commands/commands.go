@@ -60,5 +60,6 @@ func AddBaseCommands(cmd *cobra.Command, cli cli.Cli) {
 		NewStatusCommand(cli),
 		NewValuesCommand(cli),
 		NewServiceCommand(cli),
+		NewMetricsCommand(cli),
 	)
 }
