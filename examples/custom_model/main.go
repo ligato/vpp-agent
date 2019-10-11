@@ -151,7 +151,7 @@ func demonstrateClient(c client.ConfigClient) {
 	fmt.Println("# ==========================================")
 	fmt.Println("# List known models..")
 	fmt.Println("# ==========================================")
-	knownModels, err := c.KnownModels()
+	knownModels, err := c.KnownModels("config")
 	if err != nil {
 		log.Println("KnownModels failed:", err)
 	}
