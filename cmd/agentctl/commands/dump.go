@@ -147,7 +147,7 @@ func printDumpTable(out io.Writer, dump []api.KVWithMetadata) {
 		fmt.Fprintf(w, "\t%s\t\t\n", val)
 	}
 	if err := w.Flush(); err != nil {
-		return
+		panic(err)
 	}
 	fmt.Fprint(out, buf.String())
 }

@@ -19,6 +19,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"path"
 	"strings"
 	"text/tabwriter"
@@ -56,12 +57,14 @@ func newModelListCommand(cli agentcli.Cli) *cobra.Command {
 	}
 	flags := cmd.Flags()
 	flags.StringVar(&opts.Class, "class", "", "Filter by model class")
+	flags.StringVarP(&opts.Format, "format", "f", "", "Format output")
 	return cmd
 }
 
 type ModelListOptions struct {
-	Class string
-	Refs  []string
+	Class  string
+	Refs   []string
+	Format string
 }
 
 func runModelList(cli agentcli.Cli, opts ModelListOptions) error {
@@ -77,6 +80,19 @@ func runModelList(cli agentcli.Cli, opts ModelListOptions) error {
 
 	models := filterModelsByRefs(allModels, opts.Refs)
 
+	format := opts.Format
+	if len(format) == 0 {
+		printModelTable(cli.Out(), models)
+	} else {
+		if err := formatAsTemplate(cli.Out(), format, models); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func printModelTable(out io.Writer, models []types.Model) {
 	var buf bytes.Buffer
 	w := tabwriter.NewWriter(&buf, 0, 0, 2, ' ', 0)
 	fmt.Fprintf(w, "MODEL\tCLASS\tPROTO MESSAGE\tKEY PREFIX\t\n")
@@ -85,11 +101,10 @@ func runModelList(cli agentcli.Cli, opts ModelListOptions) error {
 			model.Name, model.Class, model.ProtoName, model.KeyPrefix)
 	}
 	if err := w.Flush(); err != nil {
-		return err
+		panic(err)
 	}
 
-	fmt.Fprint(cli.Out(), buf.String())
-	return nil
+	fmt.Fprint(out, buf.String())
 }
 
 func filterModelsByPrefix(models []types.Model, prefixes []string) ([]types.Model, error) {
