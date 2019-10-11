@@ -17,13 +17,13 @@ package descriptor
 import (
 	"strings"
 
-	"github.com/gogo/protobuf/proto"
+	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
 
 	"github.com/ligato/cn-infra/logging"
 	ifmodel "github.com/ligato/vpp-agent/api/models/linux/interfaces"
-	"github.com/ligato/vpp-agent/api/models/linux/iptables"
-	"github.com/ligato/vpp-agent/api/models/linux/namespace"
+	linux_iptables "github.com/ligato/vpp-agent/api/models/linux/iptables"
+	linux_namespace "github.com/ligato/vpp-agent/api/models/linux/namespace"
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	ifdescriptor "github.com/ligato/vpp-agent/plugins/linux/ifplugin/descriptor"
 	"github.com/ligato/vpp-agent/plugins/linux/iptablesplugin/descriptor/adapter"

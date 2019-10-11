@@ -1,7 +1,6 @@
 syntax = "proto3";
 
 package linux;
-
 option go_package = "github.com/ligato/vpp-agent/api/models/linux;linux";
 
 import "models/linux/interfaces/interface.proto";

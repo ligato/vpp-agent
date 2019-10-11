@@ -15,13 +15,41 @@
 package models
 
 import (
-	"fmt"
 	"path"
 
-	"github.com/gogo/protobuf/proto"
+	"github.com/golang/protobuf/proto"
 )
 
-// Key is a shorthand for the GetKey for avoid error checking.
+// Register registers model in DefaultRegistry.
+func Register(pb proto.Message, spec Spec, opts ...ModelOption) *RegisteredModel {
+	model, err := DefaultRegistry.Register(pb, spec, opts...)
+	if err != nil {
+		panic(err)
+	}
+	return model
+}
+
+// RegisteredModels returns models registered in the DefaultRegistry.
+func RegisteredModels() []RegisteredModel {
+	return DefaultRegistry.RegisteredModels()
+}
+
+// GetModel returns registered model for given model path.
+func GetModel(path string) (RegisteredModel, error) {
+	return DefaultRegistry.GetModel(path)
+}
+
+// GetModelFor returns model registered in DefaultRegistry for given proto message.
+func GetModelFor(x proto.Message) (RegisteredModel, error) {
+	return DefaultRegistry.GetModelFor(x)
+}
+
+// GetModelForKey returns model registered in DefaultRegistry which matches key.
+func GetModelForKey(key string) (RegisteredModel, error) {
+	return DefaultRegistry.GetModelForKey(key)
+}
+
+// Key is a helper for the GetKey which panics on errors.
 func Key(x proto.Message) string {
 	key, err := GetKey(x)
 	if err != nil {
@@ -30,7 +58,7 @@ func Key(x proto.Message) string {
 	return key
 }
 
-// Name is a shorthand for the GetName for avoid error checking.
+// Name is a helper for the GetName which panics on errors.
 func Name(x proto.Message) string {
 	name, err := GetName(x)
 	if err != nil {
@@ -39,80 +67,31 @@ func Name(x proto.Message) string {
 	return name
 }
 
-// Path is a shorthand for the GetPath for avoid error checking.
-func Path(x proto.Message) string {
-	path, err := GetPath(x)
-	if err != nil {
-		panic(err)
-	}
-	return path
-}
-
-// Model returns registered model for the given proto message.
-func Model(x proto.Message) registeredModel {
-	model, err := GetModel(x)
-	if err != nil {
-		panic(err)
-	}
-	return model
-}
-
 // GetKey returns complete key for gived model,
 // including key prefix defined by model specification.
 // It returns error if given model is not registered.
 func GetKey(x proto.Message) (string, error) {
-	model, err := GetModel(x)
+	model, err := GetModelFor(x)
 	if err != nil {
 		return "", err
 	}
-	name, err := model.name(x)
+	name, err := model.instanceName(x)
 	if err != nil {
 		return "", err
 	}
-	key := path.Join(model.keyPrefix, name)
+	key := path.Join(model.KeyPrefix(), name)
 	return key, nil
 }
 
 // GetName
 func GetName(x proto.Message) (string, error) {
-	model, err := GetModel(x)
+	model, err := GetModelFor(x)
 	if err != nil {
 		return "", err
 	}
-	name, err := model.name(x)
+	name, err := model.instanceName(x)
 	if err != nil {
 		return "", err
 	}
 	return name, nil
-}
-
-// GetKeyPrefix returns key prefix for gived model.
-// It returns error if given model is not registered.
-func GetPath(x proto.Message) (string, error) {
-	model, err := GetModel(x)
-	if err != nil {
-		return "", err
-	}
-	return model.Path(), nil
-}
-
-// GetModel returns registered model for the given proto message.
-func GetModel(x proto.Message) (registeredModel, error) {
-	protoName := proto.MessageName(x)
-	model, found := registeredModels[protoName]
-	if !found {
-		return registeredModel{}, fmt.Errorf("no model registered for %s", protoName)
-	}
-	return *model, nil
-}
-
-// GetModelForKey returns registered model for the given key or error.
-func GetModelForKey(key string) (registeredModel, error) {
-	for _, model := range registeredModels {
-		if !model.IsKeyValid(key) {
-			continue
-		}
-		return *model, nil
-	}
-	return registeredModel{}, fmt.Errorf("no model registered for key %s", key)
 }

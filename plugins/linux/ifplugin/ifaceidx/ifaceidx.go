@@ -16,13 +16,14 @@ package ifaceidx
 
 import (
 	"time"
-	"github.com/gogo/protobuf/proto"
+
+	"github.com/golang/protobuf/proto"
 
 	"github.com/ligato/cn-infra/idxmap"
 	"github.com/ligato/cn-infra/idxmap/mem"
 	"github.com/ligato/cn-infra/logging"
 
-	"github.com/ligato/vpp-agent/api/models/linux/namespace"
+	linux_namespace "github.com/ligato/vpp-agent/api/models/linux/namespace"
 )
 
 // LinuxIfMetadataIndex provides read-only access to mapping with Linux interface

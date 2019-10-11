@@ -42,8 +42,8 @@ func Run(kvscheduler kvs.KVScheduler, setLogging func(debugMode bool)) {
 	time.Sleep(300 * time.Millisecond) // give agent logs time to get printed
 	defer func() {
 		fmt.Printf(InfoMsgColor, "The example scenario has finalized, the agent can be now terminated with CTRL-C.")
-		fmt.Printf(InfoMsgColor,"But while the agent is still running, the REST API of KVScheduler can be explored.")
-		fmt.Printf(InfoMsgColor,"Learn more from docs/kvscheduler/kvscheduler.md, section \"REST API\"")
+		fmt.Printf(InfoMsgColor, "But while the agent is still running, the REST API of KVScheduler can be explored.")
+		fmt.Printf(InfoMsgColor, "Learn more from docs/kvscheduler/kvscheduler.md, section \"REST API\"")
 	}()
 
 	// let the user to select the scenario to run
@@ -120,7 +120,7 @@ func watchValueStatus(ch <-chan *kvs.BaseValueStatus) {
 // of this example, we have a model for interfaces, defined in ifplugin/model,
 // and models for BDs and FIBs, defined under l2plugin/model.
 func listKnownModels(c client.ConfigClient) {
-	knownModels, err := c.KnownModels()
+	knownModels, err := c.KnownModels("config")
 	if err != nil {
 		log.Fatalln(err)
 	}

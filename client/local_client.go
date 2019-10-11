@@ -17,12 +17,12 @@ package client
 import (
 	"context"
 
-	"github.com/gogo/protobuf/proto"
+	"github.com/golang/protobuf/proto"
 	"github.com/ligato/cn-infra/datasync/kvdbsync/local"
 	"github.com/ligato/cn-infra/datasync/syncbase"
 	"github.com/ligato/cn-infra/db/keyval"
 
-	api "github.com/ligato/vpp-agent/api/genericmanager"
+	"github.com/ligato/vpp-agent/api/generic"
 	"github.com/ligato/vpp-agent/pkg/models"
 	orch "github.com/ligato/vpp-agent/plugins/orchestrator"
 )
@@ -39,10 +39,12 @@ func NewClient(factory ProtoTxnFactory) ConfigClient {
 	return &client{factory}
 }
 
-func (c *client) KnownModels() ([]api.ModelInfo, error) {
-	var modules []api.ModelInfo
-	for _, info := range models.RegisteredModels() {
-		modules = append(modules, *info)
+func (c *client) KnownModels(class string) ([]*ModelInfo, error) {
+	var modules []*ModelInfo
+	for _, model := range models.RegisteredModels() {
+		if class == "" || model.Spec().Class == class {
+			modules = append(modules, model.ModelDescriptor())
+		}
 	}
 	return modules, nil
 }
@@ -68,7 +70,7 @@ func (c *client) GetConfig(dsts ...interface{}) error {
 	return nil
 }
 
-func (c *client) DumpState() ([]*api.StateItem, error) {
+func (c *client) DumpState() ([]*generic.StateItem, error) {
 	// TODO: use dispatcher to dump state
 	return nil, nil
 }

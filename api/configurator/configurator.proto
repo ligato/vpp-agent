@@ -23,12 +23,6 @@ message Notification {
     }
 }
 
-message Stats {
-    oneof stats {
-        vpp.Stats vpp_stats = 1;
-    }
-}
-
 // Configurator provides basic operations for managing configuration
 // and monitoring state.
 service Configurator {
@@ -100,21 +94,4 @@ message NotificationResponse {
     uint32 next_idx = 1;
     // Notification data
     Notification notification = 2;
-}
-
-// StatsPoller provides operations for retrieving statistics.
-service StatsPoller {
-    // PollStats is used for polling metrics using poll period.
-    rpc PollStats(PollStatsRequest) returns (stream PollStatsResponse) {};
-}
-
-message PollStatsRequest {
-    // PeriodSec defines polling period (in seconds)
-    uint32 period_sec = 1;
-}
-
-
-message PollStatsResponse {
-    uint32 poll_seq = 1;
-    Stats stats = 2;
 }

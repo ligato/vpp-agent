@@ -20,8 +20,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/fsouza/go-dockerclient"
-	prototypes "github.com/gogo/protobuf/types"
+	docker "github.com/fsouza/go-dockerclient"
+	prototypes "github.com/golang/protobuf/ptypes/empty"
 	"github.com/pkg/errors"
 
 	"github.com/ligato/cn-infra/logging"

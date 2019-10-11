@@ -5,7 +5,7 @@
 
 required = [
     "git.fd.io/govpp.git/cmd/binapi-generator",
-    "github.com/gogo/protobuf/protoc-gen-gogo",
+    "github.com/golang/protobuf/protoc-gen-go",
     "github.com/opencontainers/runc"
 ]
 
@@ -24,7 +24,7 @@ required = [
   version = "1.0"
 
 [[constraint]]
-  name = "github.com/gogo/protobuf"
+  name = "github.com/golang/protobuf"
   version = "1.2.0"
 
 [[constraint]]
@@ -63,6 +63,10 @@ required = [
   name = "google.golang.org/grpc"
   version = "1.14.0"
 
+[[override]]
+  name = "github.com/ktr0731/grpc-web-go-client"
+  branch = "master"
+
 [[constraint]]
   name = "github.com/opencontainers/runc"
   version = "v1.0.0-rc5"
@@ -97,8 +101,4 @@ required = [
 
   [[prune.project]]
     name = "github.com/ligato/cn-infra"
-    unused-packages = false
-
-  [[prune.project]]
-    name = "github.com/gogo/protobuf"
     unused-packages = false

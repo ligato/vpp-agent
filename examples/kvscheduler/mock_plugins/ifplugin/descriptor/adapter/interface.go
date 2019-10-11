@@ -3,7 +3,7 @@
 package adapter
 
 import (
-	"github.com/gogo/protobuf/proto"
+	"github.com/golang/protobuf/proto"
 	. "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/examples/kvscheduler/mock_plugins/ifplugin/model"
 	"github.com/ligato/vpp-agent/pkg/idxvpp"

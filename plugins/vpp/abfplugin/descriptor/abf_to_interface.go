@@ -18,12 +18,11 @@ import (
 	"fmt"
 
 	vpp_abf "github.com/ligato/vpp-agent/api/models/vpp/abf"
+	vpp_interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vpp/abfplugin/abfidx"
 
-	"github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-
 	"github.com/go-errors/errors"
-	"github.com/gogo/protobuf/proto"
+	"github.com/golang/protobuf/proto"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/vpp/abfplugin/vppcalls"

@@ -21,7 +21,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/gogo/protobuf/proto"
+	"github.com/golang/protobuf/proto"
 
 	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	nat "github.com/ligato/vpp-agent/api/models/vpp/nat"

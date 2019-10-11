@@ -15,7 +15,7 @@
 package graph
 
 import (
-	"github.com/gogo/protobuf/proto"
+	"github.com/golang/protobuf/proto"
 )
 
 // maximum number of flags allowed to have defined
@@ -34,10 +34,10 @@ type nodeR struct {
 	metadataMap   string
 
 	// same length and corresponding order (lexicographically by relation+label)
-	targets       Targets
-	targetsDef    []RelationTargetDef
+	targets    Targets
+	targetsDef []RelationTargetDef
 
-	sources       Targets
+	sources Targets
 }
 
 // newNodeR creates a new instance of nodeR.

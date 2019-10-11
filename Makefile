@@ -155,7 +155,7 @@ e2e-tests-cover: ## Run end-to-end tests with coverage
 generate: generate-proto generate-binapi generate-desc-adapters ## Generate all
 
 get-proto-generators:
-	@go install ./vendor/github.com/gogo/protobuf/protoc-gen-gogo
+	@go install ./vendor/github.com/golang/protobuf/protoc-gen-go
 
 generate-proto: get-proto-generators ## Generate Go code for Protobuf files
 	@echo "=> generating proto"

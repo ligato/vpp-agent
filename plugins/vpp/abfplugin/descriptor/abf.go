@@ -15,21 +15,22 @@
 package descriptor
 
 import (
-	"github.com/ligato/vpp-agent/plugins/vpp/aclplugin/descriptor"
-
 	"github.com/go-errors/errors"
-	"github.com/gogo/protobuf/proto"
-	prototypes "github.com/gogo/protobuf/types"
+	"github.com/golang/protobuf/proto"
+	prototypes "github.com/golang/protobuf/ptypes/empty"
+
 	"github.com/ligato/cn-infra/idxmap"
 	"github.com/ligato/cn-infra/logging"
+
 	abf "github.com/ligato/vpp-agent/api/models/vpp/abf"
 	acl "github.com/ligato/vpp-agent/api/models/vpp/acl"
-	"github.com/ligato/vpp-agent/api/models/vpp/interfaces"
+	vpp_interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	"github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/vpp/abfplugin/abfidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/abfplugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/vpp/abfplugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/vpp/aclplugin/aclidx"
+	"github.com/ligato/vpp-agent/plugins/vpp/aclplugin/descriptor"
 	ifdescriptor "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/descriptor"
 )
 

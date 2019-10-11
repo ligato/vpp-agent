@@ -361,72 +361,43 @@
   version = "v4.1.0"
 
 [[projects]]
-  digest = "1:3fdbd53962bb796a751552e6be1fb3dbd293d6d5851c0c48f611a82480769d7c"
-  name = "github.com/gogo/googleapis"
-  packages = ["google/rpc"]
-  pruneopts = "UT"
-  revision = "8558fb44d2f1fc223118afc694129d2c2d2924d1"
-  version = "v1.1.0"
-
-[[projects]]
-  digest = "1:c6e109ed32d266dea072dd6d00e3ee26fb960f86ed0ba7f6a07e5d2bfdeab868"
+  digest = "1:95e1006e41c641abd2f365dfa0f1213c04da294e7cd5f0bf983af234b775db64"
   name = "github.com/gogo/protobuf"
   packages = [
     "gogoproto",
     "jsonpb",
-    "plugin/compare",
-    "plugin/defaultcheck",
-    "plugin/description",
-    "plugin/embedcheck",
-    "plugin/enumstringer",
-    "plugin/equal",
-    "plugin/face",
-    "plugin/gostring",
-    "plugin/marshalto",
-    "plugin/oneofcheck",
-    "plugin/populate",
-    "plugin/size",
-    "plugin/stringer",
-    "plugin/testgen",
-    "plugin/union",
-    "plugin/unmarshal",
     "proto",
-    "protoc-gen-gogo",
     "protoc-gen-gogo/descriptor",
-    "protoc-gen-gogo/generator",
-    "protoc-gen-gogo/generator/internal/remap",
-    "protoc-gen-gogo/grpc",
-    "protoc-gen-gogo/plugin",
     "sortkeys",
     "types",
-    "vanity",
-    "vanity/command",
   ]
-  pruneopts = "T"
+  pruneopts = "UT"
   revision = "ba06b47c162d49f2af050fb4c75bcbc86a159d5c"
   version = "v1.2.1"
 
 [[projects]]
-  digest = "1:a93379ca78a24c7fad97ff3bffdc7f2285ff61f26dd6beedeab0e1391718e95c"
-  name = "github.com/gogo/status"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "23951469965b0104342ad7b9625586150b6baf5b"
-  version = "v1.0.2"
-
-[[projects]]
-  branch = "master"
-  digest = "1:823d6cdd461935cd426e76e4eec90c22938db664054eabda0bcf63ec0274566e"
+  digest = "1:4b92455ec3207af85a162816340d0c9b5ca2328b95ae14e7cf060d340ff41bc9"
   name = "github.com/golang/protobuf"
   packages = [
+    "jsonpb",
     "proto",
+    "protoc-gen-go",
+    "protoc-gen-go/descriptor",
+    "protoc-gen-go/generator",
+    "protoc-gen-go/generator/internal/remap",
+    "protoc-gen-go/grpc",
+    "protoc-gen-go/plugin",
     "ptypes",
     "ptypes/any",
     "ptypes/duration",
+    "ptypes/empty",
+    "ptypes/struct",
     "ptypes/timestamp",
+    "ptypes/wrappers",
   ]
   pruneopts = "UT"
-  revision = "b27b920f9e71b439b873b17bf99f56467623814a"
+  revision = "6c65a5562fc06764971b7c5d05c76c75e84bdbf7"
+  version = "v1.3.2"
 
 [[projects]]
   branch = "master"
@@ -511,6 +482,21 @@
   pruneopts = "UT"
   revision = "76626ae9c91c4f2a10f34cad8ce83ea42c93bb75"
   version = "v1.0"
+
+[[projects]]
+  digest = "1:cc2a8dfa41c27d7ca26165db5d49815f48ff6995096812d81392542d2139fd2c"
+  name = "github.com/jhump/protoreflect"
+  packages = [
+    "codec",
+    "desc",
+    "desc/internal",
+    "dynamic",
+    "grpcreflect",
+    "internal",
+  ]
+  pruneopts = "UT"
+  revision = "c67d679c9f863957281faba646d790dbab6cf3b3"
+  version = "v1.5.0"
 
 [[projects]]
   branch = "master"
@@ -973,7 +959,7 @@
   revision = "c66870c02cf823ceb633bcd05be3c7cda29976f4"
 
 [[projects]]
-  digest = "1:c52f29435ecb5b76c37e7f0098b6a50dbe60f8624d820827d0fede75c40199a1"
+  digest = "1:fbdce2fee46de3a5d4f324eee12c3f39c479c07e64f966bdde89bddf15887913"
   name = "google.golang.org/grpc"
   packages = [
     ".",
@@ -997,6 +983,8 @@
     "metadata",
     "naming",
     "peer",
+    "reflection",
+    "reflection/grpc_reflection_v1alpha",
     "resolver",
     "resolver/dns",
     "resolver/passthrough",
@@ -1037,12 +1025,15 @@
     "github.com/fsouza/go-dockerclient",
     "github.com/ghodss/yaml",
     "github.com/go-errors/errors",
-    "github.com/gogo/protobuf/gogoproto",
-    "github.com/gogo/protobuf/jsonpb",
-    "github.com/gogo/protobuf/proto",
-    "github.com/gogo/protobuf/protoc-gen-gogo",
-    "github.com/gogo/protobuf/types",
-    "github.com/gogo/status",
+    "github.com/golang/protobuf/jsonpb",
+    "github.com/golang/protobuf/proto",
+    "github.com/golang/protobuf/protoc-gen-go",
+    "github.com/golang/protobuf/ptypes",
+    "github.com/golang/protobuf/ptypes/any",
+    "github.com/golang/protobuf/ptypes/empty",
+    "github.com/gorilla/mux",
+    "github.com/jhump/protoreflect/dynamic",
+    "github.com/jhump/protoreflect/grpcreflect",
     "github.com/ligato/cn-infra/agent",
     "github.com/ligato/cn-infra/config",
     "github.com/ligato/cn-infra/datasync",
@@ -1094,6 +1085,9 @@
     "golang.org/x/sys/unix",
     "google.golang.org/grpc",
     "google.golang.org/grpc/codes",
+    "google.golang.org/grpc/reflection",
+    "google.golang.org/grpc/reflection/grpc_reflection_v1alpha",
+    "google.golang.org/grpc/status",
   ]
   solver-name = "gps-cdcl"
   solver-version = 1

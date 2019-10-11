@@ -17,7 +17,7 @@ package descriptor
 import (
 	"errors"
 
-	"github.com/gogo/protobuf/proto"
+	"github.com/golang/protobuf/proto"
 	"github.com/ligato/cn-infra/logging"
 
 	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"

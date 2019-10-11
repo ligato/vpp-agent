@@ -21,8 +21,8 @@ import (
 	"strings"
 
 	"github.com/ghodss/yaml"
-	"github.com/gogo/protobuf/jsonpb"
-	"github.com/gogo/protobuf/proto"
+	"github.com/golang/protobuf/jsonpb"
+	"github.com/golang/protobuf/proto"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
@@ -62,7 +62,9 @@ func runGenerate(cli agentcli.Cli, opts GenerateOptions) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	allModels, err := cli.Client().ModelList(ctx, types.ModelListOptions{})
+	allModels, err := cli.Client().ModelList(ctx, types.ModelListOptions{
+		Class: "config",
+	})
 	if err != nil {
 		return err
 	}

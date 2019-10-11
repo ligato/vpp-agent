@@ -1,7 +1,6 @@
 syntax = "proto3";
 
 package vpp;
-
 option go_package = "github.com/ligato/vpp-agent/api/models/vpp;vpp";
 
 import "models/vpp/abf/abf.proto";

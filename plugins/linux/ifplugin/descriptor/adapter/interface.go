@@ -3,9 +3,9 @@
 package adapter
 
 import (
-	"github.com/gogo/protobuf/proto"
-	"github.com/ligato/vpp-agent/api/models/linux/interfaces"
+	"github.com/golang/protobuf/proto"
 	. "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
+	"github.com/ligato/vpp-agent/api/models/linux/interfaces"
 	"github.com/ligato/vpp-agent/plugins/linux/ifplugin/ifaceidx"
 )
 

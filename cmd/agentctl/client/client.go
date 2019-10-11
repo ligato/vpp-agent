@@ -33,7 +33,6 @@ import (
 	"github.com/ligato/cn-infra/logging/logrus"
 
 	"github.com/ligato/vpp-agent/api"
-	"github.com/ligato/vpp-agent/api/genericmanager"
 	"github.com/ligato/vpp-agent/api/types"
 	"github.com/ligato/vpp-agent/client"
 	"github.com/ligato/vpp-agent/client/remoteclient"
@@ -110,8 +109,7 @@ func (c *Client) ConfigClient() (client.ConfigClient, error) {
 	if err != nil {
 		return nil, err
 	}
-	genericClient := genericmanager.NewGenericManagerClient(conn)
-	return remoteclient.NewClientGRPC(genericClient), nil
+	return remoteclient.NewClientGRPC(conn), nil
 }
 
 func (c *Client) AgentHost() string {

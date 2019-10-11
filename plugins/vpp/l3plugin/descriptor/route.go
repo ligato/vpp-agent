@@ -20,7 +20,7 @@ import (
 	"net"
 	"strings"
 
-	"github.com/gogo/protobuf/proto"
+	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
 
 	"github.com/ligato/cn-infra/logging"

@@ -17,7 +17,7 @@ package configurator
 import (
 	"sync"
 
-	"github.com/gogo/protobuf/proto"
+	"github.com/golang/protobuf/proto"
 	"github.com/ligato/cn-infra/logging"
 	rpc "github.com/ligato/vpp-agent/api/configurator"
 )

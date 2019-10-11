@@ -18,7 +18,7 @@ import (
 	"errors"
 	"net"
 
-	"github.com/gogo/protobuf/proto"
+	"github.com/golang/protobuf/proto"
 	"github.com/ligato/cn-infra/logging"
 
 	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
@@ -80,7 +80,7 @@ func (d *NAT44AddressDescriptor) IsNat44AddressKey(key string) bool {
 func (d *NAT44AddressDescriptor) Validate(key string, natAddr *nat.Nat44Global_Address) error {
 	ipAddr := net.ParseIP(natAddr.Address)
 	if ipAddr == nil {
-		return kvs.NewInvalidValueError(ErrInvalidNATAddress,"address")
+		return kvs.NewInvalidValueError(ErrInvalidNATAddress, "address")
 	}
 	return nil
 }

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate protoc --proto_path=. --gogo_out=. value_status.proto
+//go:generate protoc --proto_path=. --go_out=. value_status.proto
 
 package api
 
@@ -20,7 +20,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/gogo/protobuf/proto"
+	"github.com/golang/protobuf/proto"
 	"github.com/ligato/cn-infra/idxmap"
 )
 
@@ -227,7 +227,7 @@ type KVScheduler interface {
 	// by reconciliation or any other operation of the scheduler/descriptor.
 	// Note: Origin in KVWithMetadata is ignored and can be left unset
 	// (automatically assumed to be FromSB).
-	PushSBNotification(notif... KVWithMetadata) error
+	PushSBNotification(notif ...KVWithMetadata) error
 
 	// GetMetadataMap returns (read-only) map associating value label with value
 	// metadata of a given descriptor.

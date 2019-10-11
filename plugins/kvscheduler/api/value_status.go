@@ -17,7 +17,7 @@ package api
 import (
 	"bytes"
 
-	"github.com/gogo/protobuf/jsonpb"
+	"github.com/golang/protobuf/jsonpb"
 )
 
 // MarshalJSON ensures data is correctly marshaled
