@@ -37,7 +37,8 @@ import (
 
 	_ "github.com/ligato/vpp-agent/plugins/govppmux/vppcalls/vpp1904"
 	_ "github.com/ligato/vpp-agent/plugins/govppmux/vppcalls/vpp1908"
-	_ "github.com/ligato/vpp-agent/plugins/govppmux/vppcalls/vpp2001"
+	_ "github.com/ligato/vpp-agent/plugins/govppmux/vppcalls/vpp2001_324"
+	_ "github.com/ligato/vpp-agent/plugins/govppmux/vppcalls/vpp2001_379"
 )
 
 var (
