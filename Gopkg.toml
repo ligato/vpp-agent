@@ -102,7 +102,3 @@ required = [
   [[prune.project]]
     name = "github.com/ligato/cn-infra"
     unused-packages = false
-
-  [[prune.project]]
-    name = "github.com/golang/protobuf"
-    unused-packages = false
