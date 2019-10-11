@@ -219,7 +219,7 @@ func metricsHandler(formatter *render.Render) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		vars := mux.Vars(req)
 		if vars == nil {
-			formatter.JSON(w, http.StatusNotFound, struct{}{})
+			_ = formatter.JSON(w, http.StatusNotFound, struct{}{})
 			return
 		}
 		metric := vars["metric"]
@@ -236,9 +236,9 @@ func metricsHandler(formatter *render.Render) http.HandlerFunc {
 			}
 		})
 		if data == nil {
-			formatter.JSON(w, http.StatusNotFound, struct{}{})
+			_ = formatter.JSON(w, http.StatusNotFound, struct{}{})
 			return
 		}
-		formatter.JSON(w, 200, data)
+		_ = formatter.JSON(w, 200, data)
 	}
 }
