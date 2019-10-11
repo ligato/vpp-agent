@@ -51,7 +51,7 @@ VXLan Tunnel Is Created
 
 VXLan Tunnel Is Deleted
     [Arguments]    ${node}    ${src}    ${dst}    ${vni}
-    Wait Until Keyword Succeeds    ${tunnel_timeout}   3s    vat_term: Check VXLan Tunnel Presence    ${node}    ${src}    ${dst}    ${vni}    ${FALSE}
+    Wait Until Keyword Succeeds    ${tunnel_timeout}   3s    vpp_api: Check VXLan Tunnel Presence    ${node}    ${src}    ${dst}    ${vni}    ${NONE}
 
 VXLan Tunnel Exists
     [Arguments]    ${node}    ${src}    ${dst}    ${vni}
@@ -60,5 +60,5 @@ VXLan Tunnel Exists
 
 VXLan Tunnel Not Exists
     [Arguments]    ${node}    ${src}    ${dst}    ${vni}
-    vat_term: Check VXLan Tunnel Presence    ${node}    ${src}    ${dst}    ${vni}    ${FALSE}
+    vpp_api: Check VXLan Tunnel Presence    ${node}    ${src}    ${dst}    ${vni}    ${NONE}
 
