@@ -46,8 +46,6 @@ jobs:
 
     - stage: Test
       name: "Code linter"
-      before_script:
-        - dep ensure
       script: make lint
     - name: "Unit tests"
       before_script:
