@@ -73,6 +73,10 @@ jobs:
       script:
         - make verify-binapi
         - make integration-tests
+    - env: VPP_VERSION=2001_379
+      script:
+        - make verify-binapi
+        - make integration-tests
 
     - stage: E2E
       env: VPP_VERSION=1904
@@ -90,6 +94,11 @@ jobs:
         - make e2e-tests-cover
       after_success:
         - bash <(curl -s https://codecov.io/bash) -f /tmp/e2e-cov.out -F e2e2001-324
+    - env: VPP_VERSION=2001_379
+      script:
+        - make e2e-tests-cover
+      after_success:
+        - bash <(curl -s https://codecov.io/bash) -f /tmp/e2e-cov.out -F e2e2001-379
 
 notifications:
   slack:
