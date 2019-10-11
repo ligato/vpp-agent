@@ -1031,6 +1031,7 @@
     "github.com/golang/protobuf/ptypes",
     "github.com/golang/protobuf/ptypes/any",
     "github.com/golang/protobuf/ptypes/empty",
+    "github.com/gorilla/mux",
     "github.com/jhump/protoreflect/dynamic",
     "github.com/jhump/protoreflect/grpcreflect",
     "github.com/ligato/cn-infra/agent",
