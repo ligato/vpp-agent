@@ -19,7 +19,7 @@ cache:
   directories:
     - ${HOME}/.cache
 
-install: true
+install: go get -t ./...
 
 stages:
   - Check
