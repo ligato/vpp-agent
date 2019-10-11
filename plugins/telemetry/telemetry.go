@@ -16,16 +16,22 @@ package telemetry
 
 import (
 	"context"
+	"expvar"
 	"fmt"
+	"net/http"
 	"os"
 	"sync"
 	"time"
 
+	"github.com/golang/protobuf/proto"
+	"github.com/gorilla/mux"
 	"github.com/ligato/cn-infra/infra"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/rpc/grpc"
 	prom "github.com/ligato/cn-infra/rpc/prometheus"
+	"github.com/ligato/cn-infra/rpc/rest"
 	"github.com/ligato/cn-infra/servicelabel"
+	"github.com/unrolled/render"
 
 	"github.com/ligato/vpp-agent/api/configurator"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
@@ -64,6 +70,7 @@ type Deps struct {
 	GoVppmux     govppmux.StatsAPI
 	Prometheus   prom.API
 	GRPC         grpc.Server
+	HTTPHandlers rest.HTTPHandlers
 }
 
 // Init initializes Telemetry Plugin
@@ -109,6 +116,10 @@ func (p *Plugin) Init() error {
 	p.statsPollerServer.log = p.Log.NewLogger("stats-poller")
 	if err := p.setupStatsPoller(); err != nil {
 		return err
+	}
+
+	if p.HTTPHandlers != nil {
+		p.HTTPHandlers.RegisterHTTPHandler("/metrics/{metric}", metricsHandler, "GET")
 	}
 
 	return nil
@@ -201,5 +212,33 @@ func (p *Plugin) tracef(f string, a ...interface{}) {
 			return
 		}
 		p.Log.Debug(s)
+	}
+}
+
+func metricsHandler(formatter *render.Render) http.HandlerFunc {
+	return func(w http.ResponseWriter, req *http.Request) {
+		vars := mux.Vars(req)
+		if vars == nil {
+			formatter.JSON(w, http.StatusNotFound, struct{}{})
+			return
+		}
+		metric := vars["metric"]
+		var data proto.Message
+		expvar.Do(func(kv expvar.KeyValue) {
+			if data != nil {
+				return
+			}
+			if kv.Key == metric {
+				if fn, ok := kv.Value.(expvar.Func); ok {
+					data = fn.Value().(proto.Message)
+					return
+				}
+			}
+		})
+		if data == nil {
+			formatter.JSON(w, http.StatusNotFound, struct{}{})
+			return
+		}
+		formatter.JSON(w, 200, data)
 	}
 }

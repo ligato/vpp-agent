@@ -29,7 +29,7 @@ type StateItem = generic.StateItem
 // ConfigClient defines the client-side interface for config.
 type ConfigClient interface {
 	// KnownModels retrieves list of known modules.
-	KnownModels() ([]*ModelInfo, error)
+	KnownModels(class string) ([]*ModelInfo, error)
 
 	// ChangeRequest returns transaction for changing config.
 	ChangeRequest() ChangeRequest

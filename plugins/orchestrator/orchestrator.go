@@ -78,6 +78,7 @@ func (p *Plugin) Init() (err error) {
 
 	if grpcServer := p.GRPC.GetServer(); grpcServer != nil {
 		generic.RegisterManagerServer(grpcServer, p.manager)
+		generic.RegisterMetaServiceServer(grpcServer, p.manager)
 	} else {
 		p.log.Infof("grpc server not available")
 	}

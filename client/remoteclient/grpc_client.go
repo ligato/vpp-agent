@@ -27,10 +27,12 @@ func NewClientGRPC(conn *grpc.ClientConn) client.ConfigClient {
 	}
 }
 
-func (c *grpcClient) KnownModels() ([]*client.ModelInfo, error) {
+func (c *grpcClient) KnownModels(class string) ([]*client.ModelInfo, error) {
 	ctx := context.Background()
 
-	resp, err := c.meta.KnownModels(ctx, &generic.KnownModelsRequest{})
+	resp, err := c.meta.KnownModels(ctx, &generic.KnownModelsRequest{
+		Class: class,
+	})
 	if err != nil {
 		return nil, err
 	}

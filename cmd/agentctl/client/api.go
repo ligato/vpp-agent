@@ -20,6 +20,7 @@ type APIClient interface {
 	ModelAPIClient
 	SchedulerAPIClient
 	VppAPIClient
+	MetricsAPIClient
 
 	ConfigClient() (client.ConfigClient, error)
 
@@ -56,6 +57,10 @@ type SchedulerAPIClient interface {
 // VppAPIClient defines API client methods for the VPP
 type VppAPIClient interface {
 	VppRunCli(ctx context.Context, cmd string) (reply string, err error)
+}
+
+type MetricsAPIClient interface {
+	GetMetricData(ctx context.Context, metricName string) (map[string]interface{}, error)
 }
 
 type KVDBAPIClient interface {

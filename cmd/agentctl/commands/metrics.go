@@ -15,62 +15,108 @@
 package commands
 
 import (
+	"bytes"
+	"context"
 	"fmt"
+	"text/tabwriter"
 
+	"github.com/ligato/vpp-agent/api/types"
 	agentcli "github.com/ligato/vpp-agent/cmd/agentctl/cli"
 	"github.com/spf13/cobra"
 )
 
 func NewMetricsCommand(cli agentcli.Cli) *cobra.Command {
-	var opts MetricsOptions
-
 	cmd := &cobra.Command{
 		Use:   "metrics",
-		Short: "Retrieve runtime metrics",
+		Short: "Get runtime metrics",
+	}
+	cmd.AddCommand(
+		newMetricsListCommand(cli),
+		newMetricsGetCommand(cli),
+	)
+	return cmd
+}
+
+func newMetricsListCommand(cli agentcli.Cli) *cobra.Command {
+	var opts MetricsListOptions
+
+	cmd := &cobra.Command{
+		Use:   "list",
+		Short: "Retrieve list of metrics",
 		Args:  cobra.RangeArgs(0, 1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			opts.Patterns = args
-			return runMetrics(cli, opts)
+			opts.Refs = args
+			return runMetricsList(cli, opts)
 		},
 		DisableFlagsInUseLine: true,
 	}
 	return cmd
 }
 
-type MetricsOptions struct {
-	Patterns []string
+type MetricsListOptions struct {
+	Refs []string
 }
 
-func runMetrics(cli agentcli.Cli, opts MetricsOptions) error {
-	metrics, err := retrieveMetrics(cli, opts.Patterns)
+func runMetricsList(cli agentcli.Cli, opts MetricsListOptions) error {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	allModels, err := cli.Client().ModelList(ctx, types.ModelListOptions{
+		Class: "metrics",
+	})
 	if err != nil {
 		return err
 	}
 
-	fmt.Fprintf(cli.Out(), "%s\n", metrics)
+	models := filterModelsByRefs(allModels, opts.Refs)
+
+	var buf bytes.Buffer
+	w := tabwriter.NewWriter(&buf, 0, 0, 2, ' ', 0)
+	fmt.Fprintf(w, "METRIC\tPROTO MESSAGE\t\n")
+	for _, model := range models {
+		fmt.Fprintf(w, "%s\t%s\t\n", model.Name, model.ProtoName)
+	}
+	if err := w.Flush(); err != nil {
+		return err
+	}
+
+	fmt.Fprint(cli.Out(), buf.String())
 	return nil
 }
 
-func retrieveMetrics(cli agentcli.Cli, patterns []string) (string, error) {
-	/*q := fmt.Sprintf(`/debug/exp/var`)
+func newMetricsGetCommand(cli agentcli.Cli) *cobra.Command {
+	var opts MetricsGetOptions
 
-	resp, err := cli.Client().
+	cmd := &cobra.Command{
+		Use:   "get METRIC",
+		Short: "Get metrics data",
+		Args:  cobra.MinimumNArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			opts.Metrics = args
+			return runMetricsGet(cli, opts)
+		},
+	}
+	return cmd
+}
+
+type MetricsGetOptions struct {
+	Metrics []string
+}
+
+func runMetricsGet(cli agentcli.Cli, opts MetricsGetOptions) error {
+	metric := opts.Metrics[0]
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	data, err := cli.Client().GetMetricData(ctx, metric)
 	if err != nil {
-		return "", err
+		return err
 	}
-	logging.Debugf("metrics resp: %s\n", resp)*/
 
-	/*var out bytes.Buffer
-	if err := json.Indent(&out, resp, "", "  "); err != nil {
-		return "", err
+	if err := formatAsTemplate(cli.Out(), "json", data); err != nil {
+		return err
 	}
-	metrics := fmt.Sprintf("[%s]", out.Bytes())*/
-	//metrics := string(resp)
 
-	/*var metrics []*api.BaseValueMetrics
-	if err := json.Unmarshal(resp, &metrics); err != nil {
-		return nil, fmt.Errorf("decoding reply failed: %v", err)
-	}**/
-
-	return "metrics", nil
+	return nil
 }

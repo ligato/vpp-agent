@@ -72,7 +72,7 @@ func (c *Client) ServerVersion(ctx context.Context) (types.Version, error) {
 func (c *Client) LoggerList(ctx context.Context) ([]types.Logger, error) {
 	resp, err := c.get(ctx, "/log/list", nil, nil)
 	if err != nil {
-		return nil, fmt.Errorf("HTTP POST request failed: %v", err)
+		return nil, fmt.Errorf("HTTP request failed: %v", err)
 	}
 
 	var loggers []types.Logger
@@ -88,7 +88,7 @@ func (c *Client) LoggerSet(ctx context.Context, logger, level string) error {
 
 	resp, err := c.put(ctx, urlPath, nil, nil, nil)
 	if err != nil {
-		return fmt.Errorf("HTTP POST request failed: %v", err)
+		return fmt.Errorf("HTTP request failed: %v", err)
 	}
 
 	type Response struct {
@@ -111,7 +111,7 @@ func (c *Client) LoggerSet(ctx context.Context, logger, level string) error {
 func (c *Client) Status(ctx context.Context) (*probe.ExposedStatus, error) {
 	resp, err := c.get(ctx, "/readiness", nil, nil)
 	if err != nil {
-		return nil, fmt.Errorf("HTTP POST request failed: %v", err)
+		return nil, fmt.Errorf("HTTP request failed: %v", err)
 	}
 
 	var status probe.ExposedStatus
@@ -120,4 +120,18 @@ func (c *Client) Status(ctx context.Context) (*probe.ExposedStatus, error) {
 	}
 
 	return &status, nil
+}
+
+func (c *Client) GetMetricData(ctx context.Context, metricName string) (map[string]interface{}, error) {
+	resp, err := c.get(ctx, "/metrics/"+metricName, nil, nil)
+	if err != nil {
+		return nil, fmt.Errorf("HTTP request failed: %v", err)
+	}
+
+	var metricData = make(map[string]interface{})
+	if err := json.NewDecoder(resp.body).Decode(&metricData); err != nil {
+		return nil, fmt.Errorf("decoding reply failed: %v", err)
+	}
+
+	return metricData, nil
 }

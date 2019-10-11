@@ -39,10 +39,12 @@ func NewClient(factory ProtoTxnFactory) ConfigClient {
 	return &client{factory}
 }
 
-func (c *client) KnownModels() ([]*ModelInfo, error) {
+func (c *client) KnownModels(class string) ([]*ModelInfo, error) {
 	var modules []*ModelInfo
-	for _, info := range models.RegisteredModels() {
-		modules = append(modules, info.ModelDescriptor())
+	for _, model := range models.RegisteredModels() {
+		if class == "" || model.Spec().Class == class {
+			modules = append(modules, model.ModelDescriptor())
+		}
 	}
 	return modules, nil
 }

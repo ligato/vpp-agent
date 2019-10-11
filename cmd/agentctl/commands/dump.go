@@ -65,14 +65,16 @@ func runDump(cli agentcli.Cli, opts DumpOptions) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	allModels, err := cli.Client().ModelList(ctx, types.ModelListOptions{})
+	allModels, err := cli.Client().ModelList(ctx, types.ModelListOptions{
+		Class: "config",
+	})
 	if err != nil {
 		return err
 	}
 
 	var modelKeyPrefix string
 	for _, m := range allModels {
-		if (m.Alias != "" && model == m.Alias) || model == m.Name {
+		if model == m.Name {
 			modelKeyPrefix = m.KeyPrefix
 			break
 		}

@@ -12,30 +12,17 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 
-package types
+package metrics
 
-type Model struct {
-	Name         string
-	Class        string
-	Module       string
-	Type         string
-	Version      string
-	KeyPrefix    string
-	NameTemplate string `json:",omitempty"`
-	ProtoName    string
-	ProtoFile    string `json:",omitempty"`
-	GoType       string `json:",omitempty"`
-}
+/*
+import "github.com/golang/protobuf/proto"
 
-type ModelListOptions struct {
-	Class string
-}
+var registeredMetrics = make(map[string]func() proto.Message)
 
-type SchedulerDumpOptions struct {
-	KeyPrefix string
-	View      string
+func Register(pb proto.Message, fn func() proto.Message) {
+    models.
+    if _, ok := registeredMetrics; ok {
+        panic("duplicate registration for metrics %s", )
+    }
 }
-
-type SchedulerValuesOptions struct {
-	KeyPrefix string
-}
+*/

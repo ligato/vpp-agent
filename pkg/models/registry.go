@@ -98,6 +98,10 @@ func (r *Registry) Register(pb proto.Message, spec Spec, opts ...ModelOption) (*
 		// spec with undefined class fallbacks to config
 		spec.Class = "config"
 	}
+	if spec.Version == "" {
+		spec.Version = "v0"
+	}
+
 	if err := spec.Validate(); err != nil {
 		return nil, fmt.Errorf("spec validation for %s failed: %v", goType, err)
 	}

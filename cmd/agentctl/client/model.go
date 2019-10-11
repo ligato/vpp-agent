@@ -18,7 +18,7 @@ func (c *Client) ModelList(ctx context.Context, opts types.ModelListOptions) ([]
 	if err != nil {
 		return nil, err
 	}
-	knownModels, err := cfgClient.KnownModels()
+	knownModels, err := cfgClient.KnownModels(opts.Class)
 	if err != nil {
 		return nil, err
 	}
@@ -43,10 +43,17 @@ func convertModels(knownModels []*generic.ModelDescriptor) []types.Model {
 
 		protoName := m.ProtoName
 		keyPrefix := spec.KeyPrefix()
-		var nameTemplate string
+
+		var (
+			nameTemplate string
+			goType       string
+		)
 		for _, o := range m.Options {
 			if o.Key == "nameTemplate" && len(o.Values) > 0 {
 				nameTemplate = o.Values[0]
+			}
+			if o.Key == "goType" && len(o.Values) > 0 {
+				goType = o.Values[0]
 			}
 		}
 
@@ -55,9 +62,11 @@ func convertModels(knownModels []*generic.ModelDescriptor) []types.Model {
 			Module:       m.Spec.Module,
 			Version:      m.Spec.Version,
 			Type:         m.Spec.Type,
+			Class:        m.Spec.Class,
 			KeyPrefix:    keyPrefix,
 			ProtoName:    protoName,
 			NameTemplate: nameTemplate,
+			GoType:       goType,
 		}
 		allModels[i] = model
 	}

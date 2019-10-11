@@ -42,6 +42,103 @@ func NewModelCommand(cli agentcli.Cli) *cobra.Command {
 	return cmd
 }
 
+func newModelListCommand(cli agentcli.Cli) *cobra.Command {
+	var opts ModelListOptions
+	cmd := &cobra.Command{
+		Use:     "ls [PATTERN]",
+		Aliases: []string{"list", "l"},
+		Short:   "List models",
+		Args:    cobra.ArbitraryArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			opts.Refs = args
+			return runModelList(cli, opts)
+		},
+	}
+	flags := cmd.Flags()
+	flags.StringVar(&opts.Class, "class", "", "Filter by model class")
+	return cmd
+}
+
+type ModelListOptions struct {
+	Class string
+	Refs  []string
+}
+
+func runModelList(cli agentcli.Cli, opts ModelListOptions) error {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	allModels, err := cli.Client().ModelList(ctx, types.ModelListOptions{
+		Class: opts.Class,
+	})
+	if err != nil {
+		return err
+	}
+
+	models := filterModelsByRefs(allModels, opts.Refs)
+
+	var buf bytes.Buffer
+	w := tabwriter.NewWriter(&buf, 0, 0, 2, ' ', 0)
+	fmt.Fprintf(w, "MODEL\tCLASS\tPROTO MESSAGE\tKEY PREFIX\t\n")
+	for _, model := range models {
+		fmt.Fprintf(w, "%s\t%s\t%s\t%s\t\n",
+			model.Name, model.Class, model.ProtoName, model.KeyPrefix)
+	}
+	if err := w.Flush(); err != nil {
+		return err
+	}
+
+	fmt.Fprint(cli.Out(), buf.String())
+	return nil
+}
+
+func filterModelsByPrefix(models []types.Model, prefixes []string) ([]types.Model, error) {
+	if len(prefixes) == 0 {
+		return models, nil
+	}
+	var filtered []types.Model
+	for _, pref := range prefixes {
+		var model types.Model
+		for _, m := range models {
+			if !strings.HasPrefix(m.Name, pref) {
+				continue
+			}
+			if model.Name != "" {
+				return nil, fmt.Errorf("multiple models found with provided prefix: %s", pref)
+			}
+			model = m
+		}
+		if model.Name == "" {
+			return nil, fmt.Errorf("no model found for provided prefix: %s", pref)
+		}
+		filtered = append(filtered, model)
+	}
+	return filtered, nil
+}
+
+func filterModelsByRefs(models []types.Model, refs []string) []types.Model {
+	var filtered []types.Model
+	for _, model := range models {
+		if !matchAnyRef(model, refs) {
+			continue
+		}
+		filtered = append(filtered, model)
+	}
+	return filtered
+}
+
+func matchAnyRef(model types.Model, refs []string) bool {
+	if len(refs) == 0 {
+		return true
+	}
+	for _, ref := range refs {
+		if ok, _ := path.Match(ref, model.Name); ok {
+			return true
+		}
+	}
+	return false
+}
+
 func newModelInspectCommand(cli agentcli.Cli) *cobra.Command {
 	var (
 		opts ModelInspectOptions
@@ -89,97 +186,4 @@ func runModelInspect(cli agentcli.Cli, opts ModelInspectOptions) error {
 
 	fmt.Fprintf(cli.Out(), "%s\n", b)
 	return nil
-}
-
-func newModelListCommand(cli agentcli.Cli) *cobra.Command {
-	var opts ModelListOptions
-
-	cmd := &cobra.Command{
-		Use:     "ls [PATTERN]",
-		Aliases: []string{"list", "l"},
-		Short:   "List models",
-		Args:    cobra.ArbitraryArgs,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			opts.Refs = args
-			return runModelList(cli, opts)
-		},
-	}
-	return cmd
-}
-
-type ModelListOptions struct {
-	Refs []string
-}
-
-func runModelList(cli agentcli.Cli, opts ModelListOptions) error {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	allModels, err := cli.Client().ModelList(ctx, types.ModelListOptions{})
-	if err != nil {
-		return err
-	}
-
-	models := filterModelsByRefs(allModels, opts.Refs)
-
-	var buf bytes.Buffer
-	w := tabwriter.NewWriter(&buf, 0, 0, 2, ' ', 0)
-	fmt.Fprintf(w, "MODEL\tKEY PREFIX\tPROTO NAME\t\n")
-	for _, model := range models {
-		fmt.Fprintf(w, "%s\t%s\t%s\t\n",
-			model.Name, model.KeyPrefix, model.ProtoName)
-	}
-	if err := w.Flush(); err != nil {
-		return err
-	}
-
-	fmt.Fprint(cli.Out(), buf.String())
-	return nil
-}
-
-func filterModelsByPrefix(models []types.Model, prefixes []string) ([]types.Model, error) {
-	if len(prefixes) == 0 {
-		return models, nil
-	}
-	var filtered []types.Model
-	for _, pref := range prefixes {
-		var model types.Model
-		for _, m := range models {
-			if !strings.HasPrefix(m.Name, pref) {
-				continue
-			}
-			if model.Name != "" {
-				return nil, fmt.Errorf("Multiple models found with provided prefix: %s", pref)
-			}
-			model = m
-		}
-		if model.Name == "" {
-			return nil, fmt.Errorf("No model found for provided prefix: %s", pref)
-		}
-		filtered = append(filtered, model)
-	}
-	return filtered, nil
-}
-
-func filterModelsByRefs(models []types.Model, refs []string) []types.Model {
-	var filtered []types.Model
-	for _, model := range models {
-		if !matchAnyRef(model, refs) {
-			continue
-		}
-		filtered = append(filtered, model)
-	}
-	return filtered
-}
-
-func matchAnyRef(model types.Model, refs []string) bool {
-	if len(refs) == 0 {
-		return true
-	}
-	for _, ref := range refs {
-		if ok, _ := path.Match(ref, model.Name); ok {
-			return true
-		}
-	}
-	return false
 }

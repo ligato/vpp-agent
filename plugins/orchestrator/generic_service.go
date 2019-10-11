@@ -37,7 +37,9 @@ type genericService struct {
 func (s *genericService) KnownModels(ctx context.Context, req *generic.KnownModelsRequest) (*generic.KnownModelsResponse, error) {
 	var infos []*generic.ModelDescriptor
 	for _, model := range models.RegisteredModels() {
-		infos = append(infos, model.ModelDescriptor())
+		if req.Class == "" || model.Spec().Class == req.Class {
+			infos = append(infos, model.ModelDescriptor())
+		}
 	}
 	resp := &generic.KnownModelsResponse{
 		KnownModels: infos,

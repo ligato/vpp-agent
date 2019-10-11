@@ -41,6 +41,8 @@ import (
 	_ "github.com/ligato/vpp-agent/plugins/govppmux/vppcalls/vpp2001_379"
 )
 
+//go:generate protoc --proto_path=. --go_out=plugins=grpc:. model/metrics.proto
+
 var (
 	disabledSocketClient = os.Getenv("GOVPPMUX_NOSOCK") != ""
 )
