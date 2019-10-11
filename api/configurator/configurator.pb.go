@@ -619,7 +619,7 @@ const _ = grpc.SupportPackageIsVersion4
 type ConfiguratorClient interface {
 	// Get is used for listing desired config.
 	Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (*GetResponse, error)
-	// Update is used for updating desired config.l
+	// Update is used for updating desired config.
 	Update(ctx context.Context, in *UpdateRequest, opts ...grpc.CallOption) (*UpdateResponse, error)
 	// Delete is used for deleting desired config.
 	Delete(ctx context.Context, in *DeleteRequest, opts ...grpc.CallOption) (*DeleteResponse, error)
@@ -709,7 +709,7 @@ func (x *configuratorNotifyClient) Recv() (*NotificationResponse, error) {
 type ConfiguratorServer interface {
 	// Get is used for listing desired config.
 	Get(context.Context, *GetRequest) (*GetResponse, error)
-	// Update is used for updating desired config.l
+	// Update is used for updating desired config.
 	Update(context.Context, *UpdateRequest) (*UpdateResponse, error)
 	// Delete is used for deleting desired config.
 	Delete(context.Context, *DeleteRequest) (*DeleteResponse, error)

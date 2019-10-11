@@ -29,7 +29,7 @@ service Configurator {
     // Get is used for listing desired config.
     rpc Get(GetRequest) returns (GetResponse);
 
-    // Update is used for updating desired config.l
+    // Update is used for updating desired config.
     rpc Update(UpdateRequest) returns (UpdateResponse);
 
     // Delete is used for deleting desired config.
