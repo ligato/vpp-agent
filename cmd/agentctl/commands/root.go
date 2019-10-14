@@ -114,7 +114,6 @@ func newRoot(cmd *cobra.Command, agentCli *cli.AgentCli, opts *cli.ClientOptions
 func (root *Root) HandleGlobalFlags() (*cobra.Command, []string, error) {
 	cmd := root.cmd
 	flags := pflag.NewFlagSet(cmd.Name(), pflag.ContinueOnError)
-	flags.SetInterspersed(false)
 
 	// We need the single parse to see both sets of flags.
 	flags.AddFlagSet(cmd.Flags())
