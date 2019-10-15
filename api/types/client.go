@@ -16,17 +16,19 @@ package types
 
 type Model struct {
 	Name         string
+	Class        string
 	Module       string
 	Type         string
 	Version      string
-	Alias        string `json:",omitempty"`
 	KeyPrefix    string
-	NameTemplate string
+	NameTemplate string `json:",omitempty"`
 	ProtoName    string
-	ProtoFile    string
+	ProtoFile    string `json:",omitempty"`
+	GoType       string `json:",omitempty"`
 }
 
 type ModelListOptions struct {
+	Class string
 }
 
 type SchedulerDumpOptions struct {

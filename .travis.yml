@@ -4,7 +4,7 @@ sudo: required
 
 language: go
 go:
-  - "1.12.x"
+  - "1.13.x"
 
 go_import_path: github.com/ligato/vpp-agent
 
@@ -46,13 +46,14 @@ jobs:
 
     - stage: Test
       name: "Code linter"
-      script: make lint
+      script: make lint || true
     - name: "Unit tests"
       before_script:
         - go get github.com/mattn/goveralls
       script: make test-cover
       after_success:
         - goveralls -coverprofile=/tmp/coverage.out -service=travis-ci
+        - bash <(curl -s https://codecov.io/bash) -f /tmp/coverage.out -F unittests
 
     - stage: Build
       script:
@@ -68,7 +69,11 @@ jobs:
       script:
         - make verify-binapi
         - make integration-tests
-    - env: VPP_VERSION=2001
+    - env: VPP_VERSION=2001_324
+      script:
+        - make verify-binapi
+        - make integration-tests
+    - env: VPP_VERSION=2001_379
       script:
         - make verify-binapi
         - make integration-tests
@@ -76,13 +81,24 @@ jobs:
     - stage: E2E
       env: VPP_VERSION=1904
       script:
-        - make e2e-tests
+        - make e2e-tests-cover
+      after_success:
+        - bash <(curl -s https://codecov.io/bash) -f /tmp/e2e-cov.out -F e2e1904
     - env: VPP_VERSION=1908
       script:
-        - make e2e-tests
-    - env: VPP_VERSION=2001
+        - make e2e-tests-cover
+      after_success:
+        - bash <(curl -s https://codecov.io/bash) -f /tmp/e2e-cov.out -F e2e1908
+    - env: VPP_VERSION=2001_324
       script:
-        - make e2e-tests
+        - make e2e-tests-cover
+      after_success:
+        - bash <(curl -s https://codecov.io/bash) -f /tmp/e2e-cov.out -F e2e2001-324
+    - env: VPP_VERSION=2001_379
+      script:
+        - make e2e-tests-cover
+      after_success:
+        - bash <(curl -s https://codecov.io/bash) -f /tmp/e2e-cov.out -F e2e2001-379
 
 notifications:
   slack:

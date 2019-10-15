@@ -90,7 +90,6 @@ Show Interfaces And Other Objects After Setup
     Write To Machine    agent_vpp_1_term    show h
     Write To Machine    agent_vpp_1_term    show br
     Write To Machine    agent_vpp_1_term    show br 1 detail
-    Write To Machine    agent_vpp_1_term    show vxlan tunnel
     Write To Machine    agent_vpp_1_term    show err
     vat_term: Interfaces Dump    agent_vpp_1
     Execute In Container    agent_vpp_1    ip a

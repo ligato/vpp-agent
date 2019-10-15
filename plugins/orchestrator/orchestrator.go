@@ -18,13 +18,15 @@ import (
 	"os"
 	"strings"
 
+	"github.com/golang/protobuf/proto"
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/infra"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/rpc/grpc"
 	"golang.org/x/net/context"
+	"google.golang.org/grpc/reflection"
 
-	api "github.com/ligato/vpp-agent/api/genericmanager"
+	"github.com/ligato/vpp-agent/api/generic"
 	"github.com/ligato/vpp-agent/pkg/models"
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 )
@@ -40,12 +42,14 @@ var (
 type Plugin struct {
 	Deps
 
-	manager *genericManagerSvc
+	manager *genericService
 
 	// datasync channels
 	changeChan   chan datasync.ChangeEvent
 	resyncChan   chan datasync.ResyncEvent
 	watchDataReg datasync.WatchRegistration
+
+	reflection bool
 
 	*dispatcher
 }
@@ -69,13 +73,19 @@ func (p *Plugin) Init() (err error) {
 	}
 
 	// register grpc service
-	p.manager = &genericManagerSvc{
+	p.manager = &genericService{
 		log:      p.log,
 		dispatch: p.dispatcher,
 	}
 
 	if grpcServer := p.GRPC.GetServer(); grpcServer != nil {
-		api.RegisterGenericManagerServer(grpcServer, p.manager)
+		generic.RegisterManagerServer(grpcServer, p.manager)
+		generic.RegisterMetaServiceServer(grpcServer, p.manager)
+		// register grpc services for reflection
+		if p.reflection {
+			p.Log.Infof("registering grpc reflection service")
+			reflection.Register(grpcServer)
+		}
 	} else {
 		p.log.Infof("grpc server not available")
 	}
@@ -144,7 +154,7 @@ func (p *Plugin) watchEvents() {
 					Key: x.GetKey(),
 				}
 				if x.GetChangeType() != datasync.Delete {
-					kv.Val, err = models.UnmarshalLazyValue(kv.Key, x)
+					kv.Val, err = UnmarshalLazyValue(kv.Key, x)
 					if err != nil {
 						p.log.Errorf("decoding value for key %q failed: %v", kv.Key, err)
 						continue
@@ -183,7 +193,7 @@ func (p *Plugin) watchEvents() {
 				var keyVals []datasync.KeyVal
 				for x, done := iter.GetNext(); !done; x, done = iter.GetNext() {
 					key := x.GetKey()
-					val, err := models.UnmarshalLazyValue(key, x)
+					val, err := UnmarshalLazyValue(key, x)
 					if err != nil {
 						p.log.Errorf("unmarshal value for key %q failed: %v", key, err)
 						continue
@@ -223,6 +233,20 @@ func (p *Plugin) watchEvents() {
 
 		}
 	}
+}
+
+// UnmarshalLazyValue is helper function for unmarshalling from datasync.LazyValue.
+func UnmarshalLazyValue(key string, lazy datasync.LazyValue) (proto.Message, error) {
+	model, err := models.GetModelForKey(key)
+	if err != nil {
+		return nil, err
+	}
+	instance := model.NewInstance()
+	// try to deserialize the value into instance
+	if err := lazy.GetValue(instance); err != nil {
+		return nil, err
+	}
+	return instance, nil
 }
 
 func (p *Plugin) watchStatus(ch <-chan *kvs.BaseValueStatus) {

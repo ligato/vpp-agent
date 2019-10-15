@@ -6,7 +6,17 @@ Library      OperatingSystem
 
 Resource     ../../variables/${VARIABLES}_variables.robot
 
-Resource     ../../libraries/all_libs.robot
+Resource     ../../libraries/vpp_api.robot
+Resource     ../../libraries/vpp_term.robot
+Resource     ../../libraries/docker.robot
+Resource     ../../libraries/setup-teardown.robot
+Resource     ../../libraries/configurations.robot
+Resource     ../../libraries/etcdctl.robot
+Resource     ../../libraries/linux.robot
+
+Resource     ../../libraries/interface/vxlan.robot
+Resource     ../../libraries/interface/loopback.robot
+Resource     ../../libraries/interface/interface_generic.robot
 
 Force Tags        crud     IPv4
 Suite Setup       Testsuite Setup
@@ -32,59 +42,77 @@ Configure Environment
     Configure Environment 5
     Sleep    ${SYNC_SLEEP}
 
-
-
 Show Interfaces Before Setup
     vpp_term: Show Interfaces    agent_vpp_1
 
 Add Veth1 Interface
     linux: Interface Not Exists    node=agent_vpp_1    mac=${VETH1_MAC}
-    Put Veth Interface With IP    node=agent_vpp_1    name=vpp1_veth1    mac=${VETH1_MAC}    peer=vpp1_veth2    ip=10.10.1.1    prefix=24    mtu=1500
+    Put Veth Interface With IP    node=agent_vpp_1    name=vpp1_veth1
+    ...    mac=${VETH1_MAC}    peer=vpp1_veth2    ip=10.10.1.1    prefix=24    mtu=1500
 
 Add Veth2 Interface
     linux: Interface Not Exists    node=agent_vpp_1    mac=${VETH2_MAC}
-    Put Veth Interface    node=agent_vpp_1    name=vpp1_veth2    mac=${VETH2_MAC}    peer=vpp1_veth1
+    Put Veth Interface    node=agent_vpp_1    name=vpp1_veth2
+    ...    mac=${VETH2_MAC}    peer=vpp1_veth1
 
 Add Memif Interface
-    Put Memif Interface With IP    node=agent_vpp_1    name=vpp1_memif1    mac=62:61:61:61:61:61    master=true    id=1    ip=192.168.1.1    prefix=24    socket=default.sock
+    Put Memif Interface With IP    node=agent_vpp_1    name=vpp1_memif1
+    ...    mac=62:61:61:61:61:61    master=true    id=1
+    ...    ip=192.168.1.1    prefix=24    socket=default.sock
 
 Add VXLan Interface
-    Put VXLan Interface    node=agent_vpp_1    name=vpp1_vxlan1    src=192.168.1.1    dst=192.168.1.2    vni=5
+    Put VXLan Interface    node=agent_vpp_1    name=vpp1_vxlan1
+    ...    src=192.168.1.1    dst=192.168.1.2    vni=5
 
 Add Loopback1 Interface
-    Put Loopback Interface With IP    node=agent_vpp_1    name=vpp1_loop1    mac=12:21:21:11:11:11    ip=20.20.1.1   prefix=24   mtu=1400
+    Put Loopback Interface With IP    node=agent_vpp_1    name=vpp1_loop1
+    ...    mac=12:21:21:11:11:11    ip=20.20.1.1   prefix=24   mtu=1400
 
 Add Loopback2 Interface
-    Put Loopback Interface With IP    node=agent_vpp_1    name=vpp1_loop2    mac=22:21:21:11:11:11    ip=22.20.1.1   prefix=24   mtu=1400
+    Put Loopback Interface With IP    node=agent_vpp_1    name=vpp1_loop2
+    ...    mac=22:21:21:11:11:11    ip=22.20.1.1   prefix=24   mtu=1400
 
 Add Tap Interface
-    Put TAPv2 Interface With IP    node=agent_vpp_1    name=vpp1_tap1    mac=32:21:21:11:11:11    ip=30.30.1.1   prefix=24      host_if_name=linux_vpp1_tap1
+    Put TAPv2 Interface With IP    node=agent_vpp_1    name=vpp1_tap1
+    ...    mac=32:21:21:11:11:11    ip=30.30.1.1   prefix=24      host_if_name=linux_vpp1_tap1
 
 Check That Veth1 And Veth2 Interfaces Are Created
     linux: Interface Is Created    node=agent_vpp_1    mac=${VETH1_MAC}
     linux: Interface Is Created    node=agent_vpp_1    mac=${VETH2_MAC}
-    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    linux: Check Veth Interface State     agent_vpp_1    vpp1_veth1    mac=${VETH1_MAC}    ipv4=10.10.1.1/24    mtu=1500    state=up
-    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    linux: Check Veth Interface State     agent_vpp_1    vpp1_veth2    mac=${VETH2_MAC}    state=up
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}
+    ...    linux: Check Veth Interface State     agent_vpp_1    vpp1_veth1
+    ...    mac=${VETH1_MAC}    ipv4=10.10.1.1/24    mtu=1500    state=up
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}
+    ...    linux: Check Veth Interface State     agent_vpp_1    vpp1_veth2
+    ...    mac=${VETH2_MAC}    state=up
 
 Check TAP Interface Created
     vpp_term: Interface Is Created    node=agent_vpp_1    mac=32:21:21:11:11:11
-    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Check TAP interface State    agent_vpp_1    vpp1_tap1    mac=32:21:21:11:11:11    ipv4=30.30.1.1/24    state=up
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}
+    ...    vpp_term: Check TAP interface State    agent_vpp_1    vpp1_tap1
+    ...    mac=32:21:21:11:11:11    ipv4=30.30.1.1/24    state=up
 
 Check Memif Interface Created
     vpp_term: Interface Is Created    node=agent_vpp_1    mac=62:61:61:61:61:61
-    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vat_term: Check Memif Interface State     agent_vpp_1  vpp1_memif1  mac=62:61:61:61:61:61  role=master  id=1  ipv4=192.168.1.1/24  connected=0  enabled=1  socket=${AGENT_VPP_1_MEMIF_SOCKET_FOLDER}/default.sock
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}
+    ...    vpp_term: Check Memif Interface State     agent_vpp_1  vpp1_memif1
+    ...    mac=62:61:61:61:61:61  role=master  id=1  ipv4=192.168.1.1/24  connected=0  enabled=1  socket=${AGENT_VPP_1_MEMIF_SOCKET_FOLDER}/default.sock
 
 Check VXLan Interface Created
-    vxlan: Tunnel Is Created    node=agent_vpp_1    src=192.168.1.1    dst=192.168.1.2    vni=5
-    vat_term: Check VXLan Interface State    agent_vpp_1    vpp1_vxlan1    enabled=1    src=192.168.1.1    dst=192.168.1.2    vni=5
+    VXLan Tunnel Is Created    node=agent_vpp_1    src=192.168.1.1    dst=192.168.1.2    vni=5
+    vpp_api: Check VXLan Interface State    agent_vpp_1    vpp1_vxlan1
+    ...    enabled=1    src=192.168.1.1    dst=192.168.1.2    vni=5
 
 Check Loopback1 Interface Created
     vpp_term: Interface Is Created    node=agent_vpp_1    mac=12:21:21:11:11:11
-    vat_term: Check Loopback Interface State    agent_vpp_1    vpp1_loop1    enabled=1     mac=12:21:21:11:11:11    mtu=1400  ipv4=20.20.1.1/24
+    vpp_api: Check Loopback Interface State    agent_vpp_1    vpp1_loop1
+    ...    enabled=1     mac=12:21:21:11:11:11    mtu=1400  ipv4=20.20.1.1/24
 
 Check Loopback2 Interface Created
     vpp_term: Interface Is Created    node=agent_vpp_1    mac=22:21:21:11:11:11
-    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vat_term: Check Loopback Interface State    agent_vpp_1    vpp1_loop2    enabled=1     mac=22:21:21:11:11:11    mtu=1400  ipv4=22.20.1.1/24
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}
+    ...    vpp_api: Check Loopback Interface State    agent_vpp_1    vpp1_loop2
+    ...    enabled=1     mac=22:21:21:11:11:11    mtu=1400  ipv4=22.20.1.1/24
 
 Check Stuff
     Show Interfaces And Other Objects
@@ -94,20 +122,22 @@ Add L2XConnect1 for Memif and Loopback1
     Put L2XConnect  agent_vpp_1    vpp1_loop1     vpp1_memif1
 
 Check L2XConnect1 Memif and Loopback1 in XConnect mode
-    ${out}=      vpp_term: Show Interface Mode    agent_vpp_1
-    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Should Contain     ${out}      l2 xconnect memif1/1 loop0
-    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Should Contain     ${out}      l2 xconnect loop0 memif1/1
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}
+    ...    Verify XConnect Interfaces    agent_vpp_1
+    ...    l2 xconnect memif1/1 loop0
+    ...    l2 xconnect loop0 memif1/1
 
 Add L2XConnect2 for Tap and Loopback2
     Put L2XConnect  agent_vpp_1    vpp1_tap1    vpp1_loop2
     Put L2XConnect  agent_vpp_1    vpp1_loop2     vpp1_tap1
 
 Check L2XConnect2 and L2XConnect1 still configured
-    ${out}=      vpp_term: Show Interface Mode    agent_vpp_1
-    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Should Contain     ${out}      l2 xconnect memif1/1 loop0
-    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Should Contain     ${out}      l2 xconnect loop0 memif1/1
-    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Should Contain     ${out}      l2 xconnect tap0 loop1
-    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Should Contain     ${out}      l2 xconnect loop1 tap0
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}
+    ...    Verify XConnect Interfaces    agent_vpp_1
+    ...    l2 xconnect memif1/1 loop0
+    ...    l2 xconnect loop0 memif1/1
+    ...    l2 xconnect tap0 loop1
+    ...    l2 xconnect loop1 tap0
 
 Modify L2XConnect1
     Delete L2XConnect      agent_vpp_1    vpp1_memif1
@@ -115,36 +145,39 @@ Modify L2XConnect1
     Put L2XConnect  agent_vpp_1    vpp1_loop1     vpp1_vxlan1
 
 Check L2XConnect1 Modified and L2XConnect2 still configured
-    ${out}=      vpp_term: Show Interface Mode    agent_vpp_1
-    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Should Contain     ${out}      l2 xconnect vxlan_tunnel0 loop0
-    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Should Contain     ${out}      l2 xconnect loop0 vxlan_tunnel0
-    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Should Contain     ${out}      l2 xconnect tap0 loop1
-    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Should Contain     ${out}      l2 xconnect loop1 tap0
-    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Should Contain     ${out}      l3 memif1/1
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}
+    ...    Verify XConnect Interfaces    agent_vpp_1
+    ...    l2 xconnect vxlan_tunnel0 loop0
+    ...    l2 xconnect loop0 vxlan_tunnel0
+    ...    l2 xconnect tap0 loop1
+    ...    l2 xconnect loop1 tap0
+    ...    l3 memif1/1
 
 Delete L2XConnect1
     Delete L2XConnect      agent_vpp_1    vpp1_vxlan1
     Delete L2XConnect      agent_vpp_1    vpp1_loop1
 
 Check L2XConnect1 Deleted and L2XConnect2 still configured
-    ${out}=      vpp_term: Show Interface Mode    agent_vpp_1
-    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Should Contain     ${out}      l3 memif1/1
-    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Should Contain     ${out}      l3 loop0
-    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Should Contain     ${out}      l3 vxlan_tunnel0
-    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Should Contain     ${out}      l2 xconnect tap0 loop1
-    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Should Contain     ${out}      l2 xconnect loop1 tap0
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}
+    ...    Verify XConnect Interfaces    agent_vpp_1
+    ...    l3 memif1/1
+    ...    l3 loop0
+    ...    l3 vxlan_tunnel0
+    ...    l2 xconnect tap0 loop1
+    ...    l2 xconnect loop1 tap0
 
 Delete L2XConnect2
     Delete L2XConnect      agent_vpp_1    vpp1_tap1
     Delete L2XConnect      agent_vpp_1    vpp1_loop2
 
 Check L2XConnect1 and L2XConnect2 Deleted
-    ${out}=      vpp_term: Show Interface Mode    agent_vpp_1
-    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Should Contain     ${out}      l3 memif1/1
-    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Should Contain     ${out}      l3 loop0
-    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Should Contain     ${out}      l3 vxlan_tunnel0
-    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Should Contain     ${out}      l3 tap0
-    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Should Contain     ${out}      l3 loop1
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}
+    ...    Verify XConnect Interfaces    agent_vpp_1
+    ...    l3 memif1/1
+    ...    l3 loop0
+    ...    l3 vxlan_tunnel0
+    ...    l3 tap0
+    ...    l3 loop1
 
 *** Keywords ***
 Show Interfaces And Other Objects
@@ -169,3 +202,9 @@ TestTeardown
 Suite Cleanup
     Stop SFC Controller Container
     Testsuite Teardown
+
+Verify XConnect Interfaces
+    [Arguments]    ${node}    @{interfaces}
+    ${out}=      vpp_term: Show Interface Mode    ${node}
+    :FOR    ${interface}    IN    @{interfaces}
+    \    Should Contain    ${out}    ${interface}

@@ -22,14 +22,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gogo/protobuf/proto"
+	"github.com/golang/protobuf/proto"
 	"github.com/ligato/cn-infra/agent"
 	"github.com/ligato/cn-infra/infra"
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/namsral/flag"
 	"google.golang.org/grpc"
 
-	"github.com/ligato/vpp-agent/api/genericmanager"
 	"github.com/ligato/vpp-agent/api/models/linux"
 	linux_interfaces "github.com/ligato/vpp-agent/api/models/linux/interfaces"
 	linux_l3 "github.com/ligato/vpp-agent/api/models/linux/l3"
@@ -42,6 +41,8 @@ import (
 	mymodel "github.com/ligato/vpp-agent/examples/custom_model/pb"
 	"github.com/ligato/vpp-agent/plugins/orchestrator"
 )
+
+//go:generate protoc --proto_path=pb --proto_path=$GOPATH/src --go_out=pb pb/model.proto
 
 var (
 	address    = flag.String("address", "127.0.0.1:9111", "address of GRPC server")
@@ -111,7 +112,7 @@ func (p *ExamplePlugin) AfterInit() (err error) {
 		time.Sleep(time.Second)
 
 		// remoteclient
-		c := remoteclient.NewClientGRPC(genericmanager.NewGenericManagerClient(p.conn))
+		c := remoteclient.NewClientGRPC(p.conn)
 		demonstrateClient(c)
 
 		//time.Sleep(time.Second * 3)
@@ -150,7 +151,7 @@ func demonstrateClient(c client.ConfigClient) {
 	fmt.Println("# ==========================================")
 	fmt.Println("# List known models..")
 	fmt.Println("# ==========================================")
-	knownModels, err := c.KnownModels()
+	knownModels, err := c.KnownModels("config")
 	if err != nil {
 		log.Println("KnownModels failed:", err)
 	}

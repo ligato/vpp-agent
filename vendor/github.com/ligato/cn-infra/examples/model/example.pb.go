@@ -13,7 +13,7 @@ It has these top-level messages:
 */
 package etcdexample
 
-import "github.com/gogo/protobuf/proto"
+import "github.com/golang/protobuf/proto"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal

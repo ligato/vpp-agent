@@ -17,8 +17,11 @@ package config
 import (
 	"io/ioutil"
 	"os"
+	"reflect"
+	"time"
 
 	"github.com/ghodss/yaml"
+	"github.com/mitchellh/mapstructure"
 )
 
 // ParseConfigFromYamlFile parses a configuration from a file in YAML
@@ -33,8 +36,37 @@ func ParseConfigFromYamlFile(path string, cfg interface{}) error {
 	if err != nil {
 		return err
 	}
+	return parseConfigFromYamlBytes(b, cfg)
+}
 
-	err = yaml.Unmarshal(b, cfg)
+func parseConfigFromYamlBytes(b []byte, cfg interface{}) error {
+	var data map[string]interface{}
+	err := yaml.Unmarshal(b, &data)
+	if err != nil {
+		return err
+	}
+
+	dc := &mapstructure.DecoderConfig{
+		DecodeHook: func(in, out reflect.Type, data interface{}) (interface{}, error) {
+			// Only intended to help with cases when string must be set to `time.Duration`
+			if in.Kind() != reflect.String || out != reflect.TypeOf(time.Duration(0)) {
+				return data, nil
+			}
+
+			pd, err := time.ParseDuration(data.(string))
+			if err != nil {
+				return nil, err
+			}
+			return pd, nil
+		},
+		Result:  cfg,
+		TagName: "json",
+	}
+	dec, err := mapstructure.NewDecoder(dc)
+	if err != nil {
+		return err
+	}
+	err = dec.Decode(data)
 	if err != nil {
 		return err
 	}

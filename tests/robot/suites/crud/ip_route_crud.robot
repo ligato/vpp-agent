@@ -7,6 +7,7 @@ Library     String
 Resource     ../../variables/${VARIABLES}_variables.robot
 Resource    ../../libraries/all_libs.robot
 Resource    ../../libraries/pretty_keywords.robot
+Resource     ../../libraries/interface/vxlan.robot
 
 Force Tags        crud     IPv4
 Suite Setup       Run Keywords    Discard old results

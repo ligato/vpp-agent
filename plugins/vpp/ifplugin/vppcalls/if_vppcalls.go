@@ -39,6 +39,7 @@ type InterfaceMeta struct {
 	IsLinkStateUp  bool             `json:"is_link_state_up"`
 	LinkDuplex     uint32           `json:"link_duplex"`
 	LinkMTU        uint16           `json:"link_mtu"`
+	MTU            []uint32         `json:"mtu"`
 	LinkSpeed      uint32           `json:"link_speed"`
 	SubID          uint32           `json:"sub_id"`
 	Tag            string           `json:"tag"`
@@ -175,7 +176,7 @@ type InterfaceVppAPI interface {
 	// SetInterfaceMac calls SwInterfaceSetMacAddress bin API.
 	SetInterfaceMac(ifIdx uint32, macAddress string) error
 	// RegisterMemifSocketFilename registers new socket file name with provided ID.
-	RegisterMemifSocketFilename(filename []byte, id uint32) error
+	RegisterMemifSocketFilename(filename string, id uint32) error
 	// SetInterfaceMtu calls HwInterfaceSetMtu bin API with desired MTU value.
 	SetInterfaceMtu(ifIdx uint32, mtu uint32) error
 	// SetRxMode calls SwInterfaceSetRxMode bin API

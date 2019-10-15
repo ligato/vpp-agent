@@ -68,7 +68,7 @@ func (opts *ClientOptions) InstallFlags(flags *pflag.FlagSet) {
 // complete
 func (opts *ClientOptions) SetDefaultOptions(flags *pflag.FlagSet) {
 	client.DefaultPortHTTP = opts.PortHTTP
-	client.DefaultPortHTTP = opts.PortHTTP
+	client.DefaultPortGRPC = opts.PortGRPC
 }
 
 // SetLogLevel sets the logrus logging level

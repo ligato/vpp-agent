@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"github.com/ligato/vpp-agent/pkg/metrics"
+	vpp_client "github.com/ligato/vpp-agent/plugins/govppmux/model"
 )
 
 var (
@@ -43,13 +44,7 @@ func GetStats() *Stats {
 
 // Stats defines various statistics for govppmux plugin.
 type Stats struct {
-	ChannelsCreated uint64
-	ChannelsOpen    uint64
-
-	RequestsSent   uint64
-	RequestsDone   uint64
-	RequestsErrors uint64
-	RequestReplies uint64
+	vpp_client.Metrics
 
 	Errors metrics.Calls
 
@@ -121,7 +116,10 @@ func trackError(m string) {
 }
 
 func init() {
-	expvar.Publish("govppstats", expvar.Func(func() interface{} {
-		return GetStats()
+	metrics.Register(&vpp_client.Metrics{}, func() interface{} {
+		return &GetStats().Metrics
+	})
+	expvar.Publish(vpp_client.MetricsModel.Name(), expvar.Func(func() interface{} {
+		return &GetStats().Metrics
 	}))
 }

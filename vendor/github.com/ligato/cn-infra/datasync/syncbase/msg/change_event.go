@@ -18,17 +18,17 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/gogo/protobuf/proto"
+	"github.com/golang/protobuf/proto"
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/logging/logrus"
 )
 
-//go:generate protoc --proto_path=. --gogo_out=plugins=grpc:. datamsg.proto
+//go:generate protoc --proto_path=. --go_out=plugins=grpc:. datamsg.proto
 
 // NewChangeWatchResp is a constructor.
 func NewChangeWatchResp(ctx context.Context, message *DataChangeRequest, callback func(error)) *ChangeEvent {
 	return &ChangeEvent{
-		ctx:     ctx,
+		ctx: ctx,
 		changes: []datasync.ProtoWatchResp{
 			&ChangeWatchResp{message: message},
 		},

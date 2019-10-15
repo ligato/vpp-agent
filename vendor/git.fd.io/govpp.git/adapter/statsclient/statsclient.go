@@ -20,7 +20,6 @@ import (
 	"fmt"
 	"os"
 	"regexp"
-	"unsafe"
 
 	logger "github.com/sirupsen/logrus"
 
@@ -63,11 +62,19 @@ func init() {
 	}
 }
 
+func debugf(f string, a ...interface{}) {
+	if Debug {
+		Log.Debugf(f, a...)
+	}
+}
+
+// implements StatsAPI
+var _ adapter.StatsAPI = (*StatsClient)(nil)
+
 // StatsClient is the pure Go implementation for VPP stats API.
 type StatsClient struct {
 	sockAddr string
 
-	currentEpoch int64
 	statSegment
 }
 
@@ -94,13 +101,6 @@ func (c *StatsClient) Connect() error {
 		return err
 	}
 
-	ver := c.readVersion()
-	Log.Debugf("stat segment version: %v", ver)
-
-	if err := checkVersion(ver); err != nil {
-		return err
-	}
-
 	return nil
 }
 
@@ -108,116 +108,235 @@ func (c *StatsClient) Disconnect() error {
 	if err := c.statSegment.disconnect(); err != nil {
 		return err
 	}
-
 	return nil
 }
 
-func (c *StatsClient) ListStats(patterns ...string) (statNames []string, err error) {
+func (c *StatsClient) ListStats(patterns ...string) (names []string, err error) {
 	sa := c.accessStart()
-	if sa == nil {
-		return nil, fmt.Errorf("access failed")
+	if sa.epoch == 0 {
+		return nil, adapter.ErrStatsAccessFailed
 	}
 
-	dirOffset, _, _ := c.readOffsets()
-	Log.Debugf("dirOffset: %v", dirOffset)
-
-	vecLen := vectorLen(unsafe.Pointer(&c.sharedHeader[dirOffset]))
-	Log.Debugf("vecLen: %v", vecLen)
-	Log.Debugf("unsafe.Sizeof(statSegDirectoryEntry{}): %v", unsafe.Sizeof(statSegDirectoryEntry{}))
-
-	for i := uint64(0); i < vecLen; i++ {
-		offset := uintptr(i) * unsafe.Sizeof(statSegDirectoryEntry{})
-		dirEntry := (*statSegDirectoryEntry)(add(unsafe.Pointer(&c.sharedHeader[dirOffset]), offset))
-
-		nul := bytes.IndexByte(dirEntry.name[:], '\x00')
-		if nul < 0 {
-			Log.Debugf("no zero byte found for: %q", dirEntry.name[:])
-			continue
+	indexes, err := c.listIndexes(patterns...)
+	if err != nil {
+		return nil, err
+	}
+	for _, index := range indexes {
+		name, err := c.entryName(index)
+		if err != nil {
+			return nil, err
 		}
-		name := string(dirEntry.name[:nul])
-		if name == "" {
-			Log.Debugf("entry with empty name found (%d)", i)
-			continue
-		}
-
-		Log.Debugf(" %80q (type: %v, data: %d, offset: %d) ", name, dirEntry.directoryType, dirEntry.unionData, dirEntry.offsetVector)
-
-		if nameMatches(name, patterns) {
-			statNames = append(statNames, name)
-		}
-
-		// TODO: copy the listed entries elsewhere
+		names = append(names, name)
 	}
 
-	if !c.accessEnd(sa) {
-		return nil, adapter.ErrStatDirBusy
+	if !c.accessEnd(&sa) {
+		return nil, adapter.ErrStatsDataBusy
 	}
 
-	c.currentEpoch = sa.epoch
-
-	return statNames, nil
+	return names, nil
 }
 
-func (c *StatsClient) DumpStats(patterns ...string) (entries []*adapter.StatEntry, err error) {
-	epoch, _ := c.readEpoch()
-	if c.currentEpoch > 0 && c.currentEpoch != epoch { // TODO: do list stats before dump
-		return nil, fmt.Errorf("old data")
-	}
-
+func (c *StatsClient) DumpStats(patterns ...string) (entries []adapter.StatEntry, err error) {
 	sa := c.accessStart()
-	if sa == nil {
-		return nil, fmt.Errorf("access failed")
+	if sa.epoch == 0 {
+		return nil, adapter.ErrStatsAccessFailed
 	}
 
-	dirOffset, _, _ := c.readOffsets()
-	vecLen := vectorLen(unsafe.Pointer(&c.sharedHeader[dirOffset]))
-
-	for i := uint64(0); i < vecLen; i++ {
-		offset := uintptr(i) * unsafe.Sizeof(statSegDirectoryEntry{})
-		dirEntry := (*statSegDirectoryEntry)(add(unsafe.Pointer(&c.sharedHeader[dirOffset]), offset))
-
-		nul := bytes.IndexByte(dirEntry.name[:], '\x00')
-		if nul < 0 {
-			Log.Debugf("no zero byte found for: %q", dirEntry.name[:])
-			continue
-		}
-		name := string(dirEntry.name[:nul])
-		if name == "" {
-			Log.Debugf("entry with empty name found (%d)", i)
-			continue
-		}
-
-		Log.Debugf(" - %s (type: %v, data: %v, offset: %v) ", name, dirEntry.directoryType, dirEntry.unionData, dirEntry.offsetVector)
-
-		entry := adapter.StatEntry{
-			Name: name,
-			Type: adapter.StatType(dirEntry.directoryType),
-			Data: c.copyData(dirEntry),
-		}
-
-		Log.Debugf("\tentry data: %+v %#v (%T)", entry.Data, entry.Data, entry.Data)
-
-		if nameMatches(entry.Name, patterns) {
-			entries = append(entries, &entry)
-		}
+	dir, err := c.listIndexes(patterns...)
+	if err != nil {
+		return nil, err
+	}
+	if entries, err = c.dumpEntries(dir); err != nil {
+		return nil, err
 	}
 
-	if !c.accessEnd(sa) {
-		return nil, adapter.ErrStatDumpBusy
+	if !c.accessEnd(&sa) {
+		return nil, adapter.ErrStatsDataBusy
 	}
 
 	return entries, nil
 }
 
-func nameMatches(name string, patterns []string) bool {
-	if len(patterns) == 0 {
-		return true
+func (c *StatsClient) PrepareDir(patterns ...string) (*adapter.StatDir, error) {
+	dir := new(adapter.StatDir)
+
+	sa := c.accessStart()
+	if sa.epoch == 0 {
+		return nil, adapter.ErrStatsAccessFailed
 	}
-	for _, pattern := range patterns {
-		matched, err := regexp.MatchString(pattern, name)
-		if err == nil && matched {
-			return true
+
+	indexes, err := c.listIndexes(patterns...)
+	if err != nil {
+		return nil, err
+	}
+	dir.Indexes = indexes
+
+	entries, err := c.dumpEntries(indexes)
+	if err != nil {
+		return nil, err
+	}
+	dir.Entries = entries
+
+	if !c.accessEnd(&sa) {
+		return nil, adapter.ErrStatsDataBusy
+	}
+	dir.Epoch = sa.epoch
+
+	return dir, nil
+}
+
+func (c *StatsClient) UpdateDir(dir *adapter.StatDir) (err error) {
+	epoch, _ := c.getEpoch()
+	if dir.Epoch != epoch {
+		return adapter.ErrStatsDirStale
+	}
+
+	sa := c.accessStart()
+	if sa.epoch == 0 {
+		return adapter.ErrStatsAccessFailed
+	}
+
+	dirVector := c.getStatDirVector()
+
+	for i, index := range dir.Indexes {
+		dirEntry := c.getStatDirIndex(dirVector, index)
+
+		var name []byte
+		for n := 0; n < len(dirEntry.name); n++ {
+			if dirEntry.name[n] == 0 {
+				name = dirEntry.name[:n]
+				break
+			}
+		}
+		if len(name) == 0 {
+			continue
+		}
+
+		entry := &dir.Entries[i]
+		if !bytes.Equal(name, entry.Name) {
+			continue
+		}
+		if adapter.StatType(dirEntry.directoryType) != entry.Type {
+			continue
+		}
+		if entry.Data == nil {
+			continue
+		}
+		if err := c.updateEntryData(dirEntry, &entry.Data); err != nil {
+			return fmt.Errorf("updating stat data for entry %s failed: %v", name, err)
+		}
+
+	}
+
+	if !c.accessEnd(&sa) {
+		return adapter.ErrStatsDataBusy
+	}
+
+	return nil
+}
+
+// listIndexes lists indexes for all stat entries that match any of the regex patterns.
+func (c *StatsClient) listIndexes(patterns ...string) (indexes []uint32, err error) {
+	if len(patterns) == 0 {
+		return c.listIndexesFunc(nil)
+	}
+	var regexes = make([]*regexp.Regexp, len(patterns))
+	for i, pattern := range patterns {
+		r, err := regexp.Compile(pattern)
+		if err != nil {
+			return nil, fmt.Errorf("compiling regexp failed: %v", err)
+		}
+		regexes[i] = r
+	}
+	nameMatches := func(name []byte) bool {
+		for _, r := range regexes {
+			if r.Match(name) {
+				return true
+			}
+		}
+		return false
+	}
+	return c.listIndexesFunc(nameMatches)
+}
+
+func (c *StatsClient) listIndexesFunc(f func(name []byte) bool) (indexes []uint32, err error) {
+	if f == nil {
+		// there is around ~3150 stats, so to avoid too many allocations
+		// we set capacity to 3200 when listing all stats
+		indexes = make([]uint32, 0, 3200)
+	}
+
+	dirVector := c.getStatDirVector()
+	vecLen := uint32(vectorLen(dirVector))
+
+	for i := uint32(0); i < vecLen; i++ {
+		dirEntry := c.getStatDirIndex(dirVector, i)
+
+		if f != nil {
+			var name []byte
+			for n := 0; n < len(dirEntry.name); n++ {
+				if dirEntry.name[n] == 0 {
+					name = dirEntry.name[:n]
+					break
+				}
+			}
+			if len(name) == 0 || !f(name) {
+				continue
+			}
+		}
+		indexes = append(indexes, i)
+	}
+
+	return indexes, nil
+}
+
+func (c *StatsClient) entryName(index uint32) (string, error) {
+	dirVector := c.getStatDirVector()
+	vecLen := uint32(vectorLen(dirVector))
+
+	if index >= vecLen {
+		return "", fmt.Errorf("stat entry index %d out of range (%d)", index, vecLen)
+	}
+
+	dirEntry := c.getStatDirIndex(dirVector, index)
+
+	var name []byte
+	for n := 0; n < len(dirEntry.name); n++ {
+		if dirEntry.name[n] == 0 {
+			name = dirEntry.name[:n]
+			break
 		}
 	}
-	return false
+
+	return string(name), nil
+}
+
+func (c *StatsClient) dumpEntries(indexes []uint32) (entries []adapter.StatEntry, err error) {
+	entries = make([]adapter.StatEntry, 0, len(indexes))
+
+	dirVector := c.getStatDirVector()
+
+	for _, index := range indexes {
+		dirEntry := c.getStatDirIndex(dirVector, index)
+
+		var name []byte
+		for n := 0; n < len(dirEntry.name); n++ {
+			if dirEntry.name[n] == 0 {
+				name = dirEntry.name[:n]
+				break
+			}
+		}
+		if len(name) == 0 {
+			continue
+		}
+
+		entry := adapter.StatEntry{
+			Name: append([]byte(nil), name...),
+			Type: adapter.StatType(dirEntry.directoryType),
+			Data: c.copyEntryData(dirEntry),
+		}
+		entries = append(entries, entry)
+	}
+
+	return entries, nil
 }

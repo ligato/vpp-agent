@@ -18,7 +18,7 @@ import (
 	"context"
 	"sort"
 
-	"github.com/gogo/protobuf/proto"
+	"github.com/golang/protobuf/proto"
 )
 
 // KVStore describes an interface for key-value store used by dispatcher.

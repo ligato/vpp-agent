@@ -31,6 +31,7 @@ func NewPlugin(opts ...Option) *Plugin {
 	p.GRPC = &grpc.DefaultPlugin
 	p.KVScheduler = &kvscheduler.DefaultPlugin
 	p.Watcher = local.DefaultRegistry
+	p.reflection = true
 
 	for _, o := range opts {
 		o(p)
@@ -42,3 +43,9 @@ func NewPlugin(opts ...Option) *Plugin {
 
 // Option is a function that acts on a Plugin to inject Dependencies or configuration
 type Option func(*Plugin)
+
+func WithReflection(enabled bool) Option {
+	return func(p *Plugin) {
+		p.reflection = enabled
+	}
+}

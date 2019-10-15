@@ -17,21 +17,30 @@ package telemetry
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"os"
 	"sync"
 	"time"
 
+	"github.com/gorilla/mux"
 	"github.com/ligato/cn-infra/infra"
 	"github.com/ligato/cn-infra/logging"
+	"github.com/ligato/cn-infra/rpc/grpc"
 	prom "github.com/ligato/cn-infra/rpc/prometheus"
+	"github.com/ligato/cn-infra/rpc/rest"
 	"github.com/ligato/cn-infra/servicelabel"
+	"github.com/unrolled/render"
 
+	"github.com/ligato/vpp-agent/api/configurator"
+	"github.com/ligato/vpp-agent/pkg/metrics"
+	"github.com/ligato/vpp-agent/pkg/models"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 	"github.com/ligato/vpp-agent/plugins/telemetry/vppcalls"
 
 	_ "github.com/ligato/vpp-agent/plugins/telemetry/vppcalls/vpp1904"
 	_ "github.com/ligato/vpp-agent/plugins/telemetry/vppcalls/vpp1908"
-	_ "github.com/ligato/vpp-agent/plugins/telemetry/vppcalls/vpp2001"
+	_ "github.com/ligato/vpp-agent/plugins/telemetry/vppcalls/vpp2001_324"
+	_ "github.com/ligato/vpp-agent/plugins/telemetry/vppcalls/vpp2001_379"
 )
 
 var debug = os.Getenv("DEBUG_TELEMETRY") != ""
@@ -42,6 +51,7 @@ type Plugin struct {
 
 	handler vppcalls.TelemetryVppAPI
 
+	statsPollerServer
 	prometheusMetrics
 
 	// From config file
@@ -59,6 +69,8 @@ type Deps struct {
 	ServiceLabel servicelabel.ReaderAPI
 	GoVppmux     govppmux.StatsAPI
 	Prometheus   prom.API
+	GRPC         grpc.Server
+	HTTPHandlers rest.HTTPHandlers
 }
 
 // Init initializes Telemetry Plugin
@@ -101,6 +113,15 @@ func (p *Plugin) Init() error {
 		return err
 	}
 
+	p.statsPollerServer.log = p.Log.NewLogger("stats-poller")
+	if err := p.setupStatsPoller(); err != nil {
+		return err
+	}
+
+	if p.HTTPHandlers != nil {
+		p.HTTPHandlers.RegisterHTTPHandler("/metrics/{metric}", metricsHandler, "GET")
+	}
+
 	return nil
 }
 
@@ -111,8 +132,27 @@ func (p *Plugin) AfterInit() error {
 		return nil
 	}
 
-	p.wg.Add(1)
-	go p.periodicUpdates()
+	p.startPeriodicUpdates()
+
+	return nil
+}
+
+func (p *Plugin) setupStatsPoller() error {
+	vppCh, err := p.GoVppmux.NewAPIChannel()
+	if err != nil {
+		return err
+	}
+	defer vppCh.Close()
+
+	h := vppcalls.CompatibleTelemetryHandler(vppCh, p.GoVppmux)
+	if h == nil {
+		return err
+	}
+	p.statsPollerServer.handler = h
+
+	if p.GRPC != nil && p.GRPC.GetServer() != nil {
+		configurator.RegisterStatsPollerServer(p.GRPC.GetServer(), &p.statsPollerServer)
+	}
 
 	return nil
 }
@@ -124,11 +164,7 @@ func (p *Plugin) Close() error {
 	return nil
 }
 
-// periodic updates for the metrics data
-func (p *Plugin) periodicUpdates() {
-	defer p.wg.Done()
-
-	// Create GoVPP channel
+func (p *Plugin) startPeriodicUpdates() {
 	vppCh, err := p.GoVppmux.NewAPIChannel()
 	if err != nil {
 		p.Log.Errorf("creating channel failed: %v", err)
@@ -137,13 +173,26 @@ func (p *Plugin) periodicUpdates() {
 	defer vppCh.Close()
 
 	p.handler = vppcalls.CompatibleTelemetryHandler(vppCh, p.GoVppmux)
+	if p.handler == nil {
+		p.Log.Warnf("no compatible telemetry handler, skipping periodic updates")
+		return
+	}
+
+	p.wg.Add(1)
+	go p.periodicUpdates()
+}
+
+// periodic updates for the metrics data
+func (p *Plugin) periodicUpdates() {
+	defer p.wg.Done()
 
 	p.Log.Debugf("starting periodic updates (%v)", p.updatePeriod)
 
+	tick := time.NewTicker(p.updatePeriod)
 	for {
 		select {
 		// Delay period between updates
-		case <-time.After(p.updatePeriod):
+		case <-tick.C:
 			ctx := context.Background()
 			p.updatePrometheus(ctx)
 
@@ -163,5 +212,27 @@ func (p *Plugin) tracef(f string, a ...interface{}) {
 			return
 		}
 		p.Log.Debug(s)
+	}
+}
+
+func metricsHandler(formatter *render.Render) http.HandlerFunc {
+	return func(w http.ResponseWriter, req *http.Request) {
+		vars := mux.Vars(req)
+		if vars == nil {
+			_ = formatter.JSON(w, http.StatusNotFound, struct{}{})
+			return
+		}
+		metric := vars["metric"]
+		model, err := models.DefaultRegistry.GetModel(metric)
+		if err != nil {
+			_ = formatter.JSON(w, http.StatusNotFound, struct{ Error string }{err.Error()})
+			return
+		}
+		data := model.NewInstance()
+		if err := metrics.Retrieve(data); err != nil {
+			_ = formatter.JSON(w, http.StatusInternalServerError, struct{ Error string }{err.Error()})
+			return
+		}
+		_ = formatter.JSON(w, 200, data)
 	}
 }

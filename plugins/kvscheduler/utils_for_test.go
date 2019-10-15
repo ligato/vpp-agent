@@ -17,7 +17,7 @@ package kvscheduler
 import (
 	"strings"
 
-	"github.com/gogo/protobuf/proto"
+	"github.com/golang/protobuf/proto"
 	. "github.com/onsi/gomega"
 
 	. "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
@@ -38,7 +38,6 @@ const (
 	baseValue3 = "base-value3"
 	baseValue4 = "base-value4"
 )
-
 
 type DumpFnc func(string, View) ([]KVWithMetadata, error)
 

@@ -89,7 +89,6 @@ type ConnectionEvent struct {
 // Connection represents a shared memory connection to VPP via vppAdapter.
 type Connection struct {
 	vppClient adapter.VppAPI // VPP binary API client
-	//statsClient adapter.StatsAPI // VPP stats API client
 
 	maxAttempts int           // interval for reconnect attempts
 	recInterval time.Duration // maximum number of reconnect attempts
@@ -177,7 +176,9 @@ func (c *Connection) connectVPP() error {
 	log.Debugf("Connected to VPP")
 
 	if err := c.retrieveMessageIDs(); err != nil {
-		c.vppClient.Disconnect()
+		if err := c.vppClient.Disconnect(); err != nil {
+			log.Debugf("disconnecting vpp client failed: %v", err)
+		}
 		return fmt.Errorf("VPP is incompatible: %v", err)
 	}
 
@@ -192,7 +193,6 @@ func (c *Connection) Disconnect() {
 	if c == nil {
 		return
 	}
-
 	if c.vppClient != nil {
 		c.disconnectVPP()
 	}

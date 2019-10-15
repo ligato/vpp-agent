@@ -34,7 +34,7 @@ func NewValuesCommand(cli agentcli.Cli) *cobra.Command {
 	var opts ValuesOptions
 
 	cmd := &cobra.Command{
-		Use:   "values [model]",
+		Use:   "values [MODEL]",
 		Short: "Retrieve values from scheduler",
 		Args:  cobra.RangeArgs(0, 1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -58,14 +58,16 @@ func runValues(cli agentcli.Cli, opts ValuesOptions) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	allModels, err := cli.Client().ModelList(ctx, types.ModelListOptions{})
+	allModels, err := cli.Client().ModelList(ctx, types.ModelListOptions{
+		Class: "config",
+	})
 	if err != nil {
 		return err
 	}
 
 	var modelKeyPrefix string
 	for _, m := range allModels {
-		if (m.Alias != "" && model == m.Alias) || model == m.Name {
+		if model == m.Name {
 			modelKeyPrefix = m.KeyPrefix
 			break
 		}
@@ -102,7 +104,7 @@ func printValuesTable(out io.Writer, status []*api.BaseValueStatus) error {
 		if err != nil {
 			name = val.Key
 		} else {
-			model = fmt.Sprintf("%s.%s", m.Module, m.Type)
+			model = m.Spec().ModelName()
 			name = m.StripKeyPrefix(val.Key)
 		}
 

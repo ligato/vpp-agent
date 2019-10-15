@@ -36,17 +36,6 @@ func (m Calls) MarshalJSON() ([]byte, error) {
 		return calls[i].Count > calls[j].Count
 	})
 
-	/*var buf bytes.Buffer
-	buf.WriteByte('{')
-	for i, c := range calls {
-		if i > 0 {
-			buf.WriteByte(',')
-		}
-		buf.WriteString(fmt.Sprintf(`"%s":{"count":%d}`, c.Name, c.Count))
-	}
-	buf.WriteByte('}')
-	return buf.Bytes(), nil*/
-
 	return json.Marshal(calls)
 }
 
@@ -77,14 +66,3 @@ func (m *CallStats) Increment(d time.Duration) {
 func round(n float64) float64 {
 	return math.Round(n*1000) / 1000
 }
-
-// MarshalJSON implements json.Marshaler interface
-/*func (m *CallStats) MarshalJSON() ([]byte, error) {
-	var d string
-	d = fmt.Sprintf(
-		"%s - count: %d, total: %s (avg/min/max: %s/%s/%s)",
-		m.Name, m.Count, durStr(m.Total),
-		durStr(m.Avg), durStr(m.Min), durStr(m.Max),
-	)
-	return json.Marshal(d)
-}*/

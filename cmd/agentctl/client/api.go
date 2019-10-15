@@ -4,14 +4,14 @@ import (
 	"context"
 	"net/http"
 
+	"google.golang.org/grpc"
+
 	"github.com/ligato/cn-infra/db/keyval"
 	"github.com/ligato/cn-infra/health/probe"
 
 	"github.com/ligato/vpp-agent/api/types"
 	"github.com/ligato/vpp-agent/client"
 	"github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-
-	"google.golang.org/grpc"
 )
 
 // APIClient is an interface that clients that talk with a agent server must implement.
@@ -20,6 +20,7 @@ type APIClient interface {
 	ModelAPIClient
 	SchedulerAPIClient
 	VppAPIClient
+	MetricsAPIClient
 
 	ConfigClient() (client.ConfigClient, error)
 
@@ -56,6 +57,10 @@ type SchedulerAPIClient interface {
 // VppAPIClient defines API client methods for the VPP
 type VppAPIClient interface {
 	VppRunCli(ctx context.Context, cmd string) (reply string, err error)
+}
+
+type MetricsAPIClient interface {
+	GetMetricData(ctx context.Context, metricName string) (map[string]interface{}, error)
 }
 
 type KVDBAPIClient interface {

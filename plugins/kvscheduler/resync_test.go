@@ -21,7 +21,7 @@ import (
 
 	. "github.com/onsi/gomega"
 
-	"github.com/gogo/protobuf/proto"
+	"github.com/golang/protobuf/proto"
 	. "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/kvscheduler/internal/test"
 	"github.com/ligato/vpp-agent/plugins/kvscheduler/internal/utils"

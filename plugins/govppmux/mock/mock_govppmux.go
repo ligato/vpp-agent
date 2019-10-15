@@ -68,7 +68,7 @@ func (p *GoVPPMux) ListStats(patterns ...string) ([]string, error) {
 }
 
 // DumpStats dumps stats from mocked stats API
-func (p *GoVPPMux) DumpStats(patterns ...string) ([]*adapter.StatEntry, error) {
+func (p *GoVPPMux) DumpStats(patterns ...string) ([]adapter.StatEntry, error) {
 	if p.stats == nil {
 		return nil, fmt.Errorf("failed to dump VPP stats, nil stats adapter")
 	}
@@ -76,7 +76,7 @@ func (p *GoVPPMux) DumpStats(patterns ...string) ([]*adapter.StatEntry, error) {
 }
 
 // MockStats allows to set required stats which are then returned by 'ListStats' or 'DumpStats'
-func (p *GoVPPMux) MockStats(stats []*adapter.StatEntry) error {
+func (p *GoVPPMux) MockStats(stats []adapter.StatEntry) error {
 	if p.stats == nil {
 		return fmt.Errorf("failed to mock VPP stats, nil stats adapter")
 	}

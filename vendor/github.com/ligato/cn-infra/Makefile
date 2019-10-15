@@ -103,7 +103,7 @@ generate: generate-proto
 
 # Get generator tools
 get-proto-generators:
-	go install ./vendor/github.com/gogo/protobuf/protoc-gen-gogo
+	go install ./vendor/github.com/golang/protobuf/protoc-gen-go
 
 # Generate proto models
 generate-proto: get-proto-generators

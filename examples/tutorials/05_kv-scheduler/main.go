@@ -26,7 +26,8 @@ import (
 	"github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 )
 
-//go:generate protoc --proto_path=model --gogo_out=model ./model/model.proto
+//go:generate protoc --proto_path=model --go_out=model model/model.proto
+
 //go:generate descriptor-adapter --descriptor-name Interface --value-type *model.Interface --import "github.com/ligato/vpp-agent/examples/tutorials/05_kv-scheduler/model"
 //go:generate descriptor-adapter --descriptor-name Route --value-type *model.Route --import "github.com/ligato/vpp-agent/examples/tutorials/05_kv-scheduler/model"
 

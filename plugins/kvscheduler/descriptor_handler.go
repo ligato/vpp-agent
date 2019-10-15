@@ -1,9 +1,10 @@
 package kvscheduler
 
 import (
-	"github.com/gogo/protobuf/proto"
-	"github.com/vishvananda/netns"
 	"os"
+
+	"github.com/golang/protobuf/proto"
+	"github.com/vishvananda/netns"
 
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 )

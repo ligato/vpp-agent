@@ -7,7 +7,7 @@ file. For a simple example, see `examples/model/example.proto`.
 1. In the plugin's main file (for example, `etcd/main.go`), add 
 the following line at the top of the file:
 ```apple js
-  // go:generate protoc --proto_path=examples/model --gogo_out=examples/model examples/model/example.proto
+  // go:generate protoc --proto_path=examples/model --go_out=examples/model examples/model/example.proto
 ```
 3. You can have multiple files with protobuf message definitions. Add a
 similar line for each file.

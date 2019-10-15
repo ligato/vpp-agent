@@ -25,23 +25,27 @@ const (
 )
 
 var (
-	ErrStatDirBusy  = errors.New("stat dir busy")
-	ErrStatDumpBusy = errors.New("stat dump busy")
+	ErrStatsDataBusy     = errors.New("stats data busy")
+	ErrStatsDirStale     = errors.New("stats dir stale")
+	ErrStatsAccessFailed = errors.New("stats access failed")
 )
 
 // StatsAPI provides connection to VPP stats API.
 type StatsAPI interface {
 	// Connect establishes client connection to the stats API.
 	Connect() error
-
 	// Disconnect terminates client connection.
 	Disconnect() error
 
-	// ListStats lists names for all stats.
-	ListStats(patterns ...string) (statNames []string, err error)
-
+	// ListStats lists names for stats matching patterns.
+	ListStats(patterns ...string) (names []string, err error)
 	// DumpStats dumps all stat entries.
-	DumpStats(patterns ...string) ([]*StatEntry, error)
+	DumpStats(patterns ...string) (entries []StatEntry, err error)
+
+	// PrepareDir prepares new stat dir for entries that match any of prefixes.
+	PrepareDir(patterns ...string) (*StatDir, error)
+	// UpdateDir updates stat dir and all of their entries.
+	UpdateDir(dir *StatDir) error
 }
 
 // StatType represents type of stat directory and simply
@@ -73,25 +77,50 @@ func (d StatType) String() string {
 	return fmt.Sprintf("UnknownStatType(%d)", d)
 }
 
+// StatDir defines directory of stats entries created by PrepareDir.
+type StatDir struct {
+	Epoch   int64
+	Indexes []uint32
+	Entries []StatEntry
+}
+
 // StatEntry represents single stat entry. The type of stat stored in Data
 // is defined by Type.
 type StatEntry struct {
-	Name string
+	Name []byte
 	Type StatType
 	Data Stat
 }
 
-// Counter represents simple counter with single value.
+// Counter represents simple counter with single value, which is usually packet count.
 type Counter uint64
 
 // CombinedCounter represents counter with two values, for packet count and bytes count.
-type CombinedCounter struct {
-	Packets Counter
-	Bytes   Counter
+type CombinedCounter [2]uint64
+
+func (s CombinedCounter) Packets() uint64 {
+	return uint64(s[0])
+}
+
+func (s CombinedCounter) Bytes() uint64 {
+	return uint64(s[1])
 }
 
 // Name represents string value stored under name vector.
-type Name string
+type Name []byte
+
+func (n Name) String() string {
+	return string(n)
+}
+
+// Data represents some type of stat which is usually defined by StatType.
+type Stat interface {
+	// IsZero returns true if all of its values equal to zero.
+	IsZero() bool
+
+	// isStat is intentionally  unexported to limit implementations of interface to this package,
+	isStat()
+}
 
 // ScalarStat represents stat for ScalarIndex.
 type ScalarStat float64
@@ -102,24 +131,86 @@ type ErrorStat Counter
 // SimpleCounterStat represents stat for SimpleCounterVector.
 // The outer array represents workers and the inner array represents interface/node/.. indexes.
 // Values should be aggregated per interface/node for every worker.
+// ReduceSimpleCounterStatIndex can be used to reduce specific index.
 type SimpleCounterStat [][]Counter
 
 // CombinedCounterStat represents stat for CombinedCounterVector.
 // The outer array represents workers and the inner array represents interface/node/.. indexes.
 // Values should be aggregated per interface/node for every worker.
+// ReduceCombinedCounterStatIndex can be used to reduce specific index.
 type CombinedCounterStat [][]CombinedCounter
 
 // NameStat represents stat for NameVector.
 type NameStat []Name
-
-// Data represents some type of stat which is usually defined by StatType.
-type Stat interface {
-	// isStat is unexported to limit implementations of Data interface to this package,
-	isStat()
-}
 
 func (ScalarStat) isStat()          {}
 func (ErrorStat) isStat()           {}
 func (SimpleCounterStat) isStat()   {}
 func (CombinedCounterStat) isStat() {}
 func (NameStat) isStat()            {}
+
+func (s ScalarStat) IsZero() bool {
+	return s == 0
+}
+func (s ErrorStat) IsZero() bool {
+	return s == 0
+}
+func (s SimpleCounterStat) IsZero() bool {
+	if s == nil {
+		return true
+	}
+	for _, ss := range s {
+		for _, sss := range ss {
+			if sss != 0 {
+				return false
+			}
+		}
+	}
+	return true
+}
+func (s CombinedCounterStat) IsZero() bool {
+	if s == nil {
+		return true
+	}
+	for _, ss := range s {
+		if ss == nil {
+			return true
+		}
+		for _, sss := range ss {
+			if sss[0] != 0 || sss[1] != 0 {
+				return false
+			}
+		}
+	}
+	return true
+}
+func (s NameStat) IsZero() bool {
+	if s == nil {
+		return true
+	}
+	for _, ss := range s {
+		if len(ss) > 0 {
+			return false
+		}
+	}
+	return true
+}
+
+// ReduceSimpleCounterStatIndex returns reduced SimpleCounterStat s for index i.
+func ReduceSimpleCounterStatIndex(s SimpleCounterStat, i int) uint64 {
+	var val uint64
+	for _, w := range s {
+		val += uint64(w[i])
+	}
+	return val
+}
+
+// ReduceSimpleCounterStatIndex returns reduced CombinedCounterStat s for index i.
+func ReduceCombinedCounterStatIndex(s CombinedCounterStat, i int) [2]uint64 {
+	var val [2]uint64
+	for _, w := range s {
+		val[0] += uint64(w[i][0])
+		val[1] += uint64(w[i][1])
+	}
+	return val
+}

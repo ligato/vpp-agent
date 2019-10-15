@@ -7,8 +7,8 @@ import (
 	"net/url"
 	"reflect"
 
-	"github.com/gogo/protobuf/jsonpb"
-	"github.com/gogo/protobuf/proto"
+	"github.com/golang/protobuf/jsonpb"
+	"github.com/golang/protobuf/proto"
 
 	"github.com/ligato/vpp-agent/api/types"
 	"github.com/ligato/vpp-agent/plugins/kvscheduler/api"

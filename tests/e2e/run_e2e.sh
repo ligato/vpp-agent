@@ -4,10 +4,23 @@ set -euo pipefail
 echo "preparing E2E test"
 set -x
 
+args=($*)
+
 # compile vpp-agent
-go build -v -o ./tests/e2e/vpp-agent.test \
-  -ldflags "-X github.com/ligato/vpp-agent/vendor/github.com/ligato/cn-infra/agent.BuildVersion=TEST_E2E" \
-  ./cmd/vpp-agent
+if [ -z "${COVER_DIR-}" ]; then
+	go build -v -o ./tests/e2e/vpp-agent.test \
+      -ldflags "-X github.com/ligato/vpp-agent/vendor/github.com/ligato/cn-infra/agent.BuildVersion=TEST_E2E" \
+      ./cmd/vpp-agent
+else
+	if [ ! -d ${COVER_DIR}/e2e-coverage ]; then
+		mkdir ${COVER_DIR}/e2e-coverage
+	elif [ "$(ls -A ${COVER_DIR}/e2e-coverage)" ]; then
+		rm -f ${COVER_DIR}/e2e-coverage/*
+	fi
+	go test -covermode=count -coverpkg="github.com/ligato/vpp-agent/..." -c ./cmd/vpp-agent -o ./tests/e2e/vpp-agent.test -tags teste2e
+	DOCKER_ARGS="${DOCKER_ARGS-} -v ${COVER_DIR}/e2e-coverage:${COVER_DIR}/e2e-coverage"
+	args+=("-cov=${COVER_DIR}/e2e-coverage")
+fi
 
 # complie agentctl
 go build -v -o ./tests/e2e/agentctl.test ./cmd/agentctl
@@ -40,6 +53,12 @@ cleanup() {
 	set -x
 	docker stop -t 2 "$cid" >/dev/null
 	docker rm "$cid" >/dev/null
+
+	# merge coverage
+	if [ ! -z "${COVER_DIR-}" ]; then
+		go get github.com/wadey/gocovmerge
+		find ${COVER_DIR}/e2e-coverage -type f | xargs gocovmerge > ${COVER_DIR}/e2e-cov.out
+	fi
 }
 
 vppver=$(docker exec -i "$cid" dpkg-query -f '${Version}' -W vpp)
@@ -51,7 +70,7 @@ echo -e " E2E TEST - VPP \e[1;33m${vppver}\e[0m"
 echo "============================================================="
 
 # run e2e test
-if docker exec -i "$cid" /e2e.test -test.v $*; then
+if docker exec -i "$cid" /e2e.test -test.v ${args[@]}; then
 	echo >&2 "-------------------------------------------------------------"
 	echo >&2 -e " \e[32mPASSED\e[0m (took: ${SECONDS}s)"
 	echo >&2 "-------------------------------------------------------------"

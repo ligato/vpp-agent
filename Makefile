@@ -143,6 +143,11 @@ e2e-tests: ## Run end-to-end tests
 	@echo "=> running end-to-end tests"
 	VPP_IMG=$(VPP_IMG) ./tests/e2e/run_e2e.sh
 
+e2e-tests-cover: ## Run end-to-end tests with coverage
+	@echo "=> running end-to-end tests with coverage"
+	VPP_IMG=$(VPP_IMG) COVER_DIR=$(COVER_DIR) ./tests/e2e/run_e2e.sh
+	@echo "=> coverage report generated into ${COVER_DIR}/e2e-cov.out"
+
 # -------------------------------
 #  Code generation
 # -------------------------------
@@ -150,7 +155,7 @@ e2e-tests: ## Run end-to-end tests
 generate: generate-proto generate-binapi generate-desc-adapters ## Generate all
 
 get-proto-generators:
-	@go install ./vendor/github.com/gogo/protobuf/protoc-gen-gogo
+	@go install ./vendor/github.com/golang/protobuf/protoc-gen-go
 
 generate-proto: get-proto-generators ## Generate Go code for Protobuf files
 	@echo "=> generating proto"

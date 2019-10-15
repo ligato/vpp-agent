@@ -187,7 +187,7 @@ func (r *govppRequestCtx) ReceiveReply(reply govppapi.Message) error {
 	atomic.AddUint64(&stats.RequestsDone, 1)
 	if err != nil {
 		trackError(err.Error())
-		atomic.AddUint64(&stats.RequestsErrors, 1)
+		atomic.AddUint64(&stats.RequestsFail, 1)
 	}
 
 	took := time.Since(r.start)
@@ -229,7 +229,7 @@ func (r *govppMultirequestCtx) ReceiveReply(reply govppapi.Message) (bool, error
 		atomic.AddUint64(&stats.RequestsDone, 1)
 		if err != nil {
 			trackError(err.Error())
-			atomic.AddUint64(&stats.RequestsErrors, 1)
+			atomic.AddUint64(&stats.RequestsFail, 1)
 		}
 
 		defer func() {

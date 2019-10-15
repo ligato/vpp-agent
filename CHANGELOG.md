@@ -4,6 +4,8 @@
 
 ## Release Notes
 
+- [v2.2.0](#v2.2.0)
+- [v2.2.0-beta](#v2.2.0-beta)
 - [v2.1.0](#v2.1.0)
   - [v2.1.1](#v2.1.1)
 - [v2.0.0](#v2.0.0)
@@ -43,6 +45,28 @@ RELEASE CHANGELOG TEMPLATE:
 ### Documentation
 -->
 
+<a name="v2.2.0"></a>
+# [2.2.0](https://github.com/ligato/vpp-agent/compare/v2.2.0-beta...v2.2.0) (2019-08-26)
+
+### Compatibility
+- **VPP 19.08** (rc1)
+- **VPP 19.04** (default)
+- **VPP 19.01** (backward compatible)
+- cn-infra v2.2
+
+### Bug Fixes
+- CN-infra version updated to 2.2 contains a supervisor fix which should prevent the issue where the supervisor logging occasionally caused the agent to crash during large outputs.
+
+### New Features
+* [if-plugin][vpp-interface-plugin]
+  - Added option to configure SPAN records. Northbound data are formatted by the [SPAN model][span-model].
+
+### Improvements
+* [orchestrator][orchestrator-plugin]
+  - Clientv2 is now recognized as separate data source by the orchestrator plugin. This feature allows to use the localclient together with other data sources.
+
+### Documentation
+- Updated documentation comments in the protobuf API.
 
 <a name="v2.1.1"></a>
 # [2.1.1](https://github.com/ligato/vpp-agent/compare/v2.1.0...v2.1.1) (2019-04-05)
@@ -858,6 +882,7 @@ Data replication and events:
 [punt-model]: api/models/vpp/punt/punt.proto
 [readme]: README.md
 [rest-plugin]: plugins/restapi
+[span-model]: api/models/vpp/interfaces/span.proto
 [sr-plugin]: plugins/vpp/srplugin
 [vpp-abf-plugin]: plugins/vpp/abfplugin
 [vpp-acl-plugin]: plugins/vpp/aclplugin

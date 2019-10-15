@@ -5,7 +5,7 @@
 
 required = [
     "github.com/grpc-ecosystem/grpc-gateway/runtime",
-    "github.com/gogo/protobuf/protoc-gen-gogo",
+    "github.com/golang/protobuf/protoc-gen-go",
 ]
 
 [[constraint]]
@@ -45,7 +45,7 @@ required = [
   name = "github.com/gocql/gocql"
 
 [[constraint]]
-  name = "github.com/gogo/protobuf"
+  name = "github.com/golang/protobuf"
   version = "1.1.1"
 
 [[constraint]]
