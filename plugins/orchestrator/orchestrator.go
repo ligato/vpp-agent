@@ -49,6 +49,8 @@ type Plugin struct {
 	resyncChan   chan datasync.ResyncEvent
 	watchDataReg datasync.WatchRegistration
 
+	reflection bool
+
 	*dispatcher
 }
 
@@ -79,6 +81,11 @@ func (p *Plugin) Init() (err error) {
 	if grpcServer := p.GRPC.GetServer(); grpcServer != nil {
 		generic.RegisterManagerServer(grpcServer, p.manager)
 		generic.RegisterMetaServiceServer(grpcServer, p.manager)
+		// register grpc services for reflection
+		if p.reflection {
+			p.Log.Infof("registering grpc reflection service")
+			reflection.Register(grpcServer)
+		}
 	} else {
 		p.log.Infof("grpc server not available")
 	}
@@ -116,9 +123,6 @@ func (p *Plugin) AfterInit() (err error) {
 	statusChan := make(chan *kvs.BaseValueStatus, 100)
 	p.kvs.WatchValueStatus(statusChan, nil)
 	go p.watchStatus(statusChan)
-
-	// register grpc services for reflection
-	reflection.Register(p.GRPC.GetServer())
 
 	return nil
 }
