@@ -15,8 +15,9 @@
 package syncbase
 
 import (
-	"encoding/json"
+	"bytes"
 
+	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
 	"github.com/ligato/cn-infra/datasync"
 )
@@ -97,7 +98,7 @@ func (kv *KeyValBytes) GetKey() string {
 
 // GetValue returns the value of the pair.
 func (kv *KeyValBytes) GetValue(message proto.Message) error {
-	return json.Unmarshal(kv.value, message)
+	return jsonpb.Unmarshal(bytes.NewReader(kv.value), message)
 }
 
 // GetRevision returns revision associated with the latest change in the key-value pair.
