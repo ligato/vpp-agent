@@ -44,18 +44,18 @@ func NewRegistry() *Registry {
 	}
 }
 
-// GetModel returns registered model for the given model path
+// GetModel returns registered model for the given model name
 // or error if model is not found.
-func (r *Registry) GetModel(path string) (RegisteredModel, error) {
-	model, found := r.modelNames[path]
+func (r *Registry) GetModel(name string) (RegisteredModel, error) {
+	model, found := r.modelNames[name]
 	if !found {
-		return RegisteredModel{}, fmt.Errorf("no model registered for path %v", path)
+		return RegisteredModel{}, fmt.Errorf("no model registered for name %v", name)
 	}
 	return *model, nil
 }
 
 // GetModelFor returns registered model for the given proto message.
-func (r *Registry) GetModelFor(x proto.Message) (RegisteredModel, error) {
+func (r *Registry) GetModelFor(x interface{}) (RegisteredModel, error) {
 	t := reflect.TypeOf(x)
 	model, found := r.registeredTypes[t]
 	if !found {
@@ -85,8 +85,8 @@ func (r *Registry) RegisteredModels() []RegisteredModel {
 
 // Register registers a protobuf message with given model specification.
 // If spec.Class is unset empty it defaults to 'config'.
-func (r *Registry) Register(pb proto.Message, spec Spec, opts ...ModelOption) (*RegisteredModel, error) {
-	goType := reflect.TypeOf(pb)
+func (r *Registry) Register(x interface{}, spec Spec, opts ...ModelOption) (*RegisteredModel, error) {
+	goType := reflect.TypeOf(x)
 
 	// Check go type duplicate registration
 	if m, ok := r.registeredTypes[goType]; ok {
@@ -112,13 +112,16 @@ func (r *Registry) Register(pb proto.Message, spec Spec, opts ...ModelOption) (*
 	}
 
 	model := &RegisteredModel{
-		spec:      spec,
-		goType:    goType,
-		protoName: proto.MessageName(pb),
+		spec:   spec,
+		goType: goType,
+	}
+
+	if pb, ok := x.(proto.Message); ok {
+		model.protoName = proto.MessageName(pb)
 	}
 
 	// Use GetName as fallback for generating name
-	if _, ok := pb.(named); ok {
+	if _, ok := x.(named); ok {
 		model.nameFunc = func(obj interface{}) (s string, e error) {
 			return obj.(named).GetName(), nil
 		}

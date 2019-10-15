@@ -24,7 +24,6 @@ import (
 )
 
 var (
-	//metricz vpp_client.Metrics
 	stats   Stats
 	statsMu sync.RWMutex
 )
@@ -46,14 +45,6 @@ func GetStats() *Stats {
 // Stats defines various statistics for govppmux plugin.
 type Stats struct {
 	vpp_client.Metrics
-	/*ChannelsCreated uint64
-	ChannelsOpen    uint64
-
-	RequestsSent   uint64
-	RequestsDone   uint64
-	RequestsErrors uint64*/
-
-	RequestReplies uint64
 
 	Errors metrics.Calls
 
@@ -125,6 +116,9 @@ func trackError(m string) {
 }
 
 func init() {
+	metrics.Register(&vpp_client.Metrics{}, func() interface{} {
+		return &GetStats().Metrics
+	})
 	expvar.Publish(vpp_client.MetricsModel.Name(), expvar.Func(func() interface{} {
 		return &GetStats().Metrics
 	}))

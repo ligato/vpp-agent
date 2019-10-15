@@ -9,4 +9,6 @@ message Metrics {
     uint64 requests_sent = 3;
     uint64 requests_done = 4;
     uint64 requests_fail = 5;
+
+    uint64 request_replies = 6;
 }
