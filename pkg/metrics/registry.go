@@ -56,6 +56,7 @@ func Retrieve(metric interface{}) error {
 	mu.RLock()
 	retriever, ok := registeredMetrics[model.Name()]
 	if !ok {
+		mu.RUnlock()
 		return fmt.Errorf("metric %v does not have registered retriever", model.Name())
 	}
 	mu.RUnlock()
