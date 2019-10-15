@@ -83,9 +83,10 @@ func NewRootNamed(name string, agentCli *cli.AgentCli) *Root {
 func (root *Root) PrepareCommand() (*cobra.Command, error) {
 	cmd, args, err := root.HandleGlobalFlags()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("handle global flags failed: %v", err)
 	}
 	if debug.IsEnabledFor("flags") {
+		fmt.Printf("flag.Args() = %v\n", args)
 		cmd.DebugFlags()
 	}
 	cmd.SetArgs(args)
@@ -114,6 +115,7 @@ func newRoot(cmd *cobra.Command, agentCli *cli.AgentCli, opts *cli.ClientOptions
 func (root *Root) HandleGlobalFlags() (*cobra.Command, []string, error) {
 	cmd := root.cmd
 	flags := pflag.NewFlagSet(cmd.Name(), pflag.ContinueOnError)
+	flags.SetInterspersed(false)
 
 	// We need the single parse to see both sets of flags.
 	flags.AddFlagSet(cmd.Flags())
