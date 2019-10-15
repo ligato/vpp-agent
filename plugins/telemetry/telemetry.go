@@ -16,14 +16,12 @@ package telemetry
 
 import (
 	"context"
-	"expvar"
 	"fmt"
 	"net/http"
 	"os"
 	"sync"
 	"time"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/gorilla/mux"
 	"github.com/ligato/cn-infra/infra"
 	"github.com/ligato/cn-infra/logging"
@@ -34,6 +32,8 @@ import (
 	"github.com/unrolled/render"
 
 	"github.com/ligato/vpp-agent/api/configurator"
+	"github.com/ligato/vpp-agent/pkg/metrics"
+	"github.com/ligato/vpp-agent/pkg/models"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 	"github.com/ligato/vpp-agent/plugins/telemetry/vppcalls"
 
@@ -223,20 +223,14 @@ func metricsHandler(formatter *render.Render) http.HandlerFunc {
 			return
 		}
 		metric := vars["metric"]
-		var data proto.Message
-		expvar.Do(func(kv expvar.KeyValue) {
-			if data != nil {
-				return
-			}
-			if kv.Key == metric {
-				if fn, ok := kv.Value.(expvar.Func); ok {
-					data = fn.Value().(proto.Message)
-					return
-				}
-			}
-		})
-		if data == nil {
-			_ = formatter.JSON(w, http.StatusNotFound, struct{}{})
+		model, err := models.DefaultRegistry.GetModel(metric)
+		if err != nil {
+			_ = formatter.JSON(w, http.StatusNotFound, struct{ Error string }{err.Error()})
+			return
+		}
+		data := model.NewInstance()
+		if err := metrics.Retrieve(data); err != nil {
+			_ = formatter.JSON(w, http.StatusInternalServerError, struct{ Error string }{err.Error()})
 			return
 		}
 		_ = formatter.JSON(w, 200, data)

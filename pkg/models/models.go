@@ -34,9 +34,9 @@ func RegisteredModels() []RegisteredModel {
 	return DefaultRegistry.RegisteredModels()
 }
 
-// GetModel returns registered model for given model path.
-func GetModel(path string) (RegisteredModel, error) {
-	return DefaultRegistry.GetModel(path)
+// GetModel returns registered model for given model name.
+func GetModel(name string) (RegisteredModel, error) {
+	return DefaultRegistry.GetModel(name)
 }
 
 // GetModelFor returns model registered in DefaultRegistry for given proto message.

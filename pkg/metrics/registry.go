@@ -14,15 +14,44 @@
 
 package metrics
 
-/*
-import "github.com/golang/protobuf/proto"
+import (
+	"fmt"
+	"reflect"
 
-var registeredMetrics = make(map[string]func() proto.Message)
+	"github.com/ligato/vpp-agent/pkg/models"
+)
 
-func Register(pb proto.Message, fn func() proto.Message) {
-    models.
-    if _, ok := registeredMetrics; ok {
-        panic("duplicate registration for metrics %s", )
-    }
+var registeredMetrics = make(map[string]Retriever)
+
+// Retriever defines function that returns metrics data
+type Retriever func() interface{}
+
+// Register registers given type with retriever to metrics.
+func Register(metricType interface{}, retrieverFunc Retriever) {
+	model, err := models.DefaultRegistry.GetModelFor(metricType)
+	if err != nil {
+		panic(fmt.Sprintf("type %T not registered as model", metricType))
+	}
+	if model.Spec().Class != "metrics" {
+		panic(fmt.Sprintf("model %v not registered with class metrics", model.Name()))
+	}
+	if _, ok := registeredMetrics[model.Name()]; ok {
+		panic(fmt.Sprintf("duplicate registration for metrics model %s", model.Name()))
+	}
+	registeredMetrics[model.Name()] = retrieverFunc
 }
-*/
+
+// Retrieve calls registered retriever for given metric and sets returned data to metric.
+func Retrieve(metric interface{}) error {
+	model, err := models.DefaultRegistry.GetModelFor(metric)
+	if err != nil {
+		return fmt.Errorf("type %T not registered as model", metric)
+	}
+	retriever, ok := registeredMetrics[model.Name()]
+	if !ok {
+		return fmt.Errorf("metric %v does not have registered retriever", model.Name())
+	}
+	data := retriever()
+	reflect.ValueOf(metric).Elem().Set(reflect.ValueOf(data).Elem())
+	return nil
+}
