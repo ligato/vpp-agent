@@ -18,7 +18,7 @@ RUN wget https://storage.googleapis.com/golang/go1.9.2.linux-amd64.tar.gz && \
     mv go /usr/local && \
     rm -f go1.9.2.linux-amd64.tar.gz
 
-# build & install Protobuf & gogo protobuf compiler
+# build & install Protobuf & golang protobuf compiler
 RUN apt-get install -y make && \
     apt-get install -y autoconf automake libtool curl make g++ unzip
 

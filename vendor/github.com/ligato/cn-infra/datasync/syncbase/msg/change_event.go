@@ -15,9 +15,10 @@
 package msg
 
 import (
+	"bytes"
 	"context"
-	"encoding/json"
 
+	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/logging/logrus"
@@ -87,7 +88,7 @@ func (ev *ChangeWatchResp) GetRevision() int64 {
 
 // GetValue - see the comments in the interface datasync.ChangeEvent.
 func (ev *ChangeWatchResp) GetValue(val proto.Message) error {
-	return json.Unmarshal(ev.message.Content, val) //TODO use contentType...
+	return jsonpb.Unmarshal(bytes.NewReader(ev.message.Content), val) //TODO use contentType...
 }
 
 // GetPrevValue returns the value before change.

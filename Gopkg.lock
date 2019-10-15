@@ -3,7 +3,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:b4260c6646412fb433e49cbbe547af8da97b354fb56dba14cf5ae314d6b0ebf2"
+  digest = "1:620040c2717f0cde301ba5df32c372843f4d2efe61f4aa801b25dbde86b7bffe"
   name = "git.fd.io/govpp.git"
   packages = [
     "adapter",
@@ -19,7 +19,7 @@
     "version",
   ]
   pruneopts = "UT"
-  revision = "809b69ea4a90455445c34bbad7d8e5fea5cf3462"
+  revision = "9bf7175a26f29a8c0133883152afb98765edd8ca"
 
 [[projects]]
   branch = "master"
@@ -497,7 +497,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:1ad4fb7353307ac3b4ecb5af08c7e91612844eaa3142485abf3b9a0830e8d034"
+  digest = "1:b3cd91255c6b75e3bae28aaa3842f74fc52fbb86ac914574d1ff9c9d33573903"
   name = "github.com/ligato/cn-infra"
   packages = [
     "agent",
@@ -545,7 +545,7 @@
     "utils/safeclose",
   ]
   pruneopts = "T"
-  revision = "fa934fe80a7acc7bfbe0508d433ff9f92cbacdd0"
+  revision = "0efd9f2edb1ebb87ab32a77adc0e96308bf85bf8"
 
 [[projects]]
   branch = "master"
