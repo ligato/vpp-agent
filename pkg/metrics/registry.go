@@ -17,11 +17,15 @@ package metrics
 import (
 	"fmt"
 	"reflect"
+	"sync"
 
 	"github.com/ligato/vpp-agent/pkg/models"
 )
 
-var registeredMetrics = make(map[string]Retriever)
+var (
+	mu                sync.RWMutex
+	registeredMetrics = make(map[string]Retriever)
+)
 
 // Retriever defines function that returns metrics data
 type Retriever func() interface{}
@@ -35,6 +39,8 @@ func Register(metricType interface{}, retrieverFunc Retriever) {
 	if model.Spec().Class != "metrics" {
 		panic(fmt.Sprintf("model %v not registered with class metrics", model.Name()))
 	}
+	mu.Lock()
+	defer mu.Unlock()
 	if _, ok := registeredMetrics[model.Name()]; ok {
 		panic(fmt.Sprintf("duplicate registration for metrics model %s", model.Name()))
 	}
@@ -47,10 +53,12 @@ func Retrieve(metric interface{}) error {
 	if err != nil {
 		return fmt.Errorf("type %T not registered as model", metric)
 	}
+	mu.RLock()
 	retriever, ok := registeredMetrics[model.Name()]
 	if !ok {
 		return fmt.Errorf("metric %v does not have registered retriever", model.Name())
 	}
+	mu.RUnlock()
 	data := retriever()
 	reflect.ValueOf(metric).Elem().Set(reflect.ValueOf(data).Elem())
 	return nil
