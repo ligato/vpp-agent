@@ -106,6 +106,14 @@ func (p *Plugin) Init() (err error) {
 		return err
 	}
 
+	// register grpc services for reflection
+	if p.GRPC != nil && p.GRPC.GetServer() != nil {
+		p.Log.Infof("registering grpc reflection server")
+		reflection.Register(p.GRPC.GetServer())
+	} else {
+		p.Log.Debugf("cannot register for grpc reflection, grpc server is not available")
+	}
+
 	return nil
 }
 
@@ -116,9 +124,6 @@ func (p *Plugin) AfterInit() (err error) {
 	statusChan := make(chan *kvs.BaseValueStatus, 100)
 	p.kvs.WatchValueStatus(statusChan, nil)
 	go p.watchStatus(statusChan)
-
-	// register grpc services for reflection
-	reflection.Register(p.GRPC.GetServer())
 
 	return nil
 }
