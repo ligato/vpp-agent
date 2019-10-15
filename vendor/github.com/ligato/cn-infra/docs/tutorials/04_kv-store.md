@@ -86,13 +86,13 @@ from the `go:generate` directive; since we only have one go file in this tutoria
 we put the directive there:
 
 ```go
-//go:generate protoc --proto_path=model --gogo_out=model ./model/model.proto
+//go:generate protoc --proto_path=model --go_out=model ./model/model.proto
 ```
-Note that the above directive assumes that we use the gogo protbuf generator,
+Note that the above directive assumes that we use the golang protbuf generator,
 the source protobuf files can be found in the model directory and the
 generated files will also be put into the model directory. Note also that to
-use the gogo protobuf generator, you must install it on your machine as 
-described, for example, [here](https://github.com/gogo/protobuf).
+use the golang protobuf generator, you must install it on your machine as
+described, for example, [here](https://github.com/golang/protobuf).
 
 We use the go compiler to generate Go files from the model. In the tutorial Type:
 ```

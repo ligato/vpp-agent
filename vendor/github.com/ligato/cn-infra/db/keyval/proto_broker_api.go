@@ -15,10 +15,10 @@
 package keyval
 
 import (
-	"io"
 	"context"
+	"io"
 
-	"github.com/gogo/protobuf/proto"
+	"github.com/golang/protobuf/proto"
 	"github.com/ligato/cn-infra/datasync"
 )
 

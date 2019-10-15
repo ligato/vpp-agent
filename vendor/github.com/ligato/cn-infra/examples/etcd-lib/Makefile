@@ -1,6 +1,6 @@
 # generate go structures from proto files
 define generate_sources
-	$(if $(shell command -v protoc --gogo_out=. 2> /dev/null),$(info gogo/protobuf is installed),$(error gogo/protobuf missing, please install it with go get github.com/gogo/protobuf))
+	$(if $(shell command -v protoc --go_out=. 2> /dev/null),$(info golang/protobuf is installed),$(error golang/protobuf missing, please install it with go get github.com/golang/protobuf))
 	@echo "# generating sources"
 	@cd view && go generate -v
 endef

@@ -14,7 +14,7 @@
 
 package measure
 
-//go:generate protoc --proto_path=model/apitrace --gogo_out=model/apitrace model/apitrace/apitrace.proto
+//go:generate protoc --proto_path=model/apitrace --go_out=model/apitrace model/apitrace/apitrace.proto
 
 import (
 	"sync"

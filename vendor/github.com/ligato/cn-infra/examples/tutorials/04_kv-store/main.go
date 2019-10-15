@@ -16,8 +16,9 @@ package main
 
 import (
 	"fmt"
-	"github.com/ligato/cn-infra/datasync"
 	"time"
+
+	"github.com/ligato/cn-infra/datasync"
 
 	"github.com/ligato/cn-infra/agent"
 	"github.com/ligato/cn-infra/db/keyval"
@@ -27,7 +28,7 @@ import (
 	"github.com/ligato/cn-infra/logging"
 )
 
-//go:generate protoc --proto_path=model --gogo_out=model ./model/model.proto
+//go:generate protoc --proto_path=model --go_out=model ./model/model.proto
 
 func main() {
 	// Create an instance of our plugin using its constructor.

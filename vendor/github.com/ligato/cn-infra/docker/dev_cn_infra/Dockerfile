@@ -29,7 +29,7 @@ RUN git clone https://github.com/google/protobuf.git && \
     ldconfig && \
     cd .. && rm -rf protobuf
 
-RUN apt-get install -y golang-gogoprotobuf-dev
+RUN go get github.com/golang/protobuf
 
 # copy and execute agent build script
 COPY build-agent.sh .

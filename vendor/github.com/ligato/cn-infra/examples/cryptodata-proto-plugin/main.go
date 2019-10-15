@@ -33,6 +33,8 @@ import (
 	"github.com/pkg/errors"
 )
 
+//go:generate protoc --proto_path=. --go_out=plugins=grpc:. ipsec/ipsec.proto
+
 // PluginName represents name of plugin.
 const PluginName = "example"
 

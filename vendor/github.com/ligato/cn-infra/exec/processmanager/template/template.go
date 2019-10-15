@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate protoc --proto_path=model/process --gogo_out=model/process model/process/process.proto
+//go:generate protoc --proto_path=model/process --go_out=model/process model/process/process.proto
 
 package template
 

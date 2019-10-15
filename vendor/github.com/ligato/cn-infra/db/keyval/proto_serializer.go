@@ -18,8 +18,8 @@ import (
 	"bytes"
 	"os"
 
-	"github.com/gogo/protobuf/jsonpb"
-	"github.com/gogo/protobuf/proto"
+	"github.com/golang/protobuf/jsonpb"
+	"github.com/golang/protobuf/proto"
 )
 
 // DefaultMarshaler is the marshaler used for JSON encoding.
@@ -51,7 +51,7 @@ func (sp *SerializerProto) Marshal(message proto.Message) ([]byte, error) {
 }
 
 // SerializerJSON serializes proto message using JSON serializer.
-type SerializerJSON struct{
+type SerializerJSON struct {
 	ExpandEnvVars bool
 }
 

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate protoc --proto_path=model/access-security --gogo_out=model/access-security model/access-security/accesssecurity.proto
+//go:generate protoc --proto_path=model/access-security --go_out=model/access-security model/access-security/accesssecurity.proto
 
 package security
 
