@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate protoc --proto_path=./model --gogo_out=./model ./model/flight.proto
+//go:generate protoc --proto_path=./model --go_out=./model ./model/flight.proto
+
 package main
 
 import (

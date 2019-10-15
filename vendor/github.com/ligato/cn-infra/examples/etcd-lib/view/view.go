@@ -1,4 +1,4 @@
-//go:generate protoc --proto_path=../model/phonebook --gogo_out=../model/phonebook ../model/phonebook/phonebook.proto
+//go:generate protoc --proto_path=../model/phonebook --go_out=../model/phonebook ../model/phonebook/phonebook.proto
 
 // Package view contains an example that shows how to read data from etcd.
 package main
