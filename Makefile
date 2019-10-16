@@ -3,7 +3,7 @@ COMMIT  ?= $(shell git rev-parse HEAD)
 DATE    ?= $(shell git log -1 --format="%ct" | xargs -I{} date -d @{} +'%Y-%m-%dT%H:%M%:z')
 ARCH    ?= $(shell uname -m)
 
-CNINFRA := github.com/ligato/vpp-agent/vendor/github.com/ligato/cn-infra/agent
+CNINFRA := github.com/ligato/cn-infra/agent
 LDFLAGS = -X $(CNINFRA).BuildVersion=$(VERSION) -X $(CNINFRA).CommitHash=$(COMMIT) -X $(CNINFRA).BuildDate=$(DATE)
 
 include vpp.env
@@ -155,14 +155,14 @@ e2e-tests-cover: ## Run end-to-end tests with coverage
 generate: generate-proto generate-binapi generate-desc-adapters ## Generate all
 
 get-proto-generators:
-	@go install ./vendor/github.com/golang/protobuf/protoc-gen-go
+	@go install github.com/golang/protobuf/protoc-gen-go
 
 generate-proto: get-proto-generators ## Generate Go code for Protobuf files
 	@echo "=> generating proto"
 	./scripts/genprotos.sh
 
 get-binapi-generators:
-	@go install ./vendor/git.fd.io/govpp.git/cmd/binapi-generator
+	@go install git.fd.io/govpp.git/cmd/binapi-generator
 
 generate-binapi: get-binapi-generators ## Generate Go code for VPP binary API
 	@echo "=> generating binapi"
@@ -206,21 +206,22 @@ bindata: get-bindata
 #  Dependencies
 # -------------------------------
 
-get-dep:
-	curl -sSfL https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
-	dep version
+dep-install:
+	@echo "=> downloading project's dependencies"
+	go mod download
 
-dep-install: get-dep
-	@echo "=> installing project's dependencies"
-	dep ensure -v
-
-dep-update: get-dep
+dep-update:
 	@echo "=> updating all dependencies"
-	dep ensure -update
+	@echo "Warning: 'go get' desired new modules by hand"
 
-dep-check: get-dep ## Check Go dependencies
+# FIXME: 'go mod verify' might be used here, but tidy and verify disagree.
+dep-check:
 	@echo "=> checking dependencies"
-	dep check
+	go mod tidy
+	@if ! git diff --quiet go.mod go.sum ; then \
+		echo "go mod tidy check failed"; \
+		exit 1 ; \
+	fi
 
 # -------------------------------
 #  Linters
@@ -277,7 +278,7 @@ dev-image: ## Build developer image
 prod-image: ## Build production image
 	@echo "=> building prod image"
 	IMAGE_TAG=$(IMAGE_TAG) \
-    	./docker/prod/build.sh
+	./docker/prod/build.sh
 
 
 .PHONY: help \
