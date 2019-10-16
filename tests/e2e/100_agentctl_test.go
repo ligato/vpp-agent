@@ -58,15 +58,25 @@ func TestAgentCtl(t *testing.T) {
 			expectNotEmptyStdout: true,
 		},
 		{
-			name:           "Test `dump` action",
-			cmd:            "dump vpp.interfaces",
+			name:           "Test `dump all` action",
+			cmd:            "dump all",
+			expectInStdout: "type: SOFTWARE_LOOPBACK",
+		},
+		{
+			name:           "Test `dump vpp.*` action",
+			cmd:            `dump vpp.*`,
 			expectInStdout: "type: SOFTWARE_LOOPBACK",
 		},
 		{
 			name:           "Test `dump` action with bad model",
 			cmd:            "dump NoSuchModel",
 			expectErr:      true,
-			expectInStderr: "no such model: \"NoSuchModel\"",
+			expectInStderr: "no models found for [\"NoSuchModel\"]",
+		},
+		{
+			name:           "Test `dump` action with one bad model",
+			cmd:            "dump NoSuchModel vpp.interfaces",
+			expectInStdout: "type: SOFTWARE_LOOPBACK",
 		},
 		{
 			name:           "Test `dump --view=SB` action",
@@ -82,6 +92,22 @@ func TestAgentCtl(t *testing.T) {
 			name:           "Test `dump --view=cached` action",
 			cmd:            "dump vpp.interfaces --view=cached",
 			expectInStdout: "type: SOFTWARE_LOOPBACK",
+		},
+		{
+			name:           "Test `dump` with JSON format",
+			cmd:            "dump vpp.interfaces -f=json",
+			expectReStdout: `"Value": {\s+"name": "UNTAGGED-local0",`,
+		},
+		{
+			name:           "Test `dump` with YAML format",
+			cmd:            "dump vpp.interfaces -f=yaml",
+			expectReStdout: `Value:\s+name: UNTAGGED-local0`,
+		},
+
+		{
+			name:         "Test `dump` with custom format",
+			cmd:          `dump vpp.interfaces -f "{{range.}}Name:{{.Value.Name}}{{end}}"`,
+			expectStdout: `"Name:UNTAGGED-local0"`,
 		},
 		{
 			name:                 "Test `generate` action",
@@ -147,7 +173,7 @@ func TestAgentCtl(t *testing.T) {
 		{
 			name:           "Test `model ls` action",
 			cmd:            "model ls",
-			expectReStdout: `linux.interfaces.interface\s+config/linux/interfaces/v2/interface/\s+linux.interfaces.Interface`,
+			expectReStdout: `linux.interfaces.interface\s+config\s+linux.interfaces.Interface\s+config/linux/interfaces/v2/interface/`,
 		},
 		{
 			name:           "Test `model inspect` action",
@@ -158,13 +184,13 @@ func TestAgentCtl(t *testing.T) {
 			name:           "Test `model inspect` action (no models)",
 			cmd:            "model inspect NoSuchModel",
 			expectErr:      true,
-			expectInStderr: "No model found for provided prefix: NoSuchModel",
+			expectInStderr: "no model found for provided prefix: NoSuchModel",
 		},
 		{
 			name:           "Test `model inspect` action (multiple models)",
 			cmd:            "model inspect vpp.",
 			expectErr:      true,
-			expectInStderr: "Multiple models found with provided prefix: vpp.",
+			expectInStderr: "multiple models found with provided prefix: vpp.",
 		},
 		{
 			name:           "Test `status` action",
@@ -181,11 +207,11 @@ func TestAgentCtl(t *testing.T) {
 			cmd:            "values",
 			expectReStdout: `vpp.interfaces\s+UNTAGGED-local0\s+obtained`,
 		},
-		{
+		/*{
 			name:           "Test `values` action (with model)",
 			cmd:            "values vpp.proxyarp-global",
 			expectReStdout: `vpp.proxyarp-global\s+obtained `,
-		},
+		},*/
 		{
 			name:           "Test `vpp info` action",
 			cmd:            "vpp info",
