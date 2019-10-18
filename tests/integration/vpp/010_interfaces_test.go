@@ -130,7 +130,7 @@ func TestInterfaceEnabledFieldWithMemif(t *testing.T) {
 
 	h := ifplugin_vppcalls.CompatibleInterfaceVppHandler(ctx.vppBinapi, logrus.NewLogger("test"))
 
-	err := h.RegisterMemifSocketFilename([]byte("/tmp/memif1.sock"), 2)
+	err := h.RegisterMemifSocketFilename("/tmp/memif1.sock", 2)
 	if err != nil {
 		t.Fatalf("registering memif socket filename faild: %v", err)
 	}

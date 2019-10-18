@@ -143,6 +143,11 @@ e2e-tests: ## Run end-to-end tests
 	@echo "=> running end-to-end tests"
 	VPP_IMG=$(VPP_IMG) ./tests/e2e/run_e2e.sh
 
+e2e-tests-cover: ## Run end-to-end tests with coverage
+	@echo "=> running end-to-end tests with coverage"
+	VPP_IMG=$(VPP_IMG) COVER_DIR=$(COVER_DIR) ./tests/e2e/run_e2e.sh
+	@echo "=> coverage report generated into ${COVER_DIR}/e2e-cov.out"
+
 # -------------------------------
 #  Code generation
 # -------------------------------

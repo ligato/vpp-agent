@@ -21,9 +21,13 @@ import (
 	"git.fd.io/govpp.git/adapter"
 )
 
+// implements StatsAPI
+var _ adapter.StatsAPI = (*StatsAdapter)(nil)
+
 // StatsAdapter simulates VPP stats socket from which stats can be read
 type StatsAdapter struct {
-	entries []*adapter.StatEntry
+	entries []adapter.StatEntry
+	dir     *adapter.StatDir
 }
 
 // NewStatsAdapter returns a new mock stats adapter.
@@ -45,17 +49,31 @@ func (a *StatsAdapter) Disconnect() error {
 func (a *StatsAdapter) ListStats(patterns ...string) ([]string, error) {
 	var statNames []string
 	for _, stat := range a.entries {
-		statNames = append(statNames, stat.Name)
+		statNames = append(statNames, string(stat.Name))
 	}
 	return statNames, nil
 }
 
 // DumpStats mocks all stat entries dump.
-func (a *StatsAdapter)  DumpStats(patterns ...string) ([]*adapter.StatEntry, error) {
+func (a *StatsAdapter) DumpStats(patterns ...string) ([]adapter.StatEntry, error) {
 	return a.entries, nil
 }
 
-// MockStats replaces current values of all supported stats by provided value
-func (a *StatsAdapter) MockStats(stats []*adapter.StatEntry) {
+func (a *StatsAdapter) PrepareDir(prefixes ...string) (*adapter.StatDir, error) {
+	return a.dir, nil
+}
+
+func (a *StatsAdapter) UpdateDir(dir *adapter.StatDir) error {
+	*dir = *a.dir
+	return nil
+}
+
+// MockStats sets mocked stat entries to be returned by DumpStats.
+func (a *StatsAdapter) MockStats(stats []adapter.StatEntry) {
 	a.entries = stats
+}
+
+// MockStats sets mocked stat dir to be returned by PrepareDir.
+func (a *StatsAdapter) MockDir(dir *adapter.StatDir) {
+	a.dir = dir
 }

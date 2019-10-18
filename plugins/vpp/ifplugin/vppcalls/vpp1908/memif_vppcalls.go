@@ -67,9 +67,9 @@ func (h *InterfaceVppHandler) DeleteMemifInterface(ifName string, idx uint32) er
 }
 
 // RegisterMemifSocketFilename implements interface handler.
-func (h *InterfaceVppHandler) RegisterMemifSocketFilename(filename []byte, id uint32) error {
+func (h *InterfaceVppHandler) RegisterMemifSocketFilename(filename string, id uint32) error {
 	req := &memif.MemifSocketFilenameAddDel{
-		SocketFilename: filename,
+		SocketFilename: []byte(filename),
 		SocketID:       id,
 		IsAdd:          1, // sockets can be added only
 	}
