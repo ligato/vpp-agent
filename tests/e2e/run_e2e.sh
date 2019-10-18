@@ -22,6 +22,9 @@ else
 	args+=("-cov=${COVER_DIR}/e2e-coverage")
 fi
 
+# complie agentctl
+go build -v -o ./tests/e2e/agentctl.test ./cmd/agentctl
+
 # compile e2e test suite
 go test -c -o ./tests/e2e/e2e.test ./tests/e2e
 
@@ -31,6 +34,7 @@ go test -c -o ./tests/e2e/e2e.test ./tests/e2e
 cid=$(docker run -d -it \
 	-v $PWD/tests/e2e/e2e.test:/e2e.test:ro \
 	-v $PWD/tests/e2e/vpp-agent.test:/vpp-agent:ro \
+	-v $PWD/tests/e2e/agentctl.test:/agentctl:ro \
 	-v $PWD/tests/e2e/grpc.conf:/etc/grpc.conf:ro \
 	-v /var/run/docker.sock:/var/run/docker.sock \
 	--label e2e.test="$*" \
