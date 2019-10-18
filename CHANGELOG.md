@@ -5,6 +5,7 @@
 ## Release Notes
 
 - [v2.3.0](#v2.3.0)
+  - [v2.3.1](#v2.3.1)
 - [v2.2.0](#v2.2.0)
 - [v2.2.0-beta](#v2.2.0-beta)
 - [v2.1.0](#v2.1.0)
@@ -45,6 +46,19 @@ RELEASE CHANGELOG TEMPLATE:
 ### Docker Images
 ### Documentation
 -->
+
+<a name="v2.3.1"></a>
+# [2.3.1](https://github.com/ligato/vpp-agent/compare/v2.3.0...v2.3.1) (2019-10-18)
+- **VPP 20.01-379** (`20.01-rc0~379-ga6b93eac5`)
+- **VPP 20.01-324** (`20.01-rc0~324-g66a332cf1`)
+- **VPP 19.08.1** (default)
+- **VPP 19.04** (backward compatible)
+- cn-infra v2.2
+
+### New Features
+This minor release introduces compatibility with two different commits of the VPP 20.01. Previously compatible version was updated to commit `324-g66a332cf1`, and support for `379-ga6b93eac5` was added. Other previous versions remained.
+* [Telemetry][vpp-telemetry]
+  - Added `StatsPoller` service periodically retrieving VPP stats.
 
 <a name="v2.3.0"></a>
 # [2.3.0](https://github.com/ligato/vpp-agent/compare/v2.2.0...v2.3.0) (2019-10-04)
