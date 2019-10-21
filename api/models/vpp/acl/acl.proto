@@ -4,7 +4,7 @@ package vpp.acl;
 
 option go_package = "github.com/ligato/vpp-agent/api/models/vpp/acl;vpp_acl";
 
-// Access Control List (ACL)
+// ACL defines Access Control List.
 message ACL {
     // The name of an access list. A device MAY restrict the length
     // and value of this name, possibly spaces and special

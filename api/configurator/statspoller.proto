@@ -4,7 +4,7 @@ package configurator;
 
 option go_package = "github.com/ligato/vpp-agent/api/configurator;configurator";
 
-import "models/vpp/vpp.proto";
+import "ligato/vpp-agent/api/models/vpp/vpp.proto";
 
 message Stats {
     oneof stats {

@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package vpp.client;
 
+option go_package = "github.com/ligato/vpp-agent/plugins/govppmux/model;vpp_client";
+
 message Metrics {
     uint64 channels_created = 1;
     uint64 channels_open = 2;

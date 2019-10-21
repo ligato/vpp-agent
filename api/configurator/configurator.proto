@@ -4,9 +4,9 @@ package configurator;
 
 option go_package = "github.com/ligato/vpp-agent/api/configurator;configurator";
 
-import "models/vpp/vpp.proto";
-import "models/linux/linux.proto";
-import "models/netalloc/netalloc.proto";
+import "ligato/vpp-agent/api/models/vpp/vpp.proto";
+import "ligato/vpp-agent/api/models/linux/linux.proto";
+import "ligato/vpp-agent/api/models/netalloc/netalloc.proto";
 
 // Config groups all supported config data into single message.
 message Config {

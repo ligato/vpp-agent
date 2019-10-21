@@ -1,6 +1,7 @@
 syntax = "proto3";
 
 package generic;
+
 option go_package = "github.com/ligato/vpp-agent/api/generic";
 
 // ModelSpec defines a model specification to identify a model.

@@ -1,6 +1,7 @@
 syntax = "proto3";
 
 package generic;
+
 option go_package = "github.com/ligato/vpp-agent/api/generic";
 
 import "google/protobuf/any.proto";

@@ -4,7 +4,7 @@ package linux.iptables;
 
 option go_package = "github.com/ligato/vpp-agent/api/models/linux/iptables;linux_iptables";
 
-import "models/linux/namespace/namespace.proto";
+import "ligato/vpp-agent/api/models/linux/namespace/namespace.proto";
 
 message RuleChain {
     string name = 1;                             /* logical name of the rule chain across all configured

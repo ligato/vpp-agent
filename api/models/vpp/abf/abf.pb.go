@@ -20,7 +20,7 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
-// ACL based forwarding
+// ABF defines ACL based forwarding.
 type ABF struct {
 	Index                uint32                   `protobuf:"varint,1,opt,name=index,proto3" json:"index,omitempty"`
 	AclName              string                   `protobuf:"bytes,2,opt,name=acl_name,json=aclName,proto3" json:"acl_name,omitempty"`
