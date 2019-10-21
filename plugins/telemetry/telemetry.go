@@ -120,15 +120,16 @@ func (p *Plugin) Init() error {
 		if err := p.registerPrometheus(); err != nil {
 			return err
 		}
-		if p.HTTPHandlers != nil {
-			p.HTTPHandlers.RegisterHTTPHandler("/metrics/{metric}", metricsHandler, "GET")
-		}
 	}
 
 	// Setup stats poller
 	p.statsPollerServer.log = p.Log.NewLogger("stats-poller")
 	if err := p.setupStatsPoller(); err != nil {
 		return err
+	}
+
+	if p.HTTPHandlers != nil {
+		p.HTTPHandlers.RegisterHTTPHandler("/metrics/{metric}", metricsHandler, "GET")
 	}
 
 	return nil
