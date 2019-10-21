@@ -169,7 +169,7 @@ generate-proto: get-proto-compiler ## Generate Protobuf files
 	@echo "=> generating proto"
 	./scripts/genprotos.sh
 
-verify-proto: ## Verify generated Protobuf files
+verify-proto: get-proto-compiler ## Verify generated Protobuf files
 	@echo "=> verifying generated proto"
 	./scripts/genprotos.sh check
 
@@ -297,6 +297,7 @@ prod-image: ## Build production image
 	cmd examples clean-examples \
 	test test-cover test-cover-html test-cover-xml \
 	generate genereate-binapi generate-proto get-binapi-generators get-proto-generators \
+	install-protobuf get-proto-compiler verify-proto \
 	get-dep dep-install dep-update dep-check \
 	get-linters lint format \
 	get-linkcheck check-links \
