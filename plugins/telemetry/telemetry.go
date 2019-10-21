@@ -55,9 +55,10 @@ type Plugin struct {
 	prometheusMetrics
 
 	// From config file
-	updatePeriod time.Duration
-	disabled     bool
-	skipped      map[string]bool
+	updatePeriod       time.Duration
+	disabled           bool
+	prometheusDisabled bool
+	skipped            map[string]bool
 
 	wg   sync.WaitGroup
 	quit chan struct{}
@@ -90,29 +91,38 @@ func (p *Plugin) Init() error {
 			p.disabled = true
 			return nil
 		}
-		// This prevents setting the update period to less than 5 seconds,
-		// which can have significant performance hit.
-		if config.PollingInterval > minimumUpdatePeriod {
-			p.updatePeriod = config.PollingInterval
-			p.Log.Infof("polling period changed to %v", p.updatePeriod)
-		} else if config.PollingInterval > 0 {
-			p.Log.Warnf("polling period has to be at least %s, using default: %v",
-				minimumUpdatePeriod, defaultUpdatePeriod)
+		// Disable prometheus metrics if set by config
+		if config.PrometheusDisabled {
+			p.Log.Info("Prometheus metrics disabled via config file")
+			p.prometheusDisabled = true
+		} else {
+			// This prevents setting the update period to less than 5 seconds,
+			// which can have significant performance hit.
+			if config.PollingInterval > minimumUpdatePeriod {
+				p.updatePeriod = config.PollingInterval
+				p.Log.Infof("polling period changed to %v", p.updatePeriod)
+			} else if config.PollingInterval > 0 {
+				p.Log.Warnf("polling period has to be at least %s, using default: %v",
+					minimumUpdatePeriod, defaultUpdatePeriod)
+			}
+			// Store map of skipped metrics
+			for _, skip := range config.Skipped {
+				p.skipped[skip] = true
+			}
 		}
-		// Store map of skipped metrics
-		for _, skip := range config.Skipped {
-			p.skipped[skip] = true
-		}
-	}
-	// This serves as fallback if the config was not found or if the value is not set in config.
-	if p.updatePeriod == 0 {
-		p.updatePeriod = defaultUpdatePeriod
 	}
 
-	if err := p.registerPrometheus(); err != nil {
-		return err
+	// Register prometheus
+	if !p.prometheusDisabled {
+		if p.updatePeriod == 0 {
+			p.updatePeriod = defaultUpdatePeriod
+		}
+		if err := p.registerPrometheus(); err != nil {
+			return err
+		}
 	}
 
+	// Setup stats poller
 	p.statsPollerServer.log = p.Log.NewLogger("stats-poller")
 	if err := p.setupStatsPoller(); err != nil {
 		return err
@@ -128,7 +138,7 @@ func (p *Plugin) Init() error {
 // AfterInit executes after initializion of Telemetry Plugin
 func (p *Plugin) AfterInit() error {
 	// Do not start polling if telemetry is disabled
-	if p.disabled {
+	if p.disabled || p.prometheusDisabled {
 		return nil
 	}
 
