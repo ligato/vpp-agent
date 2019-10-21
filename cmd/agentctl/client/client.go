@@ -16,6 +16,7 @@ package client
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -24,6 +25,7 @@ import (
 	"time"
 
 	"github.com/coreos/etcd/clientv3"
+	"github.com/coreos/etcd/pkg/tlsutil"
 	"github.com/docker/docker/api/types/versions"
 	"google.golang.org/grpc"
 
@@ -58,10 +60,13 @@ type Client struct {
 	addr     string
 	basePath string
 
-	grpcAddr     string
-	httpAddr     string
-	endpoints    []string
-	serviceLabel string
+	grpcAddr      string
+	httpAddr      string
+	kvdbCertfile  string
+	kvdbKeyfile   string
+	kvdbCAfile    string
+	kvdbEndpoints []string
+	serviceLabel  string
 
 	grpcClient *grpc.ClientConn
 	httpClient *http.Client
@@ -232,14 +237,14 @@ func (c *Client) negotiateAPIVersionPing(p types.Ping) {
 }
 
 func (c *Client) KVDBClient() (KVDBAPIClient, error) {
-	kvdb, err := ConnectEtcd(c.endpoints)
+	kvdb, err := ConnectEtcd(c.kvdbEndpoints, c.kvdbCertfile, c.kvdbKeyfile, c.kvdbCAfile)
 	if err != nil {
 		return nil, fmt.Errorf("connecting to Etcd failed: %v", err)
 	}
 	return NewKVDBClient(kvdb, c.serviceLabel), nil
 }
 
-func ConnectEtcd(endpoints []string) (keyval.CoreBrokerWatcher, error) {
+func ConnectEtcd(endpoints []string, certPath, keyPath, caPath string) (keyval.CoreBrokerWatcher, error) {
 	log := logrus.NewLogger("etcd-client")
 	if debug.IsEnabledFor("kvdb") {
 		log.SetLevel(logging.DebugLevel)
@@ -253,6 +258,27 @@ func ConnectEtcd(endpoints []string) (keyval.CoreBrokerWatcher, error) {
 		},
 		OpTimeout: time.Second * 10,
 	}
+
+	// WIP. Expecting to see all three paths for now
+	if certPath != "" && keyPath != "" && caPath != "" {
+		cert, err := tlsutil.NewCert(certPath, keyPath, nil)
+		if err != nil {
+			return nil, err
+		}
+
+		cp, err := tlsutil.NewCertPool([]string{caPath})
+		if err != nil {
+			return nil, err
+		}
+
+		cfg.Config.TLS = &tls.Config{
+			Certificates:       []tls.Certificate{*cert},
+			RootCAs:            cp,
+			InsecureSkipVerify: true,
+			MinVersion:         tls.VersionTLS12,
+		}
+	}
+
 	kvdb, err := etcd.NewEtcdConnectionWithBytes(cfg, log)
 	if err != nil {
 		return nil, err

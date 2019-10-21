@@ -51,8 +51,17 @@ func WithHost(host string) Opt {
 func WithEtcdEndpoints(endpoints []string) Opt {
 	return func(c *Client) error {
 		if len(endpoints) != 0 {
-			c.endpoints = endpoints
+			c.kvdbEndpoints = endpoints
 		}
+		return nil
+	}
+}
+
+func WithKvdbTLS(cert, key, ca string) Opt {
+	return func(c *Client) error {
+		c.kvdbCertfile = cert
+		c.kvdbKeyfile = key
+		c.kvdbCAfile = ca
 		return nil
 	}
 }
