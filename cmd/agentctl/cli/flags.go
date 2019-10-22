@@ -3,10 +3,8 @@ package cli
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 	"strings"
 
-	"github.com/docker/go-connections/tlsconfig"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/pflag"
 
@@ -44,13 +42,9 @@ type ClientOptions struct {
 	PortHTTP     int
 	ServiceLabel string
 	Endpoints    []string
+	TLS          bool
 
 	ConfigDir string
-
-	// TODO: support TLS
-	TLS        bool
-	TLSVerify  bool
-	TLSOptions *tlsconfig.Options
 }
 
 // NewClientOptions returns a new ClientOptions
@@ -65,18 +59,8 @@ func (opts *ClientOptions) InstallFlags(flags *pflag.FlagSet) {
 	flags.IntVar(&opts.PortHTTP, "http-port", client.DefaultPortHTTP, "HTTP server port")
 	flags.IntVar(&opts.PortGRPC, "grpc-port", client.DefaultPortGRPC, "gRPC server port")
 	flags.StringSliceVarP(&opts.Endpoints, "etcd-endpoints", "e", etcdEndpoints, "Etcd endpoints to connect to, default from ETCD_ENDPOINTS env var")
-
-	// initialize default path for config file directory
-	// 🔧 Work in progress. This will be refactored later 🔧
-	uhd, err := os.UserHomeDir()
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Unable to get current user's home directory: %v\n", err)
-		os.Exit(1)
-	}
-	// `.agentctl` is a default name of directory with config file
-	configDir := filepath.Join(uhd, ".agentctl")
-
-	flags.StringVar(&opts.ConfigDir, "config", configDir, "Location of client config files")
+	flags.BoolVar(&opts.TLS, "tls", false, "Use TLS for connections")
+	flags.StringVar(&opts.ConfigDir, "config", DefaultConfigDir(), "Location of client config files")
 }
 
 // SetDefaultOptions sets default values for options after flag parsing is

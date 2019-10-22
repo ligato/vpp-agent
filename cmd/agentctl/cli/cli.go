@@ -18,13 +18,11 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"path/filepath"
 	"runtime"
 
 	"github.com/docker/cli/cli/streams"
 	"github.com/docker/docker/pkg/term"
 
-	"github.com/ligato/cn-infra/config"
 	"github.com/ligato/cn-infra/db/keyval"
 	"github.com/ligato/cn-infra/db/keyval/kvproto"
 	"github.com/ligato/cn-infra/logging"
@@ -47,13 +45,6 @@ type Cli interface {
 	ServerInfo() ServerInfo
 	ClientInfo() ClientInfo
 	DefaultVersion() string
-}
-
-// ConfigFile represents info from ~/.agentctl/all.conf
-type ConfigFile struct {
-	KvdbCertfile string `json:"kvdb-cert-file"`
-	KvdbKeyfile  string `json:"kvdb-key-file"`
-	KvdbCAfile   string `json:"kvdb-ca-file"`
 }
 
 type AgentCli struct {
@@ -179,13 +170,14 @@ func (cli *AgentCli) Initialize(opts *ClientOptions, ops ...InitializeOpt) error
 		SetLogLevel(opts.LogLevel)
 	}
 
-	filename := filepath.Join(opts.ConfigDir, "all.conf")
-	cf := &ConfigFile{}
-	err = config.ParseConfigFromYamlFile(filename, cf)
-	if err != nil {
-		logging.Warnf("error parsing config file: %v", err)
+	var cf *ConfigFile
+	// Config file is required for TLS connection.
+	if opts.TLS {
+		cf, err = ReadConfig(opts.ConfigDir)
+		if err != nil {
+			return fmt.Errorf("error parsing config file: %v", err)
+		}
 	}
-	logging.Debugf("config file data: %+v", cf)
 
 	if cli.client == nil {
 		cli.client, err = newAPIClient(opts, cf)
@@ -205,12 +197,15 @@ func newAPIClient(opts *ClientOptions, cf *ConfigFile) (client.APIClient, error)
 		client.WithHost(opts.AgentHost),
 		client.WithEtcdEndpoints(opts.Endpoints),
 		client.WithServiceLabel(opts.ServiceLabel),
-		client.WithKvdbTLS(cf.KvdbCertfile, cf.KvdbKeyfile, cf.KvdbCAfile),
 	}
 	var customHeaders = map[string]string{
 		"User-Agent": UserAgent(),
 	}
 	clientOpts = append(clientOpts, client.WithHTTPHeaders(customHeaders))
+
+	if cf != nil {
+		clientOpts = append(clientOpts, client.WithKvdbTLS(cf.KvdbCertfile, cf.KvdbKeyfile, cf.KvdbCAfile))
+	}
 
 	return client.NewClientWithOpts(clientOpts...)
 }

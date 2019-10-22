@@ -59,9 +59,7 @@ func WithEtcdEndpoints(endpoints []string) Opt {
 
 func WithKvdbTLS(cert, key, ca string) Opt {
 	return func(c *Client) error {
-		c.kvdbCertfile = cert
-		c.kvdbKeyfile = key
-		c.kvdbCAfile = ca
+		c.kvdbTLS = &TLSConfig{cert, key, ca}
 		return nil
 	}
 }

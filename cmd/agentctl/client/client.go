@@ -17,6 +17,7 @@ package client
 import (
 	"context"
 	"crypto/tls"
+	"crypto/x509"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -51,6 +52,12 @@ var (
 
 var _ APIClient = (*Client)(nil)
 
+type TLSConfig struct {
+	CertFile string
+	KeyFile  string
+	CAFile   string
+}
+
 // Client is the API client that performs all operations
 // against a Ligato agent.
 type Client struct {
@@ -62,9 +69,7 @@ type Client struct {
 
 	grpcAddr      string
 	httpAddr      string
-	kvdbCertfile  string
-	kvdbKeyfile   string
-	kvdbCAfile    string
+	kvdbTLS       *TLSConfig
 	kvdbEndpoints []string
 	serviceLabel  string
 
@@ -237,20 +242,34 @@ func (c *Client) negotiateAPIVersionPing(p types.Ping) {
 }
 
 func (c *Client) KVDBClient() (KVDBAPIClient, error) {
-	kvdb, err := ConnectEtcd(c.kvdbEndpoints, c.kvdbCertfile, c.kvdbKeyfile, c.kvdbCAfile)
+	kvdb, err := ConnectEtcd(c.kvdbEndpoints, c.kvdbTLS)
 	if err != nil {
 		return nil, fmt.Errorf("connecting to Etcd failed: %v", err)
 	}
 	return NewKVDBClient(kvdb, c.serviceLabel), nil
 }
 
-func ConnectEtcd(endpoints []string, certPath, keyPath, caPath string) (keyval.CoreBrokerWatcher, error) {
+func ConnectEtcd(endpoints []string, tlsConfig *TLSConfig) (keyval.CoreBrokerWatcher, error) {
 	log := logrus.NewLogger("etcd-client")
 	if debug.IsEnabledFor("kvdb") {
 		log.SetLevel(logging.DebugLevel)
 	} else {
 		log.SetLevel(logging.WarnLevel)
 	}
+
+	cfg, err := etcdConfig(endpoints, tlsConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	kvdb, err := etcd.NewEtcdConnectionWithBytes(cfg, log)
+	if err != nil {
+		return nil, err
+	}
+	return kvdb, nil
+}
+
+func etcdConfig(endpoints []string, tlsConfig *TLSConfig) (etcd.ClientConfig, error) {
 	cfg := etcd.ClientConfig{
 		Config: &clientv3.Config{
 			Endpoints:   endpoints,
@@ -259,29 +278,38 @@ func ConnectEtcd(endpoints []string, certPath, keyPath, caPath string) (keyval.C
 		OpTimeout: time.Second * 10,
 	}
 
-	// WIP. Expecting to see all three paths for now
-	if certPath != "" && keyPath != "" && caPath != "" {
-		cert, err := tlsutil.NewCert(certPath, keyPath, nil)
-		if err != nil {
-			return nil, err
-		}
+	if tlsConfig == nil {
+		return cfg, nil
+	}
 
-		cp, err := tlsutil.NewCertPool([]string{caPath})
-		if err != nil {
-			return nil, err
-		}
+	var (
+		cert *tls.Certificate
+		cp   *x509.CertPool
+		err  error
+	)
 
-		cfg.Config.TLS = &tls.Config{
-			Certificates:       []tls.Certificate{*cert},
-			RootCAs:            cp,
-			InsecureSkipVerify: true,
-			MinVersion:         tls.VersionTLS12,
+	// Use client certificates for authentication.
+	if tlsConfig.CertFile != "" && tlsConfig.KeyFile != "" {
+		cert, err = tlsutil.NewCert(tlsConfig.CertFile, tlsConfig.KeyFile, nil)
+		if err != nil {
+			return cfg, err
 		}
 	}
 
-	kvdb, err := etcd.NewEtcdConnectionWithBytes(cfg, log)
-	if err != nil {
-		return nil, err
+	// Verify server cerificate with custom trusted CA
+	if tlsConfig.CAFile != "" {
+		cp, err = tlsutil.NewCertPool([]string{tlsConfig.CAFile})
+		if err != nil {
+			return cfg, err
+		}
 	}
-	return kvdb, nil
+
+	cfg.Config.TLS = &tls.Config{
+		Certificates:       []tls.Certificate{*cert},
+		RootCAs:            cp,
+		InsecureSkipVerify: true,
+		MinVersion:         tls.VersionTLS12,
+	}
+
+	return cfg, nil
 }
