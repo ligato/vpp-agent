@@ -225,12 +225,9 @@
   revision = "3dfb26ab3cbf961298f8ce3f94659b5fe4146ceb"
 
 [[projects]]
-  digest = "1:d5e6a6adf47d002b580ed83f13493f6d4a7a891954bda48454b5876c0bd83460"
+  digest = "1:87dcb59127512b84097086504c16595cf8fef35b9e0bfca565dfc06e198158d7"
   name = "github.com/docker/go-connections"
-  packages = [
-    "nat",
-    "tlsconfig",
-  ]
+  packages = ["nat"]
   pruneopts = "UT"
   revision = "3ede32e2033de7505e6500d6c868c2b9ed9f169d"
   version = "v0.3.0"
@@ -1021,11 +1018,11 @@
     "git.fd.io/govpp.git/cmd/binapi-generator",
     "git.fd.io/govpp.git/core",
     "github.com/coreos/etcd/clientv3",
+    "github.com/coreos/etcd/pkg/tlsutil",
     "github.com/coreos/go-iptables/iptables",
     "github.com/docker/cli/cli/streams",
     "github.com/docker/docker/api/types/versions",
     "github.com/docker/docker/pkg/term",
-    "github.com/docker/go-connections/tlsconfig",
     "github.com/fsouza/go-dockerclient",
     "github.com/ghodss/yaml",
     "github.com/go-errors/errors",
