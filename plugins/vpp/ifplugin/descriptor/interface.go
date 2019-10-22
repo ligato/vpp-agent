@@ -140,6 +140,12 @@ var (
 
 	// ErrVxLanMulticastIntfMissing is returned when interface for multicast was not specified.
 	ErrVxLanMulticastIntfMissing = errors.Errorf("missing multicast interface name for VxLAN tunnel")
+
+	// ErrGtpuSrcAddrMissing is returned when source address was not set or set to an empty string.
+	ErrGtpuSrcAddrMissing = errors.Errorf("missing source address for GTPU tunnel")
+
+	// ErrGtpuDstAddrMissing is returned when destination address was not set or set to an empty string.
+	ErrGtpuDstAddrMissing = errors.Errorf("missing destination address for GTPU tunnel")
 )
 
 // InterfaceDescriptor teaches KVScheduler how to configure VPP interfaces.
@@ -317,6 +323,10 @@ func (d *InterfaceDescriptor) equivalentTypeSpecificConfig(oldIntf, newIntf *int
 		if !proto.Equal(oldIntf.GetGre(), newIntf.GetGre()) {
 			return false
 		}
+	case interfaces.Interface_GTPU_TUNNEL:
+		if !proto.Equal(oldIntf.GetGtpu(), newIntf.GetGtpu()) {
+			return false
+		}
 	}
 	return true
 }
@@ -443,6 +453,10 @@ func (d *InterfaceDescriptor) Validate(key string, intf *interfaces.Interface) e
 		if intf.Type != interfaces.Interface_GRE_TUNNEL {
 			return linkMismatchErr
 		}
+	case *interfaces.Interface_Gtpu:
+		if intf.Type != interfaces.Interface_GTPU_TUNNEL {
+			return linkMismatchErr
+		}
 	case nil:
 		if intf.Type != interfaces.Interface_SOFTWARE_LOOPBACK &&
 			intf.Type != interfaces.Interface_DPDK {
@@ -507,6 +521,13 @@ func (d *InterfaceDescriptor) Validate(key string, intf *interfaces.Interface) e
 				return kvs.NewInvalidValueError(ErrVxLanGpeNonZeroDecapVrfID, "link.vxlan.gpe.decap_vrf_id")
 			}
 
+		}
+	case interfaces.Interface_GTPU_TUNNEL:
+		if intf.GetGtpu().SrcAddr == "" {
+			return kvs.NewInvalidValueError(ErrGtpuSrcAddrMissing, "link.gtpu.src_addr")
+		}
+		if intf.GetGtpu().DstAddr == "" {
+			return kvs.NewInvalidValueError(ErrGtpuDstAddrMissing, "link.gtpu.dst_addr")
 		}
 	}
 

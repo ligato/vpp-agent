@@ -205,6 +205,10 @@ type InterfaceVppAPI interface {
 	AddGreTunnel(ifName string, greLink *interfaces.GreLink) (uint32, error)
 	// DelGreTunnel removes GRE interface.
 	DelGreTunnel(ifName string, greLink *interfaces.GreLink) (uint32, error)
+	// AddGtpuTunnel adds new GTPU interface.
+	AddGtpuTunnel(ifName string, gtpuLink *interfaces.GtpuLink, vrf uint32, multicastIf uint32) (uint32, error)
+	// DelGtpuTunnel removes GTPU interface.
+	DelGtpuTunnel(ifName string, gtpuLink *interfaces.GtpuLink) error
 }
 
 // InterfaceVppRead provides read methods for interface plugin

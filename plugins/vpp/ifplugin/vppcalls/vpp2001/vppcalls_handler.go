@@ -25,6 +25,7 @@ import (
 	vpp_bond "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/bond"
 	vpp_dhcp "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/dhcp"
 	vpp_gre "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/gre"
+	vpp_gtpu "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/gtpu"
 	vpp_ifs "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/interfaces"
 	vpp_ip "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/ip"
 	vpp_ipsec "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/ipsec"
@@ -54,6 +55,7 @@ func init() {
 	msgs = append(msgs, vpp_vmxnet3.AllMessages()...)
 	msgs = append(msgs, vpp_vpe.AllMessages()...)
 	msgs = append(msgs, vpp_vxlan.AllMessages()...)
+	msgs = append(msgs, vpp_gtpu.AllMessages()...)
 
 	vppcalls.Versions["vpp2001"] = vppcalls.HandlerVersion{
 		Msgs: msgs,
