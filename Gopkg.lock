@@ -1018,7 +1018,6 @@
     "git.fd.io/govpp.git/cmd/binapi-generator",
     "git.fd.io/govpp.git/core",
     "github.com/coreos/etcd/clientv3",
-    "github.com/coreos/etcd/pkg/tlsutil",
     "github.com/coreos/go-iptables/iptables",
     "github.com/docker/cli/cli/streams",
     "github.com/docker/docker/api/types/versions",

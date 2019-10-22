@@ -17,7 +17,6 @@ package client
 import (
 	"context"
 	"crypto/tls"
-	"crypto/x509"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -26,7 +25,6 @@ import (
 	"time"
 
 	"github.com/coreos/etcd/clientv3"
-	"github.com/coreos/etcd/pkg/tlsutil"
 	"github.com/docker/docker/api/types/versions"
 	"google.golang.org/grpc"
 
@@ -68,8 +66,9 @@ type Client struct {
 	basePath string
 
 	grpcAddr      string
+	grpcTLS       *TLSConfig
 	httpAddr      string
-	kvdbTLS       *TLSConfig
+	kvdbTLS       *tls.Config
 	kvdbEndpoints []string
 	serviceLabel  string
 
@@ -249,7 +248,7 @@ func (c *Client) KVDBClient() (KVDBAPIClient, error) {
 	return NewKVDBClient(kvdb, c.serviceLabel), nil
 }
 
-func ConnectEtcd(endpoints []string, tlsConfig *TLSConfig) (keyval.CoreBrokerWatcher, error) {
+func ConnectEtcd(endpoints []string, tc *tls.Config) (keyval.CoreBrokerWatcher, error) {
 	log := logrus.NewLogger("etcd-client")
 	if debug.IsEnabledFor("kvdb") {
 		log.SetLevel(logging.DebugLevel)
@@ -257,9 +256,13 @@ func ConnectEtcd(endpoints []string, tlsConfig *TLSConfig) (keyval.CoreBrokerWat
 		log.SetLevel(logging.WarnLevel)
 	}
 
-	cfg, err := etcdConfig(endpoints, tlsConfig)
-	if err != nil {
-		return nil, err
+	cfg := etcd.ClientConfig{
+		Config: &clientv3.Config{
+			Endpoints:   endpoints,
+			DialTimeout: time.Second * 3,
+			TLS:         tc,
+		},
+		OpTimeout: time.Second * 10,
 	}
 
 	kvdb, err := etcd.NewEtcdConnectionWithBytes(cfg, log)
@@ -267,49 +270,4 @@ func ConnectEtcd(endpoints []string, tlsConfig *TLSConfig) (keyval.CoreBrokerWat
 		return nil, err
 	}
 	return kvdb, nil
-}
-
-func etcdConfig(endpoints []string, tlsConfig *TLSConfig) (etcd.ClientConfig, error) {
-	cfg := etcd.ClientConfig{
-		Config: &clientv3.Config{
-			Endpoints:   endpoints,
-			DialTimeout: time.Second * 3,
-		},
-		OpTimeout: time.Second * 10,
-	}
-
-	if tlsConfig == nil {
-		return cfg, nil
-	}
-
-	var (
-		cert *tls.Certificate
-		cp   *x509.CertPool
-		err  error
-	)
-
-	// Use client certificates for authentication.
-	if tlsConfig.CertFile != "" && tlsConfig.KeyFile != "" {
-		cert, err = tlsutil.NewCert(tlsConfig.CertFile, tlsConfig.KeyFile, nil)
-		if err != nil {
-			return cfg, err
-		}
-	}
-
-	// Verify server cerificate with custom trusted CA
-	if tlsConfig.CAFile != "" {
-		cp, err = tlsutil.NewCertPool([]string{tlsConfig.CAFile})
-		if err != nil {
-			return cfg, err
-		}
-	}
-
-	cfg.Config.TLS = &tls.Config{
-		Certificates:       []tls.Certificate{*cert},
-		RootCAs:            cp,
-		InsecureSkipVerify: true,
-		MinVersion:         tls.VersionTLS12,
-	}
-
-	return cfg, nil
 }

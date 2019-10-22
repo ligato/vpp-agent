@@ -8,6 +8,8 @@ import (
 	"time"
 
 	"google.golang.org/grpc"
+
+	"github.com/ligato/vpp-agent/cmd/agentctl/client/tlsconfig"
 )
 
 type Opt func(*Client) error
@@ -59,8 +61,18 @@ func WithEtcdEndpoints(endpoints []string) Opt {
 
 func WithKvdbTLS(cert, key, ca string) Opt {
 	return func(c *Client) error {
-		c.kvdbTLS = &TLSConfig{cert, key, ca}
-		return nil
+		var options []tlsconfig.Option
+
+		if cert != "" && key != "" {
+			options = append(options, tlsconfig.CertKey(cert, key))
+		}
+		if ca != "" {
+			options = append(options, tlsconfig.CA(ca))
+		}
+
+		var err error
+		c.kvdbTLS, err = tlsconfig.New(options...)
+		return err
 	}
 }
 
