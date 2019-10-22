@@ -29,6 +29,8 @@ type Config struct {
 	PollingInterval time.Duration `json:"polling-interval"`
 	// Allows to disable plugin
 	Disabled bool `json:"disabled"`
+	// Allows to export prometheus in telemetry plugin
+	PrometheusDisabled bool `json:"prometheus-disabled"`
 	// Skip collecting some of the metrics:
 	// 	runtime, memory, buffers, nodes, interfaces
 	Skipped []string `json:"skipped"`
