@@ -43,6 +43,8 @@ jobs:
         - make check-links || true
     - name: "Go dependency check"
       script: make dep-check
+    - name: "Verify proto files"
+      script: make verify-proto
 
     - stage: Test
       name: "Code linter"

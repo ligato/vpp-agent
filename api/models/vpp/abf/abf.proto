@@ -4,7 +4,7 @@ package vpp.abf;
 
 option go_package = "github.com/ligato/vpp-agent/api/models/vpp/abf;vpp_abf";
 
-// ACL based forwarding
+// ABF defines ACL based forwarding.
 message ABF {
     uint32 index = 1;               // ABF index (unique identifier)
     string acl_name = 2;            // Name of the associated access list

@@ -4,7 +4,7 @@ package vpp.interfaces;
 
 option go_package = "github.com/ligato/vpp-agent/api/models/vpp/interfaces;vpp_interfaces";
 
-import "models/vpp/interfaces/interface.proto";
+import "ligato/vpp-agent/api/models/vpp/interfaces/interface.proto";
 
 message InterfaceStats {
     string name = 1;
@@ -38,7 +38,7 @@ message InterfaceStats {
 message InterfaceState {
     string name = 1;
     string internal_name = 2;
-    interfaces.Interface.Type type = 3;
+    vpp.interfaces.Interface.Type type = 3;
     uint32 if_index = 4;
 
     enum Status {

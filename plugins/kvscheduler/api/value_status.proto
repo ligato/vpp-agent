@@ -1,6 +1,8 @@
 syntax = "proto3";
 
-package api;
+package kvscheduler.api;
+
+option go_package = "github.com/ligato/vpp-agent/plugins/kvscheduler/api";
 
 enum ValueState {
     // ValueState_NONEXISTENT is assigned to value that was deleted or has never

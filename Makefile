@@ -154,12 +154,24 @@ e2e-tests-cover: ## Run end-to-end tests with coverage
 
 generate: generate-proto generate-binapi generate-desc-adapters ## Generate all
 
-get-proto-generators:
-	@go install ./vendor/github.com/golang/protobuf/protoc-gen-go
+PROTOC_CMD := $(shell command -v protoc 2> /dev/null)
 
-generate-proto: get-proto-generators ## Generate Go code for Protobuf files
+install-protobuf:
+	@echo "=> installing proto compiler"
+	./scripts/install_protobuf.sh
+
+get-proto-compiler:
+ifndef PROTOC_CMD
+get-proto-compiler: install-protobuf
+endif
+
+generate-proto: get-proto-compiler ## Generate Protobuf files
 	@echo "=> generating proto"
 	./scripts/genprotos.sh
+
+verify-proto: get-proto-compiler ## Verify generated Protobuf files
+	@echo "=> verifying generated proto"
+	./scripts/genprotos.sh check
 
 get-binapi-generators:
 	@go install ./vendor/git.fd.io/govpp.git/cmd/binapi-generator
@@ -169,7 +181,7 @@ generate-binapi: get-binapi-generators ## Generate Go code for VPP binary API
 	VPP_BINAPI=$(VPP_BINAPI) ./scripts/genbinapi.sh
 
 verify-binapi: ## Verify generated VPP binary API
-	@echo "=> verifying binary api"
+	@echo "=> verifying generated binapi"
 	docker build -f docker/dev/Dockerfile \
 		--build-arg VPP_IMG=${VPP_IMG} \
 		--build-arg VPP_BINAPI=${VPP_BINAPI} \
@@ -285,6 +297,7 @@ prod-image: ## Build production image
 	cmd examples clean-examples \
 	test test-cover test-cover-html test-cover-xml \
 	generate genereate-binapi generate-proto get-binapi-generators get-proto-generators \
+	install-protobuf get-proto-compiler verify-proto \
 	get-dep dep-install dep-update dep-check \
 	get-linters lint format \
 	get-linkcheck check-links \

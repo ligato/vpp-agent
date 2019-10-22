@@ -1,11 +1,12 @@
 syntax = "proto3";
 
 package linux;
+
 option go_package = "github.com/ligato/vpp-agent/api/models/linux;linux";
 
-import "models/linux/interfaces/interface.proto";
-import "models/linux/l3/arp.proto";
-import "models/linux/l3/route.proto";
+import "ligato/vpp-agent/api/models/linux/interfaces/interface.proto";
+import "ligato/vpp-agent/api/models/linux/l3/arp.proto";
+import "ligato/vpp-agent/api/models/linux/l3/route.proto";
 
 message ConfigData {
     repeated linux.interfaces.Interface interfaces = 10;
@@ -14,6 +15,4 @@ message ConfigData {
     repeated linux.l3.Route routes = 21;
 }
 
-message Notification {
-
-}
+message Notification {}

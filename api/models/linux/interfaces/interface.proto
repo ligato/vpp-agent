@@ -4,7 +4,7 @@ package linux.interfaces;
 
 option go_package = "github.com/ligato/vpp-agent/api/models/linux/interfaces;linux_interfaces";
 
-import "models/linux/namespace/namespace.proto";
+import "ligato/vpp-agent/api/models/linux/namespace/namespace.proto";
 
 message Interface {
     enum Type {

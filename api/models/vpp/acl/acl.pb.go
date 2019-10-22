@@ -48,7 +48,7 @@ func (ACL_Rule_Action) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_4663c311a8c458d1, []int{0, 0, 0}
 }
 
-// Access Control List (ACL)
+// ACL defines Access Control List.
 type ACL struct {
 	// The name of an access list. A device MAY restrict the length
 	// and value of this name, possibly spaces and special
