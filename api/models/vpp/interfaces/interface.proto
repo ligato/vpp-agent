@@ -23,6 +23,7 @@ message Interface {
         VMXNET3_INTERFACE = 9;
         BOND_INTERFACE = 10;
         GRE_TUNNEL = 11;
+        GTPU_TUNNEL = 12;
     };
 
     // Name is mandatory field representing logical name for the interface.
@@ -101,6 +102,7 @@ message Interface {
         VmxNet3Link vmx_net3 = 106;
         BondLink bond = 107;
         GreLink gre = 108;
+        GtpuLink gtpu = 109;
     };
 };
 
@@ -295,4 +297,28 @@ message GreLink {
     string dst_addr = 3;
     uint32 outer_fib_id = 4;
     uint32 session_id = 5;
+}
+
+message GtpuLink {
+    enum NextNode {
+        // The default next node is l2-input
+        DEFAULT = 0;
+        // l2-input
+        L2 = 1;
+        // ip4-input
+        IP4 = 2;
+        // ip6-input
+        IP6 = 3;
+    };
+    // Source VTEP address
+    string src_addr = 1;
+    // Destination VTEP address
+    string dst_addr = 2;
+    // Name of multicast interface
+    string multicast = 3;
+    // Tunnel endpoint identifier
+    uint32 teid = 4;
+    uint32 encap_vrf_id = 5; // TODO: can this be derived from the interface vrf id?
+    // Next VPP node after decapsulation
+    NextNode decap_next = 6;
 }

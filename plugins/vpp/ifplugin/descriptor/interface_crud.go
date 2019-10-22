@@ -153,6 +153,26 @@ func (d *InterfaceDescriptor) Create(key string, intf *interfaces.Interface) (me
 			d.log.Error(err)
 			return nil, err
 		}
+
+	case interfaces.Interface_GTPU_TUNNEL:
+		var multicastIfIdx uint32
+		multicastIf := intf.GetGtpu().GetMulticast()
+		if multicastIf != "" {
+			multicastMeta, found := d.intfIndex.LookupByName(multicastIf)
+			if !found {
+				err = errors.Errorf("failed to find multicast interface %s referenced by GTPU %s",
+					multicastIf, intf.Name)
+				d.log.Error(err)
+				return nil, err
+			}
+			multicastIfIdx = multicastMeta.SwIfIndex
+		}
+
+		ifIdx, err = d.ifHandler.AddGtpuTunnel(intf.Name, intf.GetGtpu(), intf.GetVrf(), multicastIfIdx)
+		if err != nil {
+			d.log.Error(err)
+			return nil, err
+		}
 	}
 
 	// MAC address. Note: physical interfaces cannot have the MAC address changed. The bond interface uses its own
@@ -256,6 +276,8 @@ func (d *InterfaceDescriptor) Delete(key string, intf *interfaces.Interface, met
 		delete(d.bondIDs, intf.GetBond().GetId())
 	case interfaces.Interface_GRE_TUNNEL:
 		_, err = d.ifHandler.DelGreTunnel(intf.Name, intf.GetGre())
+	case interfaces.Interface_GTPU_TUNNEL:
+		err = d.ifHandler.DelGtpuTunnel(intf.Name, intf.GetGtpu())
 	}
 	if err != nil {
 		err = errors.Errorf("failed to remove interface %s, index %d: %v", intf.Name, ifIdx, err)

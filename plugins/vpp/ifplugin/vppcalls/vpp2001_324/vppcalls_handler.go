@@ -35,6 +35,7 @@ import (
 	vpp_vmxnet3 "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001_324/vmxnet3"
 	vpp_vpe "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001_324/vpe"
 	vpp_vxlan "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001_324/vxlan"
+	vpp_gtpu "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001_324/gtpu"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
 )
 
@@ -54,6 +55,7 @@ func init() {
 	msgs = append(msgs, vpp_vmxnet3.AllMessages()...)
 	msgs = append(msgs, vpp_vpe.AllMessages()...)
 	msgs = append(msgs, vpp_vxlan.AllMessages()...)
+	msgs = append(msgs, vpp_gtpu.AllMessages()...)
 
 	vppcalls.Versions["vpp2001_324"] = vppcalls.HandlerVersion{
 		Msgs: msgs,

@@ -34,6 +34,7 @@ import (
 	vpp_vmxnet3 "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001_379/vmxnet3"
 	vpp_vxlan "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001_379/vxlan"
 	vpp_vxlangpe "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001_379/vxlan_gpe"
+	vpp_gtpu "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001_379/gtpu"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
 )
 
@@ -269,6 +270,11 @@ func (h *InterfaceVppHandler) DumpInterfaces() (map[uint32]*vppcalls.InterfaceDe
 	}
 
 	err = h.dumpGreDetails(interfaces)
+	if err != nil {
+		return nil, err
+	}
+
+	err = h.dumpGtpuDetails(interfaces)
 	if err != nil {
 		return nil, err
 	}
@@ -918,6 +924,58 @@ func (h *InterfaceVppHandler) dumpGreDetails(interfaces map[uint32]*vppcalls.Int
 		}
 		interfaces[swIfIndex].Interface.Type = ifs.Interface_GRE_TUNNEL
 	}
+	return nil
+}
+
+// dumpGtpuDetails dumps GTP-U interface details from VPP and fills them into the provided interface map.
+func (h *InterfaceVppHandler) dumpGtpuDetails(interfaces map[uint32]*vppcalls.InterfaceDetails) error {
+	reqCtx := h.callsChannel.SendMultiRequest(&vpp_gtpu.GtpuTunnelDump{
+		SwIfIndex: ^uint32(0),
+	})
+	for {
+		gtpuDetails := &vpp_gtpu.GtpuTunnelDetails{}
+		stop, err := reqCtx.ReceiveReply(gtpuDetails)
+		if stop {
+			break // Break from the loop.
+		}
+		if err != nil {
+			return fmt.Errorf("failed to dump GTP-U tunnel interface details: %v", err)
+		}
+		_, ifIdxExists := interfaces[gtpuDetails.SwIfIndex]
+		if !ifIdxExists {
+			continue
+		}
+		// Multicast interface
+		var multicastIfName string
+		_, exists := interfaces[gtpuDetails.McastSwIfIndex]
+		if exists {
+			multicastIfName = interfaces[gtpuDetails.McastSwIfIndex].Interface.Name
+		}
+
+		if gtpuDetails.IsIPv6 == 1 {
+			interfaces[gtpuDetails.SwIfIndex].Interface.Link = &ifs.Interface_Gtpu{
+				Gtpu: &ifs.GtpuLink{
+					Multicast:  multicastIfName,
+					SrcAddr:    net.IP(gtpuDetails.SrcAddress).To16().String(),
+					DstAddr:    net.IP(gtpuDetails.DstAddress).To16().String(),
+				    EncapVrfId: gtpuDetails.EncapVrfID,
+					Teid:       gtpuDetails.Teid,
+				},
+			}
+		} else {
+			interfaces[gtpuDetails.SwIfIndex].Interface.Link = &ifs.Interface_Gtpu{
+				Gtpu: &ifs.GtpuLink{
+					Multicast:  multicastIfName,
+					SrcAddr:    net.IP(gtpuDetails.SrcAddress[:4]).To4().String(),
+					DstAddr:    net.IP(gtpuDetails.DstAddress[:4]).To4().String(),
+				    EncapVrfId: gtpuDetails.EncapVrfID,
+					Teid:       gtpuDetails.Teid,
+				},
+			}
+		}
+		interfaces[gtpuDetails.SwIfIndex].Interface.Type = ifs.Interface_GTPU_TUNNEL
+	}
+
 	return nil
 }
 
