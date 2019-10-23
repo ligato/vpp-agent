@@ -25,7 +25,7 @@ import (
 
 const (
 	configFileDir  = ".agentctl"
-	configFileName = "all.conf"
+	configFileName = "config.yml"
 )
 
 // TLSConfig represents configuration for TLS.
@@ -37,7 +37,7 @@ type TLSConfig struct {
 	CAfile     string `json:"ca-file"`
 }
 
-// ConfigFile represents info from ~/.agentctl/all.conf.
+// ConfigFile represents info from ~/.agentctl/config.yml.
 type ConfigFile struct {
 	GrpcTLS TLSConfig `json:"grpc-tls"`
 	KvdbTLS TLSConfig `json:"kvdb-tls"`
