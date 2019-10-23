@@ -204,7 +204,22 @@ func newAPIClient(opts *ClientOptions, cf *ConfigFile) (client.APIClient, error)
 	clientOpts = append(clientOpts, client.WithHTTPHeaders(customHeaders))
 
 	if cf != nil {
-		clientOpts = append(clientOpts, client.WithKvdbTLS(cf.KvdbCertfile, cf.KvdbKeyfile, cf.KvdbCAfile))
+		if !cf.GrpcTLS.Disabled {
+			clientOpts = append(clientOpts, client.WithGrpcTLS(
+				cf.GrpcTLS.Certfile,
+				cf.GrpcTLS.Keyfile,
+				cf.GrpcTLS.CAfile,
+				cf.GrpcTLS.SkipVerify,
+			))
+		}
+		if !cf.KvdbTLS.Disabled {
+			clientOpts = append(clientOpts, client.WithKvdbTLS(
+				cf.KvdbTLS.Certfile,
+				cf.KvdbTLS.Keyfile,
+				cf.KvdbTLS.CAfile,
+				cf.KvdbTLS.SkipVerify,
+			))
+		}
 	}
 
 	return client.NewClientWithOpts(clientOpts...)

@@ -59,7 +59,7 @@ func WithEtcdEndpoints(endpoints []string) Opt {
 	}
 }
 
-func WithKvdbTLS(cert, key, ca string) Opt {
+func WithGrpcTLS(cert, key, ca string, skipVerify bool) Opt {
 	return func(c *Client) error {
 		var options []tlsconfig.Option
 
@@ -68,6 +68,29 @@ func WithKvdbTLS(cert, key, ca string) Opt {
 		}
 		if ca != "" {
 			options = append(options, tlsconfig.CA(ca))
+		}
+		if skipVerify {
+			options = append(options, tlsconfig.SkipServerVerification())
+		}
+
+		var err error
+		c.grpcTLS, err = tlsconfig.New(options...)
+		return err
+	}
+}
+
+func WithKvdbTLS(cert, key, ca string, skipVerify bool) Opt {
+	return func(c *Client) error {
+		var options []tlsconfig.Option
+
+		if cert != "" && key != "" {
+			options = append(options, tlsconfig.CertKey(cert, key))
+		}
+		if ca != "" {
+			options = append(options, tlsconfig.CA(ca))
+		}
+		if skipVerify {
+			options = append(options, tlsconfig.SkipServerVerification())
 		}
 
 		var err error

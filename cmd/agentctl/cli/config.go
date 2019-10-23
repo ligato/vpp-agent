@@ -28,11 +28,19 @@ const (
 	configFileName = "all.conf"
 )
 
+// TLSConfig represents configuration for TLS.
+type TLSConfig struct {
+	Disabled   bool   `json:"disabled"`
+	SkipVerify bool   `json:"skip-verify"`
+	Certfile   string `json:"cert-file"`
+	Keyfile    string `json:"key-file"`
+	CAfile     string `json:"ca-file"`
+}
+
 // ConfigFile represents info from ~/.agentctl/all.conf.
 type ConfigFile struct {
-	KvdbCertfile string `json:"kvdb-cert-file"`
-	KvdbKeyfile  string `json:"kvdb-key-file"`
-	KvdbCAfile   string `json:"kvdb-ca-file"`
+	GrpcTLS TLSConfig `json:"grpc-tls"`
+	KvdbTLS TLSConfig `json:"kvdb-tls"`
 }
 
 // DefaultConfigDir returns default path to agentctl's config.

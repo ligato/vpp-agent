@@ -27,6 +27,7 @@ import (
 	"github.com/coreos/etcd/clientv3"
 	"github.com/docker/docker/api/types/versions"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 
 	"github.com/ligato/cn-infra/db/keyval"
 	"github.com/ligato/cn-infra/db/keyval/etcd"
@@ -50,12 +51,6 @@ var (
 
 var _ APIClient = (*Client)(nil)
 
-type TLSConfig struct {
-	CertFile string
-	KeyFile  string
-	CAFile   string
-}
-
 // Client is the API client that performs all operations
 // against a Ligato agent.
 type Client struct {
@@ -66,10 +61,11 @@ type Client struct {
 	basePath string
 
 	grpcAddr      string
-	grpcTLS       *TLSConfig
+	grpcTLS       *tls.Config
 	httpAddr      string
-	kvdbTLS       *tls.Config
+	httpTLS       *tls.Config
 	kvdbEndpoints []string
+	kvdbTLS       *tls.Config
 	serviceLabel  string
 
 	grpcClient *grpc.ClientConn
@@ -142,11 +138,10 @@ func (c *Client) Close() error {
 	return nil
 }
 
+// GRPCConn returns configured gRPC client.
 func (c *Client) GRPCConn() (*grpc.ClientConn, error) {
 	if c.grpcClient == nil {
-		logging.Debugf("dialing grpc address: %v", c.grpcAddr)
-
-		conn, err := grpc.Dial(c.grpcAddr, grpc.WithInsecure())
+		conn, err := connectGrpc(c.grpcAddr, c.grpcTLS)
 		if err != nil {
 			return nil, err
 		}
@@ -155,8 +150,18 @@ func (c *Client) GRPCConn() (*grpc.ClientConn, error) {
 	return c.grpcClient, nil
 }
 
+// HTTPClient returns configured HTTP client.
 func (c *Client) HTTPClient() *http.Client {
 	return c.httpClient
+}
+
+// KVDBClient returns configured KVDB client.
+func (c *Client) KVDBClient() (KVDBAPIClient, error) {
+	kvdb, err := connectEtcd(c.kvdbEndpoints, c.kvdbTLS)
+	if err != nil {
+		return nil, fmt.Errorf("connecting to Etcd failed: %v", err)
+	}
+	return NewKVDBClient(kvdb, c.serviceLabel), nil
 }
 
 // ParseHostURL parses a url string, validates the string is a host url, and
@@ -240,15 +245,18 @@ func (c *Client) negotiateAPIVersionPing(p types.Ping) {
 	}
 }
 
-func (c *Client) KVDBClient() (KVDBAPIClient, error) {
-	kvdb, err := ConnectEtcd(c.kvdbEndpoints, c.kvdbTLS)
-	if err != nil {
-		return nil, fmt.Errorf("connecting to Etcd failed: %v", err)
+func connectGrpc(addr string, tc *tls.Config) (*grpc.ClientConn, error) {
+	dialOpt := grpc.WithInsecure()
+	if tc != nil {
+		dialOpt = grpc.WithTransportCredentials(credentials.NewTLS(tc))
 	}
-	return NewKVDBClient(kvdb, c.serviceLabel), nil
+
+	logging.Debugf("dialing grpc address: %v", addr)
+
+	return grpc.Dial(addr, dialOpt)
 }
 
-func ConnectEtcd(endpoints []string, tc *tls.Config) (keyval.CoreBrokerWatcher, error) {
+func connectEtcd(endpoints []string, tc *tls.Config) (keyval.CoreBrokerWatcher, error) {
 	log := logrus.NewLogger("etcd-client")
 	if debug.IsEnabledFor("kvdb") {
 		log.SetLevel(logging.DebugLevel)
