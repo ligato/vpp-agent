@@ -124,7 +124,7 @@ func (c *Client) doRequest(ctx context.Context, req *http.Request) (serverRespon
 		}
 	}()
 
-	resp, err = c.httpClient.Do(req)
+	resp, err = c.HTTPClient().Do(req)
 	if err != nil {
 		if c.scheme != "https" && strings.Contains(err.Error(), "malformed HTTP response") {
 			return serverResp, fmt.Errorf("%v.\n* Are you trying to connect to a TLS-enabled daemon without TLS?", err)

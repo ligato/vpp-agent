@@ -91,11 +91,10 @@ func NewClientFromEnv() (*Client, error) {
 // NewClientWithOpts returns client with ops applied.
 func NewClientWithOpts(ops ...Opt) (*Client, error) {
 	c := &Client{
-		host:       DefaultAgentHost,
-		version:    api.DefaultVersion,
-		httpClient: defaultHTTPClient(),
-		proto:      "tcp",
-		scheme:     "http",
+		host:    DefaultAgentHost,
+		version: api.DefaultVersion,
+		proto:   "tcp",
+		scheme:  "http",
 	}
 	for _, op := range ops {
 		if err := op(c); err != nil {
@@ -103,10 +102,6 @@ func NewClientWithOpts(ops ...Opt) (*Client, error) {
 		}
 	}
 	return c, nil
-}
-
-func defaultHTTPClient() *http.Client {
-	return &http.Client{}
 }
 
 func (c *Client) ConfigClient() (client.ConfigClient, error) {
@@ -127,8 +122,10 @@ func (c *Client) ClientVersion() string {
 
 // Close the transport used by the client
 func (c *Client) Close() error {
-	if t, ok := c.httpClient.Transport.(*http.Transport); ok {
-		t.CloseIdleConnections()
+	if c.httpClient != nil {
+		if t, ok := c.httpClient.Transport.(*http.Transport); ok {
+			t.CloseIdleConnections()
+		}
 	}
 	if c.grpcClient != nil {
 		if err := c.grpcClient.Close(); err != nil {
@@ -152,6 +149,14 @@ func (c *Client) GRPCConn() (*grpc.ClientConn, error) {
 
 // HTTPClient returns configured HTTP client.
 func (c *Client) HTTPClient() *http.Client {
+	if c.httpClient == nil {
+		tr := http.DefaultTransport.(*http.Transport).Clone()
+		tr.TLSClientConfig = c.httpTLS
+
+		return &http.Client{
+			Transport: tr,
+		}
+	}
 	return c.httpClient
 }
 

@@ -41,6 +41,7 @@ type TLSConfig struct {
 type ConfigFile struct {
 	GrpcTLS TLSConfig `json:"grpc-tls"`
 	KvdbTLS TLSConfig `json:"kvdb-tls"`
+	HTTPTLS TLSConfig `json:"http-tls"`
 }
 
 // DefaultConfigDir returns default path to agentctl's config.

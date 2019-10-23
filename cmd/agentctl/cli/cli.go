@@ -212,6 +212,14 @@ func newAPIClient(opts *ClientOptions, cf *ConfigFile) (client.APIClient, error)
 				cf.GrpcTLS.SkipVerify,
 			))
 		}
+		if !cf.HTTPTLS.Disabled {
+			clientOpts = append(clientOpts, client.WithHTTPTLS(
+				cf.HTTPTLS.Certfile,
+				cf.HTTPTLS.Keyfile,
+				cf.HTTPTLS.CAfile,
+				cf.HTTPTLS.SkipVerify,
+			))
+		}
 		if !cf.KvdbTLS.Disabled {
 			clientOpts = append(clientOpts, client.WithKvdbTLS(
 				cf.KvdbTLS.Certfile,

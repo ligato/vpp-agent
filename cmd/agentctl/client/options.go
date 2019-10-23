@@ -1,6 +1,7 @@
 package client
 
 import (
+	"crypto/tls"
 	"net"
 	"net/http"
 	"os"
@@ -59,42 +60,42 @@ func WithEtcdEndpoints(endpoints []string) Opt {
 	}
 }
 
+func withTLS(cert, key, ca string, skipVerify bool) (*tls.Config, error) {
+	var options []tlsconfig.Option
+
+	if cert != "" && key != "" {
+		options = append(options, tlsconfig.CertKey(cert, key))
+	}
+	if ca != "" {
+		options = append(options, tlsconfig.CA(ca))
+	}
+	if skipVerify {
+		options = append(options, tlsconfig.SkipServerVerification())
+	}
+
+	return tlsconfig.New(options...)
+}
+
+// WithGrpcTLS adds tls.Config for gRPC to Client.
 func WithGrpcTLS(cert, key, ca string, skipVerify bool) Opt {
-	return func(c *Client) error {
-		var options []tlsconfig.Option
-
-		if cert != "" && key != "" {
-			options = append(options, tlsconfig.CertKey(cert, key))
-		}
-		if ca != "" {
-			options = append(options, tlsconfig.CA(ca))
-		}
-		if skipVerify {
-			options = append(options, tlsconfig.SkipServerVerification())
-		}
-
-		var err error
-		c.grpcTLS, err = tlsconfig.New(options...)
+	return func(c *Client) (err error) {
+		c.grpcTLS, err = withTLS(cert, key, ca, skipVerify)
 		return err
 	}
 }
 
+// WithHTTPTLS adds tls.Config for HTTP to Client.
+func WithHTTPTLS(cert, key, ca string, skipVerify bool) Opt {
+	return func(c *Client) (err error) {
+		c.httpTLS, err = withTLS(cert, key, ca, skipVerify)
+		return err
+	}
+}
+
+// WithKvdbTLS adds tls.Config for KVDB to Client.
 func WithKvdbTLS(cert, key, ca string, skipVerify bool) Opt {
-	return func(c *Client) error {
-		var options []tlsconfig.Option
-
-		if cert != "" && key != "" {
-			options = append(options, tlsconfig.CertKey(cert, key))
-		}
-		if ca != "" {
-			options = append(options, tlsconfig.CA(ca))
-		}
-		if skipVerify {
-			options = append(options, tlsconfig.SkipServerVerification())
-		}
-
-		var err error
-		c.kvdbTLS, err = tlsconfig.New(options...)
+	return func(c *Client) (err error) {
+		c.kvdbTLS, err = withTLS(cert, key, ca, skipVerify)
 		return err
 	}
 }
@@ -131,7 +132,7 @@ func WithGRPCClient(client *grpc.ClientConn) Opt {
 // WithTimeout configures the time limit for requests made by the HTTP client
 func WithTimeout(timeout time.Duration) Opt {
 	return func(c *Client) error {
-		c.httpClient.Timeout = timeout
+		c.HTTPClient().Timeout = timeout
 		return nil
 	}
 }
