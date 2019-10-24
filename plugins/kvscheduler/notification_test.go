@@ -28,6 +28,10 @@ import (
 	"github.com/ligato/vpp-agent/plugins/kvscheduler/internal/utils"
 )
 
+const (
+	notificationTimeout = 2*time.Second
+)
+
 func TestNotifications(t *testing.T) {
 	RegisterTestingT(t)
 
@@ -223,9 +227,9 @@ func TestNotifications(t *testing.T) {
 	Expect(notifError).ShouldNot(HaveOccurred())
 
 	// wait until the notification is processed
-	Eventually(func() []*KVWithMetadata {
-		return mockSB.GetValues(nil)
-	}, 2*time.Second).Should(HaveLen(3))
+	Eventually(func() int {
+		return len(scheduler.GetTransactionHistory(startTime, time.Now()))
+	}, notificationTimeout).ShouldNot(BeZero())
 	stopTime = time.Now()
 
 	// check the state of SB
@@ -444,9 +448,9 @@ func TestNotifications(t *testing.T) {
 	Expect(notifError).ShouldNot(HaveOccurred())
 
 	// wait until the notification is processed
-	Eventually(func() []*KVWithMetadata {
-		return mockSB.GetValues(nil)
-	}, 2*time.Second).Should(HaveLen(4))
+	Eventually(func() int {
+		return len(scheduler.GetTransactionHistory(startTime, time.Now()))
+	}, notificationTimeout).ShouldNot(BeZero())
 	stopTime = time.Now()
 
 	// check the state of SB
@@ -602,9 +606,9 @@ func TestNotifications(t *testing.T) {
 	Expect(notifError).ShouldNot(HaveOccurred())
 
 	// wait until the notification is processed
-	Eventually(func() bool {
-		return len(mockSB.GetValues(nil)) == 0 && len(metadataMap.ListAllNames()) == 0
-	}, 2*time.Second).Should(BeTrue())
+	Eventually(func() int {
+		return len(scheduler.GetTransactionHistory(startTime, time.Now()))
+	}, notificationTimeout).ShouldNot(BeZero())
 	stopTime = time.Now()
 
 	// check the state of SB
@@ -864,9 +868,9 @@ func TestNotificationsWithRetry(t *testing.T) {
 	Expect(notifError).ShouldNot(HaveOccurred())
 
 	// wait until the notification is processed
-	Eventually(func() []*KVWithMetadata {
-		return mockSB.GetValues(nil)
-	}, 2*time.Second).Should(HaveLen(2))
+	Eventually(func() int {
+		return len(scheduler.GetTransactionHistory(startTime, time.Now()))
+	}, 2*time.Second).ShouldNot(BeZero())
 	stopTime := time.Now()
 
 	// check value state updates received through the channels
