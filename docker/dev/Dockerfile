@@ -23,8 +23,6 @@ ENV GOPATH /go
 RUN pwd && \
 	go mod tidy
 
-WORKDIR /src/ligato/vpp-agent
-
 COPY --from=vppimg /usr/share/vpp /usr/share/vpp
 COPY --from=vppimg /vpp/version /vpp-version
 
@@ -98,6 +96,10 @@ WORKDIR /src/ligato/vpp-agent
 ARG VERSION
 ARG COMMIT
 ARG DATE
+
+# download and cache modules
+COPY go.mod go.sum ./
+RUN go mod download
 
 COPY . ./
 
