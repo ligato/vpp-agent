@@ -230,7 +230,7 @@ dep-update:
 # FIXME: 'go mod verify' might be used here, but tidy and verify disagree.
 dep-check:
 	@echo "=> checking dependencies"
-	go mod tidy
+	go mod tidy -v
 	@if ! git diff --quiet go.mod go.sum ; then \
 		echo "go mod tidy check failed"; \
 		exit 1 ; \
