@@ -1,7 +1,7 @@
-diff --git a/plugins/vpp/binapi/vpp2001_379/sr/sr.ba.go b/plugins/vpp/binapi/vpp2001_379/sr/sr.ba.go
+diff --git a/plugins/vpp/binapi/vpp2001/sr/sr.ba.go b/plugins/vpp/binapi/vpp2001/sr/sr.ba.go
 index 775dac6f4..c2847d341 100644
---- a/plugins/vpp/binapi/vpp2001_379/sr/sr.ba.go
-+++ b/plugins/vpp/binapi/vpp2001_379/sr/sr.ba.go
+--- a/plugins/vpp/binapi/vpp2001/sr/sr.ba.go
++++ b/plugins/vpp/binapi/vpp2001/sr/sr.ba.go
 @@ -49,9 +49,9 @@ func (*Srv6Sid) GetTypeName() string {
 
  // Srv6SidList represents VPP binary API type 'srv6_sid_list'.

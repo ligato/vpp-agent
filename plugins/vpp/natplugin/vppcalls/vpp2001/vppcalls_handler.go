@@ -28,7 +28,7 @@ func init() {
 	var msgs []govppapi.Message
 	msgs = append(msgs, vpp_nat.AllMessages()...)
 
-	vppcalls.Versions["vpp2001_379"] = vppcalls.HandlerVersion{
+	vppcalls.Versions["vpp2001"] = vppcalls.HandlerVersion{
 		Msgs: msgs,
 		New: func(
 			ch govppapi.Channel, ifIdx ifaceidx.IfaceMetadataIndex, dhcpIdx idxmap.NamedMapping, log logging.Logger,

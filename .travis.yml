@@ -100,7 +100,7 @@ jobs:
       script:
         - make e2e-tests-cover
       after_success:
-        - bash <(curl -s https://codecov.io/bash) -f /tmp/e2e-cov.out -F e2e2
+        - bash <(curl -s https://codecov.io/bash) -f /tmp/e2e-cov.out -F e2e
 
 notifications:
   slack:

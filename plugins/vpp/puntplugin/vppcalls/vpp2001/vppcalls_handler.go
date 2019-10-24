@@ -32,7 +32,7 @@ func init() {
 	msgs = append(msgs, vpp_ip.AllMessages()...)
 	msgs = append(msgs, vpp_punt.AllMessages()...)
 
-	vppcalls.Versions["vpp2001_379"] = vppcalls.HandlerVersion{
+	vppcalls.Versions["vpp2001"] = vppcalls.HandlerVersion{
 		Msgs: msgs,
 		New: func(channel govppapi.Channel, index ifaceidx.IfaceMetadataIndex, logger logging.Logger) vppcalls.PuntVppAPI {
 			return NewPuntVppHandler(channel, index, logger)

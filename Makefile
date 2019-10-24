@@ -9,13 +9,14 @@ LDFLAGS = -X $(CNINFRA).BuildVersion=$(VERSION) -X $(CNINFRA).CommitHash=$(COMMI
 include vpp.env
 
 ifeq ($(VPP_VERSION),)
-VPP_VERSION = $(VPP_DEFAULT)
+VPP_VERSION=$(VPP_DEFAULT)
 endif
-VPP_IMG:=$(value VPP_IMG_$(VPP_VERSION))
+VPP_IMG:=$(value VPP_$(VPP_VERSION)_IMAGE)
 ifeq (${ARCH}, aarch64)
 VPP_IMG:=$(subst vpp-base,vpp-base-arm64,$(VPP_IMG))
 endif
-VPP_BINAPI?=$(value VPP_BINAPI_$(VPP_VERSION))
+VPP_BINAPI?=$(value VPP_$(VPP_VERSION)_BINAPI)
+
 SKIP_CHECK?=
 
 ifeq ($(NOSTRIP),)

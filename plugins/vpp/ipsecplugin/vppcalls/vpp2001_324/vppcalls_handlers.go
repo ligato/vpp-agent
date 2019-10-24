@@ -30,7 +30,7 @@ func init() {
 	var msgs []govppapi.Message
 	msgs = append(msgs, vpp_ipsec.AllMessages()...)
 
-	vppcalls.Versions["vpp2001_379"] = vppcalls.HandlerVersion{
+	vppcalls.Versions["vpp2001_324"] = vppcalls.HandlerVersion{
 		Msgs: msgs,
 		New: func(ch govppapi.Channel, ifIdx ifaceidx.IfaceMetadataIndex, log logging.Logger) vppcalls.IPSecVppAPI {
 			return NewIPSecVppHandler(ch, ifIdx, log)

@@ -55,7 +55,7 @@ func init() {
 	msgs = append(msgs, vpp_vpe.AllMessages()...)
 	msgs = append(msgs, vpp_vxlan.AllMessages()...)
 
-	vppcalls.Versions["vpp2001_379"] = vppcalls.HandlerVersion{
+	vppcalls.Versions["vpp2001"] = vppcalls.HandlerVersion{
 		Msgs: msgs,
 		New: func(ch govppapi.Channel, log logging.Logger) vppcalls.InterfaceVppAPI {
 			return NewInterfaceVppHandler(ch, log)

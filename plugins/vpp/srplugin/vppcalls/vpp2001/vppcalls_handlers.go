@@ -30,7 +30,7 @@ func init() {
 	msgs = append(msgs, vpp_sr.AllMessages()...)
 	msgs = append(msgs, vpp_vpe.AllMessages()...) // using also vpe -> need to have correct vpp version also for vpe
 
-	vppcalls.Versions["vpp2001_379"] = vppcalls.HandlerVersion{
+	vppcalls.Versions["vpp2001"] = vppcalls.HandlerVersion{
 		Msgs: msgs,
 		New: func(ch govppapi.Channel, ifIndexes ifaceidx.IfaceMetadataIndex, log logging.Logger) vppcalls.SRv6VppAPI {
 			return NewSRv6VppHandler(ch, ifIndexes, log)

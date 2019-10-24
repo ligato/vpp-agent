@@ -28,7 +28,7 @@ import (
 )
 
 func init() {
-	vppcalls.Versions["vpp2001_379"] = vppcalls.HandlerVersion{
+	vppcalls.Versions["vpp2001"] = vppcalls.HandlerVersion{
 		Msgs: vpp_l2.AllMessages(),
 		New: func(ch govppapi.Channel,
 			ifIdx ifaceidx.IfaceMetadataIndex, bdIdx idxvpp.NameToIndex, log logging.Logger,

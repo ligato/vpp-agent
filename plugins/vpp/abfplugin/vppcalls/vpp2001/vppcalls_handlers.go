@@ -28,7 +28,7 @@ func init() {
 	var msgs []govppapi.Message
 	msgs = append(msgs, vpp_abf.AllMessages()...)
 
-	vppcalls.Versions["vpp2001_379"] = vppcalls.HandlerVersion{
+	vppcalls.Versions["vpp2001"] = vppcalls.HandlerVersion{
 		Msgs: msgs,
 		New: func(ch govppapi.Channel, aclIndexes aclidx.ACLMetadataIndex, ifIndexes ifaceidx.IfaceMetadataIndex, log logging.Logger) vppcalls.ABFVppAPI {
 			return NewABFVppHandler(ch, aclIndexes, ifIndexes, log)
