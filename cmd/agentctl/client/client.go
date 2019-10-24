@@ -153,7 +153,7 @@ func (c *Client) HTTPClient() *http.Client {
 		tr := http.DefaultTransport.(*http.Transport).Clone()
 		tr.TLSClientConfig = c.httpTLS
 
-		return &http.Client{
+		c.httpClient = &http.Client{
 			Transport: tr,
 		}
 	}

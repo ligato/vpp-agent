@@ -88,6 +88,7 @@ func WithGrpcTLS(cert, key, ca string, skipVerify bool) Opt {
 func WithHTTPTLS(cert, key, ca string, skipVerify bool) Opt {
 	return func(c *Client) (err error) {
 		c.httpTLS, err = withTLS(cert, key, ca, skipVerify)
+		c.scheme = "https"
 		return err
 	}
 }
