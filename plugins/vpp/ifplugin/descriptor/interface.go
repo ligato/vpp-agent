@@ -146,6 +146,12 @@ var (
 
 	// ErrGtpuDstAddrMissing is returned when destination address was not set or set to an empty string.
 	ErrGtpuDstAddrMissing = errors.Errorf("missing destination address for GTPU tunnel")
+
+	// ErrGtpuSrcAddrBad is returned when source address was not set to valid IP address.
+	ErrGtpuSrcAddrBad = errors.Errorf("bad source address for GTPU tunnel")
+
+	// ErrGtpuDstAddrBad is returned when destination address was not set to valid IP address.
+	ErrGtpuDstAddrBad = errors.Errorf("bad destination address for GTPU tunnel")
 )
 
 // InterfaceDescriptor teaches KVScheduler how to configure VPP interfaces.
@@ -526,9 +532,16 @@ func (d *InterfaceDescriptor) Validate(key string, intf *interfaces.Interface) e
 		if intf.GetGtpu().SrcAddr == "" {
 			return kvs.NewInvalidValueError(ErrGtpuSrcAddrMissing, "link.gtpu.src_addr")
 		}
+        if net.ParseIP(intf.GetGtpu().SrcAddr) == nil {
+            return kvs.NewInvalidValueError(ErrGtpuSrcAddrBad, "link.gtpu.src_addr")
+        }
+
 		if intf.GetGtpu().DstAddr == "" {
 			return kvs.NewInvalidValueError(ErrGtpuDstAddrMissing, "link.gtpu.dst_addr")
 		}
+        if net.ParseIP(intf.GetGtpu().DstAddr) == nil {
+            return kvs.NewInvalidValueError(ErrGtpuDstAddrBad, "link.gtpu.dst_addr")
+        }
 	}
 
 	// validate unnumbered

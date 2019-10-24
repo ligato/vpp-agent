@@ -952,27 +952,21 @@ func (h *InterfaceVppHandler) dumpGtpuDetails(interfaces map[uint32]*vppcalls.In
 			multicastIfName = interfaces[gtpuDetails.McastSwIfIndex].Interface.Name
 		}
 
+        gtpu := &ifs.GtpuLink{
+            Multicast:  multicastIfName,
+            EncapVrfId: gtpuDetails.EncapVrfID,
+            Teid:       gtpuDetails.Teid,
+        }
+
 		if gtpuDetails.IsIPv6 == 1 {
-			interfaces[gtpuDetails.SwIfIndex].Interface.Link = &ifs.Interface_Gtpu{
-				Gtpu: &ifs.GtpuLink{
-					Multicast:  multicastIfName,
-					SrcAddr:    net.IP(gtpuDetails.SrcAddress).To16().String(),
-					DstAddr:    net.IP(gtpuDetails.DstAddress).To16().String(),
-				    EncapVrfId: gtpuDetails.EncapVrfID,
-					Teid:       gtpuDetails.Teid,
-				},
-			}
+            gtpu.SrcAddr = net.IP(gtpuDetails.SrcAddress).To16().String()
+            gtpu.DstAddr = net.IP(gtpuDetails.DstAddress).To16().String()
 		} else {
-			interfaces[gtpuDetails.SwIfIndex].Interface.Link = &ifs.Interface_Gtpu{
-				Gtpu: &ifs.GtpuLink{
-					Multicast:  multicastIfName,
-					SrcAddr:    net.IP(gtpuDetails.SrcAddress[:4]).To4().String(),
-					DstAddr:    net.IP(gtpuDetails.DstAddress[:4]).To4().String(),
-				    EncapVrfId: gtpuDetails.EncapVrfID,
-					Teid:       gtpuDetails.Teid,
-				},
-			}
+            gtpu.SrcAddr = net.IP(gtpuDetails.SrcAddress[:4]).To4().String()
+            gtpu.DstAddr = net.IP(gtpuDetails.DstAddress[:4]).To4().String()
 		}
+
+		interfaces[gtpuDetails.SwIfIndex].Interface.Link = &ifs.Interface_Gtpu{Gtpu: gtpu}
 		interfaces[gtpuDetails.SwIfIndex].Interface.Type = ifs.Interface_GTPU_TUNNEL
 	}
 
