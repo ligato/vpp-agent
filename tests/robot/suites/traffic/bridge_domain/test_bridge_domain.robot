@@ -7,7 +7,7 @@ Resource     ../../../variables/${VARIABLES}_variables.robot
 
 Resource     ../../../libraries/all_libs.robot
 Resource     ../../../libraries/pretty_keywords.robot
-Resource     ../../libraries/interface/vxlan.robot
+Resource     ../../../libraries/interface/vxlan.robot
 
 Force Tags        traffic     IPv4
 Suite Setup       Run Keywords    Discard old results
@@ -55,7 +55,9 @@ First configure Bridge Domain with Memif interfaces and VXLan then add two agent
 
     Add Agent VPP Node                 agent_vpp_1
     Add Agent VPP Node                 agent_vpp_2
-    Ping From agent_vpp_1 To 10.1.1.2
+    # Wait until Agents are up and configured
+    Wait Until Keyword Succeeds    60s    10s
+    ...    Ping From agent_vpp_1 To 10.1.1.2
     Ping From agent_vpp_2 To 10.1.1.1
     Ping From agent_vpp_1 To 20.1.1.2
     Ping From agent_vpp_2 To 20.1.1.1
