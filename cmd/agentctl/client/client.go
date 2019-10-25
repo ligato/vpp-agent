@@ -18,6 +18,7 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"net"
 	"net/http"
 	"net/url"
 	"path"
@@ -150,7 +151,24 @@ func (c *Client) GRPCConn() (*grpc.ClientConn, error) {
 // HTTPClient returns configured HTTP client.
 func (c *Client) HTTPClient() *http.Client {
 	if c.httpClient == nil {
-		tr := http.DefaultTransport.(*http.Transport).Clone()
+		// tr is copy-pasted definition of DefaultTransport from the net/http package
+		// In Go 1.13 method `Clone()` for http.Transport was introduced, so replace
+		// following definition of tr with
+		//		`tr := http.DefaultTransport.(*http.Transport).Clone()`
+		// when ready. For now, I think, it's better to support older versions of Go too.
+		tr := &http.Transport{
+			Proxy: http.ProxyFromEnvironment,
+			DialContext: (&net.Dialer{
+				Timeout:   30 * time.Second,
+				KeepAlive: 30 * time.Second,
+				DualStack: true,
+			}).DialContext,
+			ForceAttemptHTTP2:     true,
+			MaxIdleConns:          100,
+			IdleConnTimeout:       90 * time.Second,
+			TLSHandshakeTimeout:   10 * time.Second,
+			ExpectContinueTimeout: 1 * time.Second,
+		}
 		tr.TLSClientConfig = c.httpTLS
 
 		c.httpClient = &http.Client{
