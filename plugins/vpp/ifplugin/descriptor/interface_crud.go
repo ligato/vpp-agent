@@ -168,7 +168,7 @@ func (d *InterfaceDescriptor) Create(key string, intf *interfaces.Interface) (me
 			multicastIfIdx = multicastMeta.SwIfIndex
 		}
 
-		ifIdx, err = d.ifHandler.AddGtpuTunnel(intf.Name, intf.GetGtpu(), intf.GetVrf(), multicastIfIdx)
+		ifIdx, err = d.ifHandler.AddGtpuTunnel(intf.Name, intf.GetGtpu(), multicastIfIdx)
 		if err != nil {
 			d.log.Error(err)
 			return nil, err

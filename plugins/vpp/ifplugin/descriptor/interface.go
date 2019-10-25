@@ -51,6 +51,8 @@ const (
 	vxlanMulticastDep        = "vxlan-multicast-interface-exists"
 	vxlanVrfTableDep         = "vrf-table-for-vxlan-exists"
 	vxlanGpeVrfTableDep      = "vrf-table-for-vxlan-gpe-exists"
+	gtpuMulticastDep         = "gtpu-multicast-interface-exists"
+	gtpuVrfTableDep          = "vrf-table-for-gtpu-exists"
 	microserviceDep          = "microservice-available"
 	parentInterfaceDep       = "parent-interface-exists"
 
@@ -576,8 +578,8 @@ func (d *InterfaceDescriptor) UpdateWithRecreate(key string, oldIntf, newIntf *i
 		return true
 	}
 
-	if oldIntf.GetType() == interfaces.Interface_VXLAN_TUNNEL && oldIntf.Vrf != newIntf.Vrf {
-		// for VXLAN interface a change in the VRF assignment requires full re-creation
+	if (oldIntf.GetType() == interfaces.Interface_VXLAN_TUNNEL || oldIntf.GetType() == interfaces.Interface_GTPU_TUNNEL) && oldIntf.Vrf != newIntf.Vrf {
+		// for VXLAN and GTPU interfaces a change in the VRF assignment requires full re-creation
 		return true
 	}
 
@@ -654,6 +656,41 @@ func (d *InterfaceDescriptor) Dependencies(key string, intf *interfaces.Interfac
 			}
 		}
 
+	case interfaces.Interface_GTPU_TUNNEL:
+		// GTPU referencing an interface with Multicast IP address
+		if gtpuMulticast := intf.GetGtpu().GetMulticast(); gtpuMulticast != "" {
+			dependencies = append(dependencies, kvs.Dependency{
+				Label: gtpuMulticastDep,
+				AnyOf: kvs.AnyOfDependency{
+					KeyPrefixes: []string{interfaces.InterfaceAddressPrefix(gtpuMulticast)},
+					KeySelector: func(key string) bool {
+						_, ifaceAddr, source, _, _ := interfaces.ParseInterfaceAddressKey(key)
+						if source != netalloc_api.IPAddressSource_ALLOC_REF {
+							ip, _, err := net.ParseCIDR(ifaceAddr)
+							return err == nil && ip.IsMulticast()
+						}
+						// TODO: handle the case when multicast IP address is allocated
+						// via netalloc (too specific to bother until really needed)
+						return false
+					},
+				},
+			})
+		}
+		if intf.GetGtpu().GetEncapVrfId() != 0 {
+			// binary API for creating GTPU tunnel requires the VRF table
+			// to be already created
+			var protocol l3.VrfTable_Protocol
+			srcAddr := net.ParseIP(intf.GetGtpu().GetSrcAddr()).To4()
+			dstAddr := net.ParseIP(intf.GetGtpu().GetDstAddr()).To4()
+			if srcAddr == nil && dstAddr == nil {
+				protocol = l3.VrfTable_IPV6
+			}
+			dependencies = append(dependencies, kvs.Dependency{
+				Label: gtpuVrfTableDep,
+				Key:   l3.VrfTableKey(intf.GetGtpu().GetEncapVrfId(), protocol),
+			})
+		}
+
 	case interfaces.Interface_SUB_INTERFACE:
 		// SUB_INTERFACE requires parent interface
 		if parentName := intf.GetSub().GetParentName(); parentName != "" {
@@ -713,18 +750,26 @@ func (d *InterfaceDescriptor) DerivedValues(key string, intf *interfaces.Interfa
 	}
 
 	// VRF assignment
-	if intf.GetUnnumbered() != nil {
+	if intf.GetUnnumbered() != nil && intf.GetVrf() == 0 {
 		// VRF inherited from the target numbered interface
 		derValues = append(derValues, kvs.KeyValuePair{
 			Key:   interfaces.InterfaceInheritedVrfKey(intf.GetName(), intf.GetUnnumbered().GetInterfaceWithIp()),
 			Value: &prototypes.Empty{},
 		})
 	} else {
-		// not unnumbered
+		// not unnumbered or the VRF id is explicitly set
 		var hasIPv4, hasIPv6 bool
 		if intf.Type == interfaces.Interface_VXLAN_TUNNEL {
 			srcAddr := net.ParseIP(intf.GetVxlan().GetSrcAddress()).To4()
 			dstAddr := net.ParseIP(intf.GetVxlan().GetDstAddress()).To4()
+			if srcAddr == nil && dstAddr == nil {
+				hasIPv6 = true
+			} else {
+				hasIPv4 = true
+			}
+		} else if intf.Type == interfaces.Interface_GTPU_TUNNEL {
+			srcAddr := net.ParseIP(intf.GetGtpu().GetSrcAddr()).To4()
+			dstAddr := net.ParseIP(intf.GetGtpu().GetDstAddr()).To4()
 			if srcAddr == nil && dstAddr == nil {
 				hasIPv6 = true
 			} else {

@@ -8,11 +8,10 @@ import (
 	vpp_gtpu "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001_379/gtpu"
 )
 
-func (h *InterfaceVppHandler) gtpuAddDelTunnel(isAdd uint8, gtpuLink *ifs.GtpuLink, vrf uint32, multicastIf uint32) (uint32, error) {
+func (h *InterfaceVppHandler) gtpuAddDelTunnel(isAdd uint8, gtpuLink *ifs.GtpuLink, multicastIf uint32) (uint32, error) {
 	req := &vpp_gtpu.GtpuAddDelTunnel{
         IsAdd:          isAdd,
 		McastSwIfIndex: multicastIf,
-        //EncapVrfID:     vrf,
         EncapVrfID:     gtpuLink.EncapVrfId,
 		Teid:           gtpuLink.Teid,
     }
@@ -61,8 +60,8 @@ func (h *InterfaceVppHandler) gtpuAddDelTunnel(isAdd uint8, gtpuLink *ifs.GtpuLi
 }
 
 // AddGtpuTunnel adds new GTPU interface.
-func (h *InterfaceVppHandler) AddGtpuTunnel(ifName string, gtpuLink *ifs.GtpuLink, vrf uint32, multicastIf uint32) (uint32, error) {
-	swIfIndex, err := h.gtpuAddDelTunnel(1, gtpuLink, vrf, multicastIf)
+func (h *InterfaceVppHandler) AddGtpuTunnel(ifName string, gtpuLink *ifs.GtpuLink, multicastIf uint32) (uint32, error) {
+	swIfIndex, err := h.gtpuAddDelTunnel(1, gtpuLink, multicastIf)
 	if err != nil {
 		return 0, err
 	}
@@ -71,7 +70,7 @@ func (h *InterfaceVppHandler) AddGtpuTunnel(ifName string, gtpuLink *ifs.GtpuLin
 
 // DelGtpuTunnel removes GTPU interface.
 func (h *InterfaceVppHandler) DelGtpuTunnel(ifName string, gtpuLink *ifs.GtpuLink) error {
-	swIfIndex, err := h.gtpuAddDelTunnel(0, gtpuLink, 0, 0)
+	swIfIndex, err := h.gtpuAddDelTunnel(0, gtpuLink, 0)
 	if err != nil {
 		return err
 	}
