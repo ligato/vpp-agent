@@ -29,7 +29,8 @@ Create agents in Bridge Domain with Memif interfaces and try traffic
     Create Slave memif0 On agent_vpp_2 With MAC 02:f1:be:90:00:02, Key 1 And m1.sock Socket
     Create Bridge Domain bd1 With Autolearn On agent_vpp_1 With Interfaces bvi_loop0, memif0
     Create Bridge Domain bd1 With Autolearn On agent_vpp_2 With Interfaces bvi_loop0, memif0
-    Ping From agent_vpp_1 To 10.1.1.2
+    Wait Until Keyword Succeeds    60s    10s
+        ...    Ping From agent_vpp_1 To 10.1.1.2
     Ping From agent_vpp_2 To 10.1.1.1
     Add Agent VPP Node                 agent_vpp_3
     Create Master memif1 On agent_vpp_1 With MAC 02:f1:be:90:00:10, Key 2 And m2.sock Socket
@@ -37,7 +38,8 @@ Create agents in Bridge Domain with Memif interfaces and try traffic
     Create Slave memif0 On agent_vpp_3 With MAC 02:f1:be:90:00:03, Key 2 And m2.sock Socket
     Create Bridge Domain bd1 With Autolearn On agent_vpp_1 With Interfaces bvi_loop0, memif0, memif1
     Create Bridge Domain bd1 With Autolearn On agent_vpp_3 With Interfaces bvi_loop0, memif0
-    Ping From agent_vpp_2 To 10.1.1.3
+    Wait Until Keyword Succeeds    60s    10s
+        ...    Ping From agent_vpp_2 To 10.1.1.3
     Ping From agent_vpp_3 To 10.1.1.2
 
 First configure Bridge Domain with Memif interfaces and VXLan then add two agents and try traffic
@@ -85,7 +87,8 @@ Create Bridge Domain without autolearn
     Add fib entry for 8a:f1:be:90:00:00 in bd1 over memif0 on agent_vpp_2
     Add fib entry for 02:f1:be:90:00:00 in bd1 over memif0 on agent_vpp_2
     # and now ping must pass
-    Ping From agent_vpp_1 To 10.1.1.2
+    Wait Until Keyword Succeeds    60s    10s
+        ...    Ping From agent_vpp_1 To 10.1.1.2
     Ping From agent_vpp_2 To 10.1.1.1
 
 *** Keywords ***
