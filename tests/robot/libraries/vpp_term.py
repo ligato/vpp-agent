@@ -104,3 +104,42 @@ def parse_stn_rule(info):
             pass
 
     return state['ip_address'], state['iface'], state['next_node']
+
+
+def parse_memif_info(info):
+    state = []
+    sockets_line = []
+    for line in info.splitlines():
+        if line:
+            try:
+                _ = int(line.strip().split()[0])
+                sockets_line.append(line)
+            except ValueError:
+                pass
+            if line.strip().split()[0] == "flags":
+                if "admin-up" in line:
+                    state.append("enabled=1")
+                if "slave" in line:
+                    state.append("role=slave")
+                if "connected" in line:
+                    state.append("connected=1")
+            if line.strip().split()[0] == "socket-id":
+                try:
+                    socket_id = int(line.strip().split()[1])
+                    state.append("id="+line.strip().split()[3])
+                    for sock_line in sockets_line:
+                        try:
+                            num = int(sock_line.strip().split()[0])
+                            if num == socket_id:
+                                state.append("socket=" + sock_line.strip().split()[-1])
+                        except ValueError:
+                            pass
+                except ValueError:
+                    pass
+    if "enabled=1" not in state:
+        state.append("enabled=0")
+    if "role=slave" not in state:
+        state.append("role=master")
+    if "connected=1" not in state:
+        state.append("connected=0")
+    return state

@@ -294,23 +294,18 @@ Put Veth Interface Via Linux Plugin
     Put Json     ${uri}    ${data}
 
 Put Linux Route
-    [Arguments]    ${node}    ${namespace}    ${interface}    ${routename}    ${ip}    ${next_hop}    ${prefix}=24    ${metric}=100    ${isdefault}=false
+    [Arguments]    ${node}    ${namespace}    ${interface}    ${ip}    ${next_hop}    ${prefix}=24    ${metric}=100
     ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/linux_static_route.json
     ${uri}=               Set Variable                  /vnf-agent/${node}/config/linux/l3/${AGENT_VER}/route/${ip}/${prefix}/${interface}
     ${data}=              Replace Variables             ${data}
     Put Json     ${uri}    ${data}
 
 Put Default Linux Route
-    [Arguments]    ${node}    ${namespace}    ${interface}    ${routename}    ${next_hop}    ${metric}=100    ${isdefault}=true
+    [Arguments]    ${node}    ${namespace}    ${interface}    ${next_hop}    ${metric}=100    ${ipv6}=${FALSE}
     ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/linux_default_static_route.json
-    ${uri}=               Set Variable                  /vnf-agent/${node}/config/linux/l3/${AGENT_VER}/route/${routename}
-    ${data}=              Replace Variables             ${data}
-    Put Json     ${uri}    ${data}
-
-Put Linux Route Without Interface
-    [Arguments]    ${node}    ${namespace}    ${routename}    ${ip}    ${next_hop}    ${prefix}=24    ${metric}=100
-    ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/linux_static_route_without_interface.json
-    ${uri}=               Set Variable                  /vnf-agent/${node}/config/linux/l3/${AGENT_VER}/route/${routename}
+    ${destination}=       Set Variable If    ${ipv6}    ::/0    0.0.0.0/0
+    ${destination_network}=    Set Variable If    ${ipv6}    0:0:0:0:0:0:0:0/0    0.0.0.0/0
+    ${uri}=               Set Variable                  /vnf-agent/${node}/config/linux/l3/${AGENT_VER}/route/${destination}/${interface}
     ${data}=              Replace Variables             ${data}
     Put Json     ${uri}    ${data}
 
