@@ -1918,7 +1918,8 @@ type GtpuLink struct {
 	// Name of multicast interface
 	Multicast string `protobuf:"bytes,3,opt,name=multicast,proto3" json:"multicast,omitempty"`
 	// Tunnel endpoint identifier
-	Teid       uint32 `protobuf:"varint,4,opt,name=teid,proto3" json:"teid,omitempty"`
+	Teid uint32 `protobuf:"varint,4,opt,name=teid,proto3" json:"teid,omitempty"`
+	// VRF id for the encapsulated packets
 	EncapVrfId uint32 `protobuf:"varint,5,opt,name=encap_vrf_id,json=encapVrfId,proto3" json:"encap_vrf_id,omitempty"`
 	// Next VPP node after decapsulation
 	DecapNext            GtpuLink_NextNode `protobuf:"varint,6,opt,name=decap_next,json=decapNext,proto3,enum=vpp.interfaces.GtpuLink_NextNode" json:"decap_next,omitempty"`

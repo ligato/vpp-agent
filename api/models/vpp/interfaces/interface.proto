@@ -318,7 +318,8 @@ message GtpuLink {
     string multicast = 3;
     // Tunnel endpoint identifier
     uint32 teid = 4;
-    uint32 encap_vrf_id = 5; // TODO: can this be derived from the interface vrf id?
+    // VRF id for the encapsulated packets
+    uint32 encap_vrf_id = 5;
     // Next VPP node after decapsulation
     NextNode decap_next = 6;
 }

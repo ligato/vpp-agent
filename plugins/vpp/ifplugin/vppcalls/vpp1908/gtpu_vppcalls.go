@@ -7,7 +7,7 @@ import (
 )
 
 // AddGtpuTunnel adds new GTPU interface.
-func (h *InterfaceVppHandler) AddGtpuTunnel(ifName string, gtpuLink *ifs.GtpuLink, vrf uint32, multicastIf uint32) (uint32, error) {
+func (h *InterfaceVppHandler) AddGtpuTunnel(ifName string, gtpuLink *ifs.GtpuLink, multicastIf uint32) (uint32, error) {
     err := errors.New("Not implemented")
     return 0, err
 }
