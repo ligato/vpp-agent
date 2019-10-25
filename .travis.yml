@@ -75,7 +75,7 @@ jobs:
       script:
         - make verify-binapi
         - make integration-tests
-    - env: VPP_VERSION=2001_379
+    - env: VPP_VERSION=2001
       script:
         - make verify-binapi
         - make integration-tests
@@ -85,22 +85,22 @@ jobs:
       script:
         - make e2e-tests-cover
       after_success:
-        - bash <(curl -s https://codecov.io/bash) -f /tmp/e2e-cov.out -F e2e1904
+        - bash <(curl -s https://codecov.io/bash) -f /tmp/e2e-cov.out -F e2e
     - env: VPP_VERSION=1908
       script:
         - make e2e-tests-cover
       after_success:
-        - bash <(curl -s https://codecov.io/bash) -f /tmp/e2e-cov.out -F e2e1908
+        - bash <(curl -s https://codecov.io/bash) -f /tmp/e2e-cov.out -F e2e
     - env: VPP_VERSION=2001_324
       script:
         - make e2e-tests-cover
       after_success:
-        - bash <(curl -s https://codecov.io/bash) -f /tmp/e2e-cov.out -F e2e2001-324
-    - env: VPP_VERSION=2001_379
+        - bash <(curl -s https://codecov.io/bash) -f /tmp/e2e-cov.out -F e2e
+    - env: VPP_VERSION=2001
       script:
         - make e2e-tests-cover
       after_success:
-        - bash <(curl -s https://codecov.io/bash) -f /tmp/e2e-cov.out -F e2e2001-379
+        - bash <(curl -s https://codecov.io/bash) -f /tmp/e2e-cov.out -F e2e
 
 notifications:
   slack:

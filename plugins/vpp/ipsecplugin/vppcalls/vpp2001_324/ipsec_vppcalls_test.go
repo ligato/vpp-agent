@@ -21,16 +21,16 @@ import (
 
 	"github.com/ligato/cn-infra/logging/logrus"
 	ipsec "github.com/ligato/vpp-agent/api/models/vpp/ipsec"
-	vpp_ipsec "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001_379/ipsec"
+	vpp_ipsec "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/ipsec"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/ipsecplugin/vppcalls"
-	"github.com/ligato/vpp-agent/plugins/vpp/ipsecplugin/vppcalls/vpp2001_379"
+	"github.com/ligato/vpp-agent/plugins/vpp/ipsecplugin/vppcalls/vpp2001"
 	"github.com/ligato/vpp-agent/plugins/vpp/vppcallmock"
 	. "github.com/onsi/gomega"
 )
 
 func ipToAddr(ip string) vpp_ipsec.Address {
-	addr, err := vpp2001_379.IPToAddress(ip)
+	addr, err := vpp2001.IPToAddress(ip)
 	if err != nil {
 		panic(fmt.Sprintf("invalid IP: %s", ip))
 	}
@@ -171,7 +171,7 @@ func ipSecTestSetup(t *testing.T) (*vppcallmock.TestCtx, vppcalls.IPSecVppAPI, i
 	ctx := vppcallmock.SetupTestCtx(t)
 	log := logrus.NewLogger("test-log")
 	ifIndex := ifaceidx.NewIfaceIndex(log, "ipsec-test-ifidx")
-	ipSecHandler := vpp2001_379.NewIPSecVppHandler(ctx.MockChannel, ifIndex, log)
+	ipSecHandler := vpp2001.NewIPSecVppHandler(ctx.MockChannel, ifIndex, log)
 	return ctx, ipSecHandler, ifIndex
 }
 
