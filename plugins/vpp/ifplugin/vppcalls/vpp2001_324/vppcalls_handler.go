@@ -25,6 +25,7 @@ import (
 	vpp_bond "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001_324/bond"
 	vpp_dhcp "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001_324/dhcp"
 	vpp_gre "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001_324/gre"
+	vpp_gtpu "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001_324/gtpu"
 	vpp_ifs "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001_324/interfaces"
 	vpp_ip "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001_324/ip"
 	vpp_ipsec "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001_324/ipsec"
@@ -35,7 +36,6 @@ import (
 	vpp_vmxnet3 "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001_324/vmxnet3"
 	vpp_vpe "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001_324/vpe"
 	vpp_vxlan "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001_324/vxlan"
-	vpp_gtpu "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001_324/gtpu"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
 )
 

@@ -534,16 +534,16 @@ func (d *InterfaceDescriptor) Validate(key string, intf *interfaces.Interface) e
 		if intf.GetGtpu().SrcAddr == "" {
 			return kvs.NewInvalidValueError(ErrGtpuSrcAddrMissing, "link.gtpu.src_addr")
 		}
-        if net.ParseIP(intf.GetGtpu().SrcAddr) == nil {
-            return kvs.NewInvalidValueError(ErrGtpuSrcAddrBad, "link.gtpu.src_addr")
-        }
+		if net.ParseIP(intf.GetGtpu().SrcAddr) == nil {
+			return kvs.NewInvalidValueError(ErrGtpuSrcAddrBad, "link.gtpu.src_addr")
+		}
 
 		if intf.GetGtpu().DstAddr == "" {
 			return kvs.NewInvalidValueError(ErrGtpuDstAddrMissing, "link.gtpu.dst_addr")
 		}
-        if net.ParseIP(intf.GetGtpu().DstAddr) == nil {
-            return kvs.NewInvalidValueError(ErrGtpuDstAddrBad, "link.gtpu.dst_addr")
-        }
+		if net.ParseIP(intf.GetGtpu().DstAddr) == nil {
+			return kvs.NewInvalidValueError(ErrGtpuDstAddrBad, "link.gtpu.dst_addr")
+		}
 	}
 
 	// validate unnumbered

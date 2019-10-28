@@ -10,17 +10,17 @@ import (
 
 func (h *InterfaceVppHandler) gtpuAddDelTunnel(isAdd uint8, gtpuLink *ifs.GtpuLink, multicastIf uint32) (uint32, error) {
 	req := &vpp_gtpu.GtpuAddDelTunnel{
-        IsAdd:          isAdd,
+		IsAdd:          isAdd,
 		McastSwIfIndex: multicastIf,
-        EncapVrfID:     gtpuLink.EncapVrfId,
+		EncapVrfID:     gtpuLink.EncapVrfId,
 		Teid:           gtpuLink.Teid,
-    }
+	}
 
-    if gtpuLink.DecapNext == ifs.GtpuLink_DEFAULT {
-        req.DecapNextIndex = 0xFFFFFFFF
-    } else {
-        req.DecapNextIndex = uint32(gtpuLink.DecapNext)
-    }
+	if gtpuLink.DecapNext == ifs.GtpuLink_DEFAULT {
+		req.DecapNextIndex = 0xFFFFFFFF
+	} else {
+		req.DecapNextIndex = uint32(gtpuLink.DecapNext)
+	}
 
 	srcAddr := net.ParseIP(gtpuLink.SrcAddr)
 	if srcAddr == nil {
@@ -39,17 +39,17 @@ func (h *InterfaceVppHandler) gtpuAddDelTunnel(isAdd uint8, gtpuLink *ifs.GtpuLi
 		return 0, err
 	}
 
-    if srcAddr.To4() != nil && dstAddr.To4() != nil {
-        req.IsIPv6 = 0
-        req.SrcAddress = []byte(srcAddr.To4())
-        req.DstAddress = []byte(dstAddr.To4())
-    } else if srcAddr.To16() != nil && dstAddr.To16() != nil {
-        req.IsIPv6 = 1
-        req.SrcAddress = []byte(srcAddr.To16())
-        req.DstAddress = []byte(dstAddr.To16())
-    } else {
+	if srcAddr.To4() != nil && dstAddr.To4() != nil {
+		req.IsIPv6 = 0
+		req.SrcAddress = []byte(srcAddr.To4())
+		req.DstAddress = []byte(dstAddr.To4())
+	} else if srcAddr.To16() != nil && dstAddr.To16() != nil {
+		req.IsIPv6 = 1
+		req.SrcAddress = []byte(srcAddr.To16())
+		req.DstAddress = []byte(dstAddr.To16())
+	} else {
 		return 0, errors.New("source and destination addresses must be both either IPv4 or IPv6")
-    }
+	}
 
 	reply := &vpp_gtpu.GtpuAddDelTunnelReply{}
 

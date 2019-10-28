@@ -26,6 +26,7 @@ import (
 	vpp_bond "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001_324/bond"
 	vpp_dhcp "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001_324/dhcp"
 	vpp_gre "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001_324/gre"
+	vpp_gtpu "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001_324/gtpu"
 	vpp_ifs "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001_324/interfaces"
 	vpp_ip "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001_324/ip"
 	vpp_ipsec "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001_324/ipsec"
@@ -34,7 +35,6 @@ import (
 	vpp_vmxnet3 "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001_324/vmxnet3"
 	vpp_vxlan "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001_324/vxlan"
 	vpp_vxlangpe "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001_324/vxlan_gpe"
-	vpp_gtpu "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001_324/gtpu"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
 )
 
@@ -952,18 +952,18 @@ func (h *InterfaceVppHandler) dumpGtpuDetails(interfaces map[uint32]*vppcalls.In
 			multicastIfName = interfaces[gtpuDetails.McastSwIfIndex].Interface.Name
 		}
 
-        gtpu := &ifs.GtpuLink{
-            Multicast:  multicastIfName,
-            EncapVrfId: gtpuDetails.EncapVrfID,
-            Teid:       gtpuDetails.Teid,
-        }
+		gtpu := &ifs.GtpuLink{
+			Multicast:  multicastIfName,
+			EncapVrfId: gtpuDetails.EncapVrfID,
+			Teid:       gtpuDetails.Teid,
+		}
 
 		if gtpuDetails.IsIPv6 == 1 {
-            gtpu.SrcAddr = net.IP(gtpuDetails.SrcAddress).To16().String()
-            gtpu.DstAddr = net.IP(gtpuDetails.DstAddress).To16().String()
+			gtpu.SrcAddr = net.IP(gtpuDetails.SrcAddress).To16().String()
+			gtpu.DstAddr = net.IP(gtpuDetails.DstAddress).To16().String()
 		} else {
-            gtpu.SrcAddr = net.IP(gtpuDetails.SrcAddress[:4]).To4().String()
-            gtpu.DstAddr = net.IP(gtpuDetails.DstAddress[:4]).To4().String()
+			gtpu.SrcAddr = net.IP(gtpuDetails.SrcAddress[:4]).To4().String()
+			gtpu.DstAddr = net.IP(gtpuDetails.DstAddress[:4]).To4().String()
 		}
 
 		interfaces[gtpuDetails.SwIfIndex].Interface.Link = &ifs.Interface_Gtpu{Gtpu: gtpu}
