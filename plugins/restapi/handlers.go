@@ -26,10 +26,10 @@ import (
 	"github.com/go-errors/errors"
 	"github.com/unrolled/render"
 
-	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	"github.com/ligato/vpp-agent/plugins/configurator"
-	"github.com/ligato/vpp-agent/plugins/govppmux"
-	"github.com/ligato/vpp-agent/plugins/restapi/resturl"
+	"go.ligato.io/vpp-agent/v2/plugins/configurator"
+	"go.ligato.io/vpp-agent/v2/plugins/govppmux"
+	"go.ligato.io/vpp-agent/v2/plugins/restapi/resturl"
+	interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/interfaces"
 )
 
 var (

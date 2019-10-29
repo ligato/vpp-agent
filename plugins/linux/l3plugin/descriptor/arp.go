@@ -22,19 +22,19 @@ import (
 	"github.com/vishvananda/netlink"
 
 	"github.com/ligato/cn-infra/logging"
-	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
+	kvs "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
 
-	ifmodel "github.com/ligato/vpp-agent/api/models/linux/interfaces"
-	l3 "github.com/ligato/vpp-agent/api/models/linux/l3"
-	netalloc_api "github.com/ligato/vpp-agent/api/models/netalloc"
-	"github.com/ligato/vpp-agent/plugins/linux/ifplugin"
-	ifdescriptor "github.com/ligato/vpp-agent/plugins/linux/ifplugin/descriptor"
-	"github.com/ligato/vpp-agent/plugins/linux/l3plugin/descriptor/adapter"
-	l3linuxcalls "github.com/ligato/vpp-agent/plugins/linux/l3plugin/linuxcalls"
-	"github.com/ligato/vpp-agent/plugins/linux/nsplugin"
-	nslinuxcalls "github.com/ligato/vpp-agent/plugins/linux/nsplugin/linuxcalls"
-	"github.com/ligato/vpp-agent/plugins/netalloc"
-	netalloc_descr "github.com/ligato/vpp-agent/plugins/netalloc/descriptor"
+	"go.ligato.io/vpp-agent/v2/plugins/linux/ifplugin"
+	ifdescriptor "go.ligato.io/vpp-agent/v2/plugins/linux/ifplugin/descriptor"
+	"go.ligato.io/vpp-agent/v2/plugins/linux/l3plugin/descriptor/adapter"
+	l3linuxcalls "go.ligato.io/vpp-agent/v2/plugins/linux/l3plugin/linuxcalls"
+	"go.ligato.io/vpp-agent/v2/plugins/linux/nsplugin"
+	nslinuxcalls "go.ligato.io/vpp-agent/v2/plugins/linux/nsplugin/linuxcalls"
+	"go.ligato.io/vpp-agent/v2/plugins/netalloc"
+	netalloc_descr "go.ligato.io/vpp-agent/v2/plugins/netalloc/descriptor"
+	ifmodel "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/linux/interfaces"
+	l3 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/linux/l3"
+	netalloc_api "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/netalloc"
 )
 
 const (
@@ -96,18 +96,18 @@ func NewARPDescriptor(
 	}
 
 	typedDescr := &adapter.ARPDescriptor{
-		Name:                 ARPDescriptorName,
-		NBKeyPrefix:          l3.ModelARPEntry.KeyPrefix(),
-		ValueTypeName:        l3.ModelARPEntry.ProtoName(),
-		KeySelector:          l3.ModelARPEntry.IsKeyValid,
-		KeyLabel:             l3.ModelARPEntry.StripKeyPrefix,
-		ValueComparator:      ctx.EquivalentARPs,
-		Validate:             ctx.Validate,
-		Create:               ctx.Create,
-		Delete:               ctx.Delete,
-		Update:               ctx.Update,
-		Retrieve:             ctx.Retrieve,
-		Dependencies:         ctx.Dependencies,
+		Name:            ARPDescriptorName,
+		NBKeyPrefix:     l3.ModelARPEntry.KeyPrefix(),
+		ValueTypeName:   l3.ModelARPEntry.ProtoName(),
+		KeySelector:     l3.ModelARPEntry.IsKeyValid,
+		KeyLabel:        l3.ModelARPEntry.StripKeyPrefix,
+		ValueComparator: ctx.EquivalentARPs,
+		Validate:        ctx.Validate,
+		Create:          ctx.Create,
+		Delete:          ctx.Delete,
+		Update:          ctx.Update,
+		Retrieve:        ctx.Retrieve,
+		Dependencies:    ctx.Dependencies,
 		RetrieveDependencies: []string{
 			netalloc_descr.IPAllocDescriptorName,
 			ifdescriptor.InterfaceDescriptorName},

@@ -26,9 +26,9 @@ import (
 	"github.com/pkg/errors"
 	"github.com/vishvananda/netlink"
 
-	ifmodel "github.com/ligato/vpp-agent/api/models/linux/interfaces"
-	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-	"github.com/ligato/vpp-agent/plugins/linux/ifplugin/linuxcalls"
+	kvs "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v2/plugins/linux/ifplugin/linuxcalls"
+	ifmodel "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/linux/interfaces"
 )
 
 const (

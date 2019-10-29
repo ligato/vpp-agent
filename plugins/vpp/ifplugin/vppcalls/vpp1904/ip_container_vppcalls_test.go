@@ -18,9 +18,9 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/ip"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls/vpp1904"
 	. "github.com/onsi/gomega"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904/ip"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/vppcalls/vpp1904"
 )
 
 func ipToAddr(ip string) ip.Address {

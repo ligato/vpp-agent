@@ -23,11 +23,11 @@ import (
 
 	"github.com/ligato/cn-infra/infra"
 	"github.com/ligato/cn-infra/logging"
-	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
+	kvs "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
 
-	nsmodel "github.com/ligato/vpp-agent/api/models/linux/namespace"
-	"github.com/ligato/vpp-agent/plugins/linux/nsplugin/descriptor"
-	nsLinuxcalls "github.com/ligato/vpp-agent/plugins/linux/nsplugin/linuxcalls"
+	"go.ligato.io/vpp-agent/v2/plugins/linux/nsplugin/descriptor"
+	nsLinuxcalls "go.ligato.io/vpp-agent/v2/plugins/linux/nsplugin/linuxcalls"
+	nsmodel "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/linux/namespace"
 )
 
 // NsPlugin is a plugin to handle namespaces and microservices for other linux

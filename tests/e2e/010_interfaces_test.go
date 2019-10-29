@@ -20,10 +20,10 @@ import (
 
 	. "github.com/onsi/gomega"
 
-	linux_interfaces "github.com/ligato/vpp-agent/api/models/linux/interfaces"
-	linux_namespace "github.com/ligato/vpp-agent/api/models/linux/namespace"
-	vpp_interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/kvscheduler"
+	linux_interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/linux/interfaces"
+	linux_namespace "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/linux/namespace"
+	vpp_interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/interfaces"
 )
 
 // TODO: running downstream resync in-between restarts/re-creates seems to break stuff (for now commented out)
@@ -80,23 +80,23 @@ func TestTapInterfaceConn(t *testing.T) {
 	).Send(context.Background())
 	Expect(err).ToNot(HaveOccurred())
 
-	Eventually(ctx.getValueStateClb(vppTap)).Should(Equal(kvs.ValueState_CONFIGURED))
-	Expect(ctx.getValueState(linuxTap)).To(Equal(kvs.ValueState_CONFIGURED))
+	Eventually(ctx.getValueStateClb(vppTap)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
+	Expect(ctx.getValueState(linuxTap)).To(Equal(kvscheduler.ValueState_CONFIGURED))
 	Expect(ctx.pingFromVPP(linuxTapIP)).To(Succeed())
 	Expect(ctx.pingFromMs(msName, vppTapIP)).To(Succeed())
 
 	// restart microservice twice
 	for i := 0; i < 2; i++ {
 		ctx.stopMicroservice(msName)
-		Eventually(ctx.getValueStateClb(vppTap)).Should(Equal(kvs.ValueState_PENDING))
-		Eventually(ctx.getValueStateClb(linuxTap)).Should(Equal(kvs.ValueState_PENDING))
+		Eventually(ctx.getValueStateClb(vppTap)).Should(Equal(kvscheduler.ValueState_PENDING))
+		Eventually(ctx.getValueStateClb(linuxTap)).Should(Equal(kvscheduler.ValueState_PENDING))
 		Expect(ctx.pingFromVPP(linuxTapIP)).NotTo(Succeed())
 
 		//Expect(ctx.agentInSync()).To(BeTrue())
 
 		ctx.startMicroservice(msName)
-		Eventually(ctx.getValueStateClb(vppTap)).Should(Equal(kvs.ValueState_CONFIGURED))
-		Expect(ctx.getValueState(linuxTap)).To(Equal(kvs.ValueState_CONFIGURED))
+		Eventually(ctx.getValueStateClb(vppTap)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
+		Expect(ctx.getValueState(linuxTap)).To(Equal(kvscheduler.ValueState_CONFIGURED))
 		Expect(ctx.pingFromVPP(linuxTapIP)).To(Succeed())
 		Expect(ctx.pingFromMs(msName, vppTapIP)).To(Succeed())
 
@@ -209,26 +209,26 @@ func TestAfPacketInterfaceConn(t *testing.T) {
 	).Send(context.Background())
 	Expect(err).ToNot(HaveOccurred())
 
-	Eventually(ctx.getValueStateClb(afPacket)).Should(Equal(kvs.ValueState_CONFIGURED))
-	Expect(ctx.getValueState(veth1)).To(Equal(kvs.ValueState_CONFIGURED))
-	Expect(ctx.getValueState(veth2)).To(Equal(kvs.ValueState_CONFIGURED))
+	Eventually(ctx.getValueStateClb(afPacket)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
+	Expect(ctx.getValueState(veth1)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+	Expect(ctx.getValueState(veth2)).To(Equal(kvscheduler.ValueState_CONFIGURED))
 	Expect(ctx.pingFromVPP(veth2IP)).To(Succeed())
 	Expect(ctx.pingFromMs(msName, afPacketIP)).To(Succeed())
 
 	// restart microservice twice
 	for i := 0; i < 2; i++ {
 		ctx.stopMicroservice(msName)
-		Eventually(ctx.getValueStateClb(afPacket)).Should(Equal(kvs.ValueState_PENDING))
-		Eventually(ctx.getValueStateClb(veth1)).Should(Equal(kvs.ValueState_PENDING))
-		Eventually(ctx.getValueStateClb(veth2)).Should(Equal(kvs.ValueState_PENDING))
+		Eventually(ctx.getValueStateClb(afPacket)).Should(Equal(kvscheduler.ValueState_PENDING))
+		Eventually(ctx.getValueStateClb(veth1)).Should(Equal(kvscheduler.ValueState_PENDING))
+		Eventually(ctx.getValueStateClb(veth2)).Should(Equal(kvscheduler.ValueState_PENDING))
 		Expect(ctx.pingFromVPP(veth2IP)).NotTo(Succeed())
 
 		//Expect(ctx.agentInSync()).To(BeTrue())
 
 		ctx.startMicroservice(msName)
-		Eventually(ctx.getValueStateClb(afPacket)).Should(Equal(kvs.ValueState_CONFIGURED))
-		Expect(ctx.getValueState(veth1)).To(Equal(kvs.ValueState_CONFIGURED))
-		Expect(ctx.getValueState(veth2)).To(Equal(kvs.ValueState_CONFIGURED))
+		Eventually(ctx.getValueStateClb(afPacket)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
+		Expect(ctx.getValueState(veth1)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+		Expect(ctx.getValueState(veth2)).To(Equal(kvscheduler.ValueState_CONFIGURED))
 		Expect(ctx.pingFromVPP(veth2IP)).To(Succeed())
 		Expect(ctx.pingFromMs(msName, afPacketIP)).To(Succeed())
 

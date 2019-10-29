@@ -20,16 +20,16 @@ import (
 
 	govppapi "git.fd.io/govpp.git/api"
 
-	interfaces2 "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/dhcp"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/ip"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/memif"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/tapv2"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/vpe"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/vxlan"
-	"github.com/ligato/vpp-agent/plugins/vpp/vppcallmock"
 	. "github.com/onsi/gomega"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904/dhcp"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904/interfaces"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904/ip"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904/memif"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904/tapv2"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904/vpe"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904/vxlan"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/vppcallmock"
+	interfaces2 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/interfaces"
 )
 
 // Test dump of interfaces with vxlan type

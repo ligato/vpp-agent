@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate descriptor-adapter --descriptor-name LocalSID --value-type *vpp_srv6.LocalSID --import "github.com/ligato/vpp-agent/api/models/vpp/srv6" --output-dir "descriptor"
-//go:generate descriptor-adapter --descriptor-name Policy --value-type *vpp_srv6.Policy --import "github.com/ligato/vpp-agent/api/models/vpp/srv6" --output-dir "descriptor"
-//go:generate descriptor-adapter --descriptor-name Steering --value-type *vpp_srv6.Steering --import "github.com/ligato/vpp-agent/api/models/vpp/srv6" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name LocalSID --value-type *vpp_srv6.LocalSID --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/srv6" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name Policy --value-type *vpp_srv6.Policy --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/srv6" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name Steering --value-type *vpp_srv6.Steering --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/srv6" --output-dir "descriptor"
 
 package srplugin
 
@@ -22,17 +22,17 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/health/statuscheck"
 	"github.com/ligato/cn-infra/infra"
-	"github.com/ligato/vpp-agent/plugins/govppmux"
-	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin"
-	"github.com/ligato/vpp-agent/plugins/vpp/srplugin/descriptor"
-	"github.com/ligato/vpp-agent/plugins/vpp/srplugin/vppcalls"
 	"github.com/pkg/errors"
+	"go.ligato.io/vpp-agent/v2/plugins/govppmux"
+	scheduler "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/srplugin/descriptor"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/srplugin/vppcalls"
 
-	_ "github.com/ligato/vpp-agent/plugins/vpp/srplugin/vppcalls/vpp1904"
-	_ "github.com/ligato/vpp-agent/plugins/vpp/srplugin/vppcalls/vpp1908"
-	_ "github.com/ligato/vpp-agent/plugins/vpp/srplugin/vppcalls/vpp2001"
-	_ "github.com/ligato/vpp-agent/plugins/vpp/srplugin/vppcalls/vpp2001_324"
+	_ "go.ligato.io/vpp-agent/v2/plugins/vpp/srplugin/vppcalls/vpp1904"
+	_ "go.ligato.io/vpp-agent/v2/plugins/vpp/srplugin/vppcalls/vpp1908"
+	_ "go.ligato.io/vpp-agent/v2/plugins/vpp/srplugin/vppcalls/vpp2001"
+	_ "go.ligato.io/vpp-agent/v2/plugins/vpp/srplugin/vppcalls/vpp2001_324"
 )
 
 // SRPlugin configures segment routing.

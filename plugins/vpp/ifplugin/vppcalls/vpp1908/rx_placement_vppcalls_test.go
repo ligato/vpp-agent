@@ -17,10 +17,10 @@ package vpp1908_test
 import (
 	"testing"
 
-	ifApi "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1908/interfaces"
+	ifApi "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908/interfaces"
 
-	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	. "github.com/onsi/gomega"
+	interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/interfaces"
 )
 
 func TestSetRxPlacementForWorker(t *testing.T) {

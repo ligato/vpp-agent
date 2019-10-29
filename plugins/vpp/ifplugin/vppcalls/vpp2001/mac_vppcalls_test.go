@@ -17,9 +17,9 @@ package vpp2001_test
 import (
 	"testing"
 
-	vpp_ifs "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls/vpp2001"
 	. "github.com/onsi/gomega"
+	vpp_ifs "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/interfaces"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/vppcalls/vpp2001"
 )
 
 func TestSetInterfaceMac(t *testing.T) {

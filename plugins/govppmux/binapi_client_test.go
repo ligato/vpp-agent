@@ -19,8 +19,8 @@ import (
 	"time"
 
 	"git.fd.io/govpp.git/core"
-	"github.com/ligato/vpp-agent/plugins/vpp/vppcallmock"
 	. "github.com/onsi/gomega"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/vppcallmock"
 )
 
 func TestRequestRetry(t *testing.T) {

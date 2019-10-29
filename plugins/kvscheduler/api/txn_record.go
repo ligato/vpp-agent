@@ -19,7 +19,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ligato/vpp-agent/plugins/kvscheduler/internal/utils"
+	"go.ligato.io/vpp-agent/v2/plugins/kvscheduler/internal/utils"
+	"go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/kvscheduler"
 )
 
 // TxnType differentiates between NB transaction, retry of failed operations and
@@ -78,14 +79,14 @@ type RecordedTxn struct {
 // RecordedTxnOp is used to record executed/planned transaction operation.
 type RecordedTxnOp struct {
 	// identification
-	Operation TxnOperation
+	Operation kvscheduler.TxnOperation
 	Key       string
 
 	// changes
 	PrevValue *utils.RecordedProtoMessage
 	NewValue  *utils.RecordedProtoMessage
-	PrevState ValueState
-	NewState  ValueState
+	PrevState kvscheduler.ValueState
+	NewState  kvscheduler.ValueState
 	PrevErr   error
 	NewErr    error
 	NOOP      bool
@@ -228,66 +229,66 @@ func (op *RecordedTxnOp) StringWithOpts(index int, verbose bool, indent int) str
 	}
 	// value state transition
 	//  -> OBTAINED
-	if op.NewState == ValueState_OBTAINED {
+	if op.NewState == kvscheduler.ValueState_OBTAINED {
 		flags = append(flags, "OBTAINED")
 	}
-	if op.PrevState == ValueState_OBTAINED && op.PrevState != op.NewState {
+	if op.PrevState == kvscheduler.ValueState_OBTAINED && op.PrevState != op.NewState {
 		flags = append(flags, "WAS-OBTAINED")
 	}
 	//  -> UNIMPLEMENTED
-	if op.NewState == ValueState_UNIMPLEMENTED {
+	if op.NewState == kvscheduler.ValueState_UNIMPLEMENTED {
 		flags = append(flags, "UNIMPLEMENTED")
 	}
-	if op.PrevState == ValueState_UNIMPLEMENTED && op.PrevState != op.NewState {
+	if op.PrevState == kvscheduler.ValueState_UNIMPLEMENTED && op.PrevState != op.NewState {
 		flags = append(flags, "WAS-UNIMPLEMENTED")
 	}
 	//  -> REMOVED / MISSING
-	if op.PrevState == ValueState_REMOVED && op.Operation == TxnOperation_DELETE {
+	if op.PrevState == kvscheduler.ValueState_REMOVED && op.Operation == kvscheduler.TxnOperation_DELETE {
 		flags = append(flags, "ALREADY-REMOVED")
 	}
-	if op.PrevState == ValueState_MISSING {
-		if op.NewState == ValueState_REMOVED {
+	if op.PrevState == kvscheduler.ValueState_MISSING {
+		if op.NewState == kvscheduler.ValueState_REMOVED {
 			flags = append(flags, "ALREADY-MISSING")
 		} else {
 			flags = append(flags, "WAS-MISSING")
 		}
 	}
 	//  -> DISCOVERED
-	if op.PrevState == ValueState_DISCOVERED {
+	if op.PrevState == kvscheduler.ValueState_DISCOVERED {
 		flags = append(flags, "DISCOVERED")
 	}
 	//  -> PENDING
-	if op.PrevState == ValueState_PENDING {
-		if op.NewState == ValueState_PENDING {
+	if op.PrevState == kvscheduler.ValueState_PENDING {
+		if op.NewState == kvscheduler.ValueState_PENDING {
 			flags = append(flags, "STILL-PENDING")
 		} else {
 			flags = append(flags, "WAS-PENDING")
 		}
 	} else {
-		if op.NewState == ValueState_PENDING {
+		if op.NewState == kvscheduler.ValueState_PENDING {
 			flags = append(flags, "IS-PENDING")
 		}
 	}
 	//  -> FAILED / INVALID
-	if op.PrevState == ValueState_FAILED {
-		if op.NewState == ValueState_FAILED {
+	if op.PrevState == kvscheduler.ValueState_FAILED {
+		if op.NewState == kvscheduler.ValueState_FAILED {
 			flags = append(flags, "STILL-FAILING")
-		} else if op.NewState == ValueState_CONFIGURED {
+		} else if op.NewState == kvscheduler.ValueState_CONFIGURED {
 			flags = append(flags, "FIXED")
 		}
 	} else {
-		if op.NewState == ValueState_FAILED {
+		if op.NewState == kvscheduler.ValueState_FAILED {
 			flags = append(flags, "FAILED")
 		}
 	}
-	if op.PrevState == ValueState_INVALID {
-		if op.NewState == ValueState_INVALID {
+	if op.PrevState == kvscheduler.ValueState_INVALID {
+		if op.NewState == kvscheduler.ValueState_INVALID {
 			flags = append(flags, "STILL-INVALID")
-		} else if op.NewState == ValueState_CONFIGURED {
+		} else if op.NewState == kvscheduler.ValueState_CONFIGURED {
 			flags = append(flags, "FIXED")
 		}
 	} else {
-		if op.NewState == ValueState_INVALID {
+		if op.NewState == kvscheduler.ValueState_INVALID {
 			flags = append(flags, "INVALID")
 		}
 	}
@@ -307,14 +308,14 @@ func (op *RecordedTxnOp) StringWithOpts(index int, verbose bool, indent int) str
 	}
 
 	str += indent2 + fmt.Sprintf("- key: %s\n", op.Key)
-	if op.Operation == TxnOperation_UPDATE {
+	if op.Operation == kvscheduler.TxnOperation_UPDATE {
 		str += indent2 + fmt.Sprintf("- prev-value: %s \n", utils.ProtoToString(op.PrevValue))
 		str += indent2 + fmt.Sprintf("- new-value: %s \n", utils.ProtoToString(op.NewValue))
 	}
-	if op.Operation == TxnOperation_DELETE {
+	if op.Operation == kvscheduler.TxnOperation_DELETE {
 		str += indent2 + fmt.Sprintf("- value: %s \n", utils.ProtoToString(op.PrevValue))
 	}
-	if op.Operation == TxnOperation_CREATE {
+	if op.Operation == kvscheduler.TxnOperation_CREATE {
 		str += indent2 + fmt.Sprintf("- value: %s \n", utils.ProtoToString(op.NewValue))
 	}
 	if op.PrevErr != nil {

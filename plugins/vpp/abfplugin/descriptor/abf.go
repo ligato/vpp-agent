@@ -22,16 +22,16 @@ import (
 	"github.com/ligato/cn-infra/idxmap"
 	"github.com/ligato/cn-infra/logging"
 
-	abf "github.com/ligato/vpp-agent/api/models/vpp/abf"
-	acl "github.com/ligato/vpp-agent/api/models/vpp/acl"
-	vpp_interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	"github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-	"github.com/ligato/vpp-agent/plugins/vpp/abfplugin/abfidx"
-	"github.com/ligato/vpp-agent/plugins/vpp/abfplugin/descriptor/adapter"
-	"github.com/ligato/vpp-agent/plugins/vpp/abfplugin/vppcalls"
-	"github.com/ligato/vpp-agent/plugins/vpp/aclplugin/aclidx"
-	"github.com/ligato/vpp-agent/plugins/vpp/aclplugin/descriptor"
-	ifdescriptor "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/descriptor"
+	"go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/abfplugin/abfidx"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/abfplugin/descriptor/adapter"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/abfplugin/vppcalls"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/aclplugin/aclidx"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/aclplugin/descriptor"
+	ifdescriptor "go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/descriptor"
+	abf "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/abf"
+	acl "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/acl"
+	vpp_interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/interfaces"
 )
 
 const (

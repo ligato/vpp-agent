@@ -1,0 +1,62 @@
+syntax = "proto3";
+
+package vpp;
+
+option go_package = "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp";
+
+import "ligato/vpp-agent/vpp/abf/abf.proto";
+import "ligato/vpp-agent/vpp/acl/acl.proto";
+import "ligato/vpp-agent/vpp/interfaces/interface.proto";
+import "ligato/vpp-agent/vpp/interfaces/span.proto";
+import "ligato/vpp-agent/vpp/interfaces/state.proto";
+import "ligato/vpp-agent/vpp/ipsec/ipsec.proto";
+import "ligato/vpp-agent/vpp/l2/bridge_domain.proto";
+import "ligato/vpp-agent/vpp/l2/fib.proto";
+import "ligato/vpp-agent/vpp/l2/xconnect.proto";
+import "ligato/vpp-agent/vpp/l3/arp.proto";
+import "ligato/vpp-agent/vpp/l3/l3.proto";
+import "ligato/vpp-agent/vpp/l3/route.proto";
+import "ligato/vpp-agent/vpp/l3/vrf.proto";
+import "ligato/vpp-agent/vpp/nat/nat.proto";
+import "ligato/vpp-agent/vpp/punt/punt.proto";
+import "ligato/vpp-agent/vpp/srv6/srv6.proto";
+
+message ConfigData {
+    repeated interfaces.Interface interfaces = 10;
+    repeated interfaces.Span spans = 11;
+
+    repeated acl.ACL acls = 20;
+    repeated abf.ABF abfs = 21;
+
+    repeated l2.BridgeDomain bridge_domains = 30;
+    repeated l2.FIBEntry fibs = 31;
+    repeated l2.XConnectPair xconnect_pairs = 32;
+
+    repeated l3.Route routes = 40;
+    repeated l3.ARPEntry arps = 41;
+    l3.ProxyARP proxy_arp = 42;
+    l3.IPScanNeighbor ipscan_neighbor = 43;
+    repeated l3.VrfTable vrfs = 44;
+
+    nat.Nat44Global nat44_global = 50;
+    repeated nat.DNat44 dnat44s = 51;
+
+    repeated ipsec.SecurityPolicyDatabase ipsec_spds = 60;
+    repeated ipsec.SecurityAssociation ipsec_sas = 61;
+
+    repeated punt.IPRedirect punt_ipredirects = 70;
+    repeated punt.ToHost punt_tohosts = 71;
+    repeated punt.Exception punt_exceptions = 72;
+
+    repeated srv6.LocalSID srv6_localsids = 80;
+    repeated srv6.Policy srv6_policies = 81;
+    repeated srv6.Steering srv6_steerings = 82;
+}
+
+message Notification {
+    interfaces.InterfaceNotification interface = 1;
+}
+
+message Stats {
+    interfaces.InterfaceStats interface = 1;
+}

@@ -21,8 +21,8 @@ import (
 	"github.com/ligato/cn-infra/utils/addrs"
 	"github.com/pkg/errors"
 
-	ipsec "github.com/ligato/vpp-agent/api/models/vpp/ipsec"
-	api "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/ipsec"
+	api "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904/ipsec"
+	ipsec "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/ipsec"
 )
 
 // AddSPD implements IPSec handler.

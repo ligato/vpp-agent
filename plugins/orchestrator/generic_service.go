@@ -24,9 +24,9 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/ligato/vpp-agent/api/generic"
-	"github.com/ligato/vpp-agent/pkg/models"
-	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v2/pkg/models"
+	kvs "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/generic"
 )
 
 type genericService struct {

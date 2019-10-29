@@ -23,17 +23,18 @@ import (
 	"github.com/ligato/cn-infra/agent"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
-	linux_intf "github.com/ligato/vpp-agent/api/models/linux/interfaces"
-	"github.com/ligato/vpp-agent/api/models/linux/namespace"
-	vpp_intf "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	vpp_l2 "github.com/ligato/vpp-agent/api/models/vpp/l2"
-	"github.com/ligato/vpp-agent/clientv2/linux/localclient"
-	"github.com/ligato/vpp-agent/cmd/vpp-agent/app"
-	linux_ifplugin "github.com/ligato/vpp-agent/plugins/linux/ifplugin"
-	linux_nsplugin "github.com/ligato/vpp-agent/plugins/linux/nsplugin"
-	"github.com/ligato/vpp-agent/plugins/orchestrator"
-	vpp_ifplugin "github.com/ligato/vpp-agent/plugins/vpp/ifplugin"
 	"github.com/namsral/flag"
+
+	"go.ligato.io/vpp-agent/v2/clientv2/linux/localclient"
+	"go.ligato.io/vpp-agent/v2/cmd/vpp-agent/app"
+	linux_ifplugin "go.ligato.io/vpp-agent/v2/plugins/linux/ifplugin"
+	linux_nsplugin "go.ligato.io/vpp-agent/v2/plugins/linux/nsplugin"
+	"go.ligato.io/vpp-agent/v2/plugins/orchestrator"
+	vpp_ifplugin "go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin"
+	linux_intf "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/linux/interfaces"
+	linux_namespace "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/linux/namespace"
+	vpp_intf "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/interfaces"
+	vpp_l2 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/l2"
 )
 
 var (
@@ -353,15 +354,15 @@ func bridgeDomain() *vpp_l2.BridgeDomain {
 		MacAge:              0, /* means disable aging */
 		Interfaces: []*vpp_l2.BridgeDomain_Interface{
 			{
-				Name: "tap1",
+				Name:                    "tap1",
 				BridgedVirtualInterface: false,
 			},
 			{
-				Name: "tap2",
+				Name:                    "tap2",
 				BridgedVirtualInterface: false,
 			},
 			{
-				Name: "loop1",
+				Name:                    "loop1",
 				BridgedVirtualInterface: true,
 			},
 		},

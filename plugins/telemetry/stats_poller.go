@@ -10,10 +10,10 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/ligato/vpp-agent/api/configurator"
-	"github.com/ligato/vpp-agent/api/models/vpp"
-	vpp_interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	"github.com/ligato/vpp-agent/plugins/telemetry/vppcalls"
+	"go.ligato.io/vpp-agent/v2/plugins/telemetry/vppcalls"
+	"go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/configurator"
+	"go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp"
+	vpp_interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/interfaces"
 )
 
 type statsPollerServer struct {

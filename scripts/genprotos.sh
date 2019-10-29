@@ -10,7 +10,7 @@ curdir=$(pwd)
 
 # Create tempdir
 tmpdir=$(mktemp -d -t gen-proto.XXXXXX)
-trap 'rm -rf $tmpdir' EXIT
+trap 'tree $tmpdir; rm -rf $tmpdir' EXIT
 
 # Install the protoc-gen-go
 mkdir -p $tmpdir/bin
@@ -20,15 +20,16 @@ GOBIN=$tmpdir/bin go install github.com/golang/protobuf/protoc-gen-go
 pb_pkg_dir=$( go list -f '{{.Dir}}' -m github.com/golang/protobuf )
 
 #rm -rf $tmpdir/src
-mkdir -p $tmpdir/src/ligato
-ln -s $curdir $tmpdir/src/ligato/vpp-agent
+#mkdir -p $tmpdir/src/ligato
+#ln -s $curdir $tmpdir/src/ligato/vpp-agent
 
-cd $tmpdir/src
+#cd $tmpdir/src
+cd proto
 
 different=0
 
 echo "# Generating proto files.."
-for proto in `find ligato/vpp-agent/ -name "*.proto"`; do
+for proto in `find . -name "*.proto"`; do
 	echo "# - $proto"
 
 	protoc -I. \

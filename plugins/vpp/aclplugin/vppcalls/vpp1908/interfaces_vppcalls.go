@@ -17,7 +17,7 @@ package vpp1908
 import (
 	"fmt"
 
-	acl_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1908/acl"
+	acl_api "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908/acl"
 )
 
 // SetACLToInterfacesAsIngress implements ACL handler.

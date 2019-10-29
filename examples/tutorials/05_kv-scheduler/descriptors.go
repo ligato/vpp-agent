@@ -5,9 +5,9 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/vpp-agent/examples/tutorials/05_kv-scheduler/adapter"
-	"github.com/ligato/vpp-agent/examples/tutorials/05_kv-scheduler/model"
-	"github.com/ligato/vpp-agent/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v2/examples/tutorials/05_kv-scheduler/adapter"
+	"go.ligato.io/vpp-agent/v2/examples/tutorials/05_kv-scheduler/model"
+	"go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
 )
 
 /* Interface Descriptor */

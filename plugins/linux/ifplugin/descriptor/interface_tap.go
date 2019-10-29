@@ -19,10 +19,10 @@ import (
 
 	"github.com/pkg/errors"
 
-	interfaces "github.com/ligato/vpp-agent/api/models/linux/interfaces"
-	"github.com/ligato/vpp-agent/plugins/linux/ifplugin/ifaceidx"
+	"go.ligato.io/vpp-agent/v2/plugins/linux/ifplugin/ifaceidx"
+	interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/linux/interfaces"
 
-	nslinuxcalls "github.com/ligato/vpp-agent/plugins/linux/nsplugin/linuxcalls"
+	nslinuxcalls "go.ligato.io/vpp-agent/v2/plugins/linux/nsplugin/linuxcalls"
 )
 
 // createTAPToVPP moves Linux-side of the VPP-TAP interface to the destination namespace

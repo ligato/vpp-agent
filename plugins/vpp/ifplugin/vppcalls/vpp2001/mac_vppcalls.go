@@ -18,7 +18,7 @@ import (
 	"net"
 
 	"github.com/go-errors/errors"
-	vpp_ifs "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/interfaces"
+	vpp_ifs "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/interfaces"
 )
 
 func (h *InterfaceVppHandler) SetInterfaceMac(ifIdx uint32, macAddress string) error {

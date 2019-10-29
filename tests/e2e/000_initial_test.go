@@ -19,8 +19,8 @@ import (
 
 	. "github.com/onsi/gomega"
 
-	ns "github.com/ligato/vpp-agent/api/models/linux/namespace"
-	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/kvscheduler"
+	ns "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/linux/namespace"
 )
 
 func TestAgentInSync(t *testing.T) {
@@ -35,12 +35,12 @@ func TestStartStopMicroservice(t *testing.T) {
 
 	const msName = "microservice1"
 	key := ns.MicroserviceKey(msNamePrefix + msName)
-	msState := func() kvs.ValueState {
+	msState := func() kvscheduler.ValueState {
 		return ctx.getValueStateByKey(key)
 	}
 
 	ctx.startMicroservice(msName)
-	Eventually(msState).Should(Equal(kvs.ValueState_OBTAINED))
+	Eventually(msState).Should(Equal(kvscheduler.ValueState_OBTAINED))
 	ctx.stopMicroservice(msName)
-	Eventually(msState).Should(Equal(kvs.ValueState_NONEXISTENT))
+	Eventually(msState).Should(Equal(kvscheduler.ValueState_NONEXISTENT))
 }

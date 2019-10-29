@@ -19,9 +19,9 @@ import (
 	"hash/fnv"
 	"strings"
 
-	interfaces "github.com/ligato/vpp-agent/api/models/linux/interfaces"
-	"github.com/ligato/vpp-agent/plugins/linux/ifplugin/ifaceidx"
-	nslinuxcalls "github.com/ligato/vpp-agent/plugins/linux/nsplugin/linuxcalls"
+	"go.ligato.io/vpp-agent/v2/plugins/linux/ifplugin/ifaceidx"
+	nslinuxcalls "go.ligato.io/vpp-agent/v2/plugins/linux/nsplugin/linuxcalls"
+	interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/linux/interfaces"
 )
 
 // createVETH creates a new VETH pair if neither of VETH-ends are configured, or just

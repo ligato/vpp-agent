@@ -21,9 +21,9 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/pkg/errors"
 
-	"github.com/ligato/vpp-agent/plugins/govppmux/vppcalls"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001_324/memclnt"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001_324/vpe"
+	"go.ligato.io/vpp-agent/v2/plugins/govppmux/vppcalls"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324/memclnt"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324/vpe"
 )
 
 func init() {

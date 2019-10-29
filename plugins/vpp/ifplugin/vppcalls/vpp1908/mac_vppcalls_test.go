@@ -18,8 +18,8 @@ import (
 	"net"
 	"testing"
 
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1908/interfaces"
 	. "github.com/onsi/gomega"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908/interfaces"
 )
 
 func TestSetInterfaceMac(t *testing.T) {

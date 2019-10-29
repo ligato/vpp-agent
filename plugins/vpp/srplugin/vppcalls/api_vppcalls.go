@@ -19,8 +19,8 @@ import (
 
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
-	srv6 "github.com/ligato/vpp-agent/api/models/vpp/srv6"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
+	srv6 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/srv6"
 )
 
 // SRv6VppAPI is API boundary for vppcall package access, introduced to properly test code dependent on vppcalls package

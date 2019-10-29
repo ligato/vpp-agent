@@ -17,8 +17,8 @@ package vppcalls
 import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
-	ipsec "github.com/ligato/vpp-agent/api/models/vpp/ipsec"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
+	ipsec "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/ipsec"
 )
 
 // IPSecSaDetails holds security association with VPP metadata

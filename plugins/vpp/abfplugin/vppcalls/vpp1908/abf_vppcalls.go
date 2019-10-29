@@ -18,10 +18,10 @@ import (
 	"fmt"
 	"net"
 
-	vpp_abf "github.com/ligato/vpp-agent/api/models/vpp/abf"
+	vpp_abf "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/abf"
 
 	"github.com/go-errors/errors"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1908/abf"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908/abf"
 )
 
 const (

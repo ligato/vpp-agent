@@ -28,11 +28,11 @@ import (
 
 	"github.com/ligato/cn-infra/infra"
 
-	"github.com/ligato/vpp-agent/examples/kvscheduler/mock_plugins/ifplugin"
-	"github.com/ligato/vpp-agent/examples/kvscheduler/mock_plugins/l2plugin/descriptor"
-	"github.com/ligato/vpp-agent/examples/kvscheduler/mock_plugins/l2plugin/mockcalls"
-	"github.com/ligato/vpp-agent/pkg/idxvpp"
-	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v2/examples/kvscheduler/mock_plugins/ifplugin"
+	"go.ligato.io/vpp-agent/v2/examples/kvscheduler/mock_plugins/l2plugin/descriptor"
+	"go.ligato.io/vpp-agent/v2/examples/kvscheduler/mock_plugins/l2plugin/mockcalls"
+	"go.ligato.io/vpp-agent/v2/pkg/idxvpp"
+	kvs "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
 )
 
 // L2Plugin configures mock bridge domains and L2 FIBs.

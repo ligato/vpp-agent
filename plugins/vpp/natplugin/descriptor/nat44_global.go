@@ -20,14 +20,14 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/vpp-agent/pkg/models"
 	"github.com/pkg/errors"
+	"go.ligato.io/vpp-agent/v2/pkg/models"
 
-	nat "github.com/ligato/vpp-agent/api/models/vpp/nat"
-	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-	vpp_ifdescriptor "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/descriptor"
-	"github.com/ligato/vpp-agent/plugins/vpp/natplugin/descriptor/adapter"
-	"github.com/ligato/vpp-agent/plugins/vpp/natplugin/vppcalls"
+	kvs "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
+	vpp_ifdescriptor "go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/descriptor"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/natplugin/descriptor/adapter"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/natplugin/vppcalls"
+	nat "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/nat"
 )
 
 const (

@@ -22,8 +22,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ligato/vpp-agent/client"
-	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v2/client"
+	kvs "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/kvscheduler"
 )
 
 const graphURL = "http://localhost:9191/scheduler/graph"
@@ -38,7 +39,7 @@ const (
 )
 
 // Run runs a scenario selected by the user.
-func Run(kvscheduler kvs.KVScheduler, setLogging func(debugMode bool)) {
+func Run(kv kvs.KVScheduler, setLogging func(debugMode bool)) {
 	time.Sleep(300 * time.Millisecond) // give agent logs time to get printed
 	defer func() {
 		fmt.Printf(InfoMsgColor, "The example scenario has finalized, the agent can be now terminated with CTRL-C.")
@@ -96,8 +97,8 @@ inputLoop:
 	setLogging(debugLog)
 	if debugLog {
 		// watch and inform about value status updates
-		ch := make(chan *kvs.BaseValueStatus, 100)
-		kvscheduler.WatchValueStatus(ch, nil)
+		ch := make(chan *kvscheduler.BaseValueStatus, 100)
+		kv.WatchValueStatus(ch, nil)
 		go watchValueStatus(ch)
 	}
 
@@ -106,7 +107,7 @@ inputLoop:
 }
 
 // watchValueStatus informs about value status updates.
-func watchValueStatus(ch <-chan *kvs.BaseValueStatus) {
+func watchValueStatus(ch <-chan *kvscheduler.BaseValueStatus) {
 	for {
 		select {
 		case status := <-ch:

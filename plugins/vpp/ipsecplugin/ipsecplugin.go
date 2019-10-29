@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate descriptor-adapter --descriptor-name SPD  --value-type *vpp_ipsec.SecurityPolicyDatabase --meta-type *idxvpp.OnlyIndex --import "github.com/ligato/vpp-agent/pkg/idxvpp" --import "github.com/ligato/vpp-agent/api/models/vpp/ipsec" --output-dir "descriptor"
-//go:generate descriptor-adapter --descriptor-name SPDInterface --value-type *vpp_ipsec.SecurityPolicyDatabase_Interface --import "github.com/ligato/vpp-agent/api/models/vpp/ipsec" --output-dir "descriptor"
-//go:generate descriptor-adapter --descriptor-name SPDPolicy --value-type *vpp_ipsec.SecurityPolicyDatabase_PolicyEntry --import "github.com/ligato/vpp-agent/api/models/vpp/ipsec" --output-dir "descriptor"
-//go:generate descriptor-adapter --descriptor-name SA  --value-type *vpp_ipsec.SecurityAssociation --import "github.com/ligato/vpp-agent/api/models/vpp/ipsec" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name SPD  --value-type *vpp_ipsec.SecurityPolicyDatabase --meta-type *idxvpp.OnlyIndex --import "go.ligato.io/vpp-agent/v2/pkg/idxvpp" --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/ipsec" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name SPDInterface --value-type *vpp_ipsec.SecurityPolicyDatabase_Interface --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/ipsec" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name SPDPolicy --value-type *vpp_ipsec.SecurityPolicyDatabase_PolicyEntry --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/ipsec" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name SA  --value-type *vpp_ipsec.SecurityAssociation --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/ipsec" --output-dir "descriptor"
 
 package ipsecplugin
 
@@ -25,17 +25,17 @@ import (
 	"github.com/ligato/cn-infra/infra"
 	"github.com/pkg/errors"
 
-	"github.com/ligato/vpp-agent/plugins/govppmux"
-	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin"
-	"github.com/ligato/vpp-agent/plugins/vpp/ipsecplugin/descriptor"
-	"github.com/ligato/vpp-agent/plugins/vpp/ipsecplugin/descriptor/adapter"
-	"github.com/ligato/vpp-agent/plugins/vpp/ipsecplugin/vppcalls"
+	"go.ligato.io/vpp-agent/v2/plugins/govppmux"
+	kvs "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/ipsecplugin/descriptor"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/ipsecplugin/descriptor/adapter"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/ipsecplugin/vppcalls"
 
-	_ "github.com/ligato/vpp-agent/plugins/vpp/ipsecplugin/vppcalls/vpp1904"
-	_ "github.com/ligato/vpp-agent/plugins/vpp/ipsecplugin/vppcalls/vpp1908"
-	_ "github.com/ligato/vpp-agent/plugins/vpp/ipsecplugin/vppcalls/vpp2001"
-	_ "github.com/ligato/vpp-agent/plugins/vpp/ipsecplugin/vppcalls/vpp2001_324"
+	_ "go.ligato.io/vpp-agent/v2/plugins/vpp/ipsecplugin/vppcalls/vpp1904"
+	_ "go.ligato.io/vpp-agent/v2/plugins/vpp/ipsecplugin/vppcalls/vpp1908"
+	_ "go.ligato.io/vpp-agent/v2/plugins/vpp/ipsecplugin/vppcalls/vpp2001"
+	_ "go.ligato.io/vpp-agent/v2/plugins/vpp/ipsecplugin/vppcalls/vpp2001_324"
 )
 
 // IPSecPlugin configures VPP security policy databases and security associations using GoVPP.

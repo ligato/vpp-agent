@@ -21,16 +21,16 @@ import (
 
 	"github.com/ligato/cn-infra/agent"
 
-	linux_interfaces "github.com/ligato/vpp-agent/api/models/linux/interfaces"
-	linux_ns "github.com/ligato/vpp-agent/api/models/linux/namespace"
-	vpp_interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	vpp_l2 "github.com/ligato/vpp-agent/api/models/vpp/l2"
-	"github.com/ligato/vpp-agent/clientv2/linux/localclient"
-	linux_ifplugin "github.com/ligato/vpp-agent/plugins/linux/ifplugin"
-	linux_l3plugin "github.com/ligato/vpp-agent/plugins/linux/l3plugin"
-	"github.com/ligato/vpp-agent/plugins/orchestrator"
-	vpp_ifplugin "github.com/ligato/vpp-agent/plugins/vpp/ifplugin"
-	vpp_l2plugin "github.com/ligato/vpp-agent/plugins/vpp/l2plugin"
+	"go.ligato.io/vpp-agent/v2/clientv2/linux/localclient"
+	linux_ifplugin "go.ligato.io/vpp-agent/v2/plugins/linux/ifplugin"
+	linux_l3plugin "go.ligato.io/vpp-agent/v2/plugins/linux/l3plugin"
+	"go.ligato.io/vpp-agent/v2/plugins/orchestrator"
+	vpp_ifplugin "go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin"
+	vpp_l2plugin "go.ligato.io/vpp-agent/v2/plugins/vpp/l2plugin"
+	linux_interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/linux/interfaces"
+	linux_ns "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/linux/namespace"
+	vpp_interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/interfaces"
+	vpp_l2 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/l2"
 )
 
 /*
@@ -268,7 +268,7 @@ var (
 				Name: afPacketLogicalName,
 			},
 			{
-				Name: bviLoopName,
+				Name:                    bviLoopName,
 				BridgedVirtualInterface: true,
 			},
 		},

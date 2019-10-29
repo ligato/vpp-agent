@@ -18,11 +18,11 @@ import (
 	"testing"
 
 	"github.com/ligato/cn-infra/logging/logrus"
-	acl "github.com/ligato/vpp-agent/api/models/vpp/acl"
-	vpp_acl "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/acl"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
-	"github.com/ligato/vpp-agent/plugins/vpp/vppcallmock"
 	. "github.com/onsi/gomega"
+	vpp_acl "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/acl"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/vppcallmock"
+	acl "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/acl"
 )
 
 var aclNoRules []*acl.ACL_Rule

@@ -17,12 +17,12 @@ package vrfidx
 import (
 	"time"
 
-	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
+	l3 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/l3"
 
 	"github.com/ligato/cn-infra/idxmap"
 	"github.com/ligato/cn-infra/logging"
 
-	"github.com/ligato/vpp-agent/pkg/idxvpp"
+	"go.ligato.io/vpp-agent/v2/pkg/idxvpp"
 )
 
 // VRFMetadataIndex provides read-only access to mapping with VPP VRF

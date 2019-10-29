@@ -23,11 +23,11 @@ import (
 
 	govppapi "git.fd.io/govpp.git/api"
 
-	vpevppcalls "github.com/ligato/vpp-agent/plugins/govppmux/vppcalls"
-	"github.com/ligato/vpp-agent/plugins/govppmux/vppcalls/vpp2001"
-	"github.com/ligato/vpp-agent/plugins/telemetry/vppcalls"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/memclnt"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/vpe"
+	vpevppcalls "go.ligato.io/vpp-agent/v2/plugins/govppmux/vppcalls"
+	"go.ligato.io/vpp-agent/v2/plugins/govppmux/vppcalls/vpp2001"
+	"go.ligato.io/vpp-agent/v2/plugins/telemetry/vppcalls"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/memclnt"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/vpe"
 )
 
 func init() {

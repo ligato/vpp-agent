@@ -17,8 +17,8 @@ package vpp1908
 import (
 	"fmt"
 
-	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1908/l2"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908/l2"
+	interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/interfaces"
 )
 
 // TODO:  more suitable for the l2 plugin, but the tag-rewrite retrieve is a part of the vpp interface api

@@ -17,12 +17,12 @@ package vpp1904
 import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
-	vpe_vppcalls "github.com/ligato/vpp-agent/plugins/govppmux/vppcalls"
-	vpe_vpp1904 "github.com/ligato/vpp-agent/plugins/govppmux/vppcalls/vpp1904"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/sr"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/vpe"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
-	"github.com/ligato/vpp-agent/plugins/vpp/srplugin/vppcalls"
+	vpe_vppcalls "go.ligato.io/vpp-agent/v2/plugins/govppmux/vppcalls"
+	vpe_vpp1904 "go.ligato.io/vpp-agent/v2/plugins/govppmux/vppcalls/vpp1904"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904/sr"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904/vpe"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/srplugin/vppcalls"
 )
 
 func init() {

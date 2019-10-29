@@ -4,11 +4,11 @@ import (
 	"errors"
 	"net"
 
-	"github.com/ligato/vpp-agent/api/models/netalloc"
-	"github.com/ligato/vpp-agent/pkg/models"
-	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-	"github.com/ligato/vpp-agent/plugins/netalloc/utils"
-	plugin "github.com/ligato/vpp-agent/plugins/netalloc"
+	"go.ligato.io/vpp-agent/v2/pkg/models"
+	kvs "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
+	plugin "go.ligato.io/vpp-agent/v2/plugins/netalloc"
+	"go.ligato.io/vpp-agent/v2/plugins/netalloc/utils"
+	"go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/netalloc"
 )
 
 // NetAlloc is a mock version of the netplugin, suitable for unit testing.

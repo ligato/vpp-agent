@@ -21,12 +21,12 @@ import (
 
 	"github.com/ligato/cn-infra/agent"
 
-	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
-	"github.com/ligato/vpp-agent/clientv2/linux/localclient"
-	"github.com/ligato/vpp-agent/plugins/orchestrator"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin"
-	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin"
+	"go.ligato.io/vpp-agent/v2/clientv2/linux/localclient"
+	"go.ligato.io/vpp-agent/v2/plugins/orchestrator"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/l3plugin"
+	interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/interfaces"
+	l3 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/l3"
 )
 
 /*
@@ -178,7 +178,7 @@ var (
 		},
 	}
 	ipScanNeighbor = &l3.IPScanNeighbor{
-		Mode:           l3.IPScanNeighbor_IPv4,
+		Mode:           l3.IPScanNeighbor_IPV4,
 		ScanInterval:   1,
 		ScanIntDelay:   1,
 		MaxProcTime:    20,

@@ -19,7 +19,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ligato/vpp-agent/pkg/metrics"
+	"go.ligato.io/vpp-agent/v2/pkg/metrics"
 )
 
 var (

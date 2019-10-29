@@ -17,10 +17,10 @@ package vpp1904_test
 import (
 	"testing"
 
-	ifModel "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/memif"
 	. "github.com/onsi/gomega"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904/interfaces"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904/memif"
+	ifModel "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/interfaces"
 )
 
 func TestAddMasterMemifInterface(t *testing.T) {

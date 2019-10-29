@@ -17,10 +17,10 @@ package vpp1904
 import (
 	"net"
 
-	"github.com/ligato/vpp-agent/api/models/netalloc"
-	"github.com/ligato/vpp-agent/api/models/vpp/l3"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/ip"
 	"github.com/pkg/errors"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904/ip"
+	"go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/netalloc"
+	vpp_l3 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/l3"
 )
 
 const (

@@ -19,7 +19,7 @@ import (
 
 	. "github.com/onsi/gomega"
 
-	"github.com/ligato/vpp-agent/pkg/models"
+	"go.ligato.io/vpp-agent/v2/pkg/models"
 )
 
 type TestMetrics struct {

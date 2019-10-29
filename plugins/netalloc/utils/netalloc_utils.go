@@ -5,7 +5,7 @@ import (
 	"net"
 	"strings"
 
-	"github.com/ligato/vpp-agent/api/models/netalloc"
+	"go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/netalloc"
 )
 
 // ParseIPAddr parses IP address from string.
@@ -41,7 +41,7 @@ func ParseIPAddr(addr string, expNet *net.IPNet) (ipNet *net.IPNet, fromExpNet b
 	if expNet != nil {
 		if expNet.Contains(ip) {
 			// IP address from the expected network
-			return &net.IPNet{IP: ip, Mask: expNet.Mask}, true,nil
+			return &net.IPNet{IP: ip, Mask: expNet.Mask}, true, nil
 		}
 	}
 
@@ -55,7 +55,7 @@ func ParseIPAddr(addr string, expNet *net.IPNet) (ipNet *net.IPNet, fromExpNet b
 	}
 
 	// IPv6 address
-	return &net.IPNet{IP: ip, Mask: defaultIpv6Mask}, false,nil
+	return &net.IPNet{IP: ip, Mask: defaultIpv6Mask}, false, nil
 }
 
 // ParseAddrAllocRef parses reference to allocated address.

@@ -21,10 +21,10 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 
-	ba_ip "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1908/ip"
-	ba_punt "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1908/punt"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
-	"github.com/ligato/vpp-agent/plugins/vpp/puntplugin/vppcalls"
+	ba_ip "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908/ip"
+	ba_punt "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908/punt"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/puntplugin/vppcalls"
 )
 
 func init() {

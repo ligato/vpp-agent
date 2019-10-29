@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package vpp.stn;
+
+option go_package = "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/stn;vpp_stn";
+
+message Rule {
+    string ip_address = 1;
+    string interface = 2;
+}

@@ -18,11 +18,11 @@ import (
 	"testing"
 
 	"github.com/ligato/cn-infra/logging/logrus"
-	vpp_ifs "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls/vpp2001"
-	"github.com/ligato/vpp-agent/plugins/vpp/vppcallmock"
 	. "github.com/onsi/gomega"
+	vpp_ifs "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/interfaces"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/vppcalls"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/vppcalls/vpp2001"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/vppcallmock"
 )
 
 func TestInterfaceAdminDown(t *testing.T) {

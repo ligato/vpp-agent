@@ -26,9 +26,10 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/reflection"
 
-	"github.com/ligato/vpp-agent/api/generic"
-	"github.com/ligato/vpp-agent/pkg/models"
-	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v2/pkg/models"
+	kvs "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/generic"
+	"go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/kvscheduler"
 )
 
 var (
@@ -120,7 +121,7 @@ func (p *Plugin) Init() (err error) {
 func (p *Plugin) AfterInit() (err error) {
 	go p.watchEvents()
 
-	statusChan := make(chan *kvs.BaseValueStatus, 100)
+	statusChan := make(chan *kvscheduler.BaseValueStatus, 100)
 	p.kvs.WatchValueStatus(statusChan, nil)
 	go p.watchStatus(statusChan)
 
@@ -249,7 +250,7 @@ func UnmarshalLazyValue(key string, lazy datasync.LazyValue) (proto.Message, err
 	return instance, nil
 }
 
-func (p *Plugin) watchStatus(ch <-chan *kvs.BaseValueStatus) {
+func (p *Plugin) watchStatus(ch <-chan *kvscheduler.BaseValueStatus) {
 	for {
 		select {
 		case s := <-ch:

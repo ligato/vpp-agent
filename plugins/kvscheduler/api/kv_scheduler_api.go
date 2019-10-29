@@ -22,6 +22,8 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/ligato/cn-infra/idxmap"
+
+	"go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/kvscheduler"
 )
 
 // KeySelector is used to filter keys.
@@ -68,7 +70,7 @@ type Metadata interface{}
 // KeyWithError stores error for a key whose value failed to get updated.
 type KeyWithError struct {
 	Key          string
-	TxnOperation TxnOperation
+	TxnOperation kvscheduler.TxnOperation
 	Error        error
 }
 
@@ -236,11 +238,11 @@ type KVScheduler interface {
 
 	// GetValueStatus returns the status of a non-derived value with the given
 	// key.
-	GetValueStatus(key string) *BaseValueStatus
+	GetValueStatus(key string) *kvscheduler.BaseValueStatus
 
 	// WatchValueStatus allows to watch for changes in the status of non-derived
 	// values with keys selected by the selector (all if keySelector==nil).
-	WatchValueStatus(channel chan<- *BaseValueStatus, keySelector KeySelector)
+	WatchValueStatus(channel chan<- *kvscheduler.BaseValueStatus, keySelector KeySelector)
 
 	// GetTransactionHistory returns history of transactions started within
 	// the specified time window, or the full recorded history if the timestamps

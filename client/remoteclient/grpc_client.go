@@ -6,10 +6,10 @@ import (
 	"github.com/golang/protobuf/proto"
 	"google.golang.org/grpc"
 
-	"github.com/ligato/vpp-agent/api/generic"
-	"github.com/ligato/vpp-agent/client"
-	"github.com/ligato/vpp-agent/pkg/models"
-	"github.com/ligato/vpp-agent/pkg/util"
+	"go.ligato.io/vpp-agent/v2/client"
+	"go.ligato.io/vpp-agent/v2/pkg/models"
+	"go.ligato.io/vpp-agent/v2/pkg/util"
+	"go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/generic"
 )
 
 type grpcClient struct {

@@ -24,9 +24,10 @@ import (
 
 	"github.com/ligato/cn-infra/logging"
 
-	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-	"github.com/ligato/vpp-agent/plugins/kvscheduler/internal/graph"
-	"github.com/ligato/vpp-agent/plugins/kvscheduler/internal/utils"
+	kvs "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v2/plugins/kvscheduler/internal/graph"
+	"go.ligato.io/vpp-agent/v2/plugins/kvscheduler/internal/utils"
+	"go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/kvscheduler"
 )
 
 // applyValueArgs collects all arguments to applyValue method.
@@ -172,7 +173,7 @@ func (s *Scheduler) applyValue(args *applyValueArgs) (executed kvs.RecordedTxnOp
 	// determine the operation type
 	if args.isDepUpdate {
 		s.determineDepUpdateOperation(node, txnOp)
-		if txnOp.Operation == kvs.TxnOperation_UNDEFINED {
+		if txnOp.Operation == kvscheduler.TxnOperation_UNDEFINED {
 			// nothing needs to be updated
 			if node.GetValue() == nil {
 				// this value was already deleted (unsatisfied, derived) within
@@ -183,11 +184,11 @@ func (s *Scheduler) applyValue(args *applyValueArgs) (executed kvs.RecordedTxnOp
 			return
 		}
 	} else if args.kv.value == nil {
-		txnOp.Operation = kvs.TxnOperation_DELETE
+		txnOp.Operation = kvscheduler.TxnOperation_DELETE
 	} else if node.GetValue() == nil || !isNodeAvailable(node) {
-		txnOp.Operation = kvs.TxnOperation_CREATE
+		txnOp.Operation = kvscheduler.TxnOperation_CREATE
 	} else {
-		txnOp.Operation = kvs.TxnOperation_UPDATE
+		txnOp.Operation = kvscheduler.TxnOperation_UPDATE
 	}
 
 	// remaining txnOp attributes to fill:
@@ -226,7 +227,7 @@ func (s *Scheduler) applyValue(args *applyValueArgs) (executed kvs.RecordedTxnOp
 	// if the value is already "broken" by this transaction, do not try to update
 	// anymore, unless this is a revert
 	// (needs to be refreshed first in the post-processing stage)
-	if (prevState == kvs.ValueState_FAILED || prevState == kvs.ValueState_RETRYING) &&
+	if (prevState == kvscheduler.ValueState_FAILED || prevState == kvscheduler.ValueState_RETRYING) &&
 		!args.kv.isRevert && prevUpdate != nil && prevUpdate.txnSeqNum == args.txn.seqNum {
 		_, prevErr := getNodeError(node)
 		return executed, prevValue, prevErr
@@ -234,11 +235,11 @@ func (s *Scheduler) applyValue(args *applyValueArgs) (executed kvs.RecordedTxnOp
 
 	// run selected operation
 	switch txnOp.Operation {
-	case kvs.TxnOperation_DELETE:
+	case kvscheduler.TxnOperation_DELETE:
 		executed, err = s.applyDelete(node, txnOp, args, args.isDepUpdate, false)
-	case kvs.TxnOperation_CREATE:
+	case kvscheduler.TxnOperation_CREATE:
 		executed, err = s.applyCreate(node, txnOp, args)
-	case kvs.TxnOperation_UPDATE:
+	case kvscheduler.TxnOperation_UPDATE:
 		executed, err = s.applyUpdate(node, txnOp, args)
 	}
 
@@ -286,11 +287,11 @@ func (s *Scheduler) applyDelete(node graph.NodeRW, txnOp *kvs.RecordedTxnOp, arg
 			node.DelFlags(ErrorFlagIndex)
 			if pending {
 				// deleted due to missing dependencies
-				txnOp.NewState = kvs.ValueState_PENDING
+				txnOp.NewState = kvscheduler.ValueState_PENDING
 				s.updateNodeState(node, txnOp.NewState, args)
 			} else {
 				// removed by request
-				txnOp.NewState = kvs.ValueState_REMOVED
+				txnOp.NewState = kvscheduler.ValueState_REMOVED
 				if args.isDerived && !recreate {
 					args.graphW.DeleteNode(args.kv.key)
 				} else {
@@ -319,7 +320,7 @@ func (s *Scheduler) applyDelete(node graph.NodeRW, txnOp *kvs.RecordedTxnOp, arg
 	node.SetFlags(&UnavailValueFlag{})
 	if !pending {
 		// state may still change if delete fails
-		s.updateNodeState(node, kvs.ValueState_REMOVED, args)
+		s.updateNodeState(node, kvscheduler.ValueState_REMOVED, args)
 	}
 
 	// remove derived values
@@ -385,14 +386,14 @@ func (s *Scheduler) applyCreate(node graph.NodeRW, txnOp *kvs.RecordedTxnOp, arg
 	// handle unimplemented value
 	unimplemented := args.kv.origin == kvs.FromNB && !args.isDerived && descriptor == nil
 	if unimplemented {
-		if getNodeState(node) == kvs.ValueState_UNIMPLEMENTED {
+		if getNodeState(node) == kvscheduler.ValueState_UNIMPLEMENTED {
 			// already known
 			return
 		}
 		node.SetFlags(&UnavailValueFlag{})
 		node.DelFlags(ErrorFlagIndex)
 		txnOp.NOOP = true
-		txnOp.NewState = kvs.ValueState_UNIMPLEMENTED
+		txnOp.NewState = kvscheduler.ValueState_UNIMPLEMENTED
 		s.updateNodeState(node, txnOp.NewState, args)
 		return kvs.RecordedTxnOps{txnOp}, nil
 	}
@@ -408,7 +409,7 @@ func (s *Scheduler) applyCreate(node graph.NodeRW, txnOp *kvs.RecordedTxnOp, arg
 		if err != nil {
 			node.SetFlags(&UnavailValueFlag{})
 			txnOp.NewErr = err
-			txnOp.NewState = kvs.ValueState_INVALID
+			txnOp.NewState = kvscheduler.ValueState_INVALID
 			txnOp.NOOP = true
 			s.updateNodeState(node, txnOp.NewState, args)
 			node.SetFlags(&ErrorFlag{err: err, retriable: false})
@@ -433,7 +434,7 @@ func (s *Scheduler) applyCreate(node graph.NodeRW, txnOp *kvs.RecordedTxnOp, arg
 		// if not ready, nothing to do
 		node.SetFlags(&UnavailValueFlag{})
 		node.DelFlags(ErrorFlagIndex)
-		txnOp.NewState = kvs.ValueState_PENDING
+		txnOp.NewState = kvscheduler.ValueState_PENDING
 		txnOp.NOOP = true
 		s.updateNodeState(node, txnOp.NewState, args)
 		return kvs.RecordedTxnOps{txnOp}, nil
@@ -473,9 +474,9 @@ func (s *Scheduler) applyCreate(node graph.NodeRW, txnOp *kvs.RecordedTxnOp, arg
 	// finalize node and save before going to derived values + dependencies
 	node.DelFlags(ErrorFlagIndex, UnavailValueFlagIndex)
 	if args.kv.origin == kvs.FromSB {
-		txnOp.NewState = kvs.ValueState_OBTAINED
+		txnOp.NewState = kvscheduler.ValueState_OBTAINED
 	} else {
-		txnOp.NewState = kvs.ValueState_CONFIGURED
+		txnOp.NewState = kvscheduler.ValueState_CONFIGURED
 	}
 	s.updateNodeState(node, txnOp.NewState, args)
 	executed = append(executed, txnOp)
@@ -524,7 +525,7 @@ func (s *Scheduler) applyUpdate(node graph.NodeRW, txnOp *kvs.RecordedTxnOp, arg
 			node.SetValue(args.kv.value) // save the invalid value
 			node.SetFlags(&UnavailValueFlag{})
 			txnOp.NewErr = err
-			txnOp.NewState = kvs.ValueState_INVALID
+			txnOp.NewState = kvscheduler.ValueState_INVALID
 			txnOp.NOOP = true
 			s.updateNodeState(node, txnOp.NewState, args)
 			node.SetFlags(&ErrorFlag{err: err, retriable: false})
@@ -551,7 +552,7 @@ func (s *Scheduler) applyUpdate(node graph.NodeRW, txnOp *kvs.RecordedTxnOp, arg
 		defer func() { args.recreating = nil }()
 		// remove the obsolete revision of the value
 		delOp := s.preRecordTxnOp(args, node)
-		delOp.Operation = kvs.TxnOperation_DELETE
+		delOp.Operation = kvscheduler.TxnOperation_DELETE
 		delOp.NewValue = nil
 		delExec, inheritedErr := s.applyDelete(node, delOp, args, false, true)
 		executed = append(executed, delExec...)
@@ -562,7 +563,7 @@ func (s *Scheduler) applyUpdate(node graph.NodeRW, txnOp *kvs.RecordedTxnOp, arg
 		// create the new revision of the value
 		node = args.graphW.SetNode(args.kv.key)
 		createOp := s.preRecordTxnOp(args, node)
-		createOp.Operation = kvs.TxnOperation_CREATE
+		createOp.Operation = kvscheduler.TxnOperation_CREATE
 		createOp.PrevValue = nil
 		createExec, inheritedErr := s.applyCreate(node, createOp, args)
 		executed = append(executed, createExec...)
@@ -628,9 +629,9 @@ func (s *Scheduler) applyUpdate(node graph.NodeRW, txnOp *kvs.RecordedTxnOp, arg
 	// finalize node and save before going to new/modified derived values + dependencies
 	node.DelFlags(ErrorFlagIndex, UnavailValueFlagIndex)
 	if args.kv.origin == kvs.FromSB {
-		txnOp.NewState = kvs.ValueState_OBTAINED
+		txnOp.NewState = kvscheduler.ValueState_OBTAINED
 	} else {
-		txnOp.NewState = kvs.ValueState_CONFIGURED
+		txnOp.NewState = kvscheduler.ValueState_CONFIGURED
 	}
 	s.updateNodeState(node, txnOp.NewState, args)
 
@@ -638,8 +639,8 @@ func (s *Scheduler) applyUpdate(node graph.NodeRW, txnOp *kvs.RecordedTxnOp, arg
 	if !equivalent || txnOp.PrevState != txnOp.NewState {
 		// do not record transition if it only confirms that the value is in sync
 		confirmsInSync := equivalent &&
-			txnOp.PrevState == kvs.ValueState_DISCOVERED &&
-			txnOp.NewState == kvs.ValueState_CONFIGURED
+			txnOp.PrevState == kvscheduler.ValueState_DISCOVERED &&
+			txnOp.NewState == kvscheduler.ValueState_CONFIGURED
 		if !confirmsInSync {
 			txnOp.NOOP = equivalent
 			executed = append(executed, txnOp)
@@ -804,10 +805,10 @@ func (s *Scheduler) determineDepUpdateOperation(node graph.NodeRW, txnOp *kvs.Re
 			// nothing to do
 			return
 		}
-		txnOp.Operation = kvs.TxnOperation_CREATE
+		txnOp.Operation = kvscheduler.TxnOperation_CREATE
 	} else if !isNodeReady(node) {
 		// node should not be available anymore
-		txnOp.Operation = kvs.TxnOperation_DELETE
+		txnOp.Operation = kvscheduler.TxnOperation_DELETE
 	}
 }
 
@@ -817,10 +818,10 @@ func (s *Scheduler) compressTxnOps(executed kvs.RecordedTxnOps) kvs.RecordedTxnO
 	compressed := make(kvs.RecordedTxnOps, 0, len(executed))
 	for i, op := range executed {
 		compressedOp := false
-		if op.Operation == kvs.TxnOperation_CREATE && op.NewState == kvs.ValueState_PENDING {
+		if op.Operation == kvscheduler.TxnOperation_CREATE && op.NewState == kvscheduler.ValueState_PENDING {
 			for j := i + 1; j < len(executed); j++ {
 				if executed[j].Key == op.Key {
-					if executed[j].Operation == kvs.TxnOperation_CREATE {
+					if executed[j].Operation == kvscheduler.TxnOperation_CREATE {
 						// compress
 						compressedOp = true
 						executed[j].PrevValue = op.PrevValue
@@ -841,10 +842,10 @@ func (s *Scheduler) compressTxnOps(executed kvs.RecordedTxnOps) kvs.RecordedTxnO
 	for i := length - 1; i >= 0; i-- {
 		op := compressed[i]
 		compressedOp := false
-		if op.Operation == kvs.TxnOperation_DELETE && op.PrevState == kvs.ValueState_PENDING {
+		if op.Operation == kvscheduler.TxnOperation_DELETE && op.PrevState == kvscheduler.ValueState_PENDING {
 			for j := i - 1; j >= 0; j-- {
 				if compressed[j].Key == op.Key {
-					if compressed[j].Operation == kvs.TxnOperation_DELETE {
+					if compressed[j].Operation == kvscheduler.TxnOperation_DELETE {
 						// compress
 						compressedOp = true
 						compressed[j].NewValue = op.NewValue
@@ -865,7 +866,7 @@ func (s *Scheduler) compressTxnOps(executed kvs.RecordedTxnOps) kvs.RecordedTxnO
 }
 
 // updateNodeState updates node state if it is really necessary.
-func (s *Scheduler) updateNodeState(node graph.NodeRW, newState kvs.ValueState, args *applyValueArgs) {
+func (s *Scheduler) updateNodeState(node graph.NodeRW, newState kvscheduler.ValueState, args *applyValueArgs) {
 	if getNodeState(node) != newState {
 		if s.logGraphWalk {
 			indent := strings.Repeat(" ", (args.depth+1)*2)
@@ -876,10 +877,10 @@ func (s *Scheduler) updateNodeState(node graph.NodeRW, newState kvs.ValueState, 
 }
 
 func (s *Scheduler) markFailedValue(node graph.NodeRW, args *applyValueArgs, err error,
-	retriableErr bool) (newState kvs.ValueState) {
+	retriableErr bool) (newState kvscheduler.ValueState) {
 
 	// decide value state between FAILED and RETRYING
-	newState = kvs.ValueState_FAILED
+	newState = kvscheduler.ValueState_FAILED
 	toBeReverted := args.txn.txnType == kvs.NBTransaction && args.txn.nb.revertOnFailure && !args.kv.isRevert
 	if retriableErr && !toBeReverted {
 		// consider operation retry
@@ -896,7 +897,7 @@ func (s *Scheduler) markFailedValue(node graph.NodeRW, args *applyValueArgs, err
 		if lastUpdate.retryEnabled && lastUpdate.retryArgs != nil &&
 			(lastUpdate.retryArgs.MaxCount == 0 || attempt <= lastUpdate.retryArgs.MaxCount) {
 			// retry is allowed
-			newState = kvs.ValueState_RETRYING
+			newState = kvscheduler.ValueState_RETRYING
 		}
 	}
 	s.updateNodeState(node, newState, args)

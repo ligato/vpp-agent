@@ -20,8 +20,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ligato/vpp-agent/pkg/metrics"
-	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v2/pkg/metrics"
+	kvs "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/kvscheduler"
 )
 
 var (
@@ -36,12 +37,12 @@ func init() {
 	stats.TxnStats.Methods = make(metrics.Calls)
 	stats.TxnStats.OperationCount = make(map[string]uint64)
 	stats.TxnStats.ValueStateCount = make(map[string]uint64)
-	for state := range kvs.ValueState_value {
+	for state := range kvscheduler.ValueState_value {
 		stats.TxnStats.ValueStateCount[state] = 0
 	}
-	for op, opVal := range kvs.TxnOperation_name {
-		if op == int32(kvs.TxnOperation_UNDEFINED) ||
-			op == int32(kvs.TxnOperation_VALIDATE) {
+	for op, opVal := range kvscheduler.TxnOperation_name {
+		if op == int32(kvscheduler.TxnOperation_UNDEFINED) ||
+			op == int32(kvscheduler.TxnOperation_VALIDATE) {
 			continue
 		}
 		stats.TxnStats.OperationCount[opVal] = 0

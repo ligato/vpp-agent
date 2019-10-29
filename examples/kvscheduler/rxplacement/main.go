@@ -21,12 +21,13 @@ import (
 
 	"github.com/ligato/cn-infra/agent"
 
-	"github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	"github.com/ligato/vpp-agent/clientv2/linux/localclient"
-	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler"
-	kvs_api "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-	"github.com/ligato/vpp-agent/plugins/orchestrator"
-	vpp_ifplugin "github.com/ligato/vpp-agent/plugins/vpp/ifplugin"
+	"go.ligato.io/vpp-agent/v2/clientv2/linux/localclient"
+	kvs "go.ligato.io/vpp-agent/v2/plugins/kvscheduler"
+	kvs_api "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v2/plugins/orchestrator"
+	vpp_ifplugin "go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin"
+	"go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/kvscheduler"
+	vpp_interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/interfaces"
 )
 
 /*
@@ -129,7 +130,7 @@ func (p *ExamplePlugin) Init() error {
 
 // AfterInit handles phase after initialization.
 func (p *ExamplePlugin) AfterInit() error {
-	ch := make(chan *kvs_api.BaseValueStatus, 100)
+	ch := make(chan *kvscheduler.BaseValueStatus, 100)
 	p.KVScheduler.WatchValueStatus(ch, nil)
 	go watchValueStatus(ch)
 	go testLocalClientWithScheduler(p.KVScheduler)
@@ -141,7 +142,7 @@ func (p *ExamplePlugin) Close() error {
 	return nil
 }
 
-func watchValueStatus(ch <-chan *kvs_api.BaseValueStatus) {
+func watchValueStatus(ch <-chan *kvscheduler.BaseValueStatus) {
 	for {
 		select {
 		case status := <-ch:
@@ -202,7 +203,7 @@ func testLocalClientWithScheduler(kvscheduler kvs_api.KVScheduler) {
 	/* Re-create will fail - that is expected and it is due to the link-state key
 	   being updated AFTER the transaction, not during. The subsequent retry/notification
 	   should fix all the errors.
-	 */
+	*/
 
 	txn3 := localclient.DataChangeRequest("example")
 	err = txn3.Put().

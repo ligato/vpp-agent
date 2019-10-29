@@ -16,17 +16,17 @@ package e2e
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	. "github.com/onsi/gomega"
 
-	"fmt"
-	"github.com/ligato/vpp-agent/api/models/linux/interfaces"
-	"github.com/ligato/vpp-agent/api/models/linux/l3"
-	"github.com/ligato/vpp-agent/api/models/linux/namespace"
-	"github.com/ligato/vpp-agent/api/models/vpp/acl"
-	"github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/kvscheduler"
+	"go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/linux/interfaces"
+	linux_l3 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/linux/l3"
+	linux_namespace "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/linux/namespace"
+	vpp_acl "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/acl"
+	vpp_interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/interfaces"
 )
 
 func vppACLs(ctx *testCtx) (string, error) {
@@ -360,9 +360,9 @@ func TestL3ACLs(t *testing.T) {
 	).Send(context.Background())
 	Expect(err).ToNot(HaveOccurred(), "Transaction connecting microservices and configuring ACLs failed")
 
-	Eventually(ctx.getValueStateClb(vppTap1)).Should(Equal(kvs.ValueState_CONFIGURED),
+	Eventually(ctx.getValueStateClb(vppTap1)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
 		"TAP attached to a newly started microservice1 should be eventually configured")
-	Eventually(ctx.getValueStateClb(vppTap2)).Should(Equal(kvs.ValueState_CONFIGURED),
+	Eventually(ctx.getValueStateClb(vppTap2)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
 		"TAP attached to a newly started microservice2 should be eventually configured")
 
 	Expect(vppACLs(ctx)).Should(SatisfyAll(
@@ -402,15 +402,15 @@ func TestL3ACLs(t *testing.T) {
 	// restart both microservices
 	ctx.stopMicroservice(ms1Name)
 	ctx.stopMicroservice(ms2Name)
-	Eventually(ctx.getValueStateClb(vppTap1)).Should(Equal(kvs.ValueState_PENDING),
+	Eventually(ctx.getValueStateClb(vppTap1)).Should(Equal(kvscheduler.ValueState_PENDING),
 		"Without microservice, the associated VPP-TAP should be pending")
-	Eventually(ctx.getValueStateClb(vppTap2)).Should(Equal(kvs.ValueState_PENDING),
+	Eventually(ctx.getValueStateClb(vppTap2)).Should(Equal(kvscheduler.ValueState_PENDING),
 		"Without microservice, the associated VPP-TAP should be pending")
 	ctx.startMicroservice(ms1Name)
 	ctx.startMicroservice(ms2Name)
-	Eventually(ctx.getValueStateClb(vppTap1)).Should(Equal(kvs.ValueState_CONFIGURED),
+	Eventually(ctx.getValueStateClb(vppTap1)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
 		"VPP-TAP attached to a re-started microservice1 should be eventually configured")
-	Eventually(ctx.getValueStateClb(vppTap2)).Should(Equal(kvs.ValueState_CONFIGURED),
+	Eventually(ctx.getValueStateClb(vppTap2)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
 		"VPP-TAP attached to a re-started microservice1 should be eventually configured")
 
 	Expect(vppACLs(ctx)).Should(SatisfyAll(

@@ -20,13 +20,13 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	. "github.com/onsi/gomega"
 
-	l2 "github.com/ligato/vpp-agent/api/models/vpp/l2"
-	"github.com/ligato/vpp-agent/pkg/idxvpp"
-	vpp_l2 "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001_324/l2"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001_324/vpe"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
-	"github.com/ligato/vpp-agent/plugins/vpp/l2plugin/vppcalls"
-	"github.com/ligato/vpp-agent/plugins/vpp/vppcallmock"
+	"go.ligato.io/vpp-agent/v2/pkg/idxvpp"
+	vpp_l2 "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324/l2"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324/vpe"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/l2plugin/vppcalls"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/vppcallmock"
+	l2 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/l2"
 )
 
 var testDataInMessagesBDs = []govppapi.Message{

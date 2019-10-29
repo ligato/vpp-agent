@@ -17,9 +17,9 @@ package vppcalls
 import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
-	abf "github.com/ligato/vpp-agent/api/models/vpp/abf"
-	"github.com/ligato/vpp-agent/plugins/vpp/aclplugin/aclidx"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/aclplugin/aclidx"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
+	abf "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/abf"
 )
 
 // ABFDetails contains proto-modeled ABF data together with VPP-related metadata

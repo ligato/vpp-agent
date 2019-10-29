@@ -19,10 +19,10 @@ import (
 
 	"github.com/pkg/errors"
 
-	punt "github.com/ligato/vpp-agent/api/models/vpp/punt"
-	ba_ip "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/ip"
-	ba_punt "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/punt"
-	"github.com/ligato/vpp-agent/plugins/vpp/puntplugin/vppcalls"
+	ba_ip "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904/ip"
+	ba_punt "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904/punt"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/puntplugin/vppcalls"
+	punt "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/punt"
 )
 
 const PuntSocketHeaderVersion = 1
@@ -104,12 +104,12 @@ func (h *PuntVppHandler) DeregisterPuntSocket(toHost *punt.ToHost) error {
 
 // AddPuntRedirect adds new redirect entry
 func (h *PuntVppHandler) AddPuntRedirect(puntCfg *punt.IPRedirect) error {
-	if puntCfg.L3Protocol == punt.L3Protocol_IPv4 || puntCfg.L3Protocol == punt.L3Protocol_ALL {
+	if puntCfg.L3Protocol == punt.L3Protocol_IPV4 || puntCfg.L3Protocol == punt.L3Protocol_ALL {
 		if err := h.handlePuntRedirectIPv4(puntCfg, true); err != nil {
 			return err
 		}
 	}
-	if puntCfg.L3Protocol == punt.L3Protocol_IPv6 || puntCfg.L3Protocol == punt.L3Protocol_ALL {
+	if puntCfg.L3Protocol == punt.L3Protocol_IPV6 || puntCfg.L3Protocol == punt.L3Protocol_ALL {
 		if err := h.handlePuntRedirectIPv6(puntCfg, true); err != nil {
 			return err
 		}
@@ -119,12 +119,12 @@ func (h *PuntVppHandler) AddPuntRedirect(puntCfg *punt.IPRedirect) error {
 
 // DeletePuntRedirect removes existing redirect entry
 func (h *PuntVppHandler) DeletePuntRedirect(puntCfg *punt.IPRedirect) error {
-	if puntCfg.L3Protocol == punt.L3Protocol_IPv4 || puntCfg.L3Protocol == punt.L3Protocol_ALL {
+	if puntCfg.L3Protocol == punt.L3Protocol_IPV4 || puntCfg.L3Protocol == punt.L3Protocol_ALL {
 		if err := h.handlePuntRedirectIPv4(puntCfg, false); err != nil {
 			return err
 		}
 	}
-	if puntCfg.L3Protocol == punt.L3Protocol_IPv6 || puntCfg.L3Protocol == punt.L3Protocol_ALL {
+	if puntCfg.L3Protocol == punt.L3Protocol_IPV6 || puntCfg.L3Protocol == punt.L3Protocol_ALL {
 		if err := h.handlePuntRedirectIPv6(puntCfg, false); err != nil {
 			return err
 		}
@@ -198,7 +198,7 @@ func (h *PuntVppHandler) DeletePuntException(punt *punt.Exception) error {
 
 func parseL3Proto(p uint8) punt.L3Protocol {
 	switch p {
-	case uint8(punt.L3Protocol_IPv4), uint8(punt.L3Protocol_IPv6):
+	case uint8(punt.L3Protocol_IPV4), uint8(punt.L3Protocol_IPV6):
 		return punt.L3Protocol(p)
 	case ^uint8(0):
 		return punt.L3Protocol_ALL
@@ -218,10 +218,10 @@ func parseL4Proto(p uint8) punt.L4Protocol {
 
 func resolveL3Proto(protocol punt.L3Protocol) uint8 {
 	switch protocol {
-	case punt.L3Protocol_IPv4:
-		return uint8(punt.L3Protocol_IPv4)
-	case punt.L3Protocol_IPv6:
-		return uint8(punt.L3Protocol_IPv6)
+	case punt.L3Protocol_IPV4:
+		return uint8(punt.L3Protocol_IPV4)
+	case punt.L3Protocol_IPV6:
+		return uint8(punt.L3Protocol_IPV6)
 	case punt.L3Protocol_ALL:
 		return ^uint8(0) // binary API representation for both protocols
 	}

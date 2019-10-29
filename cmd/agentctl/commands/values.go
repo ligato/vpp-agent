@@ -24,10 +24,10 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/ligato/vpp-agent/api/types"
-	agentcli "github.com/ligato/vpp-agent/cmd/agentctl/cli"
-	"github.com/ligato/vpp-agent/pkg/models"
-	"github.com/ligato/vpp-agent/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v2/cmd/agentctl/api/types"
+	agentcli "go.ligato.io/vpp-agent/v2/cmd/agentctl/cli"
+	"go.ligato.io/vpp-agent/v2/pkg/models"
+	"go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/kvscheduler"
 )
 
 func NewValuesCommand(cli agentcli.Cli) *cobra.Command {
@@ -88,13 +88,13 @@ func runValues(cli agentcli.Cli, opts ValuesOptions) error {
 }
 
 // printValuesTable prints values data using table format
-func printValuesTable(out io.Writer, status []*api.BaseValueStatus) error {
+func printValuesTable(out io.Writer, status []*kvscheduler.BaseValueStatus) error {
 	var buf bytes.Buffer
 
 	w := tabwriter.NewWriter(&buf, 10, 0, 3, ' ', 0)
 	fmt.Fprintf(w, "MODEL\tNAME\tSTATE\tDETAILS\tLAST OP\tERROR\t\n")
 
-	var printVal = func(val *api.ValueStatus) {
+	var printVal = func(val *kvscheduler.ValueStatus) {
 		var (
 			model string
 			name  string
@@ -109,11 +109,11 @@ func printValuesTable(out io.Writer, status []*api.BaseValueStatus) error {
 		}
 
 		var lastOp string
-		if val.LastOperation != api.TxnOperation_UNDEFINED {
+		if val.LastOperation != kvscheduler.TxnOperation_UNDEFINED {
 			lastOp = val.LastOperation.String()
 		}
 		state := val.State.String()
-		if val.State == api.ValueState_OBTAINED {
+		if val.State == kvscheduler.ValueState_OBTAINED {
 			state = strings.ToLower(state)
 		}
 

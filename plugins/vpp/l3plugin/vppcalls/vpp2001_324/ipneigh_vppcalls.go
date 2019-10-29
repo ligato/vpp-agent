@@ -18,9 +18,9 @@ import (
 	"regexp"
 	"strconv"
 
-	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
-	vpp_ip "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001_324/ip"
 	"github.com/pkg/errors"
+	vpp_ip "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324/ip"
+	l3 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/l3"
 )
 
 // SetIPScanNeighbor implements ip neigh  handler.
@@ -79,9 +79,9 @@ func (h *IPNeighHandler) GetIPScanNeighbor() (*l3.IPScanNeighbor, error) {
 	if matches[1] == "enabled" {
 		switch matches[2] {
 		case "IPv4":
-			ipScanNeigh.Mode = l3.IPScanNeighbor_IPv4
+			ipScanNeigh.Mode = l3.IPScanNeighbor_IPV4
 		case "IPv6":
-			ipScanNeigh.Mode = l3.IPScanNeighbor_IPv6
+			ipScanNeigh.Mode = l3.IPScanNeighbor_IPV6
 		case "IPv4 and IPv6":
 			ipScanNeigh.Mode = l3.IPScanNeighbor_BOTH
 		}

@@ -17,10 +17,10 @@ package l3plugin
 import (
 	"github.com/ligato/cn-infra/health/statuscheck"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/vpp-agent/plugins/govppmux"
-	"github.com/ligato/vpp-agent/plugins/kvscheduler"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin"
-	"github.com/ligato/vpp-agent/plugins/netalloc"
+	"go.ligato.io/vpp-agent/v2/plugins/govppmux"
+	"go.ligato.io/vpp-agent/v2/plugins/kvscheduler"
+	"go.ligato.io/vpp-agent/v2/plugins/netalloc"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin"
 )
 
 // DefaultPlugin is a default instance of IfPlugin.

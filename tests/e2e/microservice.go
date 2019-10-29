@@ -4,14 +4,14 @@ import (
 	"bytes"
 	"fmt"
 	"regexp"
+	"runtime"
 	"strconv"
 	"testing"
-	"runtime"
 
 	"github.com/fsouza/go-dockerclient"
 	"github.com/vishvananda/netns"
 
-	nslinuxcalls "github.com/ligato/vpp-agent/plugins/linux/nsplugin/linuxcalls"
+	nslinuxcalls "go.ligato.io/vpp-agent/v2/plugins/linux/nsplugin/linuxcalls"
 )
 
 const (

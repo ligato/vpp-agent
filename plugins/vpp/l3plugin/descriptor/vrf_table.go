@@ -23,11 +23,11 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/ligato/cn-infra/logging"
-	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
-	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/descriptor/adapter"
-	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls"
-	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vrfidx"
+	kvs "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/l3plugin/descriptor/adapter"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/l3plugin/vppcalls"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/l3plugin/vrfidx"
+	l3 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/l3"
 )
 
 const (

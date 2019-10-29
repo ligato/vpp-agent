@@ -22,9 +22,9 @@ import (
 	"github.com/ligato/cn-infra/datasync/syncbase"
 	"github.com/ligato/cn-infra/db/keyval"
 
-	"github.com/ligato/vpp-agent/api/generic"
-	"github.com/ligato/vpp-agent/pkg/models"
-	orch "github.com/ligato/vpp-agent/plugins/orchestrator"
+	"go.ligato.io/vpp-agent/v2/pkg/models"
+	orch "go.ligato.io/vpp-agent/v2/plugins/orchestrator"
+	"go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/generic"
 )
 
 // LocalClient is global client for direct local access.

@@ -15,8 +15,8 @@
 package vpp1908
 
 import (
-	binapi_interface "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1908/interfaces"
-	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
+	binapi_interface "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908/interfaces"
+	interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/interfaces"
 )
 
 // SetRxPlacement implements interface handler.

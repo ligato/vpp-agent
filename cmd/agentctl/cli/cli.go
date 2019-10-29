@@ -27,9 +27,9 @@ import (
 	"github.com/ligato/cn-infra/db/keyval/kvproto"
 	"github.com/ligato/cn-infra/logging"
 
-	"github.com/ligato/vpp-agent/api"
-	"github.com/ligato/vpp-agent/cmd/agentctl/client"
-	"github.com/ligato/vpp-agent/pkg/debug"
+	"go.ligato.io/vpp-agent/v2/cmd/agentctl/api"
+	"go.ligato.io/vpp-agent/v2/cmd/agentctl/client"
+	"go.ligato.io/vpp-agent/v2/pkg/debug"
 )
 
 // Cli represents the agent command line client.

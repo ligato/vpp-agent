@@ -17,19 +17,19 @@ package vpp2001_test
 import (
 	"testing"
 
-	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vrfidx"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/l3plugin/vrfidx"
 
 	"github.com/ligato/cn-infra/logging/logrus"
-	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
-	netallock_mock "github.com/ligato/vpp-agent/plugins/netalloc/mock"
-	vpp_ip "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/ip"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
-	ifvppcalls "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
-	ifvpp2001_379 "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls/vpp2001"
-	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls"
-	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls/vpp2001"
-	"github.com/ligato/vpp-agent/plugins/vpp/vppcallmock"
 	. "github.com/onsi/gomega"
+	netallock_mock "go.ligato.io/vpp-agent/v2/plugins/netalloc/mock"
+	vpp_ip "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/ip"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
+	ifvppcalls "go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/vppcalls"
+	ifvpp2001_379 "go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/vppcalls/vpp2001"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/l3plugin/vppcalls"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/l3plugin/vppcalls/vpp2001"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/vppcallmock"
+	l3 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/l3"
 )
 
 var routes = []*l3.Route{

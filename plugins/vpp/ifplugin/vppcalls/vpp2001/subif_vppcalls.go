@@ -15,7 +15,7 @@
 package vpp2001
 
 import (
-	vpp_ifs "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/interfaces"
+	vpp_ifs "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/interfaces"
 )
 
 // CreateSubif creates sub interface.

@@ -18,13 +18,13 @@ import (
 	"testing"
 
 	"github.com/ligato/cn-infra/logging/logrus"
-	l2 "github.com/ligato/vpp-agent/api/models/vpp/l2"
-	vpp_l2 "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001_324/l2"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
-	"github.com/ligato/vpp-agent/plugins/vpp/l2plugin/vppcalls"
-	"github.com/ligato/vpp-agent/plugins/vpp/l2plugin/vppcalls/vpp2001_324"
-	"github.com/ligato/vpp-agent/plugins/vpp/vppcallmock"
 	. "github.com/onsi/gomega"
+	vpp_l2 "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324/l2"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/l2plugin/vppcalls"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/l2plugin/vppcalls/vpp2001_324"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/vppcallmock"
+	l2 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/l2"
 )
 
 const (

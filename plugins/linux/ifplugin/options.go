@@ -4,9 +4,9 @@ import (
 	"github.com/ligato/cn-infra/config"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/servicelabel"
-	"github.com/ligato/vpp-agent/plugins/kvscheduler"
-	"github.com/ligato/vpp-agent/plugins/linux/nsplugin"
-	"github.com/ligato/vpp-agent/plugins/netalloc"
+	"go.ligato.io/vpp-agent/v2/plugins/kvscheduler"
+	"go.ligato.io/vpp-agent/v2/plugins/linux/nsplugin"
+	"go.ligato.io/vpp-agent/v2/plugins/netalloc"
 )
 
 // DefaultPlugin is a default instance of IfPlugin.

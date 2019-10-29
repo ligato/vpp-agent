@@ -20,12 +20,12 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/ligato/cn-infra/logging"
 
-	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	punt "github.com/ligato/vpp-agent/api/models/vpp/punt"
-	"github.com/ligato/vpp-agent/pkg/models"
-	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-	"github.com/ligato/vpp-agent/plugins/vpp/puntplugin/descriptor/adapter"
-	"github.com/ligato/vpp-agent/plugins/vpp/puntplugin/vppcalls"
+	"go.ligato.io/vpp-agent/v2/pkg/models"
+	kvs "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/puntplugin/descriptor/adapter"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/puntplugin/vppcalls"
+	interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/interfaces"
+	punt "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/punt"
 )
 
 const (
@@ -92,8 +92,8 @@ func (d *IPRedirectDescriptor) EquivalentIPRedirect(key string, oldIPRedirect, n
 func (d *IPRedirectDescriptor) Validate(key string, redirect *punt.IPRedirect) error {
 	// validate L3 protocol
 	switch redirect.L3Protocol {
-	case punt.L3Protocol_IPv4:
-	case punt.L3Protocol_IPv6:
+	case punt.L3Protocol_IPV4:
+	case punt.L3Protocol_IPV6:
 	case punt.L3Protocol_ALL:
 	default:
 		return kvs.NewInvalidValueError(ErrIPRedirectWithoutL3Protocol, "l3_protocol")

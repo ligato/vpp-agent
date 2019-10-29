@@ -23,12 +23,12 @@ import (
 	"github.com/ligato/cn-infra/agent"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
-	vpp_intf "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	nat "github.com/ligato/vpp-agent/api/models/vpp/nat"
-	"github.com/ligato/vpp-agent/clientv2/vpp/localclient"
-	"github.com/ligato/vpp-agent/cmd/vpp-agent/app"
-	"github.com/ligato/vpp-agent/plugins/orchestrator"
 	"github.com/namsral/flag"
+	"go.ligato.io/vpp-agent/v2/clientv2/vpp/localclient"
+	"go.ligato.io/vpp-agent/v2/cmd/vpp-agent/app"
+	"go.ligato.io/vpp-agent/v2/plugins/orchestrator"
+	vpp_intf "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/interfaces"
+	nat "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/nat"
 )
 
 var (

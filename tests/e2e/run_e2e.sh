@@ -9,7 +9,7 @@ args=($*)
 # compile vpp-agent
 if [ -z "${COVER_DIR-}" ]; then
 	go build -v -o ./tests/e2e/vpp-agent.test \
-      -ldflags "-X github.com/ligato/vpp-agent/vendor/github.com/ligato/cn-infra/agent.BuildVersion=TEST_E2E" \
+      -ldflags "-X github.com/ligato/cn-infra/agent.BuildVersion=TEST_E2E" \
       ./cmd/vpp-agent
 else
 	if [ ! -d ${COVER_DIR}/e2e-coverage ]; then
@@ -17,7 +17,7 @@ else
 	elif [ "$(ls -A ${COVER_DIR}/e2e-coverage)" ]; then
 		rm -f ${COVER_DIR}/e2e-coverage/*
 	fi
-	go test -covermode=count -coverpkg="github.com/ligato/vpp-agent/..." -c ./cmd/vpp-agent -o ./tests/e2e/vpp-agent.test -tags teste2e
+	go test -covermode=count -coverpkg="go.ligato.io/vpp-agent/v2/..." -c ./cmd/vpp-agent -o ./tests/e2e/vpp-agent.test -tags teste2e
 	DOCKER_ARGS="${DOCKER_ARGS-} -v ${COVER_DIR}/e2e-coverage:${COVER_DIR}/e2e-coverage"
 	args+=("-cov=${COVER_DIR}/e2e-coverage")
 fi

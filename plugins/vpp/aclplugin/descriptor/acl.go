@@ -24,13 +24,13 @@ import (
 	"github.com/ligato/cn-infra/logging"
 	"github.com/pkg/errors"
 
-	acl "github.com/ligato/vpp-agent/api/models/vpp/acl"
-	"github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-	"github.com/ligato/vpp-agent/plugins/vpp/aclplugin/aclidx"
-	"github.com/ligato/vpp-agent/plugins/vpp/aclplugin/descriptor/adapter"
-	"github.com/ligato/vpp-agent/plugins/vpp/aclplugin/vppcalls"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin"
-	ifdescriptor "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/descriptor"
+	"go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/aclplugin/aclidx"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/aclplugin/descriptor/adapter"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/aclplugin/vppcalls"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin"
+	ifdescriptor "go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/descriptor"
+	acl "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/acl"
 )
 
 const (

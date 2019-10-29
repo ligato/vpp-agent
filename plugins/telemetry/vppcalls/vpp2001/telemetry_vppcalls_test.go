@@ -20,10 +20,10 @@ import (
 
 	. "github.com/onsi/gomega"
 
-	"github.com/ligato/vpp-agent/plugins/telemetry/vppcalls"
-	"github.com/ligato/vpp-agent/plugins/telemetry/vppcalls/vpp2001"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/vpe"
-	"github.com/ligato/vpp-agent/plugins/vpp/vppcallmock"
+	"go.ligato.io/vpp-agent/v2/plugins/telemetry/vppcalls"
+	"go.ligato.io/vpp-agent/v2/plugins/telemetry/vppcalls/vpp2001"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/vpe"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/vppcallmock"
 )
 
 func TestGetBuffers(t *testing.T) {

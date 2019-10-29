@@ -19,11 +19,11 @@ import (
 	"github.com/ligato/cn-infra/logging"
 	"github.com/pkg/errors"
 
-	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
-	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
+	kvs "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/vppcalls"
+	interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/interfaces"
+	l3 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/l3"
 )
 
 const (

@@ -21,15 +21,15 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/ligato/cn-infra/logging"
-	ifmodel "github.com/ligato/vpp-agent/api/models/linux/interfaces"
-	linux_iptables "github.com/ligato/vpp-agent/api/models/linux/iptables"
-	linux_namespace "github.com/ligato/vpp-agent/api/models/linux/namespace"
-	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-	ifdescriptor "github.com/ligato/vpp-agent/plugins/linux/ifplugin/descriptor"
-	"github.com/ligato/vpp-agent/plugins/linux/iptablesplugin/descriptor/adapter"
-	"github.com/ligato/vpp-agent/plugins/linux/iptablesplugin/linuxcalls"
-	"github.com/ligato/vpp-agent/plugins/linux/nsplugin"
-	nslinuxcalls "github.com/ligato/vpp-agent/plugins/linux/nsplugin/linuxcalls"
+	kvs "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
+	ifdescriptor "go.ligato.io/vpp-agent/v2/plugins/linux/ifplugin/descriptor"
+	"go.ligato.io/vpp-agent/v2/plugins/linux/iptablesplugin/descriptor/adapter"
+	"go.ligato.io/vpp-agent/v2/plugins/linux/iptablesplugin/linuxcalls"
+	"go.ligato.io/vpp-agent/v2/plugins/linux/nsplugin"
+	nslinuxcalls "go.ligato.io/vpp-agent/v2/plugins/linux/nsplugin/linuxcalls"
+	ifmodel "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/linux/interfaces"
+	linux_iptables "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/linux/iptables"
+	linux_namespace "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/linux/namespace"
 )
 
 const (
@@ -432,7 +432,7 @@ func isAllowedChain(table linux_iptables.RuleChain_Table, chain linux_iptables.R
 // protocolType returns protocol of the given rule chain in the NB API format.
 func protocolType(rch *linux_iptables.RuleChain) linuxcalls.L3Protocol {
 	switch rch.Protocol {
-	case linux_iptables.RuleChain_IPv6:
+	case linux_iptables.RuleChain_IPV6:
 		return linuxcalls.ProtocolIPv6
 	default:
 		return linuxcalls.ProtocolIPv4

@@ -21,9 +21,9 @@ import (
 
 	"github.com/pkg/errors"
 
-	ipsec "github.com/ligato/vpp-agent/api/models/vpp/ipsec"
-	ipsecapi "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1908/ipsec"
-	"github.com/ligato/vpp-agent/plugins/vpp/ipsecplugin/vppcalls"
+	ipsecapi "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908/ipsec"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/ipsecplugin/vppcalls"
+	ipsec "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/ipsec"
 )
 
 // DumpIPSecSA implements IPSec handler.
