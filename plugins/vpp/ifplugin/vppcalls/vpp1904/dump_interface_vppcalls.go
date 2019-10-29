@@ -24,6 +24,7 @@ import (
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904/bond"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904/dhcp"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904/gre"
+	vpp_gtpu "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904/gtpu"
 	binapi_interface "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904/interfaces"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904/ip"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904/ipsec"
@@ -252,6 +253,11 @@ func (h *InterfaceVppHandler) DumpInterfaces() (map[uint32]*vppcalls.InterfaceDe
 	}
 
 	err = h.dumpGreDetails(ifs)
+	if err != nil {
+		return nil, err
+	}
+
+	err = h.dumpGtpuDetails(ifs)
 	if err != nil {
 		return nil, err
 	}
@@ -911,6 +917,52 @@ func (h *InterfaceVppHandler) dumpGreDetails(ifs map[uint32]*vppcalls.InterfaceD
 		}
 		ifs[greDetails.SwIfIndex].Interface.Type = interfaces.Interface_GRE_TUNNEL
 	}
+	return nil
+}
+
+// dumpGtpuDetails dumps GTP-U interface details from VPP and fills them into the provided interface map.
+func (h *InterfaceVppHandler) dumpGtpuDetails(ifs map[uint32]*vppcalls.InterfaceDetails) error {
+	reqCtx := h.callsChannel.SendMultiRequest(&vpp_gtpu.GtpuTunnelDump{
+		SwIfIndex: ^uint32(0),
+	})
+	for {
+		gtpuDetails := &vpp_gtpu.GtpuTunnelDetails{}
+		stop, err := reqCtx.ReceiveReply(gtpuDetails)
+		if stop {
+			break // Break from the loop.
+		}
+		if err != nil {
+			return fmt.Errorf("failed to dump GTP-U tunnel interface details: %v", err)
+		}
+		_, ifIdxExists := ifs[gtpuDetails.SwIfIndex]
+		if !ifIdxExists {
+			continue
+		}
+		// Multicast interface
+		var multicastIfName string
+		_, exists := ifs[gtpuDetails.McastSwIfIndex]
+		if exists {
+			multicastIfName = ifs[gtpuDetails.McastSwIfIndex].Interface.Name
+		}
+
+		gtpu := &interfaces.GtpuLink{
+			Multicast:  multicastIfName,
+			EncapVrfId: gtpuDetails.EncapVrfID,
+			Teid:       gtpuDetails.Teid,
+		}
+
+		if gtpuDetails.IsIPv6 == 1 {
+			gtpu.SrcAddr = net.IP(gtpuDetails.SrcAddress).To16().String()
+			gtpu.DstAddr = net.IP(gtpuDetails.DstAddress).To16().String()
+		} else {
+			gtpu.SrcAddr = net.IP(gtpuDetails.SrcAddress[:4]).To4().String()
+			gtpu.DstAddr = net.IP(gtpuDetails.DstAddress[:4]).To4().String()
+		}
+
+		ifs[gtpuDetails.SwIfIndex].Interface.Link = &interfaces.Interface_Gtpu{Gtpu: gtpu}
+		ifs[gtpuDetails.SwIfIndex].Interface.Type = interfaces.Interface_GTPU_TUNNEL
+	}
+
 	return nil
 }
 
