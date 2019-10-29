@@ -53,11 +53,20 @@ func (h *InterfaceVppHandler) gtpuAddDelTunnel(isAdd uint8, gtpuLink *ifs.GtpuLi
 		return 0, err
 	}
 
-	if srcAddr.To4() != nil && dstAddr.To4() != nil {
+	var isSrcIPv6, isDstIPv6 bool
+
+	if srcAddr.To4() == nil {
+		isSrcIPv6 = true
+	}
+	if dstAddr.To4() == nil {
+		isDstIPv6 = true
+	}
+
+	if !isSrcIPv6 && !isDstIPv6 {
 		req.IsIPv6 = 0
 		req.SrcAddress = []byte(srcAddr.To4())
 		req.DstAddress = []byte(dstAddr.To4())
-	} else if srcAddr.To16() != nil && dstAddr.To16() != nil {
+	} else if isSrcIPv6 && isDstIPv6 {
 		req.IsIPv6 = 1
 		req.SrcAddress = []byte(srcAddr.To16())
 		req.DstAddress = []byte(dstAddr.To16())
