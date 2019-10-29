@@ -7,6 +7,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/pflag"
+	"github.com/spf13/viper"
 
 	"github.com/ligato/cn-infra/logging"
 
@@ -42,9 +43,6 @@ type ClientOptions struct {
 	PortHTTP     int
 	ServiceLabel string
 	Endpoints    []string
-	TLS          bool
-
-	ConfigDir string
 }
 
 // NewClientOptions returns a new ClientOptions
@@ -59,8 +57,12 @@ func (opts *ClientOptions) InstallFlags(flags *pflag.FlagSet) {
 	flags.IntVar(&opts.PortHTTP, "http-port", client.DefaultPortHTTP, "HTTP server port")
 	flags.IntVar(&opts.PortGRPC, "grpc-port", client.DefaultPortGRPC, "gRPC server port")
 	flags.StringSliceVarP(&opts.Endpoints, "etcd-endpoints", "e", etcdEndpoints, "Etcd endpoints to connect to, default from ETCD_ENDPOINTS env var")
-	flags.BoolVar(&opts.TLS, "tls", false, "Use TLS for connections")
-	flags.StringVar(&opts.ConfigDir, "config", DefaultConfigDir(), "Location of client config files")
+
+	flags.Bool("tls", false, "Use TLS for connections")
+	viper.BindPFlag("use-tls", flags.Lookup("tls"))
+
+	flags.String("config-dir", DefaultConfigDir(), "Path to directory with config file")
+	viper.BindPFlag("config-dir", flags.Lookup("config-dir"))
 }
 
 // SetDefaultOptions sets default values for options after flag parsing is

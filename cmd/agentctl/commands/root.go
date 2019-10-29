@@ -55,7 +55,7 @@ func NewRootNamed(name string, agentCli *cli.AgentCli) *Root {
 			return fmt.Errorf("%[1]s: '%[2]s' is not a %[1]s command.\nSee '%[1]s --help'", name, args[0])
 		},
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-			logging.Debugf("running command: %q\n", cmd.CommandPath())
+			logging.Debugf("running command: %q", cmd.CommandPath())
 			// TODO: isSupported?
 			return nil
 		},

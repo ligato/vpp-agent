@@ -22,6 +22,7 @@ import (
 
 	"github.com/docker/cli/cli/streams"
 	"github.com/docker/docker/pkg/term"
+	"github.com/spf13/viper"
 
 	"github.com/ligato/cn-infra/db/keyval"
 	"github.com/ligato/cn-infra/db/keyval/kvproto"
@@ -163,6 +164,7 @@ func (cli *AgentCli) Initialize(opts *ClientOptions, ops ...InitializeOpt) error
 			return err
 		}
 	}
+
 	if opts.Debug {
 		debug.Enable()
 		SetLogLevel("debug")
@@ -170,17 +172,10 @@ func (cli *AgentCli) Initialize(opts *ClientOptions, ops ...InitializeOpt) error
 		SetLogLevel(opts.LogLevel)
 	}
 
-	var cf *ConfigFile
-	// Config file is required for TLS connection.
-	if opts.TLS {
-		cf, err = ReadConfig(opts.ConfigDir)
-		if err != nil {
-			return fmt.Errorf("error parsing config file: %v", err)
-		}
-	}
+	ReadConfig() // TODO: maybe move it elsewhere
 
 	if cli.client == nil {
-		cli.client, err = newAPIClient(opts, cf)
+		cli.client, err = newAPIClient(opts)
 		if err != nil {
 			return err
 		}
@@ -192,7 +187,7 @@ func (cli *AgentCli) Initialize(opts *ClientOptions, ops ...InitializeOpt) error
 	return nil
 }
 
-func newAPIClient(opts *ClientOptions, cf *ConfigFile) (client.APIClient, error) {
+func newAPIClient(opts *ClientOptions) (client.APIClient, error) {
 	clientOpts := []client.Opt{
 		client.WithHost(opts.AgentHost),
 		client.WithEtcdEndpoints(opts.Endpoints),
@@ -203,29 +198,31 @@ func newAPIClient(opts *ClientOptions, cf *ConfigFile) (client.APIClient, error)
 	}
 	clientOpts = append(clientOpts, client.WithHTTPHeaders(customHeaders))
 
-	if cf != nil {
-		if !cf.GrpcTLS.Disabled {
+	if viper.GetBool("use-tls") {
+		if viper.InConfig("grpc-tls") && !viper.GetBool("grpc-tls.disabled") {
 			clientOpts = append(clientOpts, client.WithGrpcTLS(
-				cf.GrpcTLS.Certfile,
-				cf.GrpcTLS.Keyfile,
-				cf.GrpcTLS.CAfile,
-				cf.GrpcTLS.SkipVerify,
+				viper.GetString("grpc-tls.cert-file"),
+				viper.GetString("grpc-tls.key-file"),
+				viper.GetString("grpc-tls.ca-file"),
+				viper.GetBool("grpc-tls.skip-verify"),
 			))
 		}
-		if !cf.HTTPTLS.Disabled {
+
+		if viper.InConfig("http-tls") && !viper.GetBool("http-tls.disabled") {
 			clientOpts = append(clientOpts, client.WithHTTPTLS(
-				cf.HTTPTLS.Certfile,
-				cf.HTTPTLS.Keyfile,
-				cf.HTTPTLS.CAfile,
-				cf.HTTPTLS.SkipVerify,
+				viper.GetString("http-tls.cert-file"),
+				viper.GetString("http-tls.key-file"),
+				viper.GetString("http-tls.ca-file"),
+				viper.GetBool("http-tls.skip-verify"),
 			))
 		}
-		if !cf.KvdbTLS.Disabled {
+
+		if viper.InConfig("kvdb-tls") && !viper.GetBool("kvdb-tls.disabled") {
 			clientOpts = append(clientOpts, client.WithKvdbTLS(
-				cf.KvdbTLS.Certfile,
-				cf.KvdbTLS.Keyfile,
-				cf.KvdbTLS.CAfile,
-				cf.KvdbTLS.SkipVerify,
+				viper.GetString("kvdb-tls.cert-file"),
+				viper.GetString("kvdb-tls.key-file"),
+				viper.GetString("kvdb-tls.ca-file"),
+				viper.GetBool("kvdb-tls.skip-verify"),
 			))
 		}
 	}

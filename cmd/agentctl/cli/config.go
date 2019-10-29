@@ -19,30 +19,15 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/ligato/cn-infra/config"
 	"github.com/ligato/cn-infra/logging"
+	"github.com/spf13/viper"
 )
 
 const (
 	configFileDir  = ".agentctl"
 	configFileName = "config.yml"
+	configFileType = "yaml"
 )
-
-// TLSConfig represents configuration for TLS.
-type TLSConfig struct {
-	Disabled   bool   `json:"disabled"`
-	SkipVerify bool   `json:"skip-verify"`
-	Certfile   string `json:"cert-file"`
-	Keyfile    string `json:"key-file"`
-	CAfile     string `json:"ca-file"`
-}
-
-// ConfigFile represents info from ~/.agentctl/config.yml.
-type ConfigFile struct {
-	GrpcTLS TLSConfig `json:"grpc-tls"`
-	KvdbTLS TLSConfig `json:"kvdb-tls"`
-	HTTPTLS TLSConfig `json:"http-tls"`
-}
 
 // DefaultConfigDir returns default path to agentctl's config.
 func DefaultConfigDir() string {
@@ -53,22 +38,24 @@ func DefaultConfigDir() string {
 	}
 
 	p := filepath.Join(uhd, configFileDir)
-	logging.Debugf("default path to directory with agentctl's config is '%s'", p)
+	logging.Debugf("default path to directory with agentctl's config is %q", p)
 	return p
 }
 
-// ReadConfig parses a config file in `dirPath` directory.
-func ReadConfig(dirPath string) (*ConfigFile, error) {
-	filename := filepath.Join(dirPath, configFileName)
-	logging.Debugf("reading config file from %s", filename)
+// ReadConfig loads config using Viper.
+func ReadConfig() {
+	cfgFile := filepath.Join(viper.GetString("config-dir"), configFileName)
+	viper.SetConfigFile(cfgFile)
+	viper.SetConfigType(configFileType)
 
-	cf := &ConfigFile{}
-
-	err := config.ParseConfigFromYamlFile(filename, cf)
-	if err != nil {
-		return cf, fmt.Errorf("error parsing config file: %v", err)
+	err := viper.ReadInConfig()
+	if err == nil {
+		logging.Debugf("using config file: %q", viper.ConfigFileUsed())
+	} else {
+		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
+			logging.Debugf("Config file not found at %q", viper.GetString("config-dir"))
+		} else {
+			logging.Debugf("Config file was found but another error was produced: %v", err)
+		}
 	}
-
-	logging.Debugf("config file data: %+v", cf)
-	return cf, nil
 }
