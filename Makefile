@@ -1,7 +1,22 @@
+PROJECT := vpp-agent
+REMOTE_GIT := https://github.com/ligato/vpp-agent.git
+
 VERSION ?= $(shell git describe --always --tags --dirty)
 COMMIT  ?= $(shell git rev-parse HEAD)
 DATE    ?= $(shell git log -1 --format="%ct" | xargs -I{} date -d @{} +'%Y-%m-%dT%H:%M%:z')
-ARCH    ?= $(shell uname -m)
+
+UNAME_OS   ?= $(shell uname -s)
+UNAME_ARCH ?= $(shell uname -m)
+
+CACHE_BASE := $(HOME)/.cache/$(PROJECT)
+CACHE := $(CACHE_BASE)/$(UNAME_OS)/$(UNAME_ARCH)
+CACHE_BIN := $(CACHE)/bin
+CACHE_VERSIONS := $(CACHE)/versions
+
+BUF_VERSION := 0.1.0
+
+# Update the $PATH so we can use buf directly
+export PATH := $(abspath $(CACHE_BIN)):$(PATH)
 
 CNINFRA := github.com/ligato/cn-infra/agent
 LDFLAGS = -X $(CNINFRA).BuildVersion=$(VERSION) -X $(CNINFRA).CommitHash=$(COMMIT) -X $(CNINFRA).BuildDate=$(DATE)
@@ -12,7 +27,7 @@ ifeq ($(VPP_VERSION),)
 VPP_VERSION=$(VPP_DEFAULT)
 endif
 VPP_IMG:=$(value VPP_$(VPP_VERSION)_IMAGE)
-ifeq (${ARCH}, aarch64)
+ifeq (${UNAME_ARCH}, aarch64)
 VPP_IMG:=$(subst vpp-base,vpp-base-arm64,$(VPP_IMG))
 endif
 VPP_BINAPI?=$(value VPP_$(VPP_VERSION)_BINAPI)
@@ -293,6 +308,46 @@ prod-image: ## Build production image
 	IMAGE_TAG=$(IMAGE_TAG) \
 	./docker/prod/build.sh
 
+# -------------------------------
+#  ProtoBUF
+# -------------------------------
+
+# BUF points to the marker file for the installed version.
+#
+# If BUF_VERSION is changed, the binary will be re-downloaded.
+BUF := $(CACHE_VERSIONS)/buf/$(BUF_VERSION)
+$(BUF):
+	@rm -f $(CACHE_BIN)/buf
+	@mkdir -p $(CACHE_BIN)
+	curl -sSL \
+		"https://github.com/bufbuild/buf/releases/download/v$(BUF_VERSION)/buf-$(UNAME_OS)-$(UNAME_ARCH)" \
+		-o "$(CACHE_BIN)/buf"
+	chmod +x "$(CACHE_BIN)/buf"
+	@rm -rf $(dir $(BUF))
+	@mkdir -p $(dir $(BUF))
+	@touch $(BUF)
+
+buf-deps: $(BUF)
+
+buf-list: $(BUF)
+	buf ls-files
+
+# buf-local is what we run when testing locally
+# this does breaking change detection against our local git repository
+#
+buf-local: $(BUF)
+	buf check lint
+	buf check breaking --against-input '.git#branch=master'
+
+# buf-remote is what we run when testing in most CI providers
+# this does breaking change detection against our remote git repository
+#
+buf-remote: $(BUF)
+	buf check lint
+	buf check breaking --against-input "$(REMOTE_GIT)#branch=master"
+
+buf-verify: $(BUF)
+	buf image build -o /dev/null
 
 .PHONY: help \
 	agent agentctl build clean install \
@@ -305,4 +360,5 @@ prod-image: ## Build production image
 	get-linkcheck check-links \
 	get-yamllint yamllint \
 	images dev-image prod-image \
-	perf perf-all
+	perf perf-all \
+	buf-list buf-deps buf-local buf-remote buf-verify
