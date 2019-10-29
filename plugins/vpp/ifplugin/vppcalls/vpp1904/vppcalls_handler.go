@@ -24,6 +24,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/af_packet"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/bond"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/dhcp"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/gtpu"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/ip"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/ipsec"
@@ -48,6 +49,7 @@ func init() {
 	msgs = append(msgs, tapv2.AllMessages()...)
 	msgs = append(msgs, vmxnet3.AllMessages()...)
 	msgs = append(msgs, vxlan.AllMessages()...)
+	msgs = append(msgs, gtpu.AllMessages()...)
 
 	vppcalls.Versions["vpp1904"] = vppcalls.HandlerVersion{
 		Msgs: msgs,
