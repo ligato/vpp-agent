@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package kvscheduler;
+package ligato.vpp_agent.kvscheduler;
 
 option go_package = "go.ligato.io/vpp-agent/v2/plugins/kvscheduler";
 

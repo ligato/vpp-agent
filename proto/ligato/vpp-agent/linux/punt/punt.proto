@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package linux.punt;
+package ligato.vpp_agent.linux.punt;
 
 option go_package = "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/linux/punt;linux_punt";
 

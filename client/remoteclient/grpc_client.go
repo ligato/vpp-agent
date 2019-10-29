@@ -9,7 +9,7 @@ import (
 	"go.ligato.io/vpp-agent/v2/client"
 	"go.ligato.io/vpp-agent/v2/pkg/models"
 	"go.ligato.io/vpp-agent/v2/pkg/util"
-	"go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/generic"
+	"go.ligato.io/vpp-agent/v2/proto/ligato/generic"
 )
 
 type grpcClient struct {

@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package linux.l3;
+package ligato.vpp_agent.linux.l3;
 
 option go_package = "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/linux/l3;linux_l3";
 

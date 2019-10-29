@@ -10,7 +10,7 @@ import (
 	"go.ligato.io/vpp-agent/v2/cmd/agentctl/api/types"
 	"go.ligato.io/vpp-agent/v2/pkg/debug"
 	"go.ligato.io/vpp-agent/v2/pkg/models"
-	"go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/generic"
+	"go.ligato.io/vpp-agent/v2/proto/ligato/generic"
 )
 
 func (c *Client) ModelList(ctx context.Context, opts types.ModelListOptions) ([]types.Model, error) {

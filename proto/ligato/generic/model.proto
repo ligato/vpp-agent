@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package generic;
+package ligato.generic;
 
 option go_package = "go.ligato.io/vpp-agent/v2/ligato/vpp-agent/generic";
 

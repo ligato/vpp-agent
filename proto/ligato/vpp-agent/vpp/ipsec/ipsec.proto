@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package vpp.ipsec;
+package ligato.vpp_agent.vpp.ipsec;
 
 option go_package = "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/ipsec;vpp_ipsec";
 

@@ -24,7 +24,7 @@ import (
 
 	"go.ligato.io/vpp-agent/v2/pkg/models"
 	orch "go.ligato.io/vpp-agent/v2/plugins/orchestrator"
-	"go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/generic"
+	"go.ligato.io/vpp-agent/v2/proto/ligato/generic"
 )
 
 // LocalClient is global client for direct local access.

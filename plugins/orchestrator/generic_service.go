@@ -26,7 +26,7 @@ import (
 
 	"go.ligato.io/vpp-agent/v2/pkg/models"
 	kvs "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
-	"go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/generic"
+	"go.ligato.io/vpp-agent/v2/proto/ligato/generic"
 )
 
 type genericService struct {

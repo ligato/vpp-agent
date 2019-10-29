@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package linux.interfaces;
+package ligato.vpp_agent.linux.interfaces;
 
 option go_package = "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/linux/interfaces;linux_interfaces";
 

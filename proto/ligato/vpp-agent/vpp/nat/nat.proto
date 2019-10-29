@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package vpp.nat;
+package ligato.vpp_agent.vpp.nat;
 
 option go_package = "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/nat;vpp_nat";
 

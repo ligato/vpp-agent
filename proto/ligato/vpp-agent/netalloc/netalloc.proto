@@ -18,7 +18,7 @@ syntax = "proto3";
 // references (to-be or already) allocated address will have a dependency on the
 // corresponding key-value instance of IPAllocation and will read and apply the
 // address only once it is available.
-package netalloc;
+package ligato.vpp_agent.netalloc;
 
 option go_package = "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/netalloc";
 

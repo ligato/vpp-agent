@@ -1,8 +1,8 @@
 syntax = "proto3";
 
-package generic;
+package ligato.generic;
 
-option go_package = "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/generic";
+option go_package = "go.ligato.io/vpp-agent/v2/proto/ligato/generic";
 
 import "google/protobuf/any.proto";
 
