@@ -10,7 +10,7 @@ curdir=$(pwd)
 
 # Create tempdir
 tmpdir=$(mktemp -d -t gen-proto.XXXXXX)
-trap 'tree $tmpdir; rm -rf $tmpdir' EXIT
+trap 'rm -rf $tmpdir' EXIT
 
 # Install the protoc-gen-go
 mkdir -p $tmpdir/bin
