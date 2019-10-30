@@ -173,7 +173,7 @@ func TestAgentCtl(t *testing.T) {
 		{
 			name:           "Test `model ls` action",
 			cmd:            "model ls",
-			expectReStdout: `linux.interfaces.interface\s+config\s+linux.interfaces.Interface\s+config/linux/interfaces/v2/interface/`,
+			expectReStdout: `linux.interfaces.interface\s+config\s+ligato.linux.interfaces.Interface`,
 		},
 		{
 			name:           "Test `model inspect` action",
