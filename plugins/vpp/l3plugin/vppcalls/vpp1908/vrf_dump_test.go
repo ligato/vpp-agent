@@ -22,7 +22,7 @@ import (
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908/ip"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908/vpe"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/vppcallmock"
-	l3 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/l3"
+	l3 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l3"
 )
 
 func TestDumpVrfTables(t *testing.T) {

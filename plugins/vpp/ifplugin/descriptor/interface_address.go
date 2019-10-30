@@ -23,8 +23,8 @@ import (
 	"go.ligato.io/vpp-agent/v2/plugins/netalloc"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/vppcalls"
-	netalloc_api "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/netalloc"
-	interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/interfaces"
+	netalloc_api "go.ligato.io/vpp-agent/v2/proto/ligato/netalloc"
+	interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
 )
 
 const (

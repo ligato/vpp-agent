@@ -25,9 +25,9 @@ import (
 	scheduler "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/srplugin/descriptor/adapter"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/srplugin/vppcalls"
-	vpp_interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/interfaces"
-	vpp_l3 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/l3"
-	srv6 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/srv6"
+	vpp_interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
+	vpp_l3 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l3"
+	srv6 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/srv6"
 )
 
 const (

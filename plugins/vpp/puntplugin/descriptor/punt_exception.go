@@ -24,7 +24,7 @@ import (
 	kvs "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/puntplugin/descriptor/adapter"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/puntplugin/vppcalls"
-	punt "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/punt"
+	punt "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/punt"
 )
 
 const (

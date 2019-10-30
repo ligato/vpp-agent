@@ -22,7 +22,7 @@ import (
 	ba_ip "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904/ip"
 	ba_punt "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904/punt"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/puntplugin/vppcalls"
-	punt "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/punt"
+	punt "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/punt"
 )
 
 const PuntSocketHeaderVersion = 1

@@ -27,8 +27,8 @@ import (
 	kvs "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/vppcalls"
-	"go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/netalloc"
-	interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/interfaces"
+	"go.ligato.io/vpp-agent/v2/proto/ligato/netalloc"
+	interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
 )
 
 const (

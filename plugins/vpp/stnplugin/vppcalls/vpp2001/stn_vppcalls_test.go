@@ -26,7 +26,7 @@ import (
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/stnplugin/vppcalls"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/stnplugin/vppcalls/vpp2001"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/vppcallmock"
-	stn "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/stn"
+	stn "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/stn"
 )
 
 func TestAddStnRule(t *testing.T) {

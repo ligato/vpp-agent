@@ -17,7 +17,7 @@ package vrfidx
 import (
 	"time"
 
-	l3 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/l3"
+	l3 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l3"
 
 	"github.com/ligato/cn-infra/idxmap"
 	"github.com/ligato/cn-infra/logging"

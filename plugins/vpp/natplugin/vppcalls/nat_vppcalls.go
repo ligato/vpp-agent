@@ -20,7 +20,7 @@ import (
 	"github.com/ligato/cn-infra/logging"
 
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
-	nat "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/nat"
+	nat "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/nat"
 )
 
 // NatVppAPI provides methods for managing VPP NAT configuration.

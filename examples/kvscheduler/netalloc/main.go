@@ -27,11 +27,11 @@ import (
 	linux_nsplugin "go.ligato.io/vpp-agent/v2/plugins/linux/nsplugin"
 	"go.ligato.io/vpp-agent/v2/plugins/orchestrator"
 	vpp_ifplugin "go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin"
-	"go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/linux/interfaces"
-	linux_l3 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/linux/l3"
-	linux_ns "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/linux/namespace"
-	"go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/netalloc"
-	vpp_interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/interfaces"
+	"go.ligato.io/vpp-agent/v2/proto/ligato/linux/interfaces"
+	linux_l3 "go.ligato.io/vpp-agent/v2/proto/ligato/linux/l3"
+	linux_ns "go.ligato.io/vpp-agent/v2/proto/ligato/linux/namespace"
+	"go.ligato.io/vpp-agent/v2/proto/ligato/netalloc"
+	vpp_interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
 )
 
 /*

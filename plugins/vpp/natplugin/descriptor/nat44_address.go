@@ -24,8 +24,8 @@ import (
 	kvs "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/natplugin/descriptor/adapter"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/natplugin/vppcalls"
-	l3 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/l3"
-	nat "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/nat"
+	l3 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l3"
+	nat "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/nat"
 )
 
 const (

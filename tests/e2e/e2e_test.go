@@ -49,7 +49,7 @@ import (
 	"go.ligato.io/vpp-agent/v2/pkg/models"
 	kvs "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
 	nslinuxcalls "go.ligato.io/vpp-agent/v2/plugins/linux/nsplugin/linuxcalls"
-	"go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/kvscheduler"
+	"go.ligato.io/vpp-agent/v2/proto/ligato/kvscheduler"
 	"go.ligato.io/vpp-agent/v2/tests/e2e/utils"
 )
 

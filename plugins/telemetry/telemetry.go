@@ -35,7 +35,7 @@ import (
 	"go.ligato.io/vpp-agent/v2/pkg/models"
 	"go.ligato.io/vpp-agent/v2/plugins/govppmux"
 	"go.ligato.io/vpp-agent/v2/plugins/telemetry/vppcalls"
-	"go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/configurator"
+	"go.ligato.io/vpp-agent/v2/proto/ligato/configurator"
 
 	_ "go.ligato.io/vpp-agent/v2/plugins/telemetry/vppcalls/vpp1904"
 	_ "go.ligato.io/vpp-agent/v2/plugins/telemetry/vppcalls/vpp1908"

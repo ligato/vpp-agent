@@ -5,7 +5,7 @@ import (
 	"net"
 
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904/vxlan_gpe"
-	interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/interfaces"
+	interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
 )
 
 func (h *InterfaceVppHandler) vxLanGpeAddDelTunnel(isAdd uint8, vxLan *interfaces.VxlanLink, vrf, multicastIf uint32) (uint32, error) {

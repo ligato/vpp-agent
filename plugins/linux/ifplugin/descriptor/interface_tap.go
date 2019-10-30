@@ -20,7 +20,7 @@ import (
 	"github.com/pkg/errors"
 
 	"go.ligato.io/vpp-agent/v2/plugins/linux/ifplugin/ifaceidx"
-	interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/linux/interfaces"
+	interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/linux/interfaces"
 
 	nslinuxcalls "go.ligato.io/vpp-agent/v2/plugins/linux/nsplugin/linuxcalls"
 )

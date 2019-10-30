@@ -22,7 +22,7 @@ import (
 
 	"go.ligato.io/vpp-agent/v2/pkg/metrics"
 	kvs "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
-	"go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/kvscheduler"
+	"go.ligato.io/vpp-agent/v2/proto/ligato/kvscheduler"
 )
 
 var (

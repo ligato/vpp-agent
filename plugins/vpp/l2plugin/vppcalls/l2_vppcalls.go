@@ -20,7 +20,7 @@ import (
 
 	"go.ligato.io/vpp-agent/v2/pkg/idxvpp"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
-	l2 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/l2"
+	l2 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l2"
 )
 
 // BridgeDomainDetails is the wrapper structure for the bridge domain northbound API structure.

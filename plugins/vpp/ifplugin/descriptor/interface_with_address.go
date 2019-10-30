@@ -19,7 +19,7 @@ import (
 	"github.com/ligato/cn-infra/logging"
 
 	kvs "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
-	interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/interfaces"
+	interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
 )
 
 const (

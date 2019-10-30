@@ -16,7 +16,7 @@ package vpp1908
 
 import (
 	binapi_interface "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908/interfaces"
-	interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/interfaces"
+	interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
 )
 
 // SetRxMode implements interface handler.

@@ -17,7 +17,7 @@ package vpp_interfaces
 import (
 	"testing"
 
-	"go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/netalloc"
+	"go.ligato.io/vpp-agent/v2/proto/ligato/netalloc"
 )
 
 /*func TestInterfaceKey(t *testing.T) {

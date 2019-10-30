@@ -23,7 +23,7 @@ import (
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/l3plugin/vppcalls"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/l3plugin/vppcalls/vpp1904"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/vppcallmock"
-	l3 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/l3"
+	l3 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l3"
 )
 
 var vrfTables = []*l3.VrfTable{

@@ -19,8 +19,8 @@ import (
 	"testing"
 
 	. "github.com/onsi/gomega"
-	ifs "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/interfaces"
-	nat "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/nat"
+	ifs "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
+	nat "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/nat"
 
 	"github.com/ligato/cn-infra/idxmap"
 	idxmap_mem "github.com/ligato/cn-infra/idxmap/mem"

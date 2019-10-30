@@ -19,7 +19,7 @@ import (
 
 	"github.com/pkg/errors"
 	vpp_ip "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/ip"
-	l3 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/l3"
+	l3 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l3"
 )
 
 // vppAddDelArp adds or removes ARP entry according to provided input

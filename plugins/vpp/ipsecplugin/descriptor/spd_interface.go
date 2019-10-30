@@ -24,8 +24,8 @@ import (
 	kvs "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/ipsecplugin/descriptor/adapter"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/ipsecplugin/vppcalls"
-	interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/interfaces"
-	ipsec "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/ipsec"
+	interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
+	ipsec "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/ipsec"
 )
 
 const (

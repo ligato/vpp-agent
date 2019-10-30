@@ -12,13 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate descriptor-adapter --descriptor-name Route --value-type *vpp_l3.Route --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/l3" --output-dir "descriptor"
-//go:generate descriptor-adapter --descriptor-name ARPEntry --value-type *vpp_l3.ARPEntry --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/l3" --output-dir "descriptor"
-//go:generate descriptor-adapter --descriptor-name ProxyARP --value-type *vpp_l3.ProxyARP --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/l3" --output-dir "descriptor"
-//go:generate descriptor-adapter --descriptor-name ProxyARPInterface --value-type *vpp_l3.ProxyARP_Interface --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/l3" --output-dir "descriptor"
-//go:generate descriptor-adapter --descriptor-name IPScanNeighbor --value-type *vpp_l3.IPScanNeighbor --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/l3" --output-dir "descriptor"
-//go:generate descriptor-adapter --descriptor-name VrfTable --value-type *vpp_l3.VrfTable --meta-type *vrfidx.VRFMetadata --import "go.ligato.io/vpp-agent/v2/plugins/vpp/l3plugin/vrfidx" --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/l3" --output-dir "descriptor"
-//go:generate descriptor-adapter --descriptor-name DHCPProxy --value-type *vpp_l3.DHCPProxy --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/l3" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name Route --value-type *vpp_l3.Route --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l3" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name ARPEntry --value-type *vpp_l3.ARPEntry --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l3" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name ProxyARP --value-type *vpp_l3.ProxyARP --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l3" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name ProxyARPInterface --value-type *vpp_l3.ProxyARP_Interface --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l3" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name IPScanNeighbor --value-type *vpp_l3.IPScanNeighbor --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l3" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name VrfTable --value-type *vpp_l3.VrfTable --meta-type *vrfidx.VRFMetadata --import "go.ligato.io/vpp-agent/v2/plugins/vpp/l3plugin/vrfidx" --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l3" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name DHCPProxy --value-type *vpp_l3.DHCPProxy --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l3" --output-dir "descriptor"
 
 package l3plugin
 

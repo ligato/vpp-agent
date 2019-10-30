@@ -19,7 +19,7 @@ import (
 	"github.com/ligato/cn-infra/logging"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/aclplugin/aclidx"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
-	abf "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/abf"
+	abf "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/abf"
 )
 
 // ABFDetails contains proto-modeled ABF data together with VPP-related metadata

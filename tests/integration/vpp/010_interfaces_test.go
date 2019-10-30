@@ -22,7 +22,7 @@ import (
 
 	_ "go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin"
 	ifplugin_vppcalls "go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/vppcalls"
-	vpp_interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/interfaces"
+	vpp_interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
 )
 
 func TestInterfaceIP(t *testing.T) {

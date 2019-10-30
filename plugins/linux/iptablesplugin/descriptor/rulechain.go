@@ -27,9 +27,9 @@ import (
 	"go.ligato.io/vpp-agent/v2/plugins/linux/iptablesplugin/linuxcalls"
 	"go.ligato.io/vpp-agent/v2/plugins/linux/nsplugin"
 	nslinuxcalls "go.ligato.io/vpp-agent/v2/plugins/linux/nsplugin/linuxcalls"
-	ifmodel "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/linux/interfaces"
-	linux_iptables "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/linux/iptables"
-	linux_namespace "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/linux/namespace"
+	ifmodel "go.ligato.io/vpp-agent/v2/proto/ligato/linux/interfaces"
+	linux_iptables "go.ligato.io/vpp-agent/v2/proto/ligato/linux/iptables"
+	linux_namespace "go.ligato.io/vpp-agent/v2/proto/ligato/linux/namespace"
 )
 
 const (

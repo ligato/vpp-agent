@@ -30,7 +30,7 @@ import (
 	legacyclient "go.ligato.io/vpp-agent/v2/clientv2/linux/localclient"
 	"go.ligato.io/vpp-agent/v2/plugins/orchestrator"
 	vpp_ifplugin "go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin"
-	vpp_interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/interfaces"
+	vpp_interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
 )
 
 func main() {

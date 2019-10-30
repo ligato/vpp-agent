@@ -19,8 +19,8 @@ import (
 
 	"github.com/pkg/errors"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904/ip"
-	"go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/netalloc"
-	vpp_l3 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/l3"
+	"go.ligato.io/vpp-agent/v2/proto/ligato/netalloc"
+	vpp_l3 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l3"
 )
 
 const (

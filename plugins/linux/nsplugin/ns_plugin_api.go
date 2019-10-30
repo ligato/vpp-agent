@@ -18,7 +18,7 @@ import (
 	"github.com/vishvananda/netns"
 
 	"go.ligato.io/vpp-agent/v2/plugins/linux/nsplugin/linuxcalls"
-	linux_namespace "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/linux/namespace"
+	linux_namespace "go.ligato.io/vpp-agent/v2/proto/ligato/linux/namespace"
 )
 
 // API defines methods exposed by NsPlugin.

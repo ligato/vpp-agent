@@ -18,8 +18,8 @@ import (
 	"fmt"
 
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/abfplugin/abfidx"
-	vpp_abf "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/abf"
-	vpp_interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/interfaces"
+	vpp_abf "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/abf"
+	vpp_interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
 
 	"github.com/go-errors/errors"
 	"github.com/golang/protobuf/proto"

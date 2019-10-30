@@ -20,7 +20,7 @@ import (
 	"time"
 
 	"go.ligato.io/vpp-agent/v2/plugins/kvscheduler/internal/utils"
-	"go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/kvscheduler"
+	"go.ligato.io/vpp-agent/v2/proto/ligato/kvscheduler"
 )
 
 // TxnType differentiates between NB transaction, retry of failed operations and

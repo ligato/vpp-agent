@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate descriptor-adapter --descriptor-name IPPuntRedirect --value-type *vpp_punt.IPRedirect --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/punt" --output-dir "descriptor"
-//go:generate descriptor-adapter --descriptor-name PuntToHost --value-type *vpp_punt.ToHost --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/punt" --output-dir "descriptor"
-//go:generate descriptor-adapter --descriptor-name PuntException --value-type *vpp_punt.Exception --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/punt" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name IPPuntRedirect --value-type *vpp_punt.IPRedirect --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/punt" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name PuntToHost --value-type *vpp_punt.ToHost --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/punt" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name PuntException --value-type *vpp_punt.Exception --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/punt" --output-dir "descriptor"
 
 package puntplugin
 
@@ -34,7 +34,7 @@ import (
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/puntplugin/descriptor"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/puntplugin/descriptor/adapter"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/puntplugin/vppcalls"
-	vpp_punt "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/punt"
+	vpp_punt "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/punt"
 
 	_ "go.ligato.io/vpp-agent/v2/plugins/vpp/puntplugin/vppcalls/vpp1904"
 	_ "go.ligato.io/vpp-agent/v2/plugins/vpp/puntplugin/vppcalls/vpp1908"

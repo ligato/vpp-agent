@@ -19,7 +19,7 @@ import (
 	"github.com/ligato/cn-infra/logging"
 
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
-	acl "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/acl"
+	acl "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/acl"
 )
 
 // Protocol types that can occur in ACLs

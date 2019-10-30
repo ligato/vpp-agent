@@ -12,7 +12,7 @@ import (
 
 	"go.ligato.io/vpp-agent/v2/cmd/agentctl/api/types"
 	"go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
-	"go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/kvscheduler"
+	"go.ligato.io/vpp-agent/v2/proto/ligato/kvscheduler"
 )
 
 func (c *Client) SchedulerDump(ctx context.Context, opts types.SchedulerDumpOptions) ([]api.KVWithMetadata, error) {

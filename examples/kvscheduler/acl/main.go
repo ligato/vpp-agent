@@ -25,8 +25,8 @@ import (
 	"go.ligato.io/vpp-agent/v2/plugins/orchestrator"
 	vpp_aclplugin "go.ligato.io/vpp-agent/v2/plugins/vpp/aclplugin"
 	vpp_ifplugin "go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin"
-	acl "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/acl"
-	interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/interfaces"
+	acl "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/acl"
+	interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
 )
 
 /*

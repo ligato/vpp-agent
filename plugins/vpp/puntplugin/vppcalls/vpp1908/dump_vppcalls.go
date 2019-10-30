@@ -21,7 +21,7 @@ import (
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908/ip"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908/punt"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/puntplugin/vppcalls"
-	vpp_punt "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/punt"
+	vpp_punt "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/punt"
 )
 
 // DumpPuntRedirect dumps ip redirect punts

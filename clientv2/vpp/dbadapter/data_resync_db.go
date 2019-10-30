@@ -22,15 +22,15 @@ import (
 
 	vppclient "go.ligato.io/vpp-agent/v2/clientv2/vpp"
 	orch "go.ligato.io/vpp-agent/v2/plugins/orchestrator"
-	abf "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/abf"
-	acl "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/acl"
-	intf "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/interfaces"
-	ipsec "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/ipsec"
-	l2 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/l2"
-	l3 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/l3"
-	nat "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/nat"
-	punt "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/punt"
-	stn "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/stn"
+	abf "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/abf"
+	acl "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/acl"
+	intf "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
+	ipsec "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/ipsec"
+	l2 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l2"
+	l3 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l3"
+	nat "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/nat"
+	punt "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/punt"
+	stn "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/stn"
 )
 
 // NewDataResyncDSL returns a new instance of DataResyncDSL which implements

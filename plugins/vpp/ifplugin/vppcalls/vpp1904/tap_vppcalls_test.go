@@ -20,7 +20,7 @@ import (
 	. "github.com/onsi/gomega"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904/interfaces"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904/tapv2"
-	ifModel "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/interfaces"
+	ifModel "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
 )
 
 func TestAddTapInterfaceV2(t *testing.T) {

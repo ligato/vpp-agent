@@ -26,7 +26,7 @@ import (
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/ipsecplugin/vppcalls"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/ipsecplugin/vppcalls/vpp1904"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/vppcallmock"
-	ipsec2 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/ipsec"
+	ipsec2 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/ipsec"
 )
 
 func ipToAddr(ip string) ipsec.Address {

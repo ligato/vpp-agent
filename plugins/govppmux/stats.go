@@ -20,7 +20,7 @@ import (
 	"time"
 
 	"go.ligato.io/vpp-agent/v2/pkg/metrics"
-	"go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/govppmux"
+	"go.ligato.io/vpp-agent/v2/proto/ligato/govppmux"
 )
 
 var (

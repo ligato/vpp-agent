@@ -27,7 +27,7 @@ import (
 
 	"go.ligato.io/vpp-agent/v2/plugins/linux/nsplugin/descriptor"
 	nsLinuxcalls "go.ligato.io/vpp-agent/v2/plugins/linux/nsplugin/linuxcalls"
-	nsmodel "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/linux/namespace"
+	nsmodel "go.ligato.io/vpp-agent/v2/proto/ligato/linux/namespace"
 )
 
 // NsPlugin is a plugin to handle namespaces and microservices for other linux

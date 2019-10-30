@@ -28,7 +28,7 @@ import (
 
 	kvs "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
 	"go.ligato.io/vpp-agent/v2/plugins/linux/ifplugin/linuxcalls"
-	ifmodel "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/linux/interfaces"
+	ifmodel "go.ligato.io/vpp-agent/v2/proto/ligato/linux/interfaces"
 )
 
 const (

@@ -8,8 +8,8 @@ import (
 	nslinuxcalls "go.ligato.io/vpp-agent/v2/plugins/linux/nsplugin/linuxcalls"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/descriptor/adapter"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
-	"go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/netalloc"
-	interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/interfaces"
+	"go.ligato.io/vpp-agent/v2/proto/ligato/netalloc"
+	interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
 )
 
 // Create creates a VPP interface.

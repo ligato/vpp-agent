@@ -30,8 +30,8 @@ import (
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/natplugin/vppcalls"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/natplugin/vppcalls/vpp1904"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/vppcallmock"
-	interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/interfaces"
-	nat "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/nat"
+	interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
+	nat "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/nat"
 )
 
 func TestNat44GlobalConfigDump(t *testing.T) {

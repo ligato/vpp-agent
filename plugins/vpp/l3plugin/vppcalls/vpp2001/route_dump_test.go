@@ -17,7 +17,7 @@ package vpp2001
 import (
 	"testing"
 
-	l3 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/l3"
+	l3 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l3"
 
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/l3plugin/vrfidx"
 

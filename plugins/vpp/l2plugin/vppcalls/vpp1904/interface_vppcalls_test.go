@@ -21,7 +21,7 @@ import (
 
 	l2ba "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904/l2"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
-	l2 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/l2"
+	l2 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l2"
 )
 
 func TestAddInterfaceToBridgeDomain(t *testing.T) {

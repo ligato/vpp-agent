@@ -43,10 +43,10 @@ import (
 	"go.ligato.io/vpp-agent/v2/plugins/netalloc"
 	netalloc_descr "go.ligato.io/vpp-agent/v2/plugins/netalloc/descriptor"
 	vpp_ifaceidx "go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
-	interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/linux/interfaces"
-	namespace "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/linux/namespace"
-	netalloc_api "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/netalloc"
-	vpp_intf "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/interfaces"
+	interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/linux/interfaces"
+	namespace "go.ligato.io/vpp-agent/v2/proto/ligato/linux/namespace"
+	netalloc_api "go.ligato.io/vpp-agent/v2/proto/ligato/netalloc"
+	vpp_intf "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
 )
 
 const (

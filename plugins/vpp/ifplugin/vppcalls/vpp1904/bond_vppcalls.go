@@ -18,7 +18,7 @@ import (
 	"net"
 
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904/bond"
-	if_model "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/interfaces"
+	if_model "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
 )
 
 // AddBondInterface implements interface handler.

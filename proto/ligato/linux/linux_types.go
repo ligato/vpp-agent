@@ -15,8 +15,8 @@
 package linux
 
 import (
-	linux_interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/linux/interfaces"
-	linux_l3 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/linux/l3"
+	linux_interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/linux/interfaces"
+	linux_l3 "go.ligato.io/vpp-agent/v2/proto/ligato/linux/l3"
 )
 
 type (

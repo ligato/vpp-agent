@@ -27,7 +27,7 @@ import (
 	vpp_ifdescriptor "go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/descriptor"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/natplugin/descriptor/adapter"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/natplugin/vppcalls"
-	nat "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/nat"
+	nat "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/nat"
 )
 
 const (

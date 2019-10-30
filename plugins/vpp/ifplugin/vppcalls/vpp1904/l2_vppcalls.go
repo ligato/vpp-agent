@@ -18,7 +18,7 @@ import (
 	"fmt"
 
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904/l2"
-	interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/interfaces"
+	interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
 )
 
 // TODO:  more suitable for the l2 plugin, but the tag-rewrite retrieve is a part of the vpp interface api

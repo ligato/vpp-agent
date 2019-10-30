@@ -6,7 +6,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	. "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/aclplugin/aclidx"
-	"go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/acl"
+	"go.ligato.io/vpp-agent/v2/proto/ligato/vpp/acl"
 )
 
 ////////// type-safe key-value pair with metadata //////////

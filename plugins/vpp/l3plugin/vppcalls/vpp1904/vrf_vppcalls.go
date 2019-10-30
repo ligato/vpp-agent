@@ -16,7 +16,7 @@ package vpp1904
 
 import (
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904/ip"
-	l3 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/l3"
+	l3 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l3"
 )
 
 // AddVrfTable adds new VRF table.

@@ -12,7 +12,7 @@ import (
 	"go.ligato.io/vpp-agent/v2/client"
 	"go.ligato.io/vpp-agent/v2/cmd/agentctl/api/types"
 	"go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
-	"go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/kvscheduler"
+	"go.ligato.io/vpp-agent/v2/proto/ligato/kvscheduler"
 )
 
 // APIClient is an interface that clients that talk with a agent server must implement.

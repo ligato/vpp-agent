@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate descriptor-adapter --descriptor-name RuleChain --value-type *linux_iptables.RuleChain --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/linux/iptables" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name RuleChain --value-type *linux_iptables.RuleChain --import "go.ligato.io/vpp-agent/v2/proto/ligato/linux/iptables" --output-dir "descriptor"
 
 package iptablesplugin
 

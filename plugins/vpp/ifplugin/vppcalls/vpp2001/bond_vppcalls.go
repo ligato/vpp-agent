@@ -16,7 +16,7 @@ package vpp2001
 
 import (
 	vpp_bond "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/bond"
-	ifs "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/interfaces"
+	ifs "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
 )
 
 func (h *InterfaceVppHandler) AddBondInterface(ifName string, mac string, bondLink *ifs.BondLink) (uint32, error) {

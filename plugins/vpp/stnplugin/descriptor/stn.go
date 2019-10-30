@@ -23,8 +23,8 @@ import (
 	ifDescriptor "go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/descriptor"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/stnplugin/descriptor/adapter"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/stnplugin/vppcalls"
-	interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/interfaces"
-	stn "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/stn"
+	interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
+	stn "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/stn"
 )
 
 const (

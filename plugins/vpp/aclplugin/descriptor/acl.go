@@ -30,7 +30,7 @@ import (
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/aclplugin/vppcalls"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin"
 	ifdescriptor "go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/descriptor"
-	acl "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/acl"
+	acl "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/acl"
 )
 
 const (

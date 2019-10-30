@@ -34,12 +34,12 @@ import (
 	"go.ligato.io/vpp-agent/v2/cmd/vpp-agent/app"
 	mymodel "go.ligato.io/vpp-agent/v2/examples/custom_model/pb"
 	"go.ligato.io/vpp-agent/v2/plugins/orchestrator"
-	"go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/linux"
-	linux_interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/linux/interfaces"
-	linux_l3 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/linux/l3"
-	"go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp"
-	interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/interfaces"
-	vpp_l2 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/l2"
+	"go.ligato.io/vpp-agent/v2/proto/ligato/linux"
+	linux_interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/linux/interfaces"
+	linux_l3 "go.ligato.io/vpp-agent/v2/proto/ligato/linux/l3"
+	"go.ligato.io/vpp-agent/v2/proto/ligato/vpp"
+	interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
+	vpp_l2 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l2"
 )
 
 //go:generate protoc --proto_path=pb --proto_path=$GOPATH/src --go_out=pb pb/model.proto

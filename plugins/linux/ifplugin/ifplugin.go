@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate descriptor-adapter --descriptor-name Interface  --value-type *linux_interfaces.Interface --meta-type *ifaceidx.LinuxIfMetadata --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/linux/interfaces" --import "go.ligato.io/vpp-agent/v2/plugins/linux/ifplugin/ifaceidx" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name Interface  --value-type *linux_interfaces.Interface --meta-type *ifaceidx.LinuxIfMetadata --import "go.ligato.io/vpp-agent/v2/proto/ligato/linux/interfaces" --import "go.ligato.io/vpp-agent/v2/plugins/linux/ifplugin/ifaceidx" --output-dir "descriptor"
 
 package ifplugin
 

@@ -22,8 +22,8 @@ import (
 	vpp_ifdescriptor "go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/descriptor"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/l2plugin/descriptor/adapter"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/l2plugin/vppcalls"
-	interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/interfaces"
-	l2 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/l2"
+	interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
+	l2 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l2"
 )
 
 const (

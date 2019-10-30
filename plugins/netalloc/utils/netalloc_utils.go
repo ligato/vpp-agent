@@ -5,7 +5,7 @@ import (
 	"net"
 	"strings"
 
-	"go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/netalloc"
+	"go.ligato.io/vpp-agent/v2/proto/ligato/netalloc"
 )
 
 // ParseIPAddr parses IP address from string.

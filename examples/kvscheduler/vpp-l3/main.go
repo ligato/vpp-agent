@@ -25,8 +25,8 @@ import (
 	"go.ligato.io/vpp-agent/v2/plugins/orchestrator"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/l3plugin"
-	interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/interfaces"
-	l3 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/l3"
+	interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
+	l3 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l3"
 )
 
 /*

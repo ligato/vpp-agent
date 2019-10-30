@@ -21,7 +21,7 @@ import (
 	"github.com/golang/protobuf/jsonpb"
 
 	"go.ligato.io/vpp-agent/v2/pkg/models"
-	"go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/netalloc"
+	"go.ligato.io/vpp-agent/v2/proto/ligato/netalloc"
 )
 
 // ModuleName is the module name used for models.

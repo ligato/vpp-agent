@@ -29,10 +29,10 @@ import (
 	"go.ligato.io/vpp-agent/v2/plugins/orchestrator"
 	vpp_ifplugin "go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin"
 	vppifaceidx "go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
-	"go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/linux/interfaces"
-	linux_l3 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/linux/l3"
-	linux_ns "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/linux/namespace"
-	vpp_interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/interfaces"
+	"go.ligato.io/vpp-agent/v2/proto/ligato/linux/interfaces"
+	linux_l3 "go.ligato.io/vpp-agent/v2/proto/ligato/linux/l3"
+	linux_ns "go.ligato.io/vpp-agent/v2/proto/ligato/linux/namespace"
+	vpp_interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
 )
 
 /*

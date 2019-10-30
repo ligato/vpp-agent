@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate descriptor-adapter --descriptor-name STN --value-type *vpp_stn.Rule --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/stn" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name STN --value-type *vpp_stn.Rule --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/stn" --output-dir "descriptor"
 
 package stnplugin
 

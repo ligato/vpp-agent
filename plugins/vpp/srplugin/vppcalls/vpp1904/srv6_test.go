@@ -29,7 +29,7 @@ import (
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/srplugin/vppcalls"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/srplugin/vppcalls/vpp1904"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/vppcallmock"
-	srv6 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/srv6"
+	srv6 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/srv6"
 )
 
 const (

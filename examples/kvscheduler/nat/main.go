@@ -28,11 +28,11 @@ import (
 	"go.ligato.io/vpp-agent/v2/plugins/orchestrator"
 	vpp_ifplugin "go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin"
 	vpp_natplugin "go.ligato.io/vpp-agent/v2/plugins/vpp/natplugin"
-	"go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/linux/interfaces"
-	linux_l3 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/linux/l3"
-	linux_ns "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/linux/namespace"
-	vpp_interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/interfaces"
-	vpp_nat "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/nat"
+	"go.ligato.io/vpp-agent/v2/proto/ligato/linux/interfaces"
+	linux_l3 "go.ligato.io/vpp-agent/v2/proto/ligato/linux/l3"
+	linux_ns "go.ligato.io/vpp-agent/v2/proto/ligato/linux/namespace"
+	vpp_interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
+	vpp_nat "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/nat"
 )
 
 /*

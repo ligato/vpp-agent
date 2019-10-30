@@ -22,7 +22,7 @@ import (
 	vpp_acl "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/acl"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/vppcallmock"
-	acl "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/acl"
+	acl "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/acl"
 )
 
 var aclNoRules []*acl.ACL_Rule

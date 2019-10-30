@@ -8,8 +8,8 @@ import (
 	kvs "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/aclplugin/aclidx"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/aclplugin/vppcalls"
-	acl "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/acl"
-	interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/interfaces"
+	acl "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/acl"
+	interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
 )
 
 const (

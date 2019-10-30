@@ -20,7 +20,7 @@ import (
 
 	"github.com/ligato/cn-infra/logging/logrus"
 	. "github.com/onsi/gomega"
-	acl "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/acl"
+	acl "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/acl"
 
 	_ "go.ligato.io/vpp-agent/v2/plugins/vpp/aclplugin"
 	aclplugin_vppcalls "go.ligato.io/vpp-agent/v2/plugins/vpp/aclplugin/vppcalls"

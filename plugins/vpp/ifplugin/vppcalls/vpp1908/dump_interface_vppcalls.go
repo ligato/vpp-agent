@@ -33,8 +33,8 @@ import (
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908/vxlan"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908/vxlan_gpe"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/vppcalls"
-	interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/interfaces"
-	vpp_ipsec "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/ipsec"
+	interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
+	vpp_ipsec "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/ipsec"
 )
 
 const (

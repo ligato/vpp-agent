@@ -26,10 +26,10 @@ import (
 	"go.ligato.io/vpp-agent/v2/pkg/util"
 	kvs "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
 	"go.ligato.io/vpp-agent/v2/plugins/orchestrator"
-	rpc "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/configurator"
-	"go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/linux"
-	"go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/netalloc"
-	"go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp"
+	rpc "go.ligato.io/vpp-agent/v2/proto/ligato/configurator"
+	"go.ligato.io/vpp-agent/v2/proto/ligato/linux"
+	"go.ligato.io/vpp-agent/v2/proto/ligato/netalloc"
+	"go.ligato.io/vpp-agent/v2/proto/ligato/vpp"
 )
 
 // configuratorServer implements DataSyncer service.

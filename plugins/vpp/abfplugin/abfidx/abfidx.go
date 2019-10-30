@@ -17,7 +17,7 @@ package abfidx
 import (
 	"github.com/ligato/cn-infra/idxmap"
 	"github.com/ligato/cn-infra/logging"
-	abf "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/abf"
+	abf "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/abf"
 
 	"go.ligato.io/vpp-agent/v2/pkg/idxvpp"
 )

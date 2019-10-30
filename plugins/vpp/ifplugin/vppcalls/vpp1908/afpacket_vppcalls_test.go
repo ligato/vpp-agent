@@ -21,7 +21,7 @@ import (
 	. "github.com/onsi/gomega"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908/af_packet"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908/interfaces"
-	if_api "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/interfaces"
+	if_api "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
 )
 
 func TestAddAfPacketInterface(t *testing.T) {

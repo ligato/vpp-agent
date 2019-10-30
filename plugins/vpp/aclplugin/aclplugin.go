@@ -12,7 +12,7 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 
-//go:generate descriptor-adapter --descriptor-name ACL --value-type *vpp_acl.ACL --meta-type *aclidx.ACLMetadata --import "go.ligato.io/vpp-agent/v2/plugins/vpp/aclplugin/aclidx" --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/acl" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name ACL --value-type *vpp_acl.ACL --meta-type *aclidx.ACLMetadata --import "go.ligato.io/vpp-agent/v2/plugins/vpp/aclplugin/aclidx" --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/acl" --output-dir "descriptor"
 
 package aclplugin
 

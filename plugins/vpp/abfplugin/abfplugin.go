@@ -12,7 +12,7 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 
-//go:generate descriptor-adapter --descriptor-name ABF --value-type *vpp_abf.ABF --meta-type *abfidx.ABFMetadata --import "abfidx" --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/abf" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name ABF --value-type *vpp_abf.ABF --meta-type *abfidx.ABFMetadata --import "abfidx" --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/abf" --output-dir "descriptor"
 
 package abfplugin
 

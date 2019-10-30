@@ -21,7 +21,7 @@ import (
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/stnplugin/vppcalls"
 
 	vpp_stn "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/stn"
-	stn "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/stn"
+	stn "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/stn"
 )
 
 // DumpSTNRules implements STN handler, it returns all STN rules present on the VPP

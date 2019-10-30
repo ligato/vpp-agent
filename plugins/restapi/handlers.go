@@ -29,7 +29,7 @@ import (
 	"go.ligato.io/vpp-agent/v2/plugins/configurator"
 	"go.ligato.io/vpp-agent/v2/plugins/govppmux"
 	"go.ligato.io/vpp-agent/v2/plugins/restapi/resturl"
-	interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/interfaces"
+	interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
 )
 
 var (

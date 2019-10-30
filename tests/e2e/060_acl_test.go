@@ -21,12 +21,12 @@ import (
 
 	. "github.com/onsi/gomega"
 
-	"go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/kvscheduler"
-	"go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/linux/interfaces"
-	linux_l3 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/linux/l3"
-	linux_namespace "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/linux/namespace"
-	vpp_acl "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/acl"
-	vpp_interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/interfaces"
+	"go.ligato.io/vpp-agent/v2/proto/ligato/kvscheduler"
+	"go.ligato.io/vpp-agent/v2/proto/ligato/linux/interfaces"
+	linux_l3 "go.ligato.io/vpp-agent/v2/proto/ligato/linux/l3"
+	linux_namespace "go.ligato.io/vpp-agent/v2/proto/ligato/linux/namespace"
+	vpp_acl "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/acl"
+	vpp_interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
 )
 
 func vppACLs(ctx *testCtx) (string, error) {

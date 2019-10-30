@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate descriptor-adapter --descriptor-name IPAlloc --value-type *netalloc.IPAllocation --meta-type *netalloc.IPAllocMetadata --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/netalloc" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name IPAlloc --value-type *netalloc.IPAllocation --meta-type *netalloc.IPAllocMetadata --import "go.ligato.io/vpp-agent/v2/proto/ligato/netalloc" --output-dir "descriptor"
 
 package netalloc
 
@@ -29,11 +29,11 @@ import (
 	kvs "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
 	"go.ligato.io/vpp-agent/v2/plugins/netalloc/descriptor"
 	"go.ligato.io/vpp-agent/v2/plugins/netalloc/utils"
-	"go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/netalloc"
+	"go.ligato.io/vpp-agent/v2/proto/ligato/netalloc"
 )
 
 // Plugin implements network allocation features.
-// For more information, please refer to the netalloc proto model: proto/ligato/vpp-agent/netalloc/netalloc.proto
+// For more information, please refer to the netalloc proto model: proto/ligato/netalloc/netalloc.proto
 type Plugin struct {
 	Deps
 

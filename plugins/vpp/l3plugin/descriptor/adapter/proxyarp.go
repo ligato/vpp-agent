@@ -5,7 +5,7 @@ package adapter
 import (
 	"github.com/golang/protobuf/proto"
 	. "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
-	"go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/l3"
+	"go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l3"
 )
 
 ////////// type-safe key-value pair with metadata //////////

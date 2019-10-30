@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate descriptor-adapter --descriptor-name LocalSID --value-type *vpp_srv6.LocalSID --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/srv6" --output-dir "descriptor"
-//go:generate descriptor-adapter --descriptor-name Policy --value-type *vpp_srv6.Policy --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/srv6" --output-dir "descriptor"
-//go:generate descriptor-adapter --descriptor-name Steering --value-type *vpp_srv6.Steering --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/srv6" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name LocalSID --value-type *vpp_srv6.LocalSID --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/srv6" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name Policy --value-type *vpp_srv6.Policy --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/srv6" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name Steering --value-type *vpp_srv6.Steering --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/srv6" --output-dir "descriptor"
 
 package srplugin
 

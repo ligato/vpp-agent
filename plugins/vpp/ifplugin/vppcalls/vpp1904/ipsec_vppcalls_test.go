@@ -20,7 +20,7 @@ import (
 
 	. "github.com/onsi/gomega"
 
-	vpp_interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/interfaces"
+	vpp_interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
 
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904/ipsec"
 )

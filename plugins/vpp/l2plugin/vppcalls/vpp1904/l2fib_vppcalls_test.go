@@ -26,7 +26,7 @@ import (
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/l2plugin/vppcalls"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/vppcallmock"
-	l2nb "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/l2"
+	l2nb "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l2"
 )
 
 var testDataInFib = []*l2nb.FIBEntry{

@@ -8,8 +8,8 @@ import (
 	"github.com/ligato/cn-infra/health/statuscheck/model/status"
 	"github.com/pkg/errors"
 
-	"go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp"
-	interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/interfaces"
+	"go.ligato.io/vpp-agent/v2/proto/ligato/vpp"
+	interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
 )
 
 // watchStatusEvents watches for resync event of interface state data.

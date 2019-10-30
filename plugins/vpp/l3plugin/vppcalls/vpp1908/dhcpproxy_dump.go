@@ -19,7 +19,7 @@ import (
 
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908/dhcp"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/l3plugin/vppcalls"
-	vpp_l3 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/l3"
+	vpp_l3 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l3"
 )
 
 func (h *DHCPProxyHandler) DumpDHCPProxy() ([]*vppcalls.DHCPProxyDetails, error) {

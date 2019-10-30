@@ -23,7 +23,7 @@ import (
 
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/aclplugin/vppcalls"
 	acl_api "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908/acl"
-	acl "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/acl"
+	acl "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/acl"
 )
 
 // DumpACL implements ACL handler.

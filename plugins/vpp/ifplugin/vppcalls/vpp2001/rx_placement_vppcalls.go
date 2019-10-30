@@ -16,7 +16,7 @@ package vpp2001
 
 import (
 	vpp_ifs "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/interfaces"
-	ifs "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/interfaces"
+	ifs "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
 )
 
 func (h *InterfaceVppHandler) SetRxPlacement(ifIdx uint32, rxPlacement *ifs.Interface_RxPlacement) error {

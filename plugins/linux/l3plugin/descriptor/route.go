@@ -37,9 +37,9 @@ import (
 	nslinuxcalls "go.ligato.io/vpp-agent/v2/plugins/linux/nsplugin/linuxcalls"
 	"go.ligato.io/vpp-agent/v2/plugins/netalloc"
 	netalloc_descr "go.ligato.io/vpp-agent/v2/plugins/netalloc/descriptor"
-	ifmodel "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/linux/interfaces"
-	linux_l3 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/linux/l3"
-	netalloc_api "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/netalloc"
+	ifmodel "go.ligato.io/vpp-agent/v2/proto/ligato/linux/interfaces"
+	linux_l3 "go.ligato.io/vpp-agent/v2/proto/ligato/linux/l3"
+	netalloc_api "go.ligato.io/vpp-agent/v2/proto/ligato/netalloc"
 )
 
 const (

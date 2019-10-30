@@ -27,7 +27,7 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 
-	"go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/configurator"
+	"go.ligato.io/vpp-agent/v2/proto/ligato/configurator"
 )
 
 var (

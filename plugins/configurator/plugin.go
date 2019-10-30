@@ -38,8 +38,8 @@ import (
 	l3vppcalls "go.ligato.io/vpp-agent/v2/plugins/vpp/l3plugin/vppcalls"
 	natvppcalls "go.ligato.io/vpp-agent/v2/plugins/vpp/natplugin/vppcalls"
 	puntvppcalls "go.ligato.io/vpp-agent/v2/plugins/vpp/puntplugin/vppcalls"
-	rpc "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/configurator"
-	"go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp"
+	rpc "go.ligato.io/vpp-agent/v2/proto/ligato/configurator"
+	"go.ligato.io/vpp-agent/v2/proto/ligato/vpp"
 )
 
 // Plugin registers VPP GRPC services in *grpc.Server.

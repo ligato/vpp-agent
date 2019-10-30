@@ -26,7 +26,7 @@ import (
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908/abf"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/vppcallmock"
-	vpp_abf "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/abf"
+	vpp_abf "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/abf"
 )
 
 func TestGetABFVersion(t *testing.T) {

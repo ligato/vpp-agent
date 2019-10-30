@@ -21,7 +21,7 @@ import (
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/l3plugin/vrfidx"
 
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
-	l3 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/l3"
+	l3 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l3"
 )
 
 // L3VppAPI groups L3 Vpp APIs.

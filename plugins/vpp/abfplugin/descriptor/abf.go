@@ -29,9 +29,9 @@ import (
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/aclplugin/aclidx"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/aclplugin/descriptor"
 	ifdescriptor "go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/descriptor"
-	abf "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/abf"
-	acl "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/acl"
-	vpp_interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/interfaces"
+	abf "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/abf"
+	acl "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/acl"
+	vpp_interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
 )
 
 const (

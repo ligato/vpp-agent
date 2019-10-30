@@ -28,10 +28,10 @@ import (
 	"go.ligato.io/vpp-agent/v2/clientv2/vpp/localclient"
 	"go.ligato.io/vpp-agent/v2/cmd/vpp-agent/app"
 	"go.ligato.io/vpp-agent/v2/plugins/orchestrator"
-	acl "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/acl"
-	interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/interfaces"
-	l2 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/l2"
-	l3 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/l3"
+	acl "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/acl"
+	interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
+	l2 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l2"
+	l3 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l3"
 )
 
 // init sets the default logging level.

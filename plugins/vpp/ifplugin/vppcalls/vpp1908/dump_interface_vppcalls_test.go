@@ -29,7 +29,7 @@ import (
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908/vpe"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908/vxlan"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/vppcallmock"
-	interfaces2 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/interfaces"
+	interfaces2 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
 )
 
 // Test dump of interfaces with vxlan type

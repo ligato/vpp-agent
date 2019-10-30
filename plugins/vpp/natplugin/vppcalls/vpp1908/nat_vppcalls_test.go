@@ -23,7 +23,7 @@ import (
 	binapi "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908/nat"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/natplugin/vppcalls/vpp1908"
-	vpp_nat "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/nat"
+	vpp_nat "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/nat"
 )
 
 func TestSetNat44Forwarding(t *testing.T) {

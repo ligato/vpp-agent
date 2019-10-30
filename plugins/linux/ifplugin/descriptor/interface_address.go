@@ -28,8 +28,8 @@ import (
 	"go.ligato.io/vpp-agent/v2/plugins/linux/nsplugin"
 	nslinuxcalls "go.ligato.io/vpp-agent/v2/plugins/linux/nsplugin/linuxcalls"
 	"go.ligato.io/vpp-agent/v2/plugins/netalloc"
-	interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/linux/interfaces"
-	netalloc_api "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/netalloc"
+	interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/linux/interfaces"
+	netalloc_api "go.ligato.io/vpp-agent/v2/proto/ligato/netalloc"
 )
 
 const (

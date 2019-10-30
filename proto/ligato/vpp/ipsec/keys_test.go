@@ -17,7 +17,7 @@ package vpp_ipsec_test
 import (
 	"testing"
 
-	ipsec "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/ipsec"
+	ipsec "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/ipsec"
 )
 
 /*func TestIPSecSPDKey(t *testing.T) {

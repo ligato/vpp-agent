@@ -27,8 +27,8 @@ import (
 	"go.ligato.io/vpp-agent/v2/clientv2/vpp/localclient"
 	"go.ligato.io/vpp-agent/v2/cmd/vpp-agent/app"
 	"go.ligato.io/vpp-agent/v2/plugins/orchestrator"
-	vpp_intf "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/interfaces"
-	nat "go.ligato.io/vpp-agent/v2/proto/ligato/vpp-agent/vpp/nat"
+	vpp_intf "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
+	nat "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/nat"
 )
 
 var (
