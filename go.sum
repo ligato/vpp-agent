@@ -170,8 +170,8 @@ github.com/kr/pretty v0.1.0/go.mod h1:dAy3ld7l9f0ibDNOQOHHMYYIIbhfbHSm3C4ZsoJORN
 github.com/kr/pty v1.1.1/go.mod h1:pFQYn66WHrOpPYNljwOMqo10TkYh1fy3cYio2l3bCsQ=
 github.com/kr/text v0.1.0 h1:45sCR5RtlFHMR4UwH9sdQ5TC8v0qDQCHnXt+kaKSTVE=
 github.com/kr/text v0.1.0/go.mod h1:4Jbv+DJW3UT/LiOwJeYQe1efqtUx/iVham/4vfdArNI=
-github.com/ligato/cn-infra v2.2.1-0.20191025114221-5099d741d55f+incompatible h1:HZHmQpVw8uoLwMccAbKsAOPJodjRTJhYvqInP0qRO2I=
-github.com/ligato/cn-infra v2.2.1-0.20191025114221-5099d741d55f+incompatible/go.mod h1:wBXHMbKAlgOc/MkJMy/25284ri77duvS0XlIImme7z0=
+github.com/ligato/cn-infra v2.2.1-0.20191030081411-42c7431fdca1+incompatible h1:o4bJ+B9h9JvoF94T2zY3amXuR1Mryjkkfnvey8FOicg=
+github.com/ligato/cn-infra v2.2.1-0.20191030081411-42c7431fdca1+incompatible/go.mod h1:wBXHMbKAlgOc/MkJMy/25284ri77duvS0XlIImme7z0=
 github.com/lunixbochs/struc v0.0.0-20180408203800-02e4c2afbb2a h1:axFx97V2Lyke5LbeygrJlzc07mwVhHt2ZHeI/Nv8Aq4=
 github.com/lunixbochs/struc v0.0.0-20180408203800-02e4c2afbb2a/go.mod h1:iOJu9pApjjmEmNq7PqlA5R9mDu/HMF5EM3llWKX/TyA=
 github.com/matttproud/golang_protobuf_extensions v1.0.1 h1:4hp9jkHxhMHkqkrB3Ix0jegS5sx/RkqARlsWZ6pIwiU=
