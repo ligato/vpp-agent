@@ -20,14 +20,10 @@ const (
 
 var (
 	serviceLabel  = os.Getenv("MICROSERVICE_LABEL")
-	agentHost     = os.Getenv("AGENT_HOST")
 	etcdEndpoints = strings.Split(os.Getenv("ETCD_ENDPOINTS"), ",")
 )
 
 func init() {
-	if agentHost == "" {
-		agentHost = client.DefaultAgentHost
-	}
 	if len(etcdEndpoints) == 0 || etcdEndpoints[0] == "" {
 		etcdEndpoints = []string{defaultEtcdEndpoint}
 	}
@@ -38,7 +34,6 @@ type ClientOptions struct {
 	Debug    bool
 	LogLevel string
 
-	AgentHost    string
 	PortGRPC     int
 	PortHTTP     int
 	ServiceLabel string
@@ -52,7 +47,11 @@ func NewClientOptions() *ClientOptions {
 
 // InstallFlags adds flags for the common options on the FlagSet
 func (opts *ClientOptions) InstallFlags(flags *pflag.FlagSet) {
-	flags.StringVarP(&opts.AgentHost, "host", "H", agentHost, "Address on which agent is reachable, default from AGENT_HOST env var")
+	flags.StringP("host", "H", client.DefaultAgentHost, "Address on which agent is reachable, default from AGENT_HOST env var")
+	viper.BindPFlag("host", flags.Lookup("host"))
+	// TODO: consider using viper.AutomaticEnv with some prefix like `AGENTCTL`
+	viper.BindEnv("host", "AGENT_HOST")
+
 	flags.StringVar(&opts.ServiceLabel, "service-label", serviceLabel, "Service label for specific agent instance, default from MICROSERVICE_LABEL env var")
 	flags.IntVar(&opts.PortHTTP, "http-port", client.DefaultPortHTTP, "HTTP server port")
 	flags.IntVar(&opts.PortGRPC, "grpc-port", client.DefaultPortGRPC, "gRPC server port")

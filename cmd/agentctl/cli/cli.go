@@ -189,7 +189,7 @@ func (cli *AgentCli) Initialize(opts *ClientOptions, ops ...InitializeOpt) error
 
 func newAPIClient(opts *ClientOptions) (client.APIClient, error) {
 	clientOpts := []client.Opt{
-		client.WithHost(opts.AgentHost),
+		client.WithHost(viper.GetString("host")),
 		client.WithEtcdEndpoints(opts.Endpoints),
 		client.WithServiceLabel(opts.ServiceLabel),
 	}

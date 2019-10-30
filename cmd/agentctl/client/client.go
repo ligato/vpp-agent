@@ -41,10 +41,12 @@ import (
 	"github.com/ligato/vpp-agent/pkg/debug"
 )
 
-var (
+const (
 	// DefaultAgentHost defines default host address for agent
 	DefaultAgentHost = "127.0.0.1"
+)
 
+var (
 	DefaultPortGRPC = 9111
 	DefaultPortHTTP = 9191
 )
