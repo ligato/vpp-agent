@@ -750,14 +750,14 @@ func (d *InterfaceDescriptor) DerivedValues(key string, intf *interfaces.Interfa
 	}
 
 	// VRF assignment
-	if intf.GetUnnumbered() != nil && intf.GetVrf() == 0 {
+	if intf.GetUnnumbered() != nil {
 		// VRF inherited from the target numbered interface
 		derValues = append(derValues, kvs.KeyValuePair{
 			Key:   interfaces.InterfaceInheritedVrfKey(intf.GetName(), intf.GetUnnumbered().GetInterfaceWithIp()),
 			Value: &prototypes.Empty{},
 		})
 	} else {
-		// not unnumbered or the VRF id is explicitly set
+		// not unnumbered
 		var hasIPv4, hasIPv6 bool
 		if intf.Type == interfaces.Interface_VXLAN_TUNNEL {
 			srcAddr := net.ParseIP(intf.GetVxlan().GetSrcAddress()).To4()
