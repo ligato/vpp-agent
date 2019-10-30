@@ -971,6 +971,7 @@ func (h *InterfaceVppHandler) dumpGtpuDetails(ifs map[uint32]*vppcalls.Interface
 			Multicast:  multicastIfName,
 			EncapVrfId: gtpuDetails.EncapVrfID,
 			Teid:       gtpuDetails.Teid,
+			DecapNext:  interfaces.GtpuLink_NextNode(gtpuDetails.DecapNextIndex),
 		}
 
 		if gtpuDetails.IsIPv6 == 1 {
