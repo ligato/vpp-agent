@@ -526,7 +526,7 @@ A minor release using newer VPP v18.04 version.
 
 
 <a name="v1.4.0"></a>
-# [1.4.0](https://github.com/ligato/vpp-agent/compare/v1.3...v1.4) (2018-05-24)
+# [1.4.0](https://github.com/ligato/vpp-agent/compare/v1.3...v1.4.0) (2018-05-24)
 
 ### Compatibility
 - VPP v18.04 (ac2b736)
