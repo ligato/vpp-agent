@@ -7,10 +7,10 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/sirupsen/logrus"
 
-	"github.com/ligato/vpp-agent/api/generic"
-	"github.com/ligato/vpp-agent/api/types"
-	"github.com/ligato/vpp-agent/pkg/debug"
-	"github.com/ligato/vpp-agent/pkg/models"
+	"go.ligato.io/vpp-agent/v2/cmd/agentctl/api/types"
+	"go.ligato.io/vpp-agent/v2/pkg/debug"
+	"go.ligato.io/vpp-agent/v2/pkg/models"
+	"go.ligato.io/vpp-agent/v2/proto/ligato/generic"
 )
 
 func (c *Client) ModelList(ctx context.Context, opts types.ModelListOptions) ([]types.Model, error) {

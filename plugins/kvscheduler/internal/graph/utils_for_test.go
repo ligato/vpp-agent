@@ -20,7 +20,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	"github.com/ligato/cn-infra/idxmap"
-	. "github.com/ligato/vpp-agent/plugins/kvscheduler/internal/test"
+	. "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/internal/test"
 )
 
 const (
@@ -50,7 +50,7 @@ var (
 	value3 = NewStringValue("this is value3")
 	value4 = NewStringValue("this is value4")
 
-	commonOpts = Opts{RecordOldRevs:true, RecordAgeLimit: minutesInOneDay, PermanentInitPeriod: minutesInOneHour}
+	commonOpts = Opts{RecordOldRevs: true, RecordAgeLimit: minutesInOneDay, PermanentInitPeriod: minutesInOneHour}
 )
 
 func prefixASelector(key string) bool {
@@ -84,7 +84,7 @@ func buildGraph(graph Graph, wInPlace bool, record, regMaps bool, nodes map[int]
 	if graph == nil {
 		graph = NewGraph(commonOpts)
 	}
-	graphW := graph.Write(wInPlace,record)
+	graphW := graph.Write(wInPlace, record)
 	Expect(graphW.ValidateEdges()).To(BeNil())
 
 	if regMaps {

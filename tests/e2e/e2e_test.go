@@ -44,12 +44,13 @@ import (
 
 	"github.com/ligato/cn-infra/health/probe"
 	"github.com/ligato/cn-infra/health/statuscheck/model/status"
-	"github.com/ligato/vpp-agent/client"
-	"github.com/ligato/vpp-agent/client/remoteclient"
-	"github.com/ligato/vpp-agent/pkg/models"
-	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-	nslinuxcalls "github.com/ligato/vpp-agent/plugins/linux/nsplugin/linuxcalls"
-	"github.com/ligato/vpp-agent/tests/e2e/utils"
+	"go.ligato.io/vpp-agent/v2/client"
+	"go.ligato.io/vpp-agent/v2/client/remoteclient"
+	"go.ligato.io/vpp-agent/v2/pkg/models"
+	kvs "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
+	nslinuxcalls "go.ligato.io/vpp-agent/v2/plugins/linux/nsplugin/linuxcalls"
+	"go.ligato.io/vpp-agent/v2/proto/ligato/kvscheduler"
+	"go.ligato.io/vpp-agent/v2/tests/e2e/utils"
 )
 
 var (
@@ -406,18 +407,18 @@ func (ctx *testCtx) testConnection(fromMs, toMs, toAddr, listenAddr string,
 	return err
 }
 
-func (ctx *testCtx) getValueState(value proto.Message) kvs.ValueState {
+func (ctx *testCtx) getValueState(value proto.Message) kvscheduler.ValueState {
 	key := models.Key(value)
 	return ctx.getValueStateByKey(key)
 }
 
-func (ctx *testCtx) getValueStateByKey(key string) kvs.ValueState {
+func (ctx *testCtx) getValueStateByKey(key string) kvscheduler.ValueState {
 	q := fmt.Sprintf(`/scheduler/status?key=%s`, url.QueryEscape(key))
 	resp, err := ctx.httpClient.GET(q)
 	if err != nil {
 		ctx.t.Fatalf("Request to obtain value status has failed: %v", err)
 	}
-	status := kvs.BaseValueStatus{}
+	status := kvscheduler.BaseValueStatus{}
 	if err := json.Unmarshal(resp, &status); err != nil {
 		ctx.t.Fatalf("Reply with value status cannot be decoded: %v", err)
 	}
@@ -429,8 +430,8 @@ func (ctx *testCtx) getValueStateByKey(key string) kvs.ValueState {
 
 // getValueStateClb can be used to repeatedly check value state inside the assertions
 // "Eventually" and "Consistently" from Omega.
-func (ctx *testCtx) getValueStateClb(value proto.Message) func() kvs.ValueState {
-	return func() kvs.ValueState {
+func (ctx *testCtx) getValueStateClb(value proto.Message) func() kvscheduler.ValueState {
+	return func() kvscheduler.ValueState {
 		return ctx.getValueState(value)
 	}
 }

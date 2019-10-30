@@ -33,12 +33,12 @@ import (
 	"github.com/ligato/cn-infra/rpc/rest"
 	"github.com/pkg/errors"
 
-	"github.com/ligato/vpp-agent/plugins/govppmux/vppcalls"
+	"go.ligato.io/vpp-agent/v2/plugins/govppmux/vppcalls"
 
-	_ "github.com/ligato/vpp-agent/plugins/govppmux/vppcalls/vpp1904"
-	_ "github.com/ligato/vpp-agent/plugins/govppmux/vppcalls/vpp1908"
-	_ "github.com/ligato/vpp-agent/plugins/govppmux/vppcalls/vpp2001_324"
-	_ "github.com/ligato/vpp-agent/plugins/govppmux/vppcalls/vpp2001_379"
+	_ "go.ligato.io/vpp-agent/v2/plugins/govppmux/vppcalls/vpp1904"
+	_ "go.ligato.io/vpp-agent/v2/plugins/govppmux/vppcalls/vpp1908"
+	_ "go.ligato.io/vpp-agent/v2/plugins/govppmux/vppcalls/vpp2001"
+	_ "go.ligato.io/vpp-agent/v2/plugins/govppmux/vppcalls/vpp2001_324"
 )
 
 //go:generate protoc --proto_path=. --go_out=plugins=grpc:. model/metrics.proto

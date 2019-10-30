@@ -15,8 +15,8 @@
 package vpp2001_324
 
 import (
-	ifs "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	vpp_afpacket "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001_324/af_packet"
+	vpp_afpacket "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324/af_packet"
+	ifs "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
 )
 
 // AddAfPacketInterface implements AfPacket handler.

@@ -15,17 +15,18 @@
 package vpp
 
 import (
-	"github.com/ligato/cn-infra/logging/logrus"
 	"strings"
 	"testing"
 
-	vpp_l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
-	netalloc_mock "github.com/ligato/vpp-agent/plugins/netalloc/mock"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
-	ifplugin_vppcalls "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
-	_ "github.com/ligato/vpp-agent/plugins/vpp/l3plugin"
-	l3plugin_vppcalls "github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls"
-	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vrfidx"
+	"github.com/ligato/cn-infra/logging/logrus"
+
+	netalloc_mock "go.ligato.io/vpp-agent/v2/plugins/netalloc/mock"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
+	ifplugin_vppcalls "go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/vppcalls"
+	_ "go.ligato.io/vpp-agent/v2/plugins/vpp/l3plugin"
+	l3plugin_vppcalls "go.ligato.io/vpp-agent/v2/plugins/vpp/l3plugin/vppcalls"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/l3plugin/vrfidx"
+	vpp_l3 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l3"
 )
 
 func TestArp(t *testing.T) {

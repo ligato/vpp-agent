@@ -21,9 +21,9 @@ import (
 
 	"github.com/ligato/cn-infra/logging/logrus"
 
-	acl "github.com/ligato/vpp-agent/api/models/vpp/acl"
-	"github.com/ligato/vpp-agent/plugins/vpp/aclplugin/vppcalls"
-	acl_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/acl"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/aclplugin/vppcalls"
+	acl_api "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904/acl"
+	acl "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/acl"
 )
 
 // DumpACL implements ACL handler.

@@ -17,7 +17,7 @@ package mockcalls
 import (
 	"fmt"
 
-	"github.com/ligato/vpp-agent/examples/kvscheduler/mock_plugins/ifplugin/model"
+	"go.ligato.io/vpp-agent/v2/examples/kvscheduler/mock_plugins/ifplugin/model"
 )
 
 // SimulateFailedTapCreation allows to simulate failure of the next Create

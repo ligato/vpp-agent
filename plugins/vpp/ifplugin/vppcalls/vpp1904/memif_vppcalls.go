@@ -15,8 +15,8 @@
 package vpp1904
 
 import (
-	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/memif"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904/memif"
+	interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
 )
 
 // AddMemifInterface implements interface handler.

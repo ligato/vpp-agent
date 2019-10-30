@@ -15,13 +15,14 @@
 package main
 
 import (
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1908/interfaces"
 	"log"
 	"net"
 	"time"
 
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908/interfaces"
+
 	"git.fd.io/govpp.git/api"
-	"github.com/ligato/vpp-agent/plugins/govppmux"
+	"go.ligato.io/vpp-agent/v2/plugins/govppmux"
 
 	"github.com/ligato/cn-infra/agent"
 )

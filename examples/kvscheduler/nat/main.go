@@ -20,19 +20,19 @@ import (
 	"time"
 
 	"github.com/ligato/cn-infra/agent"
-	"github.com/ligato/vpp-agent/plugins/orchestrator"
 
-	"github.com/ligato/vpp-agent/api/models/linux/interfaces"
-	"github.com/ligato/vpp-agent/api/models/linux/l3"
-	linux_ns "github.com/ligato/vpp-agent/api/models/linux/namespace"
-	"github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	"github.com/ligato/vpp-agent/api/models/vpp/nat"
-	"github.com/ligato/vpp-agent/clientv2/linux/localclient"
-	linux_ifplugin "github.com/ligato/vpp-agent/plugins/linux/ifplugin"
-	linux_l3plugin "github.com/ligato/vpp-agent/plugins/linux/l3plugin"
-	linux_nsplugin "github.com/ligato/vpp-agent/plugins/linux/nsplugin"
-	vpp_ifplugin "github.com/ligato/vpp-agent/plugins/vpp/ifplugin"
-	vpp_natplugin "github.com/ligato/vpp-agent/plugins/vpp/natplugin"
+	"go.ligato.io/vpp-agent/v2/clientv2/linux/localclient"
+	linux_ifplugin "go.ligato.io/vpp-agent/v2/plugins/linux/ifplugin"
+	linux_l3plugin "go.ligato.io/vpp-agent/v2/plugins/linux/l3plugin"
+	linux_nsplugin "go.ligato.io/vpp-agent/v2/plugins/linux/nsplugin"
+	"go.ligato.io/vpp-agent/v2/plugins/orchestrator"
+	vpp_ifplugin "go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin"
+	vpp_natplugin "go.ligato.io/vpp-agent/v2/plugins/vpp/natplugin"
+	"go.ligato.io/vpp-agent/v2/proto/ligato/linux/interfaces"
+	linux_l3 "go.ligato.io/vpp-agent/v2/proto/ligato/linux/l3"
+	linux_ns "go.ligato.io/vpp-agent/v2/proto/ligato/linux/namespace"
+	vpp_interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
+	vpp_nat "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/nat"
 )
 
 /*

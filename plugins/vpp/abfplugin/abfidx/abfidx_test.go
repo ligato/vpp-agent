@@ -18,8 +18,8 @@ import (
 	"testing"
 
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/vpp-agent/plugins/vpp/abfplugin/abfidx"
 	. "github.com/onsi/gomega"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/abfplugin/abfidx"
 )
 
 func TestABFIndexLookupByName(t *testing.T) {

@@ -12,13 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate descriptor-adapter --descriptor-name Route --value-type *vpp_l3.Route --import "github.com/ligato/vpp-agent/api/models/vpp/l3" --output-dir "descriptor"
-//go:generate descriptor-adapter --descriptor-name ARPEntry --value-type *vpp_l3.ARPEntry --import "github.com/ligato/vpp-agent/api/models/vpp/l3" --output-dir "descriptor"
-//go:generate descriptor-adapter --descriptor-name ProxyARP --value-type *vpp_l3.ProxyARP --import "github.com/ligato/vpp-agent/api/models/vpp/l3" --output-dir "descriptor"
-//go:generate descriptor-adapter --descriptor-name ProxyARPInterface --value-type *vpp_l3.ProxyARP_Interface --import "github.com/ligato/vpp-agent/api/models/vpp/l3" --output-dir "descriptor"
-//go:generate descriptor-adapter --descriptor-name IPScanNeighbor --value-type *vpp_l3.IPScanNeighbor --import "github.com/ligato/vpp-agent/api/models/vpp/l3" --output-dir "descriptor"
-//go:generate descriptor-adapter --descriptor-name VrfTable --value-type *vpp_l3.VrfTable --meta-type *vrfidx.VRFMetadata --import "vrfidx" --import "github.com/ligato/vpp-agent/api/models/vpp/l3" --output-dir "descriptor"
-//go:generate descriptor-adapter --descriptor-name DHCPProxy --value-type *vpp_l3.DHCPProxy --import "github.com/ligato/vpp-agent/api/models/vpp/l3" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name Route --value-type *vpp_l3.Route --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l3" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name ARPEntry --value-type *vpp_l3.ARPEntry --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l3" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name ProxyARP --value-type *vpp_l3.ProxyARP --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l3" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name ProxyARPInterface --value-type *vpp_l3.ProxyARP_Interface --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l3" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name IPScanNeighbor --value-type *vpp_l3.IPScanNeighbor --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l3" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name VrfTable --value-type *vpp_l3.VrfTable --meta-type *vrfidx.VRFMetadata --import "go.ligato.io/vpp-agent/v2/plugins/vpp/l3plugin/vrfidx" --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l3" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name DHCPProxy --value-type *vpp_l3.DHCPProxy --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l3" --output-dir "descriptor"
 
 package l3plugin
 
@@ -28,18 +28,18 @@ import (
 	"github.com/ligato/cn-infra/infra"
 	"github.com/pkg/errors"
 
-	"github.com/ligato/vpp-agent/plugins/govppmux"
-	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-	"github.com/ligato/vpp-agent/plugins/netalloc"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin"
-	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/descriptor"
-	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls"
-	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vrfidx"
+	"go.ligato.io/vpp-agent/v2/plugins/govppmux"
+	kvs "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v2/plugins/netalloc"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/l3plugin/descriptor"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/l3plugin/vppcalls"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/l3plugin/vrfidx"
 
-	_ "github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls/vpp1904"
-	_ "github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls/vpp1908"
-	_ "github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls/vpp2001_324"
-	_ "github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls/vpp2001_379"
+	_ "go.ligato.io/vpp-agent/v2/plugins/vpp/l3plugin/vppcalls/vpp1904"
+	_ "go.ligato.io/vpp-agent/v2/plugins/vpp/l3plugin/vppcalls/vpp1908"
+	_ "go.ligato.io/vpp-agent/v2/plugins/vpp/l3plugin/vppcalls/vpp2001"
+	_ "go.ligato.io/vpp-agent/v2/plugins/vpp/l3plugin/vppcalls/vpp2001_324"
 )
 
 // L3Plugin configures Linux routes and ARP entries using Netlink API.

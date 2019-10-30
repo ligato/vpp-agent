@@ -74,15 +74,13 @@ Add VPP2_memif1 Interface
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Interface Is Created    node=agent_vpp_1    mac=${MAC_VPP1_MEMIF1}
 
 Add Static Route From VPP1 Linux To VPP2
-    Put Linux Route    node=agent_vpp_1    namespace=${EMPTY}    interface=${NAME_VPP1_TAP1}    routename=${NAME_VPP1_LINUX_TO_VPP2}    ip=${IP_VPP2_TAP1_NETWORK}    next_hop=${EMPTY}
-#    Create Route    node=agent_vpp_1    routename=vpp1linuxtovpp2    ip=${IP_VPP2_TAP1_NETWORK}    interface=${NAME_VPP1_TAP1}
+    Put Linux Route    node=agent_vpp_1    namespace=${EMPTY}    interface=${NAME_VPP1_TAP1}    ip=${IP_VPP2_TAP1_NETWORK}    next_hop=${EMPTY}
 
 Add Static Route From VPP1 To VPP2
     Create Route On agent_vpp_1 With IP 20.20.1.0/24 With Next Hop 192.168.1.2 And Vrf Id 0
 
 Add Static Route From VPP2 Linux To VPP1
-    Put Linux Route    node=agent_vpp_2    namespace=${EMPTY}    interface=${NAME_VPP2_TAP1}    routename=${NAME_VPP2_LINUX_TO_VPP1}    ip=${IP_VPP1_TAP1_NETWORK}    next_hop=${EMPTY}
-#    Create Route    node=agent_vpp_2    routename=vpp2linuxtovpp1    ip=${IP_VPP1_TAP1_NETWORK}    interface=${NAME_VPP2_TAP1}
+    Put Linux Route    node=agent_vpp_2    namespace=${EMPTY}    interface=${NAME_VPP2_TAP1}    ip=${IP_VPP1_TAP1_NETWORK}    next_hop=${EMPTY}
 
 Add Static Route From VPP2 To VPP1
     Create Route On agent_vpp_2 With IP 10.10.1.0/24 With Next Hop 192.168.1.1 And Vrf Id 0
@@ -130,13 +128,13 @@ Configure Environment 2
     Configure Environment 1
 
 Add Static Route From VPP1 Linux To VPP2 2
-    Put Linux Route    node=agent_vpp_1    namespace=${EMPTY}    interface=${NAME_VPP1_TAP1}    routename=${NAME_VPP1_LINUX_TO_VPP2}    ip=${IP_VPP2_TAP1_NETWORK}    next_hop=${EMPTY}
+    Put Linux Route    node=agent_vpp_1    namespace=${EMPTY}    interface=${NAME_VPP1_TAP1}    ip=${IP_VPP2_TAP1_NETWORK}    next_hop=${EMPTY}
 
 Add Static Route From VPP1 To VPP2 2
     Create Route On agent_vpp_1 With IP 20.20.1.0/24 With Next Hop 192.168.1.2 And Vrf Id 0
 
 Add Static Route From VPP2 Linux To VPP1 2
-    Put Linux Route    node=agent_vpp_2    namespace=${EMPTY}    interface=${NAME_VPP2_TAP1}    routename=${NAME_VPP2_LINUX_TO_VPP1}    ip=${IP_VPP1_TAP1_NETWORK}    next_hop=${EMPTY}
+    Put Linux Route    node=agent_vpp_2    namespace=${EMPTY}    interface=${NAME_VPP2_TAP1}    ip=${IP_VPP1_TAP1_NETWORK}    next_hop=${EMPTY}
 
 Add Static Route From VPP2 To VPP1 2
     Create Route On agent_vpp_2 With IP 10.10.1.0/24 With Next Hop 192.168.1.1 And Vrf Id 0

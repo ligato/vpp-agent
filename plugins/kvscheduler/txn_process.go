@@ -23,9 +23,10 @@ import (
 
 	"github.com/ligato/cn-infra/logging"
 
-	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-	"github.com/ligato/vpp-agent/plugins/kvscheduler/internal/graph"
-	"github.com/ligato/vpp-agent/plugins/kvscheduler/internal/utils"
+	kvs "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v2/plugins/kvscheduler/internal/graph"
+	"go.ligato.io/vpp-agent/v2/plugins/kvscheduler/internal/utils"
+	"go.ligato.io/vpp-agent/v2/proto/ligato/kvscheduler"
 )
 
 // transaction represents kscheduler transaction that is being queued/processed.
@@ -321,14 +322,14 @@ func (s *Scheduler) postProcessTransaction(txn *transaction, executed kvs.Record
 		}
 		state := getNodeState(node)
 		baseKey := getNodeBaseKey(node)
-		if state == kvs.ValueState_UNIMPLEMENTED {
+		if state == kvscheduler.ValueState_UNIMPLEMENTED {
 			continue
 		}
-		if state == kvs.ValueState_FAILED {
+		if state == kvscheduler.ValueState_FAILED {
 			toRefresh.Add(baseKey)
 			afterErrRefresh = true
 		}
-		if state == kvs.ValueState_RETRYING {
+		if state == kvscheduler.ValueState_RETRYING {
 			toRefresh.Add(baseKey)
 			toRetry.Add(baseKey)
 			afterErrRefresh = true
@@ -356,13 +357,13 @@ func (s *Scheduler) postProcessTransaction(txn *transaction, executed kvs.Record
 	}
 
 	// collect state updates
-	var stateUpdates []*kvs.BaseValueStatus
+	var stateUpdates []*kvscheduler.BaseValueStatus
 	removed := utils.NewSliceBasedKeySet()
 	graphR = s.graph.Read()
 	for _, key := range s.updatedStates.Iterate() {
 		node := graphR.GetNode(key)
 		status := getValueStatus(node, key)
-		if status.Value.State == kvs.ValueState_REMOVED {
+		if status.Value.State == kvscheduler.ValueState_REMOVED {
 			removed.Add(key)
 		}
 		stateUpdates = append(stateUpdates, status)
@@ -485,7 +486,7 @@ func (s *Scheduler) verifyTransaction(graphR graph.ReadAccess, executed kvs.Reco
 			continue
 		}
 		state := getNodeState(node)
-		if state == kvs.ValueState_RETRYING || state == kvs.ValueState_FAILED {
+		if state == kvscheduler.ValueState_RETRYING || state == kvscheduler.ValueState_FAILED {
 			// effects of failed operations are uncertain and cannot be therefore verified
 			continue
 		}
@@ -493,7 +494,7 @@ func (s *Scheduler) verifyTransaction(graphR graph.ReadAccess, executed kvs.Reco
 		expValue := getNodeLastAppliedValue(node)
 		lastOp := getNodeLastOperation(node)
 
-		expToNotExist := expValue == nil || state == kvs.ValueState_PENDING || state == kvs.ValueState_INVALID
+		expToNotExist := expValue == nil || state == kvscheduler.ValueState_PENDING || state == kvscheduler.ValueState_INVALID
 		if expToNotExist && isNodeAvailable(node) {
 			kvErrors = append(kvErrors, kvs.KeyWithError{
 				Key:          key,

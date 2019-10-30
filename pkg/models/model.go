@@ -20,7 +20,7 @@ import (
 
 	"github.com/golang/protobuf/proto"
 
-	"github.com/ligato/vpp-agent/api/generic"
+	"go.ligato.io/vpp-agent/v2/proto/ligato/generic"
 )
 
 // RegisteredModel represents a registered model.

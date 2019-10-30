@@ -20,7 +20,7 @@ import (
 	"github.com/ligato/cn-infra/idxmap"
 	"github.com/ligato/cn-infra/logging"
 
-	"github.com/ligato/vpp-agent/pkg/idxvpp"
+	"go.ligato.io/vpp-agent/v2/pkg/idxvpp"
 )
 
 // IfaceMetadataIndex provides read-only access to mapping with VPP interface
@@ -62,7 +62,7 @@ type IfaceMetadata struct {
 	SwIfIndex     uint32
 	Vrf           uint32
 	IPAddresses   []string // TODO: update from interfaceAddress descriptor with real IPs (not netalloc links)
-	TAPHostIfName string /* host interface name set for the Linux-side of the TAP interface; empty for non-TAPs */
+	TAPHostIfName string   /* host interface name set for the Linux-side of the TAP interface; empty for non-TAPs */
 }
 
 // GetIndex returns sw_if_index assigned to the interface.

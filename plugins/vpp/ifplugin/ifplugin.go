@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate descriptor-adapter --descriptor-name Interface  --value-type *vpp_interfaces.Interface --meta-type *ifaceidx.IfaceMetadata --import "ifaceidx" --import "github.com/ligato/vpp-agent/api/models/vpp/interfaces" --output-dir "descriptor"
-//go:generate descriptor-adapter --descriptor-name Unnumbered  --value-type *vpp_interfaces.Interface_Unnumbered --import "github.com/ligato/vpp-agent/api/models/vpp/interfaces" --output-dir "descriptor"
-//go:generate descriptor-adapter --descriptor-name RxMode  --value-type *vpp_interfaces.Interface --import "github.com/ligato/vpp-agent/api/models/vpp/interfaces" --output-dir "descriptor"
-//go:generate descriptor-adapter --descriptor-name RxPlacement  --value-type *vpp_interfaces.Interface_RxPlacement --import "github.com/ligato/vpp-agent/api/models/vpp/interfaces" --output-dir "descriptor"
-//go:generate descriptor-adapter --descriptor-name BondedInterface  --value-type *vpp_interfaces.BondLink_BondedInterface --import "github.com/ligato/vpp-agent/api/models/vpp/interfaces" --output-dir "descriptor"
-//go:generate descriptor-adapter --descriptor-name Span  --value-type *vpp_interfaces.Span --import "github.com/ligato/vpp-agent/api/models/vpp/interfaces" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name Interface  --value-type *vpp_interfaces.Interface --meta-type *ifaceidx.IfaceMetadata --import "go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx" --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name Unnumbered  --value-type *vpp_interfaces.Interface_Unnumbered --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name RxMode  --value-type *vpp_interfaces.Interface --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name RxPlacement  --value-type *vpp_interfaces.Interface_RxPlacement --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name BondedInterface  --value-type *vpp_interfaces.BondLink_BondedInterface --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name Span  --value-type *vpp_interfaces.Span --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces" --output-dir "descriptor"
 
 package ifplugin
 
@@ -34,21 +34,21 @@ import (
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/pkg/errors"
 
-	"github.com/ligato/vpp-agent/api/models/vpp"
-	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	"github.com/ligato/vpp-agent/plugins/govppmux"
-	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-	linux_ifcalls "github.com/ligato/vpp-agent/plugins/linux/ifplugin/linuxcalls"
-	"github.com/ligato/vpp-agent/plugins/linux/nsplugin"
-	"github.com/ligato/vpp-agent/plugins/netalloc"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/descriptor"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
+	"go.ligato.io/vpp-agent/v2/plugins/govppmux"
+	kvs "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
+	linux_ifcalls "go.ligato.io/vpp-agent/v2/plugins/linux/ifplugin/linuxcalls"
+	"go.ligato.io/vpp-agent/v2/plugins/linux/nsplugin"
+	"go.ligato.io/vpp-agent/v2/plugins/netalloc"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/descriptor"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/vppcalls"
+	"go.ligato.io/vpp-agent/v2/proto/ligato/vpp"
+	interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
 
-	_ "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls/vpp1904"
-	_ "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls/vpp1908"
-	_ "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls/vpp2001_324"
-	_ "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls/vpp2001_379"
+	_ "go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/vppcalls/vpp1904"
+	_ "go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/vppcalls/vpp1908"
+	_ "go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/vppcalls/vpp2001"
+	_ "go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/vppcalls/vpp2001_324"
 )
 
 // IfPlugin configures VPP interfaces using GoVPP.
@@ -304,7 +304,7 @@ func (p *IfPlugin) GetInterfaceIndex() ifaceidx.IfaceMetadataIndex {
 }
 
 // GetDHCPIndex gives read-only access to (untyped) map with DHCP leases.
-// Cast metadata to "github.com/ligato/vpp-agent/api/models/vpp/interfaces".DHCPLease
+// Cast metadata to "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces".DHCPLease
 func (p *IfPlugin) GetDHCPIndex() idxmap.NamedMapping {
 	return p.dhcpIndex
 }

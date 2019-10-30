@@ -10,7 +10,7 @@ import (
 
 	"google.golang.org/grpc"
 
-	"github.com/ligato/vpp-agent/cmd/agentctl/client/tlsconfig"
+	"go.ligato.io/vpp-agent/v2/cmd/agentctl/client/tlsconfig"
 )
 
 type Opt func(*Client) error

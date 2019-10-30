@@ -20,9 +20,9 @@ import (
 	"fmt"
 	"text/tabwriter"
 
-	"github.com/ligato/vpp-agent/api/types"
-	agentcli "github.com/ligato/vpp-agent/cmd/agentctl/cli"
 	"github.com/spf13/cobra"
+	"go.ligato.io/vpp-agent/v2/cmd/agentctl/api/types"
+	agentcli "go.ligato.io/vpp-agent/v2/cmd/agentctl/cli"
 )
 
 func NewMetricsCommand(cli agentcli.Cli) *cobra.Command {

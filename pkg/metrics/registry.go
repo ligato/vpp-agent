@@ -19,7 +19,7 @@ import (
 	"reflect"
 	"sync"
 
-	"github.com/ligato/vpp-agent/pkg/models"
+	"go.ligato.io/vpp-agent/v2/pkg/models"
 )
 
 var (

@@ -1,21 +1,37 @@
+PROJECT := vpp-agent
+REMOTE_GIT := https://github.com/ligato/vpp-agent.git
+
 VERSION ?= $(shell git describe --always --tags --dirty)
 COMMIT  ?= $(shell git rev-parse HEAD)
 DATE    ?= $(shell git log -1 --format="%ct" | xargs -I{} date -d @{} +'%Y-%m-%dT%H:%M%:z')
-ARCH    ?= $(shell uname -m)
 
-CNINFRA := github.com/ligato/vpp-agent/vendor/github.com/ligato/cn-infra/agent
+UNAME_OS   ?= $(shell uname -s)
+UNAME_ARCH ?= $(shell uname -m)
+
+CACHE_BASE := $(HOME)/.cache/$(PROJECT)
+CACHE := $(CACHE_BASE)/$(UNAME_OS)/$(UNAME_ARCH)
+CACHE_BIN := $(CACHE)/bin
+CACHE_VERSIONS := $(CACHE)/versions
+
+BUF_VERSION := 0.1.0
+
+# Update the $PATH so we can use buf directly
+export PATH := $(abspath $(CACHE_BIN)):$(PATH)
+
+CNINFRA := github.com/ligato/cn-infra/agent
 LDFLAGS = -X $(CNINFRA).BuildVersion=$(VERSION) -X $(CNINFRA).CommitHash=$(COMMIT) -X $(CNINFRA).BuildDate=$(DATE)
 
 include vpp.env
 
 ifeq ($(VPP_VERSION),)
-VPP_VERSION = $(VPP_DEFAULT)
+VPP_VERSION=$(VPP_DEFAULT)
 endif
-VPP_IMG:=$(value VPP_IMG_$(VPP_VERSION))
-ifeq (${ARCH}, aarch64)
+VPP_IMG:=$(value VPP_$(VPP_VERSION)_IMAGE)
+ifeq (${UNAME_ARCH}, aarch64)
 VPP_IMG:=$(subst vpp-base,vpp-base-arm64,$(VPP_IMG))
 endif
-VPP_BINAPI?=$(value VPP_BINAPI_$(VPP_VERSION))
+VPP_BINAPI?=$(value VPP_$(VPP_VERSION)_BINAPI)
+
 SKIP_CHECK?=
 
 ifeq ($(NOSTRIP),)
@@ -154,22 +170,34 @@ e2e-tests-cover: ## Run end-to-end tests with coverage
 
 generate: generate-proto generate-binapi generate-desc-adapters ## Generate all
 
-get-proto-generators:
-	@go install ./vendor/github.com/golang/protobuf/protoc-gen-go
+PROTOC_CMD := $(shell command -v protoc 2> /dev/null)
 
-generate-proto: get-proto-generators ## Generate Go code for Protobuf files
+install-protobuf:
+	@echo "=> installing proto compiler"
+	./scripts/install_protobuf.sh
+
+get-proto-compiler:
+ifndef PROTOC_CMD
+get-proto-compiler: install-protobuf
+endif
+
+generate-proto: get-proto-compiler ## Generate Protobuf files
 	@echo "=> generating proto"
 	./scripts/genprotos.sh
 
+verify-proto: get-proto-compiler ## Verify generated Protobuf files
+	@echo "=> verifying generated proto"
+	./scripts/genprotos.sh check
+
 get-binapi-generators:
-	@go install ./vendor/git.fd.io/govpp.git/cmd/binapi-generator
+	@go install git.fd.io/govpp.git/cmd/binapi-generator
 
 generate-binapi: get-binapi-generators ## Generate Go code for VPP binary API
 	@echo "=> generating binapi"
 	VPP_BINAPI=$(VPP_BINAPI) ./scripts/genbinapi.sh
 
 verify-binapi: ## Verify generated VPP binary API
-	@echo "=> verifying binary api"
+	@echo "=> verifying generated binapi"
 	docker build -f docker/dev/Dockerfile \
 		--build-arg VPP_IMG=${VPP_IMG} \
 		--build-arg VPP_BINAPI=${VPP_BINAPI} \
@@ -206,21 +234,22 @@ bindata: get-bindata
 #  Dependencies
 # -------------------------------
 
-get-dep:
-	curl -sSfL https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
-	dep version
+dep-install:
+	@echo "=> downloading project's dependencies"
+	go mod download
 
-dep-install: get-dep
-	@echo "=> installing project's dependencies"
-	dep ensure -v
-
-dep-update: get-dep
+dep-update:
 	@echo "=> updating all dependencies"
-	dep ensure -update
+	@echo "Warning: 'go get' desired new modules by hand"
 
-dep-check: get-dep ## Check Go dependencies
+# FIXME: 'go mod verify' might be used here, but tidy and verify disagree.
+dep-check:
 	@echo "=> checking dependencies"
-	dep check
+	go mod tidy -v
+	@if ! git diff --quiet go.mod go.sum ; then \
+		echo "go mod tidy check failed"; \
+		exit 1 ; \
+	fi
 
 # -------------------------------
 #  Linters
@@ -277,17 +306,59 @@ dev-image: ## Build developer image
 prod-image: ## Build production image
 	@echo "=> building prod image"
 	IMAGE_TAG=$(IMAGE_TAG) \
-    	./docker/prod/build.sh
+	./docker/prod/build.sh
 
+# -------------------------------
+#  ProtoBUF
+# -------------------------------
+
+# BUF points to the marker file for the installed version.
+#
+# If BUF_VERSION is changed, the binary will be re-downloaded.
+BUF := $(CACHE_VERSIONS)/buf/$(BUF_VERSION)
+$(BUF):
+	@rm -f $(CACHE_BIN)/buf
+	@mkdir -p $(CACHE_BIN)
+	curl -sSL \
+		"https://github.com/bufbuild/buf/releases/download/v$(BUF_VERSION)/buf-$(UNAME_OS)-$(UNAME_ARCH)" \
+		-o "$(CACHE_BIN)/buf"
+	chmod +x "$(CACHE_BIN)/buf"
+	@rm -rf $(dir $(BUF))
+	@mkdir -p $(dir $(BUF))
+	@touch $(BUF)
+
+buf-deps: $(BUF)
+
+buf-list: $(BUF)
+	buf ls-files
+
+# buf-local is what we run when testing locally
+# this does breaking change detection against our local git repository
+#
+buf-local: $(BUF)
+	buf check lint
+	buf check breaking --against-input '.git#branch=master'
+
+# buf-remote is what we run when testing in most CI providers
+# this does breaking change detection against our remote git repository
+#
+buf-remote: $(BUF)
+	buf check lint
+	buf check breaking --against-input "$(REMOTE_GIT)#branch=master"
+
+buf-verify: $(BUF)
+	buf image build -o /dev/null
 
 .PHONY: help \
 	agent agentctl build clean install \
 	cmd examples clean-examples \
 	test test-cover test-cover-html test-cover-xml \
 	generate genereate-binapi generate-proto get-binapi-generators get-proto-generators \
+	install-protobuf get-proto-compiler verify-proto \
 	get-dep dep-install dep-update dep-check \
 	get-linters lint format \
 	get-linkcheck check-links \
 	get-yamllint yamllint \
 	images dev-image prod-image \
-	perf perf-all
+	perf perf-all \
+	buf-list buf-deps buf-local buf-remote buf-verify

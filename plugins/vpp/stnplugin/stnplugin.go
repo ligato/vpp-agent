@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate descriptor-adapter --descriptor-name STN --value-type *vpp_stn.Rule --import "github.com/ligato/vpp-agent/api/models/vpp/stn" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name STN --value-type *vpp_stn.Rule --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/stn" --output-dir "descriptor"
 
 package stnplugin
 
@@ -22,17 +22,17 @@ import (
 	"github.com/ligato/cn-infra/infra"
 	"github.com/pkg/errors"
 
-	"github.com/ligato/vpp-agent/plugins/govppmux"
-	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin"
-	"github.com/ligato/vpp-agent/plugins/vpp/stnplugin/descriptor"
-	"github.com/ligato/vpp-agent/plugins/vpp/stnplugin/descriptor/adapter"
-	"github.com/ligato/vpp-agent/plugins/vpp/stnplugin/vppcalls"
+	"go.ligato.io/vpp-agent/v2/plugins/govppmux"
+	kvs "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/stnplugin/descriptor"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/stnplugin/descriptor/adapter"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/stnplugin/vppcalls"
 
-	_ "github.com/ligato/vpp-agent/plugins/vpp/stnplugin/vppcalls/vpp1904"
-	_ "github.com/ligato/vpp-agent/plugins/vpp/stnplugin/vppcalls/vpp1908"
-	_ "github.com/ligato/vpp-agent/plugins/vpp/stnplugin/vppcalls/vpp2001_324"
-	_ "github.com/ligato/vpp-agent/plugins/vpp/stnplugin/vppcalls/vpp2001_379"
+	_ "go.ligato.io/vpp-agent/v2/plugins/vpp/stnplugin/vppcalls/vpp1904"
+	_ "go.ligato.io/vpp-agent/v2/plugins/vpp/stnplugin/vppcalls/vpp1908"
+	_ "go.ligato.io/vpp-agent/v2/plugins/vpp/stnplugin/vppcalls/vpp2001"
+	_ "go.ligato.io/vpp-agent/v2/plugins/vpp/stnplugin/vppcalls/vpp2001_324"
 )
 
 // STNPlugin configures VPP STN rules using GoVPP.

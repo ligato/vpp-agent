@@ -27,9 +27,10 @@ import (
 	"github.com/unrolled/render"
 
 	"github.com/ligato/cn-infra/rpc/rest"
-	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-	"github.com/ligato/vpp-agent/plugins/kvscheduler/internal/graph"
-	"github.com/ligato/vpp-agent/plugins/kvscheduler/internal/utils"
+	kvs "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v2/plugins/kvscheduler/internal/graph"
+	"go.ligato.io/vpp-agent/v2/plugins/kvscheduler/internal/utils"
+	"go.ligato.io/vpp-agent/v2/proto/ligato/kvscheduler"
 )
 
 const (
@@ -494,7 +495,7 @@ func (s *Scheduler) statusGetHandler(formatter *render.Render) http.HandlerFunc 
 				graph.WithoutFlags(&DerivedFlag{}))
 		}
 
-		var status []*kvs.BaseValueStatus
+		var status []*kvscheduler.BaseValueStatus
 		for _, node := range nodes {
 			status = append(status, getValueStatus(node, node.GetKey()))
 		}

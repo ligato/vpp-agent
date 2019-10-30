@@ -25,10 +25,10 @@ import (
 
 	"github.com/ligato/cn-infra/infra"
 
-	"github.com/ligato/vpp-agent/examples/kvscheduler/mock_plugins/ifplugin/descriptor"
-	"github.com/ligato/vpp-agent/examples/kvscheduler/mock_plugins/ifplugin/mockcalls"
-	"github.com/ligato/vpp-agent/pkg/idxvpp"
-	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v2/examples/kvscheduler/mock_plugins/ifplugin/descriptor"
+	"go.ligato.io/vpp-agent/v2/examples/kvscheduler/mock_plugins/ifplugin/mockcalls"
+	"go.ligato.io/vpp-agent/v2/pkg/idxvpp"
+	kvs "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
 )
 
 // IfPlugin configures mock interfaces.

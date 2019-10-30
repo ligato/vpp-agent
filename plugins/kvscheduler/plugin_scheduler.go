@@ -29,10 +29,11 @@ import (
 	"github.com/ligato/cn-infra/infra"
 	"github.com/ligato/cn-infra/rpc/rest"
 
-	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-	"github.com/ligato/vpp-agent/plugins/kvscheduler/internal/graph"
-	"github.com/ligato/vpp-agent/plugins/kvscheduler/internal/registry"
-	"github.com/ligato/vpp-agent/plugins/kvscheduler/internal/utils"
+	kvs "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v2/plugins/kvscheduler/internal/graph"
+	"go.ligato.io/vpp-agent/v2/plugins/kvscheduler/internal/registry"
+	"go.ligato.io/vpp-agent/v2/plugins/kvscheduler/internal/utils"
+	"go.ligato.io/vpp-agent/v2/proto/ligato/kvscheduler"
 )
 
 const (
@@ -141,7 +142,7 @@ type SchedulerTxn struct {
 
 // valStateWatcher represents one subscription for value state updates.
 type valStateWatcher struct {
-	channel  chan<- *kvs.BaseValueStatus
+	channel  chan<- *kvscheduler.BaseValueStatus
 	selector kvs.KeySelector
 }
 
@@ -315,7 +316,7 @@ func (s *Scheduler) GetMetadataMap(descriptor string) idxmap.NamedMapping {
 
 // GetValueStatus returns the status of a non-derived value with the given
 // key.
-func (s *Scheduler) GetValueStatus(key string) *kvs.BaseValueStatus {
+func (s *Scheduler) GetValueStatus(key string) *kvscheduler.BaseValueStatus {
 	graphR := s.graph.Read()
 	defer graphR.Release()
 	return getValueStatus(graphR.GetNode(key), key)
@@ -323,7 +324,7 @@ func (s *Scheduler) GetValueStatus(key string) *kvs.BaseValueStatus {
 
 // WatchValueStatus allows to watch for changes in the status of non-derived
 // values with keys selected by the selector (all if keySelector==nil).
-func (s *Scheduler) WatchValueStatus(channel chan<- *kvs.BaseValueStatus, keySelector kvs.KeySelector) {
+func (s *Scheduler) WatchValueStatus(channel chan<- *kvscheduler.BaseValueStatus, keySelector kvs.KeySelector) {
 	s.txnLock.Lock()
 	defer s.txnLock.Unlock()
 	s.valStateWatchers = append(s.valStateWatchers, valStateWatcher{
@@ -351,7 +352,7 @@ func (s *Scheduler) DumpValuesByDescriptor(descriptor string, view kvs.View) (va
 		var kvPairs []kvs.KVWithMetadata
 		nbNodes := graphR.GetNodes(nil,
 			graph.WithFlags(&DescriptorFlag{descriptor}),
-			graph.WithoutFlags(&DerivedFlag{}, &ValueStateFlag{kvs.ValueState_OBTAINED}))
+			graph.WithoutFlags(&DerivedFlag{}, &ValueStateFlag{kvscheduler.ValueState_OBTAINED}))
 
 		for _, node := range nbNodes {
 			lastUpdate := getNodeLastUpdate(node)

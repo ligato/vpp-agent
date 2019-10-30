@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	"github.com/ligato/cn-infra/logging/logrus"
-	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	ifplugin_vppcalls "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
+	ifplugin_vppcalls "go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/vppcalls"
+	interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
 )
 
 func TestVxlanGpe(t *testing.T) {
