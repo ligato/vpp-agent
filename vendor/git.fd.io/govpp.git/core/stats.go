@@ -166,7 +166,7 @@ func (c *StatsConnection) updateStats(statDir **adapter.StatDir, patterns ...str
 		} else if err == adapter.ErrStatsDirStale || err == adapter.ErrStatsDataBusy {
 			// retrying
 			if r > 1 {
-				log.Debugln("sleeping for %v before next try", RetryUpdateDelay)
+				log.Debugf("sleeping for %v before next try", RetryUpdateDelay)
 				time.Sleep(RetryUpdateDelay)
 			}
 		} else {
@@ -255,23 +255,25 @@ func (c *StatsConnection) GetNodeStats(nodeStats *api.NodeStats) (err error) {
 		}
 	}
 	perNode := func(stat adapter.StatEntry, fn func(*api.NodeCounters, uint64)) {
-		s := stat.Data.(adapter.SimpleCounterStat)
-		prepNodes(len(s[0]))
-		for i := range nodeStats.Nodes {
-			val := adapter.ReduceSimpleCounterStatIndex(s, i)
-			fn(&nodeStats.Nodes[i], val)
+		if s, ok := stat.Data.(adapter.SimpleCounterStat); ok {
+			prepNodes(len(s[0]))
+			for i := range nodeStats.Nodes {
+				val := adapter.ReduceSimpleCounterStatIndex(s, i)
+				fn(&nodeStats.Nodes[i], val)
+			}
 		}
 	}
 
 	for _, stat := range c.nodeStatsData.Entries {
 		switch string(stat.Name) {
 		case NodeStats_Names:
-			stat := stat.Data.(adapter.NameStat)
-			prepNodes(len(stat))
-			for i, nc := range nodeStats.Nodes {
-				if nc.NodeName != string(stat[i]) {
-					nc.NodeName = string(stat[i])
-					nodeStats.Nodes[i] = nc
+			if stat, ok := stat.Data.(adapter.NameStat); ok {
+				prepNodes(len(stat))
+				for i, nc := range nodeStats.Nodes {
+					if nc.NodeName != string(stat[i]) {
+						nc.NodeName = string(stat[i])
+						nodeStats.Nodes[i] = nc
+					}
 				}
 			}
 		case NodeStats_Clocks:
@@ -311,31 +313,34 @@ func (c *StatsConnection) GetInterfaceStats(ifaceStats *api.InterfaceStats) (err
 		}
 	}
 	perNode := func(stat adapter.StatEntry, fn func(*api.InterfaceCounters, uint64)) {
-		s := stat.Data.(adapter.SimpleCounterStat)
-		prep(len(s[0]))
-		for i := range ifaceStats.Interfaces {
-			val := adapter.ReduceSimpleCounterStatIndex(s, i)
-			fn(&ifaceStats.Interfaces[i], val)
+		if s, ok := stat.Data.(adapter.SimpleCounterStat); ok {
+			prep(len(s[0]))
+			for i := range ifaceStats.Interfaces {
+				val := adapter.ReduceSimpleCounterStatIndex(s, i)
+				fn(&ifaceStats.Interfaces[i], val)
+			}
 		}
 	}
 	perNodeComb := func(stat adapter.StatEntry, fn func(*api.InterfaceCounters, [2]uint64)) {
-		s := stat.Data.(adapter.CombinedCounterStat)
-		prep(len(s[0]))
-		for i := range ifaceStats.Interfaces {
-			val := adapter.ReduceCombinedCounterStatIndex(s, i)
-			fn(&ifaceStats.Interfaces[i], val)
+		if s, ok := stat.Data.(adapter.CombinedCounterStat); ok {
+			prep(len(s[0]))
+			for i := range ifaceStats.Interfaces {
+				val := adapter.ReduceCombinedCounterStatIndex(s, i)
+				fn(&ifaceStats.Interfaces[i], val)
+			}
 		}
 	}
 
 	for _, stat := range c.ifaceStatsData.Entries {
 		switch string(stat.Name) {
 		case InterfaceStats_Names:
-			stat := stat.Data.(adapter.NameStat)
-			prep(len(stat))
-			for i, nc := range ifaceStats.Interfaces {
-				if nc.InterfaceName != string(stat[i]) {
-					nc.InterfaceName = string(stat[i])
-					ifaceStats.Interfaces[i] = nc
+			if stat, ok := stat.Data.(adapter.NameStat); ok {
+				prep(len(stat))
+				for i, nc := range ifaceStats.Interfaces {
+					if nc.InterfaceName != string(stat[i]) {
+						nc.InterfaceName = string(stat[i])
+						ifaceStats.Interfaces[i] = nc
+					}
 				}
 			}
 		case InterfaceStats_Drops:
