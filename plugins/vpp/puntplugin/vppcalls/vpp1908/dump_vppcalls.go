@@ -18,10 +18,10 @@ import (
 	"bytes"
 	"net"
 
-	vpp_punt "github.com/ligato/vpp-agent/api/models/vpp/punt"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1908/ip"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1908/punt"
-	"github.com/ligato/vpp-agent/plugins/vpp/puntplugin/vppcalls"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908/ip"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908/punt"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/puntplugin/vppcalls"
+	vpp_punt "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/punt"
 )
 
 // DumpPuntRedirect dumps ip redirect punts
@@ -71,11 +71,11 @@ func (h *PuntVppHandler) dumpPuntRedirect(ipv6 bool) (punts []*vpp_punt.IPRedire
 		var nextHop string
 
 		if d.Punt.Nh.Af == ip.ADDRESS_IP4 {
-			l3proto = vpp_punt.L3Protocol_IPv4
+			l3proto = vpp_punt.L3Protocol_IPV4
 			addr := d.Punt.Nh.Un.GetIP4()
 			nextHop = net.IP(addr[:]).To4().String()
 		} else if d.Punt.Nh.Af == ip.ADDRESS_IP6 {
-			l3proto = vpp_punt.L3Protocol_IPv6
+			l3proto = vpp_punt.L3Protocol_IPV6
 			addr := d.Punt.Nh.Un.GetIP6()
 			nextHop = net.IP(addr[:]).To16().String()
 		} else {
@@ -227,9 +227,9 @@ func (h *PuntVppHandler) dumpPuntReasons() (reasons []*vppcalls.ReasonDetails, e
 func parseL3Proto(p punt.AddressFamily) vpp_punt.L3Protocol {
 	switch p {
 	case punt.ADDRESS_IP4:
-		return vpp_punt.L3Protocol_IPv4
+		return vpp_punt.L3Protocol_IPV4
 	case punt.ADDRESS_IP6:
-		return vpp_punt.L3Protocol_IPv6
+		return vpp_punt.L3Protocol_IPV6
 	}
 	return vpp_punt.L3Protocol_UNDEFINED_L3
 }

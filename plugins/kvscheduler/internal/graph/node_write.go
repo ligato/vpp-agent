@@ -19,7 +19,7 @@ import (
 	"sort"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/ligato/vpp-agent/plugins/kvscheduler/internal/utils"
+	"go.ligato.io/vpp-agent/v2/plugins/kvscheduler/internal/utils"
 )
 
 type node struct {

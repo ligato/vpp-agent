@@ -6,50 +6,50 @@ set -euo pipefail
 #
 mode=${1-}
 
+curdir=$(pwd)
+
 # Create tempdir
 tmpdir=$(mktemp -d -t gen-proto.XXXXXX)
 trap 'rm -rf $tmpdir' EXIT
 
-# Install the working tree's protoc-gen-gen
+# Install the protoc-gen-go
 mkdir -p $tmpdir/bin
 PATH=$tmpdir/bin:$PATH
-GOBIN=$tmpdir/bin go install ./vendor/github.com/golang/protobuf/protoc-gen-go
+GOBIN=$tmpdir/bin go install github.com/golang/protobuf/protoc-gen-go
 
-# search for proto files in directories:
-PROTO_DIRS=(
-  api
-  plugins
-)
+pb_pkg_dir=$( go list -f '{{.Dir}}' -m github.com/golang/protobuf )
+
+#rm -rf $tmpdir/src
+#mkdir -p $tmpdir/src/ligato
+#ln -s $curdir $tmpdir/src/ligato/vpp-agent
+
+#cd $tmpdir/src
+cd proto
 
 different=0
 
 echo "# Generating proto files.."
-for dir in ${PROTO_DIRS[@]}; do
-	echo "# $dir/"
-	for proto in `find $dir -name "*.proto"`; do
-		pb=$(echo $proto | sed -e 's/\.proto$/\.pb.go/')
-		echo "# - $proto"
-		mkdir -p $tmpdir/$dir
+for proto in `find . -name "*.proto"`; do
+	echo "# - $proto"
 
-		protoc -I$dir -I../../ \
-			--go_out=plugins=grpc,paths=source_relative,\
+	protoc -I. \
+		--go_out=plugins=grpc,paths=source_relative,\
 Mgoogle/protobuf/any.proto=github.com/golang/protobuf/ptypes/any,\
-Mvppagent/api/vpp.proto=github.com/ligato/vpp-agent/api/models/vpp\
-:$tmpdir/$dir $proto
+:$tmpdir $proto
 
-		diff $tmpdir/$pb $pb || different=1
-		if [ "$mode" != "check" ]; then
-		 	cp $tmpdir/$pb $pb
-		fi
-  	done
+	pb=$(echo $proto | sed -e 's/\.proto$/\.pb.go/')
+	diff $tmpdir/$pb $pb || different=$(( different+1 ))
+
+	if [ "$mode" != "check" ]; then
+		cp $tmpdir/$pb $pb
+	fi
 done
 
-
 if [ "$mode" == "check" ]; then
-	[ $different -eq 1 ] \
-		&& echo "Check failed! Some generated proto files are different." \
-		|| echo "Check OK!"
-	exit $different
-else
-	tree $tmpdir
+	if [ $different -gt 1 ]; then
+		echo "Check failed! $different generated proto files are not up to date."
+		exit 1
+	else
+		echo "Check OK!"
+	fi
 fi

@@ -21,10 +21,10 @@ import (
 
 	. "github.com/onsi/gomega"
 
-	linux_interfaces "github.com/ligato/vpp-agent/api/models/linux/interfaces"
-	linux_ns "github.com/ligato/vpp-agent/api/models/linux/namespace"
-	vpp_interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v2/proto/ligato/kvscheduler"
+	linux_interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/linux/interfaces"
+	linux_ns "go.ligato.io/vpp-agent/v2/proto/ligato/linux/namespace"
+	vpp_interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
 )
 
 func TestSpan(t *testing.T) {
@@ -110,27 +110,27 @@ func TestSpan(t *testing.T) {
 	err := req.Update(dstTap, dstLinuxTap, spanRx).Send(context.Background())
 	Expect(err).ToNot(HaveOccurred(), "Sending change request failed with err")
 
-	Eventually(ctx.getValueStateClb(dstTap)).Should(Equal(kvs.ValueState_CONFIGURED),
+	Eventually(ctx.getValueStateClb(dstTap)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
 		"Destination TAP is not configured")
 
-	Expect(ctx.getValueState(spanRx)).To(Equal(kvs.ValueState_PENDING),
+	Expect(ctx.getValueState(spanRx)).To(Equal(kvscheduler.ValueState_PENDING),
 		"SPAN is not in a `PENDING` state, but `InterfaceFrom` is not ready")
 
 	req = ctx.grpcClient.ChangeRequest()
 	err = req.Update(srcTap, srcLinuxTap).Send(context.Background())
 	Expect(err).ToNot(HaveOccurred())
 
-	Eventually(ctx.getValueStateClb(srcTap)).Should(Equal(kvs.ValueState_CONFIGURED),
+	Eventually(ctx.getValueStateClb(srcTap)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
 		"Source TAP is not configured")
 
-	Expect(ctx.getValueState(spanRx)).To(Equal(kvs.ValueState_CONFIGURED),
+	Expect(ctx.getValueState(spanRx)).To(Equal(kvscheduler.ValueState_CONFIGURED),
 		"SPAN is not in a `CONFIGURED` state, but both interfaces are ready")
 
 	ctx.stopMicroservice(msName)
-	Eventually(ctx.getValueStateClb(dstTap)).Should(Equal(kvs.ValueState_PENDING),
+	Eventually(ctx.getValueStateClb(dstTap)).Should(Equal(kvscheduler.ValueState_PENDING),
 		"Destination TAP must be in a `PENDING` state, after its microservice stops")
 
-	Expect(ctx.getValueState(spanRx)).To(Equal(kvs.ValueState_PENDING),
+	Expect(ctx.getValueState(spanRx)).To(Equal(kvscheduler.ValueState_PENDING),
 		"SPAN is not in a `PENDING` state, but `InterfaceTo` is not ready")
 
 	// Check `show int span` output
@@ -142,10 +142,10 @@ func TestSpan(t *testing.T) {
 	// Start container and configure destination interface again
 	ctx.startMicroservice(msName)
 
-	Eventually(ctx.getValueStateClb(dstTap)).Should(Equal(kvs.ValueState_CONFIGURED),
+	Eventually(ctx.getValueStateClb(dstTap)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
 		"Destination TAP expected to be configured")
 
-	Expect(ctx.getValueState(spanRx)).To(Equal(kvs.ValueState_CONFIGURED),
+	Expect(ctx.getValueState(spanRx)).To(Equal(kvscheduler.ValueState_CONFIGURED),
 		"SPAN is not in a `CONFIGURED` state, but both interfaces are ready")
 
 	// Check `show int span` output

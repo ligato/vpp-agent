@@ -22,10 +22,10 @@ import (
 
 	"github.com/golang/protobuf/proto"
 
-	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	nat "github.com/ligato/vpp-agent/api/models/vpp/nat"
-	ba_nat "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1908/nat"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
+	ba_nat "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908/nat"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
+	interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
+	nat "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/nat"
 )
 
 // DNATs sorted by tags

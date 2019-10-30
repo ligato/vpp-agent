@@ -15,12 +15,12 @@
 package vpp1904
 
 import (
-	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	binapi_interface "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/interfaces"
+	binapi_interface "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904/interfaces"
+	interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
 )
 
 // SetRxMode implements interface handler.
-func (h *InterfaceVppHandler) SetRxMode(ifIdx uint32,rxMode *interfaces.Interface_RxMode) error {
+func (h *InterfaceVppHandler) SetRxMode(ifIdx uint32, rxMode *interfaces.Interface_RxMode) error {
 
 	req := &binapi_interface.SwInterfaceSetRxMode{
 		SwIfIndex:    ifIdx,

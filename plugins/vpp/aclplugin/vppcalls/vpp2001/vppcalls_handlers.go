@@ -17,9 +17,9 @@ package vpp2001
 import (
 	govppapi "git.fd.io/govpp.git/api"
 
-	"github.com/ligato/vpp-agent/plugins/vpp/aclplugin/vppcalls"
-	vpp_acl "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/acl"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/aclplugin/vppcalls"
+	vpp_acl "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/acl"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
 )
 
 func init() {

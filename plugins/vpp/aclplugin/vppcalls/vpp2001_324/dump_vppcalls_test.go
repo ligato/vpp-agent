@@ -18,11 +18,11 @@ import (
 	"testing"
 
 	"github.com/ligato/cn-infra/logging/logrus"
-	"github.com/ligato/vpp-agent/plugins/vpp/aclplugin/vppcalls"
-	vpp_acl "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001_324/acl"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001_324/vpe"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	. "github.com/onsi/gomega"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/aclplugin/vppcalls"
+	vpp_acl "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324/acl"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324/vpe"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
 )
 
 // Test translation of IP rule into ACL Plugin's format

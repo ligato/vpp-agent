@@ -34,7 +34,7 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/sirupsen/logrus"
 
-	"github.com/ligato/vpp-agent/plugins/govppmux/vppcalls"
+	"go.ligato.io/vpp-agent/v2/plugins/govppmux/vppcalls"
 )
 
 var (

@@ -19,8 +19,8 @@ import (
 	"net"
 
 	"github.com/go-errors/errors"
-	abf "github.com/ligato/vpp-agent/api/models/vpp/abf"
-	vpp_abf "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/abf"
+	vpp_abf "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/abf"
+	abf "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/abf"
 )
 
 const (

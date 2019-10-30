@@ -3,27 +3,33 @@ FROM ${VPP_IMG} AS vppimg
 
 RUN dpkg-query -f '${Version}' -W vpp > /vpp/version
 
-FROM golang:1.12 AS verify-binapi
+FROM golang:1.13 AS verify-binapi
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
 		patch \
  	&& rm -rf /var/lib/apt/lists/*
 
-WORKDIR /go/src/github.com/ligato/vpp-agent
+WORKDIR /src/ligato/vpp-agent
 
 ARG VPP_BINAPI
 ARG SKIP_CHECK
 
+COPY go.mod go.sum ./
 COPY plugins/vpp/binapi plugins/vpp/binapi
-COPY vendor vendor
 COPY scripts/genbinapi.sh scripts/genbinapi.sh
 COPY Makefile vpp.env ./
+
+ENV GOPATH /go
+RUN pwd && \
+	go mod tidy
 
 COPY --from=vppimg /usr/share/vpp /usr/share/vpp
 COPY --from=vppimg /vpp/version /vpp-version
 
-RUN cp -r plugins/vpp/binapi /tmp/orig_binapi && \
- 	make generate-binapi && \
+ENV GOPATH /go
+RUN pwd && \
+	cp -r plugins/vpp/binapi /tmp/orig_binapi && \
+	make generate-binapi && \
  	diff -r plugins/vpp/binapi /tmp/orig_binapi || \
  	{ \
  		vpp_version="$(cat /vpp-version)"; \
@@ -53,7 +59,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
  	&& rm -rf /var/lib/apt/lists/*
 
 # Install Go
-ENV GOLANG_VERSION 1.12.9
+ENV GOLANG_VERSION 1.13.3
 RUN set -eux; \
 	dpkgArch="$(dpkg --print-architecture)"; \
 		case "${dpkgArch##*-}" in \
@@ -67,12 +73,11 @@ RUN set -eux; \
 
 ENV GOPATH /go
 ENV PATH $GOPATH/bin:/usr/local/go/bin:$PATH
-RUN mkdir -p "$GOPATH/src" "$GOPATH/bin" && chmod -R 777 "$GOPATH"
+RUN mkdir -p "$GOPATH/bin" && chmod -R 777 "$GOPATH"
 
 # Install debugger
 RUN \
-	go get -u github.com/go-delve/delve/cmd/dlv && dlv version; \
-	go get -u github.com/golang/dep/cmd/dep && dep version;
+	go get -u github.com/go-delve/delve/cmd/dlv && dlv version
 
 # Copy configs
 COPY \
@@ -86,11 +91,15 @@ COPY ./docker/dev/vpp.conf /etc/vpp/vpp.conf
 COPY ./docker/dev/init_hook.sh /usr/bin/
 
 # Build agent
-WORKDIR $GOPATH/src/github.com/ligato/vpp-agent
+WORKDIR /src/ligato/vpp-agent
 
 ARG VERSION
 ARG COMMIT
 ARG DATE
+
+# download and cache modules
+COPY go.mod go.sum ./
+RUN go mod download
 
 COPY . ./
 

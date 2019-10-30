@@ -16,8 +16,8 @@ package ifplugin
 
 import (
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/vpp-agent/plugins/kvscheduler"
-	"github.com/ligato/vpp-agent/examples/kvscheduler/mock_plugins/ifplugin"
+	"go.ligato.io/vpp-agent/v2/examples/kvscheduler/mock_plugins/ifplugin"
+	"go.ligato.io/vpp-agent/v2/plugins/kvscheduler"
 )
 
 // DefaultPlugin is a default instance of IfPlugin.

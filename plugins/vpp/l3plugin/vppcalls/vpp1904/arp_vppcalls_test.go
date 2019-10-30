@@ -20,12 +20,12 @@ import (
 	"github.com/ligato/cn-infra/logging/logrus"
 	. "github.com/onsi/gomega"
 
-	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/ip"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
-	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls"
-	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls/vpp1904"
-	"github.com/ligato/vpp-agent/plugins/vpp/vppcallmock"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904/ip"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/l3plugin/vppcalls"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/l3plugin/vppcalls/vpp1904"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/vppcallmock"
+	l3 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l3"
 )
 
 var arpEntries = []*l3.ARPEntry{

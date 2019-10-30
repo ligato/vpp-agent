@@ -21,9 +21,9 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1908/ipsec"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
-	"github.com/ligato/vpp-agent/plugins/vpp/ipsecplugin/vppcalls"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908/ipsec"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/ipsecplugin/vppcalls"
 )
 
 func init() {

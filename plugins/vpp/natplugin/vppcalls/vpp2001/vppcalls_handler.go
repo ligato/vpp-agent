@@ -18,10 +18,10 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/idxmap"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/vpp-agent/plugins/vpp/natplugin/vppcalls"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/natplugin/vppcalls"
 
-	vpp_nat "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/nat"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
+	vpp_nat "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/nat"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
 )
 
 func init() {

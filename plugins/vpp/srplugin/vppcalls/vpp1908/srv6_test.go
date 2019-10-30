@@ -21,15 +21,15 @@ import (
 
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging/logrus"
-	srv6 "github.com/ligato/vpp-agent/api/models/vpp/srv6"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1908/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1908/sr"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1908/vpe"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
-	"github.com/ligato/vpp-agent/plugins/vpp/srplugin/vppcalls"
-	"github.com/ligato/vpp-agent/plugins/vpp/srplugin/vppcalls/vpp1908"
-	"github.com/ligato/vpp-agent/plugins/vpp/vppcallmock"
 	. "github.com/onsi/gomega"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908/interfaces"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908/sr"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908/vpe"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/srplugin/vppcalls"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/srplugin/vppcalls/vpp1908"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/vppcallmock"
+	srv6 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/srv6"
 )
 
 const (
@@ -88,8 +88,8 @@ func TestAddLocalSID(t *testing.T) {
 			Input: &srv6.LocalSID{
 				Sid:               sidToStr(sidA),
 				InstallationVrfId: 10,
-				EndFunction: &srv6.LocalSID_EndFunction_X{
-					EndFunction_X: &srv6.LocalSID_EndX{
+				EndFunction: &srv6.LocalSID_EndFunctionX{
+					EndFunctionX: &srv6.LocalSID_EndX{
 						Psp:               true,
 						NextHop:           nextHop.String(),
 						OutgoingInterface: ifaceA,
@@ -111,8 +111,8 @@ func TestAddLocalSID(t *testing.T) {
 			Input: &srv6.LocalSID{
 				Sid:               sidToStr(sidA),
 				InstallationVrfId: 10,
-				EndFunction: &srv6.LocalSID_EndFunction_X{
-					EndFunction_X: &srv6.LocalSID_EndX{
+				EndFunction: &srv6.LocalSID_EndFunctionX{
+					EndFunctionX: &srv6.LocalSID_EndX{
 						Psp:               true,
 						NextHop:           nextHopIPv4.String(),
 						OutgoingInterface: ifaceA,
@@ -134,8 +134,8 @@ func TestAddLocalSID(t *testing.T) {
 			Input: &srv6.LocalSID{
 				Sid:               sidToStr(sidA),
 				InstallationVrfId: 10,
-				EndFunction: &srv6.LocalSID_EndFunction_T{
-					EndFunction_T: &srv6.LocalSID_EndT{
+				EndFunction: &srv6.LocalSID_EndFunctionT{
+					EndFunctionT: &srv6.LocalSID_EndT{
 						Psp:   true,
 						VrfId: 11,
 					},
@@ -155,8 +155,8 @@ func TestAddLocalSID(t *testing.T) {
 			Input: &srv6.LocalSID{
 				Sid:               sidToStr(sidA),
 				InstallationVrfId: 10,
-				EndFunction: &srv6.LocalSID_EndFunction_DX2{
-					EndFunction_DX2: &srv6.LocalSID_EndDX2{
+				EndFunction: &srv6.LocalSID_EndFunctionDx2{
+					EndFunctionDx2: &srv6.LocalSID_EndDX2{
 						VlanTag:           1,
 						OutgoingInterface: ifaceA,
 					},
@@ -177,8 +177,8 @@ func TestAddLocalSID(t *testing.T) {
 			Input: &srv6.LocalSID{
 				Sid:               sidToStr(sidA),
 				InstallationVrfId: 10,
-				EndFunction: &srv6.LocalSID_EndFunction_DX4{
-					EndFunction_DX4: &srv6.LocalSID_EndDX4{
+				EndFunction: &srv6.LocalSID_EndFunctionDx4{
+					EndFunctionDx4: &srv6.LocalSID_EndDX4{
 						NextHop:           nextHopIPv4.String(),
 						OutgoingInterface: ifaceA,
 					},
@@ -199,8 +199,8 @@ func TestAddLocalSID(t *testing.T) {
 			Input: &srv6.LocalSID{
 				Sid:               sidToStr(sidA),
 				InstallationVrfId: 10,
-				EndFunction: &srv6.LocalSID_EndFunction_DX6{
-					EndFunction_DX6: &srv6.LocalSID_EndDX6{
+				EndFunction: &srv6.LocalSID_EndFunctionDx6{
+					EndFunctionDx6: &srv6.LocalSID_EndDX6{
 						NextHop:           nextHop.String(),
 						OutgoingInterface: ifaceA,
 					},
@@ -221,8 +221,8 @@ func TestAddLocalSID(t *testing.T) {
 			Input: &srv6.LocalSID{
 				Sid:               sidToStr(sidA),
 				InstallationVrfId: 10,
-				EndFunction: &srv6.LocalSID_EndFunction_DT4{
-					EndFunction_DT4: &srv6.LocalSID_EndDT4{
+				EndFunction: &srv6.LocalSID_EndFunctionDt4{
+					EndFunctionDt4: &srv6.LocalSID_EndDT4{
 						VrfId: 5,
 					},
 				},
@@ -241,8 +241,8 @@ func TestAddLocalSID(t *testing.T) {
 			Input: &srv6.LocalSID{
 				Sid:               sidToStr(sidA),
 				InstallationVrfId: 10,
-				EndFunction: &srv6.LocalSID_EndFunction_DT6{
-					EndFunction_DT6: &srv6.LocalSID_EndDT6{
+				EndFunction: &srv6.LocalSID_EndFunctionDt6{
+					EndFunctionDt6: &srv6.LocalSID_EndDT6{
 						VrfId: 5,
 					},
 				},
@@ -266,8 +266,8 @@ func TestAddLocalSID(t *testing.T) {
 			Input: &srv6.LocalSID{
 				Sid:               sidToStr(sidA),
 				InstallationVrfId: 10,
-				EndFunction: &srv6.LocalSID_EndFunction_AD{
-					EndFunction_AD: &srv6.LocalSID_EndAD{
+				EndFunction: &srv6.LocalSID_EndFunctionAd{
+					EndFunctionAd: &srv6.LocalSID_EndAD{
 						L3ServiceAddress:  nextHopIPv4.String(),
 						OutgoingInterface: ifaceA,
 						IncomingInterface: ifaceB,
@@ -288,8 +288,8 @@ func TestAddLocalSID(t *testing.T) {
 			Input: &srv6.LocalSID{
 				Sid:               sidToStr(sidA),
 				InstallationVrfId: 10,
-				EndFunction: &srv6.LocalSID_EndFunction_AD{
-					EndFunction_AD: &srv6.LocalSID_EndAD{ //missing L3ServiceAddress means it is L2 service
+				EndFunction: &srv6.LocalSID_EndFunctionAd{
+					EndFunctionAd: &srv6.LocalSID_EndAD{ //missing L3ServiceAddress means it is L2 service
 						OutgoingInterface: ifaceA,
 						IncomingInterface: ifaceB,
 					},
@@ -309,8 +309,8 @@ func TestAddLocalSID(t *testing.T) {
 			Input: &srv6.LocalSID{
 				Sid:               sidToStr(sidA),
 				InstallationVrfId: 10,
-				EndFunction: &srv6.LocalSID_EndFunction_AD{
-					EndFunction_AD: &srv6.LocalSID_EndAD{
+				EndFunction: &srv6.LocalSID_EndFunctionAd{
+					EndFunctionAd: &srv6.LocalSID_EndAD{
 						L3ServiceAddress:  nextHopIPv4.String(),
 						OutgoingInterface: ifaceA,
 						IncomingInterface: ifaceB,
@@ -331,8 +331,8 @@ func TestAddLocalSID(t *testing.T) {
 			Input: &srv6.LocalSID{
 				Sid:               sidToStr(sidA),
 				InstallationVrfId: 10,
-				EndFunction: &srv6.LocalSID_EndFunction_AD{
-					EndFunction_AD: &srv6.LocalSID_EndAD{
+				EndFunction: &srv6.LocalSID_EndFunctionAd{
+					EndFunctionAd: &srv6.LocalSID_EndAD{
 						L3ServiceAddress:  nextHopIPv4.String(),
 						OutgoingInterface: ifaceA,
 						IncomingInterface: ifaceB,
@@ -353,8 +353,8 @@ func TestAddLocalSID(t *testing.T) {
 			Input: &srv6.LocalSID{
 				Sid:               sidToStr(sidA),
 				InstallationVrfId: 10,
-				EndFunction: &srv6.LocalSID_EndFunction_AD{
-					EndFunction_AD: &srv6.LocalSID_EndAD{
+				EndFunction: &srv6.LocalSID_EndFunctionAd{
+					EndFunctionAd: &srv6.LocalSID_EndAD{
 						L3ServiceAddress:  nextHopIPv4.String(),
 						OutgoingInterface: ifaceA,
 						IncomingInterface: ifaceB,
@@ -375,8 +375,8 @@ func TestAddLocalSID(t *testing.T) {
 			Input: &srv6.LocalSID{
 				Sid:               sidToStr(sidA),
 				InstallationVrfId: 10,
-				EndFunction: &srv6.LocalSID_EndFunction_AD{
-					EndFunction_AD: &srv6.LocalSID_EndAD{
+				EndFunction: &srv6.LocalSID_EndFunctionAd{
+					EndFunctionAd: &srv6.LocalSID_EndAD{
 						L3ServiceAddress:  nextHopIPv4.String(),
 						OutgoingInterface: ifaceA,
 						IncomingInterface: "unknown0", // interface name is taken from vpp internal name
@@ -421,8 +421,8 @@ func TestAddLocalSID(t *testing.T) {
 			Input: &srv6.LocalSID{
 				Sid:               sidToStr(sidA),
 				InstallationVrfId: 10,
-				EndFunction: &srv6.LocalSID_EndFunction_AD{
-					EndFunction_AD: &srv6.LocalSID_EndAD{
+				EndFunction: &srv6.LocalSID_EndFunctionAd{
+					EndFunctionAd: &srv6.LocalSID_EndAD{
 						L3ServiceAddress:  nextHopIPv4.String(),
 						OutgoingInterface: ifaceA,
 						IncomingInterface: ifaceB,
@@ -438,8 +438,8 @@ func TestAddLocalSID(t *testing.T) {
 			Input: &srv6.LocalSID{
 				Sid:               sidToStr(sidA),
 				InstallationVrfId: 10,
-				EndFunction: &srv6.LocalSID_EndFunction_AD{
-					EndFunction_AD: &srv6.LocalSID_EndAD{
+				EndFunction: &srv6.LocalSID_EndFunctionAd{
+					EndFunctionAd: &srv6.LocalSID_EndAD{
 						L3ServiceAddress:  nextHopIPv4.String(),
 						OutgoingInterface: ifaceA,
 						IncomingInterface: ifaceB,
@@ -457,8 +457,8 @@ func TestAddLocalSID(t *testing.T) {
 			Input: &srv6.LocalSID{
 				Sid:               sidToStr(sidA),
 				InstallationVrfId: 10,
-				EndFunction: &srv6.LocalSID_EndFunction_AD{
-					EndFunction_AD: &srv6.LocalSID_EndAD{
+				EndFunction: &srv6.LocalSID_EndFunctionAd{
+					EndFunctionAd: &srv6.LocalSID_EndAD{
 						L3ServiceAddress:  nextHopIPv4.String(),
 						OutgoingInterface: ifaceA,
 						IncomingInterface: ifaceB,
@@ -476,8 +476,8 @@ func TestAddLocalSID(t *testing.T) {
 			Input: &srv6.LocalSID{
 				Sid:               sidToStr(sidA),
 				InstallationVrfId: 10,
-				EndFunction: &srv6.LocalSID_EndFunction_AD{
-					EndFunction_AD: &srv6.LocalSID_EndAD{
+				EndFunction: &srv6.LocalSID_EndFunctionAd{
+					EndFunctionAd: &srv6.LocalSID_EndAD{
 						L3ServiceAddress:  nextHopIPv4.String(),
 						OutgoingInterface: ifaceA,
 						IncomingInterface: ifaceB,
@@ -491,8 +491,8 @@ func TestAddLocalSID(t *testing.T) {
 			Input: &srv6.LocalSID{
 				Sid:               sidToStr(sidA),
 				InstallationVrfId: 10,
-				EndFunction: &srv6.LocalSID_EndFunction_X{
-					EndFunction_X: &srv6.LocalSID_EndX{
+				EndFunction: &srv6.LocalSID_EndFunctionX{
+					EndFunctionX: &srv6.LocalSID_EndX{
 						Psp:               true,
 						NextHop:           nextHop.String(),
 						OutgoingInterface: ifaceBOutOfidxs,
@@ -505,8 +505,8 @@ func TestAddLocalSID(t *testing.T) {
 			ExpectFailure: true,
 			Input: &srv6.LocalSID{
 				InstallationVrfId: 10,
-				EndFunction: &srv6.LocalSID_EndFunction_X{
-					EndFunction_X: &srv6.LocalSID_EndX{
+				EndFunction: &srv6.LocalSID_EndFunctionX{
+					EndFunctionX: &srv6.LocalSID_EndX{
 						Psp:               true,
 						NextHop:           invalidIPAddress,
 						OutgoingInterface: ifaceA,
@@ -520,8 +520,8 @@ func TestAddLocalSID(t *testing.T) {
 			Input: &srv6.LocalSID{
 				Sid:               sidToStr(sidA),
 				InstallationVrfId: 10,
-				EndFunction: &srv6.LocalSID_EndFunction_DX2{
-					EndFunction_DX2: &srv6.LocalSID_EndDX2{
+				EndFunction: &srv6.LocalSID_EndFunctionDx2{
+					EndFunctionDx2: &srv6.LocalSID_EndDX2{
 						VlanTag:           1,
 						OutgoingInterface: ifaceBOutOfidxs,
 					},
@@ -534,8 +534,8 @@ func TestAddLocalSID(t *testing.T) {
 			Input: &srv6.LocalSID{
 				Sid:               sidToStr(sidA),
 				InstallationVrfId: 10,
-				EndFunction: &srv6.LocalSID_EndFunction_DX4{
-					EndFunction_DX4: &srv6.LocalSID_EndDX4{
+				EndFunction: &srv6.LocalSID_EndFunctionDx4{
+					EndFunctionDx4: &srv6.LocalSID_EndDX4{
 						NextHop:           nextHopIPv4.String(),
 						OutgoingInterface: ifaceBOutOfidxs,
 					},
@@ -548,8 +548,8 @@ func TestAddLocalSID(t *testing.T) {
 			Input: &srv6.LocalSID{
 				Sid:               sidToStr(sidA),
 				InstallationVrfId: 10,
-				EndFunction: &srv6.LocalSID_EndFunction_DX4{
-					EndFunction_DX4: &srv6.LocalSID_EndDX4{
+				EndFunction: &srv6.LocalSID_EndFunctionDx4{
+					EndFunctionDx4: &srv6.LocalSID_EndDX4{
 						NextHop:           invalidIPAddress,
 						OutgoingInterface: ifaceA,
 					},
@@ -562,8 +562,8 @@ func TestAddLocalSID(t *testing.T) {
 			Input: &srv6.LocalSID{
 				Sid:               sidToStr(sidA),
 				InstallationVrfId: 10,
-				EndFunction: &srv6.LocalSID_EndFunction_DX4{
-					EndFunction_DX4: &srv6.LocalSID_EndDX4{
+				EndFunction: &srv6.LocalSID_EndFunctionDx4{
+					EndFunctionDx4: &srv6.LocalSID_EndDX4{
 						NextHop:           nextHop.String(),
 						OutgoingInterface: ifaceA,
 					},
@@ -576,8 +576,8 @@ func TestAddLocalSID(t *testing.T) {
 			Input: &srv6.LocalSID{
 				Sid:               sidToStr(sidA),
 				InstallationVrfId: 10,
-				EndFunction: &srv6.LocalSID_EndFunction_DX6{
-					EndFunction_DX6: &srv6.LocalSID_EndDX6{
+				EndFunction: &srv6.LocalSID_EndFunctionDx6{
+					EndFunctionDx6: &srv6.LocalSID_EndDX6{
 						NextHop:           nextHop.String(),
 						OutgoingInterface: ifaceBOutOfidxs,
 					},
@@ -590,8 +590,8 @@ func TestAddLocalSID(t *testing.T) {
 			Input: &srv6.LocalSID{
 				Sid:               sidToStr(sidA),
 				InstallationVrfId: 10,
-				EndFunction: &srv6.LocalSID_EndFunction_DX6{
-					EndFunction_DX6: &srv6.LocalSID_EndDX6{
+				EndFunction: &srv6.LocalSID_EndFunctionDx6{
+					EndFunctionDx6: &srv6.LocalSID_EndDX6{
 						NextHop:           invalidIPAddress,
 						OutgoingInterface: ifaceA,
 					},

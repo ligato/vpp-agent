@@ -17,9 +17,9 @@ package vpp2001_test
 import (
 	"testing"
 
-	ifs "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	vpp_ifs "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/interfaces"
 	. "github.com/onsi/gomega"
+	vpp_ifs "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/interfaces"
+	ifs "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
 )
 
 func TestSetRxPlacementForWorker(t *testing.T) {

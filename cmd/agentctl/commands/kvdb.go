@@ -21,7 +21,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
-	agentcli "github.com/ligato/vpp-agent/cmd/agentctl/cli"
+	agentcli "go.ligato.io/vpp-agent/v2/cmd/agentctl/cli"
 )
 
 func NewKvdbCommand(cli agentcli.Cli) *cobra.Command {

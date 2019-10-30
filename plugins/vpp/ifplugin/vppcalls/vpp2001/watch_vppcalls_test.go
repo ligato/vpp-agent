@@ -18,10 +18,10 @@ import (
 	"net"
 	"testing"
 
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/interfaces"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/interfaces"
 
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/dhcp"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/dhcp"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/vppcalls"
 
 	. "github.com/onsi/gomega"
 )

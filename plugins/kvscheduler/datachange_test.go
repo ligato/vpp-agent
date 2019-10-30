@@ -23,9 +23,10 @@ import (
 	"github.com/golang/protobuf/proto"
 	. "github.com/onsi/gomega"
 
-	. "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-	"github.com/ligato/vpp-agent/plugins/kvscheduler/internal/test"
-	"github.com/ligato/vpp-agent/plugins/kvscheduler/internal/utils"
+	. "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v2/plugins/kvscheduler/internal/test"
+	"go.ligato.io/vpp-agent/v2/plugins/kvscheduler/internal/utils"
+	. "go.ligato.io/vpp-agent/v2/proto/ligato/kvscheduler"
 )
 
 var testCtx = WithSimulation(context.Background())

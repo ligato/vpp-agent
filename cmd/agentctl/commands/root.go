@@ -30,8 +30,8 @@ import (
 	"github.com/ligato/cn-infra/agent"
 	"github.com/ligato/cn-infra/logging"
 
-	"github.com/ligato/vpp-agent/cmd/agentctl/cli"
-	"github.com/ligato/vpp-agent/pkg/debug"
+	"go.ligato.io/vpp-agent/v2/cmd/agentctl/cli"
+	"go.ligato.io/vpp-agent/v2/pkg/debug"
 )
 
 // NewRootNamed returns new Root named with name.

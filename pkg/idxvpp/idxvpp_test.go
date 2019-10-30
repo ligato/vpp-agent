@@ -15,9 +15,8 @@
 package idxvpp
 
 import (
-	"testing"
-
 	"strconv"
+	"testing"
 
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/onsi/gomega"

@@ -17,16 +17,16 @@ package descriptor
 import (
 	"fmt"
 
-	vpp_abf "github.com/ligato/vpp-agent/api/models/vpp/abf"
-	vpp_interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vpp/abfplugin/abfidx"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/abfplugin/abfidx"
+	vpp_abf "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/abf"
+	vpp_interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
 
 	"github.com/go-errors/errors"
 	"github.com/golang/protobuf/proto"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-	"github.com/ligato/vpp-agent/plugins/vpp/abfplugin/vppcalls"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin"
+	"go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/abfplugin/vppcalls"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin"
 )
 
 const (

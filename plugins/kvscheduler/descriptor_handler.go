@@ -6,7 +6,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/vishvananda/netns"
 
-	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
+	kvs "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
 )
 
 // checking of the original network namespace preservation

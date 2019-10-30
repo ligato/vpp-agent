@@ -1,8 +1,8 @@
 package commands
 
 import (
-	_ "github.com/ligato/vpp-agent/api/models/linux"
-	_ "github.com/ligato/vpp-agent/api/models/netalloc"
-	_ "github.com/ligato/vpp-agent/api/models/vpp"
-	_ "github.com/ligato/vpp-agent/plugins/govppmux/model"
+	_ "go.ligato.io/vpp-agent/v2/plugins/govppmux"
+	_ "go.ligato.io/vpp-agent/v2/proto/ligato/linux"
+	_ "go.ligato.io/vpp-agent/v2/proto/ligato/netalloc"
+	_ "go.ligato.io/vpp-agent/v2/proto/ligato/vpp"
 )

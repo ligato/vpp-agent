@@ -19,8 +19,8 @@ import (
 
 	"github.com/pkg/errors"
 
-	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/vmxnet3"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904/vmxnet3"
+	interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
 )
 
 // AddVmxNet3 implements interface handler

@@ -17,8 +17,8 @@ package vpp1904
 import (
 	"net"
 
-	if_model "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/bond"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904/bond"
+	if_model "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
 )
 
 // AddBondInterface implements interface handler.

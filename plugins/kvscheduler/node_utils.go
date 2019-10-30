@@ -16,9 +16,10 @@ package kvscheduler
 
 import (
 	"github.com/golang/protobuf/proto"
-	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-	"github.com/ligato/vpp-agent/plugins/kvscheduler/internal/graph"
-	"github.com/ligato/vpp-agent/plugins/kvscheduler/internal/utils"
+	kvs "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v2/plugins/kvscheduler/internal/graph"
+	"go.ligato.io/vpp-agent/v2/plugins/kvscheduler/internal/utils"
+	"go.ligato.io/vpp-agent/v2/proto/ligato/kvscheduler"
 )
 
 func nodeToKVPairWithMetadata(node graph.Node) kvs.KVWithMetadata {
@@ -89,13 +90,13 @@ func equalValueDetails(details1, details2 []string) bool {
 func getValueDetails(node graph.Node) (details []string) {
 	state := getNodeState(node)
 	_, err := getNodeError(node)
-	if state == kvs.ValueState_INVALID {
+	if state == kvscheduler.ValueState_INVALID {
 		if ivErr, isIVErr := err.(*kvs.InvalidValueError); isIVErr {
 			details = ivErr.GetInvalidFields()
 			return
 		}
 	}
-	if state == kvs.ValueState_PENDING {
+	if state == kvscheduler.ValueState_PENDING {
 		for _, targets := range node.GetTargets(DependencyRelation) {
 			satisfied := false
 			for _, target := range targets.Nodes {
@@ -112,15 +113,15 @@ func getValueDetails(node graph.Node) (details []string) {
 }
 
 // getValueStatus reads the value status from the corresponding node.
-func getValueStatus(node graph.Node, key string) *kvs.BaseValueStatus {
-	status := &kvs.BaseValueStatus{
-		Value: &kvs.ValueStatus{
+func getValueStatus(node graph.Node, key string) *kvscheduler.BaseValueStatus {
+	status := &kvscheduler.BaseValueStatus{
+		Value: &kvscheduler.ValueStatus{
 			Key: key,
 		},
 	}
 
 	status.Value.State = getNodeState(node)
-	if status.Value.State == kvs.ValueState_NONEXISTENT {
+	if status.Value.State == kvscheduler.ValueState_NONEXISTENT {
 		// nothing else to get for non-existent value
 		return status
 	}
@@ -147,7 +148,7 @@ func getValueStatus(node graph.Node, key string) *kvs.BaseValueStatus {
 func nbBaseValsSelectors() []graph.FlagSelector {
 	return []graph.FlagSelector{
 		graph.WithoutFlags(&DerivedFlag{}),
-		graph.WithoutFlags(&ValueStateFlag{kvs.ValueState_OBTAINED}),
+		graph.WithoutFlags(&ValueStateFlag{kvscheduler.ValueState_OBTAINED}),
 	}
 }
 
@@ -155,7 +156,7 @@ func nbBaseValsSelectors() []graph.FlagSelector {
 func sbBaseValsSelectors() []graph.FlagSelector {
 	return []graph.FlagSelector{
 		graph.WithoutFlags(&DerivedFlag{}),
-		graph.WithFlags(&ValueStateFlag{kvs.ValueState_OBTAINED}),
+		graph.WithFlags(&ValueStateFlag{kvscheduler.ValueState_OBTAINED}),
 	}
 }
 
@@ -173,21 +174,21 @@ func descrValsSelectors(descriptor string, onlyAvailable bool) []graph.FlagSelec
 }
 
 // getNodeState returns state stored in the ValueState flag.
-func getNodeState(node graph.Node) kvs.ValueState {
+func getNodeState(node graph.Node) kvscheduler.ValueState {
 	if node != nil {
 		flag := node.GetFlag(ValueStateFlagIndex)
 		if flag != nil {
 			return flag.(*ValueStateFlag).valueState
 		}
 	}
-	return kvs.ValueState_NONEXISTENT
+	return kvscheduler.ValueState_NONEXISTENT
 }
 
-func valueStateToOrigin(state kvs.ValueState) kvs.ValueOrigin {
+func valueStateToOrigin(state kvscheduler.ValueState) kvs.ValueOrigin {
 	switch state {
-	case kvs.ValueState_NONEXISTENT:
+	case kvscheduler.ValueState_NONEXISTENT:
 		return kvs.UnknownOrigin
-	case kvs.ValueState_OBTAINED:
+	case kvscheduler.ValueState_OBTAINED:
 		return kvs.FromSB
 	}
 	return kvs.FromNB
@@ -242,14 +243,14 @@ func getNodeLastAppliedValue(node graph.Node) proto.Message {
 }
 
 // getNodeLastOperation returns last operation executed over the given node.
-func getNodeLastOperation(node graph.Node) kvs.TxnOperation {
-	if node != nil && getNodeState(node) != kvs.ValueState_OBTAINED {
+func getNodeLastOperation(node graph.Node) kvscheduler.TxnOperation {
+	if node != nil && getNodeState(node) != kvscheduler.ValueState_OBTAINED {
 		lastUpdate := getNodeLastUpdate(node)
 		if lastUpdate != nil {
 			return lastUpdate.txnOp
 		}
 	}
-	return kvs.TxnOperation_UNDEFINED
+	return kvscheduler.TxnOperation_UNDEFINED
 }
 
 // getNodeDescriptor returns name of the descriptor associated with the given node.
@@ -320,7 +321,7 @@ func isNodeReadyRec(node graph.Node, depth int, visited map[string]int, checkSCC
 			return
 		}
 
-		if getNodeState(target) == kvs.ValueState_REMOVED {
+		if getNodeState(target) == kvscheduler.ValueState_REMOVED {
 			// do not consider values that are (being) removed
 			return
 		}

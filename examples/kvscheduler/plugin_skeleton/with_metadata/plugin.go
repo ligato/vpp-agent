@@ -71,8 +71,8 @@ package plugin
 import (
 	"github.com/ligato/cn-infra/infra"
 
-	"github.com/ligato/vpp-agent/examples/kvscheduler/plugin_skeleton/with_metadata/descriptor"
-	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v2/examples/kvscheduler/plugin_skeleton/with_metadata/descriptor"
+	kvs "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
 )
 
 // SkeletonPlugin is a plugin skeleton that you can start building your own plugins

@@ -19,8 +19,8 @@ import (
 
 	"github.com/pkg/errors"
 
-	ifs "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	vpp_vmxnet3 "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/vmxnet3"
+	vpp_vmxnet3 "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/vmxnet3"
+	ifs "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
 )
 
 func (h *InterfaceVppHandler) AddVmxNet3(ifName string, vmxNet3 *ifs.VmxNet3Link) (swIdx uint32, err error) {

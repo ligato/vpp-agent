@@ -19,7 +19,8 @@ import (
 
 	"github.com/golang/protobuf/proto"
 
-	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
+	kvs "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v2/proto/ligato/kvscheduler"
 )
 
 const (
@@ -84,7 +85,7 @@ func flagNameToIndex(flagName string) int {
 // Not set to values just discovered by refresh (state = DISCOVERED).
 type LastUpdateFlag struct {
 	txnSeqNum uint64
-	txnOp     kvs.TxnOperation
+	txnOp     kvscheduler.TxnOperation
 	value     proto.Message
 
 	// updated only when the value content is being modified
@@ -142,7 +143,7 @@ func (flag *ErrorFlag) GetValue() string {
 // ValueStateFlag stores current state of the value.
 // Assigned to every value.
 type ValueStateFlag struct {
-	valueState kvs.ValueState
+	valueState kvscheduler.ValueState
 }
 
 // GetIndex returns 2.

@@ -17,14 +17,14 @@ package descriptor
 import (
 	"github.com/golang/protobuf/proto"
 	"github.com/ligato/cn-infra/logging"
-	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	stn "github.com/ligato/vpp-agent/api/models/vpp/stn"
-	"github.com/ligato/vpp-agent/pkg/models"
-	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-	ifDescriptor "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/descriptor"
-	"github.com/ligato/vpp-agent/plugins/vpp/stnplugin/descriptor/adapter"
-	"github.com/ligato/vpp-agent/plugins/vpp/stnplugin/vppcalls"
 	"github.com/pkg/errors"
+	"go.ligato.io/vpp-agent/v2/pkg/models"
+	kvs "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
+	ifDescriptor "go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/descriptor"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/stnplugin/descriptor/adapter"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/stnplugin/vppcalls"
+	interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
+	stn "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/stn"
 )
 
 const (

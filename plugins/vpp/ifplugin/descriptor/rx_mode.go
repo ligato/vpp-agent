@@ -21,11 +21,12 @@ import (
 	"github.com/ligato/cn-infra/logging"
 	"github.com/pkg/errors"
 
-	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/descriptor/adapter"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
+	kvs "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/descriptor/adapter"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/vppcalls"
+	"go.ligato.io/vpp-agent/v2/proto/ligato/kvscheduler"
+	interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
 )
 
 const (
@@ -171,7 +172,7 @@ func (d *RxModeDescriptor) Validate(key string, ifaceWithRxMode *interfaces.Inte
 // Please note the proto message Interface is only used as container for RxMode.
 // Only interface name, type and Rx mode are set.
 func (d *RxModeDescriptor) Create(key string, ifaceWithRxMode *interfaces.Interface) (metadata interface{}, err error) {
-	err = d.configureRxMode(ifaceWithRxMode, kvs.TxnOperation_CREATE)
+	err = d.configureRxMode(ifaceWithRxMode, kvscheduler.TxnOperation_CREATE)
 	return nil, err
 }
 
@@ -179,17 +180,17 @@ func (d *RxModeDescriptor) Create(key string, ifaceWithRxMode *interfaces.Interf
 func (d *RxModeDescriptor) Update(key string, _, ifaceWithRxMode *interfaces.Interface,
 	oldMetadata interface{}) (newMetadata interface{}, err error) {
 
-	err = d.configureRxMode(ifaceWithRxMode, kvs.TxnOperation_UPDATE)
+	err = d.configureRxMode(ifaceWithRxMode, kvscheduler.TxnOperation_UPDATE)
 	return nil, err
 }
 
 // Delete reverts back to the default rx mode configuration.
 func (d *RxModeDescriptor) Delete(key string, ifaceWithRxMode *interfaces.Interface, metadata interface{}) error {
-	return d.configureRxMode(ifaceWithRxMode, kvs.TxnOperation_DELETE)
+	return d.configureRxMode(ifaceWithRxMode, kvscheduler.TxnOperation_DELETE)
 }
 
 // configureRxMode (re-)configures Rx mode for the interface.
-func (d *RxModeDescriptor) configureRxMode(iface *interfaces.Interface, op kvs.TxnOperation) (err error) {
+func (d *RxModeDescriptor) configureRxMode(iface *interfaces.Interface, op kvscheduler.TxnOperation) (err error) {
 
 	ifMeta, found := d.ifIndex.LookupByName(iface.Name)
 	if !found {
@@ -202,8 +203,8 @@ func (d *RxModeDescriptor) configureRxMode(iface *interfaces.Interface, op kvs.T
 	defRxMode := getDefaultRxMode(iface)
 
 	// first, revert back to default for all queues
-	revertToDefault := op == kvs.TxnOperation_DELETE ||
-		(op == kvs.TxnOperation_UPDATE && defRxMode == interfaces.Interface_RxMode_UNKNOWN)
+	revertToDefault := op == kvscheduler.TxnOperation_DELETE ||
+		(op == kvscheduler.TxnOperation_UPDATE && defRxMode == interfaces.Interface_RxMode_UNKNOWN)
 	if revertToDefault {
 		err = d.ifHandler.SetRxMode(ifIdx, &interfaces.Interface_RxMode{
 			DefaultMode: true,
@@ -217,7 +218,7 @@ func (d *RxModeDescriptor) configureRxMode(iface *interfaces.Interface, op kvs.T
 		}
 	}
 
-	if op == kvs.TxnOperation_DELETE {
+	if op == kvscheduler.TxnOperation_DELETE {
 		return
 	}
 

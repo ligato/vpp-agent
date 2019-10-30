@@ -16,13 +16,13 @@ package restapi
 
 import (
 	"github.com/ligato/cn-infra/rpc/rest"
-	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/l3plugin"
 
-	"github.com/ligato/vpp-agent/plugins/govppmux"
-	"github.com/ligato/vpp-agent/plugins/netalloc"
-	"github.com/ligato/vpp-agent/plugins/vpp/aclplugin"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin"
-	"github.com/ligato/vpp-agent/plugins/vpp/l2plugin"
+	"go.ligato.io/vpp-agent/v2/plugins/govppmux"
+	"go.ligato.io/vpp-agent/v2/plugins/netalloc"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/aclplugin"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/l2plugin"
 )
 
 // DefaultPlugin is a default instance of Plugin.

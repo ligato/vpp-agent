@@ -18,9 +18,9 @@ import (
 	"fmt"
 	"net"
 
-	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
-	vpp_dhcp "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/dhcp"
 	"github.com/pkg/errors"
+	vpp_dhcp "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/dhcp"
+	l3 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l3"
 )
 
 func (h *DHCPProxyHandler) createDeleteDHCPProxy(entry *l3.DHCPProxy, delete bool) (err error) {

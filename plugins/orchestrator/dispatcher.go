@@ -25,8 +25,9 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/ligato/vpp-agent/pkg/models"
-	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v2/pkg/models"
+	kvs "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v2/proto/ligato/kvscheduler"
 )
 
 // KeyVal associates value with its key.
@@ -38,7 +39,7 @@ type KeyVal struct {
 // KVPairs represents key-value pairs.
 type KVPairs map[string]proto.Message
 
-type Status = kvs.ValueStatus
+type Status = kvscheduler.ValueStatus
 
 type Result struct {
 	Key    string

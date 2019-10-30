@@ -18,20 +18,20 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vrfidx"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/l3plugin/vrfidx"
 
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
 
-	vpevppcalls "github.com/ligato/vpp-agent/plugins/govppmux/vppcalls"
-	"github.com/ligato/vpp-agent/plugins/govppmux/vppcalls/vpp2001_324"
-	"github.com/ligato/vpp-agent/plugins/netalloc"
-	vpp_dhcp "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001_324/dhcp"
-	vpp_ip "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001_324/ip"
-	vpp_vpe "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001_324/vpe"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
-	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls"
+	vpevppcalls "go.ligato.io/vpp-agent/v2/plugins/govppmux/vppcalls"
+	"go.ligato.io/vpp-agent/v2/plugins/govppmux/vppcalls/vpp2001_324"
+	"go.ligato.io/vpp-agent/v2/plugins/netalloc"
+	vpp_dhcp "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324/dhcp"
+	vpp_ip "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324/ip"
+	vpp_vpe "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324/vpe"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/l3plugin/vppcalls"
 )
 
 func init() {

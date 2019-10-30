@@ -15,8 +15,8 @@
 package vpp2001
 
 import (
-	ifs "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	vpp_memif "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/memif"
+	vpp_memif "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/memif"
+	ifs "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
 )
 
 func (h *InterfaceVppHandler) AddMemifInterface(ifName string, memIface *ifs.MemifLink, socketID uint32) (swIdx uint32, err error) {

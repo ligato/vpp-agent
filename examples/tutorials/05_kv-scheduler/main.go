@@ -21,9 +21,9 @@ import (
 	"github.com/ligato/cn-infra/agent"
 	"github.com/ligato/cn-infra/infra"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/vpp-agent/examples/tutorials/05_kv-scheduler/model"
-	"github.com/ligato/vpp-agent/plugins/kvscheduler"
-	"github.com/ligato/vpp-agent/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v2/examples/tutorials/05_kv-scheduler/model"
+	"go.ligato.io/vpp-agent/v2/plugins/kvscheduler"
+	"go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
 )
 
 //go:generate protoc --proto_path=model --go_out=model model/model.proto

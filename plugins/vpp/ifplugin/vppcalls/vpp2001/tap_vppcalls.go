@@ -18,8 +18,8 @@ import (
 	"errors"
 	"fmt"
 
-	ifs "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	vpp_tapv2 "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/tapv2"
+	vpp_tapv2 "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/tapv2"
+	ifs "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
 )
 
 // TapFlags definitions from https://github.com/FDio/vpp/blob/stable/2001/src/vnet/devices/tap/tap.h#L33

@@ -32,11 +32,11 @@ import (
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
 
-	"github.com/ligato/vpp-agent/api"
-	"github.com/ligato/vpp-agent/api/types"
-	"github.com/ligato/vpp-agent/client"
-	"github.com/ligato/vpp-agent/client/remoteclient"
-	"github.com/ligato/vpp-agent/pkg/debug"
+	"go.ligato.io/vpp-agent/v2/client"
+	"go.ligato.io/vpp-agent/v2/client/remoteclient"
+	"go.ligato.io/vpp-agent/v2/cmd/agentctl/api"
+	"go.ligato.io/vpp-agent/v2/cmd/agentctl/api/types"
+	"go.ligato.io/vpp-agent/v2/pkg/debug"
 )
 
 var (

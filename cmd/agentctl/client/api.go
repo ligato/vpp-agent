@@ -9,9 +9,10 @@ import (
 	"github.com/ligato/cn-infra/db/keyval"
 	"github.com/ligato/cn-infra/health/probe"
 
-	"github.com/ligato/vpp-agent/api/types"
-	"github.com/ligato/vpp-agent/client"
-	"github.com/ligato/vpp-agent/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v2/client"
+	"go.ligato.io/vpp-agent/v2/cmd/agentctl/api/types"
+	"go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v2/proto/ligato/kvscheduler"
 )
 
 // APIClient is an interface that clients that talk with a agent server must implement.
@@ -51,7 +52,7 @@ type ModelAPIClient interface {
 // SchedulerAPIClient defines API client methods for the scheduler
 type SchedulerAPIClient interface {
 	SchedulerDump(ctx context.Context, opts types.SchedulerDumpOptions) ([]api.KVWithMetadata, error)
-	SchedulerValues(ctx context.Context, opts types.SchedulerValuesOptions) ([]*api.BaseValueStatus, error)
+	SchedulerValues(ctx context.Context, opts types.SchedulerValuesOptions) ([]*kvscheduler.BaseValueStatus, error)
 }
 
 // VppAPIClient defines API client methods for the VPP

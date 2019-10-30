@@ -18,8 +18,8 @@ import (
 	"net"
 	"testing"
 
-	vpp_ifs "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/interfaces"
 	. "github.com/onsi/gomega"
+	vpp_ifs "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/interfaces"
 )
 
 func TestAddInterfaceIP(t *testing.T) {

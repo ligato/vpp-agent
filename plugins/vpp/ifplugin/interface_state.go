@@ -24,11 +24,11 @@ import (
 	"github.com/ligato/cn-infra/logging"
 	"github.com/pkg/errors"
 
-	intf "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	"github.com/ligato/vpp-agent/plugins/govppmux"
-	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
+	"go.ligato.io/vpp-agent/v2/plugins/govppmux"
+	kvs "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/vppcalls"
+	intf "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
 )
 
 var (

@@ -3,8 +3,8 @@ package vpp2001
 import (
 	"fmt"
 
-	vpp_span "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/span"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
+	vpp_span "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/span"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/vppcalls"
 )
 
 // SetSpan enables or disables SPAN on interface

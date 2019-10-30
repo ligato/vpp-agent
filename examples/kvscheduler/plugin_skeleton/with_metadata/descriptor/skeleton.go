@@ -18,10 +18,10 @@ import (
 	"github.com/ligato/cn-infra/idxmap"
 	"github.com/ligato/cn-infra/logging"
 
-	"github.com/ligato/vpp-agent/examples/kvscheduler/plugin_skeleton/with_metadata/descriptor/adapter"
-	"github.com/ligato/vpp-agent/examples/kvscheduler/plugin_skeleton/with_metadata/model"
-	"github.com/ligato/vpp-agent/examples/kvscheduler/plugin_skeleton/with_metadata/metaidx"
-	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v2/examples/kvscheduler/plugin_skeleton/with_metadata/descriptor/adapter"
+	"go.ligato.io/vpp-agent/v2/examples/kvscheduler/plugin_skeleton/with_metadata/metaidx"
+	"go.ligato.io/vpp-agent/v2/examples/kvscheduler/plugin_skeleton/with_metadata/model"
+	kvs "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
 )
 
 const (

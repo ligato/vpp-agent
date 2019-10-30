@@ -18,9 +18,9 @@ import (
 	"fmt"
 	"net"
 
-	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
-	vpp_ip "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001_324/ip"
-	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls"
+	vpp_ip "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324/ip"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/l3plugin/vppcalls"
+	l3 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l3"
 )
 
 // DumpRoutes implements route handler.

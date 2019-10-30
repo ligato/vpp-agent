@@ -20,7 +20,7 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 
-	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
+	interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
 )
 
 // InterfaceDetails is the wrapper structure for the interface northbound API structure.

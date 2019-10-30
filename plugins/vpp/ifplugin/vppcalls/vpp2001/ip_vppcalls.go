@@ -18,7 +18,7 @@ import (
 	"net"
 
 	"github.com/ligato/cn-infra/utils/addrs"
-	vpp_ifs "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001/interfaces"
+	vpp_ifs "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/interfaces"
 )
 
 func (h *InterfaceVppHandler) addDelInterfaceIP(ifIdx uint32, addr *net.IPNet, isAdd bool) error {

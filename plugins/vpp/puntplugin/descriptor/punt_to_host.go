@@ -20,11 +20,11 @@ import (
 
 	"github.com/ligato/cn-infra/logging"
 
-	punt "github.com/ligato/vpp-agent/api/models/vpp/punt"
-	"github.com/ligato/vpp-agent/pkg/models"
-	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-	"github.com/ligato/vpp-agent/plugins/vpp/puntplugin/descriptor/adapter"
-	"github.com/ligato/vpp-agent/plugins/vpp/puntplugin/vppcalls"
+	"go.ligato.io/vpp-agent/v2/pkg/models"
+	kvs "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/puntplugin/descriptor/adapter"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/puntplugin/vppcalls"
+	punt "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/punt"
 )
 
 const (
@@ -102,8 +102,8 @@ func (d *PuntToHostDescriptor) EquivalentPuntToHost(key string, oldPunt, newPunt
 func (d *PuntToHostDescriptor) Validate(key string, puntCfg *punt.ToHost) error {
 	// validate L3 protocol
 	switch puntCfg.L3Protocol {
-	case punt.L3Protocol_IPv4:
-	case punt.L3Protocol_IPv6:
+	case punt.L3Protocol_IPV4:
+	case punt.L3Protocol_IPV6:
 	case punt.L3Protocol_ALL:
 	default:
 		return kvs.NewInvalidValueError(ErrPuntWithoutL3Protocol, "l3_protocol")
@@ -196,10 +196,10 @@ Retrieved:
 			}
 			if fromVPP.PuntData.Port == fromNB.Value.Port &&
 				fromVPP.PuntData.L4Protocol == fromNB.Value.L4Protocol {
-				if fromVPP.PuntData.L3Protocol == punt.L3Protocol_IPv4 {
+				if fromVPP.PuntData.L3Protocol == punt.L3Protocol_IPV4 {
 					cachedIpv4 = append(cachedIpv4, fromVPP)
 				}
-				if fromVPP.PuntData.L3Protocol == punt.L3Protocol_IPv6 {
+				if fromVPP.PuntData.L3Protocol == punt.L3Protocol_IPV6 {
 					cachedIpv6 = append(cachedIpv6, fromVPP)
 				}
 				continue Retrieved

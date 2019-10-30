@@ -20,13 +20,13 @@ import (
 	"testing"
 
 	"github.com/ligato/cn-infra/logging/logrus"
-	ipsec2 "github.com/ligato/vpp-agent/api/models/vpp/ipsec"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1908/ipsec"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
-	"github.com/ligato/vpp-agent/plugins/vpp/ipsecplugin/vppcalls"
-	"github.com/ligato/vpp-agent/plugins/vpp/ipsecplugin/vppcalls/vpp1908"
-	"github.com/ligato/vpp-agent/plugins/vpp/vppcallmock"
 	. "github.com/onsi/gomega"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908/ipsec"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/ipsecplugin/vppcalls"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/ipsecplugin/vppcalls/vpp1908"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/vppcallmock"
+	ipsec2 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/ipsec"
 )
 
 func ipToAddr(ip string) ipsec.Address {

@@ -18,10 +18,10 @@ import (
 	"net"
 	"testing"
 
-	ifModel "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/vxlan"
 	. "github.com/onsi/gomega"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904/interfaces"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904/vxlan"
+	ifModel "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
 )
 
 func TestAddVxlanTunnel(t *testing.T) {

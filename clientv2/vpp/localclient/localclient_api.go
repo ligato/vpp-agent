@@ -17,8 +17,8 @@ package localclient
 import (
 	"github.com/ligato/cn-infra/datasync/kvdbsync/local"
 
-	vppclient "github.com/ligato/vpp-agent/clientv2/vpp"
-	"github.com/ligato/vpp-agent/clientv2/vpp/dbadapter"
+	vppclient "go.ligato.io/vpp-agent/v2/clientv2/vpp"
+	"go.ligato.io/vpp-agent/v2/clientv2/vpp/dbadapter"
 )
 
 // PluginID defines the name of VPP (vppplugin) localclient plugin.

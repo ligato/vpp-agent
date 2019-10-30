@@ -19,12 +19,12 @@ import (
 
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging/logrus"
-	l2ba "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/l2"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
-	"github.com/ligato/vpp-agent/plugins/vpp/l2plugin/vppcalls"
-	"github.com/ligato/vpp-agent/plugins/vpp/l2plugin/vppcalls/vpp1904"
-	"github.com/ligato/vpp-agent/plugins/vpp/vppcallmock"
 	. "github.com/onsi/gomega"
+	l2ba "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904/l2"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/l2plugin/vppcalls"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/l2plugin/vppcalls/vpp1904"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/vppcallmock"
 )
 
 var inTestDataXConnect = []struct {

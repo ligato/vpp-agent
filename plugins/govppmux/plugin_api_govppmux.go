@@ -16,7 +16,7 @@ package govppmux
 
 import (
 	govppapi "git.fd.io/govpp.git/api"
-	"github.com/ligato/vpp-agent/plugins/govppmux/vppcalls"
+	"go.ligato.io/vpp-agent/v2/plugins/govppmux/vppcalls"
 )
 
 // StatsAPI is extended API with ability to get VPP stats data

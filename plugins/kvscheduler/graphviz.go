@@ -15,10 +15,11 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
-	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-	"github.com/ligato/vpp-agent/plugins/kvscheduler/internal/graph"
-	"github.com/ligato/vpp-agent/plugins/kvscheduler/internal/utils"
 	"github.com/unrolled/render"
+	kvs "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v2/plugins/kvscheduler/internal/graph"
+	"go.ligato.io/vpp-agent/v2/plugins/kvscheduler/internal/utils"
+	"go.ligato.io/vpp-agent/v2/proto/ligato/kvscheduler"
 )
 
 const (
@@ -187,7 +188,7 @@ func (s *Scheduler) renderDotOutput(graphNodes []*graph.RecordedNode, txn *kvs.R
 
 		var (
 			dashedStyle bool
-			valueState  kvs.ValueState
+			valueState  kvscheduler.ValueState
 		)
 		isDerived := graphNode.GetFlag(DerivedFlagIndex) != nil
 		stateFlag := graphNode.GetFlag(ValueStateFlagIndex)
@@ -197,38 +198,38 @@ func (s *Scheduler) renderDotOutput(graphNodes []*graph.RecordedNode, txn *kvs.R
 
 		// set colors
 		switch valueState {
-		case kvs.ValueState_NONEXISTENT:
+		case kvscheduler.ValueState_NONEXISTENT:
 			attrs["fontcolor"] = "White"
 			attrs["fillcolor"] = "Black"
-		case kvs.ValueState_MISSING:
+		case kvscheduler.ValueState_MISSING:
 			attrs["fillcolor"] = "Dimgray"
 			dashedStyle = true
-		case kvs.ValueState_UNIMPLEMENTED:
+		case kvscheduler.ValueState_UNIMPLEMENTED:
 			attrs["fillcolor"] = "Darkkhaki"
 			dashedStyle = true
-		case kvs.ValueState_REMOVED:
+		case kvscheduler.ValueState_REMOVED:
 			attrs["fontcolor"] = "White"
 			attrs["fillcolor"] = "Black"
 			dashedStyle = true
 		// case kvs.ValueState_CONFIGURED // leave default
-		case kvs.ValueState_OBTAINED:
+		case kvscheduler.ValueState_OBTAINED:
 			attrs["fillcolor"] = "LightCyan"
-		case kvs.ValueState_DISCOVERED:
+		case kvscheduler.ValueState_DISCOVERED:
 			attrs["fillcolor"] = "Lime"
-		case kvs.ValueState_PENDING:
+		case kvscheduler.ValueState_PENDING:
 			dashedStyle = true
 			attrs["fillcolor"] = "Pink"
-		case kvs.ValueState_INVALID:
+		case kvscheduler.ValueState_INVALID:
 			attrs["fontcolor"] = "White"
 			attrs["fillcolor"] = "Maroon"
-		case kvs.ValueState_FAILED:
+		case kvscheduler.ValueState_FAILED:
 			attrs["fillcolor"] = "Orangered"
-		case kvs.ValueState_RETRYING:
+		case kvscheduler.ValueState_RETRYING:
 			attrs["fillcolor"] = "Deeppink"
 		}
-		if isDerived && ((valueState == kvs.ValueState_CONFIGURED) ||
-			(valueState == kvs.ValueState_OBTAINED) ||
-			(valueState == kvs.ValueState_DISCOVERED)) {
+		if isDerived && ((valueState == kvscheduler.ValueState_CONFIGURED) ||
+			(valueState == kvscheduler.ValueState_OBTAINED) ||
+			(valueState == kvscheduler.ValueState_DISCOVERED)) {
 			attrs["fillcolor"] = "LightYellow"
 			attrs["color"] = "bisque4"
 		}
