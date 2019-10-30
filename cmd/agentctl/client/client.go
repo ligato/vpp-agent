@@ -18,9 +18,11 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"net"
 	"net/http"
 	"net/url"
 	"path"
+	"strconv"
 	"strings"
 	"time"
 
@@ -44,10 +46,9 @@ import (
 const (
 	// DefaultAgentHost defines default host address for agent
 	DefaultAgentHost = "127.0.0.1"
-)
-
-var (
+	// DefaultPortGRPC defines default port for GRPC connection
 	DefaultPortGRPC = 9111
+	// DefaultPortHTTP defines default port for HTTP connection
 	DefaultPortHTTP = 9191
 )
 
@@ -62,8 +63,10 @@ type Client struct {
 	addr     string
 	basePath string
 
+	grpcPort      int
 	grpcAddr      string
 	grpcTLS       *tls.Config
+	httpPort      int
 	httpAddr      string
 	httpTLS       *tls.Config
 	kvdbEndpoints []string
@@ -93,16 +96,23 @@ func NewClientFromEnv() (*Client, error) {
 // NewClientWithOpts returns client with ops applied.
 func NewClientWithOpts(ops ...Opt) (*Client, error) {
 	c := &Client{
-		host:    DefaultAgentHost,
-		version: api.DefaultVersion,
-		proto:   "tcp",
-		scheme:  "http",
+		host:     DefaultAgentHost,
+		version:  api.DefaultVersion,
+		proto:    "tcp",
+		scheme:   "http",
+		grpcPort: DefaultPortGRPC,
+		httpPort: DefaultPortHTTP,
 	}
+
 	for _, op := range ops {
 		if err := op(c); err != nil {
 			return nil, err
 		}
 	}
+
+	c.grpcAddr = net.JoinHostPort(c.host, strconv.Itoa(c.grpcPort))
+	c.httpAddr = net.JoinHostPort(c.host, strconv.Itoa(c.httpPort))
+
 	return c, nil
 }
 

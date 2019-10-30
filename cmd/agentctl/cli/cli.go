@@ -191,6 +191,8 @@ func newAPIClient(opts *ClientOptions) (client.APIClient, error) {
 	clientOpts := []client.Opt{
 		client.WithHost(viper.GetString("host")),
 		client.WithServiceLabel(viper.GetString("service-label")),
+		client.WithGrpcPort(viper.GetInt("grpc-port")),
+		client.WithHTTPPort(viper.GetInt("http-port")),
 		client.WithEtcdEndpoints(opts.Endpoints),
 	}
 	var customHeaders = map[string]string{

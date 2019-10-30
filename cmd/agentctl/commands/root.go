@@ -136,7 +136,6 @@ func (root *Root) HandleGlobalFlags() (*cobra.Command, []string, error) {
 
 // Initialize finalises global option parsing and initializes the agentctl client.
 func (root *Root) Initialize(ops ...cli.InitializeOpt) error {
-	root.opts.SetDefaultOptions(root.flags)
 	return root.agentCli.Initialize(root.opts, ops...)
 }
 

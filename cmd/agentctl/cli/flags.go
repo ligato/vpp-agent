@@ -33,8 +33,6 @@ type ClientOptions struct {
 	Debug    bool
 	LogLevel string
 
-	PortGRPC  int
-	PortHTTP  int
 	Endpoints []string
 }
 
@@ -55,8 +53,12 @@ func (opts *ClientOptions) InstallFlags(flags *pflag.FlagSet) {
 	viper.BindPFlag("service-label", flags.Lookup("service-label"))
 	viper.BindEnv("service-label", "MICROSERVICE_LABEL")
 
-	flags.IntVar(&opts.PortHTTP, "http-port", client.DefaultPortHTTP, "HTTP server port")
-	flags.IntVar(&opts.PortGRPC, "grpc-port", client.DefaultPortGRPC, "gRPC server port")
+	flags.Int("http-port", client.DefaultPortHTTP, "HTTP server port")
+	viper.BindPFlag("http-port", flags.Lookup("http-port"))
+
+	flags.Int("grpc-port", client.DefaultPortGRPC, "gRPC server port")
+	viper.BindPFlag("grpc-port", flags.Lookup("grpc-port"))
+
 	flags.StringSliceVarP(&opts.Endpoints, "etcd-endpoints", "e", etcdEndpoints, "Etcd endpoints to connect to, default from ETCD_ENDPOINTS env var")
 
 	flags.Bool("tls", false, "Use TLS for connections")
@@ -64,13 +66,6 @@ func (opts *ClientOptions) InstallFlags(flags *pflag.FlagSet) {
 
 	flags.String("config-dir", DefaultConfigDir(), "Path to directory with config file")
 	viper.BindPFlag("config-dir", flags.Lookup("config-dir"))
-}
-
-// SetDefaultOptions sets default values for options after flag parsing is
-// complete
-func (opts *ClientOptions) SetDefaultOptions(flags *pflag.FlagSet) {
-	client.DefaultPortHTTP = opts.PortHTTP
-	client.DefaultPortGRPC = opts.PortGRPC
 }
 
 // SetLogLevel sets the logrus logging level

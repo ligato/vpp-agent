@@ -2,10 +2,8 @@ package client
 
 import (
 	"crypto/tls"
-	"net"
 	"net/http"
 	"os"
-	"strconv"
 	"time"
 
 	"google.golang.org/grpc"
@@ -44,9 +42,23 @@ func WithHost(host string) Opt {
 		c.host = host
 		c.proto = hostURL.Scheme
 		c.addr = hostURL.Host
-		c.grpcAddr = net.JoinHostPort(c.host, strconv.Itoa(DefaultPortGRPC))
-		c.httpAddr = net.JoinHostPort(c.host, strconv.Itoa(DefaultPortHTTP))
 		c.basePath = hostURL.Path
+		return nil
+	}
+}
+
+// WithHTTPPort overrides port for HTTP connection.
+func WithHTTPPort(p int) Opt {
+	return func(c *Client) error {
+		c.httpPort = p
+		return nil
+	}
+}
+
+// WithGrpcPort overrides port for GRPC connection.
+func WithGrpcPort(p int) Opt {
+	return func(c *Client) error {
+		c.grpcPort = p
 		return nil
 	}
 }
