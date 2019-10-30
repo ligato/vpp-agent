@@ -21,12 +21,9 @@ require (
 	github.com/coreos/etcd v3.3.10+incompatible
 	github.com/coreos/go-iptables v0.4.0
 	github.com/coreos/go-semver v0.3.0 // indirect
-	github.com/coreos/go-systemd v0.0.0-20180511133405-39ca1b05acc7 // indirect
-	github.com/coreos/pkg v0.0.0-20180108230652-97fdf19511ea // indirect
-	github.com/dgrijalva/jwt-go v3.2.0+incompatible // indirect
 	github.com/docker/cli v0.0.0-20190822175708-578ab52ece34
 	github.com/docker/docker v0.0.0-20180620002508-3dfb26ab3cbf
-	github.com/docker/go-connections v0.3.0
+	github.com/docker/go-connections v0.3.0 // indirect
 	github.com/docker/go-units v0.3.2 // indirect
 	github.com/docker/libnetwork v0.0.0-20180726175142-9ffeaf7d8b64 // indirect
 	github.com/eapache/go-resiliency v1.1.0 // indirect
@@ -35,23 +32,17 @@ require (
 	github.com/eknkc/amber v0.0.0-20171010120322-cdade1c07385 // indirect
 	github.com/evalphobia/logrus_fluent v0.4.0 // indirect
 	github.com/fluent/fluent-logger-golang v1.3.0 // indirect
-	github.com/fsnotify/fsnotify v1.4.7 // indirect
 	github.com/fsouza/go-dockerclient v1.2.2
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-errors/errors v1.0.1
 	github.com/go-redis/redis v6.13.2+incompatible // indirect
-	github.com/gogo/protobuf v1.2.1 // indirect
-	github.com/gogo/status v1.1.0 // indirect
 	github.com/golang/groupcache v0.0.0-20191002201903-404acd9df4cc // indirect
 	github.com/golang/protobuf v1.3.2
 	github.com/golang/snappy v0.0.0-20180518054509-2e65f85255db // indirect
 	github.com/gomodule/redigo v2.0.0+incompatible // indirect
-	github.com/google/btree v1.0.0 // indirect
 	github.com/gorilla/context v0.0.0-20160226214623-1ea25387ff6f // indirect
 	github.com/gorilla/mux v1.6.2
 	github.com/gorilla/websocket v1.4.1 // indirect
-	github.com/grpc-ecosystem/go-grpc-middleware v1.0.0 // indirect
-	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway v1.11.3 // indirect
 	github.com/hashicorp/consul v1.2.2 // indirect
 	github.com/hashicorp/go-msgpack v0.5.5 // indirect
@@ -62,14 +53,11 @@ require (
 	github.com/howeyc/crc16 v0.0.0-20171223171357-2b2a61e366a6 // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/jhump/protoreflect v1.5.0
-	github.com/jonboulle/clockwork v0.1.0 // indirect
 	github.com/ligato/cn-infra v2.2.1-0.20191025114221-5099d741d55f+incompatible
-	github.com/ligato/vpp-agent v2.4.0+incompatible // indirect
 	github.com/lunixbochs/struc v0.0.0-20180408203800-02e4c2afbb2a
 	github.com/mitchellh/go-homedir v0.0.0-20180523094522-3864e76763d9 // indirect
 	github.com/mitchellh/go-ps v0.0.0-20170309133038-4fdf99ab2936
 	github.com/mitchellh/go-testing-interface v1.0.0 // indirect
-	github.com/mitchellh/mapstructure v0.0.0-20180715050151-f15292f7a699 // indirect
 	github.com/namsral/flag v1.7.4-pre
 	github.com/onsi/gomega v1.4.1
 	github.com/opencontainers/go-digest v1.0.0-rc1 // indirect
@@ -79,31 +67,24 @@ require (
 	github.com/pierrec/lz4 v2.0.3+incompatible // indirect
 	github.com/pkg/errors v0.8.1
 	github.com/pkg/profile v1.3.0
-	github.com/prometheus/client_golang v0.9.2
+	github.com/prometheus/client_golang v0.9.3
 	github.com/rcrowley/go-metrics v0.0.0-20180503174638-e2704e165165 // indirect
 	github.com/satori/go.uuid v0.0.0-20181028125025-b2ce2384e17b // indirect
-	github.com/sirupsen/logrus v1.0.6
-	github.com/soheilhy/cmux v0.1.4 // indirect
+	github.com/sirupsen/logrus v1.2.0
 	github.com/spf13/cobra v0.0.3
-	github.com/spf13/pflag v1.0.2
+	github.com/spf13/pflag v1.0.3
+	github.com/spf13/viper v1.4.0
 	github.com/tinylib/msgp v1.0.2 // indirect
-	github.com/tmc/grpc-websocket-proxy v0.0.0-20190109142713-0ad062ec5ee5 // indirect
 	github.com/ugorji/go v1.1.6 // indirect
 	github.com/unrolled/render v0.0.0-20171102162132-65450fb6b2d3
 	github.com/vishvananda/netlink v0.0.0-20180910184128-56b1bd27a9a3
 	github.com/vishvananda/netns v0.0.0-20180720170159-13995c7128cc
-	github.com/xiang90/probing v0.0.0-20190116061207-43a291ad63a2 // indirect
 	github.com/yuin/gopher-lua v0.0.0-20190514113301-1cd887cd7036 // indirect
 	go.etcd.io/bbolt v1.3.3 // indirect
-	go.uber.org/atomic v1.4.0 // indirect
 	go.uber.org/multierr v1.2.0 // indirect
-	go.uber.org/zap v1.10.0 // indirect
-	golang.org/x/net v0.0.0-20190311183353-d8887717615a
+	golang.org/x/net v0.0.0-20190522155817-f3200d17e092
 	golang.org/x/sys v0.0.0-20190215142949-d0b11bdaac8a
 	golang.org/x/time v0.0.0-20190921001708-c4c64cad1fd0 // indirect
 	google.golang.org/grpc v1.24.0
-	gopkg.in/airbrake/gobrake.v2 v2.0.9 // indirect
-	gopkg.in/gemnasium/logrus-airbrake-hook.v2 v2.1.2 // indirect
-	gopkg.in/yaml.v2 v2.0.0 // indirect
 	gotest.tools v2.2.0+incompatible // indirect
 )
