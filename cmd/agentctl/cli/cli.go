@@ -190,8 +190,8 @@ func (cli *AgentCli) Initialize(opts *ClientOptions, ops ...InitializeOpt) error
 func newAPIClient(opts *ClientOptions) (client.APIClient, error) {
 	clientOpts := []client.Opt{
 		client.WithHost(viper.GetString("host")),
+		client.WithServiceLabel(viper.GetString("service-label")),
 		client.WithEtcdEndpoints(opts.Endpoints),
-		client.WithServiceLabel(opts.ServiceLabel),
 	}
 	var customHeaders = map[string]string{
 		"User-Agent": UserAgent(),
