@@ -22,4 +22,4 @@ jenkins-jobs update vpp_agent_jobs/
 After deploying on Jenkins server you will need to adjust scripts to your environment (such as servers, credentials, etc)
 
 [1]: https://github.com/ktdreyer/jenkins-job-wrecker
-[2]: ../test/robot/suites
+[2]: ../../robot/suites
