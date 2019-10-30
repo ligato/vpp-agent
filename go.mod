@@ -62,7 +62,7 @@ require (
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/jhump/protoreflect v1.5.0
 	github.com/jonboulle/clockwork v0.1.0 // indirect
-	github.com/ligato/cn-infra v2.2.1-0.20191025114221-5099d741d55f+incompatible
+	github.com/ligato/cn-infra v2.2.1-0.20191030081411-42c7431fdca1+incompatible
 	github.com/lunixbochs/struc v0.0.0-20180408203800-02e4c2afbb2a
 	github.com/mitchellh/go-homedir v0.0.0-20180523094522-3864e76763d9 // indirect
 	github.com/mitchellh/go-ps v0.0.0-20170309133038-4fdf99ab2936
