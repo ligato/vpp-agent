@@ -61,10 +61,10 @@ Beware: Extensive copy-pasting is actually a bad practise, so use the skeleton
 *******************************************************************************/
 
 // (*) generate golang code from your protobuf models here:
-//go:generate protoc --proto_path=model --proto_path=$GOPATH/src --go_out=model model/model.proto
+//go:generate protoc --proto_path=. --go_out=paths=source_relative:. model/model.proto
 
 // (**) generate adapter(s) for your descriptor(s) here:
-//go:generate descriptor-adapter --descriptor-name Skeleton --value-type *model.ValueSkeleton --meta-type *metaidx.SkeletonMetadata --import "model" --import "metaidx" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name Skeleton --value-type *model.ValueSkeleton --meta-type *metaidx.SkeletonMetadata --import "go.ligato.io/vpp-agent/v2/examples/kvscheduler/plugin_skeleton/with_metadata/model" --import "go.ligato.io/vpp-agent/v2/examples/kvscheduler/plugin_skeleton/with_metadata/metaidx" --output-dir "descriptor"
 
 package plugin
 

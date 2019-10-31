@@ -13,13 +13,13 @@
 // limitations under the License.
 
 // Generate golang code from the protobuf model of our mock BDs and FIBs:
-//go:generate protoc --proto_path=model --proto_path=$GOPATH/src --go_out=model model/bridge-domain.proto
-//go:generate protoc --proto_path=model --proto_path=$GOPATH/src --go_out=model model/fib.proto
+//go:generate protoc --proto_path=. --go_out=paths=source_relative:. model/bridge-domain.proto
+//go:generate protoc --proto_path=. --go_out=paths=source_relative:. model/fib.proto
 
 // Generate adapters for the descriptors of our mock BDs and FIBs:
-//go:generate descriptor-adapter --descriptor-name BridgeDomain --value-type *mock_l2.BridgeDomain --meta-type *idxvpp.OnlyIndex --import "model" --import "github.com/ligato/vpp-agent/pkg/idxvpp" --output-dir "descriptor"
-//go:generate descriptor-adapter --descriptor-name BDInterface --value-type *mock_l2.BridgeDomain_Interface --import "model" --output-dir "descriptor"
-//go:generate descriptor-adapter --descriptor-name FIB  --value-type *mock_l2.FIBEntry --import "model" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name BridgeDomain --value-type *mock_l2.BridgeDomain --meta-type *idxvpp.OnlyIndex --import "go.ligato.io/vpp-agent/v2/examples/kvscheduler/mock_plugins/l2plugin/model" --import "go.ligato.io/vpp-agent/v2/pkg/idxvpp" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name BDInterface --value-type *mock_l2.BridgeDomain_Interface --import "go.ligato.io/vpp-agent/v2/examples/kvscheduler/mock_plugins/l2plugin/model" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name FIB  --value-type *mock_l2.FIBEntry --import "go.ligato.io/vpp-agent/v2/examples/kvscheduler/mock_plugins/l2plugin/model" --output-dir "descriptor"
 
 package ifplugin
 

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate protoc --proto_path=./model --go_out=./model values.proto
+//go:generate protoc --proto_path=. --go_out=paths=source_relative:. model/values.proto
 
 package test
 
