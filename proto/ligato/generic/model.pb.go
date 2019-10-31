@@ -4,12 +4,9 @@
 package generic
 
 import (
-	context "context"
 	fmt "fmt"
 	proto "github.com/golang/protobuf/proto"
-	grpc "google.golang.org/grpc"
-	codes "google.golang.org/grpc/codes"
-	status "google.golang.org/grpc/status"
+	descriptor "github.com/golang/protobuf/protoc-gen-go/descriptor"
 	math "math"
 )
 
@@ -27,13 +24,13 @@ const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 // ModelSpec defines a model specification to identify a model.
 type ModelSpec struct {
 	// Module describes grouping for the model.
-	Module string `protobuf:"bytes,1,opt,name=module,proto3" json:"module,omitempty"`
+	Module *string `protobuf:"bytes,1,opt,name=module" json:"module,omitempty"`
 	// Version describes version of the model schema.
-	Version string `protobuf:"bytes,2,opt,name=version,proto3" json:"version,omitempty"`
+	Version *string `protobuf:"bytes,2,opt,name=version" json:"version,omitempty"`
 	// Type describes name of type described by this model.
-	Type string `protobuf:"bytes,3,opt,name=type,proto3" json:"type,omitempty"`
+	Type *string `protobuf:"bytes,3,opt,name=type" json:"type,omitempty"`
 	// Class describes purpose for the model.
-	Class                string   `protobuf:"bytes,4,opt,name=class,proto3" json:"class,omitempty"`
+	Class                *string  `protobuf:"bytes,4,opt,name=class" json:"class,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -65,342 +62,177 @@ func (m *ModelSpec) XXX_DiscardUnknown() {
 var xxx_messageInfo_ModelSpec proto.InternalMessageInfo
 
 func (m *ModelSpec) GetModule() string {
-	if m != nil {
-		return m.Module
+	if m != nil && m.Module != nil {
+		return *m.Module
 	}
 	return ""
 }
 
 func (m *ModelSpec) GetVersion() string {
-	if m != nil {
-		return m.Version
+	if m != nil && m.Version != nil {
+		return *m.Version
 	}
 	return ""
 }
 
 func (m *ModelSpec) GetType() string {
-	if m != nil {
-		return m.Type
+	if m != nil && m.Type != nil {
+		return *m.Type
 	}
 	return ""
 }
 
 func (m *ModelSpec) GetClass() string {
-	if m != nil {
-		return m.Class
+	if m != nil && m.Class != nil {
+		return *m.Class
 	}
 	return ""
 }
 
-// ModelDescriptor defines model descriptor to describe a model.
-type ModelDescriptor struct {
+// ModelDetail represents info about model details.
+type ModelDetail struct {
 	// Spec is a specificaiton the model was registered with.
-	Spec *ModelSpec `protobuf:"bytes,1,opt,name=spec,proto3" json:"spec,omitempty"`
+	Spec *ModelSpec `protobuf:"bytes,1,req,name=spec" json:"spec,omitempty"`
 	// ProtoName is a name of protobuf message representing the model.
-	ProtoName            string                    `protobuf:"bytes,2,opt,name=proto_name,json=protoName,proto3" json:"proto_name,omitempty"`
-	Options              []*ModelDescriptor_Option `protobuf:"bytes,3,rep,name=options,proto3" json:"options,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}                  `json:"-"`
-	XXX_unrecognized     []byte                    `json:"-"`
-	XXX_sizecache        int32                     `json:"-"`
+	ProtoName            *string               `protobuf:"bytes,2,opt,name=proto_name,json=protoName" json:"proto_name,omitempty"`
+	Options              []*ModelDetail_Option `protobuf:"bytes,3,rep,name=options" json:"options,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}              `json:"-"`
+	XXX_unrecognized     []byte                `json:"-"`
+	XXX_sizecache        int32                 `json:"-"`
 }
 
-func (m *ModelDescriptor) Reset()         { *m = ModelDescriptor{} }
-func (m *ModelDescriptor) String() string { return proto.CompactTextString(m) }
-func (*ModelDescriptor) ProtoMessage()    {}
-func (*ModelDescriptor) Descriptor() ([]byte, []int) {
+func (m *ModelDetail) Reset()         { *m = ModelDetail{} }
+func (m *ModelDetail) String() string { return proto.CompactTextString(m) }
+func (*ModelDetail) ProtoMessage()    {}
+func (*ModelDetail) Descriptor() ([]byte, []int) {
 	return fileDescriptor_13d85de19425b7f8, []int{1}
 }
 
-func (m *ModelDescriptor) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_ModelDescriptor.Unmarshal(m, b)
+func (m *ModelDetail) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ModelDetail.Unmarshal(m, b)
 }
-func (m *ModelDescriptor) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_ModelDescriptor.Marshal(b, m, deterministic)
+func (m *ModelDetail) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ModelDetail.Marshal(b, m, deterministic)
 }
-func (m *ModelDescriptor) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ModelDescriptor.Merge(m, src)
+func (m *ModelDetail) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ModelDetail.Merge(m, src)
 }
-func (m *ModelDescriptor) XXX_Size() int {
-	return xxx_messageInfo_ModelDescriptor.Size(m)
+func (m *ModelDetail) XXX_Size() int {
+	return xxx_messageInfo_ModelDetail.Size(m)
 }
-func (m *ModelDescriptor) XXX_DiscardUnknown() {
-	xxx_messageInfo_ModelDescriptor.DiscardUnknown(m)
+func (m *ModelDetail) XXX_DiscardUnknown() {
+	xxx_messageInfo_ModelDetail.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_ModelDescriptor proto.InternalMessageInfo
+var xxx_messageInfo_ModelDetail proto.InternalMessageInfo
 
-func (m *ModelDescriptor) GetSpec() *ModelSpec {
+func (m *ModelDetail) GetSpec() *ModelSpec {
 	if m != nil {
 		return m.Spec
 	}
 	return nil
 }
 
-func (m *ModelDescriptor) GetProtoName() string {
-	if m != nil {
-		return m.ProtoName
+func (m *ModelDetail) GetProtoName() string {
+	if m != nil && m.ProtoName != nil {
+		return *m.ProtoName
 	}
 	return ""
 }
 
-func (m *ModelDescriptor) GetOptions() []*ModelDescriptor_Option {
+func (m *ModelDetail) GetOptions() []*ModelDetail_Option {
 	if m != nil {
 		return m.Options
 	}
 	return nil
 }
 
-type ModelDescriptor_Option struct {
-	Key                  string   `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
-	Values               []string `protobuf:"bytes,2,rep,name=values,proto3" json:"values,omitempty"`
+type ModelDetail_Option struct {
+	Key                  *string  `protobuf:"bytes,1,req,name=key" json:"key,omitempty"`
+	Values               []string `protobuf:"bytes,2,rep,name=values" json:"values,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *ModelDescriptor_Option) Reset()         { *m = ModelDescriptor_Option{} }
-func (m *ModelDescriptor_Option) String() string { return proto.CompactTextString(m) }
-func (*ModelDescriptor_Option) ProtoMessage()    {}
-func (*ModelDescriptor_Option) Descriptor() ([]byte, []int) {
+func (m *ModelDetail_Option) Reset()         { *m = ModelDetail_Option{} }
+func (m *ModelDetail_Option) String() string { return proto.CompactTextString(m) }
+func (*ModelDetail_Option) ProtoMessage()    {}
+func (*ModelDetail_Option) Descriptor() ([]byte, []int) {
 	return fileDescriptor_13d85de19425b7f8, []int{1, 0}
 }
 
-func (m *ModelDescriptor_Option) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_ModelDescriptor_Option.Unmarshal(m, b)
+func (m *ModelDetail_Option) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ModelDetail_Option.Unmarshal(m, b)
 }
-func (m *ModelDescriptor_Option) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_ModelDescriptor_Option.Marshal(b, m, deterministic)
+func (m *ModelDetail_Option) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ModelDetail_Option.Marshal(b, m, deterministic)
 }
-func (m *ModelDescriptor_Option) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ModelDescriptor_Option.Merge(m, src)
+func (m *ModelDetail_Option) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ModelDetail_Option.Merge(m, src)
 }
-func (m *ModelDescriptor_Option) XXX_Size() int {
-	return xxx_messageInfo_ModelDescriptor_Option.Size(m)
+func (m *ModelDetail_Option) XXX_Size() int {
+	return xxx_messageInfo_ModelDetail_Option.Size(m)
 }
-func (m *ModelDescriptor_Option) XXX_DiscardUnknown() {
-	xxx_messageInfo_ModelDescriptor_Option.DiscardUnknown(m)
+func (m *ModelDetail_Option) XXX_DiscardUnknown() {
+	xxx_messageInfo_ModelDetail_Option.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_ModelDescriptor_Option proto.InternalMessageInfo
+var xxx_messageInfo_ModelDetail_Option proto.InternalMessageInfo
 
-func (m *ModelDescriptor_Option) GetKey() string {
-	if m != nil {
-		return m.Key
+func (m *ModelDetail_Option) GetKey() string {
+	if m != nil && m.Key != nil {
+		return *m.Key
 	}
 	return ""
 }
 
-func (m *ModelDescriptor_Option) GetValues() []string {
+func (m *ModelDetail_Option) GetValues() []string {
 	if m != nil {
 		return m.Values
 	}
 	return nil
 }
 
-type KnownModelsRequest struct {
-	Class                string   `protobuf:"bytes,1,opt,name=class,proto3" json:"class,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *KnownModelsRequest) Reset()         { *m = KnownModelsRequest{} }
-func (m *KnownModelsRequest) String() string { return proto.CompactTextString(m) }
-func (*KnownModelsRequest) ProtoMessage()    {}
-func (*KnownModelsRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_13d85de19425b7f8, []int{2}
-}
-
-func (m *KnownModelsRequest) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_KnownModelsRequest.Unmarshal(m, b)
-}
-func (m *KnownModelsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_KnownModelsRequest.Marshal(b, m, deterministic)
-}
-func (m *KnownModelsRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_KnownModelsRequest.Merge(m, src)
-}
-func (m *KnownModelsRequest) XXX_Size() int {
-	return xxx_messageInfo_KnownModelsRequest.Size(m)
-}
-func (m *KnownModelsRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_KnownModelsRequest.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_KnownModelsRequest proto.InternalMessageInfo
-
-func (m *KnownModelsRequest) GetClass() string {
-	if m != nil {
-		return m.Class
-	}
-	return ""
-}
-
-type KnownModelsResponse struct {
-	KnownModels          []*ModelDescriptor `protobuf:"bytes,1,rep,name=known_models,json=knownModels,proto3" json:"known_models,omitempty"`
-	ActiveModules        []string           `protobuf:"bytes,2,rep,name=active_modules,json=activeModules,proto3" json:"active_modules,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}           `json:"-"`
-	XXX_unrecognized     []byte             `json:"-"`
-	XXX_sizecache        int32              `json:"-"`
-}
-
-func (m *KnownModelsResponse) Reset()         { *m = KnownModelsResponse{} }
-func (m *KnownModelsResponse) String() string { return proto.CompactTextString(m) }
-func (*KnownModelsResponse) ProtoMessage()    {}
-func (*KnownModelsResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_13d85de19425b7f8, []int{3}
-}
-
-func (m *KnownModelsResponse) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_KnownModelsResponse.Unmarshal(m, b)
-}
-func (m *KnownModelsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_KnownModelsResponse.Marshal(b, m, deterministic)
-}
-func (m *KnownModelsResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_KnownModelsResponse.Merge(m, src)
-}
-func (m *KnownModelsResponse) XXX_Size() int {
-	return xxx_messageInfo_KnownModelsResponse.Size(m)
-}
-func (m *KnownModelsResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_KnownModelsResponse.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_KnownModelsResponse proto.InternalMessageInfo
-
-func (m *KnownModelsResponse) GetKnownModels() []*ModelDescriptor {
-	if m != nil {
-		return m.KnownModels
-	}
-	return nil
-}
-
-func (m *KnownModelsResponse) GetActiveModules() []string {
-	if m != nil {
-		return m.ActiveModules
-	}
-	return nil
+var E_Model = &proto.ExtensionDesc{
+	ExtendedType:  (*descriptor.MessageOptions)(nil),
+	ExtensionType: (*ModelSpec)(nil),
+	Field:         50222,
+	Name:          "ligato.generic.model",
+	Tag:           "bytes,50222,opt,name=model",
+	Filename:      "ligato/generic/model.proto",
 }
 
 func init() {
 	proto.RegisterType((*ModelSpec)(nil), "ligato.generic.ModelSpec")
-	proto.RegisterType((*ModelDescriptor)(nil), "ligato.generic.ModelDescriptor")
-	proto.RegisterType((*ModelDescriptor_Option)(nil), "ligato.generic.ModelDescriptor.Option")
-	proto.RegisterType((*KnownModelsRequest)(nil), "ligato.generic.KnownModelsRequest")
-	proto.RegisterType((*KnownModelsResponse)(nil), "ligato.generic.KnownModelsResponse")
+	proto.RegisterType((*ModelDetail)(nil), "ligato.generic.ModelDetail")
+	proto.RegisterType((*ModelDetail_Option)(nil), "ligato.generic.ModelDetail.Option")
+	proto.RegisterExtension(E_Model)
 }
 
 func init() { proto.RegisterFile("ligato/generic/model.proto", fileDescriptor_13d85de19425b7f8) }
 
 var fileDescriptor_13d85de19425b7f8 = []byte{
-	// 382 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x84, 0x52, 0x51, 0x4b, 0xe3, 0x40,
-	0x10, 0x26, 0x4d, 0xaf, 0xa5, 0x93, 0xbb, 0xde, 0xb1, 0x77, 0x1c, 0xb9, 0xc2, 0x71, 0x25, 0x87,
-	0x52, 0x84, 0x26, 0x12, 0xff, 0x80, 0x14, 0xdf, 0xa4, 0x0a, 0x29, 0xf8, 0xe0, 0x4b, 0x59, 0xd3,
-	0x21, 0x2c, 0x4d, 0x76, 0xd7, 0xec, 0x36, 0xd2, 0x37, 0xff, 0xa4, 0xff, 0x47, 0xb2, 0x9b, 0xd8,
-	0x56, 0x45, 0xdf, 0x76, 0xbe, 0xf9, 0x66, 0xe6, 0x9b, 0x6f, 0x16, 0x46, 0x39, 0xcb, 0xa8, 0x16,
-	0x51, 0x86, 0x1c, 0x4b, 0x96, 0x46, 0x85, 0x58, 0x61, 0x1e, 0xca, 0x52, 0x68, 0x41, 0x86, 0x36,
-	0x17, 0x36, 0xb9, 0x20, 0x83, 0xc1, 0xbc, 0x4e, 0x2f, 0x24, 0xa6, 0xe4, 0x37, 0xf4, 0x0a, 0xb1,
-	0xda, 0xe4, 0xe8, 0x3b, 0x63, 0x67, 0x32, 0x48, 0x9a, 0x88, 0xf8, 0xd0, 0xaf, 0xb0, 0x54, 0x4c,
-	0x70, 0xbf, 0x63, 0x12, 0x6d, 0x48, 0x08, 0x74, 0xf5, 0x56, 0xa2, 0xef, 0x1a, 0xd8, 0xbc, 0xc9,
-	0x2f, 0xf8, 0x92, 0xe6, 0x54, 0x29, 0xbf, 0x6b, 0x40, 0x1b, 0x04, 0x4f, 0x0e, 0x7c, 0x37, 0x93,
-	0x2e, 0x50, 0xa5, 0x25, 0x93, 0x5a, 0x94, 0x64, 0x0a, 0x5d, 0x25, 0x31, 0x35, 0xd3, 0xbc, 0xf8,
-	0x4f, 0x78, 0xa8, 0x2d, 0x7c, 0x11, 0x96, 0x18, 0x1a, 0xf9, 0x0b, 0x60, 0x96, 0x58, 0x72, 0x5a,
-	0x60, 0xa3, 0x64, 0x60, 0x90, 0x2b, 0x5a, 0x20, 0x39, 0x87, 0xbe, 0x90, 0x9a, 0x09, 0xae, 0x7c,
-	0x77, 0xec, 0x4e, 0xbc, 0xf8, 0xf8, 0xdd, 0x86, 0xbb, 0xf9, 0xe1, 0xb5, 0xa1, 0x27, 0x6d, 0xd9,
-	0x28, 0x86, 0x9e, 0x85, 0xc8, 0x0f, 0x70, 0xd7, 0xb8, 0x6d, 0x6c, 0xa8, 0x9f, 0xb5, 0x37, 0x15,
-	0xcd, 0x37, 0xa8, 0xfc, 0xce, 0xd8, 0xad, 0xbd, 0xb1, 0x51, 0x70, 0x02, 0xe4, 0x92, 0x8b, 0x07,
-	0x6e, 0x7a, 0xab, 0x04, 0xef, 0x37, 0xa8, 0xf4, 0xce, 0x03, 0x67, 0xdf, 0x83, 0x47, 0x07, 0x7e,
-	0x1e, 0x90, 0x95, 0x14, 0x5c, 0x21, 0x99, 0xc1, 0xd7, 0x75, 0x0d, 0x2f, 0xcd, 0xa5, 0xea, 0xa2,
-	0x5a, 0xfe, 0xbf, 0x4f, 0xe4, 0x27, 0xde, 0x7a, 0xd7, 0x8b, 0x1c, 0xc1, 0x90, 0xa6, 0x9a, 0x55,
-	0xb8, 0xb4, 0x47, 0x6b, 0x75, 0x7e, 0xb3, 0xe8, 0xdc, 0x82, 0x31, 0x82, 0x37, 0x47, 0x4d, 0x17,
-	0x58, 0x56, 0x2c, 0x45, 0x72, 0x03, 0xde, 0x9e, 0x20, 0x12, 0xbc, 0x1e, 0xf9, 0x76, 0xb5, 0xd1,
-	0xff, 0x0f, 0x39, 0x76, 0xa3, 0xd9, 0xe9, 0x6d, 0x98, 0x89, 0x96, 0xc8, 0x44, 0x54, 0x49, 0x39,
-	0xa5, 0x19, 0x72, 0x1d, 0x55, 0x71, 0x64, 0x4e, 0x16, 0x1d, 0x7e, 0xd2, 0xbb, 0x9e, 0x41, 0xcf,
-	0x9e, 0x03, 0x00, 0x00, 0xff, 0xff, 0xa9, 0xee, 0x71, 0xdb, 0xbd, 0x02, 0x00, 0x00,
-}
-
-// Reference imports to suppress errors if they are not otherwise used.
-var _ context.Context
-var _ grpc.ClientConn
-
-// This is a compile-time assertion to ensure that this generated file
-// is compatible with the grpc package it is being compiled against.
-const _ = grpc.SupportPackageIsVersion4
-
-// MetaServiceClient is the client API for MetaService service.
-//
-// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
-type MetaServiceClient interface {
-	// KnownModels returns information about service capabilities
-	// including list of models supported by the server.
-	KnownModels(ctx context.Context, in *KnownModelsRequest, opts ...grpc.CallOption) (*KnownModelsResponse, error)
-}
-
-type metaServiceClient struct {
-	cc *grpc.ClientConn
-}
-
-func NewMetaServiceClient(cc *grpc.ClientConn) MetaServiceClient {
-	return &metaServiceClient{cc}
-}
-
-func (c *metaServiceClient) KnownModels(ctx context.Context, in *KnownModelsRequest, opts ...grpc.CallOption) (*KnownModelsResponse, error) {
-	out := new(KnownModelsResponse)
-	err := c.cc.Invoke(ctx, "/ligato.generic.MetaService/KnownModels", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-// MetaServiceServer is the server API for MetaService service.
-type MetaServiceServer interface {
-	// KnownModels returns information about service capabilities
-	// including list of models supported by the server.
-	KnownModels(context.Context, *KnownModelsRequest) (*KnownModelsResponse, error)
-}
-
-// UnimplementedMetaServiceServer can be embedded to have forward compatible implementations.
-type UnimplementedMetaServiceServer struct {
-}
-
-func (*UnimplementedMetaServiceServer) KnownModels(ctx context.Context, req *KnownModelsRequest) (*KnownModelsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method KnownModels not implemented")
-}
-
-func RegisterMetaServiceServer(s *grpc.Server, srv MetaServiceServer) {
-	s.RegisterService(&_MetaService_serviceDesc, srv)
-}
-
-func _MetaService_KnownModels_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(KnownModelsRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(MetaServiceServer).KnownModels(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/ligato.generic.MetaService/KnownModels",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MetaServiceServer).KnownModels(ctx, req.(*KnownModelsRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-var _MetaService_serviceDesc = grpc.ServiceDesc{
-	ServiceName: "ligato.generic.MetaService",
-	HandlerType: (*MetaServiceServer)(nil),
-	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "KnownModels",
-			Handler:    _MetaService_KnownModels_Handler,
-		},
-	},
-	Streams:  []grpc.StreamDesc{},
-	Metadata: "ligato/generic/model.proto",
+	// 326 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x7c, 0x51, 0xcb, 0x6a, 0xeb, 0x30,
+	0x14, 0xc4, 0x71, 0x1e, 0xf8, 0x04, 0x2e, 0x17, 0x71, 0xb9, 0xa8, 0x81, 0x52, 0x93, 0x55, 0x36,
+	0x91, 0x8a, 0x97, 0xa5, 0xab, 0xd2, 0x6d, 0x1a, 0x70, 0x77, 0xdd, 0x14, 0xd5, 0x39, 0x15, 0xa2,
+	0xb2, 0x25, 0x2c, 0xc5, 0x90, 0x3f, 0xe8, 0xd7, 0xf4, 0x4f, 0xfa, 0x4f, 0xc5, 0x92, 0x5d, 0x08,
+	0x94, 0xee, 0x34, 0x33, 0xe7, 0x31, 0x9a, 0x03, 0x2b, 0xad, 0xa4, 0xf0, 0x86, 0x4b, 0x6c, 0xb0,
+	0x55, 0x15, 0xaf, 0xcd, 0x01, 0x35, 0xb3, 0xad, 0xf1, 0x86, 0xfc, 0x89, 0x1a, 0x1b, 0xb4, 0x55,
+	0x2e, 0x8d, 0x91, 0x1a, 0x79, 0x50, 0x5f, 0x8e, 0xaf, 0xfc, 0x80, 0xae, 0x6a, 0x95, 0xf5, 0xa6,
+	0x8d, 0x1d, 0x6b, 0x09, 0xd9, 0xae, 0x1f, 0xf0, 0x68, 0xb1, 0x22, 0xff, 0x61, 0x5e, 0x9b, 0xc3,
+	0x51, 0x23, 0x4d, 0xf2, 0x64, 0x93, 0x95, 0x03, 0x22, 0x14, 0x16, 0x1d, 0xb6, 0x4e, 0x99, 0x86,
+	0x4e, 0x82, 0x30, 0x42, 0x42, 0x60, 0xea, 0x4f, 0x16, 0x69, 0x1a, 0xe8, 0xf0, 0x26, 0xff, 0x60,
+	0x56, 0x69, 0xe1, 0x1c, 0x9d, 0x06, 0x32, 0x82, 0xf5, 0x67, 0x02, 0xcb, 0xb0, 0xe9, 0x1e, 0xbd,
+	0x50, 0x9a, 0x6c, 0x61, 0xea, 0x2c, 0x56, 0x34, 0xc9, 0x27, 0x9b, 0x65, 0x71, 0xc1, 0xce, 0x9d,
+	0xb3, 0x6f, 0x53, 0x65, 0x28, 0x23, 0x97, 0x00, 0xc1, 0xf0, 0x73, 0x23, 0x6a, 0x1c, 0x5c, 0x64,
+	0x81, 0x79, 0x10, 0x35, 0x92, 0x5b, 0x58, 0x18, 0xeb, 0x95, 0x69, 0x1c, 0x4d, 0xf3, 0x74, 0xb3,
+	0x2c, 0xd6, 0x3f, 0x0e, 0x8c, 0xbb, 0xd9, 0x3e, 0x94, 0x96, 0x63, 0xcb, 0xaa, 0x80, 0x79, 0xa4,
+	0xc8, 0x5f, 0x48, 0xdf, 0xf0, 0x14, 0x4c, 0x65, 0x65, 0xff, 0xec, 0x33, 0xe9, 0x84, 0x3e, 0xa2,
+	0xa3, 0x93, 0x3c, 0xed, 0x33, 0x89, 0xe8, 0xa6, 0x84, 0x59, 0x48, 0x9e, 0x5c, 0xb1, 0x18, 0x32,
+	0x1b, 0x43, 0x66, 0x3b, 0x74, 0x4e, 0x48, 0xdc, 0x0f, 0x86, 0x3e, 0xde, 0xfb, 0x74, 0x7e, 0xfd,
+	0x63, 0x1c, 0x75, 0x77, 0xfd, 0xc4, 0xa4, 0x19, 0xab, 0x94, 0xe1, 0x9d, 0xb5, 0x5b, 0x21, 0xb1,
+	0xf1, 0xbc, 0x2b, 0xe2, 0x0d, 0xf9, 0xf9, 0xf1, 0xbf, 0x02, 0x00, 0x00, 0xff, 0xff, 0x28, 0xd6,
+	0x5a, 0x88, 0x0d, 0x02, 0x00, 0x00,
 }

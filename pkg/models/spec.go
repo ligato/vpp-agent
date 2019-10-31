@@ -5,6 +5,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/golang/protobuf/proto"
 	api "go.ligato.io/vpp-agent/v2/proto/ligato/generic"
 )
 
@@ -16,10 +17,29 @@ var (
 )
 
 // Spec defines model specification used for registering model.
-type Spec api.ModelSpec
+type Spec struct {
+	Module  string
+	Version string
+	Type    string
+	Class   string
+}
+
+func ToSpec(s *api.ModelSpec) Spec {
+	return Spec{
+		Module:  s.GetModule(),
+		Version: s.GetVersion(),
+		Type:    s.GetType(),
+		Class:   s.GetClass(),
+	}
+}
 
 func (spec Spec) Proto() *api.ModelSpec {
-	return (*api.ModelSpec)(&spec)
+	return &api.ModelSpec{
+		Module:  proto.String(spec.Module),
+		Version: proto.String(spec.Version),
+		Type:    proto.String(spec.Type),
+		Class:   proto.String(spec.Class),
+	}
 }
 
 func (spec Spec) KeyPrefix() string {

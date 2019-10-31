@@ -1,51 +1,43 @@
-syntax = "proto3";
+syntax = "proto2";
 
 package ligato.generic;
 
 option go_package = "go.ligato.io/vpp-agent/v2/proto/ligato/generic";
 
+import "google/protobuf/descriptor.proto";
+
 // ModelSpec defines a model specification to identify a model.
 message ModelSpec {
 
     // Module describes grouping for the model.
-    string module = 1;
+    optional string module = 1;
+
     // Version describes version of the model schema.
-    string version = 2;
+    optional string version = 2;
+
     // Type describes name of type described by this model.
-    string type = 3;
+    optional string type = 3;
+
     // Class describes purpose for the model.
-    string class = 4;
+    optional string class = 4;
 }
 
-// ModelDescriptor defines model descriptor to describe a model.
-message ModelDescriptor {
+extend google.protobuf.MessageOptions {
+    optional ModelSpec model = 50222;
+}
+
+// ModelDetail represents info about model details.
+message ModelDetail {
 
     // Spec is a specificaiton the model was registered with.
-    ModelSpec spec = 1;
+    required ModelSpec spec = 1;
+
     // ProtoName is a name of protobuf message representing the model.
-    string proto_name = 2;
+    optional string proto_name = 2;
 
     message Option {
-        string key = 1;
+        required string key = 1;
         repeated string values = 2;
     }
     repeated Option options = 3;
-}
-
-// MetaService defines the RPC methods for managing generic models.
-service MetaService {
-
-    // KnownModels returns information about service capabilities
-    // including list of models supported by the server.
-    rpc KnownModels (KnownModelsRequest) returns (KnownModelsResponse);
-}
-
-//------------------------------------------------------------------------------
-
-message KnownModelsRequest {
-    string class = 1;
-}
-message KnownModelsResponse {
-    repeated ModelDescriptor known_models = 1;
-    repeated string active_modules = 2;
 }

@@ -1,18 +1,17 @@
 # buf.yaml
 #
-# Configuration file used by Protobuf tool Buf.
+# Config file for Buf (Protobuf tool).
 #
-# Build Protobuf schema (proto):
-#   buf image build -o image.bin
+#   Build Protobuf schema (proto):
+#     buf image build -o image.bin
 #
-# List lint checkers:
-#   buf check ls-lint-checkers
+#   List lint checkers:
+#     buf check ls-lint-checkers
 #
-# List breaking checkers:
-#   buf check ls-breaking-checkers
+#   List breaking checkers:
+#       buf check ls-breaking-checkers
 #
-#
-# Refer to https://buf.build/docs for more info.
+#  Refer to https://buf.build/docs for more info.
 
 build:
   roots:

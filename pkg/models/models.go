@@ -21,7 +21,7 @@ import (
 )
 
 // Register registers model in DefaultRegistry.
-func Register(pb proto.Message, spec Spec, opts ...ModelOption) *RegisteredModel {
+func Register(pb proto.Message, spec Spec, opts ...ModelOption) *KnownModel {
 	model, err := DefaultRegistry.Register(pb, spec, opts...)
 	if err != nil {
 		panic(err)
@@ -30,22 +30,22 @@ func Register(pb proto.Message, spec Spec, opts ...ModelOption) *RegisteredModel
 }
 
 // RegisteredModels returns models registered in the DefaultRegistry.
-func RegisteredModels() []RegisteredModel {
+func RegisteredModels() []KnownModel {
 	return DefaultRegistry.RegisteredModels()
 }
 
 // GetModel returns registered model for given model name.
-func GetModel(name string) (RegisteredModel, error) {
+func GetModel(name string) (KnownModel, error) {
 	return DefaultRegistry.GetModel(name)
 }
 
 // GetModelFor returns model registered in DefaultRegistry for given proto message.
-func GetModelFor(x proto.Message) (RegisteredModel, error) {
+func GetModelFor(x proto.Message) (KnownModel, error) {
 	return DefaultRegistry.GetModelFor(x)
 }
 
 // GetModelForKey returns model registered in DefaultRegistry which matches key.
-func GetModelForKey(key string) (RegisteredModel, error) {
+func GetModelForKey(key string) (KnownModel, error) {
 	return DefaultRegistry.GetModelForKey(key)
 }
 
