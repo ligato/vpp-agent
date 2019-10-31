@@ -25,7 +25,7 @@ func NewKVDBClient(kvdb keyval.CoreBrokerWatcher, serviceLabel string) *KVDBClie
 }
 
 func (k *KVDBClient) Put(key string, data []byte, opts ...datasync.PutOption) (err error) {
-	key, err = k.completeFullKey(key)
+	key, err = k.CompleteFullKey(key)
 	if err != nil {
 		return err
 	}
@@ -35,7 +35,7 @@ func (k *KVDBClient) Put(key string, data []byte, opts ...datasync.PutOption) (e
 }
 
 func (k *KVDBClient) GetValue(key string) (data []byte, found bool, revision int64, err error) {
-	key, err = k.completeFullKey(key)
+	key, err = k.CompleteFullKey(key)
 	if err != nil {
 		return nil, false, 0, err
 	}
@@ -59,7 +59,7 @@ func (k *KVDBClient) ListKeys(prefix string) (keyval.BytesKeyIterator, error) {
 }
 
 func (k *KVDBClient) Delete(key string, opts ...datasync.DelOption) (existed bool, err error) {
-	key, err = k.completeFullKey(key)
+	key, err = k.CompleteFullKey(key)
 	if err != nil {
 		return false, err
 	}
@@ -68,7 +68,7 @@ func (k *KVDBClient) Delete(key string, opts ...datasync.DelOption) (existed boo
 	return k.CoreBrokerWatcher.Delete(key, opts...)
 }
 
-func (k *KVDBClient) completeFullKey(key string) (string, error) {
+func (k *KVDBClient) CompleteFullKey(key string) (string, error) {
 	if strings.HasPrefix(key, servicelabel.GetAllAgentsPrefix()) {
 		return key, nil
 	}
