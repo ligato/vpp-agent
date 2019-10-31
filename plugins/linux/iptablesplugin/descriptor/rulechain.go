@@ -18,9 +18,9 @@ import (
 	"strings"
 
 	"github.com/golang/protobuf/proto"
+	"github.com/ligato/cn-infra/logging"
 	"github.com/pkg/errors"
 
-	"github.com/ligato/cn-infra/logging"
 	kvs "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
 	ifdescriptor "go.ligato.io/vpp-agent/v2/plugins/linux/ifplugin/descriptor"
 	"go.ligato.io/vpp-agent/v2/plugins/linux/iptablesplugin/descriptor/adapter"

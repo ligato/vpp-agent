@@ -32,51 +32,53 @@ var (
 
 // Registry defines model registry for managing registered models.
 type Registry struct {
-	registeredTypes map[reflect.Type]*RegisteredModel
-	modelNames      map[string]*RegisteredModel
+	registeredTypes map[reflect.Type]*KnownModel
+	modelNames      map[string]*KnownModel
 }
 
 // NewRegistry returns initialized Registry.
 func NewRegistry() *Registry {
 	return &Registry{
-		registeredTypes: make(map[reflect.Type]*RegisteredModel),
-		modelNames:      make(map[string]*RegisteredModel),
+		registeredTypes: make(map[reflect.Type]*KnownModel),
+		modelNames:      make(map[string]*KnownModel),
 	}
 }
 
 // GetModel returns registered model for the given model name
 // or error if model is not found.
-func (r *Registry) GetModel(name string) (RegisteredModel, error) {
+func (r *Registry) GetModel(name string) (KnownModel, error) {
 	model, found := r.modelNames[name]
 	if !found {
-		return RegisteredModel{}, fmt.Errorf("no model registered for name %v", name)
+		return KnownModel{}, fmt.Errorf("no model registered for name %v", name)
 	}
 	return *model, nil
 }
 
 // GetModelFor returns registered model for the given proto message.
-func (r *Registry) GetModelFor(x interface{}) (RegisteredModel, error) {
+func (r *Registry) GetModelFor(x interface{}) (KnownModel, error) {
 	t := reflect.TypeOf(x)
 	model, found := r.registeredTypes[t]
 	if !found {
-		return RegisteredModel{}, fmt.Errorf("no model registered for type %v", t)
+		if model = r.checkProtoOptions(x); model == nil {
+			return KnownModel{}, fmt.Errorf("no model registered for type %v", t)
+		}
 	}
 	return *model, nil
 }
 
 // GetModelForKey returns registered model for the given key or error.
-func (r *Registry) GetModelForKey(key string) (RegisteredModel, error) {
+func (r *Registry) GetModelForKey(key string) (KnownModel, error) {
 	for _, model := range r.registeredTypes {
 		if model.IsKeyValid(key) {
 			return *model, nil
 		}
 	}
-	return RegisteredModel{}, fmt.Errorf("no registered model matches for key %v", key)
+	return KnownModel{}, fmt.Errorf("no registered model matches for key %v", key)
 }
 
 // RegisteredModels returns all registered modules.
-func (r *Registry) RegisteredModels() []RegisteredModel {
-	var models []RegisteredModel
+func (r *Registry) RegisteredModels() []KnownModel {
+	var models []KnownModel
 	for _, model := range r.registeredTypes {
 		models = append(models, *model)
 	}
@@ -85,7 +87,7 @@ func (r *Registry) RegisteredModels() []RegisteredModel {
 
 // Register registers a protobuf message with given model specification.
 // If spec.Class is unset empty it defaults to 'config'.
-func (r *Registry) Register(x interface{}, spec Spec, opts ...ModelOption) (*RegisteredModel, error) {
+func (r *Registry) Register(x interface{}, spec Spec, opts ...ModelOption) (*KnownModel, error) {
 	goType := reflect.TypeOf(x)
 
 	// Check go type duplicate registration
@@ -111,7 +113,7 @@ func (r *Registry) Register(x interface{}, spec Spec, opts ...ModelOption) (*Reg
 		return nil, fmt.Errorf("model name %q already used by %s", spec.ModelName(), pn.goType)
 	}
 
-	model := &RegisteredModel{
+	model := &KnownModel{
 		spec:   spec,
 		goType: goType,
 	}

@@ -22,7 +22,7 @@ type statsPollerServer struct {
 	log logging.Logger
 }
 
-func (s *statsPollerServer) PollStats(req *configurator.PollStatsRequest, svr configurator.StatsPoller_PollStatsServer) error {
+func (s *statsPollerServer) PollStats(req *configurator.PollStatsRequest, svr configurator.StatsPollerService_PollStatsServer) error {
 	var pollSeq uint32
 
 	if req.PeriodSec == 0 {

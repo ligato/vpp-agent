@@ -161,7 +161,7 @@ func (p *Plugin) setupStatsPoller() error {
 	p.statsPollerServer.handler = h
 
 	if p.GRPC != nil && p.GRPC.GetServer() != nil {
-		configurator.RegisterStatsPollerServer(p.GRPC.GetServer(), &p.statsPollerServer)
+		configurator.RegisterStatsPollerServiceServer(p.GRPC.GetServer(), &p.statsPollerServer)
 	}
 
 	return nil

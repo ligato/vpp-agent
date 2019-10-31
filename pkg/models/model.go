@@ -23,8 +23,8 @@ import (
 	"go.ligato.io/vpp-agent/v2/proto/ligato/generic"
 )
 
-// RegisteredModel represents a registered model.
-type RegisteredModel struct {
+// KnownModel represents a registered model.
+type KnownModel struct {
 	spec Spec
 	modelOptions
 
@@ -33,17 +33,17 @@ type RegisteredModel struct {
 }
 
 // Spec returns model specification for the model.
-func (m RegisteredModel) Spec() *Spec {
+func (m KnownModel) Spec() *Spec {
 	spec := m.spec
 	return &spec
 }
 
 // ModelDescriptor returns descriptor for the model.
-func (m RegisteredModel) ModelDescriptor() *generic.ModelDescriptor {
-	return &generic.ModelDescriptor{
-		Spec:      (*generic.ModelSpec)(m.Spec()),
+func (m KnownModel) ModelDetail() *generic.ModelDetail {
+	return &generic.ModelDetail{
+		Spec:      m.Spec().Proto(),
 		ProtoName: m.ProtoName(),
-		Options: []*generic.ModelDescriptor_Option{
+		Options: []*generic.ModelDetail_Option{
 			{Key: "nameTemplate", Values: []string{m.NameTemplate()}},
 			{Key: "goType", Values: []string{m.GoType()}},
 		},
@@ -51,12 +51,12 @@ func (m RegisteredModel) ModelDescriptor() *generic.ModelDescriptor {
 }
 
 // NewInstance creates new instance value for model type.
-func (m RegisteredModel) NewInstance() proto.Message {
+func (m KnownModel) NewInstance() proto.Message {
 	return reflect.New(m.goType.Elem()).Interface().(proto.Message)
 }
 
 // ProtoName returns proto message name registered with the model.
-func (m RegisteredModel) ProtoName() string {
+func (m KnownModel) ProtoName() string {
 	if m.protoName == "" {
 		m.protoName = proto.MessageName(m.NewInstance())
 	}
@@ -64,22 +64,22 @@ func (m RegisteredModel) ProtoName() string {
 }
 
 // NameTemplate returns name template for the model.
-func (m RegisteredModel) NameTemplate() string {
+func (m KnownModel) NameTemplate() string {
 	return m.nameTemplate
 }
 
 // GoType returns go type for the model.
-func (m RegisteredModel) GoType() string {
+func (m KnownModel) GoType() string {
 	return m.goType.String()
 }
 
 // Path returns path for the model.
-func (m RegisteredModel) Name() string {
+func (m KnownModel) Name() string {
 	return m.spec.ModelName()
 }
 
 // KeyPrefix returns key prefix for the model.
-func (m RegisteredModel) KeyPrefix() string {
+func (m KnownModel) KeyPrefix() string {
 	keyPrefix := m.spec.KeyPrefix()
 	if m.nameFunc == nil {
 		keyPrefix = strings.TrimSuffix(keyPrefix, "/")
@@ -89,7 +89,7 @@ func (m RegisteredModel) KeyPrefix() string {
 
 // ParseKey parses the given key and returns item name
 // or returns empty name and valid as false if the key is not valid.
-func (m RegisteredModel) ParseKey(key string) (name string, valid bool) {
+func (m KnownModel) ParseKey(key string) (name string, valid bool) {
 	name = strings.TrimPrefix(key, m.KeyPrefix())
 	if name == key || (name == "" && m.nameFunc != nil) {
 		name = strings.TrimPrefix(key, m.Name())
@@ -104,20 +104,20 @@ func (m RegisteredModel) ParseKey(key string) (name string, valid bool) {
 }
 
 // IsKeyValid returns true if given key is valid for this model.
-func (m RegisteredModel) IsKeyValid(key string) bool {
+func (m KnownModel) IsKeyValid(key string) bool {
 	_, valid := m.ParseKey(key)
 	return valid
 }
 
 // StripKeyPrefix returns key with prefix stripped.
-func (m RegisteredModel) StripKeyPrefix(key string) string {
+func (m KnownModel) StripKeyPrefix(key string) string {
 	if name, valid := m.ParseKey(key); valid {
 		return name
 	}
 	return key
 }
 
-func (m RegisteredModel) instanceName(x proto.Message) (string, error) {
+func (m KnownModel) instanceName(x proto.Message) (string, error) {
 	if m.nameFunc == nil {
 		return "", nil
 	}

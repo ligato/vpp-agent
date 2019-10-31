@@ -78,20 +78,22 @@ func (p *Plugin) Init() error {
 
 	grpcServer := p.GRPCServer.GetServer()
 	if grpcServer != nil {
-		rpc.RegisterConfiguratorServer(grpcServer, &p.configurator)
+		rpc.RegisterConfiguratorServiceServer(grpcServer, &p.configurator)
 	}
 
 	if p.VPPIfPlugin != nil {
-		p.VPPIfPlugin.SetNotifyService(func(vppNotification *vpp.Notification) {
-			p.configurator.notifyService.pushNotification(&rpc.Notification{
-				Notification: &rpc.Notification_VppNotification{
-					VppNotification: vppNotification,
-				},
-			})
-		})
+		p.VPPIfPlugin.SetNotifyService(p.sendVppNotification)
 	}
 
 	return nil
+}
+
+func (p *Plugin) sendVppNotification(vppNotification *vpp.Notification) {
+	p.configurator.notifyService.pushNotification(&rpc.Notification{
+		Notification: &rpc.Notification_VppNotification{
+			VppNotification: vppNotification,
+		},
+	})
 }
 
 // Close does nothing.

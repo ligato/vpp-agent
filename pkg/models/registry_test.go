@@ -21,7 +21,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	. "go.ligato.io/vpp-agent/v2/pkg/models"
-	testmodel "go.ligato.io/vpp-agent/v2/pkg/models/testdata/testmodel"
+	testmodel "go.ligato.io/vpp-agent/v2/pkg/models/testdata/proto"
 )
 
 func ResetDefaultRegistry() {
@@ -79,4 +79,15 @@ func TestRegisterClassFallback(t *testing.T) {
 	model, err := GetModelFor(&testmodel.Basic{})
 	g.Expect(err).ToNot(HaveOccurred())
 	g.Expect(model.Spec().Class).To(Equal("config"))
+}
+
+func TestRegisterWithOption(t *testing.T) {
+	g := NewGomegaWithT(t)
+	ResetDefaultRegistry()
+
+	//Register(&testmodel.WithOption{}, /*model spec defined in the proto*/)
+
+	model, err := GetModelFor(&testmodel.WithOption{})
+	g.Expect(err).ToNot(HaveOccurred())
+	g.Expect(model.Spec().Type).To(Equal("woption"))
 }

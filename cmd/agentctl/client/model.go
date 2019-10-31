@@ -36,12 +36,12 @@ func (c *Client) ModelList(ctx context.Context, opts types.ModelListOptions) ([]
 	return allModels, nil
 }
 
-func convertModels(knownModels []*generic.ModelDescriptor) []types.Model {
+func convertModels(knownModels []*generic.ModelDetail) []types.Model {
 	allModels := make([]types.Model, len(knownModels))
 	for i, m := range knownModels {
-		spec := models.Spec(*m.Spec)
+		spec := models.ToSpec(m.Spec)
 
-		protoName := m.ProtoName
+		protoName := m.GetProtoName()
 		keyPrefix := spec.KeyPrefix()
 
 		var (
@@ -49,20 +49,20 @@ func convertModels(knownModels []*generic.ModelDescriptor) []types.Model {
 			goType       string
 		)
 		for _, o := range m.Options {
-			if o.Key == "nameTemplate" && len(o.Values) > 0 {
+			if o.GetKey() == "nameTemplate" && len(o.Values) > 0 {
 				nameTemplate = o.Values[0]
 			}
-			if o.Key == "goType" && len(o.Values) > 0 {
+			if o.GetKey() == "goType" && len(o.Values) > 0 {
 				goType = o.Values[0]
 			}
 		}
 
 		model := types.Model{
 			Name:         spec.ModelName(),
-			Module:       m.Spec.Module,
-			Version:      m.Spec.Version,
-			Type:         m.Spec.Type,
-			Class:        m.Spec.Class,
+			Module:       spec.Module,
+			Version:      spec.Version,
+			Type:         spec.Type,
+			Class:        spec.Class,
 			KeyPrefix:    keyPrefix,
 			ProtoName:    protoName,
 			NameTemplate: nameTemplate,

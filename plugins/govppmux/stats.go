@@ -119,7 +119,7 @@ func init() {
 	metrics.Register(&govppmux.Metrics{}, func() interface{} {
 		return &GetStats().Metrics
 	})
-	expvar.Publish(govppmux.MetricsModel.Name(), expvar.Func(func() interface{} {
+	expvar.Publish("govppmux.stats", expvar.Func(func() interface{} {
 		return &GetStats().Metrics
 	}))
 }

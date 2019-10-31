@@ -32,7 +32,7 @@ import (
 	"go.ligato.io/vpp-agent/v2/client"
 	"go.ligato.io/vpp-agent/v2/client/remoteclient"
 	"go.ligato.io/vpp-agent/v2/cmd/vpp-agent/app"
-	mymodel "go.ligato.io/vpp-agent/v2/examples/custom_model/pb"
+	mymodel "go.ligato.io/vpp-agent/v2/examples/custom_model/proto"
 	"go.ligato.io/vpp-agent/v2/plugins/orchestrator"
 	"go.ligato.io/vpp-agent/v2/proto/ligato/linux"
 	linux_interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/linux/interfaces"
@@ -42,7 +42,7 @@ import (
 	vpp_l2 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l2"
 )
 
-//go:generate protoc --proto_path=pb --proto_path=$GOPATH/src --go_out=pb pb/model.proto
+//go:generate protoc --proto_path=. --go_out=paths=source_relative:. proto/model.proto
 
 var (
 	address    = flag.String("address", "127.0.0.1:9111", "address of GRPC server")

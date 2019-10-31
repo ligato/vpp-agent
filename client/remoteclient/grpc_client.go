@@ -13,13 +13,13 @@ import (
 )
 
 type grpcClient struct {
-	manager generic.ManagerClient
+	manager generic.ManagerServiceClient
 	meta    generic.MetaServiceClient
 }
 
 // NewClientGRPC returns new instance that uses given service client for requests.
 func NewClientGRPC(conn *grpc.ClientConn) client.ConfigClient {
-	manager := generic.NewManagerClient(conn)
+	manager := generic.NewManagerServiceClient(conn)
 	meta := generic.NewMetaServiceClient(conn)
 	return &grpcClient{
 		manager: manager,
@@ -114,7 +114,7 @@ func (c *grpcClient) DumpState() ([]*client.StateItem, error) {
 }
 
 type setConfigRequest struct {
-	client generic.ManagerClient
+	client generic.ManagerServiceClient
 	req    *generic.SetConfigRequest
 	err    error
 }
