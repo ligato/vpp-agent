@@ -126,7 +126,7 @@ buf-breaking: $(BUF)
 
 .PHONY: protocgengoclean
 protocgengoclean:
-	find "$(PROTOC_GEN_GO_OUT)" -name "*.pb.go" -exec rm -rfv '{}' \;
+	find "$(PROTOC_GEN_GO_OUT)" -name "*.pb.go" -exec rm -drfv '{}' \;
 
 .PHONY: protocgengo
 protocgengo: protocgengoclean $(PROTOC) $(PROTOC_GEN_GO)

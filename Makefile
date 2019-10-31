@@ -23,7 +23,6 @@ endif
 
 export PATH := $(abspath $(CACHE_BIN)):$(PATH)
 
-
 CNINFRA := github.com/ligato/cn-infra/agent
 LDFLAGS = \
 	-X $(CNINFRA).BuildVersion=$(VERSION) \
@@ -66,7 +65,7 @@ help:
 
 .DEFAULT = help
 
--include proto/buf.make
+-include scripts/make/buf.make
 
 build: cmd examples
 
