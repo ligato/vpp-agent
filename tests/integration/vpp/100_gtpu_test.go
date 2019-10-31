@@ -29,17 +29,17 @@ func TestGtpu(t *testing.T) {
 
 	// The dump gtpu interface details API is broken in some of the VPP versions.
 	// See https://gerrit.fd.io/r/c/vpp/+/22904 and https://gerrit.fd.io/r/c/vpp/+/23054
-	dumpApiOk := true
+	dumpAPIOk := true
 	release := ctx.versionInfo.Release()
 	if release <= "19.04" {
-		dumpApiOk = false
+		dumpAPIOk = false
 	} else if release <= "19.08" {
 		if ctx.versionInfo.Version < "19.08.1-255" {
-			dumpApiOk = false
+			dumpAPIOk = false
 		}
 	} else if release <= "20.01" {
 		if ctx.versionInfo.Version < "20.01-rc0~496" {
-			dumpApiOk = false
+			dumpAPIOk = false
 		}
 	}
 
@@ -141,7 +141,7 @@ func TestGtpu(t *testing.T) {
 				}
 			}
 
-			if dumpApiOk {
+			if dumpAPIOk {
 				ifaces, err := h.DumpInterfaces()
 				if err != nil {
 					t.Fatalf("dumping interfaces failed: %v", err)
@@ -184,7 +184,7 @@ func TestGtpu(t *testing.T) {
 				t.Fatalf("delete GTP-U tunnel failed: %v\n", err)
 			}
 
-			if dumpApiOk {
+			if dumpAPIOk {
 				ifaces, err := h.DumpInterfaces()
 				if err != nil {
 					t.Fatalf("dumping interfaces failed: %v", err)
