@@ -27,6 +27,22 @@ func TestGtpu(t *testing.T) {
 	ctx := setupVPP(t)
 	defer ctx.teardownVPP()
 
+	// The dump gtpu interface details API is broken in some of the VPP versions.
+	// See https://gerrit.fd.io/r/c/vpp/+/22904 and https://gerrit.fd.io/r/c/vpp/+/23054
+	dumpApiOk := true
+	release := ctx.versionInfo.Release()
+	if release <= "19.04" {
+		dumpApiOk = false
+	} else if release <= "19.08" {
+		if ctx.versionInfo.Version < "19.08.1-255" {
+			dumpApiOk = false
+		}
+	} else if release <= "20.01" {
+		if ctx.versionInfo.Version < "20.01-rc0~496" {
+			dumpApiOk = false
+		}
+	}
+
 	h := ifplugin_vppcalls.CompatibleInterfaceVppHandler(ctx.vppBinapi, logrus.NewLogger("test"))
 
 	tests := []struct {
@@ -125,38 +141,42 @@ func TestGtpu(t *testing.T) {
 				}
 			}
 
-			ifaces, err := h.DumpInterfaces()
-			if err != nil {
-				t.Fatalf("dumping interfaces failed: %v", err)
-			}
-			iface, ok := ifaces[ifIdx]
-			if !ok {
-				t.Fatalf("GTP-U interface was not found in dump")
-			}
+			if dumpApiOk {
+				ifaces, err := h.DumpInterfaces()
+				if err != nil {
+					t.Fatalf("dumping interfaces failed: %v", err)
+				}
+				iface, ok := ifaces[ifIdx]
+				if !ok {
+					t.Fatalf("GTP-U interface was not found in dump")
+				}
 
-			if iface.Interface.GetType() != interfaces.Interface_GTPU_TUNNEL {
-				t.Fatalf("Interface is not a GTPU tunnel")
-			}
+				if iface.Interface.GetType() != interfaces.Interface_GTPU_TUNNEL {
+					t.Fatalf("Interface is not a GTPU tunnel")
+				}
 
-			gtpu := iface.Interface.GetGtpu()
-			if test.gtpu.SrcAddr != gtpu.SrcAddr {
-				t.Fatalf("expected source address <%s>, got: <%s>", test.gtpu.SrcAddr, gtpu.SrcAddr)
-			}
-			if test.gtpu.DstAddr != gtpu.DstAddr {
-				t.Fatalf("expected destination address <%s>, got: <%s>", test.gtpu.DstAddr, gtpu.DstAddr)
-			}
-			if test.gtpu.Teid != gtpu.Teid {
-				t.Fatalf("expected TEID <%d>, got: <%d>", test.gtpu.Teid, gtpu.Teid)
-			}
-			if test.gtpu.EncapVrfId != gtpu.EncapVrfId {
-				t.Fatalf("expected GTP-U EncapVrfId <%d>, got: <%d>", test.gtpu.EncapVrfId, gtpu.EncapVrfId)
-			}
-			testDecapNext := test.gtpu.DecapNext
-			if testDecapNext == interfaces.GtpuLink_DEFAULT {
-				testDecapNext = interfaces.GtpuLink_L2
-			}
-			if testDecapNext != gtpu.DecapNext {
-				t.Fatalf("expected GTP-U DecapNext <%d>, got: <%d>", testDecapNext, gtpu.DecapNext)
+				gtpu := iface.Interface.GetGtpu()
+				if test.gtpu.SrcAddr != gtpu.SrcAddr {
+					t.Fatalf("expected source address <%s>, got: <%s>", test.gtpu.SrcAddr, gtpu.SrcAddr)
+				}
+				if test.gtpu.DstAddr != gtpu.DstAddr {
+					t.Fatalf("expected destination address <%s>, got: <%s>", test.gtpu.DstAddr, gtpu.DstAddr)
+				}
+				if test.gtpu.Teid != gtpu.Teid {
+					t.Fatalf("expected TEID <%d>, got: <%d>", test.gtpu.Teid, gtpu.Teid)
+				}
+				if test.gtpu.EncapVrfId != gtpu.EncapVrfId {
+					t.Fatalf("expected GTP-U EncapVrfId <%d>, got: <%d>", test.gtpu.EncapVrfId, gtpu.EncapVrfId)
+				}
+				testDecapNext := test.gtpu.DecapNext
+				if testDecapNext == interfaces.GtpuLink_DEFAULT {
+					testDecapNext = interfaces.GtpuLink_L2
+				}
+				if testDecapNext != gtpu.DecapNext {
+					t.Fatalf("expected GTP-U DecapNext <%d>, got: <%d>", testDecapNext, gtpu.DecapNext)
+				}
+			} else {
+				t.Logf("GTP-U: DumpInterfaces skipped because of a broken API in VPP %s", ctx.versionInfo.Version)
 			}
 
 			err = h.DelGtpuTunnel(ifName, test.gtpu)
@@ -164,13 +184,15 @@ func TestGtpu(t *testing.T) {
 				t.Fatalf("delete GTP-U tunnel failed: %v\n", err)
 			}
 
-			ifaces, err = h.DumpInterfaces()
-			if err != nil {
-				t.Fatalf("dumping interfaces failed: %v", err)
-			}
+			if dumpApiOk {
+				ifaces, err := h.DumpInterfaces()
+				if err != nil {
+					t.Fatalf("dumping interfaces failed: %v", err)
+				}
 
-			if _, ok := ifaces[ifIdx]; ok {
-				t.Fatalf("GTP-U interface was found in dump after removing")
+				if _, ok := ifaces[ifIdx]; ok {
+					t.Fatalf("GTP-U interface was found in dump after removing")
+				}
 			}
 		})
 	}
