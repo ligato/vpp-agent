@@ -9,7 +9,7 @@
 #     buf check ls-lint-checkers
 #
 #   List breaking checkers:
-#       buf check ls-breaking-checkers
+#     buf check ls-breaking-checkers
 #
 #  Refer to https://buf.build/docs for more info.
 
@@ -20,6 +20,7 @@ lint:
   use:
     - BASIC
     - FILE_LOWER_SNAKE_CASE
+    - SERVICE_SUFFIX
   except:
     - PACKAGE_VERSION_SUFFIX
 breaking:
