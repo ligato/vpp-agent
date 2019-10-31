@@ -20,10 +20,8 @@ import (
 	. "github.com/onsi/gomega"
 
 	"go.ligato.io/vpp-agent/v2/pkg/models"
-	testmodel "go.ligato.io/vpp-agent/v2/pkg/models/testdata/testmodel"
+	testmodel "go.ligato.io/vpp-agent/v2/pkg/models/testdata/proto"
 )
-
-//go:generate protoc --proto_path=. --go_out=plugins=grpc:. testdata/testmodel/model.proto
 
 func TestKey(t *testing.T) {
 	tc := setupTest(t)

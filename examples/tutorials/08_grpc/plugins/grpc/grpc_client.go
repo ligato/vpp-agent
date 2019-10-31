@@ -32,7 +32,7 @@ type Client struct {
 	Deps // external dependencies
 
 	connection *grpc.ClientConn
-	client     configurator.ConfiguratorClient
+	client     configurator.ConfiguratorServiceClient
 }
 
 // Deps is a structure for the plugin external dependencies
@@ -50,7 +50,7 @@ func (p *Client) Init() (err error) {
 		return err
 	}
 
-	p.client = configurator.NewConfiguratorClient(p.connection)
+	p.client = configurator.NewConfiguratorServiceClient(p.connection)
 
 	p.Log.Info("GRPC client is connected")
 	// Start notification watcher
@@ -108,7 +108,7 @@ func (p *Client) watchNotif() {
 	p.Log.Info("Notification watcher started")
 	var nextIdx uint32
 	for {
-		request := &configurator.NotificationRequest{
+		request := &configurator.NotifyRequest{
 			Idx: nextIdx,
 		}
 		stream, err := p.client.Notify(context.Background(), request)

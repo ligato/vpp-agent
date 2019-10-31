@@ -71,14 +71,14 @@ func UnmarshalItem(item *api.Item) (proto.Message, error) {
 }
 
 // GetModelForItem returns model for given item.
-func GetModelForItem(item *api.Item) (RegisteredModel, error) {
+func GetModelForItem(item *api.Item) (KnownModel, error) {
 	if item.GetId() == nil {
-		return RegisteredModel{}, fmt.Errorf("item id is nil")
+		return KnownModel{}, fmt.Errorf("item id is nil")
 	}
 	modelPath := item.GetId().GetModel()
 	model, err := GetModel(modelPath)
 	if err != nil {
-		return RegisteredModel{}, err
+		return KnownModel{}, err
 	}
 	// TODO: check prefix in type url?
 	return model, nil

@@ -16,10 +16,29 @@ var (
 )
 
 // Spec defines model specification used for registering model.
-type Spec api.ModelSpec
+type Spec struct {
+	Module  string
+	Version string
+	Type    string
+	Class   string
+}
+
+func ToSpec(s *api.ModelSpec) Spec {
+	return Spec{
+		Module:  s.GetModule(),
+		Version: s.GetVersion(),
+		Type:    s.GetType(),
+		Class:   s.GetClass(),
+	}
+}
 
 func (spec Spec) Proto() *api.ModelSpec {
-	return (*api.ModelSpec)(&spec)
+	return &api.ModelSpec{
+		Module:  spec.Module,
+		Version: spec.Version,
+		Type:    spec.Type,
+		Class:   spec.Class,
+	}
 }
 
 func (spec Spec) KeyPrefix() string {

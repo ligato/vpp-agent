@@ -22,7 +22,7 @@ import (
 	"go.ligato.io/vpp-agent/v2/proto/ligato/generic"
 )
 
-type ModelInfo = generic.ModelDescriptor
+type ModelInfo = generic.ModelDetail
 
 type StateItem = generic.StateItem
 

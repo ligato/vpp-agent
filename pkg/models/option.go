@@ -12,12 +12,31 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 
-// +build tools
-
-package vppagent
+package models
 
 import (
-	_ "git.fd.io/govpp.git/cmd/binapi-generator"
-	_ "github.com/golang/protobuf/protoc-gen-go"
-	_ "github.com/mattn/goveralls"
+	"github.com/golang/protobuf/descriptor"
+	"github.com/golang/protobuf/proto"
+
+	"go.ligato.io/vpp-agent/v2/proto/ligato/generic"
 )
+
+func (r *Registry) checkProtoOptions(x interface{}) *KnownModel {
+	p, ok := x.(descriptor.Message)
+	if !ok {
+		return nil
+	}
+	_, md := descriptor.ForMessage(p)
+	s, err := proto.GetExtension(md.Options, generic.E_Model)
+	if err != nil {
+		return nil
+	}
+	if spec, ok := s.(*generic.ModelSpec); ok {
+		km, err := r.Register(x, ToSpec(spec))
+		if err != nil {
+			panic(err)
+		}
+		return km
+	}
+	return nil
+}

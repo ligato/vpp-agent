@@ -35,10 +35,10 @@ type genericService struct {
 }
 
 func (s *genericService) KnownModels(ctx context.Context, req *generic.KnownModelsRequest) (*generic.KnownModelsResponse, error) {
-	var infos []*generic.ModelDescriptor
+	var infos []*generic.ModelDetail
 	for _, model := range models.RegisteredModels() {
 		if req.Class == "" || model.Spec().Class == req.Class {
-			infos = append(infos, model.ModelDescriptor())
+			infos = append(infos, model.ModelDetail())
 		}
 	}
 	resp := &generic.KnownModelsResponse{
@@ -192,16 +192,16 @@ func (s *genericService) DumpState(context.Context, *generic.DumpStateRequest) (
 		if err != nil {
 			return nil, status.Error(codes.InvalidArgument, err.Error())
 		}
-		meta := map[string]string{}
+		md := map[string]string{}
 		states = append(states, &generic.StateItem{
 			Item:     item,
-			Metadata: meta,
+			Metadata: md,
 		})
 	}
 
 	return &generic.DumpStateResponse{Items: states}, nil
 }
 
-func (s *genericService) Subscribe(req *generic.SubscribeRequest, server generic.Manager_SubscribeServer) error {
+func (s *genericService) Subscribe(req *generic.SubscribeRequest, server generic.ManagerService_SubscribeServer) error {
 	return status.Error(codes.Unimplemented, "Not implemented yet")
 }

@@ -80,7 +80,7 @@ func (p *Plugin) Init() (err error) {
 	}
 
 	if grpcServer := p.GRPC.GetServer(); grpcServer != nil {
-		generic.RegisterManagerServer(grpcServer, p.manager)
+		generic.RegisterManagerServiceServer(grpcServer, p.manager)
 		generic.RegisterMetaServiceServer(grpcServer, p.manager)
 		// register grpc services for reflection
 		if p.reflection {

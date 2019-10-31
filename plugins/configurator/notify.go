@@ -32,12 +32,12 @@ type notifyService struct {
 
 	// VPP notifications available for clients
 	mx     sync.RWMutex
-	buffer [bufferSize]rpc.NotificationResponse
+	buffer [bufferSize]rpc.NotifyResponse
 	curIdx uint32
 }
 
 // Notify returns all required VPP notifications (or those available in the buffer) in the same order as they were received
-func (svc *notifyService) Notify(from *rpc.NotificationRequest, server rpc.Configurator_NotifyServer) error {
+func (svc *notifyService) Notify(from *rpc.NotifyRequest, server rpc.ConfiguratorService_NotifyServer) error {
 	svc.mx.RLock()
 	defer svc.mx.RUnlock()
 
@@ -70,7 +70,7 @@ func (svc *notifyService) pushNotification(notification *rpc.Notification) {
 	defer svc.mx.Unlock()
 
 	// Notification index starts with 1
-	notif := rpc.NotificationResponse{
+	notif := rpc.NotifyResponse{
 		NextIdx:      svc.curIdx + 1,
 		Notification: notifCopy,
 	}
