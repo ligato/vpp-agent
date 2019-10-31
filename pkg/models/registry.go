@@ -59,7 +59,9 @@ func (r *Registry) GetModelFor(x interface{}) (KnownModel, error) {
 	t := reflect.TypeOf(x)
 	model, found := r.registeredTypes[t]
 	if !found {
-		return KnownModel{}, fmt.Errorf("no model registered for type %v", t)
+		if model = r.checkProtoOptions(x); model == nil {
+			return KnownModel{}, fmt.Errorf("no model registered for type %v", t)
+		}
 	}
 	return *model, nil
 }

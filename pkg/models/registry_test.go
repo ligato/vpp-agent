@@ -80,3 +80,14 @@ func TestRegisterClassFallback(t *testing.T) {
 	g.Expect(err).ToNot(HaveOccurred())
 	g.Expect(model.Spec().Class).To(Equal("config"))
 }
+
+func TestRegisterWithOption(t *testing.T) {
+	g := NewGomegaWithT(t)
+	ResetDefaultRegistry()
+
+	//Register(&testmodel.WithOption{}, /*model spec defined in the proto*/)
+
+	model, err := GetModelFor(&testmodel.WithOption{})
+	g.Expect(err).ToNot(HaveOccurred())
+	g.Expect(model.Spec().Type).To(Equal("woption"))
+}

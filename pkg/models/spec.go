@@ -5,7 +5,6 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/golang/protobuf/proto"
 	api "go.ligato.io/vpp-agent/v2/proto/ligato/generic"
 )
 
@@ -35,10 +34,10 @@ func ToSpec(s *api.ModelSpec) Spec {
 
 func (spec Spec) Proto() *api.ModelSpec {
 	return &api.ModelSpec{
-		Module:  proto.String(spec.Module),
-		Version: proto.String(spec.Version),
-		Type:    proto.String(spec.Type),
-		Class:   proto.String(spec.Class),
+		Module:  spec.Module,
+		Version: spec.Version,
+		Type:    spec.Type,
+		Class:   spec.Class,
 	}
 }
 

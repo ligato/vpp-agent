@@ -42,10 +42,10 @@ func (m KnownModel) Spec() *Spec {
 func (m KnownModel) ModelDetail() *generic.ModelDetail {
 	return &generic.ModelDetail{
 		Spec:      m.Spec().Proto(),
-		ProtoName: proto.String(m.ProtoName()),
+		ProtoName: m.ProtoName(),
 		Options: []*generic.ModelDetail_Option{
-			{Key: proto.String("nameTemplate"), Values: []string{m.NameTemplate()}},
-			{Key: proto.String("goType"), Values: []string{m.GoType()}},
+			{Key: "nameTemplate", Values: []string{m.NameTemplate()}},
+			{Key: "goType", Values: []string{m.GoType()}},
 		},
 	}
 }

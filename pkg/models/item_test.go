@@ -44,7 +44,7 @@ func TestEncode(t *testing.T) {
 	t.Logf("marshalled:\n%+v", proto.MarshalTextString(item))
 
 	tc.Expect(item.GetData().GetAny().GetTypeUrl()).
-		To(Equal("models.ligato.io/models.testmodel.Basic"))
+		To(Equal("models.ligato.io/model.Basic"))
 
 	out, err := models.UnmarshalItem(item)
 	if err != nil {
@@ -76,7 +76,7 @@ func TestDecode(t *testing.T) {
 	tc.Expect(item.GetId().GetName()).To(Equal("basic1"))
 
 	tc.Expect(item.GetData().GetAny().GetTypeUrl()).
-		To(Equal("models.ligato.io/models.testmodel.Basic"))
+		To(Equal("models.ligato.io/model.Basic"))
 
 	out, err := models.UnmarshalItem(item)
 	if err != nil {
