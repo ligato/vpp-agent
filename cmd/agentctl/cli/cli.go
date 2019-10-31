@@ -190,6 +190,20 @@ func (cli *AgentCli) Initialize(opts *ClientOptions, ops ...InitializeOpt) error
 }
 
 func buildClientOptions() []client.Opt {
+	logging.Debug("----------------------------------------------------")
+	logging.Debug("Building client options")
+	logging.Debugf("\tHost: %q\n", viper.GetString("host"))
+	logging.Debugf("\tService Label: %q\n", viper.GetString("service-label"))
+	logging.Debugf("\tGRPC Port: %q\n", viper.GetString("grpc-port"))
+	logging.Debugf("\tHTTP Port: %q\n", viper.GetString("http-port"))
+	logging.Debugf("\tETCD endpoints: %#v\n", viper.GetStringSlice("etcd-endpoints"))
+	logging.Debugf("\tLIGATO_API_VERSION env var: %q\n", viper.GetString("LIGATO_API_VERSION"))
+	logging.Debugf("\tUse TLS?: %t\n", viper.GetBool("use-tls"))
+	logging.Debugf("\tGRPC TLS: %#v\n", viper.GetStringMap("grpc-tls"))
+	logging.Debugf("\tHTTP TLS: %#v\n", viper.GetStringMap("http-tls"))
+	logging.Debugf("\tKVDB TLS: %#v\n", viper.GetStringMap("kvdb-tls"))
+	logging.Debug("----------------------------------------------------")
+
 	clientOpts := []client.Opt{
 		client.WithHost(viper.GetString("host")),
 		client.WithServiceLabel(viper.GetString("service-label")),
