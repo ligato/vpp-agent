@@ -82,16 +82,18 @@ func (p *Plugin) Init() error {
 	}
 
 	if p.VPPIfPlugin != nil {
-		p.VPPIfPlugin.SetNotifyService(func(vppNotification *vpp.Notification) {
-			p.configurator.notifyService.pushNotification(&rpc.Notification{
-				Notification: &rpc.Notification_VppNotification{
-					VppNotification: vppNotification,
-				},
-			})
-		})
+		p.VPPIfPlugin.SetNotifyService(p.sendVppNotification)
 	}
 
 	return nil
+}
+
+func (p *Plugin) sendVppNotification(vppNotification *vpp.Notification) {
+	p.configurator.notifyService.pushNotification(&rpc.Notification{
+		Notification: &rpc.Notification_VppNotification{
+			VppNotification: vppNotification,
+		},
+	})
 }
 
 // Close does nothing.
