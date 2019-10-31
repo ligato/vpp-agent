@@ -78,7 +78,7 @@ func (p *Plugin) Init() error {
 
 	grpcServer := p.GRPCServer.GetServer()
 	if grpcServer != nil {
-		rpc.RegisterConfiguratorServer(grpcServer, &p.configurator)
+		rpc.RegisterConfiguratorServiceServer(grpcServer, &p.configurator)
 	}
 
 	if p.VPPIfPlugin != nil {

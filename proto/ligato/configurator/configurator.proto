@@ -23,25 +23,6 @@ message Notification {
     }
 }
 
-// Configurator provides basic operations for managing configuration
-// and monitoring state.
-service Configurator {
-    // Get is used for listing desired config.
-    rpc Get(GetRequest) returns (GetResponse);
-
-    // Update is used for updating desired config.
-    rpc Update(UpdateRequest) returns (UpdateResponse);
-
-    // Delete is used for deleting desired config.
-    rpc Delete(DeleteRequest) returns (DeleteResponse);
-
-    // Dump is used for dumping running config.
-    rpc Dump(DumpRequest) returns (DumpResponse);
-
-    // Notify is used for subscribing to notifications.
-    rpc Notify(NotificationRequest) returns (stream NotificationResponse);
-}
-
 message UpdateRequest {
     // Update describes config data to be updated.
     Config update = 1;
@@ -82,16 +63,32 @@ message DumpResponse {
     Config dump = 1;
 }
 
-// NotificationRequest represent a notification request which contains
-// index of next required message
-message NotificationRequest {
+message NotifyRequest {
     uint32 idx = 1;
 }
 
-// Response to notification request 'get'. Returns indexed notification.
-message NotificationResponse {
+message NotifyResponse {
     // Index of following notification
     uint32 next_idx = 1;
     // Notification data
     Notification notification = 2;
+}
+
+// ConfiguratorService provides basic operations for managing configuration
+// and monitoring actual state.
+service ConfiguratorService {
+    // Get is used for listing desired config.
+    rpc Get(GetRequest) returns (GetResponse);
+
+    // Update is used for updating desired config.
+    rpc Update(UpdateRequest) returns (UpdateResponse);
+
+    // Delete is used for deleting desired config.
+    rpc Delete(DeleteRequest) returns (DeleteResponse);
+
+    // Dump is used for dumping running config.
+    rpc Dump(DumpRequest) returns (DumpResponse);
+
+    // Notify is used for subscribing to notifications.
+    rpc Notify(NotifyRequest) returns (stream NotifyResponse);
 }

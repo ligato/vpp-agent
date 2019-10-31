@@ -202,6 +202,6 @@ func (s *genericService) DumpState(context.Context, *generic.DumpStateRequest) (
 	return &generic.DumpStateResponse{Items: states}, nil
 }
 
-func (s *genericService) Subscribe(req *generic.SubscribeRequest, server generic.Manager_SubscribeServer) error {
+func (s *genericService) Subscribe(req *generic.SubscribeRequest, server generic.ManagerService_SubscribeServer) error {
 	return status.Error(codes.Unimplemented, "Not implemented yet")
 }

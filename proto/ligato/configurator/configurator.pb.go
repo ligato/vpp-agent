@@ -458,49 +458,46 @@ func (m *DumpResponse) GetDump() *Config {
 	return nil
 }
 
-// NotificationRequest represent a notification request which contains
-// index of next required message
-type NotificationRequest struct {
+type NotifyRequest struct {
 	Idx                  uint32   `protobuf:"varint,1,opt,name=idx,proto3" json:"idx,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *NotificationRequest) Reset()         { *m = NotificationRequest{} }
-func (m *NotificationRequest) String() string { return proto.CompactTextString(m) }
-func (*NotificationRequest) ProtoMessage()    {}
-func (*NotificationRequest) Descriptor() ([]byte, []int) {
+func (m *NotifyRequest) Reset()         { *m = NotifyRequest{} }
+func (m *NotifyRequest) String() string { return proto.CompactTextString(m) }
+func (*NotifyRequest) ProtoMessage()    {}
+func (*NotifyRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_11e3b38d9e240f4e, []int{10}
 }
 
-func (m *NotificationRequest) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_NotificationRequest.Unmarshal(m, b)
+func (m *NotifyRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_NotifyRequest.Unmarshal(m, b)
 }
-func (m *NotificationRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_NotificationRequest.Marshal(b, m, deterministic)
+func (m *NotifyRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_NotifyRequest.Marshal(b, m, deterministic)
 }
-func (m *NotificationRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_NotificationRequest.Merge(m, src)
+func (m *NotifyRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_NotifyRequest.Merge(m, src)
 }
-func (m *NotificationRequest) XXX_Size() int {
-	return xxx_messageInfo_NotificationRequest.Size(m)
+func (m *NotifyRequest) XXX_Size() int {
+	return xxx_messageInfo_NotifyRequest.Size(m)
 }
-func (m *NotificationRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_NotificationRequest.DiscardUnknown(m)
+func (m *NotifyRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_NotifyRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_NotificationRequest proto.InternalMessageInfo
+var xxx_messageInfo_NotifyRequest proto.InternalMessageInfo
 
-func (m *NotificationRequest) GetIdx() uint32 {
+func (m *NotifyRequest) GetIdx() uint32 {
 	if m != nil {
 		return m.Idx
 	}
 	return 0
 }
 
-// Response to notification request 'get'. Returns indexed notification.
-type NotificationResponse struct {
+type NotifyResponse struct {
 	// Index of following notification
 	NextIdx uint32 `protobuf:"varint,1,opt,name=next_idx,json=nextIdx,proto3" json:"next_idx,omitempty"`
 	// Notification data
@@ -510,39 +507,39 @@ type NotificationResponse struct {
 	XXX_sizecache        int32         `json:"-"`
 }
 
-func (m *NotificationResponse) Reset()         { *m = NotificationResponse{} }
-func (m *NotificationResponse) String() string { return proto.CompactTextString(m) }
-func (*NotificationResponse) ProtoMessage()    {}
-func (*NotificationResponse) Descriptor() ([]byte, []int) {
+func (m *NotifyResponse) Reset()         { *m = NotifyResponse{} }
+func (m *NotifyResponse) String() string { return proto.CompactTextString(m) }
+func (*NotifyResponse) ProtoMessage()    {}
+func (*NotifyResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_11e3b38d9e240f4e, []int{11}
 }
 
-func (m *NotificationResponse) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_NotificationResponse.Unmarshal(m, b)
+func (m *NotifyResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_NotifyResponse.Unmarshal(m, b)
 }
-func (m *NotificationResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_NotificationResponse.Marshal(b, m, deterministic)
+func (m *NotifyResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_NotifyResponse.Marshal(b, m, deterministic)
 }
-func (m *NotificationResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_NotificationResponse.Merge(m, src)
+func (m *NotifyResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_NotifyResponse.Merge(m, src)
 }
-func (m *NotificationResponse) XXX_Size() int {
-	return xxx_messageInfo_NotificationResponse.Size(m)
+func (m *NotifyResponse) XXX_Size() int {
+	return xxx_messageInfo_NotifyResponse.Size(m)
 }
-func (m *NotificationResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_NotificationResponse.DiscardUnknown(m)
+func (m *NotifyResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_NotifyResponse.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_NotificationResponse proto.InternalMessageInfo
+var xxx_messageInfo_NotifyResponse proto.InternalMessageInfo
 
-func (m *NotificationResponse) GetNextIdx() uint32 {
+func (m *NotifyResponse) GetNextIdx() uint32 {
 	if m != nil {
 		return m.NextIdx
 	}
 	return 0
 }
 
-func (m *NotificationResponse) GetNotification() *Notification {
+func (m *NotifyResponse) GetNotification() *Notification {
 	if m != nil {
 		return m.Notification
 	}
@@ -560,8 +557,8 @@ func init() {
 	proto.RegisterType((*GetResponse)(nil), "ligato.configurator.GetResponse")
 	proto.RegisterType((*DumpRequest)(nil), "ligato.configurator.DumpRequest")
 	proto.RegisterType((*DumpResponse)(nil), "ligato.configurator.DumpResponse")
-	proto.RegisterType((*NotificationRequest)(nil), "ligato.configurator.NotificationRequest")
-	proto.RegisterType((*NotificationResponse)(nil), "ligato.configurator.NotificationResponse")
+	proto.RegisterType((*NotifyRequest)(nil), "ligato.configurator.NotifyRequest")
+	proto.RegisterType((*NotifyResponse)(nil), "ligato.configurator.NotifyResponse")
 }
 
 func init() {
@@ -569,42 +566,43 @@ func init() {
 }
 
 var fileDescriptor_11e3b38d9e240f4e = []byte{
-	// 558 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x54, 0x4f, 0x6f, 0xd3, 0x30,
-	0x14, 0x27, 0x74, 0x0a, 0xe3, 0x25, 0xed, 0x8a, 0x37, 0xa1, 0x12, 0x24, 0xb6, 0x19, 0x09, 0xc6,
-	0x81, 0x06, 0x75, 0xe2, 0xb4, 0x03, 0xa8, 0xcb, 0xb4, 0xa1, 0x49, 0x48, 0x44, 0xe2, 0xc2, 0xa5,
-	0x0a, 0x8d, 0x5b, 0x45, 0xca, 0x62, 0xd3, 0x3a, 0x51, 0xf6, 0x9d, 0x38, 0xf1, 0x11, 0xf8, 0x64,
-	0x28, 0xfe, 0xd3, 0xda, 0x28, 0xed, 0x7a, 0x68, 0x15, 0xff, 0xfc, 0xfb, 0xf3, 0x9e, 0xfd, 0x64,
-	0x78, 0x93, 0x67, 0xf3, 0x84, 0xd3, 0x70, 0x4a, 0x8b, 0x59, 0x36, 0x2f, 0x17, 0x09, 0xa7, 0x0b,
-	0x6b, 0x31, 0x64, 0x0b, 0xca, 0x29, 0x3a, 0x94, 0xbc, 0xa1, 0xb9, 0x15, 0x1c, 0x29, 0x71, 0xc5,
-	0x58, 0xf3, 0x93, 0xd4, 0x60, 0xa0, 0xd0, 0x3c, 0x2b, 0xca, 0x5a, 0xfe, 0xab, 0x9d, 0x57, 0x6a,
-	0xa7, 0x20, 0x3c, 0xc9, 0x73, 0x3a, 0x5d, 0x7d, 0xc8, 0x7d, 0xfc, 0xd7, 0x01, 0xf7, 0x52, 0x04,
-	0xa0, 0x8f, 0x00, 0x15, 0x63, 0x13, 0x19, 0x37, 0x70, 0x4e, 0x9c, 0x33, 0x6f, 0xf4, 0x7c, 0xa8,
-	0x8a, 0x68, 0xb2, 0x24, 0x2f, 0x4a, 0x78, 0x12, 0x3f, 0xad, 0x18, 0x53, 0xb2, 0x0b, 0xf0, 0x45,
-	0xa0, 0x16, 0x3e, 0x16, 0xc2, 0x81, 0x16, 0xca, 0x62, 0x0c, 0xa9, 0x27, 0x10, 0x25, 0x8e, 0xe0,
-	0x40, 0x17, 0xa4, 0xf5, 0x1d, 0xa1, 0x7f, 0xa9, 0xf5, 0xab, 0x7a, 0x0d, 0x8b, 0x9e, 0x06, 0x25,
-	0x86, 0xff, 0x38, 0xe0, 0x7f, 0xa5, 0x3c, 0x9b, 0x65, 0xd3, 0x84, 0x67, 0xb4, 0x40, 0x57, 0xd0,
-	0x6f, 0x5a, 0x29, 0x0c, 0x4c, 0x35, 0x34, 0x30, 0x1b, 0x32, 0x35, 0x37, 0x8f, 0xe2, 0x83, 0x8a,
-	0x31, 0xcb, 0xe6, 0x16, 0x90, 0x6c, 0xcd, 0x32, 0x92, 0x0d, 0x06, 0x76, 0x83, 0xff, 0x59, 0x3d,
-	0x13, 0xa8, 0x09, 0x8e, 0x7b, 0xe0, 0x9b, 0x36, 0x98, 0x40, 0xf7, 0x3b, 0x4b, 0x13, 0x4e, 0x62,
-	0xf2, 0xab, 0x24, 0x4b, 0x8e, 0xce, 0xc1, 0x2d, 0x05, 0xa0, 0x4a, 0x5d, 0x1d, 0x81, 0x35, 0x1b,
-	0xb2, 0xe5, 0x58, 0x51, 0xd1, 0x31, 0x78, 0xb3, 0x32, 0xcf, 0x27, 0x0b, 0xb2, 0xbc, 0x2f, 0xa6,
-	0xa2, 0xb6, 0xfd, 0x18, 0x1a, 0x28, 0x16, 0x08, 0xee, 0x43, 0x4f, 0xc7, 0x2c, 0x19, 0x2d, 0x96,
-	0x04, 0x47, 0xd0, 0x8d, 0x48, 0x4e, 0xac, 0xe0, 0x54, 0x00, 0x3b, 0x05, 0x4b, 0x6a, 0xe3, 0xab,
-	0x5d, 0x94, 0xaf, 0x0f, 0x70, 0x4d, 0xb8, 0x32, 0xc5, 0x63, 0xf0, 0xc4, 0x4a, 0x6e, 0x36, 0x19,
-	0xd6, 0x60, 0x6d, 0xcf, 0x90, 0x20, 0xee, 0x82, 0x17, 0x95, 0x77, 0x4c, 0x5b, 0x7e, 0x02, 0x5f,
-	0x2e, 0x95, 0x67, 0x08, 0x7b, 0x69, 0x79, 0xc7, 0x76, 0x71, 0x14, 0x44, 0xfc, 0x16, 0x0e, 0xcd,
-	0x2b, 0xd1, 0xfd, 0xf7, 0xa1, 0x93, 0xa5, 0xb5, 0xb0, 0xe9, 0xc6, 0xcd, 0x27, 0xae, 0xe1, 0xc8,
-	0x26, 0xaa, 0xc4, 0x17, 0xb0, 0x5f, 0x90, 0x9a, 0x4f, 0xd6, 0xf4, 0x27, 0xcd, 0xfa, 0x4b, 0x5a,
-	0xa3, 0x2b, 0xfb, 0x7a, 0xd5, 0x94, 0x9c, 0xb6, 0x16, 0x65, 0x79, 0x5b, 0xb2, 0xd1, 0xef, 0x0e,
-	0xf8, 0x97, 0x06, 0x17, 0xdd, 0x40, 0xe7, 0x9a, 0x70, 0x74, 0xdc, 0x6a, 0xb4, 0x3e, 0xef, 0xe0,
-	0x64, 0x33, 0x41, 0x15, 0xff, 0x0d, 0x5c, 0x39, 0x09, 0x08, 0xb7, 0x72, 0xad, 0x69, 0x0c, 0x5e,
-	0x6f, 0xe5, 0xac, 0x2d, 0xe5, 0x10, 0x6c, 0xb0, 0xb4, 0xe6, 0x6c, 0x83, 0xa5, 0x3d, 0x45, 0xe8,
-	0x16, 0xf6, 0x9a, 0x4b, 0x46, 0xed, 0xfd, 0x18, 0xe3, 0x10, 0x9c, 0x6e, 0x61, 0x28, 0xb3, 0x09,
-	0xb8, 0xe2, 0xac, 0xef, 0xd1, 0xd9, 0xc3, 0x17, 0xa1, 0x6c, 0xdf, 0xed, 0xc0, 0x94, 0xf6, 0x1f,
-	0x9c, 0xf1, 0xf8, 0xc7, 0xe7, 0x39, 0xd5, 0x82, 0x4c, 0x3c, 0xcb, 0xef, 0x93, 0x39, 0x29, 0x78,
-	0x58, 0x8d, 0x42, 0xf1, 0xc2, 0x86, 0x2d, 0xaf, 0xfd, 0x85, 0xb9, 0xf8, 0xe9, 0x0a, 0xde, 0xf9,
-	0xbf, 0x00, 0x00, 0x00, 0xff, 0xff, 0xc7, 0xf5, 0xf9, 0x48, 0x18, 0x06, 0x00, 0x00,
+	// 563 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x54, 0x4d, 0x6f, 0xd3, 0x40,
+	0x10, 0x25, 0xa4, 0x0a, 0x65, 0x6c, 0xa7, 0x61, 0x8b, 0x50, 0x30, 0x12, 0x6d, 0x16, 0x09, 0x71,
+	0x21, 0x46, 0xa9, 0x38, 0xf5, 0x00, 0x4a, 0x5d, 0xb5, 0xa8, 0x12, 0x12, 0xae, 0xb8, 0x70, 0x89,
+	0x8c, 0xbd, 0x89, 0x2c, 0xb9, 0xde, 0xc5, 0x59, 0x5b, 0xe9, 0x2f, 0xe2, 0xce, 0x4f, 0xe0, 0x97,
+	0x21, 0xef, 0x47, 0xb2, 0x8b, 0xec, 0xa8, 0x87, 0x44, 0xde, 0xb7, 0xef, 0xbd, 0x99, 0xf1, 0x3c,
+	0x19, 0xde, 0xe6, 0xd9, 0x2a, 0xe6, 0x34, 0x48, 0x68, 0xb1, 0xcc, 0x56, 0x55, 0x19, 0x73, 0x5a,
+	0x5a, 0x87, 0x29, 0x2b, 0x29, 0xa7, 0xe8, 0x58, 0xf2, 0xa6, 0xe6, 0x95, 0xff, 0x5c, 0x89, 0x6b,
+	0xc6, 0x9a, 0x9f, 0xa4, 0xfa, 0x63, 0x85, 0xe6, 0x59, 0x51, 0x6d, 0xe4, 0xbf, 0xba, 0x79, 0xad,
+	0x6e, 0x0a, 0xc2, 0xe3, 0x3c, 0xa7, 0xc9, 0xf6, 0x41, 0xde, 0xe3, 0xbf, 0x3d, 0x18, 0x5c, 0x88,
+	0x02, 0xe8, 0x23, 0x40, 0xcd, 0xd8, 0x42, 0x96, 0x1b, 0xf7, 0x4e, 0x7b, 0xef, 0x9c, 0xd9, 0x8b,
+	0xa9, 0x6a, 0xa2, 0xa9, 0x25, 0x79, 0x61, 0xcc, 0xe3, 0xe8, 0x69, 0xcd, 0x98, 0x92, 0x9d, 0x83,
+	0x2b, 0x0a, 0x6a, 0xe1, 0x63, 0x21, 0x1c, 0x6b, 0xa1, 0x6c, 0xc6, 0x90, 0x3a, 0x02, 0x51, 0xe2,
+	0x10, 0x8e, 0x74, 0x43, 0x5a, 0xdf, 0x17, 0xfa, 0x57, 0x5a, 0xbf, 0xed, 0xd7, 0xb0, 0x18, 0x6a,
+	0x50, 0x62, 0xf8, 0x4f, 0x0f, 0xdc, 0xaf, 0x94, 0x67, 0xcb, 0x2c, 0x89, 0x79, 0x46, 0x0b, 0x74,
+	0x09, 0xa3, 0x66, 0x94, 0xc2, 0xc0, 0xd4, 0x40, 0x63, 0x73, 0x20, 0x53, 0x73, 0xfd, 0x28, 0x3a,
+	0xaa, 0x19, 0xb3, 0x6c, 0x6e, 0x00, 0xc9, 0xd1, 0x2c, 0x23, 0x39, 0xa0, 0x6f, 0x0f, 0xf8, 0x9f,
+	0xd5, 0x33, 0x81, 0x9a, 0xe0, 0x7c, 0x08, 0xae, 0x69, 0x83, 0x09, 0x78, 0xdf, 0x59, 0x1a, 0x73,
+	0x12, 0x91, 0x5f, 0x15, 0x59, 0x73, 0x74, 0x06, 0x83, 0x4a, 0x00, 0xaa, 0xd5, 0xed, 0x2b, 0xb0,
+	0xb2, 0x21, 0x47, 0x8e, 0x14, 0x15, 0x9d, 0x80, 0xb3, 0xac, 0xf2, 0x7c, 0x51, 0x92, 0xf5, 0x7d,
+	0x91, 0x88, 0xde, 0x0e, 0x23, 0x68, 0xa0, 0x48, 0x20, 0x78, 0x04, 0x43, 0x5d, 0x66, 0xcd, 0x68,
+	0xb1, 0x26, 0x38, 0x04, 0x2f, 0x24, 0x39, 0xb1, 0x0a, 0xa7, 0x02, 0x78, 0x50, 0x61, 0x49, 0x6d,
+	0x7c, 0xb5, 0x8b, 0xf2, 0x75, 0x01, 0xae, 0x08, 0x57, 0xa6, 0x78, 0x0e, 0x8e, 0x38, 0xc9, 0xcb,
+	0xa6, 0x86, 0x15, 0xac, 0xfd, 0x35, 0x24, 0x88, 0x3d, 0x70, 0xc2, 0xea, 0x8e, 0x69, 0xcb, 0x4f,
+	0xe0, 0xca, 0xa3, 0xf2, 0x0c, 0xe0, 0x20, 0xad, 0xee, 0xd8, 0x43, 0x1c, 0x05, 0x11, 0x4f, 0xc0,
+	0x13, 0x2b, 0xb9, 0xd7, 0x93, 0x8f, 0xa0, 0x9f, 0xa5, 0x1b, 0x61, 0xe0, 0x45, 0xcd, 0x23, 0x2e,
+	0x61, 0xa8, 0x29, 0xaa, 0xca, 0x4b, 0x38, 0x2c, 0xc8, 0x86, 0x2f, 0x76, 0xc4, 0x27, 0xcd, 0xf9,
+	0x4b, 0xba, 0x41, 0x97, 0xf6, 0x4a, 0x55, 0x32, 0x26, 0xad, 0x8d, 0x98, 0x59, 0x88, 0x2c, 0xd9,
+	0xec, 0x77, 0x1f, 0x8e, 0x2f, 0x0c, 0xee, 0x2d, 0x29, 0xeb, 0x2c, 0x21, 0xe8, 0x1a, 0xfa, 0x57,
+	0x84, 0xa3, 0x93, 0x56, 0xbf, 0xdd, 0xab, 0xf6, 0x4f, 0xbb, 0x09, 0x6a, 0x86, 0x6f, 0x30, 0x90,
+	0x21, 0x40, 0xb8, 0x95, 0x6b, 0x05, 0xd1, 0x7f, 0xb3, 0x97, 0xb3, 0xb3, 0x94, 0xfb, 0xef, 0xb0,
+	0xb4, 0x22, 0xd6, 0x61, 0x69, 0x07, 0x08, 0xdd, 0xc0, 0x41, 0xb3, 0x5f, 0xd4, 0x3e, 0x8f, 0x91,
+	0x04, 0x7f, 0xb2, 0x87, 0xa1, 0xcc, 0x6e, 0x61, 0x20, 0x17, 0xd9, 0xd1, 0x9f, 0x15, 0x84, 0x8e,
+	0xfe, 0xec, 0x24, 0x7c, 0xe8, 0xcd, 0xe7, 0x3f, 0x3e, 0xaf, 0xa8, 0xa6, 0x66, 0xe2, 0x2b, 0xfc,
+	0x3e, 0x5e, 0x91, 0x82, 0x07, 0xf5, 0x2c, 0x10, 0x1f, 0xd4, 0xa0, 0xe5, 0xe3, 0x7e, 0x6e, 0x1e,
+	0x7e, 0x0e, 0x04, 0xef, 0xec, 0x5f, 0x00, 0x00, 0x00, 0xff, 0xff, 0xb0, 0x48, 0x2e, 0xbc, 0x07,
+	0x06, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -615,10 +613,10 @@ var _ grpc.ClientConn
 // is compatible with the grpc package it is being compiled against.
 const _ = grpc.SupportPackageIsVersion4
 
-// ConfiguratorClient is the client API for Configurator service.
+// ConfiguratorServiceClient is the client API for ConfiguratorService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
-type ConfiguratorClient interface {
+type ConfiguratorServiceClient interface {
 	// Get is used for listing desired config.
 	Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (*GetResponse, error)
 	// Update is used for updating desired config.
@@ -628,59 +626,59 @@ type ConfiguratorClient interface {
 	// Dump is used for dumping running config.
 	Dump(ctx context.Context, in *DumpRequest, opts ...grpc.CallOption) (*DumpResponse, error)
 	// Notify is used for subscribing to notifications.
-	Notify(ctx context.Context, in *NotificationRequest, opts ...grpc.CallOption) (Configurator_NotifyClient, error)
+	Notify(ctx context.Context, in *NotifyRequest, opts ...grpc.CallOption) (ConfiguratorService_NotifyClient, error)
 }
 
-type configuratorClient struct {
+type configuratorServiceClient struct {
 	cc *grpc.ClientConn
 }
 
-func NewConfiguratorClient(cc *grpc.ClientConn) ConfiguratorClient {
-	return &configuratorClient{cc}
+func NewConfiguratorServiceClient(cc *grpc.ClientConn) ConfiguratorServiceClient {
+	return &configuratorServiceClient{cc}
 }
 
-func (c *configuratorClient) Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (*GetResponse, error) {
+func (c *configuratorServiceClient) Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (*GetResponse, error) {
 	out := new(GetResponse)
-	err := c.cc.Invoke(ctx, "/ligato.configurator.Configurator/Get", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/ligato.configurator.ConfiguratorService/Get", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *configuratorClient) Update(ctx context.Context, in *UpdateRequest, opts ...grpc.CallOption) (*UpdateResponse, error) {
+func (c *configuratorServiceClient) Update(ctx context.Context, in *UpdateRequest, opts ...grpc.CallOption) (*UpdateResponse, error) {
 	out := new(UpdateResponse)
-	err := c.cc.Invoke(ctx, "/ligato.configurator.Configurator/Update", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/ligato.configurator.ConfiguratorService/Update", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *configuratorClient) Delete(ctx context.Context, in *DeleteRequest, opts ...grpc.CallOption) (*DeleteResponse, error) {
+func (c *configuratorServiceClient) Delete(ctx context.Context, in *DeleteRequest, opts ...grpc.CallOption) (*DeleteResponse, error) {
 	out := new(DeleteResponse)
-	err := c.cc.Invoke(ctx, "/ligato.configurator.Configurator/Delete", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/ligato.configurator.ConfiguratorService/Delete", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *configuratorClient) Dump(ctx context.Context, in *DumpRequest, opts ...grpc.CallOption) (*DumpResponse, error) {
+func (c *configuratorServiceClient) Dump(ctx context.Context, in *DumpRequest, opts ...grpc.CallOption) (*DumpResponse, error) {
 	out := new(DumpResponse)
-	err := c.cc.Invoke(ctx, "/ligato.configurator.Configurator/Dump", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/ligato.configurator.ConfiguratorService/Dump", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *configuratorClient) Notify(ctx context.Context, in *NotificationRequest, opts ...grpc.CallOption) (Configurator_NotifyClient, error) {
-	stream, err := c.cc.NewStream(ctx, &_Configurator_serviceDesc.Streams[0], "/ligato.configurator.Configurator/Notify", opts...)
+func (c *configuratorServiceClient) Notify(ctx context.Context, in *NotifyRequest, opts ...grpc.CallOption) (ConfiguratorService_NotifyClient, error) {
+	stream, err := c.cc.NewStream(ctx, &_ConfiguratorService_serviceDesc.Streams[0], "/ligato.configurator.ConfiguratorService/Notify", opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &configuratorNotifyClient{stream}
+	x := &configuratorServiceNotifyClient{stream}
 	if err := x.ClientStream.SendMsg(in); err != nil {
 		return nil, err
 	}
@@ -690,25 +688,25 @@ func (c *configuratorClient) Notify(ctx context.Context, in *NotificationRequest
 	return x, nil
 }
 
-type Configurator_NotifyClient interface {
-	Recv() (*NotificationResponse, error)
+type ConfiguratorService_NotifyClient interface {
+	Recv() (*NotifyResponse, error)
 	grpc.ClientStream
 }
 
-type configuratorNotifyClient struct {
+type configuratorServiceNotifyClient struct {
 	grpc.ClientStream
 }
 
-func (x *configuratorNotifyClient) Recv() (*NotificationResponse, error) {
-	m := new(NotificationResponse)
+func (x *configuratorServiceNotifyClient) Recv() (*NotifyResponse, error) {
+	m := new(NotifyResponse)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
 	return m, nil
 }
 
-// ConfiguratorServer is the server API for Configurator service.
-type ConfiguratorServer interface {
+// ConfiguratorServiceServer is the server API for ConfiguratorService service.
+type ConfiguratorServiceServer interface {
 	// Get is used for listing desired config.
 	Get(context.Context, *GetRequest) (*GetResponse, error)
 	// Update is used for updating desired config.
@@ -718,151 +716,151 @@ type ConfiguratorServer interface {
 	// Dump is used for dumping running config.
 	Dump(context.Context, *DumpRequest) (*DumpResponse, error)
 	// Notify is used for subscribing to notifications.
-	Notify(*NotificationRequest, Configurator_NotifyServer) error
+	Notify(*NotifyRequest, ConfiguratorService_NotifyServer) error
 }
 
-// UnimplementedConfiguratorServer can be embedded to have forward compatible implementations.
-type UnimplementedConfiguratorServer struct {
+// UnimplementedConfiguratorServiceServer can be embedded to have forward compatible implementations.
+type UnimplementedConfiguratorServiceServer struct {
 }
 
-func (*UnimplementedConfiguratorServer) Get(ctx context.Context, req *GetRequest) (*GetResponse, error) {
+func (*UnimplementedConfiguratorServiceServer) Get(ctx context.Context, req *GetRequest) (*GetResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Get not implemented")
 }
-func (*UnimplementedConfiguratorServer) Update(ctx context.Context, req *UpdateRequest) (*UpdateResponse, error) {
+func (*UnimplementedConfiguratorServiceServer) Update(ctx context.Context, req *UpdateRequest) (*UpdateResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Update not implemented")
 }
-func (*UnimplementedConfiguratorServer) Delete(ctx context.Context, req *DeleteRequest) (*DeleteResponse, error) {
+func (*UnimplementedConfiguratorServiceServer) Delete(ctx context.Context, req *DeleteRequest) (*DeleteResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Delete not implemented")
 }
-func (*UnimplementedConfiguratorServer) Dump(ctx context.Context, req *DumpRequest) (*DumpResponse, error) {
+func (*UnimplementedConfiguratorServiceServer) Dump(ctx context.Context, req *DumpRequest) (*DumpResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Dump not implemented")
 }
-func (*UnimplementedConfiguratorServer) Notify(req *NotificationRequest, srv Configurator_NotifyServer) error {
+func (*UnimplementedConfiguratorServiceServer) Notify(req *NotifyRequest, srv ConfiguratorService_NotifyServer) error {
 	return status.Errorf(codes.Unimplemented, "method Notify not implemented")
 }
 
-func RegisterConfiguratorServer(s *grpc.Server, srv ConfiguratorServer) {
-	s.RegisterService(&_Configurator_serviceDesc, srv)
+func RegisterConfiguratorServiceServer(s *grpc.Server, srv ConfiguratorServiceServer) {
+	s.RegisterService(&_ConfiguratorService_serviceDesc, srv)
 }
 
-func _Configurator_Get_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _ConfiguratorService_Get_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ConfiguratorServer).Get(ctx, in)
+		return srv.(ConfiguratorServiceServer).Get(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/ligato.configurator.Configurator/Get",
+		FullMethod: "/ligato.configurator.ConfiguratorService/Get",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ConfiguratorServer).Get(ctx, req.(*GetRequest))
+		return srv.(ConfiguratorServiceServer).Get(ctx, req.(*GetRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Configurator_Update_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _ConfiguratorService_Update_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(UpdateRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ConfiguratorServer).Update(ctx, in)
+		return srv.(ConfiguratorServiceServer).Update(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/ligato.configurator.Configurator/Update",
+		FullMethod: "/ligato.configurator.ConfiguratorService/Update",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ConfiguratorServer).Update(ctx, req.(*UpdateRequest))
+		return srv.(ConfiguratorServiceServer).Update(ctx, req.(*UpdateRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Configurator_Delete_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _ConfiguratorService_Delete_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(DeleteRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ConfiguratorServer).Delete(ctx, in)
+		return srv.(ConfiguratorServiceServer).Delete(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/ligato.configurator.Configurator/Delete",
+		FullMethod: "/ligato.configurator.ConfiguratorService/Delete",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ConfiguratorServer).Delete(ctx, req.(*DeleteRequest))
+		return srv.(ConfiguratorServiceServer).Delete(ctx, req.(*DeleteRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Configurator_Dump_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _ConfiguratorService_Dump_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(DumpRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ConfiguratorServer).Dump(ctx, in)
+		return srv.(ConfiguratorServiceServer).Dump(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/ligato.configurator.Configurator/Dump",
+		FullMethod: "/ligato.configurator.ConfiguratorService/Dump",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ConfiguratorServer).Dump(ctx, req.(*DumpRequest))
+		return srv.(ConfiguratorServiceServer).Dump(ctx, req.(*DumpRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Configurator_Notify_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(NotificationRequest)
+func _ConfiguratorService_Notify_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(NotifyRequest)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
 	}
-	return srv.(ConfiguratorServer).Notify(m, &configuratorNotifyServer{stream})
+	return srv.(ConfiguratorServiceServer).Notify(m, &configuratorServiceNotifyServer{stream})
 }
 
-type Configurator_NotifyServer interface {
-	Send(*NotificationResponse) error
+type ConfiguratorService_NotifyServer interface {
+	Send(*NotifyResponse) error
 	grpc.ServerStream
 }
 
-type configuratorNotifyServer struct {
+type configuratorServiceNotifyServer struct {
 	grpc.ServerStream
 }
 
-func (x *configuratorNotifyServer) Send(m *NotificationResponse) error {
+func (x *configuratorServiceNotifyServer) Send(m *NotifyResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 
-var _Configurator_serviceDesc = grpc.ServiceDesc{
-	ServiceName: "ligato.configurator.Configurator",
-	HandlerType: (*ConfiguratorServer)(nil),
+var _ConfiguratorService_serviceDesc = grpc.ServiceDesc{
+	ServiceName: "ligato.configurator.ConfiguratorService",
+	HandlerType: (*ConfiguratorServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
 			MethodName: "Get",
-			Handler:    _Configurator_Get_Handler,
+			Handler:    _ConfiguratorService_Get_Handler,
 		},
 		{
 			MethodName: "Update",
-			Handler:    _Configurator_Update_Handler,
+			Handler:    _ConfiguratorService_Update_Handler,
 		},
 		{
 			MethodName: "Delete",
-			Handler:    _Configurator_Delete_Handler,
+			Handler:    _ConfiguratorService_Delete_Handler,
 		},
 		{
 			MethodName: "Dump",
-			Handler:    _Configurator_Dump_Handler,
+			Handler:    _ConfiguratorService_Dump_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{
 		{
 			StreamName:    "Notify",
-			Handler:       _Configurator_Notify_Handler,
+			Handler:       _ConfiguratorService_Notify_Handler,
 			ServerStreams: true,
 		},
 	},

@@ -31,27 +31,6 @@ message ItemStatus {
     string message = 2;
 }
 
-//------------------------------------------------------------------------------
-
-// Manager defines the RPC methods for managing config
-// using generic model, allowing extending with custom models.
-service Manager {
-    // SetConfig is used to update desired configuration.
-    rpc SetConfig (SetConfigRequest) returns (SetConfigResponse);
-
-    // GetConfig is used to read the desired configuration.
-    rpc GetConfig (GetConfigRequest) returns (GetConfigResponse);
-
-    // DumpState is used to retrieve the actual running state.
-    rpc DumpState (DumpStateRequest) returns (DumpStateResponse);
-
-    // Subscribe is used for subscribing to events.
-    // Notifications are returned by streaming updates.
-    rpc Subscribe (SubscribeRequest) returns (stream SubscribeResponse);
-}
-
-//------------------------------------------------------------------------------
-
 message SetConfigRequest {
     repeated UpdateItem updates = 1;
     // The overwrite_all can be set to true to overwrite all other configuration
@@ -83,7 +62,6 @@ message UpdateResult {
     ItemStatus status = 3;
 }
 
-//------------------------------------------------------------------------------
 
 message GetConfigRequest {
     repeated Item.ID ids = 1;
@@ -98,7 +76,6 @@ message ConfigItem {
     map<string, string> labels = 3;
 }
 
-//------------------------------------------------------------------------------
 
 message DumpStateRequest {
     repeated Item.ID ids = 1;
@@ -112,7 +89,6 @@ message StateItem {
     map<string, string> metadata = 2;
 }
 
-//------------------------------------------------------------------------------
 
 message SubscribeRequest {
     repeated Subscription subscriptions = 1;
@@ -128,4 +104,22 @@ message Subscription {
 message Notification {
     Item item = 1;
     ItemStatus status = 2;
+}
+
+
+// ManagerService defines the RPC methods for managing config
+// using generic model, allowing extending with custom models.
+service ManagerService {
+    // SetConfig is used to update desired configuration.
+    rpc SetConfig (SetConfigRequest) returns (SetConfigResponse);
+
+    // GetConfig is used to read the desired configuration.
+    rpc GetConfig (GetConfigRequest) returns (GetConfigResponse);
+
+    // DumpState is used to retrieve the actual running state.
+    rpc DumpState (DumpStateRequest) returns (DumpStateResponse);
+
+    // Subscribe is used for subscribing to events.
+    // Notifications are returned by streaming updates.
+    rpc Subscribe (SubscribeRequest) returns (stream SubscribeResponse);
 }

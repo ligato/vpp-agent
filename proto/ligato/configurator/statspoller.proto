@@ -12,12 +12,6 @@ message Stats {
     }
 }
 
-// StatsPoller provides operations for retrieving statistics.
-service StatsPoller {
-    // PollStats is used for polling metrics using poll period.
-    rpc PollStats(PollStatsRequest) returns (stream PollStatsResponse) {};
-}
-
 message PollStatsRequest {
     // PeriodSec defines polling period (in seconds)
     uint32 period_sec = 1;
@@ -27,4 +21,10 @@ message PollStatsRequest {
 message PollStatsResponse {
     uint32 poll_seq = 1;
     Stats stats = 2;
+}
+
+// StatsPollerService provides operations for collecting statistics.
+service StatsPollerService {
+    // PollStats is used for polling metrics using poll period.
+    rpc PollStats(PollStatsRequest) returns (stream PollStatsResponse) {};
 }

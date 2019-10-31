@@ -120,7 +120,7 @@ func (p *GRPCStressPlugin) setupInitial() {
 
 	reqTimeout = time.Second * time.Duration(*timeout)
 
-	client := configurator.NewConfiguratorClient(conn)
+	client := configurator.NewConfiguratorServiceClient(conn)
 
 	// create a conn/client to create the red/black interfaces
 	// that each tunnel will reference
@@ -130,7 +130,7 @@ func (p *GRPCStressPlugin) setupInitial() {
 // create the initial red and black memif's that kiknos uses ...
 // ipsec wil ref the red ONLY i guess we dont need the black yet
 // but maybe there will be a reason
-func (p *GRPCStressPlugin) runGRPCCreateRedBlackMemifs(client configurator.ConfiguratorClient) {
+func (p *GRPCStressPlugin) runGRPCCreateRedBlackMemifs(client configurator.ConfiguratorServiceClient) {
 	p.Log.Infof("Configuring memif interfaces..")
 
 	memIFRed := &interfaces.Interface{
@@ -209,7 +209,7 @@ func (p *GRPCStressPlugin) runAllClients() {
 			log.Fatal(err)
 		}
 		p.conns = append(p.conns, conn)
-		client := configurator.NewConfiguratorClient(p.conns[i])
+		client := configurator.NewConfiguratorServiceClient(p.conns[i])
 
 		go p.runGRPCStressCreate(i, client, *numTunnels)
 	}
@@ -229,7 +229,7 @@ func (p *GRPCStressPlugin) runAllClients() {
 }
 
 // runGRPCStressCreate creates 1 tunnel and 1 route ... emulating what strongswan does on a per remote warrior
-func (p *GRPCStressPlugin) runGRPCStressCreate(id int, client configurator.ConfiguratorClient, numTunnels int) {
+func (p *GRPCStressPlugin) runGRPCStressCreate(id int, client configurator.ConfiguratorServiceClient, numTunnels int) {
 	defer p.wg.Done()
 
 	p.Log.Debugf("Creating %d tunnels/routes ... for client %d, ", numTunnels, id)

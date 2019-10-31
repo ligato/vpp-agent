@@ -83,7 +83,7 @@ func (p *ExamplePlugin) Init() (err error) {
 		return err
 	}
 
-	client := configurator.NewConfiguratorClient(p.conn)
+	client := configurator.NewConfiguratorServiceClient(p.conn)
 
 	// Apply initial VPP configuration.
 	go p.demonstrateClient(client)
@@ -118,7 +118,7 @@ func (p *ExamplePlugin) Close() error {
 }
 
 // demonstrateClient propagates snapshot of the whole initial configuration to VPP plugins.
-func (p *ExamplePlugin) demonstrateClient(client configurator.ConfiguratorClient) {
+func (p *ExamplePlugin) demonstrateClient(client configurator.ConfiguratorServiceClient) {
 	time.Sleep(time.Second * 2)
 	p.Log.Infof("Requesting resync..")
 

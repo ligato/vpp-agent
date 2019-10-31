@@ -19,4 +19,5 @@ package vppagent
 import (
 	_ "git.fd.io/govpp.git/cmd/binapi-generator"
 	_ "github.com/golang/protobuf/protoc-gen-go"
+	_ "github.com/mattn/goveralls"
 )
