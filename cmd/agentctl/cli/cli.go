@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"io"
 	"runtime"
+	"strings"
 
 	"github.com/docker/cli/cli/streams"
 	"github.com/docker/docker/pkg/term"
@@ -175,7 +176,8 @@ func (cli *AgentCli) Initialize(opts *ClientOptions, ops ...InitializeOpt) error
 	ReadConfig() // TODO: maybe move it elsewhere
 
 	if cli.client == nil {
-		cli.client, err = newAPIClient(opts)
+		clientOptions := buildClientOptions()
+		cli.client, err = client.NewClientWithOpts(clientOptions...)
 		if err != nil {
 			return err
 		}
@@ -187,14 +189,21 @@ func (cli *AgentCli) Initialize(opts *ClientOptions, ops ...InitializeOpt) error
 	return nil
 }
 
-func newAPIClient(opts *ClientOptions) (client.APIClient, error) {
+func buildClientOptions() []client.Opt {
 	clientOpts := []client.Opt{
 		client.WithHost(viper.GetString("host")),
 		client.WithServiceLabel(viper.GetString("service-label")),
 		client.WithGrpcPort(viper.GetInt("grpc-port")),
 		client.WithHTTPPort(viper.GetInt("http-port")),
-		client.WithEtcdEndpoints(opts.Endpoints),
 	}
+
+	// Handle properly case when `etcd-endpoints` returned from environment variable
+	etcdEndp := viper.GetStringSlice("etcd-endpoints")
+	if len(etcdEndp) == 1 && strings.Contains(etcdEndp[0], ",") {
+		etcdEndp = strings.Split(etcdEndp[0], ",")
+	}
+	clientOpts = append(clientOpts, client.WithEtcdEndpoints(etcdEndp))
+
 	var customHeaders = map[string]string{
 		"User-Agent": UserAgent(),
 	}
@@ -229,7 +238,7 @@ func newAPIClient(opts *ClientOptions) (client.APIClient, error) {
 		}
 	}
 
-	return client.NewClientWithOpts(clientOpts...)
+	return clientOpts
 }
 
 func (cli *AgentCli) initializeFromClient() {

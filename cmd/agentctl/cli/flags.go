@@ -3,7 +3,6 @@ package cli
 import (
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/pflag"
@@ -18,22 +17,10 @@ const (
 	defaultEtcdEndpoint = "127.0.0.1:2379"
 )
 
-var (
-	etcdEndpoints = strings.Split(os.Getenv("ETCD_ENDPOINTS"), ",")
-)
-
-func init() {
-	if len(etcdEndpoints) == 0 || etcdEndpoints[0] == "" {
-		etcdEndpoints = []string{defaultEtcdEndpoint}
-	}
-}
-
 // ClientOptions define options for the client.
 type ClientOptions struct {
 	Debug    bool
 	LogLevel string
-
-	Endpoints []string
 }
 
 // NewClientOptions returns a new ClientOptions
@@ -59,7 +46,9 @@ func (opts *ClientOptions) InstallFlags(flags *pflag.FlagSet) {
 	flags.Int("grpc-port", client.DefaultPortGRPC, "gRPC server port")
 	viper.BindPFlag("grpc-port", flags.Lookup("grpc-port"))
 
-	flags.StringSliceVarP(&opts.Endpoints, "etcd-endpoints", "e", etcdEndpoints, "Etcd endpoints to connect to, default from ETCD_ENDPOINTS env var")
+	flags.StringSliceP("etcd-endpoints", "e", []string{defaultEtcdEndpoint}, "Etcd endpoints to connect to, default from ETCD_ENDPOINTS env var")
+	viper.BindPFlag("etcd-endpoints", flags.Lookup("etcd-endpoints"))
+	viper.BindEnv("etcd-endpoints", "ETCD_ENDPOINTS")
 
 	flags.Bool("tls", false, "Use TLS for connections")
 	viper.BindPFlag("use-tls", flags.Lookup("tls"))
