@@ -280,7 +280,7 @@ lint-proto: ## Lint Protobuf files
 
 check-proto: lint-proto ## Check proto files for breaking changes
 	@echo "# checking proto files"
-	@$(MAKE) --no-print-directory buf-breaking-local
+	@$(MAKE) --no-print-directory buf-breaking
 
 # -------------------------------
 #  Images

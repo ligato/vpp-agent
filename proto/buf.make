@@ -121,7 +121,7 @@ buf-breaking-local: $(BUF)
 
 .PHONY: buf-breaking
 buf-breaking: $(BUF)
-	buf check breaking --timeout 60s --against-input "$(REMOTE_GIT)#branch=dev"
+	-buf check breaking --timeout 60s --against-input "$(REMOTE_GIT)#branch=dev"
 
 .PHONY: protocgengoclean
 protocgengoclean:
