@@ -15,20 +15,16 @@ ARG VPP_BINAPI
 ARG SKIP_CHECK
 
 COPY go.mod go.sum ./
-COPY plugins/vpp/binapi plugins/vpp/binapi
-COPY scripts/genbinapi.sh scripts/genbinapi.sh
 COPY Makefile vpp.env ./
+RUN make get-binapi-generators
 
-ENV GOPATH /go
-RUN pwd && \
-	go mod tidy
+COPY scripts/genbinapi.sh ./scripts/genbinapi.sh
+COPY plugins/vpp/binapi ./plugins/vpp/binapi
 
 COPY --from=vppimg /usr/share/vpp /usr/share/vpp
 COPY --from=vppimg /vpp/version /vpp-version
 
-ENV GOPATH /go
-RUN pwd && \
-	cp -r plugins/vpp/binapi /tmp/orig_binapi && \
+RUN cp -r plugins/vpp/binapi /tmp/orig_binapi && \
 	make generate-binapi && \
  	diff -r plugins/vpp/binapi /tmp/orig_binapi || \
  	{ \

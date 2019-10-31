@@ -66,7 +66,7 @@ help:
 
 .DEFAULT = help
 
-include proto/buf.make
+-include proto/buf.make
 
 build: cmd examples
 
