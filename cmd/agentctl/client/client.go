@@ -88,11 +88,6 @@ func NewClient(host string) (*Client, error) {
 	return NewClientWithOpts(WithHost(host))
 }
 
-// NewClientFromEnv returns client with options from environment.
-func NewClientFromEnv() (*Client, error) {
-	return NewClientWithOpts(FromEnv)
-}
-
 // NewClientWithOpts returns client with ops applied.
 func NewClientWithOpts(ops ...Opt) (*Client, error) {
 	c := &Client{

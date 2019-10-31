@@ -195,6 +195,7 @@ func buildClientOptions() []client.Opt {
 		client.WithServiceLabel(viper.GetString("service-label")),
 		client.WithGrpcPort(viper.GetInt("grpc-port")),
 		client.WithHTTPPort(viper.GetInt("http-port")),
+		client.WithVersion(viper.GetString("LIGATO_API_VERSION")),
 	}
 
 	// Handle properly case when `etcd-endpoints` returned from environment variable

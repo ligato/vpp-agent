@@ -3,7 +3,6 @@ package client
 import (
 	"crypto/tls"
 	"net/http"
-	"os"
 	"time"
 
 	"google.golang.org/grpc"
@@ -12,25 +11,6 @@ import (
 )
 
 type Opt func(*Client) error
-
-// FromEnv configures the client with values from environment variables.
-//
-// Supported environment variables:
-// - AGENT_HOST to set the url to the agent server.
-// - LIGATO_API_VERSION to set the url to the agent server.
-func FromEnv(c *Client) error {
-	if host := os.Getenv("AGENT_HOST"); host != "" {
-		if err := WithHost(host)(c); err != nil {
-			return err
-		}
-	}
-	if version := os.Getenv("LIGATO_API_VERSION"); version != "" {
-		if err := WithVersion(version)(c); err != nil {
-			return err
-		}
-	}
-	return nil
-}
 
 // WithHost overrides the client host with the specified one.
 func WithHost(host string) Opt {
