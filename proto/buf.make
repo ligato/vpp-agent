@@ -10,9 +10,6 @@ endif
 
 REMOTE_GIT := https://github.com/ligato/vpp-agent.git
 
-PROTO_PATH := proto
-PROTOC_GEN_GO_OUT := proto
-
 # https://github.com/bufbuild/buf/releases
 BUF_VERSION := 0.1.0
 # https://github.com/golang/protobuf/releases 20190709
@@ -25,6 +22,9 @@ GO_BINS := $(GO_BINS) \
 	protoc-gen-buf-check-breaking \
 	protoc-gen-buf-check-lint
 
+PROTO_PATH := proto
+PROTOC_GEN_GO_OUT := proto
+
 PROTOC_GEN_GO_PARAMETER ?= plugins=grpc,paths=source_relative
 
 ifeq ($(UNAME_OS),Darwin)
@@ -35,7 +35,14 @@ PROTOC_OS = linux
 endif
 PROTOC_ARCH := $(UNAME_ARCH)
 
-.DEFAULT = buf-image
+IMAGE_DIR=$(BUILD_DIR)/image
+
+.PHONY: buf-image
+buf-image: $(BUF)
+	@echo "# Building buf image"
+	mkdir -p $(IMAGE_DIR)/$(VERSION)
+	buf image build -o $(IMAGE_DIR)/$(VERSION)/image.bin
+	buf image build -o $(IMAGE_DIR)/$(VERSION)/image.json
 
 # BUF points to the marker file for the installed version.
 #
@@ -76,12 +83,6 @@ $(PROTOC_GEN_GO):
 	@rm -rf $(dir $(PROTOC_GEN_GO))
 	@mkdir -p $(dir $(PROTOC_GEN_GO))
 	@touch $(PROTOC_GEN_GO)
-
-.PHONY: buf-image
-buf-image: $(BUF)
-	@echo "# Building buf image"
-	buf image build -o image.bin.gz
-	buf image build -o image.json
 
 .PHONY: buf-ls-packages
 buf-ls-packages:

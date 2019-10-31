@@ -30,5 +30,6 @@ for dir in $protodirs; do
 	protofiles=$(find "${dir}" -maxdepth 1 -name '*.proto')
 	echo "$protofiles"
 
-  	protoc "--proto_path=${PROTO_PATH}" "--go_out=${PROTOC_GEN_GO_ARGS}" $protofiles
+  	protoc --proto_path="${PROTO_PATH}" \
+  		--go_out="${PROTOC_GEN_GO_ARGS}" $protofiles
 done

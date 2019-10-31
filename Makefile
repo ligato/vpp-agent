@@ -17,9 +17,12 @@ CACHE_BIN := $(CACHE)/bin
 CACHE_INCLUDE := $(CACHE)/include
 CACHE_VERSIONS := $(CACHE)/versions
 
+ifndef BUILD_DIR
+BUILD_DIR := .build
+endif
+
 export PATH := $(abspath $(CACHE_BIN)):$(PATH)
 
-include proto/buf.make
 
 CNINFRA := github.com/ligato/cn-infra/agent
 LDFLAGS = \
@@ -60,6 +63,10 @@ COVER_DIR ?= /tmp
 help:
 	@echo "List of make targets:"
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sed 's/^[^:]*://g' | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
+
+.DEFAULT = help
+
+include proto/buf.make
 
 build: cmd examples
 
@@ -213,6 +220,10 @@ get-bindata:
 bindata: get-bindata
 	@echo "# generating bindata"
 	go generate -x -run=go-bindata-assetfs ./...
+
+proto-schema: ## Generate Protobuf schema image
+	@echo "# generating proto schema"
+	@$(MAKE) --no-print-directory buf-image
 
 # -------------------------------
 #  Dependencies
