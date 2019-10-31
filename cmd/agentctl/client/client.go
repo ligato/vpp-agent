@@ -123,7 +123,7 @@ func (c *Client) AgentHost() string {
 	return c.host
 }
 
-func (c *Client) ClientVersion() string {
+func (c *Client) Version() string {
 	return c.version
 }
 

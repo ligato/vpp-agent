@@ -183,7 +183,7 @@ func (cli *AgentCli) Initialize(opts *ClientOptions, ops ...InitializeOpt) error
 		}
 	}
 	cli.clientInfo = ClientInfo{
-		DefaultVersion: cli.client.ClientVersion(),
+		DefaultVersion: cli.client.Version(),
 	}
 	cli.initializeFromClient()
 	return nil
