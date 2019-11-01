@@ -125,19 +125,6 @@ func setupE2E(t *testing.T) *testCtx {
 	}
 	RegisterTestingT(t)
 
-	SetDefaultEventuallyPollingInterval(checkPollingInterval)
-	SetDefaultEventuallyTimeout(checkTimeout)
-
-	// connect to the docker daemon
-	dockerClient, err := docker.NewClientFromEnv()
-	if err != nil {
-		t.Fatalf("failed to get docker client instance from the environment variables: %v", err)
-	}
-	t.Logf("Using docker client endpoint: %+v", dockerClient.Endpoint())
-
-	// make sure there are no microservices left from the previous run
-	resetMicroservices(t, dockerClient)
-
 	// check if VPP process is not running already
 	assertProcessNotRunning(t, "vpp", "vpp_main", *vppPath)
 
@@ -157,6 +144,19 @@ func setupE2E(t *testing.T) *testCtx {
 		vppArgs = []string{vppConf}
 	}
 	vppCmd := startProcess(t, "VPP", nil, os.Stdout, os.Stderr, *vppPath, vppArgs...)
+
+	SetDefaultEventuallyPollingInterval(checkPollingInterval)
+	SetDefaultEventuallyTimeout(checkTimeout)
+
+	// connect to the docker daemon
+	dockerClient, err := docker.NewClientFromEnv()
+	if err != nil {
+		t.Fatalf("failed to get docker client instance from the environment variables: %v", err)
+	}
+	t.Logf("Using docker client endpoint: %+v", dockerClient.Endpoint())
+
+	// make sure there are no microservices left from the previous run
+	resetMicroservices(t, dockerClient)
 
 	// start the agent
 	assertProcessNotRunning(t, "vpp_agent")
