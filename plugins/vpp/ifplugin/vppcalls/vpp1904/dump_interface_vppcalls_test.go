@@ -437,8 +437,6 @@ func TestDumpInterfacesRxPlacement(t *testing.T) {
 	Expect(rxPlacement[2].MainThread).To(BeFalse())
 	Expect(rxPlacement[2].Worker).To(BeEquivalentTo(1))
 }
-<<<<<<< HEAD
-=======
 
 // Test dump of interfaces with gtpu type
 func TestDumpInterfacesGtpu(t *testing.T) {
@@ -508,4 +506,3 @@ func TestDumpInterfacesGtpu(t *testing.T) {
 	Expect(intface.GetGtpu().EncapVrfId).To(Equal(uint32(16)))
 	Expect(intface.GetGtpu().Teid).To(Equal(uint32(100)))
 }
->>>>>>> 7367683f9... gtpu: added test cases for dump interface function

@@ -18,8 +18,8 @@ import (
 	"errors"
 	"net"
 
-	ifs "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	vpp_gtpu "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/gtpu"
+	vpp_gtpu "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904/gtpu"
+	ifs "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
 )
 
 func (h *InterfaceVppHandler) gtpuAddDelTunnel(isAdd uint8, gtpuLink *ifs.GtpuLink, multicastIf uint32) (uint32, error) {

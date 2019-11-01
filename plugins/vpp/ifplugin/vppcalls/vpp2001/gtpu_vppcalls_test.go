@@ -12,16 +12,16 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 
-package vpp2001_379_test
+package vpp2001_test
 
 import (
 	"net"
 	"testing"
 
-	ifs "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	vpp_gtpu "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001_379/gtpu"
-	vpp_ifs "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001_379/interfaces"
 	. "github.com/onsi/gomega"
+	vpp_gtpu "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/gtpu"
+	vpp_ifs "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/interfaces"
+	ifs "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
 )
 
 func TestAddGtpuTunnel(t *testing.T) {
