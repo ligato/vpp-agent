@@ -239,16 +239,25 @@ func (ctx *testCtx) agentInSync() bool {
 	return true
 }
 
+// execCmd executes command and returns stdout, stderr as strings and error.
+func (ctx *testCtx) execCmd(cmd string, args ...string) (string, string, error) {
+	ctx.t.Logf("exec: %s %s", cmd, strings.Join(args, " "))
+	var stdout, stderr bytes.Buffer
+	c := exec.Command(cmd, args...)
+	c.Stdout = &stdout
+	c.Stderr = &stderr
+	err := c.Run()
+	return stdout.String(), stderr.String(), err
+}
+
 // execVppctl returns output from vppctl for given action and arguments.
 func (ctx *testCtx) execVppctl(action string, args ...string) (string, error) {
-	var stdout bytes.Buffer
 	command := append([]string{action}, args...)
-	cmd := exec.Command("vppctl", command...)
-	cmd.Stdout = &stdout
-	if err := cmd.Run(); err != nil {
+	stdout, _, err := ctx.execCmd("vppctl", command...)
+	if err != nil {
 		return "", fmt.Errorf("could not execute `vppctl %s`: %v", strings.Join(command, " "), err)
 	}
-	return stdout.String(), nil
+	return stdout, nil
 }
 
 func (ctx *testCtx) startMicroservice(msName string) (ms *microservice) {

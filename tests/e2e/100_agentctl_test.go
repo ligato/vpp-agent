@@ -26,7 +26,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func TestAgentCtl(t *testing.T) {
+func TestAgentCtlCommands(t *testing.T) {
 	ctx := setupE2E(t)
 	defer ctx.teardownE2E()
 
@@ -302,4 +302,55 @@ func createFileWithContent(path, content string) error {
 	w.Flush()
 
 	return nil
+}
+
+func TestAgentCtlSecureGrpc(t *testing.T) {
+	// WARNING: Do not use grpc connection created in `setupE2E` in
+	// this test (though I don't know why you would but anyway).
+	// By default `grpc.Dail` is non-blocking and connecting happens
+	// in the background, so `setupE2E` function does not know about
+	// any errors. With securing grpc on the agent (by replacing
+	// grpc.conf with grpc-secure.conf) that client won't be able
+	// to establish connection because it's not configured for this
+	// secure case.
+
+	t.Log("Replacing `GRPC_CONFIG` value with /etc/grpc-secure.conf")
+	defer func(oldVal string) {
+		t.Logf("Setting `GRPC_CONFIG` back to %q", oldVal)
+		os.Setenv("GRPC_CONFIG", oldVal)
+	}(os.Getenv("GRPC_CONFIG"))
+	os.Setenv("GRPC_CONFIG", "/etc/grpc-secure.conf")
+
+	ctx := setupE2E(t)
+	defer ctx.teardownE2E()
+
+	t.Log("Try without any TLS")
+	stdout, stderr, err := ctx.execCmd(
+		"/agentctl", "--debug", "dump", "vpp.interfaces",
+	)
+	Expect(err).To(Not(BeNil()), "Should fail\n")
+	Expect(strings.Contains(stderr, "rpc error")).To(BeTrue(),
+		"Want in stderr: \n\"rpc error\"\nGot stderr: \n%s\n", stderr,
+	)
+	t.Log("OK")
+
+	t.Log("Try with TLS enabled via flag --tls, but without cert and key (note: server configured to check those files)")
+	stdout, stderr, err = ctx.execCmd(
+		"/agentctl", "--debug", "--tls", "dump", "vpp.interfaces",
+	)
+	Expect(err).To(Not(BeNil()), "Should fail\n")
+	Expect(strings.Contains(stderr, "rpc error")).To(BeTrue(),
+		"Want in stderr: \n\"rpc error\"\nGot stderr: \n%s\n", stderr,
+	)
+	t.Log("OK")
+
+	t.Log("Try with fully configured TLS via config file")
+	stdout, stderr, err = ctx.execCmd(
+		"/agentctl", "--debug", "--config-dir=/etc/.agentctl", "dump", "vpp.interfaces",
+	)
+	Expect(err).To(BeNil(),
+		"Should not fail. Got err: %v\nStderr:\n%s\n", err, stderr,
+	)
+	Expect(len(stdout)).To(Not(BeZero()))
+	t.Log("OK")
 }
