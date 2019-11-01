@@ -16,9 +16,7 @@ package e2e
 
 import (
 	"bufio"
-	"bytes"
 	"os"
-	"os/exec"
 	"regexp"
 	"strings"
 	"testing"
@@ -30,9 +28,8 @@ func TestAgentCtlCommands(t *testing.T) {
 	ctx := setupE2E(t)
 	defer ctx.teardownE2E()
 
-	var cmd *exec.Cmd
 	var err error
-	var stdout, stderr bytes.Buffer
+	var stdout, stderr string
 	var matched bool
 
 	// file created below is required to test `import` action
@@ -226,15 +223,7 @@ func TestAgentCtlCommands(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			// Reset both buffers to be empty before test
-			stdout.Reset()
-			stderr.Reset()
-
-			// Run command
-			cmd = exec.Command("/agentctl", strings.Split(test.cmd, " ")...)
-			cmd.Stdout = &stdout
-			cmd.Stderr = &stderr
-			err = cmd.Run()
+			stdout, stderr, err = ctx.execCmd("/agentctl", strings.Split(test.cmd, " ")...)
 
 			if test.expectErr {
 				Expect(err).To(Not(BeNil()),
@@ -244,45 +233,45 @@ func TestAgentCtlCommands(t *testing.T) {
 			} else {
 				Expect(err).To(BeNil(),
 					"Command `%s` should not fail. Got err: %v\nStderr:\n%s\n",
-					test.cmd, err, stderr.String(),
+					test.cmd, err, stderr,
 				)
 			}
 
 			// Check STDOUT:
 			if test.expectNotEmptyStdout {
-				Expect(stdout.Len()).To(Not(BeZero()),
+				Expect(len(stdout)).To(Not(BeZero()),
 					"Stdout should not be empty\n",
 				)
 			}
 
 			if test.expectStdout != "" {
-				Expect(stdout.String()).To(Equal(test.expectStdout),
+				Expect(stdout).To(Equal(test.expectStdout),
 					"Want stdout: \n%s\nGot stdout: \n%s\n",
-					test.expectStdout, stdout.String(),
+					test.expectStdout, stdout,
 				)
 			}
 
 			if test.expectInStdout != "" {
-				Expect(strings.Contains(stdout.String(), test.expectInStdout)).To(BeTrue(),
+				Expect(strings.Contains(stdout, test.expectInStdout)).To(BeTrue(),
 					"Want in stdout: \n%s\nGot stdout: \n%s\n",
-					test.expectInStdout, stdout.String(),
+					test.expectInStdout, stdout,
 				)
 			}
 
 			if test.expectReStdout != "" {
-				matched, err = regexp.MatchString(test.expectReStdout, stdout.String())
+				matched, err = regexp.MatchString(test.expectReStdout, stdout)
 				Expect(err).To(BeNil())
 				Expect(matched).To(BeTrue(),
 					"Want stdout to contain any match of the regular expression: \n`%s`\nGot stdout: \n%s\n",
-					test.expectReStdout, stdout.String(),
+					test.expectReStdout, stdout,
 				)
 			}
 
 			// Check STDERR:
 			if test.expectInStderr != "" {
-				Expect(strings.Contains(stderr.String(), test.expectInStderr)).To(BeTrue(),
+				Expect(strings.Contains(stderr, test.expectInStderr)).To(BeTrue(),
 					"Want in stderr: \n%s\nGot stderr: \n%s\n",
-					test.expectInStderr, stderr.String(),
+					test.expectInStderr, stderr,
 				)
 			}
 		})
