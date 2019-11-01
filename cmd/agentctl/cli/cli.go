@@ -16,6 +16,7 @@ package cli
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"io"
 	"runtime"
@@ -221,6 +222,11 @@ func buildClientOptions() []client.Opt {
 
 	var customHeaders = map[string]string{
 		"User-Agent": UserAgent(),
+	}
+	basicAuth := viper.GetString("basic-auth")
+	if basicAuth != "" {
+		auth := base64.StdEncoding.EncodeToString([]byte(basicAuth))
+		customHeaders["Authorization"] = "Basic " + auth
 	}
 	clientOpts = append(clientOpts, client.WithHTTPHeaders(customHeaders))
 

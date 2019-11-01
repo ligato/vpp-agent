@@ -203,18 +203,20 @@ func (c *Client) checkResponseErr(serverResp serverResponse) error {
 		ct = serverResp.header.Get("Content-Type")
 	}
 
-	var errorMessage string
+	var errorMsg string
 	if ct == "application/json" {
 		var errorResponse types.ErrorResponse
 		if err := json.Unmarshal(body, &errorResponse); err != nil {
 			return errors.Wrap(err, "Error reading JSON")
 		}
-		errorMessage = strings.TrimSpace(errorResponse.Message)
+		errorMsg = errorResponse.Message
 	} else {
-		errorMessage = strings.TrimSpace(string(body))
+		errorMsg = string(body)
 	}
 
-	return errors.Wrap(errors.New(errorMessage), "Error response from daemon")
+	errorMsg = fmt.Sprintf("[%d] %s", serverResp.statusCode, strings.TrimSpace(errorMsg))
+
+	return errors.Wrap(errors.New(errorMsg), "Error response from daemon")
 }
 
 func (c *Client) addHeaders(req *http.Request, headers headers) *http.Request {
