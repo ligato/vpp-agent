@@ -35,7 +35,7 @@ import (
 // Cli represents the agent command line client.
 type Cli interface {
 	Client() client.APIClient
-	KVProtoBroker() (keyval.ProtoBroker, error)
+	KVProtoBroker() (client.KVDBAPIClient, keyval.ProtoBroker, error)
 
 	Out() *streams.Out
 	Err() io.Writer
@@ -123,12 +123,12 @@ func (cli *AgentCli) DefaultVersion() string {
 	return cli.clientInfo.DefaultVersion
 }
 
-func (cli *AgentCli) KVProtoBroker() (keyval.ProtoBroker, error) {
+func (cli *AgentCli) KVProtoBroker() (client.KVDBAPIClient, keyval.ProtoBroker, error) {
 	kvdb, err := cli.Client().KVDBClient()
 	if err != nil {
-		return nil, fmt.Errorf("connecting to KVBDB failed: %v", err)
+		return nil, nil, fmt.Errorf("connecting to KVBDB failed: %v", err)
 	}
-	return jsonProtoBroker(kvdb), nil
+	return kvdb, jsonProtoBroker(kvdb), nil
 }
 
 func jsonProtoBroker(broker keyval.CoreBrokerWatcher) keyval.ProtoBroker {
