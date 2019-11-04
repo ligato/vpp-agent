@@ -222,6 +222,59 @@ func (ctx *testCtx) teardownE2E() {
 	stopProcess(ctx.t, ctx.VPP, "VPP")
 }
 
+func (ctx *testCtx) setupETCD() func() {
+	err := ctx.dockerClient.PullImage(docker.PullImageOptions{
+		Repository: "gcr.io/etcd-development/etcd",
+		Tag:        "latest",
+	}, docker.AuthConfiguration{})
+	if err != nil {
+		ctx.t.Fatalf("failed to pull ETCD image: %v", err)
+	}
+
+	container, err := ctx.dockerClient.CreateContainer(docker.CreateContainerOptions{
+		Name: "e2e-test-etcd",
+		Config: &docker.Config{
+			Env:   []string{"ETCDCTL_API=3"},
+			Image: "gcr.io/etcd-development/etcd",
+			Cmd: []string{
+				"/usr/local/bin/etcd",
+				"--client-cert-auth",
+				"--trusted-ca-file=/etc/certs/ca.pem",
+				"--cert-file", "/etc/certs/cert1.pem",
+				"--key-file", "/etc/certs/cert1-key.pem",
+				"--advertise-client-urls", "https://127.0.0.1:2379",
+				"--listen-client-urls", "https://127.0.0.1:2379",
+			},
+		},
+		HostConfig: &docker.HostConfig{
+			NetworkMode: "container:vpp-agent-e2e-tests",
+			Binds:       []string{os.Getenv("CERTS_PATH") + ":/etc/certs"},
+		},
+	})
+	if err != nil {
+		ctx.t.Fatalf("failed to create ETCD container: %v", err)
+	}
+	err = ctx.dockerClient.StartContainer(container.ID, nil)
+	if err != nil {
+		ctx.t.Fatalf("failed to start ETCD container: %v", err)
+	}
+	return ctx.teardownETCD(container.ID)
+}
+
+func (ctx *testCtx) teardownETCD(id string) func() {
+	return func() {
+		err := ctx.dockerClient.RemoveContainer(docker.RemoveContainerOptions{
+			ID:    id,
+			Force: true,
+		})
+		if err != nil {
+			ctx.t.Fatalf("failed to remove ETCD container: %v", err)
+		} else {
+			ctx.t.Logf("removed ETCD container")
+		}
+	}
+}
+
 // syncAgent runs downstream resync and returns the list of executed operations.
 func (ctx *testCtx) syncAgent() (executed kvs.RecordedTxnOps) {
 	return syncAgent(ctx.t, ctx.httpClient)

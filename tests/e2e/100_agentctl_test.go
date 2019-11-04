@@ -321,7 +321,7 @@ func TestAgentCtlSecureGrpc(t *testing.T) {
 	Expect(strings.Contains(stderr, "rpc error")).To(BeTrue(),
 		"Want in stderr: \n\"rpc error\"\nGot stderr: \n%s\n", stderr,
 	)
-	t.Log("OK")
+	t.Log("PASSED")
 
 	t.Log("Try with TLS enabled via flag --tls, but without cert and key (note: server configured to check those files)")
 	stdout, stderr, err = ctx.execCmd(
@@ -331,7 +331,7 @@ func TestAgentCtlSecureGrpc(t *testing.T) {
 	Expect(strings.Contains(stderr, "rpc error")).To(BeTrue(),
 		"Want in stderr: \n\"rpc error\"\nGot stderr: \n%s\n", stderr,
 	)
-	t.Log("OK")
+	t.Log("PASSED")
 
 	t.Log("Try with fully configured TLS via config file")
 	stdout, stderr, err = ctx.execCmd(
@@ -341,5 +341,27 @@ func TestAgentCtlSecureGrpc(t *testing.T) {
 		"Should not fail. Got err: %v\nStderr:\n%s\n", err, stderr,
 	)
 	Expect(len(stdout)).To(Not(BeZero()))
-	t.Log("OK")
+	t.Log("PASSED")
+}
+
+func TestAgentCtlSecureETCD(t *testing.T) {
+	ctx := setupE2E(t)
+	defer ctx.teardownE2E()
+	teardownETCD := ctx.setupETCD()
+	defer teardownETCD()
+
+	t.Log("Try without any TLS")
+	_, _, err := ctx.execCmd("/agentctl", "--debug", "kvdb", "list")
+	Expect(err).To(Not(BeNil()))
+	t.Log("PASSED")
+
+	t.Log("Try with TLS enabled via flag --tls, but without cert and key (note: server configured to check those files)")
+	_, _, err = ctx.execCmd("/agentctl", "--debug", "--tls", "kvdb", "list")
+	Expect(err).To(Not(BeNil()))
+	t.Log("PASSED")
+
+	t.Log("Try with fully configured TLS via config file")
+	_, stderr, err := ctx.execCmd("/agentctl", "--debug", "--config-dir=/etc/.agentctl", "kvdb", "list")
+	Expect(err).To(BeNil(), "Should not fail. Got err: %v\nStderr:\n%s\n", err, stderr)
+	t.Log("PASSED")
 }
