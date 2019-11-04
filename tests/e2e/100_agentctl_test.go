@@ -347,8 +347,8 @@ func TestAgentCtlSecureGrpc(t *testing.T) {
 func TestAgentCtlSecureETCD(t *testing.T) {
 	ctx := setupE2E(t)
 	defer ctx.teardownE2E()
-	teardownETCD := ctx.setupETCD()
-	defer teardownETCD()
+	etcdID := ctx.setupETCD()
+	defer ctx.teardownETCD(etcdID)
 
 	t.Log("Try without any TLS")
 	_, _, err := ctx.execCmd("/agentctl", "--debug", "kvdb", "list")

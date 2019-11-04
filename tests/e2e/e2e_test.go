@@ -222,7 +222,7 @@ func (ctx *testCtx) teardownE2E() {
 	stopProcess(ctx.t, ctx.VPP, "VPP")
 }
 
-func (ctx *testCtx) setupETCD() func() {
+func (ctx *testCtx) setupETCD() string {
 	err := ctx.dockerClient.PullImage(docker.PullImageOptions{
 		Repository: "gcr.io/etcd-development/etcd",
 		Tag:        "latest",
@@ -240,10 +240,10 @@ func (ctx *testCtx) setupETCD() func() {
 				"/usr/local/bin/etcd",
 				"--client-cert-auth",
 				"--trusted-ca-file=/etc/certs/ca.pem",
-				"--cert-file", "/etc/certs/cert1.pem",
-				"--key-file", "/etc/certs/cert1-key.pem",
-				"--advertise-client-urls", "https://127.0.0.1:2379",
-				"--listen-client-urls", "https://127.0.0.1:2379",
+				"--cert-file=/etc/certs/cert1.pem",
+				"--key-file=/etc/certs/cert1-key.pem",
+				"--advertise-client-urls=https://127.0.0.1:2379",
+				"--listen-client-urls=https://127.0.0.1:2379",
 			},
 		},
 		HostConfig: &docker.HostConfig{
@@ -258,20 +258,22 @@ func (ctx *testCtx) setupETCD() func() {
 	if err != nil {
 		ctx.t.Fatalf("failed to start ETCD container: %v", err)
 	}
-	return ctx.teardownETCD(container.ID)
+	return container.ID
 }
 
-func (ctx *testCtx) teardownETCD(id string) func() {
-	return func() {
-		err := ctx.dockerClient.RemoveContainer(docker.RemoveContainerOptions{
-			ID:    id,
-			Force: true,
-		})
-		if err != nil {
-			ctx.t.Fatalf("failed to remove ETCD container: %v", err)
-		} else {
-			ctx.t.Logf("removed ETCD container")
-		}
+func (ctx *testCtx) teardownETCD(id string) {
+	err := ctx.dockerClient.StopContainer(id, msStopTimeout)
+	if err != nil {
+		ctx.t.Fatalf("failed to stop ETCD container: %v", err)
+	}
+	err = ctx.dockerClient.RemoveContainer(docker.RemoveContainerOptions{
+		ID:    id,
+		Force: true,
+	})
+	if err != nil {
+		ctx.t.Fatalf("failed to remove ETCD container: %v", err)
+	} else {
+		ctx.t.Logf("removed ETCD container")
 	}
 }
 
