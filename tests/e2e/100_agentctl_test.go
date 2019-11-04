@@ -314,27 +314,27 @@ func TestAgentCtlSecureGrpc(t *testing.T) {
 	defer ctx.teardownE2E()
 
 	t.Log("Try without any TLS")
-	stdout, stderr, err := ctx.execCmd(
+	_, stderr, err := ctx.execCmd(
 		"/agentctl", "--debug", "dump", "vpp.interfaces",
 	)
-	Expect(err).To(Not(BeNil()), "Should fail\n")
+	Expect(err).To(Not(BeNil()))
 	Expect(strings.Contains(stderr, "rpc error")).To(BeTrue(),
 		"Want in stderr: \n\"rpc error\"\nGot stderr: \n%s\n", stderr,
 	)
 	t.Log("PASSED")
 
 	t.Log("Try with TLS enabled via flag --tls, but without cert and key (note: server configured to check those files)")
-	stdout, stderr, err = ctx.execCmd(
+	_, stderr, err = ctx.execCmd(
 		"/agentctl", "--debug", "--tls", "dump", "vpp.interfaces",
 	)
-	Expect(err).To(Not(BeNil()), "Should fail\n")
+	Expect(err).To(Not(BeNil()))
 	Expect(strings.Contains(stderr, "rpc error")).To(BeTrue(),
 		"Want in stderr: \n\"rpc error\"\nGot stderr: \n%s\n", stderr,
 	)
 	t.Log("PASSED")
 
 	t.Log("Try with fully configured TLS via config file")
-	stdout, stderr, err = ctx.execCmd(
+	stdout, stderr, err := ctx.execCmd(
 		"/agentctl", "--debug", "--config-dir=/etc/.agentctl", "dump", "vpp.interfaces",
 	)
 	Expect(err).To(BeNil(),
