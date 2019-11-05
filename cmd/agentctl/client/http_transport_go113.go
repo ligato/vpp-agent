@@ -20,15 +20,6 @@ import (
 	"net/http"
 )
 
-// HTTPClient returns configured HTTP client.
-func (c *Client) HTTPClient() *http.Client {
-	if c.httpClient == nil {
-		tr := http.DefaultTransport.(*http.Transport).Clone()
-		tr.TLSClientConfig = c.httpTLS
-
-		c.httpClient = &http.Client{
-			Transport: tr,
-		}
-	}
-	return c.httpClient
+func cloneHTTPTransport() *http.Transport {
+	return http.DefaultTransport.(*http.Transport).Clone()
 }

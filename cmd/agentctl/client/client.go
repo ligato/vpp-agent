@@ -154,6 +154,19 @@ func (c *Client) GRPCConn() (*grpc.ClientConn, error) {
 	return c.grpcClient, nil
 }
 
+// HTTPClient returns configured HTTP client.
+func (c *Client) HTTPClient() *http.Client {
+	if c.httpClient == nil {
+		tr := cloneHTTPTransport()
+		tr.TLSClientConfig = c.httpTLS
+
+		c.httpClient = &http.Client{
+			Transport: tr,
+		}
+	}
+	return c.httpClient
+}
+
 // KVDBClient returns configured KVDB client.
 func (c *Client) KVDBClient() (KVDBAPIClient, error) {
 	kvdb, err := connectEtcd(c.kvdbEndpoints, c.kvdbTLS)
