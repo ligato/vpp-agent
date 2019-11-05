@@ -12,7 +12,7 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 
-// tlsconfig provides more convenient way to create tls.Config
+// Package tlsconfig provides more convenient way to create "tls.Config".
 //
 // Usage:
 // 		package main
@@ -35,7 +35,6 @@
 // 			// `tc` usage
 // 		}
 //
-
 package tlsconfig
 
 import (
