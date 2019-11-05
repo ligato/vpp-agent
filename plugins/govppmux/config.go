@@ -39,6 +39,8 @@ type Config struct {
 	RetryConnectCount int `json:"retry-connect-count"`
 	// Time between connection request resend attempts. Default is 1s.
 	RetryConnectTimeout time.Duration `json:"retry-connect-timeout"`
+	// Start GOVPP proxy
+	ProxyEnabled	bool `json:"proxy-enabled"`
 }
 
 func defaultConfig() *Config {

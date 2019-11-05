@@ -16,6 +16,7 @@ package govppmux
 
 import (
 	"context"
+	"encoding/gob"
 	"fmt"
 	"os"
 	"strings"
@@ -25,6 +26,7 @@ import (
 	"git.fd.io/govpp.git/adapter"
 	govppapi "git.fd.io/govpp.git/api"
 	govpp "git.fd.io/govpp.git/core"
+	"git.fd.io/govpp.git/proxy"
 	"github.com/ligato/cn-infra/datasync/resync"
 	"github.com/ligato/cn-infra/health/statuscheck"
 	"github.com/ligato/cn-infra/infra"
@@ -39,6 +41,19 @@ import (
 	_ "go.ligato.io/vpp-agent/v2/plugins/govppmux/vppcalls/vpp1908"
 	_ "go.ligato.io/vpp-agent/v2/plugins/govppmux/vppcalls/vpp2001"
 	_ "go.ligato.io/vpp-agent/v2/plugins/govppmux/vppcalls/vpp2001_324"
+
+	gre1904 "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904/gre"
+	gre1908 "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908/gre"
+	gre2001 "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/gre"
+	gre2001_324 "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324/gre"
+
+	gpe1904 "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904/vxlan_gpe"
+	gpe1908 "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908/vxlan_gpe"
+	gpe2001 "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/vxlan_gpe"
+	gpe2001_324 "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324/vxlan_gpe"
+
+	telemetry "go.ligato.io/vpp-agent/v2/plugins/telemetry/vppcalls"
+	ifplugin "go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/vppcalls"
 )
 
 //go:generate protoc --proto_path=. --go_out=plugins=grpc:. model/metrics.proto
@@ -51,6 +66,7 @@ var (
 type Plugin struct {
 	Deps
 
+	proxy        *proxy.Server
 	vppConn      *govpp.Connection
 	vppAdapter   adapter.VppAPI
 	statsConn    govppapi.StatsProvider
@@ -105,14 +121,15 @@ func (p *Plugin) Init() (err error) {
 	// register REST API handlers
 	p.registerHandlers(p.HTTPHandlers)
 
+	var address string
+	useShm := disabledSocketClient || p.config.ConnectViaShm || p.config.ShmPrefix != ""
+	if useShm {
+		address = p.config.ShmPrefix
+	} else {
+		address = p.config.BinAPISocketPath
+	}
+
 	if p.vppAdapter == nil {
-		var address string
-		useShm := disabledSocketClient || p.config.ConnectViaShm || p.config.ShmPrefix != ""
-		if useShm {
-			address = p.config.ShmPrefix
-		} else {
-			address = p.config.BinAPISocketPath
-		}
 		p.vppAdapter = NewVppAdapter(address, useShm)
 	} else {
 		// this is used for testing purposes
@@ -163,6 +180,23 @@ func (p *Plugin) Init() (err error) {
 		p.statsAdapter = nil
 	}
 
+	if p.config.ProxyEnabled {
+		p.proxy, err = proxy.NewServer()
+		if err != nil {
+			return fmt.Errorf("failed to create proxy server:%v", err)
+		}
+
+		if err = p.proxy.ConnectBinapi(NewVppAdapter(address, useShm)); err != nil {
+			return fmt.Errorf("failed to connect to binapi for proxy server:%v", err)
+		}
+
+		if err = p.proxy.ConnectStats(NewStatsAdapter(statsSocket)); err != nil {
+			return fmt.Errorf("failed to connect to stats for proxy server:%v", err)
+		}
+
+		p.registerProxy(p.HTTPHandlers)
+		p.Log.Infof("GOVPP proxy enabled")
+	}
 	return nil
 }
 
@@ -177,6 +211,51 @@ func (p *Plugin) AfterInit() error {
 
 	p.wg.Add(1)
 	go p.handleVPPConnectionEvents(ctx)
+
+	if p.config.ProxyEnabled {
+		registerMsgs := func(msgs []govppapi.Message) {
+			for _, msg := range msgs {
+				gob.Register(msg)
+			}
+		}
+
+		apiChan, err := p.vppConn.NewAPIChannel()
+		if err != nil {
+			return err
+		}
+		defer apiChan.Close()
+
+		// register gob
+		for ver, h := range vppcalls.Versions {
+			if err = apiChan.CheckCompatiblity(h.Msgs...); err != nil {
+				continue
+			}
+			registerMsgs(h.Msgs)
+			registerMsgs(ifplugin.Versions["vpp"+strings.Replace(ver, ".", "", - 1)].Msgs)
+			registerMsgs(telemetry.Versions[ver].Msgs)
+
+			switch ver {
+			case "19.04":
+				registerMsgs(gpe1904.AllMessages())
+				registerMsgs(gre1904.AllMessages())
+			case "19.08":
+				registerMsgs(gpe1908.AllMessages())
+				registerMsgs(gre1908.AllMessages())
+			case "20.01":
+				registerMsgs(gpe2001.AllMessages())
+				registerMsgs(gre2001.AllMessages())
+			case "20.01_324":
+				registerMsgs(gpe2001_324.AllMessages())
+				registerMsgs(gre2001_324.AllMessages())
+			}
+
+			break
+		}
+
+		if err != nil {
+			panic("no compatible vpp version found")
+		}
+	}
 
 	return nil
 }
@@ -196,6 +275,11 @@ func (p *Plugin) Close() error {
 			}
 		}
 	}()
+
+	if p.proxy != nil {
+		p.proxy.DisconnectBinapi()
+		p.proxy.DisconnectStats()
+	}
 
 	return nil
 }

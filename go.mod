@@ -3,7 +3,7 @@ module go.ligato.io/vpp-agent/v2
 go 1.12
 
 require (
-	git.fd.io/govpp.git v0.1.1-0.20191017045426-cc80dbcaaaca
+	git.fd.io/govpp.git v0.2.1-0.20191104231625-2f75863ba9bf
 	github.com/Azure/go-ansiterm v0.0.0-20170929234023-d6e3b3328b78 // indirect
 	github.com/DataDog/zstd v1.3.5 // indirect
 	github.com/Microsoft/go-winio v0.4.7 // indirect
@@ -63,7 +63,7 @@ require (
 	github.com/jhump/protoreflect v1.5.0
 	github.com/jonboulle/clockwork v0.1.0 // indirect
 	github.com/ligato/cn-infra v2.2.1-0.20191030081411-42c7431fdca1+incompatible
-	github.com/lunixbochs/struc v0.0.0-20180408203800-02e4c2afbb2a
+	github.com/lunixbochs/struc v0.0.0-20190916212049-a5c72983bc42
 	github.com/mattn/goveralls v0.0.3
 	github.com/mitchellh/go-homedir v0.0.0-20180523094522-3864e76763d9 // indirect
 	github.com/mitchellh/go-ps v0.0.0-20170309133038-4fdf99ab2936
