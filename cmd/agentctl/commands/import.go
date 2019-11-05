@@ -126,10 +126,11 @@ func RunImport(cli agentcli.Cli, opts ImportOptions) error {
 		}
 
 	} else {
-		db, err := cli.KVProtoBroker()
+		c, err := cli.Client().KVDBClient()
 		if err != nil {
-			return fmt.Errorf("connecting to KVDB failed: %v", err)
+			return fmt.Errorf("KVDB error: %v", err)
 		}
+		db := c.ProtoBroker()
 
 		fmt.Printf("importing %d key vals\n", len(keyVals))
 
@@ -137,9 +138,13 @@ func RunImport(cli agentcli.Cli, opts ImportOptions) error {
 		ops := 0
 		for i := 0; i < len(keyVals); i++ {
 			keyVal := keyVals[i]
+			key, err := c.CompleteFullKey(keyVal.Key)
+			if err != nil {
+				return fmt.Errorf("key processing failed: %v", err)
+			}
 
-			fmt.Printf(" - %s\n", keyVal.Key)
-			txn.Put(keyVal.Key, keyVal.Val)
+			fmt.Printf(" - %s\n", key)
+			txn.Put(key, keyVal.Val)
 			ops++
 
 			if ops == int(opts.TxOps) || i+1 == len(keyVals) {

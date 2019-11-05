@@ -38,3 +38,4 @@ package vpp2001
 //go:generate binapigen --input-file=$VPP_API_DIR/plugins/nat.api.json
 //go:generate binapigen --input-file=$VPP_API_DIR/plugins/stn.api.json
 //go:generate binapigen --input-file=$VPP_API_DIR/plugins/vmxnet3.api.json
+//go:generate binapigen --input-file=$VPP_API_DIR/plugins/gtpu.api.json

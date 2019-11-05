@@ -17,7 +17,6 @@ package cli
 import (
 	"context"
 	"encoding/base64"
-	"fmt"
 	"io"
 	"runtime"
 	"strings"
@@ -26,8 +25,6 @@ import (
 	"github.com/docker/docker/pkg/term"
 	"github.com/spf13/viper"
 
-	"github.com/ligato/cn-infra/db/keyval"
-	"github.com/ligato/cn-infra/db/keyval/kvproto"
 	"github.com/ligato/cn-infra/logging"
 
 	"go.ligato.io/vpp-agent/v2/cmd/agentctl/api"
@@ -38,7 +35,6 @@ import (
 // Cli represents the agent command line client.
 type Cli interface {
 	Client() client.APIClient
-	KVProtoBroker() (keyval.ProtoBroker, error)
 
 	Out() *streams.Out
 	Err() io.Writer
@@ -124,18 +120,6 @@ func (cli *AgentCli) ClientInfo() ClientInfo {
 
 func (cli *AgentCli) DefaultVersion() string {
 	return cli.clientInfo.DefaultVersion
-}
-
-func (cli *AgentCli) KVProtoBroker() (keyval.ProtoBroker, error) {
-	kvdb, err := cli.Client().KVDBClient()
-	if err != nil {
-		return nil, fmt.Errorf("connecting to KVBDB failed: %v", err)
-	}
-	return jsonProtoBroker(kvdb), nil
-}
-
-func jsonProtoBroker(broker keyval.CoreBrokerWatcher) keyval.ProtoBroker {
-	return kvproto.NewProtoWrapper(broker, &keyval.SerializerJSON{})
 }
 
 // ServerInfo stores details about the supported features and platform of the
