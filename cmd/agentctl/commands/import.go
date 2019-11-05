@@ -126,10 +126,11 @@ func RunImport(cli agentcli.Cli, opts ImportOptions) error {
 		}
 
 	} else {
-		c, db, err := cli.KVProtoBroker()
+		c, err := cli.Client().KVDBClient()
 		if err != nil {
-			return fmt.Errorf("connecting to KVDB failed: %v", err)
+			return fmt.Errorf("KVDB error: %v", err)
 		}
+		db := c.ProtoBroker()
 
 		fmt.Printf("importing %d key vals\n", len(keyVals))
 

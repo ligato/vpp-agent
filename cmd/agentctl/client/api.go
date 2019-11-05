@@ -66,5 +66,6 @@ type MetricsAPIClient interface {
 
 type KVDBAPIClient interface {
 	keyval.CoreBrokerWatcher
+	ProtoBroker() keyval.ProtoBroker
 	CompleteFullKey(key string) (string, error)
 }

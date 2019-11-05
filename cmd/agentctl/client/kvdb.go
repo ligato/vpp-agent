@@ -7,6 +7,7 @@ import (
 
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/db/keyval"
+	"github.com/ligato/cn-infra/db/keyval/kvproto"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/servicelabel"
 )
@@ -22,6 +23,11 @@ func NewKVDBClient(kvdb keyval.CoreBrokerWatcher, serviceLabel string) *KVDBClie
 		CoreBrokerWatcher: kvdb,
 		serviceLabel:      serviceLabel,
 	}
+}
+
+// ProtoBroker returns ProtoWrapper with JSON serializer for KVDB connection.
+func (k *KVDBClient) ProtoBroker() keyval.ProtoBroker {
+	return kvproto.NewProtoWrapper(k.CoreBrokerWatcher, &keyval.SerializerJSON{})
 }
 
 func (k *KVDBClient) Put(key string, data []byte, opts ...datasync.PutOption) (err error) {
