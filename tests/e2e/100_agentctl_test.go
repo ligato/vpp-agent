@@ -296,7 +296,7 @@ func createFileWithContent(path, content string) error {
 func TestAgentCtlSecureGrpc(t *testing.T) {
 	// WARNING: Do not use grpc connection created in `setupE2E` in
 	// this test (though I don't know why you would but anyway).
-	// By default `grpc.Dail` is non-blocking and connecting happens
+	// By default `grpc.Dial` is non-blocking and connecting happens
 	// in the background, so `setupE2E` function does not know about
 	// any errors. With securing grpc on the agent (by replacing
 	// grpc.conf with grpc-secure.conf) that client won't be able
