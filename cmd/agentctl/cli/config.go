@@ -80,17 +80,17 @@ func (c *Config) DebugOutput() string {
 
 // ShouldUseSecureGRPC returns whether or not to use TLS for GRPC connection.
 func (c *Config) ShouldUseSecureGRPC() bool {
-	return c.UseTLS == true && c.GRPCSecure != nil && !c.GRPCSecure.Disabled
+	return c.UseTLS && c.GRPCSecure != nil && !c.GRPCSecure.Disabled
 }
 
 // ShouldUseSecureHTTP returns whether or not to use TLS for HTTP connection.
 func (c *Config) ShouldUseSecureHTTP() bool {
-	return c.UseTLS == true && c.HTTPSecure != nil && !c.HTTPSecure.Disabled
+	return c.UseTLS && c.HTTPSecure != nil && !c.HTTPSecure.Disabled
 }
 
 // ShouldUseSecureKVDB returns whether or not to use TLS for KVDB connection.
 func (c *Config) ShouldUseSecureKVDB() bool {
-	return c.UseTLS == true && c.KVDBSecure != nil && !c.KVDBSecure.Disabled
+	return c.UseTLS && c.KVDBSecure != nil && !c.KVDBSecure.Disabled
 }
 
 // adjustETCDEndpoints adjusts ETCD endpoints received from env variable.
