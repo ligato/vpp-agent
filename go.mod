@@ -59,6 +59,7 @@ require (
 	github.com/mitchellh/go-homedir v0.0.0-20180523094522-3864e76763d9 // indirect
 	github.com/mitchellh/go-ps v0.0.0-20170309133038-4fdf99ab2936
 	github.com/mitchellh/go-testing-interface v1.0.0 // indirect
+	github.com/mitchellh/mapstructure v1.1.2
 	github.com/namsral/flag v1.7.4-pre
 	github.com/onsi/gomega v1.4.1
 	github.com/opencontainers/go-digest v1.0.0-rc1 // indirect

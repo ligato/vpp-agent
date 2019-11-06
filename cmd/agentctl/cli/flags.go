@@ -57,22 +57,26 @@ func (opts *ClientOptions) InstallFlags(flags *pflag.FlagSet) {
 	flags.Bool("tls", false, "Use TLS for connections")
 	viper.BindPFlag("use-tls", flags.Lookup("tls"))
 
-	flags.String("config-dir", DefaultConfigDir(), "Path to directory with config file")
+	flags.String("config-dir", "", "Path to directory with config file.")
 	viper.BindPFlag("config-dir", flags.Lookup("config-dir"))
+
+	viper.BindEnv("ligato-api-version", "LIGATO_API_VERSION")
 }
 
-// SetLogLevel sets the logrus logging level
+// SetLogLevel sets the logrus logging level (WarnLevel for empty string as param).
 func SetLogLevel(logLevel string) {
-	if logLevel != "" {
-		lvl, err := logrus.ParseLevel(logLevel)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Unable to parse logging level: %s\n", logLevel)
-			os.Exit(1)
-		}
-		logrus.SetLevel(lvl)
-		logging.DefaultLogger.SetLevel(logging.ParseLogLevel(logLevel))
-	} else {
+	if logLevel == "" {
 		logrus.SetLevel(logrus.WarnLevel)
 		logging.DefaultLogger.SetLevel(logging.WarnLevel)
+		return
 	}
+
+	lvl, err := logrus.ParseLevel(logLevel)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Unable to parse logging level: %s\n", logLevel)
+		os.Exit(1)
+	}
+
+	logrus.SetLevel(lvl)
+	logging.DefaultLogger.SetLevel(logging.ParseLogLevel(logLevel))
 }

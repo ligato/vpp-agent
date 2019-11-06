@@ -19,11 +19,9 @@ import (
 	"encoding/base64"
 	"io"
 	"runtime"
-	"strings"
 
 	"github.com/docker/cli/cli/streams"
 	"github.com/docker/docker/pkg/term"
-	"github.com/spf13/viper"
 
 	"github.com/ligato/cn-infra/logging"
 
@@ -158,10 +156,16 @@ func (cli *AgentCli) Initialize(opts *ClientOptions, ops ...InitializeOpt) error
 		SetLogLevel(opts.LogLevel)
 	}
 
-	ReadConfig() // TODO: maybe move it elsewhere
+	cfg, err := MakeConfig()
+	if err != nil {
+		return err
+	}
+	if opts.Debug {
+		logging.Debug(cfg.DebugOutput())
+	}
 
 	if cli.client == nil {
-		clientOptions := buildClientOptions()
+		clientOptions := buildClientOptions(cfg)
 		cli.client, err = client.NewClientWithOpts(clientOptions...)
 		if err != nil {
 			return err
@@ -174,73 +178,48 @@ func (cli *AgentCli) Initialize(opts *ClientOptions, ops ...InitializeOpt) error
 	return nil
 }
 
-func buildClientOptions() []client.Opt {
-	logging.Debug("----------------------------------------------------")
-	logging.Debug("Building client options")
-	logging.Debugf("\tHost: %q\n", viper.GetString("host"))
-	logging.Debugf("\tService Label: %q\n", viper.GetString("service-label"))
-	logging.Debugf("\tGRPC Port: %q\n", viper.GetString("grpc-port"))
-	logging.Debugf("\tHTTP Port: %q\n", viper.GetString("http-port"))
-	logging.Debugf("\tETCD endpoints: %#v\n", viper.GetStringSlice("etcd-endpoints"))
-	logging.Debugf("\tLIGATO_API_VERSION env var: %q\n", viper.GetString("LIGATO_API_VERSION"))
-	logging.Debugf("\tUse TLS?: %t\n", viper.GetBool("use-tls"))
-	logging.Debugf("\tGRPC TLS: %#v\n", viper.GetStringMap("grpc-tls"))
-	logging.Debugf("\tHTTP TLS: %#v\n", viper.GetStringMap("http-tls"))
-	logging.Debugf("\tKVDB TLS: %#v\n", viper.GetStringMap("kvdb-tls"))
-	logging.Debug("----------------------------------------------------")
-
-	clientOpts := []client.Opt{
-		client.WithHost(viper.GetString("host")),
-		client.WithServiceLabel(viper.GetString("service-label")),
-		client.WithGrpcPort(viper.GetInt("grpc-port")),
-		client.WithHTTPPort(viper.GetInt("http-port")),
-		client.WithVersion(viper.GetString("LIGATO_API_VERSION")),
-	}
-
-	// Handle properly case when `etcd-endpoints` returned from environment variable
-	etcdEndp := viper.GetStringSlice("etcd-endpoints")
-	if len(etcdEndp) == 1 && strings.Contains(etcdEndp[0], ",") {
-		etcdEndp = strings.Split(etcdEndp[0], ",")
-	}
-	clientOpts = append(clientOpts, client.WithEtcdEndpoints(etcdEndp))
-
-	var customHeaders = map[string]string{
+func buildClientOptions(cfg *Config) []client.Opt {
+	customHeaders := map[string]string{
 		"User-Agent": UserAgent(),
 	}
-	basicAuth := viper.GetString("basic-auth")
-	if basicAuth != "" {
-		auth := base64.StdEncoding.EncodeToString([]byte(basicAuth))
+	if cfg.BasicAuth != "" {
+		auth := base64.StdEncoding.EncodeToString([]byte(cfg.BasicAuth))
 		customHeaders["Authorization"] = "Basic " + auth
 	}
-	clientOpts = append(clientOpts, client.WithHTTPHeaders(customHeaders))
 
-	if viper.GetBool("use-tls") {
-		if viper.InConfig("grpc-tls") && !viper.GetBool("grpc-tls.disabled") {
-			clientOpts = append(clientOpts, client.WithGrpcTLS(
-				viper.GetString("grpc-tls.cert-file"),
-				viper.GetString("grpc-tls.key-file"),
-				viper.GetString("grpc-tls.ca-file"),
-				viper.GetBool("grpc-tls.skip-verify"),
-			))
-		}
+	clientOpts := []client.Opt{
+		client.WithHost(cfg.Host),
+		client.WithServiceLabel(cfg.ServiceLabel),
+		client.WithGrpcPort(cfg.GRPCPort),
+		client.WithHTTPPort(cfg.HTTPPort),
+		client.WithVersion(cfg.LigatoAPIVersion),
+		client.WithEtcdEndpoints(cfg.ETCDEndpoints),
+		client.WithHTTPHeaders(customHeaders),
+	}
 
-		if viper.InConfig("http-tls") && !viper.GetBool("http-tls.disabled") {
-			clientOpts = append(clientOpts, client.WithHTTPTLS(
-				viper.GetString("http-tls.cert-file"),
-				viper.GetString("http-tls.key-file"),
-				viper.GetString("http-tls.ca-file"),
-				viper.GetBool("http-tls.skip-verify"),
-			))
-		}
-
-		if viper.InConfig("kvdb-tls") && !viper.GetBool("kvdb-tls.disabled") {
-			clientOpts = append(clientOpts, client.WithKvdbTLS(
-				viper.GetString("kvdb-tls.cert-file"),
-				viper.GetString("kvdb-tls.key-file"),
-				viper.GetString("kvdb-tls.ca-file"),
-				viper.GetBool("kvdb-tls.skip-verify"),
-			))
-		}
+	if cfg.ShouldUseSecureGRPC() {
+		clientOpts = append(clientOpts, client.WithGrpcTLS(
+			cfg.GRPCSecure.CertFile,
+			cfg.GRPCSecure.KeyFile,
+			cfg.GRPCSecure.CAFile,
+			cfg.GRPCSecure.SkipVerify,
+		))
+	}
+	if cfg.ShouldUseSecureHTTP() {
+		clientOpts = append(clientOpts, client.WithHTTPTLS(
+			cfg.HTTPSecure.CertFile,
+			cfg.HTTPSecure.KeyFile,
+			cfg.HTTPSecure.CAFile,
+			cfg.HTTPSecure.SkipVerify,
+		))
+	}
+	if cfg.ShouldUseSecureKVDB() {
+		clientOpts = append(clientOpts, client.WithKvdbTLS(
+			cfg.KVDBSecure.CertFile,
+			cfg.KVDBSecure.KeyFile,
+			cfg.KVDBSecure.CAFile,
+			cfg.KVDBSecure.SkipVerify,
+		))
 	}
 
 	return clientOpts
