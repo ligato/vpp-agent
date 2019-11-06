@@ -63,7 +63,7 @@ func (opts *ClientOptions) InstallFlags(flags *pflag.FlagSet) {
 	viper.BindEnv("ligato-api-version", "LIGATO_API_VERSION")
 }
 
-// SetLogLevel sets the logrus logging level (WarnLevel for empty string as param).
+// SetLogLevel sets the logrus logging level (WarnLevel for empty string).
 func SetLogLevel(logLevel string) {
 	if logLevel == "" {
 		logrus.SetLevel(logrus.WarnLevel)
