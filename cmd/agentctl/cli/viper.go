@@ -47,7 +47,7 @@ func viperSetConfigFile(name string, dir string) {
 func viperReadInConfig() {
 	if err := viper.ReadInConfig(); err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
-			logging.Debug("unable to find config file")
+			logging.Debugf("unable to find config file: %v", err)
 		} else {
 			logging.Debugf("config file was found but another error was produced: %v", err)
 		}
