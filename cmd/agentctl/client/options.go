@@ -43,10 +43,21 @@ func WithGrpcPort(p int) Opt {
 	}
 }
 
+// WithEtcdEndpoints overrides endpoints for KVDB (etcd) connection.
 func WithEtcdEndpoints(endpoints []string) Opt {
 	return func(c *Client) error {
 		if len(endpoints) != 0 {
 			c.kvdbEndpoints = endpoints
+		}
+		return nil
+	}
+}
+
+// WithEtcdDialTimeout overrides dial timeout for KVDB (etcd) connection.
+func WithEtcdDialTimeout(t time.Duration) Opt {
+	return func(c *Client) error {
+		if t != 0 {
+			c.kvdbDialTimeout = t
 		}
 		return nil
 	}

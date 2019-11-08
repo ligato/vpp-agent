@@ -193,7 +193,8 @@ func buildClientOptions(cfg *Config) []client.Opt {
 		client.WithGrpcPort(cfg.GRPCPort),
 		client.WithHTTPPort(cfg.HTTPPort),
 		client.WithVersion(cfg.LigatoAPIVersion),
-		client.WithEtcdEndpoints(cfg.ETCDEndpoints),
+		client.WithEtcdEndpoints(cfg.EtcdEndpoints),
+		client.WithEtcdDialTimeout(cfg.EtcdDialTimeout),
 		client.WithHTTPHeaders(customHeaders),
 	}
 

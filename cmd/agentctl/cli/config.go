@@ -18,6 +18,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/ligato/cn-infra/logging"
 )
@@ -38,17 +39,18 @@ type TLSConfig struct {
 
 // Config represents configuration for AgentCTL.
 type Config struct {
-	LigatoAPIVersion string     `json:"ligato-api-version"`
-	Host             string     `json:"host"`
-	ServiceLabel     string     `json:"service-label"`
-	GRPCPort         int        `json:"grpc-port"`
-	HTTPPort         int        `json:"http-port"`
-	ETCDEndpoints    []string   `json:"etcd-endpoints"`
-	BasicAuth        string     `json:"basic-auth"`
-	InsecureTLS      bool       `json:"insecure-tls"`
-	GRPCSecure       *TLSConfig `json:"grpc-tls"`
-	HTTPSecure       *TLSConfig `json:"http-tls"`
-	KVDBSecure       *TLSConfig `json:"kvdb-tls"`
+	LigatoAPIVersion string        `json:"ligato-api-version"`
+	Host             string        `json:"host"`
+	ServiceLabel     string        `json:"service-label"`
+	GRPCPort         int           `json:"grpc-port"`
+	HTTPPort         int           `json:"http-port"`
+	EtcdEndpoints    []string      `json:"etcd-endpoints"`
+	EtcdDialTimeout  time.Duration `json:"etcd-dial-timeout"`
+	BasicAuth        string        `json:"basic-auth"`
+	InsecureTLS      bool          `json:"insecure-tls"`
+	GRPCSecure       *TLSConfig    `json:"grpc-tls"`
+	HTTPSecure       *TLSConfig    `json:"http-tls"`
+	KVDBSecure       *TLSConfig    `json:"kvdb-tls"`
 }
 
 // MakeConfig returns new Config with values from Viper.
@@ -65,7 +67,7 @@ func MakeConfig() (*Config, error) {
 	}
 
 	// Values adjustment.
-	cfg.ETCDEndpoints = adjustETCDEndpoints(cfg.ETCDEndpoints)
+	cfg.EtcdEndpoints = adjustEtcdEndpoints(cfg.EtcdEndpoints)
 	cfg.GRPCSecure = adjustSecurity("gRPC", cfg.InsecureTLS, cfg.GRPCSecure)
 	cfg.HTTPSecure = adjustSecurity("HTTP", cfg.InsecureTLS, cfg.HTTPSecure)
 	cfg.KVDBSecure = adjustSecurity("KVDB", cfg.InsecureTLS, cfg.KVDBSecure)
@@ -98,8 +100,8 @@ func (c *Config) ShouldUseSecureKVDB() bool {
 	return c.KVDBSecure != nil && !c.KVDBSecure.Disabled
 }
 
-// adjustETCDEndpoints adjusts ETCD endpoints received from env variable.
-func adjustETCDEndpoints(endpoints []string) []string {
+// adjustEtcdEndpoints adjusts etcd endpoints received from env variable.
+func adjustEtcdEndpoints(endpoints []string) []string {
 	if len(endpoints) != 1 {
 		return endpoints
 	}

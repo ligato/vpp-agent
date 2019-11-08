@@ -44,12 +44,20 @@ import (
 )
 
 const (
-	// DefaultAgentHost defines default host address for agent
+	// DefaultAgentHost defines default host address for agent.
 	DefaultAgentHost = "127.0.0.1"
-	// DefaultPortGRPC defines default port for GRPC connection
+	// DefaultPortGRPC defines default port for GRPC connection.
 	DefaultPortGRPC = 9111
-	// DefaultPortHTTP defines default port for HTTP connection
+	// DefaultPortHTTP defines default port for HTTP connection.
 	DefaultPortHTTP = 9191
+)
+
+// Constants for etcd connection.
+const (
+	// defaultEtcdOpTimeout defines default dial timeout.
+	defaultEtcdDialTimeout = time.Second * 3
+	// defaultEtcdOpTimeout defines default timeout for a pending operation.
+	defaultEtcdOpTimeout = time.Second * 10
 )
 
 var _ APIClient = (*Client)(nil)
@@ -63,15 +71,16 @@ type Client struct {
 	addr     string
 	basePath string
 
-	grpcPort      int
-	grpcAddr      string
-	grpcTLS       *tls.Config
-	httpPort      int
-	httpAddr      string
-	httpTLS       *tls.Config
-	kvdbEndpoints []string
-	kvdbTLS       *tls.Config
-	serviceLabel  string
+	grpcPort        int
+	grpcAddr        string
+	grpcTLS         *tls.Config
+	httpPort        int
+	httpAddr        string
+	httpTLS         *tls.Config
+	kvdbEndpoints   []string
+	kvdbDialTimeout time.Duration
+	kvdbTLS         *tls.Config
+	serviceLabel    string
 
 	grpcClient *grpc.ClientConn
 	httpClient *http.Client
@@ -111,14 +120,6 @@ func NewClientWithOpts(ops ...Opt) (*Client, error) {
 	return c, nil
 }
 
-func (c *Client) ConfigClient() (client.ConfigClient, error) {
-	conn, err := c.GRPCConn()
-	if err != nil {
-		return nil, err
-	}
-	return remoteclient.NewClientGRPC(conn), nil
-}
-
 func (c *Client) AgentHost() string {
 	return c.host
 }
@@ -154,6 +155,15 @@ func (c *Client) GRPCConn() (*grpc.ClientConn, error) {
 	return c.grpcClient, nil
 }
 
+// ConfigClient returns "remoteclient" with gRPC connection.
+func (c *Client) ConfigClient() (client.ConfigClient, error) {
+	conn, err := c.GRPCConn()
+	if err != nil {
+		return nil, err
+	}
+	return remoteclient.NewClientGRPC(conn), nil
+}
+
 // HTTPClient returns configured HTTP client.
 func (c *Client) HTTPClient() *http.Client {
 	if c.httpClient == nil {
@@ -169,7 +179,7 @@ func (c *Client) HTTPClient() *http.Client {
 
 // KVDBClient returns configured KVDB client.
 func (c *Client) KVDBClient() (KVDBAPIClient, error) {
-	kvdb, err := connectEtcd(c.kvdbEndpoints, c.kvdbTLS)
+	kvdb, err := connectEtcd(c.kvdbEndpoints, c.kvdbDialTimeout, c.kvdbTLS)
 	if err != nil {
 		return nil, fmt.Errorf("connecting to Etcd failed: %v", err)
 	}
@@ -268,7 +278,7 @@ func connectGrpc(addr string, tc *tls.Config) (*grpc.ClientConn, error) {
 	return grpc.Dial(addr, dialOpt)
 }
 
-func connectEtcd(endpoints []string, tc *tls.Config) (keyval.CoreBrokerWatcher, error) {
+func connectEtcd(endpoints []string, dialTimeout time.Duration, tc *tls.Config) (keyval.CoreBrokerWatcher, error) {
 	log := logrus.NewLogger("etcd-client")
 	if debug.IsEnabledFor("kvdb") {
 		log.SetLevel(logging.DebugLevel)
@@ -276,13 +286,18 @@ func connectEtcd(endpoints []string, tc *tls.Config) (keyval.CoreBrokerWatcher, 
 		log.SetLevel(logging.WarnLevel)
 	}
 
+	dt := defaultEtcdDialTimeout
+	if dialTimeout != 0 {
+		dt = dialTimeout
+	}
+
 	cfg := etcd.ClientConfig{
 		Config: &clientv3.Config{
 			Endpoints:   endpoints,
-			DialTimeout: time.Second * 3,
+			DialTimeout: dt,
 			TLS:         tc,
 		},
-		OpTimeout: time.Second * 10,
+		OpTimeout: defaultEtcdOpTimeout,
 	}
 
 	kvdb, err := etcd.NewEtcdConnectionWithBytes(cfg, log)
