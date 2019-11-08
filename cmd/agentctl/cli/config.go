@@ -18,6 +18,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+
+	"github.com/ligato/cn-infra/logging"
 )
 
 const (
@@ -43,7 +45,7 @@ type Config struct {
 	HTTPPort         int        `json:"http-port"`
 	ETCDEndpoints    []string   `json:"etcd-endpoints"`
 	BasicAuth        string     `json:"basic-auth"`
-	UseTLS           bool       `json:"use-tls"`
+	InsecureTLS      bool       `json:"insecure-tls"`
 	GRPCSecure       *TLSConfig `json:"grpc-tls"`
 	HTTPSecure       *TLSConfig `json:"http-tls"`
 	KVDBSecure       *TLSConfig `json:"kvdb-tls"`
@@ -64,6 +66,9 @@ func MakeConfig() (*Config, error) {
 
 	// Values adjustment.
 	cfg.ETCDEndpoints = adjustETCDEndpoints(cfg.ETCDEndpoints)
+	cfg.GRPCSecure = adjustSecurity("gRPC", cfg.InsecureTLS, cfg.GRPCSecure)
+	cfg.HTTPSecure = adjustSecurity("HTTP", cfg.InsecureTLS, cfg.HTTPSecure)
+	cfg.KVDBSecure = adjustSecurity("KVDB", cfg.InsecureTLS, cfg.KVDBSecure)
 
 	return cfg, nil
 }
@@ -80,17 +85,17 @@ func (c *Config) DebugOutput() string {
 
 // ShouldUseSecureGRPC returns whether or not to use TLS for GRPC connection.
 func (c *Config) ShouldUseSecureGRPC() bool {
-	return c.UseTLS && c.GRPCSecure != nil && !c.GRPCSecure.Disabled
+	return c.GRPCSecure != nil && !c.GRPCSecure.Disabled
 }
 
 // ShouldUseSecureHTTP returns whether or not to use TLS for HTTP connection.
 func (c *Config) ShouldUseSecureHTTP() bool {
-	return c.UseTLS && c.HTTPSecure != nil && !c.HTTPSecure.Disabled
+	return c.HTTPSecure != nil && !c.HTTPSecure.Disabled
 }
 
 // ShouldUseSecureKVDB returns whether or not to use TLS for KVDB connection.
 func (c *Config) ShouldUseSecureKVDB() bool {
-	return c.UseTLS && c.KVDBSecure != nil && !c.KVDBSecure.Disabled
+	return c.KVDBSecure != nil && !c.KVDBSecure.Disabled
 }
 
 // adjustETCDEndpoints adjusts ETCD endpoints received from env variable.
@@ -104,4 +109,37 @@ func adjustETCDEndpoints(endpoints []string) []string {
 	}
 
 	return endpoints
+}
+
+// adjustSecurity adjusts TLS configuration to match "insecureTLS" option.
+func adjustSecurity(name string, insecureTLS bool, cfg *TLSConfig) *TLSConfig {
+	if !insecureTLS {
+		return cfg
+	}
+
+	// it is not an option to return empty config here,
+	// because if cert and key is set, then they will be
+	// used for TLS connection. "insecureTLS" means user
+	// wants TLS connection, but without verification of
+	// server's certificate.
+
+	if cfg == nil {
+		logging.Debugf("since insecure tls is used, "+
+			"%s tls config will be set to empty one", name)
+		cfg = &TLSConfig{}
+	}
+
+	if cfg.Disabled {
+		logging.Debugf("since %s tls connfig is disabled and insecure tls is used, "+
+			"%s tls config will be replaced with empty one", name)
+		cfg = &TLSConfig{}
+	}
+
+	if !cfg.SkipVerify {
+		logging.Debugf("since insecure tls is used, "+
+			"\"skip-verify\" will be changed to true for %s connection", name)
+		cfg.SkipVerify = true
+	}
+
+	return cfg
 }

@@ -54,8 +54,8 @@ func (opts *ClientOptions) InstallFlags(flags *pflag.FlagSet) {
 	viper.BindPFlag("basic-auth", flags.Lookup("basic-auth"))
 	viper.BindEnv("basic-auth", "AGENTCTL_BASIC_AUTH")
 
-	flags.Bool("tls", false, "Use TLS for connections")
-	viper.BindPFlag("use-tls", flags.Lookup("tls"))
+	flags.Bool("insecure-tls", false, "Use TLS without server's certificate validation")
+	viper.BindPFlag("insecure-tls", flags.Lookup("insecure-tls"))
 
 	flags.String("config-dir", "", "Path to directory with config file.")
 	viper.BindPFlag("config-dir", flags.Lookup("config-dir"))

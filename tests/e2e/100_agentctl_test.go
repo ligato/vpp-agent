@@ -293,6 +293,57 @@ func createFileWithContent(path, content string) error {
 	return nil
 }
 
+func TestAgentCtlSecureGrpcWithClientCertRequired(t *testing.T) {
+	// WARNING: Do not use grpc connection created in `setupE2E` in
+	// this test (though I don't know why you would but anyway).
+	// By default `grpc.Dial` is non-blocking and connecting happens
+	// in the background, so `setupE2E` function does not know about
+	// any errors. With securing grpc on the agent (by replacing
+	// grpc.conf with grpc-secure.conf) that client won't be able
+	// to establish connection because it's not configured for this
+	// secure case.
+
+	t.Log("Replacing `GRPC_CONFIG` value with /etc/grpc-secure-full.conf")
+	defer func(oldVal string) {
+		t.Logf("Setting `GRPC_CONFIG` back to %q", oldVal)
+		os.Setenv("GRPC_CONFIG", oldVal)
+	}(os.Getenv("GRPC_CONFIG"))
+	os.Setenv("GRPC_CONFIG", "/etc/grpc-secure-full.conf")
+
+	ctx := setupE2E(t)
+	defer ctx.teardownE2E()
+
+	t.Log("Try without any TLS")
+	_, stderr, err := ctx.execCmd(
+		"/agentctl", "--debug", "dump", "vpp.interfaces",
+	)
+	Expect(err).To(Not(BeNil()))
+	Expect(strings.Contains(stderr, "rpc error")).To(BeTrue(),
+		"Want in stderr: \n\"rpc error\"\nGot stderr: \n%s\n", stderr,
+	)
+	t.Log("PASSED")
+
+	t.Log("Try with TLS enabled via flag --insecure-tls, but without cert and key (note: server configured to check those files)")
+	_, stderr, err = ctx.execCmd(
+		"/agentctl", "--debug", "--insecure-tls", "dump", "vpp.interfaces",
+	)
+	Expect(err).To(Not(BeNil()))
+	Expect(strings.Contains(stderr, "rpc error")).To(BeTrue(),
+		"Want in stderr: \n\"rpc error\"\nGot stderr: \n%s\n", stderr,
+	)
+	t.Log("PASSED")
+
+	t.Log("Try with fully configured TLS via config file")
+	stdout, stderr, err := ctx.execCmd(
+		"/agentctl", "--debug", "--config-dir=/etc/.agentctl", "dump", "vpp.interfaces",
+	)
+	Expect(err).To(BeNil(),
+		"Should not fail. Got err: %v\nStderr:\n%s\n", err, stderr,
+	)
+	Expect(len(stdout)).To(Not(BeZero()))
+	t.Log("PASSED")
+}
+
 func TestAgentCtlSecureGrpc(t *testing.T) {
 	// WARNING: Do not use grpc connection created in `setupE2E` in
 	// this test (though I don't know why you would but anyway).
@@ -323,18 +374,18 @@ func TestAgentCtlSecureGrpc(t *testing.T) {
 	)
 	t.Log("PASSED")
 
-	t.Log("Try with TLS enabled via flag --tls, but without cert and key (note: server configured to check those files)")
-	_, stderr, err = ctx.execCmd(
-		"/agentctl", "--debug", "--tls", "dump", "vpp.interfaces",
+	t.Log("Try with TLS enabled via flag --insecure-tls. Should work because server is not configured to check client certs.")
+	stdout, stderr, err := ctx.execCmd(
+		"/agentctl", "--debug", "--insecure-tls", "dump", "vpp.interfaces",
 	)
-	Expect(err).To(Not(BeNil()))
-	Expect(strings.Contains(stderr, "rpc error")).To(BeTrue(),
-		"Want in stderr: \n\"rpc error\"\nGot stderr: \n%s\n", stderr,
+	Expect(err).To(BeNil(),
+		"Should not fail. Got err: %v\nStderr:\n%s\n", err, stderr,
 	)
+	Expect(len(stdout)).To(Not(BeZero()))
 	t.Log("PASSED")
 
 	t.Log("Try with fully configured TLS via config file")
-	stdout, stderr, err := ctx.execCmd(
+	stdout, stderr, err = ctx.execCmd(
 		"/agentctl", "--debug", "--config-dir=/etc/.agentctl", "dump", "vpp.interfaces",
 	)
 	Expect(err).To(BeNil(),
@@ -355,8 +406,8 @@ func TestAgentCtlSecureETCD(t *testing.T) {
 	Expect(err).To(Not(BeNil()))
 	t.Log("PASSED")
 
-	t.Log("Try with TLS enabled via flag --tls, but without cert and key (note: server configured to check those files)")
-	_, _, err = ctx.execCmd("/agentctl", "--debug", "--tls", "kvdb", "list")
+	t.Log("Try with TLS enabled via flag --insecure-tls, but without cert and key (note: server configured to check those files)")
+	_, _, err = ctx.execCmd("/agentctl", "--debug", "--insecure-tls", "kvdb", "list")
 	Expect(err).To(Not(BeNil()))
 	t.Log("PASSED")
 

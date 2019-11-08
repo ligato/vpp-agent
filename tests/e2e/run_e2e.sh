@@ -37,6 +37,7 @@ cid=$(docker run -d -it \
 	-v $PWD/tests/e2e/agentctl.test:/agentctl:ro \
 	-v $PWD/tests/e2e/resources/grpc.conf:/etc/grpc.conf:ro \
 	-v $PWD/tests/e2e/resources/grpc-secure.conf:/etc/grpc-secure.conf:ro \
+	-v $PWD/tests/e2e/resources/grpc-secure-full.conf:/etc/grpc-secure-full.conf:ro \
 	-v $PWD/tests/e2e/resources/agentctl.conf:/etc/.agentctl/config.yml:ro \
 	-v $PWD/tests/e2e/resources/certs:/etc/certs:ro \
 	-v /var/run/docker.sock:/var/run/docker.sock \
