@@ -44,9 +44,9 @@ type Config struct {
 	ServiceLabel     string        `json:"service-label"`
 	GRPCPort         int           `json:"grpc-port"`
 	HTTPPort         int           `json:"http-port"`
+	HTTPBasicAuth    string        `json:"http-basic-auth"`
 	EtcdEndpoints    []string      `json:"etcd-endpoints"`
 	EtcdDialTimeout  time.Duration `json:"etcd-dial-timeout"`
-	BasicAuth        string        `json:"basic-auth"`
 	InsecureTLS      bool          `json:"insecure-tls"`
 	GRPCSecure       *TLSConfig    `json:"grpc-tls"`
 	HTTPSecure       *TLSConfig    `json:"http-tls"`

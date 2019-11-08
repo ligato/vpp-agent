@@ -16,7 +16,6 @@ package cli
 
 import (
 	"context"
-	"encoding/base64"
 	"io"
 	"runtime"
 
@@ -179,23 +178,16 @@ func (cli *AgentCli) Initialize(opts *ClientOptions, ops ...InitializeOpt) error
 }
 
 func buildClientOptions(cfg *Config) []client.Opt {
-	customHeaders := map[string]string{
-		"User-Agent": UserAgent(),
-	}
-	if cfg.BasicAuth != "" {
-		auth := base64.StdEncoding.EncodeToString([]byte(cfg.BasicAuth))
-		customHeaders["Authorization"] = "Basic " + auth
-	}
-
 	clientOpts := []client.Opt{
 		client.WithHost(cfg.Host),
 		client.WithServiceLabel(cfg.ServiceLabel),
 		client.WithGrpcPort(cfg.GRPCPort),
 		client.WithHTTPPort(cfg.HTTPPort),
+		client.WithHTTPHeader("User-Agent", UserAgent()),
+		client.WithHTTPBasicAuth(cfg.HTTPBasicAuth),
 		client.WithVersion(cfg.LigatoAPIVersion),
 		client.WithEtcdEndpoints(cfg.EtcdEndpoints),
 		client.WithEtcdDialTimeout(cfg.EtcdDialTimeout),
-		client.WithHTTPHeaders(customHeaders),
 	}
 
 	if cfg.ShouldUseSecureGRPC() {

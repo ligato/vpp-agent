@@ -50,9 +50,9 @@ func (opts *ClientOptions) InstallFlags(flags *pflag.FlagSet) {
 	viper.BindPFlag("etcd-endpoints", flags.Lookup("etcd-endpoints"))
 	viper.BindEnv("etcd-endpoints", "ETCD_ENDPOINTS")
 
-	flags.String("basic-auth", "", "Basic auth for HTTP connection in form \"user:pass\"")
-	viper.BindPFlag("basic-auth", flags.Lookup("basic-auth"))
-	viper.BindEnv("basic-auth", "AGENTCTL_BASIC_AUTH")
+	flags.String("http-basic-auth", "", "Basic auth for HTTP connection in form \"user:pass\"")
+	viper.BindPFlag("http-basic-auth", flags.Lookup("http-basic-auth"))
+	viper.BindEnv("http-basic-auth", "AGENTCTL_HTTP_BASIC_AUTH")
 
 	flags.Bool("insecure-tls", false, "Use TLS without server's certificate validation")
 	viper.BindPFlag("insecure-tls", flags.Lookup("insecure-tls"))

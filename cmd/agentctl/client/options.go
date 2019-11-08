@@ -2,6 +2,7 @@ package client
 
 import (
 	"crypto/tls"
+	"encoding/base64"
 	"net/http"
 	"time"
 
@@ -141,12 +142,27 @@ func WithTimeout(timeout time.Duration) Opt {
 	}
 }
 
-// WithHTTPHeaders overrides the client default http headers
-func WithHTTPHeaders(headers map[string]string) Opt {
+// WithHTTPHeader adds header to HTTP headers.
+func WithHTTPHeader(k, v string) Opt {
 	return func(c *Client) error {
-		c.customHTTPHeaders = headers
+		if c.customHTTPHeaders == nil {
+			c.customHTTPHeaders = make(map[string]string)
+		}
+
+		c.customHTTPHeaders[k] = v
 		return nil
 	}
+}
+
+// WithHTTPBasicAuth adds basic auth header to HTTP headers.
+func WithHTTPBasicAuth(s string) Opt {
+	// For empty string return empty option.
+	if s == "" {
+		return func(c *Client) error { return nil }
+	}
+
+	auth := base64.StdEncoding.EncodeToString([]byte(s))
+	return WithHTTPHeader("Authorization", "Basic "+auth)
 }
 
 // WithVersion overrides the client version with the specified one. If an empty
