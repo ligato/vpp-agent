@@ -168,7 +168,7 @@ func (p *Plugin) initHandlers() (err error) {
 	// Linux handlers
 	p.configurator.linuxIfHandler = iflinuxcalls.NewNetLinkHandler(p.NsPlugin, linuxIfIndexes,
 		p.ServiceLabel.GetAgentPrefix(), defaultGoRoutineCount, p.Log)
-	p.configurator.linuxL3Handler = l3linuxcalls.NewNetLinkHandler()
+	p.configurator.linuxL3Handler = l3linuxcalls.NewNetLinkHandler(p.NsPlugin, linuxIfIndexes, defaultGoRoutineCount, p.Log)
 
 	return nil
 }

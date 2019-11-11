@@ -28,7 +28,7 @@ import (
 	"github.com/vishvananda/netns"
 )
 
-// InterfaceDetails is a object combining linux interface data based on proto
+// InterfaceDetails is an object combining linux interface data based on proto
 // model with additional metadata
 type InterfaceDetails struct {
 	Interface *interfaces.Interface `json:"interface"`

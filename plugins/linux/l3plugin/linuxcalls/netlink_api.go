@@ -15,8 +15,35 @@
 package linuxcalls
 
 import (
+	"github.com/ligato/cn-infra/logging"
 	"github.com/vishvananda/netlink"
+	"go.ligato.io/vpp-agent/v2/plugins/linux/ifplugin/ifaceidx"
+	"go.ligato.io/vpp-agent/v2/plugins/linux/nsplugin"
+	"go.ligato.io/vpp-agent/v2/proto/ligato/linux"
 )
+
+// ArpDetails is an object combining linux ARP data based on proto
+// model with additional metadata
+type ArpDetails struct {
+	ARP  *linux.ARPEntry
+	Meta *ArpMeta
+}
+
+// ArpMeta represents linux ARP metadata
+type ArpMeta struct {
+}
+
+// RouteDetails is an object combining linux route data based on proto
+// model with additional metadata
+type RouteDetails struct {
+	Route *linux.Route
+	Meta  *RouteMeta
+}
+
+// RouteMeta represents linux Route metadata
+type RouteMeta struct {
+	NetlinkScope netlink.Scope
+}
 
 // NetlinkAPI interface covers all methods inside linux calls package needed
 // to manage linux ARP entries and routes.
@@ -51,18 +78,39 @@ type NetlinkAPIRead interface {
 	// are returned.
 	GetARPEntries(interfaceIdx int) ([]netlink.Neigh, error)
 
+	// DumpARPEntries reads all ARP entries and returns them as details
+	// with proto-modeled ARP data and additional metadata
+	DumpARPEntries() ([]*ArpDetails, error)
+
 	// GetRoutes reads all configured static routes with the given outgoing
 	// interface.
 	// <interfaceIdx> works as filter, if set to zero, all routes in the namespace
 	// are returned.
 	GetRoutes(interfaceIdx int) (v4Routes, v6Routes []netlink.Route, err error)
+
+	// DumpRoutes reads all route entries and returns them as details
+	// with proto-modeled route data and additional metadata
+	DumpRoutes() ([]*RouteDetails, error)
 }
 
 // NetLinkHandler is accessor for Netlink methods.
 type NetLinkHandler struct {
+	nsPlugin  nsplugin.API
+	ifIndexes ifaceidx.LinuxIfMetadataIndex
+
+	// parallelization of the Retrieve operation
+	goRoutineCount int
+
+	log logging.Logger
 }
 
 // NewNetLinkHandler creates new instance of Netlink handler.
-func NewNetLinkHandler() *NetLinkHandler {
-	return &NetLinkHandler{}
+func NewNetLinkHandler(nsPlugin nsplugin.API, ifIndexes ifaceidx.LinuxIfMetadataIndex, goRoutineCount int,
+	log logging.Logger) *NetLinkHandler {
+	return &NetLinkHandler{
+		nsPlugin:       nsPlugin,
+		ifIndexes:      ifIndexes,
+		goRoutineCount: goRoutineCount,
+		log:            log,
+	}
 }

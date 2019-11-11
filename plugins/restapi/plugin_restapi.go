@@ -179,7 +179,7 @@ func (p *Plugin) Init() (err error) {
 	// Linux handlers
 	p.linuxIfHandler = iflinuxcalls.NewNetLinkHandler(p.NsPlugin, linuxIfIndexes, p.ServiceLabel.GetAgentPrefix(),
 		defaultGoRoutineCount, p.Log)
-	p.linuxL3Handler = l3linuxcalls.NewNetLinkHandler()
+	p.linuxL3Handler = l3linuxcalls.NewNetLinkHandler(p.NsPlugin, linuxIfIndexes, defaultGoRoutineCount, p.Log)
 
 	p.index = &index{
 		ItemMap: getIndexPageItems(),

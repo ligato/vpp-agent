@@ -651,7 +651,9 @@ func (d *InterfaceDescriptor) Retrieve(correlate []adapter.InterfaceKVWithMetada
 
 	// Obtain interface details - all interfaces with metadata
 	ifDetails, err := d.ifHandler.DumpInterfacesWithContext(nsList)
-
+	if err != nil {
+		return nil, errors.Errorf("Failed to retrieve linux interfaces: %v", err)
+	}
 	// interface logical name -> interface data
 	ifaces := make(map[string]adapter.InterfaceKVWithMetadata)
 	// already retrieved interfaces by their Linux indexes

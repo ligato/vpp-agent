@@ -44,10 +44,6 @@ const (
 	// dependency labels
 	arpInterfaceDep   = "interface-is-up"
 	arpInterfaceIPDep = "interface-has-ip-address"
-
-	// minimum number of interfaces to be given to a single Go routine for processing
-	// in the Retrieve operation
-	minWorkForGoRoutine = 3
 )
 
 // A list of non-retriable errors:
@@ -244,12 +240,6 @@ func (d *ARPDescriptor) Dependencies(key string, arp *l3.ARPEntry) (deps []kvs.D
 	return deps
 }
 
-// retrievedARPs is used as the return value sent via channel by retrieveARPs().
-type retrievedARPs struct {
-	arps []adapter.ARPKVWithMetadata
-	err  error
-}
-
 // Retrieve returns all ARP entries associated with interfaces managed by this agent.
 func (d *ARPDescriptor) Retrieve(correlate []adapter.ARPKVWithMetadata) ([]adapter.ARPKVWithMetadata, error) {
 	var values []adapter.ARPKVWithMetadata
@@ -262,104 +252,31 @@ func (d *ARPDescriptor) Retrieve(correlate []adapter.ARPKVWithMetadata) ([]adapt
 		expCfg[hwLabel(kv.Value)] = kv.Value
 	}
 
-	interfaces := d.ifPlugin.GetInterfaceIndex().ListAllInterfaces()
-	goRoutinesCnt := len(interfaces) / minWorkForGoRoutine
-	if goRoutinesCnt == 0 {
-		goRoutinesCnt = 1
-	}
-	if goRoutinesCnt > d.goRoutinesCnt {
-		goRoutinesCnt = d.goRoutinesCnt
-	}
-	ch := make(chan retrievedARPs, goRoutinesCnt)
-
-	// invoke multiple go routines for more efficient parallel ARP retrieval
-	for idx := 0; idx < goRoutinesCnt; idx++ {
-		if goRoutinesCnt > 1 {
-			go d.retrieveARPs(interfaces, idx, goRoutinesCnt, ch)
-		} else {
-			d.retrieveARPs(interfaces, idx, goRoutinesCnt, ch)
-		}
+	arpDetails, err := d.l3Handler.DumpARPEntries()
+	if err != nil {
+		return nil, errors.Errorf("Failed to retrieve linux ARPs: %v", err)
 	}
 
-	// collect results from the go routines
-	for idx := 0; idx < goRoutinesCnt; idx++ {
-		retrieved := <-ch
-		if retrieved.err != nil {
-			return values, retrieved.err
+	for _, arpDetail := range arpDetails {
+		// Convert to key-value object with metadata
+		arp := adapter.ARPKVWithMetadata{
+			Key: l3.ArpKey(arpDetail.ARP.Interface, arpDetail.ARP.IpAddress),
+			Value: &l3.ARPEntry{
+				Interface: arpDetail.ARP.Interface,
+				IpAddress: arpDetail.ARP.IpAddress,
+				HwAddress: arpDetail.ARP.HwAddress,
+			},
+			Origin: kvs.UnknownOrigin, // let the scheduler to determine the origin
 		}
-		// correlate IP addresses with netalloc references (if any) from the expected config
-		for _, arp := range retrieved.arps {
-			if expCfg, hasExpCfg := expCfg[hwLabel(arp.Value)]; hasExpCfg {
-				arp.Value.IpAddress = d.addrAlloc.CorrelateRetrievedIPs(
-					[]string{expCfg.IpAddress}, []string{arp.Value.IpAddress},
-					"", netalloc_api.IPAddressForm_ADDR_ONLY)[0]
-				// recreate key in case the IP address was replaced with a netalloc link
-				arp.Key = l3.ArpKey(arp.Value.Interface, arp.Value.IpAddress)
-			}
-			values = append(values, arp)
+		if expCfg, hasExpCfg := expCfg[hwLabel(arp.Value)]; hasExpCfg {
+			arp.Value.IpAddress = d.addrAlloc.CorrelateRetrievedIPs(
+				[]string{expCfg.IpAddress}, []string{arp.Value.IpAddress},
+				"", netalloc_api.IPAddressForm_ADDR_ONLY)[0]
+			// recreate key in case the IP address was replaced with a netalloc link
+			arp.Key = l3.ArpKey(arp.Value.Interface, arp.Value.IpAddress)
 		}
+		values = append(values, arp)
 	}
 
 	return values, nil
-}
-
-// retrieveARPs is run by a separate go routine to retrieve all ARP entries associated
-// with every <goRoutineIdx>-th interface.
-func (d *ARPDescriptor) retrieveARPs(interfaces []string, goRoutineIdx, goRoutinesCnt int, ch chan<- retrievedARPs) {
-	var retrieved retrievedARPs
-	ifMetaIdx := d.ifPlugin.GetInterfaceIndex()
-	nsCtx := nslinuxcalls.NewNamespaceMgmtCtx()
-
-	for i := goRoutineIdx; i < len(interfaces); i += goRoutinesCnt {
-		ifName := interfaces[i]
-		// get interface metadata
-		ifMeta, found := ifMetaIdx.LookupByName(ifName)
-		if !found || ifMeta == nil {
-			retrieved.err = errors.Errorf("failed to obtain metadata for interface %s", ifName)
-			d.log.Error(retrieved.err)
-			break
-		}
-
-		// switch to the namespace of the interface
-		revertNs, err := d.nsPlugin.SwitchToNamespace(nsCtx, ifMeta.Namespace)
-		if err != nil {
-			// namespace and all the ARPs it had contained no longer exist
-			d.log.WithFields(logging.Fields{
-				"err":       err,
-				"namespace": ifMeta.Namespace,
-			}).Warn("Failed to retrieve ARPs from the namespace")
-			continue
-		}
-
-		// get ARPs assigned to this interface
-		arps, err := d.l3Handler.GetARPEntries(ifMeta.LinuxIfIndex)
-		revertNs()
-		if err != nil {
-			retrieved.err = err
-			d.log.Error(retrieved.err)
-			break
-		}
-
-		// convert each ARP from Netlink representation to the NB representation
-		for _, arp := range arps {
-			if arp.IP.IsLinkLocalMulticast() {
-				// skip link-local multi-cast ARPs until there is a requirement to support them as well
-				continue
-			}
-			ipAddr := arp.IP.String()
-			hwAddr := arp.HardwareAddr.String()
-
-			retrieved.arps = append(retrieved.arps, adapter.ARPKVWithMetadata{
-				Key: l3.ArpKey(ifName, ipAddr),
-				Value: &l3.ARPEntry{
-					Interface: ifName,
-					IpAddress: ipAddr,
-					HwAddress: hwAddr,
-				},
-				Origin: kvs.UnknownOrigin, // let the scheduler to determine the origin
-			})
-		}
-	}
-
-	ch <- retrieved
 }

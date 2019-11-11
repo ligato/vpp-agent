@@ -46,9 +46,9 @@ const (
 	// RouteDescriptorName is the name of the descriptor for Linux routes.
 	RouteDescriptorName = "linux-route"
 
-	// IP addresses matching any destination.
-	ipv4AddrAny = "0.0.0.0"
-	ipv6AddrAny = "::"
+	//// IP addresses matching any destination.
+	//ipv4AddrAny = "0.0.0.0"
+	//ipv6AddrAny = "::"
 
 	// dependency labels
 	routeOutInterfaceDep       = "outgoing-interface-is-up"
@@ -340,12 +340,6 @@ func (d *RouteDescriptor) DerivedValues(key string, route *linux_l3.Route) (derV
 	return derValues
 }
 
-// retrievedRoutes is used as the return value sent via channel by retrieveRoutes().
-type retrievedRoutes struct {
-	routes []adapter.RouteKVWithMetadata
-	err    error
-}
-
 // Retrieve returns all routes associated with interfaces managed by this agent.
 func (d *RouteDescriptor) Retrieve(correlate []adapter.RouteKVWithMetadata) ([]adapter.RouteKVWithMetadata, error) {
 	var values []adapter.RouteKVWithMetadata
@@ -374,124 +368,43 @@ func (d *RouteDescriptor) Retrieve(correlate []adapter.RouteKVWithMetadata) ([]a
 		nbCfg[key] = kv.Value
 	}
 
-	interfaces := d.ifPlugin.GetInterfaceIndex().ListAllInterfaces()
-	goRoutinesCnt := len(interfaces) / minWorkForGoRoutine
-	if goRoutinesCnt == 0 {
-		goRoutinesCnt = 1
-	}
-	if goRoutinesCnt > d.goRoutinesCnt {
-		goRoutinesCnt = d.goRoutinesCnt
-	}
-	ch := make(chan retrievedRoutes, goRoutinesCnt)
-
-	// invoke multiple go routines for more efficient parallel route retrieval
-	for idx := 0; idx < goRoutinesCnt; idx++ {
-		if goRoutinesCnt > 1 {
-			go d.retrieveRoutes(interfaces, idx, goRoutinesCnt, ch)
-		} else {
-			d.retrieveRoutes(interfaces, idx, goRoutinesCnt, ch)
-		}
+	routeDetails, err := d.l3Handler.DumpRoutes()
+	if err != nil {
+		return nil, errors.Errorf("Failed to retrieve linux ARPs: %v", err)
 	}
 
-	// collect results from the go routines
-	for idx := 0; idx < goRoutinesCnt; idx++ {
-		retrieved := <-ch
-		if retrieved.err != nil {
-			return values, retrieved.err
+	// correlate with the expected configuration
+	for _, routeDetails := range routeDetails {
+		// Convert to key-value object with metadata
+		scope, err := rtScopeFromNetlinkToNB(routeDetails.Meta.NetlinkScope)
+		if err != nil {
+			// route not configured by the agent
+			continue
 		}
-		// correlate with the expected configuration
-		for _, route := range retrieved.routes {
-			key := linux_l3.RouteKey(route.Value.DstNetwork, route.Value.OutgoingInterface)
-			if expCfg, hasExpCfg := expCfg[key]; hasExpCfg {
-				if d.EquivalentRoutes(key, route.Value, expCfg) {
-					route.Value = nbCfg[key]
-					// recreate the key in case the dest. IP was replaced with netalloc link
-					route.Key = models.Key(route.Value)
-				}
+		route := adapter.RouteKVWithMetadata{
+			Key: linux_l3.RouteKey(routeDetails.Route.DstNetwork, routeDetails.Route.OutgoingInterface),
+			Value: &linux_l3.Route{
+				OutgoingInterface: routeDetails.Route.OutgoingInterface,
+				Scope:             scope,
+				DstNetwork:        routeDetails.Route.DstNetwork,
+				GwAddr:            routeDetails.Route.GwAddr,
+				Metric:            routeDetails.Route.Metric,
+			},
+			Origin: kvs.UnknownOrigin, // let the scheduler to determine the origin
+		}
+
+		key := linux_l3.RouteKey(routeDetails.Route.DstNetwork, routeDetails.Route.OutgoingInterface)
+		if expCfg, hasExpCfg := expCfg[key]; hasExpCfg {
+			if d.EquivalentRoutes(key, route.Value, expCfg) {
+				route.Value = nbCfg[key]
+				// recreate the key in case the dest. IP was replaced with netalloc link
+				route.Key = models.Key(route.Value)
 			}
-			values = append(values, route)
 		}
+		values = append(values, route)
 	}
 
 	return values, nil
-}
-
-// retrieveRoutes is run by a separate go routine to retrieve all routes entries
-// associated with every <goRoutineIdx>-th interface.
-func (d *RouteDescriptor) retrieveRoutes(interfaces []string, goRoutineIdx, goRoutinesCnt int, ch chan<- retrievedRoutes) {
-	var retrieved retrievedRoutes
-	ifMetaIdx := d.ifPlugin.GetInterfaceIndex()
-	nsCtx := nslinuxcalls.NewNamespaceMgmtCtx()
-
-	for i := goRoutineIdx; i < len(interfaces); i += goRoutinesCnt {
-		ifName := interfaces[i]
-		// get interface metadata
-		ifMeta, found := ifMetaIdx.LookupByName(ifName)
-		if !found || ifMeta == nil {
-			retrieved.err = errors.Errorf("failed to obtain metadata for interface %s", ifName)
-			d.log.Error(retrieved.err)
-			break
-		}
-
-		// switch to the namespace of the interface
-		revertNs, err := d.nsPlugin.SwitchToNamespace(nsCtx, ifMeta.Namespace)
-		if err != nil {
-			// namespace and all the routes it had contained no longer exist
-			d.log.WithFields(logging.Fields{
-				"err":       err,
-				"namespace": ifMeta.Namespace,
-			}).Warn("Failed to retrieve routes from the namespace")
-			continue
-		}
-
-		// get routes assigned to this interface
-		v4Routes, v6Routes, err := d.l3Handler.GetRoutes(ifMeta.LinuxIfIndex)
-		revertNs()
-		if err != nil {
-			retrieved.err = err
-			d.log.Error(retrieved.err)
-			break
-		}
-
-		// convert each route from Netlink representation to the NB representation
-		for idx, route := range append(v4Routes, v6Routes...) {
-			var dstNet, gwAddr string
-			if route.Dst == nil {
-				if idx < len(v4Routes) {
-					dstNet = ipv4AddrAny + "/0"
-				} else {
-					dstNet = ipv6AddrAny + "/0"
-				}
-			} else {
-				if route.Dst.IP.To4() == nil && route.Dst.IP.IsLinkLocalUnicast() {
-					// skip link-local IPv6 destinations until there is a requirement to support them
-					continue
-				}
-				dstNet = route.Dst.String()
-			}
-			if len(route.Gw) != 0 {
-				gwAddr = route.Gw.String()
-			}
-			scope, err := rtScopeFromNetlinkToNB(route.Scope)
-			if err != nil {
-				// route not configured by the agent
-				continue
-			}
-			retrieved.routes = append(retrieved.routes, adapter.RouteKVWithMetadata{
-				Key: linux_l3.RouteKey(dstNet, ifName),
-				Value: &linux_l3.Route{
-					OutgoingInterface: ifName,
-					Scope:             scope,
-					DstNetwork:        dstNet,
-					GwAddr:            gwAddr,
-					Metric:            uint32(route.Priority),
-				},
-				Origin: kvs.UnknownOrigin, // let the scheduler to determine the origin
-			})
-		}
-	}
-
-	ch <- retrieved
 }
 
 // rtScopeFromNBToNetlink convert Route scope from NB configuration
@@ -559,9 +472,9 @@ func equalNetworks(net1, net2 string) bool {
 func getGwAddr(route *linux_l3.Route) string {
 	if route.GwAddr == "" {
 		if ipv6, _ := addrs.IsIPv6(route.DstNetwork); ipv6 {
-			return ipv6AddrAny
+			return l3linuxcalls.IPv6AddrAny
 		}
-		return ipv4AddrAny
+		return l3linuxcalls.IPv4AddrAny
 	}
 	return route.GwAddr
 }
