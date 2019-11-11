@@ -17,7 +17,6 @@ package descriptor
 import (
 	"fmt"
 	"hash/fnv"
-	"strings"
 
 	"go.ligato.io/vpp-agent/v2/plugins/linux/ifplugin/ifaceidx"
 	nslinuxcalls "go.ligato.io/vpp-agent/v2/plugins/linux/nsplugin/linuxcalls"
@@ -148,16 +147,6 @@ func (d *InterfaceDescriptor) deleteVETH(nsCtx nslinuxcalls.NamespaceMgmtCtx, ke
 // The alias stores the VETH logical name together with the peer (logical) name.
 func getVethAlias(vethName, peerName string) string {
 	return vethName + "/" + peerName
-}
-
-// parseVethAlias parses out VETH logical name together with the peer name from the alias.
-func parseVethAlias(alias string) (vethName, peerName string) {
-	aliasParts := strings.Split(alias, "/")
-	vethName = aliasParts[0]
-	if len(aliasParts) > 0 {
-		peerName = aliasParts[1]
-	}
-	return
 }
 
 // getVethTemporaryHostName (deterministically) generates a temporary host name

@@ -17,9 +17,29 @@ package linuxcalls
 import (
 	"net"
 
+	"go.ligato.io/vpp-agent/v2/plugins/linux/nsplugin"
+
+	"github.com/ligato/cn-infra/logging"
+	"go.ligato.io/vpp-agent/v2/plugins/linux/ifplugin/ifaceidx"
+	interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/linux/interfaces"
+	namespaces "go.ligato.io/vpp-agent/v2/proto/ligato/linux/namespace"
+
 	"github.com/vishvananda/netlink"
 	"github.com/vishvananda/netns"
 )
+
+// InterfaceDetails is a object combining linux interface data based on proto
+// model with additional metadata
+type InterfaceDetails struct {
+	Interface *interfaces.Interface `json:"interface"`
+	Meta      *InterfaceMeta        `json:"interface_meta"`
+}
+
+// InterfaceMeta represents linux interface metadata
+type InterfaceMeta struct {
+	LinuxIfIndex int  `json:"linux_if_index"`
+	IsExisting   bool `json:"is_existing"`
+}
 
 // NetlinkAPI interface covers all methods inside linux calls package
 // needed to manage linux interfaces.
@@ -80,13 +100,34 @@ type NetlinkAPIRead interface {
 	// GetChecksumOffloading returns the state of Rx/Tx checksum offloading
 	// for the given interface.
 	GetChecksumOffloading(ifName string) (rxOn, txOn bool, err error)
+	// DumpInterfaces uses local cache to gather information about linux
+	// namespaces and retrieves them.
+	DumpInterfaces() ([]*InterfaceDetails, error)
+	// DumpInterfacesWithContext retrieves all linux interfaces based
+	// on provided namespace context.
+	DumpInterfacesWithContext(nsList []*namespaces.NetNamespace) ([]*InterfaceDetails, error)
 }
 
 // NetLinkHandler is accessor for Netlink methods.
 type NetLinkHandler struct {
+	nsPlugin    nsplugin.API
+	ifIndexes   ifaceidx.LinuxIfMetadataIndex
+	agentPrefix string
+
+	// parallelization of the Retrieve operation
+	goRoutineCount int
+
+	log logging.Logger
 }
 
 // NewNetLinkHandler creates new instance of Netlink handler.
-func NewNetLinkHandler() *NetLinkHandler {
-	return &NetLinkHandler{}
+func NewNetLinkHandler(nsPlugin nsplugin.API, ifIndexes ifaceidx.LinuxIfMetadataIndex, agentPrefix string,
+	goRoutineCount int, log logging.Logger) *NetLinkHandler {
+	return &NetLinkHandler{
+		nsPlugin:       nsPlugin,
+		ifIndexes:      ifIndexes,
+		agentPrefix:    agentPrefix,
+		goRoutineCount: goRoutineCount,
+		log:            log,
+	}
 }

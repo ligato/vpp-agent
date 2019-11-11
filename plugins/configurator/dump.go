@@ -1,3 +1,17 @@
+//  Copyright (c) 2019 Cisco and/or its affiliates.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at:
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+
 package configurator
 
 import (
@@ -17,6 +31,7 @@ import (
 	natvppcalls "go.ligato.io/vpp-agent/v2/plugins/vpp/natplugin/vppcalls"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/puntplugin/vppcalls"
 	rpc "go.ligato.io/vpp-agent/v2/proto/ligato/configurator"
+	linux_interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/linux/interfaces"
 	vpp_abf "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/abf"
 	vpp_acl "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/acl"
 	vpp_interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
@@ -132,8 +147,13 @@ func (svc *dumpService) Dump(context.Context, *rpc.DumpRequest) (*rpc.DumpRespon
 		return nil, err
 	}
 
-	// FIXME: linux interfaces should return known proto instead of netlink
-	// state.LinuxData.Interfaces, _ = svc.DumpLinuxInterfaces()
+	dump.LinuxConfig.Interfaces, err = svc.DumpLinuxInterfaces()
+	if err != nil {
+		svc.log.Errorf("DumpLinuxInterfaces failed: %v", err)
+		return nil, err
+	}
+
+	// TODO dump other Linux stuff
 
 	return &rpc.DumpResponse{Dump: dump}, nil
 }
@@ -388,14 +408,17 @@ func (svc *dumpService) DumpPuntExceptions() (punts []*vpp_punt.Exception, err e
 
 // DumpLinuxInterfaces reads linux interfaces and returns them as an *LinuxInterfaceResponse. If reading ends up with error,
 // only error is send back in response
-/*func (svc *dumpService) DumpLinuxInterfaces() ([]*linux_interfaces.Interface, error) {
-	var linuxIfs []*linux_interfaces.Interface
-	ifDetails, err := svc.linuxIfHandler.GetLinkList()
+func (svc *dumpService) DumpLinuxInterfaces() (linuxIfs []*linux_interfaces.Interface, err error) {
+	if svc.linuxIfHandler == nil {
+		return nil, errors.New("linuxIfHandler is not available")
+	}
+
+	ifDetails, err := svc.linuxIfHandler.DumpInterfaces()
 	if err != nil {
 		return nil, err
 	}
-	for _, iface := range ifDetails {
-		linuxIfs = append(linuxIfs, )
+	for _, ifDetail := range ifDetails {
+		linuxIfs = append(linuxIfs, ifDetail.Interface)
 	}
 
 	return linuxIfs, nil
@@ -403,7 +426,7 @@ func (svc *dumpService) DumpPuntExceptions() (punts []*vpp_punt.Exception, err e
 
 // DumpLinuxARPs reads linux ARPs and returns them as an *LinuxARPsResponse. If reading ends up with error,
 // only error is send back in response
-func (svc *dumpService) DumpLinuxARPs(ctx context.Context, request *rpc.DumpRequest) (*rpc.LinuxARPsResponse, error) {
+/*func (svc *dumpService) DumpLinuxARPs(ctx context.Context, request *rpc.DumpRequest) (*rpc.LinuxARPsResponse, error) {
 	var linuxArps []*linuxL3.LinuxStaticArpEntries_ArpEntry
 	arpDetails, err := svc.linuxL3Handler.DumpArpEntries()
 	if err != nil {

@@ -18,6 +18,7 @@ import (
 	"github.com/ligato/cn-infra/config"
 	"github.com/ligato/cn-infra/health/statuscheck"
 	"github.com/ligato/cn-infra/logging"
+	"github.com/ligato/cn-infra/servicelabel"
 	"go.ligato.io/vpp-agent/v2/plugins/govppmux"
 	"go.ligato.io/vpp-agent/v2/plugins/kvscheduler"
 	"go.ligato.io/vpp-agent/v2/plugins/netalloc"
@@ -34,6 +35,7 @@ func NewPlugin(opts ...Option) *IfPlugin {
 	p.StatusCheck = &statuscheck.DefaultPlugin
 	p.KVScheduler = &kvscheduler.DefaultPlugin
 	p.GoVppmux = &govppmux.DefaultPlugin
+	p.ServiceLabel = &servicelabel.DefaultPlugin
 	p.AddrAlloc = &netalloc.DefaultPlugin
 
 	for _, o := range opts {
