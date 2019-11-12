@@ -42,33 +42,20 @@ const (
 // retrievedIfaces is used as the return value sent via channel by retrieveInterfaces().
 type retrievedInterfaces struct {
 	interfaces []*InterfaceDetails
+	stats      []*InterfaceStatistics
 	err        error
 }
 
-// DumpInterfaces retrieves all linux interfaces from default namespace, and from all
+// DumpInterfaces retrieves all linux interfaces from default namespace and from all
 // the other namespaces based on known linux interfaces from the index map.
 func (h *NetLinkHandler) DumpInterfaces() ([]*InterfaceDetails, error) {
-	// Add default namespace
-	nsList := []*namespaces.NetNamespace{nil}
-	for _, ifName := range h.ifIndexes.ListAllInterfaces() {
-		if metadata, exists := h.ifIndexes.LookupByName(ifName); exists {
-			if metadata == nil {
-				h.log.Warnf("metadata for %s are nil", ifName)
-				continue
-			}
-			nsListed := false
-			for _, ns := range nsList {
-				if proto.Equal(ns, metadata.Namespace) {
-					nsListed = true
-					break
-				}
-			}
-			if !nsListed {
-				nsList = append(nsList, metadata.Namespace)
-			}
-		}
-	}
-	return h.DumpInterfacesWithContext(nsList)
+	return h.DumpInterfacesWithContext(h.getKnownNamespaces())
+}
+
+// DumpInterfaceStats retrieves statistics for all linux interfaces from default namespace
+// and from all the other namespaces based on known linux interfaces from the index map.
+func (h *NetLinkHandler) DumpInterfaceStats() ([]*InterfaceStatistics, error) {
+	return h.DumpInterfaceStatsWithContext(h.getKnownNamespaces())
 }
 
 // DumpInterfacesWithContext requires context in form of the namespace list of which linux interfaces
@@ -107,6 +94,70 @@ func (h *NetLinkHandler) DumpInterfacesWithContext(nsList []*namespaces.NetNames
 		linuxIfs = append(linuxIfs, retrieved.interfaces...)
 	}
 	return linuxIfs, nil
+}
+
+// DumpInterfaceStatsWithContext requires context in form of the namespace list of which linux interface stats
+// will be retrieved. If no context is provided, interface stats only from the default namespace interfaces
+// are retrieved.
+func (h *NetLinkHandler) DumpInterfaceStatsWithContext(nsList []*namespaces.NetNamespace) ([]*InterfaceStatistics, error) {
+	// Always retrieve from the default namespace
+	if len(nsList) == 0 {
+		nsList = []*namespaces.NetNamespace{nil}
+	}
+	// Determine the number of go routines to invoke
+	goRoutinesCnt := len(nsList) / minWorkForGoRoutine
+	if goRoutinesCnt == 0 {
+		goRoutinesCnt = 1
+	}
+	if goRoutinesCnt > h.goRoutineCount {
+		goRoutinesCnt = h.goRoutineCount
+	}
+	ch := make(chan retrievedInterfaces, goRoutinesCnt)
+
+	// Invoke multiple go routines for more efficient parallel interface retrieval
+	for idx := 0; idx < goRoutinesCnt; idx++ {
+		if goRoutinesCnt > 1 {
+			go h.retrieveInterfaces(nsList, idx, goRoutinesCnt, ch)
+		} else {
+			h.retrieveInterfaces(nsList, idx, goRoutinesCnt, ch)
+		}
+	}
+
+	// receive results from the go routines
+	var linuxStats []*InterfaceStatistics
+	for idx := 0; idx < goRoutinesCnt; idx++ {
+		retrieved := <-ch
+		if retrieved.err != nil {
+			return nil, retrieved.err
+		}
+		linuxStats = append(linuxStats, retrieved.stats...)
+	}
+	return linuxStats, nil
+}
+
+// Obtain all linux namespaces known to the Linux plugin
+func (h *NetLinkHandler) getKnownNamespaces() []*namespaces.NetNamespace {
+	// Add default namespace
+	nsList := []*namespaces.NetNamespace{nil}
+	for _, ifName := range h.ifIndexes.ListAllInterfaces() {
+		if metadata, exists := h.ifIndexes.LookupByName(ifName); exists {
+			if metadata == nil {
+				h.log.Warnf("metadata for %s are nil", ifName)
+				continue
+			}
+			nsListed := false
+			for _, ns := range nsList {
+				if proto.Equal(ns, metadata.Namespace) {
+					nsListed = true
+					break
+				}
+			}
+			if !nsListed {
+				nsList = append(nsList, metadata.Namespace)
+			}
+		}
+	}
+	return nsList
 }
 
 // retrieveInterfaces is run by a separate go routine to retrieve all interfaces
@@ -189,12 +240,35 @@ func (h *NetLinkHandler) retrieveInterfaces(nsList []*namespaces.NetNamespace, g
 			// retrieve addresses, MTU, etc.
 			h.retrieveLinkDetails(link, iface, nsRef)
 
-			// build key-value pair for the retrieved interface
+			// build interface details
 			retrieved.interfaces = append(retrieved.interfaces, &InterfaceDetails{
 				Interface: iface,
 				Meta: &InterfaceMeta{
-					LinuxIfIndex: link.Attrs().Index,
+					LinuxIfIndex:  link.Attrs().Index,
+					ParentIndex:   link.Attrs().ParentIndex,
+					MasterIndex:   link.Attrs().MasterIndex,
+					OperState:     uint8(link.Attrs().OperState),
+					Flags:         link.Attrs().RawFlags,
+					Encapsulation: link.Attrs().EncapType,
+					NumRxQueues:   link.Attrs().NumRxQueues,
+					NumTxQueues:   link.Attrs().NumTxQueues,
+					TxQueueLen:    link.Attrs().TxQLen,
 				},
+			})
+
+			// build interface statistics
+			retrieved.stats = append(retrieved.stats, &InterfaceStatistics{
+				Name:         iface.Name,
+				Type:         iface.Type,
+				LinuxIfIndex: link.Attrs().Index,
+				RxPackets:    link.Attrs().Statistics.RxPackets,
+				TxPackets:    link.Attrs().Statistics.TxPackets,
+				RxBytes:      link.Attrs().Statistics.RxBytes,
+				TxBytes:      link.Attrs().Statistics.TxBytes,
+				RxErrors:     link.Attrs().Statistics.RxErrors,
+				TxErrors:     link.Attrs().Statistics.TxErrors,
+				RxDropped:    link.Attrs().Statistics.TxDropped,
+				TxDropped:    link.Attrs().Statistics.RxDropped,
 			})
 		}
 

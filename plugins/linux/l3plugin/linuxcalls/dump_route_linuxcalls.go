@@ -158,7 +158,10 @@ func (h *NetLinkHandler) retrieveRoutes(interfaces []string, goRoutineIdx, goRou
 					Metric:            uint32(route.Priority),
 				},
 				Meta: &RouteMeta{
-					NetlinkScope: route.Scope,
+					InterfaceIndex: uint32(route.LinkIndex),
+					NetlinkScope:   route.Scope,
+					Protocol:       uint32(route.Protocol),
+					MTU:            uint32(route.MTU),
 				},
 			})
 		}

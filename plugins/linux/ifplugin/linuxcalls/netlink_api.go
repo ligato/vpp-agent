@@ -35,10 +35,35 @@ type InterfaceDetails struct {
 	Meta      *InterfaceMeta        `json:"interface_meta"`
 }
 
+// Statistics are represented here since
+// there is currently no model
+type InterfaceStatistics struct {
+	Name         string                    `json:"interface_name"`
+	Type         interfaces.Interface_Type `json:"interface_type"`
+	LinuxIfIndex int                       `json:"linux_if_index"`
+
+	// stats data
+	RxPackets uint64 `json:"rx_packets"`
+	TxPackets uint64 `json:"tx_packets"`
+	RxBytes   uint64 `json:"rx_bytes"`
+	TxBytes   uint64 `json:"tx_bytes"`
+	RxErrors  uint64 `json:"rx_errors"`
+	TxErrors  uint64 `json:"tx_errors"`
+	RxDropped uint64 `json:"rx_dropped"`
+	TxDropped uint64 `json:"tx_dropped"`
+}
+
 // InterfaceMeta represents linux interface metadata
 type InterfaceMeta struct {
-	LinuxIfIndex int  `json:"linux_if_index"`
-	IsExisting   bool `json:"is_existing"`
+	LinuxIfIndex  int    `json:"linux_if_index"`
+	ParentIndex   int    `json:"parent_index"`
+	MasterIndex   int    `json:"master_index"`
+	OperState     uint8  `json:"oper_state"`
+	Flags         uint32 `json:"flags"`
+	Encapsulation string `json:"encapsulation"`
+	NumRxQueues   int    `json:"num_rx_queue"`
+	NumTxQueues   int    `json:"num_tx_queue"`
+	TxQueueLen    int    `json:"tx_queue_len"`
 }
 
 // NetlinkAPI interface covers all methods inside linux calls package
@@ -101,11 +126,17 @@ type NetlinkAPIRead interface {
 	// for the given interface.
 	GetChecksumOffloading(ifName string) (rxOn, txOn bool, err error)
 	// DumpInterfaces uses local cache to gather information about linux
-	// namespaces and retrieves them.
+	// namespaces and retrieves interfaces from them.
 	DumpInterfaces() ([]*InterfaceDetails, error)
 	// DumpInterfacesWithContext retrieves all linux interfaces based
 	// on provided namespace context.
 	DumpInterfacesWithContext(nsList []*namespaces.NetNamespace) ([]*InterfaceDetails, error)
+	// DumpInterfaceStats uses local cache to gather information about linux
+	// namespaces and retrieves stats for interfaces in that namespace them.
+	DumpInterfaceStats() ([]*InterfaceStatistics, error)
+	// DumpInterfaceStatsWithContext retrieves all linux interface stats based
+	// on provided namespace context.
+	DumpInterfaceStatsWithContext(nsList []*namespaces.NetNamespace) ([]*InterfaceStatistics, error)
 }
 
 // NetLinkHandler is accessor for Netlink methods.

@@ -25,12 +25,15 @@ import (
 // ArpDetails is an object combining linux ARP data based on proto
 // model with additional metadata
 type ArpDetails struct {
-	ARP  *linux.ARPEntry
-	Meta *ArpMeta
+	ARP  *linux.ARPEntry `json:"linux_arp"`
+	Meta *ArpMeta        `json:"linux_arp_meta"`
 }
 
 // ArpMeta represents linux ARP metadata
 type ArpMeta struct {
+	InterfaceIndex uint32 `json:"interface_index"`
+	IPFamily       uint32 `json:"ip_family"`
+	VNI            uint32 `json:"vni"`
 }
 
 // RouteDetails is an object combining linux route data based on proto
@@ -42,7 +45,10 @@ type RouteDetails struct {
 
 // RouteMeta represents linux Route metadata
 type RouteMeta struct {
-	NetlinkScope netlink.Scope
+	InterfaceIndex uint32        `json:"interface_index"`
+	NetlinkScope   netlink.Scope `json:"link_scope"`
+	Protocol       uint32        `json:"protocol"`
+	MTU            uint32        `json:"mtu"`
 }
 
 // NetlinkAPI interface covers all methods inside linux calls package needed

@@ -120,7 +120,11 @@ func (h *NetLinkHandler) retrieveARPs(interfaces []string, goRoutineIdx, goRouti
 					IpAddress: arp.IP.String(),
 					HwAddress: arp.HardwareAddr.String(),
 				},
-				Meta: &ArpMeta{},
+				Meta: &ArpMeta{
+					InterfaceIndex: uint32(arp.LinkIndex),
+					IPFamily:       uint32(arp.Family),
+					VNI:            uint32(arp.VNI),
+				},
 			})
 		}
 	}
