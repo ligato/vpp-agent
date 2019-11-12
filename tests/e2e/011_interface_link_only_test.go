@@ -92,9 +92,7 @@ func TestLinkOnly(t *testing.T) {
 	Expect(ctx.getValueState(linuxTap)).To(Equal(kvscheduler.ValueState_CONFIGURED))
 	Expect(ctx.pingFromVPP(linuxTapIPIgnored)).NotTo(Succeed()) // IP address was not set
 
-	tapLinkName, err := netlink.LinkByName(linuxTapHostname)
-	Expect(err).ToNot(HaveOccurred())
-	hasIP := func(ipAddr string) bool {
+	hasIP := func(tapLinkName netlink.Link, ipAddr string) bool {
 		addrs, err := netlink.AddrList(tapLinkName, netlink.FAMILY_ALL)
 		Expect(err).ToNot(HaveOccurred())
 		for _, addr := range addrs {
@@ -106,8 +104,11 @@ func TestLinkOnly(t *testing.T) {
 	}
 
 	leaveMs := ms.enterNetNs()
+	tapLinkName, err := netlink.LinkByName(linuxTapHostname)
+	Expect(err).ToNot(HaveOccurred())
+
 	// agent didn't set IP address
-	Expect(hasIP(linuxTapIPIgnored)).To(BeFalse())
+	Expect(hasIP(tapLinkName, linuxTapIPIgnored)).To(BeFalse())
 
 	// set IP and MAC addresses from outside of the agent
 	ipAddr, _, err := utils.ParseIPAddr(linuxTapIPExternal+netMask, nil)
@@ -123,8 +124,8 @@ func TestLinkOnly(t *testing.T) {
 	// run downstream resync
 	Expect(ctx.agentInSync()).To(BeTrue()) // everything in-sync even though the IP addr was added
 	leaveMs = ms.enterNetNs()
-	Expect(hasIP(linuxTapIPIgnored)).To(BeFalse())
-	Expect(hasIP(linuxTapIPExternal)).To(BeTrue())
+	Expect(hasIP(tapLinkName, linuxTapIPIgnored)).To(BeFalse())
+	Expect(hasIP(tapLinkName, linuxTapIPExternal)).To(BeTrue())
 	link, err := netlink.LinkByName(linuxTapHostname)
 	Expect(err).ToNot(HaveOccurred())
 	Expect(link).ToNot(BeNil())

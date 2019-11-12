@@ -1,4 +1,4 @@
-// Copyright (c) 2017 Cisco and/or its affiliates.
+// Copyright (c) 2019 Cisco and/or its affiliates.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -34,60 +34,10 @@ const (
 	minWorkForGoRoutine = 3
 )
 
-// retrievedARPs is used as the return value sent via channel by retrieveARPs().
-type retrievedARPs struct {
-	arps []*ArpDetails
-	err  error
-}
-
 // retrievedRoutes is used as the return value sent via channel by retrieveRoutes().
 type retrievedRoutes struct {
 	routes []*RouteDetails
 	err    error
-}
-
-// GetARPEntries reads all configured static ARP entries for given interface.
-// <interfaceIdx> works as filter, if set to zero, all arp entries in the namespace
-// are returned
-func (h *NetLinkHandler) GetARPEntries(interfaceIdx int) ([]netlink.Neigh, error) {
-	return netlink.NeighList(interfaceIdx, 0)
-}
-
-// DumpARPEntries reads all ARP entries and returns them as details
-// with proto-modeled ARP data and additional metadata
-func (h *NetLinkHandler) DumpARPEntries() ([]*ArpDetails, error) {
-	interfaces := h.ifIndexes.ListAllInterfaces()
-	goRoutinesCnt := len(interfaces) / minWorkForGoRoutine
-	if goRoutinesCnt == 0 {
-		goRoutinesCnt = 1
-	}
-	if goRoutinesCnt > h.goRoutineCount {
-		goRoutinesCnt = h.goRoutineCount
-	}
-	ch := make(chan retrievedARPs, goRoutinesCnt)
-
-	// invoke multiple go routines for more efficient parallel ARP retrieval
-	for idx := 0; idx < goRoutinesCnt; idx++ {
-		if goRoutinesCnt > 1 {
-			go h.retrieveARPs(interfaces, idx, goRoutinesCnt, ch)
-		} else {
-			h.retrieveARPs(interfaces, idx, goRoutinesCnt, ch)
-		}
-	}
-
-	// collect results from the go routines
-	var arpDetails []*ArpDetails
-	for idx := 0; idx < goRoutinesCnt; idx++ {
-		retrieved := <-ch
-		if retrieved.err != nil {
-			return nil, retrieved.err
-		}
-		for _, linuxArp := range retrieved.arps {
-			arpDetails = append(arpDetails, linuxArp)
-		}
-	}
-
-	return arpDetails, nil
 }
 
 // GetRoutes reads all configured static routes with the given outgoing
@@ -139,68 +89,10 @@ func (h *NetLinkHandler) DumpRoutes() ([]*RouteDetails, error) {
 			return nil, retrieved.err
 		}
 		// correlate with the expected configuration
-		for _, routeDetail := range retrieved.routes {
-			routeDetails = append(routeDetails, routeDetail)
-		}
+		routeDetails = append(routeDetails, retrieved.routes...)
 	}
 
 	return routeDetails, nil
-}
-
-// retrieveARPs is run by a separate go routine to retrieve all ARP entries associated
-// with every <goRoutineIdx>-th interface.
-func (h *NetLinkHandler) retrieveARPs(interfaces []string, goRoutineIdx, goRoutinesCnt int, ch chan<- retrievedARPs) {
-	var retrieved retrievedARPs
-	nsCtx := linuxcalls.NewNamespaceMgmtCtx()
-
-	for i := goRoutineIdx; i < len(interfaces); i += goRoutinesCnt {
-		ifName := interfaces[i]
-		// get interface metadata
-		ifMeta, found := h.ifIndexes.LookupByName(ifName)
-		if !found || ifMeta == nil {
-			retrieved.err = errors.Errorf("failed to obtain metadata for interface %s", ifName)
-			h.log.Error(retrieved.err)
-			break
-		}
-
-		// switch to the namespace of the interface
-		revertNs, err := h.nsPlugin.SwitchToNamespace(nsCtx, ifMeta.Namespace)
-		if err != nil {
-			// namespace and all the ARPs it had contained no longer exist
-			h.log.WithFields(logging.Fields{
-				"err":       err,
-				"namespace": ifMeta.Namespace,
-			}).Warn("Failed to retrieve ARPs from the namespace")
-			continue
-		}
-
-		// get ARPs assigned to this interface
-		arps, err := h.GetARPEntries(ifMeta.LinuxIfIndex)
-		revertNs()
-		if err != nil {
-			retrieved.err = err
-			h.log.Error(retrieved.err)
-			break
-		}
-
-		// convert each ARP from Netlink representation to the ARP details
-		for _, arp := range arps {
-			if arp.IP.IsLinkLocalMulticast() {
-				// skip link-local multi-cast ARPs until there is a requirement to support them as well
-				continue
-			}
-			retrieved.arps = append(retrieved.arps, &ArpDetails{
-				ARP: &linux_l3.ARPEntry{
-					Interface: ifName,
-					IpAddress: arp.IP.String(),
-					HwAddress: arp.HardwareAddr.String(),
-				},
-				Meta: &ArpMeta{},
-			})
-		}
-	}
-
-	ch <- retrieved
 }
 
 // retrieveRoutes is run by a separate go routine to retrieve all routes entries

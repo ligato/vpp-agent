@@ -75,7 +75,7 @@ func (h *NetLinkHandler) DumpInterfaces() ([]*InterfaceDetails, error) {
 // will be retrieved. If no context is provided, interfaces only from the default namespace are retrieved.
 func (h *NetLinkHandler) DumpInterfacesWithContext(nsList []*namespaces.NetNamespace) ([]*InterfaceDetails, error) {
 	// Always retrieve from the default namespace
-	if nsList == nil || len(nsList) == 0 {
+	if len(nsList) == 0 {
 		nsList = []*namespaces.NetNamespace{nil}
 	}
 	// Determine the number of go routines to invoke
@@ -104,9 +104,7 @@ func (h *NetLinkHandler) DumpInterfacesWithContext(nsList []*namespaces.NetNames
 		if retrieved.err != nil {
 			return nil, retrieved.err
 		}
-		for _, linuxIf := range retrieved.interfaces {
-			linuxIfs = append(linuxIfs, linuxIf)
-		}
+		linuxIfs = append(linuxIfs, retrieved.interfaces...)
 	}
 	return linuxIfs, nil
 }

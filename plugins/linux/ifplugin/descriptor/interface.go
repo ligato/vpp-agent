@@ -666,6 +666,7 @@ func (d *InterfaceDescriptor) Retrieve(correlate []adapter.InterfaceKVWithMetada
 			Metadata: &ifaceidx.LinuxIfMetadata{
 				LinuxIfIndex: ifDetail.Meta.LinuxIfIndex,
 				Namespace:    ifDetail.Interface.GetNamespace(),
+				VPPTapName:   ifDetail.Interface.GetTap().GetVppTapIfName(),
 				HostIfName:   ifDetail.Interface.HostIfName,
 			},
 			Key: interfaces.InterfaceKey(ifDetail.Interface.Name),

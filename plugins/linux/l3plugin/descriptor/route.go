@@ -46,10 +46,6 @@ const (
 	// RouteDescriptorName is the name of the descriptor for Linux routes.
 	RouteDescriptorName = "linux-route"
 
-	//// IP addresses matching any destination.
-	//ipv4AddrAny = "0.0.0.0"
-	//ipv6AddrAny = "::"
-
 	// dependency labels
 	routeOutInterfaceDep       = "outgoing-interface-is-up"
 	routeOutInterfaceIPAddrDep = "outgoing-interface-has-ip-address"
