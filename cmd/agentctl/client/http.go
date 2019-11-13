@@ -124,7 +124,7 @@ func (c *Client) doRequest(ctx context.Context, req *http.Request) (serverRespon
 		}
 	}()
 
-	resp, err = c.httpClient.Do(req)
+	resp, err = c.HTTPClient().Do(req)
 	if err != nil {
 		if c.scheme != "https" && strings.Contains(err.Error(), "malformed HTTP response") {
 			return serverResp, fmt.Errorf("%v.\n* Are you trying to connect to a TLS-enabled daemon without TLS?", err)
@@ -203,18 +203,20 @@ func (c *Client) checkResponseErr(serverResp serverResponse) error {
 		ct = serverResp.header.Get("Content-Type")
 	}
 
-	var errorMessage string
+	var errorMsg string
 	if ct == "application/json" {
 		var errorResponse types.ErrorResponse
 		if err := json.Unmarshal(body, &errorResponse); err != nil {
 			return errors.Wrap(err, "Error reading JSON")
 		}
-		errorMessage = strings.TrimSpace(errorResponse.Message)
+		errorMsg = errorResponse.Message
 	} else {
-		errorMessage = strings.TrimSpace(string(body))
+		errorMsg = string(body)
 	}
 
-	return errors.Wrap(errors.New(errorMessage), "Error response from daemon")
+	errorMsg = fmt.Sprintf("[%d] %s", serverResp.statusCode, strings.TrimSpace(errorMsg))
+
+	return errors.Wrap(errors.New(errorMsg), "Error response from daemon")
 }
 
 func (c *Client) addHeaders(req *http.Request, headers headers) *http.Request {

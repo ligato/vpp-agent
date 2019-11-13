@@ -26,7 +26,7 @@ type APIClient interface {
 	ConfigClient() (client.ConfigClient, error)
 
 	AgentHost() string
-	ClientVersion() string
+	Version() string
 	KVDBClient() (KVDBAPIClient, error)
 	GRPCConn() (*grpc.ClientConn, error)
 	HTTPClient() *http.Client

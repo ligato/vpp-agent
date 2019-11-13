@@ -35,7 +35,11 @@ cid=$(docker run -d -it \
 	-v $PWD/tests/e2e/e2e.test:/e2e.test:ro \
 	-v $PWD/tests/e2e/vpp-agent.test:/vpp-agent:ro \
 	-v $PWD/tests/e2e/agentctl.test:/agentctl:ro \
-	-v $PWD/tests/e2e/grpc.conf:/etc/grpc.conf:ro \
+	-v $PWD/tests/e2e/resources/grpc.conf:/etc/grpc.conf:ro \
+	-v $PWD/tests/e2e/resources/grpc-secure.conf:/etc/grpc-secure.conf:ro \
+	-v $PWD/tests/e2e/resources/grpc-secure-full.conf:/etc/grpc-secure-full.conf:ro \
+	-v $PWD/tests/e2e/resources/agentctl.conf:/etc/.agentctl/config.yml:ro \
+	-v $PWD/tests/e2e/resources/certs:/etc/certs:ro \
 	-v /var/run/docker.sock:/var/run/docker.sock \
 	--label e2e.test="$*" \
 	--pid="host" \
@@ -43,6 +47,8 @@ cid=$(docker run -d -it \
 	--env KVSCHEDULER_GRAPHDUMP=true \
 	--env VPP_IMG="$VPP_IMG" \
 	--env GRPC_CONFIG=/etc/grpc.conf \
+	--env CERTS_PATH="$PWD/tests/e2e/resources/certs" \
+	--name vpp-agent-e2e-tests \
 	${DOCKER_ARGS-} \
 	"$VPP_IMG" bash)
 

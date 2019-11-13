@@ -147,6 +147,7 @@ func (cli *AgentCli) Initialize(opts *ClientOptions, ops ...InitializeOpt) error
 			return err
 		}
 	}
+
 	if opts.Debug {
 		debug.Enable()
 		SetLogLevel("debug")
@@ -154,31 +155,67 @@ func (cli *AgentCli) Initialize(opts *ClientOptions, ops ...InitializeOpt) error
 		SetLogLevel(opts.LogLevel)
 	}
 
+	cfg, err := MakeConfig()
+	if err != nil {
+		return err
+	}
+	if opts.Debug {
+		logging.Debug(cfg.DebugOutput())
+	}
+
 	if cli.client == nil {
-		cli.client, err = newAPIClient(opts)
+		clientOptions := buildClientOptions(cfg)
+		cli.client, err = client.NewClientWithOpts(clientOptions...)
 		if err != nil {
 			return err
 		}
 	}
 	cli.clientInfo = ClientInfo{
-		DefaultVersion: cli.client.ClientVersion(),
+		DefaultVersion: cli.client.Version(),
 	}
 	cli.initializeFromClient()
 	return nil
 }
 
-func newAPIClient(opts *ClientOptions) (client.APIClient, error) {
+func buildClientOptions(cfg *Config) []client.Opt {
 	clientOpts := []client.Opt{
-		client.WithHost(opts.AgentHost),
-		client.WithEtcdEndpoints(opts.Endpoints),
-		client.WithServiceLabel(opts.ServiceLabel),
+		client.WithHost(cfg.Host),
+		client.WithServiceLabel(cfg.ServiceLabel),
+		client.WithGrpcPort(cfg.GRPCPort),
+		client.WithHTTPPort(cfg.HTTPPort),
+		client.WithHTTPHeader("User-Agent", UserAgent()),
+		client.WithHTTPBasicAuth(cfg.HTTPBasicAuth),
+		client.WithVersion(cfg.LigatoAPIVersion),
+		client.WithEtcdEndpoints(cfg.EtcdEndpoints),
+		client.WithEtcdDialTimeout(cfg.EtcdDialTimeout),
 	}
-	var customHeaders = map[string]string{
-		"User-Agent": UserAgent(),
-	}
-	clientOpts = append(clientOpts, client.WithHTTPHeaders(customHeaders))
 
-	return client.NewClientWithOpts(clientOpts...)
+	if cfg.ShouldUseSecureGRPC() {
+		clientOpts = append(clientOpts, client.WithGrpcTLS(
+			cfg.GRPCSecure.CertFile,
+			cfg.GRPCSecure.KeyFile,
+			cfg.GRPCSecure.CAFile,
+			cfg.GRPCSecure.SkipVerify,
+		))
+	}
+	if cfg.ShouldUseSecureHTTP() {
+		clientOpts = append(clientOpts, client.WithHTTPTLS(
+			cfg.HTTPSecure.CertFile,
+			cfg.HTTPSecure.KeyFile,
+			cfg.HTTPSecure.CAFile,
+			cfg.HTTPSecure.SkipVerify,
+		))
+	}
+	if cfg.ShouldUseSecureKVDB() {
+		clientOpts = append(clientOpts, client.WithKvdbTLS(
+			cfg.KVDBSecure.CertFile,
+			cfg.KVDBSecure.KeyFile,
+			cfg.KVDBSecure.CAFile,
+			cfg.KVDBSecure.SkipVerify,
+		))
+	}
+
+	return clientOpts
 }
 
 func (cli *AgentCli) initializeFromClient() {
