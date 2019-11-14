@@ -160,6 +160,43 @@ func (h *NetLinkHandler) getKnownNamespaces() []*namespaces.NetNamespace {
 	return nsList
 }
 
+// GetVethAlias returns alias for Linux VETH interface managed by the agent.
+// The alias stores the VETH logical name together with the peer (logical) name.
+func GetVethAlias(vethName, peerName string) string {
+	return vethName + "/" + peerName
+}
+
+// ParseVethAlias parses out VETH logical name together with the peer name from the alias.
+func ParseVethAlias(alias string) (vethName, peerName string) {
+	aliasParts := strings.Split(alias, "/")
+	vethName = aliasParts[0]
+	if len(aliasParts) > 1 {
+		peerName = aliasParts[1]
+	}
+	return
+}
+
+// GetTapAlias returns alias for Linux TAP interface managed by the agent.
+// The alias stores the TAP_TO_VPP logical name together with VPP-TAP logical name
+// and the host interface name as originally set by VPP side.
+func GetTapAlias(linuxIf *interfaces.Interface, origHostIfName string) string {
+	return linuxIf.Name + "/" + linuxIf.GetTap().GetVppTapIfName() + "/" + origHostIfName
+}
+
+// ParseTapAlias parses out TAP_TO_VPP logical name together with the name of the
+// linked VPP-TAP and the original TAP host interface name.
+func ParseTapAlias(alias string) (linuxTapName, vppTapName, origHostIfName string) {
+	aliasParts := strings.Split(alias, "/")
+	linuxTapName = aliasParts[0]
+	if len(aliasParts) > 1 {
+		vppTapName = aliasParts[1]
+	}
+	if len(aliasParts) > 2 {
+		origHostIfName = aliasParts[2]
+	}
+	return
+}
+
 // retrieveInterfaces is run by a separate go routine to retrieve all interfaces
 // present in every <goRoutineIdx>-th network namespace from the list.
 func (h *NetLinkHandler) retrieveInterfaces(nsList []*namespaces.NetNamespace, goRoutineIdx, goRoutinesCnt int, ch chan<- retrievedInterfaces) {
@@ -205,7 +242,7 @@ func (h *NetLinkHandler) retrieveInterfaces(nsList []*namespaces.NetNamespace, g
 			if link.Type() == "veth" {
 				iface.Type = interfaces.Interface_VETH
 				var vethPeerIfName string
-				iface.Name, vethPeerIfName = parseVethAlias(alias)
+				iface.Name, vethPeerIfName = ParseVethAlias(alias)
 				iface.Link = &interfaces.Interface_Veth{
 					Veth: &interfaces.VethLink{
 						PeerIfName: vethPeerIfName,
@@ -214,7 +251,7 @@ func (h *NetLinkHandler) retrieveInterfaces(nsList []*namespaces.NetNamespace, g
 			} else if link.Type() == "tuntap" || link.Type() == "tun" /* not defined in vishvananda */ {
 				iface.Type = interfaces.Interface_TAP_TO_VPP
 				var vppTapIfName string
-				iface.Name, vppTapIfName, _ = parseTapAlias(alias)
+				iface.Name, vppTapIfName, _ = ParseTapAlias(alias)
 				iface.Link = &interfaces.Interface_Tap{
 					Tap: &interfaces.TapLink{
 						VppTapIfName: vppTapIfName,
@@ -326,28 +363,4 @@ func (h *NetLinkHandler) retrieveLinkDetails(link netlink.Link, iface *interface
 			}
 		}
 	}
-}
-
-// parseVethAlias parses out VETH logical name together with the peer name from the alias.
-func parseVethAlias(alias string) (vethName, peerName string) {
-	aliasParts := strings.Split(alias, "/")
-	vethName = aliasParts[0]
-	if len(aliasParts) > 0 {
-		peerName = aliasParts[1]
-	}
-	return
-}
-
-// parseTapAlias parses out TAP_TO_VPP logical name together with the name of the
-// linked VPP-TAP and the original TAP host interface name.
-func parseTapAlias(alias string) (linuxTapName, vppTapName, origHostIfName string) {
-	aliasParts := strings.Split(alias, "/")
-	linuxTapName = aliasParts[0]
-	if len(aliasParts) > 1 {
-		vppTapName = aliasParts[1]
-	}
-	if len(aliasParts) > 2 {
-		origHostIfName = aliasParts[2]
-	}
-	return
 }

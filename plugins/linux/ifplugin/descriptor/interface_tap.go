@@ -17,6 +17,8 @@ package descriptor
 import (
 	"strings"
 
+	"go.ligato.io/vpp-agent/v2/plugins/linux/ifplugin/linuxcalls"
+
 	"github.com/pkg/errors"
 
 	"go.ligato.io/vpp-agent/v2/plugins/linux/ifplugin/ifaceidx"
@@ -47,7 +49,7 @@ func (d *InterfaceDescriptor) createTAPToVPP(
 	agentPrefix := d.serviceLabel.GetAgentPrefix()
 
 	// add alias to associate TAP with the logical name and VPP-TAP reference
-	alias := agentPrefix + getTapAlias(linuxIf, vppTapHostName)
+	alias := agentPrefix + linuxcalls.GetTapAlias(linuxIf, vppTapHostName)
 	err = d.ifHandler.SetInterfaceAlias(vppTapHostName, alias)
 	if err != nil {
 		d.log.Error(err)
@@ -102,7 +104,7 @@ func (d *InterfaceDescriptor) deleteAutoTAP(nsCtx nslinuxcalls.NamespaceMgmtCtx,
 		return err
 	}
 	alias := strings.TrimPrefix(link.Attrs().Alias, agentPrefix)
-	_, _, origVppTapHostName := parseTapAlias(alias)
+	_, _, origVppTapHostName := linuxcalls.ParseTapAlias(alias)
 	if origVppTapHostName == "" {
 		err = errors.New("failed to obtain the original TAP host name")
 		d.log.Error(err)
@@ -141,25 +143,4 @@ func (d *InterfaceDescriptor) deleteAutoTAP(nsCtx nslinuxcalls.NamespaceMgmtCtx,
 	}
 
 	return nil
-}
-
-// getTapAlias returns alias for Linux TAP interface managed by the agent.
-// The alias stores the TAP_TO_VPP logical name together with VPP-TAP logical name
-// and the host interface name as originally set by VPP side.
-func getTapAlias(linuxIf *interfaces.Interface, origHostIfName string) string {
-	return linuxIf.Name + "/" + linuxIf.GetTap().GetVppTapIfName() + "/" + origHostIfName
-}
-
-// parseTapAlias parses out TAP_TO_VPP logical name together with the name of the
-// linked VPP-TAP and the original TAP host interface name.
-func parseTapAlias(alias string) (linuxTapName, vppTapName, origHostIfName string) {
-	aliasParts := strings.Split(alias, "/")
-	linuxTapName = aliasParts[0]
-	if len(aliasParts) > 1 {
-		vppTapName = aliasParts[1]
-	}
-	if len(aliasParts) > 2 {
-		origHostIfName = aliasParts[2]
-	}
-	return
 }
