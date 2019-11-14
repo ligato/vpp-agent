@@ -14,7 +14,6 @@ import (
 
 // Create creates a VPP interface.
 func (d *InterfaceDescriptor) Create(key string, intf *interfaces.Interface) (metadata *ifaceidx.IfaceMetadata, err error) {
-	d.log.Warnf(">>>>>>>>>>>>>>> Create name: %v, type: %v, metadata: %v", intf.Name, intf.Type, metadata)
 	var ifIdx uint32
 	var tapHostIfName string
 
