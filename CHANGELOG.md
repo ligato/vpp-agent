@@ -48,7 +48,7 @@ RELEASE CHANGELOG TEMPLATE:
 -->
 
 <a name="v2.4.0"></a>
-# [2.3.1](https://github.com/ligato/vpp-agent/compare/v2.3.0...v2.4.0) (2019-10-21)
+# [2.4.0](https://github.com/ligato/vpp-agent/compare/v2.3.0...v2.4.0) (2019-10-21)
 - **VPP 20.01-379** (`20.01-rc0~379-ga6b93eac5`)
 - **VPP 20.01-324** (`20.01-rc0~324-g66a332cf1`)
 - **VPP 19.08.1** (default)
