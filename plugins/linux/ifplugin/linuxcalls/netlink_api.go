@@ -128,15 +128,15 @@ type NetlinkAPIRead interface {
 	// DumpInterfaces uses local cache to gather information about linux
 	// namespaces and retrieves interfaces from them.
 	DumpInterfaces() ([]*InterfaceDetails, error)
-	// DumpInterfacesWithContext retrieves all linux interfaces based
+	// DumpInterfacesFromNamespaces retrieves all linux interfaces based
 	// on provided namespace context.
-	DumpInterfacesWithContext(nsList []*namespaces.NetNamespace) ([]*InterfaceDetails, error)
+	DumpInterfacesFromNamespaces(nsList []*namespaces.NetNamespace) ([]*InterfaceDetails, error)
 	// DumpInterfaceStats uses local cache to gather information about linux
 	// namespaces and retrieves stats for interfaces in that namespace them.
 	DumpInterfaceStats() ([]*InterfaceStatistics, error)
-	// DumpInterfaceStatsWithContext retrieves all linux interface stats based
+	// DumpInterfaceStatsFromNamespaces retrieves all linux interface stats based
 	// on provided namespace context.
-	DumpInterfaceStatsWithContext(nsList []*namespaces.NetNamespace) ([]*InterfaceStatistics, error)
+	DumpInterfaceStatsFromNamespaces(nsList []*namespaces.NetNamespace) ([]*InterfaceStatistics, error)
 }
 
 // NetLinkHandler is accessor for Netlink methods.

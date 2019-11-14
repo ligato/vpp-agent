@@ -49,18 +49,18 @@ type retrievedInterfaces struct {
 // DumpInterfaces retrieves all linux interfaces from default namespace and from all
 // the other namespaces based on known linux interfaces from the index map.
 func (h *NetLinkHandler) DumpInterfaces() ([]*InterfaceDetails, error) {
-	return h.DumpInterfacesWithContext(h.getKnownNamespaces())
+	return h.DumpInterfacesFromNamespaces(h.getKnownNamespaces())
 }
 
 // DumpInterfaceStats retrieves statistics for all linux interfaces from default namespace
 // and from all the other namespaces based on known linux interfaces from the index map.
 func (h *NetLinkHandler) DumpInterfaceStats() ([]*InterfaceStatistics, error) {
-	return h.DumpInterfaceStatsWithContext(h.getKnownNamespaces())
+	return h.DumpInterfaceStatsFromNamespaces(h.getKnownNamespaces())
 }
 
-// DumpInterfacesWithContext requires context in form of the namespace list of which linux interfaces
+// DumpInterfacesFromNamespaces requires context in form of the namespace list of which linux interfaces
 // will be retrieved. If no context is provided, interfaces only from the default namespace are retrieved.
-func (h *NetLinkHandler) DumpInterfacesWithContext(nsList []*namespaces.NetNamespace) ([]*InterfaceDetails, error) {
+func (h *NetLinkHandler) DumpInterfacesFromNamespaces(nsList []*namespaces.NetNamespace) ([]*InterfaceDetails, error) {
 	// Always retrieve from the default namespace
 	if len(nsList) == 0 {
 		nsList = []*namespaces.NetNamespace{nil}
@@ -96,10 +96,10 @@ func (h *NetLinkHandler) DumpInterfacesWithContext(nsList []*namespaces.NetNames
 	return linuxIfs, nil
 }
 
-// DumpInterfaceStatsWithContext requires context in form of the namespace list of which linux interface stats
+// DumpInterfaceStatsFromNamespaces requires context in form of the namespace list of which linux interface stats
 // will be retrieved. If no context is provided, interface stats only from the default namespace interfaces
 // are retrieved.
-func (h *NetLinkHandler) DumpInterfaceStatsWithContext(nsList []*namespaces.NetNamespace) ([]*InterfaceStatistics, error) {
+func (h *NetLinkHandler) DumpInterfaceStatsFromNamespaces(nsList []*namespaces.NetNamespace) ([]*InterfaceStatistics, error) {
 	// Always retrieve from the default namespace
 	if len(nsList) == 0 {
 		nsList = []*namespaces.NetNamespace{nil}
