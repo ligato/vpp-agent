@@ -136,7 +136,7 @@ func (d *InterfaceDescriptor) deleteVETH(nsCtx nslinuxcalls.NamespaceMgmtCtx, ke
 		}
 		if tempPeerHostName != "" {
 			// peer should be automatically removed as well, but just in case...
-			d.ifHandler.DeleteInterface(tempPeerHostName) // ignore errors
+			_ = d.ifHandler.DeleteInterface(tempPeerHostName) // ignore errors
 		}
 	}
 

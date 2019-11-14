@@ -14,6 +14,7 @@ import (
 
 // Create creates a VPP interface.
 func (d *InterfaceDescriptor) Create(key string, intf *interfaces.Interface) (metadata *ifaceidx.IfaceMetadata, err error) {
+	d.log.Warnf(">>>>>>>>>>>>>>> Create name: %v, type: %v, metadata: %v", intf.Name, intf.Type, metadata)
 	var ifIdx uint32
 	var tapHostIfName string
 
@@ -429,7 +430,9 @@ func (d *InterfaceDescriptor) Retrieve(correlate []adapter.InterfaceKVWithMetada
 		if intf.Interface.Type == interfaces.Interface_TAP {
 			tapHostIfName = intf.Interface.GetTap().GetHostIfName()
 			if generateTAPHostName(intf.Interface.Name) == tapHostIfName {
-				// interface host name was unset
+				// if a generated TAP host name matches the dumped one, there is a premise
+				// that the retrieved value was generated before and the original host name
+				// was empty.
 				intf.Interface.GetTap().HostIfName = ""
 			}
 		}
@@ -440,13 +443,14 @@ func (d *InterfaceDescriptor) Retrieve(correlate []adapter.InterfaceKVWithMetada
 				intf.Interface.GetTap().ToMicroservice = expCfg.GetTap().GetToMicroservice()
 				intf.Interface.GetTap().RxRingSize = expCfg.GetTap().GetRxRingSize()
 				intf.Interface.GetTap().TxRingSize = expCfg.GetTap().GetTxRingSize()
-				// FIXME: VPP BUG - TAPv2 host name is sometimes not properly dumped
 				// (seemingly uninitialized section of memory is returned)
 				if intf.Interface.GetTap().GetVersion() == 2 {
 					intf.Interface.GetTap().HostIfName = expCfg.GetTap().GetHostIfName()
-					tapHostIfName = expCfg.GetTap().GetHostIfName()
+					// set host name in metadata from NB data if defined
+					if intf.Interface.GetTap().HostIfName != "" {
+						tapHostIfName = expCfg.GetTap().GetHostIfName()
+					}
 				}
-
 			}
 			if expCfg.Type == interfaces.Interface_MEMIF && intf.Interface.GetMemif() != nil {
 				intf.Interface.GetMemif().Secret = expCfg.GetMemif().GetSecret()

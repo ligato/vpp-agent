@@ -411,6 +411,13 @@ func (d *InterfaceDescriptor) Delete(key string, linuxIf *interfaces.Interface, 
 	nsCtx := nslinuxcalls.NewNamespaceMgmtCtx()
 	revert, err := d.nsPlugin.SwitchToNamespace(nsCtx, linuxIf.Namespace)
 	if err != nil {
+		if _, ok := err.(*nsplugin.UnavailableMicroserviceErr); ok {
+			// Assume that the delete was called by scheduler because the namespace
+			// was removed. Do not return error in this case.
+			d.log.Debugf("Interface %s assumed deleted, required namespace %+v does not exist",
+				linuxIf.Name, linuxIf.Namespace)
+			return nil
+		}
 		d.log.Error("switch to namespace failed:", err)
 		return err
 	}

@@ -110,7 +110,7 @@ func (d *InterfaceDescriptor) deleteAutoTAP(nsCtx nslinuxcalls.NamespaceMgmtCtx,
 	}
 
 	// rename back to the temporary name
-	d.ifHandler.RenameInterface(hostName, origVppTapHostName)
+	err = d.ifHandler.RenameInterface(hostName, origVppTapHostName)
 	if err != nil {
 		d.log.Error(err)
 		return err
