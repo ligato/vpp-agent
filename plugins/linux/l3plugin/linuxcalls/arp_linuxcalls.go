@@ -29,10 +29,3 @@ func (h *NetLinkHandler) SetARPEntry(arpEntry *netlink.Neigh) error {
 func (h *NetLinkHandler) DelARPEntry(arpEntry *netlink.Neigh) error {
 	return netlink.NeighDel(arpEntry)
 }
-
-// GetARPEntries reads all configured static ARP entries for given interface.
-// <interfaceIdx> works as filter, if set to zero, all arp entries in the namespace
-// are returned
-func (h *NetLinkHandler) GetARPEntries(interfaceIdx int) ([]netlink.Neigh, error) {
-	return netlink.NeighList(interfaceIdx, 0)
-}

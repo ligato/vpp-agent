@@ -18,6 +18,9 @@ import (
 	"net/http"
 	"sync"
 
+	"github.com/ligato/cn-infra/servicelabel"
+	"go.ligato.io/vpp-agent/v2/plugins/linux/nsplugin"
+
 	"git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/infra"
 	"github.com/ligato/cn-infra/rpc/rest"
@@ -26,6 +29,7 @@ import (
 
 	"go.ligato.io/vpp-agent/v2/plugins/govppmux"
 	vpevppcalls "go.ligato.io/vpp-agent/v2/plugins/govppmux/vppcalls"
+	linuxifplugin "go.ligato.io/vpp-agent/v2/plugins/linux/ifplugin"
 	iflinuxcalls "go.ligato.io/vpp-agent/v2/plugins/linux/ifplugin/linuxcalls"
 	l3linuxcalls "go.ligato.io/vpp-agent/v2/plugins/linux/l3plugin/linuxcalls"
 	"go.ligato.io/vpp-agent/v2/plugins/netalloc"
@@ -50,6 +54,9 @@ const (
 	GET  = http.MethodGet
 	POST = http.MethodPost
 )
+
+// Default Go routine count used to retrieve linux configuration
+const defaultGoRoutineCount = 10
 
 // Plugin registers Rest Plugin
 type Plugin struct {
@@ -83,13 +90,16 @@ type Plugin struct {
 // Deps represents dependencies of Rest Plugin
 type Deps struct {
 	infra.PluginDeps
-	HTTPHandlers rest.HTTPHandlers
-	GoVppmux     govppmux.StatsAPI
-	AddrAlloc    netalloc.AddressAllocator
-	VPPACLPlugin aclplugin.API
-	VPPIfPlugin  ifplugin.API
-	VPPL2Plugin  *l2plugin.L2Plugin
-	VPPL3Plugin  *l3plugin.L3Plugin
+	HTTPHandlers  rest.HTTPHandlers
+	GoVppmux      govppmux.StatsAPI
+	ServiceLabel  servicelabel.ReaderAPI
+	AddrAlloc     netalloc.AddressAllocator
+	VPPACLPlugin  aclplugin.API
+	VPPIfPlugin   ifplugin.API
+	VPPL2Plugin   *l2plugin.L2Plugin
+	VPPL3Plugin   *l3plugin.L3Plugin
+	LinuxIfPlugin linuxifplugin.API
+	NsPlugin      nsplugin.API
 }
 
 // index defines map of main index page entries
@@ -116,6 +126,9 @@ func (p *Plugin) Init() (err error) {
 	dhcpIndexes := p.VPPIfPlugin.GetDHCPIndex()
 	aclIndexes := p.VPPACLPlugin.GetACLIndex() // TODO: make ACL optional
 	vrfIndexes := p.VPPL3Plugin.GetVRFIndex()
+
+	// Linux Indexes
+	linuxIfIndexes := p.LinuxIfPlugin.GetInterfaceIndex()
 
 	// Initialize VPP handlers
 	p.vpeHandler = vpevppcalls.CompatibleVpeHandler(p.vppChan)
@@ -164,8 +177,9 @@ func (p *Plugin) Init() (err error) {
 	}
 
 	// Linux handlers
-	p.linuxIfHandler = iflinuxcalls.NewNetLinkHandler()
-	p.linuxL3Handler = l3linuxcalls.NewNetLinkHandler()
+	p.linuxIfHandler = iflinuxcalls.NewNetLinkHandler(p.NsPlugin, linuxIfIndexes, p.ServiceLabel.GetAgentPrefix(),
+		defaultGoRoutineCount, p.Log)
+	p.linuxL3Handler = l3linuxcalls.NewNetLinkHandler(p.NsPlugin, linuxIfIndexes, defaultGoRoutineCount, p.Log)
 
 	p.index = &index{
 		ItemMap: getIndexPageItems(),

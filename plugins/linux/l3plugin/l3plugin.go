@@ -79,7 +79,7 @@ func (p *L3Plugin) Init() error {
 	}
 
 	// init handlers
-	p.l3Handler = linuxcalls.NewNetLinkHandler()
+	p.l3Handler = linuxcalls.NewNetLinkHandler(p.NsPlugin, p.IfPlugin.GetInterfaceIndex(), defaultGoRoutinesCnt, p.Log)
 
 	// init & register descriptors
 	arpDescriptor := descriptor.NewARPDescriptor(

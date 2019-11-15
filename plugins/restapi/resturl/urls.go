@@ -128,6 +128,8 @@ const (
 	Tracer = "/vpp/binapitrace"
 	// Configurator stats
 	ConfiguratorStats = "/stats/configurator"
+	// Linux interface stats
+	LinuxInterfaceStats = "/stats/linux/interfaces"
 )
 
 // Index

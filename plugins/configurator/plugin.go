@@ -19,11 +19,14 @@ import (
 
 	"github.com/ligato/cn-infra/infra"
 	"github.com/ligato/cn-infra/rpc/grpc"
+	"github.com/ligato/cn-infra/servicelabel"
 	"github.com/ligato/cn-infra/utils/safeclose"
 
 	"go.ligato.io/vpp-agent/v2/plugins/govppmux"
+	iflinuxplugin "go.ligato.io/vpp-agent/v2/plugins/linux/ifplugin"
 	iflinuxcalls "go.ligato.io/vpp-agent/v2/plugins/linux/ifplugin/linuxcalls"
 	l3linuxcalls "go.ligato.io/vpp-agent/v2/plugins/linux/l3plugin/linuxcalls"
+	"go.ligato.io/vpp-agent/v2/plugins/linux/nsplugin"
 	"go.ligato.io/vpp-agent/v2/plugins/netalloc"
 	"go.ligato.io/vpp-agent/v2/plugins/orchestrator"
 	abfvppcalls "go.ligato.io/vpp-agent/v2/plugins/vpp/abfplugin/vppcalls"
@@ -42,6 +45,9 @@ import (
 	"go.ligato.io/vpp-agent/v2/proto/ligato/vpp"
 )
 
+// Default Go routine count for linux configuration retrieval
+const defaultGoRoutineCount = 10
+
 // Plugin registers VPP GRPC services in *grpc.Server.
 type Plugin struct {
 	Deps
@@ -55,14 +61,17 @@ type Plugin struct {
 // Deps - dependencies of Plugin
 type Deps struct {
 	infra.PluginDeps
-	GRPCServer   grpc.Server
-	Dispatch     orchestrator.Dispatcher
-	GoVppmux     govppmux.StatsAPI
-	AddrAlloc    netalloc.AddressAllocator
-	VPPACLPlugin aclplugin.API
-	VPPIfPlugin  ifplugin.API
-	VPPL2Plugin  *l2plugin.L2Plugin
-	VPPL3Plugin  l3plugin.API
+	GRPCServer    grpc.Server
+	Dispatch      orchestrator.Dispatcher
+	GoVppmux      govppmux.StatsAPI
+	ServiceLabel  servicelabel.ReaderAPI
+	AddrAlloc     netalloc.AddressAllocator
+	VPPACLPlugin  aclplugin.API
+	VPPIfPlugin   ifplugin.API
+	VPPL2Plugin   *l2plugin.L2Plugin
+	VPPL3Plugin   l3plugin.API
+	LinuxIfPlugin iflinuxplugin.API
+	NsPlugin      nsplugin.API
 }
 
 // Init sets plugin child loggers
@@ -115,6 +124,9 @@ func (p *Plugin) initHandlers() (err error) {
 	aclIndexes := p.VPPACLPlugin.GetACLIndex() // TODO: make ACL optional
 	vrfIndexes := p.VPPL3Plugin.GetVRFIndex()
 
+	// Linux Indexes
+	linuxIfIndexes := p.LinuxIfPlugin.GetInterfaceIndex()
+
 	// VPP handlers
 
 	// core
@@ -153,9 +165,10 @@ func (p *Plugin) initHandlers() (err error) {
 		p.Log.Info("VPP Punt handler is not available, it will be skipped")
 	}
 
-	// Linux indexes and handlers
-	p.configurator.linuxIfHandler = iflinuxcalls.NewNetLinkHandler()
-	p.configurator.linuxL3Handler = l3linuxcalls.NewNetLinkHandler()
+	// Linux handlers
+	p.configurator.linuxIfHandler = iflinuxcalls.NewNetLinkHandler(p.NsPlugin, linuxIfIndexes,
+		p.ServiceLabel.GetAgentPrefix(), defaultGoRoutineCount, p.Log)
+	p.configurator.linuxL3Handler = l3linuxcalls.NewNetLinkHandler(p.NsPlugin, linuxIfIndexes, defaultGoRoutineCount, p.Log)
 
 	return nil
 }

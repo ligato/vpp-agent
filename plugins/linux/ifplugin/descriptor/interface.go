@@ -21,18 +21,19 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/vishvananda/netlink"
+	"go.ligato.io/vpp-agent/v2/pkg/models"
+	"golang.org/x/sys/unix"
+
 	"github.com/golang/protobuf/proto"
 	prototypes "github.com/golang/protobuf/ptypes/empty"
 	"github.com/pkg/errors"
-	"github.com/vishvananda/netlink"
-	"golang.org/x/sys/unix"
 
 	"github.com/ligato/cn-infra/idxmap"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/servicelabel"
 
-	"go.ligato.io/vpp-agent/v2/pkg/models"
 	kvs "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
 	"go.ligato.io/vpp-agent/v2/plugins/linux/ifplugin/descriptor/adapter"
 	"go.ligato.io/vpp-agent/v2/plugins/linux/ifplugin/ifaceidx"
@@ -53,10 +54,6 @@ const (
 	// InterfaceDescriptorName is the name of the descriptor for Linux interfaces.
 	InterfaceDescriptorName = "linux-interface"
 
-	// defaultLoopbackName is the name used to access loopback interface in linux
-	// host_if_name field in config is effectively ignored
-	defaultLoopbackName = "lo"
-
 	// default MTU - expected when MTU is not specified in the config.
 	defaultEthernetMTU = 1500
 	defaultLoopbackMTU = 65536
@@ -72,10 +69,6 @@ const (
 
 	// suffix attached to logical names of VETH interfaces with peers not found by Retrieve
 	vethMissingPeerSuffix = "-MISSING_PEER"
-
-	// minimum number of namespaces to be given to a single Go routine for processing
-	// in the Retrieve operation
-	minWorkForGoRoutine = 3
 )
 
 // A list of non-retriable errors:
@@ -129,14 +122,10 @@ type InterfaceDescriptor struct {
 	ifHandler    iflinuxcalls.NetlinkAPI
 	nsPlugin     nsplugin.API
 	vppIfPlugin  VPPIfPluginAPI
-	scheduler    kvs.KVScheduler
 	addrAlloc    netalloc.AddressAllocator
 
 	// runtime
 	intfIndex ifaceidx.LinuxIfMetadataIndex
-
-	// parallelization of the Retrieve operation
-	goRoutinesCnt int
 }
 
 // VPPIfPluginAPI is defined here to avoid import cycles.
@@ -148,20 +137,17 @@ type VPPIfPluginAPI interface {
 
 // NewInterfaceDescriptor creates a new instance of the Interface descriptor.
 func NewInterfaceDescriptor(
-	scheduler kvs.KVScheduler, serviceLabel servicelabel.ReaderAPI, nsPlugin nsplugin.API,
-	vppIfPlugin VPPIfPluginAPI, addrAlloc netalloc.AddressAllocator, ifHandler iflinuxcalls.NetlinkAPI,
-	log logging.PluginLogger, goRoutinesCnt int) (descr *kvs.KVDescriptor, ctx *InterfaceDescriptor) {
+	serviceLabel servicelabel.ReaderAPI, nsPlugin nsplugin.API, vppIfPlugin VPPIfPluginAPI,
+	addrAlloc netalloc.AddressAllocator, log logging.PluginLogger) (descr *kvs.KVDescriptor,
+	ctx *InterfaceDescriptor) {
 
 	// descriptor context
 	ctx = &InterfaceDescriptor{
-		scheduler:     scheduler,
-		ifHandler:     ifHandler,
-		nsPlugin:      nsPlugin,
-		vppIfPlugin:   vppIfPlugin,
-		addrAlloc:     addrAlloc,
-		serviceLabel:  serviceLabel,
-		goRoutinesCnt: goRoutinesCnt,
-		log:           log.NewLogger("if-descriptor"),
+		nsPlugin:     nsPlugin,
+		vppIfPlugin:  vppIfPlugin,
+		addrAlloc:    addrAlloc,
+		serviceLabel: serviceLabel,
+		log:          log.NewLogger("if-descriptor"),
 	}
 
 	typedDescr := &adapter.InterfaceDescriptor{
@@ -195,6 +181,12 @@ func NewInterfaceDescriptor(
 // the descriptor registration.
 func (d *InterfaceDescriptor) SetInterfaceIndex(intfIndex ifaceidx.LinuxIfMetadataIndex) {
 	d.intfIndex = intfIndex
+}
+
+// SetInterfaceHandler provides interface handler to the descriptor immediately after
+// the registration.
+func (d *InterfaceDescriptor) SetInterfaceHandler(ifHandler iflinuxcalls.NetlinkAPI) {
+	d.ifHandler = ifHandler
 }
 
 // EquivalentInterfaces is case-insensitive comparison function for
@@ -336,7 +328,7 @@ func (d *InterfaceDescriptor) Create(key string, linuxIf *interfaces.Interface) 
 				return nil, err
 			}
 			return &ifaceidx.LinuxIfMetadata{
-				Namespace:    linuxIf.Namespace,
+				Namespace:    linuxIf.GetNamespace(),
 				LinuxIfIndex: link.Attrs().Index,
 			}, nil
 		}
@@ -657,72 +649,65 @@ func (d *InterfaceDescriptor) Retrieve(correlate []adapter.InterfaceKVWithMetada
 		}
 	}
 
-	// determine the number of go routines to invoke
-	goRoutinesCnt := len(nsList) / minWorkForGoRoutine
-	if goRoutinesCnt == 0 {
-		goRoutinesCnt = 1
+	// Obtain interface details - all interfaces with metadata
+	ifDetails, err := d.ifHandler.DumpInterfacesFromNamespaces(nsList)
+	if err != nil {
+		return nil, errors.Errorf("Failed to retrieve linux interfaces: %v", err)
 	}
-	if goRoutinesCnt > d.goRoutinesCnt {
-		goRoutinesCnt = d.goRoutinesCnt
-	}
-	ch := make(chan retrievedIfaces, goRoutinesCnt)
+	// interface logical name -> interface data
+	ifaces := make(map[string]adapter.InterfaceKVWithMetadata)
+	// already retrieved interfaces by their Linux indexes
+	indexes := make(map[int]struct{})
 
-	// invoke multiple go routines for more efficient parallel interface retrieval
-	for idx := 0; idx < goRoutinesCnt; idx++ {
-		if goRoutinesCnt > 1 {
-			go d.retrieveInterfaces(nsList, idx, goRoutinesCnt, ch)
-		} else {
-			d.retrieveInterfaces(nsList, idx, goRoutinesCnt, ch)
+	for _, ifDetail := range ifDetails {
+		// Transform linux interface details to the type-safe value with metadata
+		kv := adapter.InterfaceKVWithMetadata{
+			Value: ifDetail.Interface,
+			Metadata: &ifaceidx.LinuxIfMetadata{
+				LinuxIfIndex: ifDetail.Meta.LinuxIfIndex,
+				Namespace:    ifDetail.Interface.GetNamespace(),
+				VPPTapName:   ifDetail.Interface.GetTap().GetVppTapIfName(),
+				HostIfName:   ifDetail.Interface.HostIfName,
+			},
+			Key: interfaces.InterfaceKey(ifDetail.Interface.Name),
 		}
-	}
 
-	// receive results from the go routines
-	ifaces := make(map[string]adapter.InterfaceKVWithMetadata) // interface logical name -> interface data
-	indexes := make(map[int]struct{})                          // already retrieved interfaces by their Linux indexes
-
-	for idx := 0; idx < goRoutinesCnt; idx++ {
-		retrieved := <-ch
-		if retrieved.err != nil {
-			return nil, retrieved.err
-		}
-		for _, kv := range retrieved.interfaces {
-			// skip if this interface was already retrieved and this is not the expected
-			// namespace from correlation - remember, the same namespace may have
-			// multiple different references
-			var rewrite bool
-			if _, alreadyRetrieved := indexes[kv.Metadata.LinuxIfIndex]; alreadyRetrieved {
-				if expCfg, hasExpCfg := ifCfg[kv.Value.Name]; hasExpCfg {
-					if proto.Equal(expCfg.Namespace, kv.Value.Namespace) {
-						rewrite = true
-					}
-				}
-				if !rewrite {
-					continue
-				}
-			}
-			indexes[kv.Metadata.LinuxIfIndex] = struct{}{}
-
-			// test for duplicity of VETH logical names
-			if kv.Value.Type == interfaces.Interface_VETH {
-				if _, duplicate := ifaces[kv.Value.Name]; duplicate && !rewrite {
-					// add suffix to the duplicate to make its logical name unique
-					// (and not configured by NB so that it will get removed)
-					dupIndex := 1
-					for intf2 := range ifaces {
-						if strings.HasPrefix(intf2, kv.Value.Name+vethDuplicateSuffix) {
-							dupIndex++
-						}
-					}
-					kv.Value.Name = kv.Value.Name + vethDuplicateSuffix + strconv.Itoa(dupIndex)
-					kv.Key = interfaces.InterfaceKey(kv.Value.Name)
-				}
-			}
-			// correlate link_only attribute
+		// skip if this interface was already retrieved and this is not the expected
+		// namespace from correlation - remember, the same namespace may have
+		// multiple different references
+		var rewrite bool
+		if _, alreadyRetrieved := indexes[kv.Metadata.LinuxIfIndex]; alreadyRetrieved {
 			if expCfg, hasExpCfg := ifCfg[kv.Value.Name]; hasExpCfg {
-				kv.Value.LinkOnly = expCfg.GetLinkOnly()
+				if proto.Equal(expCfg.Namespace, kv.Value.Namespace) {
+					rewrite = true
+				}
 			}
-			ifaces[kv.Value.Name] = kv
+			if !rewrite {
+				continue
+			}
 		}
+		indexes[kv.Metadata.LinuxIfIndex] = struct{}{}
+
+		// test for duplicity of VETH logical names
+		if kv.Value.Type == interfaces.Interface_VETH {
+			if _, duplicate := ifaces[kv.Value.Name]; duplicate && !rewrite {
+				// add suffix to the duplicate to make its logical name unique
+				// (and not configured by NB so that it will get removed)
+				dupIndex := 1
+				for intf2 := range ifaces {
+					if strings.HasPrefix(intf2, kv.Value.Name+vethDuplicateSuffix) {
+						dupIndex++
+					}
+				}
+				kv.Value.Name = kv.Value.Name + vethDuplicateSuffix + strconv.Itoa(dupIndex)
+				kv.Key = interfaces.InterfaceKey(kv.Value.Name)
+			}
+		}
+		// correlate link_only attribute
+		if expCfg, hasExpCfg := ifCfg[kv.Value.Name]; hasExpCfg {
+			kv.Value.LinkOnly = expCfg.GetLinkOnly()
+		}
+		ifaces[kv.Value.Name] = kv
 	}
 
 	// first collect VETHs with duplicate logical names
@@ -789,110 +774,6 @@ func (d *InterfaceDescriptor) Retrieve(correlate []adapter.InterfaceKVWithMetada
 	}
 
 	return values, nil
-}
-
-// retrieveInterfaces is run by a separate go routine to retrieve all interfaces
-// present in every <goRoutineIdx>-th network namespace from the list.
-func (d *InterfaceDescriptor) retrieveInterfaces(nsList []*namespace.NetNamespace, goRoutineIdx, goRoutinesCnt int, ch chan<- retrievedIfaces) {
-	var retrieved retrievedIfaces
-
-	agentPrefix := d.serviceLabel.GetAgentPrefix()
-	nsCtx := nslinuxcalls.NewNamespaceMgmtCtx()
-
-	for i := goRoutineIdx; i < len(nsList); i += goRoutinesCnt {
-		nsRef := nsList[i]
-		// switch to the namespace
-		revert, err := d.nsPlugin.SwitchToNamespace(nsCtx, nsRef)
-		if err != nil {
-			d.log.WithField("namespace", nsRef).
-				Warn("Failed to switch namespace:", err)
-			continue // continue with the next namespace
-		}
-
-		// get all links in the namespace
-		links, err := d.ifHandler.GetLinkList()
-		if err != nil {
-			d.log.Error("Failed to get link list:", err)
-			// switch back to the default namespace before returning error
-			revert()
-			retrieved.err = err
-			break
-		}
-
-		// retrieve every interface managed by this agent
-		for _, link := range links {
-			iface := &interfaces.Interface{
-				Namespace:   nsRef,
-				HostIfName:  link.Attrs().Name,
-				PhysAddress: link.Attrs().HardwareAddr.String(),
-				Mtu:         uint32(link.Attrs().MTU),
-			}
-
-			alias := link.Attrs().Alias
-			if !strings.HasPrefix(alias, agentPrefix) {
-				// skip interface not configured by this agent
-				continue
-			}
-			alias = strings.TrimPrefix(alias, agentPrefix)
-
-			// parse alias to obtain logical references
-			if link.Type() == "veth" {
-				iface.Type = interfaces.Interface_VETH
-				var vethPeerIfName string
-				iface.Name, vethPeerIfName = parseVethAlias(alias)
-				iface.Link = &interfaces.Interface_Veth{
-					Veth: &interfaces.VethLink{
-						PeerIfName: vethPeerIfName,
-					},
-				}
-			} else if link.Type() == "tuntap" || link.Type() == "tun" /* not defined in vishvananda */ {
-				iface.Type = interfaces.Interface_TAP_TO_VPP
-				var vppTapIfName string
-				iface.Name, vppTapIfName, _ = parseTapAlias(alias)
-				iface.Link = &interfaces.Interface_Tap{
-					Tap: &interfaces.TapLink{
-						VppTapIfName: vppTapIfName,
-					},
-				}
-			} else if link.Attrs().Name == defaultLoopbackName {
-				iface.Type = interfaces.Interface_LOOPBACK
-				iface.Name = alias
-			} else {
-				// unsupported interface type supposedly configured by agent => print warning
-				d.log.WithFields(logging.Fields{
-					"if-host-name": link.Attrs().Name,
-					"namespace":    nsRef,
-				}).Warnf("Managed interface of unsupported type: %s", link.Type())
-				continue
-			}
-
-			// skip interfaces with invalid aliases
-			if iface.Name == "" {
-				continue
-			}
-
-			// retrieve addresses, MTU, etc.
-			d.retrieveLinkDetails(link, iface, nsRef)
-
-			// build key-value pair for the retrieved interface
-			retrieved.interfaces = append(retrieved.interfaces, adapter.InterfaceKVWithMetadata{
-				Key:    models.Key(iface),
-				Value:  iface,
-				Origin: kvs.FromNB,
-				Metadata: &ifaceidx.LinuxIfMetadata{
-					LinuxIfIndex: link.Attrs().Index,
-					VPPTapName:   iface.GetTap().GetVppTapIfName(),
-					Namespace:    nsRef,
-					HostIfName:   link.Attrs().Name,
-				},
-			})
-		}
-
-		// switch back to the default namespace
-		revert()
-	}
-
-	ch <- retrieved
 }
 
 // retrieveExistingInterfaces retrieves already created Linux interface - i.e. not created
@@ -1082,7 +963,7 @@ func (d *InterfaceDescriptor) getInterfaceAddresses(ifName string) (addresses []
 // getHostIfName returns the interface host name.
 func getHostIfName(linuxIf *interfaces.Interface) string {
 	if linuxIf.Type == interfaces.Interface_LOOPBACK {
-		return defaultLoopbackName
+		return iflinuxcalls.DefaultLoopbackName
 	}
 	hostIfName := linuxIf.HostIfName
 	if hostIfName == "" {
