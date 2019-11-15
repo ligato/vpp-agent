@@ -19,13 +19,16 @@ import (
 
 	"github.com/ligato/cn-infra/infra"
 	"github.com/ligato/cn-infra/rpc/grpc"
+	"github.com/ligato/cn-infra/servicelabel"
 	"github.com/ligato/cn-infra/utils/safeclose"
 
 	rpc "github.com/ligato/vpp-agent/api/configurator"
 	"github.com/ligato/vpp-agent/api/models/vpp"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
+	iflinuxplugin "github.com/ligato/vpp-agent/plugins/linux/ifplugin"
 	iflinuxcalls "github.com/ligato/vpp-agent/plugins/linux/ifplugin/linuxcalls"
 	l3linuxcalls "github.com/ligato/vpp-agent/plugins/linux/l3plugin/linuxcalls"
+	"github.com/ligato/vpp-agent/plugins/linux/nsplugin"
 	"github.com/ligato/vpp-agent/plugins/netalloc"
 	"github.com/ligato/vpp-agent/plugins/orchestrator"
 	abfvppcalls "github.com/ligato/vpp-agent/plugins/vpp/abfplugin/vppcalls"
@@ -42,6 +45,9 @@ import (
 	puntvppcalls "github.com/ligato/vpp-agent/plugins/vpp/puntplugin/vppcalls"
 )
 
+// Default Go routine count for linux configuration retrieval
+const defaultGoRoutineCount = 10
+
 // Plugin registers VPP GRPC services in *grpc.Server.
 type Plugin struct {
 	Deps
@@ -55,14 +61,17 @@ type Plugin struct {
 // Deps - dependencies of Plugin
 type Deps struct {
 	infra.PluginDeps
-	GRPCServer   grpc.Server
-	Dispatch     orchestrator.Dispatcher
-	GoVppmux     govppmux.StatsAPI
-	AddrAlloc    netalloc.AddressAllocator
-	VPPACLPlugin aclplugin.API
-	VPPIfPlugin  ifplugin.API
-	VPPL2Plugin  *l2plugin.L2Plugin
-	VPPL3Plugin  l3plugin.API
+	GRPCServer    grpc.Server
+	Dispatch      orchestrator.Dispatcher
+	GoVppmux      govppmux.StatsAPI
+	ServiceLabel  servicelabel.ReaderAPI
+	AddrAlloc     netalloc.AddressAllocator
+	VPPACLPlugin  aclplugin.API
+	VPPIfPlugin   ifplugin.API
+	VPPL2Plugin   *l2plugin.L2Plugin
+	VPPL3Plugin   l3plugin.API
+	LinuxIfPlugin iflinuxplugin.API
+	NsPlugin      nsplugin.API
 }
 
 // Init sets plugin child loggers
@@ -82,16 +91,18 @@ func (p *Plugin) Init() error {
 	}
 
 	if p.VPPIfPlugin != nil {
-		p.VPPIfPlugin.SetNotifyService(func(vppNotification *vpp.Notification) {
-			p.configurator.notifyService.pushNotification(&rpc.Notification{
-				Notification: &rpc.Notification_VppNotification{
-					VppNotification: vppNotification,
-				},
-			})
-		})
+		p.VPPIfPlugin.SetNotifyService(p.sendVppNotification)
 	}
 
 	return nil
+}
+
+func (p *Plugin) sendVppNotification(vppNotification *vpp.Notification) {
+	p.configurator.notifyService.pushNotification(&rpc.Notification{
+		Notification: &rpc.Notification_VppNotification{
+			VppNotification: vppNotification,
+		},
+	})
 }
 
 // Close does nothing.
@@ -112,6 +123,9 @@ func (p *Plugin) initHandlers() (err error) {
 	bdIndexes := p.VPPL2Plugin.GetBDIndex()
 	aclIndexes := p.VPPACLPlugin.GetACLIndex() // TODO: make ACL optional
 	vrfIndexes := p.VPPL3Plugin.GetVRFIndex()
+
+	// Linux Indexes
+	linuxIfIndexes := p.LinuxIfPlugin.GetInterfaceIndex()
 
 	// VPP handlers
 
@@ -151,9 +165,10 @@ func (p *Plugin) initHandlers() (err error) {
 		p.Log.Info("VPP Punt handler is not available, it will be skipped")
 	}
 
-	// Linux indexes and handlers
-	p.configurator.linuxIfHandler = iflinuxcalls.NewNetLinkHandler()
-	p.configurator.linuxL3Handler = l3linuxcalls.NewNetLinkHandler()
+	// Linux handlers
+	p.configurator.linuxIfHandler = iflinuxcalls.NewNetLinkHandler(p.NsPlugin, linuxIfIndexes,
+		p.ServiceLabel.GetAgentPrefix(), defaultGoRoutineCount, p.Log)
+	p.configurator.linuxL3Handler = l3linuxcalls.NewNetLinkHandler(p.NsPlugin, linuxIfIndexes, defaultGoRoutineCount, p.Log)
 
 	return nil
 }

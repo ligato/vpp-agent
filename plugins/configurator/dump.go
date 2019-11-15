@@ -1,7 +1,24 @@
+//  Copyright (c) 2019 Cisco and/or its affiliates.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at:
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+
 package configurator
 
 import (
 	"errors"
+
+	linux_interfaces "github.com/ligato/vpp-agent/api/models/linux/interfaces"
+	linux_l3 "github.com/ligato/vpp-agent/api/models/linux/l3"
 
 	"github.com/ligato/cn-infra/logging"
 	"golang.org/x/net/context"
@@ -132,8 +149,23 @@ func (svc *dumpService) Dump(context.Context, *rpc.DumpRequest) (*rpc.DumpRespon
 		return nil, err
 	}
 
-	// FIXME: linux interfaces should return known proto instead of netlink
-	// state.LinuxData.Interfaces, _ = svc.DumpLinuxInterfaces()
+	dump.LinuxConfig.Interfaces, err = svc.DumpLinuxInterfaces()
+	if err != nil {
+		svc.log.Errorf("DumpLinuxInterfaces failed: %v", err)
+		return nil, err
+	}
+
+	dump.LinuxConfig.ArpEntries, err = svc.DumpLinuxARPs()
+	if err != nil {
+		svc.log.Errorf("DumpLinuxARPs failed: %v", err)
+		return nil, err
+	}
+
+	dump.LinuxConfig.Routes, err = svc.DumpLinuxRoutes()
+	if err != nil {
+		svc.log.Errorf("DumpLinuxRoutes failed: %v", err)
+		return nil, err
+	}
 
 	return &rpc.DumpResponse{Dump: dump}, nil
 }
@@ -388,14 +420,17 @@ func (svc *dumpService) DumpPuntExceptions() (punts []*vpp_punt.Exception, err e
 
 // DumpLinuxInterfaces reads linux interfaces and returns them as an *LinuxInterfaceResponse. If reading ends up with error,
 // only error is send back in response
-/*func (svc *dumpService) DumpLinuxInterfaces() ([]*linux_interfaces.Interface, error) {
-	var linuxIfs []*linux_interfaces.Interface
-	ifDetails, err := svc.linuxIfHandler.GetLinkList()
+func (svc *dumpService) DumpLinuxInterfaces() (linuxIfs []*linux_interfaces.Interface, err error) {
+	if svc.linuxIfHandler == nil {
+		return nil, errors.New("linuxIfHandler is not available")
+	}
+
+	ifDetails, err := svc.linuxIfHandler.DumpInterfaces()
 	if err != nil {
 		return nil, err
 	}
-	for _, iface := range ifDetails {
-		linuxIfs = append(linuxIfs, )
+	for _, ifDetail := range ifDetails {
+		linuxIfs = append(linuxIfs, ifDetail.Interface)
 	}
 
 	return linuxIfs, nil
@@ -403,23 +438,29 @@ func (svc *dumpService) DumpPuntExceptions() (punts []*vpp_punt.Exception, err e
 
 // DumpLinuxARPs reads linux ARPs and returns them as an *LinuxARPsResponse. If reading ends up with error,
 // only error is send back in response
-func (svc *dumpService) DumpLinuxARPs(ctx context.Context, request *rpc.DumpRequest) (*rpc.LinuxARPsResponse, error) {
-	var linuxArps []*linuxL3.LinuxStaticArpEntries_ArpEntry
-	arpDetails, err := svc.linuxL3Handler.DumpArpEntries()
+func (svc *dumpService) DumpLinuxARPs() (linuxARPs []*linux_l3.ARPEntry, err error) {
+	if svc.linuxL3Handler == nil {
+		return nil, errors.New("linuxL3Handler is not available")
+	}
+
+	arpDetails, err := svc.linuxL3Handler.DumpARPEntries()
 	if err != nil {
 		return nil, err
 	}
-	for _, arp := range arpDetails {
-		linuxArps = append(linuxArps, arp.Arp)
+	for _, arpDetail := range arpDetails {
+		linuxARPs = append(linuxARPs, arpDetail.ARP)
 	}
 
-	return &rpc.LinuxARPsResponse{LinuxArpEntries: linuxArps}, nil
+	return linuxARPs, nil
 }
 
 // DumpLinuxRoutes reads linux routes and returns them as an *LinuxRoutesResponse. If reading ends up with error,
 // only error is send back in response
-func (svc *dumpService) DumpLinuxRoutes(ctx context.Context, request *rpc.DumpRequest) (*rpc.LinuxRoutesResponse, error) {
-	var linuxRoutes []*linuxL3.LinuxStaticRoutes_Route
+func (svc *dumpService) DumpLinuxRoutes() (linuxRoutes []*linux_l3.Route, err error) {
+	if svc.linuxL3Handler == nil {
+		return nil, errors.New("linuxL3Handler is not available")
+	}
+
 	rtDetails, err := svc.linuxL3Handler.DumpRoutes()
 	if err != nil {
 		return nil, err
@@ -428,6 +469,5 @@ func (svc *dumpService) DumpLinuxRoutes(ctx context.Context, request *rpc.DumpRe
 		linuxRoutes = append(linuxRoutes, rt.Route)
 	}
 
-	return &rpc.LinuxRoutesResponse{LinuxRoutes: linuxRoutes}, nil
+	return linuxRoutes, nil
 }
-*/

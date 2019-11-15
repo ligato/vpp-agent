@@ -213,27 +213,23 @@ func (p *Plugin) registerPuntHandlers() {
 func (p *Plugin) registerLinuxInterfaceHandlers() {
 	// GET linux interfaces
 	p.registerHTTPHandler(resturl.LinuxInterface, GET, func() (interface{}, error) {
-		return p.linuxIfHandler.GetLinkList()
+		return p.linuxIfHandler.DumpInterfaces()
 	})
 	// GET linux interface stats
-	/*p.registerHTTPHandler(resturl.LinuxInterfaceStats, GET, func() (interface{}, error) {
-		return p.linuxIfHandler.DumpInterfaceStatistics()
-	})*/
+	p.registerHTTPHandler(resturl.LinuxInterfaceStats, GET, func() (interface{}, error) {
+		return p.linuxIfHandler.DumpInterfaceStats()
+	})
 }
 
 // Registers linux L3 plugin REST handlers
 func (p *Plugin) registerLinuxL3Handlers() {
 	// GET linux routes
 	p.registerHTTPHandler(resturl.LinuxRoutes, GET, func() (interface{}, error) {
-		routes4, routes6, err := p.linuxL3Handler.GetRoutes(0)
-		if err != nil {
-			return nil, err
-		}
-		return append(routes4, routes6...), nil
+		return p.linuxL3Handler.DumpRoutes()
 	})
 	// GET linux ARPs
 	p.registerHTTPHandler(resturl.LinuxArps, GET, func() (interface{}, error) {
-		return p.linuxL3Handler.GetARPEntries(0)
+		return p.linuxL3Handler.DumpARPEntries()
 	})
 }
 

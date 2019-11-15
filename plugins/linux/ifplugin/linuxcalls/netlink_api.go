@@ -17,9 +17,54 @@ package linuxcalls
 import (
 	"net"
 
+	"github.com/ligato/vpp-agent/plugins/linux/nsplugin"
+
+	"github.com/ligato/cn-infra/logging"
+	interfaces "github.com/ligato/vpp-agent/api/models/linux/interfaces"
+	namespaces "github.com/ligato/vpp-agent/api/models/linux/namespace"
+	"github.com/ligato/vpp-agent/plugins/linux/ifplugin/ifaceidx"
+
 	"github.com/vishvananda/netlink"
 	"github.com/vishvananda/netns"
 )
+
+// InterfaceDetails is an object combining linux interface data based on proto
+// model with additional metadata
+type InterfaceDetails struct {
+	Interface *interfaces.Interface `json:"interface"`
+	Meta      *InterfaceMeta        `json:"interface_meta"`
+}
+
+// Statistics are represented here since
+// there is currently no model
+type InterfaceStatistics struct {
+	Name         string                    `json:"interface_name"`
+	Type         interfaces.Interface_Type `json:"interface_type"`
+	LinuxIfIndex int                       `json:"linux_if_index"`
+
+	// stats data
+	RxPackets uint64 `json:"rx_packets"`
+	TxPackets uint64 `json:"tx_packets"`
+	RxBytes   uint64 `json:"rx_bytes"`
+	TxBytes   uint64 `json:"tx_bytes"`
+	RxErrors  uint64 `json:"rx_errors"`
+	TxErrors  uint64 `json:"tx_errors"`
+	RxDropped uint64 `json:"rx_dropped"`
+	TxDropped uint64 `json:"tx_dropped"`
+}
+
+// InterfaceMeta represents linux interface metadata
+type InterfaceMeta struct {
+	LinuxIfIndex  int    `json:"linux_if_index"`
+	ParentIndex   int    `json:"parent_index"`
+	MasterIndex   int    `json:"master_index"`
+	OperState     uint8  `json:"oper_state"`
+	Flags         uint32 `json:"flags"`
+	Encapsulation string `json:"encapsulation"`
+	NumRxQueues   int    `json:"num_rx_queue"`
+	NumTxQueues   int    `json:"num_tx_queue"`
+	TxQueueLen    int    `json:"tx_queue_len"`
+}
 
 // NetlinkAPI interface covers all methods inside linux calls package
 // needed to manage linux interfaces.
@@ -80,13 +125,40 @@ type NetlinkAPIRead interface {
 	// GetChecksumOffloading returns the state of Rx/Tx checksum offloading
 	// for the given interface.
 	GetChecksumOffloading(ifName string) (rxOn, txOn bool, err error)
+	// DumpInterfaces uses local cache to gather information about linux
+	// namespaces and retrieves interfaces from them.
+	DumpInterfaces() ([]*InterfaceDetails, error)
+	// DumpInterfacesFromNamespaces retrieves all linux interfaces based
+	// on provided namespace context.
+	DumpInterfacesFromNamespaces(nsList []*namespaces.NetNamespace) ([]*InterfaceDetails, error)
+	// DumpInterfaceStats uses local cache to gather information about linux
+	// namespaces and retrieves stats for interfaces in that namespace them.
+	DumpInterfaceStats() ([]*InterfaceStatistics, error)
+	// DumpInterfaceStatsFromNamespaces retrieves all linux interface stats based
+	// on provided namespace context.
+	DumpInterfaceStatsFromNamespaces(nsList []*namespaces.NetNamespace) ([]*InterfaceStatistics, error)
 }
 
 // NetLinkHandler is accessor for Netlink methods.
 type NetLinkHandler struct {
+	nsPlugin    nsplugin.API
+	ifIndexes   ifaceidx.LinuxIfMetadataIndex
+	agentPrefix string
+
+	// parallelization of the Retrieve operation
+	goRoutineCount int
+
+	log logging.Logger
 }
 
 // NewNetLinkHandler creates new instance of Netlink handler.
-func NewNetLinkHandler() *NetLinkHandler {
-	return &NetLinkHandler{}
+func NewNetLinkHandler(nsPlugin nsplugin.API, ifIndexes ifaceidx.LinuxIfMetadataIndex, agentPrefix string,
+	goRoutineCount int, log logging.Logger) *NetLinkHandler {
+	return &NetLinkHandler{
+		nsPlugin:       nsPlugin,
+		ifIndexes:      ifIndexes,
+		agentPrefix:    agentPrefix,
+		goRoutineCount: goRoutineCount,
+		log:            log,
+	}
 }

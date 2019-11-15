@@ -26,6 +26,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/ligato/cn-infra/servicelabel"
+
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/health/statuscheck"
@@ -50,6 +52,9 @@ import (
 	_ "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls/vpp2001_324"
 	_ "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls/vpp2001_379"
 )
+
+// Default Go routine count used while retrieving linux configuration
+const goRoutineCount = 10
 
 // IfPlugin configures VPP interfaces using GoVPP.
 type IfPlugin struct {
@@ -92,9 +97,10 @@ type IfPlugin struct {
 // Deps lists dependencies of the interface plugin.
 type Deps struct {
 	infra.PluginDeps
-	KVScheduler kvs.KVScheduler
-	GoVppmux    govppmux.StatsAPI
-	AddrAlloc   netalloc.AddressAllocator
+	KVScheduler  kvs.KVScheduler
+	GoVppmux     govppmux.StatsAPI
+	ServiceLabel servicelabel.ReaderAPI
+	AddrAlloc    netalloc.AddressAllocator
 
 	/*	LinuxIfPlugin and NsPlugin deps are optional,
 		but they are required if AFPacket or TAP+TAP_TO_VPP interfaces are used. */
@@ -133,7 +139,8 @@ func (p *IfPlugin) Init() (err error) {
 	// init handlers
 	p.ifHandler = vppcalls.CompatibleInterfaceVppHandler(p.vppCh, p.Log)
 	if p.LinuxIfPlugin != nil {
-		p.linuxIfHandler = linux_ifcalls.NewNetLinkHandler()
+		p.linuxIfHandler = linux_ifcalls.NewNetLinkHandler(p.NsPlugin, p.LinuxIfPlugin.GetInterfaceIndex(),
+			p.ServiceLabel.GetAgentPrefix(), goRoutineCount, p.Log)
 	}
 
 	// init & register descriptors

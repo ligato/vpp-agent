@@ -16,13 +16,16 @@ package restapi
 
 import (
 	"github.com/ligato/cn-infra/rpc/rest"
-	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin"
+	"github.com/ligato/cn-infra/servicelabel"
 
 	"github.com/ligato/vpp-agent/plugins/govppmux"
+	linuxifplugin "github.com/ligato/vpp-agent/plugins/linux/ifplugin"
+	"github.com/ligato/vpp-agent/plugins/linux/nsplugin"
 	"github.com/ligato/vpp-agent/plugins/netalloc"
 	"github.com/ligato/vpp-agent/plugins/vpp/aclplugin"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin"
 	"github.com/ligato/vpp-agent/plugins/vpp/l2plugin"
+	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin"
 )
 
 // DefaultPlugin is a default instance of Plugin.
@@ -35,11 +38,14 @@ func NewPlugin(opts ...Option) *Plugin {
 	p.PluginName = "restpapi"
 	p.HTTPHandlers = &rest.DefaultPlugin
 	p.GoVppmux = &govppmux.DefaultPlugin
+	p.ServiceLabel = &servicelabel.DefaultPlugin
 	p.AddrAlloc = &netalloc.DefaultPlugin
 	p.VPPACLPlugin = &aclplugin.DefaultPlugin
 	p.VPPIfPlugin = &ifplugin.DefaultPlugin
 	p.VPPL2Plugin = &l2plugin.DefaultPlugin
 	p.VPPL3Plugin = &l3plugin.DefaultPlugin
+	p.LinuxIfPlugin = &linuxifplugin.DefaultPlugin
+	p.NsPlugin = &nsplugin.DefaultPlugin
 
 	for _, o := range opts {
 		o(p)

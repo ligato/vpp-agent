@@ -86,17 +86,27 @@ func (p *IfPlugin) Init() error {
 		return nil
 	}
 
-	// init handlers
-	p.ifHandler = linuxcalls.NewNetLinkHandler()
-
-	// init & register descriptors
+	// init & register interface descriptor
 	var ifDescriptor *kvs.KVDescriptor
-	ifDescriptor, p.ifDescriptor = descriptor.NewInterfaceDescriptor(p.KVScheduler,
-		p.ServiceLabel, p.NsPlugin, p.VppIfPlugin, p.AddrAlloc, p.ifHandler, p.Log, config.GoRoutinesCnt)
+	ifDescriptor, p.ifDescriptor = descriptor.NewInterfaceDescriptor(p.ServiceLabel, p.NsPlugin, p.VppIfPlugin,
+		p.AddrAlloc, p.Log)
 	err = p.Deps.KVScheduler.RegisterKVDescriptor(ifDescriptor)
 	if err != nil {
 		return err
 	}
+
+	// obtain read-only reference to index map
+	var withIndex bool
+	metadataMap := p.Deps.KVScheduler.GetMetadataMap(ifDescriptor.Name)
+	p.ifIndex, withIndex = metadataMap.(ifaceidx.LinuxIfMetadataIndex)
+	if !withIndex {
+		return errors.New("missing index with interface metadata")
+	}
+
+	// init handler and pass it to the interface descriptor
+	p.ifHandler = linuxcalls.NewNetLinkHandler(p.NsPlugin, p.ifIndex, p.ServiceLabel.GetAgentPrefix(),
+		config.GoRoutinesCnt, p.Log)
+	p.ifDescriptor.SetInterfaceHandler(p.ifHandler)
 
 	var addrDescriptor *kvs.KVDescriptor
 	addrDescriptor, p.ifAddrDescriptor = descriptor.NewInterfaceAddressDescriptor(p.NsPlugin,
@@ -110,14 +120,6 @@ func (p *IfPlugin) Init() error {
 	err = p.Deps.KVScheduler.RegisterKVDescriptor(p.ifWatcher.GetDescriptor())
 	if err != nil {
 		return err
-	}
-
-	// obtain read-only reference to index map
-	var withIndex bool
-	metadataMap := p.Deps.KVScheduler.GetMetadataMap(ifDescriptor.Name)
-	p.ifIndex, withIndex = metadataMap.(ifaceidx.LinuxIfMetadataIndex)
-	if !withIndex {
-		return errors.New("missing index with interface metadata")
 	}
 
 	// pass read-only index map to descriptors
