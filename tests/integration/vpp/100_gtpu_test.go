@@ -59,7 +59,8 @@ func TestGtpu(t *testing.T) {
 				Teid:       101,
 				EncapVrfId: 0,
 			},
-			isFail: false,
+			mcastSwIfIndex: 0xFFFFFFFF,
+			isFail:         false,
 		},
 		{
 			name: "Create GTP-U tunnel (IP6)",
@@ -69,7 +70,8 @@ func TestGtpu(t *testing.T) {
 				Teid:       102,
 				EncapVrfId: 0,
 			},
-			isFail: false,
+			mcastSwIfIndex: 0xFFFFFFFF,
+			isFail:         false,
 		},
 		{
 			name: "Create GTP-U tunnel (DecapNext: L2)",
@@ -80,7 +82,8 @@ func TestGtpu(t *testing.T) {
 				EncapVrfId: 0,
 				DecapNext:  interfaces.GtpuLink_L2,
 			},
-			isFail: false,
+			mcastSwIfIndex: 0xFFFFFFFF,
+			isFail:         false,
 		},
 		{
 			name: "Create GTP-U tunnel (DecapNext: IP4)",
@@ -91,7 +94,8 @@ func TestGtpu(t *testing.T) {
 				EncapVrfId: 0,
 				DecapNext:  interfaces.GtpuLink_IP4,
 			},
-			isFail: false,
+			mcastSwIfIndex: 0xFFFFFFFF,
+			isFail:         false,
 		},
 		{
 			name: "Create GTP-U tunnel (DecapNext: IP6)",
@@ -102,7 +106,8 @@ func TestGtpu(t *testing.T) {
 				EncapVrfId: 0,
 				DecapNext:  interfaces.GtpuLink_IP6,
 			},
-			isFail: false,
+			mcastSwIfIndex: 0xFFFFFFFF,
+			isFail:         false,
 		},
 		{
 			name: "Create GTP-U tunnel with same source and destination",
@@ -112,7 +117,8 @@ func TestGtpu(t *testing.T) {
 				Teid:       301,
 				EncapVrfId: 0,
 			},
-			isFail: true,
+			mcastSwIfIndex: 0xFFFFFFFF,
+			isFail:         true,
 		},
 		{
 			name: "Create GTP-U tunnel with src and dst ip versions mismatch",
@@ -122,7 +128,8 @@ func TestGtpu(t *testing.T) {
 				Teid:       302,
 				EncapVrfId: 0,
 			},
-			isFail: true,
+			mcastSwIfIndex: 0xFFFFFFFF,
+			isFail:         true,
 		},
 	}
 	for i, test := range tests {
@@ -164,6 +171,9 @@ func TestGtpu(t *testing.T) {
 				}
 				if test.gtpu.Teid != gtpu.Teid {
 					t.Fatalf("expected TEID <%d>, got: <%d>", test.gtpu.Teid, gtpu.Teid)
+				}
+				if test.gtpu.Multicast != gtpu.Multicast {
+					t.Fatalf("expected multicast interface name <%s>, got: <%s>", test.gtpu.Multicast, gtpu.Multicast)
 				}
 				if test.gtpu.EncapVrfId != gtpu.EncapVrfId {
 					t.Fatalf("expected GTP-U EncapVrfId <%d>, got: <%d>", test.gtpu.EncapVrfId, gtpu.EncapVrfId)

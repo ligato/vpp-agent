@@ -74,6 +74,9 @@ func (d *InterfaceDescriptor) Create(key string, intf *interfaces.Interface) (me
 				return nil, err
 			}
 			multicastIfIdx = multicastMeta.SwIfIndex
+		} else {
+			// not a multicast tunnel
+			multicastIfIdx = 0xFFFFFFFF
 		}
 
 		if intf.GetVxlan().Gpe == nil {
@@ -166,6 +169,9 @@ func (d *InterfaceDescriptor) Create(key string, intf *interfaces.Interface) (me
 				return nil, err
 			}
 			multicastIfIdx = multicastMeta.SwIfIndex
+		} else {
+			// not a multicast tunnel
+			multicastIfIdx = 0xFFFFFFFF
 		}
 
 		ifIdx, err = d.ifHandler.AddGtpuTunnel(intf.Name, intf.GetGtpu(), multicastIfIdx)
