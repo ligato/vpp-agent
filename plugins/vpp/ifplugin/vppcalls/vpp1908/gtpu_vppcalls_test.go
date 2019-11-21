@@ -227,3 +227,25 @@ func TestDelGtpuTunnelRetval(t *testing.T) {
 	})
 	Expect(err).ToNot(BeNil())
 }
+
+func TestAddNilGtpuTunnel(t *testing.T) {
+	ctx, ifHandler := ifTestSetup(t)
+	defer ctx.TeardownTestCtx()
+
+	ctx.MockVpp.MockReply(&vpp_gtpu.GtpuAddDelTunnel{})
+	ctx.MockVpp.MockReply(&vpp_ifs.SwInterfaceTagAddDelReply{})
+
+	_, err := ifHandler.AddGtpuTunnel("ifName", nil, 0xFFFFFFFF)
+	Expect(err).ToNot(BeNil())
+}
+
+func TestDelNilGtpuTunnel(t *testing.T) {
+	ctx, ifHandler := ifTestSetup(t)
+	defer ctx.TeardownTestCtx()
+
+	ctx.MockVpp.MockReply(&vpp_gtpu.GtpuAddDelTunnel{})
+	ctx.MockVpp.MockReply(&vpp_ifs.SwInterfaceTagAddDelReply{})
+
+	err := ifHandler.DelGtpuTunnel("ifName", nil)
+	Expect(err).ToNot(BeNil())
+}
