@@ -1063,6 +1063,9 @@ func guessInterfaceType(ifName string) interfaces.Interface_Type {
 	case strings.HasPrefix(ifName, "gre"):
 		return interfaces.Interface_GRE_TUNNEL
 
+	case strings.HasPrefix(ifName, "gtpu"):
+		return interfaces.Interface_GTPU_TUNNEL
+
 	default:
 		return interfaces.Interface_DPDK
 	}
