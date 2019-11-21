@@ -415,11 +415,6 @@ func (d *InterfaceDescriptor) Retrieve(correlate []adapter.InterfaceKVWithMetada
 				continue
 			}
 		}
-		if intf.Interface.Name == "" {
-			// untagged interface - generate a logical name for it
-			// (apart from local0 it will get removed by resync)
-			intf.Interface.Name = untaggedIfPreffix + intf.Meta.InternalName
-		}
 		if intf.Interface.Type == interfaces.Interface_BOND_INTERFACE {
 			d.bondIDs[intf.Interface.GetBond().GetId()] = intf.Interface.Name
 		}

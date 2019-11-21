@@ -38,8 +38,14 @@ import (
 	vpp_ipsec "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/ipsec"
 )
 
-// Default VPP MTU value
-const defaultVPPMtu = 9216
+const (
+	// Default VPP MTU value
+	defaultVPPMtu = 9216
+
+	// prefix prepended to internal names of untagged interfaces to construct unique
+	// logical names
+	untaggedIfPreffix = "UNTAGGED-"
+)
 
 func getMtu(vppMtu uint16) uint32 {
 	// If default VPP MTU value is set, return 0 (it means MTU was not set in the NB config)
@@ -133,6 +139,11 @@ func (h *InterfaceVppHandler) dumpInterfaces() (map[uint32]*vppcalls.InterfaceDe
 					HostIfName: strings.TrimPrefix(ifaceName, "host-"),
 				},
 			}
+		}
+		if details.Interface.Name == "" {
+			// untagged interface - generate a logical name for it
+			// (apart from local0 it will get removed by resync)
+			details.Interface.Name = untaggedIfPreffix + ifaceName
 		}
 		ifs[ifDetails.SwIfIndex] = details
 	}
