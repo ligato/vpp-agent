@@ -30,7 +30,7 @@ func TestTelemetryNodeCounters(t *testing.T) {
 		t.Skipf("SKIP for VPP %s", ctx.versionInfo.Release())
 	}
 
-	h := vppcalls.CompatibleTelemetryHandler(ctx.vppBinapi, ctx.vppStats)
+	h := vppcalls.CompatibleTelemetryHandler(ctx.vppClient)
 
 	nodeCounters, err := h.GetNodeCounters(context.Background())
 	if err != nil {
@@ -49,7 +49,7 @@ func TestTelemetryInterfacStats(t *testing.T) {
 	ctx := setupVPP(t)
 	defer ctx.teardownVPP()
 
-	h := vppcalls.CompatibleTelemetryHandler(ctx.vppBinapi, ctx.vppStats)
+	h := vppcalls.CompatibleTelemetryHandler(ctx.vppClient)
 
 	ifStats, err := h.GetInterfaceStats(context.Background())
 	if err != nil {

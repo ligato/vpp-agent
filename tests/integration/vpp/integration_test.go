@@ -16,6 +16,7 @@ package vpp
 
 import (
 	"bytes"
+	"context"
 	"flag"
 	"fmt"
 	"log"
@@ -93,8 +94,9 @@ type testCtx struct {
 	StatsConn      *govppcore.StatsConnection
 	vppBinapi      govppapi.Channel
 	vppStats       govppapi.StatsProvider
-	vpe            vppcalls.VpeVppAPI
+	vpe            vppcalls.VppHandlerAPI
 	versionInfo    *vppcalls.VersionInfo
+	vppClient      *vppClient
 }
 
 func setupVPP(t *testing.T) *testCtx {
@@ -190,8 +192,16 @@ func setupVPP(t *testing.T) *testCtx {
 		t.Fatalf("creating channel failed: %v", err)
 	}
 
-	vpeHandler := vppcalls.CompatibleVpeHandler(ch)
-	versionInfo, err := vpeHandler.GetVersionInfo()
+	ctx := context.TODO()
+
+	vppClient := &vppClient{
+		t:               t,
+		ChannelProvider: conn,
+		ch:              ch,
+	}
+
+	vpeHandler := vppcalls.CompatibleHandler(vppClient)
+	versionInfo, err := vpeHandler.GetVersion(ctx)
 	if err != nil {
 		t.Fatalf("getting version info failed: %v", err)
 	}
@@ -199,7 +209,7 @@ func setupVPP(t *testing.T) *testCtx {
 	if versionInfo.Version == "" {
 		t.Fatal("expected VPP version to not be empty")
 	}
-	vpeInfo, err := vpeHandler.GetVpeInfo()
+	vpeInfo, err := vpeHandler.GetSession(ctx)
 	if err != nil {
 		t.Fatalf("getting vpe info failed: %v", err)
 	}
@@ -225,6 +235,7 @@ func setupVPP(t *testing.T) *testCtx {
 		Conn:        conn,
 		vppBinapi:   ch,
 		vppStats:    statsConn,
+		vppClient:   vppClient,
 	}
 }
 
@@ -270,4 +281,35 @@ func (ctx *testCtx) teardownVPP() {
 			ctx.t.Fatalf("sending SIGKILL to VPP failed: %v", err)
 		}
 	}
+}
+
+type vppClient struct {
+	t *testing.T
+
+	govppapi.ChannelProvider
+	ch      govppapi.Channel
+	stats   govppapi.StatsProvider
+	vpe     vppcalls.VppHandlerAPI
+	plugins []vppcalls.PluginInfo
+}
+
+func (v *vppClient) CheckCompatiblity(...govppapi.Message) error {
+	panic("implement me")
+}
+
+func (v *vppClient) Stats() govppapi.StatsProvider {
+	return v.stats
+}
+
+func (v *vppClient) StatsConnected() bool {
+	return v.stats != nil
+}
+
+func (v *vppClient) IsPluginLoaded(plugin string) bool {
+	for _, p := range v.plugins {
+		if p.Name == plugin {
+			return true
+		}
+	}
+	return false
 }

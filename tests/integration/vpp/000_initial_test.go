@@ -15,18 +15,29 @@
 package vpp
 
 import (
+	"context"
+	"log"
+	"strings"
 	"testing"
 
 	"go.ligato.io/vpp-agent/v2/plugins/govppmux/vppcalls"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp"
 )
 
 func TestPing(t *testing.T) {
 	ctx := setupVPP(t)
 	defer ctx.teardownVPP()
 
-	h := vppcalls.CompatibleVpeHandler(ctx.vppBinapi)
+	h := vppcalls.CompatibleHandler(ctx.vppClient)
 
-	if err := h.Ping(); err != nil {
+	if err := h.Ping(context.TODO()); err != nil {
 		t.Fatalf("control ping failed: %v", err)
+	}
+
+	handlers := vpp.GetHandlers()
+	log.Printf("listing %d handlers:", len(handlers))
+	for h, handler := range handlers {
+		log.Printf(" - %s (%v)",
+			h, strings.Join(handler.Versions(), ", "))
 	}
 }
