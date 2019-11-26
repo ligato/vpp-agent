@@ -223,7 +223,7 @@ func setupVPP(t *testing.T) *testCtx {
 		t.Fatalf("connecting to VPP stats API failed: %v", err)
 	}
 
-	t.Logf("---------------")
+	t.Logf("------S-E-T-U-P------")
 
 	return &testCtx{
 		t:           t,
@@ -240,7 +240,7 @@ func setupVPP(t *testing.T) *testCtx {
 }
 
 func (ctx *testCtx) teardownVPP() {
-	ctx.t.Logf("-----------------")
+	ctx.t.Logf("===T-E-A-R-D-O-W-N===")
 
 	// disconnect sometimes hangs
 	done := make(chan struct{})
@@ -293,8 +293,8 @@ type vppClient struct {
 	plugins []vppcalls.PluginInfo
 }
 
-func (v *vppClient) CheckCompatiblity(...govppapi.Message) error {
-	panic("implement me")
+func (v *vppClient) CheckCompatiblity(msgs ...govppapi.Message) error {
+	return v.ch.CheckCompatiblity(msgs...)
 }
 
 func (v *vppClient) Stats() govppapi.StatsProvider {
@@ -306,6 +306,11 @@ func (v *vppClient) StatsConnected() bool {
 }
 
 func (v *vppClient) IsPluginLoaded(plugin string) bool {
+	ctx := context.Background()
+	plugins, err := v.vpe.GetPlugins(ctx)
+	if err != nil {
+		v.t.Fatalf("GetPlugins failed: %v", plugins)
+	}
 	for _, p := range v.plugins {
 		if p.Name == plugin {
 			return true

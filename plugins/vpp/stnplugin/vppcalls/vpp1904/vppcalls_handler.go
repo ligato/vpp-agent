@@ -32,7 +32,7 @@ func init() {
 // StnVppHandler is accessor for STN-related vppcalls methods
 type StnVppHandler struct {
 	callsChannel govppapi.Channel
-	// TODO: use stn RPC service
+	// TODO: use RPC service
 	//stn          stn.RPCService
 	ifIndexes ifaceidx.IfaceMetadataIndex
 	log       logging.Logger
