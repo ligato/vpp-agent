@@ -60,10 +60,6 @@ const (
 	//  - determined by much fits into the VPP interface tag (64 null-terminated character string)
 	logicalNameLengthLimit = 63
 
-	// prefix prepended to internal names of untagged interfaces to construct unique
-	// logical names
-	untaggedIfPreffix = "UNTAGGED-"
-
 	// suffix attached to logical names of dumped TAP interfaces with Linux side
 	// not found by Retrieve of Linux-ifplugin
 	tapMissingLinuxSideSuffix = "-MISSING_LINUX_SIDE"
