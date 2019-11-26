@@ -40,6 +40,10 @@ import (
 const (
 	// allInterfaces defines unspecified interface index
 	allInterfaces = ^uint32(0)
+
+	// prefix prepended to internal names of untagged interfaces to construct unique
+	// logical names
+	untaggedIfPreffix = "UNTAGGED-"
 )
 
 const (
@@ -149,6 +153,11 @@ func (h *InterfaceVppHandler) dumpInterfaces(ifIdxs ...uint32) (map[uint32]*vppc
 					HostIfName: strings.TrimPrefix(ifaceName, "host-"),
 				},
 			}
+		}
+		if details.Interface.Name == "" {
+			// untagged interface - generate a logical name for it
+			// (apart from local0 it will get removed by resync)
+			details.Interface.Name = untaggedIfPreffix + ifaceName
 		}
 		interfaces[uint32(ifDetails.SwIfIndex)] = details
 	}

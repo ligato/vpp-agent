@@ -77,6 +77,9 @@ func (d *InterfaceDescriptor) Create(key string, intf *interfaces.Interface) (me
 				return nil, err
 			}
 			multicastIfIdx = multicastMeta.SwIfIndex
+		} else {
+			// not a multicast tunnel
+			multicastIfIdx = 0xFFFFFFFF
 		}
 
 		if intf.GetVxlan().Gpe == nil {
@@ -169,6 +172,9 @@ func (d *InterfaceDescriptor) Create(key string, intf *interfaces.Interface) (me
 				return nil, err
 			}
 			multicastIfIdx = multicastMeta.SwIfIndex
+		} else {
+			// not a multicast tunnel
+			multicastIfIdx = 0xFFFFFFFF
 		}
 
 		ifIdx, err = d.ifHandler.AddGtpuTunnel(intf.Name, intf.GetGtpu(), multicastIfIdx)
@@ -422,11 +428,6 @@ func (d *InterfaceDescriptor) Retrieve(correlate []adapter.InterfaceKVWithMetada
 				// unconfigured physical interface => skip (but add entry to d.ethernetIfs)
 				continue
 			}
-		}
-		if intf.Interface.Name == "" {
-			// untagged interface - generate a logical name for it
-			// (apart from local0 it will get removed by resync)
-			intf.Interface.Name = untaggedIfPreffix + intf.Meta.InternalName
 		}
 		if intf.Interface.Type == interfaces.Interface_BOND_INTERFACE {
 			d.bondIDs[intf.Interface.GetBond().GetId()] = intf.Interface.Name

@@ -32,7 +32,8 @@ func TestVxlanGpe(t *testing.T) {
 					Protocol: interfaces.VxlanLink_Gpe_IP4,
 				},
 			},
-			isFail: false,
+			mcastSwIfIndex: 0xFFFFFFFF,
+			isFail:         false,
 		},
 		{
 			name: "Create VxLAN-GPE tunnel (IP6)",
@@ -43,7 +44,8 @@ func TestVxlanGpe(t *testing.T) {
 					Protocol: interfaces.VxlanLink_Gpe_IP6,
 				},
 			},
-			isFail: false,
+			mcastSwIfIndex: 0xFFFFFFFF,
+			isFail:         false,
 		},
 		{
 			name: "Create VxLAN-GPE tunnel (Ethernet)",
@@ -54,7 +56,8 @@ func TestVxlanGpe(t *testing.T) {
 					Protocol: interfaces.VxlanLink_Gpe_ETHERNET,
 				},
 			},
-			isFail: false,
+			mcastSwIfIndex: 0xFFFFFFFF,
+			isFail:         false,
 		},
 		{
 			name: "Create VxLAN-GPE tunnel (NSH)",
@@ -65,7 +68,8 @@ func TestVxlanGpe(t *testing.T) {
 					Protocol: interfaces.VxlanLink_Gpe_NSH,
 				},
 			},
-			isFail: false,
+			mcastSwIfIndex: 0xFFFFFFFF,
+			isFail:         false,
 		},
 		{
 			name: "Create VxLAN-GPE tunnel with same source and destination",
@@ -76,7 +80,8 @@ func TestVxlanGpe(t *testing.T) {
 					Protocol: interfaces.VxlanLink_Gpe_IP4,
 				},
 			},
-			isFail: true,
+			mcastSwIfIndex: 0xFFFFFFFF,
+			isFail:         true,
 		},
 		{
 			name: "Create VxLAN-GPE tunnel with src and dst ip versions mismatch",
@@ -87,7 +92,8 @@ func TestVxlanGpe(t *testing.T) {
 					Protocol: interfaces.VxlanLink_Gpe_IP4,
 				},
 			},
-			isFail: true,
+			mcastSwIfIndex: 0xFFFFFFFF,
+			isFail:         true,
 		},
 	}
 	for i, test := range tests {
