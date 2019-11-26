@@ -51,8 +51,8 @@ type StnVppRead interface {
 }
 
 var handler = vpp.RegisterHandler(vpp.HandlerDesc{
-	HandlerName: "stn",
-	HandlerType: (*StnVppAPI)(nil),
+	Name:       "stn",
+	HandlerAPI: (*StnVppAPI)(nil),
 })
 
 type NewHandlerFunc func(ch govppapi.Channel, ifIdx ifaceidx.IfaceMetadataIndex, log logging.Logger) StnVppAPI

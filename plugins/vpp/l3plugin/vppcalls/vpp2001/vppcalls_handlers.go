@@ -18,13 +18,11 @@ import (
 	"fmt"
 	"net"
 
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/l3plugin/vrfidx"
-
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
 
-	vpevppcalls "go.ligato.io/vpp-agent/v2/plugins/govppmux/vppcalls"
+	corevppcalls "go.ligato.io/vpp-agent/v2/plugins/govppmux/vppcalls"
 	"go.ligato.io/vpp-agent/v2/plugins/govppmux/vppcalls/vpp2001"
 	"go.ligato.io/vpp-agent/v2/plugins/netalloc"
 	vpp_dhcp "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/dhcp"
@@ -32,6 +30,7 @@ import (
 	vpp_vpe "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/vpe"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/l3plugin/vppcalls"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/l3plugin/vrfidx"
 )
 
 func init() {
@@ -106,7 +105,7 @@ type RouteHandler struct {
 type IPNeighHandler struct {
 	callsChannel govppapi.Channel
 	log          logging.Logger
-	vpevppcalls.VppHandlerAPI
+	corevppcalls.VppCoreAPI
 }
 
 // VrfTableHandler is accessor for vrf-related vppcalls methods
@@ -160,9 +159,9 @@ func NewIPNeighVppHandler(callsChan govppapi.Channel, log logging.Logger) *IPNei
 		log = logrus.NewLogger("ip-neigh")
 	}
 	return &IPNeighHandler{
-		callsChannel:  callsChan,
-		log:           log,
-		VppHandlerAPI: vpp2001.NewVpeHandler(callsChan),
+		callsChannel: callsChan,
+		log:          log,
+		VppCoreAPI:   vpp2001.NewVpeHandler(callsChan),
 	}
 }
 

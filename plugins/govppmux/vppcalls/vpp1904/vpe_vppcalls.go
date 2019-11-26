@@ -62,14 +62,14 @@ func (h *VpeHandler) GetSession(ctx context.Context) (*vppcalls.SessionInfo, err
 }
 
 // GetModules retrieves module info from VPP.
-func (h *VpeHandler) GetModules(ctx context.Context) ([]vppcalls.ModuleInfo, error) {
+func (h *VpeHandler) GetModules(ctx context.Context) ([]vppcalls.APIModule, error) {
 	versions, err := h.memclnt.APIVersions(ctx, new(memclnt.APIVersions))
 	if err != nil {
 		return nil, err
 	}
-	var modules []vppcalls.ModuleInfo
+	var modules []vppcalls.APIModule
 	for _, v := range versions.APIVersions {
-		modules = append(modules, vppcalls.ModuleInfo{
+		modules = append(modules, vppcalls.APIModule{
 			Name:  strings.TrimSuffix(cleanString(v.Name), ".api"),
 			Major: v.Major,
 			Minor: v.Minor,

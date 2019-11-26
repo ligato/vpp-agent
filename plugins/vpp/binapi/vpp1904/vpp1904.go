@@ -14,12 +14,6 @@
 
 package vpp1904
 
-import "fmt"
-
-func init() {
-	fmt.Println("init() binapi.vpp1904")
-}
-
 // Version is used to identify VPP binapi version
 const Version = "19.04"
 

@@ -15,9 +15,11 @@
 package vpp2001_324_test
 
 import (
+	"context"
 	"testing"
 
 	. "github.com/onsi/gomega"
+
 	vpp_ifs "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324/interfaces"
 	vpp_memif "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324/memif"
 	ifs "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
@@ -32,7 +34,7 @@ func TestAddMasterMemifInterface(t *testing.T) {
 	})
 	ctx.MockVpp.MockReply(&vpp_ifs.SwInterfaceTagAddDelReply{})
 
-	swIfIdx, err := ifHandler.AddMemifInterface("memif", &ifs.MemifLink{
+	swIfIdx, err := ifHandler.AddMemifInterface(context.TODO(), "memif", &ifs.MemifLink{
 		Id:     1,
 		Mode:   ifs.MemifLink_IP,
 		Secret: "secret",
@@ -66,7 +68,7 @@ func TestAddMasterMemifInterfaceAsSlave(t *testing.T) {
 	})
 	ctx.MockVpp.MockReply(&vpp_ifs.SwInterfaceTagAddDelReply{})
 
-	swIfIdx, err := ifHandler.AddMemifInterface("memif", &ifs.MemifLink{
+	swIfIdx, err := ifHandler.AddMemifInterface(context.TODO(), "memif", &ifs.MemifLink{
 		Id:     1,
 		Mode:   ifs.MemifLink_IP,
 		Secret: "secret",
@@ -93,7 +95,7 @@ func TestAddMasterMemifInterfaceError(t *testing.T) {
 	ctx.MockVpp.MockReply(&vpp_memif.MemifCreate{})
 	ctx.MockVpp.MockReply(&vpp_ifs.SwInterfaceTagAddDelReply{})
 
-	_, err := ifHandler.AddMemifInterface("memif", &ifs.MemifLink{
+	_, err := ifHandler.AddMemifInterface(context.TODO(), "memif", &ifs.MemifLink{
 		Id:     1,
 		Mode:   ifs.MemifLink_IP,
 		Secret: "secret",
@@ -112,7 +114,7 @@ func TestAddMasterMemifInterfaceRetval(t *testing.T) {
 	})
 	ctx.MockVpp.MockReply(&vpp_ifs.SwInterfaceTagAddDelReply{})
 
-	_, err := ifHandler.AddMemifInterface("memif", &ifs.MemifLink{
+	_, err := ifHandler.AddMemifInterface(context.TODO(), "memif", &ifs.MemifLink{
 		Id:     1,
 		Mode:   ifs.MemifLink_IP,
 		Secret: "secret",
@@ -129,7 +131,7 @@ func TestDeleteMemifInterface(t *testing.T) {
 	ctx.MockVpp.MockReply(&vpp_memif.MemifDeleteReply{})
 	ctx.MockVpp.MockReply(&vpp_ifs.SwInterfaceTagAddDelReply{})
 
-	err := ifHandler.DeleteMemifInterface("memif", 1)
+	err := ifHandler.DeleteMemifInterface(context.TODO(), "memif", 1)
 
 	Expect(err).To(BeNil())
 }
@@ -141,7 +143,7 @@ func TestDeleteMemifInterfaceError(t *testing.T) {
 	ctx.MockVpp.MockReply(&vpp_memif.MemifDelete{})
 	ctx.MockVpp.MockReply(&vpp_ifs.SwInterfaceTagAddDelReply{})
 
-	err := ifHandler.DeleteMemifInterface("memif", 1)
+	err := ifHandler.DeleteMemifInterface(context.TODO(), "memif", 1)
 
 	Expect(err).ToNot(BeNil())
 }
@@ -155,7 +157,7 @@ func TestDeleteMemifInterfaceRetval(t *testing.T) {
 	})
 	ctx.MockVpp.MockReply(&vpp_ifs.SwInterfaceTagAddDelReply{})
 
-	err := ifHandler.DeleteMemifInterface("memif", 1)
+	err := ifHandler.DeleteMemifInterface(context.TODO(), "memif", 1)
 
 	Expect(err).ToNot(BeNil())
 }
@@ -166,7 +168,7 @@ func TestRegisterMemifSocketFilename(t *testing.T) {
 
 	ctx.MockVpp.MockReply(&vpp_memif.MemifSocketFilenameAddDelReply{})
 
-	err := ifHandler.RegisterMemifSocketFilename("filename", 1)
+	err := ifHandler.RegisterMemifSocketFilename(context.TODO(), "filename", 1)
 
 	Expect(err).To(BeNil())
 	vppMsg, ok := ctx.MockChannel.Msg.(*vpp_memif.MemifSocketFilenameAddDel)
@@ -182,7 +184,7 @@ func TestRegisterMemifSocketFilenameError(t *testing.T) {
 
 	ctx.MockVpp.MockReply(&vpp_memif.MemifSocketFilenameAddDel{})
 
-	err := ifHandler.RegisterMemifSocketFilename("filename", 1)
+	err := ifHandler.RegisterMemifSocketFilename(context.TODO(), "filename", 1)
 
 	Expect(err).ToNot(BeNil())
 }
@@ -195,7 +197,7 @@ func TestRegisterMemifSocketFilenameRetval(t *testing.T) {
 		Retval: 1,
 	})
 
-	err := ifHandler.RegisterMemifSocketFilename("filename", 1)
+	err := ifHandler.RegisterMemifSocketFilename(context.TODO(), "filename", 1)
 
 	Expect(err).ToNot(BeNil())
 }

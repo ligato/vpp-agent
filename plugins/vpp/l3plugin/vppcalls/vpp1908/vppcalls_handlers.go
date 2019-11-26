@@ -107,7 +107,7 @@ type RouteHandler struct {
 type IPNeighHandler struct {
 	callsChannel govppapi.Channel
 	log          logging.Logger
-	vpevppcalls.VppHandlerAPI
+	vpevppcalls.VppCoreAPI
 }
 
 // VrfTableHandler is accessor for vrf-related vppcalls methods
@@ -161,9 +161,9 @@ func NewIPNeighVppHandler(callsChan govppapi.Channel, log logging.Logger) *IPNei
 		log = logrus.NewLogger("ip-neigh")
 	}
 	return &IPNeighHandler{
-		callsChannel:  callsChan,
-		log:           log,
-		VppHandlerAPI: vpp1908.NewVpeHandler(callsChan),
+		callsChannel: callsChan,
+		log:          log,
+		VppCoreAPI:   vpp1908.NewVpeHandler(callsChan),
 	}
 }
 

@@ -19,11 +19,17 @@ import (
 
 	"github.com/pkg/errors"
 
+	"go.ligato.io/vpp-agent/v2/plugins/vpp"
 	vpp_vmxnet3 "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324/vmxnet3"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/vppcalls"
 	ifs "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
 )
 
 func (h *InterfaceVppHandler) AddVmxNet3(ifName string, vmxNet3 *ifs.VmxNet3Link) (swIdx uint32, err error) {
+	if h.vmxnet3 == nil {
+		return 0, vpp.ErrPluginDisabled
+	}
+
 	var pci uint32
 	pci, err = derivePCI(ifName)
 	if err != nil {
@@ -49,6 +55,10 @@ func (h *InterfaceVppHandler) AddVmxNet3(ifName string, vmxNet3 *ifs.VmxNet3Link
 }
 
 func (h *InterfaceVppHandler) DeleteVmxNet3(ifName string, ifIdx uint32) error {
+	if h.vmxnet3 == nil {
+		return vpp.ErrPluginDisabled
+	}
+
 	req := &vpp_vmxnet3.Vmxnet3Delete{
 		SwIfIndex: ifIdx,
 	}
@@ -80,4 +90,37 @@ func derivePCI(ifName string) (uint32, error) {
 	pci |= domain
 
 	return pci, nil
+}
+
+// dumpVmxNet3Details dumps VmxNet3 interface details from VPP and fills them into the provided interface map.
+func (h *InterfaceVppHandler) dumpVmxNet3Details(interfaces map[uint32]*vppcalls.InterfaceDetails) error {
+	if h.vmxnet3 == nil {
+		// no-op when disabled
+		return nil
+	}
+
+	reqCtx := h.callsChannel.SendMultiRequest(&vpp_vmxnet3.Vmxnet3Dump{})
+	for {
+		vmxnet3Details := &vpp_vmxnet3.Vmxnet3Details{}
+		stop, err := reqCtx.ReceiveReply(vmxnet3Details)
+		if stop {
+			break // Break from the loop.
+		}
+		if err != nil {
+			return fmt.Errorf("failed to dump VmxNet3 tunnel interface details: %v", err)
+		}
+		_, ifIdxExists := interfaces[vmxnet3Details.SwIfIndex]
+		if !ifIdxExists {
+			continue
+		}
+		interfaces[vmxnet3Details.SwIfIndex].Interface.Link = &ifs.Interface_VmxNet3{
+			VmxNet3: &ifs.VmxNet3Link{
+				RxqSize: uint32(vmxnet3Details.RxCount),
+				TxqSize: uint32(vmxnet3Details.TxCount),
+			},
+		}
+		interfaces[vmxnet3Details.SwIfIndex].Interface.Type = ifs.Interface_VMXNET3_INTERFACE
+		interfaces[vmxnet3Details.SwIfIndex].Meta.Pci = vmxnet3Details.PciAddr
+	}
+	return nil
 }

@@ -236,10 +236,9 @@ dep-update:
 	@echo "# updating all dependencies"
 	@echo "Warning: 'go get' desired new modules by hand"
 
-# FIXME: 'go mod verify' might be used here, but tidy and verify disagree.
 dep-check:
 	@echo "# checking dependencies"
-	go mod tidy -v
+	go mod verify -v
 	@if ! git diff --quiet go.mod go.sum ; then \
 		echo "go mod tidy check failed"; \
 		exit 1 ; \

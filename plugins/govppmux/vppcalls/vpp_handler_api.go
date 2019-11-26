@@ -23,25 +23,20 @@ import (
 	"go.ligato.io/vpp-agent/v2/plugins/vpp"
 )
 
-var Handler = vpp.RegisterHandler(vpp.HandlerDesc{
-	HandlerName: "vppcore",
-	HandlerType: (*VppHandlerAPI)(nil),
-})
-
-// VppHandlerAPI provides methods for core VPP functionality.
-type VppHandlerAPI interface {
+// VppCoreAPI provides methods for core VPP functionality.
+type VppCoreAPI interface {
 	// Ping sends control ping to VPP.
 	Ping(context.Context) error
-	// GetSession retrieves info about active session.
-	GetSession(context.Context) (*SessionInfo, error)
-	// GetVersion retrieves info about VPP version.
-	GetVersion(context.Context) (*VersionInfo, error)
-	// GetModules retrieves info about VPP API modules.
-	GetModules(context.Context) ([]ModuleInfo, error)
-	// GetPlugins retrieves info about loaded VPP plugins.
-	GetPlugins(context.Context) ([]PluginInfo, error)
 	// RunCli sends CLI commmand to VPP.
 	RunCli(ctx context.Context, cmd string) (string, error)
+	// GetVersion retrieves info about VPP version.
+	GetVersion(context.Context) (*VersionInfo, error)
+	// GetSession retrieves info about active session.
+	GetSession(context.Context) (*SessionInfo, error)
+	// GetModules retrieves info about VPP API modules.
+	GetModules(context.Context) ([]APIModule, error)
+	// GetPlugins retrieves info about loaded VPP plugins.
+	GetPlugins(context.Context) ([]PluginInfo, error)
 }
 
 // SessionInfo contains info about VPP session.
@@ -67,15 +62,15 @@ func (v VersionInfo) Release() string {
 	return v.Version[:5]
 }
 
-// ModuleInfo contains info about VPP API module.
-type ModuleInfo struct {
+// APIModule contains info about VPP API module.
+type APIModule struct {
 	Name  string
 	Major uint32
 	Minor uint32
 	Patch uint32
 }
 
-func (m ModuleInfo) String() string {
+func (m APIModule) String() string {
 	return fmt.Sprintf("%s %d.%d.%d", m.Name, m.Major, m.Minor, m.Patch)
 }
 
@@ -91,7 +86,12 @@ func (p PluginInfo) String() string {
 	return fmt.Sprintf("%s - %s", p.Name, p.Description)
 }
 
-type NewHandlerFunc func(govppapi.Channel) VppHandlerAPI
+var Handler = vpp.RegisterHandler(vpp.HandlerDesc{
+	Name:       "vppcore",
+	HandlerAPI: (*VppCoreAPI)(nil),
+})
+
+type NewHandlerFunc func(govppapi.Channel) VppCoreAPI
 
 // AddVersion registers vppcalls Handler for the given version.
 func AddVersion(version string, msgs []govppapi.Message, h NewHandlerFunc) {
@@ -111,9 +111,9 @@ func AddVersion(version string, msgs []govppapi.Message, h NewHandlerFunc) {
 }
 
 // CompatibleHandler is helper for returning comptabile Handler.
-func CompatibleHandler(c vpp.Client) VppHandlerAPI {
+func CompatibleHandler(c vpp.Client) VppCoreAPI {
 	if v := Handler.FindCompatibleVersion(c); v != nil {
-		return v.NewHandler(c).(VppHandlerAPI)
+		return v.NewHandler(c).(VppCoreAPI)
 	}
 	return nil
 }

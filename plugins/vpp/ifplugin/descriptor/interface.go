@@ -15,6 +15,7 @@
 package descriptor
 
 import (
+	context2 "context"
 	"fmt"
 	"hash/fnv"
 	"net"
@@ -839,7 +840,7 @@ func (d *InterfaceDescriptor) resolveMemifSocketFilename(memifIf *interfaces.Mem
 	if !registered {
 		// Register new socket. ID is generated (default filename ID is 0, first is ID 1, second ID 2, etc)
 		registeredID = uint32(len(d.memifSocketToID))
-		err := d.ifHandler.RegisterMemifSocketFilename(socketFileName, registeredID)
+		err := d.ifHandler.RegisterMemifSocketFilename(context2.TODO(), socketFileName, registeredID)
 		if err != nil {
 			return 0, errors.Errorf("error registering socket file name %s (ID %d): %v", socketFileName, registeredID, err)
 		}

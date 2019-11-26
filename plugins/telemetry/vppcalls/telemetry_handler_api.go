@@ -153,8 +153,8 @@ type BuffersItem struct {
 }
 
 var Handler = vpp.RegisterHandler(vpp.HandlerDesc{
-	HandlerName: "telemetry",
-	HandlerType: (*TelemetryVppAPI)(nil),
+	Name:       "telemetry",
+	HandlerAPI: (*TelemetryVppAPI)(nil),
 })
 
 type NewHandlerFunc func(govppapi.Channel) TelemetryVppAPI

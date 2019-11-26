@@ -55,7 +55,7 @@ type VpeHandler struct {
 	vpe     vpe.RPCService
 }
 
-func NewVpeHandler(ch govppapi.Channel) vppcalls.VppHandlerAPI {
+func NewVpeHandler(ch govppapi.Channel) vppcalls.VppCoreAPI {
 	return &VpeHandler{
 		memclnt: memclnt.NewServiceClient(ch),
 		vpe:     vpe.NewServiceClient(ch),

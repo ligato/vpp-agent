@@ -26,8 +26,7 @@ import (
 	interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
 )
 
-func (h *InterfaceVppHandler) AddMemifInterface(ifName string, memIface *interfaces.MemifLink, socketID uint32) (swIdx uint32, err error) {
-	ctx := context.TODO()
+func (h *InterfaceVppHandler) AddMemifInterface(ctx context.Context, ifName string, memIface *interfaces.MemifLink, socketID uint32) (swIdx uint32, err error) {
 	if h.memif == nil {
 		return 0, vpp.ErrPluginDisabled
 	}
@@ -64,8 +63,7 @@ func (h *InterfaceVppHandler) AddMemifInterface(ifName string, memIface *interfa
 	return swIdx, h.SetInterfaceTag(ifName, swIdx)
 }
 
-func (h *InterfaceVppHandler) DeleteMemifInterface(ifName string, idx uint32) error {
-	ctx := context.TODO()
+func (h *InterfaceVppHandler) DeleteMemifInterface(ctx context.Context, ifName string, idx uint32) error {
 	if h.memif == nil {
 		return vpp.ErrPluginDisabled
 	}
@@ -80,8 +78,7 @@ func (h *InterfaceVppHandler) DeleteMemifInterface(ifName string, idx uint32) er
 	return h.RemoveInterfaceTag(ifName, idx)
 }
 
-func (h *InterfaceVppHandler) RegisterMemifSocketFilename(filename string, id uint32) error {
-	ctx := context.TODO()
+func (h *InterfaceVppHandler) RegisterMemifSocketFilename(ctx context.Context, filename string, id uint32) error {
 	if h.memif == nil {
 		return vpp.ErrPluginDisabled
 	}
@@ -129,7 +126,8 @@ func (h *InterfaceVppHandler) DumpMemifSocketDetails(ctx context.Context) (map[s
 // dumpMemifDetails dumps memif interface details from VPP and fills them into the provided interface map.
 func (h *InterfaceVppHandler) dumpMemifDetails(ctx context.Context, ifs map[uint32]*vppcalls.InterfaceDetails) error {
 	if h.memif == nil {
-		return vpp.ErrPluginDisabled
+		// no-op when disabled
+		return nil
 	}
 
 	memifSocketMap, err := h.DumpMemifSocketDetails(ctx)

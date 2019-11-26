@@ -59,7 +59,7 @@ func (d *InterfaceDescriptor) Create(key string, intf *interfaces.Interface) (me
 			d.log.Error(err)
 			return nil, err
 		}
-		ifIdx, err = d.ifHandler.AddMemifInterface(intf.Name, intf.GetMemif(), socketID)
+		ifIdx, err = d.ifHandler.AddMemifInterface(context.TODO(), intf.Name, intf.GetMemif(), socketID)
 		if err != nil {
 			d.log.Error(err)
 			return nil, err
@@ -254,7 +254,7 @@ func (d *InterfaceDescriptor) Delete(key string, intf *interfaces.Interface, met
 	case interfaces.Interface_TAP:
 		err = d.ifHandler.DeleteTapInterface(intf.Name, ifIdx, intf.GetTap().GetVersion())
 	case interfaces.Interface_MEMIF:
-		err = d.ifHandler.DeleteMemifInterface(intf.Name, ifIdx)
+		err = d.ifHandler.DeleteMemifInterface(context.TODO(), intf.Name, ifIdx)
 	case interfaces.Interface_VXLAN_TUNNEL:
 		if intf.GetVxlan().Gpe == nil {
 			err = d.ifHandler.DeleteVxLanTunnel(intf.Name, ifIdx, intf.Vrf, intf.GetVxlan())

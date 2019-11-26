@@ -19,10 +19,9 @@
 package srplugin
 
 import (
-	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/health/statuscheck"
 	"github.com/ligato/cn-infra/infra"
-	"github.com/pkg/errors"
+
 	"go.ligato.io/vpp-agent/v2/plugins/govppmux"
 	scheduler "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin"
@@ -39,9 +38,6 @@ import (
 type SRPlugin struct {
 	Deps
 
-	// GoVPP channels
-	vppCh govppapi.Channel
-
 	// VPP handler
 	srHandler vppcalls.SRv6VppAPI
 
@@ -51,11 +47,10 @@ type SRPlugin struct {
 	steeringDescriptor *descriptor.SteeringDescriptor
 }
 
-// Deps lists dependencies of the interface p.
 type Deps struct {
 	infra.PluginDeps
 	Scheduler   scheduler.KVScheduler
-	GoVppmux    govppmux.API
+	VPP         govppmux.API
 	IfPlugin    ifplugin.API
 	StatusCheck statuscheck.PluginStatusWriter // optional
 }
@@ -64,19 +59,13 @@ type Deps struct {
 func (p *SRPlugin) Init() error {
 	var err error
 
-	// GoVPP channels
-	if p.vppCh, err = p.GoVppmux.NewAPIChannel(); err != nil {
-		return errors.Errorf("failed to create GoVPP API channel: %v", err)
-	}
-
 	// init handlers
-	p.srHandler = vppcalls.CompatibleSRv6VppHandler(p.vppCh, p.IfPlugin.GetInterfaceIndex(), p.Log)
+	p.srHandler = vppcalls.CompatibleSRv6Handler(p.VPP, p.IfPlugin.GetInterfaceIndex(), p.Log)
 
 	// init & register descriptors
 	localSIDDescriptor := descriptor.NewLocalSIDDescriptor(p.srHandler, p.Log)
 	policyDescriptor := descriptor.NewPolicyDescriptor(p.srHandler, p.Log)
 	steeringDescriptor := descriptor.NewSteeringDescriptor(p.srHandler, p.Log)
-
 	err = p.Deps.Scheduler.RegisterKVDescriptor(
 		localSIDDescriptor,
 		policyDescriptor,

@@ -40,12 +40,12 @@ func NewTelemetryVppStats(stats govppapi.StatsProvider) *TelemetryStats {
 	}
 }
 
+// GetSystemStats retrieves system stats.
 func (h *TelemetryStats) GetSystemStats(context.Context) (*govppapi.SystemStats, error) {
 	err := h.stats.GetSystemStats(&h.sysStats)
 	if err != nil {
 		return nil, err
 	}
-
 	return &h.sysStats, nil
 }
 
@@ -55,12 +55,12 @@ func (h *TelemetryStats) GetMemory(ctx context.Context) (*MemoryInfo, error) {
 	return nil, nil
 }
 
+// GetInterfaceStats retrieves interface stats.
 func (h *TelemetryStats) GetInterfaceStats(context.Context) (*govppapi.InterfaceStats, error) {
 	err := h.stats.GetInterfaceStats(&h.ifStats)
 	if err != nil {
 		return nil, err
 	}
-
 	return &h.ifStats, nil
 }
 
@@ -72,7 +72,6 @@ func (h *TelemetryStats) GetNodeCounters(ctx context.Context) (*NodeCounterInfo,
 	}
 
 	var counters []NodeCounter
-
 	for _, c := range h.errStats.Errors {
 		node, reason := SplitErrorName(c.CounterName)
 		counters = append(counters, NodeCounter{
@@ -96,12 +95,9 @@ func (h *TelemetryStats) GetRuntimeInfo(ctx context.Context) (*RuntimeInfo, erro
 		return nil, err
 	}
 
-	var threads []RuntimeThread
-
 	thread := RuntimeThread{
 		Name: "ALL",
 	}
-
 	for _, node := range h.nodeStats.Nodes {
 		vpc := 0.0
 		if node.Vectors != 0 && node.Calls != 0 {
@@ -118,13 +114,13 @@ func (h *TelemetryStats) GetRuntimeInfo(ctx context.Context) (*RuntimeInfo, erro
 		})
 	}
 
-	threads = append(threads, thread)
-
-	info := &RuntimeInfo{
-		Threads: threads,
+	threads := []RuntimeThread{
+		thread,
 	}
 
-	return info, nil
+	return &RuntimeInfo{
+		Threads: threads,
+	}, nil
 }
 
 // GetBuffersInfo retrieves buffers info from VPP.

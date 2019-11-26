@@ -62,8 +62,8 @@ type ABFVppRead interface {
 }
 
 var Handler = vpp.RegisterHandler(vpp.HandlerDesc{
-	HandlerName: "abf",
-	HandlerType: (*ABFVppAPI)(nil),
+	Name:       "abf",
+	HandlerAPI: (*ABFVppAPI)(nil),
 })
 
 type NewHandlerFunc func(ch govppapi.Channel, aclIdx aclidx.ACLMetadataIndex, ifIdx ifaceidx.IfaceMetadataIndex, log logging.Logger) ABFVppAPI

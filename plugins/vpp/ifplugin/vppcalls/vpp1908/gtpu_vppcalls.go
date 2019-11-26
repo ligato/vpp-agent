@@ -16,21 +16,24 @@ package vpp1908
 
 import (
 	"errors"
+	"fmt"
 	"net"
 
-	vpp_gtpu "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908/gtpu"
-	ifs "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908/gtpu"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/vppcalls"
+	interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
 )
 
-func (h *InterfaceVppHandler) gtpuAddDelTunnel(isAdd uint8, gtpuLink *ifs.GtpuLink, multicastIf uint32) (uint32, error) {
-	req := &vpp_gtpu.GtpuAddDelTunnel{
+func (h *InterfaceVppHandler) gtpuAddDelTunnel(isAdd uint8, gtpuLink *interfaces.GtpuLink, multicastIf uint32) (uint32, error) {
+	req := &gtpu.GtpuAddDelTunnel{
 		IsAdd:          isAdd,
 		McastSwIfIndex: multicastIf,
 		EncapVrfID:     gtpuLink.EncapVrfId,
 		Teid:           gtpuLink.Teid,
 	}
 
-	if gtpuLink.DecapNext == ifs.GtpuLink_DEFAULT {
+	if gtpuLink.DecapNext == interfaces.GtpuLink_DEFAULT {
 		req.DecapNextIndex = 0xFFFFFFFF
 	} else {
 		req.DecapNextIndex = uint32(gtpuLink.DecapNext)
@@ -74,7 +77,7 @@ func (h *InterfaceVppHandler) gtpuAddDelTunnel(isAdd uint8, gtpuLink *ifs.GtpuLi
 		return 0, errors.New("source and destination addresses must be both either IPv4 or IPv6")
 	}
 
-	reply := &vpp_gtpu.GtpuAddDelTunnelReply{}
+	reply := &gtpu.GtpuAddDelTunnelReply{}
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return 0, err
@@ -83,7 +86,11 @@ func (h *InterfaceVppHandler) gtpuAddDelTunnel(isAdd uint8, gtpuLink *ifs.GtpuLi
 }
 
 // AddGtpuTunnel adds new GTPU interface.
-func (h *InterfaceVppHandler) AddGtpuTunnel(ifName string, gtpuLink *ifs.GtpuLink, multicastIf uint32) (uint32, error) {
+func (h *InterfaceVppHandler) AddGtpuTunnel(ifName string, gtpuLink *interfaces.GtpuLink, multicastIf uint32) (uint32, error) {
+	if h.gtpu == nil {
+		return 0, vpp.ErrPluginDisabled
+	}
+
 	swIfIndex, err := h.gtpuAddDelTunnel(1, gtpuLink, multicastIf)
 	if err != nil {
 		return 0, err
@@ -92,10 +99,66 @@ func (h *InterfaceVppHandler) AddGtpuTunnel(ifName string, gtpuLink *ifs.GtpuLin
 }
 
 // DelGtpuTunnel removes GTPU interface.
-func (h *InterfaceVppHandler) DelGtpuTunnel(ifName string, gtpuLink *ifs.GtpuLink) error {
+func (h *InterfaceVppHandler) DelGtpuTunnel(ifName string, gtpuLink *interfaces.GtpuLink) error {
+	if h.gtpu == nil {
+		return vpp.ErrPluginDisabled
+	}
+
 	swIfIndex, err := h.gtpuAddDelTunnel(0, gtpuLink, 0)
 	if err != nil {
 		return err
 	}
 	return h.RemoveInterfaceTag(ifName, swIfIndex)
+}
+
+// dumpGtpuDetails dumps GTP-U interface details from VPP and fills them into the provided interface map.
+func (h *InterfaceVppHandler) dumpGtpuDetails(ifs map[uint32]*vppcalls.InterfaceDetails) error {
+	if h.gtpu == nil {
+		// no-op when disabled
+		return nil
+	}
+
+	reqCtx := h.callsChannel.SendMultiRequest(&gtpu.GtpuTunnelDump{
+		SwIfIndex: ^uint32(0),
+	})
+	for {
+		gtpuDetails := &gtpu.GtpuTunnelDetails{}
+		stop, err := reqCtx.ReceiveReply(gtpuDetails)
+		if stop {
+			break // Break from the loop.
+		}
+		if err != nil {
+			return fmt.Errorf("failed to dump GTP-U tunnel interface details: %v", err)
+		}
+		_, ifIdxExists := ifs[gtpuDetails.SwIfIndex]
+		if !ifIdxExists {
+			continue
+		}
+		// Multicast interface
+		var multicastIfName string
+		_, exists := ifs[gtpuDetails.McastSwIfIndex]
+		if exists {
+			multicastIfName = ifs[gtpuDetails.McastSwIfIndex].Interface.Name
+		}
+
+		gtpuLink := &interfaces.GtpuLink{
+			Multicast:  multicastIfName,
+			EncapVrfId: gtpuDetails.EncapVrfID,
+			Teid:       gtpuDetails.Teid,
+			DecapNext:  interfaces.GtpuLink_NextNode(gtpuDetails.DecapNextIndex),
+		}
+
+		if gtpuDetails.IsIPv6 == 1 {
+			gtpuLink.SrcAddr = net.IP(gtpuDetails.SrcAddress).To16().String()
+			gtpuLink.DstAddr = net.IP(gtpuDetails.DstAddress).To16().String()
+		} else {
+			gtpuLink.SrcAddr = net.IP(gtpuDetails.SrcAddress[:4]).To4().String()
+			gtpuLink.DstAddr = net.IP(gtpuDetails.DstAddress[:4]).To4().String()
+		}
+
+		ifs[gtpuDetails.SwIfIndex].Interface.Link = &interfaces.Interface_Gtpu{Gtpu: gtpuLink}
+		ifs[gtpuDetails.SwIfIndex].Interface.Type = interfaces.Interface_GTPU_TUNNEL
+	}
+
+	return nil
 }

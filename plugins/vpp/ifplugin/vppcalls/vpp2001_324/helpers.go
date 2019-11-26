@@ -15,6 +15,7 @@
 package vpp2001_324
 
 import (
+	"bytes"
 	"fmt"
 	"net"
 
@@ -39,4 +40,15 @@ func IPToAddress(ipStr string) (addr ip.Address, err error) {
 		addr.Un.SetIP4(ip4addr)
 	}
 	return
+}
+
+func uintToBool(value uint8) bool {
+	if value == 0 {
+		return false
+	}
+	return true
+}
+
+func cleanString(b []byte) string {
+	return string(bytes.SplitN(b, []byte{0x00}, 2)[0])
 }

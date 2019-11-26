@@ -19,20 +19,17 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
-	"io"
 	"net"
 	"strings"
 
 	vpp_bond "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324/bond"
 	vpp_dhcp "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324/dhcp"
 	vpp_gre "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324/gre"
-	vpp_gtpu "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324/gtpu"
 	vpp_ifs "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324/interfaces"
 	vpp_ip "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324/ip"
 	vpp_ipsec "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324/ipsec"
 	vpp_memif "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324/memif"
 	vpp_tapv2 "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324/tapv2"
-	vpp_vmxnet3 "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324/vmxnet3"
 	vpp_vxlan "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324/vxlan"
 	vpp_vxlangpe "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324/vxlan_gpe"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/vppcalls"
@@ -290,29 +287,6 @@ func (h *InterfaceVppHandler) DumpInterfaces(ctx context.Context) (map[uint32]*v
 	return interfaces, nil
 }
 
-func (h *InterfaceVppHandler) DumpMemifSocketDetails(context.Context) (map[string]uint32, error) {
-	memifSocketMap := make(map[string]uint32)
-
-	reqCtx := h.callsChannel.SendMultiRequest(&vpp_memif.MemifSocketFilenameDump{})
-	for {
-		socketDetails := &vpp_memif.MemifSocketFilenameDetails{}
-		stop, err := reqCtx.ReceiveReply(socketDetails)
-		if stop {
-			break // Break from the loop.
-		}
-		if err != nil {
-			return memifSocketMap, err
-		}
-
-		filename := strings.SplitN(socketDetails.SocketFilename, "\x00", 2)[0]
-		memifSocketMap[filename] = socketDetails.SocketID
-	}
-
-	h.log.Debugf("Memif socket dump completed, found %d entries: %v", len(memifSocketMap), memifSocketMap)
-
-	return memifSocketMap, nil
-}
-
 // DumpDhcpClients returns a slice of DhcpMeta with all interfaces and other DHCP-related information available
 func (h *InterfaceVppHandler) DumpDhcpClients() (map[uint32]*vppcalls.Dhcp, error) {
 	dhcpData := make(map[uint32]*vppcalls.Dhcp)
@@ -504,59 +478,6 @@ func (h *InterfaceVppHandler) processIPDetails(ifs map[uint32]*vppcalls.Interfac
 	}
 
 	ifDetails.Interface.IpAddresses = append(ifDetails.Interface.IpAddresses, ipAddr)
-}
-
-// dumpMemifDetails dumps memif interface details from VPP and fills them into the provided interface map.
-func (h *InterfaceVppHandler) dumpMemifDetails(ctx context.Context, interfaces map[uint32]*vppcalls.InterfaceDetails) error {
-	memifSocketMap, err := h.DumpMemifSocketDetails(ctx)
-	if err != nil {
-		return fmt.Errorf("dumping memif socket details failed: %v", err)
-	}
-
-	dump, err := h.memif.DumpMemif(ctx, &vpp_memif.MemifDump{})
-	if err != nil {
-		return err
-	}
-	for {
-		memifDetails, err := dump.Recv()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			return err
-		}
-
-		_, ifIdxExists := interfaces[uint32(memifDetails.SwIfIndex)]
-		if !ifIdxExists {
-			continue
-		}
-		interfaces[uint32(memifDetails.SwIfIndex)].Interface.Link = &ifs.Interface_Memif{
-			Memif: &ifs.MemifLink{
-				Master: memifDetails.Role == 0,
-				Mode:   memifModetoNB(memifDetails.Mode),
-				Id:     memifDetails.ID,
-				//Secret: // TODO: Secret - not available in the binary API
-				SocketFilename: func(socketMap map[string]uint32) (filename string) {
-					for filename, id := range socketMap {
-						if memifDetails.SocketID == id {
-							return filename
-						}
-					}
-					// Socket for configured memif should exist
-					h.log.Warnf("Socket ID not found for memif %v", memifDetails.SwIfIndex)
-					return
-				}(memifSocketMap),
-				RingSize:   memifDetails.RingSize,
-				BufferSize: uint32(memifDetails.BufferSize),
-				// TODO: RxQueues, TxQueues - not available in the binary API
-				//RxQueues:
-				//TxQueues:
-			},
-		}
-		interfaces[uint32(memifDetails.SwIfIndex)].Interface.Type = ifs.Interface_MEMIF
-	}
-
-	return nil
 }
 
 // dumpTapDetails dumps tap interface details from VPP and fills them into the provided interface map.
@@ -797,34 +718,6 @@ func verifyIPSecTunnelDetails(local, remote *vpp_ipsec.IpsecSaDetails) error {
 	return nil
 }
 
-// dumpVmxNet3Details dumps VmxNet3 interface details from VPP and fills them into the provided interface map.
-func (h *InterfaceVppHandler) dumpVmxNet3Details(interfaces map[uint32]*vppcalls.InterfaceDetails) error {
-	reqCtx := h.callsChannel.SendMultiRequest(&vpp_vmxnet3.Vmxnet3Dump{})
-	for {
-		vmxnet3Details := &vpp_vmxnet3.Vmxnet3Details{}
-		stop, err := reqCtx.ReceiveReply(vmxnet3Details)
-		if stop {
-			break // Break from the loop.
-		}
-		if err != nil {
-			return fmt.Errorf("failed to dump VmxNet3 tunnel interface details: %v", err)
-		}
-		_, ifIdxExists := interfaces[vmxnet3Details.SwIfIndex]
-		if !ifIdxExists {
-			continue
-		}
-		interfaces[vmxnet3Details.SwIfIndex].Interface.Link = &ifs.Interface_VmxNet3{
-			VmxNet3: &ifs.VmxNet3Link{
-				RxqSize: uint32(vmxnet3Details.RxCount),
-				TxqSize: uint32(vmxnet3Details.TxCount),
-			},
-		}
-		interfaces[vmxnet3Details.SwIfIndex].Interface.Type = ifs.Interface_VMXNET3_INTERFACE
-		interfaces[vmxnet3Details.SwIfIndex].Meta.Pci = vmxnet3Details.PciAddr
-	}
-	return nil
-}
-
 // dumpBondDetails dumps bond interface details from VPP and fills them into the provided interface map.
 func (h *InterfaceVppHandler) dumpBondDetails(interfaces map[uint32]*vppcalls.InterfaceDetails) error {
 	bondIndexes := make([]uint32, 0)
@@ -928,53 +821,6 @@ func (h *InterfaceVppHandler) dumpGreDetails(interfaces map[uint32]*vppcalls.Int
 		}
 		interfaces[swIfIndex].Interface.Type = ifs.Interface_GRE_TUNNEL
 	}
-	return nil
-}
-
-// dumpGtpuDetails dumps GTP-U interface details from VPP and fills them into the provided interface map.
-func (h *InterfaceVppHandler) dumpGtpuDetails(interfaces map[uint32]*vppcalls.InterfaceDetails) error {
-	reqCtx := h.callsChannel.SendMultiRequest(&vpp_gtpu.GtpuTunnelDump{
-		SwIfIndex: ^uint32(0),
-	})
-	for {
-		gtpuDetails := &vpp_gtpu.GtpuTunnelDetails{}
-		stop, err := reqCtx.ReceiveReply(gtpuDetails)
-		if stop {
-			break // Break from the loop.
-		}
-		if err != nil {
-			return fmt.Errorf("failed to dump GTP-U tunnel interface details: %v", err)
-		}
-		_, ifIdxExists := interfaces[gtpuDetails.SwIfIndex]
-		if !ifIdxExists {
-			continue
-		}
-		// Multicast interface
-		var multicastIfName string
-		_, exists := interfaces[gtpuDetails.McastSwIfIndex]
-		if exists {
-			multicastIfName = interfaces[gtpuDetails.McastSwIfIndex].Interface.Name
-		}
-
-		gtpu := &ifs.GtpuLink{
-			Multicast:  multicastIfName,
-			EncapVrfId: gtpuDetails.EncapVrfID,
-			Teid:       gtpuDetails.Teid,
-			DecapNext:  ifs.GtpuLink_NextNode(gtpuDetails.DecapNextIndex),
-		}
-
-		if gtpuDetails.IsIPv6 == 1 {
-			gtpu.SrcAddr = net.IP(gtpuDetails.SrcAddress).To16().String()
-			gtpu.DstAddr = net.IP(gtpuDetails.DstAddress).To16().String()
-		} else {
-			gtpu.SrcAddr = net.IP(gtpuDetails.SrcAddress[:4]).To4().String()
-			gtpu.DstAddr = net.IP(gtpuDetails.DstAddress[:4]).To4().String()
-		}
-
-		interfaces[gtpuDetails.SwIfIndex].Interface.Link = &ifs.Interface_Gtpu{Gtpu: gtpu}
-		interfaces[gtpuDetails.SwIfIndex].Interface.Type = ifs.Interface_GTPU_TUNNEL
-	}
-
 	return nil
 }
 
@@ -1219,15 +1065,4 @@ func linkStateToInterfaceStatus(flags vpp_ifs.IfStatusFlags) ifs.InterfaceState_
 		return ifs.InterfaceState_UP
 	}
 	return ifs.InterfaceState_DOWN
-}
-
-func uintToBool(value uint8) bool {
-	if value == 0 {
-		return false
-	}
-	return true
-}
-
-func cleanString(b []byte) string {
-	return string(bytes.SplitN(b, []byte{0x00}, 2)[0])
 }

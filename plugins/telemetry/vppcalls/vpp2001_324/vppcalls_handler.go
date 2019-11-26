@@ -35,7 +35,7 @@ func init() {
 }
 
 type TelemetryHandler struct {
-	vpe vpe_vppcalls.VppHandlerAPI
+	vpe vpe_vppcalls.VppCoreAPI
 }
 
 func NewTelemetryVppHandler(ch govppapi.Channel) vppcalls.TelemetryVppAPI {

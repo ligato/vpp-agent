@@ -19,6 +19,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"os/exec"
@@ -42,18 +43,18 @@ var (
 	vppPath     = flag.String("vpp-path", "/usr/bin/vpp", "VPP program path")
 	vppConfig   = flag.String("vpp-config", "", "VPP config file")
 	vppSockAddr = flag.String("vpp-sock-addr", "", "VPP binapi socket address")
+	vppRetry    = flag.Uint("retry", 3, "Number of VPP connect retries")
 
 	debug = flag.Bool("debug", false, "Turn on debug mode.")
 )
 
 const (
-	vppConnectRetries    = 3
 	vppConnectRetryDelay = time.Millisecond * 500
 	vppBootDelay         = time.Millisecond * 200
 	vppTermDelay         = time.Millisecond * 50
 	vppExitTimeout       = time.Second * 1
 
-	vppConf = `
+	defaultVPPConfig = `
 		unix {
 			nodaemon
 			cli-listen /run/vpp/cli.sock
@@ -94,18 +95,12 @@ type testCtx struct {
 	StatsConn      *govppcore.StatsConnection
 	vppBinapi      govppapi.Channel
 	vppStats       govppapi.StatsProvider
-	vpe            vppcalls.VppHandlerAPI
+	vpe            vppcalls.VppCoreAPI
 	versionInfo    *vppcalls.VersionInfo
 	vppClient      *vppClient
 }
 
-func setupVPP(t *testing.T) *testCtx {
-	if os.Getenv("TRAVIS") != "" {
-		t.Skip("skipping test for Travis")
-	}
-
-	RegisterTestingT(t)
-
+func startVPP(t *testing.T, stdout, stderr io.Writer) *exec.Cmd {
 	// check if VPP process is not running already
 	processes, err := ps.Processes()
 	if err != nil {
@@ -122,6 +117,7 @@ func setupVPP(t *testing.T) *testCtx {
 		}
 	}
 
+	// remove binapi files from previous run
 	var removeFile = func(path string) {
 		if err := os.Remove(path); err == nil {
 			t.Logf("removed file %q", path)
@@ -129,35 +125,50 @@ func setupVPP(t *testing.T) *testCtx {
 			t.Fatalf("removing file %q failed: %v", path, err)
 		}
 	}
-	// remove binapi files from previous run
 	removeFile(*vppSockAddr)
+
+	// ensure VPP runtime directory exists
 	if err := os.Mkdir("/run/vpp", 0755); err != nil && !os.IsExist(err) {
 		t.Logf("mkdir failed: %v", err)
 	}
 
-	var stderr, stdout bytes.Buffer
-
+	// setup VPP process
 	vppCmd := exec.Command(*vppPath)
 	if *vppConfig != "" {
 		vppCmd.Args = append(vppCmd.Args, "-c", *vppConfig)
 	} else {
-		vppCmd.Args = append(vppCmd.Args, vppConf)
+		vppCmd.Args = append(vppCmd.Args, defaultVPPConfig)
 	}
-	vppCmd.Stderr = &stderr
-	vppCmd.Stdout = &stdout
+	vppCmd.Stderr = stderr
+	vppCmd.Stdout = stdout
+
 	// ensure that process is killed when current process exits
 	vppCmd.SysProcAttr = &syscall.SysProcAttr{Pdeathsig: syscall.SIGKILL}
+
 	if err := vppCmd.Start(); err != nil {
 		t.Fatalf("starting VPP failed: %v", err)
 	}
+
+	t.Logf("VPP start OK (PID: %v)", vppCmd.Process.Pid)
+	return vppCmd
+}
+
+func setupVPP(t *testing.T) *testCtx {
+	if os.Getenv("TRAVIS") != "" {
+		t.Skip("skipping test for Travis")
+	}
+	RegisterTestingT(t)
+
+	// start VPP process
+	var stderr, stdout bytes.Buffer
+	vppCmd := startVPP(t, &stdout, &stderr)
 	vppPID := uint32(vppCmd.Process.Pid)
-	t.Logf("VPP start OK (PID: %v)", vppPID)
 
 	adapter := socketclient.NewVppClient(*vppSockAddr)
 
 	// wait until the socket is ready
 	if err := adapter.WaitReady(); err != nil {
-		t.Logf("WaitReady failed: %v", err)
+		t.Logf("WaitReady error: %v", err)
 	}
 	time.Sleep(vppBootDelay)
 
@@ -173,7 +184,7 @@ func setupVPP(t *testing.T) *testCtx {
 		}
 		return nil, fmt.Errorf("failed to connect after %d retries", retries)
 	}
-	conn, err := connectRetry(vppConnectRetries)
+	conn, err := connectRetry(int(*vppRetry))
 	if err != nil {
 		t.Errorf("connecting to VPP failed: %v", err)
 		if err := vppCmd.Process.Kill(); err != nil {
@@ -187,20 +198,20 @@ func setupVPP(t *testing.T) *testCtx {
 		t.FailNow()
 	}
 
-	ch, err := conn.NewAPIChannel()
+	apiChannel, err := conn.NewAPIChannel()
 	if err != nil {
 		t.Fatalf("creating channel failed: %v", err)
 	}
 
-	ctx := context.TODO()
-
 	vppClient := &vppClient{
 		t:               t,
 		ChannelProvider: conn,
-		ch:              ch,
+		ch:              apiChannel,
 	}
 
 	vpeHandler := vppcalls.CompatibleHandler(vppClient)
+
+	ctx := context.TODO()
 	versionInfo, err := vpeHandler.GetVersion(ctx)
 	if err != nil {
 		t.Fatalf("getting version info failed: %v", err)
@@ -211,7 +222,7 @@ func setupVPP(t *testing.T) *testCtx {
 	}
 	vpeInfo, err := vpeHandler.GetSession(ctx)
 	if err != nil {
-		t.Fatalf("getting vpe info failed: %v", err)
+		t.Fatalf("getting vpp info failed: %v", err)
 	}
 	if vpeInfo.PID != vppPID {
 		t.Fatalf("expected VPP PID to be %v, got %v", vppPID, vpeInfo.PID)
@@ -223,7 +234,7 @@ func setupVPP(t *testing.T) *testCtx {
 		t.Fatalf("connecting to VPP stats API failed: %v", err)
 	}
 
-	t.Logf("------S-E-T-U-P------")
+	t.Log("===>--S-E-T-U-P--<===")
 
 	return &testCtx{
 		t:           t,
@@ -233,14 +244,14 @@ func setupVPP(t *testing.T) *testCtx {
 		stderr:      &stderr,
 		stdout:      &stdout,
 		Conn:        conn,
-		vppBinapi:   ch,
+		vppBinapi:   apiChannel,
 		vppStats:    statsConn,
 		vppClient:   vppClient,
 	}
 }
 
 func (ctx *testCtx) teardownVPP() {
-	ctx.t.Logf("===T-E-A-R-D-O-W-N===")
+	ctx.t.Logf("---T-E-A-R-D-O-W-N---")
 
 	// disconnect sometimes hangs
 	done := make(chan struct{})
@@ -285,12 +296,10 @@ func (ctx *testCtx) teardownVPP() {
 
 type vppClient struct {
 	t *testing.T
-
 	govppapi.ChannelProvider
-	ch      govppapi.Channel
-	stats   govppapi.StatsProvider
-	vpe     vppcalls.VppHandlerAPI
-	plugins []vppcalls.PluginInfo
+	ch    govppapi.Channel
+	stats govppapi.StatsProvider
+	vpp   vppcalls.VppCoreAPI
 }
 
 func (v *vppClient) CheckCompatiblity(msgs ...govppapi.Message) error {
@@ -307,11 +316,11 @@ func (v *vppClient) StatsConnected() bool {
 
 func (v *vppClient) IsPluginLoaded(plugin string) bool {
 	ctx := context.Background()
-	plugins, err := v.vpe.GetPlugins(ctx)
+	plugins, err := v.vpp.GetPlugins(ctx)
 	if err != nil {
 		v.t.Fatalf("GetPlugins failed: %v", plugins)
 	}
-	for _, p := range v.plugins {
+	for _, p := range plugins {
 		if p.Name == plugin {
 			return true
 		}

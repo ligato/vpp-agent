@@ -15,16 +15,23 @@
 package vpp1904
 
 import (
+	"bytes"
 	"context"
+	"fmt"
+	"io"
 
-	vpp_memif "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904/memif"
-	ifs "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904/memif"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/vppcalls"
+	interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
 )
 
-func (h *InterfaceVppHandler) AddMemifInterface(ifName string, memIface *ifs.MemifLink, socketID uint32) (swIdx uint32, err error) {
-	ctx := context.TODO()
+func (h *InterfaceVppHandler) AddMemifInterface(ctx context.Context, ifName string, memIface *interfaces.MemifLink, socketID uint32) (swIdx uint32, err error) {
+	if h.memif == nil {
+		return 0, vpp.ErrPluginDisabled
+	}
 
-	req := &vpp_memif.MemifCreate{
+	req := &memif.MemifCreate{
 		ID:         memIface.Id,
 		Mode:       uint8(memIface.Mode),
 		Secret:     []byte(memIface.Secret),
@@ -56,10 +63,12 @@ func (h *InterfaceVppHandler) AddMemifInterface(ifName string, memIface *ifs.Mem
 	return swIdx, h.SetInterfaceTag(ifName, swIdx)
 }
 
-func (h *InterfaceVppHandler) DeleteMemifInterface(ifName string, idx uint32) error {
-	ctx := context.TODO()
+func (h *InterfaceVppHandler) DeleteMemifInterface(ctx context.Context, ifName string, idx uint32) error {
+	if h.memif == nil {
+		return vpp.ErrPluginDisabled
+	}
 
-	req := &vpp_memif.MemifDelete{
+	req := &memif.MemifDelete{
 		SwIfIndex: idx,
 	}
 	if _, err := h.memif.MemifDelete(ctx, req); err != nil {
@@ -69,10 +78,12 @@ func (h *InterfaceVppHandler) DeleteMemifInterface(ifName string, idx uint32) er
 	return h.RemoveInterfaceTag(ifName, idx)
 }
 
-func (h *InterfaceVppHandler) RegisterMemifSocketFilename(filename string, id uint32) error {
-	ctx := context.TODO()
+func (h *InterfaceVppHandler) RegisterMemifSocketFilename(ctx context.Context, filename string, id uint32) error {
+	if h.memif == nil {
+		return vpp.ErrPluginDisabled
+	}
 
-	req := &vpp_memif.MemifSocketFilenameAddDel{
+	req := &memif.MemifSocketFilenameAddDel{
 		SocketFilename: []byte(filename),
 		SocketID:       id,
 		IsAdd:          1, // sockets can be added only
@@ -80,5 +91,88 @@ func (h *InterfaceVppHandler) RegisterMemifSocketFilename(filename string, id ui
 	if _, err := h.memif.MemifSocketFilenameAddDel(ctx, req); err != nil {
 		return err
 	}
+	return nil
+}
+
+// DumpMemifSocketDetails implements interface handler.
+func (h *InterfaceVppHandler) DumpMemifSocketDetails(ctx context.Context) (map[string]uint32, error) {
+	dump, err := h.memif.DumpMemifSocketFilename(ctx, &memif.MemifSocketFilenameDump{})
+	if err != nil {
+		return nil, err
+	}
+	memifSocketMap := make(map[string]uint32)
+	for {
+		socketDetails, err := dump.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return nil, err
+		}
+
+		filename := string(bytes.SplitN(socketDetails.SocketFilename, []byte{0x00}, 2)[0])
+		memifSocketMap[filename] = socketDetails.SocketID
+	}
+
+	h.log.Debugf("Memif socket dump completed, found %d entries: %v", len(memifSocketMap), memifSocketMap)
+
+	return memifSocketMap, nil
+}
+
+// dumpMemifDetails dumps memif interface details from VPP and fills them into the provided interface map.
+func (h *InterfaceVppHandler) dumpMemifDetails(ctx context.Context, ifs map[uint32]*vppcalls.InterfaceDetails) error {
+	if h.memif == nil {
+		// no-op when disabled
+		return nil
+	}
+
+	memifSocketMap, err := h.DumpMemifSocketDetails(ctx)
+	if err != nil {
+		return fmt.Errorf("dumping memif socket details failed: %v", err)
+	}
+
+	dump, err := h.memif.DumpMemif(ctx, &memif.MemifDump{})
+	if err != nil {
+		return err
+	}
+	for {
+		memifDetails, err := dump.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return err
+		}
+
+		_, ifIdxExists := ifs[memifDetails.SwIfIndex]
+		if !ifIdxExists {
+			continue
+		}
+		ifs[memifDetails.SwIfIndex].Interface.Link = &interfaces.Interface_Memif{
+			Memif: &interfaces.MemifLink{
+				Master: memifDetails.Role == 0,
+				Mode:   memifModetoNB(memifDetails.Mode),
+				Id:     memifDetails.ID,
+				//Secret: // TODO: Secret - not available in the binary API
+				SocketFilename: func(socketMap map[string]uint32) (filename string) {
+					for filename, id := range socketMap {
+						if memifDetails.SocketID == id {
+							return filename
+						}
+					}
+					// Socket for configured memif should exist
+					h.log.Warnf("Socket ID not found for memif %v", memifDetails.SwIfIndex)
+					return
+				}(memifSocketMap),
+				RingSize:   memifDetails.RingSize,
+				BufferSize: uint32(memifDetails.BufferSize),
+				// TODO: RxQueues, TxQueues - not available in the binary API
+				//RxQueues:
+				//TxQueues:
+			},
+		}
+		ifs[memifDetails.SwIfIndex].Interface.Type = interfaces.Interface_MEMIF
+	}
+
 	return nil
 }

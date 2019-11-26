@@ -25,12 +25,10 @@ import (
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908/bond"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908/dhcp"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908/gre"
-	vpp_gtpu "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908/gtpu"
 	binapi_interface "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908/interfaces"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908/ip"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908/ipsec"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908/tapv2"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908/vmxnet3"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908/vxlan"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908/vxlan_gpe"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/vppcalls"
@@ -239,11 +237,9 @@ func (h *InterfaceVppHandler) DumpInterfaces(ctx context.Context) (map[uint32]*v
 		}
 	}
 
-	if h.memif != nil {
-		err = h.dumpMemifDetails(ctx, ifs)
-		if err != nil {
-			return nil, err
-		}
+	err = h.dumpMemifDetails(ctx, ifs)
+	if err != nil {
+		return nil, err
 	}
 
 	err = h.dumpTapDetails(ifs)
@@ -737,34 +733,6 @@ func verifyIPSecTunnelDetails(local, remote *ipsec.IpsecSaDetails) error {
 	return nil
 }
 
-// dumpVmxNet3Details dumps VmxNet3 interface details from VPP and fills them into the provided interface map.
-func (h *InterfaceVppHandler) dumpVmxNet3Details(ifs map[uint32]*vppcalls.InterfaceDetails) error {
-	reqCtx := h.callsChannel.SendMultiRequest(&vmxnet3.Vmxnet3Dump{})
-	for {
-		vmxnet3Details := &vmxnet3.Vmxnet3Details{}
-		stop, err := reqCtx.ReceiveReply(vmxnet3Details)
-		if stop {
-			break // Break from the loop.
-		}
-		if err != nil {
-			return fmt.Errorf("failed to dump VmxNet3 tunnel interface details: %v", err)
-		}
-		_, ifIdxExists := ifs[vmxnet3Details.SwIfIndex]
-		if !ifIdxExists {
-			continue
-		}
-		ifs[vmxnet3Details.SwIfIndex].Interface.Link = &interfaces.Interface_VmxNet3{
-			VmxNet3: &interfaces.VmxNet3Link{
-				RxqSize: uint32(vmxnet3Details.RxCount),
-				TxqSize: uint32(vmxnet3Details.TxCount),
-			},
-		}
-		ifs[vmxnet3Details.SwIfIndex].Interface.Type = interfaces.Interface_VMXNET3_INTERFACE
-		ifs[vmxnet3Details.SwIfIndex].Meta.Pci = vmxnet3Details.PciAddr
-	}
-	return nil
-}
-
 // dumpBondDetails dumps bond interface details from VPP and fills them into the provided interface map.
 func (h *InterfaceVppHandler) dumpBondDetails(ifs map[uint32]*vppcalls.InterfaceDetails) error {
 	bondIndexes := make([]uint32, 0)
@@ -866,53 +834,6 @@ func (h *InterfaceVppHandler) dumpGreDetails(ifs map[uint32]*vppcalls.InterfaceD
 		}
 		ifs[swIfIndex].Interface.Type = interfaces.Interface_GRE_TUNNEL
 	}
-	return nil
-}
-
-// dumpGtpuDetails dumps GTP-U interface details from VPP and fills them into the provided interface map.
-func (h *InterfaceVppHandler) dumpGtpuDetails(ifs map[uint32]*vppcalls.InterfaceDetails) error {
-	reqCtx := h.callsChannel.SendMultiRequest(&vpp_gtpu.GtpuTunnelDump{
-		SwIfIndex: ^uint32(0),
-	})
-	for {
-		gtpuDetails := &vpp_gtpu.GtpuTunnelDetails{}
-		stop, err := reqCtx.ReceiveReply(gtpuDetails)
-		if stop {
-			break // Break from the loop.
-		}
-		if err != nil {
-			return fmt.Errorf("failed to dump GTP-U tunnel interface details: %v", err)
-		}
-		_, ifIdxExists := ifs[gtpuDetails.SwIfIndex]
-		if !ifIdxExists {
-			continue
-		}
-		// Multicast interface
-		var multicastIfName string
-		_, exists := ifs[gtpuDetails.McastSwIfIndex]
-		if exists {
-			multicastIfName = ifs[gtpuDetails.McastSwIfIndex].Interface.Name
-		}
-
-		gtpu := &interfaces.GtpuLink{
-			Multicast:  multicastIfName,
-			EncapVrfId: gtpuDetails.EncapVrfID,
-			Teid:       gtpuDetails.Teid,
-			DecapNext:  interfaces.GtpuLink_NextNode(gtpuDetails.DecapNextIndex),
-		}
-
-		if gtpuDetails.IsIPv6 == 1 {
-			gtpu.SrcAddr = net.IP(gtpuDetails.SrcAddress).To16().String()
-			gtpu.DstAddr = net.IP(gtpuDetails.DstAddress).To16().String()
-		} else {
-			gtpu.SrcAddr = net.IP(gtpuDetails.SrcAddress[:4]).To4().String()
-			gtpu.DstAddr = net.IP(gtpuDetails.DstAddress[:4]).To4().String()
-		}
-
-		ifs[gtpuDetails.SwIfIndex].Interface.Link = &interfaces.Interface_Gtpu{Gtpu: gtpu}
-		ifs[gtpuDetails.SwIfIndex].Interface.Type = interfaces.Interface_GTPU_TUNNEL
-	}
-
 	return nil
 }
 
@@ -1125,15 +1046,4 @@ func getVxLanGpeProtocol(p uint8) interfaces.VxlanLink_Gpe_Protocol {
 	default:
 		return interfaces.VxlanLink_Gpe_UNKNOWN
 	}
-}
-
-func uintToBool(value uint8) bool {
-	if value == 0 {
-		return false
-	}
-	return true
-}
-
-func cleanString(b []byte) string {
-	return string(bytes.SplitN(b, []byte{0x00}, 2)[0])
 }

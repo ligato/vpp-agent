@@ -61,8 +61,8 @@ type NatVppRead interface {
 }
 
 var handler = vpp.RegisterHandler(vpp.HandlerDesc{
-	HandlerName: "nat",
-	HandlerType: (*NatVppAPI)(nil),
+	Name:       "nat",
+	HandlerAPI: (*NatVppAPI)(nil),
 })
 
 func AddNatHandlerVersion(version string, msgs []govppapi.Message,

@@ -16,8 +16,8 @@ package vppcalls
 
 import (
 	govppapi "git.fd.io/govpp.git/api"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp"
 
+	"go.ligato.io/vpp-agent/v2/plugins/vpp"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
 	acl "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/acl"
 )
@@ -109,8 +109,8 @@ type ACLVppRead interface {
 }
 
 var Handler = vpp.RegisterHandler(vpp.HandlerDesc{
-	HandlerName: "acl",
-	HandlerType: (*ACLVppAPI)(nil),
+	Name:       "acl",
+	HandlerAPI: (*ACLVppAPI)(nil),
 })
 
 type NewHandlerFunc func(c vpp.Client, ifIdx ifaceidx.IfaceMetadataIndex) ACLVppAPI

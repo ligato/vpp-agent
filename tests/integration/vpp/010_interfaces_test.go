@@ -15,21 +15,23 @@
 package vpp
 
 import (
+	"context"
 	"net"
 	"testing"
 
 	"github.com/ligato/cn-infra/logging/logrus"
 
-	_ "go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin"
 	ifplugin_vppcalls "go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/vppcalls"
 	vpp_interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
+
+	_ "go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin"
 )
 
 func TestInterfaceIP(t *testing.T) {
-	ctx := setupVPP(t)
-	defer ctx.teardownVPP()
+	test := setupVPP(t)
+	defer test.teardownVPP()
 
-	h := ifplugin_vppcalls.CompatibleInterfaceVppHandler(ctx.vppClient, logrus.NewLogger("test"))
+	h := ifplugin_vppcalls.CompatibleInterfaceVppHandler(test.vppClient, logrus.NewLogger("test"))
 
 	tests := []struct {
 		name  string
@@ -54,10 +56,10 @@ func TestInterfaceIP(t *testing.T) {
 }
 
 func TestInterfaceEnabledFieldWithLoopback(t *testing.T) {
-	ctx := setupVPP(t)
-	defer ctx.teardownVPP()
+	test := setupVPP(t)
+	defer test.teardownVPP()
 
-	h := ifplugin_vppcalls.CompatibleInterfaceVppHandler(ctx.vppClient, logrus.NewLogger("test"))
+	h := ifplugin_vppcalls.CompatibleInterfaceVppHandler(test.vppClient, logrus.NewLogger("test"))
 
 	ifIdx0, err := h.AddLoopbackInterface("loop0")
 	if err != nil {
@@ -125,25 +127,22 @@ func TestInterfaceEnabledFieldWithLoopback(t *testing.T) {
 // loopback interface after calling InterfaceAdminUp
 // memif should keep link state down
 func TestInterfaceEnabledFieldWithMemif(t *testing.T) {
-	ctx := setupVPP(t)
-	defer ctx.teardownVPP()
+	test := setupVPP(t)
+	defer test.teardownVPP()
 
-	h := ifplugin_vppcalls.CompatibleInterfaceVppHandler(ctx.vppClient, logrus.NewLogger("test"))
+	h := ifplugin_vppcalls.CompatibleInterfaceVppHandler(test.vppClient, logrus.NewLogger("test"))
 
-	err := h.RegisterMemifSocketFilename("/tmp/memif1.sock", 2)
+	ctx := context.Background()
+	err := h.RegisterMemifSocketFilename(ctx, "/tmp/memif1.sock", 2)
 	if err != nil {
 		t.Fatalf("registering memif socket filename faild: %v", err)
 	}
-	memifIdx, err := h.AddMemifInterface(
-		"memif1",
-		&vpp_interfaces.MemifLink{
-			Id:             1,
-			Master:         true,
-			Secret:         "secret",
-			SocketFilename: "/tmp/memif1.sock",
-		},
-		2,
-	)
+	memifIdx, err := h.AddMemifInterface(ctx, "memif1", &vpp_interfaces.MemifLink{
+		Id:             1,
+		Master:         true,
+		Secret:         "secret",
+		SocketFilename: "/tmp/memif1.sock",
+	}, 2)
 	if err != nil {
 		t.Fatalf("creating memif interface failed: %v", err)
 	}
@@ -206,10 +205,10 @@ func TestInterfaceEnabledFieldWithMemif(t *testing.T) {
 }
 
 func TestInterfaceDumpState(t *testing.T) {
-	ctx := setupVPP(t)
-	defer ctx.teardownVPP()
+	test := setupVPP(t)
+	defer test.teardownVPP()
 
-	h := ifplugin_vppcalls.CompatibleInterfaceVppHandler(ctx.vppClient, logrus.NewLogger("test"))
+	h := ifplugin_vppcalls.CompatibleInterfaceVppHandler(test.vppClient, logrus.NewLogger("test"))
 
 	ifIdx0, err := h.AddLoopbackInterface("loop0")
 	if err != nil {
@@ -250,10 +249,10 @@ func TestInterfaceDumpState(t *testing.T) {
 }
 
 func TestLoopbackInterface(t *testing.T) {
-	ctx := setupVPP(t)
-	defer ctx.teardownVPP()
+	test := setupVPP(t)
+	defer test.teardownVPP()
 
-	h := ifplugin_vppcalls.CompatibleInterfaceVppHandler(ctx.vppClient, logrus.NewLogger("test"))
+	h := ifplugin_vppcalls.CompatibleInterfaceVppHandler(test.vppClient, logrus.NewLogger("test"))
 
 	ifIdx, err := h.AddLoopbackInterface("loop1")
 	if err != nil {
@@ -289,12 +288,13 @@ func TestLoopbackInterface(t *testing.T) {
 }
 
 func TestMemifInterface(t *testing.T) {
-	ctx := setupVPP(t)
-	defer ctx.teardownVPP()
+	test := setupVPP(t)
+	defer test.teardownVPP()
 
-	h := ifplugin_vppcalls.CompatibleInterfaceVppHandler(ctx.vppClient, logrus.NewLogger("test"))
+	h := ifplugin_vppcalls.CompatibleInterfaceVppHandler(test.vppClient, logrus.NewLogger("test"))
 
-	ifIdx, err := h.AddMemifInterface("memif1", &vpp_interfaces.MemifLink{
+	ctx := context.Background()
+	ifIdx, err := h.AddMemifInterface(ctx, "memif1", &vpp_interfaces.MemifLink{
 		Id:     1,
 		Mode:   vpp_interfaces.MemifLink_ETHERNET,
 		Secret: "secret",

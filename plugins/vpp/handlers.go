@@ -24,8 +24,9 @@ import (
 
 // HandlerDesc is a handler descriptor used to describe a handler for registration.
 type HandlerDesc struct {
-	HandlerName string
-	HandlerType interface{}
+	Name       string
+	HandlerAPI interface{}
+	NewFunc    interface{}
 }
 
 // HandlerVersion defines handler implementation for specific version used by AddVersion.
@@ -48,10 +49,10 @@ type Handler struct {
 // Handler versions can be overwritten by calling AddVersion multiple times.
 func (h *Handler) AddVersion(hv HandlerVersion) {
 	if _, ok := h.versions[hv.Version]; ok {
-		logging.Warnf("overwritting %s handler version: %s", h.desc.HandlerName, hv.Version)
+		logging.Warnf("overwritting %s handler version: %s", h.desc.Name, hv.Version)
 	}
 	// TODO: check if given handler version implementes handler API interface
-	/*ht := reflect.TypeOf(h.desc.HandlerType).Elem()
+	/*ht := reflect.TypeOf(h.desc.HandlerAPI).Elem()
 	hc := reflect.TypeOf(hv.New).Out(0)
 	if !hc.Implements(ht) {
 		logging.DefaultLogger.Warnf("vpphandlers: AddVersion found the handler of type %v that does not satisfy %v", hc, ht)
@@ -83,21 +84,21 @@ func (h *Handler) FindCompatibleVersion(c Client) *HandlerVersion {
 // // their Check method to check compatibility.
 func (h *Handler) GetCompatibleVersion(c Client) (*HandlerVersion, error) {
 	if len(h.versions) == 0 {
-		logging.Debugf("VPP handler %s has no registered versions", h.desc.HandlerName)
+		logging.Debugf("VPP handler %s has no registered versions", h.desc.Name)
 		return nil, ErrNoVersions
 	}
 	for _, v := range h.versions {
 		if err := v.Check(c); err != nil {
 			if ierr, ok := err.(*govppapi.CompatibilityError); ok {
 				logging.Debugf("VPP handler %s incompatible with version %s: found %d incompatible messages",
-					h.desc.HandlerName, v.Version, len(ierr.IncompatibleMessages))
+					h.desc.Name, v.Version, len(ierr.IncompatibleMessages))
 			} else {
 				logging.Debugf("VPP handler %s failed check for version %s: \n%v",
-					h.desc.HandlerName, v.Version, err)
+					h.desc.Name, v.Version, err)
 			}
 			continue
 		}
-		logging.Debugf("VPP handler %s compatible version: %s", h.desc.HandlerName, v.Version)
+		logging.Debugf("VPP handler %s compatible version: %s", h.desc.Name, v.Version)
 		return v, nil
 	}
 	return nil, ErrIncompatible
@@ -109,14 +110,14 @@ var (
 
 // RegisterHandler creates new handler described by handle descriptor.
 func RegisterHandler(hd HandlerDesc) *Handler {
-	if _, ok := handlers[hd.HandlerName]; ok {
-		panic(fmt.Sprintf("VPP handler %s is already registered", hd.HandlerName))
+	if _, ok := handlers[hd.Name]; ok {
+		panic(fmt.Sprintf("VPP handler %s is already registered", hd.Name))
 	}
 	h := &Handler{
 		desc:     &hd,
 		versions: make(map[string]*HandlerVersion),
 	}
-	handlers[hd.HandlerName] = h
+	handlers[hd.Name] = h
 	return h
 }
 

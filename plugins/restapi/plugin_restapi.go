@@ -69,7 +69,7 @@ type Plugin struct {
 	vppChan api.Channel
 
 	// Handlers
-	vpeHandler  vpevppcalls.VppHandlerAPI
+	vpeHandler  vpevppcalls.VppCoreAPI
 	teleHandler telemetryvppcalls.TelemetryVppAPI
 	// VPP Handlers
 	abfHandler   abfvppcalls.ABFVppRead

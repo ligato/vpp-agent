@@ -1453,7 +1453,7 @@ func setup(t *testing.T) (*vppcallmock.TestCtx, vppcalls.SRv6VppAPI) {
 	log := logrus.NewLogger("test")
 	swIfIndex := ifaceidx.NewIfaceIndex(log, "test")
 	swIfIndex.Put(ifaceA, &ifaceidx.IfaceMetadata{SwIfIndex: swIndexA})
-	vppCalls := vpp2001.NewSRv6VppHandler(ctx.MockChannel, swIfIndex, log)
+	vppCalls := vpp2001.NewSRv6VppHandler(ctx.MockVPPClient, swIfIndex, log)
 	return ctx, vppCalls
 }
 
