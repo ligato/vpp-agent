@@ -926,6 +926,9 @@ func guessInterfaceType(ifName string) ifs.Interface_Type {
 	case strings.HasPrefix(ifName, "Bond"):
 		return ifs.Interface_BOND_INTERFACE
 
+	case strings.HasPrefix(ifName, "gtpu"):
+		return ifs.Interface_GTPU_TUNNEL
+
 	default:
 		return ifs.Interface_DPDK
 	}
