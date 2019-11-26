@@ -48,7 +48,7 @@ func getMtu(vppMtu uint16) uint32 {
 }
 
 // DumpInterfacesByType implements interface handler.
-func (h *InterfaceVppHandler) DumpInterfacesByType(reqType interfaces.Interface_Type) (map[uint32]*vppcalls.InterfaceDetails, error) {
+func (h *InterfaceVppHandler) DumpInterfacesByType(ctx context.Context, reqType interfaces.Interface_Type) (map[uint32]*vppcalls.InterfaceDetails, error) {
 	// Dump all
 	ifs, err := h.DumpInterfaces(nil)
 	if err != nil {

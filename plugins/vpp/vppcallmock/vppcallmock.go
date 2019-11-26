@@ -218,10 +218,7 @@ func (m *mockVPPClient) CheckCompatiblity(msgs ...govppapi.Message) error {
 }
 
 func (m *mockVPPClient) IsPluginLoaded(plugin string) bool {
-	if m.unloadedPlugins[plugin] {
-		return false
-	}
-	return true
+	return !m.unloadedPlugins[plugin]
 }
 
 func (m *mockVPPClient) Stats() govppapi.StatsProvider {

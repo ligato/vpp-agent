@@ -17,10 +17,8 @@ package vpp
 import (
 	"bytes"
 	"context"
-	"flag"
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"os/exec"
 	"strings"
@@ -34,18 +32,8 @@ import (
 	govppcore "git.fd.io/govpp.git/core"
 	"github.com/mitchellh/go-ps"
 	. "github.com/onsi/gomega"
-	"github.com/sirupsen/logrus"
 
 	"go.ligato.io/vpp-agent/v2/plugins/govppmux/vppcalls"
-)
-
-var (
-	vppPath     = flag.String("vpp-path", "/usr/bin/vpp", "VPP program path")
-	vppConfig   = flag.String("vpp-config", "", "VPP config file")
-	vppSockAddr = flag.String("vpp-sock-addr", "", "VPP binapi socket address")
-	vppRetry    = flag.Uint("retry", 3, "Number of VPP connect retries")
-
-	debug = flag.Bool("debug", false, "Turn on debug mode.")
 )
 
 const (
@@ -76,16 +64,6 @@ const (
 			plugin dpdk_plugin.so { disable }
 		}`
 )
-
-func TestMain(m *testing.M) {
-	log.SetFlags(log.Lmicroseconds | log.Lshortfile)
-	flag.Parse()
-	if *debug {
-		govppcore.SetLogLevel(logrus.DebugLevel)
-	}
-	result := m.Run()
-	os.Exit(result)
-}
 
 type testCtx struct {
 	t              *testing.T
@@ -164,6 +142,7 @@ func setupVPP(t *testing.T) *testCtx {
 	vppCmd := startVPP(t, &stdout, &stderr)
 	vppPID := uint32(vppCmd.Process.Pid)
 
+	// connect to binapi
 	adapter := socketclient.NewVppClient(*vppSockAddr)
 
 	// wait until the socket is ready
@@ -228,11 +207,15 @@ func setupVPP(t *testing.T) *testCtx {
 		t.Fatalf("expected VPP PID to be %v, got %v", vppPID, vpeInfo.PID)
 	}
 
+	// connect to stats
 	statsClient := statsclient.NewStatsClient("")
 	statsConn, err := govppcore.ConnectStats(statsClient)
 	if err != nil {
 		t.Fatalf("connecting to VPP stats API failed: %v", err)
 	}
+
+	vppClient.vpp = vpeHandler
+	vppClient.stats = statsConn
 
 	t.Log("===>--S-E-T-U-P--<===")
 

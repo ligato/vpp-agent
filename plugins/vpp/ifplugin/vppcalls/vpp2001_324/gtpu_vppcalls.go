@@ -87,11 +87,11 @@ func (h *InterfaceVppHandler) gtpuAddDelTunnel(isAdd uint8, gtpuLink *ifs.GtpuLi
 
 // AddGtpuTunnel adds new GTPU interface.
 func (h *InterfaceVppHandler) AddGtpuTunnel(ifName string, gtpuLink *ifs.GtpuLink, multicastIf uint32) (uint32, error) {
-    if gtpuLink == nil {
-        return 0, errors.New("Missing GTPU tunnel information")
-    }
-    if h.gtpu == nil {
+	if h.gtpu == nil {
 		return 0, vpp.ErrPluginDisabled
+	}
+	if gtpuLink == nil {
+		return 0, errors.New("missing GTPU tunnel information")
 	}
 
 	swIfIndex, err := h.gtpuAddDelTunnel(1, gtpuLink, multicastIf)
@@ -103,11 +103,11 @@ func (h *InterfaceVppHandler) AddGtpuTunnel(ifName string, gtpuLink *ifs.GtpuLin
 
 // DelGtpuTunnel removes GTPU interface.
 func (h *InterfaceVppHandler) DelGtpuTunnel(ifName string, gtpuLink *ifs.GtpuLink) error {
-    if gtpuLink == nil {
-        return errors.New("Missing GTPU tunnel information")
-    }
-    if h.gtpu == nil {
+	if h.gtpu == nil {
 		return vpp.ErrPluginDisabled
+	}
+	if gtpuLink == nil {
+		return errors.New("missing GTPU tunnel information")
 	}
 
 	swIfIndex, err := h.gtpuAddDelTunnel(0, gtpuLink, 0)

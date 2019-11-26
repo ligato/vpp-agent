@@ -246,7 +246,7 @@ type InterfaceVppRead interface {
 	//
 	DumpInterfaces(ctx context.Context) (map[uint32]*InterfaceDetails, error)
 	// DumpInterfacesByType returns all VPP interfaces of the specified type
-	DumpInterfacesByType(reqType interfaces.Interface_Type) (map[uint32]*InterfaceDetails, error)
+	DumpInterfacesByType(ctx context.Context, reqType interfaces.Interface_Type) (map[uint32]*InterfaceDetails, error)
 	// DumpInterfaceStates dumps link and administrative state of every interface.
 	DumpInterfaceStates(ifIdxs ...uint32) (map[uint32]*InterfaceState, error)
 	// DumpSpan returns all records from span table.

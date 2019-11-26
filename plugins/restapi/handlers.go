@@ -70,31 +70,31 @@ func (p *Plugin) registerACLHandlers() {
 func (p *Plugin) registerInterfaceHandlers() {
 	// GET all interfaces
 	p.registerHTTPHandler(resturl.Interface, GET, func() (interface{}, error) {
-		return p.ifHandler.DumpInterfaces(nil)
+		return p.ifHandler.DumpInterfaces(context.TODO())
 	})
 	// GET loopback interfaces
 	p.registerHTTPHandler(resturl.Loopback, GET, func() (interface{}, error) {
-		return p.ifHandler.DumpInterfacesByType(interfaces.Interface_SOFTWARE_LOOPBACK)
+		return p.ifHandler.DumpInterfacesByType(context.TODO(), interfaces.Interface_SOFTWARE_LOOPBACK)
 	})
 	// GET ethernet interfaces
 	p.registerHTTPHandler(resturl.Ethernet, GET, func() (interface{}, error) {
-		return p.ifHandler.DumpInterfacesByType(interfaces.Interface_DPDK)
+		return p.ifHandler.DumpInterfacesByType(context.TODO(), interfaces.Interface_DPDK)
 	})
 	// GET memif interfaces
 	p.registerHTTPHandler(resturl.Memif, GET, func() (interface{}, error) {
-		return p.ifHandler.DumpInterfacesByType(interfaces.Interface_MEMIF)
+		return p.ifHandler.DumpInterfacesByType(context.TODO(), interfaces.Interface_MEMIF)
 	})
 	// GET tap interfaces
 	p.registerHTTPHandler(resturl.Tap, GET, func() (interface{}, error) {
-		return p.ifHandler.DumpInterfacesByType(interfaces.Interface_TAP)
+		return p.ifHandler.DumpInterfacesByType(context.TODO(), interfaces.Interface_TAP)
 	})
 	// GET af-packet interfaces
 	p.registerHTTPHandler(resturl.AfPacket, GET, func() (interface{}, error) {
-		return p.ifHandler.DumpInterfacesByType(interfaces.Interface_AF_PACKET)
+		return p.ifHandler.DumpInterfacesByType(context.TODO(), interfaces.Interface_AF_PACKET)
 	})
 	// GET VxLAN interfaces
 	p.registerHTTPHandler(resturl.VxLan, GET, func() (interface{}, error) {
-		return p.ifHandler.DumpInterfacesByType(interfaces.Interface_VXLAN_TUNNEL)
+		return p.ifHandler.DumpInterfacesByType(context.TODO(), interfaces.Interface_VXLAN_TUNNEL)
 	})
 }
 
