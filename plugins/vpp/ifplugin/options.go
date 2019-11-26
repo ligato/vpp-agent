@@ -34,7 +34,7 @@ func NewPlugin(opts ...Option) *IfPlugin {
 	p.PluginName = "vpp-ifplugin"
 	p.StatusCheck = &statuscheck.DefaultPlugin
 	p.KVScheduler = &kvscheduler.DefaultPlugin
-	p.GoVppmux = &govppmux.DefaultPlugin
+	p.VPP = &govppmux.DefaultPlugin
 	p.ServiceLabel = &servicelabel.DefaultPlugin
 	p.AddrAlloc = &netalloc.DefaultPlugin
 

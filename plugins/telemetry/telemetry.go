@@ -68,7 +68,7 @@ type Plugin struct {
 type Deps struct {
 	infra.PluginDeps
 	ServiceLabel servicelabel.ReaderAPI
-	GoVppmux     govppmux.StatsAPI
+	VPP          govppmux.API
 	Prometheus   prom.API
 	GRPC         grpc.Server
 	HTTPHandlers rest.HTTPHandlers
@@ -148,15 +148,15 @@ func (p *Plugin) AfterInit() error {
 }
 
 func (p *Plugin) setupStatsPoller() error {
-	vppCh, err := p.GoVppmux.NewAPIChannel()
+	/*vppCh, err := p.VPP.NewAPIChannel()
 	if err != nil {
 		return err
 	}
-	defer vppCh.Close()
+	defer vppCh.Close()*/
 
-	h := vppcalls.CompatibleTelemetryHandler(vppCh, p.GoVppmux)
+	h := vppcalls.CompatibleTelemetryHandler(p.VPP)
 	if h == nil {
-		return err
+		return fmt.Errorf("VPP core handler not available")
 	}
 	p.statsPollerServer.handler = h
 
@@ -175,14 +175,14 @@ func (p *Plugin) Close() error {
 }
 
 func (p *Plugin) startPeriodicUpdates() {
-	vppCh, err := p.GoVppmux.NewAPIChannel()
+	/*vppCh, err := p.VPP.NewAPIChannel()
 	if err != nil {
 		p.Log.Errorf("creating channel failed: %v", err)
 		return
 	}
-	defer vppCh.Close()
+	defer vppCh.Close()*/
 
-	p.handler = vppcalls.CompatibleTelemetryHandler(vppCh, p.GoVppmux)
+	p.handler = vppcalls.CompatibleTelemetryHandler(p.VPP)
 	if p.handler == nil {
 		p.Log.Warnf("no compatible telemetry handler, skipping periodic updates")
 		return

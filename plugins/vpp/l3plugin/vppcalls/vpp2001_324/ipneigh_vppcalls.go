@@ -15,6 +15,7 @@
 package vpp2001_324
 
 import (
+	"context"
 	"regexp"
 	"strconv"
 
@@ -62,7 +63,7 @@ var (
 
 // GetIPScanNeighbor dumps current IP Scan Neighbor configuration.
 func (h *IPNeighHandler) GetIPScanNeighbor() (*l3.IPScanNeighbor, error) {
-	data, err := h.RunCli("show ip scan-neighbor")
+	data, err := h.RunCli(context.TODO(), "show ip scan-neighbor")
 	if err != nil {
 		return nil, err
 	}

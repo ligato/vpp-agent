@@ -70,7 +70,7 @@ func (p *Plugin) registerACLHandlers() {
 func (p *Plugin) registerInterfaceHandlers() {
 	// GET all interfaces
 	p.registerHTTPHandler(resturl.Interface, GET, func() (interface{}, error) {
-		return p.ifHandler.DumpInterfaces()
+		return p.ifHandler.DumpInterfaces(nil)
 	})
 	// GET loopback interfaces
 	p.registerHTTPHandler(resturl.Loopback, GET, func() (interface{}, error) {
@@ -322,7 +322,7 @@ func (p *Plugin) commandHandler(formatter *render.Render) http.HandlerFunc {
 
 		p.Log.Debugf("VPPCLI command: %v", command)
 
-		reply, err := p.vpeHandler.RunCli(command)
+		reply, err := p.vpeHandler.RunCli(context.TODO(), command)
 		if err != nil {
 			errMsg := fmt.Sprintf("500 Internal server error: sending request failed: %v\n", err)
 			p.Log.Error(errMsg)
@@ -345,7 +345,7 @@ func (p *Plugin) telemetryHandler(formatter *render.Render) http.HandlerFunc {
 		var cmdOuts []cmdOut
 
 		var runCmd = func(command string) {
-			out, err := p.vpeHandler.RunCli(command)
+			out, err := p.vpeHandler.RunCli(context.TODO(), command)
 			if err != nil {
 				errMsg := fmt.Sprintf("500 Internal server error: sending command failed: %v\n", err)
 				p.Log.Error(errMsg)
@@ -354,7 +354,7 @@ func (p *Plugin) telemetryHandler(formatter *render.Render) http.HandlerFunc {
 			}
 			cmdOuts = append(cmdOuts, cmdOut{
 				Command: command,
-				Output:  string(out),
+				Output:  out,
 			})
 		}
 

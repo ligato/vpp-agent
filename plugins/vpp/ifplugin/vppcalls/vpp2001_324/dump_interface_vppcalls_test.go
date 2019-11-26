@@ -88,7 +88,7 @@ func TestDumpInterfacesVxLan(t *testing.T) {
 		},
 	})
 
-	intfs, err := ifHandler.DumpInterfaces()
+	intfs, err := ifHandler.DumpInterfaces(nil)
 	Expect(err).To(BeNil())
 	Expect(intfs).To(HaveLen(1))
 	intface := intfs[0].Interface
@@ -143,7 +143,7 @@ func TestDumpInterfacesHost(t *testing.T) {
 		},
 	})
 
-	intfs, err := ifHandler.DumpInterfaces()
+	intfs, err := ifHandler.DumpInterfaces(nil)
 	Expect(err).To(BeNil())
 	Expect(intfs).To(HaveLen(1))
 	intface := intfs[0].Interface
@@ -210,7 +210,7 @@ func TestDumpInterfacesMemif(t *testing.T) {
 		},
 	})
 
-	intfs, err := ifHandler.DumpInterfaces()
+	intfs, err := ifHandler.DumpInterfaces(nil)
 	Expect(err).To(BeNil())
 	Expect(intfs).To(HaveLen(1))
 	intface := intfs[0].Interface
@@ -282,7 +282,7 @@ func TestDumpInterfacesTap2(t *testing.T) {
 		},
 	})
 
-	intfs, err := ifHandler.DumpInterfaces()
+	intfs, err := ifHandler.DumpInterfaces(nil)
 	Expect(err).To(BeNil())
 	Expect(intfs).To(HaveLen(1))
 
@@ -315,7 +315,7 @@ func TestDumpMemifSocketDetails(t *testing.T) {
 
 	ctx.MockVpp.MockReply(&vpp_vpe.ControlPingReply{})
 
-	result, err := ifHandler.DumpMemifSocketDetails()
+	result, err := ifHandler.DumpMemifSocketDetails(nil)
 	Expect(err).To(BeNil())
 	Expect(result).To(Not(BeEmpty()))
 
@@ -405,7 +405,7 @@ func TestDumpInterfacesRxPlacement(t *testing.T) {
 		},
 	})
 
-	intfs, err := ifHandler.DumpInterfaces()
+	intfs, err := ifHandler.DumpInterfaces(nil)
 	Expect(err).To(BeNil())
 	Expect(intfs).To(HaveLen(1))
 	intface := intfs[0].Interface
@@ -494,7 +494,7 @@ func TestDumpInterfacesGtpu(t *testing.T) {
 		},
 	})
 
-	intfs, err := ifHandler.DumpInterfaces()
+	intfs, err := ifHandler.DumpInterfaces(nil)
 	Expect(err).To(BeNil())
 	Expect(intfs).To(HaveLen(1))
 	intface := intfs[0].Interface

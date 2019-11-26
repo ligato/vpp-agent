@@ -17,6 +17,7 @@ package vppcalls
 import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp"
 
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
 	stn "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/stn"
@@ -49,23 +50,36 @@ type StnVppRead interface {
 	DumpSTNRules() ([]*StnDetails, error)
 }
 
-var Versions = map[string]HandlerVersion{}
+var handler = vpp.RegisterHandler(vpp.HandlerDesc{
+	HandlerName: "stn",
+	HandlerType: (*StnVppAPI)(nil),
+})
 
-type HandlerVersion struct {
-	Msgs []govppapi.Message
-	New  func(govppapi.Channel, ifaceidx.IfaceMetadataIndex, logging.Logger) StnVppAPI
+type NewHandlerFunc func(ch govppapi.Channel, ifIdx ifaceidx.IfaceMetadataIndex, log logging.Logger) StnVppAPI
+
+func AddStnHandlerVersion(version string, msgs []govppapi.Message, h NewHandlerFunc) {
+	handler.AddVersion(vpp.HandlerVersion{
+		Version: version,
+		Check: func(c vpp.Client) error {
+			ch, err := c.NewAPIChannel()
+			if err != nil {
+				return err
+			}
+			return ch.CheckCompatiblity(msgs...)
+		},
+		NewHandler: func(c vpp.Client, a ...interface{}) vpp.HandlerAPI {
+			ch, err := c.NewAPIChannel()
+			if err != nil {
+				return err
+			}
+			return h(ch, a[0].(ifaceidx.IfaceMetadataIndex), a[1].(logging.Logger))
+		},
+	})
 }
 
-func CompatibleStnVppHandler(
-	ch govppapi.Channel, idx ifaceidx.IfaceMetadataIndex, log logging.Logger,
-) StnVppAPI {
-	for ver, h := range Versions {
-		log.Debugf("checking compatibility with %s", ver)
-		if err := ch.CheckCompatiblity(h.Msgs...); err != nil {
-			continue
-		}
-		log.Debug("found compatible version:", ver)
-		return h.New(ch, idx, log)
+func CompatibleStnVppHandler(c vpp.Client, ifIdx ifaceidx.IfaceMetadataIndex, log logging.Logger) StnVppAPI {
+	if v := handler.FindCompatibleVersion(c); v != nil {
+		return v.NewHandler(c, ifIdx).(StnVppAPI)
 	}
-	panic("no compatible version available")
+	return nil
 }

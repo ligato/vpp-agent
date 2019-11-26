@@ -22,17 +22,17 @@ import (
 	govpp "git.fd.io/govpp.git/core"
 	log "github.com/ligato/cn-infra/logging/logrus"
 	. "github.com/onsi/gomega"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908/vpe"
 )
 
 // TestCtx is helping structure for unit testing.
 // It wraps VppAdapter which is used instead of real VPP.
 type TestCtx struct {
-	MockVpp     *mock.VppAdapter
-	MockStats   *mock.StatsAdapter
-	conn        *govpp.Connection
-	channel     govppapi.Channel
-	MockChannel *mockedChannel
+	MockVpp       *mock.VppAdapter
+	MockStats     *mock.StatsAdapter
+	conn          *govpp.Connection
+	channel       govppapi.Channel
+	MockChannel   *mockedChannel
+	MockVPPClient *mockVPPClient
 }
 
 // SetupTestCtx sets up all fields of TestCtx structure at the begining of test
@@ -51,7 +51,13 @@ func SetupTestCtx(t *testing.T) *TestCtx {
 	ctx.channel, err = ctx.conn.NewAPIChannel()
 	Expect(err).ShouldNot(HaveOccurred())
 
-	ctx.MockChannel = &mockedChannel{Channel: ctx.channel}
+	ctx.MockChannel = &mockedChannel{
+		Channel: ctx.channel,
+	}
+	ctx.MockVPPClient = &mockVPPClient{
+		mockedChannel:   ctx.MockChannel,
+		unloadedPlugins: map[string]bool{},
+	}
 
 	return ctx
 }
@@ -151,7 +157,7 @@ func (ctx *TestCtx) MockReplies(dataList []*HandleReplies) {
 
 		if sendControlPing {
 			sendControlPing = false
-			data := &vpe.ControlPingReply{}
+			data := &govpp.ControlPingReply{}
 			reply, err := ctx.MockVpp.ReplyBytes(request, data)
 			Expect(err).To(BeNil())
 			msgID, err := ctx.MockVpp.GetMsgID(data.GetMessageName(), data.GetCrcString())
@@ -192,4 +198,36 @@ func (ctx *TestCtx) MockReplies(dataList []*HandleReplies) {
 
 		return reply, msgID, prepared
 	})
+}
+
+type mockVPPClient struct {
+	*mockedChannel
+	unloadedPlugins map[string]bool
+}
+
+func (m *mockVPPClient) NewAPIChannel() (govppapi.Channel, error) {
+	return m.mockedChannel, nil
+}
+
+func (m *mockVPPClient) NewAPIChannelBuffered(reqChanBufSize, replyChanBufSize int) (govppapi.Channel, error) {
+	return m.mockedChannel, nil
+}
+
+func (m *mockVPPClient) CheckCompatiblity(msgs ...govppapi.Message) error {
+	return m.mockedChannel.CheckCompatiblity(msgs...)
+}
+
+func (m *mockVPPClient) IsPluginLoaded(plugin string) bool {
+	if m.unloadedPlugins[plugin] {
+		return false
+	}
+	return true
+}
+
+func (m *mockVPPClient) Stats() govppapi.StatsProvider {
+	panic("implement me")
+}
+
+func (m *mockVPPClient) StatsConnected() bool {
+	panic("implement me")
 }

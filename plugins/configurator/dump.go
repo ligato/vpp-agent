@@ -15,12 +15,10 @@
 package configurator
 
 import (
+	"context"
 	"errors"
 
-	linux_l3 "go.ligato.io/vpp-agent/v2/proto/ligato/linux/l3"
-
 	"github.com/ligato/cn-infra/logging"
-	"golang.org/x/net/context"
 
 	iflinuxcalls "go.ligato.io/vpp-agent/v2/plugins/linux/ifplugin/linuxcalls"
 	l3linuxcalls "go.ligato.io/vpp-agent/v2/plugins/linux/l3plugin/linuxcalls"
@@ -34,6 +32,7 @@ import (
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/puntplugin/vppcalls"
 	rpc "go.ligato.io/vpp-agent/v2/proto/ligato/configurator"
 	linux_interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/linux/interfaces"
+	linux_l3 "go.ligato.io/vpp-agent/v2/proto/ligato/linux/l3"
 	vpp_abf "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/abf"
 	vpp_acl "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/acl"
 	vpp_interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
@@ -66,7 +65,7 @@ type dumpService struct {
 }
 
 // Dump implements Dump method for Configurator
-func (svc *dumpService) Dump(context.Context, *rpc.DumpRequest) (*rpc.DumpResponse, error) {
+func (svc *dumpService) Dump(ctx context.Context, req *rpc.DumpRequest) (*rpc.DumpResponse, error) {
 	defer trackOperation("Dump")()
 
 	svc.log.Debugf("Received Dump request..")
@@ -76,7 +75,7 @@ func (svc *dumpService) Dump(context.Context, *rpc.DumpRequest) (*rpc.DumpRespon
 	var err error
 
 	// core
-	dump.VppConfig.Interfaces, err = svc.DumpInterfaces()
+	dump.VppConfig.Interfaces, err = svc.DumpInterfaces(ctx)
 	if err != nil {
 		svc.log.Errorf("DumpInterfaces failed: %v", err)
 		return nil, err
@@ -172,13 +171,13 @@ func (svc *dumpService) Dump(context.Context, *rpc.DumpRequest) (*rpc.DumpRespon
 
 // DumpInterfaces reads interfaces and returns them as an *InterfaceResponse. If reading ends up with error,
 // only error is send back in response
-func (svc *dumpService) DumpInterfaces() (ifs []*vpp_interfaces.Interface, err error) {
+func (svc *dumpService) DumpInterfaces(ctx context.Context) (ifs []*vpp_interfaces.Interface, err error) {
 	if svc.ifHandler == nil {
 		// handler is not available
 		return nil, nil
 	}
 
-	ifDetails, err := svc.ifHandler.DumpInterfaces()
+	ifDetails, err := svc.ifHandler.DumpInterfaces(ctx)
 	if err != nil {
 		return nil, err
 	}

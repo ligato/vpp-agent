@@ -15,11 +15,15 @@
 package vpp2001
 
 import (
+	"context"
+
 	vpp_memif "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/memif"
 	ifs "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
 )
 
 func (h *InterfaceVppHandler) AddMemifInterface(ifName string, memIface *ifs.MemifLink, socketID uint32) (swIdx uint32, err error) {
+	ctx := context.TODO()
+
 	req := &vpp_memif.MemifCreate{
 		ID:         memIface.Id,
 		Mode:       memifMode(memIface.Mode),
@@ -42,22 +46,22 @@ func (h *InterfaceVppHandler) AddMemifInterface(ifName string, memIface *ifs.Mem
 	if req.TxQueues == 0 {
 		req.TxQueues = 1
 	}
-	reply := &vpp_memif.MemifCreateReply{}
 
-	if err = h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
+	reply, err := h.memif.MemifCreate(ctx, req)
+	if err != nil {
 		return 0, err
 	}
+	swIdx = uint32(reply.SwIfIndex)
 
-	return uint32(reply.SwIfIndex), h.SetInterfaceTag(ifName, uint32(reply.SwIfIndex))
+	return swIdx, h.SetInterfaceTag(ifName, swIdx)
 }
 
 func (h *InterfaceVppHandler) DeleteMemifInterface(ifName string, idx uint32) error {
+	ctx := context.TODO()
 	req := &vpp_memif.MemifDelete{
 		SwIfIndex: vpp_memif.InterfaceIndex(idx),
 	}
-	reply := &vpp_memif.MemifDeleteReply{}
-
-	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
+	if _, err := h.memif.MemifDelete(ctx, req); err != nil {
 		return err
 	}
 
@@ -65,17 +69,16 @@ func (h *InterfaceVppHandler) DeleteMemifInterface(ifName string, idx uint32) er
 }
 
 func (h *InterfaceVppHandler) RegisterMemifSocketFilename(filename string, id uint32) error {
+	ctx := context.TODO()
+
 	req := &vpp_memif.MemifSocketFilenameAddDel{
 		SocketFilename: filename,
 		SocketID:       id,
 		IsAdd:          true, // sockets can be added only
 	}
-	reply := &vpp_memif.MemifSocketFilenameAddDelReply{}
-
-	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
+	if _, err := h.memif.MemifSocketFilenameAddDel(ctx, req); err != nil {
 		return err
 	}
-
 	return nil
 }
 

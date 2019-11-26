@@ -15,10 +15,10 @@
 package vpp2001_324
 
 import (
-	"bytes"
+	"context"
+	"fmt"
 	"strings"
 
-	govppapi "git.fd.io/govpp.git/api"
 	"github.com/pkg/errors"
 
 	"go.ligato.io/vpp-agent/v2/plugins/govppmux/vppcalls"
@@ -26,104 +26,118 @@ import (
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324/vpe"
 )
 
-func init() {
-	var msgs []govppapi.Message
-	msgs = append(msgs, vpe.AllMessages()...)
-	msgs = append(msgs, memclnt.AllMessages()...)
-
-	vppcalls.Versions["20.01_324"] = vppcalls.HandlerVersion{
-		Msgs: msgs,
-		New: func(ch govppapi.Channel) vppcalls.VpeVppAPI {
-			return NewVpeHandler(ch)
-		},
-	}
+// Ping sends VPP control ping.
+func (h *VpeHandler) Ping(ctx context.Context) error {
+	_, err := h.vpe.ControlPing(ctx, new(vpe.ControlPing))
+	return err
 }
 
-type VpeHandler struct {
-	ch govppapi.Channel
-}
-
-func NewVpeHandler(ch govppapi.Channel) *VpeHandler {
-	return &VpeHandler{ch}
-}
-
-// Ping pings the VPP.
-func (h *VpeHandler) Ping() error {
-	req := &vpe.ControlPing{}
-	reply := &vpe.ControlPingReply{}
-
-	return h.ch.SendRequest(req).ReceiveReply(reply)
-}
-
-// GetVersionInfo retrieves version info
-func (h *VpeHandler) GetVersionInfo() (*vppcalls.VersionInfo, error) {
-	req := &vpe.ShowVersion{}
-	reply := &vpe.ShowVersionReply{}
-
-	if err := h.ch.SendRequest(req).ReceiveReply(reply); err != nil {
+// GetVersion retrieves version info from VPP.
+func (h *VpeHandler) GetVersion(ctx context.Context) (*vppcalls.VersionInfo, error) {
+	version, err := h.vpe.ShowVersion(ctx, new(vpe.ShowVersion))
+	if err != nil {
 		return nil, err
 	}
-
 	info := &vppcalls.VersionInfo{
-		Program:        reply.Program,
-		Version:        reply.Version,
-		BuildDate:      reply.BuildDate,
-		BuildDirectory: reply.BuildDirectory,
+		Program:        version.Program,
+		Version:        version.Version,
+		BuildDate:      version.BuildDate,
+		BuildDirectory: version.BuildDirectory,
 	}
-
 	return info, nil
 }
 
-// GetVpeInfo retrieves vpe information.
-func (h *VpeHandler) GetVpeInfo() (*vppcalls.VpeInfo, error) {
-	req := &vpe.ControlPing{}
-	reply := &vpe.ControlPingReply{}
+// GetSession retrieves session info from VPP.
+func (h *VpeHandler) GetSession(ctx context.Context) (*vppcalls.SessionInfo, error) {
+	pong, err := h.vpe.ControlPing(ctx, new(vpe.ControlPing))
+	if err != nil {
+		return nil, err
+	}
+	info := &vppcalls.SessionInfo{
+		PID:       pong.VpePID,
+		ClientIdx: pong.ClientIndex,
+	}
 
-	if err := h.ch.SendRequest(req).ReceiveReply(reply); err != nil {
+	systime, err := h.vpe.ShowVpeSystemTime(ctx, new(vpe.ShowVpeSystemTime))
+	if err != nil {
+		// TODO: log returned error as warning?
+	} else {
+		info.Uptime = float64(systime.VpeSystemTime)
+	}
+	return info, nil
+}
+
+// GetModules retrieves module info from VPP.
+func (h *VpeHandler) GetModules(ctx context.Context) ([]vppcalls.ModuleInfo, error) {
+	versions, err := h.memclnt.APIVersions(ctx, new(memclnt.APIVersions))
+	if err != nil {
+		return nil, err
+	}
+	var modules []vppcalls.ModuleInfo
+	for _, v := range versions.APIVersions {
+		modules = append(modules, vppcalls.ModuleInfo{
+			Name:  strings.TrimSuffix(strings.TrimRight(v.Name, "\x00"), ".api"),
+			Major: v.Major,
+			Minor: v.Minor,
+			Patch: v.Patch,
+		})
+	}
+	return modules, nil
+}
+
+func (h *VpeHandler) GetPlugins(ctx context.Context) ([]vppcalls.PluginInfo, error) {
+	out, err := h.RunCli(ctx, "show plugins")
+	if err != nil {
 		return nil, err
 	}
 
-	info := &vppcalls.VpeInfo{
-		PID:       reply.VpePID,
-		ClientIdx: reply.ClientIndex,
+	lines := strings.Split(out, "\n")
+	if len(lines) == 0 {
+		return nil, fmt.Errorf("empty output for 'show plugins'")
 	}
 
-	{
-		req := &memclnt.APIVersions{}
-		reply := &memclnt.APIVersionsReply{}
-
-		if err := h.ch.SendRequest(req).ReceiveReply(reply); err != nil {
-			return nil, err
-		}
-
-		for _, v := range reply.APIVersions {
-			name := strings.TrimSuffix(strings.TrimRight(v.Name, "\x00"), ".api")
-			info.ModuleVersions = append(info.ModuleVersions, vppcalls.ModuleVersion{
-				Name:  name,
-				Major: v.Major,
-				Minor: v.Minor,
-				Patch: v.Patch,
-			})
-		}
+	pluginPathLine := strings.TrimSpace(lines[0])
+	const pluginPathPrefix = "Plugin path is:"
+	if !strings.HasPrefix(pluginPathLine, pluginPathPrefix) {
+		return nil, fmt.Errorf("unexpected output for 'show plugins'")
+	}
+	pluginPath := strings.TrimSpace(strings.TrimPrefix(pluginPathLine, pluginPathPrefix))
+	if len(pluginPath) == 0 {
+		return nil, fmt.Errorf("plugin path not found in output for 'show plugins'")
 	}
 
-	return info, nil
+	var plugins []vppcalls.PluginInfo
+	for _, line := range lines {
+		fields := strings.Fields(line)
+		if len(fields) < 3 {
+			continue
+		}
+		var i int
+		if _, err := fmt.Sscanf(fields[0], "%d.", &i); err != nil {
+			continue
+		}
+		if i <= 0 {
+			continue
+		}
+		plugin := vppcalls.PluginInfo{
+			Name:        strings.TrimSuffix(fields[1], "_plugin.so"),
+			Path:        fields[1],
+			Version:     fields[2],
+			Description: strings.Join(fields[3:], " "),
+		}
+		plugins = append(plugins, plugin)
+	}
+
+	return plugins, nil
 }
 
-// RunCli executes CLI command and returns output
-func (h *VpeHandler) RunCli(cmd string) (string, error) {
-	req := &vpe.CliInband{
+// RunCli sends CLI command to VPP and returns response.
+func (h *VpeHandler) RunCli(ctx context.Context, cmd string) (string, error) {
+	resp, err := h.vpe.CliInband(ctx, &vpe.CliInband{
 		Cmd: cmd,
+	})
+	if err != nil {
+		return "", errors.Wrapf(err, "VPP CLI command '%s' failed", cmd)
 	}
-	reply := &vpe.CliInbandReply{}
-
-	if err := h.ch.SendRequest(req).ReceiveReply(reply); err != nil {
-		return "", errors.Wrapf(err, "running VPP CLI command '%s' failed", cmd)
-	}
-
-	return reply.Reply, nil
-}
-
-func cleanBytes(b []byte) []byte {
-	return bytes.SplitN(b, []byte{0x00}, 2)[0]
+	return resp.Reply, nil
 }

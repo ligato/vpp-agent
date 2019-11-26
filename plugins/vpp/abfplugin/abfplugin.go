@@ -17,10 +17,10 @@
 package abfplugin
 
 import (
-	govppapi "git.fd.io/govpp.git/api"
 	"github.com/go-errors/errors"
 	"github.com/ligato/cn-infra/health/statuscheck"
 	"github.com/ligato/cn-infra/infra"
+
 	"go.ligato.io/vpp-agent/v2/plugins/govppmux"
 	kvs "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/abfplugin/abfidx"
@@ -39,9 +39,6 @@ import (
 type ABFPlugin struct {
 	Deps
 
-	// GoVPP channels
-	vppCh govppapi.Channel
-
 	abfHandler             vppcalls.ABFVppAPI
 	abfDescriptor          *descriptor.ABFDescriptor
 	abfInterfaceDescriptor *descriptor.ABFToInterfaceDescriptor
@@ -54,7 +51,7 @@ type ABFPlugin struct {
 type Deps struct {
 	infra.PluginDeps
 	Scheduler   kvs.KVScheduler
-	GoVppmux    govppmux.API
+	VPP         govppmux.API
 	ACLPlugin   aclplugin.API
 	IfPlugin    ifplugin.API
 	StatusCheck statuscheck.PluginStatusWriter // optional
@@ -62,15 +59,17 @@ type Deps struct {
 
 // Init initializes ABF plugin.
 func (p *ABFPlugin) Init() error {
-	var err error
-
-	// GoVPP channels
-	if p.vppCh, err = p.GoVppmux.NewAPIChannel(); err != nil {
-		return errors.Errorf("failed to create GoVPP API channel: %v", err)
+	if !p.VPP.IsPluginLoaded("abf") {
+		p.Log.Warnf("VPP plugin ABF was disabled by VPP")
+		return nil
 	}
 
-	// init handler
-	p.abfHandler = vppcalls.CompatibleABFVppHandler(p.vppCh, p.ACLPlugin.GetACLIndex(), p.IfPlugin.GetInterfaceIndex(), p.Log)
+	// init handlers
+	/*vppCh, err := p.VPP.NewAPIChannel()
+	if err != nil {
+		return errors.Errorf("failed to create GoVPP API channel: %v", err)
+	}*/
+	p.abfHandler = vppcalls.CompatibleABFHandler(p.VPP, p.ACLPlugin.GetACLIndex(), p.IfPlugin.GetInterfaceIndex(), p.Log)
 	if p.abfHandler == nil {
 		return errors.New("abfHandler is not available")
 	}

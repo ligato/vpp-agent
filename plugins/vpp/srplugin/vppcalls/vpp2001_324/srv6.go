@@ -16,6 +16,7 @@
 package vpp2001_324
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"regexp"
@@ -128,11 +129,11 @@ func (h *SRv6VppHandler) addSRProxy(sidAddr net.IP, localSID *srv6.LocalSID) err
 	} else { // L3 service
 		cmd = fmt.Sprintf("sr localsid address %v fib-table %v behavior end.ad nh %v oif %v iif %v", sidAddr, localSID.InstallationVrfId, localSID.GetEndFunctionAd().L3ServiceAddress, outInterface, inInterface)
 	}
-	data, err := h.RunCli(cmd)
+	data, err := h.RunCli(context.TODO(), cmd)
 	if err != nil {
 		return err
 	}
-	if len(strings.TrimSpace(string(data))) > 0 {
+	if len(strings.TrimSpace(data)) > 0 {
 		return fmt.Errorf("addition of dynamic segment routing proxy failed by returning nonblank space text in CLI: %v", string(data))
 	}
 	return nil
@@ -460,13 +461,13 @@ func (h *SRv6VppHandler) convertPolicySegment(segmentList *srv6.Policy_SegmentLi
 // RetrievePolicyIndexInfo retrieves index of policy <policy> and its segment lists
 func (h *SRv6VppHandler) RetrievePolicyIndexInfo(policy *srv6.Policy) (policyIndex uint32, segmentListIndexes map[*srv6.Policy_SegmentList]uint32, err error) {
 	// dump sr policies using VPP CLI
-	data, err := h.RunCli("sh sr policies")
+	data, err := h.RunCli(context.TODO(), "sh sr policies")
 	if err != nil {
 		return ^uint32(0), nil, fmt.Errorf("can't dump index data from VPP: %v", err)
 	}
 
 	// do necessary parsing to extract index of segment list
-	dumpStr := strings.ToLower(string(data))
+	dumpStr := strings.ToLower(data)
 	segmentListIndexes = make(map[*srv6.Policy_SegmentList]uint32)
 
 	for _, policyStr := range strings.Split(dumpStr, "-----------") {

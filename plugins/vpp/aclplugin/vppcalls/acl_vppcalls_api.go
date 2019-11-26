@@ -16,7 +16,7 @@ package vppcalls
 
 import (
 	govppapi "git.fd.io/govpp.git/api"
-	"github.com/ligato/cn-infra/logging"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp"
 
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
 	acl "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/acl"
@@ -108,25 +108,28 @@ type ACLVppRead interface {
 	DumpInterfaceMACIPACLs(ifIdx uint32) ([]*acl.ACL, error)
 }
 
-var Versions = map[string]HandlerVersion{}
+var Handler = vpp.RegisterHandler(vpp.HandlerDesc{
+	HandlerName: "acl",
+	HandlerType: (*ACLVppAPI)(nil),
+})
 
-type HandlerVersion struct {
-	Msgs []govppapi.Message
-	New  func(govppapi.Channel, ifaceidx.IfaceMetadataIndex) ACLVppAPI
+type NewHandlerFunc func(c vpp.Client, ifIdx ifaceidx.IfaceMetadataIndex) ACLVppAPI
+
+func AddHandlerVersion(version string, msgs []govppapi.Message, h NewHandlerFunc) {
+	Handler.AddVersion(vpp.HandlerVersion{
+		Version: version,
+		Check: func(c vpp.Client) error {
+			return c.CheckCompatiblity(msgs...)
+		},
+		NewHandler: func(c vpp.Client, a ...interface{}) vpp.HandlerAPI {
+			return h(c, a[0].(ifaceidx.IfaceMetadataIndex))
+		},
+	})
 }
 
-func CompatibleACLVppHandler(ch govppapi.Channel, idx ifaceidx.IfaceMetadataIndex, log logging.Logger) ACLVppAPI {
-	if len(Versions) == 0 {
-		// aclplugin is not loaded
-		return nil
+func CompatibleACLHandler(c vpp.Client, ifIdx ifaceidx.IfaceMetadataIndex) ACLVppAPI {
+	if v := Handler.FindCompatibleVersion(c); v != nil {
+		return v.NewHandler(c, ifIdx).(ACLVppAPI)
 	}
-	for ver, h := range Versions {
-		log.Debugf("checking compatibility with %s", ver)
-		if err := ch.CheckCompatiblity(h.Msgs...); err != nil {
-			continue
-		}
-		log.Debug("found compatible version:", ver)
-		return h.New(ch, idx)
-	}
-	panic("no compatible version available")
+	return nil
 }

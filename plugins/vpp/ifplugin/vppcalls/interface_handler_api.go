@@ -15,98 +15,45 @@
 package vppcalls
 
 import (
+	"context"
 	"net"
 
-	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp"
 
 	interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
 )
 
-// InterfaceDetails is the wrapper structure for the interface northbound API structure.
-type InterfaceDetails struct {
-	Interface *interfaces.Interface `json:"interface"`
-	Meta      *InterfaceMeta        `json:"interface_meta"`
-}
+var Handler = vpp.RegisterHandler(vpp.HandlerDesc{
+	HandlerName: "interface",
+	HandlerType: (*InterfaceVppAPI)(nil),
+})
 
-// InterfaceMeta is combination of proto-modelled Interface data and VPP provided metadata
-type InterfaceMeta struct {
-	SwIfIndex      uint32           `json:"sw_if_index"`
-	SupSwIfIndex   uint32           `json:"sub_sw_if_index"`
-	L2Address      net.HardwareAddr `json:"l2_address"`
-	InternalName   string           `json:"internal_name"`
-	IsAdminStateUp bool             `json:"is_admin_state_up"`
-	IsLinkStateUp  bool             `json:"is_link_state_up"`
-	LinkDuplex     uint32           `json:"link_duplex"`
-	LinkMTU        uint16           `json:"link_mtu"`
-	MTU            []uint32         `json:"mtu"`
-	LinkSpeed      uint32           `json:"link_speed"`
-	SubID          uint32           `json:"sub_id"`
-	Tag            string           `json:"tag"`
-	// dhcp
-	Dhcp *Dhcp `json:"dhcp"`
-	// vrf
-	VrfIPv4 uint32 `json:"vrf_ipv4"`
-	VrfIPv6 uint32 `json:"vrf_ipv6"`
-	// wmxnet3
-	Pci uint32 `json:"pci"`
-}
+// AddInterfaceHandlerVersion registers vppcalls Handler for the given version.
+/*func AddInterfaceHandlerVersion(version string, msgs []govppapi.Message,
+	h func(vpp.Client, logging.Logger) InterfaceVppAPI,
+) {
+	Handler.AddVersion(vpp.HandlerVersion{
+		Version: version,
+		Check: func(c vpp.Client) error {
+			ch, err := c.NewAPIChannel()
+			if err != nil {
+				return err
+			}
+			return ch.CheckCompatiblity(msgs...)
+		},
+		NewHandler: func(c vpp.Client, a ...interface{}) vpp.HandlerAPI {
+			return h(c, a[0].(logging.Logger))
+		},
+	})
+}*/
 
-// InterfaceEvent represents interface event from VPP.
-type InterfaceEvent struct {
-	SwIfIndex  uint32
-	AdminState uint8
-	LinkState  uint8
-	Deleted    bool
-}
-
-// Dhcp is helper struct for DHCP metadata, split to client and lease (similar to VPP binary API)
-type Dhcp struct {
-	Client *Client `json:"dhcp_client"`
-	Lease  *Lease  `json:"dhcp_lease"`
-}
-
-// Client is helper struct grouping DHCP client data
-type Client struct {
-	SwIfIndex        uint32
-	Hostname         string
-	ID               string
-	WantDhcpEvent    bool
-	SetBroadcastFlag bool
-	PID              uint32
-}
-
-// Lease is helper struct grouping DHCP lease data
-type Lease struct {
-	SwIfIndex     uint32
-	State         uint8
-	Hostname      string
-	IsIPv6        bool
-	MaskWidth     uint8
-	HostAddress   string
-	RouterAddress string
-	HostMac       string
-}
-
-// InterfaceState is a helper function grouping interface state data.
-type InterfaceState struct {
-	SwIfIndex    uint32
-	InternalName string
-	PhysAddress  net.HardwareAddr
-
-	AdminState interfaces.InterfaceState_Status
-	LinkState  interfaces.InterfaceState_Status
-	LinkDuplex interfaces.InterfaceState_Duplex
-	LinkSpeed  uint64
-	LinkMTU    uint16
-}
-
-// InterfaceSpanDetails is a helper struct grouping SPAN data.
-type InterfaceSpanDetails struct {
-	SwIfIndexFrom uint32
-	SwIfIndexTo   uint32
-	Direction     uint8
-	IsL2          uint8
+// CompatibleVpeHandler is helper for returning comptabile Handler.
+func CompatibleInterfaceVppHandler(c vpp.Client, log logging.Logger) InterfaceVppAPI {
+	if v := Handler.FindCompatibleVersion(c); v != nil {
+		return v.NewHandler(c, log).(InterfaceVppAPI)
+	}
+	return nil
 }
 
 // InterfaceVppAPI provides methods for creating and managing interface plugin
@@ -218,7 +165,8 @@ type InterfaceVppRead interface {
 	//
 	// LIMITATIONS:
 	// - there is no af_packet dump binary API. We relay on naming conventions of the internal VPP interface names
-	DumpInterfaces() (map[uint32]*InterfaceDetails, error)
+	//
+	DumpInterfaces(ctx context.Context) (map[uint32]*InterfaceDetails, error)
 	// DumpInterfacesByType returns all VPP interfaces of the specified type
 	DumpInterfacesByType(reqType interfaces.Interface_Type) (map[uint32]*InterfaceDetails, error)
 	// DumpInterfaceStates dumps link and administrative state of every interface.
@@ -230,7 +178,7 @@ type InterfaceVppRead interface {
 	// GetInterfaceVrfIPv6 reads IPv6 VRF table to interface
 	GetInterfaceVrfIPv6(ifIdx uint32) (vrfID uint32, err error)
 	// DumpMemifSocketDetails dumps memif socket details from the VPP
-	DumpMemifSocketDetails() (map[string]uint32, error)
+	DumpMemifSocketDetails(ctx context.Context) (map[string]uint32, error)
 	// DumpDhcpClients dumps DHCP-related information for all interfaces.
 	DumpDhcpClients() (map[uint32]*Dhcp, error)
 	// WatchInterfaceEvents starts watching for interface events.
@@ -239,21 +187,88 @@ type InterfaceVppRead interface {
 	WatchDHCPLeases(ch chan<- *Lease) error
 }
 
-var Versions = map[string]HandlerVersion{}
-
-type HandlerVersion struct {
-	Msgs []govppapi.Message
-	New  func(govppapi.Channel, logging.Logger) InterfaceVppAPI
+// InterfaceDetails is the wrapper structure for the interface northbound API structure.
+type InterfaceDetails struct {
+	Interface *interfaces.Interface `json:"interface"`
+	Meta      *InterfaceMeta        `json:"interface_meta"`
 }
 
-func CompatibleInterfaceVppHandler(ch govppapi.Channel, log logging.Logger) InterfaceVppAPI {
-	for ver, h := range Versions {
-		log.Debugf("checking compatibility with %s", ver)
-		if err := ch.CheckCompatiblity(h.Msgs...); err != nil {
-			continue
-		}
-		log.Debug("found compatible version:", ver)
-		return h.New(ch, log)
-	}
-	panic("no compatible version available")
+// InterfaceMeta is combination of proto-modelled Interface data and VPP provided metadata
+type InterfaceMeta struct {
+	SwIfIndex      uint32           `json:"sw_if_index"`
+	SupSwIfIndex   uint32           `json:"sub_sw_if_index"`
+	L2Address      net.HardwareAddr `json:"l2_address"`
+	InternalName   string           `json:"internal_name"`
+	IsAdminStateUp bool             `json:"is_admin_state_up"`
+	IsLinkStateUp  bool             `json:"is_link_state_up"`
+	LinkDuplex     uint32           `json:"link_duplex"`
+	LinkMTU        uint16           `json:"link_mtu"`
+	MTU            []uint32         `json:"mtu"`
+	LinkSpeed      uint32           `json:"link_speed"`
+	SubID          uint32           `json:"sub_id"`
+	Tag            string           `json:"tag"`
+	// dhcp
+	Dhcp *Dhcp `json:"dhcp"`
+	// vrf
+	VrfIPv4 uint32 `json:"vrf_ipv4"`
+	VrfIPv6 uint32 `json:"vrf_ipv6"`
+	// wmxnet3
+	Pci uint32 `json:"pci"`
+}
+
+// InterfaceEvent represents interface event from VPP.
+type InterfaceEvent struct {
+	SwIfIndex  uint32
+	AdminState uint8
+	LinkState  uint8
+	Deleted    bool
+}
+
+// Dhcp is helper struct for DHCP metadata, split to client and lease (similar to VPP binary API)
+type Dhcp struct {
+	Client *Client `json:"dhcp_client"`
+	Lease  *Lease  `json:"dhcp_lease"`
+}
+
+// Client is helper struct grouping DHCP client data
+type Client struct {
+	SwIfIndex        uint32
+	Hostname         string
+	ID               string
+	WantDhcpEvent    bool
+	SetBroadcastFlag bool
+	PID              uint32
+}
+
+// Lease is helper struct grouping DHCP lease data
+type Lease struct {
+	SwIfIndex     uint32
+	State         uint8
+	Hostname      string
+	IsIPv6        bool
+	MaskWidth     uint8
+	HostAddress   string
+	RouterAddress string
+	HostMac       string
+}
+
+// InterfaceState is a helper function grouping interface state data.
+type InterfaceState struct {
+	SwIfIndex    uint32
+	InternalName string
+	PhysAddress  net.HardwareAddr
+
+	AdminState interfaces.InterfaceState_Status
+	LinkState  interfaces.InterfaceState_Status
+	LinkDuplex interfaces.InterfaceState_Duplex
+	LinkSpeed  uint64
+	LinkMTU    uint16
+}
+
+// InterfaceSpanDetails is a helper struct grouping SPAN data.
+type InterfaceSpanDetails struct {
+	SwIfIndexFrom uint32
+	SwIfIndexTo   uint32
+	Direction     uint8
+	IsL2          uint8
 }

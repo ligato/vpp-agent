@@ -20,7 +20,6 @@
 package natplugin
 
 import (
-	govppapi "git.fd.io/govpp.git/api"
 	"github.com/pkg/errors"
 
 	"github.com/ligato/cn-infra/health/statuscheck"
@@ -42,9 +41,6 @@ import (
 type NATPlugin struct {
 	Deps
 
-	// GoVPP
-	vppCh govppapi.Channel
-
 	// handlers
 	natHandler vppcalls.NatVppAPI
 }
@@ -53,22 +49,24 @@ type NATPlugin struct {
 type Deps struct {
 	infra.PluginDeps
 	KVScheduler kvs.KVScheduler
-	GoVppmux    govppmux.API
+	VPP         govppmux.API
 	IfPlugin    ifplugin.API
 	StatusCheck statuscheck.PluginStatusWriter // optional
 }
 
 // Init registers NAT-related descriptors.
-func (p *NATPlugin) Init() error {
-	var err error
-
-	// GoVPP channels
-	if p.vppCh, err = p.GoVppmux.NewAPIChannel(); err != nil {
-		return errors.Errorf("failed to create GoVPP API channel: %v", err)
+func (p *NATPlugin) Init() (err error) {
+	if !p.VPP.IsPluginLoaded("nat") {
+		p.Log.Warnf("VPP plugin NAT was disabled by VPP")
+		return nil
 	}
 
-	// init NAT handler
-	p.natHandler = vppcalls.CompatibleNatVppHandler(p.vppCh, p.IfPlugin.GetInterfaceIndex(), p.IfPlugin.GetDHCPIndex(), p.Log)
+	// init handlers
+	/*vppCh, err := p.VPP.NewAPIChannel()
+	if err != nil {
+		return errors.Errorf("failed to create GoVPP API channel: %v", err)
+	}*/
+	p.natHandler = vppcalls.CompatibleNatVppHandler(p.VPP, p.IfPlugin.GetInterfaceIndex(), p.IfPlugin.GetDHCPIndex(), p.Log)
 	if p.natHandler == nil {
 		return errors.New("natHandler is not available")
 	}

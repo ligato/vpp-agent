@@ -28,7 +28,6 @@ import (
 
 	"github.com/ligato/cn-infra/servicelabel"
 
-	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/health/statuscheck"
 	"github.com/ligato/cn-infra/idxmap"
@@ -59,9 +58,6 @@ const goRoutineCount = 10
 // IfPlugin configures VPP interfaces using GoVPP.
 type IfPlugin struct {
 	Deps
-
-	// GoVPP
-	vppCh govppapi.Channel
 
 	// handlers
 	ifHandler      vppcalls.InterfaceVppAPI
@@ -98,15 +94,13 @@ type IfPlugin struct {
 type Deps struct {
 	infra.PluginDeps
 	KVScheduler  kvs.KVScheduler
-	GoVppmux     govppmux.StatsAPI
+	VPP          govppmux.API
 	ServiceLabel servicelabel.ReaderAPI
 	AddrAlloc    netalloc.AddressAllocator
-
 	/*	LinuxIfPlugin and NsPlugin deps are optional,
 		but they are required if AFPacket or TAP+TAP_TO_VPP interfaces are used. */
 	LinuxIfPlugin descriptor.LinuxPluginAPI
 	NsPlugin      nsplugin.API
-
 	// state publishing
 	StatusCheck       statuscheck.PluginStatusWriter
 	PublishErrors     datasync.KeyProtoValWriter            // TODO: to be used with a generic plugin for publishing errors (not just interfaces and BDs)
@@ -131,19 +125,26 @@ func (p *IfPlugin) Init() (err error) {
 	p.publishStats = p.PublishStatistics != nil || p.NotifyStates != nil
 	p.fixNilPointers()
 
-	// VPP channel
-	if p.vppCh, err = p.GoVppmux.NewAPIChannel(); err != nil {
+	// Init handlers
+	/*vppCh, err := p.VPP.NewAPIChannel()
+	if err != nil {
 		return errors.Errorf("failed to create GoVPP API channel: %v", err)
+	}*/
+	p.ifHandler = vppcalls.CompatibleInterfaceVppHandler(p.VPP, p.Log)
+	if p.ifHandler == nil {
+		return errors.New("interface VPP handler is not available")
 	}
 
-	// init handlers
-	p.ifHandler = vppcalls.CompatibleInterfaceVppHandler(p.vppCh, p.Log)
 	if p.LinuxIfPlugin != nil {
-		p.linuxIfHandler = linux_ifcalls.NewNetLinkHandler(p.NsPlugin, p.LinuxIfPlugin.GetInterfaceIndex(),
-			p.ServiceLabel.GetAgentPrefix(), goRoutineCount, p.Log)
+		p.linuxIfHandler = linux_ifcalls.NewNetLinkHandler(
+			p.NsPlugin,
+			p.LinuxIfPlugin.GetInterfaceIndex(),
+			p.ServiceLabel.GetAgentPrefix(),
+			goRoutineCount, p.Log,
+		)
 	}
 
-	// init & register descriptors
+	// Init descriptors
 
 	//   -> base interface descriptor
 	ifaceDescriptor, ifaceDescrCtx := descriptor.NewInterfaceDescriptor(p.ifHandler,
@@ -240,7 +241,7 @@ func (p *IfPlugin) Init() (err error) {
 		}
 	}
 
-	err = p.ifStateUpdater.Init(p.ctx, p.Log, p.KVScheduler, p.GoVppmux, p.intfIndex,
+	err = p.ifStateUpdater.Init(p.ctx, p.Log, p.KVScheduler, p.VPP, p.intfIndex,
 		ifNotifHandler, p.publishStats)
 	if err != nil {
 		return err

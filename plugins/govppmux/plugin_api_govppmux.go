@@ -15,33 +15,32 @@
 package govppmux
 
 import (
-	govppapi "git.fd.io/govpp.git/api"
 	"go.ligato.io/vpp-agent/v2/plugins/govppmux/vppcalls"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp"
 )
-
-// StatsAPI is extended API with ability to get VPP stats data
-type StatsAPI interface {
-	API
-
-	govppapi.StatsProvider
-}
 
 // API for other plugins to get connectivity to VPP.
 type API interface {
 	// VPPInfo returns VPP information which is retrieved immediatelly after connecting to VPP.
-	VPPInfo() (VPPInfo, error)
+	VPPInfo() VPPInfo
 
-	govppapi.ChannelProvider
+	vpp.Client
+
+	// IsPluginLoaded returns true if the given plugin is currently loaded.
+	//IsPluginLoaded(plugin string) bool
+
+	//govppapi.ChannelProvider
 }
 
 // VPPInfo defines retrieved information about the connected VPP instance.
 type VPPInfo struct {
 	Connected bool
 	vppcalls.VersionInfo
-	vppcalls.VpeInfo
+	vppcalls.SessionInfo
+	Plugins []vppcalls.PluginInfo
 }
 
-// GetReleaseVersion returns VPP release version (XX.YY), which is normalized from VersionInfo.
+// GetReleaseVersion returns VPP release version (XX.YY), which is normalized from GetVersion.
 func (vpp VPPInfo) GetReleaseVersion() string {
 	if len(vpp.Version) < 5 {
 		return ""

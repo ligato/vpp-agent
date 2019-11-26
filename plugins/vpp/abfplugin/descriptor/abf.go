@@ -60,8 +60,11 @@ type ABFDescriptor struct {
 
 // NewABFDescriptor is constructor for ABF descriptor and returns descriptor
 // suitable for registration (via adapter) with the KVScheduler.
-func NewABFDescriptor(abfHandler vppcalls.ABFVppAPI, aclIndex aclidx.ACLMetadataIndex,
-	logger logging.PluginLogger) *api.KVDescriptor {
+func NewABFDescriptor(
+	abfHandler vppcalls.ABFVppAPI,
+	aclIndex aclidx.ACLMetadataIndex,
+	logger logging.PluginLogger,
+) *api.KVDescriptor {
 	ctx := &ABFDescriptor{
 		log:        logger.NewLogger("abf-descriptor"),
 		aclIndex:   aclIndex,

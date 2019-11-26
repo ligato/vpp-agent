@@ -16,6 +16,7 @@ package vpp1908
 
 import (
 	"bytes"
+	"context"
 	"encoding/hex"
 	"fmt"
 	"net"
@@ -28,7 +29,6 @@ import (
 	binapi_interface "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908/interfaces"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908/ip"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908/ipsec"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908/memif"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908/tapv2"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908/vmxnet3"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908/vxlan"
@@ -57,7 +57,7 @@ func getMtu(vppMtu uint16) uint32 {
 // DumpInterfacesByType implements interface handler.
 func (h *InterfaceVppHandler) DumpInterfacesByType(reqType interfaces.Interface_Type) (map[uint32]*vppcalls.InterfaceDetails, error) {
 	// Dump all
-	ifs, err := h.DumpInterfaces()
+	ifs, err := h.DumpInterfaces(nil)
 	if err != nil {
 		return nil, err
 	}
@@ -153,7 +153,7 @@ func (h *InterfaceVppHandler) dumpInterfaces(ifIdxs ...uint32) (map[uint32]*vppc
 }
 
 // DumpInterfaces implements interface handler.
-func (h *InterfaceVppHandler) DumpInterfaces() (map[uint32]*vppcalls.InterfaceDetails, error) {
+func (h *InterfaceVppHandler) DumpInterfaces(ctx context.Context) (map[uint32]*vppcalls.InterfaceDetails, error) {
 	ifs, err := h.dumpInterfaces()
 	if err != nil {
 		return nil, err
@@ -239,9 +239,11 @@ func (h *InterfaceVppHandler) DumpInterfaces() (map[uint32]*vppcalls.InterfaceDe
 		}
 	}
 
-	err = h.dumpMemifDetails(ifs)
-	if err != nil {
-		return nil, err
+	if h.memif != nil {
+		err = h.dumpMemifDetails(ctx, ifs)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	err = h.dumpTapDetails(ifs)
@@ -281,30 +283,6 @@ func (h *InterfaceVppHandler) DumpInterfaces() (map[uint32]*vppcalls.InterfaceDe
 	}
 
 	return ifs, nil
-}
-
-// DumpMemifSocketDetails implements interface handler.
-func (h *InterfaceVppHandler) DumpMemifSocketDetails() (map[string]uint32, error) {
-	memifSocketMap := make(map[string]uint32)
-
-	reqCtx := h.callsChannel.SendMultiRequest(&memif.MemifSocketFilenameDump{})
-	for {
-		socketDetails := &memif.MemifSocketFilenameDetails{}
-		stop, err := reqCtx.ReceiveReply(socketDetails)
-		if stop {
-			break // Break from the loop.
-		}
-		if err != nil {
-			return memifSocketMap, fmt.Errorf("failed to dump memif socket filename details: %v", err)
-		}
-
-		filename := string(bytes.SplitN(socketDetails.SocketFilename, []byte{0x00}, 2)[0])
-		memifSocketMap[filename] = socketDetails.SocketID
-	}
-
-	h.log.Debugf("Memif socket dump completed, found %d entries: %v", len(memifSocketMap), memifSocketMap)
-
-	return memifSocketMap, nil
 }
 
 // DumpDhcpClients returns a slice of DhcpMeta with all interfaces and other DHCP-related information available
@@ -519,57 +497,6 @@ func (h *InterfaceVppHandler) processIPDetails(ifs map[uint32]*vppcalls.Interfac
 	}
 
 	ifDetails.Interface.IpAddresses = append(ifDetails.Interface.IpAddresses, ipAddr)
-}
-
-// dumpMemifDetails dumps memif interface details from VPP and fills them into the provided interface map.
-func (h *InterfaceVppHandler) dumpMemifDetails(ifs map[uint32]*vppcalls.InterfaceDetails) error {
-	// Dump all memif sockets
-	memifSocketMap, err := h.DumpMemifSocketDetails()
-	if err != nil {
-		return err
-	}
-
-	reqCtx := h.callsChannel.SendMultiRequest(&memif.MemifDump{})
-	for {
-		memifDetails := &memif.MemifDetails{}
-		stop, err := reqCtx.ReceiveReply(memifDetails)
-		if stop {
-			break // Break from the loop.
-		}
-		if err != nil {
-			return fmt.Errorf("failed to dump memif interface: %v", err)
-		}
-		_, ifIdxExists := ifs[memifDetails.SwIfIndex]
-		if !ifIdxExists {
-			continue
-		}
-		ifs[memifDetails.SwIfIndex].Interface.Link = &interfaces.Interface_Memif{
-			Memif: &interfaces.MemifLink{
-				Master: memifDetails.Role == 0,
-				Mode:   memifModetoNB(memifDetails.Mode),
-				Id:     memifDetails.ID,
-				//Secret: // TODO: Secret - not available in the binary API
-				SocketFilename: func(socketMap map[string]uint32) (filename string) {
-					for filename, id := range socketMap {
-						if memifDetails.SocketID == id {
-							return filename
-						}
-					}
-					// Socket for configured memif should exist
-					h.log.Warnf("Socket ID not found for memif %v", memifDetails.SwIfIndex)
-					return
-				}(memifSocketMap),
-				RingSize:   memifDetails.RingSize,
-				BufferSize: uint32(memifDetails.BufferSize),
-				// TODO: RxQueues, TxQueues - not available in the binary API
-				//RxQueues:
-				//TxQueues:
-			},
-		}
-		ifs[memifDetails.SwIfIndex].Interface.Type = interfaces.Interface_MEMIF
-	}
-
-	return nil
 }
 
 // dumpTapDetails dumps tap interface details from VPP and fills them into the provided interface map.

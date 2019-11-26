@@ -1,7 +1,10 @@
 package descriptor
 
 import (
+	"context"
+
 	"github.com/pkg/errors"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp"
 
 	"go.ligato.io/vpp-agent/v2/pkg/models"
 	kvs "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
@@ -362,7 +365,11 @@ func (d *InterfaceDescriptor) Update(key string, oldIntf, newIntf *interfaces.In
 
 // Retrieve returns all configured VPP interfaces.
 func (d *InterfaceDescriptor) Retrieve(correlate []adapter.InterfaceKVWithMetadata) (retrieved []adapter.InterfaceKVWithMetadata, err error) {
-	// make sure that any checks on the Linux side are done in the default namespace with locked thread
+	// TODO: context should come as first parameter for all descriptor methods
+	ctx := context.TODO()
+
+	// make sure that any checks on the Linux side
+	// are done in the default namespace with locked thread
 	if d.nsPlugin != nil {
 		nsCtx := nslinuxcalls.NewNamespaceMgmtCtx()
 		revert, err := d.nsPlugin.SwitchToNamespace(nsCtx, nil)
@@ -372,17 +379,18 @@ func (d *InterfaceDescriptor) Retrieve(correlate []adapter.InterfaceKVWithMetada
 	}
 
 	// convert interfaces for correlation into a map
-	ifCfg := make(map[string]*interfaces.Interface) // interface logical name -> interface config (as expected by correlate)
+	// interface logical name -> interface config (as expected by correlate)
+	ifCfg := make(map[string]*interfaces.Interface)
 	for _, kv := range correlate {
 		ifCfg[kv.Value.Name] = kv.Value
 	}
 
 	// refresh the map of memif socket IDs
-	d.memifSocketToID, err = d.ifHandler.DumpMemifSocketDetails()
-	if err != nil {
-		err = errors.Errorf("failed to dump memif socket details: %v", err)
-		d.log.Error(err)
-		return retrieved, err
+	d.memifSocketToID, err = d.ifHandler.DumpMemifSocketDetails(ctx)
+	if err == vpp.ErrPluginDisabled {
+		d.log.Debugf("failed to dump memif socket details: %v", err)
+	} else if err != nil {
+		return retrieved, errors.Errorf("failed to dump memif socket details: %v", err)
 	}
 	for socketPath, socketID := range d.memifSocketToID {
 		if socketID == 0 {
@@ -395,7 +403,7 @@ func (d *InterfaceDescriptor) Retrieve(correlate []adapter.InterfaceKVWithMetada
 	d.bondIDs = make(map[uint32]string)
 
 	// dump current state of VPP interfaces
-	vppIfs, err := d.ifHandler.DumpInterfaces()
+	vppIfs, err := d.ifHandler.DumpInterfaces(ctx)
 	if err != nil {
 		err = errors.Errorf("failed to dump interfaces: %v", err)
 		d.log.Error(err)

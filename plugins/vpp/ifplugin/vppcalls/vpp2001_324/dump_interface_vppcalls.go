@@ -16,8 +16,10 @@ package vpp2001_324
 
 import (
 	"bytes"
+	"context"
 	"encoding/hex"
 	"fmt"
+	"io"
 	"net"
 	"strings"
 
@@ -61,7 +63,7 @@ func getMtu(vppMtu uint16) uint32 {
 
 func (h *InterfaceVppHandler) DumpInterfacesByType(reqType ifs.Interface_Type) (map[uint32]*vppcalls.InterfaceDetails, error) {
 	// Dump all
-	ifs, err := h.DumpInterfaces()
+	ifs, err := h.DumpInterfaces(nil)
 	if err != nil {
 		return nil, err
 	}
@@ -157,7 +159,7 @@ func (h *InterfaceVppHandler) dumpInterfaces(ifIdxs ...uint32) (map[uint32]*vppc
 	return interfaces, nil
 }
 
-func (h *InterfaceVppHandler) DumpInterfaces() (map[uint32]*vppcalls.InterfaceDetails, error) {
+func (h *InterfaceVppHandler) DumpInterfaces(ctx context.Context) (map[uint32]*vppcalls.InterfaceDetails, error) {
 	interfaces, err := h.dumpInterfaces()
 	if err != nil {
 		return nil, err
@@ -244,7 +246,7 @@ func (h *InterfaceVppHandler) DumpInterfaces() (map[uint32]*vppcalls.InterfaceDe
 		}
 	}
 
-	err = h.dumpMemifDetails(interfaces)
+	err = h.dumpMemifDetails(ctx, interfaces)
 	if err != nil {
 		return nil, err
 	}
@@ -288,7 +290,7 @@ func (h *InterfaceVppHandler) DumpInterfaces() (map[uint32]*vppcalls.InterfaceDe
 	return interfaces, nil
 }
 
-func (h *InterfaceVppHandler) DumpMemifSocketDetails() (map[string]uint32, error) {
+func (h *InterfaceVppHandler) DumpMemifSocketDetails(context.Context) (map[string]uint32, error) {
 	memifSocketMap := make(map[string]uint32)
 
 	reqCtx := h.callsChannel.SendMultiRequest(&vpp_memif.MemifSocketFilenameDump{})
@@ -299,7 +301,7 @@ func (h *InterfaceVppHandler) DumpMemifSocketDetails() (map[string]uint32, error
 			break // Break from the loop.
 		}
 		if err != nil {
-			return memifSocketMap, fmt.Errorf("failed to dump memif socket filename details: %v", err)
+			return memifSocketMap, err
 		}
 
 		filename := strings.SplitN(socketDetails.SocketFilename, "\x00", 2)[0]
@@ -505,23 +507,25 @@ func (h *InterfaceVppHandler) processIPDetails(ifs map[uint32]*vppcalls.Interfac
 }
 
 // dumpMemifDetails dumps memif interface details from VPP and fills them into the provided interface map.
-func (h *InterfaceVppHandler) dumpMemifDetails(interfaces map[uint32]*vppcalls.InterfaceDetails) error {
-	// Dump all memif sockets
-	memifSocketMap, err := h.DumpMemifSocketDetails()
+func (h *InterfaceVppHandler) dumpMemifDetails(ctx context.Context, interfaces map[uint32]*vppcalls.InterfaceDetails) error {
+	memifSocketMap, err := h.DumpMemifSocketDetails(ctx)
+	if err != nil {
+		return fmt.Errorf("dumping memif socket details failed: %v", err)
+	}
+
+	dump, err := h.memif.DumpMemif(ctx, &vpp_memif.MemifDump{})
 	if err != nil {
 		return err
 	}
-
-	reqCtx := h.callsChannel.SendMultiRequest(&vpp_memif.MemifDump{})
 	for {
-		memifDetails := &vpp_memif.MemifDetails{}
-		stop, err := reqCtx.ReceiveReply(memifDetails)
-		if stop {
-			break // Break from the loop.
+		memifDetails, err := dump.Recv()
+		if err == io.EOF {
+			break
 		}
 		if err != nil {
-			return fmt.Errorf("failed to dump memif interface: %v", err)
+			return err
 		}
+
 		_, ifIdxExists := interfaces[uint32(memifDetails.SwIfIndex)]
 		if !ifIdxExists {
 			continue

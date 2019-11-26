@@ -69,7 +69,7 @@ type Plugin struct {
 	vppChan api.Channel
 
 	// Handlers
-	vpeHandler  vpevppcalls.VpeVppAPI
+	vpeHandler  vpevppcalls.VppHandlerAPI
 	teleHandler telemetryvppcalls.TelemetryVppAPI
 	// VPP Handlers
 	abfHandler   abfvppcalls.ABFVppRead
@@ -91,7 +91,7 @@ type Plugin struct {
 type Deps struct {
 	infra.PluginDeps
 	HTTPHandlers  rest.HTTPHandlers
-	GoVppmux      govppmux.StatsAPI
+	VPP           govppmux.API
 	ServiceLabel  servicelabel.ReaderAPI
 	AddrAlloc     netalloc.AddressAllocator
 	VPPACLPlugin  aclplugin.API
@@ -116,7 +116,7 @@ type indexItem struct {
 // Init initializes the Rest Plugin
 func (p *Plugin) Init() (err error) {
 	// VPP channels
-	if p.vppChan, err = p.GoVppmux.NewAPIChannel(); err != nil {
+	if p.vppChan, err = p.VPP.NewAPIChannel(); err != nil {
 		return err
 	}
 
@@ -131,17 +131,17 @@ func (p *Plugin) Init() (err error) {
 	linuxIfIndexes := p.LinuxIfPlugin.GetInterfaceIndex()
 
 	// Initialize VPP handlers
-	p.vpeHandler = vpevppcalls.CompatibleVpeHandler(p.vppChan)
+	p.vpeHandler = vpevppcalls.CompatibleHandler(p.VPP)
 	if p.vpeHandler == nil {
 		p.Log.Info("VPP main handler is not available, it will be skipped")
 	}
-	p.teleHandler = telemetryvppcalls.CompatibleTelemetryHandler(p.vppChan, p.GoVppmux)
+	p.teleHandler = telemetryvppcalls.CompatibleTelemetryHandler(p.VPP)
 	if p.teleHandler == nil {
 		p.Log.Info("VPP Telemetry handler is not available, it will be skipped")
 	}
 
 	// core
-	p.ifHandler = ifvppcalls.CompatibleInterfaceVppHandler(p.vppChan, p.Log)
+	p.ifHandler = ifvppcalls.CompatibleInterfaceVppHandler(p.VPP, p.Log)
 	if p.ifHandler == nil {
 		p.Log.Info("VPP Interface handler is not available, it will be skipped")
 	}
@@ -159,15 +159,15 @@ func (p *Plugin) Init() (err error) {
 	}
 
 	// plugins (might not be available - disabled)
-	p.abfHandler = abfvppcalls.CompatibleABFVppHandler(p.vppChan, aclIndexes, ifIndexes, p.Log)
+	p.abfHandler = abfvppcalls.CompatibleABFHandler(p.VPP, aclIndexes, ifIndexes, p.Log)
 	if p.abfHandler == nil {
 		p.Log.Infof("ABF handler is not available, it will be skipped")
 	}
-	p.aclHandler = aclvppcalls.CompatibleACLVppHandler(p.vppChan, ifIndexes, p.Log)
+	p.aclHandler = aclvppcalls.CompatibleACLHandler(p.VPP, ifIndexes)
 	if p.aclHandler == nil {
 		p.Log.Infof("ACL handler is not available, it will be skipped")
 	}
-	p.natHandler = natvppcalls.CompatibleNatVppHandler(p.vppChan, ifIndexes, dhcpIndexes, p.Log)
+	p.natHandler = natvppcalls.CompatibleNatVppHandler(p.VPP, ifIndexes, dhcpIndexes, p.Log)
 	if p.natHandler == nil {
 		p.Log.Infof("NAT handler is not available, it will be skipped")
 	}

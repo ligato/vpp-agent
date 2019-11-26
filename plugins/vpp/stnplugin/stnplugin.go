@@ -17,10 +17,8 @@
 package stnplugin
 
 import (
-	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/health/statuscheck"
 	"github.com/ligato/cn-infra/infra"
-	"github.com/pkg/errors"
 
 	"go.ligato.io/vpp-agent/v2/plugins/govppmux"
 	kvs "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
@@ -39,9 +37,6 @@ import (
 type STNPlugin struct {
 	Deps
 
-	// GoVPP
-	vppCh govppapi.Channel
-
 	// handlers
 	stnHandler vppcalls.StnVppAPI
 
@@ -53,20 +48,20 @@ type STNPlugin struct {
 type Deps struct {
 	infra.PluginDeps
 	KVScheduler kvs.KVScheduler
-	GoVppmux    govppmux.API
+	VPP         govppmux.API
 	IfPlugin    ifplugin.API
 	StatusCheck statuscheck.PluginStatusWriter // optional
 }
 
 // Init registers STN-related descriptors.
 func (p *STNPlugin) Init() (err error) {
-	// GoVPP channels
-	if p.vppCh, err = p.GoVppmux.NewAPIChannel(); err != nil {
-		return errors.Errorf("failed to create GoVPP API channel: %v", err)
+	if !p.VPP.IsPluginLoaded("stn") {
+		p.Log.Warnf("VPP plugin STN was disabled by VPP")
+		return nil
 	}
 
-	// init STN handler
-	p.stnHandler = vppcalls.CompatibleStnVppHandler(p.vppCh, p.IfPlugin.GetInterfaceIndex(), p.Log)
+	// init handlers
+	p.stnHandler = vppcalls.CompatibleStnVppHandler(p.VPP, p.IfPlugin.GetInterfaceIndex(), p.Log)
 
 	// init and register STN descriptor
 	p.stnDescriptor = descriptor.NewSTNDescriptor(p.stnHandler, p.Log)

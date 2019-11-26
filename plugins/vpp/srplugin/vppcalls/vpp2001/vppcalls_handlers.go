@@ -40,7 +40,7 @@ func init() {
 
 // SRv6VppHandler is accessor for SRv6-related vppcalls methods
 type SRv6VppHandler struct {
-	vpe_vppcalls.VpeVppAPI
+	vpe_vppcalls.VppHandlerAPI
 
 	log          logging.Logger
 	ifIndexes    ifaceidx.IfaceMetadataIndex
@@ -50,9 +50,9 @@ type SRv6VppHandler struct {
 // NewSRv6VppHandler creates new instance of SRv6 vppcalls handler
 func NewSRv6VppHandler(vppChan govppapi.Channel, ifIndexes ifaceidx.IfaceMetadataIndex, log logging.Logger) *SRv6VppHandler {
 	return &SRv6VppHandler{
-		callsChannel: vppChan,
-		ifIndexes:    ifIndexes,
-		log:          log,
-		VpeVppAPI:    vpe_vpp2001_379.NewVpeHandler(vppChan),
+		callsChannel:  vppChan,
+		ifIndexes:     ifIndexes,
+		log:           log,
+		VppHandlerAPI: vpe_vpp2001_379.NewVpeHandler(vppChan),
 	}
 }

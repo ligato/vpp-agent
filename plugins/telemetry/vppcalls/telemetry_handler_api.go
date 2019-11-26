@@ -19,8 +19,7 @@ import (
 
 	govppapi "git.fd.io/govpp.git/api"
 	log "github.com/ligato/cn-infra/logging"
-
-	"go.ligato.io/vpp-agent/v2/plugins/govppmux/vppcalls"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp"
 )
 
 var (
@@ -153,22 +152,48 @@ type BuffersItem struct {
 	NumFree  uint64 `json:"num_free"`
 }
 
-var Versions = map[string]HandlerVersion{}
+var Handler = vpp.RegisterHandler(vpp.HandlerDesc{
+	HandlerName: "telemetry",
+	HandlerType: (*TelemetryVppAPI)(nil),
+})
 
-type HandlerVersion struct {
-	Msgs []govppapi.Message
-	New  func(govppapi.Channel) TelemetryVppAPI
+type NewHandlerFunc func(govppapi.Channel) TelemetryVppAPI
+
+// AddHandlerVersion registers vppcalls Handler for the given version.
+func AddHandlerVersion(version string, msgs []govppapi.Message, h NewHandlerFunc) {
+	Handler.AddVersion(vpp.HandlerVersion{
+		Version: version,
+		Check: func(c vpp.Client) error {
+			return c.CheckCompatiblity(msgs...)
+		},
+		NewHandler: func(c vpp.Client, a ...interface{}) vpp.HandlerAPI {
+			ch, err := c.NewAPIChannel()
+			if err != nil {
+				return err
+			}
+			return h(ch)
+		},
+	})
 }
 
-func CompatibleTelemetryHandler(ch govppapi.Channel, stats govppapi.StatsProvider) TelemetryVppAPI {
-	if stats != nil {
-		return NewTelemetryVppStats(stats)
-	} else if !FallbackToCli {
+func CompatibleTelemetryHandler(c vpp.Client) TelemetryVppAPI {
+	// Prefer using VPP stats API.
+	if c.StatsConnected() {
+		return NewTelemetryVppStats(c.Stats())
+	}
+	if !FallbackToCli {
 		log.Warnf("stats unavailable and fallback to CLI disabled for telemetry")
 		return nil
 	}
-	vpe := vppcalls.CompatibleVpeHandler(ch)
-	info, err := vpe.GetVersionInfo()
+
+	/*ctx := context.TODO()
+	ch, err := c.NewAPIChannel()
+	if err != nil {
+		log.Warnf("failed to create API channel: %v", err)
+		return nil
+	}
+	vpe := vppcalls.CompatibleHandler(c)
+	info, err := vpe.GetVersion(ctx)
 	if err != nil {
 		log.Warnf("retrieving VPP info failed: %v", err)
 		return nil
@@ -190,6 +215,9 @@ func CompatibleTelemetryHandler(ch govppapi.Channel, stats govppapi.StatsProvide
 		}
 		log.Debug("found compatible version: ", ver)
 		return h.New(ch)
+	}*/
+	if v := Handler.FindCompatibleVersion(c); v != nil {
+		return v.NewHandler(c).(TelemetryVppAPI)
 	}
 	// no compatible version found
 	return nil

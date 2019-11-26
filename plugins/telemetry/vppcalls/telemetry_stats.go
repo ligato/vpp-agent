@@ -22,6 +22,8 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 )
 
+// TelemetryStats is an implementation of TelemetryVppAPI that uses
+// VPP stats API to retrieve the telemetry data.
 type TelemetryStats struct {
 	stats govppapi.StatsProvider
 

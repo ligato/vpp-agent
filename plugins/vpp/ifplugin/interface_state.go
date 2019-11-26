@@ -22,10 +22,9 @@ import (
 
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/pkg/errors"
 
-	"go.ligato.io/vpp-agent/v2/plugins/govppmux"
 	kvs "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/vppcalls"
 	intf "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
@@ -47,9 +46,8 @@ type InterfaceStateUpdater struct {
 	access  sync.Mutex
 	ifState map[uint32]*intf.InterfaceState // swIfIndex
 
-	goVppMux govppmux.StatsAPI
+	vppClient vpp.Client
 
-	vppCh      govppapi.Channel
 	ifMetaChan chan ifaceidx.IfaceMetadataDto
 
 	ifHandler vppcalls.InterfaceVppAPI
@@ -67,18 +65,21 @@ type InterfaceStateUpdater struct {
 }
 
 // Init members (channels, maps...) and start go routines
-func (c *InterfaceStateUpdater) Init(ctx context.Context,
-	logger logging.PluginLogger, kvScheduler kvs.KVScheduler,
-	goVppMux govppmux.StatsAPI, swIfIndexes ifaceidx.IfaceMetadataIndex,
-	publishIfState func(*intf.InterfaceNotification), readCounters bool,
-) (err error) {
-
-	// Logger
+func (c *InterfaceStateUpdater) Init(
+	ctx context.Context,
+	logger logging.PluginLogger,
+	kvScheduler kvs.KVScheduler,
+	vppClient vpp.Client,
+	swIfIndexes ifaceidx.IfaceMetadataIndex,
+	publishIfState func(*intf.InterfaceNotification),
+	readCounters bool,
+) error {
 	c.log = logger.NewLogger("if-state")
 
 	// Mappings
 	c.swIfIndexes = swIfIndexes
 
+	c.vppClient = vppClient
 	c.kvScheduler = kvScheduler
 	c.publishIfState = publishIfState
 	c.ifState = make(map[uint32]*intf.InterfaceState)
@@ -86,14 +87,8 @@ func (c *InterfaceStateUpdater) Init(ctx context.Context,
 	c.ifsForUpdate = make(map[uint32]struct{})
 	c.lastIfCounters = make(map[uint32]govppapi.InterfaceCounters)
 
-	// VPP channel
-	c.goVppMux = goVppMux
-	c.vppCh, err = c.goVppMux.NewAPIChannel()
-	if err != nil {
-		return errors.Errorf("failed to create API channel: %v", err)
-	}
-
-	c.ifHandler = vppcalls.CompatibleInterfaceVppHandler(c.vppCh, logger.NewLogger("if-handler"))
+	// Init handlers
+	c.ifHandler = vppcalls.CompatibleInterfaceVppHandler(c.vppClient, logger.NewLogger("if-handler"))
 
 	c.ifMetaChan = make(chan ifaceidx.IfaceMetadataDto, 1000)
 	swIfIndexes.WatchInterfaces("ifplugin_ifstate", c.ifMetaChan)
@@ -291,7 +286,7 @@ func (c *InterfaceStateUpdater) doInterfaceStatsRead() {
 		return
 	}
 
-	err := c.goVppMux.GetInterfaceStats(&c.ifStats)
+	err := c.vppClient.Stats().GetInterfaceStats(&c.ifStats)
 	if err != nil {
 		// TODO add some counter to prevent it log forever
 		c.log.Errorf("failed to read statistics data: %v", err)

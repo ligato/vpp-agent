@@ -53,7 +53,6 @@ func NewABFToInterfaceDescriptor(abfIndex abfidx.ABFMetadataIndex, abfHandler vp
 		abfIndex:   abfIndex,
 		ifPlugin:   ifPlugin,
 	}
-
 	return &api.KVDescriptor{
 		Name:         ABFToInterfaceDescriptorName,
 		KeySelector:  ctx.IsABFInterfaceKey,
