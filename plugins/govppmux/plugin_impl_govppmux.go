@@ -205,10 +205,7 @@ func (p *Plugin) Stats() govppapi.StatsProvider {
 }
 
 func (p *Plugin) StatsConnected() bool {
-	if p.statsConn != nil {
-		return true
-	}
-	return false
+	return p.statsConn != nil
 }
 
 // VPPInfo returns information about VPP session.
