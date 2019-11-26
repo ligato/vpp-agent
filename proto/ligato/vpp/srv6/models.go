@@ -46,6 +46,13 @@ var (
 		Type:    "steering",
 		Version: "v2",
 	}, models.WithNameTemplate("{{.Name}}"))
+
+	// ModelEncapSourceAddress is registered NB model of EncapSourceAddress
+	ModelEncapSourceAddress = models.Register(&EncapSourceAddress{}, models.Spec{
+		Module:  ModuleName,
+		Type:    "encapsourceaddress-global",
+		Version: "v2",
+	})
 )
 
 // SID (in srv6 package) is SRv6's segment id. It is always represented as IPv6 address

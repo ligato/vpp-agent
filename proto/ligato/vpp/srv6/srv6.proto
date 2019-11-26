@@ -132,3 +132,8 @@ message Steering {
         string prefix_address = 2;       /* IPv4/IPv6 prefix address(CIRD format) of traffic destination. All traffic with given destination will be steered to given SR policy */
     }
 }
+
+/* IPv6 SR Set SRv6 encapsulation source */
+message EncapSourceAddress {
+    string encap_source = 1;  /* IPv6 SA for encapsulated packets */
+}
