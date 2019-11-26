@@ -238,8 +238,9 @@ dep-update:
 
 dep-check:
 	@echo "# checking dependencies"
-	go mod verify -v
-	@if ! git diff --quiet go.mod go.sum ; then \
+	go mod verify
+	go mod tidy -v
+	@if ! git diff --quiet go.mod ; then \
 		echo "go mod tidy check failed"; \
 		exit 1 ; \
 	fi
