@@ -15,7 +15,7 @@
 //go:generate descriptor-adapter --descriptor-name LocalSID --value-type *vpp_srv6.LocalSID --import "github.com/ligato/vpp-agent/api/models/vpp/srv6" --output-dir "descriptor"
 //go:generate descriptor-adapter --descriptor-name Policy --value-type *vpp_srv6.Policy --import "github.com/ligato/vpp-agent/api/models/vpp/srv6" --output-dir "descriptor"
 //go:generate descriptor-adapter --descriptor-name Steering --value-type *vpp_srv6.Steering --import "github.com/ligato/vpp-agent/api/models/vpp/srv6" --output-dir "descriptor"
-//go:generate descriptor-adapter --descriptor-name EncapSourceAddress --value-type *vpp_srv6.EncapSourceAddress --import "github.com/ligato/vpp-agent/api/models/vpp/srv6" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name SRv6Global --value-type *vpp_srv6.SRv6Global --import "github.com/ligato/vpp-agent/api/models/vpp/srv6" --output-dir "descriptor"
 
 package srplugin
 
@@ -77,7 +77,7 @@ func (p *SRPlugin) Init() error {
 	localSIDDescriptor := descriptor.NewLocalSIDDescriptor(p.srHandler, p.Log)
 	policyDescriptor := descriptor.NewPolicyDescriptor(p.srHandler, p.Log)
 	steeringDescriptor := descriptor.NewSteeringDescriptor(p.srHandler, p.Log)
-	encapSourceAddressDescriptor := descriptor.NewEncapSourceAddressDescriptor(p.srHandler, p.Log)
+	encapSourceAddressDescriptor := descriptor.NewSRv6GlobalDescriptor(p.srHandler, p.Log)
 
 	err = p.Deps.Scheduler.RegisterKVDescriptor(
 		localSIDDescriptor,
