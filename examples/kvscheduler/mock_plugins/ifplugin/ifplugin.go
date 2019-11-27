@@ -21,9 +21,8 @@
 package ifplugin
 
 import (
-	"github.com/pkg/errors"
-
 	"github.com/ligato/cn-infra/infra"
+	"github.com/pkg/errors"
 
 	"go.ligato.io/vpp-agent/v2/examples/kvscheduler/mock_plugins/ifplugin/descriptor"
 	"go.ligato.io/vpp-agent/v2/examples/kvscheduler/mock_plugins/ifplugin/mockcalls"

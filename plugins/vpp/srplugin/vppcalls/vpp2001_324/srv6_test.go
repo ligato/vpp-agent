@@ -1516,8 +1516,3 @@ func boolToUint(input bool) uint8 {
 func sidToStr(sid vpp_sr.Srv6Sid) string {
 	return srv6.SID(sid.Addr).String()
 }
-
-// toIFaceByte converts value to byte representation as returned by VPP binary api in case of interface info (string bytes + 1 zero byte)
-func toIFaceByte(val string) []byte {
-	return append([]byte(val), 0x00)
-}
