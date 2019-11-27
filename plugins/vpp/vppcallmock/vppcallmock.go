@@ -15,6 +15,7 @@
 package vppcallmock
 
 import (
+	"context"
 	"testing"
 
 	"git.fd.io/govpp.git/adapter/mock"
@@ -27,6 +28,7 @@ import (
 // TestCtx is helping structure for unit testing.
 // It wraps VppAdapter which is used instead of real VPP.
 type TestCtx struct {
+	Context       context.Context
 	MockVpp       *mock.VppAdapter
 	MockStats     *mock.StatsAdapter
 	conn          *govpp.Connection
@@ -40,6 +42,7 @@ func SetupTestCtx(t *testing.T) *TestCtx {
 	RegisterTestingT(t)
 
 	ctx := &TestCtx{
+		Context:   context.Background(),
 		MockVpp:   mock.NewVppAdapter(),
 		MockStats: mock.NewStatsAdapter(),
 	}

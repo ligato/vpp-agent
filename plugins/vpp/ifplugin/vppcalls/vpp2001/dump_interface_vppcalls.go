@@ -64,7 +64,7 @@ func getMtu(vppMtu uint16) uint32 {
 
 func (h *InterfaceVppHandler) DumpInterfacesByType(ctx context.Context, reqType ifs.Interface_Type) (map[uint32]*vppcalls.InterfaceDetails, error) {
 	// Dump all
-	ifs, err := h.DumpInterfaces(nil)
+	ifs, err := h.DumpInterfaces(ctx)
 	if err != nil {
 		return nil, err
 	}

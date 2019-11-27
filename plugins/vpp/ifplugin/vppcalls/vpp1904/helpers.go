@@ -42,10 +42,7 @@ func IPToAddress(ipstr string) (addr ip.Address, err error) {
 }
 
 func uintToBool(value uint8) bool {
-	if value == 0 {
-		return false
-	}
-	return true
+	return value != 0
 }
 
 func cleanString(b []byte) string {

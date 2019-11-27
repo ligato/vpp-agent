@@ -67,7 +67,7 @@ func TestInterfaceEnabledFieldWithLoopback(t *testing.T) {
 	}
 
 	// Test after creation
-	ifaces, err := h.DumpInterfaces(nil)
+	ifaces, err := h.DumpInterfaces(test.Context)
 	if err != nil {
 		t.Fatalf("dumping interfaces failed: %v", err)
 	}
@@ -87,7 +87,7 @@ func TestInterfaceEnabledFieldWithLoopback(t *testing.T) {
 	if err != nil {
 		t.Fatalf("enabling interface failed: %v", err)
 	}
-	ifaces, err = h.DumpInterfaces(nil)
+	ifaces, err = h.DumpInterfaces(test.Context)
 	if err != nil {
 		t.Fatalf("dumping interfaces failed: %v", err)
 	}
@@ -107,7 +107,7 @@ func TestInterfaceEnabledFieldWithLoopback(t *testing.T) {
 	if err != nil {
 		t.Fatalf("disabling interface failed: %v", err)
 	}
-	ifaces, err = h.DumpInterfaces(nil)
+	ifaces, err = h.DumpInterfaces(test.Context)
 	if err != nil {
 		t.Fatalf("dumping interfaces failed: %v", err)
 	}
@@ -148,7 +148,7 @@ func TestInterfaceEnabledFieldWithMemif(t *testing.T) {
 	}
 
 	// Test after creation
-	ifaces, err := h.DumpInterfaces(nil)
+	ifaces, err := h.DumpInterfaces(test.Context)
 	if err != nil {
 		t.Fatalf("dumping interfaces failed: %v", err)
 	}
@@ -168,7 +168,7 @@ func TestInterfaceEnabledFieldWithMemif(t *testing.T) {
 	if err != nil {
 		t.Fatalf("enabling interface failed: %v", err)
 	}
-	ifaces, err = h.DumpInterfaces(nil)
+	ifaces, err = h.DumpInterfaces(test.Context)
 	if err != nil {
 		t.Fatalf("dumping interfaces failed: %v", err)
 	}
@@ -188,7 +188,7 @@ func TestInterfaceEnabledFieldWithMemif(t *testing.T) {
 	if err != nil {
 		t.Fatalf("disabling interface failed: %v", err)
 	}
-	ifaces, err = h.DumpInterfaces(nil)
+	ifaces, err = h.DumpInterfaces(test.Context)
 	if err != nil {
 		t.Fatalf("dumping interfaces failed: %v", err)
 	}
@@ -260,7 +260,7 @@ func TestLoopbackInterface(t *testing.T) {
 	}
 	t.Logf("loopback index: %+v", ifIdx)
 
-	ifaces, err := h.DumpInterfaces(nil)
+	ifaces, err := h.DumpInterfaces(test.Context)
 	if err != nil {
 		t.Fatalf("dumping interfaces failed: %v", err)
 	}
@@ -305,7 +305,7 @@ func TestMemifInterface(t *testing.T) {
 	}
 	t.Logf("memif index: %+v", ifIdx)
 
-	ifaces, err := h.DumpInterfaces(nil)
+	ifaces, err := h.DumpInterfaces(test.Context)
 	if err != nil {
 		t.Fatalf("dumping interfaces failed: %v", err)
 	}

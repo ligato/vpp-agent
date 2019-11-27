@@ -65,8 +65,9 @@ const (
 		}`
 )
 
-type testCtx struct {
+type TestCtx struct {
 	t              *testing.T
+	Context        context.Context
 	VPP            *exec.Cmd
 	stderr, stdout *bytes.Buffer
 	Conn           *govppcore.Connection
@@ -131,7 +132,7 @@ func startVPP(t *testing.T, stdout, stderr io.Writer) *exec.Cmd {
 	return vppCmd
 }
 
-func setupVPP(t *testing.T) *testCtx {
+func setupVPP(t *testing.T) *TestCtx {
 	if os.Getenv("TRAVIS") != "" {
 		t.Skip("skipping test for Travis")
 	}
@@ -219,8 +220,9 @@ func setupVPP(t *testing.T) *testCtx {
 
 	t.Log("===>--S-E-T-U-P--<===")
 
-	return &testCtx{
+	return &TestCtx{
 		t:           t,
+		Context:     ctx,
 		versionInfo: versionInfo,
 		vpe:         vpeHandler,
 		VPP:         vppCmd,
@@ -233,7 +235,7 @@ func setupVPP(t *testing.T) *testCtx {
 	}
 }
 
-func (ctx *testCtx) teardownVPP() {
+func (ctx *TestCtx) teardownVPP() {
 	ctx.t.Logf("---T-E-A-R-D-O-W-N---")
 
 	// disconnect sometimes hangs
