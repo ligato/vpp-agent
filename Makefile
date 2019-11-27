@@ -1,5 +1,7 @@
 SHELL := /usr/bin/env bash -o pipefail
 
+.DEFAULT = help
+
 PROJECT := vpp-agent
 
 VERSION ?= $(shell git describe --always --tags --dirty)
@@ -21,7 +23,7 @@ ifndef BUILD_DIR
 BUILD_DIR := .build
 endif
 
-export PATH := $(abspath $(CACHE_BIN)):$(PATH)
+export PATH := $(abspath tools):$(abspath $(CACHE_BIN)):$(PATH)
 
 CNINFRA := github.com/ligato/cn-infra/agent
 LDFLAGS = \
@@ -62,8 +64,6 @@ COVER_DIR ?= /tmp
 help:
 	@echo "List of make targets:"
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sed 's/^[^:]*://g' | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
-
-.DEFAULT = help
 
 -include scripts/make/buf.make
 
@@ -187,14 +187,13 @@ checknodiffgenerated:  ## Check no diff generated
 
 generate: generate-proto generate-binapi generate-desc-adapters ## Generate all
 	go fmt ./...
-	go mod tidy -v
 
 generate-proto: protocgengo ## Generate Protobuf files
 
-get-binapi-generators:
-	go install git.fd.io/govpp.git/cmd/binapi-generator
+tools/binapi-generator: tools/go.mod tools/go.sum
+	cd tools && go build -mod=readonly git.fd.io/govpp.git/cmd/binapi-generator
 
-generate-binapi: get-binapi-generators ## Generate Go code for VPP binary API
+generate-binapi: tools/binapi-generator ## Generate Go code for VPP binary API
 	@echo "# generating VPP binapi"
 	VPP_BINAPI=$(VPP_BINAPI) ./scripts/genbinapi.sh
 
@@ -234,7 +233,7 @@ dep-install:
 
 dep-update:
 	@echo "# updating all dependencies"
-	@echo "Warning: 'go get' desired new modules by hand"
+	@echo go mod tidy -v
 
 dep-check:
 	@echo "# checking dependencies"
@@ -315,7 +314,7 @@ prod-image: ## Build production image
 	agent agentctl build clean install \
 	cmd examples clean-examples \
 	test test-cover test-cover-html test-cover-xml \
-	generate checknodiffgenerated genereate-binapi generate-proto get-binapi-generators \
+	generate checknodiffgenerated genereate-binapi generate-proto \
 	get-dep dep-install dep-update dep-check \
 	get-linters lint format lint-proto check-proto \
 	get-linkcheck check-links \

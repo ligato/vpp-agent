@@ -14,10 +14,13 @@
 
 // +build tools
 
-package vppagent
+// Manage tool dependencies using Go modules.
+//
+//  https://github.com/golang/go/wiki/Modules#how-can-i-track-tool-dependencies-for-a-module
+//  https://github.com/golang/go/issues/25922
+//
+package tools
 
 import (
 	_ "git.fd.io/govpp.git/cmd/binapi-generator"
-	_ "github.com/golang/protobuf/protoc-gen-go"
-	_ "github.com/mattn/goveralls"
 )
