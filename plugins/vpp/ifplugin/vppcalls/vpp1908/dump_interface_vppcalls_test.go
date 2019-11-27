@@ -315,7 +315,7 @@ func TestDumpMemifSocketDetails(t *testing.T) {
 
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 
-	result, err := ifHandler.DumpMemifSocketDetails(nil)
+	result, err := ifHandler.DumpMemifSocketDetails(ctx.Context)
 	Expect(err).To(BeNil())
 	Expect(result).To(Not(BeEmpty()))
 
