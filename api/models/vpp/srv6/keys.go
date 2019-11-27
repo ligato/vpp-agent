@@ -46,6 +46,13 @@ var (
 		Type:    "steering",
 		Version: "v2",
 	}, models.WithNameTemplate("{{.Name}}"))
+
+	// ModelSRv6Global is registered NB model of SRv6 global config
+	ModelSRv6Global = models.Register(&SRv6Global{}, models.Spec{
+		Module:  ModuleName,
+		Type:    "srv6-global",
+		Version: "v2",
+	})
 )
 
 // SID (in srv6 package) is SRv6's segment id. It is always represented as IPv6 address
