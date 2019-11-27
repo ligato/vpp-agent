@@ -133,7 +133,7 @@ message Steering {
     }
 }
 
-/* IPv6 SR Set SRv6 encapsulation source */
-message EncapSourceAddress {
-    string encap_source = 1;  /* IPv6 SA for encapsulated packets */
+/* Global SRv6 config */
+message SRv6Global {
+    string encap_source_address = 1;  /* IPv6 source address for sr encapsulated packets */
 }

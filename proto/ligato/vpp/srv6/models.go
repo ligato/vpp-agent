@@ -47,10 +47,10 @@ var (
 		Version: "v2",
 	}, models.WithNameTemplate("{{.Name}}"))
 
-	// ModelEncapSourceAddress is registered NB model of EncapSourceAddress
-	ModelEncapSourceAddress = models.Register(&EncapSourceAddress{}, models.Spec{
+	// ModelSRv6Global is registered NB model of SRv6 global config
+	ModelSRv6Global = models.Register(&SRv6Global{}, models.Spec{
 		Module:  ModuleName,
-		Type:    "encapsourceaddress-global",
+		Type:    "srv6-global",
 		Version: "v2",
 	})
 )

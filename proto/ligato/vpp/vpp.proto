@@ -52,7 +52,7 @@ message ConfigData {
     repeated srv6.Policy srv6_policies = 81;
     repeated srv6.Steering srv6_steerings = 82;
 
-    srv6.EncapSourceAddress srv6_encap_source_address = 83;
+    srv6.SRv6Global srv6_global = 83;
 }
 
 message Notification {

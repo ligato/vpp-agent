@@ -10,44 +10,44 @@ import (
 
 ////////// type-safe key-value pair with metadata //////////
 
-type EncapSourceAddressKVWithMetadata struct {
+type SRv6GlobalKVWithMetadata struct {
 	Key      string
-	Value    *vpp_srv6.EncapSourceAddress
+	Value    *vpp_srv6.SRv6Global
 	Metadata interface{}
 	Origin   ValueOrigin
 }
 
 ////////// type-safe Descriptor structure //////////
 
-type EncapSourceAddressDescriptor struct {
+type SRv6GlobalDescriptor struct {
 	Name                 string
 	KeySelector          KeySelector
 	ValueTypeName        string
 	KeyLabel             func(key string) string
-	ValueComparator      func(key string, oldValue, newValue *vpp_srv6.EncapSourceAddress) bool
+	ValueComparator      func(key string, oldValue, newValue *vpp_srv6.SRv6Global) bool
 	NBKeyPrefix          string
 	WithMetadata         bool
 	MetadataMapFactory   MetadataMapFactory
-	Validate             func(key string, value *vpp_srv6.EncapSourceAddress) error
-	Create               func(key string, value *vpp_srv6.EncapSourceAddress) (metadata interface{}, err error)
-	Delete               func(key string, value *vpp_srv6.EncapSourceAddress, metadata interface{}) error
-	Update               func(key string, oldValue, newValue *vpp_srv6.EncapSourceAddress, oldMetadata interface{}) (newMetadata interface{}, err error)
-	UpdateWithRecreate   func(key string, oldValue, newValue *vpp_srv6.EncapSourceAddress, metadata interface{}) bool
-	Retrieve             func(correlate []EncapSourceAddressKVWithMetadata) ([]EncapSourceAddressKVWithMetadata, error)
+	Validate             func(key string, value *vpp_srv6.SRv6Global) error
+	Create               func(key string, value *vpp_srv6.SRv6Global) (metadata interface{}, err error)
+	Delete               func(key string, value *vpp_srv6.SRv6Global, metadata interface{}) error
+	Update               func(key string, oldValue, newValue *vpp_srv6.SRv6Global, oldMetadata interface{}) (newMetadata interface{}, err error)
+	UpdateWithRecreate   func(key string, oldValue, newValue *vpp_srv6.SRv6Global, metadata interface{}) bool
+	Retrieve             func(correlate []SRv6GlobalKVWithMetadata) ([]SRv6GlobalKVWithMetadata, error)
 	IsRetriableFailure   func(err error) bool
-	DerivedValues        func(key string, value *vpp_srv6.EncapSourceAddress) []KeyValuePair
-	Dependencies         func(key string, value *vpp_srv6.EncapSourceAddress) []Dependency
+	DerivedValues        func(key string, value *vpp_srv6.SRv6Global) []KeyValuePair
+	Dependencies         func(key string, value *vpp_srv6.SRv6Global) []Dependency
 	RetrieveDependencies []string /* descriptor name */
 }
 
 ////////// Descriptor adapter //////////
 
-type EncapSourceAddressDescriptorAdapter struct {
-	descriptor *EncapSourceAddressDescriptor
+type SRv6GlobalDescriptorAdapter struct {
+	descriptor *SRv6GlobalDescriptor
 }
 
-func NewEncapSourceAddressDescriptor(typedDescriptor *EncapSourceAddressDescriptor) *KVDescriptor {
-	adapter := &EncapSourceAddressDescriptorAdapter{descriptor: typedDescriptor}
+func NewSRv6GlobalDescriptor(typedDescriptor *SRv6GlobalDescriptor) *KVDescriptor {
+	adapter := &SRv6GlobalDescriptorAdapter{descriptor: typedDescriptor}
 	descriptor := &KVDescriptor{
 		Name:                 typedDescriptor.Name,
 		KeySelector:          typedDescriptor.KeySelector,
@@ -89,88 +89,88 @@ func NewEncapSourceAddressDescriptor(typedDescriptor *EncapSourceAddressDescript
 	return descriptor
 }
 
-func (da *EncapSourceAddressDescriptorAdapter) ValueComparator(key string, oldValue, newValue proto.Message) bool {
-	typedOldValue, err1 := castEncapSourceAddressValue(key, oldValue)
-	typedNewValue, err2 := castEncapSourceAddressValue(key, newValue)
+func (da *SRv6GlobalDescriptorAdapter) ValueComparator(key string, oldValue, newValue proto.Message) bool {
+	typedOldValue, err1 := castSRv6GlobalValue(key, oldValue)
+	typedNewValue, err2 := castSRv6GlobalValue(key, newValue)
 	if err1 != nil || err2 != nil {
 		return false
 	}
 	return da.descriptor.ValueComparator(key, typedOldValue, typedNewValue)
 }
 
-func (da *EncapSourceAddressDescriptorAdapter) Validate(key string, value proto.Message) (err error) {
-	typedValue, err := castEncapSourceAddressValue(key, value)
+func (da *SRv6GlobalDescriptorAdapter) Validate(key string, value proto.Message) (err error) {
+	typedValue, err := castSRv6GlobalValue(key, value)
 	if err != nil {
 		return err
 	}
 	return da.descriptor.Validate(key, typedValue)
 }
 
-func (da *EncapSourceAddressDescriptorAdapter) Create(key string, value proto.Message) (metadata Metadata, err error) {
-	typedValue, err := castEncapSourceAddressValue(key, value)
+func (da *SRv6GlobalDescriptorAdapter) Create(key string, value proto.Message) (metadata Metadata, err error) {
+	typedValue, err := castSRv6GlobalValue(key, value)
 	if err != nil {
 		return nil, err
 	}
 	return da.descriptor.Create(key, typedValue)
 }
 
-func (da *EncapSourceAddressDescriptorAdapter) Update(key string, oldValue, newValue proto.Message, oldMetadata Metadata) (newMetadata Metadata, err error) {
-	oldTypedValue, err := castEncapSourceAddressValue(key, oldValue)
+func (da *SRv6GlobalDescriptorAdapter) Update(key string, oldValue, newValue proto.Message, oldMetadata Metadata) (newMetadata Metadata, err error) {
+	oldTypedValue, err := castSRv6GlobalValue(key, oldValue)
 	if err != nil {
 		return nil, err
 	}
-	newTypedValue, err := castEncapSourceAddressValue(key, newValue)
+	newTypedValue, err := castSRv6GlobalValue(key, newValue)
 	if err != nil {
 		return nil, err
 	}
-	typedOldMetadata, err := castEncapSourceAddressMetadata(key, oldMetadata)
+	typedOldMetadata, err := castSRv6GlobalMetadata(key, oldMetadata)
 	if err != nil {
 		return nil, err
 	}
 	return da.descriptor.Update(key, oldTypedValue, newTypedValue, typedOldMetadata)
 }
 
-func (da *EncapSourceAddressDescriptorAdapter) Delete(key string, value proto.Message, metadata Metadata) error {
-	typedValue, err := castEncapSourceAddressValue(key, value)
+func (da *SRv6GlobalDescriptorAdapter) Delete(key string, value proto.Message, metadata Metadata) error {
+	typedValue, err := castSRv6GlobalValue(key, value)
 	if err != nil {
 		return err
 	}
-	typedMetadata, err := castEncapSourceAddressMetadata(key, metadata)
+	typedMetadata, err := castSRv6GlobalMetadata(key, metadata)
 	if err != nil {
 		return err
 	}
 	return da.descriptor.Delete(key, typedValue, typedMetadata)
 }
 
-func (da *EncapSourceAddressDescriptorAdapter) UpdateWithRecreate(key string, oldValue, newValue proto.Message, metadata Metadata) bool {
-	oldTypedValue, err := castEncapSourceAddressValue(key, oldValue)
+func (da *SRv6GlobalDescriptorAdapter) UpdateWithRecreate(key string, oldValue, newValue proto.Message, metadata Metadata) bool {
+	oldTypedValue, err := castSRv6GlobalValue(key, oldValue)
 	if err != nil {
 		return true
 	}
-	newTypedValue, err := castEncapSourceAddressValue(key, newValue)
+	newTypedValue, err := castSRv6GlobalValue(key, newValue)
 	if err != nil {
 		return true
 	}
-	typedMetadata, err := castEncapSourceAddressMetadata(key, metadata)
+	typedMetadata, err := castSRv6GlobalMetadata(key, metadata)
 	if err != nil {
 		return true
 	}
 	return da.descriptor.UpdateWithRecreate(key, oldTypedValue, newTypedValue, typedMetadata)
 }
 
-func (da *EncapSourceAddressDescriptorAdapter) Retrieve(correlate []KVWithMetadata) ([]KVWithMetadata, error) {
-	var correlateWithType []EncapSourceAddressKVWithMetadata
+func (da *SRv6GlobalDescriptorAdapter) Retrieve(correlate []KVWithMetadata) ([]KVWithMetadata, error) {
+	var correlateWithType []SRv6GlobalKVWithMetadata
 	for _, kvpair := range correlate {
-		typedValue, err := castEncapSourceAddressValue(kvpair.Key, kvpair.Value)
+		typedValue, err := castSRv6GlobalValue(kvpair.Key, kvpair.Value)
 		if err != nil {
 			continue
 		}
-		typedMetadata, err := castEncapSourceAddressMetadata(kvpair.Key, kvpair.Metadata)
+		typedMetadata, err := castSRv6GlobalMetadata(kvpair.Key, kvpair.Metadata)
 		if err != nil {
 			continue
 		}
 		correlateWithType = append(correlateWithType,
-			EncapSourceAddressKVWithMetadata{
+			SRv6GlobalKVWithMetadata{
 				Key:      kvpair.Key,
 				Value:    typedValue,
 				Metadata: typedMetadata,
@@ -195,16 +195,16 @@ func (da *EncapSourceAddressDescriptorAdapter) Retrieve(correlate []KVWithMetada
 	return values, err
 }
 
-func (da *EncapSourceAddressDescriptorAdapter) DerivedValues(key string, value proto.Message) []KeyValuePair {
-	typedValue, err := castEncapSourceAddressValue(key, value)
+func (da *SRv6GlobalDescriptorAdapter) DerivedValues(key string, value proto.Message) []KeyValuePair {
+	typedValue, err := castSRv6GlobalValue(key, value)
 	if err != nil {
 		return nil
 	}
 	return da.descriptor.DerivedValues(key, typedValue)
 }
 
-func (da *EncapSourceAddressDescriptorAdapter) Dependencies(key string, value proto.Message) []Dependency {
-	typedValue, err := castEncapSourceAddressValue(key, value)
+func (da *SRv6GlobalDescriptorAdapter) Dependencies(key string, value proto.Message) []Dependency {
+	typedValue, err := castSRv6GlobalValue(key, value)
 	if err != nil {
 		return nil
 	}
@@ -213,15 +213,15 @@ func (da *EncapSourceAddressDescriptorAdapter) Dependencies(key string, value pr
 
 ////////// Helper methods //////////
 
-func castEncapSourceAddressValue(key string, value proto.Message) (*vpp_srv6.EncapSourceAddress, error) {
-	typedValue, ok := value.(*vpp_srv6.EncapSourceAddress)
+func castSRv6GlobalValue(key string, value proto.Message) (*vpp_srv6.SRv6Global, error) {
+	typedValue, ok := value.(*vpp_srv6.SRv6Global)
 	if !ok {
 		return nil, ErrInvalidValueType(key, value)
 	}
 	return typedValue, nil
 }
 
-func castEncapSourceAddressMetadata(key string, metadata Metadata) (interface{}, error) {
+func castSRv6GlobalMetadata(key string, metadata Metadata) (interface{}, error) {
 	if metadata == nil {
 		return nil, nil
 	}
