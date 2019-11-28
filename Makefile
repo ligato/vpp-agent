@@ -1,7 +1,5 @@
 SHELL := /usr/bin/env bash -o pipefail
 
-.DEFAULT = help
-
 PROJECT := vpp-agent
 
 VERSION ?= $(shell git describe --always --tags --dirty)
@@ -23,7 +21,7 @@ ifndef BUILD_DIR
 BUILD_DIR := .build
 endif
 
-export PATH := $(abspath tools):$(abspath $(CACHE_BIN)):$(PATH)
+export PATH := $(abspath $(CACHE_BIN)):$(PATH)
 
 CNINFRA := github.com/ligato/cn-infra/agent
 LDFLAGS = \
@@ -64,6 +62,8 @@ COVER_DIR ?= /tmp
 help:
 	@echo "List of make targets:"
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sed 's/^[^:]*://g' | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
+
+.DEFAULT = help
 
 -include scripts/make/buf.make
 
@@ -190,10 +190,10 @@ generate: generate-proto generate-binapi generate-desc-adapters ## Generate all
 
 generate-proto: protocgengo ## Generate Protobuf files
 
-tools/binapi-generator: tools/go.mod tools/go.sum
-	cd tools && go build -mod=readonly git.fd.io/govpp.git/cmd/binapi-generator
+get-binapi-generators:
+	go install -mod=readonly git.fd.io/govpp.git/cmd/binapi-generator
 
-generate-binapi: tools/binapi-generator ## Generate Go code for VPP binary API
+generate-binapi: get-binapi-generators ## Generate Go code for VPP binary API
 	@echo "# generating VPP binapi"
 	VPP_BINAPI=$(VPP_BINAPI) ./scripts/genbinapi.sh
 
@@ -314,7 +314,7 @@ prod-image: ## Build production image
 	agent agentctl build clean install \
 	cmd examples clean-examples \
 	test test-cover test-cover-html test-cover-xml \
-	generate checknodiffgenerated genereate-binapi generate-proto \
+	generate checknodiffgenerated genereate-binapi generate-proto get-binapi-generators \
 	get-dep dep-install dep-update dep-check \
 	get-linters lint format lint-proto check-proto \
 	get-linkcheck check-links \
