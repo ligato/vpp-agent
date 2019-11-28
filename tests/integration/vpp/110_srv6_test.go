@@ -32,11 +32,6 @@ import (
 	srv6 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/srv6"
 )
 
-const (
-	vrfID1 = 11
-	vrfID2 = 12
-)
-
 var (
 	sidA         = sid("A::")
 	nextHop      = net.ParseIP("B::").To16()
