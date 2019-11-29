@@ -25,11 +25,6 @@ type API interface {
 	VPPInfo() VPPInfo
 
 	vpp.Client
-
-	// IsPluginLoaded returns true if the given plugin is currently loaded.
-	//IsPluginLoaded(plugin string) bool
-
-	//govppapi.ChannelProvider
 }
 
 // VPPInfo defines retrieved information about the connected VPP instance.

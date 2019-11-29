@@ -62,10 +62,6 @@ func (p *NATPlugin) Init() (err error) {
 	}
 
 	// init handlers
-	/*vppCh, err := p.VPP.NewAPIChannel()
-	if err != nil {
-		return errors.Errorf("failed to create GoVPP API channel: %v", err)
-	}*/
 	p.natHandler = vppcalls.CompatibleNatVppHandler(p.VPP, p.IfPlugin.GetInterfaceIndex(), p.IfPlugin.GetDHCPIndex(), p.Log)
 	if p.natHandler == nil {
 		return errors.New("natHandler is not available")

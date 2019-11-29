@@ -64,10 +64,6 @@ func (p *ACLPlugin) Init() (err error) {
 	}
 
 	// init handlers
-	/*vppCh, err := p.VPP.NewAPIChannel()
-	if err != nil {
-		return errors.Errorf("failed to create GoVPP API channel: %v", err)
-	}*/
 	p.aclHandler = vppcalls.CompatibleACLHandler(p.VPP, p.IfPlugin.GetInterfaceIndex())
 	if p.aclHandler == nil {
 		return errors.New("aclHandler is not available")

@@ -65,10 +65,6 @@ func (p *ABFPlugin) Init() error {
 	}
 
 	// init handlers
-	/*vppCh, err := p.VPP.NewAPIChannel()
-	if err != nil {
-		return errors.Errorf("failed to create GoVPP API channel: %v", err)
-	}*/
 	p.abfHandler = vppcalls.CompatibleABFHandler(p.VPP, p.ACLPlugin.GetACLIndex(), p.IfPlugin.GetInterfaceIndex(), p.Log)
 	if p.abfHandler == nil {
 		return errors.New("abfHandler is not available")
