@@ -68,12 +68,12 @@ func (h *RouteHandler) vppAddDelRoute(route *vpp_l3.Route, rtIfIdx uint32, delet
 
 	if isIpv6 {
 		req.IsIPv6 = 1
-		req.DstAddress = []byte(parsedDstIP.IP.To16())
-		req.NextHopAddress = []byte(parsedNextHopIP.To16())
+		req.DstAddress = parsedDstIP.IP.To16()
+		req.NextHopAddress = parsedNextHopIP.To16()
 	} else {
 		req.IsIPv6 = 0
-		req.DstAddress = []byte(parsedDstIP.IP.To4())
-		req.NextHopAddress = []byte(parsedNextHopIP.To4())
+		req.DstAddress = parsedDstIP.IP.To4()
+		req.NextHopAddress = parsedNextHopIP.To4()
 	}
 	req.DstAddressLength = byte(prefix)
 

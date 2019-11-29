@@ -18,6 +18,7 @@ import (
 	"testing"
 
 	"fmt"
+
 	"github.com/ligato/cn-infra/logging/logrus"
 	. "github.com/onsi/gomega"
 )
@@ -45,7 +46,6 @@ func testInitialization(t *testing.T) IfaceMetadataIndexRW {
 // TestIndexMetadata tests whether func IndexMetadata return map filled with correct values
 func TestIndexMetadata(t *testing.T) {
 	const (
-		ifName0 = "if0"
 		ipAddr0 = "192.168.0.1/24"
 		ipAddr1 = "192.168.1.1/24"
 	)
