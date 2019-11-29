@@ -40,14 +40,15 @@ type APIChannel interface {
 
 // Client provides methods for managing VPP.
 type Client interface {
+	govppapi.ChannelProvider
+
+	// IsPluginLoaded returns true if the given plugin is currently loaded.
 	IsPluginLoaded(plugin string) bool
 
-	govppapi.ChannelProvider
+	CheckCompatiblity(...govppapi.Message) error
 
 	// Stats provides access to VPP stats API.
 	Stats() govppapi.StatsProvider
-
-	CheckCompatiblity(...govppapi.Message) error
 
 	StatsConnected() bool
 }

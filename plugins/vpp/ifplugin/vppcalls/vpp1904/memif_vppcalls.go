@@ -96,6 +96,10 @@ func (h *InterfaceVppHandler) RegisterMemifSocketFilename(ctx context.Context, f
 
 // DumpMemifSocketDetails implements interface handler.
 func (h *InterfaceVppHandler) DumpMemifSocketDetails(ctx context.Context) (map[string]uint32, error) {
+	if h.memif == nil {
+		return nil, vpp.ErrPluginDisabled
+	}
+
 	dump, err := h.memif.DumpMemifSocketFilename(ctx, &memif.MemifSocketFilenameDump{})
 	if err != nil {
 		return nil, err

@@ -62,7 +62,7 @@ func (h *Handler) AddVersion(hv HandlerVersion) {
 
 // Versions returns list of versions from list of available handler versions.
 func (h *Handler) Versions() []string {
-	var versions []string
+	versions := make([]string, 0, len(h.versions))
 	for _, v := range h.versions {
 		versions = append(versions, v.Version)
 	}

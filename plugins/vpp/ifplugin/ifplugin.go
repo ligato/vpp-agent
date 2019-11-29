@@ -126,10 +126,6 @@ func (p *IfPlugin) Init() (err error) {
 	p.fixNilPointers()
 
 	// Init handlers
-	/*vppCh, err := p.VPP.NewAPIChannel()
-	if err != nil {
-		return errors.Errorf("failed to create GoVPP API channel: %v", err)
-	}*/
 	p.ifHandler = vppcalls.CompatibleInterfaceVppHandler(p.VPP, p.Log)
 	if p.ifHandler == nil {
 		return errors.New("interface VPP handler is not available")
