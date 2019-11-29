@@ -79,7 +79,7 @@ func AddStnHandlerVersion(version string, msgs []govppapi.Message, h NewHandlerF
 
 func CompatibleStnVppHandler(c vpp.Client, ifIdx ifaceidx.IfaceMetadataIndex, log logging.Logger) StnVppAPI {
 	if v := handler.FindCompatibleVersion(c); v != nil {
-		return v.NewHandler(c, ifIdx).(StnVppAPI)
+		return v.NewHandler(c, ifIdx, log).(StnVppAPI)
 	}
 	return nil
 }
