@@ -55,6 +55,9 @@ type SRv6VPPWrite interface {
 type SRv6VPPRead interface {
 	// TODO: implement other dump methods
 
+	// DumpLocalSids retrieves all localsids
+	DumpLocalSids() (localsids []*srv6.LocalSID, err error)
+
 	// RetrievePolicyIndexInfo retrieves index of policy <policy> and its segment lists
 	RetrievePolicyIndexInfo(policy *srv6.Policy) (policyIndex uint32, segmentListIndexes map[*srv6.Policy_SegmentList]uint32, err error)
 }
