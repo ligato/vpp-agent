@@ -19,8 +19,8 @@ import (
 	"testing"
 
 	govppapi "git.fd.io/govpp.git/api"
-
 	. "github.com/onsi/gomega"
+
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904/dhcp"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904/gtpu"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904/interfaces"
@@ -87,7 +87,7 @@ func TestDumpInterfacesVxLan(t *testing.T) {
 		},
 	})
 
-	intfs, err := ifHandler.DumpInterfaces()
+	intfs, err := ifHandler.DumpInterfaces(ctx.Context)
 	Expect(err).To(BeNil())
 	Expect(intfs).To(HaveLen(1))
 	intface := intfs[0].Interface
@@ -99,10 +99,10 @@ func TestDumpInterfacesVxLan(t *testing.T) {
 
 // Test dump of interfaces with host type
 func TestDumpInterfacesHost(t *testing.T) {
-	ctx, ifHandler := ifTestSetup(t)
-	defer ctx.TeardownTestCtx()
+	test, ifHandler := ifTestSetup(t)
+	defer test.TeardownTestCtx()
 
-	ctx.MockReplies([]*vppcallmock.HandleReplies{
+	test.MockReplies([]*vppcallmock.HandleReplies{
 		{
 			Name: (&interfaces.SwInterfaceDump{}).GetMessageName(),
 			Ping: true,
@@ -142,7 +142,7 @@ func TestDumpInterfacesHost(t *testing.T) {
 		},
 	})
 
-	intfs, err := ifHandler.DumpInterfaces()
+	intfs, err := ifHandler.DumpInterfaces(test.Context)
 	Expect(err).To(BeNil())
 	Expect(intfs).To(HaveLen(1))
 	intface := intfs[0].Interface
@@ -209,7 +209,7 @@ func TestDumpInterfacesMemif(t *testing.T) {
 		},
 	})
 
-	intfs, err := ifHandler.DumpInterfaces()
+	intfs, err := ifHandler.DumpInterfaces(ctx.Context)
 	Expect(err).To(BeNil())
 	Expect(intfs).To(HaveLen(1))
 	intface := intfs[0].Interface
@@ -282,7 +282,7 @@ func TestDumpInterfacesTap2(t *testing.T) {
 		},
 	})
 
-	intfs, err := ifHandler.DumpInterfaces()
+	intfs, err := ifHandler.DumpInterfaces(ctx.Context)
 	Expect(err).To(BeNil())
 	Expect(intfs).To(HaveLen(1))
 
@@ -315,7 +315,7 @@ func TestDumpMemifSocketDetails(t *testing.T) {
 
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 
-	result, err := ifHandler.DumpMemifSocketDetails()
+	result, err := ifHandler.DumpMemifSocketDetails(ctx.Context)
 	Expect(err).To(BeNil())
 	Expect(result).To(Not(BeEmpty()))
 
@@ -405,7 +405,7 @@ func TestDumpInterfacesRxPlacement(t *testing.T) {
 		},
 	})
 
-	intfs, err := ifHandler.DumpInterfaces()
+	intfs, err := ifHandler.DumpInterfaces(ctx.Context)
 	Expect(err).To(BeNil())
 	Expect(intfs).To(HaveLen(1))
 	intface := intfs[0].Interface
@@ -494,7 +494,7 @@ func TestDumpInterfacesGtpu(t *testing.T) {
 		},
 	})
 
-	intfs, err := ifHandler.DumpInterfaces()
+	intfs, err := ifHandler.DumpInterfaces(ctx.Context)
 	Expect(err).To(BeNil())
 	Expect(intfs).To(HaveLen(1))
 	intface := intfs[0].Interface

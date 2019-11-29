@@ -17,6 +17,8 @@ package vppcalls
 import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
+
+	"go.ligato.io/vpp-agent/v2/plugins/vpp"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/aclplugin/aclidx"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
 	abf "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/abf"
@@ -37,8 +39,6 @@ type ABFMeta struct {
 type ABFVppAPI interface {
 	ABFVppRead
 
-	// GetAbfVersion retrieves version of the VPP ABF plugin
-	GetAbfVersion() (ver string, err error)
 	// AddAbfPolicy creates new ABF entry together with a list of forwarding paths
 	AddAbfPolicy(policyID, aclID uint32, abfPaths []*abf.ABF_ForwardingPath) error
 	// DeleteAbfPolicy removes existing ABF entry
@@ -55,29 +55,42 @@ type ABFVppAPI interface {
 
 // ABFVppRead provides read methods for ABF plugin
 type ABFVppRead interface {
+	// GetAbfVersion retrieves version of the VPP ABF plugin
+	GetAbfVersion() (ver string, err error)
 	// DumpABFPolicy retrieves VPP ABF configuration.
 	DumpABFPolicy() ([]*ABFDetails, error)
 }
 
-var Versions = map[string]HandlerVersion{}
+var Handler = vpp.RegisterHandler(vpp.HandlerDesc{
+	Name:       "abf",
+	HandlerAPI: (*ABFVppAPI)(nil),
+})
 
-type HandlerVersion struct {
-	Msgs []govppapi.Message
-	New  func(govppapi.Channel, aclidx.ACLMetadataIndex, ifaceidx.IfaceMetadataIndex, logging.Logger) ABFVppAPI
+type NewHandlerFunc func(ch govppapi.Channel, aclIdx aclidx.ACLMetadataIndex, ifIdx ifaceidx.IfaceMetadataIndex, log logging.Logger) ABFVppAPI
+
+func AddABFHandlerVersion(version string, msgs []govppapi.Message, h NewHandlerFunc) {
+	Handler.AddVersion(vpp.HandlerVersion{
+		Version: version,
+		Check: func(c vpp.Client) error {
+			ch, err := c.NewAPIChannel()
+			if err != nil {
+				return err
+			}
+			return ch.CheckCompatiblity(msgs...)
+		},
+		NewHandler: func(c vpp.Client, a ...interface{}) vpp.HandlerAPI {
+			ch, err := c.NewAPIChannel()
+			if err != nil {
+				return err
+			}
+			return h(ch, a[0].(aclidx.ACLMetadataIndex), a[1].(ifaceidx.IfaceMetadataIndex), a[2].(logging.Logger))
+		},
+	})
 }
 
-func CompatibleABFVppHandler(ch govppapi.Channel, aclIdx aclidx.ACLMetadataIndex, ifIdx ifaceidx.IfaceMetadataIndex, log logging.Logger) ABFVppAPI {
-	if len(Versions) == 0 {
-		// abfplugin is not loaded
-		return nil
+func CompatibleABFHandler(c vpp.Client, aclIdx aclidx.ACLMetadataIndex, ifIdx ifaceidx.IfaceMetadataIndex, log logging.Logger) ABFVppAPI {
+	if v := Handler.FindCompatibleVersion(c); v != nil {
+		return v.NewHandler(c, aclIdx, ifIdx, log).(ABFVppAPI)
 	}
-	for ver, h := range Versions {
-		log.Debugf("checking compatibility with %s", ver)
-		if err := ch.CheckCompatiblity(h.Msgs...); err != nil {
-			continue
-		}
-		log.Debug("found compatible version:", ver)
-		return h.New(ch, aclIdx, ifIdx, log)
-	}
-	panic("no compatible version available")
+	return nil
 }

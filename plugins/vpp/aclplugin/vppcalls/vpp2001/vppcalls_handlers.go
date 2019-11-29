@@ -16,33 +16,35 @@ package vpp2001
 
 import (
 	govppapi "git.fd.io/govpp.git/api"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp"
 
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/aclplugin/vppcalls"
-	vpp_acl "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/acl"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324/acl"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
 )
 
 func init() {
-	var msgs []govppapi.Message
-	msgs = append(msgs, vpp_acl.AllMessages()...)
-
-	vppcalls.Versions["vpp2001"] = vppcalls.HandlerVersion{
-		Msgs: msgs,
-		New: func(ch govppapi.Channel, ifIdx ifaceidx.IfaceMetadataIndex) vppcalls.ACLVppAPI {
-			return NewACLVppHandler(ch, ifIdx)
-		},
-	}
+	msgs := acl.AllMessages()
+	vppcalls.AddHandlerVersion(vpp2001.Version, msgs, NewACLVppHandler)
 }
 
 // ACLVppHandler is accessor for acl-related vppcalls methods
 type ACLVppHandler struct {
 	callsChannel govppapi.Channel
-	ifIndexes    ifaceidx.IfaceMetadataIndex
+	// TODO: use only RPC service
+	acl       acl.RPCService
+	ifIndexes ifaceidx.IfaceMetadataIndex
 }
 
-func NewACLVppHandler(ch govppapi.Channel, ifIdx ifaceidx.IfaceMetadataIndex) *ACLVppHandler {
+func NewACLVppHandler(c vpp.Client, ifIdx ifaceidx.IfaceMetadataIndex) vppcalls.ACLVppAPI {
+	ch, err := c.NewAPIChannel()
+	if err != nil {
+		return nil
+	}
 	return &ACLVppHandler{
 		callsChannel: ch,
+		acl:          acl.NewServiceClient(ch),
 		ifIndexes:    ifIdx,
 	}
 }

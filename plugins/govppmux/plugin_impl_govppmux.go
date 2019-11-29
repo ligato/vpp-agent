@@ -1,16 +1,16 @@
-// Copyright (c) 2017 Cisco and/or its affiliates.
+//  Copyright (c) 2019 Cisco and/or its affiliates.
 //
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at:
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at:
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//      http://www.apache.org/licenses/LICENSE-2.0
 //
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
 
 package govppmux
 
@@ -29,7 +29,6 @@ import (
 	"github.com/ligato/cn-infra/health/statuscheck"
 	"github.com/ligato/cn-infra/infra"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/rpc/rest"
 	"github.com/pkg/errors"
 
@@ -41,42 +40,36 @@ import (
 	_ "go.ligato.io/vpp-agent/v2/plugins/govppmux/vppcalls/vpp2001_324"
 )
 
-//go:generate protoc --proto_path=. --go_out=plugins=grpc:. model/metrics.proto
-
 var (
 	disabledSocketClient = os.Getenv("GOVPPMUX_NOSOCK") != ""
 )
 
-// Plugin implements the govppmux plugin interface.
+// Plugin is the govppmux plugin implementation.
 type Plugin struct {
 	Deps
 
-	vppConn      *govpp.Connection
-	vppAdapter   adapter.VppAPI
-	statsConn    govppapi.StatsProvider
-	statsAdapter adapter.StatsAPI
-	vppConChan   chan govpp.ConnectionEvent
-	lastConnErr  error
+	config *Config
 
-	// mu protects fields below (vppInfo, lastEvent)
+	vppAdapter  adapter.VppAPI
+	vppConn     *govpp.Connection
+	vppConChan  chan govpp.ConnectionEvent
+	lastConnErr error
+	vppapiChan  govppapi.Channel
+
+	statsAdapter adapter.StatsAPI
+	statsConn    govppapi.StatsProvider
+
+	// infoMu synchonizes access to fields
+	// vppInfo and lastEvent
 	infoMu    sync.Mutex
 	vppInfo   VPPInfo
 	lastEvent govpp.ConnectionEvent
 
-	config *Config
-
-	// Cancel can be used to cancel all goroutines and their jobs inside of the plugin.
 	cancel context.CancelFunc
-
-	// Plugin-wide tracer instance used to trace and time-measure binary API calls. Can be nil if not set.
-	tracer measure.Tracer
-
-	// Wait group allows to wait until all goroutines of the plugin have finished.
-	wg sync.WaitGroup
+	wg     sync.WaitGroup
 }
 
-// Deps groups injected dependencies of plugin
-// so that they do not mix with other plugin fields.
+// Deps defines dependencies for the govppmux plugin.
 type Deps struct {
 	infra.PluginDeps
 	HTTPHandlers rest.HTTPHandlers
@@ -96,11 +89,6 @@ func (p *Plugin) Init() (err error) {
 	govpp.HealthCheckReplyTimeout = p.config.HealthCheckReplyTimeout
 	govpp.HealthCheckThreshold = p.config.HealthCheckThreshold
 	govpp.DefaultReplyTimeout = p.config.ReplyTimeout
-
-	if p.config.TraceEnabled {
-		p.tracer = measure.NewTracer("govpp-mux")
-		p.Log.Info("VPP API trace enabled")
-	}
 
 	// register REST API handlers
 	p.registerHandlers(p.HTTPHandlers)
@@ -199,35 +187,71 @@ func (p *Plugin) Close() error {
 
 	return nil
 }
-
-// VPPInfo returns information about VPP session.
-func (p *Plugin) VPPInfo() (VPPInfo, error) {
+func (p *Plugin) CheckCompatiblity(msgs ...govppapi.Message) error {
 	p.infoMu.Lock()
 	defer p.infoMu.Unlock()
-	return p.vppInfo, nil
+	if p.vppapiChan == nil {
+		apiChan, err := p.vppConn.NewAPIChannel()
+		if err != nil {
+			return err
+		}
+		p.vppapiChan = apiChan
+	}
+	return p.vppapiChan.CheckCompatiblity(msgs...)
 }
 
-func (p *Plugin) updateVPPInfo() error {
+func (p *Plugin) Stats() govppapi.StatsProvider {
+	return p
+}
+
+func (p *Plugin) StatsConnected() bool {
+	return p.statsConn != nil
+}
+
+// VPPInfo returns information about VPP session.
+func (p *Plugin) VPPInfo() VPPInfo {
+	p.infoMu.Lock()
+	defer p.infoMu.Unlock()
+	return p.vppInfo
+}
+
+// IsPluginLoaded returns true if plugin is loaded.
+func (p *Plugin) IsPluginLoaded(plugin string) bool {
+	p.infoMu.Lock()
+	defer p.infoMu.Unlock()
+	for _, p := range p.vppInfo.Plugins {
+		if p.Name == plugin {
+			return true
+		}
+	}
+	return false
+}
+
+func (p *Plugin) updateVPPInfo() (err error) {
 	if p.vppConn == nil {
 		return fmt.Errorf("VPP connection is nil")
 	}
 
-	vppAPIChan, err := p.vppConn.NewAPIChannel()
+	ctx := context.Background()
+
+	p.vppapiChan, err = p.vppConn.NewAPIChannel()
 	if err != nil {
 		return err
 	}
-	defer vppAPIChan.Close()
 
-	vpeHandler := vppcalls.CompatibleVpeHandler(vppAPIChan)
+	vpeHandler := vppcalls.CompatibleHandler(p)
+	if vpeHandler == nil {
+		return errors.New("no compatible VPP handler found")
+	}
 
-	version, err := vpeHandler.RunCli("show version verbose")
+	version, err := vpeHandler.RunCli(ctx, "show version verbose")
 	if err != nil {
 		p.Log.Warnf("RunCli error: %v", err)
 	} else {
 		p.Log.Debugf("vpp# show version verbose\n%s", version)
 	}
 
-	cmdline, err := vpeHandler.RunCli("show version cmdline")
+	cmdline, err := vpeHandler.RunCli(ctx, "show version cmdline")
 	if err != nil {
 		p.Log.Warnf("RunCli error: %v", err)
 	} else {
@@ -235,28 +259,40 @@ func (p *Plugin) updateVPPInfo() error {
 		p.Log.Debugf("vpp# show version cmdline:\n%s", out)
 	}
 
-	ver, err := vpeHandler.GetVersionInfo()
+	ver, err := vpeHandler.GetVersion(ctx)
 	if err != nil {
 		return err
 	}
-
-	p.Log.Infof("VPP version: %v", ver.Version)
-
-	vpe, err := vpeHandler.GetVpeInfo()
+	session, err := vpeHandler.GetSession(ctx)
 	if err != nil {
 		return err
 	}
-
 	p.Log.WithFields(logging.Fields{
-		"PID":      vpe.PID,
-		"ClientID": vpe.ClientIdx,
-	}).Debugf("loaded %d VPP modules: %v", len(vpe.ModuleVersions), vpe.ModuleVersions)
+		"PID":      session.PID,
+		"ClientID": session.ClientIdx,
+	}).Infof("VPP version: %v", ver.Version)
+
+	modules, err := vpeHandler.GetModules(ctx)
+	if err != nil {
+		return err
+	}
+	p.Log.Debugf("VPP has %d core modules: %v", len(modules), modules)
+
+	plugins, err := vpeHandler.GetPlugins(ctx)
+	if err != nil {
+		return err
+	}
+	p.Log.Debugf("VPP loaded %d plugins", len(plugins))
+	for _, plugin := range plugins {
+		p.Log.Debugf(" - plugin: %v", plugin)
+	}
 
 	p.infoMu.Lock()
 	p.vppInfo = VPPInfo{
 		Connected:   true,
 		VersionInfo: *ver,
-		VpeInfo:     *vpe,
+		SessionInfo: *session,
+		Plugins:     plugins,
 	}
 	p.infoMu.Unlock()
 

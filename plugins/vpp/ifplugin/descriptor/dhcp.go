@@ -53,15 +53,15 @@ type DHCPDescriptor struct {
 
 // NewDHCPDescriptor creates a new instance of DHCPDescriptor.
 func NewDHCPDescriptor(kvscheduler kvs.KVScheduler, ifHandler vppcalls.InterfaceVppAPI,
-	ifIndex ifaceidx.IfaceMetadataIndex, log logging.PluginLogger) (descr *kvs.KVDescriptor, ctx *DHCPDescriptor) {
-
-	ctx = &DHCPDescriptor{
+	ifIndex ifaceidx.IfaceMetadataIndex, log logging.PluginLogger,
+) (*kvs.KVDescriptor, *DHCPDescriptor) {
+	ctx := &DHCPDescriptor{
 		kvscheduler: kvscheduler,
 		ifHandler:   ifHandler,
 		ifIndex:     ifIndex,
 		log:         log.NewLogger("dhcp-descriptor"),
 	}
-	descr = &kvs.KVDescriptor{
+	descr := &kvs.KVDescriptor{
 		Name:                 DHCPDescriptorName,
 		KeySelector:          ctx.IsDHCPRelatedKey,
 		KeyLabel:             ctx.InterfaceNameFromKey,
@@ -72,7 +72,7 @@ func NewDHCPDescriptor(kvscheduler kvs.KVScheduler, ifHandler vppcalls.Interface
 		DerivedValues:        ctx.DerivedValues, // IP address from DHCP lease
 		RetrieveDependencies: []string{InterfaceDescriptorName},
 	}
-	return
+	return descr, ctx
 }
 
 // WatchDHCPNotifications starts watching for DHCP notifications.

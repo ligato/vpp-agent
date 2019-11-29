@@ -33,7 +33,7 @@ func TestArp(t *testing.T) {
 	ctx := setupVPP(t)
 	defer ctx.teardownVPP()
 
-	ih := ifplugin_vppcalls.CompatibleInterfaceVppHandler(ctx.vppBinapi, logrus.NewLogger("test"))
+	ih := ifplugin_vppcalls.CompatibleInterfaceVppHandler(ctx.vppClient, logrus.NewLogger("test"))
 	const ifName = "loop1"
 	ifIdx, err := ih.AddLoopbackInterface(ifName)
 	if err != nil {

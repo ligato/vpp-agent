@@ -19,6 +19,7 @@ import (
 
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
 	srv6 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/srv6"
 )
@@ -62,23 +63,28 @@ type SRv6VPPRead interface {
 	RetrievePolicyIndexInfo(policy *srv6.Policy) (policyIndex uint32, segmentListIndexes map[*srv6.Policy_SegmentList]uint32, err error)
 }
 
-var Versions = map[string]HandlerVersion{}
+var Handler = vpp.RegisterHandler(vpp.HandlerDesc{
+	Name:       "srv6",
+	HandlerAPI: (*SRv6VppAPI)(nil),
+})
 
-type HandlerVersion struct {
-	Msgs []govppapi.Message
-	New  func(govppapi.Channel, ifaceidx.IfaceMetadataIndex, logging.Logger) SRv6VppAPI
+type NewHandlerFunc func(vpp.Client, ifaceidx.IfaceMetadataIndex, logging.Logger) SRv6VppAPI
+
+func AddHandlerVersion(version string, msgs []govppapi.Message, h NewHandlerFunc) {
+	Handler.AddVersion(vpp.HandlerVersion{
+		Version: version,
+		Check: func(c vpp.Client) error {
+			return c.CheckCompatiblity(msgs...)
+		},
+		NewHandler: func(c vpp.Client, a ...interface{}) vpp.HandlerAPI {
+			return h(c, a[0].(ifaceidx.IfaceMetadataIndex), a[1].(logging.Logger))
+		},
+	})
 }
 
-func CompatibleSRv6VppHandler(
-	ch govppapi.Channel, idx ifaceidx.IfaceMetadataIndex, log logging.Logger,
-) SRv6VppAPI {
-	for ver, h := range Versions {
-		log.Debugf("checking compatibility with %s", ver)
-		if err := ch.CheckCompatiblity(h.Msgs...); err != nil {
-			continue
-		}
-		log.Debug("found compatible version:", ver)
-		return h.New(ch, idx, log)
+func CompatibleSRv6Handler(c vpp.Client, ifIdx ifaceidx.IfaceMetadataIndex, log logging.Logger) SRv6VppAPI {
+	if v := Handler.FindCompatibleVersion(c); v != nil {
+		return v.NewHandler(c, ifIdx, log).(SRv6VppAPI)
 	}
-	panic("no compatible version available")
+	return nil
 }

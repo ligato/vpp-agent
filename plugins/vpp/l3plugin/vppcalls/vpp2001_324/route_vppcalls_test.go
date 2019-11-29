@@ -17,10 +17,9 @@ package vpp2001_324_test
 import (
 	"testing"
 
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/l3plugin/vrfidx"
-
 	"github.com/ligato/cn-infra/logging/logrus"
 	. "github.com/onsi/gomega"
+
 	netallock_mock "go.ligato.io/vpp-agent/v2/plugins/netalloc/mock"
 	vpp_ip "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324/ip"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
@@ -28,6 +27,7 @@ import (
 	ifvpp2001_324 "go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/vppcalls/vpp2001_324"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/l3plugin/vppcalls"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/l3plugin/vppcalls/vpp2001_324"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/l3plugin/vrfidx"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/vppcallmock"
 	l3 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l3"
 )
@@ -87,7 +87,7 @@ func TestDeleteRoute(t *testing.T) {
 func routeTestSetup(t *testing.T) (*vppcallmock.TestCtx, ifvppcalls.InterfaceVppAPI, vppcalls.RouteVppAPI) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	log := logrus.NewLogger("test-log")
-	ifHandler := ifvpp2001_324.NewInterfaceVppHandler(ctx.MockChannel, log)
+	ifHandler := ifvpp2001_324.NewInterfaceVppHandler(ctx.MockVPPClient, log)
 	ifIndexes := ifaceidx.NewIfaceIndex(logrus.NewLogger("test-if"), "test-if")
 	vrfIndexes := vrfidx.NewVRFIndex(logrus.NewLogger("test-vrf"), "test-vrf")
 	ifIndexes.Put("iface1", &ifaceidx.IfaceMetadata{

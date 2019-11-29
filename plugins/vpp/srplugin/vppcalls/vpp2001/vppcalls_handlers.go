@@ -17,42 +17,45 @@ package vpp2001
 import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
-	vpe_vppcalls "go.ligato.io/vpp-agent/v2/plugins/govppmux/vppcalls"
-	vpe_vpp2001_379 "go.ligato.io/vpp-agent/v2/plugins/govppmux/vppcalls/vpp2001"
-	vpp_sr "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/sr"
-	vpp_vpe "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/vpe"
+
+	core_vppcalls "go.ligato.io/vpp-agent/v2/plugins/govppmux/vppcalls"
+	core_vpp2001 "go.ligato.io/vpp-agent/v2/plugins/govppmux/vppcalls/vpp2001"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/sr"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/vpe"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/srplugin/vppcalls"
 )
 
 func init() {
-	var msgs []govppapi.Message
-	msgs = append(msgs, vpp_sr.AllMessages()...)
-	msgs = append(msgs, vpp_vpe.AllMessages()...) // using also vpe -> need to have correct vpp version also for vpe
-
-	vppcalls.Versions["vpp2001"] = vppcalls.HandlerVersion{
-		Msgs: msgs,
-		New: func(ch govppapi.Channel, ifIndexes ifaceidx.IfaceMetadataIndex, log logging.Logger) vppcalls.SRv6VppAPI {
-			return NewSRv6VppHandler(ch, ifIndexes, log)
-		},
-	}
+	msgs := vpp.Messages(
+		sr.AllMessages,
+		vpe.AllMessages, // using also vpe -> need to have correct vpp version also for vpe
+	)
+	vppcalls.AddHandlerVersion(vpp2001.Version, msgs.AllMessages(), NewSRv6VppHandler)
 }
 
 // SRv6VppHandler is accessor for SRv6-related vppcalls methods
 type SRv6VppHandler struct {
-	vpe_vppcalls.VpeVppAPI
+	core_vppcalls.VppCoreAPI
 
 	log          logging.Logger
-	ifIndexes    ifaceidx.IfaceMetadataIndex
 	callsChannel govppapi.Channel
+	ifIndexes    ifaceidx.IfaceMetadataIndex
 }
 
 // NewSRv6VppHandler creates new instance of SRv6 vppcalls handler
-func NewSRv6VppHandler(vppChan govppapi.Channel, ifIndexes ifaceidx.IfaceMetadataIndex, log logging.Logger) *SRv6VppHandler {
+func NewSRv6VppHandler(c vpp.Client, ifIdx ifaceidx.IfaceMetadataIndex, log logging.Logger) vppcalls.SRv6VppAPI {
+	vppChan, err := c.NewAPIChannel()
+	if err != nil {
+		logging.Warnf("failed to create API channel")
+		return nil
+	}
 	return &SRv6VppHandler{
 		callsChannel: vppChan,
-		ifIndexes:    ifIndexes,
+		ifIndexes:    ifIdx,
 		log:          log,
-		VpeVppAPI:    vpe_vpp2001_379.NewVpeHandler(vppChan),
+		VppCoreAPI:   core_vpp2001.NewVpeHandler(vppChan),
 	}
 }

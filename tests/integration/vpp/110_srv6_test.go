@@ -71,7 +71,7 @@ func TestLocalsidCRUD(t *testing.T) {
 	defer ctx.teardownVPP()
 
 	// create interfaces (for referencing from localsids)
-	ih := ifplugin_vppcalls.CompatibleInterfaceVppHandler(ctx.vppBinapi, logrus.NewLogger("test"))
+	ih := ifplugin_vppcalls.CompatibleInterfaceVppHandler(ctx.vppClient, logrus.NewLogger("test"))
 	const ifName = "loop1"
 	ifIdx, err := ih.AddLoopbackInterface(ifName)
 	Expect(err).To(BeNil(), fmt.Sprintf("fixture setup failed in creating of interface %v: %v", ifName, err))
@@ -96,7 +96,7 @@ func TestLocalsidCRUD(t *testing.T) {
 	}
 
 	// SRv6 handler
-	srh := srv6_vppcalls.CompatibleSRv6VppHandler(ctx.vppBinapi, ifIndexes, logrus.NewLogger("test"))
+	srh := srv6_vppcalls.CompatibleSRv6Handler(ctx.vppClient, ifIndexes, logrus.NewLogger("test"))
 
 	tests := []struct {
 		name                string

@@ -17,7 +17,6 @@
 package aclplugin
 
 import (
-	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/health/statuscheck"
 	"github.com/ligato/cn-infra/infra"
 	"github.com/pkg/errors"
@@ -40,9 +39,6 @@ import (
 type ACLPlugin struct {
 	Deps
 
-	// GoVPP channels
-	vppCh govppapi.Channel
-
 	aclHandler             vppcalls.ACLVppAPI
 	aclDescriptor          *descriptor.ACLDescriptor
 	aclInterfaceDescriptor *descriptor.ACLToInterfaceDescriptor
@@ -55,22 +51,20 @@ type ACLPlugin struct {
 type Deps struct {
 	infra.PluginDeps
 	Scheduler   kvs.KVScheduler
-	GoVppmux    govppmux.API
+	VPP         govppmux.API
 	IfPlugin    ifplugin.API
 	StatusCheck statuscheck.PluginStatusWriter // optional
 }
 
 // Init initializes ACL plugin.
-func (p *ACLPlugin) Init() error {
-	var err error
-
-	// GoVPP channels
-	if p.vppCh, err = p.GoVppmux.NewAPIChannel(); err != nil {
-		return errors.Errorf("failed to create GoVPP API channel: %v", err)
+func (p *ACLPlugin) Init() (err error) {
+	if !p.VPP.IsPluginLoaded("acl") {
+		p.Log.Warnf("VPP plugin ACL was disabled by VPP")
+		return nil
 	}
 
 	// init handlers
-	p.aclHandler = vppcalls.CompatibleACLVppHandler(p.vppCh, p.IfPlugin.GetInterfaceIndex(), p.Log)
+	p.aclHandler = vppcalls.CompatibleACLHandler(p.VPP, p.IfPlugin.GetInterfaceIndex())
 	if p.aclHandler == nil {
 		return errors.New("aclHandler is not available")
 	}

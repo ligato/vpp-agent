@@ -20,6 +20,7 @@ import (
 
 	"git.fd.io/govpp.git/core"
 	. "github.com/onsi/gomega"
+
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/vppcallmock"
 )
 
@@ -75,7 +76,7 @@ func TestRequestRetry(t *testing.T) {
 			defer ctx.TeardownTestCtx()
 
 			retryCfg := retryConfig{test.attempts, test.timeout}
-			ch := newGovppChan(ctx.MockChannel, retryCfg, nil)
+			ch := newGovppChan(ctx.MockChannel, retryCfg)
 
 			ctx.MockChannel.RetErrs = test.retErrs
 

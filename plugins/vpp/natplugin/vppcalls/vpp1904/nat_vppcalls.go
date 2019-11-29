@@ -220,8 +220,8 @@ func (h *NatVppHandler) handleNat44StaticMapping(mapping *nat.DNat44_StaticMappi
 	lcPort := uint16(mapping.LocalIps[0].LocalPort)
 	lcVrf := mapping.LocalIps[0].VrfId
 	if lcIPAddr == nil {
-		return errors.Errorf("cannot configure DNAT static mapping %s: unable to parse local IP %s",
-			dnatLabel, lcIPAddr.String())
+		return errors.Errorf("cannot configure DNAT static mapping %s: unable to parse local IP %v",
+			dnatLabel, lcIPAddr)
 	}
 
 	// Check external interface (prioritized over external IP)

@@ -15,6 +15,7 @@
 package descriptor
 
 import (
+	context2 "context"
 	"fmt"
 	"hash/fnv"
 	"net"
@@ -190,12 +191,16 @@ type NetlinkAPI interface {
 }
 
 // NewInterfaceDescriptor creates a new instance of the Interface descriptor.
-func NewInterfaceDescriptor(ifHandler vppcalls.InterfaceVppAPI, addrAlloc netalloc.AddressAllocator,
-	defaultMtu uint32, linuxIfHandler NetlinkAPI, linuxIfPlugin LinuxPluginAPI, nsPlugin nsplugin.API,
-	log logging.PluginLogger) (descr *kvs.KVDescriptor, ctx *InterfaceDescriptor) {
-
-	// descriptor context
-	ctx = &InterfaceDescriptor{
+func NewInterfaceDescriptor(
+	ifHandler vppcalls.InterfaceVppAPI,
+	addrAlloc netalloc.AddressAllocator,
+	defaultMtu uint32,
+	linuxIfHandler NetlinkAPI,
+	linuxIfPlugin LinuxPluginAPI,
+	nsPlugin nsplugin.API,
+	log logging.PluginLogger,
+) (*kvs.KVDescriptor, *InterfaceDescriptor) {
+	ctx := &InterfaceDescriptor{
 		ifHandler:       ifHandler,
 		addrAlloc:       addrAlloc,
 		defaultMtu:      defaultMtu,
@@ -207,8 +212,6 @@ func NewInterfaceDescriptor(ifHandler vppcalls.InterfaceVppAPI, addrAlloc netall
 		ethernetIfs:     make(map[string]uint32),
 		bondIDs:         make(map[uint32]string),
 	}
-
-	// descriptor
 	typedDescr := &adapter.InterfaceDescriptor{
 		Name:               InterfaceDescriptorName,
 		NBKeyPrefix:        interfaces.ModelInterface.KeyPrefix(),
@@ -230,10 +233,11 @@ func NewInterfaceDescriptor(ifHandler vppcalls.InterfaceVppAPI, addrAlloc netall
 			// refresh the pool of allocated IP addresses first
 			netalloc_descr.IPAllocDescriptorName,
 			// If Linux-IfPlugin is loaded, dump it first.
-			linux_ifdescriptor.InterfaceDescriptorName},
+			linux_ifdescriptor.InterfaceDescriptorName,
+		},
 	}
-	descr = adapter.NewInterfaceDescriptor(typedDescr)
-	return
+	descr := adapter.NewInterfaceDescriptor(typedDescr)
+	return descr, ctx
 }
 
 // SetInterfaceIndex should be used to provide interface index immediately after
@@ -832,7 +836,7 @@ func (d *InterfaceDescriptor) resolveMemifSocketFilename(memifIf *interfaces.Mem
 	if !registered {
 		// Register new socket. ID is generated (default filename ID is 0, first is ID 1, second ID 2, etc)
 		registeredID = uint32(len(d.memifSocketToID))
-		err := d.ifHandler.RegisterMemifSocketFilename(socketFileName, registeredID)
+		err := d.ifHandler.RegisterMemifSocketFilename(context2.TODO(), socketFileName, registeredID)
 		if err != nil {
 			return 0, errors.Errorf("error registering socket file name %s (ID %d): %v", socketFileName, registeredID, err)
 		}
@@ -907,7 +911,7 @@ func generateTAPHostName(tapName string) string {
 // fnvHash hashes string using fnv32a algorithm.
 func fnvHash(s string) uint32 {
 	h := fnv.New32a()
-	h.Write([]byte(s))
+	_, _ = h.Write([]byte(s))
 	return h.Sum32()
 }
 

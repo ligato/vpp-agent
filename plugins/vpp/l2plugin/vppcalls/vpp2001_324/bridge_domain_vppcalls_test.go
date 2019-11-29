@@ -56,29 +56,6 @@ var createTestDataOutBD = &vpp_l2.BridgeDomainAddDel{
 	IsAdd:   1,
 }
 
-// Input test data for updating bridge domain
-var updateTestDataInBd = &l2.BridgeDomain{
-	Name:                dummyBridgeDomainName,
-	Flood:               false,
-	UnknownUnicastFlood: false,
-	Forward:             false,
-	Learn:               false,
-	ArpTermination:      false,
-	MacAge:              50,
-}
-
-// Output test data for updating bridge domain
-var updateTestDataOutBd = &vpp_l2.BridgeDomainAddDel{
-	BdID:    dummyBridgeDomain,
-	Flood:   0,
-	UuFlood: 0,
-	Forward: 0,
-	Learn:   0,
-	ArpTerm: 0,
-	MacAge:  50,
-	IsAdd:   1,
-}
-
 // Output test data for deleting bridge domain
 var deleteTestDataOutBd = &vpp_l2.BridgeDomainAddDel{
 	BdID:  dummyBridgeDomain,

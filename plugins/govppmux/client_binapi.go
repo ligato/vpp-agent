@@ -23,7 +23,6 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	"git.fd.io/govpp.git/core"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/measure"
 )
 
 // NewAPIChannel returns a new API channel for communication with VPP via govpp core.
@@ -41,7 +40,7 @@ func (p *Plugin) NewAPIChannel() (govppapi.Channel, error) {
 		p.config.RetryRequestCount,
 		p.config.RetryRequestTimeout,
 	}
-	return newGovppChan(ch, retryCfg, p.tracer), nil
+	return newGovppChan(ch, retryCfg), nil
 }
 
 // NewAPIChannelBuffered returns a new API channel for communication with VPP via govpp core.
@@ -59,7 +58,7 @@ func (p *Plugin) NewAPIChannelBuffered(reqChanBufSize, replyChanBufSize int) (go
 		p.config.RetryRequestCount,
 		p.config.RetryRequestTimeout,
 	}
-	return newGovppChan(ch, retryCfg, p.tracer), nil
+	return newGovppChan(ch, retryCfg), nil
 }
 
 // goVppChan implements govpp channel interface. Instance is returned by NewAPIChannel() or NewAPIChannelBuffered(),
@@ -69,15 +68,12 @@ type goVppChan struct {
 	govppapi.Channel
 	// Retry data
 	retry retryConfig
-	// tracer used to measure binary api call duration
-	tracer measure.Tracer
 }
 
-func newGovppChan(ch govppapi.Channel, retryCfg retryConfig, tracer measure.Tracer) *goVppChan {
+func newGovppChan(ch govppapi.Channel, retryCfg retryConfig) *goVppChan {
 	govppChan := &goVppChan{
 		Channel: ch,
 		retry:   retryCfg,
-		tracer:  tracer,
 	}
 	atomic.AddUint64(&stats.ChannelsCreated, 1)
 	atomic.AddUint64(&stats.ChannelsOpen, 1)
@@ -99,17 +95,15 @@ type retryConfig struct {
 type govppRequestCtx struct {
 	ctx  context.Context
 	task *trace.Task
+
 	// Original request context
 	requestCtx govppapi.RequestCtx
 	// Function allowing to re-send request in case it's granted by the config file
 	sendRequest func(govppapi.Message) govppapi.RequestCtx
 	// Parameter for sendRequest
 	requestMsg govppapi.Message
-	// Retry data
+
 	retry retryConfig
-	// Tracer object
-	tracer measure.Tracer
-	// Start time
 	start time.Time
 }
 
@@ -117,13 +111,12 @@ type govppRequestCtx struct {
 type govppMultirequestCtx struct {
 	ctx  context.Context
 	task *trace.Task
+
 	// Original multi request context
 	requestCtx govppapi.MultiRequestCtx
 	// Parameter for sendRequest
 	requestMsg govppapi.Message
-	// Tracer object
-	tracer measure.Tracer
-	// Start time
+
 	start time.Time
 }
 
@@ -147,19 +140,13 @@ func (c *goVppChan) SendRequest(request govppapi.Message) govppapi.RequestCtx {
 		sendRequest: c.Channel.SendRequest,
 		requestMsg:  request,
 		retry:       c.retry,
-		tracer:      c.tracer,
 		start:       start,
 	}
 }
 
 // ReceiveReply handles request and returns error if occurred. Also does retry if this option is available.
 func (r *govppRequestCtx) ReceiveReply(reply govppapi.Message) error {
-	defer func() {
-		r.task.End()
-		if r.tracer != nil {
-			r.tracer.LogTime(r.requestMsg.GetMessageName(), r.start)
-		}
-	}()
+	defer r.task.End()
 
 	var timeout time.Duration
 	maxRetries := r.retry.attempts
@@ -213,7 +200,6 @@ func (c *goVppChan) SendMultiRequest(request govppapi.Message) govppapi.MultiReq
 		task:       task,
 		requestCtx: requestCtx,
 		requestMsg: request,
-		tracer:     c.tracer,
 		start:      start,
 	}
 }
@@ -232,12 +218,7 @@ func (r *govppMultirequestCtx) ReceiveReply(reply govppapi.Message) (bool, error
 			atomic.AddUint64(&stats.RequestsFail, 1)
 		}
 
-		defer func() {
-			r.task.End()
-			if r.tracer != nil {
-				r.tracer.LogTime(r.requestMsg.GetMessageName(), r.start)
-			}
-		}()
+		defer r.task.End()
 	} else {
 		atomic.AddUint64(&stats.RequestReplies, 1)
 		trackMsgReply(reply.GetMessageName())

@@ -15,11 +15,12 @@
 package vppcalls
 
 import (
+	"context"
 	"net"
 
-	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 
+	"go.ligato.io/vpp-agent/v2/plugins/vpp"
 	interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
 )
 
@@ -113,42 +114,72 @@ type InterfaceSpanDetails struct {
 type InterfaceVppAPI interface {
 	InterfaceVppRead
 
+	MemifAPI
+	Wmxnet3API
+
 	// AddAfPacketInterface calls AfPacketCreate VPP binary API.
 	AddAfPacketInterface(ifName string, hwAddr string, afPacketIntf *interfaces.AfpacketLink) (swIndex uint32, err error)
 	// DeleteAfPacketInterface calls AfPacketDelete VPP binary API.
 	DeleteAfPacketInterface(ifName string, idx uint32, afPacketIntf *interfaces.AfpacketLink) error
+
 	// AddLoopbackInterface calls CreateLoopback bin API.
 	AddLoopbackInterface(ifName string) (swIndex uint32, err error)
 	// DeleteLoopbackInterface calls DeleteLoopback bin API.
 	DeleteLoopbackInterface(ifName string, idx uint32) error
-	// AddMemifInterface calls MemifCreate bin API.
-	AddMemifInterface(ifName string, memIface *interfaces.MemifLink, socketID uint32) (swIdx uint32, err error)
-	// DeleteMemifInterface calls MemifDelete bin API.
-	DeleteMemifInterface(ifName string, idx uint32) error
+
 	// AddTapInterface calls TapConnect bin API.
 	AddTapInterface(ifName string, tapIf *interfaces.TapLink) (swIfIdx uint32, err error)
 	// DeleteTapInterface calls TapDelete bin API.
 	DeleteTapInterface(ifName string, idx uint32, version uint32) error
+
 	// AddVxLanTunnel calls AddDelVxLanTunnelReq with flag add=1.
 	AddVxLanTunnel(ifName string, vrf, multicastIf uint32, vxLan *interfaces.VxlanLink) (swIndex uint32, err error)
 	// DeleteVxLanTunnel calls AddDelVxLanTunnelReq with flag add=0.
 	DeleteVxLanTunnel(ifName string, idx, vrf uint32, vxLan *interfaces.VxlanLink) error
+
 	// AddVxLanGpeTunnel creates VxLAN-GPE tunnel.
 	AddVxLanGpeTunnel(ifName string, vrf, multicastIf uint32, vxLan *interfaces.VxlanLink) (uint32, error)
 	// DeleteVxLanGpeTunnel removes VxLAN-GPE tunnel.
 	DeleteVxLanGpeTunnel(ifName string, vxLan *interfaces.VxlanLink) error
+
 	// AddIPSecTunnelInterface adds a new IPSec tunnel interface
 	AddIPSecTunnelInterface(ifName string, ipSecLink *interfaces.IPSecLink) (uint32, error)
 	// DeleteIPSecTunnelInterface removes existing IPSec tunnel interface
 	DeleteIPSecTunnelInterface(ifName string, ipSecLink *interfaces.IPSecLink) error
-	// AddVmxNet3 configures vmxNet3 interface. Second parameter is optional in this case.
-	AddVmxNet3(ifName string, vmxNet3 *interfaces.VmxNet3Link) (uint32, error)
-	// DeleteVmxNet3 removes vmxNet3 interface
-	DeleteVmxNet3(ifName string, ifIdx uint32) error
+
 	// AddBondInterface configures bond interface.
 	AddBondInterface(ifName string, mac string, bondLink *interfaces.BondLink) (uint32, error)
 	// DeleteBondInterface removes bond interface.
 	DeleteBondInterface(ifName string, ifIdx uint32) error
+
+	// AddSpan creates new span record
+	AddSpan(ifIdxFrom, ifIdxTo uint32, direction uint8, isL2 uint8) error
+	// DelSpan removes new span record
+	DelSpan(ifIdxFrom, ifIdxTo uint32, isL2 uint8) error
+
+	// AddGreTunnel adds new GRE interface.
+	AddGreTunnel(ifName string, greLink *interfaces.GreLink) (uint32, error)
+	// DelGreTunnel removes GRE interface.
+	DelGreTunnel(ifName string, greLink *interfaces.GreLink) (uint32, error)
+
+	// AddGtpuTunnel adds new GTPU interface.
+	AddGtpuTunnel(ifName string, gtpuLink *interfaces.GtpuLink, multicastIf uint32) (uint32, error)
+	// DelGtpuTunnel removes GTPU interface.
+	DelGtpuTunnel(ifName string, gtpuLink *interfaces.GtpuLink) error
+
+	// CreateSubif creates sub interface.
+	CreateSubif(ifIdx, vlanID uint32) (swIfIdx uint32, err error)
+	// DeleteSubif deletes sub interface.
+	DeleteSubif(ifIdx uint32) error
+
+	// AttachInterfaceToBond adds interface as a slave to the bond interface.
+	AttachInterfaceToBond(ifIdx, bondIfIdx uint32, isPassive, isLongTimeout bool) error
+	// DetachInterfaceFromBond removes interface slave status from any bond interfaces.
+	DetachInterfaceFromBond(ifIdx uint32) error
+
+	// SetVLanTagRewrite sets VLan tag rewrite rule for given sub-interface
+	SetVLanTagRewrite(ifIdx uint32, subIf *interfaces.SubInterface) error
+
 	// InterfaceAdminDown calls binary API SwInterfaceSetFlagsReply with AdminUpDown=0.
 	InterfaceAdminDown(ifIdx uint32) error
 	// InterfaceAdminUp calls binary API SwInterfaceSetFlagsReply with AdminUpDown=1.
@@ -175,8 +206,6 @@ type InterfaceVppAPI interface {
 	UnsetUnnumberedIP(uIfIdx uint32) error
 	// SetInterfaceMac calls SwInterfaceSetMacAddress bin API.
 	SetInterfaceMac(ifIdx uint32, macAddress string) error
-	// RegisterMemifSocketFilename registers new socket file name with provided ID.
-	RegisterMemifSocketFilename(filename string, id uint32) error
 	// SetInterfaceMtu calls HwInterfaceSetMtu bin API with desired MTU value.
 	SetInterfaceMtu(ifIdx uint32, mtu uint32) error
 	// SetRxMode calls SwInterfaceSetRxMode bin API
@@ -187,28 +216,24 @@ type InterfaceVppAPI interface {
 	SetInterfaceVrf(ifaceIndex, vrfID uint32) error
 	// SetInterfaceVrfIPv6 sets IPV6 VRF table for the interface
 	SetInterfaceVrfIPv6(ifaceIndex, vrfID uint32) error
-	// CreateSubif creates sub interface.
-	CreateSubif(ifIdx, vlanID uint32) (swIfIdx uint32, err error)
-	// DeleteSubif deletes sub interface.
-	DeleteSubif(ifIdx uint32) error
-	// AttachInterfaceToBond adds interface as a slave to the bond interface.
-	AttachInterfaceToBond(ifIdx, bondIfIdx uint32, isPassive, isLongTimeout bool) error
-	// DetachInterfaceFromBond removes interface slave status from any bond interfaces.
-	DetachInterfaceFromBond(ifIdx uint32) error
-	// SetVLanTagRewrite sets VLan tag rewrite rule for given sub-interface
-	SetVLanTagRewrite(ifIdx uint32, subIf *interfaces.SubInterface) error
-	// AddSpan creates new span record
-	AddSpan(ifIdxFrom, ifIdxTo uint32, direction uint8, isL2 uint8) error
-	// DelSpan removes new span record
-	DelSpan(ifIdxFrom, ifIdxTo uint32, isL2 uint8) error
-	// AddGreTunnel adds new GRE interface.
-	AddGreTunnel(ifName string, greLink *interfaces.GreLink) (uint32, error)
-	// DelGreTunnel removes GRE interface.
-	DelGreTunnel(ifName string, greLink *interfaces.GreLink) (uint32, error)
-	// AddGtpuTunnel adds new GTPU interface.
-	AddGtpuTunnel(ifName string, gtpuLink *interfaces.GtpuLink, multicastIf uint32) (uint32, error)
-	// DelGtpuTunnel removes GTPU interface.
-	DelGtpuTunnel(ifName string, gtpuLink *interfaces.GtpuLink) error
+}
+
+type MemifAPI interface {
+	// AddMemifInterface calls MemifCreate bin API.
+	AddMemifInterface(ctx context.Context, ifName string, memIface *interfaces.MemifLink, socketID uint32) (swIdx uint32, err error)
+	// DeleteMemifInterface calls MemifDelete bin API.
+	DeleteMemifInterface(ctx context.Context, ifName string, idx uint32) error
+	// RegisterMemifSocketFilename registers new socket file name with provided ID.
+	RegisterMemifSocketFilename(ctx context.Context, filename string, id uint32) error
+	// DumpMemifSocketDetails dumps memif socket details from the VPP
+	DumpMemifSocketDetails(ctx context.Context) (map[string]uint32, error)
+}
+
+type Wmxnet3API interface {
+	// AddVmxNet3 configures vmxNet3 interface. Second parameter is optional in this case.
+	AddVmxNet3(ifName string, vmxNet3 *interfaces.VmxNet3Link) (uint32, error)
+	// DeleteVmxNet3 removes vmxNet3 interface
+	DeleteVmxNet3(ifName string, ifIdx uint32) error
 }
 
 // InterfaceVppRead provides read methods for interface plugin
@@ -218,9 +243,10 @@ type InterfaceVppRead interface {
 	//
 	// LIMITATIONS:
 	// - there is no af_packet dump binary API. We relay on naming conventions of the internal VPP interface names
-	DumpInterfaces() (map[uint32]*InterfaceDetails, error)
+	//
+	DumpInterfaces(ctx context.Context) (map[uint32]*InterfaceDetails, error)
 	// DumpInterfacesByType returns all VPP interfaces of the specified type
-	DumpInterfacesByType(reqType interfaces.Interface_Type) (map[uint32]*InterfaceDetails, error)
+	DumpInterfacesByType(ctx context.Context, reqType interfaces.Interface_Type) (map[uint32]*InterfaceDetails, error)
 	// DumpInterfaceStates dumps link and administrative state of every interface.
 	DumpInterfaceStates(ifIdxs ...uint32) (map[uint32]*InterfaceState, error)
 	// DumpSpan returns all records from span table.
@@ -229,8 +255,6 @@ type InterfaceVppRead interface {
 	GetInterfaceVrf(ifIdx uint32) (vrfID uint32, err error)
 	// GetInterfaceVrfIPv6 reads IPv6 VRF table to interface
 	GetInterfaceVrfIPv6(ifIdx uint32) (vrfID uint32, err error)
-	// DumpMemifSocketDetails dumps memif socket details from the VPP
-	DumpMemifSocketDetails() (map[string]uint32, error)
 	// DumpDhcpClients dumps DHCP-related information for all interfaces.
 	DumpDhcpClients() (map[uint32]*Dhcp, error)
 	// WatchInterfaceEvents starts watching for interface events.
@@ -239,21 +263,18 @@ type InterfaceVppRead interface {
 	WatchDHCPLeases(ch chan<- *Lease) error
 }
 
-var Versions = map[string]HandlerVersion{}
+var Handler = vpp.RegisterHandler(vpp.HandlerDesc{
+	Name:       "interface",
+	HandlerAPI: (*InterfaceVppAPI)(nil),
+	NewFunc:    (*NewHandlerFunc)(nil),
+})
 
-type HandlerVersion struct {
-	Msgs []govppapi.Message
-	New  func(govppapi.Channel, logging.Logger) InterfaceVppAPI
-}
+type NewHandlerFunc func(vpp.Client, logging.Logger) InterfaceVppAPI
 
-func CompatibleInterfaceVppHandler(ch govppapi.Channel, log logging.Logger) InterfaceVppAPI {
-	for ver, h := range Versions {
-		log.Debugf("checking compatibility with %s", ver)
-		if err := ch.CheckCompatiblity(h.Msgs...); err != nil {
-			continue
-		}
-		log.Debug("found compatible version:", ver)
-		return h.New(ch, log)
+// CompatibleVpeHandler is helper for returning comptabile Handler.
+func CompatibleInterfaceVppHandler(c vpp.Client, log logging.Logger) InterfaceVppAPI {
+	if v := Handler.FindCompatibleVersion(c); v != nil {
+		return v.NewHandler(c, log).(InterfaceVppAPI)
 	}
-	panic("no compatible version available")
+	return nil
 }

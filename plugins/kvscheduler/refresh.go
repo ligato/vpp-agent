@@ -117,9 +117,10 @@ func (s *Scheduler) refreshGraph(graphW graph.RWAccess,
 
 		// mark un-retrievable as refreshed
 		if !ableToRetrieve || err != nil {
+			l := s.Log.WithField("descriptor", descriptor.Name)
 			if err != nil {
-				s.Log.WithField("descriptor", descriptor.Name).
-					Error("failed to retrieve values, refresh for the descriptor will be skipped")
+				l.Errorf("failed to retrieve values: %v", err)
+				l.Debugf("skipping refresh for the descriptor")
 			}
 			s.skipRefresh(descrNodes, nil, refreshedKeys)
 			continue

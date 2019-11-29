@@ -18,23 +18,38 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324"
 	vpp_stn "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324/stn"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/stnplugin/vppcalls"
 )
 
+/*var HandlerVersion = vpp.HandlerVersion{
+	Version: vpp2001_324.Version,
+	Check: func(c vpp.VPPClient) error {
+		var msgs []govppapi.Message
+		msgs = append(msgs, stn.AllMessages()...)
+		ch, err := c.NewAPIChannel()
+		if err != nil {
+			return err
+		}
+		return ch.CheckCompatiblity(msgs...)
+	},
+	NewHandler: func(c vpp.VPPClient, a ...interface{}) vpp.HandlerAPI {
+		ch, err := c.NewAPIChannel()
+		if err != nil {
+			return err
+		}
+		return NewStnVppHandler(ch, a[0].(ifaceidx.IfaceMetadataIndex), a[1].(logging.Logger))
+	},
+}*/
+
 func init() {
+	//vppcalls.AddVersion(HandlerVersion)
 	var msgs []govppapi.Message
 	msgs = append(msgs, vpp_stn.AllMessages()...)
 
-	vppcalls.Versions["vpp2001_324"] = vppcalls.HandlerVersion{
-		Msgs: msgs,
-		New: func(
-			ch govppapi.Channel, ifIdx ifaceidx.IfaceMetadataIndex, log logging.Logger,
-		) vppcalls.StnVppAPI {
-			return NewStnVppHandler(ch, ifIdx, log)
-		},
-	}
+	vppcalls.AddStnHandlerVersion(vpp2001_324.Version, msgs, NewStnVppHandler)
 }
 
 // StnVppHandler is accessor for STN-related vppcalls methods
@@ -47,7 +62,7 @@ type StnVppHandler struct {
 // NewStnVppHandler creates new instance of STN vppcalls handler
 func NewStnVppHandler(
 	callsChan govppapi.Channel, ifIndexes ifaceidx.IfaceMetadataIndex, log logging.Logger,
-) *StnVppHandler {
+) vppcalls.StnVppAPI {
 	return &StnVppHandler{
 		callsChannel: callsChan,
 		ifIndexes:    ifIndexes,

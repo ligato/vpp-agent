@@ -321,7 +321,7 @@ func (d *ACLDescriptor) equivalentIPRuleNetworks(net1, net2 string) bool {
 		return ipNet2 == nil || ip2.IsUnspecified()
 	}
 	if ipNet2 == nil {
-		return ipNet1 == nil || ip1.IsUnspecified()
+		return ip1.IsUnspecified()
 	}
 	return ip1.Equal(ip2) && bytes.Equal(ipNet1.Mask, ipNet2.Mask)
 }

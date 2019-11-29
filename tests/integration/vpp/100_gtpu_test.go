@@ -43,7 +43,7 @@ func TestGtpu(t *testing.T) {
 		}
 	}
 
-	h := ifplugin_vppcalls.CompatibleInterfaceVppHandler(ctx.vppBinapi, logrus.NewLogger("test"))
+	h := ifplugin_vppcalls.CompatibleInterfaceVppHandler(ctx.vppClient, logrus.NewLogger("test"))
 
 	tests := []struct {
 		name           string
@@ -149,7 +149,7 @@ func TestGtpu(t *testing.T) {
 			}
 
 			if dumpAPIOk {
-				ifaces, err := h.DumpInterfaces()
+				ifaces, err := h.DumpInterfaces(ctx.Context)
 				if err != nil {
 					t.Fatalf("dumping interfaces failed: %v", err)
 				}
@@ -195,7 +195,7 @@ func TestGtpu(t *testing.T) {
 			}
 
 			if dumpAPIOk {
-				ifaces, err := h.DumpInterfaces()
+				ifaces, err := h.DumpInterfaces(ctx.Context)
 				if err != nil {
 					t.Fatalf("dumping interfaces failed: %v", err)
 				}

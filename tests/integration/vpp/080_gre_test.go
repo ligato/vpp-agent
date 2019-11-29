@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/ligato/cn-infra/logging/logrus"
+
 	ifplugin_vppcalls "go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/vppcalls"
 	interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
 )
@@ -13,7 +14,7 @@ func TestGre(t *testing.T) {
 	ctx := setupVPP(t)
 	defer ctx.teardownVPP()
 
-	h := ifplugin_vppcalls.CompatibleInterfaceVppHandler(ctx.vppBinapi, logrus.NewLogger("test"))
+	h := ifplugin_vppcalls.CompatibleInterfaceVppHandler(ctx.vppClient, logrus.NewLogger("test"))
 
 	tests := []struct {
 		name    string
@@ -120,7 +121,7 @@ func TestGre(t *testing.T) {
 				}
 			}
 
-			ifaces, err := h.DumpInterfaces()
+			ifaces, err := h.DumpInterfaces(ctx.Context)
 			if err != nil {
 				t.Fatalf("dumping interfaces failed: %v", err)
 			}
@@ -152,7 +153,7 @@ func TestGre(t *testing.T) {
 				t.Fatalf("delete GRE tunnel failed: %v\n", err)
 			}
 
-			ifaces, err = h.DumpInterfaces()
+			ifaces, err = h.DumpInterfaces(ctx.Context)
 			if err != nil {
 				t.Fatalf("dumping interfaces failed: %v", err)
 			}

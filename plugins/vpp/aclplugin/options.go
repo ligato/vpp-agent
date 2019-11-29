@@ -33,7 +33,7 @@ func NewPlugin(opts ...Option) *ACLPlugin {
 	p.PluginName = "vpp-aclplugin"
 	p.StatusCheck = &statuscheck.DefaultPlugin
 	p.Scheduler = &kvscheduler.DefaultPlugin
-	p.GoVppmux = &govppmux.DefaultPlugin
+	p.VPP = &govppmux.DefaultPlugin
 	p.IfPlugin = &ifplugin.DefaultPlugin
 
 	for _, o := range opts {

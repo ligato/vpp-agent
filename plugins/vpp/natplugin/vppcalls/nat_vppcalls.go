@@ -18,6 +18,7 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/idxmap"
 	"github.com/ligato/cn-infra/logging"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp"
 
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
 	nat "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/nat"
@@ -59,27 +60,36 @@ type NatVppRead interface {
 	DNat44Dump() ([]*nat.DNat44, error)
 }
 
-var Versions = map[string]HandlerVersion{}
+var handler = vpp.RegisterHandler(vpp.HandlerDesc{
+	Name:       "nat",
+	HandlerAPI: (*NatVppAPI)(nil),
+})
 
-type HandlerVersion struct {
-	Msgs []govppapi.Message
-	New  func(govppapi.Channel, ifaceidx.IfaceMetadataIndex, idxmap.NamedMapping, logging.Logger) NatVppAPI
+func AddNatHandlerVersion(version string, msgs []govppapi.Message,
+	h func(ch govppapi.Channel, ifIdx ifaceidx.IfaceMetadataIndex, dhcpIdx idxmap.NamedMapping, log logging.Logger) NatVppAPI,
+) {
+	handler.AddVersion(vpp.HandlerVersion{
+		Version: version,
+		Check: func(c vpp.Client) error {
+			ch, err := c.NewAPIChannel()
+			if err != nil {
+				return err
+			}
+			return ch.CheckCompatiblity(msgs...)
+		},
+		NewHandler: func(c vpp.Client, a ...interface{}) vpp.HandlerAPI {
+			ch, err := c.NewAPIChannel()
+			if err != nil {
+				return err
+			}
+			return h(ch, a[0].(ifaceidx.IfaceMetadataIndex), a[1].(idxmap.NamedMapping), a[2].(logging.Logger))
+		},
+	})
 }
 
-func CompatibleNatVppHandler(
-	ch govppapi.Channel, ifIdx ifaceidx.IfaceMetadataIndex, dhcpIdx idxmap.NamedMapping, log logging.Logger,
-) NatVppAPI {
-	if len(Versions) == 0 {
-		// natplugin is not loaded
-		return nil
+func CompatibleNatVppHandler(c vpp.Client, ifIdx ifaceidx.IfaceMetadataIndex, dhcpIdx idxmap.NamedMapping, log logging.Logger) NatVppAPI {
+	if v := handler.FindCompatibleVersion(c); v != nil {
+		return v.NewHandler(c, ifIdx, dhcpIdx, log).(NatVppAPI)
 	}
-	for ver, h := range Versions {
-		log.Debugf("checking compatibility with %s", ver)
-		if err := ch.CheckCompatiblity(h.Msgs...); err != nil {
-			continue
-		}
-		log.Debug("found compatible version:", ver)
-		return h.New(ch, ifIdx, dhcpIdx, log)
-	}
-	panic("no compatible version available")
+	return nil
 }

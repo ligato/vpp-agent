@@ -18,7 +18,7 @@ func NewPlugin(opts ...Option) *Plugin {
 
 	p.PluginName = "telemetry"
 	p.ServiceLabel = &servicelabel.DefaultPlugin
-	p.GoVppmux = &govppmux.DefaultPlugin
+	p.VPP = &govppmux.DefaultPlugin
 	p.Prometheus = &prometheus.DefaultPlugin
 	p.GRPC = &grpc.DefaultPlugin
 	p.HTTPHandlers = &rest.DefaultPlugin

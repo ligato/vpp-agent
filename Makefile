@@ -187,12 +187,11 @@ checknodiffgenerated:  ## Check no diff generated
 
 generate: generate-proto generate-binapi generate-desc-adapters ## Generate all
 	go fmt ./...
-	go mod tidy -v
 
 generate-proto: protocgengo ## Generate Protobuf files
 
 get-binapi-generators:
-	go install git.fd.io/govpp.git/cmd/binapi-generator
+	go install -mod=readonly git.fd.io/govpp.git/cmd/binapi-generator
 
 generate-binapi: get-binapi-generators ## Generate Go code for VPP binary API
 	@echo "# generating VPP binapi"
@@ -234,13 +233,13 @@ dep-install:
 
 dep-update:
 	@echo "# updating all dependencies"
-	@echo "Warning: 'go get' desired new modules by hand"
+	@echo go mod tidy -v
 
-# FIXME: 'go mod verify' might be used here, but tidy and verify disagree.
 dep-check:
 	@echo "# checking dependencies"
+	go mod verify
 	go mod tidy -v
-	@if ! git diff --quiet go.mod go.sum ; then \
+	@if ! git diff --quiet go.mod ; then \
 		echo "go mod tidy check failed"; \
 		exit 1 ; \
 	fi

@@ -63,7 +63,7 @@ type Deps struct {
 	infra.PluginDeps
 	GRPCServer    grpc.Server
 	Dispatch      orchestrator.Dispatcher
-	GoVppmux      govppmux.StatsAPI
+	VPP           govppmux.API
 	ServiceLabel  servicelabel.ReaderAPI
 	AddrAlloc     netalloc.AddressAllocator
 	VPPACLPlugin  aclplugin.API
@@ -113,7 +113,7 @@ func (p *Plugin) Close() error {
 // helper method initializes all VPP/Linux plugin handlers
 func (p *Plugin) initHandlers() (err error) {
 	// VPP channels
-	if p.vppChan, err = p.GoVppmux.NewAPIChannel(); err != nil {
+	if p.vppChan, err = p.VPP.NewAPIChannel(); err != nil {
 		return err
 	}
 
@@ -130,7 +130,7 @@ func (p *Plugin) initHandlers() (err error) {
 	// VPP handlers
 
 	// core
-	p.configurator.ifHandler = ifvppcalls.CompatibleInterfaceVppHandler(p.vppChan, p.Log)
+	p.configurator.ifHandler = ifvppcalls.CompatibleInterfaceVppHandler(p.VPP, p.Log)
 	if p.configurator.ifHandler == nil {
 		p.Log.Info("VPP Interface handler is not available, it will be skipped")
 	}
@@ -148,15 +148,15 @@ func (p *Plugin) initHandlers() (err error) {
 	}
 
 	// plugins
-	p.configurator.abfHandler = abfvppcalls.CompatibleABFVppHandler(p.vppChan, aclIndexes, ifIndexes, p.Log)
+	p.configurator.abfHandler = abfvppcalls.CompatibleABFHandler(p.VPP, aclIndexes, ifIndexes, p.Log)
 	if p.configurator.abfHandler == nil {
 		p.Log.Info("VPP ABF handler is not available, it will be skipped")
 	}
-	p.configurator.aclHandler = aclvppcalls.CompatibleACLVppHandler(p.vppChan, ifIndexes, p.Log)
+	p.configurator.aclHandler = aclvppcalls.CompatibleACLHandler(p.VPP, ifIndexes)
 	if p.configurator.aclHandler == nil {
 		p.Log.Info("VPP ACL handler is not available, it will be skipped")
 	}
-	p.configurator.natHandler = natvppcalls.CompatibleNatVppHandler(p.vppChan, ifIndexes, dhcpIndexes, p.Log)
+	p.configurator.natHandler = natvppcalls.CompatibleNatVppHandler(p.VPP, ifIndexes, dhcpIndexes, p.Log)
 	if p.configurator.natHandler == nil {
 		p.Log.Info("VPP NAT handler is not available, it will be skipped")
 	}

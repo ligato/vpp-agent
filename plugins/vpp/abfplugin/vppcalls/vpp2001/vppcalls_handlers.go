@@ -20,6 +20,7 @@ import (
 
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/abfplugin/vppcalls"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/aclplugin/aclidx"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001"
 	vpp_abf "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/abf"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
 )
@@ -28,12 +29,7 @@ func init() {
 	var msgs []govppapi.Message
 	msgs = append(msgs, vpp_abf.AllMessages()...)
 
-	vppcalls.Versions["vpp2001"] = vppcalls.HandlerVersion{
-		Msgs: msgs,
-		New: func(ch govppapi.Channel, aclIndexes aclidx.ACLMetadataIndex, ifIndexes ifaceidx.IfaceMetadataIndex, log logging.Logger) vppcalls.ABFVppAPI {
-			return NewABFVppHandler(ch, aclIndexes, ifIndexes, log)
-		},
-	}
+	vppcalls.AddABFHandlerVersion(vpp2001.Version, msgs, NewABFVppHandler)
 }
 
 // ABFVppHandler is accessor for abf-related vppcalls methods
@@ -45,7 +41,12 @@ type ABFVppHandler struct {
 }
 
 // NewABFVppHandler returns new ABFVppHandler.
-func NewABFVppHandler(calls govppapi.Channel, aclIdx aclidx.ACLMetadataIndex, ifIdx ifaceidx.IfaceMetadataIndex, log logging.Logger) *ABFVppHandler {
+func NewABFVppHandler(
+	calls govppapi.Channel,
+	aclIdx aclidx.ACLMetadataIndex,
+	ifIdx ifaceidx.IfaceMetadataIndex,
+	log logging.Logger,
+) vppcalls.ABFVppAPI {
 	return &ABFVppHandler{
 		callsChannel: calls,
 		aclIndexes:   aclIdx,
