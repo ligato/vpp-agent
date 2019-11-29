@@ -176,6 +176,13 @@ func (d *InterfaceAddressDescriptor) Delete(key string, emptyVal proto.Message, 
 	nsCtx := nslinuxcalls.NewNamespaceMgmtCtx()
 	revert, err := d.nsPlugin.SwitchToNamespace(nsCtx, ifMeta.Namespace)
 	if err != nil {
+		if _, ok := err.(*nsplugin.UnavailableMicroserviceErr); ok {
+			// Assume that the delete was called by scheduler because the namespace
+			// was removed. Do not return error in this case.
+			d.log.Debugf("Interface %s IP address %s assumed deleted, required namespace %+v does not exist",
+				iface, ipAddr, ifMeta.Namespace)
+			return nil
+		}
 		d.log.Error(err)
 		return err
 	}

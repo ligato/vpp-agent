@@ -16,15 +16,17 @@ package e2e
 
 import (
 	"context"
+	. "net"
 	"testing"
+
+	"github.com/vishvananda/netlink"
 
 	. "github.com/onsi/gomega"
 
 	linux_interfaces "github.com/ligato/vpp-agent/api/models/linux/interfaces"
 	linux_namespace "github.com/ligato/vpp-agent/api/models/linux/namespace"
 	vpp_interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-	"github.com/ligato/vpp-agent/plugins/linux/ifplugin/linuxcalls"
+	kvscheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/netalloc/utils"
 )
 
@@ -86,13 +88,12 @@ func TestLinkOnly(t *testing.T) {
 	).Send(context.Background())
 	Expect(err).ToNot(HaveOccurred())
 
-	Eventually(ctx.getValueStateClb(vppTap)).Should(Equal(kvs.ValueState_CONFIGURED))
-	Expect(ctx.getValueState(linuxTap)).To(Equal(kvs.ValueState_CONFIGURED))
+	Eventually(ctx.getValueStateClb(vppTap)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
+	Expect(ctx.getValueState(linuxTap)).To(Equal(kvscheduler.ValueState_CONFIGURED))
 	Expect(ctx.pingFromVPP(linuxTapIPIgnored)).NotTo(Succeed()) // IP address was not set
 
-	ifHandler := linuxcalls.NewNetLinkHandler()
-	hasIP := func(ipAddr string) bool {
-		addrs, err := ifHandler.GetAddressList(linuxTapHostname)
+	hasIP := func(tapLinkName netlink.Link, ipAddr string) bool {
+		addrs, err := netlink.AddrList(tapLinkName, netlink.FAMILY_ALL)
 		Expect(err).ToNot(HaveOccurred())
 		for _, addr := range addrs {
 			if addr.IP.String() == ipAddr {
@@ -103,24 +104,29 @@ func TestLinkOnly(t *testing.T) {
 	}
 
 	leaveMs := ms.enterNetNs()
+	tapLinkName, err := netlink.LinkByName(linuxTapHostname)
+	Expect(err).ToNot(HaveOccurred())
+
 	// agent didn't set IP address
-	Expect(hasIP(linuxTapIPIgnored)).To(BeFalse())
+	Expect(hasIP(tapLinkName, linuxTapIPIgnored)).To(BeFalse())
 
 	// set IP and MAC addresses from outside of the agent
 	ipAddr, _, err := utils.ParseIPAddr(linuxTapIPExternal+netMask, nil)
 	Expect(err).ToNot(HaveOccurred())
-	err = ifHandler.AddInterfaceIP(linuxTapHostname, ipAddr)
+	err = netlink.AddrAdd(tapLinkName, &netlink.Addr{IPNet: ipAddr})
 	Expect(err).ToNot(HaveOccurred())
-	err = ifHandler.SetInterfaceMac(linuxTapHostname, linuxTapHwExternal)
+	hwAddr, err := ParseMAC(linuxTapHwExternal)
+	Expect(err).ToNot(HaveOccurred())
+	err = netlink.LinkSetHardwareAddr(tapLinkName, hwAddr)
 	Expect(err).ToNot(HaveOccurred())
 	leaveMs()
 
 	// run downstream resync
 	Expect(ctx.agentInSync()).To(BeTrue()) // everything in-sync even though the IP addr was added
 	leaveMs = ms.enterNetNs()
-	Expect(hasIP(linuxTapIPIgnored)).To(BeFalse())
-	Expect(hasIP(linuxTapIPExternal)).To(BeTrue())
-	link, err := ifHandler.GetLinkByName(linuxTapHostname)
+	Expect(hasIP(tapLinkName, linuxTapIPIgnored)).To(BeFalse())
+	Expect(hasIP(tapLinkName, linuxTapIPExternal)).To(BeTrue())
+	link, err := netlink.LinkByName(linuxTapHostname)
 	Expect(err).ToNot(HaveOccurred())
 	Expect(link).ToNot(BeNil())
 	Expect(link.Attrs().HardwareAddr.String()).To(Equal(linuxTapHwExternal))

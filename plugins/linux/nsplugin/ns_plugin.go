@@ -62,12 +62,12 @@ type Config struct {
 	Disabled bool `json:"disabled"`
 }
 
-// unavailableMicroserviceErr is error implementation used when a given microservice is not deployed.
-type unavailableMicroserviceErr struct {
+// UnavailableMicroserviceErr is error implementation used when a given microservice is not deployed.
+type UnavailableMicroserviceErr struct {
 	label string
 }
 
-func (e *unavailableMicroserviceErr) Error() string {
+func (e *UnavailableMicroserviceErr) Error() string {
 	return fmt.Sprintf("Microservice '%s' is not available", e.label)
 }
 
@@ -135,7 +135,7 @@ func (p *NsPlugin) GetNamespaceHandle(ctx nsLinuxcalls.NamespaceMgmtCtx, namespa
 		reference := namespace.Reference
 		namespace = p.convertMicroserviceNsToPidNs(reference)
 		if namespace == nil {
-			return 0, &unavailableMicroserviceErr{label: reference}
+			return 0, &UnavailableMicroserviceErr{label: reference}
 		}
 	}
 

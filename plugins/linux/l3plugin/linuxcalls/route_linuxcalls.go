@@ -34,22 +34,3 @@ func (h *NetLinkHandler) ReplaceRoute(route *netlink.Route) error {
 func (h *NetLinkHandler) DelRoute(route *netlink.Route) error {
 	return netlink.RouteDel(route)
 }
-
-// GetRoutes reads all configured static routes with the given outgoing
-// interface.
-// <interfaceIdx> works as filter, if set to zero, all routes in the namespace
-// are returned.
-func (h *NetLinkHandler) GetRoutes(interfaceIdx int) (v4Routes, v6Routes []netlink.Route, err error) {
-	var link netlink.Link
-	if interfaceIdx != 0 {
-		// netlink.RouteList reads only link index
-		link = &netlink.Dummy{LinkAttrs: netlink.LinkAttrs{Index: interfaceIdx}}
-	}
-
-	v4Routes, err = netlink.RouteList(link, netlink.FAMILY_V4)
-	if err != nil {
-		return
-	}
-	v6Routes, err = netlink.RouteList(link, netlink.FAMILY_V6)
-	return
-}

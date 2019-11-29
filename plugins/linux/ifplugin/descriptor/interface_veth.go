@@ -17,7 +17,8 @@ package descriptor
 import (
 	"fmt"
 	"hash/fnv"
-	"strings"
+
+	"github.com/ligato/vpp-agent/plugins/linux/ifplugin/linuxcalls"
 
 	interfaces "github.com/ligato/vpp-agent/api/models/linux/interfaces"
 	"github.com/ligato/vpp-agent/plugins/linux/ifplugin/ifaceidx"
@@ -55,12 +56,12 @@ func (d *InterfaceDescriptor) createVETH(
 		}
 
 		// add alias to both VETH ends
-		err = d.ifHandler.SetInterfaceAlias(tempHostName, agentPrefix+getVethAlias(linuxIf.Name, peerName))
+		err = d.ifHandler.SetInterfaceAlias(tempHostName, agentPrefix+linuxcalls.GetVethAlias(linuxIf.Name, peerName))
 		if err != nil {
 			d.log.Error(err)
 			return nil, err
 		}
-		err = d.ifHandler.SetInterfaceAlias(tempPeerHostName, agentPrefix+getVethAlias(peerName, linuxIf.Name))
+		err = d.ifHandler.SetInterfaceAlias(tempPeerHostName, agentPrefix+linuxcalls.GetVethAlias(peerName, linuxIf.Name))
 		if err != nil {
 			d.log.Error(err)
 			return nil, err
@@ -137,27 +138,11 @@ func (d *InterfaceDescriptor) deleteVETH(nsCtx nslinuxcalls.NamespaceMgmtCtx, ke
 		}
 		if tempPeerHostName != "" {
 			// peer should be automatically removed as well, but just in case...
-			d.ifHandler.DeleteInterface(tempPeerHostName) // ignore errors
+			_ = d.ifHandler.DeleteInterface(tempPeerHostName) // ignore errors
 		}
 	}
 
 	return nil
-}
-
-// getVethAlias returns alias for Linux VETH interface managed by the agent.
-// The alias stores the VETH logical name together with the peer (logical) name.
-func getVethAlias(vethName, peerName string) string {
-	return vethName + "/" + peerName
-}
-
-// parseVethAlias parses out VETH logical name together with the peer name from the alias.
-func parseVethAlias(alias string) (vethName, peerName string) {
-	aliasParts := strings.Split(alias, "/")
-	vethName = aliasParts[0]
-	if len(aliasParts) > 0 {
-		peerName = aliasParts[1]
-	}
-	return
 }
 
 // getVethTemporaryHostName (deterministically) generates a temporary host name
