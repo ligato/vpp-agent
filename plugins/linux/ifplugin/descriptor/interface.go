@@ -334,10 +334,11 @@ func (d *InterfaceDescriptor) Create(key string, linuxIf *interfaces.Interface) 
 	default:
 		return nil, ErrUnsupportedLinuxInterfaceType
 	}
-
 	if err != nil {
+		d.log.Errorf("creating interface failed: %+v", err)
 		return nil, err
 	}
+
 	metadata.HostIfName = getHostIfName(linuxIf)
 
 	// move to the namespace with the interface
