@@ -23,10 +23,11 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/vishvananda/netlink"
+	"golang.org/x/sys/unix"
+
 	"go.ligato.io/vpp-agent/v2/plugins/linux/nsplugin/linuxcalls"
 	interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/linux/interfaces"
 	namespaces "go.ligato.io/vpp-agent/v2/proto/ligato/linux/namespace"
-	"golang.org/x/sys/unix"
 )
 
 const (

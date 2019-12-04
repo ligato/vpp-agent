@@ -19,13 +19,18 @@ package linuxcalls
 import (
 	"net"
 
+	"github.com/pkg/errors"
 	"github.com/vishvananda/netlink"
 	"github.com/vishvananda/netns"
 )
 
 // GetLinkByName calls netlink API to get Link type from interface name
 func (h *NetLinkHandler) GetLinkByName(ifName string) (netlink.Link, error) {
-	return netlink.LinkByName(ifName)
+	link, err := netlink.LinkByName(ifName)
+	if err != nil {
+		return nil, errors.Wrapf(err, "LinkByName %s", ifName)
+	}
+	return link, nil
 }
 
 // GetLinkList calls netlink API to get all Links in namespace
@@ -35,7 +40,10 @@ func (h *NetLinkHandler) GetLinkList() ([]netlink.Link, error) {
 
 // SetLinkNamespace puts link into a network namespace.
 func (h *NetLinkHandler) SetLinkNamespace(link netlink.Link, ns netns.NsHandle) (err error) {
-	return netlink.LinkSetNsFd(link, int(ns))
+	if err := netlink.LinkSetNsFd(link, int(ns)); err != nil {
+		return errors.Wrapf(err, "LinkSetNsFd %v", ns)
+	}
+	return nil
 }
 
 // LinkSubscribe takes a channel to which notifications will be sent
@@ -69,7 +77,7 @@ func (h *NetLinkHandler) InterfaceExists(ifName string) (bool, error) {
 func (h *NetLinkHandler) IsInterfaceUp(ifName string) (bool, error) {
 	intf, err := net.InterfaceByName(ifName)
 	if err != nil {
-		return false, err
+		return false, errors.Wrapf(err, "InterfaceByName %s", ifName)
 	}
 	isUp := (intf.Flags & net.FlagUp) == net.FlagUp
 	return isUp, nil
@@ -81,8 +89,10 @@ func (h *NetLinkHandler) DeleteInterface(ifName string) error {
 	if err != nil {
 		return err
 	}
-
-	return netlink.LinkDel(link)
+	if err := netlink.LinkDel(link); err != nil {
+		return errors.Wrapf(err, "LinkDel %s", link)
+	}
+	return nil
 }
 
 // RenameInterface changes the name of the interface <ifName> to <newName>.
@@ -91,18 +101,19 @@ func (h *NetLinkHandler) RenameInterface(ifName string, newName string) error {
 	if err != nil {
 		return err
 	}
-	wasUp := (link.Attrs().Flags & net.FlagUp) == net.FlagUp
-	if wasUp {
+	var wasUp bool
+	if (link.Attrs().Flags & net.FlagUp) == net.FlagUp {
+		wasUp = true
 		if err = netlink.LinkSetDown(link); err != nil {
-			return err
+			return errors.Wrapf(err, "LinkSetDown %v", link)
 		}
 	}
 	if err = netlink.LinkSetName(link, newName); err != nil {
-		return err
+		return errors.Wrapf(err, "LinkSetName %s", newName)
 	}
 	if wasUp {
 		if err = netlink.LinkSetUp(link); err != nil {
-			return err
+			return errors.Wrapf(err, "LinkSetUp %v", link)
 		}
 	}
 	return nil
@@ -115,8 +126,10 @@ func (h *NetLinkHandler) SetInterfaceAlias(ifName, alias string) error {
 	if err != nil {
 		return err
 	}
-
-	return netlink.LinkSetAlias(link, alias)
+	if err := netlink.LinkSetAlias(link, alias); err != nil {
+		return errors.Wrapf(err, "LinkSetAlias %s", alias)
+	}
+	return nil
 }
 
 // SetInterfaceDown calls Netlink API LinkSetDown.
@@ -125,7 +138,10 @@ func (h *NetLinkHandler) SetInterfaceDown(ifName string) error {
 	if err != nil {
 		return err
 	}
-	return netlink.LinkSetDown(link)
+	if err := netlink.LinkSetDown(link); err != nil {
+		return errors.Wrapf(err, "LinkSetDown %v", link)
+	}
+	return nil
 }
 
 // SetInterfaceUp calls Netlink API LinkSetUp.
@@ -134,5 +150,85 @@ func (h *NetLinkHandler) SetInterfaceUp(ifName string) error {
 	if err != nil {
 		return err
 	}
-	return netlink.LinkSetUp(link)
+	if err := netlink.LinkSetUp(link); err != nil {
+		return errors.Wrapf(err, "LinkSetUp %v", link)
+	}
+	return nil
+}
+
+// GetAddressList calls AddrList netlink API
+func (h *NetLinkHandler) GetAddressList(ifName string) ([]netlink.Addr, error) {
+	link, err := h.GetLinkByName(ifName)
+	if err != nil {
+		return nil, err
+	}
+	return netlink.AddrList(link, netlink.FAMILY_ALL)
+}
+
+// AddInterfaceIP calls AddrAdd Netlink API.
+func (h *NetLinkHandler) AddInterfaceIP(ifName string, ip *net.IPNet) error {
+	link, err := h.GetLinkByName(ifName)
+	if err != nil {
+		return err
+	}
+	addr := &netlink.Addr{IPNet: ip}
+	if err := netlink.AddrAdd(link, addr); err != nil {
+		return errors.Wrapf(err, "AddrAdd %v", addr)
+	}
+	return nil
+}
+
+// DelInterfaceIP calls AddrDel Netlink API.
+func (h *NetLinkHandler) DelInterfaceIP(ifName string, ip *net.IPNet) error {
+	link, err := h.GetLinkByName(ifName)
+	if err != nil {
+		return err
+	}
+	addr := &netlink.Addr{IPNet: ip}
+	if err := netlink.AddrDel(link, addr); err != nil {
+		return errors.Wrapf(err, "AddrDel %v", addr)
+	}
+	return nil
+}
+
+// SetInterfaceMTU calls LinkSetMTU Netlink API.
+func (h *NetLinkHandler) SetInterfaceMTU(ifName string, mtu int) error {
+	link, err := h.GetLinkByName(ifName)
+	if err != nil {
+		return err
+	}
+	if err := netlink.LinkSetMTU(link, mtu); err != nil {
+		return errors.Wrapf(err, "LinkSetMTU %v", mtu)
+	}
+	return nil
+}
+
+// SetInterfaceMac calls LinkSetHardwareAddr netlink API.
+func (h *NetLinkHandler) SetInterfaceMac(ifName string, macAddress string) error {
+	link, err := h.GetLinkByName(ifName)
+	if err != nil {
+		return err
+	}
+	hwAddr, err := net.ParseMAC(macAddress)
+	if err != nil {
+		return err
+	}
+	if err := netlink.LinkSetHardwareAddr(link, hwAddr); err != nil {
+		return errors.Wrapf(err, "LinkSetHardwareAddr %v", hwAddr)
+	}
+	return nil
+}
+
+// AddVethInterfacePair calls LinkAdd Netlink API for the Netlink.Veth interface type.
+func (h *NetLinkHandler) AddVethInterfacePair(ifName, peerIfName string) error {
+	attrs := netlink.NewLinkAttrs()
+	attrs.Name = ifName
+	link := &netlink.Veth{
+		LinkAttrs: attrs,
+		PeerName:  peerIfName,
+	}
+	if err := netlink.LinkAdd(link); err != nil {
+		return errors.Wrapf(err, "LinkAdd %v", link)
+	}
+	return nil
 }
