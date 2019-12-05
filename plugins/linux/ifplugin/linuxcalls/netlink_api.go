@@ -69,13 +69,8 @@ type InterfaceMeta struct {
 // NetlinkAPI interface covers all methods inside linux calls package
 // needed to manage linux interfaces.
 type NetlinkAPI interface {
-	NetlinkAPIWrite
 	NetlinkAPIRead
-}
 
-// NetlinkAPIWrite interface covers write methods inside linux calls package
-// needed to manage linux interfaces.
-type NetlinkAPIWrite interface {
 	// AddVethInterfacePair configures two connected VETH interfaces
 	AddVethInterfacePair(ifName, peerIfName string) error
 	// DeleteInterface removes the given interface.
@@ -152,8 +147,13 @@ type NetLinkHandler struct {
 }
 
 // NewNetLinkHandler creates new instance of Netlink handler.
-func NewNetLinkHandler(nsPlugin nsplugin.API, ifIndexes ifaceidx.LinuxIfMetadataIndex, agentPrefix string,
-	goRoutineCount int, log logging.Logger) *NetLinkHandler {
+func NewNetLinkHandler(
+	nsPlugin nsplugin.API,
+	ifIndexes ifaceidx.LinuxIfMetadataIndex,
+	agentPrefix string,
+	goRoutineCount int,
+	log logging.Logger,
+) *NetLinkHandler {
 	return &NetLinkHandler{
 		nsPlugin:       nsPlugin,
 		ifIndexes:      ifIndexes,

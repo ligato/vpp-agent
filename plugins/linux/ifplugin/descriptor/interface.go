@@ -334,10 +334,11 @@ func (d *InterfaceDescriptor) Create(key string, linuxIf *interfaces.Interface) 
 	default:
 		return nil, ErrUnsupportedLinuxInterfaceType
 	}
-
 	if err != nil {
+		d.log.Errorf("creating interface failed: %+v", err)
 		return nil, err
 	}
+
 	metadata.HostIfName = getHostIfName(linuxIf)
 
 	// move to the namespace with the interface
@@ -660,7 +661,8 @@ func (d *InterfaceDescriptor) Retrieve(correlate []adapter.InterfaceKVWithMetada
 	for _, ifDetail := range ifDetails {
 		// Transform linux interface details to the type-safe value with metadata
 		kv := adapter.InterfaceKVWithMetadata{
-			Value: ifDetail.Interface,
+			Origin: kvs.FromNB,
+			Value:  ifDetail.Interface,
 			Metadata: &ifaceidx.LinuxIfMetadata{
 				LinuxIfIndex: ifDetail.Meta.LinuxIfIndex,
 				Namespace:    ifDetail.Interface.GetNamespace(),
