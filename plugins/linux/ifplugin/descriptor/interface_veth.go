@@ -18,6 +18,8 @@ import (
 	"fmt"
 	"hash/fnv"
 
+	"github.com/pkg/errors"
+
 	"go.ligato.io/vpp-agent/v2/plugins/linux/ifplugin/linuxcalls"
 
 	"go.ligato.io/vpp-agent/v2/plugins/linux/ifplugin/ifaceidx"
@@ -29,9 +31,7 @@ import (
 // applies configuration to the unfinished VETH-end with a temporary host name.
 func (d *InterfaceDescriptor) createVETH(
 	nsCtx nslinuxcalls.NamespaceMgmtCtx, key string, linuxIf *interfaces.Interface,
-) (
-	md *ifaceidx.LinuxIfMetadata, err error) {
-
+) (md *ifaceidx.LinuxIfMetadata, err error) {
 	// determine host/logical/temporary interface names
 	hostName := getHostIfName(linuxIf)
 	peerName := linuxIf.GetVeth().GetPeerIfName()
@@ -51,49 +51,42 @@ func (d *InterfaceDescriptor) createVETH(
 		// create a new VETH pair
 		err = d.ifHandler.AddVethInterfacePair(tempHostName, tempPeerHostName)
 		if err != nil {
-			d.log.Error(err)
-			return nil, err
+			return nil, errors.WithMessagef(err, "error adding veth interface pair %s, %s", tempHostName, tempPeerHostName)
 		}
 
 		// add alias to both VETH ends
 		err = d.ifHandler.SetInterfaceAlias(tempHostName, agentPrefix+linuxcalls.GetVethAlias(linuxIf.Name, peerName))
 		if err != nil {
-			d.log.Error(err)
-			return nil, err
+			return nil, errors.WithMessagef(err, "error setting interface %s alias", tempHostName)
 		}
 		err = d.ifHandler.SetInterfaceAlias(tempPeerHostName, agentPrefix+linuxcalls.GetVethAlias(peerName, linuxIf.Name))
 		if err != nil {
-			d.log.Error(err)
-			return nil, err
+			return nil, errors.WithMessagef(err, "error setting peer interface %s alias", tempPeerHostName)
 		}
 	}
 
 	// move the VETH-end to the right namespace
 	err = d.setInterfaceNamespace(nsCtx, tempHostName, linuxIf.Namespace)
 	if err != nil {
-		d.log.Error(err)
-		return nil, err
+		return nil, errors.WithMessagef(err, "error setting interface %s to namespace %v", tempHostName, linuxIf.Namespace)
 	}
 
 	// move to the namespace with the interface
 	revert, err := d.nsPlugin.SwitchToNamespace(nsCtx, linuxIf.Namespace)
 	if err != nil {
-		d.log.Error(err)
-		return nil, err
+		return nil, errors.WithMessagef(err, "error switching to namespace %v", linuxIf.Namespace)
 	}
 	defer revert()
 
 	// rename from the temporary host name to the requested host name
 	if err = d.ifHandler.RenameInterface(tempHostName, hostName); err != nil {
-		d.log.Error(err)
-		return nil, err
+		return nil, errors.WithMessagef(err, "error renaming %s to %s", tempHostName, hostName)
 	}
 
 	// build metadata
 	link, err := d.ifHandler.GetLinkByName(hostName)
 	if err != nil {
-		d.log.Error(err)
-		return nil, err
+		return nil, errors.WithMessagef(err, "error getting link %s", hostName)
 	}
 
 	return &ifaceidx.LinuxIfMetadata{
