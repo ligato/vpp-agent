@@ -17,7 +17,6 @@ package commands
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"path"
@@ -168,8 +167,7 @@ func newModelInspectCommand(cli agentcli.Cli) *cobra.Command {
 			return runModelInspect(cli, opts)
 		},
 	}
-	// TODO: add support for custom formatting instead of json
-	//cmd.Flags().StringVar(&opts.Format, "format", "", "Format for the output")
+	cmd.Flags().StringVarP(&opts.Format, "format", "f", "", "Format for the output")
 	return cmd
 }
 
@@ -194,11 +192,14 @@ func runModelInspect(cli agentcli.Cli, opts ModelInspectOptions) error {
 
 	logrus.Debugf("models: %+v", models)
 
-	b, err := json.MarshalIndent(models, "", "  ")
-	if err != nil {
-		return fmt.Errorf("encoding data failed: %v", err)
+	format := opts.Format
+	if len(format) == 0 {
+		format = "json"
 	}
 
-	fmt.Fprintf(cli.Out(), "%s\n", b)
+	if err := formatAsTemplate(cli.Out(), format, models); err != nil {
+		return err
+	}
+
 	return nil
 }
