@@ -5,6 +5,7 @@
 ## Release Notes
 
 - [v2.5.0](#v2.5.0)
+  - [v2.5.1](#v2.5.1)
 - [v2.4.0](#v2.4.0)
 - [v2.3.0](#v2.3.0)
 - [v2.2.0](#v2.2.0)
@@ -47,6 +48,18 @@ RELEASE CHANGELOG TEMPLATE:
 ### Docker Images
 ### Documentation
 -->
+
+<a name="v2.5.1"></a>
+# [2.5.1](https://github.com/ligato/vpp-agent/compare/v2.5.0...v2.5.1) (2019-12-06)
+- **VPP 20.01-379** (`20.01-rc0~379-ga6b93eac5`)
+- **VPP 20.01-324** (`20.01-rc0~324-g66a332cf1`)
+- **VPP 19.08.1** (default)
+- **VPP 19.04** (backward compatible)
+- cn-infra v2.2
+
+### Bug Fixes
+* Fix linux interface dump ([#1577](https://github.com/ligato/vpp-agent/pull/1577))
+* Fix VRF for SR policy ([#1578](https://github.com/ligato/vpp-agent/pull/1578))
 
 <a name="v2.5.0"></a>
 # [2.5.0](https://github.com/ligato/vpp-agent/compare/v2.4.0...v2.5.0) (2019-11-29)
