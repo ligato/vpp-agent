@@ -16,6 +16,7 @@ package descriptor
 
 import (
 	"fmt"
+	"math"
 	"strings"
 
 	"github.com/ligato/cn-infra/idxmap"
@@ -140,7 +141,9 @@ func (d *VrfTableDescriptor) Retrieve(correlate []adapter.VrfTableKVWithMetadata
 
 	for _, table := range tables {
 		origin := kvs.UnknownOrigin
-		if table.Id > 0 {
+		// VRF with ID=0 and ID=MaxUint32 are special
+		// and should not be removed automatically
+		if table.Id > 0 && table.Id < math.MaxUint32 {
 			origin = kvs.FromNB
 		}
 		retrieved = append(retrieved, adapter.VrfTableKVWithMetadata{
