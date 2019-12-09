@@ -17,6 +17,7 @@ package linuxclient
 import (
 	vpp_clientv2 "go.ligato.io/vpp-agent/v2/clientv2/vpp"
 	linux_interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/linux/interfaces"
+	linux_iptables "go.ligato.io/vpp-agent/v2/proto/ligato/linux/iptables"
 	linux_l3 "go.ligato.io/vpp-agent/v2/proto/ligato/linux/l3"
 	vpp_abf "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/abf"
 	vpp_acl "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/acl"
@@ -62,6 +63,8 @@ type PutDSL interface {
 	LinuxArpEntry(val *linux_l3.ARPEntry) PutDSL
 	// LinuxRoute adds a request to crete or update Linux route
 	LinuxRoute(val *linux_l3.Route) PutDSL
+	// IptablesRuleChain adds request to create or update iptables rule chain.
+	IptablesRuleChain(val *linux_iptables.RuleChain) PutDSL
 
 	// VppInterface adds a request to create or update VPP network interface.
 	VppInterface(val *vpp_interfaces.Interface) PutDSL
@@ -135,6 +138,8 @@ type DeleteDSL interface {
 	LinuxArpEntry(ifaceName string, ipAddr string) DeleteDSL
 	// LinuxRoute adds a request to delete Linux route
 	LinuxRoute(dstAddr, outIfaceName string) DeleteDSL
+	// IptablesRuleChain adds request to delete iptables rule chain.
+	IptablesRuleChain(name string) DeleteDSL
 
 	// VppInterface adds a request to delete an existing VPP network interface.
 	VppInterface(ifaceName string) DeleteDSL

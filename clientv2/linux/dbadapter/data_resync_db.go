@@ -22,6 +22,7 @@ import (
 	"go.ligato.io/vpp-agent/v2/clientv2/vpp/dbadapter"
 	"go.ligato.io/vpp-agent/v2/pkg/models"
 	linux_interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/linux/interfaces"
+	linux_iptables "go.ligato.io/vpp-agent/v2/proto/ligato/linux/iptables"
 	linux_l3 "go.ligato.io/vpp-agent/v2/proto/ligato/linux/l3"
 	abf "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/abf"
 	acl "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/acl"
@@ -75,6 +76,15 @@ func (dsl *DataResyncDSL) LinuxArpEntry(val *linux_l3.ARPEntry) linuxclient.Data
 // LinuxRoute adds Linux route to the RESYNC request.
 func (dsl *DataResyncDSL) LinuxRoute(val *linux_l3.Route) linuxclient.DataResyncDSL {
 	key := linux_l3.RouteKey(val.DstNetwork, val.OutgoingInterface)
+	dsl.txn.Put(key, val)
+	dsl.txnKeys = append(dsl.txnKeys, key)
+
+	return dsl
+}
+
+// IptablesRuleChain adds iptables rule chain to the RESYNC request.
+func (dsl *DataResyncDSL) IptablesRuleChain(val *linux_iptables.RuleChain) linuxclient.DataResyncDSL {
+	key := linux_iptables.RuleChainKey(val.Name)
 	dsl.txn.Put(key, val)
 	dsl.txnKeys = append(dsl.txnKeys, key)
 
