@@ -22,6 +22,7 @@ import (
 	"go.ligato.io/vpp-agent/v2/clientv2/vpp/dbadapter"
 	"go.ligato.io/vpp-agent/v2/pkg/models"
 	linux_interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/linux/interfaces"
+	linux_iptables "go.ligato.io/vpp-agent/v2/proto/ligato/linux/iptables"
 	linux_l3 "go.ligato.io/vpp-agent/v2/proto/ligato/linux/l3"
 	abf "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/abf"
 	acl "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/acl"
@@ -94,6 +95,12 @@ func (dsl *PutDSL) LinuxArpEntry(val *linux_l3.ARPEntry) linuxclient.PutDSL {
 // LinuxRoute adds a request to create or update Linux route.
 func (dsl *PutDSL) LinuxRoute(val *linux_l3.Route) linuxclient.PutDSL {
 	dsl.parent.txn.Put(linux_l3.RouteKey(val.DstNetwork, val.OutgoingInterface), val)
+	return dsl
+}
+
+// IptablesRuleChain adds request to create or update iptables rule chain.
+func (dsl *PutDSL) IptablesRuleChain(val *linux_iptables.RuleChain) linuxclient.PutDSL {
+	dsl.parent.txn.Put(linux_iptables.RuleChainKey(val.Name), val)
 	return dsl
 }
 
@@ -276,6 +283,12 @@ func (dsl *DeleteDSL) LinuxArpEntry(ifaceName string, ipAddr string) linuxclient
 // LinuxRoute adds a request to delete Linux route.
 func (dsl *DeleteDSL) LinuxRoute(dstAddr, outIfaceName string) linuxclient.DeleteDSL {
 	dsl.parent.txn.Delete(linux_l3.RouteKey(dstAddr, outIfaceName))
+	return dsl
+}
+
+// IptablesRuleChain adds request to delete iptables rule chain.
+func (dsl *DeleteDSL) IptablesRuleChain(name string) linuxclient.DeleteDSL {
+	dsl.parent.txn.Delete(linux_iptables.RuleChainKey(name))
 	return dsl
 }
 
