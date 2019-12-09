@@ -9,16 +9,16 @@ on:
 
 jobs:
   build-deploy:
+    name: "Build & Deploy"
     runs-on: ubuntu-18.04
-  
-  steps:
-  - uses: actions/checkout@v1
-  
-  - name: Build
-    run: |
-      make images
 
-  - name: Deploy
-    run: |
-      docker images
-      
+    steps:
+    - uses: actions/checkout@v1
+  
+    - name: Build
+      run: |
+        make images
+
+    - name: Deploy
+      run: |
+        docker images
