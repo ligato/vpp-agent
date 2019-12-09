@@ -43,10 +43,7 @@ func newVppCliCommand(cli agentcli.Cli) *cobra.Command {
 		Short:   "Execute VPP CLI command",
 		Example: `
  To run a VPP CLI command:
-  $ agentctl vpp cli show version
-
- Do same as above, but specify the HTTP address of the agent:
-  $ agentctl --httpaddr 172.17.0.3:9191 vpp cli show version
+  $ {{.CommandPath}} vpp cli show version
 `,
 		Args: cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
