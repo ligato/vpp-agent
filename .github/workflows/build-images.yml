@@ -13,12 +13,12 @@ jobs:
     runs-on: ubuntu-18.04
 
     steps:
-    - uses: actions/checkout@v1
+      - uses: actions/checkout@v1
   
-    - name: Build
-      run: |
-        make images
+      - name: Build
+        run: |
+          make images
 
-    - name: Deploy
-      run: |
-        docker images
+      - name: Deploy
+        run: |
+          docker images
