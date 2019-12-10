@@ -20,5 +20,7 @@ jobs:
           make images
 
       - name: Deploy
+        if: github.event == 'push'
         run: |
           docker images
+          docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
