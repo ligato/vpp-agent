@@ -50,8 +50,8 @@ type IPTablesAPIWrite interface {
 	// DeleteRule deletes a rule from the specified chain.
 	DeleteRule(protocol L3Protocol, table, chain string, rule string) error
 
-	// protocol deletes all rules within the specified chain.
-	DeleteAllRules(proto L3Protocol, table, chain string) error
+	// DeleteAllRules deletes all rules within the specified chain.
+	DeleteAllRules(protocol L3Protocol, table, chain string) error
 }
 
 // IPTablesAPIRead interface covers read methods inside linux calls package

@@ -291,13 +291,16 @@ type retrievedRuleChains struct {
 func (d *RuleChainDescriptor) Retrieve(correlate []adapter.RuleChainKVWithMetadata) ([]adapter.RuleChainKVWithMetadata, error) {
 	var values []adapter.RuleChainKVWithMetadata
 
-	goRoutinesCnt := len(correlate) / minWorkForGoRoutine
-	if goRoutinesCnt == 0 {
-		goRoutinesCnt = 1
+	if len(correlate) == 0 {
+		return values, nil
 	}
+
+	goRoutinesCnt := len(correlate) / minWorkForGoRoutine
+
 	if goRoutinesCnt > d.goRoutinesCnt {
 		goRoutinesCnt = d.goRoutinesCnt
 	}
+
 	ch := make(chan retrievedRuleChains, goRoutinesCnt)
 
 	// invoke multiple go routines for more efficient parallel chain retrieval
@@ -346,6 +349,10 @@ func (d *RuleChainDescriptor) retrieveRuleChains(
 
 		// list rules in provided table & chain
 		rules, err := d.ipTablesHandler.ListRules(protocolType(corrrelRule), tableNameStr(corrrelRule), chainNameStr(corrrelRule))
+
+		// switch back to the default namespace
+		nsRevert()
+
 		if err != nil {
 			d.log.Warnf("Error by listing iptables rules: %v", err)
 			continue // continue with the item
@@ -359,9 +366,6 @@ func (d *RuleChainDescriptor) retrieveRuleChains(
 			Value:  val,
 			Origin: kvs.FromNB,
 		})
-
-		// switch back to the default namespace
-		nsRevert()
 	}
 
 	ch <- retrieved
@@ -439,7 +443,7 @@ func protocolType(rch *linux_iptables.RuleChain) linuxcalls.L3Protocol {
 	}
 }
 
-// protocolType iptables table name of the given rule chain in the NB API format.
+// tableNameStr returns iptables table name of the given rule chain in the NB API format.
 func tableNameStr(rch *linux_iptables.RuleChain) string {
 	switch rch.Table {
 	case linux_iptables.RuleChain_NAT:
@@ -455,7 +459,7 @@ func tableNameStr(rch *linux_iptables.RuleChain) string {
 	}
 }
 
-// protocolType iptables chain name of the given rule chain in the NB API format.
+// chainNameStr returns iptables chain name of the given rule chain in the NB API format.
 func chainNameStr(rch *linux_iptables.RuleChain) string {
 	switch rch.ChainType {
 	case linux_iptables.RuleChain_CUSTOM:
@@ -473,7 +477,7 @@ func chainNameStr(rch *linux_iptables.RuleChain) string {
 	}
 }
 
-// protocolType iptables policy name of the given rule chain in the NB API format.
+// chainPolicyStr returns iptables policy name of the given rule chain in the NB API format.
 func chainPolicyStr(rch *linux_iptables.RuleChain) string {
 	switch rch.DefaultPolicy {
 	case linux_iptables.RuleChain_DROP:
