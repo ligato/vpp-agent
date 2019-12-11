@@ -2,10 +2,11 @@ name: Docker Images
 
 on:
   push:
-    branches: master
+    branches: 
+      - master
   pull_request:
-    branches: master
-  release:
+    branches: 
+      - master
 
 jobs:
   build-deploy:
@@ -26,7 +27,7 @@ jobs:
           docker tag prod_vpp_agent ligato/vpp-agent:latest
 
       - name: Deploy images
-        if: github.event == 'push' && github.ref == 'master'
+        if: github.event == 'push'
         run: |
           docker images
           docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
