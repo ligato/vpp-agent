@@ -1,0 +1,34 @@
+name: Docker Images
+
+on:
+  push:
+    branches: master
+  pull_request:
+    branches: master
+  release:
+
+jobs:
+  build-deploy:
+    name: "Build & Deploy"
+    runs-on: ubuntu-18.04
+
+    steps:
+      - uses: actions/checkout@v1
+
+      - name: Build dev image
+        run: |
+          make dev-image
+          docker tag dev_vpp_agent ligato/dev-vpp-agent:latest
+
+      - name: Build prod image
+        run: |
+          make prod-image
+          docker tag prod_vpp_agent ligato/vpp-agent:latest
+
+      - name: Deploy images
+        if: github.event == 'push' && github.ref == 'master'
+        run: |
+          docker images
+          docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
+          docker push ligato/dev-vpp-agent:latest
+          docker push ligato/vpp-agent:latest
