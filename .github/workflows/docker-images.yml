@@ -26,13 +26,8 @@ jobs:
           make prod-image
           docker tag prod_vpp_agent ligato/vpp-agent:latest
 
-      - name: Dump GitHub context
-        env:
-          GITHUB_CONTEXT: ${{ toJson(github) }}
-        run: echo "$GITHUB_CONTEXT"
-
       - name: Deploy images
-        if: github.event == 'push'
+        if: github.event_name == 'push'
         run: |
           docker images
           docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
