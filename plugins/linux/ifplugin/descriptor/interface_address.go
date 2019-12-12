@@ -149,7 +149,7 @@ func (d *InterfaceAddressDescriptor) Create(key string, emptyVal proto.Message) 
 	err = d.ifHandler.AddInterfaceIP(ifMeta.HostIfName, ipAddr)
 
 	// an attempt to add already assigned IP is not considered as error
-	if err == syscall.EEXIST {
+	if errors.Cause(err) == syscall.EEXIST {
 		err = nil
 	}
 	return nil, err
