@@ -16,8 +16,6 @@ package e2e
 
 import (
 	"context"
-	"os"
-	"strings"
 	"testing"
 
 	. "github.com/onsi/gomega"
@@ -572,14 +570,6 @@ func TestVPPRoutesWithNetalloc(t *testing.T) {
 	Expect(ctx.pingFromVPP(linuxLoopNet1IP)).To(Succeed())
 	Expect(ctx.pingFromVPP(linuxLoopNet2IP)).To(Succeed())
 	Expect(ctx.agentInSync()).To(BeTrue())
-
-	if strings.HasSuffix(os.Getenv("VPP_IMG"), "19.08") {
-		// TODO: we cannot handle microservice restarts in 19.08 since the TAP interface
-		// attached to the stopped microservice is automatically removed, but not the
-		// associated routes and it is not possible to remove/update them
-		// Waiting for reaction from VPP dev...
-		return
-	}
 
 	// restart microservice
 	ctx.stopMicroservice(msName)
