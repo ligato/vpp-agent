@@ -21,6 +21,7 @@ import (
 	"text/tabwriter"
 
 	"github.com/spf13/cobra"
+
 	"go.ligato.io/vpp-agent/v2/cmd/agentctl/api/types"
 	agentcli "go.ligato.io/vpp-agent/v2/cmd/agentctl/cli"
 )
@@ -41,9 +42,10 @@ func newMetricsListCommand(cli agentcli.Cli) *cobra.Command {
 	var opts MetricsListOptions
 
 	cmd := &cobra.Command{
-		Use:   "list",
-		Short: "Retrieve list of metrics",
-		Args:  cobra.RangeArgs(0, 1),
+		Use:     "list [PATTERN]",
+		Aliases: []string{"list", "l"},
+		Short:   "List metrics",
+		Args:    cobra.ArbitraryArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			opts.Refs = args
 			return runMetricsList(cli, opts)
