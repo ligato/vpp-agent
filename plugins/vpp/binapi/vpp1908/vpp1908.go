@@ -15,7 +15,7 @@
 package vpp1908
 
 // Version is used to identify VPP version for binapi
-const Version = "19.08"
+const Version = "19.08.1"
 
 //go:generate -command binapigen binapi-generator --output-dir=.
 

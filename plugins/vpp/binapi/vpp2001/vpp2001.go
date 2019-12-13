@@ -15,7 +15,7 @@
 package vpp2001
 
 // Version is used to identify VPP binapi version
-const Version = "20.01-rc0+379"
+const Version = "20.01-rc0~379"
 
 //go:generate -command binapigen binapi-generator --output-dir=.
 

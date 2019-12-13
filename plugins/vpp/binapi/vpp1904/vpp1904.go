@@ -15,7 +15,7 @@
 package vpp1904
 
 // Version is used to identify VPP binapi version
-const Version = "19.04"
+const Version = "19.04.2"
 
 //go:generate -command binapigen binapi-generator --output-dir=.
 
