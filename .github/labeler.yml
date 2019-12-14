@@ -1,2 +1,5 @@
 "🔃 VPP sync":
   - vpp.env
+
+":gear: CI"
+  - .github/workflows/*
