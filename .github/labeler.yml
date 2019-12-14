@@ -1,5 +1,21 @@
-"🔃 VPP sync":
-  - vpp.env
+"🔗 dependencies":
+  - go.mod
+  - go.sum
 
-":gear: CI":
-  - .github/workflows/*
+"🔃 VPP sync": vpp.env
+
+"🔨 testing":
+  - tests/*
+  - tests/**/*
+
+"📜 docs & examples":
+  - docs/*
+  - docs/**/*
+  - examples/*
+  - examples/**/*
+
+"⚙️ CI/CD":
+  - .github/*
+  - .github/**/*
+  - docker/*
+  - docker/**/*
