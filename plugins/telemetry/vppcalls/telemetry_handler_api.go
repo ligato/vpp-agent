@@ -19,13 +19,14 @@ import (
 
 	govppapi "git.fd.io/govpp.git/api"
 	log "github.com/ligato/cn-infra/logging"
+
 	"go.ligato.io/vpp-agent/v2/plugins/vpp"
 )
 
 var (
 	// FallbackToCli defines wether should telemetry handler
 	// fallback to parsing stats from CLI output.
-	FallbackToCli = true
+	FallbackToCli = false
 )
 
 // TelemetryVppAPI provides API for retrieving telemetry data from VPP.
@@ -181,44 +182,14 @@ func CompatibleTelemetryHandler(c vpp.Client) TelemetryVppAPI {
 	if c.StatsConnected() {
 		return NewTelemetryVppStats(c.Stats())
 	}
-	if !FallbackToCli {
-		log.Warnf("stats unavailable and fallback to CLI disabled for telemetry")
-		return nil
-	}
-
-	/*ctx := context.TODO()
-	ch, err := c.NewAPIChannel()
-	if err != nil {
-		log.Warnf("failed to create API channel: %v", err)
-		return nil
-	}
-	vpe := vppcalls.CompatibleHandler(c)
-	info, err := vpe.GetVersion(ctx)
-	if err != nil {
-		log.Warnf("retrieving VPP info failed: %v", err)
-		return nil
-	}
-	if ver := info.Release(); ver != "" {
-		log.Debug("telemetry checking release: ", ver)
-		if h, ok := Versions[ver]; ok {
-			if err := ch.CheckCompatiblity(h.Msgs...); err != nil {
-				log.Debugf("telemetry version %s not compatible: %v", ver, err)
-			}
-			log.Debug("telemetry found compatible release: ", ver)
-			return h.New(ch)
+	if FallbackToCli {
+		if v := Handler.FindCompatibleVersion(c); v != nil {
+			log.Debugf("falling back to parsing CLI output for telemetry")
+			return v.NewHandler(c).(TelemetryVppAPI)
 		}
+		// no compatible version found
+		return nil
 	}
-	for ver, h := range Versions {
-		if err := ch.CheckCompatiblity(h.Msgs...); err != nil {
-			log.Debugf("version %s not compatible: %v", ver, err)
-			continue
-		}
-		log.Debug("found compatible version: ", ver)
-		return h.New(ch)
-	}*/
-	if v := Handler.FindCompatibleVersion(c); v != nil {
-		return v.NewHandler(c).(TelemetryVppAPI)
-	}
-	// no compatible version found
+	log.Warnf("stats connection not available for telemetry")
 	return nil
 }

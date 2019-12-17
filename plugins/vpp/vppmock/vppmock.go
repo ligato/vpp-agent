@@ -25,7 +25,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-// TestCtx is a  unit testing.
+// TestCtx is a helper for unit testing.
 // It wraps VppAdapter which is used instead of real VPP.
 type TestCtx struct {
 	//*GomegaWithT
