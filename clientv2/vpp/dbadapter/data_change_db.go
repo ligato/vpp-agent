@@ -167,6 +167,18 @@ func (dsl *PutDSL) DNAT44(nat44 *nat.DNat44) vppclient.PutDSL {
 	return dsl
 }
 
+// NAT44Interface adds a request to create or update NAT44 interface configuration.
+func (dsl *PutDSL) NAT44Interface(natIf *nat.Nat44Interface) vppclient.PutDSL {
+	dsl.parent.txn.Put(models.Key(&nat.Nat44Interface{}), natIf)
+	return dsl
+}
+
+// NAT44AddressPool adds a request to create or update NAT44 address pool.
+func (dsl *PutDSL) NAT44AddressPool(pool *nat.Nat44AddressPool) vppclient.PutDSL {
+	dsl.parent.txn.Put(models.Key(&nat.Nat44AddressPool{}), pool)
+	return dsl
+}
+
 // IPSecSA adds request to create a new Security Association
 func (dsl *PutDSL) IPSecSA(sa *ipsec.SecurityAssociation) vppclient.PutDSL {
 	dsl.parent.txn.Put(ipsec.SAKey(sa.Index), sa)

@@ -184,6 +184,24 @@ func (dsl *DataResyncDSL) DNAT44(nat44 *nat.DNat44) vppclient.DataResyncDSL {
 	return dsl
 }
 
+// NAT44Interface adds NAT44 interface configuration to the RESYNC request.
+func (dsl *DataResyncDSL) NAT44Interface(natIf *nat.Nat44Interface) vppclient.DataResyncDSL {
+	key := models.Key(&nat.Nat44Interface{})
+	dsl.txn.Put(key, natIf)
+	dsl.txnKeys = append(dsl.txnKeys, key)
+
+	return dsl
+}
+
+// NAT44AddressPool adds NAT44 address pool configuration to the RESYNC request.
+func (dsl *DataResyncDSL) NAT44AddressPool(pool *nat.Nat44AddressPool) vppclient.DataResyncDSL {
+	key := models.Key(&nat.Nat44AddressPool{})
+	dsl.txn.Put(key, pool)
+	dsl.txnKeys = append(dsl.txnKeys, key)
+
+	return dsl
+}
+
 // IPSecSA adds request to create a new Security Association
 func (dsl *DataResyncDSL) IPSecSA(sa *ipsec.SecurityAssociation) vppclient.DataResyncDSL {
 	key := ipsec.SAKey(sa.Index)
