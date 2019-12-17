@@ -33,6 +33,7 @@ import (
 	"github.com/pkg/errors"
 
 	"go.ligato.io/vpp-agent/v2/plugins/govppmux/vppcalls"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp"
 
 	_ "go.ligato.io/vpp-agent/v2/plugins/govppmux/vppcalls/vpp1904"
 	_ "go.ligato.io/vpp-agent/v2/plugins/govppmux/vppcalls/vpp1908"
@@ -295,6 +296,12 @@ func (p *Plugin) updateVPPInfo() (err error) {
 		Plugins:     plugins,
 	}
 	p.infoMu.Unlock()
+
+	p.Log.Debugf("listing %d VPP handlers", len(vpp.GetHandlers()))
+	for name, handler := range vpp.GetHandlers() {
+		versions := handler.Versions()
+		p.Log.Debugf("- handler: %-10s has %d versions: %v", name, len(versions), versions)
+	}
 
 	return nil
 }

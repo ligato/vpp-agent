@@ -20,7 +20,6 @@
 package ipsecplugin
 
 import (
-	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/health/statuscheck"
 	"github.com/ligato/cn-infra/infra"
 	"github.com/pkg/errors"
@@ -42,9 +41,6 @@ import (
 type IPSecPlugin struct {
 	Deps
 
-	// GoVPP
-	vppCh govppapi.Channel
-
 	// handler
 	ipSecHandler vppcalls.IPSecVppAPI
 
@@ -59,20 +55,15 @@ type IPSecPlugin struct {
 type Deps struct {
 	infra.PluginDeps
 	KVScheduler kvs.KVScheduler
-	GoVppmux    govppmux.API
+	VPP         govppmux.API
 	IfPlugin    ifplugin.API
 	StatusCheck statuscheck.PluginStatusWriter // optional
 }
 
 // Init registers IPSec-related descriptors.
 func (p *IPSecPlugin) Init() (err error) {
-	// GoVPP channels
-	if p.vppCh, err = p.GoVppmux.NewAPIChannel(); err != nil {
-		return errors.Errorf("failed to create GoVPP API channel: %v", err)
-	}
-
 	// init IPSec handler
-	p.ipSecHandler = vppcalls.CompatibleIPSecVppHandler(p.vppCh, p.IfPlugin.GetInterfaceIndex(), p.Log)
+	p.ipSecHandler = vppcalls.CompatibleIPSecVppHandler(p.VPP, p.IfPlugin.GetInterfaceIndex(), p.Log)
 	if p.ipSecHandler == nil {
 		return errors.New("ipsecHandler is not available")
 	}

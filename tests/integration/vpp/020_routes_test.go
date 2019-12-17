@@ -38,7 +38,7 @@ func TestRoutes(t *testing.T) {
 	vrfIndexes.Put("vrf1-ipv4", &vrfidx.VRFMetadata{Index: 0, Protocol: vpp_l3.VrfTable_IPV4})
 	vrfIndexes.Put("vrf1-ipv6", &vrfidx.VRFMetadata{Index: 0, Protocol: vpp_l3.VrfTable_IPV6})
 
-	h := l3plugin_vppcalls.CompatibleL3VppHandler(ctx.vppBinapi, ifIndexes, vrfIndexes,
+	h := l3plugin_vppcalls.CompatibleL3VppHandler(ctx.vppClient, ifIndexes, vrfIndexes,
 		netalloc_mock.NewMockNetAlloc(), logrus.NewLogger("test"))
 
 	routes, err := h.DumpRoutes()
@@ -88,7 +88,7 @@ func TestCRUDIPv4Route(t *testing.T) {
 	vrfIndexes := vrfidx.NewVRFIndex(logrus.NewLogger("test-vrf"), "test-vrf")
 	vrfIndexes.Put("vrf1-ipv4-vrf0", &vrfidx.VRFMetadata{Index: vrfMetaIdx, Protocol: vpp_l3.VrfTable_IPV4})
 
-	h := l3plugin_vppcalls.CompatibleL3VppHandler(ctx.vppBinapi, ifIndexes, vrfIndexes,
+	h := l3plugin_vppcalls.CompatibleL3VppHandler(ctx.vppClient, ifIndexes, vrfIndexes,
 		netalloc_mock.NewMockNetAlloc(), logrus.NewLogger("test"))
 
 	routes, errx := h.DumpRoutes()
@@ -237,7 +237,7 @@ func TestCRUDIPv6Route(t *testing.T) {
 	vrfIndexes := vrfidx.NewVRFIndex(logrus.NewLogger("test-vrf"), "test-vrf")
 	vrfIndexes.Put("vrf1-ipv6-vrf0", &vrfidx.VRFMetadata{Index: vrfMetaIdx, Protocol: vpp_l3.VrfTable_IPV6})
 
-	h := l3plugin_vppcalls.CompatibleL3VppHandler(ctx.vppBinapi, ifIndexes, vrfIndexes,
+	h := l3plugin_vppcalls.CompatibleL3VppHandler(ctx.vppClient, ifIndexes, vrfIndexes,
 		netalloc_mock.NewMockNetAlloc(), logrus.NewLogger("test"))
 
 	routes, errx := h.DumpRoutes()

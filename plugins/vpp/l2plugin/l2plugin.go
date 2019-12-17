@@ -20,7 +20,6 @@
 package l2plugin
 
 import (
-	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/health/statuscheck"
 	"github.com/ligato/cn-infra/infra"
 	"github.com/pkg/errors"
@@ -43,9 +42,6 @@ import (
 type L2Plugin struct {
 	Deps
 
-	// GoVPP
-	vppCh govppapi.Channel
-
 	// handlers
 	l2Handler vppcalls.L2VppAPI
 
@@ -63,20 +59,15 @@ type L2Plugin struct {
 type Deps struct {
 	infra.PluginDeps
 	KVScheduler kvs.KVScheduler
-	GoVppmux    govppmux.API
+	VPP         govppmux.API
 	IfPlugin    ifplugin.API
 	StatusCheck statuscheck.PluginStatusWriter // optional
 }
 
 // Init registers L2-related descriptors.
 func (p *L2Plugin) Init() (err error) {
-	// GoVPP channels
-	if p.vppCh, err = p.GoVppmux.NewAPIChannel(); err != nil {
-		return errors.Errorf("failed to create GoVPP API channel: %v", err)
-	}
-
 	// init handlers
-	p.l2Handler = vppcalls.CompatibleL2VppHandler(p.vppCh, p.IfPlugin.GetInterfaceIndex(), p.bdIndex, p.Log)
+	p.l2Handler = vppcalls.CompatibleL2VppHandler(p.VPP, p.IfPlugin.GetInterfaceIndex(), p.bdIndex, p.Log)
 	if p.l2Handler == nil {
 		return errors.Errorf("could not find compatible L2VppHandler")
 	}
@@ -98,7 +89,7 @@ func (p *L2Plugin) Init() (err error) {
 	}
 
 	// we set l2Handler again here, because bdIndex was nil before
-	p.l2Handler = vppcalls.CompatibleL2VppHandler(p.vppCh, p.IfPlugin.GetInterfaceIndex(), p.bdIndex, p.Log)
+	p.l2Handler = vppcalls.CompatibleL2VppHandler(p.VPP, p.IfPlugin.GetInterfaceIndex(), p.bdIndex, p.Log)
 
 	// init & register descriptors
 	p.bdIfaceDescriptor = descriptor.NewBDInterfaceDescriptor(p.bdIndex, p.l2Handler, p.Log)

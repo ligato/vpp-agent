@@ -16,8 +16,8 @@ package vpp2001
 
 import (
 	govppapi "git.fd.io/govpp.git/api"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp"
 
+	"go.ligato.io/vpp-agent/v2/plugins/vpp"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/aclplugin/vppcalls"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324/acl"

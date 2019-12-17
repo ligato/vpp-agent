@@ -25,7 +25,7 @@ import (
 	l2ba "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904/l2"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/l2plugin/vppcalls"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/vppcallmock"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/vppmock"
 	l2nb "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l2"
 )
 
@@ -100,8 +100,8 @@ func TestL2FibDelete(t *testing.T) {
 	}
 }
 
-func fibTestSetup(t *testing.T) (*vppcallmock.TestCtx, vppcalls.FIBVppAPI, ifaceidx.IfaceMetadataIndexRW, idxvpp.NameToIndexRW) {
-	ctx := vppcallmock.SetupTestCtx(t)
+func fibTestSetup(t *testing.T) (*vppmock.TestCtx, vppcalls.FIBVppAPI, ifaceidx.IfaceMetadataIndexRW, idxvpp.NameToIndexRW) {
+	ctx := vppmock.SetupTestCtx(t)
 	logger := logrus.NewLogger("test-log")
 	ifaceIdx := ifaceidx.NewIfaceIndex(logger, "fib-if-idx")
 	bdIndexes := idxvpp.NewNameToIndex(logger, "fib-bd-idx", nil)

@@ -25,7 +25,7 @@ import (
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/stnplugin/vppcalls"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/stnplugin/vppcalls/vpp2001"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/vppcallmock"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/vppmock"
 	stn "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/stn"
 )
 
@@ -142,8 +142,8 @@ func TestDelStnRule(t *testing.T) {
 	Expect(vppMsg.IsAdd).To(BeEquivalentTo(0))
 }
 
-func stnTestSetup(t *testing.T) (*vppcallmock.TestCtx, vppcalls.StnVppAPI, ifaceidx.IfaceMetadataIndexRW) {
-	ctx := vppcallmock.SetupTestCtx(t)
+func stnTestSetup(t *testing.T) (*vppmock.TestCtx, vppcalls.StnVppAPI, ifaceidx.IfaceMetadataIndexRW) {
+	ctx := vppmock.SetupTestCtx(t)
 	logger := logrus.NewLogger("test-log")
 	ifIndexes := ifaceidx.NewIfaceIndex(logger, "stn-if-idx")
 	stnHandler := vpp2001.NewStnVppHandler(ctx.MockChannel, ifIndexes, logrus.DefaultLogger())

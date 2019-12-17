@@ -21,12 +21,12 @@ import (
 	. "github.com/onsi/gomega"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904/ip"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904/vpe"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/vppcallmock"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/vppmock"
 	l3 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l3"
 )
 
 func TestDumpVrfTables(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx := vppmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()
 	vthandler := NewVrfTableVppHandler(ctx.MockChannel, logrus.DefaultLogger())
 

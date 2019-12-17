@@ -31,7 +31,7 @@ func NewPlugin(opts ...Option) *PuntPlugin {
 
 	p.PluginName = "vpp-punt-plugin"
 	p.KVScheduler = &kvscheduler.DefaultPlugin
-	p.GoVppmux = &govppmux.DefaultPlugin
+	p.VPP = &govppmux.DefaultPlugin
 	p.IfPlugin = &ifplugin.DefaultPlugin
 
 	for _, o := range opts {

@@ -21,7 +21,7 @@ import (
 	. "github.com/onsi/gomega"
 	acl_api "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908/acl"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/vppcallmock"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/vppmock"
 	acl "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/acl"
 )
 
@@ -226,13 +226,13 @@ var aclMACIPrules = []*acl.ACL_Rule{
 }
 
 type testCtx struct {
-	*vppcallmock.TestCtx
+	*vppmock.TestCtx
 	aclHandler *ACLVppHandler
 	ifIndexes  ifaceidx.IfaceMetadataIndexRW
 }
 
 func setupACLTest(t *testing.T) *testCtx {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx := vppmock.SetupTestCtx(t)
 
 	ifaceIdx := ifaceidx.NewIfaceIndex(logrus.NewLogger("test"), "test")
 	aclHandler := NewACLVppHandler(ctx.MockVPPClient, ifaceIdx).(*ACLVppHandler)

@@ -25,7 +25,7 @@ import (
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/puntplugin/vppcalls"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/puntplugin/vppcalls/vpp1904"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/vppcallmock"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/vppmock"
 	punt "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/punt"
 )
 
@@ -205,8 +205,8 @@ func TestDeleteIPRedirect(t *testing.T) {
 	//Expect(vppMsg.Nh).To(Equal([]uint8(net.ParseIP("10.0.0.1").To4())))
 }
 
-func puntTestSetup(t *testing.T) (*vppcallmock.TestCtx, vppcalls.PuntVppAPI, ifaceidx.IfaceMetadataIndexRW) {
-	ctx := vppcallmock.SetupTestCtx(t)
+func puntTestSetup(t *testing.T) (*vppmock.TestCtx, vppcalls.PuntVppAPI, ifaceidx.IfaceMetadataIndexRW) {
+	ctx := vppmock.SetupTestCtx(t)
 	logger := logrus.NewLogger("test-log")
 	ifIndexes := ifaceidx.NewIfaceIndex(logger, "punt-if-idx")
 	puntHandler := vpp1904.NewPuntVppHandler(ctx.MockChannel, ifIndexes, logrus.DefaultLogger())

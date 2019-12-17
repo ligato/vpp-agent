@@ -21,11 +21,9 @@ package puntplugin
 import (
 	"strings"
 
-	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/health/statuscheck"
 	"github.com/ligato/cn-infra/infra"
-	"github.com/pkg/errors"
 
 	"go.ligato.io/vpp-agent/v2/pkg/models"
 	"go.ligato.io/vpp-agent/v2/plugins/govppmux"
@@ -46,9 +44,6 @@ import (
 type PuntPlugin struct {
 	Deps
 
-	// GoVPP
-	vppCh govppapi.Channel
-
 	// handler
 	puntHandler vppcalls.PuntVppAPI
 
@@ -62,7 +57,7 @@ type PuntPlugin struct {
 type Deps struct {
 	infra.PluginDeps
 	KVScheduler  kvs.KVScheduler
-	GoVppmux     govppmux.API
+	VPP          govppmux.API
 	IfPlugin     ifplugin.API
 	PublishState datasync.KeyProtoValWriter     // optional
 	StatusCheck  statuscheck.PluginStatusWriter // optional
@@ -70,13 +65,8 @@ type Deps struct {
 
 // Init registers STN-related descriptors.
 func (p *PuntPlugin) Init() (err error) {
-	// GoVPP channels
-	if p.vppCh, err = p.GoVppmux.NewAPIChannel(); err != nil {
-		return errors.Errorf("failed to create GoVPP API channel: %v", err)
-	}
-
 	// init punt handler
-	p.puntHandler = vppcalls.CompatiblePuntVppHandler(p.vppCh, p.IfPlugin.GetInterfaceIndex(), p.Log)
+	p.puntHandler = vppcalls.CompatiblePuntVppHandler(p.VPP, p.IfPlugin.GetInterfaceIndex(), p.Log)
 
 	// init and register IP punt redirect
 	p.ipRedirectDescriptor = descriptor.NewIPRedirectDescriptor(p.puntHandler, p.Log)

@@ -87,14 +87,14 @@ func (p PluginInfo) String() string {
 }
 
 var Handler = vpp.RegisterHandler(vpp.HandlerDesc{
-	Name:       "vppcore",
+	Name:       "core",
 	HandlerAPI: (*VppCoreAPI)(nil),
 })
 
 type NewHandlerFunc func(govppapi.Channel) VppCoreAPI
 
 // AddVersion registers vppcalls Handler for the given version.
-func AddVersion(version string, msgs []govppapi.Message, h NewHandlerFunc) {
+func AddVersion(version vpp.Version, msgs []govppapi.Message, h NewHandlerFunc) {
 	Handler.AddVersion(vpp.HandlerVersion{
 		Version: version,
 		Check: func(c vpp.Client) error {

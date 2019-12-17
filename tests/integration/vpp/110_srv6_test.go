@@ -88,7 +88,7 @@ func TestLocalsidCRUD(t *testing.T) {
 	vrfIndexes := vrfidx.NewVRFIndex(logrus.NewLogger("test-vrf"), "test-vrf")
 	vrfIndexes.Put("vrf1-ipv4", &vrfidx.VRFMetadata{Index: 0, Protocol: vpp_l3.VrfTable_IPV4})
 	vrfIndexes.Put("vrf1-ipv6", &vrfidx.VRFMetadata{Index: 0, Protocol: vpp_l3.VrfTable_IPV6})
-	l3h := l3plugin_vppcalls.CompatibleL3VppHandler(ctx.vppBinapi, ifIndexes, vrfIndexes,
+	l3h := l3plugin_vppcalls.CompatibleL3VppHandler(ctx.vppClient, ifIndexes, vrfIndexes,
 		netalloc_mock.NewMockNetAlloc(), logrus.NewLogger("test-l3"))
 	for _, vrfTable := range vrfTables[:4] {
 		Expect(l3h.AddVrfTable(vrfTable)).Should(Succeed(), fmt.Sprintf("fixture setup failed "+

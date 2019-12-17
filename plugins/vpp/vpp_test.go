@@ -12,20 +12,8 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 
-package app
+package vpp
 
-import (
-	"log"
-	"testing"
-
-	"go.ligato.io/vpp-agent/v2/plugins/vpp"
-)
-
-func TestHandlers(t *testing.T) {
-	handlers := vpp.GetHandlers()
-
-	log.Printf("listing %d handlers:", len(handlers))
-	for h, handler := range handlers {
-		log.Printf(" - %s (%v)", h, handler.Versions())
-	}
+func ClearRegisteredHandlers() {
+	registeredHandlers = map[string]*Handler{}
 }

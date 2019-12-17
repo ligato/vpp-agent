@@ -33,7 +33,7 @@ func NewPlugin(opts ...Option) *L3Plugin {
 	p.PluginName = "vpp-l3plugin"
 	p.StatusCheck = &statuscheck.DefaultPlugin
 	p.KVScheduler = &kvscheduler.DefaultPlugin
-	p.GoVppmux = &govppmux.DefaultPlugin
+	p.VPP = &govppmux.DefaultPlugin
 	p.IfPlugin = &ifplugin.DefaultPlugin
 	p.AddrAlloc = &netalloc.DefaultPlugin
 

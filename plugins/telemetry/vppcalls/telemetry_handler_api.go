@@ -66,7 +66,7 @@ type MemoryThread struct {
 	PageSize  uint64 `json:"page_size"`
 }
 
-// NodeErrorCounterInfo contains node counters info.
+// NodeCounterInfo contains node counters info.
 type NodeCounterInfo struct {
 	Counters []NodeCounter `json:"counters"`
 }
@@ -160,7 +160,7 @@ var Handler = vpp.RegisterHandler(vpp.HandlerDesc{
 type NewHandlerFunc func(govppapi.Channel) TelemetryVppAPI
 
 // AddHandlerVersion registers vppcalls Handler for the given version.
-func AddHandlerVersion(version string, msgs []govppapi.Message, h NewHandlerFunc) {
+func AddHandlerVersion(version vpp.Version, msgs []govppapi.Message, h NewHandlerFunc) {
 	Handler.AddVersion(vpp.HandlerVersion{
 		Version: version,
 		Check: func(c vpp.Client) error {

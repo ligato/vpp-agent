@@ -18,20 +18,17 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/ligato/cn-infra/servicelabel"
-	"go.ligato.io/vpp-agent/v2/plugins/linux/nsplugin"
-
-	"git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/infra"
 	"github.com/ligato/cn-infra/rpc/rest"
 	access "github.com/ligato/cn-infra/rpc/rest/security/model/access-security"
-	"github.com/ligato/cn-infra/utils/safeclose"
+	"github.com/ligato/cn-infra/servicelabel"
 
 	"go.ligato.io/vpp-agent/v2/plugins/govppmux"
 	vpevppcalls "go.ligato.io/vpp-agent/v2/plugins/govppmux/vppcalls"
 	linuxifplugin "go.ligato.io/vpp-agent/v2/plugins/linux/ifplugin"
 	iflinuxcalls "go.ligato.io/vpp-agent/v2/plugins/linux/ifplugin/linuxcalls"
 	l3linuxcalls "go.ligato.io/vpp-agent/v2/plugins/linux/l3plugin/linuxcalls"
+	"go.ligato.io/vpp-agent/v2/plugins/linux/nsplugin"
 	"go.ligato.io/vpp-agent/v2/plugins/netalloc"
 	"go.ligato.io/vpp-agent/v2/plugins/restapi/resturl"
 	telemetryvppcalls "go.ligato.io/vpp-agent/v2/plugins/telemetry/vppcalls"
@@ -64,9 +61,6 @@ type Plugin struct {
 
 	// Index page
 	index *index
-
-	// Channels
-	vppChan api.Channel
 
 	// Handlers
 	vpeHandler  vpevppcalls.VppCoreAPI
@@ -115,11 +109,6 @@ type indexItem struct {
 
 // Init initializes the Rest Plugin
 func (p *Plugin) Init() (err error) {
-	// VPP channels
-	if p.vppChan, err = p.VPP.NewAPIChannel(); err != nil {
-		return err
-	}
-
 	// VPP Indexes
 	ifIndexes := p.VPPIfPlugin.GetInterfaceIndex()
 	bdIndexes := p.VPPL2Plugin.GetBDIndex()
@@ -145,15 +134,15 @@ func (p *Plugin) Init() (err error) {
 	if p.ifHandler == nil {
 		p.Log.Info("VPP Interface handler is not available, it will be skipped")
 	}
-	p.l2Handler = l2vppcalls.CompatibleL2VppHandler(p.vppChan, ifIndexes, bdIndexes, p.Log)
+	p.l2Handler = l2vppcalls.CompatibleL2VppHandler(p.VPP, ifIndexes, bdIndexes, p.Log)
 	if p.l2Handler == nil {
 		p.Log.Info("VPP L2 handler is not available, it will be skipped")
 	}
-	p.l3Handler = l3vppcalls.CompatibleL3VppHandler(p.vppChan, ifIndexes, vrfIndexes, p.AddrAlloc, p.Log)
+	p.l3Handler = l3vppcalls.CompatibleL3VppHandler(p.VPP, ifIndexes, vrfIndexes, p.AddrAlloc, p.Log)
 	if p.l3Handler == nil {
 		p.Log.Info("VPP L3 handler is not available, it will be skipped")
 	}
-	p.ipSecHandler = ipsecvppcalls.CompatibleIPSecVppHandler(p.vppChan, ifIndexes, p.Log)
+	p.ipSecHandler = ipsecvppcalls.CompatibleIPSecVppHandler(p.VPP, ifIndexes, p.Log)
 	if p.ipSecHandler == nil {
 		p.Log.Info("VPP IPSec handler is not available, it will be skipped")
 	}
@@ -171,7 +160,7 @@ func (p *Plugin) Init() (err error) {
 	if p.natHandler == nil {
 		p.Log.Infof("NAT handler is not available, it will be skipped")
 	}
-	p.puntHandler = puntvppcalls.CompatiblePuntVppHandler(p.vppChan, ifIndexes, p.Log)
+	p.puntHandler = puntvppcalls.CompatiblePuntVppHandler(p.VPP, ifIndexes, p.Log)
 	if p.puntHandler == nil {
 		p.Log.Infof("Punt handler is not available, it will be skipped")
 	}
@@ -221,8 +210,8 @@ func (p *Plugin) AfterInit() (err error) {
 }
 
 // Close is used to clean up resources used by Plugin
-func (p *Plugin) Close() (err error) {
-	return safeclose.Close(p.vppChan)
+func (p *Plugin) Close() error {
+	return nil
 }
 
 // Fill index item lists

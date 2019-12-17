@@ -32,7 +32,7 @@ func NewPlugin(opts ...Option) *IPSecPlugin {
 	p.PluginName = "vpp-ipsec-plugin"
 	p.StatusCheck = &statuscheck.DefaultPlugin
 	p.KVScheduler = &kvscheduler.DefaultPlugin
-	p.GoVppmux = &govppmux.DefaultPlugin
+	p.VPP = &govppmux.DefaultPlugin
 	p.IfPlugin = &ifplugin.DefaultPlugin
 
 	for _, o := range opts {

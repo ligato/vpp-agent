@@ -21,7 +21,7 @@ import (
 	"git.fd.io/govpp.git/core"
 	. "github.com/onsi/gomega"
 
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/vppcallmock"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/vppmock"
 )
 
 func TestRequestRetry(t *testing.T) {
@@ -72,7 +72,7 @@ func TestRequestRetry(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			ctx := vppcallmock.SetupTestCtx(t)
+			ctx := vppmock.SetupTestCtx(t)
 			defer ctx.TeardownTestCtx()
 
 			retryCfg := retryConfig{test.attempts, test.timeout}

@@ -70,7 +70,7 @@ var Handler = vpp.RegisterHandler(vpp.HandlerDesc{
 
 type NewHandlerFunc func(vpp.Client, ifaceidx.IfaceMetadataIndex, logging.Logger) SRv6VppAPI
 
-func AddHandlerVersion(version string, msgs []govppapi.Message, h NewHandlerFunc) {
+func AddHandlerVersion(version vpp.Version, msgs []govppapi.Message, h NewHandlerFunc) {
 	Handler.AddVersion(vpp.HandlerVersion{
 		Version: version,
 		Check: func(c vpp.Client) error {

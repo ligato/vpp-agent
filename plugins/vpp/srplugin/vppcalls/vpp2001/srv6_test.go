@@ -28,7 +28,7 @@ import (
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/srplugin/vppcalls"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/srplugin/vppcalls/vpp2001"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/vppcallmock"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/vppmock"
 	srv6 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/srv6"
 )
 
@@ -1448,8 +1448,8 @@ func TestRetrievePolicyIndexInfo(t *testing.T) {
 	}
 }
 
-func setup(t *testing.T) (*vppcallmock.TestCtx, vppcalls.SRv6VppAPI) {
-	ctx := vppcallmock.SetupTestCtx(t)
+func setup(t *testing.T) (*vppmock.TestCtx, vppcalls.SRv6VppAPI) {
+	ctx := vppmock.SetupTestCtx(t)
 	log := logrus.NewLogger("test")
 	swIfIndex := ifaceidx.NewIfaceIndex(log, "test")
 	swIfIndex.Put(ifaceA, &ifaceidx.IfaceMetadata{SwIfIndex: swIndexA})
@@ -1457,7 +1457,7 @@ func setup(t *testing.T) (*vppcallmock.TestCtx, vppcalls.SRv6VppAPI) {
 	return ctx, vppCalls
 }
 
-func teardown(ctx *vppcallmock.TestCtx) {
+func teardown(ctx *vppmock.TestCtx) {
 	ctx.TeardownTestCtx()
 }
 

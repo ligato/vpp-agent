@@ -18,21 +18,20 @@ import (
 	"fmt"
 	"net"
 
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/l3plugin/vrfidx"
-
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908/dhcp"
-
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
 
 	vpevppcalls "go.ligato.io/vpp-agent/v2/plugins/govppmux/vppcalls"
-	"go.ligato.io/vpp-agent/v2/plugins/govppmux/vppcalls/vpp1908"
+	vpe_vpp1908 "go.ligato.io/vpp-agent/v2/plugins/govppmux/vppcalls/vpp1908"
 	"go.ligato.io/vpp-agent/v2/plugins/netalloc"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908/dhcp"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908/ip"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908/vpe"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/l3plugin/vppcalls"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/l3plugin/vrfidx"
 )
 
 func init() {
@@ -41,14 +40,7 @@ func init() {
 	msgs = append(msgs, vpe.AllMessages()...)
 	msgs = append(msgs, dhcp.AllMessages()...)
 
-	vppcalls.Versions["vpp1908"] = vppcalls.HandlerVersion{
-		Msgs: msgs,
-		New: func(ch govppapi.Channel, ifIdx ifaceidx.IfaceMetadataIndex,
-			vrfIdx vrfidx.VRFMetadataIndex, addrAlloc netalloc.AddressAllocator, log logging.Logger,
-		) vppcalls.L3VppAPI {
-			return NewL3VppHandler(ch, ifIdx, vrfIdx, addrAlloc, log)
-		},
-	}
+	vppcalls.AddHandlerVersion(vpp1908.Version, msgs, NewL3VppHandler)
 }
 
 type L3VppHandler struct {
@@ -61,9 +53,12 @@ type L3VppHandler struct {
 }
 
 func NewL3VppHandler(
-	ch govppapi.Channel, ifIdx ifaceidx.IfaceMetadataIndex, vrfIdx vrfidx.VRFMetadataIndex,
-	addrAlloc netalloc.AddressAllocator, log logging.Logger,
-) *L3VppHandler {
+	ch govppapi.Channel,
+	ifIdx ifaceidx.IfaceMetadataIndex,
+	vrfIdx vrfidx.VRFMetadataIndex,
+	addrAlloc netalloc.AddressAllocator,
+	log logging.Logger,
+) vppcalls.L3VppAPI {
 	return &L3VppHandler{
 		ArpVppHandler:      NewArpVppHandler(ch, ifIdx, log),
 		ProxyArpVppHandler: NewProxyArpVppHandler(ch, ifIdx, log),
@@ -163,7 +158,7 @@ func NewIPNeighVppHandler(callsChan govppapi.Channel, log logging.Logger) *IPNei
 	return &IPNeighHandler{
 		callsChannel: callsChan,
 		log:          log,
-		VppCoreAPI:   vpp1908.NewVpeHandler(callsChan),
+		VppCoreAPI:   vpe_vpp1908.NewVpeHandler(callsChan),
 	}
 }
 

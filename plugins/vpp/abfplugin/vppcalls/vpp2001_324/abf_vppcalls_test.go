@@ -25,7 +25,7 @@ import (
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/aclplugin/aclidx"
 	vpp_abf "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324/abf"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/vppcallmock"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/vppmock"
 	abf "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/abf"
 )
 
@@ -266,8 +266,8 @@ func TestDetachABFInterfaceIPv6Error(t *testing.T) {
 	Expect(err).ToNot(BeNil())
 }
 
-func abfTestSetup(t *testing.T) (*vppcallmock.TestCtx, vppcalls.ABFVppAPI, ifaceidx.IfaceMetadataIndexRW) {
-	ctx := vppcallmock.SetupTestCtx(t)
+func abfTestSetup(t *testing.T) (*vppmock.TestCtx, vppcalls.ABFVppAPI, ifaceidx.IfaceMetadataIndexRW) {
+	ctx := vppmock.SetupTestCtx(t)
 	log := logrus.NewLogger("test-log")
 	aclIdx := aclidx.NewACLIndex(log, "acl-index")
 	ifIdx := ifaceidx.NewIfaceIndex(log, "if-index")

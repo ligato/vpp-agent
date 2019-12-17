@@ -25,7 +25,7 @@ import (
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/vpe"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/l2plugin/vppcalls"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/vppcallmock"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/vppmock"
 	l2 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l2"
 )
 
@@ -106,7 +106,7 @@ func TestDumpBridgeDomains(t *testing.T) {
 	ifIndexes.Put("if1", &ifaceidx.IfaceMetadata{SwIfIndex: 5})
 	ifIndexes.Put("if2", &ifaceidx.IfaceMetadata{SwIfIndex: 7})
 
-	ctx.MockReplies([]*vppcallmock.HandleReplies{
+	ctx.MockReplies([]*vppmock.HandleReplies{
 		{
 			Name:    (&vpp_l2.BdIPMacDump{}).GetMessageName(),
 			Ping:    true,
@@ -138,7 +138,7 @@ func TestDumpBridgeDomainsWithARP(t *testing.T) {
 	ifIndexes.Put("if1", &ifaceidx.IfaceMetadata{SwIfIndex: 5})
 	ifIndexes.Put("if3", &ifaceidx.IfaceMetadata{SwIfIndex: 8})
 
-	ctx.MockReplies([]*vppcallmock.HandleReplies{
+	ctx.MockReplies([]*vppmock.HandleReplies{
 		{
 			Name: (&vpp_l2.BdIPMacDump{}).GetMessageName(),
 			Ping: true,

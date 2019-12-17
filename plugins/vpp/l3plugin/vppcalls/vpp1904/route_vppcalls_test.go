@@ -26,7 +26,7 @@ import (
 	ifvpp1904 "go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/vppcalls/vpp1904"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/l3plugin/vppcalls"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/l3plugin/vppcalls/vpp1904"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/vppcallmock"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/vppmock"
 	l3 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l3"
 )
 
@@ -82,8 +82,8 @@ func TestDeleteRoute(t *testing.T) {
 	Expect(err).To(Not(BeNil()))
 }
 
-func routeTestSetup(t *testing.T) (*vppcallmock.TestCtx, ifvppcalls.InterfaceVppAPI, vppcalls.RouteVppAPI) {
-	ctx := vppcallmock.SetupTestCtx(t)
+func routeTestSetup(t *testing.T) (*vppmock.TestCtx, ifvppcalls.InterfaceVppAPI, vppcalls.RouteVppAPI) {
+	ctx := vppmock.SetupTestCtx(t)
 	log := logrus.NewLogger("test-log")
 	ifHandler := ifvpp1904.NewInterfaceVppHandler(ctx.MockVPPClient, log)
 	ifIndexes := ifaceidx.NewIfaceIndex(logrus.NewLogger("test"), "test")

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package vppcallmock
+package vppmock
 
 import (
 	"context"
@@ -25,9 +25,10 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-// TestCtx is helping structure for unit testing.
+// TestCtx is a  unit testing.
 // It wraps VppAdapter which is used instead of real VPP.
 type TestCtx struct {
+	//*GomegaWithT
 	Context       context.Context
 	MockVpp       *mock.VppAdapter
 	MockStats     *mock.StatsAdapter
@@ -40,8 +41,10 @@ type TestCtx struct {
 // SetupTestCtx sets up all fields of TestCtx structure at the begining of test
 func SetupTestCtx(t *testing.T) *TestCtx {
 	RegisterTestingT(t)
+	//g := NewGomegaWithT(t) // TODO: use GomegaWithT
 
 	ctx := &TestCtx{
+		//GomegaWithT: g,
 		Context:   context.Background(),
 		MockVpp:   mock.NewVppAdapter(),
 		MockStats: mock.NewStatsAdapter(),

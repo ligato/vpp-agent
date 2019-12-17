@@ -68,7 +68,7 @@ var Handler = vpp.RegisterHandler(vpp.HandlerDesc{
 
 type NewHandlerFunc func(ch govppapi.Channel, aclIdx aclidx.ACLMetadataIndex, ifIdx ifaceidx.IfaceMetadataIndex, log logging.Logger) ABFVppAPI
 
-func AddABFHandlerVersion(version string, msgs []govppapi.Message, h NewHandlerFunc) {
+func AddABFHandlerVersion(version vpp.Version, msgs []govppapi.Message, h NewHandlerFunc) {
 	Handler.AddVersion(vpp.HandlerVersion{
 		Version: version,
 		Check: func(c vpp.Client) error {

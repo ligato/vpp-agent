@@ -23,15 +23,13 @@ import (
 var (
 	// ErrIncompatible is an error returned when no compatible handler is found.
 	ErrIncompatible = errors.New("incompatible handler")
-
 	// ErrNoVersions is an error returned when no handler versions are found.
 	ErrNoVersions = errors.New("no handler versions")
-
 	// ErrPluginDisabled is an error returned when disabled plugin is detected.
 	ErrPluginDisabled = errors.New("plugin not available")
 )
 
-// Version defines a VPP version
+// Version represents version of VPP.
 type Version string
 
 type APIChannel interface {
