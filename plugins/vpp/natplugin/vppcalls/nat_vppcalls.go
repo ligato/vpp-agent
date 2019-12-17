@@ -55,9 +55,14 @@ type NatVppAPI interface {
 // NatVppRead provides read methods for VPP NAT configuration.
 type NatVppRead interface {
 	// Nat44GlobalConfigDump dumps global NAT44 config in NB format.
-	Nat44GlobalConfigDump() (*nat.Nat44Global, error)
+	// If dumpDeprecated is true, dumps deprecated NAT44 global config as well.
+	Nat44GlobalConfigDump(dumpDeprecated bool) (*nat.Nat44Global, error)
 	// DNat44Dump dumps all configured DNAT-44 configurations ordered by label.
 	DNat44Dump() ([]*nat.DNat44, error)
+	// Nat44Nat44InterfacesDump dumps NAT44 config of all NAT44-enabled interfaces.
+	Nat44Nat44InterfacesDump() ([]*nat.Nat44Interface, error)
+	// Nat44AddressPoolsDump dumps all configured NAT44 address pools.
+	Nat44AddressPoolsDump() ([]*nat.Nat44AddressPool, error)
 }
 
 var handler = vpp.RegisterHandler(vpp.HandlerDesc{

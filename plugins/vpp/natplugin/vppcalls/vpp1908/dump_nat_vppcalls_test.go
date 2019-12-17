@@ -42,6 +42,20 @@ func TestNat44GlobalConfigDump(t *testing.T) {
 		Enabled: true,
 	})
 
+	// virtual reassembly
+	ctx.MockVpp.MockReply(&bin_api.NatGetReassReply{
+		// IPv4
+		IP4Timeout:  10,
+		IP4MaxReass: 5,
+		IP4MaxFrag:  7,
+		IP4DropFrag: 1,
+		// IPv6
+		IP6Timeout:  20,
+		IP6MaxReass: 8,
+		IP6MaxFrag:  13,
+		IP6DropFrag: 0,
+	})
+
 	// non-output interfaces
 	ctx.MockVpp.MockReply(
 		&bin_api.Nat44InterfaceDetails{
@@ -73,25 +87,11 @@ func TestNat44GlobalConfigDump(t *testing.T) {
 		})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 
-	// virtual reassembly
-	ctx.MockVpp.MockReply(&bin_api.NatGetReassReply{
-		// IPv4
-		IP4Timeout:  10,
-		IP4MaxReass: 5,
-		IP4MaxFrag:  7,
-		IP4DropFrag: 1,
-		// IPv6
-		IP6Timeout:  20,
-		IP6MaxReass: 8,
-		IP6MaxFrag:  13,
-		IP6DropFrag: 0,
-	})
-
 	swIfIndexes.Put("if0", &ifaceidx.IfaceMetadata{SwIfIndex: 1})
 	swIfIndexes.Put("if1", &ifaceidx.IfaceMetadata{SwIfIndex: 2})
 	swIfIndexes.Put("if2", &ifaceidx.IfaceMetadata{SwIfIndex: 3})
 
-	globalCfg, err := natHandler.Nat44GlobalConfigDump()
+	globalCfg, err := natHandler.Nat44GlobalConfigDump(true)
 	Expect(err).To(Succeed())
 
 	Expect(globalCfg.Forwarding).To(BeTrue())

@@ -10,44 +10,44 @@ import (
 
 ////////// type-safe key-value pair with metadata //////////
 
-type NAT44AddressKVWithMetadata struct {
+type NAT44AddressPoolKVWithMetadata struct {
 	Key      string
-	Value    *vpp_nat.Nat44Global_Address
+	Value    *vpp_nat.Nat44AddressPool
 	Metadata interface{}
 	Origin   ValueOrigin
 }
 
 ////////// type-safe Descriptor structure //////////
 
-type NAT44AddressDescriptor struct {
+type NAT44AddressPoolDescriptor struct {
 	Name                 string
 	KeySelector          KeySelector
 	ValueTypeName        string
 	KeyLabel             func(key string) string
-	ValueComparator      func(key string, oldValue, newValue *vpp_nat.Nat44Global_Address) bool
+	ValueComparator      func(key string, oldValue, newValue *vpp_nat.Nat44AddressPool) bool
 	NBKeyPrefix          string
 	WithMetadata         bool
 	MetadataMapFactory   MetadataMapFactory
-	Validate             func(key string, value *vpp_nat.Nat44Global_Address) error
-	Create               func(key string, value *vpp_nat.Nat44Global_Address) (metadata interface{}, err error)
-	Delete               func(key string, value *vpp_nat.Nat44Global_Address, metadata interface{}) error
-	Update               func(key string, oldValue, newValue *vpp_nat.Nat44Global_Address, oldMetadata interface{}) (newMetadata interface{}, err error)
-	UpdateWithRecreate   func(key string, oldValue, newValue *vpp_nat.Nat44Global_Address, metadata interface{}) bool
-	Retrieve             func(correlate []NAT44AddressKVWithMetadata) ([]NAT44AddressKVWithMetadata, error)
+	Validate             func(key string, value *vpp_nat.Nat44AddressPool) error
+	Create               func(key string, value *vpp_nat.Nat44AddressPool) (metadata interface{}, err error)
+	Delete               func(key string, value *vpp_nat.Nat44AddressPool, metadata interface{}) error
+	Update               func(key string, oldValue, newValue *vpp_nat.Nat44AddressPool, oldMetadata interface{}) (newMetadata interface{}, err error)
+	UpdateWithRecreate   func(key string, oldValue, newValue *vpp_nat.Nat44AddressPool, metadata interface{}) bool
+	Retrieve             func(correlate []NAT44AddressPoolKVWithMetadata) ([]NAT44AddressPoolKVWithMetadata, error)
 	IsRetriableFailure   func(err error) bool
-	DerivedValues        func(key string, value *vpp_nat.Nat44Global_Address) []KeyValuePair
-	Dependencies         func(key string, value *vpp_nat.Nat44Global_Address) []Dependency
+	DerivedValues        func(key string, value *vpp_nat.Nat44AddressPool) []KeyValuePair
+	Dependencies         func(key string, value *vpp_nat.Nat44AddressPool) []Dependency
 	RetrieveDependencies []string /* descriptor name */
 }
 
 ////////// Descriptor adapter //////////
 
-type NAT44AddressDescriptorAdapter struct {
-	descriptor *NAT44AddressDescriptor
+type NAT44AddressPoolDescriptorAdapter struct {
+	descriptor *NAT44AddressPoolDescriptor
 }
 
-func NewNAT44AddressDescriptor(typedDescriptor *NAT44AddressDescriptor) *KVDescriptor {
-	adapter := &NAT44AddressDescriptorAdapter{descriptor: typedDescriptor}
+func NewNAT44AddressPoolDescriptor(typedDescriptor *NAT44AddressPoolDescriptor) *KVDescriptor {
+	adapter := &NAT44AddressPoolDescriptorAdapter{descriptor: typedDescriptor}
 	descriptor := &KVDescriptor{
 		Name:                 typedDescriptor.Name,
 		KeySelector:          typedDescriptor.KeySelector,
@@ -89,88 +89,88 @@ func NewNAT44AddressDescriptor(typedDescriptor *NAT44AddressDescriptor) *KVDescr
 	return descriptor
 }
 
-func (da *NAT44AddressDescriptorAdapter) ValueComparator(key string, oldValue, newValue proto.Message) bool {
-	typedOldValue, err1 := castNAT44AddressValue(key, oldValue)
-	typedNewValue, err2 := castNAT44AddressValue(key, newValue)
+func (da *NAT44AddressPoolDescriptorAdapter) ValueComparator(key string, oldValue, newValue proto.Message) bool {
+	typedOldValue, err1 := castNAT44AddressPoolValue(key, oldValue)
+	typedNewValue, err2 := castNAT44AddressPoolValue(key, newValue)
 	if err1 != nil || err2 != nil {
 		return false
 	}
 	return da.descriptor.ValueComparator(key, typedOldValue, typedNewValue)
 }
 
-func (da *NAT44AddressDescriptorAdapter) Validate(key string, value proto.Message) (err error) {
-	typedValue, err := castNAT44AddressValue(key, value)
+func (da *NAT44AddressPoolDescriptorAdapter) Validate(key string, value proto.Message) (err error) {
+	typedValue, err := castNAT44AddressPoolValue(key, value)
 	if err != nil {
 		return err
 	}
 	return da.descriptor.Validate(key, typedValue)
 }
 
-func (da *NAT44AddressDescriptorAdapter) Create(key string, value proto.Message) (metadata Metadata, err error) {
-	typedValue, err := castNAT44AddressValue(key, value)
+func (da *NAT44AddressPoolDescriptorAdapter) Create(key string, value proto.Message) (metadata Metadata, err error) {
+	typedValue, err := castNAT44AddressPoolValue(key, value)
 	if err != nil {
 		return nil, err
 	}
 	return da.descriptor.Create(key, typedValue)
 }
 
-func (da *NAT44AddressDescriptorAdapter) Update(key string, oldValue, newValue proto.Message, oldMetadata Metadata) (newMetadata Metadata, err error) {
-	oldTypedValue, err := castNAT44AddressValue(key, oldValue)
+func (da *NAT44AddressPoolDescriptorAdapter) Update(key string, oldValue, newValue proto.Message, oldMetadata Metadata) (newMetadata Metadata, err error) {
+	oldTypedValue, err := castNAT44AddressPoolValue(key, oldValue)
 	if err != nil {
 		return nil, err
 	}
-	newTypedValue, err := castNAT44AddressValue(key, newValue)
+	newTypedValue, err := castNAT44AddressPoolValue(key, newValue)
 	if err != nil {
 		return nil, err
 	}
-	typedOldMetadata, err := castNAT44AddressMetadata(key, oldMetadata)
+	typedOldMetadata, err := castNAT44AddressPoolMetadata(key, oldMetadata)
 	if err != nil {
 		return nil, err
 	}
 	return da.descriptor.Update(key, oldTypedValue, newTypedValue, typedOldMetadata)
 }
 
-func (da *NAT44AddressDescriptorAdapter) Delete(key string, value proto.Message, metadata Metadata) error {
-	typedValue, err := castNAT44AddressValue(key, value)
+func (da *NAT44AddressPoolDescriptorAdapter) Delete(key string, value proto.Message, metadata Metadata) error {
+	typedValue, err := castNAT44AddressPoolValue(key, value)
 	if err != nil {
 		return err
 	}
-	typedMetadata, err := castNAT44AddressMetadata(key, metadata)
+	typedMetadata, err := castNAT44AddressPoolMetadata(key, metadata)
 	if err != nil {
 		return err
 	}
 	return da.descriptor.Delete(key, typedValue, typedMetadata)
 }
 
-func (da *NAT44AddressDescriptorAdapter) UpdateWithRecreate(key string, oldValue, newValue proto.Message, metadata Metadata) bool {
-	oldTypedValue, err := castNAT44AddressValue(key, oldValue)
+func (da *NAT44AddressPoolDescriptorAdapter) UpdateWithRecreate(key string, oldValue, newValue proto.Message, metadata Metadata) bool {
+	oldTypedValue, err := castNAT44AddressPoolValue(key, oldValue)
 	if err != nil {
 		return true
 	}
-	newTypedValue, err := castNAT44AddressValue(key, newValue)
+	newTypedValue, err := castNAT44AddressPoolValue(key, newValue)
 	if err != nil {
 		return true
 	}
-	typedMetadata, err := castNAT44AddressMetadata(key, metadata)
+	typedMetadata, err := castNAT44AddressPoolMetadata(key, metadata)
 	if err != nil {
 		return true
 	}
 	return da.descriptor.UpdateWithRecreate(key, oldTypedValue, newTypedValue, typedMetadata)
 }
 
-func (da *NAT44AddressDescriptorAdapter) Retrieve(correlate []KVWithMetadata) ([]KVWithMetadata, error) {
-	var correlateWithType []NAT44AddressKVWithMetadata
+func (da *NAT44AddressPoolDescriptorAdapter) Retrieve(correlate []KVWithMetadata) ([]KVWithMetadata, error) {
+	var correlateWithType []NAT44AddressPoolKVWithMetadata
 	for _, kvpair := range correlate {
-		typedValue, err := castNAT44AddressValue(kvpair.Key, kvpair.Value)
+		typedValue, err := castNAT44AddressPoolValue(kvpair.Key, kvpair.Value)
 		if err != nil {
 			continue
 		}
-		typedMetadata, err := castNAT44AddressMetadata(kvpair.Key, kvpair.Metadata)
+		typedMetadata, err := castNAT44AddressPoolMetadata(kvpair.Key, kvpair.Metadata)
 		if err != nil {
 			continue
 		}
 		correlateWithType = append(correlateWithType,
-			NAT44AddressKVWithMetadata{
+			NAT44AddressPoolKVWithMetadata{
 				Key:      kvpair.Key,
 				Value:    typedValue,
 				Metadata: typedMetadata,
@@ -195,16 +195,16 @@ func (da *NAT44AddressDescriptorAdapter) Retrieve(correlate []KVWithMetadata) ([
 	return values, err
 }
 
-func (da *NAT44AddressDescriptorAdapter) DerivedValues(key string, value proto.Message) []KeyValuePair {
-	typedValue, err := castNAT44AddressValue(key, value)
+func (da *NAT44AddressPoolDescriptorAdapter) DerivedValues(key string, value proto.Message) []KeyValuePair {
+	typedValue, err := castNAT44AddressPoolValue(key, value)
 	if err != nil {
 		return nil
 	}
 	return da.descriptor.DerivedValues(key, typedValue)
 }
 
-func (da *NAT44AddressDescriptorAdapter) Dependencies(key string, value proto.Message) []Dependency {
-	typedValue, err := castNAT44AddressValue(key, value)
+func (da *NAT44AddressPoolDescriptorAdapter) Dependencies(key string, value proto.Message) []Dependency {
+	typedValue, err := castNAT44AddressPoolValue(key, value)
 	if err != nil {
 		return nil
 	}
@@ -213,15 +213,15 @@ func (da *NAT44AddressDescriptorAdapter) Dependencies(key string, value proto.Me
 
 ////////// Helper methods //////////
 
-func castNAT44AddressValue(key string, value proto.Message) (*vpp_nat.Nat44Global_Address, error) {
-	typedValue, ok := value.(*vpp_nat.Nat44Global_Address)
+func castNAT44AddressPoolValue(key string, value proto.Message) (*vpp_nat.Nat44AddressPool, error) {
+	typedValue, ok := value.(*vpp_nat.Nat44AddressPool)
 	if !ok {
 		return nil, ErrInvalidValueType(key, value)
 	}
 	return typedValue, nil
 }
 
-func castNAT44AddressMetadata(key string, metadata Metadata) (interface{}, error) {
+func castNAT44AddressPoolMetadata(key string, metadata Metadata) (interface{}, error) {
 	if metadata == nil {
 		return nil, nil
 	}

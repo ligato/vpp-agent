@@ -68,6 +68,10 @@ const (
 	NatGlobal = "/dump/vpp/v2/nat/global"
 	// NatDNat is a REST path of a DNAT configurations
 	NatDNat = "/dump/vpp/v2/nat/dnat"
+	// NatInterfaces is a REST path of NAT interfaces config
+	NatInterfaces = "/dump/vpp/v2/nat/interfaces"
+	// NatAddressPools is a REST path of NAT address pools config
+	NatAddressPools = "/dump/vpp/v2/nat/pools"
 )
 
 // L2 plugin

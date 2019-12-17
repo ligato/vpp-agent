@@ -12,7 +12,7 @@ message Nat44Global {
         bool is_inside = 2;                     /* Distinguish between inside/outside interface. */
         bool output_feature = 3;                /* Enable/disable output feature. */
     }
-    repeated Interface nat_interfaces = 2;
+    repeated Interface nat_interfaces = 2 [deprecated=true];  /* Use separate Nat44Interface entries instead. */
 
     message Address {
         string address = 1;                     /* IPv4 address. */
@@ -22,7 +22,7 @@ message Nat44Global {
                                                  */
         bool twice_nat = 3;                     /* Enable/disable twice NAT. */
     }
-    repeated Address address_pool = 3;
+    repeated Address address_pool = 3 [deprecated=true];  /* Use separate Nat44AddressPool entries instead. */
 
     VirtualReassembly virtual_reassembly = 4;   /* Virtual reassembly for IPv4 */
 }
@@ -75,7 +75,28 @@ message DNat44 {
     repeated IdentityMapping id_mappings = 3;
 }
 
-message VirtualReassembly {                 /* NAT virtual reassembly */
+/* Local network interfaces enabled for NAT44. */
+message Nat44Interface {
+    string name = 1;                        /* (logical) Interface name. */
+    bool nat_inside = 2;                    /* Enable/disable NAT on inside. */
+    bool nat_outside = 3;                   /* Enable/disable NAT on outside. */
+    bool output_feature = 4;                /* Enable/disable output feature. */
+}
+
+/* Address Pools used for NAT44. */
+message Nat44AddressPool {
+    string label = 1;                       /* Unique identifier for the NAT44 pool. */
+    uint32 vrf_id = 2;                      /* VRF id of tenant, 0xFFFFFFFF means independent of VRF.
+                                                   Non-zero (and not all-ones) VRF has to be explicitly created
+                                                   (see api/models/vpp/l3/vrf.proto).
+                                            */
+    string first_ip = 3;                    /* First IP address of the pool. */
+    string last_ip = 4;                     /* Last IP address of the pool. Should be higher than first_ip or empty. */
+    bool twice_nat = 5;                     /* Enable/disable twice NAT. */
+}
+
+/* NAT virtual reassembly */
+message VirtualReassembly {
     uint32 timeout = 1;                     /* Reassembly timeout */
     uint32 max_reassemblies = 2;            /* Maximum number of concurrent reassemblies */
     uint32 max_fragments = 3;               /* Maximum number of fragments per reassembly */

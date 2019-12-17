@@ -34,6 +34,16 @@ var (
 		Type:    "dnat44",
 		Version: "v2",
 	}, models.WithNameTemplate("{{.Label}}"))
+	ModelNat44Interface = models.Register(&Nat44Interface{}, models.Spec{
+		Module:  ModuleName,
+		Type:    "nat44-interfaces",
+		Version: "v2",
+	}, models.WithNameTemplate("{{.Name}}"))
+	ModelNat44AddressPool = models.Register(&Nat44AddressPool{}, models.Spec{
+		Module:  ModuleName,
+		Type:    "nat44-pools",
+		Version: "v2",
+	}, models.WithNameTemplate("{{.Label}}"))
 )
 
 // GlobalNAT44Key returns key for Nat44Global.
@@ -45,6 +55,22 @@ func GlobalNAT44Key() string {
 // given DNAT-44 configuration.
 func DNAT44Key(label string) string {
 	return models.Key(&DNat44{
+		Label: label,
+	})
+}
+
+// Nat44InterfaceKey returns the key used in NB DB to store the configuration of the
+// given NAT44 interface.
+func Nat44InterfaceKey(name string) string {
+	return models.Key(&Nat44Interface{
+		Name: name,
+	})
+}
+
+// Nat44AddressPoolKey returns the key used in NB DB to store the configuration of the
+// given NAT44 address pool.
+func Nat44AddressPoolKey(label string) string {
+	return models.Key(&Nat44AddressPool{
 		Label: label,
 	})
 }
@@ -88,9 +114,9 @@ const (
 
 /* NAT44 interface (derived) */
 
-// InterfaceNAT44Key returns (derived) key representing NAT44 configuration
+// DerivedInterfaceNAT44Key returns (derived) key representing NAT44 configuration
 // for a given interface.
-func InterfaceNAT44Key(iface string, isInside bool) string {
+func DerivedInterfaceNAT44Key(iface string, isInside bool) string {
 	if iface == "" {
 		iface = InvalidKeyPart
 	}
@@ -103,9 +129,9 @@ func InterfaceNAT44Key(iface string, isInside bool) string {
 	return key
 }
 
-// ParseInterfaceNAT44Key parses interface name and the assigned NAT44 feature
+// ParseDerivedInterfaceNAT44Key parses interface name and the assigned NAT44 feature
 // from Interface-NAT44 key.
-func ParseInterfaceNAT44Key(key string) (iface string, isInside bool, isInterfaceNAT44Key bool) {
+func ParseDerivedInterfaceNAT44Key(key string) (iface string, isInside bool, isInterfaceNAT44Key bool) {
 	trim := strings.TrimPrefix(key, interfaceNAT44KeyPrefix)
 	if trim != key && trim != "" {
 		fibComps := strings.Split(trim, "/")
@@ -123,10 +149,10 @@ func ParseInterfaceNAT44Key(key string) (iface string, isInside bool, isInterfac
 
 /* NAT44 address (derived) */
 
-// AddressNAT44Key returns (derived) key representing NAT44 configuration
+// DerivedAddressNAT44Key returns (derived) key representing NAT44 configuration
 // for a single IP address from the NAT44 address pool.
 // Address is inserted into the key without validation!
-func AddressNAT44Key(address string, twiceNat bool) string {
+func DerivedAddressNAT44Key(address string, twiceNat bool) string {
 	key := strings.Replace(addressNAT44KeyTemplate, "{address}", address, 1)
 	twiceNatFlag := twiceNatOff
 	if twiceNat {
@@ -136,9 +162,9 @@ func AddressNAT44Key(address string, twiceNat bool) string {
 	return key
 }
 
-// ParseAddressNAT44Key parses configuration of a single NAT44 address from a key
-// returned by AddressNAT44Key().
-func ParseAddressNAT44Key(key string) (address string, twiceNat bool, isAddressNAT44Key bool) {
+// ParseDerivedAddressNAT44Key parses configuration of a single NAT44 address from a key
+// returned by DerivedAddressNAT44Key().
+func ParseDerivedAddressNAT44Key(key string) (address string, twiceNat bool, isAddressNAT44Key bool) {
 	trim := strings.TrimPrefix(key, addressNAT44KeyPrefix)
 	if trim != key && trim != "" {
 		fibComps := strings.Split(trim, "/")

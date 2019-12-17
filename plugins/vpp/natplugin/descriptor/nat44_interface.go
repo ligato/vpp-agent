@@ -15,9 +15,7 @@
 package descriptor
 
 import (
-	"github.com/golang/protobuf/proto"
 	"github.com/ligato/cn-infra/logging"
-
 	kvs "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/natplugin/descriptor/adapter"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/natplugin/vppcalls"
@@ -26,70 +24,114 @@ import (
 )
 
 const (
-	// NAT44InterfaceDescriptorName is the name of the descriptor for VPP NAT44
-	// features applied to interfaces.
+	// NAT44InterfaceDescriptorName is the name of the descriptor for VPP NAT44 features applied to interfaces.
 	NAT44InterfaceDescriptorName = "vpp-nat44-interface"
-
-	// dependency labels
-	natInterfaceDep = "interface-exists"
 )
 
-// NAT44InterfaceDescriptor teaches KVScheduler how to configure VPP NAT interface
-// features.
+// NAT44InterfaceDescriptor teaches KVScheduler how to configure VPP NAT interface features.
 type NAT44InterfaceDescriptor struct {
-	log        logging.Logger
-	natHandler vppcalls.NatVppAPI
+	log             logging.Logger
+	natHandler      vppcalls.NatVppAPI
+	nat44GlobalDesc *NAT44GlobalDescriptor
 }
 
 // NewNAT44InterfaceDescriptor creates a new instance of the NAT44Interface descriptor.
-func NewNAT44InterfaceDescriptor(natHandler vppcalls.NatVppAPI, log logging.PluginLogger) *kvs.KVDescriptor {
+func NewNAT44InterfaceDescriptor(nat44GlobalDesc *NAT44GlobalDescriptor,
+	natHandler vppcalls.NatVppAPI, log logging.PluginLogger) *kvs.KVDescriptor {
 	ctx := &NAT44InterfaceDescriptor{
-		natHandler: natHandler,
-		log:        log.NewLogger("nat44-iface-descriptor"),
+		nat44GlobalDesc: nat44GlobalDesc,
+		natHandler:      natHandler,
+		log:             log.NewLogger("nat44-iface-descriptor"),
 	}
 
 	typedDescr := &adapter.NAT44InterfaceDescriptor{
 		Name:          NAT44InterfaceDescriptorName,
-		KeySelector:   ctx.IsNAT44InterfaceKey,
-		ValueTypeName: proto.MessageName(&nat.Nat44Global_Interface{}),
+		NBKeyPrefix:   nat.ModelNat44Interface.KeyPrefix(),
+		ValueTypeName: nat.ModelNat44Interface.ProtoName(),
+		KeySelector:   nat.ModelNat44Interface.IsKeyValid,
+		KeyLabel:      nat.ModelNat44Interface.StripKeyPrefix,
+		Validate:      ctx.Validate,
 		Create:        ctx.Create,
 		Delete:        ctx.Delete,
+		Retrieve:      ctx.Retrieve,
 		Dependencies:  ctx.Dependencies,
+		// retrieve global NAT config first (required for deprecated global NAT interface & address API)
+		RetrieveDependencies: []string{NAT44GlobalDescriptorName},
 	}
 	return adapter.NewNAT44InterfaceDescriptor(typedDescr)
 }
 
-// IsNAT44InterfaceKey returns true if the key is identifying NAT-44 configuration
-// for interface.
-func (d *NAT44InterfaceDescriptor) IsNAT44InterfaceKey(key string) bool {
-	_, _, isNATIfaceKey := nat.ParseInterfaceNAT44Key(key)
-	return isNATIfaceKey
-}
-
-// Create enables NAT44 for an interface.
-func (d *NAT44InterfaceDescriptor) Create(key string, natIface *nat.Nat44Global_Interface) (metadata interface{}, err error) {
-	err = d.natHandler.EnableNat44Interface(natIface.Name, natIface.IsInside, natIface.OutputFeature)
-	if err != nil {
-		d.log.Error(err)
-		return nil, err
-
-	}
-	return nil, nil
-}
-
-// Delete disables NAT44 for an interface.
-func (d *NAT44InterfaceDescriptor) Delete(key string, natIface *nat.Nat44Global_Interface, metadata interface{}) error {
-	err := d.natHandler.DisableNat44Interface(natIface.Name, natIface.IsInside, natIface.OutputFeature)
-	if err != nil {
-		d.log.Error(err)
-		return err
-
+// Validate validates VPP NAT44 interface configuration.
+func (d *NAT44InterfaceDescriptor) Validate(key string, natIface *nat.Nat44Interface) error {
+	if natIface.NatOutside && natIface.NatInside && natIface.OutputFeature {
+		// output feature cannot be enabled on interface with both inside & outside NAT enabled
+		return kvs.NewInvalidValueError(ErrNATInterfaceFeatureCollision, "output_feature")
 	}
 	return nil
 }
 
+// Create enables NAT44 on an interface.
+func (d *NAT44InterfaceDescriptor) Create(key string, natIface *nat.Nat44Interface) (metadata interface{}, err error) {
+	if natIface.NatInside {
+		err = d.natHandler.EnableNat44Interface(natIface.Name, true, natIface.OutputFeature)
+		if err != nil {
+			d.log.Error(err)
+			return nil, err
+		}
+	}
+	if natIface.NatOutside {
+		err = d.natHandler.EnableNat44Interface(natIface.Name, false, natIface.OutputFeature)
+		if err != nil {
+			d.log.Error(err)
+			return nil, err
+		}
+	}
+	return nil, nil
+}
+
+// Delete disables NAT44 on an interface.
+func (d *NAT44InterfaceDescriptor) Delete(key string, natIface *nat.Nat44Interface, metadata interface{}) error {
+	if natIface.NatInside {
+		err := d.natHandler.DisableNat44Interface(natIface.Name, true, natIface.OutputFeature)
+		if err != nil {
+			d.log.Error(err)
+			return err
+		}
+	}
+	if natIface.NatOutside {
+		err := d.natHandler.DisableNat44Interface(natIface.Name, false, natIface.OutputFeature)
+		if err != nil {
+			d.log.Error(err)
+			return err
+		}
+	}
+	return nil
+}
+
+// Retrieve returns the current NAT44 interface configuration.
+func (d *NAT44InterfaceDescriptor) Retrieve(correlate []adapter.NAT44InterfaceKVWithMetadata) ([]adapter.NAT44InterfaceKVWithMetadata, error) {
+	if d.nat44GlobalDesc.UseDeprecatedAPI {
+		return nil, nil // NAT interfaces already dumped by global descriptor (deprecated API is in use)
+	}
+	natIfs, err := d.natHandler.Nat44Nat44InterfacesDump()
+	if err != nil {
+		d.log.Error(err)
+		return nil, err
+	}
+	retrieved := make([]adapter.NAT44InterfaceKVWithMetadata, 0)
+
+	for _, natIf := range natIfs {
+		retrieved = append(retrieved, adapter.NAT44InterfaceKVWithMetadata{
+			Key:    nat.Nat44InterfaceKey(natIf.Name),
+			Value:  natIf,
+			Origin: kvs.FromNB,
+		})
+	}
+	return retrieved, nil
+}
+
 // Dependencies lists the interface as the only dependency.
-func (d *NAT44InterfaceDescriptor) Dependencies(key string, natIface *nat.Nat44Global_Interface) []kvs.Dependency {
+func (d *NAT44InterfaceDescriptor) Dependencies(key string, natIface *nat.Nat44Interface) []kvs.Dependency {
 	return []kvs.Dependency{
 		{
 			Label: natInterfaceDep,

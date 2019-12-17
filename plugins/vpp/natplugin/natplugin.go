@@ -13,9 +13,11 @@
 // limitations under the License.
 
 //go:generate descriptor-adapter --descriptor-name NAT44Global --value-type *vpp_nat.Nat44Global --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/nat" --output-dir "descriptor"
-//go:generate descriptor-adapter --descriptor-name NAT44Interface --value-type *vpp_nat.Nat44Global_Interface --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/nat" --output-dir "descriptor"
-//go:generate descriptor-adapter --descriptor-name NAT44Address --value-type *vpp_nat.Nat44Global_Address --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/nat" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name NAT44GlobalInterface --value-type *vpp_nat.Nat44Global_Interface --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/nat" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name NAT44GlobalAddress --value-type *vpp_nat.Nat44Global_Address --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/nat" --output-dir "descriptor"
 //go:generate descriptor-adapter --descriptor-name DNAT44 --value-type *vpp_nat.DNat44 --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/nat" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name NAT44Interface --value-type *vpp_nat.Nat44Interface --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/nat" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name NAT44AddressPool --value-type *vpp_nat.Nat44AddressPool --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/nat" --output-dir "descriptor"
 
 package natplugin
 
@@ -68,16 +70,18 @@ func (p *NATPlugin) Init() (err error) {
 	}
 
 	// init and register descriptors
-	nat44GlobalDescriptor := descriptor.NewNAT44GlobalDescriptor(p.natHandler, p.Log)
-	nat44IfaceDescriptor := descriptor.NewNAT44InterfaceDescriptor(p.natHandler, p.Log)
-	nat44AddrDescriptor := descriptor.NewNAT44AddressDescriptor(p.natHandler, p.Log)
+	nat44GlobalCtx, nat44GlobalDescriptor := descriptor.NewNAT44GlobalDescriptor(p.natHandler, p.Log)
+	nat44GlobalIfaceDescriptor := descriptor.NewNAT44GlobalInterfaceDescriptor(p.natHandler, p.Log)
+	nat44GlobalAddrDescriptor := descriptor.NewNAT44GlobalAddressDescriptor(p.natHandler, p.Log)
 	dnat44Descriptor := descriptor.NewDNAT44Descriptor(p.natHandler, p.Log)
+	nat44IfaceDescriptor := descriptor.NewNAT44InterfaceDescriptor(nat44GlobalCtx, p.natHandler, p.Log)
 
 	err = p.KVScheduler.RegisterKVDescriptor(
 		nat44GlobalDescriptor,
-		nat44IfaceDescriptor,
-		nat44AddrDescriptor,
+		nat44GlobalIfaceDescriptor, // deprecated, kept for backward compatibility
+		nat44GlobalAddrDescriptor,  // deprecated, kept for backward compatibility
 		dnat44Descriptor,
+		nat44IfaceDescriptor,
 	)
 	if err != nil {
 		return err

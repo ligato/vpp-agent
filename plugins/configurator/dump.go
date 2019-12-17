@@ -137,6 +137,16 @@ func (svc *dumpService) Dump(ctx context.Context, req *rpc.DumpRequest) (*rpc.Du
 		svc.log.Errorf("DumpDNAT44s failed: %v", err)
 		return nil, err
 	}
+	dump.VppConfig.Nat44Interfaces, err = svc.DumpNAT44Interfaces()
+	if err != nil {
+		svc.log.Errorf("DumpNAT44Interfaces failed: %v", err)
+		return nil, err
+	}
+	dump.VppConfig.Nat44Pools, err = svc.DumpNAT44AddressPools()
+	if err != nil {
+		svc.log.Errorf("DumpNAT44AddressPools failed: %v", err)
+		return nil, err
+	}
 	dump.VppConfig.PuntTohosts, err = svc.DumpPunt()
 	if err != nil {
 		svc.log.Errorf("DumpPunt failed: %v", err)
@@ -356,14 +366,14 @@ func (svc *dumpService) DumpABFs() (abfs []*vpp_abf.ABF, err error) {
 	return abfs, nil
 }
 
-// DumpNAT44GLobal dumps NAT44Global
+// DumpNAT44Global dumps NAT44Global
 func (svc *dumpService) DumpNAT44Global() (glob *vpp_nat.Nat44Global, err error) {
 	if svc.natHandler == nil {
 		// handler is not available
 		return nil, nil
 	}
 
-	glob, err = svc.natHandler.Nat44GlobalConfigDump()
+	glob, err = svc.natHandler.Nat44GlobalConfigDump(false)
 	if err != nil {
 		return nil, err
 	}
@@ -382,6 +392,34 @@ func (svc *dumpService) DumpDNAT44s() (dnats []*vpp_nat.DNat44, err error) {
 		return nil, err
 	}
 	return dnats, nil
+}
+
+// DumpNAT44Interfaces dumps NAT44Interfaces
+func (svc *dumpService) DumpNAT44Interfaces() (natIfs []*vpp_nat.Nat44Interface, err error) {
+	if svc.natHandler == nil {
+		// handler is not available
+		return nil, nil
+	}
+
+	natIfs, err = svc.natHandler.Nat44Nat44InterfacesDump()
+	if err != nil {
+		return nil, err
+	}
+	return natIfs, nil
+}
+
+// DumpNAT44AddressPools dumps NAT44AddressPools
+func (svc *dumpService) DumpNAT44AddressPools() (natPools []*vpp_nat.Nat44AddressPool, err error) {
+	if svc.natHandler == nil {
+		// handler is not available
+		return nil, nil
+	}
+
+	natPools, err = svc.natHandler.Nat44AddressPoolsDump()
+	if err != nil {
+		return nil, err
+	}
+	return natPools, nil
 }
 
 // DumpPunt reads VPP Punt socket registrations and returns them as an *PuntResponse.
