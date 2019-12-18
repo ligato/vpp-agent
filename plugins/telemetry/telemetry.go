@@ -29,6 +29,7 @@ import (
 	prom "github.com/ligato/cn-infra/rpc/prometheus"
 	"github.com/ligato/cn-infra/rpc/rest"
 	"github.com/ligato/cn-infra/servicelabel"
+	"github.com/pkg/errors"
 	"github.com/unrolled/render"
 
 	"go.ligato.io/vpp-agent/v2/pkg/metrics"
@@ -125,7 +126,7 @@ func (p *Plugin) Init() error {
 	// Setup stats poller
 	p.statsPollerServer.log = p.Log.NewLogger("stats-poller")
 	if err := p.setupStatsPoller(); err != nil {
-		return err
+		return errors.WithMessage(err, "setting up stats poller failed")
 	}
 
 	if p.HTTPHandlers != nil {
@@ -148,15 +149,9 @@ func (p *Plugin) AfterInit() error {
 }
 
 func (p *Plugin) setupStatsPoller() error {
-	/*vppCh, err := p.VPP.NewAPIChannel()
-	if err != nil {
-		return err
-	}
-	defer vppCh.Close()*/
-
 	h := vppcalls.CompatibleTelemetryHandler(p.VPP)
 	if h == nil {
-		return fmt.Errorf("VPP core handler not available")
+		return fmt.Errorf("VPP telemetry handler unavailable")
 	}
 	p.statsPollerServer.handler = h
 
@@ -175,16 +170,9 @@ func (p *Plugin) Close() error {
 }
 
 func (p *Plugin) startPeriodicUpdates() {
-	/*vppCh, err := p.VPP.NewAPIChannel()
-	if err != nil {
-		p.Log.Errorf("creating channel failed: %v", err)
-		return
-	}
-	defer vppCh.Close()*/
-
 	p.handler = vppcalls.CompatibleTelemetryHandler(p.VPP)
 	if p.handler == nil {
-		p.Log.Warnf("no compatible telemetry handler, skipping periodic updates")
+		p.Log.Warnf("VPP telemetry handler unavailable, skipping periodic updates")
 		return
 	}
 

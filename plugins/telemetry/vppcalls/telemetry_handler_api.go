@@ -184,11 +184,10 @@ func CompatibleTelemetryHandler(c vpp.Client) TelemetryVppAPI {
 	}
 	if FallbackToCli {
 		if v := Handler.FindCompatibleVersion(c); v != nil {
-			log.Debugf("falling back to parsing CLI output for telemetry")
+			log.Info("falling back to parsing CLI output for telemetry")
 			return v.NewHandler(c).(TelemetryVppAPI)
 		}
 		// no compatible version found
-		return nil
 	}
 	log.Warnf("stats connection not available for telemetry")
 	return nil
