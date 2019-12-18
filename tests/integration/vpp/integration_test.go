@@ -34,6 +34,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	"go.ligato.io/vpp-agent/v2/plugins/govppmux/vppcalls"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp"
 )
 
 const (
@@ -282,9 +283,14 @@ func (ctx *TestCtx) teardownVPP() {
 type vppClient struct {
 	t *testing.T
 	govppapi.ChannelProvider
-	ch    govppapi.Channel
-	stats govppapi.StatsProvider
-	vpp   vppcalls.VppCoreAPI
+	ch      govppapi.Channel
+	stats   govppapi.StatsProvider
+	vpp     vppcalls.VppCoreAPI
+	version vpp.Version
+}
+
+func (m *vppClient) Version() vpp.Version {
+	return m.version
 }
 
 func (v *vppClient) CheckCompatiblity(msgs ...govppapi.Message) error {

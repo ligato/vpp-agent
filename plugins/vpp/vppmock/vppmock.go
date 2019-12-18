@@ -23,6 +23,8 @@ import (
 	govpp "git.fd.io/govpp.git/core"
 	log "github.com/ligato/cn-infra/logging/logrus"
 	. "github.com/onsi/gomega"
+
+	"go.ligato.io/vpp-agent/v2/plugins/vpp"
 )
 
 // TestCtx is a helper for unit testing.
@@ -208,7 +210,12 @@ func (ctx *TestCtx) MockReplies(dataList []*HandleReplies) {
 
 type mockVPPClient struct {
 	*mockedChannel
+	version         vpp.Version
 	unloadedPlugins map[string]bool
+}
+
+func (m *mockVPPClient) Version() vpp.Version {
+	return m.version
 }
 
 func (m *mockVPPClient) NewAPIChannel() (govppapi.Channel, error) {

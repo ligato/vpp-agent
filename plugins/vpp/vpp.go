@@ -29,24 +29,21 @@ var (
 	ErrPluginDisabled = errors.New("plugin not available")
 )
 
-// Version represents version of VPP.
+// Version represents VPP version.
 type Version string
-
-type APIChannel interface {
-	govppapi.Channel
-}
 
 // Client provides methods for managing VPP.
 type Client interface {
-	govppapi.ChannelProvider
-
+	// Version returns binapi version compatible with running VPP.
+	Version() Version
+	// NewAPIChannel returns new channel for sending binapi requests.
+	NewAPIChannel() (govppapi.Channel, error)
 	// IsPluginLoaded returns true if the given plugin is currently loaded.
 	IsPluginLoaded(plugin string) bool
-
+	// CheckCompatiblity checks compatibility with given binapi messages.
 	CheckCompatiblity(...govppapi.Message) error
-
 	// Stats provides access to VPP stats API.
 	Stats() govppapi.StatsProvider
-
+	// StatsConnected return true if client is connected to stats.
 	StatsConnected() bool
 }

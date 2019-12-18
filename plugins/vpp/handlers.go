@@ -22,13 +22,6 @@ import (
 	"github.com/ligato/cn-infra/logging"
 )
 
-// HandlerDesc is a handler descriptor used to describe a handler for registration.
-type HandlerDesc struct {
-	Name       string
-	HandlerAPI interface{}
-	NewFunc    interface{}
-}
-
 // HandlerVersion defines handler implementation for specific version used by AddVersion.
 type HandlerVersion struct {
 	Version    Version
@@ -67,6 +60,47 @@ func (h *Handler) AddVersion(hv HandlerVersion) {
 	h.versions[hv.Version] = &hv
 }
 
+// FindCompatibleVersion iterates over all available handler versions and calls
+// their Check method to check compatibility.
+func (h *Handler) FindCompatibleVersion(c Client) *HandlerVersion {
+	v, err := h.GetCompatibleVersion(c)
+	if err != nil {
+		return nil
+	}
+	return v
+}
+
+// GetCompatibleVersion iterates over all available handler versions and calls
+// their Check method to check compatibility.
+func (h *Handler) GetCompatibleVersion(vpp Client) (*HandlerVersion, error) {
+	if len(h.versions) == 0 {
+		logging.Debugf("VPP handler %s has no registered versions", h.desc.Name)
+		return nil, ErrNoVersions
+	}
+	// try compatible binapi version first
+	if vpp.Version() != "" {
+		if v, ok := h.versions[vpp.Version()]; ok {
+			logging.Debugf("VPP handler %s COMPATIBLE with version: %s", h.desc.Name, v.Version)
+			return v, nil
+		}
+	}
+	// fallback to checking all registered versions
+	for _, v := range h.versions {
+		if err := v.Check(vpp); err != nil {
+			if ierr, ok := err.(*govppapi.CompatibilityError); ok {
+				logging.Debugf("VPP handler %s incompatible with %s: %d incompatible messages",
+					h.desc.Name, v.Version, len(ierr.IncompatibleMessages))
+			} else {
+				logging.Debugf("VPP handler %s version %s check failed: %v", h.desc.Name, v.Version, err)
+			}
+			continue
+		}
+		logging.Debugf("VPP handler %s COMPATIBLE with version: %s", h.desc.Name, v.Version)
+		return v, nil
+	}
+	return nil, ErrIncompatible
+}
+
 // Versions returns list of versions from list of available handler versions.
 func (h *Handler) Versions() []Version {
 	vs := make([]Version, 0, len(h.versions))
@@ -83,43 +117,16 @@ func (v versions) Len() int           { return len(v) }
 func (v versions) Less(i, j int) bool { return v[i] < v[j] }
 func (v versions) Swap(i, j int)      { v[i], v[j] = v[j], v[i] }
 
-// FindCompatibleVersion iterates over all available handler versions and calls
-// their Check method to check compatibility.
-func (h *Handler) FindCompatibleVersion(c Client) *HandlerVersion {
-	v, err := h.GetCompatibleVersion(c)
-	if err != nil {
-		return nil
-	}
-	return v
-}
-
-// GetCompatibleVersion iterates over all available handler versions and calls
-// // their Check method to check compatibility.
-func (h *Handler) GetCompatibleVersion(c Client) (*HandlerVersion, error) {
-	if len(h.versions) == 0 {
-		logging.Debugf("VPP handler %s has no registered versions", h.desc.Name)
-		return nil, ErrNoVersions
-	}
-	for _, v := range h.versions {
-		if err := v.Check(c); err != nil {
-			if ierr, ok := err.(*govppapi.CompatibilityError); ok {
-				logging.Debugf("VPP handler %s incompatible with version %s: found %d incompatible messages",
-					h.desc.Name, v.Version, len(ierr.IncompatibleMessages))
-			} else {
-				logging.Debugf("VPP handler %s failed check for version %s: \n%v",
-					h.desc.Name, v.Version, err)
-			}
-			continue
-		}
-		logging.Debugf("VPP handler %s compatible version: %s", h.desc.Name, v.Version)
-		return v, nil
-	}
-	return nil, ErrIncompatible
-}
-
 var (
 	registeredHandlers = map[string]*Handler{}
 )
+
+// HandlerDesc represents a VPP handler's specification.
+type HandlerDesc struct {
+	Name       string
+	HandlerAPI interface{}
+	NewFunc    interface{}
+}
 
 // RegisterHandler creates new handler described by handle descriptor.
 func RegisterHandler(hd HandlerDesc) *Handler {

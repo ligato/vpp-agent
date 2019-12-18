@@ -14,8 +14,40 @@
 
 package vpp2001_324
 
+import (
+	"go.ligato.io/vpp-agent/v2/plugins/vpp"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324/abf"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324/acl"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324/af_packet"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324/bond"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324/dhcp"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324/gre"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324/gtpu"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324/interfaces"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324/ip"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324/ipsec"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324/l2"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324/memclnt"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324/memif"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324/nat"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324/punt"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324/span"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324/sr"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324/stn"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324/tapv2"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324/vmxnet3"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324/vpe"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324/vxlan"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324/vxlan_gpe"
+)
+
 // Version is used to identify VPP binapi version
 const Version = "20.01-rc0~324"
+
+func init() {
+	binapi.Versions[Version] = Messages
+}
 
 //go:generate -command binapigen binapi-generator --output-dir=.
 
@@ -37,8 +69,35 @@ const Version = "20.01-rc0~324"
 //go:generate binapigen --input-file=$VPP_API_DIR/core/vxlan_gpe.api.json
 //go:generate binapigen --input-file=$VPP_API_DIR/plugins/abf.api.json
 //go:generate binapigen --input-file=$VPP_API_DIR/plugins/acl.api.json
+//go:generate binapigen --input-file=$VPP_API_DIR/plugins/gtpu.api.json
 //go:generate binapigen --input-file=$VPP_API_DIR/plugins/memif.api.json
 //go:generate binapigen --input-file=$VPP_API_DIR/plugins/nat.api.json
 //go:generate binapigen --input-file=$VPP_API_DIR/plugins/stn.api.json
 //go:generate binapigen --input-file=$VPP_API_DIR/plugins/vmxnet3.api.json
-//go:generate binapigen --input-file=$VPP_API_DIR/plugins/gtpu.api.json
+
+// Messages is list of functions that return all messages for this version.
+var Messages = vpp.Messages(
+	af_packet.AllMessages,
+	bond.AllMessages,
+	dhcp.AllMessages,
+	gre.AllMessages,
+	interfaces.AllMessages,
+	ip.AllMessages,
+	ipsec.AllMessages,
+	l2.AllMessages,
+	memclnt.AllMessages,
+	punt.AllMessages,
+	span.AllMessages,
+	sr.AllMessages,
+	tapv2.AllMessages,
+	vpe.AllMessages,
+	vxlan.AllMessages,
+	vxlan_gpe.AllMessages,
+	abf.AllMessages,
+	acl.AllMessages,
+	gtpu.AllMessages,
+	memif.AllMessages,
+	nat.AllMessages,
+	stn.AllMessages,
+	vmxnet3.AllMessages,
+)

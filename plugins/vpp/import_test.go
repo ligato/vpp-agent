@@ -12,20 +12,39 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 
-package app
+package vpp_test
 
 import (
+	"fmt"
 	"log"
+	"reflect"
 	"testing"
 
+	"git.fd.io/govpp.git/api"
+
 	"go.ligato.io/vpp-agent/v2/plugins/vpp"
+
+	// force import of all vpp plugins
+	_ "go.ligato.io/vpp-agent/v2/cmd/vpp-agent/app"
 )
 
-func TestHandlers(t *testing.T) {
+func TestVppHandlers(t *testing.T) {
 	handlers := vpp.GetHandlers()
+	log.Printf("%d handlers:", len(handlers))
 
-	log.Printf("listing %d handlers:", len(handlers))
 	for h, handler := range handlers {
-		log.Printf(" - %s (%v)", h, handler.Versions())
+		log.Printf("- handler: %-10s (%v)", h, handler.Versions())
+	}
+}
+
+func TestBinapiMessage(t *testing.T) {
+	msgTypes := api.GetRegisteredMessageTypes()
+	log.Printf("%d binapi messages:", len(msgTypes))
+
+	for msgType := range msgTypes {
+		typ := msgType.Elem()
+		msg := reflect.New(typ).Interface().(api.Message)
+		id := fmt.Sprintf("%s_%s", msg.GetMessageName(), msg.GetCrcString())
+		log.Printf("- msg: %s - %s (%v)", typ.String(), typ.PkgPath(), id)
 	}
 }

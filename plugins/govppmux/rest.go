@@ -16,6 +16,7 @@ package govppmux
 
 import (
 	"net/http"
+	"net/rpc"
 
 	"github.com/ligato/cn-infra/rpc/rest"
 	"github.com/unrolled/render"
@@ -28,6 +29,7 @@ func (p *Plugin) registerHandlers(http rest.HTTPHandlers) {
 		return
 	}
 	http.RegisterHTTPHandler("/govppmux/stats", p.statsHandler, "GET")
+	http.RegisterHTTPHandler(rpc.DefaultRPCPath, p.proxyHandler, "CONNECT")
 }
 
 func (p *Plugin) statsHandler(formatter *render.Render) http.HandlerFunc {
@@ -36,4 +38,13 @@ func (p *Plugin) statsHandler(formatter *render.Render) http.HandlerFunc {
 			p.Log.Warnf("stats handler errored: %v", err)
 		}
 	}
+}
+
+func (p *Plugin) proxyHandler(_ *render.Render) http.HandlerFunc {
+	if !p.config.ProxyEnabled {
+		return func(w http.ResponseWriter, req *http.Request) {
+			http.Error(w, "VPP proxy not enabled", http.StatusServiceUnavailable)
+		}
+	}
+	return p.proxy.ServeHTTP
 }

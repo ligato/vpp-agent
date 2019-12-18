@@ -53,6 +53,7 @@ require (
 	github.com/howeyc/crc16 v0.0.0-20171223171357-2b2a61e366a6 // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/jhump/protoreflect v1.5.0
+	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
 	github.com/ligato/cn-infra v2.2.1-0.20191030081411-42c7431fdca1+incompatible
 	github.com/lunixbochs/struc v0.0.0-20190916212049-a5c72983bc42
 	github.com/mitchellh/go-homedir v0.0.0-20180523094522-3864e76763d9 // indirect
@@ -71,7 +72,7 @@ require (
 	github.com/prometheus/client_golang v0.9.3
 	github.com/rcrowley/go-metrics v0.0.0-20180503174638-e2704e165165 // indirect
 	github.com/satori/go.uuid v0.0.0-20181028125025-b2ce2384e17b // indirect
-	github.com/sirupsen/logrus v1.2.0
+	github.com/sirupsen/logrus v1.4.2
 	github.com/spf13/cobra v0.0.3
 	github.com/spf13/pflag v1.0.3
 	github.com/spf13/viper v1.4.0
@@ -83,8 +84,9 @@ require (
 	github.com/yuin/gopher-lua v0.0.0-20190514113301-1cd887cd7036 // indirect
 	go.etcd.io/bbolt v1.3.3 // indirect
 	go.uber.org/multierr v1.2.0 // indirect
+	golang.org/x/crypto v0.0.0-20191206172530-e9b2fee46413 // indirect
 	golang.org/x/net v0.0.0-20190522155817-f3200d17e092
-	golang.org/x/sys v0.0.0-20190215142949-d0b11bdaac8a
+	golang.org/x/sys v0.0.0-20191210023423-ac6580df4449
 	golang.org/x/time v0.0.0-20190921001708-c4c64cad1fd0 // indirect
 	google.golang.org/grpc v1.24.0
 	gotest.tools v2.2.0+incompatible // indirect
