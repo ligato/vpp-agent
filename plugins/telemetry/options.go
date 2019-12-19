@@ -6,6 +6,7 @@ import (
 	"github.com/ligato/cn-infra/servicelabel"
 
 	"github.com/ligato/vpp-agent/plugins/govppmux"
+	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin"
 )
 
 // DefaultPlugin is default instance of Plugin
@@ -20,6 +21,7 @@ func NewPlugin(opts ...Option) *Plugin {
 	p.GoVppmux = &govppmux.DefaultPlugin
 	p.Prometheus = &prometheus.DefaultPlugin
 	p.GRPC = &grpc.DefaultPlugin
+	p.IfPlugin = &ifplugin.DefaultPlugin
 
 	for _, o := range opts {
 		o(p)

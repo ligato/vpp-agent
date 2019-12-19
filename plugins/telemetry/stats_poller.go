@@ -14,10 +14,12 @@ import (
 	"github.com/ligato/vpp-agent/api/models/vpp"
 	vpp_interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	"github.com/ligato/vpp-agent/plugins/telemetry/vppcalls"
+	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 )
 
 type statsPollerServer struct {
 	handler vppcalls.TelemetryVppAPI
+	ifIndex ifaceidx.IfaceMetadataIndex
 
 	log logging.Logger
 }
@@ -39,9 +41,9 @@ func (s *statsPollerServer) PollStats(req *configurator.PollStatsRequest, svr co
 		s.log.WithField("seq", pollSeq).Debugf("polling stats..")
 
 		vppStatsCh := make(chan vpp.Stats)
-		var vppStatsErr error
+		var err error
 		go func() {
-			vppStatsErr = s.streamVppStats(vppStatsCh)
+			err = s.streamVppStats(vppStatsCh)
 			close(vppStatsCh)
 		}()
 		for vppStats := range vppStatsCh {
@@ -58,10 +60,9 @@ func (s *statsPollerServer) PollStats(req *configurator.PollStatsRequest, svr co
 				return nil
 			}
 		}
-
-		if vppStatsErr != nil {
-			s.log.Errorf("polling vpp stats failed: %v", vppStatsErr)
-			return vppStatsErr
+		if err != nil {
+			s.log.Errorf("polling vpp stats failed: %v", err)
+			return err
 		}
 
 		<-tick.C
@@ -70,6 +71,7 @@ func (s *statsPollerServer) PollStats(req *configurator.PollStatsRequest, svr co
 
 func (s *statsPollerServer) streamVppStats(ch chan vpp.Stats) error {
 	ctx := context.Background()
+
 	ifStats, err := s.handler.GetInterfaceStats(ctx)
 	if err != nil {
 		return err
@@ -80,9 +82,14 @@ func (s *statsPollerServer) streamVppStats(ch chan vpp.Stats) error {
 	s.log.Debugf("streaming %d interface stats", len(ifStats.Interfaces))
 
 	for _, iface := range ifStats.Interfaces {
+		name, _, exists := s.ifIndex.LookupBySwIfIndex(iface.InterfaceIndex)
+		if !exists {
+			// fallback to internal name
+			name = iface.InterfaceName
+		}
 		vppStats := vpp.Stats{
 			Interface: &vpp_interfaces.InterfaceStats{
-				Name:        iface.InterfaceName,
+				Name:        name,
 				Rx:          convertInterfaceCombined(iface.Rx),
 				Tx:          convertInterfaceCombined(iface.Tx),
 				RxUnicast:   convertInterfaceCombined(iface.RxUnicast),
@@ -104,7 +111,6 @@ func (s *statsPollerServer) streamVppStats(ch chan vpp.Stats) error {
 		}
 		ch <- vppStats
 	}
-
 	return nil
 }
 
@@ -113,5 +119,4 @@ func convertInterfaceCombined(c api.InterfaceCounterCombined) *vpp_interfaces.In
 		Bytes:   c.Bytes,
 		Packets: c.Packets,
 	}
-
 }

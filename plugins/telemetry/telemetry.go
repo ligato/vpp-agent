@@ -30,6 +30,7 @@ import (
 	"github.com/ligato/vpp-agent/api/configurator"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 	"github.com/ligato/vpp-agent/plugins/telemetry/vppcalls"
+	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 
 	_ "github.com/ligato/vpp-agent/plugins/telemetry/vppcalls/vpp1904"
 	_ "github.com/ligato/vpp-agent/plugins/telemetry/vppcalls/vpp1908"
@@ -58,6 +59,12 @@ type Plugin struct {
 	quit chan struct{}
 }
 
+type InterfaceIndexProvider interface {
+	// GetInterfaceIndex gives read-only access to map with metadata of all configured
+	// VPP interfaces.
+	GetInterfaceIndex() ifaceidx.IfaceMetadataIndex
+}
+
 // Deps represents dependencies of Telemetry Plugin
 type Deps struct {
 	infra.PluginDeps
@@ -65,6 +72,7 @@ type Deps struct {
 	GoVppmux     govppmux.StatsAPI
 	Prometheus   prom.API
 	GRPC         grpc.Server
+	IfPlugin     InterfaceIndexProvider
 }
 
 // Init initializes Telemetry Plugin
@@ -148,6 +156,7 @@ func (p *Plugin) setupStatsPoller() error {
 		return err
 	}
 	p.statsPollerServer.handler = h
+	p.ifIndex = p.IfPlugin.GetInterfaceIndex()
 
 	if p.GRPC != nil && p.GRPC.GetServer() != nil {
 		configurator.RegisterStatsPollerServer(p.GRPC.GetServer(), &p.statsPollerServer)
