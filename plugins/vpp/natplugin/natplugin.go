@@ -75,6 +75,7 @@ func (p *NATPlugin) Init() (err error) {
 	nat44GlobalAddrDescriptor := descriptor.NewNAT44GlobalAddressDescriptor(p.natHandler, p.Log)
 	dnat44Descriptor := descriptor.NewDNAT44Descriptor(p.natHandler, p.Log)
 	nat44IfaceDescriptor := descriptor.NewNAT44InterfaceDescriptor(nat44GlobalCtx, p.natHandler, p.Log)
+	nat44AddrPoolDescriptor := descriptor.NewNAT44AddressPoolDescriptor(nat44GlobalCtx, p.natHandler, p.Log)
 
 	err = p.KVScheduler.RegisterKVDescriptor(
 		nat44GlobalDescriptor,
@@ -82,6 +83,7 @@ func (p *NATPlugin) Init() (err error) {
 		nat44GlobalAddrDescriptor,  // deprecated, kept for backward compatibility
 		dnat44Descriptor,
 		nat44IfaceDescriptor,
+		nat44AddrPoolDescriptor,
 	)
 	if err != nil {
 		return err

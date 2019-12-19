@@ -401,7 +401,7 @@ func (svc *dumpService) DumpNAT44Interfaces() (natIfs []*vpp_nat.Nat44Interface,
 		return nil, nil
 	}
 
-	natIfs, err = svc.natHandler.Nat44Nat44InterfacesDump()
+	natIfs, err = svc.natHandler.Nat44InterfacesDump()
 	if err != nil {
 		return nil, err
 	}

@@ -286,27 +286,41 @@ func TestDisableNat44InterfaceOutputAsOutside(t *testing.T) {
 	Expect(msg.SwIfIndex).To(BeEquivalentTo(2))
 }
 
-func TestAddNat44Address(t *testing.T) {
+func TestAddNat44AddressPool(t *testing.T) {
 	ctx, natHandler, _, _ := natTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	addr := net.ParseIP("10.0.0.1").To4()
+	addr1 := net.ParseIP("10.0.0.1").To4()
+	addr2 := net.ParseIP("10.0.0.10").To4()
 
+	// first IP only
 	ctx.MockVpp.MockReply(&vpp_nat.Nat44AddDelAddressRangeReply{})
-	err := natHandler.AddNat44Address(addr.String(), 0, false)
-
+	err := natHandler.AddNat44AddressPool(0, addr1.String(), "", false)
 	Expect(err).ShouldNot(HaveOccurred())
 
 	msg, ok := ctx.MockChannel.Msg.(*vpp_nat.Nat44AddDelAddressRange)
 	Expect(ok).To(BeTrue())
 	Expect(msg.IsAdd).To(BeTrue())
-	Expect(addressTo4IP(msg.FirstIPAddress)).To(BeEquivalentTo(addr.String()))
-	Expect(addressTo4IP(msg.LastIPAddress)).To(BeEquivalentTo(addr.String()))
+	Expect(addressTo4IP(msg.FirstIPAddress)).To(BeEquivalentTo(addr1.String()))
+	Expect(addressTo4IP(msg.LastIPAddress)).To(BeEquivalentTo(addr1.String()))
+	Expect(msg.VrfID).To(BeEquivalentTo(0))
+	Expect(msg.Flags).To(BeEquivalentTo(0))
+
+	// first IP + last IP
+	ctx.MockVpp.MockReply(&vpp_nat.Nat44AddDelAddressRangeReply{})
+	err = natHandler.AddNat44AddressPool(0, addr1.String(), addr2.String(), false)
+	Expect(err).ShouldNot(HaveOccurred())
+
+	msg, ok = ctx.MockChannel.Msg.(*vpp_nat.Nat44AddDelAddressRange)
+	Expect(ok).To(BeTrue())
+	Expect(msg.IsAdd).To(BeTrue())
+	Expect(addressTo4IP(msg.FirstIPAddress)).To(BeEquivalentTo(addr1.String()))
+	Expect(addressTo4IP(msg.LastIPAddress)).To(BeEquivalentTo(addr2.String()))
 	Expect(msg.VrfID).To(BeEquivalentTo(0))
 	Expect(msg.Flags).To(BeEquivalentTo(0))
 }
 
-func TestAddNat44AddressError(t *testing.T) {
+func TestAddNat44AddressPoolError(t *testing.T) {
 	ctx, natHandler, _, _ := natTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
@@ -314,7 +328,7 @@ func TestAddNat44AddressError(t *testing.T) {
 
 	// Incorrect reply object
 	ctx.MockVpp.MockReply(&vpp_nat.Nat44AddDelIdentityMappingReply{})
-	err := natHandler.AddNat44Address(addr.String(), 0, false)
+	err := natHandler.AddNat44AddressPool(0, addr.String(), "", false)
 
 	Expect(err).Should(HaveOccurred())
 }
@@ -328,19 +342,19 @@ func TestAddNat44AddressPoolRetval(t *testing.T) {
 	ctx.MockVpp.MockReply(&vpp_nat.Nat44AddDelAddressRangeReply{
 		Retval: 1,
 	})
-	err := natHandler.AddNat44Address(addr.String(), 0, false)
+	err := natHandler.AddNat44AddressPool(0, addr.String(), "", false)
 
 	Expect(err).Should(HaveOccurred())
 }
 
-func TestDelNat44Address(t *testing.T) {
+func TestDelNat44AddressPool(t *testing.T) {
 	ctx, natHandler, _, _ := natTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	addr := net.ParseIP("10.0.0.1").To4()
 
 	ctx.MockVpp.MockReply(&vpp_nat.Nat44AddDelAddressRangeReply{})
-	err := natHandler.DelNat44Address(addr.String(), 0, false)
+	err := natHandler.DelNat44AddressPool(0, addr.String(), "", false)
 
 	Expect(err).ShouldNot(HaveOccurred())
 

@@ -75,51 +75,45 @@ func (d *NAT44InterfaceDescriptor) Create(key string, natIface *nat.Nat44Interfa
 	if natIface.NatInside {
 		err = d.natHandler.EnableNat44Interface(natIface.Name, true, natIface.OutputFeature)
 		if err != nil {
-			d.log.Error(err)
-			return nil, err
+			return
 		}
 	}
 	if natIface.NatOutside {
 		err = d.natHandler.EnableNat44Interface(natIface.Name, false, natIface.OutputFeature)
 		if err != nil {
-			d.log.Error(err)
-			return nil, err
+			return
 		}
 	}
-	return nil, nil
+	return
 }
 
 // Delete disables NAT44 on an interface.
-func (d *NAT44InterfaceDescriptor) Delete(key string, natIface *nat.Nat44Interface, metadata interface{}) error {
+func (d *NAT44InterfaceDescriptor) Delete(key string, natIface *nat.Nat44Interface, metadata interface{}) (err error) {
 	if natIface.NatInside {
-		err := d.natHandler.DisableNat44Interface(natIface.Name, true, natIface.OutputFeature)
+		err = d.natHandler.DisableNat44Interface(natIface.Name, true, natIface.OutputFeature)
 		if err != nil {
-			d.log.Error(err)
-			return err
+			return
 		}
 	}
 	if natIface.NatOutside {
-		err := d.natHandler.DisableNat44Interface(natIface.Name, false, natIface.OutputFeature)
+		err = d.natHandler.DisableNat44Interface(natIface.Name, false, natIface.OutputFeature)
 		if err != nil {
-			d.log.Error(err)
-			return err
+			return
 		}
 	}
-	return nil
+	return
 }
 
 // Retrieve returns the current NAT44 interface configuration.
-func (d *NAT44InterfaceDescriptor) Retrieve(correlate []adapter.NAT44InterfaceKVWithMetadata) ([]adapter.NAT44InterfaceKVWithMetadata, error) {
+func (d *NAT44InterfaceDescriptor) Retrieve(correlate []adapter.NAT44InterfaceKVWithMetadata) (
+	retrieved []adapter.NAT44InterfaceKVWithMetadata, err error) {
 	if d.nat44GlobalDesc.UseDeprecatedAPI {
 		return nil, nil // NAT interfaces already dumped by global descriptor (deprecated API is in use)
 	}
-	natIfs, err := d.natHandler.Nat44Nat44InterfacesDump()
+	natIfs, err := d.natHandler.Nat44InterfacesDump()
 	if err != nil {
-		d.log.Error(err)
 		return nil, err
 	}
-	retrieved := make([]adapter.NAT44InterfaceKVWithMetadata, 0)
-
 	for _, natIf := range natIfs {
 		retrieved = append(retrieved, adapter.NAT44InterfaceKVWithMetadata{
 			Key:    nat.Nat44InterfaceKey(natIf.Name),
@@ -127,7 +121,7 @@ func (d *NAT44InterfaceDescriptor) Retrieve(correlate []adapter.NAT44InterfaceKV
 			Origin: kvs.FromNB,
 		})
 	}
-	return retrieved, nil
+	return
 }
 
 // Dependencies lists the interface as the only dependency.

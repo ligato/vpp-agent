@@ -119,7 +119,7 @@ func (p *Plugin) registerNATHandlers() {
 		if p.natHandler == nil {
 			return nil, ErrHandlerUnavailable
 		}
-		return p.natHandler.Nat44Nat44InterfacesDump()
+		return p.natHandler.Nat44InterfacesDump()
 	})
 	// GET NAT address pools
 	p.registerHTTPHandler(resturl.NatAddressPools, GET, func() (interface{}, error) {

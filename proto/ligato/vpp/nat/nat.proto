@@ -85,14 +85,12 @@ message Nat44Interface {
 
 /* Address Pools used for NAT44. */
 message Nat44AddressPool {
-    string label = 1;                       /* Unique identifier for the NAT44 pool. */
-    uint32 vrf_id = 2;                      /* VRF id of tenant, 0xFFFFFFFF means independent of VRF.
-                                                   Non-zero (and not all-ones) VRF has to be explicitly created
-                                                   (see api/models/vpp/l3/vrf.proto).
-                                            */
-    string first_ip = 3;                    /* First IP address of the pool. */
-    string last_ip = 4;                     /* Last IP address of the pool. Should be higher than first_ip or empty. */
-    bool twice_nat = 5;                     /* Enable/disable twice NAT. */
+    uint32 vrf_id = 1;                      /* VRF id of tenant, 0xFFFFFFFF means independent of VRF.
+                                               Non-zero (and not all-ones) VRF has to be explicitly created
+                                               (see api/models/vpp/l3/vrf.proto). */
+    string first_ip = 2;                    /* First IP address of the pool. */
+    string last_ip = 3;                     /* Last IP address of the pool. Should be higher than first_ip or empty. */
+    bool twice_nat = 4;                     /* Enable/disable twice NAT. */
 }
 
 /* NAT virtual reassembly */

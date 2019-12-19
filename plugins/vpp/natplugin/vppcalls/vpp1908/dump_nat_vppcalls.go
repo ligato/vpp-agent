@@ -106,8 +106,8 @@ func (h *NatVppHandler) DNat44Dump() (dnats []*nat.DNat44, err error) {
 	return dnats, nil
 }
 
-// Nat44Nat44InterfacesDump dumps NAT44 config of all NAT44-enabled interfaces.
-func (h *NatVppHandler) Nat44Nat44InterfacesDump() (natIfs []*nat.Nat44Interface, err error) {
+// Nat44InterfacesDump dumps NAT44 config of all NAT44-enabled interfaces.
+func (h *NatVppHandler) Nat44InterfacesDump() (natIfs []*nat.Nat44Interface, err error) {
 
 	// dump NAT interfaces without output feature enabled
 	req1 := &ba_nat.Nat44InterfaceDump{}
@@ -167,7 +167,40 @@ func (h *NatVppHandler) Nat44Nat44InterfacesDump() (natIfs []*nat.Nat44Interface
 
 // Nat44AddressPoolsDump dumps all configured NAT44 address pools.
 func (h *NatVppHandler) Nat44AddressPoolsDump() (natPools []*nat.Nat44AddressPool, err error) {
-	return // TODO: implement me
+	var curPool *nat.Nat44AddressPool
+	var lastIP net.IP
+
+	req := &ba_nat.Nat44AddressDump{}
+	reqContext := h.callsChannel.SendMultiRequest(req)
+
+	for {
+		msg := &ba_nat.Nat44AddressDetails{}
+		stop, err := reqContext.ReceiveReply(msg)
+		if err != nil {
+			return nil, fmt.Errorf("failed to dump NAT44 Address pool: %v", err)
+		}
+		if stop {
+			break
+		}
+		ip := net.IP(msg.IPAddress[:])
+		isTwiceNat := getNat44Flags(msg.Flags).isTwiceNat
+		// merge subsequent IPs into a single pool
+		if curPool != nil && curPool.VrfId == msg.VrfID && curPool.TwiceNat == isTwiceNat && ip.Equal(incIP(lastIP)) {
+			// update current pool
+			curPool.LastIp = ip.String()
+		} else {
+			// start a new pool
+			pool := &nat.Nat44AddressPool{
+				FirstIp:  ip.String(),
+				VrfId:    msg.VrfID,
+				TwiceNat: isTwiceNat,
+			}
+			curPool = pool
+			natPools = append(natPools, pool)
+		}
+		lastIP = ip
+	}
+	return
 }
 
 // nat44AddressDump returns NAT44 address pool configured in the VPP.
@@ -631,4 +664,18 @@ func uintToBool(value uint8) bool {
 		return false
 	}
 	return true
+}
+
+// incIP increments IP address and returns it.
+// Based on: https://play.golang.org/p/m8TNTtygK0
+func incIP(ip net.IP) net.IP {
+	retIP := make(net.IP, len(ip))
+	copy(retIP, ip)
+	for j := len(retIP) - 1; j >= 0; j-- {
+		retIP[j]++
+		if retIP[j] > 0 {
+			break
+		}
+	}
+	return retIP
 }

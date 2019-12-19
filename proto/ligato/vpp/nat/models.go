@@ -29,21 +29,28 @@ var (
 		Type:    "nat44-global",
 		Version: "v2",
 	})
+
 	ModelDNat44 = models.Register(&DNat44{}, models.Spec{
 		Module:  ModuleName,
 		Type:    "dnat44",
 		Version: "v2",
 	}, models.WithNameTemplate("{{.Label}}"))
+
 	ModelNat44Interface = models.Register(&Nat44Interface{}, models.Spec{
 		Module:  ModuleName,
-		Type:    "nat44-interfaces",
+		Type:    "nat44-interface",
 		Version: "v2",
 	}, models.WithNameTemplate("{{.Name}}"))
+
 	ModelNat44AddressPool = models.Register(&Nat44AddressPool{}, models.Spec{
 		Module:  ModuleName,
-		Type:    "nat44-pools",
+		Type:    "nat44-pool",
 		Version: "v2",
-	}, models.WithNameTemplate("{{.Label}}"))
+	}, models.WithNameTemplate(
+		"vrf/{{.VrfId}}"+
+			"/address/{{.FirstIp}}"+
+			"{{if and .LastIp (ne .FirstIp .LastIp)}}-{{.LastIp}}{{end}}",
+	))
 )
 
 // GlobalNAT44Key returns key for Nat44Global.
@@ -69,9 +76,11 @@ func Nat44InterfaceKey(name string) string {
 
 // Nat44AddressPoolKey returns the key used in NB DB to store the configuration of the
 // given NAT44 address pool.
-func Nat44AddressPoolKey(label string) string {
+func Nat44AddressPoolKey(vrf uint32, firstIP, lastIP string) string {
 	return models.Key(&Nat44AddressPool{
-		Label: label,
+		VrfId:   vrf,
+		FirstIp: firstIP,
+		LastIp:  lastIP,
 	})
 }
 

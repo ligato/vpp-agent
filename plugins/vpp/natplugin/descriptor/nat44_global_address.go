@@ -89,7 +89,7 @@ func (d *NAT44GlobalAddressDescriptor) Validate(key string, natAddr *nat.Nat44Gl
 
 // Create adds IP address into the NAT44 address pool.
 func (d *NAT44GlobalAddressDescriptor) Create(key string, natAddr *nat.Nat44Global_Address) (metadata interface{}, err error) {
-	err = d.natHandler.AddNat44Address(natAddr.Address, natAddr.VrfId, natAddr.TwiceNat)
+	err = d.natHandler.AddNat44AddressPool(natAddr.VrfId, natAddr.Address, "", natAddr.TwiceNat)
 	if err != nil {
 		d.log.Error(err)
 		return nil, err
@@ -99,7 +99,7 @@ func (d *NAT44GlobalAddressDescriptor) Create(key string, natAddr *nat.Nat44Glob
 
 // Delete removes IP address from the NAT44 address pool.
 func (d *NAT44GlobalAddressDescriptor) Delete(key string, natAddr *nat.Nat44Global_Address, metadata interface{}) error {
-	err := d.natHandler.DelNat44Address(natAddr.Address, natAddr.VrfId, natAddr.TwiceNat)
+	err := d.natHandler.DelNat44AddressPool(natAddr.VrfId, natAddr.Address, "", natAddr.TwiceNat)
 	if err != nil {
 		d.log.Error(err)
 		return err
