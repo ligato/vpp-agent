@@ -20,11 +20,13 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
+// Available protocols.
 type DNat44_Protocol int32
 
 const (
-	DNat44_TCP  DNat44_Protocol = 0
-	DNat44_UDP  DNat44_Protocol = 1
+	DNat44_TCP DNat44_Protocol = 0
+	DNat44_UDP DNat44_Protocol = 1
+	// ICMP is not permitted for load balanced entries.
 	DNat44_ICMP DNat44_Protocol = 2
 )
 
@@ -48,6 +50,7 @@ func (DNat44_Protocol) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_6c5496f531b4b7d3, []int{1, 0}
 }
 
+// Available twice-NAT modes.
 type DNat44_StaticMapping_TwiceNatMode int32
 
 const (
@@ -76,14 +79,19 @@ func (DNat44_StaticMapping_TwiceNatMode) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_6c5496f531b4b7d3, []int{1, 0, 0}
 }
 
+// Nat44Global defines global NAT44 configuration.
 type Nat44Global struct {
-	Forwarding           bool                     `protobuf:"varint,1,opt,name=forwarding,proto3" json:"forwarding,omitempty"`
-	NatInterfaces        []*Nat44Global_Interface `protobuf:"bytes,2,rep,name=nat_interfaces,json=natInterfaces,proto3" json:"nat_interfaces,omitempty"` // Deprecated: Do not use.
-	AddressPool          []*Nat44Global_Address   `protobuf:"bytes,3,rep,name=address_pool,json=addressPool,proto3" json:"address_pool,omitempty"`       // Deprecated: Do not use.
-	VirtualReassembly    *VirtualReassembly       `protobuf:"bytes,4,opt,name=virtual_reassembly,json=virtualReassembly,proto3" json:"virtual_reassembly,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}                 `json:"-"`
-	XXX_unrecognized     []byte                   `json:"-"`
-	XXX_sizecache        int32                    `json:"-"`
+	// Enable/disable forwarding.
+	Forwarding bool `protobuf:"varint,1,opt,name=forwarding,proto3" json:"forwarding,omitempty"`
+	// List of NAT-enabled interfaces. Deprecated - use separate Nat44Interface entries instead.
+	NatInterfaces []*Nat44Global_Interface `protobuf:"bytes,2,rep,name=nat_interfaces,json=natInterfaces,proto3" json:"nat_interfaces,omitempty"` // Deprecated: Do not use.
+	// Address pool used for source IP NAT. Deprecated - use separate Nat44AddressPool entries instead.
+	AddressPool []*Nat44Global_Address `protobuf:"bytes,3,rep,name=address_pool,json=addressPool,proto3" json:"address_pool,omitempty"` // Deprecated: Do not use.
+	// Virtual reassembly for IPv4.
+	VirtualReassembly    *VirtualReassembly `protobuf:"bytes,4,opt,name=virtual_reassembly,json=virtualReassembly,proto3" json:"virtual_reassembly,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}           `json:"-"`
+	XXX_unrecognized     []byte             `json:"-"`
+	XXX_sizecache        int32              `json:"-"`
 }
 
 func (m *Nat44Global) Reset()         { *m = Nat44Global{} }
@@ -141,9 +149,13 @@ func (m *Nat44Global) GetVirtualReassembly() *VirtualReassembly {
 	return nil
 }
 
+// Interface defines a network interface enabled for NAT.
 type Nat44Global_Interface struct {
-	Name                 string   `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	IsInside             bool     `protobuf:"varint,2,opt,name=is_inside,json=isInside,proto3" json:"is_inside,omitempty"`
+	// Interface name (logical).
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	// Distinguish between inside/outside interface.
+	IsInside bool `protobuf:"varint,2,opt,name=is_inside,json=isInside,proto3" json:"is_inside,omitempty"`
+	// Enable/disable output feature.
 	OutputFeature        bool     `protobuf:"varint,3,opt,name=output_feature,json=outputFeature,proto3" json:"output_feature,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -196,9 +208,14 @@ func (m *Nat44Global_Interface) GetOutputFeature() bool {
 	return false
 }
 
+// Address defines an address to be used for source IP NAT.
 type Nat44Global_Address struct {
-	Address              string   `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"`
-	VrfId                uint32   `protobuf:"varint,2,opt,name=vrf_id,json=vrfId,proto3" json:"vrf_id,omitempty"`
+	// IPv4 address.
+	Address string `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"`
+	// VRF id of tenant, 0xFFFFFFFF means independent of VRF.
+	// Non-zero (and not all-ones) VRF has to be explicitly created (see api/models/vpp/l3/vrf.proto).
+	VrfId uint32 `protobuf:"varint,2,opt,name=vrf_id,json=vrfId,proto3" json:"vrf_id,omitempty"`
+	// Enable/disable twice NAT.
 	TwiceNat             bool     `protobuf:"varint,3,opt,name=twice_nat,json=twiceNat,proto3" json:"twice_nat,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -251,9 +268,13 @@ func (m *Nat44Global_Address) GetTwiceNat() bool {
 	return false
 }
 
+// DNat44 defines destination NAT44 configuration.
 type DNat44 struct {
-	Label                string                    `protobuf:"bytes,1,opt,name=label,proto3" json:"label,omitempty"`
-	StMappings           []*DNat44_StaticMapping   `protobuf:"bytes,2,rep,name=st_mappings,json=stMappings,proto3" json:"st_mappings,omitempty"`
+	// Unique identifier for the DNAT configuration.
+	Label string `protobuf:"bytes,1,opt,name=label,proto3" json:"label,omitempty"`
+	// A list of static mappings in DNAT.
+	StMappings []*DNat44_StaticMapping `protobuf:"bytes,2,rep,name=st_mappings,json=stMappings,proto3" json:"st_mappings,omitempty"`
+	// A list of identity mappings in DNAT.
 	IdMappings           []*DNat44_IdentityMapping `protobuf:"bytes,3,rep,name=id_mappings,json=idMappings,proto3" json:"id_mappings,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                  `json:"-"`
 	XXX_unrecognized     []byte                    `json:"-"`
@@ -306,17 +327,25 @@ func (m *DNat44) GetIdMappings() []*DNat44_IdentityMapping {
 	return nil
 }
 
+// StaticMapping defines a list of static mappings in DNAT.
 type DNat44_StaticMapping struct {
-	ExternalInterface    string                            `protobuf:"bytes,1,opt,name=external_interface,json=externalInterface,proto3" json:"external_interface,omitempty"`
-	ExternalIp           string                            `protobuf:"bytes,2,opt,name=external_ip,json=externalIp,proto3" json:"external_ip,omitempty"`
-	ExternalPort         uint32                            `protobuf:"varint,3,opt,name=external_port,json=externalPort,proto3" json:"external_port,omitempty"`
-	LocalIps             []*DNat44_StaticMapping_LocalIP   `protobuf:"bytes,4,rep,name=local_ips,json=localIps,proto3" json:"local_ips,omitempty"`
-	Protocol             DNat44_Protocol                   `protobuf:"varint,5,opt,name=protocol,proto3,enum=ligato.vpp.nat.DNat44_Protocol" json:"protocol,omitempty"`
-	TwiceNat             DNat44_StaticMapping_TwiceNatMode `protobuf:"varint,6,opt,name=twice_nat,json=twiceNat,proto3,enum=ligato.vpp.nat.DNat44_StaticMapping_TwiceNatMode" json:"twice_nat,omitempty"`
-	SessionAffinity      uint32                            `protobuf:"varint,7,opt,name=session_affinity,json=sessionAffinity,proto3" json:"session_affinity,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}                          `json:"-"`
-	XXX_unrecognized     []byte                            `json:"-"`
-	XXX_sizecache        int32                             `json:"-"`
+	// Interface to use external IP from; preferred over external_ip.
+	ExternalInterface string `protobuf:"bytes,1,opt,name=external_interface,json=externalInterface,proto3" json:"external_interface,omitempty"`
+	// External address.
+	ExternalIp string `protobuf:"bytes,2,opt,name=external_ip,json=externalIp,proto3" json:"external_ip,omitempty"`
+	// Port (do not set for address mapping).
+	ExternalPort uint32 `protobuf:"varint,3,opt,name=external_port,json=externalPort,proto3" json:"external_port,omitempty"`
+	// List of local IP addresses. If there is more than one entry, load-balancing is enabled.
+	LocalIps []*DNat44_StaticMapping_LocalIP `protobuf:"bytes,4,rep,name=local_ips,json=localIps,proto3" json:"local_ips,omitempty"`
+	// Protocol used for static mapping.
+	Protocol DNat44_Protocol `protobuf:"varint,5,opt,name=protocol,proto3,enum=ligato.vpp.nat.DNat44_Protocol" json:"protocol,omitempty"`
+	// Enable/disable (self-)twice NAT.
+	TwiceNat DNat44_StaticMapping_TwiceNatMode `protobuf:"varint,6,opt,name=twice_nat,json=twiceNat,proto3,enum=ligato.vpp.nat.DNat44_StaticMapping_TwiceNatMode" json:"twice_nat,omitempty"`
+	// Session affinity. 0 means disabled, otherwise client IP affinity sticky time in seconds.
+	SessionAffinity      uint32   `protobuf:"varint,7,opt,name=session_affinity,json=sessionAffinity,proto3" json:"session_affinity,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
 func (m *DNat44_StaticMapping) Reset()         { *m = DNat44_StaticMapping{} }
@@ -393,10 +422,15 @@ func (m *DNat44_StaticMapping) GetSessionAffinity() uint32 {
 	return 0
 }
 
+// LocalIP defines a local IP addresses.
 type DNat44_StaticMapping_LocalIP struct {
-	VrfId                uint32   `protobuf:"varint,1,opt,name=vrf_id,json=vrfId,proto3" json:"vrf_id,omitempty"`
-	LocalIp              string   `protobuf:"bytes,2,opt,name=local_ip,json=localIp,proto3" json:"local_ip,omitempty"`
-	LocalPort            uint32   `protobuf:"varint,3,opt,name=local_port,json=localPort,proto3" json:"local_port,omitempty"`
+	// VRF (table) ID. Non-zero VRF has to be explicitly created (see api/models/vpp/l3/vrf.proto).
+	VrfId uint32 `protobuf:"varint,1,opt,name=vrf_id,json=vrfId,proto3" json:"vrf_id,omitempty"`
+	// Local IP address).
+	LocalIp string `protobuf:"bytes,2,opt,name=local_ip,json=localIp,proto3" json:"local_ip,omitempty"`
+	// Port (do not set for address mapping).
+	LocalPort uint32 `protobuf:"varint,3,opt,name=local_port,json=localPort,proto3" json:"local_port,omitempty"`
+	// Probability level for load-balancing mode.
 	Probability          uint32   `protobuf:"varint,4,opt,name=probability,proto3" json:"probability,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -456,11 +490,17 @@ func (m *DNat44_StaticMapping_LocalIP) GetProbability() uint32 {
 	return 0
 }
 
+// IdentityMapping defines an identity mapping in DNAT.
 type DNat44_IdentityMapping struct {
-	VrfId                uint32          `protobuf:"varint,1,opt,name=vrf_id,json=vrfId,proto3" json:"vrf_id,omitempty"`
-	Interface            string          `protobuf:"bytes,2,opt,name=interface,proto3" json:"interface,omitempty"`
-	IpAddress            string          `protobuf:"bytes,3,opt,name=ip_address,json=ipAddress,proto3" json:"ip_address,omitempty"`
-	Port                 uint32          `protobuf:"varint,4,opt,name=port,proto3" json:"port,omitempty"`
+	// VRF (table) ID. Non-zero VRF has to be explicitly created (see api/models/vpp/l3/vrf.proto).
+	VrfId uint32 `protobuf:"varint,1,opt,name=vrf_id,json=vrfId,proto3" json:"vrf_id,omitempty"`
+	// Name of the interface to use address from; preferred over ip_address.
+	Interface string `protobuf:"bytes,2,opt,name=interface,proto3" json:"interface,omitempty"`
+	// IP address.
+	IpAddress string `protobuf:"bytes,3,opt,name=ip_address,json=ipAddress,proto3" json:"ip_address,omitempty"`
+	// Port (do not set for address mapping).
+	Port uint32 `protobuf:"varint,4,opt,name=port,proto3" json:"port,omitempty"`
+	// Protocol used for identity mapping.
 	Protocol             DNat44_Protocol `protobuf:"varint,5,opt,name=protocol,proto3,enum=ligato.vpp.nat.DNat44_Protocol" json:"protocol,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
 	XXX_unrecognized     []byte          `json:"-"`
@@ -527,11 +567,15 @@ func (m *DNat44_IdentityMapping) GetProtocol() DNat44_Protocol {
 	return DNat44_TCP
 }
 
-// Local network interfaces enabled for NAT44.
+// Nat44Interface defines a local network interfaces enabled for NAT44.
 type Nat44Interface struct {
-	Name                 string   `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	NatInside            bool     `protobuf:"varint,2,opt,name=nat_inside,json=natInside,proto3" json:"nat_inside,omitempty"`
-	NatOutside           bool     `protobuf:"varint,3,opt,name=nat_outside,json=natOutside,proto3" json:"nat_outside,omitempty"`
+	// Interface name (logical).
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	// Enable/disable NAT on inside.
+	NatInside bool `protobuf:"varint,2,opt,name=nat_inside,json=natInside,proto3" json:"nat_inside,omitempty"`
+	// Enable/disable NAT on outside.
+	NatOutside bool `protobuf:"varint,3,opt,name=nat_outside,json=natOutside,proto3" json:"nat_outside,omitempty"`
+	//  Enable/disable output feature.
 	OutputFeature        bool     `protobuf:"varint,4,opt,name=output_feature,json=outputFeature,proto3" json:"output_feature,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -591,11 +635,16 @@ func (m *Nat44Interface) GetOutputFeature() bool {
 	return false
 }
 
-// Address Pools used for NAT44.
+// Nat44AddressPool defines an address pool used for NAT44.
 type Nat44AddressPool struct {
-	VrfId                uint32   `protobuf:"varint,1,opt,name=vrf_id,json=vrfId,proto3" json:"vrf_id,omitempty"`
-	FirstIp              string   `protobuf:"bytes,2,opt,name=first_ip,json=firstIp,proto3" json:"first_ip,omitempty"`
-	LastIp               string   `protobuf:"bytes,3,opt,name=last_ip,json=lastIp,proto3" json:"last_ip,omitempty"`
+	// VRF id of tenant, 0xFFFFFFFF means independent of VRF.
+	// Non-zero (and not all-ones) VRF has to be explicitly created (see api/models/vpp/l3/vrf.proto).
+	VrfId uint32 `protobuf:"varint,1,opt,name=vrf_id,json=vrfId,proto3" json:"vrf_id,omitempty"`
+	// First IP address of the pool.
+	FirstIp string `protobuf:"bytes,2,opt,name=first_ip,json=firstIp,proto3" json:"first_ip,omitempty"`
+	// Last IP address of the pool. Should be higher than first_ip or empty.
+	LastIp string `protobuf:"bytes,3,opt,name=last_ip,json=lastIp,proto3" json:"last_ip,omitempty"`
+	// Enable/disable twice NAT.
 	TwiceNat             bool     `protobuf:"varint,4,opt,name=twice_nat,json=twiceNat,proto3" json:"twice_nat,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -655,11 +704,15 @@ func (m *Nat44AddressPool) GetTwiceNat() bool {
 	return false
 }
 
-// NAT virtual reassembly
+// VirtualReassembly defines NAT virtual reassembly settings.
 type VirtualReassembly struct {
-	Timeout              uint32   `protobuf:"varint,1,opt,name=timeout,proto3" json:"timeout,omitempty"`
-	MaxReassemblies      uint32   `protobuf:"varint,2,opt,name=max_reassemblies,json=maxReassemblies,proto3" json:"max_reassemblies,omitempty"`
-	MaxFragments         uint32   `protobuf:"varint,3,opt,name=max_fragments,json=maxFragments,proto3" json:"max_fragments,omitempty"`
+	// Reassembly timeout.
+	Timeout uint32 `protobuf:"varint,1,opt,name=timeout,proto3" json:"timeout,omitempty"`
+	// Maximum number of concurrent reassemblies.
+	MaxReassemblies uint32 `protobuf:"varint,2,opt,name=max_reassemblies,json=maxReassemblies,proto3" json:"max_reassemblies,omitempty"`
+	// Maximum number of fragments per reassembly.
+	MaxFragments uint32 `protobuf:"varint,3,opt,name=max_fragments,json=maxFragments,proto3" json:"max_fragments,omitempty"`
+	// If set to true fragments are dropped, translated otherwise.
 	DropFragments        bool     `protobuf:"varint,4,opt,name=drop_fragments,json=dropFragments,proto3" json:"drop_fragments,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
