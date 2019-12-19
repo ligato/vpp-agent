@@ -186,7 +186,7 @@ func (dsl *DataResyncDSL) DNAT44(nat44 *nat.DNat44) vppclient.DataResyncDSL {
 
 // NAT44Interface adds NAT44 interface configuration to the RESYNC request.
 func (dsl *DataResyncDSL) NAT44Interface(natIf *nat.Nat44Interface) vppclient.DataResyncDSL {
-	key := models.Key(&nat.Nat44Interface{})
+	key := models.Key(natIf)
 	dsl.txn.Put(key, natIf)
 	dsl.txnKeys = append(dsl.txnKeys, key)
 
@@ -195,7 +195,7 @@ func (dsl *DataResyncDSL) NAT44Interface(natIf *nat.Nat44Interface) vppclient.Da
 
 // NAT44AddressPool adds NAT44 address pool configuration to the RESYNC request.
 func (dsl *DataResyncDSL) NAT44AddressPool(pool *nat.Nat44AddressPool) vppclient.DataResyncDSL {
-	key := models.Key(&nat.Nat44AddressPool{})
+	key := models.Key(pool)
 	dsl.txn.Put(key, pool)
 	dsl.txnKeys = append(dsl.txnKeys, key)
 

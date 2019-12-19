@@ -169,13 +169,13 @@ func (dsl *PutDSL) DNAT44(nat44 *nat.DNat44) vppclient.PutDSL {
 
 // NAT44Interface adds a request to create or update NAT44 interface configuration.
 func (dsl *PutDSL) NAT44Interface(natIf *nat.Nat44Interface) vppclient.PutDSL {
-	dsl.parent.txn.Put(models.Key(&nat.Nat44Interface{}), natIf)
+	dsl.parent.txn.Put(models.Key(natIf), natIf)
 	return dsl
 }
 
 // NAT44AddressPool adds a request to create or update NAT44 address pool.
 func (dsl *PutDSL) NAT44AddressPool(pool *nat.Nat44AddressPool) vppclient.PutDSL {
-	dsl.parent.txn.Put(models.Key(&nat.Nat44AddressPool{}), pool)
+	dsl.parent.txn.Put(models.Key(pool), pool)
 	return dsl
 }
 
