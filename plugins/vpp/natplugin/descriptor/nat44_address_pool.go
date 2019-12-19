@@ -67,6 +67,8 @@ func NewNAT44AddressPoolDescriptor(nat44GlobalDesc *NAT44GlobalDescriptor,
 		Delete:        ctx.Delete,
 		Retrieve:      ctx.Retrieve,
 		Dependencies:  ctx.Dependencies,
+		// retrieve global NAT config first (required for deprecated global NAT interface & address API)
+		RetrieveDependencies: []string{NAT44GlobalDescriptorName},
 	}
 	return adapter.NewNAT44AddressPoolDescriptor(typedDescr)
 }

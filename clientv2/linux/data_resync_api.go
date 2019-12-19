@@ -89,6 +89,10 @@ type DataResyncDSL interface {
 	NAT44Global(nat *nat.Nat44Global) DataResyncDSL
 	// DNAT44 adds DNAT44 configuration to the RESYNC request
 	DNAT44(dnat *nat.DNat44) DataResyncDSL
+	// NAT44Interface adds NAT44 interface configuration to the RESYNC request.
+	NAT44Interface(natIf *nat.Nat44Interface) DataResyncDSL
+	// NAT44AddressPool adds NAT44 address pool configuration to the RESYNC request.
+	NAT44AddressPool(pool *nat.Nat44AddressPool) DataResyncDSL
 	// IPSecSA adds request to RESYNC a new Security Association
 	IPSecSA(sa *ipsec.SecurityAssociation) DataResyncDSL
 	// IPSecSPD adds request to RESYNC a new Security Policy Database

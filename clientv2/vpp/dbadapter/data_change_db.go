@@ -311,6 +311,18 @@ func (dsl *DeleteDSL) DNAT44(label string) vppclient.DeleteDSL {
 	return dsl
 }
 
+// NAT44Interface adds a request to delete NAT44 interface configuration.
+func (dsl *DeleteDSL) NAT44Interface(natIf *nat.Nat44Interface) vppclient.DeleteDSL {
+	dsl.parent.txn.Delete(models.Key(natIf))
+	return dsl
+}
+
+// NAT44AddressPool adds a request to create or update NAT44 address pool.
+func (dsl *DeleteDSL) NAT44AddressPool(pool *nat.Nat44AddressPool) vppclient.DeleteDSL {
+	dsl.parent.txn.Delete(models.Key(pool))
+	return dsl
+}
+
 // IPSecSA adds request to create a new Security Association
 func (dsl *DeleteDSL) IPSecSA(saIndex string) vppclient.DeleteDSL {
 	dsl.parent.txn.Delete(ipsec.SAKey(saIndex))
