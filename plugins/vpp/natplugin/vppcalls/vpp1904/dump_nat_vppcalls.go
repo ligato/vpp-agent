@@ -159,6 +159,9 @@ func (h *NatVppHandler) Nat44InterfacesDump() (natIfs []*nat.Nat44Interface, err
 			NatOutside:    msg.IsInside == 0 || msg.IsInside == 2,
 			OutputFeature: true,
 		}
+		if !natIf.NatInside && !natIf.NatOutside {
+			natIf.NatOutside = true
+		}
 		natIfs = append(natIfs, natIf)
 	}
 	return
