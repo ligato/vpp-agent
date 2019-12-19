@@ -153,6 +153,12 @@ func testLocalClientWithScheduler() {
 		VppInterface(server1VPPTap).
 		VppInterface(server2VPPTap).
 		NAT44Global(natGlobal).
+		NAT44Interface(natInterfaceTapHost).
+		NAT44Interface(natInterfaceTapClient).
+		NAT44Interface(natInterfaceTapServer1).
+		NAT44Interface(natInterfaceTapServer2).
+		NAT44AddressPool(natPool1).
+		NAT44AddressPool(natPool2).
 		DNAT44(tcpServiceDNAT).
 		DNAT44(udpServiceDNAT).
 		DNAT44(idDNAT).
@@ -257,7 +263,7 @@ const (
 	emptyDNATLabel = "empty-dnat"
 
 	natPoolAddr1 = hostNetPrefix + "100"
-	natPoolAddr2 = hostNetPrefix + "200"
+	natPoolAddr2 = hostNetPrefix + "101"
 	natPoolAddr3 = hostNetPrefix + "250"
 )
 
@@ -460,45 +466,38 @@ var (
 			MaxFragments:    10,
 			DropFragments:   true,
 		},
-		NatInterfaces: []*vpp_nat.Nat44Global_Interface{
-			{
-				Name:          vppTapHostLogicalName,
-				IsInside:      false,
-				OutputFeature: true,
-			},
-			{
-				Name:          vppTapClientLogicalName,
-				IsInside:      false,
-				OutputFeature: false,
-			},
-			{
-				Name:          vppTapClientLogicalName,
-				IsInside:      true, // just to test in & out together
-				OutputFeature: false,
-			},
-			{
-				Name:          vppTapServer1LogicalName,
-				IsInside:      true,
-				OutputFeature: false,
-			},
-			{
-				Name:          vppTapServer2LogicalName,
-				IsInside:      true,
-				OutputFeature: false,
-			},
-		},
-		AddressPool: []*vpp_nat.Nat44Global_Address{
-			{
-				Address: natPoolAddr1,
-			},
-			{
-				Address: natPoolAddr2,
-			},
-			{
-				Address:  natPoolAddr3,
-				TwiceNat: true,
-			},
-		},
+	}
+
+	/* NAT interfaces */
+
+	natInterfaceTapHost = &vpp_nat.Nat44Interface{
+		Name:          vppTapHostLogicalName,
+		NatOutside:    true,
+		OutputFeature: true,
+	}
+	natInterfaceTapClient = &vpp_nat.Nat44Interface{
+		Name:       vppTapClientLogicalName,
+		NatInside:  true, // just to test in & out together
+		NatOutside: true,
+	}
+	natInterfaceTapServer1 = &vpp_nat.Nat44Interface{
+		Name:      vppTapServer1LogicalName,
+		NatInside: true,
+	}
+	natInterfaceTapServer2 = &vpp_nat.Nat44Interface{
+		Name:      vppTapServer2LogicalName,
+		NatInside: true,
+	}
+
+	/* NAT pools */
+
+	natPool1 = &vpp_nat.Nat44AddressPool{
+		FirstIp: natPoolAddr1,
+		LastIp:  natPoolAddr2,
+	}
+	natPool2 = &vpp_nat.Nat44AddressPool{
+		FirstIp:  natPoolAddr3,
+		TwiceNat: true,
 	}
 
 	/* TCP service */
