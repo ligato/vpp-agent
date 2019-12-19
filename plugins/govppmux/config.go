@@ -69,6 +69,7 @@ func DefaultConfig() *Config {
 		ReplyTimeout:             time.Second,
 		RetryRequestTimeout:      500 * time.Millisecond,
 		RetryConnectTimeout:      time.Second,
+		ProxyEnabled:             true,
 	}
 }
 

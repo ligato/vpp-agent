@@ -120,7 +120,7 @@ func (p *Plugin) Init() (err error) {
 	linuxIfIndexes := p.LinuxIfPlugin.GetInterfaceIndex()
 
 	// Initialize VPP handlers
-	p.vpeHandler = vpevppcalls.CompatibleHandler(p.VPP)
+	p.vpeHandler, err = vpevppcalls.NewHandler(p.VPP)
 	if p.vpeHandler == nil {
 		p.Log.Info("VPP main handler is not available, it will be skipped")
 	}
@@ -184,28 +184,22 @@ func (p *Plugin) Init() (err error) {
 func (p *Plugin) AfterInit() (err error) {
 	// VPP handlers
 	p.registerTelemetryHandlers()
-	p.registerCommandHandler()
-
 	// core
 	p.registerInterfaceHandlers()
 	p.registerL2Handlers()
 	p.registerL3Handlers()
 	p.registerIPSecHandlers()
-
 	// plugins
 	p.registerABFHandler()
 	p.registerACLHandlers()
 	p.registerNATHandlers()
 	p.registerPuntHandlers()
-
 	// Linux handlers
 	p.registerLinuxInterfaceHandlers()
 	p.registerLinuxL3Handlers()
-
 	// Index and stats handlers
 	p.registerIndexHandlers()
 	p.registerStatsHandler()
-
 	return nil
 }
 
@@ -248,7 +242,6 @@ func getIndexPageItems() map[string][]indexItem {
 			{Name: "Node count", Path: resturl.TNodeCount},
 		},
 		"Stats": {
-			{Name: "VPP Binary API", Path: resturl.Tracer},
 			{Name: "Configurator Stats", Path: resturl.ConfiguratorStats},
 		},
 	}
@@ -261,15 +254,14 @@ func getPermissionsGroups() []*access.PermissionGroup {
 	tracerPg := &access.PermissionGroup{
 		Name: "stats",
 		Permissions: []*access.PermissionGroup_Permissions{
-			newPermission(resturl.Index, GET),
-			newPermission(resturl.Tracer, GET),
+			newPermission("/", GET),
 			newPermission(resturl.ConfiguratorStats, GET),
 		},
 	}
 	telemetryPg := &access.PermissionGroup{
 		Name: "telemetry",
 		Permissions: []*access.PermissionGroup_Permissions{
-			newPermission(resturl.Index, GET),
+			newPermission("/", GET),
 			newPermission(resturl.Telemetry, GET),
 			newPermission(resturl.TMemory, GET),
 			newPermission(resturl.TRuntime, GET),
@@ -279,7 +271,7 @@ func getPermissionsGroups() []*access.PermissionGroup {
 	dumpPg := &access.PermissionGroup{
 		Name: "dump",
 		Permissions: []*access.PermissionGroup_Permissions{
-			newPermission(resturl.Index, GET),
+			newPermission("/", GET),
 			newPermission(resturl.ABF, GET),
 			newPermission(resturl.ACLIP, GET),
 			newPermission(resturl.ACLMACIP, GET),

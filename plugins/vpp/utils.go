@@ -14,30 +14,12 @@
 
 package vpp
 
-import govppapi "git.fd.io/govpp.git/api"
+import (
+	govppapi "git.fd.io/govpp.git/api"
 
-// MessagesList aggregates multiple funcs that return messages.
-type MessagesList []func() []govppapi.Message
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi"
+)
 
-// Messages is used to initialize message list.
-func Messages(funcs ...func() []govppapi.Message) MessagesList {
-	var list MessagesList
-	list.Add(funcs...)
-	return list
-}
-
-// Add adds funcs to message list.
-func (list *MessagesList) Add(funcs ...func() []govppapi.Message) {
-	for _, msgFunc := range funcs {
-		*list = append(*list, msgFunc)
-	}
-}
-
-// AllMessages returns messages from message list funcs combined.
-func (list *MessagesList) AllMessages() []govppapi.Message {
-	var msgs []govppapi.Message
-	for _, msgFunc := range *list {
-		msgs = append(msgs, msgFunc()...)
-	}
-	return msgs
+func Messages(funcs ...func() []govppapi.Message) binapi.MessagesList {
+	return binapi.Messages(funcs...)
 }

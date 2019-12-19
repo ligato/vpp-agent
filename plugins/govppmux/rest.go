@@ -15,6 +15,9 @@
 package govppmux
 
 import (
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/rpc"
 
@@ -30,6 +33,7 @@ func (p *Plugin) registerHandlers(http rest.HTTPHandlers) {
 	}
 	http.RegisterHTTPHandler("/govppmux/stats", p.statsHandler, "GET")
 	http.RegisterHTTPHandler(rpc.DefaultRPCPath, p.proxyHandler, "CONNECT")
+	http.RegisterHTTPHandler("/vpp/command", p.cliCommandHandler, "POST")
 }
 
 func (p *Plugin) statsHandler(formatter *render.Render) http.HandlerFunc {
@@ -46,5 +50,42 @@ func (p *Plugin) proxyHandler(_ *render.Render) http.HandlerFunc {
 			http.Error(w, "VPP proxy not enabled", http.StatusServiceUnavailable)
 		}
 	}
-	return p.proxy.ServeHTTP
+	return func(w http.ResponseWriter, req *http.Request) {
+		p.proxy.ServeHTTP(w, req)
+	}
+}
+
+func (p *Plugin) cliCommandHandler(formatter *render.Render) http.HandlerFunc {
+	return func(w http.ResponseWriter, req *http.Request) {
+		body, err := ioutil.ReadAll(req.Body)
+		if err != nil {
+			errMsg := fmt.Sprintf("400 Bad request: failed to parse request body: %v", err)
+			formatter.JSON(w, http.StatusBadRequest, errMsg)
+			return
+		}
+		var reqParam map[string]string
+
+		if err = json.Unmarshal(body, &reqParam); err != nil {
+			errMsg := fmt.Sprintf("400 Bad request: failed to unmarshall request body: %v\n", err)
+			formatter.JSON(w, http.StatusBadRequest, errMsg)
+			return
+		}
+		command, ok := reqParam["vppclicommand"]
+		if !ok || command == "" {
+			errMsg := fmt.Sprintf("400 Bad request: vppclicommand parameter missing or empty\n")
+			formatter.JSON(w, http.StatusBadRequest, errMsg)
+			return
+		}
+
+		p.Log.Debugf("VPPCLI command: %v", command)
+		reply, err := p.vpeHandler.RunCli(req.Context(), command)
+		if err != nil {
+			errMsg := fmt.Sprintf("500 Internal server error: sending request failed: %v\n", err)
+			formatter.JSON(w, http.StatusInternalServerError, errMsg)
+			return
+		}
+
+		p.Log.Debugf("VPPCLI response: %s", reply)
+		formatter.JSON(w, http.StatusOK, reply)
+	}
 }

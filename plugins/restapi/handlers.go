@@ -27,7 +27,6 @@ import (
 	"github.com/unrolled/render"
 
 	"go.ligato.io/vpp-agent/v2/plugins/configurator"
-	"go.ligato.io/vpp-agent/v2/plugins/govppmux"
 	"go.ligato.io/vpp-agent/v2/plugins/restapi/resturl"
 	interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
 )
@@ -241,15 +240,8 @@ func (p *Plugin) registerTelemetryHandlers() {
 	p.HTTPHandlers.RegisterHTTPHandler(resturl.TNodeCount, p.telemetryNodeCountHandler, GET)
 }
 
-// Registers Tracer handler
 func (p *Plugin) registerStatsHandler() {
-	p.HTTPHandlers.RegisterHTTPHandler(resturl.Tracer, p.tracerHandler, GET)
 	p.HTTPHandlers.RegisterHTTPHandler(resturl.ConfiguratorStats, p.configuratorStatsHandler, GET)
-}
-
-// Registers command handler
-func (p *Plugin) registerCommandHandler() {
-	p.HTTPHandlers.RegisterHTTPHandler(resturl.Command, p.commandHandler, POST)
 }
 
 // Registers index page
@@ -259,7 +251,6 @@ func (p *Plugin) registerIndexHandlers() {
 		Asset:      Asset,
 		AssetNames: AssetNames,
 	})
-
 	handlerFunc := func(formatter *render.Render) http.HandlerFunc {
 		return func(w http.ResponseWriter, req *http.Request) {
 
@@ -267,7 +258,7 @@ func (p *Plugin) registerIndexHandlers() {
 			p.logError(r.HTML(w, http.StatusOK, "index", p.index))
 		}
 	}
-	p.HTTPHandlers.RegisterHTTPHandler(resturl.Index, handlerFunc, GET)
+	p.HTTPHandlers.RegisterHTTPHandler("/", handlerFunc, GET)
 }
 
 // registerHTTPHandler is common register method for all handlers
@@ -411,19 +402,6 @@ func (p *Plugin) telemetryNodeCountHandler(formatter *render.Render) http.Handle
 		}
 
 		p.logError(formatter.JSON(w, http.StatusOK, nodeCounters))
-	}
-}
-
-// tracerHandler - returns binary API call trace
-func (p *Plugin) tracerHandler(formatter *render.Render) http.HandlerFunc {
-	return func(w http.ResponseWriter, req *http.Request) {
-		entries := govppmux.GetStats()
-		if entries == nil {
-			p.logError(formatter.JSON(w, http.StatusOK, "VPP api trace is disabled"))
-			return
-		}
-
-		p.logError(formatter.JSON(w, http.StatusOK, entries))
 	}
 }
 

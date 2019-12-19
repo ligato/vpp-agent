@@ -237,7 +237,3 @@ func (m *mockVPPClient) IsPluginLoaded(plugin string) bool {
 func (m *mockVPPClient) Stats() govppapi.StatsProvider {
 	panic("implement me")
 }
-
-func (m *mockVPPClient) StatsConnected() bool {
-	panic("implement me")
-}

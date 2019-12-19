@@ -69,13 +69,13 @@ const (
 type TestCtx struct {
 	t              *testing.T
 	Context        context.Context
-	VPP            *exec.Cmd
+	vppCmd         *exec.Cmd
 	stderr, stdout *bytes.Buffer
 	Conn           *govppcore.Connection
 	StatsConn      *govppcore.StatsConnection
 	vppBinapi      govppapi.Channel
 	vppStats       govppapi.StatsProvider
-	vpe            vppcalls.VppCoreAPI
+	vpp            vppcalls.VppCoreAPI
 	versionInfo    *vppcalls.VersionInfo
 	vppClient      *vppClient
 }
@@ -225,8 +225,8 @@ func setupVPP(t *testing.T) *TestCtx {
 		t:           t,
 		Context:     ctx,
 		versionInfo: versionInfo,
-		vpe:         vpeHandler,
-		VPP:         vppCmd,
+		vpp:         vpeHandler,
+		vppCmd:      vppCmd,
 		stderr:      &stderr,
 		stdout:      &stdout,
 		Conn:        conn,
@@ -255,14 +255,14 @@ func (ctx *TestCtx) teardownVPP() {
 		ctx.t.Logf("VPP disconnect timeout")
 	}
 
-	if err := ctx.VPP.Process.Signal(syscall.SIGTERM); err != nil {
+	if err := ctx.vppCmd.Process.Signal(syscall.SIGTERM); err != nil {
 		ctx.t.Fatalf("sending SIGTERM to VPP failed: %v", err)
 	}
 
 	// wait until VPP exits
 	exit := make(chan struct{})
 	go func() {
-		if err := ctx.VPP.Wait(); err != nil {
+		if err := ctx.vppCmd.Wait(); err != nil {
 			ctx.t.Logf("VPP process wait failed: %v", err)
 		}
 		close(exit)
@@ -274,7 +274,7 @@ func (ctx *TestCtx) teardownVPP() {
 	case <-time.After(vppExitTimeout):
 		ctx.t.Logf("VPP exit timeout")
 		ctx.t.Logf("sending SIGKILL to VPP..")
-		if err := ctx.VPP.Process.Signal(syscall.SIGKILL); err != nil {
+		if err := ctx.vppCmd.Process.Signal(syscall.SIGKILL); err != nil {
 			ctx.t.Fatalf("sending SIGKILL to VPP failed: %v", err)
 		}
 	}
@@ -299,10 +299,6 @@ func (v *vppClient) CheckCompatiblity(msgs ...govppapi.Message) error {
 
 func (v *vppClient) Stats() govppapi.StatsProvider {
 	return v.stats
-}
-
-func (v *vppClient) StatsConnected() bool {
-	return v.stats != nil
 }
 
 func (v *vppClient) IsPluginLoaded(plugin string) bool {

@@ -54,6 +54,8 @@ type Plugin struct {
 
 	config *Config
 
+	vpeHandler vppcalls.VppCoreAPI
+
 	binapiVersion vpp.Version
 	vppConn       *govpp.Connection
 	vppConChan    chan govpp.ConnectionEvent
@@ -61,7 +63,7 @@ type Plugin struct {
 	vppapiChan    govppapi.Channel
 
 	statsAdapter adapter.StatsAPI
-	statsConn    govppapi.StatsProvider
+	statsConn    *govpp.StatsConnection
 
 	proxy *proxy.Server
 
@@ -155,6 +157,11 @@ func (p *Plugin) Init() (err error) {
 	}
 
 	if p.config.ProxyEnabled {
+		// register binapi messages to gob package (required for proxy)
+		msgList := binapi.Versions[p.binapiVersion]
+		for _, msg := range msgList.AllMessages() {
+			gob.Register(msg)
+		}
 		err := p.startProxy(NewVppAdapter(address, useShm), NewStatsAdapter(statsSocket))
 		if err != nil {
 			return err
@@ -222,11 +229,10 @@ func (p *Plugin) CheckCompatiblity(msgs ...govppapi.Message) error {
 }
 
 func (p *Plugin) Stats() govppapi.StatsProvider {
+	if p.statsConn == nil {
+		return nil
+	}
 	return p
-}
-
-func (p *Plugin) StatsConnected() bool {
-	return p.statsConn != nil
 }
 
 // VPPInfo returns information about VPP session.
@@ -248,33 +254,6 @@ func (p *Plugin) IsPluginLoaded(plugin string) bool {
 	return false
 }
 
-func (p *Plugin) findCompatibleVersion() (vpp.Version, error) {
-	if len(binapi.Versions) == 0 {
-		return "", fmt.Errorf("no binapi versions loaded")
-	}
-	p.Log.Debugf("checking compatibility for %d binapi versions", len(binapi.Versions))
-	for ver, list := range binapi.Versions {
-		msgs := list.AllMessages()
-		if err := p.CheckCompatiblity(msgs...); err != nil {
-			if ierr, ok := err.(*govppapi.CompatibilityError); ok {
-				logging.Debugf("binapi version %-15v incompatible: %d/%d incompatible messages", ver, len(ierr.IncompatibleMessages), len(msgs))
-			} else {
-				logging.Warnf("binapi version %v check failed: %v", ver, err)
-			}
-			continue
-		}
-		p.Log.Debugf("found compatible binapi version: %v", ver)
-		// register binapi messages to gob package (required for proxy)
-		if p.config.ProxyEnabled {
-			for _, msg := range msgs {
-				gob.Register(msg)
-			}
-		}
-		return ver, nil
-	}
-	return "", fmt.Errorf("no compatible binapi version found")
-}
-
 func (p *Plugin) updateVPPInfo() (err error) {
 	if p.vppConn == nil {
 		return fmt.Errorf("VPP connection is nil")
@@ -286,24 +265,23 @@ func (p *Plugin) updateVPPInfo() (err error) {
 	if err != nil {
 		return err
 	}
-	p.binapiVersion, err = p.findCompatibleVersion()
+	p.binapiVersion, err = vpp.FindCompatibleBinapi(p.vppapiChan)
 	if err != nil {
 		return err
 	}
 
-	vpeHandler := vppcalls.CompatibleHandler(p)
-	if vpeHandler == nil {
+	p.vpeHandler, err = vppcalls.NewHandler(p)
+	if err != nil {
 		return errors.New("no compatible VPP handler found")
 	}
 
-	version, err := vpeHandler.RunCli(ctx, "show version verbose")
+	version, err := p.vpeHandler.RunCli(ctx, "show version verbose")
 	if err != nil {
 		p.Log.Warnf("RunCli error: %v", err)
 	} else {
 		p.Log.Debugf("vpp# show version verbose\n%s", version)
 	}
-
-	cmdline, err := vpeHandler.RunCli(ctx, "show version cmdline")
+	cmdline, err := p.vpeHandler.RunCli(ctx, "show version cmdline")
 	if err != nil {
 		p.Log.Warnf("RunCli error: %v", err)
 	} else {
@@ -311,11 +289,11 @@ func (p *Plugin) updateVPPInfo() (err error) {
 		p.Log.Debugf("vpp# show version cmdline:\n%s", out)
 	}
 
-	ver, err := vpeHandler.GetVersion(ctx)
+	ver, err := p.vpeHandler.GetVersion(ctx)
 	if err != nil {
 		return err
 	}
-	session, err := vpeHandler.GetSession(ctx)
+	session, err := p.vpeHandler.GetSession(ctx)
 	if err != nil {
 		return err
 	}
@@ -324,13 +302,13 @@ func (p *Plugin) updateVPPInfo() (err error) {
 		"ClientID": session.ClientIdx,
 	}).Infof("VPP version: %v", ver.Version)
 
-	modules, err := vpeHandler.GetModules(ctx)
+	modules, err := p.vpeHandler.GetModules(ctx)
 	if err != nil {
 		return err
 	}
 	p.Log.Debugf("VPP has %d core modules: %v", len(modules), modules)
 
-	plugins, err := vpeHandler.GetPlugins(ctx)
+	plugins, err := p.vpeHandler.GetPlugins(ctx)
 	if err != nil {
 		return err
 	}

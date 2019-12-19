@@ -19,6 +19,7 @@ import (
 	"fmt"
 
 	govppapi "git.fd.io/govpp.git/api"
+	"github.com/ligato/cn-infra/logging"
 
 	"go.ligato.io/vpp-agent/v2/plugins/vpp"
 )
@@ -89,6 +90,7 @@ func (p PluginInfo) String() string {
 var Handler = vpp.RegisterHandler(vpp.HandlerDesc{
 	Name:       "core",
 	HandlerAPI: (*VppCoreAPI)(nil),
+	NewFunc:    (*NewHandlerFunc)(nil),
 })
 
 type NewHandlerFunc func(govppapi.Channel) VppCoreAPI
@@ -107,13 +109,27 @@ func AddVersion(version vpp.Version, msgs []govppapi.Message, h NewHandlerFunc) 
 			}
 			return h(ch)
 		},
+		New: h,
 	})
 }
 
-// CompatibleHandler is helper for returning comptabile Handler.
-func CompatibleHandler(c vpp.Client) VppCoreAPI {
-	if v := Handler.FindCompatibleVersion(c); v != nil {
-		return v.NewHandler(c).(VppCoreAPI)
+func NewHandler(c vpp.Client) (VppCoreAPI, error) {
+	v, err := Handler.GetCompatibleVersion(c)
+	if err != nil {
+		return nil, err
 	}
-	return nil
+	ch, err := c.NewAPIChannel()
+	if err != nil {
+		return nil, err
+	}
+	return v.New.(NewHandlerFunc)(ch), nil
+}
+
+// CompatibleHandler is helper for returning compatible Handler.
+func CompatibleHandler(c vpp.Client) VppCoreAPI {
+	v, err := NewHandler(c)
+	if err != nil {
+		logging.Warn(err)
+	}
+	return v
 }

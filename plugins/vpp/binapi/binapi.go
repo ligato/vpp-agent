@@ -15,8 +15,37 @@
 package binapi
 
 import (
-	"go.ligato.io/vpp-agent/v2/plugins/vpp"
+	govppapi "git.fd.io/govpp.git/api"
 )
 
+// Version represents VPP version for generated binapi.
+type Version string
+
 // Versions is a map of all binapi messages for each supported VPP versions.
-var Versions = map[vpp.Version]vpp.MessagesList{}
+var Versions = map[Version]MessagesList{}
+
+// MessagesList aggregates multiple funcs that return messages.
+type MessagesList []func() []govppapi.Message
+
+// Messages is used to initialize message list.
+func Messages(funcs ...func() []govppapi.Message) MessagesList {
+	var list MessagesList
+	list.Add(funcs...)
+	return list
+}
+
+// Add adds funcs to message list.
+func (list *MessagesList) Add(funcs ...func() []govppapi.Message) {
+	for _, msgFunc := range funcs {
+		*list = append(*list, msgFunc)
+	}
+}
+
+// AllMessages returns messages from message list funcs combined.
+func (list *MessagesList) AllMessages() []govppapi.Message {
+	var msgs []govppapi.Message
+	for _, msgFunc := range *list {
+		msgs = append(msgs, msgFunc()...)
+	}
+	return msgs
+}

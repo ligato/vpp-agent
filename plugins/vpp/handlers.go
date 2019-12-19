@@ -27,6 +27,7 @@ type HandlerVersion struct {
 	Version    Version
 	Check      func(Client) error
 	NewHandler func(Client, ...interface{}) HandlerAPI
+	New        interface{}
 }
 
 // HandlerAPI is an empty interface representing handler interface.
@@ -72,21 +73,21 @@ func (h *Handler) FindCompatibleVersion(c Client) *HandlerVersion {
 
 // GetCompatibleVersion iterates over all available handler versions and calls
 // their Check method to check compatibility.
-func (h *Handler) GetCompatibleVersion(vpp Client) (*HandlerVersion, error) {
+func (h *Handler) GetCompatibleVersion(c Client) (*HandlerVersion, error) {
 	if len(h.versions) == 0 {
 		logging.Debugf("VPP handler %s has no registered versions", h.desc.Name)
 		return nil, ErrNoVersions
 	}
 	// try compatible binapi version first
-	if vpp.Version() != "" {
-		if v, ok := h.versions[vpp.Version()]; ok {
+	if ver, _ := FindCompatibleBinapi(c); ver != "" {
+		if v, ok := h.versions[ver]; ok {
 			logging.Debugf("VPP handler %s COMPATIBLE with version: %s", h.desc.Name, v.Version)
 			return v, nil
 		}
 	}
 	// fallback to checking all registered versions
 	for _, v := range h.versions {
-		if err := v.Check(vpp); err != nil {
+		if err := v.Check(c); err != nil {
 			if ierr, ok := err.(*govppapi.CompatibilityError); ok {
 				logging.Debugf("VPP handler %s incompatible with %s: %d incompatible messages",
 					h.desc.Name, v.Version, len(ierr.IncompatibleMessages))

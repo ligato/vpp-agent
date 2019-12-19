@@ -14,7 +14,7 @@
 
 // +build proxy
 
-package vppcalls_test
+package vpp_test
 
 import (
 	"context"
@@ -67,6 +67,7 @@ func TestProxyClient(t *testing.T) {
 	if err != nil {
 		log.Fatalln(err)
 	}
+
 	var msgs []api.Message
 	msgs = append(msgs, interfaces.AllMessages()...)
 	msgs = append(msgs, vpe.AllMessages()...)

@@ -177,10 +177,26 @@ func AddHandlerVersion(version vpp.Version, msgs []govppapi.Message, h NewHandle
 	})
 }
 
+func NewHandler(c vpp.Client) (TelemetryVppAPI, error) {
+	// Prefer using VPP stats API.
+	if stats := c.Stats(); stats != nil {
+		return NewTelemetryVppStats(stats), nil
+	}
+	v, err := Handler.GetCompatibleVersion(c)
+	if err != nil {
+		return nil, err
+	}
+	ch, err := c.NewAPIChannel()
+	if err != nil {
+		return nil, err
+	}
+	return v.New.(NewHandlerFunc)(ch), nil
+}
+
 func CompatibleTelemetryHandler(c vpp.Client) TelemetryVppAPI {
 	// Prefer using VPP stats API.
-	if c.StatsConnected() {
-		return NewTelemetryVppStats(c.Stats())
+	if stats := c.Stats(); stats != nil {
+		return NewTelemetryVppStats(stats)
 	}
 	if FallbackToCli {
 		if v := Handler.FindCompatibleVersion(c); v != nil {
