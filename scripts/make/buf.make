@@ -112,7 +112,7 @@ buf-lint: $(BUF)
 
 .PHONY: buf-breaking-local
 buf-breaking-local: $(BUF)
-	-buf check breaking --against-input '.git#branch=dev'
+	buf check breaking --against-input '.git#branch=dev'
 
 # buf-breaking is what we run when testing in most CI providers
 # this does breaking change detection against our remote git repository
@@ -122,7 +122,7 @@ buf-breaking-local: $(BUF)
 
 .PHONY: buf-breaking
 buf-breaking: $(BUF)
-	-buf check breaking --timeout 60s --against-input "$(REMOTE_GIT)#branch=dev"
+	buf check breaking --timeout 60s --against-input "$(REMOTE_GIT)#branch=dev"
 
 .PHONY: protocgengoclean
 protocgengoclean:
