@@ -16,13 +16,13 @@ package ifaceidx
 
 import (
 	"time"
-	"github.com/gogo/protobuf/proto"
 
+	"github.com/golang/protobuf/proto"
 	"github.com/ligato/cn-infra/idxmap"
 	"github.com/ligato/cn-infra/idxmap/mem"
 	"github.com/ligato/cn-infra/logging"
 
-	"github.com/ligato/vpp-agent/api/models/linux/namespace"
+	linux_namespace "go.ligato.io/vpp-agent/v2/proto/ligato/linux/namespace"
 )
 
 // LinuxIfMetadataIndex provides read-only access to mapping with Linux interface
@@ -52,7 +52,7 @@ type LinuxIfMetadataIndex interface {
 
 	// WatchInterfaces allows to subscribe to watch for changes in the mapping
 	// of interface metadata.
-	WatchInterfaces(subscriber string, channel chan<- LinuxIfMetadataIndexDto)
+	WatchInterfaces(subscriber string, channel chan<- LinuxIfMetadataIndexDto) error
 }
 
 // LinuxIfMetadataIndexRW provides read-write access to mapping with interface
@@ -161,7 +161,7 @@ func (ifmx *linuxIfMetadataIndex) ListAllInterfaces() (names []string) {
 
 // WatchInterfaces allows to subscribe to watch for changes in the mapping
 // if interface metadata.
-func (ifmx *linuxIfMetadataIndex) WatchInterfaces(subscriber string, channel chan<- LinuxIfMetadataIndexDto) {
+func (ifmx *linuxIfMetadataIndex) WatchInterfaces(subscriber string, channel chan<- LinuxIfMetadataIndexDto) error {
 	watcher := func(dto idxmap.NamedMappingGenericEvent) {
 		typedMeta, ok := dto.Value.(*LinuxIfMetadata)
 		if !ok {
@@ -177,7 +177,7 @@ func (ifmx *linuxIfMetadataIndex) WatchInterfaces(subscriber string, channel cha
 			ifmx.log.Warn("Unable to deliver notification")
 		}
 	}
-	ifmx.Watch(subscriber, watcher)
+	return ifmx.Watch(subscriber, watcher)
 }
 
 // indexMetadata is an index function used for interface metadata.

@@ -15,31 +15,32 @@
 package descriptor
 
 import (
+	context2 "context"
 	"fmt"
 	"hash/fnv"
 	"net"
 	"strings"
 
-	"github.com/gogo/protobuf/proto"
-	prototypes "github.com/gogo/protobuf/types"
+	"github.com/golang/protobuf/proto"
+	prototypes "github.com/golang/protobuf/ptypes/empty"
 	"github.com/ligato/cn-infra/idxmap"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/pkg/errors"
 
-	linux_intf "github.com/ligato/vpp-agent/api/models/linux/interfaces"
-	linux_ns "github.com/ligato/vpp-agent/api/models/linux/namespace"
-	netalloc_api "github.com/ligato/vpp-agent/api/models/netalloc"
-	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
-	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-	linux_ifdescriptor "github.com/ligato/vpp-agent/plugins/linux/ifplugin/descriptor"
-	linux_ifaceidx "github.com/ligato/vpp-agent/plugins/linux/ifplugin/ifaceidx"
-	"github.com/ligato/vpp-agent/plugins/linux/nsplugin"
-	"github.com/ligato/vpp-agent/plugins/netalloc"
-	netalloc_descr "github.com/ligato/vpp-agent/plugins/netalloc/descriptor"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/descriptor/adapter"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
+	kvs "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
+	linux_ifdescriptor "go.ligato.io/vpp-agent/v2/plugins/linux/ifplugin/descriptor"
+	linux_ifaceidx "go.ligato.io/vpp-agent/v2/plugins/linux/ifplugin/ifaceidx"
+	"go.ligato.io/vpp-agent/v2/plugins/linux/nsplugin"
+	"go.ligato.io/vpp-agent/v2/plugins/netalloc"
+	netalloc_descr "go.ligato.io/vpp-agent/v2/plugins/netalloc/descriptor"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/descriptor/adapter"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/vppcalls"
+	linux_intf "go.ligato.io/vpp-agent/v2/proto/ligato/linux/interfaces"
+	linux_ns "go.ligato.io/vpp-agent/v2/proto/ligato/linux/namespace"
+	netalloc_api "go.ligato.io/vpp-agent/v2/proto/ligato/netalloc"
+	interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
+	l3 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l3"
 )
 
 const (
@@ -51,16 +52,14 @@ const (
 	vxlanMulticastDep        = "vxlan-multicast-interface-exists"
 	vxlanVrfTableDep         = "vrf-table-for-vxlan-exists"
 	vxlanGpeVrfTableDep      = "vrf-table-for-vxlan-gpe-exists"
+	gtpuMulticastDep         = "gtpu-multicast-interface-exists"
+	gtpuVrfTableDep          = "vrf-table-for-gtpu-exists"
 	microserviceDep          = "microservice-available"
 	parentInterfaceDep       = "parent-interface-exists"
 
 	// how many characters a logical interface name is allowed to have
 	//  - determined by much fits into the VPP interface tag (64 null-terminated character string)
 	logicalNameLengthLimit = 63
-
-	// prefix prepended to internal names of untagged interfaces to construct unique
-	// logical names
-	untaggedIfPreffix = "UNTAGGED-"
 
 	// suffix attached to logical names of dumped TAP interfaces with Linux side
 	// not found by Retrieve of Linux-ifplugin
@@ -140,6 +139,18 @@ var (
 
 	// ErrVxLanMulticastIntfMissing is returned when interface for multicast was not specified.
 	ErrVxLanMulticastIntfMissing = errors.Errorf("missing multicast interface name for VxLAN tunnel")
+
+	// ErrGtpuSrcAddrMissing is returned when source address was not set or set to an empty string.
+	ErrGtpuSrcAddrMissing = errors.Errorf("missing source address for GTPU tunnel")
+
+	// ErrGtpuDstAddrMissing is returned when destination address was not set or set to an empty string.
+	ErrGtpuDstAddrMissing = errors.Errorf("missing destination address for GTPU tunnel")
+
+	// ErrGtpuSrcAddrBad is returned when source address was not set to valid IP address.
+	ErrGtpuSrcAddrBad = errors.Errorf("bad source address for GTPU tunnel")
+
+	// ErrGtpuDstAddrBad is returned when destination address was not set to valid IP address.
+	ErrGtpuDstAddrBad = errors.Errorf("bad destination address for GTPU tunnel")
 )
 
 // InterfaceDescriptor teaches KVScheduler how to configure VPP interfaces.
@@ -180,12 +191,16 @@ type NetlinkAPI interface {
 }
 
 // NewInterfaceDescriptor creates a new instance of the Interface descriptor.
-func NewInterfaceDescriptor(ifHandler vppcalls.InterfaceVppAPI, addrAlloc netalloc.AddressAllocator,
-	defaultMtu uint32, linuxIfHandler NetlinkAPI, linuxIfPlugin LinuxPluginAPI, nsPlugin nsplugin.API,
-	log logging.PluginLogger) (descr *kvs.KVDescriptor, ctx *InterfaceDescriptor) {
-
-	// descriptor context
-	ctx = &InterfaceDescriptor{
+func NewInterfaceDescriptor(
+	ifHandler vppcalls.InterfaceVppAPI,
+	addrAlloc netalloc.AddressAllocator,
+	defaultMtu uint32,
+	linuxIfHandler NetlinkAPI,
+	linuxIfPlugin LinuxPluginAPI,
+	nsPlugin nsplugin.API,
+	log logging.PluginLogger,
+) (*kvs.KVDescriptor, *InterfaceDescriptor) {
+	ctx := &InterfaceDescriptor{
 		ifHandler:       ifHandler,
 		addrAlloc:       addrAlloc,
 		defaultMtu:      defaultMtu,
@@ -197,8 +212,6 @@ func NewInterfaceDescriptor(ifHandler vppcalls.InterfaceVppAPI, addrAlloc netall
 		ethernetIfs:     make(map[string]uint32),
 		bondIDs:         make(map[uint32]string),
 	}
-
-	// descriptor
 	typedDescr := &adapter.InterfaceDescriptor{
 		Name:               InterfaceDescriptorName,
 		NBKeyPrefix:        interfaces.ModelInterface.KeyPrefix(),
@@ -220,10 +233,11 @@ func NewInterfaceDescriptor(ifHandler vppcalls.InterfaceVppAPI, addrAlloc netall
 			// refresh the pool of allocated IP addresses first
 			netalloc_descr.IPAllocDescriptorName,
 			// If Linux-IfPlugin is loaded, dump it first.
-			linux_ifdescriptor.InterfaceDescriptorName},
+			linux_ifdescriptor.InterfaceDescriptorName,
+		},
 	}
-	descr = adapter.NewInterfaceDescriptor(typedDescr)
-	return
+	descr := adapter.NewInterfaceDescriptor(typedDescr)
+	return descr, ctx
 }
 
 // SetInterfaceIndex should be used to provide interface index immediately after
@@ -315,6 +329,10 @@ func (d *InterfaceDescriptor) equivalentTypeSpecificConfig(oldIntf, newIntf *int
 		}
 	case interfaces.Interface_GRE_TUNNEL:
 		if !proto.Equal(oldIntf.GetGre(), newIntf.GetGre()) {
+			return false
+		}
+	case interfaces.Interface_GTPU_TUNNEL:
+		if !proto.Equal(oldIntf.GetGtpu(), newIntf.GetGtpu()) {
 			return false
 		}
 	}
@@ -443,6 +461,10 @@ func (d *InterfaceDescriptor) Validate(key string, intf *interfaces.Interface) e
 		if intf.Type != interfaces.Interface_GRE_TUNNEL {
 			return linkMismatchErr
 		}
+	case *interfaces.Interface_Gtpu:
+		if intf.Type != interfaces.Interface_GTPU_TUNNEL {
+			return linkMismatchErr
+		}
 	case nil:
 		if intf.Type != interfaces.Interface_SOFTWARE_LOOPBACK &&
 			intf.Type != interfaces.Interface_DPDK {
@@ -508,6 +530,20 @@ func (d *InterfaceDescriptor) Validate(key string, intf *interfaces.Interface) e
 			}
 
 		}
+	case interfaces.Interface_GTPU_TUNNEL:
+		if intf.GetGtpu().SrcAddr == "" {
+			return kvs.NewInvalidValueError(ErrGtpuSrcAddrMissing, "link.gtpu.src_addr")
+		}
+		if net.ParseIP(intf.GetGtpu().SrcAddr) == nil {
+			return kvs.NewInvalidValueError(ErrGtpuSrcAddrBad, "link.gtpu.src_addr")
+		}
+
+		if intf.GetGtpu().DstAddr == "" {
+			return kvs.NewInvalidValueError(ErrGtpuDstAddrMissing, "link.gtpu.dst_addr")
+		}
+		if net.ParseIP(intf.GetGtpu().DstAddr) == nil {
+			return kvs.NewInvalidValueError(ErrGtpuDstAddrBad, "link.gtpu.dst_addr")
+		}
 	}
 
 	// validate unnumbered
@@ -542,8 +578,8 @@ func (d *InterfaceDescriptor) UpdateWithRecreate(key string, oldIntf, newIntf *i
 		return true
 	}
 
-	if oldIntf.GetType() == interfaces.Interface_VXLAN_TUNNEL && oldIntf.Vrf != newIntf.Vrf {
-		// for VXLAN interface a change in the VRF assignment requires full re-creation
+	if (oldIntf.GetType() == interfaces.Interface_VXLAN_TUNNEL || oldIntf.GetType() == interfaces.Interface_GTPU_TUNNEL) && oldIntf.Vrf != newIntf.Vrf {
+		// for VXLAN and GTPU interfaces a change in the VRF assignment requires full re-creation
 		return true
 	}
 
@@ -618,6 +654,41 @@ func (d *InterfaceDescriptor) Dependencies(key string, intf *interfaces.Interfac
 					Key:   l3.VrfTableKey(gpe.DecapVrfId, protocol),
 				})
 			}
+		}
+
+	case interfaces.Interface_GTPU_TUNNEL:
+		// GTPU referencing an interface with Multicast IP address
+		if gtpuMulticast := intf.GetGtpu().GetMulticast(); gtpuMulticast != "" {
+			dependencies = append(dependencies, kvs.Dependency{
+				Label: gtpuMulticastDep,
+				AnyOf: kvs.AnyOfDependency{
+					KeyPrefixes: []string{interfaces.InterfaceAddressPrefix(gtpuMulticast)},
+					KeySelector: func(key string) bool {
+						_, ifaceAddr, source, _, _ := interfaces.ParseInterfaceAddressKey(key)
+						if source != netalloc_api.IPAddressSource_ALLOC_REF {
+							ip, _, err := net.ParseCIDR(ifaceAddr)
+							return err == nil && ip.IsMulticast()
+						}
+						// TODO: handle the case when multicast IP address is allocated
+						// via netalloc (too specific to bother until really needed)
+						return false
+					},
+				},
+			})
+		}
+		if intf.GetGtpu().GetEncapVrfId() != 0 {
+			// binary API for creating GTPU tunnel requires the VRF table
+			// to be already created
+			var protocol l3.VrfTable_Protocol
+			srcAddr := net.ParseIP(intf.GetGtpu().GetSrcAddr()).To4()
+			dstAddr := net.ParseIP(intf.GetGtpu().GetDstAddr()).To4()
+			if srcAddr == nil && dstAddr == nil {
+				protocol = l3.VrfTable_IPV6
+			}
+			dependencies = append(dependencies, kvs.Dependency{
+				Label: gtpuVrfTableDep,
+				Key:   l3.VrfTableKey(intf.GetGtpu().GetEncapVrfId(), protocol),
+			})
 		}
 
 	case interfaces.Interface_SUB_INTERFACE:
@@ -696,6 +767,14 @@ func (d *InterfaceDescriptor) DerivedValues(key string, intf *interfaces.Interfa
 			} else {
 				hasIPv4 = true
 			}
+		} else if intf.Type == interfaces.Interface_GTPU_TUNNEL {
+			srcAddr := net.ParseIP(intf.GetGtpu().GetSrcAddr()).To4()
+			dstAddr := net.ParseIP(intf.GetGtpu().GetDstAddr()).To4()
+			if srcAddr == nil && dstAddr == nil {
+				hasIPv6 = true
+			} else {
+				hasIPv4 = true
+			}
 		} else {
 			// not VXLAN tunnel
 			hasIPv4, hasIPv6 = getIPAddressVersions(intf.IpAddresses)
@@ -757,7 +836,7 @@ func (d *InterfaceDescriptor) resolveMemifSocketFilename(memifIf *interfaces.Mem
 	if !registered {
 		// Register new socket. ID is generated (default filename ID is 0, first is ID 1, second ID 2, etc)
 		registeredID = uint32(len(d.memifSocketToID))
-		err := d.ifHandler.RegisterMemifSocketFilename(socketFileName, registeredID)
+		err := d.ifHandler.RegisterMemifSocketFilename(context2.TODO(), socketFileName, registeredID)
 		if err != nil {
 			return 0, errors.Errorf("error registering socket file name %s (ID %d): %v", socketFileName, registeredID, err)
 		}
@@ -832,7 +911,7 @@ func generateTAPHostName(tapName string) string {
 // fnvHash hashes string using fnv32a algorithm.
 func fnvHash(s string) uint32 {
 	h := fnv.New32a()
-	h.Write([]byte(s))
+	_, _ = h.Write([]byte(s))
 	return h.Sum32()
 }
 

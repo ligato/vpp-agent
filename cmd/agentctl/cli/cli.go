@@ -16,26 +16,22 @@ package cli
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"runtime"
 
 	"github.com/docker/cli/cli/streams"
 	"github.com/docker/docker/pkg/term"
 
-	"github.com/ligato/cn-infra/db/keyval"
-	"github.com/ligato/cn-infra/db/keyval/kvproto"
 	"github.com/ligato/cn-infra/logging"
 
-	"github.com/ligato/vpp-agent/api"
-	"github.com/ligato/vpp-agent/cmd/agentctl/client"
-	"github.com/ligato/vpp-agent/pkg/debug"
+	"go.ligato.io/vpp-agent/v2/cmd/agentctl/api"
+	"go.ligato.io/vpp-agent/v2/cmd/agentctl/client"
+	"go.ligato.io/vpp-agent/v2/pkg/debug"
 )
 
 // Cli represents the agent command line client.
 type Cli interface {
 	Client() client.APIClient
-	KVProtoBroker() (keyval.ProtoBroker, error)
 
 	Out() *streams.Out
 	Err() io.Writer
@@ -123,18 +119,6 @@ func (cli *AgentCli) DefaultVersion() string {
 	return cli.clientInfo.DefaultVersion
 }
 
-func (cli *AgentCli) KVProtoBroker() (keyval.ProtoBroker, error) {
-	kvdb, err := cli.Client().KVDBClient()
-	if err != nil {
-		return nil, fmt.Errorf("connecting to KVBDB failed: %v", err)
-	}
-	return jsonProtoBroker(kvdb), nil
-}
-
-func jsonProtoBroker(broker keyval.CoreBrokerWatcher) keyval.ProtoBroker {
-	return kvproto.NewProtoWrapper(broker, &keyval.SerializerJSON{})
-}
-
 // ServerInfo stores details about the supported features and platform of the
 // server
 type ServerInfo struct {
@@ -163,6 +147,7 @@ func (cli *AgentCli) Initialize(opts *ClientOptions, ops ...InitializeOpt) error
 			return err
 		}
 	}
+
 	if opts.Debug {
 		debug.Enable()
 		SetLogLevel("debug")
@@ -170,31 +155,67 @@ func (cli *AgentCli) Initialize(opts *ClientOptions, ops ...InitializeOpt) error
 		SetLogLevel(opts.LogLevel)
 	}
 
+	cfg, err := MakeConfig()
+	if err != nil {
+		return err
+	}
+	if opts.Debug {
+		logging.Debug(cfg.DebugOutput())
+	}
+
 	if cli.client == nil {
-		cli.client, err = newAPIClient(opts)
+		clientOptions := buildClientOptions(cfg)
+		cli.client, err = client.NewClientWithOpts(clientOptions...)
 		if err != nil {
 			return err
 		}
 	}
 	cli.clientInfo = ClientInfo{
-		DefaultVersion: cli.client.ClientVersion(),
+		DefaultVersion: cli.client.Version(),
 	}
 	cli.initializeFromClient()
 	return nil
 }
 
-func newAPIClient(opts *ClientOptions) (client.APIClient, error) {
+func buildClientOptions(cfg *Config) []client.Opt {
 	clientOpts := []client.Opt{
-		client.WithHost(opts.AgentHost),
-		client.WithEtcdEndpoints(opts.Endpoints),
-		client.WithServiceLabel(opts.ServiceLabel),
+		client.WithHost(cfg.Host),
+		client.WithServiceLabel(cfg.ServiceLabel),
+		client.WithGrpcPort(cfg.GRPCPort),
+		client.WithHTTPPort(cfg.HTTPPort),
+		client.WithHTTPHeader("User-Agent", UserAgent()),
+		client.WithHTTPBasicAuth(cfg.HTTPBasicAuth),
+		client.WithVersion(cfg.LigatoAPIVersion),
+		client.WithEtcdEndpoints(cfg.EtcdEndpoints),
+		client.WithEtcdDialTimeout(cfg.EtcdDialTimeout),
 	}
-	var customHeaders = map[string]string{
-		"User-Agent": UserAgent(),
-	}
-	clientOpts = append(clientOpts, client.WithHTTPHeaders(customHeaders))
 
-	return client.NewClientWithOpts(clientOpts...)
+	if cfg.ShouldUseSecureGRPC() {
+		clientOpts = append(clientOpts, client.WithGrpcTLS(
+			cfg.GRPCSecure.CertFile,
+			cfg.GRPCSecure.KeyFile,
+			cfg.GRPCSecure.CAFile,
+			cfg.GRPCSecure.SkipVerify,
+		))
+	}
+	if cfg.ShouldUseSecureHTTP() {
+		clientOpts = append(clientOpts, client.WithHTTPTLS(
+			cfg.HTTPSecure.CertFile,
+			cfg.HTTPSecure.KeyFile,
+			cfg.HTTPSecure.CAFile,
+			cfg.HTTPSecure.SkipVerify,
+		))
+	}
+	if cfg.ShouldUseSecureKVDB() {
+		clientOpts = append(clientOpts, client.WithKvdbTLS(
+			cfg.KVDBSecure.CertFile,
+			cfg.KVDBSecure.KeyFile,
+			cfg.KVDBSecure.CAFile,
+			cfg.KVDBSecure.SkipVerify,
+		))
+	}
+
+	return clientOpts
 }
 
 func (cli *AgentCli) initializeFromClient() {

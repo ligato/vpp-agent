@@ -18,19 +18,19 @@ import (
 	"net"
 	"testing"
 
-	ifs "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	nat "github.com/ligato/vpp-agent/api/models/vpp/nat"
 	. "github.com/onsi/gomega"
+	ifs "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
+	nat "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/nat"
 
 	"github.com/ligato/cn-infra/idxmap"
 	idxmap_mem "github.com/ligato/cn-infra/idxmap/mem"
 	"github.com/ligato/cn-infra/logging/logrus"
-	vpp_nat "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001_324/nat"
-	vpp_vpe "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001_324/vpe"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
-	"github.com/ligato/vpp-agent/plugins/vpp/natplugin/vppcalls"
-	"github.com/ligato/vpp-agent/plugins/vpp/natplugin/vppcalls/vpp2001_324"
-	"github.com/ligato/vpp-agent/plugins/vpp/vppcallmock"
+	vpp_nat "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324/nat"
+	vpp_vpe "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324/vpe"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/natplugin/vppcalls"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/natplugin/vppcalls/vpp2001_324"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/vppmock"
 )
 
 func TestNat44GlobalConfigDump(t *testing.T) {
@@ -40,6 +40,20 @@ func TestNat44GlobalConfigDump(t *testing.T) {
 	// forwarding
 	ctx.MockVpp.MockReply(&vpp_nat.Nat44ForwardingIsEnabledReply{
 		Enabled: true,
+	})
+
+	// virtual reassembly
+	ctx.MockVpp.MockReply(&vpp_nat.NatGetReassReply{
+		// IPv4
+		IP4Timeout:  10,
+		IP4MaxReass: 5,
+		IP4MaxFrag:  7,
+		IP4DropFrag: 1,
+		// IPv6
+		IP6Timeout:  20,
+		IP6MaxReass: 8,
+		IP6MaxFrag:  13,
+		IP6DropFrag: 0,
 	})
 
 	// non-output interfaces
@@ -73,25 +87,11 @@ func TestNat44GlobalConfigDump(t *testing.T) {
 		})
 	ctx.MockVpp.MockReply(&vpp_vpe.ControlPingReply{})
 
-	// virtual reassembly
-	ctx.MockVpp.MockReply(&vpp_nat.NatGetReassReply{
-		// IPv4
-		IP4Timeout:  10,
-		IP4MaxReass: 5,
-		IP4MaxFrag:  7,
-		IP4DropFrag: 1,
-		// IPv6
-		IP6Timeout:  20,
-		IP6MaxReass: 8,
-		IP6MaxFrag:  13,
-		IP6DropFrag: 0,
-	})
-
 	swIfIndexes.Put("if0", &ifaceidx.IfaceMetadata{SwIfIndex: 1})
 	swIfIndexes.Put("if1", &ifaceidx.IfaceMetadata{SwIfIndex: 2})
 	swIfIndexes.Put("if2", &ifaceidx.IfaceMetadata{SwIfIndex: 3})
 
-	globalCfg, err := natHandler.Nat44GlobalConfigDump()
+	globalCfg, err := natHandler.Nat44GlobalConfigDump(true)
 	Expect(err).To(Succeed())
 
 	Expect(globalCfg.Forwarding).To(BeTrue())
@@ -120,6 +120,95 @@ func TestNat44GlobalConfigDump(t *testing.T) {
 	Expect(globalCfg.VirtualReassembly.MaxReassemblies).To(BeEquivalentTo(5))
 	Expect(globalCfg.VirtualReassembly.MaxFragments).To(BeEquivalentTo(7))
 	Expect(globalCfg.VirtualReassembly.DropFragments).To(BeTrue())
+}
+
+func TestNat44InterfacesDump(t *testing.T) {
+	ctx, natHandler, swIfIndexes, _ := natTestSetup(t)
+	defer ctx.TeardownTestCtx()
+
+	// non-output interfaces
+	ctx.MockVpp.MockReply(
+		&vpp_nat.Nat44InterfaceDetails{
+			SwIfIndex: 1,
+			Flags:     vpp_nat.NAT_IS_OUTSIDE,
+		},
+		&vpp_nat.Nat44InterfaceDetails{
+			SwIfIndex: 2,
+			Flags:     vpp_nat.NAT_IS_INSIDE,
+		})
+	ctx.MockVpp.MockReply(&vpp_vpe.ControlPingReply{})
+
+	// output interfaces
+	ctx.MockVpp.MockReply(&vpp_nat.Nat44InterfaceOutputFeatureDetails{
+		SwIfIndex: 3,
+		Flags:     vpp_nat.NAT_IS_INSIDE | vpp_nat.NAT_IS_OUTSIDE,
+	})
+	ctx.MockVpp.MockReply(&vpp_vpe.ControlPingReply{})
+
+	swIfIndexes.Put("if0", &ifaceidx.IfaceMetadata{SwIfIndex: 1})
+	swIfIndexes.Put("if1", &ifaceidx.IfaceMetadata{SwIfIndex: 2})
+	swIfIndexes.Put("if2", &ifaceidx.IfaceMetadata{SwIfIndex: 3})
+
+	interfaces, err := natHandler.Nat44InterfacesDump()
+	Expect(err).To(Succeed())
+
+	Expect(interfaces).To(HaveLen(3))
+
+	Expect(interfaces[0].Name).To(Equal("if0"))
+	Expect(interfaces[0].NatInside).To(BeFalse())
+	Expect(interfaces[0].NatOutside).To(BeTrue())
+	Expect(interfaces[0].OutputFeature).To(BeFalse())
+
+	Expect(interfaces[1].Name).To(Equal("if1"))
+	Expect(interfaces[1].NatInside).To(BeTrue())
+	Expect(interfaces[1].NatOutside).To(BeFalse())
+	Expect(interfaces[1].OutputFeature).To(BeFalse())
+
+	Expect(interfaces[2].Name).To(Equal("if2"))
+	Expect(interfaces[2].NatInside).To(BeTrue())
+	Expect(interfaces[2].NatOutside).To(BeTrue())
+	Expect(interfaces[2].OutputFeature).To(BeTrue())
+}
+
+func TestNat44AddressPoolsDump(t *testing.T) {
+	ctx, natHandler, _, _ := natTestSetup(t)
+	defer ctx.TeardownTestCtx()
+
+	// address pool
+	ctx.MockVpp.MockReply(
+		&vpp_nat.Nat44AddressDetails{
+			IPAddress: ipTo4Address("192.168.10.1"),
+			Flags:     vpp_nat.NAT_IS_TWICE_NAT,
+			VrfID:     1,
+		},
+		&vpp_nat.Nat44AddressDetails{
+			IPAddress: ipTo4Address("192.168.10.2"),
+			VrfID:     2,
+		},
+		&vpp_nat.Nat44AddressDetails{
+			IPAddress: ipTo4Address("192.168.10.3"),
+			VrfID:     2,
+		},
+		&vpp_nat.Nat44AddressDetails{
+			IPAddress: ipTo4Address("192.168.10.4"),
+			VrfID:     2,
+		})
+	ctx.MockVpp.MockReply(&vpp_vpe.ControlPingReply{})
+
+	pools, err := natHandler.Nat44AddressPoolsDump()
+	Expect(err).To(Succeed())
+
+	Expect(pools).To(HaveLen(2))
+
+	Expect(pools[0].FirstIp).To(Equal("192.168.10.1"))
+	Expect(pools[0].LastIp).To(Equal(""))
+	Expect(pools[0].TwiceNat).To(BeTrue())
+	Expect(pools[0].VrfId).To(BeEquivalentTo(1))
+
+	Expect(pools[1].FirstIp).To(Equal("192.168.10.2"))
+	Expect(pools[1].LastIp).To(Equal("192.168.10.4"))
+	Expect(pools[1].TwiceNat).To(BeFalse())
+	Expect(pools[1].VrfId).To(BeEquivalentTo(2))
 }
 
 func TestDNATDump(t *testing.T) {
@@ -358,8 +447,8 @@ func TestDNATDump(t *testing.T) {
 	Expect(dnat.IdMappings[1].Interface).To(BeEquivalentTo("if1"))
 }
 
-func natTestSetup(t *testing.T) (*vppcallmock.TestCtx, vppcalls.NatVppAPI, ifaceidx.IfaceMetadataIndexRW, idxmap.NamedMappingRW) {
-	ctx := vppcallmock.SetupTestCtx(t)
+func natTestSetup(t *testing.T) (*vppmock.TestCtx, vppcalls.NatVppAPI, ifaceidx.IfaceMetadataIndexRW, idxmap.NamedMappingRW) {
+	ctx := vppmock.SetupTestCtx(t)
 	log := logrus.NewLogger("test-log")
 	swIfIndexes := ifaceidx.NewIfaceIndex(logrus.DefaultLogger(), "test-sw_if_indexes")
 	dhcpIndexes := idxmap_mem.NewNamedMapping(logrus.DefaultLogger(), "test-dhcp_indexes", nil)

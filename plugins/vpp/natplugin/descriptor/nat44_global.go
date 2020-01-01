@@ -18,16 +18,16 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/gogo/protobuf/proto"
+	"github.com/golang/protobuf/proto"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/vpp-agent/pkg/models"
 	"github.com/pkg/errors"
+	"go.ligato.io/vpp-agent/v2/pkg/models"
 
-	nat "github.com/ligato/vpp-agent/api/models/vpp/nat"
-	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-	vpp_ifdescriptor "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/descriptor"
-	"github.com/ligato/vpp-agent/plugins/vpp/natplugin/descriptor/adapter"
-	"github.com/ligato/vpp-agent/plugins/vpp/natplugin/vppcalls"
+	kvs "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
+	vpp_ifdescriptor "go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/descriptor"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/natplugin/descriptor/adapter"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/natplugin/vppcalls"
+	nat "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/nat"
 )
 
 const (
@@ -68,10 +68,14 @@ var defaultGlobalCfg = &nat.Nat44Global{
 type NAT44GlobalDescriptor struct {
 	log        logging.Logger
 	natHandler vppcalls.NatVppAPI
+
+	// UseDeprecatedAPI tracks whether deprecated global API (NAT interfaces, addresses) is being used on NB.
+	// Used to orchestrate which data should be dumped from which descriptor on Retrieve.
+	UseDeprecatedAPI bool
 }
 
 // NewNAT44GlobalDescriptor creates a new instance of the NAT44Global descriptor.
-func NewNAT44GlobalDescriptor(natHandler vppcalls.NatVppAPI, log logging.PluginLogger) *kvs.KVDescriptor {
+func NewNAT44GlobalDescriptor(natHandler vppcalls.NatVppAPI, log logging.PluginLogger) (*NAT44GlobalDescriptor, *kvs.KVDescriptor) {
 	ctx := &NAT44GlobalDescriptor{
 		natHandler: natHandler,
 		log:        log.NewLogger("nat44-global-descriptor"),
@@ -91,7 +95,7 @@ func NewNAT44GlobalDescriptor(natHandler vppcalls.NatVppAPI, log logging.PluginL
 		DerivedValues:        ctx.DerivedValues,
 		RetrieveDependencies: []string{vpp_ifdescriptor.InterfaceDescriptorName},
 	}
-	return adapter.NewNAT44GlobalDescriptor(typedDescr)
+	return ctx, adapter.NewNAT44GlobalDescriptor(typedDescr)
 }
 
 // EquivalentNAT44Global compares two NAT44 global configs for equality.
@@ -110,6 +114,12 @@ func (d *NAT44GlobalDescriptor) EquivalentNAT44Global(key string, oldGlobalCfg, 
 
 // Validate validates VPP NAT44 global configuration.
 func (d *NAT44GlobalDescriptor) Validate(key string, globalCfg *nat.Nat44Global) error {
+	if len(globalCfg.NatInterfaces) > 0 {
+		d.log.Warnf("NatInterfaces are deprecated in global NAT44 config, use separate Nat44Interface entries.")
+	}
+	if len(globalCfg.AddressPool) > 0 {
+		d.log.Warnf("AddressPool is deprecated in global NAT44 config, use separate Nat44AddressPool entries.")
+	}
 	// check NAT interface features for collisions
 	natIfaceMap := make(map[string]*natIface)
 	for _, iface := range globalCfg.NatInterfaces {
@@ -203,7 +213,16 @@ func (d *NAT44GlobalDescriptor) Update(key string, oldGlobalCfg, newGlobalCfg *n
 
 // Retrieve returns the current NAT44 global configuration.
 func (d *NAT44GlobalDescriptor) Retrieve(correlate []adapter.NAT44GlobalKVWithMetadata) ([]adapter.NAT44GlobalKVWithMetadata, error) {
-	globalCfg, err := d.natHandler.Nat44GlobalConfigDump()
+	// Note: either this descriptor (deprecated) or separate interface / address pool descriptors
+	// can retrieve NAT interfaces / address pools, never both of them. Use correlate to decide.
+	d.UseDeprecatedAPI = false
+	for _, g := range correlate {
+		if len(g.Value.NatInterfaces) > 0 || len(g.Value.AddressPool) > 0 {
+			d.UseDeprecatedAPI = true
+		}
+	}
+
+	globalCfg, err := d.natHandler.Nat44GlobalConfigDump(d.UseDeprecatedAPI)
 	if err != nil {
 		d.log.Error(err)
 		return nil, err
@@ -230,14 +249,14 @@ func (d *NAT44GlobalDescriptor) DerivedValues(key string, globalCfg *nat.Nat44Gl
 	// NAT addresses
 	for _, natAddr := range globalCfg.AddressPool {
 		derValues = append(derValues, kvs.KeyValuePair{
-			Key:   nat.AddressNAT44Key(natAddr.Address, natAddr.TwiceNat),
+			Key:   nat.DerivedAddressNAT44Key(natAddr.Address, natAddr.TwiceNat),
 			Value: natAddr,
 		})
 	}
 	// NAT interfaces
 	for _, natIface := range globalCfg.NatInterfaces {
 		derValues = append(derValues, kvs.KeyValuePair{
-			Key:   nat.InterfaceNAT44Key(natIface.Name, natIface.IsInside),
+			Key:   nat.DerivedInterfaceNAT44Key(natIface.Name, natIface.IsInside),
 			Value: natIface,
 		})
 	}

@@ -15,33 +15,32 @@
 package configurator
 
 import (
+	"context"
 	"errors"
 
-	linux_interfaces "github.com/ligato/vpp-agent/api/models/linux/interfaces"
-	linux_l3 "github.com/ligato/vpp-agent/api/models/linux/l3"
-
 	"github.com/ligato/cn-infra/logging"
-	"golang.org/x/net/context"
 
-	rpc "github.com/ligato/vpp-agent/api/configurator"
-	vpp_abf "github.com/ligato/vpp-agent/api/models/vpp/abf"
-	vpp_acl "github.com/ligato/vpp-agent/api/models/vpp/acl"
-	vpp_interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	vpp_ipsec "github.com/ligato/vpp-agent/api/models/vpp/ipsec"
-	vpp_l2 "github.com/ligato/vpp-agent/api/models/vpp/l2"
-	vpp_l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
-	vpp_nat "github.com/ligato/vpp-agent/api/models/vpp/nat"
-	vpp_punt "github.com/ligato/vpp-agent/api/models/vpp/punt"
-	iflinuxcalls "github.com/ligato/vpp-agent/plugins/linux/ifplugin/linuxcalls"
-	l3linuxcalls "github.com/ligato/vpp-agent/plugins/linux/l3plugin/linuxcalls"
-	abfvppcalls "github.com/ligato/vpp-agent/plugins/vpp/abfplugin/vppcalls"
-	aclvppcalls "github.com/ligato/vpp-agent/plugins/vpp/aclplugin/vppcalls"
-	ifvppcalls "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
-	ipsecvppcalls "github.com/ligato/vpp-agent/plugins/vpp/ipsecplugin/vppcalls"
-	l2vppcalls "github.com/ligato/vpp-agent/plugins/vpp/l2plugin/vppcalls"
-	l3vppcalls "github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls"
-	natvppcalls "github.com/ligato/vpp-agent/plugins/vpp/natplugin/vppcalls"
-	"github.com/ligato/vpp-agent/plugins/vpp/puntplugin/vppcalls"
+	iflinuxcalls "go.ligato.io/vpp-agent/v2/plugins/linux/ifplugin/linuxcalls"
+	l3linuxcalls "go.ligato.io/vpp-agent/v2/plugins/linux/l3plugin/linuxcalls"
+	abfvppcalls "go.ligato.io/vpp-agent/v2/plugins/vpp/abfplugin/vppcalls"
+	aclvppcalls "go.ligato.io/vpp-agent/v2/plugins/vpp/aclplugin/vppcalls"
+	ifvppcalls "go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/vppcalls"
+	ipsecvppcalls "go.ligato.io/vpp-agent/v2/plugins/vpp/ipsecplugin/vppcalls"
+	l2vppcalls "go.ligato.io/vpp-agent/v2/plugins/vpp/l2plugin/vppcalls"
+	l3vppcalls "go.ligato.io/vpp-agent/v2/plugins/vpp/l3plugin/vppcalls"
+	natvppcalls "go.ligato.io/vpp-agent/v2/plugins/vpp/natplugin/vppcalls"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/puntplugin/vppcalls"
+	rpc "go.ligato.io/vpp-agent/v2/proto/ligato/configurator"
+	linux_interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/linux/interfaces"
+	linux_l3 "go.ligato.io/vpp-agent/v2/proto/ligato/linux/l3"
+	vpp_abf "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/abf"
+	vpp_acl "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/acl"
+	vpp_interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
+	vpp_ipsec "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/ipsec"
+	vpp_l2 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l2"
+	vpp_l3 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l3"
+	vpp_nat "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/nat"
+	vpp_punt "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/punt"
 )
 
 type dumpService struct {
@@ -66,7 +65,7 @@ type dumpService struct {
 }
 
 // Dump implements Dump method for Configurator
-func (svc *dumpService) Dump(context.Context, *rpc.DumpRequest) (*rpc.DumpResponse, error) {
+func (svc *dumpService) Dump(ctx context.Context, req *rpc.DumpRequest) (*rpc.DumpResponse, error) {
 	defer trackOperation("Dump")()
 
 	svc.log.Debugf("Received Dump request..")
@@ -76,7 +75,7 @@ func (svc *dumpService) Dump(context.Context, *rpc.DumpRequest) (*rpc.DumpRespon
 	var err error
 
 	// core
-	dump.VppConfig.Interfaces, err = svc.DumpInterfaces()
+	dump.VppConfig.Interfaces, err = svc.DumpInterfaces(ctx)
 	if err != nil {
 		svc.log.Errorf("DumpInterfaces failed: %v", err)
 		return nil, err
@@ -138,6 +137,16 @@ func (svc *dumpService) Dump(context.Context, *rpc.DumpRequest) (*rpc.DumpRespon
 		svc.log.Errorf("DumpDNAT44s failed: %v", err)
 		return nil, err
 	}
+	dump.VppConfig.Nat44Interfaces, err = svc.DumpNAT44Interfaces()
+	if err != nil {
+		svc.log.Errorf("DumpNAT44Interfaces failed: %v", err)
+		return nil, err
+	}
+	dump.VppConfig.Nat44Pools, err = svc.DumpNAT44AddressPools()
+	if err != nil {
+		svc.log.Errorf("DumpNAT44AddressPools failed: %v", err)
+		return nil, err
+	}
 	dump.VppConfig.PuntTohosts, err = svc.DumpPunt()
 	if err != nil {
 		svc.log.Errorf("DumpPunt failed: %v", err)
@@ -172,13 +181,13 @@ func (svc *dumpService) Dump(context.Context, *rpc.DumpRequest) (*rpc.DumpRespon
 
 // DumpInterfaces reads interfaces and returns them as an *InterfaceResponse. If reading ends up with error,
 // only error is send back in response
-func (svc *dumpService) DumpInterfaces() (ifs []*vpp_interfaces.Interface, err error) {
+func (svc *dumpService) DumpInterfaces(ctx context.Context) (ifs []*vpp_interfaces.Interface, err error) {
 	if svc.ifHandler == nil {
 		// handler is not available
 		return nil, nil
 	}
 
-	ifDetails, err := svc.ifHandler.DumpInterfaces()
+	ifDetails, err := svc.ifHandler.DumpInterfaces(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -357,14 +366,14 @@ func (svc *dumpService) DumpABFs() (abfs []*vpp_abf.ABF, err error) {
 	return abfs, nil
 }
 
-// DumpNAT44GLobal dumps NAT44Global
+// DumpNAT44Global dumps NAT44Global
 func (svc *dumpService) DumpNAT44Global() (glob *vpp_nat.Nat44Global, err error) {
 	if svc.natHandler == nil {
 		// handler is not available
 		return nil, nil
 	}
 
-	glob, err = svc.natHandler.Nat44GlobalConfigDump()
+	glob, err = svc.natHandler.Nat44GlobalConfigDump(false)
 	if err != nil {
 		return nil, err
 	}
@@ -383,6 +392,34 @@ func (svc *dumpService) DumpDNAT44s() (dnats []*vpp_nat.DNat44, err error) {
 		return nil, err
 	}
 	return dnats, nil
+}
+
+// DumpNAT44Interfaces dumps NAT44Interfaces
+func (svc *dumpService) DumpNAT44Interfaces() (natIfs []*vpp_nat.Nat44Interface, err error) {
+	if svc.natHandler == nil {
+		// handler is not available
+		return nil, nil
+	}
+
+	natIfs, err = svc.natHandler.Nat44InterfacesDump()
+	if err != nil {
+		return nil, err
+	}
+	return natIfs, nil
+}
+
+// DumpNAT44AddressPools dumps NAT44AddressPools
+func (svc *dumpService) DumpNAT44AddressPools() (natPools []*vpp_nat.Nat44AddressPool, err error) {
+	if svc.natHandler == nil {
+		// handler is not available
+		return nil, nil
+	}
+
+	natPools, err = svc.natHandler.Nat44AddressPoolsDump()
+	if err != nil {
+		return nil, err
+	}
+	return natPools, nil
 }
 
 // DumpPunt reads VPP Punt socket registrations and returns them as an *PuntResponse.

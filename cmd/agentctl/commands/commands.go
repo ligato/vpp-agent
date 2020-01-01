@@ -8,7 +8,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
-	"github.com/ligato/vpp-agent/cmd/agentctl/cli"
+	"go.ligato.io/vpp-agent/v2/cmd/agentctl/cli"
 )
 
 var (
@@ -59,5 +59,7 @@ func AddBaseCommands(cmd *cobra.Command, cli cli.Cli) {
 		NewGenerateCommand(cli),
 		NewStatusCommand(cli),
 		NewValuesCommand(cli),
+		NewServiceCommand(cli),
+		NewMetricsCommand(cli),
 	)
 }

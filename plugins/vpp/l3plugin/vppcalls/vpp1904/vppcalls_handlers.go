@@ -18,21 +18,20 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vrfidx"
-
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/dhcp"
-
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
 
-	vpevppcalls "github.com/ligato/vpp-agent/plugins/govppmux/vppcalls"
-	"github.com/ligato/vpp-agent/plugins/govppmux/vppcalls/vpp1904"
-	"github.com/ligato/vpp-agent/plugins/netalloc"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/ip"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/vpe"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
-	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls"
+	vpevppcalls "go.ligato.io/vpp-agent/v2/plugins/govppmux/vppcalls"
+	vpe_vpp1904 "go.ligato.io/vpp-agent/v2/plugins/govppmux/vppcalls/vpp1904"
+	"go.ligato.io/vpp-agent/v2/plugins/netalloc"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904/dhcp"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904/ip"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904/vpe"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/l3plugin/vppcalls"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/l3plugin/vrfidx"
 )
 
 func init() {
@@ -41,14 +40,7 @@ func init() {
 	msgs = append(msgs, vpe.AllMessages()...)
 	msgs = append(msgs, dhcp.AllMessages()...)
 
-	vppcalls.Versions["vpp1904"] = vppcalls.HandlerVersion{
-		Msgs: msgs,
-		New: func(ch govppapi.Channel, ifIdx ifaceidx.IfaceMetadataIndex, vrfIdx vrfidx.VRFMetadataIndex,
-			addrAlloc netalloc.AddressAllocator, log logging.Logger,
-		) vppcalls.L3VppAPI {
-			return NewL3VppHandler(ch, ifIdx, addrAlloc, log)
-		},
-	}
+	vppcalls.AddHandlerVersion(vpp1904.Version, msgs, NewL3VppHandler)
 }
 
 type L3VppHandler struct {
@@ -61,8 +53,12 @@ type L3VppHandler struct {
 }
 
 func NewL3VppHandler(
-	ch govppapi.Channel, ifIdx ifaceidx.IfaceMetadataIndex, addrAlloc netalloc.AddressAllocator, log logging.Logger,
-) *L3VppHandler {
+	ch govppapi.Channel,
+	ifIdx ifaceidx.IfaceMetadataIndex,
+	vrfIdx vrfidx.VRFMetadataIndex,
+	addrAlloc netalloc.AddressAllocator,
+	log logging.Logger,
+) vppcalls.L3VppAPI {
 	return &L3VppHandler{
 		ArpVppHandler:      NewArpVppHandler(ch, ifIdx, log),
 		ProxyArpVppHandler: NewProxyArpVppHandler(ch, ifIdx, log),
@@ -105,7 +101,7 @@ type RouteHandler struct {
 type IPNeighHandler struct {
 	callsChannel govppapi.Channel
 	log          logging.Logger
-	vpevppcalls.VpeVppAPI
+	vpevppcalls.VppCoreAPI
 }
 
 // VrfTableHandler is accessor for vrf-related vppcalls methods
@@ -160,7 +156,7 @@ func NewIPNeighVppHandler(callsChan govppapi.Channel, log logging.Logger) *IPNei
 	return &IPNeighHandler{
 		callsChannel: callsChan,
 		log:          log,
-		VpeVppAPI:    vpp1904.NewVpeHandler(callsChan),
+		VppCoreAPI:   vpe_vpp1904.NewVpeHandler(callsChan),
 	}
 }
 
@@ -175,7 +171,7 @@ func NewVrfTableVppHandler(callsChan govppapi.Channel, log logging.Logger) *VrfT
 	}
 }
 
-// NewVrfTableVppHandler creates new instance of vrf-table vppcalls handler
+// NewDHCPProxyHandler creates new instance of vrf-table vppcalls handler
 func NewDHCPProxyHandler(callsChan govppapi.Channel, log logging.Logger) *DHCPProxyHandler {
 	if log == nil {
 		log = logrus.NewLogger("dhcp-proxy-handler")

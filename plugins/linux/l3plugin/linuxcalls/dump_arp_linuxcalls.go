@@ -20,9 +20,8 @@ import (
 	"github.com/ligato/cn-infra/logging"
 	"github.com/pkg/errors"
 	"github.com/vishvananda/netlink"
-
-	linux_l3 "github.com/ligato/vpp-agent/api/models/linux/l3"
-	"github.com/ligato/vpp-agent/plugins/linux/nsplugin/linuxcalls"
+	"go.ligato.io/vpp-agent/v2/plugins/linux/nsplugin/linuxcalls"
+	linux_l3 "go.ligato.io/vpp-agent/v2/proto/ligato/linux/l3"
 )
 
 // retrievedARPs is used as the return value sent via channel by retrieveARPs().

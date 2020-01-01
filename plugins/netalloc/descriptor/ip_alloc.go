@@ -17,13 +17,13 @@ package descriptor
 import (
 	"net"
 
+	prototypes "github.com/golang/protobuf/ptypes/empty"
 	"github.com/ligato/cn-infra/logging"
-	prototypes "github.com/gogo/protobuf/types"
 
-	"github.com/ligato/vpp-agent/api/models/netalloc"
-	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-	"github.com/ligato/vpp-agent/plugins/netalloc/descriptor/adapter"
-	"github.com/ligato/vpp-agent/plugins/netalloc/utils"
+	kvs "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v2/plugins/netalloc/descriptor/adapter"
+	"go.ligato.io/vpp-agent/v2/plugins/netalloc/utils"
+	"go.ligato.io/vpp-agent/v2/proto/ligato/netalloc"
 )
 
 const (
@@ -118,5 +118,5 @@ func (d *IPAllocDescriptor) parseAddr(addrAlloc *netalloc.IPAllocation) (parsed 
 			return nil, false, err
 		}
 	}
-	return &netalloc.IPAllocMetadata{IfaceAddr: ifaceAddr, GwAddr: gwAddr}, neighGw,nil
+	return &netalloc.IPAllocMetadata{IfaceAddr: ifaceAddr, GwAddr: gwAddr}, neighGw, nil
 }

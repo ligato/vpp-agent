@@ -20,12 +20,12 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/gogo/protobuf/proto"
+	"github.com/golang/protobuf/proto"
 
-	ifs "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	nat "github.com/ligato/vpp-agent/api/models/vpp/nat"
-	vpp_nat "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001_324/nat"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
+	vpp_nat "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324/nat"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
+	ifs "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
+	nat "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/nat"
 )
 
 // DNATs sorted by tags
@@ -38,31 +38,27 @@ type stMappingMap map[string][]*nat.DNat44_StaticMapping
 type idMappingMap map[string][]*nat.DNat44_IdentityMapping
 
 // Nat44GlobalConfigDump dumps global NAT44 config in NB format.
-func (h *NatVppHandler) Nat44GlobalConfigDump() (*nat.Nat44Global, error) {
-	isEnabled, err := h.isNat44ForwardingEnabled()
+func (h *NatVppHandler) Nat44GlobalConfigDump(dumpDeprecated bool) (cfg *nat.Nat44Global, err error) {
+	cfg = &nat.Nat44Global{}
+	cfg.Forwarding, err = h.isNat44ForwardingEnabled()
 	if err != nil {
 		return nil, err
 	}
-	natInterfaces, err := h.nat44InterfaceDump()
+	cfg.VirtualReassembly, _, err = h.virtualReassemblyDump()
 	if err != nil {
 		return nil, err
 	}
-	natAddressPool, err := h.nat44AddressDump()
-	if err != nil {
-		return nil, err
+	if dumpDeprecated {
+		cfg.NatInterfaces, err = h.nat44InterfaceDump()
+		if err != nil {
+			return nil, err
+		}
+		cfg.AddressPool, err = h.nat44AddressDump()
+		if err != nil {
+			return nil, err
+		}
 	}
-	vrIPv4, _, err := h.virtualReassemblyDump()
-	if err != nil {
-		return nil, err
-	}
-
-	// combine into the global NAT configuration
-	return &nat.Nat44Global{
-		Forwarding:        isEnabled,
-		NatInterfaces:     natInterfaces,
-		AddressPool:       natAddressPool,
-		VirtualReassembly: vrIPv4,
-	}, nil
+	return
 }
 
 // DNat44Dump dumps all configured DNAT-44 configurations ordered by label.
@@ -110,7 +106,108 @@ func (h *NatVppHandler) DNat44Dump() (dnats []*nat.DNat44, err error) {
 	return dnats, nil
 }
 
+// Nat44InterfacesDump dumps NAT44 config of all NAT44-enabled interfaces.
+func (h *NatVppHandler) Nat44InterfacesDump() (natIfs []*nat.Nat44Interface, err error) {
+
+	// dump NAT interfaces without output feature enabled
+	req1 := &vpp_nat.Nat44InterfaceDump{}
+	reqContext := h.callsChannel.SendMultiRequest(req1)
+	for {
+		msg := &vpp_nat.Nat44InterfaceDetails{}
+		stop, err := reqContext.ReceiveReply(msg)
+		if err != nil {
+			return nil, fmt.Errorf("failed to dump NAT44 interface: %v", err)
+		}
+		if stop {
+			break
+		}
+		ifName, _, found := h.ifIndexes.LookupBySwIfIndex(uint32(msg.SwIfIndex))
+		if !found {
+			h.log.Warnf("Interface with index %d not found in the mapping", msg.SwIfIndex)
+			continue
+		}
+		flags := getNat44Flags(msg.Flags)
+		natIf := &nat.Nat44Interface{
+			Name:          ifName,
+			NatInside:     flags.isInside,
+			NatOutside:    flags.isOutside,
+			OutputFeature: false,
+		}
+		natIfs = append(natIfs, natIf)
+	}
+
+	// dump interfaces with output feature enabled
+	req2 := &vpp_nat.Nat44InterfaceOutputFeatureDump{}
+	reqContext = h.callsChannel.SendMultiRequest(req2)
+	for {
+		msg := &vpp_nat.Nat44InterfaceOutputFeatureDetails{}
+		stop, err := reqContext.ReceiveReply(msg)
+		if err != nil {
+			return nil, fmt.Errorf("failed to dump NAT44 interface output feature: %v", err)
+		}
+		if stop {
+			break
+		}
+		ifName, _, found := h.ifIndexes.LookupBySwIfIndex(uint32(msg.SwIfIndex))
+		if !found {
+			h.log.Warnf("Interface with index %d not found in the mapping", msg.SwIfIndex)
+			continue
+		}
+		flags := getNat44Flags(msg.Flags)
+		natIf := &nat.Nat44Interface{
+			Name:          ifName,
+			NatInside:     flags.isInside,
+			NatOutside:    flags.isOutside,
+			OutputFeature: true,
+		}
+		if !natIf.NatInside && !natIf.NatOutside {
+			natIf.NatOutside = true
+		}
+		natIfs = append(natIfs, natIf)
+	}
+	return
+}
+
+// Nat44AddressPoolsDump dumps all configured NAT44 address pools.
+func (h *NatVppHandler) Nat44AddressPoolsDump() (natPools []*nat.Nat44AddressPool, err error) {
+	var curPool *nat.Nat44AddressPool
+	var lastIP net.IP
+
+	req := &vpp_nat.Nat44AddressDump{}
+	reqContext := h.callsChannel.SendMultiRequest(req)
+
+	for {
+		msg := &vpp_nat.Nat44AddressDetails{}
+		stop, err := reqContext.ReceiveReply(msg)
+		if err != nil {
+			return nil, fmt.Errorf("failed to dump NAT44 Address pool: %v", err)
+		}
+		if stop {
+			break
+		}
+		ip := net.IP(msg.IPAddress[:])
+		isTwiceNat := getNat44Flags(msg.Flags).isTwiceNat
+		// merge subsequent IPs into a single pool
+		if curPool != nil && curPool.VrfId == msg.VrfID && curPool.TwiceNat == isTwiceNat && ip.Equal(incIP(lastIP)) {
+			// update current pool
+			curPool.LastIp = ip.String()
+		} else {
+			// start a new pool
+			pool := &nat.Nat44AddressPool{
+				FirstIp:  ip.String(),
+				VrfId:    msg.VrfID,
+				TwiceNat: isTwiceNat,
+			}
+			curPool = pool
+			natPools = append(natPools, pool)
+		}
+		lastIP = ip
+	}
+	return
+}
+
 // nat44AddressDump returns NAT44 address pool configured in the VPP.
+// Deprecated. Functionality moved to Nat44AddressPoolsDump. Kept for backward compatibility.
 func (h *NatVppHandler) nat44AddressDump() (addressPool []*nat.Nat44Global_Address, err error) {
 	req := &vpp_nat.Nat44AddressDump{}
 	reqContext := h.callsChannel.SendMultiRequest(req)
@@ -384,6 +481,7 @@ func (h *NatVppHandler) nat44IdentityMappingDump() (entries idMappingMap, err er
 }
 
 // nat44InterfaceDump dumps NAT44 interface features.
+// Deprecated. Functionality moved to Nat44Nat44InterfacesDump. Kept for backward compatibility.
 func (h *NatVppHandler) nat44InterfaceDump() (interfaces []*nat.Nat44Global_Interface, err error) {
 
 	/* dump non-Output interfaces first */
@@ -569,4 +667,18 @@ func uintToBool(value uint8) bool {
 		return false
 	}
 	return true
+}
+
+// incIP increments IP address and returns it.
+// Based on: https://play.golang.org/p/m8TNTtygK0
+func incIP(ip net.IP) net.IP {
+	retIP := make(net.IP, len(ip))
+	copy(retIP, ip)
+	for j := len(retIP) - 1; j >= 0; j-- {
+		retIP[j]++
+		if retIP[j] > 0 {
+			break
+		}
+	}
+	return retIP
 }

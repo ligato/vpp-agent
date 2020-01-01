@@ -23,27 +23,26 @@ import (
 	"github.com/ligato/cn-infra/agent"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
-	vpp_intf "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	nat "github.com/ligato/vpp-agent/api/models/vpp/nat"
-	"github.com/ligato/vpp-agent/clientv2/vpp/localclient"
-	"github.com/ligato/vpp-agent/cmd/vpp-agent/app"
-	"github.com/ligato/vpp-agent/plugins/orchestrator"
 	"github.com/namsral/flag"
+	"go.ligato.io/vpp-agent/v2/clientv2/vpp/localclient"
+	"go.ligato.io/vpp-agent/v2/cmd/vpp-agent/app"
+	"go.ligato.io/vpp-agent/v2/plugins/orchestrator"
+	vpp_intf "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
+	nat "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/nat"
 )
 
 var (
 	timeout = flag.Int("timeout", 20, "Timeout between applying of global and DNAT configuration in seconds")
 )
 
-/* Confgiuration */
+/* Configuration */
 
-// Global NAT is a one-time configuration (single key in the etcd, but it can be modified or removed as ususally).
-// Configured items are 'global' for the whole NAT44 environment. Data consists of:
-// - NAT forwarding setup
-// - Enabled interfaces (including output feature)
-// - Enabled address pools
+// Basic NAT configuration consists of 3 parts:
+// - Global NAT: NAT settings which are 'global' for the whole NAT44 environment, e.g. NAT forwarding setup
+// - NAT-enabled interfaces (including output feature): each interface is configured individually
+// - NAT address pools: each address pool can be configured individually
 
-/* Result of test NAT global data */
+/* Result of the test NAT config */
 /*
 vpp# sh nat44 interfaces
 NAT44 interfaces:
@@ -53,7 +52,12 @@ NAT44 interfaces:
 
 vpp# sh nat44 addresses
 NAT44 pool addresses:
-192.168.0.1
+10.10.0.1
+  tenant VRF: 0
+  0 busy udp ports
+  0 busy tcp ports
+  0 busy icmp ports
+10.10.0.2
   tenant VRF: 0
   0 busy udp ports
   0 busy tcp ports
@@ -73,12 +77,7 @@ NAT44 pool addresses:
   0 busy udp ports
   0 busy tcp ports
   0 busy icmp ports
-10.10.0.1
-  tenant VRF: 0
-  0 busy udp ports
-  0 busy tcp ports
-  0 busy icmp ports
-10.10.0.2
+192.168.0.1
   tenant VRF: 0
   0 busy udp ports
   0 busy tcp ports
@@ -170,7 +169,7 @@ func (p *NatExamplePlugin) Init() error {
 // AfterInit initializes example plugin.
 func (p *NatExamplePlugin) AfterInit() error {
 	// Apply initial VPP configuration.
-	p.putGlobalConfig()
+	p.putBasicNATConfig()
 
 	// Schedule reconfiguration.
 	var ctx context.Context
@@ -195,19 +194,25 @@ func (p *NatExamplePlugin) String() string {
 	return PluginName
 }
 
-// Configure NAT44 Global config
-func (p *NatExamplePlugin) putGlobalConfig() {
-	p.Log.Infof("Applying NAT44 global configuration")
+// Configure NAT44 config
+func (p *NatExamplePlugin) putBasicNATConfig() {
+	p.Log.Infof("Applying NAT44 configuration")
 	err := localclient.DataResyncRequest(PluginName).
 		Interface(interface1()).
 		Interface(interface2()).
 		Interface(interface3()).
 		NAT44Global(globalNat()).
+		NAT44Interface(natInterface1()).
+		NAT44Interface(natInterface2()).
+		NAT44Interface(natInterface3()).
+		NAT44AddressPool(natPool1()).
+		NAT44AddressPool(natPool2()).
+		NAT44AddressPool(natPool3()).
 		Send().ReceiveReply()
 	if err != nil {
-		p.Log.Errorf("NAT44 global configuration failed: %v", err)
+		p.Log.Errorf("NAT44 configuration failed: %v", err)
 	} else {
-		p.Log.Info("NAT44 global configuration successful")
+		p.Log.Info("NAT44 configuration successful")
 	}
 }
 
@@ -297,42 +302,51 @@ func interface3() *vpp_intf.Interface {
 func globalNat() *nat.Nat44Global {
 	return &nat.Nat44Global{
 		Forwarding: false,
-		NatInterfaces: []*nat.Nat44Global_Interface{
-			{
-				Name:          "memif1",
-				IsInside:      false,
-				OutputFeature: false,
-			},
-			{
-				Name:          "memif2",
-				IsInside:      false,
-				OutputFeature: true,
-			},
-			{
-				Name:          "memif3",
-				IsInside:      true,
-				OutputFeature: false,
-			},
-		},
-		AddressPool: []*nat.Nat44Global_Address{
-			{
-				VrfId:    0,
-				Address:  "192.168.0.1",
-				TwiceNat: false,
-			},
-			{
-				VrfId:   0,
-				Address: "175.124.0.1",
-				//LastSrcAddress:  "175.124.0.3",
-				TwiceNat: false,
-			},
-			{
-				VrfId:   0,
-				Address: "10.10.0.1",
-				//LastSrcAddress:  "10.10.0.2",
-				TwiceNat: false,
-			},
-		},
+	}
+}
+
+func natInterface1() *nat.Nat44Interface {
+	return &nat.Nat44Interface{
+		Name:       "memif1",
+		NatOutside: true,
+	}
+}
+
+func natInterface2() *nat.Nat44Interface {
+	return &nat.Nat44Interface{
+		Name:          "memif2",
+		NatOutside:    true,
+		OutputFeature: true,
+	}
+}
+
+func natInterface3() *nat.Nat44Interface {
+	return &nat.Nat44Interface{
+		Name:      "memif3",
+		NatInside: true,
+	}
+}
+
+func natPool1() *nat.Nat44AddressPool {
+	return &nat.Nat44AddressPool{
+		VrfId:   0,
+		FirstIp: "192.168.0.1",
+	}
+}
+
+func natPool2() *nat.Nat44AddressPool {
+	return &nat.Nat44AddressPool{
+		VrfId:   0,
+		FirstIp: "175.124.0.1",
+		LastIp:  "175.124.0.3",
+	}
+}
+
+func natPool3() *nat.Nat44AddressPool {
+	return &nat.Nat44AddressPool{
+		VrfId:   0,
+		FirstIp: "10.10.0.1",
+		LastIp:  "10.10.0.2",
 	}
 }
 

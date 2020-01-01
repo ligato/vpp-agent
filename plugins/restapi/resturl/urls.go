@@ -68,6 +68,10 @@ const (
 	NatGlobal = "/dump/vpp/v2/nat/global"
 	// NatDNat is a REST path of a DNAT configurations
 	NatDNat = "/dump/vpp/v2/nat/dnat"
+	// NatInterfaces is a REST path of NAT interfaces config
+	NatInterfaces = "/dump/vpp/v2/nat/interfaces"
+	// NatAddressPools is a REST path of NAT address pools config
+	NatAddressPools = "/dump/vpp/v2/nat/pools"
 )
 
 // L2 plugin
@@ -107,12 +111,6 @@ const (
 	PuntSocket = "/dump/vpp/v2/punt/sockets"
 )
 
-// Command
-const (
-	// Command allows to put CLI command to the rest
-	Command = "/vpp/command"
-)
-
 // Telemetry
 const (
 	// Telemetry reads various types of metrics data from the VPP
@@ -124,16 +122,8 @@ const (
 
 // Stats
 const (
-	// Traced binary API calls
-	Tracer = "/vpp/binapitrace"
 	// Configurator stats
 	ConfiguratorStats = "/stats/configurator"
 	// Linux interface stats
 	LinuxInterfaceStats = "/stats/linux/interfaces"
-)
-
-// Index
-const (
-	// Index can be used to get the full index page
-	Index = "/"
 )

@@ -21,31 +21,33 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/gogo/protobuf/proto"
-	prototypes "github.com/gogo/protobuf/types"
+	"github.com/vishvananda/netlink"
+	"go.ligato.io/vpp-agent/v2/pkg/models"
+	"golang.org/x/sys/unix"
+
+	"github.com/golang/protobuf/proto"
+	prototypes "github.com/golang/protobuf/ptypes/empty"
+	"github.com/pkg/errors"
+
 	"github.com/ligato/cn-infra/idxmap"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/servicelabel"
-	"github.com/pkg/errors"
-	"github.com/vishvananda/netlink"
-	"golang.org/x/sys/unix"
 
-	interfaces "github.com/ligato/vpp-agent/api/models/linux/interfaces"
-	namespace "github.com/ligato/vpp-agent/api/models/linux/namespace"
-	netalloc_api "github.com/ligato/vpp-agent/api/models/netalloc"
-	vpp_intf "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	"github.com/ligato/vpp-agent/pkg/models"
-	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-	"github.com/ligato/vpp-agent/plugins/linux/ifplugin/descriptor/adapter"
-	"github.com/ligato/vpp-agent/plugins/linux/ifplugin/ifaceidx"
-	iflinuxcalls "github.com/ligato/vpp-agent/plugins/linux/ifplugin/linuxcalls"
-	"github.com/ligato/vpp-agent/plugins/linux/nsplugin"
-	nsdescriptor "github.com/ligato/vpp-agent/plugins/linux/nsplugin/descriptor"
-	nslinuxcalls "github.com/ligato/vpp-agent/plugins/linux/nsplugin/linuxcalls"
-	"github.com/ligato/vpp-agent/plugins/netalloc"
-	netalloc_descr "github.com/ligato/vpp-agent/plugins/netalloc/descriptor"
-	vpp_ifaceidx "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
+	kvs "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v2/plugins/linux/ifplugin/descriptor/adapter"
+	"go.ligato.io/vpp-agent/v2/plugins/linux/ifplugin/ifaceidx"
+	iflinuxcalls "go.ligato.io/vpp-agent/v2/plugins/linux/ifplugin/linuxcalls"
+	"go.ligato.io/vpp-agent/v2/plugins/linux/nsplugin"
+	nsdescriptor "go.ligato.io/vpp-agent/v2/plugins/linux/nsplugin/descriptor"
+	nslinuxcalls "go.ligato.io/vpp-agent/v2/plugins/linux/nsplugin/linuxcalls"
+	"go.ligato.io/vpp-agent/v2/plugins/netalloc"
+	netalloc_descr "go.ligato.io/vpp-agent/v2/plugins/netalloc/descriptor"
+	vpp_ifaceidx "go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
+	interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/linux/interfaces"
+	namespace "go.ligato.io/vpp-agent/v2/proto/ligato/linux/namespace"
+	netalloc_api "go.ligato.io/vpp-agent/v2/proto/ligato/netalloc"
+	vpp_intf "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
 )
 
 const (
@@ -335,7 +337,7 @@ func (d *InterfaceDescriptor) Create(key string, linuxIf *interfaces.Interface) 
 		return nil, ErrUnsupportedLinuxInterfaceType
 	}
 	if err != nil {
-		d.log.Errorf("creating interface failed: %+v", err)
+		d.log.Errorf("creating %v interface failed: %+v", linuxIf.GetType(), err)
 		return nil, err
 	}
 

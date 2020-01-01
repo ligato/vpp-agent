@@ -18,11 +18,11 @@ import (
 	"testing"
 
 	"github.com/ligato/cn-infra/logging/logrus"
-	acl "github.com/ligato/vpp-agent/api/models/vpp/acl"
-	vpp_acl "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001_324/acl"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
-	"github.com/ligato/vpp-agent/plugins/vpp/vppcallmock"
 	. "github.com/onsi/gomega"
+	vpp_acl "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324/acl"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/vppmock"
+	acl "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/acl"
 )
 
 var aclNoRules []*acl.ACL_Rule
@@ -226,16 +226,16 @@ var aclMACIPrules = []*acl.ACL_Rule{
 }
 
 type testCtx struct {
-	*vppcallmock.TestCtx
+	*vppmock.TestCtx
 	aclHandler *ACLVppHandler
 	ifIndexes  ifaceidx.IfaceMetadataIndexRW
 }
 
 func setupACLTest(t *testing.T) *testCtx {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx := vppmock.SetupTestCtx(t)
 
 	ifaceIdx := ifaceidx.NewIfaceIndex(logrus.NewLogger("test"), "test")
-	aclHandler := NewACLVppHandler(ctx.MockChannel, ifaceIdx)
+	aclHandler := NewACLVppHandler(ctx.MockVPPClient, ifaceIdx).(*ACLVppHandler)
 
 	return &testCtx{
 		TestCtx:    ctx,

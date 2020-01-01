@@ -17,10 +17,10 @@ package vpp1904
 import (
 	"testing"
 
-	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/vpe"
-	"github.com/ligato/vpp-agent/plugins/vpp/vppcallmock"
 	. "github.com/onsi/gomega"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904/vpe"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/vppmock"
+	l3 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l3"
 )
 
 func TestGetIPScanNeighbor(t *testing.T) {
@@ -42,7 +42,7 @@ func TestGetIPScanNeighbor(t *testing.T) {
    Full_scan_interval: 1 min  Stale_purge_threshod: 4 min
    Max_process_time: 20 usec  Max_updates 10  Delay_to_resume_after_max_limit: 1 msec`,
 			expected: l3.IPScanNeighbor{
-				Mode:           l3.IPScanNeighbor_IPv4,
+				Mode:           l3.IPScanNeighbor_IPV4,
 				ScanInterval:   1,
 				MaxProcTime:    20,
 				MaxUpdate:      10,
@@ -67,7 +67,7 @@ func TestGetIPScanNeighbor(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			ctx := vppcallmock.SetupTestCtx(t)
+			ctx := vppmock.SetupTestCtx(t)
 			defer ctx.TeardownTestCtx()
 
 			ctx.MockVpp.MockReply(&vpe.CliInbandReply{

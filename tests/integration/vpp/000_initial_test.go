@@ -15,18 +15,47 @@
 package vpp
 
 import (
+	"context"
 	"testing"
 
-	"github.com/ligato/vpp-agent/plugins/govppmux/vppcalls"
+	"go.ligato.io/vpp-agent/v2/plugins/govppmux/vppcalls"
 )
 
 func TestPing(t *testing.T) {
-	ctx := setupVPP(t)
-	defer ctx.teardownVPP()
+	test := setupVPP(t)
+	defer test.teardownVPP()
 
-	h := vppcalls.CompatibleVpeHandler(ctx.vppBinapi)
+	vpp := vppcalls.CompatibleHandler(test.vppClient)
 
-	if err := h.Ping(); err != nil {
+	if err := vpp.Ping(context.Background()); err != nil {
 		t.Fatalf("control ping failed: %v", err)
 	}
+}
+
+func TestGetVersion(t *testing.T) {
+	test := setupVPP(t)
+	defer test.teardownVPP()
+
+	vpp := vppcalls.CompatibleHandler(test.vppClient)
+
+	versionInfo, err := vpp.GetVersion(context.Background())
+	if err != nil {
+		t.Fatalf("getting version failed: %v", err)
+	}
+
+	t.Logf("version: %v", versionInfo.Version)
+}
+
+func TestGetPlugins(t *testing.T) {
+	test := setupVPP(t)
+	defer test.teardownVPP()
+
+	vpp := vppcalls.CompatibleHandler(test.vppClient)
+
+	plugins, err := vpp.GetPlugins(context.Background())
+	if err != nil {
+		t.Fatalf("getting pluggins failed: %v", err)
+	}
+
+	t.Logf("%d plugins: %v", len(plugins), plugins)
 }

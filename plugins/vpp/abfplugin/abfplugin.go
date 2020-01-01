@@ -12,35 +12,32 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 
-//go:generate descriptor-adapter --descriptor-name ABF --value-type *vpp_abf.ABF --meta-type *abfidx.ABFMetadata --import "abfidx" --import "github.com/ligato/vpp-agent/api/models/vpp/abf" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name ABF --value-type *vpp_abf.ABF --meta-type *abfidx.ABFMetadata --import "abfidx" --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/abf" --output-dir "descriptor"
 
 package abfplugin
 
 import (
-	govppapi "git.fd.io/govpp.git/api"
 	"github.com/go-errors/errors"
 	"github.com/ligato/cn-infra/health/statuscheck"
 	"github.com/ligato/cn-infra/infra"
-	"github.com/ligato/vpp-agent/plugins/govppmux"
-	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-	"github.com/ligato/vpp-agent/plugins/vpp/abfplugin/abfidx"
-	"github.com/ligato/vpp-agent/plugins/vpp/abfplugin/descriptor"
-	"github.com/ligato/vpp-agent/plugins/vpp/abfplugin/vppcalls"
-	"github.com/ligato/vpp-agent/plugins/vpp/aclplugin"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin"
 
-	_ "github.com/ligato/vpp-agent/plugins/vpp/abfplugin/vppcalls/vpp1904"
-	_ "github.com/ligato/vpp-agent/plugins/vpp/abfplugin/vppcalls/vpp1908"
-	_ "github.com/ligato/vpp-agent/plugins/vpp/abfplugin/vppcalls/vpp2001_324"
-	_ "github.com/ligato/vpp-agent/plugins/vpp/abfplugin/vppcalls/vpp2001_379"
+	"go.ligato.io/vpp-agent/v2/plugins/govppmux"
+	kvs "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/abfplugin/abfidx"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/abfplugin/descriptor"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/abfplugin/vppcalls"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/aclplugin"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin"
+
+	_ "go.ligato.io/vpp-agent/v2/plugins/vpp/abfplugin/vppcalls/vpp1904"
+	_ "go.ligato.io/vpp-agent/v2/plugins/vpp/abfplugin/vppcalls/vpp1908"
+	_ "go.ligato.io/vpp-agent/v2/plugins/vpp/abfplugin/vppcalls/vpp2001"
+	_ "go.ligato.io/vpp-agent/v2/plugins/vpp/abfplugin/vppcalls/vpp2001_324"
 )
 
 // ABFPlugin is a plugin that manages ACL-based forwarding.
 type ABFPlugin struct {
 	Deps
-
-	// GoVPP channels
-	vppCh govppapi.Channel
 
 	abfHandler             vppcalls.ABFVppAPI
 	abfDescriptor          *descriptor.ABFDescriptor
@@ -54,7 +51,7 @@ type ABFPlugin struct {
 type Deps struct {
 	infra.PluginDeps
 	Scheduler   kvs.KVScheduler
-	GoVppmux    govppmux.API
+	VPP         govppmux.API
 	ACLPlugin   aclplugin.API
 	IfPlugin    ifplugin.API
 	StatusCheck statuscheck.PluginStatusWriter // optional
@@ -62,15 +59,13 @@ type Deps struct {
 
 // Init initializes ABF plugin.
 func (p *ABFPlugin) Init() error {
-	var err error
-
-	// GoVPP channels
-	if p.vppCh, err = p.GoVppmux.NewAPIChannel(); err != nil {
-		return errors.Errorf("failed to create GoVPP API channel: %v", err)
+	if !p.VPP.IsPluginLoaded("abf") {
+		p.Log.Warnf("VPP plugin ABF was disabled by VPP")
+		return nil
 	}
 
-	// init handler
-	p.abfHandler = vppcalls.CompatibleABFVppHandler(p.vppCh, p.ACLPlugin.GetACLIndex(), p.IfPlugin.GetInterfaceIndex(), p.Log)
+	// init handlers
+	p.abfHandler = vppcalls.CompatibleABFHandler(p.VPP, p.ACLPlugin.GetACLIndex(), p.IfPlugin.GetInterfaceIndex(), p.Log)
 	if p.abfHandler == nil {
 		return errors.New("abfHandler is not available")
 	}

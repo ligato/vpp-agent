@@ -19,18 +19,18 @@ import (
 	"log"
 
 	"github.com/ligato/cn-infra/agent"
-
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/datasync/kvdbsync"
 	"github.com/ligato/cn-infra/datasync/kvdbsync/local"
 	"github.com/ligato/cn-infra/datasync/resync"
 	"github.com/ligato/cn-infra/db/keyval/etcd"
 	"github.com/ligato/cn-infra/health/statuscheck"
-	"github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	legacyclient "github.com/ligato/vpp-agent/clientv2/linux/localclient"
-	"github.com/ligato/vpp-agent/client"
-	"github.com/ligato/vpp-agent/plugins/orchestrator"
-	vpp_ifplugin "github.com/ligato/vpp-agent/plugins/vpp/ifplugin"
+
+	"go.ligato.io/vpp-agent/v2/client"
+	legacyclient "go.ligato.io/vpp-agent/v2/clientv2/linux/localclient"
+	"go.ligato.io/vpp-agent/v2/plugins/orchestrator"
+	vpp_ifplugin "go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin"
+	vpp_interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
 )
 
 func main() {

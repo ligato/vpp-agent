@@ -21,13 +21,13 @@ import (
 
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/utils/addrs"
-	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	"github.com/ligato/vpp-agent/api/models/vpp/l3"
-	srv6 "github.com/ligato/vpp-agent/api/models/vpp/srv6"
-	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-	"github.com/ligato/vpp-agent/plugins/vpp/srplugin/descriptor/adapter"
-	"github.com/ligato/vpp-agent/plugins/vpp/srplugin/vppcalls"
 	"github.com/pkg/errors"
+	scheduler "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/srplugin/descriptor/adapter"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/srplugin/vppcalls"
+	interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
+	vpp_l3 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l3"
+	srv6 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/srv6"
 )
 
 const (
@@ -88,32 +88,32 @@ func (d *LocalSIDDescriptor) equivalentEndFunctions(ef1, ef2 interface{}) bool {
 	switch ef1typed := ef1.(type) {
 	case *srv6.LocalSID_BaseEndFunction:
 		return true
-	case *srv6.LocalSID_EndFunction_X:
-		return ef1typed.EndFunction_X.Psp == ef2.(*srv6.LocalSID_EndFunction_X).EndFunction_X.Psp &&
-			equivalentIPv6(ef1typed.EndFunction_X.NextHop, ef2.(*srv6.LocalSID_EndFunction_X).EndFunction_X.NextHop) &&
-			equivalentTrimmedLowered(ef1typed.EndFunction_X.OutgoingInterface, ef2.(*srv6.LocalSID_EndFunction_X).EndFunction_X.OutgoingInterface)
-	case *srv6.LocalSID_EndFunction_T:
-		return ef1typed.EndFunction_T.Psp == ef2.(*srv6.LocalSID_EndFunction_T).EndFunction_T.Psp &&
-			ef1typed.EndFunction_T.VrfId == ef2.(*srv6.LocalSID_EndFunction_T).EndFunction_T.VrfId
-	case *srv6.LocalSID_EndFunction_DX2:
-		return ef1typed.EndFunction_DX2.VlanTag == ef2.(*srv6.LocalSID_EndFunction_DX2).EndFunction_DX2.VlanTag &&
-			equivalentTrimmedLowered(ef1typed.EndFunction_DX2.OutgoingInterface, ef2.(*srv6.LocalSID_EndFunction_DX2).EndFunction_DX2.OutgoingInterface)
-	case *srv6.LocalSID_EndFunction_DX4:
-		return equivalentIPv4(ef1typed.EndFunction_DX4.NextHop, ef2.(*srv6.LocalSID_EndFunction_DX4).EndFunction_DX4.NextHop) &&
-			equivalentTrimmedLowered(ef1typed.EndFunction_DX4.OutgoingInterface, ef2.(*srv6.LocalSID_EndFunction_DX4).EndFunction_DX4.OutgoingInterface)
-	case *srv6.LocalSID_EndFunction_DX6:
-		return equivalentIPv4(ef1typed.EndFunction_DX6.NextHop, ef2.(*srv6.LocalSID_EndFunction_DX6).EndFunction_DX6.NextHop) &&
-			equivalentTrimmedLowered(ef1typed.EndFunction_DX6.OutgoingInterface, ef2.(*srv6.LocalSID_EndFunction_DX6).EndFunction_DX6.OutgoingInterface)
-	case *srv6.LocalSID_EndFunction_DT4:
-		return ef1typed.EndFunction_DT4.VrfId == ef2.(*srv6.LocalSID_EndFunction_DT4).EndFunction_DT4.VrfId
-	case *srv6.LocalSID_EndFunction_DT6:
-		return ef1typed.EndFunction_DT6.VrfId == ef2.(*srv6.LocalSID_EndFunction_DT6).EndFunction_DT6.VrfId
-	case *srv6.LocalSID_EndFunction_AD:
-		return equivalentTrimmedLowered(ef1typed.EndFunction_AD.OutgoingInterface, ef2.(*srv6.LocalSID_EndFunction_AD).EndFunction_AD.OutgoingInterface) &&
-			equivalentTrimmedLowered(ef1typed.EndFunction_AD.IncomingInterface, ef2.(*srv6.LocalSID_EndFunction_AD).EndFunction_AD.IncomingInterface) &&
-			(equivalentIPv4(ef1typed.EndFunction_AD.L3ServiceAddress, ef2.(*srv6.LocalSID_EndFunction_AD).EndFunction_AD.L3ServiceAddress) || // l3 ipv4 service
-				equivalentIPv6(ef1typed.EndFunction_AD.L3ServiceAddress, ef2.(*srv6.LocalSID_EndFunction_AD).EndFunction_AD.L3ServiceAddress) || // l3 ipv6 service
-				(strings.TrimSpace(ef1typed.EndFunction_AD.L3ServiceAddress) == "" && strings.TrimSpace(ef2.(*srv6.LocalSID_EndFunction_AD).EndFunction_AD.L3ServiceAddress) == "")) // l2 service
+	case *srv6.LocalSID_EndFunctionX:
+		return ef1typed.EndFunctionX.Psp == ef2.(*srv6.LocalSID_EndFunctionX).EndFunctionX.Psp &&
+			equivalentIPv6(ef1typed.EndFunctionX.NextHop, ef2.(*srv6.LocalSID_EndFunctionX).EndFunctionX.NextHop) &&
+			equivalentTrimmedLowered(ef1typed.EndFunctionX.OutgoingInterface, ef2.(*srv6.LocalSID_EndFunctionX).EndFunctionX.OutgoingInterface)
+	case *srv6.LocalSID_EndFunctionT:
+		return ef1typed.EndFunctionT.Psp == ef2.(*srv6.LocalSID_EndFunctionT).EndFunctionT.Psp &&
+			ef1typed.EndFunctionT.VrfId == ef2.(*srv6.LocalSID_EndFunctionT).EndFunctionT.VrfId
+	case *srv6.LocalSID_EndFunctionDx2:
+		return ef1typed.EndFunctionDx2.VlanTag == ef2.(*srv6.LocalSID_EndFunctionDx2).EndFunctionDx2.VlanTag &&
+			equivalentTrimmedLowered(ef1typed.EndFunctionDx2.OutgoingInterface, ef2.(*srv6.LocalSID_EndFunctionDx2).EndFunctionDx2.OutgoingInterface)
+	case *srv6.LocalSID_EndFunctionDx4:
+		return equivalentIPv4(ef1typed.EndFunctionDx4.NextHop, ef2.(*srv6.LocalSID_EndFunctionDx4).EndFunctionDx4.NextHop) &&
+			equivalentTrimmedLowered(ef1typed.EndFunctionDx4.OutgoingInterface, ef2.(*srv6.LocalSID_EndFunctionDx4).EndFunctionDx4.OutgoingInterface)
+	case *srv6.LocalSID_EndFunctionDx6:
+		return equivalentIPv4(ef1typed.EndFunctionDx6.NextHop, ef2.(*srv6.LocalSID_EndFunctionDx6).EndFunctionDx6.NextHop) &&
+			equivalentTrimmedLowered(ef1typed.EndFunctionDx6.OutgoingInterface, ef2.(*srv6.LocalSID_EndFunctionDx6).EndFunctionDx6.OutgoingInterface)
+	case *srv6.LocalSID_EndFunctionDt4:
+		return ef1typed.EndFunctionDt4.VrfId == ef2.(*srv6.LocalSID_EndFunctionDt4).EndFunctionDt4.VrfId
+	case *srv6.LocalSID_EndFunctionDt6:
+		return ef1typed.EndFunctionDt6.VrfId == ef2.(*srv6.LocalSID_EndFunctionDt6).EndFunctionDt6.VrfId
+	case *srv6.LocalSID_EndFunctionAd:
+		return equivalentTrimmedLowered(ef1typed.EndFunctionAd.OutgoingInterface, ef2.(*srv6.LocalSID_EndFunctionAd).EndFunctionAd.OutgoingInterface) &&
+			equivalentTrimmedLowered(ef1typed.EndFunctionAd.IncomingInterface, ef2.(*srv6.LocalSID_EndFunctionAd).EndFunctionAd.IncomingInterface) &&
+			(equivalentIPv4(ef1typed.EndFunctionAd.L3ServiceAddress, ef2.(*srv6.LocalSID_EndFunctionAd).EndFunctionAd.L3ServiceAddress) || // l3 ipv4 service
+				equivalentIPv6(ef1typed.EndFunctionAd.L3ServiceAddress, ef2.(*srv6.LocalSID_EndFunctionAd).EndFunctionAd.L3ServiceAddress) || // l3 ipv6 service
+				(strings.TrimSpace(ef1typed.EndFunctionAd.L3ServiceAddress) == "" && strings.TrimSpace(ef2.(*srv6.LocalSID_EndFunctionAd).EndFunctionAd.L3ServiceAddress) == "")) // l2 service
 	default:
 		d.log.Warn("EquivalentSteering found unknown end function type (%T). Using general reflect.DeepEqual for it.", ef1)
 		return reflect.DeepEqual(ef1, ef2) // unknown end function type
@@ -134,33 +134,33 @@ func (d *LocalSIDDescriptor) Validate(key string, localSID *srv6.LocalSID) error
 	// checking end functions
 	switch ef := localSID.EndFunction.(type) {
 	case *srv6.LocalSID_BaseEndFunction:
-	case *srv6.LocalSID_EndFunction_X:
-		_, err := ParseIPv6(ef.EndFunction_X.NextHop)
+	case *srv6.LocalSID_EndFunctionX:
+		_, err := ParseIPv6(ef.EndFunctionX.NextHop)
 		if err != nil {
-			return scheduler.NewInvalidValueError(errors.Errorf("failed to parse next hop %s, should be a valid ipv6 address: %v", ef.EndFunction_X.NextHop, err), "endfunction_X.NextHop")
+			return scheduler.NewInvalidValueError(errors.Errorf("failed to parse next hop %s, should be a valid ipv6 address: %v", ef.EndFunctionX.NextHop, err), "EndFunctionX.NextHop")
 		}
-	case *srv6.LocalSID_EndFunction_T:
-	case *srv6.LocalSID_EndFunction_DX2:
-	case *srv6.LocalSID_EndFunction_DX4:
-		_, err := ParseIPv4(ef.EndFunction_DX4.NextHop)
+	case *srv6.LocalSID_EndFunctionT:
+	case *srv6.LocalSID_EndFunctionDx2:
+	case *srv6.LocalSID_EndFunctionDx4:
+		_, err := ParseIPv4(ef.EndFunctionDx4.NextHop)
 		if err != nil {
-			return scheduler.NewInvalidValueError(errors.Errorf("failed to parse next hop %s, should be a valid ipv4 address: %v", ef.EndFunction_DX4.NextHop, err), "endfunction_DX4.NextHop")
+			return scheduler.NewInvalidValueError(errors.Errorf("failed to parse next hop %s, should be a valid ipv4 address: %v", ef.EndFunctionDx4.NextHop, err), "EndFunctionDX4.NextHop")
 		}
-	case *srv6.LocalSID_EndFunction_DX6:
-		_, err := ParseIPv6(ef.EndFunction_DX6.NextHop)
+	case *srv6.LocalSID_EndFunctionDx6:
+		_, err := ParseIPv6(ef.EndFunctionDx6.NextHop)
 		if err != nil {
-			return scheduler.NewInvalidValueError(errors.Errorf("failed to parse next hop %s, should be a valid ipv6 address: %v", ef.EndFunction_DX6.NextHop, err), "endfunction_DX6.NextHop")
+			return scheduler.NewInvalidValueError(errors.Errorf("failed to parse next hop %s, should be a valid ipv6 address: %v", ef.EndFunctionDx6.NextHop, err), "EndFunctionDX6.NextHop")
 		}
-	case *srv6.LocalSID_EndFunction_DT4:
-	case *srv6.LocalSID_EndFunction_DT6:
-	case *srv6.LocalSID_EndFunction_AD:
-		if strings.TrimSpace(ef.EndFunction_AD.L3ServiceAddress) == "" {
+	case *srv6.LocalSID_EndFunctionDt4:
+	case *srv6.LocalSID_EndFunctionDt6:
+	case *srv6.LocalSID_EndFunctionAd:
+		if strings.TrimSpace(ef.EndFunctionAd.L3ServiceAddress) == "" {
 			return nil // l2 service
 		}
 		// l3 service
-		ip := net.ParseIP(ef.EndFunction_AD.L3ServiceAddress)
+		ip := net.ParseIP(ef.EndFunctionAd.L3ServiceAddress)
 		if ip == nil {
-			return scheduler.NewInvalidValueError(errors.Errorf("failed to parse service address %s, should be a valid ip address(ipv4 or ipv6) or empty(case of l2 service): %v", ef.EndFunction_AD.L3ServiceAddress, err), "endfunction_AD.L3ServiceAddress")
+			return scheduler.NewInvalidValueError(errors.Errorf("failed to parse service address %s, should be a valid ip address(ipv4 or ipv6) or empty(case of l2 service): %v", ef.EndFunctionAd.L3ServiceAddress, err), "EndFunctionAD.L3ServiceAddress")
 		}
 	case nil:
 		return scheduler.NewInvalidValueError(errors.New("end function must be provided"), "endfunction")
@@ -195,55 +195,55 @@ func (d *LocalSIDDescriptor) Dependencies(key string, localSID *srv6.LocalSID) (
 	})
 
 	switch ef := localSID.EndFunction.(type) {
-	case *srv6.LocalSID_EndFunction_T:
-		if ef.EndFunction_T.VrfId != 0 { // VRF 0 is in VPP by default
+	case *srv6.LocalSID_EndFunctionT:
+		if ef.EndFunctionT.VrfId != 0 { // VRF 0 is in VPP by default
 			dependencies = append(dependencies, scheduler.Dependency{
 				Label: localsidLookupVRFDep,
-				Key:   vpp_l3.VrfTableKey(ef.EndFunction_T.VrfId, vpp_l3.VrfTable_IPV6), // T refers to IPv6 VRF table
+				Key:   vpp_l3.VrfTableKey(ef.EndFunctionT.VrfId, vpp_l3.VrfTable_IPV6), // T refers to IPv6 VRF table
 			})
 		}
-	case *srv6.LocalSID_EndFunction_X:
+	case *srv6.LocalSID_EndFunctionX:
 		dependencies = append(dependencies, scheduler.Dependency{
 			Label: localsidOutgoingInterfaceDep,
-			Key:   interfaces.InterfaceKey(ef.EndFunction_X.OutgoingInterface),
+			Key:   interfaces.InterfaceKey(ef.EndFunctionX.OutgoingInterface),
 		})
-	case *srv6.LocalSID_EndFunction_DX2:
+	case *srv6.LocalSID_EndFunctionDx2:
 		dependencies = append(dependencies, scheduler.Dependency{
 			Label: localsidOutgoingInterfaceDep,
-			Key:   interfaces.InterfaceKey(ef.EndFunction_DX2.OutgoingInterface),
+			Key:   interfaces.InterfaceKey(ef.EndFunctionDx2.OutgoingInterface),
 		})
-	case *srv6.LocalSID_EndFunction_DX4:
+	case *srv6.LocalSID_EndFunctionDx4:
 		dependencies = append(dependencies, scheduler.Dependency{
 			Label: localsidOutgoingInterfaceDep,
-			Key:   interfaces.InterfaceKey(ef.EndFunction_DX4.OutgoingInterface),
+			Key:   interfaces.InterfaceKey(ef.EndFunctionDx4.OutgoingInterface),
 		})
-	case *srv6.LocalSID_EndFunction_DX6:
+	case *srv6.LocalSID_EndFunctionDx6:
 		dependencies = append(dependencies, scheduler.Dependency{
 			Label: localsidOutgoingInterfaceDep,
-			Key:   interfaces.InterfaceKey(ef.EndFunction_DX6.OutgoingInterface),
+			Key:   interfaces.InterfaceKey(ef.EndFunctionDx6.OutgoingInterface),
 		})
-	case *srv6.LocalSID_EndFunction_DT4:
-		if ef.EndFunction_DT4.VrfId != 0 { // VRF 0 is in VPP by default
+	case *srv6.LocalSID_EndFunctionDt4:
+		if ef.EndFunctionDt4.VrfId != 0 { // VRF 0 is in VPP by default
 			dependencies = append(dependencies, scheduler.Dependency{
 				Label: localsidLookupVRFDep,
-				Key:   vpp_l3.VrfTableKey(ef.EndFunction_DT4.VrfId, vpp_l3.VrfTable_IPV4), // we want ipv4 VRF because DT4
+				Key:   vpp_l3.VrfTableKey(ef.EndFunctionDt4.VrfId, vpp_l3.VrfTable_IPV4), // we want ipv4 VRF because DT4
 			})
 		}
-	case *srv6.LocalSID_EndFunction_DT6:
-		if ef.EndFunction_DT6.VrfId != 0 { // VRF 0 is in VPP by default
+	case *srv6.LocalSID_EndFunctionDt6:
+		if ef.EndFunctionDt6.VrfId != 0 { // VRF 0 is in VPP by default
 			dependencies = append(dependencies, scheduler.Dependency{
 				Label: localsidLookupVRFDep,
-				Key:   vpp_l3.VrfTableKey(ef.EndFunction_DT6.VrfId, vpp_l3.VrfTable_IPV6), // we want ipv6 VRF because DT6
+				Key:   vpp_l3.VrfTableKey(ef.EndFunctionDt6.VrfId, vpp_l3.VrfTable_IPV6), // we want ipv6 VRF because DT6
 			})
 		}
-	case *srv6.LocalSID_EndFunction_AD:
+	case *srv6.LocalSID_EndFunctionAd:
 		dependencies = append(dependencies, scheduler.Dependency{
 			Label: localsidOutgoingInterfaceDep,
-			Key:   interfaces.InterfaceKey(ef.EndFunction_AD.OutgoingInterface),
+			Key:   interfaces.InterfaceKey(ef.EndFunctionAd.OutgoingInterface),
 		})
 		dependencies = append(dependencies, scheduler.Dependency{
 			Label: localsidIncomingInterfaceDep,
-			Key:   interfaces.InterfaceKey(ef.EndFunction_AD.IncomingInterface),
+			Key:   interfaces.InterfaceKey(ef.EndFunctionAd.IncomingInterface),
 		})
 	}
 

@@ -17,9 +17,10 @@ package registry
 import (
 	"container/list"
 
-	. "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-	"github.com/ligato/vpp-agent/plugins/kvscheduler/internal/utils"
 	"fmt"
+
+	. "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v2/plugins/kvscheduler/internal/utils"
 )
 
 const (

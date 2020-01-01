@@ -24,13 +24,13 @@ import (
 	"github.com/ligato/cn-infra/logging"
 	_ "github.com/ligato/cn-infra/logging/logrus" // for setting default registry
 
-	mock_ifplugin "github.com/ligato/vpp-agent/examples/kvscheduler/mock_plugins/ifplugin"
-	"github.com/ligato/vpp-agent/examples/kvscheduler/mock_plugins/ifplugin/model"
-	mock_l2plugin "github.com/ligato/vpp-agent/examples/kvscheduler/mock_plugins/l2plugin"
-	"github.com/ligato/vpp-agent/examples/kvscheduler/mock_plugins/l2plugin/model"
-	"github.com/ligato/vpp-agent/pkg/models"
-	. "github.com/ligato/vpp-agent/plugins/kvscheduler"
-	. "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
+	mock_ifplugin "go.ligato.io/vpp-agent/v2/examples/kvscheduler/mock_plugins/ifplugin"
+	"go.ligato.io/vpp-agent/v2/examples/kvscheduler/mock_plugins/ifplugin/model"
+	mock_l2plugin "go.ligato.io/vpp-agent/v2/examples/kvscheduler/mock_plugins/l2plugin"
+	"go.ligato.io/vpp-agent/v2/examples/kvscheduler/mock_plugins/l2plugin/model"
+	"go.ligato.io/vpp-agent/v2/pkg/models"
+	. "go.ligato.io/vpp-agent/v2/plugins/kvscheduler"
+	. "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
 )
 
 /*
@@ -59,7 +59,6 @@ func BenchmarkScale(b *testing.B) {
 func BenchmarkScaleWithoutSimulation(b *testing.B) {
 	benchmarkScale(b, false)
 }
-
 
 func benchmarkScale(b *testing.B, withSimulation bool) {
 	for _, n := range [...]int{1, 10, 100, 1000} {

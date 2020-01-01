@@ -12,20 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate descriptor-adapter --descriptor-name ARP --value-type *linux_l3.ARPEntry --import "github.com/ligato/vpp-agent/api/models/linux/l3" --output-dir "descriptor"
-//go:generate descriptor-adapter --descriptor-name Route --value-type *linux_l3.Route --import "github.com/ligato/vpp-agent/api/models/linux/l3" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name ARP --value-type *linux_l3.ARPEntry --import "go.ligato.io/vpp-agent/v2/proto/ligato/linux/l3" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name Route --value-type *linux_l3.Route --import "go.ligato.io/vpp-agent/v2/proto/ligato/linux/l3" --output-dir "descriptor"
 
 package l3plugin
 
 import (
 	"github.com/ligato/cn-infra/infra"
-	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
+	kvs "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
 
-	"github.com/ligato/vpp-agent/plugins/linux/ifplugin"
-	"github.com/ligato/vpp-agent/plugins/linux/l3plugin/descriptor"
-	"github.com/ligato/vpp-agent/plugins/linux/l3plugin/linuxcalls"
-	"github.com/ligato/vpp-agent/plugins/linux/nsplugin"
-	"github.com/ligato/vpp-agent/plugins/netalloc"
+	"go.ligato.io/vpp-agent/v2/plugins/linux/ifplugin"
+	"go.ligato.io/vpp-agent/v2/plugins/linux/l3plugin/descriptor"
+	"go.ligato.io/vpp-agent/v2/plugins/linux/l3plugin/linuxcalls"
+	"go.ligato.io/vpp-agent/v2/plugins/linux/nsplugin"
+	"go.ligato.io/vpp-agent/v2/plugins/netalloc"
 )
 
 const (

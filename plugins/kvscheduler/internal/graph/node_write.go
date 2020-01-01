@@ -18,8 +18,8 @@ import (
 	"reflect"
 	"sort"
 
-	"github.com/gogo/protobuf/proto"
-	"github.com/ligato/vpp-agent/plugins/kvscheduler/internal/utils"
+	"github.com/golang/protobuf/proto"
+	"go.ligato.io/vpp-agent/v2/plugins/kvscheduler/internal/utils"
 )
 
 type node struct {
@@ -136,7 +136,7 @@ func (node *node) SetTargets(targetsDef []RelationTargetDef) {
 		return order == -1
 	})
 
-	var i,j int
+	var i, j int
 	for i < len(targetsDef) || j < len(node.targetsDef) {
 		var equal bool
 		var order int
@@ -263,7 +263,7 @@ func (node *node) removeTargetEntry(index int) {
 	if index < len(node.targets)-1 {
 		copy(node.targets[index:], node.targets[index+1:])
 	}
-	node.targets = node.targets[0:len(node.targets)-1]
+	node.targets = node.targets[0 : len(node.targets)-1]
 }
 
 func (node *node) addDelEdges(target RelationTargetDef, del bool) {
@@ -375,7 +375,7 @@ func (node *node) removeFromSources(relation, label, key string) {
 			if idx < len(node.sources)-1 {
 				copy(node.sources[idx:], node.sources[idx+1:])
 			}
-			node.sources = node.sources[0:len(node.sources)-1]
+			node.sources = node.sources[0 : len(node.sources)-1]
 		}
 		node.sourcesUpdated = true
 		node.graph.unsaved.Add(node.key)

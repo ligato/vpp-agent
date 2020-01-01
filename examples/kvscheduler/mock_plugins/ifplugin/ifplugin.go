@@ -13,22 +13,21 @@
 // limitations under the License.
 
 // Generate golang code from the protobuf model of our mock interfaces:
-//go:generate protoc --proto_path=model --proto_path=$GOPATH/src --gogo_out=model model/interface.proto
+//go:generate protoc --proto_path=. --go_out=paths=source_relative:. model/interface.proto
 
 // Generate adapter for the descriptor of our mock interfaces:
-//go:generate descriptor-adapter --descriptor-name Interface  --value-type *mock_interfaces.Interface --meta-type *idxvpp.OnlyIndex --import "model" --import "github.com/ligato/vpp-agent/pkg/idxvpp" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name Interface  --value-type *mock_interfaces.Interface --meta-type *idxvpp.OnlyIndex --import "go.ligato.io/vpp-agent/v2/examples/kvscheduler/mock_plugins/ifplugin/model" --import "go.ligato.io/vpp-agent/v2/pkg/idxvpp" --output-dir "descriptor"
 
 package ifplugin
 
 import (
+	"github.com/ligato/cn-infra/infra"
 	"github.com/pkg/errors"
 
-	"github.com/ligato/cn-infra/infra"
-
-	"github.com/ligato/vpp-agent/examples/kvscheduler/mock_plugins/ifplugin/descriptor"
-	"github.com/ligato/vpp-agent/examples/kvscheduler/mock_plugins/ifplugin/mockcalls"
-	"github.com/ligato/vpp-agent/pkg/idxvpp"
-	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v2/examples/kvscheduler/mock_plugins/ifplugin/descriptor"
+	"go.ligato.io/vpp-agent/v2/examples/kvscheduler/mock_plugins/ifplugin/mockcalls"
+	"go.ligato.io/vpp-agent/v2/pkg/idxvpp"
+	kvs "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
 )
 
 // IfPlugin configures mock interfaces.

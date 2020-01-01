@@ -19,11 +19,12 @@ import (
 	"os"
 	"strings"
 
-	"github.com/gogo/protobuf/proto"
+	"github.com/golang/protobuf/proto"
 	"github.com/ligato/cn-infra/logging"
-	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-	"github.com/ligato/vpp-agent/plugins/kvscheduler/internal/graph"
-	"github.com/ligato/vpp-agent/plugins/kvscheduler/internal/utils"
+	kvs "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v2/plugins/kvscheduler/internal/graph"
+	"go.ligato.io/vpp-agent/v2/plugins/kvscheduler/internal/utils"
+	"go.ligato.io/vpp-agent/v2/proto/ligato/kvscheduler"
 )
 
 var enableGraphDump = os.Getenv("KVSCHEDULER_GRAPHDUMP") != ""
@@ -116,9 +117,10 @@ func (s *Scheduler) refreshGraph(graphW graph.RWAccess,
 
 		// mark un-retrievable as refreshed
 		if !ableToRetrieve || err != nil {
+			l := s.Log.WithField("descriptor", descriptor.Name)
 			if err != nil {
-				s.Log.WithField("descriptor", descriptor.Name).
-					Error("failed to retrieve values, refresh for the descriptor will be skipped")
+				l.Errorf("failed to retrieve values: %v", err)
+				l.Debugf("skipping refresh for the descriptor")
 			}
 			s.skipRefresh(descrNodes, nil, refreshedKeys)
 			continue
@@ -300,17 +302,17 @@ func (s *Scheduler) refreshAvailNode(graphW graph.RWAccess, node graph.NodeRW,
 	refreshed.Add(node.GetKey())
 
 	// refresh state
-	if getNodeState(node) == kvs.ValueState_NONEXISTENT {
+	if getNodeState(node) == kvscheduler.ValueState_NONEXISTENT {
 		// newly found node
 		if origin == kvs.FromSB {
-			s.refreshNodeState(node, kvs.ValueState_OBTAINED, indent)
+			s.refreshNodeState(node, kvscheduler.ValueState_OBTAINED, indent)
 		} else {
-			s.refreshNodeState(node, kvs.ValueState_DISCOVERED, indent)
+			s.refreshNodeState(node, kvscheduler.ValueState_DISCOVERED, indent)
 		}
 	}
-	if getNodeState(node) == kvs.ValueState_PENDING {
+	if getNodeState(node) == kvscheduler.ValueState_PENDING {
 		// no longer pending apparently
-		s.refreshNodeState(node, kvs.ValueState_CONFIGURED, indent)
+		s.refreshNodeState(node, kvscheduler.ValueState_CONFIGURED, indent)
 	}
 
 	// update descriptor flag
@@ -342,7 +344,7 @@ func (s *Scheduler) refreshUnavailNode(graphW graph.RWAccess, node graph.Node, r
 		s.updatedStates.Add(getNodeBaseKey(node))
 	}
 	state := getNodeState(node)
-	if getNodeOrigin(node) == kvs.FromSB || state == kvs.ValueState_DISCOVERED {
+	if getNodeOrigin(node) == kvs.FromSB || state == kvscheduler.ValueState_DISCOVERED {
 		// just remove from the graph
 		graphW.DeleteNode(node.GetKey())
 		return
@@ -355,20 +357,20 @@ func (s *Scheduler) refreshUnavailNode(graphW graph.RWAccess, node graph.Node, r
 	}
 
 	// update state
-	if state == kvs.ValueState_UNIMPLEMENTED {
+	if state == kvscheduler.ValueState_UNIMPLEMENTED {
 		// it is expected that unimplemented value is not retrieved
 		return
 	}
-	if state == kvs.ValueState_CONFIGURED {
+	if state == kvscheduler.ValueState_CONFIGURED {
 		if getNodeLastUpdate(node).value == nil {
-			s.refreshNodeState(nodeW, kvs.ValueState_REMOVED, indent)
+			s.refreshNodeState(nodeW, kvscheduler.ValueState_REMOVED, indent)
 		} else {
-			s.refreshNodeState(nodeW, kvs.ValueState_MISSING, indent)
+			s.refreshNodeState(nodeW, kvscheduler.ValueState_MISSING, indent)
 		}
 	}
 }
 
-func (s *Scheduler) refreshNodeState(node graph.NodeRW, newState kvs.ValueState, indent int) {
+func (s *Scheduler) refreshNodeState(node graph.NodeRW, newState kvscheduler.ValueState, indent int) {
 	if getNodeState(node) != newState {
 		if s.logGraphWalk {
 			fmt.Printf("%s  -> change value state from %v to %v\n",

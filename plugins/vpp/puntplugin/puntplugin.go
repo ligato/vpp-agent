@@ -12,42 +12,37 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate descriptor-adapter --descriptor-name IPPuntRedirect --value-type *vpp_punt.IPRedirect --import "github.com/ligato/vpp-agent/api/models/vpp/punt" --output-dir "descriptor"
-//go:generate descriptor-adapter --descriptor-name PuntToHost --value-type *vpp_punt.ToHost --import "github.com/ligato/vpp-agent/api/models/vpp/punt" --output-dir "descriptor"
-//go:generate descriptor-adapter --descriptor-name PuntException --value-type *vpp_punt.Exception --import "github.com/ligato/vpp-agent/api/models/vpp/punt" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name IPPuntRedirect --value-type *vpp_punt.IPRedirect --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/punt" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name PuntToHost --value-type *vpp_punt.ToHost --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/punt" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name PuntException --value-type *vpp_punt.Exception --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/punt" --output-dir "descriptor"
 
 package puntplugin
 
 import (
 	"strings"
 
-	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/health/statuscheck"
 	"github.com/ligato/cn-infra/infra"
-	"github.com/pkg/errors"
 
-	vpp_punt "github.com/ligato/vpp-agent/api/models/vpp/punt"
-	"github.com/ligato/vpp-agent/pkg/models"
-	"github.com/ligato/vpp-agent/plugins/govppmux"
-	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin"
-	"github.com/ligato/vpp-agent/plugins/vpp/puntplugin/descriptor"
-	"github.com/ligato/vpp-agent/plugins/vpp/puntplugin/descriptor/adapter"
-	"github.com/ligato/vpp-agent/plugins/vpp/puntplugin/vppcalls"
+	"go.ligato.io/vpp-agent/v2/pkg/models"
+	"go.ligato.io/vpp-agent/v2/plugins/govppmux"
+	kvs "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/puntplugin/descriptor"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/puntplugin/descriptor/adapter"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/puntplugin/vppcalls"
+	vpp_punt "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/punt"
 
-	_ "github.com/ligato/vpp-agent/plugins/vpp/puntplugin/vppcalls/vpp1904"
-	_ "github.com/ligato/vpp-agent/plugins/vpp/puntplugin/vppcalls/vpp1908"
-	_ "github.com/ligato/vpp-agent/plugins/vpp/puntplugin/vppcalls/vpp2001_324"
-	_ "github.com/ligato/vpp-agent/plugins/vpp/puntplugin/vppcalls/vpp2001_379"
+	_ "go.ligato.io/vpp-agent/v2/plugins/vpp/puntplugin/vppcalls/vpp1904"
+	_ "go.ligato.io/vpp-agent/v2/plugins/vpp/puntplugin/vppcalls/vpp1908"
+	_ "go.ligato.io/vpp-agent/v2/plugins/vpp/puntplugin/vppcalls/vpp2001"
+	_ "go.ligato.io/vpp-agent/v2/plugins/vpp/puntplugin/vppcalls/vpp2001_324"
 )
 
 // PuntPlugin configures VPP punt to host or unix domain socket entries and IP redirect entries using GoVPP.
 type PuntPlugin struct {
 	Deps
-
-	// GoVPP
-	vppCh govppapi.Channel
 
 	// handler
 	puntHandler vppcalls.PuntVppAPI
@@ -62,7 +57,7 @@ type PuntPlugin struct {
 type Deps struct {
 	infra.PluginDeps
 	KVScheduler  kvs.KVScheduler
-	GoVppmux     govppmux.API
+	VPP          govppmux.API
 	IfPlugin     ifplugin.API
 	PublishState datasync.KeyProtoValWriter     // optional
 	StatusCheck  statuscheck.PluginStatusWriter // optional
@@ -70,13 +65,8 @@ type Deps struct {
 
 // Init registers STN-related descriptors.
 func (p *PuntPlugin) Init() (err error) {
-	// GoVPP channels
-	if p.vppCh, err = p.GoVppmux.NewAPIChannel(); err != nil {
-		return errors.Errorf("failed to create GoVPP API channel: %v", err)
-	}
-
 	// init punt handler
-	p.puntHandler = vppcalls.CompatiblePuntVppHandler(p.vppCh, p.IfPlugin.GetInterfaceIndex(), p.Log)
+	p.puntHandler = vppcalls.CompatiblePuntVppHandler(p.VPP, p.IfPlugin.GetInterfaceIndex(), p.Log)
 
 	// init and register IP punt redirect
 	p.ipRedirectDescriptor = descriptor.NewIPRedirectDescriptor(p.puntHandler, p.Log)

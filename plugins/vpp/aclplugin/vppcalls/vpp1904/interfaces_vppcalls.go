@@ -15,9 +15,10 @@
 package vpp1904
 
 import (
+	"context"
 	"fmt"
 
-	acl_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/acl"
+	acl_api "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904/acl"
 )
 
 // SetACLToInterfacesAsIngress implements ACL handler.
@@ -58,6 +59,8 @@ func (h *ACLVppHandler) RemoveACLFromInterfacesAsEgress(ACLIndex uint32, ifIndic
 
 // AddACLToInterfaceAsIngress implements ACL handler.
 func (h *ACLVppHandler) AddACLToInterfaceAsIngress(aclIndex uint32, ifName string) error {
+	ctx := context.TODO()
+
 	meta, ok := h.ifIndexes.LookupByName(ifName)
 	if !ok {
 		return fmt.Errorf("metadata for interface %s not found", ifName)
@@ -70,9 +73,8 @@ func (h *ACLVppHandler) AddACLToInterfaceAsIngress(aclIndex uint32, ifName strin
 		SwIfIndex: ifIdx,
 		IsInput:   1,
 	}
-	reply := &acl_api.ACLInterfaceAddDelReply{}
 
-	err := h.callsChannel.SendRequest(req).ReceiveReply(reply)
+	_, err := h.acl.ACLInterfaceAddDel(ctx, req)
 	if err != nil {
 		return fmt.Errorf("failed to add interface %d to ACL (L3/L4) %d as ingress: %v", ifIdx, aclIndex, err)
 	}
@@ -82,6 +84,8 @@ func (h *ACLVppHandler) AddACLToInterfaceAsIngress(aclIndex uint32, ifName strin
 
 // AddACLToInterfaceAsEgress implements ACL handler.
 func (h *ACLVppHandler) AddACLToInterfaceAsEgress(aclIndex uint32, ifName string) error {
+	ctx := context.TODO()
+
 	meta, ok := h.ifIndexes.LookupByName(ifName)
 	if !ok {
 		return fmt.Errorf("metadata for interface %s not found", ifName)
@@ -94,9 +98,8 @@ func (h *ACLVppHandler) AddACLToInterfaceAsEgress(aclIndex uint32, ifName string
 		SwIfIndex: ifIdx,
 		IsInput:   0,
 	}
-	reply := &acl_api.ACLInterfaceAddDelReply{}
 
-	err := h.callsChannel.SendRequest(req).ReceiveReply(reply)
+	_, err := h.acl.ACLInterfaceAddDel(ctx, req)
 	if err != nil {
 		return fmt.Errorf("failed to add interface %d to ACL (L3/L4) %d as egress: %v", ifIdx, aclIndex, err)
 	}

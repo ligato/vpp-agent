@@ -1,15 +1,18 @@
 package descriptor
 
 import (
-	"github.com/pkg/errors"
+	"context"
 
-	"github.com/ligato/vpp-agent/api/models/netalloc"
-	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	"github.com/ligato/vpp-agent/pkg/models"
-	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-	nslinuxcalls "github.com/ligato/vpp-agent/plugins/linux/nsplugin/linuxcalls"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/descriptor/adapter"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
+	"github.com/pkg/errors"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp"
+
+	"go.ligato.io/vpp-agent/v2/pkg/models"
+	kvs "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
+	nslinuxcalls "go.ligato.io/vpp-agent/v2/plugins/linux/nsplugin/linuxcalls"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/descriptor/adapter"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
+	"go.ligato.io/vpp-agent/v2/proto/ligato/netalloc"
+	interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
 )
 
 // Create creates a VPP interface.
@@ -56,7 +59,7 @@ func (d *InterfaceDescriptor) Create(key string, intf *interfaces.Interface) (me
 			d.log.Error(err)
 			return nil, err
 		}
-		ifIdx, err = d.ifHandler.AddMemifInterface(intf.Name, intf.GetMemif(), socketID)
+		ifIdx, err = d.ifHandler.AddMemifInterface(context.TODO(), intf.Name, intf.GetMemif(), socketID)
 		if err != nil {
 			d.log.Error(err)
 			return nil, err
@@ -74,6 +77,9 @@ func (d *InterfaceDescriptor) Create(key string, intf *interfaces.Interface) (me
 				return nil, err
 			}
 			multicastIfIdx = multicastMeta.SwIfIndex
+		} else {
+			// not a multicast tunnel
+			multicastIfIdx = 0xFFFFFFFF
 		}
 
 		if intf.GetVxlan().Gpe == nil {
@@ -149,6 +155,29 @@ func (d *InterfaceDescriptor) Create(key string, intf *interfaces.Interface) (me
 
 	case interfaces.Interface_GRE_TUNNEL:
 		ifIdx, err = d.ifHandler.AddGreTunnel(intf.Name, intf.GetGre())
+		if err != nil {
+			d.log.Error(err)
+			return nil, err
+		}
+
+	case interfaces.Interface_GTPU_TUNNEL:
+		var multicastIfIdx uint32
+		multicastIf := intf.GetGtpu().GetMulticast()
+		if multicastIf != "" {
+			multicastMeta, found := d.intfIndex.LookupByName(multicastIf)
+			if !found {
+				err = errors.Errorf("failed to find multicast interface %s referenced by GTPU %s",
+					multicastIf, intf.Name)
+				d.log.Error(err)
+				return nil, err
+			}
+			multicastIfIdx = multicastMeta.SwIfIndex
+		} else {
+			// not a multicast tunnel
+			multicastIfIdx = 0xFFFFFFFF
+		}
+
+		ifIdx, err = d.ifHandler.AddGtpuTunnel(intf.Name, intf.GetGtpu(), multicastIfIdx)
 		if err != nil {
 			d.log.Error(err)
 			return nil, err
@@ -231,7 +260,7 @@ func (d *InterfaceDescriptor) Delete(key string, intf *interfaces.Interface, met
 	case interfaces.Interface_TAP:
 		err = d.ifHandler.DeleteTapInterface(intf.Name, ifIdx, intf.GetTap().GetVersion())
 	case interfaces.Interface_MEMIF:
-		err = d.ifHandler.DeleteMemifInterface(intf.Name, ifIdx)
+		err = d.ifHandler.DeleteMemifInterface(context.TODO(), intf.Name, ifIdx)
 	case interfaces.Interface_VXLAN_TUNNEL:
 		if intf.GetVxlan().Gpe == nil {
 			err = d.ifHandler.DeleteVxLanTunnel(intf.Name, ifIdx, intf.Vrf, intf.GetVxlan())
@@ -256,6 +285,8 @@ func (d *InterfaceDescriptor) Delete(key string, intf *interfaces.Interface, met
 		delete(d.bondIDs, intf.GetBond().GetId())
 	case interfaces.Interface_GRE_TUNNEL:
 		_, err = d.ifHandler.DelGreTunnel(intf.Name, intf.GetGre())
+	case interfaces.Interface_GTPU_TUNNEL:
+		err = d.ifHandler.DelGtpuTunnel(intf.Name, intf.GetGtpu())
 	}
 	if err != nil {
 		err = errors.Errorf("failed to remove interface %s, index %d: %v", intf.Name, ifIdx, err)
@@ -340,7 +371,11 @@ func (d *InterfaceDescriptor) Update(key string, oldIntf, newIntf *interfaces.In
 
 // Retrieve returns all configured VPP interfaces.
 func (d *InterfaceDescriptor) Retrieve(correlate []adapter.InterfaceKVWithMetadata) (retrieved []adapter.InterfaceKVWithMetadata, err error) {
-	// make sure that any checks on the Linux side are done in the default namespace with locked thread
+	// TODO: context should come as first parameter for all descriptor methods
+	ctx := context.TODO()
+
+	// make sure that any checks on the Linux side
+	// are done in the default namespace with locked thread
 	if d.nsPlugin != nil {
 		nsCtx := nslinuxcalls.NewNamespaceMgmtCtx()
 		revert, err := d.nsPlugin.SwitchToNamespace(nsCtx, nil)
@@ -350,17 +385,18 @@ func (d *InterfaceDescriptor) Retrieve(correlate []adapter.InterfaceKVWithMetada
 	}
 
 	// convert interfaces for correlation into a map
-	ifCfg := make(map[string]*interfaces.Interface) // interface logical name -> interface config (as expected by correlate)
+	// interface logical name -> interface config (as expected by correlate)
+	ifCfg := make(map[string]*interfaces.Interface)
 	for _, kv := range correlate {
 		ifCfg[kv.Value.Name] = kv.Value
 	}
 
 	// refresh the map of memif socket IDs
-	d.memifSocketToID, err = d.ifHandler.DumpMemifSocketDetails()
-	if err != nil {
-		err = errors.Errorf("failed to dump memif socket details: %v", err)
-		d.log.Error(err)
-		return retrieved, err
+	d.memifSocketToID, err = d.ifHandler.DumpMemifSocketDetails(ctx)
+	if err == vpp.ErrPluginDisabled {
+		d.log.Debugf("failed to dump memif socket details: %v", err)
+	} else if err != nil {
+		return retrieved, errors.Errorf("failed to dump memif socket details: %v", err)
 	}
 	for socketPath, socketID := range d.memifSocketToID {
 		if socketID == 0 {
@@ -373,7 +409,7 @@ func (d *InterfaceDescriptor) Retrieve(correlate []adapter.InterfaceKVWithMetada
 	d.bondIDs = make(map[uint32]string)
 
 	// dump current state of VPP interfaces
-	vppIfs, err := d.ifHandler.DumpInterfaces()
+	vppIfs, err := d.ifHandler.DumpInterfaces(ctx)
 	if err != nil {
 		err = errors.Errorf("failed to dump interfaces: %v", err)
 		d.log.Error(err)
@@ -392,11 +428,6 @@ func (d *InterfaceDescriptor) Retrieve(correlate []adapter.InterfaceKVWithMetada
 				// unconfigured physical interface => skip (but add entry to d.ethernetIfs)
 				continue
 			}
-		}
-		if intf.Interface.Name == "" {
-			// untagged interface - generate a logical name for it
-			// (apart from local0 it will get removed by resync)
-			intf.Interface.Name = untaggedIfPreffix + intf.Meta.InternalName
 		}
 		if intf.Interface.Type == interfaces.Interface_BOND_INTERFACE {
 			d.bondIDs[intf.Interface.GetBond().GetId()] = intf.Interface.Name

@@ -9,8 +9,8 @@ import (
 	"github.com/ligato/cn-infra/db/keyval/etcd"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logmanager"
-	"github.com/ligato/vpp-agent/cmd/vpp-agent/app"
-	"github.com/ligato/vpp-agent/plugins/orchestrator"
+	"go.ligato.io/vpp-agent/v2/cmd/vpp-agent/app"
+	"go.ligato.io/vpp-agent/v2/plugins/orchestrator"
 )
 
 func main() {

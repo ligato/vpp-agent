@@ -17,14 +17,14 @@ package descriptor
 import (
 	"strconv"
 
-	"github.com/gogo/protobuf/proto"
+	"github.com/golang/protobuf/proto"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/pkg/errors"
 
-	ipsec "github.com/ligato/vpp-agent/api/models/vpp/ipsec"
-	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-	"github.com/ligato/vpp-agent/plugins/vpp/ipsecplugin/descriptor/adapter"
-	"github.com/ligato/vpp-agent/plugins/vpp/ipsecplugin/vppcalls"
+	kvs "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/ipsecplugin/descriptor/adapter"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/ipsecplugin/vppcalls"
+	ipsec "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/ipsec"
 )
 
 const (

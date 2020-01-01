@@ -18,16 +18,16 @@ import (
 	"testing"
 
 	"github.com/ligato/cn-infra/logging/logrus"
-	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/ip"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
-	ifvppcalls "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
-	ifvpp1904 "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls/vpp1904"
-	netallock_mock "github.com/ligato/vpp-agent/plugins/netalloc/mock"
-	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls"
-	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls/vpp1904"
-	"github.com/ligato/vpp-agent/plugins/vpp/vppcallmock"
 	. "github.com/onsi/gomega"
+	netallock_mock "go.ligato.io/vpp-agent/v2/plugins/netalloc/mock"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904/ip"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
+	ifvppcalls "go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/vppcalls"
+	ifvpp1904 "go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/vppcalls/vpp1904"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/l3plugin/vppcalls"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/l3plugin/vppcalls/vpp1904"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/vppmock"
+	l3 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l3"
 )
 
 var routes = []*l3.Route{
@@ -82,10 +82,10 @@ func TestDeleteRoute(t *testing.T) {
 	Expect(err).To(Not(BeNil()))
 }
 
-func routeTestSetup(t *testing.T) (*vppcallmock.TestCtx, ifvppcalls.InterfaceVppAPI, vppcalls.RouteVppAPI) {
-	ctx := vppcallmock.SetupTestCtx(t)
+func routeTestSetup(t *testing.T) (*vppmock.TestCtx, ifvppcalls.InterfaceVppAPI, vppcalls.RouteVppAPI) {
+	ctx := vppmock.SetupTestCtx(t)
 	log := logrus.NewLogger("test-log")
-	ifHandler := ifvpp1904.NewInterfaceVppHandler(ctx.MockChannel, log)
+	ifHandler := ifvpp1904.NewInterfaceVppHandler(ctx.MockVPPClient, log)
 	ifIndexes := ifaceidx.NewIfaceIndex(logrus.NewLogger("test"), "test")
 	ifIndexes.Put("iface1", &ifaceidx.IfaceMetadata{
 		SwIfIndex: 1,

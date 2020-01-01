@@ -17,10 +17,10 @@ package abfplugin
 import (
 	"github.com/ligato/cn-infra/health/statuscheck"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/vpp-agent/plugins/govppmux"
-	"github.com/ligato/vpp-agent/plugins/kvscheduler"
-	"github.com/ligato/vpp-agent/plugins/vpp/aclplugin"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin"
+	"go.ligato.io/vpp-agent/v2/plugins/govppmux"
+	"go.ligato.io/vpp-agent/v2/plugins/kvscheduler"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/aclplugin"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin"
 )
 
 // DefaultPlugin is a default instance of ABFPlugin.
@@ -33,7 +33,7 @@ func NewPlugin(opts ...Option) *ABFPlugin {
 	p.PluginName = "vpp-abfplugin"
 	p.StatusCheck = &statuscheck.DefaultPlugin
 	p.Scheduler = &kvscheduler.DefaultPlugin
-	p.GoVppmux = &govppmux.DefaultPlugin
+	p.VPP = &govppmux.DefaultPlugin
 	p.ACLPlugin = &aclplugin.DefaultPlugin
 	p.IfPlugin = &ifplugin.DefaultPlugin
 

@@ -18,19 +18,19 @@ import (
 	"context"
 
 	"github.com/ligato/cn-infra/db/keyval"
-	"github.com/ligato/vpp-agent/pkg/models"
+	"go.ligato.io/vpp-agent/v2/pkg/models"
 
-	abf "github.com/ligato/vpp-agent/api/models/vpp/abf"
-	acl "github.com/ligato/vpp-agent/api/models/vpp/acl"
-	intf "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	ipsec "github.com/ligato/vpp-agent/api/models/vpp/ipsec"
-	l2 "github.com/ligato/vpp-agent/api/models/vpp/l2"
-	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
-	nat "github.com/ligato/vpp-agent/api/models/vpp/nat"
-	punt "github.com/ligato/vpp-agent/api/models/vpp/punt"
-	stn "github.com/ligato/vpp-agent/api/models/vpp/stn"
-	vppclient "github.com/ligato/vpp-agent/clientv2/vpp"
-	orch "github.com/ligato/vpp-agent/plugins/orchestrator"
+	vppclient "go.ligato.io/vpp-agent/v2/clientv2/vpp"
+	orch "go.ligato.io/vpp-agent/v2/plugins/orchestrator"
+	abf "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/abf"
+	acl "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/acl"
+	intf "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
+	ipsec "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/ipsec"
+	l2 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l2"
+	l3 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l3"
+	nat "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/nat"
+	punt "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/punt"
+	stn "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/stn"
 )
 
 // NewDataChangeDSL returns a new instance of DataChangeDSL which implements
@@ -167,6 +167,18 @@ func (dsl *PutDSL) DNAT44(nat44 *nat.DNat44) vppclient.PutDSL {
 	return dsl
 }
 
+// NAT44Interface adds a request to create or update NAT44 interface configuration.
+func (dsl *PutDSL) NAT44Interface(natIf *nat.Nat44Interface) vppclient.PutDSL {
+	dsl.parent.txn.Put(models.Key(natIf), natIf)
+	return dsl
+}
+
+// NAT44AddressPool adds a request to create or update NAT44 address pool.
+func (dsl *PutDSL) NAT44AddressPool(pool *nat.Nat44AddressPool) vppclient.PutDSL {
+	dsl.parent.txn.Put(models.Key(pool), pool)
+	return dsl
+}
+
 // IPSecSA adds request to create a new Security Association
 func (dsl *PutDSL) IPSecSA(sa *ipsec.SecurityAssociation) vppclient.PutDSL {
 	dsl.parent.txn.Put(ipsec.SAKey(sa.Index), sa)
@@ -296,6 +308,18 @@ func (dsl *DeleteDSL) NAT44Global() vppclient.DeleteDSL {
 // DNAT44 adds a request to delete an existing DNAT44 configuration
 func (dsl *DeleteDSL) DNAT44(label string) vppclient.DeleteDSL {
 	dsl.parent.txn.Delete(nat.DNAT44Key(label))
+	return dsl
+}
+
+// NAT44Interface adds a request to delete NAT44 interface configuration.
+func (dsl *DeleteDSL) NAT44Interface(natIf *nat.Nat44Interface) vppclient.DeleteDSL {
+	dsl.parent.txn.Delete(models.Key(natIf))
+	return dsl
+}
+
+// NAT44AddressPool adds a request to create or update NAT44 address pool.
+func (dsl *DeleteDSL) NAT44AddressPool(pool *nat.Nat44AddressPool) vppclient.DeleteDSL {
+	dsl.parent.txn.Delete(models.Key(pool))
 	return dsl
 }
 

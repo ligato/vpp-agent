@@ -16,10 +16,10 @@ package linuxcalls
 
 import (
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/vpp-agent/api/models/linux"
-	"github.com/ligato/vpp-agent/plugins/linux/ifplugin/ifaceidx"
-	"github.com/ligato/vpp-agent/plugins/linux/nsplugin"
 	"github.com/vishvananda/netlink"
+	"go.ligato.io/vpp-agent/v2/plugins/linux/ifplugin/ifaceidx"
+	"go.ligato.io/vpp-agent/v2/plugins/linux/nsplugin"
+	"go.ligato.io/vpp-agent/v2/proto/ligato/linux"
 )
 
 // ArpDetails is an object combining linux ARP data based on proto

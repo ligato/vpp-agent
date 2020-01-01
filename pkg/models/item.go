@@ -16,67 +16,24 @@ package models
 
 import (
 	"fmt"
-	"reflect"
+	"path"
 
-	"github.com/gogo/protobuf/proto"
-	"github.com/gogo/protobuf/types"
+	"github.com/golang/protobuf/proto"
+	types "github.com/golang/protobuf/ptypes"
 
-	"github.com/ligato/cn-infra/datasync"
-	api "github.com/ligato/vpp-agent/api/genericmanager"
+	api "go.ligato.io/vpp-agent/v2/proto/ligato/generic"
 )
 
 // This constant is used as prefix for TypeUrl when marshalling to Any.
 const ligatoModels = "models.ligato.io/"
 
-// UnmarshalLazyValue is helper function for unmarshalling from datasync.LazyValue.
-func UnmarshalLazyValue(key string, lazy datasync.LazyValue) (proto.Message, error) {
-	for _, model := range registeredModels {
-		if !model.IsKeyValid(key) {
-			continue
-		}
-		valueType := proto.MessageType(model.ProtoName())
-		if valueType == nil {
-			return nil, fmt.Errorf("unknown proto message defined for key %s", key)
-		}
-		value := reflect.New(valueType.Elem()).Interface().(proto.Message)
-		// try to deserialize the value
-		err := lazy.GetValue(value)
-		if err != nil {
-			return nil, err
-		}
-		return value, nil
-	}
-	return nil, fmt.Errorf("no model registered for key %s", key)
-}
-
-// Unmarshal is helper function for unmarshalling items.
-func UnmarshalItem(m *api.Item) (proto.Message, error) {
-	protoName, err := types.AnyMessageName(m.GetData().GetAny())
+// Marshal is helper function for marshalling model instance into item.
+func MarshalItem(pb proto.Message) (*api.Item, error) {
+	model, err := GetModelFor(pb)
 	if err != nil {
 		return nil, err
 	}
-	model, found := registeredModels[protoName]
-	if !found {
-		return nil, fmt.Errorf("message %s is not registered as model", protoName)
-	}
-
-	itemModel := m.Id.Model
-	if itemModel.Module != model.Module ||
-		itemModel.Version != model.Version ||
-		itemModel.Type != model.Type {
-		return nil, fmt.Errorf("item model does not match the one registered (%+v)", itemModel)
-	}
-
-	var any types.DynamicAny
-	if err := types.UnmarshalAny(m.GetData().GetAny(), &any); err != nil {
-		return nil, err
-	}
-	return any.Message, nil
-}
-
-// Marshal is helper function for marshalling items.
-func MarshalItem(pb proto.Message) (*api.Item, error) {
-	id, err := getItemID(pb)
+	name, err := model.instanceName(pb)
 	if err != nil {
 		return nil, err
 	}
@@ -87,88 +44,52 @@ func MarshalItem(pb proto.Message) (*api.Item, error) {
 	}
 	any.TypeUrl = ligatoModels + proto.MessageName(pb)
 
-	/*name, err := model.nameFunc(pb)
-	if err != nil {
-		return nil, err
-	}
-	path := path.Join(model.Path(), name)*/
-
 	item := &api.Item{
-		/*Ref: &api.ItemRef{
-			Path: model.modelPath,
-			Name: name,
-		},*/
-		Id: id,
-		//Key: path,
+		Id: &api.Item_ID{
+			Model: model.Name(),
+			Name:  name,
+		},
 		Data: &api.Data{
-			Any: any,
+			Union: &api.Data_Any{Any: any},
 		},
 	}
 	return item, nil
 }
 
-func getItemID(pb proto.Message) (*api.Item_ID, error) {
-	protoName := proto.MessageName(pb)
-	model, found := registeredModels[protoName]
-	if !found {
-		return nil, fmt.Errorf("message %s is not registered as model", protoName)
-	}
-
-	name, err := model.name(pb)
+// Unmarshal is helper function for unmarshalling items.
+func UnmarshalItem(item *api.Item) (proto.Message, error) {
+	_, err := GetModelForItem(item)
 	if err != nil {
 		return nil, err
 	}
 
-	return &api.Item_ID{
-		Name: name,
-		Model: &api.Model{
-			Module:  model.Module,
-			Version: model.Version,
-			Type:    model.Type,
-		},
-	}, nil
+	var any types.DynamicAny
+	if err := types.UnmarshalAny(item.GetData().GetAny(), &any); err != nil {
+		return nil, err
+	}
+	return any.Message, nil
 }
 
-type model interface {
-	GetModule() string
-	GetVersion() string
-	GetType() string
+// GetModelForItem returns model for given item.
+func GetModelForItem(item *api.Item) (KnownModel, error) {
+	if item.GetId() == nil {
+		return KnownModel{}, fmt.Errorf("item id is nil")
+	}
+	modelPath := item.GetId().GetModel()
+	model, err := GetModel(modelPath)
+	if err != nil {
+		return KnownModel{}, err
+	}
+	// TODO: check prefix in type url?
+	return model, nil
 }
 
-func getModelPath(m model) string {
-	return buildModelPath(m.GetVersion(), m.GetModule(), m.GetType())
-}
-
-// ModelForItem
-func ModelForItem(item *api.Item) (registeredModel, error) {
-	if data := item.GetData(); data != nil {
-		return GetModel(data)
+// GetKeyForItem returns key for given item.
+func GetKeyForItem(item *api.Item) (string, error) {
+	model, err := GetModelForItem(item)
+	if err != nil {
+		return "", err
 	}
-	if id := item.GetId(); id != nil {
-		modelPath := getModelPath(id.Model)
-		protoName, found := modelPaths[modelPath]
-		if found {
-			model, _ := registeredModels[protoName]
-			return *model, nil
-		}
-	}
-
-	return registeredModel{}, fmt.Errorf("no model found for item %v", item)
-}
-
-func ItemKey(item *api.Item) (string, error) {
-	if data := item.GetData(); data != nil {
-		return GetKey(data)
-	}
-	if id := item.GetId(); id != nil {
-		modelPath := getModelPath(id.Model)
-		protoName, found := modelPaths[modelPath]
-		if found {
-			model, _ := registeredModels[protoName]
-			key := model.KeyPrefix() + id.Name
-			return key, nil
-		}
-	}
-
-	return "", fmt.Errorf("invalid item: %v", item)
+	key := path.Join(model.KeyPrefix(), item.GetId().GetName())
+	return key, nil
 }

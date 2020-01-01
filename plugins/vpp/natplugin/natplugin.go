@@ -12,38 +12,36 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate descriptor-adapter --descriptor-name NAT44Global --value-type *vpp_nat.Nat44Global --import "github.com/ligato/vpp-agent/api/models/vpp/nat" --output-dir "descriptor"
-//go:generate descriptor-adapter --descriptor-name NAT44Interface --value-type *vpp_nat.Nat44Global_Interface --import "github.com/ligato/vpp-agent/api/models/vpp/nat" --output-dir "descriptor"
-//go:generate descriptor-adapter --descriptor-name NAT44Address --value-type *vpp_nat.Nat44Global_Address --import "github.com/ligato/vpp-agent/api/models/vpp/nat" --output-dir "descriptor"
-//go:generate descriptor-adapter --descriptor-name DNAT44 --value-type *vpp_nat.DNat44 --import "github.com/ligato/vpp-agent/api/models/vpp/nat" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name NAT44Global --value-type *vpp_nat.Nat44Global --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/nat" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name NAT44GlobalInterface --value-type *vpp_nat.Nat44Global_Interface --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/nat" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name NAT44GlobalAddress --value-type *vpp_nat.Nat44Global_Address --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/nat" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name DNAT44 --value-type *vpp_nat.DNat44 --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/nat" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name NAT44Interface --value-type *vpp_nat.Nat44Interface --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/nat" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name NAT44AddressPool --value-type *vpp_nat.Nat44AddressPool --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/nat" --output-dir "descriptor"
 
 package natplugin
 
 import (
-	govppapi "git.fd.io/govpp.git/api"
 	"github.com/pkg/errors"
 
 	"github.com/ligato/cn-infra/health/statuscheck"
 	"github.com/ligato/cn-infra/infra"
 
-	"github.com/ligato/vpp-agent/plugins/govppmux"
-	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin"
-	"github.com/ligato/vpp-agent/plugins/vpp/natplugin/descriptor"
-	"github.com/ligato/vpp-agent/plugins/vpp/natplugin/vppcalls"
+	"go.ligato.io/vpp-agent/v2/plugins/govppmux"
+	kvs "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/natplugin/descriptor"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/natplugin/vppcalls"
 
-	_ "github.com/ligato/vpp-agent/plugins/vpp/natplugin/vppcalls/vpp1904"
-	_ "github.com/ligato/vpp-agent/plugins/vpp/natplugin/vppcalls/vpp1908"
-	_ "github.com/ligato/vpp-agent/plugins/vpp/natplugin/vppcalls/vpp2001_324"
-	_ "github.com/ligato/vpp-agent/plugins/vpp/natplugin/vppcalls/vpp2001_379"
+	_ "go.ligato.io/vpp-agent/v2/plugins/vpp/natplugin/vppcalls/vpp1904"
+	_ "go.ligato.io/vpp-agent/v2/plugins/vpp/natplugin/vppcalls/vpp1908"
+	_ "go.ligato.io/vpp-agent/v2/plugins/vpp/natplugin/vppcalls/vpp2001"
+	_ "go.ligato.io/vpp-agent/v2/plugins/vpp/natplugin/vppcalls/vpp2001_324"
 )
 
 // NATPlugin configures VPP NAT.
 type NATPlugin struct {
 	Deps
-
-	// GoVPP
-	vppCh govppapi.Channel
 
 	// handlers
 	natHandler vppcalls.NatVppAPI
@@ -53,37 +51,39 @@ type NATPlugin struct {
 type Deps struct {
 	infra.PluginDeps
 	KVScheduler kvs.KVScheduler
-	GoVppmux    govppmux.API
+	VPP         govppmux.API
 	IfPlugin    ifplugin.API
 	StatusCheck statuscheck.PluginStatusWriter // optional
 }
 
 // Init registers NAT-related descriptors.
-func (p *NATPlugin) Init() error {
-	var err error
-
-	// GoVPP channels
-	if p.vppCh, err = p.GoVppmux.NewAPIChannel(); err != nil {
-		return errors.Errorf("failed to create GoVPP API channel: %v", err)
+func (p *NATPlugin) Init() (err error) {
+	if !p.VPP.IsPluginLoaded("nat") {
+		p.Log.Warnf("VPP plugin NAT was disabled by VPP")
+		return nil
 	}
 
-	// init NAT handler
-	p.natHandler = vppcalls.CompatibleNatVppHandler(p.vppCh, p.IfPlugin.GetInterfaceIndex(), p.IfPlugin.GetDHCPIndex(), p.Log)
+	// init handlers
+	p.natHandler = vppcalls.CompatibleNatVppHandler(p.VPP, p.IfPlugin.GetInterfaceIndex(), p.IfPlugin.GetDHCPIndex(), p.Log)
 	if p.natHandler == nil {
 		return errors.New("natHandler is not available")
 	}
 
 	// init and register descriptors
-	nat44GlobalDescriptor := descriptor.NewNAT44GlobalDescriptor(p.natHandler, p.Log)
-	nat44IfaceDescriptor := descriptor.NewNAT44InterfaceDescriptor(p.natHandler, p.Log)
-	nat44AddrDescriptor := descriptor.NewNAT44AddressDescriptor(p.natHandler, p.Log)
+	nat44GlobalCtx, nat44GlobalDescriptor := descriptor.NewNAT44GlobalDescriptor(p.natHandler, p.Log)
+	nat44GlobalIfaceDescriptor := descriptor.NewNAT44GlobalInterfaceDescriptor(p.natHandler, p.Log)
+	nat44GlobalAddrDescriptor := descriptor.NewNAT44GlobalAddressDescriptor(p.natHandler, p.Log)
 	dnat44Descriptor := descriptor.NewDNAT44Descriptor(p.natHandler, p.Log)
+	nat44IfaceDescriptor := descriptor.NewNAT44InterfaceDescriptor(nat44GlobalCtx, p.natHandler, p.Log)
+	nat44AddrPoolDescriptor := descriptor.NewNAT44AddressPoolDescriptor(nat44GlobalCtx, p.natHandler, p.Log)
 
 	err = p.KVScheduler.RegisterKVDescriptor(
 		nat44GlobalDescriptor,
-		nat44IfaceDescriptor,
-		nat44AddrDescriptor,
+		nat44GlobalIfaceDescriptor, // deprecated, kept for backward compatibility
+		nat44GlobalAddrDescriptor,  // deprecated, kept for backward compatibility
 		dnat44Descriptor,
+		nat44IfaceDescriptor,
+		nat44AddrPoolDescriptor,
 	)
 	if err != nil {
 		return err

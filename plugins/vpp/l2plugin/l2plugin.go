@@ -12,39 +12,35 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate descriptor-adapter --descriptor-name BridgeDomain --value-type *vpp_l2.BridgeDomain --meta-type *idxvpp.OnlyIndex --import "github.com/ligato/vpp-agent/pkg/idxvpp" --import "github.com/ligato/vpp-agent/api/models/vpp/l2" --output-dir "descriptor"
-//go:generate descriptor-adapter --descriptor-name BDInterface --value-type *vpp_l2.BridgeDomain_Interface --import "github.com/ligato/vpp-agent/api/models/vpp/l2" --output-dir "descriptor"
-//go:generate descriptor-adapter --descriptor-name FIB  --value-type *vpp_l2.FIBEntry --import "github.com/ligato/vpp-agent/api/models/vpp/l2" --output-dir "descriptor"
-//go:generate descriptor-adapter --descriptor-name XConnect  --value-type *vpp_l2.XConnectPair --import "github.com/ligato/vpp-agent/api/models/vpp/l2" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name BridgeDomain --value-type *vpp_l2.BridgeDomain --meta-type *idxvpp.OnlyIndex --import "go.ligato.io/vpp-agent/v2/pkg/idxvpp" --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l2" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name BDInterface --value-type *vpp_l2.BridgeDomain_Interface --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l2" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name FIB  --value-type *vpp_l2.FIBEntry --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l2" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name XConnect  --value-type *vpp_l2.XConnectPair --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l2" --output-dir "descriptor"
 
 package l2plugin
 
 import (
-	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/health/statuscheck"
 	"github.com/ligato/cn-infra/infra"
 	"github.com/pkg/errors"
 
-	"github.com/ligato/vpp-agent/pkg/idxvpp"
-	"github.com/ligato/vpp-agent/plugins/govppmux"
-	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin"
-	"github.com/ligato/vpp-agent/plugins/vpp/l2plugin/descriptor"
-	"github.com/ligato/vpp-agent/plugins/vpp/l2plugin/descriptor/adapter"
-	"github.com/ligato/vpp-agent/plugins/vpp/l2plugin/vppcalls"
+	"go.ligato.io/vpp-agent/v2/pkg/idxvpp"
+	"go.ligato.io/vpp-agent/v2/plugins/govppmux"
+	kvs "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/l2plugin/descriptor"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/l2plugin/descriptor/adapter"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/l2plugin/vppcalls"
 
-	_ "github.com/ligato/vpp-agent/plugins/vpp/l2plugin/vppcalls/vpp1904"
-	_ "github.com/ligato/vpp-agent/plugins/vpp/l2plugin/vppcalls/vpp1908"
-	_ "github.com/ligato/vpp-agent/plugins/vpp/l2plugin/vppcalls/vpp2001_324"
-	_ "github.com/ligato/vpp-agent/plugins/vpp/l2plugin/vppcalls/vpp2001_379"
+	_ "go.ligato.io/vpp-agent/v2/plugins/vpp/l2plugin/vppcalls/vpp1904"
+	_ "go.ligato.io/vpp-agent/v2/plugins/vpp/l2plugin/vppcalls/vpp1908"
+	_ "go.ligato.io/vpp-agent/v2/plugins/vpp/l2plugin/vppcalls/vpp2001"
+	_ "go.ligato.io/vpp-agent/v2/plugins/vpp/l2plugin/vppcalls/vpp2001_324"
 )
 
 // L2Plugin configures VPP bridge domains, L2 FIBs and xConnects using GoVPP.
 type L2Plugin struct {
 	Deps
-
-	// GoVPP
-	vppCh govppapi.Channel
 
 	// handlers
 	l2Handler vppcalls.L2VppAPI
@@ -63,20 +59,15 @@ type L2Plugin struct {
 type Deps struct {
 	infra.PluginDeps
 	KVScheduler kvs.KVScheduler
-	GoVppmux    govppmux.API
+	VPP         govppmux.API
 	IfPlugin    ifplugin.API
 	StatusCheck statuscheck.PluginStatusWriter // optional
 }
 
 // Init registers L2-related descriptors.
 func (p *L2Plugin) Init() (err error) {
-	// GoVPP channels
-	if p.vppCh, err = p.GoVppmux.NewAPIChannel(); err != nil {
-		return errors.Errorf("failed to create GoVPP API channel: %v", err)
-	}
-
 	// init handlers
-	p.l2Handler = vppcalls.CompatibleL2VppHandler(p.vppCh, p.IfPlugin.GetInterfaceIndex(), p.bdIndex, p.Log)
+	p.l2Handler = vppcalls.CompatibleL2VppHandler(p.VPP, p.IfPlugin.GetInterfaceIndex(), p.bdIndex, p.Log)
 	if p.l2Handler == nil {
 		return errors.Errorf("could not find compatible L2VppHandler")
 	}
@@ -98,7 +89,7 @@ func (p *L2Plugin) Init() (err error) {
 	}
 
 	// we set l2Handler again here, because bdIndex was nil before
-	p.l2Handler = vppcalls.CompatibleL2VppHandler(p.vppCh, p.IfPlugin.GetInterfaceIndex(), p.bdIndex, p.Log)
+	p.l2Handler = vppcalls.CompatibleL2VppHandler(p.VPP, p.IfPlugin.GetInterfaceIndex(), p.bdIndex, p.Log)
 
 	// init & register descriptors
 	p.bdIfaceDescriptor = descriptor.NewBDInterfaceDescriptor(p.bdIndex, p.l2Handler, p.Log)

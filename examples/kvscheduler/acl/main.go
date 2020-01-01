@@ -21,12 +21,12 @@ import (
 
 	"github.com/ligato/cn-infra/agent"
 
-	acl "github.com/ligato/vpp-agent/api/models/vpp/acl"
-	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	"github.com/ligato/vpp-agent/clientv2/vpp/localclient"
-	"github.com/ligato/vpp-agent/plugins/orchestrator"
-	vpp_aclplugin "github.com/ligato/vpp-agent/plugins/vpp/aclplugin"
-	vpp_ifplugin "github.com/ligato/vpp-agent/plugins/vpp/ifplugin"
+	"go.ligato.io/vpp-agent/v2/clientv2/vpp/localclient"
+	"go.ligato.io/vpp-agent/v2/plugins/orchestrator"
+	vpp_aclplugin "go.ligato.io/vpp-agent/v2/plugins/vpp/aclplugin"
+	vpp_ifplugin "go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin"
+	acl "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/acl"
+	interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
 )
 
 /*

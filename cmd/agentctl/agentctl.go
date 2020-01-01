@@ -18,8 +18,8 @@ import (
 	"fmt"
 	"os"
 
-	agentcli "github.com/ligato/vpp-agent/cmd/agentctl/cli"
-	"github.com/ligato/vpp-agent/cmd/agentctl/commands"
+	agentcli "go.ligato.io/vpp-agent/v2/cmd/agentctl/cli"
+	"go.ligato.io/vpp-agent/v2/cmd/agentctl/commands"
 )
 
 const logo = `

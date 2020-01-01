@@ -18,10 +18,10 @@ package linuxcalls
 
 import (
 	"github.com/ligato/cn-infra/logging"
-	linux_l3 "github.com/ligato/vpp-agent/api/models/linux/l3"
-	"github.com/ligato/vpp-agent/plugins/linux/nsplugin/linuxcalls"
 	"github.com/pkg/errors"
 	"github.com/vishvananda/netlink"
+	"go.ligato.io/vpp-agent/v2/plugins/linux/nsplugin/linuxcalls"
+	linux_l3 "go.ligato.io/vpp-agent/v2/proto/ligato/linux/l3"
 )
 
 const (

@@ -12,36 +12,32 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 
-//go:generate descriptor-adapter --descriptor-name ACL --value-type *vpp_acl.ACL --meta-type *aclidx.ACLMetadata --import "aclidx" --import "github.com/ligato/vpp-agent/api/models/vpp/acl" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name ACL --value-type *vpp_acl.ACL --meta-type *aclidx.ACLMetadata --import "go.ligato.io/vpp-agent/v2/plugins/vpp/aclplugin/aclidx" --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/acl" --output-dir "descriptor"
 
 package aclplugin
 
 import (
-	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/health/statuscheck"
 	"github.com/ligato/cn-infra/infra"
 	"github.com/pkg/errors"
 
-	"github.com/ligato/vpp-agent/plugins/govppmux"
-	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-	"github.com/ligato/vpp-agent/plugins/vpp/aclplugin/aclidx"
-	"github.com/ligato/vpp-agent/plugins/vpp/aclplugin/descriptor"
-	"github.com/ligato/vpp-agent/plugins/vpp/aclplugin/descriptor/adapter"
-	"github.com/ligato/vpp-agent/plugins/vpp/aclplugin/vppcalls"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin"
+	"go.ligato.io/vpp-agent/v2/plugins/govppmux"
+	kvs "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/aclplugin/aclidx"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/aclplugin/descriptor"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/aclplugin/descriptor/adapter"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/aclplugin/vppcalls"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin"
 
-	_ "github.com/ligato/vpp-agent/plugins/vpp/aclplugin/vppcalls/vpp1904"
-	_ "github.com/ligato/vpp-agent/plugins/vpp/aclplugin/vppcalls/vpp1908"
-	_ "github.com/ligato/vpp-agent/plugins/vpp/aclplugin/vppcalls/vpp2001_324"
-	_ "github.com/ligato/vpp-agent/plugins/vpp/aclplugin/vppcalls/vpp2001_379"
+	_ "go.ligato.io/vpp-agent/v2/plugins/vpp/aclplugin/vppcalls/vpp1904"
+	_ "go.ligato.io/vpp-agent/v2/plugins/vpp/aclplugin/vppcalls/vpp1908"
+	_ "go.ligato.io/vpp-agent/v2/plugins/vpp/aclplugin/vppcalls/vpp2001"
+	_ "go.ligato.io/vpp-agent/v2/plugins/vpp/aclplugin/vppcalls/vpp2001_324"
 )
 
 // ACLPlugin is a plugin that manages ACLs.
 type ACLPlugin struct {
 	Deps
-
-	// GoVPP channels
-	vppCh govppapi.Channel
 
 	aclHandler             vppcalls.ACLVppAPI
 	aclDescriptor          *descriptor.ACLDescriptor
@@ -55,22 +51,20 @@ type ACLPlugin struct {
 type Deps struct {
 	infra.PluginDeps
 	Scheduler   kvs.KVScheduler
-	GoVppmux    govppmux.API
+	VPP         govppmux.API
 	IfPlugin    ifplugin.API
 	StatusCheck statuscheck.PluginStatusWriter // optional
 }
 
 // Init initializes ACL plugin.
-func (p *ACLPlugin) Init() error {
-	var err error
-
-	// GoVPP channels
-	if p.vppCh, err = p.GoVppmux.NewAPIChannel(); err != nil {
-		return errors.Errorf("failed to create GoVPP API channel: %v", err)
+func (p *ACLPlugin) Init() (err error) {
+	if !p.VPP.IsPluginLoaded("acl") {
+		p.Log.Warnf("VPP plugin ACL was disabled by VPP")
+		return nil
 	}
 
 	// init handlers
-	p.aclHandler = vppcalls.CompatibleACLVppHandler(p.vppCh, p.IfPlugin.GetInterfaceIndex(), p.Log)
+	p.aclHandler = vppcalls.CompatibleACLHandler(p.VPP, p.IfPlugin.GetInterfaceIndex())
 	if p.aclHandler == nil {
 		return errors.New("aclHandler is not available")
 	}

@@ -18,15 +18,15 @@ import (
 	"testing"
 
 	"github.com/ligato/cn-infra/logging/logrus"
-	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
-	vpp_ip "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001_324/ip"
-	vpp_vpe "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001_324/vpe"
-	"github.com/ligato/vpp-agent/plugins/vpp/vppcallmock"
 	. "github.com/onsi/gomega"
+	vpp_ip "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324/ip"
+	vpp_vpe "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324/vpe"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/vppmock"
+	l3 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l3"
 )
 
 func TestDumpVrfTables(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx := vppmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()
 	vthandler := NewVrfTableVppHandler(ctx.MockChannel, logrus.DefaultLogger())
 

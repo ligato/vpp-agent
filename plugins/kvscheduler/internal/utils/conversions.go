@@ -15,8 +15,8 @@
 package utils
 
 import (
-	"github.com/gogo/protobuf/proto"
-	prototypes "github.com/gogo/protobuf/types"
+	"github.com/golang/protobuf/proto"
+	prototypes "github.com/golang/protobuf/ptypes/empty"
 )
 
 // ProtoToString converts proto message to string.

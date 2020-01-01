@@ -18,11 +18,11 @@ import (
 	"testing"
 
 	"github.com/ligato/cn-infra/logging/logrus"
-	vpp_ifs "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001_324/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls/vpp2001_324"
-	"github.com/ligato/vpp-agent/plugins/vpp/vppcallmock"
 	. "github.com/onsi/gomega"
+	vpp_ifs "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324/interfaces"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/vppcalls"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/vppcalls/vpp2001_324"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/vppmock"
 )
 
 func TestInterfaceAdminDown(t *testing.T) {
@@ -174,9 +174,9 @@ func TestInterfaceRemoveTagRetval(t *testing.T) {
 	Expect(err).ToNot(BeNil())
 }
 
-func ifTestSetup(t *testing.T) (*vppcallmock.TestCtx, vppcalls.InterfaceVppAPI) {
-	ctx := vppcallmock.SetupTestCtx(t)
+func ifTestSetup(t *testing.T) (*vppmock.TestCtx, vppcalls.InterfaceVppAPI) {
+	ctx := vppmock.SetupTestCtx(t)
 	log := logrus.NewLogger("test-log")
-	ifHandler := vpp2001_324.NewInterfaceVppHandler(ctx.MockChannel, log)
+	ifHandler := vpp2001_324.NewInterfaceVppHandler(ctx.MockVPPClient, log)
 	return ctx, ifHandler
 }

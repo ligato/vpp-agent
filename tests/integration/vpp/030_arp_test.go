@@ -15,24 +15,25 @@
 package vpp
 
 import (
-	"github.com/ligato/cn-infra/logging/logrus"
 	"strings"
 	"testing"
 
-	vpp_l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
-	netalloc_mock "github.com/ligato/vpp-agent/plugins/netalloc/mock"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
-	ifplugin_vppcalls "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
-	_ "github.com/ligato/vpp-agent/plugins/vpp/l3plugin"
-	l3plugin_vppcalls "github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls"
-	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vrfidx"
+	"github.com/ligato/cn-infra/logging/logrus"
+
+	netalloc_mock "go.ligato.io/vpp-agent/v2/plugins/netalloc/mock"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
+	ifplugin_vppcalls "go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/vppcalls"
+	_ "go.ligato.io/vpp-agent/v2/plugins/vpp/l3plugin"
+	l3plugin_vppcalls "go.ligato.io/vpp-agent/v2/plugins/vpp/l3plugin/vppcalls"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/l3plugin/vrfidx"
+	vpp_l3 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l3"
 )
 
 func TestArp(t *testing.T) {
 	ctx := setupVPP(t)
 	defer ctx.teardownVPP()
 
-	ih := ifplugin_vppcalls.CompatibleInterfaceVppHandler(ctx.vppBinapi, logrus.NewLogger("test"))
+	ih := ifplugin_vppcalls.CompatibleInterfaceVppHandler(ctx.vppClient, logrus.NewLogger("test"))
 	const ifName = "loop1"
 	ifIdx, err := ih.AddLoopbackInterface(ifName)
 	if err != nil {
@@ -46,7 +47,7 @@ func TestArp(t *testing.T) {
 	vrfIndexes.Put("vrf1-ipv4", &vrfidx.VRFMetadata{Index: 0, Protocol: vpp_l3.VrfTable_IPV4})
 	vrfIndexes.Put("vrf1-ipv6", &vrfidx.VRFMetadata{Index: 0, Protocol: vpp_l3.VrfTable_IPV6})
 
-	h := l3plugin_vppcalls.CompatibleL3VppHandler(ctx.vppBinapi, ifIndexes, vrfIndexes,
+	h := l3plugin_vppcalls.CompatibleL3VppHandler(ctx.vppClient, ifIndexes, vrfIndexes,
 		netalloc_mock.NewMockNetAlloc(), logrus.NewLogger("test"))
 
 	tests := []struct {

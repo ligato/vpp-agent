@@ -17,9 +17,9 @@ package test
 import (
 	"strings"
 
-	"github.com/gogo/protobuf/proto"
+	"github.com/golang/protobuf/proto"
 	"github.com/ligato/cn-infra/idxmap"
-	. "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
+	. "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
 )
 
 // WithoutOp references operation to leave undefined in the MockDescriptor.

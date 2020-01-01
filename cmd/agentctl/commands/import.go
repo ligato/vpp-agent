@@ -24,15 +24,15 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gogo/protobuf/jsonpb"
-	"github.com/gogo/protobuf/proto"
+	"github.com/golang/protobuf/jsonpb"
+	"github.com/golang/protobuf/proto"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/servicelabel"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
-	agentcli "github.com/ligato/vpp-agent/cmd/agentctl/cli"
-	"github.com/ligato/vpp-agent/pkg/models"
+	agentcli "go.ligato.io/vpp-agent/v2/cmd/agentctl/cli"
+	"go.ligato.io/vpp-agent/v2/pkg/models"
 )
 
 func NewImportCommand(cli agentcli.Cli) *cobra.Command {
@@ -126,10 +126,11 @@ func RunImport(cli agentcli.Cli, opts ImportOptions) error {
 		}
 
 	} else {
-		db, err := cli.KVProtoBroker()
+		c, err := cli.Client().KVDBClient()
 		if err != nil {
-			return fmt.Errorf("connecting to KVDB failed: %v", err)
+			return fmt.Errorf("KVDB error: %v", err)
 		}
+		db := c.ProtoBroker()
 
 		fmt.Printf("importing %d key vals\n", len(keyVals))
 
@@ -137,9 +138,13 @@ func RunImport(cli agentcli.Cli, opts ImportOptions) error {
 		ops := 0
 		for i := 0; i < len(keyVals); i++ {
 			keyVal := keyVals[i]
+			key, err := c.CompleteFullKey(keyVal.Key)
+			if err != nil {
+				return fmt.Errorf("key processing failed: %v", err)
+			}
 
-			fmt.Printf(" - %s\n", keyVal.Key)
-			txn.Put(keyVal.Key, keyVal.Val)
+			fmt.Printf(" - %s\n", key)
+			txn.Put(key, keyVal.Val)
 			ops++
 
 			if ops == int(opts.TxOps) || i+1 == len(keyVals) {

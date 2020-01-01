@@ -1,0 +1,21 @@
+"🔗 dependencies":
+  - go.mod
+  - go.sum
+
+"🔃 VPP sync": vpp.env
+
+"🔨 testing":
+  - tests/*
+  - tests/**/*
+
+"📜 docs & examples":
+  - docs/*
+  - docs/**/*
+  - examples/*
+  - examples/**/*
+
+"⚙️ CI/CD":
+  - .github/*
+  - .github/**/*
+  - docker/*
+  - docker/**/*

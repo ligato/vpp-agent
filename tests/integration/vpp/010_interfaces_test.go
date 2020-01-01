@@ -15,21 +15,23 @@
 package vpp
 
 import (
+	"context"
 	"net"
 	"testing"
 
 	"github.com/ligato/cn-infra/logging/logrus"
 
-	vpp_interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	_ "github.com/ligato/vpp-agent/plugins/vpp/ifplugin"
-	ifplugin_vppcalls "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
+	ifplugin_vppcalls "go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/vppcalls"
+	vpp_interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
+
+	_ "go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin"
 )
 
 func TestInterfaceIP(t *testing.T) {
-	ctx := setupVPP(t)
-	defer ctx.teardownVPP()
+	test := setupVPP(t)
+	defer test.teardownVPP()
 
-	h := ifplugin_vppcalls.CompatibleInterfaceVppHandler(ctx.vppBinapi, logrus.NewLogger("test"))
+	h := ifplugin_vppcalls.CompatibleInterfaceVppHandler(test.vppClient, logrus.NewLogger("test"))
 
 	tests := []struct {
 		name  string
@@ -54,10 +56,10 @@ func TestInterfaceIP(t *testing.T) {
 }
 
 func TestInterfaceEnabledFieldWithLoopback(t *testing.T) {
-	ctx := setupVPP(t)
-	defer ctx.teardownVPP()
+	test := setupVPP(t)
+	defer test.teardownVPP()
 
-	h := ifplugin_vppcalls.CompatibleInterfaceVppHandler(ctx.vppBinapi, logrus.NewLogger("test"))
+	h := ifplugin_vppcalls.CompatibleInterfaceVppHandler(test.vppClient, logrus.NewLogger("test"))
 
 	ifIdx0, err := h.AddLoopbackInterface("loop0")
 	if err != nil {
@@ -65,7 +67,7 @@ func TestInterfaceEnabledFieldWithLoopback(t *testing.T) {
 	}
 
 	// Test after creation
-	ifaces, err := h.DumpInterfaces()
+	ifaces, err := h.DumpInterfaces(test.Context)
 	if err != nil {
 		t.Fatalf("dumping interfaces failed: %v", err)
 	}
@@ -85,7 +87,7 @@ func TestInterfaceEnabledFieldWithLoopback(t *testing.T) {
 	if err != nil {
 		t.Fatalf("enabling interface failed: %v", err)
 	}
-	ifaces, err = h.DumpInterfaces()
+	ifaces, err = h.DumpInterfaces(test.Context)
 	if err != nil {
 		t.Fatalf("dumping interfaces failed: %v", err)
 	}
@@ -105,7 +107,7 @@ func TestInterfaceEnabledFieldWithLoopback(t *testing.T) {
 	if err != nil {
 		t.Fatalf("disabling interface failed: %v", err)
 	}
-	ifaces, err = h.DumpInterfaces()
+	ifaces, err = h.DumpInterfaces(test.Context)
 	if err != nil {
 		t.Fatalf("dumping interfaces failed: %v", err)
 	}
@@ -125,31 +127,28 @@ func TestInterfaceEnabledFieldWithLoopback(t *testing.T) {
 // loopback interface after calling InterfaceAdminUp
 // memif should keep link state down
 func TestInterfaceEnabledFieldWithMemif(t *testing.T) {
-	ctx := setupVPP(t)
-	defer ctx.teardownVPP()
+	test := setupVPP(t)
+	defer test.teardownVPP()
 
-	h := ifplugin_vppcalls.CompatibleInterfaceVppHandler(ctx.vppBinapi, logrus.NewLogger("test"))
+	h := ifplugin_vppcalls.CompatibleInterfaceVppHandler(test.vppClient, logrus.NewLogger("test"))
 
-	err := h.RegisterMemifSocketFilename("/tmp/memif1.sock", 2)
+	ctx := context.Background()
+	err := h.RegisterMemifSocketFilename(ctx, "/tmp/memif1.sock", 2)
 	if err != nil {
 		t.Fatalf("registering memif socket filename faild: %v", err)
 	}
-	memifIdx, err := h.AddMemifInterface(
-		"memif1",
-		&vpp_interfaces.MemifLink{
-			Id:             1,
-			Master:         true,
-			Secret:         "secret",
-			SocketFilename: "/tmp/memif1.sock",
-		},
-		2,
-	)
+	memifIdx, err := h.AddMemifInterface(ctx, "memif1", &vpp_interfaces.MemifLink{
+		Id:             1,
+		Master:         true,
+		Secret:         "secret",
+		SocketFilename: "/tmp/memif1.sock",
+	}, 2)
 	if err != nil {
 		t.Fatalf("creating memif interface failed: %v", err)
 	}
 
 	// Test after creation
-	ifaces, err := h.DumpInterfaces()
+	ifaces, err := h.DumpInterfaces(test.Context)
 	if err != nil {
 		t.Fatalf("dumping interfaces failed: %v", err)
 	}
@@ -169,7 +168,7 @@ func TestInterfaceEnabledFieldWithMemif(t *testing.T) {
 	if err != nil {
 		t.Fatalf("enabling interface failed: %v", err)
 	}
-	ifaces, err = h.DumpInterfaces()
+	ifaces, err = h.DumpInterfaces(test.Context)
 	if err != nil {
 		t.Fatalf("dumping interfaces failed: %v", err)
 	}
@@ -189,7 +188,7 @@ func TestInterfaceEnabledFieldWithMemif(t *testing.T) {
 	if err != nil {
 		t.Fatalf("disabling interface failed: %v", err)
 	}
-	ifaces, err = h.DumpInterfaces()
+	ifaces, err = h.DumpInterfaces(test.Context)
 	if err != nil {
 		t.Fatalf("dumping interfaces failed: %v", err)
 	}
@@ -206,10 +205,10 @@ func TestInterfaceEnabledFieldWithMemif(t *testing.T) {
 }
 
 func TestInterfaceDumpState(t *testing.T) {
-	ctx := setupVPP(t)
-	defer ctx.teardownVPP()
+	test := setupVPP(t)
+	defer test.teardownVPP()
 
-	h := ifplugin_vppcalls.CompatibleInterfaceVppHandler(ctx.vppBinapi, logrus.NewLogger("test"))
+	h := ifplugin_vppcalls.CompatibleInterfaceVppHandler(test.vppClient, logrus.NewLogger("test"))
 
 	ifIdx0, err := h.AddLoopbackInterface("loop0")
 	if err != nil {
@@ -250,10 +249,10 @@ func TestInterfaceDumpState(t *testing.T) {
 }
 
 func TestLoopbackInterface(t *testing.T) {
-	ctx := setupVPP(t)
-	defer ctx.teardownVPP()
+	test := setupVPP(t)
+	defer test.teardownVPP()
 
-	h := ifplugin_vppcalls.CompatibleInterfaceVppHandler(ctx.vppBinapi, logrus.NewLogger("test"))
+	h := ifplugin_vppcalls.CompatibleInterfaceVppHandler(test.vppClient, logrus.NewLogger("test"))
 
 	ifIdx, err := h.AddLoopbackInterface("loop1")
 	if err != nil {
@@ -261,7 +260,7 @@ func TestLoopbackInterface(t *testing.T) {
 	}
 	t.Logf("loopback index: %+v", ifIdx)
 
-	ifaces, err := h.DumpInterfaces()
+	ifaces, err := h.DumpInterfaces(test.Context)
 	if err != nil {
 		t.Fatalf("dumping interfaces failed: %v", err)
 	}
@@ -289,12 +288,13 @@ func TestLoopbackInterface(t *testing.T) {
 }
 
 func TestMemifInterface(t *testing.T) {
-	ctx := setupVPP(t)
-	defer ctx.teardownVPP()
+	test := setupVPP(t)
+	defer test.teardownVPP()
 
-	h := ifplugin_vppcalls.CompatibleInterfaceVppHandler(ctx.vppBinapi, logrus.NewLogger("test"))
+	h := ifplugin_vppcalls.CompatibleInterfaceVppHandler(test.vppClient, logrus.NewLogger("test"))
 
-	ifIdx, err := h.AddMemifInterface("memif1", &vpp_interfaces.MemifLink{
+	ctx := context.Background()
+	ifIdx, err := h.AddMemifInterface(ctx, "memif1", &vpp_interfaces.MemifLink{
 		Id:     1,
 		Mode:   vpp_interfaces.MemifLink_ETHERNET,
 		Secret: "secret",
@@ -305,7 +305,7 @@ func TestMemifInterface(t *testing.T) {
 	}
 	t.Logf("memif index: %+v", ifIdx)
 
-	ifaces, err := h.DumpInterfaces()
+	ifaces, err := h.DumpInterfaces(test.Context)
 	if err != nil {
 		t.Fatalf("dumping interfaces failed: %v", err)
 	}

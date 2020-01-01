@@ -18,7 +18,7 @@ import (
 	"context"
 	"log"
 
-	"github.com/ligato/vpp-agent/client"
+	"go.ligato.io/vpp-agent/v2/client"
 )
 
 // InvalidConfigFixedWithUpdate presents a scenario, in which an interface is

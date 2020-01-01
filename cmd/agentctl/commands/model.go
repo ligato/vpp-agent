@@ -17,8 +17,8 @@ package commands
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
+	"io"
 	"path"
 	"strings"
 	"text/tabwriter"
@@ -26,8 +26,8 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
-	"github.com/ligato/vpp-agent/api/types"
-	agentcli "github.com/ligato/vpp-agent/cmd/agentctl/cli"
+	"go.ligato.io/vpp-agent/v2/cmd/agentctl/api/types"
+	agentcli "go.ligato.io/vpp-agent/v2/cmd/agentctl/cli"
 )
 
 func NewModelCommand(cli agentcli.Cli) *cobra.Command {
@@ -42,58 +42,8 @@ func NewModelCommand(cli agentcli.Cli) *cobra.Command {
 	return cmd
 }
 
-func newModelInspectCommand(cli agentcli.Cli) *cobra.Command {
-	var (
-		opts ModelInspectOptions
-	)
-	cmd := &cobra.Command{
-		Use:     "inspect MODEL [MODEL...]",
-		Aliases: []string{"i"},
-		Short:   "Display detailed information on one or more models",
-		Args:    cobra.MinimumNArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			opts.Names = args
-			return runModelInspect(cli, opts)
-		},
-	}
-	// TODO: add support for custom formatting instead of json
-	//cmd.Flags().StringVar(&opts.Format, "format", "", "Format for the output")
-	return cmd
-}
-
-type ModelInspectOptions struct {
-	Names  []string
-	Format string
-}
-
-func runModelInspect(cli agentcli.Cli, opts ModelInspectOptions) error {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	allModels, err := cli.Client().ModelList(ctx, types.ModelListOptions{})
-	if err != nil {
-		return err
-	}
-
-	models, err := filterModelsByPrefix(allModels, opts.Names)
-	if err != nil {
-		return err
-	}
-
-	logrus.Debugf("models: %+v", models)
-
-	b, err := json.MarshalIndent(models, "", "  ")
-	if err != nil {
-		return fmt.Errorf("encoding data failed: %v", err)
-	}
-
-	fmt.Fprintf(cli.Out(), "%s\n", b)
-	return nil
-}
-
 func newModelListCommand(cli agentcli.Cli) *cobra.Command {
 	var opts ModelListOptions
-
 	cmd := &cobra.Command{
 		Use:     "ls [PATTERN]",
 		Aliases: []string{"list", "l"},
@@ -104,37 +54,56 @@ func newModelListCommand(cli agentcli.Cli) *cobra.Command {
 			return runModelList(cli, opts)
 		},
 	}
+	flags := cmd.Flags()
+	flags.StringVar(&opts.Class, "class", "", "Filter by model class")
+	flags.StringVarP(&opts.Format, "format", "f", "", "Format output")
 	return cmd
 }
 
 type ModelListOptions struct {
-	Refs []string
+	Class  string
+	Refs   []string
+	Format string
 }
 
 func runModelList(cli agentcli.Cli, opts ModelListOptions) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	allModels, err := cli.Client().ModelList(ctx, types.ModelListOptions{})
+	allModels, err := cli.Client().ModelList(ctx, types.ModelListOptions{
+		Class: opts.Class,
+	})
 	if err != nil {
 		return err
 	}
 
 	models := filterModelsByRefs(allModels, opts.Refs)
 
-	var buf bytes.Buffer
-	w := tabwriter.NewWriter(&buf, 0, 0, 2, ' ', 0)
-	fmt.Fprintf(w, "MODEL\tKEY PREFIX\tPROTO NAME\t\n")
-	for _, model := range models {
-		fmt.Fprintf(w, "%s\t%s\t%s\t\n",
-			model.Name, model.KeyPrefix, model.ProtoName)
-	}
-	if err := w.Flush(); err != nil {
-		return err
+	format := opts.Format
+	if len(format) == 0 {
+		printModelTable(cli.Out(), models)
+	} else {
+		if err := formatAsTemplate(cli.Out(), format, models); err != nil {
+			return err
+		}
 	}
 
-	fmt.Fprint(cli.Out(), buf.String())
 	return nil
+}
+
+func printModelTable(out io.Writer, models []types.Model) {
+	var buf bytes.Buffer
+	w := tabwriter.NewWriter(&buf, 0, 0, 2, ' ', 0)
+	fmt.Fprintf(w, "MODEL\tCLASS\tPROTO MESSAGE\tKEY PREFIX\t\n")
+	for _, model := range models {
+		fmt.Fprintf(w, "%s\t%s\t%s\t%s\t\n",
+			model.Name, model.Class, model.ProtoName, model.KeyPrefix)
+	}
+	if err := w.Flush(); err != nil {
+		panic(err)
+	}
+
+	fmt.Fprint(out, buf.String())
 }
 
 func filterModelsByPrefix(models []types.Model, prefixes []string) ([]types.Model, error) {
@@ -149,12 +118,12 @@ func filterModelsByPrefix(models []types.Model, prefixes []string) ([]types.Mode
 				continue
 			}
 			if model.Name != "" {
-				return nil, fmt.Errorf("Multiple models found with provided prefix: %s", pref)
+				return nil, fmt.Errorf("multiple models found with provided prefix: %s", pref)
 			}
 			model = m
 		}
 		if model.Name == "" {
-			return nil, fmt.Errorf("No model found for provided prefix: %s", pref)
+			return nil, fmt.Errorf("no model found for provided prefix: %s", pref)
 		}
 		filtered = append(filtered, model)
 	}
@@ -182,4 +151,55 @@ func matchAnyRef(model types.Model, refs []string) bool {
 		}
 	}
 	return false
+}
+
+func newModelInspectCommand(cli agentcli.Cli) *cobra.Command {
+	var (
+		opts ModelInspectOptions
+	)
+	cmd := &cobra.Command{
+		Use:     "inspect MODEL [MODEL...]",
+		Aliases: []string{"i"},
+		Short:   "Display detailed information on one or more models",
+		Args:    cobra.MinimumNArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			opts.Names = args
+			return runModelInspect(cli, opts)
+		},
+	}
+	cmd.Flags().StringVarP(&opts.Format, "format", "f", "", "Format for the output")
+	return cmd
+}
+
+type ModelInspectOptions struct {
+	Names  []string
+	Format string
+}
+
+func runModelInspect(cli agentcli.Cli, opts ModelInspectOptions) error {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	allModels, err := cli.Client().ModelList(ctx, types.ModelListOptions{})
+	if err != nil {
+		return err
+	}
+
+	models, err := filterModelsByPrefix(allModels, opts.Names)
+	if err != nil {
+		return err
+	}
+
+	logrus.Debugf("models: %+v", models)
+
+	format := opts.Format
+	if len(format) == 0 {
+		format = "json"
+	}
+
+	if err := formatAsTemplate(cli.Out(), format, models); err != nil {
+		return err
+	}
+
+	return nil
 }

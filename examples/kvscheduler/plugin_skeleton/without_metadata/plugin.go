@@ -53,20 +53,19 @@ Beware: Extensive copy-pasting is actually a bad practise, so use the skeleton
         scratch, using the skeleton only as a reference.
 *******************************************************************************/
 
-
 // (*) generate golang code from your protobuf models here:
-//go:generate protoc --proto_path=model --proto_path=$GOPATH/src --gogo_out=model model/model.proto
+//go:generate protoc --proto_path=. --go_out=paths=source_relative:. model/model.proto
 
 // (**) generate adapter(s) for your descriptor(s) here:
-//go:generate descriptor-adapter --descriptor-name Skeleton --value-type *model.ValueSkeleton --import "model" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name Skeleton --value-type *model.ValueSkeleton --import "go.ligato.io/vpp-agent/v2/examples/kvscheduler/plugin_skeleton/without_metadata/model" --output-dir "descriptor"
 
 package plugin
 
 import (
 	"github.com/ligato/cn-infra/infra"
 
-	"github.com/ligato/vpp-agent/examples/kvscheduler/plugin_skeleton/without_metadata/descriptor"
-	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v2/examples/kvscheduler/plugin_skeleton/without_metadata/descriptor"
+	kvs "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
 )
 
 // SkeletonPlugin is a plugin skeleton that you can start building your own plugins

@@ -20,12 +20,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gogo/protobuf/proto"
+	"github.com/golang/protobuf/proto"
 	. "github.com/onsi/gomega"
 
-	. "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-	"github.com/ligato/vpp-agent/plugins/kvscheduler/internal/test"
-	"github.com/ligato/vpp-agent/plugins/kvscheduler/internal/utils"
+	. "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v2/plugins/kvscheduler/internal/test"
+	"go.ligato.io/vpp-agent/v2/plugins/kvscheduler/internal/utils"
+	. "go.ligato.io/vpp-agent/v2/proto/ligato/kvscheduler"
 )
 
 var testCtx = WithSimulation(context.Background())
@@ -2096,7 +2097,7 @@ func TestFailedRecreateOfDerivedValue(t *testing.T) {
 		mockSB.SetValue(prefixA+baseValue1, test.NewArrayValue(),
 			&test.OnlyInteger{Integer: 0}, FromNB, false)
 	}
-	mockSB.PlanError(prefixA+baseValue1+"/item1", nil, nil) // Delete
+	mockSB.PlanError(prefixA+baseValue1+"/item1", nil, nil)                                              // Delete
 	mockSB.PlanError(prefixA+baseValue1+"/item1", errors.New("failed to create value"), failedCreateClb) // (Re)Create
 
 	// run 2nd non-resync transaction that will have errors
@@ -2135,12 +2136,12 @@ func TestFailedRecreateOfDerivedValue(t *testing.T) {
 	// -> planned
 	txnOps := RecordedTxnOps{
 		{
-			Operation:  TxnOperation_UPDATE,
-			Key:        prefixA + baseValue1,
-			PrevValue:  utils.RecordProtoMessage(arrayVal1),
-			NewValue:   utils.RecordProtoMessage(arrayVal2),
-			PrevState:  ValueState_CONFIGURED,
-			NewState:   ValueState_CONFIGURED,
+			Operation: TxnOperation_UPDATE,
+			Key:       prefixA + baseValue1,
+			PrevValue: utils.RecordProtoMessage(arrayVal1),
+			NewValue:  utils.RecordProtoMessage(arrayVal2),
+			PrevState: ValueState_CONFIGURED,
+			NewState:  ValueState_CONFIGURED,
 		},
 		{
 			Operation:  TxnOperation_DELETE,
@@ -2166,12 +2167,12 @@ func TestFailedRecreateOfDerivedValue(t *testing.T) {
 	// -> executed
 	txnOps = RecordedTxnOps{
 		{
-			Operation:  TxnOperation_UPDATE,
-			Key:        prefixA + baseValue1,
-			PrevValue:  utils.RecordProtoMessage(arrayVal1),
-			NewValue:   utils.RecordProtoMessage(arrayVal2),
-			PrevState:  ValueState_CONFIGURED,
-			NewState:   ValueState_CONFIGURED,
+			Operation: TxnOperation_UPDATE,
+			Key:       prefixA + baseValue1,
+			PrevValue: utils.RecordProtoMessage(arrayVal1),
+			NewValue:  utils.RecordProtoMessage(arrayVal2),
+			PrevState: ValueState_CONFIGURED,
+			NewState:  ValueState_CONFIGURED,
 		},
 		{
 			Operation:  TxnOperation_DELETE,
@@ -2199,4 +2200,3 @@ func TestFailedRecreateOfDerivedValue(t *testing.T) {
 	err = scheduler.Close()
 	Expect(err).To(BeNil())
 }
-

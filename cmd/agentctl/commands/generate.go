@@ -21,13 +21,13 @@ import (
 	"strings"
 
 	"github.com/ghodss/yaml"
-	"github.com/gogo/protobuf/jsonpb"
-	"github.com/gogo/protobuf/proto"
+	"github.com/golang/protobuf/jsonpb"
+	"github.com/golang/protobuf/proto"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
-	"github.com/ligato/vpp-agent/api/types"
-	agentcli "github.com/ligato/vpp-agent/cmd/agentctl/cli"
+	"go.ligato.io/vpp-agent/v2/cmd/agentctl/api/types"
+	agentcli "go.ligato.io/vpp-agent/v2/cmd/agentctl/cli"
 )
 
 func NewGenerateCommand(cli agentcli.Cli) *cobra.Command {
@@ -62,7 +62,9 @@ func runGenerate(cli agentcli.Cli, opts GenerateOptions) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	allModels, err := cli.Client().ModelList(ctx, types.ModelListOptions{})
+	allModels, err := cli.Client().ModelList(ctx, types.ModelListOptions{
+		Class: "config",
+	})
 	if err != nil {
 		return err
 	}

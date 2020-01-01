@@ -21,21 +21,15 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 
-	"github.com/ligato/vpp-agent/pkg/idxvpp"
-	l2ba "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/l2"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
-	"github.com/ligato/vpp-agent/plugins/vpp/l2plugin/vppcalls"
+	"go.ligato.io/vpp-agent/v2/pkg/idxvpp"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904"
+	l2ba "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904/l2"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/l2plugin/vppcalls"
 )
 
 func init() {
-	vppcalls.Versions["vpp1904"] = vppcalls.HandlerVersion{
-		Msgs: l2ba.AllMessages(),
-		New: func(ch govppapi.Channel,
-			ifIdx ifaceidx.IfaceMetadataIndex, bdIdx idxvpp.NameToIndex, log logging.Logger,
-		) vppcalls.L2VppAPI {
-			return NewL2VppHandler(ch, ifIdx, bdIdx, log)
-		},
-	}
+	vppcalls.AddHandlerVersion(vpp1904.Version, l2ba.AllMessages(), NewL2VppHandler)
 }
 
 type L2VppHandler struct {
@@ -46,7 +40,7 @@ type L2VppHandler struct {
 
 func NewL2VppHandler(ch govppapi.Channel,
 	ifIdx ifaceidx.IfaceMetadataIndex, bdIdx idxvpp.NameToIndex, log logging.Logger,
-) *L2VppHandler {
+) vppcalls.L2VppAPI {
 	return &L2VppHandler{
 		BridgeDomainVppHandler: newBridgeDomainVppHandler(ch, ifIdx, log),
 		FIBVppHandler:          newFIBVppHandler(ch, ifIdx, bdIdx, log),

@@ -17,8 +17,8 @@ package vpp1904_test
 import (
 	"testing"
 
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/dhcp"
 	. "github.com/onsi/gomega"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904/dhcp"
 )
 
 func TestSetInterfaceAsDHCPClient(t *testing.T) {

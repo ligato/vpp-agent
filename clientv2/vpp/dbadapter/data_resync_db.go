@@ -18,19 +18,19 @@ import (
 	"context"
 
 	"github.com/ligato/cn-infra/db/keyval"
-	"github.com/ligato/vpp-agent/pkg/models"
+	"go.ligato.io/vpp-agent/v2/pkg/models"
 
-	abf "github.com/ligato/vpp-agent/api/models/vpp/abf"
-	acl "github.com/ligato/vpp-agent/api/models/vpp/acl"
-	intf "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	ipsec "github.com/ligato/vpp-agent/api/models/vpp/ipsec"
-	l2 "github.com/ligato/vpp-agent/api/models/vpp/l2"
-	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
-	nat "github.com/ligato/vpp-agent/api/models/vpp/nat"
-	punt "github.com/ligato/vpp-agent/api/models/vpp/punt"
-	stn "github.com/ligato/vpp-agent/api/models/vpp/stn"
-	vppclient "github.com/ligato/vpp-agent/clientv2/vpp"
-	orch "github.com/ligato/vpp-agent/plugins/orchestrator"
+	vppclient "go.ligato.io/vpp-agent/v2/clientv2/vpp"
+	orch "go.ligato.io/vpp-agent/v2/plugins/orchestrator"
+	abf "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/abf"
+	acl "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/acl"
+	intf "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
+	ipsec "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/ipsec"
+	l2 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l2"
+	l3 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l3"
+	nat "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/nat"
+	punt "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/punt"
+	stn "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/stn"
 )
 
 // NewDataResyncDSL returns a new instance of DataResyncDSL which implements
@@ -179,6 +179,24 @@ func (dsl *DataResyncDSL) NAT44Global(nat44 *nat.Nat44Global) vppclient.DataResy
 func (dsl *DataResyncDSL) DNAT44(nat44 *nat.DNat44) vppclient.DataResyncDSL {
 	key := nat.DNAT44Key(nat44.Label)
 	dsl.txn.Put(key, nat44)
+	dsl.txnKeys = append(dsl.txnKeys, key)
+
+	return dsl
+}
+
+// NAT44Interface adds NAT44 interface configuration to the RESYNC request.
+func (dsl *DataResyncDSL) NAT44Interface(natIf *nat.Nat44Interface) vppclient.DataResyncDSL {
+	key := models.Key(natIf)
+	dsl.txn.Put(key, natIf)
+	dsl.txnKeys = append(dsl.txnKeys, key)
+
+	return dsl
+}
+
+// NAT44AddressPool adds NAT44 address pool configuration to the RESYNC request.
+func (dsl *DataResyncDSL) NAT44AddressPool(pool *nat.Nat44AddressPool) vppclient.DataResyncDSL {
+	key := models.Key(pool)
+	dsl.txn.Put(key, pool)
 	dsl.txnKeys = append(dsl.txnKeys, key)
 
 	return dsl

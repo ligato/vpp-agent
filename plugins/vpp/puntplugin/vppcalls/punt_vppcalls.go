@@ -20,8 +20,9 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 
-	punt "github.com/ligato/vpp-agent/api/models/vpp/punt"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
+	punt "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/punt"
 )
 
 var (
@@ -70,7 +71,7 @@ type PuntVppAPI interface {
 
 // PuntVPPRead provides read methods for punt
 type PuntVPPRead interface {
-	// DumpPuntRegisteredSockets returns all punt socket registrations known to the VPP agent
+	// DumpRegisteredPuntSockets returns all punt socket registrations known to the VPP agent
 	DumpRegisteredPuntSockets() ([]*PuntDetails, error)
 	// DumpExceptions dumps punt exceptions
 	DumpExceptions() ([]*ExceptionDetails, error)
@@ -80,27 +81,36 @@ type PuntVPPRead interface {
 	DumpPuntRedirect() ([]*punt.IPRedirect, error)
 }
 
-var Versions = map[string]HandlerVersion{}
+var Handler = vpp.RegisterHandler(vpp.HandlerDesc{
+	Name:       "punt",
+	HandlerAPI: (*PuntVppAPI)(nil),
+})
 
-type HandlerVersion struct {
-	Msgs []govppapi.Message
-	New  func(govppapi.Channel, ifaceidx.IfaceMetadataIndex, logging.Logger) PuntVppAPI
+type NewHandlerFunc func(ch govppapi.Channel, idx ifaceidx.IfaceMetadataIndex, log logging.Logger) PuntVppAPI
+
+func AddHandlerVersion(version vpp.Version, msgs []govppapi.Message, h NewHandlerFunc) {
+	Handler.AddVersion(vpp.HandlerVersion{
+		Version: version,
+		Check: func(c vpp.Client) error {
+			ch, err := c.NewAPIChannel()
+			if err != nil {
+				return err
+			}
+			return ch.CheckCompatiblity(msgs...)
+		},
+		NewHandler: func(c vpp.Client, a ...interface{}) vpp.HandlerAPI {
+			ch, err := c.NewAPIChannel()
+			if err != nil {
+				return err
+			}
+			return h(ch, a[0].(ifaceidx.IfaceMetadataIndex), a[1].(logging.Logger))
+		},
+	})
 }
 
-func CompatiblePuntVppHandler(
-	ch govppapi.Channel, idx ifaceidx.IfaceMetadataIndex, log logging.Logger,
-) PuntVppAPI {
-	if len(Versions) == 0 {
-		// puntplugin is not loaded
-		return nil
+func CompatiblePuntVppHandler(c vpp.Client, ifIdx ifaceidx.IfaceMetadataIndex, log logging.Logger) PuntVppAPI {
+	if v := Handler.FindCompatibleVersion(c); v != nil {
+		return v.NewHandler(c, ifIdx, log).(PuntVppAPI)
 	}
-	for ver, h := range Versions {
-		log.Debugf("checking compatibility with %s", ver)
-		if err := ch.CheckCompatiblity(h.Msgs...); err != nil {
-			continue
-		}
-		log.Debug("found compatible version:", ver)
-		return h.New(ch, idx, log)
-	}
-	panic("no compatible version available")
+	return nil
 }

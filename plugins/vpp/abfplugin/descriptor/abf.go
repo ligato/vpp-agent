@@ -15,22 +15,23 @@
 package descriptor
 
 import (
-	"github.com/ligato/vpp-agent/plugins/vpp/aclplugin/descriptor"
-
 	"github.com/go-errors/errors"
-	"github.com/gogo/protobuf/proto"
-	prototypes "github.com/gogo/protobuf/types"
+	"github.com/golang/protobuf/proto"
+	prototypes "github.com/golang/protobuf/ptypes/empty"
+
 	"github.com/ligato/cn-infra/idxmap"
 	"github.com/ligato/cn-infra/logging"
-	abf "github.com/ligato/vpp-agent/api/models/vpp/abf"
-	acl "github.com/ligato/vpp-agent/api/models/vpp/acl"
-	"github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	"github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-	"github.com/ligato/vpp-agent/plugins/vpp/abfplugin/abfidx"
-	"github.com/ligato/vpp-agent/plugins/vpp/abfplugin/descriptor/adapter"
-	"github.com/ligato/vpp-agent/plugins/vpp/abfplugin/vppcalls"
-	"github.com/ligato/vpp-agent/plugins/vpp/aclplugin/aclidx"
-	ifdescriptor "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/descriptor"
+
+	"go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/abfplugin/abfidx"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/abfplugin/descriptor/adapter"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/abfplugin/vppcalls"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/aclplugin/aclidx"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/aclplugin/descriptor"
+	ifdescriptor "go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/descriptor"
+	abf "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/abf"
+	acl "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/acl"
+	vpp_interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
 )
 
 const (
@@ -59,8 +60,11 @@ type ABFDescriptor struct {
 
 // NewABFDescriptor is constructor for ABF descriptor and returns descriptor
 // suitable for registration (via adapter) with the KVScheduler.
-func NewABFDescriptor(abfHandler vppcalls.ABFVppAPI, aclIndex aclidx.ACLMetadataIndex,
-	logger logging.PluginLogger) *api.KVDescriptor {
+func NewABFDescriptor(
+	abfHandler vppcalls.ABFVppAPI,
+	aclIndex aclidx.ACLMetadataIndex,
+	logger logging.PluginLogger,
+) *api.KVDescriptor {
 	ctx := &ABFDescriptor{
 		log:        logger.NewLogger("abf-descriptor"),
 		aclIndex:   aclIndex,

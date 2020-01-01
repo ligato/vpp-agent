@@ -6,7 +6,7 @@ metadata:
 data:
   etcd.conf: |
     insecure-transport: true
-    dial-timeout: 1000000000
+    dial-timeout: 1s
     endpoints:
      - "172.17.0.1:22379"
   kafka.conf: |

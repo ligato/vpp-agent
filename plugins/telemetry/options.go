@@ -3,10 +3,11 @@ package telemetry
 import (
 	"github.com/ligato/cn-infra/rpc/grpc"
 	"github.com/ligato/cn-infra/rpc/prometheus"
+	"github.com/ligato/cn-infra/rpc/rest"
 	"github.com/ligato/cn-infra/servicelabel"
 
-	"github.com/ligato/vpp-agent/plugins/govppmux"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin"
+	"go.ligato.io/vpp-agent/v2/plugins/govppmux"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin"
 )
 
 // DefaultPlugin is default instance of Plugin
@@ -18,9 +19,10 @@ func NewPlugin(opts ...Option) *Plugin {
 
 	p.PluginName = "telemetry"
 	p.ServiceLabel = &servicelabel.DefaultPlugin
-	p.GoVppmux = &govppmux.DefaultPlugin
+	p.VPP = &govppmux.DefaultPlugin
 	p.Prometheus = &prometheus.DefaultPlugin
 	p.GRPC = &grpc.DefaultPlugin
+	p.HTTPHandlers = &rest.DefaultPlugin
 	p.IfPlugin = &ifplugin.DefaultPlugin
 
 	for _, o := range opts {

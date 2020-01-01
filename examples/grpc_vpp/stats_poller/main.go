@@ -25,7 +25,7 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 
-	"github.com/ligato/vpp-agent/api/configurator"
+	"go.ligato.io/vpp-agent/v2/proto/ligato/configurator"
 )
 
 var (
@@ -65,7 +65,7 @@ func (p *ExamplePlugin) Init() (err error) {
 		return err
 	}
 
-	client := configurator.NewStatsPollerClient(p.conn)
+	client := configurator.NewStatsPollerServiceClient(p.conn)
 
 	// Start stats poller.
 	go p.pollStats(client)
@@ -74,7 +74,7 @@ func (p *ExamplePlugin) Init() (err error) {
 }
 
 // Get is an implementation of client-side statistics streaming.
-func (p *ExamplePlugin) pollStats(client configurator.StatsPollerClient) {
+func (p *ExamplePlugin) pollStats(client configurator.StatsPollerServiceClient) {
 	p.Log.Infof("Polling every %v seconds..", *period)
 
 	req := &configurator.PollStatsRequest{

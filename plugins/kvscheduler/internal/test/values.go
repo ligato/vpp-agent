@@ -12,15 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate protoc --proto_path=./model --gogo_out=./model values.proto
+//go:generate protoc --proto_path=. --go_out=paths=source_relative:. model/values.proto
 
 package test
 
 import (
-	"github.com/gogo/protobuf/proto"
+	"github.com/golang/protobuf/proto"
 
-	. "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-	. "github.com/ligato/vpp-agent/plugins/kvscheduler/internal/test/model"
+	. "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
+	. "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/internal/test/model"
 )
 
 // NewStringValue creates a new instance of StringValue.

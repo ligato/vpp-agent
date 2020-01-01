@@ -17,19 +17,19 @@ package vpp2001_324_test
 import (
 	"testing"
 
-	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vrfidx"
-
 	"github.com/ligato/cn-infra/logging/logrus"
-	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
-	netallock_mock "github.com/ligato/vpp-agent/plugins/netalloc/mock"
-	vpp_ip "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001_324/ip"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
-	ifvppcalls "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
-	ifvpp2001_324 "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls/vpp2001_324"
-	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls"
-	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls/vpp2001_324"
-	"github.com/ligato/vpp-agent/plugins/vpp/vppcallmock"
 	. "github.com/onsi/gomega"
+
+	netallock_mock "go.ligato.io/vpp-agent/v2/plugins/netalloc/mock"
+	vpp_ip "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324/ip"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
+	ifvppcalls "go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/vppcalls"
+	ifvpp2001_324 "go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/vppcalls/vpp2001_324"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/l3plugin/vppcalls"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/l3plugin/vppcalls/vpp2001_324"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/l3plugin/vrfidx"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/vppmock"
+	l3 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l3"
 )
 
 var routes = []*l3.Route{
@@ -84,10 +84,10 @@ func TestDeleteRoute(t *testing.T) {
 	Expect(err).To(Not(BeNil()))
 }
 
-func routeTestSetup(t *testing.T) (*vppcallmock.TestCtx, ifvppcalls.InterfaceVppAPI, vppcalls.RouteVppAPI) {
-	ctx := vppcallmock.SetupTestCtx(t)
+func routeTestSetup(t *testing.T) (*vppmock.TestCtx, ifvppcalls.InterfaceVppAPI, vppcalls.RouteVppAPI) {
+	ctx := vppmock.SetupTestCtx(t)
 	log := logrus.NewLogger("test-log")
-	ifHandler := ifvpp2001_324.NewInterfaceVppHandler(ctx.MockChannel, log)
+	ifHandler := ifvpp2001_324.NewInterfaceVppHandler(ctx.MockVPPClient, log)
 	ifIndexes := ifaceidx.NewIfaceIndex(logrus.NewLogger("test-if"), "test-if")
 	vrfIndexes := vrfidx.NewVRFIndex(logrus.NewLogger("test-vrf"), "test-vrf")
 	ifIndexes.Put("iface1", &ifaceidx.IfaceMetadata{

@@ -16,7 +16,7 @@ package main
 
 import (
 	"github.com/ligato/cn-infra/agent"
-	"github.com/ligato/vpp-agent/examples/tutorials/08_grpc/plugins/grpc"
+	"go.ligato.io/vpp-agent/v2/examples/tutorials/08_grpc/plugins/grpc"
 )
 
 func main() {

@@ -15,81 +15,93 @@
 package vpp2001_324
 
 import (
-	"fmt"
-	"net"
-
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp"
 
-	vpp_afpacket "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001_324/af_packet"
-	vpp_bond "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001_324/bond"
-	vpp_dhcp "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001_324/dhcp"
-	vpp_gre "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001_324/gre"
-	vpp_ifs "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001_324/interfaces"
-	vpp_ip "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001_324/ip"
-	vpp_ipsec "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001_324/ipsec"
-	vpp_l2 "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001_324/l2"
-	vpp_memif "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001_324/memif"
-	vpp_span "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001_324/span"
-	vpp_tapv2 "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001_324/tapv2"
-	vpp_vmxnet3 "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001_324/vmxnet3"
-	vpp_vpe "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001_324/vpe"
-	vpp_vxlan "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001_324/vxlan"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324/af_packet"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324/bond"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324/dhcp"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324/gre"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324/gtpu"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324/interfaces"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324/ip"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324/ipsec"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324/l2"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324/memif"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324/span"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324/tapv2"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324/vmxnet3"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324/vxlan"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/vppcalls"
 )
 
-func init() {
-	var msgs []govppapi.Message
-	msgs = append(msgs, vpp_afpacket.AllMessages()...)
-	msgs = append(msgs, vpp_bond.AllMessages()...)
-	msgs = append(msgs, vpp_dhcp.AllMessages()...)
-	msgs = append(msgs, vpp_gre.AllMessages()...)
-	msgs = append(msgs, vpp_ifs.AllMessages()...)
-	msgs = append(msgs, vpp_ip.AllMessages()...)
-	msgs = append(msgs, vpp_ipsec.AllMessages()...)
-	msgs = append(msgs, vpp_l2.AllMessages()...)
-	msgs = append(msgs, vpp_memif.AllMessages()...)
-	msgs = append(msgs, vpp_span.AllMessages()...)
-	msgs = append(msgs, vpp_tapv2.AllMessages()...)
-	msgs = append(msgs, vpp_vmxnet3.AllMessages()...)
-	msgs = append(msgs, vpp_vpe.AllMessages()...)
-	msgs = append(msgs, vpp_vxlan.AllMessages()...)
+var HandlerVersion = vpp.HandlerVersion{
+	Version: vpp2001_324.Version,
+	Check: func(c vpp.Client) error {
+		msgs := vpp.Messages(
+			af_packet.AllMessages,
+			bond.AllMessages,
+			dhcp.AllMessages,
+			interfaces.AllMessages,
+			ip.AllMessages,
+			ipsec.AllMessages,
+			gre.AllMessages,
+			l2.AllMessages,
+			span.AllMessages,
+			tapv2.AllMessages,
+			vxlan.AllMessages,
+		)
+		if c.IsPluginLoaded(gtpu.ModuleName) {
+			msgs.Add(gtpu.AllMessages)
+		}
+		if c.IsPluginLoaded(memif.ModuleName) {
+			msgs.Add(memif.AllMessages)
+		}
+		if c.IsPluginLoaded(vmxnet3.ModuleName) {
+			msgs.Add(vmxnet3.AllMessages)
+		}
+		return c.CheckCompatiblity(msgs.AllMessages()...)
+	},
+	NewHandler: func(c vpp.Client, a ...interface{}) vpp.HandlerAPI {
+		return NewInterfaceVppHandler(c, a[0].(logging.Logger))
+	},
+}
 
-	vppcalls.Versions["vpp2001_324"] = vppcalls.HandlerVersion{
-		Msgs: msgs,
-		New: func(ch govppapi.Channel, log logging.Logger) vppcalls.InterfaceVppAPI {
-			return NewInterfaceVppHandler(ch, log)
-		},
-	}
+func init() {
+	vppcalls.Handler.AddVersion(HandlerVersion)
 }
 
 // InterfaceVppHandler is accessor for interface-related vppcalls methods
 type InterfaceVppHandler struct {
 	callsChannel govppapi.Channel
+	interfaces   interfaces.RPCService
+	gtpu         gtpu.RPCService
+	memif        memif.RPCService
+	vmxnet3      vmxnet3.RPCService
 	log          logging.Logger
 }
 
 // NewInterfaceVppHandler returns new InterfaceVppHandler.
-func NewInterfaceVppHandler(ch govppapi.Channel, log logging.Logger) *InterfaceVppHandler {
-	return &InterfaceVppHandler{ch, log}
-}
-
-// IPToAddress converts string type IP address to VPP ip.api address representation
-func IPToAddress(ipStr string) (addr vpp_ip.Address, err error) {
-	netIP := net.ParseIP(ipStr)
-	if netIP == nil {
-		return vpp_ip.Address{}, fmt.Errorf("invalid IP: %q", ipStr)
+func NewInterfaceVppHandler(c vpp.Client, log logging.Logger) vppcalls.InterfaceVppAPI {
+	ch, err := c.NewAPIChannel()
+	if err != nil {
+		return nil
 	}
-	if ip4 := netIP.To4(); ip4 == nil {
-		addr.Af = vpp_ip.ADDRESS_IP6
-		var ip6addr vpp_ip.IP6Address
-		copy(ip6addr[:], netIP.To16())
-		addr.Un.SetIP6(ip6addr)
-	} else {
-		addr.Af = vpp_ip.ADDRESS_IP4
-		var ip4addr vpp_ip.IP4Address
-		copy(ip4addr[:], ip4)
-		addr.Un.SetIP4(ip4addr)
+	h := &InterfaceVppHandler{
+		callsChannel: ch,
+		interfaces:   interfaces.NewServiceClient(ch),
+		log:          log,
 	}
-	return
+	if c.IsPluginLoaded(gtpu.ModuleName) {
+		h.gtpu = gtpu.NewServiceClient(ch)
+	}
+	if c.IsPluginLoaded(memif.ModuleName) {
+		h.memif = memif.NewServiceClient(ch)
+	}
+	if c.IsPluginLoaded(vmxnet3.ModuleName) {
+		h.vmxnet3 = vmxnet3.NewServiceClient(ch)
+	}
+	return h
 }

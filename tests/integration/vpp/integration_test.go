@@ -16,9 +16,9 @@ package vpp
 
 import (
 	"bytes"
-	"flag"
+	"context"
 	"fmt"
-	"log"
+	"io"
 	"os"
 	"os/exec"
 	"strings"
@@ -32,27 +32,18 @@ import (
 	govppcore "git.fd.io/govpp.git/core"
 	"github.com/mitchellh/go-ps"
 	. "github.com/onsi/gomega"
-	"github.com/sirupsen/logrus"
 
-	"github.com/ligato/vpp-agent/plugins/govppmux/vppcalls"
-)
-
-var (
-	vppPath     = flag.String("vpp-path", "/usr/bin/vpp", "VPP program path")
-	vppConfig   = flag.String("vpp-config", "", "VPP config file")
-	vppSockAddr = flag.String("vpp-sock-addr", "", "VPP binapi socket address")
-
-	debug = flag.Bool("debug", false, "Turn on debug mode.")
+	"go.ligato.io/vpp-agent/v2/plugins/govppmux/vppcalls"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp"
 )
 
 const (
-	vppConnectRetries    = 3
 	vppConnectRetryDelay = time.Millisecond * 500
 	vppBootDelay         = time.Millisecond * 200
 	vppTermDelay         = time.Millisecond * 50
 	vppExitTimeout       = time.Second * 1
 
-	vppConf = `
+	defaultVPPConfig = `
 		unix {
 			nodaemon
 			cli-listen /run/vpp/cli.sock
@@ -75,35 +66,21 @@ const (
 		}`
 )
 
-func TestMain(m *testing.M) {
-	log.SetFlags(log.Lmicroseconds | log.Lshortfile)
-	flag.Parse()
-	if *debug {
-		govppcore.SetLogLevel(logrus.DebugLevel)
-	}
-	result := m.Run()
-	os.Exit(result)
-}
-
-type testCtx struct {
+type TestCtx struct {
 	t              *testing.T
-	VPP            *exec.Cmd
+	Context        context.Context
+	vppCmd         *exec.Cmd
 	stderr, stdout *bytes.Buffer
 	Conn           *govppcore.Connection
 	StatsConn      *govppcore.StatsConnection
 	vppBinapi      govppapi.Channel
 	vppStats       govppapi.StatsProvider
-	vpe            vppcalls.VpeVppAPI
+	vpp            vppcalls.VppCoreAPI
 	versionInfo    *vppcalls.VersionInfo
+	vppClient      *vppClient
 }
 
-func setupVPP(t *testing.T) *testCtx {
-	if os.Getenv("TRAVIS") != "" {
-		t.Skip("skipping test for Travis")
-	}
-
-	RegisterTestingT(t)
-
+func startVPP(t *testing.T, stdout, stderr io.Writer) *exec.Cmd {
 	// check if VPP process is not running already
 	processes, err := ps.Processes()
 	if err != nil {
@@ -120,6 +97,7 @@ func setupVPP(t *testing.T) *testCtx {
 		}
 	}
 
+	// remove binapi files from previous run
 	var removeFile = func(path string) {
 		if err := os.Remove(path); err == nil {
 			t.Logf("removed file %q", path)
@@ -127,35 +105,51 @@ func setupVPP(t *testing.T) *testCtx {
 			t.Fatalf("removing file %q failed: %v", path, err)
 		}
 	}
-	// remove binapi files from previous run
 	removeFile(*vppSockAddr)
+
+	// ensure VPP runtime directory exists
 	if err := os.Mkdir("/run/vpp", 0755); err != nil && !os.IsExist(err) {
 		t.Logf("mkdir failed: %v", err)
 	}
 
-	var stderr, stdout bytes.Buffer
-
+	// setup VPP process
 	vppCmd := exec.Command(*vppPath)
 	if *vppConfig != "" {
 		vppCmd.Args = append(vppCmd.Args, "-c", *vppConfig)
 	} else {
-		vppCmd.Args = append(vppCmd.Args, vppConf)
+		vppCmd.Args = append(vppCmd.Args, defaultVPPConfig)
 	}
-	vppCmd.Stderr = &stderr
-	vppCmd.Stdout = &stdout
+	vppCmd.Stderr = stderr
+	vppCmd.Stdout = stdout
+
 	// ensure that process is killed when current process exits
 	vppCmd.SysProcAttr = &syscall.SysProcAttr{Pdeathsig: syscall.SIGKILL}
+
 	if err := vppCmd.Start(); err != nil {
 		t.Fatalf("starting VPP failed: %v", err)
 	}
-	vppPID := uint32(vppCmd.Process.Pid)
-	t.Logf("VPP start OK (PID: %v)", vppPID)
 
+	t.Logf("VPP start OK (PID: %v)", vppCmd.Process.Pid)
+	return vppCmd
+}
+
+func setupVPP(t *testing.T) *TestCtx {
+	if os.Getenv("TRAVIS") != "" {
+		t.Skip("skipping test for Travis")
+	}
+	RegisterTestingT(t)
+
+	// start VPP process
+	var stderr, stdout bytes.Buffer
+	vppCmd := startVPP(t, &stdout, &stderr)
+	vppPID := uint32(vppCmd.Process.Pid)
+
+	// connect to binapi
 	adapter := socketclient.NewVppClient(*vppSockAddr)
 
 	// wait until the socket is ready
 	if err := adapter.WaitReady(); err != nil {
-		t.Logf("WaitReady failed: %v", err)
+		t.Logf("WaitReady error: %v", err)
 	}
 	time.Sleep(vppBootDelay)
 
@@ -171,7 +165,7 @@ func setupVPP(t *testing.T) *testCtx {
 		}
 		return nil, fmt.Errorf("failed to connect after %d retries", retries)
 	}
-	conn, err := connectRetry(vppConnectRetries)
+	conn, err := connectRetry(int(*vppRetry))
 	if err != nil {
 		t.Errorf("connecting to VPP failed: %v", err)
 		if err := vppCmd.Process.Kill(); err != nil {
@@ -185,13 +179,21 @@ func setupVPP(t *testing.T) *testCtx {
 		t.FailNow()
 	}
 
-	ch, err := conn.NewAPIChannel()
+	apiChannel, err := conn.NewAPIChannel()
 	if err != nil {
 		t.Fatalf("creating channel failed: %v", err)
 	}
 
-	vpeHandler := vppcalls.CompatibleVpeHandler(ch)
-	versionInfo, err := vpeHandler.GetVersionInfo()
+	vppClient := &vppClient{
+		t:               t,
+		ChannelProvider: conn,
+		ch:              apiChannel,
+	}
+
+	vpeHandler := vppcalls.CompatibleHandler(vppClient)
+
+	ctx := context.TODO()
+	versionInfo, err := vpeHandler.GetVersion(ctx)
 	if err != nil {
 		t.Fatalf("getting version info failed: %v", err)
 	}
@@ -199,37 +201,43 @@ func setupVPP(t *testing.T) *testCtx {
 	if versionInfo.Version == "" {
 		t.Fatal("expected VPP version to not be empty")
 	}
-	vpeInfo, err := vpeHandler.GetVpeInfo()
+	vpeInfo, err := vpeHandler.GetSession(ctx)
 	if err != nil {
-		t.Fatalf("getting vpe info failed: %v", err)
+		t.Fatalf("getting vpp info failed: %v", err)
 	}
 	if vpeInfo.PID != vppPID {
 		t.Fatalf("expected VPP PID to be %v, got %v", vppPID, vpeInfo.PID)
 	}
 
+	// connect to stats
 	statsClient := statsclient.NewStatsClient("")
 	statsConn, err := govppcore.ConnectStats(statsClient)
 	if err != nil {
 		t.Fatalf("connecting to VPP stats API failed: %v", err)
 	}
 
-	t.Logf("---------------")
+	vppClient.vpp = vpeHandler
+	vppClient.stats = statsConn
 
-	return &testCtx{
+	t.Log("===>--S-E-T-U-P--<===")
+
+	return &TestCtx{
 		t:           t,
+		Context:     ctx,
 		versionInfo: versionInfo,
-		vpe:         vpeHandler,
-		VPP:         vppCmd,
+		vpp:         vpeHandler,
+		vppCmd:      vppCmd,
 		stderr:      &stderr,
 		stdout:      &stdout,
 		Conn:        conn,
-		vppBinapi:   ch,
+		vppBinapi:   apiChannel,
 		vppStats:    statsConn,
+		vppClient:   vppClient,
 	}
 }
 
-func (ctx *testCtx) teardownVPP() {
-	ctx.t.Logf("-----------------")
+func (ctx *TestCtx) teardownVPP() {
+	ctx.t.Logf("---T-E-A-R-D-O-W-N---")
 
 	// disconnect sometimes hangs
 	done := make(chan struct{})
@@ -247,14 +255,14 @@ func (ctx *testCtx) teardownVPP() {
 		ctx.t.Logf("VPP disconnect timeout")
 	}
 
-	if err := ctx.VPP.Process.Signal(syscall.SIGTERM); err != nil {
+	if err := ctx.vppCmd.Process.Signal(syscall.SIGTERM); err != nil {
 		ctx.t.Fatalf("sending SIGTERM to VPP failed: %v", err)
 	}
 
 	// wait until VPP exits
 	exit := make(chan struct{})
 	go func() {
-		if err := ctx.VPP.Wait(); err != nil {
+		if err := ctx.vppCmd.Wait(); err != nil {
 			ctx.t.Logf("VPP process wait failed: %v", err)
 		}
 		close(exit)
@@ -266,8 +274,43 @@ func (ctx *testCtx) teardownVPP() {
 	case <-time.After(vppExitTimeout):
 		ctx.t.Logf("VPP exit timeout")
 		ctx.t.Logf("sending SIGKILL to VPP..")
-		if err := ctx.VPP.Process.Signal(syscall.SIGKILL); err != nil {
+		if err := ctx.vppCmd.Process.Signal(syscall.SIGKILL); err != nil {
 			ctx.t.Fatalf("sending SIGKILL to VPP failed: %v", err)
 		}
 	}
+}
+
+type vppClient struct {
+	t *testing.T
+	govppapi.ChannelProvider
+	ch      govppapi.Channel
+	stats   govppapi.StatsProvider
+	vpp     vppcalls.VppCoreAPI
+	version vpp.Version
+}
+
+func (m *vppClient) Version() vpp.Version {
+	return m.version
+}
+
+func (v *vppClient) CheckCompatiblity(msgs ...govppapi.Message) error {
+	return v.ch.CheckCompatiblity(msgs...)
+}
+
+func (v *vppClient) Stats() govppapi.StatsProvider {
+	return v.stats
+}
+
+func (v *vppClient) IsPluginLoaded(plugin string) bool {
+	ctx := context.Background()
+	plugins, err := v.vpp.GetPlugins(ctx)
+	if err != nil {
+		v.t.Fatalf("GetPlugins failed: %v", plugins)
+	}
+	for _, p := range plugins {
+		if p.Name == plugin {
+			return true
+		}
+	}
+	return false
 }

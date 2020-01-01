@@ -5,15 +5,16 @@ import (
 	"testing"
 
 	"github.com/ligato/cn-infra/logging/logrus"
-	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	ifplugin_vppcalls "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
+
+	ifplugin_vppcalls "go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/vppcalls"
+	interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
 )
 
 func TestVxlanGpe(t *testing.T) {
 	ctx := setupVPP(t)
 	defer ctx.teardownVPP()
 
-	h := ifplugin_vppcalls.CompatibleInterfaceVppHandler(ctx.vppBinapi, logrus.NewLogger("test"))
+	h := ifplugin_vppcalls.CompatibleInterfaceVppHandler(ctx.vppClient, logrus.NewLogger("test"))
 
 	tests := []struct {
 		name           string
@@ -31,7 +32,8 @@ func TestVxlanGpe(t *testing.T) {
 					Protocol: interfaces.VxlanLink_Gpe_IP4,
 				},
 			},
-			isFail: false,
+			mcastSwIfIndex: 0xFFFFFFFF,
+			isFail:         false,
 		},
 		{
 			name: "Create VxLAN-GPE tunnel (IP6)",
@@ -42,7 +44,8 @@ func TestVxlanGpe(t *testing.T) {
 					Protocol: interfaces.VxlanLink_Gpe_IP6,
 				},
 			},
-			isFail: false,
+			mcastSwIfIndex: 0xFFFFFFFF,
+			isFail:         false,
 		},
 		{
 			name: "Create VxLAN-GPE tunnel (Ethernet)",
@@ -53,7 +56,8 @@ func TestVxlanGpe(t *testing.T) {
 					Protocol: interfaces.VxlanLink_Gpe_ETHERNET,
 				},
 			},
-			isFail: false,
+			mcastSwIfIndex: 0xFFFFFFFF,
+			isFail:         false,
 		},
 		{
 			name: "Create VxLAN-GPE tunnel (NSH)",
@@ -64,7 +68,8 @@ func TestVxlanGpe(t *testing.T) {
 					Protocol: interfaces.VxlanLink_Gpe_NSH,
 				},
 			},
-			isFail: false,
+			mcastSwIfIndex: 0xFFFFFFFF,
+			isFail:         false,
 		},
 		{
 			name: "Create VxLAN-GPE tunnel with same source and destination",
@@ -75,7 +80,8 @@ func TestVxlanGpe(t *testing.T) {
 					Protocol: interfaces.VxlanLink_Gpe_IP4,
 				},
 			},
-			isFail: true,
+			mcastSwIfIndex: 0xFFFFFFFF,
+			isFail:         true,
 		},
 		{
 			name: "Create VxLAN-GPE tunnel with src and dst ip versions mismatch",
@@ -86,7 +92,8 @@ func TestVxlanGpe(t *testing.T) {
 					Protocol: interfaces.VxlanLink_Gpe_IP4,
 				},
 			},
-			isFail: true,
+			mcastSwIfIndex: 0xFFFFFFFF,
+			isFail:         true,
 		},
 	}
 	for i, test := range tests {
@@ -105,7 +112,7 @@ func TestVxlanGpe(t *testing.T) {
 				}
 			}
 
-			ifaces, err := h.DumpInterfaces()
+			ifaces, err := h.DumpInterfaces(ctx.Context)
 			if err != nil {
 				t.Fatalf("dumping interfaces failed: %v", err)
 			}
@@ -139,7 +146,7 @@ func TestVxlanGpe(t *testing.T) {
 				t.Fatalf("delete VxLAN-GPE tunnel failed: %v\n", err)
 			}
 
-			ifaces, err = h.DumpInterfaces()
+			ifaces, err = h.DumpInterfaces(ctx.Context)
 			if err != nil {
 				t.Fatalf("dumping interfaces failed: %v", err)
 			}

@@ -18,11 +18,12 @@ import (
 	"context"
 	"testing"
 
-	"github.com/ligato/vpp-agent/plugins/telemetry/vppcalls"
-	"github.com/ligato/vpp-agent/plugins/telemetry/vppcalls/vpp1904"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/vpe"
-	"github.com/ligato/vpp-agent/plugins/vpp/vppcallmock"
 	. "github.com/onsi/gomega"
+
+	"go.ligato.io/vpp-agent/v2/plugins/telemetry/vppcalls"
+	"go.ligato.io/vpp-agent/v2/plugins/telemetry/vppcalls/vpp1904"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904/vpe"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/vppmock"
 )
 
 func TestGetBuffers(t *testing.T) {
@@ -499,8 +500,8 @@ func TestGetNodeCounters(t *testing.T) {
 	}))*/
 }
 
-func testSetup(t *testing.T) (*vppcallmock.TestCtx, vppcalls.TelemetryVppAPI) {
-	ctx := vppcallmock.SetupTestCtx(t)
+func testSetup(t *testing.T) (*vppmock.TestCtx, vppcalls.TelemetryVppAPI) {
+	ctx := vppmock.SetupTestCtx(t)
 	handler := vpp1904.NewTelemetryVppHandler(ctx.MockChannel)
 	return ctx, handler
 }

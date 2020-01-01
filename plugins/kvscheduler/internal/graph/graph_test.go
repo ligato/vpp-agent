@@ -18,15 +18,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gogo/protobuf/proto"
+	"github.com/golang/protobuf/proto"
 	. "github.com/onsi/gomega"
 
-	. "github.com/ligato/vpp-agent/plugins/kvscheduler/internal/test"
-	. "github.com/ligato/vpp-agent/plugins/kvscheduler/internal/utils"
+	. "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/internal/test"
+	. "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/internal/utils"
 )
 
 const (
-	minutesInOneDay = uint32(1440)
+	minutesInOneDay  = uint32(1440)
 	minutesInOneHour = uint32(60)
 )
 
@@ -457,7 +457,7 @@ func testMultipleNodes(wInPlace bool) {
 func TestSelectors(t *testing.T) {
 	RegisterTestingT(t)
 
-	graph := buildGraph(nil, false,true, true, selectNodesToBuild(1, 2, 3, 4))
+	graph := buildGraph(nil, false, true, true, selectNodesToBuild(1, 2, 3, 4))
 	graphR := graph.Read()
 
 	// test key selector
@@ -482,7 +482,7 @@ func TestSelectors(t *testing.T) {
 
 	// change flags and re-test flag selectors
 	graphR.Release()
-	graphW := graph.Write(false,false)
+	graphW := graph.Write(false, false)
 	graphW.SetNode(keyA1).SetFlags(ColorFlag(Green), TemporaryFlag())
 	graphW.SetNode(keyA1).DelFlags(AbstractFlagIndex)
 	graphW.SetNode(keyA3).DelFlags(ColorFlagIndex)
@@ -504,7 +504,7 @@ func TestNodeRemoval(t *testing.T) {
 	RegisterTestingT(t)
 
 	startTime := time.Now()
-	graph := buildGraph(nil, false,true, true, selectNodesToBuild(1, 2, 3, 4))
+	graph := buildGraph(nil, false, true, true, selectNodesToBuild(1, 2, 3, 4))
 
 	// delete node2 & node 4
 	delTime := time.Now()
@@ -726,11 +726,11 @@ func TestNodeTimeline(t *testing.T) {
 
 	// add node1
 	startTime := time.Now()
-	graph := buildGraph(nil, false,true, true, selectNodesToBuild(1))
+	graph := buildGraph(nil, false, true, true, selectNodesToBuild(1))
 
 	// delete node1
 	delTime := time.Now()
-	graphW := graph.Write(false,true)
+	graphW := graph.Write(false, true)
 	graphW.DeleteNode(keyA1)
 	graphW.Save()
 	graphW.Release()
@@ -828,7 +828,7 @@ func TestNodeMetadata(t *testing.T) {
 	RegisterTestingT(t)
 
 	// add node1-node3
-	graph := buildGraph(nil, false,true, true, selectNodesToBuild(1, 2, 3))
+	graph := buildGraph(nil, false, true, true, selectNodesToBuild(1, 2, 3))
 
 	// check metadata
 	graphR := graph.Read()
