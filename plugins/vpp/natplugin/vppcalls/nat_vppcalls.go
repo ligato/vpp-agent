@@ -34,10 +34,10 @@ type NatVppAPI interface {
 	EnableNat44Interface(iface string, isInside, isOutput bool) error
 	// DisableNat44Interface disables NAT feature for provided interface
 	DisableNat44Interface(iface string, isInside, isOutput bool) error
-	// AddNat44Address adds new IPV4 address into the NAT pool.
-	AddNat44Address(address string, vrf uint32, twiceNat bool) error
-	// DelNat44Address removes existing IPv4 address from the NAT pool.
-	DelNat44Address(address string, vrf uint32, twiceNat bool) error
+	// AddNat44AddressPool adds new IPV4 address pool into the NAT pools.
+	AddNat44AddressPool(vrf uint32, firstIP, lastIP string, twiceNat bool) error
+	// DelNat44AddressPool removes existing IPv4 address pool from the NAT pools.
+	DelNat44AddressPool(vrf uint32, firstIP, lastIP string, twiceNat bool) error
 	// SetVirtualReassemblyIPv4 configures NAT virtual reassembly for IPv4 packets.
 	SetVirtualReassemblyIPv4(vrCfg *nat.VirtualReassembly) error
 	// SetVirtualReassemblyIPv6 configures NAT virtual reassembly for IPv6 packets.
@@ -55,9 +55,14 @@ type NatVppAPI interface {
 // NatVppRead provides read methods for VPP NAT configuration.
 type NatVppRead interface {
 	// Nat44GlobalConfigDump dumps global NAT44 config in NB format.
-	Nat44GlobalConfigDump() (*nat.Nat44Global, error)
+	// If dumpDeprecated is true, dumps deprecated NAT44 global config as well.
+	Nat44GlobalConfigDump(dumpDeprecated bool) (*nat.Nat44Global, error)
 	// DNat44Dump dumps all configured DNAT-44 configurations ordered by label.
 	DNat44Dump() ([]*nat.DNat44, error)
+	// Nat44InterfacesDump dumps NAT44 config of all NAT44-enabled interfaces.
+	Nat44InterfacesDump() ([]*nat.Nat44Interface, error)
+	// Nat44AddressPoolsDump dumps all configured NAT44 address pools.
+	Nat44AddressPoolsDump() ([]*nat.Nat44AddressPool, error)
 }
 
 var handler = vpp.RegisterHandler(vpp.HandlerDesc{

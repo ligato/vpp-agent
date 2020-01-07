@@ -40,6 +40,8 @@ message ConfigData {
 
     nat.Nat44Global nat44_global = 50;
     repeated nat.DNat44 dnat44s = 51;
+    repeated nat.Nat44Interface nat44_interfaces = 52;
+    repeated nat.Nat44AddressPool nat44_pools = 53;
 
     repeated ipsec.SecurityPolicyDatabase ipsec_spds = 60;
     repeated ipsec.SecurityAssociation ipsec_sas = 61;

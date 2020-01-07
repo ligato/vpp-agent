@@ -227,6 +227,18 @@ func (dsl *PutDSL) DNAT44(nat44 *nat.DNat44) linuxclient.PutDSL {
 	return dsl
 }
 
+// NAT44Interface adds a request to create or update NAT44 interface configuration.
+func (dsl *PutDSL) NAT44Interface(natIf *nat.Nat44Interface) linuxclient.PutDSL {
+	dsl.parent.txn.Put(models.Key(natIf), natIf)
+	return dsl
+}
+
+// NAT44AddressPool adds a request to create or update NAT44 address pool.
+func (dsl *PutDSL) NAT44AddressPool(pool *nat.Nat44AddressPool) linuxclient.PutDSL {
+	dsl.parent.txn.Put(models.Key(pool), pool)
+	return dsl
+}
+
 // IPSecSA adds request to create a new Security Association
 func (dsl *PutDSL) IPSecSA(sa *ipsec.SecurityAssociation) linuxclient.PutDSL {
 	dsl.vppPut.IPSecSA(sa)
@@ -413,6 +425,18 @@ func (dsl *DeleteDSL) NAT44Global() linuxclient.DeleteDSL {
 // DNAT44 adds a request to delete an existing DNAT44 configuration
 func (dsl *DeleteDSL) DNAT44(label string) linuxclient.DeleteDSL {
 	dsl.vppDelete.DNAT44(label)
+	return dsl
+}
+
+// NAT44Interface adds a request to delete NAT44 interface configuration.
+func (dsl *DeleteDSL) NAT44Interface(natIf *nat.Nat44Interface) linuxclient.DeleteDSL {
+	dsl.parent.txn.Delete(models.Key(natIf))
+	return dsl
+}
+
+// NAT44AddressPool adds a request to create or update NAT44 address pool.
+func (dsl *DeleteDSL) NAT44AddressPool(pool *nat.Nat44AddressPool) linuxclient.DeleteDSL {
+	dsl.parent.txn.Delete(models.Key(pool))
 	return dsl
 }
 

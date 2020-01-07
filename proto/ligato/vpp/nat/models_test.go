@@ -93,7 +93,7 @@ func TestInterfaceNAT44Key(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			key := InterfaceNAT44Key(test.iface, test.isInside)
+			key := DerivedInterfaceNAT44Key(test.iface, test.isInside)
 			if key != test.expectedKey {
 				t.Errorf("failed for: iface=%s isInside=%t\n"+
 					"expected key:\n\t%q\ngot key:\n\t%q",
@@ -163,7 +163,7 @@ func TestParseInterfaceNAT44Key(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			iface, isInside, isInterfaceNAT44Key := ParseInterfaceNAT44Key(test.key)
+			iface, isInside, isInterfaceNAT44Key := ParseDerivedInterfaceNAT44Key(test.key)
 			if isInterfaceNAT44Key != test.expectedIsInterfaceNAT44Key {
 				t.Errorf("expected isInterfaceNAT44Key: %v\tgot: %v", test.expectedIsInterfaceNAT44Key, isInterfaceNAT44Key)
 			}
@@ -211,7 +211,7 @@ func TestAddressNAT44Key(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			key := AddressNAT44Key(test.address, test.twiceNat)
+			key := DerivedAddressNAT44Key(test.address, test.twiceNat)
 			if key != test.expectedKey {
 				t.Errorf("failed for: address=%s twiceNat=%t\n"+
 					"expected key:\n\t%q\ngot key:\n\t%q",
@@ -270,7 +270,7 @@ func TestParseAddressNAT44Key(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			address, twiceNat, isAddressNAT44Key := ParseAddressNAT44Key(test.key)
+			address, twiceNat, isAddressNAT44Key := ParseDerivedAddressNAT44Key(test.key)
 			if isAddressNAT44Key != test.expectedIsAddressNAT44Key {
 				t.Errorf("expected isAddressNAT44Key: %v\tgot: %v", test.expectedIsAddressNAT44Key, isAddressNAT44Key)
 			}

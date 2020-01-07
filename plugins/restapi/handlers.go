@@ -105,7 +105,7 @@ func (p *Plugin) registerNATHandlers() {
 		if p.natHandler == nil {
 			return nil, ErrHandlerUnavailable
 		}
-		return p.natHandler.Nat44GlobalConfigDump()
+		return p.natHandler.Nat44GlobalConfigDump(false)
 	})
 	// GET DNAT config
 	p.registerHTTPHandler(resturl.NatDNat, GET, func() (interface{}, error) {
@@ -113,6 +113,20 @@ func (p *Plugin) registerNATHandlers() {
 			return nil, ErrHandlerUnavailable
 		}
 		return p.natHandler.DNat44Dump()
+	})
+	// GET NAT interfaces
+	p.registerHTTPHandler(resturl.NatInterfaces, GET, func() (interface{}, error) {
+		if p.natHandler == nil {
+			return nil, ErrHandlerUnavailable
+		}
+		return p.natHandler.Nat44InterfacesDump()
+	})
+	// GET NAT address pools
+	p.registerHTTPHandler(resturl.NatAddressPools, GET, func() (interface{}, error) {
+		if p.natHandler == nil {
+			return nil, ErrHandlerUnavailable
+		}
+		return p.natHandler.Nat44AddressPoolsDump()
 	})
 }
 

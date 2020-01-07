@@ -83,6 +83,10 @@ type PutDSL interface {
 	NAT44Global(nat *nat.Nat44Global) PutDSL
 	// DNAT44 adds a request to create or update DNAT44 configuration
 	DNAT44(dnat *nat.DNat44) PutDSL
+	// NAT44Interface adds a request to create or update NAT44 interface configuration.
+	NAT44Interface(natIf *nat.Nat44Interface) PutDSL
+	// NAT44AddressPool adds a request to create or update NAT44 address pool.
+	NAT44AddressPool(pool *nat.Nat44AddressPool) PutDSL
 	// IPSecSA adds request to create a new Security Association
 	IPSecSA(sa *ipsec.SecurityAssociation) PutDSL
 	// IPSecSPD adds request to create a new Security Policy Database
@@ -136,6 +140,10 @@ type DeleteDSL interface {
 	NAT44Global() DeleteDSL
 	// DNAT44 adds a request to delete an existing DNAT44 configuration
 	DNAT44(label string) DeleteDSL
+	// NAT44Interface adds a request to delete NAT44 interface configuration.
+	NAT44Interface(natIf *nat.Nat44Interface) DeleteDSL
+	// NAT44AddressPool adds a request to delete NAT44 address pool.
+	NAT44AddressPool(pool *nat.Nat44AddressPool) DeleteDSL
 	// IPSecSA adds request to delete a Security Association
 	IPSecSA(saIndex string) DeleteDSL
 	// IPSecSPD adds request to delete a Security Policy Database
