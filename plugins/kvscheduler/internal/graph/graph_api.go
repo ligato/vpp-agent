@@ -21,8 +21,8 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
-
 	"github.com/ligato/cn-infra/idxmap"
+
 	. "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
 	"go.ligato.io/vpp-agent/v2/plugins/kvscheduler/internal/utils"
 )
@@ -144,7 +144,7 @@ type Node interface {
 	// GetLabel returns the label associated with this node.
 	GetLabel() string
 
-	// GetKey returns the value associated with the node.
+	// GetValue returns the value associated with the node.
 	GetValue() proto.Message
 
 	// GetFlag returns reference to the given flag or nil if the node doesn't have
