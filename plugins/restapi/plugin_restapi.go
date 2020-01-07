@@ -15,6 +15,7 @@
 package restapi
 
 import (
+	"fmt"
 	"net/http"
 	"sync"
 
@@ -121,8 +122,10 @@ func (p *Plugin) Init() (err error) {
 
 	// Initialize VPP handlers
 	p.vpeHandler, err = vpevppcalls.NewHandler(p.VPP)
-	if p.vpeHandler == nil {
-		p.Log.Info("VPP main handler is not available, it will be skipped")
+	if err != nil {
+		return fmt.Errorf("VPP core handler error: %w", err)
+	} else if p.vpeHandler == nil {
+		p.Log.Info("VPP core handler is not available, it will be skipped")
 	}
 	p.teleHandler = telemetryvppcalls.CompatibleTelemetryHandler(p.VPP)
 	if p.teleHandler == nil {

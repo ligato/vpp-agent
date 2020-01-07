@@ -60,20 +60,20 @@ func (p *Plugin) cliCommandHandler(formatter *render.Render) http.HandlerFunc {
 		body, err := ioutil.ReadAll(req.Body)
 		if err != nil {
 			errMsg := fmt.Sprintf("400 Bad request: failed to parse request body: %v", err)
-			formatter.JSON(w, http.StatusBadRequest, errMsg)
+			_ = formatter.JSON(w, http.StatusBadRequest, errMsg)
 			return
 		}
 		var reqParam map[string]string
 
 		if err = json.Unmarshal(body, &reqParam); err != nil {
 			errMsg := fmt.Sprintf("400 Bad request: failed to unmarshall request body: %v\n", err)
-			formatter.JSON(w, http.StatusBadRequest, errMsg)
+			_ = formatter.JSON(w, http.StatusBadRequest, errMsg)
 			return
 		}
 		command, ok := reqParam["vppclicommand"]
 		if !ok || command == "" {
 			errMsg := fmt.Sprintf("400 Bad request: vppclicommand parameter missing or empty\n")
-			formatter.JSON(w, http.StatusBadRequest, errMsg)
+			_ = formatter.JSON(w, http.StatusBadRequest, errMsg)
 			return
 		}
 
@@ -81,11 +81,11 @@ func (p *Plugin) cliCommandHandler(formatter *render.Render) http.HandlerFunc {
 		reply, err := p.vpeHandler.RunCli(req.Context(), command)
 		if err != nil {
 			errMsg := fmt.Sprintf("500 Internal server error: sending request failed: %v\n", err)
-			formatter.JSON(w, http.StatusInternalServerError, errMsg)
+			_ = formatter.JSON(w, http.StatusInternalServerError, errMsg)
 			return
 		}
 
 		p.Log.Debugf("VPPCLI response: %s", reply)
-		formatter.JSON(w, http.StatusOK, reply)
+		_ = formatter.JSON(w, http.StatusOK, reply)
 	}
 }
