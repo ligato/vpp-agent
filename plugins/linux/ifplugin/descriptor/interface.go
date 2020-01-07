@@ -337,7 +337,7 @@ func (d *InterfaceDescriptor) Create(key string, linuxIf *interfaces.Interface) 
 		return nil, ErrUnsupportedLinuxInterfaceType
 	}
 	if err != nil {
-		d.log.Errorf("creating interface failed: %+v", err)
+		d.log.Errorf("creating %v interface failed: %+v", linuxIf.GetType(), err)
 		return nil, err
 	}
 
