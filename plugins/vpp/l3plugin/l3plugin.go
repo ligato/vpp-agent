@@ -65,7 +65,7 @@ type L3Plugin struct {
 type Deps struct {
 	infra.PluginDeps
 	KVScheduler kvs.KVScheduler
-	GoVppmux    govppmux.API
+	VPP         govppmux.API
 	IfPlugin    ifplugin.API
 	AddrAlloc   netalloc.AddressAllocator
 	StatusCheck statuscheck.PluginStatusWriter // optional
@@ -76,12 +76,12 @@ func (p *L3Plugin) Init() error {
 	var err error
 
 	// GoVPP channels
-	if p.vppCh, err = p.GoVppmux.NewAPIChannel(); err != nil {
+	if p.vppCh, err = p.VPP.NewAPIChannel(); err != nil {
 		return errors.Errorf("failed to create GoVPP API channel: %v", err)
 	}
 
 	// init handlers
-	p.l3Handler = vppcalls.CompatibleL3VppHandler(p.vppCh, p.IfPlugin.GetInterfaceIndex(),
+	p.l3Handler = vppcalls.CompatibleL3VppHandler(p.VPP, p.IfPlugin.GetInterfaceIndex(),
 		p.vrfIndex, p.AddrAlloc, p.Log)
 	if p.l3Handler == nil {
 		return errors.Errorf("could not find compatible L3VppHandler")
@@ -100,7 +100,7 @@ func (p *L3Plugin) Init() error {
 	}
 
 	// set l3 handler again since VRF index was nil before
-	p.l3Handler = vppcalls.CompatibleL3VppHandler(p.vppCh, p.IfPlugin.GetInterfaceIndex(),
+	p.l3Handler = vppcalls.CompatibleL3VppHandler(p.VPP, p.IfPlugin.GetInterfaceIndex(),
 		p.vrfIndex, p.AddrAlloc, p.Log)
 
 	// init & register descriptors

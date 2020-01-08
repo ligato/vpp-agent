@@ -111,12 +111,6 @@ const (
 	PuntSocket = "/dump/vpp/v2/punt/sockets"
 )
 
-// Command
-const (
-	// Command allows to put CLI command to the rest
-	Command = "/vpp/command"
-)
-
 // Telemetry
 const (
 	// Telemetry reads various types of metrics data from the VPP
@@ -128,16 +122,8 @@ const (
 
 // Stats
 const (
-	// Traced binary API calls
-	Tracer = "/vpp/binapitrace"
 	// Configurator stats
 	ConfiguratorStats = "/stats/configurator"
 	// Linux interface stats
 	LinuxInterfaceStats = "/stats/linux/interfaces"
-)
-
-// Index
-const (
-	// Index can be used to get the full index page
-	Index = "/"
 )

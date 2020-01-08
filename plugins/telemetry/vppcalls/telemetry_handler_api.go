@@ -19,13 +19,14 @@ import (
 
 	govppapi "git.fd.io/govpp.git/api"
 	log "github.com/ligato/cn-infra/logging"
+
 	"go.ligato.io/vpp-agent/v2/plugins/vpp"
 )
 
 var (
 	// FallbackToCli defines wether should telemetry handler
 	// fallback to parsing stats from CLI output.
-	FallbackToCli = true
+	FallbackToCli = false
 )
 
 // TelemetryVppAPI provides API for retrieving telemetry data from VPP.
@@ -66,7 +67,7 @@ type MemoryThread struct {
 	PageSize  uint64 `json:"page_size"`
 }
 
-// NodeErrorCounterInfo contains node counters info.
+// NodeCounterInfo contains node counters info.
 type NodeCounterInfo struct {
 	Counters []NodeCounter `json:"counters"`
 }
@@ -160,7 +161,7 @@ var Handler = vpp.RegisterHandler(vpp.HandlerDesc{
 type NewHandlerFunc func(govppapi.Channel) TelemetryVppAPI
 
 // AddHandlerVersion registers vppcalls Handler for the given version.
-func AddHandlerVersion(version string, msgs []govppapi.Message, h NewHandlerFunc) {
+func AddHandlerVersion(version vpp.Version, msgs []govppapi.Message, h NewHandlerFunc) {
 	Handler.AddVersion(vpp.HandlerVersion{
 		Version: version,
 		Check: func(c vpp.Client) error {
@@ -176,49 +177,34 @@ func AddHandlerVersion(version string, msgs []govppapi.Message, h NewHandlerFunc
 	})
 }
 
-func CompatibleTelemetryHandler(c vpp.Client) TelemetryVppAPI {
+func NewHandler(c vpp.Client) (TelemetryVppAPI, error) {
 	// Prefer using VPP stats API.
-	if c.StatsConnected() {
-		return NewTelemetryVppStats(c.Stats())
+	if stats := c.Stats(); stats != nil {
+		return NewTelemetryVppStats(stats), nil
 	}
-	if !FallbackToCli {
-		log.Warnf("stats unavailable and fallback to CLI disabled for telemetry")
-		return nil
+	v, err := Handler.GetCompatibleVersion(c)
+	if err != nil {
+		return nil, err
 	}
-
-	/*ctx := context.TODO()
 	ch, err := c.NewAPIChannel()
 	if err != nil {
-		log.Warnf("failed to create API channel: %v", err)
-		return nil
+		return nil, err
 	}
-	vpe := vppcalls.CompatibleHandler(c)
-	info, err := vpe.GetVersion(ctx)
-	if err != nil {
-		log.Warnf("retrieving VPP info failed: %v", err)
-		return nil
+	return v.New.(NewHandlerFunc)(ch), nil
+}
+
+func CompatibleTelemetryHandler(c vpp.Client) TelemetryVppAPI {
+	// Prefer using VPP stats API.
+	if stats := c.Stats(); stats != nil {
+		return NewTelemetryVppStats(stats)
 	}
-	if ver := info.Release(); ver != "" {
-		log.Debug("telemetry checking release: ", ver)
-		if h, ok := Versions[ver]; ok {
-			if err := ch.CheckCompatiblity(h.Msgs...); err != nil {
-				log.Debugf("telemetry version %s not compatible: %v", ver, err)
-			}
-			log.Debug("telemetry found compatible release: ", ver)
-			return h.New(ch)
+	if FallbackToCli {
+		if v := Handler.FindCompatibleVersion(c); v != nil {
+			log.Info("falling back to parsing CLI output for telemetry")
+			return v.NewHandler(c).(TelemetryVppAPI)
 		}
+		// no compatible version found
 	}
-	for ver, h := range Versions {
-		if err := ch.CheckCompatiblity(h.Msgs...); err != nil {
-			log.Debugf("version %s not compatible: %v", ver, err)
-			continue
-		}
-		log.Debug("found compatible version: ", ver)
-		return h.New(ch)
-	}*/
-	if v := Handler.FindCompatibleVersion(c); v != nil {
-		return v.NewHandler(c).(TelemetryVppAPI)
-	}
-	// no compatible version found
+	log.Warnf("stats connection not available for telemetry")
 	return nil
 }

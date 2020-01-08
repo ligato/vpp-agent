@@ -60,7 +60,7 @@ type ACLVppAPI interface {
 	AddMACIPACL(rules []*acl.ACL_Rule, aclName string) (aclIdx uint32, err error)
 	// ModifyACL modifies ACL (L3/L4) by updating its rules. It uses ACL index to identify ACL.
 	ModifyACL(aclIdx uint32, rules []*acl.ACL_Rule, aclName string) error
-	// ModifyACL modifies MACIP ACL (L2) by updating its rules. It uses ACL index to identify ACL.
+	// ModifyMACIPACL modifies MACIP ACL (L2) by updating its rules. It uses ACL index to identify ACL.
 	ModifyMACIPACL(aclIdx uint32, rules []*acl.ACL_Rule, aclName string) error
 	// DeleteACL removes ACL (L3/L4).
 	DeleteACL(aclIdx uint32) error
@@ -102,7 +102,7 @@ type ACLVppRead interface {
 	DumpACLInterfaces(indices []uint32) (map[uint32]*acl.ACL_Interfaces, error)
 	// DumpMACIPACLInterfaces dumps all ACLs (L2) for given ACL indexes. Returns map of MACIP ACL indexes with assigned interfaces.
 	DumpMACIPACLInterfaces(indices []uint32) (map[uint32]*acl.ACL_Interfaces, error)
-	// DumpInterfaceAcls finds interface in VPP and returns its ACL (L3/L4) configuration.
+	// DumpInterfaceACLs finds interface in VPP and returns its ACL (L3/L4) configuration.
 	DumpInterfaceACLs(ifIdx uint32) ([]*acl.ACL, error)
 	// DumpInterfaceMACIPACLs finds interface in VPP and returns its MACIP ACL (L2) configuration.
 	DumpInterfaceMACIPACLs(ifIdx uint32) ([]*acl.ACL, error)
@@ -115,7 +115,7 @@ var Handler = vpp.RegisterHandler(vpp.HandlerDesc{
 
 type NewHandlerFunc func(c vpp.Client, ifIdx ifaceidx.IfaceMetadataIndex) ACLVppAPI
 
-func AddHandlerVersion(version string, msgs []govppapi.Message, h NewHandlerFunc) {
+func AddHandlerVersion(version vpp.Version, msgs []govppapi.Message, h NewHandlerFunc) {
 	Handler.AddVersion(vpp.HandlerVersion{
 		Version: version,
 		Check: func(c vpp.Client) error {

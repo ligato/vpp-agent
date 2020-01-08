@@ -23,8 +23,9 @@ import (
 	"github.com/ligato/cn-infra/logging/logrus"
 
 	corevppcalls "go.ligato.io/vpp-agent/v2/plugins/govppmux/vppcalls"
-	"go.ligato.io/vpp-agent/v2/plugins/govppmux/vppcalls/vpp2001"
+	vpe_vpp2001 "go.ligato.io/vpp-agent/v2/plugins/govppmux/vppcalls/vpp2001"
 	"go.ligato.io/vpp-agent/v2/plugins/netalloc"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001"
 	vpp_dhcp "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/dhcp"
 	vpp_ip "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/ip"
 	vpp_vpe "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/vpe"
@@ -39,14 +40,7 @@ func init() {
 	msgs = append(msgs, vpp_vpe.AllMessages()...)
 	msgs = append(msgs, vpp_dhcp.AllMessages()...)
 
-	vppcalls.Versions["vpp2001"] = vppcalls.HandlerVersion{
-		Msgs: msgs,
-		New: func(ch govppapi.Channel, ifIdx ifaceidx.IfaceMetadataIndex,
-			vrfIdx vrfidx.VRFMetadataIndex, addrAlloc netalloc.AddressAllocator, log logging.Logger,
-		) vppcalls.L3VppAPI {
-			return NewL3VppHandler(ch, ifIdx, vrfIdx, addrAlloc, log)
-		},
-	}
+	vppcalls.AddHandlerVersion(vpp2001.Version, msgs, NewL3VppHandler)
 }
 
 type L3VppHandler struct {
@@ -59,9 +53,12 @@ type L3VppHandler struct {
 }
 
 func NewL3VppHandler(
-	ch govppapi.Channel, ifIdx ifaceidx.IfaceMetadataIndex, vrfIdx vrfidx.VRFMetadataIndex,
-	addrAlloc netalloc.AddressAllocator, log logging.Logger,
-) *L3VppHandler {
+	ch govppapi.Channel,
+	ifIdx ifaceidx.IfaceMetadataIndex,
+	vrfIdx vrfidx.VRFMetadataIndex,
+	addrAlloc netalloc.AddressAllocator,
+	log logging.Logger,
+) vppcalls.L3VppAPI {
 	return &L3VppHandler{
 		ArpVppHandler:      NewArpVppHandler(ch, ifIdx, log),
 		ProxyArpVppHandler: NewProxyArpVppHandler(ch, ifIdx, log),
@@ -161,7 +158,7 @@ func NewIPNeighVppHandler(callsChan govppapi.Channel, log logging.Logger) *IPNei
 	return &IPNeighHandler{
 		callsChannel: callsChan,
 		log:          log,
-		VppCoreAPI:   vpp2001.NewVpeHandler(callsChan),
+		VppCoreAPI:   vpe_vpp2001.NewVpeHandler(callsChan),
 	}
 }
 

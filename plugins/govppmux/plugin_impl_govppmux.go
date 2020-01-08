@@ -16,6 +16,7 @@ package govppmux
 
 import (
 	"context"
+	"encoding/gob"
 	"fmt"
 	"os"
 	"strings"
@@ -25,6 +26,7 @@ import (
 	"git.fd.io/govpp.git/adapter"
 	govppapi "git.fd.io/govpp.git/api"
 	govpp "git.fd.io/govpp.git/core"
+	"git.fd.io/govpp.git/proxy"
 	"github.com/ligato/cn-infra/datasync/resync"
 	"github.com/ligato/cn-infra/health/statuscheck"
 	"github.com/ligato/cn-infra/infra"
@@ -33,6 +35,8 @@ import (
 	"github.com/pkg/errors"
 
 	"go.ligato.io/vpp-agent/v2/plugins/govppmux/vppcalls"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi"
 
 	_ "go.ligato.io/vpp-agent/v2/plugins/govppmux/vppcalls/vpp1904"
 	_ "go.ligato.io/vpp-agent/v2/plugins/govppmux/vppcalls/vpp1908"
@@ -50,14 +54,18 @@ type Plugin struct {
 
 	config *Config
 
-	vppAdapter  adapter.VppAPI
-	vppConn     *govpp.Connection
-	vppConChan  chan govpp.ConnectionEvent
-	lastConnErr error
-	vppapiChan  govppapi.Channel
+	vpeHandler vppcalls.VppCoreAPI
+
+	binapiVersion vpp.Version
+	vppConn       *govpp.Connection
+	vppConChan    chan govpp.ConnectionEvent
+	lastConnErr   error
+	vppapiChan    govppapi.Channel
 
 	statsAdapter adapter.StatsAPI
-	statsConn    govppapi.StatsProvider
+	statsConn    *govpp.StatsConnection
+
+	proxy *proxy.Server
 
 	// infoMu synchonizes access to fields
 	// vppInfo and lastEvent
@@ -85,6 +93,7 @@ func (p *Plugin) Init() (err error) {
 
 	p.Log.Debugf("config: %+v", p.config)
 
+	// set GoVPP config
 	govpp.HealthCheckProbeInterval = p.config.HealthCheckProbeInterval
 	govpp.HealthCheckReplyTimeout = p.config.HealthCheckReplyTimeout
 	govpp.HealthCheckThreshold = p.config.HealthCheckThreshold
@@ -93,18 +102,12 @@ func (p *Plugin) Init() (err error) {
 	// register REST API handlers
 	p.registerHandlers(p.HTTPHandlers)
 
-	if p.vppAdapter == nil {
-		var address string
-		useShm := disabledSocketClient || p.config.ConnectViaShm || p.config.ShmPrefix != ""
-		if useShm {
-			address = p.config.ShmPrefix
-		} else {
-			address = p.config.BinAPISocketPath
-		}
-		p.vppAdapter = NewVppAdapter(address, useShm)
+	var address string
+	useShm := disabledSocketClient || p.config.ConnectViaShm || p.config.ShmPrefix != ""
+	if useShm {
+		address = p.config.ShmPrefix
 	} else {
-		// this is used for testing purposes
-		p.Log.Info("Reusing existing vppAdapter")
+		address = p.config.BinAPISocketPath
 	}
 
 	// TODO: Async connect & automatic reconnect support is not yet implemented in the agent,
@@ -112,14 +115,17 @@ func (p *Plugin) Init() (err error) {
 	startTime := time.Now()
 	p.Log.Debugf("connecting to VPP..")
 
-	p.vppConn, p.vppConChan, err = govpp.AsyncConnect(p.vppAdapter, p.config.RetryConnectCount, p.config.RetryConnectTimeout)
+	vppAdapter := NewVppAdapter(address, useShm)
+	p.vppConn, p.vppConChan, err = govpp.AsyncConnect(vppAdapter, p.config.RetryConnectCount, p.config.RetryConnectTimeout)
 	if err != nil {
 		return err
 	}
-
 	// wait for connection event
 	for {
-		event := <-p.vppConChan
+		event, ok := <-p.vppConChan
+		if !ok {
+			return errors.Errorf("VPP connection state channel closed")
+		}
 		if event.State == govpp.Connected {
 			break
 		} else if event.State == govpp.Failed || event.State == govpp.Disconnected {
@@ -128,9 +134,8 @@ func (p *Plugin) Init() (err error) {
 			p.Log.Debugf("VPP connection state: %+v", event)
 		}
 	}
-
-	connectDur := time.Since(startTime)
-	p.Log.Debugf("connection to VPP established (took %s)", connectDur.Round(time.Millisecond))
+	took := time.Since(startTime)
+	p.Log.Debugf("connection to VPP established (took %s)", took.Round(time.Millisecond))
 
 	if err := p.updateVPPInfo(); err != nil {
 		return errors.WithMessage(err, "retrieving VPP info failed")
@@ -149,6 +154,19 @@ func (p *Plugin) Init() (err error) {
 	} else if p.statsConn, err = govpp.ConnectStats(statsAdapter); err != nil {
 		p.Log.Warnf("Unable to connect to the VPP statistics socket, %v", err)
 		p.statsAdapter = nil
+	}
+
+	if p.config.ProxyEnabled {
+		// register binapi messages to gob package (required for proxy)
+		msgList := binapi.Versions[p.binapiVersion]
+		for _, msg := range msgList.AllMessages() {
+			gob.Register(msg)
+		}
+		err := p.startProxy(NewVppAdapter(address, useShm), NewStatsAdapter(statsSocket))
+		if err != nil {
+			return err
+		}
+		p.Log.Infof("VPP proxy ready")
 	}
 
 	return nil
@@ -185,8 +203,18 @@ func (p *Plugin) Close() error {
 		}
 	}()
 
+	if p.proxy != nil {
+		p.proxy.DisconnectBinapi()
+		p.proxy.DisconnectStats()
+	}
+
 	return nil
 }
+
+func (p *Plugin) Version() vpp.Version {
+	return p.binapiVersion
+}
+
 func (p *Plugin) CheckCompatiblity(msgs ...govppapi.Message) error {
 	p.infoMu.Lock()
 	defer p.infoMu.Unlock()
@@ -201,11 +229,10 @@ func (p *Plugin) CheckCompatiblity(msgs ...govppapi.Message) error {
 }
 
 func (p *Plugin) Stats() govppapi.StatsProvider {
+	if p.statsConn == nil {
+		return nil
+	}
 	return p
-}
-
-func (p *Plugin) StatsConnected() bool {
-	return p.statsConn != nil
 }
 
 // VPPInfo returns information about VPP session.
@@ -238,20 +265,23 @@ func (p *Plugin) updateVPPInfo() (err error) {
 	if err != nil {
 		return err
 	}
+	p.binapiVersion, err = vpp.FindCompatibleBinapi(p.vppapiChan)
+	if err != nil {
+		return err
+	}
 
-	vpeHandler := vppcalls.CompatibleHandler(p)
-	if vpeHandler == nil {
+	p.vpeHandler, err = vppcalls.NewHandler(p)
+	if err != nil {
 		return errors.New("no compatible VPP handler found")
 	}
 
-	version, err := vpeHandler.RunCli(ctx, "show version verbose")
+	version, err := p.vpeHandler.RunCli(ctx, "show version verbose")
 	if err != nil {
 		p.Log.Warnf("RunCli error: %v", err)
 	} else {
 		p.Log.Debugf("vpp# show version verbose\n%s", version)
 	}
-
-	cmdline, err := vpeHandler.RunCli(ctx, "show version cmdline")
+	cmdline, err := p.vpeHandler.RunCli(ctx, "show version cmdline")
 	if err != nil {
 		p.Log.Warnf("RunCli error: %v", err)
 	} else {
@@ -259,11 +289,11 @@ func (p *Plugin) updateVPPInfo() (err error) {
 		p.Log.Debugf("vpp# show version cmdline:\n%s", out)
 	}
 
-	ver, err := vpeHandler.GetVersion(ctx)
+	ver, err := p.vpeHandler.GetVersion(ctx)
 	if err != nil {
 		return err
 	}
-	session, err := vpeHandler.GetSession(ctx)
+	session, err := p.vpeHandler.GetSession(ctx)
 	if err != nil {
 		return err
 	}
@@ -272,13 +302,13 @@ func (p *Plugin) updateVPPInfo() (err error) {
 		"ClientID": session.ClientIdx,
 	}).Infof("VPP version: %v", ver.Version)
 
-	modules, err := vpeHandler.GetModules(ctx)
+	modules, err := p.vpeHandler.GetModules(ctx)
 	if err != nil {
 		return err
 	}
 	p.Log.Debugf("VPP has %d core modules: %v", len(modules), modules)
 
-	plugins, err := vpeHandler.GetPlugins(ctx)
+	plugins, err := p.vpeHandler.GetPlugins(ctx)
 	if err != nil {
 		return err
 	}
@@ -296,6 +326,12 @@ func (p *Plugin) updateVPPInfo() (err error) {
 	}
 	p.infoMu.Unlock()
 
+	p.Log.Debugf("listing %d VPP handlers", len(vpp.GetHandlers()))
+	for name, handler := range vpp.GetHandlers() {
+		versions := handler.Versions()
+		p.Log.Debugf("- handler: %-10s has %d versions: %v", name, len(versions), versions)
+	}
+
 	return nil
 }
 
@@ -305,7 +341,13 @@ func (p *Plugin) handleVPPConnectionEvents(ctx context.Context) {
 
 	for {
 		select {
-		case event := <-p.vppConChan:
+		case event, ok := <-p.vppConChan:
+			if !ok {
+				p.lastConnErr = errors.Errorf("VPP connection state channel closed")
+				p.StatusCheck.ReportStateChange(p.PluginName, statuscheck.Error, p.lastConnErr)
+				return
+			}
+
 			if event.State == govpp.Connected {
 				if err := p.updateVPPInfo(); err != nil {
 					p.Log.Errorf("updating VPP info failed: %v", err)
@@ -340,4 +382,20 @@ func (p *Plugin) handleVPPConnectionEvents(ctx context.Context) {
 			return
 		}
 	}
+}
+
+func (p *Plugin) startProxy(vppapi adapter.VppAPI, statsapi adapter.StatsAPI) (err error) {
+	p.Log.Infof("starting VPP proxy")
+
+	p.proxy, err = proxy.NewServer()
+	if err != nil {
+		return errors.WithMessage(err, "creating proxy failed")
+	}
+	if err = p.proxy.ConnectBinapi(vppapi); err != nil {
+		return errors.WithMessage(err, "connecting binapi for proxy failed")
+	}
+	if err = p.proxy.ConnectStats(statsapi); err != nil {
+		return errors.WithMessage(err, "connecting stats for proxy failed")
+	}
+	return nil
 }

@@ -17,8 +17,8 @@ package vpp1908
 import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp"
 
+	"go.ligato.io/vpp-agent/v2/plugins/vpp"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908/af_packet"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908/bond"

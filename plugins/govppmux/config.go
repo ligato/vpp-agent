@@ -49,6 +49,9 @@ type Config struct {
 	// Time between connection request resend attempts. Default is 1s.
 	RetryConnectTimeout time.Duration `json:"retry-connect-timeout"`
 
+	// Enable VPP proxy.
+	ProxyEnabled bool `json:"proxy-enabled"`
+
 	// Below are options used for VPP connection health checking.
 	HealthCheckProbeInterval time.Duration `json:"health-check-probe-interval"`
 	HealthCheckReplyTimeout  time.Duration `json:"health-check-reply-timeout"`
@@ -66,6 +69,7 @@ func DefaultConfig() *Config {
 		ReplyTimeout:             time.Second,
 		RetryRequestTimeout:      500 * time.Millisecond,
 		RetryConnectTimeout:      time.Second,
+		ProxyEnabled:             true,
 	}
 }
 

@@ -21,6 +21,7 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324"
 	vpp_ip "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324/ip"
 	vpp_punt "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324/punt"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
@@ -32,12 +33,7 @@ func init() {
 	msgs = append(msgs, vpp_ip.AllMessages()...)
 	msgs = append(msgs, vpp_punt.AllMessages()...)
 
-	vppcalls.Versions["vpp2001_324"] = vppcalls.HandlerVersion{
-		Msgs: msgs,
-		New: func(channel govppapi.Channel, index ifaceidx.IfaceMetadataIndex, logger logging.Logger) vppcalls.PuntVppAPI {
-			return NewPuntVppHandler(channel, index, logger)
-		},
-	}
+	vppcalls.AddHandlerVersion(vpp2001_324.Version, msgs, NewPuntVppHandler)
 }
 
 // PuntVppHandler is accessor for punt-related vppcalls methods.
@@ -50,7 +46,7 @@ type PuntVppHandler struct {
 // NewPuntVppHandler creates new instance of punt vppcalls handler
 func NewPuntVppHandler(
 	callsChan govppapi.Channel, ifIndexes ifaceidx.IfaceMetadataIndex, log logging.Logger,
-) *PuntVppHandler {
+) vppcalls.PuntVppAPI {
 	return &PuntVppHandler{
 		callsChannel: callsChan,
 		ifIndexes:    ifIndexes,

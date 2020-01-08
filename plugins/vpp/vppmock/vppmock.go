@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package vppcallmock
+package vppmock
 
 import (
 	"context"
@@ -23,11 +23,14 @@ import (
 	govpp "git.fd.io/govpp.git/core"
 	log "github.com/ligato/cn-infra/logging/logrus"
 	. "github.com/onsi/gomega"
+
+	"go.ligato.io/vpp-agent/v2/plugins/vpp"
 )
 
-// TestCtx is helping structure for unit testing.
+// TestCtx is a helper for unit testing.
 // It wraps VppAdapter which is used instead of real VPP.
 type TestCtx struct {
+	//*GomegaWithT
 	Context       context.Context
 	MockVpp       *mock.VppAdapter
 	MockStats     *mock.StatsAdapter
@@ -40,8 +43,10 @@ type TestCtx struct {
 // SetupTestCtx sets up all fields of TestCtx structure at the begining of test
 func SetupTestCtx(t *testing.T) *TestCtx {
 	RegisterTestingT(t)
+	//g := NewGomegaWithT(t) // TODO: use GomegaWithT
 
 	ctx := &TestCtx{
+		//GomegaWithT: g,
 		Context:   context.Background(),
 		MockVpp:   mock.NewVppAdapter(),
 		MockStats: mock.NewStatsAdapter(),
@@ -205,7 +210,12 @@ func (ctx *TestCtx) MockReplies(dataList []*HandleReplies) {
 
 type mockVPPClient struct {
 	*mockedChannel
+	version         vpp.Version
 	unloadedPlugins map[string]bool
+}
+
+func (m *mockVPPClient) Version() vpp.Version {
+	return m.version
 }
 
 func (m *mockVPPClient) NewAPIChannel() (govppapi.Channel, error) {
@@ -225,9 +235,5 @@ func (m *mockVPPClient) IsPluginLoaded(plugin string) bool {
 }
 
 func (m *mockVPPClient) Stats() govppapi.StatsProvider {
-	panic("implement me")
-}
-
-func (m *mockVPPClient) StatsConnected() bool {
 	panic("implement me")
 }

@@ -30,7 +30,7 @@ import (
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/natplugin/vppcalls"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/natplugin/vppcalls/vpp1908"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/vppcallmock"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/vppmock"
 )
 
 func TestNat44GlobalConfigDump(t *testing.T) {
@@ -447,8 +447,8 @@ func TestDNATDump(t *testing.T) {
 	Expect(dnat.IdMappings[1].Interface).To(BeEquivalentTo("if1"))
 }
 
-func natTestSetup(t *testing.T) (*vppcallmock.TestCtx, vppcalls.NatVppAPI, ifaceidx.IfaceMetadataIndexRW, idxmap.NamedMappingRW) {
-	ctx := vppcallmock.SetupTestCtx(t)
+func natTestSetup(t *testing.T) (*vppmock.TestCtx, vppcalls.NatVppAPI, ifaceidx.IfaceMetadataIndexRW, idxmap.NamedMappingRW) {
+	ctx := vppmock.SetupTestCtx(t)
 	log := logrus.NewLogger("test-log")
 	swIfIndexes := ifaceidx.NewIfaceIndex(logrus.DefaultLogger(), "test-sw_if_indexes")
 	dhcpIndexes := idxmap_mem.NewNamedMapping(logrus.DefaultLogger(), "test-dhcp_indexes", nil)

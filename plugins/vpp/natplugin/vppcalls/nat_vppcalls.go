@@ -70,7 +70,7 @@ var handler = vpp.RegisterHandler(vpp.HandlerDesc{
 	HandlerAPI: (*NatVppAPI)(nil),
 })
 
-func AddNatHandlerVersion(version string, msgs []govppapi.Message,
+func AddNatHandlerVersion(version vpp.Version, msgs []govppapi.Message,
 	h func(ch govppapi.Channel, ifIdx ifaceidx.IfaceMetadataIndex, dhcpIdx idxmap.NamedMapping, log logging.Logger) NatVppAPI,
 ) {
 	handler.AddVersion(vpp.HandlerVersion{

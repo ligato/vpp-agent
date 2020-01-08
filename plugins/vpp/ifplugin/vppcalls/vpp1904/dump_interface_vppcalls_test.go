@@ -29,7 +29,7 @@ import (
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904/tapv2"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904/vpe"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904/vxlan"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/vppcallmock"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/vppmock"
 	interfaces2 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
 )
 
@@ -41,7 +41,7 @@ func TestDumpInterfacesVxLan(t *testing.T) {
 	ipv61Parse := net.ParseIP("dead:beef:feed:face:cafe:babe:baad:c0de").To16()
 	ipv62Parse := net.ParseIP("d3ad:beef:feed:face:cafe:babe:baad:c0de").To16()
 
-	ctx.MockReplies([]*vppcallmock.HandleReplies{
+	ctx.MockReplies([]*vppmock.HandleReplies{
 		{
 			Name: (&interfaces.SwInterfaceDump{}).GetMessageName(),
 			Ping: true,
@@ -102,7 +102,7 @@ func TestDumpInterfacesHost(t *testing.T) {
 	test, ifHandler := ifTestSetup(t)
 	defer test.TeardownTestCtx()
 
-	test.MockReplies([]*vppcallmock.HandleReplies{
+	test.MockReplies([]*vppmock.HandleReplies{
 		{
 			Name: (&interfaces.SwInterfaceDump{}).GetMessageName(),
 			Ping: true,
@@ -156,7 +156,7 @@ func TestDumpInterfacesMemif(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockReplies([]*vppcallmock.HandleReplies{
+	ctx.MockReplies([]*vppmock.HandleReplies{
 		{
 			Name: (&interfaces.SwInterfaceDump{}).GetMessageName(),
 			Ping: true,
@@ -228,7 +228,7 @@ func TestDumpInterfacesTap2(t *testing.T) {
 	hwAddr1Parse, err := net.ParseMAC("01:23:45:67:89:ab")
 	Expect(err).To(BeNil())
 
-	ctx.MockReplies([]*vppcallmock.HandleReplies{
+	ctx.MockReplies([]*vppmock.HandleReplies{
 		{
 			Name: (&interfaces.SwInterfaceDump{}).GetMessageName(),
 			Ping: true,
@@ -328,7 +328,7 @@ func TestDumpInterfacesRxPlacement(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockReplies([]*vppcallmock.HandleReplies{
+	ctx.MockReplies([]*vppmock.HandleReplies{
 		{
 			Name: (&interfaces.SwInterfaceDump{}).GetMessageName(),
 			Ping: true,
@@ -446,7 +446,7 @@ func TestDumpInterfacesGtpu(t *testing.T) {
 	ipv61Parse := net.ParseIP("dead:beef:feed:face:cafe:babe:baad:c0de").To16()
 	ipv62Parse := net.ParseIP("d3ad:beef:feed:face:cafe:babe:baad:c0de").To16()
 
-	ctx.MockReplies([]*vppcallmock.HandleReplies{
+	ctx.MockReplies([]*vppmock.HandleReplies{
 		{
 			Name: (&interfaces.SwInterfaceDump{}).GetMessageName(),
 			Ping: true,

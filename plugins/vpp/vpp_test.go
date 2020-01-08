@@ -14,12 +14,6 @@
 
 package vpp
 
-import (
-	govppapi "git.fd.io/govpp.git/api"
-
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi"
-)
-
-func Messages(funcs ...func() []govppapi.Message) binapi.MessagesList {
-	return binapi.Messages(funcs...)
+func ClearRegisteredHandlers() {
+	registeredHandlers = map[string]*Handler{}
 }

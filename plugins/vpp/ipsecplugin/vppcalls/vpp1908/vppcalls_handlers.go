@@ -21,6 +21,7 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908/ipsec"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/ipsecplugin/vppcalls"
@@ -30,12 +31,7 @@ func init() {
 	var msgs []govppapi.Message
 	msgs = append(msgs, ipsec.AllMessages()...)
 
-	vppcalls.Versions["vpp1908"] = vppcalls.HandlerVersion{
-		Msgs: msgs,
-		New: func(ch govppapi.Channel, ifIdx ifaceidx.IfaceMetadataIndex, log logging.Logger) vppcalls.IPSecVppAPI {
-			return NewIPSecVppHandler(ch, ifIdx, log)
-		},
-	}
+	vppcalls.AddHandlerVersion(vpp1908.Version, msgs, NewIPSecVppHandler)
 }
 
 // IPSecVppHandler is accessor for IPSec-related vppcalls methods
@@ -45,7 +41,7 @@ type IPSecVppHandler struct {
 	log          logging.Logger
 }
 
-func NewIPSecVppHandler(ch govppapi.Channel, ifIdx ifaceidx.IfaceMetadataIndex, log logging.Logger) *IPSecVppHandler {
+func NewIPSecVppHandler(ch govppapi.Channel, ifIdx ifaceidx.IfaceMetadataIndex, log logging.Logger) vppcalls.IPSecVppAPI {
 	return &IPSecVppHandler{ch, ifIdx, log}
 }
 

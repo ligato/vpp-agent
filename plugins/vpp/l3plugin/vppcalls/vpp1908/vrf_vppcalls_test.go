@@ -22,7 +22,7 @@ import (
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908/ip"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/l3plugin/vppcalls"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/l3plugin/vppcalls/vpp1908"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/vppcallmock"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/vppmock"
 	l3 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l3"
 )
 
@@ -130,8 +130,8 @@ func TestDeleteVrfTable(t *testing.T) {
 	Expect(err).To(Not(BeNil()))
 }
 
-func vrfTableTestSetup(t *testing.T) (*vppcallmock.TestCtx, vppcalls.VrfTableVppAPI) {
-	ctx := vppcallmock.SetupTestCtx(t)
+func vrfTableTestSetup(t *testing.T) (*vppmock.TestCtx, vppcalls.VrfTableVppAPI) {
+	ctx := vppmock.SetupTestCtx(t)
 	log := logrus.NewLogger("test-log")
 	vtHandler := vpp1908.NewVrfTableVppHandler(ctx.MockChannel, log)
 	return ctx, vtHandler

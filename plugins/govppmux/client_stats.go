@@ -17,7 +17,6 @@ package govppmux
 import (
 	"git.fd.io/govpp.git/adapter"
 	govppapi "git.fd.io/govpp.git/api"
-	govpp "git.fd.io/govpp.git/core"
 )
 
 // ListStats returns all stats names
@@ -38,7 +37,7 @@ func (p *Plugin) DumpStats(prefixes ...string) ([]adapter.StatEntry, error) {
 
 // GetSystemStats retrieves system statistics of the connected VPP instance like Vector rate, Input rate, etc.
 func (p *Plugin) GetSystemStats(stats *govppapi.SystemStats) error {
-	if p.statsConn == nil || p.statsConn.(*govpp.StatsConnection) == nil {
+	if p.statsConn == nil {
 		return nil
 	}
 	return p.statsConn.GetSystemStats(stats)
@@ -46,7 +45,7 @@ func (p *Plugin) GetSystemStats(stats *govppapi.SystemStats) error {
 
 // GetNodeStats retrieves a list of Node VPP counters (vectors, clocks, ...)
 func (p *Plugin) GetNodeStats(stats *govppapi.NodeStats) error {
-	if p.statsConn == nil || p.statsConn.(*govpp.StatsConnection) == nil {
+	if p.statsConn == nil {
 		return nil
 	}
 	return p.statsConn.GetNodeStats(stats)
@@ -54,7 +53,7 @@ func (p *Plugin) GetNodeStats(stats *govppapi.NodeStats) error {
 
 // GetInterfaceStats retrieves all counters related to the VPP interfaces
 func (p *Plugin) GetInterfaceStats(stats *govppapi.InterfaceStats) error {
-	if p.statsConn == nil || p.statsConn.(*govpp.StatsConnection) == nil {
+	if p.statsConn == nil {
 		return nil
 	}
 	return p.statsConn.GetInterfaceStats(stats)
@@ -62,15 +61,15 @@ func (p *Plugin) GetInterfaceStats(stats *govppapi.InterfaceStats) error {
 
 // GetErrorStats retrieves VPP error counters
 func (p *Plugin) GetErrorStats(stats *govppapi.ErrorStats) error {
-	if p.statsConn == nil || p.statsConn.(*govpp.StatsConnection) == nil {
+	if p.statsConn == nil {
 		return nil
 	}
 	return p.statsConn.GetErrorStats(stats)
 }
 
-// GetErrorStats retrieves VPP error counters
+// GetBufferStats retrieves VPP error counters
 func (p *Plugin) GetBufferStats(stats *govppapi.BufferStats) error {
-	if p.statsConn == nil || p.statsConn.(*govpp.StatsConnection) == nil {
+	if p.statsConn == nil {
 		return nil
 	}
 	return p.statsConn.GetBufferStats(stats)

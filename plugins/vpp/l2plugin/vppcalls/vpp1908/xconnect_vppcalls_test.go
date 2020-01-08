@@ -24,7 +24,7 @@ import (
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/l2plugin/vppcalls"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/l2plugin/vppcalls/vpp1908"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/vppcallmock"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/vppmock"
 )
 
 var inTestDataXConnect = []struct {
@@ -119,8 +119,8 @@ func TestVppUnsetL2XConnect(t *testing.T) {
 	}
 }
 
-func xcTestSetup(t *testing.T) (*vppcallmock.TestCtx, vppcalls.XConnectVppAPI, ifaceidx.IfaceMetadataIndexRW) {
-	ctx := vppcallmock.SetupTestCtx(t)
+func xcTestSetup(t *testing.T) (*vppmock.TestCtx, vppcalls.XConnectVppAPI, ifaceidx.IfaceMetadataIndexRW) {
+	ctx := vppmock.SetupTestCtx(t)
 	log := logrus.NewLogger("test-log")
 	ifaceIdx := ifaceidx.NewIfaceIndex(log, "xc-if-idx")
 	xcHandler := vpp1908.NewL2VppHandler(ctx.MockChannel, ifaceIdx, nil, log)

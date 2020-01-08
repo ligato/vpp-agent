@@ -19,7 +19,7 @@ import (
 
 	. "github.com/onsi/gomega"
 	vpp_vpe "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324/vpe"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/vppcallmock"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/vppmock"
 	l3 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l3"
 )
 
@@ -67,7 +67,7 @@ func TestGetIPScanNeighbor(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			ctx := vppcallmock.SetupTestCtx(t)
+			ctx := vppmock.SetupTestCtx(t)
 			defer ctx.TeardownTestCtx()
 
 			ctx.MockVpp.MockReply(&vpp_vpe.CliInbandReply{

@@ -16,31 +16,13 @@ package vpp1904
 
 import (
 	govppapi "git.fd.io/govpp.git/api"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp"
 
 	"go.ligato.io/vpp-agent/v2/plugins/govppmux/vppcalls"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904/memclnt"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904/vpe"
 )
-
-/*var (
-	CompatibilityCheck = vpp.MessageCheck(
-		vpe.AllMessages,
-		memclnt.AllMessages,
-	)
-)
-
-var HandlerVersion = vpp.HandlerVersion{
-	Version: vpp1904.Version,
-	Check: vpp.MessageCheck(
-		vpe.AllMessages,
-		memclnt.AllMessages,
-	),
-	NewHandler: func(c vpp.Client, a ...interface{}) vpp.HandlerAPI {
-		return NewVpeHandler(c)
-	},
-}*/
 
 func init() {
 	msgs := vpp.Messages(

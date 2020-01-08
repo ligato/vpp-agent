@@ -23,7 +23,7 @@ import (
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/l2plugin/vppcalls"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/l2plugin/vppcalls/vpp1908"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/vppcallmock"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/vppmock"
 	l2 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l2"
 )
 
@@ -135,8 +135,8 @@ func TestVppDeleteBridgeDomainError(t *testing.T) {
 	Expect(err).Should(HaveOccurred())
 }
 
-func bdTestSetup(t *testing.T) (*vppcallmock.TestCtx, vppcalls.BridgeDomainVppAPI, ifaceidx.IfaceMetadataIndexRW) {
-	ctx := vppcallmock.SetupTestCtx(t)
+func bdTestSetup(t *testing.T) (*vppmock.TestCtx, vppcalls.BridgeDomainVppAPI, ifaceidx.IfaceMetadataIndexRW) {
+	ctx := vppmock.SetupTestCtx(t)
 	log := logrus.NewLogger("test-log")
 	ifIndex := ifaceidx.NewIfaceIndex(log, "bd-test-ifidx")
 	bdHandler := vpp1908.NewL2VppHandler(ctx.MockChannel, ifIndex, nil, log)

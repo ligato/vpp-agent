@@ -40,7 +40,7 @@ type StnVppAPI interface {
 
 	// AddSTNRule calls StnAddDelRule bin API with IsAdd=1
 	AddSTNRule(stnRule *stn.Rule) error
-	// DelSTNRule calls StnAddDelRule bin API with IsAdd=0
+	// DeleteSTNRule calls StnAddDelRule bin API with IsAdd=0
 	DeleteSTNRule(stnRule *stn.Rule) error
 }
 
@@ -57,7 +57,7 @@ var handler = vpp.RegisterHandler(vpp.HandlerDesc{
 
 type NewHandlerFunc func(ch govppapi.Channel, ifIdx ifaceidx.IfaceMetadataIndex, log logging.Logger) StnVppAPI
 
-func AddStnHandlerVersion(version string, msgs []govppapi.Message, h NewHandlerFunc) {
+func AddStnHandlerVersion(version vpp.Version, msgs []govppapi.Message, h NewHandlerFunc) {
 	handler.AddVersion(vpp.HandlerVersion{
 		Version: version,
 		Check: func(c vpp.Client) error {

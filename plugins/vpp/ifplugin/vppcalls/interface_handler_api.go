@@ -271,7 +271,7 @@ var Handler = vpp.RegisterHandler(vpp.HandlerDesc{
 
 type NewHandlerFunc func(vpp.Client, logging.Logger) InterfaceVppAPI
 
-// CompatibleVpeHandler is helper for returning comptabile Handler.
+// CompatibleInterfaceVppHandler is helper for returning comptabile Handler.
 func CompatibleInterfaceVppHandler(c vpp.Client, log logging.Logger) InterfaceVppAPI {
 	if v := Handler.FindCompatibleVersion(c); v != nil {
 		return v.NewHandler(c, log).(InterfaceVppAPI)

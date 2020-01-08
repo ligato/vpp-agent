@@ -24,28 +24,7 @@ import (
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/stnplugin/vppcalls"
 )
 
-/*var HandlerVersion = vpp.HandlerVersion{
-	Version: vpp2001_324.Version,
-	Check: func(c vpp.VPPClient) error {
-		var msgs []govppapi.Message
-		msgs = append(msgs, stn.AllMessages()...)
-		ch, err := c.NewAPIChannel()
-		if err != nil {
-			return err
-		}
-		return ch.CheckCompatiblity(msgs...)
-	},
-	NewHandler: func(c vpp.VPPClient, a ...interface{}) vpp.HandlerAPI {
-		ch, err := c.NewAPIChannel()
-		if err != nil {
-			return err
-		}
-		return NewStnVppHandler(ch, a[0].(ifaceidx.IfaceMetadataIndex), a[1].(logging.Logger))
-	},
-}*/
-
 func init() {
-	//vppcalls.AddVersion(HandlerVersion)
 	var msgs []govppapi.Message
 	msgs = append(msgs, vpp_stn.AllMessages()...)
 

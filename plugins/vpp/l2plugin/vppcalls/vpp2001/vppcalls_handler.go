@@ -22,20 +22,14 @@ import (
 	"github.com/ligato/cn-infra/logging"
 
 	"go.ligato.io/vpp-agent/v2/pkg/idxvpp"
-	vpp_l2 "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/l2"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001"
+	l2ba "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/l2"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/l2plugin/vppcalls"
 )
 
 func init() {
-	vppcalls.Versions["vpp2001"] = vppcalls.HandlerVersion{
-		Msgs: vpp_l2.AllMessages(),
-		New: func(ch govppapi.Channel,
-			ifIdx ifaceidx.IfaceMetadataIndex, bdIdx idxvpp.NameToIndex, log logging.Logger,
-		) vppcalls.L2VppAPI {
-			return NewL2VppHandler(ch, ifIdx, bdIdx, log)
-		},
-	}
+	vppcalls.AddHandlerVersion(vpp2001.Version, l2ba.AllMessages(), NewL2VppHandler)
 }
 
 type L2VppHandler struct {
@@ -46,7 +40,7 @@ type L2VppHandler struct {
 
 func NewL2VppHandler(ch govppapi.Channel,
 	ifIdx ifaceidx.IfaceMetadataIndex, bdIdx idxvpp.NameToIndex, log logging.Logger,
-) *L2VppHandler {
+) vppcalls.L2VppAPI {
 	return &L2VppHandler{
 		BridgeDomainVppHandler: newBridgeDomainVppHandler(ch, ifIdx, log),
 		FIBVppHandler:          newFIBVppHandler(ch, ifIdx, bdIdx, log),
@@ -104,19 +98,19 @@ func newXConnectVppHandler(ch govppapi.Channel, ifIdx ifaceidx.IfaceMetadataInde
 	}
 }
 
-func ipToAddress(ipstr string) (addr vpp_l2.Address, err error) {
+func ipToAddress(ipstr string) (addr l2ba.Address, err error) {
 	netIP := net.ParseIP(ipstr)
 	if netIP == nil {
-		return vpp_l2.Address{}, fmt.Errorf("invalid IP: %q", ipstr)
+		return l2ba.Address{}, fmt.Errorf("invalid IP: %q", ipstr)
 	}
 	if ip4 := netIP.To4(); ip4 == nil {
-		addr.Af = vpp_l2.ADDRESS_IP6
-		var ip6addr vpp_l2.IP6Address
+		addr.Af = l2ba.ADDRESS_IP6
+		var ip6addr l2ba.IP6Address
 		copy(ip6addr[:], netIP.To16())
 		addr.Un.SetIP6(ip6addr)
 	} else {
-		addr.Af = vpp_l2.ADDRESS_IP4
-		var ip4addr vpp_l2.IP4Address
+		addr.Af = l2ba.ADDRESS_IP4
+		var ip4addr l2ba.IP4Address
 		copy(ip4addr[:], ip4)
 		addr.Un.SetIP4(ip4addr)
 	}

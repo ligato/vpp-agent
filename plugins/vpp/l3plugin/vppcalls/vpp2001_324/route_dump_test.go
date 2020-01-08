@@ -27,12 +27,12 @@ import (
 	vpp_ip "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324/ip"
 	vpp_vpe "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324/vpe"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/vppcallmock"
+	"go.ligato.io/vpp-agent/v2/plugins/vpp/vppmock"
 )
 
 // Test dumping routes
 func TestDumpStaticRoutes(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx := vppmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()
 	ifIndexes := ifaceidx.NewIfaceIndex(logrus.NewLogger("test-if"), "test-if")
 	vrfIndexes := vrfidx.NewVRFIndex(logrus.NewLogger("test-vrf"), "test-vrf")
