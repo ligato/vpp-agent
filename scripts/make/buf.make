@@ -10,12 +10,15 @@ endif
 
 REMOTE_GIT := https://github.com/ligato/vpp-agent.git
 
-# https://github.com/bufbuild/buf/releases
-BUF_VERSION := 0.1.0
+# TODO: use master instead of dev branch (when master contains proto folder)
+BREAKING_BRANCH := dev
+
+# https://github.com/bufbuild/buf/releases 20200101
+BUF_VERSION := 0.5.0
 # https://github.com/golang/protobuf/releases 20190709
 PROTOC_GEN_GO_VERSION ?= v1.3.2
-# https://github.com/protocolbuffers/protobuf/releases 20191002
-PROTOC_VERSION ?= 3.10.0
+# https://github.com/protocolbuffers/protobuf/releases 20191213
+PROTOC_VERSION ?= 3.11.2
 
 GO_BINS := $(GO_BINS) \
 	buf \
@@ -86,11 +89,13 @@ $(PROTOC_GEN_GO):
 
 .PHONY: buf-ls-packages
 buf-ls-packages:
-	buf image build --exclude-imports --exclude-source-info -o -#format=json | jq '.file[] | .package' | sort | uniq
+	buf image build --exclude-imports --exclude-source-info \
+		-o -#format=json | jq '.file[] | .package' | sort | uniq
 
 .PHONY: buf-ls-files
 buf-ls-files:
-	buf image build --exclude-imports --exclude-source-info -o -#format=json | jq '.file[] | .name' | sort | uniq
+	buf image build --exclude-imports --exclude-source-info \
+		-o -#format=json | jq '.file[] | .name' | sort | uniq
 
 # buf-deps allows us to install deps without running any checks.
 
@@ -106,23 +111,18 @@ buf-lint: $(BUF)
 
 # buf-breaking-local is what we run when testing locally
 # this does breaking change detection against our local git repository
-#
-# TODO: use master instead dev branch after next release
-#
 
 .PHONY: buf-breaking-local
 buf-breaking-local: $(BUF)
-	buf check breaking --against-input '.git#branch=dev'
+	buf check breaking --against-input '.git#branch=$(BREAKING_BRANCH)'
 
 # buf-breaking is what we run when testing in most CI providers
 # this does breaking change detection against our remote git repository
-#
-# TODO: use master instead dev branch after next release
-#
 
 .PHONY: buf-breaking
 buf-breaking: $(BUF)
-	buf check breaking --timeout 60s --against-input "$(REMOTE_GIT)#branch=dev"
+	buf check breaking --against-input "$(REMOTE_GIT)#branch=$(BREAKING_BRANCH)" \
+		--timeout 60s
 
 .PHONY: protocgengoclean
 protocgengoclean:
