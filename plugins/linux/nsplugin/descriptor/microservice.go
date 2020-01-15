@@ -26,9 +26,9 @@ import (
 
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/servicelabel"
-	kvs "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
+	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 
-	nsmodel "go.ligato.io/vpp-agent/v2/proto/ligato/linux/namespace"
+	nsmodel "go.ligato.io/vpp-agent/v3/proto/ligato/linux/namespace"
 )
 
 const (

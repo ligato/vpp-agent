@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package ligato.linux;
 
-option go_package = "go.ligato.io/vpp-agent/v2/proto/ligato/linux;linux";
+option go_package = "go.ligato.io/vpp-agent/v3/proto/ligato/linux;linux";
 
 import "ligato/linux/interfaces/interface.proto";
 import "ligato/linux/l3/arp.proto";

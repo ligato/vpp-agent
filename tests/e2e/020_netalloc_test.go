@@ -20,13 +20,13 @@ import (
 
 	. "github.com/onsi/gomega"
 
-	"go.ligato.io/vpp-agent/v2/proto/ligato/kvscheduler"
-	linux_interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/linux/interfaces"
-	linux_l3 "go.ligato.io/vpp-agent/v2/proto/ligato/linux/l3"
-	linux_namespace "go.ligato.io/vpp-agent/v2/proto/ligato/linux/namespace"
-	"go.ligato.io/vpp-agent/v2/proto/ligato/netalloc"
-	vpp_interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
-	vpp_l3 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l3"
+	"go.ligato.io/vpp-agent/v3/proto/ligato/kvscheduler"
+	linux_interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/linux/interfaces"
+	linux_l3 "go.ligato.io/vpp-agent/v3/proto/ligato/linux/l3"
+	linux_namespace "go.ligato.io/vpp-agent/v3/proto/ligato/linux/namespace"
+	"go.ligato.io/vpp-agent/v3/proto/ligato/netalloc"
+	vpp_interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
+	vpp_l3 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3"
 )
 
 // test IP address allocation using the netalloc plugin for VPP+Linux interfaces,

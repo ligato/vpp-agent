@@ -23,7 +23,7 @@ import (
 	"github.com/ligato/cn-infra/health/probe"
 	"github.com/sirupsen/logrus"
 
-	"go.ligato.io/vpp-agent/v2/cmd/agentctl/api/types"
+	"go.ligato.io/vpp-agent/v3/cmd/agentctl/api/types"
 )
 
 // Ping pings the server and returns the value of the "API-Version" headers.

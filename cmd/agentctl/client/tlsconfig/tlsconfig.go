@@ -18,7 +18,7 @@
 // 		package main
 //
 // 		import "fmt"
-//		import "go.ligato.io/vpp-agent/v2/cmd/agentctl/client/tlsconfig"
+//		import "go.ligato.io/vpp-agent/v3/cmd/agentctl/client/tlsconfig"
 //
 // 		func main() {
 // 			tc, err := tlsconfig.New(

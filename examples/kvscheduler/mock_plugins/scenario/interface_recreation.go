@@ -18,8 +18,8 @@ import (
 	"context"
 	"log"
 
-	"go.ligato.io/vpp-agent/v2/client"
-	interfaces "go.ligato.io/vpp-agent/v2/examples/kvscheduler/mock_plugins/ifplugin/model"
+	"go.ligato.io/vpp-agent/v3/client"
+	interfaces "go.ligato.io/vpp-agent/v3/examples/kvscheduler/mock_plugins/ifplugin/model"
 )
 
 // InterfaceRecreation presents a scenario, in which the interface type is changed,

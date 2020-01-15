@@ -17,7 +17,7 @@ package mockcalls
 import (
 	"fmt"
 
-	l2 "go.ligato.io/vpp-agent/v2/examples/kvscheduler/mock_plugins/l2plugin/model"
+	l2 "go.ligato.io/vpp-agent/v3/examples/kvscheduler/mock_plugins/l2plugin/model"
 )
 
 // CreateBridgeDomain creates new bridge domain in the mock SB.

@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package ligato.vpp.srv6;
 
-option go_package = "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/srv6;vpp_srv6";
+option go_package = "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/srv6;vpp_srv6";
 
 message LocalSID {
     string sid = 1;                      /* segment id (IPv6 Address) */

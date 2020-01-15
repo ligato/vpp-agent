@@ -15,8 +15,8 @@
 package vpp2001_324
 
 import (
-	vpp_l2 "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324/l2"
-	l2 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l2"
+	vpp_l2 "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001_324/l2"
+	l2 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l2"
 )
 
 // AddBridgeDomain adds new bridge domain.

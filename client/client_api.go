@@ -19,7 +19,7 @@ import (
 
 	"github.com/golang/protobuf/proto"
 
-	"go.ligato.io/vpp-agent/v2/proto/ligato/generic"
+	"go.ligato.io/vpp-agent/v3/proto/ligato/generic"
 )
 
 type ModelInfo = generic.ModelDetail

@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package ligato.vpp.acl;
 
-option go_package = "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/acl;vpp_acl";
+option go_package = "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/acl;vpp_acl";
 
 // ACL defines Access Control List.
 message ACL {

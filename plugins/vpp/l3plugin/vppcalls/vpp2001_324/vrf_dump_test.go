@@ -19,10 +19,10 @@ import (
 
 	"github.com/ligato/cn-infra/logging/logrus"
 	. "github.com/onsi/gomega"
-	vpp_ip "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324/ip"
-	vpp_vpe "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324/vpe"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/vppmock"
-	l3 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l3"
+	vpp_ip "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001_324/ip"
+	vpp_vpe "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001_324/vpe"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/vppmock"
+	l3 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3"
 )
 
 func TestDumpVrfTables(t *testing.T) {

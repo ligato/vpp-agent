@@ -20,9 +20,9 @@ import (
 	"sync"
 	"time"
 
-	"go.ligato.io/vpp-agent/v2/pkg/metrics"
-	kvs "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
-	"go.ligato.io/vpp-agent/v2/proto/ligato/kvscheduler"
+	"go.ligato.io/vpp-agent/v3/pkg/metrics"
+	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v3/proto/ligato/kvscheduler"
 )
 
 var (

@@ -21,12 +21,12 @@ import (
 
 	"github.com/ligato/cn-infra/logging/logrus"
 	. "github.com/onsi/gomega"
-	vpp_ipsec "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/ipsec"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/ipsecplugin/vppcalls"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/ipsecplugin/vppcalls/vpp2001"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/vppmock"
-	ipsec "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/ipsec"
+	vpp_ipsec "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ipsec"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/ipsecplugin/vppcalls"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/ipsecplugin/vppcalls/vpp2001"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/vppmock"
+	ipsec "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/ipsec"
 )
 
 func ipToAddr(ip string) vpp_ipsec.Address {

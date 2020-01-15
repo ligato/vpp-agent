@@ -18,14 +18,14 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 
-	core_vppcalls "go.ligato.io/vpp-agent/v2/plugins/govppmux/vppcalls"
-	core_vpp1904 "go.ligato.io/vpp-agent/v2/plugins/govppmux/vppcalls/vpp1904"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904/sr"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904/vpe"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/srplugin/vppcalls"
+	core_vppcalls "go.ligato.io/vpp-agent/v3/plugins/govppmux/vppcalls"
+	core_vpp1904 "go.ligato.io/vpp-agent/v3/plugins/govppmux/vppcalls/vpp1904"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1904"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1904/sr"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1904/vpe"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/srplugin/vppcalls"
 )
 
 func init() {

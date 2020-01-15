@@ -18,10 +18,10 @@ import (
 	"fmt"
 	"net"
 
-	vpp_abf "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/abf"
+	vpp_abf "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/abf"
 
 	"github.com/go-errors/errors"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904/abf"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1904/abf"
 )
 
 // GetAbfVersion retrieves version of the VPP ABF plugin

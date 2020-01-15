@@ -24,7 +24,7 @@ import (
 
 	"github.com/ligato/cn-infra/logging"
 
-	"go.ligato.io/vpp-agent/v2/cmd/agentctl/client"
+	"go.ligato.io/vpp-agent/v3/cmd/agentctl/client"
 )
 
 const (

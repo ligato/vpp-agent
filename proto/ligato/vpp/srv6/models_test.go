@@ -18,7 +18,7 @@ import (
 	"testing"
 
 	. "github.com/onsi/gomega"
-	srv6 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/srv6"
+	srv6 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/srv6"
 )
 
 // TestPolicyKey tests all cases for method PolicyKey

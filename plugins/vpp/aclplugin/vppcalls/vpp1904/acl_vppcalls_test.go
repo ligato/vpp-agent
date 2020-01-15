@@ -19,10 +19,10 @@ import (
 
 	"github.com/ligato/cn-infra/logging/logrus"
 	. "github.com/onsi/gomega"
-	acl_api "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904/acl"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/vppmock"
-	acl "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/acl"
+	acl_api "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1904/acl"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/vppmock"
+	acl "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/acl"
 )
 
 var aclNoRules []*acl.ACL_Rule

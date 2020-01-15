@@ -19,11 +19,11 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/ligato/cn-infra/logging"
-	scheduler "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/srplugin/descriptor/adapter"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/srplugin/vppcalls"
-	vpp_l3 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l3"
-	srv6 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/srv6"
+	scheduler "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/srplugin/descriptor/adapter"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/srplugin/vppcalls"
+	vpp_l3 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3"
+	srv6 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/srv6"
 )
 
 const (

@@ -19,8 +19,8 @@ import (
 
 	"fmt"
 
-	. "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
-	"go.ligato.io/vpp-agent/v2/plugins/kvscheduler/internal/utils"
+	. "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v3/plugins/kvscheduler/internal/utils"
 )
 
 const (

@@ -20,13 +20,13 @@ import (
 
 	"github.com/ligato/cn-infra/logging/logrus"
 
-	netalloc_mock "go.ligato.io/vpp-agent/v2/plugins/netalloc/mock"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
-	ifplugin_vppcalls "go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/vppcalls"
-	_ "go.ligato.io/vpp-agent/v2/plugins/vpp/l3plugin"
-	l3plugin_vppcalls "go.ligato.io/vpp-agent/v2/plugins/vpp/l3plugin/vppcalls"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/l3plugin/vrfidx"
-	vpp_l3 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l3"
+	netalloc_mock "go.ligato.io/vpp-agent/v3/plugins/netalloc/mock"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
+	ifplugin_vppcalls "go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/vppcalls"
+	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin"
+	l3plugin_vppcalls "go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin/vppcalls"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin/vrfidx"
+	vpp_l3 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3"
 )
 
 func TestArp(t *testing.T) {

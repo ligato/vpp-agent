@@ -21,13 +21,13 @@ import (
 	"github.com/ligato/cn-infra/logging/logrus"
 	. "github.com/onsi/gomega"
 
-	aclplugin_vppcalls "go.ligato.io/vpp-agent/v2/plugins/vpp/aclplugin/vppcalls"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
-	ifplugin_vppcalls "go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/vppcalls"
-	acl "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/acl"
+	aclplugin_vppcalls "go.ligato.io/vpp-agent/v3/plugins/vpp/aclplugin/vppcalls"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
+	ifplugin_vppcalls "go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/vppcalls"
+	acl "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/acl"
 
-	_ "go.ligato.io/vpp-agent/v2/plugins/vpp/aclplugin"
-	_ "go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin"
+	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/aclplugin"
+	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin"
 )
 
 func rulePerm(permit bool) acl.ACL_Rule_Action {

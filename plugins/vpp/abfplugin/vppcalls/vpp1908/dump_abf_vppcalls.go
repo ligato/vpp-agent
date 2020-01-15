@@ -17,9 +17,9 @@ package vpp1908
 import (
 	"net"
 
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/abfplugin/vppcalls"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908/abf"
-	vpp_abf "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/abf"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/abfplugin/vppcalls"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1908/abf"
+	vpp_abf "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/abf"
 )
 
 // placeholder for unknown names

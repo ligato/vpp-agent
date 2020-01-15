@@ -18,19 +18,19 @@ import (
 	"context"
 
 	"github.com/ligato/cn-infra/db/keyval"
-	"go.ligato.io/vpp-agent/v2/pkg/models"
+	"go.ligato.io/vpp-agent/v3/pkg/models"
 
-	vppclient "go.ligato.io/vpp-agent/v2/clientv2/vpp"
-	orch "go.ligato.io/vpp-agent/v2/plugins/orchestrator"
-	abf "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/abf"
-	acl "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/acl"
-	intf "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
-	ipsec "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/ipsec"
-	l2 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l2"
-	l3 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l3"
-	nat "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/nat"
-	punt "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/punt"
-	stn "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/stn"
+	vppclient "go.ligato.io/vpp-agent/v3/clientv2/vpp"
+	orch "go.ligato.io/vpp-agent/v3/plugins/orchestrator"
+	abf "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/abf"
+	acl "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/acl"
+	intf "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
+	ipsec "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/ipsec"
+	l2 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l2"
+	l3 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3"
+	nat "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/nat"
+	punt "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/punt"
+	stn "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/stn"
 )
 
 // NewDataChangeDSL returns a new instance of DataChangeDSL which implements

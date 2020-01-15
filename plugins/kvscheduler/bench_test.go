@@ -24,13 +24,13 @@ import (
 	"github.com/ligato/cn-infra/logging"
 	_ "github.com/ligato/cn-infra/logging/logrus" // for setting default registry
 
-	mock_ifplugin "go.ligato.io/vpp-agent/v2/examples/kvscheduler/mock_plugins/ifplugin"
-	"go.ligato.io/vpp-agent/v2/examples/kvscheduler/mock_plugins/ifplugin/model"
-	mock_l2plugin "go.ligato.io/vpp-agent/v2/examples/kvscheduler/mock_plugins/l2plugin"
-	"go.ligato.io/vpp-agent/v2/examples/kvscheduler/mock_plugins/l2plugin/model"
-	"go.ligato.io/vpp-agent/v2/pkg/models"
-	. "go.ligato.io/vpp-agent/v2/plugins/kvscheduler"
-	. "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
+	mock_ifplugin "go.ligato.io/vpp-agent/v3/examples/kvscheduler/mock_plugins/ifplugin"
+	"go.ligato.io/vpp-agent/v3/examples/kvscheduler/mock_plugins/ifplugin/model"
+	mock_l2plugin "go.ligato.io/vpp-agent/v3/examples/kvscheduler/mock_plugins/l2plugin"
+	"go.ligato.io/vpp-agent/v3/examples/kvscheduler/mock_plugins/l2plugin/model"
+	"go.ligato.io/vpp-agent/v3/pkg/models"
+	. "go.ligato.io/vpp-agent/v3/plugins/kvscheduler"
+	. "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 )
 
 /*

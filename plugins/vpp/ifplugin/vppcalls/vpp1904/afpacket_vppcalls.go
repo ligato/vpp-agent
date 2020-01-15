@@ -17,8 +17,8 @@ package vpp1904
 import (
 	"net"
 
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904/af_packet"
-	interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1904/af_packet"
+	interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
 )
 
 // AddAfPacketInterface implements AfPacket handler.

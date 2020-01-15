@@ -18,8 +18,8 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/ligato/cn-infra/logging"
 
-	kvs "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
-	interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
+	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
+	interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
 )
 
 const (

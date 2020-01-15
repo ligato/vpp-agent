@@ -11,7 +11,7 @@ import (
 	docker "github.com/fsouza/go-dockerclient"
 	"github.com/vishvananda/netns"
 
-	nslinuxcalls "go.ligato.io/vpp-agent/v2/plugins/linux/nsplugin/linuxcalls"
+	nslinuxcalls "go.ligato.io/vpp-agent/v3/plugins/linux/nsplugin/linuxcalls"
 )
 
 const (

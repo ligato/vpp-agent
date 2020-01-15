@@ -20,13 +20,13 @@ import (
 
 	. "github.com/onsi/gomega"
 
-	"go.ligato.io/vpp-agent/v2/proto/ligato/kvscheduler"
-	"go.ligato.io/vpp-agent/v2/proto/ligato/linux/interfaces"
-	"go.ligato.io/vpp-agent/v2/proto/ligato/linux/l3"
-	linux_namespace "go.ligato.io/vpp-agent/v2/proto/ligato/linux/namespace"
-	vpp_interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
-	vpp_l3 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l3"
-	vpp_nat "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/nat"
+	"go.ligato.io/vpp-agent/v3/proto/ligato/kvscheduler"
+	"go.ligato.io/vpp-agent/v3/proto/ligato/linux/interfaces"
+	"go.ligato.io/vpp-agent/v3/proto/ligato/linux/l3"
+	linux_namespace "go.ligato.io/vpp-agent/v3/proto/ligato/linux/namespace"
+	vpp_interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
+	vpp_l3 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3"
+	vpp_nat "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/nat"
 )
 
 // Simulate public and private networks using two microservices and test

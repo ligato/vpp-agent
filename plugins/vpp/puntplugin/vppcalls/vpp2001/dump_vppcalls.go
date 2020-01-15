@@ -18,10 +18,10 @@ import (
 	"bytes"
 	"net"
 
-	vpp_ip "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/ip"
-	vpp_punt "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/punt"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/puntplugin/vppcalls"
-	punt "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/punt"
+	vpp_ip "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ip"
+	vpp_punt "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/punt"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/puntplugin/vppcalls"
+	punt "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/punt"
 )
 
 // DumpPuntRedirect dumps ip redirect punts

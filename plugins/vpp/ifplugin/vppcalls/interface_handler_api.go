@@ -20,8 +20,8 @@ import (
 
 	"github.com/ligato/cn-infra/logging"
 
-	"go.ligato.io/vpp-agent/v2/plugins/vpp"
-	interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp"
+	interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
 )
 
 // InterfaceDetails is the wrapper structure for the interface northbound API structure.

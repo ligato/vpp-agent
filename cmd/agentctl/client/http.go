@@ -16,7 +16,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
-	"go.ligato.io/vpp-agent/v2/cmd/agentctl/api/types"
+	"go.ligato.io/vpp-agent/v3/cmd/agentctl/api/types"
 )
 
 // serverResponse is a wrapper for http API responses.

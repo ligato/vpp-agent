@@ -3,8 +3,8 @@ package netalloc
 import (
 	"net"
 
-	kvs "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
-	"go.ligato.io/vpp-agent/v2/proto/ligato/netalloc"
+	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v3/proto/ligato/netalloc"
 )
 
 // GwValidityCheck is used in ValidateIPAddress to tell if a GW reference is (un)expected/required.

@@ -22,16 +22,16 @@ import (
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
 
-	corevppcalls "go.ligato.io/vpp-agent/v2/plugins/govppmux/vppcalls"
-	vpe_vpp2001 "go.ligato.io/vpp-agent/v2/plugins/govppmux/vppcalls/vpp2001"
-	"go.ligato.io/vpp-agent/v2/plugins/netalloc"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001"
-	vpp_dhcp "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/dhcp"
-	vpp_ip "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/ip"
-	vpp_vpe "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/vpe"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/l3plugin/vppcalls"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/l3plugin/vrfidx"
+	corevppcalls "go.ligato.io/vpp-agent/v3/plugins/govppmux/vppcalls"
+	vpe_vpp2001 "go.ligato.io/vpp-agent/v3/plugins/govppmux/vppcalls/vpp2001"
+	"go.ligato.io/vpp-agent/v3/plugins/netalloc"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001"
+	vpp_dhcp "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/dhcp"
+	vpp_ip "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ip"
+	vpp_vpe "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/vpe"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin/vppcalls"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin/vrfidx"
 )
 
 func init() {

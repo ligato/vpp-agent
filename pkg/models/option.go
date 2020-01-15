@@ -18,7 +18,7 @@ import (
 	"github.com/golang/protobuf/descriptor"
 	"github.com/golang/protobuf/proto"
 
-	"go.ligato.io/vpp-agent/v2/proto/ligato/generic"
+	"go.ligato.io/vpp-agent/v3/proto/ligato/generic"
 )
 
 func (r *Registry) checkProtoOptions(x interface{}) *KnownModel {

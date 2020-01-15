@@ -17,7 +17,7 @@ package vpp_abf_test
 import (
 	"testing"
 
-	vpp_abf "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/abf"
+	vpp_abf "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/abf"
 )
 
 func TestABFKey(t *testing.T) {

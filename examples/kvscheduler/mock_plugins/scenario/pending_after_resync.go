@@ -18,7 +18,7 @@ import (
 	"context"
 	"log"
 
-	"go.ligato.io/vpp-agent/v2/client"
+	"go.ligato.io/vpp-agent/v3/client"
 )
 
 // PendingAfterResync presents a scenario, in which some objects are pending

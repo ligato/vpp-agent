@@ -17,7 +17,7 @@ else
 	elif [ "$(ls -A ${COVER_DIR}/e2e-coverage)" ]; then
 		rm -f ${COVER_DIR}/e2e-coverage/*
 	fi
-	go test -covermode=count -coverpkg="go.ligato.io/vpp-agent/v2/..." -c ./cmd/vpp-agent -o ./tests/e2e/vpp-agent.test -tags teste2e
+	go test -covermode=count -coverpkg="go.ligato.io/vpp-agent/v3/..." -c ./cmd/vpp-agent -o ./tests/e2e/vpp-agent.test -tags teste2e
 	DOCKER_ARGS="${DOCKER_ARGS-} -v ${COVER_DIR}/e2e-coverage:${COVER_DIR}/e2e-coverage"
 	args+=("-cov=${COVER_DIR}/e2e-coverage")
 fi

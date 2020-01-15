@@ -20,9 +20,9 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 
-	"go.ligato.io/vpp-agent/v2/plugins/vpp"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
-	punt "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/punt"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
+	punt "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/punt"
 )
 
 var (

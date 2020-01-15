@@ -19,9 +19,9 @@ import (
 
 	. "github.com/onsi/gomega"
 
-	vpp_l2 "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/l2"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
-	l2 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l2"
+	vpp_l2 "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/l2"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
+	l2 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l2"
 )
 
 func TestAddInterfaceToBridgeDomain(t *testing.T) {

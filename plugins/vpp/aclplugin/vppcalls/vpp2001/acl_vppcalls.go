@@ -19,9 +19,9 @@ import (
 	"net"
 	"strings"
 
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/aclplugin/vppcalls"
-	vpp_acl "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/acl"
-	acl "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/acl"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/aclplugin/vppcalls"
+	vpp_acl "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/acl"
+	acl "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/acl"
 )
 
 // AddACL implements ACL handler.

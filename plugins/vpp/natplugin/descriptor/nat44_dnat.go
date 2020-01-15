@@ -21,13 +21,13 @@ import (
 
 	"strconv"
 
-	kvs "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
-	vpp_ifdescriptor "go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/descriptor"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/natplugin/descriptor/adapter"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/natplugin/vppcalls"
-	interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
-	l3 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l3"
-	nat "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/nat"
+	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
+	vpp_ifdescriptor "go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/descriptor"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/natplugin/descriptor/adapter"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/natplugin/vppcalls"
+	interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
+	l3 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3"
+	nat "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/nat"
 )
 
 const (

@@ -16,12 +16,12 @@ package vpp2001_324
 
 import (
 	govppapi "git.fd.io/govpp.git/api"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp"
 
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/aclplugin/vppcalls"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324/acl"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/aclplugin/vppcalls"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001_324"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001_324/acl"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
 )
 
 func init() {

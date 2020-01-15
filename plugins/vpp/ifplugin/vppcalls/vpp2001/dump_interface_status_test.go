@@ -17,8 +17,8 @@ package vpp2001
 import (
 	"testing"
 
-	vpp_ifs "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/interfaces"
-	ifs "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
+	vpp_ifs "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/interfaces"
+	ifs "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
 )
 
 func TestIsAdminStateUp(t *testing.T) {

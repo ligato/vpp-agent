@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package ligato.vpp.interfaces;
 
-option go_package = "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces;vpp_interfaces";
+option go_package = "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces;vpp_interfaces";
 
 import "ligato/vpp/interfaces/interface.proto";
 

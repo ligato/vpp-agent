@@ -17,9 +17,9 @@ package abfidx
 import (
 	"github.com/ligato/cn-infra/idxmap"
 	"github.com/ligato/cn-infra/logging"
-	abf "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/abf"
+	abf "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/abf"
 
-	"go.ligato.io/vpp-agent/v2/pkg/idxvpp"
+	"go.ligato.io/vpp-agent/v3/pkg/idxvpp"
 )
 
 // ABFMetadataIndex provides read-only access to mapping between ABF indexes (generated in the ABF plugin)

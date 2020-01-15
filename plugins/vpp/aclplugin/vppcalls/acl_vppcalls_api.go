@@ -17,9 +17,9 @@ package vppcalls
 import (
 	govppapi "git.fd.io/govpp.git/api"
 
-	"go.ligato.io/vpp-agent/v2/plugins/vpp"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
-	acl "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/acl"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
+	acl "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/acl"
 )
 
 // Protocol types that can occur in ACLs

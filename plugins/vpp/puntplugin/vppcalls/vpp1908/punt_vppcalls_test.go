@@ -20,13 +20,13 @@ import (
 	"github.com/ligato/cn-infra/logging/logrus"
 	. "github.com/onsi/gomega"
 
-	ba_ip "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908/ip"
-	ba_punt "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908/punt"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/puntplugin/vppcalls"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/puntplugin/vppcalls/vpp1908"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/vppmock"
-	punt "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/punt"
+	ba_ip "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1908/ip"
+	ba_punt "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1908/punt"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/puntplugin/vppcalls"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/puntplugin/vppcalls/vpp1908"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/vppmock"
+	punt "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/punt"
 )
 
 // TODO test below temporary disabled (re-enable with set_punt)

@@ -21,9 +21,9 @@ import (
 
 	"github.com/pkg/errors"
 
-	"go.ligato.io/vpp-agent/v2/plugins/govppmux/vppcalls"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324/memclnt"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324/vpe"
+	"go.ligato.io/vpp-agent/v3/plugins/govppmux/vppcalls"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001_324/memclnt"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001_324/vpe"
 )
 
 // Ping sends VPP control ping.

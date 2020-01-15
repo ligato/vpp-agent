@@ -19,9 +19,9 @@ import (
 
 	. "github.com/onsi/gomega"
 
-	vpp_ifs "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/interfaces"
-	vpp_memif "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/memif"
-	ifs "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
+	vpp_ifs "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/interfaces"
+	vpp_memif "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/memif"
+	ifs "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
 )
 
 func TestAddMasterMemifInterface(t *testing.T) {

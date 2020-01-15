@@ -18,10 +18,10 @@ import (
 	"net"
 
 	"github.com/pkg/errors"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/stnplugin/vppcalls"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/stnplugin/vppcalls"
 
-	api "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904/stn"
-	stn "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/stn"
+	api "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1904/stn"
+	stn "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/stn"
 )
 
 // DumpSTNRules implements STN handler, it returns all STN rules present on the VPP

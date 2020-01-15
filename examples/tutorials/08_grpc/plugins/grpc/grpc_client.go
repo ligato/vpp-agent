@@ -21,9 +21,9 @@ import (
 	"time"
 
 	"github.com/ligato/cn-infra/infra"
-	"go.ligato.io/vpp-agent/v2/proto/ligato/configurator"
-	"go.ligato.io/vpp-agent/v2/proto/ligato/vpp"
-	vpp_interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
+	"go.ligato.io/vpp-agent/v3/proto/ligato/configurator"
+	"go.ligato.io/vpp-agent/v3/proto/ligato/vpp"
+	vpp_interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
 	"google.golang.org/grpc"
 )
 

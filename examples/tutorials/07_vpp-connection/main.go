@@ -19,10 +19,10 @@ import (
 	"net"
 	"time"
 
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908/interfaces"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1908/interfaces"
 
 	"git.fd.io/govpp.git/api"
-	"go.ligato.io/vpp-agent/v2/plugins/govppmux"
+	"go.ligato.io/vpp-agent/v3/plugins/govppmux"
 
 	"github.com/ligato/cn-infra/agent"
 )

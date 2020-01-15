@@ -6,8 +6,8 @@ import (
 	"github.com/ligato/cn-infra/rpc/rest"
 	"github.com/ligato/cn-infra/servicelabel"
 
-	"go.ligato.io/vpp-agent/v2/plugins/govppmux"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin"
+	"go.ligato.io/vpp-agent/v3/plugins/govppmux"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin"
 )
 
 // DefaultPlugin is default instance of Plugin

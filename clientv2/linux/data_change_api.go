@@ -15,19 +15,19 @@
 package linuxclient
 
 import (
-	vpp_clientv2 "go.ligato.io/vpp-agent/v2/clientv2/vpp"
-	linux_interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/linux/interfaces"
-	linux_iptables "go.ligato.io/vpp-agent/v2/proto/ligato/linux/iptables"
-	linux_l3 "go.ligato.io/vpp-agent/v2/proto/ligato/linux/l3"
-	vpp_abf "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/abf"
-	vpp_acl "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/acl"
-	vpp_interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
-	ipsec "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/ipsec"
-	vpp_l2 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l2"
-	vpp_l3 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l3"
-	nat "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/nat"
-	punt "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/punt"
-	vpp_stn "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/stn"
+	vpp_clientv2 "go.ligato.io/vpp-agent/v3/clientv2/vpp"
+	linux_interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/linux/interfaces"
+	linux_iptables "go.ligato.io/vpp-agent/v3/proto/ligato/linux/iptables"
+	linux_l3 "go.ligato.io/vpp-agent/v3/proto/ligato/linux/l3"
+	vpp_abf "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/abf"
+	vpp_acl "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/acl"
+	vpp_interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
+	ipsec "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/ipsec"
+	vpp_l2 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l2"
+	vpp_l3 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3"
+	nat "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/nat"
+	punt "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/punt"
+	vpp_stn "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/stn"
 )
 
 // DataChangeDSL defines the Domain Specific Language (DSL) for data change

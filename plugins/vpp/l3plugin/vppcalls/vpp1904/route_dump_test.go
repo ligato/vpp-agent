@@ -19,11 +19,11 @@ import (
 
 	"github.com/ligato/cn-infra/logging/logrus"
 	. "github.com/onsi/gomega"
-	netallock_mock "go.ligato.io/vpp-agent/v2/plugins/netalloc/mock"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904/ip"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904/vpe"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/vppmock"
+	netallock_mock "go.ligato.io/vpp-agent/v3/plugins/netalloc/mock"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1904/ip"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1904/vpe"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/vppmock"
 )
 
 // Test dumping routes

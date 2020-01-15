@@ -17,7 +17,7 @@ package linux_l3
 import (
 	"strings"
 
-	"go.ligato.io/vpp-agent/v2/pkg/models"
+	"go.ligato.io/vpp-agent/v3/pkg/models"
 )
 
 // ModuleName is the module name used for models.

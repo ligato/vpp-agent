@@ -18,14 +18,14 @@ import (
 	"github.com/ligato/cn-infra/rpc/rest"
 	"github.com/ligato/cn-infra/servicelabel"
 
-	"go.ligato.io/vpp-agent/v2/plugins/govppmux"
-	linuxifplugin "go.ligato.io/vpp-agent/v2/plugins/linux/ifplugin"
-	"go.ligato.io/vpp-agent/v2/plugins/linux/nsplugin"
-	"go.ligato.io/vpp-agent/v2/plugins/netalloc"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/aclplugin"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/l2plugin"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/l3plugin"
+	"go.ligato.io/vpp-agent/v3/plugins/govppmux"
+	linuxifplugin "go.ligato.io/vpp-agent/v3/plugins/linux/ifplugin"
+	"go.ligato.io/vpp-agent/v3/plugins/linux/nsplugin"
+	"go.ligato.io/vpp-agent/v3/plugins/netalloc"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/aclplugin"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/l2plugin"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin"
 )
 
 // DefaultPlugin is a default instance of Plugin.

@@ -22,7 +22,7 @@ import (
 	"strings"
 
 	"github.com/vishvananda/netlink"
-	"go.ligato.io/vpp-agent/v2/pkg/models"
+	"go.ligato.io/vpp-agent/v3/pkg/models"
 	"golang.org/x/sys/unix"
 
 	"github.com/golang/protobuf/proto"
@@ -34,20 +34,20 @@ import (
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/servicelabel"
 
-	kvs "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
-	"go.ligato.io/vpp-agent/v2/plugins/linux/ifplugin/descriptor/adapter"
-	"go.ligato.io/vpp-agent/v2/plugins/linux/ifplugin/ifaceidx"
-	iflinuxcalls "go.ligato.io/vpp-agent/v2/plugins/linux/ifplugin/linuxcalls"
-	"go.ligato.io/vpp-agent/v2/plugins/linux/nsplugin"
-	nsdescriptor "go.ligato.io/vpp-agent/v2/plugins/linux/nsplugin/descriptor"
-	nslinuxcalls "go.ligato.io/vpp-agent/v2/plugins/linux/nsplugin/linuxcalls"
-	"go.ligato.io/vpp-agent/v2/plugins/netalloc"
-	netalloc_descr "go.ligato.io/vpp-agent/v2/plugins/netalloc/descriptor"
-	vpp_ifaceidx "go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
-	interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/linux/interfaces"
-	namespace "go.ligato.io/vpp-agent/v2/proto/ligato/linux/namespace"
-	netalloc_api "go.ligato.io/vpp-agent/v2/proto/ligato/netalloc"
-	vpp_intf "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
+	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v3/plugins/linux/ifplugin/descriptor/adapter"
+	"go.ligato.io/vpp-agent/v3/plugins/linux/ifplugin/ifaceidx"
+	iflinuxcalls "go.ligato.io/vpp-agent/v3/plugins/linux/ifplugin/linuxcalls"
+	"go.ligato.io/vpp-agent/v3/plugins/linux/nsplugin"
+	nsdescriptor "go.ligato.io/vpp-agent/v3/plugins/linux/nsplugin/descriptor"
+	nslinuxcalls "go.ligato.io/vpp-agent/v3/plugins/linux/nsplugin/linuxcalls"
+	"go.ligato.io/vpp-agent/v3/plugins/netalloc"
+	netalloc_descr "go.ligato.io/vpp-agent/v3/plugins/netalloc/descriptor"
+	vpp_ifaceidx "go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
+	interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/linux/interfaces"
+	namespace "go.ligato.io/vpp-agent/v3/proto/ligato/linux/namespace"
+	netalloc_api "go.ligato.io/vpp-agent/v3/proto/ligato/netalloc"
+	vpp_intf "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
 )
 
 const (

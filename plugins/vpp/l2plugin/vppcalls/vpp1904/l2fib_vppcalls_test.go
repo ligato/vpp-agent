@@ -18,15 +18,15 @@ import (
 	"testing"
 
 	"github.com/ligato/cn-infra/logging/logrus"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/l2plugin/vppcalls/vpp1904"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/l2plugin/vppcalls/vpp1904"
 
 	. "github.com/onsi/gomega"
-	"go.ligato.io/vpp-agent/v2/pkg/idxvpp"
-	l2ba "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904/l2"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/l2plugin/vppcalls"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/vppmock"
-	l2nb "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l2"
+	"go.ligato.io/vpp-agent/v3/pkg/idxvpp"
+	l2ba "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1904/l2"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/l2plugin/vppcalls"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/vppmock"
+	l2nb "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l2"
 )
 
 var testDataInFib = []*l2nb.FIBEntry{

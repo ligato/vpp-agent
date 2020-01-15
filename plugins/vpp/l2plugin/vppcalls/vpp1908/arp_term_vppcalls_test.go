@@ -18,7 +18,7 @@ import (
 	"testing"
 
 	. "github.com/onsi/gomega"
-	l2ba "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908/l2"
+	l2ba "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1908/l2"
 )
 
 func TestVppAddArpTerminationTableEntry(t *testing.T) {

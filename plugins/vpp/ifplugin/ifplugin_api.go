@@ -16,8 +16,8 @@ package ifplugin
 
 import (
 	"github.com/ligato/cn-infra/idxmap"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
-	"go.ligato.io/vpp-agent/v2/proto/ligato/vpp"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
+	"go.ligato.io/vpp-agent/v3/proto/ligato/vpp"
 )
 
 // API defines methods exposed by VPP-IfPlugin.
@@ -27,7 +27,7 @@ type API interface {
 	GetInterfaceIndex() ifaceidx.IfaceMetadataIndex
 
 	// GetDHCPIndex gives read-only access to (untyped) map with DHCP leases.
-	// Cast metadata to "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces".DHCPLease
+	// Cast metadata to "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces".DHCPLease
 	GetDHCPIndex() idxmap.NamedMapping
 
 	// SetNotifyService allows to pass function for updating interface notifications.

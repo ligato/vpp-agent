@@ -19,7 +19,7 @@ import (
 	"fmt"
 	"net"
 
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904/ip"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1904/ip"
 )
 
 func IPToAddress(ipstr string) (addr ip.Address, err error) {

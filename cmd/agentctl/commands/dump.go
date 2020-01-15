@@ -27,9 +27,9 @@ import (
 	"github.com/ligato/cn-infra/logging"
 	"github.com/spf13/cobra"
 
-	"go.ligato.io/vpp-agent/v2/cmd/agentctl/api/types"
-	agentcli "go.ligato.io/vpp-agent/v2/cmd/agentctl/cli"
-	"go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v3/cmd/agentctl/api/types"
+	agentcli "go.ligato.io/vpp-agent/v3/cmd/agentctl/cli"
+	"go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 )
 
 func NewDumpCommand(cli agentcli.Cli) *cobra.Command {

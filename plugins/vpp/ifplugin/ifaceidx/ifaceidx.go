@@ -20,7 +20,7 @@ import (
 	"github.com/ligato/cn-infra/idxmap"
 	"github.com/ligato/cn-infra/logging"
 
-	"go.ligato.io/vpp-agent/v2/pkg/idxvpp"
+	"go.ligato.io/vpp-agent/v3/pkg/idxvpp"
 )
 
 // IfaceMetadataIndex provides read-only access to mapping with VPP interface

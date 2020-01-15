@@ -22,14 +22,14 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging/logrus"
 	. "github.com/onsi/gomega"
-	vpp_ifs "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/interfaces"
-	vpp_sr "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/sr"
-	vpp_vpe "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/vpe"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/srplugin/vppcalls"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/srplugin/vppcalls/vpp2001"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/vppmock"
-	srv6 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/srv6"
+	vpp_ifs "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/interfaces"
+	vpp_sr "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/sr"
+	vpp_vpe "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/vpe"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/srplugin/vppcalls"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/srplugin/vppcalls/vpp2001"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/vppmock"
+	srv6 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/srv6"
 )
 
 const (

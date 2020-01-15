@@ -17,17 +17,17 @@ package vpp2001_324
 import (
 	"testing"
 
-	l3 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l3"
+	l3 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3"
 
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/l3plugin/vrfidx"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin/vrfidx"
 
 	"github.com/ligato/cn-infra/logging/logrus"
 	. "github.com/onsi/gomega"
-	netallock_mock "go.ligato.io/vpp-agent/v2/plugins/netalloc/mock"
-	vpp_ip "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/ip"
-	vpp_vpe "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/vpe"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/vppmock"
+	netallock_mock "go.ligato.io/vpp-agent/v3/plugins/netalloc/mock"
+	vpp_ip "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ip"
+	vpp_vpe "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/vpe"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/vppmock"
 )
 
 // Test dumping routes

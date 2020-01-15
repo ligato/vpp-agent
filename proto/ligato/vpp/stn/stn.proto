@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package ligato.vpp.stn;
 
-option go_package = "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/stn;vpp_stn";
+option go_package = "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/stn;vpp_stn";
 
 message Rule {
     string ip_address = 1;

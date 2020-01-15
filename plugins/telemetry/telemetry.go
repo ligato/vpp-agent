@@ -32,17 +32,17 @@ import (
 	"github.com/pkg/errors"
 	"github.com/unrolled/render"
 
-	"go.ligato.io/vpp-agent/v2/pkg/metrics"
-	"go.ligato.io/vpp-agent/v2/pkg/models"
-	"go.ligato.io/vpp-agent/v2/plugins/govppmux"
-	"go.ligato.io/vpp-agent/v2/plugins/telemetry/vppcalls"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
-	"go.ligato.io/vpp-agent/v2/proto/ligato/configurator"
+	"go.ligato.io/vpp-agent/v3/pkg/metrics"
+	"go.ligato.io/vpp-agent/v3/pkg/models"
+	"go.ligato.io/vpp-agent/v3/plugins/govppmux"
+	"go.ligato.io/vpp-agent/v3/plugins/telemetry/vppcalls"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
+	"go.ligato.io/vpp-agent/v3/proto/ligato/configurator"
 
-	_ "go.ligato.io/vpp-agent/v2/plugins/telemetry/vppcalls/vpp1904"
-	_ "go.ligato.io/vpp-agent/v2/plugins/telemetry/vppcalls/vpp1908"
-	_ "go.ligato.io/vpp-agent/v2/plugins/telemetry/vppcalls/vpp2001"
-	_ "go.ligato.io/vpp-agent/v2/plugins/telemetry/vppcalls/vpp2001_324"
+	_ "go.ligato.io/vpp-agent/v3/plugins/telemetry/vppcalls/vpp1904"
+	_ "go.ligato.io/vpp-agent/v3/plugins/telemetry/vppcalls/vpp1908"
+	_ "go.ligato.io/vpp-agent/v3/plugins/telemetry/vppcalls/vpp2001"
+	_ "go.ligato.io/vpp-agent/v3/plugins/telemetry/vppcalls/vpp2001_324"
 )
 
 var debug = os.Getenv("DEBUG_TELEMETRY") != ""

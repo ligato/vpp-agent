@@ -17,9 +17,9 @@
 //go:generate protoc --proto_path=. --go_out=paths=source_relative:. model/fib.proto
 
 // Generate adapters for the descriptors of our mock BDs and FIBs:
-//go:generate descriptor-adapter --descriptor-name BridgeDomain --value-type *mock_l2.BridgeDomain --meta-type *idxvpp.OnlyIndex --import "go.ligato.io/vpp-agent/v2/examples/kvscheduler/mock_plugins/l2plugin/model" --import "go.ligato.io/vpp-agent/v2/pkg/idxvpp" --output-dir "descriptor"
-//go:generate descriptor-adapter --descriptor-name BDInterface --value-type *mock_l2.BridgeDomain_Interface --import "go.ligato.io/vpp-agent/v2/examples/kvscheduler/mock_plugins/l2plugin/model" --output-dir "descriptor"
-//go:generate descriptor-adapter --descriptor-name FIB  --value-type *mock_l2.FIBEntry --import "go.ligato.io/vpp-agent/v2/examples/kvscheduler/mock_plugins/l2plugin/model" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name BridgeDomain --value-type *mock_l2.BridgeDomain --meta-type *idxvpp.OnlyIndex --import "go.ligato.io/vpp-agent/v3/examples/kvscheduler/mock_plugins/l2plugin/model" --import "go.ligato.io/vpp-agent/v3/pkg/idxvpp" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name BDInterface --value-type *mock_l2.BridgeDomain_Interface --import "go.ligato.io/vpp-agent/v3/examples/kvscheduler/mock_plugins/l2plugin/model" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name FIB  --value-type *mock_l2.FIBEntry --import "go.ligato.io/vpp-agent/v3/examples/kvscheduler/mock_plugins/l2plugin/model" --output-dir "descriptor"
 
 package ifplugin
 
@@ -28,11 +28,11 @@ import (
 
 	"github.com/ligato/cn-infra/infra"
 
-	"go.ligato.io/vpp-agent/v2/examples/kvscheduler/mock_plugins/ifplugin"
-	"go.ligato.io/vpp-agent/v2/examples/kvscheduler/mock_plugins/l2plugin/descriptor"
-	"go.ligato.io/vpp-agent/v2/examples/kvscheduler/mock_plugins/l2plugin/mockcalls"
-	"go.ligato.io/vpp-agent/v2/pkg/idxvpp"
-	kvs "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v3/examples/kvscheduler/mock_plugins/ifplugin"
+	"go.ligato.io/vpp-agent/v3/examples/kvscheduler/mock_plugins/l2plugin/descriptor"
+	"go.ligato.io/vpp-agent/v3/examples/kvscheduler/mock_plugins/l2plugin/mockcalls"
+	"go.ligato.io/vpp-agent/v3/pkg/idxvpp"
+	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 )
 
 // L2Plugin configures mock bridge domains and L2 FIBs.

@@ -19,7 +19,7 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/ligato/cn-infra/idxmap"
-	. "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
+	. "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 )
 
 // WithoutOp references operation to leave undefined in the MockDescriptor.

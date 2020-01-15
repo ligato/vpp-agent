@@ -19,18 +19,18 @@ import (
 	"testing"
 
 	. "github.com/onsi/gomega"
-	vpp_interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
-	vpp_nat "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/nat"
+	vpp_interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
+	vpp_nat "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/nat"
 
 	"github.com/ligato/cn-infra/idxmap"
 	idxmap_mem "github.com/ligato/cn-infra/idxmap/mem"
 	"github.com/ligato/cn-infra/logging/logrus"
-	bin_api "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908/nat"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908/vpe"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/natplugin/vppcalls"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/natplugin/vppcalls/vpp1908"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/vppmock"
+	bin_api "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1908/nat"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1908/vpe"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/natplugin/vppcalls"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/natplugin/vppcalls/vpp1908"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/vppmock"
 )
 
 func TestNat44GlobalConfigDump(t *testing.T) {

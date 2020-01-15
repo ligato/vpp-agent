@@ -19,13 +19,13 @@ import (
 
 	"github.com/ligato/cn-infra/agent"
 
-	kvs "go.ligato.io/vpp-agent/v2/plugins/kvscheduler"
-	"go.ligato.io/vpp-agent/v2/plugins/orchestrator"
+	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler"
+	"go.ligato.io/vpp-agent/v3/plugins/orchestrator"
 
 	"github.com/ligato/cn-infra/logging"
-	mock_ifplugin "go.ligato.io/vpp-agent/v2/examples/kvscheduler/mock_plugins/ifplugin"
-	mock_l2plugin "go.ligato.io/vpp-agent/v2/examples/kvscheduler/mock_plugins/l2plugin"
-	"go.ligato.io/vpp-agent/v2/examples/kvscheduler/mock_plugins/scenario"
+	mock_ifplugin "go.ligato.io/vpp-agent/v3/examples/kvscheduler/mock_plugins/ifplugin"
+	mock_l2plugin "go.ligato.io/vpp-agent/v3/examples/kvscheduler/mock_plugins/l2plugin"
+	"go.ligato.io/vpp-agent/v3/examples/kvscheduler/mock_plugins/scenario"
 )
 
 /*

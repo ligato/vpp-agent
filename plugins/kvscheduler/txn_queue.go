@@ -20,7 +20,7 @@ import (
 
 	"github.com/ligato/cn-infra/logging"
 
-	kvs "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
+	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 )
 
 // enqueueTxn adds transaction into the FIFO queue (channel) for execution.

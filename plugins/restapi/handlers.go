@@ -26,9 +26,9 @@ import (
 	"github.com/go-errors/errors"
 	"github.com/unrolled/render"
 
-	"go.ligato.io/vpp-agent/v2/plugins/configurator"
-	"go.ligato.io/vpp-agent/v2/plugins/restapi/resturl"
-	interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
+	"go.ligato.io/vpp-agent/v3/plugins/configurator"
+	"go.ligato.io/vpp-agent/v3/plugins/restapi/resturl"
+	interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
 )
 
 var (

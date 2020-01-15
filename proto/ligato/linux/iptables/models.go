@@ -15,7 +15,7 @@
 package linux_iptables
 
 import (
-	"go.ligato.io/vpp-agent/v2/pkg/models"
+	"go.ligato.io/vpp-agent/v3/pkg/models"
 )
 
 // ModuleName is the module name used for models.

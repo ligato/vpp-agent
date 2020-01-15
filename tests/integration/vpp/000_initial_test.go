@@ -18,7 +18,7 @@ import (
 	"context"
 	"testing"
 
-	"go.ligato.io/vpp-agent/v2/plugins/govppmux/vppcalls"
+	"go.ligato.io/vpp-agent/v3/plugins/govppmux/vppcalls"
 )
 
 func TestPing(t *testing.T) {

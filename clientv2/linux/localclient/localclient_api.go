@@ -16,8 +16,8 @@ package localclient
 
 import (
 	"github.com/ligato/cn-infra/datasync/kvdbsync/local"
-	linuxclient "go.ligato.io/vpp-agent/v2/clientv2/linux"
-	"go.ligato.io/vpp-agent/v2/clientv2/linux/dbadapter"
+	linuxclient "go.ligato.io/vpp-agent/v3/clientv2/linux"
+	"go.ligato.io/vpp-agent/v3/clientv2/linux/dbadapter"
 )
 
 // PluginID defines the name of Linux localclient plugin.

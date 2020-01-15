@@ -20,7 +20,7 @@ syntax = "proto3";
 // address only once it is available.
 package ligato.netalloc;
 
-option go_package = "go.ligato.io/vpp-agent/v2/proto/ligato/netalloc";
+option go_package = "go.ligato.io/vpp-agent/v3/proto/ligato/netalloc";
 
 // IPAddressForm can be used in descriptors whose models reference allocated IP
 // addresses, to ask for a specific form in which the address should applied.

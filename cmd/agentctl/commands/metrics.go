@@ -22,8 +22,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"go.ligato.io/vpp-agent/v2/cmd/agentctl/api/types"
-	agentcli "go.ligato.io/vpp-agent/v2/cmd/agentctl/cli"
+	"go.ligato.io/vpp-agent/v3/cmd/agentctl/api/types"
+	agentcli "go.ligato.io/vpp-agent/v3/cmd/agentctl/cli"
 )
 
 func NewMetricsCommand(cli agentcli.Cli) *cobra.Command {

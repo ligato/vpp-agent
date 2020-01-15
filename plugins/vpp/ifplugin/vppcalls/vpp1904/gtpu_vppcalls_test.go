@@ -19,9 +19,9 @@ import (
 	"testing"
 
 	. "github.com/onsi/gomega"
-	vpp_gtpu "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904/gtpu"
-	vpp_ifs "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904/interfaces"
-	ifs "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
+	vpp_gtpu "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1904/gtpu"
+	vpp_ifs "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1904/interfaces"
+	ifs "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
 )
 
 func TestAddGtpuTunnel(t *testing.T) {

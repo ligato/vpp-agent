@@ -15,7 +15,7 @@
 package vpp2001
 
 import (
-	vpp_ifs "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/interfaces"
+	vpp_ifs "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/interfaces"
 )
 
 func (h *InterfaceVppHandler) AddLoopbackInterface(ifName string) (swIndex uint32, err error) {

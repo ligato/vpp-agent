@@ -22,10 +22,10 @@ import (
 	"strings"
 	"time"
 
-	kvs "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
-	"go.ligato.io/vpp-agent/v2/plugins/kvscheduler/internal/graph"
-	"go.ligato.io/vpp-agent/v2/plugins/kvscheduler/internal/utils"
-	"go.ligato.io/vpp-agent/v2/proto/ligato/kvscheduler"
+	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v3/plugins/kvscheduler/internal/graph"
+	"go.ligato.io/vpp-agent/v3/plugins/kvscheduler/internal/utils"
+	"go.ligato.io/vpp-agent/v3/proto/ligato/kvscheduler"
 )
 
 // GetTransactionHistory returns history of transactions started within the specified

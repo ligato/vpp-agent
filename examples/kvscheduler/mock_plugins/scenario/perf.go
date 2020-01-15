@@ -24,11 +24,11 @@ import (
 
 	"encoding/binary"
 
-	"go.ligato.io/vpp-agent/v2/client"
+	"go.ligato.io/vpp-agent/v3/client"
 
-	interfaces "go.ligato.io/vpp-agent/v2/examples/kvscheduler/mock_plugins/ifplugin/model"
-	l2 "go.ligato.io/vpp-agent/v2/examples/kvscheduler/mock_plugins/l2plugin/model"
-	"go.ligato.io/vpp-agent/v2/plugins/kvscheduler"
+	interfaces "go.ligato.io/vpp-agent/v3/examples/kvscheduler/mock_plugins/ifplugin/model"
+	l2 "go.ligato.io/vpp-agent/v3/examples/kvscheduler/mock_plugins/l2plugin/model"
+	"go.ligato.io/vpp-agent/v3/plugins/kvscheduler"
 )
 
 const iterations = 1000

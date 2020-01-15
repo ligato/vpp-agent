@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package ligato.vpp.punt;
 
-option go_package = "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/punt;vpp_punt";
+option go_package = "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/punt;vpp_punt";
 
 // L3Protocol defines Layer 3 protocols.
 enum L3Protocol {

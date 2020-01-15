@@ -12,7 +12,7 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 
-//go:generate descriptor-adapter --descriptor-name ACL --value-type *vpp_acl.ACL --meta-type *aclidx.ACLMetadata --import "go.ligato.io/vpp-agent/v2/plugins/vpp/aclplugin/aclidx" --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/acl" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name ACL --value-type *vpp_acl.ACL --meta-type *aclidx.ACLMetadata --import "go.ligato.io/vpp-agent/v3/plugins/vpp/aclplugin/aclidx" --import "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/acl" --output-dir "descriptor"
 
 package aclplugin
 
@@ -21,18 +21,18 @@ import (
 	"github.com/ligato/cn-infra/infra"
 	"github.com/pkg/errors"
 
-	"go.ligato.io/vpp-agent/v2/plugins/govppmux"
-	kvs "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/aclplugin/aclidx"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/aclplugin/descriptor"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/aclplugin/descriptor/adapter"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/aclplugin/vppcalls"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin"
+	"go.ligato.io/vpp-agent/v3/plugins/govppmux"
+	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/aclplugin/aclidx"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/aclplugin/descriptor"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/aclplugin/descriptor/adapter"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/aclplugin/vppcalls"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin"
 
-	_ "go.ligato.io/vpp-agent/v2/plugins/vpp/aclplugin/vppcalls/vpp1904"
-	_ "go.ligato.io/vpp-agent/v2/plugins/vpp/aclplugin/vppcalls/vpp1908"
-	_ "go.ligato.io/vpp-agent/v2/plugins/vpp/aclplugin/vppcalls/vpp2001"
-	_ "go.ligato.io/vpp-agent/v2/plugins/vpp/aclplugin/vppcalls/vpp2001_324"
+	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/aclplugin/vppcalls/vpp1904"
+	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/aclplugin/vppcalls/vpp1908"
+	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/aclplugin/vppcalls/vpp2001"
+	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/aclplugin/vppcalls/vpp2001_324"
 )
 
 // ACLPlugin is a plugin that manages ACLs.

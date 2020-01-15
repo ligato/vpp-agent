@@ -25,13 +25,13 @@ import (
 	"github.com/ligato/cn-infra/agent"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
-	"go.ligato.io/vpp-agent/v2/clientv2/vpp/localclient"
-	"go.ligato.io/vpp-agent/v2/cmd/vpp-agent/app"
-	"go.ligato.io/vpp-agent/v2/plugins/orchestrator"
-	acl "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/acl"
-	interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
-	l2 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l2"
-	l3 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l3"
+	"go.ligato.io/vpp-agent/v3/clientv2/vpp/localclient"
+	"go.ligato.io/vpp-agent/v3/cmd/vpp-agent/app"
+	"go.ligato.io/vpp-agent/v3/plugins/orchestrator"
+	acl "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/acl"
+	interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
+	l2 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l2"
+	l3 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3"
 )
 
 // init sets the default logging level.

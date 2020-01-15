@@ -29,17 +29,17 @@ import (
 	"github.com/namsral/flag"
 	"google.golang.org/grpc"
 
-	"go.ligato.io/vpp-agent/v2/client"
-	"go.ligato.io/vpp-agent/v2/client/remoteclient"
-	"go.ligato.io/vpp-agent/v2/cmd/vpp-agent/app"
-	mymodel "go.ligato.io/vpp-agent/v2/examples/custom_model/proto"
-	"go.ligato.io/vpp-agent/v2/plugins/orchestrator"
-	"go.ligato.io/vpp-agent/v2/proto/ligato/linux"
-	linux_interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/linux/interfaces"
-	linux_l3 "go.ligato.io/vpp-agent/v2/proto/ligato/linux/l3"
-	"go.ligato.io/vpp-agent/v2/proto/ligato/vpp"
-	interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
-	vpp_l2 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l2"
+	"go.ligato.io/vpp-agent/v3/client"
+	"go.ligato.io/vpp-agent/v3/client/remoteclient"
+	"go.ligato.io/vpp-agent/v3/cmd/vpp-agent/app"
+	mymodel "go.ligato.io/vpp-agent/v3/examples/custom_model/proto"
+	"go.ligato.io/vpp-agent/v3/plugins/orchestrator"
+	"go.ligato.io/vpp-agent/v3/proto/ligato/linux"
+	linux_interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/linux/interfaces"
+	linux_l3 "go.ligato.io/vpp-agent/v3/proto/ligato/linux/l3"
+	"go.ligato.io/vpp-agent/v3/proto/ligato/vpp"
+	interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
+	vpp_l2 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l2"
 )
 
 //go:generate protoc --proto_path=. --go_out=paths=source_relative:. proto/model.proto

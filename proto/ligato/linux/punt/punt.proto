@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package ligato.linux.punt;
 
-option go_package = "go.ligato.io/vpp-agent/v2/proto/ligato/linux/punt;linux_punt";
+option go_package = "go.ligato.io/vpp-agent/v3/proto/ligato/linux/punt;linux_punt";
 
 /* Proxy allows to listen on network socket or unix domain socket, and resend to another network/unix domain socket */
 message Proxy {

@@ -4,8 +4,8 @@ import (
 	"errors"
 	"net"
 
-	vpp_gre "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324/gre"
-	ifs "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
+	vpp_gre "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001_324/gre"
+	ifs "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
 )
 
 func (h *InterfaceVppHandler) greAddDelTunnel(isAdd bool, greLink *ifs.GreLink) (uint32, error) {

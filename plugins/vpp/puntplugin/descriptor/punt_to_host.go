@@ -20,11 +20,11 @@ import (
 
 	"github.com/ligato/cn-infra/logging"
 
-	"go.ligato.io/vpp-agent/v2/pkg/models"
-	kvs "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/puntplugin/descriptor/adapter"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/puntplugin/vppcalls"
-	punt "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/punt"
+	"go.ligato.io/vpp-agent/v3/pkg/models"
+	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/puntplugin/descriptor/adapter"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/puntplugin/vppcalls"
+	punt "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/punt"
 )
 
 const (

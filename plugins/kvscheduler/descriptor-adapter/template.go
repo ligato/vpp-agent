@@ -20,7 +20,7 @@ package adapter
 
 import (
 	"github.com/golang/protobuf/proto"
-	. "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
+	. "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 
     {{- range $i, $path := .Imports }}
 	"{{ $path }}"

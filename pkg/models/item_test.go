@@ -20,8 +20,8 @@ import (
 	"github.com/golang/protobuf/proto"
 	. "github.com/onsi/gomega"
 
-	"go.ligato.io/vpp-agent/v2/pkg/models"
-	testmodel "go.ligato.io/vpp-agent/v2/pkg/models/testdata/proto"
+	"go.ligato.io/vpp-agent/v3/pkg/models"
+	testmodel "go.ligato.io/vpp-agent/v3/pkg/models/testdata/proto"
 )
 
 func TestEncode(t *testing.T) {

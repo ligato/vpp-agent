@@ -21,10 +21,10 @@ import (
 	"github.com/vishvananda/netlink"
 	"github.com/vishvananda/netns"
 
-	"go.ligato.io/vpp-agent/v2/plugins/linux/ifplugin/ifaceidx"
-	"go.ligato.io/vpp-agent/v2/plugins/linux/nsplugin"
-	interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/linux/interfaces"
-	namespaces "go.ligato.io/vpp-agent/v2/proto/ligato/linux/namespace"
+	"go.ligato.io/vpp-agent/v3/plugins/linux/ifplugin/ifaceidx"
+	"go.ligato.io/vpp-agent/v3/plugins/linux/nsplugin"
+	interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/linux/interfaces"
+	namespaces "go.ligato.io/vpp-agent/v3/proto/ligato/linux/namespace"
 )
 
 // InterfaceDetails is an object combining linux interface data based on proto

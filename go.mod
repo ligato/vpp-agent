@@ -1,4 +1,4 @@
-module go.ligato.io/vpp-agent/v2
+module go.ligato.io/vpp-agent/v3
 
 go 1.12
 

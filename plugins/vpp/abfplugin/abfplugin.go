@@ -12,7 +12,7 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 
-//go:generate descriptor-adapter --descriptor-name ABF --value-type *vpp_abf.ABF --meta-type *abfidx.ABFMetadata --import "abfidx" --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/abf" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name ABF --value-type *vpp_abf.ABF --meta-type *abfidx.ABFMetadata --import "abfidx" --import "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/abf" --output-dir "descriptor"
 
 package abfplugin
 
@@ -21,18 +21,18 @@ import (
 	"github.com/ligato/cn-infra/health/statuscheck"
 	"github.com/ligato/cn-infra/infra"
 
-	"go.ligato.io/vpp-agent/v2/plugins/govppmux"
-	kvs "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/abfplugin/abfidx"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/abfplugin/descriptor"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/abfplugin/vppcalls"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/aclplugin"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin"
+	"go.ligato.io/vpp-agent/v3/plugins/govppmux"
+	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/abfplugin/abfidx"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/abfplugin/descriptor"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/abfplugin/vppcalls"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/aclplugin"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin"
 
-	_ "go.ligato.io/vpp-agent/v2/plugins/vpp/abfplugin/vppcalls/vpp1904"
-	_ "go.ligato.io/vpp-agent/v2/plugins/vpp/abfplugin/vppcalls/vpp1908"
-	_ "go.ligato.io/vpp-agent/v2/plugins/vpp/abfplugin/vppcalls/vpp2001"
-	_ "go.ligato.io/vpp-agent/v2/plugins/vpp/abfplugin/vppcalls/vpp2001_324"
+	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/abfplugin/vppcalls/vpp1904"
+	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/abfplugin/vppcalls/vpp1908"
+	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/abfplugin/vppcalls/vpp2001"
+	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/abfplugin/vppcalls/vpp2001_324"
 )
 
 // ABFPlugin is a plugin that manages ACL-based forwarding.

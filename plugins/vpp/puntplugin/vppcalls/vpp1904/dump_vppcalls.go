@@ -15,10 +15,10 @@
 package vpp1904
 
 import (
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904/punt"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/puntplugin/vppcalls"
-	"go.ligato.io/vpp-agent/v2/proto/ligato/vpp"
-	vpp_punt "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/punt"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1904/punt"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/puntplugin/vppcalls"
+	"go.ligato.io/vpp-agent/v3/proto/ligato/vpp"
+	vpp_punt "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/punt"
 )
 
 // FIXME: temporary solutions for providing data in dump

@@ -16,7 +16,7 @@ package vpp2001
 
 import (
 	"github.com/ligato/cn-infra/utils/addrs"
-	vpp_ip "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/ip"
+	vpp_ip "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ip"
 )
 
 const (

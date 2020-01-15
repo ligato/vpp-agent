@@ -19,7 +19,7 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/ligato/cn-infra/logging"
-	rpc "go.ligato.io/vpp-agent/v2/proto/ligato/configurator"
+	rpc "go.ligato.io/vpp-agent/v3/proto/ligato/configurator"
 )
 
 // Maximum number of messages stored in the buffer. Buffer is always filled from left

@@ -17,7 +17,7 @@ package vpp1908
 import (
 	"net"
 
-	l2ba "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908/l2"
+	l2ba "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1908/l2"
 )
 
 func (h *BridgeDomainVppHandler) callBdIPMacAddDel(isAdd bool, bdID uint32, mac string, ip string) error {

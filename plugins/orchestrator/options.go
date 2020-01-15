@@ -17,7 +17,7 @@ package orchestrator
 import (
 	"github.com/ligato/cn-infra/datasync/kvdbsync/local"
 	"github.com/ligato/cn-infra/rpc/grpc"
-	"go.ligato.io/vpp-agent/v2/plugins/kvscheduler"
+	"go.ligato.io/vpp-agent/v3/plugins/kvscheduler"
 )
 
 // DefaultPlugin is default instance of Plugin

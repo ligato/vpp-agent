@@ -22,14 +22,14 @@ import (
 	"github.com/ligato/cn-infra/agent"
 
 	"github.com/golang/protobuf/proto"
-	"go.ligato.io/vpp-agent/v2/clientv2/linux/localclient"
-	"go.ligato.io/vpp-agent/v2/plugins/orchestrator"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/l3plugin"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/natplugin"
-	interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
-	l3 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l3"
-	nat "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/nat"
+	"go.ligato.io/vpp-agent/v3/clientv2/linux/localclient"
+	"go.ligato.io/vpp-agent/v3/plugins/orchestrator"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/natplugin"
+	interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
+	l3 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3"
+	nat "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/nat"
 )
 
 /*

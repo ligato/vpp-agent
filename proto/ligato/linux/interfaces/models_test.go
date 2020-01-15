@@ -17,7 +17,7 @@ package linux_interfaces
 import (
 	"testing"
 
-	"go.ligato.io/vpp-agent/v2/proto/ligato/netalloc"
+	"go.ligato.io/vpp-agent/v3/proto/ligato/netalloc"
 )
 
 func TestInterfaceAddressKey(t *testing.T) {

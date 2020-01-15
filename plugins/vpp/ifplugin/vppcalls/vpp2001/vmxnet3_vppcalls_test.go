@@ -18,9 +18,9 @@ import (
 	"testing"
 
 	. "github.com/onsi/gomega"
-	vpp_ifs "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/interfaces"
-	vpp_vmxnet3 "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/vmxnet3"
-	ifs "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
+	vpp_ifs "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/interfaces"
+	vpp_vmxnet3 "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/vmxnet3"
+	ifs "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
 )
 
 func TestAddVmxNet3Interface(t *testing.T) {

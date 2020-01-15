@@ -20,10 +20,10 @@ import (
 	prototypes "github.com/golang/protobuf/ptypes/empty"
 	"github.com/ligato/cn-infra/logging"
 
-	kvs "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
-	"go.ligato.io/vpp-agent/v2/plugins/netalloc/descriptor/adapter"
-	"go.ligato.io/vpp-agent/v2/plugins/netalloc/utils"
-	"go.ligato.io/vpp-agent/v2/proto/ligato/netalloc"
+	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v3/plugins/netalloc/descriptor/adapter"
+	"go.ligato.io/vpp-agent/v3/plugins/netalloc/utils"
+	"go.ligato.io/vpp-agent/v3/proto/ligato/netalloc"
 )
 
 const (

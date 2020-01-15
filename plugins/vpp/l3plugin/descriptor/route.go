@@ -25,16 +25,16 @@ import (
 
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/utils/addrs"
-	"go.ligato.io/vpp-agent/v2/pkg/models"
-	kvs "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
-	"go.ligato.io/vpp-agent/v2/plugins/netalloc"
-	netalloc_descr "go.ligato.io/vpp-agent/v2/plugins/netalloc/descriptor"
-	ifdescriptor "go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/descriptor"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/l3plugin/descriptor/adapter"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/l3plugin/vppcalls"
-	netalloc_api "go.ligato.io/vpp-agent/v2/proto/ligato/netalloc"
-	interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
-	l3 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l3"
+	"go.ligato.io/vpp-agent/v3/pkg/models"
+	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v3/plugins/netalloc"
+	netalloc_descr "go.ligato.io/vpp-agent/v3/plugins/netalloc/descriptor"
+	ifdescriptor "go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/descriptor"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin/descriptor/adapter"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin/vppcalls"
+	netalloc_api "go.ligato.io/vpp-agent/v3/proto/ligato/netalloc"
+	interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
+	l3 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3"
 )
 
 const (

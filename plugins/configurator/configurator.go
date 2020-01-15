@@ -22,14 +22,14 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"go.ligato.io/vpp-agent/v2/pkg/models"
-	"go.ligato.io/vpp-agent/v2/pkg/util"
-	kvs "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
-	"go.ligato.io/vpp-agent/v2/plugins/orchestrator"
-	rpc "go.ligato.io/vpp-agent/v2/proto/ligato/configurator"
-	"go.ligato.io/vpp-agent/v2/proto/ligato/linux"
-	"go.ligato.io/vpp-agent/v2/proto/ligato/netalloc"
-	"go.ligato.io/vpp-agent/v2/proto/ligato/vpp"
+	"go.ligato.io/vpp-agent/v3/pkg/models"
+	"go.ligato.io/vpp-agent/v3/pkg/util"
+	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v3/plugins/orchestrator"
+	rpc "go.ligato.io/vpp-agent/v3/proto/ligato/configurator"
+	"go.ligato.io/vpp-agent/v3/proto/ligato/linux"
+	"go.ligato.io/vpp-agent/v3/proto/ligato/netalloc"
+	"go.ligato.io/vpp-agent/v3/proto/ligato/vpp"
 )
 
 // configuratorServer implements DataSyncer service.

@@ -6,7 +6,7 @@ package model
 import (
 	fmt "fmt"
 	proto "github.com/golang/protobuf/proto"
-	_ "go.ligato.io/vpp-agent/v2/proto/ligato/generic"
+	_ "go.ligato.io/vpp-agent/v3/proto/ligato/generic"
 	math "math"
 )
 

@@ -17,7 +17,7 @@ package mockcalls
 import (
 	"github.com/ligato/cn-infra/logging"
 
-	"go.ligato.io/vpp-agent/v2/examples/kvscheduler/mock_plugins/ifplugin/model"
+	"go.ligato.io/vpp-agent/v3/examples/kvscheduler/mock_plugins/ifplugin/model"
 )
 
 // map of interfaces "configured" in the mock SB.

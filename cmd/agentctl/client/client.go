@@ -36,11 +36,11 @@ import (
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
 
-	"go.ligato.io/vpp-agent/v2/client"
-	"go.ligato.io/vpp-agent/v2/client/remoteclient"
-	"go.ligato.io/vpp-agent/v2/cmd/agentctl/api"
-	"go.ligato.io/vpp-agent/v2/cmd/agentctl/api/types"
-	"go.ligato.io/vpp-agent/v2/pkg/debug"
+	"go.ligato.io/vpp-agent/v3/client"
+	"go.ligato.io/vpp-agent/v3/client/remoteclient"
+	"go.ligato.io/vpp-agent/v3/cmd/agentctl/api"
+	"go.ligato.io/vpp-agent/v3/cmd/agentctl/api/types"
+	"go.ligato.io/vpp-agent/v3/pkg/debug"
 )
 
 const (

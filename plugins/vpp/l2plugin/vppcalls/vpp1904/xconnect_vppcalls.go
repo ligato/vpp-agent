@@ -17,7 +17,7 @@ package vpp1904
 import (
 	"errors"
 
-	l2ba "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904/l2"
+	l2ba "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1904/l2"
 )
 
 // AddL2XConnect creates xConnect between two existing interfaces.

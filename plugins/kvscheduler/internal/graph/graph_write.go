@@ -18,7 +18,7 @@ import (
 	"time"
 
 	"github.com/ligato/cn-infra/idxmap"
-	"go.ligato.io/vpp-agent/v2/plugins/kvscheduler/internal/utils"
+	"go.ligato.io/vpp-agent/v3/plugins/kvscheduler/internal/utils"
 )
 
 // graphRW implements RWAccess.

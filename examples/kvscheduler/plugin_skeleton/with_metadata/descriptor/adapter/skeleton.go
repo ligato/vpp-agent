@@ -4,9 +4,9 @@ package adapter
 
 import (
 	"github.com/golang/protobuf/proto"
-	. "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
-	"go.ligato.io/vpp-agent/v2/examples/kvscheduler/plugin_skeleton/with_metadata/model"
-	"go.ligato.io/vpp-agent/v2/examples/kvscheduler/plugin_skeleton/with_metadata/metaidx"
+	"go.ligato.io/vpp-agent/v3/examples/kvscheduler/plugin_skeleton/with_metadata/metaidx"
+	"go.ligato.io/vpp-agent/v3/examples/kvscheduler/plugin_skeleton/with_metadata/model"
+	. "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 )
 
 ////////// type-safe key-value pair with metadata //////////

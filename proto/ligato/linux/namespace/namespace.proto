@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package ligato.linux.namespace;
 
-option go_package = "go.ligato.io/vpp-agent/v2/proto/ligato/linux/namespace;linux_namespace";
+option go_package = "go.ligato.io/vpp-agent/v3/proto/ligato/linux/namespace;linux_namespace";
 
 message NetNamespace {
     enum ReferenceType {

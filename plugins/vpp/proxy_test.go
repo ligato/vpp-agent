@@ -26,9 +26,9 @@ import (
 	"git.fd.io/govpp.git/api"
 	"git.fd.io/govpp.git/proxy"
 
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908/interfaces"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908/vpe"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1908"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1908/interfaces"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1908/vpe"
 )
 
 func init() {

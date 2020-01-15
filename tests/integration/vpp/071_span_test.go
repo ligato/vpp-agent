@@ -5,9 +5,9 @@ import (
 
 	"github.com/ligato/cn-infra/logging/logrus"
 
-	_ "go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin"
-	ifplugin_vppcalls "go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/vppcalls"
-	vpp_interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
+	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin"
+	ifplugin_vppcalls "go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/vppcalls"
+	vpp_interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
 )
 
 func TestSpan(t *testing.T) {

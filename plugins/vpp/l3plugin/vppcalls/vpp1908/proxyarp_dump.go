@@ -17,9 +17,9 @@ package vpp1908
 import (
 	"net"
 
-	l3binapi "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908/ip"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/l3plugin/vppcalls"
-	l3 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l3"
+	l3binapi "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1908/ip"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin/vppcalls"
+	l3 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3"
 )
 
 // DumpProxyArpRanges implements proxy arp handler.

@@ -15,7 +15,7 @@
 package ifplugin
 
 import (
-	"go.ligato.io/vpp-agent/v2/pkg/idxvpp"
+	"go.ligato.io/vpp-agent/v3/pkg/idxvpp"
 )
 
 // API defines methods exposed by mock ifplugin.

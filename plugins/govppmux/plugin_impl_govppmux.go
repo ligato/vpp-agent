@@ -34,14 +34,14 @@ import (
 	"github.com/ligato/cn-infra/rpc/rest"
 	"github.com/pkg/errors"
 
-	"go.ligato.io/vpp-agent/v2/plugins/govppmux/vppcalls"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi"
+	"go.ligato.io/vpp-agent/v3/plugins/govppmux/vppcalls"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi"
 
-	_ "go.ligato.io/vpp-agent/v2/plugins/govppmux/vppcalls/vpp1904"
-	_ "go.ligato.io/vpp-agent/v2/plugins/govppmux/vppcalls/vpp1908"
-	_ "go.ligato.io/vpp-agent/v2/plugins/govppmux/vppcalls/vpp2001"
-	_ "go.ligato.io/vpp-agent/v2/plugins/govppmux/vppcalls/vpp2001_324"
+	_ "go.ligato.io/vpp-agent/v3/plugins/govppmux/vppcalls/vpp1904"
+	_ "go.ligato.io/vpp-agent/v3/plugins/govppmux/vppcalls/vpp1908"
+	_ "go.ligato.io/vpp-agent/v3/plugins/govppmux/vppcalls/vpp2001"
+	_ "go.ligato.io/vpp-agent/v3/plugins/govppmux/vppcalls/vpp2001_324"
 )
 
 var (

@@ -18,8 +18,8 @@ import (
 	"context"
 	"log"
 
-	"go.ligato.io/vpp-agent/v2/client"
-	kvs "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v3/client"
+	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 )
 
 // RevertedChange presents a scenario, in which an update transaction fails

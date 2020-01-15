@@ -20,8 +20,8 @@ import (
 	"github.com/ligato/cn-infra/logging"
 	"github.com/pkg/errors"
 	"github.com/vishvananda/netlink"
-	"go.ligato.io/vpp-agent/v2/plugins/linux/nsplugin/linuxcalls"
-	linux_l3 "go.ligato.io/vpp-agent/v2/proto/ligato/linux/l3"
+	"go.ligato.io/vpp-agent/v3/plugins/linux/nsplugin/linuxcalls"
+	linux_l3 "go.ligato.io/vpp-agent/v3/proto/ligato/linux/l3"
 )
 
 const (

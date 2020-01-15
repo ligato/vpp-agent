@@ -18,7 +18,7 @@ import (
 	"context"
 	"log"
 
-	"go.ligato.io/vpp-agent/v2/client"
+	"go.ligato.io/vpp-agent/v3/client"
 )
 
 // PendingAfterChange presents a scenario, in which originally configured objects

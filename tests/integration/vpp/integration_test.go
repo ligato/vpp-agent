@@ -33,8 +33,8 @@ import (
 	"github.com/mitchellh/go-ps"
 	. "github.com/onsi/gomega"
 
-	"go.ligato.io/vpp-agent/v2/plugins/govppmux/vppcalls"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp"
+	"go.ligato.io/vpp-agent/v3/plugins/govppmux/vppcalls"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp"
 )
 
 const (

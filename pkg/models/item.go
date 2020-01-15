@@ -21,7 +21,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	types "github.com/golang/protobuf/ptypes"
 
-	api "go.ligato.io/vpp-agent/v2/proto/ligato/generic"
+	api "go.ligato.io/vpp-agent/v3/proto/ligato/generic"
 )
 
 // This constant is used as prefix for TypeUrl when marshalling to Any.

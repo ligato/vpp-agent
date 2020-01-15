@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package ligato.vpp.ipsec;
 
-option go_package = "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/ipsec;vpp_ipsec";
+option go_package = "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/ipsec;vpp_ipsec";
 
 /* Cryptographic algorithm for encryption */
 enum CryptoAlg { // vpp/src/vnet/ipsec/ipsec_sa.h:22

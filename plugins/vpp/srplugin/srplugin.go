@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate descriptor-adapter --descriptor-name LocalSID --value-type *vpp_srv6.LocalSID --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/srv6" --output-dir "descriptor"
-//go:generate descriptor-adapter --descriptor-name Policy --value-type *vpp_srv6.Policy --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/srv6" --output-dir "descriptor"
-//go:generate descriptor-adapter --descriptor-name Steering --value-type *vpp_srv6.Steering --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/srv6" --output-dir "descriptor"
-//go:generate descriptor-adapter --descriptor-name SRv6Global --value-type *vpp_srv6.SRv6Global --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/srv6" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name LocalSID --value-type *vpp_srv6.LocalSID --import "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/srv6" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name Policy --value-type *vpp_srv6.Policy --import "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/srv6" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name Steering --value-type *vpp_srv6.Steering --import "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/srv6" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name SRv6Global --value-type *vpp_srv6.SRv6Global --import "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/srv6" --output-dir "descriptor"
 
 package srplugin
 
@@ -23,16 +23,16 @@ import (
 	"github.com/ligato/cn-infra/health/statuscheck"
 	"github.com/ligato/cn-infra/infra"
 
-	"go.ligato.io/vpp-agent/v2/plugins/govppmux"
-	scheduler "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/srplugin/descriptor"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/srplugin/vppcalls"
+	"go.ligato.io/vpp-agent/v3/plugins/govppmux"
+	scheduler "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/srplugin/descriptor"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/srplugin/vppcalls"
 
-	_ "go.ligato.io/vpp-agent/v2/plugins/vpp/srplugin/vppcalls/vpp1904"
-	_ "go.ligato.io/vpp-agent/v2/plugins/vpp/srplugin/vppcalls/vpp1908"
-	_ "go.ligato.io/vpp-agent/v2/plugins/vpp/srplugin/vppcalls/vpp2001"
-	_ "go.ligato.io/vpp-agent/v2/plugins/vpp/srplugin/vppcalls/vpp2001_324"
+	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/srplugin/vppcalls/vpp1904"
+	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/srplugin/vppcalls/vpp1908"
+	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/srplugin/vppcalls/vpp2001"
+	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/srplugin/vppcalls/vpp2001_324"
 )
 
 // SRPlugin configures segment routing.

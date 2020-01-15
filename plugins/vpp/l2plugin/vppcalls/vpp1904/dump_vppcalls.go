@@ -19,10 +19,10 @@ import (
 	"net"
 
 	"github.com/pkg/errors"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/l2plugin/vppcalls"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/l2plugin/vppcalls"
 
-	l2ba "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904/l2"
-	l2nb "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l2"
+	l2ba "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1904/l2"
+	l2nb "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l2"
 )
 
 // DumpBridgeDomains implements bridge domain handler.

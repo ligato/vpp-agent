@@ -24,7 +24,7 @@ import (
 	log "github.com/ligato/cn-infra/logging/logrus"
 	. "github.com/onsi/gomega"
 
-	"go.ligato.io/vpp-agent/v2/plugins/vpp"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp"
 )
 
 // TestCtx is a helper for unit testing.

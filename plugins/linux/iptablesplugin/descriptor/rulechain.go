@@ -21,15 +21,15 @@ import (
 	"github.com/ligato/cn-infra/logging"
 	"github.com/pkg/errors"
 
-	kvs "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
-	ifdescriptor "go.ligato.io/vpp-agent/v2/plugins/linux/ifplugin/descriptor"
-	"go.ligato.io/vpp-agent/v2/plugins/linux/iptablesplugin/descriptor/adapter"
-	"go.ligato.io/vpp-agent/v2/plugins/linux/iptablesplugin/linuxcalls"
-	"go.ligato.io/vpp-agent/v2/plugins/linux/nsplugin"
-	nslinuxcalls "go.ligato.io/vpp-agent/v2/plugins/linux/nsplugin/linuxcalls"
-	ifmodel "go.ligato.io/vpp-agent/v2/proto/ligato/linux/interfaces"
-	linux_iptables "go.ligato.io/vpp-agent/v2/proto/ligato/linux/iptables"
-	linux_namespace "go.ligato.io/vpp-agent/v2/proto/ligato/linux/namespace"
+	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
+	ifdescriptor "go.ligato.io/vpp-agent/v3/plugins/linux/ifplugin/descriptor"
+	"go.ligato.io/vpp-agent/v3/plugins/linux/iptablesplugin/descriptor/adapter"
+	"go.ligato.io/vpp-agent/v3/plugins/linux/iptablesplugin/linuxcalls"
+	"go.ligato.io/vpp-agent/v3/plugins/linux/nsplugin"
+	nslinuxcalls "go.ligato.io/vpp-agent/v3/plugins/linux/nsplugin/linuxcalls"
+	ifmodel "go.ligato.io/vpp-agent/v3/proto/ligato/linux/interfaces"
+	linux_iptables "go.ligato.io/vpp-agent/v3/proto/ligato/linux/iptables"
+	linux_namespace "go.ligato.io/vpp-agent/v3/proto/ligato/linux/namespace"
 )
 
 const (

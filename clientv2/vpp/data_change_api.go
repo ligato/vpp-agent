@@ -15,15 +15,15 @@
 package vppclient
 
 import (
-	abf "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/abf"
-	acl "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/acl"
-	interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
-	ipsec "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/ipsec"
-	l2 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l2"
-	l3 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l3"
-	nat "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/nat"
-	punt "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/punt"
-	stn "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/stn"
+	abf "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/abf"
+	acl "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/acl"
+	interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
+	ipsec "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/ipsec"
+	l2 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l2"
+	l3 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3"
+	nat "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/nat"
+	punt "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/punt"
+	stn "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/stn"
 )
 
 // DataChangeDSL defines Domain Specific Language (DSL) for data change.

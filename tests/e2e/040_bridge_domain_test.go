@@ -22,11 +22,11 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/types"
 
-	"go.ligato.io/vpp-agent/v2/proto/ligato/kvscheduler"
-	linux_interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/linux/interfaces"
-	linux_namespace "go.ligato.io/vpp-agent/v2/proto/ligato/linux/namespace"
-	vpp_interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
-	vpp_l2 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l2"
+	"go.ligato.io/vpp-agent/v3/proto/ligato/kvscheduler"
+	linux_interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/linux/interfaces"
+	linux_namespace "go.ligato.io/vpp-agent/v3/proto/ligato/linux/namespace"
+	vpp_interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
+	vpp_l2 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l2"
 )
 
 func bridgeDomains(ctx *testCtx) ([]map[string]string, error) {

@@ -18,8 +18,8 @@ import (
 	"net"
 
 	"github.com/pkg/errors"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904/dhcp"
-	vpp_l3 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l3"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1904/dhcp"
+	vpp_l3 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3"
 )
 
 func (h *DHCPProxyHandler) createDeleteDHCPProxy(entry *vpp_l3.DHCPProxy, delete bool) error {

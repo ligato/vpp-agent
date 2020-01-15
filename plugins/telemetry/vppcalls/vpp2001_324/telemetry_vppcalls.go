@@ -22,7 +22,7 @@ import (
 	"strings"
 
 	govppapi "git.fd.io/govpp.git/api"
-	"go.ligato.io/vpp-agent/v2/plugins/telemetry/vppcalls"
+	"go.ligato.io/vpp-agent/v3/plugins/telemetry/vppcalls"
 )
 
 func (h *TelemetryHandler) GetSystemStats(context.Context) (*govppapi.SystemStats, error) {

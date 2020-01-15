@@ -25,10 +25,10 @@ import (
 	"strings"
 
 	"github.com/ligato/cn-infra/logging"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904/interfaces"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904/sr"
-	nbint "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
-	srv6 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/srv6"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1904/interfaces"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1904/sr"
+	nbint "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
+	srv6 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/srv6"
 )
 
 // Constants for behavior function hardcoded into VPP (there can be also custom behavior functions implemented as VPP plugins)

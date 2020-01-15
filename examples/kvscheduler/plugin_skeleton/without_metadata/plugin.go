@@ -57,15 +57,15 @@ Beware: Extensive copy-pasting is actually a bad practise, so use the skeleton
 //go:generate protoc --proto_path=. --go_out=paths=source_relative:. model/model.proto
 
 // (**) generate adapter(s) for your descriptor(s) here:
-//go:generate descriptor-adapter --descriptor-name Skeleton --value-type *model.ValueSkeleton --import "go.ligato.io/vpp-agent/v2/examples/kvscheduler/plugin_skeleton/without_metadata/model" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name Skeleton --value-type *model.ValueSkeleton --import "go.ligato.io/vpp-agent/v3/examples/kvscheduler/plugin_skeleton/without_metadata/model" --output-dir "descriptor"
 
 package plugin
 
 import (
 	"github.com/ligato/cn-infra/infra"
 
-	"go.ligato.io/vpp-agent/v2/examples/kvscheduler/plugin_skeleton/without_metadata/descriptor"
-	kvs "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v3/examples/kvscheduler/plugin_skeleton/without_metadata/descriptor"
+	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 )
 
 // SkeletonPlugin is a plugin skeleton that you can start building your own plugins

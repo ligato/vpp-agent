@@ -17,13 +17,13 @@ package vpp2001
 import (
 	govppapi "git.fd.io/govpp.git/api"
 
-	vpe_vppcalls "go.ligato.io/vpp-agent/v2/plugins/govppmux/vppcalls"
-	vpe_vpp2001 "go.ligato.io/vpp-agent/v2/plugins/govppmux/vppcalls/vpp2001"
-	"go.ligato.io/vpp-agent/v2/plugins/telemetry/vppcalls"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/memclnt"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/vpe"
+	vpe_vppcalls "go.ligato.io/vpp-agent/v3/plugins/govppmux/vppcalls"
+	vpe_vpp2001 "go.ligato.io/vpp-agent/v3/plugins/govppmux/vppcalls/vpp2001"
+	"go.ligato.io/vpp-agent/v3/plugins/telemetry/vppcalls"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/memclnt"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/vpe"
 )
 
 func init() {

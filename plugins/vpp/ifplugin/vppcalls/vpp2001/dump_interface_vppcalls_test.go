@@ -21,17 +21,17 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 
 	. "github.com/onsi/gomega"
-	vpp_dhcp "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/dhcp"
-	vpp_gtpu "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/gtpu"
-	vpp_interfaces "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/interfaces"
-	vpp_ip "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/ip"
-	vpp_memif "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/memif"
-	vpp_tapv2 "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/tapv2"
-	vpp_vpe "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/vpe"
-	vpp_vxlan "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/vxlan"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/vppcalls/vpp2001"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/vppmock"
-	ifs "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
+	vpp_dhcp "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/dhcp"
+	vpp_gtpu "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/gtpu"
+	vpp_interfaces "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/interfaces"
+	vpp_ip "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ip"
+	vpp_memif "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/memif"
+	vpp_tapv2 "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/tapv2"
+	vpp_vpe "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/vpe"
+	vpp_vxlan "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/vxlan"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/vppcalls/vpp2001"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/vppmock"
+	ifs "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
 )
 
 // Test dump of interfaces with vxlan type

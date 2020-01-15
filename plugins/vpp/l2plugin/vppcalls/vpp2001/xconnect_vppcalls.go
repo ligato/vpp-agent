@@ -17,7 +17,7 @@ package vpp2001
 import (
 	"errors"
 
-	vpp_l2 "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/l2"
+	vpp_l2 "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/l2"
 )
 
 // AddL2XConnect creates xConnect between two existing interfaces.

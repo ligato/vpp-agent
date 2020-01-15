@@ -18,7 +18,7 @@ import (
 	"net"
 	"strings"
 
-	"go.ligato.io/vpp-agent/v2/pkg/models"
+	"go.ligato.io/vpp-agent/v3/pkg/models"
 )
 
 const (

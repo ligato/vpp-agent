@@ -21,12 +21,12 @@ import (
 	"github.com/ligato/cn-infra/logging/logrus"
 	. "github.com/onsi/gomega"
 
-	vpp_stn "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/stn"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/stnplugin/vppcalls"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/stnplugin/vppcalls/vpp2001"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/vppmock"
-	stn "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/stn"
+	vpp_stn "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/stn"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/stnplugin/vppcalls"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/stnplugin/vppcalls/vpp2001"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/vppmock"
+	stn "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/stn"
 )
 
 func TestAddStnRule(t *testing.T) {

@@ -20,7 +20,7 @@ import (
 	"github.com/docker/cli/cli/streams"
 	"github.com/docker/docker/pkg/term"
 
-	"go.ligato.io/vpp-agent/v2/cmd/agentctl/client"
+	"go.ligato.io/vpp-agent/v3/cmd/agentctl/client"
 )
 
 // AgentCliOption applies a modification on a AgentCli.

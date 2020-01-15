@@ -15,7 +15,7 @@
 package vpp1904
 
 import (
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904/interfaces"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1904/interfaces"
 )
 
 // CreateSubif creates sub interface.

@@ -20,10 +20,10 @@ import (
 	"fmt"
 	"io"
 
-	"go.ligato.io/vpp-agent/v2/plugins/vpp"
-	vpp_memif "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908/memif"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/vppcalls"
-	interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp"
+	vpp_memif "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1908/memif"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/vppcalls"
+	interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
 )
 
 func (h *InterfaceVppHandler) AddMemifInterface(ctx context.Context, ifName string, memIface *interfaces.MemifLink, socketID uint32) (swIdx uint32, err error) {

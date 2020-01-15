@@ -22,19 +22,19 @@ import (
 	"github.com/vishvananda/netlink"
 
 	"github.com/ligato/cn-infra/logging"
-	kvs "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
+	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 
-	"go.ligato.io/vpp-agent/v2/plugins/linux/ifplugin"
-	ifdescriptor "go.ligato.io/vpp-agent/v2/plugins/linux/ifplugin/descriptor"
-	"go.ligato.io/vpp-agent/v2/plugins/linux/l3plugin/descriptor/adapter"
-	l3linuxcalls "go.ligato.io/vpp-agent/v2/plugins/linux/l3plugin/linuxcalls"
-	"go.ligato.io/vpp-agent/v2/plugins/linux/nsplugin"
-	nslinuxcalls "go.ligato.io/vpp-agent/v2/plugins/linux/nsplugin/linuxcalls"
-	"go.ligato.io/vpp-agent/v2/plugins/netalloc"
-	netalloc_descr "go.ligato.io/vpp-agent/v2/plugins/netalloc/descriptor"
-	ifmodel "go.ligato.io/vpp-agent/v2/proto/ligato/linux/interfaces"
-	l3 "go.ligato.io/vpp-agent/v2/proto/ligato/linux/l3"
-	netalloc_api "go.ligato.io/vpp-agent/v2/proto/ligato/netalloc"
+	"go.ligato.io/vpp-agent/v3/plugins/linux/ifplugin"
+	ifdescriptor "go.ligato.io/vpp-agent/v3/plugins/linux/ifplugin/descriptor"
+	"go.ligato.io/vpp-agent/v3/plugins/linux/l3plugin/descriptor/adapter"
+	l3linuxcalls "go.ligato.io/vpp-agent/v3/plugins/linux/l3plugin/linuxcalls"
+	"go.ligato.io/vpp-agent/v3/plugins/linux/nsplugin"
+	nslinuxcalls "go.ligato.io/vpp-agent/v3/plugins/linux/nsplugin/linuxcalls"
+	"go.ligato.io/vpp-agent/v3/plugins/netalloc"
+	netalloc_descr "go.ligato.io/vpp-agent/v3/plugins/netalloc/descriptor"
+	ifmodel "go.ligato.io/vpp-agent/v3/proto/ligato/linux/interfaces"
+	l3 "go.ligato.io/vpp-agent/v3/proto/ligato/linux/l3"
+	netalloc_api "go.ligato.io/vpp-agent/v3/proto/ligato/netalloc"
 )
 
 const (

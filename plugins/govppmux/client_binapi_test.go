@@ -21,7 +21,7 @@ import (
 	"git.fd.io/govpp.git/core"
 	. "github.com/onsi/gomega"
 
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/vppmock"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/vppmock"
 )
 
 func TestRequestRetry(t *testing.T) {

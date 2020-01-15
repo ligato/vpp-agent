@@ -21,12 +21,12 @@ import (
 	"github.com/ligato/cn-infra/logging/logrus"
 	. "github.com/onsi/gomega"
 
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/abfplugin/vppcalls"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/aclplugin/aclidx"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908/abf"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/vppmock"
-	vpp_abf "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/abf"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/abfplugin/vppcalls"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/aclplugin/aclidx"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1908/abf"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/vppmock"
+	vpp_abf "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/abf"
 )
 
 func TestGetABFVersion(t *testing.T) {

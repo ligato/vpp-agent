@@ -17,8 +17,8 @@ package mockcalls
 import (
 	"github.com/ligato/cn-infra/logging"
 
-	l2 "go.ligato.io/vpp-agent/v2/examples/kvscheduler/mock_plugins/l2plugin/model"
-	"go.ligato.io/vpp-agent/v2/pkg/idxvpp"
+	l2 "go.ligato.io/vpp-agent/v3/examples/kvscheduler/mock_plugins/l2plugin/model"
+	"go.ligato.io/vpp-agent/v3/pkg/idxvpp"
 )
 
 // map of bridge domains "configured" in the mock SB.

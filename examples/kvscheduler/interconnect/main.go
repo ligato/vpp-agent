@@ -21,18 +21,18 @@ import (
 
 	"github.com/ligato/cn-infra/agent"
 
-	"go.ligato.io/vpp-agent/v2/clientv2/linux/localclient"
-	linux_ifplugin "go.ligato.io/vpp-agent/v2/plugins/linux/ifplugin"
-	linuxifaceidx "go.ligato.io/vpp-agent/v2/plugins/linux/ifplugin/ifaceidx"
-	linux_l3plugin "go.ligato.io/vpp-agent/v2/plugins/linux/l3plugin"
-	linux_nsplugin "go.ligato.io/vpp-agent/v2/plugins/linux/nsplugin"
-	"go.ligato.io/vpp-agent/v2/plugins/orchestrator"
-	vpp_ifplugin "go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin"
-	vppifaceidx "go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
-	"go.ligato.io/vpp-agent/v2/proto/ligato/linux/interfaces"
-	linux_l3 "go.ligato.io/vpp-agent/v2/proto/ligato/linux/l3"
-	linux_ns "go.ligato.io/vpp-agent/v2/proto/ligato/linux/namespace"
-	vpp_interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
+	"go.ligato.io/vpp-agent/v3/clientv2/linux/localclient"
+	linux_ifplugin "go.ligato.io/vpp-agent/v3/plugins/linux/ifplugin"
+	linuxifaceidx "go.ligato.io/vpp-agent/v3/plugins/linux/ifplugin/ifaceidx"
+	linux_l3plugin "go.ligato.io/vpp-agent/v3/plugins/linux/l3plugin"
+	linux_nsplugin "go.ligato.io/vpp-agent/v3/plugins/linux/nsplugin"
+	"go.ligato.io/vpp-agent/v3/plugins/orchestrator"
+	vpp_ifplugin "go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin"
+	vppifaceidx "go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
+	"go.ligato.io/vpp-agent/v3/proto/ligato/linux/interfaces"
+	linux_l3 "go.ligato.io/vpp-agent/v3/proto/ligato/linux/l3"
+	linux_ns "go.ligato.io/vpp-agent/v3/proto/ligato/linux/namespace"
+	vpp_interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
 )
 
 /*

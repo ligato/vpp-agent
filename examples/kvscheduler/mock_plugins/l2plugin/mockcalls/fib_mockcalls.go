@@ -18,7 +18,7 @@ import (
 	"fmt"
 
 	"github.com/golang/protobuf/proto"
-	l2 "go.ligato.io/vpp-agent/v2/examples/kvscheduler/mock_plugins/l2plugin/model"
+	l2 "go.ligato.io/vpp-agent/v3/examples/kvscheduler/mock_plugins/l2plugin/model"
 )
 
 // CreateL2FIB creates L2 FIB table entry in the mock SB.

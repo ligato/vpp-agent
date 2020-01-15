@@ -19,8 +19,8 @@ import (
 
 	. "github.com/onsi/gomega"
 
-	"go.ligato.io/vpp-agent/v2/proto/ligato/kvscheduler"
-	ns "go.ligato.io/vpp-agent/v2/proto/ligato/linux/namespace"
+	"go.ligato.io/vpp-agent/v3/proto/ligato/kvscheduler"
+	ns "go.ligato.io/vpp-agent/v3/proto/ligato/linux/namespace"
 )
 
 func TestAgentInSync(t *testing.T) {

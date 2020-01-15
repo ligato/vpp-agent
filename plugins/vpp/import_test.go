@@ -22,10 +22,10 @@ import (
 
 	"git.fd.io/govpp.git/api"
 
-	"go.ligato.io/vpp-agent/v2/plugins/vpp"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp"
 
 	// force import of all vpp plugins
-	_ "go.ligato.io/vpp-agent/v2/cmd/vpp-agent/app"
+	_ "go.ligato.io/vpp-agent/v3/cmd/vpp-agent/app"
 )
 
 func TestVppHandlers(t *testing.T) {

@@ -19,12 +19,12 @@ import (
 	"github.com/ligato/cn-infra/logging"
 	"github.com/pkg/errors"
 
-	interfaces "go.ligato.io/vpp-agent/v2/examples/kvscheduler/mock_plugins/ifplugin/model"
-	"go.ligato.io/vpp-agent/v2/examples/kvscheduler/mock_plugins/l2plugin/descriptor/adapter"
-	"go.ligato.io/vpp-agent/v2/examples/kvscheduler/mock_plugins/l2plugin/mockcalls"
-	l2 "go.ligato.io/vpp-agent/v2/examples/kvscheduler/mock_plugins/l2plugin/model"
-	"go.ligato.io/vpp-agent/v2/pkg/idxvpp"
-	kvs "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
+	interfaces "go.ligato.io/vpp-agent/v3/examples/kvscheduler/mock_plugins/ifplugin/model"
+	"go.ligato.io/vpp-agent/v3/examples/kvscheduler/mock_plugins/l2plugin/descriptor/adapter"
+	"go.ligato.io/vpp-agent/v3/examples/kvscheduler/mock_plugins/l2plugin/mockcalls"
+	l2 "go.ligato.io/vpp-agent/v3/examples/kvscheduler/mock_plugins/l2plugin/model"
+	"go.ligato.io/vpp-agent/v3/pkg/idxvpp"
+	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 )
 
 const (

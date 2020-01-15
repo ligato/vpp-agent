@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package ligato.vpp.l2;
 
-option go_package = "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l2;vpp_l2";
+option go_package = "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l2;vpp_l2";
 
 message XConnectPair {
     string receive_interface = 1;

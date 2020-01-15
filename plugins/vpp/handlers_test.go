@@ -19,8 +19,8 @@ import (
 
 	. "github.com/onsi/gomega"
 
-	"go.ligato.io/vpp-agent/v2/plugins/vpp"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/vppmock"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/vppmock"
 )
 
 type testHandlerAPI interface {

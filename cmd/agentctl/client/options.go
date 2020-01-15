@@ -8,7 +8,7 @@ import (
 
 	"google.golang.org/grpc"
 
-	"go.ligato.io/vpp-agent/v2/cmd/agentctl/client/tlsconfig"
+	"go.ligato.io/vpp-agent/v3/cmd/agentctl/client/tlsconfig"
 )
 
 type Opt func(*Client) error

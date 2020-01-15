@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate descriptor-adapter --descriptor-name Interface  --value-type *linux_interfaces.Interface --meta-type *ifaceidx.LinuxIfMetadata --import "go.ligato.io/vpp-agent/v2/proto/ligato/linux/interfaces" --import "go.ligato.io/vpp-agent/v2/plugins/linux/ifplugin/ifaceidx" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name Interface  --value-type *linux_interfaces.Interface --meta-type *ifaceidx.LinuxIfMetadata --import "go.ligato.io/vpp-agent/v3/proto/ligato/linux/interfaces" --import "go.ligato.io/vpp-agent/v3/plugins/linux/ifplugin/ifaceidx" --output-dir "descriptor"
 
 package ifplugin
 
@@ -22,12 +22,12 @@ import (
 	"github.com/ligato/cn-infra/infra"
 	"github.com/ligato/cn-infra/servicelabel"
 
-	kvs "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
-	"go.ligato.io/vpp-agent/v2/plugins/linux/ifplugin/descriptor"
-	"go.ligato.io/vpp-agent/v2/plugins/linux/ifplugin/ifaceidx"
-	"go.ligato.io/vpp-agent/v2/plugins/linux/ifplugin/linuxcalls"
-	"go.ligato.io/vpp-agent/v2/plugins/linux/nsplugin"
-	"go.ligato.io/vpp-agent/v2/plugins/netalloc"
+	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v3/plugins/linux/ifplugin/descriptor"
+	"go.ligato.io/vpp-agent/v3/plugins/linux/ifplugin/ifaceidx"
+	"go.ligato.io/vpp-agent/v3/plugins/linux/ifplugin/linuxcalls"
+	"go.ligato.io/vpp-agent/v3/plugins/linux/nsplugin"
+	"go.ligato.io/vpp-agent/v3/plugins/netalloc"
 )
 
 const (

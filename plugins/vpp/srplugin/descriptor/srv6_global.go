@@ -3,10 +3,10 @@ package descriptor
 import (
 	"github.com/golang/protobuf/proto"
 	"github.com/ligato/cn-infra/logging"
-	srv6 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/srv6"
-	scheduler "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/srplugin/descriptor/adapter"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/srplugin/vppcalls"
+	scheduler "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/srplugin/descriptor/adapter"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/srplugin/vppcalls"
+	srv6 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/srv6"
 )
 
 const (
@@ -48,7 +48,6 @@ func NewSRv6GlobalDescriptor(srHandler vppcalls.SRv6VppAPI, log logging.PluginLo
 	}
 	return adapter.NewSRv6GlobalDescriptor(typedDescr)
 }
-
 
 // EquivalentSRv6Global compares the IP Scan Neighbor values.
 func (d *SRv6GlobalDescriptor) EquivalentSRv6Global(key string, oldValue, newValue *srv6.SRv6Global) bool {

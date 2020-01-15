@@ -31,8 +31,8 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
-	agentcli "go.ligato.io/vpp-agent/v2/cmd/agentctl/cli"
-	"go.ligato.io/vpp-agent/v2/pkg/models"
+	agentcli "go.ligato.io/vpp-agent/v3/cmd/agentctl/cli"
+	"go.ligato.io/vpp-agent/v3/pkg/models"
 )
 
 func NewImportCommand(cli agentcli.Cli) *cobra.Command {

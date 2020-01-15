@@ -30,7 +30,7 @@ import (
 	ref "google.golang.org/grpc/reflection/grpc_reflection_v1alpha"
 	"google.golang.org/grpc/status"
 
-	agentcli "go.ligato.io/vpp-agent/v2/cmd/agentctl/cli"
+	agentcli "go.ligato.io/vpp-agent/v3/cmd/agentctl/cli"
 )
 
 func NewServiceCommand(cli agentcli.Cli) *cobra.Command {

@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package ligato.linux.iptables;
 
-option go_package = "go.ligato.io/vpp-agent/v2/proto/ligato/linux/iptables;linux_iptables";
+option go_package = "go.ligato.io/vpp-agent/v3/proto/ligato/linux/iptables;linux_iptables";
 
 import "ligato/linux/namespace/namespace.proto";
 

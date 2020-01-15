@@ -30,13 +30,13 @@ import (
 	"github.com/namsral/flag"
 	"google.golang.org/grpc"
 
-	"go.ligato.io/vpp-agent/v2/proto/ligato/configurator"
-	"go.ligato.io/vpp-agent/v2/proto/ligato/linux"
-	linux_interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/linux/interfaces"
-	"go.ligato.io/vpp-agent/v2/proto/ligato/vpp"
-	interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
-	vpp_ipsec "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/ipsec"
-	vpp_l3 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l3"
+	"go.ligato.io/vpp-agent/v3/proto/ligato/configurator"
+	"go.ligato.io/vpp-agent/v3/proto/ligato/linux"
+	linux_interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/linux/interfaces"
+	"go.ligato.io/vpp-agent/v3/proto/ligato/vpp"
+	interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
+	vpp_ipsec "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/ipsec"
+	vpp_l3 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3"
 )
 
 var (

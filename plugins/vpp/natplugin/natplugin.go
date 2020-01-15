@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate descriptor-adapter --descriptor-name NAT44Global --value-type *vpp_nat.Nat44Global --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/nat" --output-dir "descriptor"
-//go:generate descriptor-adapter --descriptor-name NAT44GlobalInterface --value-type *vpp_nat.Nat44Global_Interface --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/nat" --output-dir "descriptor"
-//go:generate descriptor-adapter --descriptor-name NAT44GlobalAddress --value-type *vpp_nat.Nat44Global_Address --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/nat" --output-dir "descriptor"
-//go:generate descriptor-adapter --descriptor-name DNAT44 --value-type *vpp_nat.DNat44 --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/nat" --output-dir "descriptor"
-//go:generate descriptor-adapter --descriptor-name NAT44Interface --value-type *vpp_nat.Nat44Interface --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/nat" --output-dir "descriptor"
-//go:generate descriptor-adapter --descriptor-name NAT44AddressPool --value-type *vpp_nat.Nat44AddressPool --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/nat" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name NAT44Global --value-type *vpp_nat.Nat44Global --import "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/nat" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name NAT44GlobalInterface --value-type *vpp_nat.Nat44Global_Interface --import "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/nat" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name NAT44GlobalAddress --value-type *vpp_nat.Nat44Global_Address --import "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/nat" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name DNAT44 --value-type *vpp_nat.DNat44 --import "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/nat" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name NAT44Interface --value-type *vpp_nat.Nat44Interface --import "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/nat" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name NAT44AddressPool --value-type *vpp_nat.Nat44AddressPool --import "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/nat" --output-dir "descriptor"
 
 package natplugin
 
@@ -27,16 +27,16 @@ import (
 	"github.com/ligato/cn-infra/health/statuscheck"
 	"github.com/ligato/cn-infra/infra"
 
-	"go.ligato.io/vpp-agent/v2/plugins/govppmux"
-	kvs "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/natplugin/descriptor"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/natplugin/vppcalls"
+	"go.ligato.io/vpp-agent/v3/plugins/govppmux"
+	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/natplugin/descriptor"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/natplugin/vppcalls"
 
-	_ "go.ligato.io/vpp-agent/v2/plugins/vpp/natplugin/vppcalls/vpp1904"
-	_ "go.ligato.io/vpp-agent/v2/plugins/vpp/natplugin/vppcalls/vpp1908"
-	_ "go.ligato.io/vpp-agent/v2/plugins/vpp/natplugin/vppcalls/vpp2001"
-	_ "go.ligato.io/vpp-agent/v2/plugins/vpp/natplugin/vppcalls/vpp2001_324"
+	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/natplugin/vppcalls/vpp1904"
+	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/natplugin/vppcalls/vpp1908"
+	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/natplugin/vppcalls/vpp2001"
+	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/natplugin/vppcalls/vpp2001_324"
 )
 
 // NATPlugin configures VPP NAT.

@@ -20,13 +20,13 @@ import (
 	"github.com/ligato/cn-infra/logging/logrus"
 	. "github.com/onsi/gomega"
 
-	ba_ip "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904/ip"
-	ba_punt "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904/punt"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/puntplugin/vppcalls"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/puntplugin/vppcalls/vpp1904"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/vppmock"
-	punt "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/punt"
+	ba_ip "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1904/ip"
+	ba_punt "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1904/punt"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/puntplugin/vppcalls"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/puntplugin/vppcalls/vpp1904"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/vppmock"
+	punt "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/punt"
 )
 
 func TestAddPunt(t *testing.T) {

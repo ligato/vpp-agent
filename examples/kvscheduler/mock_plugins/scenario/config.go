@@ -15,8 +15,8 @@
 package scenario
 
 import (
-	interfaces "go.ligato.io/vpp-agent/v2/examples/kvscheduler/mock_plugins/ifplugin/model"
-	l2 "go.ligato.io/vpp-agent/v2/examples/kvscheduler/mock_plugins/l2plugin/model"
+	interfaces "go.ligato.io/vpp-agent/v3/examples/kvscheduler/mock_plugins/ifplugin/model"
+	l2 "go.ligato.io/vpp-agent/v3/examples/kvscheduler/mock_plugins/l2plugin/model"
 )
 
 // Items used across all scenarios:

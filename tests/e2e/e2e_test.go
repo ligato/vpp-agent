@@ -44,13 +44,13 @@ import (
 
 	"github.com/ligato/cn-infra/health/probe"
 	"github.com/ligato/cn-infra/health/statuscheck/model/status"
-	"go.ligato.io/vpp-agent/v2/client"
-	"go.ligato.io/vpp-agent/v2/client/remoteclient"
-	"go.ligato.io/vpp-agent/v2/pkg/models"
-	kvs "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
-	nslinuxcalls "go.ligato.io/vpp-agent/v2/plugins/linux/nsplugin/linuxcalls"
-	"go.ligato.io/vpp-agent/v2/proto/ligato/kvscheduler"
-	"go.ligato.io/vpp-agent/v2/tests/e2e/utils"
+	"go.ligato.io/vpp-agent/v3/client"
+	"go.ligato.io/vpp-agent/v3/client/remoteclient"
+	"go.ligato.io/vpp-agent/v3/pkg/models"
+	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
+	nslinuxcalls "go.ligato.io/vpp-agent/v3/plugins/linux/nsplugin/linuxcalls"
+	"go.ligato.io/vpp-agent/v3/proto/ligato/kvscheduler"
+	"go.ligato.io/vpp-agent/v3/tests/e2e/utils"
 )
 
 var (

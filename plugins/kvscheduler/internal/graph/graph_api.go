@@ -23,8 +23,8 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/ligato/cn-infra/idxmap"
 
-	. "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
-	"go.ligato.io/vpp-agent/v2/plugins/kvscheduler/internal/utils"
+	. "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v3/plugins/kvscheduler/internal/utils"
 )
 
 // Graph is an in-memory graph representation of key-value pairs and their

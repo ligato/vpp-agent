@@ -2,7 +2,7 @@ syntax = "proto2";
 
 package ligato.generic;
 
-option go_package = "go.ligato.io/vpp-agent/v2/proto/ligato/generic";
+option go_package = "go.ligato.io/vpp-agent/v3/proto/ligato/generic";
 
 import "google/protobuf/descriptor.proto";
 import "ligato/generic/model.proto";

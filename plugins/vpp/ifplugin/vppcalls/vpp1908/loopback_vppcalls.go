@@ -15,7 +15,7 @@
 package vpp1908
 
 import (
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908/interfaces"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1908/interfaces"
 )
 
 // AddLoopbackInterface implements interface handler.

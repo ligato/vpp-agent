@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net"
 
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/ip"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ip"
 )
 
 // IPToAddress converts string type IP address to VPP ip.api address representation

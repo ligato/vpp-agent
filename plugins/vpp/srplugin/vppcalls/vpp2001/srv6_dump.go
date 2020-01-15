@@ -18,8 +18,8 @@ import (
 	"net"
 
 	"github.com/go-errors/errors"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/sr"
-	srv6 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/srv6"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/sr"
+	srv6 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/srv6"
 )
 
 // DumpLocalSids retrieves all localsids

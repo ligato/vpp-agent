@@ -21,10 +21,10 @@ import (
 
 	"github.com/ligato/cn-infra/logging/logrus"
 
-	ifplugin_vppcalls "go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/vppcalls"
-	vpp_interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
+	ifplugin_vppcalls "go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/vppcalls"
+	vpp_interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
 
-	_ "go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin"
+	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin"
 )
 
 func TestInterfaceIP(t *testing.T) {

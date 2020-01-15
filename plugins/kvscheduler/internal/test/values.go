@@ -19,8 +19,8 @@ package test
 import (
 	"github.com/golang/protobuf/proto"
 
-	. "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
-	. "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/internal/test/model"
+	. "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
+	. "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/internal/test/model"
 )
 
 // NewStringValue creates a new instance of StringValue.

@@ -15,7 +15,7 @@
 package aclplugin
 
 import (
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/aclplugin/aclidx"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/aclplugin/aclidx"
 )
 
 // API defines methods exposed by VPP-ACLPlugin.

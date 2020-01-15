@@ -18,8 +18,8 @@ import (
 	"context"
 	"testing"
 
-	_ "go.ligato.io/vpp-agent/v2/plugins/telemetry"
-	"go.ligato.io/vpp-agent/v2/plugins/telemetry/vppcalls"
+	_ "go.ligato.io/vpp-agent/v3/plugins/telemetry"
+	"go.ligato.io/vpp-agent/v3/plugins/telemetry/vppcalls"
 )
 
 func TestTelemetryNodeCounters(t *testing.T) {

@@ -21,16 +21,16 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 
 	. "github.com/onsi/gomega"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908/dhcp"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908/gtpu"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908/interfaces"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908/ip"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908/memif"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908/tapv2"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908/vpe"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908/vxlan"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/vppmock"
-	interfaces2 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1908/dhcp"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1908/gtpu"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1908/interfaces"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1908/ip"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1908/memif"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1908/tapv2"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1908/vpe"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1908/vxlan"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/vppmock"
+	interfaces2 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
 )
 
 // Test dump of interfaces with vxlan type

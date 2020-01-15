@@ -19,8 +19,8 @@ import (
 	"fmt"
 	"net"
 
-	vpp_ipsec "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324/ipsec"
-	ifs "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
+	vpp_ipsec "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001_324/ipsec"
+	ifs "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
 )
 
 // AddIPSecTunnelInterface adds a new IPSec tunnel interface.

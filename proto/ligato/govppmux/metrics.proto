@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package ligato.govppmux;
 
-option go_package = "go.ligato.io/vpp-agent/v2/proto/ligato/govppmux;govppmux";
+option go_package = "go.ligato.io/vpp-agent/v3/proto/ligato/govppmux;govppmux";
 
 message Metrics {
     uint64 channels_created = 1;

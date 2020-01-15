@@ -15,12 +15,12 @@
 package descriptor
 
 import (
-	"go.ligato.io/vpp-agent/v2/plugins/linux/ifplugin/ifaceidx"
-	interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/linux/interfaces"
+	"go.ligato.io/vpp-agent/v3/plugins/linux/ifplugin/ifaceidx"
+	interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/linux/interfaces"
 
 	"strings"
 
-	nslinuxcalls "go.ligato.io/vpp-agent/v2/plugins/linux/nsplugin/linuxcalls"
+	nslinuxcalls "go.ligato.io/vpp-agent/v3/plugins/linux/nsplugin/linuxcalls"
 )
 
 const unconfiguredAlias = "unconfigured"

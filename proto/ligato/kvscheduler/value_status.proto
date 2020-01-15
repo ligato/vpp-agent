@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package ligato.kvscheduler;
 
-option go_package = "go.ligato.io/vpp-agent/v2/proto/ligato/kvscheduler";
+option go_package = "go.ligato.io/vpp-agent/v3/proto/ligato/kvscheduler";
 
 enum ValueState {
     // ValueState_NONEXISTENT is assigned to value that was deleted or has never

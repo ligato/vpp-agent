@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate descriptor-adapter --descriptor-name BridgeDomain --value-type *vpp_l2.BridgeDomain --meta-type *idxvpp.OnlyIndex --import "go.ligato.io/vpp-agent/v2/pkg/idxvpp" --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l2" --output-dir "descriptor"
-//go:generate descriptor-adapter --descriptor-name BDInterface --value-type *vpp_l2.BridgeDomain_Interface --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l2" --output-dir "descriptor"
-//go:generate descriptor-adapter --descriptor-name FIB  --value-type *vpp_l2.FIBEntry --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l2" --output-dir "descriptor"
-//go:generate descriptor-adapter --descriptor-name XConnect  --value-type *vpp_l2.XConnectPair --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l2" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name BridgeDomain --value-type *vpp_l2.BridgeDomain --meta-type *idxvpp.OnlyIndex --import "go.ligato.io/vpp-agent/v3/pkg/idxvpp" --import "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l2" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name BDInterface --value-type *vpp_l2.BridgeDomain_Interface --import "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l2" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name FIB  --value-type *vpp_l2.FIBEntry --import "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l2" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name XConnect  --value-type *vpp_l2.XConnectPair --import "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l2" --output-dir "descriptor"
 
 package l2plugin
 
@@ -24,18 +24,18 @@ import (
 	"github.com/ligato/cn-infra/infra"
 	"github.com/pkg/errors"
 
-	"go.ligato.io/vpp-agent/v2/pkg/idxvpp"
-	"go.ligato.io/vpp-agent/v2/plugins/govppmux"
-	kvs "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/l2plugin/descriptor"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/l2plugin/descriptor/adapter"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/l2plugin/vppcalls"
+	"go.ligato.io/vpp-agent/v3/pkg/idxvpp"
+	"go.ligato.io/vpp-agent/v3/plugins/govppmux"
+	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/l2plugin/descriptor"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/l2plugin/descriptor/adapter"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/l2plugin/vppcalls"
 
-	_ "go.ligato.io/vpp-agent/v2/plugins/vpp/l2plugin/vppcalls/vpp1904"
-	_ "go.ligato.io/vpp-agent/v2/plugins/vpp/l2plugin/vppcalls/vpp1908"
-	_ "go.ligato.io/vpp-agent/v2/plugins/vpp/l2plugin/vppcalls/vpp2001"
-	_ "go.ligato.io/vpp-agent/v2/plugins/vpp/l2plugin/vppcalls/vpp2001_324"
+	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/l2plugin/vppcalls/vpp1904"
+	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/l2plugin/vppcalls/vpp1908"
+	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/l2plugin/vppcalls/vpp2001"
+	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/l2plugin/vppcalls/vpp2001_324"
 )
 
 // L2Plugin configures VPP bridge domains, L2 FIBs and xConnects using GoVPP.

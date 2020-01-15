@@ -15,8 +15,8 @@
 package govppmux
 
 import (
-	"go.ligato.io/vpp-agent/v2/plugins/govppmux/vppcalls"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp"
+	"go.ligato.io/vpp-agent/v3/plugins/govppmux/vppcalls"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp"
 )
 
 // API for other plugins to get connectivity to VPP.

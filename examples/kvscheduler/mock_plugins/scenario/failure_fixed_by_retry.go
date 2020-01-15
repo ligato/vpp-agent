@@ -17,8 +17,8 @@ package scenario
 import (
 	"log"
 
-	"go.ligato.io/vpp-agent/v2/client"
-	mocksb "go.ligato.io/vpp-agent/v2/examples/kvscheduler/mock_plugins/ifplugin/mockcalls"
+	"go.ligato.io/vpp-agent/v3/client"
+	mocksb "go.ligato.io/vpp-agent/v3/examples/kvscheduler/mock_plugins/ifplugin/mockcalls"
 )
 
 // FailureFixedWithRetry presents a scenario, in which interface fails to get

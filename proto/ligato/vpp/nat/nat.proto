@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package ligato.vpp.nat;
 
-option go_package = "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/nat;vpp_nat";
+option go_package = "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/nat;vpp_nat";
 
 // Nat44Global defines global NAT44 configuration.
 message Nat44Global {

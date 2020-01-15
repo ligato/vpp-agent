@@ -19,7 +19,7 @@ import (
 
 	"github.com/golang/protobuf/proto"
 
-	. "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
+	. "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 )
 
 // MockSouthbound is used in UTs to simulate the state of the southbound for the scheduler.

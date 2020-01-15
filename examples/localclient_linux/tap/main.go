@@ -25,16 +25,16 @@ import (
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/namsral/flag"
 
-	"go.ligato.io/vpp-agent/v2/clientv2/linux/localclient"
-	"go.ligato.io/vpp-agent/v2/cmd/vpp-agent/app"
-	linux_ifplugin "go.ligato.io/vpp-agent/v2/plugins/linux/ifplugin"
-	linux_nsplugin "go.ligato.io/vpp-agent/v2/plugins/linux/nsplugin"
-	"go.ligato.io/vpp-agent/v2/plugins/orchestrator"
-	vpp_ifplugin "go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin"
-	linux_intf "go.ligato.io/vpp-agent/v2/proto/ligato/linux/interfaces"
-	linux_namespace "go.ligato.io/vpp-agent/v2/proto/ligato/linux/namespace"
-	vpp_intf "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
-	vpp_l2 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l2"
+	"go.ligato.io/vpp-agent/v3/clientv2/linux/localclient"
+	"go.ligato.io/vpp-agent/v3/cmd/vpp-agent/app"
+	linux_ifplugin "go.ligato.io/vpp-agent/v3/plugins/linux/ifplugin"
+	linux_nsplugin "go.ligato.io/vpp-agent/v3/plugins/linux/nsplugin"
+	"go.ligato.io/vpp-agent/v3/plugins/orchestrator"
+	vpp_ifplugin "go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin"
+	linux_intf "go.ligato.io/vpp-agent/v3/proto/ligato/linux/interfaces"
+	linux_namespace "go.ligato.io/vpp-agent/v3/proto/ligato/linux/namespace"
+	vpp_intf "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
+	vpp_l2 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l2"
 )
 
 var (

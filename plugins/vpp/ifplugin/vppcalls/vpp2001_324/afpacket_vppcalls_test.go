@@ -17,12 +17,12 @@ package vpp2001_324_test
 import (
 	"testing"
 
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/vppcalls/vpp2001_324"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/vppcalls/vpp2001_324"
 
 	. "github.com/onsi/gomega"
-	vpp_afpacket "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324/af_packet"
-	vpp_ifs "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324/interfaces"
-	ifs "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
+	vpp_afpacket "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001_324/af_packet"
+	vpp_ifs "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001_324/interfaces"
+	ifs "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
 )
 
 func TestAddAfPacketInterface(t *testing.T) {

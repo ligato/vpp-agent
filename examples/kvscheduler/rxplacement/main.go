@@ -21,13 +21,13 @@ import (
 
 	"github.com/ligato/cn-infra/agent"
 
-	"go.ligato.io/vpp-agent/v2/clientv2/linux/localclient"
-	kvs "go.ligato.io/vpp-agent/v2/plugins/kvscheduler"
-	kvs_api "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
-	"go.ligato.io/vpp-agent/v2/plugins/orchestrator"
-	vpp_ifplugin "go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin"
-	"go.ligato.io/vpp-agent/v2/proto/ligato/kvscheduler"
-	vpp_interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
+	"go.ligato.io/vpp-agent/v3/clientv2/linux/localclient"
+	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler"
+	kvs_api "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v3/plugins/orchestrator"
+	vpp_ifplugin "go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin"
+	"go.ligato.io/vpp-agent/v3/proto/ligato/kvscheduler"
+	vpp_interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
 )
 
 /*

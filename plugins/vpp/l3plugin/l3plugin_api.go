@@ -14,7 +14,7 @@
 
 package l3plugin
 
-import "go.ligato.io/vpp-agent/v2/plugins/vpp/l3plugin/vrfidx"
+import "go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin/vrfidx"
 
 // API defines methods exposed by VPP-L3Plugin.
 type API interface {

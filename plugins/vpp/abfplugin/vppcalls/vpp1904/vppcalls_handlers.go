@@ -18,11 +18,11 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/abfplugin/vppcalls"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/aclplugin/aclidx"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904/abf"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/abfplugin/vppcalls"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/aclplugin/aclidx"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1904"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1904/abf"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
 )
 
 func init() {

@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate descriptor-adapter --descriptor-name IPPuntRedirect --value-type *vpp_punt.IPRedirect --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/punt" --output-dir "descriptor"
-//go:generate descriptor-adapter --descriptor-name PuntToHost --value-type *vpp_punt.ToHost --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/punt" --output-dir "descriptor"
-//go:generate descriptor-adapter --descriptor-name PuntException --value-type *vpp_punt.Exception --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/punt" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name IPPuntRedirect --value-type *vpp_punt.IPRedirect --import "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/punt" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name PuntToHost --value-type *vpp_punt.ToHost --import "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/punt" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name PuntException --value-type *vpp_punt.Exception --import "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/punt" --output-dir "descriptor"
 
 package puntplugin
 
@@ -25,19 +25,19 @@ import (
 	"github.com/ligato/cn-infra/health/statuscheck"
 	"github.com/ligato/cn-infra/infra"
 
-	"go.ligato.io/vpp-agent/v2/pkg/models"
-	"go.ligato.io/vpp-agent/v2/plugins/govppmux"
-	kvs "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/puntplugin/descriptor"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/puntplugin/descriptor/adapter"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/puntplugin/vppcalls"
-	vpp_punt "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/punt"
+	"go.ligato.io/vpp-agent/v3/pkg/models"
+	"go.ligato.io/vpp-agent/v3/plugins/govppmux"
+	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/puntplugin/descriptor"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/puntplugin/descriptor/adapter"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/puntplugin/vppcalls"
+	vpp_punt "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/punt"
 
-	_ "go.ligato.io/vpp-agent/v2/plugins/vpp/puntplugin/vppcalls/vpp1904"
-	_ "go.ligato.io/vpp-agent/v2/plugins/vpp/puntplugin/vppcalls/vpp1908"
-	_ "go.ligato.io/vpp-agent/v2/plugins/vpp/puntplugin/vppcalls/vpp2001"
-	_ "go.ligato.io/vpp-agent/v2/plugins/vpp/puntplugin/vppcalls/vpp2001_324"
+	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/puntplugin/vppcalls/vpp1904"
+	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/puntplugin/vppcalls/vpp1908"
+	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/puntplugin/vppcalls/vpp2001"
+	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/puntplugin/vppcalls/vpp2001_324"
 )
 
 // PuntPlugin configures VPP punt to host or unix domain socket entries and IP redirect entries using GoVPP.

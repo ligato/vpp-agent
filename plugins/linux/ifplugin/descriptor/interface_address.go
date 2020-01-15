@@ -22,14 +22,14 @@ import (
 	"github.com/ligato/cn-infra/logging"
 	"github.com/pkg/errors"
 
-	kvs "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
-	"go.ligato.io/vpp-agent/v2/plugins/linux/ifplugin/ifaceidx"
-	iflinuxcalls "go.ligato.io/vpp-agent/v2/plugins/linux/ifplugin/linuxcalls"
-	"go.ligato.io/vpp-agent/v2/plugins/linux/nsplugin"
-	nslinuxcalls "go.ligato.io/vpp-agent/v2/plugins/linux/nsplugin/linuxcalls"
-	"go.ligato.io/vpp-agent/v2/plugins/netalloc"
-	interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/linux/interfaces"
-	netalloc_api "go.ligato.io/vpp-agent/v2/proto/ligato/netalloc"
+	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v3/plugins/linux/ifplugin/ifaceidx"
+	iflinuxcalls "go.ligato.io/vpp-agent/v3/plugins/linux/ifplugin/linuxcalls"
+	"go.ligato.io/vpp-agent/v3/plugins/linux/nsplugin"
+	nslinuxcalls "go.ligato.io/vpp-agent/v3/plugins/linux/nsplugin/linuxcalls"
+	"go.ligato.io/vpp-agent/v3/plugins/netalloc"
+	interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/linux/interfaces"
+	netalloc_api "go.ligato.io/vpp-agent/v3/proto/ligato/netalloc"
 )
 
 const (

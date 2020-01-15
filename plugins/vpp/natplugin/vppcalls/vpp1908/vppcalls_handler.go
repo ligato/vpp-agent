@@ -19,10 +19,10 @@ import (
 	"github.com/ligato/cn-infra/idxmap"
 	"github.com/ligato/cn-infra/logging"
 
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908/nat"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/natplugin/vppcalls"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1908"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1908/nat"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/natplugin/vppcalls"
 )
 
 func init() {

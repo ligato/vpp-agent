@@ -15,15 +15,15 @@
 package vpp
 
 import (
-	vpp_abf "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/abf"
-	vpp_acl "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/acl"
-	vpp_interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
-	vpp_ipsec "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/ipsec"
-	vpp_l2 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l2"
-	vpp_l3 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l3"
-	vpp_nat "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/nat"
-	vpp_punt "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/punt"
-	vpp_stn "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/stn"
+	vpp_abf "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/abf"
+	vpp_acl "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/acl"
+	vpp_interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
+	vpp_ipsec "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/ipsec"
+	vpp_l2 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l2"
+	vpp_l3 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3"
+	vpp_nat "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/nat"
+	vpp_punt "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/punt"
+	vpp_stn "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/stn"
 )
 
 type (

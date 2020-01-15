@@ -20,10 +20,10 @@ import (
 	"testing"
 
 	. "github.com/onsi/gomega"
-	binapi "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908/nat"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/natplugin/vppcalls/vpp1908"
-	vpp_nat "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/nat"
+	binapi "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1908/nat"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/natplugin/vppcalls/vpp1908"
+	vpp_nat "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/nat"
 )
 
 func TestSetNat44Forwarding(t *testing.T) {

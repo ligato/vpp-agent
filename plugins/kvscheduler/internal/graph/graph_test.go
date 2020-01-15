@@ -21,8 +21,8 @@ import (
 	"github.com/golang/protobuf/proto"
 	. "github.com/onsi/gomega"
 
-	. "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/internal/test"
-	. "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/internal/utils"
+	. "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/internal/test"
+	. "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/internal/utils"
 )
 
 const (

@@ -16,9 +16,9 @@ package stnplugin
 
 import (
 	"github.com/ligato/cn-infra/logging"
-	"go.ligato.io/vpp-agent/v2/plugins/govppmux"
-	"go.ligato.io/vpp-agent/v2/plugins/kvscheduler"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin"
+	"go.ligato.io/vpp-agent/v3/plugins/govppmux"
+	"go.ligato.io/vpp-agent/v3/plugins/kvscheduler"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin"
 )
 
 // DefaultPlugin is a default instance of STN plugin.

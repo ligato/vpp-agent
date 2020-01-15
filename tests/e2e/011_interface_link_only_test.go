@@ -23,11 +23,11 @@ import (
 
 	. "github.com/onsi/gomega"
 
-	"go.ligato.io/vpp-agent/v2/plugins/netalloc/utils"
-	"go.ligato.io/vpp-agent/v2/proto/ligato/kvscheduler"
-	linux_interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/linux/interfaces"
-	linux_namespace "go.ligato.io/vpp-agent/v2/proto/ligato/linux/namespace"
-	vpp_interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
+	"go.ligato.io/vpp-agent/v3/plugins/netalloc/utils"
+	"go.ligato.io/vpp-agent/v3/proto/ligato/kvscheduler"
+	linux_interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/linux/interfaces"
+	linux_namespace "go.ligato.io/vpp-agent/v3/proto/ligato/linux/namespace"
+	vpp_interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
 )
 
 // configure only link on the Linux side of the interface and leave addresses

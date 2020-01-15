@@ -27,8 +27,8 @@ import (
 	"github.com/ligato/cn-infra/datasync/resync"
 	"github.com/ligato/cn-infra/logging"
 
-	"go.ligato.io/vpp-agent/v2/cmd/vpp-agent/app"
-	"go.ligato.io/vpp-agent/v2/pkg/debug"
+	"go.ligato.io/vpp-agent/v3/cmd/vpp-agent/app"
+	"go.ligato.io/vpp-agent/v3/pkg/debug"
 )
 
 const logo = `                                      __

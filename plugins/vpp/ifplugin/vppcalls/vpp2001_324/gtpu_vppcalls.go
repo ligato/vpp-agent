@@ -19,10 +19,10 @@ import (
 	"fmt"
 	"net"
 
-	"go.ligato.io/vpp-agent/v2/plugins/vpp"
-	vpp_gtpu "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324/gtpu"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/vppcalls"
-	ifs "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp"
+	vpp_gtpu "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001_324/gtpu"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/vppcalls"
+	ifs "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
 )
 
 func (h *InterfaceVppHandler) gtpuAddDelTunnel(isAdd uint8, gtpuLink *ifs.GtpuLink, multicastIf uint32) (uint32, error) {

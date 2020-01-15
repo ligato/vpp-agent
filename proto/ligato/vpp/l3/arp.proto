@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package ligato.vpp.l3;
 
-option go_package = "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l3;vpp_l3";
+option go_package = "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3;vpp_l3";
 
 message ARPEntry {
     string interface = 1;
