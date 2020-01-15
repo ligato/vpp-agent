@@ -23,6 +23,7 @@ lint:
     - SERVICE_SUFFIX
   except:
     - PACKAGE_VERSION_SUFFIX
+    - FILE_SAME_GO_PACKAGE
 breaking:
   use:
     - FILE
