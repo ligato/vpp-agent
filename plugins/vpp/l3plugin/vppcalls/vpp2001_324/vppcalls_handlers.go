@@ -15,6 +15,7 @@
 package vpp2001_324
 
 import (
+	"context"
 	"fmt"
 	"net"
 
@@ -50,6 +51,18 @@ type L3VppHandler struct {
 	*IPNeighHandler
 	*VrfTableHandler
 	*DHCPProxyHandler
+}
+
+func (h *L3VppHandler) UpdateL3XC(ctx context.Context, l3xc *vppcalls.L3XC) error {
+	panic("implement me")
+}
+
+func (h *L3VppHandler) DeleteL3XC(ctx context.Context, index uint32, ipv6 bool) error {
+	panic("implement me")
+}
+
+func (h *L3VppHandler) DumpL3XC(ctx context.Context, index uint32) ([]vppcalls.L3XC, error) {
+	return nil, fmt.Errorf("implement me")
 }
 
 func NewL3VppHandler(

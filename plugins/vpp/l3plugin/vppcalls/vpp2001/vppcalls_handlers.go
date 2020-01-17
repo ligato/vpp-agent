@@ -28,6 +28,7 @@ import (
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001"
 	vpp_dhcp "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/dhcp"
 	vpp_ip "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ip"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/l3xc"
 	vpp_vpe "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/vpe"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin/vppcalls"
@@ -43,6 +44,24 @@ func init() {
 	vppcalls.AddHandlerVersion(vpp2001.Version, msgs, NewL3VppHandler)
 }
 
+type L3XCHandler struct {
+	l3xc      l3xc.RPCService
+	ifIndexes ifaceidx.IfaceMetadataIndex
+	log       logging.Logger
+}
+
+// NewL3XCHandler creates new instance of L3XC vppcalls handler
+func NewL3XCHandler(callsChan govppapi.Channel, ifIndexes ifaceidx.IfaceMetadataIndex, log logging.Logger) *L3XCHandler {
+	if log == nil {
+		log = logrus.NewLogger("l3xc-handler")
+	}
+	return &L3XCHandler{
+		l3xc:      l3xc.NewServiceClient(callsChan),
+		ifIndexes: ifIndexes,
+		log:       log,
+	}
+}
+
 type L3VppHandler struct {
 	*ArpVppHandler
 	*ProxyArpVppHandler
@@ -50,6 +69,7 @@ type L3VppHandler struct {
 	*IPNeighHandler
 	*VrfTableHandler
 	*DHCPProxyHandler
+	*L3XCHandler
 }
 
 func NewL3VppHandler(
@@ -66,6 +86,7 @@ func NewL3VppHandler(
 		IPNeighHandler:     NewIPNeighVppHandler(ch, log),
 		VrfTableHandler:    NewVrfTableVppHandler(ch, log),
 		DHCPProxyHandler:   NewDHCPProxyHandler(ch, log),
+		L3XCHandler:        NewL3XCHandler(ch, ifIdx, log),
 	}
 }
 

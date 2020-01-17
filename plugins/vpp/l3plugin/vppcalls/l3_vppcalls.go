@@ -15,13 +15,16 @@
 package vppcalls
 
 import (
+	"context"
+	"net"
+
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
+
 	"go.ligato.io/vpp-agent/v3/plugins/netalloc"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp"
-	"go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin/vrfidx"
-
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin/vrfidx"
 	l3 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3"
 )
 
@@ -33,6 +36,26 @@ type L3VppAPI interface {
 	IPNeighVppAPI
 	VrfTableVppAPI
 	DHCPProxyAPI
+	L3XCVppAPI
+}
+
+type Path struct {
+	SwIfIndex  uint32
+	NextHop    net.IP
+	Weight     uint8
+	Preference uint8
+}
+
+type L3XC struct {
+	SwIfIndex uint32
+	IsIPv6    bool
+	Paths     []Path
+}
+
+type L3XCVppAPI interface {
+	DumpL3XC(ctx context.Context, index uint32) ([]L3XC, error)
+	UpdateL3XC(ctx context.Context, l3xc *L3XC) error
+	DeleteL3XC(ctx context.Context, index uint32, ipv6 bool) error
 }
 
 // ArpDetails holds info about ARP entry as a proto model
