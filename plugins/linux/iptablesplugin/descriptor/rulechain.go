@@ -17,19 +17,19 @@ package descriptor
 import (
 	"strings"
 
-	"github.com/gogo/protobuf/proto"
+	"github.com/golang/protobuf/proto"
+	"github.com/ligato/cn-infra/logging"
 	"github.com/pkg/errors"
 
-	"github.com/ligato/cn-infra/logging"
-	ifmodel "github.com/ligato/vpp-agent/api/models/linux/interfaces"
-	"github.com/ligato/vpp-agent/api/models/linux/iptables"
-	"github.com/ligato/vpp-agent/api/models/linux/namespace"
-	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-	ifdescriptor "github.com/ligato/vpp-agent/plugins/linux/ifplugin/descriptor"
-	"github.com/ligato/vpp-agent/plugins/linux/iptablesplugin/descriptor/adapter"
-	"github.com/ligato/vpp-agent/plugins/linux/iptablesplugin/linuxcalls"
-	"github.com/ligato/vpp-agent/plugins/linux/nsplugin"
-	nslinuxcalls "github.com/ligato/vpp-agent/plugins/linux/nsplugin/linuxcalls"
+	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
+	ifdescriptor "go.ligato.io/vpp-agent/v3/plugins/linux/ifplugin/descriptor"
+	"go.ligato.io/vpp-agent/v3/plugins/linux/iptablesplugin/descriptor/adapter"
+	"go.ligato.io/vpp-agent/v3/plugins/linux/iptablesplugin/linuxcalls"
+	"go.ligato.io/vpp-agent/v3/plugins/linux/nsplugin"
+	nslinuxcalls "go.ligato.io/vpp-agent/v3/plugins/linux/nsplugin/linuxcalls"
+	ifmodel "go.ligato.io/vpp-agent/v3/proto/ligato/linux/interfaces"
+	linux_iptables "go.ligato.io/vpp-agent/v3/proto/ligato/linux/iptables"
+	linux_namespace "go.ligato.io/vpp-agent/v3/proto/ligato/linux/namespace"
 )
 
 const (
@@ -291,13 +291,16 @@ type retrievedRuleChains struct {
 func (d *RuleChainDescriptor) Retrieve(correlate []adapter.RuleChainKVWithMetadata) ([]adapter.RuleChainKVWithMetadata, error) {
 	var values []adapter.RuleChainKVWithMetadata
 
-	goRoutinesCnt := len(correlate) / minWorkForGoRoutine
-	if goRoutinesCnt == 0 {
-		goRoutinesCnt = 1
+	if len(correlate) == 0 {
+		return values, nil
 	}
+
+	goRoutinesCnt := len(correlate) / minWorkForGoRoutine
+
 	if goRoutinesCnt > d.goRoutinesCnt {
 		goRoutinesCnt = d.goRoutinesCnt
 	}
+
 	ch := make(chan retrievedRuleChains, goRoutinesCnt)
 
 	// invoke multiple go routines for more efficient parallel chain retrieval
@@ -346,6 +349,10 @@ func (d *RuleChainDescriptor) retrieveRuleChains(
 
 		// list rules in provided table & chain
 		rules, err := d.ipTablesHandler.ListRules(protocolType(corrrelRule), tableNameStr(corrrelRule), chainNameStr(corrrelRule))
+
+		// switch back to the default namespace
+		nsRevert()
+
 		if err != nil {
 			d.log.Warnf("Error by listing iptables rules: %v", err)
 			continue // continue with the item
@@ -359,9 +366,6 @@ func (d *RuleChainDescriptor) retrieveRuleChains(
 			Value:  val,
 			Origin: kvs.FromNB,
 		})
-
-		// switch back to the default namespace
-		nsRevert()
 	}
 
 	ch <- retrieved
@@ -432,14 +436,14 @@ func isAllowedChain(table linux_iptables.RuleChain_Table, chain linux_iptables.R
 // protocolType returns protocol of the given rule chain in the NB API format.
 func protocolType(rch *linux_iptables.RuleChain) linuxcalls.L3Protocol {
 	switch rch.Protocol {
-	case linux_iptables.RuleChain_IPv6:
+	case linux_iptables.RuleChain_IPV6:
 		return linuxcalls.ProtocolIPv6
 	default:
 		return linuxcalls.ProtocolIPv4
 	}
 }
 
-// protocolType iptables table name of the given rule chain in the NB API format.
+// tableNameStr returns iptables table name of the given rule chain in the NB API format.
 func tableNameStr(rch *linux_iptables.RuleChain) string {
 	switch rch.Table {
 	case linux_iptables.RuleChain_NAT:
@@ -455,7 +459,7 @@ func tableNameStr(rch *linux_iptables.RuleChain) string {
 	}
 }
 
-// protocolType iptables chain name of the given rule chain in the NB API format.
+// chainNameStr returns iptables chain name of the given rule chain in the NB API format.
 func chainNameStr(rch *linux_iptables.RuleChain) string {
 	switch rch.ChainType {
 	case linux_iptables.RuleChain_CUSTOM:
@@ -473,7 +477,7 @@ func chainNameStr(rch *linux_iptables.RuleChain) string {
 	}
 }
 
-// protocolType iptables policy name of the given rule chain in the NB API format.
+// chainPolicyStr returns iptables policy name of the given rule chain in the NB API format.
 func chainPolicyStr(rch *linux_iptables.RuleChain) string {
 	switch rch.DefaultPolicy {
 	case linux_iptables.RuleChain_DROP:

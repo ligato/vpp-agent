@@ -22,21 +22,21 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gogo/protobuf/jsonpb"
-	"github.com/gogo/protobuf/proto"
+	"github.com/golang/protobuf/jsonpb"
+	"github.com/golang/protobuf/proto"
 	"github.com/ligato/cn-infra/agent"
 	"github.com/ligato/cn-infra/infra"
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/namsral/flag"
 	"google.golang.org/grpc"
 
-	"github.com/ligato/vpp-agent/api/configurator"
-	"github.com/ligato/vpp-agent/api/models/linux"
-	"github.com/ligato/vpp-agent/api/models/linux/interfaces"
-	"github.com/ligato/vpp-agent/api/models/vpp"
-	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	"github.com/ligato/vpp-agent/api/models/vpp/ipsec"
-	"github.com/ligato/vpp-agent/api/models/vpp/l3"
+	"go.ligato.io/vpp-agent/v3/proto/ligato/configurator"
+	"go.ligato.io/vpp-agent/v3/proto/ligato/linux"
+	linux_interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/linux/interfaces"
+	"go.ligato.io/vpp-agent/v3/proto/ligato/vpp"
+	interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
+	vpp_ipsec "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/ipsec"
+	vpp_l3 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3"
 )
 
 var (
@@ -83,7 +83,7 @@ func (p *ExamplePlugin) Init() (err error) {
 		return err
 	}
 
-	client := configurator.NewConfiguratorClient(p.conn)
+	client := configurator.NewConfiguratorServiceClient(p.conn)
 
 	// Apply initial VPP configuration.
 	go p.demonstrateClient(client)
@@ -118,7 +118,7 @@ func (p *ExamplePlugin) Close() error {
 }
 
 // demonstrateClient propagates snapshot of the whole initial configuration to VPP plugins.
-func (p *ExamplePlugin) demonstrateClient(client configurator.ConfiguratorClient) {
+func (p *ExamplePlugin) demonstrateClient(client configurator.ConfiguratorServiceClient) {
 	time.Sleep(time.Second * 2)
 	p.Log.Infof("Requesting resync..")
 

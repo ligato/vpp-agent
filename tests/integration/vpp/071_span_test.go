@@ -5,16 +5,16 @@ import (
 
 	"github.com/ligato/cn-infra/logging/logrus"
 
-	vpp_interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	_ "github.com/ligato/vpp-agent/plugins/vpp/ifplugin"
-	ifplugin_vppcalls "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
+	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin"
+	ifplugin_vppcalls "go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/vppcalls"
+	vpp_interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
 )
 
 func TestSpan(t *testing.T) {
 	ctx := setupVPP(t)
 	defer ctx.teardownVPP()
 
-	h := ifplugin_vppcalls.CompatibleInterfaceVppHandler(ctx.vppBinapi, logrus.NewLogger("test"))
+	h := ifplugin_vppcalls.CompatibleInterfaceVppHandler(ctx.vppClient, logrus.NewLogger("test"))
 
 	tests := []struct {
 		name string

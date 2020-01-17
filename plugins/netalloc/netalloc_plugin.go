@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate descriptor-adapter --descriptor-name IPAlloc --value-type *netalloc.IPAllocation --meta-type *netalloc.IPAllocMetadata --import "github.com/ligato/vpp-agent/api/models/netalloc" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name IPAlloc --value-type *netalloc.IPAllocation --meta-type *netalloc.IPAllocMetadata --import "go.ligato.io/vpp-agent/v3/proto/ligato/netalloc" --output-dir "descriptor"
 
 package netalloc
 
@@ -25,15 +25,15 @@ import (
 	"github.com/ligato/cn-infra/infra"
 
 	"github.com/ligato/cn-infra/idxmap"
-	"github.com/ligato/vpp-agent/api/models/netalloc"
-	"github.com/ligato/vpp-agent/pkg/models"
-	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-	"github.com/ligato/vpp-agent/plugins/netalloc/descriptor"
-	"github.com/ligato/vpp-agent/plugins/netalloc/utils"
+	"go.ligato.io/vpp-agent/v3/pkg/models"
+	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v3/plugins/netalloc/descriptor"
+	"go.ligato.io/vpp-agent/v3/plugins/netalloc/utils"
+	"go.ligato.io/vpp-agent/v3/proto/ligato/netalloc"
 )
 
 // Plugin implements network allocation features.
-// For more information, please refer to the netalloc proto model: api/models/netalloc/netalloc.proto
+// For more information, please refer to the netalloc proto model: proto/ligato/netalloc/netalloc.proto
 type Plugin struct {
 	Deps
 

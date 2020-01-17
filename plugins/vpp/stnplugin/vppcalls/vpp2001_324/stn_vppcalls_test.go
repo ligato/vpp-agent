@@ -21,12 +21,12 @@ import (
 	"github.com/ligato/cn-infra/logging/logrus"
 	. "github.com/onsi/gomega"
 
-	stn "github.com/ligato/vpp-agent/api/models/vpp/stn"
-	vpp_stn "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001_324/stn"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
-	"github.com/ligato/vpp-agent/plugins/vpp/stnplugin/vppcalls"
-	"github.com/ligato/vpp-agent/plugins/vpp/stnplugin/vppcalls/vpp2001_324"
-	"github.com/ligato/vpp-agent/plugins/vpp/vppcallmock"
+	vpp_stn "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001_324/stn"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/stnplugin/vppcalls"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/stnplugin/vppcalls/vpp2001_324"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/vppmock"
+	stn "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/stn"
 )
 
 func TestAddStnRule(t *testing.T) {
@@ -142,8 +142,8 @@ func TestDelStnRule(t *testing.T) {
 	Expect(vppMsg.IsAdd).To(BeEquivalentTo(0))
 }
 
-func stnTestSetup(t *testing.T) (*vppcallmock.TestCtx, vppcalls.StnVppAPI, ifaceidx.IfaceMetadataIndexRW) {
-	ctx := vppcallmock.SetupTestCtx(t)
+func stnTestSetup(t *testing.T) (*vppmock.TestCtx, vppcalls.StnVppAPI, ifaceidx.IfaceMetadataIndexRW) {
+	ctx := vppmock.SetupTestCtx(t)
 	logger := logrus.NewLogger("test-log")
 	ifIndexes := ifaceidx.NewIfaceIndex(logger, "stn-if-idx")
 	stnHandler := vpp2001_324.NewStnVppHandler(ctx.MockChannel, ifIndexes, logrus.DefaultLogger())

@@ -17,25 +17,32 @@ package telemetry
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"os"
 	"sync"
 	"time"
 
+	"github.com/gorilla/mux"
 	"github.com/ligato/cn-infra/infra"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/rpc/grpc"
 	prom "github.com/ligato/cn-infra/rpc/prometheus"
+	"github.com/ligato/cn-infra/rpc/rest"
 	"github.com/ligato/cn-infra/servicelabel"
+	"github.com/pkg/errors"
+	"github.com/unrolled/render"
 
-	"github.com/ligato/vpp-agent/api/configurator"
-	"github.com/ligato/vpp-agent/plugins/govppmux"
-	"github.com/ligato/vpp-agent/plugins/telemetry/vppcalls"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
+	"go.ligato.io/vpp-agent/v3/pkg/metrics"
+	"go.ligato.io/vpp-agent/v3/pkg/models"
+	"go.ligato.io/vpp-agent/v3/plugins/govppmux"
+	"go.ligato.io/vpp-agent/v3/plugins/telemetry/vppcalls"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
+	"go.ligato.io/vpp-agent/v3/proto/ligato/configurator"
 
-	_ "github.com/ligato/vpp-agent/plugins/telemetry/vppcalls/vpp1904"
-	_ "github.com/ligato/vpp-agent/plugins/telemetry/vppcalls/vpp1908"
-	_ "github.com/ligato/vpp-agent/plugins/telemetry/vppcalls/vpp2001_324"
-	_ "github.com/ligato/vpp-agent/plugins/telemetry/vppcalls/vpp2001_379"
+	_ "go.ligato.io/vpp-agent/v3/plugins/telemetry/vppcalls/vpp1904"
+	_ "go.ligato.io/vpp-agent/v3/plugins/telemetry/vppcalls/vpp1908"
+	_ "go.ligato.io/vpp-agent/v3/plugins/telemetry/vppcalls/vpp2001"
+	_ "go.ligato.io/vpp-agent/v3/plugins/telemetry/vppcalls/vpp2001_324"
 )
 
 var debug = os.Getenv("DEBUG_TELEMETRY") != ""
@@ -69,9 +76,10 @@ type InterfaceIndexProvider interface {
 type Deps struct {
 	infra.PluginDeps
 	ServiceLabel servicelabel.ReaderAPI
-	GoVppmux     govppmux.StatsAPI
+	VPP          govppmux.API
 	Prometheus   prom.API
 	GRPC         grpc.Server
+	HTTPHandlers rest.HTTPHandlers
 	IfPlugin     InterfaceIndexProvider
 }
 
@@ -126,7 +134,11 @@ func (p *Plugin) Init() error {
 	// Setup stats poller
 	p.statsPollerServer.log = p.Log.NewLogger("stats-poller")
 	if err := p.setupStatsPoller(); err != nil {
-		return err
+		return errors.WithMessage(err, "setting up stats poller failed")
+	}
+
+	if p.HTTPHandlers != nil {
+		p.HTTPHandlers.RegisterHTTPHandler("/metrics/{metric}", metricsHandler, "GET")
 	}
 
 	return nil
@@ -145,21 +157,15 @@ func (p *Plugin) AfterInit() error {
 }
 
 func (p *Plugin) setupStatsPoller() error {
-	vppCh, err := p.GoVppmux.NewAPIChannel()
-	if err != nil {
-		return err
-	}
-	defer vppCh.Close()
-
-	h := vppcalls.CompatibleTelemetryHandler(vppCh, p.GoVppmux)
+	h := vppcalls.CompatibleTelemetryHandler(p.VPP)
 	if h == nil {
-		return err
+		return fmt.Errorf("VPP telemetry handler unavailable")
 	}
 	p.statsPollerServer.handler = h
 	p.ifIndex = p.IfPlugin.GetInterfaceIndex()
 
 	if p.GRPC != nil && p.GRPC.GetServer() != nil {
-		configurator.RegisterStatsPollerServer(p.GRPC.GetServer(), &p.statsPollerServer)
+		configurator.RegisterStatsPollerServiceServer(p.GRPC.GetServer(), &p.statsPollerServer)
 	}
 
 	return nil
@@ -173,16 +179,9 @@ func (p *Plugin) Close() error {
 }
 
 func (p *Plugin) startPeriodicUpdates() {
-	vppCh, err := p.GoVppmux.NewAPIChannel()
-	if err != nil {
-		p.Log.Errorf("creating channel failed: %v", err)
-		return
-	}
-	defer vppCh.Close()
-
-	p.handler = vppcalls.CompatibleTelemetryHandler(vppCh, p.GoVppmux)
+	p.handler = vppcalls.CompatibleTelemetryHandler(p.VPP)
 	if p.handler == nil {
-		p.Log.Warnf("no compatible telemetry handler, skipping periodic updates")
+		p.Log.Warnf("VPP telemetry handler unavailable, skipping periodic updates")
 		return
 	}
 
@@ -220,5 +219,27 @@ func (p *Plugin) tracef(f string, a ...interface{}) {
 			return
 		}
 		p.Log.Debug(s)
+	}
+}
+
+func metricsHandler(formatter *render.Render) http.HandlerFunc {
+	return func(w http.ResponseWriter, req *http.Request) {
+		vars := mux.Vars(req)
+		if vars == nil {
+			_ = formatter.JSON(w, http.StatusNotFound, struct{}{})
+			return
+		}
+		metric := vars["metric"]
+		model, err := models.DefaultRegistry.GetModel(metric)
+		if err != nil {
+			_ = formatter.JSON(w, http.StatusNotFound, struct{ Error string }{err.Error()})
+			return
+		}
+		data := model.NewInstance()
+		if err := metrics.Retrieve(data); err != nil {
+			_ = formatter.JSON(w, http.StatusInternalServerError, struct{ Error string }{err.Error()})
+			return
+		}
+		_ = formatter.JSON(w, 200, data)
 	}
 }

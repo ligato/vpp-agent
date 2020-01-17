@@ -15,34 +15,31 @@
 package configurator
 
 import (
-	"git.fd.io/govpp.git/api"
-
 	"github.com/ligato/cn-infra/infra"
 	"github.com/ligato/cn-infra/rpc/grpc"
 	"github.com/ligato/cn-infra/servicelabel"
-	"github.com/ligato/cn-infra/utils/safeclose"
 
-	rpc "github.com/ligato/vpp-agent/api/configurator"
-	"github.com/ligato/vpp-agent/api/models/vpp"
-	"github.com/ligato/vpp-agent/plugins/govppmux"
-	iflinuxplugin "github.com/ligato/vpp-agent/plugins/linux/ifplugin"
-	iflinuxcalls "github.com/ligato/vpp-agent/plugins/linux/ifplugin/linuxcalls"
-	l3linuxcalls "github.com/ligato/vpp-agent/plugins/linux/l3plugin/linuxcalls"
-	"github.com/ligato/vpp-agent/plugins/linux/nsplugin"
-	"github.com/ligato/vpp-agent/plugins/netalloc"
-	"github.com/ligato/vpp-agent/plugins/orchestrator"
-	abfvppcalls "github.com/ligato/vpp-agent/plugins/vpp/abfplugin/vppcalls"
-	"github.com/ligato/vpp-agent/plugins/vpp/aclplugin"
-	aclvppcalls "github.com/ligato/vpp-agent/plugins/vpp/aclplugin/vppcalls"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin"
-	ifvppcalls "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
-	ipsecvppcalls "github.com/ligato/vpp-agent/plugins/vpp/ipsecplugin/vppcalls"
-	"github.com/ligato/vpp-agent/plugins/vpp/l2plugin"
-	l2vppcalls "github.com/ligato/vpp-agent/plugins/vpp/l2plugin/vppcalls"
-	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin"
-	l3vppcalls "github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls"
-	natvppcalls "github.com/ligato/vpp-agent/plugins/vpp/natplugin/vppcalls"
-	puntvppcalls "github.com/ligato/vpp-agent/plugins/vpp/puntplugin/vppcalls"
+	"go.ligato.io/vpp-agent/v3/plugins/govppmux"
+	iflinuxplugin "go.ligato.io/vpp-agent/v3/plugins/linux/ifplugin"
+	iflinuxcalls "go.ligato.io/vpp-agent/v3/plugins/linux/ifplugin/linuxcalls"
+	l3linuxcalls "go.ligato.io/vpp-agent/v3/plugins/linux/l3plugin/linuxcalls"
+	"go.ligato.io/vpp-agent/v3/plugins/linux/nsplugin"
+	"go.ligato.io/vpp-agent/v3/plugins/netalloc"
+	"go.ligato.io/vpp-agent/v3/plugins/orchestrator"
+	abfvppcalls "go.ligato.io/vpp-agent/v3/plugins/vpp/abfplugin/vppcalls"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/aclplugin"
+	aclvppcalls "go.ligato.io/vpp-agent/v3/plugins/vpp/aclplugin/vppcalls"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin"
+	ifvppcalls "go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/vppcalls"
+	ipsecvppcalls "go.ligato.io/vpp-agent/v3/plugins/vpp/ipsecplugin/vppcalls"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/l2plugin"
+	l2vppcalls "go.ligato.io/vpp-agent/v3/plugins/vpp/l2plugin/vppcalls"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin"
+	l3vppcalls "go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin/vppcalls"
+	natvppcalls "go.ligato.io/vpp-agent/v3/plugins/vpp/natplugin/vppcalls"
+	puntvppcalls "go.ligato.io/vpp-agent/v3/plugins/vpp/puntplugin/vppcalls"
+	rpc "go.ligato.io/vpp-agent/v3/proto/ligato/configurator"
+	"go.ligato.io/vpp-agent/v3/proto/ligato/vpp"
 )
 
 // Default Go routine count for linux configuration retrieval
@@ -53,9 +50,6 @@ type Plugin struct {
 	Deps
 
 	configurator configuratorServer
-
-	// Channels
-	vppChan api.Channel
 }
 
 // Deps - dependencies of Plugin
@@ -63,7 +57,7 @@ type Deps struct {
 	infra.PluginDeps
 	GRPCServer    grpc.Server
 	Dispatch      orchestrator.Dispatcher
-	GoVppmux      govppmux.StatsAPI
+	VPP           govppmux.API
 	ServiceLabel  servicelabel.ReaderAPI
 	AddrAlloc     netalloc.AddressAllocator
 	VPPACLPlugin  aclplugin.API
@@ -87,7 +81,7 @@ func (p *Plugin) Init() error {
 
 	grpcServer := p.GRPCServer.GetServer()
 	if grpcServer != nil {
-		rpc.RegisterConfiguratorServer(grpcServer, &p.configurator)
+		rpc.RegisterConfiguratorServiceServer(grpcServer, &p.configurator)
 	}
 
 	if p.VPPIfPlugin != nil {
@@ -107,16 +101,11 @@ func (p *Plugin) sendVppNotification(vppNotification *vpp.Notification) {
 
 // Close does nothing.
 func (p *Plugin) Close() error {
-	return safeclose.Close(p.vppChan)
+	return nil
 }
 
 // helper method initializes all VPP/Linux plugin handlers
 func (p *Plugin) initHandlers() (err error) {
-	// VPP channels
-	if p.vppChan, err = p.GoVppmux.NewAPIChannel(); err != nil {
-		return err
-	}
-
 	// VPP Indexes
 	ifIndexes := p.VPPIfPlugin.GetInterfaceIndex()
 	dhcpIndexes := p.VPPIfPlugin.GetDHCPIndex()
@@ -128,39 +117,36 @@ func (p *Plugin) initHandlers() (err error) {
 	linuxIfIndexes := p.LinuxIfPlugin.GetInterfaceIndex()
 
 	// VPP handlers
-
-	// core
-	p.configurator.ifHandler = ifvppcalls.CompatibleInterfaceVppHandler(p.vppChan, p.Log)
+	p.configurator.ifHandler = ifvppcalls.CompatibleInterfaceVppHandler(p.VPP, p.Log)
 	if p.configurator.ifHandler == nil {
 		p.Log.Info("VPP Interface handler is not available, it will be skipped")
 	}
-	p.configurator.l2Handler = l2vppcalls.CompatibleL2VppHandler(p.vppChan, ifIndexes, bdIndexes, p.Log)
+	p.configurator.l2Handler = l2vppcalls.CompatibleL2VppHandler(p.VPP, ifIndexes, bdIndexes, p.Log)
 	if p.configurator.l2Handler == nil {
 		p.Log.Info("VPP L2 handler is not available, it will be skipped")
 	}
-	p.configurator.l3Handler = l3vppcalls.CompatibleL3VppHandler(p.vppChan, ifIndexes, vrfIndexes, p.AddrAlloc, p.Log)
+	p.configurator.l3Handler = l3vppcalls.CompatibleL3VppHandler(p.VPP, ifIndexes, vrfIndexes, p.AddrAlloc, p.Log)
 	if p.configurator.l3Handler == nil {
 		p.Log.Info("VPP L3 handler is not available, it will be skipped")
 	}
-	p.configurator.ipsecHandler = ipsecvppcalls.CompatibleIPSecVppHandler(p.vppChan, ifIndexes, p.Log)
+	p.configurator.ipsecHandler = ipsecvppcalls.CompatibleIPSecVppHandler(p.VPP, ifIndexes, p.Log)
 	if p.configurator.ipsecHandler == nil {
 		p.Log.Info("VPP IPSec handler is not available, it will be skipped")
 	}
-
 	// plugins
-	p.configurator.abfHandler = abfvppcalls.CompatibleABFVppHandler(p.vppChan, aclIndexes, ifIndexes, p.Log)
+	p.configurator.abfHandler = abfvppcalls.CompatibleABFHandler(p.VPP, aclIndexes, ifIndexes, p.Log)
 	if p.configurator.abfHandler == nil {
 		p.Log.Info("VPP ABF handler is not available, it will be skipped")
 	}
-	p.configurator.aclHandler = aclvppcalls.CompatibleACLVppHandler(p.vppChan, ifIndexes, p.Log)
+	p.configurator.aclHandler = aclvppcalls.CompatibleACLHandler(p.VPP, ifIndexes)
 	if p.configurator.aclHandler == nil {
 		p.Log.Info("VPP ACL handler is not available, it will be skipped")
 	}
-	p.configurator.natHandler = natvppcalls.CompatibleNatVppHandler(p.vppChan, ifIndexes, dhcpIndexes, p.Log)
+	p.configurator.natHandler = natvppcalls.CompatibleNatVppHandler(p.VPP, ifIndexes, dhcpIndexes, p.Log)
 	if p.configurator.natHandler == nil {
 		p.Log.Info("VPP NAT handler is not available, it will be skipped")
 	}
-	p.configurator.puntHandler = puntvppcalls.CompatiblePuntVppHandler(p.vppChan, ifIndexes, p.Log)
+	p.configurator.puntHandler = puntvppcalls.CompatiblePuntVppHandler(p.VPP, ifIndexes, p.Log)
 	if p.configurator.puntHandler == nil {
 		p.Log.Info("VPP Punt handler is not available, it will be skipped")
 	}

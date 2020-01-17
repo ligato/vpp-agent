@@ -23,12 +23,13 @@ import (
 	"strings"
 	"text/tabwriter"
 
-	"github.com/gogo/protobuf/proto"
+	"github.com/golang/protobuf/proto"
+	"github.com/ligato/cn-infra/logging"
 	"github.com/spf13/cobra"
 
-	"github.com/ligato/vpp-agent/api/types"
-	agentcli "github.com/ligato/vpp-agent/cmd/agentctl/cli"
-	"github.com/ligato/vpp-agent/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v3/cmd/agentctl/api/types"
+	agentcli "go.ligato.io/vpp-agent/v3/cmd/agentctl/cli"
+	"go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 )
 
 func NewDumpCommand(cli agentcli.Cli) *cobra.Command {
@@ -38,8 +39,11 @@ func NewDumpCommand(cli agentcli.Cli) *cobra.Command {
 		Use:   "dump MODEL",
 		Short: "Dump running state",
 		Example: `
- To dump VPP interfaces run:
-  $ {{.CommandPath}} vpp.interfaces
+ To dump all data:
+  $ {{.CommandPath}} all
+
+ To dump all VPP data in json format run:
+  $ {{.CommandPath}} -f json vpp.*
 
  To use different dump view use --view flag:
   $ {{.CommandPath}} --view=NB vpp.interfaces`,
@@ -49,48 +53,67 @@ func NewDumpCommand(cli agentcli.Cli) *cobra.Command {
 			return runDump(cli, opts)
 		},
 	}
-	cmd.Flags().StringVar(&opts.View, "view", "cached", "Dump view type: cached, NB, SB")
+	flags := cmd.Flags()
+	flags.StringVar(&opts.View, "view", "cached", "Dump view type: cached, NB, SB")
+	flags.StringVarP(&opts.Format, "format", "f", "", "Format output")
 	return cmd
 }
 
 type DumpOptions struct {
 	Models []string
 	View   string
+	Format string
 }
 
 func runDump(cli agentcli.Cli, opts DumpOptions) error {
 	dumpView := opts.View
-	model := opts.Models[0]
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	allModels, err := cli.Client().ModelList(ctx, types.ModelListOptions{})
-	if err != nil {
-		return err
-	}
-
-	var modelKeyPrefix string
-	for _, m := range allModels {
-		if (m.Alias != "" && model == m.Alias) || model == m.Name {
-			modelKeyPrefix = m.KeyPrefix
-			break
-		}
-	}
-	if modelKeyPrefix == "" {
-		return fmt.Errorf("no such model: %q", model)
-	}
-
-	dump, err := cli.Client().SchedulerDump(ctx, types.SchedulerDumpOptions{
-		KeyPrefix: modelKeyPrefix,
-		View:      dumpView,
+	allModels, err := cli.Client().ModelList(ctx, types.ModelListOptions{
+		Class: "config",
 	})
 	if err != nil {
 		return err
 	}
 
-	sort.Sort(dumpByKey(dump))
-	printDumpTable(cli.Out(), dump)
+	refs := opts.Models
+	if opts.Models[0] == "all" {
+		refs = []string{"*"}
+	}
+
+	var keyPrefixes []string
+	for _, m := range filterModelsByRefs(allModels, refs) {
+		keyPrefixes = append(keyPrefixes, m.KeyPrefix)
+	}
+	if len(keyPrefixes) == 0 {
+		return fmt.Errorf("no models found for %q", opts.Models)
+	}
+
+	var dumps []api.KVWithMetadata
+	for _, keyPrefix := range keyPrefixes {
+		dump, err := cli.Client().SchedulerDump(ctx, types.SchedulerDumpOptions{
+			KeyPrefix: keyPrefix,
+			View:      dumpView,
+		})
+		if err != nil {
+			logging.Debug(fmt.Errorf("dump for %s failed: %v", keyPrefix, err))
+			continue
+		}
+		dumps = append(dumps, dump...)
+	}
+
+	sort.Sort(dumpByKey(dumps))
+
+	format := opts.Format
+	if len(format) == 0 {
+		printDumpTable(cli.Out(), dumps)
+	} else {
+		if err := formatAsTemplate(cli.Out(), format, dumps); err != nil {
+			return err
+		}
+	}
 
 	return nil
 }
@@ -124,7 +147,7 @@ func printDumpTable(out io.Writer, dump []api.KVWithMetadata) {
 		fmt.Fprintf(w, "\t%s\t\t\n", val)
 	}
 	if err := w.Flush(); err != nil {
-		return
+		panic(err)
 	}
 	fmt.Fprint(out, buf.String())
 }

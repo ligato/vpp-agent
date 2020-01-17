@@ -15,16 +15,16 @@
 package descriptor
 
 import (
-	"github.com/gogo/protobuf/proto"
+	"github.com/golang/protobuf/proto"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/pkg/errors"
 
-	interfaces "github.com/ligato/vpp-agent/examples/kvscheduler/mock_plugins/ifplugin/model"
-	l2 "github.com/ligato/vpp-agent/examples/kvscheduler/mock_plugins/l2plugin/model"
-	"github.com/ligato/vpp-agent/pkg/idxvpp"
-	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-	"github.com/ligato/vpp-agent/examples/kvscheduler/mock_plugins/l2plugin/descriptor/adapter"
-	"github.com/ligato/vpp-agent/examples/kvscheduler/mock_plugins/l2plugin/mockcalls"
+	interfaces "go.ligato.io/vpp-agent/v3/examples/kvscheduler/mock_plugins/ifplugin/model"
+	"go.ligato.io/vpp-agent/v3/examples/kvscheduler/mock_plugins/l2plugin/descriptor/adapter"
+	"go.ligato.io/vpp-agent/v3/examples/kvscheduler/mock_plugins/l2plugin/mockcalls"
+	l2 "go.ligato.io/vpp-agent/v3/examples/kvscheduler/mock_plugins/l2plugin/model"
+	"go.ligato.io/vpp-agent/v3/pkg/idxvpp"
+	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 )
 
 const (

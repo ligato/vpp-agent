@@ -17,21 +17,22 @@ package dbadapter
 import (
 	"github.com/ligato/cn-infra/db/keyval"
 
-	linux_interfaces "github.com/ligato/vpp-agent/api/models/linux/interfaces"
-	linux_l3 "github.com/ligato/vpp-agent/api/models/linux/l3"
-	abf "github.com/ligato/vpp-agent/api/models/vpp/abf"
-	acl "github.com/ligato/vpp-agent/api/models/vpp/acl"
-	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	ipsec "github.com/ligato/vpp-agent/api/models/vpp/ipsec"
-	l2 "github.com/ligato/vpp-agent/api/models/vpp/l2"
-	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
-	nat "github.com/ligato/vpp-agent/api/models/vpp/nat"
-	punt "github.com/ligato/vpp-agent/api/models/vpp/punt"
-	stn "github.com/ligato/vpp-agent/api/models/vpp/stn"
-	linuxclient "github.com/ligato/vpp-agent/clientv2/linux"
-	vppclient "github.com/ligato/vpp-agent/clientv2/vpp"
-	"github.com/ligato/vpp-agent/clientv2/vpp/dbadapter"
-	"github.com/ligato/vpp-agent/pkg/models"
+	linuxclient "go.ligato.io/vpp-agent/v3/clientv2/linux"
+	vppclient "go.ligato.io/vpp-agent/v3/clientv2/vpp"
+	"go.ligato.io/vpp-agent/v3/clientv2/vpp/dbadapter"
+	"go.ligato.io/vpp-agent/v3/pkg/models"
+	linux_interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/linux/interfaces"
+	linux_iptables "go.ligato.io/vpp-agent/v3/proto/ligato/linux/iptables"
+	linux_l3 "go.ligato.io/vpp-agent/v3/proto/ligato/linux/l3"
+	abf "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/abf"
+	acl "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/acl"
+	interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
+	ipsec "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/ipsec"
+	l2 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l2"
+	l3 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3"
+	nat "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/nat"
+	punt "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/punt"
+	stn "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/stn"
 )
 
 // NewDataResyncDSL returns a new instance of DataResyncDSL which implements
@@ -75,6 +76,15 @@ func (dsl *DataResyncDSL) LinuxArpEntry(val *linux_l3.ARPEntry) linuxclient.Data
 // LinuxRoute adds Linux route to the RESYNC request.
 func (dsl *DataResyncDSL) LinuxRoute(val *linux_l3.Route) linuxclient.DataResyncDSL {
 	key := linux_l3.RouteKey(val.DstNetwork, val.OutgoingInterface)
+	dsl.txn.Put(key, val)
+	dsl.txnKeys = append(dsl.txnKeys, key)
+
+	return dsl
+}
+
+// IptablesRuleChain adds iptables rule chain to the RESYNC request.
+func (dsl *DataResyncDSL) IptablesRuleChain(val *linux_iptables.RuleChain) linuxclient.DataResyncDSL {
+	key := linux_iptables.RuleChainKey(val.Name)
 	dsl.txn.Put(key, val)
 	dsl.txnKeys = append(dsl.txnKeys, key)
 
@@ -202,6 +212,24 @@ func (dsl *DataResyncDSL) NAT44Global(nat44 *nat.Nat44Global) linuxclient.DataRe
 // DNAT44 adds DNAT44 configuration to the RESYNC request
 func (dsl *DataResyncDSL) DNAT44(nat44 *nat.DNat44) linuxclient.DataResyncDSL {
 	dsl.vppDataResync.DNAT44(nat44)
+	return dsl
+}
+
+// NAT44Interface adds NAT44 interface configuration to the RESYNC request.
+func (dsl *DataResyncDSL) NAT44Interface(natIf *nat.Nat44Interface) linuxclient.DataResyncDSL {
+	key := models.Key(natIf)
+	dsl.txn.Put(key, natIf)
+	dsl.txnKeys = append(dsl.txnKeys, key)
+
+	return dsl
+}
+
+// NAT44AddressPool adds NAT44 address pool configuration to the RESYNC request.
+func (dsl *DataResyncDSL) NAT44AddressPool(pool *nat.Nat44AddressPool) linuxclient.DataResyncDSL {
+	key := models.Key(pool)
+	dsl.txn.Put(key, pool)
+	dsl.txnKeys = append(dsl.txnKeys, key)
+
 	return dsl
 }
 

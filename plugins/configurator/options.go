@@ -17,16 +17,15 @@ package configurator
 import (
 	"github.com/ligato/cn-infra/rpc/grpc"
 	"github.com/ligato/cn-infra/servicelabel"
-
-	"github.com/ligato/vpp-agent/plugins/govppmux"
-	linuxifplugin "github.com/ligato/vpp-agent/plugins/linux/ifplugin"
-	"github.com/ligato/vpp-agent/plugins/linux/nsplugin"
-	"github.com/ligato/vpp-agent/plugins/netalloc"
-	"github.com/ligato/vpp-agent/plugins/orchestrator"
-	"github.com/ligato/vpp-agent/plugins/vpp/aclplugin"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin"
-	"github.com/ligato/vpp-agent/plugins/vpp/l2plugin"
-	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin"
+	"go.ligato.io/vpp-agent/v3/plugins/govppmux"
+	linuxifplugin "go.ligato.io/vpp-agent/v3/plugins/linux/ifplugin"
+	"go.ligato.io/vpp-agent/v3/plugins/linux/nsplugin"
+	"go.ligato.io/vpp-agent/v3/plugins/netalloc"
+	"go.ligato.io/vpp-agent/v3/plugins/orchestrator"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/aclplugin"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/l2plugin"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin"
 )
 
 // DefaultPlugin is default instance of Plugin
@@ -39,7 +38,7 @@ func NewPlugin(opts ...Option) *Plugin {
 	p.PluginName = "configurator"
 	p.GRPCServer = &grpc.DefaultPlugin
 	p.Dispatch = &orchestrator.DefaultPlugin
-	p.GoVppmux = &govppmux.DefaultPlugin
+	p.VPP = &govppmux.DefaultPlugin
 	p.ServiceLabel = &servicelabel.DefaultPlugin
 	p.AddrAlloc = &netalloc.DefaultPlugin
 	p.VPPACLPlugin = &aclplugin.DefaultPlugin

@@ -26,10 +26,9 @@ import (
 	"github.com/go-errors/errors"
 	"github.com/unrolled/render"
 
-	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	"github.com/ligato/vpp-agent/plugins/configurator"
-	"github.com/ligato/vpp-agent/plugins/govppmux"
-	"github.com/ligato/vpp-agent/plugins/restapi/resturl"
+	"go.ligato.io/vpp-agent/v3/plugins/configurator"
+	"go.ligato.io/vpp-agent/v3/plugins/restapi/resturl"
+	interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
 )
 
 var (
@@ -70,31 +69,31 @@ func (p *Plugin) registerACLHandlers() {
 func (p *Plugin) registerInterfaceHandlers() {
 	// GET all interfaces
 	p.registerHTTPHandler(resturl.Interface, GET, func() (interface{}, error) {
-		return p.ifHandler.DumpInterfaces()
+		return p.ifHandler.DumpInterfaces(context.TODO())
 	})
 	// GET loopback interfaces
 	p.registerHTTPHandler(resturl.Loopback, GET, func() (interface{}, error) {
-		return p.ifHandler.DumpInterfacesByType(interfaces.Interface_SOFTWARE_LOOPBACK)
+		return p.ifHandler.DumpInterfacesByType(context.TODO(), interfaces.Interface_SOFTWARE_LOOPBACK)
 	})
 	// GET ethernet interfaces
 	p.registerHTTPHandler(resturl.Ethernet, GET, func() (interface{}, error) {
-		return p.ifHandler.DumpInterfacesByType(interfaces.Interface_DPDK)
+		return p.ifHandler.DumpInterfacesByType(context.TODO(), interfaces.Interface_DPDK)
 	})
 	// GET memif interfaces
 	p.registerHTTPHandler(resturl.Memif, GET, func() (interface{}, error) {
-		return p.ifHandler.DumpInterfacesByType(interfaces.Interface_MEMIF)
+		return p.ifHandler.DumpInterfacesByType(context.TODO(), interfaces.Interface_MEMIF)
 	})
 	// GET tap interfaces
 	p.registerHTTPHandler(resturl.Tap, GET, func() (interface{}, error) {
-		return p.ifHandler.DumpInterfacesByType(interfaces.Interface_TAP)
+		return p.ifHandler.DumpInterfacesByType(context.TODO(), interfaces.Interface_TAP)
 	})
 	// GET af-packet interfaces
 	p.registerHTTPHandler(resturl.AfPacket, GET, func() (interface{}, error) {
-		return p.ifHandler.DumpInterfacesByType(interfaces.Interface_AF_PACKET)
+		return p.ifHandler.DumpInterfacesByType(context.TODO(), interfaces.Interface_AF_PACKET)
 	})
 	// GET VxLAN interfaces
 	p.registerHTTPHandler(resturl.VxLan, GET, func() (interface{}, error) {
-		return p.ifHandler.DumpInterfacesByType(interfaces.Interface_VXLAN_TUNNEL)
+		return p.ifHandler.DumpInterfacesByType(context.TODO(), interfaces.Interface_VXLAN_TUNNEL)
 	})
 }
 
@@ -105,7 +104,7 @@ func (p *Plugin) registerNATHandlers() {
 		if p.natHandler == nil {
 			return nil, ErrHandlerUnavailable
 		}
-		return p.natHandler.Nat44GlobalConfigDump()
+		return p.natHandler.Nat44GlobalConfigDump(false)
 	})
 	// GET DNAT config
 	p.registerHTTPHandler(resturl.NatDNat, GET, func() (interface{}, error) {
@@ -113,6 +112,20 @@ func (p *Plugin) registerNATHandlers() {
 			return nil, ErrHandlerUnavailable
 		}
 		return p.natHandler.DNat44Dump()
+	})
+	// GET NAT interfaces
+	p.registerHTTPHandler(resturl.NatInterfaces, GET, func() (interface{}, error) {
+		if p.natHandler == nil {
+			return nil, ErrHandlerUnavailable
+		}
+		return p.natHandler.Nat44InterfacesDump()
+	})
+	// GET NAT address pools
+	p.registerHTTPHandler(resturl.NatAddressPools, GET, func() (interface{}, error) {
+		if p.natHandler == nil {
+			return nil, ErrHandlerUnavailable
+		}
+		return p.natHandler.Nat44AddressPoolsDump()
 	})
 }
 
@@ -241,15 +254,8 @@ func (p *Plugin) registerTelemetryHandlers() {
 	p.HTTPHandlers.RegisterHTTPHandler(resturl.TNodeCount, p.telemetryNodeCountHandler, GET)
 }
 
-// Registers Tracer handler
 func (p *Plugin) registerStatsHandler() {
-	p.HTTPHandlers.RegisterHTTPHandler(resturl.Tracer, p.tracerHandler, GET)
 	p.HTTPHandlers.RegisterHTTPHandler(resturl.ConfiguratorStats, p.configuratorStatsHandler, GET)
-}
-
-// Registers command handler
-func (p *Plugin) registerCommandHandler() {
-	p.HTTPHandlers.RegisterHTTPHandler(resturl.Command, p.commandHandler, POST)
 }
 
 // Registers index page
@@ -259,7 +265,6 @@ func (p *Plugin) registerIndexHandlers() {
 		Asset:      Asset,
 		AssetNames: AssetNames,
 	})
-
 	handlerFunc := func(formatter *render.Render) http.HandlerFunc {
 		return func(w http.ResponseWriter, req *http.Request) {
 
@@ -267,7 +272,7 @@ func (p *Plugin) registerIndexHandlers() {
 			p.logError(r.HTML(w, http.StatusOK, "index", p.index))
 		}
 	}
-	p.HTTPHandlers.RegisterHTTPHandler(resturl.Index, handlerFunc, GET)
+	p.HTTPHandlers.RegisterHTTPHandler("/", handlerFunc, GET)
 }
 
 // registerHTTPHandler is common register method for all handlers
@@ -322,7 +327,7 @@ func (p *Plugin) commandHandler(formatter *render.Render) http.HandlerFunc {
 
 		p.Log.Debugf("VPPCLI command: %v", command)
 
-		reply, err := p.vpeHandler.RunCli(command)
+		reply, err := p.vpeHandler.RunCli(context.TODO(), command)
 		if err != nil {
 			errMsg := fmt.Sprintf("500 Internal server error: sending request failed: %v\n", err)
 			p.Log.Error(errMsg)
@@ -345,7 +350,7 @@ func (p *Plugin) telemetryHandler(formatter *render.Render) http.HandlerFunc {
 		var cmdOuts []cmdOut
 
 		var runCmd = func(command string) {
-			out, err := p.vpeHandler.RunCli(command)
+			out, err := p.vpeHandler.RunCli(context.TODO(), command)
 			if err != nil {
 				errMsg := fmt.Sprintf("500 Internal server error: sending command failed: %v\n", err)
 				p.Log.Error(errMsg)
@@ -354,7 +359,7 @@ func (p *Plugin) telemetryHandler(formatter *render.Render) http.HandlerFunc {
 			}
 			cmdOuts = append(cmdOuts, cmdOut{
 				Command: command,
-				Output:  string(out),
+				Output:  out,
 			})
 		}
 
@@ -411,19 +416,6 @@ func (p *Plugin) telemetryNodeCountHandler(formatter *render.Render) http.Handle
 		}
 
 		p.logError(formatter.JSON(w, http.StatusOK, nodeCounters))
-	}
-}
-
-// tracerHandler - returns binary API call trace
-func (p *Plugin) tracerHandler(formatter *render.Render) http.HandlerFunc {
-	return func(w http.ResponseWriter, req *http.Request) {
-		entries := govppmux.GetStats()
-		if entries == nil {
-			p.logError(formatter.JSON(w, http.StatusOK, "VPP api trace is disabled"))
-			return
-		}
-
-		p.logError(formatter.JSON(w, http.StatusOK, entries))
 	}
 }
 

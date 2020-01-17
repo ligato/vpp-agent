@@ -24,14 +24,14 @@ import (
 	idxmap_mem "github.com/ligato/cn-infra/idxmap/mem"
 	"github.com/ligato/cn-infra/logging/logrus"
 
-	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	nat "github.com/ligato/vpp-agent/api/models/vpp/nat"
-	bin_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/nat"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/vpe"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
-	"github.com/ligato/vpp-agent/plugins/vpp/natplugin/vppcalls"
-	"github.com/ligato/vpp-agent/plugins/vpp/natplugin/vppcalls/vpp1904"
-	"github.com/ligato/vpp-agent/plugins/vpp/vppcallmock"
+	bin_api "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1904/nat"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1904/vpe"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/natplugin/vppcalls"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/natplugin/vppcalls/vpp1904"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/vppmock"
+	interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
+	nat "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/nat"
 )
 
 func TestNat44GlobalConfigDump(t *testing.T) {
@@ -41,6 +41,20 @@ func TestNat44GlobalConfigDump(t *testing.T) {
 	// forwarding
 	ctx.MockVpp.MockReply(&bin_api.Nat44ForwardingIsEnabledReply{
 		Enabled: 1,
+	})
+
+	// virtual reassembly
+	ctx.MockVpp.MockReply(&bin_api.NatGetReassReply{
+		// IPv4
+		IP4Timeout:  10,
+		IP4MaxReass: 5,
+		IP4MaxFrag:  7,
+		IP4DropFrag: 1,
+		// IPv6
+		IP6Timeout:  20,
+		IP6MaxReass: 8,
+		IP6MaxFrag:  13,
+		IP6DropFrag: 0,
 	})
 
 	// non-output interfaces
@@ -76,25 +90,11 @@ func TestNat44GlobalConfigDump(t *testing.T) {
 		})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 
-	// virtual reassembly
-	ctx.MockVpp.MockReply(&bin_api.NatGetReassReply{
-		// IPv4
-		IP4Timeout:  10,
-		IP4MaxReass: 5,
-		IP4MaxFrag:  7,
-		IP4DropFrag: 1,
-		// IPv6
-		IP6Timeout:  20,
-		IP6MaxReass: 8,
-		IP6MaxFrag:  13,
-		IP6DropFrag: 0,
-	})
-
 	swIfIndexes.Put("if0", &ifaceidx.IfaceMetadata{SwIfIndex: 1})
 	swIfIndexes.Put("if1", &ifaceidx.IfaceMetadata{SwIfIndex: 2})
 	swIfIndexes.Put("if2", &ifaceidx.IfaceMetadata{SwIfIndex: 3})
 
-	globalCfg, err := natHandler.Nat44GlobalConfigDump()
+	globalCfg, err := natHandler.Nat44GlobalConfigDump(true)
 	Expect(err).To(Succeed())
 
 	Expect(globalCfg.Forwarding).To(BeTrue())
@@ -370,8 +370,8 @@ func TestDNATDump(t *testing.T) {
 	Expect(dnat.IdMappings[1].Interface).To(BeEquivalentTo("if1"))
 }
 
-func natTestSetup(t *testing.T) (*vppcallmock.TestCtx, vppcalls.NatVppAPI, ifaceidx.IfaceMetadataIndexRW, idxmap.NamedMappingRW) {
-	ctx := vppcallmock.SetupTestCtx(t)
+func natTestSetup(t *testing.T) (*vppmock.TestCtx, vppcalls.NatVppAPI, ifaceidx.IfaceMetadataIndexRW, idxmap.NamedMappingRW) {
+	ctx := vppmock.SetupTestCtx(t)
 	log := logrus.NewLogger("test-log")
 	swIfIndexes := ifaceidx.NewIfaceIndex(logrus.DefaultLogger(), "test-sw_if_indexes")
 	dhcpIndexes := idxmap_mem.NewNamedMapping(logrus.DefaultLogger(), "test-dhcp_indexes", nil)

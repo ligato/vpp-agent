@@ -15,18 +15,19 @@
 package linuxclient
 
 import (
-	linux_interfaces "github.com/ligato/vpp-agent/api/models/linux/interfaces"
-	linux_l3 "github.com/ligato/vpp-agent/api/models/linux/l3"
-	vpp_abf "github.com/ligato/vpp-agent/api/models/vpp/abf"
-	vpp_acl "github.com/ligato/vpp-agent/api/models/vpp/acl"
-	vpp_interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	ipsec "github.com/ligato/vpp-agent/api/models/vpp/ipsec"
-	vpp_l2 "github.com/ligato/vpp-agent/api/models/vpp/l2"
-	vpp_l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
-	nat "github.com/ligato/vpp-agent/api/models/vpp/nat"
-	punt "github.com/ligato/vpp-agent/api/models/vpp/punt"
-	vpp_stn "github.com/ligato/vpp-agent/api/models/vpp/stn"
-	vpp_clientv2 "github.com/ligato/vpp-agent/clientv2/vpp"
+	vpp_clientv2 "go.ligato.io/vpp-agent/v3/clientv2/vpp"
+	linux_interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/linux/interfaces"
+	linux_iptables "go.ligato.io/vpp-agent/v3/proto/ligato/linux/iptables"
+	linux_l3 "go.ligato.io/vpp-agent/v3/proto/ligato/linux/l3"
+	vpp_abf "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/abf"
+	vpp_acl "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/acl"
+	vpp_interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
+	ipsec "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/ipsec"
+	vpp_l2 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l2"
+	vpp_l3 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3"
+	nat "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/nat"
+	punt "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/punt"
+	vpp_stn "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/stn"
 )
 
 // DataResyncDSL defines the Domain Specific Language (DSL) for data RESYNC
@@ -42,6 +43,8 @@ type DataResyncDSL interface {
 	LinuxArpEntry(arp *linux_l3.ARPEntry) DataResyncDSL
 	// LinuxInterface adds Linux route to the RESYNC request.
 	LinuxRoute(route *linux_l3.Route) DataResyncDSL
+	// IptablesRuleChain adds iptables rule chain to the RESYNC request.
+	IptablesRuleChain(val *linux_iptables.RuleChain) DataResyncDSL
 
 	// VppInterface adds VPP interface to the RESYNC request.
 	VppInterface(intf *vpp_interfaces.Interface) DataResyncDSL
@@ -86,6 +89,10 @@ type DataResyncDSL interface {
 	NAT44Global(nat *nat.Nat44Global) DataResyncDSL
 	// DNAT44 adds DNAT44 configuration to the RESYNC request
 	DNAT44(dnat *nat.DNat44) DataResyncDSL
+	// NAT44Interface adds NAT44 interface configuration to the RESYNC request.
+	NAT44Interface(natIf *nat.Nat44Interface) DataResyncDSL
+	// NAT44AddressPool adds NAT44 address pool configuration to the RESYNC request.
+	NAT44AddressPool(pool *nat.Nat44AddressPool) DataResyncDSL
 	// IPSecSA adds request to RESYNC a new Security Association
 	IPSecSA(sa *ipsec.SecurityAssociation) DataResyncDSL
 	// IPSecSPD adds request to RESYNC a new Security Policy Database

@@ -1,4 +1,4 @@
-//  Copyright (c) 2019 Cisco and/or its affiliates.
+//  Copyright (c) 2020 Cisco and/or its affiliates.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -21,10 +21,11 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 
-	vpp_ip "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001_324/ip"
-	vpp_punt "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001_324/punt"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
-	"github.com/ligato/vpp-agent/plugins/vpp/puntplugin/vppcalls"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001_324"
+	vpp_ip "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001_324/ip"
+	vpp_punt "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001_324/punt"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/puntplugin/vppcalls"
 )
 
 func init() {
@@ -32,12 +33,7 @@ func init() {
 	msgs = append(msgs, vpp_ip.AllMessages()...)
 	msgs = append(msgs, vpp_punt.AllMessages()...)
 
-	vppcalls.Versions["vpp2001_324"] = vppcalls.HandlerVersion{
-		Msgs: msgs,
-		New: func(channel govppapi.Channel, index ifaceidx.IfaceMetadataIndex, logger logging.Logger) vppcalls.PuntVppAPI {
-			return NewPuntVppHandler(channel, index, logger)
-		},
-	}
+	vppcalls.AddHandlerVersion(vpp2001_324.Version, msgs, NewPuntVppHandler)
 }
 
 // PuntVppHandler is accessor for punt-related vppcalls methods.
@@ -50,7 +46,7 @@ type PuntVppHandler struct {
 // NewPuntVppHandler creates new instance of punt vppcalls handler
 func NewPuntVppHandler(
 	callsChan govppapi.Channel, ifIndexes ifaceidx.IfaceMetadataIndex, log logging.Logger,
-) *PuntVppHandler {
+) vppcalls.PuntVppAPI {
 	return &PuntVppHandler{
 		callsChannel: callsChan,
 		ifIndexes:    ifIndexes,

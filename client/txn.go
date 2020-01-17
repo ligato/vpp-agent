@@ -17,8 +17,8 @@ package client
 import (
 	"context"
 
-	"github.com/gogo/protobuf/proto"
-	"github.com/ligato/vpp-agent/pkg/models"
+	"github.com/golang/protobuf/proto"
+	"go.ligato.io/vpp-agent/v3/pkg/models"
 )
 
 // Txn is the

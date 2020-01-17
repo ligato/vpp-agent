@@ -17,12 +17,14 @@ package descriptor
 import (
 	"strings"
 
+	"go.ligato.io/vpp-agent/v3/plugins/linux/ifplugin/linuxcalls"
+
 	"github.com/pkg/errors"
 
-	interfaces "github.com/ligato/vpp-agent/api/models/linux/interfaces"
-	"github.com/ligato/vpp-agent/plugins/linux/ifplugin/ifaceidx"
-	"github.com/ligato/vpp-agent/plugins/linux/ifplugin/linuxcalls"
-	nslinuxcalls "github.com/ligato/vpp-agent/plugins/linux/nsplugin/linuxcalls"
+	"go.ligato.io/vpp-agent/v3/plugins/linux/ifplugin/ifaceidx"
+	interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/linux/interfaces"
+
+	nslinuxcalls "go.ligato.io/vpp-agent/v3/plugins/linux/nsplugin/linuxcalls"
 )
 
 // createTAPToVPP moves Linux-side of the VPP-TAP interface to the destination namespace

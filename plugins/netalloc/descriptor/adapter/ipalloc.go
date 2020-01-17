@@ -3,9 +3,9 @@
 package adapter
 
 import (
-	"github.com/gogo/protobuf/proto"
-	. "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-	"github.com/ligato/vpp-agent/api/models/netalloc"
+	"github.com/golang/protobuf/proto"
+	. "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v3/proto/ligato/netalloc"
 )
 
 ////////// type-safe key-value pair with metadata //////////

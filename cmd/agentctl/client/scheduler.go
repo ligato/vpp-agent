@@ -7,11 +7,12 @@ import (
 	"net/url"
 	"reflect"
 
-	"github.com/gogo/protobuf/jsonpb"
-	"github.com/gogo/protobuf/proto"
+	"github.com/golang/protobuf/jsonpb"
+	"github.com/golang/protobuf/proto"
 
-	"github.com/ligato/vpp-agent/api/types"
-	"github.com/ligato/vpp-agent/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v3/cmd/agentctl/api/types"
+	"go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v3/proto/ligato/kvscheduler"
 )
 
 func (c *Client) SchedulerDump(ctx context.Context, opts types.SchedulerDumpOptions) ([]api.KVWithMetadata, error) {
@@ -56,7 +57,7 @@ func (c *Client) SchedulerDump(ctx context.Context, opts types.SchedulerDumpOpti
 	return dump, nil
 }
 
-func (c *Client) SchedulerValues(ctx context.Context, opts types.SchedulerValuesOptions) ([]*api.BaseValueStatus, error) {
+func (c *Client) SchedulerValues(ctx context.Context, opts types.SchedulerValuesOptions) ([]*kvscheduler.BaseValueStatus, error) {
 	query := url.Values{}
 	query.Set("key-prefix", opts.KeyPrefix)
 
@@ -65,7 +66,7 @@ func (c *Client) SchedulerValues(ctx context.Context, opts types.SchedulerValues
 		return nil, err
 	}
 
-	var status []*api.BaseValueStatus
+	var status []*kvscheduler.BaseValueStatus
 	if err := json.NewDecoder(resp.body).Decode(&status); err != nil {
 		return nil, fmt.Errorf("decoding reply failed: %v", err)
 	}

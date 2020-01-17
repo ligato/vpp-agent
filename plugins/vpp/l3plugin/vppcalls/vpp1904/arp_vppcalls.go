@@ -17,9 +17,9 @@ package vpp1904
 import (
 	"net"
 
-	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/ip"
 	"github.com/pkg/errors"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1904/ip"
+	l3 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3"
 )
 
 // vppAddDelArp adds or removes ARP entry according to provided input

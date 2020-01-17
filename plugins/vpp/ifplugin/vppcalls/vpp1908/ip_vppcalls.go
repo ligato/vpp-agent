@@ -18,7 +18,7 @@ import (
 	"net"
 
 	"github.com/ligato/cn-infra/utils/addrs"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1908/interfaces"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1908/interfaces"
 )
 
 const (

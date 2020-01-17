@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package ligato.vpp.interfaces;
+
+option go_package = "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces;vpp_interfaces";
+
+message Span {
+    string interface_from = 1;
+    string interface_to = 2;
+
+    enum Direction {
+        UNKNOWN = 0;
+        RX = 1;
+        TX = 2;
+        BOTH = 3;
+    };
+    Direction direction = 3;
+    bool is_l2 = 4;
+}

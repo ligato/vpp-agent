@@ -17,8 +17,8 @@ package vpp1908_test
 import (
 	"testing"
 
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1908/interfaces"
 	. "github.com/onsi/gomega"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1908/interfaces"
 )
 
 func TestGetInterfaceVRF(t *testing.T) {

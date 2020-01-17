@@ -27,7 +27,7 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 
-	"github.com/ligato/vpp-agent/api/configurator"
+	"go.ligato.io/vpp-agent/v3/proto/ligato/configurator"
 )
 
 var (
@@ -70,7 +70,7 @@ func (p *ExamplePlugin) Init() (err error) {
 		return err
 	}
 
-	client := configurator.NewConfiguratorClient(p.conn)
+	client := configurator.NewConfiguratorServiceClient(p.conn)
 
 	// Start notification watcher.
 	go p.watchNotifications(client)
@@ -80,13 +80,13 @@ func (p *ExamplePlugin) Init() (err error) {
 }
 
 // Get is an implementation of client-side statistics streaming.
-func (p *ExamplePlugin) watchNotifications(client configurator.ConfiguratorClient) {
+func (p *ExamplePlugin) watchNotifications(client configurator.ConfiguratorServiceClient) {
 	var nextIdx uint32
 
 	logrus.DefaultLogger().Info("Watching..")
 	for {
 		// Prepare request with the initial index
-		request := &configurator.NotificationRequest{
+		request := &configurator.NotifyRequest{
 			Idx: nextIdx,
 		}
 		// Get stream object

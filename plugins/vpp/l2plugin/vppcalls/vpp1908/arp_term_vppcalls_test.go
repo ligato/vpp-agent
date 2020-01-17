@@ -17,8 +17,8 @@ package vpp1908_test
 import (
 	"testing"
 
-	l2ba "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1908/l2"
 	. "github.com/onsi/gomega"
+	l2ba "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1908/l2"
 )
 
 func TestVppAddArpTerminationTableEntry(t *testing.T) {

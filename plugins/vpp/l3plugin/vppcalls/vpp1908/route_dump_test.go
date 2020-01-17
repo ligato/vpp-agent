@@ -15,23 +15,24 @@
 package vpp1908
 
 import (
-	vpp_l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
 	"testing"
 
-	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vrfidx"
+	vpp_l3 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3"
+
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin/vrfidx"
 
 	"github.com/ligato/cn-infra/logging/logrus"
-	netallock_mock "github.com/ligato/vpp-agent/plugins/netalloc/mock"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1908/ip"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1908/vpe"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
-	"github.com/ligato/vpp-agent/plugins/vpp/vppcallmock"
 	. "github.com/onsi/gomega"
+	netallock_mock "go.ligato.io/vpp-agent/v3/plugins/netalloc/mock"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1908/ip"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1908/vpe"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/vppmock"
 )
 
 // Test dumping routes
 func TestDumpStaticRoutes(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx := vppmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()
 	ifIndexes := ifaceidx.NewIfaceIndex(logrus.NewLogger("test-if"), "test-if")
 	vrfIndexes := vrfidx.NewVRFIndex(logrus.NewLogger("test-vrf"), "test-vrf")

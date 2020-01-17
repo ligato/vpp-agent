@@ -21,15 +21,15 @@ import (
 
 	"github.com/ligato/cn-infra/agent"
 
-	"github.com/ligato/vpp-agent/clientv2/linux/localclient"
-	"github.com/ligato/vpp-agent/plugins/orchestrator"
+	"go.ligato.io/vpp-agent/v3/clientv2/linux/localclient"
+	"go.ligato.io/vpp-agent/v3/plugins/orchestrator"
 
-	linux_interfaces "github.com/ligato/vpp-agent/api/models/linux/interfaces"
-	linux_ns "github.com/ligato/vpp-agent/api/models/linux/namespace"
-	vpp_interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	linux_ifplugin "github.com/ligato/vpp-agent/plugins/linux/ifplugin"
-	linux_nsplugin "github.com/ligato/vpp-agent/plugins/linux/nsplugin"
-	vpp_ifplugin "github.com/ligato/vpp-agent/plugins/vpp/ifplugin"
+	linux_ifplugin "go.ligato.io/vpp-agent/v3/plugins/linux/ifplugin"
+	linux_nsplugin "go.ligato.io/vpp-agent/v3/plugins/linux/nsplugin"
+	vpp_ifplugin "go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin"
+	linux_interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/linux/interfaces"
+	linux_ns "go.ligato.io/vpp-agent/v3/proto/ligato/linux/namespace"
+	vpp_interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
 )
 
 /*

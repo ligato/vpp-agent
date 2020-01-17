@@ -18,39 +18,32 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/stn"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
-	"github.com/ligato/vpp-agent/plugins/vpp/stnplugin/vppcalls"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1904"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1904/stn"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/stnplugin/vppcalls"
 )
 
 func init() {
-	var msgs []govppapi.Message
-	msgs = append(msgs, stn.AllMessages()...)
-
-	vppcalls.Versions["vpp1904"] = vppcalls.HandlerVersion{
-		Msgs: msgs,
-		New: func(
-			ch govppapi.Channel, ifIdx ifaceidx.IfaceMetadataIndex, log logging.Logger,
-		) vppcalls.StnVppAPI {
-			return NewStnVppHandler(ch, ifIdx, log)
-		},
-	}
+	msgs := stn.AllMessages()
+	vppcalls.AddStnHandlerVersion(vpp1904.Version, msgs, NewStnVppHandler)
 }
 
 // StnVppHandler is accessor for STN-related vppcalls methods
 type StnVppHandler struct {
 	callsChannel govppapi.Channel
-	ifIndexes    ifaceidx.IfaceMetadataIndex
-	log          logging.Logger
+	// TODO: use RPC service
+	//stn          stn.RPCService
+	ifIndexes ifaceidx.IfaceMetadataIndex
+	log       logging.Logger
 }
 
 // NewStnVppHandler creates new instance of STN vppcalls handler
-func NewStnVppHandler(
-	callsChan govppapi.Channel, ifIndexes ifaceidx.IfaceMetadataIndex, log logging.Logger,
-) *StnVppHandler {
+func NewStnVppHandler(ch govppapi.Channel, ifIdx ifaceidx.IfaceMetadataIndex, log logging.Logger) vppcalls.StnVppAPI {
 	return &StnVppHandler{
-		callsChannel: callsChan,
-		ifIndexes:    ifIndexes,
-		log:          log,
+		callsChannel: ch,
+		//stn:          stn.NewServiceClient(ch),
+		ifIndexes: ifIdx,
+		log:       log,
 	}
 }

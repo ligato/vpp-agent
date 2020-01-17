@@ -12,17 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate descriptor-adapter --descriptor-name RuleChain --value-type *linux_iptables.RuleChain --import "github.com/ligato/vpp-agent/api/models/linux/iptables" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name RuleChain --value-type *linux_iptables.RuleChain --import "go.ligato.io/vpp-agent/v3/proto/ligato/linux/iptables" --output-dir "descriptor"
 
 package iptablesplugin
 
 import (
 	"github.com/ligato/cn-infra/infra"
-	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
+	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 
-	"github.com/ligato/vpp-agent/plugins/linux/iptablesplugin/descriptor"
-	"github.com/ligato/vpp-agent/plugins/linux/iptablesplugin/linuxcalls"
-	"github.com/ligato/vpp-agent/plugins/linux/nsplugin"
+	"go.ligato.io/vpp-agent/v3/plugins/linux/iptablesplugin/descriptor"
+	"go.ligato.io/vpp-agent/v3/plugins/linux/iptablesplugin/linuxcalls"
+	"go.ligato.io/vpp-agent/v3/plugins/linux/nsplugin"
 )
 
 const (

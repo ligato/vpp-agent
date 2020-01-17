@@ -3,13 +3,13 @@ package netalloc
 import (
 	"net"
 
-	"github.com/ligato/vpp-agent/api/models/netalloc"
-	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
+	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v3/proto/ligato/netalloc"
 )
-
 
 // GwValidityCheck is used in ValidateIPAddress to tell if a GW reference is (un)expected/required.
 type GwValidityCheck int
+
 const (
 	// GWRefAllowed is used when it doesn't matter if reference points to interface
 	// address or GW address.

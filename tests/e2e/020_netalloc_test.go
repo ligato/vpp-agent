@@ -20,13 +20,13 @@ import (
 
 	. "github.com/onsi/gomega"
 
-	linux_interfaces "github.com/ligato/vpp-agent/api/models/linux/interfaces"
-	linux_l3 "github.com/ligato/vpp-agent/api/models/linux/l3"
-	linux_namespace "github.com/ligato/vpp-agent/api/models/linux/namespace"
-	"github.com/ligato/vpp-agent/api/models/netalloc"
-	vpp_interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	vpp_l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
-	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v3/proto/ligato/kvscheduler"
+	linux_interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/linux/interfaces"
+	linux_l3 "go.ligato.io/vpp-agent/v3/proto/ligato/linux/l3"
+	linux_namespace "go.ligato.io/vpp-agent/v3/proto/ligato/linux/namespace"
+	"go.ligato.io/vpp-agent/v3/proto/ligato/netalloc"
+	vpp_interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
+	vpp_l3 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3"
 )
 
 // test IP address allocation using the netalloc plugin for VPP+Linux interfaces,
@@ -147,23 +147,23 @@ func TestIPWithNeighGW(t *testing.T) {
 	checkItemsAreConfigured := func(msRestart, withLoopAddr bool) {
 		// configured immediately:
 		if withLoopAddr {
-			Expect(ctx.getValueState(vppLoopAddr)).To(Equal(kvs.ValueState_CONFIGURED))
+			Expect(ctx.getValueState(vppLoopAddr)).To(Equal(kvscheduler.ValueState_CONFIGURED))
 		}
-		Expect(ctx.getValueState(vppTapAddr)).To(Equal(kvs.ValueState_CONFIGURED))
-		Expect(ctx.getValueState(linuxTapAddr)).To(Equal(kvs.ValueState_CONFIGURED))
-		Expect(ctx.getValueState(vppLoop)).To(Equal(kvs.ValueState_CONFIGURED))
+		Expect(ctx.getValueState(vppTapAddr)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+		Expect(ctx.getValueState(linuxTapAddr)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+		Expect(ctx.getValueState(vppLoop)).To(Equal(kvscheduler.ValueState_CONFIGURED))
 		// the rest depends on the microservice
 		if msRestart {
-			Eventually(ctx.getValueStateClb(vppTap)).Should(Equal(kvs.ValueState_CONFIGURED))
+			Eventually(ctx.getValueStateClb(vppTap)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
 		} else {
-			Expect(ctx.getValueState(vppTap)).To(Equal(kvs.ValueState_CONFIGURED))
+			Expect(ctx.getValueState(vppTap)).To(Equal(kvscheduler.ValueState_CONFIGURED))
 		}
-		Expect(ctx.getValueState(linuxTap)).To(Equal(kvs.ValueState_CONFIGURED))
-		Expect(ctx.getValueState(linuxArp)).To(Equal(kvs.ValueState_CONFIGURED))
+		Expect(ctx.getValueState(linuxTap)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+		Expect(ctx.getValueState(linuxArp)).To(Equal(kvscheduler.ValueState_CONFIGURED))
 		if withLoopAddr {
-			Expect(ctx.getValueState(linuxRoute)).To(Equal(kvs.ValueState_CONFIGURED))
+			Expect(ctx.getValueState(linuxRoute)).To(Equal(kvscheduler.ValueState_CONFIGURED))
 		} else {
-			Expect(ctx.getValueState(linuxRoute)).To(Equal(kvs.ValueState_PENDING))
+			Expect(ctx.getValueState(linuxRoute)).To(Equal(kvscheduler.ValueState_PENDING))
 		}
 	}
 	checkItemsAreConfigured(true, true)
@@ -347,23 +347,23 @@ func TestIPWithNonLocalGW(t *testing.T) {
 
 	checkItemsAreConfigured := func(msRestart, withLinkRoute bool) {
 		// configured immediately:
-		Expect(ctx.getValueState(vppLoopAddr)).To(Equal(kvs.ValueState_CONFIGURED))
-		Expect(ctx.getValueState(vppTapAddr)).To(Equal(kvs.ValueState_CONFIGURED))
-		Expect(ctx.getValueState(linuxTapAddr)).To(Equal(kvs.ValueState_CONFIGURED))
-		Expect(ctx.getValueState(vppLoop)).To(Equal(kvs.ValueState_CONFIGURED))
+		Expect(ctx.getValueState(vppLoopAddr)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+		Expect(ctx.getValueState(vppTapAddr)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+		Expect(ctx.getValueState(linuxTapAddr)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+		Expect(ctx.getValueState(vppLoop)).To(Equal(kvscheduler.ValueState_CONFIGURED))
 		// the rest depends on the microservice
 		if msRestart {
-			Eventually(ctx.getValueStateClb(vppTap)).Should(Equal(kvs.ValueState_CONFIGURED))
+			Eventually(ctx.getValueStateClb(vppTap)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
 		} else {
-			Expect(ctx.getValueState(vppTap)).To(Equal(kvs.ValueState_CONFIGURED))
+			Expect(ctx.getValueState(vppTap)).To(Equal(kvscheduler.ValueState_CONFIGURED))
 		}
-		Expect(ctx.getValueState(linuxTap)).To(Equal(kvs.ValueState_CONFIGURED))
-		Expect(ctx.getValueState(linuxArp)).To(Equal(kvs.ValueState_CONFIGURED))
+		Expect(ctx.getValueState(linuxTap)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+		Expect(ctx.getValueState(linuxArp)).To(Equal(kvscheduler.ValueState_CONFIGURED))
 		if withLinkRoute {
-			Expect(ctx.getValueState(linuxRoute)).To(Equal(kvs.ValueState_CONFIGURED))
-			Expect(ctx.getValueState(linuxLinkRoute)).To(Equal(kvs.ValueState_CONFIGURED))
+			Expect(ctx.getValueState(linuxRoute)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+			Expect(ctx.getValueState(linuxLinkRoute)).To(Equal(kvscheduler.ValueState_CONFIGURED))
 		} else {
-			Expect(ctx.getValueState(linuxRoute)).To(Equal(kvs.ValueState_PENDING))
+			Expect(ctx.getValueState(linuxRoute)).To(Equal(kvscheduler.ValueState_PENDING))
 		}
 	}
 	checkItemsAreConfigured(true, true)
@@ -544,24 +544,24 @@ func TestVPPRoutesWithNetalloc(t *testing.T) {
 	checkItemsAreConfigured := func(msRestart, withLoopNet2Addr bool) {
 		// configured immediately:
 		if withLoopNet2Addr {
-			Expect(ctx.getValueState(linuxLoopNet2Addr)).To(Equal(kvs.ValueState_CONFIGURED))
+			Expect(ctx.getValueState(linuxLoopNet2Addr)).To(Equal(kvscheduler.ValueState_CONFIGURED))
 		}
-		Expect(ctx.getValueState(vppTapAddr)).To(Equal(kvs.ValueState_CONFIGURED))
-		Expect(ctx.getValueState(linuxTapAddr)).To(Equal(kvs.ValueState_CONFIGURED))
-		Expect(ctx.getValueState(linuxLoopNet1Addr)).To(Equal(kvs.ValueState_CONFIGURED))
+		Expect(ctx.getValueState(vppTapAddr)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+		Expect(ctx.getValueState(linuxTapAddr)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+		Expect(ctx.getValueState(linuxLoopNet1Addr)).To(Equal(kvscheduler.ValueState_CONFIGURED))
 		// the rest depends on the microservice
 		if msRestart {
-			Eventually(ctx.getValueStateClb(vppTap)).Should(Equal(kvs.ValueState_CONFIGURED))
+			Eventually(ctx.getValueStateClb(vppTap)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
 		} else {
-			Expect(ctx.getValueState(vppTap)).To(Equal(kvs.ValueState_CONFIGURED))
+			Expect(ctx.getValueState(vppTap)).To(Equal(kvscheduler.ValueState_CONFIGURED))
 		}
-		Expect(ctx.getValueState(linuxTap)).To(Equal(kvs.ValueState_CONFIGURED))
-		Expect(ctx.getValueState(linuxLoop)).To(Equal(kvs.ValueState_CONFIGURED))
-		Expect(ctx.getValueState(vppRouteLoopNet1)).To(Equal(kvs.ValueState_CONFIGURED))
+		Expect(ctx.getValueState(linuxTap)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+		Expect(ctx.getValueState(linuxLoop)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+		Expect(ctx.getValueState(vppRouteLoopNet1)).To(Equal(kvscheduler.ValueState_CONFIGURED))
 		if withLoopNet2Addr {
-			Expect(ctx.getValueState(vppRouteLoopNet2)).To(Equal(kvs.ValueState_CONFIGURED))
+			Expect(ctx.getValueState(vppRouteLoopNet2)).To(Equal(kvscheduler.ValueState_CONFIGURED))
 		} else {
-			Expect(ctx.getValueState(vppRouteLoopNet2)).To(Equal(kvs.ValueState_PENDING))
+			Expect(ctx.getValueState(vppRouteLoopNet2)).To(Equal(kvscheduler.ValueState_PENDING))
 		}
 	}
 	checkItemsAreConfigured(true, true)

@@ -2,16 +2,15 @@ package client
 
 import (
 	"context"
-	"fmt"
 	"sort"
-	"strings"
 
-	"github.com/gogo/protobuf/proto"
+	"github.com/golang/protobuf/proto"
 	"github.com/sirupsen/logrus"
 
-	"github.com/ligato/vpp-agent/api/genericmanager"
-	"github.com/ligato/vpp-agent/api/types"
-	"github.com/ligato/vpp-agent/pkg/debug"
+	"go.ligato.io/vpp-agent/v3/cmd/agentctl/api/types"
+	"go.ligato.io/vpp-agent/v3/pkg/debug"
+	"go.ligato.io/vpp-agent/v3/pkg/models"
+	"go.ligato.io/vpp-agent/v3/proto/ligato/generic"
 )
 
 func (c *Client) ModelList(ctx context.Context, opts types.ModelListOptions) ([]types.Model, error) {
@@ -19,7 +18,7 @@ func (c *Client) ModelList(ctx context.Context, opts types.ModelListOptions) ([]
 	if err != nil {
 		return nil, err
 	}
-	knownModels, err := cfgClient.KnownModels()
+	knownModels, err := cfgClient.KnownModels(opts.Class)
 	if err != nil {
 		return nil, err
 	}
@@ -27,7 +26,7 @@ func (c *Client) ModelList(ctx context.Context, opts types.ModelListOptions) ([]
 	logrus.Debugf("retrieved %d known models", len(knownModels))
 	if debug.IsEnabledFor("models") {
 		for _, m := range knownModels {
-			logrus.Debug(proto.CompactTextString(&m))
+			logrus.Debug(proto.CompactTextString(m))
 		}
 	}
 
@@ -37,37 +36,37 @@ func (c *Client) ModelList(ctx context.Context, opts types.ModelListOptions) ([]
 	return allModels, nil
 }
 
-func convertModels(knownModels []genericmanager.ModelInfo) []types.Model {
+func convertModels(knownModels []*generic.ModelDetail) []types.Model {
 	allModels := make([]types.Model, len(knownModels))
 	for i, m := range knownModels {
-		module := strings.Split(m.Model.Module, ".")
-		typ := m.Model.Type
-		version := m.Model.Version
+		spec := models.ToSpec(m.Spec)
 
-		name := fmt.Sprintf("%s.%s", m.Model.Module, typ)
-		alias := fmt.Sprintf("%s.%s", module[0], typ)
-		if alias == name {
-			alias = ""
+		protoName := m.GetProtoName()
+		keyPrefix := spec.KeyPrefix()
+
+		var (
+			nameTemplate string
+			goType       string
+		)
+		for _, o := range m.Options {
+			if o.GetKey() == "nameTemplate" && len(o.Values) > 0 {
+				nameTemplate = o.Values[0]
+			}
+			if o.GetKey() == "goType" && len(o.Values) > 0 {
+				goType = o.Values[0]
+			}
 		}
 
-		protoName := m.Info["protoName"]
-		keyPrefix := m.Info["keyPrefix"]
-		nameTemplate := m.Info["nameTemplate"]
-
-		//p := reflect.New(proto.MessageType(protoName)).Elem().Interface().(descriptor.Message)
-		//fd, _ := descriptor.ForMessage(p)
-
 		model := types.Model{
-			Name:         name,
-			Module:       m.Model.Module,
-			Version:      version,
-			Type:         typ,
-			Alias:        alias,
+			Name:         spec.ModelName(),
+			Module:       spec.Module,
+			Version:      spec.Version,
+			Type:         spec.Type,
+			Class:        spec.Class,
 			KeyPrefix:    keyPrefix,
 			ProtoName:    protoName,
 			NameTemplate: nameTemplate,
-			//Proto:    proto.MarshalTextString(fd),
-			//ProtoFile: fd.GetName(),
+			GoType:       goType,
 		}
 		allModels[i] = model
 	}

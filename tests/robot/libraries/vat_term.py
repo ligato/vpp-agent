@@ -112,33 +112,6 @@ def Parse_BD_Details(details):
         state.append("arp_term=0")
     return state
 
-# input - etcd dump
-# output - etcd dump converted to json + key, node, name, type atributes
-def Convert_ETCD_Dump_To_JSON(dump):
-    etcd_json = '['
-    key = ''
-    data = ''
-    firstline = True
-    for line in dump.splitlines():
-        if line.strip() != '':
-            if line[0] == '/':
-                if not firstline:
-                    etcd_json += '{"key":"'+key+'","node":"'+node+'","name":"'+name+'","type":"'+type+'","data":'+data+'},'
-                key = line
-                node = key.split('/')[2]
-                name = key.split('/')[-1]
-                type = key.split('/')[4]
-                data = ''
-                firstline = False
-            else:
-                if line == "null":
-                    line = '{"error":"null"}'
-                data += line 
-    if not firstline:
-        etcd_json += '{"key":"'+key+'","node":"'+node+'","name":"'+name+'","type":"'+type+'","data":'+data+'}'
-    etcd_json += ']'
-    return etcd_json
-
 # input - node name, bd name, etcd dump converted to json, bridge domain dump
 # output - list of interfaces (etcd names) in bd
 def Parse_BD_Interfaces(node, bd, etcd_json, bd_dump):

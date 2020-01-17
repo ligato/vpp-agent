@@ -17,21 +17,22 @@ package dbadapter
 import (
 	"github.com/ligato/cn-infra/db/keyval"
 
-	linux_interfaces "github.com/ligato/vpp-agent/api/models/linux/interfaces"
-	linux_l3 "github.com/ligato/vpp-agent/api/models/linux/l3"
-	abf "github.com/ligato/vpp-agent/api/models/vpp/abf"
-	acl "github.com/ligato/vpp-agent/api/models/vpp/acl"
-	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	ipsec "github.com/ligato/vpp-agent/api/models/vpp/ipsec"
-	l2 "github.com/ligato/vpp-agent/api/models/vpp/l2"
-	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
-	nat "github.com/ligato/vpp-agent/api/models/vpp/nat"
-	punt "github.com/ligato/vpp-agent/api/models/vpp/punt"
-	stn "github.com/ligato/vpp-agent/api/models/vpp/stn"
-	linuxclient "github.com/ligato/vpp-agent/clientv2/linux"
-	vppclient "github.com/ligato/vpp-agent/clientv2/vpp"
-	"github.com/ligato/vpp-agent/clientv2/vpp/dbadapter"
-	"github.com/ligato/vpp-agent/pkg/models"
+	linuxclient "go.ligato.io/vpp-agent/v3/clientv2/linux"
+	vppclient "go.ligato.io/vpp-agent/v3/clientv2/vpp"
+	"go.ligato.io/vpp-agent/v3/clientv2/vpp/dbadapter"
+	"go.ligato.io/vpp-agent/v3/pkg/models"
+	linux_interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/linux/interfaces"
+	linux_iptables "go.ligato.io/vpp-agent/v3/proto/ligato/linux/iptables"
+	linux_l3 "go.ligato.io/vpp-agent/v3/proto/ligato/linux/l3"
+	abf "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/abf"
+	acl "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/acl"
+	interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
+	ipsec "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/ipsec"
+	l2 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l2"
+	l3 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3"
+	nat "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/nat"
+	punt "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/punt"
+	stn "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/stn"
 )
 
 // NewDataChangeDSL returns a new instance of DataChangeDSL which implements
@@ -94,6 +95,12 @@ func (dsl *PutDSL) LinuxArpEntry(val *linux_l3.ARPEntry) linuxclient.PutDSL {
 // LinuxRoute adds a request to create or update Linux route.
 func (dsl *PutDSL) LinuxRoute(val *linux_l3.Route) linuxclient.PutDSL {
 	dsl.parent.txn.Put(linux_l3.RouteKey(val.DstNetwork, val.OutgoingInterface), val)
+	return dsl
+}
+
+// IptablesRuleChain adds request to create or update iptables rule chain.
+func (dsl *PutDSL) IptablesRuleChain(val *linux_iptables.RuleChain) linuxclient.PutDSL {
+	dsl.parent.txn.Put(linux_iptables.RuleChainKey(val.Name), val)
 	return dsl
 }
 
@@ -220,6 +227,18 @@ func (dsl *PutDSL) DNAT44(nat44 *nat.DNat44) linuxclient.PutDSL {
 	return dsl
 }
 
+// NAT44Interface adds a request to create or update NAT44 interface configuration.
+func (dsl *PutDSL) NAT44Interface(natIf *nat.Nat44Interface) linuxclient.PutDSL {
+	dsl.parent.txn.Put(models.Key(natIf), natIf)
+	return dsl
+}
+
+// NAT44AddressPool adds a request to create or update NAT44 address pool.
+func (dsl *PutDSL) NAT44AddressPool(pool *nat.Nat44AddressPool) linuxclient.PutDSL {
+	dsl.parent.txn.Put(models.Key(pool), pool)
+	return dsl
+}
+
 // IPSecSA adds request to create a new Security Association
 func (dsl *PutDSL) IPSecSA(sa *ipsec.SecurityAssociation) linuxclient.PutDSL {
 	dsl.vppPut.IPSecSA(sa)
@@ -276,6 +295,12 @@ func (dsl *DeleteDSL) LinuxArpEntry(ifaceName string, ipAddr string) linuxclient
 // LinuxRoute adds a request to delete Linux route.
 func (dsl *DeleteDSL) LinuxRoute(dstAddr, outIfaceName string) linuxclient.DeleteDSL {
 	dsl.parent.txn.Delete(linux_l3.RouteKey(dstAddr, outIfaceName))
+	return dsl
+}
+
+// IptablesRuleChain adds request to delete iptables rule chain.
+func (dsl *DeleteDSL) IptablesRuleChain(name string) linuxclient.DeleteDSL {
+	dsl.parent.txn.Delete(linux_iptables.RuleChainKey(name))
 	return dsl
 }
 
@@ -400,6 +425,18 @@ func (dsl *DeleteDSL) NAT44Global() linuxclient.DeleteDSL {
 // DNAT44 adds a request to delete an existing DNAT44 configuration
 func (dsl *DeleteDSL) DNAT44(label string) linuxclient.DeleteDSL {
 	dsl.vppDelete.DNAT44(label)
+	return dsl
+}
+
+// NAT44Interface adds a request to delete NAT44 interface configuration.
+func (dsl *DeleteDSL) NAT44Interface(natIf *nat.Nat44Interface) linuxclient.DeleteDSL {
+	dsl.parent.txn.Delete(models.Key(natIf))
+	return dsl
+}
+
+// NAT44AddressPool adds a request to create or update NAT44 address pool.
+func (dsl *DeleteDSL) NAT44AddressPool(pool *nat.Nat44AddressPool) linuxclient.DeleteDSL {
+	dsl.parent.txn.Delete(models.Key(pool))
 	return dsl
 }
 

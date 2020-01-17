@@ -1,0 +1,32 @@
+# buf.yaml
+#
+# Config file for Buf (Protobuf tool).
+#
+#   Build Protobuf schema (proto):
+#     buf image build -o image.bin
+#
+#   List lint checkers:
+#     buf check ls-lint-checkers
+#
+#   List breaking checkers:
+#     buf check ls-breaking-checkers
+#
+#  Refer to https://buf.build/docs for more info.
+
+build:
+  roots:
+    - proto
+lint:
+  use:
+    - BASIC
+    - FILE_LOWER_SNAKE_CASE
+    - SERVICE_SUFFIX
+  except:
+    - PACKAGE_VERSION_SUFFIX
+breaking:
+  use:
+    - FILE
+    - PACKAGE
+    - WIRE_JSON
+  except:
+    - FILE_SAME_GO_PACKAGE

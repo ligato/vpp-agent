@@ -21,12 +21,12 @@ import (
 	"github.com/ligato/cn-infra/logging/logrus"
 	. "github.com/onsi/gomega"
 
-	abf "github.com/ligato/vpp-agent/api/models/vpp/abf"
-	"github.com/ligato/vpp-agent/plugins/vpp/abfplugin/vppcalls"
-	"github.com/ligato/vpp-agent/plugins/vpp/aclplugin/aclidx"
-	vpp_abf "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001_324/abf"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
-	"github.com/ligato/vpp-agent/plugins/vpp/vppcallmock"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/abfplugin/vppcalls"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/aclplugin/aclidx"
+	vpp_abf "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001_324/abf"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/vppmock"
+	abf "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/abf"
 )
 
 func TestGetABFVersion(t *testing.T) {
@@ -266,8 +266,8 @@ func TestDetachABFInterfaceIPv6Error(t *testing.T) {
 	Expect(err).ToNot(BeNil())
 }
 
-func abfTestSetup(t *testing.T) (*vppcallmock.TestCtx, vppcalls.ABFVppAPI, ifaceidx.IfaceMetadataIndexRW) {
-	ctx := vppcallmock.SetupTestCtx(t)
+func abfTestSetup(t *testing.T) (*vppmock.TestCtx, vppcalls.ABFVppAPI, ifaceidx.IfaceMetadataIndexRW) {
+	ctx := vppmock.SetupTestCtx(t)
 	log := logrus.NewLogger("test-log")
 	aclIdx := aclidx.NewACLIndex(log, "acl-index")
 	ifIdx := ifaceidx.NewIfaceIndex(log, "if-index")

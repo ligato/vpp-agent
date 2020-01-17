@@ -21,13 +21,13 @@ import (
 	"strings"
 
 	"github.com/ligato/cn-infra/logging"
-	vpp_interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	"github.com/ligato/vpp-agent/api/models/vpp/l3"
-	srv6 "github.com/ligato/vpp-agent/api/models/vpp/srv6"
-	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-	"github.com/ligato/vpp-agent/plugins/vpp/srplugin/descriptor/adapter"
-	"github.com/ligato/vpp-agent/plugins/vpp/srplugin/vppcalls"
 	"github.com/pkg/errors"
+	scheduler "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/srplugin/descriptor/adapter"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/srplugin/vppcalls"
+	vpp_interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
+	vpp_l3 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3"
+	srv6 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/srv6"
 )
 
 const (

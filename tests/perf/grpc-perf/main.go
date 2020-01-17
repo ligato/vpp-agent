@@ -23,19 +23,19 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gogo/protobuf/jsonpb"
-	"github.com/gogo/protobuf/proto"
+	"github.com/golang/protobuf/jsonpb"
+	"github.com/golang/protobuf/proto"
 	"github.com/ligato/cn-infra/agent"
 	"github.com/ligato/cn-infra/infra"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/namsral/flag"
 	"google.golang.org/grpc"
 
-	"github.com/ligato/vpp-agent/api/configurator"
-	"github.com/ligato/vpp-agent/api/models/vpp"
-	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	ipsec "github.com/ligato/vpp-agent/api/models/vpp/ipsec"
-	vpp_l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
+	"go.ligato.io/vpp-agent/v3/proto/ligato/configurator"
+	"go.ligato.io/vpp-agent/v3/proto/ligato/vpp"
+	interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
+	ipsec "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/ipsec"
+	vpp_l3 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3"
 )
 
 var (
@@ -120,7 +120,7 @@ func (p *GRPCStressPlugin) setupInitial() {
 
 	reqTimeout = time.Second * time.Duration(*timeout)
 
-	client := configurator.NewConfiguratorClient(conn)
+	client := configurator.NewConfiguratorServiceClient(conn)
 
 	// create a conn/client to create the red/black interfaces
 	// that each tunnel will reference
@@ -130,7 +130,7 @@ func (p *GRPCStressPlugin) setupInitial() {
 // create the initial red and black memif's that kiknos uses ...
 // ipsec wil ref the red ONLY i guess we dont need the black yet
 // but maybe there will be a reason
-func (p *GRPCStressPlugin) runGRPCCreateRedBlackMemifs(client configurator.ConfiguratorClient) {
+func (p *GRPCStressPlugin) runGRPCCreateRedBlackMemifs(client configurator.ConfiguratorServiceClient) {
 	p.Log.Infof("Configuring memif interfaces..")
 
 	memIFRed := &interfaces.Interface{
@@ -209,7 +209,7 @@ func (p *GRPCStressPlugin) runAllClients() {
 			log.Fatal(err)
 		}
 		p.conns = append(p.conns, conn)
-		client := configurator.NewConfiguratorClient(p.conns[i])
+		client := configurator.NewConfiguratorServiceClient(p.conns[i])
 
 		go p.runGRPCStressCreate(i, client, *numTunnels)
 	}
@@ -229,7 +229,7 @@ func (p *GRPCStressPlugin) runAllClients() {
 }
 
 // runGRPCStressCreate creates 1 tunnel and 1 route ... emulating what strongswan does on a per remote warrior
-func (p *GRPCStressPlugin) runGRPCStressCreate(id int, client configurator.ConfiguratorClient, numTunnels int) {
+func (p *GRPCStressPlugin) runGRPCStressCreate(id int, client configurator.ConfiguratorServiceClient, numTunnels int) {
 	defer p.wg.Done()
 
 	p.Log.Debugf("Creating %d tunnels/routes ... for client %d, ", numTunnels, id)

@@ -17,8 +17,8 @@ package vpp2001_324
 import (
 	"testing"
 
-	vpp_acl "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001_324/acl"
 	. "github.com/onsi/gomega"
+	vpp_acl "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001_324/acl"
 )
 
 // Test assignment of IP acl rule to given interface

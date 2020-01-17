@@ -18,24 +18,18 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/idxmap"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/vpp-agent/plugins/vpp/natplugin/vppcalls"
 
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1908/nat"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1908"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1908/nat"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/natplugin/vppcalls"
 )
 
 func init() {
 	var msgs []govppapi.Message
 	msgs = append(msgs, nat.AllMessages()...)
 
-	vppcalls.Versions["vpp1908"] = vppcalls.HandlerVersion{
-		Msgs: msgs,
-		New: func(
-			ch govppapi.Channel, ifIdx ifaceidx.IfaceMetadataIndex, dhcpIdx idxmap.NamedMapping, log logging.Logger,
-		) vppcalls.NatVppAPI {
-			return NewNatVppHandler(ch, ifIdx, dhcpIdx, log)
-		},
-	}
+	vppcalls.AddNatHandlerVersion(vpp1908.Version, msgs, NewNatVppHandler)
 }
 
 // NatVppHandler is accessor for NAT-related vppcalls methods.
@@ -49,7 +43,7 @@ type NatVppHandler struct {
 // NewNatVppHandler creates new instance of NAT vppcalls handler.
 func NewNatVppHandler(callsChan govppapi.Channel,
 	ifIndexes ifaceidx.IfaceMetadataIndex, dhcpIndex idxmap.NamedMapping, log logging.Logger,
-) *NatVppHandler {
+) vppcalls.NatVppAPI {
 	return &NatVppHandler{
 		callsChannel: callsChan,
 		ifIndexes:    ifIndexes,

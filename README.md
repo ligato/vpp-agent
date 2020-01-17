@@ -51,7 +51,7 @@ that contain the VPP Agent and VPP: [ligato/vpp-agent][vpp-agent] (or for ARM64:
 
 0. Start ETCD on your host (e.g. in Docker as described [here][etcd-local]).
 
-   Note: for ARM64 see the information for [etcd][etcd].
+   Note: for ARM64 see the information for [etcd][etcd-arm64].
 
 1. Run VPP + VPP Agent in a Docker container:
 ```
@@ -115,13 +115,12 @@ If you are interested in contributing, please see the [contribution guidelines][
 [contribution]: CONTRIBUTING.md
 [docker]: docker
 [docker-image]: https://docs.ligato.io/en/latest/user-guide/get-vpp-agent/#local-image-build
-[etcd]: docs/arm64/etcd.md
-[etcd-local]: docker/dev/README.md#running-etcd-server-on-local-host
+[etcd-arm64]: https://docs.ligato.io/en/latest/user-guide/arm64/#arm64-and-etcd-server
+[etcd-local]: https://docs.ligato.io/en/latest/user-guide/get-vpp-agent/#connect-vpp-agent-to-the-key-value-data-store
 [govpp]: https://wiki.fd.io/view/GoVPP
-[kafka]: docs/arm64/kafka.md
 [ligato-docs]: http://docs.ligato.io/
 [protobufs]: https://developers.google.com/protocol-buffers/
 [vnf]: https://docs.ligato.io/en/latest/intro/glossary/#cnf
-[vpp]: https://fd.io/technology/#vpp
+[vpp]: https://fd.io/vppproject/vpptech/
 [vpp-agent]: https://hub.docker.com/r/ligato/vpp-agent
 [vpp-agent-arm64]: https://hub.docker.com/r/ligato/vpp-agent-arm64

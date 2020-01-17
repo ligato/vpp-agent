@@ -21,10 +21,11 @@ import (
 
 	. "github.com/onsi/gomega"
 
-	"github.com/gogo/protobuf/proto"
-	. "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-	"github.com/ligato/vpp-agent/plugins/kvscheduler/internal/test"
-	"github.com/ligato/vpp-agent/plugins/kvscheduler/internal/utils"
+	"github.com/golang/protobuf/proto"
+	. "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v3/plugins/kvscheduler/internal/test"
+	"go.ligato.io/vpp-agent/v3/plugins/kvscheduler/internal/utils"
+	. "go.ligato.io/vpp-agent/v3/proto/ligato/kvscheduler"
 )
 
 func TestEmptyResync(t *testing.T) {

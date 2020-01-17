@@ -3,10 +3,10 @@
 package adapter
 
 import (
-	"github.com/gogo/protobuf/proto"
-	. "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-	"github.com/ligato/vpp-agent/examples/kvscheduler/plugin_skeleton/with_metadata/model"
-	"github.com/ligato/vpp-agent/examples/kvscheduler/plugin_skeleton/with_metadata/metaidx"
+	"github.com/golang/protobuf/proto"
+	"go.ligato.io/vpp-agent/v3/examples/kvscheduler/plugin_skeleton/with_metadata/metaidx"
+	"go.ligato.io/vpp-agent/v3/examples/kvscheduler/plugin_skeleton/with_metadata/model"
+	. "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 )
 
 ////////// type-safe key-value pair with metadata //////////

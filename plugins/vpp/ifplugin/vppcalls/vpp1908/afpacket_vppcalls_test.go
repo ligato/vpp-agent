@@ -18,10 +18,10 @@ import (
 	"net"
 	"testing"
 
-	if_api "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1908/af_packet"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1908/interfaces"
 	. "github.com/onsi/gomega"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1908/af_packet"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1908/interfaces"
+	if_api "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
 )
 
 func TestAddAfPacketInterface(t *testing.T) {

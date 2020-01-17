@@ -23,10 +23,10 @@ import (
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/utils/safeclose"
-	l2 "github.com/ligato/vpp-agent/api/models/vpp/l2"
-	"github.com/ligato/vpp-agent/cmd/vpp-agent/app"
-	"github.com/ligato/vpp-agent/plugins/govppmux"
-	l2Api "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1908/l2"
+	"go.ligato.io/vpp-agent/v3/cmd/vpp-agent/app"
+	"go.ligato.io/vpp-agent/v3/plugins/govppmux"
+	l2Api "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1908/l2"
+	l2 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l2"
 )
 
 // *************************************************************************

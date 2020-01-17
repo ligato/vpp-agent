@@ -19,7 +19,7 @@ import (
 	"strconv"
 	"testing"
 
-	. "github.com/ligato/vpp-agent/plugins/kvscheduler/internal/test"
+	. "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/internal/test"
 )
 
 /*

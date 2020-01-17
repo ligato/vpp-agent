@@ -20,8 +20,8 @@ import (
 
 	"github.com/pkg/errors"
 
-	stn "github.com/ligato/vpp-agent/api/models/vpp/stn"
-	api "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1908/stn"
+	api "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1908/stn"
+	stn "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/stn"
 )
 
 // AddSTNRule implements STN handler, adds a new STN rule to the VPP.

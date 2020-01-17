@@ -17,11 +17,12 @@ package vppcalls
 import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vrfidx"
-	"github.com/ligato/vpp-agent/plugins/netalloc"
+	"go.ligato.io/vpp-agent/v3/plugins/netalloc"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin/vrfidx"
 
-	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
+	l3 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3"
 )
 
 // L3VppAPI groups L3 Vpp APIs.
@@ -197,28 +198,46 @@ type IPNeighVppAPI interface {
 	GetIPScanNeighbor() (*l3.IPScanNeighbor, error)
 }
 
-var Versions = map[string]HandlerVersion{}
+var Handler = vpp.RegisterHandler(vpp.HandlerDesc{
+	Name:       "l3",
+	HandlerAPI: (*L3VppAPI)(nil),
+})
 
-type HandlerVersion struct {
-	Msgs []govppapi.Message
-	New  func(govppapi.Channel, ifaceidx.IfaceMetadataIndex, vrfidx.VRFMetadataIndex,
-		netalloc.AddressAllocator, logging.Logger) L3VppAPI
+type NewHandlerFunc func(ch govppapi.Channel, idx ifaceidx.IfaceMetadataIndex, vrfIdx vrfidx.VRFMetadataIndex, addrAlloc netalloc.AddressAllocator, log logging.Logger) L3VppAPI
+
+func AddHandlerVersion(version vpp.Version, msgs []govppapi.Message, h NewHandlerFunc) {
+	Handler.AddVersion(vpp.HandlerVersion{
+		Version: version,
+		Check: func(c vpp.Client) error {
+			ch, err := c.NewAPIChannel()
+			if err != nil {
+				return err
+			}
+			return ch.CheckCompatiblity(msgs...)
+		},
+		NewHandler: func(c vpp.Client, a ...interface{}) vpp.HandlerAPI {
+			ch, err := c.NewAPIChannel()
+			if err != nil {
+				return err
+			}
+			var vrfIdx vrfidx.VRFMetadataIndex
+			if a[1] != nil {
+				vrfIdx = a[1].(vrfidx.VRFMetadataIndex)
+			}
+			return h(ch, a[0].(ifaceidx.IfaceMetadataIndex), vrfIdx, a[2].(netalloc.AddressAllocator), a[3].(logging.Logger))
+		},
+	})
 }
 
 func CompatibleL3VppHandler(
-	ch govppapi.Channel,
+	c vpp.Client,
 	ifIdx ifaceidx.IfaceMetadataIndex,
 	vrfIdx vrfidx.VRFMetadataIndex,
 	addrAlloc netalloc.AddressAllocator,
 	log logging.Logger,
 ) L3VppAPI {
-	for ver, h := range Versions {
-		if err := ch.CheckCompatiblity(h.Msgs...); err != nil {
-			log.Debugf("version %s not compatible", ver)
-			continue
-		}
-		log.Debug("found compatible version:", ver)
-		return h.New(ch, ifIdx, vrfIdx, addrAlloc, log)
+	if v := Handler.FindCompatibleVersion(c); v != nil {
+		return v.NewHandler(c, ifIdx, vrfIdx, addrAlloc, log).(L3VppAPI)
 	}
-	panic("no compatible version available")
+	return nil
 }

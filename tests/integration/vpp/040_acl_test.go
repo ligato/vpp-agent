@@ -19,14 +19,15 @@ import (
 	"testing"
 
 	"github.com/ligato/cn-infra/logging/logrus"
-	acl "github.com/ligato/vpp-agent/api/models/vpp/acl"
 	. "github.com/onsi/gomega"
 
-	_ "github.com/ligato/vpp-agent/plugins/vpp/aclplugin"
-	aclplugin_vppcalls "github.com/ligato/vpp-agent/plugins/vpp/aclplugin/vppcalls"
-	_ "github.com/ligato/vpp-agent/plugins/vpp/ifplugin"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
-	ifplugin_vppcalls "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
+	aclplugin_vppcalls "go.ligato.io/vpp-agent/v3/plugins/vpp/aclplugin/vppcalls"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
+	ifplugin_vppcalls "go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/vppcalls"
+	acl "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/acl"
+
+	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/aclplugin"
+	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin"
 )
 
 func rulePerm(permit bool) acl.ACL_Rule_Action {
@@ -131,7 +132,7 @@ func TestCRUDIPAcl(t *testing.T) {
 	ctx := setupVPP(t)
 	defer ctx.teardownVPP()
 
-	ih := ifplugin_vppcalls.CompatibleInterfaceVppHandler(ctx.vppBinapi, logrus.NewLogger("test"))
+	ih := ifplugin_vppcalls.CompatibleInterfaceVppHandler(ctx.vppClient, logrus.NewLogger("test"))
 	Expect(ih).To(Not(BeNil()), "Handler should be created.")
 
 	const ifName = "loop1"
@@ -152,7 +153,7 @@ func TestCRUDIPAcl(t *testing.T) {
 		SwIfIndex: ifIdx2,
 	})
 
-	h := aclplugin_vppcalls.CompatibleACLVppHandler(ctx.vppBinapi, ifIndexes, logrus.NewLogger("test"))
+	h := aclplugin_vppcalls.CompatibleACLHandler(ctx.vppClient, ifIndexes)
 	Expect(h).To(Not(BeNil()), "Handler should be created.")
 
 	acls, errx := h.DumpACL()
@@ -489,7 +490,7 @@ func TestCRUDMacIPAcl(t *testing.T) {
 	ctx := setupVPP(t)
 	defer ctx.teardownVPP()
 
-	ih := ifplugin_vppcalls.CompatibleInterfaceVppHandler(ctx.vppBinapi, logrus.NewLogger("test"))
+	ih := ifplugin_vppcalls.CompatibleInterfaceVppHandler(ctx.vppClient, logrus.NewLogger("test"))
 	Expect(ih).To(Not(BeNil()), "Handler should be created.")
 
 	const ifName = "loop1"
@@ -510,7 +511,7 @@ func TestCRUDMacIPAcl(t *testing.T) {
 		SwIfIndex: ifIdx2,
 	})
 
-	h := aclplugin_vppcalls.CompatibleACLVppHandler(ctx.vppBinapi, ifIndexes, logrus.NewLogger("test"))
+	h := aclplugin_vppcalls.CompatibleACLHandler(ctx.vppClient, ifIndexes)
 	Expect(h).To(Not(BeNil()), "Handler should be created.")
 	if h == nil {
 		t.Fatalf("handler was not created")

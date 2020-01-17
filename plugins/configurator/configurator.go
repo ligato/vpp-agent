@@ -17,19 +17,19 @@ package configurator
 import (
 	"runtime/trace"
 
-	"github.com/gogo/status"
 	"github.com/ligato/cn-infra/logging"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
-	rpc "github.com/ligato/vpp-agent/api/configurator"
-	"github.com/ligato/vpp-agent/api/models/linux"
-	"github.com/ligato/vpp-agent/api/models/netalloc"
-	"github.com/ligato/vpp-agent/api/models/vpp"
-	"github.com/ligato/vpp-agent/pkg/models"
-	"github.com/ligato/vpp-agent/pkg/util"
-	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-	"github.com/ligato/vpp-agent/plugins/orchestrator"
+	"go.ligato.io/vpp-agent/v3/pkg/models"
+	"go.ligato.io/vpp-agent/v3/pkg/util"
+	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v3/plugins/orchestrator"
+	rpc "go.ligato.io/vpp-agent/v3/proto/ligato/configurator"
+	"go.ligato.io/vpp-agent/v3/proto/ligato/linux"
+	"go.ligato.io/vpp-agent/v3/proto/ligato/netalloc"
+	"go.ligato.io/vpp-agent/v3/proto/ligato/vpp"
 )
 
 // configuratorServer implements DataSyncer service.
@@ -47,7 +47,11 @@ func (svc *configuratorServer) Get(context.Context, *rpc.GetRequest) (*rpc.GetRe
 
 	config := newConfig()
 
-	util.PlaceProtos(svc.dispatch.ListData(), config.LinuxConfig, config.VppConfig)
+	util.PlaceProtos(svc.dispatch.ListData(),
+		config.LinuxConfig,
+		config.VppConfig,
+		config.NetallocConfig,
+	)
 
 	return &rpc.GetResponse{Config: config}, nil
 }
@@ -60,7 +64,11 @@ func (svc *configuratorServer) Update(ctx context.Context, req *rpc.UpdateReques
 
 	defer trackOperation("Update")()
 
-	protos := util.ExtractProtos(req.Update.VppConfig, req.Update.LinuxConfig)
+	protos := util.ExtractProtos(
+		req.GetUpdate().GetVppConfig(),
+		req.GetUpdate().GetLinuxConfig(),
+		req.GetUpdate().GetNetallocConfig(),
+	)
 
 	var kvPairs []orchestrator.KeyVal
 	for _, p := range protos {
@@ -92,7 +100,11 @@ func (svc *configuratorServer) Update(ctx context.Context, req *rpc.UpdateReques
 func (svc *configuratorServer) Delete(ctx context.Context, req *rpc.DeleteRequest) (*rpc.DeleteResponse, error) {
 	defer trackOperation("Delete")()
 
-	protos := util.ExtractProtos(req.Delete.VppConfig, req.Delete.LinuxConfig)
+	protos := util.ExtractProtos(
+		req.Delete.VppConfig,
+		req.Delete.LinuxConfig,
+		req.Delete.NetallocConfig,
+	)
 
 	var kvPairs []orchestrator.KeyVal
 	for _, p := range protos {

@@ -19,17 +19,18 @@ import (
 	"testing"
 
 	govppapi "git.fd.io/govpp.git/api"
-
-	interfaces2 "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/dhcp"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/ip"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/memif"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/tapv2"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/vpe"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/vxlan"
-	"github.com/ligato/vpp-agent/plugins/vpp/vppcallmock"
 	. "github.com/onsi/gomega"
+
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1904/dhcp"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1904/gtpu"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1904/interfaces"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1904/ip"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1904/memif"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1904/tapv2"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1904/vpe"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1904/vxlan"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/vppmock"
+	interfaces2 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
 )
 
 // Test dump of interfaces with vxlan type
@@ -40,7 +41,7 @@ func TestDumpInterfacesVxLan(t *testing.T) {
 	ipv61Parse := net.ParseIP("dead:beef:feed:face:cafe:babe:baad:c0de").To16()
 	ipv62Parse := net.ParseIP("d3ad:beef:feed:face:cafe:babe:baad:c0de").To16()
 
-	ctx.MockReplies([]*vppcallmock.HandleReplies{
+	ctx.MockReplies([]*vppmock.HandleReplies{
 		{
 			Name: (&interfaces.SwInterfaceDump{}).GetMessageName(),
 			Ping: true,
@@ -80,9 +81,13 @@ func TestDumpInterfacesVxLan(t *testing.T) {
 				DstAddress: ipv62Parse,
 			},
 		},
+		{
+			Name: (&gtpu.GtpuTunnelDump{}).GetMessageName(),
+			Ping: true,
+		},
 	})
 
-	intfs, err := ifHandler.DumpInterfaces()
+	intfs, err := ifHandler.DumpInterfaces(ctx.Context)
 	Expect(err).To(BeNil())
 	Expect(intfs).To(HaveLen(1))
 	intface := intfs[0].Interface
@@ -94,10 +99,10 @@ func TestDumpInterfacesVxLan(t *testing.T) {
 
 // Test dump of interfaces with host type
 func TestDumpInterfacesHost(t *testing.T) {
-	ctx, ifHandler := ifTestSetup(t)
-	defer ctx.TeardownTestCtx()
+	test, ifHandler := ifTestSetup(t)
+	defer test.TeardownTestCtx()
 
-	ctx.MockReplies([]*vppcallmock.HandleReplies{
+	test.MockReplies([]*vppmock.HandleReplies{
 		{
 			Name: (&interfaces.SwInterfaceDump{}).GetMessageName(),
 			Ping: true,
@@ -131,9 +136,13 @@ func TestDumpInterfacesHost(t *testing.T) {
 			Name: (&vxlan.VxlanTunnelDump{}).GetMessageName(),
 			Ping: true,
 		},
+		{
+			Name: (&gtpu.GtpuTunnelDump{}).GetMessageName(),
+			Ping: true,
+		},
 	})
 
-	intfs, err := ifHandler.DumpInterfaces()
+	intfs, err := ifHandler.DumpInterfaces(test.Context)
 	Expect(err).To(BeNil())
 	Expect(intfs).To(HaveLen(1))
 	intface := intfs[0].Interface
@@ -147,7 +156,7 @@ func TestDumpInterfacesMemif(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockReplies([]*vppcallmock.HandleReplies{
+	ctx.MockReplies([]*vppmock.HandleReplies{
 		{
 			Name: (&interfaces.SwInterfaceDump{}).GetMessageName(),
 			Ping: true,
@@ -194,9 +203,13 @@ func TestDumpInterfacesMemif(t *testing.T) {
 			Name: (&vxlan.VxlanTunnelDump{}).GetMessageName(),
 			Ping: true,
 		},
+		{
+			Name: (&gtpu.GtpuTunnelDump{}).GetMessageName(),
+			Ping: true,
+		},
 	})
 
-	intfs, err := ifHandler.DumpInterfaces()
+	intfs, err := ifHandler.DumpInterfaces(ctx.Context)
 	Expect(err).To(BeNil())
 	Expect(intfs).To(HaveLen(1))
 	intface := intfs[0].Interface
@@ -215,7 +228,7 @@ func TestDumpInterfacesTap2(t *testing.T) {
 	hwAddr1Parse, err := net.ParseMAC("01:23:45:67:89:ab")
 	Expect(err).To(BeNil())
 
-	ctx.MockReplies([]*vppcallmock.HandleReplies{
+	ctx.MockReplies([]*vppmock.HandleReplies{
 		{
 			Name: (&interfaces.SwInterfaceDump{}).GetMessageName(),
 			Ping: true,
@@ -263,9 +276,13 @@ func TestDumpInterfacesTap2(t *testing.T) {
 			Name: (&vxlan.VxlanTunnelDump{}).GetMessageName(),
 			Ping: true,
 		},
+		{
+			Name: (&gtpu.GtpuTunnelDump{}).GetMessageName(),
+			Ping: true,
+		},
 	})
 
-	intfs, err := ifHandler.DumpInterfaces()
+	intfs, err := ifHandler.DumpInterfaces(ctx.Context)
 	Expect(err).To(BeNil())
 	Expect(intfs).To(HaveLen(1))
 
@@ -298,7 +315,7 @@ func TestDumpMemifSocketDetails(t *testing.T) {
 
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 
-	result, err := ifHandler.DumpMemifSocketDetails()
+	result, err := ifHandler.DumpMemifSocketDetails(ctx.Context)
 	Expect(err).To(BeNil())
 	Expect(result).To(Not(BeEmpty()))
 
@@ -311,7 +328,7 @@ func TestDumpInterfacesRxPlacement(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockReplies([]*vppcallmock.HandleReplies{
+	ctx.MockReplies([]*vppmock.HandleReplies{
 		{
 			Name: (&interfaces.SwInterfaceDump{}).GetMessageName(),
 			Ping: true,
@@ -359,6 +376,10 @@ func TestDumpInterfacesRxPlacement(t *testing.T) {
 			Ping: true,
 		},
 		{
+			Name: (&gtpu.GtpuTunnelDump{}).GetMessageName(),
+			Ping: true,
+		},
+		{
 			Name: (&interfaces.SwInterfaceRxPlacementDump{}).GetMessageName(),
 			Ping: true,
 			Messages: []govppapi.Message{
@@ -384,7 +405,7 @@ func TestDumpInterfacesRxPlacement(t *testing.T) {
 		},
 	})
 
-	intfs, err := ifHandler.DumpInterfaces()
+	intfs, err := ifHandler.DumpInterfaces(ctx.Context)
 	Expect(err).To(BeNil())
 	Expect(intfs).To(HaveLen(1))
 	intface := intfs[0].Interface
@@ -415,4 +436,73 @@ func TestDumpInterfacesRxPlacement(t *testing.T) {
 	Expect(rxPlacement[2].Queue).To(BeEquivalentTo(2))
 	Expect(rxPlacement[2].MainThread).To(BeFalse())
 	Expect(rxPlacement[2].Worker).To(BeEquivalentTo(1))
+}
+
+// Test dump of interfaces with gtpu type
+func TestDumpInterfacesGtpu(t *testing.T) {
+	ctx, ifHandler := ifTestSetup(t)
+	defer ctx.TeardownTestCtx()
+
+	ipv61Parse := net.ParseIP("dead:beef:feed:face:cafe:babe:baad:c0de").To16()
+	ipv62Parse := net.ParseIP("d3ad:beef:feed:face:cafe:babe:baad:c0de").To16()
+
+	ctx.MockReplies([]*vppmock.HandleReplies{
+		{
+			Name: (&interfaces.SwInterfaceDump{}).GetMessageName(),
+			Ping: true,
+			Message: &interfaces.SwInterfaceDetails{
+				InterfaceName: []byte("gtpu1"),
+			},
+		},
+		{
+			Name:    (&interfaces.SwInterfaceGetTable{}).GetMessageName(),
+			Ping:    false,
+			Message: &interfaces.SwInterfaceGetTableReply{},
+		},
+		{
+			Name:    (&ip.IPAddressDump{}).GetMessageName(),
+			Ping:    true,
+			Message: &ip.IPAddressDetails{},
+		},
+		{
+			Name: (&memif.MemifSocketFilenameDump{}).GetMessageName(),
+			Ping: true,
+		},
+		{
+			Name: (&memif.MemifDump{}).GetMessageName(),
+			Ping: true,
+		},
+		{
+			Name: (&tapv2.SwInterfaceTapV2Dump{}).GetMessageName(),
+			Ping: true,
+		},
+		{
+			Name: (&vxlan.VxlanTunnelDump{}).GetMessageName(),
+			Ping: true,
+		},
+		{
+			Name: (&gtpu.GtpuTunnelDump{}).GetMessageName(),
+			Ping: true,
+			Message: &gtpu.GtpuTunnelDetails{
+				IsIPv6:     1,
+				SwIfIndex:  0,
+				SrcAddress: ipv61Parse,
+				DstAddress: ipv62Parse,
+				EncapVrfID: 16,
+				Teid:       100,
+			},
+		},
+	})
+
+	intfs, err := ifHandler.DumpInterfaces(ctx.Context)
+	Expect(err).To(BeNil())
+	Expect(intfs).To(HaveLen(1))
+	intface := intfs[0].Interface
+
+	// Check gtpu
+	Expect(intface.Type).To(Equal(interfaces2.Interface_GTPU_TUNNEL))
+	Expect(intface.GetGtpu().SrcAddr).To(Equal("dead:beef:feed:face:cafe:babe:baad:c0de"))
+	Expect(intface.GetGtpu().DstAddr).To(Equal("d3ad:beef:feed:face:cafe:babe:baad:c0de"))
+	Expect(intface.GetGtpu().EncapVrfId).To(Equal(uint32(16)))
+	Expect(intface.GetGtpu().Teid).To(Equal(uint32(100)))
 }

@@ -15,7 +15,7 @@
 package ifplugin
 
 import (
-	"github.com/ligato/vpp-agent/plugins/linux/ifplugin/ifaceidx"
+	"go.ligato.io/vpp-agent/v3/plugins/linux/ifplugin/ifaceidx"
 )
 
 // API defines methods exposed by Linux-IfPlugin.

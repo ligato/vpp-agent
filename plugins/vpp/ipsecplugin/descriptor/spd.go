@@ -24,12 +24,12 @@ import (
 	"github.com/ligato/cn-infra/logging"
 	"github.com/pkg/errors"
 
-	ipsec "github.com/ligato/vpp-agent/api/models/vpp/ipsec"
-	"github.com/ligato/vpp-agent/pkg/idxvpp"
-	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-	vppIfDescriptor "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/descriptor"
-	"github.com/ligato/vpp-agent/plugins/vpp/ipsecplugin/descriptor/adapter"
-	"github.com/ligato/vpp-agent/plugins/vpp/ipsecplugin/vppcalls"
+	"go.ligato.io/vpp-agent/v3/pkg/idxvpp"
+	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
+	vppIfDescriptor "go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/descriptor"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/ipsecplugin/descriptor/adapter"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/ipsecplugin/vppcalls"
+	ipsec "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/ipsec"
 )
 
 const (

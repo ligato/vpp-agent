@@ -15,7 +15,7 @@
 package registry
 
 import (
-	. "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
+	. "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 )
 
 // Registry can be used to register all descriptors and get quick (cached, O(log))

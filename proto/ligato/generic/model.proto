@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+package ligato.generic;
+
+option go_package = "go.ligato.io/vpp-agent/v3/proto/ligato/generic";
+
+// ModelSpec defines a model specification to identify a model.
+message ModelSpec {
+
+    // Module describes grouping for the model.
+    string module = 1;
+
+    // Version describes version of the model schema.
+    string version = 2;
+
+    // Type describes name of type described by this model.
+    string type = 3;
+
+    // Class describes purpose for the model.
+    string class = 4;
+}
+
+// ModelDetail represents info about model details.
+message ModelDetail {
+
+    // Spec is a specificaiton the model was registered with.
+    ModelSpec spec = 1;
+
+    // ProtoName is a name of protobuf message representing the model.
+    string proto_name = 2;
+
+    message Option {
+        string key = 1;
+        repeated string values = 2;
+    }
+    repeated Option options = 3;
+}

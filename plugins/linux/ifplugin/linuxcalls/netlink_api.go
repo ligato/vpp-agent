@@ -17,15 +17,14 @@ package linuxcalls
 import (
 	"net"
 
-	"github.com/ligato/vpp-agent/plugins/linux/nsplugin"
-
 	"github.com/ligato/cn-infra/logging"
-	interfaces "github.com/ligato/vpp-agent/api/models/linux/interfaces"
-	namespaces "github.com/ligato/vpp-agent/api/models/linux/namespace"
-	"github.com/ligato/vpp-agent/plugins/linux/ifplugin/ifaceidx"
-
 	"github.com/vishvananda/netlink"
 	"github.com/vishvananda/netns"
+
+	"go.ligato.io/vpp-agent/v3/plugins/linux/ifplugin/ifaceidx"
+	"go.ligato.io/vpp-agent/v3/plugins/linux/nsplugin"
+	interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/linux/interfaces"
+	namespaces "go.ligato.io/vpp-agent/v3/proto/ligato/linux/namespace"
 )
 
 // InterfaceDetails is an object combining linux interface data based on proto

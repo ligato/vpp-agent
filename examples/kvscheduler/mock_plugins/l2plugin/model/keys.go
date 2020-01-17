@@ -17,7 +17,7 @@ package mock_l2
 import (
 	"strings"
 
-	"github.com/ligato/vpp-agent/pkg/models"
+	"go.ligato.io/vpp-agent/v3/pkg/models"
 )
 
 // ModuleName is the module name used for models of the mock l2plugin.
@@ -54,12 +54,10 @@ func FIBKey(bdName string, fibMac string) string {
 	})
 }
 
-
 /* Note: We do not yet provide tools to build models for derived values, therefore
-         the key template and the key building/parsing methods have to be defined
-         from the scratch for the time being.
- */
-
+   the key template and the key building/parsing methods have to be defined
+   from the scratch for the time being.
+*/
 
 /* BD <-> interface binding (derived value) */
 const (

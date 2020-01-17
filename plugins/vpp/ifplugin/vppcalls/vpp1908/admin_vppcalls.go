@@ -15,7 +15,7 @@
 package vpp1908
 
 import (
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1908/interfaces"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1908/interfaces"
 )
 
 // InterfaceAdminDown implements interface handler.

@@ -17,9 +17,9 @@ package vpp2001_324
 import (
 	"net"
 
-	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
-	vpp_dhcp "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001_324/dhcp"
-	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls"
+	vpp_dhcp "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/dhcp"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin/vppcalls"
+	l3 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3"
 )
 
 func (h *DHCPProxyHandler) DumpDHCPProxy() (entry []*vppcalls.DHCPProxyDetails, err error) {

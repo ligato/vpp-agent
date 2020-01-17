@@ -20,15 +20,15 @@ import (
 	"sync"
 	"time"
 
-	"github.com/fsouza/go-dockerclient"
-	prototypes "github.com/gogo/protobuf/types"
+	docker "github.com/fsouza/go-dockerclient"
+	prototypes "github.com/golang/protobuf/ptypes/empty"
 	"github.com/pkg/errors"
 
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/servicelabel"
-	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
+	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 
-	nsmodel "github.com/ligato/vpp-agent/api/models/linux/namespace"
+	nsmodel "go.ligato.io/vpp-agent/v3/proto/ligato/linux/namespace"
 )
 
 const (

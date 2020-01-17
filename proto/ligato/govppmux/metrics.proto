@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package ligato.govppmux;
+
+option go_package = "go.ligato.io/vpp-agent/v3/proto/ligato/govppmux;govppmux";
+
+message Metrics {
+    uint64 channels_created = 1;
+    uint64 channels_open = 2;
+
+    uint64 requests_sent = 3;
+    uint64 requests_done = 4;
+    uint64 requests_fail = 5;
+
+    uint64 request_replies = 6;
+}

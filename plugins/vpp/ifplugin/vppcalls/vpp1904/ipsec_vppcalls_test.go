@@ -20,9 +20,9 @@ import (
 
 	. "github.com/onsi/gomega"
 
-	vpp_interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
+	vpp_interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
 
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/ipsec"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1904/ipsec"
 )
 
 func TestAddIPSecTunnelInterface(t *testing.T) {

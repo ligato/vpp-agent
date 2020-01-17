@@ -24,11 +24,11 @@ import (
 
 	"encoding/binary"
 
-	"github.com/ligato/vpp-agent/client"
+	"go.ligato.io/vpp-agent/v3/client"
 
-	interfaces "github.com/ligato/vpp-agent/examples/kvscheduler/mock_plugins/ifplugin/model"
-	l2 "github.com/ligato/vpp-agent/examples/kvscheduler/mock_plugins/l2plugin/model"
-	"github.com/ligato/vpp-agent/plugins/kvscheduler"
+	interfaces "go.ligato.io/vpp-agent/v3/examples/kvscheduler/mock_plugins/ifplugin/model"
+	l2 "go.ligato.io/vpp-agent/v3/examples/kvscheduler/mock_plugins/l2plugin/model"
+	"go.ligato.io/vpp-agent/v3/plugins/kvscheduler"
 )
 
 const iterations = 1000
@@ -122,7 +122,7 @@ func PerfTest() {
 		}
 		bdIfaces = append(bdIfaces, tap.GetName())
 		bd := &l2.BridgeDomain{
-			Name: "bd1",
+			Name:       "bd1",
 			Interfaces: make([]*l2.BridgeDomain_Interface, 0, len(bdIfaces)),
 		}
 		for _, iface := range bdIfaces {

@@ -10,6 +10,7 @@ Resource      vat_term.robot
 
 *** Variables ***
 ${timeout_etcd}=      30s
+${timeout_agent}=     20s
 
 *** Keywords ***
 Add Agent Node
@@ -38,7 +39,7 @@ Add Agent VPP Node
     [Arguments]    ${node}    ${vswitch}=${FALSE}
     ${add_params}=    Set Variable If    ${vswitch}    --pid=host -v "/var/run/docker.sock:/var/run/docker.sock"    ${EMPTY}
     Open SSH Connection    ${node}    ${DOCKER_HOST_IP}    ${DOCKER_HOST_USER}    ${DOCKER_HOST_PSWD}
-    Execute On Machine     ${node}    ${DOCKER_COMMAND} create -e MICROSERVICE_LABEL=${node} -e KAFKA_CONFIG=disabled -e VPP_STATUS_PUBLISHERS=etcd -e INITIAL_LOGLVL=debug --sysctl net.ipv6.conf.all.disable_ipv6=0 -it --privileged -v "${VPP_AGENT_HOST_MEMIF_SOCKET_FOLDER}:${${node}_MEMIF_SOCKET_FOLDER}" -v "${DOCKER_SOCKET_FOLDER}:${${node}_SOCKET_FOLDER}" -p ${${node}_VPP_HOST_PORT}:${${node}_VPP_PORT} -p ${${node}_REST_API_HOST_PORT}:${${node}_REST_API_PORT} --name ${node} ${add_params} ${${node}_DOCKER_IMAGE}
+    Execute On Machine     ${node}    ${DOCKER_COMMAND} create -e MICROSERVICE_LABEL=${node} -e KAFKA_CONFIG=disabled -e VPP_STATUS_PUBLISHERS=etcd -e INITIAL_LOGLVL=debug -e START_TIMEOUT=${timeout_agent} --sysctl net.ipv6.conf.all.disable_ipv6=0 -it --privileged -v "${VPP_AGENT_HOST_MEMIF_SOCKET_FOLDER}:${${node}_MEMIF_SOCKET_FOLDER}" -v "${DOCKER_SOCKET_FOLDER}:${${node}_SOCKET_FOLDER}" -p ${${node}_VPP_HOST_PORT}:${${node}_VPP_PORT} -p ${${node}_REST_API_HOST_PORT}:${${node}_REST_API_PORT} --name ${node} ${add_params} ${${node}_DOCKER_IMAGE}
     Write To Machine       ${node}    ${DOCKER_COMMAND} start ${node}
     Append To List    ${NODES}    ${node}
     Open SSH Connection    ${node}_term    ${DOCKER_HOST_IP}    ${DOCKER_HOST_USER}    ${DOCKER_HOST_PSWD}
@@ -55,7 +56,7 @@ Add Agent VPP Node With Own Vpp Config
     [Arguments]    ${node}    ${vpp_conf_file}    ${vswitch}=${FALSE}
     ${add_params}=    Set Variable If    ${vswitch}    --pid=host -v "/var/run/docker.sock:/var/run/docker.sock"    ${EMPTY}
     Open SSH Connection    ${node}    ${DOCKER_HOST_IP}    ${DOCKER_HOST_USER}    ${DOCKER_HOST_PSWD}
-    Execute On Machine     ${node}    ${DOCKER_COMMAND} create -e MICROSERVICE_LABEL=${node} -e KAFKA_CONFIG=disabled -e VPP_STATUS_PUBLISHERS=etcd -e INITIAL_LOGLVL=debug --sysctl net.ipv6.conf.all.disable_ipv6=0 -it --privileged -v "${VPP_AGENT_HOST_MEMIF_SOCKET_FOLDER}:${${node}_MEMIF_SOCKET_FOLDER}" -v "${DOCKER_SOCKET_FOLDER}:${${node}_SOCKET_FOLDER}" -p ${${node}_VPP_HOST_PORT}:${${node}_VPP_PORT} -p ${${node}_REST_API_HOST_PORT}:${${node}_REST_API_PORT} --name ${node} ${add_params} ${${node}_DOCKER_IMAGE}
+    Execute On Machine     ${node}    ${DOCKER_COMMAND} create -e MICROSERVICE_LABEL=${node} -e KAFKA_CONFIG=disabled -e VPP_STATUS_PUBLISHERS=etcd -e INITIAL_LOGLVL=debug -e START_TIMEOUT=${timeout_agent} --sysctl net.ipv6.conf.all.disable_ipv6=0 -it --privileged -v "${VPP_AGENT_HOST_MEMIF_SOCKET_FOLDER}:${${node}_MEMIF_SOCKET_FOLDER}" -v "${DOCKER_SOCKET_FOLDER}:${${node}_SOCKET_FOLDER}" -p ${${node}_VPP_HOST_PORT}:${${node}_VPP_PORT} -p ${${node}_REST_API_HOST_PORT}:${${node}_REST_API_PORT} --name ${node} ${add_params} ${${node}_DOCKER_IMAGE}
     ${data}=               OperatingSystem.Get File      ${CURDIR}/../resources/${vpp_conf_file}
     Create File            ${RESULTS_FOLDER}/vpp-${node}.conf    ${data}
     Create File            ${RESULTS_FOLDER_SUITE}/vpp-${node}.conf    ${data}
@@ -91,7 +92,7 @@ Add Agent VPP Node With Physical Int
     [Arguments]    ${node}    ${int_nums}    ${vswitch}=${FALSE}
     ${add_params}=    Set Variable If    ${vswitch}    --pid=host -v "/var/run/docker.sock:/var/run/docker.sock"    ${EMPTY}
     Open SSH Connection    ${node}    ${DOCKER_HOST_IP}    ${DOCKER_HOST_USER}    ${DOCKER_HOST_PSWD}
-    Execute On Machine     ${node}    ${DOCKER_COMMAND} create -e MICROSERVICE_LABEL=${node} -e KAFKA_CONFIG=disabled --sysctl net.ipv6.conf.all.disable_ipv6=0 -it --privileged -v "${DOCKER_SOCKET_FOLDER}:${${node}_SOCKET_FOLDER}" -p ${${node}_VPP_HOST_PORT}:${${node}_VPP_PORT} -p ${${node}_REST_API_HOST_PORT}:${${node}_REST_API_PORT} --name ${node} ${add_params}  ${${node}_DOCKER_IMAGE}
+    Execute On Machine     ${node}    ${DOCKER_COMMAND} create -e MICROSERVICE_LABEL=${node} -e KAFKA_CONFIG=disabled -e START_TIMEOUT=${timeout_agent} --sysctl net.ipv6.conf.all.disable_ipv6=0 -it --privileged -v "${DOCKER_SOCKET_FOLDER}:${${node}_SOCKET_FOLDER}" -p ${${node}_VPP_HOST_PORT}:${${node}_VPP_PORT} -p ${${node}_REST_API_HOST_PORT}:${${node}_REST_API_PORT} --name ${node} ${add_params}  ${${node}_DOCKER_IMAGE}
     ${devs}=               Set Variable    ${EMPTY}
     :FOR    ${int_num}    IN    @{int_nums}
     \    ${devs}=    Set Variable    ${devs}${\n}dev ${DOCKER_PHYSICAL_INT_${int_num}}

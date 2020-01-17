@@ -21,8 +21,8 @@ import (
 
 	. "github.com/onsi/gomega"
 
-	. "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-	. "github.com/ligato/vpp-agent/plugins/kvscheduler/internal/test"
+	. "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
+	. "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/internal/test"
 )
 
 const (

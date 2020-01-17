@@ -23,9 +23,9 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/pkg/errors"
 
-	vpp_dhcp "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001_324/dhcp"
-	vpp_ifs "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001_324/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
+	vpp_dhcp "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001_324/dhcp"
+	vpp_ifs "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001_324/interfaces"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/vppcalls"
 )
 
 var InterfaceEventTimeout = time.Second

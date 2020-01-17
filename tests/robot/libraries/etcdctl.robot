@@ -35,7 +35,12 @@ Delete Key
     ${out}=             Execute On Machine    docker    ${command}    log=false
     [Return]           ${out}
 
-#*****
+Get ETCD Dump
+    [Arguments]    ${machine}=docker
+    ${command}=         Set Variable    ${DOCKER_COMMAND} exec etcd etcdctl get --prefix="true" ""
+    ${out}=             Execute On Machine    ${machine}    ${command}    log=false
+    [Return]            ${out}
+
 Put Memif Interface
     [Arguments]    ${node}    ${name}    ${mac}    ${master}    ${id}    ${socket}=memif.sock    ${mtu}=1500    ${vrf}=0    ${enabled}=true
     ${socket}=            Set Variable                  ${${node}_MEMIF_SOCKET_FOLDER}/${socket}
@@ -191,23 +196,11 @@ Get Bridge Domain ID
     [Arguments]    ${node}    ${bd_name}
     ${bds_dump}=    Execute On Machine    docker    curl -sX GET http://localhost:9191/dump/vpp/v2/bd
     ${bds_json}=    Evaluate    json.loads('''${bds_dump}''')    json
-    ${index}=   Set Variable    0
     :FOR    ${bd}   IN  @{bds_json}
     \   ${data}=    Set Variable    ${bd['bridge_domain']}
     \   ${meta}=    Set Variable    ${bd['bridge_domain_meta']}
-    \   ${index}=   Run Keyword If  "${data["name"]}" == "${bd_name}"     Set Variable  ${meta['bridge_domain_id']}
-    [Return]   ${index}
-
-Get Bridge Domain ID IPv6
-    [Arguments]    ${node}    ${bd_name}
-    ${bds_dump}=    Execute On Machine    docker    curl --noproxy "::" -g -6 -sX GET http://[::]:9191/dump/vpp/v2/bd
-    ${bds_json}=    Evaluate    json.loads('''${bds_dump}''')    json
-    ${index}=   Set Variable    0
-    :FOR    ${bd}   IN  @{bds_json}
-    \   ${data}=    Set Variable    ${bd['bridge_domain']}
-    \   ${meta}=    Set Variable    ${bd['bridge_domain_meta']}
-    \   ${index}=   Run Keyword If  "${data["name"]}" == "${bd_name}"     Set Variable  ${meta['bridge_domain_id']}
-    [Return]   ${index}
+    \   Return From Keyword If    "${data["name"]}" == "${bd_name}"    ${meta['bridge_domain_id']}
+    [Return]   0
 
 Put TAP Unnumbered Interface
     [Arguments]    ${node}    ${name}    ${mac}    ${unnumbered}    ${interface_with_ip_name}    ${host_if_name}    ${mtu}=1500    ${enabled}=true
@@ -301,23 +294,18 @@ Put Veth Interface Via Linux Plugin
     Put Json     ${uri}    ${data}
 
 Put Linux Route
-    [Arguments]    ${node}    ${namespace}    ${interface}    ${routename}    ${ip}    ${next_hop}    ${prefix}=24    ${metric}=100    ${isdefault}=false
+    [Arguments]    ${node}    ${namespace}    ${interface}    ${ip}    ${next_hop}    ${prefix}=24    ${metric}=100
     ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/linux_static_route.json
     ${uri}=               Set Variable                  /vnf-agent/${node}/config/linux/l3/${AGENT_VER}/route/${ip}/${prefix}/${interface}
     ${data}=              Replace Variables             ${data}
     Put Json     ${uri}    ${data}
 
 Put Default Linux Route
-    [Arguments]    ${node}    ${namespace}    ${interface}    ${routename}    ${next_hop}    ${metric}=100    ${isdefault}=true
+    [Arguments]    ${node}    ${namespace}    ${interface}    ${next_hop}    ${metric}=100    ${ipv6}=${FALSE}
     ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/linux_default_static_route.json
-    ${uri}=               Set Variable                  /vnf-agent/${node}/config/linux/l3/${AGENT_VER}/route/${routename}
-    ${data}=              Replace Variables             ${data}
-    Put Json     ${uri}    ${data}
-
-Put Linux Route Without Interface
-    [Arguments]    ${node}    ${namespace}    ${routename}    ${ip}    ${next_hop}    ${prefix}=24    ${metric}=100
-    ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/linux_static_route_without_interface.json
-    ${uri}=               Set Variable                  /vnf-agent/${node}/config/linux/l3/${AGENT_VER}/route/${routename}
+    ${destination}=       Set Variable If    ${ipv6}    ::/0    0.0.0.0/0
+    ${destination_network}=    Set Variable If    ${ipv6}    0:0:0:0:0:0:0:0/0    0.0.0.0/0
+    ${uri}=               Set Variable                  /vnf-agent/${node}/config/linux/l3/${AGENT_VER}/route/${destination}/${interface}
     ${data}=              Replace Variables             ${data}
     Put Json     ${uri}    ${data}
 

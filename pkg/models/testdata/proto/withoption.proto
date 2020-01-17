@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package model;
+
+import "ligato/generic/options.proto";
+
+message WithOption {
+    option (ligato.generic.model) = {
+        module: "modeltests"
+        type: "woption"
+    };
+
+    int32 id = 1;
+    string caption = 2;
+};

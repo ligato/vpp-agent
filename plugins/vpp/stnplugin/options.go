@@ -16,9 +16,9 @@ package stnplugin
 
 import (
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/vpp-agent/plugins/govppmux"
-	"github.com/ligato/vpp-agent/plugins/kvscheduler"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin"
+	"go.ligato.io/vpp-agent/v3/plugins/govppmux"
+	"go.ligato.io/vpp-agent/v3/plugins/kvscheduler"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin"
 )
 
 // DefaultPlugin is a default instance of STN plugin.
@@ -30,7 +30,7 @@ func NewPlugin(opts ...Option) *STNPlugin {
 
 	p.PluginName = "vpp-stn-plugin"
 	p.KVScheduler = &kvscheduler.DefaultPlugin
-	p.GoVppmux = &govppmux.DefaultPlugin
+	p.VPP = &govppmux.DefaultPlugin
 	p.IfPlugin = &ifplugin.DefaultPlugin
 
 	for _, o := range opts {

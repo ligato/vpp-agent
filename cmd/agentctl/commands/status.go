@@ -19,7 +19,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	agentcli "github.com/ligato/vpp-agent/cmd/agentctl/cli"
+	agentcli "go.ligato.io/vpp-agent/v3/cmd/agentctl/cli"
 )
 
 func NewStatusCommand(cli agentcli.Cli) *cobra.Command {

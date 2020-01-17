@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package model;
+
+message Basic {
+    string name = 1;
+
+    int32 value_int = 2;
+    uint32 value_uint = 3;
+    int64 value_int64 = 4;
+
+    repeated string repeated_string = 5;
+}
+
+message Nest {
+    string name = 1;
+
+    message Nested {
+        string level = 1;
+    }
+    Nested nested = 2;
+}

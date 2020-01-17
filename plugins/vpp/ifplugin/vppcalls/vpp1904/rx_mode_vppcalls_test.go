@@ -17,9 +17,9 @@ package vpp1904_test
 import (
 	"testing"
 
-	ifModel "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/interfaces"
 	. "github.com/onsi/gomega"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1904/interfaces"
+	ifModel "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
 )
 
 func TestSetRxMode(t *testing.T) {
@@ -74,7 +74,6 @@ func TestSetRxModeRetval(t *testing.T) {
 
 	Expect(err).ToNot(BeNil())
 }
-
 
 func TestSetDefaultRxMode(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)

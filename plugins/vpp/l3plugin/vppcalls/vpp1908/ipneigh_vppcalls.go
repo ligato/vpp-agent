@@ -15,12 +15,13 @@
 package vpp1908
 
 import (
+	"context"
 	"regexp"
 	"strconv"
 
-	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1908/ip"
 	"github.com/pkg/errors"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1908/ip"
+	l3 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3"
 )
 
 // SetIPScanNeighbor implements ip neigh  handler.
@@ -62,7 +63,7 @@ var (
 
 // GetIPScanNeighbor dumps current IP Scan Neighbor configuration.
 func (h *IPNeighHandler) GetIPScanNeighbor() (*l3.IPScanNeighbor, error) {
-	data, err := h.RunCli("show ip scan-neighbor")
+	data, err := h.RunCli(context.TODO(), "show ip scan-neighbor")
 	if err != nil {
 		return nil, err
 	}
@@ -79,9 +80,9 @@ func (h *IPNeighHandler) GetIPScanNeighbor() (*l3.IPScanNeighbor, error) {
 	if matches[1] == "enabled" {
 		switch matches[2] {
 		case "IPv4":
-			ipScanNeigh.Mode = l3.IPScanNeighbor_IPv4
+			ipScanNeigh.Mode = l3.IPScanNeighbor_IPV4
 		case "IPv6":
-			ipScanNeigh.Mode = l3.IPScanNeighbor_IPv6
+			ipScanNeigh.Mode = l3.IPScanNeighbor_IPV6
 		case "IPv4 and IPv6":
 			ipScanNeigh.Mode = l3.IPScanNeighbor_BOTH
 		}

@@ -20,12 +20,12 @@ import (
 	"github.com/ligato/cn-infra/logging/logrus"
 	. "github.com/onsi/gomega"
 
-	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1908/ip"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
-	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls"
-	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls/vpp1908"
-	"github.com/ligato/vpp-agent/plugins/vpp/vppcallmock"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1908/ip"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin/vppcalls"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin/vppcalls/vpp1908"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/vppmock"
+	l3 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3"
 )
 
 var arpEntries = []*l3.ARPEntry{
@@ -83,8 +83,8 @@ func TestDelArp(t *testing.T) {
 	Expect(err).To(Succeed())
 }
 
-func arpTestSetup(t *testing.T) (*vppcallmock.TestCtx, ifaceidx.IfaceMetadataIndexRW, vppcalls.ArpVppAPI) {
-	ctx := vppcallmock.SetupTestCtx(t)
+func arpTestSetup(t *testing.T) (*vppmock.TestCtx, ifaceidx.IfaceMetadataIndexRW, vppcalls.ArpVppAPI) {
+	ctx := vppmock.SetupTestCtx(t)
 	log := logrus.NewLogger("test-log")
 	ifIndexes := ifaceidx.NewIfaceIndex(logrus.NewLogger("test"), "test")
 	arpHandler := vpp1908.NewArpVppHandler(ctx.MockChannel, ifIndexes, log)

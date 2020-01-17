@@ -15,7 +15,7 @@
 package model
 
 import (
-	"github.com/ligato/vpp-agent/pkg/models"
+	"go.ligato.io/vpp-agent/v3/pkg/models"
 )
 
 // ModuleName is the module name used for all the models of this plugin.

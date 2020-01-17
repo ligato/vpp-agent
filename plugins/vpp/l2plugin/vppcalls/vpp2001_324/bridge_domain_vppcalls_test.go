@@ -18,13 +18,13 @@ import (
 	"testing"
 
 	"github.com/ligato/cn-infra/logging/logrus"
-	l2 "github.com/ligato/vpp-agent/api/models/vpp/l2"
-	vpp_l2 "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001_324/l2"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
-	"github.com/ligato/vpp-agent/plugins/vpp/l2plugin/vppcalls"
-	"github.com/ligato/vpp-agent/plugins/vpp/l2plugin/vppcalls/vpp2001_324"
-	"github.com/ligato/vpp-agent/plugins/vpp/vppcallmock"
 	. "github.com/onsi/gomega"
+	vpp_l2 "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001_324/l2"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/l2plugin/vppcalls"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/l2plugin/vppcalls/vpp2001_324"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/vppmock"
+	l2 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l2"
 )
 
 const (
@@ -53,29 +53,6 @@ var createTestDataOutBD = &vpp_l2.BridgeDomainAddDel{
 	ArpTerm: 1,
 	MacAge:  45,
 	BdTag:   []byte(dummyBridgeDomainName),
-	IsAdd:   1,
-}
-
-// Input test data for updating bridge domain
-var updateTestDataInBd = &l2.BridgeDomain{
-	Name:                dummyBridgeDomainName,
-	Flood:               false,
-	UnknownUnicastFlood: false,
-	Forward:             false,
-	Learn:               false,
-	ArpTermination:      false,
-	MacAge:              50,
-}
-
-// Output test data for updating bridge domain
-var updateTestDataOutBd = &vpp_l2.BridgeDomainAddDel{
-	BdID:    dummyBridgeDomain,
-	Flood:   0,
-	UuFlood: 0,
-	Forward: 0,
-	Learn:   0,
-	ArpTerm: 0,
-	MacAge:  50,
 	IsAdd:   1,
 }
 
@@ -135,8 +112,8 @@ func TestVppDeleteBridgeDomainError(t *testing.T) {
 	Expect(err).Should(HaveOccurred())
 }
 
-func bdTestSetup(t *testing.T) (*vppcallmock.TestCtx, vppcalls.BridgeDomainVppAPI, ifaceidx.IfaceMetadataIndexRW) {
-	ctx := vppcallmock.SetupTestCtx(t)
+func bdTestSetup(t *testing.T) (*vppmock.TestCtx, vppcalls.BridgeDomainVppAPI, ifaceidx.IfaceMetadataIndexRW) {
+	ctx := vppmock.SetupTestCtx(t)
 	log := logrus.NewLogger("test-log")
 	ifIndex := ifaceidx.NewIfaceIndex(log, "bd-test-ifidx")
 	bdHandler := vpp2001_324.NewL2VppHandler(ctx.MockChannel, ifIndex, nil, log)

@@ -17,10 +17,10 @@ package vpp1908_test
 import (
 	"testing"
 
-	ifModel "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1908/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1908/vmxnet3"
 	. "github.com/onsi/gomega"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1908/interfaces"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1908/vmxnet3"
+	ifModel "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
 )
 
 func TestAddVmxNet3Interface(t *testing.T) {

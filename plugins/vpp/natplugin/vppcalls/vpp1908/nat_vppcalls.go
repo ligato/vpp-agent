@@ -20,8 +20,8 @@ import (
 
 	"github.com/pkg/errors"
 
-	nat "github.com/ligato/vpp-agent/api/models/vpp/nat"
-	natba "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1908/nat"
+	natba "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1908/nat"
+	nat "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/nat"
 )
 
 // Num protocol representation
@@ -80,14 +80,14 @@ func (h *NatVppHandler) DisableNat44Interface(iface string, isInside, isOutput b
 	return h.handleNat44Interface(iface, isInside, false)
 }
 
-// AddNat44Address adds new IPv4 address into the NAT44 pool.
-func (h *NatVppHandler) AddNat44Address(address string, vrf uint32, twiceNat bool) error {
-	return h.handleNat44AddressPool(address, vrf, twiceNat, true)
+// AddNat44AddressPool adds new IPV4 address pool into the NAT pools.
+func (h *NatVppHandler) AddNat44AddressPool(vrf uint32, firstIP, lastIP string, twiceNat bool) error {
+	return h.handleNat44AddressPool(vrf, firstIP, lastIP, twiceNat, true)
 }
 
-// DelNat44Address removes existing IPv4 address from the NAT44 pool.
-func (h *NatVppHandler) DelNat44Address(address string, vrf uint32, twiceNat bool) error {
-	return h.handleNat44AddressPool(address, vrf, twiceNat, false)
+// DelNat44AddressPool removes existing IPv4 address pool from the NAT pools.
+func (h *NatVppHandler) DelNat44AddressPool(vrf uint32, firstIP, lastIP string, twiceNat bool) error {
+	return h.handleNat44AddressPool(vrf, firstIP, lastIP, twiceNat, false)
 }
 
 // SetVirtualReassemblyIPv4 configures NAT virtual reassembly for IPv4 packets.
@@ -176,16 +176,23 @@ func (h *NatVppHandler) handleNat44InterfaceOutputFeature(iface string, isInside
 	return nil
 }
 
-// Calls VPP binary API to add/remove address to/from the NAT44 pool.
-func (h *NatVppHandler) handleNat44AddressPool(address string, vrf uint32, twiceNat, isAdd bool) error {
-	ipAddr, err := ipTo4Address(address)
+// Calls VPP binary API to add/remove addresses to/from the NAT44 pool.
+func (h *NatVppHandler) handleNat44AddressPool(vrf uint32, firstIP, lastIP string, twiceNat, isAdd bool) error {
+	firstAddr, err := ipTo4Address(firstIP)
 	if err != nil {
-		return errors.Errorf("unable to parse address %s from the NAT pool: %v", address, err)
+		return errors.Errorf("unable to parse address %s from the NAT pool: %v", firstIP, err)
+	}
+	lastAddr := firstAddr
+	if lastIP != "" {
+		lastAddr, err = ipTo4Address(lastIP)
+		if err != nil {
+			return errors.Errorf("unable to parse address %s from the NAT pool: %v", lastIP, err)
+		}
 	}
 
 	req := &natba.Nat44AddDelAddressRange{
-		FirstIPAddress: ipAddr,
-		LastIPAddress:  ipAddr,
+		FirstIPAddress: firstAddr,
+		LastIPAddress:  lastAddr,
 		VrfID:          vrf,
 		Flags:          setNat44Flags(&nat44Flags{isTwiceNat: twiceNat}),
 		IsAdd:          isAdd,

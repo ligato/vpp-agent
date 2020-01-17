@@ -17,10 +17,10 @@ package vpp1904_test
 import (
 	"testing"
 
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/interfaces"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1904/interfaces"
 
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/dhcp"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1904/dhcp"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/vppcalls"
 
 	. "github.com/onsi/gomega"
 )

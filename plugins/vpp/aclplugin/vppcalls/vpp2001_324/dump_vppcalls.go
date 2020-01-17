@@ -21,9 +21,9 @@ import (
 
 	"github.com/ligato/cn-infra/logging/logrus"
 
-	acl "github.com/ligato/vpp-agent/api/models/vpp/acl"
-	"github.com/ligato/vpp-agent/plugins/vpp/aclplugin/vppcalls"
-	vpp_acl "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001_324/acl"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/aclplugin/vppcalls"
+	vpp_acl "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001_324/acl"
+	acl "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/acl"
 )
 
 // DumpACL implements ACL handler.
@@ -628,7 +628,7 @@ func (h *ACLVppHandler) getUDPMatchRule(r vpp_acl.ACLRule) *acl.ACL_Rule_IpRule_
 // format into the ACL Plugin's NB format
 func (h *ACLVppHandler) getIcmpMatchRule(r vpp_acl.ACLRule) *acl.ACL_Rule_IpRule_Icmp {
 	icmp := &acl.ACL_Rule_IpRule_Icmp{
-		Icmpv6:        r.IsIPv6 > 0,
+		Icmpv6: r.IsIPv6 > 0,
 		IcmpCodeRange: &acl.ACL_Rule_IpRule_Icmp_Range{
 			First: uint32(r.DstportOrIcmpcodeFirst),
 			Last:  uint32(r.DstportOrIcmpcodeLast),

@@ -28,7 +28,7 @@ import (
 func (h *NetLinkHandler) GetLinkByName(ifName string) (netlink.Link, error) {
 	link, err := netlink.LinkByName(ifName)
 	if err != nil {
-		return nil, errors.Wrapf(err, "LinkByName %s", ifName)
+		return nil, errors.Wrapf(err, "LinkByName %q", ifName)
 	}
 	return link, nil
 }

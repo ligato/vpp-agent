@@ -15,7 +15,11 @@
 package govppmux
 
 import (
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
 	"net/http"
+	"net/rpc"
 
 	"github.com/ligato/cn-infra/rpc/rest"
 	"github.com/unrolled/render"
@@ -28,6 +32,8 @@ func (p *Plugin) registerHandlers(http rest.HTTPHandlers) {
 		return
 	}
 	http.RegisterHTTPHandler("/govppmux/stats", p.statsHandler, "GET")
+	http.RegisterHTTPHandler(rpc.DefaultRPCPath, p.proxyHandler, "CONNECT")
+	http.RegisterHTTPHandler("/vpp/command", p.cliCommandHandler, "POST")
 }
 
 func (p *Plugin) statsHandler(formatter *render.Render) http.HandlerFunc {
@@ -35,5 +41,51 @@ func (p *Plugin) statsHandler(formatter *render.Render) http.HandlerFunc {
 		if err := formatter.JSON(w, http.StatusOK, GetStats()); err != nil {
 			p.Log.Warnf("stats handler errored: %v", err)
 		}
+	}
+}
+
+func (p *Plugin) proxyHandler(_ *render.Render) http.HandlerFunc {
+	if !p.config.ProxyEnabled {
+		return func(w http.ResponseWriter, req *http.Request) {
+			http.Error(w, "VPP proxy not enabled", http.StatusServiceUnavailable)
+		}
+	}
+	return func(w http.ResponseWriter, req *http.Request) {
+		p.proxy.ServeHTTP(w, req)
+	}
+}
+
+func (p *Plugin) cliCommandHandler(formatter *render.Render) http.HandlerFunc {
+	return func(w http.ResponseWriter, req *http.Request) {
+		body, err := ioutil.ReadAll(req.Body)
+		if err != nil {
+			errMsg := fmt.Sprintf("400 Bad request: failed to parse request body: %v", err)
+			_ = formatter.JSON(w, http.StatusBadRequest, errMsg)
+			return
+		}
+		var reqParam map[string]string
+
+		if err = json.Unmarshal(body, &reqParam); err != nil {
+			errMsg := fmt.Sprintf("400 Bad request: failed to unmarshall request body: %v\n", err)
+			_ = formatter.JSON(w, http.StatusBadRequest, errMsg)
+			return
+		}
+		command, ok := reqParam["vppclicommand"]
+		if !ok || command == "" {
+			errMsg := fmt.Sprintf("400 Bad request: vppclicommand parameter missing or empty\n")
+			_ = formatter.JSON(w, http.StatusBadRequest, errMsg)
+			return
+		}
+
+		p.Log.Debugf("VPPCLI command: %v", command)
+		reply, err := p.vpeHandler.RunCli(req.Context(), command)
+		if err != nil {
+			errMsg := fmt.Sprintf("500 Internal server error: sending request failed: %v\n", err)
+			_ = formatter.JSON(w, http.StatusInternalServerError, errMsg)
+			return
+		}
+
+		p.Log.Debugf("VPPCLI response: %s", reply)
+		_ = formatter.JSON(w, http.StatusOK, reply)
 	}
 }

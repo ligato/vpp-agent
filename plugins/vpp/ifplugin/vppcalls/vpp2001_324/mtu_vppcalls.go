@@ -15,7 +15,7 @@
 package vpp2001_324
 
 import (
-	vpp_ifs "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001_324/interfaces"
+	vpp_ifs "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001_324/interfaces"
 )
 
 func (h *InterfaceVppHandler) SetInterfaceMtu(ifIdx uint32, mtu uint32) error {

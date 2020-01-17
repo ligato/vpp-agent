@@ -17,8 +17,10 @@ package vppcalls
 import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
-	ipsec "github.com/ligato/vpp-agent/api/models/vpp/ipsec"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
+
+	"go.ligato.io/vpp-agent/v3/plugins/vpp"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
+	ipsec "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/ipsec"
 )
 
 // IPSecSaDetails holds security association with VPP metadata
@@ -62,19 +64,19 @@ type IPSecVppAPI interface {
 
 	// AddSPD adds SPD to VPP via binary API
 	AddSPD(spdID uint32) error
-	// DelSPD deletes SPD from VPP via binary API
+	// DeleteSPD deletes SPD from VPP via binary API
 	DeleteSPD(spdID uint32) error
-	// InterfaceAddSPD adds SPD interface assignment to VPP via binary API
+	// AddSPDInterface adds SPD interface assignment to VPP via binary API
 	AddSPDInterface(spdID uint32, iface *ipsec.SecurityPolicyDatabase_Interface) error
-	// InterfaceDelSPD deletes SPD interface assignment from VPP via binary API
+	// DeleteSPDInterface deletes SPD interface assignment from VPP via binary API
 	DeleteSPDInterface(spdID uint32, iface *ipsec.SecurityPolicyDatabase_Interface) error
 	// AddSPDEntry adds SPD policy entry to VPP via binary API
 	AddSPDEntry(spdID, saID uint32, spd *ipsec.SecurityPolicyDatabase_PolicyEntry) error
-	// DelSPDEntry deletes SPD policy entry from VPP via binary API
+	// DeleteSPDEntry deletes SPD policy entry from VPP via binary API
 	DeleteSPDEntry(spdID, saID uint32, spd *ipsec.SecurityPolicyDatabase_PolicyEntry) error
-	// AddSAEntry adds SA to VPP via binary API
+	// AddSA adds SA to VPP via binary API
 	AddSA(sa *ipsec.SecurityAssociation) error
-	// DelSAEntry deletes SA from VPP via binary API
+	// DeleteSA deletes SA from VPP via binary API
 	DeleteSA(sa *ipsec.SecurityAssociation) error
 }
 
@@ -88,27 +90,36 @@ type IPSecVPPRead interface {
 	DumpIPSecSAWithIndex(saID uint32) (saList []*IPSecSaDetails, err error)
 }
 
-var Versions = map[string]HandlerVersion{}
+var Handler = vpp.RegisterHandler(vpp.HandlerDesc{
+	Name:       "ipsec",
+	HandlerAPI: (*IPSecVppAPI)(nil),
+})
 
-type HandlerVersion struct {
-	Msgs []govppapi.Message
-	New  func(govppapi.Channel, ifaceidx.IfaceMetadataIndex, logging.Logger) IPSecVppAPI
+type NewHandlerFunc func(ch govppapi.Channel, ifDdx ifaceidx.IfaceMetadataIndex, log logging.Logger) IPSecVppAPI
+
+func AddHandlerVersion(version vpp.Version, msgs []govppapi.Message, h NewHandlerFunc) {
+	Handler.AddVersion(vpp.HandlerVersion{
+		Version: version,
+		Check: func(c vpp.Client) error {
+			ch, err := c.NewAPIChannel()
+			if err != nil {
+				return err
+			}
+			return ch.CheckCompatiblity(msgs...)
+		},
+		NewHandler: func(c vpp.Client, a ...interface{}) vpp.HandlerAPI {
+			ch, err := c.NewAPIChannel()
+			if err != nil {
+				return err
+			}
+			return h(ch, a[0].(ifaceidx.IfaceMetadataIndex), a[1].(logging.Logger))
+		},
+	})
 }
 
-func CompatibleIPSecVppHandler(
-	ch govppapi.Channel, idx ifaceidx.IfaceMetadataIndex, log logging.Logger,
-) IPSecVppAPI {
-	if len(Versions) == 0 {
-		// ipsecplugin is not loaded
-		return nil
+func CompatibleIPSecVppHandler(c vpp.Client, ifIdx ifaceidx.IfaceMetadataIndex, log logging.Logger) IPSecVppAPI {
+	if v := Handler.FindCompatibleVersion(c); v != nil {
+		return v.NewHandler(c, ifIdx, log).(IPSecVppAPI)
 	}
-	for ver, h := range Versions {
-		log.Debugf("checking compatibility with %s", ver)
-		if err := ch.CheckCompatiblity(h.Msgs...); err != nil {
-			continue
-		}
-		log.Debug("found compatible version:", ver)
-		return h.New(ch, idx, log)
-	}
-	panic("no compatible version available")
+	return nil
 }

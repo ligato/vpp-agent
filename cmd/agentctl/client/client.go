@@ -16,36 +16,48 @@ package client
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
+	"net"
 	"net/http"
 	"net/url"
 	"path"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/coreos/etcd/clientv3"
 	"github.com/docker/docker/api/types/versions"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 
 	"github.com/ligato/cn-infra/db/keyval"
 	"github.com/ligato/cn-infra/db/keyval/etcd"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
 
-	"github.com/ligato/vpp-agent/api"
-	"github.com/ligato/vpp-agent/api/genericmanager"
-	"github.com/ligato/vpp-agent/api/types"
-	"github.com/ligato/vpp-agent/client"
-	"github.com/ligato/vpp-agent/client/remoteclient"
-	"github.com/ligato/vpp-agent/pkg/debug"
+	"go.ligato.io/vpp-agent/v3/client"
+	"go.ligato.io/vpp-agent/v3/client/remoteclient"
+	"go.ligato.io/vpp-agent/v3/cmd/agentctl/api"
+	"go.ligato.io/vpp-agent/v3/cmd/agentctl/api/types"
+	"go.ligato.io/vpp-agent/v3/pkg/debug"
 )
 
-var (
-	// DefaultAgentHost defines default host address for agent
+const (
+	// DefaultAgentHost defines default host address for agent.
 	DefaultAgentHost = "127.0.0.1"
-
+	// DefaultPortGRPC defines default port for GRPC connection.
 	DefaultPortGRPC = 9111
+	// DefaultPortHTTP defines default port for HTTP connection.
 	DefaultPortHTTP = 9191
+)
+
+// Constants for etcd connection.
+const (
+	// defaultEtcdOpTimeout defines default dial timeout.
+	defaultEtcdDialTimeout = time.Second * 3
+	// defaultEtcdOpTimeout defines default timeout for a pending operation.
+	defaultEtcdOpTimeout = time.Second * 10
 )
 
 var _ APIClient = (*Client)(nil)
@@ -59,10 +71,16 @@ type Client struct {
 	addr     string
 	basePath string
 
-	grpcAddr     string
-	httpAddr     string
-	endpoints    []string
-	serviceLabel string
+	grpcPort        int
+	grpcAddr        string
+	grpcTLS         *tls.Config
+	httpPort        int
+	httpAddr        string
+	httpTLS         *tls.Config
+	kvdbEndpoints   []string
+	kvdbDialTimeout time.Duration
+	kvdbTLS         *tls.Config
+	serviceLabel    string
 
 	grpcClient *grpc.ClientConn
 	httpClient *http.Client
@@ -79,53 +97,43 @@ func NewClient(host string) (*Client, error) {
 	return NewClientWithOpts(WithHost(host))
 }
 
-// NewClientFromEnv returns client with options from environment.
-func NewClientFromEnv() (*Client, error) {
-	return NewClientWithOpts(FromEnv)
-}
-
 // NewClientWithOpts returns client with ops applied.
 func NewClientWithOpts(ops ...Opt) (*Client, error) {
 	c := &Client{
-		host:       DefaultAgentHost,
-		version:    api.DefaultVersion,
-		httpClient: defaultHTTPClient(),
-		proto:      "tcp",
-		scheme:     "http",
+		host:     DefaultAgentHost,
+		version:  api.DefaultVersion,
+		proto:    "tcp",
+		scheme:   "http",
+		grpcPort: DefaultPortGRPC,
+		httpPort: DefaultPortHTTP,
 	}
+
 	for _, op := range ops {
 		if err := op(c); err != nil {
 			return nil, err
 		}
 	}
+
+	c.grpcAddr = net.JoinHostPort(c.host, strconv.Itoa(c.grpcPort))
+	c.httpAddr = net.JoinHostPort(c.host, strconv.Itoa(c.httpPort))
+
 	return c, nil
-}
-
-func defaultHTTPClient() *http.Client {
-	return &http.Client{}
-}
-
-func (c *Client) ConfigClient() (client.ConfigClient, error) {
-	conn, err := c.GRPCConn()
-	if err != nil {
-		return nil, err
-	}
-	genericClient := genericmanager.NewGenericManagerClient(conn)
-	return remoteclient.NewClientGRPC(genericClient), nil
 }
 
 func (c *Client) AgentHost() string {
 	return c.host
 }
 
-func (c *Client) ClientVersion() string {
+func (c *Client) Version() string {
 	return c.version
 }
 
 // Close the transport used by the client
 func (c *Client) Close() error {
-	if t, ok := c.httpClient.Transport.(*http.Transport); ok {
-		t.CloseIdleConnections()
+	if c.httpClient != nil {
+		if t, ok := c.httpClient.Transport.(*http.Transport); ok {
+			t.CloseIdleConnections()
+		}
 	}
 	if c.grpcClient != nil {
 		if err := c.grpcClient.Close(); err != nil {
@@ -135,11 +143,10 @@ func (c *Client) Close() error {
 	return nil
 }
 
+// GRPCConn returns configured gRPC client.
 func (c *Client) GRPCConn() (*grpc.ClientConn, error) {
 	if c.grpcClient == nil {
-		logging.Debugf("dialing grpc address: %v", c.grpcAddr)
-
-		conn, err := grpc.Dial(c.grpcAddr, grpc.WithInsecure())
+		conn, err := connectGrpc(c.grpcAddr, c.grpcTLS)
 		if err != nil {
 			return nil, err
 		}
@@ -148,8 +155,35 @@ func (c *Client) GRPCConn() (*grpc.ClientConn, error) {
 	return c.grpcClient, nil
 }
 
+// ConfigClient returns "remoteclient" with gRPC connection.
+func (c *Client) ConfigClient() (client.ConfigClient, error) {
+	conn, err := c.GRPCConn()
+	if err != nil {
+		return nil, err
+	}
+	return remoteclient.NewClientGRPC(conn), nil
+}
+
+// HTTPClient returns configured HTTP client.
 func (c *Client) HTTPClient() *http.Client {
+	if c.httpClient == nil {
+		tr := cloneHTTPTransport()
+		tr.TLSClientConfig = c.httpTLS
+
+		c.httpClient = &http.Client{
+			Transport: tr,
+		}
+	}
 	return c.httpClient
+}
+
+// KVDBClient returns configured KVDB client.
+func (c *Client) KVDBClient() (KVDBAPIClient, error) {
+	kvdb, err := connectEtcd(c.kvdbEndpoints, c.kvdbDialTimeout, c.kvdbTLS)
+	if err != nil {
+		return nil, fmt.Errorf("connecting to Etcd failed: %v", err)
+	}
+	return NewKVDBClient(kvdb, c.serviceLabel), nil
 }
 
 // ParseHostURL parses a url string, validates the string is a host url, and
@@ -233,28 +267,39 @@ func (c *Client) negotiateAPIVersionPing(p types.Ping) {
 	}
 }
 
-func (c *Client) KVDBClient() (KVDBAPIClient, error) {
-	kvdb, err := ConnectEtcd(c.endpoints)
-	if err != nil {
-		return nil, fmt.Errorf("connecting to Etcd failed: %v", err)
+func connectGrpc(addr string, tc *tls.Config) (*grpc.ClientConn, error) {
+	dialOpt := grpc.WithInsecure()
+	if tc != nil {
+		dialOpt = grpc.WithTransportCredentials(credentials.NewTLS(tc))
 	}
-	return NewKVDBClient(kvdb, c.serviceLabel), nil
+
+	logging.Debugf("dialing grpc address: %v", addr)
+
+	return grpc.Dial(addr, dialOpt)
 }
 
-func ConnectEtcd(endpoints []string) (keyval.CoreBrokerWatcher, error) {
+func connectEtcd(endpoints []string, dialTimeout time.Duration, tc *tls.Config) (keyval.CoreBrokerWatcher, error) {
 	log := logrus.NewLogger("etcd-client")
 	if debug.IsEnabledFor("kvdb") {
 		log.SetLevel(logging.DebugLevel)
 	} else {
 		log.SetLevel(logging.WarnLevel)
 	}
+
+	dt := defaultEtcdDialTimeout
+	if dialTimeout != 0 {
+		dt = dialTimeout
+	}
+
 	cfg := etcd.ClientConfig{
 		Config: &clientv3.Config{
 			Endpoints:   endpoints,
-			DialTimeout: time.Second * 3,
+			DialTimeout: dt,
+			TLS:         tc,
 		},
-		OpTimeout: time.Second * 10,
+		OpTimeout: defaultEtcdOpTimeout,
 	}
+
 	kvdb, err := etcd.NewEtcdConnectionWithBytes(cfg, log)
 	if err != nil {
 		return nil, err

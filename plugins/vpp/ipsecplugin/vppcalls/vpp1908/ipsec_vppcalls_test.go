@@ -20,13 +20,13 @@ import (
 	"testing"
 
 	"github.com/ligato/cn-infra/logging/logrus"
-	ipsec2 "github.com/ligato/vpp-agent/api/models/vpp/ipsec"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1908/ipsec"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
-	"github.com/ligato/vpp-agent/plugins/vpp/ipsecplugin/vppcalls"
-	"github.com/ligato/vpp-agent/plugins/vpp/ipsecplugin/vppcalls/vpp1908"
-	"github.com/ligato/vpp-agent/plugins/vpp/vppcallmock"
 	. "github.com/onsi/gomega"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1908/ipsec"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/ipsecplugin/vppcalls"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/ipsecplugin/vppcalls/vpp1908"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/vppmock"
+	ipsec2 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/ipsec"
 )
 
 func ipToAddr(ip string) ipsec.Address {
@@ -167,8 +167,8 @@ func TestVppInterfaceDelSPD(t *testing.T) {
 	}))
 }
 
-func ipSecTestSetup(t *testing.T) (*vppcallmock.TestCtx, vppcalls.IPSecVppAPI, ifaceidx.IfaceMetadataIndexRW) {
-	ctx := vppcallmock.SetupTestCtx(t)
+func ipSecTestSetup(t *testing.T) (*vppmock.TestCtx, vppcalls.IPSecVppAPI, ifaceidx.IfaceMetadataIndexRW) {
+	ctx := vppmock.SetupTestCtx(t)
 	log := logrus.NewLogger("test-log")
 	ifIndex := ifaceidx.NewIfaceIndex(log, "ipsec-test-ifidx")
 	ipSecHandler := vpp1908.NewIPSecVppHandler(ctx.MockChannel, ifIndex, log)

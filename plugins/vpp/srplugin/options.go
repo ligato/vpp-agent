@@ -17,9 +17,10 @@ package srplugin
 import (
 	"github.com/ligato/cn-infra/health/statuscheck"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/vpp-agent/plugins/govppmux"
-	"github.com/ligato/vpp-agent/plugins/kvscheduler"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin"
+
+	"go.ligato.io/vpp-agent/v3/plugins/govppmux"
+	"go.ligato.io/vpp-agent/v3/plugins/kvscheduler"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin"
 )
 
 // DefaultPlugin is a default instance of SRPlugin.
@@ -32,7 +33,7 @@ func NewPlugin(opts ...Option) *SRPlugin {
 	p.PluginName = "vpp-srplugin"
 	p.StatusCheck = &statuscheck.DefaultPlugin
 	p.Scheduler = &kvscheduler.DefaultPlugin
-	p.GoVppmux = &govppmux.DefaultPlugin
+	p.VPP = &govppmux.DefaultPlugin
 	p.IfPlugin = &ifplugin.DefaultPlugin
 
 	for _, o := range opts {

@@ -18,12 +18,12 @@ import (
 	"testing"
 
 	"github.com/ligato/cn-infra/logging/logrus"
-	vpp_ip "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001_324/ip"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
-	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls"
-	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls/vpp2001_324"
-	"github.com/ligato/vpp-agent/plugins/vpp/vppcallmock"
 	. "github.com/onsi/gomega"
+	vpp_ip "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001_324/ip"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin/vppcalls"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin/vppcalls/vpp2001_324"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/vppmock"
 )
 
 // Test enable/disable proxy arp
@@ -64,8 +64,8 @@ func TestProxyArpRange(t *testing.T) {
 	Expect(err).To(Not(BeNil()))
 }
 
-func pArpTestSetup(t *testing.T) (*vppcallmock.TestCtx, ifaceidx.IfaceMetadataIndexRW, vppcalls.ArpVppAPI, vppcalls.ProxyArpVppAPI) {
-	ctx := vppcallmock.SetupTestCtx(t)
+func pArpTestSetup(t *testing.T) (*vppmock.TestCtx, ifaceidx.IfaceMetadataIndexRW, vppcalls.ArpVppAPI, vppcalls.ProxyArpVppAPI) {
+	ctx := vppmock.SetupTestCtx(t)
 	log := logrus.NewLogger("test-log")
 	ifIndexes := ifaceidx.NewIfaceIndex(logrus.NewLogger("test"), "test")
 	arpHandler := vpp2001_324.NewArpVppHandler(ctx.MockChannel, ifIndexes, log)

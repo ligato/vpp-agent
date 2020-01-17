@@ -111,12 +111,6 @@ Make Datastore Snapshots
     ${prefix}=             Create Next Snapshot Prefix
     Take ETCD Snapshots    ${prefix}_${tag}
 
-Get ETCD Dump
-    [Arguments]    ${machine}=docker
-    ${command}=         Set Variable    ${DOCKER_COMMAND} exec etcd etcdctl get --prefix="true" ""
-    ${out}=             Execute On Machine    ${machine}    ${command}    log=false
-    [Return]            ${out}
-
 Take ETCD Snapshots
     [Arguments]            ${tag}    ${machine}=docker
     ${dump}=               Get ETCD Dump    ${machine}

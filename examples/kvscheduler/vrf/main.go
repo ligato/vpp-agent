@@ -21,15 +21,15 @@ import (
 
 	"github.com/ligato/cn-infra/agent"
 
-	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
-	nat "github.com/ligato/vpp-agent/api/models/vpp/nat"
-	"github.com/ligato/vpp-agent/clientv2/linux/localclient"
-	"github.com/ligato/vpp-agent/plugins/orchestrator"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin"
-	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin"
-	"github.com/ligato/vpp-agent/plugins/vpp/natplugin"
-	"github.com/gogo/protobuf/proto"
+	"github.com/golang/protobuf/proto"
+	"go.ligato.io/vpp-agent/v3/clientv2/linux/localclient"
+	"go.ligato.io/vpp-agent/v3/plugins/orchestrator"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/natplugin"
+	interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
+	l3 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3"
+	nat "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/nat"
 )
 
 /*
@@ -124,7 +124,7 @@ func testLocalClientWithScheduler() {
 		Put().
 		VrfTable(vrfV6).
 		VppInterface(tap1). // add IPv6 address
-//		DNAT44(dnat1).      // will become pending
+		//		DNAT44(dnat1).      // will become pending
 		Send().ReceiveReply()
 	if err != nil {
 		fmt.Println(err)

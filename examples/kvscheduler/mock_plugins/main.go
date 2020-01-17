@@ -19,13 +19,13 @@ import (
 
 	"github.com/ligato/cn-infra/agent"
 
-	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler"
-	"github.com/ligato/vpp-agent/plugins/orchestrator"
+	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler"
+	"go.ligato.io/vpp-agent/v3/plugins/orchestrator"
 
-	mock_ifplugin "github.com/ligato/vpp-agent/examples/kvscheduler/mock_plugins/ifplugin"
-	mock_l2plugin "github.com/ligato/vpp-agent/examples/kvscheduler/mock_plugins/l2plugin"
-	"github.com/ligato/vpp-agent/examples/kvscheduler/mock_plugins/scenario"
 	"github.com/ligato/cn-infra/logging"
+	mock_ifplugin "go.ligato.io/vpp-agent/v3/examples/kvscheduler/mock_plugins/ifplugin"
+	mock_l2plugin "go.ligato.io/vpp-agent/v3/examples/kvscheduler/mock_plugins/l2plugin"
+	"go.ligato.io/vpp-agent/v3/examples/kvscheduler/mock_plugins/scenario"
 )
 
 /*
@@ -79,7 +79,7 @@ func (a *ExampleAgent) AfterInit() error {
 			a.MockIfPlugin.Log.SetLevel(logging.ErrorLevel)
 			a.MockL2Plugin.Log.SetLevel(logging.ErrorLevel)
 			logging.DefaultRegistry.SetLevel(
-				a.Orchestrator.String() +".dispatcher", logging.ErrorLevel.String())
+				a.Orchestrator.String()+".dispatcher", logging.ErrorLevel.String())
 		}
 	})
 	return nil

@@ -21,7 +21,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
-	agentcli "github.com/ligato/vpp-agent/cmd/agentctl/cli"
+	agentcli "go.ligato.io/vpp-agent/v3/cmd/agentctl/cli"
 )
 
 func NewKvdbCommand(cli agentcli.Cli) *cobra.Command {
@@ -61,7 +61,7 @@ func newKvdbListCommand(cli agentcli.Cli) *cobra.Command {
 }
 
 func runKvdbList(cli agentcli.Cli, key string, keysOnly bool) error {
-	logrus.Debugf("kvdb.List- KEY: %s\n", key)
+	logrus.Debugf("kvdb.List - KEY: %q", key)
 
 	kvdb, err := cli.Client().KVDBClient()
 	if err != nil {
@@ -110,7 +110,7 @@ func newKvdbGetCommand(cli agentcli.Cli) *cobra.Command {
 }
 
 func runKvdbGet(cli agentcli.Cli, key string) error {
-	logrus.Debugf("kvdb.Get - KEY: %s\n", key)
+	logrus.Debugf("kvdb.Get - KEY: %q", key)
 
 	kvdb, err := cli.Client().KVDBClient()
 	if err != nil {
@@ -161,7 +161,7 @@ For short key, put command use default microservice label.
 }
 
 func runKvdbPut(cli agentcli.Cli, key, value string) error {
-	logrus.Debugf("kvdb.Put - KEY: %s VAL: %s\n", key, value)
+	logrus.Debugf("kvdb.Put - KEY: %q VAL: %q", key, value)
 
 	kvdb, err := cli.Client().KVDBClient()
 	if err != nil {
@@ -192,7 +192,7 @@ func newKvdbDelCommand(cli agentcli.Cli) *cobra.Command {
 }
 
 func runKvdbDel(cli agentcli.Cli, key string) error {
-	logrus.Debugf("kvdb.Del - KEY: %s \n", key)
+	logrus.Debugf("kvdb.Del - KEY: %q", key)
 
 	kvdb, err := cli.Client().KVDBClient()
 	if err != nil {

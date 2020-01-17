@@ -24,8 +24,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/ligato/vpp-agent/api/types"
-	agentcli "github.com/ligato/vpp-agent/cmd/agentctl/cli"
+	"go.ligato.io/vpp-agent/v3/cmd/agentctl/api/types"
+	agentcli "go.ligato.io/vpp-agent/v3/cmd/agentctl/cli"
 )
 
 func NewLogCommand(cli agentcli.Cli) *cobra.Command {

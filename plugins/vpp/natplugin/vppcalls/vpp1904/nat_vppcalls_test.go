@@ -21,9 +21,9 @@ import (
 
 	. "github.com/onsi/gomega"
 
-	nat "github.com/ligato/vpp-agent/api/models/vpp/nat"
-	binapi "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/nat"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
+	binapi "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1904/nat"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
+	nat "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/nat"
 )
 
 func TestSetNat44Forwarding(t *testing.T) {
@@ -293,7 +293,7 @@ func TestAddNat44Address(t *testing.T) {
 	addr := net.ParseIP("10.0.0.1").To4()
 
 	ctx.MockVpp.MockReply(&binapi.Nat44AddDelAddressRangeReply{})
-	err := natHandler.AddNat44Address(addr.String(), 0, false)
+	err := natHandler.AddNat44AddressPool(0, addr.String(), "", false)
 
 	Expect(err).ShouldNot(HaveOccurred())
 
@@ -314,7 +314,7 @@ func TestAddNat44AddressError(t *testing.T) {
 
 	// Incorrect reply object
 	ctx.MockVpp.MockReply(&binapi.Nat44AddDelIdentityMappingReply{})
-	err := natHandler.AddNat44Address(addr.String(), 0, false)
+	err := natHandler.AddNat44AddressPool(0, addr.String(), "", false)
 
 	Expect(err).Should(HaveOccurred())
 }
@@ -328,7 +328,7 @@ func TestAddNat44AddressPoolRetval(t *testing.T) {
 	ctx.MockVpp.MockReply(&binapi.Nat44AddDelAddressRangeReply{
 		Retval: 1,
 	})
-	err := natHandler.AddNat44Address(addr.String(), 0, false)
+	err := natHandler.AddNat44AddressPool(0, addr.String(), "", false)
 
 	Expect(err).Should(HaveOccurred())
 }
@@ -340,7 +340,7 @@ func TestDelNat44Address(t *testing.T) {
 	addr := net.ParseIP("10.0.0.1").To4()
 
 	ctx.MockVpp.MockReply(&binapi.Nat44AddDelAddressRangeReply{})
-	err := natHandler.DelNat44Address(addr.String(), 0, false)
+	err := natHandler.DelNat44AddressPool(0, addr.String(), "", false)
 
 	Expect(err).ShouldNot(HaveOccurred())
 

@@ -22,35 +22,9 @@ import (
 	"strings"
 
 	govppapi "git.fd.io/govpp.git/api"
-	vpevppcalls "github.com/ligato/vpp-agent/plugins/govppmux/vppcalls"
-	"github.com/ligato/vpp-agent/plugins/govppmux/vppcalls/vpp1904"
-	"github.com/ligato/vpp-agent/plugins/telemetry/vppcalls"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/memclnt"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/vpe"
+
+	"go.ligato.io/vpp-agent/v3/plugins/telemetry/vppcalls"
 )
-
-func init() {
-	var msgs []govppapi.Message
-	msgs = append(msgs, memclnt.AllMessages()...)
-	msgs = append(msgs, vpe.AllMessages()...)
-
-	vppcalls.Versions["19.04"] = vppcalls.HandlerVersion{
-		Msgs: msgs,
-		New: func(ch govppapi.Channel) vppcalls.TelemetryVppAPI {
-			return NewTelemetryVppHandler(ch)
-		},
-	}
-}
-
-type TelemetryHandler struct {
-	vpe vpevppcalls.VpeVppAPI
-}
-
-func NewTelemetryVppHandler(ch govppapi.Channel) *TelemetryHandler {
-	return &TelemetryHandler{
-		vpe: vpp1904.NewVpeHandler(ch),
-	}
-}
 
 func (h *TelemetryHandler) GetSystemStats(context.Context) (*govppapi.SystemStats, error) {
 	return nil, nil
@@ -69,7 +43,7 @@ var (
 
 // GetMemory retrieves `show memory` info.
 func (h *TelemetryHandler) GetMemory(ctx context.Context) (*vppcalls.MemoryInfo, error) {
-	input, err := h.vpe.RunCli("show memory main-heap")
+	input, err := h.vpe.RunCli(context.TODO(), "show memory main-heap")
 	if err != nil {
 		return nil, err
 	}
@@ -122,7 +96,7 @@ var (
 
 // GetNodeCounters retrieves node counters info.
 func (h *TelemetryHandler) GetNodeCounters(ctx context.Context) (*vppcalls.NodeCounterInfo, error) {
-	data, err := h.vpe.RunCli("show node counters")
+	data, err := h.vpe.RunCli(context.TODO(), "show node counters")
 	if err != nil {
 		return nil, err
 	}
@@ -177,7 +151,7 @@ var (
 
 // GetRuntimeInfo retrieves how runtime info.
 func (h *TelemetryHandler) GetRuntimeInfo(ctx context.Context) (*vppcalls.RuntimeInfo, error) {
-	input, err := h.vpe.RunCli("show runtime")
+	input, err := h.vpe.RunCli(context.TODO(), "show runtime")
 	if err != nil {
 		return nil, err
 	}
@@ -244,7 +218,7 @@ var (
 
 // GetBuffersInfo retrieves buffers info from VPP.
 func (h *TelemetryHandler) GetBuffersInfo(ctx context.Context) (*vppcalls.BuffersInfo, error) {
-	data, err := h.vpe.RunCli("show buffers")
+	data, err := h.vpe.RunCli(context.TODO(), "show buffers")
 	if err != nil {
 		return nil, err
 	}

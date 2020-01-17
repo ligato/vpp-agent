@@ -1,11 +1,12 @@
 package kvscheduler
 
 import (
-	"github.com/gogo/protobuf/proto"
-	"github.com/vishvananda/netns"
 	"os"
 
-	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
+	"github.com/golang/protobuf/proto"
+	"github.com/vishvananda/netns"
+
+	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 )
 
 // checking of the original network namespace preservation

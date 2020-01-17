@@ -34,7 +34,7 @@ import (
 	"time"
 
 	docker "github.com/fsouza/go-dockerclient"
-	"github.com/gogo/protobuf/proto"
+	"github.com/golang/protobuf/proto"
 	"github.com/mitchellh/go-ps"
 	. "github.com/onsi/gomega"
 	"google.golang.org/grpc"
@@ -44,13 +44,13 @@ import (
 
 	"github.com/ligato/cn-infra/health/probe"
 	"github.com/ligato/cn-infra/health/statuscheck/model/status"
-	"github.com/ligato/vpp-agent/api/genericmanager"
-	"github.com/ligato/vpp-agent/client"
-	"github.com/ligato/vpp-agent/client/remoteclient"
-	"github.com/ligato/vpp-agent/pkg/models"
-	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-	nslinuxcalls "github.com/ligato/vpp-agent/plugins/linux/nsplugin/linuxcalls"
-	"github.com/ligato/vpp-agent/tests/e2e/utils"
+	"go.ligato.io/vpp-agent/v3/client"
+	"go.ligato.io/vpp-agent/v3/client/remoteclient"
+	"go.ligato.io/vpp-agent/v3/pkg/models"
+	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
+	nslinuxcalls "go.ligato.io/vpp-agent/v3/plugins/linux/nsplugin/linuxcalls"
+	"go.ligato.io/vpp-agent/v3/proto/ligato/kvscheduler"
+	"go.ligato.io/vpp-agent/v3/tests/e2e/utils"
 )
 
 var (
@@ -125,19 +125,6 @@ func setupE2E(t *testing.T) *testCtx {
 	}
 	RegisterTestingT(t)
 
-	SetDefaultEventuallyPollingInterval(checkPollingInterval)
-	SetDefaultEventuallyTimeout(checkTimeout)
-
-	// connect to the docker daemon
-	dockerClient, err := docker.NewClientFromEnv()
-	if err != nil {
-		t.Fatalf("failed to get docker client instance from the environment variables: %v", err)
-	}
-	t.Logf("Using docker client endpoint: %+v", dockerClient.Endpoint())
-
-	// make sure there are no microservices left from the previous run
-	resetMicroservices(t, dockerClient)
-
 	// check if VPP process is not running already
 	assertProcessNotRunning(t, "vpp", "vpp_main", *vppPath)
 
@@ -157,6 +144,19 @@ func setupE2E(t *testing.T) *testCtx {
 		vppArgs = []string{vppConf}
 	}
 	vppCmd := startProcess(t, "VPP", nil, os.Stdout, os.Stderr, *vppPath, vppArgs...)
+
+	SetDefaultEventuallyPollingInterval(checkPollingInterval)
+	SetDefaultEventuallyTimeout(checkTimeout)
+
+	// connect to the docker daemon
+	dockerClient, err := docker.NewClientFromEnv()
+	if err != nil {
+		t.Fatalf("failed to get docker client instance from the environment variables: %v", err)
+	}
+	t.Logf("Using docker client endpoint: %+v", dockerClient.Endpoint())
+
+	// make sure there are no microservices left from the previous run
+	resetMicroservices(t, dockerClient)
 
 	// start the agent
 	assertProcessNotRunning(t, "vpp_agent")
@@ -186,7 +186,7 @@ func setupE2E(t *testing.T) *testCtx {
 	if err != nil {
 		t.Fatalf("Failed to connect to VPP-agent via gRPC: %v", err)
 	}
-	grpcClient := remoteclient.NewClientGRPC(genericmanager.NewGenericManagerClient(grpcConn))
+	grpcClient := remoteclient.NewClientGRPC(grpcConn)
 
 	// run initial resync
 	syncAgent(t, httpClient)
@@ -222,6 +222,61 @@ func (ctx *testCtx) teardownE2E() {
 	stopProcess(ctx.t, ctx.VPP, "VPP")
 }
 
+func (ctx *testCtx) setupETCD() string {
+	err := ctx.dockerClient.PullImage(docker.PullImageOptions{
+		Repository: "gcr.io/etcd-development/etcd",
+		Tag:        "latest",
+	}, docker.AuthConfiguration{})
+	if err != nil {
+		ctx.t.Fatalf("failed to pull ETCD image: %v", err)
+	}
+
+	container, err := ctx.dockerClient.CreateContainer(docker.CreateContainerOptions{
+		Name: "e2e-test-etcd",
+		Config: &docker.Config{
+			Env:   []string{"ETCDCTL_API=3"},
+			Image: "gcr.io/etcd-development/etcd",
+			Cmd: []string{
+				"/usr/local/bin/etcd",
+				"--client-cert-auth",
+				"--trusted-ca-file=/etc/certs/ca.pem",
+				"--cert-file=/etc/certs/cert1.pem",
+				"--key-file=/etc/certs/cert1-key.pem",
+				"--advertise-client-urls=https://127.0.0.1:2379",
+				"--listen-client-urls=https://127.0.0.1:2379",
+			},
+		},
+		HostConfig: &docker.HostConfig{
+			NetworkMode: "container:vpp-agent-e2e-tests",
+			Binds:       []string{os.Getenv("CERTS_PATH") + ":/etc/certs"},
+		},
+	})
+	if err != nil {
+		ctx.t.Fatalf("failed to create ETCD container: %v", err)
+	}
+	err = ctx.dockerClient.StartContainer(container.ID, nil)
+	if err != nil {
+		ctx.t.Fatalf("failed to start ETCD container: %v", err)
+	}
+	return container.ID
+}
+
+func (ctx *testCtx) teardownETCD(id string) {
+	err := ctx.dockerClient.StopContainer(id, msStopTimeout)
+	if err != nil {
+		ctx.t.Fatalf("failed to stop ETCD container: %v", err)
+	}
+	err = ctx.dockerClient.RemoveContainer(docker.RemoveContainerOptions{
+		ID:    id,
+		Force: true,
+	})
+	if err != nil {
+		ctx.t.Fatalf("failed to remove ETCD container: %v", err)
+	} else {
+		ctx.t.Logf("removed ETCD container")
+	}
+}
+
 // syncAgent runs downstream resync and returns the list of executed operations.
 func (ctx *testCtx) syncAgent() (executed kvs.RecordedTxnOps) {
 	return syncAgent(ctx.t, ctx.httpClient)
@@ -239,16 +294,25 @@ func (ctx *testCtx) agentInSync() bool {
 	return true
 }
 
+// execCmd executes command and returns stdout, stderr as strings and error.
+func (ctx *testCtx) execCmd(cmd string, args ...string) (string, string, error) {
+	ctx.t.Logf("exec: %s %s", cmd, strings.Join(args, " "))
+	var stdout, stderr bytes.Buffer
+	c := exec.Command(cmd, args...)
+	c.Stdout = &stdout
+	c.Stderr = &stderr
+	err := c.Run()
+	return stdout.String(), stderr.String(), err
+}
+
 // execVppctl returns output from vppctl for given action and arguments.
 func (ctx *testCtx) execVppctl(action string, args ...string) (string, error) {
-	var stdout bytes.Buffer
 	command := append([]string{action}, args...)
-	cmd := exec.Command("vppctl", command...)
-	cmd.Stdout = &stdout
-	if err := cmd.Run(); err != nil {
+	stdout, _, err := ctx.execCmd("vppctl", command...)
+	if err != nil {
 		return "", fmt.Errorf("could not execute `vppctl %s`: %v", strings.Join(command, " "), err)
 	}
-	return stdout.String(), nil
+	return stdout, nil
 }
 
 func (ctx *testCtx) startMicroservice(msName string) (ms *microservice) {
@@ -407,18 +471,18 @@ func (ctx *testCtx) testConnection(fromMs, toMs, toAddr, listenAddr string,
 	return err
 }
 
-func (ctx *testCtx) getValueState(value proto.Message) kvs.ValueState {
+func (ctx *testCtx) getValueState(value proto.Message) kvscheduler.ValueState {
 	key := models.Key(value)
 	return ctx.getValueStateByKey(key)
 }
 
-func (ctx *testCtx) getValueStateByKey(key string) kvs.ValueState {
+func (ctx *testCtx) getValueStateByKey(key string) kvscheduler.ValueState {
 	q := fmt.Sprintf(`/scheduler/status?key=%s`, url.QueryEscape(key))
 	resp, err := ctx.httpClient.GET(q)
 	if err != nil {
 		ctx.t.Fatalf("Request to obtain value status has failed: %v", err)
 	}
-	status := kvs.BaseValueStatus{}
+	status := kvscheduler.BaseValueStatus{}
 	if err := json.Unmarshal(resp, &status); err != nil {
 		ctx.t.Fatalf("Reply with value status cannot be decoded: %v", err)
 	}
@@ -430,8 +494,8 @@ func (ctx *testCtx) getValueStateByKey(key string) kvs.ValueState {
 
 // getValueStateClb can be used to repeatedly check value state inside the assertions
 // "Eventually" and "Consistently" from Omega.
-func (ctx *testCtx) getValueStateClb(value proto.Message) func() kvs.ValueState {
-	return func() kvs.ValueState {
+func (ctx *testCtx) getValueStateClb(value proto.Message) func() kvscheduler.ValueState {
+	return func() kvscheduler.ValueState {
 		return ctx.getValueState(value)
 	}
 }

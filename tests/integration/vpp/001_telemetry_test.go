@@ -18,19 +18,19 @@ import (
 	"context"
 	"testing"
 
-	_ "github.com/ligato/vpp-agent/plugins/telemetry"
-	"github.com/ligato/vpp-agent/plugins/telemetry/vppcalls"
+	_ "go.ligato.io/vpp-agent/v3/plugins/telemetry"
+	"go.ligato.io/vpp-agent/v3/plugins/telemetry/vppcalls"
 )
 
 func TestTelemetryNodeCounters(t *testing.T) {
-	ctx := setupVPP(t)
-	defer ctx.teardownVPP()
+	test := setupVPP(t)
+	defer test.teardownVPP()
 
-	if ctx.versionInfo.Release() <= "19.04" {
-		t.Skipf("SKIP for VPP %s", ctx.versionInfo.Release())
+	if test.versionInfo.Release() <= "19.04" {
+		t.Skipf("SKIP for VPP %s<=19.04", test.versionInfo.Release())
 	}
 
-	h := vppcalls.CompatibleTelemetryHandler(ctx.vppBinapi, ctx.vppStats)
+	h := vppcalls.CompatibleTelemetryHandler(test.vppClient)
 
 	nodeCounters, err := h.GetNodeCounters(context.Background())
 	if err != nil {
@@ -45,18 +45,19 @@ func TestTelemetryNodeCounters(t *testing.T) {
 	}
 }
 
-func TestTelemetryInterfacStats(t *testing.T) {
-	ctx := setupVPP(t)
-	defer ctx.teardownVPP()
+func TestTelemetryInterfaceStats(t *testing.T) {
+	test := setupVPP(t)
+	defer test.teardownVPP()
 
-	h := vppcalls.CompatibleTelemetryHandler(ctx.vppBinapi, ctx.vppStats)
+	h := vppcalls.CompatibleTelemetryHandler(test.vppClient)
 
 	ifStats, err := h.GetInterfaceStats(context.Background())
 	if err != nil {
 		t.Fatalf("getting interface stats failed: %v", err)
+	} else {
+		t.Logf("retrieved interface stats: %+v", ifStats)
 	}
-	t.Logf("retrieved interface stats: %+v", ifStats)
-	if ifStats.Interfaces == nil {
+	if ifStats == nil || ifStats.Interfaces == nil {
 		t.Fatal("expected interface stats, got nil")
 	}
 	if len(ifStats.Interfaces) == 0 {

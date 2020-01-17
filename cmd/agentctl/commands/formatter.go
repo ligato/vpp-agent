@@ -23,11 +23,13 @@ import (
 	"time"
 
 	"github.com/ghodss/yaml"
+	"github.com/golang/protobuf/proto"
 )
 
 var tmplFuncs = template.FuncMap{
 	"json":  jsonTmpl,
 	"yaml":  yamlTmpl,
+	"proto": protoTmpl,
 	"epoch": epochTmpl,
 	"ago":   agoTmpl,
 }
@@ -40,6 +42,8 @@ func formatAsTemplate(w io.Writer, format string, data interface{}) error {
 		format = "{{json .}}"
 	} else if format == "yaml" {
 		format = "{{yaml .}}"
+	} else if format == "proto" {
+		format = "{{proto .}}"
 	}
 
 	if _, err := t.Parse(format); err != nil {
@@ -73,6 +77,19 @@ func jsonTmpl(data interface{}) string {
 	encoder := json.NewEncoder(&b)
 	encoder.SetIndent("", "  ")
 	if err := encoder.Encode(data); err != nil {
+		panic(err)
+	}
+	return b.String()
+}
+
+func protoTmpl(data interface{}) string {
+	pb, ok := data.(proto.Message)
+	if !ok {
+		panic(fmt.Sprintf("%T is not a proto message", data))
+	}
+	var b bytes.Buffer
+	m := proto.TextMarshaler{}
+	if err := m.Marshal(&b, pb); err != nil {
 		panic(err)
 	}
 	return b.String()

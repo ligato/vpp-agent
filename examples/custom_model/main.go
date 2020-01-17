@@ -22,26 +22,27 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gogo/protobuf/proto"
+	"github.com/golang/protobuf/proto"
 	"github.com/ligato/cn-infra/agent"
 	"github.com/ligato/cn-infra/infra"
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/namsral/flag"
 	"google.golang.org/grpc"
 
-	"github.com/ligato/vpp-agent/api/genericmanager"
-	"github.com/ligato/vpp-agent/api/models/linux"
-	linux_interfaces "github.com/ligato/vpp-agent/api/models/linux/interfaces"
-	linux_l3 "github.com/ligato/vpp-agent/api/models/linux/l3"
-	"github.com/ligato/vpp-agent/api/models/vpp"
-	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	vpp_l2 "github.com/ligato/vpp-agent/api/models/vpp/l2"
-	"github.com/ligato/vpp-agent/client"
-	"github.com/ligato/vpp-agent/client/remoteclient"
-	"github.com/ligato/vpp-agent/cmd/vpp-agent/app"
-	mymodel "github.com/ligato/vpp-agent/examples/custom_model/pb"
-	"github.com/ligato/vpp-agent/plugins/orchestrator"
+	"go.ligato.io/vpp-agent/v3/client"
+	"go.ligato.io/vpp-agent/v3/client/remoteclient"
+	"go.ligato.io/vpp-agent/v3/cmd/vpp-agent/app"
+	mymodel "go.ligato.io/vpp-agent/v3/examples/custom_model/proto"
+	"go.ligato.io/vpp-agent/v3/plugins/orchestrator"
+	"go.ligato.io/vpp-agent/v3/proto/ligato/linux"
+	linux_interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/linux/interfaces"
+	linux_l3 "go.ligato.io/vpp-agent/v3/proto/ligato/linux/l3"
+	"go.ligato.io/vpp-agent/v3/proto/ligato/vpp"
+	interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
+	vpp_l2 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l2"
 )
+
+//go:generate protoc --proto_path=. --go_out=paths=source_relative:. proto/model.proto
 
 var (
 	address    = flag.String("address", "127.0.0.1:9111", "address of GRPC server")
@@ -111,7 +112,7 @@ func (p *ExamplePlugin) AfterInit() (err error) {
 		time.Sleep(time.Second)
 
 		// remoteclient
-		c := remoteclient.NewClientGRPC(genericmanager.NewGenericManagerClient(p.conn))
+		c := remoteclient.NewClientGRPC(p.conn)
 		demonstrateClient(c)
 
 		//time.Sleep(time.Second * 3)
@@ -150,7 +151,7 @@ func demonstrateClient(c client.ConfigClient) {
 	fmt.Println("# ==========================================")
 	fmt.Println("# List known models..")
 	fmt.Println("# ==========================================")
-	knownModels, err := c.KnownModels()
+	knownModels, err := c.KnownModels("config")
 	if err != nil {
 		log.Println("KnownModels failed:", err)
 	}

@@ -17,7 +17,7 @@ package util
 import (
 	"reflect"
 
-	"github.com/gogo/protobuf/proto"
+	"github.com/golang/protobuf/proto"
 )
 
 func ExtractProtos(from ...interface{}) (protos []proto.Message) {

@@ -1,4 +1,4 @@
-//  Copyright (c) 2019 Cisco and/or its affiliates.
+//  Copyright (c) 2020 Cisco and/or its affiliates.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -20,13 +20,13 @@ import (
 	"github.com/ligato/cn-infra/logging/logrus"
 	. "github.com/onsi/gomega"
 
-	punt "github.com/ligato/vpp-agent/api/models/vpp/punt"
-	vpp_ip "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001_324/ip"
-	vpp_punt "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp2001_324/punt"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
-	"github.com/ligato/vpp-agent/plugins/vpp/puntplugin/vppcalls"
-	"github.com/ligato/vpp-agent/plugins/vpp/puntplugin/vppcalls/vpp2001_324"
-	"github.com/ligato/vpp-agent/plugins/vpp/vppcallmock"
+	vpp_ip "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001_324/ip"
+	vpp_punt "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001_324/punt"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/puntplugin/vppcalls"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/puntplugin/vppcalls/vpp2001_324"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/vppmock"
+	punt "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/punt"
 )
 
 // TODO test below temporary disabled (re-enable with set_punt)
@@ -83,7 +83,7 @@ func TestRegisterPuntSocket(t *testing.T) {
 	})
 
 	path, err := puntHandler.RegisterPuntSocket(&punt.ToHost{
-		L3Protocol: punt.L3Protocol_IPv4,
+		L3Protocol: punt.L3Protocol_IPV4,
 		L4Protocol: punt.L4Protocol_UDP,
 		Port:       9000,
 		SocketPath: "/test/path/socket",
@@ -147,7 +147,7 @@ func TestAddIPRedirect(t *testing.T) {
 	ifIndexes.Put("if2", &ifaceidx.IfaceMetadata{SwIfIndex: 2})
 
 	err := puntHandler.AddPuntRedirect(&punt.IPRedirect{
-		L3Protocol:  punt.L3Protocol_IPv4,
+		L3Protocol:  punt.L3Protocol_IPV4,
 		RxInterface: "if1",
 		TxInterface: "if2",
 		NextHop:     "10.0.0.1",
@@ -172,7 +172,7 @@ func TestAddIPRedirectAll(t *testing.T) {
 	ifIndexes.Put("if1", &ifaceidx.IfaceMetadata{SwIfIndex: 1})
 
 	err := puntHandler.AddPuntRedirect(&punt.IPRedirect{
-		L3Protocol:  punt.L3Protocol_IPv4,
+		L3Protocol:  punt.L3Protocol_IPV4,
 		TxInterface: "if1",
 		NextHop:     "30.0.0.1",
 	})
@@ -198,7 +198,7 @@ func TestDeleteIPRedirect(t *testing.T) {
 	ifIndexes.Put("if2", &ifaceidx.IfaceMetadata{SwIfIndex: 2})
 
 	err := puntHandler.DeletePuntRedirect(&punt.IPRedirect{
-		L3Protocol:  punt.L3Protocol_IPv4,
+		L3Protocol:  punt.L3Protocol_IPV4,
 		RxInterface: "if1",
 		TxInterface: "if2",
 		NextHop:     "10.0.0.1",
@@ -215,8 +215,8 @@ func TestDeleteIPRedirect(t *testing.T) {
 	//Expect(vppMsg.Nh).To(Equal([]uint8(net.ParseIP("10.0.0.1").To4())))
 }
 
-func puntTestSetup(t *testing.T) (*vppcallmock.TestCtx, vppcalls.PuntVppAPI, ifaceidx.IfaceMetadataIndexRW) {
-	ctx := vppcallmock.SetupTestCtx(t)
+func puntTestSetup(t *testing.T) (*vppmock.TestCtx, vppcalls.PuntVppAPI, ifaceidx.IfaceMetadataIndexRW) {
+	ctx := vppmock.SetupTestCtx(t)
 	logger := logrus.NewLogger("test-log")
 	ifIndexes := ifaceidx.NewIfaceIndex(logger, "punt-if-idx")
 	puntHandler := vpp2001_324.NewPuntVppHandler(ctx.MockChannel, ifIndexes, logrus.DefaultLogger())

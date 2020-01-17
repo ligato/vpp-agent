@@ -13,14 +13,13 @@
 // limitations under the License.
 
 // Generate golang code from the protobuf model of our mock BDs and FIBs:
-//go:generate protoc --proto_path=model --proto_path=$GOPATH/src --gogo_out=model model/bridge-domain.proto
-//go:generate protoc --proto_path=model --proto_path=$GOPATH/src --gogo_out=model model/fib.proto
+//go:generate protoc --proto_path=. --go_out=paths=source_relative:. model/bridge-domain.proto
+//go:generate protoc --proto_path=. --go_out=paths=source_relative:. model/fib.proto
 
 // Generate adapters for the descriptors of our mock BDs and FIBs:
-//go:generate descriptor-adapter --descriptor-name BridgeDomain --value-type *mock_l2.BridgeDomain --meta-type *idxvpp.OnlyIndex --import "model" --import "github.com/ligato/vpp-agent/pkg/idxvpp" --output-dir "descriptor"
-//go:generate descriptor-adapter --descriptor-name BDInterface --value-type *mock_l2.BridgeDomain_Interface --import "model" --output-dir "descriptor"
-//go:generate descriptor-adapter --descriptor-name FIB  --value-type *mock_l2.FIBEntry --import "model" --output-dir "descriptor"
-
+//go:generate descriptor-adapter --descriptor-name BridgeDomain --value-type *mock_l2.BridgeDomain --meta-type *idxvpp.OnlyIndex --import "go.ligato.io/vpp-agent/v3/examples/kvscheduler/mock_plugins/l2plugin/model" --import "go.ligato.io/vpp-agent/v3/pkg/idxvpp" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name BDInterface --value-type *mock_l2.BridgeDomain_Interface --import "go.ligato.io/vpp-agent/v3/examples/kvscheduler/mock_plugins/l2plugin/model" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name FIB  --value-type *mock_l2.FIBEntry --import "go.ligato.io/vpp-agent/v3/examples/kvscheduler/mock_plugins/l2plugin/model" --output-dir "descriptor"
 
 package ifplugin
 
@@ -29,11 +28,11 @@ import (
 
 	"github.com/ligato/cn-infra/infra"
 
-	"github.com/ligato/vpp-agent/examples/kvscheduler/mock_plugins/l2plugin/descriptor"
-	"github.com/ligato/vpp-agent/examples/kvscheduler/mock_plugins/l2plugin/mockcalls"
-	"github.com/ligato/vpp-agent/pkg/idxvpp"
-	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-	"github.com/ligato/vpp-agent/examples/kvscheduler/mock_plugins/ifplugin"
+	"go.ligato.io/vpp-agent/v3/examples/kvscheduler/mock_plugins/ifplugin"
+	"go.ligato.io/vpp-agent/v3/examples/kvscheduler/mock_plugins/l2plugin/descriptor"
+	"go.ligato.io/vpp-agent/v3/examples/kvscheduler/mock_plugins/l2plugin/mockcalls"
+	"go.ligato.io/vpp-agent/v3/pkg/idxvpp"
+	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 )
 
 // L2Plugin configures mock bridge domains and L2 FIBs.
@@ -51,7 +50,7 @@ type L2Plugin struct {
 
 	// descriptors for BDs and L2 FIBs
 	bdDescriptor      *descriptor.BridgeDomainDescriptor
-	bdIfaceDescriptor *descriptor.BDInterfaceDescriptor  // for derived bindings between BD and interfaces
+	bdIfaceDescriptor *descriptor.BDInterfaceDescriptor // for derived bindings between BD and interfaces
 	fibDescriptor     *descriptor.FIBDescriptor
 
 	// metadata index map (exposed read-only for other plugins)

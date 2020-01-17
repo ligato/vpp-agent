@@ -18,18 +18,18 @@ import (
 	"fmt"
 	"syscall"
 
-	"github.com/gogo/protobuf/proto"
+	"github.com/golang/protobuf/proto"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/pkg/errors"
 
-	interfaces "github.com/ligato/vpp-agent/api/models/linux/interfaces"
-	netalloc_api "github.com/ligato/vpp-agent/api/models/netalloc"
-	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-	"github.com/ligato/vpp-agent/plugins/linux/ifplugin/ifaceidx"
-	iflinuxcalls "github.com/ligato/vpp-agent/plugins/linux/ifplugin/linuxcalls"
-	"github.com/ligato/vpp-agent/plugins/linux/nsplugin"
-	nslinuxcalls "github.com/ligato/vpp-agent/plugins/linux/nsplugin/linuxcalls"
-	"github.com/ligato/vpp-agent/plugins/netalloc"
+	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v3/plugins/linux/ifplugin/ifaceidx"
+	iflinuxcalls "go.ligato.io/vpp-agent/v3/plugins/linux/ifplugin/linuxcalls"
+	"go.ligato.io/vpp-agent/v3/plugins/linux/nsplugin"
+	nslinuxcalls "go.ligato.io/vpp-agent/v3/plugins/linux/nsplugin/linuxcalls"
+	"go.ligato.io/vpp-agent/v3/plugins/netalloc"
+	interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/linux/interfaces"
+	netalloc_api "go.ligato.io/vpp-agent/v3/proto/ligato/netalloc"
 )
 
 const (

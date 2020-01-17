@@ -18,7 +18,7 @@ import (
 	"time"
 
 	"github.com/ligato/cn-infra/idxmap"
-	"github.com/ligato/vpp-agent/plugins/kvscheduler/internal/utils"
+	"go.ligato.io/vpp-agent/v3/plugins/kvscheduler/internal/utils"
 )
 
 // graphRW implements RWAccess.
@@ -28,7 +28,7 @@ type graphRW struct {
 	record   bool
 	wInPlace bool
 
-	newRevs  map[string]bool // key -> data-updated? (for Release)
+	newRevs map[string]bool // key -> data-updated? (for Release)
 }
 
 // newGraphRW creates a new instance of grapRW, which extends an existing

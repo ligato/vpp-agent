@@ -15,8 +15,8 @@
 package vpp1904
 
 import (
-	l2 "github.com/ligato/vpp-agent/api/models/vpp/l2"
-	l2ba "github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/l2"
+	l2ba "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1904/l2"
+	l2 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l2"
 )
 
 // AddBridgeDomain adds new bridge domain.

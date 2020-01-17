@@ -3,16 +3,16 @@
 package adapter
 
 import (
-	"github.com/gogo/protobuf/proto"
-	. "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-	"github.com/ligato/vpp-agent/api/models/vpp/nat"
+	"github.com/golang/protobuf/proto"
+	. "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v3/proto/ligato/vpp/nat"
 )
 
 ////////// type-safe key-value pair with metadata //////////
 
 type NAT44InterfaceKVWithMetadata struct {
 	Key      string
-	Value    *vpp_nat.Nat44Global_Interface
+	Value    *vpp_nat.Nat44Interface
 	Metadata interface{}
 	Origin   ValueOrigin
 }
@@ -24,19 +24,19 @@ type NAT44InterfaceDescriptor struct {
 	KeySelector          KeySelector
 	ValueTypeName        string
 	KeyLabel             func(key string) string
-	ValueComparator      func(key string, oldValue, newValue *vpp_nat.Nat44Global_Interface) bool
+	ValueComparator      func(key string, oldValue, newValue *vpp_nat.Nat44Interface) bool
 	NBKeyPrefix          string
 	WithMetadata         bool
 	MetadataMapFactory   MetadataMapFactory
-	Validate             func(key string, value *vpp_nat.Nat44Global_Interface) error
-	Create               func(key string, value *vpp_nat.Nat44Global_Interface) (metadata interface{}, err error)
-	Delete               func(key string, value *vpp_nat.Nat44Global_Interface, metadata interface{}) error
-	Update               func(key string, oldValue, newValue *vpp_nat.Nat44Global_Interface, oldMetadata interface{}) (newMetadata interface{}, err error)
-	UpdateWithRecreate   func(key string, oldValue, newValue *vpp_nat.Nat44Global_Interface, metadata interface{}) bool
+	Validate             func(key string, value *vpp_nat.Nat44Interface) error
+	Create               func(key string, value *vpp_nat.Nat44Interface) (metadata interface{}, err error)
+	Delete               func(key string, value *vpp_nat.Nat44Interface, metadata interface{}) error
+	Update               func(key string, oldValue, newValue *vpp_nat.Nat44Interface, oldMetadata interface{}) (newMetadata interface{}, err error)
+	UpdateWithRecreate   func(key string, oldValue, newValue *vpp_nat.Nat44Interface, metadata interface{}) bool
 	Retrieve             func(correlate []NAT44InterfaceKVWithMetadata) ([]NAT44InterfaceKVWithMetadata, error)
 	IsRetriableFailure   func(err error) bool
-	DerivedValues        func(key string, value *vpp_nat.Nat44Global_Interface) []KeyValuePair
-	Dependencies         func(key string, value *vpp_nat.Nat44Global_Interface) []Dependency
+	DerivedValues        func(key string, value *vpp_nat.Nat44Interface) []KeyValuePair
+	Dependencies         func(key string, value *vpp_nat.Nat44Interface) []Dependency
 	RetrieveDependencies []string /* descriptor name */
 }
 
@@ -213,8 +213,8 @@ func (da *NAT44InterfaceDescriptorAdapter) Dependencies(key string, value proto.
 
 ////////// Helper methods //////////
 
-func castNAT44InterfaceValue(key string, value proto.Message) (*vpp_nat.Nat44Global_Interface, error) {
-	typedValue, ok := value.(*vpp_nat.Nat44Global_Interface)
+func castNAT44InterfaceValue(key string, value proto.Message) (*vpp_nat.Nat44Interface, error) {
+	typedValue, ok := value.(*vpp_nat.Nat44Interface)
 	if !ok {
 		return nil, ErrInvalidValueType(key, value)
 	}

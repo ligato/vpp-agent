@@ -15,8 +15,8 @@
 package vpp1904
 
 import (
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpp1904/ip"
 	"github.com/pkg/errors"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1904/ip"
 )
 
 // EnableProxyArpInterface implements proxy arp handler.

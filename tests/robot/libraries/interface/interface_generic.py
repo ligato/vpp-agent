@@ -21,6 +21,28 @@ def get_interface_index_from_api(data, name):
             "Dumped data: {data}".format(name=name, data=data))
 
 
+def get_interface_name_from_api(data, index):
+    """Process data from sw_interface_dump API and return index
+     of the interface specified by name.
+
+     :param data: Output of interface dump API call.
+     :param index: Index of the interface to find.
+     :type data: list
+     :type index: int
+     :returns: Name of the specified interface.
+     :rtype: str
+     :raises RuntimeError: If the interface is not found.
+     """
+
+    for iface in data:
+        if iface["sw_interface_details"]["sw_if_index"] == index:
+            return iface["sw_interface_details"]["interface_name"]
+    else:
+        raise RuntimeError(
+            "Interface with index {index} not found in dump. "
+            "Dumped data: {data}".format(index=index, data=data))
+
+
 def get_interface_state_from_api(data, index=-1, name="_"):
     """Process data from sw_interface_dump API and return state
     of the interface specified by name or index.

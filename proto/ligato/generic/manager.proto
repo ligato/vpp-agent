@@ -1,0 +1,125 @@
+syntax = "proto3";
+
+package ligato.generic;
+
+option go_package = "go.ligato.io/vpp-agent/v3/proto/ligato/generic";
+
+import "google/protobuf/any.proto";
+
+// Item represents single instance described by the Model.
+message Item {
+    // ID represents identifier for distinguishing items.
+    message ID {
+        string model = 1;
+        string name = 2;
+    }
+
+    ID id = 1;
+    Data data = 2;
+}
+
+// Data represents encoded data for an item.
+message Data {
+    oneof union {
+        google.protobuf.Any any = 1;
+    }
+}
+
+// Item status describes status of an item.
+message ItemStatus {
+    string status = 1;
+    string message = 2;
+}
+
+message SetConfigRequest {
+    repeated UpdateItem updates = 1;
+    // The overwrite_all can be set to true to overwrite all other configuration
+    // (this is also known as Full Resync)
+    bool overwrite_all = 2;
+}
+message SetConfigResponse {
+    repeated UpdateResult results = 1;
+}
+
+message UpdateItem {
+    // The item describes item to be updated.
+    // For a delete operation set fields item.Data to nil.
+    Item item = 1;
+    // The labels can be used to define user-defined labels for item.
+    map<string, string> labels = 2;
+}
+
+message UpdateResult {
+    enum Operation {
+        UNSPECIFIED = 0;
+        CREATE = 1;
+        UPDATE = 2;
+        DELETE = 3;
+    }
+    Item.ID id = 4;
+    string key = 1;
+    Operation op = 2;
+    ItemStatus status = 3;
+}
+
+
+message GetConfigRequest {
+    repeated Item.ID ids = 1;
+}
+message GetConfigResponse {
+    repeated ConfigItem items = 1;
+}
+
+message ConfigItem {
+    Item item = 1;
+    ItemStatus status = 2;
+    map<string, string> labels = 3;
+}
+
+
+message DumpStateRequest {
+    repeated Item.ID ids = 1;
+}
+message DumpStateResponse {
+    repeated StateItem items = 1;
+}
+
+message StateItem {
+    Item item = 1;
+    map<string, string> metadata = 2;
+}
+
+
+message SubscribeRequest {
+    repeated Subscription subscriptions = 1;
+}
+message SubscribeResponse {
+    repeated Notification notifications = 1;
+}
+
+message Subscription {
+    Item.ID id = 1;
+}
+
+message Notification {
+    Item item = 1;
+    ItemStatus status = 2;
+}
+
+
+// ManagerService defines the RPC methods for managing config
+// using generic model, allowing extending with custom models.
+service ManagerService {
+    // SetConfig is used to update desired configuration.
+    rpc SetConfig (SetConfigRequest) returns (SetConfigResponse);
+
+    // GetConfig is used to read the desired configuration.
+    rpc GetConfig (GetConfigRequest) returns (GetConfigResponse);
+
+    // DumpState is used to retrieve the actual running state.
+    rpc DumpState (DumpStateRequest) returns (DumpStateResponse);
+
+    // Subscribe is used for subscribing to events.
+    // Notifications are returned by streaming updates.
+    rpc Subscribe (SubscribeRequest) returns (stream SubscribeResponse);
+}

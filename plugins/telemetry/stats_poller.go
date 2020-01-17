@@ -5,16 +5,16 @@ import (
 	"fmt"
 	"time"
 
-	"git.fd.io/govpp.git/api"
-	"github.com/gogo/status"
+	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
-	"github.com/ligato/vpp-agent/api/configurator"
-	"github.com/ligato/vpp-agent/api/models/vpp"
-	vpp_interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	"github.com/ligato/vpp-agent/plugins/telemetry/vppcalls"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
+	"go.ligato.io/vpp-agent/v3/plugins/telemetry/vppcalls"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
+	"go.ligato.io/vpp-agent/v3/proto/ligato/configurator"
+	"go.ligato.io/vpp-agent/v3/proto/ligato/vpp"
+	vpp_interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
 )
 
 type statsPollerServer struct {
@@ -24,7 +24,7 @@ type statsPollerServer struct {
 	log logging.Logger
 }
 
-func (s *statsPollerServer) PollStats(req *configurator.PollStatsRequest, svr configurator.StatsPoller_PollStatsServer) error {
+func (s *statsPollerServer) PollStats(req *configurator.PollStatsRequest, svr configurator.StatsPollerService_PollStatsServer) error {
 	var pollSeq uint32
 
 	if req.PeriodSec == 0 {
@@ -114,7 +114,7 @@ func (s *statsPollerServer) streamVppStats(ch chan vpp.Stats) error {
 	return nil
 }
 
-func convertInterfaceCombined(c api.InterfaceCounterCombined) *vpp_interfaces.InterfaceStats_CombinedCounter {
+func convertInterfaceCombined(c govppapi.InterfaceCounterCombined) *vpp_interfaces.InterfaceStats_CombinedCounter {
 	return &vpp_interfaces.InterfaceStats_CombinedCounter{
 		Bytes:   c.Bytes,
 		Packets: c.Packets,

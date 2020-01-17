@@ -20,14 +20,14 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/gogo/protobuf/proto"
+	"github.com/golang/protobuf/proto"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/vishvananda/netlink"
 	"golang.org/x/sys/unix"
 
-	interfaces "github.com/ligato/vpp-agent/api/models/linux/interfaces"
-	namespaces "github.com/ligato/vpp-agent/api/models/linux/namespace"
-	"github.com/ligato/vpp-agent/plugins/linux/nsplugin/linuxcalls"
+	"go.ligato.io/vpp-agent/v3/plugins/linux/nsplugin/linuxcalls"
+	interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/linux/interfaces"
+	namespaces "go.ligato.io/vpp-agent/v3/proto/ligato/linux/namespace"
 )
 
 const (

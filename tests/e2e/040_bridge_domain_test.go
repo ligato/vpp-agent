@@ -22,11 +22,11 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/types"
 
-	linux_interfaces "github.com/ligato/vpp-agent/api/models/linux/interfaces"
-	linux_namespace "github.com/ligato/vpp-agent/api/models/linux/namespace"
-	vpp_interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	vpp_l2 "github.com/ligato/vpp-agent/api/models/vpp/l2"
-	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v3/proto/ligato/kvscheduler"
+	linux_interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/linux/interfaces"
+	linux_namespace "go.ligato.io/vpp-agent/v3/proto/ligato/linux/namespace"
+	vpp_interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
+	vpp_l2 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l2"
 )
 
 func bridgeDomains(ctx *testCtx) ([]map[string]string, error) {
@@ -181,11 +181,11 @@ func TestBridgeDomainWithTAPs(t *testing.T) {
 	).Send(context.Background())
 	Expect(err).To(BeNil(), "Transaction creating BD with TAPs failed")
 
-	Expect(ctx.getValueState(vppLoop)).To(Equal(kvs.ValueState_CONFIGURED),
+	Expect(ctx.getValueState(vppLoop)).To(Equal(kvscheduler.ValueState_CONFIGURED),
 		"BD BVI should be configured even before microservices start")
-	Eventually(ctx.getValueStateClb(vppTap1)).Should(Equal(kvs.ValueState_CONFIGURED),
+	Eventually(ctx.getValueStateClb(vppTap1)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
 		"TAP attached to a newly started microservice1 should be eventually configured")
-	Eventually(ctx.getValueStateClb(vppTap2)).Should(Equal(kvs.ValueState_CONFIGURED),
+	Eventually(ctx.getValueStateClb(vppTap2)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
 		"TAP attached to a newly started microservice2 should be eventually configured")
 
 	bds, err := bridgeDomains(ctx)
@@ -206,17 +206,17 @@ func TestBridgeDomainWithTAPs(t *testing.T) {
 	// - "Eventually" is also used with linuxTap1 to wait for retry txn that
 	//   will change state from RETRYING to PENDING
 	ctx.stopMicroservice(ms1Name)
-	Eventually(ctx.getValueStateClb(vppTap1)).Should(Equal(kvs.ValueState_PENDING),
+	Eventually(ctx.getValueStateClb(vppTap1)).Should(Equal(kvscheduler.ValueState_PENDING),
 		"Without microservice, the associated VPP-TAP should be pending")
-	Eventually(ctx.getValueStateClb(linuxTap1)).Should(Equal(kvs.ValueState_PENDING),
+	Eventually(ctx.getValueStateClb(linuxTap1)).Should(Equal(kvscheduler.ValueState_PENDING),
 		"Without microservice, the associated LinuxTAP should be pending")
-	Expect(ctx.getValueState(vppTap2)).To(Equal(kvs.ValueState_CONFIGURED),
+	Expect(ctx.getValueState(vppTap2)).To(Equal(kvscheduler.ValueState_CONFIGURED),
 		"VPP-TAP attached to running microservice is not configured")
-	Expect(ctx.getValueState(linuxTap2)).To(Equal(kvs.ValueState_CONFIGURED),
+	Expect(ctx.getValueState(linuxTap2)).To(Equal(kvscheduler.ValueState_CONFIGURED),
 		"Linux-TAP attached to running microservice is not configured")
-	Expect(ctx.getValueState(vppLoop)).To(Equal(kvs.ValueState_CONFIGURED),
+	Expect(ctx.getValueState(vppLoop)).To(Equal(kvscheduler.ValueState_CONFIGURED),
 		"BD BVI interface is not configured")
-	Expect(ctx.getValueState(bd)).To(Equal(kvs.ValueState_CONFIGURED),
+	Expect(ctx.getValueState(bd)).To(Equal(kvscheduler.ValueState_CONFIGURED),
 		"BD is not configured")
 
 	Expect(ctx.pingFromMs(ms2Name, linuxTap1IP)).ToNot(Succeed())
@@ -227,9 +227,9 @@ func TestBridgeDomainWithTAPs(t *testing.T) {
 
 	// restart the microservice
 	ctx.startMicroservice(ms1Name)
-	Eventually(ctx.getValueStateClb(vppTap1)).Should(Equal(kvs.ValueState_CONFIGURED),
+	Eventually(ctx.getValueStateClb(vppTap1)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
 		"VPP-TAP attached to a re-started microservice1 should be eventually configured")
-	Expect(ctx.getValueState(linuxTap1)).To(Equal(kvs.ValueState_CONFIGURED),
+	Expect(ctx.getValueState(linuxTap1)).To(Equal(kvscheduler.ValueState_CONFIGURED),
 		"Linux-TAP attached to a re-started microservice1 is not configured")
 
 	// Waiting for TAP interface after restart
@@ -416,11 +416,11 @@ func TestBridgeDomainWithAfPackets(t *testing.T) {
 	).Send(context.Background())
 	Expect(err).ToNot(HaveOccurred(), "Transaction creating BD with AF-PACKETs failed")
 
-	Expect(ctx.getValueState(vppLoop)).To(Equal(kvs.ValueState_CONFIGURED),
+	Expect(ctx.getValueState(vppLoop)).To(Equal(kvscheduler.ValueState_CONFIGURED),
 		"BD BVI should be configured even before microservices start")
-	Eventually(ctx.getValueStateClb(afPacket1)).Should(Equal(kvs.ValueState_CONFIGURED),
+	Eventually(ctx.getValueStateClb(afPacket1)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
 		"AF-PACKET attached to a newly started microservice1 should be eventually configured")
-	Eventually(ctx.getValueStateClb(afPacket2)).Should(Equal(kvs.ValueState_CONFIGURED),
+	Eventually(ctx.getValueStateClb(afPacket2)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
 		"AF-PACKET attached to a newly started microservice2 should be eventually configured")
 
 	bds, err := bridgeDomains(ctx)
@@ -441,21 +441,21 @@ func TestBridgeDomainWithAfPackets(t *testing.T) {
 	// - both AF-PACKET and VETH use separate "Eventually" assertion since
 	//   they react to different SB notifications
 	ctx.stopMicroservice(ms1Name)
-	Eventually(ctx.getValueStateClb(afPacket1)).Should(Equal(kvs.ValueState_PENDING),
+	Eventually(ctx.getValueStateClb(afPacket1)).Should(Equal(kvscheduler.ValueState_PENDING),
 		"Without microservice, the associated AF-PACKET should be pending")
-	Eventually(ctx.getValueStateClb(veth1a)).Should(Equal(kvs.ValueState_PENDING),
+	Eventually(ctx.getValueStateClb(veth1a)).Should(Equal(kvscheduler.ValueState_PENDING),
 		"Without microservice, the associated VETH should be pending")
-	Expect(ctx.getValueState(veth1b)).To(Equal(kvs.ValueState_PENDING),
+	Expect(ctx.getValueState(veth1b)).To(Equal(kvscheduler.ValueState_PENDING),
 		"Without microservice, the associated VETH should be pending")
-	Expect(ctx.getValueState(afPacket2)).To(Equal(kvs.ValueState_CONFIGURED),
+	Expect(ctx.getValueState(afPacket2)).To(Equal(kvscheduler.ValueState_CONFIGURED),
 		"AF-PACKET attached to running microservice is not configured")
-	Expect(ctx.getValueState(veth2a)).To(Equal(kvs.ValueState_CONFIGURED),
+	Expect(ctx.getValueState(veth2a)).To(Equal(kvscheduler.ValueState_CONFIGURED),
 		"VETH attached to running microservice is not configured")
-	Expect(ctx.getValueState(veth2b)).To(Equal(kvs.ValueState_CONFIGURED),
+	Expect(ctx.getValueState(veth2b)).To(Equal(kvscheduler.ValueState_CONFIGURED),
 		"VETH attached to running microservice is not configured")
-	Expect(ctx.getValueState(vppLoop)).To(Equal(kvs.ValueState_CONFIGURED),
+	Expect(ctx.getValueState(vppLoop)).To(Equal(kvscheduler.ValueState_CONFIGURED),
 		"BD BVI interface is not configured")
-	Expect(ctx.getValueState(bd)).To(Equal(kvs.ValueState_CONFIGURED),
+	Expect(ctx.getValueState(bd)).To(Equal(kvscheduler.ValueState_CONFIGURED),
 		"BD is not configured")
 
 	Expect(ctx.pingFromMs(ms2Name, veth1IP)).ToNot(Succeed())
@@ -466,11 +466,11 @@ func TestBridgeDomainWithAfPackets(t *testing.T) {
 
 	// restart the microservice
 	ctx.startMicroservice(ms1Name)
-	Eventually(ctx.getValueStateClb(afPacket1)).Should(Equal(kvs.ValueState_CONFIGURED),
+	Eventually(ctx.getValueStateClb(afPacket1)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
 		"AF-PACKET attached to a re-started microservice1 should be eventually configured")
-	Expect(ctx.getValueState(veth1a)).To(Equal(kvs.ValueState_CONFIGURED),
+	Expect(ctx.getValueState(veth1a)).To(Equal(kvscheduler.ValueState_CONFIGURED),
 		"VETH attached to re-started microservice1 is not configured")
-	Expect(ctx.getValueState(veth1b)).To(Equal(kvs.ValueState_CONFIGURED),
+	Expect(ctx.getValueState(veth1b)).To(Equal(kvscheduler.ValueState_CONFIGURED),
 		"VETH attached to re-started microservice1 is not configured")
 
 	// Waiting for AF-PACKET interface after restart

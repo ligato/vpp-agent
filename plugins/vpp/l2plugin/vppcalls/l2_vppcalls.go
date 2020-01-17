@@ -18,9 +18,10 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 
-	l2 "github.com/ligato/vpp-agent/api/models/vpp/l2"
-	"github.com/ligato/vpp-agent/pkg/idxvpp"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
+	"go.ligato.io/vpp-agent/v3/pkg/idxvpp"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
+	l2 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l2"
 )
 
 // BridgeDomainDetails is the wrapper structure for the bridge domain northbound API structure.
@@ -125,26 +126,40 @@ type XConnectVppRead interface {
 	DumpXConnectPairs() (map[uint32]*XConnectDetails, error)
 }
 
-var Versions = map[string]HandlerVersion{}
+var Handler = vpp.RegisterHandler(vpp.HandlerDesc{
+	Name:       "l2",
+	HandlerAPI: (*L2VppAPI)(nil),
+})
 
-type HandlerVersion struct {
-	Msgs []govppapi.Message
-	New  func(govppapi.Channel, ifaceidx.IfaceMetadataIndex, idxvpp.NameToIndex, logging.Logger) L2VppAPI
+type NewHandlerFunc func(ch govppapi.Channel, ifDdx ifaceidx.IfaceMetadataIndex, bdIdx idxvpp.NameToIndex, log logging.Logger) L2VppAPI
+
+func AddHandlerVersion(version vpp.Version, msgs []govppapi.Message, h NewHandlerFunc) {
+	Handler.AddVersion(vpp.HandlerVersion{
+		Version: version,
+		Check: func(c vpp.Client) error {
+			ch, err := c.NewAPIChannel()
+			if err != nil {
+				return err
+			}
+			return ch.CheckCompatiblity(msgs...)
+		},
+		NewHandler: func(c vpp.Client, a ...interface{}) vpp.HandlerAPI {
+			ch, err := c.NewAPIChannel()
+			if err != nil {
+				return err
+			}
+			var bdIdx idxvpp.NameToIndex
+			if a[1] != nil {
+				bdIdx = a[1].(idxvpp.NameToIndex)
+			}
+			return h(ch, a[0].(ifaceidx.IfaceMetadataIndex), bdIdx, a[2].(logging.Logger))
+		},
+	})
 }
 
-func CompatibleL2VppHandler(
-	ch govppapi.Channel,
-	ifIdx ifaceidx.IfaceMetadataIndex,
-	bdIdx idxvpp.NameToIndex,
-	log logging.Logger,
-) L2VppAPI {
-	for ver, h := range Versions {
-		if err := ch.CheckCompatiblity(h.Msgs...); err != nil {
-			log.Debugf("version %s not compatible", ver)
-			continue
-		}
-		log.Debug("found compatible version:", ver)
-		return h.New(ch, ifIdx, bdIdx, log)
+func CompatibleL2VppHandler(c vpp.Client, ifIdx ifaceidx.IfaceMetadataIndex, bdIdx idxvpp.NameToIndex, log logging.Logger) L2VppAPI {
+	if v := Handler.FindCompatibleVersion(c); v != nil {
+		return v.NewHandler(c, ifIdx, bdIdx, log).(L2VppAPI)
 	}
-	panic("no compatible version available")
+	return nil
 }

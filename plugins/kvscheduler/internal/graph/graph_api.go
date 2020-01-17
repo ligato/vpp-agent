@@ -17,14 +17,14 @@ package graph
 import (
 	"bytes"
 	"fmt"
-	"time"
 	"sort"
+	"time"
 
-	"github.com/gogo/protobuf/proto"
-
+	"github.com/golang/protobuf/proto"
 	"github.com/ligato/cn-infra/idxmap"
-	. "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-	"github.com/ligato/vpp-agent/plugins/kvscheduler/internal/utils"
+
+	. "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v3/plugins/kvscheduler/internal/utils"
 )
 
 // Graph is an in-memory graph representation of key-value pairs and their
@@ -134,7 +134,7 @@ type RWAccess interface {
 // TargetIterator is a callback applied on every target.
 // For each label it will be called n+1 times, where n is the number of targets
 // available for the given label and the extra call will be made with nil target.
-type TargetIterator func (target Node, label string) (skipLabel, abort bool)
+type TargetIterator func(target Node, label string) (skipLabel, abort bool)
 
 // Node is a read-only handle to a single graph node.
 type Node interface {
@@ -144,7 +144,7 @@ type Node interface {
 	// GetLabel returns the label associated with this node.
 	GetLabel() string
 
-	// GetKey returns the value associated with the node.
+	// GetValue returns the value associated with the node.
 	GetValue() proto.Message
 
 	// GetFlag returns reference to the given flag or nil if the node doesn't have
@@ -416,7 +416,7 @@ type RecordedNode struct {
 	Flags            RecordedFlags
 	MetadataFields   map[string][]string // field name -> values
 	Targets          Targets
-	TargetUpdateOnly bool                // true if only runtime Targets have changed since the last rev
+	TargetUpdateOnly bool // true if only runtime Targets have changed since the last rev
 }
 
 // GetFlag returns reference to the given flag or nil if the node didn't have

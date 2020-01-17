@@ -4,14 +4,15 @@ import (
 	"context"
 	"net/http"
 
+	"google.golang.org/grpc"
+
 	"github.com/ligato/cn-infra/db/keyval"
 	"github.com/ligato/cn-infra/health/probe"
 
-	"github.com/ligato/vpp-agent/api/types"
-	"github.com/ligato/vpp-agent/client"
-	"github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-
-	"google.golang.org/grpc"
+	"go.ligato.io/vpp-agent/v3/client"
+	"go.ligato.io/vpp-agent/v3/cmd/agentctl/api/types"
+	"go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v3/proto/ligato/kvscheduler"
 )
 
 // APIClient is an interface that clients that talk with a agent server must implement.
@@ -20,11 +21,12 @@ type APIClient interface {
 	ModelAPIClient
 	SchedulerAPIClient
 	VppAPIClient
+	MetricsAPIClient
 
 	ConfigClient() (client.ConfigClient, error)
 
 	AgentHost() string
-	ClientVersion() string
+	Version() string
 	KVDBClient() (KVDBAPIClient, error)
 	GRPCConn() (*grpc.ClientConn, error)
 	HTTPClient() *http.Client
@@ -50,7 +52,7 @@ type ModelAPIClient interface {
 // SchedulerAPIClient defines API client methods for the scheduler
 type SchedulerAPIClient interface {
 	SchedulerDump(ctx context.Context, opts types.SchedulerDumpOptions) ([]api.KVWithMetadata, error)
-	SchedulerValues(ctx context.Context, opts types.SchedulerValuesOptions) ([]*api.BaseValueStatus, error)
+	SchedulerValues(ctx context.Context, opts types.SchedulerValuesOptions) ([]*kvscheduler.BaseValueStatus, error)
 }
 
 // VppAPIClient defines API client methods for the VPP
@@ -58,6 +60,12 @@ type VppAPIClient interface {
 	VppRunCli(ctx context.Context, cmd string) (reply string, err error)
 }
 
+type MetricsAPIClient interface {
+	GetMetricData(ctx context.Context, metricName string) (map[string]interface{}, error)
+}
+
 type KVDBAPIClient interface {
 	keyval.CoreBrokerWatcher
+	ProtoBroker() keyval.ProtoBroker
+	CompleteFullKey(key string) (string, error)
 }
