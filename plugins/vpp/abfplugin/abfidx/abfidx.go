@@ -25,10 +25,10 @@ import (
 // ABFMetadataIndex provides read-only access to mapping between ABF indexes (generated in the ABF plugin)
 // and ABF names.
 type ABFMetadataIndex interface {
-	// LookupByName looks up previously stored item identified by index in the mapping.
+	// LookupByName looks up previously stored item identified by name in the mapping.
 	LookupByName(name string) (metadata *ABFMetadata, exists bool)
 
-	// LookupByIndex looks up previously stored item identified by name in the mapping.
+	// LookupByIndex looks up previously stored item identified by index in the mapping.
 	LookupByIndex(idx uint32) (name string, metadata *ABFMetadata, exists bool)
 }
 

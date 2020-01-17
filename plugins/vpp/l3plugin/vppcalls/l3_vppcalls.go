@@ -121,7 +121,7 @@ type ProxyArpVppAPI interface {
 type ProxyArpVppRead interface {
 	// DumpProxyArpRanges returns configured proxy ARP ranges
 	DumpProxyArpRanges() ([]*ProxyArpRangesDetails, error)
-	// DumpProxyArpRanges returns configured proxy ARP interfaces
+	// DumpProxyArpInterfaces returns configured proxy ARP interfaces
 	DumpProxyArpInterfaces() ([]*ProxyArpInterfaceDetails, error)
 }
 

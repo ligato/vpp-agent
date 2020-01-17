@@ -55,7 +55,7 @@ func (node *nodeR) GetLabel() string {
 	return node.label
 }
 
-// GetKey returns the value associated with the node.
+// GetValue returns the value associated with the node.
 func (node *nodeR) GetValue() proto.Message {
 	return node.value
 }
