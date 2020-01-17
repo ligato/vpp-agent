@@ -72,14 +72,22 @@ var (
 	}, models.WithNameTemplate(
 		`{{ protoip .SourceIpAddress}}`,
 	))
+
+	ModelL3XC = models.Register(&L3XC{}, models.Spec{
+		Module:  ModuleName,
+		Type:    "l3xc",
+		Version: "v2",
+	}, models.WithNameTemplate(
+		`{{.Interface}}/protocol/{{.Protocol}}`,
+	))
 )
 
-// ProxyARPKey is key for global proxy arp
+// ProxyARPKey returns key for global proxy arp
 func ProxyARPKey() string {
 	return models.Key(&ProxyARP{})
 }
 
-// ProxyARPKey is key for global ip scan neighbor
+// IPScanNeighborKey returns key for global ip scan neighbor
 func IPScanNeighborKey() string {
 	return models.Key(&IPScanNeighbor{})
 }
@@ -110,10 +118,18 @@ func VrfTableKey(id uint32, protocol VrfTable_Protocol) string {
 	})
 }
 
-// DHCPProxyKey is key for DHCP proxy
+// DHCPProxyKey returns key for DHCP proxy
 func DHCPProxyKey(srcIP string) string {
 	return models.Key(&DHCPProxy{
 		SourceIpAddress: srcIP,
+	})
+}
+
+// L3XCKey returns key for L3XC
+func L3XCKey(iface string, protocol L3XC_Protocol) string {
+	return models.Key(&L3XC{
+		Interface: iface,
+		Protocol:  protocol,
 	})
 }
 

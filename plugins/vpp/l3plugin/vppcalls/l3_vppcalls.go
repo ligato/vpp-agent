@@ -39,25 +39,6 @@ type L3VppAPI interface {
 	L3XCVppAPI
 }
 
-type Path struct {
-	SwIfIndex  uint32
-	NextHop    net.IP
-	Weight     uint8
-	Preference uint8
-}
-
-type L3XC struct {
-	SwIfIndex uint32
-	IsIPv6    bool
-	Paths     []Path
-}
-
-type L3XCVppAPI interface {
-	DumpL3XC(ctx context.Context, index uint32) ([]L3XC, error)
-	UpdateL3XC(ctx context.Context, l3xc *L3XC) error
-	DeleteL3XC(ctx context.Context, index uint32, ipv6 bool) error
-}
-
 // ArpDetails holds info about ARP entry as a proto model
 type ArpDetails struct {
 	Arp  *l3.ARPEntry
@@ -219,6 +200,30 @@ type IPNeighVppAPI interface {
 	SetIPScanNeighbor(data *l3.IPScanNeighbor) error
 	// GetIPScanNeighbor returns IP scan neighbor configuration from the VPP
 	GetIPScanNeighbor() (*l3.IPScanNeighbor, error)
+}
+
+type Path struct {
+	SwIfIndex  uint32
+	NextHop    net.IP
+	Weight     uint8
+	Preference uint8
+}
+
+type L3XC struct {
+	SwIfIndex uint32
+	IsIPv6    bool
+	Paths     []Path
+}
+
+type L3XCVppRead interface {
+	DumpL3XC(ctx context.Context, index uint32) ([]L3XC, error)
+}
+
+type L3XCVppAPI interface {
+	L3XCVppRead
+
+	UpdateL3XC(ctx context.Context, l3xc *L3XC) error
+	DeleteL3XC(ctx context.Context, index uint32, ipv6 bool) error
 }
 
 var Handler = vpp.RegisterHandler(vpp.HandlerDesc{
