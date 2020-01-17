@@ -28,5 +28,3 @@ breaking:
     - FILE
     - PACKAGE
     - WIRE_JSON
-  except:
-    - FILE_SAME_GO_PACKAGE
