@@ -69,7 +69,7 @@ type ArpMeta struct {
 	SwIfIndex uint32
 }
 
-// ArpVppAPI provides methods for managing ARP entries
+// DHCPProxyAPI provides methods for managing ARP entries
 type DHCPProxyAPI interface {
 	DHCPProxyRead
 

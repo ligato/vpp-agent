@@ -5,18 +5,21 @@ package ligato.vpp.l3;
 option go_package = "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3;vpp_l3";
 
 message VrfTable {
-    uint32 id = 1;   /* table ID, mandatory
-                            - do not confuse with fib index (shown by some VPP CLIs),
-                              which is VPP-internal offset in the vector of allocated tables
-                      */
+    // ID is mandatory identification for VRF table.
+    // NOTE: do not confuse with fib index (shown by some VPP CLIs),
+    // which is VPP's internal offset in the vector of allocated tables.
+    uint32 id = 1;
+
+    // Protocol define IP protocol of VRF table.
     enum Protocol {
         IPV4 = 0;
         IPV6 = 1;
     }
-    Protocol protocol = 2; /* mandatory */
-    string label = 3;      /* optional label to describe the table purpose
-                                - maximum allowed length is 63 characters
-                                - included in the output from the VPP CLI command "show ip fib"
-                                - if undefined, then VPP will generate label using the template "<protocol>-VRF:<id>"
-                            */
+    Protocol protocol = 2;
+
+    // Label is an optional description for the table.
+    // - maximum allowed length is 63 characters
+    // - included in the output from the VPP CLI command "show ip fib"
+    // - if undefined, then VPP will generate label using the template "<protocol>-VRF:<id>"
+    string label = 3;
 }
