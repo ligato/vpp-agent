@@ -17,18 +17,18 @@ package abfidx
 import (
 	"github.com/ligato/cn-infra/idxmap"
 	"github.com/ligato/cn-infra/logging"
-	abf "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/abf"
 
 	"go.ligato.io/vpp-agent/v3/pkg/idxvpp"
+	abf "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/abf"
 )
 
 // ABFMetadataIndex provides read-only access to mapping between ABF indexes (generated in the ABF plugin)
 // and ABF names.
 type ABFMetadataIndex interface {
-	// LookupIdx looks up previously stored item identified by index in the mapping.
+	// LookupByName looks up previously stored item identified by index in the mapping.
 	LookupByName(name string) (metadata *ABFMetadata, exists bool)
 
-	// LookupName looks up previously stored item identified by name in the mapping.
+	// LookupByIndex looks up previously stored item identified by name in the mapping.
 	LookupByIndex(idx uint32) (name string, metadata *ABFMetadata, exists bool)
 }
 
