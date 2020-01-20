@@ -186,7 +186,6 @@ checknodiffgenerated:  ## Check no diff generated
 	bash scripts/checknodiffgenerated.sh $(MAKE) generate
 
 generate: generate-proto generate-binapi generate-desc-adapters ## Generate all
-	go fmt ./...
 
 generate-proto: protocgengo ## Generate Protobuf files
 

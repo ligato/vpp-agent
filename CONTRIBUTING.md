@@ -8,8 +8,5 @@ In any case, before submitting your pull request please check the
 [Coding style](CODINGSTYLE.md) and cover the newly added code with tests 
 and documentation.
 
-The tool used for managing third-party dependencies is
-[dep](https://github.com/golang/dep). After adding or updating a
-dependency in `Gopkg.toml` run `make dep-install` to download the specified
-dependencies into the vendor folder.
-To update all of the project's dependencies run `make dep-update`.
+The dependencies are managed using Go modules. On any change of
+dependencies, run `go mod tidy` to update `go.mod`/`go.sum` files.

@@ -55,7 +55,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
  	&& rm -rf /var/lib/apt/lists/*
 
 # Install Go
-ENV GOLANG_VERSION 1.13.3
+ENV GOLANG_VERSION 1.13.6
 RUN set -eux; \
 	dpkgArch="$(dpkg --print-architecture)"; \
 		case "${dpkgArch##*-}" in \
@@ -72,12 +72,12 @@ ENV PATH $GOPATH/bin:/usr/local/go/bin:$PATH
 RUN mkdir -p "$GOPATH/bin" && chmod -R 777 "$GOPATH"
 
 # Install debugger
-RUN \
-	go get -u github.com/go-delve/delve/cmd/dlv && dlv version
+RUN go get -u github.com/go-delve/delve/cmd/dlv && dlv version
 
 # Copy configs
 COPY \
     ./docker/dev/etcd.conf \
+    ./docker/dev/grpc.conf \
     ./docker/dev/logs.conf \
     ./docker/dev/vpp-ifplugin.conf \
     ./docker/dev/supervisor.conf \
@@ -86,23 +86,25 @@ COPY \
 COPY ./docker/dev/vpp.conf /etc/vpp/vpp.conf
 COPY ./docker/dev/init_hook.sh /usr/bin/
 
-# Build agent
+# Install agent
 WORKDIR /src/ligato/vpp-agent
 
 ARG VERSION
 ARG COMMIT
 ARG DATE
 
-# download and cache modules
 COPY go.mod go.sum ./
 RUN go mod download
-
 COPY . ./
 
-RUN VERSION=$VERSION COMMIT=$COMMIT DATE=$DATE make install
+RUN \
+	VERSION=$VERSION \
+	COMMIT=$COMMIT \
+	DATE=$DATE \
+ make install
 
 ENV SUPERVISOR_CONFIG=/opt/vpp-agent/dev/supervisor.conf
 
-# run supervisor as the default executable
 CMD rm -f /dev/shm/db /dev/shm/global_vm /dev/shm/vpe-api && \
-    exec vpp-agent-init
+	mkdir -p /run/vpp && \
+	exec vpp-agent-init

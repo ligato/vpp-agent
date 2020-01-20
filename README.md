@@ -22,27 +22,23 @@ CNFs. An example of a custom VPP-based CNF is the [Contiv-VPP][contiv-vpp] vswit
 |Release|Release Date|Info|
 |---|:---:|---|
 |[![stable](https://img.shields.io/github/release/ligato/vpp-agent.svg?label=release&logo=github)](https://github.com/ligato/vpp-agent/releases/latest)|![Release date](https://img.shields.io/github/release-date/ligato/vpp-agent.svg?label=)|latest release|
-|[![latest](https://img.shields.io/github/release-pre/ligato/vpp-agent.svg?label=release&logo=github)](https://github.com/ligato/vpp-agent/releases)|![Release date](https://img.shields.io/github/release-date-pre/ligato/vpp-agent.svg?label=)|last release/pre-release|
 
 Have a look at the [release notes](CHANGELOG.md) for a complete list of changes.
 
 ### Branches
 
 |Branch|Last Commit|Info|
-|---|:---:|---|
-|[![master](https://img.shields.io/badge/branch-master-blue.svg?logo=git&logoColor=white)](https://github.com/ligato/vpp-agent/tree/master)|![GitHub last commit (branch)](https://img.shields.io/github/last-commit/ligato/vpp-agent/master.svg?label=)| has **moved to v2**, introducing several [breaking changes](https://github.com/ligato/vpp-agent/blob/master/CHANGELOG.md#v200) :warning:|
-|[![dev](https://img.shields.io/badge/branch-dev-green.svg?logo=git&logoColor=white)](https://github.com/ligato/vpp-agent/tree/dev)|![GitHub last commit (branch)](https://img.shields.io/github/last-commit/ligato/vpp-agent/dev.svg?label=)|will be used for all the future **development**|
-
-**Note:** The branch pantheon-dev has been **deprecated** (v1).
+|---|---|:---:|
+|[![master](https://img.shields.io/badge/branch-master-green.svg?logo=git&logoColor=white)](https://github.com/ligato/vpp-agent/tree/master)| **has switched to [v3](https://github.com/ligato/vpp-agent/blob/master/CHANGELOG.md#v300)** :warning:|![GitHub last commit (branch)](https://img.shields.io/github/last-commit/ligato/vpp-agent/master.svg?label=)|
+|[![dev](https://img.shields.io/badge/branch-dev-lightgray.svg?logo=git&logoColor=white)](https://github.com/ligato/vpp-agent/tree/dev)| has been **DEPRECATED** |![GitHub last commit (branch)](https://img.shields.io/github/last-commit/ligato/vpp-agent/dev.svg?label=)|
+|[![v2](https://img.shields.io/badge/branch-v2-lightblue.svg?logo=git&logoColor=white)](https://github.com/ligato/vpp-agent/tree/v2)| provides **legacy v2** |![GitHub last commit (branch)](https://img.shields.io/github/last-commit/ligato/vpp-agent/v2.svg?label=)|
 
 ### Images
 
 |Image|Image Size/Layers|Info|
 |---|:---:|---|
-|[![ligato/vpp-agent](https://img.shields.io/badge/image-ligato/vpp--agent-blue.svg?logo=docker&logoColor=white)](https://cloud.docker.com/u/ligato/repository/docker/ligato/vpp-agent)|![MicroBadger Size](https://img.shields.io/microbadger/image-size/ligato/vpp-agent.svg) ![MicroBadger Layers](https://img.shields.io/microbadger/layers/ligato/vpp-agent.svg)|minimal image for production|
-|[![ligato/dev-vpp-agent](https://img.shields.io/badge/image-ligato/dev--vpp--agent-blue.svg?logo=docker&logoColor=white)](https://cloud.docker.com/u/ligato/repository/docker/ligato/dev-vpp-agent)|![MicroBadger Size](https://img.shields.io/microbadger/image-size/ligato/dev-vpp-agent.svg) ![MicroBadger Layers](https://img.shields.io/microbadger/layers/ligato/dev-vpp-agent.svg)|image prepared for developers|
-
-The image tag `latest` is built from **master branch** and `dev` tag is built from **dev branch**.
+|[![ligato/vpp-agent](https://img.shields.io/badge/image-ligato/vpp--agent-blue.svg?logo=docker&logoColor=white)](https://cloud.docker.com/u/ligato/repository/docker/ligato/vpp-agent)|![MicroBadger Size](https://img.shields.io/microbadger/image-size/ligato/vpp-agent.svg) ![MicroBadger Layers](https://img.shields.io/microbadger/layers/ligato/vpp-agent.svg)|production image with minimal footprint|
+|[![ligato/dev-vpp-agent](https://img.shields.io/badge/image-ligato/dev--vpp--agent-blue.svg?logo=docker&logoColor=white)](https://cloud.docker.com/u/ligato/repository/docker/ligato/dev-vpp-agent)|![MicroBadger Size](https://img.shields.io/microbadger/image-size/ligato/dev-vpp-agent.svg) ![MicroBadger Layers](https://img.shields.io/microbadger/layers/ligato/dev-vpp-agent.svg)|development image prepared for developers|
 
 ## Quickstart
 
@@ -55,18 +51,19 @@ that contain the VPP Agent and VPP: [ligato/vpp-agent][vpp-agent] (or for ARM64:
 
 1. Run VPP + VPP Agent in a Docker container:
 ```
-docker run -it --rm --name vpp --privileged ligato/vpp-agent
+docker run -it --rm --name agent1 --privileged ligato/vpp-agent
 ```
 
 2. Manage VPP agent using agentctl:
 ```
-docker exec -it vpp agentctl -h
+docker exec -it agent1 agentctl --help
+docker exec -it agent1 agentctl status
 ```
 
-3. Check the configuration (using agentctl or directly using VPP console):
+3. Check the configuration (via agentctl or in VPP console):
 ```
-docker exec -it vpp agentctl -e 172.17.0.1:2379 show
-docker exec -it vpp vppctl -s localhost:5002
+docker exec -it agent1 agentctl dump all
+docker exec -it agent1 vppctl -s localhost:5002 show interface
 ```
 
 **Next Steps**

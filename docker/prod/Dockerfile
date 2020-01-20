@@ -22,15 +22,28 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # install vpp
 COPY --from=devimg /vpp/*.deb /opt/vpp/
 
-RUN cd /opt/vpp/ \
- && apt-get update \
- && apt-get install -y ./*.deb \
- && rm *.deb \
- && rm -rf /var/lib/apt/lists/*
+RUN set -eux; \
+	cd /opt/vpp/; \
+	apt-get update; \
+	apt-get install -y ./*.deb; \
+	rm *.deb; \
+	rm -rf /var/lib/apt/lists/*;
 
 # Final image
 FROM scratch
 COPY --from=base / /
+
+WORKDIR /root/
+
+# Copy configs
+COPY \
+	etcd.conf \
+	grpc.conf \
+	supervisor.conf \
+ /opt/vpp-agent/dev/
+
+COPY vpp.conf /etc/vpp/vpp.conf
+COPY init_hook.sh /usr/bin/
 
 # Install agent
 COPY --from=devimg \
@@ -39,15 +52,6 @@ COPY --from=devimg \
     /go/bin/vpp-agent-init \
  /bin/
 
-# Copy configs
-COPY etcd.conf /opt/vpp-agent/dev/
-COPY supervisor.conf /opt/vpp-agent/dev/
-COPY vpp.conf /etc/vpp/vpp.conf
-COPY init_hook.sh /usr/bin/
-
-WORKDIR /root/
-
-ENV SUPERVISOR_CONFIG=/opt/vpp-agent/dev/supervisor.conf
-
 CMD rm -f /dev/shm/db /dev/shm/global_vm /dev/shm/vpe-api && \
-    exec vpp-agent-init
+	mkdir -p /run/vpp && \
+	exec vpp-agent-init
