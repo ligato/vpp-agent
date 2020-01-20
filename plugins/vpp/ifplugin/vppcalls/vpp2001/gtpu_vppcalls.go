@@ -15,9 +15,10 @@
 package vpp2001
 
 import (
-	"errors"
 	"fmt"
 	"net"
+
+	"github.com/pkg/errors"
 
 	"go.ligato.io/vpp-agent/v3/plugins/vpp"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/gtpu"
@@ -88,7 +89,7 @@ func (h *InterfaceVppHandler) gtpuAddDelTunnel(isAdd uint8, gtpuLink *interfaces
 // AddGtpuTunnel adds new GTPU interface.
 func (h *InterfaceVppHandler) AddGtpuTunnel(ifName string, gtpuLink *interfaces.GtpuLink, multicastIf uint32) (uint32, error) {
 	if h.gtpu == nil {
-		return 0, vpp.ErrPluginDisabled
+		return 0, errors.WithMessage(vpp.ErrPluginDisabled, "gtpu")
 	}
 	if gtpuLink == nil {
 		return 0, errors.New("missing GTPU tunnel information")
@@ -104,7 +105,7 @@ func (h *InterfaceVppHandler) AddGtpuTunnel(ifName string, gtpuLink *interfaces.
 // DelGtpuTunnel removes GTPU interface.
 func (h *InterfaceVppHandler) DelGtpuTunnel(ifName string, gtpuLink *interfaces.GtpuLink) error {
 	if h.gtpu == nil {
-		return vpp.ErrPluginDisabled
+		return errors.WithMessage(vpp.ErrPluginDisabled, "gtpu")
 	}
 	if gtpuLink == nil {
 		return errors.New("missing GTPU tunnel information")

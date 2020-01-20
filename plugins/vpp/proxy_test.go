@@ -86,6 +86,7 @@ func TestProxyClient(t *testing.T) {
 
 	// - or using generated rpc service
 	svc := interfaces.NewServiceClient(binapiChannel)
+
 	stream, err := svc.DumpSwInterface(context.Background(), &interfaces.SwInterfaceDump{})
 	if err != nil {
 		log.Fatalln("binapi request failed:", err)

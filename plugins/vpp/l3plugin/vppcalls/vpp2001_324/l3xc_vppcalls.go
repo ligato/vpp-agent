@@ -19,6 +19,9 @@ import (
 	"io"
 	"net"
 
+	"github.com/pkg/errors"
+
+	"go.ligato.io/vpp-agent/v3/plugins/vpp"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001_324/l3xc"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin/vppcalls"
 )
@@ -28,6 +31,11 @@ func (h *L3XCHandler) DumpAllL3XC(ctx context.Context) ([]vppcalls.L3XC, error) 
 }
 
 func (h *L3XCHandler) DumpL3XC(ctx context.Context, index uint32) ([]vppcalls.L3XC, error) {
+	if h.l3xc == nil {
+		// no-op when disabled
+		return nil, nil
+	}
+
 	dump, err := h.l3xc.DumpL3xc(ctx, &l3xc.L3xcDump{
 		SwIfIndex: index,
 	})
@@ -69,6 +77,10 @@ func (h *L3XCHandler) DumpL3XC(ctx context.Context, index uint32) ([]vppcalls.L3
 }
 
 func (h *L3XCHandler) UpdateL3XC(ctx context.Context, xc *vppcalls.L3XC) error {
+	if h.l3xc == nil {
+		return errors.WithMessage(vpp.ErrPluginDisabled, "l3xc")
+	}
+
 	paths := make([]l3xc.FibPath, len(xc.Paths))
 	for i, p := range xc.Paths {
 		fibPath := l3xc.FibPath{
@@ -94,6 +106,10 @@ func (h *L3XCHandler) UpdateL3XC(ctx context.Context, xc *vppcalls.L3XC) error {
 }
 
 func (h *L3XCHandler) DeleteL3XC(ctx context.Context, index uint32, ipv6 bool) error {
+	if h.l3xc == nil {
+		return errors.WithMessage(vpp.ErrPluginDisabled, "l3xc")
+	}
+
 	_, err := h.l3xc.L3xcDel(ctx, &l3xc.L3xcDel{
 		SwIfIndex: index,
 		IsIP6:     boolToUint(ipv6),

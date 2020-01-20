@@ -236,7 +236,7 @@ var Handler = vpp.RegisterHandler(vpp.HandlerDesc{
 	HandlerAPI: (*L3VppAPI)(nil),
 })
 
-type NewHandlerFunc func(ch govppapi.Channel, idx ifaceidx.IfaceMetadataIndex, vrfIdx vrfidx.VRFMetadataIndex, addrAlloc netalloc.AddressAllocator, log logging.Logger) L3VppAPI
+type NewHandlerFunc func(c vpp.Client, idx ifaceidx.IfaceMetadataIndex, vrfIdx vrfidx.VRFMetadataIndex, addrAlloc netalloc.AddressAllocator, log logging.Logger) L3VppAPI
 
 func AddHandlerVersion(version vpp.Version, msgs []govppapi.Message, h NewHandlerFunc) {
 	Handler.AddVersion(vpp.HandlerVersion{
@@ -249,15 +249,11 @@ func AddHandlerVersion(version vpp.Version, msgs []govppapi.Message, h NewHandle
 			return ch.CheckCompatiblity(msgs...)
 		},
 		NewHandler: func(c vpp.Client, a ...interface{}) vpp.HandlerAPI {
-			ch, err := c.NewAPIChannel()
-			if err != nil {
-				return err
-			}
 			var vrfIdx vrfidx.VRFMetadataIndex
 			if a[1] != nil {
 				vrfIdx = a[1].(vrfidx.VRFMetadataIndex)
 			}
-			return h(ch, a[0].(ifaceidx.IfaceMetadataIndex), vrfIdx, a[2].(netalloc.AddressAllocator), a[3].(logging.Logger))
+			return h(c, a[0].(ifaceidx.IfaceMetadataIndex), vrfIdx, a[2].(netalloc.AddressAllocator), a[3].(logging.Logger))
 		},
 	})
 }

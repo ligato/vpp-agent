@@ -18,11 +18,11 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 )
 
-// Version represents VPP version for generated binapi.
-type Version string
-
 // Versions is a map of all binapi messages for each supported VPP versions.
 var Versions = map[Version]MessagesList{}
+
+// Version represents VPP version for generated binapi.
+type Version string
 
 // MessagesList aggregates multiple funcs that return messages.
 type MessagesList []func() []govppapi.Message

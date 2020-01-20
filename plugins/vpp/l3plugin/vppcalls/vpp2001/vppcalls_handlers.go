@@ -25,6 +25,7 @@ import (
 	corevppcalls "go.ligato.io/vpp-agent/v3/plugins/govppmux/vppcalls"
 	vpe_vpp2001 "go.ligato.io/vpp-agent/v3/plugins/govppmux/vppcalls/vpp2001"
 	"go.ligato.io/vpp-agent/v3/plugins/netalloc"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001"
 	vpp_dhcp "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/dhcp"
 	vpp_ip "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ip"
@@ -55,12 +56,17 @@ type L3VppHandler struct {
 }
 
 func NewL3VppHandler(
-	ch govppapi.Channel,
+	c vpp.Client,
 	ifIdx ifaceidx.IfaceMetadataIndex,
 	vrfIdx vrfidx.VRFMetadataIndex,
 	addrAlloc netalloc.AddressAllocator,
 	log logging.Logger,
 ) vppcalls.L3VppAPI {
+	ch, err := c.NewAPIChannel()
+	if err != nil {
+		logging.Warnf("creating channel failed: %v", err)
+		return nil
+	}
 	return &L3VppHandler{
 		ArpVppHandler:      NewArpVppHandler(ch, ifIdx, log),
 		ProxyArpVppHandler: NewProxyArpVppHandler(ch, ifIdx, log),
@@ -68,7 +74,7 @@ func NewL3VppHandler(
 		IPNeighHandler:     NewIPNeighVppHandler(ch, log),
 		VrfTableHandler:    NewVrfTableVppHandler(ch, log),
 		DHCPProxyHandler:   NewDHCPProxyHandler(ch, log),
-		L3XCHandler:        NewL3XCHandler(ch, ifIdx, log),
+		L3XCHandler:        NewL3XCHandler(c, ifIdx, log),
 	}
 }
 
@@ -194,15 +200,23 @@ type L3XCHandler struct {
 }
 
 // NewL3XCHandler creates new instance of L3XC vppcalls handler
-func NewL3XCHandler(callsChan govppapi.Channel, ifIndexes ifaceidx.IfaceMetadataIndex, log logging.Logger) *L3XCHandler {
+func NewL3XCHandler(c vpp.Client, ifIndexes ifaceidx.IfaceMetadataIndex, log logging.Logger) *L3XCHandler {
 	if log == nil {
 		log = logrus.NewLogger("l3xc-handler")
 	}
-	return &L3XCHandler{
-		l3xc:      l3xc.NewServiceClient(callsChan),
+	h := &L3XCHandler{
 		ifIndexes: ifIndexes,
 		log:       log,
 	}
+	if c.IsPluginLoaded(l3xc.ModuleName) {
+		ch, err := c.NewAPIChannel()
+		if err != nil {
+			logging.Warnf("creating channel failed: %v", err)
+			return nil
+		}
+		h.l3xc = l3xc.NewServiceClient(ch)
+	}
+	return h
 }
 
 func ipToAddress(ipstr string) (addr vpp_ip.Address, err error) {

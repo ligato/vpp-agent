@@ -26,6 +26,10 @@ import (
 )
 
 func (h *InterfaceVppHandler) AddVmxNet3(ifName string, vmxNet3 *ifs.VmxNet3Link) (swIdx uint32, err error) {
+	if h.vmxnet3 == nil {
+		return 0, errors.WithMessage(vpp.ErrPluginDisabled, "wmxnet")
+	}
+
 	var pci uint32
 	pci, err = derivePCI(ifName)
 	if err != nil {
@@ -52,7 +56,7 @@ func (h *InterfaceVppHandler) AddVmxNet3(ifName string, vmxNet3 *ifs.VmxNet3Link
 
 func (h *InterfaceVppHandler) DeleteVmxNet3(ifName string, ifIdx uint32) error {
 	if h.vmxnet3 == nil {
-		return vpp.ErrPluginDisabled
+		return errors.WithMessage(vpp.ErrPluginDisabled, "wmxnet")
 	}
 
 	req := &vpp_vmxnet3.Vmxnet3Delete{

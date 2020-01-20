@@ -393,14 +393,15 @@ func (d *InterfaceDescriptor) Retrieve(correlate []adapter.InterfaceKVWithMetada
 
 	// refresh the map of memif socket IDs
 	d.memifSocketToID, err = d.ifHandler.DumpMemifSocketDetails(ctx)
-	if err == vpp.ErrPluginDisabled {
-		d.log.Debugf("failed to dump memif socket details: %v", err)
+	if errors.Is(err, vpp.ErrPluginDisabled) {
+		d.log.Debugf("cannot dump memif socket details: %v", err)
 	} else if err != nil {
 		return retrieved, errors.Errorf("failed to dump memif socket details: %v", err)
-	}
-	for socketPath, socketID := range d.memifSocketToID {
-		if socketID == 0 {
-			d.defaultMemifSocketPath = socketPath
+	} else {
+		for socketPath, socketID := range d.memifSocketToID {
+			if socketID == 0 {
+				d.defaultMemifSocketPath = socketPath
+			}
 		}
 	}
 

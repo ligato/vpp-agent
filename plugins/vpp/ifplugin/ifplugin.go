@@ -36,10 +36,12 @@ import (
 	"github.com/pkg/errors"
 
 	"go.ligato.io/vpp-agent/v3/plugins/govppmux"
+	"go.ligato.io/vpp-agent/v3/plugins/kvscheduler"
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 	linux_ifcalls "go.ligato.io/vpp-agent/v3/plugins/linux/ifplugin/linuxcalls"
 	"go.ligato.io/vpp-agent/v3/plugins/linux/nsplugin"
 	"go.ligato.io/vpp-agent/v3/plugins/netalloc"
+	vppclient "go.ligato.io/vpp-agent/v3/plugins/vpp"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/descriptor"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/vppcalls"
@@ -51,6 +53,11 @@ import (
 	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/vppcalls/vpp2001"
 	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/vppcalls/vpp2001_324"
 )
+
+func init() {
+	// this adds ErrPluginDisabled to non-retryable errors
+	kvscheduler.NonRetryableErrors = append(kvscheduler.NonRetryableErrors, vppclient.ErrPluginDisabled)
+}
 
 // Default Go routine count used while retrieving linux configuration
 const goRoutineCount = 10
