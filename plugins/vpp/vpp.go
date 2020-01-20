@@ -56,17 +56,32 @@ func FindCompatibleBinapi(ch CompatibilityChecker) (binapi.Version, error) {
 	if len(binapi.Versions) == 0 {
 		return "", fmt.Errorf("no binapi versions loaded")
 	}
-	logging.Debugf("checking compatibility for %d binapi versions", len(binapi.Versions))
+	logging.Debugf("checking binapi compatibility (%d versions)", len(binapi.Versions))
+
+	var mostCompatible = struct {
+		version      Version
+		incompatible int
+	}{}
 	for version, msgList := range binapi.Versions {
 		msgs := msgList.AllMessages()
 		if err := ch.CheckCompatiblity(msgs...); err == nil {
 			logging.Debugf("found compatible binapi version: %v", version)
 			return version, nil
 		} else if ierr, ok := err.(*govppapi.CompatibilityError); ok {
-			logging.Debugf("binapi version %-15v incompatible: %d/%d incompatible messages", version, len(ierr.IncompatibleMessages), len(msgs))
+			logging.Debugf("binapi version %-15v incompatible: %d/%d incompatible messages",
+				version, len(ierr.IncompatibleMessages), len(msgs))
+
+			if mostCompatible.version == "" || mostCompatible.incompatible > len(ierr.IncompatibleMessages) {
+				mostCompatible.version = version
+				mostCompatible.incompatible = len(ierr.IncompatibleMessages)
+			}
 		} else {
 			logging.Warnf("binapi version %v check failed: %v", version, err)
 		}
+	}
+	if mostCompatible.version != "" {
+		logging.Debugf("choosing the most compatible binapi version: %v", mostCompatible.version)
+		return mostCompatible.version, nil
 	}
 	return "", fmt.Errorf("no compatible binapi version found")
 }
