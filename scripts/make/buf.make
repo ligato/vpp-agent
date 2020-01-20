@@ -9,9 +9,7 @@ $(error UNAME_ARCH is not set)
 endif
 
 REMOTE_GIT := https://github.com/ligato/vpp-agent.git
-
-# TODO: use master instead of dev branch (when master contains proto folder)
-BREAKING_BRANCH := dev
+CHECK_BREAKING_BRANCH := master
 
 # https://github.com/bufbuild/buf/releases 20200101
 BUF_VERSION := 0.5.0
@@ -114,15 +112,16 @@ buf-lint: $(BUF)
 
 .PHONY: buf-breaking-local
 buf-breaking-local: $(BUF)
-	buf check breaking --against-input '.git#branch=$(BREAKING_BRANCH)'
+	buf check breaking --against-input '.git#branch=$(CHECK_BREAKING_BRANCH)'
 
 # buf-breaking is what we run when testing in most CI providers
 # this does breaking change detection against our remote git repository
 
 .PHONY: buf-breaking
 buf-breaking: $(BUF)
-	buf check breaking --against-input "$(REMOTE_GIT)#branch=$(BREAKING_BRANCH)" \
-		--timeout 60s
+	buf check breaking --timeout 60s \
+	 --against-input "$(REMOTE_GIT)#branch=$(CHECK_BREAKING_BRANCH)"
+
 
 .PHONY: protocgengoclean
 protocgengoclean:
