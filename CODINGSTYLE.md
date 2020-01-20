@@ -6,4 +6,3 @@
 
 [1]: https://golang.org/doc/effective_go.html
 [2]: https://github.com/golang/go/wiki/CodeReviewComments
-[3]: https://golang.github.io/dep/docs/introduction.html
