@@ -19,6 +19,7 @@ import (
 	"encoding/gob"
 	"fmt"
 	"os"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -312,6 +313,9 @@ func (p *Plugin) updateVPPInfo() (err error) {
 	if err != nil {
 		return err
 	}
+
+	sort.Slice(plugins, func(i, j int) bool { return plugins[i].Name < plugins[j].Name })
+
 	p.Log.Debugf("VPP loaded %d plugins", len(plugins))
 	for _, plugin := range plugins {
 		p.Log.Debugf(" - plugin: %v", plugin)
