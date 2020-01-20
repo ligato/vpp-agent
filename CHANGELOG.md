@@ -4,6 +4,7 @@
 
 ## Release Notes
 
+- [v3.0.0](#v3.0.0)
 - [v2.5.0](#v2.5.0)
   - [v2.5.1](#v2.5.1)
 - [v2.4.0](#v2.4.0)
@@ -49,8 +50,29 @@ RELEASE CHANGELOG TEMPLATE:
 ### Documentation
 -->
 
+<a name="v3.0.0"></a>
+# [3.0.0](https://github.com/ligato/vpp-agent/compare/v2.5.0...master) (not yet released)
+
+### Compatibility
+- **VPP 20.01-379** (`20.01-rc0~379-ga6b93eac5`)
+- **VPP 20.01-324** (`20.01-rc0~324-g66a332cf1`)
+- **VPP 19.08.1** (default)
+- **VPP 19.04** (backward compatible)
+
+### BREAKING CHANGES
+- migrate from dep to Go modules for dependency management and remove vendor directory
+- use vanity import path  `go.ligato.io/vpp-agent/v3` in Go files
+- cleanup Protobuf definitions and move all _.proto_ files into `proto/ligato` directory
+
+### New Features
+- vpp-plugins: support L3 cross-connect
+- allow disabling of VPP plugins
+- add gRPC reflection service
+
 <a name="v2.5.1"></a>
 # [2.5.1](https://github.com/ligato/vpp-agent/compare/v2.5.0...v2.5.1) (2019-12-06)
+
+### Compatibility
 - **VPP 20.01-379** (`20.01-rc0~379-ga6b93eac5`)
 - **VPP 20.01-324** (`20.01-rc0~324-g66a332cf1`)
 - **VPP 19.08.1** (default)
@@ -63,6 +85,8 @@ RELEASE CHANGELOG TEMPLATE:
 
 <a name="v2.5.0"></a>
 # [2.5.0](https://github.com/ligato/vpp-agent/compare/v2.4.0...v2.5.0) (2019-11-29)
+
+### Compatibility
 - **VPP 20.01-379** (`20.01-rc0~379-ga6b93eac5`)
 - **VPP 20.01-324** (`20.01-rc0~324-g66a332cf1`)
 - **VPP 19.08.1** (default)
@@ -78,6 +102,8 @@ RELEASE CHANGELOG TEMPLATE:
 
 <a name="v2.4.0"></a>
 # [2.4.0](https://github.com/ligato/vpp-agent/compare/v2.3.0...v2.4.0) (2019-10-21)
+
+### Compatibility
 - **VPP 20.01-379** (`20.01-rc0~379-ga6b93eac5`)
 - **VPP 20.01-324** (`20.01-rc0~324-g66a332cf1`)
 - **VPP 19.08.1** (default)
