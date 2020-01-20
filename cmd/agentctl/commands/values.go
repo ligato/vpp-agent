@@ -15,7 +15,6 @@
 package commands
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"io"
@@ -32,7 +31,6 @@ import (
 
 func NewValuesCommand(cli agentcli.Cli) *cobra.Command {
 	var opts ValuesOptions
-
 	cmd := &cobra.Command{
 		Use:   "values [MODEL]",
 		Short: "Retrieve values from scheduler",
@@ -42,11 +40,14 @@ func NewValuesCommand(cli agentcli.Cli) *cobra.Command {
 			return runValues(cli, opts)
 		},
 	}
+	flags := cmd.Flags()
+	flags.StringVarP(&opts.Format, "format", "f", "", "Format output")
 	return cmd
 }
 
 type ValuesOptions struct {
 	Models []string
+	Format string
 }
 
 func runValues(cli agentcli.Cli, opts ValuesOptions) error {
@@ -73,25 +74,30 @@ func runValues(cli agentcli.Cli, opts ValuesOptions) error {
 		}
 	}
 
-	status, err := cli.Client().SchedulerValues(ctx, types.SchedulerValuesOptions{
+	values, err := cli.Client().SchedulerValues(ctx, types.SchedulerValuesOptions{
 		KeyPrefix: modelKeyPrefix,
 	})
 	if err != nil {
 		return err
 	}
 
-	if err := printValuesTable(cli.Out(), status); err != nil {
-		return err
+	format := opts.Format
+	if len(format) == 0 {
+		printValuesTable(cli.Out(), values)
+	} else {
+		if err := formatAsTemplate(cli.Out(), format, values); err != nil {
+			return err
+		}
 	}
 
 	return nil
 }
 
 // printValuesTable prints values data using table format
-func printValuesTable(out io.Writer, status []*kvscheduler.BaseValueStatus) error {
-	var buf bytes.Buffer
+func printValuesTable(out io.Writer, status []*kvscheduler.BaseValueStatus) {
+	w := tabwriter.NewWriter(out, 10, 0, 3, ' ', 0)
+	defer w.Flush()
 
-	w := tabwriter.NewWriter(&buf, 10, 0, 3, ' ', 0)
 	fmt.Fprintf(w, "MODEL\tNAME\tSTATE\tDETAILS\tLAST OP\tERROR\t\n")
 
 	var printVal = func(val *kvscheduler.ValueStatus) {
@@ -131,9 +137,4 @@ func printValuesTable(out io.Writer, status []*kvscheduler.BaseValueStatus) erro
 			printVal(v)
 		}
 	}
-	if err := w.Flush(); err != nil {
-		return err
-	}
-	_, err := buf.WriteTo(out)
-	return err
 }

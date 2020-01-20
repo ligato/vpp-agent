@@ -29,7 +29,7 @@ func NewStatusCommand(cli agentcli.Cli) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "status",
 		Short: "Retrieve agent status",
-		Args:  cobra.RangeArgs(0, 1),
+		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runStatus(cli, opts)
 		},
