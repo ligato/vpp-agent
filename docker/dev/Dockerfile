@@ -103,6 +103,6 @@ RUN VERSION=$VERSION COMMIT=$COMMIT DATE=$DATE make install
 
 ENV SUPERVISOR_CONFIG=/opt/vpp-agent/dev/supervisor.conf
 
-# run supervisor as the default executable
 CMD rm -f /dev/shm/db /dev/shm/global_vm /dev/shm/vpe-api && \
-    exec vpp-agent-init
+	mkdir -p /run/vpp && \
+	exec vpp-agent-init
