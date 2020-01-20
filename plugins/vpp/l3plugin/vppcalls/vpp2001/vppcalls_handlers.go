@@ -44,24 +44,6 @@ func init() {
 	vppcalls.AddHandlerVersion(vpp2001.Version, msgs, NewL3VppHandler)
 }
 
-type L3XCHandler struct {
-	l3xc      l3xc.RPCService
-	ifIndexes ifaceidx.IfaceMetadataIndex
-	log       logging.Logger
-}
-
-// NewL3XCHandler creates new instance of L3XC vppcalls handler
-func NewL3XCHandler(callsChan govppapi.Channel, ifIndexes ifaceidx.IfaceMetadataIndex, log logging.Logger) *L3XCHandler {
-	if log == nil {
-		log = logrus.NewLogger("l3xc-handler")
-	}
-	return &L3XCHandler{
-		l3xc:      l3xc.NewServiceClient(callsChan),
-		ifIndexes: ifIndexes,
-		log:       log,
-	}
-}
-
 type L3VppHandler struct {
 	*ArpVppHandler
 	*ProxyArpVppHandler
@@ -194,7 +176,7 @@ func NewVrfTableVppHandler(callsChan govppapi.Channel, log logging.Logger) *VrfT
 	}
 }
 
-// NewVrfTableVppHandler creates new instance of vrf-table vppcalls handler
+// NewDHCPProxyHandler creates new instance of vrf-table vppcalls handler
 func NewDHCPProxyHandler(callsChan govppapi.Channel, log logging.Logger) *DHCPProxyHandler {
 	if log == nil {
 		log = logrus.NewLogger("dhcp-proxy-handler")
@@ -202,6 +184,24 @@ func NewDHCPProxyHandler(callsChan govppapi.Channel, log logging.Logger) *DHCPPr
 	return &DHCPProxyHandler{
 		callsChannel: callsChan,
 		log:          log,
+	}
+}
+
+type L3XCHandler struct {
+	l3xc      l3xc.RPCService
+	ifIndexes ifaceidx.IfaceMetadataIndex
+	log       logging.Logger
+}
+
+// NewL3XCHandler creates new instance of L3XC vppcalls handler
+func NewL3XCHandler(callsChan govppapi.Channel, ifIndexes ifaceidx.IfaceMetadataIndex, log logging.Logger) *L3XCHandler {
+	if log == nil {
+		log = logrus.NewLogger("l3xc-handler")
+	}
+	return &L3XCHandler{
+		l3xc:      l3xc.NewServiceClient(callsChan),
+		ifIndexes: ifIndexes,
+		log:       log,
 	}
 }
 

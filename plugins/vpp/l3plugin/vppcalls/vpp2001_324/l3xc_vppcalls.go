@@ -12,14 +12,14 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 
-package vpp2001
+package vpp2001_324
 
 import (
 	"context"
 	"io"
 	"net"
 
-	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/l3xc"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001_324/l3xc"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin/vppcalls"
 )
 

@@ -28,6 +28,7 @@ import (
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ip"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ipsec"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/l2"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/l3xc"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/memclnt"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/memif"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/nat"
@@ -97,6 +98,7 @@ var Messages = vpp.Messages(
 	abf.AllMessages,
 	acl.AllMessages,
 	gtpu.AllMessages,
+	l3xc.AllMessages,
 	memif.AllMessages,
 	nat.AllMessages,
 	stn.AllMessages,

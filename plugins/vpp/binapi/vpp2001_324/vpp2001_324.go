@@ -28,6 +28,7 @@ import (
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001_324/ip"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001_324/ipsec"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001_324/l2"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001_324/l3xc"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001_324/memclnt"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001_324/memif"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001_324/nat"
@@ -70,6 +71,7 @@ func init() {
 //go:generate binapigen --input-file=$VPP_API_DIR/plugins/abf.api.json
 //go:generate binapigen --input-file=$VPP_API_DIR/plugins/acl.api.json
 //go:generate binapigen --input-file=$VPP_API_DIR/plugins/gtpu.api.json
+//go:generate binapigen --input-file=$VPP_API_DIR/plugins/l3xc.api.json
 //go:generate binapigen --input-file=$VPP_API_DIR/plugins/memif.api.json
 //go:generate binapigen --input-file=$VPP_API_DIR/plugins/nat.api.json
 //go:generate binapigen --input-file=$VPP_API_DIR/plugins/stn.api.json
@@ -96,6 +98,7 @@ var Messages = vpp.Messages(
 	abf.AllMessages,
 	acl.AllMessages,
 	gtpu.AllMessages,
+	l3xc.AllMessages,
 	memif.AllMessages,
 	nat.AllMessages,
 	stn.AllMessages,

@@ -202,6 +202,7 @@ type IPNeighVppAPI interface {
 	GetIPScanNeighbor() (*l3.IPScanNeighbor, error)
 }
 
+// Path represents FIB path entry.
 type Path struct {
 	SwIfIndex  uint32
 	NextHop    net.IP
@@ -209,16 +210,20 @@ type Path struct {
 	Preference uint8
 }
 
+// L3XC represents configuration for L3XC.
 type L3XC struct {
 	SwIfIndex uint32
 	IsIPv6    bool
 	Paths     []Path
 }
 
+// L3XCVppRead provides read methods for L3XC configuration.
 type L3XCVppRead interface {
+	DumpAllL3XC(ctx context.Context) ([]L3XC, error)
 	DumpL3XC(ctx context.Context, index uint32) ([]L3XC, error)
 }
 
+// L3XCVppAPI provides methods for managing L3XC configuration.
 type L3XCVppAPI interface {
 	L3XCVppRead
 

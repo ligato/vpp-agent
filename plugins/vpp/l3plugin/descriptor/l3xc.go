@@ -40,7 +40,8 @@ const (
 	L3XCDescriptorName = "vpp-l3xc"
 
 	// dependency labels
-	l3xcEntryInterfaceDep = "interface-exists"
+	l3xcTargetInterfaceDep = "target-interface-exists"
+	l3xcPathInterfaceDep   = "path-interface-exists"
 )
 
 // L3XCDescriptor teaches KVScheduler how to configure VPP L3XCs.
@@ -100,13 +101,13 @@ func (d *L3XCDescriptor) Dependencies(key string, l3xc *l3.L3XC) (deps []kvs.Dep
 	// the outgoing interface must exist
 	if l3xc.Interface != "" {
 		deps = append(deps, kvs.Dependency{
-			Label: l3xcEntryInterfaceDep,
+			Label: l3xcTargetInterfaceDep,
 			Key:   interfaces.InterfaceKey(l3xc.Interface),
 		})
 	}
 	for _, path := range l3xc.Paths {
 		deps = append(deps, kvs.Dependency{
-			Label: l3xcEntryInterfaceDep,
+			Label: l3xcPathInterfaceDep,
 			Key:   interfaces.InterfaceKey(path.Interface),
 		})
 	}
@@ -195,7 +196,7 @@ func (d *L3XCDescriptor) Retrieve(correlate []adapter.L3XCKVWithMetadata) (
 ) {
 	ctx := context.TODO()
 
-	l3xcEntries, err := d.l3xcHandler.DumpL3XC(ctx, ^uint32(0))
+	l3xcEntries, err := d.l3xcHandler.DumpAllL3XC(ctx)
 	if err != nil {
 		return nil, errors.Errorf("dumping VPP L3XCs failed: %v", err)
 	}
