@@ -73,9 +73,9 @@ var (
 		`{{ protoip .SourceIpAddress}}`,
 	))
 
-	ModelL3XC = models.Register(&L3XC{}, models.Spec{
+	ModelL3XC = models.Register(&L3XConnect{}, models.Spec{
 		Module:  ModuleName,
-		Type:    "l3xc",
+		Type:    "l3xconnect",
 		Version: "v2",
 	}, models.WithNameTemplate(
 		`{{.Interface}}/protocol/{{.Protocol}}`,
@@ -126,8 +126,8 @@ func DHCPProxyKey(srcIP string) string {
 }
 
 // L3XCKey returns key for L3XC
-func L3XCKey(iface string, protocol L3XC_Protocol) string {
-	return models.Key(&L3XC{
+func L3XCKey(iface string, protocol L3XConnect_Protocol) string {
+	return models.Key(&L3XConnect{
 		Interface: iface,
 		Protocol:  protocol,
 	})

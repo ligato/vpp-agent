@@ -19,7 +19,7 @@
 //go:generate descriptor-adapter --descriptor-name IPScanNeighbor --value-type *vpp_l3.IPScanNeighbor --import "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3" --output-dir "descriptor"
 //go:generate descriptor-adapter --descriptor-name VrfTable --value-type *vpp_l3.VrfTable --meta-type *vrfidx.VRFMetadata --import "go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin/vrfidx" --import "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3" --output-dir "descriptor"
 //go:generate descriptor-adapter --descriptor-name DHCPProxy --value-type *vpp_l3.DHCPProxy --import "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3" --output-dir "descriptor"
-//go:generate descriptor-adapter --descriptor-name L3XC --value-type *vpp_l3.L3XC --import "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name L3XC --value-type *vpp_l3.L3XConnect --import "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3" --output-dir "descriptor"
 
 package l3plugin
 

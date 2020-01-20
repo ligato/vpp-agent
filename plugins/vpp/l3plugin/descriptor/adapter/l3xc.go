@@ -12,7 +12,7 @@ import (
 
 type L3XCKVWithMetadata struct {
 	Key      string
-	Value    *vpp_l3.L3XC
+	Value    *vpp_l3.L3XConnect
 	Metadata interface{}
 	Origin   ValueOrigin
 }
@@ -24,19 +24,19 @@ type L3XCDescriptor struct {
 	KeySelector          KeySelector
 	ValueTypeName        string
 	KeyLabel             func(key string) string
-	ValueComparator      func(key string, oldValue, newValue *vpp_l3.L3XC) bool
+	ValueComparator      func(key string, oldValue, newValue *vpp_l3.L3XConnect) bool
 	NBKeyPrefix          string
 	WithMetadata         bool
 	MetadataMapFactory   MetadataMapFactory
-	Validate             func(key string, value *vpp_l3.L3XC) error
-	Create               func(key string, value *vpp_l3.L3XC) (metadata interface{}, err error)
-	Delete               func(key string, value *vpp_l3.L3XC, metadata interface{}) error
-	Update               func(key string, oldValue, newValue *vpp_l3.L3XC, oldMetadata interface{}) (newMetadata interface{}, err error)
-	UpdateWithRecreate   func(key string, oldValue, newValue *vpp_l3.L3XC, metadata interface{}) bool
+	Validate             func(key string, value *vpp_l3.L3XConnect) error
+	Create               func(key string, value *vpp_l3.L3XConnect) (metadata interface{}, err error)
+	Delete               func(key string, value *vpp_l3.L3XConnect, metadata interface{}) error
+	Update               func(key string, oldValue, newValue *vpp_l3.L3XConnect, oldMetadata interface{}) (newMetadata interface{}, err error)
+	UpdateWithRecreate   func(key string, oldValue, newValue *vpp_l3.L3XConnect, metadata interface{}) bool
 	Retrieve             func(correlate []L3XCKVWithMetadata) ([]L3XCKVWithMetadata, error)
 	IsRetriableFailure   func(err error) bool
-	DerivedValues        func(key string, value *vpp_l3.L3XC) []KeyValuePair
-	Dependencies         func(key string, value *vpp_l3.L3XC) []Dependency
+	DerivedValues        func(key string, value *vpp_l3.L3XConnect) []KeyValuePair
+	Dependencies         func(key string, value *vpp_l3.L3XConnect) []Dependency
 	RetrieveDependencies []string /* descriptor name */
 }
 
@@ -213,8 +213,8 @@ func (da *L3XCDescriptorAdapter) Dependencies(key string, value proto.Message) [
 
 ////////// Helper methods //////////
 
-func castL3XCValue(key string, value proto.Message) (*vpp_l3.L3XC, error) {
-	typedValue, ok := value.(*vpp_l3.L3XC)
+func castL3XCValue(key string, value proto.Message) (*vpp_l3.L3XConnect, error) {
+	typedValue, ok := value.(*vpp_l3.L3XConnect)
 	if !ok {
 		return nil, ErrInvalidValueType(key, value)
 	}

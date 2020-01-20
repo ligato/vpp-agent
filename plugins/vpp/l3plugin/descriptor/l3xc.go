@@ -41,7 +41,7 @@ const (
 
 	// dependency labels
 	l3xcTargetInterfaceDep = "target-interface-exists"
-	l3xcPathInterfaceDep   = "path-interface-exists"
+	l3xcPathInterfaceDep   = "outgoing-interface-exists"
 )
 
 // L3XCDescriptor teaches KVScheduler how to configure VPP L3XCs.
@@ -81,12 +81,12 @@ func NewL3XCDescriptor(l3xcHandler vppcalls.L3XCVppAPI, ifIndexes ifaceidx.Iface
 }
 
 // EquivalentL3XCs is comparison function for L3XC entries.
-func (d *L3XCDescriptor) EquivalentL3XCs(key string, oldL3XC, newL3XC *l3.L3XC) bool {
+func (d *L3XCDescriptor) EquivalentL3XCs(key string, oldL3XC, newL3XC *l3.L3XConnect) bool {
 	return proto.Equal(oldL3XC, newL3XC)
 }
 
 // Validate returns if given l3xc is valid.
-func (d *L3XCDescriptor) Validate(key string, l3xc *l3.L3XC) error {
+func (d *L3XCDescriptor) Validate(key string, l3xc *l3.L3XConnect) error {
 	if l3xc.Interface == "" {
 		return errors.Errorf("no interface defined")
 	}
@@ -97,7 +97,7 @@ func (d *L3XCDescriptor) Validate(key string, l3xc *l3.L3XC) error {
 }
 
 // Dependencies lists dependencies for a VPP L3XC entry.
-func (d *L3XCDescriptor) Dependencies(key string, l3xc *l3.L3XC) (deps []kvs.Dependency) {
+func (d *L3XCDescriptor) Dependencies(key string, l3xc *l3.L3XConnect) (deps []kvs.Dependency) {
 	// the outgoing interface must exist
 	if l3xc.Interface != "" {
 		deps = append(deps, kvs.Dependency{
@@ -108,23 +108,23 @@ func (d *L3XCDescriptor) Dependencies(key string, l3xc *l3.L3XC) (deps []kvs.Dep
 	for _, path := range l3xc.Paths {
 		deps = append(deps, kvs.Dependency{
 			Label: l3xcPathInterfaceDep,
-			Key:   interfaces.InterfaceKey(path.Interface),
+			Key:   interfaces.InterfaceKey(path.OutgoingInterface),
 		})
 	}
 	return deps
 }
 
 // Create adds VPP L3XC entry.
-func (d *L3XCDescriptor) Create(key string, l3xc *l3.L3XC) (interface{}, error) {
+func (d *L3XCDescriptor) Create(key string, l3xc *l3.L3XConnect) (interface{}, error) {
 	return d.update(key, l3xc)
 }
 
 // Update updates VPP L3XC entry.
-func (d *L3XCDescriptor) Update(key string, oldL3XC, newL3XC *l3.L3XC, oldMeta interface{}) (interface{}, error) {
+func (d *L3XCDescriptor) Update(key string, oldL3XC, newL3XC *l3.L3XConnect, oldMeta interface{}) (interface{}, error) {
 	return d.update(key, newL3XC)
 }
 
-func (d *L3XCDescriptor) update(key string, l3xc *l3.L3XC) (interface{}, error) {
+func (d *L3XCDescriptor) update(key string, l3xc *l3.L3XConnect) (interface{}, error) {
 	ctx := context.TODO()
 
 	var swIfIndex uint32
@@ -142,21 +142,21 @@ func (d *L3XCDescriptor) update(key string, l3xc *l3.L3XC) (interface{}, error) 
 
 	paths := make([]vppcalls.Path, len(l3xc.Paths))
 	for i, p := range l3xc.Paths {
-		pmeta, found := d.ifIndexes.LookupByName(p.Interface)
+		pmeta, found := d.ifIndexes.LookupByName(p.OutgoingInterface)
 		if !found {
-			return nil, errors.Errorf("interface %s from path #%d not found", p.Interface, i)
+			return nil, errors.Errorf("interface %s from path #%d not found", p.OutgoingInterface, i)
 		}
 		paths[i] = vppcalls.Path{
 			SwIfIndex:  pmeta.SwIfIndex,
 			Weight:     uint8(p.Weight),
 			Preference: uint8(p.Preference),
-			NextHop:    net.ParseIP(p.NextHop),
+			NextHop:    net.ParseIP(p.NextHopAddr),
 		}
 	}
 
 	if err := d.l3xcHandler.UpdateL3XC(ctx, &vppcalls.L3XC{
 		SwIfIndex: swIfIndex,
-		IsIPv6:    l3xc.Protocol == l3.L3XC_IPV6,
+		IsIPv6:    l3xc.Protocol == l3.L3XConnect_IPV6,
 		Paths:     paths,
 	}); err != nil {
 		return nil, err
@@ -166,7 +166,7 @@ func (d *L3XCDescriptor) update(key string, l3xc *l3.L3XC) (interface{}, error) 
 }
 
 // Delete removes VPP L3XC entry.
-func (d *L3XCDescriptor) Delete(key string, l3xc *l3.L3XC, metadata interface{}) error {
+func (d *L3XCDescriptor) Delete(key string, l3xc *l3.L3XConnect, metadata interface{}) error {
 	ctx := context.TODO()
 
 	var swIfIndex uint32
@@ -181,7 +181,7 @@ func (d *L3XCDescriptor) Delete(key string, l3xc *l3.L3XC, metadata interface{})
 		}
 		swIfIndex = meta.SwIfIndex
 	}
-	isIPv6 := l3xc.Protocol == l3.L3XC_IPV6
+	isIPv6 := l3xc.Protocol == l3.L3XConnect_IPV6
 
 	if err := d.l3xcHandler.DeleteL3XC(ctx, swIfIndex, isIPv6); err != nil {
 		return err
@@ -208,25 +208,25 @@ func (d *L3XCDescriptor) Retrieve(correlate []adapter.L3XCKVWithMetadata) (
 			d.log.Warnf("L3XC dump: interface index %d not found", l3xc.SwIfIndex)
 
 		}
-		ipProto := l3.L3XC_IPV4
+		ipProto := l3.L3XConnect_IPV4
 		if l3xc.IsIPv6 {
-			ipProto = l3.L3XC_IPV6
+			ipProto = l3.L3XConnect_IPV6
 		}
-		paths := make([]*l3.L3XC_Path, len(l3xc.Paths))
+		paths := make([]*l3.L3XConnect_Path, len(l3xc.Paths))
 		for i, p := range l3xc.Paths {
 			ifNamePath, _, exists := d.ifIndexes.LookupBySwIfIndex(p.SwIfIndex)
 			if !exists {
 				ifNamePath = fmt.Sprintf("MISSING-%d", p.SwIfIndex)
 				d.log.Warnf("L3XC dump: interface index %d for path #%d not found", p.SwIfIndex, i)
 			}
-			paths[i] = &l3.L3XC_Path{
-				Interface:  ifNamePath,
-				Weight:     uint32(p.Weight),
-				Preference: uint32(p.Preference),
-				NextHop:    p.NextHop.String(),
+			paths[i] = &l3.L3XConnect_Path{
+				OutgoingInterface: ifNamePath,
+				NextHopAddr:       p.NextHop.String(),
+				Weight:            uint32(p.Weight),
+				Preference:        uint32(p.Preference),
 			}
 		}
-		value := &l3.L3XC{
+		value := &l3.L3XConnect{
 			Interface: ifName,
 			Protocol:  ipProto,
 			Paths:     paths,
