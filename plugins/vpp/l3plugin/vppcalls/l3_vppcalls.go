@@ -15,13 +15,16 @@
 package vppcalls
 
 import (
+	"context"
+	"net"
+
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
+
 	"go.ligato.io/vpp-agent/v3/plugins/netalloc"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp"
-	"go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin/vrfidx"
-
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin/vrfidx"
 	l3 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3"
 )
 
@@ -33,6 +36,7 @@ type L3VppAPI interface {
 	IPNeighVppAPI
 	VrfTableVppAPI
 	DHCPProxyAPI
+	L3XCVppAPI
 }
 
 // ArpDetails holds info about ARP entry as a proto model
@@ -46,7 +50,7 @@ type ArpMeta struct {
 	SwIfIndex uint32
 }
 
-// ArpVppAPI provides methods for managing ARP entries
+// DHCPProxyAPI provides methods for managing ARP entries
 type DHCPProxyAPI interface {
 	DHCPProxyRead
 
@@ -117,7 +121,7 @@ type ProxyArpVppAPI interface {
 type ProxyArpVppRead interface {
 	// DumpProxyArpRanges returns configured proxy ARP ranges
 	DumpProxyArpRanges() ([]*ProxyArpRangesDetails, error)
-	// DumpProxyArpRanges returns configured proxy ARP interfaces
+	// DumpProxyArpInterfaces returns configured proxy ARP interfaces
 	DumpProxyArpInterfaces() ([]*ProxyArpInterfaceDetails, error)
 }
 
@@ -196,6 +200,35 @@ type IPNeighVppAPI interface {
 	SetIPScanNeighbor(data *l3.IPScanNeighbor) error
 	// GetIPScanNeighbor returns IP scan neighbor configuration from the VPP
 	GetIPScanNeighbor() (*l3.IPScanNeighbor, error)
+}
+
+// Path represents FIB path entry.
+type Path struct {
+	SwIfIndex  uint32
+	NextHop    net.IP
+	Weight     uint8
+	Preference uint8
+}
+
+// L3XC represents configuration for L3XC.
+type L3XC struct {
+	SwIfIndex uint32
+	IsIPv6    bool
+	Paths     []Path
+}
+
+// L3XCVppRead provides read methods for L3XC configuration.
+type L3XCVppRead interface {
+	DumpAllL3XC(ctx context.Context) ([]L3XC, error)
+	DumpL3XC(ctx context.Context, index uint32) ([]L3XC, error)
+}
+
+// L3XCVppAPI provides methods for managing L3XC configuration.
+type L3XCVppAPI interface {
+	L3XCVppRead
+
+	UpdateL3XC(ctx context.Context, l3xc *L3XC) error
+	DeleteL3XC(ctx context.Context, index uint32, ipv6 bool) error
 }
 
 var Handler = vpp.RegisterHandler(vpp.HandlerDesc{

@@ -23,9 +23,17 @@ const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 type Route_RouteType int32
 
 const (
+	// Forwarding is being done in the specified vrf_id only, or according to
+	// the specified outgoing interface.
 	Route_INTRA_VRF Route_RouteType = 0
+	// Forwarding is being done by lookup into a different VRF,
+	// specified as via_vrf_id field. In case of these routes, the outgoing
+	// interface should not be specified. The next hop IP address
+	// does not have to be specified either, in that case VPP does full
+	// recursive lookup in the via_vrf_id VRF.
 	Route_INTER_VRF Route_RouteType = 1
-	Route_DROP      Route_RouteType = 2
+	// Drops the network communication designated for specific IP address.
+	Route_DROP Route_RouteType = 2
 )
 
 var Route_RouteType_name = map[int32]string{
@@ -49,14 +57,24 @@ func (Route_RouteType) EnumDescriptor() ([]byte, []int) {
 }
 
 type Route struct {
-	Type              Route_RouteType `protobuf:"varint,10,opt,name=type,proto3,enum=ligato.vpp.l3.Route_RouteType" json:"type,omitempty"`
-	VrfId             uint32          `protobuf:"varint,1,opt,name=vrf_id,json=vrfId,proto3" json:"vrf_id,omitempty"`
-	DstNetwork        string          `protobuf:"bytes,3,opt,name=dst_network,json=dstNetwork,proto3" json:"dst_network,omitempty"`
-	NextHopAddr       string          `protobuf:"bytes,4,opt,name=next_hop_addr,json=nextHopAddr,proto3" json:"next_hop_addr,omitempty"`
-	OutgoingInterface string          `protobuf:"bytes,5,opt,name=outgoing_interface,json=outgoingInterface,proto3" json:"outgoing_interface,omitempty"`
-	Weight            uint32          `protobuf:"varint,6,opt,name=weight,proto3" json:"weight,omitempty"`
-	Preference        uint32          `protobuf:"varint,7,opt,name=preference,proto3" json:"preference,omitempty"`
-	// (a poor man's primary and backup)
+	Type Route_RouteType `protobuf:"varint,10,opt,name=type,proto3,enum=ligato.vpp.l3.Route_RouteType" json:"type,omitempty"`
+	// VRF identifier, field required for remote client. This value should be
+	// consistent with VRF ID in static route key. If it is not, value from
+	// key will be preffered and this field will be overriden.
+	// Non-zero VRF has to be explicitly created (see api/models/vpp/l3/vrf.proto)
+	VrfId uint32 `protobuf:"varint,1,opt,name=vrf_id,json=vrfId,proto3" json:"vrf_id,omitempty"`
+	// Destination network defined by IP address and prefix (format: <address>/<prefix>).
+	DstNetwork string `protobuf:"bytes,3,opt,name=dst_network,json=dstNetwork,proto3" json:"dst_network,omitempty"`
+	// Next hop address.
+	NextHopAddr string `protobuf:"bytes,4,opt,name=next_hop_addr,json=nextHopAddr,proto3" json:"next_hop_addr,omitempty"`
+	// Interface name of the outgoing interface.
+	OutgoingInterface string `protobuf:"bytes,5,opt,name=outgoing_interface,json=outgoingInterface,proto3" json:"outgoing_interface,omitempty"`
+	// Weight is used for unequal cost load balancing.
+	Weight uint32 `protobuf:"varint,6,opt,name=weight,proto3" json:"weight,omitempty"`
+	// Preference defines path preference. Lower preference is preferred.
+	// Only paths with the best preference contribute to forwarding (a poor man's primary and backup).
+	Preference uint32 `protobuf:"varint,7,opt,name=preference,proto3" json:"preference,omitempty"`
+	// Specifies VRF ID for the next hop lookup / recursive lookup
 	ViaVrfId             uint32   `protobuf:"varint,8,opt,name=via_vrf_id,json=viaVrfId,proto3" json:"via_vrf_id,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`

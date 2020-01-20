@@ -14,7 +14,7 @@ const (
 	// GWRefAllowed is used when it doesn't matter if reference points to interface
 	// address or GW address.
 	GWRefAllowed GwValidityCheck = iota
-	// GWRefAllowed is used when an IP address reference should point to GW address.
+	// GWRefRequired is used when an IP address reference should point to GW address.
 	GWRefRequired
 	// GwRefUnexpected is used when an IP address reference should not point to GW address.
 	GwRefUnexpected

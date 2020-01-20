@@ -20,6 +20,7 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
+// Protocol define IP protocol of VRF table.
 type VrfTable_Protocol int32
 
 const (
@@ -46,12 +47,19 @@ func (VrfTable_Protocol) EnumDescriptor() ([]byte, []int) {
 }
 
 type VrfTable struct {
-	Id                   uint32            `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
-	Protocol             VrfTable_Protocol `protobuf:"varint,2,opt,name=protocol,proto3,enum=ligato.vpp.l3.VrfTable_Protocol" json:"protocol,omitempty"`
-	Label                string            `protobuf:"bytes,3,opt,name=label,proto3" json:"label,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}          `json:"-"`
-	XXX_unrecognized     []byte            `json:"-"`
-	XXX_sizecache        int32             `json:"-"`
+	// ID is mandatory identification for VRF table.
+	// NOTE: do not confuse with fib index (shown by some VPP CLIs),
+	// which is VPP's internal offset in the vector of allocated tables.
+	Id       uint32            `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	Protocol VrfTable_Protocol `protobuf:"varint,2,opt,name=protocol,proto3,enum=ligato.vpp.l3.VrfTable_Protocol" json:"protocol,omitempty"`
+	// Label is an optional description for the table.
+	// - maximum allowed length is 63 characters
+	// - included in the output from the VPP CLI command "show ip fib"
+	// - if undefined, then VPP will generate label using the template "<protocol>-VRF:<id>"
+	Label                string   `protobuf:"bytes,3,opt,name=label,proto3" json:"label,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
 func (m *VrfTable) Reset()         { *m = VrfTable{} }

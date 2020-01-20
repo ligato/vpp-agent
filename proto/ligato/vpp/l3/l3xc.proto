@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package ligato.vpp.l3;
+
+option go_package = "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3;vpp_l3";
+
+message L3XConnect {
+    string interface = 1;
+
+    enum Protocol {
+        IPV4 = 0;
+        IPV6 = 1;
+    }
+    Protocol protocol = 2;
+
+    message Path {
+        string outgoing_interface = 1;
+        string next_hop_addr = 2;
+        uint32 weight = 3;
+        uint32 preference = 4;
+    }
+    repeated Path paths = 3;
+}
