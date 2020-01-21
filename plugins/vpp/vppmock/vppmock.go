@@ -234,7 +234,7 @@ func (m *mockVPPClient) IsPluginLoaded(plugin string) bool {
 	return !m.unloadedPlugins[plugin]
 }
 
-func (m *mockVPPClient) PreferredVersion() vpp.Version {
+func (m *mockVPPClient) BinapiVersion() vpp.Version {
 	return ""
 }
 

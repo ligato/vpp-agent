@@ -293,7 +293,7 @@ func (m *vppClient) Version() vpp.Version {
 	return m.version
 }
 
-func (m *vppClient) PreferredVersion() vpp.Version {
+func (m *vppClient) BinapiVersion() vpp.Version {
 	return ""
 }
 
