@@ -47,7 +47,36 @@ import (
 const Version = "20.01-rc0~379"
 
 func init() {
-	binapi.Versions[Version] = Messages
+	binapi.Versions[Version] = binapi.VersionMsgs{
+		Core: vpp.Messages(
+			af_packet.AllMessages,
+			bond.AllMessages,
+			dhcp.AllMessages,
+			gre.AllMessages,
+			interfaces.AllMessages,
+			ip.AllMessages,
+			ipsec.AllMessages,
+			l2.AllMessages,
+			memclnt.AllMessages,
+			punt.AllMessages,
+			span.AllMessages,
+			sr.AllMessages,
+			tapv2.AllMessages,
+			vpe.AllMessages,
+			vxlan.AllMessages,
+			vxlan_gpe.AllMessages,
+		),
+		Plugins: vpp.Messages(
+			abf.AllMessages,
+			acl.AllMessages,
+			gtpu.AllMessages,
+			l3xc.AllMessages,
+			memif.AllMessages,
+			nat.AllMessages,
+			stn.AllMessages,
+			vmxnet3.AllMessages,
+		),
+	}
 }
 
 //go:generate -command binapigen binapi-generator --output-dir=.
@@ -76,31 +105,3 @@ func init() {
 //go:generate binapigen --input-file=$VPP_API_DIR/plugins/nat.api.json
 //go:generate binapigen --input-file=$VPP_API_DIR/plugins/stn.api.json
 //go:generate binapigen --input-file=$VPP_API_DIR/plugins/vmxnet3.api.json
-
-// Messages is list of functions that return all messages for this version.
-var Messages = vpp.Messages(
-	af_packet.AllMessages,
-	bond.AllMessages,
-	dhcp.AllMessages,
-	gre.AllMessages,
-	interfaces.AllMessages,
-	ip.AllMessages,
-	ipsec.AllMessages,
-	l2.AllMessages,
-	memclnt.AllMessages,
-	punt.AllMessages,
-	span.AllMessages,
-	sr.AllMessages,
-	tapv2.AllMessages,
-	vpe.AllMessages,
-	vxlan.AllMessages,
-	vxlan_gpe.AllMessages,
-	abf.AllMessages,
-	acl.AllMessages,
-	gtpu.AllMessages,
-	l3xc.AllMessages,
-	memif.AllMessages,
-	nat.AllMessages,
-	stn.AllMessages,
-	vmxnet3.AllMessages,
-)

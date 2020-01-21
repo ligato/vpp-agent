@@ -234,6 +234,10 @@ func (m *mockVPPClient) IsPluginLoaded(plugin string) bool {
 	return !m.unloadedPlugins[plugin]
 }
 
+func (m *mockVPPClient) PreferredVersion() vpp.Version {
+	return ""
+}
+
 func (m *mockVPPClient) Stats() govppapi.StatsProvider {
 	panic("implement me")
 }

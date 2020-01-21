@@ -45,6 +45,8 @@ type Client interface {
 	Stats() govppapi.StatsProvider
 	// IsPluginLoaded returns true if the given plugin is currently loaded.
 	IsPluginLoaded(plugin string) bool
+	// PreferredVersion returns version that is preferred.
+	PreferredVersion() Version
 }
 
 type CompatibilityChecker interface {
@@ -64,19 +66,25 @@ func FindCompatibleBinapi(ch CompatibilityChecker) (binapi.Version, error) {
 	}{}
 	for version, msgList := range binapi.Versions {
 		msgs := msgList.AllMessages()
-		if err := ch.CheckCompatiblity(msgs...); err == nil {
+		if err := ch.CheckCompatiblity(msgList.Core.AllMessages()...); err == nil {
+			logging.Debugf("binapi version %v core compatible", version)
+		} else {
+			logging.Debugf("binapi version %v core check failed: %v", version, err)
+			continue
+		}
+		if err := ch.CheckCompatiblity(msgList.Plugins.AllMessages()...); err == nil {
 			logging.Debugf("found compatible binapi version: %v", version)
 			return version, nil
 		} else if ierr, ok := err.(*govppapi.CompatibilityError); ok {
 			logging.Debugf("binapi version %-15v incompatible: %d/%d incompatible messages",
 				version, len(ierr.IncompatibleMessages), len(msgs))
-
-			if mostCompatible.version == "" || mostCompatible.incompatible > len(ierr.IncompatibleMessages) {
+			incompatible := len(ierr.IncompatibleMessages)
+			if (mostCompatible.version == "" || mostCompatible.incompatible > incompatible) && incompatible < len(msgs) {
 				mostCompatible.version = version
-				mostCompatible.incompatible = len(ierr.IncompatibleMessages)
+				mostCompatible.incompatible = incompatible
 			}
 		} else {
-			logging.Warnf("binapi version %v check failed: %v", version, err)
+			logging.Warnf("binapi version %v plugin check failed: %v", version, err)
 		}
 	}
 	if mostCompatible.version != "" {

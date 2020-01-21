@@ -19,7 +19,21 @@ import (
 )
 
 // Versions is a map of all binapi messages for each supported VPP versions.
-var Versions = map[Version]MessagesList{}
+var Versions = map[Version]VersionMsgs{}
+
+// VersionMsgs contains list of messages in version.
+type VersionMsgs struct {
+	Core    MessagesList
+	Plugins MessagesList
+}
+
+// AllMessages returns messages from message list funcs combined.
+func (vc *VersionMsgs) AllMessages() []govppapi.Message {
+	var msgs []govppapi.Message
+	msgs = append(msgs, vc.Core.AllMessages()...)
+	msgs = append(msgs, vc.Plugins.AllMessages()...)
+	return msgs
+}
 
 // Version represents VPP version for generated binapi.
 type Version string

@@ -293,6 +293,10 @@ func (m *vppClient) Version() vpp.Version {
 	return m.version
 }
 
+func (m *vppClient) PreferredVersion() vpp.Version {
+	return ""
+}
+
 func (v *vppClient) CheckCompatiblity(msgs ...govppapi.Message) error {
 	return v.ch.CheckCompatiblity(msgs...)
 }

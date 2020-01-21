@@ -236,6 +236,10 @@ func (p *Plugin) Stats() govppapi.StatsProvider {
 	return p
 }
 
+func (p *Plugin) PreferredVersion() vpp.Version {
+	return p.binapiVersion
+}
+
 // VPPInfo returns information about VPP session.
 func (p *Plugin) VPPInfo() VPPInfo {
 	p.infoMu.Lock()
