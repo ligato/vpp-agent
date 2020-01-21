@@ -19,6 +19,7 @@ import (
 	"encoding/gob"
 	"fmt"
 	"os"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -235,6 +236,10 @@ func (p *Plugin) Stats() govppapi.StatsProvider {
 	return p
 }
 
+func (p *Plugin) BinapiVersion() vpp.Version {
+	return p.binapiVersion
+}
+
 // VPPInfo returns information about VPP session.
 func (p *Plugin) VPPInfo() VPPInfo {
 	p.infoMu.Lock()
@@ -259,13 +264,11 @@ func (p *Plugin) updateVPPInfo() (err error) {
 		return fmt.Errorf("VPP connection is nil")
 	}
 
-	ctx := context.Background()
-
 	p.vppapiChan, err = p.vppConn.NewAPIChannel()
 	if err != nil {
 		return err
 	}
-	p.binapiVersion, err = vpp.FindCompatibleBinapi(p.vppapiChan)
+	p.binapiVersion, err = binapi.CompatibleVersion(p.vppapiChan)
 	if err != nil {
 		return err
 	}
@@ -274,6 +277,8 @@ func (p *Plugin) updateVPPInfo() (err error) {
 	if err != nil {
 		return errors.New("no compatible VPP handler found")
 	}
+
+	ctx := context.TODO()
 
 	version, err := p.vpeHandler.RunCli(ctx, "show version verbose")
 	if err != nil {
@@ -312,6 +317,9 @@ func (p *Plugin) updateVPPInfo() (err error) {
 	if err != nil {
 		return err
 	}
+
+	sort.Slice(plugins, func(i, j int) bool { return plugins[i].Name < plugins[j].Name })
+
 	p.Log.Debugf("VPP loaded %d plugins", len(plugins))
 	for _, plugin := range plugins {
 		p.Log.Debugf(" - plugin: %v", plugin)
@@ -326,7 +334,7 @@ func (p *Plugin) updateVPPInfo() (err error) {
 	}
 	p.infoMu.Unlock()
 
-	p.Log.Debugf("listing %d VPP handlers", len(vpp.GetHandlers()))
+	p.Log.Debugf("found %d registered VPP handlers", len(vpp.GetHandlers()))
 	for name, handler := range vpp.GetHandlers() {
 		versions := handler.Versions()
 		p.Log.Debugf("- handler: %-10s has %d versions: %v", name, len(versions), versions)

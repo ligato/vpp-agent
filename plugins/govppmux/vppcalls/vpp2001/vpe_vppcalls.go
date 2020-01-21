@@ -86,6 +86,11 @@ func (h *VpeHandler) GetModules(ctx context.Context) ([]vppcalls.APIModule, erro
 }
 
 func (h *VpeHandler) GetPlugins(ctx context.Context) ([]vppcalls.PluginInfo, error) {
+	const (
+		pluginPathPrefix = "Plugin path is:"
+		pluginNameSuffix = "_plugin.so"
+	)
+
 	out, err := h.RunCli(ctx, "show plugins")
 	if err != nil {
 		return nil, err
@@ -95,9 +100,7 @@ func (h *VpeHandler) GetPlugins(ctx context.Context) ([]vppcalls.PluginInfo, err
 	if len(lines) == 0 {
 		return nil, fmt.Errorf("empty output for 'show plugins'")
 	}
-
 	pluginPathLine := strings.TrimSpace(lines[0])
-	const pluginPathPrefix = "Plugin path is:"
 	if !strings.HasPrefix(pluginPathLine, pluginPathPrefix) {
 		return nil, fmt.Errorf("unexpected output for 'show plugins'")
 	}
@@ -120,7 +123,7 @@ func (h *VpeHandler) GetPlugins(ctx context.Context) ([]vppcalls.PluginInfo, err
 			continue
 		}
 		plugin := vppcalls.PluginInfo{
-			Name:        strings.TrimSuffix(fields[1], "_plugin.so"),
+			Name:        strings.TrimSuffix(fields[1], pluginNameSuffix),
 			Path:        fields[1],
 			Version:     fields[2],
 			Description: strings.Join(fields[3:], " "),

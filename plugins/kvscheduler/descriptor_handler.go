@@ -1,12 +1,18 @@
 package kvscheduler
 
 import (
+	"errors"
 	"os"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/vishvananda/netns"
 
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
+)
+
+var (
+	// NonRetryableErrors contains global list of non-retryable errors.
+	NonRetryableErrors []error
 )
 
 // checking of the original network namespace preservation
@@ -139,13 +145,20 @@ func (h *descriptorHandler) delete(key string, value proto.Message, metadata kvs
 // If descriptor does not define IsRetriableFailure, it is assumed any failure
 // can be potentially fixed by retry.
 func (h *descriptorHandler) isRetriableFailure(err error) bool {
-	// first check for errors returned by the handler itself
-	handlerErrs := []error{
+	handlerErrors := []error{
 		kvs.ErrUnimplementedCreate,
 		kvs.ErrUnimplementedDelete,
-		kvs.ErrEscapedNetNs}
-	for _, handlerError := range handlerErrs {
-		if err == handlerError {
+		kvs.ErrEscapedNetNs,
+	}
+	// check for errors returned by the handler itself
+	for _, e := range handlerErrors {
+		if errors.Is(err, e) {
+			return false
+		}
+	}
+	// check for global non-retryable errors
+	for _, e := range NonRetryableErrors {
+		if errors.Is(err, e) {
 			return false
 		}
 	}

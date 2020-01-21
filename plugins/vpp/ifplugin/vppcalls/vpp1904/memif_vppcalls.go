@@ -20,6 +20,8 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/pkg/errors"
+
 	"go.ligato.io/vpp-agent/v3/plugins/vpp"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1904/memif"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/vppcalls"
@@ -28,7 +30,7 @@ import (
 
 func (h *InterfaceVppHandler) AddMemifInterface(ctx context.Context, ifName string, memIface *interfaces.MemifLink, socketID uint32) (swIdx uint32, err error) {
 	if h.memif == nil {
-		return 0, vpp.ErrPluginDisabled
+		return 0, errors.WithMessage(vpp.ErrPluginDisabled, "memif")
 	}
 
 	req := &memif.MemifCreate{
@@ -65,7 +67,7 @@ func (h *InterfaceVppHandler) AddMemifInterface(ctx context.Context, ifName stri
 
 func (h *InterfaceVppHandler) DeleteMemifInterface(ctx context.Context, ifName string, idx uint32) error {
 	if h.memif == nil {
-		return vpp.ErrPluginDisabled
+		return errors.WithMessage(vpp.ErrPluginDisabled, "memif")
 	}
 
 	req := &memif.MemifDelete{
@@ -80,7 +82,7 @@ func (h *InterfaceVppHandler) DeleteMemifInterface(ctx context.Context, ifName s
 
 func (h *InterfaceVppHandler) RegisterMemifSocketFilename(ctx context.Context, filename string, id uint32) error {
 	if h.memif == nil {
-		return vpp.ErrPluginDisabled
+		return errors.WithMessage(vpp.ErrPluginDisabled, "memif")
 	}
 
 	req := &memif.MemifSocketFilenameAddDel{
@@ -97,7 +99,7 @@ func (h *InterfaceVppHandler) RegisterMemifSocketFilename(ctx context.Context, f
 // DumpMemifSocketDetails implements interface handler.
 func (h *InterfaceVppHandler) DumpMemifSocketDetails(ctx context.Context) (map[string]uint32, error) {
 	if h.memif == nil {
-		return nil, vpp.ErrPluginDisabled
+		return nil, errors.WithMessage(vpp.ErrPluginDisabled, "memif")
 	}
 
 	dump, err := h.memif.DumpMemifSocketFilename(ctx, &memif.MemifSocketFilenameDump{})

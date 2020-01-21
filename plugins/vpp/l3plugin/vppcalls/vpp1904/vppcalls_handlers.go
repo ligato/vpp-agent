@@ -27,6 +27,7 @@ import (
 	vpevppcalls "go.ligato.io/vpp-agent/v3/plugins/govppmux/vppcalls"
 	vpe_vpp1904 "go.ligato.io/vpp-agent/v3/plugins/govppmux/vppcalls/vpp1904"
 	"go.ligato.io/vpp-agent/v3/plugins/netalloc"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1904"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1904/dhcp"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1904/ip"
@@ -60,12 +61,17 @@ type L3VppHandler struct {
 }
 
 func NewL3VppHandler(
-	ch govppapi.Channel,
+	c vpp.Client,
 	ifIdx ifaceidx.IfaceMetadataIndex,
 	vrfIdx vrfidx.VRFMetadataIndex,
 	addrAlloc netalloc.AddressAllocator,
 	log logging.Logger,
 ) vppcalls.L3VppAPI {
+	ch, err := c.NewAPIChannel()
+	if err != nil {
+		logging.Warnf("creating channel failed: %v", err)
+		return nil
+	}
 	return &L3VppHandler{
 		ArpVppHandler:          NewArpVppHandler(ch, ifIdx, log),
 		ProxyArpVppHandler:     NewProxyArpVppHandler(ch, ifIdx, log),

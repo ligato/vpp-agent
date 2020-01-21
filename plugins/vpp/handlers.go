@@ -15,6 +15,7 @@
 package vpp
 
 import (
+	"errors"
 	"fmt"
 	"sort"
 
@@ -78,26 +79,24 @@ func (h *Handler) GetCompatibleVersion(c Client) (*HandlerVersion, error) {
 		logging.Debugf("VPP handler %s has no registered versions", h.desc.Name)
 		return nil, ErrNoVersions
 	}
-	// try compatible binapi version first
-	if ver, _ := FindCompatibleBinapi(c); ver != "" {
+	// try preferred binapi version first
+	if ver := c.BinapiVersion(); ver != "" {
 		if v, ok := h.versions[ver]; ok {
-			logging.Debugf("VPP handler %s COMPATIBLE with version: %s", h.desc.Name, v.Version)
+			logging.Debugf("VPP handler %s COMPATIBLE with preferred version: %s", h.desc.Name, v.Version)
 			return v, nil
 		}
 	}
 	// fallback to checking all registered versions
 	for _, v := range h.versions {
-		if err := v.Check(c); err != nil {
-			if ierr, ok := err.(*govppapi.CompatibilityError); ok {
-				logging.Debugf("VPP handler %s incompatible with %s: %d incompatible messages",
-					h.desc.Name, v.Version, len(ierr.IncompatibleMessages))
-			} else {
-				logging.Debugf("VPP handler %s version %s check failed: %v", h.desc.Name, v.Version, err)
-			}
-			continue
+		var compErr *govppapi.CompatibilityError
+		if err := v.Check(c); errors.As(err, &compErr) {
+			logging.Debugf("VPP handler %s incompatible with %s (%d messages)", h.desc.Name, v.Version, len(compErr.IncompatibleMessages))
+		} else if err != nil {
+			logging.Warnf("VPP handler %s version %s check failed: %v", h.desc.Name, v.Version, err)
+		} else {
+			logging.Debugf("VPP handler %s COMPATIBLE with version: %s", h.desc.Name, v.Version)
+			return v, nil
 		}
-		logging.Debugf("VPP handler %s COMPATIBLE with version: %s", h.desc.Name, v.Version)
-		return v, nil
 	}
 	return nil, ErrIncompatible
 }
