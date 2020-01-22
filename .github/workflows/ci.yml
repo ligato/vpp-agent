@@ -48,16 +48,6 @@ jobs:
          eval $(go env)
          mkdir -p ~/junit/
          ${GOPATH}/bin/gotestsum --junitfile ~/junit/unit-tests.xml -- -race -short $(go list ./...)
-  golangci-lint:
-    name: golangci-lint
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - name: golangci-lint
-        uses: reviewdog/action-golangci-lint@v1
-        with:
-          github_token: ${{ secrets.github_token }}
-          reporter: github-check
   checkgomod:
     name: check go.mod and go.sum
     runs-on: ubuntu-latest
@@ -71,17 +61,3 @@ jobs:
         run: |
           git diff --name-only --exit-code go.mod || ( echo "Run go tidy" && false )
           git diff --name-only --exit-code go.sum || ( echo "Run go tidy" && false )
-  license:
-    name: license header check
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-go@v1
-        with:
-          go-version: 1.13
-      - name: Install go-header
-        run: 'go get github.com/denis-tingajkin/go-header@v0.2.1'
-      - name: Run go-header
-        run: |
-          eval $(go env)
-          ${GOPATH}/bin/go-header
