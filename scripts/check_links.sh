@@ -2,7 +2,7 @@
 
 res=0
 
-for i in `find . \( -path ./vendor -o -path ./vpp \) -prune -o -name "*.md"`
+for i in $(find . \( -path ./vendor -o -path ./vpp \) -prune -o -name "*.md")
 do
     if [ -d "$i" ]; then
         continue

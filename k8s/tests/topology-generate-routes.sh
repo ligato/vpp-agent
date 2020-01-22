@@ -21,11 +21,11 @@ docker exec -it ${ETCD_CONTAINER} etcdctl put /vnf-agent/${VSWITCH_NAME}/vpp/con
 '
 
 
-if [ $1 -eq 0 ] ; then
+if [ "$1" -eq 0 ] ; then
    exit
 fi
 
-for i in $(eval echo {1..$1});do
+for i in $(eval echo {1.."$1"});do
     a=$(($i / 254 + 1))
     b=$(($i % 255))
 

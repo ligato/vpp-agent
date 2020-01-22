@@ -31,5 +31,5 @@ for dir in $protodirs; do
 	echo "$protofiles"
 
   	protoc --proto_path="${PROTO_PATH}" \
-  		--go_out="${PROTOC_GEN_GO_ARGS}" $protofiles
+  		--go_out="${PROTOC_GEN_GO_ARGS}" "$protofiles"
 done

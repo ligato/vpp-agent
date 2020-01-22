@@ -19,7 +19,7 @@ gometalinter \
 	--linter="vet:go vet ${params}:^(?:vet:.*?\.go:\s+(?P<path>.*?\.go):(?P<line>\d+):(?P<col>\d+):\s*(?P<message>.*))|(?:(?P<path>.*?\.go):(?P<line>\d+):\s*(?P<message>.*))$" \
 	--deadline 3m \
 	--enable-gc \
-	--disable-all $enabledLinters \
+	--disable-all "$enabledLinters" \
 	--exclude="should not use dot imports" \
 	--exclude="don't use an underscore in package name" \
 	--exclude="comment" \

@@ -4,7 +4,7 @@ cd "$(dirname "$0")"
 
 set -euo pipefail
 
-buildArch=`uname -m`
+buildArch=$(uname -m)
 case "${buildArch##*-}" in
 	  aarch64) ;;
   	x86_64) ;;
@@ -22,6 +22,6 @@ set -x
 docker build -f Dockerfile \
     --build-arg DEV_IMG=${DEV_IMG} \
 	  --tag ${IMAGE_TAG} \
- ${DOCKER_BUILD_ARGS-} .
+ "${DOCKER_BUILD_ARGS-}" .
 
 docker run --rm "${IMAGE_TAG}" vpp-agent -h || true

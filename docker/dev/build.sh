@@ -27,14 +27,14 @@ echo "==============================================="
 set -x
 
 docker build -f Dockerfile \
-    --build-arg VPP_IMG=${VPP_IMG} \
-    --build-arg VPP_BINAPI=${VPP_BINAPI} \
-    --build-arg VERSION=${VERSION} \
-    --build-arg COMMIT=${COMMIT} \
-    --build-arg DATE=${DATE} \
-    --build-arg SKIP_CHECK=${SKIP_CHECK:-} \
+    --build-arg VPP_IMG="${VPP_IMG}" \
+    --build-arg VPP_BINAPI="${VPP_BINAPI}" \
+    --build-arg VERSION="${VERSION}" \
+    --build-arg COMMIT="${COMMIT}" \
+    --build-arg DATE="${DATE}" \
+    --build-arg SKIP_CHECK="${SKIP_CHECK:-}" \
     --tag ${IMAGE_TAG} \
     --pull \
- ${DOCKER_BUILD_ARGS-} ../..
+ "${DOCKER_BUILD_ARGS-}" ../..
 
 docker run --rm "${IMAGE_TAG}" vpp-agent -h || true

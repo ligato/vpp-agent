@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 
 terminate_process () {
-    PID=$(pidof $1)
+    PID=$(pidof "$1")
     if [[ ${PID} != "" ]]; then
-        kill ${PID}
+        kill "${PID}"
         echo "process $1 terminated"
     fi
 }

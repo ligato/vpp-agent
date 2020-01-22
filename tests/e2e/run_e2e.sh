@@ -12,10 +12,10 @@ if [ -z "${COVER_DIR-}" ]; then
       -ldflags "-X github.com/ligato/cn-infra/agent.BuildVersion=TEST_E2E" \
       ./cmd/vpp-agent
 else
-	if [ ! -d ${COVER_DIR}/e2e-coverage ]; then
-		mkdir ${COVER_DIR}/e2e-coverage
-	elif [ "$(ls -A ${COVER_DIR}/e2e-coverage)" ]; then
-		rm -f ${COVER_DIR}/e2e-coverage/*
+	if [ ! -d "${COVER_DIR}"/e2e-coverage ]; then
+		mkdir "${COVER_DIR}"/e2e-coverage
+	elif [ "$(ls -A "${COVER_DIR}"/e2e-coverage)" ]; then
+		rm -f "${COVER_DIR}"/e2e-coverage/*
 	fi
 	go test -covermode=count -coverpkg="go.ligato.io/vpp-agent/v3/..." -c ./cmd/vpp-agent -o ./tests/e2e/vpp-agent.test -tags teste2e
 	DOCKER_ARGS="${DOCKER_ARGS-} -v ${COVER_DIR}/e2e-coverage:${COVER_DIR}/e2e-coverage"
@@ -32,14 +32,14 @@ go test -c -o ./tests/e2e/e2e.test ./tests/e2e
 # TODO: do not run docker image with pid=host,
 #  because any other vpp running now breaks tests
 cid=$(docker run -d -it \
-	-v $PWD/tests/e2e/e2e.test:/e2e.test:ro \
-	-v $PWD/tests/e2e/vpp-agent.test:/vpp-agent:ro \
-	-v $PWD/tests/e2e/agentctl.test:/agentctl:ro \
-	-v $PWD/tests/e2e/resources/grpc.conf:/etc/grpc.conf:ro \
-	-v $PWD/tests/e2e/resources/grpc-secure.conf:/etc/grpc-secure.conf:ro \
-	-v $PWD/tests/e2e/resources/grpc-secure-full.conf:/etc/grpc-secure-full.conf:ro \
-	-v $PWD/tests/e2e/resources/agentctl.conf:/etc/.agentctl/config.yml:ro \
-	-v $PWD/tests/e2e/resources/certs:/etc/certs:ro \
+	-v "$PWD"/tests/e2e/e2e.test:/e2e.test:ro \
+	-v "$PWD"/tests/e2e/vpp-agent.test:/vpp-agent:ro \
+	-v "$PWD"/tests/e2e/agentctl.test:/agentctl:ro \
+	-v "$PWD"/tests/e2e/resources/grpc.conf:/etc/grpc.conf:ro \
+	-v "$PWD"/tests/e2e/resources/grpc-secure.conf:/etc/grpc-secure.conf:ro \
+	-v "$PWD"/tests/e2e/resources/grpc-secure-full.conf:/etc/grpc-secure-full.conf:ro \
+	-v "$PWD"/tests/e2e/resources/agentctl.conf:/etc/.agentctl/config.yml:ro \
+	-v "$PWD"/tests/e2e/resources/certs:/etc/certs:ro \
 	-v /var/run/docker.sock:/var/run/docker.sock \
 	--label e2e.test="$*" \
 	--pid="host" \
@@ -49,7 +49,7 @@ cid=$(docker run -d -it \
 	--env GRPC_CONFIG=/etc/grpc.conf \
 	--env CERTS_PATH="$PWD/tests/e2e/resources/certs" \
 	--name vpp-agent-e2e-tests \
-	${DOCKER_ARGS-} \
+	"${DOCKER_ARGS-}" \
 	"$VPP_IMG" bash)
 
 set +x
@@ -63,7 +63,7 @@ cleanup() {
 	# merge coverage
 	if [ ! -z "${COVER_DIR-}" ]; then
 		go get github.com/wadey/gocovmerge
-		find ${COVER_DIR}/e2e-coverage -type f | xargs gocovmerge > ${COVER_DIR}/e2e-cov.out
+		find "${COVER_DIR}"/e2e-coverage -type f | xargs gocovmerge > "${COVER_DIR}"/e2e-cov.out
 	fi
 }
 

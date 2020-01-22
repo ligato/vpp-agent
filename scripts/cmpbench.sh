@@ -14,7 +14,7 @@ SCRIPT_DIR="$(dirname $(readlink -e "${BASH_SOURCE[0]}"))"
 
 BENCH_PKG_DIR=${1:-${SCRIPT_DIR}/../plugins/kvscheduler}
 
-[ -z ${OUTPUT_DIR-} ] && OUTPUT_DIR=/tmp/bench
+[ -z "${OUTPUT_DIR-}" ] && OUTPUT_DIR=/tmp/bench
 mkdir -p "$OUTPUT_DIR"
 
 OLD_BENCH="${OUTPUT_DIR}/old.txt"
@@ -27,7 +27,7 @@ function benchtest() {
 	go test -run=NONE -bench=. -benchmem -benchtime=3s
 }
 
-BENCH_PKG=$(go list $BENCH_PKG_DIR)
+BENCH_PKG=$(go list "$BENCH_PKG_DIR")
 
 echo "-> running cmpbench for package: $BENCH_PKG"
 

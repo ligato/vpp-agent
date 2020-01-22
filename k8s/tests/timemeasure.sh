@@ -11,15 +11,15 @@ calcTimeFormat(){
     dt3=$(echo "$dt2-3600*$dh" | bc)
     dm=$(echo "$dt3/60" | bc)
     ds=$(echo "$dt3-60*$dm" | bc)
-    retstr=LC_NUMERIC="en_US.UTF-8" printf "%02d:%02d:%02.5f\n" $dh $dm $ds
-    echo $retstr
+    retstr=LC_NUMERIC="en_US.UTF-8" printf "%02d:%02d:%02.5f\n" "$dh" "$dm" "$ds"
+    echo "$retstr"
 }
 
 # takes timemstamp format value and calculates nanoseconds
 calcNanoTime(){
-    a=(`echo $1 | sed -e 's/[:]/ /g'`)
+    a=($(echo "$1" | sed -e 's/[:]/ /g'))
     seconds= echo "${a[2]}+60*${a[1]}+3600*${a[0]}" | bc
-    echo $seconds
+    echo "$seconds"
 }
 
 # takes ns time value and returns HH:MM:SS:ms time format
@@ -30,8 +30,8 @@ showTime(){
     dt3=$(echo "$dt2-3600*$dh" | bc)
     dm=$(echo "$dt3/60" | bc)
     ds=$(echo "$dt3-60*$dm" | bc)
-    retstr=LC_NUMERIC="en_US.UTF-8" printf "%02d:%02d:%02.5f\n" $dh $dm $ds
-    echo $retstr
+    retstr=LC_NUMERIC="en_US.UTF-8" printf "%02d:%02d:%02.5f\n" "$dh" "$dm" "$ds"
+    echo "$retstr"
 }
 
 # proccess intermediate file log/out.csv
@@ -66,7 +66,7 @@ while IFS="," read -r val1 val2 val3;do
     line_id=$((line_id+1))  
   elif [[ "$val2" == ' Started measuring' ]]
   then
-    start=$(calcNanoTime $val1)
+    start=$(calcNanoTime "$val1")
     echo "$line_id,$run,Measuring started,$val1,00:00:00.0,0" >> log/measuring_exp.csv
     echo "$line_id,$run,Measuring started,$val1,00:00:00.0,0"
     rel_item=$line_id
@@ -75,207 +75,207 @@ while IFS="," read -r val1 val2 val3;do
   elif [[ "$val2" == ' Starting the agent...' ]]
   then
     vppKilled=0
-    startAgent=$(calcNanoTime $val1)
+    startAgent=$(calcNanoTime "$val1")
     diff=$(echo "$startAgent-$start" | bc)
     if [ $(bc <<< "$diff > 0") -eq 1 ]
     then
-        time=$(showTime $diff)
+        time=$(showTime "$diff")
         echo "$line_id,$run,Starting Agent,$val1,$time,$rel_item" >> log/measuring_exp.csv
         echo "$line_id,$run,Starting Agent,$val1,$time,$rel_item"
         rel_item=$line_id
         line_id=$((line_id+1))
     else
-      time=$(showTime $start)
+      time=$(showTime "$start")
       echo "$line_id,$run,Kill failed,$time,00:00:00.0,0" >> log/measuring_exp.csv
       echo "$line_id,$run,Kill failed,$time,00:00:00.0,0"
       line_id=$((line_id+1))
     fi
   elif [[ "$val2" =~ ' Connecting to etcd took' ]]
   then
-    etcdTime=$(calcNanoTime $val1)
+    etcdTime=$(calcNanoTime "$val1")
     etcdStamp=$val1
     #etcdTookTime=$(bc <<< "scale = 10; $val3 / 1000000 ")
-    a=(`echo $val3 | sed -e 's/[:]/ /g'`)
+    a=($(echo "$val3" | sed -e 's/[:]/ /g'))
     etcdTookTimge=$(bc <<< "scale = 10; ${a[0]} / 1000000 ")
 
   elif [[ "$val2" =~ ' Resync took' ]]
   then
-    resyncTime=$(calcNanoTime $val1)
+    resyncTime=$(calcNanoTime "$val1")
     resyncStamp=$val1
     #resyncTookTime=$(bc <<< "scale = 10; $val3 / 1000000 ")
-    a=(`echo $val3 | sed -e 's/[:]/ /g'`)
+    a=($(echo "$val3" | sed -e 's/[:]/ /g'))
     resyncTookTime=$(bc <<< "scale = 10; ${a[0]} / 1000000 ")
 
   elif [[ "$val2" == ' VPP Killed' ]]
   then
-    vppKilled=$(calcNanoTime $val1)
+    vppKilled=$(calcNanoTime "$val1")
     vppItem=$line_id
     diff=$(echo "$vppKilled-$start" | bc)
-    time=$(showTime $diff)
+    time=$(showTime "$diff")
     echo "$line_id,$run,VPP Killed,$val1,$time,$rel_item" >> log/measuring_exp.csv
     echo "$line_id,$run,VPP Killed,$val1,$time,$rel_item"
     line_id=$((line_id+1)) 
     
   elif [[ "$val2" == ' VPP-Agent Killed' ]]
   then
-    vppKilled=$(calcNanoTime $val1)
+    vppKilled=$(calcNanoTime "$val1")
     vppItem=$line_id
     diff=$(echo "$vppKilled-$start" | bc)
-    time=$(showTime $diff)
+    time=$(showTime "$diff")
     echo "$line_id,$run,VPP Agent Killed,$val1,$time,$rel_item" >> log/measuring_exp.csv
     echo "$line_id,$run,VPP Agent Killed,$val1,$time,$rel_item"
     line_id=$((line_id+1))   
   elif [[ "$val2" =~ ' Loading topology' ]]
   then
     diff=$(echo "$vppKilled-0" | bc)
-    time=$(showTime $diff)
+    time=$(showTime "$diff")
     echo "$line_id,$run,$val2,$val1,$time,0" >> log/measuring_exp.csv
     echo "$line_id,$run,$val2,$val1,$time,0"
     line_id=$((line_id+1))
   elif [[ "$val2" =~ ' Container cooled down for' ]]
   then
-    coreDone=$(calcNanoTime $val1)
+    coreDone=$(calcNanoTime "$val1")
     diff=$(echo "$coreDone - $startAgent" | bc)
-    time=$(showTime $diff)
+    time=$(showTime "$diff")
     echo "$line_id,$run,$val2,$val1,$time,$rel_item" >> log/measuring_exp.csv
     echo "$line_id,$run,$val2,$val1,$time,$vppItem"    
     line_id=$((line_id+1))    
   elif [[ "$val2" =~ ' Core dump of size' ]]
   then
-    coreDone=$(calcNanoTime $val1)
+    coreDone=$(calcNanoTime "$val1")
     diff=$(echo "$coreDone - $vppKilled" | bc)
-    time=$(showTime $diff)
+    time=$(showTime "$diff")
     echo "$line_id,$run,$val2,$val1,$time,$vppItem" >> log/measuring_exp.csv
     echo "$line_id,$run,$val2,$val1,$time,$vppItem"    
     line_id=$((line_id+1))
   elif [[ "$val2" = ' Core dump not created' ]]
   then
-    coreDone=$(calcNanoTime $val1)
+    coreDone=$(calcNanoTime "$val1")
     diff=$(echo "$coreDone - $vppKilled" | bc)
-    time=$(showTime $diff)
+    time=$(showTime "$diff")
     echo "$line_id,$run,$val2,$val1,$time,$vppItem" >> log/measuring_exp.csv
     echo "$line_id,$run,$val2,$val1,$time,$vppItem"    
     line_id=$((line_id+1))
   elif [[ "$val2" =~ ' call took' ]]
   then
-    coreDone=$(calcNanoTime $val1)
+    coreDone=$(calcNanoTime "$val1")
     diff=$(echo "$coreDone - $resyncBeginTime" | bc)
-    time=$(showTime $diff)
-    a=(`echo $val3 | sed -e 's/[:]/ /g'`)
+    time=$(showTime "$diff")
+    a=($(echo "$val3" | sed -e 's/[:]/ /g'))
     vppTookTime=$(bc <<< "scale = 10; ${a[0]} / 1000000 ")
     echo "$line_id,$run,$val2,$val1,$time,$resyncBeginItem,$vppTookTime" >> log/measuring_exp.csv
     echo "$line_id,$run,$val2,$val1,$time,$resyncBeginItem,$vppTookTime"    
     line_id=$((line_id+1)) 
   elif [[ "$val2" =~ ' stopwatch has no entries' ]]
   then
-    coreDone=$(calcNanoTime $val1)
+    coreDone=$(calcNanoTime "$val1")
     diff=$(echo "$coreDone - $resyncBeginTime" | bc)
-    time=$(showTime $diff)
+    time=$(showTime "$diff")
     echo "$line_id,$run,$val2,$val1,$time,$resyncBeginItem" >> log/measuring_exp.csv
     echo "$line_id,$run,$val2,$val1,$time,$resyncBeginItem"    
     line_id=$((line_id+1)) 
   elif [[ "$val2" =~ ' partial resync time is' ]]
   then
-    coreDone=$(calcNanoTime $val1)
+    coreDone=$(calcNanoTime "$val1")
     diff=$(echo "$coreDone - $resyncBeginTime" | bc)
-    time=$(showTime $diff)
-    a=(`echo $val3 | sed -e 's/[:]/ /g'`)
+    time=$(showTime "$diff")
+    a=($(echo "$val3" | sed -e 's/[:]/ /g'))
     vppTookTime=$(bc <<< "scale = 10; ${a[0]} / 1000000 ")
     echo "$line_id,$run,$val2,$val1,$time,$resyncBeginItem,$vppTookTime" >> log/measuring_exp.csv
     echo "$line_id,$run,$val2,$val1,$time,$resyncBeginItem,$vppTookTime"    
     line_id=$((line_id+1))  
   elif [[ "$val2" = ' Sleeping while VPP will be ready' ]]
   then
-    coreDone=$(calcNanoTime $val1)
+    coreDone=$(calcNanoTime "$val1")
     diff=$(echo "$coreDone - $startAgent" | bc)
-    time=$(showTime $diff)
+    time=$(showTime "$diff")
     echo "$line_id,$run,$val2,$val1,$time,$rel_item" >> log/measuring_exp.csv
     echo "$line_id,$run,$val2,$val1,$time,$rel_item"    
     line_id=$((line_id+1)) 
   elif [[ "$val2" = ' VPP is ready to connect' ]]
   then
-    coreDone=$(calcNanoTime $val1)
+    coreDone=$(calcNanoTime "$val1")
     diff=$(echo "$coreDone - $startAgent" | bc)
-    time=$(showTime $diff)
+    time=$(showTime "$diff")
     echo "$line_id,$run,$val2,$val1,$time,$rel_item" >> log/measuring_exp.csv
     echo "$line_id,$run,$val2,$val1,$time,$rel_item"    
     line_id=$((line_id+1))   
   elif [[ "$val2" =~ ' Connecting to VPP took' ]]
   then
-    vppTime=$(calcNanoTime $val1)
+    vppTime=$(calcNanoTime "$val1")
     vppStamp=$val1
     #vppTookTime=$(bc <<< "scale = 10; $val3 / 1000000 ")
-    a=(`echo $val3 | sed -e 's/[:]/ /g'`)
+    a=($(echo "$val3" | sed -e 's/[:]/ /g'))
     vppTookTime=$(bc <<< "scale = 10; ${a[0]} / 1000000 ")
   elif [[ "$val2" =~ ' resync the VPP Configuration begin' ]]
   then
-    resyncBeginTime=$(calcNanoTime $val1)
+    resyncBeginTime=$(calcNanoTime "$val1")
     resyncBeginTimeStamp=$val1
     resyncBeginItem=$line_id 
     diff=$(echo "$resyncBeginTime - $startAgent" | bc)
-    time=$(showTime $diff)
+    time=$(showTime "$diff")
     echo "$line_id,$run,$val2,$val1,$time,$rel_item" >> log/measuring_exp.csv
     echo "$line_id,$run,$val2,$val1,$time,$rel_item"    
     line_id=$((line_id+1))       
   elif [[ "$val2" =~ ' resync the Linux Configuration' ]]
   then
-    resyncBeginTime=$(calcNanoTime $val1)
+    resyncBeginTime=$(calcNanoTime "$val1")
     resyncBeginTimeStamp=$val1
     resyncBeginItem=$line_id 
     diff=$(echo "$resyncBeginTime - $startAgent" | bc)
-    time=$(showTime $diff)
+    time=$(showTime "$diff")
     echo "$line_id,$run,$val2,$val1,$time,$rel_item" >> log/measuring_exp.csv
     echo "$line_id,$run,$val2,$val1,$time,$rel_item"    
     line_id=$((line_id+1))       
 
   elif [[ "$val2" =~ ' Connecting to kafka took' ]]
   then
-    kafkaTime=$(calcNanoTime $val1)
+    kafkaTime=$(calcNanoTime "$val1")
     kafkaStamp=$val1
     #kafkaTookTime=$(bc <<< "scale = 10; $val3 / 1000000 ")
-    a=(`echo $val3 | sed -e 's/[:]/ /g'`)
+    a=($(echo "$val3" | sed -e 's/[:]/ /g'))
     kafkaTookTime=$(bc <<< "scale = 10; ${a[0]} / 1000000 ")
   elif [[ "$val2" =~ ' plugin GoVPP: Init' ]]
   then
-    GoVPPInitTime=$(calcNanoTime $val1)
+    GoVPPInitTime=$(calcNanoTime "$val1")
     GoVPPInitStamp=$val1
-    a=(`echo $val3 | sed -e 's/[:]/ /g'`)
+    a=($(echo "$val3" | sed -e 's/[:]/ /g'))
     GoVPPInitTookTime=$(bc <<< "scale = 10; ${a[0]} / 1000000 ")
   elif [[ "$val2" =~ ' plugin Linux: Init' ]]
   then
-    LinuxInitTime=$(calcNanoTime $val1)
+    LinuxInitTime=$(calcNanoTime "$val1")
     LinuxInitStamp=$val1
-    a=(`echo $val3 | sed -e 's/[:]/ /g'`)
+    a=($(echo "$val3" | sed -e 's/[:]/ /g'))
     LinuxInitTookTime=$(bc <<< "scale = 10; ${a[0]} / 1000000 ")
   elif [[ "$val2" =~ ' plugin VPP: Init' ]]
   then
-    PluginVPPInitTime=$(calcNanoTime $val1)
+    PluginVPPInitTime=$(calcNanoTime "$val1")
     PluginVPPInitStamp=$val1
-    a=(`echo $val3 | sed -e 's/[:]/ /g'`)
+    a=($(echo "$val3" | sed -e 's/[:]/ /g'))
     PluginVPPInitTookTime=$(bc <<< "scale = 10; ${a[0]} / 1000000 ")
   elif [[ "$val2" =~ ' resync the VPP Configuration end' ]]
   then
-    PluginVPPResyncTime=$(calcNanoTime $val1)
+    PluginVPPResyncTime=$(calcNanoTime "$val1")
     PluginVPPResyncStamp=$val1
-    a=(`echo $val3 | sed -e 's/[:]/ /g'`)
+    a=($(echo "$val3" | sed -e 's/[:]/ /g'))
     PluginVPPResyncTookTime=$(bc <<< "scale = 10; ${a[0]} / 1000000 ")
   elif [[ "$val2" =~ ' Agent Init' ]]
   then
-    AgentInitTime=$(calcNanoTime $val1)
+    AgentInitTime=$(calcNanoTime "$val1")
     AgentInitStamp=$val1
-    a=(`echo $val3 | sed -e 's/[:]/ /g'`)
+    a=($(echo "$val3" | sed -e 's/[:]/ /g'))
     AgentInitTookTime=$(bc <<< "scale = 10; ${a[0]} / 1000000 ")
   elif [[ "$val2" =~ ' Agent AfterInit' ]]
   then
-    AgentAfterInitTime=$(calcNanoTime $val1)
+    AgentAfterInitTime=$(calcNanoTime "$val1")
     AgentAfterInitStamp=$val1
-    a=(`echo $val3 | sed -e 's/[:]/ /g'`)
+    a=($(echo "$val3" | sed -e 's/[:]/ /g'))
     AgentAfterInitTookTime=$(bc <<< "scale = 10; ${a[0]} / 1000000 ")
   elif [ "$val2" == ' Killed' ]
   then
-    start1=$(calcNanoTime $val1)
+    start1=$(calcNanoTime "$val1")
     diff=$(echo "$start1-$start" | bc)
-    time=$(showTime $diff)
+    time=$(showTime "$diff")
     if [ $(bc <<< "$diff < 0") -eq 1 ]
     then
       echo "$line_id,$run,Kill failed,$val1,$time,$rel_item" >> log/measuring_exp.csv
@@ -330,76 +330,76 @@ while IFS="," read -r val1 val2 val3;do
     if [ $(bc <<< "$diff > 0") -eq 1 ]
     then
       diff=$(echo "$etcdTime-$startAgent" | bc)
-      time=$(showTime $diff)
+      time=$(showTime "$diff")
       echo "$line_id,$run,ETCD connected,$etcdStamp,$time,$rel_item,$etcdTookTime" >> log/measuring_exp.csv
       echo "$line_id,$run,ETCD connected,$etcdStamp,$time,$rel_item,$etcdTookTime"
       line_id=$((line_id+1))
       diff=$(echo "$kafkaTime-$startAgent" | bc)
-      time=$(showTime $diff)
+      time=$(showTime "$diff")
       echo "$line_id,$run,Kafka connected,$kafkaStamp,$time,$rel_item,$kafkaTookTime" >> log/measuring_exp.csv
       echo "$line_id,$run,Kafka connected,$kafkaStamp,$time,$rel_item,$kafkaTookTime"
       line_id=$((line_id+1))
       diff=$(echo "$vppTime-$startAgent" | bc)
-      time=$(showTime $diff)
+      time=$(showTime "$diff")
       echo "$line_id,$run,VPP connected,$vppStamp,$time,$rel_item,$vppTookTime" >> log/measuring_exp.csv
       echo "$line_id,$run,VPP connected,$vppStamp,$time,$rel_item,$vppTookTime"
       line_id=$((line_id+1))
       diff=$(echo "$GoVPPInitTime-$startAgent" | bc)
-      time=$(showTime $diff)
+      time=$(showTime "$diff")
       echo "$line_id,$run,GoVPP Init,$GoVPPInitStamp,$time,$rel_item,$GoVPPInitTookTime" >> log/measuring_exp.csv
       echo "$line_id,$run,GoVPP Init,$GoVPPInitStamp,$time,$rel_item,$GoVPPInitTookTime"
 
       line_id=$((line_id+1))
       diff=$(echo "$LinuxInitTime-$startAgent" | bc)
-      time=$(showTime $diff)
+      time=$(showTime "$diff")
       echo "$line_id,$run,Linux plugin Init,$LinuxInitStamp,$time,$rel_item,$LinuxInitTookTime" >> log/measuring_exp.csv
       echo "$line_id,$run,Linux plugin Init,$LinuxInitStamp,$time,$rel_item,$LinuxInitTookTime"
 
       line_id=$((line_id+1))
       diff=$(echo "$PluginVPPInitTime-$startAgent" | bc)
-      time=$(showTime $diff)
+      time=$(showTime "$diff")
       echo "$line_id,$run,VPP plugin Init,$PluginVPPInitStamp,$time,$rel_item,$PluginVPPInitTookTime" >> log/measuring_exp.csv
       echo "$line_id,$run,VPP plugin Init,$PluginVPPInitStamp,$time,$rel_item,$PluginVPPInitTookTime"
 
       line_id=$((line_id+1))
       diff=$(echo "$PluginVPPResyncTime-$startAgent" | bc)
-      time=$(showTime $diff)
+      time=$(showTime "$diff")
       echo "$line_id,$run,Resync of VPP config,$PluginVPPResyncStamp,$time,$rel_item,$PluginVPPResyncTookTime" >> log/measuring_exp.csv
       echo "$line_id,$run,Resync of VPP config,$PluginVPPResyncStamp,$time,$rel_item,$PluginVPPResyncTookTime"
 
       line_id=$((line_id+1))
       diff=$(echo "$resyncTime-$startAgent" | bc)
-      time=$(showTime $diff)
+      time=$(showTime "$diff")
       echo "$line_id,$run,Resync done,$resyncStamp,$time,$rel_item,$resyncTookTime" >> log/measuring_exp.csv
       echo "$line_id,$run,Resync done,$resyncStamp,$time,$rel_item,$resyncTookTime"
 
       line_id=$((line_id+1))
       diff=$(echo "$AgentInitTime-$startAgent" | bc)
-      time=$(showTime $diff)
+      time=$(showTime "$diff")
       echo "$line_id,$run,Agent Init,$AgentInitStamp,$time,$rel_item,$AgentInitTookTime" >> log/measuring_exp.csv
       echo "$line_id,$run,Agent Init,$AgentInitStamp,$time,$rel_item,$AgentInitTookTime"
 
       line_id=$((line_id+1))
       diff=$(echo "$AgentAfterInitTime-$startAgent" | bc)
-      time=$(showTime $diff)
+      time=$(showTime "$diff")
       echo "$line_id,$run,Agent AfterInit,$AgentAfterInitStamp,$time,$rel_item,$AgentAfterInitTookTime" >> log/measuring_exp.csv
       echo "$line_id,$run,Agent AfterInit,$AgentAfterInitStamp,$time,$rel_item,$AgentAfterInitTookTime"
 
 
       line_id=$((line_id+1))
       diff=$(echo "$AllInitTime-$startAgent" | bc)
-      time=$(showTime $diff)
+      time=$(showTime "$diff")
       echo "$line_id,$run,Agent ready,$AllInitStamp,$time,$rel_item" >> log/measuring_exp.csv
       echo "$line_id,$run,Agent ready,$AllInitStamp,$time,$rel_item"
       line_id=$((line_id+1))
     fi
   elif [ "$val2" == ' All plugins initialized successfully' ]
   then
-      AllInitTime=$(calcNanoTime $val1)
+      AllInitTime=$(calcNanoTime "$val1")
       AllInitStamp=$val1
-      a=(`echo $val3 | sed -e 's/[:]/ /g'`)
+      a=($(echo "$val3" | sed -e 's/[:]/ /g'))
   fi
-done <$1
+done <"$1"
 }
 
 # starting etcd and kafka containers
@@ -501,18 +501,18 @@ EOF
 KillVppAndCheck() {
     vpp_id_line=$(kubectl exec vpp -- ps aux | grep /usr/bin/vpp)
     #echo $vpp_id_line
-    vpp_id=$(echo $vpp_id_line | awk '{print $2}')
+    vpp_id=$(echo "$vpp_id_line" | awk '{print $2}')
     #echo $vpp_id
     sudo rm -f /tmp/cores/core.dump
     restime0=$(showTime $(date +%s.%N))
     echo "$restime0, VPP Killed" >> log/out.csv
     echo "Killing the vpp - run ${i}"
-    kubectl exec vpp -- kill -s ABRT $vpp_id
+    kubectl exec vpp -- kill -s ABRT "$vpp_id"
     for (( ig = 1; ig <= 800; ig++ ))
     do
       vpp_id_line=$(kubectl exec vpp -- ps aux | grep /bin/vpp-agent)
       #echo $vpp_id_line
-      new_vpp_id=$(echo $vpp_id_line | awk '{print $2}')
+      new_vpp_id=$(echo "$vpp_id_line" | awk '{print $2}')
       if [[ $vpp_id != $new_vpp_id ]]
       then
          echo "VPP was killed!"
@@ -529,18 +529,18 @@ KillVppAndCheck() {
 KillAgentAndCheck() {
     vpp_id_line=$(kubectl exec vpp -- ps aux | grep /bin/vpp-agent)
     #echo $vpp_id_line
-    vpp_id=$(echo $vpp_id_line | awk '{print $2}')
+    vpp_id=$(echo "$vpp_id_line" | awk '{print $2}')
     #echo $vpp_id
     sudo rm -f /tmp/cores/core.dump
     restime0=$(showTime $(date +%s.%N))
     echo "$restime0, VPP-Agent Killed" >> log/out.csv
     echo "Killing the VPP-agent - run ${i}"
-    kubectl exec vpp -- kill -s ABRT $vpp_id
+    kubectl exec vpp -- kill -s ABRT "$vpp_id"
     for (( ig = 1; ig <= 800; ig++ ))
     do
       vpp_id_line=$(kubectl exec vpp -- ps aux | grep /bin/vpp-agent)
       #echo $vpp_id_line
-      new_vpp_id=$(echo $vpp_id_line | awk '{print $2}')
+      new_vpp_id=$(echo "$vpp_id_line" | awk '{print $2}')
       if [[ "$vpp_id" != "$new_vpp_id" ]]
       then
          echo "VPP-agent was killed!"
@@ -559,12 +559,12 @@ getCoreDumpFile() {
       if [ -f  /tmp/cores/core.dump ]
       then
 	vpp_core_final=$(stat -c %y /tmp/cores/core.dump)
-	vpp_core_final_time=$(echo $vpp_core_final | awk '{print $2}')
-	vpp_core_final_time_zone=$(echo $vpp_core_final | awk '{print $3}')
+	vpp_core_final_time=$(echo "$vpp_core_final" | awk '{print $2}')
+	vpp_core_final_time_zone=$(echo "$vpp_core_final" | awk '{print $3}')
 	tz_sign=${vpp_core_final_time_zone:0:1}
 	tz_value=${vpp_core_final_time_zone:1:4}
 	tz=$(echo "$tz_value/100" | bc)
-	vpp_calc=$(calcNanoTime $vpp_core_final_time)
+	vpp_calc=$(calcNanoTime "$vpp_core_final_time")
 	tzsec=$(echo "$tz*3600" | bc)
 	#echo "Core_final:$vpp_core_final"
 	#echo "Core_final_time:$vpp_core_final_time"
@@ -580,11 +580,11 @@ getCoreDumpFile() {
 	  then
 	    #echo "substract"
 	    timecalc=$(echo "$vpp_calc-$tzsec" | bc)
-	    showtime=$(showTime $timecalc)
+	    showtime=$(showTime "$timecalc")
 	  else
 	    #echo "adding"
 	    timecalc=$(echo "$vpp_calc+$tzsec" | bc)
-	    showtime=$(showTime $timecalc)
+	    showtime=$(showTime "$timecalc")
 	  fi
 	  corefilesize=$(stat --format=%s "/tmp/cores/core.dump")
 	  corefilesizekB=$(echo "$corefilesize/1024" | bc)
@@ -616,9 +616,9 @@ getCoreDumpFile() {
 # this is the filter taking away all important lines from the log file
 # and does some extract of data from the lines  
 handleLogsFromOneRun() {
-    kubectl logs vpp > log/vpp$1.log
-    grep -E 'Starting the agent...|stopwatch enabled:|stopwatch disabled:|resync the Linux Configuration|resync the VPP Configuration begin|call took|partial resync time is|stopwatch has no entries|Sleeping while VPP will be ready|VPP is ready to connect|Connecting to etcd took|Resync took|Connecting to VPP took|Connecting to kafka took|All plugins initialized successfully|plugin Linux: Init|plugin GoVPP: Init|plugin VPP: Init|resync the VPP Configuration end|Agent Init|Agent AfterInit'  log/vpp$1.log > log/log$1.log
-    cat log/log$1.log | sed -r 's/^time="[0-9-]{10} ([^"]+)".+ msg="([^"]+)"(([^"]*(durationInNs[:]?[ ]?=([0-9]+)))|(\s*))/\1, \2, \6/' >> log/out.csv
+    kubectl logs vpp > log/vpp"$1".log
+    grep -E 'Starting the agent...|stopwatch enabled:|stopwatch disabled:|resync the Linux Configuration|resync the VPP Configuration begin|call took|partial resync time is|stopwatch has no entries|Sleeping while VPP will be ready|VPP is ready to connect|Connecting to etcd took|Resync took|Connecting to VPP took|Connecting to kafka took|All plugins initialized successfully|plugin Linux: Init|plugin GoVPP: Init|plugin VPP: Init|resync the VPP Configuration end|Agent Init|Agent AfterInit'  log/vpp"$1".log > log/log"$1".log
+    cat log/log"$1".log | sed -r 's/^time="[0-9-]{10} ([^"]+)".+ msg="([^"]+)"(([^"]*(durationInNs[:]?[ ]?=([0-9]+)))|(\s*))/\1, \2, \6/' >> log/out.csv
     echo "--,--,--,--------" >> log/out.csv
 }
 
@@ -668,7 +668,7 @@ sleep ${waitTime}
     
 for (( i = 1; i <= $cycle; i++ ))
 do
-    handleLogsFromOneRun ${i}
+    handleLogsFromOneRun "${i}"
     #if [ $(bc <<< "$i % 2") -eq 0 ]
     #then
     #  echo "Cooling down container for $recoveryTime"

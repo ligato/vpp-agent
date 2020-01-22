@@ -12,7 +12,7 @@ BASH_ENTRY_DIR="$(dirname $(readlink -e "${BASH_SOURCE[0]}"))"
 _test="${1}"
 _requests="${2-1000}"
 
-[ -z ${REPORT_DIR-} ] && REPORT_DIR="${SCRIPT_DIR}/reports/$_test"
+[ -z "${REPORT_DIR-}" ] && REPORT_DIR="${SCRIPT_DIR}/reports/$_test"
 
 export DEBUG_PROFILE_PATH="${REPORT_DIR}"
 
@@ -34,10 +34,10 @@ memprof="${REPORT_DIR}/mem.pprof"
 
 function run_test() {
 	# create report directory
-	rm -vrf ${REPORT_DIR}/*
-	mkdir --mode=777 -p ${REPORT_DIR}
+	rm -vrf "${REPORT_DIR}"/*
+	mkdir --mode=777 -p "${REPORT_DIR}"
 
-	perftest $* 2>&1 | tee $log_report
+	perftest "$*" 2>&1 | tee "$log_report"
 }
 
 function perftest() {
@@ -59,7 +59,7 @@ function perftest() {
 	echo "-> running $perftest test.."
 	echo "--------------------------------------------------------------"
 	test_result=0
-	$_test_client/$_test ${CLIENT_PARAMS-} --tunnels=$requests || test_result=$?
+	"$_test_client"/"$_test" "${CLIENT_PARAMS-}" --tunnels="$requests" || test_result=$?
 	echo "--------------------------------------------------------------"
 	echo "-> $_test test finished (exit code: $test_result)"
 
@@ -69,39 +69,39 @@ function perftest() {
 	check_agent
 
 	echo "-> collecting system info to: $sys_info"
-	sysinfo "uname -a" > $sys_info
-	sysinfo "env" >> $sys_info
-	sysinfo "pwd" >> $sys_info
-	sysinfo "lscpu" >> $sys_info
-	sysinfo "ip addr" >> $sys_info
-	sysinfo "free -h" >> $sys_info
-	sysinfo "df -h" >> $sys_info
-	sysinfo "ps faux" >> $sys_info
+	sysinfo "uname -a" > "$sys_info"
+	sysinfo "env" >> "$sys_info"
+	sysinfo "pwd" >> "$sys_info"
+	sysinfo "lscpu" >> "$sys_info"
+	sysinfo "ip addr" >> "$sys_info"
+	sysinfo "free -h" >> "$sys_info"
+	sysinfo "df -h" >> "$sys_info"
+	sysinfo "ps faux" >> "$sys_info"
 
 	echo "-> collecting agent info to: $agent_info"
-	grep -B 6 "Starting agent version" $log_agent > $agent_info
-	agentrest "scheduler/stats" >> $agent_info
-	agentrest "govppmux/stats" >> $agent_info
+	grep -B 6 "Starting agent version" "$log_agent" > "$agent_info"
+	agentrest "scheduler/stats" >> "$agent_info"
+	agentrest "govppmux/stats" >> "$agent_info"
 
 	echo "-> collecting VPP info to: $vpp_info"
-	echo -e "VPP info:\n\n" > $vpp_info
-	vppcli "show version verbose" >> $vpp_info
-	vppcli "show version cmdline" >> $vpp_info
-	vppcli "show plugins" >> $vpp_info
-	vppcli "show clock" >> $vpp_info
-	vppcli "show threads" >> $vpp_info
-	vppcli "show cpu" >> $vpp_info
-	vppcli "show physmem" >> $vpp_info
-	vppcli "show memory verbose" >> $vpp_info
-	vppcli "show api clients" >> $vpp_info
-	vppcli "show api histogram" >> $vpp_info
-	vppcli "show api trace-status" >> $vpp_info
-	vppcli "show api ring-stats" >> $vpp_info
-	vppcli "api trace status" >> $vpp_info
-	vppcli "show event-logger" >> $vpp_info
-	vppcli "show unix errors" >> $vpp_info
-	vppcli "show unix files" >> $vpp_info
-	vppcli "show ip fib summary" >> $vpp_info
+	echo -e "VPP info:\n\n" > "$vpp_info"
+	vppcli "show version verbose" >> "$vpp_info"
+	vppcli "show version cmdline" >> "$vpp_info"
+	vppcli "show plugins" >> "$vpp_info"
+	vppcli "show clock" >> "$vpp_info"
+	vppcli "show threads" >> "$vpp_info"
+	vppcli "show cpu" >> "$vpp_info"
+	vppcli "show physmem" >> "$vpp_info"
+	vppcli "show memory verbose" >> "$vpp_info"
+	vppcli "show api clients" >> "$vpp_info"
+	vppcli "show api histogram" >> "$vpp_info"
+	vppcli "show api trace-status" >> "$vpp_info"
+	vppcli "show api ring-stats" >> "$vpp_info"
+	vppcli "api trace status" >> "$vpp_info"
+	vppcli "show event-logger" >> "$vpp_info"
+	vppcli "show unix errors" >> "$vpp_info"
+	vppcli "show unix files" >> "$vpp_info"
+	vppcli "show ip fib summary" >> "$vpp_info"
 
 	if [[ "$test_result" == "0" ]]; then
 		echo "--------------------------------------------------------------------------------"
@@ -182,7 +182,7 @@ function start_vpp() {
 	rm -f /dev/shm/db /dev/shm/global_vm /dev/shm/vpe-api
 	$_vpp -c /etc/vpp/vpp.conf > "$log_vpp" 2>&1 &
 	pid_vpp="$!"
-	timeout "${wait_vpp_boot}" grep -q "vlib_plugin_early_init" <(tail -qF $log_vpp)
+	timeout "${wait_vpp_boot}" grep -q "vlib_plugin_early_init" <(tail -qF "$log_vpp")
 	echo "ok! (PID:${pid_vpp})"
 }
 
@@ -246,7 +246,7 @@ function start_agent() {
 	echo -n "-> starting agent.. "
 	$_agent > "$log_agent" 2>&1 &
 	pid_agent="$!"
-	timeout "${wait_agent_boot}" grep -q "Agent started" <(tail -qF $log_agent) || {
+	timeout "${wait_agent_boot}" grep -q "Agent started" <(tail -qF "$log_agent") || {
 		fail "timeout!"
 	}
 	echo "ok! (PID:${pid_agent})"

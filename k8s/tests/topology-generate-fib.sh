@@ -37,11 +37,11 @@ docker exec -it ${ETCD_CONTAINER} etcdctl put /vnf-agent/${VSWITCH_NAME}/vpp/con
 }
 '
 
-if [ $1 -eq 0 ] ; then
+if [ "$1" -eq 0 ] ; then
    exit
 fi
 
-for i in $(eval echo {1..$1});do
+for i in $(eval echo {1.."$1"});do
     a=$(($i / 16 / 16 / 16 % 16))
     b=$(($i / 16 / 16 % 16))
     c=$(($i / 16 % 16))
