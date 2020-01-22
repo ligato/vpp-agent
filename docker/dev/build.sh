@@ -35,6 +35,6 @@ docker build -f Dockerfile \
     --build-arg SKIP_CHECK="${SKIP_CHECK:-}" \
     --tag ${IMAGE_TAG} \
     --pull \
- "${DOCKER_BUILD_ARGS-}" ../..
+ ${DOCKER_BUILD_ARGS-} ../..
 
 docker run --rm "${IMAGE_TAG}" vpp-agent -h || true
