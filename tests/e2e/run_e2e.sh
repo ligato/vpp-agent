@@ -49,7 +49,7 @@ cid=$(docker run -d -it \
 	--env GRPC_CONFIG=/etc/grpc.conf \
 	--env CERTS_PATH="$PWD/tests/e2e/resources/certs" \
 	--name vpp-agent-e2e-tests \
-	"${DOCKER_ARGS-}" \
+	${DOCKER_ARGS-} \
 	"$VPP_IMG" bash)
 
 set +x
