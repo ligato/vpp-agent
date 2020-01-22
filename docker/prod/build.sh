@@ -22,6 +22,6 @@ set -x
 docker build -f Dockerfile \
     --build-arg DEV_IMG=${DEV_IMG} \
 	  --tag ${IMAGE_TAG} \
- "${DOCKER_BUILD_ARGS-}" .
+ ${DOCKER_BUILD_ARGS-} .
 
 docker run --rm "${IMAGE_TAG}" vpp-agent -h || true
