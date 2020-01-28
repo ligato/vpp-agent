@@ -33,6 +33,8 @@ Have a look at the [release notes](CHANGELOG.md) for a complete list of changes.
 |[![dev](https://img.shields.io/badge/branch-dev-lightgray.svg?logo=git&logoColor=white)](https://github.com/ligato/vpp-agent/tree/dev)| has been **DEPRECATED** |![GitHub last commit (branch)](https://img.shields.io/github/last-commit/ligato/vpp-agent/dev.svg?label=)|
 |[![v2](https://img.shields.io/badge/branch-v2-lightblue.svg?logo=git&logoColor=white)](https://github.com/ligato/vpp-agent/tree/v2)| provides **legacy v2** |![GitHub last commit (branch)](https://img.shields.io/github/last-commit/ligato/vpp-agent/v2.svg?label=)|
 
+All development is done against **master** branch.
+
 ### Images
 
 |Image|Image Size/Layers|Info|
