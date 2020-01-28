@@ -186,6 +186,8 @@ type VrfTableVppAPI interface {
 	AddVrfTable(table *l3.VrfTable) error
 	// DelVrfTable deletes existing VRF table.
 	DelVrfTable(table *l3.VrfTable) error
+	// SetVrfFlowHashSettings sets IP flow hash settings for a VRF table.
+	SetVrfFlowHashSettings(vrfID uint32, isIPv6 bool, hashFields *l3.VrfTable_FlowHashSettings) error
 }
 
 // VrfTableVppRead provides read methods for VRF tables.
