@@ -27,7 +27,7 @@ Have a look at the [release notes](CHANGELOG.md) for a complete list of changes.
 
 ### Branches
 
-|Branch|Last Commit|Info|
+|Branch|Info|Last Commit|
 |---|---|:---:|
 |[![master](https://img.shields.io/badge/branch-master-green.svg?logo=git&logoColor=white)](https://github.com/ligato/vpp-agent/tree/master)| **has switched to [v3](https://github.com/ligato/vpp-agent/blob/master/CHANGELOG.md#v300)** :warning:|![GitHub last commit (branch)](https://img.shields.io/github/last-commit/ligato/vpp-agent/master.svg?label=)|
 |[![dev](https://img.shields.io/badge/branch-dev-lightgray.svg?logo=git&logoColor=white)](https://github.com/ligato/vpp-agent/tree/dev)| has been **DEPRECATED** |![GitHub last commit (branch)](https://img.shields.io/github/last-commit/ligato/vpp-agent/dev.svg?label=)|
