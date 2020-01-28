@@ -212,5 +212,7 @@ func defaultVrfFlowHashSettings() *l3.VrfTable_FlowHashSettings {
 		UseSrcPort:  true,
 		UseDstPort:  true,
 		UseProtocol: true,
+		Symmetric:   false,
+		Reverse:     false,
 	}
 }
