@@ -130,6 +130,33 @@ func TestDeleteVrfTable(t *testing.T) {
 	Expect(err).To(Not(BeNil()))
 }
 
+// Test VRF flow hash settings
+func TestVrfFlowHashSettings(t *testing.T) {
+	ctx, vtHandler := vrfTableTestSetup(t)
+	defer ctx.TeardownTestCtx()
+
+	ctx.MockVpp.MockReply(&vpp_ip.SetIPFlowHashReply{})
+	err := vtHandler.SetVrfFlowHashSettings(5, true,
+		&l3.VrfTable_FlowHashSettings{
+			UseSrcIp:   true,
+			UseSrcPort: true,
+			Symmetric:  true,
+		})
+	Expect(err).To(Succeed())
+
+	vppMsg, ok := ctx.MockChannel.Msg.(*vpp_ip.SetIPFlowHash)
+	Expect(ok).To(BeTrue())
+	Expect(vppMsg.VrfID).To(BeEquivalentTo(5))
+	Expect(vppMsg.IsIPv6).To(BeEquivalentTo(1))
+	Expect(vppMsg.Src).To(BeEquivalentTo(1))
+	Expect(vppMsg.Dst).To(BeEquivalentTo(0))
+	Expect(vppMsg.Sport).To(BeEquivalentTo(1))
+	Expect(vppMsg.Dport).To(BeEquivalentTo(0))
+	Expect(vppMsg.Proto).To(BeEquivalentTo(0))
+	Expect(vppMsg.Symmetric).To(BeEquivalentTo(1))
+	Expect(vppMsg.Reverse).To(BeEquivalentTo(0))
+}
+
 func vrfTableTestSetup(t *testing.T) (*vppmock.TestCtx, vppcalls.VrfTableVppAPI) {
 	ctx := vppmock.SetupTestCtx(t)
 	log := logrus.NewLogger("test-log")
