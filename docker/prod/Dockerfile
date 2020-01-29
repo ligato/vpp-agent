@@ -52,6 +52,8 @@ COPY --from=devimg \
     /go/bin/vpp-agent-init \
  /bin/
 
+ENV SUPERVISOR_CONFIG=/opt/vpp-agent/dev/supervisor.conf
+
 CMD rm -f /dev/shm/db /dev/shm/global_vm /dev/shm/vpe-api && \
 	mkdir -p /run/vpp && \
 	exec vpp-agent-init
