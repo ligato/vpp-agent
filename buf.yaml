@@ -1,3 +1,4 @@
+---
 # buf.yaml
 #
 # Config file for Buf (Protobuf tool).
@@ -12,7 +13,6 @@
 #     buf check ls-breaking-checkers
 #
 #  Refer to https://buf.build/docs for more info.
-
 build:
   roots:
     - proto
