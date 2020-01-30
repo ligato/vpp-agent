@@ -79,7 +79,13 @@ func init() {
 	}
 }
 
-//go:generate -command binapigen binapi-generator --output-dir=.
+//go:generate binapi-generator --output-dir=. --input-file=$VPP_API_DIR/core/ethernet_types.api.json
+//go:generate binapi-generator --output-dir=. --input-file=$VPP_API_DIR/core/fib_types.api.json
+//go:generate binapi-generator --output-dir=. --input-file=$VPP_API_DIR/core/interface_types.api.json
+//go:generate binapi-generator --output-dir=. --input-file=$VPP_API_DIR/core/ip_types.api.json
+//go:generate binapi-generator --output-dir=. --input-file=$VPP_API_DIR/core/vpe_types.api.json
+
+//go:generate -command binapigen binapi-generator --output-dir=. --input-types=$VPP_API_DIR/core/ethernet_types.api.json,$VPP_API_DIR/core/fib_types.api.json,$VPP_API_DIR/core/interface_types.api.json,$VPP_API_DIR/core/ip_types.api.json,$VPP_API_DIR/core/vpe_types.api.json
 
 //go:generate binapigen --input-file=$VPP_API_DIR/core/af_packet.api.json
 //go:generate binapigen --input-file=$VPP_API_DIR/core/bond.api.json

@@ -1,7 +1,7 @@
-diff --git a/plugins/vpp/binapi/vpp2001/ip/ip.ba.go b/plugins/vpp/binapi/vpp2001/ip/ip.ba.go
+diff --git a/plugins/vpp/binapi/vpp2001/fib_types/fib_types.ba.go b/plugins/vpp/binapi/vpp2001/fib_types/fib_types.ba.go
 index 3bdb5510a..191e53c00 100644
---- a/plugins/vpp/binapi/vpp2001/ip/ip.ba.go
-+++ b/plugins/vpp/binapi/vpp2001/ip/ip.ba.go
+--- a/plugins/vpp/binapi/vpp2001/fib_types/fib_types.ba.go
++++ b/plugins/vpp/binapi/vpp2001/fib_types/fib_types.ba.go
 @@ -458,8 +458,8 @@ type FibPath struct {
 	Flags      FibPathFlags
 	Proto      FibPathNhProto
