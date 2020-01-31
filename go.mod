@@ -33,7 +33,7 @@ require (
 	github.com/eknkc/amber v0.0.0-20171010120322-cdade1c07385 // indirect
 	github.com/evalphobia/logrus_fluent v0.4.0 // indirect
 	github.com/fluent/fluent-logger-golang v1.3.0 // indirect
-	github.com/fsouza/go-dockerclient v1.2.2
+	github.com/fsouza/go-dockerclient v1.6.0
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-errors/errors v1.0.1
 	github.com/go-redis/redis v6.13.2+incompatible // indirect
