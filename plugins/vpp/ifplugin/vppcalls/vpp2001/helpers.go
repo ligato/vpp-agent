@@ -1,7 +1,6 @@
 package vpp2001
 
 import (
-	"bytes"
 	"fmt"
 	"net"
 	"strings"
@@ -36,8 +35,4 @@ func uintToBool(value uint8) bool {
 
 func cleanString(s string) string {
 	return strings.SplitN(s, "\x00", 2)[0]
-}
-
-func cleanBytes(b []byte) string {
-	return string(bytes.SplitN(b, []byte{0x00}, 2)[0])
 }

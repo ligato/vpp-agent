@@ -127,7 +127,7 @@ func (h *ABFVppHandler) dumpABFPolicy() ([]*vppcalls.ABFDetails, error) {
 				InterfaceName: ifName,
 				Weight:        uint32(path.Weight),
 				Preference:    uint32(path.Preference),
-				Dvr:           isDvr(path.Type),
+				Dvr:           path.Type == fib_types.FIB_API_PATH_TYPE_DVR,
 			}
 			fwdPaths = append(fwdPaths, fwdPath)
 		}
@@ -160,19 +160,4 @@ func parseNextHopToString(nh vpp_abf.FibPathNh, proto vpp_abf.FibPathNhProto) st
 		return net.IP(addr[:]).To16().String()
 	}
 	return ""
-}
-
-// ABF fib currently supports only DVR or normal mode
-func isDvr(pathType vpp_abf.FibPathType) (isDvr bool) {
-	if pathType == fib_types.FIB_API_PATH_TYPE_DVR {
-		return true
-	}
-	return false
-}
-
-func uintToBool(value uint8) bool {
-	if value == 0 {
-		return false
-	}
-	return true
 }
