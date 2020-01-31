@@ -211,11 +211,11 @@ var fileDescriptor_a59f0470c39b77d1 = []byte{
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ context.Context
-var _ grpc.ClientConn
+var _ grpc.ClientConnInterface
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the grpc package it is being compiled against.
-const _ = grpc.SupportPackageIsVersion4
+const _ = grpc.SupportPackageIsVersion6
 
 // StatsPollerServiceClient is the client API for StatsPollerService service.
 //
@@ -226,10 +226,10 @@ type StatsPollerServiceClient interface {
 }
 
 type statsPollerServiceClient struct {
-	cc *grpc.ClientConn
+	cc grpc.ClientConnInterface
 }
 
-func NewStatsPollerServiceClient(cc *grpc.ClientConn) StatsPollerServiceClient {
+func NewStatsPollerServiceClient(cc grpc.ClientConnInterface) StatsPollerServiceClient {
 	return &statsPollerServiceClient{cc}
 }
 
