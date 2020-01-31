@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"net"
 
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ip_types"
 	vpp_ipsec "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ipsec"
 	ifs "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
 )
@@ -97,12 +98,12 @@ func ipToIPSecAddress(ipstr string) (addr vpp_ipsec.Address, err error) {
 		return vpp_ipsec.Address{}, fmt.Errorf("invalid IP: %q", ipstr)
 	}
 	if ip4 := netIP.To4(); ip4 == nil {
-		addr.Af = vpp_ipsec.ADDRESS_IP6
+		addr.Af = ip_types.ADDRESS_IP6
 		var ip6addr vpp_ipsec.IP6Address
 		copy(ip6addr[:], netIP.To16())
 		addr.Un.SetIP6(ip6addr)
 	} else {
-		addr.Af = vpp_ipsec.ADDRESS_IP4
+		addr.Af = ip_types.ADDRESS_IP4
 		var ip4addr vpp_ipsec.IP4Address
 		copy(ip4addr[:], ip4)
 		addr.Un.SetIP4(ip4addr)

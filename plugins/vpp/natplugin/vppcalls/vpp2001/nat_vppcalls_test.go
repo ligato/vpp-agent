@@ -367,6 +367,8 @@ func TestDelNat44AddressPool(t *testing.T) {
 	Expect(msg.Flags).To(BeEquivalentTo(0))
 }
 
+/* DEPRECATED
+
 func TestSetNat44VirtualReassemblyIPv4(t *testing.T) {
 	ctx, natHandler, _, _ := natTestSetup(t)
 	defer ctx.TeardownTestCtx()
@@ -409,7 +411,7 @@ func TestSetNat44VirtualReassemblyIPv6(t *testing.T) {
 	Expect(msg.MaxFrag).To(BeEquivalentTo(10))
 	Expect(msg.MaxReass).To(BeEquivalentTo(15))
 	Expect(msg.DropFrag).To(BeEquivalentTo(1))
-}
+}*/
 
 func TestAddNat44StaticMapping(t *testing.T) {
 	ctx, natHandler, swIfIndexes, _ := natTestSetup(t)

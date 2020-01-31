@@ -22,6 +22,7 @@ import (
 	"github.com/pkg/errors"
 
 	vpp_ipsec "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ipsec"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ipsec_types"
 	ipsec "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/ipsec"
 )
 
@@ -175,23 +176,23 @@ func (h *IPSecVppHandler) sadAddDelEntry(sa *ipsec.SecurityAssociation, isAdd bo
 
 	var flags vpp_ipsec.IpsecSadFlags
 	if sa.UseEsn {
-		flags |= vpp_ipsec.IPSEC_API_SAD_FLAG_USE_ESN
+		flags |= ipsec_types.IPSEC_API_SAD_FLAG_USE_ESN
 	}
 	if sa.UseAntiReplay {
-		flags |= vpp_ipsec.IPSEC_API_SAD_FLAG_USE_ANTI_REPLAY
+		flags |= ipsec_types.IPSEC_API_SAD_FLAG_USE_ANTI_REPLAY
 	}
 	if sa.EnableUdpEncap {
-		flags |= vpp_ipsec.IPSEC_API_SAD_FLAG_UDP_ENCAP
+		flags |= ipsec_types.IPSEC_API_SAD_FLAG_UDP_ENCAP
 	}
-	var tunnelSrc, tunnelDst vpp_ipsec.Address
+	var tunnelSrc, tunnelDst ipsec_types.Address
 	if sa.TunnelSrcAddr != "" {
-		flags |= vpp_ipsec.IPSEC_API_SAD_FLAG_IS_TUNNEL
+		flags |= ipsec_types.IPSEC_API_SAD_FLAG_IS_TUNNEL
 		isIPv6, err := addrs.IsIPv6(sa.TunnelSrcAddr)
 		if err != nil {
 			return err
 		}
 		if isIPv6 {
-			flags |= vpp_ipsec.IPSEC_API_SAD_FLAG_IS_TUNNEL_V6
+			flags |= ipsec_types.IPSEC_API_SAD_FLAG_IS_TUNNEL_V6
 		}
 		tunnelSrc, err = IPToAddress(sa.TunnelSrcAddr)
 		if err != nil {

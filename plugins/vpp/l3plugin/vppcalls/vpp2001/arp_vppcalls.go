@@ -18,7 +18,8 @@ import (
 	"net"
 
 	"github.com/pkg/errors"
-	vpp_ip "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ip"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/interface_types"
+	vpp_ip_neighbor "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ip_neighbor"
 	l3 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3"
 )
 
@@ -29,16 +30,16 @@ func (h *ArpVppHandler) vppAddDelArp(entry *l3.ARPEntry, delete bool) error {
 		return errors.Errorf("interface %s not found", entry.Interface)
 	}
 
-	var flags vpp_ip.IPNeighborFlags
-	flags |= vpp_ip.IP_API_NEIGHBOR_FLAG_NO_FIB_ENTRY
+	var flags vpp_ip_neighbor.IPNeighborFlags
+	flags |= vpp_ip_neighbor.IP_API_NEIGHBOR_FLAG_NO_FIB_ENTRY
 	if entry.Static {
-		flags |= vpp_ip.IP_API_NEIGHBOR_FLAG_STATIC
+		flags |= vpp_ip_neighbor.IP_API_NEIGHBOR_FLAG_STATIC
 	}
 
-	req := &vpp_ip.IPNeighborAddDel{
-		IsAdd: boolToUint(!delete),
-		Neighbor: vpp_ip.IPNeighbor{
-			SwIfIndex: meta.SwIfIndex,
+	req := &vpp_ip_neighbor.IPNeighborAddDel{
+		IsAdd: !delete,
+		Neighbor: vpp_ip_neighbor.IPNeighbor{
+			SwIfIndex: interface_types.InterfaceIndex(meta.SwIfIndex),
 			Flags:     flags,
 		},
 	}
@@ -55,7 +56,7 @@ func (h *ArpVppHandler) vppAddDelArp(entry *l3.ARPEntry, delete bool) error {
 	}
 	copy(req.Neighbor.MacAddress[:], macAddr)
 
-	reply := &vpp_ip.IPNeighborAddDelReply{}
+	reply := &vpp_ip_neighbor.IPNeighborAddDelReply{}
 	if err = h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	}

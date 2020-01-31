@@ -22,7 +22,7 @@ import (
 	io "io"
 	strconv "strconv"
 
-	fib_types "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/fib_types"
+	ip_types "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ip_types"
 )
 
 const (
@@ -32,13 +32,13 @@ const (
 	VersionCrc = 0x51716f7f
 )
 
-type AddressFamily = fib_types.AddressFamily
+type AddressFamily = ip_types.AddressFamily
 
-type IPDscp = fib_types.IPDscp
+type IPDscp = ip_types.IPDscp
 
-type IPEcn = fib_types.IPEcn
+type IPEcn = ip_types.IPEcn
 
-type IPProto = fib_types.IPProto
+type IPProto = ip_types.IPProto
 
 // PuntType represents VPP binary API enum 'punt_type'.
 type PuntType uint32
@@ -69,27 +69,27 @@ func (x PuntType) String() string {
 	return strconv.Itoa(int(x))
 }
 
-type AddressWithPrefix = fib_types.AddressWithPrefix
+type AddressWithPrefix = ip_types.AddressWithPrefix
 
-type IP4Address = fib_types.IP4Address
+type IP4Address = ip_types.IP4Address
 
-type IP4AddressWithPrefix = fib_types.IP4AddressWithPrefix
+type IP4AddressWithPrefix = ip_types.IP4AddressWithPrefix
 
-type IP6Address = fib_types.IP6Address
+type IP6Address = ip_types.IP6Address
 
-type IP6AddressWithPrefix = fib_types.IP6AddressWithPrefix
+type IP6AddressWithPrefix = ip_types.IP6AddressWithPrefix
 
-type Address = fib_types.Address
+type Address = ip_types.Address
 
-type IP4Prefix = fib_types.IP4Prefix
+type IP4Prefix = ip_types.IP4Prefix
 
-type IP6Prefix = fib_types.IP6Prefix
+type IP6Prefix = ip_types.IP6Prefix
 
-type Mprefix = fib_types.Mprefix
+type Mprefix = ip_types.Mprefix
 
-type Prefix = fib_types.Prefix
+type Prefix = ip_types.Prefix
 
-type PrefixMatcher = fib_types.PrefixMatcher
+type PrefixMatcher = ip_types.PrefixMatcher
 
 // Punt represents VPP binary API type 'punt'.
 type Punt struct {
@@ -132,7 +132,7 @@ type PuntReason struct {
 
 func (*PuntReason) GetTypeName() string { return "punt_reason" }
 
-type AddressUnion = fib_types.AddressUnion
+type AddressUnion = ip_types.AddressUnion
 
 // PuntUnion represents VPP binary API union 'punt_union'.
 type PuntUnion struct {

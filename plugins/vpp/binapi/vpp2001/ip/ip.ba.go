@@ -25,6 +25,7 @@ import (
 	ethernet_types "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ethernet_types"
 	fib_types "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/fib_types"
 	interface_types "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/interface_types"
+	ip_types "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ip_types"
 )
 
 const (
@@ -34,7 +35,7 @@ const (
 	VersionCrc = 0xfc3fea46
 )
 
-type AddressFamily = fib_types.AddressFamily
+type AddressFamily = ip_types.AddressFamily
 
 type FibPathFlags = fib_types.FibPathFlags
 
@@ -46,11 +47,11 @@ type IfStatusFlags = interface_types.IfStatusFlags
 
 type IfType = interface_types.IfType
 
-type IPDscp = fib_types.IPDscp
+type IPDscp = ip_types.IPDscp
 
-type IPEcn = fib_types.IPEcn
+type IPEcn = ip_types.IPEcn
 
-type IPProto = fib_types.IPProto
+type IPProto = ip_types.IPProto
 
 // IPReassType represents VPP binary API enum 'ip_reass_type'.
 type IPReassType uint32
@@ -124,21 +125,21 @@ type RxMode = interface_types.RxMode
 
 type SubIfFlags = interface_types.SubIfFlags
 
-type AddressWithPrefix = fib_types.AddressWithPrefix
+type AddressWithPrefix = ip_types.AddressWithPrefix
 
 type InterfaceIndex = interface_types.InterfaceIndex
 
-type IP4Address = fib_types.IP4Address
+type IP4Address = ip_types.IP4Address
 
-type IP4AddressWithPrefix = fib_types.IP4AddressWithPrefix
+type IP4AddressWithPrefix = ip_types.IP4AddressWithPrefix
 
-type IP6Address = fib_types.IP6Address
+type IP6Address = ip_types.IP6Address
 
-type IP6AddressWithPrefix = fib_types.IP6AddressWithPrefix
+type IP6AddressWithPrefix = ip_types.IP6AddressWithPrefix
 
 type MacAddress = ethernet_types.MacAddress
 
-type Address = fib_types.Address
+type Address = ip_types.Address
 
 type FibMplsLabel = fib_types.FibMplsLabel
 
@@ -146,9 +147,9 @@ type FibPath = fib_types.FibPath
 
 type FibPathNh = fib_types.FibPathNh
 
-type IP4Prefix = fib_types.IP4Prefix
+type IP4Prefix = ip_types.IP4Prefix
 
-type IP6Prefix = fib_types.IP6Prefix
+type IP6Prefix = ip_types.IP6Prefix
 
 // IPMroute represents VPP binary API type 'ip_mroute'.
 type IPMroute struct {
@@ -190,11 +191,11 @@ type MfibPath struct {
 
 func (*MfibPath) GetTypeName() string { return "mfib_path" }
 
-type Mprefix = fib_types.Mprefix
+type Mprefix = ip_types.Mprefix
 
-type Prefix = fib_types.Prefix
+type Prefix = ip_types.Prefix
 
-type PrefixMatcher = fib_types.PrefixMatcher
+type PrefixMatcher = ip_types.PrefixMatcher
 
 // PuntRedirect represents VPP binary API type 'punt_redirect'.
 type PuntRedirect struct {
@@ -205,7 +206,7 @@ type PuntRedirect struct {
 
 func (*PuntRedirect) GetTypeName() string { return "punt_redirect" }
 
-type AddressUnion = fib_types.AddressUnion
+type AddressUnion = ip_types.AddressUnion
 
 // IoamDisable represents VPP binary API message 'ioam_disable'.
 type IoamDisable struct {

@@ -19,9 +19,10 @@ import (
 	"net"
 
 	"github.com/pkg/errors"
-	"go.ligato.io/vpp-agent/v3/plugins/vpp/l2plugin/vppcalls"
 
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ip_types"
 	vpp_l2 "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/l2"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/l2plugin/vppcalls"
 	l2 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l2"
 )
 
@@ -232,10 +233,10 @@ func (h *XConnectVppHandler) DumpXConnectPairs() (map[uint32]*vppcalls.XConnectD
 func parseAddressToString(address vpp_l2.Address) string {
 	var nhIP net.IP = make([]byte, 16)
 	copy(nhIP[:], address.Un.XXX_UnionData[:])
-	if address.Af == vpp_l2.ADDRESS_IP4 {
+	if address.Af == ip_types.ADDRESS_IP4 {
 		return nhIP[:4].To4().String()
 	}
-	if address.Af == vpp_l2.ADDRESS_IP6 {
+	if address.Af == ip_types.ADDRESS_IP6 {
 		return nhIP.To16().String()
 	}
 

@@ -22,8 +22,9 @@ import (
 	io "io"
 	strconv "strconv"
 
-	fib_types "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/fib_types"
 	interface_types "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/interface_types"
+	ip_types "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ip_types"
+	ipsec_types "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ipsec_types"
 )
 
 const (
@@ -33,178 +34,25 @@ const (
 	VersionCrc = 0x5a59fef9
 )
 
-type AddressFamily = fib_types.AddressFamily
+type AddressFamily = ip_types.AddressFamily
 
 type IfStatusFlags = interface_types.IfStatusFlags
 
 type IfType = interface_types.IfType
 
-type IPDscp = fib_types.IPDscp
+type IPDscp = ip_types.IPDscp
 
-type IPEcn = fib_types.IPEcn
+type IPEcn = ip_types.IPEcn
 
-type IPProto = fib_types.IPProto
+type IPProto = ip_types.IPProto
 
-// IpsecCryptoAlg represents VPP binary API enum 'ipsec_crypto_alg'.
-type IpsecCryptoAlg uint32
+type IpsecCryptoAlg = ipsec_types.IpsecCryptoAlg
 
-const (
-	IPSEC_API_CRYPTO_ALG_NONE        IpsecCryptoAlg = 0
-	IPSEC_API_CRYPTO_ALG_AES_CBC_128 IpsecCryptoAlg = 1
-	IPSEC_API_CRYPTO_ALG_AES_CBC_192 IpsecCryptoAlg = 2
-	IPSEC_API_CRYPTO_ALG_AES_CBC_256 IpsecCryptoAlg = 3
-	IPSEC_API_CRYPTO_ALG_AES_CTR_128 IpsecCryptoAlg = 4
-	IPSEC_API_CRYPTO_ALG_AES_CTR_192 IpsecCryptoAlg = 5
-	IPSEC_API_CRYPTO_ALG_AES_CTR_256 IpsecCryptoAlg = 6
-	IPSEC_API_CRYPTO_ALG_AES_GCM_128 IpsecCryptoAlg = 7
-	IPSEC_API_CRYPTO_ALG_AES_GCM_192 IpsecCryptoAlg = 8
-	IPSEC_API_CRYPTO_ALG_AES_GCM_256 IpsecCryptoAlg = 9
-	IPSEC_API_CRYPTO_ALG_DES_CBC     IpsecCryptoAlg = 10
-	IPSEC_API_CRYPTO_ALG_3DES_CBC    IpsecCryptoAlg = 11
-)
+type IpsecIntegAlg = ipsec_types.IpsecIntegAlg
 
-var IpsecCryptoAlg_name = map[uint32]string{
-	0:  "IPSEC_API_CRYPTO_ALG_NONE",
-	1:  "IPSEC_API_CRYPTO_ALG_AES_CBC_128",
-	2:  "IPSEC_API_CRYPTO_ALG_AES_CBC_192",
-	3:  "IPSEC_API_CRYPTO_ALG_AES_CBC_256",
-	4:  "IPSEC_API_CRYPTO_ALG_AES_CTR_128",
-	5:  "IPSEC_API_CRYPTO_ALG_AES_CTR_192",
-	6:  "IPSEC_API_CRYPTO_ALG_AES_CTR_256",
-	7:  "IPSEC_API_CRYPTO_ALG_AES_GCM_128",
-	8:  "IPSEC_API_CRYPTO_ALG_AES_GCM_192",
-	9:  "IPSEC_API_CRYPTO_ALG_AES_GCM_256",
-	10: "IPSEC_API_CRYPTO_ALG_DES_CBC",
-	11: "IPSEC_API_CRYPTO_ALG_3DES_CBC",
-}
+type IpsecProto = ipsec_types.IpsecProto
 
-var IpsecCryptoAlg_value = map[string]uint32{
-	"IPSEC_API_CRYPTO_ALG_NONE":        0,
-	"IPSEC_API_CRYPTO_ALG_AES_CBC_128": 1,
-	"IPSEC_API_CRYPTO_ALG_AES_CBC_192": 2,
-	"IPSEC_API_CRYPTO_ALG_AES_CBC_256": 3,
-	"IPSEC_API_CRYPTO_ALG_AES_CTR_128": 4,
-	"IPSEC_API_CRYPTO_ALG_AES_CTR_192": 5,
-	"IPSEC_API_CRYPTO_ALG_AES_CTR_256": 6,
-	"IPSEC_API_CRYPTO_ALG_AES_GCM_128": 7,
-	"IPSEC_API_CRYPTO_ALG_AES_GCM_192": 8,
-	"IPSEC_API_CRYPTO_ALG_AES_GCM_256": 9,
-	"IPSEC_API_CRYPTO_ALG_DES_CBC":     10,
-	"IPSEC_API_CRYPTO_ALG_3DES_CBC":    11,
-}
-
-func (x IpsecCryptoAlg) String() string {
-	s, ok := IpsecCryptoAlg_name[uint32(x)]
-	if ok {
-		return s
-	}
-	return strconv.Itoa(int(x))
-}
-
-// IpsecIntegAlg represents VPP binary API enum 'ipsec_integ_alg'.
-type IpsecIntegAlg uint32
-
-const (
-	IPSEC_API_INTEG_ALG_NONE        IpsecIntegAlg = 0
-	IPSEC_API_INTEG_ALG_MD5_96      IpsecIntegAlg = 1
-	IPSEC_API_INTEG_ALG_SHA1_96     IpsecIntegAlg = 2
-	IPSEC_API_INTEG_ALG_SHA_256_96  IpsecIntegAlg = 3
-	IPSEC_API_INTEG_ALG_SHA_256_128 IpsecIntegAlg = 4
-	IPSEC_API_INTEG_ALG_SHA_384_192 IpsecIntegAlg = 5
-	IPSEC_API_INTEG_ALG_SHA_512_256 IpsecIntegAlg = 6
-)
-
-var IpsecIntegAlg_name = map[uint32]string{
-	0: "IPSEC_API_INTEG_ALG_NONE",
-	1: "IPSEC_API_INTEG_ALG_MD5_96",
-	2: "IPSEC_API_INTEG_ALG_SHA1_96",
-	3: "IPSEC_API_INTEG_ALG_SHA_256_96",
-	4: "IPSEC_API_INTEG_ALG_SHA_256_128",
-	5: "IPSEC_API_INTEG_ALG_SHA_384_192",
-	6: "IPSEC_API_INTEG_ALG_SHA_512_256",
-}
-
-var IpsecIntegAlg_value = map[string]uint32{
-	"IPSEC_API_INTEG_ALG_NONE":        0,
-	"IPSEC_API_INTEG_ALG_MD5_96":      1,
-	"IPSEC_API_INTEG_ALG_SHA1_96":     2,
-	"IPSEC_API_INTEG_ALG_SHA_256_96":  3,
-	"IPSEC_API_INTEG_ALG_SHA_256_128": 4,
-	"IPSEC_API_INTEG_ALG_SHA_384_192": 5,
-	"IPSEC_API_INTEG_ALG_SHA_512_256": 6,
-}
-
-func (x IpsecIntegAlg) String() string {
-	s, ok := IpsecIntegAlg_name[uint32(x)]
-	if ok {
-		return s
-	}
-	return strconv.Itoa(int(x))
-}
-
-// IpsecProto represents VPP binary API enum 'ipsec_proto'.
-type IpsecProto uint32
-
-const (
-	IPSEC_API_PROTO_ESP IpsecProto = 1
-	IPSEC_API_PROTO_AH  IpsecProto = 2
-)
-
-var IpsecProto_name = map[uint32]string{
-	1: "IPSEC_API_PROTO_ESP",
-	2: "IPSEC_API_PROTO_AH",
-}
-
-var IpsecProto_value = map[string]uint32{
-	"IPSEC_API_PROTO_ESP": 1,
-	"IPSEC_API_PROTO_AH":  2,
-}
-
-func (x IpsecProto) String() string {
-	s, ok := IpsecProto_name[uint32(x)]
-	if ok {
-		return s
-	}
-	return strconv.Itoa(int(x))
-}
-
-// IpsecSadFlags represents VPP binary API enum 'ipsec_sad_flags'.
-type IpsecSadFlags uint32
-
-const (
-	IPSEC_API_SAD_FLAG_NONE            IpsecSadFlags = 0
-	IPSEC_API_SAD_FLAG_USE_ESN         IpsecSadFlags = 1
-	IPSEC_API_SAD_FLAG_USE_ANTI_REPLAY IpsecSadFlags = 2
-	IPSEC_API_SAD_FLAG_IS_TUNNEL       IpsecSadFlags = 4
-	IPSEC_API_SAD_FLAG_IS_TUNNEL_V6    IpsecSadFlags = 8
-	IPSEC_API_SAD_FLAG_UDP_ENCAP       IpsecSadFlags = 16
-)
-
-var IpsecSadFlags_name = map[uint32]string{
-	0:  "IPSEC_API_SAD_FLAG_NONE",
-	1:  "IPSEC_API_SAD_FLAG_USE_ESN",
-	2:  "IPSEC_API_SAD_FLAG_USE_ANTI_REPLAY",
-	4:  "IPSEC_API_SAD_FLAG_IS_TUNNEL",
-	8:  "IPSEC_API_SAD_FLAG_IS_TUNNEL_V6",
-	16: "IPSEC_API_SAD_FLAG_UDP_ENCAP",
-}
-
-var IpsecSadFlags_value = map[string]uint32{
-	"IPSEC_API_SAD_FLAG_NONE":            0,
-	"IPSEC_API_SAD_FLAG_USE_ESN":         1,
-	"IPSEC_API_SAD_FLAG_USE_ANTI_REPLAY": 2,
-	"IPSEC_API_SAD_FLAG_IS_TUNNEL":       4,
-	"IPSEC_API_SAD_FLAG_IS_TUNNEL_V6":    8,
-	"IPSEC_API_SAD_FLAG_UDP_ENCAP":       16,
-}
-
-func (x IpsecSadFlags) String() string {
-	s, ok := IpsecSadFlags_name[uint32(x)]
-	if ok {
-		return s
-	}
-	return strconv.Itoa(int(x))
-}
+type IpsecSadFlags = ipsec_types.IpsecSadFlags
 
 // IpsecSpdAction represents VPP binary API enum 'ipsec_spd_action'.
 type IpsecSpdAction uint32
@@ -246,41 +94,25 @@ type RxMode = interface_types.RxMode
 
 type SubIfFlags = interface_types.SubIfFlags
 
-type AddressWithPrefix = fib_types.AddressWithPrefix
+type AddressWithPrefix = ip_types.AddressWithPrefix
 
 type InterfaceIndex = interface_types.InterfaceIndex
 
-type IP4Address = fib_types.IP4Address
+type IP4Address = ip_types.IP4Address
 
-type IP4AddressWithPrefix = fib_types.IP4AddressWithPrefix
+type IP4AddressWithPrefix = ip_types.IP4AddressWithPrefix
 
-type IP6Address = fib_types.IP6Address
+type IP6Address = ip_types.IP6Address
 
-type IP6AddressWithPrefix = fib_types.IP6AddressWithPrefix
+type IP6AddressWithPrefix = ip_types.IP6AddressWithPrefix
 
-type Address = fib_types.Address
+type Address = ip_types.Address
 
-type IP4Prefix = fib_types.IP4Prefix
+type IP4Prefix = ip_types.IP4Prefix
 
-type IP6Prefix = fib_types.IP6Prefix
+type IP6Prefix = ip_types.IP6Prefix
 
-// IpsecSadEntry represents VPP binary API type 'ipsec_sad_entry'.
-type IpsecSadEntry struct {
-	SadID              uint32
-	Spi                uint32
-	Protocol           IpsecProto
-	CryptoAlgorithm    IpsecCryptoAlg
-	CryptoKey          Key
-	IntegrityAlgorithm IpsecIntegAlg
-	IntegrityKey       Key
-	Flags              IpsecSadFlags
-	TunnelSrc          Address
-	TunnelDst          Address
-	TxTableID          uint32
-	Salt               uint32
-}
-
-func (*IpsecSadEntry) GetTypeName() string { return "ipsec_sad_entry" }
+type IpsecSadEntry = ipsec_types.IpsecSadEntry
 
 // IpsecSpdEntry represents VPP binary API type 'ipsec_spd_entry'.
 type IpsecSpdEntry struct {
@@ -312,21 +144,15 @@ type IpsecTunnelProtect struct {
 
 func (*IpsecTunnelProtect) GetTypeName() string { return "ipsec_tunnel_protect" }
 
-// Key represents VPP binary API type 'key'.
-type Key struct {
-	Length uint8
-	Data   []byte `struc:"[128]byte"`
-}
+type Key = ipsec_types.Key
 
-func (*Key) GetTypeName() string { return "key" }
+type Mprefix = ip_types.Mprefix
 
-type Mprefix = fib_types.Mprefix
+type Prefix = ip_types.Prefix
 
-type Prefix = fib_types.Prefix
+type PrefixMatcher = ip_types.PrefixMatcher
 
-type PrefixMatcher = fib_types.PrefixMatcher
-
-type AddressUnion = fib_types.AddressUnion
+type AddressUnion = ip_types.AddressUnion
 
 // IpsecBackendDetails represents VPP binary API message 'ipsec_backend_details'.
 type IpsecBackendDetails struct {

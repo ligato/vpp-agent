@@ -18,6 +18,7 @@ import (
 	"net"
 
 	"github.com/pkg/errors"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ip_types"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/stnplugin/vppcalls"
 
 	vpp_stn "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/stn"
@@ -39,24 +40,26 @@ func (h *StnVppHandler) DumpSTNRules() ([]*vppcalls.StnDetails, error) {
 		if err != nil {
 			return nil, errors.Errorf("error reading STN rules from the VPP: %v", err)
 		}
-		ifName, _, found := h.ifIndexes.LookupBySwIfIndex(msg.SwIfIndex)
+		ifName, _, found := h.ifIndexes.LookupBySwIfIndex(uint32(msg.SwIfIndex))
 		if !found {
 			h.log.Warnf("STN dump: interface name not found for index %d", msg.SwIfIndex)
 		}
 
-		var stnIP string
-		if uintToBool(msg.IsIP4) {
-			stnIP = net.IP(msg.IPAddress[:4]).To4().String()
+		var stnIP net.IP
+		if msg.IPAddress.Af == ip_types.ADDRESS_IP4 {
+			stnAddr := msg.IPAddress.Un.GetIP4()
+			stnIP = net.IP(stnAddr[:])
 		} else {
-			stnIP = net.IP(msg.IPAddress).To16().String()
+			stnAddr := msg.IPAddress.Un.GetIP6()
+			stnIP = net.IP(stnAddr[:])
 		}
 
 		stnRule := &stn.Rule{
-			IpAddress: stnIP,
+			IpAddress: stnIP.String(),
 			Interface: ifName,
 		}
 		stnMeta := &vppcalls.StnMeta{
-			IfIdx: msg.SwIfIndex,
+			IfIdx: uint32(msg.SwIfIndex),
 		}
 
 		stnDetails = append(stnDetails, &vppcalls.StnDetails{

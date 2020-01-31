@@ -208,7 +208,7 @@ func (h *NatVppHandler) handleNat44AddressPool(vrf uint32, firstIP, lastIP strin
 
 // Calls VPP binary API to setup NAT virtual reassembly
 func (h *NatVppHandler) handleNatVirtualReassembly(vrCfg *nat.VirtualReassembly, isIpv6 bool) error {
-	req := &vpp_nat.NatSetReass{
+	/*req := &vpp_nat.NatSetReass{
 		Timeout:  vrCfg.Timeout,
 		MaxReass: uint16(vrCfg.MaxReassemblies),
 		MaxFrag:  uint8(vrCfg.MaxFragments),
@@ -216,11 +216,10 @@ func (h *NatVppHandler) handleNatVirtualReassembly(vrCfg *nat.VirtualReassembly,
 		IsIP6:    isIpv6,
 	}
 	reply := &vpp_nat.NatSetReassReply{}
-
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
-	}
-
+	}*/
+	// was DEPRECATED in VPP
 	return nil
 }
 
@@ -468,11 +467,4 @@ func checkTagLength(tag string) error {
 			tag, len(tag), maxTagLen)
 	}
 	return nil
-}
-
-func boolToUint(input bool) uint8 {
-	if input {
-		return 1
-	}
-	return 0
 }

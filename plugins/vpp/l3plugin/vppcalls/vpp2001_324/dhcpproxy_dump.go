@@ -18,6 +18,7 @@ import (
 	"net"
 
 	vpp_dhcp "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/dhcp"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ip_types"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin/vppcalls"
 	l3 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3"
 )
@@ -70,7 +71,7 @@ func (h *DHCPProxyHandler) dumpDHCPProxyForIPVersion(isIPv6 bool) (entry []*vppc
 }
 
 func addressToString(address vpp_dhcp.Address) string {
-	if address.Af == vpp_dhcp.ADDRESS_IP6 {
+	if address.Af == ip_types.ADDRESS_IP6 {
 		ipAddr := address.Un.GetIP6()
 		return net.IP(ipAddr[:]).To16().String()
 	}

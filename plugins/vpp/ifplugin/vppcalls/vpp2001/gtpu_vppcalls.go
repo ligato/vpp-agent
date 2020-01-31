@@ -22,14 +22,16 @@ import (
 
 	"go.ligato.io/vpp-agent/v3/plugins/vpp"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/gtpu"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/interface_types"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ip_types"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/vppcalls"
 	interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
 )
 
-func (h *InterfaceVppHandler) gtpuAddDelTunnel(isAdd uint8, gtpuLink *interfaces.GtpuLink, multicastIf uint32) (uint32, error) {
+func (h *InterfaceVppHandler) gtpuAddDelTunnel(isAdd bool, gtpuLink *interfaces.GtpuLink, multicastIf uint32) (uint32, error) {
 	req := &gtpu.GtpuAddDelTunnel{
 		IsAdd:          isAdd,
-		McastSwIfIndex: multicastIf,
+		McastSwIfIndex: interface_types.InterfaceIndex(multicastIf),
 		EncapVrfID:     gtpuLink.EncapVrfId,
 		Teid:           gtpuLink.Teid,
 	}
@@ -67,13 +69,29 @@ func (h *InterfaceVppHandler) gtpuAddDelTunnel(isAdd uint8, gtpuLink *interfaces
 	}
 
 	if !isSrcIPv6 && !isDstIPv6 {
-		req.IsIPv6 = 0
-		req.SrcAddress = []byte(srcAddr.To4())
-		req.DstAddress = []byte(dstAddr.To4())
+		var src, dst [4]uint8
+		copy(src[:], srcAddr.To4())
+		copy(dst[:], dstAddr.To4())
+		req.SrcAddress = ip_types.Address{
+			Af: ip_types.ADDRESS_IP4,
+			Un: ip_types.AddressUnionIP4(src),
+		}
+		req.DstAddress = ip_types.Address{
+			Af: ip_types.ADDRESS_IP4,
+			Un: ip_types.AddressUnionIP4(dst),
+		}
 	} else if isSrcIPv6 && isDstIPv6 {
-		req.IsIPv6 = 1
-		req.SrcAddress = []byte(srcAddr.To16())
-		req.DstAddress = []byte(dstAddr.To16())
+		var src, dst [16]uint8
+		copy(src[:], srcAddr.To16())
+		copy(dst[:], dstAddr.To16())
+		req.SrcAddress = ip_types.Address{
+			Af: ip_types.ADDRESS_IP6,
+			Un: ip_types.AddressUnionIP6(src),
+		}
+		req.DstAddress = ip_types.Address{
+			Af: ip_types.ADDRESS_IP6,
+			Un: ip_types.AddressUnionIP6(dst),
+		}
 	} else {
 		return 0, errors.New("source and destination addresses must be both either IPv4 or IPv6")
 	}
@@ -95,7 +113,7 @@ func (h *InterfaceVppHandler) AddGtpuTunnel(ifName string, gtpuLink *interfaces.
 		return 0, errors.New("missing GTPU tunnel information")
 	}
 
-	swIfIndex, err := h.gtpuAddDelTunnel(1, gtpuLink, multicastIf)
+	swIfIndex, err := h.gtpuAddDelTunnel(true, gtpuLink, multicastIf)
 	if err != nil {
 		return 0, err
 	}
@@ -111,7 +129,7 @@ func (h *InterfaceVppHandler) DelGtpuTunnel(ifName string, gtpuLink *interfaces.
 		return errors.New("missing GTPU tunnel information")
 	}
 
-	swIfIndex, err := h.gtpuAddDelTunnel(0, gtpuLink, 0)
+	swIfIndex, err := h.gtpuAddDelTunnel(false, gtpuLink, 0)
 	if err != nil {
 		return err
 	}
@@ -126,7 +144,7 @@ func (h *InterfaceVppHandler) dumpGtpuDetails(ifc map[uint32]*vppcalls.Interface
 	}
 
 	reqCtx := h.callsChannel.SendMultiRequest(&gtpu.GtpuTunnelDump{
-		SwIfIndex: ^uint32(0),
+		SwIfIndex: ^interface_types.InterfaceIndex(0),
 	})
 	for {
 		gtpuDetails := &gtpu.GtpuTunnelDetails{}
@@ -137,15 +155,15 @@ func (h *InterfaceVppHandler) dumpGtpuDetails(ifc map[uint32]*vppcalls.Interface
 		if err != nil {
 			return fmt.Errorf("failed to dump GTP-U tunnel interface details: %v", err)
 		}
-		_, ifIdxExists := ifc[gtpuDetails.SwIfIndex]
+		_, ifIdxExists := ifc[uint32(gtpuDetails.SwIfIndex)]
 		if !ifIdxExists {
 			continue
 		}
 		// Multicast interface
 		var multicastIfName string
-		_, exists := ifc[gtpuDetails.McastSwIfIndex]
+		_, exists := ifc[uint32(gtpuDetails.McastSwIfIndex)]
 		if exists {
-			multicastIfName = ifc[gtpuDetails.McastSwIfIndex].Interface.Name
+			multicastIfName = ifc[uint32(gtpuDetails.McastSwIfIndex)].Interface.Name
 		}
 
 		gtpuLink := &interfaces.GtpuLink{
@@ -155,16 +173,20 @@ func (h *InterfaceVppHandler) dumpGtpuDetails(ifc map[uint32]*vppcalls.Interface
 			DecapNext:  interfaces.GtpuLink_NextNode(gtpuDetails.DecapNextIndex),
 		}
 
-		if gtpuDetails.IsIPv6 == 1 {
-			gtpuLink.SrcAddr = net.IP(gtpuDetails.SrcAddress).To16().String()
-			gtpuLink.DstAddr = net.IP(gtpuDetails.DstAddress).To16().String()
+		if gtpuDetails.SrcAddress.Af == ip_types.ADDRESS_IP6 {
+			srcAddrArr := gtpuDetails.SrcAddress.Un.GetIP6()
+			gtpuLink.SrcAddr = net.IP(srcAddrArr[:]).To16().String()
+			dstAddrArr := gtpuDetails.DstAddress.Un.GetIP6()
+			gtpuLink.DstAddr = net.IP(dstAddrArr[:]).To16().String()
 		} else {
-			gtpuLink.SrcAddr = net.IP(gtpuDetails.SrcAddress[:4]).To4().String()
-			gtpuLink.DstAddr = net.IP(gtpuDetails.DstAddress[:4]).To4().String()
+			srcAddrArr := gtpuDetails.SrcAddress.Un.GetIP4()
+			gtpuLink.SrcAddr = net.IP(srcAddrArr[:4]).To4().String()
+			dstAddrArr := gtpuDetails.DstAddress.Un.GetIP4()
+			gtpuLink.DstAddr = net.IP(dstAddrArr[:4]).To4().String()
 		}
 
-		ifc[gtpuDetails.SwIfIndex].Interface.Link = &interfaces.Interface_Gtpu{Gtpu: gtpuLink}
-		ifc[gtpuDetails.SwIfIndex].Interface.Type = interfaces.Interface_GTPU_TUNNEL
+		ifc[uint32(gtpuDetails.SwIfIndex)].Interface.Link = &interfaces.Interface_Gtpu{Gtpu: gtpuLink}
+		ifc[uint32(gtpuDetails.SwIfIndex)].Interface.Type = interfaces.Interface_GTPU_TUNNEL
 	}
 
 	return nil

@@ -21,7 +21,9 @@ import (
 
 	"github.com/pkg/errors"
 
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ip_types"
 	vpp_ipsec "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ipsec"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ipsec_types"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ipsecplugin/vppcalls"
 	ipsec "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/ipsec"
 )
@@ -45,7 +47,7 @@ func (h *IPSecVppHandler) DumpIPSecSAWithIndex(saID uint32) (saList []*vppcalls.
 		}
 
 		var tunnelSrcAddr, tunnelDstAddr net.IP
-		if saData.Entry.TunnelDst.Af == vpp_ipsec.ADDRESS_IP6 {
+		if saData.Entry.TunnelDst.Af == ip_types.ADDRESS_IP6 {
 			src := saData.Entry.TunnelSrc.Un.GetIP6()
 			dst := saData.Entry.TunnelDst.Un.GetIP6()
 			tunnelSrcAddr, tunnelDstAddr = net.IP(src[:]), net.IP(dst[:])
@@ -63,11 +65,11 @@ func (h *IPSecVppHandler) DumpIPSecSAWithIndex(saID uint32) (saList []*vppcalls.
 			CryptoKey:      hex.EncodeToString(saData.Entry.CryptoKey.Data[:saData.Entry.CryptoKey.Length]),
 			IntegAlg:       ipsec.IntegAlg(saData.Entry.IntegrityAlgorithm),
 			IntegKey:       hex.EncodeToString(saData.Entry.IntegrityKey.Data[:saData.Entry.IntegrityKey.Length]),
-			UseEsn:         (saData.Entry.Flags & vpp_ipsec.IPSEC_API_SAD_FLAG_USE_ESN) != 0,
-			UseAntiReplay:  (saData.Entry.Flags & vpp_ipsec.IPSEC_API_SAD_FLAG_USE_ANTI_REPLAY) != 0,
+			UseEsn:         (saData.Entry.Flags & ipsec_types.IPSEC_API_SAD_FLAG_USE_ESN) != 0,
+			UseAntiReplay:  (saData.Entry.Flags & ipsec_types.IPSEC_API_SAD_FLAG_USE_ANTI_REPLAY) != 0,
 			TunnelSrcAddr:  tunnelSrcAddr.String(),
 			TunnelDstAddr:  tunnelDstAddr.String(),
-			EnableUdpEncap: (saData.Entry.Flags & vpp_ipsec.IPSEC_API_SAD_FLAG_UDP_ENCAP) != 0,
+			EnableUdpEncap: (saData.Entry.Flags & ipsec_types.IPSEC_API_SAD_FLAG_UDP_ENCAP) != 0,
 		}
 		meta := &vppcalls.IPSecSaMeta{
 			SaID:           saData.Entry.SadID,

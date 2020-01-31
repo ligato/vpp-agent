@@ -20,6 +20,7 @@ import (
 
 	"github.com/pkg/errors"
 	vpp_dhcp "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/dhcp"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ip_types"
 	l3 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3"
 )
 
@@ -59,12 +60,12 @@ func ipToDHCPAddress(address string) (dhcpAddr vpp_dhcp.Address, err error) {
 		return vpp_dhcp.Address{}, fmt.Errorf("invalid IP: %q", address)
 	}
 	if ip4 := netIP.To4(); ip4 == nil {
-		dhcpAddr.Af = vpp_dhcp.ADDRESS_IP6
+		dhcpAddr.Af = ip_types.ADDRESS_IP6
 		var ip6addr vpp_dhcp.IP6Address
 		copy(ip6addr[:], netIP.To16())
 		dhcpAddr.Un.SetIP6(ip6addr)
 	} else {
-		dhcpAddr.Af = vpp_dhcp.ADDRESS_IP4
+		dhcpAddr.Af = ip_types.ADDRESS_IP4
 		var ip4addr vpp_dhcp.IP4Address
 		copy(ip4addr[:], ip4)
 		dhcpAddr.Un.SetIP4(ip4addr)

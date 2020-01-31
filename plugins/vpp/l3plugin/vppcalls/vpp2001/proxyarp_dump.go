@@ -17,17 +17,17 @@ package vpp2001
 import (
 	"net"
 
-	vpp_ip "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ip"
+	vpp_arp "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/arp"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin/vppcalls"
 	l3 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3"
 )
 
 // DumpProxyArpRanges implements proxy arp handler.
 func (h *ProxyArpVppHandler) DumpProxyArpRanges() (pArpRngs []*vppcalls.ProxyArpRangesDetails, err error) {
-	reqCtx := h.callsChannel.SendMultiRequest(&vpp_ip.ProxyArpDump{})
+	reqCtx := h.callsChannel.SendMultiRequest(&vpp_arp.ProxyArpDump{})
 
 	for {
-		proxyArpDetails := &vpp_ip.ProxyArpDetails{}
+		proxyArpDetails := &vpp_arp.ProxyArpDetails{}
 		stop, err := reqCtx.ReceiveReply(proxyArpDetails)
 		if stop {
 			break
@@ -50,10 +50,10 @@ func (h *ProxyArpVppHandler) DumpProxyArpRanges() (pArpRngs []*vppcalls.ProxyArp
 
 // DumpProxyArpInterfaces implements proxy arp handler.
 func (h *ProxyArpVppHandler) DumpProxyArpInterfaces() (pArpIfs []*vppcalls.ProxyArpInterfaceDetails, err error) {
-	reqCtx := h.callsChannel.SendMultiRequest(&vpp_ip.ProxyArpIntfcDump{})
+	reqCtx := h.callsChannel.SendMultiRequest(&vpp_arp.ProxyArpIntfcDump{})
 
 	for {
-		proxyArpDetails := &vpp_ip.ProxyArpIntfcDetails{}
+		proxyArpDetails := &vpp_arp.ProxyArpIntfcDetails{}
 		stop, err := reqCtx.ReceiveReply(proxyArpDetails)
 		if stop {
 			break

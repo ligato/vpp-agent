@@ -234,7 +234,8 @@ func (h *NatVppHandler) nat44AddressDump() (addressPool []*nat.Nat44Global_Addre
 
 // virtualReassemblyDump returns current NAT virtual-reassembly configuration.
 func (h *NatVppHandler) virtualReassemblyDump() (vrIPv4 *nat.VirtualReassembly, vrIPv6 *nat.VirtualReassembly, err error) {
-	req := &vpp_nat.NatGetReass{}
+	return // was DEPRECATED in VPP
+	/*req := &vpp_nat.NatGetReass{}
 	reply := &vpp_nat.NatGetReassReply{}
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
@@ -253,8 +254,7 @@ func (h *NatVppHandler) virtualReassemblyDump() (vrIPv4 *nat.VirtualReassembly, 
 		MaxFragments:    uint32(reply.IP6MaxFrag),
 		DropFragments:   uintToBool(reply.IP6DropFrag),
 	}
-
-	return
+	return*/
 }
 
 // nat44StaticMappingDump returns a map of NAT44 static mappings sorted by tags

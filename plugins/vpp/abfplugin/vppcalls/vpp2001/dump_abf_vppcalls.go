@@ -19,6 +19,7 @@ import (
 
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/abfplugin/vppcalls"
 	vpp_abf "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/abf"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/fib_types"
 	abf "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/abf"
 )
 
@@ -68,7 +69,7 @@ func (h *ABFVppHandler) dumpABFInterfaces() (map[uint32][]*abf.ABF_AttachedInter
 		}
 
 		// interface name
-		ifName, _, exists := h.ifIndexes.LookupBySwIfIndex(reply.Attach.SwIfIndex)
+		ifName, _, exists := h.ifIndexes.LookupBySwIfIndex(uint32(reply.Attach.SwIfIndex))
 		if !exists {
 			ifName = unknownName
 		}
@@ -77,7 +78,7 @@ func (h *ABFVppHandler) dumpABFInterfaces() (map[uint32][]*abf.ABF_AttachedInter
 		attached := &abf.ABF_AttachedInterface{
 			InputInterface: ifName,
 			Priority:       reply.Attach.Priority,
-			IsIpv6:         uintToBool(reply.Attach.IsIPv6),
+			IsIpv6:         reply.Attach.IsIPv6,
 		}
 
 		_, ok := abfIfs[reply.Attach.PolicyID]
@@ -150,11 +151,11 @@ func (h *ABFVppHandler) dumpABFPolicy() ([]*vppcalls.ABFDetails, error) {
 
 // returns next hop IP address
 func parseNextHopToString(nh vpp_abf.FibPathNh, proto vpp_abf.FibPathNhProto) string {
-	if proto == vpp_abf.FIB_API_PATH_NH_PROTO_IP4 {
+	if proto == fib_types.FIB_API_PATH_NH_PROTO_IP4 {
 		addr := nh.Address.GetIP4()
 		return net.IP(addr[:]).To4().String()
 	}
-	if proto == vpp_abf.FIB_API_PATH_NH_PROTO_IP6 {
+	if proto == fib_types.FIB_API_PATH_NH_PROTO_IP6 {
 		addr := nh.Address.GetIP6()
 		return net.IP(addr[:]).To16().String()
 	}
@@ -163,7 +164,7 @@ func parseNextHopToString(nh vpp_abf.FibPathNh, proto vpp_abf.FibPathNhProto) st
 
 // ABF fib currently supports only DVR or normal mode
 func isDvr(pathType vpp_abf.FibPathType) (isDvr bool) {
-	if pathType == vpp_abf.FIB_API_PATH_TYPE_DVR {
+	if pathType == fib_types.FIB_API_PATH_TYPE_DVR {
 		return true
 	}
 	return false

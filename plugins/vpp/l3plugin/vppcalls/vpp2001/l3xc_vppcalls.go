@@ -22,6 +22,8 @@ import (
 	"github.com/pkg/errors"
 
 	"go.ligato.io/vpp-agent/v3/plugins/vpp"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/fib_types"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/interface_types"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/l3xc"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin/vppcalls"
 )
@@ -37,7 +39,7 @@ func (h *L3XCHandler) DumpL3XC(ctx context.Context, index uint32) ([]vppcalls.L3
 	}
 
 	dump, err := h.l3xc.DumpL3xc(ctx, &l3xc.L3xcDump{
-		SwIfIndex: index,
+		SwIfIndex: interface_types.InterfaceIndex(index),
 	})
 	if err != nil {
 		return nil, err
@@ -53,7 +55,7 @@ func (h *L3XCHandler) DumpL3XC(ctx context.Context, index uint32) ([]vppcalls.L3
 		paths := make([]vppcalls.Path, len(recv.L3xc.Paths))
 		for i, p := range recv.L3xc.Paths {
 			var nextHop net.IP
-			if p.Proto == l3xc.FIB_API_PATH_NH_PROTO_IP6 {
+			if p.Proto == fib_types.FIB_API_PATH_NH_PROTO_IP6 {
 				ip6Addr := p.Nh.Address.GetIP6()
 				nextHop = net.IP(ip6Addr[:]).To16()
 			} else {
@@ -68,8 +70,8 @@ func (h *L3XCHandler) DumpL3XC(ctx context.Context, index uint32) ([]vppcalls.L3
 			}
 		}
 		l3xcs = append(l3xcs, vppcalls.L3XC{
-			SwIfIndex: recv.L3xc.SwIfIndex,
-			IsIPv6:    recv.L3xc.IsIP6 == 1,
+			SwIfIndex: uint32(recv.L3xc.SwIfIndex),
+			IsIPv6:    recv.L3xc.IsIP6,
 			Paths:     paths,
 		})
 	}
@@ -87,15 +89,15 @@ func (h *L3XCHandler) UpdateL3XC(ctx context.Context, xc *vppcalls.L3XC) error {
 			SwIfIndex:  p.SwIfIndex,
 			Weight:     p.Weight,
 			Preference: p.Preference,
-			Type:       l3xc.FIB_API_PATH_TYPE_NORMAL,
+			Type:       fib_types.FIB_API_PATH_TYPE_NORMAL,
 		}
 		fibPath.Nh, fibPath.Proto = getL3XCFibPathNhAndProto(p.NextHop)
 		paths[i] = fibPath
 	}
 	_, err := h.l3xc.L3xcUpdate(ctx, &l3xc.L3xcUpdate{
 		L3xc: l3xc.L3xc{
-			SwIfIndex: xc.SwIfIndex,
-			IsIP6:     boolToUint(xc.IsIPv6),
+			SwIfIndex: interface_types.InterfaceIndex(xc.SwIfIndex),
+			IsIP6:     xc.IsIPv6,
 			Paths:     paths,
 		},
 	})
@@ -111,8 +113,8 @@ func (h *L3XCHandler) DeleteL3XC(ctx context.Context, index uint32, ipv6 bool) e
 	}
 
 	_, err := h.l3xc.L3xcDel(ctx, &l3xc.L3xcDel{
-		SwIfIndex: index,
-		IsIP6:     boolToUint(ipv6),
+		SwIfIndex: interface_types.InterfaceIndex(index),
+		IsIP6:     ipv6,
 	})
 	if err != nil {
 		return err
@@ -121,15 +123,15 @@ func (h *L3XCHandler) DeleteL3XC(ctx context.Context, index uint32, ipv6 bool) e
 }
 
 func getL3XCFibPathNhAndProto(netIP net.IP) (nh l3xc.FibPathNh, proto l3xc.FibPathNhProto) {
-	var addrUnion l3xc.AddressUnion
+	var addrUnion fib_types.AddressUnion
 	if netIP.To4() == nil {
-		proto = l3xc.FIB_API_PATH_NH_PROTO_IP6
-		var ip6addr l3xc.IP6Address
+		proto = fib_types.FIB_API_PATH_NH_PROTO_IP6
+		var ip6addr fib_types.IP6Address
 		copy(ip6addr[:], netIP.To16())
 		addrUnion.SetIP6(ip6addr)
 	} else {
-		proto = l3xc.FIB_API_PATH_NH_PROTO_IP4
-		var ip4addr l3xc.IP4Address
+		proto = fib_types.FIB_API_PATH_NH_PROTO_IP4
+		var ip4addr fib_types.IP4Address
 		copy(ip4addr[:], netIP.To4())
 		addrUnion.SetIP4(ip4addr)
 	}

@@ -15,10 +15,12 @@
 package vpp2001
 
 import (
-	"bytes"
 	"net"
+	"strings"
 
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/interface_types"
 	vpp_ip "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ip"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ip_types"
 	vpp_punt "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/punt"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/puntplugin/vppcalls"
 	punt "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/punt"
@@ -43,8 +45,8 @@ func (h *PuntVppHandler) DumpPuntRedirect() (punts []*punt.IPRedirect, err error
 
 func (h *PuntVppHandler) dumpPuntRedirect(ipv6 bool) (punts []*punt.IPRedirect, err error) {
 	req := h.callsChannel.SendMultiRequest(&vpp_ip.IPPuntRedirectDump{
-		SwIfIndex: ^uint32(0),
-		IsIPv6:    boolToUint(ipv6),
+		SwIfIndex: ^interface_types.InterfaceIndex(0),
+		IsIPv6:    ipv6,
 	})
 	for {
 		d := &vpp_ip.IPPuntRedirectDetails{}
@@ -56,12 +58,12 @@ func (h *PuntVppHandler) dumpPuntRedirect(ipv6 bool) (punts []*punt.IPRedirect, 
 			return nil, err
 		}
 
-		rxIface, _, exists := h.ifIndexes.LookupBySwIfIndex(d.Punt.RxSwIfIndex)
+		rxIface, _, exists := h.ifIndexes.LookupBySwIfIndex(uint32(d.Punt.RxSwIfIndex))
 		if !exists {
 			h.log.Warnf("RX interface (%v) not found", d.Punt.RxSwIfIndex)
 			continue
 		}
-		txIface, _, exists := h.ifIndexes.LookupBySwIfIndex(d.Punt.TxSwIfIndex)
+		txIface, _, exists := h.ifIndexes.LookupBySwIfIndex(uint32(d.Punt.TxSwIfIndex))
 		if !exists {
 			h.log.Warnf("TX interface (%v) not found", d.Punt.TxSwIfIndex)
 			continue
@@ -70,11 +72,11 @@ func (h *PuntVppHandler) dumpPuntRedirect(ipv6 bool) (punts []*punt.IPRedirect, 
 		var l3proto punt.L3Protocol
 		var nextHop string
 
-		if d.Punt.Nh.Af == vpp_ip.ADDRESS_IP4 {
+		if d.Punt.Nh.Af == ip_types.ADDRESS_IP4 {
 			l3proto = punt.L3Protocol_IPV4
 			addr := d.Punt.Nh.Un.GetIP4()
 			nextHop = net.IP(addr[:]).To4().String()
-		} else if d.Punt.Nh.Af == vpp_ip.ADDRESS_IP6 {
+		} else if d.Punt.Nh.Af == ip_types.ADDRESS_IP6 {
 			l3proto = punt.L3Protocol_IPV6
 			addr := d.Punt.Nh.Un.GetIP6()
 			nextHop = net.IP(addr[:]).To16().String()
@@ -133,7 +135,7 @@ func (h *PuntVppHandler) dumpPuntExceptions(reasons map[uint32]string) (punts []
 
 		puntData := d.Punt.Punt.GetException()
 		reason := reasons[puntData.ID]
-		socketPath := string(bytes.Trim(d.Pathname, "\x00"))
+		socketPath := strings.Trim(d.Pathname, "\x00")
 
 		punts = append(punts, &vppcalls.ExceptionDetails{
 			Exception: &punt.Exception{
@@ -176,7 +178,7 @@ func (h *PuntVppHandler) dumpPuntL4() (punts []*vppcalls.PuntDetails, err error)
 		}
 
 		puntData := d.Punt.Punt.GetL4()
-		socketPath := string(bytes.Trim(d.Pathname, "\x00"))
+		socketPath := strings.Trim(d.Pathname, "\x00")
 
 		punts = append(punts, &vppcalls.PuntDetails{
 			PuntData: &punt.ToHost{
@@ -226,9 +228,9 @@ func (h *PuntVppHandler) dumpPuntReasons() (reasons []*vppcalls.ReasonDetails, e
 
 func parseL3Proto(p vpp_punt.AddressFamily) punt.L3Protocol {
 	switch p {
-	case vpp_punt.ADDRESS_IP4:
+	case ip_types.ADDRESS_IP4:
 		return punt.L3Protocol_IPV4
-	case vpp_punt.ADDRESS_IP6:
+	case ip_types.ADDRESS_IP6:
 		return punt.L3Protocol_IPV6
 	}
 	return punt.L3Protocol_UNDEFINED_L3
@@ -236,9 +238,9 @@ func parseL3Proto(p vpp_punt.AddressFamily) punt.L3Protocol {
 
 func parseL4Proto(p vpp_punt.IPProto) punt.L4Protocol {
 	switch p {
-	case vpp_punt.IP_API_PROTO_TCP:
+	case ip_types.IP_API_PROTO_TCP:
 		return punt.L4Protocol_TCP
-	case vpp_punt.IP_API_PROTO_UDP:
+	case ip_types.IP_API_PROTO_UDP:
 		return punt.L4Protocol_UDP
 	}
 	return punt.L4Protocol_UNDEFINED_L4

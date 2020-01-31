@@ -22,6 +22,7 @@ import (
 	"github.com/ligato/cn-infra/logging"
 
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ip_types"
 	vpp_ipsec "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ipsec"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ipsecplugin/vppcalls"
@@ -46,7 +47,7 @@ func NewIPSecVppHandler(ch govppapi.Channel, ifIdx ifaceidx.IfaceMetadataIndex, 
 }
 
 func ipsecAddrToIP(addr vpp_ipsec.Address) net.IP {
-	if addr.Af == vpp_ipsec.ADDRESS_IP6 {
+	if addr.Af == ip_types.ADDRESS_IP6 {
 		addrIP := addr.Un.GetIP6()
 		return net.IP(addrIP[:])
 	}
@@ -54,19 +55,19 @@ func ipsecAddrToIP(addr vpp_ipsec.Address) net.IP {
 	return net.IP(addrIP[:])
 }
 
-func IPToAddress(ipstr string) (addr vpp_ipsec.Address, err error) {
+func IPToAddress(ipstr string) (addr ip_types.Address, err error) {
 	netIP := net.ParseIP(ipstr)
 	if netIP == nil {
-		return vpp_ipsec.Address{}, fmt.Errorf("invalid IP: %q", ipstr)
+		return ip_types.Address{}, fmt.Errorf("invalid IP: %q", ipstr)
 	}
 	if ip4 := netIP.To4(); ip4 == nil {
-		addr.Af = vpp_ipsec.ADDRESS_IP6
-		var ip6addr vpp_ipsec.IP6Address
+		addr.Af = ip_types.ADDRESS_IP6
+		var ip6addr ip_types.IP6Address
 		copy(ip6addr[:], netIP.To16())
 		addr.Un.SetIP6(ip6addr)
 	} else {
-		addr.Af = vpp_ipsec.ADDRESS_IP4
-		var ip4addr vpp_ipsec.IP4Address
+		addr.Af = ip_types.ADDRESS_IP4
+		var ip4addr ip_types.IP4Address
 		copy(ip4addr[:], ip4)
 		addr.Un.SetIP4(ip4addr)
 	}

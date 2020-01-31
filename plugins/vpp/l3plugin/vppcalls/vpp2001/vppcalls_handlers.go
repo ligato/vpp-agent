@@ -29,6 +29,7 @@ import (
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001"
 	vpp_dhcp "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/dhcp"
 	vpp_ip "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ip"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ip_types"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/l3xc"
 	vpp_vpe "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/vpe"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
@@ -225,12 +226,12 @@ func ipToAddress(ipstr string) (addr vpp_ip.Address, err error) {
 		return vpp_ip.Address{}, fmt.Errorf("invalid IP: %q", ipstr)
 	}
 	if ip4 := netIP.To4(); ip4 == nil {
-		addr.Af = vpp_ip.ADDRESS_IP6
+		addr.Af = ip_types.ADDRESS_IP6
 		var ip6addr vpp_ip.IP6Address
 		copy(ip6addr[:], netIP.To16())
 		addr.Un.SetIP6(ip6addr)
 	} else {
-		addr.Af = vpp_ip.ADDRESS_IP4
+		addr.Af = ip_types.ADDRESS_IP4
 		var ip4addr vpp_ip.IP4Address
 		copy(ip4addr[:], ip4)
 		addr.Un.SetIP4(ip4addr)
@@ -241,12 +242,12 @@ func ipToAddress(ipstr string) (addr vpp_ip.Address, err error) {
 func networkToPrefix(dstNetwork *net.IPNet) vpp_ip.Prefix {
 	var addr vpp_ip.Address
 	if dstNetwork.IP.To4() == nil {
-		addr.Af = vpp_ip.ADDRESS_IP6
+		addr.Af = ip_types.ADDRESS_IP6
 		var ip6addr vpp_ip.IP6Address
 		copy(ip6addr[:], dstNetwork.IP.To16())
 		addr.Un.SetIP6(ip6addr)
 	} else {
-		addr.Af = vpp_ip.ADDRESS_IP4
+		addr.Af = ip_types.ADDRESS_IP4
 		var ip4addr vpp_ip.IP4Address
 		copy(ip4addr[:], dstNetwork.IP.To4())
 		addr.Un.SetIP4(ip4addr)

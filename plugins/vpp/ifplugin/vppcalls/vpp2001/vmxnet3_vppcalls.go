@@ -20,6 +20,7 @@ import (
 	"github.com/pkg/errors"
 
 	"go.ligato.io/vpp-agent/v3/plugins/vpp"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/interface_types"
 	vpp_vmxnet3 "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/vmxnet3"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/vppcalls"
 	ifs "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
@@ -51,7 +52,7 @@ func (h *InterfaceVppHandler) AddVmxNet3(ifName string, vmxNet3 *ifs.VmxNet3Link
 		return 0, errors.Errorf(err.Error())
 	}
 
-	return reply.SwIfIndex, h.SetInterfaceTag(ifName, reply.SwIfIndex)
+	return uint32(reply.SwIfIndex), h.SetInterfaceTag(ifName, uint32(reply.SwIfIndex))
 }
 
 func (h *InterfaceVppHandler) DeleteVmxNet3(ifName string, ifIdx uint32) error {
@@ -60,7 +61,7 @@ func (h *InterfaceVppHandler) DeleteVmxNet3(ifName string, ifIdx uint32) error {
 	}
 
 	req := &vpp_vmxnet3.Vmxnet3Delete{
-		SwIfIndex: ifIdx,
+		SwIfIndex: interface_types.InterfaceIndex(ifIdx),
 	}
 	reply := &vpp_vmxnet3.Vmxnet3DeleteReply{}
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
@@ -109,18 +110,18 @@ func (h *InterfaceVppHandler) dumpVmxNet3Details(interfaces map[uint32]*vppcalls
 		if err != nil {
 			return fmt.Errorf("failed to dump VmxNet3 tunnel interface details: %v", err)
 		}
-		_, ifIdxExists := interfaces[vmxnet3Details.SwIfIndex]
+		_, ifIdxExists := interfaces[uint32(vmxnet3Details.SwIfIndex)]
 		if !ifIdxExists {
 			continue
 		}
-		interfaces[vmxnet3Details.SwIfIndex].Interface.Link = &ifs.Interface_VmxNet3{
+		interfaces[uint32(vmxnet3Details.SwIfIndex)].Interface.Link = &ifs.Interface_VmxNet3{
 			VmxNet3: &ifs.VmxNet3Link{
 				RxqSize: uint32(vmxnet3Details.RxCount),
 				TxqSize: uint32(vmxnet3Details.TxCount),
 			},
 		}
-		interfaces[vmxnet3Details.SwIfIndex].Interface.Type = ifs.Interface_VMXNET3_INTERFACE
-		interfaces[vmxnet3Details.SwIfIndex].Meta.Pci = vmxnet3Details.PciAddr
+		interfaces[uint32(vmxnet3Details.SwIfIndex)].Interface.Type = ifs.Interface_VMXNET3_INTERFACE
+		interfaces[uint32(vmxnet3Details.SwIfIndex)].Meta.Pci = vmxnet3Details.PciAddr
 	}
 	return nil
 }

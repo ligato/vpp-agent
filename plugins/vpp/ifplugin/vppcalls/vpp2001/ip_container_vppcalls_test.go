@@ -47,7 +47,7 @@ func TestAddContainerIP(t *testing.T) {
 		Address: ipToAddr("10.0.0.1"),
 		Len:     24,
 	}))
-	Expect(vppMsg.IsAdd).To(BeEquivalentTo(1))
+	Expect(vppMsg.IsAdd).To(BeTrue())
 }
 
 func TestAddContainerIPv6(t *testing.T) {
@@ -66,7 +66,7 @@ func TestAddContainerIPv6(t *testing.T) {
 		Address: ipToAddr("2001:db8:0:1:1:1:1:1"),
 		Len:     128,
 	}))
-	Expect(vppMsg.IsAdd).To(BeEquivalentTo(1))
+	Expect(vppMsg.IsAdd).To(BeTrue())
 }
 
 func TestAddContainerIPInvalidIP(t *testing.T) {
@@ -120,7 +120,7 @@ func TestDelContainerIP(t *testing.T) {
 		Address: ipToAddr("10.0.0.1"),
 		Len:     24,
 	}))
-	Expect(vppMsg.IsAdd).To(BeEquivalentTo(0))
+	Expect(vppMsg.IsAdd).To(BeFalse())
 }
 
 func TestDelContainerIPv6(t *testing.T) {
@@ -139,7 +139,7 @@ func TestDelContainerIPv6(t *testing.T) {
 		Address: ipToAddr("2001:db8:0:1:1:1:1:1"),
 		Len:     128,
 	}))
-	Expect(vppMsg.IsAdd).To(BeEquivalentTo(0))
+	Expect(vppMsg.IsAdd).To(BeFalse())
 }
 
 func TestDelContainerIPError(t *testing.T) {

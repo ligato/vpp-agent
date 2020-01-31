@@ -18,7 +18,9 @@ import (
 	"fmt"
 	"net"
 
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/fib_types"
 	vpp_ip "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ip"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ip_types"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin/vppcalls"
 	l3 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3"
 )
@@ -41,7 +43,7 @@ func (h *RouteHandler) dumpRoutesForVrfAndIP(vrfID uint32, proto l3.VrfTable_Pro
 	reqCtx := h.callsChannel.SendMultiRequest(&vpp_ip.IPRouteDump{
 		Table: vpp_ip.IPTable{
 			TableID: vrfID,
-			IsIP6:   protoToUint(proto),
+			IsIP6:   proto == l3.VrfTable_IPV6,
 		},
 	})
 	for {
@@ -68,7 +70,7 @@ func (h *RouteHandler) dumpRoutesForVrfAndIP(vrfID uint32, proto l3.VrfTable_Pro
 func (h *RouteHandler) dumpRouteIPDetails(ipRoute vpp_ip.IPRoute) ([]*vppcalls.RouteDetails, error) {
 	// Common fields for every route path (destination IP, VRF)
 	var dstIP string
-	if ipRoute.Prefix.Address.Af == vpp_ip.ADDRESS_IP6 {
+	if ipRoute.Prefix.Address.Af == ip_types.ADDRESS_IP6 {
 		ip6Addr := ipRoute.Prefix.Address.Un.GetIP6()
 		dstIP = fmt.Sprintf("%s/%d", net.IP(ip6Addr[:]).To16().String(), uint32(ipRoute.Prefix.Len))
 	} else {
@@ -85,7 +87,7 @@ func (h *RouteHandler) dumpRouteIPDetails(ipRoute vpp_ip.IPRoute) ([]*vppcalls.R
 			var nextHopIP string
 			netIP := make([]byte, 16)
 			copy(netIP[:], path.Nh.Address.XXX_UnionData[:])
-			if path.Proto == vpp_ip.FIB_API_PATH_NH_PROTO_IP6 {
+			if path.Proto == fib_types.FIB_API_PATH_NH_PROTO_IP6 {
 				nextHopIP = fmt.Sprintf("%s", net.IP(netIP).To16().String())
 			} else {
 				nextHopIP = fmt.Sprintf("%s", net.IP(netIP[:4]).To4().String())
@@ -94,7 +96,7 @@ func (h *RouteHandler) dumpRouteIPDetails(ipRoute vpp_ip.IPRoute) ([]*vppcalls.R
 			// Route type (if via VRF is used)
 			var routeType l3.Route_RouteType
 			var viaVrfID uint32
-			if path.Type == vpp_ip.FIB_API_PATH_TYPE_DROP {
+			if path.Type == fib_types.FIB_API_PATH_TYPE_DROP {
 				routeType = l3.Route_DROP
 			} else if path.SwIfIndex == NextHopOutgoingIfUnset && path.TableID != ipRoute.TableID {
 				// outgoing interface not specified and path table is not equal to route table id = inter-VRF route
@@ -142,7 +144,7 @@ func (h *RouteHandler) dumpRouteIPDetails(ipRoute vpp_ip.IPRoute) ([]*vppcalls.R
 			// Route metadata
 			meta := &vppcalls.RouteMeta{
 				OutgoingIfIdx: ifIdx,
-				IsIPv6:        path.Proto == vpp_ip.FIB_API_PATH_NH_PROTO_IP6,
+				IsIPv6:        path.Proto == fib_types.FIB_API_PATH_NH_PROTO_IP6,
 				NextHopID:     path.Nh.ObjID,
 				RpfID:         path.RpfID,
 				LabelStack:    labelStack,
@@ -178,33 +180,26 @@ func (h *RouteHandler) dumpRouteIPDetails(ipRoute vpp_ip.IPRoute) ([]*vppcalls.R
 
 func resolvePathType(meta *vppcalls.RouteMeta, pathType vpp_ip.FibPathType) {
 	switch pathType {
-	case vpp_ip.FIB_API_PATH_TYPE_LOCAL:
+	case fib_types.FIB_API_PATH_TYPE_LOCAL:
 		meta.IsLocal = true
-	case vpp_ip.FIB_API_PATH_TYPE_UDP_ENCAP:
+	case fib_types.FIB_API_PATH_TYPE_UDP_ENCAP:
 		meta.IsUDPEncap = true
-	case vpp_ip.FIB_API_PATH_TYPE_ICMP_UNREACH:
+	case fib_types.FIB_API_PATH_TYPE_ICMP_UNREACH:
 		meta.IsUnreach = true
-	case vpp_ip.FIB_API_PATH_TYPE_ICMP_PROHIBIT:
+	case fib_types.FIB_API_PATH_TYPE_ICMP_PROHIBIT:
 		meta.IsProhibit = true
-	case vpp_ip.FIB_API_PATH_TYPE_DVR:
+	case fib_types.FIB_API_PATH_TYPE_DVR:
 		meta.IsDvr = true
-	case vpp_ip.FIB_API_PATH_TYPE_SOURCE_LOOKUP:
+	case fib_types.FIB_API_PATH_TYPE_SOURCE_LOOKUP:
 		meta.IsSourceLookup = true
 	}
 }
 
 func resolvePathFlags(meta *vppcalls.RouteMeta, pathFlags vpp_ip.FibPathFlags) {
 	switch pathFlags {
-	case vpp_ip.FIB_API_PATH_FLAG_RESOLVE_VIA_HOST:
+	case fib_types.FIB_API_PATH_FLAG_RESOLVE_VIA_HOST:
 		meta.IsResolveHost = true
-	case vpp_ip.FIB_API_PATH_FLAG_RESOLVE_VIA_ATTACHED:
+	case fib_types.FIB_API_PATH_FLAG_RESOLVE_VIA_ATTACHED:
 		meta.IsResolveAttached = true
 	}
-}
-
-func protoToUint(proto l3.VrfTable_Protocol) uint8 {
-	if proto == l3.VrfTable_IPV6 {
-		return 1
-	}
-	return 0
 }

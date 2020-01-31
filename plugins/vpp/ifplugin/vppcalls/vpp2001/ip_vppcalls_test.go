@@ -20,6 +20,7 @@ import (
 
 	. "github.com/onsi/gomega"
 	vpp_ifs "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/interfaces"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ip_types"
 )
 
 func TestAddInterfaceIP(t *testing.T) {
@@ -38,7 +39,7 @@ func TestAddInterfaceIP(t *testing.T) {
 	vppMsg, ok := ctx.MockChannel.Msg.(*vpp_ifs.SwInterfaceAddDelAddress)
 	Expect(ok).To(BeTrue())
 	Expect(vppMsg.SwIfIndex).To(BeEquivalentTo(1))
-	Expect(vppMsg.Prefix.Address.Af).To(BeEquivalentTo(vpp_ifs.ADDRESS_IP4))
+	Expect(vppMsg.Prefix.Address.Af).To(BeEquivalentTo(ip_types.ADDRESS_IP4))
 	copy(ipv4Addr[:], ipNet.IP.To4())
 	Expect(vppMsg.Prefix.Address.Un.GetIP4()).To(BeEquivalentTo(ipv4Addr))
 	Expect(vppMsg.Prefix.Len).To(BeEquivalentTo(24))
@@ -62,7 +63,7 @@ func TestAddInterfaceIPv6(t *testing.T) {
 	vppMsg, ok := ctx.MockChannel.Msg.(*vpp_ifs.SwInterfaceAddDelAddress)
 	Expect(ok).To(BeTrue())
 	Expect(vppMsg.SwIfIndex).To(BeEquivalentTo(1))
-	Expect(vppMsg.Prefix.Address.Af).To(BeEquivalentTo(vpp_ifs.ADDRESS_IP6))
+	Expect(vppMsg.Prefix.Address.Af).To(BeEquivalentTo(ip_types.ADDRESS_IP6))
 	copy(ipv6Addr[:], ipNet.IP.To16())
 	Expect(vppMsg.Prefix.Address.Un.GetIP6()).To(BeEquivalentTo(ipv6Addr))
 	Expect(vppMsg.Prefix.Len).To(BeEquivalentTo(128))
@@ -127,7 +128,7 @@ func TestDelInterfaceIP(t *testing.T) {
 	vppMsg, ok := ctx.MockChannel.Msg.(*vpp_ifs.SwInterfaceAddDelAddress)
 	Expect(ok).To(BeTrue())
 	Expect(vppMsg.SwIfIndex).To(BeEquivalentTo(1))
-	Expect(vppMsg.Prefix.Address.Af).To(BeEquivalentTo(vpp_ifs.ADDRESS_IP4))
+	Expect(vppMsg.Prefix.Address.Af).To(BeEquivalentTo(ip_types.ADDRESS_IP4))
 	copy(ipv4Addr[:], ipNet.IP.To4())
 	Expect(vppMsg.Prefix.Address.Un.GetIP4()).To(BeEquivalentTo(ipv4Addr))
 	Expect(vppMsg.Prefix.Len).To(BeEquivalentTo(24))
@@ -151,7 +152,7 @@ func TestDelInterfaceIPv6(t *testing.T) {
 	vppMsg, ok := ctx.MockChannel.Msg.(*vpp_ifs.SwInterfaceAddDelAddress)
 	Expect(ok).To(BeTrue())
 	Expect(vppMsg.SwIfIndex).To(BeEquivalentTo(1))
-	Expect(vppMsg.Prefix.Address.Af).To(BeEquivalentTo(vpp_ifs.ADDRESS_IP6))
+	Expect(vppMsg.Prefix.Address.Af).To(BeEquivalentTo(ip_types.ADDRESS_IP6))
 	copy(ipv6Addr[:], ipNet.IP.To16())
 	Expect(vppMsg.Prefix.Address.Un.GetIP6()).To(BeEquivalentTo(ipv6Addr))
 	Expect(vppMsg.Prefix.Len).To(BeEquivalentTo(128))
