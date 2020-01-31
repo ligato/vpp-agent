@@ -91,5 +91,3 @@ require (
 	google.golang.org/grpc v1.24.0
 	gotest.tools v2.2.0+incompatible // indirect
 )
-
-replace github.com/bennyscetbun/jsongo => github.com/bennyscetbun/jsongo v0.0.0-20160422144625-5240b3f82c66
