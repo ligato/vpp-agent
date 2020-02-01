@@ -25,7 +25,7 @@ echo -e " VPP Integration Test - \e[1;33m${vppver}\e[0m"
 echo "============================================================="
 
 # run integration test
-if docker exec -i "$cid" /vpp-integration.test "$*"; then
+if docker exec -i "$cid" /vpp-integration.test "$@"; then
 	echo >&2 "-------------------------------------------------------------"
 	echo >&2 -e " \e[32mPASSED\e[0m (took: ${SECONDS}s)"
 	echo >&2 "-------------------------------------------------------------"
