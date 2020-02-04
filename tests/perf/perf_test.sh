@@ -28,13 +28,15 @@ agent_info="${REPORT_DIR}/agent-info.txt"
 cpuprof="${REPORT_DIR}/cpu.pprof"
 memprof="${REPORT_DIR}/mem.pprof"
 
+rest_addr="${REST_ADDR:-http://127.0.0.1:9191}"
+
 # -------
 #  test
 # -------
 
 function run_test() {
 	# create report directory
-	rm -vrf ${REPORT_DIR}/*
+	rm -vrf ${REPORT_DIR}/* 2>/dev/null
 	mkdir --mode=777 -p ${REPORT_DIR}
 
 	perftest $* 2>&1 | tee $log_report
@@ -45,8 +47,9 @@ function perftest() {
 	local requests="$2"
 	
 	echo "================================================================================"
-	echo " PERF-TEST: $perftest - ${requests} requests"
-	echo "  -> ${REPORT_DIR}"
+	echo " PERF TEST: $perftest"
+	echo "  - num requests: ${requests}"
+	echo "  - report dir: ${REPORT_DIR}"
 	echo "================================================================================"
 	
 	prepare_test
@@ -116,8 +119,14 @@ function perftest() {
 	stop_vpp
 
 	echo -n "-> processing profiles.. "
-	[ -r "$cpuprof" ] && go tool pprof -dot "$cpuprof" | dot -Tsvg -o "$REPORT_DIR/cpu-profile.svg"
-	[ -r "$memprof" ] && go tool pprof -alloc_space -dot "$memprof" | dot -Tsvg -o "$REPORT_DIR/mem-profile.svg"
+	set +e
+	if [ -r "$cpuprof" ]; then
+		go tool pprof -dot "$cpuprof" | dot -Tsvg -o "$REPORT_DIR/cpu-profile.svg"
+	fi
+	if [ -r "$memprof" ]; then
+		go tool pprof -alloc_space -dot "$memprof" | dot -Tsvg -o "$REPORT_DIR/mem-profile.svg"
+	fi
+	set -e
 
 	echo
 }
@@ -129,7 +138,7 @@ function prepare_test() {
 
 	#[[ -e "./$_test" ]] || {
 		echo "-> compiling test client $_test.."
-		go build -o "$_test_client/$_test" -v "$_test_client"
+		go build -o "$_test_client/$_test" "$_test_client"
 	#}
 }
 
@@ -235,7 +244,7 @@ function vppcli() {
 #  vpp-agent
 # -------------
 
-wait_agent_boot=5
+wait_agent_boot=10
 
 function start_agent() {
 	local _agent="$(which vpp-agent)"
@@ -247,7 +256,11 @@ function start_agent() {
 	$_agent > "$log_agent" 2>&1 &
 	pid_agent="$!"
 	timeout "${wait_agent_boot}" grep -q "Agent started" <(tail -qF $log_agent) || {
-		fail "timeout!"
+		echo "AGENT LOG:"
+		echo "---"
+		tail "$log_agent"
+		echo "---"
+		fail "TIMEOUT!"
 	}
 	echo "ok! (PID:${pid_agent})"
 }
@@ -287,7 +300,7 @@ function check_agent() {
 }
 
 function agentrest() {
-	local url="http://localhost:9191/$1"
+	local url="$rest_addr/$1"
 
 	echo "----------------------------------------------------"
 	echo "GET $url"

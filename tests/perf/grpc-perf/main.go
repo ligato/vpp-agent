@@ -29,6 +29,7 @@ import (
 	"github.com/ligato/cn-infra/infra"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/namsral/flag"
+	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 
 	"go.ligato.io/vpp-agent/v3/proto/ligato/configurator"
@@ -80,7 +81,8 @@ func main() {
 
 // GRPCStressPlugin makes use of the remoteclient to locally CRUD ipsec tunnels and routes.
 type GRPCStressPlugin struct {
-	infra.PluginDeps
+	infra.PluginName
+	Log *logrus.Logger
 
 	conns []*grpc.ClientConn
 
@@ -90,12 +92,18 @@ type GRPCStressPlugin struct {
 func NewGRPCStressPlugin() *GRPCStressPlugin {
 	p := &GRPCStressPlugin{}
 	p.SetName("grpc-stress-test-client")
-	p.Setup()
+	p.Log = logrus.New()
+	p.Log.SetFormatter(&logrus.TextFormatter{
+		ForceColors:               true,
+		EnvironmentOverrideColors: true,
+	})
 	return p
 }
 
-// Init initializes  plugin.
 func (p *GRPCStressPlugin) Init() error {
+	return nil
+}
+func (p *GRPCStressPlugin) Close() error {
 	return nil
 }
 
@@ -216,9 +224,16 @@ func (p *GRPCStressPlugin) runAllClients() {
 
 	p.Log.Debugf("Waiting for clients..")
 	p.wg.Wait()
+	took := time.Since(t)
+	perSec := float64(*numTunnels) / took.Seconds()
 
-	took := time.Since(t).Round(time.Microsecond * 100)
-	p.Log.Infof("All clients done, took: %v", took)
+	p.Log.Infof("All clients done!")
+	p.Log.Infof("----------------------------------------")
+	p.Log.Infof(" -> Took: %.3fs", took.Seconds())
+	p.Log.Infof(" -> Clients: %d", *numClients)
+	p.Log.Infof(" -> Requests: %d", *numTunnels)
+	p.Log.Infof(" -> PERFORMANCE: %.1f req/sec", perSec)
+	p.Log.Infof("----------------------------------------")
 
 	for i := 0; i < *numClients; i++ {
 		if err := p.conns[i].Close(); err != nil {
