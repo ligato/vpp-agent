@@ -20,17 +20,23 @@ import (
 	"net/http"
 	_ "net/http/pprof"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/pkg/profile"
 )
 
-const defaultServerAddr = ":1234"
+const (
+	defaultServerAddr     = ":1234"
+	defaultMemProfileRate = 1024
+)
 
 var (
-	profileMode     = os.Getenv("DEBUG_PROFILE_MODE")
-	profilePath     = os.Getenv("DEBUG_PROFILE_PATH")
 	debugServerAddr = os.Getenv("DEBUG_SERVER_ADDR")
+
+	profileMode    = os.Getenv("DEBUG_PROFILE_MODE")
+	profilePath    = os.Getenv("DEBUG_PROFILE_PATH")
+	profileMemRate = os.Getenv("DEBUG_PROFILE_MEMRATE")
 )
 
 type Debug struct {
@@ -58,11 +64,18 @@ func (d *Debug) Stop() {
 func (d *Debug) runProfiling() {
 	var profiling func(*profile.Profile)
 
+	memRate := defaultMemProfileRate
+	if profileMemRate != "" {
+		if x, err := strconv.Atoi(profileMemRate); err == nil {
+			memRate = x
+		}
+	}
+
 	switch strings.ToLower(profileMode) {
 	case "cpu":
 		profiling = profile.CPUProfile
 	case "mem":
-		profiling = profile.MemProfile
+		profiling = profile.MemProfileRate(memRate)
 	case "mutex":
 		profiling = profile.MutexProfile
 	case "block":
