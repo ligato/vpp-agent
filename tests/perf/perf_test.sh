@@ -28,6 +28,8 @@ agent_info="${REPORT_DIR}/agent-info.txt"
 cpuprof="${REPORT_DIR}/cpu.pprof"
 memprof="${REPORT_DIR}/mem.pprof"
 
+rest_addr="${REST_ADDR:-http://127.0.0.1:9191}"
+
 # -------
 #  test
 # -------
@@ -298,7 +300,7 @@ function check_agent() {
 }
 
 function agentrest() {
-	local url="http://localhost:9191/$1"
+	local url="$rest_addr/$1"
 
 	echo "----------------------------------------------------"
 	echo "GET $url"
