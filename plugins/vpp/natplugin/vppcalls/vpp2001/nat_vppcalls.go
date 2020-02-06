@@ -208,6 +208,9 @@ func (h *NatVppHandler) handleNat44AddressPool(vrf uint32, firstIP, lastIP strin
 
 // Calls VPP binary API to setup NAT virtual reassembly
 func (h *NatVppHandler) handleNatVirtualReassembly(vrCfg *nat.VirtualReassembly, isIpv6 bool) error {
+	// Virtual Reassembly has been removed from NAT API in VPP (moved to IP API)
+	// TODO: define IPReassembly model in L3 plugin
+	return nil
 	/*req := &vpp_nat.NatSetReass{
 		Timeout:  vrCfg.Timeout,
 		MaxReass: uint16(vrCfg.MaxReassemblies),
@@ -219,8 +222,6 @@ func (h *NatVppHandler) handleNatVirtualReassembly(vrCfg *nat.VirtualReassembly,
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	}*/
-	// was DEPRECATED in VPP
-	return nil
 }
 
 // Calls VPP binary API to add/remove NAT44 static mapping
