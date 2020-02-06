@@ -276,7 +276,7 @@ MDLINKCHECK := $(shell command -v markdown-link-check 2> /dev/null)
 get-linkcheck: ## Check links in Markdown files
 ifndef MDLINKCHECK
 	sudo apt-get update && sudo apt-get install -y npm
-	npm install markdown-link-check@3.6.2
+	npm install -g markdown-link-check@3.6.2
 endif
 
 check-links: get-linkcheck
