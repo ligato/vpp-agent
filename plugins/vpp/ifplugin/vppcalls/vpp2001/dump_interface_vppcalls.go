@@ -497,7 +497,9 @@ func (h *InterfaceVppHandler) dumpTapDetails(interfaces map[uint32]*vppcalls.Int
 	// Original TAP v1 was DEPRECATED
 
 	// TAP v2
-	reqCtx := h.callsChannel.SendMultiRequest(&vpp_tapv2.SwInterfaceTapV2Dump{})
+	reqCtx := h.callsChannel.SendMultiRequest(&vpp_tapv2.SwInterfaceTapV2Dump{
+		SwIfIndex: ^vpp_tapv2.InterfaceIndex(0),
+	})
 	for {
 		tapDetails := &vpp_tapv2.SwInterfaceTapV2Details{}
 		stop, err := reqCtx.ReceiveReply(tapDetails)
