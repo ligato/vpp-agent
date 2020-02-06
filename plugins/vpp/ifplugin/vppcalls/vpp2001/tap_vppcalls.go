@@ -44,6 +44,7 @@ func (h *InterfaceVppHandler) AddTapInterface(ifName string, tapIf *ifs.TapLink)
 		// Configure fast virtio-based TAP interface
 		req := &vpp_tapv2.TapCreateV2{
 			ID:            ^uint32(0),
+			NumRxQueues:   1,
 			HostIfName:    tapIf.HostIfName,
 			HostIfNameSet: true,
 			UseRandomMac:  true,
