@@ -82,7 +82,7 @@ func TestInterfaceAdminUpError(t *testing.T) {
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&interfaces.HwInterfaceSetMtuReply{})
-	err := ifHandler.InterfaceAdminDown(nil, 1)
+	err := ifHandler.InterfaceAdminDown(ctx.Context, 1)
 
 	Expect(err).ToNot(BeNil())
 }

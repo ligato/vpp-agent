@@ -248,7 +248,7 @@ func TestCRUDIPv6Route(t *testing.T) {
 	t.Logf("%d routes dumped", routesCnt)
 
 	newRoute := vpp_l3.Route{VrfId: 0, DstNetwork: "fd30:0:0:1::/64", NextHopAddr: "fd31::1:1:0:0:1", OutgoingInterface: ifName}
-	err = h.VppAddRoute(nil, &newRoute)
+	err = h.VppAddRoute(test.Context, &newRoute)
 	if err != nil {
 		t.Fatalf("adding route failed: %v", err)
 	}
