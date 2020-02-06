@@ -101,7 +101,7 @@ RUN \
 	VERSION=$VERSION \
 	COMMIT=$COMMIT \
 	DATE=$DATE \
- make install
+ make install purge
 
 ENV SUPERVISOR_CONFIG=/opt/vpp-agent/dev/supervisor.conf
 

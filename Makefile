@@ -133,7 +133,7 @@ clean-examples: ## Clean examples
 	cd examples/localclient_vpp/nat      	&& go clean
 	cd examples/localclient_vpp/plugins	 	&& go clean
 
-purge:
+purge: ## Purge cached files
 	go clean -testcache -cache ./...
 
 debug-remote: ## Debug remotely
@@ -239,11 +239,15 @@ dep-update:
 
 dep-check:
 	@echo "# checking dependencies"
+	@if ! git --no-pager diff --quiet go.mod ; then \
+		echo >&2 "go.mod has uncommitted changes!"; \
+		exit 1; \
+	fi
 	go mod verify
 	go mod tidy -v
-	@if ! git diff --quiet go.mod ; then \
-		echo "go mod tidy check failed"; \
-		exit 1 ; \
+	@if ! git --no-pager diff go.mod ; then \
+		echo >&2 "go mod tidy check failed!"; \
+		exit 1; \
 	fi
 
 # -------------------------------
