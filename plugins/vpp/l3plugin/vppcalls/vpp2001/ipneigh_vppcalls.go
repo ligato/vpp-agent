@@ -15,11 +15,10 @@
 package vpp2001
 
 import (
-	"regexp"
 	"strconv"
 
-	vpp_ip_neighbor "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ip_neighbor"
-	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ip_types"
+	//vpp_ip_neighbor "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ip_neighbor"
+	//"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ip_types"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin/vppcalls"
 	l3 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3"
 )
@@ -78,7 +77,7 @@ func (h *IPNeighHandler) SetIPScanNeighbor(data *l3.IPScanNeighbor) (err error) 
 	return nil*/
 }
 
-func (h *IPNeighHandler) setIPScanNeighbor(af ip_types.AddressFamily, maxNum, maxAge uint32, recycle bool) error {
+/*func (h *IPNeighHandler) setIPScanNeighbor(af ip_types.AddressFamily, maxNum, maxAge uint32, recycle bool) error {
 	req := &vpp_ip_neighbor.IPNeighborConfig{
 		Af:        af,
 		MaxNumber: maxNum,
@@ -92,19 +91,19 @@ func (h *IPNeighHandler) setIPScanNeighbor(af ip_types.AddressFamily, maxNum, ma
 	}
 
 	return nil
-}
+}*/
 
 var (
-	/*
-		Sample outputs for VPP CLI 'show ip neighbor-config'
-		---
-		ip4:
-		  limit:50000, age:0, recycle:0
-		ip6:
-		  limit:50000, age:0, recycle:0
-		---
-	*/
-	cliIPScanNeighRe = regexp.MustCompile(`(ip4|ip6):\n\s+limit:([0-9]+),\s+age:([0-9]+),\s+recycle:([0-9]+)\s+`)
+/*
+	Sample outputs for VPP CLI 'show ip neighbor-config'
+	---
+	ip4:
+	  limit:50000, age:0, recycle:0
+	ip6:
+	  limit:50000, age:0, recycle:0
+	---
+*/
+//cliIPScanNeighRe = regexp.MustCompile(`(ip4|ip6):\n\s+limit:([0-9]+),\s+age:([0-9]+),\s+recycle:([0-9]+)\s+`)
 )
 
 // GetIPScanNeighbor dumps current IP Scan Neighbor configuration.
