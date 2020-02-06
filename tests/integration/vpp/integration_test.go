@@ -221,7 +221,7 @@ func setupVPP(t *testing.T) *TestCtx {
 	vppClient.vpp = vpeHandler
 	vppClient.stats = statsConn
 
-	t.Log("-> S E T U P <-")
+	t.Log("-> SETUP done\n")
 
 	return &TestCtx{
 		t:           t,
@@ -239,7 +239,7 @@ func setupVPP(t *testing.T) *TestCtx {
 }
 
 func (ctx *TestCtx) teardownVPP() {
-	ctx.t.Logf("-> T E A R D O W N <-")
+	ctx.t.Logf("-> TEARDOWN begin")
 
 	// disconnect sometimes hangs
 	done := make(chan struct{})

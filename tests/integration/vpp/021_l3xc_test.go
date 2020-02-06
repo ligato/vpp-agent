@@ -27,6 +27,8 @@ import (
 	l3plugin_vppcalls "go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin/vppcalls"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin/vrfidx"
 	vpp_l3 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3"
+
+	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin"
 )
 
 func TestL3XC(t *testing.T) {
