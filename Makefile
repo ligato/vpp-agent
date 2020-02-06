@@ -133,6 +133,9 @@ clean-examples: ## Clean examples
 	cd examples/localclient_vpp/nat      	&& go clean
 	cd examples/localclient_vpp/plugins	 	&& go clean
 
+purge:
+	go clean -testcache -cache ./...
+
 debug-remote: ## Debug remotely
 	cd ./cmd/vpp-agent && dlv debug --headless --listen=:2345 --api-version=2 --accept-multiclient
 
@@ -310,7 +313,7 @@ prod-image: ## Build production image
 
 
 .PHONY: help \
-	agent agentctl build clean install \
+	agent agentctl build clean install purge \
 	cmd examples clean-examples \
 	test test-cover test-cover-html test-cover-xml \
 	generate checknodiffgenerated genereate-binapi generate-proto get-binapi-generators \
