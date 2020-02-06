@@ -37,12 +37,12 @@ func (h *InterfaceVppHandler) greAddDelTunnel(isAdd bool, greLink *ifs.GreLink) 
 	}
 
 	var tt vpp_gre.GreTunnelType
-	switch uint8(greLink.TunnelType - 1) {
-	case 0:
+	switch greLink.TunnelType {
+	case ifs.GreLink_L3:
 		tt = vpp_gre.GRE_API_TUNNEL_TYPE_L3
-	case 1:
+	case ifs.GreLink_TEB:
 		tt = vpp_gre.GRE_API_TUNNEL_TYPE_TEB
-	case 2:
+	case ifs.GreLink_ERSPAN:
 		tt = vpp_gre.GRE_API_TUNNEL_TYPE_ERSPAN
 	default:
 		return 0, errors.New("bad GRE tunnel type")
@@ -50,6 +50,7 @@ func (h *InterfaceVppHandler) greAddDelTunnel(isAdd bool, greLink *ifs.GreLink) 
 
 	tunnel := vpp_gre.GreTunnel{
 		Type:         tt,
+		Mode:         vpp_gre.GRE_API_TUNNEL_MODE_P2P, // TODO: add mode to proto model
 		Instance:     ^uint32(0),
 		OuterTableID: greLink.OuterFibId,
 		SessionID:    uint16(greLink.SessionId),
