@@ -29,6 +29,7 @@ import (
 	"github.com/pkg/errors"
 
 	"go.ligato.io/vpp-agent/v3/plugins/govppmux"
+	"go.ligato.io/vpp-agent/v3/plugins/kvscheduler"
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 	"go.ligato.io/vpp-agent/v3/plugins/netalloc"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin"
@@ -39,8 +40,11 @@ import (
 	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin/vppcalls/vpp1904"
 	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin/vppcalls/vpp1908"
 	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin/vppcalls/vpp2001"
-	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin/vppcalls/vpp2001_324"
 )
+
+func init() {
+	kvscheduler.AddNonRetryableError(vppcalls.ErrIPNeighborNotImplemented)
+}
 
 // L3Plugin configures Linux routes and ARP entries using Netlink API.
 type L3Plugin struct {

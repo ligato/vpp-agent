@@ -34,22 +34,22 @@ func TestDumpVrfTables(t *testing.T) {
 		&vpp_ip.IPTableDetails{
 			Table: vpp_ip.IPTable{
 				TableID: 1,
-				Name:    []byte("table3"),
-				IsIP6:   0,
+				Name:    "table3",
+				IsIP6:   false,
 			},
 		},
 		&vpp_ip.IPTableDetails{
 			Table: vpp_ip.IPTable{
 				TableID: 2,
-				Name:    []byte("table3"),
-				IsIP6:   0,
+				Name:    "table3",
+				IsIP6:   false,
 			},
 		},
 		&vpp_ip.IPTableDetails{
 			Table: vpp_ip.IPTable{
 				TableID: 3,
-				Name:    []byte("table2"),
-				IsIP6:   1,
+				Name:    "table2",
+				IsIP6:   true,
 			},
 		},
 	)

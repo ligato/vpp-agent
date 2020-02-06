@@ -19,12 +19,14 @@ import (
 	"testing"
 
 	govppapi "git.fd.io/govpp.git/api"
-
 	. "github.com/onsi/gomega"
+
 	vpp_dhcp "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/dhcp"
 	vpp_gtpu "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/gtpu"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/interface_types"
 	vpp_interfaces "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/interfaces"
 	vpp_ip "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ip"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ip_types"
 	vpp_memif "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/memif"
 	vpp_tapv2 "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/tapv2"
 	vpp_vpe "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/vpe"
@@ -237,7 +239,7 @@ func TestDumpInterfacesTap2(t *testing.T) {
 				SwIfIndex:     0,
 				InterfaceName: "tap2",
 				Tag:           "mytap2",
-				Flags:         vpp_interfaces.IF_STATUS_API_FLAG_ADMIN_UP,
+				Flags:         interface_types.IF_STATUS_API_FLAG_ADMIN_UP,
 				LinkMtu:       9216,
 				L2Address:     hwAddr1Parse,
 			},
@@ -269,7 +271,7 @@ func TestDumpInterfacesTap2(t *testing.T) {
 			Ping: true,
 			Message: &vpp_tapv2.SwInterfaceTapV2Details{
 				SwIfIndex:  0,
-				HostIfName: []byte("taptap2"),
+				HostIfName: "taptap2",
 			},
 		},
 		{
@@ -443,8 +445,18 @@ func TestDumpInterfacesGtpu(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ipv61Parse := net.ParseIP("dead:beef:feed:face:cafe:babe:baad:c0de").To16()
-	ipv62Parse := net.ParseIP("d3ad:beef:feed:face:cafe:babe:baad:c0de").To16()
+	ipv61Parse := ip_types.Address{
+		Af: ip_types.ADDRESS_IP6,
+		Un: ip_types.AddressUnionIP6(ip_types.IP6Address{
+			0xde, 0xad, 0xbe, 0xef, 0xfe, 0xed, 0xfa, 0xce, 0xca, 0xfe, 0xba, 0xbe, 0xba, 0xad, 0xc0, 0xde,
+		}),
+	}
+	ipv62Parse := ip_types.Address{
+		Af: ip_types.ADDRESS_IP6,
+		Un: ip_types.AddressUnionIP6(ip_types.IP6Address{
+			0xd3, 0xad, 0xbe, 0xef, 0xfe, 0xed, 0xfa, 0xce, 0xca, 0xfe, 0xba, 0xbe, 0xba, 0xad, 0xc0, 0xde,
+		}),
+	}
 
 	ctx.MockReplies([]*vppmock.HandleReplies{
 		{
@@ -484,7 +496,6 @@ func TestDumpInterfacesGtpu(t *testing.T) {
 			Name: (&vpp_gtpu.GtpuTunnelDump{}).GetMessageName(),
 			Ping: true,
 			Message: &vpp_gtpu.GtpuTunnelDetails{
-				IsIPv6:     1,
 				SwIfIndex:  0,
 				SrcAddress: ipv61Parse,
 				DstAddress: ipv62Parse,

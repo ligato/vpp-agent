@@ -51,12 +51,10 @@ import (
 	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/vppcalls/vpp1904"
 	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/vppcalls/vpp1908"
 	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/vppcalls/vpp2001"
-	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/vppcalls/vpp2001_324"
 )
 
 func init() {
-	// this adds ErrPluginDisabled to non-retryable errors
-	kvscheduler.NonRetryableErrors = append(kvscheduler.NonRetryableErrors, vppclient.ErrPluginDisabled)
+	kvscheduler.AddNonRetryableError(vppclient.ErrPluginDisabled)
 }
 
 // Default Go routine count used while retrieving linux configuration

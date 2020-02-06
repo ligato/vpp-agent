@@ -20,6 +20,8 @@ func (d *InterfaceDescriptor) Create(key string, intf *interfaces.Interface) (me
 	var ifIdx uint32
 	var tapHostIfName string
 
+	ctx := context.TODO()
+
 	// create the interface of the given type
 	switch intf.Type {
 	case interfaces.Interface_TAP:
@@ -115,7 +117,7 @@ func (d *InterfaceDescriptor) Create(key string, intf *interfaces.Interface) (me
 			return nil, err
 		}
 	case interfaces.Interface_IPSEC_TUNNEL:
-		ifIdx, err = d.ifHandler.AddIPSecTunnelInterface(intf.Name, intf.GetIpsec())
+		ifIdx, err = d.ifHandler.AddIPSecTunnelInterface(ctx, intf.Name, intf.GetIpsec())
 		if err != nil {
 			d.log.Error(err)
 			return nil, err
@@ -224,7 +226,7 @@ func (d *InterfaceDescriptor) Create(key string, intf *interfaces.Interface) (me
 
 	// set interface up if enabled
 	if intf.Enabled {
-		if err = d.ifHandler.InterfaceAdminUp(ifIdx); err != nil {
+		if err = d.ifHandler.InterfaceAdminUp(ctx, ifIdx); err != nil {
 			err = errors.Errorf("failed to set interface %s up: %v", intf.Name, err)
 			d.log.Error(err)
 			return nil, err
@@ -246,9 +248,11 @@ func (d *InterfaceDescriptor) Delete(key string, intf *interfaces.Interface, met
 	var err error
 	ifIdx := metadata.SwIfIndex
 
+	ctx := context.TODO()
+
 	// set interface to ADMIN_DOWN unless the type is AF_PACKET_INTERFACE
 	if intf.Type != interfaces.Interface_AF_PACKET {
-		if err := d.ifHandler.InterfaceAdminDown(ifIdx); err != nil {
+		if err := d.ifHandler.InterfaceAdminDown(ctx, ifIdx); err != nil {
 			err = errors.Errorf("failed to set interface %s down: %v", intf.Name, err)
 			d.log.Error(err)
 			return err
@@ -275,7 +279,7 @@ func (d *InterfaceDescriptor) Delete(key string, intf *interfaces.Interface, met
 	case interfaces.Interface_AF_PACKET:
 		err = d.ifHandler.DeleteAfPacketInterface(intf.Name, ifIdx, intf.GetAfpacket())
 	case interfaces.Interface_IPSEC_TUNNEL:
-		err = d.ifHandler.DeleteIPSecTunnelInterface(intf.Name, intf.GetIpsec())
+		err = d.ifHandler.DeleteIPSecTunnelInterface(ctx, intf.Name, intf.GetIpsec())
 	case interfaces.Interface_SUB_INTERFACE:
 		err = d.ifHandler.DeleteSubif(ifIdx)
 	case interfaces.Interface_VMXNET3_INTERFACE:
@@ -301,16 +305,18 @@ func (d *InterfaceDescriptor) Delete(key string, intf *interfaces.Interface, met
 func (d *InterfaceDescriptor) Update(key string, oldIntf, newIntf *interfaces.Interface, oldMetadata *ifaceidx.IfaceMetadata) (newMetadata *ifaceidx.IfaceMetadata, err error) {
 	ifIdx := oldMetadata.SwIfIndex
 
+	ctx := context.TODO()
+
 	// admin status
 	if newIntf.Enabled != oldIntf.Enabled {
 		if newIntf.Enabled {
-			if err = d.ifHandler.InterfaceAdminUp(ifIdx); err != nil {
+			if err = d.ifHandler.InterfaceAdminUp(ctx, ifIdx); err != nil {
 				err = errors.Errorf("failed to set interface %s up: %v", newIntf.Name, err)
 				d.log.Error(err)
 				return oldMetadata, err
 			}
 		} else {
-			if err = d.ifHandler.InterfaceAdminDown(ifIdx); err != nil {
+			if err = d.ifHandler.InterfaceAdminDown(ctx, ifIdx); err != nil {
 				err = errors.Errorf("failed to set interface %s down: %v", newIntf.Name, err)
 				d.log.Error(err)
 				return oldMetadata, err

@@ -70,7 +70,7 @@ func TestAddABFPolicy(t *testing.T) {
 	Expect(err).To(BeNil())
 	req, ok := ctx.MockChannel.Msg.(*vpp_abf.AbfPolicyAddDel)
 	Expect(ok).To(BeTrue())
-	Expect(req.IsAdd).To(Equal(uint8(1)))
+	Expect(req.IsAdd).To(BeTrue())
 	Expect(req.Policy.PolicyID).To(Equal(uint32(1)))
 	Expect(req.Policy.ACLIndex).To(Equal(uint32(2)))
 	Expect(req.Policy.NPaths).To(Equal(uint8(2)))
@@ -120,7 +120,7 @@ func TestDeleteABFPolicy(t *testing.T) {
 	Expect(err).To(BeNil())
 	req, ok := ctx.MockChannel.Msg.(*vpp_abf.AbfPolicyAddDel)
 	Expect(ok).To(BeTrue())
-	Expect(req.IsAdd).To(Equal(uint8(0)))
+	Expect(req.IsAdd).To(BeFalse())
 	Expect(req.Policy.PolicyID).To(Equal(uint32(1)))
 	Expect(req.Policy.NPaths).To(Equal(uint8(2)))
 	Expect(req.Policy.Paths[0].SwIfIndex).To(Equal(uint32(5)))
@@ -153,11 +153,11 @@ func TestAttachABFInterfaceIPv4(t *testing.T) {
 	Expect(err).To(BeNil())
 	req, ok := ctx.MockChannel.Msg.(*vpp_abf.AbfItfAttachAddDel)
 	Expect(ok).To(BeTrue())
-	Expect(req.IsAdd).To(Equal(uint8(1)))
+	Expect(req.IsAdd).To(BeTrue())
 	Expect(req.Attach.PolicyID).To(Equal(uint32(1)))
-	Expect(req.Attach.SwIfIndex).To(Equal(uint32(2)))
+	Expect(req.Attach.SwIfIndex).To(BeEquivalentTo(uint32(2)))
 	Expect(req.Attach.Priority).To(Equal(uint32(3)))
-	Expect(req.Attach.IsIPv6).To(Equal(uint8(0)))
+	Expect(req.Attach.IsIPv6).To(BeFalse())
 }
 
 func TestAttachABFInterfaceIPv4Error(t *testing.T) {
@@ -184,11 +184,11 @@ func TestAttachABFInterfaceIPv6(t *testing.T) {
 	Expect(err).To(BeNil())
 	req, ok := ctx.MockChannel.Msg.(*vpp_abf.AbfItfAttachAddDel)
 	Expect(ok).To(BeTrue())
-	Expect(req.IsAdd).To(Equal(uint8(1)))
+	Expect(req.IsAdd).To(BeTrue())
 	Expect(req.Attach.PolicyID).To(Equal(uint32(1)))
-	Expect(req.Attach.SwIfIndex).To(Equal(uint32(2)))
+	Expect(req.Attach.SwIfIndex).To(BeEquivalentTo(uint32(2)))
 	Expect(req.Attach.Priority).To(Equal(uint32(3)))
-	Expect(req.Attach.IsIPv6).To(Equal(uint8(1)))
+	Expect(req.Attach.IsIPv6).To(BeTrue())
 }
 
 func TestAttachABFInterfaceIPv6Error(t *testing.T) {
@@ -215,11 +215,11 @@ func TestDetachABFInterfaceIPv4(t *testing.T) {
 	Expect(err).To(BeNil())
 	req, ok := ctx.MockChannel.Msg.(*vpp_abf.AbfItfAttachAddDel)
 	Expect(ok).To(BeTrue())
-	Expect(req.IsAdd).To(Equal(uint8(0)))
+	Expect(req.IsAdd).To(BeFalse())
 	Expect(req.Attach.PolicyID).To(Equal(uint32(1)))
-	Expect(req.Attach.SwIfIndex).To(Equal(uint32(2)))
+	Expect(req.Attach.SwIfIndex).To(BeEquivalentTo(uint32(2)))
 	Expect(req.Attach.Priority).To(Equal(uint32(3)))
-	Expect(req.Attach.IsIPv6).To(Equal(uint8(0)))
+	Expect(req.Attach.IsIPv6).To(BeFalse())
 }
 
 func TestDetachABFInterfaceIPv4Error(t *testing.T) {
@@ -246,11 +246,11 @@ func TestDetachABFInterfaceIPv6(t *testing.T) {
 	Expect(err).To(BeNil())
 	req, ok := ctx.MockChannel.Msg.(*vpp_abf.AbfItfAttachAddDel)
 	Expect(ok).To(BeTrue())
-	Expect(req.IsAdd).To(Equal(uint8(0)))
+	Expect(req.IsAdd).To(BeFalse())
 	Expect(req.Attach.PolicyID).To(Equal(uint32(1)))
-	Expect(req.Attach.SwIfIndex).To(Equal(uint32(2)))
+	Expect(req.Attach.SwIfIndex).To(BeEquivalentTo(uint32(2)))
 	Expect(req.Attach.Priority).To(Equal(uint32(3)))
-	Expect(req.Attach.IsIPv6).To(Equal(uint8(1)))
+	Expect(req.Attach.IsIPv6).To(BeTrue())
 }
 
 func TestDetachABFInterfaceIPv6Error(t *testing.T) {

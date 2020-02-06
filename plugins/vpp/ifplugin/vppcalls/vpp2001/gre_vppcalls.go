@@ -5,6 +5,7 @@ import (
 	"net"
 
 	vpp_gre "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/gre"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ip_types"
 	ifs "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
 )
 
@@ -36,22 +37,23 @@ func (h *InterfaceVppHandler) greAddDelTunnel(isAdd bool, greLink *ifs.GreLink) 
 	}
 
 	var tt vpp_gre.GreTunnelType
-	switch uint8(greLink.TunnelType - 1) {
-	case 0:
+	switch greLink.TunnelType {
+	case ifs.GreLink_L3:
 		tt = vpp_gre.GRE_API_TUNNEL_TYPE_L3
-	case 1:
+	case ifs.GreLink_TEB:
 		tt = vpp_gre.GRE_API_TUNNEL_TYPE_TEB
-	case 2:
+	case ifs.GreLink_ERSPAN:
 		tt = vpp_gre.GRE_API_TUNNEL_TYPE_ERSPAN
 	default:
 		return 0, errors.New("bad GRE tunnel type")
 	}
 
 	tunnel := vpp_gre.GreTunnel{
-		Type:       tt,
-		Instance:   ^uint32(0),
-		OuterFibID: greLink.OuterFibId,
-		SessionID:  uint16(greLink.SessionId),
+		Type:         tt,
+		Mode:         vpp_gre.GRE_API_TUNNEL_MODE_P2P, // TODO: add mode to proto model
+		Instance:     ^uint32(0),
+		OuterTableID: greLink.OuterFibId,
+		SessionID:    uint16(greLink.SessionId),
 	}
 
 	var isSrcIPv6, isDstIPv6 bool
@@ -68,27 +70,27 @@ func (h *InterfaceVppHandler) greAddDelTunnel(isAdd bool, greLink *ifs.GreLink) 
 
 	if isSrcIPv6 {
 		var src, dst [16]uint8
-		copy(src[:], []byte(greSource.To16()))
-		copy(dst[:], []byte(greDestination.To16()))
+		copy(src[:], greSource.To16())
+		copy(dst[:], greDestination.To16())
 		tunnel.Src = vpp_gre.Address{
-			Af: vpp_gre.ADDRESS_IP6,
-			Un: vpp_gre.AddressUnionIP6(vpp_gre.IP6Address(src)),
+			Af: ip_types.ADDRESS_IP6,
+			Un: ip_types.AddressUnionIP6(src),
 		}
 		tunnel.Dst = vpp_gre.Address{
-			Af: vpp_gre.ADDRESS_IP6,
-			Un: vpp_gre.AddressUnionIP6(vpp_gre.IP6Address(dst)),
+			Af: ip_types.ADDRESS_IP6,
+			Un: ip_types.AddressUnionIP6(dst),
 		}
 	} else {
 		var src, dst [4]uint8
-		copy(src[:], []byte(greSource.To4()))
-		copy(dst[:], []byte(greDestination.To4()))
+		copy(src[:], greSource.To4())
+		copy(dst[:], greDestination.To4())
 		tunnel.Src = vpp_gre.Address{
-			Af: vpp_gre.ADDRESS_IP4,
-			Un: vpp_gre.AddressUnionIP4(vpp_gre.IP4Address(src)),
+			Af: ip_types.ADDRESS_IP4,
+			Un: ip_types.AddressUnionIP4(src),
 		}
 		tunnel.Dst = vpp_gre.Address{
-			Af: vpp_gre.ADDRESS_IP4,
-			Un: vpp_gre.AddressUnionIP4(vpp_gre.IP4Address(dst)),
+			Af: ip_types.ADDRESS_IP4,
+			Un: ip_types.AddressUnionIP4(dst),
 		}
 	}
 

@@ -19,6 +19,7 @@ import (
 
 	"github.com/ligato/cn-infra/logging/logrus"
 	. "github.com/onsi/gomega"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/interface_types"
 	vpp_ifs "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/interfaces"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/vppcalls"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/vppcalls/vpp2001"
@@ -30,7 +31,7 @@ func TestInterfaceAdminDown(t *testing.T) {
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&vpp_ifs.SwInterfaceSetFlagsReply{})
-	err := ifHandler.InterfaceAdminDown(1)
+	err := ifHandler.InterfaceAdminDown(ctx.Context, 1)
 
 	Expect(err).To(BeNil())
 	vppMsg, ok := ctx.MockChannel.Msg.(*vpp_ifs.SwInterfaceSetFlags)
@@ -45,7 +46,7 @@ func TestInterfaceAdminDownError(t *testing.T) {
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&vpp_ifs.HwInterfaceSetMtuReply{})
-	err := ifHandler.InterfaceAdminDown(1)
+	err := ifHandler.InterfaceAdminDown(ctx.Context, 1)
 
 	Expect(err).ToNot(BeNil())
 }
@@ -57,7 +58,7 @@ func TestInterfaceAdminDownRetval(t *testing.T) {
 	ctx.MockVpp.MockReply(&vpp_ifs.SwInterfaceSetFlagsReply{
 		Retval: 1,
 	})
-	err := ifHandler.InterfaceAdminDown(1)
+	err := ifHandler.InterfaceAdminDown(ctx.Context, 1)
 
 	Expect(err).ToNot(BeNil())
 }
@@ -67,14 +68,14 @@ func TestInterfaceAdminUp(t *testing.T) {
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&vpp_ifs.SwInterfaceSetFlagsReply{})
-	err := ifHandler.InterfaceAdminUp(1)
+	err := ifHandler.InterfaceAdminUp(ctx.Context, 1)
 
 	Expect(err).ShouldNot(HaveOccurred())
 	vppMsg, ok := ctx.MockChannel.Msg.(*vpp_ifs.SwInterfaceSetFlags)
 	Expect(ok).To(BeTrue())
 	Expect(vppMsg).NotTo(BeNil())
 	Expect(vppMsg.SwIfIndex).To(Equal(vpp_ifs.InterfaceIndex(1)))
-	Expect(vppMsg.Flags).To(Equal(vpp_ifs.IF_STATUS_API_FLAG_ADMIN_UP))
+	Expect(vppMsg.Flags).To(Equal(interface_types.IF_STATUS_API_FLAG_ADMIN_UP))
 }
 
 func TestInterfaceAdminUpError(t *testing.T) {
@@ -82,7 +83,7 @@ func TestInterfaceAdminUpError(t *testing.T) {
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&vpp_ifs.HwInterfaceSetMtuReply{})
-	err := ifHandler.InterfaceAdminDown(1)
+	err := ifHandler.InterfaceAdminDown(ctx.Context, 1)
 
 	Expect(err).ToNot(BeNil())
 }
@@ -94,7 +95,7 @@ func TestInterfaceAdminUpRetval(t *testing.T) {
 	ctx.MockVpp.MockReply(&vpp_ifs.SwInterfaceSetFlagsReply{
 		Retval: 1,
 	})
-	err := ifHandler.InterfaceAdminDown(1)
+	err := ifHandler.InterfaceAdminDown(ctx.Context, 1)
 
 	Expect(err).ToNot(BeNil())
 }

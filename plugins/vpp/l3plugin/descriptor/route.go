@@ -16,6 +16,7 @@ package descriptor
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"net"
 	"strings"
@@ -144,7 +145,7 @@ func (d *RouteDescriptor) Validate(key string, route *l3.Route) (err error) {
 
 // Create adds VPP static route.
 func (d *RouteDescriptor) Create(key string, route *l3.Route) (metadata interface{}, err error) {
-	err = d.routeHandler.VppAddRoute(route)
+	err = d.routeHandler.VppAddRoute(context.TODO(), route)
 	if err != nil {
 		return nil, err
 	}
@@ -154,7 +155,7 @@ func (d *RouteDescriptor) Create(key string, route *l3.Route) (metadata interfac
 
 // Delete removes VPP static route.
 func (d *RouteDescriptor) Delete(key string, route *l3.Route, metadata interface{}) error {
-	err := d.routeHandler.VppDelRoute(route)
+	err := d.routeHandler.VppDelRoute(context.TODO(), route)
 	if err != nil {
 		return err
 	}

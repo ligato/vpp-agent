@@ -17,6 +17,7 @@ package vpp2001
 import (
 	"testing"
 
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ip_types"
 	l3 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3"
 
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin/vrfidx"
@@ -48,8 +49,8 @@ func TestDumpStaticRoutes(t *testing.T) {
 		Route: vpp_ip.IPRoute{
 			Prefix: vpp_ip.Prefix{
 				Address: vpp_ip.Address{
-					Af: vpp_ip.ADDRESS_IP4,
-					Un: vpp_ip.AddressUnionIP4([4]uint8{10, 0, 0, 1}),
+					Af: ip_types.ADDRESS_IP4,
+					Un: ip_types.AddressUnionIP4([4]uint8{10, 0, 0, 1}),
 				},
 			},
 			Paths: []vpp_ip.FibPath{
@@ -64,8 +65,8 @@ func TestDumpStaticRoutes(t *testing.T) {
 		Route: vpp_ip.IPRoute{
 			Prefix: vpp_ip.Prefix{
 				Address: vpp_ip.Address{
-					Af: vpp_ip.ADDRESS_IP6,
-					Un: vpp_ip.AddressUnionIP6([16]uint8{255, 255, 10, 1}),
+					Af: ip_types.ADDRESS_IP6,
+					Un: ip_types.AddressUnionIP6([16]uint8{255, 255, 10, 1}),
 				},
 			},
 			Paths: []vpp_ip.FibPath{

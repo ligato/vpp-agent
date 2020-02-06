@@ -40,15 +40,10 @@ type GreAddDelTunnel struct {
 	SessionID  uint16
 }
 
-func (*GreAddDelTunnel) GetMessageName() string {
-	return "gre_add_del_tunnel"
-}
-func (*GreAddDelTunnel) GetCrcString() string {
-	return "9f03ede2"
-}
-func (*GreAddDelTunnel) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *GreAddDelTunnel) Reset()                        { *m = GreAddDelTunnel{} }
+func (*GreAddDelTunnel) GetMessageName() string          { return "gre_add_del_tunnel" }
+func (*GreAddDelTunnel) GetCrcString() string            { return "9f03ede2" }
+func (*GreAddDelTunnel) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // GreAddDelTunnelReply represents VPP binary API message 'gre_add_del_tunnel_reply'.
 type GreAddDelTunnelReply struct {
@@ -56,15 +51,10 @@ type GreAddDelTunnelReply struct {
 	SwIfIndex uint32
 }
 
-func (*GreAddDelTunnelReply) GetMessageName() string {
-	return "gre_add_del_tunnel_reply"
-}
-func (*GreAddDelTunnelReply) GetCrcString() string {
-	return "fda5941f"
-}
-func (*GreAddDelTunnelReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *GreAddDelTunnelReply) Reset()                        { *m = GreAddDelTunnelReply{} }
+func (*GreAddDelTunnelReply) GetMessageName() string          { return "gre_add_del_tunnel_reply" }
+func (*GreAddDelTunnelReply) GetCrcString() string            { return "fda5941f" }
+func (*GreAddDelTunnelReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // GreTunnelDetails represents VPP binary API message 'gre_tunnel_details'.
 type GreTunnelDetails struct {
@@ -78,30 +68,20 @@ type GreTunnelDetails struct {
 	SessionID  uint16
 }
 
-func (*GreTunnelDetails) GetMessageName() string {
-	return "gre_tunnel_details"
-}
-func (*GreTunnelDetails) GetCrcString() string {
-	return "1a12b8c1"
-}
-func (*GreTunnelDetails) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *GreTunnelDetails) Reset()                        { *m = GreTunnelDetails{} }
+func (*GreTunnelDetails) GetMessageName() string          { return "gre_tunnel_details" }
+func (*GreTunnelDetails) GetCrcString() string            { return "1a12b8c1" }
+func (*GreTunnelDetails) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // GreTunnelDump represents VPP binary API message 'gre_tunnel_dump'.
 type GreTunnelDump struct {
 	SwIfIndex uint32
 }
 
-func (*GreTunnelDump) GetMessageName() string {
-	return "gre_tunnel_dump"
-}
-func (*GreTunnelDump) GetCrcString() string {
-	return "529cb13f"
-}
-func (*GreTunnelDump) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *GreTunnelDump) Reset()                        { *m = GreTunnelDump{} }
+func (*GreTunnelDump) GetMessageName() string          { return "gre_tunnel_dump" }
+func (*GreTunnelDump) GetCrcString() string            { return "529cb13f" }
+func (*GreTunnelDump) GetMessageType() api.MessageType { return api.RequestMessage }
 
 func init() {
 	api.RegisterMessage((*GreAddDelTunnel)(nil), "gre.GreAddDelTunnel")

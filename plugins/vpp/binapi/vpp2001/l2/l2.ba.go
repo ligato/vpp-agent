@@ -5,12 +5,12 @@
 Package l2 is a generated VPP binary API for 'l2' module.
 
 It consists of:
-	  6 enums
-	  6 aliases
+	 12 enums
+	  7 aliases
 	  9 types
 	  1 union
-	 51 messages
-	 25 services
+	 54 messages
+	 26 services
 */
 package l2
 
@@ -21,40 +21,20 @@ import (
 	struc "github.com/lunixbochs/struc"
 	io "io"
 	strconv "strconv"
+
+	ethernet_types "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ethernet_types"
+	interface_types "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/interface_types"
+	ip_types "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ip_types"
 )
 
 const (
 	// ModuleName is the name of this module.
 	ModuleName = "l2"
 	// VersionCrc is the CRC of this module.
-	VersionCrc = 0x170b2c89
+	VersionCrc = 0x2e148df3
 )
 
-// AddressFamily represents VPP binary API enum 'address_family'.
-type AddressFamily uint32
-
-const (
-	ADDRESS_IP4 AddressFamily = 0
-	ADDRESS_IP6 AddressFamily = 1
-)
-
-var AddressFamily_name = map[uint32]string{
-	0: "ADDRESS_IP4",
-	1: "ADDRESS_IP6",
-}
-
-var AddressFamily_value = map[string]uint32{
-	"ADDRESS_IP4": 0,
-	"ADDRESS_IP6": 1,
-}
-
-func (x AddressFamily) String() string {
-	s, ok := AddressFamily_name[uint32(x)]
-	if ok {
-		return s
-	}
-	return strconv.Itoa(int(x))
-}
+type AddressFamily = ip_types.AddressFamily
 
 // BdFlags represents VPP binary API enum 'bd_flags'.
 type BdFlags uint32
@@ -97,176 +77,15 @@ func (x BdFlags) String() string {
 	return strconv.Itoa(int(x))
 }
 
-// IPDscp represents VPP binary API enum 'ip_dscp'.
-type IPDscp uint8
+type IfStatusFlags = interface_types.IfStatusFlags
 
-const (
-	IP_API_DSCP_CS0  IPDscp = 0
-	IP_API_DSCP_CS1  IPDscp = 8
-	IP_API_DSCP_AF11 IPDscp = 10
-	IP_API_DSCP_AF12 IPDscp = 12
-	IP_API_DSCP_AF13 IPDscp = 14
-	IP_API_DSCP_CS2  IPDscp = 16
-	IP_API_DSCP_AF21 IPDscp = 18
-	IP_API_DSCP_AF22 IPDscp = 20
-	IP_API_DSCP_AF23 IPDscp = 22
-	IP_API_DSCP_CS3  IPDscp = 24
-	IP_API_DSCP_AF31 IPDscp = 26
-	IP_API_DSCP_AF32 IPDscp = 28
-	IP_API_DSCP_AF33 IPDscp = 30
-	IP_API_DSCP_CS4  IPDscp = 32
-	IP_API_DSCP_AF41 IPDscp = 34
-	IP_API_DSCP_AF42 IPDscp = 36
-	IP_API_DSCP_AF43 IPDscp = 38
-	IP_API_DSCP_CS5  IPDscp = 40
-	IP_API_DSCP_EF   IPDscp = 46
-	IP_API_DSCP_CS6  IPDscp = 48
-	IP_API_DSCP_CS7  IPDscp = 50
-)
+type IfType = interface_types.IfType
 
-var IPDscp_name = map[uint8]string{
-	0:  "IP_API_DSCP_CS0",
-	8:  "IP_API_DSCP_CS1",
-	10: "IP_API_DSCP_AF11",
-	12: "IP_API_DSCP_AF12",
-	14: "IP_API_DSCP_AF13",
-	16: "IP_API_DSCP_CS2",
-	18: "IP_API_DSCP_AF21",
-	20: "IP_API_DSCP_AF22",
-	22: "IP_API_DSCP_AF23",
-	24: "IP_API_DSCP_CS3",
-	26: "IP_API_DSCP_AF31",
-	28: "IP_API_DSCP_AF32",
-	30: "IP_API_DSCP_AF33",
-	32: "IP_API_DSCP_CS4",
-	34: "IP_API_DSCP_AF41",
-	36: "IP_API_DSCP_AF42",
-	38: "IP_API_DSCP_AF43",
-	40: "IP_API_DSCP_CS5",
-	46: "IP_API_DSCP_EF",
-	48: "IP_API_DSCP_CS6",
-	50: "IP_API_DSCP_CS7",
-}
+type IPDscp = ip_types.IPDscp
 
-var IPDscp_value = map[string]uint8{
-	"IP_API_DSCP_CS0":  0,
-	"IP_API_DSCP_CS1":  8,
-	"IP_API_DSCP_AF11": 10,
-	"IP_API_DSCP_AF12": 12,
-	"IP_API_DSCP_AF13": 14,
-	"IP_API_DSCP_CS2":  16,
-	"IP_API_DSCP_AF21": 18,
-	"IP_API_DSCP_AF22": 20,
-	"IP_API_DSCP_AF23": 22,
-	"IP_API_DSCP_CS3":  24,
-	"IP_API_DSCP_AF31": 26,
-	"IP_API_DSCP_AF32": 28,
-	"IP_API_DSCP_AF33": 30,
-	"IP_API_DSCP_CS4":  32,
-	"IP_API_DSCP_AF41": 34,
-	"IP_API_DSCP_AF42": 36,
-	"IP_API_DSCP_AF43": 38,
-	"IP_API_DSCP_CS5":  40,
-	"IP_API_DSCP_EF":   46,
-	"IP_API_DSCP_CS6":  48,
-	"IP_API_DSCP_CS7":  50,
-}
+type IPEcn = ip_types.IPEcn
 
-func (x IPDscp) String() string {
-	s, ok := IPDscp_name[uint8(x)]
-	if ok {
-		return s
-	}
-	return strconv.Itoa(int(x))
-}
-
-// IPEcn represents VPP binary API enum 'ip_ecn'.
-type IPEcn uint8
-
-const (
-	IP_API_ECN_NONE IPEcn = 0
-	IP_API_ECN_ECT0 IPEcn = 1
-	IP_API_ECN_ECT1 IPEcn = 2
-	IP_API_ECN_CE   IPEcn = 3
-)
-
-var IPEcn_name = map[uint8]string{
-	0: "IP_API_ECN_NONE",
-	1: "IP_API_ECN_ECT0",
-	2: "IP_API_ECN_ECT1",
-	3: "IP_API_ECN_CE",
-}
-
-var IPEcn_value = map[string]uint8{
-	"IP_API_ECN_NONE": 0,
-	"IP_API_ECN_ECT0": 1,
-	"IP_API_ECN_ECT1": 2,
-	"IP_API_ECN_CE":   3,
-}
-
-func (x IPEcn) String() string {
-	s, ok := IPEcn_name[uint8(x)]
-	if ok {
-		return s
-	}
-	return strconv.Itoa(int(x))
-}
-
-// IPProto represents VPP binary API enum 'ip_proto'.
-type IPProto uint32
-
-const (
-	IP_API_PROTO_HOPOPT   IPProto = 0
-	IP_API_PROTO_ICMP     IPProto = 1
-	IP_API_PROTO_IGMP     IPProto = 2
-	IP_API_PROTO_TCP      IPProto = 6
-	IP_API_PROTO_UDP      IPProto = 17
-	IP_API_PROTO_GRE      IPProto = 47
-	IP_API_PROTO_AH       IPProto = 50
-	IP_API_PROTO_ESP      IPProto = 51
-	IP_API_PROTO_EIGRP    IPProto = 88
-	IP_API_PROTO_OSPF     IPProto = 89
-	IP_API_PROTO_SCTP     IPProto = 132
-	IP_API_PROTO_RESERVED IPProto = 255
-)
-
-var IPProto_name = map[uint32]string{
-	0:   "IP_API_PROTO_HOPOPT",
-	1:   "IP_API_PROTO_ICMP",
-	2:   "IP_API_PROTO_IGMP",
-	6:   "IP_API_PROTO_TCP",
-	17:  "IP_API_PROTO_UDP",
-	47:  "IP_API_PROTO_GRE",
-	50:  "IP_API_PROTO_AH",
-	51:  "IP_API_PROTO_ESP",
-	88:  "IP_API_PROTO_EIGRP",
-	89:  "IP_API_PROTO_OSPF",
-	132: "IP_API_PROTO_SCTP",
-	255: "IP_API_PROTO_RESERVED",
-}
-
-var IPProto_value = map[string]uint32{
-	"IP_API_PROTO_HOPOPT":   0,
-	"IP_API_PROTO_ICMP":     1,
-	"IP_API_PROTO_IGMP":     2,
-	"IP_API_PROTO_TCP":      6,
-	"IP_API_PROTO_UDP":      17,
-	"IP_API_PROTO_GRE":      47,
-	"IP_API_PROTO_AH":       50,
-	"IP_API_PROTO_ESP":      51,
-	"IP_API_PROTO_EIGRP":    88,
-	"IP_API_PROTO_OSPF":     89,
-	"IP_API_PROTO_SCTP":     132,
-	"IP_API_PROTO_RESERVED": 255,
-}
-
-func (x IPProto) String() string {
-	s, ok := IPProto_name[uint32(x)]
-	if ok {
-		return s
-	}
-	return strconv.Itoa(int(x))
-}
+type IPProto = ip_types.IPProto
 
 // L2PortType represents VPP binary API enum 'l2_port_type'.
 type L2PortType uint32
@@ -297,33 +116,29 @@ func (x L2PortType) String() string {
 	return strconv.Itoa(int(x))
 }
 
-// AddressWithPrefix represents VPP binary API alias 'address_with_prefix'.
-type AddressWithPrefix Prefix
+type LinkDuplex = interface_types.LinkDuplex
 
-// IP4Address represents VPP binary API alias 'ip4_address'.
-type IP4Address [4]uint8
+type MtuProto = interface_types.MtuProto
 
-// IP4AddressWithPrefix represents VPP binary API alias 'ip4_address_with_prefix'.
-type IP4AddressWithPrefix IP4Prefix
+type RxMode = interface_types.RxMode
 
-// IP6Address represents VPP binary API alias 'ip6_address'.
-type IP6Address [16]uint8
+type SubIfFlags = interface_types.SubIfFlags
 
-// IP6AddressWithPrefix represents VPP binary API alias 'ip6_address_with_prefix'.
-type IP6AddressWithPrefix IP6Prefix
+type AddressWithPrefix = ip_types.AddressWithPrefix
 
-// MacAddress represents VPP binary API alias 'mac_address'.
-type MacAddress [6]uint8
+type InterfaceIndex = interface_types.InterfaceIndex
 
-// Address represents VPP binary API type 'address'.
-type Address struct {
-	Af AddressFamily
-	Un AddressUnion
-}
+type IP4Address = ip_types.IP4Address
 
-func (*Address) GetTypeName() string {
-	return "address"
-}
+type IP4AddressWithPrefix = ip_types.IP4AddressWithPrefix
+
+type IP6Address = ip_types.IP6Address
+
+type IP6AddressWithPrefix = ip_types.IP6AddressWithPrefix
+
+type MacAddress = ethernet_types.MacAddress
+
+type Address = ip_types.Address
 
 // BdIPMac represents VPP binary API type 'bd_ip_mac'.
 type BdIPMac struct {
@@ -332,9 +147,7 @@ type BdIPMac struct {
 	Mac  MacAddress
 }
 
-func (*BdIPMac) GetTypeName() string {
-	return "bd_ip_mac"
-}
+func (*BdIPMac) GetTypeName() string { return "bd_ip_mac" }
 
 // BridgeDomainSwIf represents VPP binary API type 'bridge_domain_sw_if'.
 type BridgeDomainSwIf struct {
@@ -343,29 +156,11 @@ type BridgeDomainSwIf struct {
 	Shg       uint8
 }
 
-func (*BridgeDomainSwIf) GetTypeName() string {
-	return "bridge_domain_sw_if"
-}
+func (*BridgeDomainSwIf) GetTypeName() string { return "bridge_domain_sw_if" }
 
-// IP4Prefix represents VPP binary API type 'ip4_prefix'.
-type IP4Prefix struct {
-	Address IP4Address
-	Len     uint8
-}
+type IP4Prefix = ip_types.IP4Prefix
 
-func (*IP4Prefix) GetTypeName() string {
-	return "ip4_prefix"
-}
-
-// IP6Prefix represents VPP binary API type 'ip6_prefix'.
-type IP6Prefix struct {
-	Address IP6Address
-	Len     uint8
-}
-
-func (*IP6Prefix) GetTypeName() string {
-	return "ip6_prefix"
-}
+type IP6Prefix = ip_types.IP6Prefix
 
 // MacEntry represents VPP binary API type 'mac_entry'.
 type MacEntry struct {
@@ -375,84 +170,15 @@ type MacEntry struct {
 	Flags     uint8
 }
 
-func (*MacEntry) GetTypeName() string {
-	return "mac_entry"
-}
+func (*MacEntry) GetTypeName() string { return "mac_entry" }
 
-// Mprefix represents VPP binary API type 'mprefix'.
-type Mprefix struct {
-	Af               AddressFamily
-	GrpAddressLength uint16
-	GrpAddress       AddressUnion
-	SrcAddress       AddressUnion
-}
+type Mprefix = ip_types.Mprefix
 
-func (*Mprefix) GetTypeName() string {
-	return "mprefix"
-}
+type Prefix = ip_types.Prefix
 
-// Prefix represents VPP binary API type 'prefix'.
-type Prefix struct {
-	Address Address
-	Len     uint8
-}
+type PrefixMatcher = ip_types.PrefixMatcher
 
-func (*Prefix) GetTypeName() string {
-	return "prefix"
-}
-
-// PrefixMatcher represents VPP binary API type 'prefix_matcher'.
-type PrefixMatcher struct {
-	Le uint8
-	Ge uint8
-}
-
-func (*PrefixMatcher) GetTypeName() string {
-	return "prefix_matcher"
-}
-
-// AddressUnion represents VPP binary API union 'address_union'.
-type AddressUnion struct {
-	XXX_UnionData [16]byte
-}
-
-func (*AddressUnion) GetTypeName() string {
-	return "address_union"
-}
-
-func AddressUnionIP4(a IP4Address) (u AddressUnion) {
-	u.SetIP4(a)
-	return
-}
-func (u *AddressUnion) SetIP4(a IP4Address) {
-	var b = new(bytes.Buffer)
-	if err := struc.Pack(b, &a); err != nil {
-		return
-	}
-	copy(u.XXX_UnionData[:], b.Bytes())
-}
-func (u *AddressUnion) GetIP4() (a IP4Address) {
-	var b = bytes.NewReader(u.XXX_UnionData[:])
-	struc.Unpack(b, &a)
-	return
-}
-
-func AddressUnionIP6(a IP6Address) (u AddressUnion) {
-	u.SetIP6(a)
-	return
-}
-func (u *AddressUnion) SetIP6(a IP6Address) {
-	var b = new(bytes.Buffer)
-	if err := struc.Pack(b, &a); err != nil {
-		return
-	}
-	copy(u.XXX_UnionData[:], b.Bytes())
-}
-func (u *AddressUnion) GetIP6() (a IP6Address) {
-	var b = bytes.NewReader(u.XXX_UnionData[:])
-	struc.Unpack(b, &a)
-	return
-}
+type AddressUnion = ip_types.AddressUnion
 
 // BdIPMacAddDel represents VPP binary API message 'bd_ip_mac_add_del'.
 type BdIPMacAddDel struct {
@@ -460,90 +186,60 @@ type BdIPMacAddDel struct {
 	Entry BdIPMac
 }
 
-func (*BdIPMacAddDel) GetMessageName() string {
-	return "bd_ip_mac_add_del"
-}
-func (*BdIPMacAddDel) GetCrcString() string {
-	return "25bf4063"
-}
-func (*BdIPMacAddDel) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *BdIPMacAddDel) Reset()                        { *m = BdIPMacAddDel{} }
+func (*BdIPMacAddDel) GetMessageName() string          { return "bd_ip_mac_add_del" }
+func (*BdIPMacAddDel) GetCrcString() string            { return "25bf4063" }
+func (*BdIPMacAddDel) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // BdIPMacAddDelReply represents VPP binary API message 'bd_ip_mac_add_del_reply'.
 type BdIPMacAddDelReply struct {
 	Retval int32
 }
 
-func (*BdIPMacAddDelReply) GetMessageName() string {
-	return "bd_ip_mac_add_del_reply"
-}
-func (*BdIPMacAddDelReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*BdIPMacAddDelReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *BdIPMacAddDelReply) Reset()                        { *m = BdIPMacAddDelReply{} }
+func (*BdIPMacAddDelReply) GetMessageName() string          { return "bd_ip_mac_add_del_reply" }
+func (*BdIPMacAddDelReply) GetCrcString() string            { return "e8d4e804" }
+func (*BdIPMacAddDelReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // BdIPMacDetails represents VPP binary API message 'bd_ip_mac_details'.
 type BdIPMacDetails struct {
 	Entry BdIPMac
 }
 
-func (*BdIPMacDetails) GetMessageName() string {
-	return "bd_ip_mac_details"
-}
-func (*BdIPMacDetails) GetCrcString() string {
-	return "a52f8044"
-}
-func (*BdIPMacDetails) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *BdIPMacDetails) Reset()                        { *m = BdIPMacDetails{} }
+func (*BdIPMacDetails) GetMessageName() string          { return "bd_ip_mac_details" }
+func (*BdIPMacDetails) GetCrcString() string            { return "a52f8044" }
+func (*BdIPMacDetails) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // BdIPMacDump represents VPP binary API message 'bd_ip_mac_dump'.
 type BdIPMacDump struct {
 	BdID uint32
 }
 
-func (*BdIPMacDump) GetMessageName() string {
-	return "bd_ip_mac_dump"
-}
-func (*BdIPMacDump) GetCrcString() string {
-	return "c25fdce6"
-}
-func (*BdIPMacDump) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *BdIPMacDump) Reset()                        { *m = BdIPMacDump{} }
+func (*BdIPMacDump) GetMessageName() string          { return "bd_ip_mac_dump" }
+func (*BdIPMacDump) GetCrcString() string            { return "c25fdce6" }
+func (*BdIPMacDump) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // BdIPMacFlush represents VPP binary API message 'bd_ip_mac_flush'.
 type BdIPMacFlush struct {
 	BdID uint32
 }
 
-func (*BdIPMacFlush) GetMessageName() string {
-	return "bd_ip_mac_flush"
-}
-func (*BdIPMacFlush) GetCrcString() string {
-	return "c25fdce6"
-}
-func (*BdIPMacFlush) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *BdIPMacFlush) Reset()                        { *m = BdIPMacFlush{} }
+func (*BdIPMacFlush) GetMessageName() string          { return "bd_ip_mac_flush" }
+func (*BdIPMacFlush) GetCrcString() string            { return "c25fdce6" }
+func (*BdIPMacFlush) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // BdIPMacFlushReply represents VPP binary API message 'bd_ip_mac_flush_reply'.
 type BdIPMacFlushReply struct {
 	Retval int32
 }
 
-func (*BdIPMacFlushReply) GetMessageName() string {
-	return "bd_ip_mac_flush_reply"
-}
-func (*BdIPMacFlushReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*BdIPMacFlushReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *BdIPMacFlushReply) Reset()                        { *m = BdIPMacFlushReply{} }
+func (*BdIPMacFlushReply) GetMessageName() string          { return "bd_ip_mac_flush_reply" }
+func (*BdIPMacFlushReply) GetCrcString() string            { return "e8d4e804" }
+func (*BdIPMacFlushReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // BridgeDomainAddDel represents VPP binary API message 'bridge_domain_add_del'.
 type BridgeDomainAddDel struct {
@@ -559,30 +255,20 @@ type BridgeDomainAddDel struct {
 	IsAdd   uint8
 }
 
-func (*BridgeDomainAddDel) GetMessageName() string {
-	return "bridge_domain_add_del"
-}
-func (*BridgeDomainAddDel) GetCrcString() string {
-	return "c6360720"
-}
-func (*BridgeDomainAddDel) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *BridgeDomainAddDel) Reset()                        { *m = BridgeDomainAddDel{} }
+func (*BridgeDomainAddDel) GetMessageName() string          { return "bridge_domain_add_del" }
+func (*BridgeDomainAddDel) GetCrcString() string            { return "c6360720" }
+func (*BridgeDomainAddDel) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // BridgeDomainAddDelReply represents VPP binary API message 'bridge_domain_add_del_reply'.
 type BridgeDomainAddDelReply struct {
 	Retval int32
 }
 
-func (*BridgeDomainAddDelReply) GetMessageName() string {
-	return "bridge_domain_add_del_reply"
-}
-func (*BridgeDomainAddDelReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*BridgeDomainAddDelReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *BridgeDomainAddDelReply) Reset()                        { *m = BridgeDomainAddDelReply{} }
+func (*BridgeDomainAddDelReply) GetMessageName() string          { return "bridge_domain_add_del_reply" }
+func (*BridgeDomainAddDelReply) GetCrcString() string            { return "e8d4e804" }
+func (*BridgeDomainAddDelReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // BridgeDomainDetails represents VPP binary API message 'bridge_domain_details'.
 type BridgeDomainDetails struct {
@@ -601,30 +287,20 @@ type BridgeDomainDetails struct {
 	SwIfDetails    []BridgeDomainSwIf
 }
 
-func (*BridgeDomainDetails) GetMessageName() string {
-	return "bridge_domain_details"
-}
-func (*BridgeDomainDetails) GetCrcString() string {
-	return "748c854a"
-}
-func (*BridgeDomainDetails) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *BridgeDomainDetails) Reset()                        { *m = BridgeDomainDetails{} }
+func (*BridgeDomainDetails) GetMessageName() string          { return "bridge_domain_details" }
+func (*BridgeDomainDetails) GetCrcString() string            { return "748c854a" }
+func (*BridgeDomainDetails) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // BridgeDomainDump represents VPP binary API message 'bridge_domain_dump'.
 type BridgeDomainDump struct {
 	BdID uint32
 }
 
-func (*BridgeDomainDump) GetMessageName() string {
-	return "bridge_domain_dump"
-}
-func (*BridgeDomainDump) GetCrcString() string {
-	return "c25fdce6"
-}
-func (*BridgeDomainDump) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *BridgeDomainDump) Reset()                        { *m = BridgeDomainDump{} }
+func (*BridgeDomainDump) GetMessageName() string          { return "bridge_domain_dump" }
+func (*BridgeDomainDump) GetCrcString() string            { return "c25fdce6" }
+func (*BridgeDomainDump) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // BridgeDomainSetMacAge represents VPP binary API message 'bridge_domain_set_mac_age'.
 type BridgeDomainSetMacAge struct {
@@ -632,30 +308,20 @@ type BridgeDomainSetMacAge struct {
 	MacAge uint8
 }
 
-func (*BridgeDomainSetMacAge) GetMessageName() string {
-	return "bridge_domain_set_mac_age"
-}
-func (*BridgeDomainSetMacAge) GetCrcString() string {
-	return "b537ad7b"
-}
-func (*BridgeDomainSetMacAge) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *BridgeDomainSetMacAge) Reset()                        { *m = BridgeDomainSetMacAge{} }
+func (*BridgeDomainSetMacAge) GetMessageName() string          { return "bridge_domain_set_mac_age" }
+func (*BridgeDomainSetMacAge) GetCrcString() string            { return "b537ad7b" }
+func (*BridgeDomainSetMacAge) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // BridgeDomainSetMacAgeReply represents VPP binary API message 'bridge_domain_set_mac_age_reply'.
 type BridgeDomainSetMacAgeReply struct {
 	Retval int32
 }
 
-func (*BridgeDomainSetMacAgeReply) GetMessageName() string {
-	return "bridge_domain_set_mac_age_reply"
-}
-func (*BridgeDomainSetMacAgeReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*BridgeDomainSetMacAgeReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *BridgeDomainSetMacAgeReply) Reset()                        { *m = BridgeDomainSetMacAgeReply{} }
+func (*BridgeDomainSetMacAgeReply) GetMessageName() string          { return "bridge_domain_set_mac_age_reply" }
+func (*BridgeDomainSetMacAgeReply) GetCrcString() string            { return "e8d4e804" }
+func (*BridgeDomainSetMacAgeReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // BridgeFlags represents VPP binary API message 'bridge_flags'.
 type BridgeFlags struct {
@@ -664,15 +330,10 @@ type BridgeFlags struct {
 	Flags BdFlags
 }
 
-func (*BridgeFlags) GetMessageName() string {
-	return "bridge_flags"
-}
-func (*BridgeFlags) GetCrcString() string {
-	return "2eb9b76c"
-}
-func (*BridgeFlags) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *BridgeFlags) Reset()                        { *m = BridgeFlags{} }
+func (*BridgeFlags) GetMessageName() string          { return "bridge_flags" }
+func (*BridgeFlags) GetCrcString() string            { return "2eb9b76c" }
+func (*BridgeFlags) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // BridgeFlagsReply represents VPP binary API message 'bridge_flags_reply'.
 type BridgeFlagsReply struct {
@@ -680,15 +341,10 @@ type BridgeFlagsReply struct {
 	ResultingFeatureBitmap uint32
 }
 
-func (*BridgeFlagsReply) GetMessageName() string {
-	return "bridge_flags_reply"
-}
-func (*BridgeFlagsReply) GetCrcString() string {
-	return "29b2a2b3"
-}
-func (*BridgeFlagsReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *BridgeFlagsReply) Reset()                        { *m = BridgeFlagsReply{} }
+func (*BridgeFlagsReply) GetMessageName() string          { return "bridge_flags_reply" }
+func (*BridgeFlagsReply) GetCrcString() string            { return "29b2a2b3" }
+func (*BridgeFlagsReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // BviCreate represents VPP binary API message 'bvi_create'.
 type BviCreate struct {
@@ -696,15 +352,10 @@ type BviCreate struct {
 	UserInstance uint32
 }
 
-func (*BviCreate) GetMessageName() string {
-	return "bvi_create"
-}
-func (*BviCreate) GetCrcString() string {
-	return "f5398559"
-}
-func (*BviCreate) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *BviCreate) Reset()                        { *m = BviCreate{} }
+func (*BviCreate) GetMessageName() string          { return "bvi_create" }
+func (*BviCreate) GetCrcString() string            { return "f5398559" }
+func (*BviCreate) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // BviCreateReply represents VPP binary API message 'bvi_create_reply'.
 type BviCreateReply struct {
@@ -712,73 +363,61 @@ type BviCreateReply struct {
 	SwIfIndex uint32
 }
 
-func (*BviCreateReply) GetMessageName() string {
-	return "bvi_create_reply"
-}
-func (*BviCreateReply) GetCrcString() string {
-	return "fda5941f"
-}
-func (*BviCreateReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *BviCreateReply) Reset()                        { *m = BviCreateReply{} }
+func (*BviCreateReply) GetMessageName() string          { return "bvi_create_reply" }
+func (*BviCreateReply) GetCrcString() string            { return "fda5941f" }
+func (*BviCreateReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // BviDelete represents VPP binary API message 'bvi_delete'.
 type BviDelete struct {
 	SwIfIndex uint32
 }
 
-func (*BviDelete) GetMessageName() string {
-	return "bvi_delete"
-}
-func (*BviDelete) GetCrcString() string {
-	return "529cb13f"
-}
-func (*BviDelete) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *BviDelete) Reset()                        { *m = BviDelete{} }
+func (*BviDelete) GetMessageName() string          { return "bvi_delete" }
+func (*BviDelete) GetCrcString() string            { return "529cb13f" }
+func (*BviDelete) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // BviDeleteReply represents VPP binary API message 'bvi_delete_reply'.
 type BviDeleteReply struct {
 	Retval int32
 }
 
-func (*BviDeleteReply) GetMessageName() string {
-	return "bvi_delete_reply"
+func (m *BviDeleteReply) Reset()                        { *m = BviDeleteReply{} }
+func (*BviDeleteReply) GetMessageName() string          { return "bvi_delete_reply" }
+func (*BviDeleteReply) GetCrcString() string            { return "e8d4e804" }
+func (*BviDeleteReply) GetMessageType() api.MessageType { return api.ReplyMessage }
+
+// L2ArpTermEvent represents VPP binary API message 'l2_arp_term_event'.
+type L2ArpTermEvent struct {
+	PID       uint32
+	IP        Address
+	SwIfIndex InterfaceIndex
+	Mac       MacAddress
 }
-func (*BviDeleteReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*BviDeleteReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+
+func (m *L2ArpTermEvent) Reset()                        { *m = L2ArpTermEvent{} }
+func (*L2ArpTermEvent) GetMessageName() string          { return "l2_arp_term_event" }
+func (*L2ArpTermEvent) GetCrcString() string            { return "85ff71ea" }
+func (*L2ArpTermEvent) GetMessageType() api.MessageType { return api.EventMessage }
 
 // L2FibClearTable represents VPP binary API message 'l2_fib_clear_table'.
 type L2FibClearTable struct{}
 
-func (*L2FibClearTable) GetMessageName() string {
-	return "l2_fib_clear_table"
-}
-func (*L2FibClearTable) GetCrcString() string {
-	return "51077d14"
-}
-func (*L2FibClearTable) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *L2FibClearTable) Reset()                        { *m = L2FibClearTable{} }
+func (*L2FibClearTable) GetMessageName() string          { return "l2_fib_clear_table" }
+func (*L2FibClearTable) GetCrcString() string            { return "51077d14" }
+func (*L2FibClearTable) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // L2FibClearTableReply represents VPP binary API message 'l2_fib_clear_table_reply'.
 type L2FibClearTableReply struct {
 	Retval int32
 }
 
-func (*L2FibClearTableReply) GetMessageName() string {
-	return "l2_fib_clear_table_reply"
-}
-func (*L2FibClearTableReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*L2FibClearTableReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *L2FibClearTableReply) Reset()                        { *m = L2FibClearTableReply{} }
+func (*L2FibClearTableReply) GetMessageName() string          { return "l2_fib_clear_table_reply" }
+func (*L2FibClearTableReply) GetCrcString() string            { return "e8d4e804" }
+func (*L2FibClearTableReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // L2FibTableDetails represents VPP binary API message 'l2_fib_table_details'.
 type L2FibTableDetails struct {
@@ -790,30 +429,20 @@ type L2FibTableDetails struct {
 	BviMac    uint8
 }
 
-func (*L2FibTableDetails) GetMessageName() string {
-	return "l2_fib_table_details"
-}
-func (*L2FibTableDetails) GetCrcString() string {
-	return "c7392706"
-}
-func (*L2FibTableDetails) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *L2FibTableDetails) Reset()                        { *m = L2FibTableDetails{} }
+func (*L2FibTableDetails) GetMessageName() string          { return "l2_fib_table_details" }
+func (*L2FibTableDetails) GetCrcString() string            { return "c7392706" }
+func (*L2FibTableDetails) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // L2FibTableDump represents VPP binary API message 'l2_fib_table_dump'.
 type L2FibTableDump struct {
 	BdID uint32
 }
 
-func (*L2FibTableDump) GetMessageName() string {
-	return "l2_fib_table_dump"
-}
-func (*L2FibTableDump) GetCrcString() string {
-	return "c25fdce6"
-}
-func (*L2FibTableDump) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *L2FibTableDump) Reset()                        { *m = L2FibTableDump{} }
+func (*L2FibTableDump) GetMessageName() string          { return "l2_fib_table_dump" }
+func (*L2FibTableDump) GetCrcString() string            { return "c25fdce6" }
+func (*L2FibTableDump) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // L2Flags represents VPP binary API message 'l2_flags'.
 type L2Flags struct {
@@ -822,15 +451,10 @@ type L2Flags struct {
 	FeatureBitmap uint32
 }
 
-func (*L2Flags) GetMessageName() string {
-	return "l2_flags"
-}
-func (*L2Flags) GetCrcString() string {
-	return "0e889fb9"
-}
-func (*L2Flags) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *L2Flags) Reset()                        { *m = L2Flags{} }
+func (*L2Flags) GetMessageName() string          { return "l2_flags" }
+func (*L2Flags) GetCrcString() string            { return "0e889fb9" }
+func (*L2Flags) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // L2FlagsReply represents VPP binary API message 'l2_flags_reply'.
 type L2FlagsReply struct {
@@ -838,15 +462,10 @@ type L2FlagsReply struct {
 	ResultingFeatureBitmap uint32
 }
 
-func (*L2FlagsReply) GetMessageName() string {
-	return "l2_flags_reply"
-}
-func (*L2FlagsReply) GetCrcString() string {
-	return "29b2a2b3"
-}
-func (*L2FlagsReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *L2FlagsReply) Reset()                        { *m = L2FlagsReply{} }
+func (*L2FlagsReply) GetMessageName() string          { return "l2_flags_reply" }
+func (*L2FlagsReply) GetCrcString() string            { return "29b2a2b3" }
+func (*L2FlagsReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // L2InterfaceEfpFilter represents VPP binary API message 'l2_interface_efp_filter'.
 type L2InterfaceEfpFilter struct {
@@ -854,30 +473,20 @@ type L2InterfaceEfpFilter struct {
 	EnableDisable uint8
 }
 
-func (*L2InterfaceEfpFilter) GetMessageName() string {
-	return "l2_interface_efp_filter"
-}
-func (*L2InterfaceEfpFilter) GetCrcString() string {
-	return "69d24598"
-}
-func (*L2InterfaceEfpFilter) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *L2InterfaceEfpFilter) Reset()                        { *m = L2InterfaceEfpFilter{} }
+func (*L2InterfaceEfpFilter) GetMessageName() string          { return "l2_interface_efp_filter" }
+func (*L2InterfaceEfpFilter) GetCrcString() string            { return "69d24598" }
+func (*L2InterfaceEfpFilter) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // L2InterfaceEfpFilterReply represents VPP binary API message 'l2_interface_efp_filter_reply'.
 type L2InterfaceEfpFilterReply struct {
 	Retval int32
 }
 
-func (*L2InterfaceEfpFilterReply) GetMessageName() string {
-	return "l2_interface_efp_filter_reply"
-}
-func (*L2InterfaceEfpFilterReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*L2InterfaceEfpFilterReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *L2InterfaceEfpFilterReply) Reset()                        { *m = L2InterfaceEfpFilterReply{} }
+func (*L2InterfaceEfpFilterReply) GetMessageName() string          { return "l2_interface_efp_filter_reply" }
+func (*L2InterfaceEfpFilterReply) GetCrcString() string            { return "e8d4e804" }
+func (*L2InterfaceEfpFilterReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // L2InterfacePbbTagRewrite represents VPP binary API message 'l2_interface_pbb_tag_rewrite'.
 type L2InterfacePbbTagRewrite struct {
@@ -890,30 +499,22 @@ type L2InterfacePbbTagRewrite struct {
 	ISid      uint32
 }
 
-func (*L2InterfacePbbTagRewrite) GetMessageName() string {
-	return "l2_interface_pbb_tag_rewrite"
-}
-func (*L2InterfacePbbTagRewrite) GetCrcString() string {
-	return "6cf815f9"
-}
-func (*L2InterfacePbbTagRewrite) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *L2InterfacePbbTagRewrite) Reset()                        { *m = L2InterfacePbbTagRewrite{} }
+func (*L2InterfacePbbTagRewrite) GetMessageName() string          { return "l2_interface_pbb_tag_rewrite" }
+func (*L2InterfacePbbTagRewrite) GetCrcString() string            { return "6cf815f9" }
+func (*L2InterfacePbbTagRewrite) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // L2InterfacePbbTagRewriteReply represents VPP binary API message 'l2_interface_pbb_tag_rewrite_reply'.
 type L2InterfacePbbTagRewriteReply struct {
 	Retval int32
 }
 
+func (m *L2InterfacePbbTagRewriteReply) Reset() { *m = L2InterfacePbbTagRewriteReply{} }
 func (*L2InterfacePbbTagRewriteReply) GetMessageName() string {
 	return "l2_interface_pbb_tag_rewrite_reply"
 }
-func (*L2InterfacePbbTagRewriteReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*L2InterfacePbbTagRewriteReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (*L2InterfacePbbTagRewriteReply) GetCrcString() string            { return "e8d4e804" }
+func (*L2InterfacePbbTagRewriteReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // L2InterfaceVlanTagRewrite represents VPP binary API message 'l2_interface_vlan_tag_rewrite'.
 type L2InterfaceVlanTagRewrite struct {
@@ -924,30 +525,22 @@ type L2InterfaceVlanTagRewrite struct {
 	Tag2      uint32
 }
 
-func (*L2InterfaceVlanTagRewrite) GetMessageName() string {
-	return "l2_interface_vlan_tag_rewrite"
-}
-func (*L2InterfaceVlanTagRewrite) GetCrcString() string {
-	return "b90be6b4"
-}
-func (*L2InterfaceVlanTagRewrite) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *L2InterfaceVlanTagRewrite) Reset()                        { *m = L2InterfaceVlanTagRewrite{} }
+func (*L2InterfaceVlanTagRewrite) GetMessageName() string          { return "l2_interface_vlan_tag_rewrite" }
+func (*L2InterfaceVlanTagRewrite) GetCrcString() string            { return "b90be6b4" }
+func (*L2InterfaceVlanTagRewrite) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // L2InterfaceVlanTagRewriteReply represents VPP binary API message 'l2_interface_vlan_tag_rewrite_reply'.
 type L2InterfaceVlanTagRewriteReply struct {
 	Retval int32
 }
 
+func (m *L2InterfaceVlanTagRewriteReply) Reset() { *m = L2InterfaceVlanTagRewriteReply{} }
 func (*L2InterfaceVlanTagRewriteReply) GetMessageName() string {
 	return "l2_interface_vlan_tag_rewrite_reply"
 }
-func (*L2InterfaceVlanTagRewriteReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*L2InterfaceVlanTagRewriteReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (*L2InterfaceVlanTagRewriteReply) GetCrcString() string            { return "e8d4e804" }
+func (*L2InterfaceVlanTagRewriteReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // L2MacsEvent represents VPP binary API message 'l2_macs_event'.
 type L2MacsEvent struct {
@@ -956,15 +549,10 @@ type L2MacsEvent struct {
 	Mac   []MacEntry
 }
 
-func (*L2MacsEvent) GetMessageName() string {
-	return "l2_macs_event"
-}
-func (*L2MacsEvent) GetCrcString() string {
-	return "afc74a60"
-}
-func (*L2MacsEvent) GetMessageType() api.MessageType {
-	return api.EventMessage
-}
+func (m *L2MacsEvent) Reset()                        { *m = L2MacsEvent{} }
+func (*L2MacsEvent) GetMessageName() string          { return "l2_macs_event" }
+func (*L2MacsEvent) GetCrcString() string            { return "afc74a60" }
+func (*L2MacsEvent) GetMessageType() api.MessageType { return api.EventMessage }
 
 // L2PatchAddDel represents VPP binary API message 'l2_patch_add_del'.
 type L2PatchAddDel struct {
@@ -973,30 +561,20 @@ type L2PatchAddDel struct {
 	IsAdd       uint8
 }
 
-func (*L2PatchAddDel) GetMessageName() string {
-	return "l2_patch_add_del"
-}
-func (*L2PatchAddDel) GetCrcString() string {
-	return "62506e63"
-}
-func (*L2PatchAddDel) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *L2PatchAddDel) Reset()                        { *m = L2PatchAddDel{} }
+func (*L2PatchAddDel) GetMessageName() string          { return "l2_patch_add_del" }
+func (*L2PatchAddDel) GetCrcString() string            { return "62506e63" }
+func (*L2PatchAddDel) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // L2PatchAddDelReply represents VPP binary API message 'l2_patch_add_del_reply'.
 type L2PatchAddDelReply struct {
 	Retval int32
 }
 
-func (*L2PatchAddDelReply) GetMessageName() string {
-	return "l2_patch_add_del_reply"
-}
-func (*L2PatchAddDelReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*L2PatchAddDelReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *L2PatchAddDelReply) Reset()                        { *m = L2PatchAddDelReply{} }
+func (*L2PatchAddDelReply) GetMessageName() string          { return "l2_patch_add_del_reply" }
+func (*L2PatchAddDelReply) GetCrcString() string            { return "e8d4e804" }
+func (*L2PatchAddDelReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // L2XconnectDetails represents VPP binary API message 'l2_xconnect_details'.
 type L2XconnectDetails struct {
@@ -1004,28 +582,18 @@ type L2XconnectDetails struct {
 	TxSwIfIndex uint32
 }
 
-func (*L2XconnectDetails) GetMessageName() string {
-	return "l2_xconnect_details"
-}
-func (*L2XconnectDetails) GetCrcString() string {
-	return "722e2378"
-}
-func (*L2XconnectDetails) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *L2XconnectDetails) Reset()                        { *m = L2XconnectDetails{} }
+func (*L2XconnectDetails) GetMessageName() string          { return "l2_xconnect_details" }
+func (*L2XconnectDetails) GetCrcString() string            { return "722e2378" }
+func (*L2XconnectDetails) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // L2XconnectDump represents VPP binary API message 'l2_xconnect_dump'.
 type L2XconnectDump struct{}
 
-func (*L2XconnectDump) GetMessageName() string {
-	return "l2_xconnect_dump"
-}
-func (*L2XconnectDump) GetCrcString() string {
-	return "51077d14"
-}
-func (*L2XconnectDump) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *L2XconnectDump) Reset()                        { *m = L2XconnectDump{} }
+func (*L2XconnectDump) GetMessageName() string          { return "l2_xconnect_dump" }
+func (*L2XconnectDump) GetCrcString() string            { return "51077d14" }
+func (*L2XconnectDump) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // L2fibAddDel represents VPP binary API message 'l2fib_add_del'.
 type L2fibAddDel struct {
@@ -1038,118 +606,78 @@ type L2fibAddDel struct {
 	BviMac    uint8
 }
 
-func (*L2fibAddDel) GetMessageName() string {
-	return "l2fib_add_del"
-}
-func (*L2fibAddDel) GetCrcString() string {
-	return "34ced3eb"
-}
-func (*L2fibAddDel) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *L2fibAddDel) Reset()                        { *m = L2fibAddDel{} }
+func (*L2fibAddDel) GetMessageName() string          { return "l2fib_add_del" }
+func (*L2fibAddDel) GetCrcString() string            { return "34ced3eb" }
+func (*L2fibAddDel) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // L2fibAddDelReply represents VPP binary API message 'l2fib_add_del_reply'.
 type L2fibAddDelReply struct {
 	Retval int32
 }
 
-func (*L2fibAddDelReply) GetMessageName() string {
-	return "l2fib_add_del_reply"
-}
-func (*L2fibAddDelReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*L2fibAddDelReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *L2fibAddDelReply) Reset()                        { *m = L2fibAddDelReply{} }
+func (*L2fibAddDelReply) GetMessageName() string          { return "l2fib_add_del_reply" }
+func (*L2fibAddDelReply) GetCrcString() string            { return "e8d4e804" }
+func (*L2fibAddDelReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // L2fibFlushAll represents VPP binary API message 'l2fib_flush_all'.
 type L2fibFlushAll struct{}
 
-func (*L2fibFlushAll) GetMessageName() string {
-	return "l2fib_flush_all"
-}
-func (*L2fibFlushAll) GetCrcString() string {
-	return "51077d14"
-}
-func (*L2fibFlushAll) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *L2fibFlushAll) Reset()                        { *m = L2fibFlushAll{} }
+func (*L2fibFlushAll) GetMessageName() string          { return "l2fib_flush_all" }
+func (*L2fibFlushAll) GetCrcString() string            { return "51077d14" }
+func (*L2fibFlushAll) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // L2fibFlushAllReply represents VPP binary API message 'l2fib_flush_all_reply'.
 type L2fibFlushAllReply struct {
 	Retval int32
 }
 
-func (*L2fibFlushAllReply) GetMessageName() string {
-	return "l2fib_flush_all_reply"
-}
-func (*L2fibFlushAllReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*L2fibFlushAllReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *L2fibFlushAllReply) Reset()                        { *m = L2fibFlushAllReply{} }
+func (*L2fibFlushAllReply) GetMessageName() string          { return "l2fib_flush_all_reply" }
+func (*L2fibFlushAllReply) GetCrcString() string            { return "e8d4e804" }
+func (*L2fibFlushAllReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // L2fibFlushBd represents VPP binary API message 'l2fib_flush_bd'.
 type L2fibFlushBd struct {
 	BdID uint32
 }
 
-func (*L2fibFlushBd) GetMessageName() string {
-	return "l2fib_flush_bd"
-}
-func (*L2fibFlushBd) GetCrcString() string {
-	return "c25fdce6"
-}
-func (*L2fibFlushBd) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *L2fibFlushBd) Reset()                        { *m = L2fibFlushBd{} }
+func (*L2fibFlushBd) GetMessageName() string          { return "l2fib_flush_bd" }
+func (*L2fibFlushBd) GetCrcString() string            { return "c25fdce6" }
+func (*L2fibFlushBd) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // L2fibFlushBdReply represents VPP binary API message 'l2fib_flush_bd_reply'.
 type L2fibFlushBdReply struct {
 	Retval int32
 }
 
-func (*L2fibFlushBdReply) GetMessageName() string {
-	return "l2fib_flush_bd_reply"
-}
-func (*L2fibFlushBdReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*L2fibFlushBdReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *L2fibFlushBdReply) Reset()                        { *m = L2fibFlushBdReply{} }
+func (*L2fibFlushBdReply) GetMessageName() string          { return "l2fib_flush_bd_reply" }
+func (*L2fibFlushBdReply) GetCrcString() string            { return "e8d4e804" }
+func (*L2fibFlushBdReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // L2fibFlushInt represents VPP binary API message 'l2fib_flush_int'.
 type L2fibFlushInt struct {
 	SwIfIndex uint32
 }
 
-func (*L2fibFlushInt) GetMessageName() string {
-	return "l2fib_flush_int"
-}
-func (*L2fibFlushInt) GetCrcString() string {
-	return "529cb13f"
-}
-func (*L2fibFlushInt) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *L2fibFlushInt) Reset()                        { *m = L2fibFlushInt{} }
+func (*L2fibFlushInt) GetMessageName() string          { return "l2fib_flush_int" }
+func (*L2fibFlushInt) GetCrcString() string            { return "529cb13f" }
+func (*L2fibFlushInt) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // L2fibFlushIntReply represents VPP binary API message 'l2fib_flush_int_reply'.
 type L2fibFlushIntReply struct {
 	Retval int32
 }
 
-func (*L2fibFlushIntReply) GetMessageName() string {
-	return "l2fib_flush_int_reply"
-}
-func (*L2fibFlushIntReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*L2fibFlushIntReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *L2fibFlushIntReply) Reset()                        { *m = L2fibFlushIntReply{} }
+func (*L2fibFlushIntReply) GetMessageName() string          { return "l2fib_flush_int_reply" }
+func (*L2fibFlushIntReply) GetCrcString() string            { return "e8d4e804" }
+func (*L2fibFlushIntReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // SwInterfaceSetL2Bridge represents VPP binary API message 'sw_interface_set_l2_bridge'.
 type SwInterfaceSetL2Bridge struct {
@@ -1160,30 +688,20 @@ type SwInterfaceSetL2Bridge struct {
 	Enable      uint8
 }
 
-func (*SwInterfaceSetL2Bridge) GetMessageName() string {
-	return "sw_interface_set_l2_bridge"
-}
-func (*SwInterfaceSetL2Bridge) GetCrcString() string {
-	return "5579f809"
-}
-func (*SwInterfaceSetL2Bridge) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *SwInterfaceSetL2Bridge) Reset()                        { *m = SwInterfaceSetL2Bridge{} }
+func (*SwInterfaceSetL2Bridge) GetMessageName() string          { return "sw_interface_set_l2_bridge" }
+func (*SwInterfaceSetL2Bridge) GetCrcString() string            { return "5579f809" }
+func (*SwInterfaceSetL2Bridge) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // SwInterfaceSetL2BridgeReply represents VPP binary API message 'sw_interface_set_l2_bridge_reply'.
 type SwInterfaceSetL2BridgeReply struct {
 	Retval int32
 }
 
-func (*SwInterfaceSetL2BridgeReply) GetMessageName() string {
-	return "sw_interface_set_l2_bridge_reply"
-}
-func (*SwInterfaceSetL2BridgeReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*SwInterfaceSetL2BridgeReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *SwInterfaceSetL2BridgeReply) Reset()                        { *m = SwInterfaceSetL2BridgeReply{} }
+func (*SwInterfaceSetL2BridgeReply) GetMessageName() string          { return "sw_interface_set_l2_bridge_reply" }
+func (*SwInterfaceSetL2BridgeReply) GetCrcString() string            { return "e8d4e804" }
+func (*SwInterfaceSetL2BridgeReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // SwInterfaceSetL2Xconnect represents VPP binary API message 'sw_interface_set_l2_xconnect'.
 type SwInterfaceSetL2Xconnect struct {
@@ -1192,30 +710,22 @@ type SwInterfaceSetL2Xconnect struct {
 	Enable      uint8
 }
 
-func (*SwInterfaceSetL2Xconnect) GetMessageName() string {
-	return "sw_interface_set_l2_xconnect"
-}
-func (*SwInterfaceSetL2Xconnect) GetCrcString() string {
-	return "95de3988"
-}
-func (*SwInterfaceSetL2Xconnect) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *SwInterfaceSetL2Xconnect) Reset()                        { *m = SwInterfaceSetL2Xconnect{} }
+func (*SwInterfaceSetL2Xconnect) GetMessageName() string          { return "sw_interface_set_l2_xconnect" }
+func (*SwInterfaceSetL2Xconnect) GetCrcString() string            { return "95de3988" }
+func (*SwInterfaceSetL2Xconnect) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // SwInterfaceSetL2XconnectReply represents VPP binary API message 'sw_interface_set_l2_xconnect_reply'.
 type SwInterfaceSetL2XconnectReply struct {
 	Retval int32
 }
 
+func (m *SwInterfaceSetL2XconnectReply) Reset() { *m = SwInterfaceSetL2XconnectReply{} }
 func (*SwInterfaceSetL2XconnectReply) GetMessageName() string {
 	return "sw_interface_set_l2_xconnect_reply"
 }
-func (*SwInterfaceSetL2XconnectReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*SwInterfaceSetL2XconnectReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (*SwInterfaceSetL2XconnectReply) GetCrcString() string            { return "e8d4e804" }
+func (*SwInterfaceSetL2XconnectReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // SwInterfaceSetVpath represents VPP binary API message 'sw_interface_set_vpath'.
 type SwInterfaceSetVpath struct {
@@ -1223,64 +733,65 @@ type SwInterfaceSetVpath struct {
 	Enable    uint8
 }
 
-func (*SwInterfaceSetVpath) GetMessageName() string {
-	return "sw_interface_set_vpath"
-}
-func (*SwInterfaceSetVpath) GetCrcString() string {
-	return "a36fadc0"
-}
-func (*SwInterfaceSetVpath) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *SwInterfaceSetVpath) Reset()                        { *m = SwInterfaceSetVpath{} }
+func (*SwInterfaceSetVpath) GetMessageName() string          { return "sw_interface_set_vpath" }
+func (*SwInterfaceSetVpath) GetCrcString() string            { return "a36fadc0" }
+func (*SwInterfaceSetVpath) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // SwInterfaceSetVpathReply represents VPP binary API message 'sw_interface_set_vpath_reply'.
 type SwInterfaceSetVpathReply struct {
 	Retval int32
 }
 
-func (*SwInterfaceSetVpathReply) GetMessageName() string {
-	return "sw_interface_set_vpath_reply"
+func (m *SwInterfaceSetVpathReply) Reset()                        { *m = SwInterfaceSetVpathReply{} }
+func (*SwInterfaceSetVpathReply) GetMessageName() string          { return "sw_interface_set_vpath_reply" }
+func (*SwInterfaceSetVpathReply) GetCrcString() string            { return "e8d4e804" }
+func (*SwInterfaceSetVpathReply) GetMessageType() api.MessageType { return api.ReplyMessage }
+
+// WantL2ArpTermEvents represents VPP binary API message 'want_l2_arp_term_events'.
+type WantL2ArpTermEvents struct {
+	Enable bool
+	PID    uint32
 }
-func (*SwInterfaceSetVpathReply) GetCrcString() string {
-	return "e8d4e804"
+
+func (m *WantL2ArpTermEvents) Reset()                        { *m = WantL2ArpTermEvents{} }
+func (*WantL2ArpTermEvents) GetMessageName() string          { return "want_l2_arp_term_events" }
+func (*WantL2ArpTermEvents) GetCrcString() string            { return "3ec6d6c2" }
+func (*WantL2ArpTermEvents) GetMessageType() api.MessageType { return api.RequestMessage }
+
+// WantL2ArpTermEventsReply represents VPP binary API message 'want_l2_arp_term_events_reply'.
+type WantL2ArpTermEventsReply struct {
+	Retval int32
 }
-func (*SwInterfaceSetVpathReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+
+func (m *WantL2ArpTermEventsReply) Reset()                        { *m = WantL2ArpTermEventsReply{} }
+func (*WantL2ArpTermEventsReply) GetMessageName() string          { return "want_l2_arp_term_events_reply" }
+func (*WantL2ArpTermEventsReply) GetCrcString() string            { return "e8d4e804" }
+func (*WantL2ArpTermEventsReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // WantL2MacsEvents represents VPP binary API message 'want_l2_macs_events'.
 type WantL2MacsEvents struct {
 	LearnLimit     uint32
 	ScanDelay      uint8
 	MaxMacsInEvent uint8
-	EnableDisable  uint8
+	EnableDisable  bool
 	PID            uint32
 }
 
-func (*WantL2MacsEvents) GetMessageName() string {
-	return "want_l2_macs_events"
-}
-func (*WantL2MacsEvents) GetCrcString() string {
-	return "94e63394"
-}
-func (*WantL2MacsEvents) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *WantL2MacsEvents) Reset()                        { *m = WantL2MacsEvents{} }
+func (*WantL2MacsEvents) GetMessageName() string          { return "want_l2_macs_events" }
+func (*WantL2MacsEvents) GetCrcString() string            { return "9aabdfde" }
+func (*WantL2MacsEvents) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // WantL2MacsEventsReply represents VPP binary API message 'want_l2_macs_events_reply'.
 type WantL2MacsEventsReply struct {
 	Retval int32
 }
 
-func (*WantL2MacsEventsReply) GetMessageName() string {
-	return "want_l2_macs_events_reply"
-}
-func (*WantL2MacsEventsReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*WantL2MacsEventsReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *WantL2MacsEventsReply) Reset()                        { *m = WantL2MacsEventsReply{} }
+func (*WantL2MacsEventsReply) GetMessageName() string          { return "want_l2_macs_events_reply" }
+func (*WantL2MacsEventsReply) GetCrcString() string            { return "e8d4e804" }
+func (*WantL2MacsEventsReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 func init() {
 	api.RegisterMessage((*BdIPMacAddDel)(nil), "l2.BdIPMacAddDel")
@@ -1301,6 +812,7 @@ func init() {
 	api.RegisterMessage((*BviCreateReply)(nil), "l2.BviCreateReply")
 	api.RegisterMessage((*BviDelete)(nil), "l2.BviDelete")
 	api.RegisterMessage((*BviDeleteReply)(nil), "l2.BviDeleteReply")
+	api.RegisterMessage((*L2ArpTermEvent)(nil), "l2.L2ArpTermEvent")
 	api.RegisterMessage((*L2FibClearTable)(nil), "l2.L2FibClearTable")
 	api.RegisterMessage((*L2FibClearTableReply)(nil), "l2.L2FibClearTableReply")
 	api.RegisterMessage((*L2FibTableDetails)(nil), "l2.L2FibTableDetails")
@@ -1332,6 +844,8 @@ func init() {
 	api.RegisterMessage((*SwInterfaceSetL2XconnectReply)(nil), "l2.SwInterfaceSetL2XconnectReply")
 	api.RegisterMessage((*SwInterfaceSetVpath)(nil), "l2.SwInterfaceSetVpath")
 	api.RegisterMessage((*SwInterfaceSetVpathReply)(nil), "l2.SwInterfaceSetVpathReply")
+	api.RegisterMessage((*WantL2ArpTermEvents)(nil), "l2.WantL2ArpTermEvents")
+	api.RegisterMessage((*WantL2ArpTermEventsReply)(nil), "l2.WantL2ArpTermEventsReply")
 	api.RegisterMessage((*WantL2MacsEvents)(nil), "l2.WantL2MacsEvents")
 	api.RegisterMessage((*WantL2MacsEventsReply)(nil), "l2.WantL2MacsEventsReply")
 }
@@ -1357,6 +871,7 @@ func AllMessages() []api.Message {
 		(*BviCreateReply)(nil),
 		(*BviDelete)(nil),
 		(*BviDeleteReply)(nil),
+		(*L2ArpTermEvent)(nil),
 		(*L2FibClearTable)(nil),
 		(*L2FibClearTableReply)(nil),
 		(*L2FibTableDetails)(nil),
@@ -1388,6 +903,8 @@ func AllMessages() []api.Message {
 		(*SwInterfaceSetL2XconnectReply)(nil),
 		(*SwInterfaceSetVpath)(nil),
 		(*SwInterfaceSetVpathReply)(nil),
+		(*WantL2ArpTermEvents)(nil),
+		(*WantL2ArpTermEventsReply)(nil),
 		(*WantL2MacsEvents)(nil),
 		(*WantL2MacsEventsReply)(nil),
 	}
@@ -1419,6 +936,7 @@ type RPCService interface {
 	SwInterfaceSetL2Bridge(ctx context.Context, in *SwInterfaceSetL2Bridge) (*SwInterfaceSetL2BridgeReply, error)
 	SwInterfaceSetL2Xconnect(ctx context.Context, in *SwInterfaceSetL2Xconnect) (*SwInterfaceSetL2XconnectReply, error)
 	SwInterfaceSetVpath(ctx context.Context, in *SwInterfaceSetVpath) (*SwInterfaceSetVpathReply, error)
+	WantL2ArpTermEvents(ctx context.Context, in *WantL2ArpTermEvents) (*WantL2ArpTermEventsReply, error)
 	WantL2MacsEvents(ctx context.Context, in *WantL2MacsEvents) (*WantL2MacsEventsReply, error)
 }
 
@@ -1707,6 +1225,15 @@ func (c *serviceClient) SwInterfaceSetL2Xconnect(ctx context.Context, in *SwInte
 
 func (c *serviceClient) SwInterfaceSetVpath(ctx context.Context, in *SwInterfaceSetVpath) (*SwInterfaceSetVpathReply, error) {
 	out := new(SwInterfaceSetVpathReply)
+	err := c.ch.SendRequest(in).ReceiveReply(out)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *serviceClient) WantL2ArpTermEvents(ctx context.Context, in *WantL2ArpTermEvents) (*WantL2ArpTermEventsReply, error) {
+	out := new(WantL2ArpTermEventsReply)
 	err := c.ch.SendRequest(in).ReceiveReply(out)
 	if err != nil {
 		return nil, err

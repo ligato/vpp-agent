@@ -20,6 +20,7 @@ import (
 	"github.com/ligato/cn-infra/logging"
 
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001"
+	vpp_ip "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ip"
 	vpp_nat "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/nat"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/natplugin/vppcalls"
@@ -35,6 +36,8 @@ func init() {
 // NatVppHandler is accessor for NAT-related vppcalls methods.
 type NatVppHandler struct {
 	callsChannel govppapi.Channel
+	ip           vpp_ip.RPCService
+	nat          vpp_nat.RPCService
 	ifIndexes    ifaceidx.IfaceMetadataIndex
 	dhcpIndex    idxmap.NamedMapping
 	log          logging.Logger
@@ -46,6 +49,8 @@ func NewNatVppHandler(callsChan govppapi.Channel,
 ) vppcalls.NatVppAPI {
 	return &NatVppHandler{
 		callsChannel: callsChan,
+		ip:           vpp_ip.NewServiceClient(callsChan),
+		nat:          vpp_nat.NewServiceClient(callsChan),
 		ifIndexes:    ifIndexes,
 		dhcpIndex:    dhcpIndex,
 		log:          log,

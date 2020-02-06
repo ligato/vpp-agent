@@ -21,211 +21,24 @@ import (
 	struc "github.com/lunixbochs/struc"
 	io "io"
 	strconv "strconv"
+
+	ip_types "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ip_types"
 )
 
 const (
 	// ModuleName is the name of this module.
 	ModuleName = "punt"
 	// VersionCrc is the CRC of this module.
-	VersionCrc = 0xd671ac9b
+	VersionCrc = 0x51716f7f
 )
 
-// AddressFamily represents VPP binary API enum 'address_family'.
-type AddressFamily uint32
+type AddressFamily = ip_types.AddressFamily
 
-const (
-	ADDRESS_IP4 AddressFamily = 0
-	ADDRESS_IP6 AddressFamily = 1
-)
+type IPDscp = ip_types.IPDscp
 
-var AddressFamily_name = map[uint32]string{
-	0: "ADDRESS_IP4",
-	1: "ADDRESS_IP6",
-}
+type IPEcn = ip_types.IPEcn
 
-var AddressFamily_value = map[string]uint32{
-	"ADDRESS_IP4": 0,
-	"ADDRESS_IP6": 1,
-}
-
-func (x AddressFamily) String() string {
-	s, ok := AddressFamily_name[uint32(x)]
-	if ok {
-		return s
-	}
-	return strconv.Itoa(int(x))
-}
-
-// IPDscp represents VPP binary API enum 'ip_dscp'.
-type IPDscp uint8
-
-const (
-	IP_API_DSCP_CS0  IPDscp = 0
-	IP_API_DSCP_CS1  IPDscp = 8
-	IP_API_DSCP_AF11 IPDscp = 10
-	IP_API_DSCP_AF12 IPDscp = 12
-	IP_API_DSCP_AF13 IPDscp = 14
-	IP_API_DSCP_CS2  IPDscp = 16
-	IP_API_DSCP_AF21 IPDscp = 18
-	IP_API_DSCP_AF22 IPDscp = 20
-	IP_API_DSCP_AF23 IPDscp = 22
-	IP_API_DSCP_CS3  IPDscp = 24
-	IP_API_DSCP_AF31 IPDscp = 26
-	IP_API_DSCP_AF32 IPDscp = 28
-	IP_API_DSCP_AF33 IPDscp = 30
-	IP_API_DSCP_CS4  IPDscp = 32
-	IP_API_DSCP_AF41 IPDscp = 34
-	IP_API_DSCP_AF42 IPDscp = 36
-	IP_API_DSCP_AF43 IPDscp = 38
-	IP_API_DSCP_CS5  IPDscp = 40
-	IP_API_DSCP_EF   IPDscp = 46
-	IP_API_DSCP_CS6  IPDscp = 48
-	IP_API_DSCP_CS7  IPDscp = 50
-)
-
-var IPDscp_name = map[uint8]string{
-	0:  "IP_API_DSCP_CS0",
-	8:  "IP_API_DSCP_CS1",
-	10: "IP_API_DSCP_AF11",
-	12: "IP_API_DSCP_AF12",
-	14: "IP_API_DSCP_AF13",
-	16: "IP_API_DSCP_CS2",
-	18: "IP_API_DSCP_AF21",
-	20: "IP_API_DSCP_AF22",
-	22: "IP_API_DSCP_AF23",
-	24: "IP_API_DSCP_CS3",
-	26: "IP_API_DSCP_AF31",
-	28: "IP_API_DSCP_AF32",
-	30: "IP_API_DSCP_AF33",
-	32: "IP_API_DSCP_CS4",
-	34: "IP_API_DSCP_AF41",
-	36: "IP_API_DSCP_AF42",
-	38: "IP_API_DSCP_AF43",
-	40: "IP_API_DSCP_CS5",
-	46: "IP_API_DSCP_EF",
-	48: "IP_API_DSCP_CS6",
-	50: "IP_API_DSCP_CS7",
-}
-
-var IPDscp_value = map[string]uint8{
-	"IP_API_DSCP_CS0":  0,
-	"IP_API_DSCP_CS1":  8,
-	"IP_API_DSCP_AF11": 10,
-	"IP_API_DSCP_AF12": 12,
-	"IP_API_DSCP_AF13": 14,
-	"IP_API_DSCP_CS2":  16,
-	"IP_API_DSCP_AF21": 18,
-	"IP_API_DSCP_AF22": 20,
-	"IP_API_DSCP_AF23": 22,
-	"IP_API_DSCP_CS3":  24,
-	"IP_API_DSCP_AF31": 26,
-	"IP_API_DSCP_AF32": 28,
-	"IP_API_DSCP_AF33": 30,
-	"IP_API_DSCP_CS4":  32,
-	"IP_API_DSCP_AF41": 34,
-	"IP_API_DSCP_AF42": 36,
-	"IP_API_DSCP_AF43": 38,
-	"IP_API_DSCP_CS5":  40,
-	"IP_API_DSCP_EF":   46,
-	"IP_API_DSCP_CS6":  48,
-	"IP_API_DSCP_CS7":  50,
-}
-
-func (x IPDscp) String() string {
-	s, ok := IPDscp_name[uint8(x)]
-	if ok {
-		return s
-	}
-	return strconv.Itoa(int(x))
-}
-
-// IPEcn represents VPP binary API enum 'ip_ecn'.
-type IPEcn uint8
-
-const (
-	IP_API_ECN_NONE IPEcn = 0
-	IP_API_ECN_ECT0 IPEcn = 1
-	IP_API_ECN_ECT1 IPEcn = 2
-	IP_API_ECN_CE   IPEcn = 3
-)
-
-var IPEcn_name = map[uint8]string{
-	0: "IP_API_ECN_NONE",
-	1: "IP_API_ECN_ECT0",
-	2: "IP_API_ECN_ECT1",
-	3: "IP_API_ECN_CE",
-}
-
-var IPEcn_value = map[string]uint8{
-	"IP_API_ECN_NONE": 0,
-	"IP_API_ECN_ECT0": 1,
-	"IP_API_ECN_ECT1": 2,
-	"IP_API_ECN_CE":   3,
-}
-
-func (x IPEcn) String() string {
-	s, ok := IPEcn_name[uint8(x)]
-	if ok {
-		return s
-	}
-	return strconv.Itoa(int(x))
-}
-
-// IPProto represents VPP binary API enum 'ip_proto'.
-type IPProto uint32
-
-const (
-	IP_API_PROTO_HOPOPT   IPProto = 0
-	IP_API_PROTO_ICMP     IPProto = 1
-	IP_API_PROTO_IGMP     IPProto = 2
-	IP_API_PROTO_TCP      IPProto = 6
-	IP_API_PROTO_UDP      IPProto = 17
-	IP_API_PROTO_GRE      IPProto = 47
-	IP_API_PROTO_AH       IPProto = 50
-	IP_API_PROTO_ESP      IPProto = 51
-	IP_API_PROTO_EIGRP    IPProto = 88
-	IP_API_PROTO_OSPF     IPProto = 89
-	IP_API_PROTO_SCTP     IPProto = 132
-	IP_API_PROTO_RESERVED IPProto = 255
-)
-
-var IPProto_name = map[uint32]string{
-	0:   "IP_API_PROTO_HOPOPT",
-	1:   "IP_API_PROTO_ICMP",
-	2:   "IP_API_PROTO_IGMP",
-	6:   "IP_API_PROTO_TCP",
-	17:  "IP_API_PROTO_UDP",
-	47:  "IP_API_PROTO_GRE",
-	50:  "IP_API_PROTO_AH",
-	51:  "IP_API_PROTO_ESP",
-	88:  "IP_API_PROTO_EIGRP",
-	89:  "IP_API_PROTO_OSPF",
-	132: "IP_API_PROTO_SCTP",
-	255: "IP_API_PROTO_RESERVED",
-}
-
-var IPProto_value = map[string]uint32{
-	"IP_API_PROTO_HOPOPT":   0,
-	"IP_API_PROTO_ICMP":     1,
-	"IP_API_PROTO_IGMP":     2,
-	"IP_API_PROTO_TCP":      6,
-	"IP_API_PROTO_UDP":      17,
-	"IP_API_PROTO_GRE":      47,
-	"IP_API_PROTO_AH":       50,
-	"IP_API_PROTO_ESP":      51,
-	"IP_API_PROTO_EIGRP":    88,
-	"IP_API_PROTO_OSPF":     89,
-	"IP_API_PROTO_SCTP":     132,
-	"IP_API_PROTO_RESERVED": 255,
-}
-
-func (x IPProto) String() string {
-	s, ok := IPProto_name[uint32(x)]
-	if ok {
-		return s
-	}
-	return strconv.Itoa(int(x))
-}
+type IPProto = ip_types.IPProto
 
 // PuntType represents VPP binary API enum 'punt_type'.
 type PuntType uint32
@@ -256,82 +69,27 @@ func (x PuntType) String() string {
 	return strconv.Itoa(int(x))
 }
 
-// AddressWithPrefix represents VPP binary API alias 'address_with_prefix'.
-type AddressWithPrefix Prefix
+type AddressWithPrefix = ip_types.AddressWithPrefix
 
-// IP4Address represents VPP binary API alias 'ip4_address'.
-type IP4Address [4]uint8
+type IP4Address = ip_types.IP4Address
 
-// IP4AddressWithPrefix represents VPP binary API alias 'ip4_address_with_prefix'.
-type IP4AddressWithPrefix IP4Prefix
+type IP4AddressWithPrefix = ip_types.IP4AddressWithPrefix
 
-// IP6Address represents VPP binary API alias 'ip6_address'.
-type IP6Address [16]uint8
+type IP6Address = ip_types.IP6Address
 
-// IP6AddressWithPrefix represents VPP binary API alias 'ip6_address_with_prefix'.
-type IP6AddressWithPrefix IP6Prefix
+type IP6AddressWithPrefix = ip_types.IP6AddressWithPrefix
 
-// Address represents VPP binary API type 'address'.
-type Address struct {
-	Af AddressFamily
-	Un AddressUnion
-}
+type Address = ip_types.Address
 
-func (*Address) GetTypeName() string {
-	return "address"
-}
+type IP4Prefix = ip_types.IP4Prefix
 
-// IP4Prefix represents VPP binary API type 'ip4_prefix'.
-type IP4Prefix struct {
-	Address IP4Address
-	Len     uint8
-}
+type IP6Prefix = ip_types.IP6Prefix
 
-func (*IP4Prefix) GetTypeName() string {
-	return "ip4_prefix"
-}
+type Mprefix = ip_types.Mprefix
 
-// IP6Prefix represents VPP binary API type 'ip6_prefix'.
-type IP6Prefix struct {
-	Address IP6Address
-	Len     uint8
-}
+type Prefix = ip_types.Prefix
 
-func (*IP6Prefix) GetTypeName() string {
-	return "ip6_prefix"
-}
-
-// Mprefix represents VPP binary API type 'mprefix'.
-type Mprefix struct {
-	Af               AddressFamily
-	GrpAddressLength uint16
-	GrpAddress       AddressUnion
-	SrcAddress       AddressUnion
-}
-
-func (*Mprefix) GetTypeName() string {
-	return "mprefix"
-}
-
-// Prefix represents VPP binary API type 'prefix'.
-type Prefix struct {
-	Address Address
-	Len     uint8
-}
-
-func (*Prefix) GetTypeName() string {
-	return "prefix"
-}
-
-// PrefixMatcher represents VPP binary API type 'prefix_matcher'.
-type PrefixMatcher struct {
-	Le uint8
-	Ge uint8
-}
-
-func (*PrefixMatcher) GetTypeName() string {
-	return "prefix_matcher"
-}
+type PrefixMatcher = ip_types.PrefixMatcher
 
 // Punt represents VPP binary API type 'punt'.
 type Punt struct {
@@ -339,18 +97,14 @@ type Punt struct {
 	Punt PuntUnion
 }
 
-func (*Punt) GetTypeName() string {
-	return "punt"
-}
+func (*Punt) GetTypeName() string { return "punt" }
 
 // PuntException represents VPP binary API type 'punt_exception'.
 type PuntException struct {
 	ID uint32
 }
 
-func (*PuntException) GetTypeName() string {
-	return "punt_exception"
-}
+func (*PuntException) GetTypeName() string { return "punt_exception" }
 
 // PuntIPProto represents VPP binary API type 'punt_ip_proto'.
 type PuntIPProto struct {
@@ -358,9 +112,7 @@ type PuntIPProto struct {
 	Protocol IPProto
 }
 
-func (*PuntIPProto) GetTypeName() string {
-	return "punt_ip_proto"
-}
+func (*PuntIPProto) GetTypeName() string { return "punt_ip_proto" }
 
 // PuntL4 represents VPP binary API type 'punt_l4'.
 type PuntL4 struct {
@@ -369,9 +121,7 @@ type PuntL4 struct {
 	Port     uint16
 }
 
-func (*PuntL4) GetTypeName() string {
-	return "punt_l4"
-}
+func (*PuntL4) GetTypeName() string { return "punt_l4" }
 
 // PuntReason represents VPP binary API type 'punt_reason'.
 type PuntReason struct {
@@ -380,61 +130,16 @@ type PuntReason struct {
 	Name        string
 }
 
-func (*PuntReason) GetTypeName() string {
-	return "punt_reason"
-}
+func (*PuntReason) GetTypeName() string { return "punt_reason" }
 
-// AddressUnion represents VPP binary API union 'address_union'.
-type AddressUnion struct {
-	XXX_UnionData [16]byte
-}
-
-func (*AddressUnion) GetTypeName() string {
-	return "address_union"
-}
-
-func AddressUnionIP4(a IP4Address) (u AddressUnion) {
-	u.SetIP4(a)
-	return
-}
-func (u *AddressUnion) SetIP4(a IP4Address) {
-	var b = new(bytes.Buffer)
-	if err := struc.Pack(b, &a); err != nil {
-		return
-	}
-	copy(u.XXX_UnionData[:], b.Bytes())
-}
-func (u *AddressUnion) GetIP4() (a IP4Address) {
-	var b = bytes.NewReader(u.XXX_UnionData[:])
-	struc.Unpack(b, &a)
-	return
-}
-
-func AddressUnionIP6(a IP6Address) (u AddressUnion) {
-	u.SetIP6(a)
-	return
-}
-func (u *AddressUnion) SetIP6(a IP6Address) {
-	var b = new(bytes.Buffer)
-	if err := struc.Pack(b, &a); err != nil {
-		return
-	}
-	copy(u.XXX_UnionData[:], b.Bytes())
-}
-func (u *AddressUnion) GetIP6() (a IP6Address) {
-	var b = bytes.NewReader(u.XXX_UnionData[:])
-	struc.Unpack(b, &a)
-	return
-}
+type AddressUnion = ip_types.AddressUnion
 
 // PuntUnion represents VPP binary API union 'punt_union'.
 type PuntUnion struct {
 	XXX_UnionData [10]byte
 }
 
-func (*PuntUnion) GetTypeName() string {
-	return "punt_union"
-}
+func (*PuntUnion) GetTypeName() string { return "punt_union" }
 
 func PuntUnionException(a PuntException) (u PuntUnion) {
 	u.SetException(a)
@@ -492,155 +197,105 @@ type PuntReasonDetails struct {
 	Reason PuntReason
 }
 
-func (*PuntReasonDetails) GetMessageName() string {
-	return "punt_reason_details"
-}
-func (*PuntReasonDetails) GetCrcString() string {
-	return "2c9d4a40"
-}
-func (*PuntReasonDetails) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *PuntReasonDetails) Reset()                        { *m = PuntReasonDetails{} }
+func (*PuntReasonDetails) GetMessageName() string          { return "punt_reason_details" }
+func (*PuntReasonDetails) GetCrcString() string            { return "2c9d4a40" }
+func (*PuntReasonDetails) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // PuntReasonDump represents VPP binary API message 'punt_reason_dump'.
 type PuntReasonDump struct {
 	Reason PuntReason
 }
 
-func (*PuntReasonDump) GetMessageName() string {
-	return "punt_reason_dump"
-}
-func (*PuntReasonDump) GetCrcString() string {
-	return "5c0dd4fe"
-}
-func (*PuntReasonDump) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *PuntReasonDump) Reset()                        { *m = PuntReasonDump{} }
+func (*PuntReasonDump) GetMessageName() string          { return "punt_reason_dump" }
+func (*PuntReasonDump) GetCrcString() string            { return "5c0dd4fe" }
+func (*PuntReasonDump) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // PuntSocketDeregister represents VPP binary API message 'punt_socket_deregister'.
 type PuntSocketDeregister struct {
 	Punt Punt
 }
 
-func (*PuntSocketDeregister) GetMessageName() string {
-	return "punt_socket_deregister"
-}
-func (*PuntSocketDeregister) GetCrcString() string {
-	return "98a444f4"
-}
-func (*PuntSocketDeregister) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *PuntSocketDeregister) Reset()                        { *m = PuntSocketDeregister{} }
+func (*PuntSocketDeregister) GetMessageName() string          { return "punt_socket_deregister" }
+func (*PuntSocketDeregister) GetCrcString() string            { return "98a444f4" }
+func (*PuntSocketDeregister) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // PuntSocketDeregisterReply represents VPP binary API message 'punt_socket_deregister_reply'.
 type PuntSocketDeregisterReply struct {
 	Retval int32
 }
 
-func (*PuntSocketDeregisterReply) GetMessageName() string {
-	return "punt_socket_deregister_reply"
-}
-func (*PuntSocketDeregisterReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*PuntSocketDeregisterReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *PuntSocketDeregisterReply) Reset()                        { *m = PuntSocketDeregisterReply{} }
+func (*PuntSocketDeregisterReply) GetMessageName() string          { return "punt_socket_deregister_reply" }
+func (*PuntSocketDeregisterReply) GetCrcString() string            { return "e8d4e804" }
+func (*PuntSocketDeregisterReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // PuntSocketDetails represents VPP binary API message 'punt_socket_details'.
 type PuntSocketDetails struct {
 	Punt     Punt
-	Pathname []byte `struc:"[108]byte"`
+	Pathname string `struc:"[108]byte"`
 }
 
-func (*PuntSocketDetails) GetMessageName() string {
-	return "punt_socket_details"
-}
-func (*PuntSocketDetails) GetCrcString() string {
-	return "25100aad"
-}
-func (*PuntSocketDetails) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *PuntSocketDetails) Reset()                        { *m = PuntSocketDetails{} }
+func (*PuntSocketDetails) GetMessageName() string          { return "punt_socket_details" }
+func (*PuntSocketDetails) GetCrcString() string            { return "1de0ce75" }
+func (*PuntSocketDetails) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // PuntSocketDump represents VPP binary API message 'punt_socket_dump'.
 type PuntSocketDump struct {
 	Type PuntType
 }
 
-func (*PuntSocketDump) GetMessageName() string {
-	return "punt_socket_dump"
-}
-func (*PuntSocketDump) GetCrcString() string {
-	return "52974935"
-}
-func (*PuntSocketDump) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *PuntSocketDump) Reset()                        { *m = PuntSocketDump{} }
+func (*PuntSocketDump) GetMessageName() string          { return "punt_socket_dump" }
+func (*PuntSocketDump) GetCrcString() string            { return "52974935" }
+func (*PuntSocketDump) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // PuntSocketRegister represents VPP binary API message 'punt_socket_register'.
 type PuntSocketRegister struct {
 	HeaderVersion uint32
 	Punt          Punt
-	Pathname      []byte `struc:"[108]byte"`
+	Pathname      string `struc:"[108]byte"`
 }
 
-func (*PuntSocketRegister) GetMessageName() string {
-	return "punt_socket_register"
-}
-func (*PuntSocketRegister) GetCrcString() string {
-	return "ddc0d8e0"
-}
-func (*PuntSocketRegister) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *PuntSocketRegister) Reset()                        { *m = PuntSocketRegister{} }
+func (*PuntSocketRegister) GetMessageName() string          { return "punt_socket_register" }
+func (*PuntSocketRegister) GetCrcString() string            { return "c8cd10fa" }
+func (*PuntSocketRegister) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // PuntSocketRegisterReply represents VPP binary API message 'punt_socket_register_reply'.
 type PuntSocketRegisterReply struct {
 	Retval   int32
-	Pathname []byte `struc:"[64]byte"`
+	Pathname string `struc:"[108]byte"`
 }
 
-func (*PuntSocketRegisterReply) GetMessageName() string {
-	return "punt_socket_register_reply"
-}
-func (*PuntSocketRegisterReply) GetCrcString() string {
-	return "42dc0ee6"
-}
-func (*PuntSocketRegisterReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *PuntSocketRegisterReply) Reset()                        { *m = PuntSocketRegisterReply{} }
+func (*PuntSocketRegisterReply) GetMessageName() string          { return "punt_socket_register_reply" }
+func (*PuntSocketRegisterReply) GetCrcString() string            { return "bd30ae90" }
+func (*PuntSocketRegisterReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // SetPunt represents VPP binary API message 'set_punt'.
 type SetPunt struct {
-	IsAdd uint8
+	IsAdd bool
 	Punt  Punt
 }
 
-func (*SetPunt) GetMessageName() string {
-	return "set_punt"
-}
-func (*SetPunt) GetCrcString() string {
-	return "032a42ef"
-}
-func (*SetPunt) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *SetPunt) Reset()                        { *m = SetPunt{} }
+func (*SetPunt) GetMessageName() string          { return "set_punt" }
+func (*SetPunt) GetCrcString() string            { return "83799618" }
+func (*SetPunt) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // SetPuntReply represents VPP binary API message 'set_punt_reply'.
 type SetPuntReply struct {
 	Retval int32
 }
 
-func (*SetPuntReply) GetMessageName() string {
-	return "set_punt_reply"
-}
-func (*SetPuntReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*SetPuntReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *SetPuntReply) Reset()                        { *m = SetPuntReply{} }
+func (*SetPuntReply) GetMessageName() string          { return "set_punt_reply" }
+func (*SetPuntReply) GetCrcString() string            { return "e8d4e804" }
+func (*SetPuntReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 func init() {
 	api.RegisterMessage((*PuntReasonDetails)(nil), "punt.PuntReasonDetails")

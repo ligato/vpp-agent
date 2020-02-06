@@ -44,7 +44,7 @@ func TestAddTapInterfaceV2(t *testing.T) {
 	for _, msg := range ctx.MockChannel.Msgs {
 		vppMsg, ok := msg.(*vpp_tapv2.TapCreateV2)
 		if ok {
-			Expect(vppMsg.UseRandomMac).To(BeEquivalentTo(1))
+			Expect(vppMsg.UseRandomMac).To(BeTrue())
 			Expect(vppMsg.HostIfName).To(BeEquivalentTo([]byte("hostIf")))
 			msgCheck = true
 		}

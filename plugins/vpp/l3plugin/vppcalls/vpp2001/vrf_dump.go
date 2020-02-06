@@ -15,7 +15,7 @@
 package vpp2001
 
 import (
-	"bytes"
+	"strings"
 
 	vpp_ip "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ip"
 	l3 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3"
@@ -36,8 +36,8 @@ func (h *VrfTableHandler) DumpVrfTables() (tables []*l3.VrfTable, err error) {
 		}
 		tables = append(tables, &l3.VrfTable{
 			Id:       fibDetails.Table.TableID,
-			Protocol: getTableProto(uintToBool(fibDetails.Table.IsIP6)),
-			Label:    bytesToString(fibDetails.Table.Name),
+			Protocol: getTableProto(fibDetails.Table.IsIP6),
+			Label:    strings.Trim(fibDetails.Table.Name, "\x00"),
 		})
 	}
 
@@ -49,8 +49,4 @@ func getTableProto(isIPv6 bool) l3.VrfTable_Protocol {
 		return l3.VrfTable_IPV6
 	}
 	return l3.VrfTable_IPV4
-}
-
-func bytesToString(b []byte) string {
-	return string(bytes.SplitN(b, []byte{0x00}, 2)[0])
 }

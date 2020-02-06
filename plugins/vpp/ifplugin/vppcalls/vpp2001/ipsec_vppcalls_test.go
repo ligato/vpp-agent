@@ -21,6 +21,7 @@ import (
 
 	. "github.com/onsi/gomega"
 
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ip_types"
 	vpp_ipsec "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ipsec"
 	ifs "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
 )
@@ -49,7 +50,7 @@ func TestAddIPSecTunnelInterface(t *testing.T) {
 		RemoteIntegKey:  "8a506a794f574265564551694d653457",
 		EnableUdpEncap:  true,
 	}
-	index, err := ifHandler.AddIPSecTunnelInterface("if1", ipSecLink)
+	index, err := ifHandler.AddIPSecTunnelInterface(ctx.Context, "if1", ipSecLink)
 	Expect(err).To(BeNil())
 	Expect(index).To(Equal(uint32(2)))
 
@@ -68,7 +69,7 @@ func TestAddIPSecTunnelInterface(t *testing.T) {
 	Expect(vppMsg.Esn).To(Equal(uint8(1)))
 	Expect(vppMsg.IsAdd).To(Equal(uint8(1)))
 	Expect(vppMsg.AntiReplay).To(Equal(uint8(1)))
-	Expect(vppMsg.LocalIP.Af).To(Equal(vpp_ipsec.ADDRESS_IP4))
+	Expect(vppMsg.LocalIP.Af).To(Equal(ip_types.ADDRESS_IP4))
 	copy(ipv4Addr[:], net.ParseIP(ipSecLink.LocalIp)[12:])
 	Expect(vppMsg.LocalIP.Un).To(BeEquivalentTo(vpp_ipsec.AddressUnion{XXX_UnionData: ipv4Addr}))
 	Expect(vppMsg.LocalSpi).To(Equal(uint32(1500)))
@@ -94,7 +95,7 @@ func TestAddIPSecTunnelInterfaceError(t *testing.T) {
 		Retval:    9,
 	})
 
-	index, err := ifHandler.AddIPSecTunnelInterface("if1", &ifs.IPSecLink{
+	index, err := ifHandler.AddIPSecTunnelInterface(ctx.Context, "if1", &ifs.IPSecLink{
 		Esn:            true,
 		LocalIp:        "10.10.0.1",
 		LocalCryptoKey: "4a506a794f574265564551694d653768",
@@ -110,7 +111,7 @@ func TestDeleteIPSecTunnelInterface(t *testing.T) {
 		SwIfIndex: 2,
 	})
 
-	err := ifHandler.DeleteIPSecTunnelInterface("if1", &ifs.IPSecLink{
+	err := ifHandler.DeleteIPSecTunnelInterface(ctx.Context, "if1", &ifs.IPSecLink{
 		Esn:             true,
 		LocalIp:         "10.10.0.1",
 		RemoteIp:        "10.10.0.2",
@@ -129,7 +130,7 @@ func TestDeleteIPSecTunnelInterfaceError(t *testing.T) {
 		Retval:    9,
 	})
 
-	err := ifHandler.DeleteIPSecTunnelInterface("if1", &ifs.IPSecLink{
+	err := ifHandler.DeleteIPSecTunnelInterface(ctx.Context, "if1", &ifs.IPSecLink{
 		Esn:            true,
 		LocalIp:        "10.10.0.1",
 		LocalCryptoKey: "4a506a794f574265564551694d653768",

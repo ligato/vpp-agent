@@ -115,10 +115,3 @@ func getLoadBalance(lb ifs.BondLink_LoadBalance) vpp_bond.BondLbAlgo {
 		return 0
 	}
 }
-
-func boolToUint(input bool) uint8 {
-	if input {
-		return 1
-	}
-	return 0
-}

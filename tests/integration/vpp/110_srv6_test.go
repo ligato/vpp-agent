@@ -21,15 +21,19 @@ import (
 
 	"github.com/ligato/cn-infra/logging/logrus"
 	. "github.com/onsi/gomega"
+
 	netalloc_mock "go.ligato.io/vpp-agent/v3/plugins/netalloc/mock"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
 	ifplugin_vppcalls "go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/vppcalls"
 	l3plugin_vppcalls "go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin/vppcalls"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin/vrfidx"
-	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/srplugin"
 	srv6_vppcalls "go.ligato.io/vpp-agent/v3/plugins/vpp/srplugin/vppcalls"
 	vpp_l3 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3"
 	srv6 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/srv6"
+
+	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin"
+	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin"
+	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/srplugin"
 )
 
 var (

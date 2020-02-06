@@ -15,11 +15,14 @@
 package vpp2001
 
 import (
+	"fmt"
 	"net"
 	"strings"
 
 	"github.com/pkg/errors"
 
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/interface_types"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ip_types"
 	vpp_stn "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/stn"
 	stn "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/stn"
 )
@@ -51,25 +54,16 @@ func (h *StnVppHandler) addDelStnRule(stnRule *stn.Rule, isAdd bool) error {
 	}
 
 	// parse IP address
-	var byteIP []byte
-	var isIPv4 uint8
-	ip := net.ParseIP(ipAddr)
-	if ip == nil {
-		return errors.Errorf("failed to parse IP address %s", ipAddr)
-	} else if ip.To4() == nil {
-		byteIP = []byte(ip.To16())
-		isIPv4 = 0
-	} else {
-		byteIP = []byte(ip.To4())
-		isIPv4 = 1
+	ip, err := ipToAddress(ipAddr)
+	if err != nil {
+		return err
 	}
 
 	// add STN rule
 	req := &vpp_stn.StnAddDelRule{
-		IsIP4:     isIPv4,
-		IPAddress: byteIP,
-		SwIfIndex: swIfIndex,
-		IsAdd:     boolToUint(isAdd),
+		IPAddress: ip,
+		SwIfIndex: interface_types.InterfaceIndex(swIfIndex),
+		IsAdd:     isAdd,
 	}
 	reply := &vpp_stn.StnAddDelRuleReply{}
 
@@ -81,9 +75,21 @@ func (h *StnVppHandler) addDelStnRule(stnRule *stn.Rule, isAdd bool) error {
 
 }
 
-func boolToUint(input bool) uint8 {
-	if input {
-		return 1
+func ipToAddress(address string) (dhcpAddr ip_types.Address, err error) {
+	netIP := net.ParseIP(address)
+	if netIP == nil {
+		return ip_types.Address{}, fmt.Errorf("invalid IP: %q", address)
 	}
-	return 0
+	if ip4 := netIP.To4(); ip4 == nil {
+		dhcpAddr.Af = ip_types.ADDRESS_IP6
+		var ip6addr ip_types.IP6Address
+		copy(ip6addr[:], netIP.To16())
+		dhcpAddr.Un.SetIP6(ip6addr)
+	} else {
+		dhcpAddr.Af = ip_types.ADDRESS_IP4
+		var ip4addr ip_types.IP4Address
+		copy(ip4addr[:], ip4)
+		dhcpAddr.Un.SetIP4(ip4addr)
+	}
+	return
 }

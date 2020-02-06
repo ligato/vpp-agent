@@ -370,9 +370,7 @@ type Address struct {
 	Un AddressUnion
 }
 
-func (*Address) GetTypeName() string {
-	return "address"
-}
+func (*Address) GetTypeName() string { return "address" }
 
 // FibMplsLabel represents VPP binary API type 'fib_mpls_label'.
 type FibMplsLabel struct {
@@ -382,9 +380,7 @@ type FibMplsLabel struct {
 	Exp       uint8
 }
 
-func (*FibMplsLabel) GetTypeName() string {
-	return "fib_mpls_label"
-}
+func (*FibMplsLabel) GetTypeName() string { return "fib_mpls_label" }
 
 // FibPath represents VPP binary API type 'fib_path'.
 type FibPath struct {
@@ -401,9 +397,7 @@ type FibPath struct {
 	LabelStack []FibMplsLabel
 }
 
-func (*FibPath) GetTypeName() string {
-	return "fib_path"
-}
+func (*FibPath) GetTypeName() string { return "fib_path" }
 
 // FibPathNh represents VPP binary API type 'fib_path_nh'.
 type FibPathNh struct {
@@ -413,9 +407,7 @@ type FibPathNh struct {
 	ClassifyTableIndex uint32
 }
 
-func (*FibPathNh) GetTypeName() string {
-	return "fib_path_nh"
-}
+func (*FibPathNh) GetTypeName() string { return "fib_path_nh" }
 
 // IP4Prefix represents VPP binary API type 'ip4_prefix'.
 type IP4Prefix struct {
@@ -423,9 +415,7 @@ type IP4Prefix struct {
 	Len     uint8
 }
 
-func (*IP4Prefix) GetTypeName() string {
-	return "ip4_prefix"
-}
+func (*IP4Prefix) GetTypeName() string { return "ip4_prefix" }
 
 // IP6Prefix represents VPP binary API type 'ip6_prefix'.
 type IP6Prefix struct {
@@ -433,9 +423,7 @@ type IP6Prefix struct {
 	Len     uint8
 }
 
-func (*IP6Prefix) GetTypeName() string {
-	return "ip6_prefix"
-}
+func (*IP6Prefix) GetTypeName() string { return "ip6_prefix" }
 
 // L3xc represents VPP binary API type 'l3xc'.
 type L3xc struct {
@@ -445,9 +433,7 @@ type L3xc struct {
 	Paths     []FibPath
 }
 
-func (*L3xc) GetTypeName() string {
-	return "l3xc"
-}
+func (*L3xc) GetTypeName() string { return "l3xc" }
 
 // Mprefix represents VPP binary API type 'mprefix'.
 type Mprefix struct {
@@ -457,9 +443,7 @@ type Mprefix struct {
 	SrcAddress       AddressUnion
 }
 
-func (*Mprefix) GetTypeName() string {
-	return "mprefix"
-}
+func (*Mprefix) GetTypeName() string { return "mprefix" }
 
 // Prefix represents VPP binary API type 'prefix'.
 type Prefix struct {
@@ -467,9 +451,7 @@ type Prefix struct {
 	Len     uint8
 }
 
-func (*Prefix) GetTypeName() string {
-	return "prefix"
-}
+func (*Prefix) GetTypeName() string { return "prefix" }
 
 // PrefixMatcher represents VPP binary API type 'prefix_matcher'.
 type PrefixMatcher struct {
@@ -477,18 +459,14 @@ type PrefixMatcher struct {
 	Ge uint8
 }
 
-func (*PrefixMatcher) GetTypeName() string {
-	return "prefix_matcher"
-}
+func (*PrefixMatcher) GetTypeName() string { return "prefix_matcher" }
 
 // AddressUnion represents VPP binary API union 'address_union'.
 type AddressUnion struct {
 	XXX_UnionData [16]byte
 }
 
-func (*AddressUnion) GetTypeName() string {
-	return "address_union"
-}
+func (*AddressUnion) GetTypeName() string { return "address_union" }
 
 func AddressUnionIP4(a IP4Address) (u AddressUnion) {
 	u.SetIP4(a)
@@ -530,73 +508,48 @@ type L3xcDel struct {
 	IsIP6     uint8
 }
 
-func (*L3xcDel) GetMessageName() string {
-	return "l3xc_del"
-}
-func (*L3xcDel) GetCrcString() string {
-	return "4cd68e2d"
-}
-func (*L3xcDel) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *L3xcDel) Reset()                        { *m = L3xcDel{} }
+func (*L3xcDel) GetMessageName() string          { return "l3xc_del" }
+func (*L3xcDel) GetCrcString() string            { return "4cd68e2d" }
+func (*L3xcDel) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // L3xcDelReply represents VPP binary API message 'l3xc_del_reply'.
 type L3xcDelReply struct {
 	Retval int32
 }
 
-func (*L3xcDelReply) GetMessageName() string {
-	return "l3xc_del_reply"
-}
-func (*L3xcDelReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*L3xcDelReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *L3xcDelReply) Reset()                        { *m = L3xcDelReply{} }
+func (*L3xcDelReply) GetMessageName() string          { return "l3xc_del_reply" }
+func (*L3xcDelReply) GetCrcString() string            { return "e8d4e804" }
+func (*L3xcDelReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // L3xcDetails represents VPP binary API message 'l3xc_details'.
 type L3xcDetails struct {
 	L3xc L3xc
 }
 
-func (*L3xcDetails) GetMessageName() string {
-	return "l3xc_details"
-}
-func (*L3xcDetails) GetCrcString() string {
-	return "183b63a2"
-}
-func (*L3xcDetails) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *L3xcDetails) Reset()                        { *m = L3xcDetails{} }
+func (*L3xcDetails) GetMessageName() string          { return "l3xc_details" }
+func (*L3xcDetails) GetCrcString() string            { return "183b63a2" }
+func (*L3xcDetails) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // L3xcDump represents VPP binary API message 'l3xc_dump'.
 type L3xcDump struct {
 	SwIfIndex uint32
 }
 
-func (*L3xcDump) GetMessageName() string {
-	return "l3xc_dump"
-}
-func (*L3xcDump) GetCrcString() string {
-	return "529cb13f"
-}
-func (*L3xcDump) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *L3xcDump) Reset()                        { *m = L3xcDump{} }
+func (*L3xcDump) GetMessageName() string          { return "l3xc_dump" }
+func (*L3xcDump) GetCrcString() string            { return "529cb13f" }
+func (*L3xcDump) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // L3xcPluginGetVersion represents VPP binary API message 'l3xc_plugin_get_version'.
 type L3xcPluginGetVersion struct{}
 
-func (*L3xcPluginGetVersion) GetMessageName() string {
-	return "l3xc_plugin_get_version"
-}
-func (*L3xcPluginGetVersion) GetCrcString() string {
-	return "51077d14"
-}
-func (*L3xcPluginGetVersion) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *L3xcPluginGetVersion) Reset()                        { *m = L3xcPluginGetVersion{} }
+func (*L3xcPluginGetVersion) GetMessageName() string          { return "l3xc_plugin_get_version" }
+func (*L3xcPluginGetVersion) GetCrcString() string            { return "51077d14" }
+func (*L3xcPluginGetVersion) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // L3xcPluginGetVersionReply represents VPP binary API message 'l3xc_plugin_get_version_reply'.
 type L3xcPluginGetVersionReply struct {
@@ -604,30 +557,20 @@ type L3xcPluginGetVersionReply struct {
 	Minor uint32
 }
 
-func (*L3xcPluginGetVersionReply) GetMessageName() string {
-	return "l3xc_plugin_get_version_reply"
-}
-func (*L3xcPluginGetVersionReply) GetCrcString() string {
-	return "9b32cf86"
-}
-func (*L3xcPluginGetVersionReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *L3xcPluginGetVersionReply) Reset()                        { *m = L3xcPluginGetVersionReply{} }
+func (*L3xcPluginGetVersionReply) GetMessageName() string          { return "l3xc_plugin_get_version_reply" }
+func (*L3xcPluginGetVersionReply) GetCrcString() string            { return "9b32cf86" }
+func (*L3xcPluginGetVersionReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // L3xcUpdate represents VPP binary API message 'l3xc_update'.
 type L3xcUpdate struct {
 	L3xc L3xc
 }
 
-func (*L3xcUpdate) GetMessageName() string {
-	return "l3xc_update"
-}
-func (*L3xcUpdate) GetCrcString() string {
-	return "baf08660"
-}
-func (*L3xcUpdate) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *L3xcUpdate) Reset()                        { *m = L3xcUpdate{} }
+func (*L3xcUpdate) GetMessageName() string          { return "l3xc_update" }
+func (*L3xcUpdate) GetCrcString() string            { return "baf08660" }
+func (*L3xcUpdate) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // L3xcUpdateReply represents VPP binary API message 'l3xc_update_reply'.
 type L3xcUpdateReply struct {
@@ -635,15 +578,10 @@ type L3xcUpdateReply struct {
 	StatsIndex uint32
 }
 
-func (*L3xcUpdateReply) GetMessageName() string {
-	return "l3xc_update_reply"
-}
-func (*L3xcUpdateReply) GetCrcString() string {
-	return "1992deab"
-}
-func (*L3xcUpdateReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *L3xcUpdateReply) Reset()                        { *m = L3xcUpdateReply{} }
+func (*L3xcUpdateReply) GetMessageName() string          { return "l3xc_update_reply" }
+func (*L3xcUpdateReply) GetCrcString() string            { return "1992deab" }
+func (*L3xcUpdateReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 func init() {
 	api.RegisterMessage((*L3xcDel)(nil), "l3xc.L3xcDel")

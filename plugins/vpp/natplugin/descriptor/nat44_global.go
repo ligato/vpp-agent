@@ -21,8 +21,8 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/pkg/errors"
-	"go.ligato.io/vpp-agent/v3/pkg/models"
 
+	"go.ligato.io/vpp-agent/v3/pkg/models"
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 	vpp_ifdescriptor "go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/descriptor"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/natplugin/descriptor/adapter"
@@ -34,12 +34,6 @@ const (
 	// NAT44GlobalDescriptorName is the name of the descriptor for VPP NAT44 global
 	// configuration.
 	NAT44GlobalDescriptorName = "vpp-nat44-global"
-
-	// default virtual reassembly configuration
-	natReassTimeoutDefault = 2 // seconds
-	natMaxReassDefault     = 1024
-	natMaxFragDefault      = 5
-	natDropFragDefault     = false
 )
 
 // A list of non-retriable errors:
@@ -53,21 +47,13 @@ var (
 	ErrDuplicateNATAddress = errors.New("Duplicate VPP NAT address")
 )
 
-// defaultGlobalCfg is the default NAT44 global configuration.
-var defaultGlobalCfg = &nat.Nat44Global{
-	VirtualReassembly: &nat.VirtualReassembly{
-		Timeout:         natReassTimeoutDefault,
-		MaxReassemblies: natMaxReassDefault,
-		MaxFragments:    natMaxFragDefault,
-		DropFragments:   natDropFragDefault,
-	},
-}
-
 // NAT44GlobalDescriptor teaches KVScheduler how to configure global options for
 // VPP NAT44.
 type NAT44GlobalDescriptor struct {
 	log        logging.Logger
 	natHandler vppcalls.NatVppAPI
+
+	defaultGlobalCfg *nat.Nat44Global
 
 	// UseDeprecatedAPI tracks whether deprecated global API (NAT interfaces, addresses) is being used on NB.
 	// Used to orchestrate which data should be dumped from which descriptor on Retrieve.
@@ -77,8 +63,9 @@ type NAT44GlobalDescriptor struct {
 // NewNAT44GlobalDescriptor creates a new instance of the NAT44Global descriptor.
 func NewNAT44GlobalDescriptor(natHandler vppcalls.NatVppAPI, log logging.PluginLogger) (*NAT44GlobalDescriptor, *kvs.KVDescriptor) {
 	ctx := &NAT44GlobalDescriptor{
-		natHandler: natHandler,
-		log:        log.NewLogger("nat44-global-descriptor"),
+		natHandler:       natHandler,
+		log:              log.NewLogger("nat44-global-descriptor"),
+		defaultGlobalCfg: natHandler.DefaultNat44GlobalConfig(),
 	}
 
 	typedDescr := &adapter.NAT44GlobalDescriptor{
@@ -103,7 +90,7 @@ func (d *NAT44GlobalDescriptor) EquivalentNAT44Global(key string, oldGlobalCfg, 
 	if oldGlobalCfg.Forwarding != newGlobalCfg.Forwarding {
 		return false
 	}
-	if !proto.Equal(getVirtualReassembly(oldGlobalCfg), getVirtualReassembly(newGlobalCfg)) {
+	if !proto.Equal(d.getVirtualReassembly(oldGlobalCfg), d.getVirtualReassembly(newGlobalCfg)) {
 		return false
 	}
 
@@ -179,12 +166,12 @@ func (d *NAT44GlobalDescriptor) Validate(key string, globalCfg *nat.Nat44Global)
 
 // Create applies NAT44 global options.
 func (d *NAT44GlobalDescriptor) Create(key string, globalCfg *nat.Nat44Global) (metadata interface{}, err error) {
-	return d.Update(key, defaultGlobalCfg, globalCfg, nil)
+	return d.Update(key, d.defaultGlobalCfg, globalCfg, nil)
 }
 
 // Delete sets NAT44 global options back to the defaults.
 func (d *NAT44GlobalDescriptor) Delete(key string, globalCfg *nat.Nat44Global, metadata interface{}) error {
-	_, err := d.Update(key, globalCfg, defaultGlobalCfg, metadata)
+	_, err := d.Update(key, globalCfg, d.defaultGlobalCfg, metadata)
 	return err
 }
 
@@ -200,8 +187,8 @@ func (d *NAT44GlobalDescriptor) Update(key string, oldGlobalCfg, newGlobalCfg *n
 	}
 
 	// update virtual reassembly for IPv4
-	if !proto.Equal(getVirtualReassembly(oldGlobalCfg), getVirtualReassembly(newGlobalCfg)) {
-		if err = d.natHandler.SetVirtualReassemblyIPv4(getVirtualReassembly(newGlobalCfg)); err != nil {
+	if !proto.Equal(d.getVirtualReassembly(oldGlobalCfg), d.getVirtualReassembly(newGlobalCfg)) {
+		if err = d.natHandler.SetVirtualReassemblyIPv4(d.getVirtualReassembly(newGlobalCfg)); err != nil {
 			err = errors.Errorf("failed to set NAT virtual reassembly for IPv4: %v", err)
 			d.log.Error(err)
 			return nil, err
@@ -229,7 +216,7 @@ func (d *NAT44GlobalDescriptor) Retrieve(correlate []adapter.NAT44GlobalKVWithMe
 	}
 
 	origin := kvs.FromNB
-	if proto.Equal(globalCfg, defaultGlobalCfg) {
+	if proto.Equal(globalCfg, d.defaultGlobalCfg) {
 		origin = kvs.FromSB
 	}
 
@@ -271,9 +258,9 @@ type natIface struct {
 	output int
 }
 
-func getVirtualReassembly(globalCfg *nat.Nat44Global) *nat.VirtualReassembly {
+func (d *NAT44GlobalDescriptor) getVirtualReassembly(globalCfg *nat.Nat44Global) *nat.VirtualReassembly {
 	if globalCfg.VirtualReassembly == nil {
-		return defaultGlobalCfg.VirtualReassembly
+		return d.defaultGlobalCfg.VirtualReassembly
 	}
 	return globalCfg.VirtualReassembly
 }

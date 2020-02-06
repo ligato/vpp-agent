@@ -36,30 +36,20 @@ type StnAddDelRule struct {
 	IsAdd     uint8
 }
 
-func (*StnAddDelRule) GetMessageName() string {
-	return "stn_add_del_rule"
-}
-func (*StnAddDelRule) GetCrcString() string {
-	return "9f0bbe21"
-}
-func (*StnAddDelRule) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *StnAddDelRule) Reset()                        { *m = StnAddDelRule{} }
+func (*StnAddDelRule) GetMessageName() string          { return "stn_add_del_rule" }
+func (*StnAddDelRule) GetCrcString() string            { return "9f0bbe21" }
+func (*StnAddDelRule) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // StnAddDelRuleReply represents VPP binary API message 'stn_add_del_rule_reply'.
 type StnAddDelRuleReply struct {
 	Retval int32
 }
 
-func (*StnAddDelRuleReply) GetMessageName() string {
-	return "stn_add_del_rule_reply"
-}
-func (*StnAddDelRuleReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*StnAddDelRuleReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *StnAddDelRuleReply) Reset()                        { *m = StnAddDelRuleReply{} }
+func (*StnAddDelRuleReply) GetMessageName() string          { return "stn_add_del_rule_reply" }
+func (*StnAddDelRuleReply) GetCrcString() string            { return "e8d4e804" }
+func (*StnAddDelRuleReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // StnRulesDetails represents VPP binary API message 'stn_rules_details'.
 type StnRulesDetails struct {
@@ -68,28 +58,18 @@ type StnRulesDetails struct {
 	SwIfIndex uint32
 }
 
-func (*StnRulesDetails) GetMessageName() string {
-	return "stn_rules_details"
-}
-func (*StnRulesDetails) GetCrcString() string {
-	return "5eafa31e"
-}
-func (*StnRulesDetails) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *StnRulesDetails) Reset()                        { *m = StnRulesDetails{} }
+func (*StnRulesDetails) GetMessageName() string          { return "stn_rules_details" }
+func (*StnRulesDetails) GetCrcString() string            { return "5eafa31e" }
+func (*StnRulesDetails) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // StnRulesDump represents VPP binary API message 'stn_rules_dump'.
 type StnRulesDump struct{}
 
-func (*StnRulesDump) GetMessageName() string {
-	return "stn_rules_dump"
-}
-func (*StnRulesDump) GetCrcString() string {
-	return "51077d14"
-}
-func (*StnRulesDump) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *StnRulesDump) Reset()                        { *m = StnRulesDump{} }
+func (*StnRulesDump) GetMessageName() string          { return "stn_rules_dump" }
+func (*StnRulesDump) GetCrcString() string            { return "51077d14" }
+func (*StnRulesDump) GetMessageType() api.MessageType { return api.RequestMessage }
 
 func init() {
 	api.RegisterMessage((*StnAddDelRule)(nil), "stn.StnAddDelRule")
