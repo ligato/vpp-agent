@@ -17,6 +17,7 @@ package descriptor
 import (
 	"github.com/golang/protobuf/proto"
 	"github.com/ligato/cn-infra/logging"
+	"github.com/pkg/errors"
 
 	"go.ligato.io/vpp-agent/v3/pkg/models"
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
@@ -30,38 +31,26 @@ const (
 	IPScanNeighborDescriptorName = "vpp-ip-scan-neighbor"
 )
 
-const (
-	defaultScanInterval   = 1
-	defaultMaxProcTime    = 20
-	defaultMaxUpdate      = 10
-	defaultScanIntDelay   = 1
-	defaultStaleThreshold = 4
-)
-
-var defaultIPScanNeighbor = &l3.IPScanNeighbor{
-	Mode:           l3.IPScanNeighbor_DISABLED,
-	ScanInterval:   defaultScanInterval,
-	MaxProcTime:    defaultMaxProcTime,
-	MaxUpdate:      defaultMaxUpdate,
-	ScanIntDelay:   defaultScanIntDelay,
-	StaleThreshold: defaultStaleThreshold,
-}
-
 // IPScanNeighborDescriptor teaches KVScheduler how to configure VPP proxy ARPs.
 type IPScanNeighborDescriptor struct {
-	log       logging.Logger
-	ipNeigh   vppcalls.IPNeighVppAPI
-	scheduler kvs.KVScheduler
+	log                   logging.Logger
+	ipNeigh               vppcalls.IPNeighVppAPI
+	scheduler             kvs.KVScheduler
+	defaultIPScanNeighbor *l3.IPScanNeighbor
 }
 
 // NewIPScanNeighborDescriptor creates a new instance of the IPScanNeighborDescriptor.
-func NewIPScanNeighborDescriptor(scheduler kvs.KVScheduler,
-	proxyArpHandler vppcalls.IPNeighVppAPI, log logging.PluginLogger) *kvs.KVDescriptor {
+func NewIPScanNeighborDescriptor(
+	scheduler kvs.KVScheduler,
+	ipNeighHandler vppcalls.IPNeighVppAPI,
+	log logging.PluginLogger,
+) *kvs.KVDescriptor {
 
 	ctx := &IPScanNeighborDescriptor{
-		scheduler: scheduler,
-		ipNeigh:   proxyArpHandler,
-		log:       log.NewLogger("ip-scan-neigh-descriptor"),
+		scheduler:             scheduler,
+		ipNeigh:               ipNeighHandler,
+		log:                   log.NewLogger("ip-scan-neigh-descriptor"),
+		defaultIPScanNeighbor: ipNeighHandler.DefaultIPScanNeighbor(),
 	}
 
 	typedDescr := &adapter.IPScanNeighborDescriptor{
@@ -74,23 +63,28 @@ func NewIPScanNeighborDescriptor(scheduler kvs.KVScheduler,
 		Update:          ctx.Update,
 		Delete:          ctx.Delete,
 		Retrieve:        ctx.Retrieve,
+		// TODO: define validation method
 	}
 	return adapter.NewIPScanNeighborDescriptor(typedDescr)
 }
 
 // EquivalentIPScanNeighbors compares the IP Scan Neighbor values.
 func (d *IPScanNeighborDescriptor) EquivalentIPScanNeighbors(key string, oldValue, newValue *l3.IPScanNeighbor) bool {
-	return proto.Equal(withDefaults(oldValue), withDefaults(newValue))
+	return proto.Equal(d.withDefaults(oldValue), d.withDefaults(newValue))
 }
 
 // Create adds VPP IP Scan Neighbor.
 func (d *IPScanNeighborDescriptor) Create(key string, value *l3.IPScanNeighbor) (metadata interface{}, err error) {
-	return d.Update(key, defaultIPScanNeighbor, value, nil)
+	return d.Update(key, d.defaultIPScanNeighbor, value, nil)
 }
 
 // Delete deletes VPP IP Scan Neighbor.
 func (d *IPScanNeighborDescriptor) Delete(key string, value *l3.IPScanNeighbor, metadata interface{}) error {
-	_, err := d.Update(key, value, defaultIPScanNeighbor, metadata)
+	_, err := d.Update(key, value, d.defaultIPScanNeighbor, metadata)
+	if errors.Is(err, vppcalls.ErrIPNeighborNotImplemented) {
+		d.log.Debug("SetIPScanNeighbor failed:", err)
+		return nil
+	}
 	return err
 }
 
@@ -108,13 +102,16 @@ func (d *IPScanNeighborDescriptor) Retrieve(correlate []adapter.IPScanNeighborKV
 ) {
 	// Retrieve VPP configuration
 	ipNeigh, err := d.ipNeigh.GetIPScanNeighbor()
-	if err != nil {
+	if errors.Is(err, vppcalls.ErrIPNeighborNotImplemented) {
+		d.log.Debug("GetIPScanNeighbor failed:", err)
+		return nil, nil
+	} else if err != nil {
 		return nil, err
 	}
-	fillDefaults(ipNeigh)
+	d.fillDefaults(ipNeigh)
 
 	var origin = kvs.FromNB
-	if proto.Equal(ipNeigh, defaultIPScanNeighbor) {
+	if proto.Equal(ipNeigh, d.defaultIPScanNeighbor) {
 		origin = kvs.FromSB
 	}
 
@@ -126,41 +123,53 @@ func (d *IPScanNeighborDescriptor) Retrieve(correlate []adapter.IPScanNeighborKV
 
 	return retrieved, nil
 }
-func withDefaults(orig *l3.IPScanNeighbor) *l3.IPScanNeighbor {
-	var val = *orig
+func (d *IPScanNeighborDescriptor) withDefaults(orig *l3.IPScanNeighbor) *l3.IPScanNeighbor {
+	var (
+		def = d.defaultIPScanNeighbor
+		val = *orig
+	)
+	if def == nil {
+		return &val
+	}
 	if val.ScanInterval == 0 {
-		val.ScanInterval = defaultScanInterval
+		val.ScanInterval = def.GetScanInterval()
 	}
 	if val.MaxProcTime == 0 {
-		val.MaxProcTime = defaultMaxProcTime
+		val.MaxProcTime = def.GetMaxProcTime()
 	}
 	if val.MaxUpdate == 0 {
-		val.MaxUpdate = defaultMaxUpdate
+		val.MaxUpdate = def.GetMaxUpdate()
 	}
 	if val.ScanIntDelay == 0 {
-		val.ScanIntDelay = defaultScanIntDelay
+		val.ScanIntDelay = def.GetScanIntDelay()
 	}
 	if val.StaleThreshold == 0 {
-		val.StaleThreshold = defaultStaleThreshold
+		val.StaleThreshold = def.GetStaleThreshold()
 	}
 	return &val
 }
 
-func fillDefaults(orig *l3.IPScanNeighbor) {
-	var val = orig
+func (d *IPScanNeighborDescriptor) fillDefaults(orig *l3.IPScanNeighbor) {
+	var (
+		def = d.defaultIPScanNeighbor
+		val = orig
+	)
+	if def == nil {
+		return
+	}
 	if val.ScanInterval == 0 {
-		val.ScanInterval = defaultScanInterval
+		val.ScanInterval = def.GetScanInterval()
 	}
 	if val.MaxProcTime == 0 {
-		val.MaxProcTime = defaultMaxProcTime
+		val.MaxProcTime = def.GetMaxProcTime()
 	}
 	if val.MaxUpdate == 0 {
-		val.MaxUpdate = defaultMaxUpdate
+		val.MaxUpdate = def.GetMaxUpdate()
 	}
 	if val.ScanIntDelay == 0 {
-		val.ScanIntDelay = defaultScanIntDelay
+		val.ScanIntDelay = def.GetScanIntDelay()
 	}
 	if val.StaleThreshold == 0 {
-		val.StaleThreshold = defaultStaleThreshold
+		val.StaleThreshold = def.GetStaleThreshold()
 	}
 }

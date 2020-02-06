@@ -5,8 +5,8 @@
 Package abf is a generated VPP binary API for 'abf' module.
 
 It consists of:
-	  7 enums
-	  5 aliases
+	 13 enums
+	  6 aliases
 	 11 types
 	  1 union
 	 10 messages
@@ -21,358 +21,66 @@ import (
 	struc "github.com/lunixbochs/struc"
 	io "io"
 	strconv "strconv"
+
+	fib_types "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/fib_types"
+	interface_types "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/interface_types"
+	ip_types "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ip_types"
 )
 
 const (
 	// ModuleName is the name of this module.
 	ModuleName = "abf"
 	// VersionCrc is the CRC of this module.
-	VersionCrc = 0xb229ea7c
+	VersionCrc = 0xc2e5c644
 )
 
-// AddressFamily represents VPP binary API enum 'address_family'.
-type AddressFamily uint32
+type AddressFamily = ip_types.AddressFamily
 
-const (
-	ADDRESS_IP4 AddressFamily = 0
-	ADDRESS_IP6 AddressFamily = 1
-)
+type FibPathFlags = fib_types.FibPathFlags
 
-var AddressFamily_name = map[uint32]string{
-	0: "ADDRESS_IP4",
-	1: "ADDRESS_IP6",
-}
+type FibPathNhProto = fib_types.FibPathNhProto
 
-var AddressFamily_value = map[string]uint32{
-	"ADDRESS_IP4": 0,
-	"ADDRESS_IP6": 1,
-}
+type FibPathType = fib_types.FibPathType
 
-func (x AddressFamily) String() string {
-	s, ok := AddressFamily_name[uint32(x)]
-	if ok {
-		return s
-	}
-	return strconv.Itoa(int(x))
-}
+type IfStatusFlags = interface_types.IfStatusFlags
 
-// FibPathFlags represents VPP binary API enum 'fib_path_flags'.
-type FibPathFlags uint32
+type IfType = interface_types.IfType
 
-const (
-	FIB_API_PATH_FLAG_NONE                 FibPathFlags = 0
-	FIB_API_PATH_FLAG_RESOLVE_VIA_ATTACHED FibPathFlags = 1
-	FIB_API_PATH_FLAG_RESOLVE_VIA_HOST     FibPathFlags = 2
-	FIB_API_PATH_FLAG_POP_PW_CW            FibPathFlags = 4
-)
+type IPDscp = ip_types.IPDscp
 
-var FibPathFlags_name = map[uint32]string{
-	0: "FIB_API_PATH_FLAG_NONE",
-	1: "FIB_API_PATH_FLAG_RESOLVE_VIA_ATTACHED",
-	2: "FIB_API_PATH_FLAG_RESOLVE_VIA_HOST",
-	4: "FIB_API_PATH_FLAG_POP_PW_CW",
-}
+type IPEcn = ip_types.IPEcn
 
-var FibPathFlags_value = map[string]uint32{
-	"FIB_API_PATH_FLAG_NONE":                 0,
-	"FIB_API_PATH_FLAG_RESOLVE_VIA_ATTACHED": 1,
-	"FIB_API_PATH_FLAG_RESOLVE_VIA_HOST":     2,
-	"FIB_API_PATH_FLAG_POP_PW_CW":            4,
-}
+type IPProto = ip_types.IPProto
 
-func (x FibPathFlags) String() string {
-	s, ok := FibPathFlags_name[uint32(x)]
-	if ok {
-		return s
-	}
-	return strconv.Itoa(int(x))
-}
+type LinkDuplex = interface_types.LinkDuplex
 
-// FibPathNhProto represents VPP binary API enum 'fib_path_nh_proto'.
-type FibPathNhProto uint32
+type MtuProto = interface_types.MtuProto
 
-const (
-	FIB_API_PATH_NH_PROTO_IP4      FibPathNhProto = 0
-	FIB_API_PATH_NH_PROTO_IP6      FibPathNhProto = 1
-	FIB_API_PATH_NH_PROTO_MPLS     FibPathNhProto = 2
-	FIB_API_PATH_NH_PROTO_ETHERNET FibPathNhProto = 3
-	FIB_API_PATH_NH_PROTO_BIER     FibPathNhProto = 4
-)
+type RxMode = interface_types.RxMode
 
-var FibPathNhProto_name = map[uint32]string{
-	0: "FIB_API_PATH_NH_PROTO_IP4",
-	1: "FIB_API_PATH_NH_PROTO_IP6",
-	2: "FIB_API_PATH_NH_PROTO_MPLS",
-	3: "FIB_API_PATH_NH_PROTO_ETHERNET",
-	4: "FIB_API_PATH_NH_PROTO_BIER",
-}
+type SubIfFlags = interface_types.SubIfFlags
 
-var FibPathNhProto_value = map[string]uint32{
-	"FIB_API_PATH_NH_PROTO_IP4":      0,
-	"FIB_API_PATH_NH_PROTO_IP6":      1,
-	"FIB_API_PATH_NH_PROTO_MPLS":     2,
-	"FIB_API_PATH_NH_PROTO_ETHERNET": 3,
-	"FIB_API_PATH_NH_PROTO_BIER":     4,
-}
+type AddressWithPrefix = ip_types.AddressWithPrefix
 
-func (x FibPathNhProto) String() string {
-	s, ok := FibPathNhProto_name[uint32(x)]
-	if ok {
-		return s
-	}
-	return strconv.Itoa(int(x))
-}
+type InterfaceIndex = interface_types.InterfaceIndex
 
-// FibPathType represents VPP binary API enum 'fib_path_type'.
-type FibPathType uint32
+type IP4Address = ip_types.IP4Address
 
-const (
-	FIB_API_PATH_TYPE_NORMAL        FibPathType = 0
-	FIB_API_PATH_TYPE_LOCAL         FibPathType = 1
-	FIB_API_PATH_TYPE_DROP          FibPathType = 2
-	FIB_API_PATH_TYPE_UDP_ENCAP     FibPathType = 3
-	FIB_API_PATH_TYPE_BIER_IMP      FibPathType = 4
-	FIB_API_PATH_TYPE_ICMP_UNREACH  FibPathType = 5
-	FIB_API_PATH_TYPE_ICMP_PROHIBIT FibPathType = 6
-	FIB_API_PATH_TYPE_SOURCE_LOOKUP FibPathType = 7
-	FIB_API_PATH_TYPE_DVR           FibPathType = 8
-	FIB_API_PATH_TYPE_INTERFACE_RX  FibPathType = 9
-	FIB_API_PATH_TYPE_CLASSIFY      FibPathType = 10
-)
+type IP4AddressWithPrefix = ip_types.IP4AddressWithPrefix
 
-var FibPathType_name = map[uint32]string{
-	0:  "FIB_API_PATH_TYPE_NORMAL",
-	1:  "FIB_API_PATH_TYPE_LOCAL",
-	2:  "FIB_API_PATH_TYPE_DROP",
-	3:  "FIB_API_PATH_TYPE_UDP_ENCAP",
-	4:  "FIB_API_PATH_TYPE_BIER_IMP",
-	5:  "FIB_API_PATH_TYPE_ICMP_UNREACH",
-	6:  "FIB_API_PATH_TYPE_ICMP_PROHIBIT",
-	7:  "FIB_API_PATH_TYPE_SOURCE_LOOKUP",
-	8:  "FIB_API_PATH_TYPE_DVR",
-	9:  "FIB_API_PATH_TYPE_INTERFACE_RX",
-	10: "FIB_API_PATH_TYPE_CLASSIFY",
-}
+type IP6Address = ip_types.IP6Address
 
-var FibPathType_value = map[string]uint32{
-	"FIB_API_PATH_TYPE_NORMAL":        0,
-	"FIB_API_PATH_TYPE_LOCAL":         1,
-	"FIB_API_PATH_TYPE_DROP":          2,
-	"FIB_API_PATH_TYPE_UDP_ENCAP":     3,
-	"FIB_API_PATH_TYPE_BIER_IMP":      4,
-	"FIB_API_PATH_TYPE_ICMP_UNREACH":  5,
-	"FIB_API_PATH_TYPE_ICMP_PROHIBIT": 6,
-	"FIB_API_PATH_TYPE_SOURCE_LOOKUP": 7,
-	"FIB_API_PATH_TYPE_DVR":           8,
-	"FIB_API_PATH_TYPE_INTERFACE_RX":  9,
-	"FIB_API_PATH_TYPE_CLASSIFY":      10,
-}
-
-func (x FibPathType) String() string {
-	s, ok := FibPathType_name[uint32(x)]
-	if ok {
-		return s
-	}
-	return strconv.Itoa(int(x))
-}
-
-// IPDscp represents VPP binary API enum 'ip_dscp'.
-type IPDscp uint8
-
-const (
-	IP_API_DSCP_CS0  IPDscp = 0
-	IP_API_DSCP_CS1  IPDscp = 8
-	IP_API_DSCP_AF11 IPDscp = 10
-	IP_API_DSCP_AF12 IPDscp = 12
-	IP_API_DSCP_AF13 IPDscp = 14
-	IP_API_DSCP_CS2  IPDscp = 16
-	IP_API_DSCP_AF21 IPDscp = 18
-	IP_API_DSCP_AF22 IPDscp = 20
-	IP_API_DSCP_AF23 IPDscp = 22
-	IP_API_DSCP_CS3  IPDscp = 24
-	IP_API_DSCP_AF31 IPDscp = 26
-	IP_API_DSCP_AF32 IPDscp = 28
-	IP_API_DSCP_AF33 IPDscp = 30
-	IP_API_DSCP_CS4  IPDscp = 32
-	IP_API_DSCP_AF41 IPDscp = 34
-	IP_API_DSCP_AF42 IPDscp = 36
-	IP_API_DSCP_AF43 IPDscp = 38
-	IP_API_DSCP_CS5  IPDscp = 40
-	IP_API_DSCP_EF   IPDscp = 46
-	IP_API_DSCP_CS6  IPDscp = 48
-	IP_API_DSCP_CS7  IPDscp = 50
-)
-
-var IPDscp_name = map[uint8]string{
-	0:  "IP_API_DSCP_CS0",
-	8:  "IP_API_DSCP_CS1",
-	10: "IP_API_DSCP_AF11",
-	12: "IP_API_DSCP_AF12",
-	14: "IP_API_DSCP_AF13",
-	16: "IP_API_DSCP_CS2",
-	18: "IP_API_DSCP_AF21",
-	20: "IP_API_DSCP_AF22",
-	22: "IP_API_DSCP_AF23",
-	24: "IP_API_DSCP_CS3",
-	26: "IP_API_DSCP_AF31",
-	28: "IP_API_DSCP_AF32",
-	30: "IP_API_DSCP_AF33",
-	32: "IP_API_DSCP_CS4",
-	34: "IP_API_DSCP_AF41",
-	36: "IP_API_DSCP_AF42",
-	38: "IP_API_DSCP_AF43",
-	40: "IP_API_DSCP_CS5",
-	46: "IP_API_DSCP_EF",
-	48: "IP_API_DSCP_CS6",
-	50: "IP_API_DSCP_CS7",
-}
-
-var IPDscp_value = map[string]uint8{
-	"IP_API_DSCP_CS0":  0,
-	"IP_API_DSCP_CS1":  8,
-	"IP_API_DSCP_AF11": 10,
-	"IP_API_DSCP_AF12": 12,
-	"IP_API_DSCP_AF13": 14,
-	"IP_API_DSCP_CS2":  16,
-	"IP_API_DSCP_AF21": 18,
-	"IP_API_DSCP_AF22": 20,
-	"IP_API_DSCP_AF23": 22,
-	"IP_API_DSCP_CS3":  24,
-	"IP_API_DSCP_AF31": 26,
-	"IP_API_DSCP_AF32": 28,
-	"IP_API_DSCP_AF33": 30,
-	"IP_API_DSCP_CS4":  32,
-	"IP_API_DSCP_AF41": 34,
-	"IP_API_DSCP_AF42": 36,
-	"IP_API_DSCP_AF43": 38,
-	"IP_API_DSCP_CS5":  40,
-	"IP_API_DSCP_EF":   46,
-	"IP_API_DSCP_CS6":  48,
-	"IP_API_DSCP_CS7":  50,
-}
-
-func (x IPDscp) String() string {
-	s, ok := IPDscp_name[uint8(x)]
-	if ok {
-		return s
-	}
-	return strconv.Itoa(int(x))
-}
-
-// IPEcn represents VPP binary API enum 'ip_ecn'.
-type IPEcn uint8
-
-const (
-	IP_API_ECN_NONE IPEcn = 0
-	IP_API_ECN_ECT0 IPEcn = 1
-	IP_API_ECN_ECT1 IPEcn = 2
-	IP_API_ECN_CE   IPEcn = 3
-)
-
-var IPEcn_name = map[uint8]string{
-	0: "IP_API_ECN_NONE",
-	1: "IP_API_ECN_ECT0",
-	2: "IP_API_ECN_ECT1",
-	3: "IP_API_ECN_CE",
-}
-
-var IPEcn_value = map[string]uint8{
-	"IP_API_ECN_NONE": 0,
-	"IP_API_ECN_ECT0": 1,
-	"IP_API_ECN_ECT1": 2,
-	"IP_API_ECN_CE":   3,
-}
-
-func (x IPEcn) String() string {
-	s, ok := IPEcn_name[uint8(x)]
-	if ok {
-		return s
-	}
-	return strconv.Itoa(int(x))
-}
-
-// IPProto represents VPP binary API enum 'ip_proto'.
-type IPProto uint32
-
-const (
-	IP_API_PROTO_HOPOPT   IPProto = 0
-	IP_API_PROTO_ICMP     IPProto = 1
-	IP_API_PROTO_IGMP     IPProto = 2
-	IP_API_PROTO_TCP      IPProto = 6
-	IP_API_PROTO_UDP      IPProto = 17
-	IP_API_PROTO_GRE      IPProto = 47
-	IP_API_PROTO_AH       IPProto = 50
-	IP_API_PROTO_ESP      IPProto = 51
-	IP_API_PROTO_EIGRP    IPProto = 88
-	IP_API_PROTO_OSPF     IPProto = 89
-	IP_API_PROTO_SCTP     IPProto = 132
-	IP_API_PROTO_RESERVED IPProto = 255
-)
-
-var IPProto_name = map[uint32]string{
-	0:   "IP_API_PROTO_HOPOPT",
-	1:   "IP_API_PROTO_ICMP",
-	2:   "IP_API_PROTO_IGMP",
-	6:   "IP_API_PROTO_TCP",
-	17:  "IP_API_PROTO_UDP",
-	47:  "IP_API_PROTO_GRE",
-	50:  "IP_API_PROTO_AH",
-	51:  "IP_API_PROTO_ESP",
-	88:  "IP_API_PROTO_EIGRP",
-	89:  "IP_API_PROTO_OSPF",
-	132: "IP_API_PROTO_SCTP",
-	255: "IP_API_PROTO_RESERVED",
-}
-
-var IPProto_value = map[string]uint32{
-	"IP_API_PROTO_HOPOPT":   0,
-	"IP_API_PROTO_ICMP":     1,
-	"IP_API_PROTO_IGMP":     2,
-	"IP_API_PROTO_TCP":      6,
-	"IP_API_PROTO_UDP":      17,
-	"IP_API_PROTO_GRE":      47,
-	"IP_API_PROTO_AH":       50,
-	"IP_API_PROTO_ESP":      51,
-	"IP_API_PROTO_EIGRP":    88,
-	"IP_API_PROTO_OSPF":     89,
-	"IP_API_PROTO_SCTP":     132,
-	"IP_API_PROTO_RESERVED": 255,
-}
-
-func (x IPProto) String() string {
-	s, ok := IPProto_name[uint32(x)]
-	if ok {
-		return s
-	}
-	return strconv.Itoa(int(x))
-}
-
-// AddressWithPrefix represents VPP binary API alias 'address_with_prefix'.
-type AddressWithPrefix Prefix
-
-// IP4Address represents VPP binary API alias 'ip4_address'.
-type IP4Address [4]uint8
-
-// IP4AddressWithPrefix represents VPP binary API alias 'ip4_address_with_prefix'.
-type IP4AddressWithPrefix IP4Prefix
-
-// IP6Address represents VPP binary API alias 'ip6_address'.
-type IP6Address [16]uint8
-
-// IP6AddressWithPrefix represents VPP binary API alias 'ip6_address_with_prefix'.
-type IP6AddressWithPrefix IP6Prefix
+type IP6AddressWithPrefix = ip_types.IP6AddressWithPrefix
 
 // AbfItfAttach represents VPP binary API type 'abf_itf_attach'.
 type AbfItfAttach struct {
 	PolicyID  uint32
-	SwIfIndex uint32
+	SwIfIndex InterfaceIndex
 	Priority  uint32
-	IsIPv6    uint8
+	IsIPv6    bool
 }
 
-func (*AbfItfAttach) GetTypeName() string {
-	return "abf_itf_attach"
-}
+func (*AbfItfAttach) GetTypeName() string { return "abf_itf_attach" }
 
 // AbfPolicy represents VPP binary API type 'abf_policy'.
 type AbfPolicy struct {
@@ -382,229 +90,74 @@ type AbfPolicy struct {
 	Paths    []FibPath
 }
 
-func (*AbfPolicy) GetTypeName() string {
-	return "abf_policy"
-}
+func (*AbfPolicy) GetTypeName() string { return "abf_policy" }
 
-// Address represents VPP binary API type 'address'.
-type Address struct {
-	Af AddressFamily
-	Un AddressUnion
-}
+type Address = ip_types.Address
 
-func (*Address) GetTypeName() string {
-	return "address"
-}
+type FibMplsLabel = fib_types.FibMplsLabel
 
-// FibMplsLabel represents VPP binary API type 'fib_mpls_label'.
-type FibMplsLabel struct {
-	IsUniform uint8
-	Label     uint32
-	TTL       uint8
-	Exp       uint8
-}
+type FibPath = fib_types.FibPath
 
-func (*FibMplsLabel) GetTypeName() string {
-	return "fib_mpls_label"
-}
+type FibPathNh = fib_types.FibPathNh
 
-// FibPath represents VPP binary API type 'fib_path'.
-type FibPath struct {
-	SwIfIndex  uint32
-	TableID    uint32
-	RpfID      uint32
-	Weight     uint8
-	Preference uint8
-	Type       FibPathType
-	Flags      FibPathFlags
-	Proto      FibPathNhProto
-	Nh         FibPathNh
-	NLabels    uint8 `struc:"sizeof=LabelStack"` // MANUALLY FIXED
-	LabelStack []FibMplsLabel
-}
+type IP4Prefix = ip_types.IP4Prefix
 
-func (*FibPath) GetTypeName() string {
-	return "fib_path"
-}
+type IP6Prefix = ip_types.IP6Prefix
 
-// FibPathNh represents VPP binary API type 'fib_path_nh'.
-type FibPathNh struct {
-	Address            AddressUnion
-	ViaLabel           uint32
-	ObjID              uint32
-	ClassifyTableIndex uint32
-}
+type Mprefix = ip_types.Mprefix
 
-func (*FibPathNh) GetTypeName() string {
-	return "fib_path_nh"
-}
+type Prefix = ip_types.Prefix
 
-// IP4Prefix represents VPP binary API type 'ip4_prefix'.
-type IP4Prefix struct {
-	Address IP4Address
-	Len     uint8
-}
+type PrefixMatcher = ip_types.PrefixMatcher
 
-func (*IP4Prefix) GetTypeName() string {
-	return "ip4_prefix"
-}
-
-// IP6Prefix represents VPP binary API type 'ip6_prefix'.
-type IP6Prefix struct {
-	Address IP6Address
-	Len     uint8
-}
-
-func (*IP6Prefix) GetTypeName() string {
-	return "ip6_prefix"
-}
-
-// Mprefix represents VPP binary API type 'mprefix'.
-type Mprefix struct {
-	Af               AddressFamily
-	GrpAddressLength uint16
-	GrpAddress       AddressUnion
-	SrcAddress       AddressUnion
-}
-
-func (*Mprefix) GetTypeName() string {
-	return "mprefix"
-}
-
-// Prefix represents VPP binary API type 'prefix'.
-type Prefix struct {
-	Address Address
-	Len     uint8
-}
-
-func (*Prefix) GetTypeName() string {
-	return "prefix"
-}
-
-// PrefixMatcher represents VPP binary API type 'prefix_matcher'.
-type PrefixMatcher struct {
-	Le uint8
-	Ge uint8
-}
-
-func (*PrefixMatcher) GetTypeName() string {
-	return "prefix_matcher"
-}
-
-// AddressUnion represents VPP binary API union 'address_union'.
-type AddressUnion struct {
-	XXX_UnionData [16]byte
-}
-
-func (*AddressUnion) GetTypeName() string {
-	return "address_union"
-}
-
-func AddressUnionIP4(a IP4Address) (u AddressUnion) {
-	u.SetIP4(a)
-	return
-}
-func (u *AddressUnion) SetIP4(a IP4Address) {
-	var b = new(bytes.Buffer)
-	if err := struc.Pack(b, &a); err != nil {
-		return
-	}
-	copy(u.XXX_UnionData[:], b.Bytes())
-}
-func (u *AddressUnion) GetIP4() (a IP4Address) {
-	var b = bytes.NewReader(u.XXX_UnionData[:])
-	struc.Unpack(b, &a)
-	return
-}
-
-func AddressUnionIP6(a IP6Address) (u AddressUnion) {
-	u.SetIP6(a)
-	return
-}
-func (u *AddressUnion) SetIP6(a IP6Address) {
-	var b = new(bytes.Buffer)
-	if err := struc.Pack(b, &a); err != nil {
-		return
-	}
-	copy(u.XXX_UnionData[:], b.Bytes())
-}
-func (u *AddressUnion) GetIP6() (a IP6Address) {
-	var b = bytes.NewReader(u.XXX_UnionData[:])
-	struc.Unpack(b, &a)
-	return
-}
+type AddressUnion = ip_types.AddressUnion
 
 // AbfItfAttachAddDel represents VPP binary API message 'abf_itf_attach_add_del'.
 type AbfItfAttachAddDel struct {
-	IsAdd  uint8
+	IsAdd  bool
 	Attach AbfItfAttach
 }
 
-func (*AbfItfAttachAddDel) GetMessageName() string {
-	return "abf_itf_attach_add_del"
-}
-func (*AbfItfAttachAddDel) GetCrcString() string {
-	return "4464f87d"
-}
-func (*AbfItfAttachAddDel) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *AbfItfAttachAddDel) Reset()                        { *m = AbfItfAttachAddDel{} }
+func (*AbfItfAttachAddDel) GetMessageName() string          { return "abf_itf_attach_add_del" }
+func (*AbfItfAttachAddDel) GetCrcString() string            { return "25c8621b" }
+func (*AbfItfAttachAddDel) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // AbfItfAttachAddDelReply represents VPP binary API message 'abf_itf_attach_add_del_reply'.
 type AbfItfAttachAddDelReply struct {
 	Retval int32
 }
 
-func (*AbfItfAttachAddDelReply) GetMessageName() string {
-	return "abf_itf_attach_add_del_reply"
-}
-func (*AbfItfAttachAddDelReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*AbfItfAttachAddDelReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *AbfItfAttachAddDelReply) Reset()                        { *m = AbfItfAttachAddDelReply{} }
+func (*AbfItfAttachAddDelReply) GetMessageName() string          { return "abf_itf_attach_add_del_reply" }
+func (*AbfItfAttachAddDelReply) GetCrcString() string            { return "e8d4e804" }
+func (*AbfItfAttachAddDelReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // AbfItfAttachDetails represents VPP binary API message 'abf_itf_attach_details'.
 type AbfItfAttachDetails struct {
 	Attach AbfItfAttach
 }
 
-func (*AbfItfAttachDetails) GetMessageName() string {
-	return "abf_itf_attach_details"
-}
-func (*AbfItfAttachDetails) GetCrcString() string {
-	return "4a943370"
-}
-func (*AbfItfAttachDetails) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *AbfItfAttachDetails) Reset()                        { *m = AbfItfAttachDetails{} }
+func (*AbfItfAttachDetails) GetMessageName() string          { return "abf_itf_attach_details" }
+func (*AbfItfAttachDetails) GetCrcString() string            { return "7819523e" }
+func (*AbfItfAttachDetails) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // AbfItfAttachDump represents VPP binary API message 'abf_itf_attach_dump'.
 type AbfItfAttachDump struct{}
 
-func (*AbfItfAttachDump) GetMessageName() string {
-	return "abf_itf_attach_dump"
-}
-func (*AbfItfAttachDump) GetCrcString() string {
-	return "51077d14"
-}
-func (*AbfItfAttachDump) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *AbfItfAttachDump) Reset()                        { *m = AbfItfAttachDump{} }
+func (*AbfItfAttachDump) GetMessageName() string          { return "abf_itf_attach_dump" }
+func (*AbfItfAttachDump) GetCrcString() string            { return "51077d14" }
+func (*AbfItfAttachDump) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // AbfPluginGetVersion represents VPP binary API message 'abf_plugin_get_version'.
 type AbfPluginGetVersion struct{}
 
-func (*AbfPluginGetVersion) GetMessageName() string {
-	return "abf_plugin_get_version"
-}
-func (*AbfPluginGetVersion) GetCrcString() string {
-	return "51077d14"
-}
-func (*AbfPluginGetVersion) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *AbfPluginGetVersion) Reset()                        { *m = AbfPluginGetVersion{} }
+func (*AbfPluginGetVersion) GetMessageName() string          { return "abf_plugin_get_version" }
+func (*AbfPluginGetVersion) GetCrcString() string            { return "51077d14" }
+func (*AbfPluginGetVersion) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // AbfPluginGetVersionReply represents VPP binary API message 'abf_plugin_get_version_reply'.
 type AbfPluginGetVersionReply struct {
@@ -612,74 +165,49 @@ type AbfPluginGetVersionReply struct {
 	Minor uint32
 }
 
-func (*AbfPluginGetVersionReply) GetMessageName() string {
-	return "abf_plugin_get_version_reply"
-}
-func (*AbfPluginGetVersionReply) GetCrcString() string {
-	return "9b32cf86"
-}
-func (*AbfPluginGetVersionReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *AbfPluginGetVersionReply) Reset()                        { *m = AbfPluginGetVersionReply{} }
+func (*AbfPluginGetVersionReply) GetMessageName() string          { return "abf_plugin_get_version_reply" }
+func (*AbfPluginGetVersionReply) GetCrcString() string            { return "9b32cf86" }
+func (*AbfPluginGetVersionReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // AbfPolicyAddDel represents VPP binary API message 'abf_policy_add_del'.
 type AbfPolicyAddDel struct {
-	IsAdd  uint8
+	IsAdd  bool
 	Policy AbfPolicy
 }
 
-func (*AbfPolicyAddDel) GetMessageName() string {
-	return "abf_policy_add_del"
-}
-func (*AbfPolicyAddDel) GetCrcString() string {
-	return "a74e4bb7"
-}
-func (*AbfPolicyAddDel) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *AbfPolicyAddDel) Reset()                        { *m = AbfPolicyAddDel{} }
+func (*AbfPolicyAddDel) GetMessageName() string          { return "abf_policy_add_del" }
+func (*AbfPolicyAddDel) GetCrcString() string            { return "ee66f93e" }
+func (*AbfPolicyAddDel) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // AbfPolicyAddDelReply represents VPP binary API message 'abf_policy_add_del_reply'.
 type AbfPolicyAddDelReply struct {
 	Retval int32
 }
 
-func (*AbfPolicyAddDelReply) GetMessageName() string {
-	return "abf_policy_add_del_reply"
-}
-func (*AbfPolicyAddDelReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*AbfPolicyAddDelReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *AbfPolicyAddDelReply) Reset()                        { *m = AbfPolicyAddDelReply{} }
+func (*AbfPolicyAddDelReply) GetMessageName() string          { return "abf_policy_add_del_reply" }
+func (*AbfPolicyAddDelReply) GetCrcString() string            { return "e8d4e804" }
+func (*AbfPolicyAddDelReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // AbfPolicyDetails represents VPP binary API message 'abf_policy_details'.
 type AbfPolicyDetails struct {
 	Policy AbfPolicy
 }
 
-func (*AbfPolicyDetails) GetMessageName() string {
-	return "abf_policy_details"
-}
-func (*AbfPolicyDetails) GetCrcString() string {
-	return "6769e504"
-}
-func (*AbfPolicyDetails) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *AbfPolicyDetails) Reset()                        { *m = AbfPolicyDetails{} }
+func (*AbfPolicyDetails) GetMessageName() string          { return "abf_policy_details" }
+func (*AbfPolicyDetails) GetCrcString() string            { return "6769e504" }
+func (*AbfPolicyDetails) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // AbfPolicyDump represents VPP binary API message 'abf_policy_dump'.
 type AbfPolicyDump struct{}
 
-func (*AbfPolicyDump) GetMessageName() string {
-	return "abf_policy_dump"
-}
-func (*AbfPolicyDump) GetCrcString() string {
-	return "51077d14"
-}
-func (*AbfPolicyDump) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *AbfPolicyDump) Reset()                        { *m = AbfPolicyDump{} }
+func (*AbfPolicyDump) GetMessageName() string          { return "abf_policy_dump" }
+func (*AbfPolicyDump) GetCrcString() string            { return "51077d14" }
+func (*AbfPolicyDump) GetMessageType() api.MessageType { return api.RequestMessage }
 
 func init() {
 	api.RegisterMessage((*AbfItfAttachAddDel)(nil), "abf.AbfItfAttachAddDel")

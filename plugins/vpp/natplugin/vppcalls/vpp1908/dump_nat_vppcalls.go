@@ -37,6 +37,28 @@ type stMappingMap map[string][]*nat.DNat44_StaticMapping
 // identity mappings sorted by tags
 type idMappingMap map[string][]*nat.DNat44_IdentityMapping
 
+// default virtual reassembly configuration
+const (
+	natReassTimeoutDefault = 2 // seconds
+	natMaxReassDefault     = 1024
+	natMaxFragDefault      = 5
+	natDropFragDefault     = false
+)
+
+func (h *NatVppHandler) DefaultNat44GlobalConfig() *nat.Nat44Global {
+	return &nat.Nat44Global{
+		Forwarding:    false,
+		NatInterfaces: nil,
+		AddressPool:   nil,
+		VirtualReassembly: &nat.VirtualReassembly{
+			Timeout:         natReassTimeoutDefault,
+			MaxReassemblies: natMaxReassDefault,
+			MaxFragments:    natMaxFragDefault,
+			DropFragments:   natDropFragDefault,
+		},
+	}
+}
+
 // Nat44GlobalConfigDump dumps global NAT44 config in NB format.
 func (h *NatVppHandler) Nat44GlobalConfigDump(dumpDeprecated bool) (cfg *nat.Nat44Global, err error) {
 	cfg = &nat.Nat44Global{}

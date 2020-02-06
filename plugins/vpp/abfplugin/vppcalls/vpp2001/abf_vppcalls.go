@@ -19,7 +19,10 @@ import (
 	"net"
 
 	"github.com/go-errors/errors"
+
 	vpp_abf "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/abf"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/fib_types"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/interface_types"
 	abf "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/abf"
 )
 
@@ -95,12 +98,12 @@ func (h *ABFVppHandler) AbfDetachInterfaceIPv6(policyID, ifIdx, priority uint32)
 
 func (h *ABFVppHandler) abfAttachDetachInterface(policyID, ifIdx, priority uint32, isAdd, isIPv6 bool) error {
 	req := &vpp_abf.AbfItfAttachAddDel{
-		IsAdd: boolToUint(isAdd),
+		IsAdd: isAdd,
 		Attach: vpp_abf.AbfItfAttach{
 			PolicyID:  policyID,
-			SwIfIndex: ifIdx,
+			SwIfIndex: interface_types.InterfaceIndex(ifIdx),
 			Priority:  priority,
-			IsIPv6:    boolToUint(isIPv6),
+			IsIPv6:    isIPv6,
 		},
 	}
 	reply := &vpp_abf.AbfItfAttachAddDelReply{}
@@ -110,7 +113,7 @@ func (h *ABFVppHandler) abfAttachDetachInterface(policyID, ifIdx, priority uint3
 
 func (h *ABFVppHandler) abfAddDelPolicy(policyID, aclID uint32, abfPaths []*abf.ABF_ForwardingPath, isAdd bool) error {
 	req := &vpp_abf.AbfPolicyAddDel{
-		IsAdd: boolToUint(isAdd),
+		IsAdd: isAdd,
 		Policy: vpp_abf.AbfPolicy{
 			PolicyID: policyID,
 			ACLIndex: aclID,
@@ -150,9 +153,9 @@ func (h *ABFVppHandler) toFibPaths(abfPaths []*abf.ABF_ForwardingPath) (fibPaths
 // supported cases are DVR and normal
 func setFibPathType(isDvr bool) vpp_abf.FibPathType {
 	if isDvr {
-		return vpp_abf.FIB_API_PATH_TYPE_DVR
+		return fib_types.FIB_API_PATH_TYPE_DVR
 	}
-	return vpp_abf.FIB_API_PATH_TYPE_NORMAL
+	return fib_types.FIB_API_PATH_TYPE_NORMAL
 }
 
 // resolve IP address and return FIB path next hop (IP address) and IPv4/IPv6 version
@@ -161,15 +164,15 @@ func setFibPathNhAndProto(ipStr string) (nh vpp_abf.FibPathNh, proto vpp_abf.Fib
 	if netIP == nil {
 		return nh, proto, errors.Errorf("failed to parse next hop IP address %s", ipStr)
 	}
-	var au vpp_abf.AddressUnion
+	var au fib_types.AddressUnion
 	if ipv4 := netIP.To4(); ipv4 == nil {
-		var address vpp_abf.IP6Address
-		proto = vpp_abf.FIB_API_PATH_NH_PROTO_IP6
+		var address fib_types.IP6Address
+		proto = fib_types.FIB_API_PATH_NH_PROTO_IP6
 		copy(address[:], netIP[:])
 		au.SetIP6(address)
 	} else {
-		var address vpp_abf.IP4Address
-		proto = vpp_abf.FIB_API_PATH_NH_PROTO_IP4
+		var address fib_types.IP4Address
+		proto = fib_types.FIB_API_PATH_NH_PROTO_IP4
 		copy(address[:], netIP[12:])
 		au.SetIP4(address)
 	}
@@ -178,11 +181,4 @@ func setFibPathNhAndProto(ipStr string) (nh vpp_abf.FibPathNh, proto vpp_abf.Fib
 		ViaLabel:           NextHopViaLabelUnset,
 		ClassifyTableIndex: ClassifyTableIndexUnset,
 	}, proto, nil
-}
-
-func boolToUint(input bool) uint8 {
-	if input {
-		return 1
-	}
-	return 0
 }

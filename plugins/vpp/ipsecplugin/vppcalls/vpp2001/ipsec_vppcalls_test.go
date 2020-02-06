@@ -21,7 +21,9 @@ import (
 
 	"github.com/ligato/cn-infra/logging/logrus"
 	. "github.com/onsi/gomega"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ip_types"
 	vpp_ipsec "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ipsec"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ipsec_types"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ipsecplugin/vppcalls"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ipsecplugin/vppcalls/vpp2001"
@@ -205,7 +207,7 @@ func TestVppAddSA(t *testing.T) {
 				Length: uint8(len(cryptoKey)),
 				Data:   cryptoKey,
 			},
-			Flags: vpp_ipsec.IPSEC_API_SAD_FLAG_USE_ESN | vpp_ipsec.IPSEC_API_SAD_FLAG_USE_ANTI_REPLAY,
+			Flags: ipsec_types.IPSEC_API_SAD_FLAG_USE_ESN | ipsec_types.IPSEC_API_SAD_FLAG_USE_ANTI_REPLAY,
 		},
 	}))
 }
@@ -240,7 +242,7 @@ func TestVppDelSA(t *testing.T) {
 				Length: uint8(len(cryptoKey)),
 				Data:   cryptoKey,
 			},
-			Flags: vpp_ipsec.IPSEC_API_SAD_FLAG_USE_ESN | vpp_ipsec.IPSEC_API_SAD_FLAG_USE_ANTI_REPLAY,
+			Flags: ipsec_types.IPSEC_API_SAD_FLAG_USE_ESN | ipsec_types.IPSEC_API_SAD_FLAG_USE_ANTI_REPLAY,
 		},
 	}))
 }
@@ -275,15 +277,15 @@ func TestVppAddSATunnelMode(t *testing.T) {
 				Length: uint8(len(cryptoKey)),
 				Data:   cryptoKey,
 			},
-			TunnelSrc: vpp_ipsec.Address{
-				Af: vpp_ipsec.ADDRESS_IP4,
-				Un: vpp_ipsec.AddressUnion{XXX_UnionData: [16]byte{10, 1, 0, 1}},
+			TunnelSrc: ipsec_types.Address{
+				Af: ip_types.ADDRESS_IP4,
+				Un: ipsec_types.AddressUnion{XXX_UnionData: [16]byte{10, 1, 0, 1}},
 			},
-			TunnelDst: vpp_ipsec.Address{
-				Af: vpp_ipsec.ADDRESS_IP4,
-				Un: vpp_ipsec.AddressUnion{XXX_UnionData: [16]byte{20, 1, 0, 1}},
+			TunnelDst: ipsec_types.Address{
+				Af: ip_types.ADDRESS_IP4,
+				Un: ipsec_types.AddressUnion{XXX_UnionData: [16]byte{20, 1, 0, 1}},
 			},
-			Flags: vpp_ipsec.IPSEC_API_SAD_FLAG_IS_TUNNEL,
+			Flags: ipsec_types.IPSEC_API_SAD_FLAG_IS_TUNNEL,
 		},
 	}))
 }
@@ -318,15 +320,15 @@ func TestVppAddSATunnelModeIPv6(t *testing.T) {
 				Length: uint8(len(cryptoKey)),
 				Data:   cryptoKey,
 			},
-			TunnelSrc: vpp_ipsec.Address{
-				Af: vpp_ipsec.ADDRESS_IP6,
-				Un: vpp_ipsec.AddressUnion{XXX_UnionData: [16]byte{18, 52}},
+			TunnelSrc: ipsec_types.Address{
+				Af: ip_types.ADDRESS_IP6,
+				Un: ipsec_types.AddressUnion{XXX_UnionData: [16]byte{18, 52}},
 			},
-			TunnelDst: vpp_ipsec.Address{
-				Af: vpp_ipsec.ADDRESS_IP6,
-				Un: vpp_ipsec.AddressUnion{XXX_UnionData: [16]byte{171, 205}},
+			TunnelDst: ipsec_types.Address{
+				Af: ip_types.ADDRESS_IP6,
+				Un: ipsec_types.AddressUnion{XXX_UnionData: [16]byte{171, 205}},
 			},
-			Flags: vpp_ipsec.IPSEC_API_SAD_FLAG_IS_TUNNEL | vpp_ipsec.IPSEC_API_SAD_FLAG_IS_TUNNEL_V6,
+			Flags: ipsec_types.IPSEC_API_SAD_FLAG_IS_TUNNEL | ipsec_types.IPSEC_API_SAD_FLAG_IS_TUNNEL_V6,
 		},
 	}))
 }

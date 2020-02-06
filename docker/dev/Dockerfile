@@ -55,7 +55,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
  	&& rm -rf /var/lib/apt/lists/*
 
 # Install Go
-ENV GOLANG_VERSION 1.13.6
+ENV GOLANG_VERSION 1.13.7
 RUN set -eux; \
 	dpkgArch="$(dpkg --print-architecture)"; \
 		case "${dpkgArch##*-}" in \
@@ -101,7 +101,7 @@ RUN \
 	VERSION=$VERSION \
 	COMMIT=$COMMIT \
 	DATE=$DATE \
- make install
+ make install purge
 
 ENV SUPERVISOR_CONFIG=/opt/vpp-agent/dev/supervisor.conf
 

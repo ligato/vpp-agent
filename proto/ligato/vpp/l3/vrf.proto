@@ -22,4 +22,19 @@ message VrfTable {
     // - included in the output from the VPP CLI command "show ip fib"
     // - if undefined, then VPP will generate label using the template "<protocol>-VRF:<id>"
     string label = 3;
+
+    // FlowHashSettings allows tuning of hash calculation of IP flows in the VRF table.
+    // This affects hash table size as well as the stickiness of flows by load-balancing.
+    // If not defined, default settings that are implicitly enabled are:
+    //  - use_src_ip, use_dst_ip, use_src_port, use_dst_port, use_protocol
+    message FlowHashSettings {
+        bool use_src_ip = 1;
+        bool use_dst_ip = 2;
+        bool use_src_port = 3;
+        bool use_dst_port = 4;
+        bool use_protocol = 5;
+        bool reverse = 6;
+        bool symmetric = 7;
+    }
+    FlowHashSettings flow_hash_settings = 4;
 }

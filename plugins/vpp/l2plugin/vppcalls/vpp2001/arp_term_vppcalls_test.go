@@ -18,6 +18,7 @@ import (
 	"testing"
 
 	. "github.com/onsi/gomega"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ip_types"
 	vpp_l2 "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/l2"
 )
 
@@ -35,8 +36,8 @@ func TestVppAddArpTerminationTableEntry(t *testing.T) {
 		Entry: vpp_l2.BdIPMac{
 			BdID: 4,
 			IP: vpp_l2.Address{
-				Af: vpp_l2.ADDRESS_IP4,
-				Un: vpp_l2.AddressUnionIP4(
+				Af: ip_types.ADDRESS_IP4,
+				Un: ip_types.AddressUnionIP4(
 					vpp_l2.IP4Address{192, 168, 4, 4},
 				),
 			},
@@ -59,8 +60,8 @@ func TestVppAddArpTerminationTableEntryIPv6(t *testing.T) {
 		Entry: vpp_l2.BdIPMac{
 			BdID: 4,
 			IP: vpp_l2.Address{
-				Af: vpp_l2.ADDRESS_IP6,
-				Un: vpp_l2.AddressUnionIP6(
+				Af: ip_types.ADDRESS_IP6,
+				Un: ip_types.AddressUnionIP6(
 					vpp_l2.IP6Address{32, 1, 13, 185, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 84},
 				),
 			},
@@ -83,8 +84,8 @@ func TestVppRemoveArpTerminationTableEntry(t *testing.T) {
 		Entry: vpp_l2.BdIPMac{
 			BdID: 4,
 			IP: vpp_l2.Address{
-				Af: vpp_l2.ADDRESS_IP4,
-				Un: vpp_l2.AddressUnionIP4(
+				Af: ip_types.ADDRESS_IP4,
+				Un: ip_types.AddressUnionIP4(
 					vpp_l2.IP4Address{192, 168, 4, 4},
 				),
 			},

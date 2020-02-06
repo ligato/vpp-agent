@@ -20,9 +20,22 @@ import (
 	"strconv"
 
 	"github.com/pkg/errors"
+
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1904/ip"
 	l3 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3"
 )
+
+// DefaultIPScanNeighbor implements ip neigh handler.
+func (h *IPNeighHandler) DefaultIPScanNeighbor() *l3.IPScanNeighbor {
+	return &l3.IPScanNeighbor{
+		Mode:           l3.IPScanNeighbor_DISABLED,
+		MaxProcTime:    20,
+		MaxUpdate:      10,
+		ScanInterval:   1,
+		ScanIntDelay:   1,
+		StaleThreshold: 4,
+	}
+}
 
 // SetIPScanNeighbor implements ip neigh  handler.
 func (h *IPNeighHandler) SetIPScanNeighbor(data *l3.IPScanNeighbor) error {
@@ -43,19 +56,20 @@ func (h *IPNeighHandler) SetIPScanNeighbor(data *l3.IPScanNeighbor) error {
 	return nil
 }
 
+/*
+	Sample outputs for VPP CLI 'show ip scan-neighbor'
+	---
+	IP neighbor scan disabled - current time is 5.5101 sec
+	---
+	IP neighbor scan enabled for IPv4 neighbors - current time is 95133.3063 sec
+	   Full_scan_interval: 1 min  Stale_purge_threshod: 4 min
+	   Max_process_time: 20 usec  Max_updates 10  Delay_to_resume_after_max_limit: 231 msec
+	---
+	IP neighbor scan enabled for IPv4 and IPv6 neighbors - current time is 95.6033 sec
+	   Full_scan_interval: 1 min  Stale_purge_threshod: 4 min
+	   Max_process_time: 20 usec  Max_updates 10  Delay_to_resume_after_max_limit: 1 msec
+*/
 var (
-	/*
-		---
-		IP neighbor scan disabled - current time is 5.5101 sec
-		---
-		IP neighbor scan enabled for IPv4 neighbors - current time is 95133.3063 sec
-		   Full_scan_interval: 1 min  Stale_purge_threshod: 4 min
-		   Max_process_time: 20 usec  Max_updates 10  Delay_to_resume_after_max_limit: 231 msec
-		---
-		IP neighbor scan enabled for IPv4 and IPv6 neighbors - current time is 95.6033 sec
-		   Full_scan_interval: 1 min  Stale_purge_threshod: 4 min
-		   Max_process_time: 20 usec  Max_updates 10  Delay_to_resume_after_max_limit: 1 msec
-	*/
 	cliIPScanNeighRe = regexp.MustCompile(`IP neighbor scan (disabled|enabled)(?: for (IPv4|IPv6|IPv4 and IPv6) neighbors)? - current time is [0-9\.]+ sec(?:
 \s+Full_scan_interval: ([0-9]+) min\s+Stale_purge_threshod: ([0-9]+) min
 \s+Max_process_time: ([0-9]+) usec\s+Max_updates ([0-9]+)\s+Delay_to_resume_after_max_limit: ([0-9]+) msec)?`)
@@ -70,10 +84,10 @@ func (h *IPNeighHandler) GetIPScanNeighbor() (*l3.IPScanNeighbor, error) {
 
 	ipScanNeigh := &l3.IPScanNeighbor{}
 
-	matches := cliIPScanNeighRe.FindStringSubmatch(string(data))
+	matches := cliIPScanNeighRe.FindStringSubmatch(data)
 
 	if len(matches) != 8 {
-		h.log.Warnf("invalid 'show ip scan-neighbor' output: %q", string(data))
+		h.log.Warnf("invalid 'show ip scan-neighbor' output: %q", data)
 		return nil, errors.Errorf("invalid 'show ip scan-neighbor' output")
 	}
 

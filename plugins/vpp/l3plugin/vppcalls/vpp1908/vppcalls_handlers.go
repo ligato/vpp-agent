@@ -105,6 +105,7 @@ type RouteHandler struct {
 	vrfIndexes   vrfidx.VRFMetadataIndex
 	addrAlloc    netalloc.AddressAllocator
 	log          logging.Logger
+	ip           ip.RPCService
 }
 
 // IPNeighHandler is accessor for ip-neighbor-related vppcalls methods
@@ -156,6 +157,7 @@ func NewRouteVppHandler(callsChan govppapi.Channel, ifIndexes ifaceidx.IfaceMeta
 		vrfIndexes:   vrfIdx,
 		addrAlloc:    addrAlloc,
 		log:          log,
+		ip:           ip.NewServiceClient(callsChan),
 	}
 }
 

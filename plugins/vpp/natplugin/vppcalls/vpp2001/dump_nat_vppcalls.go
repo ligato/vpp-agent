@@ -37,6 +37,15 @@ type stMappingMap map[string][]*nat.DNat44_StaticMapping
 // identity mappings sorted by tags
 type idMappingMap map[string][]*nat.DNat44_IdentityMapping
 
+func (h *NatVppHandler) DefaultNat44GlobalConfig() *nat.Nat44Global {
+	return &nat.Nat44Global{
+		Forwarding:        false,
+		NatInterfaces:     nil,
+		AddressPool:       nil,
+		VirtualReassembly: nil, // VirtualReassembly is not part of NAT API in VPP 20.01+ anymore
+	}
+}
+
 // Nat44GlobalConfigDump dumps global NAT44 config in NB format.
 func (h *NatVppHandler) Nat44GlobalConfigDump(dumpDeprecated bool) (cfg *nat.Nat44Global, err error) {
 	cfg = &nat.Nat44Global{}
@@ -234,14 +243,21 @@ func (h *NatVppHandler) nat44AddressDump() (addressPool []*nat.Nat44Global_Addre
 
 // virtualReassemblyDump returns current NAT virtual-reassembly configuration.
 func (h *NatVppHandler) virtualReassemblyDump() (vrIPv4 *nat.VirtualReassembly, vrIPv6 *nat.VirtualReassembly, err error) {
-	req := &vpp_nat.NatGetReass{}
-	reply := &vpp_nat.NatGetReassReply{}
-
-	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
-		return nil, nil, fmt.Errorf("failed to get NAT virtual reassembly configuration: %v", err)
+	/*ipv4vr, err := h.ip.IPReassemblyGet(context.TODO(), &vpp_ip.IPReassemblyGet{IsIP6: false})
+	if err != nil {
+		return nil, nil, fmt.Errorf("getting virtual reassembly IPv4 config failed: %w", err)
 	}
+	h.log.Debugf("IP Reassembly config IPv4: %+v\n", ipv4vr)
+	ipv6vr, err := h.ip.IPReassemblyGet(context.TODO(), &vpp_ip.IPReassemblyGet{IsIP6: true})
+	if err != nil {
+		return nil, nil, fmt.Errorf("getting virtual reassembly IPv6 config failed: %w", err)
+	}
+	h.log.Debugf("IP Reassembly config IPv6: %+v\n", ipv6vr)*/
 
-	vrIPv4 = &nat.VirtualReassembly{
+	// Virtual Reassembly has been removed from NAT API in VPP (moved to IP API)
+	// TODO: define IPReassembly model in L3 plugin
+	return nil, nil, nil
+	/*vrIPv4 = &nat.VirtualReassembly{
 		Timeout:         reply.IP4Timeout,
 		MaxReassemblies: uint32(reply.IP4MaxReass),
 		MaxFragments:    uint32(reply.IP4MaxFrag),
@@ -253,8 +269,7 @@ func (h *NatVppHandler) virtualReassemblyDump() (vrIPv4 *nat.VirtualReassembly, 
 		MaxFragments:    uint32(reply.IP6MaxFrag),
 		DropFragments:   uintToBool(reply.IP6DropFrag),
 	}
-
-	return
+	return*/
 }
 
 // nat44StaticMappingDump returns a map of NAT44 static mappings sorted by tags

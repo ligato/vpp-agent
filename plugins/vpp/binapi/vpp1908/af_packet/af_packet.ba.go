@@ -35,15 +35,10 @@ type AfPacketCreate struct {
 	UseRandomHwAddr uint8
 }
 
-func (*AfPacketCreate) GetMessageName() string {
-	return "af_packet_create"
-}
-func (*AfPacketCreate) GetCrcString() string {
-	return "6d5d30d6"
-}
-func (*AfPacketCreate) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *AfPacketCreate) Reset()                        { *m = AfPacketCreate{} }
+func (*AfPacketCreate) GetMessageName() string          { return "af_packet_create" }
+func (*AfPacketCreate) GetCrcString() string            { return "6d5d30d6" }
+func (*AfPacketCreate) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // AfPacketCreateReply represents VPP binary API message 'af_packet_create_reply'.
 type AfPacketCreateReply struct {
@@ -51,45 +46,30 @@ type AfPacketCreateReply struct {
 	SwIfIndex uint32
 }
 
-func (*AfPacketCreateReply) GetMessageName() string {
-	return "af_packet_create_reply"
-}
-func (*AfPacketCreateReply) GetCrcString() string {
-	return "fda5941f"
-}
-func (*AfPacketCreateReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *AfPacketCreateReply) Reset()                        { *m = AfPacketCreateReply{} }
+func (*AfPacketCreateReply) GetMessageName() string          { return "af_packet_create_reply" }
+func (*AfPacketCreateReply) GetCrcString() string            { return "fda5941f" }
+func (*AfPacketCreateReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // AfPacketDelete represents VPP binary API message 'af_packet_delete'.
 type AfPacketDelete struct {
 	HostIfName []byte `struc:"[64]byte"`
 }
 
-func (*AfPacketDelete) GetMessageName() string {
-	return "af_packet_delete"
-}
-func (*AfPacketDelete) GetCrcString() string {
-	return "3efceda3"
-}
-func (*AfPacketDelete) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *AfPacketDelete) Reset()                        { *m = AfPacketDelete{} }
+func (*AfPacketDelete) GetMessageName() string          { return "af_packet_delete" }
+func (*AfPacketDelete) GetCrcString() string            { return "3efceda3" }
+func (*AfPacketDelete) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // AfPacketDeleteReply represents VPP binary API message 'af_packet_delete_reply'.
 type AfPacketDeleteReply struct {
 	Retval int32
 }
 
-func (*AfPacketDeleteReply) GetMessageName() string {
-	return "af_packet_delete_reply"
-}
-func (*AfPacketDeleteReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*AfPacketDeleteReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *AfPacketDeleteReply) Reset()                        { *m = AfPacketDeleteReply{} }
+func (*AfPacketDeleteReply) GetMessageName() string          { return "af_packet_delete_reply" }
+func (*AfPacketDeleteReply) GetCrcString() string            { return "e8d4e804" }
+func (*AfPacketDeleteReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // AfPacketDetails represents VPP binary API message 'af_packet_details'.
 type AfPacketDetails struct {
@@ -97,28 +77,18 @@ type AfPacketDetails struct {
 	HostIfName []byte `struc:"[64]byte"`
 }
 
-func (*AfPacketDetails) GetMessageName() string {
-	return "af_packet_details"
-}
-func (*AfPacketDetails) GetCrcString() string {
-	return "057205fa"
-}
-func (*AfPacketDetails) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *AfPacketDetails) Reset()                        { *m = AfPacketDetails{} }
+func (*AfPacketDetails) GetMessageName() string          { return "af_packet_details" }
+func (*AfPacketDetails) GetCrcString() string            { return "057205fa" }
+func (*AfPacketDetails) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // AfPacketDump represents VPP binary API message 'af_packet_dump'.
 type AfPacketDump struct{}
 
-func (*AfPacketDump) GetMessageName() string {
-	return "af_packet_dump"
-}
-func (*AfPacketDump) GetCrcString() string {
-	return "51077d14"
-}
-func (*AfPacketDump) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *AfPacketDump) Reset()                        { *m = AfPacketDump{} }
+func (*AfPacketDump) GetMessageName() string          { return "af_packet_dump" }
+func (*AfPacketDump) GetCrcString() string            { return "51077d14" }
+func (*AfPacketDump) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // AfPacketSetL4CksumOffload represents VPP binary API message 'af_packet_set_l4_cksum_offload'.
 type AfPacketSetL4CksumOffload struct {
@@ -126,30 +96,22 @@ type AfPacketSetL4CksumOffload struct {
 	Set       uint8
 }
 
-func (*AfPacketSetL4CksumOffload) GetMessageName() string {
-	return "af_packet_set_l4_cksum_offload"
-}
-func (*AfPacketSetL4CksumOffload) GetCrcString() string {
-	return "86538585"
-}
-func (*AfPacketSetL4CksumOffload) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *AfPacketSetL4CksumOffload) Reset()                        { *m = AfPacketSetL4CksumOffload{} }
+func (*AfPacketSetL4CksumOffload) GetMessageName() string          { return "af_packet_set_l4_cksum_offload" }
+func (*AfPacketSetL4CksumOffload) GetCrcString() string            { return "86538585" }
+func (*AfPacketSetL4CksumOffload) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // AfPacketSetL4CksumOffloadReply represents VPP binary API message 'af_packet_set_l4_cksum_offload_reply'.
 type AfPacketSetL4CksumOffloadReply struct {
 	Retval int32
 }
 
+func (m *AfPacketSetL4CksumOffloadReply) Reset() { *m = AfPacketSetL4CksumOffloadReply{} }
 func (*AfPacketSetL4CksumOffloadReply) GetMessageName() string {
 	return "af_packet_set_l4_cksum_offload_reply"
 }
-func (*AfPacketSetL4CksumOffloadReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*AfPacketSetL4CksumOffloadReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (*AfPacketSetL4CksumOffloadReply) GetCrcString() string            { return "e8d4e804" }
+func (*AfPacketSetL4CksumOffloadReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 func init() {
 	api.RegisterMessage((*AfPacketCreate)(nil), "af_packet.AfPacketCreate")

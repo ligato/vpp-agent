@@ -5,6 +5,10 @@
 Package stn is a generated VPP binary API for 'stn' module.
 
 It consists of:
+	 10 enums
+	  6 aliases
+	  6 types
+	  1 union
 	  4 messages
 	  2 services
 */
@@ -17,77 +21,104 @@ import (
 	struc "github.com/lunixbochs/struc"
 	io "io"
 	strconv "strconv"
+
+	interface_types "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/interface_types"
+	ip_types "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ip_types"
 )
 
 const (
 	// ModuleName is the name of this module.
 	ModuleName = "stn"
 	// VersionCrc is the CRC of this module.
-	VersionCrc = 0xd96edf6e
+	VersionCrc = 0x619d8f3
 )
+
+type AddressFamily = ip_types.AddressFamily
+
+type IfStatusFlags = interface_types.IfStatusFlags
+
+type IfType = interface_types.IfType
+
+type IPDscp = ip_types.IPDscp
+
+type IPEcn = ip_types.IPEcn
+
+type IPProto = ip_types.IPProto
+
+type LinkDuplex = interface_types.LinkDuplex
+
+type MtuProto = interface_types.MtuProto
+
+type RxMode = interface_types.RxMode
+
+type SubIfFlags = interface_types.SubIfFlags
+
+type AddressWithPrefix = ip_types.AddressWithPrefix
+
+type InterfaceIndex = interface_types.InterfaceIndex
+
+type IP4Address = ip_types.IP4Address
+
+type IP4AddressWithPrefix = ip_types.IP4AddressWithPrefix
+
+type IP6Address = ip_types.IP6Address
+
+type IP6AddressWithPrefix = ip_types.IP6AddressWithPrefix
+
+type Address = ip_types.Address
+
+type IP4Prefix = ip_types.IP4Prefix
+
+type IP6Prefix = ip_types.IP6Prefix
+
+type Mprefix = ip_types.Mprefix
+
+type Prefix = ip_types.Prefix
+
+type PrefixMatcher = ip_types.PrefixMatcher
+
+type AddressUnion = ip_types.AddressUnion
 
 // StnAddDelRule represents VPP binary API message 'stn_add_del_rule'.
 type StnAddDelRule struct {
-	IsIP4     uint8
-	IPAddress []byte `struc:"[16]byte"`
-	SwIfIndex uint32
-	IsAdd     uint8
+	IPAddress Address
+	SwIfIndex InterfaceIndex
+	IsAdd     bool
 }
 
-func (*StnAddDelRule) GetMessageName() string {
-	return "stn_add_del_rule"
-}
-func (*StnAddDelRule) GetCrcString() string {
-	return "9f0bbe21"
-}
-func (*StnAddDelRule) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *StnAddDelRule) Reset()                        { *m = StnAddDelRule{} }
+func (*StnAddDelRule) GetMessageName() string          { return "stn_add_del_rule" }
+func (*StnAddDelRule) GetCrcString() string            { return "53f751e6" }
+func (*StnAddDelRule) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // StnAddDelRuleReply represents VPP binary API message 'stn_add_del_rule_reply'.
 type StnAddDelRuleReply struct {
 	Retval int32
 }
 
-func (*StnAddDelRuleReply) GetMessageName() string {
-	return "stn_add_del_rule_reply"
-}
-func (*StnAddDelRuleReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*StnAddDelRuleReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *StnAddDelRuleReply) Reset()                        { *m = StnAddDelRuleReply{} }
+func (*StnAddDelRuleReply) GetMessageName() string          { return "stn_add_del_rule_reply" }
+func (*StnAddDelRuleReply) GetCrcString() string            { return "e8d4e804" }
+func (*StnAddDelRuleReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // StnRulesDetails represents VPP binary API message 'stn_rules_details'.
 type StnRulesDetails struct {
-	IsIP4     uint8
-	IPAddress []byte `struc:"[16]byte"`
-	SwIfIndex uint32
+	IPAddress Address
+	SwIfIndex InterfaceIndex
 }
 
-func (*StnRulesDetails) GetMessageName() string {
-	return "stn_rules_details"
-}
-func (*StnRulesDetails) GetCrcString() string {
-	return "5eafa31e"
-}
-func (*StnRulesDetails) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *StnRulesDetails) Reset()                        { *m = StnRulesDetails{} }
+func (*StnRulesDetails) GetMessageName() string          { return "stn_rules_details" }
+func (*StnRulesDetails) GetCrcString() string            { return "b0f6606c" }
+func (*StnRulesDetails) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // StnRulesDump represents VPP binary API message 'stn_rules_dump'.
 type StnRulesDump struct{}
 
-func (*StnRulesDump) GetMessageName() string {
-	return "stn_rules_dump"
-}
-func (*StnRulesDump) GetCrcString() string {
-	return "51077d14"
-}
-func (*StnRulesDump) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *StnRulesDump) Reset()                        { *m = StnRulesDump{} }
+func (*StnRulesDump) GetMessageName() string          { return "stn_rules_dump" }
+func (*StnRulesDump) GetCrcString() string            { return "51077d14" }
+func (*StnRulesDump) GetMessageType() api.MessageType { return api.RequestMessage }
 
 func init() {
 	api.RegisterMessage((*StnAddDelRule)(nil), "stn.StnAddDelRule")

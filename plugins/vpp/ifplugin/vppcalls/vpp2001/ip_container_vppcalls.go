@@ -16,17 +16,15 @@ package vpp2001
 
 import (
 	"github.com/ligato/cn-infra/utils/addrs"
+
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/interface_types"
 	vpp_ip "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ip"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ip_types"
 )
 
-const (
-	addContainerIP    uint8 = 1
-	removeContainerIP uint8 = 0
-)
-
-func (h *InterfaceVppHandler) sendAndLogMessageForVpp(ifIdx uint32, addr string, isAdd uint8) error {
+func (h *InterfaceVppHandler) sendAndLogMessageForVpp(ifIdx uint32, addr string, isAdd bool) error {
 	req := &vpp_ip.IPContainerProxyAddDel{
-		SwIfIndex: ifIdx,
+		SwIfIndex: interface_types.InterfaceIndex(ifIdx),
 		IsAdd:     isAdd,
 	}
 
@@ -39,10 +37,10 @@ func (h *InterfaceVppHandler) sendAndLogMessageForVpp(ifIdx uint32, addr string,
 	req.Pfx.Len = byte(prefix)
 	if isIPv6 {
 		copy(req.Pfx.Address.Un.XXX_UnionData[:], IPaddr.IP.To16())
-		req.Pfx.Address.Af = vpp_ip.ADDRESS_IP6
+		req.Pfx.Address.Af = ip_types.ADDRESS_IP6
 	} else {
 		copy(req.Pfx.Address.Un.XXX_UnionData[:], IPaddr.IP.To4())
-		req.Pfx.Address.Af = vpp_ip.ADDRESS_IP4
+		req.Pfx.Address.Af = ip_types.ADDRESS_IP4
 	}
 	reply := &vpp_ip.IPContainerProxyAddDelReply{}
 
@@ -54,9 +52,9 @@ func (h *InterfaceVppHandler) sendAndLogMessageForVpp(ifIdx uint32, addr string,
 }
 
 func (h *InterfaceVppHandler) AddContainerIP(ifIdx uint32, addr string) error {
-	return h.sendAndLogMessageForVpp(ifIdx, addr, addContainerIP)
+	return h.sendAndLogMessageForVpp(ifIdx, addr, true)
 }
 
 func (h *InterfaceVppHandler) DelContainerIP(ifIdx uint32, addr string) error {
-	return h.sendAndLogMessageForVpp(ifIdx, addr, removeContainerIP)
+	return h.sendAndLogMessageForVpp(ifIdx, addr, false)
 }

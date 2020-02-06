@@ -46,28 +46,18 @@ type SwInterfaceTapV2Details struct {
 	TapFlags         uint32
 }
 
-func (*SwInterfaceTapV2Details) GetMessageName() string {
-	return "sw_interface_tap_v2_details"
-}
-func (*SwInterfaceTapV2Details) GetCrcString() string {
-	return "73dbc2d2"
-}
-func (*SwInterfaceTapV2Details) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *SwInterfaceTapV2Details) Reset()                        { *m = SwInterfaceTapV2Details{} }
+func (*SwInterfaceTapV2Details) GetMessageName() string          { return "sw_interface_tap_v2_details" }
+func (*SwInterfaceTapV2Details) GetCrcString() string            { return "73dbc2d2" }
+func (*SwInterfaceTapV2Details) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // SwInterfaceTapV2Dump represents VPP binary API message 'sw_interface_tap_v2_dump'.
 type SwInterfaceTapV2Dump struct{}
 
-func (*SwInterfaceTapV2Dump) GetMessageName() string {
-	return "sw_interface_tap_v2_dump"
-}
-func (*SwInterfaceTapV2Dump) GetCrcString() string {
-	return "51077d14"
-}
-func (*SwInterfaceTapV2Dump) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *SwInterfaceTapV2Dump) Reset()                        { *m = SwInterfaceTapV2Dump{} }
+func (*SwInterfaceTapV2Dump) GetMessageName() string          { return "sw_interface_tap_v2_dump" }
+func (*SwInterfaceTapV2Dump) GetCrcString() string            { return "51077d14" }
+func (*SwInterfaceTapV2Dump) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // TapCreateV2 represents VPP binary API message 'tap_create_v2'.
 type TapCreateV2 struct {
@@ -98,15 +88,10 @@ type TapCreateV2 struct {
 	TapFlags         uint32
 }
 
-func (*TapCreateV2) GetMessageName() string {
-	return "tap_create_v2"
-}
-func (*TapCreateV2) GetCrcString() string {
-	return "eabede03"
-}
-func (*TapCreateV2) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *TapCreateV2) Reset()                        { *m = TapCreateV2{} }
+func (*TapCreateV2) GetMessageName() string          { return "tap_create_v2" }
+func (*TapCreateV2) GetCrcString() string            { return "eabede03" }
+func (*TapCreateV2) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // TapCreateV2Reply represents VPP binary API message 'tap_create_v2_reply'.
 type TapCreateV2Reply struct {
@@ -114,45 +99,30 @@ type TapCreateV2Reply struct {
 	SwIfIndex uint32
 }
 
-func (*TapCreateV2Reply) GetMessageName() string {
-	return "tap_create_v2_reply"
-}
-func (*TapCreateV2Reply) GetCrcString() string {
-	return "fda5941f"
-}
-func (*TapCreateV2Reply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *TapCreateV2Reply) Reset()                        { *m = TapCreateV2Reply{} }
+func (*TapCreateV2Reply) GetMessageName() string          { return "tap_create_v2_reply" }
+func (*TapCreateV2Reply) GetCrcString() string            { return "fda5941f" }
+func (*TapCreateV2Reply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // TapDeleteV2 represents VPP binary API message 'tap_delete_v2'.
 type TapDeleteV2 struct {
 	SwIfIndex uint32
 }
 
-func (*TapDeleteV2) GetMessageName() string {
-	return "tap_delete_v2"
-}
-func (*TapDeleteV2) GetCrcString() string {
-	return "529cb13f"
-}
-func (*TapDeleteV2) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *TapDeleteV2) Reset()                        { *m = TapDeleteV2{} }
+func (*TapDeleteV2) GetMessageName() string          { return "tap_delete_v2" }
+func (*TapDeleteV2) GetCrcString() string            { return "529cb13f" }
+func (*TapDeleteV2) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // TapDeleteV2Reply represents VPP binary API message 'tap_delete_v2_reply'.
 type TapDeleteV2Reply struct {
 	Retval int32
 }
 
-func (*TapDeleteV2Reply) GetMessageName() string {
-	return "tap_delete_v2_reply"
-}
-func (*TapDeleteV2Reply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*TapDeleteV2Reply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *TapDeleteV2Reply) Reset()                        { *m = TapDeleteV2Reply{} }
+func (*TapDeleteV2Reply) GetMessageName() string          { return "tap_delete_v2_reply" }
+func (*TapDeleteV2Reply) GetCrcString() string            { return "e8d4e804" }
+func (*TapDeleteV2Reply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 func init() {
 	api.RegisterMessage((*SwInterfaceTapV2Details)(nil), "tapv2.SwInterfaceTapV2Details")

@@ -20,7 +20,9 @@ import (
 
 	"github.com/pkg/errors"
 
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/interface_types"
 	vpp_ip "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ip"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ip_types"
 	vpp_punt "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/punt"
 	punt "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/punt"
 )
@@ -95,13 +97,13 @@ func (h *PuntVppHandler) RegisterPuntSocket(p *punt.ToHost) (pathName string, er
 	ipProto := resolveL4Proto(p.L4Protocol)
 
 	if p.L3Protocol == punt.L3Protocol_IPV4 || p.L3Protocol == punt.L3Protocol_ALL {
-		baPunt := getPuntL4Config(vpp_punt.ADDRESS_IP4, ipProto, uint16(p.Port))
+		baPunt := getPuntL4Config(ip_types.ADDRESS_IP4, ipProto, uint16(p.Port))
 		if pathName, err = h.handleRegisterPuntSocket(baPunt, p.SocketPath); err != nil {
 			return "", err
 		}
 	}
 	if p.L3Protocol == punt.L3Protocol_IPV6 || p.L3Protocol == punt.L3Protocol_ALL {
-		baPunt := getPuntL4Config(vpp_punt.ADDRESS_IP6, ipProto, uint16(p.Port))
+		baPunt := getPuntL4Config(ip_types.ADDRESS_IP6, ipProto, uint16(p.Port))
 		if pathName, err = h.handleRegisterPuntSocket(baPunt, p.SocketPath); err != nil {
 			return "", err
 		}
@@ -115,13 +117,13 @@ func (h *PuntVppHandler) DeregisterPuntSocket(p *punt.ToHost) error {
 	ipProto := resolveL4Proto(p.L4Protocol)
 
 	if p.L3Protocol == punt.L3Protocol_IPV4 || p.L3Protocol == punt.L3Protocol_ALL {
-		baPunt := getPuntL4Config(vpp_punt.ADDRESS_IP4, ipProto, uint16(p.Port))
+		baPunt := getPuntL4Config(ip_types.ADDRESS_IP4, ipProto, uint16(p.Port))
 		if err := h.handleDeregisterPuntSocket(baPunt); err != nil {
 			return err
 		}
 	}
 	if p.L3Protocol == punt.L3Protocol_IPV6 || p.L3Protocol == punt.L3Protocol_ALL {
-		baPunt := getPuntL4Config(vpp_punt.ADDRESS_IP6, ipProto, uint16(p.Port))
+		baPunt := getPuntL4Config(ip_types.ADDRESS_IP6, ipProto, uint16(p.Port))
 		if err := h.handleDeregisterPuntSocket(baPunt); err != nil {
 			return err
 		}
@@ -134,7 +136,7 @@ func (h *PuntVppHandler) handleRegisterPuntSocket(punt vpp_punt.Punt, path strin
 	req := &vpp_punt.PuntSocketRegister{
 		HeaderVersion: PuntSocketHeaderVersion,
 		Punt:          punt,
-		Pathname:      []byte(path),
+		Pathname:      path,
 	}
 	reply := &vpp_punt.PuntSocketRegisterReply{}
 
@@ -262,10 +264,10 @@ func (h *PuntVppHandler) handlePuntRedirect(punt *punt.IPRedirect, isIPv4, isAdd
 	}
 
 	req := &vpp_ip.IPPuntRedirect{
-		IsAdd: boolToUint(isAdd),
+		IsAdd: isAdd,
 		Punt: vpp_ip.PuntRedirect{
-			RxSwIfIndex: rxIfIdx,
-			TxSwIfIndex: txMetadata.SwIfIndex,
+			RxSwIfIndex: interface_types.InterfaceIndex(rxIfIdx),
+			TxSwIfIndex: interface_types.InterfaceIndex(txMetadata.SwIfIndex),
 			Nh:          nextHop,
 		},
 	}
@@ -279,9 +281,9 @@ func (h *PuntVppHandler) handlePuntRedirect(punt *punt.IPRedirect, isIPv4, isAdd
 
 func resolveL4Proto(protocol punt.L4Protocol) vpp_punt.IPProto {
 	if protocol == punt.L4Protocol_UDP {
-		return vpp_punt.IP_API_PROTO_UDP
+		return ip_types.IP_API_PROTO_UDP
 	}
-	return vpp_punt.IP_API_PROTO_TCP
+	return ip_types.IP_API_PROTO_TCP
 }
 
 func boolToUint(input bool) uint8 {

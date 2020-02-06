@@ -37,7 +37,7 @@ ifeq ($(VPP_VERSION),)
 VPP_VERSION=$(VPP_DEFAULT)
 endif
 VPP_IMG:=$(value VPP_$(VPP_VERSION)_IMAGE)
-ifeq (${UNAME_ARCH}, aarch64)
+ifeq ($(UNAME_ARCH), aarch64)
 VPP_IMG:=$(subst vpp-base,vpp-base-arm64,$(VPP_IMG))
 endif
 VPP_BINAPI?=$(value VPP_$(VPP_VERSION)_BINAPI)
@@ -132,6 +132,9 @@ clean-examples: ## Clean examples
 	cd examples/localclient_linux/veth 	 	&& go clean
 	cd examples/localclient_vpp/nat      	&& go clean
 	cd examples/localclient_vpp/plugins	 	&& go clean
+
+purge: ## Purge cached files
+	go clean -testcache -cache ./...
 
 debug-remote: ## Debug remotely
 	cd ./cmd/vpp-agent && dlv debug --headless --listen=:2345 --api-version=2 --accept-multiclient
@@ -236,11 +239,15 @@ dep-update:
 
 dep-check:
 	@echo "# checking dependencies"
+	@if ! git --no-pager diff go.mod ; then \
+		echo >&2 "go.mod has uncommitted changes!"; \
+		exit 1; \
+	fi
 	go mod verify
 	go mod tidy -v
-	@if ! git diff --quiet go.mod ; then \
-		echo "go mod tidy check failed"; \
-		exit 1 ; \
+	@if ! git --no-pager diff go.mod ; then \
+		echo >&2 "go mod tidy check failed!"; \
+		exit 1; \
 	fi
 
 # -------------------------------
@@ -310,7 +317,7 @@ prod-image: ## Build production image
 
 
 .PHONY: help \
-	agent agentctl build clean install \
+	agent agentctl build clean install purge \
 	cmd examples clean-examples \
 	test test-cover test-cover-html test-cover-xml \
 	generate checknodiffgenerated genereate-binapi generate-proto get-binapi-generators \

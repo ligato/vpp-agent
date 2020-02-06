@@ -15,6 +15,7 @@
 package vpp1904
 
 import (
+	"context"
 	"encoding/hex"
 	"fmt"
 	"net"
@@ -24,12 +25,12 @@ import (
 )
 
 // AddIPSecTunnelInterface adds a new IPSec tunnel interface.
-func (h *InterfaceVppHandler) AddIPSecTunnelInterface(ifName string, ipSecLink *interfaces.IPSecLink) (uint32, error) {
+func (h *InterfaceVppHandler) AddIPSecTunnelInterface(ctx context.Context, ifName string, ipSecLink *interfaces.IPSecLink) (uint32, error) {
 	return h.tunnelIfAddDel(ifName, ipSecLink, true)
 }
 
 // DeleteIPSecTunnelInterface removes existing IPSec tunnel interface.
-func (h *InterfaceVppHandler) DeleteIPSecTunnelInterface(ifName string, ipSecLink *interfaces.IPSecLink) error {
+func (h *InterfaceVppHandler) DeleteIPSecTunnelInterface(ctx context.Context, ifName string, ipSecLink *interfaces.IPSecLink) error {
 	// Note: ifIdx is not used now, tunnel should be matched based on parameters
 	_, err := h.tunnelIfAddDel(ifName, ipSecLink, false)
 	return err

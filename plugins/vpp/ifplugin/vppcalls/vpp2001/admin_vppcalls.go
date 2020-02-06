@@ -15,14 +15,17 @@
 package vpp2001
 
 import (
+	"context"
+
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/interface_types"
 	vpp_ifs "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/interfaces"
 )
 
-func (h *InterfaceVppHandler) InterfaceAdminDown(ifIdx uint32) error {
+func (h *InterfaceVppHandler) InterfaceAdminDown(ctx context.Context, ifIdx uint32) error {
 	return h.interfaceSetFlags(ifIdx, false)
 }
 
-func (h *InterfaceVppHandler) InterfaceAdminUp(ifIdx uint32) error {
+func (h *InterfaceVppHandler) InterfaceAdminUp(ctx context.Context, ifIdx uint32) error {
 	return h.interfaceSetFlags(ifIdx, true)
 }
 
@@ -69,7 +72,7 @@ func (h *InterfaceVppHandler) handleInterfaceTag(tag string, ifIdx vpp_ifs.Inter
 
 func setAdminUpFlag(adminUp bool) vpp_ifs.IfStatusFlags {
 	if adminUp {
-		return vpp_ifs.IF_STATUS_API_FLAG_ADMIN_UP
+		return interface_types.IF_STATUS_API_FLAG_ADMIN_UP
 	}
 	return 0
 }

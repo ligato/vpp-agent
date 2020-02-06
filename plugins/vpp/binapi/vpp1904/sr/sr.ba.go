@@ -34,24 +34,16 @@ type SrIP6Address struct {
 	Data []byte `struc:"[16]byte"`
 }
 
-func (*SrIP6Address) GetTypeName() string {
-	return "sr_ip6_address"
-}
-func (*SrIP6Address) GetCrcString() string {
-	return "bea0c5e6"
-}
+func (*SrIP6Address) GetTypeName() string  { return "sr_ip6_address" }
+func (*SrIP6Address) GetCrcString() string { return "bea0c5e6" }
 
 // Srv6Sid represents VPP binary API type 'srv6_sid'.
 type Srv6Sid struct {
 	Addr []byte `struc:"[16]byte"`
 }
 
-func (*Srv6Sid) GetTypeName() string {
-	return "srv6_sid"
-}
-func (*Srv6Sid) GetCrcString() string {
-	return "6ee67284"
-}
+func (*Srv6Sid) GetTypeName() string  { return "srv6_sid" }
+func (*Srv6Sid) GetCrcString() string { return "6ee67284" }
 
 // Srv6SidList represents VPP binary API type 'srv6_sid_list'.
 type Srv6SidList struct {
@@ -60,12 +52,8 @@ type Srv6SidList struct {
 	Sids    []Srv6Sid
 }
 
-func (*Srv6SidList) GetTypeName() string {
-	return "srv6_sid_list"
-}
-func (*Srv6SidList) GetCrcString() string {
-	return "4066af74"
-}
+func (*Srv6SidList) GetTypeName() string  { return "srv6_sid_list" }
+func (*Srv6SidList) GetCrcString() string { return "4066af74" }
 
 // SrLocalsidAddDel represents VPP binary API message 'sr_localsid_add_del'.
 type SrLocalsidAddDel struct {
@@ -80,30 +68,20 @@ type SrLocalsidAddDel struct {
 	NhAddr4   []byte `struc:"[4]byte"`
 }
 
-func (*SrLocalsidAddDel) GetMessageName() string {
-	return "sr_localsid_add_del"
-}
-func (*SrLocalsidAddDel) GetCrcString() string {
-	return "20d478a0"
-}
-func (*SrLocalsidAddDel) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *SrLocalsidAddDel) Reset()                        { *m = SrLocalsidAddDel{} }
+func (*SrLocalsidAddDel) GetMessageName() string          { return "sr_localsid_add_del" }
+func (*SrLocalsidAddDel) GetCrcString() string            { return "20d478a0" }
+func (*SrLocalsidAddDel) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // SrLocalsidAddDelReply represents VPP binary API message 'sr_localsid_add_del_reply'.
 type SrLocalsidAddDelReply struct {
 	Retval int32
 }
 
-func (*SrLocalsidAddDelReply) GetMessageName() string {
-	return "sr_localsid_add_del_reply"
-}
-func (*SrLocalsidAddDelReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*SrLocalsidAddDelReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *SrLocalsidAddDelReply) Reset()                        { *m = SrLocalsidAddDelReply{} }
+func (*SrLocalsidAddDelReply) GetMessageName() string          { return "sr_localsid_add_del_reply" }
+func (*SrLocalsidAddDelReply) GetCrcString() string            { return "e8d4e804" }
+func (*SrLocalsidAddDelReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // SrLocalsidsDetails represents VPP binary API message 'sr_localsids_details'.
 type SrLocalsidsDetails struct {
@@ -117,28 +95,18 @@ type SrLocalsidsDetails struct {
 	XconnectIfaceOrVrfTable uint32
 }
 
-func (*SrLocalsidsDetails) GetMessageName() string {
-	return "sr_localsids_details"
-}
-func (*SrLocalsidsDetails) GetCrcString() string {
-	return "7ff35765"
-}
-func (*SrLocalsidsDetails) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *SrLocalsidsDetails) Reset()                        { *m = SrLocalsidsDetails{} }
+func (*SrLocalsidsDetails) GetMessageName() string          { return "sr_localsids_details" }
+func (*SrLocalsidsDetails) GetCrcString() string            { return "7ff35765" }
+func (*SrLocalsidsDetails) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // SrLocalsidsDump represents VPP binary API message 'sr_localsids_dump'.
 type SrLocalsidsDump struct{}
 
-func (*SrLocalsidsDump) GetMessageName() string {
-	return "sr_localsids_dump"
-}
-func (*SrLocalsidsDump) GetCrcString() string {
-	return "51077d14"
-}
-func (*SrLocalsidsDump) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *SrLocalsidsDump) Reset()                        { *m = SrLocalsidsDump{} }
+func (*SrLocalsidsDump) GetMessageName() string          { return "sr_localsids_dump" }
+func (*SrLocalsidsDump) GetCrcString() string            { return "51077d14" }
+func (*SrLocalsidsDump) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // SrPoliciesDetails represents VPP binary API message 'sr_policies_details'.
 type SrPoliciesDetails struct {
@@ -150,28 +118,18 @@ type SrPoliciesDetails struct {
 	SidLists    []Srv6SidList
 }
 
-func (*SrPoliciesDetails) GetMessageName() string {
-	return "sr_policies_details"
-}
-func (*SrPoliciesDetails) GetCrcString() string {
-	return "ae838a76"
-}
-func (*SrPoliciesDetails) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *SrPoliciesDetails) Reset()                        { *m = SrPoliciesDetails{} }
+func (*SrPoliciesDetails) GetMessageName() string          { return "sr_policies_details" }
+func (*SrPoliciesDetails) GetCrcString() string            { return "ae838a76" }
+func (*SrPoliciesDetails) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // SrPoliciesDump represents VPP binary API message 'sr_policies_dump'.
 type SrPoliciesDump struct{}
 
-func (*SrPoliciesDump) GetMessageName() string {
-	return "sr_policies_dump"
-}
-func (*SrPoliciesDump) GetCrcString() string {
-	return "51077d14"
-}
-func (*SrPoliciesDump) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *SrPoliciesDump) Reset()                        { *m = SrPoliciesDump{} }
+func (*SrPoliciesDump) GetMessageName() string          { return "sr_policies_dump" }
+func (*SrPoliciesDump) GetCrcString() string            { return "51077d14" }
+func (*SrPoliciesDump) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // SrPolicyAdd represents VPP binary API message 'sr_policy_add'.
 type SrPolicyAdd struct {
@@ -183,30 +141,20 @@ type SrPolicyAdd struct {
 	Sids     Srv6SidList
 }
 
-func (*SrPolicyAdd) GetMessageName() string {
-	return "sr_policy_add"
-}
-func (*SrPolicyAdd) GetCrcString() string {
-	return "a1676c1f"
-}
-func (*SrPolicyAdd) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *SrPolicyAdd) Reset()                        { *m = SrPolicyAdd{} }
+func (*SrPolicyAdd) GetMessageName() string          { return "sr_policy_add" }
+func (*SrPolicyAdd) GetCrcString() string            { return "a1676c1f" }
+func (*SrPolicyAdd) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // SrPolicyAddReply represents VPP binary API message 'sr_policy_add_reply'.
 type SrPolicyAddReply struct {
 	Retval int32
 }
 
-func (*SrPolicyAddReply) GetMessageName() string {
-	return "sr_policy_add_reply"
-}
-func (*SrPolicyAddReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*SrPolicyAddReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *SrPolicyAddReply) Reset()                        { *m = SrPolicyAddReply{} }
+func (*SrPolicyAddReply) GetMessageName() string          { return "sr_policy_add_reply" }
+func (*SrPolicyAddReply) GetCrcString() string            { return "e8d4e804" }
+func (*SrPolicyAddReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // SrPolicyDel represents VPP binary API message 'sr_policy_del'.
 type SrPolicyDel struct {
@@ -214,30 +162,20 @@ type SrPolicyDel struct {
 	SrPolicyIndex uint32
 }
 
-func (*SrPolicyDel) GetMessageName() string {
-	return "sr_policy_del"
-}
-func (*SrPolicyDel) GetCrcString() string {
-	return "168e1a98"
-}
-func (*SrPolicyDel) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *SrPolicyDel) Reset()                        { *m = SrPolicyDel{} }
+func (*SrPolicyDel) GetMessageName() string          { return "sr_policy_del" }
+func (*SrPolicyDel) GetCrcString() string            { return "168e1a98" }
+func (*SrPolicyDel) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // SrPolicyDelReply represents VPP binary API message 'sr_policy_del_reply'.
 type SrPolicyDelReply struct {
 	Retval int32
 }
 
-func (*SrPolicyDelReply) GetMessageName() string {
-	return "sr_policy_del_reply"
-}
-func (*SrPolicyDelReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*SrPolicyDelReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *SrPolicyDelReply) Reset()                        { *m = SrPolicyDelReply{} }
+func (*SrPolicyDelReply) GetMessageName() string          { return "sr_policy_del_reply" }
+func (*SrPolicyDelReply) GetCrcString() string            { return "e8d4e804" }
+func (*SrPolicyDelReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // SrPolicyMod represents VPP binary API message 'sr_policy_mod'.
 type SrPolicyMod struct {
@@ -250,60 +188,40 @@ type SrPolicyMod struct {
 	Sids          Srv6SidList
 }
 
-func (*SrPolicyMod) GetMessageName() string {
-	return "sr_policy_mod"
-}
-func (*SrPolicyMod) GetCrcString() string {
-	return "51252136"
-}
-func (*SrPolicyMod) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *SrPolicyMod) Reset()                        { *m = SrPolicyMod{} }
+func (*SrPolicyMod) GetMessageName() string          { return "sr_policy_mod" }
+func (*SrPolicyMod) GetCrcString() string            { return "51252136" }
+func (*SrPolicyMod) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // SrPolicyModReply represents VPP binary API message 'sr_policy_mod_reply'.
 type SrPolicyModReply struct {
 	Retval int32
 }
 
-func (*SrPolicyModReply) GetMessageName() string {
-	return "sr_policy_mod_reply"
-}
-func (*SrPolicyModReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*SrPolicyModReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *SrPolicyModReply) Reset()                        { *m = SrPolicyModReply{} }
+func (*SrPolicyModReply) GetMessageName() string          { return "sr_policy_mod_reply" }
+func (*SrPolicyModReply) GetCrcString() string            { return "e8d4e804" }
+func (*SrPolicyModReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // SrSetEncapSource represents VPP binary API message 'sr_set_encap_source'.
 type SrSetEncapSource struct {
 	EncapsSource []byte `struc:"[16]byte"`
 }
 
-func (*SrSetEncapSource) GetMessageName() string {
-	return "sr_set_encap_source"
-}
-func (*SrSetEncapSource) GetCrcString() string {
-	return "d05bb4de"
-}
-func (*SrSetEncapSource) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *SrSetEncapSource) Reset()                        { *m = SrSetEncapSource{} }
+func (*SrSetEncapSource) GetMessageName() string          { return "sr_set_encap_source" }
+func (*SrSetEncapSource) GetCrcString() string            { return "d05bb4de" }
+func (*SrSetEncapSource) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // SrSetEncapSourceReply represents VPP binary API message 'sr_set_encap_source_reply'.
 type SrSetEncapSourceReply struct {
 	Retval int32
 }
 
-func (*SrSetEncapSourceReply) GetMessageName() string {
-	return "sr_set_encap_source_reply"
-}
-func (*SrSetEncapSourceReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*SrSetEncapSourceReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *SrSetEncapSourceReply) Reset()                        { *m = SrSetEncapSourceReply{} }
+func (*SrSetEncapSourceReply) GetMessageName() string          { return "sr_set_encap_source_reply" }
+func (*SrSetEncapSourceReply) GetCrcString() string            { return "e8d4e804" }
+func (*SrSetEncapSourceReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // SrSteeringAddDel represents VPP binary API message 'sr_steering_add_del'.
 type SrSteeringAddDel struct {
@@ -317,30 +235,20 @@ type SrSteeringAddDel struct {
 	TrafficType   uint8
 }
 
-func (*SrSteeringAddDel) GetMessageName() string {
-	return "sr_steering_add_del"
-}
-func (*SrSteeringAddDel) GetCrcString() string {
-	return "28b5dcab"
-}
-func (*SrSteeringAddDel) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *SrSteeringAddDel) Reset()                        { *m = SrSteeringAddDel{} }
+func (*SrSteeringAddDel) GetMessageName() string          { return "sr_steering_add_del" }
+func (*SrSteeringAddDel) GetCrcString() string            { return "28b5dcab" }
+func (*SrSteeringAddDel) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // SrSteeringAddDelReply represents VPP binary API message 'sr_steering_add_del_reply'.
 type SrSteeringAddDelReply struct {
 	Retval int32
 }
 
-func (*SrSteeringAddDelReply) GetMessageName() string {
-	return "sr_steering_add_del_reply"
-}
-func (*SrSteeringAddDelReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*SrSteeringAddDelReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *SrSteeringAddDelReply) Reset()                        { *m = SrSteeringAddDelReply{} }
+func (*SrSteeringAddDelReply) GetMessageName() string          { return "sr_steering_add_del_reply" }
+func (*SrSteeringAddDelReply) GetCrcString() string            { return "e8d4e804" }
+func (*SrSteeringAddDelReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // SrSteeringPolDetails represents VPP binary API message 'sr_steering_pol_details'.
 type SrSteeringPolDetails struct {
@@ -352,28 +260,18 @@ type SrSteeringPolDetails struct {
 	Bsid        Srv6Sid
 }
 
-func (*SrSteeringPolDetails) GetMessageName() string {
-	return "sr_steering_pol_details"
-}
-func (*SrSteeringPolDetails) GetCrcString() string {
-	return "1c756f85"
-}
-func (*SrSteeringPolDetails) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *SrSteeringPolDetails) Reset()                        { *m = SrSteeringPolDetails{} }
+func (*SrSteeringPolDetails) GetMessageName() string          { return "sr_steering_pol_details" }
+func (*SrSteeringPolDetails) GetCrcString() string            { return "1c756f85" }
+func (*SrSteeringPolDetails) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // SrSteeringPolDump represents VPP binary API message 'sr_steering_pol_dump'.
 type SrSteeringPolDump struct{}
 
-func (*SrSteeringPolDump) GetMessageName() string {
-	return "sr_steering_pol_dump"
-}
-func (*SrSteeringPolDump) GetCrcString() string {
-	return "51077d14"
-}
-func (*SrSteeringPolDump) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *SrSteeringPolDump) Reset()                        { *m = SrSteeringPolDump{} }
+func (*SrSteeringPolDump) GetMessageName() string          { return "sr_steering_pol_dump" }
+func (*SrSteeringPolDump) GetCrcString() string            { return "51077d14" }
+func (*SrSteeringPolDump) GetMessageType() api.MessageType { return api.RequestMessage }
 
 func init() {
 	api.RegisterMessage((*SrLocalsidAddDel)(nil), "sr.SrLocalsidAddDel")

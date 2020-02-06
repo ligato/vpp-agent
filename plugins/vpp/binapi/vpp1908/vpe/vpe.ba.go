@@ -95,9 +95,7 @@ type ThreadData struct {
 	CPUSocket uint32
 }
 
-func (*ThreadData) GetTypeName() string {
-	return "thread_data"
-}
+func (*ThreadData) GetTypeName() string { return "thread_data" }
 
 // Version represents VPP binary API type 'version'.
 type Version struct {
@@ -108,9 +106,7 @@ type Version struct {
 	BuildMetadata []byte `struc:"[17]byte"`
 }
 
-func (*Version) GetTypeName() string {
-	return "version"
-}
+func (*Version) GetTypeName() string { return "version" }
 
 // AddNodeNext represents VPP binary API message 'add_node_next'.
 type AddNodeNext struct {
@@ -118,15 +114,10 @@ type AddNodeNext struct {
 	NextName []byte `struc:"[64]byte"`
 }
 
-func (*AddNodeNext) GetMessageName() string {
-	return "add_node_next"
-}
-func (*AddNodeNext) GetCrcString() string {
-	return "9ab92f7a"
-}
-func (*AddNodeNext) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *AddNodeNext) Reset()                        { *m = AddNodeNext{} }
+func (*AddNodeNext) GetMessageName() string          { return "add_node_next" }
+func (*AddNodeNext) GetCrcString() string            { return "9ab92f7a" }
+func (*AddNodeNext) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // AddNodeNextReply represents VPP binary API message 'add_node_next_reply'.
 type AddNodeNextReply struct {
@@ -134,30 +125,20 @@ type AddNodeNextReply struct {
 	NextIndex uint32
 }
 
-func (*AddNodeNextReply) GetMessageName() string {
-	return "add_node_next_reply"
-}
-func (*AddNodeNextReply) GetCrcString() string {
-	return "2ed75f32"
-}
-func (*AddNodeNextReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *AddNodeNextReply) Reset()                        { *m = AddNodeNextReply{} }
+func (*AddNodeNextReply) GetMessageName() string          { return "add_node_next_reply" }
+func (*AddNodeNextReply) GetCrcString() string            { return "2ed75f32" }
+func (*AddNodeNextReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // Cli represents VPP binary API message 'cli'.
 type Cli struct {
 	CmdInShmem uint64
 }
 
-func (*Cli) GetMessageName() string {
-	return "cli"
-}
-func (*Cli) GetCrcString() string {
-	return "23bfbfff"
-}
-func (*Cli) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *Cli) Reset()                        { *m = Cli{} }
+func (*Cli) GetMessageName() string          { return "cli" }
+func (*Cli) GetCrcString() string            { return "23bfbfff" }
+func (*Cli) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // CliInband represents VPP binary API message 'cli_inband'.
 type CliInband struct {
@@ -165,15 +146,10 @@ type CliInband struct {
 	Cmd        string
 }
 
-func (*CliInband) GetMessageName() string {
-	return "cli_inband"
-}
-func (*CliInband) GetCrcString() string {
-	return "f8377302"
-}
-func (*CliInband) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *CliInband) Reset()                        { *m = CliInband{} }
+func (*CliInband) GetMessageName() string          { return "cli_inband" }
+func (*CliInband) GetCrcString() string            { return "f8377302" }
+func (*CliInband) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // CliInbandReply represents VPP binary API message 'cli_inband_reply'.
 type CliInbandReply struct {
@@ -182,15 +158,10 @@ type CliInbandReply struct {
 	Reply        string
 }
 
-func (*CliInbandReply) GetMessageName() string {
-	return "cli_inband_reply"
-}
-func (*CliInbandReply) GetCrcString() string {
-	return "05879051"
-}
-func (*CliInbandReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *CliInbandReply) Reset()                        { *m = CliInbandReply{} }
+func (*CliInbandReply) GetMessageName() string          { return "cli_inband_reply" }
+func (*CliInbandReply) GetCrcString() string            { return "05879051" }
+func (*CliInbandReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // CliReply represents VPP binary API message 'cli_reply'.
 type CliReply struct {
@@ -198,28 +169,18 @@ type CliReply struct {
 	ReplyInShmem uint64
 }
 
-func (*CliReply) GetMessageName() string {
-	return "cli_reply"
-}
-func (*CliReply) GetCrcString() string {
-	return "06d68297"
-}
-func (*CliReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *CliReply) Reset()                        { *m = CliReply{} }
+func (*CliReply) GetMessageName() string          { return "cli_reply" }
+func (*CliReply) GetCrcString() string            { return "06d68297" }
+func (*CliReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // ControlPing represents VPP binary API message 'control_ping'.
 type ControlPing struct{}
 
-func (*ControlPing) GetMessageName() string {
-	return "control_ping"
-}
-func (*ControlPing) GetCrcString() string {
-	return "51077d14"
-}
-func (*ControlPing) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *ControlPing) Reset()                        { *m = ControlPing{} }
+func (*ControlPing) GetMessageName() string          { return "control_ping" }
+func (*ControlPing) GetCrcString() string            { return "51077d14" }
+func (*ControlPing) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // ControlPingReply represents VPP binary API message 'control_ping_reply'.
 type ControlPingReply struct {
@@ -228,30 +189,20 @@ type ControlPingReply struct {
 	VpePID      uint32
 }
 
-func (*ControlPingReply) GetMessageName() string {
-	return "control_ping_reply"
-}
-func (*ControlPingReply) GetCrcString() string {
-	return "f6b0b8ca"
-}
-func (*ControlPingReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *ControlPingReply) Reset()                        { *m = ControlPingReply{} }
+func (*ControlPingReply) GetMessageName() string          { return "control_ping_reply" }
+func (*ControlPingReply) GetCrcString() string            { return "f6b0b8ca" }
+func (*ControlPingReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // GetF64EndianValue represents VPP binary API message 'get_f64_endian_value'.
 type GetF64EndianValue struct {
 	F64One float64
 }
 
-func (*GetF64EndianValue) GetMessageName() string {
-	return "get_f64_endian_value"
-}
-func (*GetF64EndianValue) GetCrcString() string {
-	return "809fcd44"
-}
-func (*GetF64EndianValue) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *GetF64EndianValue) Reset()                        { *m = GetF64EndianValue{} }
+func (*GetF64EndianValue) GetMessageName() string          { return "get_f64_endian_value" }
+func (*GetF64EndianValue) GetCrcString() string            { return "809fcd44" }
+func (*GetF64EndianValue) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // GetF64EndianValueReply represents VPP binary API message 'get_f64_endian_value_reply'.
 type GetF64EndianValueReply struct {
@@ -259,30 +210,20 @@ type GetF64EndianValueReply struct {
 	F64OneResult float64
 }
 
-func (*GetF64EndianValueReply) GetMessageName() string {
-	return "get_f64_endian_value_reply"
-}
-func (*GetF64EndianValueReply) GetCrcString() string {
-	return "7e02e404"
-}
-func (*GetF64EndianValueReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *GetF64EndianValueReply) Reset()                        { *m = GetF64EndianValueReply{} }
+func (*GetF64EndianValueReply) GetMessageName() string          { return "get_f64_endian_value_reply" }
+func (*GetF64EndianValueReply) GetCrcString() string            { return "7e02e404" }
+func (*GetF64EndianValueReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // GetF64IncrementByOne represents VPP binary API message 'get_f64_increment_by_one'.
 type GetF64IncrementByOne struct {
 	F64Value float64
 }
 
-func (*GetF64IncrementByOne) GetMessageName() string {
-	return "get_f64_increment_by_one"
-}
-func (*GetF64IncrementByOne) GetCrcString() string {
-	return "b64f027e"
-}
-func (*GetF64IncrementByOne) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *GetF64IncrementByOne) Reset()                        { *m = GetF64IncrementByOne{} }
+func (*GetF64IncrementByOne) GetMessageName() string          { return "get_f64_increment_by_one" }
+func (*GetF64IncrementByOne) GetCrcString() string            { return "b64f027e" }
+func (*GetF64IncrementByOne) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // GetF64IncrementByOneReply represents VPP binary API message 'get_f64_increment_by_one_reply'.
 type GetF64IncrementByOneReply struct {
@@ -290,15 +231,10 @@ type GetF64IncrementByOneReply struct {
 	F64Value float64
 }
 
-func (*GetF64IncrementByOneReply) GetMessageName() string {
-	return "get_f64_increment_by_one_reply"
-}
-func (*GetF64IncrementByOneReply) GetCrcString() string {
-	return "d25dbaa3"
-}
-func (*GetF64IncrementByOneReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *GetF64IncrementByOneReply) Reset()                        { *m = GetF64IncrementByOneReply{} }
+func (*GetF64IncrementByOneReply) GetMessageName() string          { return "get_f64_increment_by_one_reply" }
+func (*GetF64IncrementByOneReply) GetCrcString() string            { return "d25dbaa3" }
+func (*GetF64IncrementByOneReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // GetNextIndex represents VPP binary API message 'get_next_index'.
 type GetNextIndex struct {
@@ -306,15 +242,10 @@ type GetNextIndex struct {
 	NextName []byte `struc:"[64]byte"`
 }
 
-func (*GetNextIndex) GetMessageName() string {
-	return "get_next_index"
-}
-func (*GetNextIndex) GetCrcString() string {
-	return "9ab92f7a"
-}
-func (*GetNextIndex) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *GetNextIndex) Reset()                        { *m = GetNextIndex{} }
+func (*GetNextIndex) GetMessageName() string          { return "get_next_index" }
+func (*GetNextIndex) GetCrcString() string            { return "9ab92f7a" }
+func (*GetNextIndex) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // GetNextIndexReply represents VPP binary API message 'get_next_index_reply'.
 type GetNextIndexReply struct {
@@ -322,28 +253,18 @@ type GetNextIndexReply struct {
 	NextIndex uint32
 }
 
-func (*GetNextIndexReply) GetMessageName() string {
-	return "get_next_index_reply"
-}
-func (*GetNextIndexReply) GetCrcString() string {
-	return "2ed75f32"
-}
-func (*GetNextIndexReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *GetNextIndexReply) Reset()                        { *m = GetNextIndexReply{} }
+func (*GetNextIndexReply) GetMessageName() string          { return "get_next_index_reply" }
+func (*GetNextIndexReply) GetCrcString() string            { return "2ed75f32" }
+func (*GetNextIndexReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // GetNodeGraph represents VPP binary API message 'get_node_graph'.
 type GetNodeGraph struct{}
 
-func (*GetNodeGraph) GetMessageName() string {
-	return "get_node_graph"
-}
-func (*GetNodeGraph) GetCrcString() string {
-	return "51077d14"
-}
-func (*GetNodeGraph) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *GetNodeGraph) Reset()                        { *m = GetNodeGraph{} }
+func (*GetNodeGraph) GetMessageName() string          { return "get_node_graph" }
+func (*GetNodeGraph) GetCrcString() string            { return "51077d14" }
+func (*GetNodeGraph) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // GetNodeGraphReply represents VPP binary API message 'get_node_graph_reply'.
 type GetNodeGraphReply struct {
@@ -351,30 +272,20 @@ type GetNodeGraphReply struct {
 	ReplyInShmem uint64
 }
 
-func (*GetNodeGraphReply) GetMessageName() string {
-	return "get_node_graph_reply"
-}
-func (*GetNodeGraphReply) GetCrcString() string {
-	return "06d68297"
-}
-func (*GetNodeGraphReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *GetNodeGraphReply) Reset()                        { *m = GetNodeGraphReply{} }
+func (*GetNodeGraphReply) GetMessageName() string          { return "get_node_graph_reply" }
+func (*GetNodeGraphReply) GetCrcString() string            { return "06d68297" }
+func (*GetNodeGraphReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // GetNodeIndex represents VPP binary API message 'get_node_index'.
 type GetNodeIndex struct {
 	NodeName []byte `struc:"[64]byte"`
 }
 
-func (*GetNodeIndex) GetMessageName() string {
-	return "get_node_index"
-}
-func (*GetNodeIndex) GetCrcString() string {
-	return "6c9a495d"
-}
-func (*GetNodeIndex) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *GetNodeIndex) Reset()                        { *m = GetNodeIndex{} }
+func (*GetNodeIndex) GetMessageName() string          { return "get_node_index" }
+func (*GetNodeIndex) GetCrcString() string            { return "6c9a495d" }
+func (*GetNodeIndex) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // GetNodeIndexReply represents VPP binary API message 'get_node_index_reply'.
 type GetNodeIndexReply struct {
@@ -382,15 +293,10 @@ type GetNodeIndexReply struct {
 	NodeIndex uint32
 }
 
-func (*GetNodeIndexReply) GetMessageName() string {
-	return "get_node_index_reply"
-}
-func (*GetNodeIndexReply) GetCrcString() string {
-	return "a8600b89"
-}
-func (*GetNodeIndexReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *GetNodeIndexReply) Reset()                        { *m = GetNodeIndexReply{} }
+func (*GetNodeIndexReply) GetMessageName() string          { return "get_node_index_reply" }
+func (*GetNodeIndexReply) GetCrcString() string            { return "a8600b89" }
+func (*GetNodeIndexReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // LogDetails represents VPP binary API message 'log_details'.
 type LogDetails struct {
@@ -400,43 +306,28 @@ type LogDetails struct {
 	Message   string `struc:"[256]byte"`
 }
 
-func (*LogDetails) GetMessageName() string {
-	return "log_details"
-}
-func (*LogDetails) GetCrcString() string {
-	return "255827a1"
-}
-func (*LogDetails) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *LogDetails) Reset()                        { *m = LogDetails{} }
+func (*LogDetails) GetMessageName() string          { return "log_details" }
+func (*LogDetails) GetCrcString() string            { return "255827a1" }
+func (*LogDetails) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // LogDump represents VPP binary API message 'log_dump'.
 type LogDump struct {
 	StartTimestamp Timestamp
 }
 
-func (*LogDump) GetMessageName() string {
-	return "log_dump"
-}
-func (*LogDump) GetCrcString() string {
-	return "6ab31753"
-}
-func (*LogDump) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *LogDump) Reset()                        { *m = LogDump{} }
+func (*LogDump) GetMessageName() string          { return "log_dump" }
+func (*LogDump) GetCrcString() string            { return "6ab31753" }
+func (*LogDump) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // ShowThreads represents VPP binary API message 'show_threads'.
 type ShowThreads struct{}
 
-func (*ShowThreads) GetMessageName() string {
-	return "show_threads"
-}
-func (*ShowThreads) GetCrcString() string {
-	return "51077d14"
-}
-func (*ShowThreads) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *ShowThreads) Reset()                        { *m = ShowThreads{} }
+func (*ShowThreads) GetMessageName() string          { return "show_threads" }
+func (*ShowThreads) GetCrcString() string            { return "51077d14" }
+func (*ShowThreads) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // ShowThreadsReply represents VPP binary API message 'show_threads_reply'.
 type ShowThreadsReply struct {
@@ -445,28 +336,18 @@ type ShowThreadsReply struct {
 	ThreadData []ThreadData
 }
 
-func (*ShowThreadsReply) GetMessageName() string {
-	return "show_threads_reply"
-}
-func (*ShowThreadsReply) GetCrcString() string {
-	return "f5e0b66f"
-}
-func (*ShowThreadsReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *ShowThreadsReply) Reset()                        { *m = ShowThreadsReply{} }
+func (*ShowThreadsReply) GetMessageName() string          { return "show_threads_reply" }
+func (*ShowThreadsReply) GetCrcString() string            { return "f5e0b66f" }
+func (*ShowThreadsReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // ShowVersion represents VPP binary API message 'show_version'.
 type ShowVersion struct{}
 
-func (*ShowVersion) GetMessageName() string {
-	return "show_version"
-}
-func (*ShowVersion) GetCrcString() string {
-	return "51077d14"
-}
-func (*ShowVersion) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *ShowVersion) Reset()                        { *m = ShowVersion{} }
+func (*ShowVersion) GetMessageName() string          { return "show_version" }
+func (*ShowVersion) GetCrcString() string            { return "51077d14" }
+func (*ShowVersion) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // ShowVersionReply represents VPP binary API message 'show_version_reply'.
 type ShowVersionReply struct {
@@ -477,28 +358,18 @@ type ShowVersionReply struct {
 	BuildDirectory string `struc:"[256]byte"`
 }
 
-func (*ShowVersionReply) GetMessageName() string {
-	return "show_version_reply"
-}
-func (*ShowVersionReply) GetCrcString() string {
-	return "c919bde1"
-}
-func (*ShowVersionReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *ShowVersionReply) Reset()                        { *m = ShowVersionReply{} }
+func (*ShowVersionReply) GetMessageName() string          { return "show_version_reply" }
+func (*ShowVersionReply) GetCrcString() string            { return "c919bde1" }
+func (*ShowVersionReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // ShowVpeSystemTime represents VPP binary API message 'show_vpe_system_time'.
 type ShowVpeSystemTime struct{}
 
-func (*ShowVpeSystemTime) GetMessageName() string {
-	return "show_vpe_system_time"
-}
-func (*ShowVpeSystemTime) GetCrcString() string {
-	return "51077d14"
-}
-func (*ShowVpeSystemTime) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *ShowVpeSystemTime) Reset()                        { *m = ShowVpeSystemTime{} }
+func (*ShowVpeSystemTime) GetMessageName() string          { return "show_vpe_system_time" }
+func (*ShowVpeSystemTime) GetCrcString() string            { return "51077d14" }
+func (*ShowVpeSystemTime) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // ShowVpeSystemTimeReply represents VPP binary API message 'show_vpe_system_time_reply'.
 type ShowVpeSystemTimeReply struct {
@@ -506,15 +377,10 @@ type ShowVpeSystemTimeReply struct {
 	VpeSystemTime Timestamp
 }
 
-func (*ShowVpeSystemTimeReply) GetMessageName() string {
-	return "show_vpe_system_time_reply"
-}
-func (*ShowVpeSystemTimeReply) GetCrcString() string {
-	return "7ffd8193"
-}
-func (*ShowVpeSystemTimeReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *ShowVpeSystemTimeReply) Reset()                        { *m = ShowVpeSystemTimeReply{} }
+func (*ShowVpeSystemTimeReply) GetMessageName() string          { return "show_vpe_system_time_reply" }
+func (*ShowVpeSystemTimeReply) GetCrcString() string            { return "7ffd8193" }
+func (*ShowVpeSystemTimeReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 func init() {
 	api.RegisterMessage((*AddNodeNext)(nil), "vpe.AddNodeNext")

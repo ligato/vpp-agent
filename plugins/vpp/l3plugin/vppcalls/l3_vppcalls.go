@@ -16,6 +16,7 @@ package vppcalls
 
 import (
 	"context"
+	"errors"
 	"net"
 
 	govppapi "git.fd.io/govpp.git/api"
@@ -26,6 +27,11 @@ import (
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin/vrfidx"
 	l3 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3"
+)
+
+var (
+	// ErrIPNeighborNotImplemented is used for IPScanNeighAPI handlers that are missing implementation.
+	ErrIPNeighborNotImplemented = errors.New("ip neighbor config not implemented")
 )
 
 // L3VppAPI groups L3 Vpp APIs.
@@ -165,10 +171,10 @@ type RouteVppAPI interface {
 
 	// VppAddRoute adds new route, according to provided input.
 	// Every route has to contain VRF ID (default is 0).
-	VppAddRoute(route *l3.Route) error
+	VppAddRoute(ctx context.Context, route *l3.Route) error
 	// VppDelRoute removes old route, according to provided input.
 	// Every route has to contain VRF ID (default is 0).
-	VppDelRoute(route *l3.Route) error
+	VppDelRoute(ctx context.Context, route *l3.Route) error
 }
 
 // RouteVppRead provides read methods for routes
@@ -186,6 +192,8 @@ type VrfTableVppAPI interface {
 	AddVrfTable(table *l3.VrfTable) error
 	// DelVrfTable deletes existing VRF table.
 	DelVrfTable(table *l3.VrfTable) error
+	// SetVrfFlowHashSettings sets IP flow hash settings for a VRF table.
+	SetVrfFlowHashSettings(vrfID uint32, isIPv6 bool, hashFields *l3.VrfTable_FlowHashSettings) error
 }
 
 // VrfTableVppRead provides read methods for VRF tables.
@@ -200,6 +208,8 @@ type IPNeighVppAPI interface {
 	SetIPScanNeighbor(data *l3.IPScanNeighbor) error
 	// GetIPScanNeighbor returns IP scan neighbor configuration from the VPP
 	GetIPScanNeighbor() (*l3.IPScanNeighbor, error)
+	// DefaultIPScanNeighbor returns default IP scan neighbor configuration
+	DefaultIPScanNeighbor() *l3.IPScanNeighbor
 }
 
 // Path represents FIB path entry.

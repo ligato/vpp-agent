@@ -25,9 +25,12 @@ import (
 	vpp_bond "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/bond"
 	vpp_dhcp "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/dhcp"
 	vpp_gre "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/gre"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/interface_types"
 	vpp_ifs "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/interfaces"
 	vpp_ip "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ip"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ip_types"
 	vpp_ipsec "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ipsec"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ipsec_types"
 	vpp_memif "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/memif"
 	vpp_tapv2 "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/tapv2"
 	vpp_vxlan "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/vxlan"
@@ -444,8 +447,8 @@ func (h *InterfaceVppHandler) dumpIPAddressDetails(ifs map[uint32]*vppcalls.Inte
 	// Dump IP addresses of each interface.
 	for idx := range ifs {
 		reqCtx := h.callsChannel.SendMultiRequest(&vpp_ip.IPAddressDump{
-			SwIfIndex: idx,
-			IsIPv6:    boolToUint(isIPv6),
+			SwIfIndex: interface_types.InterfaceIndex(idx),
+			IsIPv6:    isIPv6,
 		})
 		for {
 			ipDetails := &vpp_ip.IPAddressDetails{}
@@ -465,7 +468,7 @@ func (h *InterfaceVppHandler) dumpIPAddressDetails(ifs map[uint32]*vppcalls.Inte
 
 // processIPDetails processes ip.IPAddressDetails binary API message and fills the details into the provided interface map.
 func (h *InterfaceVppHandler) processIPDetails(ifs map[uint32]*vppcalls.InterfaceDetails, ipDetails *vpp_ip.IPAddressDetails, dhcpClients map[uint32]*vppcalls.Dhcp) {
-	ifDetails, ifIdxExists := ifs[ipDetails.SwIfIndex]
+	ifDetails, ifIdxExists := ifs[uint32(ipDetails.SwIfIndex)]
 	if !ifIdxExists {
 		return
 	}
@@ -473,14 +476,14 @@ func (h *InterfaceVppHandler) processIPDetails(ifs map[uint32]*vppcalls.Interfac
 	var ipAddr string
 	ipByte := make([]byte, 16)
 	copy(ipByte[:], ipDetails.Prefix.Address.Un.XXX_UnionData[:])
-	if ipDetails.Prefix.Address.Af == vpp_ip.ADDRESS_IP6 {
+	if ipDetails.Prefix.Address.Af == ip_types.ADDRESS_IP6 {
 		ipAddr = fmt.Sprintf("%s/%d", net.IP(ipByte).To16().String(), uint32(ipDetails.Prefix.Len))
 	} else {
 		ipAddr = fmt.Sprintf("%s/%d", net.IP(ipByte[:4]).To4().String(), uint32(ipDetails.Prefix.Len))
 	}
 
 	// skip IP addresses given by DHCP
-	if dhcpClient, hasDhcpClient := dhcpClients[ipDetails.SwIfIndex]; hasDhcpClient {
+	if dhcpClient, hasDhcpClient := dhcpClients[uint32(ipDetails.SwIfIndex)]; hasDhcpClient {
 		if dhcpClient.Lease != nil && dhcpClient.Lease.HostAddress == ipAddr {
 			return
 		}
@@ -494,7 +497,9 @@ func (h *InterfaceVppHandler) dumpTapDetails(interfaces map[uint32]*vppcalls.Int
 	// Original TAP v1 was DEPRECATED
 
 	// TAP v2
-	reqCtx := h.callsChannel.SendMultiRequest(&vpp_tapv2.SwInterfaceTapV2Dump{})
+	reqCtx := h.callsChannel.SendMultiRequest(&vpp_tapv2.SwInterfaceTapV2Dump{
+		SwIfIndex: ^vpp_tapv2.InterfaceIndex(0),
+	})
 	for {
 		tapDetails := &vpp_tapv2.SwInterfaceTapV2Details{}
 		stop, err := reqCtx.ReceiveReply(tapDetails)
@@ -514,7 +519,7 @@ func (h *InterfaceVppHandler) dumpTapDetails(interfaces map[uint32]*vppcalls.Int
 				HostIfName: cleanString(tapDetails.HostIfName),
 				RxRingSize: uint32(tapDetails.RxRingSz),
 				TxRingSize: uint32(tapDetails.TxRingSz),
-				EnableGso:  tapDetails.TapFlags&TapFlagGSO == TapFlagGSO,
+				EnableGso:  tapDetails.TapFlags&vpp_tapv2.TAP_FLAG_GSO == vpp_tapv2.TAP_FLAG_GSO,
 			},
 		}
 		interfaces[tapDetails.SwIfIndex].Interface.Type = ifs.Interface_TAP
@@ -666,7 +671,7 @@ func (h *InterfaceVppHandler) dumpIPSecTunnelDetails(interfaces map[uint32]*vppc
 		}
 
 		var localIP, remoteIP net.IP
-		if tunnel.Entry.TunnelDst.Af == vpp_ipsec.ADDRESS_IP6 {
+		if tunnel.Entry.TunnelDst.Af == ip_types.ADDRESS_IP6 {
 			localSrc := local.Entry.TunnelSrc.Un.GetIP6()
 			remoteSrc := remote.Entry.TunnelSrc.Un.GetIP6()
 			localIP, remoteIP = net.IP(localSrc[:]), net.IP(remoteSrc[:])
@@ -684,8 +689,8 @@ func (h *InterfaceVppHandler) dumpIPSecTunnelDetails(interfaces map[uint32]*vppc
 		ifDetails.Interface.Type = ifs.Interface_IPSEC_TUNNEL
 		ifDetails.Interface.Link = &ifs.Interface_Ipsec{
 			Ipsec: &ifs.IPSecLink{
-				Esn:             (tunnel.Entry.Flags & vpp_ipsec.IPSEC_API_SAD_FLAG_USE_ESN) != 0,
-				AntiReplay:      (tunnel.Entry.Flags & vpp_ipsec.IPSEC_API_SAD_FLAG_USE_ANTI_REPLAY) != 0,
+				Esn:             (tunnel.Entry.Flags & ipsec_types.IPSEC_API_SAD_FLAG_USE_ESN) != 0,
+				AntiReplay:      (tunnel.Entry.Flags & ipsec_types.IPSEC_API_SAD_FLAG_USE_ANTI_REPLAY) != 0,
 				LocalIp:         localIP.String(),
 				RemoteIp:        remoteIP.String(),
 				LocalSpi:        local.Entry.Spi,
@@ -696,7 +701,7 @@ func (h *InterfaceVppHandler) dumpIPSecTunnelDetails(interfaces map[uint32]*vppc
 				IntegAlg:        ipsec.IntegAlg(tunnel.Entry.IntegrityAlgorithm),
 				LocalIntegKey:   hex.EncodeToString(local.Entry.IntegrityKey.Data[:local.Entry.IntegrityKey.Length]),
 				RemoteIntegKey:  hex.EncodeToString(remote.Entry.IntegrityKey.Data[:remote.Entry.IntegrityKey.Length]),
-				EnableUdpEncap:  (tunnel.Entry.Flags & vpp_ipsec.IPSEC_API_SAD_FLAG_UDP_ENCAP) != 0,
+				EnableUdpEncap:  (tunnel.Entry.Flags & ipsec_types.IPSEC_API_SAD_FLAG_UDP_ENCAP) != 0,
 			},
 		}
 	}
@@ -709,7 +714,8 @@ func verifyIPSecTunnelDetails(local, remote *vpp_ipsec.IpsecSaDetails) error {
 		return fmt.Errorf("swIfIndex data mismatch (local: %v, remote: %v)",
 			local.SwIfIndex, remote.SwIfIndex)
 	}
-	localIsTunnel, remoteIsTunnel := local.Entry.Flags&vpp_ipsec.IPSEC_API_SAD_FLAG_IS_TUNNEL, remote.Entry.Flags&vpp_ipsec.IPSEC_API_SAD_FLAG_IS_TUNNEL
+	localIsTunnel := local.Entry.Flags & ipsec_types.IPSEC_API_SAD_FLAG_IS_TUNNEL
+	remoteIsTunnel := remote.Entry.Flags & ipsec_types.IPSEC_API_SAD_FLAG_IS_TUNNEL
 	if localIsTunnel != remoteIsTunnel {
 		return fmt.Errorf("tunnel data mismatch (local: %v, remote: %v)",
 			localIsTunnel, remoteIsTunnel)
@@ -717,7 +723,7 @@ func verifyIPSecTunnelDetails(local, remote *vpp_ipsec.IpsecSaDetails) error {
 
 	localSrc, localDst := local.Entry.TunnelSrc.Un.XXX_UnionData, local.Entry.TunnelDst.Un.XXX_UnionData
 	remoteSrc, remoteDst := remote.Entry.TunnelSrc.Un.XXX_UnionData, remote.Entry.TunnelDst.Un.XXX_UnionData
-	if (local.Entry.Flags&vpp_ipsec.IPSEC_API_SAD_FLAG_IS_TUNNEL_V6) != (remote.Entry.Flags&vpp_ipsec.IPSEC_API_SAD_FLAG_IS_TUNNEL_V6) ||
+	if (local.Entry.Flags&ipsec_types.IPSEC_API_SAD_FLAG_IS_TUNNEL_V6) != (remote.Entry.Flags&ipsec_types.IPSEC_API_SAD_FLAG_IS_TUNNEL_V6) ||
 		!bytes.Equal(localSrc[:], remoteDst[:]) ||
 		!bytes.Equal(localDst[:], remoteSrc[:]) {
 		return fmt.Errorf("src/dst IP mismatch (local: %+v, remote: %+v)",
@@ -803,15 +809,14 @@ func (h *InterfaceVppHandler) dumpGreDetails(interfaces map[uint32]*vppcalls.Int
 		swIfIndex := uint32(tunnel.SwIfIndex)
 
 		var srcAddr, dstAddr net.IP
-
-		if tunnel.Src.Af == vpp_gre.ADDRESS_IP4 {
+		if tunnel.Src.Af == ip_types.ADDRESS_IP4 {
 			srcAddrArr := tunnel.Src.Un.GetIP4()
 			srcAddr = net.IP(srcAddrArr[:])
 		} else {
 			srcAddrArr := tunnel.Src.Un.GetIP6()
 			srcAddr = net.IP(srcAddrArr[:])
 		}
-		if tunnel.Dst.Af == vpp_gre.ADDRESS_IP4 {
+		if tunnel.Dst.Af == ip_types.ADDRESS_IP4 {
 			dstAddrArr := tunnel.Dst.Un.GetIP4()
 			dstAddr = net.IP(dstAddrArr[:])
 		} else {
@@ -824,7 +829,7 @@ func (h *InterfaceVppHandler) dumpGreDetails(interfaces map[uint32]*vppcalls.Int
 				TunnelType: getGreTunnelType(tunnel.Type),
 				SrcAddr:    srcAddr.String(),
 				DstAddr:    dstAddr.String(),
-				OuterFibId: tunnel.OuterFibID,
+				OuterFibId: tunnel.OuterTableID,
 				SessionId:  uint32(tunnel.SessionID),
 			},
 		}
@@ -837,7 +842,7 @@ func (h *InterfaceVppHandler) dumpGreDetails(interfaces map[uint32]*vppcalls.Int
 func (h *InterfaceVppHandler) dumpUnnumberedDetails() (map[uint32]uint32, error) {
 	unIfMap := make(map[uint32]uint32) // unnumbered/ip-interface
 	reqCtx := h.callsChannel.SendMultiRequest(&vpp_ip.IPUnnumberedDump{
-		SwIfIndex: ^uint32(0),
+		SwIfIndex: ^interface_types.InterfaceIndex(0),
 	})
 
 	for {
@@ -850,7 +855,7 @@ func (h *InterfaceVppHandler) dumpUnnumberedDetails() (map[uint32]uint32, error)
 			return nil, err
 		}
 
-		unIfMap[unDetails.SwIfIndex] = unDetails.IPSwIfIndex
+		unIfMap[uint32(unDetails.SwIfIndex)] = uint32(unDetails.IPSwIfIndex)
 	}
 
 	return unIfMap, nil
@@ -1058,11 +1063,11 @@ func getVxLanGpeProtocol(p uint8) ifs.VxlanLink_Gpe_Protocol {
 }
 
 func isAdminStateUp(flags vpp_ifs.IfStatusFlags) bool {
-	return flags&vpp_ifs.IF_STATUS_API_FLAG_ADMIN_UP != 0
+	return flags&interface_types.IF_STATUS_API_FLAG_ADMIN_UP != 0
 }
 
 func isLinkStateUp(flags vpp_ifs.IfStatusFlags) bool {
-	return flags&vpp_ifs.IF_STATUS_API_FLAG_LINK_UP != 0
+	return flags&interface_types.IF_STATUS_API_FLAG_LINK_UP != 0
 }
 
 func adminStateToInterfaceStatus(flags vpp_ifs.IfStatusFlags) ifs.InterfaceState_Status {

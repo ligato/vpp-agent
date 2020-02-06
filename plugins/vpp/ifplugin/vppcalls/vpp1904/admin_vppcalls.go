@@ -15,16 +15,18 @@
 package vpp1904
 
 import (
+	"context"
+
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1904/interfaces"
 )
 
 // InterfaceAdminDown implements interface handler.
-func (h *InterfaceVppHandler) InterfaceAdminDown(ifIdx uint32) error {
+func (h *InterfaceVppHandler) InterfaceAdminDown(ctx context.Context, ifIdx uint32) error {
 	return h.interfaceSetFlags(ifIdx, false)
 }
 
 // InterfaceAdminUp implements interface handler.
-func (h *InterfaceVppHandler) InterfaceAdminUp(ifIdx uint32) error {
+func (h *InterfaceVppHandler) InterfaceAdminUp(ctx context.Context, ifIdx uint32) error {
 	return h.interfaceSetFlags(ifIdx, true)
 }
 

@@ -46,3 +46,22 @@ func (h *VrfTableHandler) addDelVrfTable(table *l3.VrfTable, isAdd bool) error {
 
 	return nil
 }
+
+// SetVrfFlowHashSettings sets IP flow hash settings for a VRF table.
+func (h *VrfTableHandler) SetVrfFlowHashSettings(vrfID uint32, isIPv6 bool, hashFields *l3.VrfTable_FlowHashSettings) error {
+	req := &ip.SetIPFlowHash{
+		VrfID:     vrfID,
+		IsIPv6:    boolToUint(isIPv6),
+		Src:       boolToUint(hashFields.UseSrcIp),
+		Dst:       boolToUint(hashFields.UseDstIp),
+		Sport:     boolToUint(hashFields.UseSrcPort),
+		Dport:     boolToUint(hashFields.UseDstPort),
+		Proto:     boolToUint(hashFields.UseProtocol),
+		Reverse:   boolToUint(hashFields.Reverse),
+		Symmetric: boolToUint(hashFields.Symmetric),
+	}
+	reply := &ip.SetIPFlowHashReply{}
+
+	err := h.callsChannel.SendRequest(req).ReceiveReply(reply)
+	return err
+}

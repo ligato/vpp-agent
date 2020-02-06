@@ -33,10 +33,10 @@ func (h *VrfTableHandler) addDelVrfTable(table *l3.VrfTable, isAdd bool) error {
 	req := &vpp_ip.IPTableAddDel{
 		Table: vpp_ip.IPTable{
 			TableID: table.Id,
-			IsIP6:   boolToUint(table.GetProtocol() == l3.VrfTable_IPV6),
-			Name:    []byte(table.Label),
+			IsIP6:   table.GetProtocol() == l3.VrfTable_IPV6,
+			Name:    table.Label,
 		},
-		IsAdd: boolToUint(isAdd),
+		IsAdd: isAdd,
 	}
 	reply := &vpp_ip.IPTableAddDelReply{}
 
@@ -45,4 +45,23 @@ func (h *VrfTableHandler) addDelVrfTable(table *l3.VrfTable, isAdd bool) error {
 	}
 
 	return nil
+}
+
+// SetVrfFlowHashSettings sets IP flow hash settings for a VRF table.
+func (h *VrfTableHandler) SetVrfFlowHashSettings(vrfID uint32, isIPv6 bool, hashFields *l3.VrfTable_FlowHashSettings) error {
+	req := &vpp_ip.SetIPFlowHash{
+		VrfID:     vrfID,
+		IsIPv6:    isIPv6,
+		Src:       hashFields.UseSrcIp,
+		Dst:       hashFields.UseDstIp,
+		Sport:     hashFields.UseSrcPort,
+		Dport:     hashFields.UseDstPort,
+		Proto:     hashFields.UseProtocol,
+		Reverse:   hashFields.Reverse,
+		Symmetric: hashFields.Symmetric,
+	}
+	reply := &vpp_ip.SetIPFlowHashReply{}
+
+	err := h.callsChannel.SendRequest(req).ReceiveReply(reply)
+	return err
 }

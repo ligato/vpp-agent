@@ -15,12 +15,12 @@
 package vpp2001_test
 
 import (
-	"net"
 	"testing"
 
 	"github.com/ligato/cn-infra/logging/logrus"
 	. "github.com/onsi/gomega"
 
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ip_types"
 	vpp_stn "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/stn"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/stnplugin/vppcalls"
@@ -46,9 +46,9 @@ func TestAddStnRule(t *testing.T) {
 	vppMsg, ok := ctx.MockChannel.Msg.(*vpp_stn.StnAddDelRule)
 	Expect(ok).To(BeTrue())
 	Expect(vppMsg.SwIfIndex).To(BeEquivalentTo(1))
-	Expect(vppMsg.IPAddress).To(BeEquivalentTo(net.ParseIP("10.0.0.1").To4()))
-	Expect(vppMsg.IsIP4).To(BeEquivalentTo(1))
-	Expect(vppMsg.IsAdd).To(BeEquivalentTo(1))
+	Expect(vppMsg.IPAddress.Un.GetIP4()).To(BeEquivalentTo(ip_types.IP4Address{10, 0, 0, 1}))
+	Expect(vppMsg.IPAddress.Af).To(Equal(ip_types.ADDRESS_IP4))
+	Expect(vppMsg.IsAdd).To(BeTrue())
 }
 
 func TestAddStnRuleIPv6(t *testing.T) {
@@ -68,9 +68,9 @@ func TestAddStnRuleIPv6(t *testing.T) {
 	vppMsg, ok := ctx.MockChannel.Msg.(*vpp_stn.StnAddDelRule)
 	Expect(ok).To(BeTrue())
 	Expect(vppMsg.SwIfIndex).To(BeEquivalentTo(1))
-	Expect(vppMsg.IPAddress).To(BeEquivalentTo(net.ParseIP("2001:db8:0:1:1:1:1:1").To16()))
-	Expect(vppMsg.IsIP4).To(BeEquivalentTo(0))
-	Expect(vppMsg.IsAdd).To(BeEquivalentTo(1))
+	Expect(vppMsg.IPAddress.Un.GetIP6()).To(BeEquivalentTo(ip_types.IP6Address{32, 1, 13, 184, 0, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1}))
+	Expect(vppMsg.IPAddress.Af).To(Equal(ip_types.ADDRESS_IP6))
+	Expect(vppMsg.IsAdd).To(BeTrue())
 }
 
 func TestAddStnRuleInvalidIP(t *testing.T) {
@@ -139,7 +139,7 @@ func TestDelStnRule(t *testing.T) {
 	Expect(err).To(BeNil())
 	vppMsg, ok := ctx.MockChannel.Msg.(*vpp_stn.StnAddDelRule)
 	Expect(ok).To(BeTrue())
-	Expect(vppMsg.IsAdd).To(BeEquivalentTo(0))
+	Expect(vppMsg.IsAdd).To(BeFalse())
 }
 
 func stnTestSetup(t *testing.T) (*vppmock.TestCtx, vppcalls.StnVppAPI, ifaceidx.IfaceMetadataIndexRW) {

@@ -2,7 +2,9 @@
 *.so
 *.test
 *.out
+*.log
 
+# ignore IDE files
 .idea/*
 
 # ignore executables (extensionless files)
@@ -13,16 +15,8 @@
 !/examples/**/
 !/examples/**/*.*
 
-# test results
-/tests/perf/grpc-perf/grpc-perf
-/tests/perf/log
-/tests/perf/logresult.zip
-/tests/robot/variables/jozo_local_variables.robot
-
-# vpp directory
+# top level dirs
 /vpp/
-
-# exclude vendor
 /vendor/
-
 /.build/
+/report/

@@ -30,16 +30,20 @@ type KnownModel struct {
 
 	goType    reflect.Type
 	protoName string
+
+	// cache
+	keyPrefix *string
+	modelName *string
 }
 
 // Spec returns model specification for the model.
-func (m KnownModel) Spec() *Spec {
+func (m *KnownModel) Spec() *Spec {
 	spec := m.spec
 	return &spec
 }
 
-// ModelDescriptor returns descriptor for the model.
-func (m KnownModel) ModelDetail() *generic.ModelDetail {
+// ModelDetail returns descriptor for the model.
+func (m *KnownModel) ModelDetail() *generic.ModelDetail {
 	return &generic.ModelDetail{
 		Spec:      m.Spec().Proto(),
 		ProtoName: m.ProtoName(),
@@ -51,12 +55,12 @@ func (m KnownModel) ModelDetail() *generic.ModelDetail {
 }
 
 // NewInstance creates new instance value for model type.
-func (m KnownModel) NewInstance() proto.Message {
+func (m *KnownModel) NewInstance() proto.Message {
 	return reflect.New(m.goType.Elem()).Interface().(proto.Message)
 }
 
 // ProtoName returns proto message name registered with the model.
-func (m KnownModel) ProtoName() string {
+func (m *KnownModel) ProtoName() string {
 	if m.protoName == "" {
 		m.protoName = proto.MessageName(m.NewInstance())
 	}
@@ -64,22 +68,34 @@ func (m KnownModel) ProtoName() string {
 }
 
 // NameTemplate returns name template for the model.
-func (m KnownModel) NameTemplate() string {
+func (m *KnownModel) NameTemplate() string {
 	return m.nameTemplate
 }
 
 // GoType returns go type for the model.
-func (m KnownModel) GoType() string {
+func (m *KnownModel) GoType() string {
 	return m.goType.String()
 }
 
-// Path returns path for the model.
-func (m KnownModel) Name() string {
-	return m.spec.ModelName()
+// Name returns name for the model.
+func (m *KnownModel) Name() string {
+	if m.modelName == nil {
+		modelName := m.spec.ModelName()
+		m.modelName = &modelName
+	}
+	return *m.modelName
 }
 
 // KeyPrefix returns key prefix for the model.
-func (m KnownModel) KeyPrefix() string {
+func (m *KnownModel) KeyPrefix() string {
+	if m.keyPrefix == nil {
+		keyPrefix := m.getKeyPrefix()
+		m.keyPrefix = &keyPrefix
+	}
+	return *m.keyPrefix
+}
+
+func (m *KnownModel) getKeyPrefix() string {
 	keyPrefix := m.spec.KeyPrefix()
 	if m.nameFunc == nil {
 		keyPrefix = strings.TrimSuffix(keyPrefix, "/")
@@ -89,7 +105,7 @@ func (m KnownModel) KeyPrefix() string {
 
 // ParseKey parses the given key and returns item name
 // or returns empty name and valid as false if the key is not valid.
-func (m KnownModel) ParseKey(key string) (name string, valid bool) {
+func (m *KnownModel) ParseKey(key string) (name string, valid bool) {
 	name = strings.TrimPrefix(key, m.KeyPrefix())
 	if name == key || (name == "" && m.nameFunc != nil) {
 		name = strings.TrimPrefix(key, m.Name())
@@ -104,20 +120,20 @@ func (m KnownModel) ParseKey(key string) (name string, valid bool) {
 }
 
 // IsKeyValid returns true if given key is valid for this model.
-func (m KnownModel) IsKeyValid(key string) bool {
+func (m *KnownModel) IsKeyValid(key string) bool {
 	_, valid := m.ParseKey(key)
 	return valid
 }
 
 // StripKeyPrefix returns key with prefix stripped.
-func (m KnownModel) StripKeyPrefix(key string) string {
+func (m *KnownModel) StripKeyPrefix(key string) string {
 	if name, valid := m.ParseKey(key); valid {
 		return name
 	}
 	return key
 }
 
-func (m KnownModel) instanceName(x proto.Message) (string, error) {
+func (m *KnownModel) instanceName(x proto.Message) (string, error) {
 	if m.nameFunc == nil {
 		return "", nil
 	}

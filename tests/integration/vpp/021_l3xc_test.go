@@ -27,6 +27,8 @@ import (
 	l3plugin_vppcalls "go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin/vppcalls"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin/vrfidx"
 	vpp_l3 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3"
+
+	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin"
 )
 
 func TestL3XC(t *testing.T) {
@@ -59,7 +61,7 @@ func TestL3XC(t *testing.T) {
 	if err := ih.AddInterfaceIP(ifIdx1, &ipNet1); err != nil {
 		t.Fatalf("adding interface IP failed: %v", err)
 	}
-	if err := ih.InterfaceAdminUp(ifIdx1); err != nil {
+	if err := ih.InterfaceAdminUp(test.Context, ifIdx1); err != nil {
 		t.Fatalf("setting interface admin up failed: %v", err)
 	}
 
@@ -76,7 +78,7 @@ func TestL3XC(t *testing.T) {
 	if err := ih.AddInterfaceIP(ifIdx2, &ipNet2); err != nil {
 		t.Fatalf("adding interface IP failed: %v", err)
 	}
-	if err := ih.InterfaceAdminUp(ifIdx2); err != nil {
+	if err := ih.InterfaceAdminUp(test.Context, ifIdx2); err != nil {
 		t.Fatalf("setting interface admin up failed: %v", err)
 	}
 

@@ -43,7 +43,7 @@ func TestNat44GlobalConfigDump(t *testing.T) {
 	})
 
 	// virtual reassembly
-	ctx.MockVpp.MockReply(&vpp_nat.NatGetReassReply{
+	/*ctx.MockVpp.MockReply(&vpp_nat.NatGetReassReply{
 		// IPv4
 		IP4Timeout:  10,
 		IP4MaxReass: 5,
@@ -53,8 +53,8 @@ func TestNat44GlobalConfigDump(t *testing.T) {
 		IP6Timeout:  20,
 		IP6MaxReass: 8,
 		IP6MaxFrag:  13,
-		IP6DropFrag: 0,
-	})
+		IP6DropFrag: 0,*
+	})*/
 
 	// non-output interfaces
 	ctx.MockVpp.MockReply(
@@ -115,11 +115,11 @@ func TestNat44GlobalConfigDump(t *testing.T) {
 	Expect(globalCfg.NatInterfaces[2].IsInside).To(BeTrue())
 	Expect(globalCfg.NatInterfaces[2].OutputFeature).To(BeTrue())
 
-	Expect(globalCfg.VirtualReassembly).ToNot(BeNil())
+	/*Expect(globalCfg.VirtualReassembly).ToNot(BeNil())
 	Expect(globalCfg.VirtualReassembly.Timeout).To(BeEquivalentTo(10))
 	Expect(globalCfg.VirtualReassembly.MaxReassemblies).To(BeEquivalentTo(5))
 	Expect(globalCfg.VirtualReassembly.MaxFragments).To(BeEquivalentTo(7))
-	Expect(globalCfg.VirtualReassembly.DropFragments).To(BeTrue())
+	Expect(globalCfg.VirtualReassembly.DropFragments).To(BeTrue())*/
 }
 
 func TestNat44InterfacesDump(t *testing.T) {

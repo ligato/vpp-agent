@@ -19,8 +19,11 @@ import (
 	"testing"
 
 	"github.com/ligato/cn-infra/logging/logrus"
+
 	ifplugin_vppcalls "go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/vppcalls"
 	interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
+
+	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin"
 )
 
 func TestGtpu(t *testing.T) {
