@@ -239,7 +239,7 @@ dep-update:
 
 dep-check:
 	@echo "# checking dependencies"
-	@if ! git --no-pager diff --quiet go.mod ; then \
+	@if ! git --no-pager diff go.mod ; then \
 		echo >&2 "go.mod has uncommitted changes!"; \
 		exit 1; \
 	fi
