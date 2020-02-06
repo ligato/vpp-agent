@@ -182,10 +182,3 @@ func setFibPathNhAndProto(ipStr string) (nh vpp_abf.FibPathNh, proto vpp_abf.Fib
 		ClassifyTableIndex: ClassifyTableIndexUnset,
 	}, proto, nil
 }
-
-func boolToUint(input bool) uint8 {
-	if input {
-		return 1
-	}
-	return 0
-}
