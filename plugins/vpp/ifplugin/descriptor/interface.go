@@ -95,8 +95,9 @@ var (
 	// includes an IP address.
 	ErrUnnumberedWithIP = errors.New("VPP unnumbered interface was defined with IP address")
 
-	// ErrAfPacketWithoutHostName is returned when AF-Packet configuration is missing host interface name.
-	ErrAfPacketWithoutHostName = errors.New("VPP AF-Packet interface was defined without host interface name")
+	// ErrAfPacketWithoutTarget is returned when AF-Packet configuration is missing reference to the target linux interface.
+	ErrAfPacketWithoutTarget = errors.New(
+		"VPP AF-Packet interface was defined without reference to the target linux interface")
 
 	// ErrInterfaceLinkMismatch is returned when interface type does not match the link configuration.
 	ErrInterfaceLinkMismatch = errors.New("VPP interface type and link configuration do not match")
@@ -304,7 +305,9 @@ func (d *InterfaceDescriptor) equivalentTypeSpecificConfig(oldIntf, newIntf *int
 			return false
 		}
 	case interfaces.Interface_AF_PACKET:
-		if oldIntf.GetAfpacket().GetHostIfName() != newIntf.GetAfpacket().GetHostIfName() {
+		//nolint:staticcheck
+		if oldIntf.GetAfpacket().GetHostIfName() != newIntf.GetAfpacket().GetHostIfName() ||
+			oldIntf.GetAfpacket().GetLinuxInterface() != newIntf.GetAfpacket().GetLinuxInterface() {
 			return false
 		}
 	case interfaces.Interface_MEMIF:
@@ -483,8 +486,11 @@ func (d *InterfaceDescriptor) Validate(key string, intf *interfaces.Interface) e
 			return kvs.NewInvalidValueError(ErrDPDKInterfaceMissing, "name")
 		}
 	case interfaces.Interface_AF_PACKET:
-		if intf.GetAfpacket().GetHostIfName() == "" {
-			return kvs.NewInvalidValueError(ErrAfPacketWithoutHostName, "link.afpacket.host_if_name")
+		//nolint:staticcheck
+		if intf.GetAfpacket().GetHostIfName() == "" &&
+			intf.GetAfpacket().GetLinuxInterface() == "" {
+			return kvs.NewInvalidValueError(ErrAfPacketWithoutTarget,
+				"link.afpacket.host_if_name", "link.afpacket.linux_interface")
 		}
 	case interfaces.Interface_BOND_INTERFACE:
 		if name, ok := d.bondIDs[intf.GetBond().GetId()]; ok && name != intf.GetName() {
@@ -596,10 +602,18 @@ func (d *InterfaceDescriptor) Dependencies(key string, intf *interfaces.Interfac
 	switch intf.Type {
 	case interfaces.Interface_AF_PACKET:
 		// AF-PACKET depends on a referenced Linux interface in the default namespace
-		dependencies = append(dependencies, kvs.Dependency{
-			Label: afPacketHostInterfaceDep,
-			Key:   linux_intf.InterfaceHostNameKey(intf.GetAfpacket().GetHostIfName()),
-		})
+		//nolint:staticcheck
+		if intf.GetAfpacket().GetLinuxInterface() != "" {
+			dependencies = append(dependencies, kvs.Dependency{
+				Label: afPacketHostInterfaceDep,
+				Key:   linux_intf.InterfaceKey(intf.GetAfpacket().GetLinuxInterface()),
+			})
+		} else if intf.GetAfpacket().GetHostIfName() != "" {
+			dependencies = append(dependencies, kvs.Dependency{
+				Label: afPacketHostInterfaceDep,
+				Key:   linux_intf.InterfaceHostNameKey(intf.GetAfpacket().GetHostIfName()),
+			})
+		}
 	case interfaces.Interface_TAP:
 		// TAP connects VPP with microservice
 		if toMicroservice := intf.GetTap().GetToMicroservice(); toMicroservice != "" {
@@ -826,6 +840,24 @@ func (d *InterfaceDescriptor) getInterfaceMTU(intf *interfaces.Interface) uint32
 		return mtu
 	}
 	return d.defaultMtu /* still can be 0, i.e. undefined */
+}
+
+// getAfPacketTargetHostIfName returns the host name of the interface to which the given AF-PACKET
+// interface should bind to.
+//nolint:staticcheck
+func (d *InterfaceDescriptor) getAfPacketTargetHostIfName(afpacket *interfaces.AfpacketLink) (string, error) {
+	if afpacket.GetLinuxInterface() == "" {
+		return afpacket.GetHostIfName(), nil
+	}
+	if d.linuxIfPlugin == nil {
+		return "", errors.New("linux ifplugin dependency is needed for AF-PACKET interface")
+	}
+	linuxIfIdx := d.linuxIfPlugin.GetInterfaceIndex()
+	linuxIfMeta, exists := linuxIfIdx.LookupByName(afpacket.GetLinuxInterface())
+	if !exists {
+		return "", errors.Errorf("failed to find linux interface %s", afpacket.GetLinuxInterface())
+	}
+	return linuxIfMeta.HostIfName, nil
 }
 
 // resolveMemifSocketFilename returns memif socket filename ID.

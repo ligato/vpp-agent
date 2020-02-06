@@ -22,7 +22,6 @@ import (
 	. "github.com/onsi/gomega"
 	vpp_afpacket "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/af_packet"
 	vpp_ifs "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/interfaces"
-	ifs "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
 )
 
 func TestAddAfPacketInterface(t *testing.T) {
@@ -32,9 +31,7 @@ func TestAddAfPacketInterface(t *testing.T) {
 	ctx.MockVpp.MockReply(&vpp_afpacket.AfPacketCreateReply{})
 	ctx.MockVpp.MockReply(&vpp_ifs.SwInterfaceTagAddDelReply{})
 
-	ifIndex, err := ifHandler.AddAfPacketInterface("if1", "", &ifs.AfpacketLink{
-		HostIfName: "host1",
-	})
+	ifIndex, err := ifHandler.AddAfPacketInterface("if1", "", "host1")
 
 	Expect(err).To(BeNil())
 	Expect(ifIndex).ToNot(BeNil())
@@ -58,9 +55,7 @@ func TestAddAfPacketInterfaceError(t *testing.T) {
 
 	ctx.MockVpp.MockReply(&vpp_afpacket.AfPacketDeleteReply{})
 
-	_, err := ifHandler.AddAfPacketInterface("if1", "", &ifs.AfpacketLink{
-		HostIfName: "host1",
-	})
+	_, err := ifHandler.AddAfPacketInterface("if1", "", "host1")
 
 	Expect(err).ToNot(BeNil())
 }
@@ -74,9 +69,7 @@ func TestAddAfPacketInterfaceRetval(t *testing.T) {
 	})
 	ctx.MockVpp.MockReply(&vpp_ifs.SwInterfaceTagAddDelReply{})
 
-	_, err := ifHandler.AddAfPacketInterface("if1", "", &ifs.AfpacketLink{
-		HostIfName: "host1",
-	})
+	_, err := ifHandler.AddAfPacketInterface("if1", "", "host1")
 
 	Expect(err).ToNot(BeNil())
 }
@@ -88,9 +81,7 @@ func TestDeleteAfPacketInterface(t *testing.T) {
 	ctx.MockVpp.MockReply(&vpp_afpacket.AfPacketDeleteReply{})
 	ctx.MockVpp.MockReply(&vpp_ifs.SwInterfaceTagAddDelReply{})
 
-	err := ifHandler.DeleteAfPacketInterface("if1", 0, &ifs.AfpacketLink{
-		HostIfName: "host1",
-	})
+	err := ifHandler.DeleteAfPacketInterface("if1", 0, "host1")
 
 	Expect(err).To(BeNil())
 	Expect(len(ctx.MockChannel.Msgs)).To(BeEquivalentTo(2))
@@ -111,9 +102,7 @@ func TestDeleteAfPacketInterfaceError(t *testing.T) {
 
 	ctx.MockVpp.MockReply(&vpp_afpacket.AfPacketCreateReply{})
 
-	err := ifHandler.DeleteAfPacketInterface("if1", 0, &ifs.AfpacketLink{
-		HostIfName: "host1",
-	})
+	err := ifHandler.DeleteAfPacketInterface("if1", 0, "host1")
 
 	Expect(err).ToNot(BeNil())
 }
@@ -127,9 +116,7 @@ func TestDeleteAfPacketInterfaceRetval(t *testing.T) {
 	})
 	ctx.MockVpp.MockReply(&vpp_ifs.SwInterfaceTagAddDelReply{})
 
-	err := ifHandler.DeleteAfPacketInterface("if1", 0, &ifs.AfpacketLink{
-		HostIfName: "host1",
-	})
+	err := ifHandler.DeleteAfPacketInterface("if1", 0, "host1")
 
 	Expect(err).ToNot(BeNil())
 }
@@ -141,9 +128,7 @@ func TestAddAfPacketInterfaceMac(t *testing.T) {
 	ctx.MockVpp.MockReply(&vpp_afpacket.AfPacketCreateReply{})
 	ctx.MockVpp.MockReply(&vpp_ifs.SwInterfaceTagAddDelReply{})
 
-	ifIndex, err := ifHandler.AddAfPacketInterface("if1", "a2:01:01:01:01:01", &ifs.AfpacketLink{
-		HostIfName: "host1",
-	})
+	ifIndex, err := ifHandler.AddAfPacketInterface("if1", "a2:01:01:01:01:01", "host1")
 
 	Expect(err).To(BeNil())
 	Expect(ifIndex).ToNot(BeNil())

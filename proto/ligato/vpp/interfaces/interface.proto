@@ -186,8 +186,18 @@ message VxlanLink {
 
 // AfpacketLink defines configuration for interface type: AF_PACKET
 message AfpacketLink {
-    // Name of the host interface to bind to (mandatory)
-    string host_if_name = 1;
+    // Name of the host (Linux) interface to bind to.
+    // This field is DEPRECATED. The logical reference <linux_interface> should be used instead.
+    // Target Linux interface which is not configured by the same (or any) vpp-agent can be assigned
+    // a logical name using a Linux interface configuration entry of type EXISTING
+    // (see proto/ligato/linux/interfaces/interface.proto).
+    // It is mandatory to define either <host_if_name> or <linux_interface>.
+    string host_if_name = 1 [deprecated=true];
+
+    // Logical name of the Linux interface to bind to.
+    // This is an alternative (and preferred) interface reference to <host_if_name>.
+    // It is mandatory to define either <host_if_name> or <linux_interface>.
+    string linux_interface = 2;
 }
 
 // TapLink defines configuration for interface type: TAP

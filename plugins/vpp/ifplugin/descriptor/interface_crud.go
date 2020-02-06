@@ -111,7 +111,12 @@ func (d *InterfaceDescriptor) Create(key string, intf *interfaces.Interface) (me
 		}
 
 	case interfaces.Interface_AF_PACKET:
-		ifIdx, err = d.ifHandler.AddAfPacketInterface(intf.Name, intf.GetPhysAddress(), intf.GetAfpacket())
+		targetHostIfName, err := d.getAfPacketTargetHostIfName(intf.GetAfpacket())
+		if err != nil {
+			d.log.Error(err)
+			return nil, err
+		}
+		ifIdx, err = d.ifHandler.AddAfPacketInterface(intf.Name, intf.GetPhysAddress(), targetHostIfName)
 		if err != nil {
 			d.log.Error(err)
 			return nil, err
@@ -277,7 +282,11 @@ func (d *InterfaceDescriptor) Delete(key string, intf *interfaces.Interface, met
 		d.log.Debugf("Interface %s removal skipped: cannot remove (blacklist) physical interface", intf.Name) // Not an error
 		return nil
 	case interfaces.Interface_AF_PACKET:
-		err = d.ifHandler.DeleteAfPacketInterface(intf.Name, ifIdx, intf.GetAfpacket())
+		var targetHostIfName string
+		targetHostIfName, err = d.getAfPacketTargetHostIfName(intf.GetAfpacket())
+		if err == nil {
+			err = d.ifHandler.DeleteAfPacketInterface(intf.Name, ifIdx, targetHostIfName)
+		}
 	case interfaces.Interface_IPSEC_TUNNEL:
 		err = d.ifHandler.DeleteIPSecTunnelInterface(ctx, intf.Name, intf.GetIpsec())
 	case interfaces.Interface_SUB_INTERFACE:
@@ -485,6 +494,14 @@ func (d *InterfaceDescriptor) Retrieve(correlate []adapter.InterfaceKVWithMetada
 					intf.Interface.GetMemif().BufferSize = expCfg.GetMemif().GetBufferSize()
 				}
 			}
+			//nolint:staticcheck
+			if expCfg.Type == interfaces.Interface_AF_PACKET && intf.Interface.GetAfpacket() != nil {
+				hostIfName, err := d.getAfPacketTargetHostIfName(expCfg.GetAfpacket())
+				if err == nil && hostIfName == intf.Interface.GetAfpacket().GetHostIfName() {
+					intf.Interface.GetAfpacket().HostIfName = expCfg.GetAfpacket().GetHostIfName()
+					intf.Interface.GetAfpacket().LinuxInterface = expCfg.GetAfpacket().GetLinuxInterface()
+				}
+			}
 
 			// remove rx-placement entries for queues with configuration not defined by NB
 			rxPlacementDump := intf.Interface.GetRxPlacements()
@@ -520,9 +537,12 @@ func (d *InterfaceDescriptor) Retrieve(correlate []adapter.InterfaceKVWithMetada
 		// verify links between VPP and Linux side
 		if d.linuxIfPlugin != nil && d.linuxIfHandler != nil && d.nsPlugin != nil {
 			if intf.Interface.Type == interfaces.Interface_AF_PACKET {
-				hostIfName := intf.Interface.GetAfpacket().HostIfName
-				exists, _ := d.linuxIfHandler.InterfaceExists(hostIfName)
-				if !exists {
+				var exists bool
+				hostIfName, err := d.getAfPacketTargetHostIfName(intf.Interface.GetAfpacket())
+				if err == nil {
+					exists, _ = d.linuxIfHandler.InterfaceExists(hostIfName)
+				}
+				if err != nil || !exists {
 					// the Linux interface that the AF-Packet is attached to does not exist
 					// - append special suffix that will make this interface unwanted
 					intf.Interface.Name += afPacketMissingAttachedIfSuffix
