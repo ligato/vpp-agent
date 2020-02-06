@@ -6,7 +6,7 @@ language: go
 go:
   - 1.x
 
-go_import_path: go.ligato.io/vpp-agent
+go_import_path: go.ligato.io/vpp-agent/v3
 
 services:
   - docker
@@ -18,6 +18,7 @@ git:
 cache:
   directories:
     - ${HOME}/.cache
+    - ${HOME}/gopath/pkg/mod
 
 install: true
 
@@ -32,8 +33,8 @@ stages:
 jobs:
   include:
     - stage: Check
-      language: shell
       name: "Check formatting"
+      language: shell
       addons:
         apt:
           packages:
@@ -46,8 +47,12 @@ jobs:
     - name: "Check proto files"
       script: make check-proto
 
-    - stage: Test
-      name: "Code linter"
+    - stage: Build & Test
+      name: "Build"
+        script:
+          - make cmd
+          - make examples
+    - name: "Code linter"
       script: make lint || true
     - name: "Unit tests"
       before_script:
@@ -56,11 +61,6 @@ jobs:
       after_success:
         - goveralls -coverprofile=/tmp/coverage.out -service=travis-ci
         - bash <(curl -s https://codecov.io/bash) -f /tmp/coverage.out -F unittests
-
-    - stage: Build
-      script:
-        - make cmd
-        - make examples
 
     - stage: Integration
       env: VPP_VERSION=1904
