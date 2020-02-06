@@ -54,8 +54,7 @@ import (
 )
 
 func init() {
-	// this adds ErrPluginDisabled to non-retryable errors
-	kvscheduler.NonRetryableErrors = append(kvscheduler.NonRetryableErrors, vppclient.ErrPluginDisabled)
+	kvscheduler.AddNonRetryableError(vppclient.ErrPluginDisabled)
 }
 
 // Default Go routine count used while retrieving linux configuration
