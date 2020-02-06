@@ -16,6 +16,7 @@ package vppcalls
 
 import (
 	"context"
+	"errors"
 	"net"
 
 	govppapi "git.fd.io/govpp.git/api"
@@ -26,6 +27,11 @@ import (
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin/vrfidx"
 	l3 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3"
+)
+
+var (
+	// ErrIPNeighborNotImplemented is used for IPScanNeighAPI handlers that are missing implementation.
+	ErrIPNeighborNotImplemented = errors.New("ip neighbor config not implemented")
 )
 
 // L3VppAPI groups L3 Vpp APIs.
@@ -202,6 +208,8 @@ type IPNeighVppAPI interface {
 	SetIPScanNeighbor(data *l3.IPScanNeighbor) error
 	// GetIPScanNeighbor returns IP scan neighbor configuration from the VPP
 	GetIPScanNeighbor() (*l3.IPScanNeighbor, error)
+	// DefaultIPScanNeighbor returns default IP scan neighbor configuration
+	DefaultIPScanNeighbor() *l3.IPScanNeighbor
 }
 
 // Path represents FIB path entry.

@@ -29,6 +29,7 @@ import (
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001"
 	vpp_dhcp "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/dhcp"
 	vpp_ip "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ip"
+	vpp_ip_neighbor "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ip_neighbor"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ip_types"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/l3xc"
 	vpp_vpe "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/vpe"
@@ -40,6 +41,7 @@ import (
 func init() {
 	var msgs []govppapi.Message
 	msgs = append(msgs, vpp_ip.AllMessages()...)
+	msgs = append(msgs, vpp_ip_neighbor.AllMessages()...)
 	msgs = append(msgs, vpp_vpe.AllMessages()...)
 	msgs = append(msgs, vpp_dhcp.AllMessages()...)
 
