@@ -282,9 +282,7 @@ type Address struct {
 	Un AddressUnion
 }
 
-func (*Address) GetTypeName() string {
-	return "address"
-}
+func (*Address) GetTypeName() string { return "address" }
 
 // GreTunnel represents VPP binary API type 'gre_tunnel'.
 type GreTunnel struct {
@@ -299,9 +297,7 @@ type GreTunnel struct {
 	Dst         Address
 }
 
-func (*GreTunnel) GetTypeName() string {
-	return "gre_tunnel"
-}
+func (*GreTunnel) GetTypeName() string { return "gre_tunnel" }
 
 // IP4Prefix represents VPP binary API type 'ip4_prefix'.
 type IP4Prefix struct {
@@ -309,9 +305,7 @@ type IP4Prefix struct {
 	Len     uint8
 }
 
-func (*IP4Prefix) GetTypeName() string {
-	return "ip4_prefix"
-}
+func (*IP4Prefix) GetTypeName() string { return "ip4_prefix" }
 
 // IP6Prefix represents VPP binary API type 'ip6_prefix'.
 type IP6Prefix struct {
@@ -319,9 +313,7 @@ type IP6Prefix struct {
 	Len     uint8
 }
 
-func (*IP6Prefix) GetTypeName() string {
-	return "ip6_prefix"
-}
+func (*IP6Prefix) GetTypeName() string { return "ip6_prefix" }
 
 // Mprefix represents VPP binary API type 'mprefix'.
 type Mprefix struct {
@@ -331,9 +323,7 @@ type Mprefix struct {
 	SrcAddress       AddressUnion
 }
 
-func (*Mprefix) GetTypeName() string {
-	return "mprefix"
-}
+func (*Mprefix) GetTypeName() string { return "mprefix" }
 
 // Prefix represents VPP binary API type 'prefix'.
 type Prefix struct {
@@ -341,9 +331,7 @@ type Prefix struct {
 	Len     uint8
 }
 
-func (*Prefix) GetTypeName() string {
-	return "prefix"
-}
+func (*Prefix) GetTypeName() string { return "prefix" }
 
 // PrefixMatcher represents VPP binary API type 'prefix_matcher'.
 type PrefixMatcher struct {
@@ -351,18 +339,14 @@ type PrefixMatcher struct {
 	Ge uint8
 }
 
-func (*PrefixMatcher) GetTypeName() string {
-	return "prefix_matcher"
-}
+func (*PrefixMatcher) GetTypeName() string { return "prefix_matcher" }
 
 // AddressUnion represents VPP binary API union 'address_union'.
 type AddressUnion struct {
 	XXX_UnionData [16]byte
 }
 
-func (*AddressUnion) GetTypeName() string {
-	return "address_union"
-}
+func (*AddressUnion) GetTypeName() string { return "address_union" }
 
 func AddressUnionIP4(a IP4Address) (u AddressUnion) {
 	u.SetIP4(a)
@@ -404,15 +388,10 @@ type GreTunnelAddDel struct {
 	Tunnel GreTunnel
 }
 
-func (*GreTunnelAddDel) GetMessageName() string {
-	return "gre_tunnel_add_del"
-}
-func (*GreTunnelAddDel) GetCrcString() string {
-	return "4bf7bdec"
-}
-func (*GreTunnelAddDel) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *GreTunnelAddDel) Reset()                        { *m = GreTunnelAddDel{} }
+func (*GreTunnelAddDel) GetMessageName() string          { return "gre_tunnel_add_del" }
+func (*GreTunnelAddDel) GetCrcString() string            { return "4bf7bdec" }
+func (*GreTunnelAddDel) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // GreTunnelAddDelReply represents VPP binary API message 'gre_tunnel_add_del_reply'.
 type GreTunnelAddDelReply struct {
@@ -420,45 +399,30 @@ type GreTunnelAddDelReply struct {
 	SwIfIndex InterfaceIndex
 }
 
-func (*GreTunnelAddDelReply) GetMessageName() string {
-	return "gre_tunnel_add_del_reply"
-}
-func (*GreTunnelAddDelReply) GetCrcString() string {
-	return "5383d31f"
-}
-func (*GreTunnelAddDelReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *GreTunnelAddDelReply) Reset()                        { *m = GreTunnelAddDelReply{} }
+func (*GreTunnelAddDelReply) GetMessageName() string          { return "gre_tunnel_add_del_reply" }
+func (*GreTunnelAddDelReply) GetCrcString() string            { return "5383d31f" }
+func (*GreTunnelAddDelReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // GreTunnelDetails represents VPP binary API message 'gre_tunnel_details'.
 type GreTunnelDetails struct {
 	Tunnel GreTunnel
 }
 
-func (*GreTunnelDetails) GetMessageName() string {
-	return "gre_tunnel_details"
-}
-func (*GreTunnelDetails) GetCrcString() string {
-	return "1c6696b1"
-}
-func (*GreTunnelDetails) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *GreTunnelDetails) Reset()                        { *m = GreTunnelDetails{} }
+func (*GreTunnelDetails) GetMessageName() string          { return "gre_tunnel_details" }
+func (*GreTunnelDetails) GetCrcString() string            { return "1c6696b1" }
+func (*GreTunnelDetails) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // GreTunnelDump represents VPP binary API message 'gre_tunnel_dump'.
 type GreTunnelDump struct {
 	SwIfIndex InterfaceIndex
 }
 
-func (*GreTunnelDump) GetMessageName() string {
-	return "gre_tunnel_dump"
-}
-func (*GreTunnelDump) GetCrcString() string {
-	return "f9e6675e"
-}
-func (*GreTunnelDump) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *GreTunnelDump) Reset()                        { *m = GreTunnelDump{} }
+func (*GreTunnelDump) GetMessageName() string          { return "gre_tunnel_dump" }
+func (*GreTunnelDump) GetCrcString() string            { return "f9e6675e" }
+func (*GreTunnelDump) GetMessageType() api.MessageType { return api.RequestMessage }
 
 func init() {
 	api.RegisterMessage((*GreTunnelAddDel)(nil), "gre.GreTunnelAddDel")

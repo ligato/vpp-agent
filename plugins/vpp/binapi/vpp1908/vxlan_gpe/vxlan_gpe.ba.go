@@ -35,30 +35,24 @@ type SwInterfaceSetVxlanGpeBypass struct {
 	Enable    uint8
 }
 
+func (m *SwInterfaceSetVxlanGpeBypass) Reset() { *m = SwInterfaceSetVxlanGpeBypass{} }
 func (*SwInterfaceSetVxlanGpeBypass) GetMessageName() string {
 	return "sw_interface_set_vxlan_gpe_bypass"
 }
-func (*SwInterfaceSetVxlanGpeBypass) GetCrcString() string {
-	return "e74ca095"
-}
-func (*SwInterfaceSetVxlanGpeBypass) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (*SwInterfaceSetVxlanGpeBypass) GetCrcString() string            { return "e74ca095" }
+func (*SwInterfaceSetVxlanGpeBypass) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // SwInterfaceSetVxlanGpeBypassReply represents VPP binary API message 'sw_interface_set_vxlan_gpe_bypass_reply'.
 type SwInterfaceSetVxlanGpeBypassReply struct {
 	Retval int32
 }
 
+func (m *SwInterfaceSetVxlanGpeBypassReply) Reset() { *m = SwInterfaceSetVxlanGpeBypassReply{} }
 func (*SwInterfaceSetVxlanGpeBypassReply) GetMessageName() string {
 	return "sw_interface_set_vxlan_gpe_bypass_reply"
 }
-func (*SwInterfaceSetVxlanGpeBypassReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*SwInterfaceSetVxlanGpeBypassReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (*SwInterfaceSetVxlanGpeBypassReply) GetCrcString() string            { return "e8d4e804" }
+func (*SwInterfaceSetVxlanGpeBypassReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // VxlanGpeAddDelTunnel represents VPP binary API message 'vxlan_gpe_add_del_tunnel'.
 type VxlanGpeAddDelTunnel struct {
@@ -73,15 +67,10 @@ type VxlanGpeAddDelTunnel struct {
 	IsAdd          uint8
 }
 
-func (*VxlanGpeAddDelTunnel) GetMessageName() string {
-	return "vxlan_gpe_add_del_tunnel"
-}
-func (*VxlanGpeAddDelTunnel) GetCrcString() string {
-	return "d15850ba"
-}
-func (*VxlanGpeAddDelTunnel) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *VxlanGpeAddDelTunnel) Reset()                        { *m = VxlanGpeAddDelTunnel{} }
+func (*VxlanGpeAddDelTunnel) GetMessageName() string          { return "vxlan_gpe_add_del_tunnel" }
+func (*VxlanGpeAddDelTunnel) GetCrcString() string            { return "d15850ba" }
+func (*VxlanGpeAddDelTunnel) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // VxlanGpeAddDelTunnelReply represents VPP binary API message 'vxlan_gpe_add_del_tunnel_reply'.
 type VxlanGpeAddDelTunnelReply struct {
@@ -89,15 +78,10 @@ type VxlanGpeAddDelTunnelReply struct {
 	SwIfIndex uint32
 }
 
-func (*VxlanGpeAddDelTunnelReply) GetMessageName() string {
-	return "vxlan_gpe_add_del_tunnel_reply"
-}
-func (*VxlanGpeAddDelTunnelReply) GetCrcString() string {
-	return "fda5941f"
-}
-func (*VxlanGpeAddDelTunnelReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *VxlanGpeAddDelTunnelReply) Reset()                        { *m = VxlanGpeAddDelTunnelReply{} }
+func (*VxlanGpeAddDelTunnelReply) GetMessageName() string          { return "vxlan_gpe_add_del_tunnel_reply" }
+func (*VxlanGpeAddDelTunnelReply) GetCrcString() string            { return "fda5941f" }
+func (*VxlanGpeAddDelTunnelReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // VxlanGpeTunnelDetails represents VPP binary API message 'vxlan_gpe_tunnel_details'.
 type VxlanGpeTunnelDetails struct {
@@ -112,30 +96,20 @@ type VxlanGpeTunnelDetails struct {
 	IsIPv6         uint8
 }
 
-func (*VxlanGpeTunnelDetails) GetMessageName() string {
-	return "vxlan_gpe_tunnel_details"
-}
-func (*VxlanGpeTunnelDetails) GetCrcString() string {
-	return "2673fbfa"
-}
-func (*VxlanGpeTunnelDetails) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *VxlanGpeTunnelDetails) Reset()                        { *m = VxlanGpeTunnelDetails{} }
+func (*VxlanGpeTunnelDetails) GetMessageName() string          { return "vxlan_gpe_tunnel_details" }
+func (*VxlanGpeTunnelDetails) GetCrcString() string            { return "2673fbfa" }
+func (*VxlanGpeTunnelDetails) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // VxlanGpeTunnelDump represents VPP binary API message 'vxlan_gpe_tunnel_dump'.
 type VxlanGpeTunnelDump struct {
 	SwIfIndex uint32
 }
 
-func (*VxlanGpeTunnelDump) GetMessageName() string {
-	return "vxlan_gpe_tunnel_dump"
-}
-func (*VxlanGpeTunnelDump) GetCrcString() string {
-	return "529cb13f"
-}
-func (*VxlanGpeTunnelDump) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *VxlanGpeTunnelDump) Reset()                        { *m = VxlanGpeTunnelDump{} }
+func (*VxlanGpeTunnelDump) GetMessageName() string          { return "vxlan_gpe_tunnel_dump" }
+func (*VxlanGpeTunnelDump) GetCrcString() string            { return "529cb13f" }
+func (*VxlanGpeTunnelDump) GetMessageType() api.MessageType { return api.RequestMessage }
 
 func init() {
 	api.RegisterMessage((*SwInterfaceSetVxlanGpeBypass)(nil), "vxlan_gpe.SwInterfaceSetVxlanGpeBypass")
