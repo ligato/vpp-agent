@@ -15,17 +15,19 @@
 package vpp1908
 
 import (
+	"context"
+
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1908/interfaces"
 )
 
 // InterfaceAdminDown implements interface handler.
-func (h *InterfaceVppHandler) InterfaceAdminDown(ifIdx uint32) error {
-	return h.interfaceSetFlags(ifIdx, false)
+func (h *InterfaceVppHandler) InterfaceAdminDown(ctx context.Context, ifIdx uint32) error {
+	return h.interfaceSetFlags(ctx, ifIdx, false)
 }
 
 // InterfaceAdminUp implements interface handler.
-func (h *InterfaceVppHandler) InterfaceAdminUp(ifIdx uint32) error {
-	return h.interfaceSetFlags(ifIdx, true)
+func (h *InterfaceVppHandler) InterfaceAdminUp(ctx context.Context, ifIdx uint32) error {
+	return h.interfaceSetFlags(ctx, ifIdx, true)
 }
 
 // SetInterfaceTag implements interface handler.
@@ -38,17 +40,14 @@ func (h *InterfaceVppHandler) RemoveInterfaceTag(tag string, ifIdx uint32) error
 	return h.handleInterfaceTag(tag, ifIdx, false)
 }
 
-func (h *InterfaceVppHandler) interfaceSetFlags(ifIdx uint32, adminUp bool) error {
+func (h *InterfaceVppHandler) interfaceSetFlags(ctx context.Context, ifIdx uint32, adminUp bool) error {
 	req := &interfaces.SwInterfaceSetFlags{
 		SwIfIndex:   ifIdx,
 		AdminUpDown: boolToUint(adminUp),
 	}
-	reply := &interfaces.SwInterfaceSetFlagsReply{}
-
-	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
+	if _, err := h.interfaces.SwInterfaceSetFlags(ctx, req); err != nil {
 		return err
 	}
-
 	return nil
 }
 

@@ -68,10 +68,10 @@ func TestRoutes(t *testing.T) {
 }
 
 func TestCRUDIPv4Route(t *testing.T) {
-	ctx := setupVPP(t)
-	defer ctx.teardownVPP()
+	test := setupVPP(t)
+	defer test.teardownVPP()
 
-	ih := ifplugin_vppcalls.CompatibleInterfaceVppHandler(ctx.vppClient, logrus.NewLogger("test"))
+	ih := ifplugin_vppcalls.CompatibleInterfaceVppHandler(test.vppClient, logrus.NewLogger("test"))
 	const ifName = "loop1"
 	ifIdx, err := ih.AddLoopbackInterface(ifName)
 	if err != nil {
@@ -88,7 +88,7 @@ func TestCRUDIPv4Route(t *testing.T) {
 	vrfIndexes := vrfidx.NewVRFIndex(logrus.NewLogger("test-vrf"), "test-vrf")
 	vrfIndexes.Put("vrf1-ipv4-vrf0", &vrfidx.VRFMetadata{Index: vrfMetaIdx, Protocol: vpp_l3.VrfTable_IPV4})
 
-	h := l3plugin_vppcalls.CompatibleL3VppHandler(ctx.vppClient, ifIndexes, vrfIndexes,
+	h := l3plugin_vppcalls.CompatibleL3VppHandler(test.vppClient, ifIndexes, vrfIndexes,
 		netalloc_mock.NewMockNetAlloc(), logrus.NewLogger("test"))
 
 	routes, errx := h.DumpRoutes()
@@ -99,7 +99,7 @@ func TestCRUDIPv4Route(t *testing.T) {
 	t.Logf("%d routes dumped", routesCnt)
 
 	newRoute := vpp_l3.Route{VrfId: 0, DstNetwork: "192.168.10.0/24", NextHopAddr: "192.168.30.1", OutgoingInterface: ifName}
-	err = h.VppAddRoute(&newRoute)
+	err = h.VppAddRoute(test.Context, &newRoute)
 	if err != nil {
 		t.Fatalf("adding route failed: %v", err)
 	}
@@ -127,7 +127,7 @@ func TestCRUDIPv4Route(t *testing.T) {
 		t.Error("Added route is not present in route dump")
 	}
 
-	err = h.VppDelRoute(&newRoute)
+	err = h.VppDelRoute(test.Context, &newRoute)
 	if err != nil {
 		t.Fatalf("deleting route failed: %v", err)
 	}
@@ -165,7 +165,7 @@ func TestCRUDIPv4Route(t *testing.T) {
 	t.Logf("%d routes dumped", routesCnt)
 
 	newRoute = vpp_l3.Route{VrfId: 2, DstNetwork: "192.168.10.0/24", NextHopAddr: "192.168.30.1", OutgoingInterface: ifName}
-	err = h.VppAddRoute(&newRoute)
+	err = h.VppAddRoute(test.Context, &newRoute)
 	if err != nil {
 		t.Fatalf("adding route failed: %v", err)
 	}
@@ -193,7 +193,7 @@ func TestCRUDIPv4Route(t *testing.T) {
 		t.Error("Added route is not present in route dump")
 	}
 
-	err = h.VppDelRoute(&newRoute)
+	err = h.VppDelRoute(test.Context, &newRoute)
 	if err != nil {
 		t.Fatalf("deleting route failed: %v", err)
 	}
@@ -217,10 +217,10 @@ func TestCRUDIPv4Route(t *testing.T) {
 }
 
 func TestCRUDIPv6Route(t *testing.T) {
-	ctx := setupVPP(t)
-	defer ctx.teardownVPP()
+	test := setupVPP(t)
+	defer test.teardownVPP()
 
-	ih := ifplugin_vppcalls.CompatibleInterfaceVppHandler(ctx.vppClient, logrus.NewLogger("test"))
+	ih := ifplugin_vppcalls.CompatibleInterfaceVppHandler(test.vppClient, logrus.NewLogger("test"))
 	const ifName = "loop1"
 	ifIdx, err := ih.AddLoopbackInterface(ifName)
 	if err != nil {
@@ -237,7 +237,7 @@ func TestCRUDIPv6Route(t *testing.T) {
 	vrfIndexes := vrfidx.NewVRFIndex(logrus.NewLogger("test-vrf"), "test-vrf")
 	vrfIndexes.Put("vrf1-ipv6-vrf0", &vrfidx.VRFMetadata{Index: vrfMetaIdx, Protocol: vpp_l3.VrfTable_IPV6})
 
-	h := l3plugin_vppcalls.CompatibleL3VppHandler(ctx.vppClient, ifIndexes, vrfIndexes,
+	h := l3plugin_vppcalls.CompatibleL3VppHandler(test.vppClient, ifIndexes, vrfIndexes,
 		netalloc_mock.NewMockNetAlloc(), logrus.NewLogger("test"))
 
 	routes, errx := h.DumpRoutes()
@@ -248,7 +248,7 @@ func TestCRUDIPv6Route(t *testing.T) {
 	t.Logf("%d routes dumped", routesCnt)
 
 	newRoute := vpp_l3.Route{VrfId: 0, DstNetwork: "fd30:0:0:1::/64", NextHopAddr: "fd31::1:1:0:0:1", OutgoingInterface: ifName}
-	err = h.VppAddRoute(&newRoute)
+	err = h.VppAddRoute(nil, &newRoute)
 	if err != nil {
 		t.Fatalf("adding route failed: %v", err)
 	}
@@ -275,7 +275,7 @@ func TestCRUDIPv6Route(t *testing.T) {
 		t.Error("Added route is not present in route dump")
 	}
 
-	err = h.VppDelRoute(&newRoute)
+	err = h.VppDelRoute(test.Context, &newRoute)
 	if err != nil {
 		t.Fatalf("deleting route failed: %v", err)
 	}
@@ -313,7 +313,7 @@ func TestCRUDIPv6Route(t *testing.T) {
 	t.Logf("%d routes dumped", routesCnt)
 
 	newRoute = vpp_l3.Route{VrfId: 2, DstNetwork: "fd30:0:0:1::/64", NextHopAddr: "fd31::1:1:0:0:1", OutgoingInterface: ifName}
-	err = h.VppAddRoute(&newRoute)
+	err = h.VppAddRoute(test.Context, &newRoute)
 	if err != nil {
 		t.Fatalf("adding route failed: %v", err)
 	}
@@ -340,7 +340,7 @@ func TestCRUDIPv6Route(t *testing.T) {
 		t.Error("Added route is not present in route dump")
 	}
 
-	err = h.VppDelRoute(&newRoute)
+	err = h.VppDelRoute(test.Context, &newRoute)
 	if err != nil {
 		t.Fatalf("deleting route failed: %v", err)
 	}

@@ -15,9 +15,11 @@
 package vpp2001
 
 import (
+	"context"
 	"net"
 
 	"github.com/pkg/errors"
+
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/fib_types"
 	vpp_ip "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ip"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/netalloc"
@@ -94,7 +96,7 @@ func (h *RouteHandler) vppAddDelRoute(route *l3.Route, rtIfIdx uint32, delete bo
 }
 
 // VppAddRoute implements route handler.
-func (h *RouteHandler) VppAddRoute(route *l3.Route) error {
+func (h *RouteHandler) VppAddRoute(ctx context.Context, route *l3.Route) error {
 	swIfIdx, err := h.getRouteSwIfIndex(route.OutgoingInterface)
 	if err != nil {
 		return err
@@ -104,7 +106,7 @@ func (h *RouteHandler) VppAddRoute(route *l3.Route) error {
 }
 
 // VppDelRoute implements route handler.
-func (h *RouteHandler) VppDelRoute(route *l3.Route) error {
+func (h *RouteHandler) VppDelRoute(ctx context.Context, route *l3.Route) error {
 	swIfIdx, err := h.getRouteSwIfIndex(route.OutgoingInterface)
 	if err != nil {
 		return err

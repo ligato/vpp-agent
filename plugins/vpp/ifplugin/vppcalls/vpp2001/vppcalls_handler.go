@@ -77,6 +77,7 @@ func init() {
 type InterfaceVppHandler struct {
 	callsChannel govppapi.Channel
 	interfaces   interfaces.RPCService
+	ipsec        ipsec.RPCService
 	gtpu         gtpu.RPCService
 	memif        memif.RPCService
 	vmxnet3      vmxnet3.RPCService
@@ -92,6 +93,7 @@ func NewInterfaceVppHandler(c vpp.Client, log logging.Logger) vppcalls.Interface
 	h := &InterfaceVppHandler{
 		callsChannel: ch,
 		interfaces:   interfaces.NewServiceClient(ch),
+		ipsec:        ipsec.NewServiceClient(ch),
 		log:          log,
 	}
 	if c.IsPluginLoaded(gtpu.ModuleName) {

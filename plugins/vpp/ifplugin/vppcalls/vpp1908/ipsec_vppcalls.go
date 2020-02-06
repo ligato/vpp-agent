@@ -15,6 +15,7 @@
 package vpp1908
 
 import (
+	"context"
 	"encoding/hex"
 	"fmt"
 	"net"
@@ -24,18 +25,18 @@ import (
 )
 
 // AddIPSecTunnelInterface adds a new IPSec tunnel interface.
-func (h *InterfaceVppHandler) AddIPSecTunnelInterface(ifName string, ipSecLink *interfaces.IPSecLink) (uint32, error) {
-	return h.tunnelIfAddDel(ifName, ipSecLink, true)
+func (h *InterfaceVppHandler) AddIPSecTunnelInterface(ctx context.Context, ifName string, ipSecLink *interfaces.IPSecLink) (uint32, error) {
+	return h.tunnelIfAddDel(ctx, ifName, ipSecLink, true)
 }
 
 // DeleteIPSecTunnelInterface removes existing IPSec tunnel interface.
-func (h *InterfaceVppHandler) DeleteIPSecTunnelInterface(ifName string, ipSecLink *interfaces.IPSecLink) error {
+func (h *InterfaceVppHandler) DeleteIPSecTunnelInterface(ctx context.Context, ifName string, ipSecLink *interfaces.IPSecLink) error {
 	// Note: ifIdx is not used now, tunnel should be matched based on parameters
-	_, err := h.tunnelIfAddDel(ifName, ipSecLink, false)
+	_, err := h.tunnelIfAddDel(ctx, ifName, ipSecLink, false)
 	return err
 }
 
-func (h *InterfaceVppHandler) tunnelIfAddDel(ifName string, ipSecLink *interfaces.IPSecLink, isAdd bool) (uint32, error) {
+func (h *InterfaceVppHandler) tunnelIfAddDel(ctx context.Context, ifName string, ipSecLink *interfaces.IPSecLink, isAdd bool) (uint32, error) {
 	localCryptoKey, err := hex.DecodeString(ipSecLink.LocalCryptoKey)
 	if err != nil {
 		return 0, err
@@ -82,9 +83,9 @@ func (h *InterfaceVppHandler) tunnelIfAddDel(ifName string, ipSecLink *interface
 		RemoteIntegKeyLen:  uint8(len(remoteIntegKey)),
 		UDPEncap:           boolToUint(ipSecLink.EnableUdpEncap),
 	}
-	reply := &api.IpsecTunnelIfAddDelReply{}
 
-	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
+	reply, err := h.ipsec.IpsecTunnelIfAddDel(ctx, req)
+	if err != nil {
 		return 0, err
 	}
 

@@ -15,28 +15,26 @@
 package vpp2001
 
 import (
+	"context"
 	"encoding/hex"
-	"fmt"
-	"net"
 
-	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ip_types"
 	vpp_ipsec "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ipsec"
 	ifs "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
 )
 
 // AddIPSecTunnelInterface adds a new IPSec tunnel interface.
-func (h *InterfaceVppHandler) AddIPSecTunnelInterface(ifName string, ipSecLink *ifs.IPSecLink) (uint32, error) {
-	return h.tunnelIfAddDel(ifName, ipSecLink, true)
+func (h *InterfaceVppHandler) AddIPSecTunnelInterface(ctx context.Context, ifName string, ipSecLink *ifs.IPSecLink) (uint32, error) {
+	return h.tunnelIfAddDel(ctx, ifName, ipSecLink, true)
 }
 
 // DeleteIPSecTunnelInterface removes existing IPSec tunnel interface.
-func (h *InterfaceVppHandler) DeleteIPSecTunnelInterface(ifName string, ipSecLink *ifs.IPSecLink) error {
+func (h *InterfaceVppHandler) DeleteIPSecTunnelInterface(ctx context.Context, ifName string, ipSecLink *ifs.IPSecLink) error {
 	// Note: ifIdx is not used now, tunnel should be matched based on parameters
-	_, err := h.tunnelIfAddDel(ifName, ipSecLink, false)
+	_, err := h.tunnelIfAddDel(ctx, ifName, ipSecLink, false)
 	return err
 }
 
-func (h *InterfaceVppHandler) tunnelIfAddDel(ifName string, ipSecLink *ifs.IPSecLink, isAdd bool) (uint32, error) {
+func (h *InterfaceVppHandler) tunnelIfAddDel(ctx context.Context, ifName string, ipSecLink *ifs.IPSecLink, isAdd bool) (uint32, error) {
 	localCryptoKey, err := hex.DecodeString(ipSecLink.LocalCryptoKey)
 	if err != nil {
 		return 0, err
@@ -54,11 +52,11 @@ func (h *InterfaceVppHandler) tunnelIfAddDel(ifName string, ipSecLink *ifs.IPSec
 		return 0, err
 	}
 
-	localIP, err := ipToIPSecAddress(ipSecLink.LocalIp)
+	localIP, err := IPToAddress(ipSecLink.LocalIp)
 	if err != nil {
 		return 0, err
 	}
-	remoteIP, err := ipToIPSecAddress(ipSecLink.RemoteIp)
+	remoteIP, err := IPToAddress(ipSecLink.RemoteIp)
 	if err != nil {
 		return 0, err
 	}
@@ -83,30 +81,10 @@ func (h *InterfaceVppHandler) tunnelIfAddDel(ifName string, ipSecLink *ifs.IPSec
 		RemoteIntegKeyLen:  uint8(len(remoteIntegKey)),
 		UDPEncap:           boolToUint(ipSecLink.EnableUdpEncap),
 	}
-	reply := &vpp_ipsec.IpsecTunnelIfAddDelReply{}
-
-	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
+	reply, err := h.ipsec.IpsecTunnelIfAddDel(ctx, req)
+	if err != nil {
 		return 0, err
 	}
 
 	return reply.SwIfIndex, nil
-}
-
-func ipToIPSecAddress(ipstr string) (addr vpp_ipsec.Address, err error) {
-	netIP := net.ParseIP(ipstr)
-	if netIP == nil {
-		return vpp_ipsec.Address{}, fmt.Errorf("invalid IP: %q", ipstr)
-	}
-	if ip4 := netIP.To4(); ip4 == nil {
-		addr.Af = ip_types.ADDRESS_IP6
-		var ip6addr vpp_ipsec.IP6Address
-		copy(ip6addr[:], netIP.To16())
-		addr.Un.SetIP6(ip6addr)
-	} else {
-		addr.Af = ip_types.ADDRESS_IP4
-		var ip4addr vpp_ipsec.IP4Address
-		copy(ip4addr[:], ip4)
-		addr.Un.SetIP4(ip4addr)
-	}
-	return
 }

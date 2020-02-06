@@ -15,9 +15,11 @@
 package vpp2001
 
 import (
+	"context"
 	"net"
 
 	"github.com/ligato/cn-infra/utils/addrs"
+
 	vpp_ifs "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/interfaces"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ip_types"
 )
@@ -68,11 +70,11 @@ func (h *InterfaceVppHandler) setUnsetUnnumberedIP(uIfIdx uint32, ifIdxWithIP ui
 	return nil
 }
 
-func (h *InterfaceVppHandler) SetUnnumberedIP(uIfIdx uint32, ifIdxWithIP uint32) error {
+func (h *InterfaceVppHandler) SetUnnumberedIP(ctx context.Context, uIfIdx uint32, ifIdxWithIP uint32) error {
 	return h.setUnsetUnnumberedIP(uIfIdx, ifIdxWithIP, true)
 }
 
-func (h *InterfaceVppHandler) UnsetUnnumberedIP(uIfIdx uint32) error {
+func (h *InterfaceVppHandler) UnsetUnnumberedIP(ctx context.Context, uIfIdx uint32) error {
 	return h.setUnsetUnnumberedIP(uIfIdx, 0, false)
 }
 

@@ -31,7 +31,7 @@ func TestInterfaceAdminDown(t *testing.T) {
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&vpp_ifs.SwInterfaceSetFlagsReply{})
-	err := ifHandler.InterfaceAdminDown(1)
+	err := ifHandler.InterfaceAdminDown(ctx.Context, 1)
 
 	Expect(err).To(BeNil())
 	vppMsg, ok := ctx.MockChannel.Msg.(*vpp_ifs.SwInterfaceSetFlags)
@@ -46,7 +46,7 @@ func TestInterfaceAdminDownError(t *testing.T) {
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&vpp_ifs.HwInterfaceSetMtuReply{})
-	err := ifHandler.InterfaceAdminDown(1)
+	err := ifHandler.InterfaceAdminDown(ctx.Context, 1)
 
 	Expect(err).ToNot(BeNil())
 }
@@ -58,7 +58,7 @@ func TestInterfaceAdminDownRetval(t *testing.T) {
 	ctx.MockVpp.MockReply(&vpp_ifs.SwInterfaceSetFlagsReply{
 		Retval: 1,
 	})
-	err := ifHandler.InterfaceAdminDown(1)
+	err := ifHandler.InterfaceAdminDown(ctx.Context, 1)
 
 	Expect(err).ToNot(BeNil())
 }
@@ -68,7 +68,7 @@ func TestInterfaceAdminUp(t *testing.T) {
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&vpp_ifs.SwInterfaceSetFlagsReply{})
-	err := ifHandler.InterfaceAdminUp(1)
+	err := ifHandler.InterfaceAdminUp(ctx.Context, 1)
 
 	Expect(err).ShouldNot(HaveOccurred())
 	vppMsg, ok := ctx.MockChannel.Msg.(*vpp_ifs.SwInterfaceSetFlags)
@@ -83,7 +83,7 @@ func TestInterfaceAdminUpError(t *testing.T) {
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&vpp_ifs.HwInterfaceSetMtuReply{})
-	err := ifHandler.InterfaceAdminDown(1)
+	err := ifHandler.InterfaceAdminDown(ctx.Context, 1)
 
 	Expect(err).ToNot(BeNil())
 }
@@ -95,7 +95,7 @@ func TestInterfaceAdminUpRetval(t *testing.T) {
 	ctx.MockVpp.MockReply(&vpp_ifs.SwInterfaceSetFlagsReply{
 		Retval: 1,
 	})
-	err := ifHandler.InterfaceAdminDown(1)
+	err := ifHandler.InterfaceAdminDown(ctx.Context, 1)
 
 	Expect(err).ToNot(BeNil())
 }

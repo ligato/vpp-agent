@@ -23,7 +23,7 @@ import (
 
 // TODO:  more suitable for the l2 plugin, but the tag-rewrite retrieve is a part of the vpp interface api
 
-// SetInterfaceTagRewrite sets an interface tag rewrite
+// SetVLanTagRewrite sets an interface tag rewrite
 func (h *InterfaceVppHandler) SetVLanTagRewrite(ifIdx uint32, subIf *ifs.SubInterface) error {
 	req := &vpp_l2.L2InterfaceVlanTagRewrite{
 		SwIfIndex: ifIdx,

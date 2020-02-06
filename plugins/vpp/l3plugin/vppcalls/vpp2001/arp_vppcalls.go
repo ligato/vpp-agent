@@ -18,6 +18,7 @@ import (
 	"net"
 
 	"github.com/pkg/errors"
+
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/interface_types"
 	vpp_ip_neighbor "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ip_neighbor"
 	l3 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3"

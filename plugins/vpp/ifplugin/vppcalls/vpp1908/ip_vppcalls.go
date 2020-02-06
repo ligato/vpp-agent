@@ -15,9 +15,11 @@
 package vpp1908
 
 import (
+	"context"
 	"net"
 
 	"github.com/ligato/cn-infra/utils/addrs"
+
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1908/interfaces"
 )
 
@@ -70,7 +72,7 @@ const (
 	unsetUnnumberedIP uint8 = 0
 )
 
-func (h *InterfaceVppHandler) setUnsetUnnumberedIP(uIfIdx uint32, ifIdxWithIP uint32, isAdd uint8) error {
+func (h *InterfaceVppHandler) setUnsetUnnumberedIP(ctx context.Context, uIfIdx uint32, ifIdxWithIP uint32, isAdd uint8) error {
 	// Prepare the message.
 	req := &interfaces.SwInterfaceSetUnnumbered{
 		SwIfIndex:           ifIdxWithIP,
@@ -87,11 +89,11 @@ func (h *InterfaceVppHandler) setUnsetUnnumberedIP(uIfIdx uint32, ifIdxWithIP ui
 }
 
 // SetUnnumberedIP implements interface handler.
-func (h *InterfaceVppHandler) SetUnnumberedIP(uIfIdx uint32, ifIdxWithIP uint32) error {
-	return h.setUnsetUnnumberedIP(uIfIdx, ifIdxWithIP, setUnnumberedIP)
+func (h *InterfaceVppHandler) SetUnnumberedIP(ctx context.Context, uIfIdx uint32, ifIdxWithIP uint32) error {
+	return h.setUnsetUnnumberedIP(ctx, uIfIdx, ifIdxWithIP, setUnnumberedIP)
 }
 
 // UnsetUnnumberedIP implements interface handler.
-func (h *InterfaceVppHandler) UnsetUnnumberedIP(uIfIdx uint32) error {
-	return h.setUnsetUnnumberedIP(uIfIdx, 0, unsetUnnumberedIP)
+func (h *InterfaceVppHandler) UnsetUnnumberedIP(ctx context.Context, uIfIdx uint32) error {
+	return h.setUnsetUnnumberedIP(ctx, uIfIdx, 0, unsetUnnumberedIP)
 }

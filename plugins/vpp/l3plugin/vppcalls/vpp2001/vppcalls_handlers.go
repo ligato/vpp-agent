@@ -265,10 +265,3 @@ func uintToBool(value uint8) bool {
 	}
 	return true
 }
-
-func boolToUint(input bool) uint8 {
-	if input {
-		return 1
-	}
-	return 0
-}
