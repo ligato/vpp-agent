@@ -77,7 +77,7 @@ func TestIPNeighbor(t *testing.T) {
 	if err := h.SetIPScanNeighbor(&vpp_l3.IPScanNeighbor{
 		Mode:           vpp_l3.IPScanNeighbor_IPV4,
 		MaxProcTime:    20,
-		MaxUpdate:      0, // It seems VPP is ignoring setting MaxUpdate
+		MaxUpdate:      10,
 		ScanInterval:   1,
 		ScanIntDelay:   1,
 		StaleThreshold: 4,
@@ -95,8 +95,8 @@ func TestIPNeighbor(t *testing.T) {
 	if ipneigh.Mode != vpp_l3.IPScanNeighbor_IPV4 {
 		t.Fatalf("expected Mode to be IPV4, got %v", ipneigh.Mode)
 	}
-	if ipneigh.MaxUpdate != 0 {
-		t.Fatalf("expected MaxUpdate to be 0, got %v", ipneigh.MaxUpdate)
+	if ipneigh.MaxUpdate != 10 {
+		t.Fatalf("expected MaxUpdate to be 10, got %v", ipneigh.MaxUpdate)
 	}
 	if ipneigh.ScanIntDelay != 5 {
 		t.Fatalf("expected ScanIntDelay to be 5, got %v", ipneigh.ScanIntDelay)
