@@ -15,7 +15,6 @@
 package vpp2001
 
 import (
-	"context"
 	"fmt"
 	"net"
 	"sort"
@@ -23,7 +22,6 @@ import (
 
 	"github.com/golang/protobuf/proto"
 
-	vpp_ip "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ip"
 	vpp_nat "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/nat"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
 	ifs "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
@@ -245,7 +243,7 @@ func (h *NatVppHandler) nat44AddressDump() (addressPool []*nat.Nat44Global_Addre
 
 // virtualReassemblyDump returns current NAT virtual-reassembly configuration.
 func (h *NatVppHandler) virtualReassemblyDump() (vrIPv4 *nat.VirtualReassembly, vrIPv6 *nat.VirtualReassembly, err error) {
-	ipv4vr, err := h.ip.IPReassemblyGet(context.TODO(), &vpp_ip.IPReassemblyGet{IsIP6: false})
+	/*ipv4vr, err := h.ip.IPReassemblyGet(context.TODO(), &vpp_ip.IPReassemblyGet{IsIP6: false})
 	if err != nil {
 		return nil, nil, fmt.Errorf("getting virtual reassembly IPv4 config failed: %w", err)
 	}
@@ -254,7 +252,7 @@ func (h *NatVppHandler) virtualReassemblyDump() (vrIPv4 *nat.VirtualReassembly, 
 	if err != nil {
 		return nil, nil, fmt.Errorf("getting virtual reassembly IPv6 config failed: %w", err)
 	}
-	h.log.Debugf("IP Reassembly config IPv6: %+v\n", ipv6vr)
+	h.log.Debugf("IP Reassembly config IPv6: %+v\n", ipv6vr)*/
 
 	// Virtual Reassembly has been removed from NAT API in VPP (moved to IP API)
 	// TODO: define IPReassembly model in L3 plugin
