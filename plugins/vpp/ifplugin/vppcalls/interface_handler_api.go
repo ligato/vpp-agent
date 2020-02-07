@@ -118,9 +118,9 @@ type InterfaceVppAPI interface {
 	Wmxnet3API
 
 	// AddAfPacketInterface calls AfPacketCreate VPP binary API.
-	AddAfPacketInterface(ifName string, hwAddr string, afPacketIntf *interfaces.AfpacketLink) (swIndex uint32, err error)
+	AddAfPacketInterface(ifName, hwAddr, targetHostIfName string) (swIndex uint32, err error)
 	// DeleteAfPacketInterface calls AfPacketDelete VPP binary API.
-	DeleteAfPacketInterface(ifName string, idx uint32, afPacketIntf *interfaces.AfpacketLink) error
+	DeleteAfPacketInterface(ifName string, idx uint32, targetHostIfName string) error
 
 	// AddLoopbackInterface calls CreateLoopback bin API.
 	AddLoopbackInterface(ifName string) (swIndex uint32, err error)
