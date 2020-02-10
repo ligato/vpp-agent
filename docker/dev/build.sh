@@ -21,7 +21,7 @@ echo " Agent"
 echo "-----------------------------------------------"
 echo " - version: ${VERSION}"
 echo " - commit:  ${COMMIT}"
-echo " - date:    ${DATE}"
+echo " - date:    ${BUILD_DATE}"
 echo "==============================================="
 
 set -x
