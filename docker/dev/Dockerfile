@@ -91,7 +91,7 @@ WORKDIR /src/ligato/vpp-agent
 
 ARG VERSION
 ARG COMMIT
-ARG DATE
+ARG BUILD_DATE
 
 COPY go.mod go.sum ./
 RUN go mod download
@@ -100,7 +100,7 @@ COPY . ./
 RUN \
 	VERSION=$VERSION \
 	COMMIT=$COMMIT \
-	DATE=$DATE \
+	BUILD_DATE=$BUILD_DATE \
  make install purge
 
 ENV SUPERVISOR_CONFIG=/opt/vpp-agent/dev/supervisor.conf
