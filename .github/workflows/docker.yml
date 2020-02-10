@@ -17,6 +17,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
+      - name: Fetch tags
+        run: git fetch --depth=1 origin +refs/tags/v*:refs/tags/v*
       - name: Dev image
         run: make dev-image
       - name: Prod image

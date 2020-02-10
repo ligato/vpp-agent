@@ -23,27 +23,30 @@ import (
 )
 
 var (
-	app        = "vpp-agent"
-	version    = "v3.0.0"
-	gitCommit  = "unknown"
-	gitBranch  = "HEAD"
-	buildUser  = "unknown"
-	buildHost  = "unknown"
-	buildStamp = ""
+	app       = "vpp-agent"
+	version   = "v3.0.0"
+	gitCommit = "unknown"
+	gitBranch = "HEAD"
+	buildUser = "unknown"
+	buildHost = "unknown"
+	buildDate = ""
 )
 
-var buildDate time.Time
+var buildTime time.Time
 var revision string
 
 func init() {
-	buildstampInt64, _ := strconv.ParseInt(buildStamp, 10, 64)
+	buildstampInt64, _ := strconv.ParseInt(buildDate, 10, 64)
 	if buildstampInt64 == 0 {
 		buildstampInt64 = time.Now().Unix()
 	}
-	buildDate = time.Unix(buildstampInt64, 0)
+	buildTime = time.Unix(buildstampInt64, 0)
 	revision = gitCommit
 	if len(revision) > 7 {
 		revision = revision[:7]
+	}
+	if gitBranch != "HEAD" {
+		revision += fmt.Sprintf("@%s", gitBranch)
 	}
 }
 
@@ -54,7 +57,7 @@ func String() string {
 
 // Data returns version data.
 func Data() (ver, rev, date string) {
-	return version, revision, buildDate.Format(time.UnixDate)
+	return version, revision, buildTime.Format(time.UnixDate)
 }
 
 func Short() string {
@@ -62,7 +65,7 @@ func Short() string {
 }
 
 func BuiltStamp() string {
-	return fmt.Sprintf("%s (%s)", buildDate.Format(time.UnixDate), timeAgo(buildDate))
+	return fmt.Sprintf("%s (%s)", buildTime.Format(time.UnixDate), timeAgo(buildTime))
 }
 
 func BuiltBy() string {
@@ -76,7 +79,7 @@ func BuiltBy() string {
 func Info() string {
 	return fmt.Sprintf(`%s %s (%s) built by %s@%s on %v (%s)`,
 		app, version, revision,
-		buildUser, buildHost, buildDate.Format(time.Stamp), timeAgo(buildDate),
+		buildUser, buildHost, buildTime.Format(time.Stamp), timeAgo(buildTime),
 	)
 }
 
@@ -89,8 +92,8 @@ func Detail() string {
   Built By:  	%s@%s 
   Build Date:	%s
   Go Runtime:	%s (%s/%s)`,
-		app, version, gitBranch, gitCommit,
-		buildUser, buildHost, buildDate.Format(time.UnixDate),
+		app, version, gitBranch, revision,
+		buildUser, buildHost, buildTime.Format(time.UnixDate),
 		runtime.Version(), runtime.GOOS, runtime.GOARCH,
 	)
 }

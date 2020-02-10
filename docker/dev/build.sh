@@ -21,6 +21,7 @@ echo " Agent"
 echo "-----------------------------------------------"
 echo " - version: ${VERSION}"
 echo " - commit:  ${COMMIT}"
+echo " - branch:  ${BRANCH}"
 echo " - date:    ${BUILD_DATE}"
 echo "==============================================="
 
@@ -31,6 +32,7 @@ docker build -f Dockerfile \
     --build-arg VPP_BINAPI=${VPP_BINAPI} \
     --build-arg VERSION=${VERSION} \
     --build-arg COMMIT=${COMMIT} \
+    --build-arg BRANCH=${BRANCH} \
     --build-arg BUILD_DATE=${BUILD_DATE} \
     --build-arg SKIP_CHECK=${SKIP_CHECK:-} \
     --tag ${IMAGE_TAG} \

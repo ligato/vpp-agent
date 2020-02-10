@@ -14,7 +14,7 @@ LDFLAGS = -w -s \
 	-X $(GOPKG)/pkg/version.version=$(VERSION) \
 	-X $(GOPKG)/pkg/version.gitCommit=$(COMMIT) \
 	-X $(GOPKG)/pkg/version.gitBranch=$(BRANCH) \
-	-X $(GOPKG)/pkg/version.buildStamp=$(BUILD_DATE) \
+	-X $(GOPKG)/pkg/version.buildDate=$(BUILD_DATE) \
 	-X $(GOPKG)/pkg/version.buildUser=$(BUILD_USER) \
 	-X $(GOPKG)/pkg/version.buildHost=$(BUILD_HOST)
 
@@ -313,7 +313,8 @@ dev-image: ## Build developer image
 	@echo "# building dev image"
 	IMAGE_TAG=$(IMAGE_TAG) \
 		VPP_IMG=$(VPP_IMG) VPP_BINAPI=$(VPP_BINAPI) \
-		VERSION=$(VERSION) COMMIT=$(COMMIT) BUILD_DATE=$(BUILD_DATE) \
+		VERSION=$(VERSION) COMMIT=$(COMMIT) BRANCH=$(BRANCH) \
+		BUILD_DATE=$(BUILD_DATE) \
 	  ./docker/dev/build.sh
 
 prod-image: ## Build production image
