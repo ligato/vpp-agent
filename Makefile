@@ -1,10 +1,22 @@
 SHELL := /usr/bin/env bash -o pipefail
 
-PROJECT := vpp-agent
+PROJECT    := vpp-agent
+VERSION	   ?= $(shell git describe --always --tags --dirty --match 'v*')
+COMMIT     ?= $(shell git rev-parse HEAD)
+BRANCH     ?= $(shell git rev-parse --abbrev-ref HEAD)
+BUILD_DATE ?= $(shell date +%s)
+BUILD_HOST ?= $(shell hostname)
+BUILD_USER ?= $(shell id -un)
 
-VERSION ?= $(shell git describe --always --tags --dirty)
-COMMIT  ?= $(shell git rev-parse HEAD)
-DATE    ?= $(shell git log -1 --format="%ct" | xargs -I{} date -d @{} +'%Y-%m-%dT%H:%M%:z')
+GOPKG := $(shell go list -m)
+LDFLAGS = -w -s \
+	-X $(GOPKG)/pkg/version.app=$(PROJECT) \
+	-X $(GOPKG)/pkg/version.version=$(VERSION) \
+	-X $(GOPKG)/pkg/version.gitCommit=$(COMMIT) \
+	-X $(GOPKG)/pkg/version.gitBranch=$(BRANCH) \
+	-X $(GOPKG)/pkg/version.buildDate=$(BUILD_DATE) \
+	-X $(GOPKG)/pkg/version.buildUser=$(BUILD_USER) \
+	-X $(GOPKG)/pkg/version.buildHost=$(BUILD_HOST)
 
 UNAME_OS   ?= $(shell uname -s)
 UNAME_ARCH ?= $(shell uname -m)
@@ -17,17 +29,11 @@ CACHE_BIN := $(CACHE)/bin
 CACHE_INCLUDE := $(CACHE)/include
 CACHE_VERSIONS := $(CACHE)/versions
 
+export PATH := $(abspath $(CACHE_BIN)):$(PATH)
+
 ifndef BUILD_DIR
 BUILD_DIR := .build
 endif
-
-export PATH := $(abspath $(CACHE_BIN)):$(PATH)
-
-CNINFRA := github.com/ligato/cn-infra/agent
-LDFLAGS = \
-	-X $(CNINFRA).BuildVersion=$(VERSION) \
-	-X $(CNINFRA).CommitHash=$(COMMIT) \
-	-X $(CNINFRA).BuildDate=$(DATE)
 
 export GO111MODULE=on
 
@@ -307,13 +313,13 @@ dev-image: ## Build developer image
 	@echo "# building dev image"
 	IMAGE_TAG=$(IMAGE_TAG) \
 		VPP_IMG=$(VPP_IMG) VPP_BINAPI=$(VPP_BINAPI) \
-		VERSION=$(VERSION) COMMIT=$(COMMIT) DATE=$(DATE) \
-		./docker/dev/build.sh
+		VERSION=$(VERSION) COMMIT=$(COMMIT) BRANCH=$(BRANCH) \
+		BUILD_DATE=$(BUILD_DATE) \
+	  ./docker/dev/build.sh
 
 prod-image: ## Build production image
 	@echo "# building prod image"
-	IMAGE_TAG=$(IMAGE_TAG) \
-	./docker/prod/build.sh
+	IMAGE_TAG=$(IMAGE_TAG) ./docker/prod/build.sh
 
 
 .PHONY: help \
