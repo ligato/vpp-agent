@@ -40,7 +40,7 @@ jobs:
         run: make dev-image
       - name: Prod image
         run: make prod-image
-        
+
       - name: Tag images
         run: |
           docker tag dev_vpp_agent ligato/dev-vpp-agent:latest
@@ -66,7 +66,7 @@ jobs:
         run: make dev-image
       - name: Prod image
         run: make prod-image
-        
+
       - name: Get tag
         id: vars
         run: |
