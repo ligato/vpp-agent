@@ -33,6 +33,14 @@ jobs:
     if: github.event_name == 'push' && !contains(github.ref, 'refs/tags/v')
 
     steps:
+      - uses: actions/checkout@v2
+      - name: Fetch tags
+        run: git fetch --depth=1 origin +refs/tags/v*:refs/tags/v*
+      - name: Dev image
+        run: make dev-image
+      - name: Prod image
+        run: make prod-image
+        
       - name: Tag images
         run: |
           docker tag dev_vpp_agent ligato/dev-vpp-agent:latest
@@ -51,6 +59,14 @@ jobs:
     if: github.event_name == 'push' && contains(github.ref, 'refs/tags/v')
 
     steps:
+      - uses: actions/checkout@v2
+      - name: Fetch tags
+        run: git fetch --depth=1 origin +refs/tags/v*:refs/tags/v*
+      - name: Dev image
+        run: make dev-image
+      - name: Prod image
+        run: make prod-image
+        
       - name: Get tag
         id: vars
         run: |
