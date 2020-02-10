@@ -31,7 +31,7 @@ docker build -f Dockerfile \
     --build-arg VPP_BINAPI=${VPP_BINAPI} \
     --build-arg VERSION=${VERSION} \
     --build-arg COMMIT=${COMMIT} \
-    --build-arg DATE=${DATE} \
+    --build-arg BUILD_DATE=${BUILD_DATE} \
     --build-arg SKIP_CHECK=${SKIP_CHECK:-} \
     --tag ${IMAGE_TAG} \
  ${DOCKER_BUILD_ARGS-} ../..
