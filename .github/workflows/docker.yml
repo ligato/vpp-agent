@@ -22,9 +22,7 @@ jobs:
       - name: Prod image
         run: make prod-image
       - name: List images
-        run: |
-          docker images
-          git diff
+        run: docker images
 
   deploy-latest:
     name: deploy latest
