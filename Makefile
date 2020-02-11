@@ -8,7 +8,7 @@ BUILD_DATE ?= $(shell date +%s)
 BUILD_HOST ?= $(shell hostname)
 BUILD_USER ?= $(shell id -un)
 
-GOPKG := $(shell go list -m)
+GOPKG := go.ligato.io/vpp-agent/v3
 LDFLAGS = -w -s \
 	-X $(GOPKG)/pkg/version.app=$(PROJECT) \
 	-X $(GOPKG)/pkg/version.version=$(VERSION) \
