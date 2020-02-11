@@ -24,7 +24,7 @@ jobs:
       - name: List images
         run: |
           docker images
-          git status
+          git diff
 
   deploy-latest:
     name: deploy latest
