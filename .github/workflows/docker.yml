@@ -16,9 +16,7 @@ jobs:
     runs-on: ubuntu-18.04
 
     steps:
-      - uses: actions/checkout@v2
-      - name: Fetch tags
-        run: git fetch --depth=1 origin +refs/tags/v*:refs/tags/v*
+      - uses: actions/checkout@v1
       - name: Dev image
         run: make dev-image
       - name: Prod image
@@ -33,9 +31,7 @@ jobs:
     if: github.event_name == 'push' && !contains(github.ref, 'refs/tags/v')
 
     steps:
-      - uses: actions/checkout@v2
-      - name: Fetch tags
-        run: git fetch --depth=1 origin +refs/tags/v*:refs/tags/v*
+      - uses: actions/checkout@v1
       - name: Dev image
         run: make dev-image
       - name: Prod image
@@ -59,9 +55,7 @@ jobs:
     if: github.event_name == 'push' && contains(github.ref, 'refs/tags/v')
 
     steps:
-      - uses: actions/checkout@v2
-      - name: Fetch tags
-        run: git fetch --depth=1 origin +refs/tags/v*:refs/tags/v*
+      - uses: actions/checkout@v1
       - name: Dev image
         run: make dev-image
       - name: Prod image
