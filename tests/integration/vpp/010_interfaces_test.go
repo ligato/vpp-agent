@@ -83,7 +83,7 @@ func TestInterfaceEnabledFieldWithLoopback(t *testing.T) {
 	}
 
 	// Set AdminUp and test again
-	err = h.InterfaceAdminUp(ifIdx0)
+	err = h.InterfaceAdminUp(test.Context, ifIdx0)
 	if err != nil {
 		t.Fatalf("enabling interface failed: %v", err)
 	}
@@ -103,7 +103,7 @@ func TestInterfaceEnabledFieldWithLoopback(t *testing.T) {
 	}
 
 	// Set AdminDown and test again
-	err = h.InterfaceAdminDown(ifIdx0)
+	err = h.InterfaceAdminDown(test.Context, ifIdx0)
 	if err != nil {
 		t.Fatalf("disabling interface failed: %v", err)
 	}
@@ -164,7 +164,7 @@ func TestInterfaceEnabledFieldWithMemif(t *testing.T) {
 	}
 
 	// Set AdminUp and test again
-	err = h.InterfaceAdminUp(memifIdx)
+	err = h.InterfaceAdminUp(test.Context, memifIdx)
 	if err != nil {
 		t.Fatalf("enabling interface failed: %v", err)
 	}
@@ -184,7 +184,7 @@ func TestInterfaceEnabledFieldWithMemif(t *testing.T) {
 	}
 
 	// Set AdminDown and test again
-	err = h.InterfaceAdminDown(memifIdx)
+	err = h.InterfaceAdminDown(test.Context, memifIdx)
 	if err != nil {
 		t.Fatalf("disabling interface failed: %v", err)
 	}

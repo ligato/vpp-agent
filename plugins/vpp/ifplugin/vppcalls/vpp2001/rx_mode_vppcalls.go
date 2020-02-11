@@ -15,6 +15,7 @@
 package vpp2001
 
 import (
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/interface_types"
 	vpp_ifs "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/interfaces"
 	ifs "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
 )
@@ -39,14 +40,14 @@ func (h *InterfaceVppHandler) SetRxMode(ifIdx uint32, rxMode *ifs.Interface_RxMo
 func setRxMode(mode ifs.Interface_RxMode_Type) vpp_ifs.RxMode {
 	switch mode {
 	case ifs.Interface_RxMode_POLLING:
-		return vpp_ifs.RX_MODE_API_POLLING
+		return interface_types.RX_MODE_API_POLLING
 	case ifs.Interface_RxMode_INTERRUPT:
-		return vpp_ifs.RX_MODE_API_INTERRUPT
+		return interface_types.RX_MODE_API_INTERRUPT
 	case ifs.Interface_RxMode_ADAPTIVE:
-		return vpp_ifs.RX_MODE_API_ADAPTIVE
+		return interface_types.RX_MODE_API_ADAPTIVE
 	case ifs.Interface_RxMode_DEFAULT:
-		return vpp_ifs.RX_MODE_API_DEFAULT
+		return interface_types.RX_MODE_API_DEFAULT
 	default:
-		return vpp_ifs.RX_MODE_API_UNKNOWN
+		return interface_types.RX_MODE_API_UNKNOWN
 	}
 }

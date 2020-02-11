@@ -338,9 +338,7 @@ type Address struct {
 	Un AddressUnion
 }
 
-func (*Address) GetTypeName() string {
-	return "address"
-}
+func (*Address) GetTypeName() string { return "address" }
 
 // IP4Prefix represents VPP binary API type 'ip4_prefix'.
 type IP4Prefix struct {
@@ -348,9 +346,7 @@ type IP4Prefix struct {
 	Len     uint8
 }
 
-func (*IP4Prefix) GetTypeName() string {
-	return "ip4_prefix"
-}
+func (*IP4Prefix) GetTypeName() string { return "ip4_prefix" }
 
 // IP6Prefix represents VPP binary API type 'ip6_prefix'.
 type IP6Prefix struct {
@@ -358,9 +354,7 @@ type IP6Prefix struct {
 	Len     uint8
 }
 
-func (*IP6Prefix) GetTypeName() string {
-	return "ip6_prefix"
-}
+func (*IP6Prefix) GetTypeName() string { return "ip6_prefix" }
 
 // Mprefix represents VPP binary API type 'mprefix'.
 type Mprefix struct {
@@ -370,9 +364,7 @@ type Mprefix struct {
 	SrcAddress       AddressUnion
 }
 
-func (*Mprefix) GetTypeName() string {
-	return "mprefix"
-}
+func (*Mprefix) GetTypeName() string { return "mprefix" }
 
 // Nat44LbAddrPort represents VPP binary API type 'nat44_lb_addr_port'.
 type Nat44LbAddrPort struct {
@@ -382,9 +374,7 @@ type Nat44LbAddrPort struct {
 	VrfID       uint32
 }
 
-func (*Nat44LbAddrPort) GetTypeName() string {
-	return "nat44_lb_addr_port"
-}
+func (*Nat44LbAddrPort) GetTypeName() string { return "nat44_lb_addr_port" }
 
 // Prefix represents VPP binary API type 'prefix'.
 type Prefix struct {
@@ -392,9 +382,7 @@ type Prefix struct {
 	Len     uint8
 }
 
-func (*Prefix) GetTypeName() string {
-	return "prefix"
-}
+func (*Prefix) GetTypeName() string { return "prefix" }
 
 // PrefixMatcher represents VPP binary API type 'prefix_matcher'.
 type PrefixMatcher struct {
@@ -402,18 +390,14 @@ type PrefixMatcher struct {
 	Ge uint8
 }
 
-func (*PrefixMatcher) GetTypeName() string {
-	return "prefix_matcher"
-}
+func (*PrefixMatcher) GetTypeName() string { return "prefix_matcher" }
 
 // AddressUnion represents VPP binary API union 'address_union'.
 type AddressUnion struct {
 	XXX_UnionData [16]byte
 }
 
-func (*AddressUnion) GetTypeName() string {
-	return "address_union"
-}
+func (*AddressUnion) GetTypeName() string { return "address_union" }
 
 func AddressUnionIP4(a IP4Address) (u AddressUnion) {
 	u.SetIP4(a)
@@ -456,71 +440,48 @@ type DsliteAddDelPoolAddrRange struct {
 	IsAdd     bool
 }
 
-func (*DsliteAddDelPoolAddrRange) GetMessageName() string {
-	return "dslite_add_del_pool_addr_range"
-}
-func (*DsliteAddDelPoolAddrRange) GetCrcString() string {
-	return "c448457a"
-}
-func (*DsliteAddDelPoolAddrRange) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *DsliteAddDelPoolAddrRange) Reset()                        { *m = DsliteAddDelPoolAddrRange{} }
+func (*DsliteAddDelPoolAddrRange) GetMessageName() string          { return "dslite_add_del_pool_addr_range" }
+func (*DsliteAddDelPoolAddrRange) GetCrcString() string            { return "c448457a" }
+func (*DsliteAddDelPoolAddrRange) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // DsliteAddDelPoolAddrRangeReply represents VPP binary API message 'dslite_add_del_pool_addr_range_reply'.
 type DsliteAddDelPoolAddrRangeReply struct {
 	Retval int32
 }
 
+func (m *DsliteAddDelPoolAddrRangeReply) Reset() { *m = DsliteAddDelPoolAddrRangeReply{} }
 func (*DsliteAddDelPoolAddrRangeReply) GetMessageName() string {
 	return "dslite_add_del_pool_addr_range_reply"
 }
-func (*DsliteAddDelPoolAddrRangeReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*DsliteAddDelPoolAddrRangeReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (*DsliteAddDelPoolAddrRangeReply) GetCrcString() string            { return "e8d4e804" }
+func (*DsliteAddDelPoolAddrRangeReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // DsliteAddressDetails represents VPP binary API message 'dslite_address_details'.
 type DsliteAddressDetails struct {
 	IPAddress IP4Address
 }
 
-func (*DsliteAddressDetails) GetMessageName() string {
-	return "dslite_address_details"
-}
-func (*DsliteAddressDetails) GetCrcString() string {
-	return "ec26d648"
-}
-func (*DsliteAddressDetails) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *DsliteAddressDetails) Reset()                        { *m = DsliteAddressDetails{} }
+func (*DsliteAddressDetails) GetMessageName() string          { return "dslite_address_details" }
+func (*DsliteAddressDetails) GetCrcString() string            { return "ec26d648" }
+func (*DsliteAddressDetails) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // DsliteAddressDump represents VPP binary API message 'dslite_address_dump'.
 type DsliteAddressDump struct{}
 
-func (*DsliteAddressDump) GetMessageName() string {
-	return "dslite_address_dump"
-}
-func (*DsliteAddressDump) GetCrcString() string {
-	return "51077d14"
-}
-func (*DsliteAddressDump) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *DsliteAddressDump) Reset()                        { *m = DsliteAddressDump{} }
+func (*DsliteAddressDump) GetMessageName() string          { return "dslite_address_dump" }
+func (*DsliteAddressDump) GetCrcString() string            { return "51077d14" }
+func (*DsliteAddressDump) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // DsliteGetAftrAddr represents VPP binary API message 'dslite_get_aftr_addr'.
 type DsliteGetAftrAddr struct{}
 
-func (*DsliteGetAftrAddr) GetMessageName() string {
-	return "dslite_get_aftr_addr"
-}
-func (*DsliteGetAftrAddr) GetCrcString() string {
-	return "51077d14"
-}
-func (*DsliteGetAftrAddr) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *DsliteGetAftrAddr) Reset()                        { *m = DsliteGetAftrAddr{} }
+func (*DsliteGetAftrAddr) GetMessageName() string          { return "dslite_get_aftr_addr" }
+func (*DsliteGetAftrAddr) GetCrcString() string            { return "51077d14" }
+func (*DsliteGetAftrAddr) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // DsliteGetAftrAddrReply represents VPP binary API message 'dslite_get_aftr_addr_reply'.
 type DsliteGetAftrAddrReply struct {
@@ -529,28 +490,18 @@ type DsliteGetAftrAddrReply struct {
 	IP6Addr IP6Address
 }
 
-func (*DsliteGetAftrAddrReply) GetMessageName() string {
-	return "dslite_get_aftr_addr_reply"
-}
-func (*DsliteGetAftrAddrReply) GetCrcString() string {
-	return "38e30db1"
-}
-func (*DsliteGetAftrAddrReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *DsliteGetAftrAddrReply) Reset()                        { *m = DsliteGetAftrAddrReply{} }
+func (*DsliteGetAftrAddrReply) GetMessageName() string          { return "dslite_get_aftr_addr_reply" }
+func (*DsliteGetAftrAddrReply) GetCrcString() string            { return "38e30db1" }
+func (*DsliteGetAftrAddrReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // DsliteGetB4Addr represents VPP binary API message 'dslite_get_b4_addr'.
 type DsliteGetB4Addr struct{}
 
-func (*DsliteGetB4Addr) GetMessageName() string {
-	return "dslite_get_b4_addr"
-}
-func (*DsliteGetB4Addr) GetCrcString() string {
-	return "51077d14"
-}
-func (*DsliteGetB4Addr) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *DsliteGetB4Addr) Reset()                        { *m = DsliteGetB4Addr{} }
+func (*DsliteGetB4Addr) GetMessageName() string          { return "dslite_get_b4_addr" }
+func (*DsliteGetB4Addr) GetCrcString() string            { return "51077d14" }
+func (*DsliteGetB4Addr) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // DsliteGetB4AddrReply represents VPP binary API message 'dslite_get_b4_addr_reply'.
 type DsliteGetB4AddrReply struct {
@@ -559,15 +510,10 @@ type DsliteGetB4AddrReply struct {
 	IP6Addr IP6Address
 }
 
-func (*DsliteGetB4AddrReply) GetMessageName() string {
-	return "dslite_get_b4_addr_reply"
-}
-func (*DsliteGetB4AddrReply) GetCrcString() string {
-	return "38e30db1"
-}
-func (*DsliteGetB4AddrReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *DsliteGetB4AddrReply) Reset()                        { *m = DsliteGetB4AddrReply{} }
+func (*DsliteGetB4AddrReply) GetMessageName() string          { return "dslite_get_b4_addr_reply" }
+func (*DsliteGetB4AddrReply) GetCrcString() string            { return "38e30db1" }
+func (*DsliteGetB4AddrReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // DsliteSetAftrAddr represents VPP binary API message 'dslite_set_aftr_addr'.
 type DsliteSetAftrAddr struct {
@@ -575,30 +521,20 @@ type DsliteSetAftrAddr struct {
 	IP6Addr IP6Address
 }
 
-func (*DsliteSetAftrAddr) GetMessageName() string {
-	return "dslite_set_aftr_addr"
-}
-func (*DsliteSetAftrAddr) GetCrcString() string {
-	return "1e955f8d"
-}
-func (*DsliteSetAftrAddr) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *DsliteSetAftrAddr) Reset()                        { *m = DsliteSetAftrAddr{} }
+func (*DsliteSetAftrAddr) GetMessageName() string          { return "dslite_set_aftr_addr" }
+func (*DsliteSetAftrAddr) GetCrcString() string            { return "1e955f8d" }
+func (*DsliteSetAftrAddr) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // DsliteSetAftrAddrReply represents VPP binary API message 'dslite_set_aftr_addr_reply'.
 type DsliteSetAftrAddrReply struct {
 	Retval int32
 }
 
-func (*DsliteSetAftrAddrReply) GetMessageName() string {
-	return "dslite_set_aftr_addr_reply"
-}
-func (*DsliteSetAftrAddrReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*DsliteSetAftrAddrReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *DsliteSetAftrAddrReply) Reset()                        { *m = DsliteSetAftrAddrReply{} }
+func (*DsliteSetAftrAddrReply) GetMessageName() string          { return "dslite_set_aftr_addr_reply" }
+func (*DsliteSetAftrAddrReply) GetCrcString() string            { return "e8d4e804" }
+func (*DsliteSetAftrAddrReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // DsliteSetB4Addr represents VPP binary API message 'dslite_set_b4_addr'.
 type DsliteSetB4Addr struct {
@@ -606,30 +542,20 @@ type DsliteSetB4Addr struct {
 	IP6Addr IP6Address
 }
 
-func (*DsliteSetB4Addr) GetMessageName() string {
-	return "dslite_set_b4_addr"
-}
-func (*DsliteSetB4Addr) GetCrcString() string {
-	return "1e955f8d"
-}
-func (*DsliteSetB4Addr) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *DsliteSetB4Addr) Reset()                        { *m = DsliteSetB4Addr{} }
+func (*DsliteSetB4Addr) GetMessageName() string          { return "dslite_set_b4_addr" }
+func (*DsliteSetB4Addr) GetCrcString() string            { return "1e955f8d" }
+func (*DsliteSetB4Addr) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // DsliteSetB4AddrReply represents VPP binary API message 'dslite_set_b4_addr_reply'.
 type DsliteSetB4AddrReply struct {
 	Retval int32
 }
 
-func (*DsliteSetB4AddrReply) GetMessageName() string {
-	return "dslite_set_b4_addr_reply"
-}
-func (*DsliteSetB4AddrReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*DsliteSetB4AddrReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *DsliteSetB4AddrReply) Reset()                        { *m = DsliteSetB4AddrReply{} }
+func (*DsliteSetB4AddrReply) GetMessageName() string          { return "dslite_set_b4_addr_reply" }
+func (*DsliteSetB4AddrReply) GetCrcString() string            { return "e8d4e804" }
+func (*DsliteSetB4AddrReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // Nat44AddDelAddressRange represents VPP binary API message 'nat44_add_del_address_range'.
 type Nat44AddDelAddressRange struct {
@@ -640,30 +566,22 @@ type Nat44AddDelAddressRange struct {
 	Flags          NatConfigFlags
 }
 
-func (*Nat44AddDelAddressRange) GetMessageName() string {
-	return "nat44_add_del_address_range"
-}
-func (*Nat44AddDelAddressRange) GetCrcString() string {
-	return "d4c7568c"
-}
-func (*Nat44AddDelAddressRange) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *Nat44AddDelAddressRange) Reset()                        { *m = Nat44AddDelAddressRange{} }
+func (*Nat44AddDelAddressRange) GetMessageName() string          { return "nat44_add_del_address_range" }
+func (*Nat44AddDelAddressRange) GetCrcString() string            { return "d4c7568c" }
+func (*Nat44AddDelAddressRange) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // Nat44AddDelAddressRangeReply represents VPP binary API message 'nat44_add_del_address_range_reply'.
 type Nat44AddDelAddressRangeReply struct {
 	Retval int32
 }
 
+func (m *Nat44AddDelAddressRangeReply) Reset() { *m = Nat44AddDelAddressRangeReply{} }
 func (*Nat44AddDelAddressRangeReply) GetMessageName() string {
 	return "nat44_add_del_address_range_reply"
 }
-func (*Nat44AddDelAddressRangeReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*Nat44AddDelAddressRangeReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (*Nat44AddDelAddressRangeReply) GetCrcString() string            { return "e8d4e804" }
+func (*Nat44AddDelAddressRangeReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // Nat44AddDelIdentityMapping represents VPP binary API message 'nat44_add_del_identity_mapping'.
 type Nat44AddDelIdentityMapping struct {
@@ -677,30 +595,22 @@ type Nat44AddDelIdentityMapping struct {
 	Tag       string `struc:"[64]byte"`
 }
 
-func (*Nat44AddDelIdentityMapping) GetMessageName() string {
-	return "nat44_add_del_identity_mapping"
-}
-func (*Nat44AddDelIdentityMapping) GetCrcString() string {
-	return "8e12743f"
-}
-func (*Nat44AddDelIdentityMapping) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *Nat44AddDelIdentityMapping) Reset()                        { *m = Nat44AddDelIdentityMapping{} }
+func (*Nat44AddDelIdentityMapping) GetMessageName() string          { return "nat44_add_del_identity_mapping" }
+func (*Nat44AddDelIdentityMapping) GetCrcString() string            { return "8e12743f" }
+func (*Nat44AddDelIdentityMapping) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // Nat44AddDelIdentityMappingReply represents VPP binary API message 'nat44_add_del_identity_mapping_reply'.
 type Nat44AddDelIdentityMappingReply struct {
 	Retval int32
 }
 
+func (m *Nat44AddDelIdentityMappingReply) Reset() { *m = Nat44AddDelIdentityMappingReply{} }
 func (*Nat44AddDelIdentityMappingReply) GetMessageName() string {
 	return "nat44_add_del_identity_mapping_reply"
 }
-func (*Nat44AddDelIdentityMappingReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*Nat44AddDelIdentityMappingReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (*Nat44AddDelIdentityMappingReply) GetCrcString() string            { return "e8d4e804" }
+func (*Nat44AddDelIdentityMappingReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // Nat44AddDelInterfaceAddr represents VPP binary API message 'nat44_add_del_interface_addr'.
 type Nat44AddDelInterfaceAddr struct {
@@ -709,30 +619,22 @@ type Nat44AddDelInterfaceAddr struct {
 	Flags     NatConfigFlags
 }
 
-func (*Nat44AddDelInterfaceAddr) GetMessageName() string {
-	return "nat44_add_del_interface_addr"
-}
-func (*Nat44AddDelInterfaceAddr) GetCrcString() string {
-	return "fc835325"
-}
-func (*Nat44AddDelInterfaceAddr) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *Nat44AddDelInterfaceAddr) Reset()                        { *m = Nat44AddDelInterfaceAddr{} }
+func (*Nat44AddDelInterfaceAddr) GetMessageName() string          { return "nat44_add_del_interface_addr" }
+func (*Nat44AddDelInterfaceAddr) GetCrcString() string            { return "fc835325" }
+func (*Nat44AddDelInterfaceAddr) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // Nat44AddDelInterfaceAddrReply represents VPP binary API message 'nat44_add_del_interface_addr_reply'.
 type Nat44AddDelInterfaceAddrReply struct {
 	Retval int32
 }
 
+func (m *Nat44AddDelInterfaceAddrReply) Reset() { *m = Nat44AddDelInterfaceAddrReply{} }
 func (*Nat44AddDelInterfaceAddrReply) GetMessageName() string {
 	return "nat44_add_del_interface_addr_reply"
 }
-func (*Nat44AddDelInterfaceAddrReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*Nat44AddDelInterfaceAddrReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (*Nat44AddDelInterfaceAddrReply) GetCrcString() string            { return "e8d4e804" }
+func (*Nat44AddDelInterfaceAddrReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // Nat44AddDelLbStaticMapping represents VPP binary API message 'nat44_add_del_lb_static_mapping'.
 type Nat44AddDelLbStaticMapping struct {
@@ -747,30 +649,22 @@ type Nat44AddDelLbStaticMapping struct {
 	Locals       []Nat44LbAddrPort
 }
 
-func (*Nat44AddDelLbStaticMapping) GetMessageName() string {
-	return "nat44_add_del_lb_static_mapping"
-}
-func (*Nat44AddDelLbStaticMapping) GetCrcString() string {
-	return "53b24611"
-}
-func (*Nat44AddDelLbStaticMapping) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *Nat44AddDelLbStaticMapping) Reset()                        { *m = Nat44AddDelLbStaticMapping{} }
+func (*Nat44AddDelLbStaticMapping) GetMessageName() string          { return "nat44_add_del_lb_static_mapping" }
+func (*Nat44AddDelLbStaticMapping) GetCrcString() string            { return "53b24611" }
+func (*Nat44AddDelLbStaticMapping) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // Nat44AddDelLbStaticMappingReply represents VPP binary API message 'nat44_add_del_lb_static_mapping_reply'.
 type Nat44AddDelLbStaticMappingReply struct {
 	Retval int32
 }
 
+func (m *Nat44AddDelLbStaticMappingReply) Reset() { *m = Nat44AddDelLbStaticMappingReply{} }
 func (*Nat44AddDelLbStaticMappingReply) GetMessageName() string {
 	return "nat44_add_del_lb_static_mapping_reply"
 }
-func (*Nat44AddDelLbStaticMappingReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*Nat44AddDelLbStaticMappingReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (*Nat44AddDelLbStaticMappingReply) GetCrcString() string            { return "e8d4e804" }
+func (*Nat44AddDelLbStaticMappingReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // Nat44AddDelStaticMapping represents VPP binary API message 'nat44_add_del_static_mapping'.
 type Nat44AddDelStaticMapping struct {
@@ -786,30 +680,22 @@ type Nat44AddDelStaticMapping struct {
 	Tag               string `struc:"[64]byte"`
 }
 
-func (*Nat44AddDelStaticMapping) GetMessageName() string {
-	return "nat44_add_del_static_mapping"
-}
-func (*Nat44AddDelStaticMapping) GetCrcString() string {
-	return "e165e83b"
-}
-func (*Nat44AddDelStaticMapping) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *Nat44AddDelStaticMapping) Reset()                        { *m = Nat44AddDelStaticMapping{} }
+func (*Nat44AddDelStaticMapping) GetMessageName() string          { return "nat44_add_del_static_mapping" }
+func (*Nat44AddDelStaticMapping) GetCrcString() string            { return "e165e83b" }
+func (*Nat44AddDelStaticMapping) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // Nat44AddDelStaticMappingReply represents VPP binary API message 'nat44_add_del_static_mapping_reply'.
 type Nat44AddDelStaticMappingReply struct {
 	Retval int32
 }
 
+func (m *Nat44AddDelStaticMappingReply) Reset() { *m = Nat44AddDelStaticMappingReply{} }
 func (*Nat44AddDelStaticMappingReply) GetMessageName() string {
 	return "nat44_add_del_static_mapping_reply"
 }
-func (*Nat44AddDelStaticMappingReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*Nat44AddDelStaticMappingReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (*Nat44AddDelStaticMappingReply) GetCrcString() string            { return "e8d4e804" }
+func (*Nat44AddDelStaticMappingReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // Nat44AddressDetails represents VPP binary API message 'nat44_address_details'.
 type Nat44AddressDetails struct {
@@ -818,28 +704,18 @@ type Nat44AddressDetails struct {
 	VrfID     uint32
 }
 
-func (*Nat44AddressDetails) GetMessageName() string {
-	return "nat44_address_details"
-}
-func (*Nat44AddressDetails) GetCrcString() string {
-	return "45410ac4"
-}
-func (*Nat44AddressDetails) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *Nat44AddressDetails) Reset()                        { *m = Nat44AddressDetails{} }
+func (*Nat44AddressDetails) GetMessageName() string          { return "nat44_address_details" }
+func (*Nat44AddressDetails) GetCrcString() string            { return "45410ac4" }
+func (*Nat44AddressDetails) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // Nat44AddressDump represents VPP binary API message 'nat44_address_dump'.
 type Nat44AddressDump struct{}
 
-func (*Nat44AddressDump) GetMessageName() string {
-	return "nat44_address_dump"
-}
-func (*Nat44AddressDump) GetCrcString() string {
-	return "51077d14"
-}
-func (*Nat44AddressDump) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *Nat44AddressDump) Reset()                        { *m = Nat44AddressDump{} }
+func (*Nat44AddressDump) GetMessageName() string          { return "nat44_address_dump" }
+func (*Nat44AddressDump) GetCrcString() string            { return "51077d14" }
+func (*Nat44AddressDump) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // Nat44DelSession represents VPP binary API message 'nat44_del_session'.
 type Nat44DelSession struct {
@@ -852,88 +728,62 @@ type Nat44DelSession struct {
 	ExtHostPort    uint16
 }
 
-func (*Nat44DelSession) GetMessageName() string {
-	return "nat44_del_session"
-}
-func (*Nat44DelSession) GetCrcString() string {
-	return "4c49c387"
-}
-func (*Nat44DelSession) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *Nat44DelSession) Reset()                        { *m = Nat44DelSession{} }
+func (*Nat44DelSession) GetMessageName() string          { return "nat44_del_session" }
+func (*Nat44DelSession) GetCrcString() string            { return "4c49c387" }
+func (*Nat44DelSession) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // Nat44DelSessionReply represents VPP binary API message 'nat44_del_session_reply'.
 type Nat44DelSessionReply struct {
 	Retval int32
 }
 
-func (*Nat44DelSessionReply) GetMessageName() string {
-	return "nat44_del_session_reply"
-}
-func (*Nat44DelSessionReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*Nat44DelSessionReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *Nat44DelSessionReply) Reset()                        { *m = Nat44DelSessionReply{} }
+func (*Nat44DelSessionReply) GetMessageName() string          { return "nat44_del_session_reply" }
+func (*Nat44DelSessionReply) GetCrcString() string            { return "e8d4e804" }
+func (*Nat44DelSessionReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // Nat44ForwardingEnableDisable represents VPP binary API message 'nat44_forwarding_enable_disable'.
 type Nat44ForwardingEnableDisable struct {
 	Enable bool
 }
 
-func (*Nat44ForwardingEnableDisable) GetMessageName() string {
-	return "nat44_forwarding_enable_disable"
-}
-func (*Nat44ForwardingEnableDisable) GetCrcString() string {
-	return "b3e225d2"
-}
-func (*Nat44ForwardingEnableDisable) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *Nat44ForwardingEnableDisable) Reset()                        { *m = Nat44ForwardingEnableDisable{} }
+func (*Nat44ForwardingEnableDisable) GetMessageName() string          { return "nat44_forwarding_enable_disable" }
+func (*Nat44ForwardingEnableDisable) GetCrcString() string            { return "b3e225d2" }
+func (*Nat44ForwardingEnableDisable) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // Nat44ForwardingEnableDisableReply represents VPP binary API message 'nat44_forwarding_enable_disable_reply'.
 type Nat44ForwardingEnableDisableReply struct {
 	Retval int32
 }
 
+func (m *Nat44ForwardingEnableDisableReply) Reset() { *m = Nat44ForwardingEnableDisableReply{} }
 func (*Nat44ForwardingEnableDisableReply) GetMessageName() string {
 	return "nat44_forwarding_enable_disable_reply"
 }
-func (*Nat44ForwardingEnableDisableReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*Nat44ForwardingEnableDisableReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (*Nat44ForwardingEnableDisableReply) GetCrcString() string            { return "e8d4e804" }
+func (*Nat44ForwardingEnableDisableReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // Nat44ForwardingIsEnabled represents VPP binary API message 'nat44_forwarding_is_enabled'.
 type Nat44ForwardingIsEnabled struct{}
 
-func (*Nat44ForwardingIsEnabled) GetMessageName() string {
-	return "nat44_forwarding_is_enabled"
-}
-func (*Nat44ForwardingIsEnabled) GetCrcString() string {
-	return "51077d14"
-}
-func (*Nat44ForwardingIsEnabled) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *Nat44ForwardingIsEnabled) Reset()                        { *m = Nat44ForwardingIsEnabled{} }
+func (*Nat44ForwardingIsEnabled) GetMessageName() string          { return "nat44_forwarding_is_enabled" }
+func (*Nat44ForwardingIsEnabled) GetCrcString() string            { return "51077d14" }
+func (*Nat44ForwardingIsEnabled) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // Nat44ForwardingIsEnabledReply represents VPP binary API message 'nat44_forwarding_is_enabled_reply'.
 type Nat44ForwardingIsEnabledReply struct {
 	Enabled bool
 }
 
+func (m *Nat44ForwardingIsEnabledReply) Reset() { *m = Nat44ForwardingIsEnabledReply{} }
 func (*Nat44ForwardingIsEnabledReply) GetMessageName() string {
 	return "nat44_forwarding_is_enabled_reply"
 }
-func (*Nat44ForwardingIsEnabledReply) GetCrcString() string {
-	return "46924a06"
-}
-func (*Nat44ForwardingIsEnabledReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (*Nat44ForwardingIsEnabledReply) GetCrcString() string            { return "46924a06" }
+func (*Nat44ForwardingIsEnabledReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // Nat44IdentityMappingDetails represents VPP binary API message 'nat44_identity_mapping_details'.
 type Nat44IdentityMappingDetails struct {
@@ -946,28 +796,18 @@ type Nat44IdentityMappingDetails struct {
 	Tag       string `struc:"[64]byte"`
 }
 
-func (*Nat44IdentityMappingDetails) GetMessageName() string {
-	return "nat44_identity_mapping_details"
-}
-func (*Nat44IdentityMappingDetails) GetCrcString() string {
-	return "36d21351"
-}
-func (*Nat44IdentityMappingDetails) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *Nat44IdentityMappingDetails) Reset()                        { *m = Nat44IdentityMappingDetails{} }
+func (*Nat44IdentityMappingDetails) GetMessageName() string          { return "nat44_identity_mapping_details" }
+func (*Nat44IdentityMappingDetails) GetCrcString() string            { return "36d21351" }
+func (*Nat44IdentityMappingDetails) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // Nat44IdentityMappingDump represents VPP binary API message 'nat44_identity_mapping_dump'.
 type Nat44IdentityMappingDump struct{}
 
-func (*Nat44IdentityMappingDump) GetMessageName() string {
-	return "nat44_identity_mapping_dump"
-}
-func (*Nat44IdentityMappingDump) GetCrcString() string {
-	return "51077d14"
-}
-func (*Nat44IdentityMappingDump) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *Nat44IdentityMappingDump) Reset()                        { *m = Nat44IdentityMappingDump{} }
+func (*Nat44IdentityMappingDump) GetMessageName() string          { return "nat44_identity_mapping_dump" }
+func (*Nat44IdentityMappingDump) GetCrcString() string            { return "51077d14" }
+func (*Nat44IdentityMappingDump) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // Nat44InterfaceAddDelFeature represents VPP binary API message 'nat44_interface_add_del_feature'.
 type Nat44InterfaceAddDelFeature struct {
@@ -976,30 +816,22 @@ type Nat44InterfaceAddDelFeature struct {
 	SwIfIndex InterfaceIndex
 }
 
-func (*Nat44InterfaceAddDelFeature) GetMessageName() string {
-	return "nat44_interface_add_del_feature"
-}
-func (*Nat44InterfaceAddDelFeature) GetCrcString() string {
-	return "f3699b83"
-}
-func (*Nat44InterfaceAddDelFeature) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *Nat44InterfaceAddDelFeature) Reset()                        { *m = Nat44InterfaceAddDelFeature{} }
+func (*Nat44InterfaceAddDelFeature) GetMessageName() string          { return "nat44_interface_add_del_feature" }
+func (*Nat44InterfaceAddDelFeature) GetCrcString() string            { return "f3699b83" }
+func (*Nat44InterfaceAddDelFeature) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // Nat44InterfaceAddDelFeatureReply represents VPP binary API message 'nat44_interface_add_del_feature_reply'.
 type Nat44InterfaceAddDelFeatureReply struct {
 	Retval int32
 }
 
+func (m *Nat44InterfaceAddDelFeatureReply) Reset() { *m = Nat44InterfaceAddDelFeatureReply{} }
 func (*Nat44InterfaceAddDelFeatureReply) GetMessageName() string {
 	return "nat44_interface_add_del_feature_reply"
 }
-func (*Nat44InterfaceAddDelFeatureReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*Nat44InterfaceAddDelFeatureReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (*Nat44InterfaceAddDelFeatureReply) GetCrcString() string            { return "e8d4e804" }
+func (*Nat44InterfaceAddDelFeatureReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // Nat44InterfaceAddDelOutputFeature represents VPP binary API message 'nat44_interface_add_del_output_feature'.
 type Nat44InterfaceAddDelOutputFeature struct {
@@ -1008,27 +840,25 @@ type Nat44InterfaceAddDelOutputFeature struct {
 	SwIfIndex InterfaceIndex
 }
 
+func (m *Nat44InterfaceAddDelOutputFeature) Reset() { *m = Nat44InterfaceAddDelOutputFeature{} }
 func (*Nat44InterfaceAddDelOutputFeature) GetMessageName() string {
 	return "nat44_interface_add_del_output_feature"
 }
-func (*Nat44InterfaceAddDelOutputFeature) GetCrcString() string {
-	return "f3699b83"
-}
-func (*Nat44InterfaceAddDelOutputFeature) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (*Nat44InterfaceAddDelOutputFeature) GetCrcString() string            { return "f3699b83" }
+func (*Nat44InterfaceAddDelOutputFeature) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // Nat44InterfaceAddDelOutputFeatureReply represents VPP binary API message 'nat44_interface_add_del_output_feature_reply'.
 type Nat44InterfaceAddDelOutputFeatureReply struct {
 	Retval int32
 }
 
+func (m *Nat44InterfaceAddDelOutputFeatureReply) Reset() {
+	*m = Nat44InterfaceAddDelOutputFeatureReply{}
+}
 func (*Nat44InterfaceAddDelOutputFeatureReply) GetMessageName() string {
 	return "nat44_interface_add_del_output_feature_reply"
 }
-func (*Nat44InterfaceAddDelOutputFeatureReply) GetCrcString() string {
-	return "e8d4e804"
-}
+func (*Nat44InterfaceAddDelOutputFeatureReply) GetCrcString() string { return "e8d4e804" }
 func (*Nat44InterfaceAddDelOutputFeatureReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
@@ -1039,28 +869,18 @@ type Nat44InterfaceAddrDetails struct {
 	Flags     NatConfigFlags
 }
 
-func (*Nat44InterfaceAddrDetails) GetMessageName() string {
-	return "nat44_interface_addr_details"
-}
-func (*Nat44InterfaceAddrDetails) GetCrcString() string {
-	return "3e687514"
-}
-func (*Nat44InterfaceAddrDetails) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *Nat44InterfaceAddrDetails) Reset()                        { *m = Nat44InterfaceAddrDetails{} }
+func (*Nat44InterfaceAddrDetails) GetMessageName() string          { return "nat44_interface_addr_details" }
+func (*Nat44InterfaceAddrDetails) GetCrcString() string            { return "3e687514" }
+func (*Nat44InterfaceAddrDetails) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // Nat44InterfaceAddrDump represents VPP binary API message 'nat44_interface_addr_dump'.
 type Nat44InterfaceAddrDump struct{}
 
-func (*Nat44InterfaceAddrDump) GetMessageName() string {
-	return "nat44_interface_addr_dump"
-}
-func (*Nat44InterfaceAddrDump) GetCrcString() string {
-	return "51077d14"
-}
-func (*Nat44InterfaceAddrDump) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *Nat44InterfaceAddrDump) Reset()                        { *m = Nat44InterfaceAddrDump{} }
+func (*Nat44InterfaceAddrDump) GetMessageName() string          { return "nat44_interface_addr_dump" }
+func (*Nat44InterfaceAddrDump) GetCrcString() string            { return "51077d14" }
+func (*Nat44InterfaceAddrDump) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // Nat44InterfaceDetails represents VPP binary API message 'nat44_interface_details'.
 type Nat44InterfaceDetails struct {
@@ -1068,28 +888,18 @@ type Nat44InterfaceDetails struct {
 	SwIfIndex InterfaceIndex
 }
 
-func (*Nat44InterfaceDetails) GetMessageName() string {
-	return "nat44_interface_details"
-}
-func (*Nat44InterfaceDetails) GetCrcString() string {
-	return "5d286289"
-}
-func (*Nat44InterfaceDetails) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *Nat44InterfaceDetails) Reset()                        { *m = Nat44InterfaceDetails{} }
+func (*Nat44InterfaceDetails) GetMessageName() string          { return "nat44_interface_details" }
+func (*Nat44InterfaceDetails) GetCrcString() string            { return "5d286289" }
+func (*Nat44InterfaceDetails) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // Nat44InterfaceDump represents VPP binary API message 'nat44_interface_dump'.
 type Nat44InterfaceDump struct{}
 
-func (*Nat44InterfaceDump) GetMessageName() string {
-	return "nat44_interface_dump"
-}
-func (*Nat44InterfaceDump) GetCrcString() string {
-	return "51077d14"
-}
-func (*Nat44InterfaceDump) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *Nat44InterfaceDump) Reset()                        { *m = Nat44InterfaceDump{} }
+func (*Nat44InterfaceDump) GetMessageName() string          { return "nat44_interface_dump" }
+func (*Nat44InterfaceDump) GetCrcString() string            { return "51077d14" }
+func (*Nat44InterfaceDump) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // Nat44InterfaceOutputFeatureDetails represents VPP binary API message 'nat44_interface_output_feature_details'.
 type Nat44InterfaceOutputFeatureDetails struct {
@@ -1097,28 +907,22 @@ type Nat44InterfaceOutputFeatureDetails struct {
 	SwIfIndex InterfaceIndex
 }
 
+func (m *Nat44InterfaceOutputFeatureDetails) Reset() { *m = Nat44InterfaceOutputFeatureDetails{} }
 func (*Nat44InterfaceOutputFeatureDetails) GetMessageName() string {
 	return "nat44_interface_output_feature_details"
 }
-func (*Nat44InterfaceOutputFeatureDetails) GetCrcString() string {
-	return "5d286289"
-}
-func (*Nat44InterfaceOutputFeatureDetails) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (*Nat44InterfaceOutputFeatureDetails) GetCrcString() string            { return "5d286289" }
+func (*Nat44InterfaceOutputFeatureDetails) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // Nat44InterfaceOutputFeatureDump represents VPP binary API message 'nat44_interface_output_feature_dump'.
 type Nat44InterfaceOutputFeatureDump struct{}
 
+func (m *Nat44InterfaceOutputFeatureDump) Reset() { *m = Nat44InterfaceOutputFeatureDump{} }
 func (*Nat44InterfaceOutputFeatureDump) GetMessageName() string {
 	return "nat44_interface_output_feature_dump"
 }
-func (*Nat44InterfaceOutputFeatureDump) GetCrcString() string {
-	return "51077d14"
-}
-func (*Nat44InterfaceOutputFeatureDump) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (*Nat44InterfaceOutputFeatureDump) GetCrcString() string            { return "51077d14" }
+func (*Nat44InterfaceOutputFeatureDump) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // Nat44LbStaticMappingAddDelLocal represents VPP binary API message 'nat44_lb_static_mapping_add_del_local'.
 type Nat44LbStaticMappingAddDelLocal struct {
@@ -1129,30 +933,24 @@ type Nat44LbStaticMappingAddDelLocal struct {
 	Local        Nat44LbAddrPort
 }
 
+func (m *Nat44LbStaticMappingAddDelLocal) Reset() { *m = Nat44LbStaticMappingAddDelLocal{} }
 func (*Nat44LbStaticMappingAddDelLocal) GetMessageName() string {
 	return "nat44_lb_static_mapping_add_del_local"
 }
-func (*Nat44LbStaticMappingAddDelLocal) GetCrcString() string {
-	return "2910a151"
-}
-func (*Nat44LbStaticMappingAddDelLocal) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (*Nat44LbStaticMappingAddDelLocal) GetCrcString() string            { return "2910a151" }
+func (*Nat44LbStaticMappingAddDelLocal) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // Nat44LbStaticMappingAddDelLocalReply represents VPP binary API message 'nat44_lb_static_mapping_add_del_local_reply'.
 type Nat44LbStaticMappingAddDelLocalReply struct {
 	Retval int32
 }
 
+func (m *Nat44LbStaticMappingAddDelLocalReply) Reset() { *m = Nat44LbStaticMappingAddDelLocalReply{} }
 func (*Nat44LbStaticMappingAddDelLocalReply) GetMessageName() string {
 	return "nat44_lb_static_mapping_add_del_local_reply"
 }
-func (*Nat44LbStaticMappingAddDelLocalReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*Nat44LbStaticMappingAddDelLocalReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (*Nat44LbStaticMappingAddDelLocalReply) GetCrcString() string            { return "e8d4e804" }
+func (*Nat44LbStaticMappingAddDelLocalReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // Nat44LbStaticMappingDetails represents VPP binary API message 'nat44_lb_static_mapping_details'.
 type Nat44LbStaticMappingDetails struct {
@@ -1166,28 +964,18 @@ type Nat44LbStaticMappingDetails struct {
 	Locals       []Nat44LbAddrPort
 }
 
-func (*Nat44LbStaticMappingDetails) GetMessageName() string {
-	return "nat44_lb_static_mapping_details"
-}
-func (*Nat44LbStaticMappingDetails) GetCrcString() string {
-	return "2267b9e8"
-}
-func (*Nat44LbStaticMappingDetails) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *Nat44LbStaticMappingDetails) Reset()                        { *m = Nat44LbStaticMappingDetails{} }
+func (*Nat44LbStaticMappingDetails) GetMessageName() string          { return "nat44_lb_static_mapping_details" }
+func (*Nat44LbStaticMappingDetails) GetCrcString() string            { return "2267b9e8" }
+func (*Nat44LbStaticMappingDetails) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // Nat44LbStaticMappingDump represents VPP binary API message 'nat44_lb_static_mapping_dump'.
 type Nat44LbStaticMappingDump struct{}
 
-func (*Nat44LbStaticMappingDump) GetMessageName() string {
-	return "nat44_lb_static_mapping_dump"
-}
-func (*Nat44LbStaticMappingDump) GetCrcString() string {
-	return "51077d14"
-}
-func (*Nat44LbStaticMappingDump) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *Nat44LbStaticMappingDump) Reset()                        { *m = Nat44LbStaticMappingDump{} }
+func (*Nat44LbStaticMappingDump) GetMessageName() string          { return "nat44_lb_static_mapping_dump" }
+func (*Nat44LbStaticMappingDump) GetCrcString() string            { return "51077d14" }
+func (*Nat44LbStaticMappingDump) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // Nat44StaticMappingDetails represents VPP binary API message 'nat44_static_mapping_details'.
 type Nat44StaticMappingDetails struct {
@@ -1202,28 +990,18 @@ type Nat44StaticMappingDetails struct {
 	Tag               string `struc:"[64]byte"`
 }
 
-func (*Nat44StaticMappingDetails) GetMessageName() string {
-	return "nat44_static_mapping_details"
-}
-func (*Nat44StaticMappingDetails) GetCrcString() string {
-	return "1a433ef7"
-}
-func (*Nat44StaticMappingDetails) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *Nat44StaticMappingDetails) Reset()                        { *m = Nat44StaticMappingDetails{} }
+func (*Nat44StaticMappingDetails) GetMessageName() string          { return "nat44_static_mapping_details" }
+func (*Nat44StaticMappingDetails) GetCrcString() string            { return "1a433ef7" }
+func (*Nat44StaticMappingDetails) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // Nat44StaticMappingDump represents VPP binary API message 'nat44_static_mapping_dump'.
 type Nat44StaticMappingDump struct{}
 
-func (*Nat44StaticMappingDump) GetMessageName() string {
-	return "nat44_static_mapping_dump"
-}
-func (*Nat44StaticMappingDump) GetCrcString() string {
-	return "51077d14"
-}
-func (*Nat44StaticMappingDump) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *Nat44StaticMappingDump) Reset()                        { *m = Nat44StaticMappingDump{} }
+func (*Nat44StaticMappingDump) GetMessageName() string          { return "nat44_static_mapping_dump" }
+func (*Nat44StaticMappingDump) GetCrcString() string            { return "51077d14" }
+func (*Nat44StaticMappingDump) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // Nat44UserDetails represents VPP binary API message 'nat44_user_details'.
 type Nat44UserDetails struct {
@@ -1233,28 +1011,18 @@ type Nat44UserDetails struct {
 	Nstaticsessions uint32
 }
 
-func (*Nat44UserDetails) GetMessageName() string {
-	return "nat44_user_details"
-}
-func (*Nat44UserDetails) GetCrcString() string {
-	return "355896c2"
-}
-func (*Nat44UserDetails) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *Nat44UserDetails) Reset()                        { *m = Nat44UserDetails{} }
+func (*Nat44UserDetails) GetMessageName() string          { return "nat44_user_details" }
+func (*Nat44UserDetails) GetCrcString() string            { return "355896c2" }
+func (*Nat44UserDetails) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // Nat44UserDump represents VPP binary API message 'nat44_user_dump'.
 type Nat44UserDump struct{}
 
-func (*Nat44UserDump) GetMessageName() string {
-	return "nat44_user_dump"
-}
-func (*Nat44UserDump) GetCrcString() string {
-	return "51077d14"
-}
-func (*Nat44UserDump) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *Nat44UserDump) Reset()                        { *m = Nat44UserDump{} }
+func (*Nat44UserDump) GetMessageName() string          { return "nat44_user_dump" }
+func (*Nat44UserDump) GetCrcString() string            { return "51077d14" }
+func (*Nat44UserDump) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // Nat44UserSessionDetails represents VPP binary API message 'nat44_user_session_details'.
 type Nat44UserSessionDetails struct {
@@ -1273,15 +1041,10 @@ type Nat44UserSessionDetails struct {
 	ExtHostNatPort    uint16
 }
 
-func (*Nat44UserSessionDetails) GetMessageName() string {
-	return "nat44_user_session_details"
-}
-func (*Nat44UserSessionDetails) GetCrcString() string {
-	return "1965fd69"
-}
-func (*Nat44UserSessionDetails) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *Nat44UserSessionDetails) Reset()                        { *m = Nat44UserSessionDetails{} }
+func (*Nat44UserSessionDetails) GetMessageName() string          { return "nat44_user_session_details" }
+func (*Nat44UserSessionDetails) GetCrcString() string            { return "1965fd69" }
+func (*Nat44UserSessionDetails) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // Nat44UserSessionDump represents VPP binary API message 'nat44_user_session_dump'.
 type Nat44UserSessionDump struct {
@@ -1289,15 +1052,10 @@ type Nat44UserSessionDump struct {
 	VrfID     uint32
 }
 
-func (*Nat44UserSessionDump) GetMessageName() string {
-	return "nat44_user_session_dump"
-}
-func (*Nat44UserSessionDump) GetCrcString() string {
-	return "e1899c98"
-}
-func (*Nat44UserSessionDump) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *Nat44UserSessionDump) Reset()                        { *m = Nat44UserSessionDump{} }
+func (*Nat44UserSessionDump) GetMessageName() string          { return "nat44_user_session_dump" }
+func (*Nat44UserSessionDump) GetCrcString() string            { return "e1899c98" }
+func (*Nat44UserSessionDump) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // Nat64AddDelInterface represents VPP binary API message 'nat64_add_del_interface'.
 type Nat64AddDelInterface struct {
@@ -1306,15 +1064,10 @@ type Nat64AddDelInterface struct {
 	SwIfIndex InterfaceIndex
 }
 
-func (*Nat64AddDelInterface) GetMessageName() string {
-	return "nat64_add_del_interface"
-}
-func (*Nat64AddDelInterface) GetCrcString() string {
-	return "f3699b83"
-}
-func (*Nat64AddDelInterface) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *Nat64AddDelInterface) Reset()                        { *m = Nat64AddDelInterface{} }
+func (*Nat64AddDelInterface) GetMessageName() string          { return "nat64_add_del_interface" }
+func (*Nat64AddDelInterface) GetCrcString() string            { return "f3699b83" }
+func (*Nat64AddDelInterface) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // Nat64AddDelInterfaceAddr represents VPP binary API message 'nat64_add_del_interface_addr'.
 type Nat64AddDelInterfaceAddr struct {
@@ -1322,45 +1075,32 @@ type Nat64AddDelInterfaceAddr struct {
 	SwIfIndex InterfaceIndex
 }
 
-func (*Nat64AddDelInterfaceAddr) GetMessageName() string {
-	return "nat64_add_del_interface_addr"
-}
-func (*Nat64AddDelInterfaceAddr) GetCrcString() string {
-	return "47d6e753"
-}
-func (*Nat64AddDelInterfaceAddr) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *Nat64AddDelInterfaceAddr) Reset()                        { *m = Nat64AddDelInterfaceAddr{} }
+func (*Nat64AddDelInterfaceAddr) GetMessageName() string          { return "nat64_add_del_interface_addr" }
+func (*Nat64AddDelInterfaceAddr) GetCrcString() string            { return "47d6e753" }
+func (*Nat64AddDelInterfaceAddr) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // Nat64AddDelInterfaceAddrReply represents VPP binary API message 'nat64_add_del_interface_addr_reply'.
 type Nat64AddDelInterfaceAddrReply struct {
 	Retval int32
 }
 
+func (m *Nat64AddDelInterfaceAddrReply) Reset() { *m = Nat64AddDelInterfaceAddrReply{} }
 func (*Nat64AddDelInterfaceAddrReply) GetMessageName() string {
 	return "nat64_add_del_interface_addr_reply"
 }
-func (*Nat64AddDelInterfaceAddrReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*Nat64AddDelInterfaceAddrReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (*Nat64AddDelInterfaceAddrReply) GetCrcString() string            { return "e8d4e804" }
+func (*Nat64AddDelInterfaceAddrReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // Nat64AddDelInterfaceReply represents VPP binary API message 'nat64_add_del_interface_reply'.
 type Nat64AddDelInterfaceReply struct {
 	Retval int32
 }
 
-func (*Nat64AddDelInterfaceReply) GetMessageName() string {
-	return "nat64_add_del_interface_reply"
-}
-func (*Nat64AddDelInterfaceReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*Nat64AddDelInterfaceReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *Nat64AddDelInterfaceReply) Reset()                        { *m = Nat64AddDelInterfaceReply{} }
+func (*Nat64AddDelInterfaceReply) GetMessageName() string          { return "nat64_add_del_interface_reply" }
+func (*Nat64AddDelInterfaceReply) GetCrcString() string            { return "e8d4e804" }
+func (*Nat64AddDelInterfaceReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // Nat64AddDelPoolAddrRange represents VPP binary API message 'nat64_add_del_pool_addr_range'.
 type Nat64AddDelPoolAddrRange struct {
@@ -1370,30 +1110,22 @@ type Nat64AddDelPoolAddrRange struct {
 	IsAdd     bool
 }
 
-func (*Nat64AddDelPoolAddrRange) GetMessageName() string {
-	return "nat64_add_del_pool_addr_range"
-}
-func (*Nat64AddDelPoolAddrRange) GetCrcString() string {
-	return "21234ef3"
-}
-func (*Nat64AddDelPoolAddrRange) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *Nat64AddDelPoolAddrRange) Reset()                        { *m = Nat64AddDelPoolAddrRange{} }
+func (*Nat64AddDelPoolAddrRange) GetMessageName() string          { return "nat64_add_del_pool_addr_range" }
+func (*Nat64AddDelPoolAddrRange) GetCrcString() string            { return "21234ef3" }
+func (*Nat64AddDelPoolAddrRange) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // Nat64AddDelPoolAddrRangeReply represents VPP binary API message 'nat64_add_del_pool_addr_range_reply'.
 type Nat64AddDelPoolAddrRangeReply struct {
 	Retval int32
 }
 
+func (m *Nat64AddDelPoolAddrRangeReply) Reset() { *m = Nat64AddDelPoolAddrRangeReply{} }
 func (*Nat64AddDelPoolAddrRangeReply) GetMessageName() string {
 	return "nat64_add_del_pool_addr_range_reply"
 }
-func (*Nat64AddDelPoolAddrRangeReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*Nat64AddDelPoolAddrRangeReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (*Nat64AddDelPoolAddrRangeReply) GetCrcString() string            { return "e8d4e804" }
+func (*Nat64AddDelPoolAddrRangeReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // Nat64AddDelPrefix represents VPP binary API message 'nat64_add_del_prefix'.
 type Nat64AddDelPrefix struct {
@@ -1402,30 +1134,20 @@ type Nat64AddDelPrefix struct {
 	IsAdd  bool
 }
 
-func (*Nat64AddDelPrefix) GetMessageName() string {
-	return "nat64_add_del_prefix"
-}
-func (*Nat64AddDelPrefix) GetCrcString() string {
-	return "727b2f4c"
-}
-func (*Nat64AddDelPrefix) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *Nat64AddDelPrefix) Reset()                        { *m = Nat64AddDelPrefix{} }
+func (*Nat64AddDelPrefix) GetMessageName() string          { return "nat64_add_del_prefix" }
+func (*Nat64AddDelPrefix) GetCrcString() string            { return "727b2f4c" }
+func (*Nat64AddDelPrefix) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // Nat64AddDelPrefixReply represents VPP binary API message 'nat64_add_del_prefix_reply'.
 type Nat64AddDelPrefixReply struct {
 	Retval int32
 }
 
-func (*Nat64AddDelPrefixReply) GetMessageName() string {
-	return "nat64_add_del_prefix_reply"
-}
-func (*Nat64AddDelPrefixReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*Nat64AddDelPrefixReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *Nat64AddDelPrefixReply) Reset()                        { *m = Nat64AddDelPrefixReply{} }
+func (*Nat64AddDelPrefixReply) GetMessageName() string          { return "nat64_add_del_prefix_reply" }
+func (*Nat64AddDelPrefixReply) GetCrcString() string            { return "e8d4e804" }
+func (*Nat64AddDelPrefixReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // Nat64AddDelStaticBib represents VPP binary API message 'nat64_add_del_static_bib'.
 type Nat64AddDelStaticBib struct {
@@ -1438,30 +1160,20 @@ type Nat64AddDelStaticBib struct {
 	IsAdd bool
 }
 
-func (*Nat64AddDelStaticBib) GetMessageName() string {
-	return "nat64_add_del_static_bib"
-}
-func (*Nat64AddDelStaticBib) GetCrcString() string {
-	return "90fae58a"
-}
-func (*Nat64AddDelStaticBib) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *Nat64AddDelStaticBib) Reset()                        { *m = Nat64AddDelStaticBib{} }
+func (*Nat64AddDelStaticBib) GetMessageName() string          { return "nat64_add_del_static_bib" }
+func (*Nat64AddDelStaticBib) GetCrcString() string            { return "90fae58a" }
+func (*Nat64AddDelStaticBib) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // Nat64AddDelStaticBibReply represents VPP binary API message 'nat64_add_del_static_bib_reply'.
 type Nat64AddDelStaticBibReply struct {
 	Retval int32
 }
 
-func (*Nat64AddDelStaticBibReply) GetMessageName() string {
-	return "nat64_add_del_static_bib_reply"
-}
-func (*Nat64AddDelStaticBibReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*Nat64AddDelStaticBibReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *Nat64AddDelStaticBibReply) Reset()                        { *m = Nat64AddDelStaticBibReply{} }
+func (*Nat64AddDelStaticBibReply) GetMessageName() string          { return "nat64_add_del_static_bib_reply" }
+func (*Nat64AddDelStaticBibReply) GetCrcString() string            { return "e8d4e804" }
+func (*Nat64AddDelStaticBibReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // Nat64BibDetails represents VPP binary API message 'nat64_bib_details'.
 type Nat64BibDetails struct {
@@ -1475,30 +1187,20 @@ type Nat64BibDetails struct {
 	SesNum uint32
 }
 
-func (*Nat64BibDetails) GetMessageName() string {
-	return "nat64_bib_details"
-}
-func (*Nat64BibDetails) GetCrcString() string {
-	return "62c8541d"
-}
-func (*Nat64BibDetails) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *Nat64BibDetails) Reset()                        { *m = Nat64BibDetails{} }
+func (*Nat64BibDetails) GetMessageName() string          { return "nat64_bib_details" }
+func (*Nat64BibDetails) GetCrcString() string            { return "62c8541d" }
+func (*Nat64BibDetails) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // Nat64BibDump represents VPP binary API message 'nat64_bib_dump'.
 type Nat64BibDump struct {
 	Proto uint8
 }
 
-func (*Nat64BibDump) GetMessageName() string {
-	return "nat64_bib_dump"
-}
-func (*Nat64BibDump) GetCrcString() string {
-	return "cfcb6b75"
-}
-func (*Nat64BibDump) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *Nat64BibDump) Reset()                        { *m = Nat64BibDump{} }
+func (*Nat64BibDump) GetMessageName() string          { return "nat64_bib_dump" }
+func (*Nat64BibDump) GetCrcString() string            { return "cfcb6b75" }
+func (*Nat64BibDump) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // Nat64InterfaceDetails represents VPP binary API message 'nat64_interface_details'.
 type Nat64InterfaceDetails struct {
@@ -1506,28 +1208,18 @@ type Nat64InterfaceDetails struct {
 	SwIfIndex InterfaceIndex
 }
 
-func (*Nat64InterfaceDetails) GetMessageName() string {
-	return "nat64_interface_details"
-}
-func (*Nat64InterfaceDetails) GetCrcString() string {
-	return "5d286289"
-}
-func (*Nat64InterfaceDetails) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *Nat64InterfaceDetails) Reset()                        { *m = Nat64InterfaceDetails{} }
+func (*Nat64InterfaceDetails) GetMessageName() string          { return "nat64_interface_details" }
+func (*Nat64InterfaceDetails) GetCrcString() string            { return "5d286289" }
+func (*Nat64InterfaceDetails) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // Nat64InterfaceDump represents VPP binary API message 'nat64_interface_dump'.
 type Nat64InterfaceDump struct{}
 
-func (*Nat64InterfaceDump) GetMessageName() string {
-	return "nat64_interface_dump"
-}
-func (*Nat64InterfaceDump) GetCrcString() string {
-	return "51077d14"
-}
-func (*Nat64InterfaceDump) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *Nat64InterfaceDump) Reset()                        { *m = Nat64InterfaceDump{} }
+func (*Nat64InterfaceDump) GetMessageName() string          { return "nat64_interface_dump" }
+func (*Nat64InterfaceDump) GetCrcString() string            { return "51077d14" }
+func (*Nat64InterfaceDump) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // Nat64PoolAddrDetails represents VPP binary API message 'nat64_pool_addr_details'.
 type Nat64PoolAddrDetails struct {
@@ -1535,28 +1227,18 @@ type Nat64PoolAddrDetails struct {
 	VrfID   uint32
 }
 
-func (*Nat64PoolAddrDetails) GetMessageName() string {
-	return "nat64_pool_addr_details"
-}
-func (*Nat64PoolAddrDetails) GetCrcString() string {
-	return "9bb99cdb"
-}
-func (*Nat64PoolAddrDetails) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *Nat64PoolAddrDetails) Reset()                        { *m = Nat64PoolAddrDetails{} }
+func (*Nat64PoolAddrDetails) GetMessageName() string          { return "nat64_pool_addr_details" }
+func (*Nat64PoolAddrDetails) GetCrcString() string            { return "9bb99cdb" }
+func (*Nat64PoolAddrDetails) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // Nat64PoolAddrDump represents VPP binary API message 'nat64_pool_addr_dump'.
 type Nat64PoolAddrDump struct{}
 
-func (*Nat64PoolAddrDump) GetMessageName() string {
-	return "nat64_pool_addr_dump"
-}
-func (*Nat64PoolAddrDump) GetCrcString() string {
-	return "51077d14"
-}
-func (*Nat64PoolAddrDump) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *Nat64PoolAddrDump) Reset()                        { *m = Nat64PoolAddrDump{} }
+func (*Nat64PoolAddrDump) GetMessageName() string          { return "nat64_pool_addr_dump" }
+func (*Nat64PoolAddrDump) GetCrcString() string            { return "51077d14" }
+func (*Nat64PoolAddrDump) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // Nat64PrefixDetails represents VPP binary API message 'nat64_prefix_details'.
 type Nat64PrefixDetails struct {
@@ -1564,28 +1246,18 @@ type Nat64PrefixDetails struct {
 	VrfID  uint32
 }
 
-func (*Nat64PrefixDetails) GetMessageName() string {
-	return "nat64_prefix_details"
-}
-func (*Nat64PrefixDetails) GetCrcString() string {
-	return "20568de3"
-}
-func (*Nat64PrefixDetails) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *Nat64PrefixDetails) Reset()                        { *m = Nat64PrefixDetails{} }
+func (*Nat64PrefixDetails) GetMessageName() string          { return "nat64_prefix_details" }
+func (*Nat64PrefixDetails) GetCrcString() string            { return "20568de3" }
+func (*Nat64PrefixDetails) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // Nat64PrefixDump represents VPP binary API message 'nat64_prefix_dump'.
 type Nat64PrefixDump struct{}
 
-func (*Nat64PrefixDump) GetMessageName() string {
-	return "nat64_prefix_dump"
-}
-func (*Nat64PrefixDump) GetCrcString() string {
-	return "51077d14"
-}
-func (*Nat64PrefixDump) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *Nat64PrefixDump) Reset()                        { *m = Nat64PrefixDump{} }
+func (*Nat64PrefixDump) GetMessageName() string          { return "nat64_prefix_dump" }
+func (*Nat64PrefixDump) GetCrcString() string            { return "51077d14" }
+func (*Nat64PrefixDump) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // Nat64StDetails represents VPP binary API message 'nat64_st_details'.
 type Nat64StDetails struct {
@@ -1600,30 +1272,20 @@ type Nat64StDetails struct {
 	Proto  uint8
 }
 
-func (*Nat64StDetails) GetMessageName() string {
-	return "nat64_st_details"
-}
-func (*Nat64StDetails) GetCrcString() string {
-	return "c770d620"
-}
-func (*Nat64StDetails) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *Nat64StDetails) Reset()                        { *m = Nat64StDetails{} }
+func (*Nat64StDetails) GetMessageName() string          { return "nat64_st_details" }
+func (*Nat64StDetails) GetCrcString() string            { return "c770d620" }
+func (*Nat64StDetails) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // Nat64StDump represents VPP binary API message 'nat64_st_dump'.
 type Nat64StDump struct {
 	Proto uint8
 }
 
-func (*Nat64StDump) GetMessageName() string {
-	return "nat64_st_dump"
-}
-func (*Nat64StDump) GetCrcString() string {
-	return "cfcb6b75"
-}
-func (*Nat64StDump) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *Nat64StDump) Reset()                        { *m = Nat64StDump{} }
+func (*Nat64StDump) GetMessageName() string          { return "nat64_st_dump" }
+func (*Nat64StDump) GetCrcString() string            { return "cfcb6b75" }
+func (*Nat64StDump) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // Nat66AddDelInterface represents VPP binary API message 'nat66_add_del_interface'.
 type Nat66AddDelInterface struct {
@@ -1632,30 +1294,20 @@ type Nat66AddDelInterface struct {
 	SwIfIndex InterfaceIndex
 }
 
-func (*Nat66AddDelInterface) GetMessageName() string {
-	return "nat66_add_del_interface"
-}
-func (*Nat66AddDelInterface) GetCrcString() string {
-	return "f3699b83"
-}
-func (*Nat66AddDelInterface) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *Nat66AddDelInterface) Reset()                        { *m = Nat66AddDelInterface{} }
+func (*Nat66AddDelInterface) GetMessageName() string          { return "nat66_add_del_interface" }
+func (*Nat66AddDelInterface) GetCrcString() string            { return "f3699b83" }
+func (*Nat66AddDelInterface) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // Nat66AddDelInterfaceReply represents VPP binary API message 'nat66_add_del_interface_reply'.
 type Nat66AddDelInterfaceReply struct {
 	Retval int32
 }
 
-func (*Nat66AddDelInterfaceReply) GetMessageName() string {
-	return "nat66_add_del_interface_reply"
-}
-func (*Nat66AddDelInterfaceReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*Nat66AddDelInterfaceReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *Nat66AddDelInterfaceReply) Reset()                        { *m = Nat66AddDelInterfaceReply{} }
+func (*Nat66AddDelInterfaceReply) GetMessageName() string          { return "nat66_add_del_interface_reply" }
+func (*Nat66AddDelInterfaceReply) GetCrcString() string            { return "e8d4e804" }
+func (*Nat66AddDelInterfaceReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // Nat66AddDelStaticMapping represents VPP binary API message 'nat66_add_del_static_mapping'.
 type Nat66AddDelStaticMapping struct {
@@ -1665,30 +1317,22 @@ type Nat66AddDelStaticMapping struct {
 	VrfID             uint32
 }
 
-func (*Nat66AddDelStaticMapping) GetMessageName() string {
-	return "nat66_add_del_static_mapping"
-}
-func (*Nat66AddDelStaticMapping) GetCrcString() string {
-	return "fb64e50b"
-}
-func (*Nat66AddDelStaticMapping) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *Nat66AddDelStaticMapping) Reset()                        { *m = Nat66AddDelStaticMapping{} }
+func (*Nat66AddDelStaticMapping) GetMessageName() string          { return "nat66_add_del_static_mapping" }
+func (*Nat66AddDelStaticMapping) GetCrcString() string            { return "fb64e50b" }
+func (*Nat66AddDelStaticMapping) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // Nat66AddDelStaticMappingReply represents VPP binary API message 'nat66_add_del_static_mapping_reply'.
 type Nat66AddDelStaticMappingReply struct {
 	Retval int32
 }
 
+func (m *Nat66AddDelStaticMappingReply) Reset() { *m = Nat66AddDelStaticMappingReply{} }
 func (*Nat66AddDelStaticMappingReply) GetMessageName() string {
 	return "nat66_add_del_static_mapping_reply"
 }
-func (*Nat66AddDelStaticMappingReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*Nat66AddDelStaticMappingReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (*Nat66AddDelStaticMappingReply) GetCrcString() string            { return "e8d4e804" }
+func (*Nat66AddDelStaticMappingReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // Nat66InterfaceDetails represents VPP binary API message 'nat66_interface_details'.
 type Nat66InterfaceDetails struct {
@@ -1696,28 +1340,18 @@ type Nat66InterfaceDetails struct {
 	SwIfIndex InterfaceIndex
 }
 
-func (*Nat66InterfaceDetails) GetMessageName() string {
-	return "nat66_interface_details"
-}
-func (*Nat66InterfaceDetails) GetCrcString() string {
-	return "5d286289"
-}
-func (*Nat66InterfaceDetails) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *Nat66InterfaceDetails) Reset()                        { *m = Nat66InterfaceDetails{} }
+func (*Nat66InterfaceDetails) GetMessageName() string          { return "nat66_interface_details" }
+func (*Nat66InterfaceDetails) GetCrcString() string            { return "5d286289" }
+func (*Nat66InterfaceDetails) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // Nat66InterfaceDump represents VPP binary API message 'nat66_interface_dump'.
 type Nat66InterfaceDump struct{}
 
-func (*Nat66InterfaceDump) GetMessageName() string {
-	return "nat66_interface_dump"
-}
-func (*Nat66InterfaceDump) GetCrcString() string {
-	return "51077d14"
-}
-func (*Nat66InterfaceDump) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *Nat66InterfaceDump) Reset()                        { *m = Nat66InterfaceDump{} }
+func (*Nat66InterfaceDump) GetMessageName() string          { return "nat66_interface_dump" }
+func (*Nat66InterfaceDump) GetCrcString() string            { return "51077d14" }
+func (*Nat66InterfaceDump) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // Nat66StaticMappingDetails represents VPP binary API message 'nat66_static_mapping_details'.
 type Nat66StaticMappingDetails struct {
@@ -1728,41 +1362,26 @@ type Nat66StaticMappingDetails struct {
 	TotalPkts         uint64
 }
 
-func (*Nat66StaticMappingDetails) GetMessageName() string {
-	return "nat66_static_mapping_details"
-}
-func (*Nat66StaticMappingDetails) GetCrcString() string {
-	return "5c568448"
-}
-func (*Nat66StaticMappingDetails) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *Nat66StaticMappingDetails) Reset()                        { *m = Nat66StaticMappingDetails{} }
+func (*Nat66StaticMappingDetails) GetMessageName() string          { return "nat66_static_mapping_details" }
+func (*Nat66StaticMappingDetails) GetCrcString() string            { return "5c568448" }
+func (*Nat66StaticMappingDetails) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // Nat66StaticMappingDump represents VPP binary API message 'nat66_static_mapping_dump'.
 type Nat66StaticMappingDump struct{}
 
-func (*Nat66StaticMappingDump) GetMessageName() string {
-	return "nat66_static_mapping_dump"
-}
-func (*Nat66StaticMappingDump) GetCrcString() string {
-	return "51077d14"
-}
-func (*Nat66StaticMappingDump) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *Nat66StaticMappingDump) Reset()                        { *m = Nat66StaticMappingDump{} }
+func (*Nat66StaticMappingDump) GetMessageName() string          { return "nat66_static_mapping_dump" }
+func (*Nat66StaticMappingDump) GetCrcString() string            { return "51077d14" }
+func (*Nat66StaticMappingDump) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // NatControlPing represents VPP binary API message 'nat_control_ping'.
 type NatControlPing struct{}
 
-func (*NatControlPing) GetMessageName() string {
-	return "nat_control_ping"
-}
-func (*NatControlPing) GetCrcString() string {
-	return "51077d14"
-}
-func (*NatControlPing) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *NatControlPing) Reset()                        { *m = NatControlPing{} }
+func (*NatControlPing) GetMessageName() string          { return "nat_control_ping" }
+func (*NatControlPing) GetCrcString() string            { return "51077d14" }
+func (*NatControlPing) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // NatControlPingReply represents VPP binary API message 'nat_control_ping_reply'.
 type NatControlPingReply struct {
@@ -1771,15 +1390,10 @@ type NatControlPingReply struct {
 	VpePID      uint32
 }
 
-func (*NatControlPingReply) GetMessageName() string {
-	return "nat_control_ping_reply"
-}
-func (*NatControlPingReply) GetCrcString() string {
-	return "f6b0b8ca"
-}
-func (*NatControlPingReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *NatControlPingReply) Reset()                        { *m = NatControlPingReply{} }
+func (*NatControlPingReply) GetMessageName() string          { return "nat_control_ping_reply" }
+func (*NatControlPingReply) GetCrcString() string            { return "f6b0b8ca" }
+func (*NatControlPingReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // NatDetAddDelMap represents VPP binary API message 'nat_det_add_del_map'.
 type NatDetAddDelMap struct {
@@ -1790,30 +1404,20 @@ type NatDetAddDelMap struct {
 	OutPlen uint8
 }
 
-func (*NatDetAddDelMap) GetMessageName() string {
-	return "nat_det_add_del_map"
-}
-func (*NatDetAddDelMap) GetCrcString() string {
-	return "112fde05"
-}
-func (*NatDetAddDelMap) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *NatDetAddDelMap) Reset()                        { *m = NatDetAddDelMap{} }
+func (*NatDetAddDelMap) GetMessageName() string          { return "nat_det_add_del_map" }
+func (*NatDetAddDelMap) GetCrcString() string            { return "112fde05" }
+func (*NatDetAddDelMap) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // NatDetAddDelMapReply represents VPP binary API message 'nat_det_add_del_map_reply'.
 type NatDetAddDelMapReply struct {
 	Retval int32
 }
 
-func (*NatDetAddDelMapReply) GetMessageName() string {
-	return "nat_det_add_del_map_reply"
-}
-func (*NatDetAddDelMapReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*NatDetAddDelMapReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *NatDetAddDelMapReply) Reset()                        { *m = NatDetAddDelMapReply{} }
+func (*NatDetAddDelMapReply) GetMessageName() string          { return "nat_det_add_del_map_reply" }
+func (*NatDetAddDelMapReply) GetCrcString() string            { return "e8d4e804" }
+func (*NatDetAddDelMapReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // NatDetCloseSessionIn represents VPP binary API message 'nat_det_close_session_in'.
 type NatDetCloseSessionIn struct {
@@ -1823,30 +1427,20 @@ type NatDetCloseSessionIn struct {
 	ExtPort uint16
 }
 
-func (*NatDetCloseSessionIn) GetMessageName() string {
-	return "nat_det_close_session_in"
-}
-func (*NatDetCloseSessionIn) GetCrcString() string {
-	return "0a10ef64"
-}
-func (*NatDetCloseSessionIn) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *NatDetCloseSessionIn) Reset()                        { *m = NatDetCloseSessionIn{} }
+func (*NatDetCloseSessionIn) GetMessageName() string          { return "nat_det_close_session_in" }
+func (*NatDetCloseSessionIn) GetCrcString() string            { return "0a10ef64" }
+func (*NatDetCloseSessionIn) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // NatDetCloseSessionInReply represents VPP binary API message 'nat_det_close_session_in_reply'.
 type NatDetCloseSessionInReply struct {
 	Retval int32
 }
 
-func (*NatDetCloseSessionInReply) GetMessageName() string {
-	return "nat_det_close_session_in_reply"
-}
-func (*NatDetCloseSessionInReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*NatDetCloseSessionInReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *NatDetCloseSessionInReply) Reset()                        { *m = NatDetCloseSessionInReply{} }
+func (*NatDetCloseSessionInReply) GetMessageName() string          { return "nat_det_close_session_in_reply" }
+func (*NatDetCloseSessionInReply) GetCrcString() string            { return "e8d4e804" }
+func (*NatDetCloseSessionInReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // NatDetCloseSessionOut represents VPP binary API message 'nat_det_close_session_out'.
 type NatDetCloseSessionOut struct {
@@ -1856,45 +1450,30 @@ type NatDetCloseSessionOut struct {
 	ExtPort uint16
 }
 
-func (*NatDetCloseSessionOut) GetMessageName() string {
-	return "nat_det_close_session_out"
-}
-func (*NatDetCloseSessionOut) GetCrcString() string {
-	return "c1b6cbfb"
-}
-func (*NatDetCloseSessionOut) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *NatDetCloseSessionOut) Reset()                        { *m = NatDetCloseSessionOut{} }
+func (*NatDetCloseSessionOut) GetMessageName() string          { return "nat_det_close_session_out" }
+func (*NatDetCloseSessionOut) GetCrcString() string            { return "c1b6cbfb" }
+func (*NatDetCloseSessionOut) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // NatDetCloseSessionOutReply represents VPP binary API message 'nat_det_close_session_out_reply'.
 type NatDetCloseSessionOutReply struct {
 	Retval int32
 }
 
-func (*NatDetCloseSessionOutReply) GetMessageName() string {
-	return "nat_det_close_session_out_reply"
-}
-func (*NatDetCloseSessionOutReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*NatDetCloseSessionOutReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *NatDetCloseSessionOutReply) Reset()                        { *m = NatDetCloseSessionOutReply{} }
+func (*NatDetCloseSessionOutReply) GetMessageName() string          { return "nat_det_close_session_out_reply" }
+func (*NatDetCloseSessionOutReply) GetCrcString() string            { return "e8d4e804" }
+func (*NatDetCloseSessionOutReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // NatDetForward represents VPP binary API message 'nat_det_forward'.
 type NatDetForward struct {
 	InAddr IP4Address
 }
 
-func (*NatDetForward) GetMessageName() string {
-	return "nat_det_forward"
-}
-func (*NatDetForward) GetCrcString() string {
-	return "7f8a89cd"
-}
-func (*NatDetForward) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *NatDetForward) Reset()                        { *m = NatDetForward{} }
+func (*NatDetForward) GetMessageName() string          { return "nat_det_forward" }
+func (*NatDetForward) GetCrcString() string            { return "7f8a89cd" }
+func (*NatDetForward) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // NatDetForwardReply represents VPP binary API message 'nat_det_forward_reply'.
 type NatDetForwardReply struct {
@@ -1904,15 +1483,10 @@ type NatDetForwardReply struct {
 	OutAddr   IP4Address
 }
 
-func (*NatDetForwardReply) GetMessageName() string {
-	return "nat_det_forward_reply"
-}
-func (*NatDetForwardReply) GetCrcString() string {
-	return "a8ccbdc0"
-}
-func (*NatDetForwardReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *NatDetForwardReply) Reset()                        { *m = NatDetForwardReply{} }
+func (*NatDetForwardReply) GetMessageName() string          { return "nat_det_forward_reply" }
+func (*NatDetForwardReply) GetCrcString() string            { return "a8ccbdc0" }
+func (*NatDetForwardReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // NatDetMapDetails represents VPP binary API message 'nat_det_map_details'.
 type NatDetMapDetails struct {
@@ -1925,28 +1499,18 @@ type NatDetMapDetails struct {
 	SesNum       uint32
 }
 
-func (*NatDetMapDetails) GetMessageName() string {
-	return "nat_det_map_details"
-}
-func (*NatDetMapDetails) GetCrcString() string {
-	return "88000ee1"
-}
-func (*NatDetMapDetails) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *NatDetMapDetails) Reset()                        { *m = NatDetMapDetails{} }
+func (*NatDetMapDetails) GetMessageName() string          { return "nat_det_map_details" }
+func (*NatDetMapDetails) GetCrcString() string            { return "88000ee1" }
+func (*NatDetMapDetails) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // NatDetMapDump represents VPP binary API message 'nat_det_map_dump'.
 type NatDetMapDump struct{}
 
-func (*NatDetMapDump) GetMessageName() string {
-	return "nat_det_map_dump"
-}
-func (*NatDetMapDump) GetCrcString() string {
-	return "51077d14"
-}
-func (*NatDetMapDump) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *NatDetMapDump) Reset()                        { *m = NatDetMapDump{} }
+func (*NatDetMapDump) GetMessageName() string          { return "nat_det_map_dump" }
+func (*NatDetMapDump) GetCrcString() string            { return "51077d14" }
+func (*NatDetMapDump) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // NatDetReverse represents VPP binary API message 'nat_det_reverse'.
 type NatDetReverse struct {
@@ -1954,15 +1518,10 @@ type NatDetReverse struct {
 	OutAddr IP4Address
 }
 
-func (*NatDetReverse) GetMessageName() string {
-	return "nat_det_reverse"
-}
-func (*NatDetReverse) GetCrcString() string {
-	return "a7573fe1"
-}
-func (*NatDetReverse) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *NatDetReverse) Reset()                        { *m = NatDetReverse{} }
+func (*NatDetReverse) GetMessageName() string          { return "nat_det_reverse" }
+func (*NatDetReverse) GetCrcString() string            { return "a7573fe1" }
+func (*NatDetReverse) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // NatDetReverseReply represents VPP binary API message 'nat_det_reverse_reply'.
 type NatDetReverseReply struct {
@@ -1970,15 +1529,10 @@ type NatDetReverseReply struct {
 	InAddr IP4Address
 }
 
-func (*NatDetReverseReply) GetMessageName() string {
-	return "nat_det_reverse_reply"
-}
-func (*NatDetReverseReply) GetCrcString() string {
-	return "34066d48"
-}
-func (*NatDetReverseReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *NatDetReverseReply) Reset()                        { *m = NatDetReverseReply{} }
+func (*NatDetReverseReply) GetMessageName() string          { return "nat_det_reverse_reply" }
+func (*NatDetReverseReply) GetCrcString() string            { return "34066d48" }
+func (*NatDetReverseReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // NatDetSessionDetails represents VPP binary API message 'nat_det_session_details'.
 type NatDetSessionDetails struct {
@@ -1990,43 +1544,28 @@ type NatDetSessionDetails struct {
 	Expire  uint32
 }
 
-func (*NatDetSessionDetails) GetMessageName() string {
-	return "nat_det_session_details"
-}
-func (*NatDetSessionDetails) GetCrcString() string {
-	return "27f3c171"
-}
-func (*NatDetSessionDetails) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *NatDetSessionDetails) Reset()                        { *m = NatDetSessionDetails{} }
+func (*NatDetSessionDetails) GetMessageName() string          { return "nat_det_session_details" }
+func (*NatDetSessionDetails) GetCrcString() string            { return "27f3c171" }
+func (*NatDetSessionDetails) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // NatDetSessionDump represents VPP binary API message 'nat_det_session_dump'.
 type NatDetSessionDump struct {
 	UserAddr IP4Address
 }
 
-func (*NatDetSessionDump) GetMessageName() string {
-	return "nat_det_session_dump"
-}
-func (*NatDetSessionDump) GetCrcString() string {
-	return "e45a3af7"
-}
-func (*NatDetSessionDump) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *NatDetSessionDump) Reset()                        { *m = NatDetSessionDump{} }
+func (*NatDetSessionDump) GetMessageName() string          { return "nat_det_session_dump" }
+func (*NatDetSessionDump) GetCrcString() string            { return "e45a3af7" }
+func (*NatDetSessionDump) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // NatGetAddrAndPortAllocAlg represents VPP binary API message 'nat_get_addr_and_port_alloc_alg'.
 type NatGetAddrAndPortAllocAlg struct{}
 
-func (*NatGetAddrAndPortAllocAlg) GetMessageName() string {
-	return "nat_get_addr_and_port_alloc_alg"
-}
-func (*NatGetAddrAndPortAllocAlg) GetCrcString() string {
-	return "51077d14"
-}
-func (*NatGetAddrAndPortAllocAlg) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *NatGetAddrAndPortAllocAlg) Reset()                        { *m = NatGetAddrAndPortAllocAlg{} }
+func (*NatGetAddrAndPortAllocAlg) GetMessageName() string          { return "nat_get_addr_and_port_alloc_alg" }
+func (*NatGetAddrAndPortAllocAlg) GetCrcString() string            { return "51077d14" }
+func (*NatGetAddrAndPortAllocAlg) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // NatGetAddrAndPortAllocAlgReply represents VPP binary API message 'nat_get_addr_and_port_alloc_alg_reply'.
 type NatGetAddrAndPortAllocAlgReply struct {
@@ -2039,28 +1578,20 @@ type NatGetAddrAndPortAllocAlgReply struct {
 	EndPort    uint16
 }
 
+func (m *NatGetAddrAndPortAllocAlgReply) Reset() { *m = NatGetAddrAndPortAllocAlgReply{} }
 func (*NatGetAddrAndPortAllocAlgReply) GetMessageName() string {
 	return "nat_get_addr_and_port_alloc_alg_reply"
 }
-func (*NatGetAddrAndPortAllocAlgReply) GetCrcString() string {
-	return "3607a7d0"
-}
-func (*NatGetAddrAndPortAllocAlgReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (*NatGetAddrAndPortAllocAlgReply) GetCrcString() string            { return "3607a7d0" }
+func (*NatGetAddrAndPortAllocAlgReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // NatGetMssClamping represents VPP binary API message 'nat_get_mss_clamping'.
 type NatGetMssClamping struct{}
 
-func (*NatGetMssClamping) GetMessageName() string {
-	return "nat_get_mss_clamping"
-}
-func (*NatGetMssClamping) GetCrcString() string {
-	return "51077d14"
-}
-func (*NatGetMssClamping) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *NatGetMssClamping) Reset()                        { *m = NatGetMssClamping{} }
+func (*NatGetMssClamping) GetMessageName() string          { return "nat_get_mss_clamping" }
+func (*NatGetMssClamping) GetCrcString() string            { return "51077d14" }
+func (*NatGetMssClamping) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // NatGetMssClampingReply represents VPP binary API message 'nat_get_mss_clamping_reply'.
 type NatGetMssClampingReply struct {
@@ -2069,28 +1600,18 @@ type NatGetMssClampingReply struct {
 	Enable   bool
 }
 
-func (*NatGetMssClampingReply) GetMessageName() string {
-	return "nat_get_mss_clamping_reply"
-}
-func (*NatGetMssClampingReply) GetCrcString() string {
-	return "1c0b2a78"
-}
-func (*NatGetMssClampingReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *NatGetMssClampingReply) Reset()                        { *m = NatGetMssClampingReply{} }
+func (*NatGetMssClampingReply) GetMessageName() string          { return "nat_get_mss_clamping_reply" }
+func (*NatGetMssClampingReply) GetCrcString() string            { return "1c0b2a78" }
+func (*NatGetMssClampingReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // NatGetReass represents VPP binary API message 'nat_get_reass'.
 type NatGetReass struct{}
 
-func (*NatGetReass) GetMessageName() string {
-	return "nat_get_reass"
-}
-func (*NatGetReass) GetCrcString() string {
-	return "51077d14"
-}
-func (*NatGetReass) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *NatGetReass) Reset()                        { *m = NatGetReass{} }
+func (*NatGetReass) GetMessageName() string          { return "nat_get_reass" }
+func (*NatGetReass) GetCrcString() string            { return "51077d14" }
+func (*NatGetReass) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // NatGetReassReply represents VPP binary API message 'nat_get_reass_reply'.
 type NatGetReassReply struct {
@@ -2105,28 +1626,18 @@ type NatGetReassReply struct {
 	IP6DropFrag uint8
 }
 
-func (*NatGetReassReply) GetMessageName() string {
-	return "nat_get_reass_reply"
-}
-func (*NatGetReassReply) GetCrcString() string {
-	return "8102a0fb"
-}
-func (*NatGetReassReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *NatGetReassReply) Reset()                        { *m = NatGetReassReply{} }
+func (*NatGetReassReply) GetMessageName() string          { return "nat_get_reass_reply" }
+func (*NatGetReassReply) GetCrcString() string            { return "8102a0fb" }
+func (*NatGetReassReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // NatGetTimeouts represents VPP binary API message 'nat_get_timeouts'.
 type NatGetTimeouts struct{}
 
-func (*NatGetTimeouts) GetMessageName() string {
-	return "nat_get_timeouts"
-}
-func (*NatGetTimeouts) GetCrcString() string {
-	return "51077d14"
-}
-func (*NatGetTimeouts) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *NatGetTimeouts) Reset()                        { *m = NatGetTimeouts{} }
+func (*NatGetTimeouts) GetMessageName() string          { return "nat_get_timeouts" }
+func (*NatGetTimeouts) GetCrcString() string            { return "51077d14" }
+func (*NatGetTimeouts) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // NatGetTimeoutsReply represents VPP binary API message 'nat_get_timeouts_reply'.
 type NatGetTimeoutsReply struct {
@@ -2137,56 +1648,36 @@ type NatGetTimeoutsReply struct {
 	ICMP           uint32
 }
 
-func (*NatGetTimeoutsReply) GetMessageName() string {
-	return "nat_get_timeouts_reply"
-}
-func (*NatGetTimeoutsReply) GetCrcString() string {
-	return "3c4df4e1"
-}
-func (*NatGetTimeoutsReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *NatGetTimeoutsReply) Reset()                        { *m = NatGetTimeoutsReply{} }
+func (*NatGetTimeoutsReply) GetMessageName() string          { return "nat_get_timeouts_reply" }
+func (*NatGetTimeoutsReply) GetCrcString() string            { return "3c4df4e1" }
+func (*NatGetTimeoutsReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // NatHaFlush represents VPP binary API message 'nat_ha_flush'.
 type NatHaFlush struct{}
 
-func (*NatHaFlush) GetMessageName() string {
-	return "nat_ha_flush"
-}
-func (*NatHaFlush) GetCrcString() string {
-	return "51077d14"
-}
-func (*NatHaFlush) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *NatHaFlush) Reset()                        { *m = NatHaFlush{} }
+func (*NatHaFlush) GetMessageName() string          { return "nat_ha_flush" }
+func (*NatHaFlush) GetCrcString() string            { return "51077d14" }
+func (*NatHaFlush) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // NatHaFlushReply represents VPP binary API message 'nat_ha_flush_reply'.
 type NatHaFlushReply struct {
 	Retval int32
 }
 
-func (*NatHaFlushReply) GetMessageName() string {
-	return "nat_ha_flush_reply"
-}
-func (*NatHaFlushReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*NatHaFlushReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *NatHaFlushReply) Reset()                        { *m = NatHaFlushReply{} }
+func (*NatHaFlushReply) GetMessageName() string          { return "nat_ha_flush_reply" }
+func (*NatHaFlushReply) GetCrcString() string            { return "e8d4e804" }
+func (*NatHaFlushReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // NatHaGetFailover represents VPP binary API message 'nat_ha_get_failover'.
 type NatHaGetFailover struct{}
 
-func (*NatHaGetFailover) GetMessageName() string {
-	return "nat_ha_get_failover"
-}
-func (*NatHaGetFailover) GetCrcString() string {
-	return "51077d14"
-}
-func (*NatHaGetFailover) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *NatHaGetFailover) Reset()                        { *m = NatHaGetFailover{} }
+func (*NatHaGetFailover) GetMessageName() string          { return "nat_ha_get_failover" }
+func (*NatHaGetFailover) GetCrcString() string            { return "51077d14" }
+func (*NatHaGetFailover) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // NatHaGetFailoverReply represents VPP binary API message 'nat_ha_get_failover_reply'.
 type NatHaGetFailoverReply struct {
@@ -2196,28 +1687,18 @@ type NatHaGetFailoverReply struct {
 	SessionRefreshInterval uint32
 }
 
-func (*NatHaGetFailoverReply) GetMessageName() string {
-	return "nat_ha_get_failover_reply"
-}
-func (*NatHaGetFailoverReply) GetCrcString() string {
-	return "a67d8752"
-}
-func (*NatHaGetFailoverReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *NatHaGetFailoverReply) Reset()                        { *m = NatHaGetFailoverReply{} }
+func (*NatHaGetFailoverReply) GetMessageName() string          { return "nat_ha_get_failover_reply" }
+func (*NatHaGetFailoverReply) GetCrcString() string            { return "a67d8752" }
+func (*NatHaGetFailoverReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // NatHaGetListener represents VPP binary API message 'nat_ha_get_listener'.
 type NatHaGetListener struct{}
 
-func (*NatHaGetListener) GetMessageName() string {
-	return "nat_ha_get_listener"
-}
-func (*NatHaGetListener) GetCrcString() string {
-	return "51077d14"
-}
-func (*NatHaGetListener) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *NatHaGetListener) Reset()                        { *m = NatHaGetListener{} }
+func (*NatHaGetListener) GetMessageName() string          { return "nat_ha_get_listener" }
+func (*NatHaGetListener) GetCrcString() string            { return "51077d14" }
+func (*NatHaGetListener) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // NatHaGetListenerReply represents VPP binary API message 'nat_ha_get_listener_reply'.
 type NatHaGetListenerReply struct {
@@ -2227,15 +1708,10 @@ type NatHaGetListenerReply struct {
 	PathMtu   uint32
 }
 
-func (*NatHaGetListenerReply) GetMessageName() string {
-	return "nat_ha_get_listener_reply"
-}
-func (*NatHaGetListenerReply) GetCrcString() string {
-	return "123ea41f"
-}
-func (*NatHaGetListenerReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *NatHaGetListenerReply) Reset()                        { *m = NatHaGetListenerReply{} }
+func (*NatHaGetListenerReply) GetMessageName() string          { return "nat_ha_get_listener_reply" }
+func (*NatHaGetListenerReply) GetCrcString() string            { return "123ea41f" }
+func (*NatHaGetListenerReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // NatHaResync represents VPP binary API message 'nat_ha_resync'.
 type NatHaResync struct {
@@ -2243,15 +1719,10 @@ type NatHaResync struct {
 	PID             uint32
 }
 
-func (*NatHaResync) GetMessageName() string {
-	return "nat_ha_resync"
-}
-func (*NatHaResync) GetCrcString() string {
-	return "c8ab9e03"
-}
-func (*NatHaResync) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *NatHaResync) Reset()                        { *m = NatHaResync{} }
+func (*NatHaResync) GetMessageName() string          { return "nat_ha_resync" }
+func (*NatHaResync) GetCrcString() string            { return "c8ab9e03" }
+func (*NatHaResync) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // NatHaResyncCompletedEvent represents VPP binary API message 'nat_ha_resync_completed_event'.
 type NatHaResyncCompletedEvent struct {
@@ -2259,30 +1730,20 @@ type NatHaResyncCompletedEvent struct {
 	MissedCount uint32
 }
 
-func (*NatHaResyncCompletedEvent) GetMessageName() string {
-	return "nat_ha_resync_completed_event"
-}
-func (*NatHaResyncCompletedEvent) GetCrcString() string {
-	return "fdc598fb"
-}
-func (*NatHaResyncCompletedEvent) GetMessageType() api.MessageType {
-	return api.EventMessage
-}
+func (m *NatHaResyncCompletedEvent) Reset()                        { *m = NatHaResyncCompletedEvent{} }
+func (*NatHaResyncCompletedEvent) GetMessageName() string          { return "nat_ha_resync_completed_event" }
+func (*NatHaResyncCompletedEvent) GetCrcString() string            { return "fdc598fb" }
+func (*NatHaResyncCompletedEvent) GetMessageType() api.MessageType { return api.EventMessage }
 
 // NatHaResyncReply represents VPP binary API message 'nat_ha_resync_reply'.
 type NatHaResyncReply struct {
 	Retval int32
 }
 
-func (*NatHaResyncReply) GetMessageName() string {
-	return "nat_ha_resync_reply"
-}
-func (*NatHaResyncReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*NatHaResyncReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *NatHaResyncReply) Reset()                        { *m = NatHaResyncReply{} }
+func (*NatHaResyncReply) GetMessageName() string          { return "nat_ha_resync_reply" }
+func (*NatHaResyncReply) GetCrcString() string            { return "e8d4e804" }
+func (*NatHaResyncReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // NatHaSetFailover represents VPP binary API message 'nat_ha_set_failover'.
 type NatHaSetFailover struct {
@@ -2291,30 +1752,20 @@ type NatHaSetFailover struct {
 	SessionRefreshInterval uint32
 }
 
-func (*NatHaSetFailover) GetMessageName() string {
-	return "nat_ha_set_failover"
-}
-func (*NatHaSetFailover) GetCrcString() string {
-	return "718246af"
-}
-func (*NatHaSetFailover) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *NatHaSetFailover) Reset()                        { *m = NatHaSetFailover{} }
+func (*NatHaSetFailover) GetMessageName() string          { return "nat_ha_set_failover" }
+func (*NatHaSetFailover) GetCrcString() string            { return "718246af" }
+func (*NatHaSetFailover) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // NatHaSetFailoverReply represents VPP binary API message 'nat_ha_set_failover_reply'.
 type NatHaSetFailoverReply struct {
 	Retval int32
 }
 
-func (*NatHaSetFailoverReply) GetMessageName() string {
-	return "nat_ha_set_failover_reply"
-}
-func (*NatHaSetFailoverReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*NatHaSetFailoverReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *NatHaSetFailoverReply) Reset()                        { *m = NatHaSetFailoverReply{} }
+func (*NatHaSetFailoverReply) GetMessageName() string          { return "nat_ha_set_failover_reply" }
+func (*NatHaSetFailoverReply) GetCrcString() string            { return "e8d4e804" }
+func (*NatHaSetFailoverReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // NatHaSetListener represents VPP binary API message 'nat_ha_set_listener'.
 type NatHaSetListener struct {
@@ -2323,30 +1774,20 @@ type NatHaSetListener struct {
 	PathMtu   uint32
 }
 
-func (*NatHaSetListener) GetMessageName() string {
-	return "nat_ha_set_listener"
-}
-func (*NatHaSetListener) GetCrcString() string {
-	return "e4a8cb4e"
-}
-func (*NatHaSetListener) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *NatHaSetListener) Reset()                        { *m = NatHaSetListener{} }
+func (*NatHaSetListener) GetMessageName() string          { return "nat_ha_set_listener" }
+func (*NatHaSetListener) GetCrcString() string            { return "e4a8cb4e" }
+func (*NatHaSetListener) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // NatHaSetListenerReply represents VPP binary API message 'nat_ha_set_listener_reply'.
 type NatHaSetListenerReply struct {
 	Retval int32
 }
 
-func (*NatHaSetListenerReply) GetMessageName() string {
-	return "nat_ha_set_listener_reply"
-}
-func (*NatHaSetListenerReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*NatHaSetListenerReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *NatHaSetListenerReply) Reset()                        { *m = NatHaSetListenerReply{} }
+func (*NatHaSetListenerReply) GetMessageName() string          { return "nat_ha_set_listener_reply" }
+func (*NatHaSetListenerReply) GetCrcString() string            { return "e8d4e804" }
+func (*NatHaSetListenerReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // NatIpfixEnableDisable represents VPP binary API message 'nat_ipfix_enable_disable'.
 type NatIpfixEnableDisable struct {
@@ -2355,30 +1796,20 @@ type NatIpfixEnableDisable struct {
 	Enable   bool
 }
 
-func (*NatIpfixEnableDisable) GetMessageName() string {
-	return "nat_ipfix_enable_disable"
-}
-func (*NatIpfixEnableDisable) GetCrcString() string {
-	return "9af4a2d2"
-}
-func (*NatIpfixEnableDisable) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *NatIpfixEnableDisable) Reset()                        { *m = NatIpfixEnableDisable{} }
+func (*NatIpfixEnableDisable) GetMessageName() string          { return "nat_ipfix_enable_disable" }
+func (*NatIpfixEnableDisable) GetCrcString() string            { return "9af4a2d2" }
+func (*NatIpfixEnableDisable) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // NatIpfixEnableDisableReply represents VPP binary API message 'nat_ipfix_enable_disable_reply'.
 type NatIpfixEnableDisableReply struct {
 	Retval int32
 }
 
-func (*NatIpfixEnableDisableReply) GetMessageName() string {
-	return "nat_ipfix_enable_disable_reply"
-}
-func (*NatIpfixEnableDisableReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*NatIpfixEnableDisableReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *NatIpfixEnableDisableReply) Reset()                        { *m = NatIpfixEnableDisableReply{} }
+func (*NatIpfixEnableDisableReply) GetMessageName() string          { return "nat_ipfix_enable_disable_reply" }
+func (*NatIpfixEnableDisableReply) GetCrcString() string            { return "e8d4e804" }
+func (*NatIpfixEnableDisableReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // NatReassDetails represents VPP binary API message 'nat_reass_details'.
 type NatReassDetails struct {
@@ -2389,28 +1820,18 @@ type NatReassDetails struct {
 	FragN   uint8
 }
 
-func (*NatReassDetails) GetMessageName() string {
-	return "nat_reass_details"
-}
-func (*NatReassDetails) GetCrcString() string {
-	return "dbef31be"
-}
-func (*NatReassDetails) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *NatReassDetails) Reset()                        { *m = NatReassDetails{} }
+func (*NatReassDetails) GetMessageName() string          { return "nat_reass_details" }
+func (*NatReassDetails) GetCrcString() string            { return "dbef31be" }
+func (*NatReassDetails) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // NatReassDump represents VPP binary API message 'nat_reass_dump'.
 type NatReassDump struct{}
 
-func (*NatReassDump) GetMessageName() string {
-	return "nat_reass_dump"
-}
-func (*NatReassDump) GetCrcString() string {
-	return "51077d14"
-}
-func (*NatReassDump) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *NatReassDump) Reset()                        { *m = NatReassDump{} }
+func (*NatReassDump) GetMessageName() string          { return "nat_reass_dump" }
+func (*NatReassDump) GetCrcString() string            { return "51077d14" }
+func (*NatReassDump) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // NatSetAddrAndPortAllocAlg represents VPP binary API message 'nat_set_addr_and_port_alloc_alg'.
 type NatSetAddrAndPortAllocAlg struct {
@@ -2422,60 +1843,42 @@ type NatSetAddrAndPortAllocAlg struct {
 	EndPort    uint16
 }
 
-func (*NatSetAddrAndPortAllocAlg) GetMessageName() string {
-	return "nat_set_addr_and_port_alloc_alg"
-}
-func (*NatSetAddrAndPortAllocAlg) GetCrcString() string {
-	return "deeb746f"
-}
-func (*NatSetAddrAndPortAllocAlg) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *NatSetAddrAndPortAllocAlg) Reset()                        { *m = NatSetAddrAndPortAllocAlg{} }
+func (*NatSetAddrAndPortAllocAlg) GetMessageName() string          { return "nat_set_addr_and_port_alloc_alg" }
+func (*NatSetAddrAndPortAllocAlg) GetCrcString() string            { return "deeb746f" }
+func (*NatSetAddrAndPortAllocAlg) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // NatSetAddrAndPortAllocAlgReply represents VPP binary API message 'nat_set_addr_and_port_alloc_alg_reply'.
 type NatSetAddrAndPortAllocAlgReply struct {
 	Retval int32
 }
 
+func (m *NatSetAddrAndPortAllocAlgReply) Reset() { *m = NatSetAddrAndPortAllocAlgReply{} }
 func (*NatSetAddrAndPortAllocAlgReply) GetMessageName() string {
 	return "nat_set_addr_and_port_alloc_alg_reply"
 }
-func (*NatSetAddrAndPortAllocAlgReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*NatSetAddrAndPortAllocAlgReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (*NatSetAddrAndPortAllocAlgReply) GetCrcString() string            { return "e8d4e804" }
+func (*NatSetAddrAndPortAllocAlgReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // NatSetLogLevel represents VPP binary API message 'nat_set_log_level'.
 type NatSetLogLevel struct {
 	LogLevel NatLogLevel
 }
 
-func (*NatSetLogLevel) GetMessageName() string {
-	return "nat_set_log_level"
-}
-func (*NatSetLogLevel) GetCrcString() string {
-	return "70076bfe"
-}
-func (*NatSetLogLevel) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *NatSetLogLevel) Reset()                        { *m = NatSetLogLevel{} }
+func (*NatSetLogLevel) GetMessageName() string          { return "nat_set_log_level" }
+func (*NatSetLogLevel) GetCrcString() string            { return "70076bfe" }
+func (*NatSetLogLevel) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // NatSetLogLevelReply represents VPP binary API message 'nat_set_log_level_reply'.
 type NatSetLogLevelReply struct {
 	Retval int32
 }
 
-func (*NatSetLogLevelReply) GetMessageName() string {
-	return "nat_set_log_level_reply"
-}
-func (*NatSetLogLevelReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*NatSetLogLevelReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *NatSetLogLevelReply) Reset()                        { *m = NatSetLogLevelReply{} }
+func (*NatSetLogLevelReply) GetMessageName() string          { return "nat_set_log_level_reply" }
+func (*NatSetLogLevelReply) GetCrcString() string            { return "e8d4e804" }
+func (*NatSetLogLevelReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // NatSetMssClamping represents VPP binary API message 'nat_set_mss_clamping'.
 type NatSetMssClamping struct {
@@ -2483,30 +1886,20 @@ type NatSetMssClamping struct {
 	Enable   bool
 }
 
-func (*NatSetMssClamping) GetMessageName() string {
-	return "nat_set_mss_clamping"
-}
-func (*NatSetMssClamping) GetCrcString() string {
-	return "25e90abb"
-}
-func (*NatSetMssClamping) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *NatSetMssClamping) Reset()                        { *m = NatSetMssClamping{} }
+func (*NatSetMssClamping) GetMessageName() string          { return "nat_set_mss_clamping" }
+func (*NatSetMssClamping) GetCrcString() string            { return "25e90abb" }
+func (*NatSetMssClamping) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // NatSetMssClampingReply represents VPP binary API message 'nat_set_mss_clamping_reply'.
 type NatSetMssClampingReply struct {
 	Retval int32
 }
 
-func (*NatSetMssClampingReply) GetMessageName() string {
-	return "nat_set_mss_clamping_reply"
-}
-func (*NatSetMssClampingReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*NatSetMssClampingReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *NatSetMssClampingReply) Reset()                        { *m = NatSetMssClampingReply{} }
+func (*NatSetMssClampingReply) GetMessageName() string          { return "nat_set_mss_clamping_reply" }
+func (*NatSetMssClampingReply) GetCrcString() string            { return "e8d4e804" }
+func (*NatSetMssClampingReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // NatSetReass represents VPP binary API message 'nat_set_reass'.
 type NatSetReass struct {
@@ -2517,30 +1910,20 @@ type NatSetReass struct {
 	IsIP6    bool
 }
 
-func (*NatSetReass) GetMessageName() string {
-	return "nat_set_reass"
-}
-func (*NatSetReass) GetCrcString() string {
-	return "364ce510"
-}
-func (*NatSetReass) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *NatSetReass) Reset()                        { *m = NatSetReass{} }
+func (*NatSetReass) GetMessageName() string          { return "nat_set_reass" }
+func (*NatSetReass) GetCrcString() string            { return "364ce510" }
+func (*NatSetReass) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // NatSetReassReply represents VPP binary API message 'nat_set_reass_reply'.
 type NatSetReassReply struct {
 	Retval int32
 }
 
-func (*NatSetReassReply) GetMessageName() string {
-	return "nat_set_reass_reply"
-}
-func (*NatSetReassReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*NatSetReassReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *NatSetReassReply) Reset()                        { *m = NatSetReassReply{} }
+func (*NatSetReassReply) GetMessageName() string          { return "nat_set_reass_reply" }
+func (*NatSetReassReply) GetCrcString() string            { return "e8d4e804" }
+func (*NatSetReassReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // NatSetTimeouts represents VPP binary API message 'nat_set_timeouts'.
 type NatSetTimeouts struct {
@@ -2550,73 +1933,48 @@ type NatSetTimeouts struct {
 	ICMP           uint32
 }
 
-func (*NatSetTimeouts) GetMessageName() string {
-	return "nat_set_timeouts"
-}
-func (*NatSetTimeouts) GetCrcString() string {
-	return "d4746b16"
-}
-func (*NatSetTimeouts) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *NatSetTimeouts) Reset()                        { *m = NatSetTimeouts{} }
+func (*NatSetTimeouts) GetMessageName() string          { return "nat_set_timeouts" }
+func (*NatSetTimeouts) GetCrcString() string            { return "d4746b16" }
+func (*NatSetTimeouts) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // NatSetTimeoutsReply represents VPP binary API message 'nat_set_timeouts_reply'.
 type NatSetTimeoutsReply struct {
 	Retval int32
 }
 
-func (*NatSetTimeoutsReply) GetMessageName() string {
-	return "nat_set_timeouts_reply"
-}
-func (*NatSetTimeoutsReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*NatSetTimeoutsReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *NatSetTimeoutsReply) Reset()                        { *m = NatSetTimeoutsReply{} }
+func (*NatSetTimeoutsReply) GetMessageName() string          { return "nat_set_timeouts_reply" }
+func (*NatSetTimeoutsReply) GetCrcString() string            { return "e8d4e804" }
+func (*NatSetTimeoutsReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // NatSetWorkers represents VPP binary API message 'nat_set_workers'.
 type NatSetWorkers struct {
 	WorkerMask uint64
 }
 
-func (*NatSetWorkers) GetMessageName() string {
-	return "nat_set_workers"
-}
-func (*NatSetWorkers) GetCrcString() string {
-	return "da926638"
-}
-func (*NatSetWorkers) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *NatSetWorkers) Reset()                        { *m = NatSetWorkers{} }
+func (*NatSetWorkers) GetMessageName() string          { return "nat_set_workers" }
+func (*NatSetWorkers) GetCrcString() string            { return "da926638" }
+func (*NatSetWorkers) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // NatSetWorkersReply represents VPP binary API message 'nat_set_workers_reply'.
 type NatSetWorkersReply struct {
 	Retval int32
 }
 
-func (*NatSetWorkersReply) GetMessageName() string {
-	return "nat_set_workers_reply"
-}
-func (*NatSetWorkersReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*NatSetWorkersReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *NatSetWorkersReply) Reset()                        { *m = NatSetWorkersReply{} }
+func (*NatSetWorkersReply) GetMessageName() string          { return "nat_set_workers_reply" }
+func (*NatSetWorkersReply) GetCrcString() string            { return "e8d4e804" }
+func (*NatSetWorkersReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // NatShowConfig represents VPP binary API message 'nat_show_config'.
 type NatShowConfig struct{}
 
-func (*NatShowConfig) GetMessageName() string {
-	return "nat_show_config"
-}
-func (*NatShowConfig) GetCrcString() string {
-	return "51077d14"
-}
-func (*NatShowConfig) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *NatShowConfig) Reset()                        { *m = NatShowConfig{} }
+func (*NatShowConfig) GetMessageName() string          { return "nat_show_config" }
+func (*NatShowConfig) GetCrcString() string            { return "51077d14" }
+func (*NatShowConfig) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // NatShowConfigReply represents VPP binary API message 'nat_show_config_reply'.
 type NatShowConfigReply struct {
@@ -2640,15 +1998,10 @@ type NatShowConfigReply struct {
 	Nat64StMemorySize               uint32
 }
 
-func (*NatShowConfigReply) GetMessageName() string {
-	return "nat_show_config_reply"
-}
-func (*NatShowConfigReply) GetCrcString() string {
-	return "006a0786"
-}
-func (*NatShowConfigReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *NatShowConfigReply) Reset()                        { *m = NatShowConfigReply{} }
+func (*NatShowConfigReply) GetMessageName() string          { return "nat_show_config_reply" }
+func (*NatShowConfigReply) GetCrcString() string            { return "006a0786" }
+func (*NatShowConfigReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // NatWorkerDetails represents VPP binary API message 'nat_worker_details'.
 type NatWorkerDetails struct {
@@ -2657,28 +2010,18 @@ type NatWorkerDetails struct {
 	Name        string `struc:"[64]byte"`
 }
 
-func (*NatWorkerDetails) GetMessageName() string {
-	return "nat_worker_details"
-}
-func (*NatWorkerDetails) GetCrcString() string {
-	return "84bf06fc"
-}
-func (*NatWorkerDetails) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *NatWorkerDetails) Reset()                        { *m = NatWorkerDetails{} }
+func (*NatWorkerDetails) GetMessageName() string          { return "nat_worker_details" }
+func (*NatWorkerDetails) GetCrcString() string            { return "84bf06fc" }
+func (*NatWorkerDetails) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // NatWorkerDump represents VPP binary API message 'nat_worker_dump'.
 type NatWorkerDump struct{}
 
-func (*NatWorkerDump) GetMessageName() string {
-	return "nat_worker_dump"
-}
-func (*NatWorkerDump) GetCrcString() string {
-	return "51077d14"
-}
-func (*NatWorkerDump) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *NatWorkerDump) Reset()                        { *m = NatWorkerDump{} }
+func (*NatWorkerDump) GetMessageName() string          { return "nat_worker_dump" }
+func (*NatWorkerDump) GetCrcString() string            { return "51077d14" }
+func (*NatWorkerDump) GetMessageType() api.MessageType { return api.RequestMessage }
 
 func init() {
 	api.RegisterMessage((*DsliteAddDelPoolAddrRange)(nil), "nat.DsliteAddDelPoolAddrRange")

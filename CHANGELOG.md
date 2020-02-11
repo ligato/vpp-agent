@@ -40,10 +40,10 @@
 RELEASE CHANGELOG TEMPLATE:
 <a name="vX.Y.Z"></a>
 # [X.Y.Z](https://github.com/ligato/vpp-agent/compare/vX-1.Y-1.Z-1...vX.Y.Z) (YYYY-MM-DD)
-### Compatibility
+### COMPATIBILITY
+### KNOWN ISSUES
 ### BREAKING CHANGES
 ### Bug Fixes
-### Known Issues
 ### Features
 ### Improvements
 ### Docker Images
@@ -51,28 +51,45 @@ RELEASE CHANGELOG TEMPLATE:
 -->
 
 <a name="v3.0.0"></a>
-# [3.0.0](https://github.com/ligato/vpp-agent/compare/v2.5.0...master) (not yet released)
+# [3.0.0](https://github.com/ligato/vpp-agent/compare/v2.5.0...master) (2020-02-10)
 
-### Compatibility
-- **VPP 20.01-379** (`20.01-rc0~379-ga6b93eac5`)
-- **VPP 20.01-324** (`20.01-rc0~324-g66a332cf1`)
-- **VPP 19.08.1** (default)
-- **VPP 19.04** (backward compatible)
+### COMPATIBILITY
+- **VPP 20.01** (default)
+- **VPP 19.08.1** (recommended)
+- **VPP 19.04.4**
+
+### KNOWN ISSUES
+- VPP L3 plugin: `IPScanNeighbor` was disabled for VPP 20.01 due to VPP API changes (will be implemented later using new model)
+- VPP NAT plugin: `VirtualReassembly` in `Nat44Global` was disabled for VPP 20.01 due to VPP API changes (will be implemented later in VPP L3 plugin using new model)
 
 ### BREAKING CHANGES
-- migrate from dep to Go modules for dependency management and remove vendor directory
-- use vanity import path  `go.ligato.io/vpp-agent/v3` in Go files
-- cleanup Protobuf definitions and move all _.proto_ files into `proto/ligato` directory
+- migrate from dep to Go modules for dependency management and remove vendor directory (#1599)
+- use vanity import path  `go.ligato.io/vpp-agent/v3` in Go files (#1599)
+- move all _.proto_ files into `proto/ligato` directory and add check for breaking changes (#1599)
+
+### Bug Fixes
+- check for duplicate Linux interface IP address (#1586)
 
 ### New Features
-- vpp-plugins: support L3 cross-connect
-- allow disabling of VPP plugins
+- VPP interface plugin: Allow AF-PACKET to reference target Linux interface via logical name (#1616)
+- VPP L3 plugin: add support for L3 cross-connects (#1602)
+- VPP L3 plugin: IP flow hash settings support (#1610)
+- VPP NAT plugin: NAT interface and AddressPool API changes (#1595)
+- VPP plugins: support disabling VPP plugins (#1593)
+- VPP client: add support for govpp proxy (#1593)
+
+### Improvements
+- optimize getting model keys, with up to 20% faster transactions (#1615)
+- agentctl output formatting improvements (#1581, #1582, #1589)
+- generated VPP binary API now imports common types from `*_types` packages
+- development docker images now have smaller size (~400MB less)
+- start using Github Workflows for CI/CD pipeline
 - add gRPC reflection service
 
 <a name="v2.5.1"></a>
 # [2.5.1](https://github.com/ligato/vpp-agent/compare/v2.5.0...v2.5.1) (2019-12-06)
 
-### Compatibility
+### COMPATIBILITY
 - **VPP 20.01-379** (`20.01-rc0~379-ga6b93eac5`)
 - **VPP 20.01-324** (`20.01-rc0~324-g66a332cf1`)
 - **VPP 19.08.1** (default)

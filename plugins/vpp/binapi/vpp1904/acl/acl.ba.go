@@ -46,12 +46,8 @@ type ACLRule struct {
 	TCPFlagsValue          uint8
 }
 
-func (*ACLRule) GetTypeName() string {
-	return "acl_rule"
-}
-func (*ACLRule) GetCrcString() string {
-	return "6f99bf4d"
-}
+func (*ACLRule) GetTypeName() string  { return "acl_rule" }
+func (*ACLRule) GetCrcString() string { return "6f99bf4d" }
 
 // MacipACLRule represents VPP binary API type 'macip_acl_rule'.
 type MacipACLRule struct {
@@ -63,12 +59,8 @@ type MacipACLRule struct {
 	SrcIPPrefixLen uint8
 }
 
-func (*MacipACLRule) GetTypeName() string {
-	return "macip_acl_rule"
-}
-func (*MacipACLRule) GetCrcString() string {
-	return "70589f1e"
-}
+func (*MacipACLRule) GetTypeName() string  { return "macip_acl_rule" }
+func (*MacipACLRule) GetCrcString() string { return "70589f1e" }
 
 // ACLAddReplace represents VPP binary API message 'acl_add_replace'.
 type ACLAddReplace struct {
@@ -78,15 +70,10 @@ type ACLAddReplace struct {
 	R        []ACLRule
 }
 
-func (*ACLAddReplace) GetMessageName() string {
-	return "acl_add_replace"
-}
-func (*ACLAddReplace) GetCrcString() string {
-	return "e839997e"
-}
-func (*ACLAddReplace) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *ACLAddReplace) Reset()                        { *m = ACLAddReplace{} }
+func (*ACLAddReplace) GetMessageName() string          { return "acl_add_replace" }
+func (*ACLAddReplace) GetCrcString() string            { return "e839997e" }
+func (*ACLAddReplace) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // ACLAddReplaceReply represents VPP binary API message 'acl_add_replace_reply'.
 type ACLAddReplaceReply struct {
@@ -94,45 +81,30 @@ type ACLAddReplaceReply struct {
 	Retval   int32
 }
 
-func (*ACLAddReplaceReply) GetMessageName() string {
-	return "acl_add_replace_reply"
-}
-func (*ACLAddReplaceReply) GetCrcString() string {
-	return "ac407b0c"
-}
-func (*ACLAddReplaceReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *ACLAddReplaceReply) Reset()                        { *m = ACLAddReplaceReply{} }
+func (*ACLAddReplaceReply) GetMessageName() string          { return "acl_add_replace_reply" }
+func (*ACLAddReplaceReply) GetCrcString() string            { return "ac407b0c" }
+func (*ACLAddReplaceReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // ACLDel represents VPP binary API message 'acl_del'.
 type ACLDel struct {
 	ACLIndex uint32
 }
 
-func (*ACLDel) GetMessageName() string {
-	return "acl_del"
-}
-func (*ACLDel) GetCrcString() string {
-	return "ef34fea4"
-}
-func (*ACLDel) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *ACLDel) Reset()                        { *m = ACLDel{} }
+func (*ACLDel) GetMessageName() string          { return "acl_del" }
+func (*ACLDel) GetCrcString() string            { return "ef34fea4" }
+func (*ACLDel) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // ACLDelReply represents VPP binary API message 'acl_del_reply'.
 type ACLDelReply struct {
 	Retval int32
 }
 
-func (*ACLDelReply) GetMessageName() string {
-	return "acl_del_reply"
-}
-func (*ACLDelReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*ACLDelReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *ACLDelReply) Reset()                        { *m = ACLDelReply{} }
+func (*ACLDelReply) GetMessageName() string          { return "acl_del_reply" }
+func (*ACLDelReply) GetCrcString() string            { return "e8d4e804" }
+func (*ACLDelReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // ACLDetails represents VPP binary API message 'acl_details'.
 type ACLDetails struct {
@@ -142,30 +114,20 @@ type ACLDetails struct {
 	R        []ACLRule
 }
 
-func (*ACLDetails) GetMessageName() string {
-	return "acl_details"
-}
-func (*ACLDetails) GetCrcString() string {
-	return "5bd895be"
-}
-func (*ACLDetails) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *ACLDetails) Reset()                        { *m = ACLDetails{} }
+func (*ACLDetails) GetMessageName() string          { return "acl_details" }
+func (*ACLDetails) GetCrcString() string            { return "5bd895be" }
+func (*ACLDetails) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // ACLDump represents VPP binary API message 'acl_dump'.
 type ACLDump struct {
 	ACLIndex uint32
 }
 
-func (*ACLDump) GetMessageName() string {
-	return "acl_dump"
-}
-func (*ACLDump) GetCrcString() string {
-	return "ef34fea4"
-}
-func (*ACLDump) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *ACLDump) Reset()                        { *m = ACLDump{} }
+func (*ACLDump) GetMessageName() string          { return "acl_dump" }
+func (*ACLDump) GetCrcString() string            { return "ef34fea4" }
+func (*ACLDump) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // ACLInterfaceAddDel represents VPP binary API message 'acl_interface_add_del'.
 type ACLInterfaceAddDel struct {
@@ -175,30 +137,20 @@ type ACLInterfaceAddDel struct {
 	ACLIndex  uint32
 }
 
-func (*ACLInterfaceAddDel) GetMessageName() string {
-	return "acl_interface_add_del"
-}
-func (*ACLInterfaceAddDel) GetCrcString() string {
-	return "0b2aedd1"
-}
-func (*ACLInterfaceAddDel) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *ACLInterfaceAddDel) Reset()                        { *m = ACLInterfaceAddDel{} }
+func (*ACLInterfaceAddDel) GetMessageName() string          { return "acl_interface_add_del" }
+func (*ACLInterfaceAddDel) GetCrcString() string            { return "0b2aedd1" }
+func (*ACLInterfaceAddDel) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // ACLInterfaceAddDelReply represents VPP binary API message 'acl_interface_add_del_reply'.
 type ACLInterfaceAddDelReply struct {
 	Retval int32
 }
 
-func (*ACLInterfaceAddDelReply) GetMessageName() string {
-	return "acl_interface_add_del_reply"
-}
-func (*ACLInterfaceAddDelReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*ACLInterfaceAddDelReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *ACLInterfaceAddDelReply) Reset()                        { *m = ACLInterfaceAddDelReply{} }
+func (*ACLInterfaceAddDelReply) GetMessageName() string          { return "acl_interface_add_del_reply" }
+func (*ACLInterfaceAddDelReply) GetCrcString() string            { return "e8d4e804" }
+func (*ACLInterfaceAddDelReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // ACLInterfaceEtypeWhitelistDetails represents VPP binary API message 'acl_interface_etype_whitelist_details'.
 type ACLInterfaceEtypeWhitelistDetails struct {
@@ -208,30 +160,24 @@ type ACLInterfaceEtypeWhitelistDetails struct {
 	Whitelist []uint16
 }
 
+func (m *ACLInterfaceEtypeWhitelistDetails) Reset() { *m = ACLInterfaceEtypeWhitelistDetails{} }
 func (*ACLInterfaceEtypeWhitelistDetails) GetMessageName() string {
 	return "acl_interface_etype_whitelist_details"
 }
-func (*ACLInterfaceEtypeWhitelistDetails) GetCrcString() string {
-	return "6a5d4e81"
-}
-func (*ACLInterfaceEtypeWhitelistDetails) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (*ACLInterfaceEtypeWhitelistDetails) GetCrcString() string            { return "6a5d4e81" }
+func (*ACLInterfaceEtypeWhitelistDetails) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // ACLInterfaceEtypeWhitelistDump represents VPP binary API message 'acl_interface_etype_whitelist_dump'.
 type ACLInterfaceEtypeWhitelistDump struct {
 	SwIfIndex uint32
 }
 
+func (m *ACLInterfaceEtypeWhitelistDump) Reset() { *m = ACLInterfaceEtypeWhitelistDump{} }
 func (*ACLInterfaceEtypeWhitelistDump) GetMessageName() string {
 	return "acl_interface_etype_whitelist_dump"
 }
-func (*ACLInterfaceEtypeWhitelistDump) GetCrcString() string {
-	return "529cb13f"
-}
-func (*ACLInterfaceEtypeWhitelistDump) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (*ACLInterfaceEtypeWhitelistDump) GetCrcString() string            { return "529cb13f" }
+func (*ACLInterfaceEtypeWhitelistDump) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // ACLInterfaceListDetails represents VPP binary API message 'acl_interface_list_details'.
 type ACLInterfaceListDetails struct {
@@ -241,30 +187,20 @@ type ACLInterfaceListDetails struct {
 	Acls      []uint32
 }
 
-func (*ACLInterfaceListDetails) GetMessageName() string {
-	return "acl_interface_list_details"
-}
-func (*ACLInterfaceListDetails) GetCrcString() string {
-	return "d5e80809"
-}
-func (*ACLInterfaceListDetails) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *ACLInterfaceListDetails) Reset()                        { *m = ACLInterfaceListDetails{} }
+func (*ACLInterfaceListDetails) GetMessageName() string          { return "acl_interface_list_details" }
+func (*ACLInterfaceListDetails) GetCrcString() string            { return "d5e80809" }
+func (*ACLInterfaceListDetails) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // ACLInterfaceListDump represents VPP binary API message 'acl_interface_list_dump'.
 type ACLInterfaceListDump struct {
 	SwIfIndex uint32
 }
 
-func (*ACLInterfaceListDump) GetMessageName() string {
-	return "acl_interface_list_dump"
-}
-func (*ACLInterfaceListDump) GetCrcString() string {
-	return "529cb13f"
-}
-func (*ACLInterfaceListDump) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *ACLInterfaceListDump) Reset()                        { *m = ACLInterfaceListDump{} }
+func (*ACLInterfaceListDump) GetMessageName() string          { return "acl_interface_list_dump" }
+func (*ACLInterfaceListDump) GetCrcString() string            { return "529cb13f" }
+func (*ACLInterfaceListDump) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // ACLInterfaceSetACLList represents VPP binary API message 'acl_interface_set_acl_list'.
 type ACLInterfaceSetACLList struct {
@@ -274,30 +210,20 @@ type ACLInterfaceSetACLList struct {
 	Acls      []uint32
 }
 
-func (*ACLInterfaceSetACLList) GetMessageName() string {
-	return "acl_interface_set_acl_list"
-}
-func (*ACLInterfaceSetACLList) GetCrcString() string {
-	return "8baece38"
-}
-func (*ACLInterfaceSetACLList) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *ACLInterfaceSetACLList) Reset()                        { *m = ACLInterfaceSetACLList{} }
+func (*ACLInterfaceSetACLList) GetMessageName() string          { return "acl_interface_set_acl_list" }
+func (*ACLInterfaceSetACLList) GetCrcString() string            { return "8baece38" }
+func (*ACLInterfaceSetACLList) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // ACLInterfaceSetACLListReply represents VPP binary API message 'acl_interface_set_acl_list_reply'.
 type ACLInterfaceSetACLListReply struct {
 	Retval int32
 }
 
-func (*ACLInterfaceSetACLListReply) GetMessageName() string {
-	return "acl_interface_set_acl_list_reply"
-}
-func (*ACLInterfaceSetACLListReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*ACLInterfaceSetACLListReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *ACLInterfaceSetACLListReply) Reset()                        { *m = ACLInterfaceSetACLListReply{} }
+func (*ACLInterfaceSetACLListReply) GetMessageName() string          { return "acl_interface_set_acl_list_reply" }
+func (*ACLInterfaceSetACLListReply) GetCrcString() string            { return "e8d4e804" }
+func (*ACLInterfaceSetACLListReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // ACLInterfaceSetEtypeWhitelist represents VPP binary API message 'acl_interface_set_etype_whitelist'.
 type ACLInterfaceSetEtypeWhitelist struct {
@@ -307,43 +233,32 @@ type ACLInterfaceSetEtypeWhitelist struct {
 	Whitelist []uint16
 }
 
+func (m *ACLInterfaceSetEtypeWhitelist) Reset() { *m = ACLInterfaceSetEtypeWhitelist{} }
 func (*ACLInterfaceSetEtypeWhitelist) GetMessageName() string {
 	return "acl_interface_set_etype_whitelist"
 }
-func (*ACLInterfaceSetEtypeWhitelist) GetCrcString() string {
-	return "f515efc5"
-}
-func (*ACLInterfaceSetEtypeWhitelist) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (*ACLInterfaceSetEtypeWhitelist) GetCrcString() string            { return "f515efc5" }
+func (*ACLInterfaceSetEtypeWhitelist) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // ACLInterfaceSetEtypeWhitelistReply represents VPP binary API message 'acl_interface_set_etype_whitelist_reply'.
 type ACLInterfaceSetEtypeWhitelistReply struct {
 	Retval int32
 }
 
+func (m *ACLInterfaceSetEtypeWhitelistReply) Reset() { *m = ACLInterfaceSetEtypeWhitelistReply{} }
 func (*ACLInterfaceSetEtypeWhitelistReply) GetMessageName() string {
 	return "acl_interface_set_etype_whitelist_reply"
 }
-func (*ACLInterfaceSetEtypeWhitelistReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*ACLInterfaceSetEtypeWhitelistReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (*ACLInterfaceSetEtypeWhitelistReply) GetCrcString() string            { return "e8d4e804" }
+func (*ACLInterfaceSetEtypeWhitelistReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // ACLPluginControlPing represents VPP binary API message 'acl_plugin_control_ping'.
 type ACLPluginControlPing struct{}
 
-func (*ACLPluginControlPing) GetMessageName() string {
-	return "acl_plugin_control_ping"
-}
-func (*ACLPluginControlPing) GetCrcString() string {
-	return "51077d14"
-}
-func (*ACLPluginControlPing) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *ACLPluginControlPing) Reset()                        { *m = ACLPluginControlPing{} }
+func (*ACLPluginControlPing) GetMessageName() string          { return "acl_plugin_control_ping" }
+func (*ACLPluginControlPing) GetCrcString() string            { return "51077d14" }
+func (*ACLPluginControlPing) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // ACLPluginControlPingReply represents VPP binary API message 'acl_plugin_control_ping_reply'.
 type ACLPluginControlPingReply struct {
@@ -352,56 +267,40 @@ type ACLPluginControlPingReply struct {
 	VpePID      uint32
 }
 
-func (*ACLPluginControlPingReply) GetMessageName() string {
-	return "acl_plugin_control_ping_reply"
-}
-func (*ACLPluginControlPingReply) GetCrcString() string {
-	return "f6b0b8ca"
-}
-func (*ACLPluginControlPingReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *ACLPluginControlPingReply) Reset()                        { *m = ACLPluginControlPingReply{} }
+func (*ACLPluginControlPingReply) GetMessageName() string          { return "acl_plugin_control_ping_reply" }
+func (*ACLPluginControlPingReply) GetCrcString() string            { return "f6b0b8ca" }
+func (*ACLPluginControlPingReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // ACLPluginGetConnTableMaxEntries represents VPP binary API message 'acl_plugin_get_conn_table_max_entries'.
 type ACLPluginGetConnTableMaxEntries struct{}
 
+func (m *ACLPluginGetConnTableMaxEntries) Reset() { *m = ACLPluginGetConnTableMaxEntries{} }
 func (*ACLPluginGetConnTableMaxEntries) GetMessageName() string {
 	return "acl_plugin_get_conn_table_max_entries"
 }
-func (*ACLPluginGetConnTableMaxEntries) GetCrcString() string {
-	return "51077d14"
-}
-func (*ACLPluginGetConnTableMaxEntries) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (*ACLPluginGetConnTableMaxEntries) GetCrcString() string            { return "51077d14" }
+func (*ACLPluginGetConnTableMaxEntries) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // ACLPluginGetConnTableMaxEntriesReply represents VPP binary API message 'acl_plugin_get_conn_table_max_entries_reply'.
 type ACLPluginGetConnTableMaxEntriesReply struct {
 	ConnTableMaxEntries uint64
 }
 
+func (m *ACLPluginGetConnTableMaxEntriesReply) Reset() { *m = ACLPluginGetConnTableMaxEntriesReply{} }
 func (*ACLPluginGetConnTableMaxEntriesReply) GetMessageName() string {
 	return "acl_plugin_get_conn_table_max_entries_reply"
 }
-func (*ACLPluginGetConnTableMaxEntriesReply) GetCrcString() string {
-	return "7a096d3d"
-}
-func (*ACLPluginGetConnTableMaxEntriesReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (*ACLPluginGetConnTableMaxEntriesReply) GetCrcString() string            { return "7a096d3d" }
+func (*ACLPluginGetConnTableMaxEntriesReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // ACLPluginGetVersion represents VPP binary API message 'acl_plugin_get_version'.
 type ACLPluginGetVersion struct{}
 
-func (*ACLPluginGetVersion) GetMessageName() string {
-	return "acl_plugin_get_version"
-}
-func (*ACLPluginGetVersion) GetCrcString() string {
-	return "51077d14"
-}
-func (*ACLPluginGetVersion) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *ACLPluginGetVersion) Reset()                        { *m = ACLPluginGetVersion{} }
+func (*ACLPluginGetVersion) GetMessageName() string          { return "acl_plugin_get_version" }
+func (*ACLPluginGetVersion) GetCrcString() string            { return "51077d14" }
+func (*ACLPluginGetVersion) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // ACLPluginGetVersionReply represents VPP binary API message 'acl_plugin_get_version_reply'.
 type ACLPluginGetVersionReply struct {
@@ -409,15 +308,10 @@ type ACLPluginGetVersionReply struct {
 	Minor uint32
 }
 
-func (*ACLPluginGetVersionReply) GetMessageName() string {
-	return "acl_plugin_get_version_reply"
-}
-func (*ACLPluginGetVersionReply) GetCrcString() string {
-	return "9b32cf86"
-}
-func (*ACLPluginGetVersionReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *ACLPluginGetVersionReply) Reset()                        { *m = ACLPluginGetVersionReply{} }
+func (*ACLPluginGetVersionReply) GetMessageName() string          { return "acl_plugin_get_version_reply" }
+func (*ACLPluginGetVersionReply) GetCrcString() string            { return "9b32cf86" }
+func (*ACLPluginGetVersionReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // MacipACLAdd represents VPP binary API message 'macip_acl_add'.
 type MacipACLAdd struct {
@@ -426,15 +320,10 @@ type MacipACLAdd struct {
 	R     []MacipACLRule
 }
 
-func (*MacipACLAdd) GetMessageName() string {
-	return "macip_acl_add"
-}
-func (*MacipACLAdd) GetCrcString() string {
-	return "b3d3d65a"
-}
-func (*MacipACLAdd) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *MacipACLAdd) Reset()                        { *m = MacipACLAdd{} }
+func (*MacipACLAdd) GetMessageName() string          { return "macip_acl_add" }
+func (*MacipACLAdd) GetCrcString() string            { return "b3d3d65a" }
+func (*MacipACLAdd) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // MacipACLAddReplace represents VPP binary API message 'macip_acl_add_replace'.
 type MacipACLAddReplace struct {
@@ -444,15 +333,10 @@ type MacipACLAddReplace struct {
 	R        []MacipACLRule
 }
 
-func (*MacipACLAddReplace) GetMessageName() string {
-	return "macip_acl_add_replace"
-}
-func (*MacipACLAddReplace) GetCrcString() string {
-	return "a0e8c01b"
-}
-func (*MacipACLAddReplace) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *MacipACLAddReplace) Reset()                        { *m = MacipACLAddReplace{} }
+func (*MacipACLAddReplace) GetMessageName() string          { return "macip_acl_add_replace" }
+func (*MacipACLAddReplace) GetCrcString() string            { return "a0e8c01b" }
+func (*MacipACLAddReplace) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // MacipACLAddReplaceReply represents VPP binary API message 'macip_acl_add_replace_reply'.
 type MacipACLAddReplaceReply struct {
@@ -460,15 +344,10 @@ type MacipACLAddReplaceReply struct {
 	Retval   int32
 }
 
-func (*MacipACLAddReplaceReply) GetMessageName() string {
-	return "macip_acl_add_replace_reply"
-}
-func (*MacipACLAddReplaceReply) GetCrcString() string {
-	return "ac407b0c"
-}
-func (*MacipACLAddReplaceReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *MacipACLAddReplaceReply) Reset()                        { *m = MacipACLAddReplaceReply{} }
+func (*MacipACLAddReplaceReply) GetMessageName() string          { return "macip_acl_add_replace_reply" }
+func (*MacipACLAddReplaceReply) GetCrcString() string            { return "ac407b0c" }
+func (*MacipACLAddReplaceReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // MacipACLAddReply represents VPP binary API message 'macip_acl_add_reply'.
 type MacipACLAddReply struct {
@@ -476,45 +355,30 @@ type MacipACLAddReply struct {
 	Retval   int32
 }
 
-func (*MacipACLAddReply) GetMessageName() string {
-	return "macip_acl_add_reply"
-}
-func (*MacipACLAddReply) GetCrcString() string {
-	return "ac407b0c"
-}
-func (*MacipACLAddReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *MacipACLAddReply) Reset()                        { *m = MacipACLAddReply{} }
+func (*MacipACLAddReply) GetMessageName() string          { return "macip_acl_add_reply" }
+func (*MacipACLAddReply) GetCrcString() string            { return "ac407b0c" }
+func (*MacipACLAddReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // MacipACLDel represents VPP binary API message 'macip_acl_del'.
 type MacipACLDel struct {
 	ACLIndex uint32
 }
 
-func (*MacipACLDel) GetMessageName() string {
-	return "macip_acl_del"
-}
-func (*MacipACLDel) GetCrcString() string {
-	return "ef34fea4"
-}
-func (*MacipACLDel) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *MacipACLDel) Reset()                        { *m = MacipACLDel{} }
+func (*MacipACLDel) GetMessageName() string          { return "macip_acl_del" }
+func (*MacipACLDel) GetCrcString() string            { return "ef34fea4" }
+func (*MacipACLDel) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // MacipACLDelReply represents VPP binary API message 'macip_acl_del_reply'.
 type MacipACLDelReply struct {
 	Retval int32
 }
 
-func (*MacipACLDelReply) GetMessageName() string {
-	return "macip_acl_del_reply"
-}
-func (*MacipACLDelReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*MacipACLDelReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *MacipACLDelReply) Reset()                        { *m = MacipACLDelReply{} }
+func (*MacipACLDelReply) GetMessageName() string          { return "macip_acl_del_reply" }
+func (*MacipACLDelReply) GetCrcString() string            { return "e8d4e804" }
+func (*MacipACLDelReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // MacipACLDetails represents VPP binary API message 'macip_acl_details'.
 type MacipACLDetails struct {
@@ -524,30 +388,20 @@ type MacipACLDetails struct {
 	R        []MacipACLRule
 }
 
-func (*MacipACLDetails) GetMessageName() string {
-	return "macip_acl_details"
-}
-func (*MacipACLDetails) GetCrcString() string {
-	return "dd2b55ba"
-}
-func (*MacipACLDetails) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *MacipACLDetails) Reset()                        { *m = MacipACLDetails{} }
+func (*MacipACLDetails) GetMessageName() string          { return "macip_acl_details" }
+func (*MacipACLDetails) GetCrcString() string            { return "dd2b55ba" }
+func (*MacipACLDetails) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // MacipACLDump represents VPP binary API message 'macip_acl_dump'.
 type MacipACLDump struct {
 	ACLIndex uint32
 }
 
-func (*MacipACLDump) GetMessageName() string {
-	return "macip_acl_dump"
-}
-func (*MacipACLDump) GetCrcString() string {
-	return "ef34fea4"
-}
-func (*MacipACLDump) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *MacipACLDump) Reset()                        { *m = MacipACLDump{} }
+func (*MacipACLDump) GetMessageName() string          { return "macip_acl_dump" }
+func (*MacipACLDump) GetCrcString() string            { return "ef34fea4" }
+func (*MacipACLDump) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // MacipACLInterfaceAddDel represents VPP binary API message 'macip_acl_interface_add_del'.
 type MacipACLInterfaceAddDel struct {
@@ -556,43 +410,30 @@ type MacipACLInterfaceAddDel struct {
 	ACLIndex  uint32
 }
 
-func (*MacipACLInterfaceAddDel) GetMessageName() string {
-	return "macip_acl_interface_add_del"
-}
-func (*MacipACLInterfaceAddDel) GetCrcString() string {
-	return "6a6be97c"
-}
-func (*MacipACLInterfaceAddDel) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *MacipACLInterfaceAddDel) Reset()                        { *m = MacipACLInterfaceAddDel{} }
+func (*MacipACLInterfaceAddDel) GetMessageName() string          { return "macip_acl_interface_add_del" }
+func (*MacipACLInterfaceAddDel) GetCrcString() string            { return "6a6be97c" }
+func (*MacipACLInterfaceAddDel) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // MacipACLInterfaceAddDelReply represents VPP binary API message 'macip_acl_interface_add_del_reply'.
 type MacipACLInterfaceAddDelReply struct {
 	Retval int32
 }
 
+func (m *MacipACLInterfaceAddDelReply) Reset() { *m = MacipACLInterfaceAddDelReply{} }
 func (*MacipACLInterfaceAddDelReply) GetMessageName() string {
 	return "macip_acl_interface_add_del_reply"
 }
-func (*MacipACLInterfaceAddDelReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*MacipACLInterfaceAddDelReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (*MacipACLInterfaceAddDelReply) GetCrcString() string            { return "e8d4e804" }
+func (*MacipACLInterfaceAddDelReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // MacipACLInterfaceGet represents VPP binary API message 'macip_acl_interface_get'.
 type MacipACLInterfaceGet struct{}
 
-func (*MacipACLInterfaceGet) GetMessageName() string {
-	return "macip_acl_interface_get"
-}
-func (*MacipACLInterfaceGet) GetCrcString() string {
-	return "51077d14"
-}
-func (*MacipACLInterfaceGet) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *MacipACLInterfaceGet) Reset()                        { *m = MacipACLInterfaceGet{} }
+func (*MacipACLInterfaceGet) GetMessageName() string          { return "macip_acl_interface_get" }
+func (*MacipACLInterfaceGet) GetCrcString() string            { return "51077d14" }
+func (*MacipACLInterfaceGet) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // MacipACLInterfaceGetReply represents VPP binary API message 'macip_acl_interface_get_reply'.
 type MacipACLInterfaceGetReply struct {
@@ -600,15 +441,10 @@ type MacipACLInterfaceGetReply struct {
 	Acls  []uint32
 }
 
-func (*MacipACLInterfaceGetReply) GetMessageName() string {
-	return "macip_acl_interface_get_reply"
-}
-func (*MacipACLInterfaceGetReply) GetCrcString() string {
-	return "accf9b05"
-}
-func (*MacipACLInterfaceGetReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *MacipACLInterfaceGetReply) Reset()                        { *m = MacipACLInterfaceGetReply{} }
+func (*MacipACLInterfaceGetReply) GetMessageName() string          { return "macip_acl_interface_get_reply" }
+func (*MacipACLInterfaceGetReply) GetCrcString() string            { return "accf9b05" }
+func (*MacipACLInterfaceGetReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // MacipACLInterfaceListDetails represents VPP binary API message 'macip_acl_interface_list_details'.
 type MacipACLInterfaceListDetails struct {
@@ -617,30 +453,22 @@ type MacipACLInterfaceListDetails struct {
 	Acls      []uint32
 }
 
+func (m *MacipACLInterfaceListDetails) Reset() { *m = MacipACLInterfaceListDetails{} }
 func (*MacipACLInterfaceListDetails) GetMessageName() string {
 	return "macip_acl_interface_list_details"
 }
-func (*MacipACLInterfaceListDetails) GetCrcString() string {
-	return "29783fa0"
-}
-func (*MacipACLInterfaceListDetails) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (*MacipACLInterfaceListDetails) GetCrcString() string            { return "29783fa0" }
+func (*MacipACLInterfaceListDetails) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // MacipACLInterfaceListDump represents VPP binary API message 'macip_acl_interface_list_dump'.
 type MacipACLInterfaceListDump struct {
 	SwIfIndex uint32
 }
 
-func (*MacipACLInterfaceListDump) GetMessageName() string {
-	return "macip_acl_interface_list_dump"
-}
-func (*MacipACLInterfaceListDump) GetCrcString() string {
-	return "529cb13f"
-}
-func (*MacipACLInterfaceListDump) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *MacipACLInterfaceListDump) Reset()                        { *m = MacipACLInterfaceListDump{} }
+func (*MacipACLInterfaceListDump) GetMessageName() string          { return "macip_acl_interface_list_dump" }
+func (*MacipACLInterfaceListDump) GetCrcString() string            { return "529cb13f" }
+func (*MacipACLInterfaceListDump) GetMessageType() api.MessageType { return api.RequestMessage }
 
 func init() {
 	api.RegisterMessage((*ACLAddReplace)(nil), "acl.ACLAddReplace")

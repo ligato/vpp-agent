@@ -1,0 +1,64 @@
+---
+name: CI
+on: pull_request
+
+jobs:
+  yamllint:
+    name: lint yaml
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup Python
+        uses: actions/setup-python@v1
+      - name: Install yamllint
+        run: pip install --user yamllint
+      - name: Run yamllint
+        run: ~/.local/bin/yamllint -c .yamllint.yml .
+#  shellcheck:
+#    name: shellcheck
+#    runs-on: ubuntu-latest
+#    steps:
+#      - uses: actions/checkout@v2
+#      - name: shellcheck
+#        uses: reviewdog/action-shellcheck@v1
+#        with:
+#          github_token: ${{ secrets.github_token }}
+#          reporter: github-check
+  build:
+    name: build go
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-go@v1
+        with:
+          go-version: 1.13
+      - run: |
+          go build -v ./...
+#  test:
+#    name: test
+#    runs-on: ubuntu-latest
+#    steps:
+#      - uses: actions/checkout@v2
+#      - uses: actions/setup-go@v1
+#        with:
+#          go-version: 1.13
+#      - name: Install gotestsum
+#        run: go get gotest.tools/gotestsum@v0.4.0
+#      - name: Run tests
+#        run: |
+#         eval $(go env)
+#         mkdir -p ~/junit/
+#         ${GOPATH}/bin/gotestsum --junitfile ~/junit/unit-tests.xml -- -short $(go list ./...)
+  checkgomod:
+    name: check go.mod and go.sum
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-go@v1
+        with:
+          go-version: 1.13
+      - run: go mod tidy
+      - name: Check for changes in go.mod or go.sum
+        run: |
+          git diff --name-only --exit-code go.mod || ( echo "Run go tidy" && false )
+          git diff --name-only --exit-code go.sum || ( echo "Run go tidy" && false )

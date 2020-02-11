@@ -40,15 +40,10 @@ type GtpuAddDelTunnel struct {
 	Teid           uint32
 }
 
-func (*GtpuAddDelTunnel) GetMessageName() string {
-	return "gtpu_add_del_tunnel"
-}
-func (*GtpuAddDelTunnel) GetCrcString() string {
-	return "7ce9952e"
-}
-func (*GtpuAddDelTunnel) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *GtpuAddDelTunnel) Reset()                        { *m = GtpuAddDelTunnel{} }
+func (*GtpuAddDelTunnel) GetMessageName() string          { return "gtpu_add_del_tunnel" }
+func (*GtpuAddDelTunnel) GetCrcString() string            { return "7ce9952e" }
+func (*GtpuAddDelTunnel) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // GtpuAddDelTunnelReply represents VPP binary API message 'gtpu_add_del_tunnel_reply'.
 type GtpuAddDelTunnelReply struct {
@@ -56,15 +51,10 @@ type GtpuAddDelTunnelReply struct {
 	SwIfIndex uint32
 }
 
-func (*GtpuAddDelTunnelReply) GetMessageName() string {
-	return "gtpu_add_del_tunnel_reply"
-}
-func (*GtpuAddDelTunnelReply) GetCrcString() string {
-	return "fda5941f"
-}
-func (*GtpuAddDelTunnelReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *GtpuAddDelTunnelReply) Reset()                        { *m = GtpuAddDelTunnelReply{} }
+func (*GtpuAddDelTunnelReply) GetMessageName() string          { return "gtpu_add_del_tunnel_reply" }
+func (*GtpuAddDelTunnelReply) GetCrcString() string            { return "fda5941f" }
+func (*GtpuAddDelTunnelReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // GtpuTunnelDetails represents VPP binary API message 'gtpu_tunnel_details'.
 type GtpuTunnelDetails struct {
@@ -78,30 +68,20 @@ type GtpuTunnelDetails struct {
 	Teid           uint32
 }
 
-func (*GtpuTunnelDetails) GetMessageName() string {
-	return "gtpu_tunnel_details"
-}
-func (*GtpuTunnelDetails) GetCrcString() string {
-	return "68853c3d"
-}
-func (*GtpuTunnelDetails) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *GtpuTunnelDetails) Reset()                        { *m = GtpuTunnelDetails{} }
+func (*GtpuTunnelDetails) GetMessageName() string          { return "gtpu_tunnel_details" }
+func (*GtpuTunnelDetails) GetCrcString() string            { return "68853c3d" }
+func (*GtpuTunnelDetails) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // GtpuTunnelDump represents VPP binary API message 'gtpu_tunnel_dump'.
 type GtpuTunnelDump struct {
 	SwIfIndex uint32
 }
 
-func (*GtpuTunnelDump) GetMessageName() string {
-	return "gtpu_tunnel_dump"
-}
-func (*GtpuTunnelDump) GetCrcString() string {
-	return "529cb13f"
-}
-func (*GtpuTunnelDump) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *GtpuTunnelDump) Reset()                        { *m = GtpuTunnelDump{} }
+func (*GtpuTunnelDump) GetMessageName() string          { return "gtpu_tunnel_dump" }
+func (*GtpuTunnelDump) GetCrcString() string            { return "529cb13f" }
+func (*GtpuTunnelDump) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // SwInterfaceSetGtpuBypass represents VPP binary API message 'sw_interface_set_gtpu_bypass'.
 type SwInterfaceSetGtpuBypass struct {
@@ -110,30 +90,22 @@ type SwInterfaceSetGtpuBypass struct {
 	Enable    uint8
 }
 
-func (*SwInterfaceSetGtpuBypass) GetMessageName() string {
-	return "sw_interface_set_gtpu_bypass"
-}
-func (*SwInterfaceSetGtpuBypass) GetCrcString() string {
-	return "e74ca095"
-}
-func (*SwInterfaceSetGtpuBypass) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *SwInterfaceSetGtpuBypass) Reset()                        { *m = SwInterfaceSetGtpuBypass{} }
+func (*SwInterfaceSetGtpuBypass) GetMessageName() string          { return "sw_interface_set_gtpu_bypass" }
+func (*SwInterfaceSetGtpuBypass) GetCrcString() string            { return "e74ca095" }
+func (*SwInterfaceSetGtpuBypass) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // SwInterfaceSetGtpuBypassReply represents VPP binary API message 'sw_interface_set_gtpu_bypass_reply'.
 type SwInterfaceSetGtpuBypassReply struct {
 	Retval int32
 }
 
+func (m *SwInterfaceSetGtpuBypassReply) Reset() { *m = SwInterfaceSetGtpuBypassReply{} }
 func (*SwInterfaceSetGtpuBypassReply) GetMessageName() string {
 	return "sw_interface_set_gtpu_bypass_reply"
 }
-func (*SwInterfaceSetGtpuBypassReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*SwInterfaceSetGtpuBypassReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (*SwInterfaceSetGtpuBypassReply) GetCrcString() string            { return "e8d4e804" }
+func (*SwInterfaceSetGtpuBypassReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 func init() {
 	api.RegisterMessage((*GtpuAddDelTunnel)(nil), "gtpu.GtpuAddDelTunnel")

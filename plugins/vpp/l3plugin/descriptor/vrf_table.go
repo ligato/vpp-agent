@@ -19,6 +19,7 @@ import (
 	"math"
 	"strings"
 
+	"github.com/golang/protobuf/proto"
 	"github.com/ligato/cn-infra/idxmap"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/pkg/errors"
@@ -70,6 +71,8 @@ func NewVrfTableDescriptor(
 		ValueComparator:    ctx.EquivalentVrfTables,
 		Validate:           ctx.Validate,
 		Create:             ctx.Create,
+		Update:             ctx.Update,
+		UpdateWithRecreate: ctx.UpdateWithRecreate,
 		Delete:             ctx.Delete,
 		Retrieve:           ctx.Retrieve,
 	}
@@ -78,7 +81,8 @@ func NewVrfTableDescriptor(
 
 // EquivalentVrfTables is a comparison function for l3.VrfTable.
 func (d *VrfTableDescriptor) EquivalentVrfTables(key string, oldVrfTable, newVrfTable *l3.VrfTable) bool {
-	if getVrfTableLabel(oldVrfTable) != getVrfTableLabel(newVrfTable) {
+	if getVrfTableLabel(oldVrfTable) != getVrfTableLabel(newVrfTable) ||
+		!proto.Equal(oldVrfTable.FlowHashSettings, newVrfTable.FlowHashSettings) {
 		return false
 	}
 	return true
@@ -99,12 +103,16 @@ func (d *VrfTableDescriptor) Validate(key string, vrfTable *l3.VrfTable) (err er
 
 // Create adds VPP VRF table.
 func (d *VrfTableDescriptor) Create(key string, vrfTable *l3.VrfTable) (metadata *vrfidx.VRFMetadata, err error) {
-	if vrfTable.Id == 0 {
-		// nothing to do, automatically created by VPP
-	}
 	err = d.vtHandler.AddVrfTable(vrfTable)
 	if err != nil {
 		return nil, err
+	}
+
+	if vrfTable.FlowHashSettings != nil {
+		err = d.vtHandler.SetVrfFlowHashSettings(vrfTable.Id, vrfTable.Protocol == l3.VrfTable_IPV6, vrfTable.FlowHashSettings)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	// fill the metadata
@@ -116,11 +124,36 @@ func (d *VrfTableDescriptor) Create(key string, vrfTable *l3.VrfTable) (metadata
 	return metadata, nil
 }
 
+// UpdateWithRecreate returns true if a VRF update needs to be performed via re-crate.
+func (d *VrfTableDescriptor) UpdateWithRecreate(_ string, oldVrfTable, newVrfTable *l3.VrfTable, _ *vrfidx.VRFMetadata) bool {
+	if oldVrfTable.Protocol == newVrfTable.Protocol && oldVrfTable.Id == newVrfTable.Id {
+		return false
+	}
+	return true // protocol or VRF ID changed = recreate
+}
+
+// Update updates VPP VRF table (ony if protocol or VRF ID has not changed).
+func (d *VrfTableDescriptor) Update(_ string, oldVrfTable, newVrfTable *l3.VrfTable, _ *vrfidx.VRFMetadata) (
+	metadata *vrfidx.VRFMetadata, err error) {
+
+	if !proto.Equal(oldVrfTable.FlowHashSettings, newVrfTable.FlowHashSettings) {
+		newSettings := newVrfTable.FlowHashSettings
+		if newSettings == nil {
+			newSettings = defaultVrfFlowHashSettings()
+		}
+		err = d.vtHandler.SetVrfFlowHashSettings(newVrfTable.Id, newVrfTable.Protocol == l3.VrfTable_IPV6, newSettings)
+	}
+
+	// fill the metadata
+	metadata = &vrfidx.VRFMetadata{
+		Index:    newVrfTable.Id,
+		Protocol: newVrfTable.Protocol,
+	}
+	return metadata, err
+}
+
 // Delete removes VPP VRF table.
 func (d *VrfTableDescriptor) Delete(key string, vrfTable *l3.VrfTable, metadata *vrfidx.VRFMetadata) error {
-	if vrfTable.Id == 0 {
-		// nothing to do, VRF ID=0 always exists
-	}
 	err := d.vtHandler.DelVrfTable(vrfTable)
 	if err != nil {
 		return err
@@ -137,6 +170,9 @@ func (d *VrfTableDescriptor) Retrieve(correlate []adapter.VrfTableKVWithMetadata
 	if err != nil {
 		return nil, errors.Errorf("failed to dump VPP VRF tables: %v", err)
 	}
+
+	// TODO: implement flow hash settings dump once supported by VPP (https://jira.fd.io/browse/VPP-1829)
+	// (until implemented, resync will always re-configure flow hash settings if non-default settings are used)
 
 	for _, table := range tables {
 		origin := kvs.UnknownOrigin
@@ -166,4 +202,17 @@ func getVrfTableLabel(vrfTable *l3.VrfTable) string {
 			strings.ToLower(vrfTable.Protocol.String()), vrfTable.Id)
 	}
 	return vrfTable.Label
+}
+
+// defaultVrfFlowHashSettings returns default flow hash settings (implicitly existing if not set).
+func defaultVrfFlowHashSettings() *l3.VrfTable_FlowHashSettings {
+	return &l3.VrfTable_FlowHashSettings{
+		UseSrcIp:    true,
+		UseDstIp:    true,
+		UseSrcPort:  true,
+		UseDstPort:  true,
+		UseProtocol: true,
+		Symmetric:   false,
+		Reverse:     false,
+	}
 }

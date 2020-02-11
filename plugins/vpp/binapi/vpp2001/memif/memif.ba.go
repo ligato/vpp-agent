@@ -19,6 +19,9 @@ import (
 	struc "github.com/lunixbochs/struc"
 	io "io"
 	strconv "strconv"
+
+	ethernet_types "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ethernet_types"
+	interface_types "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/interface_types"
 )
 
 const (
@@ -28,92 +31,11 @@ const (
 	VersionCrc = 0x88dc56c9
 )
 
-// IfStatusFlags represents VPP binary API enum 'if_status_flags'.
-type IfStatusFlags uint32
+type IfStatusFlags = interface_types.IfStatusFlags
 
-const (
-	IF_STATUS_API_FLAG_ADMIN_UP IfStatusFlags = 1
-	IF_STATUS_API_FLAG_LINK_UP  IfStatusFlags = 2
-)
+type IfType = interface_types.IfType
 
-var IfStatusFlags_name = map[uint32]string{
-	1: "IF_STATUS_API_FLAG_ADMIN_UP",
-	2: "IF_STATUS_API_FLAG_LINK_UP",
-}
-
-var IfStatusFlags_value = map[string]uint32{
-	"IF_STATUS_API_FLAG_ADMIN_UP": 1,
-	"IF_STATUS_API_FLAG_LINK_UP":  2,
-}
-
-func (x IfStatusFlags) String() string {
-	s, ok := IfStatusFlags_name[uint32(x)]
-	if ok {
-		return s
-	}
-	return strconv.Itoa(int(x))
-}
-
-// IfType represents VPP binary API enum 'if_type'.
-type IfType uint32
-
-const (
-	IF_API_TYPE_HARDWARE IfType = 1
-	IF_API_TYPE_SUB      IfType = 2
-	IF_API_TYPE_P2P      IfType = 3
-	IF_API_TYPE_PIPE     IfType = 4
-)
-
-var IfType_name = map[uint32]string{
-	1: "IF_API_TYPE_HARDWARE",
-	2: "IF_API_TYPE_SUB",
-	3: "IF_API_TYPE_P2P",
-	4: "IF_API_TYPE_PIPE",
-}
-
-var IfType_value = map[string]uint32{
-	"IF_API_TYPE_HARDWARE": 1,
-	"IF_API_TYPE_SUB":      2,
-	"IF_API_TYPE_P2P":      3,
-	"IF_API_TYPE_PIPE":     4,
-}
-
-func (x IfType) String() string {
-	s, ok := IfType_name[uint32(x)]
-	if ok {
-		return s
-	}
-	return strconv.Itoa(int(x))
-}
-
-// LinkDuplex represents VPP binary API enum 'link_duplex'.
-type LinkDuplex uint32
-
-const (
-	LINK_DUPLEX_API_UNKNOWN LinkDuplex = 0
-	LINK_DUPLEX_API_HALF    LinkDuplex = 1
-	LINK_DUPLEX_API_FULL    LinkDuplex = 2
-)
-
-var LinkDuplex_name = map[uint32]string{
-	0: "LINK_DUPLEX_API_UNKNOWN",
-	1: "LINK_DUPLEX_API_HALF",
-	2: "LINK_DUPLEX_API_FULL",
-}
-
-var LinkDuplex_value = map[string]uint32{
-	"LINK_DUPLEX_API_UNKNOWN": 0,
-	"LINK_DUPLEX_API_HALF":    1,
-	"LINK_DUPLEX_API_FULL":    2,
-}
-
-func (x LinkDuplex) String() string {
-	s, ok := LinkDuplex_name[uint32(x)]
-	if ok {
-		return s
-	}
-	return strconv.Itoa(int(x))
-}
+type LinkDuplex = interface_types.LinkDuplex
 
 // MemifMode represents VPP binary API enum 'memif_mode'.
 type MemifMode uint32
@@ -170,131 +92,15 @@ func (x MemifRole) String() string {
 	return strconv.Itoa(int(x))
 }
 
-// MtuProto represents VPP binary API enum 'mtu_proto'.
-type MtuProto uint32
+type MtuProto = interface_types.MtuProto
 
-const (
-	MTU_PROTO_API_L3   MtuProto = 1
-	MTU_PROTO_API_IP4  MtuProto = 2
-	MTU_PROTO_API_IP6  MtuProto = 3
-	MTU_PROTO_API_MPLS MtuProto = 4
-	MTU_PROTO_API_N    MtuProto = 5
-)
+type RxMode = interface_types.RxMode
 
-var MtuProto_name = map[uint32]string{
-	1: "MTU_PROTO_API_L3",
-	2: "MTU_PROTO_API_IP4",
-	3: "MTU_PROTO_API_IP6",
-	4: "MTU_PROTO_API_MPLS",
-	5: "MTU_PROTO_API_N",
-}
+type SubIfFlags = interface_types.SubIfFlags
 
-var MtuProto_value = map[string]uint32{
-	"MTU_PROTO_API_L3":   1,
-	"MTU_PROTO_API_IP4":  2,
-	"MTU_PROTO_API_IP6":  3,
-	"MTU_PROTO_API_MPLS": 4,
-	"MTU_PROTO_API_N":    5,
-}
+type InterfaceIndex = interface_types.InterfaceIndex
 
-func (x MtuProto) String() string {
-	s, ok := MtuProto_name[uint32(x)]
-	if ok {
-		return s
-	}
-	return strconv.Itoa(int(x))
-}
-
-// RxMode represents VPP binary API enum 'rx_mode'.
-type RxMode uint32
-
-const (
-	RX_MODE_API_UNKNOWN   RxMode = 0
-	RX_MODE_API_POLLING   RxMode = 1
-	RX_MODE_API_INTERRUPT RxMode = 2
-	RX_MODE_API_ADAPTIVE  RxMode = 3
-	RX_MODE_API_DEFAULT   RxMode = 4
-)
-
-var RxMode_name = map[uint32]string{
-	0: "RX_MODE_API_UNKNOWN",
-	1: "RX_MODE_API_POLLING",
-	2: "RX_MODE_API_INTERRUPT",
-	3: "RX_MODE_API_ADAPTIVE",
-	4: "RX_MODE_API_DEFAULT",
-}
-
-var RxMode_value = map[string]uint32{
-	"RX_MODE_API_UNKNOWN":   0,
-	"RX_MODE_API_POLLING":   1,
-	"RX_MODE_API_INTERRUPT": 2,
-	"RX_MODE_API_ADAPTIVE":  3,
-	"RX_MODE_API_DEFAULT":   4,
-}
-
-func (x RxMode) String() string {
-	s, ok := RxMode_name[uint32(x)]
-	if ok {
-		return s
-	}
-	return strconv.Itoa(int(x))
-}
-
-// SubIfFlags represents VPP binary API enum 'sub_if_flags'.
-type SubIfFlags uint32
-
-const (
-	SUB_IF_API_FLAG_NO_TAGS           SubIfFlags = 1
-	SUB_IF_API_FLAG_ONE_TAG           SubIfFlags = 2
-	SUB_IF_API_FLAG_TWO_TAGS          SubIfFlags = 4
-	SUB_IF_API_FLAG_DOT1AD            SubIfFlags = 8
-	SUB_IF_API_FLAG_EXACT_MATCH       SubIfFlags = 16
-	SUB_IF_API_FLAG_DEFAULT           SubIfFlags = 32
-	SUB_IF_API_FLAG_OUTER_VLAN_ID_ANY SubIfFlags = 64
-	SUB_IF_API_FLAG_INNER_VLAN_ID_ANY SubIfFlags = 128
-	SUB_IF_API_FLAG_MASK_VNET         SubIfFlags = 254
-	SUB_IF_API_FLAG_DOT1AH            SubIfFlags = 256
-)
-
-var SubIfFlags_name = map[uint32]string{
-	1:   "SUB_IF_API_FLAG_NO_TAGS",
-	2:   "SUB_IF_API_FLAG_ONE_TAG",
-	4:   "SUB_IF_API_FLAG_TWO_TAGS",
-	8:   "SUB_IF_API_FLAG_DOT1AD",
-	16:  "SUB_IF_API_FLAG_EXACT_MATCH",
-	32:  "SUB_IF_API_FLAG_DEFAULT",
-	64:  "SUB_IF_API_FLAG_OUTER_VLAN_ID_ANY",
-	128: "SUB_IF_API_FLAG_INNER_VLAN_ID_ANY",
-	254: "SUB_IF_API_FLAG_MASK_VNET",
-	256: "SUB_IF_API_FLAG_DOT1AH",
-}
-
-var SubIfFlags_value = map[string]uint32{
-	"SUB_IF_API_FLAG_NO_TAGS":           1,
-	"SUB_IF_API_FLAG_ONE_TAG":           2,
-	"SUB_IF_API_FLAG_TWO_TAGS":          4,
-	"SUB_IF_API_FLAG_DOT1AD":            8,
-	"SUB_IF_API_FLAG_EXACT_MATCH":       16,
-	"SUB_IF_API_FLAG_DEFAULT":           32,
-	"SUB_IF_API_FLAG_OUTER_VLAN_ID_ANY": 64,
-	"SUB_IF_API_FLAG_INNER_VLAN_ID_ANY": 128,
-	"SUB_IF_API_FLAG_MASK_VNET":         254,
-	"SUB_IF_API_FLAG_DOT1AH":            256,
-}
-
-func (x SubIfFlags) String() string {
-	s, ok := SubIfFlags_name[uint32(x)]
-	if ok {
-		return s
-	}
-	return strconv.Itoa(int(x))
-}
-
-// InterfaceIndex represents VPP binary API alias 'interface_index'.
-type InterfaceIndex uint32
-
-// MacAddress represents VPP binary API alias 'mac_address'.
-type MacAddress [6]uint8
+type MacAddress = ethernet_types.MacAddress
 
 // MemifCreate represents VPP binary API message 'memif_create'.
 type MemifCreate struct {
@@ -311,15 +117,10 @@ type MemifCreate struct {
 	Secret     string `struc:"[24]byte"`
 }
 
-func (*MemifCreate) GetMessageName() string {
-	return "memif_create"
-}
-func (*MemifCreate) GetCrcString() string {
-	return "b1b25061"
-}
-func (*MemifCreate) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *MemifCreate) Reset()                        { *m = MemifCreate{} }
+func (*MemifCreate) GetMessageName() string          { return "memif_create" }
+func (*MemifCreate) GetCrcString() string            { return "b1b25061" }
+func (*MemifCreate) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // MemifCreateReply represents VPP binary API message 'memif_create_reply'.
 type MemifCreateReply struct {
@@ -327,45 +128,30 @@ type MemifCreateReply struct {
 	SwIfIndex InterfaceIndex
 }
 
-func (*MemifCreateReply) GetMessageName() string {
-	return "memif_create_reply"
-}
-func (*MemifCreateReply) GetCrcString() string {
-	return "5383d31f"
-}
-func (*MemifCreateReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *MemifCreateReply) Reset()                        { *m = MemifCreateReply{} }
+func (*MemifCreateReply) GetMessageName() string          { return "memif_create_reply" }
+func (*MemifCreateReply) GetCrcString() string            { return "5383d31f" }
+func (*MemifCreateReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // MemifDelete represents VPP binary API message 'memif_delete'.
 type MemifDelete struct {
 	SwIfIndex InterfaceIndex
 }
 
-func (*MemifDelete) GetMessageName() string {
-	return "memif_delete"
-}
-func (*MemifDelete) GetCrcString() string {
-	return "f9e6675e"
-}
-func (*MemifDelete) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *MemifDelete) Reset()                        { *m = MemifDelete{} }
+func (*MemifDelete) GetMessageName() string          { return "memif_delete" }
+func (*MemifDelete) GetCrcString() string            { return "f9e6675e" }
+func (*MemifDelete) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // MemifDeleteReply represents VPP binary API message 'memif_delete_reply'.
 type MemifDeleteReply struct {
 	Retval int32
 }
 
-func (*MemifDeleteReply) GetMessageName() string {
-	return "memif_delete_reply"
-}
-func (*MemifDeleteReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*MemifDeleteReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *MemifDeleteReply) Reset()                        { *m = MemifDeleteReply{} }
+func (*MemifDeleteReply) GetMessageName() string          { return "memif_delete_reply" }
+func (*MemifDeleteReply) GetCrcString() string            { return "e8d4e804" }
+func (*MemifDeleteReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // MemifDetails represents VPP binary API message 'memif_details'.
 type MemifDetails struct {
@@ -382,28 +168,18 @@ type MemifDetails struct {
 	IfName     string `struc:"[64]byte"`
 }
 
-func (*MemifDetails) GetMessageName() string {
-	return "memif_details"
-}
-func (*MemifDetails) GetCrcString() string {
-	return "d0382c4c"
-}
-func (*MemifDetails) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *MemifDetails) Reset()                        { *m = MemifDetails{} }
+func (*MemifDetails) GetMessageName() string          { return "memif_details" }
+func (*MemifDetails) GetCrcString() string            { return "d0382c4c" }
+func (*MemifDetails) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // MemifDump represents VPP binary API message 'memif_dump'.
 type MemifDump struct{}
 
-func (*MemifDump) GetMessageName() string {
-	return "memif_dump"
-}
-func (*MemifDump) GetCrcString() string {
-	return "51077d14"
-}
-func (*MemifDump) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *MemifDump) Reset()                        { *m = MemifDump{} }
+func (*MemifDump) GetMessageName() string          { return "memif_dump" }
+func (*MemifDump) GetCrcString() string            { return "51077d14" }
+func (*MemifDump) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // MemifSocketFilenameAddDel represents VPP binary API message 'memif_socket_filename_add_del'.
 type MemifSocketFilenameAddDel struct {
@@ -412,30 +188,22 @@ type MemifSocketFilenameAddDel struct {
 	SocketFilename string `struc:"[108]byte"`
 }
 
-func (*MemifSocketFilenameAddDel) GetMessageName() string {
-	return "memif_socket_filename_add_del"
-}
-func (*MemifSocketFilenameAddDel) GetCrcString() string {
-	return "a2ce1a10"
-}
-func (*MemifSocketFilenameAddDel) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *MemifSocketFilenameAddDel) Reset()                        { *m = MemifSocketFilenameAddDel{} }
+func (*MemifSocketFilenameAddDel) GetMessageName() string          { return "memif_socket_filename_add_del" }
+func (*MemifSocketFilenameAddDel) GetCrcString() string            { return "a2ce1a10" }
+func (*MemifSocketFilenameAddDel) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // MemifSocketFilenameAddDelReply represents VPP binary API message 'memif_socket_filename_add_del_reply'.
 type MemifSocketFilenameAddDelReply struct {
 	Retval int32
 }
 
+func (m *MemifSocketFilenameAddDelReply) Reset() { *m = MemifSocketFilenameAddDelReply{} }
 func (*MemifSocketFilenameAddDelReply) GetMessageName() string {
 	return "memif_socket_filename_add_del_reply"
 }
-func (*MemifSocketFilenameAddDelReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*MemifSocketFilenameAddDelReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (*MemifSocketFilenameAddDelReply) GetCrcString() string            { return "e8d4e804" }
+func (*MemifSocketFilenameAddDelReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // MemifSocketFilenameDetails represents VPP binary API message 'memif_socket_filename_details'.
 type MemifSocketFilenameDetails struct {
@@ -443,28 +211,18 @@ type MemifSocketFilenameDetails struct {
 	SocketFilename string `struc:"[108]byte"`
 }
 
-func (*MemifSocketFilenameDetails) GetMessageName() string {
-	return "memif_socket_filename_details"
-}
-func (*MemifSocketFilenameDetails) GetCrcString() string {
-	return "7ff326f7"
-}
-func (*MemifSocketFilenameDetails) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *MemifSocketFilenameDetails) Reset()                        { *m = MemifSocketFilenameDetails{} }
+func (*MemifSocketFilenameDetails) GetMessageName() string          { return "memif_socket_filename_details" }
+func (*MemifSocketFilenameDetails) GetCrcString() string            { return "7ff326f7" }
+func (*MemifSocketFilenameDetails) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // MemifSocketFilenameDump represents VPP binary API message 'memif_socket_filename_dump'.
 type MemifSocketFilenameDump struct{}
 
-func (*MemifSocketFilenameDump) GetMessageName() string {
-	return "memif_socket_filename_dump"
-}
-func (*MemifSocketFilenameDump) GetCrcString() string {
-	return "51077d14"
-}
-func (*MemifSocketFilenameDump) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *MemifSocketFilenameDump) Reset()                        { *m = MemifSocketFilenameDump{} }
+func (*MemifSocketFilenameDump) GetMessageName() string          { return "memif_socket_filename_dump" }
+func (*MemifSocketFilenameDump) GetCrcString() string            { return "51077d14" }
+func (*MemifSocketFilenameDump) GetMessageType() api.MessageType { return api.RequestMessage }
 
 func init() {
 	api.RegisterMessage((*MemifCreate)(nil), "memif.MemifCreate")

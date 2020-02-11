@@ -139,11 +139,11 @@ var fileDescriptor_f153e6a4d289f1e7 = []byte{
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ context.Context
-var _ grpc.ClientConn
+var _ grpc.ClientConnInterface
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the grpc package it is being compiled against.
-const _ = grpc.SupportPackageIsVersion4
+const _ = grpc.SupportPackageIsVersion6
 
 // MetaServiceClient is the client API for MetaService service.
 //
@@ -155,10 +155,10 @@ type MetaServiceClient interface {
 }
 
 type metaServiceClient struct {
-	cc *grpc.ClientConn
+	cc grpc.ClientConnInterface
 }
 
-func NewMetaServiceClient(cc *grpc.ClientConn) MetaServiceClient {
+func NewMetaServiceClient(cc grpc.ClientConnInterface) MetaServiceClient {
 	return &metaServiceClient{cc}
 }
 

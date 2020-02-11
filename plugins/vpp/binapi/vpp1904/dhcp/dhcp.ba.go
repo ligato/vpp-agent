@@ -36,12 +36,8 @@ type DHCP6AddressInfo struct {
 	PreferredTime uint32
 }
 
-func (*DHCP6AddressInfo) GetTypeName() string {
-	return "dhcp6_address_info"
-}
-func (*DHCP6AddressInfo) GetCrcString() string {
-	return "f3d501e2"
-}
+func (*DHCP6AddressInfo) GetTypeName() string  { return "dhcp6_address_info" }
+func (*DHCP6AddressInfo) GetCrcString() string { return "f3d501e2" }
 
 // DHCP6PdPrefixInfo represents VPP binary API type 'dhcp6_pd_prefix_info'.
 type DHCP6PdPrefixInfo struct {
@@ -51,12 +47,8 @@ type DHCP6PdPrefixInfo struct {
 	PreferredTime uint32
 }
 
-func (*DHCP6PdPrefixInfo) GetTypeName() string {
-	return "dhcp6_pd_prefix_info"
-}
-func (*DHCP6PdPrefixInfo) GetCrcString() string {
-	return "c459690e"
-}
+func (*DHCP6PdPrefixInfo) GetTypeName() string  { return "dhcp6_pd_prefix_info" }
+func (*DHCP6PdPrefixInfo) GetCrcString() string { return "c459690e" }
 
 // DHCPClient represents VPP binary API type 'dhcp_client'.
 type DHCPClient struct {
@@ -68,12 +60,8 @@ type DHCPClient struct {
 	PID              uint32
 }
 
-func (*DHCPClient) GetTypeName() string {
-	return "dhcp_client"
-}
-func (*DHCPClient) GetCrcString() string {
-	return "527f7935"
-}
+func (*DHCPClient) GetTypeName() string  { return "dhcp_client" }
+func (*DHCPClient) GetCrcString() string { return "527f7935" }
 
 // DHCPLease represents VPP binary API type 'dhcp_lease'.
 type DHCPLease struct {
@@ -87,12 +75,8 @@ type DHCPLease struct {
 	HostMac       []byte `struc:"[6]byte"`
 }
 
-func (*DHCPLease) GetTypeName() string {
-	return "dhcp_lease"
-}
-func (*DHCPLease) GetCrcString() string {
-	return "61090276"
-}
+func (*DHCPLease) GetTypeName() string  { return "dhcp_lease" }
+func (*DHCPLease) GetCrcString() string { return "61090276" }
 
 // DHCPServer represents VPP binary API type 'dhcp_server'.
 type DHCPServer struct {
@@ -100,72 +84,50 @@ type DHCPServer struct {
 	DHCPServer  []byte `struc:"[16]byte"`
 }
 
-func (*DHCPServer) GetTypeName() string {
-	return "dhcp_server"
-}
-func (*DHCPServer) GetCrcString() string {
-	return "f16506c4"
-}
+func (*DHCPServer) GetTypeName() string  { return "dhcp_server" }
+func (*DHCPServer) GetCrcString() string { return "f16506c4" }
 
 // DHCP6ClientsEnableDisable represents VPP binary API message 'dhcp6_clients_enable_disable'.
 type DHCP6ClientsEnableDisable struct {
 	Enable uint8
 }
 
-func (*DHCP6ClientsEnableDisable) GetMessageName() string {
-	return "dhcp6_clients_enable_disable"
-}
-func (*DHCP6ClientsEnableDisable) GetCrcString() string {
-	return "8050327d"
-}
-func (*DHCP6ClientsEnableDisable) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *DHCP6ClientsEnableDisable) Reset()                        { *m = DHCP6ClientsEnableDisable{} }
+func (*DHCP6ClientsEnableDisable) GetMessageName() string          { return "dhcp6_clients_enable_disable" }
+func (*DHCP6ClientsEnableDisable) GetCrcString() string            { return "8050327d" }
+func (*DHCP6ClientsEnableDisable) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // DHCP6ClientsEnableDisableReply represents VPP binary API message 'dhcp6_clients_enable_disable_reply'.
 type DHCP6ClientsEnableDisableReply struct {
 	Retval int32
 }
 
+func (m *DHCP6ClientsEnableDisableReply) Reset() { *m = DHCP6ClientsEnableDisableReply{} }
 func (*DHCP6ClientsEnableDisableReply) GetMessageName() string {
 	return "dhcp6_clients_enable_disable_reply"
 }
-func (*DHCP6ClientsEnableDisableReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*DHCP6ClientsEnableDisableReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (*DHCP6ClientsEnableDisableReply) GetCrcString() string            { return "e8d4e804" }
+func (*DHCP6ClientsEnableDisableReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // DHCP6DuidLlSet represents VPP binary API message 'dhcp6_duid_ll_set'.
 type DHCP6DuidLlSet struct {
 	DuidLl []byte `struc:"[10]byte"`
 }
 
-func (*DHCP6DuidLlSet) GetMessageName() string {
-	return "dhcp6_duid_ll_set"
-}
-func (*DHCP6DuidLlSet) GetCrcString() string {
-	return "0f6ca323"
-}
-func (*DHCP6DuidLlSet) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *DHCP6DuidLlSet) Reset()                        { *m = DHCP6DuidLlSet{} }
+func (*DHCP6DuidLlSet) GetMessageName() string          { return "dhcp6_duid_ll_set" }
+func (*DHCP6DuidLlSet) GetCrcString() string            { return "0f6ca323" }
+func (*DHCP6DuidLlSet) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // DHCP6DuidLlSetReply represents VPP binary API message 'dhcp6_duid_ll_set_reply'.
 type DHCP6DuidLlSetReply struct {
 	Retval int32
 }
 
-func (*DHCP6DuidLlSetReply) GetMessageName() string {
-	return "dhcp6_duid_ll_set_reply"
-}
-func (*DHCP6DuidLlSetReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*DHCP6DuidLlSetReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *DHCP6DuidLlSetReply) Reset()                        { *m = DHCP6DuidLlSetReply{} }
+func (*DHCP6DuidLlSetReply) GetMessageName() string          { return "dhcp6_duid_ll_set_reply" }
+func (*DHCP6DuidLlSetReply) GetCrcString() string            { return "e8d4e804" }
+func (*DHCP6DuidLlSetReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // DHCP6PdReplyEvent represents VPP binary API message 'dhcp6_pd_reply_event'.
 type DHCP6PdReplyEvent struct {
@@ -182,15 +144,10 @@ type DHCP6PdReplyEvent struct {
 	Prefixes        []DHCP6PdPrefixInfo
 }
 
-func (*DHCP6PdReplyEvent) GetMessageName() string {
-	return "dhcp6_pd_reply_event"
-}
-func (*DHCP6PdReplyEvent) GetCrcString() string {
-	return "48e73c36"
-}
-func (*DHCP6PdReplyEvent) GetMessageType() api.MessageType {
-	return api.EventMessage
-}
+func (m *DHCP6PdReplyEvent) Reset()                        { *m = DHCP6PdReplyEvent{} }
+func (*DHCP6PdReplyEvent) GetMessageName() string          { return "dhcp6_pd_reply_event" }
+func (*DHCP6PdReplyEvent) GetCrcString() string            { return "48e73c36" }
+func (*DHCP6PdReplyEvent) GetMessageType() api.MessageType { return api.EventMessage }
 
 // DHCP6PdSendClientMessage represents VPP binary API message 'dhcp6_pd_send_client_message'.
 type DHCP6PdSendClientMessage struct {
@@ -208,30 +165,22 @@ type DHCP6PdSendClientMessage struct {
 	Prefixes    []DHCP6PdPrefixInfo
 }
 
-func (*DHCP6PdSendClientMessage) GetMessageName() string {
-	return "dhcp6_pd_send_client_message"
-}
-func (*DHCP6PdSendClientMessage) GetCrcString() string {
-	return "5a063fbc"
-}
-func (*DHCP6PdSendClientMessage) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *DHCP6PdSendClientMessage) Reset()                        { *m = DHCP6PdSendClientMessage{} }
+func (*DHCP6PdSendClientMessage) GetMessageName() string          { return "dhcp6_pd_send_client_message" }
+func (*DHCP6PdSendClientMessage) GetCrcString() string            { return "5a063fbc" }
+func (*DHCP6PdSendClientMessage) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // DHCP6PdSendClientMessageReply represents VPP binary API message 'dhcp6_pd_send_client_message_reply'.
 type DHCP6PdSendClientMessageReply struct {
 	Retval int32
 }
 
+func (m *DHCP6PdSendClientMessageReply) Reset() { *m = DHCP6PdSendClientMessageReply{} }
 func (*DHCP6PdSendClientMessageReply) GetMessageName() string {
 	return "dhcp6_pd_send_client_message_reply"
 }
-func (*DHCP6PdSendClientMessageReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*DHCP6PdSendClientMessageReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (*DHCP6PdSendClientMessageReply) GetCrcString() string            { return "e8d4e804" }
+func (*DHCP6PdSendClientMessageReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // DHCP6ReplyEvent represents VPP binary API message 'dhcp6_reply_event'.
 type DHCP6ReplyEvent struct {
@@ -248,15 +197,10 @@ type DHCP6ReplyEvent struct {
 	Addresses       []DHCP6AddressInfo
 }
 
-func (*DHCP6ReplyEvent) GetMessageName() string {
-	return "dhcp6_reply_event"
-}
-func (*DHCP6ReplyEvent) GetCrcString() string {
-	return "ac4563f9"
-}
-func (*DHCP6ReplyEvent) GetMessageType() api.MessageType {
-	return api.EventMessage
-}
+func (m *DHCP6ReplyEvent) Reset()                        { *m = DHCP6ReplyEvent{} }
+func (*DHCP6ReplyEvent) GetMessageName() string          { return "dhcp6_reply_event" }
+func (*DHCP6ReplyEvent) GetCrcString() string            { return "ac4563f9" }
+func (*DHCP6ReplyEvent) GetMessageType() api.MessageType { return api.EventMessage }
 
 // DHCP6SendClientMessage represents VPP binary API message 'dhcp6_send_client_message'.
 type DHCP6SendClientMessage struct {
@@ -274,30 +218,20 @@ type DHCP6SendClientMessage struct {
 	Addresses   []DHCP6AddressInfo
 }
 
-func (*DHCP6SendClientMessage) GetMessageName() string {
-	return "dhcp6_send_client_message"
-}
-func (*DHCP6SendClientMessage) GetCrcString() string {
-	return "a13ae8c4"
-}
-func (*DHCP6SendClientMessage) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *DHCP6SendClientMessage) Reset()                        { *m = DHCP6SendClientMessage{} }
+func (*DHCP6SendClientMessage) GetMessageName() string          { return "dhcp6_send_client_message" }
+func (*DHCP6SendClientMessage) GetCrcString() string            { return "a13ae8c4" }
+func (*DHCP6SendClientMessage) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // DHCP6SendClientMessageReply represents VPP binary API message 'dhcp6_send_client_message_reply'.
 type DHCP6SendClientMessageReply struct {
 	Retval int32
 }
 
-func (*DHCP6SendClientMessageReply) GetMessageName() string {
-	return "dhcp6_send_client_message_reply"
-}
-func (*DHCP6SendClientMessageReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*DHCP6SendClientMessageReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *DHCP6SendClientMessageReply) Reset()                        { *m = DHCP6SendClientMessageReply{} }
+func (*DHCP6SendClientMessageReply) GetMessageName() string          { return "dhcp6_send_client_message_reply" }
+func (*DHCP6SendClientMessageReply) GetCrcString() string            { return "e8d4e804" }
+func (*DHCP6SendClientMessageReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // DHCPClientConfig represents VPP binary API message 'dhcp_client_config'.
 type DHCPClientConfig struct {
@@ -305,30 +239,20 @@ type DHCPClientConfig struct {
 	Client DHCPClient
 }
 
-func (*DHCPClientConfig) GetMessageName() string {
-	return "dhcp_client_config"
-}
-func (*DHCPClientConfig) GetCrcString() string {
-	return "c32ccdfe"
-}
-func (*DHCPClientConfig) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *DHCPClientConfig) Reset()                        { *m = DHCPClientConfig{} }
+func (*DHCPClientConfig) GetMessageName() string          { return "dhcp_client_config" }
+func (*DHCPClientConfig) GetCrcString() string            { return "c32ccdfe" }
+func (*DHCPClientConfig) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // DHCPClientConfigReply represents VPP binary API message 'dhcp_client_config_reply'.
 type DHCPClientConfigReply struct {
 	Retval int32
 }
 
-func (*DHCPClientConfigReply) GetMessageName() string {
-	return "dhcp_client_config_reply"
-}
-func (*DHCPClientConfigReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*DHCPClientConfigReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *DHCPClientConfigReply) Reset()                        { *m = DHCPClientConfigReply{} }
+func (*DHCPClientConfigReply) GetMessageName() string          { return "dhcp_client_config_reply" }
+func (*DHCPClientConfigReply) GetCrcString() string            { return "e8d4e804" }
+func (*DHCPClientConfigReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // DHCPClientDetails represents VPP binary API message 'dhcp_client_details'.
 type DHCPClientDetails struct {
@@ -336,28 +260,18 @@ type DHCPClientDetails struct {
 	Lease  DHCPLease
 }
 
-func (*DHCPClientDetails) GetMessageName() string {
-	return "dhcp_client_details"
-}
-func (*DHCPClientDetails) GetCrcString() string {
-	return "7ea3a745"
-}
-func (*DHCPClientDetails) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *DHCPClientDetails) Reset()                        { *m = DHCPClientDetails{} }
+func (*DHCPClientDetails) GetMessageName() string          { return "dhcp_client_details" }
+func (*DHCPClientDetails) GetCrcString() string            { return "7ea3a745" }
+func (*DHCPClientDetails) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // DHCPClientDump represents VPP binary API message 'dhcp_client_dump'.
 type DHCPClientDump struct{}
 
-func (*DHCPClientDump) GetMessageName() string {
-	return "dhcp_client_dump"
-}
-func (*DHCPClientDump) GetCrcString() string {
-	return "51077d14"
-}
-func (*DHCPClientDump) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *DHCPClientDump) Reset()                        { *m = DHCPClientDump{} }
+func (*DHCPClientDump) GetMessageName() string          { return "dhcp_client_dump" }
+func (*DHCPClientDump) GetCrcString() string            { return "51077d14" }
+func (*DHCPClientDump) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // DHCPComplEvent represents VPP binary API message 'dhcp_compl_event'.
 type DHCPComplEvent struct {
@@ -365,15 +279,10 @@ type DHCPComplEvent struct {
 	Lease DHCPLease
 }
 
-func (*DHCPComplEvent) GetMessageName() string {
-	return "dhcp_compl_event"
-}
-func (*DHCPComplEvent) GetCrcString() string {
-	return "2105c31b"
-}
-func (*DHCPComplEvent) GetMessageType() api.MessageType {
-	return api.EventMessage
-}
+func (m *DHCPComplEvent) Reset()                        { *m = DHCPComplEvent{} }
+func (*DHCPComplEvent) GetMessageName() string          { return "dhcp_compl_event" }
+func (*DHCPComplEvent) GetCrcString() string            { return "2105c31b" }
+func (*DHCPComplEvent) GetMessageType() api.MessageType { return api.EventMessage }
 
 // DHCPProxyConfig represents VPP binary API message 'dhcp_proxy_config'.
 type DHCPProxyConfig struct {
@@ -385,30 +294,20 @@ type DHCPProxyConfig struct {
 	DHCPSrcAddress []byte `struc:"[16]byte"`
 }
 
-func (*DHCPProxyConfig) GetMessageName() string {
-	return "dhcp_proxy_config"
-}
-func (*DHCPProxyConfig) GetCrcString() string {
-	return "6af4b645"
-}
-func (*DHCPProxyConfig) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *DHCPProxyConfig) Reset()                        { *m = DHCPProxyConfig{} }
+func (*DHCPProxyConfig) GetMessageName() string          { return "dhcp_proxy_config" }
+func (*DHCPProxyConfig) GetCrcString() string            { return "6af4b645" }
+func (*DHCPProxyConfig) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // DHCPProxyConfigReply represents VPP binary API message 'dhcp_proxy_config_reply'.
 type DHCPProxyConfigReply struct {
 	Retval int32
 }
 
-func (*DHCPProxyConfigReply) GetMessageName() string {
-	return "dhcp_proxy_config_reply"
-}
-func (*DHCPProxyConfigReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*DHCPProxyConfigReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *DHCPProxyConfigReply) Reset()                        { *m = DHCPProxyConfigReply{} }
+func (*DHCPProxyConfigReply) GetMessageName() string          { return "dhcp_proxy_config_reply" }
+func (*DHCPProxyConfigReply) GetCrcString() string            { return "e8d4e804" }
+func (*DHCPProxyConfigReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // DHCPProxyDetails represents VPP binary API message 'dhcp_proxy_details'.
 type DHCPProxyDetails struct {
@@ -423,30 +322,20 @@ type DHCPProxyDetails struct {
 	Servers        []DHCPServer
 }
 
-func (*DHCPProxyDetails) GetMessageName() string {
-	return "dhcp_proxy_details"
-}
-func (*DHCPProxyDetails) GetCrcString() string {
-	return "a5f2ad84"
-}
-func (*DHCPProxyDetails) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *DHCPProxyDetails) Reset()                        { *m = DHCPProxyDetails{} }
+func (*DHCPProxyDetails) GetMessageName() string          { return "dhcp_proxy_details" }
+func (*DHCPProxyDetails) GetCrcString() string            { return "a5f2ad84" }
+func (*DHCPProxyDetails) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // DHCPProxyDump represents VPP binary API message 'dhcp_proxy_dump'.
 type DHCPProxyDump struct {
 	IsIP6 uint8
 }
 
-func (*DHCPProxyDump) GetMessageName() string {
-	return "dhcp_proxy_dump"
-}
-func (*DHCPProxyDump) GetCrcString() string {
-	return "6fe91190"
-}
-func (*DHCPProxyDump) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *DHCPProxyDump) Reset()                        { *m = DHCPProxyDump{} }
+func (*DHCPProxyDump) GetMessageName() string          { return "dhcp_proxy_dump" }
+func (*DHCPProxyDump) GetCrcString() string            { return "6fe91190" }
+func (*DHCPProxyDump) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // DHCPProxySetVss represents VPP binary API message 'dhcp_proxy_set_vss'.
 type DHCPProxySetVss struct {
@@ -459,30 +348,20 @@ type DHCPProxySetVss struct {
 	IsAdd      uint8
 }
 
-func (*DHCPProxySetVss) GetMessageName() string {
-	return "dhcp_proxy_set_vss"
-}
-func (*DHCPProxySetVss) GetCrcString() string {
-	return "606535aa"
-}
-func (*DHCPProxySetVss) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *DHCPProxySetVss) Reset()                        { *m = DHCPProxySetVss{} }
+func (*DHCPProxySetVss) GetMessageName() string          { return "dhcp_proxy_set_vss" }
+func (*DHCPProxySetVss) GetCrcString() string            { return "606535aa" }
+func (*DHCPProxySetVss) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // DHCPProxySetVssReply represents VPP binary API message 'dhcp_proxy_set_vss_reply'.
 type DHCPProxySetVssReply struct {
 	Retval int32
 }
 
-func (*DHCPProxySetVssReply) GetMessageName() string {
-	return "dhcp_proxy_set_vss_reply"
-}
-func (*DHCPProxySetVssReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*DHCPProxySetVssReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *DHCPProxySetVssReply) Reset()                        { *m = DHCPProxySetVssReply{} }
+func (*DHCPProxySetVssReply) GetMessageName() string          { return "dhcp_proxy_set_vss_reply" }
+func (*DHCPProxySetVssReply) GetCrcString() string            { return "e8d4e804" }
+func (*DHCPProxySetVssReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // WantDHCP6PdReplyEvents represents VPP binary API message 'want_dhcp6_pd_reply_events'.
 type WantDHCP6PdReplyEvents struct {
@@ -490,30 +369,20 @@ type WantDHCP6PdReplyEvents struct {
 	PID           uint32
 }
 
-func (*WantDHCP6PdReplyEvents) GetMessageName() string {
-	return "want_dhcp6_pd_reply_events"
-}
-func (*WantDHCP6PdReplyEvents) GetCrcString() string {
-	return "05b454b5"
-}
-func (*WantDHCP6PdReplyEvents) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *WantDHCP6PdReplyEvents) Reset()                        { *m = WantDHCP6PdReplyEvents{} }
+func (*WantDHCP6PdReplyEvents) GetMessageName() string          { return "want_dhcp6_pd_reply_events" }
+func (*WantDHCP6PdReplyEvents) GetCrcString() string            { return "05b454b5" }
+func (*WantDHCP6PdReplyEvents) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // WantDHCP6PdReplyEventsReply represents VPP binary API message 'want_dhcp6_pd_reply_events_reply'.
 type WantDHCP6PdReplyEventsReply struct {
 	Retval int32
 }
 
-func (*WantDHCP6PdReplyEventsReply) GetMessageName() string {
-	return "want_dhcp6_pd_reply_events_reply"
-}
-func (*WantDHCP6PdReplyEventsReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*WantDHCP6PdReplyEventsReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *WantDHCP6PdReplyEventsReply) Reset()                        { *m = WantDHCP6PdReplyEventsReply{} }
+func (*WantDHCP6PdReplyEventsReply) GetMessageName() string          { return "want_dhcp6_pd_reply_events_reply" }
+func (*WantDHCP6PdReplyEventsReply) GetCrcString() string            { return "e8d4e804" }
+func (*WantDHCP6PdReplyEventsReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // WantDHCP6ReplyEvents represents VPP binary API message 'want_dhcp6_reply_events'.
 type WantDHCP6ReplyEvents struct {
@@ -521,30 +390,20 @@ type WantDHCP6ReplyEvents struct {
 	PID           uint32
 }
 
-func (*WantDHCP6ReplyEvents) GetMessageName() string {
-	return "want_dhcp6_reply_events"
-}
-func (*WantDHCP6ReplyEvents) GetCrcString() string {
-	return "05b454b5"
-}
-func (*WantDHCP6ReplyEvents) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *WantDHCP6ReplyEvents) Reset()                        { *m = WantDHCP6ReplyEvents{} }
+func (*WantDHCP6ReplyEvents) GetMessageName() string          { return "want_dhcp6_reply_events" }
+func (*WantDHCP6ReplyEvents) GetCrcString() string            { return "05b454b5" }
+func (*WantDHCP6ReplyEvents) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // WantDHCP6ReplyEventsReply represents VPP binary API message 'want_dhcp6_reply_events_reply'.
 type WantDHCP6ReplyEventsReply struct {
 	Retval int32
 }
 
-func (*WantDHCP6ReplyEventsReply) GetMessageName() string {
-	return "want_dhcp6_reply_events_reply"
-}
-func (*WantDHCP6ReplyEventsReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*WantDHCP6ReplyEventsReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *WantDHCP6ReplyEventsReply) Reset()                        { *m = WantDHCP6ReplyEventsReply{} }
+func (*WantDHCP6ReplyEventsReply) GetMessageName() string          { return "want_dhcp6_reply_events_reply" }
+func (*WantDHCP6ReplyEventsReply) GetCrcString() string            { return "e8d4e804" }
+func (*WantDHCP6ReplyEventsReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 func init() {
 	api.RegisterMessage((*DHCP6ClientsEnableDisable)(nil), "dhcp.DHCP6ClientsEnableDisable")

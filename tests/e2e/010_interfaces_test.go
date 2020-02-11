@@ -269,3 +269,134 @@ func TestAfPacketInterfaceConn(t *testing.T) {
 	Expect(ctx.pingFromMs(msName, afPacketIP)).To(Succeed())
 	Expect(ctx.agentInSync()).To(BeTrue())
 }
+
+// Connect VPP with a microservice via AF-PACKET + VETH interfaces.
+// Configure AF-PACKET with logical reference to the target VETH interface.
+func TestAfPacketWithLogicalReference(t *testing.T) {
+	ctx := setupE2E(t)
+	defer ctx.teardownE2E()
+
+	const (
+		afPacketName  = "vpp-afpacket"
+		veth1Name     = "linux-veth1"
+		veth2Name     = "linux-veth2"
+		veth1Hostname = "veth1"
+		veth2Hostname = "veth2"
+		afPacketIP    = "192.168.1.1"
+		veth2IP       = "192.168.1.2"
+		netMask       = "/30"
+		msName        = "microservice1"
+	)
+
+	afPacket := &vpp_interfaces.Interface{
+		Name:        afPacketName,
+		Type:        vpp_interfaces.Interface_AF_PACKET,
+		Enabled:     true,
+		IpAddresses: []string{afPacketIP + netMask},
+		Link: &vpp_interfaces.Interface_Afpacket{
+			Afpacket: &vpp_interfaces.AfpacketLink{
+				LinuxInterface: veth1Name,
+			},
+		},
+	}
+	veth1 := &linux_interfaces.Interface{
+		Name:       veth1Name,
+		Type:       linux_interfaces.Interface_VETH,
+		Enabled:    true,
+		HostIfName: veth1Hostname,
+		Link: &linux_interfaces.Interface_Veth{
+			Veth: &linux_interfaces.VethLink{
+				PeerIfName: veth2Name,
+			},
+		},
+	}
+	veth2 := &linux_interfaces.Interface{
+		Name:        veth2Name,
+		Type:        linux_interfaces.Interface_VETH,
+		Enabled:     true,
+		HostIfName:  veth2Hostname,
+		IpAddresses: []string{veth2IP + netMask},
+		Link: &linux_interfaces.Interface_Veth{
+			Veth: &linux_interfaces.VethLink{
+				PeerIfName: veth1Name,
+			},
+		},
+		Namespace: &linux_namespace.NetNamespace{
+			Type:      linux_namespace.NetNamespace_MICROSERVICE,
+			Reference: msNamePrefix + msName,
+		},
+	}
+
+	ctx.startMicroservice(msName)
+	req := ctx.grpcClient.ChangeRequest()
+	err := req.Update(
+		afPacket,
+		veth1,
+		veth2,
+	).Send(context.Background())
+	Expect(err).ToNot(HaveOccurred())
+
+	Expect(ctx.getValueState(afPacket)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+	Expect(ctx.getValueState(veth1)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+	Expect(ctx.getValueState(veth2)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+	Expect(ctx.pingFromVPP(veth2IP)).To(Succeed())
+	Expect(ctx.pingFromMs(msName, afPacketIP)).To(Succeed())
+
+	// restart microservice twice
+	for i := 0; i < 2; i++ {
+		ctx.stopMicroservice(msName)
+		Eventually(ctx.getValueStateClb(afPacket)).Should(Equal(kvscheduler.ValueState_PENDING))
+		Eventually(ctx.getValueStateClb(veth1)).Should(Equal(kvscheduler.ValueState_PENDING))
+		Eventually(ctx.getValueStateClb(veth2)).Should(Equal(kvscheduler.ValueState_PENDING))
+		Expect(ctx.pingFromVPP(veth2IP)).NotTo(Succeed())
+		Expect(ctx.agentInSync()).To(BeTrue())
+
+		ctx.startMicroservice(msName)
+		Eventually(ctx.getValueStateClb(afPacket)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
+		Expect(ctx.getValueState(veth1)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+		Expect(ctx.getValueState(veth2)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+		Expect(ctx.pingFromVPP(veth2IP)).To(Succeed())
+		Expect(ctx.pingFromMs(msName, afPacketIP)).To(Succeed())
+		Expect(ctx.agentInSync()).To(BeTrue())
+	}
+
+	// re-create AF-PACKET
+	req = ctx.grpcClient.ChangeRequest()
+	err = req.Delete(
+		afPacket,
+	).Send(context.Background())
+	Expect(err).ToNot(HaveOccurred())
+
+	Expect(ctx.pingFromVPP(veth2IP)).NotTo(Succeed())
+	Expect(ctx.pingFromMs(msName, afPacketIP)).NotTo(Succeed())
+
+	req = ctx.grpcClient.ChangeRequest()
+	err = req.Update(
+		afPacket,
+	).Send(context.Background())
+	Expect(err).ToNot(HaveOccurred())
+
+	Eventually(ctx.pingFromVPPClb(veth2IP)).Should(Succeed())
+	Expect(ctx.pingFromMs(msName, afPacketIP)).To(Succeed())
+	Expect(ctx.agentInSync()).To(BeTrue())
+
+	// re-create VETH
+	req = ctx.grpcClient.ChangeRequest()
+	err = req.Delete(
+		veth2,
+	).Send(context.Background())
+	Expect(err).ToNot(HaveOccurred())
+
+	Expect(ctx.pingFromVPP(veth2IP)).NotTo(Succeed())
+	Expect(ctx.pingFromMs(msName, afPacketIP)).NotTo(Succeed())
+
+	req = ctx.grpcClient.ChangeRequest()
+	err = req.Update(
+		veth2,
+	).Send(context.Background())
+	Expect(err).ToNot(HaveOccurred())
+
+	Eventually(ctx.pingFromVPPClb(veth2IP)).Should(Succeed())
+	Expect(ctx.pingFromMs(msName, afPacketIP)).To(Succeed())
+	Expect(ctx.agentInSync()).To(BeTrue())
+}

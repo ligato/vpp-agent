@@ -5,6 +5,10 @@
 Package tapv2 is a generated VPP binary API for 'tapv2' module.
 
 It consists of:
+	 11 enums
+	  7 aliases
+	  6 types
+	  1 union
 	  6 messages
 	  3 services
 */
@@ -17,143 +21,191 @@ import (
 	struc "github.com/lunixbochs/struc"
 	io "io"
 	strconv "strconv"
+
+	ethernet_types "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ethernet_types"
+	interface_types "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/interface_types"
+	ip_types "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ip_types"
 )
 
 const (
 	// ModuleName is the name of this module.
 	ModuleName = "tapv2"
 	// VersionCrc is the CRC of this module.
-	VersionCrc = 0x41375eca
+	VersionCrc = 0x7d58f9a4
 )
+
+type AddressFamily = ip_types.AddressFamily
+
+type IfStatusFlags = interface_types.IfStatusFlags
+
+type IfType = interface_types.IfType
+
+type IPDscp = ip_types.IPDscp
+
+type IPEcn = ip_types.IPEcn
+
+type IPProto = ip_types.IPProto
+
+type LinkDuplex = interface_types.LinkDuplex
+
+type MtuProto = interface_types.MtuProto
+
+type RxMode = interface_types.RxMode
+
+type SubIfFlags = interface_types.SubIfFlags
+
+// TapFlags represents VPP binary API enum 'tap_flags'.
+type TapFlags uint32
+
+const (
+	TAP_FLAG_GSO          TapFlags = 1
+	TAP_FLAG_CSUM_OFFLOAD TapFlags = 2
+)
+
+var TapFlags_name = map[uint32]string{
+	1: "TAP_FLAG_GSO",
+	2: "TAP_FLAG_CSUM_OFFLOAD",
+}
+
+var TapFlags_value = map[string]uint32{
+	"TAP_FLAG_GSO":          1,
+	"TAP_FLAG_CSUM_OFFLOAD": 2,
+}
+
+func (x TapFlags) String() string {
+	s, ok := TapFlags_name[uint32(x)]
+	if ok {
+		return s
+	}
+	return strconv.Itoa(int(x))
+}
+
+type AddressWithPrefix = ip_types.AddressWithPrefix
+
+type InterfaceIndex = interface_types.InterfaceIndex
+
+type IP4Address = ip_types.IP4Address
+
+type IP4AddressWithPrefix = ip_types.IP4AddressWithPrefix
+
+type IP6Address = ip_types.IP6Address
+
+type IP6AddressWithPrefix = ip_types.IP6AddressWithPrefix
+
+type MacAddress = ethernet_types.MacAddress
+
+type Address = ip_types.Address
+
+type IP4Prefix = ip_types.IP4Prefix
+
+type IP6Prefix = ip_types.IP6Prefix
+
+type Mprefix = ip_types.Mprefix
+
+type Prefix = ip_types.Prefix
+
+type PrefixMatcher = ip_types.PrefixMatcher
+
+type AddressUnion = ip_types.AddressUnion
 
 // SwInterfaceTapV2Details represents VPP binary API message 'sw_interface_tap_v2_details'.
 type SwInterfaceTapV2Details struct {
-	SwIfIndex        uint32
-	ID               uint32
-	DevName          []byte `struc:"[64]byte"`
-	TxRingSz         uint16
-	RxRingSz         uint16
-	HostMacAddr      []byte `struc:"[6]byte"`
-	HostIfName       []byte `struc:"[64]byte"`
-	HostNamespace    []byte `struc:"[64]byte"`
-	HostBridge       []byte `struc:"[64]byte"`
-	HostIP4Addr      []byte `struc:"[4]byte"`
-	HostIP4PrefixLen uint8
-	HostIP6Addr      []byte `struc:"[16]byte"`
-	HostIP6PrefixLen uint8
-	HostMtuSize      uint32
-	TapFlags         uint32
+	SwIfIndex     uint32
+	ID            uint32
+	TxRingSz      uint16
+	RxRingSz      uint16
+	HostMtuSize   uint32
+	HostMacAddr   MacAddress
+	HostIP4Prefix IP4AddressWithPrefix
+	HostIP6Prefix IP6AddressWithPrefix
+	TapFlags      TapFlags
+	DevName       string `struc:"[64]byte"`
+	HostIfName    string `struc:"[64]byte"`
+	HostNamespace string `struc:"[64]byte"`
+	HostBridge    string `struc:"[64]byte"`
 }
 
-func (*SwInterfaceTapV2Details) GetMessageName() string {
-	return "sw_interface_tap_v2_details"
-}
-func (*SwInterfaceTapV2Details) GetCrcString() string {
-	return "5ee87a5f"
-}
-func (*SwInterfaceTapV2Details) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *SwInterfaceTapV2Details) Reset()                        { *m = SwInterfaceTapV2Details{} }
+func (*SwInterfaceTapV2Details) GetMessageName() string          { return "sw_interface_tap_v2_details" }
+func (*SwInterfaceTapV2Details) GetCrcString() string            { return "e53c16de" }
+func (*SwInterfaceTapV2Details) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // SwInterfaceTapV2Dump represents VPP binary API message 'sw_interface_tap_v2_dump'.
-type SwInterfaceTapV2Dump struct{}
+type SwInterfaceTapV2Dump struct {
+	SwIfIndex InterfaceIndex
+}
 
-func (*SwInterfaceTapV2Dump) GetMessageName() string {
-	return "sw_interface_tap_v2_dump"
-}
-func (*SwInterfaceTapV2Dump) GetCrcString() string {
-	return "51077d14"
-}
-func (*SwInterfaceTapV2Dump) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *SwInterfaceTapV2Dump) Reset()                        { *m = SwInterfaceTapV2Dump{} }
+func (*SwInterfaceTapV2Dump) GetMessageName() string          { return "sw_interface_tap_v2_dump" }
+func (*SwInterfaceTapV2Dump) GetCrcString() string            { return "f9e6675e" }
+func (*SwInterfaceTapV2Dump) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // TapCreateV2 represents VPP binary API message 'tap_create_v2'.
 type TapCreateV2 struct {
 	ID               uint32
-	UseRandomMac     uint8
-	MacAddress       []byte `struc:"[6]byte"`
+	UseRandomMac     bool
+	MacAddress       MacAddress
+	NumRxQueues      uint8
 	TxRingSz         uint16
 	RxRingSz         uint16
-	HostNamespaceSet uint8
-	HostNamespace    []byte `struc:"[64]byte"`
-	HostMacAddrSet   uint8
-	HostMacAddr      []byte `struc:"[6]byte"`
-	HostIfNameSet    uint8
-	HostIfName       []byte `struc:"[64]byte"`
-	HostBridgeSet    uint8
-	HostBridge       []byte `struc:"[64]byte"`
-	HostIP4AddrSet   uint8
-	HostIP4Addr      []byte `struc:"[4]byte"`
-	HostIP4PrefixLen uint8
-	HostIP6AddrSet   uint8
-	HostIP6Addr      []byte `struc:"[16]byte"`
-	HostIP6PrefixLen uint8
-	HostIP4GwSet     uint8
-	HostIP4Gw        []byte `struc:"[4]byte"`
-	HostIP6GwSet     uint8
-	HostIP6Gw        []byte `struc:"[16]byte"`
-	HostMtuSet       uint8
+	HostMtuSet       bool
 	HostMtuSize      uint32
-	Tag              []byte `struc:"[64]byte"`
-	TapFlags         uint32
+	HostMacAddrSet   bool
+	HostMacAddr      MacAddress
+	HostIP4PrefixSet bool
+	HostIP4Prefix    IP4AddressWithPrefix
+	HostIP6PrefixSet bool
+	HostIP6Prefix    IP6AddressWithPrefix
+	HostIP4GwSet     bool
+	HostIP4Gw        IP4Address
+	HostIP6GwSet     bool
+	HostIP6Gw        IP6Address
+	TapFlags         TapFlags
+	HostNamespaceSet bool
+	HostNamespace    string `struc:"[64]byte"`
+	HostIfNameSet    bool
+	HostIfName       string `struc:"[64]byte"`
+	HostBridgeSet    bool
+	HostBridge       string `struc:"[64]byte"`
+	XXX_TagLen       uint32 `struc:"sizeof=Tag"`
+	Tag              string
 }
 
-func (*TapCreateV2) GetMessageName() string {
-	return "tap_create_v2"
-}
-func (*TapCreateV2) GetCrcString() string {
-	return "8fa99320"
-}
-func (*TapCreateV2) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *TapCreateV2) Reset()                        { *m = TapCreateV2{} }
+func (*TapCreateV2) GetMessageName() string          { return "tap_create_v2" }
+func (*TapCreateV2) GetCrcString() string            { return "445835fd" }
+func (*TapCreateV2) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // TapCreateV2Reply represents VPP binary API message 'tap_create_v2_reply'.
 type TapCreateV2Reply struct {
 	Retval    int32
-	SwIfIndex uint32
+	SwIfIndex InterfaceIndex
 }
 
-func (*TapCreateV2Reply) GetMessageName() string {
-	return "tap_create_v2_reply"
-}
-func (*TapCreateV2Reply) GetCrcString() string {
-	return "fda5941f"
-}
-func (*TapCreateV2Reply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *TapCreateV2Reply) Reset()                        { *m = TapCreateV2Reply{} }
+func (*TapCreateV2Reply) GetMessageName() string          { return "tap_create_v2_reply" }
+func (*TapCreateV2Reply) GetCrcString() string            { return "5383d31f" }
+func (*TapCreateV2Reply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // TapDeleteV2 represents VPP binary API message 'tap_delete_v2'.
 type TapDeleteV2 struct {
-	SwIfIndex uint32
+	SwIfIndex InterfaceIndex
 }
 
-func (*TapDeleteV2) GetMessageName() string {
-	return "tap_delete_v2"
-}
-func (*TapDeleteV2) GetCrcString() string {
-	return "529cb13f"
-}
-func (*TapDeleteV2) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *TapDeleteV2) Reset()                        { *m = TapDeleteV2{} }
+func (*TapDeleteV2) GetMessageName() string          { return "tap_delete_v2" }
+func (*TapDeleteV2) GetCrcString() string            { return "f9e6675e" }
+func (*TapDeleteV2) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // TapDeleteV2Reply represents VPP binary API message 'tap_delete_v2_reply'.
 type TapDeleteV2Reply struct {
 	Retval int32
 }
 
-func (*TapDeleteV2Reply) GetMessageName() string {
-	return "tap_delete_v2_reply"
-}
-func (*TapDeleteV2Reply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*TapDeleteV2Reply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *TapDeleteV2Reply) Reset()                        { *m = TapDeleteV2Reply{} }
+func (*TapDeleteV2Reply) GetMessageName() string          { return "tap_delete_v2_reply" }
+func (*TapDeleteV2Reply) GetCrcString() string            { return "e8d4e804" }
+func (*TapDeleteV2Reply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 func init() {
 	api.RegisterMessage((*SwInterfaceTapV2Details)(nil), "tapv2.SwInterfaceTapV2Details")

@@ -15,9 +15,11 @@
 package vpp1904
 
 import (
+	context "context"
 	"net"
 
 	"github.com/pkg/errors"
+
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1904/ip"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/netalloc"
 	vpp_l3 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3"
@@ -108,7 +110,7 @@ func (h *RouteHandler) vppAddDelRoute(route *vpp_l3.Route, rtIfIdx uint32, delet
 }
 
 // VppAddRoute implements route handler.
-func (h *RouteHandler) VppAddRoute(route *vpp_l3.Route) error {
+func (h *RouteHandler) VppAddRoute(ctx context.Context, route *vpp_l3.Route) error {
 	swIfIdx, err := h.getRouteSwIfIndex(route.OutgoingInterface)
 	if err != nil {
 		return err
@@ -118,7 +120,7 @@ func (h *RouteHandler) VppAddRoute(route *vpp_l3.Route) error {
 }
 
 // VppDelRoute implements route handler.
-func (h *RouteHandler) VppDelRoute(route *vpp_l3.Route) error {
+func (h *RouteHandler) VppDelRoute(ctx context.Context, route *vpp_l3.Route) error {
 	swIfIdx, err := h.getRouteSwIfIndex(route.OutgoingInterface)
 	if err != nil {
 		return err

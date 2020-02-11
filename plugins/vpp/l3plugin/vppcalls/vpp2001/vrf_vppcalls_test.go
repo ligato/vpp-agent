@@ -56,8 +56,8 @@ func TestAddVrfTable(t *testing.T) {
 	vppMsg, ok := ctx.MockChannel.Msg.(*vpp_ip.IPTableAddDel)
 	Expect(ok).To(BeTrue())
 	Expect(vppMsg.Table.TableID).To(BeEquivalentTo(1))
-	Expect(vppMsg.Table.IsIP6).To(BeEquivalentTo(0))
-	Expect(vppMsg.IsAdd).To(BeEquivalentTo(1))
+	Expect(vppMsg.Table.IsIP6).To(BeFalse())
+	Expect(vppMsg.IsAdd).To(BeTrue())
 	Expect(vppMsg.Table.Name).To(BeEquivalentTo([]byte("table1")))
 
 	ctx.MockVpp.MockReply(&vpp_ip.IPTableAddDelReply{})
@@ -67,8 +67,8 @@ func TestAddVrfTable(t *testing.T) {
 	vppMsg, ok = ctx.MockChannel.Msg.(*vpp_ip.IPTableAddDel)
 	Expect(ok).To(BeTrue())
 	Expect(vppMsg.Table.TableID).To(BeEquivalentTo(1))
-	Expect(vppMsg.Table.IsIP6).To(BeEquivalentTo(1))
-	Expect(vppMsg.IsAdd).To(BeEquivalentTo(1))
+	Expect(vppMsg.Table.IsIP6).To(BeTrue())
+	Expect(vppMsg.IsAdd).To(BeTrue())
 	Expect(vppMsg.Table.Name).To(BeEquivalentTo([]byte("table1")))
 
 	ctx.MockVpp.MockReply(&vpp_ip.IPTableAddDelReply{})
@@ -78,8 +78,8 @@ func TestAddVrfTable(t *testing.T) {
 	vppMsg, ok = ctx.MockChannel.Msg.(*vpp_ip.IPTableAddDel)
 	Expect(ok).To(BeTrue())
 	Expect(vppMsg.Table.TableID).To(BeEquivalentTo(2))
-	Expect(vppMsg.Table.IsIP6).To(BeEquivalentTo(1))
-	Expect(vppMsg.IsAdd).To(BeEquivalentTo(1))
+	Expect(vppMsg.Table.IsIP6).To(BeTrue())
+	Expect(vppMsg.IsAdd).To(BeTrue())
 	Expect(vppMsg.Table.Name).To(BeEquivalentTo([]byte("table2")))
 
 	ctx.MockVpp.MockReply(&vpp_ip.IPTableAddDelReply{Retval: 1})
@@ -99,8 +99,8 @@ func TestDeleteVrfTable(t *testing.T) {
 	vppMsg, ok := ctx.MockChannel.Msg.(*vpp_ip.IPTableAddDel)
 	Expect(ok).To(BeTrue())
 	Expect(vppMsg.Table.TableID).To(BeEquivalentTo(1))
-	Expect(vppMsg.Table.IsIP6).To(BeEquivalentTo(0))
-	Expect(vppMsg.IsAdd).To(BeEquivalentTo(0))
+	Expect(vppMsg.Table.IsIP6).To(BeFalse())
+	Expect(vppMsg.IsAdd).To(BeFalse())
 	Expect(vppMsg.Table.Name).To(BeEquivalentTo([]byte("table1")))
 
 	ctx.MockVpp.MockReply(&vpp_ip.IPTableAddDelReply{})
@@ -110,8 +110,8 @@ func TestDeleteVrfTable(t *testing.T) {
 	vppMsg, ok = ctx.MockChannel.Msg.(*vpp_ip.IPTableAddDel)
 	Expect(ok).To(BeTrue())
 	Expect(vppMsg.Table.TableID).To(BeEquivalentTo(1))
-	Expect(vppMsg.Table.IsIP6).To(BeEquivalentTo(1))
-	Expect(vppMsg.IsAdd).To(BeEquivalentTo(0))
+	Expect(vppMsg.Table.IsIP6).To(BeTrue())
+	Expect(vppMsg.IsAdd).To(BeFalse())
 	Expect(vppMsg.Table.Name).To(BeEquivalentTo([]byte("table1")))
 
 	ctx.MockVpp.MockReply(&vpp_ip.IPTableAddDelReply{})
@@ -121,13 +121,40 @@ func TestDeleteVrfTable(t *testing.T) {
 	vppMsg, ok = ctx.MockChannel.Msg.(*vpp_ip.IPTableAddDel)
 	Expect(ok).To(BeTrue())
 	Expect(vppMsg.Table.TableID).To(BeEquivalentTo(2))
-	Expect(vppMsg.Table.IsIP6).To(BeEquivalentTo(1))
-	Expect(vppMsg.IsAdd).To(BeEquivalentTo(0))
+	Expect(vppMsg.Table.IsIP6).To(BeTrue())
+	Expect(vppMsg.IsAdd).To(BeFalse())
 	Expect(vppMsg.Table.Name).To(BeEquivalentTo([]byte("table2")))
 
 	ctx.MockVpp.MockReply(&vpp_ip.IPTableAddDelReply{Retval: 1})
 	err = vtHandler.DelVrfTable(vrfTables[0])
 	Expect(err).To(Not(BeNil()))
+}
+
+// Test VRF flow hash settings
+func TestVrfFlowHashSettings(t *testing.T) {
+	ctx, vtHandler := vrfTableTestSetup(t)
+	defer ctx.TeardownTestCtx()
+
+	ctx.MockVpp.MockReply(&vpp_ip.SetIPFlowHashReply{})
+	err := vtHandler.SetVrfFlowHashSettings(5, true,
+		&l3.VrfTable_FlowHashSettings{
+			UseSrcIp:   true,
+			UseSrcPort: true,
+			Symmetric:  true,
+		})
+	Expect(err).To(Succeed())
+
+	vppMsg, ok := ctx.MockChannel.Msg.(*vpp_ip.SetIPFlowHash)
+	Expect(ok).To(BeTrue())
+	Expect(vppMsg.VrfID).To(BeEquivalentTo(5))
+	Expect(vppMsg.IsIPv6).To(BeTrue())
+	Expect(vppMsg.Src).To(BeTrue())
+	Expect(vppMsg.Dst).To(BeFalse())
+	Expect(vppMsg.Sport).To(BeTrue())
+	Expect(vppMsg.Dport).To(BeFalse())
+	Expect(vppMsg.Proto).To(BeFalse())
+	Expect(vppMsg.Symmetric).To(BeTrue())
+	Expect(vppMsg.Reverse).To(BeFalse())
 }
 
 func vrfTableTestSetup(t *testing.T) (*vppmock.TestCtx, vppcalls.VrfTableVppAPI) {

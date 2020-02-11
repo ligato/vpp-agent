@@ -1,4 +1,5 @@
 ---
+os: linux
 dist: xenial
 sudo: required
 
@@ -6,7 +7,7 @@ language: go
 go:
   - 1.x
 
-go_import_path: go.ligato.io/vpp-agent
+go_import_path: go.ligato.io/vpp-agent/v3
 
 services:
   - docker
@@ -18,13 +19,14 @@ git:
 cache:
   directories:
     - ${HOME}/.cache
+    - ${HOME}/gopath/pkg/mod
 
 install: true
 
 stages:
   - Check
   - Test
-  - Build
+  - Build&Test
   - Integration
   - name: E2E
     if: ( type = push AND branch IN (master, dev) ) OR ( type IN (cron, api) ) OR ( commit_message =~ /^(test-e2e)/ )
@@ -32,8 +34,8 @@ stages:
 jobs:
   include:
     - stage: Check
-      language: shell
       name: "Check formatting"
+      language: shell
       addons:
         apt:
           packages:
@@ -46,8 +48,12 @@ jobs:
     - name: "Check proto files"
       script: make check-proto
 
-    - stage: Test
-      name: "Code linter"
+    - stage: Build&Test
+      name: "Build"
+      script:
+        - make cmd
+        - make examples
+    - name: "Code linter"
       script: make lint || true
     - name: "Unit tests"
       before_script:
@@ -57,21 +63,12 @@ jobs:
         - goveralls -coverprofile=/tmp/coverage.out -service=travis-ci
         - bash <(curl -s https://codecov.io/bash) -f /tmp/coverage.out -F unittests
 
-    - stage: Build
-      script:
-        - make cmd
-        - make examples
-
     - stage: Integration
       env: VPP_VERSION=1904
       script:
         - make verify-binapi
         - make integration-tests
     - env: VPP_VERSION=1908
-      script:
-        - make verify-binapi
-        - make integration-tests
-    - env: VPP_VERSION=2001_324
       script:
         - make verify-binapi
         - make integration-tests
@@ -87,11 +84,6 @@ jobs:
       after_success:
         - bash <(curl -s https://codecov.io/bash) -f /tmp/e2e-cov.out -F e2e
     - env: VPP_VERSION=1908
-      script:
-        - make e2e-tests-cover
-      after_success:
-        - bash <(curl -s https://codecov.io/bash) -f /tmp/e2e-cov.out -F e2e
-    - env: VPP_VERSION=2001_324
       script:
         - make e2e-tests-cover
       after_success:

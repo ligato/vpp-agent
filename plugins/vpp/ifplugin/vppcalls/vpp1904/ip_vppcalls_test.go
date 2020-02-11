@@ -194,7 +194,7 @@ func TestSetUnnumberedIP(t *testing.T) {
 
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetUnnumberedReply{})
 
-	err := ifHandler.SetUnnumberedIP(1, 2)
+	err := ifHandler.SetUnnumberedIP(ctx.Context, 1, 2)
 
 	Expect(err).To(BeNil())
 	vppMsg, ok := ctx.MockChannel.Msg.(*interfaces.SwInterfaceSetUnnumbered)
@@ -210,7 +210,7 @@ func TestSetUnnumberedIPError(t *testing.T) {
 
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetUnnumbered{})
 
-	err := ifHandler.SetUnnumberedIP(1, 2)
+	err := ifHandler.SetUnnumberedIP(ctx.Context, 1, 2)
 
 	Expect(err).ToNot(BeNil())
 }
@@ -223,7 +223,7 @@ func TestSetUnnumberedIPRetval(t *testing.T) {
 		Retval: 1,
 	})
 
-	err := ifHandler.SetUnnumberedIP(1, 2)
+	err := ifHandler.SetUnnumberedIP(ctx.Context, 1, 2)
 
 	Expect(err).ToNot(BeNil())
 }
@@ -234,7 +234,7 @@ func TestUnsetUnnumberedIP(t *testing.T) {
 
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetUnnumberedReply{})
 
-	err := ifHandler.UnsetUnnumberedIP(1)
+	err := ifHandler.UnsetUnnumberedIP(ctx.Context, 1)
 
 	Expect(err).To(BeNil())
 	vppMsg, ok := ctx.MockChannel.Msg.(*interfaces.SwInterfaceSetUnnumbered)
@@ -250,7 +250,7 @@ func TestUnsetUnnumberedIPError(t *testing.T) {
 
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetUnnumbered{})
 
-	err := ifHandler.UnsetUnnumberedIP(1)
+	err := ifHandler.UnsetUnnumberedIP(ctx.Context, 1)
 
 	Expect(err).ToNot(BeNil())
 }
@@ -263,7 +263,7 @@ func TestUnsetUnnumberedIPRetval(t *testing.T) {
 		Retval: 1,
 	})
 
-	err := ifHandler.UnsetUnnumberedIP(1)
+	err := ifHandler.UnsetUnnumberedIP(ctx.Context, 1)
 
 	Expect(err).ToNot(BeNil())
 }

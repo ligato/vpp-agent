@@ -55,7 +55,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
  	&& rm -rf /var/lib/apt/lists/*
 
 # Install Go
-ENV GOLANG_VERSION 1.13.6
+ENV GOLANG_VERSION 1.13.7
 RUN set -eux; \
 	dpkgArch="$(dpkg --print-architecture)"; \
 		case "${dpkgArch##*-}" in \
@@ -91,17 +91,14 @@ WORKDIR /src/ligato/vpp-agent
 
 ARG VERSION
 ARG COMMIT
-ARG DATE
+ARG BRANCH
+ARG BUILD_DATE
 
 COPY go.mod go.sum ./
 RUN go mod download
 COPY . ./
 
-RUN \
-	VERSION=$VERSION \
-	COMMIT=$COMMIT \
-	DATE=$DATE \
- make install
+RUN make install purge
 
 ENV SUPERVISOR_CONFIG=/opt/vpp-agent/dev/supervisor.conf
 

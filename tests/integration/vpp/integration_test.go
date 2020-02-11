@@ -17,6 +17,7 @@ package vpp
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -139,6 +140,8 @@ func setupVPP(t *testing.T) *TestCtx {
 	}
 	RegisterTestingT(t)
 
+	ctx := context.TODO()
+
 	// start VPP process
 	var stderr, stdout bytes.Buffer
 	vppCmd := startVPP(t, &stdout, &stderr)
@@ -192,7 +195,6 @@ func setupVPP(t *testing.T) *TestCtx {
 
 	vpeHandler := vppcalls.CompatibleHandler(vppClient)
 
-	ctx := context.TODO()
 	versionInfo, err := vpeHandler.GetVersion(ctx)
 	if err != nil {
 		t.Fatalf("getting version info failed: %v", err)
@@ -219,7 +221,7 @@ func setupVPP(t *testing.T) *TestCtx {
 	vppClient.vpp = vpeHandler
 	vppClient.stats = statsConn
 
-	t.Log("===>--S-E-T-U-P--<===")
+	t.Log("-> SETUP done\n")
 
 	return &TestCtx{
 		t:           t,
@@ -237,7 +239,7 @@ func setupVPP(t *testing.T) *TestCtx {
 }
 
 func (ctx *TestCtx) teardownVPP() {
-	ctx.t.Logf("---T-E-A-R-D-O-W-N---")
+	ctx.t.Logf("-> TEARDOWN begin")
 
 	// disconnect sometimes hangs
 	done := make(chan struct{})
@@ -263,13 +265,19 @@ func (ctx *TestCtx) teardownVPP() {
 	exit := make(chan struct{})
 	go func() {
 		if err := ctx.vppCmd.Wait(); err != nil {
-			ctx.t.Logf("VPP process wait failed: %v", err)
+			var exiterr *exec.ExitError
+			if errors.As(err, &exiterr) && strings.Contains(exiterr.Error(), "core dumped") {
+				ctx.t.Logf("VPP process CRASHED: %s", exiterr.Error())
+			} else {
+				ctx.t.Logf("VPP process wait failed: %v", err)
+			}
+		} else {
+			ctx.t.Logf("VPP exit OK")
 		}
 		close(exit)
 	}()
 	select {
 	case <-exit:
-		ctx.t.Logf("VPP exit OK")
 
 	case <-time.After(vppExitTimeout):
 		ctx.t.Logf("VPP exit timeout")

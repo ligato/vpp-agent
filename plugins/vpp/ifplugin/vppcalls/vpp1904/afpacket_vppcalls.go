@@ -18,13 +18,12 @@ import (
 	"net"
 
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1904/af_packet"
-	interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
 )
 
 // AddAfPacketInterface implements AfPacket handler.
-func (h *InterfaceVppHandler) AddAfPacketInterface(ifName string, hwAddr string, afPacketIntf *interfaces.AfpacketLink) (swIndex uint32, err error) {
+func (h *InterfaceVppHandler) AddAfPacketInterface(ifName, hwAddr, targetHostIfName string) (swIndex uint32, err error) {
 	req := &af_packet.AfPacketCreate{
-		HostIfName: []byte(afPacketIntf.HostIfName),
+		HostIfName: []byte(targetHostIfName),
 	}
 	if hwAddr == "" {
 		req.UseRandomHwAddr = 1
@@ -45,9 +44,9 @@ func (h *InterfaceVppHandler) AddAfPacketInterface(ifName string, hwAddr string,
 }
 
 // DeleteAfPacketInterface implements AfPacket handler.
-func (h *InterfaceVppHandler) DeleteAfPacketInterface(ifName string, idx uint32, afPacketIntf *interfaces.AfpacketLink) error {
+func (h *InterfaceVppHandler) DeleteAfPacketInterface(ifName string, idx uint32, targetHostIfName string) error {
 	req := &af_packet.AfPacketDelete{
-		HostIfName: []byte(afPacketIntf.HostIfName),
+		HostIfName: []byte(targetHostIfName),
 	}
 	reply := &af_packet.AfPacketDeleteReply{}
 

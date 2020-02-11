@@ -17,7 +17,8 @@ package vpp2001
 import (
 	"net"
 
-	vpp_ip "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ip"
+	vpp_ip_neighbor "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ip_neighbor"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ip_types"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin/vppcalls"
 	l3 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3"
 )
@@ -37,13 +38,15 @@ func (h *ArpVppHandler) DumpArpEntries() ([]*vppcalls.ArpDetails, error) {
 
 func (h *ArpVppHandler) dumpArpEntries(isIPv6 bool) ([]*vppcalls.ArpDetails, error) {
 	var entries []*vppcalls.ArpDetails
-	reqCtx := h.callsChannel.SendMultiRequest(&vpp_ip.IPNeighborDump{
+	req := &vpp_ip_neighbor.IPNeighborDump{
 		SwIfIndex: 0xffffffff, // Send multirequest to get all ARP entries for given IP version
-		IsIPv6:    boolToUint(isIPv6),
-	})
-
+	}
+	if isIPv6 {
+		req.Af = ip_types.ADDRESS_IP6
+	}
+	reqCtx := h.callsChannel.SendMultiRequest(req)
 	for {
-		arpDetails := &vpp_ip.IPNeighborDetails{}
+		arpDetails := &vpp_ip_neighbor.IPNeighborDetails{}
 		stop, err := reqCtx.ReceiveReply(arpDetails)
 		if stop {
 			break
@@ -54,13 +57,13 @@ func (h *ArpVppHandler) dumpArpEntries(isIPv6 bool) ([]*vppcalls.ArpDetails, err
 		}
 
 		// ARP interface
-		ifName, _, exists := h.ifIndexes.LookupBySwIfIndex(arpDetails.Neighbor.SwIfIndex)
+		ifName, _, exists := h.ifIndexes.LookupBySwIfIndex(uint32(arpDetails.Neighbor.SwIfIndex))
 		if !exists {
 			h.log.Warnf("ARP dump: interface name not found for index %d", arpDetails.Neighbor.SwIfIndex)
 		}
 		// IP & MAC address
 		var ip string
-		if arpDetails.Neighbor.IPAddress.Af == vpp_ip.ADDRESS_IP6 {
+		if arpDetails.Neighbor.IPAddress.Af == ip_types.ADDRESS_IP6 {
 			addr := arpDetails.Neighbor.IPAddress.Un.GetIP6()
 			ip = net.IP(addr[:]).To16().String()
 		} else {
@@ -73,11 +76,11 @@ func (h *ArpVppHandler) dumpArpEntries(isIPv6 bool) ([]*vppcalls.ArpDetails, err
 			Interface:   ifName,
 			IpAddress:   ip,
 			PhysAddress: net.HardwareAddr(arpDetails.Neighbor.MacAddress[:]).String(),
-			Static:      arpDetails.Neighbor.Flags&vpp_ip.IP_API_NEIGHBOR_FLAG_STATIC != 0,
+			Static:      arpDetails.Neighbor.Flags&vpp_ip_neighbor.IP_API_NEIGHBOR_FLAG_STATIC != 0,
 		}
 		// ARP meta
 		meta := &vppcalls.ArpMeta{
-			SwIfIndex: arpDetails.Neighbor.SwIfIndex,
+			SwIfIndex: uint32(arpDetails.Neighbor.SwIfIndex),
 		}
 
 		entries = append(entries, &vppcalls.ArpDetails{

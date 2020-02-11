@@ -263,12 +263,8 @@ type Address struct {
 	Un AddressUnion
 }
 
-func (*Address) GetTypeName() string {
-	return "address"
-}
-func (*Address) GetCrcString() string {
-	return "09f11671"
-}
+func (*Address) GetTypeName() string  { return "address" }
+func (*Address) GetCrcString() string { return "09f11671" }
 
 // IP4Prefix represents VPP binary API type 'ip4_prefix'.
 type IP4Prefix struct {
@@ -276,12 +272,8 @@ type IP4Prefix struct {
 	Len    uint8
 }
 
-func (*IP4Prefix) GetTypeName() string {
-	return "ip4_prefix"
-}
-func (*IP4Prefix) GetCrcString() string {
-	return "ea8dc11d"
-}
+func (*IP4Prefix) GetTypeName() string  { return "ip4_prefix" }
+func (*IP4Prefix) GetCrcString() string { return "ea8dc11d" }
 
 // IP6Prefix represents VPP binary API type 'ip6_prefix'.
 type IP6Prefix struct {
@@ -289,12 +281,8 @@ type IP6Prefix struct {
 	Len    uint8
 }
 
-func (*IP6Prefix) GetTypeName() string {
-	return "ip6_prefix"
-}
-func (*IP6Prefix) GetCrcString() string {
-	return "779fd64f"
-}
+func (*IP6Prefix) GetTypeName() string  { return "ip6_prefix" }
+func (*IP6Prefix) GetCrcString() string { return "779fd64f" }
 
 // IpsecSadEntry represents VPP binary API type 'ipsec_sad_entry'.
 type IpsecSadEntry struct {
@@ -311,12 +299,8 @@ type IpsecSadEntry struct {
 	TxTableID          uint32
 }
 
-func (*IpsecSadEntry) GetTypeName() string {
-	return "ipsec_sad_entry"
-}
-func (*IpsecSadEntry) GetCrcString() string {
-	return "ca3da05d"
-}
+func (*IpsecSadEntry) GetTypeName() string  { return "ipsec_sad_entry" }
+func (*IpsecSadEntry) GetCrcString() string { return "ca3da05d" }
 
 // IpsecSpdEntry represents VPP binary API type 'ipsec_spd_entry'.
 type IpsecSpdEntry struct {
@@ -336,12 +320,8 @@ type IpsecSpdEntry struct {
 	LocalPortStop      uint16
 }
 
-func (*IpsecSpdEntry) GetTypeName() string {
-	return "ipsec_spd_entry"
-}
-func (*IpsecSpdEntry) GetCrcString() string {
-	return "876fdb2c"
-}
+func (*IpsecSpdEntry) GetTypeName() string  { return "ipsec_spd_entry" }
+func (*IpsecSpdEntry) GetCrcString() string { return "876fdb2c" }
 
 // Key represents VPP binary API type 'key'.
 type Key struct {
@@ -349,12 +329,8 @@ type Key struct {
 	Data   []byte `struc:"[128]byte"`
 }
 
-func (*Key) GetTypeName() string {
-	return "key"
-}
-func (*Key) GetCrcString() string {
-	return "f3d0c4fd"
-}
+func (*Key) GetTypeName() string  { return "key" }
+func (*Key) GetCrcString() string { return "f3d0c4fd" }
 
 // Mprefix represents VPP binary API type 'mprefix'.
 type Mprefix struct {
@@ -364,12 +340,8 @@ type Mprefix struct {
 	SrcAddress       AddressUnion
 }
 
-func (*Mprefix) GetTypeName() string {
-	return "mprefix"
-}
-func (*Mprefix) GetCrcString() string {
-	return "1c4cba05"
-}
+func (*Mprefix) GetTypeName() string  { return "mprefix" }
+func (*Mprefix) GetCrcString() string { return "1c4cba05" }
 
 // Prefix represents VPP binary API type 'prefix'.
 type Prefix struct {
@@ -377,24 +349,16 @@ type Prefix struct {
 	AddressLength uint8
 }
 
-func (*Prefix) GetTypeName() string {
-	return "prefix"
-}
-func (*Prefix) GetCrcString() string {
-	return "0403aebc"
-}
+func (*Prefix) GetTypeName() string  { return "prefix" }
+func (*Prefix) GetCrcString() string { return "0403aebc" }
 
 // AddressUnion represents VPP binary API union 'address_union'.
 type AddressUnion struct {
 	XXX_UnionData [16]byte
 }
 
-func (*AddressUnion) GetTypeName() string {
-	return "address_union"
-}
-func (*AddressUnion) GetCrcString() string {
-	return "d68a2fb4"
-}
+func (*AddressUnion) GetTypeName() string  { return "address_union" }
+func (*AddressUnion) GetCrcString() string { return "d68a2fb4" }
 
 func AddressUnionIP4(a IP4Address) (u AddressUnion) {
 	u.SetIP4(a)
@@ -438,28 +402,18 @@ type IpsecBackendDetails struct {
 	Active   uint8
 }
 
-func (*IpsecBackendDetails) GetMessageName() string {
-	return "ipsec_backend_details"
-}
-func (*IpsecBackendDetails) GetCrcString() string {
-	return "3341f485"
-}
-func (*IpsecBackendDetails) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *IpsecBackendDetails) Reset()                        { *m = IpsecBackendDetails{} }
+func (*IpsecBackendDetails) GetMessageName() string          { return "ipsec_backend_details" }
+func (*IpsecBackendDetails) GetCrcString() string            { return "3341f485" }
+func (*IpsecBackendDetails) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // IpsecBackendDump represents VPP binary API message 'ipsec_backend_dump'.
 type IpsecBackendDump struct{}
 
-func (*IpsecBackendDump) GetMessageName() string {
-	return "ipsec_backend_dump"
-}
-func (*IpsecBackendDump) GetCrcString() string {
-	return "51077d14"
-}
-func (*IpsecBackendDump) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *IpsecBackendDump) Reset()                        { *m = IpsecBackendDump{} }
+func (*IpsecBackendDump) GetMessageName() string          { return "ipsec_backend_dump" }
+func (*IpsecBackendDump) GetCrcString() string            { return "51077d14" }
+func (*IpsecBackendDump) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // IpsecInterfaceAddDelSpd represents VPP binary API message 'ipsec_interface_add_del_spd'.
 type IpsecInterfaceAddDelSpd struct {
@@ -468,30 +422,22 @@ type IpsecInterfaceAddDelSpd struct {
 	SpdID     uint32
 }
 
-func (*IpsecInterfaceAddDelSpd) GetMessageName() string {
-	return "ipsec_interface_add_del_spd"
-}
-func (*IpsecInterfaceAddDelSpd) GetCrcString() string {
-	return "1e3b8286"
-}
-func (*IpsecInterfaceAddDelSpd) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *IpsecInterfaceAddDelSpd) Reset()                        { *m = IpsecInterfaceAddDelSpd{} }
+func (*IpsecInterfaceAddDelSpd) GetMessageName() string          { return "ipsec_interface_add_del_spd" }
+func (*IpsecInterfaceAddDelSpd) GetCrcString() string            { return "1e3b8286" }
+func (*IpsecInterfaceAddDelSpd) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // IpsecInterfaceAddDelSpdReply represents VPP binary API message 'ipsec_interface_add_del_spd_reply'.
 type IpsecInterfaceAddDelSpdReply struct {
 	Retval int32
 }
 
+func (m *IpsecInterfaceAddDelSpdReply) Reset() { *m = IpsecInterfaceAddDelSpdReply{} }
 func (*IpsecInterfaceAddDelSpdReply) GetMessageName() string {
 	return "ipsec_interface_add_del_spd_reply"
 }
-func (*IpsecInterfaceAddDelSpdReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*IpsecInterfaceAddDelSpdReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (*IpsecInterfaceAddDelSpdReply) GetCrcString() string            { return "e8d4e804" }
+func (*IpsecInterfaceAddDelSpdReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // IpsecSaDetails represents VPP binary API message 'ipsec_sa_details'.
 type IpsecSaDetails struct {
@@ -504,30 +450,20 @@ type IpsecSaDetails struct {
 	TotalDataSize  uint64
 }
 
-func (*IpsecSaDetails) GetMessageName() string {
-	return "ipsec_sa_details"
-}
-func (*IpsecSaDetails) GetCrcString() string {
-	return "62f0eab8"
-}
-func (*IpsecSaDetails) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *IpsecSaDetails) Reset()                        { *m = IpsecSaDetails{} }
+func (*IpsecSaDetails) GetMessageName() string          { return "ipsec_sa_details" }
+func (*IpsecSaDetails) GetCrcString() string            { return "62f0eab8" }
+func (*IpsecSaDetails) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // IpsecSaDump represents VPP binary API message 'ipsec_sa_dump'.
 type IpsecSaDump struct {
 	SaID uint32
 }
 
-func (*IpsecSaDump) GetMessageName() string {
-	return "ipsec_sa_dump"
-}
-func (*IpsecSaDump) GetCrcString() string {
-	return "2076c2f4"
-}
-func (*IpsecSaDump) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *IpsecSaDump) Reset()                        { *m = IpsecSaDump{} }
+func (*IpsecSaDump) GetMessageName() string          { return "ipsec_sa_dump" }
+func (*IpsecSaDump) GetCrcString() string            { return "2076c2f4" }
+func (*IpsecSaDump) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // IpsecSaSetKey represents VPP binary API message 'ipsec_sa_set_key'.
 type IpsecSaSetKey struct {
@@ -536,30 +472,20 @@ type IpsecSaSetKey struct {
 	IntegrityKey Key
 }
 
-func (*IpsecSaSetKey) GetMessageName() string {
-	return "ipsec_sa_set_key"
-}
-func (*IpsecSaSetKey) GetCrcString() string {
-	return "f407f496"
-}
-func (*IpsecSaSetKey) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *IpsecSaSetKey) Reset()                        { *m = IpsecSaSetKey{} }
+func (*IpsecSaSetKey) GetMessageName() string          { return "ipsec_sa_set_key" }
+func (*IpsecSaSetKey) GetCrcString() string            { return "f407f496" }
+func (*IpsecSaSetKey) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // IpsecSaSetKeyReply represents VPP binary API message 'ipsec_sa_set_key_reply'.
 type IpsecSaSetKeyReply struct {
 	Retval int32
 }
 
-func (*IpsecSaSetKeyReply) GetMessageName() string {
-	return "ipsec_sa_set_key_reply"
-}
-func (*IpsecSaSetKeyReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*IpsecSaSetKeyReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *IpsecSaSetKeyReply) Reset()                        { *m = IpsecSaSetKeyReply{} }
+func (*IpsecSaSetKeyReply) GetMessageName() string          { return "ipsec_sa_set_key_reply" }
+func (*IpsecSaSetKeyReply) GetCrcString() string            { return "e8d4e804" }
+func (*IpsecSaSetKeyReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // IpsecSadEntryAddDel represents VPP binary API message 'ipsec_sad_entry_add_del'.
 type IpsecSadEntryAddDel struct {
@@ -567,15 +493,10 @@ type IpsecSadEntryAddDel struct {
 	Entry IpsecSadEntry
 }
 
-func (*IpsecSadEntryAddDel) GetMessageName() string {
-	return "ipsec_sad_entry_add_del"
-}
-func (*IpsecSadEntryAddDel) GetCrcString() string {
-	return "05747d5b"
-}
-func (*IpsecSadEntryAddDel) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *IpsecSadEntryAddDel) Reset()                        { *m = IpsecSadEntryAddDel{} }
+func (*IpsecSadEntryAddDel) GetMessageName() string          { return "ipsec_sad_entry_add_del" }
+func (*IpsecSadEntryAddDel) GetCrcString() string            { return "05747d5b" }
+func (*IpsecSadEntryAddDel) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // IpsecSadEntryAddDelReply represents VPP binary API message 'ipsec_sad_entry_add_del_reply'.
 type IpsecSadEntryAddDelReply struct {
@@ -583,15 +504,10 @@ type IpsecSadEntryAddDelReply struct {
 	StatIndex uint32
 }
 
-func (*IpsecSadEntryAddDelReply) GetMessageName() string {
-	return "ipsec_sad_entry_add_del_reply"
-}
-func (*IpsecSadEntryAddDelReply) GetCrcString() string {
-	return "9ffac24b"
-}
-func (*IpsecSadEntryAddDelReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *IpsecSadEntryAddDelReply) Reset()                        { *m = IpsecSadEntryAddDelReply{} }
+func (*IpsecSadEntryAddDelReply) GetMessageName() string          { return "ipsec_sad_entry_add_del_reply" }
+func (*IpsecSadEntryAddDelReply) GetCrcString() string            { return "9ffac24b" }
+func (*IpsecSadEntryAddDelReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // IpsecSelectBackend represents VPP binary API message 'ipsec_select_backend'.
 type IpsecSelectBackend struct {
@@ -599,30 +515,20 @@ type IpsecSelectBackend struct {
 	Index    uint8
 }
 
-func (*IpsecSelectBackend) GetMessageName() string {
-	return "ipsec_select_backend"
-}
-func (*IpsecSelectBackend) GetCrcString() string {
-	return "b36bcff3"
-}
-func (*IpsecSelectBackend) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *IpsecSelectBackend) Reset()                        { *m = IpsecSelectBackend{} }
+func (*IpsecSelectBackend) GetMessageName() string          { return "ipsec_select_backend" }
+func (*IpsecSelectBackend) GetCrcString() string            { return "b36bcff3" }
+func (*IpsecSelectBackend) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // IpsecSelectBackendReply represents VPP binary API message 'ipsec_select_backend_reply'.
 type IpsecSelectBackendReply struct {
 	Retval int32
 }
 
-func (*IpsecSelectBackendReply) GetMessageName() string {
-	return "ipsec_select_backend_reply"
-}
-func (*IpsecSelectBackendReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*IpsecSelectBackendReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *IpsecSelectBackendReply) Reset()                        { *m = IpsecSelectBackendReply{} }
+func (*IpsecSelectBackendReply) GetMessageName() string          { return "ipsec_select_backend_reply" }
+func (*IpsecSelectBackendReply) GetCrcString() string            { return "e8d4e804" }
+func (*IpsecSelectBackendReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // IpsecSpdAddDel represents VPP binary API message 'ipsec_spd_add_del'.
 type IpsecSpdAddDel struct {
@@ -630,45 +536,30 @@ type IpsecSpdAddDel struct {
 	SpdID uint32
 }
 
-func (*IpsecSpdAddDel) GetMessageName() string {
-	return "ipsec_spd_add_del"
-}
-func (*IpsecSpdAddDel) GetCrcString() string {
-	return "9ffdf5da"
-}
-func (*IpsecSpdAddDel) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *IpsecSpdAddDel) Reset()                        { *m = IpsecSpdAddDel{} }
+func (*IpsecSpdAddDel) GetMessageName() string          { return "ipsec_spd_add_del" }
+func (*IpsecSpdAddDel) GetCrcString() string            { return "9ffdf5da" }
+func (*IpsecSpdAddDel) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // IpsecSpdAddDelReply represents VPP binary API message 'ipsec_spd_add_del_reply'.
 type IpsecSpdAddDelReply struct {
 	Retval int32
 }
 
-func (*IpsecSpdAddDelReply) GetMessageName() string {
-	return "ipsec_spd_add_del_reply"
-}
-func (*IpsecSpdAddDelReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*IpsecSpdAddDelReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *IpsecSpdAddDelReply) Reset()                        { *m = IpsecSpdAddDelReply{} }
+func (*IpsecSpdAddDelReply) GetMessageName() string          { return "ipsec_spd_add_del_reply" }
+func (*IpsecSpdAddDelReply) GetCrcString() string            { return "e8d4e804" }
+func (*IpsecSpdAddDelReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // IpsecSpdDetails represents VPP binary API message 'ipsec_spd_details'.
 type IpsecSpdDetails struct {
 	Entry IpsecSpdEntry
 }
 
-func (*IpsecSpdDetails) GetMessageName() string {
-	return "ipsec_spd_details"
-}
-func (*IpsecSpdDetails) GetCrcString() string {
-	return "928e5fcc"
-}
-func (*IpsecSpdDetails) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *IpsecSpdDetails) Reset()                        { *m = IpsecSpdDetails{} }
+func (*IpsecSpdDetails) GetMessageName() string          { return "ipsec_spd_details" }
+func (*IpsecSpdDetails) GetCrcString() string            { return "928e5fcc" }
+func (*IpsecSpdDetails) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // IpsecSpdDump represents VPP binary API message 'ipsec_spd_dump'.
 type IpsecSpdDump struct {
@@ -676,15 +567,10 @@ type IpsecSpdDump struct {
 	SaID  uint32
 }
 
-func (*IpsecSpdDump) GetMessageName() string {
-	return "ipsec_spd_dump"
-}
-func (*IpsecSpdDump) GetCrcString() string {
-	return "afefbf7d"
-}
-func (*IpsecSpdDump) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *IpsecSpdDump) Reset()                        { *m = IpsecSpdDump{} }
+func (*IpsecSpdDump) GetMessageName() string          { return "ipsec_spd_dump" }
+func (*IpsecSpdDump) GetCrcString() string            { return "afefbf7d" }
+func (*IpsecSpdDump) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // IpsecSpdEntryAddDel represents VPP binary API message 'ipsec_spd_entry_add_del'.
 type IpsecSpdEntryAddDel struct {
@@ -692,15 +578,10 @@ type IpsecSpdEntryAddDel struct {
 	Entry IpsecSpdEntry
 }
 
-func (*IpsecSpdEntryAddDel) GetMessageName() string {
-	return "ipsec_spd_entry_add_del"
-}
-func (*IpsecSpdEntryAddDel) GetCrcString() string {
-	return "bbab53da"
-}
-func (*IpsecSpdEntryAddDel) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *IpsecSpdEntryAddDel) Reset()                        { *m = IpsecSpdEntryAddDel{} }
+func (*IpsecSpdEntryAddDel) GetMessageName() string          { return "ipsec_spd_entry_add_del" }
+func (*IpsecSpdEntryAddDel) GetCrcString() string            { return "bbab53da" }
+func (*IpsecSpdEntryAddDel) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // IpsecSpdEntryAddDelReply represents VPP binary API message 'ipsec_spd_entry_add_del_reply'.
 type IpsecSpdEntryAddDelReply struct {
@@ -708,15 +589,10 @@ type IpsecSpdEntryAddDelReply struct {
 	StatIndex uint32
 }
 
-func (*IpsecSpdEntryAddDelReply) GetMessageName() string {
-	return "ipsec_spd_entry_add_del_reply"
-}
-func (*IpsecSpdEntryAddDelReply) GetCrcString() string {
-	return "9ffac24b"
-}
-func (*IpsecSpdEntryAddDelReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *IpsecSpdEntryAddDelReply) Reset()                        { *m = IpsecSpdEntryAddDelReply{} }
+func (*IpsecSpdEntryAddDelReply) GetMessageName() string          { return "ipsec_spd_entry_add_del_reply" }
+func (*IpsecSpdEntryAddDelReply) GetCrcString() string            { return "9ffac24b" }
+func (*IpsecSpdEntryAddDelReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // IpsecSpdInterfaceDetails represents VPP binary API message 'ipsec_spd_interface_details'.
 type IpsecSpdInterfaceDetails struct {
@@ -724,15 +600,10 @@ type IpsecSpdInterfaceDetails struct {
 	SwIfIndex uint32
 }
 
-func (*IpsecSpdInterfaceDetails) GetMessageName() string {
-	return "ipsec_spd_interface_details"
-}
-func (*IpsecSpdInterfaceDetails) GetCrcString() string {
-	return "2c54296d"
-}
-func (*IpsecSpdInterfaceDetails) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *IpsecSpdInterfaceDetails) Reset()                        { *m = IpsecSpdInterfaceDetails{} }
+func (*IpsecSpdInterfaceDetails) GetMessageName() string          { return "ipsec_spd_interface_details" }
+func (*IpsecSpdInterfaceDetails) GetCrcString() string            { return "2c54296d" }
+func (*IpsecSpdInterfaceDetails) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // IpsecSpdInterfaceDump represents VPP binary API message 'ipsec_spd_interface_dump'.
 type IpsecSpdInterfaceDump struct {
@@ -740,15 +611,10 @@ type IpsecSpdInterfaceDump struct {
 	SpdIndexValid uint8
 }
 
-func (*IpsecSpdInterfaceDump) GetMessageName() string {
-	return "ipsec_spd_interface_dump"
-}
-func (*IpsecSpdInterfaceDump) GetCrcString() string {
-	return "8971de19"
-}
-func (*IpsecSpdInterfaceDump) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *IpsecSpdInterfaceDump) Reset()                        { *m = IpsecSpdInterfaceDump{} }
+func (*IpsecSpdInterfaceDump) GetMessageName() string          { return "ipsec_spd_interface_dump" }
+func (*IpsecSpdInterfaceDump) GetCrcString() string            { return "8971de19" }
+func (*IpsecSpdInterfaceDump) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // IpsecSpdsDetails represents VPP binary API message 'ipsec_spds_details'.
 type IpsecSpdsDetails struct {
@@ -756,28 +622,18 @@ type IpsecSpdsDetails struct {
 	Npolicies uint32
 }
 
-func (*IpsecSpdsDetails) GetMessageName() string {
-	return "ipsec_spds_details"
-}
-func (*IpsecSpdsDetails) GetCrcString() string {
-	return "a04bb254"
-}
-func (*IpsecSpdsDetails) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *IpsecSpdsDetails) Reset()                        { *m = IpsecSpdsDetails{} }
+func (*IpsecSpdsDetails) GetMessageName() string          { return "ipsec_spds_details" }
+func (*IpsecSpdsDetails) GetCrcString() string            { return "a04bb254" }
+func (*IpsecSpdsDetails) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // IpsecSpdsDump represents VPP binary API message 'ipsec_spds_dump'.
 type IpsecSpdsDump struct{}
 
-func (*IpsecSpdsDump) GetMessageName() string {
-	return "ipsec_spds_dump"
-}
-func (*IpsecSpdsDump) GetCrcString() string {
-	return "51077d14"
-}
-func (*IpsecSpdsDump) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *IpsecSpdsDump) Reset()                        { *m = IpsecSpdsDump{} }
+func (*IpsecSpdsDump) GetMessageName() string          { return "ipsec_spds_dump" }
+func (*IpsecSpdsDump) GetCrcString() string            { return "51077d14" }
+func (*IpsecSpdsDump) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // IpsecTunnelIfAddDel represents VPP binary API message 'ipsec_tunnel_if_add_del'.
 type IpsecTunnelIfAddDel struct {
@@ -804,15 +660,10 @@ type IpsecTunnelIfAddDel struct {
 	TxTableID          uint32
 }
 
-func (*IpsecTunnelIfAddDel) GetMessageName() string {
-	return "ipsec_tunnel_if_add_del"
-}
-func (*IpsecTunnelIfAddDel) GetCrcString() string {
-	return "58e7f5ee"
-}
-func (*IpsecTunnelIfAddDel) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *IpsecTunnelIfAddDel) Reset()                        { *m = IpsecTunnelIfAddDel{} }
+func (*IpsecTunnelIfAddDel) GetMessageName() string          { return "ipsec_tunnel_if_add_del" }
+func (*IpsecTunnelIfAddDel) GetCrcString() string            { return "58e7f5ee" }
+func (*IpsecTunnelIfAddDel) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // IpsecTunnelIfAddDelReply represents VPP binary API message 'ipsec_tunnel_if_add_del_reply'.
 type IpsecTunnelIfAddDelReply struct {
@@ -820,15 +671,10 @@ type IpsecTunnelIfAddDelReply struct {
 	SwIfIndex uint32
 }
 
-func (*IpsecTunnelIfAddDelReply) GetMessageName() string {
-	return "ipsec_tunnel_if_add_del_reply"
-}
-func (*IpsecTunnelIfAddDelReply) GetCrcString() string {
-	return "fda5941f"
-}
-func (*IpsecTunnelIfAddDelReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *IpsecTunnelIfAddDelReply) Reset()                        { *m = IpsecTunnelIfAddDelReply{} }
+func (*IpsecTunnelIfAddDelReply) GetMessageName() string          { return "ipsec_tunnel_if_add_del_reply" }
+func (*IpsecTunnelIfAddDelReply) GetCrcString() string            { return "fda5941f" }
+func (*IpsecTunnelIfAddDelReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // IpsecTunnelIfSetKey represents VPP binary API message 'ipsec_tunnel_if_set_key'.
 type IpsecTunnelIfSetKey struct {
@@ -839,30 +685,20 @@ type IpsecTunnelIfSetKey struct {
 	Key       []byte `struc:"[128]byte"`
 }
 
-func (*IpsecTunnelIfSetKey) GetMessageName() string {
-	return "ipsec_tunnel_if_set_key"
-}
-func (*IpsecTunnelIfSetKey) GetCrcString() string {
-	return "326169a8"
-}
-func (*IpsecTunnelIfSetKey) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *IpsecTunnelIfSetKey) Reset()                        { *m = IpsecTunnelIfSetKey{} }
+func (*IpsecTunnelIfSetKey) GetMessageName() string          { return "ipsec_tunnel_if_set_key" }
+func (*IpsecTunnelIfSetKey) GetCrcString() string            { return "326169a8" }
+func (*IpsecTunnelIfSetKey) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // IpsecTunnelIfSetKeyReply represents VPP binary API message 'ipsec_tunnel_if_set_key_reply'.
 type IpsecTunnelIfSetKeyReply struct {
 	Retval int32
 }
 
-func (*IpsecTunnelIfSetKeyReply) GetMessageName() string {
-	return "ipsec_tunnel_if_set_key_reply"
-}
-func (*IpsecTunnelIfSetKeyReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*IpsecTunnelIfSetKeyReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *IpsecTunnelIfSetKeyReply) Reset()                        { *m = IpsecTunnelIfSetKeyReply{} }
+func (*IpsecTunnelIfSetKeyReply) GetMessageName() string          { return "ipsec_tunnel_if_set_key_reply" }
+func (*IpsecTunnelIfSetKeyReply) GetCrcString() string            { return "e8d4e804" }
+func (*IpsecTunnelIfSetKeyReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // IpsecTunnelIfSetSa represents VPP binary API message 'ipsec_tunnel_if_set_sa'.
 type IpsecTunnelIfSetSa struct {
@@ -871,30 +707,20 @@ type IpsecTunnelIfSetSa struct {
 	IsOutbound uint8
 }
 
-func (*IpsecTunnelIfSetSa) GetMessageName() string {
-	return "ipsec_tunnel_if_set_sa"
-}
-func (*IpsecTunnelIfSetSa) GetCrcString() string {
-	return "6ab567f2"
-}
-func (*IpsecTunnelIfSetSa) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *IpsecTunnelIfSetSa) Reset()                        { *m = IpsecTunnelIfSetSa{} }
+func (*IpsecTunnelIfSetSa) GetMessageName() string          { return "ipsec_tunnel_if_set_sa" }
+func (*IpsecTunnelIfSetSa) GetCrcString() string            { return "6ab567f2" }
+func (*IpsecTunnelIfSetSa) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // IpsecTunnelIfSetSaReply represents VPP binary API message 'ipsec_tunnel_if_set_sa_reply'.
 type IpsecTunnelIfSetSaReply struct {
 	Retval int32
 }
 
-func (*IpsecTunnelIfSetSaReply) GetMessageName() string {
-	return "ipsec_tunnel_if_set_sa_reply"
-}
-func (*IpsecTunnelIfSetSaReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*IpsecTunnelIfSetSaReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *IpsecTunnelIfSetSaReply) Reset()                        { *m = IpsecTunnelIfSetSaReply{} }
+func (*IpsecTunnelIfSetSaReply) GetMessageName() string          { return "ipsec_tunnel_if_set_sa_reply" }
+func (*IpsecTunnelIfSetSaReply) GetCrcString() string            { return "e8d4e804" }
+func (*IpsecTunnelIfSetSaReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 func init() {
 	api.RegisterMessage((*IpsecBackendDetails)(nil), "ipsec.IpsecBackendDetails")

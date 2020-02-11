@@ -3,7 +3,7 @@ module go.ligato.io/vpp-agent/v3
 go 1.12
 
 require (
-	git.fd.io/govpp.git v0.2.1-0.20200120113858-e095944d454b
+	git.fd.io/govpp.git v0.2.1-0.20200131102335-2df59463fcbb
 	github.com/Azure/go-ansiterm v0.0.0-20170929234023-d6e3b3328b78 // indirect
 	github.com/DataDog/zstd v1.3.5 // indirect
 	github.com/Microsoft/go-winio v0.4.7 // indirect
@@ -13,7 +13,6 @@ require (
 	github.com/alicebob/gopher-json v0.0.0-20180125190556-5a6b3ba71ee6 // indirect
 	github.com/alicebob/miniredis v2.5.0+incompatible // indirect
 	github.com/armon/go-metrics v0.0.0-20190430140413-ec5e00d3c878 // indirect
-	github.com/bennyscetbun/jsongo v1.1.0 // indirect
 	github.com/bmizerany/assert v0.0.0-20160611221934-b7ed37b82869 // indirect
 	github.com/bshuster-repo/logrus-logstash-hook v0.4.1 // indirect
 	github.com/bsm/sarama-cluster v2.1.15+incompatible // indirect
@@ -38,7 +37,7 @@ require (
 	github.com/go-errors/errors v1.0.1
 	github.com/go-redis/redis v6.13.2+incompatible // indirect
 	github.com/golang/groupcache v0.0.0-20191002201903-404acd9df4cc // indirect
-	github.com/golang/protobuf v1.3.2
+	github.com/golang/protobuf v1.3.3
 	github.com/golang/snappy v0.0.0-20180518054509-2e65f85255db // indirect
 	github.com/gomodule/redigo v2.0.0+incompatible // indirect
 	github.com/gorilla/context v0.0.0-20160226214623-1ea25387ff6f // indirect
@@ -89,8 +88,6 @@ require (
 	golang.org/x/net v0.0.0-20190522155817-f3200d17e092
 	golang.org/x/sys v0.0.0-20200117145432-59e60aa80a0c
 	golang.org/x/time v0.0.0-20190921001708-c4c64cad1fd0 // indirect
-	google.golang.org/grpc v1.24.0
+	google.golang.org/grpc v1.27.0
 	gotest.tools v2.2.0+incompatible // indirect
 )
-
-replace github.com/bennyscetbun/jsongo => github.com/bennyscetbun/jsongo v0.0.0-20160422144625-5240b3f82c66

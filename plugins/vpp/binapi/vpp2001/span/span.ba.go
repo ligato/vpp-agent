@@ -34,30 +34,20 @@ type SwInterfaceSpanDetails struct {
 	IsL2          uint8
 }
 
-func (*SwInterfaceSpanDetails) GetMessageName() string {
-	return "sw_interface_span_details"
-}
-func (*SwInterfaceSpanDetails) GetCrcString() string {
-	return "23966371"
-}
-func (*SwInterfaceSpanDetails) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *SwInterfaceSpanDetails) Reset()                        { *m = SwInterfaceSpanDetails{} }
+func (*SwInterfaceSpanDetails) GetMessageName() string          { return "sw_interface_span_details" }
+func (*SwInterfaceSpanDetails) GetCrcString() string            { return "23966371" }
+func (*SwInterfaceSpanDetails) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // SwInterfaceSpanDump represents VPP binary API message 'sw_interface_span_dump'.
 type SwInterfaceSpanDump struct {
 	IsL2 uint8
 }
 
-func (*SwInterfaceSpanDump) GetMessageName() string {
-	return "sw_interface_span_dump"
-}
-func (*SwInterfaceSpanDump) GetCrcString() string {
-	return "67c54650"
-}
-func (*SwInterfaceSpanDump) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *SwInterfaceSpanDump) Reset()                        { *m = SwInterfaceSpanDump{} }
+func (*SwInterfaceSpanDump) GetMessageName() string          { return "sw_interface_span_dump" }
+func (*SwInterfaceSpanDump) GetCrcString() string            { return "67c54650" }
+func (*SwInterfaceSpanDump) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // SwInterfaceSpanEnableDisable represents VPP binary API message 'sw_interface_span_enable_disable'.
 type SwInterfaceSpanEnableDisable struct {
@@ -67,30 +57,24 @@ type SwInterfaceSpanEnableDisable struct {
 	IsL2          uint8
 }
 
+func (m *SwInterfaceSpanEnableDisable) Reset() { *m = SwInterfaceSpanEnableDisable{} }
 func (*SwInterfaceSpanEnableDisable) GetMessageName() string {
 	return "sw_interface_span_enable_disable"
 }
-func (*SwInterfaceSpanEnableDisable) GetCrcString() string {
-	return "7216258d"
-}
-func (*SwInterfaceSpanEnableDisable) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (*SwInterfaceSpanEnableDisable) GetCrcString() string            { return "7216258d" }
+func (*SwInterfaceSpanEnableDisable) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // SwInterfaceSpanEnableDisableReply represents VPP binary API message 'sw_interface_span_enable_disable_reply'.
 type SwInterfaceSpanEnableDisableReply struct {
 	Retval int32
 }
 
+func (m *SwInterfaceSpanEnableDisableReply) Reset() { *m = SwInterfaceSpanEnableDisableReply{} }
 func (*SwInterfaceSpanEnableDisableReply) GetMessageName() string {
 	return "sw_interface_span_enable_disable_reply"
 }
-func (*SwInterfaceSpanEnableDisableReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*SwInterfaceSpanEnableDisableReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (*SwInterfaceSpanEnableDisableReply) GetCrcString() string            { return "e8d4e804" }
+func (*SwInterfaceSpanEnableDisableReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 func init() {
 	api.RegisterMessage((*SwInterfaceSpanDetails)(nil), "span.SwInterfaceSpanDetails")

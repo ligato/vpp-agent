@@ -15,85 +15,130 @@
 package vpp2001
 
 import (
-	"context"
-	"regexp"
 	"strconv"
 
-	"github.com/pkg/errors"
-	vpp_ip "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ip"
+	//vpp_ip_neighbor "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ip_neighbor"
+	//"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ip_types"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin/vppcalls"
 	l3 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3"
 )
 
-// SetIPScanNeighbor implements ip neigh  handler.
-func (h *IPNeighHandler) SetIPScanNeighbor(data *l3.IPScanNeighbor) error {
-	req := &vpp_ip.IPScanNeighborEnableDisable{
-		Mode:           uint8(data.Mode),
-		ScanInterval:   uint8(data.ScanInterval),
-		MaxProcTime:    uint8(data.MaxProcTime),
-		MaxUpdate:      uint8(data.MaxUpdate),
-		ScanIntDelay:   uint8(data.ScanIntDelay),
-		StaleThreshold: uint8(data.StaleThreshold),
+/*
+	FIXME: IP neighbor configuraton is not implemented for 20.01, because
+ 	of breaking change in the API.
+	New proto model must be defined to support configuring this properly.
+	The current model does not allow separated config for IPv4 and IPv6.
+*/
+
+// DefaultIPScanNeighbor implements ip neigh handler.
+func (h *IPNeighHandler) DefaultIPScanNeighbor() *l3.IPScanNeighbor {
+	return nil
+
+	/*return &l3.IPScanNeighbor{
+		Mode:           l3.IPScanNeighbor_DISABLED,
+		MaxProcTime:    0,
+		MaxUpdate:      50000,
+		ScanInterval:   0,
+		ScanIntDelay:   0,
+		StaleThreshold: 0,
+	}*/
+}
+
+// SetIPScanNeighbor implements ip neigh handler.
+func (h *IPNeighHandler) SetIPScanNeighbor(data *l3.IPScanNeighbor) (err error) {
+	return vppcalls.ErrIPNeighborNotImplemented
+
+	/*switch data.Mode {
+	case l3.IPScanNeighbor_IPV4:
+		return h.setIPScanNeighbor(ip_types.ADDRESS_IP4, data.MaxUpdate, data.MaxProcTime, recycle)
+	case l3.IPScanNeighbor_IPV6:
+		return h.setIPScanNeighbor(ip_types.ADDRESS_IP6, data.MaxUpdate, data.MaxProcTime, recycle)
+	case l3.IPScanNeighbor_BOTH:
+		err = h.setIPScanNeighbor(ip_types.ADDRESS_IP4, data.MaxUpdate, data.MaxProcTime, recycle)
+		if err != nil {
+			return err
+		}
+		err = h.setIPScanNeighbor(ip_types.ADDRESS_IP6, data.MaxUpdate, data.MaxProcTime, recycle)
+		if err != nil {
+			return err
+		}
+	case l3.IPScanNeighbor_DISABLED:
+		err = h.setIPScanNeighbor(ip_types.ADDRESS_IP4, 0, 0, false)
+		if err != nil {
+			return err
+		}
+		err = h.setIPScanNeighbor(ip_types.ADDRESS_IP6, 0, 0, false)
+		if err != nil {
+			return err
+		}
+	default:
+		return fmt.Errorf("unknown IP Scan Neighbor mode: %v", data.Mode)
 	}
-	reply := &vpp_ip.IPScanNeighborEnableDisableReply{}
+	return nil*/
+}
+
+/*func (h *IPNeighHandler) setIPScanNeighbor(af ip_types.AddressFamily, maxNum, maxAge uint32, recycle bool) error {
+	req := &vpp_ip_neighbor.IPNeighborConfig{
+		Af:        af,
+		MaxNumber: maxNum,
+		MaxAge:    maxAge,
+		Recycle:   recycle,
+	}
+	reply := &vpp_ip_neighbor.IPNeighborConfigReply{}
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	}
 
 	return nil
-}
+}*/
 
 var (
-	/*
-		---
-		IP neighbor scan disabled - current time is 5.5101 sec
-		---
-		IP neighbor scan enabled for IPv4 neighbors - current time is 95133.3063 sec
-		   Full_scan_interval: 1 min  Stale_purge_threshod: 4 min
-		   Max_process_time: 20 usec  Max_updates 10  Delay_to_resume_after_max_limit: 231 msec
-		---
-		IP neighbor scan enabled for IPv4 and IPv6 neighbors - current time is 95.6033 sec
-		   Full_scan_interval: 1 min  Stale_purge_threshod: 4 min
-		   Max_process_time: 20 usec  Max_updates 10  Delay_to_resume_after_max_limit: 1 msec
-	*/
-	cliIPScanNeighRe = regexp.MustCompile(`IP neighbor scan (disabled|enabled)(?: for (IPv4|IPv6|IPv4 and IPv6) neighbors)? - current time is [0-9\.]+ sec(?:
-\s+Full_scan_interval: ([0-9]+) min\s+Stale_purge_threshod: ([0-9]+) min
-\s+Max_process_time: ([0-9]+) usec\s+Max_updates ([0-9]+)\s+Delay_to_resume_after_max_limit: ([0-9]+) msec)?`)
+/*
+	Sample outputs for VPP CLI 'show ip neighbor-config'
+	---
+	ip4:
+	  limit:50000, age:0, recycle:0
+	ip6:
+	  limit:50000, age:0, recycle:0
+	---
+*/
+//cliIPScanNeighRe = regexp.MustCompile(`(ip4|ip6):\n\s+limit:([0-9]+),\s+age:([0-9]+),\s+recycle:([0-9]+)\s+`)
 )
 
 // GetIPScanNeighbor dumps current IP Scan Neighbor configuration.
 func (h *IPNeighHandler) GetIPScanNeighbor() (*l3.IPScanNeighbor, error) {
-	data, err := h.RunCli(context.TODO(), "show ip scan-neighbor")
+	return nil, vppcalls.ErrIPNeighborNotImplemented
+
+	/*data, err := h.RunCli(context.TODO(), "show ip neighbor-config")
 	if err != nil {
 		return nil, err
 	}
 
+	allMatches := cliIPScanNeighRe.FindAllStringSubmatch(data, 2)
+
+	fmt.Printf("%d MATCHES:\n%q\n", len(allMatches), allMatches)
+
+	if len(allMatches) != 2 || len(allMatches[0]) != 5 || len(allMatches[1]) != 5 {
+		h.log.Warnf("invalid 'show ip neighbor-config' output: %q", data)
+		return nil, errors.Errorf("invalid VPP CLI output for ip neighbor config")
+	}
+
 	ipScanNeigh := &l3.IPScanNeighbor{}
 
-	matches := cliIPScanNeighRe.FindStringSubmatch(string(data))
-
-	if len(matches) != 8 {
-		h.log.Warnf("invalid 'show ip scan-neighbor' output: %q", string(data))
-		return nil, errors.Errorf("invalid 'show ip scan-neighbor' output")
-	}
-
-	if matches[1] == "enabled" {
-		switch matches[2] {
-		case "IPv4":
+	for _, matches := range allMatches {
+		switch matches[1] {
+		case "ip4":
 			ipScanNeigh.Mode = l3.IPScanNeighbor_IPV4
-		case "IPv6":
+		case "ip6":
 			ipScanNeigh.Mode = l3.IPScanNeighbor_IPV6
-		case "IPv4 and IPv6":
-			ipScanNeigh.Mode = l3.IPScanNeighbor_BOTH
 		}
+		ipScanNeigh.MaxUpdate = h.strToUint32(matches[2])
+		ipScanNeigh.MaxProcTime = h.strToUint32(matches[3])
+		ipScanNeigh.ScanInterval = h.strToUint32(matches[4])
 	}
-	ipScanNeigh.ScanInterval = h.strToUint32(matches[3])
-	ipScanNeigh.StaleThreshold = h.strToUint32(matches[4])
-	ipScanNeigh.MaxProcTime = h.strToUint32(matches[5])
-	ipScanNeigh.MaxUpdate = h.strToUint32(matches[6])
-	ipScanNeigh.ScanIntDelay = h.strToUint32(matches[7])
 
-	return ipScanNeigh, nil
+	return ipScanNeigh, nil*/
 }
 
 func (h *IPNeighHandler) strToUint32(s string) uint32 {

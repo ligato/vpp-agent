@@ -38,9 +38,7 @@ type Vmxnet3RxList struct {
 	RxConsume []uint16 `struc:"[2]uint16"`
 }
 
-func (*Vmxnet3RxList) GetTypeName() string {
-	return "vmxnet3_rx_list"
-}
+func (*Vmxnet3RxList) GetTypeName() string { return "vmxnet3_rx_list" }
 
 // Vmxnet3TxList represents VPP binary API type 'vmxnet3_tx_list'.
 type Vmxnet3TxList struct {
@@ -50,9 +48,7 @@ type Vmxnet3TxList struct {
 	TxConsume uint16
 }
 
-func (*Vmxnet3TxList) GetTypeName() string {
-	return "vmxnet3_tx_list"
-}
+func (*Vmxnet3TxList) GetTypeName() string { return "vmxnet3_tx_list" }
 
 // Vmxnet3Create represents VPP binary API message 'vmxnet3_create'.
 type Vmxnet3Create struct {
@@ -65,15 +61,10 @@ type Vmxnet3Create struct {
 	Bind       uint8
 }
 
-func (*Vmxnet3Create) GetMessageName() string {
-	return "vmxnet3_create"
-}
-func (*Vmxnet3Create) GetCrcString() string {
-	return "6da613a5"
-}
-func (*Vmxnet3Create) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *Vmxnet3Create) Reset()                        { *m = Vmxnet3Create{} }
+func (*Vmxnet3Create) GetMessageName() string          { return "vmxnet3_create" }
+func (*Vmxnet3Create) GetCrcString() string            { return "6da613a5" }
+func (*Vmxnet3Create) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // Vmxnet3CreateReply represents VPP binary API message 'vmxnet3_create_reply'.
 type Vmxnet3CreateReply struct {
@@ -81,45 +72,30 @@ type Vmxnet3CreateReply struct {
 	SwIfIndex uint32
 }
 
-func (*Vmxnet3CreateReply) GetMessageName() string {
-	return "vmxnet3_create_reply"
-}
-func (*Vmxnet3CreateReply) GetCrcString() string {
-	return "fda5941f"
-}
-func (*Vmxnet3CreateReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *Vmxnet3CreateReply) Reset()                        { *m = Vmxnet3CreateReply{} }
+func (*Vmxnet3CreateReply) GetMessageName() string          { return "vmxnet3_create_reply" }
+func (*Vmxnet3CreateReply) GetCrcString() string            { return "fda5941f" }
+func (*Vmxnet3CreateReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // Vmxnet3Delete represents VPP binary API message 'vmxnet3_delete'.
 type Vmxnet3Delete struct {
 	SwIfIndex uint32
 }
 
-func (*Vmxnet3Delete) GetMessageName() string {
-	return "vmxnet3_delete"
-}
-func (*Vmxnet3Delete) GetCrcString() string {
-	return "529cb13f"
-}
-func (*Vmxnet3Delete) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *Vmxnet3Delete) Reset()                        { *m = Vmxnet3Delete{} }
+func (*Vmxnet3Delete) GetMessageName() string          { return "vmxnet3_delete" }
+func (*Vmxnet3Delete) GetCrcString() string            { return "529cb13f" }
+func (*Vmxnet3Delete) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // Vmxnet3DeleteReply represents VPP binary API message 'vmxnet3_delete_reply'.
 type Vmxnet3DeleteReply struct {
 	Retval int32
 }
 
-func (*Vmxnet3DeleteReply) GetMessageName() string {
-	return "vmxnet3_delete_reply"
-}
-func (*Vmxnet3DeleteReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*Vmxnet3DeleteReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *Vmxnet3DeleteReply) Reset()                        { *m = Vmxnet3DeleteReply{} }
+func (*Vmxnet3DeleteReply) GetMessageName() string          { return "vmxnet3_delete_reply" }
+func (*Vmxnet3DeleteReply) GetCrcString() string            { return "e8d4e804" }
+func (*Vmxnet3DeleteReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // Vmxnet3Details represents VPP binary API message 'vmxnet3_details'.
 type Vmxnet3Details struct {
@@ -135,28 +111,18 @@ type Vmxnet3Details struct {
 	TxList      []Vmxnet3TxList `struc:"[8]Vmxnet3TxList"`
 }
 
-func (*Vmxnet3Details) GetMessageName() string {
-	return "vmxnet3_details"
-}
-func (*Vmxnet3Details) GetCrcString() string {
-	return "25f4412f"
-}
-func (*Vmxnet3Details) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *Vmxnet3Details) Reset()                        { *m = Vmxnet3Details{} }
+func (*Vmxnet3Details) GetMessageName() string          { return "vmxnet3_details" }
+func (*Vmxnet3Details) GetCrcString() string            { return "25f4412f" }
+func (*Vmxnet3Details) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // Vmxnet3Dump represents VPP binary API message 'vmxnet3_dump'.
 type Vmxnet3Dump struct{}
 
-func (*Vmxnet3Dump) GetMessageName() string {
-	return "vmxnet3_dump"
-}
-func (*Vmxnet3Dump) GetCrcString() string {
-	return "51077d14"
-}
-func (*Vmxnet3Dump) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *Vmxnet3Dump) Reset()                        { *m = Vmxnet3Dump{} }
+func (*Vmxnet3Dump) GetMessageName() string          { return "vmxnet3_dump" }
+func (*Vmxnet3Dump) GetCrcString() string            { return "51077d14" }
+func (*Vmxnet3Dump) GetMessageType() api.MessageType { return api.RequestMessage }
 
 func init() {
 	api.RegisterMessage((*Vmxnet3Create)(nil), "vmxnet3.Vmxnet3Create")

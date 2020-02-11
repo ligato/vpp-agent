@@ -18,8 +18,8 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/idxmap"
 	"github.com/ligato/cn-infra/logging"
-	"go.ligato.io/vpp-agent/v3/plugins/vpp"
 
+	"go.ligato.io/vpp-agent/v3/plugins/vpp"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
 	nat "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/nat"
 )
@@ -54,6 +54,8 @@ type NatVppAPI interface {
 
 // NatVppRead provides read methods for VPP NAT configuration.
 type NatVppRead interface {
+	// DefaultNat44GlobalConfig returns default global configuration.
+	DefaultNat44GlobalConfig() *nat.Nat44Global
 	// Nat44GlobalConfigDump dumps global NAT44 config in NB format.
 	// If dumpDeprecated is true, dumps deprecated NAT44 global config as well.
 	Nat44GlobalConfigDump(dumpDeprecated bool) (*nat.Nat44Global, error)

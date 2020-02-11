@@ -20,6 +20,8 @@ func (d *InterfaceDescriptor) Create(key string, intf *interfaces.Interface) (me
 	var ifIdx uint32
 	var tapHostIfName string
 
+	ctx := context.TODO()
+
 	// create the interface of the given type
 	switch intf.Type {
 	case interfaces.Interface_TAP:
@@ -109,13 +111,18 @@ func (d *InterfaceDescriptor) Create(key string, intf *interfaces.Interface) (me
 		}
 
 	case interfaces.Interface_AF_PACKET:
-		ifIdx, err = d.ifHandler.AddAfPacketInterface(intf.Name, intf.GetPhysAddress(), intf.GetAfpacket())
+		targetHostIfName, err := d.getAfPacketTargetHostIfName(intf.GetAfpacket())
+		if err != nil {
+			d.log.Error(err)
+			return nil, err
+		}
+		ifIdx, err = d.ifHandler.AddAfPacketInterface(intf.Name, intf.GetPhysAddress(), targetHostIfName)
 		if err != nil {
 			d.log.Error(err)
 			return nil, err
 		}
 	case interfaces.Interface_IPSEC_TUNNEL:
-		ifIdx, err = d.ifHandler.AddIPSecTunnelInterface(intf.Name, intf.GetIpsec())
+		ifIdx, err = d.ifHandler.AddIPSecTunnelInterface(ctx, intf.Name, intf.GetIpsec())
 		if err != nil {
 			d.log.Error(err)
 			return nil, err
@@ -224,7 +231,7 @@ func (d *InterfaceDescriptor) Create(key string, intf *interfaces.Interface) (me
 
 	// set interface up if enabled
 	if intf.Enabled {
-		if err = d.ifHandler.InterfaceAdminUp(ifIdx); err != nil {
+		if err = d.ifHandler.InterfaceAdminUp(ctx, ifIdx); err != nil {
 			err = errors.Errorf("failed to set interface %s up: %v", intf.Name, err)
 			d.log.Error(err)
 			return nil, err
@@ -246,9 +253,11 @@ func (d *InterfaceDescriptor) Delete(key string, intf *interfaces.Interface, met
 	var err error
 	ifIdx := metadata.SwIfIndex
 
+	ctx := context.TODO()
+
 	// set interface to ADMIN_DOWN unless the type is AF_PACKET_INTERFACE
 	if intf.Type != interfaces.Interface_AF_PACKET {
-		if err := d.ifHandler.InterfaceAdminDown(ifIdx); err != nil {
+		if err := d.ifHandler.InterfaceAdminDown(ctx, ifIdx); err != nil {
 			err = errors.Errorf("failed to set interface %s down: %v", intf.Name, err)
 			d.log.Error(err)
 			return err
@@ -273,9 +282,13 @@ func (d *InterfaceDescriptor) Delete(key string, intf *interfaces.Interface, met
 		d.log.Debugf("Interface %s removal skipped: cannot remove (blacklist) physical interface", intf.Name) // Not an error
 		return nil
 	case interfaces.Interface_AF_PACKET:
-		err = d.ifHandler.DeleteAfPacketInterface(intf.Name, ifIdx, intf.GetAfpacket())
+		var targetHostIfName string
+		targetHostIfName, err = d.getAfPacketTargetHostIfName(intf.GetAfpacket())
+		if err == nil {
+			err = d.ifHandler.DeleteAfPacketInterface(intf.Name, ifIdx, targetHostIfName)
+		}
 	case interfaces.Interface_IPSEC_TUNNEL:
-		err = d.ifHandler.DeleteIPSecTunnelInterface(intf.Name, intf.GetIpsec())
+		err = d.ifHandler.DeleteIPSecTunnelInterface(ctx, intf.Name, intf.GetIpsec())
 	case interfaces.Interface_SUB_INTERFACE:
 		err = d.ifHandler.DeleteSubif(ifIdx)
 	case interfaces.Interface_VMXNET3_INTERFACE:
@@ -301,16 +314,18 @@ func (d *InterfaceDescriptor) Delete(key string, intf *interfaces.Interface, met
 func (d *InterfaceDescriptor) Update(key string, oldIntf, newIntf *interfaces.Interface, oldMetadata *ifaceidx.IfaceMetadata) (newMetadata *ifaceidx.IfaceMetadata, err error) {
 	ifIdx := oldMetadata.SwIfIndex
 
+	ctx := context.TODO()
+
 	// admin status
 	if newIntf.Enabled != oldIntf.Enabled {
 		if newIntf.Enabled {
-			if err = d.ifHandler.InterfaceAdminUp(ifIdx); err != nil {
+			if err = d.ifHandler.InterfaceAdminUp(ctx, ifIdx); err != nil {
 				err = errors.Errorf("failed to set interface %s up: %v", newIntf.Name, err)
 				d.log.Error(err)
 				return oldMetadata, err
 			}
 		} else {
-			if err = d.ifHandler.InterfaceAdminDown(ifIdx); err != nil {
+			if err = d.ifHandler.InterfaceAdminDown(ctx, ifIdx); err != nil {
 				err = errors.Errorf("failed to set interface %s down: %v", newIntf.Name, err)
 				d.log.Error(err)
 				return oldMetadata, err
@@ -479,6 +494,14 @@ func (d *InterfaceDescriptor) Retrieve(correlate []adapter.InterfaceKVWithMetada
 					intf.Interface.GetMemif().BufferSize = expCfg.GetMemif().GetBufferSize()
 				}
 			}
+			//nolint:staticcheck
+			if expCfg.Type == interfaces.Interface_AF_PACKET && intf.Interface.GetAfpacket() != nil {
+				hostIfName, err := d.getAfPacketTargetHostIfName(expCfg.GetAfpacket())
+				if err == nil && hostIfName == intf.Interface.GetAfpacket().GetHostIfName() {
+					intf.Interface.GetAfpacket().HostIfName = expCfg.GetAfpacket().GetHostIfName()
+					intf.Interface.GetAfpacket().LinuxInterface = expCfg.GetAfpacket().GetLinuxInterface()
+				}
+			}
 
 			// remove rx-placement entries for queues with configuration not defined by NB
 			rxPlacementDump := intf.Interface.GetRxPlacements()
@@ -514,9 +537,12 @@ func (d *InterfaceDescriptor) Retrieve(correlate []adapter.InterfaceKVWithMetada
 		// verify links between VPP and Linux side
 		if d.linuxIfPlugin != nil && d.linuxIfHandler != nil && d.nsPlugin != nil {
 			if intf.Interface.Type == interfaces.Interface_AF_PACKET {
-				hostIfName := intf.Interface.GetAfpacket().HostIfName
-				exists, _ := d.linuxIfHandler.InterfaceExists(hostIfName)
-				if !exists {
+				var exists bool
+				hostIfName, err := d.getAfPacketTargetHostIfName(intf.Interface.GetAfpacket())
+				if err == nil {
+					exists, _ = d.linuxIfHandler.InterfaceExists(hostIfName)
+				}
+				if err != nil || !exists {
 					// the Linux interface that the AF-Packet is attached to does not exist
 					// - append special suffix that will make this interface unwanted
 					intf.Interface.Name += afPacketMissingAttachedIfSuffix

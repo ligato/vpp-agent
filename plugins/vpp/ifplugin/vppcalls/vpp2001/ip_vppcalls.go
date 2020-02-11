@@ -15,10 +15,13 @@
 package vpp2001
 
 import (
+	"context"
 	"net"
 
 	"github.com/ligato/cn-infra/utils/addrs"
+
 	vpp_ifs "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/interfaces"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ip_types"
 )
 
 func (h *InterfaceVppHandler) addDelInterfaceIP(ifIdx uint32, addr *net.IPNet, isAdd bool) error {
@@ -67,22 +70,22 @@ func (h *InterfaceVppHandler) setUnsetUnnumberedIP(uIfIdx uint32, ifIdxWithIP ui
 	return nil
 }
 
-func (h *InterfaceVppHandler) SetUnnumberedIP(uIfIdx uint32, ifIdxWithIP uint32) error {
+func (h *InterfaceVppHandler) SetUnnumberedIP(ctx context.Context, uIfIdx uint32, ifIdxWithIP uint32) error {
 	return h.setUnsetUnnumberedIP(uIfIdx, ifIdxWithIP, true)
 }
 
-func (h *InterfaceVppHandler) UnsetUnnumberedIP(uIfIdx uint32) error {
+func (h *InterfaceVppHandler) UnsetUnnumberedIP(ctx context.Context, uIfIdx uint32) error {
 	return h.setUnsetUnnumberedIP(uIfIdx, 0, false)
 }
 
 func ipToAddress(address *net.IPNet, isIPv6 bool) (ipAddr vpp_ifs.Address) {
 	if isIPv6 {
-		ipAddr.Af = vpp_ifs.ADDRESS_IP6
+		ipAddr.Af = ip_types.ADDRESS_IP6
 		var ip6addr vpp_ifs.IP6Address
 		copy(ip6addr[:], address.IP.To16())
 		ipAddr.Un.SetIP6(ip6addr)
 	} else {
-		ipAddr.Af = vpp_ifs.ADDRESS_IP4
+		ipAddr.Af = ip_types.ADDRESS_IP4
 		var ip4addr vpp_ifs.IP4Address
 		copy(ip4addr[:], address.IP.To4())
 		ipAddr.Un.SetIP4(ip4addr)

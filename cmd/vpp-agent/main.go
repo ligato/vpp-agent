@@ -17,6 +17,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"os"
@@ -29,24 +30,37 @@ import (
 
 	"go.ligato.io/vpp-agent/v3/cmd/vpp-agent/app"
 	"go.ligato.io/vpp-agent/v3/pkg/debug"
+	"go.ligato.io/vpp-agent/v3/pkg/version"
 )
 
-const logo = `                                      __
- _  _____  ___ _______ ____ ____ ___ / /_
-| |/ / _ \/ _ /___/ _ '/ _ '/ -_/ _ / __/
-|___/ .__/ .__/   \_'_/\_' /\__/_//_\__/  %s
-   /_/  /_/           /___/
+const logo = `                                       __
+  _  _____  ___ _______ ____ ____ ___ / /_   
+ | |/ / _ \/ _ /___/ _ '/ _ '/ -_/ _ / __/  %s
+ |___/ .__/ .__/   \_'_/\_' /\__/_//_\__/   %s
+    /_/  /_/           /___/                %s
 
 `
 
-var (
-	startTimeout  = agent.DefaultStartTimeout
-	stopTimeout   = agent.DefaultStopTimeout
-	resyncTimeout = time.Second * 10
-)
+func parseVersion() {
+	ver, rev, date := version.Data()
+	agent.BuildVersion = ver
+	agent.CommitHash = rev
+	agent.BuildDate = date
+	s := flag.NewFlagSet("version", flag.ContinueOnError)
+	v := s.Bool("version", false, "Print version info and exit.")
+	s.Usage = func() {}
+	if err := s.Parse(os.Args[1:]); err == nil {
+		if *v {
+			fmt.Fprintln(os.Stdout, version.Info())
+			os.Exit(0)
+		}
+	}
+}
 
 func main() {
-	fmt.Fprintf(os.Stdout, logo, agent.BuildVersion)
+	parseVersion()
+
+	fmt.Fprintf(os.Stderr, logo, version.Short(), version.BuiltStamp(), version.BuiltBy())
 
 	if debug.IsEnabled() {
 		logging.DefaultLogger.SetLevel(logging.DebugLevel)
@@ -65,6 +79,12 @@ func main() {
 		logging.DefaultLogger.Fatal(err)
 	}
 }
+
+var (
+	startTimeout  = agent.DefaultStartTimeout
+	stopTimeout   = agent.DefaultStopTimeout
+	resyncTimeout = time.Second * 10
+)
 
 func init() {
 	// Overrides for start/stop timeouts of agent

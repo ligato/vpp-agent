@@ -38,15 +38,10 @@ type BondCreate struct {
 	NumaOnly     uint8
 }
 
-func (*BondCreate) GetMessageName() string {
-	return "bond_create"
-}
-func (*BondCreate) GetCrcString() string {
-	return "f19b4ad0"
-}
-func (*BondCreate) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *BondCreate) Reset()                        { *m = BondCreate{} }
+func (*BondCreate) GetMessageName() string          { return "bond_create" }
+func (*BondCreate) GetCrcString() string            { return "f19b4ad0" }
+func (*BondCreate) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // BondCreateReply represents VPP binary API message 'bond_create_reply'.
 type BondCreateReply struct {
@@ -54,75 +49,50 @@ type BondCreateReply struct {
 	SwIfIndex uint32
 }
 
-func (*BondCreateReply) GetMessageName() string {
-	return "bond_create_reply"
-}
-func (*BondCreateReply) GetCrcString() string {
-	return "fda5941f"
-}
-func (*BondCreateReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *BondCreateReply) Reset()                        { *m = BondCreateReply{} }
+func (*BondCreateReply) GetMessageName() string          { return "bond_create_reply" }
+func (*BondCreateReply) GetCrcString() string            { return "fda5941f" }
+func (*BondCreateReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // BondDelete represents VPP binary API message 'bond_delete'.
 type BondDelete struct {
 	SwIfIndex uint32
 }
 
-func (*BondDelete) GetMessageName() string {
-	return "bond_delete"
-}
-func (*BondDelete) GetCrcString() string {
-	return "529cb13f"
-}
-func (*BondDelete) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *BondDelete) Reset()                        { *m = BondDelete{} }
+func (*BondDelete) GetMessageName() string          { return "bond_delete" }
+func (*BondDelete) GetCrcString() string            { return "529cb13f" }
+func (*BondDelete) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // BondDeleteReply represents VPP binary API message 'bond_delete_reply'.
 type BondDeleteReply struct {
 	Retval int32
 }
 
-func (*BondDeleteReply) GetMessageName() string {
-	return "bond_delete_reply"
-}
-func (*BondDeleteReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*BondDeleteReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *BondDeleteReply) Reset()                        { *m = BondDeleteReply{} }
+func (*BondDeleteReply) GetMessageName() string          { return "bond_delete_reply" }
+func (*BondDeleteReply) GetCrcString() string            { return "e8d4e804" }
+func (*BondDeleteReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // BondDetachSlave represents VPP binary API message 'bond_detach_slave'.
 type BondDetachSlave struct {
 	SwIfIndex uint32
 }
 
-func (*BondDetachSlave) GetMessageName() string {
-	return "bond_detach_slave"
-}
-func (*BondDetachSlave) GetCrcString() string {
-	return "529cb13f"
-}
-func (*BondDetachSlave) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *BondDetachSlave) Reset()                        { *m = BondDetachSlave{} }
+func (*BondDetachSlave) GetMessageName() string          { return "bond_detach_slave" }
+func (*BondDetachSlave) GetCrcString() string            { return "529cb13f" }
+func (*BondDetachSlave) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // BondDetachSlaveReply represents VPP binary API message 'bond_detach_slave_reply'.
 type BondDetachSlaveReply struct {
 	Retval int32
 }
 
-func (*BondDetachSlaveReply) GetMessageName() string {
-	return "bond_detach_slave_reply"
-}
-func (*BondDetachSlaveReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*BondDetachSlaveReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *BondDetachSlaveReply) Reset()                        { *m = BondDetachSlaveReply{} }
+func (*BondDetachSlaveReply) GetMessageName() string          { return "bond_detach_slave_reply" }
+func (*BondDetachSlaveReply) GetCrcString() string            { return "e8d4e804" }
+func (*BondDetachSlaveReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // BondEnslave represents VPP binary API message 'bond_enslave'.
 type BondEnslave struct {
@@ -132,30 +102,20 @@ type BondEnslave struct {
 	IsLongTimeout uint8
 }
 
-func (*BondEnslave) GetMessageName() string {
-	return "bond_enslave"
-}
-func (*BondEnslave) GetCrcString() string {
-	return "0ded34f6"
-}
-func (*BondEnslave) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *BondEnslave) Reset()                        { *m = BondEnslave{} }
+func (*BondEnslave) GetMessageName() string          { return "bond_enslave" }
+func (*BondEnslave) GetCrcString() string            { return "0ded34f6" }
+func (*BondEnslave) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // BondEnslaveReply represents VPP binary API message 'bond_enslave_reply'.
 type BondEnslaveReply struct {
 	Retval int32
 }
 
-func (*BondEnslaveReply) GetMessageName() string {
-	return "bond_enslave_reply"
-}
-func (*BondEnslaveReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*BondEnslaveReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *BondEnslaveReply) Reset()                        { *m = BondEnslaveReply{} }
+func (*BondEnslaveReply) GetMessageName() string          { return "bond_enslave_reply" }
+func (*BondEnslaveReply) GetCrcString() string            { return "e8d4e804" }
+func (*BondEnslaveReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // SwInterfaceBondDetails represents VPP binary API message 'sw_interface_bond_details'.
 type SwInterfaceBondDetails struct {
@@ -169,28 +129,18 @@ type SwInterfaceBondDetails struct {
 	Slaves        uint32
 }
 
-func (*SwInterfaceBondDetails) GetMessageName() string {
-	return "sw_interface_bond_details"
-}
-func (*SwInterfaceBondDetails) GetCrcString() string {
-	return "a8ac5a5f"
-}
-func (*SwInterfaceBondDetails) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *SwInterfaceBondDetails) Reset()                        { *m = SwInterfaceBondDetails{} }
+func (*SwInterfaceBondDetails) GetMessageName() string          { return "sw_interface_bond_details" }
+func (*SwInterfaceBondDetails) GetCrcString() string            { return "a8ac5a5f" }
+func (*SwInterfaceBondDetails) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // SwInterfaceBondDump represents VPP binary API message 'sw_interface_bond_dump'.
 type SwInterfaceBondDump struct{}
 
-func (*SwInterfaceBondDump) GetMessageName() string {
-	return "sw_interface_bond_dump"
-}
-func (*SwInterfaceBondDump) GetCrcString() string {
-	return "51077d14"
-}
-func (*SwInterfaceBondDump) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *SwInterfaceBondDump) Reset()                        { *m = SwInterfaceBondDump{} }
+func (*SwInterfaceBondDump) GetMessageName() string          { return "sw_interface_bond_dump" }
+func (*SwInterfaceBondDump) GetCrcString() string            { return "51077d14" }
+func (*SwInterfaceBondDump) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // SwInterfaceSlaveDetails represents VPP binary API message 'sw_interface_slave_details'.
 type SwInterfaceSlaveDetails struct {
@@ -200,30 +150,20 @@ type SwInterfaceSlaveDetails struct {
 	IsLongTimeout uint8
 }
 
-func (*SwInterfaceSlaveDetails) GetMessageName() string {
-	return "sw_interface_slave_details"
-}
-func (*SwInterfaceSlaveDetails) GetCrcString() string {
-	return "d5c58e45"
-}
-func (*SwInterfaceSlaveDetails) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *SwInterfaceSlaveDetails) Reset()                        { *m = SwInterfaceSlaveDetails{} }
+func (*SwInterfaceSlaveDetails) GetMessageName() string          { return "sw_interface_slave_details" }
+func (*SwInterfaceSlaveDetails) GetCrcString() string            { return "d5c58e45" }
+func (*SwInterfaceSlaveDetails) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // SwInterfaceSlaveDump represents VPP binary API message 'sw_interface_slave_dump'.
 type SwInterfaceSlaveDump struct {
 	SwIfIndex uint32
 }
 
-func (*SwInterfaceSlaveDump) GetMessageName() string {
-	return "sw_interface_slave_dump"
-}
-func (*SwInterfaceSlaveDump) GetCrcString() string {
-	return "529cb13f"
-}
-func (*SwInterfaceSlaveDump) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *SwInterfaceSlaveDump) Reset()                        { *m = SwInterfaceSlaveDump{} }
+func (*SwInterfaceSlaveDump) GetMessageName() string          { return "sw_interface_slave_dump" }
+func (*SwInterfaceSlaveDump) GetCrcString() string            { return "529cb13f" }
+func (*SwInterfaceSlaveDump) GetMessageType() api.MessageType { return api.RequestMessage }
 
 func init() {
 	api.RegisterMessage((*BondCreate)(nil), "bond.BondCreate")
