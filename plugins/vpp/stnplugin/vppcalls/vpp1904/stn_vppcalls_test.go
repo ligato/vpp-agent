@@ -18,8 +18,8 @@ import (
 	"net"
 	"testing"
 
-	"github.com/ligato/cn-infra/logging/logrus"
 	. "github.com/onsi/gomega"
+	"go.ligato.io/cn-infra/v2/logging/logrus"
 
 	api "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1904/stn"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"

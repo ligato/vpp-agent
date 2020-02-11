@@ -15,8 +15,8 @@
 package restapi
 
 import (
-	"github.com/ligato/cn-infra/rpc/rest"
-	"github.com/ligato/cn-infra/servicelabel"
+	"go.ligato.io/cn-infra/v2/rpc/rest"
+	"go.ligato.io/cn-infra/v2/servicelabel"
 
 	"go.ligato.io/vpp-agent/v3/plugins/govppmux"
 	linuxifplugin "go.ligato.io/vpp-agent/v3/plugins/linux/ifplugin"

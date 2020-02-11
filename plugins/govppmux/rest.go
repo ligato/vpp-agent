@@ -21,8 +21,8 @@ import (
 	"net/http"
 	"net/rpc"
 
-	"github.com/ligato/cn-infra/rpc/rest"
 	"github.com/unrolled/render"
+	"go.ligato.io/cn-infra/v2/rpc/rest"
 )
 
 // registerHandlers registers all supported REST APIs.

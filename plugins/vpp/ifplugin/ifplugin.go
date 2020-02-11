@@ -26,14 +26,14 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ligato/cn-infra/servicelabel"
+	"go.ligato.io/cn-infra/v2/servicelabel"
 
-	"github.com/ligato/cn-infra/datasync"
-	"github.com/ligato/cn-infra/health/statuscheck"
-	"github.com/ligato/cn-infra/idxmap"
-	"github.com/ligato/cn-infra/infra"
-	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/pkg/errors"
+	"go.ligato.io/cn-infra/v2/datasync"
+	"go.ligato.io/cn-infra/v2/health/statuscheck"
+	"go.ligato.io/cn-infra/v2/idxmap"
+	"go.ligato.io/cn-infra/v2/infra"
+	"go.ligato.io/cn-infra/v2/utils/safeclose"
 
 	"go.ligato.io/vpp-agent/v3/plugins/govppmux"
 	"go.ligato.io/vpp-agent/v3/plugins/kvscheduler"

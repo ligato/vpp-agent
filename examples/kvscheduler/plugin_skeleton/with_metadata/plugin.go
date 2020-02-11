@@ -69,7 +69,7 @@ Beware: Extensive copy-pasting is actually a bad practise, so use the skeleton
 package plugin
 
 import (
-	"github.com/ligato/cn-infra/infra"
+	"go.ligato.io/cn-infra/v2/infra"
 
 	"go.ligato.io/vpp-agent/v3/examples/kvscheduler/plugin_skeleton/with_metadata/descriptor"
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"

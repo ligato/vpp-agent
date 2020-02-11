@@ -18,9 +18,9 @@ import (
 	"context"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/ligato/cn-infra/datasync/kvdbsync/local"
-	"github.com/ligato/cn-infra/datasync/syncbase"
-	"github.com/ligato/cn-infra/db/keyval"
+	"go.ligato.io/cn-infra/v2/datasync/kvdbsync/local"
+	"go.ligato.io/cn-infra/v2/datasync/syncbase"
+	"go.ligato.io/cn-infra/v2/db/keyval"
 
 	"go.ligato.io/vpp-agent/v3/pkg/models"
 	orch "go.ligato.io/vpp-agent/v3/plugins/orchestrator"

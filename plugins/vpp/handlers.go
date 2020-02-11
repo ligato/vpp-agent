@@ -20,7 +20,7 @@ import (
 	"sort"
 
 	govppapi "git.fd.io/govpp.git/api"
-	"github.com/ligato/cn-infra/logging"
+	"go.ligato.io/cn-infra/v2/logging"
 )
 
 // HandlerVersion defines handler implementation for specific version used by AddVersion.

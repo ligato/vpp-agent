@@ -19,7 +19,7 @@ import (
 	"fmt"
 
 	govppapi "git.fd.io/govpp.git/api"
-	"github.com/ligato/cn-infra/logging"
+	"go.ligato.io/cn-infra/v2/logging"
 )
 
 // Versions is a map of all binapi messages for each supported VPP versions.

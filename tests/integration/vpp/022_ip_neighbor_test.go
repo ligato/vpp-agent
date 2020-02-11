@@ -18,7 +18,7 @@ import (
 	"testing"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/ligato/cn-infra/logging/logrus"
+	"go.ligato.io/cn-infra/v2/logging/logrus"
 
 	vpe_vppcalls "go.ligato.io/vpp-agent/v3/plugins/govppmux/vppcalls"
 	netalloc_mock "go.ligato.io/vpp-agent/v3/plugins/netalloc/mock"

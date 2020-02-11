@@ -18,8 +18,8 @@ import (
 	"os"
 	"runtime"
 
-	"github.com/ligato/cn-infra/logging"
 	"github.com/vishvananda/netns"
+	"go.ligato.io/cn-infra/v2/logging"
 )
 
 var enableNsCtxCheck = os.Getenv("NSPLUGIN_CHECK_NS_CTX") != ""

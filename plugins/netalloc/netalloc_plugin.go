@@ -22,9 +22,10 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/ligato/cn-infra/infra"
+	"go.ligato.io/cn-infra/v2/infra"
 
-	"github.com/ligato/cn-infra/idxmap"
+	"go.ligato.io/cn-infra/v2/idxmap"
+
 	"go.ligato.io/vpp-agent/v3/pkg/models"
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 	"go.ligato.io/vpp-agent/v3/plugins/netalloc/descriptor"

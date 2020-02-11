@@ -19,13 +19,13 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/ligato/cn-infra/datasync"
-	"github.com/ligato/cn-infra/datasync/kvdbsync/local"
-	"github.com/ligato/cn-infra/datasync/resync"
-	"github.com/ligato/cn-infra/datasync/syncbase"
-	"github.com/ligato/cn-infra/infra"
-	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/utils/safeclose"
+	"go.ligato.io/cn-infra/v2/datasync"
+	"go.ligato.io/cn-infra/v2/datasync/kvdbsync/local"
+	"go.ligato.io/cn-infra/v2/datasync/resync"
+	"go.ligato.io/cn-infra/v2/datasync/syncbase"
+	"go.ligato.io/cn-infra/v2/infra"
+	"go.ligato.io/cn-infra/v2/logging"
+	"go.ligato.io/cn-infra/v2/utils/safeclose"
 )
 
 // Option is a function that acts on a Plugin to inject Dependencies or configuration

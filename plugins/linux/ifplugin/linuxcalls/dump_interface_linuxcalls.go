@@ -21,8 +21,8 @@ import (
 	"strings"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/ligato/cn-infra/logging"
 	"github.com/vishvananda/netlink"
+	"go.ligato.io/cn-infra/v2/logging"
 	"golang.org/x/sys/unix"
 
 	"go.ligato.io/vpp-agent/v3/plugins/linux/nsplugin/linuxcalls"

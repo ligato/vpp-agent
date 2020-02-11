@@ -1,14 +1,15 @@
 package main
 
 import (
-	"github.com/ligato/cn-infra/agent"
-	"github.com/ligato/cn-infra/datasync"
-	"github.com/ligato/cn-infra/datasync/kvdbsync"
-	"github.com/ligato/cn-infra/datasync/kvdbsync/local"
-	"github.com/ligato/cn-infra/datasync/resync"
-	"github.com/ligato/cn-infra/db/keyval/etcd"
-	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/logmanager"
+	"go.ligato.io/cn-infra/v2/agent"
+	"go.ligato.io/cn-infra/v2/datasync"
+	"go.ligato.io/cn-infra/v2/datasync/kvdbsync"
+	"go.ligato.io/cn-infra/v2/datasync/kvdbsync/local"
+	"go.ligato.io/cn-infra/v2/datasync/resync"
+	"go.ligato.io/cn-infra/v2/db/keyval/etcd"
+	"go.ligato.io/cn-infra/v2/logging"
+	"go.ligato.io/cn-infra/v2/logging/logmanager"
+
 	"go.ligato.io/vpp-agent/v3/cmd/vpp-agent/app"
 	"go.ligato.io/vpp-agent/v3/plugins/orchestrator"
 )

@@ -22,7 +22,7 @@ import (
 
 	govppapi "git.fd.io/govpp.git/api"
 	"git.fd.io/govpp.git/core"
-	"github.com/ligato/cn-infra/logging"
+	"go.ligato.io/cn-infra/v2/logging"
 )
 
 // NewAPIChannel returns a new API channel for communication with VPP via govpp core.

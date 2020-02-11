@@ -19,8 +19,8 @@ package ifplugin
 import (
 	"github.com/pkg/errors"
 
-	"github.com/ligato/cn-infra/infra"
-	"github.com/ligato/cn-infra/servicelabel"
+	"go.ligato.io/cn-infra/v2/infra"
+	"go.ligato.io/cn-infra/v2/servicelabel"
 
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 	"go.ligato.io/vpp-agent/v3/plugins/linux/ifplugin/descriptor"

@@ -20,7 +20,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ligato/cn-infra/logging"
+	"go.ligato.io/cn-infra/v2/logging"
 )
 
 const (

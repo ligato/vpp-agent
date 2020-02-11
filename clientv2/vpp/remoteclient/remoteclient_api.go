@@ -15,7 +15,8 @@
 package remoteclient
 
 import (
-	"github.com/ligato/cn-infra/db/keyval"
+	"go.ligato.io/cn-infra/v2/db/keyval"
+
 	"go.ligato.io/vpp-agent/v3/clientv2/vpp"
 	"go.ligato.io/vpp-agent/v3/clientv2/vpp/dbadapter"
 	//"github.com/ligato/vpp-agent/clientv2/vpp/grpcadapter"

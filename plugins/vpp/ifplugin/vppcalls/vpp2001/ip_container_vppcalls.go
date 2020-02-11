@@ -15,7 +15,7 @@
 package vpp2001
 
 import (
-	"github.com/ligato/cn-infra/utils/addrs"
+	"go.ligato.io/cn-infra/v2/utils/addrs"
 
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/interface_types"
 	vpp_ip "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ip"

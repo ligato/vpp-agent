@@ -20,9 +20,9 @@ import (
 	"net"
 
 	govppapi "git.fd.io/govpp.git/api"
-	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/pkg/errors"
+	"go.ligato.io/cn-infra/v2/logging"
+	"go.ligato.io/cn-infra/v2/logging/logrus"
 
 	vpevppcalls "go.ligato.io/vpp-agent/v3/plugins/govppmux/vppcalls"
 	vpe_vpp1904 "go.ligato.io/vpp-agent/v3/plugins/govppmux/vppcalls/vpp1904"

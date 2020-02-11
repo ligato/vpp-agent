@@ -17,8 +17,9 @@ package abfidx_test
 import (
 	"testing"
 
-	"github.com/ligato/cn-infra/logging"
 	. "github.com/onsi/gomega"
+	"go.ligato.io/cn-infra/v2/logging"
+
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/abfplugin/abfidx"
 )
 

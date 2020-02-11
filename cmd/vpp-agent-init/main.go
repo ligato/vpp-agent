@@ -18,8 +18,8 @@
 package main
 
 import (
-	"github.com/ligato/cn-infra/agent"
-	sv "github.com/ligato/cn-infra/exec/supervisor"
+	"go.ligato.io/cn-infra/v2/agent"
+	sv "go.ligato.io/cn-infra/v2/exec/supervisor"
 )
 
 func main() {

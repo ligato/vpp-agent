@@ -20,8 +20,9 @@ import (
 	"testing"
 
 	govppapi "git.fd.io/govpp.git/api"
-	"github.com/ligato/cn-infra/logging/logrus"
 	. "github.com/onsi/gomega"
+	"go.ligato.io/cn-infra/v2/logging/logrus"
+
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1904/interfaces"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1904/sr"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1904/vpe"

@@ -17,8 +17,9 @@ package vpp1908
 import (
 	"testing"
 
-	"github.com/ligato/cn-infra/logging/logrus"
 	. "github.com/onsi/gomega"
+	"go.ligato.io/cn-infra/v2/logging/logrus"
+
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/aclplugin/vppcalls"
 	acl_api "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1908/acl"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1908/vpe"

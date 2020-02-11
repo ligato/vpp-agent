@@ -6,7 +6,7 @@ import (
 	"time"
 
 	govppapi "git.fd.io/govpp.git/api"
-	"github.com/ligato/cn-infra/logging"
+	"go.ligato.io/cn-infra/v2/logging"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 

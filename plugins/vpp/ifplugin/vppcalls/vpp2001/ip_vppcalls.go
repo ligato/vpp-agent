@@ -18,7 +18,7 @@ import (
 	"context"
 	"net"
 
-	"github.com/ligato/cn-infra/utils/addrs"
+	"go.ligato.io/cn-infra/v2/utils/addrs"
 
 	vpp_ifs "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/interfaces"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ip_types"

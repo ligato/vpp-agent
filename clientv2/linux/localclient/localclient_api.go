@@ -15,7 +15,8 @@
 package localclient
 
 import (
-	"github.com/ligato/cn-infra/datasync/kvdbsync/local"
+	"go.ligato.io/cn-infra/v2/datasync/kvdbsync/local"
+
 	linuxclient "go.ligato.io/vpp-agent/v3/clientv2/linux"
 	"go.ligato.io/vpp-agent/v3/clientv2/linux/dbadapter"
 )

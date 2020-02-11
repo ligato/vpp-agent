@@ -19,10 +19,10 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/ligato/cn-infra/infra"
-	"github.com/ligato/cn-infra/rpc/rest"
-	access "github.com/ligato/cn-infra/rpc/rest/security/model/access-security"
-	"github.com/ligato/cn-infra/servicelabel"
+	"go.ligato.io/cn-infra/v2/infra"
+	"go.ligato.io/cn-infra/v2/rpc/rest"
+	access "go.ligato.io/cn-infra/v2/rpc/rest/security/model/access-security"
+	"go.ligato.io/cn-infra/v2/servicelabel"
 
 	"go.ligato.io/vpp-agent/v3/plugins/govppmux"
 	vpevppcalls "go.ligato.io/vpp-agent/v3/plugins/govppmux/vppcalls"

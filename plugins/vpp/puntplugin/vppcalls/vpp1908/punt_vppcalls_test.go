@@ -17,8 +17,8 @@ package vpp1908_test
 import (
 	"testing"
 
-	"github.com/ligato/cn-infra/logging/logrus"
 	. "github.com/onsi/gomega"
+	"go.ligato.io/cn-infra/v2/logging/logrus"
 
 	ba_ip "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1908/ip"
 	ba_punt "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1908/punt"

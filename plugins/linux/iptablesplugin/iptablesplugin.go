@@ -17,7 +17,8 @@
 package iptablesplugin
 
 import (
-	"github.com/ligato/cn-infra/infra"
+	"go.ligato.io/cn-infra/v2/infra"
+
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 
 	"go.ligato.io/vpp-agent/v3/plugins/linux/iptablesplugin/descriptor"

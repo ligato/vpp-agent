@@ -3,10 +3,10 @@ package ifplugin
 import (
 	"strings"
 
-	"github.com/ligato/cn-infra/datasync"
-	"github.com/ligato/cn-infra/health/statuscheck"
-	"github.com/ligato/cn-infra/health/statuscheck/model/status"
 	"github.com/pkg/errors"
+	"go.ligato.io/cn-infra/v2/datasync"
+	"go.ligato.io/cn-infra/v2/health/statuscheck"
+	"go.ligato.io/cn-infra/v2/health/statuscheck/model/status"
 
 	"go.ligato.io/vpp-agent/v3/proto/ligato/vpp"
 	interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"

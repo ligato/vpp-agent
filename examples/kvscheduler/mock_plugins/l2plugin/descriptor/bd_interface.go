@@ -16,8 +16,8 @@ package descriptor
 
 import (
 	"github.com/golang/protobuf/proto"
-	"github.com/ligato/cn-infra/logging"
 	"github.com/pkg/errors"
+	"go.ligato.io/cn-infra/v2/logging"
 
 	interfaces "go.ligato.io/vpp-agent/v3/examples/kvscheduler/mock_plugins/ifplugin/model"
 	"go.ligato.io/vpp-agent/v3/examples/kvscheduler/mock_plugins/l2plugin/descriptor/adapter"

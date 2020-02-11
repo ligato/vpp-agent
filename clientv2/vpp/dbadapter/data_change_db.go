@@ -17,7 +17,8 @@ package dbadapter
 import (
 	"context"
 
-	"github.com/ligato/cn-infra/db/keyval"
+	"go.ligato.io/cn-infra/v2/db/keyval"
+
 	"go.ligato.io/vpp-agent/v3/pkg/models"
 
 	vppclient "go.ligato.io/vpp-agent/v3/clientv2/vpp"

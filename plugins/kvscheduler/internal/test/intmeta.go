@@ -17,9 +17,9 @@ package test
 import (
 	"strconv"
 
-	"github.com/ligato/cn-infra/idxmap"
-	"github.com/ligato/cn-infra/idxmap/mem"
-	"github.com/ligato/cn-infra/logging"
+	"go.ligato.io/cn-infra/v2/idxmap"
+	"go.ligato.io/cn-infra/v2/idxmap/mem"
+	"go.ligato.io/cn-infra/v2/logging"
 )
 
 // NameToInteger is a idxmap specialization used in the UTs for scheduler.

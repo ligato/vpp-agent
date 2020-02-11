@@ -15,9 +15,9 @@
 package govppmux
 
 import (
-	"github.com/ligato/cn-infra/datasync/resync"
-	"github.com/ligato/cn-infra/health/statuscheck"
-	"github.com/ligato/cn-infra/rpc/rest"
+	"go.ligato.io/cn-infra/v2/datasync/resync"
+	"go.ligato.io/cn-infra/v2/health/statuscheck"
+	"go.ligato.io/cn-infra/v2/rpc/rest"
 )
 
 // DefaultPlugin is default instance of Plugin

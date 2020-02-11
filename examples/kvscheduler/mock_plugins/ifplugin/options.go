@@ -15,7 +15,8 @@
 package ifplugin
 
 import (
-	"github.com/ligato/cn-infra/logging"
+	"go.ligato.io/cn-infra/v2/logging"
+
 	"go.ligato.io/vpp-agent/v3/plugins/kvscheduler"
 )
 

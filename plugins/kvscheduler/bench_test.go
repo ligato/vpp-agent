@@ -21,8 +21,8 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/ligato/cn-infra/logging"
-	_ "github.com/ligato/cn-infra/logging/logrus" // for setting default registry
+	"go.ligato.io/cn-infra/v2/logging"
+	_ "go.ligato.io/cn-infra/v2/logging/logrus" // for setting default registry
 
 	mock_ifplugin "go.ligato.io/vpp-agent/v3/examples/kvscheduler/mock_plugins/ifplugin"
 	"go.ligato.io/vpp-agent/v3/examples/kvscheduler/mock_plugins/ifplugin/model"

@@ -26,10 +26,10 @@ import (
 
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
-	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/servicelabel"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"go.ligato.io/cn-infra/v2/logging"
+	"go.ligato.io/cn-infra/v2/servicelabel"
 
 	agentcli "go.ligato.io/vpp-agent/v3/cmd/agentctl/cli"
 	"go.ligato.io/vpp-agent/v3/pkg/models"

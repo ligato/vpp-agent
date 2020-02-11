@@ -19,12 +19,14 @@ import (
 	"testing"
 
 	. "github.com/onsi/gomega"
+
 	vpp_interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
 	vpp_nat "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/nat"
 
-	"github.com/ligato/cn-infra/idxmap"
-	idxmap_mem "github.com/ligato/cn-infra/idxmap/mem"
-	"github.com/ligato/cn-infra/logging/logrus"
+	"go.ligato.io/cn-infra/v2/idxmap"
+	idxmap_mem "go.ligato.io/cn-infra/v2/idxmap/mem"
+	"go.ligato.io/cn-infra/v2/logging/logrus"
+
 	bin_api "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1908/nat"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1908/vpe"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"

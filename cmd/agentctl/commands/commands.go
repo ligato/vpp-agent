@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/ligato/cn-infra/logging"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"go.ligato.io/cn-infra/v2/logging"
 
 	"go.ligato.io/vpp-agent/v3/cmd/agentctl/cli"
 )

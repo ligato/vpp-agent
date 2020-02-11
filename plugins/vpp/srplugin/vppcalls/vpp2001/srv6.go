@@ -23,7 +23,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/ligato/cn-infra/logging"
+	"go.ligato.io/cn-infra/v2/logging"
+
 	vpp_ifs "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/interfaces"
 	vpp_sr "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/sr"
 	ifs "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"

@@ -19,8 +19,8 @@ import (
 	"net"
 	"testing"
 
-	"github.com/ligato/cn-infra/logging/logrus"
 	. "github.com/onsi/gomega"
+	"go.ligato.io/cn-infra/v2/logging/logrus"
 
 	netalloc_mock "go.ligato.io/vpp-agent/v3/plugins/netalloc/mock"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"

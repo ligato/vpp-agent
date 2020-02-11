@@ -17,8 +17,9 @@ package vpp1904
 import (
 	"testing"
 
-	"github.com/ligato/cn-infra/logging/logrus"
 	. "github.com/onsi/gomega"
+	"go.ligato.io/cn-infra/v2/logging/logrus"
+
 	acl_api "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1904/acl"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/vppmock"
