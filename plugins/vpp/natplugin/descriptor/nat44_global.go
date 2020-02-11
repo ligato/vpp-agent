@@ -19,8 +19,8 @@ import (
 	"net"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/ligato/cn-infra/logging"
 	"github.com/pkg/errors"
+	"go.ligato.io/cn-infra/v2/logging"
 
 	"go.ligato.io/vpp-agent/v3/pkg/models"
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"

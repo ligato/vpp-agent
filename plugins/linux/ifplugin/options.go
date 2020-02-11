@@ -1,9 +1,10 @@
 package ifplugin
 
 import (
-	"github.com/ligato/cn-infra/config"
-	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/servicelabel"
+	"go.ligato.io/cn-infra/v2/config"
+	"go.ligato.io/cn-infra/v2/logging"
+	"go.ligato.io/cn-infra/v2/servicelabel"
+
 	"go.ligato.io/vpp-agent/v3/plugins/kvscheduler"
 	"go.ligato.io/vpp-agent/v3/plugins/linux/nsplugin"
 	"go.ligato.io/vpp-agent/v3/plugins/netalloc"

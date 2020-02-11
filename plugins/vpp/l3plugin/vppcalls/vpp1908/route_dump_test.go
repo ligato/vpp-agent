@@ -21,8 +21,9 @@ import (
 
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin/vrfidx"
 
-	"github.com/ligato/cn-infra/logging/logrus"
 	. "github.com/onsi/gomega"
+	"go.ligato.io/cn-infra/v2/logging/logrus"
+
 	netallock_mock "go.ligato.io/vpp-agent/v3/plugins/netalloc/mock"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1908/ip"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1908/vpe"

@@ -24,8 +24,9 @@ import (
 	prototypes "github.com/golang/protobuf/ptypes/empty"
 	"github.com/pkg/errors"
 
-	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/servicelabel"
+	"go.ligato.io/cn-infra/v2/logging"
+	"go.ligato.io/cn-infra/v2/servicelabel"
+
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 
 	nsmodel "go.ligato.io/vpp-agent/v3/proto/ligato/linux/namespace"

@@ -18,9 +18,9 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/ligato/cn-infra/idxmap"
-	"github.com/ligato/cn-infra/idxmap/mem"
-	"github.com/ligato/cn-infra/logging"
+	"go.ligato.io/cn-infra/v2/idxmap"
+	"go.ligato.io/cn-infra/v2/idxmap/mem"
+	"go.ligato.io/cn-infra/v2/logging"
 
 	linux_namespace "go.ligato.io/vpp-agent/v3/proto/ligato/linux/namespace"
 )

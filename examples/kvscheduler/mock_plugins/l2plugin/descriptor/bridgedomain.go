@@ -15,9 +15,9 @@
 package descriptor
 
 import (
-	"github.com/ligato/cn-infra/idxmap"
-	"github.com/ligato/cn-infra/logging"
 	"github.com/pkg/errors"
+	"go.ligato.io/cn-infra/v2/idxmap"
+	"go.ligato.io/cn-infra/v2/logging"
 
 	ifdescriptor "go.ligato.io/vpp-agent/v3/examples/kvscheduler/mock_plugins/ifplugin/descriptor"
 	"go.ligato.io/vpp-agent/v3/examples/kvscheduler/mock_plugins/l2plugin/descriptor/adapter"

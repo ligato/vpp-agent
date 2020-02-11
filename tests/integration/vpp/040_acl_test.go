@@ -18,8 +18,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ligato/cn-infra/logging/logrus"
 	. "github.com/onsi/gomega"
+	"go.ligato.io/cn-infra/v2/logging/logrus"
 
 	aclplugin_vppcalls "go.ligato.io/vpp-agent/v3/plugins/vpp/aclplugin/vppcalls"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"

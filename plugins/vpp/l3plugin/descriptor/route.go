@@ -22,9 +22,9 @@ import (
 	"strings"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/utils/addrs"
 	"github.com/pkg/errors"
+	"go.ligato.io/cn-infra/v2/logging"
+	"go.ligato.io/cn-infra/v2/utils/addrs"
 
 	"go.ligato.io/vpp-agent/v3/pkg/models"
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"

@@ -22,7 +22,7 @@ import (
 	"github.com/docker/cli/cli/streams"
 	"github.com/docker/docker/pkg/term"
 
-	"github.com/ligato/cn-infra/logging"
+	"go.ligato.io/cn-infra/v2/logging"
 
 	"go.ligato.io/vpp-agent/v3/cmd/agentctl/api"
 	"go.ligato.io/vpp-agent/v3/cmd/agentctl/client"

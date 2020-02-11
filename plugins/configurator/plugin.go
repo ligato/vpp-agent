@@ -15,9 +15,9 @@
 package configurator
 
 import (
-	"github.com/ligato/cn-infra/infra"
-	"github.com/ligato/cn-infra/rpc/grpc"
-	"github.com/ligato/cn-infra/servicelabel"
+	"go.ligato.io/cn-infra/v2/infra"
+	"go.ligato.io/cn-infra/v2/rpc/grpc"
+	"go.ligato.io/cn-infra/v2/servicelabel"
 
 	"go.ligato.io/vpp-agent/v3/plugins/govppmux"
 	iflinuxplugin "go.ligato.io/vpp-agent/v3/plugins/linux/ifplugin"

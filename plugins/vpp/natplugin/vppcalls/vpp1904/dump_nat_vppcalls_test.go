@@ -20,9 +20,9 @@ import (
 
 	. "github.com/onsi/gomega"
 
-	"github.com/ligato/cn-infra/idxmap"
-	idxmap_mem "github.com/ligato/cn-infra/idxmap/mem"
-	"github.com/ligato/cn-infra/logging/logrus"
+	"go.ligato.io/cn-infra/v2/idxmap"
+	idxmap_mem "go.ligato.io/cn-infra/v2/idxmap/mem"
+	"go.ligato.io/cn-infra/v2/logging/logrus"
 
 	bin_api "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1904/nat"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1904/vpe"

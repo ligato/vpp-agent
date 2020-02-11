@@ -18,7 +18,8 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/ligato/cn-infra/logging"
+	"go.ligato.io/cn-infra/v2/logging"
+
 	scheduler "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/srplugin/descriptor/adapter"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/srplugin/vppcalls"

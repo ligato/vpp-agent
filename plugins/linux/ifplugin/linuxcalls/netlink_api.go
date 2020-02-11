@@ -17,9 +17,9 @@ package linuxcalls
 import (
 	"net"
 
-	"github.com/ligato/cn-infra/logging"
 	"github.com/vishvananda/netlink"
 	"github.com/vishvananda/netns"
+	"go.ligato.io/cn-infra/v2/logging"
 
 	"go.ligato.io/vpp-agent/v3/plugins/linux/ifplugin/ifaceidx"
 	"go.ligato.io/vpp-agent/v3/plugins/linux/nsplugin"

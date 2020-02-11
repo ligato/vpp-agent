@@ -4,7 +4,8 @@ import (
 	"strings"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/ligato/cn-infra/logging"
+	"go.ligato.io/cn-infra/v2/logging"
+
 	"go.ligato.io/vpp-agent/v3/examples/tutorials/05_kv-scheduler/adapter"
 	"go.ligato.io/vpp-agent/v3/examples/tutorials/05_kv-scheduler/model"
 	"go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"

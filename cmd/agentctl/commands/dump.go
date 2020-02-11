@@ -24,8 +24,8 @@ import (
 	"text/tabwriter"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/ligato/cn-infra/logging"
 	"github.com/spf13/cobra"
+	"go.ligato.io/cn-infra/v2/logging"
 
 	"go.ligato.io/vpp-agent/v3/cmd/agentctl/api/types"
 	agentcli "go.ligato.io/vpp-agent/v3/cmd/agentctl/cli"

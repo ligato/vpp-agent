@@ -16,8 +16,8 @@ package vpp2001
 
 import (
 	govppapi "git.fd.io/govpp.git/api"
-	"github.com/ligato/cn-infra/idxmap"
-	"github.com/ligato/cn-infra/logging"
+	"go.ligato.io/cn-infra/v2/idxmap"
+	"go.ligato.io/cn-infra/v2/logging"
 
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001"
 	vpp_ip "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ip"

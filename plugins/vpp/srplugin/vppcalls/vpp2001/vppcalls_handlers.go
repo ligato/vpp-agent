@@ -16,7 +16,7 @@ package vpp2001
 
 import (
 	govppapi "git.fd.io/govpp.git/api"
-	"github.com/ligato/cn-infra/logging"
+	"go.ligato.io/cn-infra/v2/logging"
 
 	core_vppcalls "go.ligato.io/vpp-agent/v3/plugins/govppmux/vppcalls"
 	core_vpp2001 "go.ligato.io/vpp-agent/v3/plugins/govppmux/vppcalls/vpp2001"

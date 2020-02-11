@@ -1,10 +1,10 @@
 package telemetry
 
 import (
-	"github.com/ligato/cn-infra/rpc/grpc"
-	"github.com/ligato/cn-infra/rpc/prometheus"
-	"github.com/ligato/cn-infra/rpc/rest"
-	"github.com/ligato/cn-infra/servicelabel"
+	"go.ligato.io/cn-infra/v2/rpc/grpc"
+	"go.ligato.io/cn-infra/v2/rpc/prometheus"
+	"go.ligato.io/cn-infra/v2/rpc/rest"
+	"go.ligato.io/cn-infra/v2/servicelabel"
 
 	"go.ligato.io/vpp-agent/v3/plugins/govppmux"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin"

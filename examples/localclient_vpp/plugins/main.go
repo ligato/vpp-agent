@@ -22,9 +22,10 @@ import (
 
 	"log"
 
-	"github.com/ligato/cn-infra/agent"
-	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/logrus"
+	"go.ligato.io/cn-infra/v2/agent"
+	"go.ligato.io/cn-infra/v2/logging"
+	"go.ligato.io/cn-infra/v2/logging/logrus"
+
 	"go.ligato.io/vpp-agent/v3/clientv2/vpp/localclient"
 	"go.ligato.io/vpp-agent/v3/cmd/vpp-agent/app"
 	"go.ligato.io/vpp-agent/v3/plugins/orchestrator"

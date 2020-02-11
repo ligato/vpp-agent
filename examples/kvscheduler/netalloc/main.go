@@ -20,7 +20,8 @@ import (
 	"log"
 	"time"
 
-	"github.com/ligato/cn-infra/agent"
+	"go.ligato.io/cn-infra/v2/agent"
+
 	"go.ligato.io/vpp-agent/v3/client"
 	linux_ifplugin "go.ligato.io/vpp-agent/v3/plugins/linux/ifplugin"
 	linux_l3plugin "go.ligato.io/vpp-agent/v3/plugins/linux/l3plugin"

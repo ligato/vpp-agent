@@ -18,8 +18,8 @@ import (
 	"encoding/hex"
 	"strconv"
 
-	"github.com/ligato/cn-infra/utils/addrs"
 	"github.com/pkg/errors"
+	"go.ligato.io/cn-infra/v2/utils/addrs"
 
 	vpp_ipsec "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ipsec"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ipsec_types"

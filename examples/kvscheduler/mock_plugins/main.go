@@ -17,12 +17,13 @@ package main
 import (
 	"log"
 
-	"github.com/ligato/cn-infra/agent"
+	"go.ligato.io/cn-infra/v2/agent"
 
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler"
 	"go.ligato.io/vpp-agent/v3/plugins/orchestrator"
 
-	"github.com/ligato/cn-infra/logging"
+	"go.ligato.io/cn-infra/v2/logging"
+
 	mock_ifplugin "go.ligato.io/vpp-agent/v3/examples/kvscheduler/mock_plugins/ifplugin"
 	mock_l2plugin "go.ligato.io/vpp-agent/v3/examples/kvscheduler/mock_plugins/l2plugin"
 	"go.ligato.io/vpp-agent/v3/examples/kvscheduler/mock_plugins/scenario"

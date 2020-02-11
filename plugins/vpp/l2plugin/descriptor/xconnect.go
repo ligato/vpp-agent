@@ -15,8 +15,8 @@
 package descriptor
 
 import (
-	"github.com/ligato/cn-infra/logging"
 	"github.com/pkg/errors"
+	"go.ligato.io/cn-infra/v2/logging"
 
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 	vpp_ifdescriptor "go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/descriptor"

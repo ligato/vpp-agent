@@ -17,10 +17,12 @@ package vpp2001_test
 import (
 	"testing"
 
-	"github.com/ligato/cn-infra/logging/logrus"
+	"go.ligato.io/cn-infra/v2/logging/logrus"
+
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/l2plugin/vppcalls/vpp2001"
 
 	. "github.com/onsi/gomega"
+
 	"go.ligato.io/vpp-agent/v3/pkg/idxvpp"
 	vpp_l2 "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/l2"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"

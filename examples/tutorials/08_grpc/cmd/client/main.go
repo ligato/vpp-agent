@@ -15,7 +15,8 @@
 package main
 
 import (
-	"github.com/ligato/cn-infra/agent"
+	"go.ligato.io/cn-infra/v2/agent"
+
 	"go.ligato.io/vpp-agent/v3/examples/tutorials/08_grpc/plugins/grpc"
 )
 

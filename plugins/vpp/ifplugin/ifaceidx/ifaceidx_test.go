@@ -19,8 +19,8 @@ import (
 
 	"fmt"
 
-	"github.com/ligato/cn-infra/logging/logrus"
 	. "github.com/onsi/gomega"
+	"go.ligato.io/cn-infra/v2/logging/logrus"
 )
 
 // Constants

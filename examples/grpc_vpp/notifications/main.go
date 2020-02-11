@@ -20,10 +20,10 @@ import (
 	"net"
 	"time"
 
-	"github.com/ligato/cn-infra/agent"
-	"github.com/ligato/cn-infra/infra"
-	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/namsral/flag"
+	"go.ligato.io/cn-infra/v2/agent"
+	"go.ligato.io/cn-infra/v2/infra"
+	"go.ligato.io/cn-infra/v2/logging/logrus"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 

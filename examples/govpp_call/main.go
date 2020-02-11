@@ -19,10 +19,11 @@ import (
 	"time"
 
 	govppapi "git.fd.io/govpp.git/api"
-	"github.com/ligato/cn-infra/agent"
-	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/logrus"
-	"github.com/ligato/cn-infra/utils/safeclose"
+	"go.ligato.io/cn-infra/v2/agent"
+	"go.ligato.io/cn-infra/v2/logging"
+	"go.ligato.io/cn-infra/v2/logging/logrus"
+	"go.ligato.io/cn-infra/v2/utils/safeclose"
+
 	"go.ligato.io/vpp-agent/v3/cmd/vpp-agent/app"
 	"go.ligato.io/vpp-agent/v3/plugins/govppmux"
 	l2Api "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1908/l2"

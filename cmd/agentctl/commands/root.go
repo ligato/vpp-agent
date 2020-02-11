@@ -27,8 +27,8 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
-	"github.com/ligato/cn-infra/agent"
-	"github.com/ligato/cn-infra/logging"
+	"go.ligato.io/cn-infra/v2/agent"
+	"go.ligato.io/cn-infra/v2/logging"
 
 	"go.ligato.io/vpp-agent/v3/cmd/agentctl/cli"
 	"go.ligato.io/vpp-agent/v3/pkg/debug"

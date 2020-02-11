@@ -24,7 +24,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/ligato/cn-infra/logging"
+	"go.ligato.io/cn-infra/v2/logging"
+
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1904/interfaces"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1904/sr"
 	nbint "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"

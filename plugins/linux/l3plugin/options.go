@@ -1,8 +1,9 @@
 package l3plugin
 
 import (
-	"github.com/ligato/cn-infra/config"
-	"github.com/ligato/cn-infra/logging"
+	"go.ligato.io/cn-infra/v2/config"
+	"go.ligato.io/cn-infra/v2/logging"
+
 	"go.ligato.io/vpp-agent/v3/plugins/kvscheduler"
 	"go.ligato.io/vpp-agent/v3/plugins/linux/ifplugin"
 	"go.ligato.io/vpp-agent/v3/plugins/linux/nsplugin"

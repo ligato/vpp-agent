@@ -15,8 +15,8 @@
 package descriptor
 
 import (
-	"github.com/ligato/cn-infra/idxmap"
-	"github.com/ligato/cn-infra/logging"
+	"go.ligato.io/cn-infra/v2/idxmap"
+	"go.ligato.io/cn-infra/v2/logging"
 
 	"go.ligato.io/vpp-agent/v3/examples/kvscheduler/plugin_skeleton/with_metadata/descriptor/adapter"
 	"go.ligato.io/vpp-agent/v3/examples/kvscheduler/plugin_skeleton/with_metadata/metaidx"

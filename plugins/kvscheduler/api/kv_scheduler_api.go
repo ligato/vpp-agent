@@ -19,7 +19,7 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/ligato/cn-infra/idxmap"
+	"go.ligato.io/cn-infra/v2/idxmap"
 
 	"go.ligato.io/vpp-agent/v3/proto/ligato/kvscheduler"
 )
