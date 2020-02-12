@@ -15,14 +15,19 @@
 package govppmux
 
 import (
+	"go.ligato.io/vpp-agent/v3/pkg/metrics"
 	"go.ligato.io/vpp-agent/v3/plugins/govppmux/vppcalls"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp"
+	"go.ligato.io/vpp-agent/v3/proto/ligato/govppmux"
 )
 
 // API for other plugins to get connectivity to VPP.
 type API interface {
 	// VPPInfo returns VPP information which is retrieved immediatelly after connecting to VPP.
 	VPPInfo() VPPInfo
+
+	// GoVPPStats returns current GoVPP statistics.
+	GoVPPStats() *Stats
 
 	vpp.Client
 }
@@ -33,6 +38,16 @@ type VPPInfo struct {
 	vppcalls.VersionInfo
 	vppcalls.SessionInfo
 	Plugins []vppcalls.PluginInfo
+}
+
+// Stats defines various statistics for govppmux plugin.
+type Stats struct {
+	govppmux.Metrics
+
+	Errors      metrics.Calls
+	AllMessages metrics.CallStats
+	Messages    metrics.Calls
+	Replies     metrics.Calls
 }
 
 // GetReleaseVersion returns VPP release version (XX.YY), which is normalized from GetVersion.

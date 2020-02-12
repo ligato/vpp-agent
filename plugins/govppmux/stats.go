@@ -42,18 +42,6 @@ func GetStats() *Stats {
 	return s
 }
 
-// Stats defines various statistics for govppmux plugin.
-type Stats struct {
-	govppmux.Metrics
-
-	Errors metrics.Calls
-
-	AllMessages metrics.CallStats
-	Messages    metrics.Calls
-
-	Replies metrics.Calls
-}
-
 func (s *Stats) getOrCreateMessage(msg string) *metrics.CallStats {
 	statsMu.RLock()
 	ms, ok := s.Messages[msg]

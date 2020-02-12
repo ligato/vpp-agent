@@ -406,3 +406,8 @@ func (p *Plugin) startProxy(vppapi adapter.VppAPI, statsapi adapter.StatsAPI) (e
 	}
 	return nil
 }
+
+// GoVPPStats returns current GoVPP statistics.
+func (p *Plugin) GoVPPStats() *Stats {
+	return GetStats()
+}
