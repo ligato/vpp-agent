@@ -1,13 +1,10 @@
 # VPP Agent
 
-![GitHub contributors](https://img.shields.io/github/contributors/ligato/vpp-agent.svg)
-[![Build Status](https://travis-ci.org/ligato/vpp-agent.svg?branch=master)](https://travis-ci.org/ligato/vpp-agent)
-[![Coverage Status](https://coveralls.io/repos/github/ligato/vpp-agent/badge.svg?branch=master)](https://coveralls.io/github/ligato/vpp-agent?branch=master)
-[![Go Report Card](https://goreportcard.com/badge/github.com/ligato/vpp-agent)](https://goreportcard.com/report/github.com/ligato/vpp-agent)
-[![GoDoc](https://godoc.org/github.com/ligato/vpp-agent?status.svg)](https://godoc.org/github.com/ligato/vpp-agent)
 [![GitHub license](https://img.shields.io/badge/license-Apache%20license%202.0-blue.svg)](https://github.com/ligato/vpp-agent/blob/master/LICENSE)
 
-###### Please note that the content of this repository is currently **WORK IN PROGRESS**!
+> Please note that the content of this repository is currently **WORK IN PROGRESS**!
+
+## Intro
 
 The VPP Agent is a Go implementation of a control/management plane for [VPP][vpp] based
 cloud-native [Virtual Network Functions][vnf] (VNFs). The VPP Agent is built on top of 
@@ -16,6 +13,12 @@ cloud-native [Virtual Network Functions][vnf] (VNFs). The VPP Agent is built on 
 The VPP Agent can be used as-is as a management/control agent for VNFs  based on off-the-shelf
 VPP (e.g. a VPP-based vswitch), or as a framework for developing management agents for VPP-based
 CNFs. An example of a custom VPP-based CNF is the [Contiv-VPP][contiv-vpp] vswitch.
+
+## Status
+
+[![Build Status](https://travis-ci.com/ligato/vpp-agent.svg?branch=master)](https://travis-ci.com/ligato/vpp-agent)
+[![Coverage Status](https://coveralls.io/repos/github/ligato/vpp-agent/badge.svg?branch=master)](https://coveralls.io/github/ligato/vpp-agent?branch=master)
+[![Go Report Card](https://goreportcard.com/badge/github.com/ligato/vpp-agent)](https://goreportcard.com/report/github.com/ligato/vpp-agent)
 
 ### Releases
 
@@ -73,6 +76,7 @@ docker exec -it agent1 vppctl -s localhost:5002 show interface
 See [README][docker-image] of development docker image for more details.
 
 ## Documentation
+[![GoDoc](https://godoc.org/github.com/ligato/vpp-agent?status.svg)](https://godoc.org/github.com/ligato/vpp-agent)
 
 Extensive documentation for the VPP Agent can be found at [docs.ligato.io](https://docs.ligato.io).
 
@@ -105,6 +109,8 @@ its management/control planes are implemented using the VNF agent:
 ![context](docs/imgs/context.png "VPP Agent & its Plugins on top of cn-infra")
 
 ## Contributing
+
+![GitHub contributors](https://img.shields.io/github/contributors/ligato/vpp-agent.svg)
 
 If you are interested in contributing, please see the [contribution guidelines][contribution].
 
