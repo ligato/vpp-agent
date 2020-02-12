@@ -1,7 +1,5 @@
 <h1 align="center">VPP Agent</h1>
 
-## Intro
-
 The VPP Agent is a Go implementation of a control/management plane for [VPP][vpp] based
 cloud-native [Virtual Network Functions][vnf] (VNFs). The VPP Agent is built on top of 
 [CN Infra][cn-infra], a framework for developing cloud-native VNFs (CNFs).
