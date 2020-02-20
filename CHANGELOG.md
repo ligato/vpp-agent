@@ -5,6 +5,7 @@
 ## Release Notes
 
 - [v3.0.0](#v3.0.0)
+  - [v3.0.1](#v3.0.1)
 - [v2.5.0](#v2.5.0)
   - [v2.5.1](#v2.5.1)
 - [v2.4.0](#v2.4.0)
@@ -49,6 +50,12 @@ RELEASE CHANGELOG TEMPLATE:
 ### Docker Images
 ### Documentation
 -->
+
+<a name="v3.0.1"></a>
+# [3.0.1](https://github.com/ligato/vpp-agent/compare/v3.0.0...v3.0.1) (2020-02-20)
+
+### Bug Fixes
+* fix: Add missing models to ConfigData (https://github.com/ligato/vpp-agent/pull/1625)
 
 <a name="v3.0.0"></a>
 # [3.0.0](https://github.com/ligato/vpp-agent/compare/v2.5.0...master) (2020-02-10)
