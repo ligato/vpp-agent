@@ -16,6 +16,7 @@ package linux
 
 import (
 	linux_interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/linux/interfaces"
+	linux_iptables "go.ligato.io/vpp-agent/v3/proto/ligato/linux/iptables"
 	linux_l3 "go.ligato.io/vpp-agent/v3/proto/ligato/linux/l3"
 )
 
@@ -26,4 +27,7 @@ type (
 	// L3
 	Route    = linux_l3.Route
 	ARPEntry = linux_l3.ARPEntry
+
+	// IP tables
+	IPTablesRuleChain = linux_iptables.RuleChain
 )
