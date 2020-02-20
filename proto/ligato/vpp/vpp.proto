@@ -15,6 +15,7 @@ import "ligato/vpp/l2/fib.proto";
 import "ligato/vpp/l2/xconnect.proto";
 import "ligato/vpp/l3/arp.proto";
 import "ligato/vpp/l3/l3.proto";
+import "ligato/vpp/l3/l3xc.proto";
 import "ligato/vpp/l3/route.proto";
 import "ligato/vpp/l3/vrf.proto";
 import "ligato/vpp/nat/nat.proto";
@@ -37,6 +38,8 @@ message ConfigData {
     l3.ProxyARP proxy_arp = 42;
     l3.IPScanNeighbor ipscan_neighbor = 43;
     repeated l3.VrfTable vrfs = 44;
+    repeated l3.L3XConnect l3xconnects = 45;
+    repeated l3.DHCPProxy dhcp_proxies = 46;
 
     nat.Nat44Global nat44_global = 50;
     repeated nat.DNat44 dnat44s = 51;
@@ -50,11 +53,10 @@ message ConfigData {
     repeated punt.ToHost punt_tohosts = 71;
     repeated punt.Exception punt_exceptions = 72;
 
+    srv6.SRv6Global srv6_global = 83;
     repeated srv6.LocalSID srv6_localsids = 80;
     repeated srv6.Policy srv6_policies = 81;
     repeated srv6.Steering srv6_steerings = 82;
-
-    srv6.SRv6Global srv6_global = 83;
 }
 
 message Notification {
