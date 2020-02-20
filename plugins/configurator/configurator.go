@@ -101,9 +101,9 @@ func (svc *configuratorServer) Delete(ctx context.Context, req *rpc.DeleteReques
 	defer trackOperation("Delete")()
 
 	protos := util.ExtractProtos(
-		req.Delete.VppConfig,
-		req.Delete.LinuxConfig,
-		req.Delete.NetallocConfig,
+		req.GetDelete().GetVppConfig(),
+		req.GetDelete().GetLinuxConfig(),
+		req.GetDelete().GetNetallocConfig(),
 	)
 
 	var kvPairs []orchestrator.KeyVal
