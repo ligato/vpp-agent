@@ -16,6 +16,7 @@ package govppmux
 
 import (
 	"expvar"
+	"os"
 	"sync"
 	"time"
 
@@ -23,18 +24,33 @@ import (
 	"go.ligato.io/vpp-agent/v3/proto/ligato/govppmux"
 )
 
+// DisableOldStats is used to disabled old way of collecting stats.
+var DisableOldStats = os.Getenv("GOVPPMUX_OLDSTATS_DISABLED") != ""
+
 var (
 	stats   Stats
 	statsMu sync.RWMutex
 )
 
 func init() {
+	if DisableOldStats {
+		return
+	}
 	stats.Errors = make(metrics.Calls)
 	stats.Messages = make(metrics.Calls)
 	stats.Replies = make(metrics.Calls)
+	metrics.Register(&govppmux.Metrics{}, func() interface{} {
+		return &GetStats().Metrics
+	})
+	expvar.Publish("govppmux.stats", expvar.Func(func() interface{} {
+		return &GetStats().Metrics
+	}))
 }
 
 func GetStats() *Stats {
+	if DisableOldStats {
+		return nil
+	}
 	s := new(Stats)
 	statsMu.RLock()
 	*s = stats
@@ -113,13 +129,4 @@ func trackError(m string) {
 	statsMu.Lock()
 	ms.Increment(0)
 	statsMu.Unlock()
-}
-
-func init() {
-	metrics.Register(&govppmux.Metrics{}, func() interface{} {
-		return &GetStats().Metrics
-	})
-	expvar.Publish("govppmux.stats", expvar.Func(func() interface{} {
-		return &GetStats().Metrics
-	}))
 }

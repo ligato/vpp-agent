@@ -17,7 +17,6 @@ package govppmux
 import (
 	"context"
 	"runtime/trace"
-	"sync/atomic"
 	"time"
 
 	govppapi "git.fd.io/govpp.git/api"
@@ -27,10 +26,6 @@ import (
 
 // NewAPIChannel returns a new API channel for communication with VPP via govpp core.
 // It uses default buffer sizes for the request and reply Go channels.
-//
-// Example of binary API call from some plugin using GOVPP:
-//      ch, _ := govpp_mux.NewAPIChannel()
-//      ch.SendRequest(req).ReceiveReply
 func (p *Plugin) NewAPIChannel() (govppapi.Channel, error) {
 	ch, err := p.vppConn.NewAPIChannel()
 	if err != nil {
@@ -45,10 +40,6 @@ func (p *Plugin) NewAPIChannel() (govppapi.Channel, error) {
 
 // NewAPIChannelBuffered returns a new API channel for communication with VPP via govpp core.
 // It allows to specify custom buffer sizes for the request and reply Go channels.
-//
-// Example of binary API call from some plugin using GOVPP:
-//      ch, _ := govpp_mux.NewAPIChannelBuffered(100, 100)
-//      ch.SendRequest(req).ReceiveReply
 func (p *Plugin) NewAPIChannelBuffered(reqChanBufSize, replyChanBufSize int) (govppapi.Channel, error) {
 	ch, err := p.vppConn.NewAPIChannelBuffered(reqChanBufSize, replyChanBufSize)
 	if err != nil {
@@ -75,14 +66,13 @@ func newGovppChan(ch govppapi.Channel, retryCfg retryConfig) *goVppChan {
 		Channel: ch,
 		retry:   retryCfg,
 	}
-	atomic.AddUint64(&stats.ChannelsCreated, 1)
-	atomic.AddUint64(&stats.ChannelsOpen, 1)
+	reportChannelsOpened()
 	return govppChan
 }
 
 func (c *goVppChan) Close() {
 	c.Channel.Close()
-	atomic.AddUint64(&stats.ChannelsOpen, ^uint64(0)) // decrement
+	reportChannelsClosed()
 }
 
 // helper struct holding info about retry configuration
@@ -130,7 +120,7 @@ func (c *goVppChan) SendRequest(request govppapi.Message) govppapi.RequestCtx {
 	// Send request now and wait for context
 	requestCtx := c.Channel.SendRequest(request)
 
-	atomic.AddUint64(&stats.RequestsSent, 1)
+	reportRequestSent(request)
 
 	// Return context with value and function which allows to send request again if needed
 	return &govppRequestCtx{
@@ -149,37 +139,30 @@ func (r *govppRequestCtx) ReceiveReply(reply govppapi.Message) error {
 	defer r.task.End()
 
 	var timeout time.Duration
-	maxRetries := r.retry.attempts
+	attempts := r.retry.attempts
 	if r.retry.timeout > 0 { // Default value is 500ms
 		timeout = r.retry.timeout
 	}
-
 	// Receive reply from original send
 	err := r.requestCtx.ReceiveReply(reply)
-
 	for retry := 1; err == core.ErrNotConnected; retry++ {
-		if retry > maxRetries {
-			// retrying failed
-			break
+		if retry > attempts {
+			break // max attempts exceeded
 		}
-		logging.Warnf("Govppmux: request retry (%d/%d), message %s in %v",
-			retry, maxRetries, r.requestMsg.GetMessageName(), timeout)
+		logging.Warnf("govppmux: request retry (%d/%d), message %s in %v",
+			retry, attempts, r.requestMsg.GetMessageName(), timeout)
 		// Wait before next attempt
 		time.Sleep(timeout)
 		// Retry request
-		trace.Logf(r.ctx, "requestRetry", "%d/%d", retry, maxRetries)
+		trace.Logf(r.ctx, "requestRetry", "%d/%d", retry, attempts)
 		err = r.sendRequest(r.requestMsg).ReceiveReply(reply)
 	}
-
-	atomic.AddUint64(&stats.RequestsDone, 1)
 	if err != nil {
-		trackError(err.Error())
-		atomic.AddUint64(&stats.RequestsFail, 1)
+		reportRequestFailed(reply, err)
+	} else {
+		reportRequestSuccess(r.requestMsg, r.start)
+		reportRepliesReceived(reply)
 	}
-
-	took := time.Since(r.start)
-	trackMsgRequestDur(r.requestMsg.GetMessageName(), took)
-
 	return err
 }
 
@@ -192,7 +175,7 @@ func (c *goVppChan) SendMultiRequest(request govppapi.Message) govppapi.MultiReq
 	// Send request now and wait for context
 	requestCtx := c.Channel.SendMultiRequest(request)
 
-	atomic.AddUint64(&stats.RequestsSent, 1)
+	reportRequestSent(request)
 
 	// Return context with value and function which allows to send request again if needed
 	return &govppMultirequestCtx{
@@ -209,19 +192,14 @@ func (r *govppMultirequestCtx) ReceiveReply(reply govppapi.Message) (bool, error
 	// Receive reply from original send
 	last, err := r.requestCtx.ReceiveReply(reply)
 	if last || err != nil {
-		took := time.Since(r.start)
-		trackMsgRequestDur(r.requestMsg.GetMessageName(), took)
-
-		atomic.AddUint64(&stats.RequestsDone, 1)
-		if err != nil {
-			trackError(err.Error())
-			atomic.AddUint64(&stats.RequestsFail, 1)
-		}
-
 		defer r.task.End()
+		if err != nil {
+			reportRequestFailed(r.requestMsg, err)
+		} else {
+			reportRequestSuccess(r.requestMsg, r.start)
+		}
 	} else {
-		atomic.AddUint64(&stats.RequestReplies, 1)
-		trackMsgReply(reply.GetMessageName())
+		reportRepliesReceived(reply)
 	}
 	return last, err
 }
