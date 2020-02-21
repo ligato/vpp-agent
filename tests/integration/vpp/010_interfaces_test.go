@@ -67,7 +67,7 @@ func TestInterfaceEnabledFieldWithLoopback(t *testing.T) {
 	}
 
 	// Test after creation
-	ifaces, err := h.DumpInterfaces(test.Context)
+	ifaces, err := h.DumpInterfaces(test.Ctx)
 	if err != nil {
 		t.Fatalf("dumping interfaces failed: %v", err)
 	}
@@ -83,11 +83,11 @@ func TestInterfaceEnabledFieldWithLoopback(t *testing.T) {
 	}
 
 	// Set AdminUp and test again
-	err = h.InterfaceAdminUp(test.Context, ifIdx0)
+	err = h.InterfaceAdminUp(test.Ctx, ifIdx0)
 	if err != nil {
 		t.Fatalf("enabling interface failed: %v", err)
 	}
-	ifaces, err = h.DumpInterfaces(test.Context)
+	ifaces, err = h.DumpInterfaces(test.Ctx)
 	if err != nil {
 		t.Fatalf("dumping interfaces failed: %v", err)
 	}
@@ -103,11 +103,11 @@ func TestInterfaceEnabledFieldWithLoopback(t *testing.T) {
 	}
 
 	// Set AdminDown and test again
-	err = h.InterfaceAdminDown(test.Context, ifIdx0)
+	err = h.InterfaceAdminDown(test.Ctx, ifIdx0)
 	if err != nil {
 		t.Fatalf("disabling interface failed: %v", err)
 	}
-	ifaces, err = h.DumpInterfaces(test.Context)
+	ifaces, err = h.DumpInterfaces(test.Ctx)
 	if err != nil {
 		t.Fatalf("dumping interfaces failed: %v", err)
 	}
@@ -148,7 +148,7 @@ func TestInterfaceEnabledFieldWithMemif(t *testing.T) {
 	}
 
 	// Test after creation
-	ifaces, err := h.DumpInterfaces(test.Context)
+	ifaces, err := h.DumpInterfaces(test.Ctx)
 	if err != nil {
 		t.Fatalf("dumping interfaces failed: %v", err)
 	}
@@ -164,11 +164,11 @@ func TestInterfaceEnabledFieldWithMemif(t *testing.T) {
 	}
 
 	// Set AdminUp and test again
-	err = h.InterfaceAdminUp(test.Context, memifIdx)
+	err = h.InterfaceAdminUp(test.Ctx, memifIdx)
 	if err != nil {
 		t.Fatalf("enabling interface failed: %v", err)
 	}
-	ifaces, err = h.DumpInterfaces(test.Context)
+	ifaces, err = h.DumpInterfaces(test.Ctx)
 	if err != nil {
 		t.Fatalf("dumping interfaces failed: %v", err)
 	}
@@ -184,11 +184,11 @@ func TestInterfaceEnabledFieldWithMemif(t *testing.T) {
 	}
 
 	// Set AdminDown and test again
-	err = h.InterfaceAdminDown(test.Context, memifIdx)
+	err = h.InterfaceAdminDown(test.Ctx, memifIdx)
 	if err != nil {
 		t.Fatalf("disabling interface failed: %v", err)
 	}
-	ifaces, err = h.DumpInterfaces(test.Context)
+	ifaces, err = h.DumpInterfaces(test.Ctx)
 	if err != nil {
 		t.Fatalf("dumping interfaces failed: %v", err)
 	}
@@ -260,7 +260,7 @@ func TestLoopbackInterface(t *testing.T) {
 	}
 	t.Logf("loopback index: %+v", ifIdx)
 
-	ifaces, err := h.DumpInterfaces(test.Context)
+	ifaces, err := h.DumpInterfaces(test.Ctx)
 	if err != nil {
 		t.Fatalf("dumping interfaces failed: %v", err)
 	}
@@ -305,7 +305,7 @@ func TestMemifInterface(t *testing.T) {
 	}
 	t.Logf("memif index: %+v", ifIdx)
 
-	ifaces, err := h.DumpInterfaces(test.Context)
+	ifaces, err := h.DumpInterfaces(test.Ctx)
 	if err != nil {
 		t.Fatalf("dumping interfaces failed: %v", err)
 	}

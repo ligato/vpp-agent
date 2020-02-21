@@ -51,7 +51,7 @@ func TestIPNeighbor(t *testing.T) {
 	)
 
 	cliShowConfig := func() {
-		out, err := vpp.RunCli(test.Context, "show ip scan-neighbor")
+		out, err := vpp.RunCli(test.Ctx, "show ip scan-neighbor")
 		if err != nil {
 			t.Fatal(err)
 		}

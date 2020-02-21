@@ -152,7 +152,7 @@ func TestGtpu(t *testing.T) {
 			}
 
 			if dumpAPIOk {
-				ifaces, err := h.DumpInterfaces(ctx.Context)
+				ifaces, err := h.DumpInterfaces(ctx.Ctx)
 				if err != nil {
 					t.Fatalf("dumping interfaces failed: %v", err)
 				}
@@ -198,7 +198,7 @@ func TestGtpu(t *testing.T) {
 			}
 
 			if dumpAPIOk {
-				ifaces, err := h.DumpInterfaces(ctx.Context)
+				ifaces, err := h.DumpInterfaces(ctx.Ctx)
 				if err != nil {
 					t.Fatalf("dumping interfaces failed: %v", err)
 				}

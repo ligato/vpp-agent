@@ -164,6 +164,8 @@ func (ms *microservice) enterNetNs() (exitNetNs func()) {
 
 // ping <destAddress> from inside of the microservice.
 func (ms *microservice) ping(destAddress string, allowedLoss ...int) error {
+	ms.t.Helper()
+
 	stdout, err := ms.exec("ping", "-w", "4", destAddress)
 	if err != nil {
 		return err

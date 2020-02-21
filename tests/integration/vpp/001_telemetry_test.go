@@ -32,7 +32,7 @@ func TestTelemetryNodeCounters(t *testing.T) {
 
 	h := vppcalls.CompatibleTelemetryHandler(test.vppClient)
 
-	nodeCounters, err := h.GetNodeCounters(test.Context)
+	nodeCounters, err := h.GetNodeCounters(test.Ctx)
 	if err != nil {
 		t.Fatalf("getting node counters failed: %v", err)
 	}
@@ -51,7 +51,7 @@ func TestTelemetryInterfaceStats(t *testing.T) {
 
 	h := vppcalls.CompatibleTelemetryHandler(test.vppClient)
 
-	ifStats, err := h.GetInterfaceStats(test.Context)
+	ifStats, err := h.GetInterfaceStats(test.Ctx)
 	if err != nil {
 		t.Fatalf("getting interface stats failed: %v", err)
 	} else {
