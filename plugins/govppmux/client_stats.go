@@ -40,6 +40,8 @@ func (p *Plugin) GetSystemStats(stats *govppapi.SystemStats) error {
 	if p.statsConn == nil {
 		return nil
 	}
+	p.statsMu.Lock()
+	defer p.statsMu.Unlock()
 	return p.statsConn.GetSystemStats(stats)
 }
 
@@ -48,6 +50,8 @@ func (p *Plugin) GetNodeStats(stats *govppapi.NodeStats) error {
 	if p.statsConn == nil {
 		return nil
 	}
+	p.statsMu.Lock()
+	defer p.statsMu.Unlock()
 	return p.statsConn.GetNodeStats(stats)
 }
 
@@ -56,6 +60,8 @@ func (p *Plugin) GetInterfaceStats(stats *govppapi.InterfaceStats) error {
 	if p.statsConn == nil {
 		return nil
 	}
+	p.statsMu.Lock()
+	defer p.statsMu.Unlock()
 	return p.statsConn.GetInterfaceStats(stats)
 }
 
@@ -64,6 +70,8 @@ func (p *Plugin) GetErrorStats(stats *govppapi.ErrorStats) error {
 	if p.statsConn == nil {
 		return nil
 	}
+	p.statsMu.Lock()
+	defer p.statsMu.Unlock()
 	return p.statsConn.GetErrorStats(stats)
 }
 
@@ -72,5 +80,7 @@ func (p *Plugin) GetBufferStats(stats *govppapi.BufferStats) error {
 	if p.statsConn == nil {
 		return nil
 	}
+	p.statsMu.Lock()
+	defer p.statsMu.Unlock()
 	return p.statsConn.GetBufferStats(stats)
 }
