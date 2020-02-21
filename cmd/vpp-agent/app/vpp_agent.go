@@ -162,7 +162,7 @@ func (a *VPPAgent) AfterInit() error {
 }
 
 // Close could close used resources.
-func (VPPAgent) Close() error {
+func (a *VPPAgent) Close() error {
 	return nil
 }
 

@@ -69,7 +69,7 @@ const (
 
 type TestCtx struct {
 	t              *testing.T
-	Context        context.Context
+	Ctx            context.Context
 	vppCmd         *exec.Cmd
 	stderr, stdout *bytes.Buffer
 	Conn           *govppcore.Connection
@@ -225,7 +225,7 @@ func setupVPP(t *testing.T) *TestCtx {
 
 	return &TestCtx{
 		t:           t,
-		Context:     ctx,
+		Ctx:         ctx,
 		versionInfo: versionInfo,
 		vpp:         vpeHandler,
 		vppCmd:      vppCmd,

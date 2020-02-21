@@ -123,7 +123,7 @@ func TestGre(t *testing.T) {
 				}
 			}
 
-			ifaces, err := h.DumpInterfaces(ctx.Context)
+			ifaces, err := h.DumpInterfaces(ctx.Ctx)
 			if err != nil {
 				t.Fatalf("dumping interfaces failed: %v", err)
 			}
@@ -155,7 +155,7 @@ func TestGre(t *testing.T) {
 				t.Fatalf("delete GRE tunnel failed: %v\n", err)
 			}
 
-			ifaces, err = h.DumpInterfaces(ctx.Context)
+			ifaces, err = h.DumpInterfaces(ctx.Ctx)
 			if err != nil {
 				t.Fatalf("dumping interfaces failed: %v", err)
 			}
