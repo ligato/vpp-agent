@@ -69,7 +69,7 @@ func Short() string {
 }
 
 func BuiltOn() string {
-	stamp := fmt.Sprintf("%s", buildTime.Format(time.UnixDate))
+	stamp := buildTime.Format(time.UnixDate)
 	if !buildTime.IsZero() {
 		stamp += fmt.Sprintf(" (%s)", timeAgo(buildTime))
 	}
