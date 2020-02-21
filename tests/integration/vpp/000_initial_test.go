@@ -43,10 +43,7 @@ func TestGetVersion(t *testing.T) {
 
 	info, err := vpp.GetVersion(test.Ctx)
 	Expect(err).ToNot(HaveOccurred())
-	Expect(info.Version).To(BePrintable())
-	Expect(info.Program).To(BePrintable())
-	Expect(info.BuildDate).To(BePrintable())
-	Expect(info.BuildDirectory).To(BePrintable())
+	Expect(info.Version).To(BePrintable(), "Version should be printable string:\n\t%#v", info)
 }
 
 func TestGetPlugins(t *testing.T) {
