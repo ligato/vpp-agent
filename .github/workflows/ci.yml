@@ -14,6 +14,13 @@ jobs:
         run: pip install --user yamllint
       - name: Run yamllint
         run: ~/.local/bin/yamllint -c .yamllint.yml .
+  checkproto:
+    name: check proto
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Run check-proto
+        run: make check-proto
 #  shellcheck:
 #    name: shellcheck
 #    runs-on: ubuntu-latest
