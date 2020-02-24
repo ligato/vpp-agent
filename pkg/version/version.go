@@ -36,11 +36,10 @@ var buildTime time.Time
 var revision string
 
 func init() {
-	buildstampInt64, _ := strconv.ParseInt(buildDate, 10, 64)
-	if buildstampInt64 == 0 {
-		buildstampInt64 = time.Now().Unix()
+	if buildDate != "" {
+		buildstampInt64, _ := strconv.ParseInt(buildDate, 10, 64)
+		buildTime = time.Unix(buildstampInt64, 0)
 	}
-	buildTime = time.Unix(buildstampInt64, 0)
 	revision = gitCommit
 	if len(revision) > 7 {
 		revision = revision[:7]
@@ -50,8 +49,13 @@ func init() {
 	}
 }
 
-// String returns version string.
-func String() string {
+// App returns app name.
+func App() string {
+	return app
+}
+
+// Version returns version string.
+func Version() string {
 	return version
 }
 
@@ -64,22 +68,24 @@ func Short() string {
 	return fmt.Sprintf(`%s %s`, app, version)
 }
 
-func BuiltStamp() string {
-	return fmt.Sprintf("%s (%s)", buildTime.Format(time.UnixDate), timeAgo(buildTime))
+func BuiltOn() string {
+	stamp := buildTime.Format(time.UnixDate)
+	if !buildTime.IsZero() {
+		stamp += fmt.Sprintf(" (%s)", timeAgo(buildTime))
+	}
+	return stamp
 }
 
 func BuiltBy() string {
 	return fmt.Sprintf("%s@%s (%s %s/%s)",
-		buildUser, buildHost,
-		runtime.Version(), runtime.GOOS, runtime.GOARCH,
+		buildUser, buildHost, runtime.Version(), runtime.GOOS, runtime.GOARCH,
 	)
 }
 
 // Info returns string with complete version info on single line.
 func Info() string {
-	return fmt.Sprintf(`%s %s (%s) built by %s@%s on %v (%s)`,
-		app, version, revision,
-		buildUser, buildHost, buildTime.Format(time.Stamp), timeAgo(buildTime),
+	return fmt.Sprintf(`%s %s (%s) built by %s@%s on %v`,
+		app, version, revision, buildUser, buildHost, BuiltOn(),
 	)
 }
 

@@ -19,6 +19,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"time"
@@ -34,7 +35,7 @@ import (
 )
 
 const logo = `                                       __
-  _  _____  ___ _______ ____ ____ ___ / /_   
+  _  _____  ___ _______ ____ ____ ___ / /_  %s
  | |/ / _ \/ _ /___/ _ '/ _ '/ -_/ _ / __/  %s
  |___/ .__/ .__/   \_'_/\_' /\__/_//_\__/   %s
     /_/  /_/           /___/                %s
@@ -42,25 +43,32 @@ const logo = `                                       __
 `
 
 func parseVersion() {
-	ver, rev, date := version.Data()
-	agent.BuildVersion = ver
-	agent.CommitHash = rev
-	agent.BuildDate = date
 	s := flag.NewFlagSet("version", flag.ContinueOnError)
-	v := s.Bool("version", false, "Print version info and exit.")
 	s.Usage = func() {}
+	s.SetOutput(ioutil.Discard)
+	var (
+		v  = s.Bool("V", false, "Print version and exit.")
+		vv = s.Bool("version", false, "Print version info and exit.")
+	)
 	if err := s.Parse(os.Args[1:]); err == nil {
 		if *v {
+			fmt.Fprintln(os.Stdout, version.Version())
+			os.Exit(0)
+		}
+		if *vv {
 			fmt.Fprintln(os.Stdout, version.Info())
 			os.Exit(0)
 		}
 	}
+	ver, rev, date := version.Data()
+	agent.BuildVersion = ver
+	agent.CommitHash = rev
+	agent.BuildDate = date
 }
 
 func main() {
 	parseVersion()
-
-	fmt.Fprintf(os.Stderr, logo, version.Short(), version.BuiltStamp(), version.BuiltBy())
+	fmt.Fprintf(os.Stderr, logo, version.App(), version.Version(), version.BuiltOn(), version.BuiltBy())
 
 	if debug.IsEnabled() {
 		logging.DefaultLogger.SetLevel(logging.DebugLevel)

@@ -297,6 +297,7 @@ func (ctx *testCtx) agentInSync() bool {
 
 // execCmd executes command and returns stdout, stderr as strings and error.
 func (ctx *testCtx) execCmd(cmd string, args ...string) (string, string, error) {
+	ctx.t.Helper()
 	ctx.t.Logf("exec: %s %s", cmd, strings.Join(args, " "))
 	var stdout, stderr bytes.Buffer
 	c := exec.Command(cmd, args...)
@@ -308,6 +309,7 @@ func (ctx *testCtx) execCmd(cmd string, args ...string) (string, string, error) 
 
 // execVppctl returns output from vppctl for given action and arguments.
 func (ctx *testCtx) execVppctl(action string, args ...string) (string, error) {
+	ctx.t.Helper()
 	command := append([]string{action}, args...)
 	stdout, _, err := ctx.execCmd("vppctl", command...)
 	if err != nil {
@@ -356,6 +358,7 @@ func (ctx *testCtx) pingFromMsClb(msName, dstAddress string) func() error {
 
 // pingFromVPP pings <dstAddress> from inside the VPP.
 func (ctx *testCtx) pingFromVPP(destAddress string) error {
+	ctx.t.Helper()
 	// run ping on VPP using vppctl
 	stdout, err := ctx.execVppctl("ping", destAddress)
 	if err != nil {

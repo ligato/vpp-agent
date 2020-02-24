@@ -61,7 +61,7 @@ func TestL3XC(t *testing.T) {
 	if err := ih.AddInterfaceIP(ifIdx1, &ipNet1); err != nil {
 		t.Fatalf("adding interface IP failed: %v", err)
 	}
-	if err := ih.InterfaceAdminUp(test.Context, ifIdx1); err != nil {
+	if err := ih.InterfaceAdminUp(test.Ctx, ifIdx1); err != nil {
 		t.Fatalf("setting interface admin up failed: %v", err)
 	}
 
@@ -78,7 +78,7 @@ func TestL3XC(t *testing.T) {
 	if err := ih.AddInterfaceIP(ifIdx2, &ipNet2); err != nil {
 		t.Fatalf("adding interface IP failed: %v", err)
 	}
-	if err := ih.InterfaceAdminUp(test.Context, ifIdx2); err != nil {
+	if err := ih.InterfaceAdminUp(test.Ctx, ifIdx2); err != nil {
 		t.Fatalf("setting interface admin up failed: %v", err)
 	}
 
@@ -86,14 +86,14 @@ func TestL3XC(t *testing.T) {
 	l3Handler := l3plugin_vppcalls.CompatibleL3VppHandler(test.vppClient, ifIndexes, vrfIndexes,
 		netalloc_mock.NewMockNetAlloc(), logrus.NewLogger("test"))
 
-	l3xcs, err := l3Handler.DumpL3XC(test.Context, math.MaxUint32)
+	l3xcs, err := l3Handler.DumpL3XC(test.Ctx, math.MaxUint32)
 	if err != nil {
 		t.Fatalf("dumping l3xcs failed: %v", err)
 	} else if len(l3xcs) != 0 {
 		t.Fatalf("expected empty dump, but got: %+v", l3xcs)
 	}
 
-	err = l3Handler.UpdateL3XC(test.Context, &l3plugin_vppcalls.L3XC{
+	err = l3Handler.UpdateL3XC(test.Ctx, &l3plugin_vppcalls.L3XC{
 		SwIfIndex: ifIdx1,
 		IsIPv6:    false,
 		Paths: []l3plugin_vppcalls.Path{
@@ -107,7 +107,7 @@ func TestL3XC(t *testing.T) {
 		t.Fatalf("unexpected error on updating l3xcs: %v", err)
 	}
 
-	l3xcs, err = l3Handler.DumpL3XC(test.Context, math.MaxUint32)
+	l3xcs, err = l3Handler.DumpL3XC(test.Ctx, math.MaxUint32)
 	if err != nil {
 		t.Fatalf("dumping l3xcs failed: %v", err)
 	} else if n := len(l3xcs); n != 1 {
@@ -128,12 +128,12 @@ func TestL3XC(t *testing.T) {
 		t.Fatalf("expected path Nh to be %v, but got %v", ipNet2.IP, path.NextHop)
 	}
 
-	err = l3Handler.DeleteL3XC(test.Context, ifIdx1, false)
+	err = l3Handler.DeleteL3XC(test.Ctx, ifIdx1, false)
 	if err != nil {
 		t.Fatalf("deleting l3xc failed: %v", err)
 	}
 
-	l3xcs, err = l3Handler.DumpL3XC(test.Context, math.MaxUint32)
+	l3xcs, err = l3Handler.DumpL3XC(test.Ctx, math.MaxUint32)
 	if err != nil {
 		t.Fatalf("dumping l3xcs failed: %v", err)
 	} else if len(l3xcs) != 0 {

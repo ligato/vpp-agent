@@ -62,6 +62,7 @@ type Plugin struct {
 	lastConnErr   error
 	vppapiChan    govppapi.Channel
 
+	statsMu      sync.Mutex
 	statsAdapter adapter.StatsAPI
 	statsConn    *govpp.StatsConnection
 

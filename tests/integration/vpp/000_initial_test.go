@@ -15,8 +15,9 @@
 package vpp
 
 import (
-	"context"
 	"testing"
+
+	. "github.com/onsi/gomega"
 
 	"go.ligato.io/vpp-agent/v3/plugins/govppmux/vppcalls"
 )
@@ -27,9 +28,11 @@ func TestPing(t *testing.T) {
 
 	vpp := vppcalls.CompatibleHandler(test.vppClient)
 
-	if err := vpp.Ping(context.Background()); err != nil {
-		t.Fatalf("control ping failed: %v", err)
-	}
+	Expect(vpp.Ping(test.Ctx)).To(Succeed())
+
+	session, err := vpp.GetSession(test.Ctx)
+	Expect(err).ToNot(HaveOccurred())
+	Expect(session.PID).To(BeEquivalentTo(test.vppCmd.Process.Pid))
 }
 
 func TestGetVersion(t *testing.T) {
@@ -38,12 +41,9 @@ func TestGetVersion(t *testing.T) {
 
 	vpp := vppcalls.CompatibleHandler(test.vppClient)
 
-	versionInfo, err := vpp.GetVersion(context.Background())
-	if err != nil {
-		t.Fatalf("getting version failed: %v", err)
-	}
-
-	t.Logf("version: %v", versionInfo.Version)
+	info, err := vpp.GetVersion(test.Ctx)
+	Expect(err).ToNot(HaveOccurred())
+	Expect(info.Version).To(BePrintable(), "Version should be printable string:\n\t%#v", info)
 }
 
 func TestGetPlugins(t *testing.T) {
@@ -52,10 +52,14 @@ func TestGetPlugins(t *testing.T) {
 
 	vpp := vppcalls.CompatibleHandler(test.vppClient)
 
-	plugins, err := vpp.GetPlugins(context.Background())
-	if err != nil {
-		t.Fatalf("getting pluggins failed: %v", err)
-	}
-
+	plugins, err := vpp.GetPlugins(test.Ctx)
+	Expect(err).ToNot(HaveOccurred())
 	t.Logf("%d plugins: %v", len(plugins), plugins)
+	Expect(plugins).ToNot(BeEmpty())
+
+	// GetModules return empty list with VPP 20.01
+	/*modules, err := vpp.GetModules(test.Ctx)
+	Expect(err).ToNot(HaveOccurred())
+	t.Logf("%d modules: %v", len(modules), modules)
+	Expect(modules).ToNot(BeEmpty())*/
 }

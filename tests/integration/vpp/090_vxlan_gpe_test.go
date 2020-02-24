@@ -114,7 +114,7 @@ func TestVxlanGpe(t *testing.T) {
 				}
 			}
 
-			ifaces, err := h.DumpInterfaces(ctx.Context)
+			ifaces, err := h.DumpInterfaces(ctx.Ctx)
 			if err != nil {
 				t.Fatalf("dumping interfaces failed: %v", err)
 			}
@@ -148,7 +148,7 @@ func TestVxlanGpe(t *testing.T) {
 				t.Fatalf("delete VxLAN-GPE tunnel failed: %v\n", err)
 			}
 
-			ifaces, err = h.DumpInterfaces(ctx.Context)
+			ifaces, err = h.DumpInterfaces(ctx.Ctx)
 			if err != nil {
 				t.Fatalf("dumping interfaces failed: %v", err)
 			}

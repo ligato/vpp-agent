@@ -39,10 +39,10 @@ func (h *VpeHandler) GetVersion(ctx context.Context) (*vppcalls.VersionInfo, err
 		return nil, err
 	}
 	info := &vppcalls.VersionInfo{
-		Program:        version.Program,
-		Version:        version.Version,
-		BuildDate:      version.BuildDate,
-		BuildDirectory: version.BuildDirectory,
+		Program:        strings.TrimRight(version.Program, "\x00"),
+		Version:        strings.TrimRight(version.Version, "\x00"),
+		BuildDate:      strings.TrimRight(version.BuildDate, "\x00"),
+		BuildDirectory: strings.TrimRight(version.BuildDirectory, "\x00"),
 	}
 	return info, nil
 }
