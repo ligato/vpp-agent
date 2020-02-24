@@ -42,7 +42,7 @@ require (
 	github.com/pkg/profile v1.3.0
 	github.com/prometheus/client_golang v0.9.3
 	github.com/sirupsen/logrus v1.4.2
-	github.com/spf13/cobra v0.0.3
+	github.com/spf13/cobra v0.0.6
 	github.com/spf13/pflag v1.0.3
 	github.com/spf13/viper v1.4.0
 	github.com/unrolled/render v0.0.0-20180914162206-b9786414de4d
