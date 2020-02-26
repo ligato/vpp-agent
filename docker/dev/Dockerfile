@@ -89,14 +89,14 @@ COPY ./docker/dev/init_hook.sh /usr/bin/
 # Install agent
 WORKDIR /src/ligato/vpp-agent
 
+COPY go.mod go.sum ./
+RUN go mod download
+COPY . ./
+
 ARG VERSION
 ARG COMMIT
 ARG BRANCH
 ARG BUILD_DATE
-
-COPY go.mod go.sum ./
-RUN go mod download
-COPY . ./
 
 RUN make install purge
 
