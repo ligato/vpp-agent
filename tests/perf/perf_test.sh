@@ -12,6 +12,8 @@ BASH_ENTRY_DIR="$(dirname $(readlink -e "${BASH_SOURCE[0]}"))"
 _test="${1}"
 _requests="${2-1000}"
 
+_test_client="$SCRIPT_DIR"/"$_test"
+
 [ -z ${REPORT_DIR-} ] && REPORT_DIR="${SCRIPT_DIR}/reports/$_test"
 
 export DEBUG_PROFILE_PATH="${REPORT_DIR}"
@@ -23,23 +25,26 @@ log_agent="${REPORT_DIR}/agent.log"
 
 sys_info="${REPORT_DIR}/sys-info.txt"
 vpp_info="${REPORT_DIR}/vpp-info.txt"
-agent_info="${REPORT_DIR}/agent-info.txt"
+agent_info="${REPORT_DIR}/agent-info"
 
 cpuprof="${REPORT_DIR}/cpu.pprof"
 memprof="${REPORT_DIR}/mem.pprof"
 
 rest_addr="${REST_ADDR:-http://127.0.0.1:9191}"
+sleep_extra="${SLEEP_EXTRA:-5}"
 
 # -------
 #  test
 # -------
 
 function run_test() {
+	echo "Preparing PERF testing.."
+
 	# create report directory
 	rm -vrf ${REPORT_DIR}/* 2>/dev/null
 	mkdir --mode=777 -p ${REPORT_DIR}
 
-	perftest $* 2>&1 | tee $log_report
+	perftest $* 2>&1 | tee "$log_report"
 }
 
 function perftest() {
@@ -47,22 +52,26 @@ function perftest() {
 	local requests="$2"
 	
 	echo "================================================================================"
-	echo " PERF TEST: $perftest"
-	echo "  - num requests: ${requests}"
-	echo "  - report dir: ${REPORT_DIR}"
+	echo " PERF TEST"
 	echo "================================================================================"
-	
+	echo "- name: ${perftest}"
+	echo "- num requests: ${requests}"
+	echo "- report dir: ${REPORT_DIR}"
+	echo "--------------------------------------------------------------------------------"
+
 	prepare_test
 
 	trap 'on_exit' EXIT
-
 	start_vpp
 	start_agent
 
-	echo "-> running $perftest test.."
+	echo "-> sleeping for $sleep_extra seconds before starting test"
+	sleep "$sleep_extra"
+
+	echo "-> starting $perftest test.."
 	echo "--------------------------------------------------------------"
 	test_result=0
-	$_test_client/$_test ${CLIENT_PARAMS-} --tunnels=$requests || test_result=$?
+	"$_test_client"/"$_test" ${CLIENT_PARAMS-} --tunnels=$requests || test_result=$?
 	echo "--------------------------------------------------------------"
 	echo "-> $_test test finished (exit code: $test_result)"
 
@@ -71,39 +80,47 @@ function perftest() {
 	check_vpp
 	check_agent
 
+	set +e
+
+	#curl -sSfL "http://127.0.0.1:9094/metrics" > "${REPORT_DIR}/metrics_client.txt" || true
+
 	echo "-> collecting system info to: $sys_info"
-	sysinfo "uname -a" > $sys_info
-	sysinfo "env" >> $sys_info
 	sysinfo "pwd" >> $sys_info
+	sysinfo "env | sort" >> $sys_info
+	sysinfo "uname -a" > $sys_info
 	sysinfo "lscpu" >> $sys_info
-	sysinfo "ip addr" >> $sys_info
 	sysinfo "free -h" >> $sys_info
 	sysinfo "df -h" >> $sys_info
+	sysinfo "ip -br link" >> $sys_info
+	sysinfo "ip -br addr" >> $sys_info
+	sysinfo "ip -br route" >> $sys_info
 	sysinfo "ps faux" >> $sys_info
 
-	echo "-> collecting agent info to: $agent_info"
-	grep -B 6 "Starting agent version" $log_agent > $agent_info
-	agentrest "scheduler/stats" >> $agent_info
-	agentrest "govppmux/stats" >> $agent_info
+	echo "-> collecting agent data.."
+	curljson "$rest_addr/scheduler/stats" > "${REPORT_DIR}/agent-stats_scheduler.json"
+	curljson "$rest_addr/govppmux/stats" > "${REPORT_DIR}/agent-stats_govppmux.json"
+	curl -sSfL "$rest_addr/metrics" > "${REPORT_DIR}/metrics_agent.txt"
 
-	echo "-> collecting VPP info to: $vpp_info"
+	echo "-> collecting VPP data to: $vpp_info"
 	echo -e "VPP info:\n\n" > $vpp_info
-	vppcli "show version verbose" >> $vpp_info
-	vppcli "show version cmdline" >> $vpp_info
-	vppcli "show plugins" >> $vpp_info
 	vppcli "show clock" >> $vpp_info
-	vppcli "show threads" >> $vpp_info
+	vppcli "show version verbose" >> $vpp_info
+	vppcli "show plugins" >> $vpp_info
 	vppcli "show cpu" >> $vpp_info
+	vppcli "show version cmdline" >> $vpp_info
+	vppcli "show threads" >> $vpp_info
 	vppcli "show physmem" >> $vpp_info
-	vppcli "show memory verbose" >> $vpp_info
-	vppcli "show api clients" >> $vpp_info
+	vppcli "show memory main-heap verbose" >> $vpp_info
+	vppcli "show memory api-segment verbose" >> $vpp_info
+	vppcli "show memory stats-segment verbose" >> $vpp_info
 	vppcli "show api histogram" >> $vpp_info
-	vppcli "show api trace-status" >> $vpp_info
 	vppcli "show api ring-stats" >> $vpp_info
+	vppcli "show api trace-status" >> $vpp_info
 	vppcli "api trace status" >> $vpp_info
-	vppcli "show event-logger" >> $vpp_info
-	vppcli "show unix errors" >> $vpp_info
+	vppcli "show api clients" >> $vpp_info
 	vppcli "show unix files" >> $vpp_info
+	vppcli "show unix errors" >> $vpp_info
+	vppcli "show event-logger" >> $vpp_info
 	vppcli "show ip fib summary" >> $vpp_info
 
 	if [[ "$test_result" == "0" ]]; then
@@ -113,6 +130,9 @@ function perftest() {
 	else
 		fail "Test client failure (exit code: $test_result)"
 	fi
+
+	echo "-> sleeping for $sleep_extra seconds before stopping"
+	sleep "$sleep_extra"
 	
 	trap - EXIT
 	stop_agent
@@ -134,7 +154,6 @@ function perftest() {
 function prepare_test() {
 	#cd ${BASH_ENTRY_DIR}
 	# build test client
-	_test_client="$SCRIPT_DIR/$_test"
 
 	#[[ -e "./$_test" ]] || {
 		echo "-> compiling test client $_test.."
@@ -299,14 +318,10 @@ function check_agent() {
 	fi
 }
 
-function agentrest() {
-	local url="$rest_addr/$1"
+function curljson() {
+	local url="$1"
 
-	echo "----------------------------------------------------"
-	echo "GET $url"
-	echo "----------------------------------------------------"
 	curl -sSfL -H "Content-Type: application/json" "$url"
-	echo
 }
 
 # skip running test if no argument is given (source)
