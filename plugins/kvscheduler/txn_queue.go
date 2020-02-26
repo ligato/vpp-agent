@@ -34,6 +34,7 @@ func (s *Scheduler) enqueueTxn(txn *transaction) error {
 		case <-s.ctx.Done():
 			return kvs.ErrClosedScheduler
 		case s.txnQueue <- txn:
+			reportQueued(1)
 			return nil
 		}
 	}
@@ -41,8 +42,10 @@ func (s *Scheduler) enqueueTxn(txn *transaction) error {
 	case <-s.ctx.Done():
 		return kvs.ErrClosedScheduler
 	case s.txnQueue <- txn:
+		reportQueued(1)
 		return nil
 	default:
+		reportTxnDropped()
 		return kvs.ErrTxnQueueFull
 	}
 }
@@ -53,6 +56,7 @@ func (s *Scheduler) dequeueTxn() (txn *transaction, canceled bool) {
 	case <-s.ctx.Done():
 		return nil, true
 	case txn = <-s.txnQueue:
+		reportQueued(-1)
 		//trace.Log(txn.ctx, "txn", "dequeue")
 		return txn, false
 	}
@@ -75,12 +79,13 @@ func (s *Scheduler) delayRetry(args *retryTxn) {
 		err := s.enqueueTxn(&transaction{
 			txnType: kvs.RetryFailedOps,
 			retry:   args,
+			created: time.Now(),
 		})
 		if err != nil {
 			s.Log.WithFields(logging.Fields{
 				"txnSeqNum": args.txnSeqNum,
 				"err":       err,
-			}).Warn("Failed to enqueue re-try for failed operations")
+			}).Warn("Failed to enqueue retry transaction for failed operations")
 			s.enqueueRetry(args) // try again with the same time period
 		}
 	}

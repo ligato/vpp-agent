@@ -25,7 +25,7 @@ import (
 // Set of raw Prometheus metrics.
 // Labels
 // * message
-// *
+// * error
 // Do not increment directly, use Report* methods.
 var (
 	channelsCreated = prometheus.NewCounter(prometheus.CounterOpts{

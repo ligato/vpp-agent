@@ -128,6 +128,7 @@ func trackTransactionMethod(m string) func() {
 	s := stats.TxnStats
 	return func() {
 		took := time.Since(t)
+		reportTxnProcessDuration(m, took.Seconds())
 		statsMu.Lock()
 		ms, tracked := s.Methods[m]
 		if !tracked {
