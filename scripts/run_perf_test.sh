@@ -9,6 +9,8 @@ image=${AGENT_IMG:-ligato/dev-vpp-agent}
 reports=${REPORTS_DIR:-report}
 profiling_mode=${PROF_MODE-}
 
+reports="$(cd $reports && pwd)"
+
 runid=${RUN-"${num_req}-req"}
 results="${reports}/perf-results-${runid}"
 
@@ -16,9 +18,9 @@ mkdir -p "$results"
 
 echo "Starting perf test run: $runid"
 
-cid=$(docker run -d --rm -it --privileged \
+cid=$(docker run -d -it --privileged \
 	--label perf-run="$runid" \
-	-v $(pwd)/"$results":/report \
+	-v "$results":/report \
 	-e REPORT_DIR=/report \
 	-e ETCD_CONFIG=disabled \
 	-e INITIAL_LOGLVL=info \
