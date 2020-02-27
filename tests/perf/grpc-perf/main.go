@@ -71,15 +71,16 @@ func init() {
 }
 
 var (
-	address       = flag.String("address", "127.0.0.1:9111", "address of GRPC server")
-	socketType    = flag.String("socket-type", "tcp", "socket type [tcp, tcp4, tcp6, unix, unixpacket]")
-	numClients    = flag.Int("clients", 1, "number of concurrent grpc clients")
-	numTunnels    = flag.Int("tunnels", 100, "number of tunnels to stress per client")
-	numPerRequest = flag.Int("numperreq", 1, "number of tunnels/routes per grpc request")
-	withIPs       = flag.Bool("with-ips", false, "configure IP address for each tunnel on memif at the end")
-	debug         = flag.Bool("debug", false, "turn on debug dump")
-	dumpMetrics   = flag.Bool("dumpmetrics", false, "Dump metrics before exit.")
-	timeout       = flag.Uint("timeout", 300, "timeout for requests (in seconds)")
+	address        = flag.String("address", "127.0.0.1:9111", "address of GRPC server")
+	socketType     = flag.String("socket-type", "tcp", "socket type [tcp, tcp4, tcp6, unix, unixpacket]")
+	numClients     = flag.Int("clients", 1, "number of concurrent grpc clients")
+	numTunnels     = flag.Int("tunnels", 100, "number of tunnels to stress per client")
+	numPerRequest  = flag.Int("numperreq", 1, "number of tunnels/routes per grpc request")
+	withIPs        = flag.Bool("with-ips", false, "configure IP address for each tunnel on memif at the end")
+	debug          = flag.Bool("debug", false, "turn on debug dump")
+	dumpMetrics    = flag.Bool("dumpmetrics", false, "Dump metrics before exit.")
+	timeout        = flag.Uint("timeout", 300, "timeout for requests (in seconds)")
+	reportProgress = flag.Uint("progress", 20, "percent of progress to report")
 
 	dialTimeout = time.Second * 3
 	reqTimeout  = time.Second * 300
@@ -324,17 +325,18 @@ func (p *GRPCStressPlugin) runAllClients() {
 	}
 
 	p.Log.Debugf("Waiting for clients..")
+
 	p.wg.Wait()
 
 	took := time.Since(t)
-	perSec := float64(*numTunnels) / took.Seconds()
+	perSec := float64((*numTunnels)*(*numClients)) / took.Seconds()
 
 	p.Log.Infof("All clients done!")
 	p.Log.Infof("========================================")
 	p.Log.Infof(" RESULTS:")
 	p.Log.Infof("========================================")
 	p.Log.Infof("	Elapsed: %.2f sec", took.Seconds())
-	p.Log.Infof("	Average: %.2f req/sec", perSec)
+	p.Log.Infof("	Average: %.1f req/sec", perSec)
 	p.Log.Infof("========================================")
 
 	/*for i := 0; i < *numClients; i++ {
@@ -369,14 +371,18 @@ func (p *GRPCStressPlugin) runAllClients() {
 }
 
 // runGRPCStressCreate creates 1 tunnel and 1 route ... emulating what strongswan does on a per remote warrior
-func (p *GRPCStressPlugin) runGRPCStressCreate(id int, client configurator.ConfiguratorServiceClient, numTunnels int) {
+func (p *GRPCStressPlugin) runGRPCStressCreate(clientId int, client configurator.ConfiguratorServiceClient, numTunnels int) {
 	defer p.wg.Done()
 
-	p.Log.Debugf("Creating %d tunnels/routes ... for client %d, ", numTunnels, id)
+	p.Log.Debugf("Creating %d tunnels/routes ... for client %d, ", numTunnels, clientId)
 
 	startTime := time.Now()
 
 	ips := []string{"10.0.0.1/24"}
+
+	report := 0.0
+	lastNumTunnels := 0
+	lastReport := startTime
 
 	for tunNum := 0; tunNum < numTunnels; {
 		if tunNum == numTunnels {
@@ -391,7 +397,7 @@ func (p *GRPCStressPlugin) runGRPCStressCreate(id int, client configurator.Confi
 				break
 			}
 
-			tunID := id*numTunnels + tunNum
+			tunID := clientId*numTunnels + tunNum
 			tunNum++
 
 			ipsecTunnelName := fmt.Sprintf("ipsec-%d", tunID)
@@ -434,7 +440,7 @@ func (p *GRPCStressPlugin) runGRPCStressCreate(id int, client configurator.Confi
 				OutgoingInterface: ipsecTunnelName,
 			}
 
-			//p.Log.Infof("Creating %s ... client: %d, tunNum: %d", ipsecTunnelName, id, tunNum)
+			//p.Log.Infof("Creating %s ... client: %d, tunNum: %d", ipsecTunnelName, clientId, tunNum)
 
 			ifaces = append(ifaces, ipsecTunnel)
 			routes = append(routes, route)
@@ -451,7 +457,22 @@ func (p *GRPCStressPlugin) runGRPCStressCreate(id int, client configurator.Confi
 			},
 		})
 		if err != nil {
-			log.Fatalf("Error creating tun/route: id/tun=%d/%d, err: %s", id, tunNum, err)
+			log.Fatalf("Error creating tun/route: clientId/tun=%d/%d, err: %s", clientId, tunNum, err)
+		}
+
+		progress := (float64(tunNum) / float64(numTunnels)) * 100
+		if uint(progress-report) >= *reportProgress {
+			tunNumReport := tunNum - lastNumTunnels
+
+			took := time.Since(lastReport)
+			perSec := float64(tunNumReport) / took.Seconds()
+
+			p.Log.Infof("client #%d - progress % 3.0f%% -> %d tunnels took %.3fs (%.1f tunnels/sec)",
+				clientId, progress, tunNumReport, took.Seconds(), perSec)
+
+			report = progress
+			lastReport = time.Now()
+			lastNumTunnels = tunNum
 		}
 	}
 
@@ -490,8 +511,8 @@ func (p *GRPCStressPlugin) runGRPCStressCreate(id int, client configurator.Confi
 	took := time.Since(startTime)
 	perSec := float64(numTunnels) / took.Seconds()
 
-	p.Log.Infof("Client #%d done, %d tunnels took %.3fs (%.3f tunnels/sec)",
-		id, numTunnels, took.Seconds(), perSec)
+	p.Log.Infof("client #%d done => %d tunnels took %.3fs (%.1f tunnels/sec)",
+		clientId, numTunnels, took.Seconds(), perSec)
 }
 
 func gen3octets(num uint32) string {
