@@ -6,7 +6,7 @@ set -euo pipefail
 num_req=${1-10000}
 
 image=${AGENT_IMG:-ligato/dev-vpp-agent}
-reports=${REPORTS_DIR:-report}
+reports=${REPORT_DIR:-report}
 profiling_mode=${PROF_MODE-}
 
 reports="$(cd $reports && pwd)"
