@@ -396,9 +396,10 @@ func (p *GRPCStressPlugin) runGRPCStressCreate(id int, client configurator.Confi
 
 			ipsecTunnelName := fmt.Sprintf("ipsec-%d", tunID)
 
+			ipPart0 := 100 + (uint32(tunID)>>16)&0xFF
 			ipPart := gen2octets(uint32(tunID))
-			localIP := fmt.Sprintf("100.%s.1", ipPart)
-			remoteIP := fmt.Sprintf("100.%s.254", ipPart)
+			localIP := fmt.Sprintf("%d.%s.1", ipPart0, ipPart)
+			remoteIP := fmt.Sprintf("%d.%s.254", ipPart0, ipPart)
 
 			ips = append(ips, localIP+"/24")
 
