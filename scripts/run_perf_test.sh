@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# usage: ./scripts/run_perf_test.sh <num_req>
+# usage: ./scripts/run_perf_test.sh <num_req> <num_tunnels_per_req> <num_clients>
 
 num_req=${1-10000}
 
@@ -37,6 +37,6 @@ function on_exit() {
 }
 trap 'on_exit' EXIT
 
-docker exec -it "$cid" bash ./tests/perf/perf_test.sh grpc-perf "$num_req"
+docker exec -it "$cid" bash ./tests/perf/perf_test.sh grpc-perf $*
 
 echo "Test results stored in: $results"

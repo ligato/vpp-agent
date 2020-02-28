@@ -11,15 +11,17 @@ BASH_ENTRY_DIR="$(dirname $(readlink -e "${BASH_SOURCE[0]}"))"
 
 _test="${1}"
 _requests="${2-1000}"
+_perreq="${3-5}"
+_numclients="${4-1}"
 
-_test_client="$SCRIPT_DIR"/"$_test"
+_test_client="$SCRIPT_DIR/$_test"
+_vpp_config="$_test_client/vpp.conf"
 
 [ -z ${REPORT_DIR-} ] && REPORT_DIR="${SCRIPT_DIR}/reports/$_test"
 
 export DEBUG_PROFILE_PATH="${REPORT_DIR}"
 
 log_report="${REPORT_DIR}/report.log"
-
 log_vpp="${REPORT_DIR}/vpp.log"
 log_agent="${REPORT_DIR}/agent.log"
 
@@ -50,13 +52,18 @@ function run_test() {
 function perftest() {
 	local perftest="$1"
 	local requests="$2"
-	
+	local tunnels="$3"
+	local clients="$4"
+
 	echo "================================================================================"
-	echo " PERF TEST"
+	echo " PERF TEST - ${perftest}"
 	echo "================================================================================"
-	echo "- name: ${perftest}"
-	echo "- num requests: ${requests}"
-	echo "- report dir: ${REPORT_DIR}"
+	echo "report dir: ${REPORT_DIR}"
+	echo
+	echo "settings:"
+	echo " - requests per client: ${requests}"
+	echo " - tunnels per request: ${_perreq}"
+	echo " - clients: ${_numclients}"
 	echo "--------------------------------------------------------------------------------"
 
 	prepare_test
@@ -71,7 +78,7 @@ function perftest() {
 	echo "-> starting $perftest test.."
 	echo "--------------------------------------------------------------"
 	test_result=0
-	"$_test_client"/"$_test" ${CLIENT_PARAMS-} --tunnels=$requests || test_result=$?
+	"$_test_client"/"$_test" --tunnels=$requests --numperreq=$tunnels --clients=$clients ${CLIENT_PARAMS:-}  || test_result=$?
 	echo "--------------------------------------------------------------"
 	echo "-> $_test test finished (exit code: $test_result)"
 
@@ -207,8 +214,8 @@ function start_vpp() {
 	[[ -e "$_vpp" ]] || fail "VPP not found!"
 
 	echo -n "-> starting VPP ($_vpp).. "
-	rm -f /dev/shm/db /dev/shm/global_vm /dev/shm/vpe-api
-	$_vpp -c /etc/vpp/vpp.conf > "$log_vpp" 2>&1 &
+	rm -vf /dev/shm/db /dev/shm/global_vm /dev/shm/vpe-api
+	$_vpp -c "${_vpp_config}" > "$log_vpp" 2>&1 &
 	pid_vpp="$!"
 	timeout "${wait_vpp_boot}" grep -q "vlib_plugin_early_init" <(tail -qF $log_vpp)
 	echo "ok! (PID:${pid_vpp})"
@@ -327,5 +334,5 @@ function curljson() {
 # skip running test if no argument is given (source)
 #[ -z "${1-}" ] || run_test $1
 
-run_test "$_test" "$_requests"
+run_test "$_test" "$_requests" "$_perreq" "$_numclients"
 
