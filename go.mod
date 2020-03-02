@@ -19,7 +19,7 @@ require (
 	github.com/docker/go-connections v0.3.0 // indirect
 	github.com/docker/go-units v0.3.2 // indirect
 	github.com/docker/libnetwork v0.0.0-20180726175142-9ffeaf7d8b64 // indirect
-	github.com/fsouza/go-dockerclient v1.2.2
+	github.com/fsouza/go-dockerclient v1.6.3
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-errors/errors v1.0.1
 	github.com/golang/protobuf v1.3.3
