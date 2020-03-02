@@ -22,7 +22,7 @@ message Interface {
         TAP = 5;
         AF_PACKET = 6;
         VXLAN_TUNNEL = 7;
-        IPSEC_TUNNEL = 8;
+        IPSEC_TUNNEL = 8 [deprecated=true]; // Deprecated in VPP 20.01+. Use IPIP_TUNNEL + ipsec.TunnelProtection instead.
         VMXNET3_INTERFACE = 9;
         BOND_INTERFACE = 10;
         GRE_TUNNEL = 11;
@@ -97,7 +97,7 @@ message Interface {
         AfpacketLink afpacket = 102;
         TapLink tap = 103;
         VxlanLink vxlan = 104;
-        IPSecLink ipsec = 105;
+        IPSecLink ipsec = 105 [deprecated=true]; // Deprecated in VPP 20.01+. Use IPIP_TUNNEL + ipsec.TunnelProtection instead.
         VmxNet3Link vmx_net3 = 106;
         BondLink bond = 107;
         GreLink gre = 108;
