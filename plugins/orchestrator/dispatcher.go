@@ -15,16 +15,15 @@
 package orchestrator
 
 import (
+	"context"
 	"fmt"
 	"runtime/trace"
 	"sync"
 	"time"
 
+	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
 	"go.ligato.io/cn-infra/v2/logging"
-	"golang.org/x/net/context"
-
-	"github.com/golang/protobuf/proto"
 
 	"go.ligato.io/vpp-agent/v3/pkg/models"
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"

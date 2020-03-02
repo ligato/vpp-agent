@@ -39,6 +39,7 @@ type transaction struct {
 	values  []kvForTxn
 	nb      *nbTxn    // defined for NB transactions
 	retry   *retryTxn // defined for retry of failed operations
+	created time.Time
 }
 
 // kvForTxn represents a new value for a given key to be applied in a transaction.
@@ -92,7 +93,9 @@ func (s *Scheduler) consumeTransactions() {
 		if canceled {
 			return
 		}
+		reportQueueWait(txn.txnType, time.Since(txn.created).Seconds())
 		s.processTransaction(txn)
+		reportTxnProcessed(txn.txnType, time.Since(txn.created).Seconds())
 	}
 }
 

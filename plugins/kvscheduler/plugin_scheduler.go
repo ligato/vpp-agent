@@ -180,6 +180,7 @@ func (s *Scheduler) Init() error {
 	s.registry = registry.NewRegistry()
 	// prepare channel for serializing transactions
 	s.txnQueue = make(chan *transaction, 100)
+	reportQueueCap(cap(s.txnQueue))
 	// register REST API handlers
 	s.registerHandlers(s.HTTPHandlers)
 	// initialize key-set used to mark values with updated status
@@ -292,6 +293,7 @@ func (s *Scheduler) TransactionBarrier() {
 func (s *Scheduler) PushSBNotification(notif ...kvs.KVWithMetadata) error {
 	txn := &transaction{
 		txnType: kvs.SBNotification,
+		created: time.Now(),
 	}
 	for _, value := range notif {
 		txn.values = append(txn.values, kvForTxn{
@@ -441,6 +443,7 @@ func (txn *SchedulerTxn) Commit(ctx context.Context) (txnSeqNum uint64, err erro
 		txnType: kvs.NBTransaction,
 		nb:      &nbTxn{},
 		values:  make([]kvForTxn, 0, len(txn.values)),
+		created: time.Now(),
 	}
 
 	// collect values

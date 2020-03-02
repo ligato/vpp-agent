@@ -251,8 +251,10 @@ func (c *InterfaceStateUpdater) doUpdatesIfStateDetails() {
 
 	var ifIdxs []uint32
 	c.access.Lock()
-	for ifIdx := range c.ifsForUpdate {
-		ifIdxs = append(ifIdxs, ifIdx)
+	if len(c.ifsForUpdate) < 1000 {
+		for ifIdx := range c.ifsForUpdate {
+			ifIdxs = append(ifIdxs, ifIdx)
+		}
 	}
 	// clear interfaces for update
 	c.ifsForUpdate = make(map[uint32]struct{})

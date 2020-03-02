@@ -18,20 +18,26 @@ package main
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net"
+	"net/http"
 	"sync"
 	"time"
 
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
+	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	"github.com/namsral/flag"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
 	"go.ligato.io/cn-infra/v2/agent"
 	"go.ligato.io/cn-infra/v2/infra"
 	"go.ligato.io/cn-infra/v2/logging"
 	"google.golang.org/grpc"
 
+	"go.ligato.io/vpp-agent/v3/pkg/version"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/configurator"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/vpp"
 	interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
@@ -40,14 +46,41 @@ import (
 )
 
 var (
-	address       = flag.String("address", "127.0.0.1:9111", "address of GRPC server")
-	socketType    = flag.String("socket-type", "tcp", "socket type [tcp, tcp4, tcp6, unix, unixpacket]")
-	numClients    = flag.Int("clients", 1, "number of concurrent grpc clients")
-	numTunnels    = flag.Int("tunnels", 100, "number of tunnels to stress per client")
-	numPerRequest = flag.Int("numperreq", 10, "number of tunnels/routes per grpc request")
-	withIPs       = flag.Bool("with-ips", false, "configure IP address for each tunnel on memif at the end")
-	debug         = flag.Bool("debug", false, "turn on debug dump")
-	timeout       = flag.Uint("timeout", 300, "timeout for requests (in seconds)")
+	reg              = prometheus.NewRegistry()
+	grpcMetrics      = grpc_prometheus.NewClientMetrics()
+	perfTestSettings *prometheus.GaugeVec
+)
+
+func init() {
+	flag.Parse()
+
+	grpcMetrics.EnableClientHandlingTimeHistogram()
+	reg.MustRegister(grpcMetrics)
+	perfTestSettings = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: "ligato",
+		Subsystem: "perf_test",
+		Name:      "client_settings",
+		Help:      "",
+		ConstLabels: map[string]string{
+			"num_clients": fmt.Sprint(*numClients),
+			"num_tunnels": fmt.Sprint(*numTunnels),
+			"num_per_req": fmt.Sprint(*numPerRequest),
+		},
+	}, []string{"start_time"})
+	reg.MustRegister(perfTestSettings)
+}
+
+var (
+	address        = flag.String("address", "127.0.0.1:9111", "address of GRPC server")
+	socketType     = flag.String("socket-type", "tcp", "socket type [tcp, tcp4, tcp6, unix, unixpacket]")
+	numClients     = flag.Int("clients", 1, "number of concurrent grpc clients")
+	numTunnels     = flag.Int("tunnels", 100, "number of tunnels to stress per client")
+	numPerRequest  = flag.Int("numperreq", 1, "number of tunnels/routes per grpc request")
+	withIPs        = flag.Bool("with-ips", false, "configure IP address for each tunnel on memif at the end")
+	debug          = flag.Bool("debug", false, "turn on debug dump")
+	dumpMetrics    = flag.Bool("dumpmetrics", false, "Dump metrics before exit.")
+	timeout        = flag.Uint("timeout", 300, "timeout for requests (in seconds)")
+	reportProgress = flag.Uint("progress", 20, "percent of progress to report")
 
 	dialTimeout = time.Second * 3
 	reqTimeout  = time.Second * 300
@@ -58,13 +91,19 @@ func main() {
 		logging.DefaultLogger.SetLevel(logging.DebugLevel)
 	}
 
+	perfTestSettings.WithLabelValues(time.Now().Format(time.Stamp)).Set(1)
+
+	go serveMetrics()
+
 	quit := make(chan struct{})
 
 	ep := NewGRPCStressPlugin()
 
+	ver, rev, date := version.Data()
 	a := agent.NewAgent(
 		agent.AllPlugins(ep),
 		agent.QuitOnClose(quit),
+		agent.Version(ver, date, rev),
 	)
 
 	if err := a.Start(); err != nil {
@@ -77,6 +116,39 @@ func main() {
 	if err := a.Stop(); err != nil {
 		log.Fatalln(err)
 	}
+
+	if *dumpMetrics {
+		resp, err := http.Get("http://localhost:9094/metrics")
+		if err != nil {
+			log.Fatalln(err)
+		}
+		if b, err := ioutil.ReadAll(resp.Body); err != nil {
+			log.Fatalln(err)
+		} else {
+			fmt.Println("----------------------")
+			fmt.Println("-> CLIENT METRICS")
+			fmt.Println("----------------------")
+			fmt.Print(string(b))
+			fmt.Println("----------------------")
+		}
+	}
+
+	time.Sleep(time.Second * 5)
+}
+
+func serveMetrics() {
+	h := promhttp.HandlerFor(reg, promhttp.HandlerOpts{})
+
+	// Create a HTTP server for prometheus.
+	httpServer := &http.Server{
+		Handler: h,
+		Addr:    fmt.Sprintf(":%d", 9094),
+	}
+
+	// Start your http server for prometheus.
+	if err := httpServer.ListenAndServe(); err != nil {
+		log.Println("Unable to start a http server.")
+	}
 }
 
 // GRPCStressPlugin makes use of the remoteclient to locally CRUD ipsec tunnels and routes.
@@ -84,6 +156,7 @@ type GRPCStressPlugin struct {
 	infra.PluginName
 	Log *logrus.Logger
 
+	conn  *grpc.ClientConn
 	conns []*grpc.ClientConn
 
 	wg sync.WaitGroup
@@ -104,6 +177,9 @@ func (p *GRPCStressPlugin) Init() error {
 	return nil
 }
 func (p *GRPCStressPlugin) Close() error {
+	if p.conn != nil {
+		return p.conn.Close()
+	}
 	return nil
 }
 
@@ -121,14 +197,34 @@ func (p *GRPCStressPlugin) setupInitial() {
 	conn, err := grpc.Dial("unix",
 		grpc.WithInsecure(),
 		grpc.WithDialer(dialer(*socketType, *address, dialTimeout)),
+		grpc.WithUnaryInterceptor(grpcMetrics.UnaryClientInterceptor()),
+		grpc.WithStreamInterceptor(grpcMetrics.StreamClientInterceptor()),
 	)
 	if err != nil {
 		log.Fatal(err)
 	}
+	p.conn = conn
 
 	reqTimeout = time.Second * time.Duration(*timeout)
 
 	client := configurator.NewConfiguratorServiceClient(conn)
+
+	p.Log.Infof("Requesting get..")
+	cfg, err := client.Get(context.Background(), &configurator.GetRequest{})
+	if err != nil {
+		log.Fatalln(err)
+	}
+	out, _ := (&jsonpb.Marshaler{Indent: "  "}).MarshalToString(cfg)
+	fmt.Printf("Config:\n %+v\n", out)
+
+	p.Log.Infof("Requesting dump..")
+	dump, err := client.Dump(context.Background(), &configurator.DumpRequest{})
+	if err != nil {
+		log.Fatalln(err)
+	}
+	fmt.Printf("Dump:\n %+v\n", proto.MarshalTextString(dump))
+
+	time.Sleep(time.Second * 1)
 
 	// create a conn/client to create the red/black interfaces
 	// that each tunnel will reference
@@ -199,17 +295,21 @@ func (p *GRPCStressPlugin) runGRPCCreateRedBlackMemifs(client configurator.Confi
 }
 
 func (p *GRPCStressPlugin) runAllClients() {
-	p.Log.Debugf("numTunnels: %d, numPerRequest: %d, numClients=%d",
-		*numTunnels, *numPerRequest, *numClients)
-
-	p.Log.Infof("Running for %d clients", *numClients)
+	p.Log.Infof("----------------------------------------")
+	p.Log.Infof(" SETTINGS:")
+	p.Log.Infof("----------------------------------------")
+	p.Log.Infof(" -> Clients: %d", *numClients)
+	p.Log.Infof(" -> Requests: %d", *numTunnels)
+	p.Log.Infof(" -> Tunnels per request: %d", *numPerRequest)
+	p.Log.Infof("----------------------------------------")
+	p.Log.Infof("Launching all clients..")
 
 	t := time.Now()
 
 	p.wg.Add(*numClients)
 	for i := 0; i < *numClients; i++ {
 		// Set up connection to the server.
-		conn, err := grpc.Dial("unix",
+		/*conn, err := grpc.Dial("unix",
 			grpc.WithInsecure(),
 			grpc.WithDialer(dialer(*socketType, *address, dialTimeout)),
 		)
@@ -217,41 +317,72 @@ func (p *GRPCStressPlugin) runAllClients() {
 			log.Fatal(err)
 		}
 		p.conns = append(p.conns, conn)
-		client := configurator.NewConfiguratorServiceClient(p.conns[i])
+		client := configurator.NewConfiguratorServiceClient(p.conns[i])*/
+
+		client := configurator.NewConfiguratorServiceClient(p.conn)
 
 		go p.runGRPCStressCreate(i, client, *numTunnels)
 	}
 
 	p.Log.Debugf("Waiting for clients..")
+
 	p.wg.Wait()
+
 	took := time.Since(t)
-	perSec := float64(*numTunnels) / took.Seconds()
+	perSec := float64((*numTunnels)*(*numClients)) / took.Seconds()
 
 	p.Log.Infof("All clients done!")
-	p.Log.Infof("----------------------------------------")
-	p.Log.Infof(" -> Took: %.3fs", took.Seconds())
-	p.Log.Infof(" -> Clients: %d", *numClients)
-	p.Log.Infof(" -> Requests: %d", *numTunnels)
-	p.Log.Infof(" -> PERFORMANCE: %.1f req/sec", perSec)
-	p.Log.Infof("----------------------------------------")
+	p.Log.Infof("========================================")
+	p.Log.Infof(" RESULTS:")
+	p.Log.Infof("========================================")
+	p.Log.Infof("	Elapsed: %.2f sec", took.Seconds())
+	p.Log.Infof("	Average: %.1f req/sec", perSec)
+	p.Log.Infof("========================================")
 
-	for i := 0; i < *numClients; i++ {
+	/*for i := 0; i < *numClients; i++ {
 		if err := p.conns[i].Close(); err != nil {
 			log.Fatal(err)
 		}
+	}*/
+
+	if *debug {
+		client := configurator.NewConfiguratorServiceClient(p.conn)
+
+		time.Sleep(time.Second * 5)
+		p.Log.Infof("Requesting get..")
+
+		cfg, err := client.Get(context.Background(), &configurator.GetRequest{})
+		if err != nil {
+			log.Fatalln(err)
+		}
+		out, _ := (&jsonpb.Marshaler{Indent: "  "}).MarshalToString(cfg)
+		fmt.Printf("Config:\n %+v\n", out)
+
+		time.Sleep(time.Second * 5)
+		p.Log.Infof("Requesting dump..")
+
+		dump, err := client.Dump(context.Background(), &configurator.DumpRequest{})
+		if err != nil {
+			log.Fatalln(err)
+		}
+		fmt.Printf("Dump:\n %+v\n", proto.MarshalTextString(dump))
 	}
 
 }
 
 // runGRPCStressCreate creates 1 tunnel and 1 route ... emulating what strongswan does on a per remote warrior
-func (p *GRPCStressPlugin) runGRPCStressCreate(id int, client configurator.ConfiguratorServiceClient, numTunnels int) {
+func (p *GRPCStressPlugin) runGRPCStressCreate(clientId int, client configurator.ConfiguratorServiceClient, numTunnels int) {
 	defer p.wg.Done()
 
-	p.Log.Debugf("Creating %d tunnels/routes ... for client %d, ", numTunnels, id)
+	p.Log.Debugf("Creating %d tunnels/routes ... for client %d, ", numTunnels, clientId)
 
 	startTime := time.Now()
 
 	ips := []string{"10.0.0.1/24"}
+
+	report := 0.0
+	lastNumTunnels := 0
+	lastReport := startTime
 
 	for tunNum := 0; tunNum < numTunnels; {
 		if tunNum == numTunnels {
@@ -266,14 +397,15 @@ func (p *GRPCStressPlugin) runGRPCStressCreate(id int, client configurator.Confi
 				break
 			}
 
-			tunID := id*numTunnels + tunNum
+			tunID := clientId*numTunnels + tunNum
 			tunNum++
 
 			ipsecTunnelName := fmt.Sprintf("ipsec-%d", tunID)
 
+			ipPart0 := 100 + (uint32(tunID)>>16)&0xFF
 			ipPart := gen2octets(uint32(tunID))
-			localIP := fmt.Sprintf("100.%s.1", ipPart)
-			remoteIP := fmt.Sprintf("100.%s.254", ipPart)
+			localIP := fmt.Sprintf("%d.%s.1", ipPart0, ipPart)
+			remoteIP := fmt.Sprintf("%d.%s.254", ipPart0, ipPart)
 
 			ips = append(ips, localIP+"/24")
 
@@ -308,7 +440,7 @@ func (p *GRPCStressPlugin) runGRPCStressCreate(id int, client configurator.Confi
 				OutgoingInterface: ipsecTunnelName,
 			}
 
-			//p.Log.Infof("Creating %s ... client: %d, tunNum: %d", ipsecTunnelName, id, tunNum)
+			//p.Log.Infof("Creating %s ... client: %d, tunNum: %d", ipsecTunnelName, clientId, tunNum)
 
 			ifaces = append(ifaces, ipsecTunnel)
 			routes = append(routes, route)
@@ -325,7 +457,22 @@ func (p *GRPCStressPlugin) runGRPCStressCreate(id int, client configurator.Confi
 			},
 		})
 		if err != nil {
-			log.Fatalf("Error creating tun/route: id/tun=%d/%d, err: %s", id, tunNum, err)
+			log.Fatalf("Error creating tun/route: clientId/tun=%d/%d, err: %s", clientId, tunNum, err)
+		}
+
+		progress := (float64(tunNum) / float64(numTunnels)) * 100
+		if uint(progress-report) >= *reportProgress {
+			tunNumReport := tunNum - lastNumTunnels
+
+			took := time.Since(lastReport)
+			perSec := float64(tunNumReport) / took.Seconds()
+
+			p.Log.Infof("client #%d - progress % 3.0f%% -> %d tunnels took %.3fs (%.1f tunnels/sec)",
+				clientId, progress, tunNumReport, took.Seconds(), perSec)
+
+			report = progress
+			lastReport = time.Now()
+			lastNumTunnels = tunNum
 		}
 	}
 
@@ -361,32 +508,11 @@ func (p *GRPCStressPlugin) runGRPCStressCreate(id int, client configurator.Confi
 		}
 	}
 
-	endTime := time.Now()
+	took := time.Since(startTime)
+	perSec := float64(numTunnels) / took.Seconds()
 
-	p.Log.Infof("Client #%d done, %d tunnels took %s",
-		id, numTunnels, endTime.Sub(startTime).Round(time.Millisecond))
-
-	if *debug {
-		time.Sleep(time.Second * 5)
-		p.Log.Infof("Requesting get..")
-
-		cfg, err := client.Get(context.Background(), &configurator.GetRequest{})
-		if err != nil {
-			log.Fatalln(err)
-		}
-		out, _ := (&jsonpb.Marshaler{Indent: "  "}).MarshalToString(cfg)
-		fmt.Printf("Config:\n %+v\n", out)
-
-		time.Sleep(time.Second * 5)
-		p.Log.Infof("Requesting dump..")
-
-		dump, err := client.Dump(context.Background(), &configurator.DumpRequest{})
-		if err != nil {
-			log.Fatalln(err)
-		}
-		fmt.Printf("Dump:\n %+v\n", proto.MarshalTextString(dump))
-	}
-
+	p.Log.Infof("client #%d done => %d tunnels took %.3fs (%.1f tunnels/sec)",
+		clientId, numTunnels, took.Seconds(), perSec)
 }
 
 func gen3octets(num uint32) string {
