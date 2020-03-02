@@ -15,9 +15,7 @@
 package descriptor
 
 import (
-	"fmt"
 	"net"
-	"strconv"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -84,7 +82,6 @@ func (d *IPSecSPDDescriptor) GetDescriptor() *adapter.SPDDescriptor {
 		ValueComparator:      d.EquivalentIPSecSPDs,
 		WithMetadata:         true,
 		MetadataMapFactory:   d.MetadataFactory,
-		Validate:             d.Validate,
 		Create:               d.Create,
 		Delete:               d.Delete,
 		Retrieve:             d.Retrieve,
@@ -111,26 +108,6 @@ func (d *IPSecSPDDescriptor) EquivalentIPSecSPDs(key string, oldSPD, newSPD *ips
 // MetadataFactory is a factory for index-map customized for VPP security policy databases.
 func (d *IPSecSPDDescriptor) MetadataFactory() idxmap.NamedMappingRW {
 	return idxvpp.NewNameToIndex(d.log, "vpp-spd-index", nil)
-}
-
-// Validate validates VPP IPSec security policy database configuration.
-func (d *IPSecSPDDescriptor) Validate(key string, spd *ipsec.SecurityPolicyDatabase) error {
-	if spd.Index == "" {
-		return kvs.NewInvalidValueError(ErrIPSecSPDWithoutIndex, "index")
-	}
-	if _, err := strconv.Atoi(spd.Index); err != nil {
-		return kvs.NewInvalidValueError(ErrIPSecSPDInvalidIndex, "index")
-	}
-
-	// check list of policies for security associations
-	for idx, policy := range spd.PolicyEntries {
-		if policy.SaIndex == "" {
-			return kvs.NewInvalidValueError(ErrSPDWithoutSA,
-				fmt.Sprintf("policy_entries[%d].sa_index", idx))
-		}
-	}
-
-	return nil
 }
 
 // Create adds a new IPSec security policy database.
@@ -172,14 +149,10 @@ func (d *IPSecSPDDescriptor) Retrieve(correlate []adapter.SPDKVWithMetadata) (du
 		return dump, err
 	}
 	for _, spd := range spds {
-		spdIdx, err := strconv.Atoi(spd.Spd.Index)
-		if err != nil {
-			return dump, err
-		}
 		dump = append(dump, adapter.SPDKVWithMetadata{
 			Key:      ipsec.SPDKey(spd.Spd.Index),
 			Value:    spd.Spd,
-			Metadata: &idxvpp.OnlyIndex{Index: uint32(spdIdx)},
+			Metadata: &idxvpp.OnlyIndex{Index: spd.Spd.Index},
 			Origin:   kvs.FromNB,
 		})
 	}

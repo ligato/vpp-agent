@@ -167,6 +167,11 @@ type InterfaceVppAPI interface {
 	// DelGtpuTunnel removes GTPU interface.
 	DelGtpuTunnel(ifName string, gtpuLink *interfaces.GtpuLink) error
 
+	// AddIpipTunnel adds new IPIP tunnel interface.
+	AddIpipTunnel(ifName string, vrf uint32, ipipLink *interfaces.IPIPLink) (uint32, error)
+	// DelIpipTunnel removes IPIP tunnel interface.
+	DelIpipTunnel(ifName string, ifIdx uint32) error
+
 	// CreateSubif creates sub interface.
 	CreateSubif(ifIdx, vlanID uint32) (swIfIdx uint32, err error)
 	// DeleteSubif deletes sub interface.

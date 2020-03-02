@@ -27,6 +27,7 @@ message Interface {
         BOND_INTERFACE = 10;
         GRE_TUNNEL = 11;
         GTPU_TUNNEL = 12;
+        IPIP_TUNNEL = 13;
     };
     // Type represents the type of VPP interface and it must match the actual Link.
     Type type = 2;
@@ -101,6 +102,7 @@ message Interface {
         BondLink bond = 107;
         GreLink gre = 108;
         GtpuLink gtpu = 109;
+        IPIPLink ipip = 110;
     };
 };
 
@@ -339,4 +341,19 @@ message GtpuLink {
     uint32 encap_vrf_id = 5;
     // Next VPP node after decapsulation
     NextNode decap_next = 6;
+}
+
+message IPIPLink {
+    enum Mode {
+        // point-to-point tunnel
+        POINT_TO_POINT = 0;
+        // note: point-to multipoint support will be added in VPP 20.04
+    };
+    // Mode of the IPIP tunnel
+    Mode tunnel_mode = 1;
+
+    // Source VTEP IP address
+    string src_addr = 2;
+    // Destination VTEP IP address
+    string dst_addr = 3;
 }

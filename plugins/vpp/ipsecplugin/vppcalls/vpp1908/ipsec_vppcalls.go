@@ -16,8 +16,7 @@ package vpp1908
 
 import (
 	"encoding/hex"
-	"strconv"
-
+	"fmt"
 	"github.com/pkg/errors"
 	"go.ligato.io/cn-infra/v2/utils/addrs"
 
@@ -71,6 +70,21 @@ func (h *IPSecVppHandler) AddSA(sa *ipsec.SecurityAssociation) error {
 // DeleteSA implements IPSec handler.
 func (h *IPSecVppHandler) DeleteSA(sa *ipsec.SecurityAssociation) error {
 	return h.sadAddDelEntry(sa, false)
+}
+
+// AddTunnelProtection implements IPSec handler for adding a tunnel protection.
+func (h *IPSecVppHandler) AddTunnelProtection(tp *ipsec.TunnelProtection) error {
+	return fmt.Errorf("tunnel protection not supported in VPP 19.08")
+}
+
+// UpdateTunnelProtection implements IPSec handler for updating a tunnel protection.
+func (h *IPSecVppHandler) UpdateTunnelProtection(tp *ipsec.TunnelProtection) error {
+	return fmt.Errorf("tunnel protection not supported in VPP 19.08")
+}
+
+// DeleteTunnelProtection implements IPSec handler for deleting a tunnel protection.
+func (h *IPSecVppHandler) DeleteTunnelProtection(tp *ipsec.TunnelProtection) error {
+	return fmt.Errorf("tunnel protection not supported in VPP 19.08")
 }
 
 func (h *IPSecVppHandler) spdAddDel(spdID uint32, isAdd bool) error {
@@ -168,11 +182,6 @@ func (h *IPSecVppHandler) sadAddDelEntry(sa *ipsec.SecurityAssociation, isAdd bo
 		return err
 	}
 
-	saID, err := strconv.Atoi(sa.Index)
-	if err != nil {
-		return err
-	}
-
 	var flags api.IpsecSadFlags
 	if sa.UseEsn {
 		flags |= api.IPSEC_API_SAD_FLAG_USE_ESN
@@ -206,7 +215,7 @@ func (h *IPSecVppHandler) sadAddDelEntry(sa *ipsec.SecurityAssociation, isAdd bo
 	req := &api.IpsecSadEntryAddDel{
 		IsAdd: boolToUint(isAdd),
 		Entry: api.IpsecSadEntry{
-			SadID:           uint32(saID),
+			SadID:           sa.Index,
 			Spi:             sa.Spi,
 			Protocol:        api.IpsecProto(sa.Protocol),
 			CryptoAlgorithm: api.IpsecCryptoAlg(sa.CryptoAlg),

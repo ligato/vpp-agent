@@ -206,7 +206,7 @@ func dialer(socket, address string, timeoutVal time.Duration) func(string, time.
 
 var (
 	sa10 = &vpp.IPSecSA{
-		Index:     "10",
+		Index:     10,
 		Spi:       1001,
 		Protocol:  1,
 		CryptoAlg: 1,
@@ -215,14 +215,14 @@ var (
 		IntegKey:  "4339314b55523947594d6d3547666b45764e6a58",
 	}
 	spd1 = &vpp.IPSecSPD{
-		Index: "1",
+		Index: 1,
 		PolicyEntries: []*vpp_ipsec.SecurityPolicyDatabase_PolicyEntry{
 			{
 				Priority:   100,
 				IsOutbound: false,
 				Action:     0,
 				Protocol:   50,
-				SaIndex:    "10",
+				SaIndex:    10,
 			},
 		},
 	}

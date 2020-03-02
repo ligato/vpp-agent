@@ -78,6 +78,12 @@ type IPSecVppAPI interface {
 	AddSA(sa *ipsec.SecurityAssociation) error
 	// DeleteSA deletes SA from VPP via binary API
 	DeleteSA(sa *ipsec.SecurityAssociation) error
+	// AddTunnelProtection adds a tunnel protection to VPP via binary API
+	AddTunnelProtection(tp *ipsec.TunnelProtection) error
+	// UpdateTunnelProtection updates a tunnel protection on VPP via binary API
+	UpdateTunnelProtection(tp *ipsec.TunnelProtection) error
+	// DeleteTunnelProtection deletes a tunnel protection from VPP via binary API
+	DeleteTunnelProtection(tp *ipsec.TunnelProtection) error
 }
 
 // IPSecVPPRead provides read methods for IPSec
@@ -88,6 +94,8 @@ type IPSecVPPRead interface {
 	DumpIPSecSA() (saList []*IPSecSaDetails, err error)
 	// DumpIPSecSAWithIndex returns a security association with provided index
 	DumpIPSecSAWithIndex(saID uint32) (saList []*IPSecSaDetails, err error)
+	// DumpTunnelProtections returns configured IPSec tunnel protections
+	DumpTunnelProtections() (tpList []*ipsec.TunnelProtection, err error)
 }
 
 var Handler = vpp.RegisterHandler(vpp.HandlerDesc{

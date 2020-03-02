@@ -75,7 +75,7 @@ func TestVppAddSPDEntry(t *testing.T) {
 	ctx.MockVpp.MockReply(&ipsec.IpsecSpdEntryAddDelReply{})
 
 	err := ipSecHandler.AddSPDEntry(10, 5, &ipsec2.SecurityPolicyDatabase_PolicyEntry{
-		SaIndex:    "5",
+		SaIndex:    5,
 		Priority:   10,
 		IsOutbound: true,
 	})
@@ -105,7 +105,7 @@ func TestVppDelSPDEntry(t *testing.T) {
 	ctx.MockVpp.MockReply(&ipsec.IpsecSpdEntryAddDelReply{})
 
 	err := ipSecHandler.DeleteSPDEntry(10, 2, &ipsec2.SecurityPolicyDatabase_PolicyEntry{
-		SaIndex:    "2",
+		SaIndex:    2,
 		Priority:   5,
 		IsOutbound: true,
 	})
@@ -186,7 +186,7 @@ func TestVppAddSA(t *testing.T) {
 	Expect(err).To(BeNil())
 
 	err = ipSecHandler.AddSA(&ipsec2.SecurityAssociation{
-		Index:         "1",
+		Index:         1,
 		Spi:           uint32(1001),
 		UseEsn:        true,
 		UseAntiReplay: true,
@@ -221,7 +221,7 @@ func TestVppDelSA(t *testing.T) {
 	Expect(err).To(BeNil())
 
 	err = ipSecHandler.DeleteSA(&ipsec2.SecurityAssociation{
-		Index:         "1",
+		Index:         1,
 		Spi:           uint32(1001),
 		UseEsn:        true,
 		UseAntiReplay: true,
@@ -256,7 +256,7 @@ func TestVppAddSATunnelMode(t *testing.T) {
 	Expect(err).To(BeNil())
 
 	err = ipSecHandler.AddSA(&ipsec2.SecurityAssociation{
-		Index:         "1",
+		Index:         1,
 		Spi:           uint32(1001),
 		TunnelSrcAddr: "10.1.0.1",
 		TunnelDstAddr: "20.1.0.1",
@@ -299,7 +299,7 @@ func TestVppAddSATunnelModeIPv6(t *testing.T) {
 	Expect(err).To(BeNil())
 
 	err = ipSecHandler.AddSA(&ipsec2.SecurityAssociation{
-		Index:         "1",
+		Index:         1,
 		Spi:           uint32(1001),
 		TunnelSrcAddr: "1234::",
 		TunnelDstAddr: "abcd::",

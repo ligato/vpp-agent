@@ -54,6 +54,7 @@ const (
 	vxlanGpeVrfTableDep      = "vrf-table-for-vxlan-gpe-exists"
 	gtpuMulticastDep         = "gtpu-multicast-interface-exists"
 	gtpuVrfTableDep          = "vrf-table-for-gtpu-exists"
+	ipipVrfTableDep          = "vrf-table-for-ipip-exists"
 	microserviceDep          = "microservice-available"
 	parentInterfaceDep       = "parent-interface-exists"
 
@@ -152,6 +153,18 @@ var (
 
 	// ErrGtpuDstAddrBad is returned when destination address was not set to valid IP address.
 	ErrGtpuDstAddrBad = errors.Errorf("bad destination address for GTPU tunnel")
+
+	// ErrIpipSrcAddrMissing is returned when source address was not set or set to an empty string.
+	ErrIpipSrcAddrMissing = errors.Errorf("missing source address for IPIP tunnel")
+
+	// ErrIpipDstAddrMissing is returned when destination address was not set or set to an empty string.
+	ErrIpipDstAddrMissing = errors.Errorf("missing destination address for IPIP tunnel")
+
+	// ErrIpipSrcAddrBad is returned when source address was not set to valid IP address.
+	ErrIpipSrcAddrBad = errors.Errorf("bad source address for IPIP tunnel")
+
+	// ErrIpipDstAddrBad is returned when destination address was not set to valid IP address.
+	ErrIpipDstAddrBad = errors.Errorf("bad destination address for IPIP tunnel")
 )
 
 // InterfaceDescriptor teaches KVScheduler how to configure VPP interfaces.
@@ -338,6 +351,10 @@ func (d *InterfaceDescriptor) equivalentTypeSpecificConfig(oldIntf, newIntf *int
 		if !proto.Equal(oldIntf.GetGtpu(), newIntf.GetGtpu()) {
 			return false
 		}
+	case interfaces.Interface_IPIP_TUNNEL:
+		if !proto.Equal(oldIntf.GetIpip(), newIntf.GetIpip()) {
+			return false
+		}
 	}
 	return true
 }
@@ -468,6 +485,10 @@ func (d *InterfaceDescriptor) Validate(key string, intf *interfaces.Interface) e
 		if intf.Type != interfaces.Interface_GTPU_TUNNEL {
 			return linkMismatchErr
 		}
+	case *interfaces.Interface_Ipip:
+		if intf.Type != interfaces.Interface_IPIP_TUNNEL {
+			return linkMismatchErr
+		}
 	case nil:
 		if intf.Type != interfaces.Interface_SOFTWARE_LOOPBACK &&
 			intf.Type != interfaces.Interface_DPDK {
@@ -550,6 +571,20 @@ func (d *InterfaceDescriptor) Validate(key string, intf *interfaces.Interface) e
 		if net.ParseIP(intf.GetGtpu().DstAddr) == nil {
 			return kvs.NewInvalidValueError(ErrGtpuDstAddrBad, "link.gtpu.dst_addr")
 		}
+	case interfaces.Interface_IPIP_TUNNEL:
+		if intf.GetIpip().SrcAddr == "" {
+			return kvs.NewInvalidValueError(ErrIpipSrcAddrMissing, "link.ipip.src_addr")
+		}
+		if net.ParseIP(intf.GetIpip().SrcAddr) == nil {
+			return kvs.NewInvalidValueError(ErrIpipSrcAddrBad, "link.ipip.src_addr")
+		}
+
+		if intf.GetIpip().DstAddr == "" {
+			return kvs.NewInvalidValueError(ErrIpipDstAddrMissing, "link.ipip.dst_addr")
+		}
+		if net.ParseIP(intf.GetIpip().DstAddr) == nil {
+			return kvs.NewInvalidValueError(ErrIpipDstAddrBad, "link.ipip.dst_addr")
+		}
 	}
 
 	// validate unnumbered
@@ -584,8 +619,11 @@ func (d *InterfaceDescriptor) UpdateWithRecreate(key string, oldIntf, newIntf *i
 		return true
 	}
 
-	if (oldIntf.GetType() == interfaces.Interface_VXLAN_TUNNEL || oldIntf.GetType() == interfaces.Interface_GTPU_TUNNEL) && oldIntf.Vrf != newIntf.Vrf {
-		// for VXLAN and GTPU interfaces a change in the VRF assignment requires full re-creation
+	if (oldIntf.GetType() == interfaces.Interface_VXLAN_TUNNEL ||
+		oldIntf.GetType() == interfaces.Interface_GTPU_TUNNEL ||
+		oldIntf.GetType() == interfaces.Interface_IPIP_TUNNEL) &&
+		oldIntf.Vrf != newIntf.Vrf {
+		// for VXLAN, GTPU and IPIP interfaces a change in the VRF assignment requires full re-creation
 		return true
 	}
 
@@ -705,6 +743,21 @@ func (d *InterfaceDescriptor) Dependencies(key string, intf *interfaces.Interfac
 			})
 		}
 
+	case interfaces.Interface_IPIP_TUNNEL:
+		if intf.GetVrf() != 0 {
+			// binary API for creating IPIP tunnel requires the VRF table to be already created
+			var protocol l3.VrfTable_Protocol
+			srcAddr := net.ParseIP(intf.GetIpip().GetSrcAddr()).To4()
+			dstAddr := net.ParseIP(intf.GetIpip().GetDstAddr()).To4()
+			if srcAddr == nil && dstAddr == nil {
+				protocol = l3.VrfTable_IPV6
+			}
+			dependencies = append(dependencies, kvs.Dependency{
+				Label: ipipVrfTableDep,
+				Key:   l3.VrfTableKey(intf.GetVrf(), protocol),
+			})
+		}
+
 	case interfaces.Interface_SUB_INTERFACE:
 		// SUB_INTERFACE requires parent interface
 		if parentName := intf.GetSub().GetParentName(); parentName != "" {
@@ -773,7 +826,8 @@ func (d *InterfaceDescriptor) DerivedValues(key string, intf *interfaces.Interfa
 	} else {
 		// not unnumbered
 		var hasIPv4, hasIPv6 bool
-		if intf.Type == interfaces.Interface_VXLAN_TUNNEL {
+		switch intf.Type {
+		case interfaces.Interface_VXLAN_TUNNEL:
 			srcAddr := net.ParseIP(intf.GetVxlan().GetSrcAddress()).To4()
 			dstAddr := net.ParseIP(intf.GetVxlan().GetDstAddress()).To4()
 			if srcAddr == nil && dstAddr == nil {
@@ -781,7 +835,7 @@ func (d *InterfaceDescriptor) DerivedValues(key string, intf *interfaces.Interfa
 			} else {
 				hasIPv4 = true
 			}
-		} else if intf.Type == interfaces.Interface_GTPU_TUNNEL {
+		case interfaces.Interface_GTPU_TUNNEL:
 			srcAddr := net.ParseIP(intf.GetGtpu().GetSrcAddr()).To4()
 			dstAddr := net.ParseIP(intf.GetGtpu().GetDstAddr()).To4()
 			if srcAddr == nil && dstAddr == nil {
@@ -789,8 +843,15 @@ func (d *InterfaceDescriptor) DerivedValues(key string, intf *interfaces.Interfa
 			} else {
 				hasIPv4 = true
 			}
-		} else {
-			// not VXLAN tunnel
+		case interfaces.Interface_IPIP_TUNNEL:
+			srcAddr := net.ParseIP(intf.GetIpip().GetSrcAddr()).To4()
+			dstAddr := net.ParseIP(intf.GetIpip().GetDstAddr()).To4()
+			if srcAddr == nil && dstAddr == nil {
+				hasIPv6 = true
+			} else {
+				hasIPv4 = true
+			}
+		default:
 			hasIPv4, hasIPv6 = getIPAddressVersions(intf.IpAddresses)
 		}
 		if hasIPv4 || hasIPv6 {
