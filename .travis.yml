@@ -24,7 +24,6 @@ cache:
 install: true
 
 stages:
-  - Check
   - Test
   - Build&Test
   - Integration
@@ -33,21 +32,6 @@ stages:
 
 jobs:
   include:
-    - stage: Check
-      name: "Check formatting"
-      language: shell
-      addons:
-        apt:
-          packages:
-            - npm
-      script:
-        - make yamllint
-        - make check-links || true
-    - name: "Go dependency check"
-      script: make dep-check
-    - name: "Check proto files"
-      script: make check-proto
-
     - stage: Build&Test
       name: "Build"
       script:
