@@ -209,20 +209,22 @@ func (p *GRPCStressPlugin) setupInitial() {
 
 	client := configurator.NewConfiguratorServiceClient(conn)
 
-	p.Log.Infof("Requesting get..")
-	cfg, err := client.Get(context.Background(), &configurator.GetRequest{})
-	if err != nil {
-		log.Fatalln(err)
-	}
-	out, _ := (&jsonpb.Marshaler{Indent: "  "}).MarshalToString(cfg)
-	fmt.Printf("Config:\n %+v\n", out)
+	if *debug {
+		p.Log.Infof("Requesting get..")
+		cfg, err := client.Get(context.Background(), &configurator.GetRequest{})
+		if err != nil {
+			log.Fatalln(err)
+		}
+		out, _ := (&jsonpb.Marshaler{Indent: "  "}).MarshalToString(cfg)
+		fmt.Printf("Config:\n %+v\n", out)
 
-	p.Log.Infof("Requesting dump..")
-	dump, err := client.Dump(context.Background(), &configurator.DumpRequest{})
-	if err != nil {
-		log.Fatalln(err)
+		p.Log.Infof("Requesting dump..")
+		dump, err := client.Dump(context.Background(), &configurator.DumpRequest{})
+		if err != nil {
+			log.Fatalln(err)
+		}
+		fmt.Printf("Dump:\n %+v\n", proto.MarshalTextString(dump))
 	}
-	fmt.Printf("Dump:\n %+v\n", proto.MarshalTextString(dump))
 
 	time.Sleep(time.Second * 1)
 
