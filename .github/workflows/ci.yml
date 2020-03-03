@@ -31,6 +31,18 @@ jobs:
 #        with:
 #          github_token: ${{ secrets.github_token }}
 #          reporter: github-check
+  checkgomod:
+    name: check go.mod
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-go@v1
+        with:
+          go-version: 1.13
+      - run: go mod tidy -v
+      - name: Check for changes in go.mod
+        run: |
+          git diff --name-only --exit-code go.mod || ( git diff && echo "Run go tidy to update go.mod" && false )
   build:
     name: build go
     runs-on: ubuntu-latest
@@ -56,16 +68,3 @@ jobs:
 #         eval $(go env)
 #         mkdir -p ~/junit/
 #         ${GOPATH}/bin/gotestsum --junitfile ~/junit/unit-tests.xml -- -short $(go list ./...)
-  checkgomod:
-    name: check go.mod and go.sum
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-go@v1
-        with:
-          go-version: 1.13
-      - run: go mod tidy
-      - name: Check for changes in go.mod or go.sum
-        run: |
-          git diff --name-only --exit-code go.mod || ( echo "Run go tidy" && false )
-          git diff --name-only --exit-code go.sum || ( echo "Run go tidy" && false )
