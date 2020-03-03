@@ -336,7 +336,7 @@ func TestAfPacketWithLogicalReference(t *testing.T) {
 	).Send(context.Background())
 	Expect(err).ToNot(HaveOccurred())
 
-	Expect(ctx.getValueState(afPacket)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+	Eventually(ctx.getValueStateClb(afPacket)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
 	Expect(ctx.getValueState(veth1)).To(Equal(kvscheduler.ValueState_CONFIGURED))
 	Expect(ctx.getValueState(veth2)).To(Equal(kvscheduler.ValueState_CONFIGURED))
 	Expect(ctx.pingFromVPP(veth2IP)).To(Succeed())
