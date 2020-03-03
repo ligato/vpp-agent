@@ -6,6 +6,7 @@ import (
 	"time"
 
 	govppapi "git.fd.io/govpp.git/api"
+	"github.com/golang/protobuf/proto"
 	"go.ligato.io/cn-infra/v2/logging"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -25,35 +26,26 @@ type statsPollerServer struct {
 }
 
 func (s *statsPollerServer) PollStats(req *configurator.PollStatsRequest, svr configurator.StatsPollerService_PollStatsServer) error {
-	var pollSeq uint32
-
-	if req.PeriodSec == 0 {
-		return status.Error(codes.InvalidArgument, "PeriodSec must be greater than 0")
+	if req.GetPeriodSec() == 0 && req.GetNumPolls() > 1 {
+		return status.Error(codes.InvalidArgument, "period must be > 0 if number of polls is > 1")
 	}
-	period := time.Duration(req.PeriodSec) * time.Second
 
-	tick := time.NewTicker(period)
-	defer tick.Stop()
+	ctx := svr.Context()
 
-	s.log.Debugf("starting to poll stats every %v", period)
-	for {
-		pollSeq++
-		s.log.WithField("seq", pollSeq).Debugf("polling stats..")
-
-		vppStatsCh := make(chan vpp.Stats)
-		var err error
+	streamStats := func(pollSeq uint32) (err error) {
+		vppStatsCh := make(chan *vpp.Stats)
 		go func() {
-			err = s.streamVppStats(vppStatsCh)
+			err = s.streamVppStats(ctx, vppStatsCh)
 			close(vppStatsCh)
 		}()
 		for vppStats := range vppStatsCh {
-			VppStats := vppStats
+			VppStats := proto.Clone(vppStats).(*vpp.Stats)
 			s.log.Debugf("sending vpp stats: %v", VppStats)
 
 			if err := svr.Send(&configurator.PollStatsResponse{
 				PollSeq: pollSeq,
 				Stats: &configurator.Stats{
-					Stats: &configurator.Stats_VppStats{VppStats: &VppStats},
+					Stats: &configurator.Stats_VppStats{VppStats: VppStats},
 				},
 			}); err != nil {
 				s.log.Errorf("sending stats failed: %v", err)
@@ -64,14 +56,41 @@ func (s *statsPollerServer) PollStats(req *configurator.PollStatsRequest, svr co
 			s.log.Errorf("polling vpp stats failed: %v", err)
 			return err
 		}
+		return nil
+	}
 
-		<-tick.C
+	if req.GetPeriodSec() == 0 {
+		return streamStats(0)
+	}
+
+	period := time.Duration(req.GetPeriodSec()) * time.Second
+	s.log.Debugf("start polling stats every %v", period)
+
+	tick := time.NewTicker(period)
+	defer tick.Stop()
+
+	for pollSeq := uint32(1); ; pollSeq++ {
+		s.log.WithField("seq", pollSeq).Debugf("polling stats..")
+
+		if err := streamStats(pollSeq); err != nil {
+			return err
+		}
+
+		if req.GetNumPolls() > 0 && pollSeq >= req.GetNumPolls() {
+			s.log.Debugf("reached %d pollings", req.GetNumPolls())
+			return nil
+		}
+
+		select {
+		case <-tick.C:
+			// period passed
+		case <-ctx.Done():
+			return ctx.Err()
+		}
 	}
 }
 
-func (s *statsPollerServer) streamVppStats(ch chan vpp.Stats) error {
-	ctx := context.Background()
-
+func (s *statsPollerServer) streamVppStats(ctx context.Context, ch chan *vpp.Stats) error {
 	ifStats, err := s.handler.GetInterfaceStats(ctx)
 	if err != nil {
 		return err
@@ -87,7 +106,7 @@ func (s *statsPollerServer) streamVppStats(ch chan vpp.Stats) error {
 			// fallback to internal name
 			name = iface.InterfaceName
 		}
-		vppStats := vpp.Stats{
+		vppStats := &vpp.Stats{
 			Interface: &vpp_interfaces.InterfaceStats{
 				Name:        name,
 				Rx:          convertInterfaceCombined(iface.Rx),
@@ -109,7 +128,13 @@ func (s *statsPollerServer) streamVppStats(ch chan vpp.Stats) error {
 				Mpls:        iface.Mpls,
 			},
 		}
-		ch <- vppStats
+
+		select {
+		case ch <- vppStats:
+			// stats sent
+		case <-ctx.Done():
+			return ctx.Err()
+		}
 	}
 	return nil
 }
