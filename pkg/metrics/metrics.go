@@ -18,24 +18,24 @@ import (
 	"encoding/json"
 	"math"
 	"sort"
-	"time"
 )
-
-// RoundDuration is the default value used for rounding durations.
-var RoundDuration = time.Millisecond * 1
 
 type Calls map[string]*CallStats
 
 // MarshalJSON implements json.Marshaler interface
 func (m Calls) MarshalJSON() ([]byte, error) {
-	calls := make([]*CallStats, 0, len(m))
+	calls := make([]CallStats, 0, len(m))
 	for _, s := range m {
-		calls = append(calls, s)
+		stat := *s
+		stat.Total = round(stat.Total)
+		stat.Avg = round(stat.Avg)
+		stat.Min = round(stat.Min)
+		stat.Max = round(stat.Max)
+		calls = append(calls, stat)
 	}
 	sort.Slice(calls, func(i, j int) bool {
 		return calls[i].Count > calls[j].Count
 	})
-
 	return json.Marshal(calls)
 }
 
@@ -50,16 +50,15 @@ type CallStats struct {
 }
 
 // Increment increments call count and recalculates durations
-func (m *CallStats) Increment(d time.Duration) {
-	took := d.Round(RoundDuration).Seconds()
+func (m *CallStats) Increment(tookSec float64) {
 	m.Count++
-	m.Total = round(m.Total + took)
-	m.Avg = round(m.Total / float64(m.Count))
-	if took > m.Max {
-		m.Max = took
+	m.Total = m.Total + tookSec
+	m.Avg = m.Total / float64(m.Count)
+	if tookSec > m.Max {
+		m.Max = tookSec
 	}
-	if m.Min == 0 || took < m.Min {
-		m.Min = took
+	if m.Min == 0 || tookSec < m.Min {
+		m.Min = tookSec
 	}
 }
 

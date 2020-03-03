@@ -18,7 +18,6 @@ import (
 	"expvar"
 	"os"
 	"sync"
-	"time"
 
 	"go.ligato.io/vpp-agent/v3/pkg/metrics"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/govppmux"
@@ -37,6 +36,7 @@ func init() {
 		return
 	}
 	stats.Errors = make(metrics.Calls)
+	stats.Total = metrics.Calls{"ALL": &metrics.CallStats{Name: "AllMessages"}}
 	stats.Messages = make(metrics.Calls)
 	stats.Replies = make(metrics.Calls)
 	metrics.Register(&govppmux.Metrics{}, func() interface{} {
@@ -64,8 +64,8 @@ type Stats struct {
 
 	Errors metrics.Calls
 
-	AllMessages metrics.CallStats
-	Messages    metrics.Calls
+	Total    metrics.Calls
+	Messages metrics.Calls
 
 	Replies metrics.Calls
 }
@@ -83,11 +83,11 @@ func (s *Stats) getOrCreateMessage(msg string) *metrics.CallStats {
 	return ms
 }
 
-func trackMsgRequestDur(m string, d time.Duration) {
+func trackMsgRequestDur(m string, took float64) {
 	ms := stats.getOrCreateMessage(m)
 	statsMu.Lock()
-	ms.Increment(d)
-	stats.AllMessages.Increment(d)
+	ms.Increment(took)
+	stats.Total["ALL"].Increment(took)
 	statsMu.Unlock()
 }
 

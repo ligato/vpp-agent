@@ -61,7 +61,7 @@ func trackOperation(m string) func() {
 	t := time.Now()
 	ms := stats.getOrCreateOperation(m)
 	return func() {
-		took := time.Since(t)
+		took := time.Since(t).Seconds()
 		statsMu.Lock()
 		ms.Increment(took)
 		stats.AllOperations.Increment(took)

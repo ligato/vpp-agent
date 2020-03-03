@@ -144,10 +144,10 @@ func reportRequestFailed(request govppapi.Message, err error) {
 }
 
 func reportRequestSuccess(request govppapi.Message, startTime time.Time) {
-	took := time.Since(startTime)
+	took := time.Since(startTime).Seconds()
 	requestsCount.Dec()
 	requestsDone.WithLabelValues(request.GetMessageName()).Inc()
-	successfulRequestHandlingSec.WithLabelValues(request.GetMessageName()).Observe(took.Seconds())
+	successfulRequestHandlingSec.WithLabelValues(request.GetMessageName()).Observe(took)
 
 	if DisableOldStats {
 		return

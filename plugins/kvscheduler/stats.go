@@ -104,7 +104,7 @@ func trackDescMethod(d, m string) func() {
 	method := stats.Descriptors[d].getOrCreateMethod(m)
 	methodall := stats.AllDescriptors.getOrCreateMethod(m)
 	return func() {
-		took := time.Since(t)
+		took := time.Since(t).Seconds()
 		statsMu.Lock()
 		method.Increment(took)
 		methodall.Increment(took)
@@ -116,7 +116,7 @@ func trackGraphMethod(m string) func() {
 	t := time.Now()
 	method := stats.GraphMethods.getOrCreateMethod(m)
 	return func() {
-		took := time.Since(t)
+		took := time.Since(t).Seconds()
 		statsMu.Lock()
 		method.Increment(took)
 		statsMu.Unlock()
@@ -127,8 +127,8 @@ func trackTransactionMethod(m string) func() {
 	t := time.Now()
 	s := stats.TxnStats
 	return func() {
-		took := time.Since(t)
-		reportTxnProcessDuration(m, took.Seconds())
+		took := time.Since(t).Seconds()
+		reportTxnProcessDuration(m, took)
 		statsMu.Lock()
 		ms, tracked := s.Methods[m]
 		if !tracked {
