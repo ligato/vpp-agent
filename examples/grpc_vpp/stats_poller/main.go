@@ -15,14 +15,18 @@
 package main
 
 import (
+	"context"
+	"errors"
+	"fmt"
+	"io"
 	"log"
 	"net"
+	"os"
 	"time"
 
 	"github.com/namsral/flag"
 	"go.ligato.io/cn-infra/v2/agent"
 	"go.ligato.io/cn-infra/v2/infra"
-	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 
 	"go.ligato.io/vpp-agent/v3/proto/ligato/configurator"
@@ -31,7 +35,9 @@ import (
 var (
 	address    = flag.String("address", "localhost:9111", "address of GRPC server")
 	socketType = flag.String("socket-type", "tcp", "[tcp, tcp4, tcp6, unix, unixpacket]")
-	period     = flag.Uint("period", 3, "Polling period (in seconds)")
+
+	period = flag.Uint("period", 3, "Polling period (in seconds)")
+	polls  = flag.Uint("polls", 0, "Number of pollings")
 )
 
 func main() {
@@ -59,7 +65,11 @@ func (p *ExamplePlugin) Init() (err error) {
 	// Set up connection to the server.
 	p.conn, err = grpc.Dial("unix",
 		grpc.WithInsecure(),
-		grpc.WithDialer(dialer(*socketType, *address, time.Second*3)))
+		grpc.WithContextDialer(func(ctx context.Context, addr string) (net.Conn, error) {
+			return net.DialTimeout(*socketType, *address, time.Second*3)
+		}),
+		//grpc.WithContextDialer(dialer(*socketType, *address, time.Second*3)),
+	)
 
 	if err != nil {
 		return err
@@ -75,13 +85,14 @@ func (p *ExamplePlugin) Init() (err error) {
 
 // Get is an implementation of client-side statistics streaming.
 func (p *ExamplePlugin) pollStats(client configurator.StatsPollerServiceClient) {
-	p.Log.Infof("Polling every %v seconds..", *period)
+	ctx := context.Background()
 
 	req := &configurator.PollStatsRequest{
 		PeriodSec: uint32(*period),
+		NumPolls:  uint32(*polls),
 	}
+	fmt.Printf("Polling stats: %v\n", req)
 
-	ctx := context.Background()
 	stream, err := client.PollStats(ctx, req)
 	if err != nil {
 		p.Log.Fatalln("PollStats failed:", err)
@@ -90,26 +101,26 @@ func (p *ExamplePlugin) pollStats(client configurator.StatsPollerServiceClient) 
 	var lastSeq uint32
 	for {
 		resp, err := stream.Recv()
-		if err != nil {
+		if errors.Is(err, io.EOF) {
+			p.Log.Infof("Polling has completed.")
+			os.Exit(0)
+		} else if err != nil {
 			p.Log.Fatalln("Recv failed:", err)
 		}
 
 		if resp.PollSeq != lastSeq {
-			p.Log.Infof(" --- Poll sequence: %-3v", resp.PollSeq)
+			fmt.Printf(" --- Poll sequence: %-3v\n", resp.PollSeq)
 		}
 		lastSeq = resp.PollSeq
 
 		vppStats := resp.GetStats().GetVppStats()
-		p.Log.Infof("VPP stats: %v", vppStats)
+		fmt.Printf("VPP stats: %v\n", vppStats)
 	}
 }
 
 // Dialer for unix domain socket
-func dialer(socket, address string, timeoutVal time.Duration) func(string, time.Duration) (net.Conn, error) {
-	return func(addr string, timeout time.Duration) (net.Conn, error) {
-		// Pass values
-		addr, timeout = address, timeoutVal
-		// Dial with timeout
-		return net.DialTimeout(socket, addr, timeoutVal)
+func dialer(socket, address string, timeoutVal time.Duration) func(context.Context, string) (net.Conn, error) {
+	return func(ctx context.Context, addr string) (net.Conn, error) {
+		return net.DialTimeout(socket, address, timeoutVal)
 	}
 }

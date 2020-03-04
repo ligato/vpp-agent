@@ -6,6 +6,7 @@ option go_package = "go.ligato.io/vpp-agent/v3/proto/ligato/configurator;configu
 
 import "ligato/vpp/vpp.proto";
 
+// Stats defines stats data returned by StatsPollerService.
 message Stats {
     oneof stats {
         vpp.Stats vpp_stats = 1;
@@ -13,18 +14,24 @@ message Stats {
 }
 
 message PollStatsRequest {
-    // PeriodSec defines polling period (in seconds)
+    // PeriodSec defines polling period (in seconds). Set to zero to
+    // return just single polling.
     uint32 period_sec = 1;
+    // NumPolls defines number of pollings. Set to non-zero number to
+    // stop the polling after specified number of pollings is reached.
+    uint32 num_polls = 2;
 }
 
 
 message PollStatsResponse {
+    // PollSeq defines the sequence number of this polling response.
     uint32 poll_seq = 1;
+    // Stats contains polled stats data.
     Stats stats = 2;
 }
 
 // StatsPollerService provides operations for collecting statistics.
 service StatsPollerService {
-    // PollStats is used for polling metrics using poll period.
+    // PollStats is used for polling stats with specific period and number of pollings.
     rpc PollStats(PollStatsRequest) returns (stream PollStatsResponse) {};
 }
