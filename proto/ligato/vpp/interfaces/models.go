@@ -15,8 +15,10 @@
 package vpp_interfaces
 
 import (
+	"bytes"
 	"strconv"
 	"strings"
+	"unsafe"
 
 	"github.com/golang/protobuf/jsonpb"
 
@@ -270,10 +272,19 @@ func ParseInterfaceAddressKey(key string) (iface, address string, source netallo
 
 /* Interface VRF (derived) */
 
+const (
+	interfaceVrfKeyPrefix     = "vpp/interface/"
+	interfaceVrfKeyPartVrf    = "/vrf/"
+	interfaceVrfKeyPartIpVer  = "/ip-version/"
+	interfaceVrfKeyPartFromIf = "/from-interface/"
+)
+
 // InterfaceVrfKeyPrefix returns prefix of the key representing assignment
 // of the given interface into unspecified VRF table.
 func InterfaceVrfKeyPrefix(iface string) string {
-	return strings.Replace(vrfTKeyTemplatePrefix, "{iface}", iface, 1)
+	return interfaceVrfKeyPrefix + iface + interfaceVrfKeyPartVrf
+
+	//return strings.Replace(vrfTKeyTemplatePrefix, "{iface}", iface, 1)
 }
 
 // InterfaceVrfKey returns key representing assignment of the given interface
@@ -302,10 +313,68 @@ func InterfaceVrfKey(iface string, vrf int, ipv4, ipv6 bool) string {
 	return key
 }
 
+func IsInterfaceVrfKey(key string) bool {
+	if !strings.HasPrefix(key, interfaceVrfKeyPrefix) {
+		return false
+	}
+	if strings.Index(key, interfaceVrfKeyPartVrf) <= 0 {
+		return false
+	}
+	if strings.Index(key, interfaceVrfKeyPartFromIf) < 0 && strings.Index(key, interfaceVrfKeyPartIpVer) < 0 {
+		return false
+	}
+	return true
+}
+
+func ParseInterfaceVrfKeyByte(key []byte) (iface string, vrf int, ipv4, ipv6, isIfaceVrfKey bool) {
+	rest := bytes.TrimPrefix(key, []byte(interfaceVrfKeyPrefix))
+	if len(rest) == len(key) {
+		return
+	}
+
+	vrfIndex := bytes.Index(rest, []byte(interfaceVrfKeyPartVrf))
+	if vrfIndex <= 0 {
+		return
+	}
+	ipvIndex := bytes.Index(rest, []byte(interfaceVrfKeyPartIpVer))
+	if ipvIndex < 0 {
+		return
+	}
+
+	// parse interface name
+	ifaceBytes := rest[:vrfIndex]
+	iface = *(*string)(unsafe.Pointer(&ifaceBytes))
+	if len(iface) == 0 {
+		iface = InvalidKeyPart
+	}
+
+	// parse VRF table ID
+	var err error
+	vrf, err = strconv.Atoi(string(rest[vrfIndex+len(interfaceVrfKeyPartVrf) : ipvIndex]))
+	if err != nil {
+		vrf = -1
+	}
+
+	// parse IP version
+	switch string(rest[ipvIndex+len(interfaceVrfKeyPartIpVer):]) {
+	case vrfBoth:
+		ipv4 = true
+		ipv6 = true
+	case vrfIPv4:
+		ipv4 = true
+	case vrfIPv6:
+		ipv6 = true
+	}
+
+	return iface, vrf, ipv4, ipv6, true
+}
+
 // ParseInterfaceVrfKey parses details from key derived from interface by
 // InterfaceVrfKey().
 func ParseInterfaceVrfKey(key string) (iface string, vrf int, ipv4, ipv6, isIfaceVrfKey bool) {
-	parts := strings.Split(key, "/")
+	return ParseInterfaceVrfKeyByte([]byte(key))
+
+	/*parts := strings.Split(key, "/")
 	if len(parts) < 7 || parts[0] != "vpp" || parts[1] != "interface" {
 		return
 	}
@@ -348,7 +417,7 @@ func ParseInterfaceVrfKey(key string) (iface string, vrf int, ipv4, ipv6, isIfac
 	case vrfIPv6:
 		ipv6 = true
 	}
-	return
+	return*/
 }
 
 // InterfaceInheritedVrfKey returns key representing assignment of the given
@@ -366,10 +435,42 @@ func InterfaceInheritedVrfKey(iface string, fromIface string) string {
 	return key
 }
 
+func ParseInterfaceInheritedVrfKeyByte(key []byte) (iface, fromIface string, isIfaceInherVrfKey bool) {
+	rest := bytes.TrimPrefix(key, []byte(interfaceVrfKeyPrefix))
+	if len(rest) == len(key) {
+		return
+	}
+
+	vrfIndex := bytes.Index(rest, []byte(interfaceVrfKeyPartVrf))
+	if vrfIndex < 0 {
+		return
+	}
+	fromIfIndex := bytes.Index(rest, []byte(interfaceVrfKeyPartFromIf))
+	if fromIfIndex < 0 {
+		return
+	}
+
+	// parse interface name
+	ifaceBytes := rest[:vrfIndex]
+	iface = *(*string)(unsafe.Pointer(&ifaceBytes))
+	if len(iface) == 0 {
+		iface = InvalidKeyPart
+	}
+	fromIfaceBytes := rest[fromIfIndex+len(interfaceVrfKeyPartFromIf):]
+	fromIface = *(*string)(unsafe.Pointer(&fromIfaceBytes))
+	if len(fromIface) == 0 {
+		fromIface = InvalidKeyPart
+	}
+
+	return iface, fromIface, true
+}
+
 // ParseInterfaceInheritedVrfKey parses details from key derived from interface by
 // InterfaceInheritedVrfKey().
 func ParseInterfaceInheritedVrfKey(key string) (iface, fromIface string, isIfaceInherVrfKey bool) {
-	parts := strings.Split(key, "/")
+	return ParseInterfaceInheritedVrfKeyByte([]byte(key))
+
+	/*parts := strings.Split(key, "/")
 	if len(parts) < 6 || parts[0] != "vpp" || parts[1] != "interface" {
 		return
 	}
@@ -397,7 +498,7 @@ func ParseInterfaceInheritedVrfKey(key string) (iface, fromIface string, isIface
 	if fromIface == "" {
 		fromIface = InvalidKeyPart
 	}
-	return
+	return*/
 }
 
 /* Unnumbered interface (derived) */

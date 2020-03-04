@@ -619,7 +619,7 @@ func TestParseInterfaceVrfKey(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			iface, vrf, ipv4, ipv6, isIfaceVrfKey := ParseInterfaceVrfKey(test.key)
+			iface, vrf, ipv4, ipv6, isIfaceVrfKey := ParseInterfaceVrfKeyByte([]byte(test.key))
 			if isIfaceVrfKey != test.expectedIsIfaceVrfKey {
 				t.Errorf("expected isVrfTableKey: %v\tgot: %v", test.expectedIsIfaceVrfKey, isIfaceVrfKey)
 			}
@@ -747,7 +747,7 @@ func TestParseInterfaceInheritedVrfKey(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			iface, fromIface, isIfaceInherVrfKey := ParseInterfaceInheritedVrfKey(test.key)
+			iface, fromIface, isIfaceInherVrfKey := ParseInterfaceInheritedVrfKeyByte([]byte(test.key))
 			if isIfaceInherVrfKey != test.expectedIsIfaceInherVrfKey {
 				t.Errorf("expected isIfaceInherVrfKey: %v\tgot: %v", test.expectedIsIfaceInherVrfKey, isIfaceInherVrfKey)
 			}

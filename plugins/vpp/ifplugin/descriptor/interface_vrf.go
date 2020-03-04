@@ -65,7 +65,9 @@ func NewInterfaceVrfDescriptor(ifHandler vppcalls.InterfaceVppAPI, ifIndex iface
 // IsInterfaceVrfKey returns true if the key represents assignment of an interface
 // into a VRF table.
 func (d *InterfaceVrfDescriptor) IsInterfaceVrfKey(key string) bool {
-	_, _, _, _, isIfaceVrfKey := interfaces.ParseInterfaceVrfKey(key)
+	return interfaces.IsInterfaceVrfKey(key)
+
+	/*_, _, _, _, isIfaceVrfKey := interfaces.ParseInterfaceVrfKey(key)
 	if isIfaceVrfKey {
 		return true
 	}
@@ -73,7 +75,7 @@ func (d *InterfaceVrfDescriptor) IsInterfaceVrfKey(key string) bool {
 	if isIfaceInherVrfKey {
 		return true
 	}
-	return false
+	return false*/
 }
 
 // Create puts interface into the given VRF table.
