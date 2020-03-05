@@ -16,6 +16,7 @@ package vpp1908
 
 import (
 	"encoding/hex"
+	vpp_ipsec "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ipsec"
 	"net"
 	"strconv"
 
@@ -167,7 +168,34 @@ func (h *IPSecVppHandler) DumpIPSecSPD() (spdList []*vppcalls.IPSecSpdDetails, e
 
 // DumpTunnelProtections returns configured IPSec tunnel protections.
 func (h *IPSecVppHandler) DumpTunnelProtections() (tpList []*ipsec.TunnelProtection, err error) {
-	return // tunnel protection not supported in VPP 19.08
+	req := &ipsecapi.IpsecTunnelProtectDump{
+		SwIfIndex: ipsecapi.InterfaceIndex(^uint32(0)),
+	}
+	requestCtx := h.callsChannel.SendMultiRequest(req)
+	for {
+		tpDetails := &vpp_ipsec.IpsecTunnelProtectDetails{}
+		stop, err := requestCtx.ReceiveReply(tpDetails)
+		if stop {
+			break
+		}
+		if err != nil {
+			return nil, err
+		}
+		ifName, _, exists := h.ifIndexes.LookupBySwIfIndex(uint32(tpDetails.Tun.SwIfIndex))
+		if !exists {
+			h.log.Warnf("Tunnel protection dump: interface name for index %d not found", tpDetails.Tun.SwIfIndex)
+			continue
+		}
+		tp := &ipsec.TunnelProtection{
+			Interface: ifName,
+			SaOut:     []uint32{tpDetails.Tun.SaOut},
+		}
+		for _, sa := range tpDetails.Tun.SaIn {
+			tp.SaIn = append(tp.SaIn, sa)
+		}
+		tpList = append(tpList, tp)
+	}
+	return
 }
 
 // Get all indexes of SPD configured on the VPP
