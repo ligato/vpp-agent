@@ -3,7 +3,7 @@ FROM ${VPP_IMG} AS vppimg
 
 RUN dpkg-query -f '${Version}' -W vpp > /vpp/version
 
-FROM golang:1.13 AS verify-binapi
+FROM golang:1.14 AS verify-binapi
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
 		patch \
@@ -55,7 +55,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
  	&& rm -rf /var/lib/apt/lists/*
 
 # Install Go
-ENV GOLANG_VERSION 1.13.7
+ENV GOLANG_VERSION 1.14
 RUN set -eux; \
 	dpkgArch="$(dpkg --print-architecture)"; \
 		case "${dpkgArch##*-}" in \
