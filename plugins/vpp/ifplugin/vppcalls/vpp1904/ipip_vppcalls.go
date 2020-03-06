@@ -17,15 +17,16 @@ package vpp1904
 import (
 	"fmt"
 
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/vppcalls"
 	interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
 )
 
 // AddIpipTunnel adds new IPIP tunnel interface.
 func (h *InterfaceVppHandler) AddIpipTunnel(ifName string, vrf uint32, ipipLink *interfaces.IPIPLink) (uint32, error) {
-	return 0, fmt.Errorf("IPIP interface unsupported in VPP 1904")
+	return 0, fmt.Errorf("%w in VPP 19.04", vppcalls.ErrIPIPUnsupported)
 }
 
 // DelIpipTunnel removes IPIP tunnel interface.
 func (h *InterfaceVppHandler) DelIpipTunnel(ifName string, ifIdx uint32) error {
-	return fmt.Errorf("IPIP interface unsupported in VPP 1904")
+	return fmt.Errorf("%w in VPP 19.04", vppcalls.ErrIPIPUnsupported)
 }

@@ -16,12 +16,18 @@ package vppcalls
 
 import (
 	"context"
+	"errors"
 	"net"
 
 	"go.ligato.io/cn-infra/v2/logging"
 
 	"go.ligato.io/vpp-agent/v3/plugins/vpp"
 	interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
+)
+
+var (
+	// ErrIPIPUnsupported error is returned if IPIP interface is not supported on given VPP version.
+	ErrIPIPUnsupported = errors.New("IPIP interface not supported")
 )
 
 // InterfaceDetails is the wrapper structure for the interface northbound API structure.

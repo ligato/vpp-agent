@@ -24,6 +24,7 @@ import (
 	"github.com/pkg/errors"
 	"go.ligato.io/cn-infra/v2/health/statuscheck"
 	"go.ligato.io/cn-infra/v2/infra"
+	"go.ligato.io/vpp-agent/v3/plugins/kvscheduler"
 
 	"go.ligato.io/vpp-agent/v3/plugins/govppmux"
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
@@ -36,6 +37,10 @@ import (
 	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/ipsecplugin/vppcalls/vpp1908"
 	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/ipsecplugin/vppcalls/vpp2001"
 )
+
+func init() {
+	kvscheduler.AddNonRetryableError(vppcalls.ErrTunnelProtectionUnsupported)
+}
 
 // IPSecPlugin configures VPP security policy databases and security associations using GoVPP.
 type IPSecPlugin struct {

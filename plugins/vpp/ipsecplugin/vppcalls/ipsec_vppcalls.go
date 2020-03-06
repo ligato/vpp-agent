@@ -15,12 +15,19 @@
 package vppcalls
 
 import (
+	"errors"
+
 	govppapi "git.fd.io/govpp.git/api"
 	"go.ligato.io/cn-infra/v2/logging"
 
 	"go.ligato.io/vpp-agent/v3/plugins/vpp"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
 	ipsec "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/ipsec"
+)
+
+var (
+	// ErrTunnelProtectionUnsupported error is returned if IPSec tunnel protection is not supported on given VPP version.
+	ErrTunnelProtectionUnsupported = errors.New("IPSec tunnel protection is not supported")
 )
 
 // IPSecSaDetails holds security association with VPP metadata

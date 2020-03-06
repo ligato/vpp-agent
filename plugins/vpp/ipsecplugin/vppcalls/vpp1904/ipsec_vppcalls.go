@@ -18,9 +18,10 @@ import (
 	"encoding/hex"
 	"fmt"
 	"github.com/pkg/errors"
-	"go.ligato.io/cn-infra/v2/utils/addrs"
 
+	"go.ligato.io/cn-infra/v2/utils/addrs"
 	api "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1904/ipsec"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/ipsecplugin/vppcalls"
 	ipsec "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/ipsec"
 )
 
@@ -74,17 +75,17 @@ func (h *IPSecVppHandler) DeleteSA(sa *ipsec.SecurityAssociation) error {
 
 // AddTunnelProtection implements IPSec handler for adding a tunnel protection.
 func (h *IPSecVppHandler) AddTunnelProtection(tp *ipsec.TunnelProtection) error {
-	return fmt.Errorf("tunnel protection not supported in VPP 19.04")
+	return fmt.Errorf("%w in VPP 19.04", vppcalls.ErrTunnelProtectionUnsupported)
 }
 
 // UpdateTunnelProtection implements IPSec handler for updating a tunnel protection.
 func (h *IPSecVppHandler) UpdateTunnelProtection(tp *ipsec.TunnelProtection) error {
-	return fmt.Errorf("tunnel protection not supported in VPP 19.04")
+	return fmt.Errorf("%w in VPP 19.04", vppcalls.ErrTunnelProtectionUnsupported)
 }
 
 // DeleteTunnelProtection implements IPSec handler for deleting a tunnel protection.
 func (h *IPSecVppHandler) DeleteTunnelProtection(tp *ipsec.TunnelProtection) error {
-	return fmt.Errorf("tunnel protection not supported in VPP 19.04")
+	return fmt.Errorf("%w in VPP 19.04", vppcalls.ErrTunnelProtectionUnsupported)
 }
 
 func (h *IPSecVppHandler) spdAddDel(spdID uint32, isAdd bool) error {
