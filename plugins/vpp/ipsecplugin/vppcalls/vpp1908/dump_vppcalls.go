@@ -190,9 +190,7 @@ func (h *IPSecVppHandler) DumpTunnelProtections() (tpList []*ipsec.TunnelProtect
 			Interface: ifName,
 			SaOut:     []uint32{tpDetails.Tun.SaOut},
 		}
-		for _, sa := range tpDetails.Tun.SaIn {
-			tp.SaIn = append(tp.SaIn, sa)
-		}
+		tp.SaIn = append(tp.SaIn, tpDetails.Tun.SaIn...)
 		tpList = append(tpList, tp)
 	}
 	return
