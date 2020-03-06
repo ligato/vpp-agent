@@ -20,8 +20,6 @@ import (
 
 	"github.com/pkg/errors"
 
-	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1908/interface_types"
-	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1908/ip_types"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1908/ipip"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/vppcalls"
 	interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
@@ -61,25 +59,25 @@ func (h *InterfaceVppHandler) AddIpipTunnel(ifName string, vrf uint32, ipipLink 
 		var src, dst [4]uint8
 		copy(src[:], srcAddr.To4())
 		copy(dst[:], dstAddr.To4())
-		req.Tunnel.Src = ip_types.Address{
-			Af: ip_types.ADDRESS_IP4,
-			Un: ip_types.AddressUnionIP4(src),
+		req.Tunnel.Src = ipip.Address{
+			Af: ipip.ADDRESS_IP4,
+			Un: ipip.AddressUnionIP4(src),
 		}
-		req.Tunnel.Dst = ip_types.Address{
-			Af: ip_types.ADDRESS_IP4,
-			Un: ip_types.AddressUnionIP4(dst),
+		req.Tunnel.Dst = ipip.Address{
+			Af: ipip.ADDRESS_IP4,
+			Un: ipip.AddressUnionIP4(dst),
 		}
 	} else if isSrcIPv6 && isDstIPv6 {
 		var src, dst [16]uint8
 		copy(src[:], srcAddr.To16())
 		copy(dst[:], dstAddr.To16())
-		req.Tunnel.Src = ip_types.Address{
-			Af: ip_types.ADDRESS_IP6,
-			Un: ip_types.AddressUnionIP6(src),
+		req.Tunnel.Src = ipip.Address{
+			Af: ipip.ADDRESS_IP6,
+			Un: ipip.AddressUnionIP6(src),
 		}
-		req.Tunnel.Dst = ip_types.Address{
-			Af: ip_types.ADDRESS_IP6,
-			Un: ip_types.AddressUnionIP6(dst),
+		req.Tunnel.Dst = ipip.Address{
+			Af: ipip.ADDRESS_IP6,
+			Un: ipip.AddressUnionIP6(dst),
 		}
 	} else {
 		return 0, errors.New("source and destination addresses must be both either IPv4 or IPv6")
@@ -110,7 +108,7 @@ func (h *InterfaceVppHandler) DelIpipTunnel(ifName string, ifIdx uint32) error {
 func (h *InterfaceVppHandler) dumpIpipDetails(ifc map[uint32]*vppcalls.InterfaceDetails) error {
 
 	reqCtx := h.callsChannel.SendMultiRequest(&ipip.IpipTunnelDump{
-		SwIfIndex: ^interface_types.InterfaceIndex(0),
+		SwIfIndex: ^ipip.InterfaceIndex(0),
 	})
 	for {
 		ipipDetails := &ipip.IpipTunnelDetails{}
@@ -127,7 +125,7 @@ func (h *InterfaceVppHandler) dumpIpipDetails(ifc map[uint32]*vppcalls.Interface
 		}
 
 		ipipLink := &interfaces.IPIPLink{}
-		if ipipDetails.Tunnel.Src.Af == ip_types.ADDRESS_IP6 {
+		if ipipDetails.Tunnel.Src.Af == ipip.ADDRESS_IP6 {
 			srcAddrArr := ipipDetails.Tunnel.Src.Un.GetIP6()
 			ipipLink.SrcAddr = net.IP(srcAddrArr[:]).To16().String()
 			dstAddrArr := ipipDetails.Tunnel.Dst.Un.GetIP6()

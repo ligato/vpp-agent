@@ -19,7 +19,6 @@ import (
 
 	. "github.com/onsi/gomega"
 	vpp_ifs "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1908/interfaces"
-	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1908/ip_types"
 	vpp_ipip "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1908/ipip"
 	ifs "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
 )
@@ -43,13 +42,13 @@ func TestAddIpipTunnel(t *testing.T) {
 	for _, msg := range ctx.MockChannel.Msgs {
 		vppMsg, ok := msg.(*vpp_ipip.IpipAddTunnel)
 		if ok {
-			Expect(vppMsg.Tunnel.Src).To(Equal(ip_types.Address{
-				Af: ip_types.ADDRESS_IP4,
-				Un: ip_types.AddressUnionIP4(ip_types.IP4Address{10, 0, 0, 1}),
+			Expect(vppMsg.Tunnel.Src).To(Equal(vpp_ipip.Address{
+				Af: vpp_ipip.ADDRESS_IP4,
+				Un: vpp_ipip.AddressUnionIP4(vpp_ipip.IP4Address{10, 0, 0, 1}),
 			}))
-			Expect(vppMsg.Tunnel.Dst).To(Equal(ip_types.Address{
-				Af: ip_types.ADDRESS_IP4,
-				Un: ip_types.AddressUnionIP4(ip_types.IP4Address{20, 0, 0, 1}),
+			Expect(vppMsg.Tunnel.Dst).To(Equal(vpp_ipip.Address{
+				Af: vpp_ipip.ADDRESS_IP4,
+				Un: vpp_ipip.AddressUnionIP4(vpp_ipip.IP4Address{20, 0, 0, 1}),
 			}))
 			Expect(vppMsg.Tunnel.TableID).To(BeEquivalentTo(0))
 			msgCheck = true
@@ -77,13 +76,13 @@ func TestAddIpipTunnelWithVrf(t *testing.T) {
 	for _, msg := range ctx.MockChannel.Msgs {
 		vppMsg, ok := msg.(*vpp_ipip.IpipAddTunnel)
 		if ok {
-			Expect(vppMsg.Tunnel.Src).To(Equal(ip_types.Address{
-				Af: ip_types.ADDRESS_IP4,
-				Un: ip_types.AddressUnionIP4(ip_types.IP4Address{10, 0, 0, 1}),
+			Expect(vppMsg.Tunnel.Src).To(Equal(vpp_ipip.Address{
+				Af: vpp_ipip.ADDRESS_IP4,
+				Un: vpp_ipip.AddressUnionIP4(vpp_ipip.IP4Address{10, 0, 0, 1}),
 			}))
-			Expect(vppMsg.Tunnel.Dst).To(Equal(ip_types.Address{
-				Af: ip_types.ADDRESS_IP4,
-				Un: ip_types.AddressUnionIP4(ip_types.IP4Address{20, 0, 0, 1}),
+			Expect(vppMsg.Tunnel.Dst).To(Equal(vpp_ipip.Address{
+				Af: vpp_ipip.ADDRESS_IP4,
+				Un: vpp_ipip.AddressUnionIP4(vpp_ipip.IP4Address{20, 0, 0, 1}),
 			}))
 			Expect(vppMsg.Tunnel.TableID).To(BeEquivalentTo(1))
 			msgCheck = true
@@ -111,15 +110,15 @@ func TestAddIpipTunnelIPv6(t *testing.T) {
 	for _, msg := range ctx.MockChannel.Msgs {
 		vppMsg, ok := msg.(*vpp_ipip.IpipAddTunnel)
 		if ok {
-			Expect(vppMsg.Tunnel.Src).To(Equal(ip_types.Address{
-				Af: ip_types.ADDRESS_IP6,
-				Un: ip_types.AddressUnionIP6(ip_types.IP6Address{
+			Expect(vppMsg.Tunnel.Src).To(Equal(vpp_ipip.Address{
+				Af: vpp_ipip.ADDRESS_IP6,
+				Un: vpp_ipip.AddressUnionIP6(vpp_ipip.IP6Address{
 					0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0x01, 0, 0x01, 0, 0x01, 0, 0x01, 0, 0x01,
 				}),
 			}))
-			Expect(vppMsg.Tunnel.Dst).To(Equal(ip_types.Address{
-				Af: ip_types.ADDRESS_IP6,
-				Un: ip_types.AddressUnionIP6(ip_types.IP6Address{
+			Expect(vppMsg.Tunnel.Dst).To(Equal(vpp_ipip.Address{
+				Af: vpp_ipip.ADDRESS_IP6,
+				Un: vpp_ipip.AddressUnionIP6(vpp_ipip.IP6Address{
 					0x20, 0x02, 0x0d, 0xb8, 0, 0, 0, 0x01, 0, 0x01, 0, 0x01, 0, 0x01, 0, 0x01,
 				}),
 			}))

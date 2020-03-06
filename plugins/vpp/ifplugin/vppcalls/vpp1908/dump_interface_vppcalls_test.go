@@ -25,7 +25,6 @@ import (
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1908/gtpu"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1908/interfaces"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1908/ip"
-	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1908/ip_types"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1908/ipip"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1908/memif"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1908/tapv2"
@@ -581,14 +580,14 @@ func TestDumpInterfacesIPIP(t *testing.T) {
 			Ping: true,
 			Message: &ipip.IpipTunnelDetails{
 				Tunnel: ipip.IpipTunnel{
-					Dst: ip_types.Address{
-						Af: ip_types.ADDRESS_IP6,
-						Un: ip_types.AddressUnionIP6(ip_types.IP6Address{
+					Dst: ipip.Address{
+						Af: ipip.ADDRESS_IP6,
+						Un: ipip.AddressUnionIP6(ipip.IP6Address{
 							0xde, 0xad, 0xbe, 0xef, 0xfe, 0xed, 0xfa, 0xce, 0xca, 0xfe, 0xba, 0xbe, 0xba, 0xad, 0xc0, 0xde,
 						})},
-					Src: ip_types.Address{
-						Af: ip_types.ADDRESS_IP6,
-						Un: ip_types.AddressUnionIP6(ip_types.IP6Address{
+					Src: ipip.Address{
+						Af: ipip.ADDRESS_IP6,
+						Un: ipip.AddressUnionIP6(ipip.IP6Address{
 							0xd3, 0xad, 0xbe, 0xef, 0xfe, 0xed, 0xfa, 0xce, 0xca, 0xfe, 0xba, 0xbe, 0xba, 0xad, 0xc0, 0xde,
 						})},
 				},
