@@ -77,7 +77,7 @@ func TestVppAddSPDEntry(t *testing.T) {
 	ctx.MockVpp.MockReply(&vpp_ipsec.IpsecSpdEntryAddDelReply{})
 
 	err := ipSecHandler.AddSPDEntry(10, 5, &ipsec.SecurityPolicyDatabase_PolicyEntry{
-		SaIndex:    "5",
+		SaIndex:    5,
 		Priority:   10,
 		IsOutbound: true,
 	})
@@ -107,7 +107,7 @@ func TestVppDelSPDEntry(t *testing.T) {
 	ctx.MockVpp.MockReply(&vpp_ipsec.IpsecSpdEntryAddDelReply{})
 
 	err := ipSecHandler.DeleteSPDEntry(10, 2, &ipsec.SecurityPolicyDatabase_PolicyEntry{
-		SaIndex:    "2",
+		SaIndex:    2,
 		Priority:   5,
 		IsOutbound: true,
 	})
@@ -188,7 +188,7 @@ func TestVppAddSA(t *testing.T) {
 	Expect(err).To(BeNil())
 
 	err = ipSecHandler.AddSA(&ipsec.SecurityAssociation{
-		Index:         "1",
+		Index:         1,
 		Spi:           uint32(1001),
 		UseEsn:        true,
 		UseAntiReplay: true,
@@ -223,7 +223,7 @@ func TestVppDelSA(t *testing.T) {
 	Expect(err).To(BeNil())
 
 	err = ipSecHandler.DeleteSA(&ipsec.SecurityAssociation{
-		Index:         "1",
+		Index:         1,
 		Spi:           uint32(1001),
 		UseEsn:        true,
 		UseAntiReplay: true,
@@ -258,7 +258,7 @@ func TestVppAddSATunnelMode(t *testing.T) {
 	Expect(err).To(BeNil())
 
 	err = ipSecHandler.AddSA(&ipsec.SecurityAssociation{
-		Index:         "1",
+		Index:         1,
 		Spi:           uint32(1001),
 		TunnelSrcAddr: "10.1.0.1",
 		TunnelDstAddr: "20.1.0.1",
@@ -301,7 +301,7 @@ func TestVppAddSATunnelModeIPv6(t *testing.T) {
 	Expect(err).To(BeNil())
 
 	err = ipSecHandler.AddSA(&ipsec.SecurityAssociation{
-		Index:         "1",
+		Index:         1,
 		Spi:           uint32(1001),
 		TunnelSrcAddr: "1234::",
 		TunnelDstAddr: "abcd::",
@@ -331,5 +331,47 @@ func TestVppAddSATunnelModeIPv6(t *testing.T) {
 			},
 			Flags: ipsec_types.IPSEC_API_SAD_FLAG_IS_TUNNEL | ipsec_types.IPSEC_API_SAD_FLAG_IS_TUNNEL_V6,
 		},
+	}))
+}
+
+func TestVppAddTunnelProtection(t *testing.T) {
+	ctx, ipSecHandler, ifIndex := ipSecTestSetup(t)
+	defer ctx.TeardownTestCtx()
+
+	ifIndex.Put("ipip-tunnel", &ifaceidx.IfaceMetadata{SwIfIndex: 5})
+
+	ctx.MockVpp.MockReply(&vpp_ipsec.IpsecTunnelProtectUpdateReply{})
+	err := ipSecHandler.AddTunnelProtection(&ipsec.TunnelProtection{
+		Interface: "ipip-tunnel",
+		SaOut:     []uint32{10},
+		SaIn:      []uint32{20, 30},
+	})
+
+	Expect(err).ShouldNot(HaveOccurred())
+	Expect(ctx.MockChannel.Msg).To(BeEquivalentTo(&vpp_ipsec.IpsecTunnelProtectUpdate{
+		Tunnel: vpp_ipsec.IpsecTunnelProtect{
+			SwIfIndex: 5,
+			SaOut:     10,
+			NSaIn:     2,
+			SaIn:      []uint32{20, 30},
+		},
+	}))
+}
+
+func TestVppDelTunnelProtection(t *testing.T) {
+	ctx, ipSecHandler, ifIndex := ipSecTestSetup(t)
+	defer ctx.TeardownTestCtx()
+
+	ifIndex.Put("ipip-tunnel", &ifaceidx.IfaceMetadata{SwIfIndex: 5})
+
+	ctx.MockVpp.MockReply(&vpp_ipsec.IpsecTunnelProtectDelReply{})
+
+	err := ipSecHandler.DeleteTunnelProtection(&ipsec.TunnelProtection{
+		Interface: "ipip-tunnel",
+	})
+
+	Expect(err).ShouldNot(HaveOccurred())
+	Expect(ctx.MockChannel.Msg).To(BeEquivalentTo(&vpp_ipsec.IpsecTunnelProtectDel{
+		SwIfIndex: 5,
 	}))
 }

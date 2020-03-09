@@ -55,6 +55,7 @@ import (
 
 func init() {
 	kvscheduler.AddNonRetryableError(vppclient.ErrPluginDisabled)
+	kvscheduler.AddNonRetryableError(vppcalls.ErrIPIPUnsupported)
 }
 
 // Default Go routine count used while retrieving linux configuration

@@ -281,6 +281,11 @@ func (h *InterfaceVppHandler) DumpInterfaces(ctx context.Context) (map[uint32]*v
 		return nil, err
 	}
 
+	err = h.dumpIpipDetails(ifs)
+	if err != nil {
+		return nil, err
+	}
+
 	// Rx-placement dump is last since it uses interface type-specific data
 	err = h.dumpRxPlacement(ifs)
 	if err != nil {
@@ -944,6 +949,9 @@ func guessInterfaceType(ifName string) interfaces.Interface_Type {
 
 	case strings.HasPrefix(ifName, "gtpu"):
 		return interfaces.Interface_GTPU_TUNNEL
+
+	case strings.HasPrefix(ifName, "ipip"):
+		return interfaces.Interface_IPIP_TUNNEL
 
 	default:
 		return interfaces.Interface_DPDK

@@ -16,6 +16,7 @@ package vpp1908
 
 import (
 	"encoding/hex"
+	vpp_ipsec "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ipsec"
 	"net"
 	"strconv"
 
@@ -56,7 +57,7 @@ func (h *IPSecVppHandler) DumpIPSecSAWithIndex(saID uint32) (saList []*vppcalls.
 		}
 
 		sa := &ipsec.SecurityAssociation{
-			Index:          strconv.Itoa(int(saData.Entry.SadID)),
+			Index:          saData.Entry.SadID,
 			Spi:            saData.Entry.Spi,
 			Protocol:       ipsec.SecurityAssociation_IPSecProtocol(saData.Entry.Protocol),
 			CryptoAlg:      ipsec.CryptoAlg(saData.Entry.CryptoAlgorithm),
@@ -65,9 +66,13 @@ func (h *IPSecVppHandler) DumpIPSecSAWithIndex(saID uint32) (saList []*vppcalls.
 			IntegKey:       hex.EncodeToString(saData.Entry.IntegrityKey.Data[:saData.Entry.IntegrityKey.Length]),
 			UseEsn:         (saData.Entry.Flags & ipsecapi.IPSEC_API_SAD_FLAG_USE_ESN) != 0,
 			UseAntiReplay:  (saData.Entry.Flags & ipsecapi.IPSEC_API_SAD_FLAG_USE_ANTI_REPLAY) != 0,
-			TunnelSrcAddr:  tunnelSrcAddr.String(),
-			TunnelDstAddr:  tunnelDstAddr.String(),
 			EnableUdpEncap: (saData.Entry.Flags & ipsecapi.IPSEC_API_SAD_FLAG_UDP_ENCAP) != 0,
+		}
+		if !tunnelSrcAddr.IsUnspecified() {
+			sa.TunnelSrcAddr = tunnelSrcAddr.String()
+		}
+		if !tunnelDstAddr.IsUnspecified() {
+			sa.TunnelDstAddr = tunnelDstAddr.String()
 		}
 		meta := &vppcalls.IPSecSaMeta{
 			SaID:           saData.Entry.SadID,
@@ -100,7 +105,7 @@ func (h *IPSecVppHandler) DumpIPSecSPD() (spdList []*vppcalls.IPSecSpdDetails, e
 	}
 	for spdIdx, numPolicies := range spdIndexes {
 		spd := &ipsec.SecurityPolicyDatabase{
-			Index: strconv.Itoa(spdIdx),
+			Index: uint32(spdIdx),
 		}
 
 		req := &ipsecapi.IpsecSpdDump{
@@ -125,7 +130,7 @@ func (h *IPSecVppHandler) DumpIPSecSPD() (spdList []*vppcalls.IPSecSpdDetails, e
 
 			// Prepare policy entry and put to the SPD
 			policyEntry := &ipsec.SecurityPolicyDatabase_PolicyEntry{
-				SaIndex:         strconv.Itoa(int(spdDetails.Entry.SaID)),
+				SaIndex:         spdDetails.Entry.SaID,
 				Priority:        spdDetails.Entry.Priority,
 				IsOutbound:      uintToBool(spdDetails.Entry.IsOutbound),
 				RemoteAddrStart: remoteStartAddr.String(),
@@ -159,6 +164,36 @@ func (h *IPSecVppHandler) DumpIPSecSPD() (spdList []*vppcalls.IPSecSpdDetails, e
 	}
 
 	return spdList, nil
+}
+
+// DumpTunnelProtections returns configured IPSec tunnel protections.
+func (h *IPSecVppHandler) DumpTunnelProtections() (tpList []*ipsec.TunnelProtection, err error) {
+	req := &ipsecapi.IpsecTunnelProtectDump{
+		SwIfIndex: ipsecapi.InterfaceIndex(^uint32(0)),
+	}
+	requestCtx := h.callsChannel.SendMultiRequest(req)
+	for {
+		tpDetails := &vpp_ipsec.IpsecTunnelProtectDetails{}
+		stop, err := requestCtx.ReceiveReply(tpDetails)
+		if stop {
+			break
+		}
+		if err != nil {
+			return nil, err
+		}
+		ifName, _, exists := h.ifIndexes.LookupBySwIfIndex(uint32(tpDetails.Tun.SwIfIndex))
+		if !exists {
+			h.log.Warnf("Tunnel protection dump: interface name for index %d not found", tpDetails.Tun.SwIfIndex)
+			continue
+		}
+		tp := &ipsec.TunnelProtection{
+			Interface: ifName,
+			SaOut:     []uint32{tpDetails.Tun.SaOut},
+		}
+		tp.SaIn = append(tp.SaIn, tpDetails.Tun.SaIn...)
+		tpList = append(tpList, tp)
+	}
+	return
 }
 
 // Get all indexes of SPD configured on the VPP

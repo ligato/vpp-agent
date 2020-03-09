@@ -15,12 +15,19 @@
 package vppcalls
 
 import (
+	"errors"
+
 	govppapi "git.fd.io/govpp.git/api"
 	"go.ligato.io/cn-infra/v2/logging"
 
 	"go.ligato.io/vpp-agent/v3/plugins/vpp"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
 	ipsec "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/ipsec"
+)
+
+var (
+	// ErrTunnelProtectionUnsupported error is returned if IPSec tunnel protection is not supported on given VPP version.
+	ErrTunnelProtectionUnsupported = errors.New("IPSec tunnel protection is not supported")
 )
 
 // IPSecSaDetails holds security association with VPP metadata
@@ -78,6 +85,12 @@ type IPSecVppAPI interface {
 	AddSA(sa *ipsec.SecurityAssociation) error
 	// DeleteSA deletes SA from VPP via binary API
 	DeleteSA(sa *ipsec.SecurityAssociation) error
+	// AddTunnelProtection adds a tunnel protection to VPP via binary API
+	AddTunnelProtection(tp *ipsec.TunnelProtection) error
+	// UpdateTunnelProtection updates a tunnel protection on VPP via binary API
+	UpdateTunnelProtection(tp *ipsec.TunnelProtection) error
+	// DeleteTunnelProtection deletes a tunnel protection from VPP via binary API
+	DeleteTunnelProtection(tp *ipsec.TunnelProtection) error
 }
 
 // IPSecVPPRead provides read methods for IPSec
@@ -88,6 +101,8 @@ type IPSecVPPRead interface {
 	DumpIPSecSA() (saList []*IPSecSaDetails, err error)
 	// DumpIPSecSAWithIndex returns a security association with provided index
 	DumpIPSecSAWithIndex(saID uint32) (saList []*IPSecSaDetails, err error)
+	// DumpTunnelProtections returns configured IPSec tunnel protections
+	DumpTunnelProtections() (tpList []*ipsec.TunnelProtection, err error)
 }
 
 var Handler = vpp.RegisterHandler(vpp.HandlerDesc{

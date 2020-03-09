@@ -245,6 +245,12 @@ func (dsl *DataResyncDSL) IPSecSPD(spd *ipsec.SecurityPolicyDatabase) linuxclien
 	return dsl
 }
 
+// IPSecTunnelProtection adds request to RESYNC an IPSec tunnel protection
+func (dsl *DataResyncDSL) IPSecTunnelProtection(tp *ipsec.TunnelProtection) linuxclient.DataResyncDSL {
+	dsl.vppDataResync.IPSecTunnelProtection(tp)
+	return dsl
+}
+
 // PuntIPRedirect adds request to RESYNC a rule used to punt L3 traffic via interface.
 func (dsl *DataResyncDSL) PuntIPRedirect(val *punt.IPRedirect) linuxclient.DataResyncDSL {
 	dsl.vppDataResync.PuntIPRedirect(val)

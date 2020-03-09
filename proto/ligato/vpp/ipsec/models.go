@@ -36,11 +36,19 @@ var (
 		Version: "v2",
 		Type:    "sa",
 	}, models.WithNameTemplate("{{.Index}}"))
+
+	ModelTunnelProtection = models.Register(&TunnelProtection{}, models.Spec{
+		Module:  ModuleName,
+		Version: "v2",
+		Type:    "tun-protect",
+	}, models.WithNameTemplate(
+		`{{.Interface}}`,
+	))
 )
 
 // SPDKey returns the key used in NB DB to store the configuration of the
 // given security policy database configuration.
-func SPDKey(index string) string {
+func SPDKey(index uint32) string {
 	return models.Key(&SecurityPolicyDatabase{
 		Index: index,
 	})
@@ -48,7 +56,7 @@ func SPDKey(index string) string {
 
 // SAKey returns the key used in NB DB to store the configuration of the
 // given security association configuration.
-func SAKey(index string) string {
+func SAKey(index uint32) string {
 	return models.Key(&SecurityAssociation{
 		Index: index,
 	})
@@ -77,17 +85,11 @@ const (
 
 // SPDInterfaceKey returns the key used to represent binding between the given interface
 // and the security policy database.
-func SPDInterfaceKey(spdIndex string, ifName string) string {
-	if spdIndex == "" {
-		spdIndex = InvalidKeyPart
-	}
-	if _, err := strconv.Atoi(spdIndex); err != nil {
-		spdIndex = InvalidKeyPart
-	}
+func SPDInterfaceKey(spdIndex uint32, ifName string) string {
 	if ifName == "" {
 		ifName = InvalidKeyPart
 	}
-	key := strings.Replace(spdInterfaceKeyTemplate, "{spd}", spdIndex, 1)
+	key := strings.Replace(spdInterfaceKeyTemplate, "{spd}", strconv.FormatUint(uint64(spdIndex), 10), 1)
 	key = strings.Replace(key, "{iface}", ifName, 1)
 	return key
 }
@@ -107,21 +109,9 @@ func ParseSPDInterfaceKey(key string) (spdIndex string, iface string, isSPDIface
 
 // SPDPolicyKey returns the key used to represent binding between the given policy
 // (security association) and the security policy database.
-func SPDPolicyKey(spdIndex string, saIndex string) string {
-	if spdIndex == "" {
-		spdIndex = InvalidKeyPart
-	}
-	if _, err := strconv.Atoi(spdIndex); err != nil {
-		spdIndex = InvalidKeyPart
-	}
-	if saIndex == "" {
-		saIndex = InvalidKeyPart
-	}
-	if _, err := strconv.Atoi(saIndex); err != nil {
-		saIndex = InvalidKeyPart
-	}
-	key := strings.Replace(spdPolicyKeyTemplate, "{spd}", spdIndex, 1)
-	key = strings.Replace(key, "{sa}", saIndex, 1)
+func SPDPolicyKey(spdIndex uint32, saIndex uint32) string {
+	key := strings.Replace(spdPolicyKeyTemplate, "{spd}", strconv.FormatUint(uint64(spdIndex), 10), 1)
+	key = strings.Replace(key, "{sa}", strconv.FormatUint(uint64(saIndex), 10), 1)
 	return key
 }
 

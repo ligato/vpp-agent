@@ -16,12 +16,18 @@ package vppcalls
 
 import (
 	"context"
+	"errors"
 	"net"
 
 	"go.ligato.io/cn-infra/v2/logging"
 
 	"go.ligato.io/vpp-agent/v3/plugins/vpp"
 	interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
+)
+
+var (
+	// ErrIPIPUnsupported error is returned if IPIP interface is not supported on given VPP version.
+	ErrIPIPUnsupported = errors.New("IPIP interface not supported")
 )
 
 // InterfaceDetails is the wrapper structure for the interface northbound API structure.
@@ -166,6 +172,11 @@ type InterfaceVppAPI interface {
 	AddGtpuTunnel(ifName string, gtpuLink *interfaces.GtpuLink, multicastIf uint32) (uint32, error)
 	// DelGtpuTunnel removes GTPU interface.
 	DelGtpuTunnel(ifName string, gtpuLink *interfaces.GtpuLink) error
+
+	// AddIpipTunnel adds new IPIP tunnel interface.
+	AddIpipTunnel(ifName string, vrf uint32, ipipLink *interfaces.IPIPLink) (uint32, error)
+	// DelIpipTunnel removes IPIP tunnel interface.
+	DelIpipTunnel(ifName string, ifIdx uint32) error
 
 	// CreateSubif creates sub interface.
 	CreateSubif(ifIdx, vlanID uint32) (swIfIdx uint32, err error)

@@ -33,7 +33,7 @@ enum IntegAlg { // vpp/src/vnet/ipsec/ipsec_sa.h:44
 
 /* Security Policy Database (SPD) */
 message SecurityPolicyDatabase {
-    string index = 1;                           /* Numerical security policy database index, serves as a unique identifier */
+    uint32 index = 1;                           /* Numerical security policy database index, serves as a unique identifier */
 
     message Interface {
         string name = 1;                        /* Name of the related interface */
@@ -41,7 +41,7 @@ message SecurityPolicyDatabase {
     repeated Interface interfaces = 2;          /* List of interfaces belonging to this SPD */
 
     message PolicyEntry {
-        string sa_index = 1;                    /* Security association index */
+        uint32 sa_index = 1;                    /* Security association index */
 
         int32 priority = 2;
         bool is_outbound = 3;
@@ -71,7 +71,7 @@ message SecurityPolicyDatabase {
 
 /* Security Association (SA) */
 message SecurityAssociation {
-    string index = 1;               /* Numerical security association index, serves as a unique identifier */
+    uint32 index = 1;               /* Numerical security association index, serves as a unique identifier */
     uint32 spi = 2;                 /* Security parameter index */
 
     enum IPSecProtocol {
@@ -93,4 +93,17 @@ message SecurityAssociation {
     string tunnel_dst_addr = 11;
 
     bool enable_udp_encap = 12;     /* Enable UDP encapsulation for NAT traversal */
+}
+
+// TunnelProtection allows enabling IPSec tunnel protection on an existing interface
+// (only IPIP tunnel interfaces are currently supported)
+message TunnelProtection {
+    // Name of the interface to be protected with IPSec.
+    string interface = 1;
+
+    // Outbound security associations identified by SA index.
+    repeated uint32 sa_out = 2;
+
+    // Inbound security associations identified by SA index.
+    repeated uint32 sa_in = 3;
 }

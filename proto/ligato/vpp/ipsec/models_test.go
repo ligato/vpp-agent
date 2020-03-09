@@ -102,43 +102,30 @@ func TestParseIPSecSPDNameFromKey(t *testing.T) {
 func TestSPDInterfaceKey(t *testing.T) {
 	tests := []struct {
 		name        string
-		spdIndex    string
+		spdIndex    uint32
 		ifName      string
 		expectedKey string
 	}{
 		{
 			name:        "valid SPD index & iface name",
-			spdIndex:    "1",
+			spdIndex:    1,
 			ifName:      "if1",
 			expectedKey: "vpp/spd/1/interface/if1",
 		},
 		{
 			name:        "empty SPD & valid interface",
-			spdIndex:    "",
 			ifName:      "if1",
-			expectedKey: "vpp/spd/<invalid>/interface/if1",
+			expectedKey: "vpp/spd/0/interface/if1",
 		},
 		{
-			name:        "invalid SPD but valid interface",
-			spdIndex:    "spd1",
-			ifName:      "if1",
-			expectedKey: "vpp/spd/<invalid>/interface/if1",
-		},
-		{
-			name:        "valid SPD but invalid interface",
-			spdIndex:    "1",
+			name:        "invalid interface",
+			spdIndex:    1,
 			ifName:      "",
 			expectedKey: "vpp/spd/1/interface/<invalid>",
 		},
 		{
-			name:        "invalid parameters",
-			spdIndex:    "",
-			ifName:      "",
-			expectedKey: "vpp/spd/<invalid>/interface/<invalid>",
-		},
-		{
 			name:        "Gbe interface",
-			spdIndex:    "1",
+			spdIndex:    1,
 			ifName:      "GigabitEthernet0/a/0",
 			expectedKey: "vpp/spd/1/interface/GigabitEthernet0/a/0",
 		},
@@ -147,7 +134,7 @@ func TestSPDInterfaceKey(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			key := ipsec.SPDInterfaceKey(test.spdIndex, test.ifName)
 			if key != test.expectedKey {
-				t.Errorf("failed for: spdIdx=%s idName=%s\n"+
+				t.Errorf("failed for: spdIdx=%d idName=%s\n"+
 					"expected key:\n\t%q\ngot key:\n\t%q",
 					test.spdIndex, test.ifName, test.expectedKey, key)
 			}
@@ -218,46 +205,31 @@ func TestParseSPDInterfaceKey(t *testing.T) {
 func TestSPDPolicyKey(t *testing.T) {
 	tests := []struct {
 		name        string
-		spdIndex    string
-		saIndex     string
+		spdIndex    uint32
+		saIndex     uint32
 		expectedKey string
 	}{
 		{
 			name:        "valid SPD & SA index",
-			spdIndex:    "1",
-			saIndex:     "2",
+			spdIndex:    1,
+			saIndex:     2,
 			expectedKey: "vpp/spd/1/sa/2",
 		},
 		{
 			name:        "empty SPD & valid SA",
-			spdIndex:    "",
-			saIndex:     "2",
-			expectedKey: "vpp/spd/<invalid>/sa/2",
+			saIndex:     2,
+			expectedKey: "vpp/spd/0/sa/2",
 		},
 		{
-			name:        "invalid SPD and empty SA",
-			spdIndex:    "spd1",
-			saIndex:     "",
-			expectedKey: "vpp/spd/<invalid>/sa/<invalid>",
-		},
-		{
-			name:        "valid SPD but invalid SA",
-			spdIndex:    "1",
-			saIndex:     "sa2",
-			expectedKey: "vpp/spd/1/sa/<invalid>",
-		},
-		{
-			name:        "invalid parameters",
-			spdIndex:    "",
-			saIndex:     "",
-			expectedKey: "vpp/spd/<invalid>/sa/<invalid>",
+			name:        "empty SPD and empty SA",
+			expectedKey: "vpp/spd/0/sa/0",
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			key := ipsec.SPDPolicyKey(test.spdIndex, test.saIndex)
 			if key != test.expectedKey {
-				t.Errorf("failed for: spdIdx=%s saIdx=%s\n"+
+				t.Errorf("failed for: spdIdx=%d saIdx=%d\n"+
 					"expected key:\n\t%q\ngot key:\n\t%q",
 					test.spdIndex, test.saIndex, test.expectedKey, key)
 			}
