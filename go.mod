@@ -50,7 +50,7 @@ require (
 	github.com/vishvananda/netlink v0.0.0-20180910184128-56b1bd27a9a3
 	github.com/vishvananda/netns v0.0.0-20180720170159-13995c7128cc
 	github.com/yuin/gopher-lua v0.0.0-20190514113301-1cd887cd7036 // indirect
-	go.ligato.io/cn-infra/v2 v2.5.0-alpha.0.20200224101443-4cf6c674e05d
+	go.ligato.io/cn-infra/v2 v2.5.0-alpha.0.20200313154441-b0d4c1b11c73
 	go.uber.org/multierr v1.2.0 // indirect
 	golang.org/x/crypto v0.0.0-20191206172530-e9b2fee46413 // indirect
 	golang.org/x/net v0.0.0-20190620200207-3b0461eec859
