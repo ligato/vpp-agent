@@ -63,6 +63,7 @@ type Config struct {
 
 func DefaultConfig() *Config {
 	return &Config{
+		ReconnectResync:          true,
 		HealthCheckProbeInterval: time.Second,
 		HealthCheckReplyTimeout:  250 * time.Millisecond,
 		HealthCheckThreshold:     1,
