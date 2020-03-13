@@ -24,7 +24,7 @@ import (
 
 var (
 	app       = "vpp-agent"
-	version   = "v3.1.0-dev"
+	version   = "v3.1.0"
 	gitCommit = "unknown"
 	gitBranch = "HEAD"
 	buildUser = "unknown"
