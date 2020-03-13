@@ -56,7 +56,10 @@ RELEASE CHANGELOG TEMPLATE:
 # [3.1.0](https://github.com/ligato/vpp-agent/compare/v3.0.0...v3.1.0) (2020-03-13)
 
 ### BREAKING CHANGES
-* Switch cn-infra dependency to using vanity import path (`go.ligato.io/cn-infra/v2`) (https://github.com/ligato/vpp-agent/pull/1620)
+* Switch cn-infra dependency to using vanity import path (https://github.com/ligato/vpp-agent/pull/1620)
+
+  To migrate, replace all cn-infra import paths from `github.com/ligato/cn-infra` to `go.ligato.io/cn-infra/v2`.
+  And to update cn-infra, run `go get -u go.ligato.io/cn-infra/v2@master`.
 
 ### Bug Fixes
 * Add missing models to ConfigData (https://github.com/ligato/vpp-agent/pull/1625)
