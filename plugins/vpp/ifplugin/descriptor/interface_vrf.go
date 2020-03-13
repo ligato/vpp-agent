@@ -70,10 +70,7 @@ func (d *InterfaceVrfDescriptor) IsInterfaceVrfKey(key string) bool {
 		return true
 	}
 	_, _, isIfaceInherVrfKey := interfaces.ParseInterfaceInheritedVrfKey(key)
-	if isIfaceInherVrfKey {
-		return true
-	}
-	return false
+	return isIfaceInherVrfKey
 }
 
 // Create puts interface into the given VRF table.

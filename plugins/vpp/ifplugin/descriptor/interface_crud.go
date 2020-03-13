@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
+
 	"go.ligato.io/vpp-agent/v3/plugins/vpp"
 
 	"go.ligato.io/vpp-agent/v3/pkg/models"
@@ -61,8 +62,9 @@ func (d *InterfaceDescriptor) Create(key string, intf *interfaces.Interface) (me
 			d.log.Error(err)
 			return nil, err
 		}
-		ifIdx, err = d.ifHandler.AddMemifInterface(context.TODO(), intf.Name, intf.GetMemif(), socketID)
+		ifIdx, err = d.ifHandler.AddMemifInterface(ctx, intf.Name, intf.GetMemif(), socketID)
 		if err != nil {
+			err := errors.WithMessagef(err, "adding memif interface %s (socketID: %d) failed", intf.Name, socketID)
 			d.log.Error(err)
 			return nil, err
 		}

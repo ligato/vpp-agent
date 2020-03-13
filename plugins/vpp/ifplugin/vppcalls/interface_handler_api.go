@@ -269,9 +269,9 @@ type InterfaceVppRead interface {
 	// DumpDhcpClients dumps DHCP-related information for all interfaces.
 	DumpDhcpClients() (map[uint32]*Dhcp, error)
 	// WatchInterfaceEvents starts watching for interface events.
-	WatchInterfaceEvents(ch chan<- *InterfaceEvent) error
+	WatchInterfaceEvents(ctx context.Context, events chan<- *InterfaceEvent) error
 	// WatchDHCPLeases starts watching for DHCP leases.
-	WatchDHCPLeases(ch chan<- *Lease) error
+	WatchDHCPLeases(ctx context.Context, leases chan<- *Lease) error
 }
 
 var Handler = vpp.RegisterHandler(vpp.HandlerDesc{
