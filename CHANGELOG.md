@@ -4,6 +4,7 @@
 
 ## Release Notes
 
+- [v3.1.0](#v3.1.0)
 - [v3.0.0](#v3.0.0)
   - [v3.0.1](#v3.0.1)
 - [v2.5.0](#v2.5.0)
@@ -51,11 +52,30 @@ RELEASE CHANGELOG TEMPLATE:
 ### Documentation
 -->
 
+<a name="v3.1.0"></a>
+# [3.1.0](https://github.com/ligato/vpp-agent/compare/v3.0.0...v3.1.0) (2020-03-13)
+
+### BREAKING CHANGES
+* Switch cn-infra dependency to using vanity import path (`go.ligato.io/cn-infra/v2`) (https://github.com/ligato/vpp-agent/pull/1620)
+
+### Bug Fixes
+* Add missing models to ConfigData (https://github.com/ligato/vpp-agent/pull/1625)
+* Fix watching VPP events (https://github.com/ligato/vpp-agent/pull/1640)
+
+### Features
+* Allow customizing polling from stats poller (https://github.com/ligato/vpp-agent/pull/1634)
+* IPIP tunnel + IPSec tunnel protection support (https://github.com/ligato/vpp-agent/pull/1638)
+* Add prometheus metrics to govppmux (https://github.com/ligato/vpp-agent/pull/1626)
+* Add prometheus metrics to kvscheduler (https://github.com/ligato/vpp-agent/pull/1626)
+
+### Improvements
+* Improve performance testing suite
+
 <a name="v3.0.1"></a>
 # [3.0.1](https://github.com/ligato/vpp-agent/compare/v3.0.0...v3.0.1) (2020-02-20)
 
 ### Bug Fixes
-* fix: Add missing models to ConfigData (https://github.com/ligato/vpp-agent/pull/1625)
+* Add missing models to ConfigData (https://github.com/ligato/vpp-agent/pull/1625)
 
 <a name="v3.0.0"></a>
 # [3.0.0](https://github.com/ligato/vpp-agent/compare/v2.5.0...master) (2020-02-10)
