@@ -59,6 +59,7 @@ RELEASE CHANGELOG TEMPLATE:
 * Switch cn-infra dependency to using vanity import path [#1620](https://github.com/ligato/vpp-agent/pull/1620)
 
   To migrate, replace all cn-infra import paths (`github.com/ligato/cn-infra` -> `go.ligato.io/cn-infra/v2`)
+
   To update cn-infra dependency, run `go get -u go.ligato.io/cn-infra/v2@master`.
 
 ### Bug Fixes
