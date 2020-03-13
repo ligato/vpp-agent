@@ -56,20 +56,20 @@ RELEASE CHANGELOG TEMPLATE:
 # [3.1.0](https://github.com/ligato/vpp-agent/compare/v3.0.0...v3.1.0) (2020-03-13)
 
 ### BREAKING CHANGES
-* Switch cn-infra dependency to using vanity import path (https://github.com/ligato/vpp-agent/pull/1620)
+* Switch cn-infra dependency to using vanity import path [#1620](https://github.com/ligato/vpp-agent/pull/1620)
 
-  To migrate, replace all cn-infra import paths from `github.com/ligato/cn-infra` to `go.ligato.io/cn-infra/v2`.
-  And to update cn-infra, run `go get -u go.ligato.io/cn-infra/v2@master`.
+  To migrate, replace all cn-infra import paths (`github.com/ligato/cn-infra` -> `go.ligato.io/cn-infra/v2`)
+  To update cn-infra dependency, run `go get -u go.ligato.io/cn-infra/v2@master`.
 
 ### Bug Fixes
-* Add missing models to ConfigData (https://github.com/ligato/vpp-agent/pull/1625)
-* Fix watching VPP events (https://github.com/ligato/vpp-agent/pull/1640)
+* Add missing models to ConfigData [#1625](https://github.com/ligato/vpp-agent/pull/1625)
+* Fix watching VPP events [#1640](https://github.com/ligato/vpp-agent/pull/1640)
 
 ### Features
-* Allow customizing polling from stats poller (https://github.com/ligato/vpp-agent/pull/1634)
-* IPIP tunnel + IPSec tunnel protection support (https://github.com/ligato/vpp-agent/pull/1638)
-* Add prometheus metrics to govppmux (https://github.com/ligato/vpp-agent/pull/1626)
-* Add prometheus metrics to kvscheduler (https://github.com/ligato/vpp-agent/pull/1626)
+* Allow customizing polling from stats poller [#1634](https://github.com/ligato/vpp-agent/pull/1634)
+* IPIP tunnel + IPSec tunnel protection support [#1638](https://github.com/ligato/vpp-agent/pull/1638)
+* Add prometheus metrics to govppmux [#1626](https://github.com/ligato/vpp-agent/pull/1626)
+* Add prometheus metrics to kvscheduler [#1630](https://github.com/ligato/vpp-agent/pull/1630)
 
 ### Improvements
 * Improve performance testing suite
