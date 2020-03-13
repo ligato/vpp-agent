@@ -50,8 +50,9 @@ type InterfaceStateUpdater struct {
 
 	ifMetaChan chan ifaceidx.IfaceMetadataDto
 
-	ifHandler vppcalls.InterfaceVppAPI
-	ifEvents  chan *vppcalls.InterfaceEvent
+	ifHandler      vppcalls.InterfaceVppAPI
+	ifEvents       chan *vppcalls.InterfaceEvent
+	cancelIfEvents func()
 
 	ifsForUpdate   map[uint32]struct{}
 	lastIfCounters map[uint32]govppapi.InterfaceCounters
@@ -60,6 +61,7 @@ type InterfaceStateUpdater struct {
 	lastIfNotif time.Time
 	lastIfMeta  time.Time
 
+	ctx    context.Context
 	cancel context.CancelFunc // cancel can be used to cancel all goroutines and their jobs inside of the plugin
 	wg     sync.WaitGroup     // wait group that allows to wait until all goroutines of the plugin have finished
 }
@@ -96,26 +98,25 @@ func (c *InterfaceStateUpdater) Init(
 	c.ifEvents = make(chan *vppcalls.InterfaceEvent, 1000)
 
 	// Create child context
-	var childCtx context.Context
-	childCtx, c.cancel = context.WithCancel(ctx)
+	c.ctx, c.cancel = context.WithCancel(ctx)
 
 	// Watch for incoming notifications
 	c.wg.Add(1)
-	go c.watchVPPNotifications(childCtx)
+	go c.watchVPPNotifications(c.ctx)
 
 	// Periodically read VPP counters and combined counters for VPP statistics
 	if disableInterfaceStats {
 		c.log.Warnf("reading interface stats is DISABLED!")
 	} else if readCounters {
 		c.wg.Add(1)
-		go c.startReadingCounters(childCtx)
+		go c.startReadingCounters(c.ctx)
 	}
 
 	if disableStatusPublishing {
 		c.log.Warnf("publishing interface status is DISABLED!")
 	} else {
 		c.wg.Add(1)
-		go c.startUpdatingIfStateDetails(childCtx)
+		go c.startUpdatingIfStateDetails(c.ctx)
 	}
 
 	return nil
@@ -123,19 +124,15 @@ func (c *InterfaceStateUpdater) Init(
 
 // AfterInit subscribes for watching VPP notifications on previously initialized channel
 func (c *InterfaceStateUpdater) AfterInit() error {
-	err := c.subscribeVPPNotifications()
-	if err != nil {
+	if err := c.subscribeVPPNotifications(c.ctx); err != nil {
 		return err
 	}
-	return nil
-}
-
-// subscribeVPPNotifications subscribes for interface state notifications from VPP.
-func (c *InterfaceStateUpdater) subscribeVPPNotifications() error {
-	if err := c.ifHandler.WatchInterfaceEvents(c.ifEvents); err != nil {
-		return err
-	}
-
+	c.vppClient.OnReconnect(func() {
+		c.cancelIfEvents()
+		if err := c.subscribeVPPNotifications(c.ctx); err != nil {
+			c.log.Warnf("WatchInterfaceEvents failed: %v", err)
+		}
+	})
 	return nil
 }
 
@@ -143,14 +140,15 @@ func (c *InterfaceStateUpdater) subscribeVPPNotifications() error {
 func (c *InterfaceStateUpdater) Close() error {
 	c.cancel()
 	c.wg.Wait()
+	return nil
+}
 
-	// TODO: handle unsubscribing
-	/*if c.vppNotifSubs != nil {
-		if err := c.vppNotifSubs.Unsubscribe(); err != nil {
-			return errors.Errorf("failed to unsubscribe interface state notification on close: %v", err)
-		}
-	}*/
-
+// subscribeVPPNotifications subscribes for interface state notifications from VPP.
+func (c *InterfaceStateUpdater) subscribeVPPNotifications(ctx context.Context) error {
+	ctx, c.cancelIfEvents = context.WithCancel(ctx)
+	if err := c.ifHandler.WatchInterfaceEvents(ctx, c.ifEvents); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -387,7 +385,6 @@ func (c *InterfaceStateUpdater) getIfStateDataWLookup(ifIdx uint32) (*intf.Inter
 			Name:       ifName,
 			Statistics: &intf.InterfaceState_Statistics{},
 		}
-
 		c.ifState[ifIdx] = ifState
 		found = true
 	}

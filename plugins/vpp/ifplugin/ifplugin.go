@@ -76,7 +76,6 @@ type IfPlugin struct {
 	// descriptors
 	linkStateDescriptor *descriptor.LinkStateDescriptor
 	dhcpDescriptor      *descriptor.DHCPDescriptor
-	spanDescriptor      *descriptor.SpanDescriptor
 
 	// from config file
 	defaultMtu uint32
@@ -243,8 +242,7 @@ func (p *IfPlugin) Init() (err error) {
 		}
 	}
 
-	err = p.ifStateUpdater.Init(p.ctx, p.Log, p.KVScheduler, p.VPP, p.intfIndex,
-		ifNotifHandler, p.publishStats)
+	err = p.ifStateUpdater.Init(p.ctx, p.Log, p.KVScheduler, p.VPP, p.intfIndex, ifNotifHandler, p.publishStats)
 	if err != nil {
 		return err
 	}
