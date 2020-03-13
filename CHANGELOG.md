@@ -73,7 +73,7 @@ RELEASE CHANGELOG TEMPLATE:
 * Add prometheus metrics to kvscheduler [#1630](https://github.com/ligato/vpp-agent/pull/1630)
 
 ### Improvements
-* Improve performance testing suite
+* Improve performance testing suite [#1630](https://github.com/ligato/vpp-agent/pull/1630)
 
 <a name="v3.0.1"></a>
 # [3.0.1](https://github.com/ligato/vpp-agent/compare/v3.0.0...v3.0.1) (2020-02-20)
