@@ -91,6 +91,8 @@ type PutDSL interface {
 	IPSecSA(sa *ipsec.SecurityAssociation) PutDSL
 	// IPSecSPD adds request to create a new Security Policy Database
 	IPSecSPD(spd *ipsec.SecurityPolicyDatabase) PutDSL
+	// IPSecTunnelProtection adds request to create a new IPSec tunnel protection
+	IPSecTunnelProtection(tp *ipsec.TunnelProtection) PutDSL
 	// PuntIPRedirect adds request to create or update rule to punt L3 traffic via interface.
 	PuntIPRedirect(val *punt.IPRedirect) PutDSL
 	// PuntToHost adds request to create or update rule to punt L4 traffic to a host.
@@ -145,9 +147,11 @@ type DeleteDSL interface {
 	// NAT44AddressPool adds a request to delete NAT44 address pool.
 	NAT44AddressPool(pool *nat.Nat44AddressPool) DeleteDSL
 	// IPSecSA adds request to delete a Security Association
-	IPSecSA(saIndex string) DeleteDSL
+	IPSecSA(saIndex uint32) DeleteDSL
 	// IPSecSPD adds request to delete a Security Policy Database
-	IPSecSPD(spdIndex string) DeleteDSL
+	IPSecSPD(spdIndex uint32) DeleteDSL
+	// IPSecTunnelProtection adds request to delete an IPSec tunnel protection from an interface
+	IPSecTunnelProtection(tp *ipsec.TunnelProtection) DeleteDSL
 	// PuntIPRedirect adds request to delete a rule used to punt L3 traffic via interface.
 	PuntIPRedirect(l3Proto punt.L3Protocol, txInterface string) DeleteDSL
 	// PuntToHost adds request to delete a rule used to punt L4 traffic to a host.

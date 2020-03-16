@@ -221,6 +221,14 @@ func (dsl *DataResyncDSL) IPSecSPD(spd *ipsec.SecurityPolicyDatabase) vppclient.
 	return dsl
 }
 
+// IPSecTunnelProtection adds request to RESYNC an IPSec tunnel protection
+func (dsl *DataResyncDSL) IPSecTunnelProtection(tp *ipsec.TunnelProtection) vppclient.DataResyncDSL {
+	key := models.Key(tp)
+	dsl.txn.Put(key, tp)
+	dsl.txnKeys = append(dsl.txnKeys, key)
+	return dsl
+}
+
 // PuntIPRedirect adds request to RESYNC a rule used to punt L3 traffic via interface.
 func (dsl *DataResyncDSL) PuntIPRedirect(val *punt.IPRedirect) vppclient.DataResyncDSL {
 	key := punt.IPRedirectKey(val.L3Protocol, val.TxInterface)

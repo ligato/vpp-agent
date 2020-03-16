@@ -16,8 +16,6 @@ package vpp1908
 
 import (
 	"encoding/hex"
-	"strconv"
-
 	"github.com/pkg/errors"
 	"go.ligato.io/cn-infra/v2/utils/addrs"
 
@@ -71,6 +69,33 @@ func (h *IPSecVppHandler) AddSA(sa *ipsec.SecurityAssociation) error {
 // DeleteSA implements IPSec handler.
 func (h *IPSecVppHandler) DeleteSA(sa *ipsec.SecurityAssociation) error {
 	return h.sadAddDelEntry(sa, false)
+}
+
+// AddTunnelProtection implements IPSec handler for adding a tunnel protection.
+func (h *IPSecVppHandler) AddTunnelProtection(tp *ipsec.TunnelProtection) error {
+	ifaceMeta, found := h.ifIndexes.LookupByName(tp.Interface)
+	if !found {
+		return errors.New("failed to get interface metadata")
+	}
+	return h.tunProtectAddUpdateEntry(tp, ifaceMeta.SwIfIndex)
+}
+
+// UpdateTunnelProtection implements IPSec handler for updating a tunnel protection.
+func (h *IPSecVppHandler) UpdateTunnelProtection(tp *ipsec.TunnelProtection) error {
+	ifaceMeta, found := h.ifIndexes.LookupByName(tp.Interface)
+	if !found {
+		return errors.New("failed to get interface metadata")
+	}
+	return h.tunProtectAddUpdateEntry(tp, ifaceMeta.SwIfIndex)
+}
+
+// DeleteTunnelProtection implements IPSec handler for deleting a tunnel protection.
+func (h *IPSecVppHandler) DeleteTunnelProtection(tp *ipsec.TunnelProtection) error {
+	ifaceMeta, found := h.ifIndexes.LookupByName(tp.Interface)
+	if !found {
+		return errors.New("failed to get interface metadata")
+	}
+	return h.tunProtectDelEntry(tp, ifaceMeta.SwIfIndex)
 }
 
 func (h *IPSecVppHandler) spdAddDel(spdID uint32, isAdd bool) error {
@@ -168,11 +193,6 @@ func (h *IPSecVppHandler) sadAddDelEntry(sa *ipsec.SecurityAssociation, isAdd bo
 		return err
 	}
 
-	saID, err := strconv.Atoi(sa.Index)
-	if err != nil {
-		return err
-	}
-
 	var flags api.IpsecSadFlags
 	if sa.UseEsn {
 		flags |= api.IPSEC_API_SAD_FLAG_USE_ESN
@@ -206,7 +226,7 @@ func (h *IPSecVppHandler) sadAddDelEntry(sa *ipsec.SecurityAssociation, isAdd bo
 	req := &api.IpsecSadEntryAddDel{
 		IsAdd: boolToUint(isAdd),
 		Entry: api.IpsecSadEntry{
-			SadID:           uint32(saID),
+			SadID:           sa.Index,
 			Spi:             sa.Spi,
 			Protocol:        api.IpsecProto(sa.Protocol),
 			CryptoAlgorithm: api.IpsecCryptoAlg(sa.CryptoAlg),
@@ -230,6 +250,37 @@ func (h *IPSecVppHandler) sadAddDelEntry(sa *ipsec.SecurityAssociation, isAdd bo
 		return err
 	}
 
+	return nil
+}
+
+func (h *IPSecVppHandler) tunProtectAddUpdateEntry(tp *ipsec.TunnelProtection, swIfIndex uint32) error {
+	if len(tp.SaOut) == 0 || len(tp.SaIn) == 0 {
+		return errors.New("missing outbound/inbound SA")
+	}
+	if len(tp.SaIn) > int(^uint8(0)) {
+		return errors.New("invalid number of inbound SAs")
+	}
+	req := &api.IpsecTunnelProtectUpdate{Tunnel: api.IpsecTunnelProtect{
+		SwIfIndex: api.InterfaceIndex(swIfIndex),
+		SaOut:     tp.SaOut[0],
+		SaIn:      tp.SaIn,
+		NSaIn:     uint8(len(tp.SaIn)),
+	}}
+	reply := &api.IpsecTunnelProtectUpdateReply{}
+	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (h *IPSecVppHandler) tunProtectDelEntry(tp *ipsec.TunnelProtection, swIfIndex uint32) error {
+	req := &api.IpsecTunnelProtectDel{
+		SwIfIndex: api.InterfaceIndex(swIfIndex),
+	}
+	reply := &api.IpsecTunnelProtectDelReply{}
+	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
+		return err
+	}
 	return nil
 }
 

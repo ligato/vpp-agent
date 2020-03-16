@@ -45,4 +45,6 @@ type Client interface {
 	IsPluginLoaded(plugin string) bool
 	// BinapiVersion returns preferred binapi version.
 	BinapiVersion() Version
+	// OnReconnect registers handler function to be executed on reconnect.
+	OnReconnect(h func())
 }

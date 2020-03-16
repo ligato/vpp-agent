@@ -297,11 +297,11 @@ type vppClient struct {
 	version vpp.Version
 }
 
-func (m *vppClient) Version() vpp.Version {
-	return m.version
+func (v *vppClient) Version() vpp.Version {
+	return v.version
 }
 
-func (m *vppClient) BinapiVersion() vpp.Version {
+func (v *vppClient) BinapiVersion() vpp.Version {
 	return ""
 }
 
@@ -325,4 +325,8 @@ func (v *vppClient) IsPluginLoaded(plugin string) bool {
 		}
 	}
 	return false
+}
+
+func (v *vppClient) OnReconnect(h func()) {
+	// no-op
 }

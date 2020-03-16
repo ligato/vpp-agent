@@ -251,6 +251,12 @@ func (dsl *PutDSL) IPSecSPD(spd *ipsec.SecurityPolicyDatabase) linuxclient.PutDS
 	return dsl
 }
 
+// IPSecTunnelProtection adds request to delete an IPSec tunnel protection from an interface
+func (dsl *PutDSL) IPSecTunnelProtection(tp *ipsec.TunnelProtection) linuxclient.PutDSL {
+	dsl.vppPut.IPSecTunnelProtection(tp)
+	return dsl
+}
+
 // PuntIPRedirect adds request to create or update rule to punt L3 traffic via interface.
 func (dsl *PutDSL) PuntIPRedirect(val *punt.IPRedirect) linuxclient.PutDSL {
 	dsl.vppPut.PuntIPRedirect(val)
@@ -441,14 +447,20 @@ func (dsl *DeleteDSL) NAT44AddressPool(pool *nat.Nat44AddressPool) linuxclient.D
 }
 
 // IPSecSA adds request to delete a Security Association
-func (dsl *DeleteDSL) IPSecSA(saIndex string) linuxclient.DeleteDSL {
+func (dsl *DeleteDSL) IPSecSA(saIndex uint32) linuxclient.DeleteDSL {
 	dsl.vppDelete.IPSecSA(saIndex)
 	return dsl
 }
 
 // IPSecSPD adds request to delete a Security Policy Database
-func (dsl *DeleteDSL) IPSecSPD(spdIndex string) linuxclient.DeleteDSL {
+func (dsl *DeleteDSL) IPSecSPD(spdIndex uint32) linuxclient.DeleteDSL {
 	dsl.vppDelete.IPSecSPD(spdIndex)
+	return dsl
+}
+
+// IPSecTunnelProtection adds request to delete an IPSec tunnel protection from an interface
+func (dsl *DeleteDSL) IPSecTunnelProtection(tp *ipsec.TunnelProtection) linuxclient.DeleteDSL {
+	dsl.vppDelete.IPSecTunnelProtection(tp)
 	return dsl
 }
 

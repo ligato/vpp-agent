@@ -218,8 +218,8 @@ func (d *DHCPDescriptor) watchDHCPNotifications(ctx context.Context) {
 	defer d.wg.Done()
 	d.log.Debug("Started watcher on DHCP notifications")
 
-	dhcpChan := make(chan *vppcalls.Lease)
-	if err := d.ifHandler.WatchDHCPLeases(dhcpChan); err != nil {
+	dhcpChan := make(chan *vppcalls.Lease, 10)
+	if err := d.ifHandler.WatchDHCPLeases(ctx, dhcpChan); err != nil {
 		d.log.Errorf("watching dhcp leases failed: %v", err)
 		return
 	}
@@ -227,7 +227,7 @@ func (d *DHCPDescriptor) watchDHCPNotifications(ctx context.Context) {
 	for {
 		select {
 		case lease := <-dhcpChan:
-			// interface logical name
+			// Get interface logical name
 			ifName, _, found := d.ifIndex.LookupBySwIfIndex(lease.SwIfIndex)
 			if !found {
 				d.log.Warnf("Interface sw_if_index=%d with DHCP lease was not found in the mapping", lease.SwIfIndex)

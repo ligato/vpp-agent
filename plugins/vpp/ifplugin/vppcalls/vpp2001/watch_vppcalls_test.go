@@ -18,12 +18,11 @@ import (
 	"net"
 	"testing"
 
-	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/interfaces"
+	. "github.com/onsi/gomega"
 
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/dhcp"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/interfaces"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/vppcalls"
-
-	. "github.com/onsi/gomega"
 )
 
 func TestWatchInterfaceEvents(t *testing.T) {
@@ -31,14 +30,14 @@ func TestWatchInterfaceEvents(t *testing.T) {
 	defer ctx.TeardownTestCtx()
 	ctx.MockVpp.MockReply(&interfaces.WantInterfaceEventsReply{})
 	eventsChan := make(chan *vppcalls.InterfaceEvent)
-	err := ifHandler.WatchInterfaceEvents(eventsChan)
+	err := ifHandler.WatchInterfaceEvents(ctx.Context, eventsChan)
 	notifChan := ctx.MockChannel.GetChannel()
 	Expect(notifChan).ToNot(BeNil())
 	Expect(err).To(BeNil())
 
 	notifChan <- &interfaces.SwInterfaceEvent{
 		SwIfIndex: 1,
-		Flags:     2,
+		Flags:     3,
 		Deleted:   true,
 	}
 	var result *vppcalls.InterfaceEvent
@@ -61,7 +60,7 @@ func TestWatchInterfaceEvents(t *testing.T) {
 
 	notifChan <- &interfaces.SwInterfaceEvent{
 		SwIfIndex: 3,
-		Flags:     2,
+		Flags:     3,
 		Deleted:   false,
 	}
 	result = &vppcalls.InterfaceEvent{}
@@ -80,7 +79,7 @@ func TestWatchDHCPLeases(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 	leasesChChan := make(chan *vppcalls.Lease)
-	err := ifHandler.WatchDHCPLeases(leasesChChan)
+	err := ifHandler.WatchDHCPLeases(ctx.Context, leasesChChan)
 	notifChan := ctx.MockChannel.GetChannel()
 	Expect(notifChan).ToNot(BeNil())
 	Expect(err).To(BeNil())

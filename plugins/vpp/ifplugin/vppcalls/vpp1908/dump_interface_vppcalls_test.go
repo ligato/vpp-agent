@@ -25,6 +25,7 @@ import (
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1908/gtpu"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1908/interfaces"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1908/ip"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1908/ipip"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1908/memif"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1908/tapv2"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1908/vpe"
@@ -85,6 +86,10 @@ func TestDumpInterfacesVxLan(t *testing.T) {
 			Name: (&gtpu.GtpuTunnelDump{}).GetMessageName(),
 			Ping: true,
 		},
+		{
+			Name: (&ipip.IpipTunnelDump{}).GetMessageName(),
+			Ping: true,
+		},
 	})
 
 	intfs, err := ifHandler.DumpInterfaces(ctx.Context)
@@ -138,6 +143,10 @@ func TestDumpInterfacesHost(t *testing.T) {
 		},
 		{
 			Name: (&gtpu.GtpuTunnelDump{}).GetMessageName(),
+			Ping: true,
+		},
+		{
+			Name: (&ipip.IpipTunnelDump{}).GetMessageName(),
 			Ping: true,
 		},
 	})
@@ -205,6 +214,10 @@ func TestDumpInterfacesMemif(t *testing.T) {
 		},
 		{
 			Name: (&gtpu.GtpuTunnelDump{}).GetMessageName(),
+			Ping: true,
+		},
+		{
+			Name: (&ipip.IpipTunnelDump{}).GetMessageName(),
 			Ping: true,
 		},
 	})
@@ -278,6 +291,10 @@ func TestDumpInterfacesTap2(t *testing.T) {
 		},
 		{
 			Name: (&gtpu.GtpuTunnelDump{}).GetMessageName(),
+			Ping: true,
+		},
+		{
+			Name: (&ipip.IpipTunnelDump{}).GetMessageName(),
 			Ping: true,
 		},
 	})
@@ -377,6 +394,10 @@ func TestDumpInterfacesRxPlacement(t *testing.T) {
 		},
 		{
 			Name: (&gtpu.GtpuTunnelDump{}).GetMessageName(),
+			Ping: true,
+		},
+		{
+			Name: (&ipip.IpipTunnelDump{}).GetMessageName(),
 			Ping: true,
 		},
 		{
@@ -492,6 +513,10 @@ func TestDumpInterfacesGtpu(t *testing.T) {
 				Teid:       100,
 			},
 		},
+		{
+			Name: (&ipip.IpipTunnelDump{}).GetMessageName(),
+			Ping: true,
+		},
 	})
 
 	intfs, err := ifHandler.DumpInterfaces(ctx.Context)
@@ -505,4 +530,78 @@ func TestDumpInterfacesGtpu(t *testing.T) {
 	Expect(intface.GetGtpu().DstAddr).To(Equal("d3ad:beef:feed:face:cafe:babe:baad:c0de"))
 	Expect(intface.GetGtpu().EncapVrfId).To(Equal(uint32(16)))
 	Expect(intface.GetGtpu().Teid).To(Equal(uint32(100)))
+}
+
+// Test dump of interfaces with IPIP type
+func TestDumpInterfacesIPIP(t *testing.T) {
+	ctx, ifHandler := ifTestSetup(t)
+	defer ctx.TeardownTestCtx()
+
+	ctx.MockReplies([]*vppmock.HandleReplies{
+		{
+			Name: (&interfaces.SwInterfaceDump{}).GetMessageName(),
+			Ping: true,
+			Message: &interfaces.SwInterfaceDetails{
+				InterfaceName: "vxlan1",
+			},
+		},
+		{
+			Name:    (&interfaces.SwInterfaceGetTable{}).GetMessageName(),
+			Ping:    false,
+			Message: &interfaces.SwInterfaceGetTableReply{},
+		},
+		{
+			Name:    (&ip.IPAddressDump{}).GetMessageName(),
+			Ping:    true,
+			Message: &ip.IPAddressDetails{},
+		},
+		{
+			Name: (&memif.MemifSocketFilenameDump{}).GetMessageName(),
+			Ping: true,
+		},
+		{
+			Name: (&memif.MemifDump{}).GetMessageName(),
+			Ping: true,
+		},
+		{
+			Name: (&tapv2.SwInterfaceTapV2Dump{}).GetMessageName(),
+			Ping: true,
+		},
+		{
+			Name: (&vxlan.VxlanTunnelDump{}).GetMessageName(),
+			Ping: true,
+		},
+		{
+			Name: (&gtpu.GtpuTunnelDump{}).GetMessageName(),
+			Ping: true,
+		},
+		{
+			Name: (&ipip.IpipTunnelDump{}).GetMessageName(),
+			Ping: true,
+			Message: &ipip.IpipTunnelDetails{
+				Tunnel: ipip.IpipTunnel{
+					Dst: ipip.Address{
+						Af: ipip.ADDRESS_IP6,
+						Un: ipip.AddressUnionIP6(ipip.IP6Address{
+							0xde, 0xad, 0xbe, 0xef, 0xfe, 0xed, 0xfa, 0xce, 0xca, 0xfe, 0xba, 0xbe, 0xba, 0xad, 0xc0, 0xde,
+						})},
+					Src: ipip.Address{
+						Af: ipip.ADDRESS_IP6,
+						Un: ipip.AddressUnionIP6(ipip.IP6Address{
+							0xd3, 0xad, 0xbe, 0xef, 0xfe, 0xed, 0xfa, 0xce, 0xca, 0xfe, 0xba, 0xbe, 0xba, 0xad, 0xc0, 0xde,
+						})},
+				},
+			},
+		},
+	})
+
+	intfs, err := ifHandler.DumpInterfaces(ctx.Context)
+	Expect(err).To(BeNil())
+	Expect(intfs).To(HaveLen(1))
+	intface := intfs[0].Interface
+
+	// Check IPIP
+	Expect(intface.GetIpip()).ToNot(BeNil())
+	Expect(intface.GetIpip().DstAddr).To(Equal("dead:beef:feed:face:cafe:babe:baad:c0de"))
+	Expect(intface.GetIpip().SrcAddr).To(Equal("d3ad:beef:feed:face:cafe:babe:baad:c0de"))
 }

@@ -26,6 +26,7 @@ import (
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/gtpu"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/interfaces"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ip"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ipip"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ipsec"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/l2"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/l3xc"
@@ -44,7 +45,7 @@ import (
 )
 
 // Version is used to identify VPP binapi version
-const Version = "20.01-rc0~379"
+const Version = "20.01-rc2~11"
 
 func init() {
 	binapi.Versions[Version] = binapi.VersionMsgs{
@@ -65,6 +66,7 @@ func init() {
 			vpe.AllMessages,
 			vxlan.AllMessages,
 			vxlan_gpe.AllMessages,
+			ipip.AllMessages,
 		),
 		Plugins: vpp.Messages(
 			abf.AllMessages,
@@ -105,6 +107,7 @@ func init() {
 //go:generate binapigen --input-file=$VPP_API_DIR/core/vpe.api.json
 //go:generate binapigen --input-file=$VPP_API_DIR/core/vxlan.api.json
 //go:generate binapigen --input-file=$VPP_API_DIR/core/vxlan_gpe.api.json
+//go:generate binapigen --input-file=$VPP_API_DIR/core/ipip.api.json
 //go:generate binapigen --input-file=$VPP_API_DIR/plugins/abf.api.json
 //go:generate binapigen --input-file=$VPP_API_DIR/plugins/acl.api.json
 //go:generate binapigen --input-file=$VPP_API_DIR/plugins/gtpu.api.json

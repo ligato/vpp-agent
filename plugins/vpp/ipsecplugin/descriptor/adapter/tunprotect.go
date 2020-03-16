@@ -5,50 +5,49 @@ package adapter
 import (
 	"github.com/golang/protobuf/proto"
 	. "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
-	"go.ligato.io/vpp-agent/v3/pkg/idxvpp"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/vpp/ipsec"
 )
 
 ////////// type-safe key-value pair with metadata //////////
 
-type SPDKVWithMetadata struct {
+type TunProtectKVWithMetadata struct {
 	Key      string
-	Value    *vpp_ipsec.SecurityPolicyDatabase
-	Metadata *idxvpp.OnlyIndex
+	Value    *vpp_ipsec.TunnelProtection
+	Metadata interface{}
 	Origin   ValueOrigin
 }
 
 ////////// type-safe Descriptor structure //////////
 
-type SPDDescriptor struct {
+type TunProtectDescriptor struct {
 	Name                 string
 	KeySelector          KeySelector
 	ValueTypeName        string
 	KeyLabel             func(key string) string
-	ValueComparator      func(key string, oldValue, newValue *vpp_ipsec.SecurityPolicyDatabase) bool
+	ValueComparator      func(key string, oldValue, newValue *vpp_ipsec.TunnelProtection) bool
 	NBKeyPrefix          string
 	WithMetadata         bool
 	MetadataMapFactory   MetadataMapFactory
-	Validate             func(key string, value *vpp_ipsec.SecurityPolicyDatabase) error
-	Create               func(key string, value *vpp_ipsec.SecurityPolicyDatabase) (metadata *idxvpp.OnlyIndex, err error)
-	Delete               func(key string, value *vpp_ipsec.SecurityPolicyDatabase, metadata *idxvpp.OnlyIndex) error
-	Update               func(key string, oldValue, newValue *vpp_ipsec.SecurityPolicyDatabase, oldMetadata *idxvpp.OnlyIndex) (newMetadata *idxvpp.OnlyIndex, err error)
-	UpdateWithRecreate   func(key string, oldValue, newValue *vpp_ipsec.SecurityPolicyDatabase, metadata *idxvpp.OnlyIndex) bool
-	Retrieve             func(correlate []SPDKVWithMetadata) ([]SPDKVWithMetadata, error)
+	Validate             func(key string, value *vpp_ipsec.TunnelProtection) error
+	Create               func(key string, value *vpp_ipsec.TunnelProtection) (metadata interface{}, err error)
+	Delete               func(key string, value *vpp_ipsec.TunnelProtection, metadata interface{}) error
+	Update               func(key string, oldValue, newValue *vpp_ipsec.TunnelProtection, oldMetadata interface{}) (newMetadata interface{}, err error)
+	UpdateWithRecreate   func(key string, oldValue, newValue *vpp_ipsec.TunnelProtection, metadata interface{}) bool
+	Retrieve             func(correlate []TunProtectKVWithMetadata) ([]TunProtectKVWithMetadata, error)
 	IsRetriableFailure   func(err error) bool
-	DerivedValues        func(key string, value *vpp_ipsec.SecurityPolicyDatabase) []KeyValuePair
-	Dependencies         func(key string, value *vpp_ipsec.SecurityPolicyDatabase) []Dependency
+	DerivedValues        func(key string, value *vpp_ipsec.TunnelProtection) []KeyValuePair
+	Dependencies         func(key string, value *vpp_ipsec.TunnelProtection) []Dependency
 	RetrieveDependencies []string /* descriptor name */
 }
 
 ////////// Descriptor adapter //////////
 
-type SPDDescriptorAdapter struct {
-	descriptor *SPDDescriptor
+type TunProtectDescriptorAdapter struct {
+	descriptor *TunProtectDescriptor
 }
 
-func NewSPDDescriptor(typedDescriptor *SPDDescriptor) *KVDescriptor {
-	adapter := &SPDDescriptorAdapter{descriptor: typedDescriptor}
+func NewTunProtectDescriptor(typedDescriptor *TunProtectDescriptor) *KVDescriptor {
+	adapter := &TunProtectDescriptorAdapter{descriptor: typedDescriptor}
 	descriptor := &KVDescriptor{
 		Name:                 typedDescriptor.Name,
 		KeySelector:          typedDescriptor.KeySelector,
@@ -90,88 +89,88 @@ func NewSPDDescriptor(typedDescriptor *SPDDescriptor) *KVDescriptor {
 	return descriptor
 }
 
-func (da *SPDDescriptorAdapter) ValueComparator(key string, oldValue, newValue proto.Message) bool {
-	typedOldValue, err1 := castSPDValue(key, oldValue)
-	typedNewValue, err2 := castSPDValue(key, newValue)
+func (da *TunProtectDescriptorAdapter) ValueComparator(key string, oldValue, newValue proto.Message) bool {
+	typedOldValue, err1 := castTunProtectValue(key, oldValue)
+	typedNewValue, err2 := castTunProtectValue(key, newValue)
 	if err1 != nil || err2 != nil {
 		return false
 	}
 	return da.descriptor.ValueComparator(key, typedOldValue, typedNewValue)
 }
 
-func (da *SPDDescriptorAdapter) Validate(key string, value proto.Message) (err error) {
-	typedValue, err := castSPDValue(key, value)
+func (da *TunProtectDescriptorAdapter) Validate(key string, value proto.Message) (err error) {
+	typedValue, err := castTunProtectValue(key, value)
 	if err != nil {
 		return err
 	}
 	return da.descriptor.Validate(key, typedValue)
 }
 
-func (da *SPDDescriptorAdapter) Create(key string, value proto.Message) (metadata Metadata, err error) {
-	typedValue, err := castSPDValue(key, value)
+func (da *TunProtectDescriptorAdapter) Create(key string, value proto.Message) (metadata Metadata, err error) {
+	typedValue, err := castTunProtectValue(key, value)
 	if err != nil {
 		return nil, err
 	}
 	return da.descriptor.Create(key, typedValue)
 }
 
-func (da *SPDDescriptorAdapter) Update(key string, oldValue, newValue proto.Message, oldMetadata Metadata) (newMetadata Metadata, err error) {
-	oldTypedValue, err := castSPDValue(key, oldValue)
+func (da *TunProtectDescriptorAdapter) Update(key string, oldValue, newValue proto.Message, oldMetadata Metadata) (newMetadata Metadata, err error) {
+	oldTypedValue, err := castTunProtectValue(key, oldValue)
 	if err != nil {
 		return nil, err
 	}
-	newTypedValue, err := castSPDValue(key, newValue)
+	newTypedValue, err := castTunProtectValue(key, newValue)
 	if err != nil {
 		return nil, err
 	}
-	typedOldMetadata, err := castSPDMetadata(key, oldMetadata)
+	typedOldMetadata, err := castTunProtectMetadata(key, oldMetadata)
 	if err != nil {
 		return nil, err
 	}
 	return da.descriptor.Update(key, oldTypedValue, newTypedValue, typedOldMetadata)
 }
 
-func (da *SPDDescriptorAdapter) Delete(key string, value proto.Message, metadata Metadata) error {
-	typedValue, err := castSPDValue(key, value)
+func (da *TunProtectDescriptorAdapter) Delete(key string, value proto.Message, metadata Metadata) error {
+	typedValue, err := castTunProtectValue(key, value)
 	if err != nil {
 		return err
 	}
-	typedMetadata, err := castSPDMetadata(key, metadata)
+	typedMetadata, err := castTunProtectMetadata(key, metadata)
 	if err != nil {
 		return err
 	}
 	return da.descriptor.Delete(key, typedValue, typedMetadata)
 }
 
-func (da *SPDDescriptorAdapter) UpdateWithRecreate(key string, oldValue, newValue proto.Message, metadata Metadata) bool {
-	oldTypedValue, err := castSPDValue(key, oldValue)
+func (da *TunProtectDescriptorAdapter) UpdateWithRecreate(key string, oldValue, newValue proto.Message, metadata Metadata) bool {
+	oldTypedValue, err := castTunProtectValue(key, oldValue)
 	if err != nil {
 		return true
 	}
-	newTypedValue, err := castSPDValue(key, newValue)
+	newTypedValue, err := castTunProtectValue(key, newValue)
 	if err != nil {
 		return true
 	}
-	typedMetadata, err := castSPDMetadata(key, metadata)
+	typedMetadata, err := castTunProtectMetadata(key, metadata)
 	if err != nil {
 		return true
 	}
 	return da.descriptor.UpdateWithRecreate(key, oldTypedValue, newTypedValue, typedMetadata)
 }
 
-func (da *SPDDescriptorAdapter) Retrieve(correlate []KVWithMetadata) ([]KVWithMetadata, error) {
-	var correlateWithType []SPDKVWithMetadata
+func (da *TunProtectDescriptorAdapter) Retrieve(correlate []KVWithMetadata) ([]KVWithMetadata, error) {
+	var correlateWithType []TunProtectKVWithMetadata
 	for _, kvpair := range correlate {
-		typedValue, err := castSPDValue(kvpair.Key, kvpair.Value)
+		typedValue, err := castTunProtectValue(kvpair.Key, kvpair.Value)
 		if err != nil {
 			continue
 		}
-		typedMetadata, err := castSPDMetadata(kvpair.Key, kvpair.Metadata)
+		typedMetadata, err := castTunProtectMetadata(kvpair.Key, kvpair.Metadata)
 		if err != nil {
 			continue
 		}
 		correlateWithType = append(correlateWithType,
-			SPDKVWithMetadata{
+			TunProtectKVWithMetadata{
 				Key:      kvpair.Key,
 				Value:    typedValue,
 				Metadata: typedMetadata,
@@ -196,16 +195,16 @@ func (da *SPDDescriptorAdapter) Retrieve(correlate []KVWithMetadata) ([]KVWithMe
 	return values, err
 }
 
-func (da *SPDDescriptorAdapter) DerivedValues(key string, value proto.Message) []KeyValuePair {
-	typedValue, err := castSPDValue(key, value)
+func (da *TunProtectDescriptorAdapter) DerivedValues(key string, value proto.Message) []KeyValuePair {
+	typedValue, err := castTunProtectValue(key, value)
 	if err != nil {
 		return nil
 	}
 	return da.descriptor.DerivedValues(key, typedValue)
 }
 
-func (da *SPDDescriptorAdapter) Dependencies(key string, value proto.Message) []Dependency {
-	typedValue, err := castSPDValue(key, value)
+func (da *TunProtectDescriptorAdapter) Dependencies(key string, value proto.Message) []Dependency {
+	typedValue, err := castTunProtectValue(key, value)
 	if err != nil {
 		return nil
 	}
@@ -214,19 +213,19 @@ func (da *SPDDescriptorAdapter) Dependencies(key string, value proto.Message) []
 
 ////////// Helper methods //////////
 
-func castSPDValue(key string, value proto.Message) (*vpp_ipsec.SecurityPolicyDatabase, error) {
-	typedValue, ok := value.(*vpp_ipsec.SecurityPolicyDatabase)
+func castTunProtectValue(key string, value proto.Message) (*vpp_ipsec.TunnelProtection, error) {
+	typedValue, ok := value.(*vpp_ipsec.TunnelProtection)
 	if !ok {
 		return nil, ErrInvalidValueType(key, value)
 	}
 	return typedValue, nil
 }
 
-func castSPDMetadata(key string, metadata Metadata) (*idxvpp.OnlyIndex, error) {
+func castTunProtectMetadata(key string, metadata Metadata) (interface{}, error) {
 	if metadata == nil {
 		return nil, nil
 	}
-	typedMetadata, ok := metadata.(*idxvpp.OnlyIndex)
+	typedMetadata, ok := metadata.(interface{})
 	if !ok {
 		return nil, ErrInvalidMetadataType(key)
 	}

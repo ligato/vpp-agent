@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
+
 	"go.ligato.io/vpp-agent/v3/plugins/vpp"
 
 	"go.ligato.io/vpp-agent/v3/pkg/models"
@@ -61,8 +62,9 @@ func (d *InterfaceDescriptor) Create(key string, intf *interfaces.Interface) (me
 			d.log.Error(err)
 			return nil, err
 		}
-		ifIdx, err = d.ifHandler.AddMemifInterface(context.TODO(), intf.Name, intf.GetMemif(), socketID)
+		ifIdx, err = d.ifHandler.AddMemifInterface(ctx, intf.Name, intf.GetMemif(), socketID)
 		if err != nil {
+			err := errors.WithMessagef(err, "adding memif interface %s (socketID: %d) failed", intf.Name, socketID)
 			d.log.Error(err)
 			return nil, err
 		}
@@ -189,6 +191,13 @@ func (d *InterfaceDescriptor) Create(key string, intf *interfaces.Interface) (me
 			d.log.Error(err)
 			return nil, err
 		}
+
+	case interfaces.Interface_IPIP_TUNNEL:
+		ifIdx, err = d.ifHandler.AddIpipTunnel(intf.Name, intf.GetVrf(), intf.GetIpip())
+		if err != nil {
+			d.log.Error(err)
+			return nil, err
+		}
 	}
 
 	// MAC address. Note: physical interfaces cannot have the MAC address changed. The bond interface uses its own
@@ -300,6 +309,8 @@ func (d *InterfaceDescriptor) Delete(key string, intf *interfaces.Interface, met
 		_, err = d.ifHandler.DelGreTunnel(intf.Name, intf.GetGre())
 	case interfaces.Interface_GTPU_TUNNEL:
 		err = d.ifHandler.DelGtpuTunnel(intf.Name, intf.GetGtpu())
+	case interfaces.Interface_IPIP_TUNNEL:
+		err = d.ifHandler.DelIpipTunnel(intf.Name, ifIdx)
 	}
 	if err != nil {
 		err = errors.Errorf("failed to remove interface %s, index %d: %v", intf.Name, ifIdx, err)
