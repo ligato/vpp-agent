@@ -36,7 +36,7 @@ type APIClient interface {
 	Close() error
 }
 
-// SystemAPIClient defines API client methods for the system
+// InfraAPIClient defines API client methods for the system
 type InfraAPIClient interface {
 	Status(ctx context.Context) (*probe.ExposedStatus, error)
 	Ping(ctx context.Context) (types.Ping, error)
