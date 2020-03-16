@@ -65,7 +65,7 @@ jobs:
         id: vars
         run: |
           echo ::set-output name=tag::$(echo ${GITHUB_REF:10})
-          
+
           echo ::group::Env vars
           echo $(env | sort)
           echo ::endgroup::
