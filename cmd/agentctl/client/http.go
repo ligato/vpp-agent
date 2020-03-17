@@ -22,6 +22,7 @@ import (
 // serverResponse is a wrapper for http API responses.
 type serverResponse struct {
 	body       io.ReadCloser
+	contentLen int64
 	header     http.Header
 	statusCode int
 	reqURL     *url.URL
@@ -120,7 +121,7 @@ func (c *Client) doRequest(ctx context.Context, req *http.Request) (serverRespon
 		if err != nil {
 			logrus.Debugf("<= http response ERROR: %v", err)
 		} else {
-			logrus.Debugf("<= http response (statusCode %v)", serverResp.statusCode)
+			logrus.Debugf("<= http response %v (%d bytes)", serverResp.statusCode, serverResp.contentLen)
 		}
 	}()
 
@@ -140,7 +141,6 @@ func (c *Client) doRequest(ctx context.Context, req *http.Request) (serverRespon
 		case context.Canceled, context.DeadlineExceeded:
 			return serverResp, err
 		}
-
 		if nErr, ok := err.(*url.Error); ok {
 			if nErr, ok := nErr.Err.(*net.OpError); ok {
 				if os.IsPermission(nErr.Err) {
@@ -148,7 +148,6 @@ func (c *Client) doRequest(ctx context.Context, req *http.Request) (serverRespon
 				}
 			}
 		}
-
 		if err, ok := err.(net.Error); ok {
 			if err.Timeout() {
 				return serverResp, ErrorConnectionFailed(c.host)
@@ -167,6 +166,7 @@ func (c *Client) doRequest(ctx context.Context, req *http.Request) (serverRespon
 		serverResp.statusCode = resp.StatusCode
 		serverResp.body = resp.Body
 		serverResp.header = resp.Header
+		serverResp.contentLen = resp.ContentLength
 	}
 	return serverResp, nil
 }
@@ -207,7 +207,7 @@ func (c *Client) checkResponseErr(serverResp serverResponse) error {
 	if ct == "application/json" {
 		var errorResponse types.ErrorResponse
 		if err := json.Unmarshal(body, &errorResponse); err != nil {
-			return errors.Wrap(err, "Error reading JSON")
+			return errors.Wrap(err, "Error unmarshaling JSON body")
 		}
 		errorMsg = errorResponse.Message
 	} else {
