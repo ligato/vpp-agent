@@ -123,11 +123,11 @@ type RecordedTxn struct {
 	// arguments
 	SeqNum       uint64
 	TxnType      TxnType
-	ResyncType   ResyncType
-	Description  string `json:",omitempty"`
-	RetryForTxn  uint64 `json:",omitempty"`
-	RetryAttempt int    `json:",omitempty"`
-	Values       []RecordedKVPair
+	ResyncType   ResyncType       `json:",omitempty"`
+	Description  string           `json:",omitempty"`
+	RetryForTxn  uint64           `json:",omitempty"`
+	RetryAttempt int              `json:",omitempty"`
+	Values       []RecordedKVPair `json:",omitempty"`
 
 	// operations
 	Planned  RecordedTxnOps `json:",omitempty"`
@@ -141,12 +141,12 @@ type RecordedTxnOp struct {
 	Key       string
 
 	// changes
-	PrevValue *utils.RecordedProtoMessage `json:",omitempty"`
-	NewValue  *utils.RecordedProtoMessage `json:",omitempty"`
-	PrevState kvscheduler.ValueState      `json:",omitempty"`
 	NewState  kvscheduler.ValueState      `json:",omitempty"`
-	PrevErr   error                       `json:",omitempty"`
+	NewValue  *utils.RecordedProtoMessage `json:",omitempty"`
 	NewErr    error                       `json:",omitempty"`
+	PrevState kvscheduler.ValueState      `json:",omitempty"`
+	PrevValue *utils.RecordedProtoMessage `json:",omitempty"`
+	PrevErr   error                       `json:",omitempty"`
 	NOOP      bool                        `json:",omitempty"`
 
 	// flags
