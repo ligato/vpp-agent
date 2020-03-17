@@ -39,3 +39,8 @@ type SchedulerDumpOptions struct {
 type SchedulerValuesOptions struct {
 	KeyPrefix string
 }
+
+type SchedulerResyncOptions struct {
+	Retry   bool
+	Verbose bool
+}
