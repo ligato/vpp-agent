@@ -16,15 +16,16 @@ package kvscheduler
 
 import (
 	"bytes"
+	"encoding/json"
 
 	"github.com/golang/protobuf/jsonpb"
 )
 
 // MarshalJSON ensures data is correctly marshaled
-func (m *ValueStatus) MarshalJSON() ([]byte, error) {
+func (m ValueStatus) MarshalJSON() ([]byte, error) {
 	marshaller := &jsonpb.Marshaler{}
 	var buf bytes.Buffer
-	if err := marshaller.Marshal(&buf, m); err != nil {
+	if err := marshaller.Marshal(&buf, &m); err != nil {
 		return nil, err
 	}
 	return buf.Bytes(), nil
@@ -33,4 +34,50 @@ func (m *ValueStatus) MarshalJSON() ([]byte, error) {
 // UnmarshalJSON ensures that data is correctly unmarshaled
 func (m *ValueStatus) UnmarshalJSON(data []byte) error {
 	return jsonpb.Unmarshal(bytes.NewReader(data), m)
+}
+
+// MarshalJSON ensures data is correctly marshaled
+func (x ValueState) MarshalJSON() ([]byte, error) {
+	return json.Marshal(x.String())
+}
+
+// UnmarshalJSON ensures that data is correctly unmarshaled
+func (x *ValueState) UnmarshalJSON(b []byte) error {
+	if b[0] == '"' {
+		var s string
+		if err := json.Unmarshal(b, &s); err != nil {
+			return err
+		}
+		*x = ValueState(ValueState_value[s])
+	} else {
+		var n int
+		if err := json.Unmarshal(b, &n); err != nil {
+			return err
+		}
+		*x = ValueState(n)
+	}
+	return nil
+}
+
+// MarshalJSON ensures data is correctly marshaled
+func (x TxnOperation) MarshalJSON() ([]byte, error) {
+	return json.Marshal(x.String())
+}
+
+// UnmarshalJSON ensures that data is correctly unmarshaled
+func (x *TxnOperation) UnmarshalJSON(b []byte) error {
+	if b[0] == '"' {
+		var s string
+		if err := json.Unmarshal(b, &s); err != nil {
+			return err
+		}
+		*x = TxnOperation(TxnOperation_value[s])
+	} else {
+		var n int
+		if err := json.Unmarshal(b, &n); err != nil {
+			return err
+		}
+		*x = TxnOperation(n)
+	}
+	return nil
 }
