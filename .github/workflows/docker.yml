@@ -66,9 +66,9 @@ jobs:
         run: |
           echo ::set-output name=tag::$(echo ${GITHUB_REF:10})
 
-          echo ##[group]Env vars
-          env | sort
-          echo ##[endgroup]
+          echo ::group::Env vars
+          echo $(env | sort)
+          echo ::endgroup::
       - name: Tag images
         run: |
           docker tag dev_vpp_agent ligato/dev-vpp-agent:${{ steps.vars.outputs.tag }}
