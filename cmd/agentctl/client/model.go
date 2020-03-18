@@ -26,7 +26,7 @@ func (c *Client) ModelList(ctx context.Context, opts types.ModelListOptions) ([]
 	logrus.Debugf("retrieved %d known models", len(knownModels))
 	if debug.IsEnabledFor("models") {
 		for _, m := range knownModels {
-			logrus.Debug(proto.CompactTextString(m))
+			logrus.Debug(" - ", proto.CompactTextString(m))
 		}
 	}
 
@@ -54,6 +54,15 @@ func convertModels(knownModels []*generic.ModelDetail) []types.Model {
 			}
 			if o.GetKey() == "goType" && len(o.Values) > 0 {
 				goType = o.Values[0]
+			}
+		}
+
+		// fix key prefixes for models with no template
+		if nameTemplate == "" {
+			km, err := models.GetModel(spec.ModelName())
+			if err == nil && km.KeyPrefix() != keyPrefix {
+				logrus.Debugf("key prefix for model %v fixed from %q to %q", spec.ModelName(), keyPrefix, km.KeyPrefix())
+				keyPrefix = km.KeyPrefix()
 			}
 		}
 
