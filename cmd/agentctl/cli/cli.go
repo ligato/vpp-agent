@@ -183,7 +183,7 @@ func buildClientOptions(cfg *Config) []client.Opt {
 		client.WithServiceLabel(cfg.ServiceLabel),
 		client.WithGrpcPort(cfg.GRPCPort),
 		client.WithHTTPPort(cfg.HTTPPort),
-		client.WithHTTPHeader("User-Agent", UserAgent()),
+		client.WithUserAgent(UserAgent()),
 		client.WithHTTPBasicAuth(cfg.HTTPBasicAuth),
 		client.WithVersion(cfg.LigatoAPIVersion),
 		client.WithEtcdEndpoints(cfg.EtcdEndpoints),

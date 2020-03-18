@@ -142,6 +142,11 @@ func WithTimeout(timeout time.Duration) Opt {
 	}
 }
 
+// WithUserAgent sets User-Agent in the HTTP headers.
+func WithUserAgent(a string) Opt {
+	return WithHTTPHeader("User-Agent", a)
+}
+
 // WithHTTPHeader adds header to HTTP headers.
 func WithHTTPHeader(k, v string) Opt {
 	return func(c *Client) error {

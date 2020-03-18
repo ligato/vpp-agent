@@ -25,6 +25,7 @@ type Model struct {
 	ProtoName    string
 	ProtoFile    string `json:",omitempty"`
 	GoType       string `json:",omitempty"`
+	PkgPath      string `json:",omitempty"`
 }
 
 type ModelListOptions struct {

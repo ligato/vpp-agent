@@ -18,6 +18,7 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/golang/protobuf/descriptor"
 	"github.com/golang/protobuf/proto"
 
 	"go.ligato.io/vpp-agent/v3/proto/ligato/generic"
@@ -50,6 +51,8 @@ func (m *KnownModel) ModelDetail() *generic.ModelDetail {
 		Options: []*generic.ModelDetail_Option{
 			{Key: "nameTemplate", Values: []string{m.NameTemplate()}},
 			{Key: "goType", Values: []string{m.GoType()}},
+			{Key: "pkgPath", Values: []string{m.PkgPath()}},
+			{Key: "protoFile", Values: []string{m.ProtoFile()}},
 		},
 	}
 }
@@ -62,9 +65,18 @@ func (m *KnownModel) NewInstance() proto.Message {
 // ProtoName returns proto message name registered with the model.
 func (m *KnownModel) ProtoName() string {
 	if m.protoName == "" {
-		m.protoName = proto.MessageName(m.NewInstance())
+		m.protoName = proto.MessageName(m.nilProto())
 	}
 	return m.protoName
+}
+
+// ProtoFile returns proto file name for the model.
+func (m *KnownModel) ProtoFile() string {
+	if msg, ok := m.nilProto().(descriptor.Message); ok {
+		fd, _ := descriptor.ForMessage(msg)
+		return *fd.Name
+	}
+	return ""
 }
 
 // NameTemplate returns name template for the model.
@@ -75,6 +87,11 @@ func (m *KnownModel) NameTemplate() string {
 // GoType returns go type for the model.
 func (m *KnownModel) GoType() string {
 	return m.goType.String()
+}
+
+// PkgPath returns package import path for the model definition.
+func (m *KnownModel) PkgPath() string {
+	return m.goType.Elem().PkgPath()
 }
 
 // Name returns name for the model.
@@ -133,9 +150,13 @@ func (m *KnownModel) StripKeyPrefix(key string) string {
 	return key
 }
 
-func (m *KnownModel) instanceName(x proto.Message) (string, error) {
+func (m *KnownModel) instanceName(x interface{}) (string, error) {
 	if m.nameFunc == nil {
 		return "", nil
 	}
 	return m.nameFunc(x)
+}
+
+func (m *KnownModel) nilProto() proto.Message {
+	return reflect.Zero(m.goType).Interface().(proto.Message)
 }

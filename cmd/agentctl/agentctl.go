@@ -20,6 +20,7 @@ import (
 
 	agentcli "go.ligato.io/vpp-agent/v3/cmd/agentctl/cli"
 	"go.ligato.io/vpp-agent/v3/cmd/agentctl/commands"
+	"go.ligato.io/vpp-agent/v3/pkg/version"
 )
 
 const logo = `
@@ -38,6 +39,7 @@ func runAgentctl(cli *agentcli.AgentCli) error {
 		return err
 	}
 	cmd.Long = logo
+	cmd.Version = version.Version()
 	return cmd.Execute()
 }
 

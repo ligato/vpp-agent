@@ -26,6 +26,8 @@ func WithNameTemplate(t string) ModelOption {
 	}
 }
 
+const namedTemplate = `{{.Name}}`
+
 type named interface {
 	GetName() string
 }

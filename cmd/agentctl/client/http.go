@@ -103,12 +103,16 @@ func (c *Client) sendRequest(ctx context.Context, method, path string, query url
 	if err != nil {
 		return resp, err
 	}
+
 	err = c.checkResponseErr(resp)
 	return resp, err
 }
 
 func (c *Client) doRequest(ctx context.Context, req *http.Request) (serverResponse, error) {
-	serverResp := serverResponse{statusCode: -1, reqURL: req.URL}
+	serverResp := serverResponse{
+		statusCode: -1,
+		reqURL:     req.URL,
+	}
 
 	var (
 		err  error
@@ -116,12 +120,16 @@ func (c *Client) doRequest(ctx context.Context, req *http.Request) (serverRespon
 	)
 	req = req.WithContext(ctx)
 
-	logrus.Debugf("=> sending http request: %s %s (%d bytes)", req.Method, req.URL, req.ContentLength)
+	fields := map[string]interface{}{}
+	if req.ContentLength > 0 {
+		fields["contentLength"] = req.ContentLength
+	}
+	logrus.WithFields(fields).Debugf("=> sending http request: %s %s", req.Method, req.URL)
 	defer func() {
 		if err != nil {
-			logrus.Debugf("<= http response ERROR: %v", err)
+			logrus.Debugf("<- http response ERROR: %v", err)
 		} else {
-			logrus.Debugf("<= http response %v (%d bytes)", serverResp.statusCode, serverResp.contentLen)
+			logrus.Debugf("<- http response %v (%d bytes)", serverResp.statusCode, serverResp.contentLen)
 		}
 	}()
 
@@ -161,7 +169,15 @@ func (c *Client) doRequest(ctx context.Context, req *http.Request) (serverRespon
 
 		return serverResp, errors.Wrap(err, "error during connect")
 	}
-
+	if logrus.IsLevelEnabled(logrus.DebugLevel) {
+		body, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			logrus.Debugf("reading body failed: %v", err)
+		} else {
+			logrus.Debugf("body: %s", body)
+		}
+		resp.Body = ioutil.NopCloser(bytes.NewReader(body))
+	}
 	if resp != nil {
 		serverResp.statusCode = resp.StatusCode
 		serverResp.body = resp.Body
