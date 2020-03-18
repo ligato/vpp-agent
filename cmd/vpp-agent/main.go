@@ -35,7 +35,7 @@ import (
 )
 
 const logo = `                                       __
-  _  _____  ___ _______ ____ ____ ___ / /_  %s
+  _  _____  ___ _______ ____ ____ ___ / /_  
  | |/ / _ \/ _ /___/ _ '/ _ '/ -_/ _ / __/  %s
  |___/ .__/ .__/   \_'_/\_' /\__/_//_\__/   %s
     /_/  /_/           /___/                %s
@@ -68,7 +68,7 @@ func parseVersion() {
 
 func main() {
 	parseVersion()
-	fmt.Fprintf(os.Stderr, logo, version.App(), version.Version(), version.BuiltOn(), version.BuiltBy())
+	fmt.Fprintf(os.Stderr, logo, version.Short(), version.BuiltOn(), version.BuiltBy())
 
 	if debug.IsEnabled() {
 		logging.DefaultLogger.SetLevel(logging.DebugLevel)
