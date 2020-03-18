@@ -83,7 +83,8 @@ func GetKey(x proto.Message) (string, error) {
 	return key, nil
 }
 
-// GetName
+// GetName returns instance name for given model.
+// It returns error if given model is not registered.
 func GetName(x proto.Message) (string, error) {
 	model, err := GetModelFor(x)
 	if err != nil {

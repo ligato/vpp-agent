@@ -16,6 +16,7 @@ package api
 
 import (
 	"context"
+	"encoding/json"
 	"time"
 )
 
@@ -105,6 +106,38 @@ func (t ResyncType) String() string {
 	default:
 		return "UnknownResync"
 	}
+}
+
+var resyncType_value = map[string]int{
+	"NotResync":        int(NotResync),
+	"FullResync":       int(FullResync),
+	"UpstreamResync":   int(UpstreamResync),
+	"DownstreamResync": int(DownstreamResync),
+}
+
+func (t ResyncType) MarshalJSON() ([]byte, error) {
+	return json.Marshal(t.String())
+}
+
+func (t *ResyncType) UnmarshalJSON(b []byte) error {
+	if b[0] == '"' {
+		var s string
+		if err := json.Unmarshal(b, &s); err != nil {
+			return err
+		}
+		if v, ok := resyncType_value[s]; ok {
+			*t = ResyncType(v)
+		} else {
+			*t = NotResync
+		}
+	} else {
+		var n int
+		if err := json.Unmarshal(b, &n); err != nil {
+			return err
+		}
+		*t = ResyncType(n)
+	}
+	return nil
 }
 
 // WithResync prepares context for transaction that, based on the resync type,

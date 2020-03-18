@@ -15,6 +15,7 @@
 package api
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -44,19 +45,76 @@ const (
 func (t TxnType) String() string {
 	switch t {
 	case SBNotification:
-		return "SB Notification"
+		return "SBNotification"
 	case NBTransaction:
-		return "NB Transaction"
+		return "NBTransaction"
 	case RetryFailedOps:
-		return "Retry Transaction"
+		return "RetryFailedOps"
 	}
 	return "UndefinedTxnType"
 }
 
+var txnType_value = map[string]int{
+	"SBNotification": int(SBNotification),
+	"NBTransaction":  int(NBTransaction),
+	"RetryFailedOps": int(RetryFailedOps),
+}
+
+func (t TxnType) MarshalJSON() ([]byte, error) {
+	return json.Marshal(t.String())
+}
+
+func (t *TxnType) UnmarshalJSON(b []byte) error {
+	if b[0] == '"' {
+		var s string
+		if err := json.Unmarshal(b, &s); err != nil {
+			return err
+		}
+		if v, ok := txnType_value[s]; ok {
+			*t = TxnType(v)
+		} else {
+			*t = TxnType(-1)
+		}
+	} else {
+		var n int
+		if err := json.Unmarshal(b, &n); err != nil {
+			return err
+		}
+		*t = TxnType(n)
+	}
+	return nil
+}
+
+func txnTypeToString(t TxnType) string {
+	switch t {
+	case NBTransaction:
+		return "NB Transaction"
+	case SBNotification:
+		return "SB Notification"
+	case RetryFailedOps:
+		return "Retry Transaction"
+	}
+	return t.String()
+}
+
+func resyncTypeToString(t ResyncType) string {
+	switch t {
+	case NotResync:
+		return "Not Resync"
+	case FullResync:
+		return "Full Resync"
+	case UpstreamResync:
+		return "NB Sync"
+	case DownstreamResync:
+		return "SB Sync"
+	}
+	return t.String()
+}
+
 // RecordedTxn is used to record executed transaction.
 type RecordedTxn struct {
-	PreRecord      bool // not yet fully recorded, only args + plan + pre-processing errors
-	WithSimulation bool
+	PreRecord      bool `json:",omitempty"` // not yet fully recorded, only args + plan + pre-processing errors
+	WithSimulation bool `json:",omitempty"`
 
 	// timestamps
 	Start time.Time
@@ -65,15 +123,15 @@ type RecordedTxn struct {
 	// arguments
 	SeqNum       uint64
 	TxnType      TxnType
-	ResyncType   ResyncType
-	Description  string
-	RetryForTxn  uint64
-	RetryAttempt int
-	Values       []RecordedKVPair
+	ResyncType   ResyncType       `json:",omitempty"`
+	Description  string           `json:",omitempty"`
+	RetryForTxn  uint64           `json:",omitempty"`
+	RetryAttempt int              `json:",omitempty"`
+	Values       []RecordedKVPair `json:",omitempty"`
 
 	// operations
-	Planned  RecordedTxnOps
-	Executed RecordedTxnOps
+	Planned  RecordedTxnOps `json:",omitempty"`
+	Executed RecordedTxnOps `json:",omitempty"`
 }
 
 // RecordedTxnOp is used to record executed/planned transaction operation.
@@ -83,20 +141,20 @@ type RecordedTxnOp struct {
 	Key       string
 
 	// changes
-	PrevValue *utils.RecordedProtoMessage
-	NewValue  *utils.RecordedProtoMessage
-	PrevState kvscheduler.ValueState
-	NewState  kvscheduler.ValueState
-	PrevErr   error
-	NewErr    error
-	NOOP      bool
+	NewState  kvscheduler.ValueState      `json:",omitempty"`
+	NewValue  *utils.RecordedProtoMessage `json:",omitempty"`
+	NewErr    error                       `json:",omitempty"`
+	PrevState kvscheduler.ValueState      `json:",omitempty"`
+	PrevValue *utils.RecordedProtoMessage `json:",omitempty"`
+	PrevErr   error                       `json:",omitempty"`
+	NOOP      bool                        `json:",omitempty"`
 
 	// flags
-	IsDerived  bool
-	IsProperty bool
-	IsRevert   bool
-	IsRetry    bool
-	IsRecreate bool
+	IsDerived  bool `json:",omitempty"`
+	IsProperty bool `json:",omitempty"`
+	IsRevert   bool `json:",omitempty"`
+	IsRetry    bool `json:",omitempty"`
+	IsRecreate bool `json:",omitempty"`
 }
 
 // RecordedKVPair is used to record key-value pair.
@@ -129,20 +187,13 @@ func (txn *RecordedTxn) StringWithOpts(resultOnly, verbose bool, indent int) str
 		str += indent1 + "* transaction arguments:\n"
 		str += indent2 + fmt.Sprintf("- seqNum: %d\n", txn.SeqNum)
 		if txn.TxnType == NBTransaction && txn.ResyncType != NotResync {
-			ResyncType := "Full Resync"
-			if txn.ResyncType == DownstreamResync {
-				ResyncType = "SB Sync"
-			}
-			if txn.ResyncType == UpstreamResync {
-				ResyncType = "NB Sync"
-			}
-			str += indent2 + fmt.Sprintf("- type: %s, %s\n", txn.TxnType.String(), ResyncType)
+			str += indent2 + fmt.Sprintf("- type: %s, %s\n", txnTypeToString(txn.TxnType), resyncTypeToString(txn.ResyncType))
 		} else {
 			if txn.TxnType == RetryFailedOps {
 				str += indent2 + fmt.Sprintf("- type: %s (for txn %d, attempt #%d)\n",
-					txn.TxnType.String(), txn.RetryForTxn, txn.RetryAttempt)
+					txnTypeToString(txn.TxnType), txn.RetryForTxn, txn.RetryAttempt)
 			} else {
-				str += indent2 + fmt.Sprintf("- type: %s\n", txn.TxnType.String())
+				str += indent2 + fmt.Sprintf("- type: %s\n", txnTypeToString(txn.TxnType))
 			}
 		}
 		if txn.Description != "" {

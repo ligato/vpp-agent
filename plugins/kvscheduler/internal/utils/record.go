@@ -48,14 +48,12 @@ func (p *RecordedProtoMessage) MarshalJSON() ([]byte, error) {
 	)
 	if p != nil {
 		msgName = proto.MessageName(p.Message)
-		marshaller := &jsonpb.Marshaler{}
-		msgData, err = marshaller.MarshalToString(p.Message)
-		if err != nil {
-			return nil, err
-		}
+		msgData = proto.CompactTextString(p.Message)
 	}
-	pwn, err := json.Marshal(
-		ProtoWithName{ProtoMsgName: msgName, ProtoMsgData: msgData})
+	pwn, err := json.Marshal(ProtoWithName{
+		ProtoMsgName: msgName,
+		ProtoMsgData: msgData,
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -66,9 +64,8 @@ func (p *RecordedProtoMessage) MarshalJSON() ([]byte, error) {
 // The jsonpb package produces a different output than the standard "encoding/json"
 // package, which does not operate correctly on protocol buffers.
 func (p *RecordedProtoMessage) UnmarshalJSON(data []byte) error {
-	pwn := ProtoWithName{}
-	err := json.Unmarshal(data, &pwn)
-	if err != nil {
+	var pwn ProtoWithName
+	if err := json.Unmarshal(data, &pwn); err != nil {
 		return err
 	}
 	p.ProtoMsgName = pwn.ProtoMsgName
@@ -80,7 +77,12 @@ func (p *RecordedProtoMessage) UnmarshalJSON(data []byte) error {
 		return fmt.Errorf("unknown proto message: %s", p.ProtoMsgName)
 	}
 	msg := reflect.New(msgType.Elem()).Interface().(proto.Message)
-	err = jsonpb.UnmarshalString(pwn.ProtoMsgData, msg)
+	var err error
+	if len(pwn.ProtoMsgData) > 0 && pwn.ProtoMsgData[0] == '{' {
+		err = jsonpb.UnmarshalString(pwn.ProtoMsgData, msg)
+	} else {
+		err = proto.UnmarshalText(pwn.ProtoMsgData, msg)
+	}
 	if err != nil {
 		return err
 	}
