@@ -20,6 +20,9 @@ func IsEnabled() bool {
 
 // Enable sets the DEBUG env var to true.
 func Enable() {
+	if IsEnabled() {
+		return
+	}
 	os.Setenv(envDebug, "1")
 }
 
