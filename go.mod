@@ -1,6 +1,6 @@
 module go.ligato.io/vpp-agent/v3
 
-go 1.12
+go 1.13
 
 require (
 	git.fd.io/govpp.git v0.2.1-0.20200131102335-2df59463fcbb
