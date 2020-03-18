@@ -81,7 +81,7 @@ type VersionMsgs struct {
 }
 
 // AllMessages returns messages from message list funcs combined.
-func (vc *VersionMsgs) AllMessages() []govppapi.Message {
+func (vc VersionMsgs) AllMessages() []govppapi.Message {
 	var msgs []govppapi.Message
 	msgs = append(msgs, vc.Core.AllMessages()...)
 	msgs = append(msgs, vc.Plugins.AllMessages()...)
