@@ -47,6 +47,8 @@ func convertModels(knownModels []*generic.ModelDetail) []types.Model {
 		var (
 			nameTemplate string
 			goType       string
+			pkgPath      string
+			protoFile    string
 		)
 		for _, o := range m.Options {
 			if o.GetKey() == "nameTemplate" && len(o.Values) > 0 {
@@ -54,6 +56,12 @@ func convertModels(knownModels []*generic.ModelDetail) []types.Model {
 			}
 			if o.GetKey() == "goType" && len(o.Values) > 0 {
 				goType = o.Values[0]
+			}
+			if o.GetKey() == "pkgPath" && len(o.Values) > 0 {
+				pkgPath = o.Values[0]
+			}
+			if o.GetKey() == "protoFile" && len(o.Values) > 0 {
+				protoFile = o.Values[0]
 			}
 		}
 
@@ -74,8 +82,10 @@ func convertModels(knownModels []*generic.ModelDetail) []types.Model {
 			Class:        spec.Class,
 			KeyPrefix:    keyPrefix,
 			ProtoName:    protoName,
+			ProtoFile:    protoFile,
 			NameTemplate: nameTemplate,
 			GoType:       goType,
+			PkgPath:      pkgPath,
 		}
 		allModels[i] = model
 	}
