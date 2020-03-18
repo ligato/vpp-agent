@@ -127,6 +127,7 @@ func (r *Registry) Register(x interface{}, spec Spec, opts ...ModelOption) (*Kno
 		model.nameFunc = func(obj interface{}) (s string, e error) {
 			return obj.(named).GetName(), nil
 		}
+		model.nameTemplate = namedTemplate
 	}
 
 	// Apply custom options
