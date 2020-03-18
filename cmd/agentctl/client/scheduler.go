@@ -1,17 +1,14 @@
 package client
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/url"
 	"reflect"
 
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
-	"go.ligato.io/cn-infra/v2/logging"
 
 	"go.ligato.io/vpp-agent/v3/cmd/agentctl/api/types"
 	"go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
@@ -53,7 +50,12 @@ func (c *Client) SchedulerDump(ctx context.Context, opts types.SchedulerDumpOpti
 			return nil, fmt.Errorf("unknown proto message defined for key %s", d.Key)
 		}
 		d.Value = reflect.New(valueType.Elem()).Interface().(proto.Message)
-		if err = jsonpb.UnmarshalString(kvd.Value.ProtoMsgData, d.Value); err != nil {
+		if len(kvd.Value.ProtoMsgData) > 0 && kvd.Value.ProtoMsgData[0] == '{' {
+			err = jsonpb.UnmarshalString(kvd.Value.ProtoMsgData, d.Value)
+		} else {
+			err = proto.UnmarshalText(kvd.Value.ProtoMsgData, d.Value)
+		}
+		if err != nil {
 			return nil, fmt.Errorf("decoding reply failed: %v", err)
 		}
 		dump = append(dump, d)
@@ -92,15 +94,8 @@ func (c *Client) SchedulerResync(ctx context.Context, opts types.SchedulerResync
 		return nil, err
 	}
 
-	body, err := ioutil.ReadAll(resp.body)
-	if err != nil {
-		return nil, err
-	}
-
-	logging.Debugf("body content:\n%s", body)
-
 	var rectxn api.RecordedTxn
-	if err := json.NewDecoder(bytes.NewReader(body)).Decode(&rectxn); err != nil {
+	if err := json.NewDecoder(resp.body).Decode(&rectxn); err != nil {
 		return nil, fmt.Errorf("decoding reply failed: %v", err)
 	}
 
