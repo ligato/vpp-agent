@@ -15,12 +15,13 @@
 package descriptor
 
 import (
+	"bytes"
+	"fmt"
 	"strings"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
 	"go.ligato.io/cn-infra/v2/logging"
-
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 	ifdescriptor "go.ligato.io/vpp-agent/v3/plugins/linux/ifplugin/descriptor"
 	"go.ligato.io/vpp-agent/v3/plugins/linux/iptablesplugin/descriptor/adapter"
@@ -69,19 +70,22 @@ type RuleChainDescriptor struct {
 
 	// parallelization of the Retrieve operation
 	goRoutinesCnt int
+	// performance solution threshold
+	minRuleCountForPerfRuleAddition int
 }
 
 // NewRuleChainDescriptor creates a new instance of the iptables RuleChain descriptor.
 func NewRuleChainDescriptor(
 	scheduler kvs.KVScheduler, ipTablesHandler linuxcalls.IPTablesAPI, nsPlugin nsplugin.API,
-	log logging.PluginLogger, goRoutinesCnt int) *kvs.KVDescriptor {
+	log logging.PluginLogger, goRoutinesCnt int, minRuleCountForPerfRuleAddition int) *kvs.KVDescriptor {
 
 	descrCtx := &RuleChainDescriptor{
-		scheduler:       scheduler,
-		ipTablesHandler: ipTablesHandler,
-		nsPlugin:        nsPlugin,
-		goRoutinesCnt:   goRoutinesCnt,
-		log:             log.NewLogger("ipt-rulechain-descriptor"),
+		scheduler:                       scheduler,
+		ipTablesHandler:                 ipTablesHandler,
+		nsPlugin:                        nsPlugin,
+		goRoutinesCnt:                   goRoutinesCnt,
+		minRuleCountForPerfRuleAddition: minRuleCountForPerfRuleAddition,
+		log:                             log.NewLogger("ipt-rulechain-descriptor"),
 	}
 
 	typedDescr := &adapter.RuleChainDescriptor{
@@ -208,11 +212,43 @@ func (d *RuleChainDescriptor) Create(key string, rch *linux_iptables.RuleChain) 
 	}
 
 	// append all rules
-	for _, rule := range rch.Rules {
-		err := d.ipTablesHandler.AppendRule(protocolType(rch), tableNameStr(rch), chainNameStr(rch), rule)
-		if err != nil {
-			d.log.Errorf("Error by appending iptables rule: %v", err)
-			break
+	if len(rch.Rules) > 0 {
+		if len(rch.Rules) < d.minRuleCountForPerfRuleAddition { // use normal method of addition
+			for _, rule := range rch.Rules {
+				err := d.ipTablesHandler.AppendRule(protocolType(rch), tableNameStr(rch), chainNameStr(rch), rule)
+				if err != nil {
+					d.log.Errorf("Error by appending iptables rule: %v", err)
+					break
+				}
+			}
+		} else { // use performance solution (this makes performance difference with higher count of appended rules)
+			// export existing iptables data
+			data, err := d.ipTablesHandler.SaveTable(protocolType(rch), tableNameStr(rch), true)
+			if err != nil {
+				return nil, errors.Errorf("Error by adding rules: Can't export all rules due to: %v", err)
+			}
+
+			// add rules to exported data
+			insertPoint := bytes.Index(data, []byte("COMMIT"))
+			if insertPoint == -1 {
+				return nil, errors.Errorf("Error by adding rules: Can't find COMMIT statement in iptables-save data")
+			}
+			var rules strings.Builder
+			chain := chainNameStr(rch)
+			for _, rule := range rch.Rules {
+				rules.WriteString(fmt.Sprintf("[0:0] -A %s %s\n", chain, rule))
+			}
+			insertData := []byte(rules.String())
+			updatedData := make([]byte, len(data)+len(insertData))
+			copy(updatedData[:insertPoint], data[:insertPoint])
+			copy(updatedData[insertPoint:insertPoint+len(insertData)], insertData)
+			copy(updatedData[insertPoint+len(insertData):], data[insertPoint:])
+
+			// import modified data to linux
+			err = d.ipTablesHandler.RestoreTable(protocolType(rch), tableNameStr(rch), updatedData, true, true)
+			if err != nil {
+				return nil, errors.Errorf("Error by adding rules: Can't restore modified iptables data due to: %v", err)
+			}
 		}
 	}
 

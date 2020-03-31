@@ -15,10 +15,13 @@
 package linuxcalls
 
 import (
+	"bytes"
 	"fmt"
+	"os/exec"
 	"strings"
 
 	"github.com/coreos/go-iptables/iptables"
+	"github.com/pkg/errors"
 )
 
 const (
@@ -27,6 +30,12 @@ const (
 
 	// prefix of a "new chain" rule
 	newChainRulePrefix = "-N"
+
+	// command names
+	IPv4SaveCmd    string = "iptables-save"
+	IPv4RestoreCmd string = "iptables-restore"
+	IPv6RestoreCmd string = "ip6tables-restore"
+	IPv6SaveCmd    string = "ip6tables-save"
 )
 
 // IPTablesHandler is a handler for all operations on Linux iptables / ip6tables.
@@ -134,6 +143,55 @@ func (h *IPTablesHandler) ListRules(protocol L3Protocol, table, chain string) (r
 	}
 
 	return
+}
+
+// SaveTable exports all data for given table in IPTable-save output format
+func (h *IPTablesHandler) SaveTable(protocol L3Protocol, table string, exportCounters bool) ([]byte, error) {
+	// create command with arguments
+	saveCmd := IPv4SaveCmd
+	if protocol == ProtocolIPv6 {
+		saveCmd = IPv6SaveCmd
+	}
+	args := []string{"-t", table}
+	if exportCounters {
+		args = append(args, "-c")
+	}
+	cmd := exec.Command(saveCmd, args...)
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+
+	// run command and extract result
+	err := cmd.Run()
+	if err != nil {
+		return nil, errors.Errorf("%s failed due to: %v (%s)", saveCmd, err, stderr.String())
+	}
+	return stdout.Bytes(), nil
+}
+
+// RestoreTable import all data (in IPTable-save output format) for given table
+func (h *IPTablesHandler) RestoreTable(protocol L3Protocol, table string, data []byte, flush bool, importCounters bool) error {
+	// create command with arguments
+	restoreCmd := IPv4RestoreCmd
+	if protocol == ProtocolIPv6 {
+		restoreCmd = IPv6RestoreCmd
+	}
+	args := []string{"-T", table}
+	if importCounters {
+		args = append(args, "-c")
+	}
+	if !flush {
+		args = append(args, "-n")
+	}
+	cmd := exec.Command(restoreCmd, args...)
+	cmd.Stdin = bytes.NewReader(data)
+
+	// run command and extract result
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return errors.Errorf("%s failed due to: %v (%s)", restoreCmd, err, string(output))
+	}
+	return nil
 }
 
 // getHandler returns the iptables handler for the given protocol.

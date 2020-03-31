@@ -52,6 +52,9 @@ type IPTablesAPIWrite interface {
 
 	// DeleteAllRules deletes all rules within the specified chain.
 	DeleteAllRules(protocol L3Protocol, table, chain string) error
+
+	// RestoreTable import all data (in IPTable-save output format) for given table
+	RestoreTable(protocol L3Protocol, table string, data []byte, flush bool, importCounters bool) error
 }
 
 // IPTablesAPIRead interface covers read methods inside linux calls package
@@ -59,6 +62,9 @@ type IPTablesAPIWrite interface {
 type IPTablesAPIRead interface {
 	// ListRules lists all rules within the specified chain.
 	ListRules(protocol L3Protocol, table, chain string) (rules []string, err error)
+
+	// SaveTable exports all data for given table in IPTable-save output format
+	SaveTable(protocol L3Protocol, table string, exportCounters bool) ([]byte, error)
 }
 
 // NewIPTablesHandler creates new instance of iptables handler.

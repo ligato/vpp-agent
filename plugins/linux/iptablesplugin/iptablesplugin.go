@@ -17,10 +17,10 @@
 package iptablesplugin
 
 import (
+	"math"
+
 	"go.ligato.io/cn-infra/v2/infra"
-
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
-
 	"go.ligato.io/vpp-agent/v3/plugins/linux/iptablesplugin/descriptor"
 	"go.ligato.io/vpp-agent/v3/plugins/linux/iptablesplugin/linuxcalls"
 	"go.ligato.io/vpp-agent/v3/plugins/linux/nsplugin"
@@ -30,6 +30,13 @@ const (
 	// by default, at most 10 go routines will split the configured rule chains
 	// to execute the Retrieve operation in parallel.
 	defaultGoRoutinesCnt = 10
+
+	// by default, no rules will be added by alternative performance strategy using
+	// iptables-save/modify data/iptables-store technique
+	// If this performance technique is needed, then the minimum rule limit should be lowered
+	// by configuration to some lower value (0 means that the permance strategy is
+	// always used)
+	defaultMinRuleCountForPerfRuleAddition = math.MaxInt32
 )
 
 // IPTablesPlugin configures Linux iptables rules.
@@ -56,8 +63,9 @@ type Deps struct {
 
 // Config holds the plugin configuration.
 type Config struct {
-	Disabled      bool `json:"disabled"`
-	GoRoutinesCnt int  `json:"go-routines-count"`
+	Disabled                        bool `json:"disabled"`
+	GoRoutinesCnt                   int  `json:"go-routines-count"`
+	MinRuleCountForPerfRuleAddition int  `json:"min-rule-count-for-performance-rule-addition"`
 }
 
 // Init initializes and registers descriptors and handlers for Linux iptables rules.
@@ -85,7 +93,7 @@ func (p *IPTablesPlugin) Init() error {
 
 	// init & register the descriptor
 	ruleChainDescriptor := descriptor.NewRuleChainDescriptor(
-		p.KVScheduler, p.iptHandler, p.NsPlugin, p.Log, config.GoRoutinesCnt)
+		p.KVScheduler, p.iptHandler, p.NsPlugin, p.Log, config.GoRoutinesCnt, config.MinRuleCountForPerfRuleAddition)
 
 	err = p.Deps.KVScheduler.RegisterKVDescriptor(ruleChainDescriptor)
 	if err != nil {
@@ -104,7 +112,8 @@ func (p *IPTablesPlugin) Close() error {
 func (p *IPTablesPlugin) retrieveConfig() (*Config, error) {
 	config := &Config{
 		// default configuration
-		GoRoutinesCnt: defaultGoRoutinesCnt,
+		GoRoutinesCnt:                   defaultGoRoutinesCnt,
+		MinRuleCountForPerfRuleAddition: defaultMinRuleCountForPerfRuleAddition,
 	}
 	found, err := p.Cfg.LoadValue(config)
 	if !found {
