@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package ligato.vpp.ipfix;
+
+option go_package = "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/ipfix;vpp_ipfix";
+
+message FlowProbeFeature {
+    string interface = 1;
+    bool l2 = 2;
+    bool ip4 = 3;
+    bool ip6 = 4;
+}
+
+message FlowProbeParams {
+    uint32 active_timer = 1;
+    uint32 passive_timer = 2;
+    bool record_l2 = 3;
+    bool record_l3 = 4;
+    bool record_l4 = 5;
+}

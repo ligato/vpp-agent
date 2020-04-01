@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package ligato.vpp.ipfix;
+
+option go_package = "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/ipfix;vpp_ipfix";
+
+// IPFIX defines the IP Flow Information eXport (IPFIX) configuration.
+message IPFIX {
+    message Collector {
+        string address = 1;
+        uint32 port = 2;
+    }
+    Collector collector = 1;
+    string source_address = 2;
+    uint32 vrf_id = 3;
+    uint32 path_mtu = 4;
+    uint32 template_interval = 5;
+}
