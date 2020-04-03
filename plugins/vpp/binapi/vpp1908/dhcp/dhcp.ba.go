@@ -690,8 +690,10 @@ type WantDHCP6PdReplyEventsReply struct {
 	Retval int32
 }
 
-func (m *WantDHCP6PdReplyEventsReply) Reset()                        { *m = WantDHCP6PdReplyEventsReply{} }
-func (*WantDHCP6PdReplyEventsReply) GetMessageName() string          { return "want_dhcp6_pd_reply_events_reply" }
+func (m *WantDHCP6PdReplyEventsReply) Reset() { *m = WantDHCP6PdReplyEventsReply{} }
+func (*WantDHCP6PdReplyEventsReply) GetMessageName() string {
+	return "want_dhcp6_pd_reply_events_reply"
+}
 func (*WantDHCP6PdReplyEventsReply) GetCrcString() string            { return "e8d4e804" }
 func (*WantDHCP6PdReplyEventsReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 

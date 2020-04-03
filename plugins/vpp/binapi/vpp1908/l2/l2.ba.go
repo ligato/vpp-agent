@@ -941,8 +941,10 @@ type SwInterfaceSetL2BridgeReply struct {
 	Retval int32
 }
 
-func (m *SwInterfaceSetL2BridgeReply) Reset()                        { *m = SwInterfaceSetL2BridgeReply{} }
-func (*SwInterfaceSetL2BridgeReply) GetMessageName() string          { return "sw_interface_set_l2_bridge_reply" }
+func (m *SwInterfaceSetL2BridgeReply) Reset() { *m = SwInterfaceSetL2BridgeReply{} }
+func (*SwInterfaceSetL2BridgeReply) GetMessageName() string {
+	return "sw_interface_set_l2_bridge_reply"
+}
 func (*SwInterfaceSetL2BridgeReply) GetCrcString() string            { return "e8d4e804" }
 func (*SwInterfaceSetL2BridgeReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
