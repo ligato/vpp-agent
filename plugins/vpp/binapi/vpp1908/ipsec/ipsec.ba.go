@@ -29,7 +29,7 @@ const (
 	// APIVersion is the API version of this module.
 	APIVersion = "3.0.0"
 	// VersionCrc is the CRC of this module.
-	VersionCrc = 0x9a42c103
+	VersionCrc = 0xdc202cb1
 )
 
 // AddressFamily represents VPP binary API enum 'address_family'.
@@ -362,6 +362,7 @@ const (
 	IPSEC_API_SAD_FLAG_IS_TUNNEL       IpsecSadFlags = 4
 	IPSEC_API_SAD_FLAG_IS_TUNNEL_V6    IpsecSadFlags = 8
 	IPSEC_API_SAD_FLAG_UDP_ENCAP       IpsecSadFlags = 16
+	IPSEC_API_SAD_FLAG_IS_INBOUND      IpsecSadFlags = 64
 )
 
 var IpsecSadFlags_name = map[uint32]string{
@@ -371,6 +372,7 @@ var IpsecSadFlags_name = map[uint32]string{
 	4:  "IPSEC_API_SAD_FLAG_IS_TUNNEL",
 	8:  "IPSEC_API_SAD_FLAG_IS_TUNNEL_V6",
 	16: "IPSEC_API_SAD_FLAG_UDP_ENCAP",
+	64: "IPSEC_API_SAD_FLAG_IS_INBOUND",
 }
 
 var IpsecSadFlags_value = map[string]uint32{
@@ -380,6 +382,7 @@ var IpsecSadFlags_value = map[string]uint32{
 	"IPSEC_API_SAD_FLAG_IS_TUNNEL":       4,
 	"IPSEC_API_SAD_FLAG_IS_TUNNEL_V6":    8,
 	"IPSEC_API_SAD_FLAG_UDP_ENCAP":       16,
+	"IPSEC_API_SAD_FLAG_IS_INBOUND":      64,
 }
 
 func (x IpsecSadFlags) String() string {
