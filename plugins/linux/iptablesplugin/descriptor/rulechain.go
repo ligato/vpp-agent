@@ -15,8 +15,6 @@
 package descriptor
 
 import (
-	"bytes"
-	"fmt"
 	"strings"
 
 	"github.com/golang/protobuf/proto"
@@ -208,48 +206,13 @@ func (d *RuleChainDescriptor) Create(key string, rch *linux_iptables.RuleChain) 
 	// wipe all rules in the chain that may have existed before
 	err = d.ipTablesHandler.DeleteAllRules(protocolType(rch), tableNameStr(rch), chainNameStr(rch))
 	if err != nil {
-		d.log.Warnf("Error by wiping iptables rules: %v", err)
+		return nil, errors.Errorf("Error by wiping iptables rules: %v", err)
 	}
 
 	// append all rules
-	if len(rch.Rules) > 0 {
-		if len(rch.Rules) < d.minRuleCountForPerfRuleAddition { // use normal method of addition
-			for _, rule := range rch.Rules {
-				err := d.ipTablesHandler.AppendRule(protocolType(rch), tableNameStr(rch), chainNameStr(rch), rule)
-				if err != nil {
-					d.log.Errorf("Error by appending iptables rule: %v", err)
-					break
-				}
-			}
-		} else { // use performance solution (this makes performance difference with higher count of appended rules)
-			// export existing iptables data
-			data, err := d.ipTablesHandler.SaveTable(protocolType(rch), tableNameStr(rch), true)
-			if err != nil {
-				return nil, errors.Errorf("Error by adding rules: Can't export all rules due to: %v", err)
-			}
-
-			// add rules to exported data
-			insertPoint := bytes.Index(data, []byte("COMMIT"))
-			if insertPoint == -1 {
-				return nil, errors.Errorf("Error by adding rules: Can't find COMMIT statement in iptables-save data")
-			}
-			var rules strings.Builder
-			chain := chainNameStr(rch)
-			for _, rule := range rch.Rules {
-				rules.WriteString(fmt.Sprintf("[0:0] -A %s %s\n", chain, rule))
-			}
-			insertData := []byte(rules.String())
-			updatedData := make([]byte, len(data)+len(insertData))
-			copy(updatedData[:insertPoint], data[:insertPoint])
-			copy(updatedData[insertPoint:insertPoint+len(insertData)], insertData)
-			copy(updatedData[insertPoint+len(insertData):], data[insertPoint:])
-
-			// import modified data to linux
-			err = d.ipTablesHandler.RestoreTable(protocolType(rch), tableNameStr(rch), updatedData, true, true)
-			if err != nil {
-				return nil, errors.Errorf("Error by adding rules: Can't restore modified iptables data due to: %v", err)
-			}
-		}
+	err = d.ipTablesHandler.AppendRules(protocolType(rch), tableNameStr(rch), chainNameStr(rch), rch.Rules...)
+	if err != nil {
+		return nil, errors.Errorf("Error by adding rules: %v", err)
 	}
 
 	return nil, err

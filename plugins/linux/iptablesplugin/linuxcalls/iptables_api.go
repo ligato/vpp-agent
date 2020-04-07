@@ -26,7 +26,7 @@ const (
 // to manage linux iptables rules.
 type IPTablesAPI interface {
 	// Init initializes an iptables handler.
-	Init() error
+	Init(config *HandlerConfig) error
 
 	IPTablesAPIWrite
 	IPTablesAPIRead
@@ -47,14 +47,14 @@ type IPTablesAPIWrite interface {
 	// AppendRule appends a rule into the specified chain.
 	AppendRule(protocol L3Protocol, table, chain string, rule string) error
 
+	// AppendRules appends rules into the specified chain.
+	AppendRules(protocol L3Protocol, table, chain string, rules ...string) error
+
 	// DeleteRule deletes a rule from the specified chain.
 	DeleteRule(protocol L3Protocol, table, chain string, rule string) error
 
 	// DeleteAllRules deletes all rules within the specified chain.
 	DeleteAllRules(protocol L3Protocol, table, chain string) error
-
-	// RestoreTable import all data (in IPTable-save output format) for given table
-	RestoreTable(protocol L3Protocol, table string, data []byte, flush bool, importCounters bool) error
 }
 
 // IPTablesAPIRead interface covers read methods inside linux calls package
@@ -62,9 +62,11 @@ type IPTablesAPIWrite interface {
 type IPTablesAPIRead interface {
 	// ListRules lists all rules within the specified chain.
 	ListRules(protocol L3Protocol, table, chain string) (rules []string, err error)
+}
 
-	// SaveTable exports all data for given table in IPTable-save output format
-	SaveTable(protocol L3Protocol, table string, exportCounters bool) ([]byte, error)
+// HandlerConfig holds the IPTablesHandler related configuration.
+type HandlerConfig struct {
+	MinRuleCountForPerfRuleAddition int `json:"min-rule-count-for-performance-rule-addition"`
 }
 
 // NewIPTablesHandler creates new instance of iptables handler.

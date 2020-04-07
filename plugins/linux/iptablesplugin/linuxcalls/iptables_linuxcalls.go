@@ -40,12 +40,13 @@ const (
 
 // IPTablesHandler is a handler for all operations on Linux iptables / ip6tables.
 type IPTablesHandler struct {
-	v4Handler *iptables.IPTables
-	v6Handler *iptables.IPTables
+	v4Handler                       *iptables.IPTables
+	v6Handler                       *iptables.IPTables
+	minRuleCountForPerfRuleAddition int
 }
 
 // Init initializes an iptables handler.
-func (h *IPTablesHandler) Init() error {
+func (h *IPTablesHandler) Init(config *HandlerConfig) error {
 	var err error
 
 	h.v4Handler, err = iptables.NewWithProtocol(iptables.ProtocolIPv4)
@@ -59,6 +60,8 @@ func (h *IPTablesHandler) Init() error {
 		err = fmt.Errorf("errr by initializing iptables v6 handler: %v", err)
 		// continue, ip6tables just may not be installed
 	}
+
+	h.minRuleCountForPerfRuleAddition = config.MinRuleCountForPerfRuleAddition
 
 	return err
 }
@@ -99,6 +102,51 @@ func (h *IPTablesHandler) AppendRule(protocol L3Protocol, table, chain string, r
 	ruleSlice := strings.Split(rule, " ")
 
 	return handler.Append(table, chain, ruleSlice[:]...)
+}
+
+// AppendRules appends rules into the specified chain.
+func (h *IPTablesHandler) AppendRules(protocol L3Protocol, table, chain string, rules ...string) error {
+	if len(rules) == 0 {
+		return nil // nothing to do
+	}
+
+	if len(rules) < h.minRuleCountForPerfRuleAddition { // use normal method of addition
+		for _, rule := range rules {
+			err := h.AppendRule(protocol, table, chain, rule)
+			if err != nil {
+				return errors.Errorf("Error by appending iptables rule: %v", err)
+			}
+		}
+	} else { // use performance solution (this makes performance difference with higher count of appended rules)
+		// export existing iptables data
+		data, err := h.saveTable(protocol, table, true)
+		if err != nil {
+			return errors.Errorf(": Can't export all rules due to: %v", err)
+		}
+
+		// add rules to exported data
+		insertPoint := bytes.Index(data, []byte("COMMIT"))
+		if insertPoint == -1 {
+			return errors.Errorf("Error by adding rules: Can't find COMMIT statement in iptables-save data")
+		}
+		var rulesSB strings.Builder
+		for _, rule := range rules {
+			rulesSB.WriteString(fmt.Sprintf("[0:0] -A %s %s\n", chain, rule))
+		}
+		insertData := []byte(rulesSB.String())
+		updatedData := make([]byte, len(data)+len(insertData))
+		copy(updatedData[:insertPoint], data[:insertPoint])
+		copy(updatedData[insertPoint:insertPoint+len(insertData)], insertData)
+		copy(updatedData[insertPoint+len(insertData):], data[insertPoint:])
+
+		// import modified data to linux
+		err = h.restoreTable(protocol, table, updatedData, true, true)
+		if err != nil {
+			return errors.Errorf("Error by adding rules: Can't restore modified iptables data due to: %v", err)
+		}
+	}
+
+	return nil
 }
 
 // DeleteRule deletes a rule from the specified chain.
@@ -145,8 +193,8 @@ func (h *IPTablesHandler) ListRules(protocol L3Protocol, table, chain string) (r
 	return
 }
 
-// SaveTable exports all data for given table in IPTable-save output format
-func (h *IPTablesHandler) SaveTable(protocol L3Protocol, table string, exportCounters bool) ([]byte, error) {
+// saveTable exports all data for given table in IPTable-save output format
+func (h *IPTablesHandler) saveTable(protocol L3Protocol, table string, exportCounters bool) ([]byte, error) {
 	// create command with arguments
 	saveCmd := IPv4SaveCmd
 	if protocol == ProtocolIPv6 {
@@ -169,8 +217,8 @@ func (h *IPTablesHandler) SaveTable(protocol L3Protocol, table string, exportCou
 	return stdout.Bytes(), nil
 }
 
-// RestoreTable import all data (in IPTable-save output format) for given table
-func (h *IPTablesHandler) RestoreTable(protocol L3Protocol, table string, data []byte, flush bool, importCounters bool) error {
+// restoreTable import all data (in IPTable-save output format) for given table
+func (h *IPTablesHandler) restoreTable(protocol L3Protocol, table string, data []byte, flush bool, importCounters bool) error {
 	// create command with arguments
 	restoreCmd := IPv4RestoreCmd
 	if protocol == ProtocolIPv6 {

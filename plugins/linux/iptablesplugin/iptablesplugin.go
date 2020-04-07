@@ -63,9 +63,10 @@ type Deps struct {
 
 // Config holds the plugin configuration.
 type Config struct {
-	Disabled                        bool `json:"disabled"`
-	GoRoutinesCnt                   int  `json:"go-routines-count"`
-	MinRuleCountForPerfRuleAddition int  `json:"min-rule-count-for-performance-rule-addition"`
+	linuxcalls.HandlerConfig `json:"handler"`
+
+	Disabled      bool `json:"disabled"`
+	GoRoutinesCnt int  `json:"go-routines-count"`
 }
 
 // Init initializes and registers descriptors and handlers for Linux iptables rules.
@@ -84,7 +85,7 @@ func (p *IPTablesPlugin) Init() error {
 
 	// init iptables handler
 	p.iptHandler = linuxcalls.NewIPTablesHandler()
-	err = p.iptHandler.Init()
+	err = p.iptHandler.Init(&config.HandlerConfig)
 	if err != nil && p.configFound {
 		// just warn here, iptables / ip6tables just may not be installed - will return
 		// an error by attempt to configure it
@@ -112,8 +113,10 @@ func (p *IPTablesPlugin) Close() error {
 func (p *IPTablesPlugin) retrieveConfig() (*Config, error) {
 	config := &Config{
 		// default configuration
-		GoRoutinesCnt:                   defaultGoRoutinesCnt,
-		MinRuleCountForPerfRuleAddition: defaultMinRuleCountForPerfRuleAddition,
+		GoRoutinesCnt: defaultGoRoutinesCnt,
+		HandlerConfig: linuxcalls.HandlerConfig{
+			MinRuleCountForPerfRuleAddition: defaultMinRuleCountForPerfRuleAddition,
+		},
 	}
 	found, err := p.Cfg.LoadValue(config)
 	if !found {
