@@ -20,7 +20,6 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
 	"go.ligato.io/cn-infra/v2/logging"
-
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 	ifdescriptor "go.ligato.io/vpp-agent/v3/plugins/linux/ifplugin/descriptor"
 	"go.ligato.io/vpp-agent/v3/plugins/linux/iptablesplugin/descriptor/adapter"
@@ -69,19 +68,22 @@ type RuleChainDescriptor struct {
 
 	// parallelization of the Retrieve operation
 	goRoutinesCnt int
+	// performance solution threshold
+	minRuleCountForPerfRuleAddition int
 }
 
 // NewRuleChainDescriptor creates a new instance of the iptables RuleChain descriptor.
 func NewRuleChainDescriptor(
 	scheduler kvs.KVScheduler, ipTablesHandler linuxcalls.IPTablesAPI, nsPlugin nsplugin.API,
-	log logging.PluginLogger, goRoutinesCnt int) *kvs.KVDescriptor {
+	log logging.PluginLogger, goRoutinesCnt int, minRuleCountForPerfRuleAddition int) *kvs.KVDescriptor {
 
 	descrCtx := &RuleChainDescriptor{
-		scheduler:       scheduler,
-		ipTablesHandler: ipTablesHandler,
-		nsPlugin:        nsPlugin,
-		goRoutinesCnt:   goRoutinesCnt,
-		log:             log.NewLogger("ipt-rulechain-descriptor"),
+		scheduler:                       scheduler,
+		ipTablesHandler:                 ipTablesHandler,
+		nsPlugin:                        nsPlugin,
+		goRoutinesCnt:                   goRoutinesCnt,
+		minRuleCountForPerfRuleAddition: minRuleCountForPerfRuleAddition,
+		log:                             log.NewLogger("ipt-rulechain-descriptor"),
 	}
 
 	typedDescr := &adapter.RuleChainDescriptor{
@@ -204,16 +206,13 @@ func (d *RuleChainDescriptor) Create(key string, rch *linux_iptables.RuleChain) 
 	// wipe all rules in the chain that may have existed before
 	err = d.ipTablesHandler.DeleteAllRules(protocolType(rch), tableNameStr(rch), chainNameStr(rch))
 	if err != nil {
-		d.log.Warnf("Error by wiping iptables rules: %v", err)
+		return nil, errors.Errorf("Error by wiping iptables rules: %v", err)
 	}
 
 	// append all rules
-	for _, rule := range rch.Rules {
-		err := d.ipTablesHandler.AppendRule(protocolType(rch), tableNameStr(rch), chainNameStr(rch), rule)
-		if err != nil {
-			d.log.Errorf("Error by appending iptables rule: %v", err)
-			break
-		}
+	err = d.ipTablesHandler.AppendRules(protocolType(rch), tableNameStr(rch), chainNameStr(rch), rch.Rules...)
+	if err != nil {
+		return nil, errors.Errorf("Error by adding rules: %v", err)
 	}
 
 	return nil, err
