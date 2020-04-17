@@ -15,6 +15,8 @@
 package descriptor
 
 import (
+	"errors"
+
 	"go.ligato.io/cn-infra/v2/logging"
 
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
@@ -24,10 +26,18 @@ import (
 )
 
 const (
+	// FPFeatureDescriptorName is the name of the descriptor for
+	// VPP Flowprobe Feature configuration.
 	FPFeatureDescriptorName = "vpp-flowprobe-feature"
 )
 
-// FPFeatureDescriptor configures Flowprobe feature for VPP.
+// Validation errors:
+var (
+	// ErrIfaceNotDefined returned when interface in confiugration is empty string.
+	ErrIfaceNotDefined = errors.New("missing interface name for Flowprobe Feature")
+)
+
+// FPFeatureDescriptor configures Flowprobe Feature for VPP.
 type FPFeatureDescriptor struct {
 	ipfixHandler vppcalls.IpfixVppAPI
 	log          logging.Logger
@@ -45,38 +55,54 @@ func NewFPFeatureDescriptor(ipfixHandler vppcalls.IpfixVppAPI, log logging.Plugi
 		ValueTypeName: ipfix.ModelFlowprobeFeature.ProtoName(),
 		KeySelector:   ipfix.ModelFlowprobeFeature.IsKeyValid,
 		KeyLabel:      ipfix.ModelFlowprobeFeature.StripKeyPrefix,
+		WithMetadata:  true,
 		Validate:      ctx.Validate,
 		Create:        ctx.Create,
 		Delete:        ctx.Delete,
+		Retrieve:      ctx.Retrieve,
 		Dependencies:  ctx.Dependencies,
 	}
 	return adapter.NewFlowProbeFeatureDescriptor(typedDescr)
 }
 
-// Validate does nothing.
+// Validate checks if Flowprobe Feature configuration is good to send to VPP.
 func (d *FPFeatureDescriptor) Validate(key string, value *ipfix.FlowProbeFeature) error {
+	if value.GetInterface() == "" {
+		return kvs.NewInvalidValueError(ErrIfaceNotDefined, "interface")
+	}
 	return nil
 }
 
-// Create uses vppcalls to pass Flowprobe feature configuration for interface to VPP.
+// Create uses vppcalls to pass Flowprobe Feature configuration for interface to VPP.
 func (d *FPFeatureDescriptor) Create(key string, val *ipfix.FlowProbeFeature) (metadata interface{}, err error) {
 	err = d.ipfixHandler.AddFPFeature(val)
-	return
+	return val, err
 }
 
-// Delete uses vppcalls to remove Flowprobe feature configuration for interface..
+// Delete uses vppcalls to remove Flowprobe Feature configuration for interface.
 func (d *FPFeatureDescriptor) Delete(key string, val *ipfix.FlowProbeFeature, metadata interface{}) (err error) {
 	err = d.ipfixHandler.DelFPFeature(val)
 	return
 }
 
-// Dependencies sets Flowprobe params as a dependency which must be created
-// before enabling Flowprobe feature on an interface.
-func (d *FPFeatureDescriptor) Dependencies(key string, value *ipfix.FlowProbeFeature) []kvs.Dependency {
+// Dependencies sets Flowprobe Params as a dependency which must be created
+// before enabling Flowprobe Feature on an interface.
+func (d *FPFeatureDescriptor) Dependencies(key string, val *ipfix.FlowProbeFeature) []kvs.Dependency {
 	return []kvs.Dependency{
 		{
 			Label: "flowprobe-params",
 			Key:   ipfix.FlowprobeParamsKey(),
 		},
 	}
+}
+
+// Retrieve hopes that configuration in correlate is actual configuration in VPP.
+// As soon as VPP devs will add dump API calls, this methods should be fixed.
+// Also, this method sets metadata, so descriptor for Flowprobe Params would know
+// that there are some interfaces with Flowprobe Feature enabled.
+func (d *FPFeatureDescriptor) Retrieve(correlate []adapter.FlowProbeFeatureKVWithMetadata) (retrieved []adapter.FlowProbeFeatureKVWithMetadata, err error) {
+	for i := range correlate {
+		correlate[i].Metadata = correlate[i].Value
+	}
+	return correlate, nil
 }

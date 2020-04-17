@@ -32,6 +32,18 @@ const (
 	IPFIXDescriptorName = "vpp-ipfix"
 )
 
+// Validation errors:
+var (
+	// ErrColAddrNotDefined returned when collector address in confiugration is empty string.
+	ErrColAddrNotDefined = errors.New("address of a collector was not provided")
+	// ErrSrcAddrNotDefined returned when source address in confiugration is empty string.
+	ErrSrcAddrNotDefined = errors.New("address of a source was not provided")
+	// ErrTooBigMTU informs about the maximum value for Path MTU.
+	ErrTooBigMTU = errors.New("too big value, maximum is 1450")
+	// ErrTooSmlMTU informs about the minimum value for Path MTU.
+	ErrTooSmlMTU = errors.New("too small value, minimum is 68")
+)
+
 // IPFIXDescriptor configures IPFIX for VPP.
 type IPFIXDescriptor struct {
 	ipfixHandler vppcalls.IpfixVppAPI
@@ -59,42 +71,35 @@ func NewIPFIXDescriptor(ipfixHandler vppcalls.IpfixVppAPI, log logging.PluginLog
 	return adapter.NewIPFIXDescriptor(typedDescr)
 }
 
-// Validate validates VPP IPFIX configuration.
+// Validate does basic check of VPP IPFIX configuration.
 func (d *IPFIXDescriptor) Validate(key string, value *ipfix.IPFIX) error {
-	d.log.Debug("Validate IPFIX")
 	if value.GetCollector().GetAddress() == "" {
-		err := errors.New("address of a collector was not provided")
-		return kvs.NewInvalidValueError(err, "collector.address")
+		return kvs.NewInvalidValueError(ErrColAddrNotDefined, "collector.address")
 	}
 
 	if value.GetSourceAddress() == "" {
-		err := errors.New("address of a source was not provided")
-		return kvs.NewInvalidValueError(err, "source_address")
+		return kvs.NewInvalidValueError(ErrSrcAddrNotDefined, "source_address")
 	}
 
 	if mtu := value.GetPathMtu(); mtu == 0 {
-		// That's okay. No worries. Will use the default path-mtu value.
+		// That's okay. No worries. VPP will use the default Path MTU value.
 	} else if mtu > vppcalls.MaxPathMTU {
-		err := errors.New("too big value, maximum is 1450")
-		return kvs.NewInvalidValueError(err, "path_mtu")
+		return kvs.NewInvalidValueError(ErrTooBigMTU, "path_mtu")
 	} else if mtu < vppcalls.MinPathMTU {
-		err := errors.New("too small value, minimum is 68")
-		return kvs.NewInvalidValueError(err, "path_mtu")
+		return kvs.NewInvalidValueError(ErrTooSmlMTU, "path_mtu")
 	}
 
 	return nil
 }
 
-// Create sets VPP IPFIX configuration.
+// Create calls Update method, because IPFIX configuration is always there and can not be created.
 func (d *IPFIXDescriptor) Create(key string, val *ipfix.IPFIX) (metadata interface{}, err error) {
-	d.log.Debug("Create IPFIX")
-	err = d.ipfixHandler.SetExporter(val)
+	_, err = d.Update(key, nil, val, nil)
 	return
 }
 
 // Update sets VPP IPFIX configuration.
 func (d *IPFIXDescriptor) Update(key string, oldVal, newVal *ipfix.IPFIX, oldMetadata interface{}) (newMetadata interface{}, err error) {
-	d.log.Debug("Update IPFIX")
 	err = d.ipfixHandler.SetExporter(newVal)
 	return
 }
@@ -103,11 +108,10 @@ func (d *IPFIXDescriptor) Update(key string, oldVal, newVal *ipfix.IPFIX, oldMet
 // nor reasons to delete VPP IPFIX configuration.
 // You can only configure exporting in a way you want to.
 func (d *IPFIXDescriptor) Delete(key string, val *ipfix.IPFIX, metadata interface{}) (err error) {
-	d.log.Debug("Delete IPFIX")
 	return nil
 }
 
-// Retrieve returns all configured IP flow infromation exporters.
+// Retrieve returns configuration of IP Flow Infromation eXporter.
 func (d *IPFIXDescriptor) Retrieve(correlate []adapter.IPFIXKVWithMetadata) (retrieved []adapter.IPFIXKVWithMetadata, err error) {
 	ipfixes, err := d.ipfixHandler.DumpExporters()
 	if err != nil {

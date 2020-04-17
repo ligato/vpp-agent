@@ -37,9 +37,15 @@ import (
 // IPFIXPlugin is a plugin that manages IPFIX configuration in VPP.
 // IPFIX - IP Flow Information Export (IPFIX).
 // It allows to:
-//   - configure export of flowprobe information;
-//   - configure flowprobe params;
-//   - enable/disable flowprobe feature for an interface.
+//   - configure export of Flowprobe information;
+//   - configure Flowprobe Params;
+//   - enable/disable Flowprobe Feature for an interface.
+//
+// Things to rememmber:
+//   - Flowprobe Feature can not be configured for any interface,
+//     if Flowprobe Params were not set.
+//   - Flowprobe Params can not be changed,
+//     if Flowprobe Feature was enabled for at least one interface.
 type IPFIXPlugin struct {
 	Deps
 
@@ -75,14 +81,20 @@ func (p *IPFIXPlugin) Init() (err error) {
 		return err
 	}
 
-	fpParamsDescriptor := descriptor.NewFPParamsDescriptor(p.ipfixHandler, p.Log)
-	err = p.KVScheduler.RegisterKVDescriptor(fpParamsDescriptor)
+	fpFeatureDescriptor := descriptor.NewFPFeatureDescriptor(p.ipfixHandler, p.Log)
+	err = p.KVScheduler.RegisterKVDescriptor(fpFeatureDescriptor)
 	if err != nil {
 		return err
 	}
 
-	fpFeautreDescriptor := descriptor.NewFPFeatureDescriptor(p.ipfixHandler, p.Log)
-	err = p.KVScheduler.RegisterKVDescriptor(fpFeautreDescriptor)
+	// Descriptor for Flowprobe Params will use `fpFeatureMM` to check
+	// if Flowprobe Params can be updated. If at least one item is in this
+	// map, than there is at least one interface with Flowprobe Feature
+	// enabled, hence Flowprobe Params update is not allowed.
+	fpFeatureMM := p.KVScheduler.GetMetadataMap(fpFeatureDescriptor.Name)
+
+	fpParamsDescriptor := descriptor.NewFPParamsDescriptor(p.ipfixHandler, fpFeatureMM, p.Log)
+	err = p.KVScheduler.RegisterKVDescriptor(fpParamsDescriptor)
 	if err != nil {
 		return err
 	}
