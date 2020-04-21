@@ -42,6 +42,7 @@ func TestIPIP(t *testing.T) {
 	tests := []struct {
 		name       string
 		ipip       *interfaces.IPIPLink
+		ipip2      *interfaces.IPIPLink
 		shouldFail bool
 	}{
 		{
@@ -75,6 +76,30 @@ func TestIPIP(t *testing.T) {
 			},
 			shouldFail: true,
 		},
+		{
+			name: "Create 2 IPIP tunnels (IPv4)",
+			ipip: &interfaces.IPIPLink{
+				SrcAddr: "20.30.40.50",
+				DstAddr: "50.40.30.20",
+			},
+			ipip2: &interfaces.IPIPLink{
+				SrcAddr: "20.30.40.50",
+				DstAddr: "50.40.30.21",
+			},
+			shouldFail: false,
+		},
+		{
+			name: "Create 2 IPIP tunnels with same src & dst addresses (IPv4)",
+			ipip: &interfaces.IPIPLink{
+				SrcAddr: "20.30.40.50",
+				DstAddr: "50.40.30.20",
+			},
+			ipip2: &interfaces.IPIPLink{
+				SrcAddr: "20.30.40.50",
+				DstAddr: "50.40.30.20",
+			},
+			shouldFail: true,
+		},
 	}
 	for i, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -87,8 +112,28 @@ func TestIPIP(t *testing.T) {
 				}
 				t.Fatalf("create IPIP tunnel failed: %v\n", err)
 			} else {
-				if test.shouldFail {
+				if test.shouldFail && test.ipip2 == nil {
 					t.Fatal("create IPIP tunnel must fail, but it's not")
+				}
+			}
+
+			var (
+				ifName2 string
+				ifIdx2  uint32
+			)
+			if test.ipip2 != nil {
+				ifName2 := fmt.Sprintf("ipip%d-2", i)
+				ifIdx2, err = h.AddIpipTunnel(ifName2, 0, test.ipip2)
+
+				if err != nil {
+					if test.shouldFail {
+						return
+					}
+					t.Fatalf("create IPIP tunnel failed: %v\n", err)
+				} else {
+					if test.shouldFail {
+						t.Fatal("create IPIP tunnel must fail, but it's not")
+					}
 				}
 			}
 
@@ -100,6 +145,12 @@ func TestIPIP(t *testing.T) {
 				iface, ok := ifaces[ifIdx]
 				if !ok {
 					t.Fatalf("IPIP interface was not found in dump")
+				}
+				if test.ipip2 != nil {
+					_, ok := ifaces[ifIdx2]
+					if !ok {
+						t.Fatalf("IPIP interface2 was not found in dump")
+					}
 				}
 
 				if iface.Interface.GetType() != interfaces.Interface_IPIP_TUNNEL {
@@ -121,6 +172,12 @@ func TestIPIP(t *testing.T) {
 			if err != nil {
 				t.Fatalf("delete IPIP tunnel failed: %v\n", err)
 			}
+			if test.ipip2 != nil {
+				err = h.DelIpipTunnel(ifName2, ifIdx2)
+				if err != nil {
+					t.Fatalf("delete IPIP tunnel failed: %v\n", err)
+				}
+			}
 
 			if dumpAPIOk {
 				ifaces, err := h.DumpInterfaces(ctx.Ctx)
@@ -130,6 +187,11 @@ func TestIPIP(t *testing.T) {
 
 				if _, ok := ifaces[ifIdx]; ok {
 					t.Fatalf("IPIP interface was found in dump after removing")
+				}
+				if test.ipip2 != nil {
+					if _, ok := ifaces[ifIdx2]; ok {
+						t.Fatalf("IPIP interface2 was found in dump after removing")
+					}
 				}
 			}
 		})

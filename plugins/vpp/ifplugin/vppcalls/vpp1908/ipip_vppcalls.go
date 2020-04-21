@@ -29,7 +29,8 @@ import (
 func (h *InterfaceVppHandler) AddIpipTunnel(ifName string, vrf uint32, ipipLink *interfaces.IPIPLink) (uint32, error) {
 	req := &ipip.IpipAddTunnel{
 		Tunnel: ipip.IpipTunnel{
-			TableID: vrf,
+			Instance: ^uint32(0),
+			TableID:  vrf,
 		},
 	}
 
