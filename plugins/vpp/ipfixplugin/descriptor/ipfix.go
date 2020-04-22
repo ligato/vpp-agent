@@ -57,18 +57,72 @@ func NewIPFIXDescriptor(ipfixHandler vppcalls.IpfixVppAPI, log logging.PluginLog
 		log:          log.NewLogger("ipfix-descriptor"),
 	}
 	typedDescr := &adapter.IPFIXDescriptor{
-		Name:          IPFIXDescriptorName,
-		NBKeyPrefix:   ipfix.ModelIPFIX.KeyPrefix(),
-		ValueTypeName: ipfix.ModelIPFIX.ProtoName(),
-		KeySelector:   ipfix.ModelIPFIX.IsKeyValid,
-		KeyLabel:      ipfix.ModelIPFIX.StripKeyPrefix,
-		Validate:      ctx.Validate,
-		Create:        ctx.Create,
-		Delete:        ctx.Delete,
-		Retrieve:      ctx.Retrieve,
-		Update:        ctx.Update,
+		Name:            IPFIXDescriptorName,
+		NBKeyPrefix:     ipfix.ModelIPFIX.KeyPrefix(),
+		ValueTypeName:   ipfix.ModelIPFIX.ProtoName(),
+		KeySelector:     ipfix.ModelIPFIX.IsKeyValid,
+		KeyLabel:        ipfix.ModelIPFIX.StripKeyPrefix,
+		ValueComparator: ctx.EquivalentIPFIX,
+		Validate:        ctx.Validate,
+		Create:          ctx.Create,
+		Delete:          ctx.Delete,
+		Retrieve:        ctx.Retrieve,
+		Update:          ctx.Update,
 	}
 	return adapter.NewIPFIXDescriptor(typedDescr)
+}
+
+// EquivalentIPFIX returns true if two IPFIX configurations are equal.
+func (d *IPFIXDescriptor) EquivalentIPFIX(key string, oldValue, newValue *ipfix.IPFIX) bool {
+	if oldValue.GetCollector().GetAddress() != newValue.GetCollector().GetAddress() {
+		return false
+	}
+
+	if oldValue.GetSourceAddress() != newValue.GetSourceAddress() {
+		return false
+	}
+
+	oldPort := oldValue.GetCollector().GetPort()
+	newPort := newValue.GetCollector().GetPort()
+	if oldPort != newPort {
+		defaultPort := uint32(4739)
+		oldIsNotDefault := oldPort != 0 && oldPort != defaultPort
+		newIsNotDefault := newPort != 0 && newPort != defaultPort
+
+		if oldIsNotDefault || newIsNotDefault {
+			return false
+		}
+	}
+
+	if oldValue.GetVrfId() != newValue.GetVrfId() {
+		return false
+	}
+
+	oldMTU := oldValue.GetPathMtu()
+	newMTU := newValue.GetPathMtu()
+	if oldMTU != newMTU {
+		defaultMTU := uint32(512)
+		oldIsNotDefault := oldMTU != 0 && oldMTU != defaultMTU
+		newIsNotDefault := newMTU != 0 && newMTU != defaultMTU
+
+		if oldIsNotDefault || newIsNotDefault {
+			return false
+		}
+	}
+
+	oldInterval := oldValue.GetTemplateInterval()
+	newInterval := newValue.GetTemplateInterval()
+	if oldInterval != newInterval {
+		defaultInterval := uint32(20)
+		oldIsNotDefault := oldInterval != 0 && oldInterval != defaultInterval
+		newIsNotDefault := newInterval != 0 && newInterval != defaultInterval
+
+		if oldIsNotDefault || newIsNotDefault {
+			return false
+		}
+	}
+
+	return true
 }
 
 // Validate does basic check of VPP IPFIX configuration.
