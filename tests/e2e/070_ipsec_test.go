@@ -25,7 +25,7 @@ import (
 	"go.ligato.io/vpp-agent/v3/proto/ligato/vpp/ipsec"
 )
 
-func TestSpan(t *testing.T) {
+func TestIPSec(t *testing.T) {
 	ctx := setupE2E(t)
 	defer ctx.teardownE2E()
 
