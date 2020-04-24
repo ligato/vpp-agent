@@ -117,8 +117,8 @@ func TestIPSec(t *testing.T) {
 	}
 	tpNew := &vpp_ipsec.TunnelProtection{
 		Interface: tunnelIfName,
-		SaOut:     []uint32{saOut.Index},
-		SaIn:      []uint32{saIn.Index},
+		SaOut:     []uint32{saOutNew.Index},
+		SaIn:      []uint32{saInNew.Index},
 	}
 
 	req2 := ctx.grpcClient.ChangeRequest()
@@ -133,9 +133,9 @@ func TestIPSec(t *testing.T) {
 		).Send(context.Background())
 	Expect(err).ToNot(HaveOccurred(), "Sending change request failed with err")
 
-	Eventually(ctx.getValueStateClb(saOut)).Should(Equal(kvscheduler.ValueState_REMOVED),
+	Eventually(ctx.getValueStateClb(saOut)).Should(Equal(kvscheduler.ValueState_NONEXISTENT),
 		"old OUT SA was not removed")
-	Eventually(ctx.getValueStateClb(saIn)).Should(Equal(kvscheduler.ValueState_REMOVED),
+	Eventually(ctx.getValueStateClb(saIn)).Should(Equal(kvscheduler.ValueState_NONEXISTENT),
 		"old IN SA was not removed")
 	Eventually(ctx.getValueStateClb(saOutNew)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
 		"OUT SA is not configured")
@@ -155,12 +155,12 @@ func TestIPSec(t *testing.T) {
 	).Send(context.Background())
 	Expect(err).ToNot(HaveOccurred(), "Sending change request failed with err")
 
-	Eventually(ctx.getValueStateClb(saOutNew)).Should(Equal(kvscheduler.ValueState_REMOVED),
+	Eventually(ctx.getValueStateClb(saOutNew)).Should(Equal(kvscheduler.ValueState_NONEXISTENT),
 		"OUT SA was not removed")
-	Eventually(ctx.getValueStateClb(saInNew)).Should(Equal(kvscheduler.ValueState_REMOVED),
+	Eventually(ctx.getValueStateClb(saInNew)).Should(Equal(kvscheduler.ValueState_NONEXISTENT),
 		"IN SA was not removed")
-	Eventually(ctx.getValueStateClb(tpNew)).Should(Equal(kvscheduler.ValueState_REMOVED),
+	Eventually(ctx.getValueStateClb(tpNew)).Should(Equal(kvscheduler.ValueState_NONEXISTENT),
 		"tunnel protection was not removed")
-	Eventually(ctx.getValueStateClb(ipipTun)).Should(Equal(kvscheduler.ValueState_REMOVED),
+	Eventually(ctx.getValueStateClb(ipipTun)).Should(Equal(kvscheduler.ValueState_NONEXISTENT),
 		"IPIP tunnel was not removed")
 }
