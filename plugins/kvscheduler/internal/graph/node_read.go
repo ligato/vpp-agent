@@ -16,6 +16,7 @@ package graph
 
 import (
 	"github.com/golang/protobuf/proto"
+	"go.ligato.io/cn-infra/v2/logging"
 )
 
 // maximum number of flags allowed to have defined
@@ -52,28 +53,53 @@ func (node *nodeR) GetKey() string {
 
 // GetLabel returns the label associated with this node.
 func (node *nodeR) GetLabel() string {
+	if node == nil {
+		logging.Warnf("kvscheduler: NODE==nil, GetLabel()")
+		return ""
+	}
+
 	return node.label
 }
 
 // GetValue returns the value associated with the node.
 func (node *nodeR) GetValue() proto.Message {
+	if node == nil {
+		logging.Warnf("kvscheduler: NODE==nil, GetValue()")
+		return nil
+	}
+
 	return node.value
 }
 
 // GetFlag returns reference to the given flag or nil if the node doesn't have
 // this flag associated.
 func (node *nodeR) GetFlag(flagIndex int) Flag {
+	if node == nil {
+		logging.Warnf("kvscheduler: NODE==nil, GetFlag(flagIndex=%v)", flagIndex)
+		return nil
+	}
+
 	return node.flags[flagIndex]
 }
 
 // GetMetadata returns the value metadata associated with the node.
 func (node *nodeR) GetMetadata() interface{} {
+	if node == nil {
+		logging.Warnf("kvscheduler: NODE==nil, GetMetadata()")
+		return nil
+	}
+
 	return node.metadata
 }
 
 // GetTargets returns a set of nodes, indexed by relation labels, that the
 // edges of the given relation points to.
 func (node *nodeR) GetTargets(relation string) (runtimeTargets RuntimeTargets) {
+	if node == nil {
+		logging.Warnf("kvscheduler: NODE==nil, GetTargets(relation=%v)", relation)
+		return nil
+	}
+
 	for i := node.targets.RelationBegin(relation); i < len(node.targets); i++ {
 		if node.targets[i].Relation != relation {
 			break
@@ -93,6 +119,11 @@ func (node *nodeR) GetTargets(relation string) (runtimeTargets RuntimeTargets) {
 // IterTargets allows to iterate over the set of nodes that the edges of the given
 // relation points to.
 func (node *nodeR) IterTargets(relation string, callback TargetIterator) {
+	if node == nil {
+		logging.Warnf("kvscheduler: NODE==nil, IterTargets(relation=%v)", relation)
+		return
+	}
+
 	for i := node.targets.RelationBegin(relation); i < len(node.targets); i++ {
 		if node.targets[i].Relation != relation {
 			break
@@ -119,6 +150,11 @@ func (node *nodeR) IterTargets(relation string, callback TargetIterator) {
 // GetSources returns edges pointing to this node in the reverse
 // orientation.
 func (node *nodeR) GetSources(relation string) (runtimeTargets RuntimeTargets) {
+	if node == nil {
+		logging.Warnf("kvscheduler: NODE==nil, GetSources(relation=%v)", relation)
+		return
+	}
+
 	for i := node.sources.RelationBegin(relation); i < len(node.sources); i++ {
 		if node.sources[i].Relation != relation {
 			break

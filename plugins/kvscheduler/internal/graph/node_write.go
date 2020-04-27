@@ -19,6 +19,8 @@ import (
 	"sort"
 
 	"github.com/golang/protobuf/proto"
+	"go.ligato.io/cn-infra/v2/logging"
+
 	"go.ligato.io/vpp-agent/v3/plugins/kvscheduler/internal/utils"
 )
 
@@ -49,18 +51,33 @@ func newNode(nodeR *nodeR) *node {
 
 // SetLabel associates given label with this node.
 func (node *node) SetLabel(label string) {
+	if node == nil {
+		logging.Warnf("kvscheduler: NODE==nil, SetLabel(label=%v)", label)
+		return
+	}
+
 	node.label = label
 	node.dataUpdated = true
 }
 
 // SetValue associates given value with this node.
 func (node *node) SetValue(value proto.Message) {
+	if node == nil {
+		logging.Warnf("kvscheduler: NODE==nil, SetValue(value=%v)", value)
+		return
+	}
+
 	node.value = value
 	node.dataUpdated = true
 }
 
 // SetFlags associates given flag with this node.
 func (node *node) SetFlags(flags ...Flag) {
+	if node == nil {
+		logging.Warnf("kvscheduler: NODE==nil, SetFlags(flags=%v)", flags)
+		return
+	}
+
 	for _, flag := range flags {
 		node.flags[flag.GetIndex()] = flag
 	}
@@ -69,6 +86,11 @@ func (node *node) SetFlags(flags ...Flag) {
 
 // DelFlags removes given flag from this node.
 func (node *node) DelFlags(flagIndexes ...int) {
+	if node == nil {
+		logging.Warnf("kvscheduler: NODE==nil, DelFlags(flagIndexes=%v)", flagIndexes)
+		return
+	}
+
 	for _, idx := range flagIndexes {
 		node.flags[idx] = nil
 	}
@@ -78,6 +100,11 @@ func (node *node) DelFlags(flagIndexes ...int) {
 // SetMetadataMap chooses metadata map to be used to store the association
 // between this node's value label and metadata.
 func (node *node) SetMetadataMap(mapName string) {
+	if node == nil {
+		logging.Warnf("kvscheduler: NODE==nil, SetMetadataMap(mapName=%v)", mapName)
+		return
+	}
+
 	if node.metadataMap == "" { // cannot be changed
 		node.metadataMap = mapName
 		node.dataUpdated = true
@@ -90,6 +117,11 @@ func (node *node) SetMetadataMap(mapName string) {
 
 // SetMetadata associates given value metadata with this node.
 func (node *node) SetMetadata(metadata interface{}) {
+	if node == nil {
+		logging.Warnf("kvscheduler: NODE==nil, SetMetadata(metadata=%v)", metadata)
+		return
+	}
+
 	node.metadata = metadata
 	node.dataUpdated = true
 	node.metaInSync = false
@@ -100,6 +132,11 @@ func (node *node) SetMetadata(metadata interface{}) {
 
 // syncMetadata applies metadata changes into the associated mapping.
 func (node *node) syncMetadata() {
+	if node == nil {
+		logging.Warnf("kvscheduler: NODE==nil, syncMetadata()")
+		return
+	}
+
 	if node.metaInSync {
 		return
 	}
@@ -125,6 +162,10 @@ func (node *node) syncMetadata() {
 
 // SetTargets updates definitions of all edges pointing from this node.
 func (node *node) SetTargets(targetsDef []RelationTargetDef) {
+	if node == nil {
+		logging.Warnf("kvscheduler: NODE==nil, SetTargets(targetsDef=%v)", targetsDef)
+		return
+	}
 
 	pgraph := node.graph.parent
 	if pgraph != nil && pgraph.methodTracker != nil {
@@ -242,6 +283,11 @@ func (node *node) SetTargets(targetsDef []RelationTargetDef) {
 
 // addTargetEntry adds new target entry at the given index.
 func (node *node) addTargetEntry(index int, relation, label string, singleton bool) {
+	if node == nil {
+		logging.Warnf("kvscheduler: NODE==nil, addTargetEntry(index=%v, relation=%v, label=%v, singleton=%v)", index, relation, label, singleton)
+		return
+	}
+
 	node.targets = append(node.targets, Target{})
 	if index < len(node.targets)-1 {
 		copy(node.targets[index+1:], node.targets[index:])
@@ -260,6 +306,11 @@ func (node *node) addTargetEntry(index int, relation, label string, singleton bo
 
 // removeTargetEntry removes target entry at the given index
 func (node *node) removeTargetEntry(index int) {
+	if node == nil {
+		logging.Warnf("kvscheduler: NODE==nil, removeTargetEntry(index=%v)", index)
+		return
+	}
+
 	if index < len(node.targets)-1 {
 		copy(node.targets[index:], node.targets[index+1:])
 	}
@@ -267,6 +318,11 @@ func (node *node) removeTargetEntry(index int) {
 }
 
 func (node *node) addDelEdges(target RelationTargetDef, del bool) {
+	if node == nil {
+		logging.Warnf("kvscheduler: NODE==nil, addDelEdges(target=%v, del=%v)", target, del)
+		return
+	}
+
 	cb := node.graph.edgeLookup.addEdge
 	if del {
 		cb = node.graph.edgeLookup.delEdge
@@ -303,6 +359,11 @@ func (node *node) addDelEdges(target RelationTargetDef, del bool) {
 
 // iterEveryEdge iterates over every outgoing edge.
 func (node *node) iterEveryEdge(target RelationTargetDef, cb func(targetKey string)) {
+	if node == nil {
+		logging.Warnf("kvscheduler: NODE==nil, iterEveryEdge(target=%v)", target)
+		return
+	}
+
 	checkTarget := func(key string) {
 		if !target.WithKeySelector() || target.Selector.KeySelector(key) == true {
 			cb(key)
@@ -323,6 +384,11 @@ func (node *node) iterEveryEdge(target RelationTargetDef, cb func(targetKey stri
 // addToTargets adds node2 into the set of targets for this node.
 // Sources of node2 are also updated accordingly.
 func (node *node) addToTargets(node2 *node, target *Target) {
+	if node == nil {
+		logging.Warnf("kvscheduler: NODE==nil, addToTargets(node2=%v, target=%v)", node2, target)
+		return
+	}
+
 	// update targets of node
 	updated := target.MatchingKeys.Add(node2.key)
 	node.targetsUpdated = updated || node.targetsUpdated
@@ -337,6 +403,11 @@ func (node *node) addToTargets(node2 *node, target *Target) {
 
 // addToSources adds node2 into the set of sources for this node.
 func (node *node) addToSources(node2 *node, target *Target) {
+	if node == nil {
+		logging.Warnf("kvscheduler: NODE==nil, addToSources(node2=%v, target=%v)", node2, target)
+		return
+	}
+
 	s, idx := node.sources.GetTargetForLabel(target.Relation, target.Label)
 	if s == nil {
 		node.sources = append(node.sources, Target{})
@@ -358,6 +429,11 @@ func (node *node) addToSources(node2 *node, target *Target) {
 // removeFromTarget removes given key from the given target.
 // Note: sources are not updated!
 func (node *node) removeFromTarget(key, relation, label string) {
+	if node == nil {
+		logging.Warnf("kvscheduler: NODE==nil, removeFromTarget(relation=%v, label=%v, key=%v)", relation, label, key)
+		return
+	}
+
 	target, _ := node.targets.GetTargetForLabel(relation, label)
 	updated := target.MatchingKeys.Del(key)
 	node.targetsUpdated = updated || node.targetsUpdated
@@ -368,6 +444,11 @@ func (node *node) removeFromTarget(key, relation, label string) {
 
 // removeFromSources removes given key from the sources for the given relation.
 func (node *node) removeFromSources(relation, label, key string) {
+	if node == nil {
+		logging.Warnf("kvscheduler: NODE==nil, removeFromSources(relation=%v, label=%v, key=%v)", relation, label, key)
+		return
+	}
+
 	t, idx := node.sources.GetTargetForLabel(relation, label)
 	updated := t.MatchingKeys.Del(key)
 	if updated {
