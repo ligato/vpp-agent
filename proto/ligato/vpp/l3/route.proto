@@ -4,44 +4,53 @@ package ligato.vpp.l3;
 
 option go_package = "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3;vpp_l3";
 
+// mpls.proto defines the mpls label structure, mapls label is a part of Route
+// structure.
+import "ligato/vpp/mpls/mpls.proto";
+
 message Route {
-    enum RouteType {
-        // Forwarding is being done in the specified vrf_id only, or according to
-        // the specified outgoing interface.
-        INTRA_VRF = 0;
-        // Forwarding is being done by lookup into a different VRF,
-        // specified as via_vrf_id field. In case of these routes, the outgoing
-        // interface should not be specified. The next hop IP address
-        // does not have to be specified either, in that case VPP does full
-        // recursive lookup in the via_vrf_id VRF.
-        INTER_VRF = 1;
-        // Drops the network communication designated for specific IP address.
-        DROP = 2;
-    }
-    RouteType type = 10;
+  enum RouteType {
+    // Forwarding is being done in the specified vrf_id only, or according to
+    // the specified outgoing interface.
+    INTRA_VRF = 0;
+    // Forwarding is being done by lookup into a different VRF,
+    // specified as via_vrf_id field. In case of these routes, the outgoing
+    // interface should not be specified. The next hop IP address
+    // does not have to be specified either, in that case VPP does full
+    // recursive lookup in the via_vrf_id VRF.
+    INTER_VRF = 1;
+    // Drops the network communication designated for specific IP address.
+    DROP = 2;
+  }
+  RouteType type = 10;
 
-    // VRF identifier, field required for remote client. This value should be
-    // consistent with VRF ID in static route key. If it is not, value from
-    // key will be preffered and this field will be overriden.
-    // Non-zero VRF has to be explicitly created (see api/models/vpp/l3/vrf.proto)
-    uint32 vrf_id = 1;
+  // VRF identifier, field required for remote client. This value should be
+  // consistent with VRF ID in static route key. If it is not, value from
+  // key will be preffered and this field will be overriden.
+  // Non-zero VRF has to be explicitly created (see api/models/vpp/l3/vrf.proto)
+  uint32 vrf_id = 1;
 
-    // Destination network defined by IP address and prefix (format: <address>/<prefix>).
-    string dst_network = 3;
+  // Destination network defined by IP address and prefix (format:
+  // <address>/<prefix>).
+  string dst_network = 3;
 
-    // Next hop address.
-    string next_hop_addr = 4;
+  // Next hop address.
+  string next_hop_addr = 4;
 
-    // Interface name of the outgoing interface.
-    string outgoing_interface = 5;
+  // Interface name of the outgoing interface.
+  string outgoing_interface = 5;
 
-    // Weight is used for unequal cost load balancing.
-    uint32 weight = 6;
+  // Weight is used for unequal cost load balancing.
+  uint32 weight = 6;
 
-    // Preference defines path preference. Lower preference is preferred.
-    // Only paths with the best preference contribute to forwarding (a poor man's primary and backup).
-    uint32 preference = 7;
+  // Preference defines path preference. Lower preference is preferred.
+  // Only paths with the best preference contribute to forwarding (a poor man's
+  // primary and backup).
+  uint32 preference = 7;
 
-    // Specifies VRF ID for the next hop lookup / recursive lookup
-    uint32 via_vrf_id = 8;
+  // Specifies VRF ID for the next hop lookup / recursive lookup
+  uint32 via_vrf_id = 8;
+
+  // Labels specifies mpls label stack to associate with a route entry
+  repeated mpls.MPLSLabel labels = 9;
 }

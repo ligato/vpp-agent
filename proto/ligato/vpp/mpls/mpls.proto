@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+package ligato.vpp.mpls;
+
+option go_package = "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/mpls;vpp_mpls";
+
+// MPLSLabel defines a structure for MPLS Label. It matches the definition of
+// the label found in fib_types
+message MPLSLabel {
+  bool is_uniform = 1; /* Not sure what it is but it is used in fib structure*/
+  uint32 label = 2;    /* 24 out of 32 least significant bits of MPLS label*/
+  bytes ttl = 3;       /* One byte carrying TTL value */
+  bytes exp = 4;       /* One byte carrying EXP bits*/
+}
