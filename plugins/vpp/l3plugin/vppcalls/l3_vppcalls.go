@@ -162,7 +162,11 @@ type RouteMeta struct {
 	IsSourceLookup    bool
 	NextHopID         uint32
 	RpfID             uint32
-	LabelStack        []FibMplsLabel
+
+	// Since l3.Route now has a field for MPLS Stack, carrying it in a route's meta data
+	// maybe not needed
+
+	LabelStack []FibMplsLabel
 }
 
 // RouteVppAPI provides methods for managing routes
