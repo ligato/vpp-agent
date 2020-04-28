@@ -15,6 +15,8 @@
 package descriptor
 
 import (
+	"fmt"
+
 	"github.com/pkg/errors"
 
 	"go.ligato.io/cn-infra/v2/logging"
@@ -132,15 +134,15 @@ func (d *TunnelProtectDescriptor) Dependencies(key string, value *ipsec.TunnelPr
 			Key:   interfaces.InterfaceKey(value.Interface),
 		},
 	}
-	for _, sa := range value.SaOut {
+	for i, sa := range value.SaOut {
 		deps = append(deps, kvs.Dependency{
-			Label: ipsecSADep,
+			Label: fmt.Sprintf("%s-out-%d", ipsecSADep, i),
 			Key:   ipsec.SAKey(sa),
 		})
 	}
-	for _, sa := range value.SaIn {
+	for i, sa := range value.SaIn {
 		deps = append(deps, kvs.Dependency{
-			Label: ipsecSADep,
+			Label: fmt.Sprintf("%s-in-%d", ipsecSADep, i),
 			Key:   ipsec.SAKey(sa),
 		})
 	}

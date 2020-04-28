@@ -178,6 +178,7 @@ func (h *descriptorHandler) dependencies(key string, value proto.Message) (deps 
 	if h.descriptor == nil || h.descriptor.Dependencies == nil {
 		return
 	}
+	// TODO: check that label is unique for each KV pair, throw panic if not (?)
 	defer trackDescMethod(h.descriptor.Name, "Dependencies")()
 	return h.descriptor.Dependencies(key, value)
 }
