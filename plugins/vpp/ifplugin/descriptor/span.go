@@ -108,12 +108,7 @@ func (d *SpanDescriptor) Create(key string, value *interfaces.Span) (metadata in
 		return nil, err
 	}
 
-	var isL2 uint8
-	if value.IsL2 {
-		isL2 = 1
-	}
-
-	err = d.spanHandler.AddSpan(ifaceFrom.SwIfIndex, ifaceTo.SwIfIndex, uint8(value.Direction), isL2)
+	err = d.spanHandler.AddSpan(ifaceFrom.SwIfIndex, ifaceTo.SwIfIndex, uint8(value.Direction), value.IsL2)
 	if err != nil {
 		err = errors.Errorf("failed to add interface span: %v", err)
 		d.log.Error(err)
@@ -140,12 +135,7 @@ func (d *SpanDescriptor) Delete(key string, value *interfaces.Span, metadata int
 		return err
 	}
 
-	var isL2 uint8
-	if value.IsL2 {
-		isL2 = 1
-	}
-
-	err = d.spanHandler.DelSpan(ifaceFrom.SwIfIndex, ifaceTo.SwIfIndex, isL2)
+	err = d.spanHandler.DelSpan(ifaceFrom.SwIfIndex, ifaceTo.SwIfIndex, value.IsL2)
 	if err != nil {
 		err = errors.Errorf("failed to delete interface span: %v", err)
 		d.log.Error(err)
@@ -176,18 +166,13 @@ func (d *SpanDescriptor) Retrieve(correlate []adapter.SpanKVWithMetadata) (retri
 			d.log.Debugf("failed to find interface with index %d", s.SwIfIndexTo)
 			continue
 		}
-		var isL2 bool
-		if s.IsL2 == 1 {
-			isL2 = true
-		}
-
 		retrieved = append(retrieved, adapter.SpanKVWithMetadata{
 			Key: interfaces.SpanKey(nameFrom, nameTo),
 			Value: &interfaces.Span{
 				InterfaceFrom: nameFrom,
 				InterfaceTo:   nameTo,
 				Direction:     interfaces.Span_Direction(s.Direction),
-				IsL2:          isL2,
+				IsL2:          s.IsL2,
 			},
 			Origin: kvs.FromNB,
 		})

@@ -32,6 +32,7 @@ import (
 	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/abfplugin/vppcalls/vpp1904"
 	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/abfplugin/vppcalls/vpp1908"
 	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/abfplugin/vppcalls/vpp2001"
+	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/abfplugin/vppcalls/vpp2005"
 )
 
 // ABFPlugin is a plugin that manages ACL-based forwarding.

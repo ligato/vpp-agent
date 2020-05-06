@@ -30,6 +30,7 @@ import (
 	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/stnplugin/vppcalls/vpp1904"
 	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/stnplugin/vppcalls/vpp1908"
 	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/stnplugin/vppcalls/vpp2001"
+	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/stnplugin/vppcalls/vpp2005"
 )
 
 // STNPlugin configures VPP STN rules using GoVPP.

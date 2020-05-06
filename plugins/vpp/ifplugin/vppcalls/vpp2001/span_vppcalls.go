@@ -8,12 +8,12 @@ import (
 )
 
 // SetSpan enables or disables SPAN on interface
-func (h *InterfaceVppHandler) setSpan(ifIdxFrom, ifIdxTo uint32, state, isL2 uint8) error {
+func (h *InterfaceVppHandler) setSpan(ifIdxFrom, ifIdxTo uint32, state uint8, isL2 bool) error {
 	req := &vpp_span.SwInterfaceSpanEnableDisable{
 		SwIfIndexFrom: ifIdxFrom,
 		SwIfIndexTo:   ifIdxTo,
 		State:         state,
-		IsL2:          isL2,
+		IsL2:          boolToUint(isL2),
 	}
 	reply := &vpp_span.SwInterfaceSpanEnableDisableReply{}
 
@@ -25,12 +25,12 @@ func (h *InterfaceVppHandler) setSpan(ifIdxFrom, ifIdxTo uint32, state, isL2 uin
 }
 
 // AddSpan enables SPAN on interface
-func (h *InterfaceVppHandler) AddSpan(ifIdxFrom, ifIdxTo uint32, direction, isL2 uint8) error {
+func (h *InterfaceVppHandler) AddSpan(ifIdxFrom, ifIdxTo uint32, direction uint8, isL2 bool) error {
 	return h.setSpan(ifIdxFrom, ifIdxTo, direction, isL2)
 }
 
 // DelSpan disables SPAN on interface
-func (h *InterfaceVppHandler) DelSpan(ifIdxFrom, ifIdxTo uint32, isL2 uint8) error {
+func (h *InterfaceVppHandler) DelSpan(ifIdxFrom, ifIdxTo uint32, isL2 bool) error {
 	return h.setSpan(ifIdxFrom, ifIdxTo, 0, isL2)
 }
 
@@ -72,7 +72,7 @@ func (h *InterfaceVppHandler) dumpSpan(msg *vpp_span.SwInterfaceSpanDump) ([]*vp
 			SwIfIndexFrom: spanDetails.SwIfIndexFrom,
 			SwIfIndexTo:   spanDetails.SwIfIndexTo,
 			Direction:     spanDetails.State,
-			IsL2:          spanDetails.IsL2,
+			IsL2:          spanDetails.IsL2 > 0,
 		}
 		spans = append(spans, spanData)
 	}

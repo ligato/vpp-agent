@@ -1,0 +1,16 @@
+diff --git a/plugins/vpp/binapi/vpp2005/sr/sr.ba.go b/plugins/vpp/binapi/vpp2005/sr/sr.ba.go
+index 775dac6f4..c2847d341 100644
+--- a/plugins/vpp/binapi/vpp2005/sr/sr.ba.go
++++ b/plugins/vpp/binapi/vpp2005/sr/sr.ba.go
+@@ -191,9 +191,9 @@ func (*Srv6Sid) GetTypeName() string {
+
+ // Srv6SidList represents VPP binary API type 'srv6_sid_list'.
+ type Srv6SidList struct {
+-	NumSids uint8
++	NumSids uint8 `struc:"sizeof=Sids"`
+	Weight  uint32
+-	Sids    []IP6Address `struc:"[16]IP6Address"`
++	Sids    []IP6Address
+ }
+
+ func (*Srv6SidList) GetTypeName() string {

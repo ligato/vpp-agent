@@ -1,0 +1,75 @@
+//  Copyright (c) 2019 Cisco and/or its affiliates.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at:
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+
+package vpp2005_test
+
+import (
+	"testing"
+
+	. "github.com/onsi/gomega"
+	"go.ligato.io/cn-infra/v2/logging/logrus"
+
+	vpp_arp "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/arp"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin/vppcalls"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin/vppcalls/vpp2005"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/vppmock"
+)
+
+// Test enable/disable proxy arp
+func TestProxyArp(t *testing.T) {
+	ctx, ifIndexes, _, pArpHandler := pArpTestSetup(t)
+	defer ctx.TeardownTestCtx()
+
+	ifIndexes.Put("if1", &ifaceidx.IfaceMetadata{SwIfIndex: 1})
+
+	ctx.MockVpp.MockReply(&vpp_arp.ProxyArpIntfcEnableDisableReply{})
+	err := pArpHandler.EnableProxyArpInterface("if1")
+	Expect(err).To(Succeed())
+
+	ctx.MockVpp.MockReply(&vpp_arp.ProxyArpIntfcEnableDisableReply{})
+	err = pArpHandler.DisableProxyArpInterface("if1")
+	Expect(err).To(Succeed())
+
+	ctx.MockVpp.MockReply(&vpp_arp.ProxyArpIntfcEnableDisableReply{Retval: 1})
+	err = pArpHandler.DisableProxyArpInterface("if1")
+	Expect(err).NotTo(BeNil())
+}
+
+// Test add/delete ip range for proxy arp
+func TestProxyArpRange(t *testing.T) {
+	ctx, _, _, pArpHandler := pArpTestSetup(t)
+	defer ctx.TeardownTestCtx()
+
+	ctx.MockVpp.MockReply(&vpp_arp.ProxyArpAddDelReply{})
+	err := pArpHandler.AddProxyArpRange([]byte{192, 168, 10, 20}, []byte{192, 168, 10, 30})
+	Expect(err).To(Succeed())
+
+	ctx.MockVpp.MockReply(&vpp_arp.ProxyArpAddDelReply{})
+	err = pArpHandler.DeleteProxyArpRange([]byte{192, 168, 10, 23}, []byte{192, 168, 10, 27})
+	Expect(err).To(Succeed())
+
+	ctx.MockVpp.MockReply(&vpp_arp.ProxyArpAddDelReply{Retval: 1})
+	err = pArpHandler.AddProxyArpRange([]byte{192, 168, 10, 23}, []byte{192, 168, 10, 27})
+	Expect(err).To(Not(BeNil()))
+}
+
+func pArpTestSetup(t *testing.T) (*vppmock.TestCtx, ifaceidx.IfaceMetadataIndexRW, vppcalls.ArpVppAPI, vppcalls.ProxyArpVppAPI) {
+	ctx := vppmock.SetupTestCtx(t)
+	log := logrus.NewLogger("test-log")
+	ifIndexes := ifaceidx.NewIfaceIndex(logrus.NewLogger("test"), "test")
+	arpHandler := vpp2005.NewArpVppHandler(ctx.MockChannel, ifIndexes, log)
+	pArpHandler := vpp2005.NewProxyArpVppHandler(ctx.MockChannel, ifIndexes, log)
+	return ctx, ifIndexes, arpHandler, pArpHandler
+}

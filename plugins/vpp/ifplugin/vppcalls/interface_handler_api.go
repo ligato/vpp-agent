@@ -113,7 +113,7 @@ type InterfaceSpanDetails struct {
 	SwIfIndexFrom uint32
 	SwIfIndexTo   uint32
 	Direction     uint8
-	IsL2          uint8
+	IsL2          bool
 }
 
 // InterfaceVppAPI provides methods for creating and managing interface plugin
@@ -159,9 +159,9 @@ type InterfaceVppAPI interface {
 	DeleteBondInterface(ifName string, ifIdx uint32) error
 
 	// AddSpan creates new span record
-	AddSpan(ifIdxFrom, ifIdxTo uint32, direction uint8, isL2 uint8) error
+	AddSpan(ifIdxFrom, ifIdxTo uint32, direction uint8, isL2 bool) error
 	// DelSpan removes new span record
-	DelSpan(ifIdxFrom, ifIdxTo uint32, isL2 uint8) error
+	DelSpan(ifIdxFrom, ifIdxTo uint32, isL2 bool) error
 
 	// AddGreTunnel adds new GRE interface.
 	AddGreTunnel(ifName string, greLink *interfaces.GreLink) (uint32, error)
