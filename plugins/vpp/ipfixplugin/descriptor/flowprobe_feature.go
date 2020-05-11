@@ -22,6 +22,7 @@ import (
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ipfixplugin/descriptor/adapter"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ipfixplugin/vppcalls"
+	interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
 	ipfix "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/ipfix"
 )
 
@@ -93,16 +94,28 @@ func (d *FPFeatureDescriptor) Dependencies(key string, val *ipfix.FlowProbeFeatu
 			Label: "flowprobe-params",
 			Key:   ipfix.FlowprobeParamsKey(),
 		},
+		{
+			Label: "interface",
+			Key:   interfaces.InterfaceKey(val.Interface),
+		},
 	}
 }
 
 // Retrieve hopes that configuration in correlate is actual configuration in VPP.
 // As soon as VPP devs will add dump API calls, this methods should be fixed.
+// TODO: waiting for https://jira.fd.io/browse/VPP-1861.
+//
 // Also, this method sets metadata, so descriptor for Flowprobe Params would know
 // that there are some interfaces with Flowprobe Feature enabled.
 func (d *FPFeatureDescriptor) Retrieve(correlate []adapter.FlowProbeFeatureKVWithMetadata) (retrieved []adapter.FlowProbeFeatureKVWithMetadata, err error) {
-	for i := range correlate {
-		correlate[i].Metadata = correlate[i].Value
+	corr := make([]adapter.FlowProbeFeatureKVWithMetadata, len(correlate))
+	for i, c := range correlate {
+		corr[i] = adapter.FlowProbeFeatureKVWithMetadata{
+			Key:      c.Key,
+			Value:    c.Value,
+			Metadata: c.Value,
+			Origin:   c.Origin,
+		}
 	}
-	return correlate, nil
+	return corr, nil
 }
