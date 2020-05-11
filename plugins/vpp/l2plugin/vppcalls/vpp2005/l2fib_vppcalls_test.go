@@ -17,17 +17,18 @@ package vpp2005_test
 import (
 	"testing"
 
+	. "github.com/onsi/gomega"
 	"go.ligato.io/cn-infra/v2/logging/logrus"
 
-	"go.ligato.io/vpp-agent/v3/plugins/vpp/l2plugin/vppcalls/vpp2005"
-
-	. "github.com/onsi/gomega"
-
 	"go.ligato.io/vpp-agent/v3/pkg/idxvpp"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/ethernet_types"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/interface_types"
 	vpp_l2 "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/l2"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/l2plugin/vppcalls"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/l2plugin/vppcalls/vpp2005"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/vppmock"
+
 	l2 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l2"
 )
 
@@ -39,10 +40,10 @@ var testDataInFib = []*l2.FIBEntry{
 }
 
 var testDatasOutFib = []*vpp_l2.L2fibAddDel{
-	{BdID: 5, SwIfIndex: 55, BviMac: 1, Mac: []byte{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}, StaticMac: 1, FilterMac: 0},
-	{BdID: 5, SwIfIndex: 55, BviMac: 0, Mac: []byte{0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA}, StaticMac: 1, FilterMac: 0},
-	{BdID: 5, SwIfIndex: ^uint32(0), BviMac: 0, Mac: []byte{0xBB, 0xBB, 0xBB, 0xBB, 0xBB, 0xBB}, StaticMac: 0, FilterMac: 1},
-	{BdID: 5, SwIfIndex: 55, BviMac: 0, Mac: []byte{0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC}, StaticMac: 0, FilterMac: 0},
+	{BdID: 5, SwIfIndex: 55, BviMac: true, Mac: ethernet_types.MacAddress{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}, StaticMac: true, FilterMac: false},
+	{BdID: 5, SwIfIndex: 55, BviMac: false, Mac: ethernet_types.MacAddress{0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA}, StaticMac: true, FilterMac: false},
+	{BdID: 5, SwIfIndex: ^interface_types.InterfaceIndex(0), BviMac: false, Mac: ethernet_types.MacAddress{0xBB, 0xBB, 0xBB, 0xBB, 0xBB, 0xBB}, StaticMac: false, FilterMac: true},
+	{BdID: 5, SwIfIndex: 55, BviMac: false, Mac: ethernet_types.MacAddress{0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC}, StaticMac: false, FilterMac: false},
 }
 
 func TestL2FibAdd(t *testing.T) {
@@ -56,7 +57,7 @@ func TestL2FibAdd(t *testing.T) {
 		ctx.MockVpp.MockReply(&vpp_l2.L2fibAddDelReply{})
 		err := fibHandler.AddL2FIB(testDataInFib[i])
 		Expect(err).ShouldNot(HaveOccurred())
-		testDatasOutFib[i].IsAdd = 1
+		testDatasOutFib[i].IsAdd = true
 		Expect(ctx.MockChannel.Msg).To(Equal(testDatasOutFib[i]))
 	}
 }
@@ -97,7 +98,7 @@ func TestL2FibDelete(t *testing.T) {
 		ctx.MockVpp.MockReply(&vpp_l2.L2fibAddDelReply{})
 		err := fibHandler.DeleteL2FIB(testDataInFib[i])
 		Expect(err).ShouldNot(HaveOccurred())
-		testDatasOutFib[i].IsAdd = 0
+		testDatasOutFib[i].IsAdd = false
 		Expect(ctx.MockChannel.Msg).To(Equal(testDatasOutFib[i]))
 	}
 }

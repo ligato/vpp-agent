@@ -50,7 +50,7 @@ func TestVppAddSPD(t *testing.T) {
 
 	Expect(err).ShouldNot(HaveOccurred())
 	Expect(ctx.MockChannel.Msg).To(BeEquivalentTo(&vpp_ipsec.IpsecSpdAddDel{
-		IsAdd: 1,
+		IsAdd: true,
 		SpdID: 10,
 	}))
 }
@@ -65,7 +65,7 @@ func TestVppDelSPD(t *testing.T) {
 
 	Expect(err).ShouldNot(HaveOccurred())
 	Expect(ctx.MockChannel.Msg).To(BeEquivalentTo(&vpp_ipsec.IpsecSpdAddDel{
-		IsAdd: 0,
+		IsAdd: false,
 		SpdID: 10,
 	}))
 }
@@ -84,12 +84,12 @@ func TestVppAddSPDEntry(t *testing.T) {
 
 	Expect(err).ShouldNot(HaveOccurred())
 	Expect(ctx.MockChannel.Msg).To(BeEquivalentTo(&vpp_ipsec.IpsecSpdEntryAddDel{
-		IsAdd: 1,
+		IsAdd: true,
 		Entry: vpp_ipsec.IpsecSpdEntry{
 			SpdID:              10,
 			SaID:               5,
 			Priority:           10,
-			IsOutbound:         1,
+			IsOutbound:         true,
 			RemoteAddressStart: ipToAddr("0.0.0.0"),
 			RemoteAddressStop:  ipToAddr("255.255.255.255"),
 			LocalAddressStart:  ipToAddr("0.0.0.0"),
@@ -114,12 +114,12 @@ func TestVppDelSPDEntry(t *testing.T) {
 
 	Expect(err).ShouldNot(HaveOccurred())
 	Expect(ctx.MockChannel.Msg).To(BeEquivalentTo(&vpp_ipsec.IpsecSpdEntryAddDel{
-		IsAdd: 0,
+		IsAdd: false,
 		Entry: vpp_ipsec.IpsecSpdEntry{
 			SpdID:              10,
 			SaID:               2,
 			Priority:           5,
-			IsOutbound:         1,
+			IsOutbound:         true,
 			RemoteAddressStart: ipToAddr("0.0.0.0"),
 			RemoteAddressStop:  ipToAddr("255.255.255.255"),
 			LocalAddressStart:  ipToAddr("0.0.0.0"),
@@ -144,7 +144,7 @@ func TestVppInterfaceAddSPD(t *testing.T) {
 
 	Expect(err).ShouldNot(HaveOccurred())
 	Expect(ctx.MockChannel.Msg).To(BeEquivalentTo(&vpp_ipsec.IpsecInterfaceAddDelSpd{
-		IsAdd:     1,
+		IsAdd:     true,
 		SpdID:     10,
 		SwIfIndex: 2,
 	}))
@@ -164,7 +164,7 @@ func TestVppInterfaceDelSPD(t *testing.T) {
 
 	Expect(err).ShouldNot(HaveOccurred())
 	Expect(ctx.MockChannel.Msg).To(BeEquivalentTo(&vpp_ipsec.IpsecInterfaceAddDelSpd{
-		IsAdd:     0,
+		IsAdd:     false,
 		SpdID:     10,
 		SwIfIndex: 2,
 	}))
@@ -196,7 +196,7 @@ func TestVppAddSA(t *testing.T) {
 
 	Expect(err).ShouldNot(HaveOccurred())
 	Expect(ctx.MockChannel.Msg).To(BeEquivalentTo(&vpp_ipsec.IpsecSadEntryAddDel{
-		IsAdd: 1,
+		IsAdd: true,
 		Entry: vpp_ipsec.IpsecSadEntry{
 			SadID: 1,
 			Spi:   1001,
@@ -231,7 +231,7 @@ func TestVppDelSA(t *testing.T) {
 
 	Expect(err).ShouldNot(HaveOccurred())
 	Expect(ctx.MockChannel.Msg).To(BeEquivalentTo(&vpp_ipsec.IpsecSadEntryAddDel{
-		IsAdd: 0,
+		IsAdd: false,
 		Entry: vpp_ipsec.IpsecSadEntry{
 			SadID: 1,
 			Spi:   1001,
@@ -266,7 +266,7 @@ func TestVppAddSATunnelMode(t *testing.T) {
 
 	Expect(err).ShouldNot(HaveOccurred())
 	Expect(ctx.MockChannel.Msg).To(BeEquivalentTo(&vpp_ipsec.IpsecSadEntryAddDel{
-		IsAdd: 1,
+		IsAdd: true,
 		Entry: vpp_ipsec.IpsecSadEntry{
 			SadID: 1,
 			Spi:   1001,
@@ -309,7 +309,7 @@ func TestVppAddSATunnelModeIPv6(t *testing.T) {
 
 	Expect(err).ShouldNot(HaveOccurred())
 	Expect(ctx.MockChannel.Msg).To(BeEquivalentTo(&vpp_ipsec.IpsecSadEntryAddDel{
-		IsAdd: 1,
+		IsAdd: true,
 		Entry: vpp_ipsec.IpsecSadEntry{
 			SadID: 1,
 			Spi:   1001,

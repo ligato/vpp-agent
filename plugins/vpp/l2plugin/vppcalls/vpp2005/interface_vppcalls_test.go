@@ -19,6 +19,7 @@ import (
 
 	. "github.com/onsi/gomega"
 
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/interface_types"
 	vpp_l2 "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/l2"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
 	l2 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l2"
@@ -41,11 +42,11 @@ func TestAddInterfaceToBridgeDomain(t *testing.T) {
 	Expect(ctx.MockChannel.Msgs).To(HaveLen(1))
 	msg := ctx.MockChannel.Msgs[0]
 	Expect(msg).To(BeEquivalentTo(&vpp_l2.SwInterfaceSetL2Bridge{
-		RxSwIfIndex: uint32(1),
+		RxSwIfIndex: interface_types.InterfaceIndex(1),
 		BdID:        1,
 		Shg:         uint8(0),
 		PortType:    vpp_l2.L2_API_PORT_TYPE_BVI,
-		Enable:      1,
+		Enable:      true,
 	}))
 }
 
@@ -118,11 +119,11 @@ func TestDeleteInterfaceFromBridgeDomain(t *testing.T) {
 	Expect(ctx.MockChannel.Msgs).To(HaveLen(1))
 	msg := ctx.MockChannel.Msgs[0]
 	Expect(msg).To(BeEquivalentTo(&vpp_l2.SwInterfaceSetL2Bridge{
-		RxSwIfIndex: uint32(10),
+		RxSwIfIndex: interface_types.InterfaceIndex(10),
 		BdID:        4,
 		Shg:         uint8(12),
 		PortType:    vpp_l2.L2_API_PORT_TYPE_NORMAL,
-		Enable:      0,
+		Enable:      false,
 	}))
 }
 

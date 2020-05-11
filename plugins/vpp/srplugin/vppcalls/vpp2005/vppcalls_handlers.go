@@ -99,7 +99,7 @@ func IPToAddress(ipstr string) (addr ip_types.Address, err error) {
 	} else {
 		addr.Af = ip_types.ADDRESS_IP4
 		var ip4addr ip_types.IP4Address
-		copy(ip4addr[:], ip4)
+		copy(ip4addr[:], ip4.To4())
 		addr.Un.SetIP4(ip4addr)
 	}
 	return

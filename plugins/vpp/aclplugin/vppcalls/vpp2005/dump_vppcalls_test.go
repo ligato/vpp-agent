@@ -22,6 +22,7 @@ import (
 
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/aclplugin/vppcalls"
 	vpp_acl "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/acl"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/ip_types"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/vpe"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
 )
@@ -32,45 +33,84 @@ func TestGetIPRuleMatch(t *testing.T) {
 	defer ctx.teardownACLTest()
 
 	icmpV4Rule := ctx.aclHandler.getIPRuleMatches(vpp_acl.ACLRule{
-		SrcIPAddr:      []byte{10, 0, 0, 1},
-		SrcIPPrefixLen: 24,
-		DstIPAddr:      []byte{20, 0, 0, 1},
-		DstIPPrefixLen: 24,
-		Proto:          vppcalls.ICMPv4Proto,
+		DstPrefix: vpp_acl.Prefix{
+			Address: ip_types.Address{
+				Af: ip_types.ADDRESS_IP4,
+				Un: ip_types.AddressUnionIP4(ip_types.IP4Address{20, 0, 0, 1}),
+			},
+			Len: 24,
+		},
+		SrcPrefix: vpp_acl.Prefix{
+			Address: ip_types.Address{
+				Af: ip_types.ADDRESS_IP4,
+				Un: ip_types.AddressUnionIP4(ip_types.IP4Address{10, 0, 0, 1}),
+			},
+			Len: 24,
+		},
+		Proto: vppcalls.ICMPv4Proto,
 	})
 	if icmpV4Rule.GetIcmp() == nil {
 		t.Fatal("should have icmp match")
 	}
 
 	icmpV6Rule := ctx.aclHandler.getIPRuleMatches(vpp_acl.ACLRule{
-		IsIPv6:         1,
-		SrcIPAddr:      []byte{'d', 'e', 'd', 'd', 1},
-		SrcIPPrefixLen: 64,
-		DstIPAddr:      []byte{'d', 'e', 'd', 'd', 2},
-		DstIPPrefixLen: 32,
-		Proto:          vppcalls.ICMPv6Proto,
+		SrcPrefix: vpp_acl.Prefix{
+			Address: ip_types.Address{
+				Af: ip_types.ADDRESS_IP6,
+				Un: ip_types.AddressUnionIP6(ip_types.IP6Address{'d', 'e', 'd', 'd', 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}),
+			},
+			Len: 64,
+		},
+		DstPrefix: vpp_acl.Prefix{
+			Address: ip_types.Address{
+				Af: ip_types.ADDRESS_IP6,
+				Un: ip_types.AddressUnionIP6(ip_types.IP6Address{'d', 'e', 'd', 'd', 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}),
+			},
+			Len: 32,
+		},
+		Proto: vppcalls.ICMPv6Proto,
 	})
 	if icmpV6Rule.GetIcmp() == nil {
 		t.Fatal("should have icmpv6 match")
 	}
 
 	tcpRule := ctx.aclHandler.getIPRuleMatches(vpp_acl.ACLRule{
-		SrcIPAddr:      []byte{10, 0, 0, 1},
-		SrcIPPrefixLen: 24,
-		DstIPAddr:      []byte{20, 0, 0, 1},
-		DstIPPrefixLen: 24,
-		Proto:          vppcalls.TCPProto,
+		DstPrefix: vpp_acl.Prefix{
+			Address: ip_types.Address{
+				Af: ip_types.ADDRESS_IP4,
+				Un: ip_types.AddressUnionIP4(ip_types.IP4Address{20, 0, 0, 1}),
+			},
+			Len: 24,
+		},
+		SrcPrefix: vpp_acl.Prefix{
+			Address: ip_types.Address{
+				Af: ip_types.ADDRESS_IP4,
+				Un: ip_types.AddressUnionIP4(ip_types.IP4Address{10, 0, 0, 1}),
+			},
+			Len: 24,
+		},
+		Proto: vppcalls.TCPProto,
 	})
 	if tcpRule.GetTcp() == nil {
 		t.Fatal("should have tcp match")
 	}
 
 	udpRule := ctx.aclHandler.getIPRuleMatches(vpp_acl.ACLRule{
-		SrcIPAddr:      []byte{10, 0, 0, 1},
-		SrcIPPrefixLen: 24,
-		DstIPAddr:      []byte{20, 0, 0, 1},
-		DstIPPrefixLen: 24,
-		Proto:          vppcalls.UDPProto,
+		DstPrefix: vpp_acl.Prefix{
+			Address: ip_types.Address{
+				Af: ip_types.ADDRESS_IP4,
+				Un: ip_types.AddressUnionIP4(ip_types.IP4Address{20, 0, 0, 1}),
+			},
+			Len: 24,
+		},
+		SrcPrefix: vpp_acl.Prefix{
+			Address: ip_types.Address{
+				Af: ip_types.ADDRESS_IP4,
+				Un: ip_types.AddressUnionIP4(ip_types.IP4Address{10, 0, 0, 1}),
+			},
+			Len: 24,
+		},
+		Proto: vppcalls.UDPProto,
 	})
 	if udpRule.GetUdp() == nil {
 		t.Fatal("should have udp match")
@@ -83,22 +123,31 @@ func TestGetMACIPRuleMatches(t *testing.T) {
 	defer ctx.teardownACLTest()
 
 	macipV4Rule := ctx.aclHandler.getMACIPRuleMatches(vpp_acl.MacipACLRule{
-		IsPermit:       1,
-		SrcMac:         []byte{2, 'd', 'e', 'a', 'd', 2},
-		SrcMacMask:     []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff},
-		SrcIPAddr:      []byte{10, 0, 0, 1},
-		SrcIPPrefixLen: 32,
+		IsPermit:   1,
+		SrcMac:     vpp_acl.MacAddress{2, 'd', 'e', 'a', 'd', 2},
+		SrcMacMask: vpp_acl.MacAddress{0xff, 0xff, 0xff, 0xff, 0xff, 0xff},
+		SrcPrefix: vpp_acl.Prefix{
+			Address: ip_types.Address{
+				Af: ip_types.ADDRESS_IP4,
+				Un: ip_types.AddressUnionIP4(ip_types.IP4Address{10, 0, 0, 1}),
+			},
+			Len: 32,
+		},
 	})
 	if macipV4Rule.GetSourceMacAddress() == "" {
 		t.Fatal("should have mac match")
 	}
 	macipV6Rule := ctx.aclHandler.getMACIPRuleMatches(vpp_acl.MacipACLRule{
-		IsPermit:       0,
-		IsIPv6:         1,
-		SrcMac:         []byte{2, 'd', 'e', 'a', 'd', 2},
-		SrcMacMask:     []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff},
-		SrcIPAddr:      []byte{'d', 'e', 'a', 'd', 1},
-		SrcIPPrefixLen: 64,
+		IsPermit:   0,
+		SrcMac:     vpp_acl.MacAddress{2, 'd', 'e', 'a', 'd', 2},
+		SrcMacMask: vpp_acl.MacAddress{0xff, 0xff, 0xff, 0xff, 0xff, 0xff},
+		SrcPrefix: vpp_acl.Prefix{
+			Address: ip_types.Address{
+				Af: ip_types.ADDRESS_IP6,
+				Un: ip_types.AddressUnionIP6(ip_types.IP6Address{'d', 'e', 'd', 'd', 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}),
+			},
+			Len: 64,
+		},
 	})
 	if macipV6Rule.GetSourceMacAddress() == "" {
 		t.Fatal("should have mac match")
@@ -113,19 +162,19 @@ func TestDumpIPACL(t *testing.T) {
 	ctx.MockVpp.MockReply(
 		&vpp_acl.ACLDetails{
 			ACLIndex: 0,
-			Tag:      []byte{'a', 'c', 'l', '1'},
+			Tag:      "acl1",
 			Count:    1,
 			R:        []vpp_acl.ACLRule{{IsPermit: 1}},
 		},
 		&vpp_acl.ACLDetails{
 			ACLIndex: 1,
-			Tag:      []byte{'a', 'c', 'l', '2'},
+			Tag:      "acl2",
 			Count:    2,
 			R:        []vpp_acl.ACLRule{{IsPermit: 0}, {IsPermit: 2}},
 		},
 		&vpp_acl.ACLDetails{
 			ACLIndex: 2,
-			Tag:      []byte{'a', 'c', 'l', '3'},
+			Tag:      "acl3",
 			Count:    3,
 			R:        []vpp_acl.ACLRule{{IsPermit: 0}, {IsPermit: 1}, {IsPermit: 2}},
 		})
@@ -157,19 +206,19 @@ func TestDumpMACIPACL(t *testing.T) {
 	ctx.MockVpp.MockReply(
 		&vpp_acl.MacipACLDetails{
 			ACLIndex: 0,
-			Tag:      []byte{'a', 'c', 'l', '1'},
+			Tag:      "acl1",
 			Count:    1,
 			R:        []vpp_acl.MacipACLRule{{IsPermit: 1}},
 		},
 		&vpp_acl.MacipACLDetails{
 			ACLIndex: 1,
-			Tag:      []byte{'a', 'c', 'l', '2'},
+			Tag:      "acl2",
 			Count:    2,
 			R:        []vpp_acl.MacipACLRule{{IsPermit: 0}, {IsPermit: 2}},
 		},
 		&vpp_acl.MacipACLDetails{
 			ACLIndex: 2,
-			Tag:      []byte{'a', 'c', 'l', '3'},
+			Tag:      "acl3",
 			Count:    3,
 			R:        []vpp_acl.MacipACLRule{{IsPermit: 0}, {IsPermit: 1}, {IsPermit: 2}},
 		})

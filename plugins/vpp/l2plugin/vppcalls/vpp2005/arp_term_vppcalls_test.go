@@ -44,7 +44,7 @@ func TestVppAddArpTerminationTableEntry(t *testing.T) {
 			},
 			Mac: vpp_l2.MacAddress{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF},
 		},
-		IsAdd: 1,
+		IsAdd: true,
 	}))
 }
 
@@ -68,7 +68,7 @@ func TestVppAddArpTerminationTableEntryIPv6(t *testing.T) {
 			},
 			Mac: vpp_l2.MacAddress{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF},
 		},
-		IsAdd: 1,
+		IsAdd: true,
 	}))
 }
 
@@ -92,7 +92,7 @@ func TestVppRemoveArpTerminationTableEntry(t *testing.T) {
 			},
 			Mac: vpp_l2.MacAddress{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF},
 		},
-		IsAdd: 0,
+		IsAdd: false,
 	}))
 }
 

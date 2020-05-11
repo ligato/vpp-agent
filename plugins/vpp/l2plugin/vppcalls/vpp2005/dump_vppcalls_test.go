@@ -21,6 +21,8 @@ import (
 	. "github.com/onsi/gomega"
 
 	"go.ligato.io/vpp-agent/v3/pkg/idxvpp"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/ethernet_types"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/interface_types"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/ip_types"
 	vpp_l2 "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/l2"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/vpe"
@@ -33,7 +35,7 @@ import (
 var testDataInMessagesBDs = []govppapi.Message{
 	&vpp_l2.BridgeDomainDetails{
 		BdID:  4,
-		Flood: 1, UuFlood: 1, Forward: 1, Learn: 1, ArpTerm: 1, MacAge: 140,
+		Flood: true, UuFlood: true, Forward: true, Learn: true, ArpTerm: true, MacAge: 140,
 		SwIfDetails: []vpp_l2.BridgeDomainSwIf{
 			{SwIfIndex: 5},
 			{SwIfIndex: 7},
@@ -41,7 +43,7 @@ var testDataInMessagesBDs = []govppapi.Message{
 	},
 	&vpp_l2.BridgeDomainDetails{
 		BdID:  5,
-		Flood: 0, UuFlood: 0, Forward: 0, Learn: 0, ArpTerm: 0, MacAge: 141,
+		Flood: false, UuFlood: false, Forward: false, Learn: false, ArpTerm: false, MacAge: 141,
 		SwIfDetails: []vpp_l2.BridgeDomainSwIf{
 			{SwIfIndex: 5},
 			{SwIfIndex: 8},
@@ -177,13 +179,13 @@ func TestDumpBridgeDomainsWithARP(t *testing.T) {
 var testDataInMessagesFIBs = []govppapi.Message{
 	&vpp_l2.L2FibTableDetails{
 		BdID:   10,
-		Mac:    []byte{0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA},
-		BviMac: 0, SwIfIndex: ^uint32(0), FilterMac: 1, StaticMac: 0,
+		Mac:    ethernet_types.MacAddress{0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA},
+		BviMac: false, SwIfIndex: ^interface_types.InterfaceIndex(0), FilterMac: true, StaticMac: false,
 	},
 	&vpp_l2.L2FibTableDetails{
 		BdID:   20,
-		Mac:    []byte{0xBB, 0xBB, 0xBB, 0xBB, 0xBB, 0xBB},
-		BviMac: 1, SwIfIndex: 1, FilterMac: 0, StaticMac: 1,
+		Mac:    ethernet_types.MacAddress{0xBB, 0xBB, 0xBB, 0xBB, 0xBB, 0xBB},
+		BviMac: true, SwIfIndex: 1, FilterMac: false, StaticMac: true,
 	},
 }
 

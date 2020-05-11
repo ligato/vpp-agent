@@ -83,7 +83,7 @@ func TestVppSetL2XConnect(t *testing.T) {
 		} else {
 			Expect(err).NotTo(BeNil())
 		}
-		outTestDataXConnect[i].outData.Enable = 1
+		outTestDataXConnect[i].outData.Enable = true
 		Expect(ctx.MockChannel.Msg).To(Equal(outTestDataXConnect[i].outData))
 	}
 }
@@ -115,7 +115,7 @@ func TestVppUnsetL2XConnect(t *testing.T) {
 		} else {
 			Expect(err).NotTo(BeNil())
 		}
-		outTestDataXConnect[i].outData.Enable = 0
+		outTestDataXConnect[i].outData.Enable = false
 		Expect(ctx.MockChannel.Msg).To(Equal(outTestDataXConnect[i].outData))
 	}
 }

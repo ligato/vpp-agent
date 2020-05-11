@@ -79,10 +79,9 @@ func TestDumpInterfacesVxLan(t *testing.T) {
 			Name: (&vpp_vxlan.VxlanTunnelDump{}).GetMessageName(),
 			Ping: true,
 			Message: &vpp_vxlan.VxlanTunnelDetails{
-				IsIPv6:     1,
 				SwIfIndex:  0,
-				SrcAddress: ipv61Parse,
-				DstAddress: ipv62Parse,
+				SrcAddress: ipToAddr(ipv61Parse.String()),
+				DstAddress: ipToAddr(ipv62Parse.String()),
 			},
 		},
 		{

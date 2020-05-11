@@ -201,7 +201,7 @@ func (h *ACLVppHandler) transformACLMacIPRules(rules []*acl.ACL_Rule) (aclMacIPR
 			// Source IP Address + Prefix
 			aclMacIPRule.SrcPrefix, err = IPtoPrefix(macIPRule.SourceAddress)
 			if err != nil {
-				return nil, fmt.Errorf("invalid mac IP rule source address %v", macIPRule.SourceAddress)
+				return nil, fmt.Errorf("invalid IP address %v", macIPRule.SourceAddress)
 			}
 			// MAC + mask
 			srcMac, err := net.ParseMAC(macIPRule.SourceMacAddress)

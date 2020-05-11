@@ -66,9 +66,9 @@ func TestAddIPSecTunnelInterface(t *testing.T) {
 	remoteIntegKey, err := hex.DecodeString("8a506a794f574265564551694d653457")
 	Expect(err).To(BeNil())
 
-	Expect(vppMsg.Esn).To(Equal(uint8(1)))
-	Expect(vppMsg.IsAdd).To(Equal(uint8(1)))
-	Expect(vppMsg.AntiReplay).To(Equal(uint8(1)))
+	Expect(vppMsg.Esn).To(Equal(true))
+	Expect(vppMsg.IsAdd).To(Equal(true))
+	Expect(vppMsg.AntiReplay).To(Equal(true))
 	Expect(vppMsg.LocalIP.Af).To(Equal(ip_types.ADDRESS_IP4))
 	copy(ipv4Addr[:], net.ParseIP(ipSecLink.LocalIp)[12:])
 	Expect(vppMsg.LocalIP.Un).To(BeEquivalentTo(vpp_ipsec.AddressUnion{XXX_UnionData: ipv4Addr}))
@@ -84,7 +84,7 @@ func TestAddIPSecTunnelInterface(t *testing.T) {
 	Expect(vppMsg.LocalIntegKeyLen).To(Equal(uint8(16)))
 	Expect(vppMsg.RemoteIntegKey).To(BeEquivalentTo(remoteIntegKey))
 	Expect(vppMsg.RemoteIntegKeyLen).To(Equal(uint8(16)))
-	Expect(vppMsg.UDPEncap).To(Equal(uint8(1)))
+	Expect(vppMsg.UDPEncap).To(Equal(true))
 }
 
 func TestAddIPSecTunnelInterfaceError(t *testing.T) {

@@ -15,8 +15,9 @@
 package vpp2005_test
 
 import (
-	"net"
 	"testing"
+
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/ip_types"
 
 	. "github.com/onsi/gomega"
 
@@ -45,13 +46,12 @@ func TestAddVxlanTunnel(t *testing.T) {
 	for _, msg := range ctx.MockChannel.Msgs {
 		vppMsg, ok := msg.(*vpp_vxlan.VxlanAddDelTunnel)
 		if ok {
-			Expect(vppMsg.SrcAddress).To(BeEquivalentTo(net.ParseIP("10.0.0.1").To4()))
-			Expect(vppMsg.DstAddress).To(BeEquivalentTo(net.ParseIP("20.0.0.1").To4()))
-			Expect(vppMsg.IsAdd).To(BeEquivalentTo(1))
+			Expect(vppMsg.SrcAddress.Un.GetIP4()).To(BeEquivalentTo(vpp_ifs.IP4Address{10, 0, 0, 1}))
+			Expect(vppMsg.DstAddress.Un.GetIP4()).To(BeEquivalentTo(vpp_ifs.IP4Address{20, 0, 0, 1}))
+			Expect(vppMsg.IsAdd).To(BeEquivalentTo(true))
 			Expect(vppMsg.EncapVrfID).To(BeEquivalentTo(0))
 			Expect(vppMsg.McastSwIfIndex).To(BeEquivalentTo(2))
 			Expect(vppMsg.Vni).To(BeEquivalentTo(1))
-			Expect(vppMsg.IsIPv6).To(BeEquivalentTo(0))
 			msgCheck = true
 		}
 	}
@@ -79,13 +79,12 @@ func TestAddVxlanTunnelWithVrf(t *testing.T) {
 	for _, msg := range ctx.MockChannel.Msgs {
 		vppMsg, ok := msg.(*vpp_vxlan.VxlanAddDelTunnel)
 		if ok {
-			Expect(vppMsg.SrcAddress).To(BeEquivalentTo(net.ParseIP("10.0.0.1").To4()))
-			Expect(vppMsg.DstAddress).To(BeEquivalentTo(net.ParseIP("20.0.0.1").To4()))
-			Expect(vppMsg.IsAdd).To(BeEquivalentTo(1))
+			Expect(vppMsg.SrcAddress.Un.GetIP4()).To(BeEquivalentTo(ip_types.IP4Address{10, 0, 0, 1}))
+			Expect(vppMsg.DstAddress.Un.GetIP4()).To(BeEquivalentTo(ip_types.IP4Address{20, 0, 0, 1}))
+			Expect(vppMsg.IsAdd).To(BeEquivalentTo(true))
 			Expect(vppMsg.EncapVrfID).To(BeEquivalentTo(1))
 			Expect(vppMsg.McastSwIfIndex).To(BeEquivalentTo(1))
 			Expect(vppMsg.Vni).To(BeEquivalentTo(1))
-			Expect(vppMsg.IsIPv6).To(BeEquivalentTo(0))
 			msgCheck = true
 		}
 	}
@@ -112,9 +111,8 @@ func TestAddVxlanTunnelIPv6(t *testing.T) {
 	for _, msg := range ctx.MockChannel.Msgs {
 		vppMsg, ok := msg.(*vpp_vxlan.VxlanAddDelTunnel)
 		if ok {
-			Expect(vppMsg.SrcAddress).To(BeEquivalentTo(net.ParseIP("2001:db8:0:1:1:1:1:1").To16()))
-			Expect(vppMsg.DstAddress).To(BeEquivalentTo(net.ParseIP("2002:db8:0:1:1:1:1:1").To16()))
-			Expect(vppMsg.IsIPv6).To(BeEquivalentTo(1))
+			Expect(vppMsg.SrcAddress).To(BeEquivalentTo(ipToAddr("2001:db8:0:1:1:1:1:1")))
+			Expect(vppMsg.DstAddress).To(BeEquivalentTo(ipToAddr("2002:db8:0:1:1:1:1:1")))
 			msgCheck = true
 		}
 	}

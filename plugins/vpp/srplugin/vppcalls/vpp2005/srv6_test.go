@@ -23,7 +23,9 @@ import (
 	. "github.com/onsi/gomega"
 	"go.ligato.io/cn-infra/v2/logging/logrus"
 
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/interface_types"
 	vpp_ifs "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/interfaces"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/ip_types"
 	vpp_sr "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/sr"
 	vpp_vpe "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/vpe"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
@@ -34,19 +36,19 @@ import (
 )
 
 const (
-	ifaceA                  = "A"
-	ifaceB                  = "B"
-	ifaceBOutOfidxs         = "B"
-	swIndexA         uint32 = 1
-	invalidIPAddress        = "XYZ"
-	memif1                  = "memif1/1"
-	memif2                  = "memif2/2"
+	ifaceA           = "A"
+	ifaceB           = "B"
+	ifaceBOutOfidxs  = "B"
+	swIndexA         = 1
+	invalidIPAddress = "XYZ"
+	memif1           = "memif1/1"
+	memif2           = "memif2/2"
 )
 
 var (
-	sidA        = *sid("A::")
-	sidB        = *sid("B::")
-	sidC        = *sid("C::")
+	sidA        = sid("A::")
+	sidB        = sid("B::")
+	sidC        = sid("C::")
 	nextHop     = net.ParseIP("B::").To16()
 	nextHopIPv4 = net.ParseIP("1.2.3.4").To4()
 )
@@ -77,11 +79,11 @@ func TestAddLocalSID(t *testing.T) {
 				},
 			},
 			Expected: &vpp_sr.SrLocalsidAddDel{
-				IsDel:    0,
+				IsDel:    false,
 				Localsid: sidA,
 				Behavior: vpp2005.BehaviorEnd,
 				FibTable: 10, // installationVrfId
-				EndPsp:   1,
+				EndPsp:   true,
 			},
 		},
 		{
@@ -98,13 +100,13 @@ func TestAddLocalSID(t *testing.T) {
 				},
 			},
 			Expected: &vpp_sr.SrLocalsidAddDel{
-				IsDel:     0,
+				IsDel:     false,
 				Localsid:  sidA,
 				Behavior:  vpp2005.BehaviorX,
 				FibTable:  10, // installationVrfId
-				EndPsp:    1,
-				SwIfIndex: swIndexA,
-				NhAddr6:   nextHop,
+				EndPsp:    true,
+				SwIfIndex: interface_types.InterfaceIndex(swIndexA),
+				NhAddr:    toAddress(nextHop.String()),
 			},
 		},
 		{
@@ -121,13 +123,13 @@ func TestAddLocalSID(t *testing.T) {
 				},
 			},
 			Expected: &vpp_sr.SrLocalsidAddDel{
-				IsDel:     0,
+				IsDel:     false,
 				Localsid:  sidA,
 				Behavior:  vpp2005.BehaviorX,
 				FibTable:  10, // installationVrfId
-				EndPsp:    1,
+				EndPsp:    true,
 				SwIfIndex: swIndexA,
-				NhAddr4:   nextHopIPv4,
+				NhAddr:    toAddress(nextHopIPv4.String()),
 			},
 		},
 		{
@@ -143,12 +145,12 @@ func TestAddLocalSID(t *testing.T) {
 				},
 			},
 			Expected: &vpp_sr.SrLocalsidAddDel{
-				IsDel:     0,
+				IsDel:     false,
 				Localsid:  sidA,
 				Behavior:  vpp2005.BehaviorT,
 				FibTable:  10, // installationVrfId
 				SwIfIndex: 11,
-				EndPsp:    1,
+				EndPsp:    true,
 			},
 		},
 		{
@@ -164,11 +166,11 @@ func TestAddLocalSID(t *testing.T) {
 				},
 			},
 			Expected: &vpp_sr.SrLocalsidAddDel{
-				IsDel:     0,
+				IsDel:     false,
 				Localsid:  sidA,
 				Behavior:  vpp2005.BehaviorDX2,
 				FibTable:  10, // installationVrfId
-				EndPsp:    0,
+				EndPsp:    false,
 				VlanIndex: 1,
 				SwIfIndex: swIndexA,
 			},
@@ -186,13 +188,13 @@ func TestAddLocalSID(t *testing.T) {
 				},
 			},
 			Expected: &vpp_sr.SrLocalsidAddDel{
-				IsDel:     0,
+				IsDel:     false,
 				Localsid:  sidA,
 				Behavior:  vpp2005.BehaviorDX4,
 				FibTable:  10, // installationVrfId
-				EndPsp:    0,
+				EndPsp:    false,
 				SwIfIndex: swIndexA,
-				NhAddr4:   nextHopIPv4,
+				NhAddr:    toAddress(nextHopIPv4.String()),
 			},
 		},
 		{
@@ -208,13 +210,13 @@ func TestAddLocalSID(t *testing.T) {
 				},
 			},
 			Expected: &vpp_sr.SrLocalsidAddDel{
-				IsDel:     0,
+				IsDel:     false,
 				Localsid:  sidA,
 				Behavior:  vpp2005.BehaviorDX6,
 				FibTable:  10, // installationVrfId
-				EndPsp:    0,
+				EndPsp:    false,
 				SwIfIndex: swIndexA,
-				NhAddr6:   nextHop,
+				NhAddr:    toAddress(nextHop.String()),
 			},
 		},
 		{
@@ -229,12 +231,12 @@ func TestAddLocalSID(t *testing.T) {
 				},
 			},
 			Expected: &vpp_sr.SrLocalsidAddDel{
-				IsDel:     0,
+				IsDel:     false,
 				Localsid:  sidA,
 				Behavior:  vpp2005.BehaviorDT4,
 				FibTable:  10, // installationVrfId
 				SwIfIndex: 5,
-				EndPsp:    0,
+				EndPsp:    false,
 			},
 		},
 		{
@@ -249,12 +251,12 @@ func TestAddLocalSID(t *testing.T) {
 				},
 			},
 			Expected: &vpp_sr.SrLocalsidAddDel{
-				IsDel:     0,
+				IsDel:     false,
 				Localsid:  sidA,
 				Behavior:  vpp2005.BehaviorDT6,
 				FibTable:  10, // installationVrfId
 				SwIfIndex: 5,
-				EndPsp:    0,
+				EndPsp:    false,
 			},
 		},
 		{
@@ -666,7 +668,7 @@ func TestDeleteLocalSID(t *testing.T) {
 			Verify: func(err error, catchedMsg govppapi.Message) {
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(catchedMsg).To(Equal(&vpp_sr.SrLocalsidAddDel{
-					IsDel:    1,
+					IsDel:    true,
 					Localsid: sidA,
 					FibTable: 0,
 				}))
@@ -687,7 +689,7 @@ func TestDeleteLocalSID(t *testing.T) {
 			Verify: func(err error, catchedMsg govppapi.Message) {
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(catchedMsg).To(Equal(&vpp_sr.SrLocalsidAddDel{
-					IsDel:    1,
+					IsDel:    true,
 					Localsid: sidA,
 					FibTable: 10,
 				}))
@@ -742,7 +744,7 @@ func TestSetEncapsSourceAddress(t *testing.T) {
 			Verify: func(err error, catchedMsg govppapi.Message) {
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(catchedMsg).To(Equal(&vpp_sr.SrSetEncapSource{
-					EncapsSource: nextHop,
+					EncapsSource: sid(nextHop.String()),
 				}))
 			},
 		},
@@ -789,58 +791,58 @@ func TestAddPolicy(t *testing.T) {
 	}{
 		{
 			Name:        "simple SetAddPolicy",
-			Policy:      policy(sidA.Addr, 10, false, true, policySegmentList(1, sidA.Addr, sidB.Addr, sidC.Addr)),
+			Policy:      policy(sidA[:], 10, false, true, policySegmentList(1, sidA[:], sidB[:], sidC[:])),
 			MockReplies: []govppapi.Message{&vpp_sr.SrPolicyAddReply{}},
 			Verify: func(err error, catchedMsgs []govppapi.Message) {
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(catchedMsgs).To(HaveLen(1))
 				Expect(catchedMsgs[0]).To(Equal(&vpp_sr.SrPolicyAdd{
-					BsidAddr: sidA.Addr,
+					BsidAddr: *(&sidA),
 					FibTable: 10, // installationVrfId
-					Type:     boolToUint(false),
-					IsEncap:  boolToUint(true),
+					IsSpray:  false,
+					IsEncap:  true,
 					Sids: vpp_sr.Srv6SidList{
 						Weight:  1,
 						NumSids: 3,
-						Sids:    []vpp_sr.Srv6Sid{{Addr: sidA.Addr}, {Addr: sidB.Addr}, {Addr: sidC.Addr}},
+						Sids:    []vpp_sr.IP6Address{sidA, sidB, sidC},
 					},
 				}))
 			},
 		},
 		{
 			Name: "adding policy with multiple segment lists",
-			Policy: policy(sidA.Addr, 10, false, true,
-				policySegmentList(1, sidA.Addr, sidB.Addr, sidC.Addr), policySegmentList(1, sidB.Addr, sidC.Addr, sidA.Addr)),
+			Policy: policy(sidA[:], 10, false, true,
+				policySegmentList(1, sidA[:], sidB[:], sidC[:]), policySegmentList(1, sidB[:], sidC[:], sidA[:])),
 			MockReplies: []govppapi.Message{&vpp_sr.SrPolicyAddReply{}, &vpp_sr.SrPolicyModReply{}},
 			Verify: func(err error, catchedMsgs []govppapi.Message) {
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(catchedMsgs).To(HaveLen(2))
 				Expect(catchedMsgs[0]).To(Equal(&vpp_sr.SrPolicyAdd{
-					BsidAddr: sidA.Addr,
+					BsidAddr: sidA,
 					FibTable: 10, // installationVrfId
-					Type:     boolToUint(false),
-					IsEncap:  boolToUint(true),
+					IsSpray:  false,
+					IsEncap:  true,
 					Sids: vpp_sr.Srv6SidList{
 						Weight:  1,
 						NumSids: 3,
-						Sids:    []vpp_sr.Srv6Sid{{Addr: sidA.Addr}, {Addr: sidB.Addr}, {Addr: sidC.Addr}},
+						Sids:    []vpp_sr.IP6Address{sidA, sidB, sidC},
 					},
 				}))
 				Expect(catchedMsgs[1]).To(Equal(&vpp_sr.SrPolicyMod{
-					BsidAddr:  sidA.Addr,
+					BsidAddr:  sidA,
 					Operation: vpp2005.AddSRList,
 					FibTable:  10, // installationVrfId
 					Sids: vpp_sr.Srv6SidList{
 						Weight:  1,
 						NumSids: 3,
-						Sids:    []vpp_sr.Srv6Sid{{Addr: sidB.Addr}, {Addr: sidC.Addr}, {Addr: sidA.Addr}},
+						Sids:    []vpp_sr.IP6Address{sidB, sidC, sidA},
 					},
 				}))
 			},
 		},
 		{
 			Name:        "failing when adding policy with empty segment lists",
-			Policy:      policy(sidA.Addr, 10, false, true),
+			Policy:      policy(sidA[:], 10, false, true),
 			MockReplies: []govppapi.Message{&vpp_sr.SrPolicyAddReply{}},
 			Verify: func(err error, catchedMsgs []govppapi.Message) {
 				Expect(err).Should(HaveOccurred())
@@ -867,7 +869,7 @@ func TestAddPolicy(t *testing.T) {
 		},
 		{
 			Name: "invalid SID (not IP address) in first segment list",
-			Policy: policy(sidA.Addr, 10, false, true,
+			Policy: policy(sidA[:], 10, false, true,
 				&srv6.Policy_SegmentList{
 					Weight:   1,
 					Segments: []string{sidToStr(sidA), invalidIPAddress, sidToStr(sidC)},
@@ -879,8 +881,8 @@ func TestAddPolicy(t *testing.T) {
 		},
 		{
 			Name: "invalid SID (not IP address) in non-first segment list",
-			Policy: policy(sidA.Addr, 10, false, true,
-				policySegmentList(1, sidA.Addr, sidB.Addr, sidC.Addr),
+			Policy: policy(sidA[:], 10, false, true,
+				policySegmentList(1, sidA[:], sidB[:], sidC[:]),
 				&srv6.Policy_SegmentList{
 					Weight:   1,
 					Segments: []string{sidToStr(sidA), invalidIPAddress, sidToStr(sidC)},
@@ -892,7 +894,7 @@ func TestAddPolicy(t *testing.T) {
 		},
 		{
 			Name:        "failure propagation from VPP",
-			Policy:      policy(sidA.Addr, 0, true, true, policySegmentList(1, sidA.Addr, sidB.Addr, sidC.Addr)),
+			Policy:      policy(sidA[:], 0, true, true, policySegmentList(1, sidA[:], sidB[:], sidC[:])),
 			MockReplies: []govppapi.Message{&vpp_sr.SrPolicyAddReply{Retval: 1}},
 			Verify: func(err error, msgs []govppapi.Message) {
 				Expect(err).Should(HaveOccurred())
@@ -926,7 +928,7 @@ func TestDeletePolicy(t *testing.T) {
 	}{
 		{
 			Name:      "simple delete of policy",
-			BSID:      sidA.Addr,
+			BSID:      sidA[:],
 			MockReply: &vpp_sr.SrPolicyDelReply{},
 			Verify: func(err error, catchedMsg govppapi.Message) {
 				Expect(err).ShouldNot(HaveOccurred())
@@ -937,7 +939,7 @@ func TestDeletePolicy(t *testing.T) {
 		},
 		{
 			Name:      "failure propagation from VPP",
-			BSID:      sidA.Addr,
+			BSID:      sidA[:],
 			MockReply: &vpp_sr.SrPolicyDelReply{Retval: 1},
 			Verify: func(err error, msg govppapi.Message) {
 				Expect(err).Should(HaveOccurred())
@@ -951,7 +953,7 @@ func TestDeletePolicy(t *testing.T) {
 			ctx, vppCalls := setup(t)
 			defer teardown(ctx)
 			// data and prepare case
-			policy := policy(td.BSID, 0, true, true, policySegmentList(1, sidA.Addr, sidB.Addr, sidC.Addr))
+			policy := policy(td.BSID, 0, true, true, policySegmentList(1, sidA[:], sidB[:], sidC[:]))
 			vppCalls.AddPolicy(policy)
 			ctx.MockVpp.MockReply(td.MockReply)
 			// make the call and verify
@@ -973,26 +975,26 @@ func TestAddPolicySegmentList(t *testing.T) {
 	}{
 		{
 			Name:              "simple addition of policy segment",
-			Policy:            policy(sidA.Addr, 10, false, true),
-			PolicySegmentList: policySegmentList(1, sidA.Addr, sidB.Addr, sidC.Addr),
+			Policy:            policy(sidA[:], 10, false, true),
+			PolicySegmentList: policySegmentList(1, sidA[:], sidB[:], sidC[:]),
 			MockReply:         &vpp_sr.SrPolicyModReply{},
 			Verify: func(err error, catchedMsg govppapi.Message) {
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(catchedMsg).To(Equal(&vpp_sr.SrPolicyMod{
-					BsidAddr:  sidA.Addr,
+					BsidAddr:  sidA,
 					Operation: vpp2005.AddSRList,
 					FibTable:  10, // installationVrfId
 					Sids: vpp_sr.Srv6SidList{
 						Weight:  1,
 						NumSids: 3,
-						Sids:    []vpp_sr.Srv6Sid{{Addr: sidA.Addr}, {Addr: sidB.Addr}, {Addr: sidC.Addr}},
+						Sids:    []vpp_sr.IP6Address{sidA, sidB, sidC},
 					},
 				}))
 			},
 		},
 		{
 			Name:   "invalid SID (not IP address) in segment list",
-			Policy: policy(sidA.Addr, 10, false, true),
+			Policy: policy(sidA[:], 10, false, true),
 			PolicySegmentList: &srv6.Policy_SegmentList{
 				Weight:   1,
 				Segments: []string{sidToStr(sidA), invalidIPAddress, sidToStr(sidC)},
@@ -1010,7 +1012,7 @@ func TestAddPolicySegmentList(t *testing.T) {
 				SprayBehaviour:    false,
 				SrhEncapsulation:  true,
 			},
-			PolicySegmentList: policySegmentList(1, sidA.Addr, sidB.Addr, sidC.Addr),
+			PolicySegmentList: policySegmentList(1, sidA[:], sidB[:], sidC[:]),
 			MockReply:         &vpp_sr.SrPolicyModReply{},
 			Verify: func(err error, catchedMsg govppapi.Message) {
 				Expect(err).Should(HaveOccurred())
@@ -1018,8 +1020,8 @@ func TestAddPolicySegmentList(t *testing.T) {
 		},
 		{
 			Name:              "failure propagation from VPP",
-			Policy:            policy(sidA.Addr, 0, true, true),
-			PolicySegmentList: policySegmentList(1, sidA.Addr, sidB.Addr, sidC.Addr),
+			Policy:            policy(sidA[:], 0, true, true),
+			PolicySegmentList: policySegmentList(1, sidA[:], sidB[:], sidC[:]),
 			MockReply:         &vpp_sr.SrPolicyModReply{Retval: 1},
 			Verify: func(err error, msg govppapi.Message) {
 				Expect(err).Should(HaveOccurred())
@@ -1053,28 +1055,28 @@ func TestDeletePolicySegmentList(t *testing.T) {
 	}{
 		{
 			Name:              "simple deletion of policy segment",
-			Policy:            policy(sidA.Addr, 10, false, true, policySegmentList(1, sidA.Addr, sidB.Addr, sidC.Addr)),
-			PolicySegmentList: policySegmentList(1, sidA.Addr, sidB.Addr, sidC.Addr),
+			Policy:            policy(sidA[:], 10, false, true, policySegmentList(1, sidA[:], sidB[:], sidC[:])),
+			PolicySegmentList: policySegmentList(1, sidA[:], sidB[:], sidC[:]),
 			SegmentIndex:      111,
 			MockReply:         &vpp_sr.SrPolicyModReply{},
 			Verify: func(err error, catchedMsg govppapi.Message) {
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(catchedMsg).To(Equal(&vpp_sr.SrPolicyMod{
-					BsidAddr:  sidA.Addr,
+					BsidAddr:  sidA,
 					Operation: vpp2005.DeleteSRList,
 					SlIndex:   111,
 					FibTable:  10, // installationVrfId
 					Sids: vpp_sr.Srv6SidList{
 						Weight:  1,
 						NumSids: 3,
-						Sids:    []vpp_sr.Srv6Sid{{Addr: sidA.Addr}, {Addr: sidB.Addr}, {Addr: sidC.Addr}},
+						Sids:    []vpp_sr.IP6Address{sidA, sidB, sidC},
 					},
 				}))
 			},
 		},
 		{
 			Name: "invalid SID (not IP address) in segment list",
-			Policy: policy(sidA.Addr, 10, false, true,
+			Policy: policy(sidA[:], 10, false, true,
 				&srv6.Policy_SegmentList{
 					Weight:   1,
 					Segments: []string{sidToStr(sidA), invalidIPAddress, sidToStr(sidC)},
@@ -1091,8 +1093,8 @@ func TestDeletePolicySegmentList(t *testing.T) {
 		},
 		{
 			Name:              "failure propagation from VPP",
-			Policy:            policy(sidA.Addr, 0, true, true, policySegmentList(1, sidA.Addr, sidB.Addr, sidC.Addr)),
-			PolicySegmentList: policySegmentList(1, sidA.Addr, sidB.Addr, sidC.Addr),
+			Policy:            policy(sidA[:], 0, true, true, policySegmentList(1, sidA[:], sidB[:], sidC[:])),
+			PolicySegmentList: policySegmentList(1, sidA[:], sidB[:], sidC[:]),
 			SegmentIndex:      111,
 			MockReply:         &vpp_sr.SrPolicyModReply{Retval: 1},
 			Verify: func(err error, msg govppapi.Message) {
@@ -1153,13 +1155,12 @@ func testAddRemoveSteering(t *testing.T, removal bool) {
 			Verify: func(err error, catchedMsg govppapi.Message) {
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(catchedMsg).To(Equal(&vpp_sr.SrSteeringAddDel{
-					IsDel:         boolToUint(removal),
-					BsidAddr:      sidA.Addr,
+					IsDel:         removal,
+					BsidAddr:      sidA,
 					SrPolicyIndex: uint32(0),
 					TableID:       10,
 					TrafficType:   vpp2005.SteerTypeIPv6,
-					PrefixAddr:    net.ParseIP("1::").To16(),
-					MaskWidth:     64,
+					Prefix:        ip_types.Prefix{Address: toAddress("1::"), Len: 64},
 				}))
 			},
 		},
@@ -1180,13 +1181,12 @@ func testAddRemoveSteering(t *testing.T, removal bool) {
 			Verify: func(err error, catchedMsg govppapi.Message) {
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(catchedMsg).To(Equal(&vpp_sr.SrSteeringAddDel{
-					IsDel:         boolToUint(removal),
-					BsidAddr:      sidA.Addr,
+					IsDel:         removal,
+					BsidAddr:      sidA,
 					SrPolicyIndex: uint32(0),
 					TableID:       10,
 					TrafficType:   vpp2005.SteerTypeIPv4,
-					PrefixAddr:    net.ParseIP("1.2.3.4").To16(),
-					MaskWidth:     24,
+					Prefix:        ip_types.Prefix{Address: toAddress("1.2.3.4"), Len: 24},
 				}))
 			},
 		},
@@ -1206,8 +1206,8 @@ func testAddRemoveSteering(t *testing.T, removal bool) {
 			Verify: func(err error, catchedMsg govppapi.Message) {
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(catchedMsg).To(Equal(&vpp_sr.SrSteeringAddDel{
-					IsDel:         boolToUint(removal),
-					BsidAddr:      sidA.Addr,
+					IsDel:         removal,
+					BsidAddr:      sidA,
 					SrPolicyIndex: uint32(0),
 					TrafficType:   vpp2005.SteerTypeL2,
 					SwIfIndex:     swIndexA,
@@ -1231,13 +1231,12 @@ func testAddRemoveSteering(t *testing.T, removal bool) {
 			Verify: func(err error, catchedMsg govppapi.Message) {
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(catchedMsg).To(Equal(&vpp_sr.SrSteeringAddDel{
-					IsDel:         boolToUint(removal),
-					BsidAddr:      nil,
+					IsDel:         removal,
+					BsidAddr:      sid(""),
 					SrPolicyIndex: uint32(20),
 					TableID:       10,
 					TrafficType:   vpp2005.SteerTypeIPv6,
-					PrefixAddr:    net.ParseIP("1::").To16(),
-					MaskWidth:     64,
+					Prefix:        ip_types.Prefix{Address: toAddress("1::"), Len: 64},
 				}))
 			},
 		},
@@ -1379,9 +1378,9 @@ func TestRetrievePolicyIndexInfo(t *testing.T) {
 -----------
 `
 	correctPolicyIndex := uint32(4)
-	segmentListABC := policySegmentList(1, sidA.Addr, sidB.Addr, sidC.Addr)
-	segmentListBBC := policySegmentList(1, sidB.Addr, sidB.Addr, sidC.Addr)
-	notExistingSegmentListCCC := policySegmentList(1, sidC.Addr, sidC.Addr, sidC.Addr)
+	segmentListABC := policySegmentList(1, sidA[:], sidB[:], sidC[:])
+	segmentListBBC := policySegmentList(1, sidB[:], sidB[:], sidC[:])
+	notExistingSegmentListCCC := policySegmentList(1, sidC[:], sidC[:], sidC[:])
 
 	// Prepare different cases
 	cases := []struct {
@@ -1394,7 +1393,7 @@ func TestRetrievePolicyIndexInfo(t *testing.T) {
 	}{
 		{
 			Name:   "basic successful index retrieval",
-			Policy: policy(sidA.Addr, 10, false, true, segmentListABC, segmentListBBC),
+			Policy: policy(sidA[:], 10, false, true, segmentListABC, segmentListBBC),
 			MockReply: &vpp_vpe.CliInbandReply{
 				Reply:  correctCLIOutput,
 				Retval: 0,
@@ -1404,13 +1403,13 @@ func TestRetrievePolicyIndexInfo(t *testing.T) {
 		},
 		{
 			Name:             "failure propagation from VPP",
-			Policy:           policy(sidA.Addr, 10, false, true, segmentListABC, segmentListBBC),
+			Policy:           policy(sidA[:], 10, false, true, segmentListABC, segmentListBBC),
 			MockReply:        &vpp_vpe.CliInbandReply{Retval: 1},
 			ExpectingFailure: true,
 		},
 		{
 			Name:   "searching for not existing policy ",
-			Policy: policy(sidC.Addr, 10, false, true, segmentListABC, segmentListBBC),
+			Policy: policy(sidC[:], 10, false, true, segmentListABC, segmentListBBC),
 			MockReply: &vpp_vpe.CliInbandReply{
 				Reply:  correctCLIOutput,
 				Retval: 0,
@@ -1419,7 +1418,7 @@ func TestRetrievePolicyIndexInfo(t *testing.T) {
 		},
 		{
 			Name:   "searching for not existing policy segment list",
-			Policy: policy(sidA.Addr, 10, false, true, notExistingSegmentListCCC),
+			Policy: policy(sidA[:], 10, false, true, notExistingSegmentListCCC),
 			MockReply: &vpp_vpe.CliInbandReply{
 				Reply:  correctCLIOutput,
 				Retval: 0,
@@ -1462,14 +1461,14 @@ func teardown(ctx *vppmock.TestCtx) {
 	ctx.TeardownTestCtx()
 }
 
-func sid(str string) *vpp_sr.Srv6Sid {
+func sid(str string) vpp_sr.IP6Address {
 	bsid, err := parseIPv6(str)
 	if err != nil {
 		panic(fmt.Sprintf("can't parse %q into SRv6 BSID (IPv6 address)", str))
 	}
-	return &vpp_sr.Srv6Sid{
-		Addr: bsid,
-	}
+	var ip vpp_sr.IP6Address
+	copy(ip[:], bsid)
+	return ip
 }
 
 // parseIPv6 parses string <str> to IPv6 address (including IPv4 address converted to IPv6 address)
@@ -1514,6 +1513,18 @@ func boolToUint(input bool) uint8 {
 	return uint8(0)
 }
 
-func sidToStr(sid vpp_sr.Srv6Sid) string {
-	return srv6.SID(sid.Addr).String()
+func sidToStr(sid vpp_sr.IP6Address) string {
+	return srv6.SID(sid[:]).String()
+}
+
+func toAddress(ip interface{}) (addr ip_types.Address) {
+	switch ip := ip.(type) {
+	case string:
+		addr, _ = vpp2005.IPToAddress(ip)
+	case net.IP:
+		addr, _ = vpp2005.IPToAddress(ip.String())
+	default:
+		panic(fmt.Sprintf("cannot convert to ip_types.Address from type %T", ip))
+	}
+	return
 }

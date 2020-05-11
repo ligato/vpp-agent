@@ -304,7 +304,7 @@ func TestAddMacIPAcl(t *testing.T) {
 
 	_, err = ctx.aclHandler.AddMACIPACL(aclErr7Rules, "test10")
 	Expect(err).To(Not(BeNil()))
-	Expect(err.Error()).To(BeEquivalentTo("invalid IP address "))
+	Expect(err.Error()).To(HavePrefix("invalid IP address "))
 
 	ctx.MockVpp.MockReply(&vpp_acl.ACLAddReplaceReply{})
 	_, err = ctx.aclHandler.AddMACIPACL(aclMACIPrules, "test11")

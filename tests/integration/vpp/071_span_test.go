@@ -24,7 +24,7 @@ func TestSpan(t *testing.T) {
 		swIfIndexFrom uint32
 		swIfIndexTo   uint32
 		direction     uint8
-		isL2          uint8
+		isL2          bool
 
 		// If dump must return record (true) or empty slice (false):
 		isDump bool
@@ -33,13 +33,13 @@ func TestSpan(t *testing.T) {
 		// If action must fail:
 		isFail bool
 	}{
-		{"enable Rx SPAN", 0, 1, uint8(vpp_interfaces.Span_RX), 0, true, true, false},
-		{"enable Tx SPAN", 0, 1, uint8(vpp_interfaces.Span_TX), 0, true, true, false},
-		{"enable Both SPAN", 0, 1, uint8(vpp_interfaces.Span_BOTH), 0, true, true, false},
-		{"disable SPAN", 0, 1, uint8(vpp_interfaces.Span_BOTH), 0, false, false, false},
-		{"enable SPAN with L2 set", 0, 1, uint8(vpp_interfaces.Span_RX), 1, true, true, false},
-		{"disable SPAN with L2 set", 0, 1, uint8(vpp_interfaces.Span_RX), 1, false, false, false},
-		{"enable bad SPAN", 0, 0, uint8(vpp_interfaces.Span_BOTH), 0, false, true, true},
+		{"enable Rx SPAN", 0, 1, uint8(vpp_interfaces.Span_RX), false, true, true, false},
+		{"enable Tx SPAN", 0, 1, uint8(vpp_interfaces.Span_TX), false, true, true, false},
+		{"enable Both SPAN", 0, 1, uint8(vpp_interfaces.Span_BOTH), false, true, true, false},
+		{"disable SPAN", 0, 1, uint8(vpp_interfaces.Span_BOTH), false, false, false, false},
+		{"enable SPAN with L2 set", 0, 1, uint8(vpp_interfaces.Span_RX), true, true, true, false},
+		{"disable SPAN with L2 set", 0, 1, uint8(vpp_interfaces.Span_RX), true, false, false, false},
+		{"enable bad SPAN", 0, 0, uint8(vpp_interfaces.Span_BOTH), false, false, true, true},
 	}
 
 	for _, test := range tests {
@@ -78,7 +78,7 @@ func TestSpan(t *testing.T) {
 					t.Fatalf("wrong Direction. Expected: %d. Got: %d\n", test.direction, dumpResp[0].Direction)
 				}
 				if dumpResp[0].IsL2 != test.isL2 {
-					t.Fatalf("wrong IsL2. Expected: %d. Got: %d\n", test.isL2, dumpResp[0].IsL2)
+					t.Fatalf("wrong IsL2. Expected: %v. Got: %v\n", test.isL2, dumpResp[0].IsL2)
 				}
 			} else {
 				if len(dumpResp) != 0 {

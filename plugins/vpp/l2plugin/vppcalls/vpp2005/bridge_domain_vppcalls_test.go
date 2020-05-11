@@ -47,20 +47,20 @@ var createTestDataInBD = &l2.BridgeDomain{
 // Output test data for creating bridge domain
 var createTestDataOutBD = &vpp_l2.BridgeDomainAddDel{
 	BdID:    dummyBridgeDomain,
-	Flood:   1,
-	UuFlood: 1,
-	Forward: 1,
-	Learn:   1,
-	ArpTerm: 1,
+	Flood:   true,
+	UuFlood: true,
+	Forward: true,
+	Learn:   true,
+	ArpTerm: true,
 	MacAge:  45,
-	BdTag:   []byte(dummyBridgeDomainName),
-	IsAdd:   1,
+	BdTag:   dummyBridgeDomainName,
+	IsAdd:   true,
 }
 
 // Output test data for deleting bridge domain
 var deleteTestDataOutBd = &vpp_l2.BridgeDomainAddDel{
 	BdID:  dummyBridgeDomain,
-	IsAdd: 0,
+	IsAdd: false,
 }
 
 func TestVppAddBridgeDomain(t *testing.T) {
