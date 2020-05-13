@@ -22,10 +22,12 @@ import (
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1908/af_packet"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1908/bond"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1908/dhcp"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1908/flowprobe"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1908/gre"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1908/gtpu"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1908/interfaces"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1908/ip"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1908/ipfix_export"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1908/ipip"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1908/ipsec"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1908/l2"
@@ -56,6 +58,7 @@ func init() {
 			gre.AllMessages,
 			interfaces.AllMessages,
 			ip.AllMessages,
+			ipfix_export.AllMessages,
 			ipsec.AllMessages,
 			l2.AllMessages,
 			memclnt.AllMessages,
@@ -71,6 +74,7 @@ func init() {
 		Plugins: vpp.Messages(
 			abf.AllMessages,
 			acl.AllMessages,
+			flowprobe.AllMessages,
 			gtpu.AllMessages,
 			l3xc.AllMessages,
 			memif.AllMessages,
@@ -89,6 +93,7 @@ func init() {
 //go:generate binapigen --input-file=$VPP_API_DIR/core/gre.api.json
 //go:generate binapigen --input-file=$VPP_API_DIR/core/interface.api.json
 //go:generate binapigen --input-file=$VPP_API_DIR/core/ip.api.json
+//go:generate binapigen --input-file=$VPP_API_DIR/core/ipfix_export.api.json
 //go:generate binapigen --input-file=$VPP_API_DIR/core/ipsec.api.json
 //go:generate binapigen --input-file=$VPP_API_DIR/core/l2.api.json
 //go:generate binapigen --input-file=$VPP_API_DIR/core/memclnt.api.json
@@ -102,6 +107,7 @@ func init() {
 //go:generate binapigen --input-file=$VPP_API_DIR/core/ipip.api.json
 //go:generate binapigen --input-file=$VPP_API_DIR/plugins/abf.api.json
 //go:generate binapigen --input-file=$VPP_API_DIR/plugins/acl.api.json
+//go:generate binapigen --input-file=$VPP_API_DIR/plugins/flowprobe.api.json
 //go:generate binapigen --input-file=$VPP_API_DIR/plugins/gtpu.api.json
 //go:generate binapigen --input-file=$VPP_API_DIR/plugins/l3xc.api.json
 //go:generate binapigen --input-file=$VPP_API_DIR/plugins/memif.api.json

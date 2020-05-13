@@ -41,6 +41,7 @@ import (
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/abfplugin"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/aclplugin"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/ipfixplugin"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ipsecplugin"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/l2plugin"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin"
@@ -172,6 +173,7 @@ type VPP struct {
 	ABFPlugin   *abfplugin.ABFPlugin
 	ACLPlugin   *aclplugin.ACLPlugin
 	IfPlugin    *ifplugin.IfPlugin
+	IPFIXPlugin *ipfixplugin.IPFIXPlugin
 	IPSecPlugin *ipsecplugin.IPSecPlugin
 	L2Plugin    *l2plugin.L2Plugin
 	L3Plugin    *l3plugin.L3Plugin
@@ -186,6 +188,7 @@ func DefaultVPP() VPP {
 		ABFPlugin:   &abfplugin.DefaultPlugin,
 		ACLPlugin:   &aclplugin.DefaultPlugin,
 		IfPlugin:    &ifplugin.DefaultPlugin,
+		IPFIXPlugin: &ipfixplugin.DefaultPlugin,
 		IPSecPlugin: &ipsecplugin.DefaultPlugin,
 		L2Plugin:    &l2plugin.DefaultPlugin,
 		L3Plugin:    &l3plugin.DefaultPlugin,
