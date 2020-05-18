@@ -60,6 +60,10 @@ jobs:
       script:
         - make verify-binapi
         - make integration-tests
+    - env: VPP_VERSION=2005
+      script:
+        - make verify-binapi
+        - make integration-tests
 
     - stage: E2E
       env: VPP_VERSION=1904
