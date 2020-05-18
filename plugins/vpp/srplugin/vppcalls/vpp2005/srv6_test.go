@@ -1240,7 +1240,6 @@ func testAddRemoveSteering(t *testing.T, removal bool) {
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(catchedMsg).To(Equal(&vpp_sr.SrSteeringAddDel{
 					IsDel:         removal,
-					BsidAddr:      sid(""),
 					SrPolicyIndex: uint32(20),
 					TableID:       10,
 					TrafficType:   vpp2005.SteerTypeIPv6,
