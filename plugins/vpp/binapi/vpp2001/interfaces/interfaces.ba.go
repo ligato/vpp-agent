@@ -15,12 +15,13 @@ It consists of:
 package interfaces
 
 import (
-	bytes "bytes"
-	context "context"
+	"bytes"
+	"context"
+	"io"
+	"strconv"
+
 	api "git.fd.io/govpp.git/api"
 	struc "github.com/lunixbochs/struc"
-	io "io"
-	strconv "strconv"
 
 	ethernet_types "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ethernet_types"
 	interface_types "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/interface_types"
@@ -312,8 +313,10 @@ type SwInterfaceAddDelMacAddress struct {
 	IsAdd     uint8
 }
 
-func (m *SwInterfaceAddDelMacAddress) Reset()                        { *m = SwInterfaceAddDelMacAddress{} }
-func (*SwInterfaceAddDelMacAddress) GetMessageName() string          { return "sw_interface_add_del_mac_address" }
+func (m *SwInterfaceAddDelMacAddress) Reset() { *m = SwInterfaceAddDelMacAddress{} }
+func (*SwInterfaceAddDelMacAddress) GetMessageName() string {
+	return "sw_interface_add_del_mac_address"
+}
 func (*SwInterfaceAddDelMacAddress) GetCrcString() string            { return "638bb9f4" }
 func (*SwInterfaceAddDelMacAddress) GetMessageType() api.MessageType { return api.RequestMessage }
 

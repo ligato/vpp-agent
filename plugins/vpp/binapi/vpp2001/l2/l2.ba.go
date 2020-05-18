@@ -15,12 +15,13 @@ It consists of:
 package l2
 
 import (
-	bytes "bytes"
-	context "context"
+	"bytes"
+	"context"
+	"io"
+	"strconv"
+
 	api "git.fd.io/govpp.git/api"
 	struc "github.com/lunixbochs/struc"
-	io "io"
-	strconv "strconv"
 
 	ethernet_types "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ethernet_types"
 	interface_types "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/interface_types"
@@ -698,8 +699,10 @@ type SwInterfaceSetL2BridgeReply struct {
 	Retval int32
 }
 
-func (m *SwInterfaceSetL2BridgeReply) Reset()                        { *m = SwInterfaceSetL2BridgeReply{} }
-func (*SwInterfaceSetL2BridgeReply) GetMessageName() string          { return "sw_interface_set_l2_bridge_reply" }
+func (m *SwInterfaceSetL2BridgeReply) Reset() { *m = SwInterfaceSetL2BridgeReply{} }
+func (*SwInterfaceSetL2BridgeReply) GetMessageName() string {
+	return "sw_interface_set_l2_bridge_reply"
+}
 func (*SwInterfaceSetL2BridgeReply) GetCrcString() string            { return "e8d4e804" }
 func (*SwInterfaceSetL2BridgeReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 

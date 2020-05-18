@@ -15,12 +15,13 @@ It consists of:
 package nat
 
 import (
-	bytes "bytes"
-	context "context"
+	"bytes"
+	"context"
+	"io"
+	"strconv"
+
 	api "git.fd.io/govpp.git/api"
 	struc "github.com/lunixbochs/struc"
-	io "io"
-	strconv "strconv"
 
 	interface_types "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/interface_types"
 	ip_types "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ip_types"
@@ -489,8 +490,10 @@ type Nat44ForwardingEnableDisable struct {
 	Enable bool
 }
 
-func (m *Nat44ForwardingEnableDisable) Reset()                        { *m = Nat44ForwardingEnableDisable{} }
-func (*Nat44ForwardingEnableDisable) GetMessageName() string          { return "nat44_forwarding_enable_disable" }
+func (m *Nat44ForwardingEnableDisable) Reset() { *m = Nat44ForwardingEnableDisable{} }
+func (*Nat44ForwardingEnableDisable) GetMessageName() string {
+	return "nat44_forwarding_enable_disable"
+}
 func (*Nat44ForwardingEnableDisable) GetCrcString() string            { return "b3e225d2" }
 func (*Nat44ForwardingEnableDisable) GetMessageType() api.MessageType { return api.RequestMessage }
 
@@ -690,8 +693,10 @@ func (m *Nat44LbStaticMappingAddDelLocalReply) Reset() { *m = Nat44LbStaticMappi
 func (*Nat44LbStaticMappingAddDelLocalReply) GetMessageName() string {
 	return "nat44_lb_static_mapping_add_del_local_reply"
 }
-func (*Nat44LbStaticMappingAddDelLocalReply) GetCrcString() string            { return "e8d4e804" }
-func (*Nat44LbStaticMappingAddDelLocalReply) GetMessageType() api.MessageType { return api.ReplyMessage }
+func (*Nat44LbStaticMappingAddDelLocalReply) GetCrcString() string { return "e8d4e804" }
+func (*Nat44LbStaticMappingAddDelLocalReply) GetMessageType() api.MessageType {
+	return api.ReplyMessage
+}
 
 // Nat44LbStaticMappingDetails represents VPP binary API message 'nat44_lb_static_mapping_details'.
 type Nat44LbStaticMappingDetails struct {
