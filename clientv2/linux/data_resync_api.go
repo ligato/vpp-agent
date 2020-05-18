@@ -22,6 +22,7 @@ import (
 	vpp_abf "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/abf"
 	vpp_acl "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/acl"
 	vpp_interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
+	ipfix "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/ipfix"
 	ipsec "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/ipsec"
 	vpp_l2 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l2"
 	vpp_l3 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3"
@@ -105,6 +106,12 @@ type DataResyncDSL interface {
 	PuntToHost(val *punt.ToHost) DataResyncDSL
 	// PuntException adds request to create or update exception to punt specific packets.
 	PuntException(val *punt.Exception) DataResyncDSL
+	// IPFIX adds IPFIX configuration to the RESYNC request.
+	IPFIX(val *ipfix.IPFIX) DataResyncDSL
+	// FlowprobeParams adds Flowprobe Params configuration to the RESYNC request.
+	FlowprobeParams(val *ipfix.FlowProbeParams) DataResyncDSL
+	// FlowprobeFeature adds Flowprobe Feature configuration to the RESYNC request.
+	FlowprobeFeature(val *ipfix.FlowProbeFeature) DataResyncDSL
 
 	// Send propagates the RESYNC request to the plugins.
 	Send() vpp_clientv2.Reply

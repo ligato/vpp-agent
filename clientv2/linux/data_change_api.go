@@ -22,6 +22,7 @@ import (
 	vpp_abf "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/abf"
 	vpp_acl "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/acl"
 	vpp_interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
+	ipfix "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/ipfix"
 	ipsec "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/ipsec"
 	vpp_l2 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l2"
 	vpp_l3 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3"
@@ -125,6 +126,12 @@ type PutDSL interface {
 	PuntToHost(val *punt.ToHost) PutDSL
 	// PuntException adds request to create or update exception to punt specific packets.
 	PuntException(val *punt.Exception) PutDSL
+	// IPFIX adds a request to update VPP IP Flow Information eXport configuration.
+	IPFIX(val *ipfix.IPFIX) PutDSL
+	// FlowprobeParams adds a request to update VPP Flowprobe Params.
+	FlowprobeParams(val *ipfix.FlowProbeParams) PutDSL
+	// FlowprobeFeature adds a request to enable Flowprobe Feature on interface.
+	FlowprobeFeature(val *ipfix.FlowProbeFeature) PutDSL
 
 	// Delete changes the DSL mode to allow removing an existing configuration.
 	// See documentation for DataChangeDSL.Delete().
@@ -208,6 +215,8 @@ type DeleteDSL interface {
 	PuntToHost(l3Proto punt.L3Protocol, l4Proto punt.L4Protocol, port uint32) DeleteDSL
 	// PuntException adds request to delete exception to punt specific packets.
 	PuntException(reason string) DeleteDSL
+	// FlowprobeFeature adds a request to disable Flowprobe Feature on interface.
+	FlowprobeFeature(val *ipfix.FlowProbeFeature) DeleteDSL
 
 	// Put changes the DSL mode to allow configuration editing.
 	// See documentation for DataChangeDSL.Put().

@@ -27,6 +27,7 @@ import (
 	abf "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/abf"
 	acl "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/acl"
 	interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
+	ipfix "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/ipfix"
 	ipsec "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/ipsec"
 	l2 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l2"
 	l3 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3"
@@ -265,6 +266,33 @@ func (dsl *DataResyncDSL) PuntToHost(val *punt.ToHost) linuxclient.DataResyncDSL
 
 // PuntException adds request to create or update exception to punt specific packets.
 func (dsl *DataResyncDSL) PuntException(val *punt.Exception) linuxclient.DataResyncDSL {
+	key := models.Key(val)
+	dsl.txn.Put(key, val)
+	dsl.txnKeys = append(dsl.txnKeys, key)
+
+	return dsl
+}
+
+// IPFIX adds IPFIX configuration to the RESYNC request.
+func (dsl *DataResyncDSL) IPFIX(val *ipfix.IPFIX) linuxclient.DataResyncDSL {
+	key := models.Key(val)
+	dsl.txn.Put(key, val)
+	dsl.txnKeys = append(dsl.txnKeys, key)
+
+	return dsl
+}
+
+// FlowprobeParams adds Flowprobe Params configuration to the RESYNC request.
+func (dsl *DataResyncDSL) FlowprobeParams(val *ipfix.FlowProbeParams) linuxclient.DataResyncDSL {
+	key := models.Key(val)
+	dsl.txn.Put(key, val)
+	dsl.txnKeys = append(dsl.txnKeys, key)
+
+	return dsl
+}
+
+// FlowprobeFeature adds Flowprobe Feature configuration to the RESYNC request.
+func (dsl *DataResyncDSL) FlowprobeFeature(val *ipfix.FlowProbeFeature) linuxclient.DataResyncDSL {
 	key := models.Key(val)
 	dsl.txn.Put(key, val)
 	dsl.txnKeys = append(dsl.txnKeys, key)
