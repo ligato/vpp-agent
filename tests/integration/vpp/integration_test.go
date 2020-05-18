@@ -54,12 +54,13 @@ const (
 		}
 		api-trace {
 			on
+			save-api-table /run/vpp/api-table
 		}
 		socksvr {
-			default
+			socket-name /run/vpp/api.sock
 		}
 		statseg {
-			default
+			socket-name /run/vpp/stats.sock
 			per-node-counters on
 		}
 		plugins {
