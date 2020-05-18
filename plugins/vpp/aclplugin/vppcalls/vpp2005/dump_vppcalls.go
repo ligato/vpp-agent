@@ -92,7 +92,7 @@ func (h *ACLVppHandler) DumpMACIPACL() ([]*vppcalls.ACLDetails, error) {
 
 	// get all ACLs with MACIP ruleData
 	MACIPRuleACLs, err := h.DumpMacIPAcls()
-	if len(MACIPRuleACLs) < 1 || err != nil {
+	if err != nil || len(MACIPRuleACLs) == 0 {
 		return nil, err
 	}
 

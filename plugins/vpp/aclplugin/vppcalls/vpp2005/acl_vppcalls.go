@@ -203,6 +203,7 @@ func (h *ACLVppHandler) transformACLMacIPRules(rules []*acl.ACL_Rule) (aclMacIPR
 			if err != nil {
 				return nil, fmt.Errorf("invalid IP address %v", macIPRule.SourceAddress)
 			}
+			aclMacIPRule.SrcPrefix.Len = uint8(macIPRule.SourceAddressPrefix)
 			// MAC + mask
 			srcMac, err := net.ParseMAC(macIPRule.SourceMacAddress)
 			if err != nil {
@@ -377,7 +378,7 @@ func IPtoPrefix(addr string) (ip_types.Prefix, error) {
 	} else {
 		prefix.Address.Af = ip_types.ADDRESS_IP4
 		var ip4addr vpp_ifs.IP4Address
-		copy(ip4addr[:], ipAddr.IP.To16())
+		copy(ip4addr[:], ipAddr.IP.To4())
 		prefix.Address.Un.SetIP4(ip4addr)
 	}
 	return prefix, nil
