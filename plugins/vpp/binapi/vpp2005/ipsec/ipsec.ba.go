@@ -15,12 +15,13 @@ It consists of:
 package ipsec
 
 import (
-	bytes "bytes"
-	context "context"
+	"bytes"
+	"context"
+	"io"
+	"strconv"
+
 	api "git.fd.io/govpp.git/api"
 	struc "github.com/lunixbochs/struc"
-	io "io"
-	strconv "strconv"
 
 	interface_types "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/interface_types"
 	ip_types "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/ip_types"
@@ -33,7 +34,7 @@ const (
 	// APIVersion is the API version of this module.
 	APIVersion = "3.0.2"
 	// VersionCrc is the CRC of this module.
-	VersionCrc = 0x4414929b
+	VersionCrc = 0x6a839805
 )
 
 type AddressFamily = ip_types.AddressFamily
@@ -215,7 +216,7 @@ type IpsecSaDetails struct {
 
 func (m *IpsecSaDetails) Reset()                        { *m = IpsecSaDetails{} }
 func (*IpsecSaDetails) GetMessageName() string          { return "ipsec_sa_details" }
-func (*IpsecSaDetails) GetCrcString() string            { return "28a22afb" }
+func (*IpsecSaDetails) GetCrcString() string            { return "b30c7f41" }
 func (*IpsecSaDetails) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // IpsecSaDump represents VPP binary API message 'ipsec_sa_dump'.
@@ -236,7 +237,7 @@ type IpsecSadEntryAddDel struct {
 
 func (m *IpsecSadEntryAddDel) Reset()                        { *m = IpsecSadEntryAddDel{} }
 func (*IpsecSadEntryAddDel) GetMessageName() string          { return "ipsec_sad_entry_add_del" }
-func (*IpsecSadEntryAddDel) GetCrcString() string            { return "57cc13fa" }
+func (*IpsecSadEntryAddDel) GetCrcString() string            { return "b8def364" }
 func (*IpsecSadEntryAddDel) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // IpsecSadEntryAddDelReply represents VPP binary API message 'ipsec_sad_entry_add_del_reply'.

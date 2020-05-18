@@ -9,18 +9,19 @@ It consists of:
 	  7 aliases
 	 14 types
 	  1 union
-	 58 messages
-	 29 services
+	 60 messages
+	 30 services
 */
 package ip
 
 import (
-	bytes "bytes"
-	context "context"
+	"bytes"
+	"context"
+	"io"
+	"strconv"
+
 	api "git.fd.io/govpp.git/api"
 	struc "github.com/lunixbochs/struc"
-	io "io"
-	strconv "strconv"
 
 	ethernet_types "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/ethernet_types"
 	fib_types "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/fib_types"
@@ -34,7 +35,7 @@ const (
 	// APIVersion is the API version of this module.
 	APIVersion = "3.0.1"
 	// VersionCrc is the CRC of this module.
-	VersionCrc = 0xbb635254
+	VersionCrc = 0x765d74b1
 )
 
 type AddressFamily = ip_types.AddressFamily
@@ -585,6 +586,29 @@ func (*IPRouteDump) GetMessageName() string          { return "ip_route_dump" }
 func (*IPRouteDump) GetCrcString() string            { return "b9d2e09e" }
 func (*IPRouteDump) GetMessageType() api.MessageType { return api.RequestMessage }
 
+// IPRouteLookup represents VPP binary API message 'ip_route_lookup'.
+type IPRouteLookup struct {
+	TableID uint32
+	Exact   uint8
+	Prefix  Prefix
+}
+
+func (m *IPRouteLookup) Reset()                        { *m = IPRouteLookup{} }
+func (*IPRouteLookup) GetMessageName() string          { return "ip_route_lookup" }
+func (*IPRouteLookup) GetCrcString() string            { return "e2986185" }
+func (*IPRouteLookup) GetMessageType() api.MessageType { return api.RequestMessage }
+
+// IPRouteLookupReply represents VPP binary API message 'ip_route_lookup_reply'.
+type IPRouteLookupReply struct {
+	Retval int32
+	Route  IPRoute
+}
+
+func (m *IPRouteLookupReply) Reset()                        { *m = IPRouteLookupReply{} }
+func (*IPRouteLookupReply) GetMessageName() string          { return "ip_route_lookup_reply" }
+func (*IPRouteLookupReply) GetCrcString() string            { return "ae99de8e" }
+func (*IPRouteLookupReply) GetMessageType() api.MessageType { return api.ReplyMessage }
+
 // IPSourceAndPortRangeCheckAddDel represents VPP binary API message 'ip_source_and_port_range_check_add_del'.
 type IPSourceAndPortRangeCheckAddDel struct {
 	IsAdd          bool
@@ -910,6 +934,8 @@ func init() {
 	api.RegisterMessage((*IPRouteAddDelReply)(nil), "ip.IPRouteAddDelReply")
 	api.RegisterMessage((*IPRouteDetails)(nil), "ip.IPRouteDetails")
 	api.RegisterMessage((*IPRouteDump)(nil), "ip.IPRouteDump")
+	api.RegisterMessage((*IPRouteLookup)(nil), "ip.IPRouteLookup")
+	api.RegisterMessage((*IPRouteLookupReply)(nil), "ip.IPRouteLookupReply")
 	api.RegisterMessage((*IPSourceAndPortRangeCheckAddDel)(nil), "ip.IPSourceAndPortRangeCheckAddDel")
 	api.RegisterMessage((*IPSourceAndPortRangeCheckAddDelReply)(nil), "ip.IPSourceAndPortRangeCheckAddDelReply")
 	api.RegisterMessage((*IPSourceAndPortRangeCheckInterfaceAddDel)(nil), "ip.IPSourceAndPortRangeCheckInterfaceAddDel")
@@ -973,6 +999,8 @@ func AllMessages() []api.Message {
 		(*IPRouteAddDelReply)(nil),
 		(*IPRouteDetails)(nil),
 		(*IPRouteDump)(nil),
+		(*IPRouteLookup)(nil),
+		(*IPRouteLookupReply)(nil),
 		(*IPSourceAndPortRangeCheckAddDel)(nil),
 		(*IPSourceAndPortRangeCheckAddDelReply)(nil),
 		(*IPSourceAndPortRangeCheckInterfaceAddDel)(nil),
@@ -1022,6 +1050,7 @@ type RPCService interface {
 	IPReassemblyGet(ctx context.Context, in *IPReassemblyGet) (*IPReassemblyGetReply, error)
 	IPReassemblySet(ctx context.Context, in *IPReassemblySet) (*IPReassemblySetReply, error)
 	IPRouteAddDel(ctx context.Context, in *IPRouteAddDel) (*IPRouteAddDelReply, error)
+	IPRouteLookup(ctx context.Context, in *IPRouteLookup) (*IPRouteLookupReply, error)
 	IPSourceAndPortRangeCheckAddDel(ctx context.Context, in *IPSourceAndPortRangeCheckAddDel) (*IPSourceAndPortRangeCheckAddDelReply, error)
 	IPSourceAndPortRangeCheckInterfaceAddDel(ctx context.Context, in *IPSourceAndPortRangeCheckInterfaceAddDel) (*IPSourceAndPortRangeCheckInterfaceAddDelReply, error)
 	IPTableAddDel(ctx context.Context, in *IPTableAddDel) (*IPTableAddDelReply, error)
@@ -1384,6 +1413,15 @@ func (c *serviceClient) IPReassemblySet(ctx context.Context, in *IPReassemblySet
 
 func (c *serviceClient) IPRouteAddDel(ctx context.Context, in *IPRouteAddDel) (*IPRouteAddDelReply, error) {
 	out := new(IPRouteAddDelReply)
+	err := c.ch.SendRequest(in).ReceiveReply(out)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *serviceClient) IPRouteLookup(ctx context.Context, in *IPRouteLookup) (*IPRouteLookupReply, error) {
+	out := new(IPRouteLookupReply)
 	err := c.ch.SendRequest(in).ReceiveReply(out)
 	if err != nil {
 		return nil, err

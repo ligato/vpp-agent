@@ -15,12 +15,13 @@ It consists of:
 package tapv2
 
 import (
-	bytes "bytes"
-	context "context"
+	"bytes"
+	"context"
+	"io"
+	"strconv"
+
 	api "git.fd.io/govpp.git/api"
 	struc "github.com/lunixbochs/struc"
-	io "io"
-	strconv "strconv"
 
 	ethernet_types "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/ethernet_types"
 	interface_types "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/interface_types"
@@ -31,9 +32,9 @@ const (
 	// ModuleName is the name of this module.
 	ModuleName = "tapv2"
 	// APIVersion is the API version of this module.
-	APIVersion = "3.0.0"
+	APIVersion = "4.0.0"
 	// VersionCrc is the CRC of this module.
-	VersionCrc = 0x1567e28c
+	VersionCrc = 0x3ed7c42d
 )
 
 type AddressFamily = ip_types.AddressFamily
@@ -60,27 +61,30 @@ type SubIfFlags = interface_types.SubIfFlags
 type TapFlags uint32
 
 const (
-	TAP_FLAG_GSO          TapFlags = 1
-	TAP_FLAG_CSUM_OFFLOAD TapFlags = 2
-	TAP_FLAG_PERSIST      TapFlags = 4
-	TAP_FLAG_ATTACH       TapFlags = 8
-	TAP_FLAG_TUN          TapFlags = 16
+	TAP_API_FLAG_GSO          TapFlags = 1
+	TAP_API_FLAG_CSUM_OFFLOAD TapFlags = 2
+	TAP_API_FLAG_PERSIST      TapFlags = 4
+	TAP_API_FLAG_ATTACH       TapFlags = 8
+	TAP_API_FLAG_TUN          TapFlags = 16
+	TAP_API_FLAG_GRO_COALESCE TapFlags = 32
 )
 
 var TapFlags_name = map[uint32]string{
-	1:  "TAP_FLAG_GSO",
-	2:  "TAP_FLAG_CSUM_OFFLOAD",
-	4:  "TAP_FLAG_PERSIST",
-	8:  "TAP_FLAG_ATTACH",
-	16: "TAP_FLAG_TUN",
+	1:  "TAP_API_FLAG_GSO",
+	2:  "TAP_API_FLAG_CSUM_OFFLOAD",
+	4:  "TAP_API_FLAG_PERSIST",
+	8:  "TAP_API_FLAG_ATTACH",
+	16: "TAP_API_FLAG_TUN",
+	32: "TAP_API_FLAG_GRO_COALESCE",
 }
 
 var TapFlags_value = map[string]uint32{
-	"TAP_FLAG_GSO":          1,
-	"TAP_FLAG_CSUM_OFFLOAD": 2,
-	"TAP_FLAG_PERSIST":      4,
-	"TAP_FLAG_ATTACH":       8,
-	"TAP_FLAG_TUN":          16,
+	"TAP_API_FLAG_GSO":          1,
+	"TAP_API_FLAG_CSUM_OFFLOAD": 2,
+	"TAP_API_FLAG_PERSIST":      4,
+	"TAP_API_FLAG_ATTACH":       8,
+	"TAP_API_FLAG_TUN":          16,
+	"TAP_API_FLAG_GRO_COALESCE": 32,
 }
 
 func (x TapFlags) String() string {

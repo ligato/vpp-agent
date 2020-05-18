@@ -13,12 +13,13 @@ It consists of:
 package ipsec_types
 
 import (
-	bytes "bytes"
-	context "context"
+	"bytes"
+	"context"
+	"io"
+	"strconv"
+
 	api "git.fd.io/govpp.git/api"
 	struc "github.com/lunixbochs/struc"
-	io "io"
-	strconv "strconv"
 
 	ip_types "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/ip_types"
 )
@@ -29,7 +30,7 @@ const (
 	// APIVersion is the API version of this module.
 	APIVersion = "3.0.0"
 	// VersionCrc is the CRC of this module.
-	VersionCrc = 0x8e70261b
+	VersionCrc = 0xd8f8f7ce
 )
 
 type AddressFamily = ip_types.AddressFamily
@@ -234,6 +235,8 @@ type IpsecSadEntry struct {
 	TunnelDst          Address
 	TxTableID          uint32
 	Salt               uint32
+	UDPSrcPort         uint16
+	UDPDstPort         uint16
 }
 
 func (*IpsecSadEntry) GetTypeName() string { return "ipsec_sad_entry" }

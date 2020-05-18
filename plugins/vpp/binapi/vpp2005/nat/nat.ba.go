@@ -9,18 +9,19 @@ It consists of:
 	  6 aliases
 	  7 types
 	  1 union
-	123 messages
-	 61 services
+	125 messages
+	 62 services
 */
 package nat
 
 import (
-	bytes "bytes"
-	context "context"
+	"bytes"
+	"context"
+	"io"
+	"strconv"
+
 	api "git.fd.io/govpp.git/api"
 	struc "github.com/lunixbochs/struc"
-	io "io"
-	strconv "strconv"
 
 	interface_types "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/interface_types"
 	ip_types "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/ip_types"
@@ -32,7 +33,7 @@ const (
 	// APIVersion is the API version of this module.
 	APIVersion = "5.2.0"
 	// VersionCrc is the CRC of this module.
-	VersionCrc = 0xafaf7bbe
+	VersionCrc = 0xabdcbb0d
 )
 
 type AddressFamily = ip_types.AddressFamily
@@ -638,6 +639,27 @@ func (m *Nat44SessionCleanupReply) Reset()                        { *m = Nat44Se
 func (*Nat44SessionCleanupReply) GetMessageName() string          { return "nat44_session_cleanup_reply" }
 func (*Nat44SessionCleanupReply) GetCrcString() string            { return "e8d4e804" }
 func (*Nat44SessionCleanupReply) GetMessageType() api.MessageType { return api.ReplyMessage }
+
+// Nat44SetSessionLimit represents VPP binary API message 'nat44_set_session_limit'.
+type Nat44SetSessionLimit struct {
+	SessionLimit uint32
+	VrfID        uint32
+}
+
+func (m *Nat44SetSessionLimit) Reset()                        { *m = Nat44SetSessionLimit{} }
+func (*Nat44SetSessionLimit) GetMessageName() string          { return "nat44_set_session_limit" }
+func (*Nat44SetSessionLimit) GetCrcString() string            { return "8899bbb1" }
+func (*Nat44SetSessionLimit) GetMessageType() api.MessageType { return api.RequestMessage }
+
+// Nat44SetSessionLimitReply represents VPP binary API message 'nat44_set_session_limit_reply'.
+type Nat44SetSessionLimitReply struct {
+	Retval int32
+}
+
+func (m *Nat44SetSessionLimitReply) Reset()                        { *m = Nat44SetSessionLimitReply{} }
+func (*Nat44SetSessionLimitReply) GetMessageName() string          { return "nat44_set_session_limit_reply" }
+func (*Nat44SetSessionLimitReply) GetCrcString() string            { return "e8d4e804" }
+func (*Nat44SetSessionLimitReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // Nat44StaticMappingDetails represents VPP binary API message 'nat44_static_mapping_details'.
 type Nat44StaticMappingDetails struct {
@@ -1652,6 +1674,8 @@ func init() {
 	api.RegisterMessage((*Nat44LbStaticMappingDump)(nil), "nat.Nat44LbStaticMappingDump")
 	api.RegisterMessage((*Nat44SessionCleanup)(nil), "nat.Nat44SessionCleanup")
 	api.RegisterMessage((*Nat44SessionCleanupReply)(nil), "nat.Nat44SessionCleanupReply")
+	api.RegisterMessage((*Nat44SetSessionLimit)(nil), "nat.Nat44SetSessionLimit")
+	api.RegisterMessage((*Nat44SetSessionLimitReply)(nil), "nat.Nat44SetSessionLimitReply")
 	api.RegisterMessage((*Nat44StaticMappingDetails)(nil), "nat.Nat44StaticMappingDetails")
 	api.RegisterMessage((*Nat44StaticMappingDump)(nil), "nat.Nat44StaticMappingDump")
 	api.RegisterMessage((*Nat44UserDetails)(nil), "nat.Nat44UserDetails")
@@ -1780,6 +1804,8 @@ func AllMessages() []api.Message {
 		(*Nat44LbStaticMappingDump)(nil),
 		(*Nat44SessionCleanup)(nil),
 		(*Nat44SessionCleanupReply)(nil),
+		(*Nat44SetSessionLimit)(nil),
+		(*Nat44SetSessionLimitReply)(nil),
 		(*Nat44StaticMappingDetails)(nil),
 		(*Nat44StaticMappingDump)(nil),
 		(*Nat44UserDetails)(nil),
@@ -1902,6 +1928,7 @@ type RPCService interface {
 	Nat44InterfaceAddDelOutputFeature(ctx context.Context, in *Nat44InterfaceAddDelOutputFeature) (*Nat44InterfaceAddDelOutputFeatureReply, error)
 	Nat44LbStaticMappingAddDelLocal(ctx context.Context, in *Nat44LbStaticMappingAddDelLocal) (*Nat44LbStaticMappingAddDelLocalReply, error)
 	Nat44SessionCleanup(ctx context.Context, in *Nat44SessionCleanup) (*Nat44SessionCleanupReply, error)
+	Nat44SetSessionLimit(ctx context.Context, in *Nat44SetSessionLimit) (*Nat44SetSessionLimitReply, error)
 	Nat64AddDelInterface(ctx context.Context, in *Nat64AddDelInterface) (*Nat64AddDelInterfaceReply, error)
 	Nat64AddDelInterfaceAddr(ctx context.Context, in *Nat64AddDelInterfaceAddr) (*Nat64AddDelInterfaceAddrReply, error)
 	Nat64AddDelPoolAddrRange(ctx context.Context, in *Nat64AddDelPoolAddrRange) (*Nat64AddDelPoolAddrRangeReply, error)
@@ -2545,6 +2572,15 @@ func (c *serviceClient) Nat44LbStaticMappingAddDelLocal(ctx context.Context, in 
 
 func (c *serviceClient) Nat44SessionCleanup(ctx context.Context, in *Nat44SessionCleanup) (*Nat44SessionCleanupReply, error) {
 	out := new(Nat44SessionCleanupReply)
+	err := c.ch.SendRequest(in).ReceiveReply(out)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *serviceClient) Nat44SetSessionLimit(ctx context.Context, in *Nat44SetSessionLimit) (*Nat44SetSessionLimitReply, error) {
+	out := new(Nat44SetSessionLimitReply)
 	err := c.ch.SendRequest(in).ReceiveReply(out)
 	if err != nil {
 		return nil, err
