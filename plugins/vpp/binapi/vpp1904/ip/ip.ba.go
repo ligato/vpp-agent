@@ -15,12 +15,13 @@ It consists of:
 package ip
 
 import (
-	bytes "bytes"
-	context "context"
+	"bytes"
+	"context"
+	"io"
+	"strconv"
+
 	api "git.fd.io/govpp.git/api"
 	struc "github.com/lunixbochs/struc"
-	io "io"
-	strconv "strconv"
 )
 
 const (
@@ -570,8 +571,10 @@ type IPContainerProxyAddDelReply struct {
 	Retval int32
 }
 
-func (m *IPContainerProxyAddDelReply) Reset()                        { *m = IPContainerProxyAddDelReply{} }
-func (*IPContainerProxyAddDelReply) GetMessageName() string          { return "ip_container_proxy_add_del_reply" }
+func (m *IPContainerProxyAddDelReply) Reset() { *m = IPContainerProxyAddDelReply{} }
+func (*IPContainerProxyAddDelReply) GetMessageName() string {
+	return "ip_container_proxy_add_del_reply"
+}
 func (*IPContainerProxyAddDelReply) GetCrcString() string            { return "e8d4e804" }
 func (*IPContainerProxyAddDelReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
@@ -951,8 +954,10 @@ func (m *IPSourceAndPortRangeCheckAddDelReply) Reset() { *m = IPSourceAndPortRan
 func (*IPSourceAndPortRangeCheckAddDelReply) GetMessageName() string {
 	return "ip_source_and_port_range_check_add_del_reply"
 }
-func (*IPSourceAndPortRangeCheckAddDelReply) GetCrcString() string            { return "e8d4e804" }
-func (*IPSourceAndPortRangeCheckAddDelReply) GetMessageType() api.MessageType { return api.ReplyMessage }
+func (*IPSourceAndPortRangeCheckAddDelReply) GetCrcString() string { return "e8d4e804" }
+func (*IPSourceAndPortRangeCheckAddDelReply) GetMessageType() api.MessageType {
+	return api.ReplyMessage
+}
 
 // IPSourceAndPortRangeCheckInterfaceAddDel represents VPP binary API message 'ip_source_and_port_range_check_interface_add_del'.
 type IPSourceAndPortRangeCheckInterfaceAddDel struct {
