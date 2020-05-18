@@ -38,7 +38,7 @@ func (h *InterfaceVppHandler) AddTapInterface(ifName string, tapIf *ifs.TapLink)
 	} else if tapIf.Version == 2 {
 		var flags vpp_tapv2.TapFlags
 		if tapIf.EnableGso {
-			flags |= vpp_tapv2.TAP_FLAG_GSO
+			flags |= vpp_tapv2.TAP_API_FLAG_GSO
 		}
 
 		// Configure fast virtio-based TAP interface

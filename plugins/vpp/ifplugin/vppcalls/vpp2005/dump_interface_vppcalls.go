@@ -524,7 +524,7 @@ func (h *InterfaceVppHandler) dumpTapDetails(interfaces map[uint32]*vppcalls.Int
 				HostIfName: cleanString(tapDetails.HostIfName),
 				RxRingSize: uint32(tapDetails.RxRingSz),
 				TxRingSize: uint32(tapDetails.TxRingSz),
-				EnableGso:  tapDetails.TapFlags&vpp_tapv2.TAP_FLAG_GSO == vpp_tapv2.TAP_FLAG_GSO,
+				EnableGso:  tapDetails.TapFlags&vpp_tapv2.TAP_API_FLAG_GSO == vpp_tapv2.TAP_API_FLAG_GSO,
 			},
 		}
 		interfaces[tapDetails.SwIfIndex].Interface.Type = ifs.Interface_TAP
