@@ -28,6 +28,7 @@ import (
 	vpp_ifs "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/interfaces"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/ip_types"
 	vpp_sr "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/sr"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/vppcalls/vpp2005"
 	ifs "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
 	srv6 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/srv6"
 )
@@ -560,10 +561,9 @@ func (h *SRv6VppHandler) addDelSteering(delete bool, steering *srv6.Steering) er
 	}
 
 	// converting target traffic info
-	var prefixAddr vpp_sr.IP6Address
+	var prefix vpp_sr.Prefix
 	steerType := vpp_sr.SrSteer(SteerTypeIPv6)
 	tableID := uint32(0)
-	maskWidth := uint32(0)
 	intIndex := uint32(0)
 	switch t := steering.Traffic.(type) {
 	case *srv6.Steering_L3Traffic_:
@@ -575,9 +575,12 @@ func (h *SRv6VppHandler) addDelSteering(delete bool, steering *srv6.Steering) er
 			steerType = SteerTypeIPv4
 		}
 		tableID = t.L3Traffic.InstallationVrfId
-		copy(prefixAddr[:], ip.To16())
-		ms, _ := ipnet.Mask.Size()
-		maskWidth = uint32(ms)
+		if ip.To16() != nil {
+			prefix.Address.Af = ip_types.ADDRESS_IP6
+		}
+		prefix.Address, _ = vpp2005.IPToAddress(ip.String())
+		maskWidth, _ := ipnet.Mask.Size()
+		prefix.Len = uint8(maskWidth)
 	case *srv6.Steering_L2Traffic_:
 		steerType = SteerTypeL2
 		ifMeta, exists := h.ifIndexes.LookupByName(t.L2Traffic.InterfaceName)
@@ -590,22 +593,14 @@ func (h *SRv6VppHandler) addDelSteering(delete bool, steering *srv6.Steering) er
 	default:
 		return fmt.Errorf("unknown traffic type (link type %+v)", t)
 	}
-	var addr vpp_sr.Address
-	addr.Af = ip_types.ADDRESS_IP6
-	addr.Un.SetIP6(prefixAddr)
-	prefix := vpp_sr.Prefix{
-		Address: addr,
-		Len:     uint8(maskWidth),
-	}
 	req := &vpp_sr.SrSteeringAddDel{
 		IsDel:         delete,
 		TableID:       tableID,
-		BsidAddr:      policyBSIDAddr, // policy (to which we want to steer routing into) identified by policy binding sid (alternativelly it can be used policy index)
-		SrPolicyIndex: policyIndex,    // policy (to which we want to steer routing into) identified by policy index (alternativelly it can be used policy binding sid)
-		TrafficType:   steerType,      // type of traffic to steer
-		Prefix:        prefix,         // destination prefix address (L3 traffic type only)
-		//MaskWidth:     maskWidth,      // destination ip prefix mask (L3 traffic type only)
-		SwIfIndex: vpp_ifs.InterfaceIndex(intIndex), // incoming interface (L2 traffic type only)
+		BsidAddr:      policyBSIDAddr,                   // policy (to which we want to steer routing into) identified by policy binding sid (alternativelly it can be used policy index)
+		SrPolicyIndex: policyIndex,                      // policy (to which we want to steer routing into) identified by policy index (alternativelly it can be used policy binding sid)
+		TrafficType:   steerType,                        // type of traffic to steer
+		Prefix:        prefix,                           // destination prefix address (L3 traffic type only)
+		SwIfIndex:     vpp_ifs.InterfaceIndex(intIndex), // incoming interface (L2 traffic type only)
 	}
 	reply := &vpp_sr.SrSteeringAddDelReply{}
 
@@ -616,9 +611,13 @@ func (h *SRv6VppHandler) addDelSteering(delete bool, steering *srv6.Steering) er
 		return fmt.Errorf("vpp call %q returned: %d", reply.GetMessageName(), reply.Retval)
 	}
 
-	h.log.WithFields(logging.Fields{"steer type": steerType, "L3 prefix address bytes": prefixAddr,
-		"L2 interface index": intIndex, "policy binding SID": policyBSIDAddr, "policy index": policyIndex}).
-		Debugf("%v steering to SR policy ", operationFinished)
+	h.log.WithFields(logging.Fields{
+		"steer type":         steerType,
+		"L3 prefix":          prefix,
+		"L2 interface index": intIndex,
+		"policy binding SID": policyBSIDAddr,
+		"policy index":       policyIndex,
+	}).Debugf("%v steering to SR policy ", operationFinished)
 
 	return nil
 }
