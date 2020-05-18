@@ -27,6 +27,7 @@ import (
 	abf "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/abf"
 	acl "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/acl"
 	interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
+	ipfix "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/ipfix"
 	ipsec "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/ipsec"
 	l2 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l2"
 	l3 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3"
@@ -275,6 +276,24 @@ func (dsl *PutDSL) PuntException(val *punt.Exception) linuxclient.PutDSL {
 	return dsl
 }
 
+// IPFIX adds a request to update VPP IP Flow Information eXport configuration.
+func (dsl *PutDSL) IPFIX(val *ipfix.IPFIX) linuxclient.PutDSL {
+	dsl.parent.txn.Put(models.Key(val), val)
+	return dsl
+}
+
+// FlowprobeParams adds a request to update VPP Flowprobe Params.
+func (dsl *PutDSL) FlowprobeParams(val *ipfix.FlowProbeParams) linuxclient.PutDSL {
+	dsl.parent.txn.Put(models.Key(val), val)
+	return dsl
+}
+
+// FlowprobeFeature adds a request to enable Flowprobe Feature on interface.
+func (dsl *PutDSL) FlowprobeFeature(val *ipfix.FlowProbeFeature) linuxclient.PutDSL {
+	dsl.parent.txn.Put(models.Key(val), val)
+	return dsl
+}
+
 // Delete changes the DSL mode to allow removal of an existing configuration.
 func (dsl *PutDSL) Delete() linuxclient.DeleteDSL {
 	return &DeleteDSL{dsl.parent, dsl.vppPut.Delete()}
@@ -479,6 +498,12 @@ func (dsl *DeleteDSL) PuntToHost(l3Proto punt.L3Protocol, l4Proto punt.L4Protoco
 // PuntException adds request to delete exception to punt specific packets.
 func (dsl *DeleteDSL) PuntException(reason string) linuxclient.DeleteDSL {
 	dsl.parent.txn.Delete(punt.ExceptionKey(reason))
+	return dsl
+}
+
+// FlowprobeFeature adds a request to disable Flowprobe Feature on interface.
+func (dsl *DeleteDSL) FlowprobeFeature(val *ipfix.FlowProbeFeature) linuxclient.DeleteDSL {
+	dsl.parent.txn.Delete(models.Key(val))
 	return dsl
 }
 
