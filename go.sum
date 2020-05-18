@@ -1,7 +1,7 @@
 cloud.google.com/go v0.26.0 h1:e0WKqKTd5BnrG8aKH3J3h+QvEIQtSUcf2n5UZ5ZgLtQ=
 cloud.google.com/go v0.26.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMTw=
-git.fd.io/govpp.git v0.3.4 h1:IycjZ2GzvSvPiwy6+jKzhH18ySohGOILIVmWy3m5r2Q=
-git.fd.io/govpp.git v0.3.4/go.mod h1:SaURD+s2tyKdTyPdzAiHaoHwG6KEzIkPY1ZOdxU63qU=
+git.fd.io/govpp.git v0.3.5 h1:ehm5LvXJSgapKdjxRETbi5I75rWFcL5Fq84IHDZ9PF0=
+git.fd.io/govpp.git v0.3.5/go.mod h1:SaURD+s2tyKdTyPdzAiHaoHwG6KEzIkPY1ZOdxU63qU=
 github.com/Azure/go-ansiterm v0.0.0-20170929234023-d6e3b3328b78 h1:w+iIsaOQNcT7OZ575w+acHgRric5iCyQh+xv+KJ4HB8=
 github.com/Azure/go-ansiterm v0.0.0-20170929234023-d6e3b3328b78/go.mod h1:LmzpDX56iTiv29bbRTIsUNlaFfuhWRQBWjQdVyAevI8=
 github.com/BurntSushi/toml v0.3.1 h1:WXkYYl6Yr3qBf1K79EBnL4mak0OimBfB0XUf9Vl28OQ=
