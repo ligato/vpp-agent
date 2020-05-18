@@ -230,7 +230,7 @@ func (h *IPSecVppHandler) sadAddDelEntry(sa *ipsec.SecurityAssociation, isAdd bo
 		Entry: vpp_ipsec.IpsecSadEntry{
 			SadID:           sa.Index,
 			Spi:             sa.Spi,
-			Protocol:        vpp_ipsec.IpsecProto(sa.Protocol),
+			Protocol:        protocolToIpsecProto(sa.Protocol),
 			CryptoAlgorithm: vpp_ipsec.IpsecCryptoAlg(sa.CryptoAlg),
 			CryptoKey: vpp_ipsec.Key{
 				Data:   cryptoKey,
@@ -253,6 +253,17 @@ func (h *IPSecVppHandler) sadAddDelEntry(sa *ipsec.SecurityAssociation, isAdd bo
 	}
 
 	return nil
+}
+
+func protocolToIpsecProto(protocol ipsec.SecurityAssociation_IPSecProtocol) ipsec_types.IpsecProto {
+	switch protocol {
+	case ipsec.SecurityAssociation_AH:
+		return ipsec_types.IPSEC_API_PROTO_AH
+	case ipsec.SecurityAssociation_ESP:
+		return ipsec_types.IPSEC_API_PROTO_ESP
+	default:
+		return 0
+	}
 }
 
 func (h *IPSecVppHandler) tunProtectAddUpdateEntry(tp *ipsec.TunnelProtection, swIfIndex uint32) error {
@@ -284,11 +295,4 @@ func (h *IPSecVppHandler) tunProtectDelEntry(tp *ipsec.TunnelProtection, swIfInd
 		return err
 	}
 	return nil
-}
-
-func boolToUint(value bool) uint8 {
-	if value {
-		return 1
-	}
-	return 0
 }

@@ -17,15 +17,18 @@ package vpp2005
 import (
 	"go.ligato.io/vpp-agent/v3/plugins/vpp"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi"
+
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/abf"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/acl"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/af_packet"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/bond"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/dhcp"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/flowprobe"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/gre"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/gtpu"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/interfaces"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/ip"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/ipfix_export"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/ipip"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/ipsec"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/l2"
@@ -52,11 +55,11 @@ func init() {
 		Core: vpp.Messages(
 			af_packet.AllMessages,
 			bond.AllMessages,
-			dhcp.AllMessages,
 			gre.AllMessages,
 			interfaces.AllMessages,
 			ip.AllMessages,
 			ipsec.AllMessages,
+			ipfix_export.AllMessages,
 			l2.AllMessages,
 			memclnt.AllMessages,
 			punt.AllMessages,
@@ -71,6 +74,8 @@ func init() {
 		Plugins: vpp.Messages(
 			abf.AllMessages,
 			acl.AllMessages,
+			dhcp.AllMessages,
+			flowprobe.AllMessages,
 			gtpu.AllMessages,
 			l3xc.AllMessages,
 			memif.AllMessages,
@@ -97,6 +102,7 @@ func init() {
 //go:generate binapigen --input-file=$VPP_API_DIR/core/interface.api.json
 //go:generate binapigen --input-file=$VPP_API_DIR/core/ip.api.json
 //go:generate binapigen --input-file=$VPP_API_DIR/core/ip_neighbor.api.json
+//go:generate binapigen --input-file=$VPP_API_DIR/core/ipfix_export.api.json
 //go:generate binapigen --input-file=$VPP_API_DIR/core/ipsec.api.json
 //go:generate binapigen --input-file=$VPP_API_DIR/core/l2.api.json
 //go:generate binapigen --input-file=$VPP_API_DIR/core/memclnt.api.json
@@ -112,6 +118,7 @@ func init() {
 //go:generate binapigen --input-file=$VPP_API_DIR/plugins/acl.api.json
 //go:generate binapigen --input-file=$VPP_API_DIR/plugins/gtpu.api.json
 //go:generate binapigen --input-file=$VPP_API_DIR/plugins/dhcp.api.json
+//go:generate binapigen --input-file=$VPP_API_DIR/plugins/flowprobe.api.json
 //go:generate binapigen --input-file=$VPP_API_DIR/plugins/l3xc.api.json
 //go:generate binapigen --input-file=$VPP_API_DIR/plugins/memif.api.json
 //go:generate binapigen --input-file=$VPP_API_DIR/plugins/nat.api.json
