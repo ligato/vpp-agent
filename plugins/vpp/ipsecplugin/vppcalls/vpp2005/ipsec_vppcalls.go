@@ -255,6 +255,17 @@ func (h *IPSecVppHandler) sadAddDelEntry(sa *ipsec.SecurityAssociation, isAdd bo
 	return nil
 }
 
+func ipsecProtoToProtocol(ipsecProto ipsec_types.IpsecProto) ipsec.SecurityAssociation_IPSecProtocol {
+	switch ipsecProto {
+	case ipsec_types.IPSEC_API_PROTO_AH:
+		return ipsec.SecurityAssociation_AH
+	case ipsec_types.IPSEC_API_PROTO_ESP:
+		return ipsec.SecurityAssociation_ESP
+	default:
+		return 0
+	}
+}
+
 func protocolToIpsecProto(protocol ipsec.SecurityAssociation_IPSecProtocol) ipsec_types.IpsecProto {
 	switch protocol {
 	case ipsec.SecurityAssociation_AH:

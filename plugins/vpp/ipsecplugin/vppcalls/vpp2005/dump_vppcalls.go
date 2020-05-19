@@ -60,7 +60,7 @@ func (h *IPSecVppHandler) DumpIPSecSAWithIndex(saID uint32) (saList []*vppcalls.
 		sa := &ipsec.SecurityAssociation{
 			Index:          saData.Entry.SadID,
 			Spi:            saData.Entry.Spi,
-			Protocol:       ipsec.SecurityAssociation_IPSecProtocol(saData.Entry.Protocol),
+			Protocol:       ipsecProtoToProtocol(saData.Entry.Protocol),
 			CryptoAlg:      ipsec.CryptoAlg(saData.Entry.CryptoAlgorithm),
 			CryptoKey:      hex.EncodeToString(saData.Entry.CryptoKey.Data[:saData.Entry.CryptoKey.Length]),
 			IntegAlg:       ipsec.IntegAlg(saData.Entry.IntegrityAlgorithm),
@@ -82,7 +82,6 @@ func (h *IPSecVppHandler) DumpIPSecSAWithIndex(saID uint32) (saList []*vppcalls.
 			SeqOutbound:    saData.SeqOutbound,
 			LastSeqInbound: saData.LastSeqInbound,
 			ReplayWindow:   saData.ReplayWindow,
-			//TotalDataSize:  saData.TotalDataSize,
 		}
 		saList = append(saList, &vppcalls.IPSecSaDetails{
 			Sa:   sa,
@@ -97,7 +96,12 @@ func (h *IPSecVppHandler) DumpIPSecSAWithIndex(saID uint32) (saList []*vppcalls.
 func (h *IPSecVppHandler) DumpIPSecSPD() (spdList []*vppcalls.IPSecSpdDetails, err error) {
 	metadata := make(map[string]*vppcalls.SpdMeta)
 
-	// TODO dump IPSec SPD interfaces is not available in current VPP version
+	// TODO: add integration test for dumping SPD interfaces
+	spdInterfaces, err := h.dumpSpdInterfaces()
+	if err != nil {
+		h.log.Warnf("dumping spd interfaces failed: %v", err)
+	}
+	h.log.Debugf("dumped spd interfaces: %+v", spdInterfaces)
 
 	// Get all VPP SPD indexes
 	spdIndexes, err := h.dumpSpdIndexes()
@@ -195,6 +199,30 @@ func (h *IPSecVppHandler) DumpTunnelProtections() (tpList []*ipsec.TunnelProtect
 	return
 }
 
+// Get all interfaces of SPD configured on the VPP
+func (h *IPSecVppHandler) dumpSpdInterfaces() (map[int][]uint32, error) {
+	// SPD index to interface indexes
+	spdInterfaces := make(map[int][]uint32)
+
+	req := &vpp_ipsec.IpsecSpdInterfaceDump{}
+	reqCtx := h.callsChannel.SendMultiRequest(req)
+
+	for {
+		spdDetails := &vpp_ipsec.IpsecSpdInterfaceDetails{}
+		stop, err := reqCtx.ReceiveReply(spdDetails)
+		if stop {
+			break
+		}
+		if err != nil {
+			return nil, err
+		}
+
+		spdInterfaces[int(spdDetails.SpdIndex)] = append(spdInterfaces[int(spdDetails.SpdIndex)], uint32(spdDetails.SwIfIndex))
+	}
+
+	return spdInterfaces, nil
+}
+
 // Get all indexes of SPD configured on the VPP
 func (h *IPSecVppHandler) dumpSpdIndexes() (map[int]uint32, error) {
 	// SPD index to number of policies
@@ -248,11 +276,4 @@ func resetPort(port uint16) uint32 {
 		return 0
 	}
 	return uint32(port)
-}
-
-func uintToBool(input uint8) bool {
-	if input == 1 {
-		return true
-	}
-	return false
 }

@@ -208,19 +208,19 @@ var (
 	sa10 = &vpp.IPSecSA{
 		Index:     10,
 		Spi:       1001,
-		Protocol:  1,
-		CryptoAlg: 1,
+		Protocol:  vpp_ipsec.SecurityAssociation_ESP,
+		CryptoAlg: vpp_ipsec.CryptoAlg_AES_CBC_128,
 		CryptoKey: "4a506a794f574265564551694d653768",
-		IntegAlg:  2,
+		IntegAlg:  vpp_ipsec.IntegAlg_SHA1_96,
 		IntegKey:  "4339314b55523947594d6d3547666b45764e6a58",
 	}
 	spd1 = &vpp.IPSecSPD{
 		Index: 1,
 		PolicyEntries: []*vpp_ipsec.SecurityPolicyDatabase_PolicyEntry{
 			{
+				Action:     vpp_ipsec.SecurityPolicyDatabase_PolicyEntry_BYPASS,
 				Priority:   100,
 				IsOutbound: false,
-				Action:     0,
 				Protocol:   50,
 				SaIndex:    10,
 			},

@@ -192,14 +192,16 @@ func TestVppAddSA(t *testing.T) {
 		Spi:           uint32(1001),
 		UseEsn:        true,
 		UseAntiReplay: true,
+		Protocol:      ipsec.SecurityAssociation_ESP,
 	})
 
 	Expect(err).ShouldNot(HaveOccurred())
 	Expect(ctx.MockChannel.Msg).To(BeEquivalentTo(&vpp_ipsec.IpsecSadEntryAddDel{
 		IsAdd: true,
 		Entry: vpp_ipsec.IpsecSadEntry{
-			SadID: 1,
-			Spi:   1001,
+			Protocol: ipsec_types.IPSEC_API_PROTO_ESP,
+			SadID:    1,
+			Spi:      1001,
 			CryptoKey: vpp_ipsec.Key{
 				Length: uint8(len(cryptoKey)),
 				Data:   cryptoKey,
@@ -227,6 +229,7 @@ func TestVppDelSA(t *testing.T) {
 		Spi:           uint32(1001),
 		UseEsn:        true,
 		UseAntiReplay: true,
+		Protocol:      ipsec.SecurityAssociation_ESP,
 	})
 
 	Expect(err).ShouldNot(HaveOccurred())
@@ -243,7 +246,8 @@ func TestVppDelSA(t *testing.T) {
 				Length: uint8(len(cryptoKey)),
 				Data:   cryptoKey,
 			},
-			Flags: ipsec_types.IPSEC_API_SAD_FLAG_USE_ESN | ipsec_types.IPSEC_API_SAD_FLAG_USE_ANTI_REPLAY,
+			Flags:    ipsec_types.IPSEC_API_SAD_FLAG_USE_ESN | ipsec_types.IPSEC_API_SAD_FLAG_USE_ANTI_REPLAY,
+			Protocol: ipsec_types.IPSEC_API_PROTO_ESP,
 		},
 	}))
 }
@@ -262,6 +266,7 @@ func TestVppAddSATunnelMode(t *testing.T) {
 		Spi:           uint32(1001),
 		TunnelSrcAddr: "10.1.0.1",
 		TunnelDstAddr: "20.1.0.1",
+		Protocol:      ipsec.SecurityAssociation_ESP,
 	})
 
 	Expect(err).ShouldNot(HaveOccurred())
@@ -286,7 +291,8 @@ func TestVppAddSATunnelMode(t *testing.T) {
 				Af: ip_types.ADDRESS_IP4,
 				Un: ipsec_types.AddressUnion{XXX_UnionData: [16]byte{20, 1, 0, 1}},
 			},
-			Flags: ipsec_types.IPSEC_API_SAD_FLAG_IS_TUNNEL,
+			Flags:    ipsec_types.IPSEC_API_SAD_FLAG_IS_TUNNEL,
+			Protocol: ipsec_types.IPSEC_API_PROTO_ESP,
 		},
 	}))
 }
@@ -305,6 +311,7 @@ func TestVppAddSATunnelModeIPv6(t *testing.T) {
 		Spi:           uint32(1001),
 		TunnelSrcAddr: "1234::",
 		TunnelDstAddr: "abcd::",
+		Protocol:      ipsec.SecurityAssociation_ESP,
 	})
 
 	Expect(err).ShouldNot(HaveOccurred())
@@ -329,7 +336,8 @@ func TestVppAddSATunnelModeIPv6(t *testing.T) {
 				Af: ip_types.ADDRESS_IP6,
 				Un: ipsec_types.AddressUnion{XXX_UnionData: [16]byte{171, 205}},
 			},
-			Flags: ipsec_types.IPSEC_API_SAD_FLAG_IS_TUNNEL | ipsec_types.IPSEC_API_SAD_FLAG_IS_TUNNEL_V6,
+			Flags:    ipsec_types.IPSEC_API_SAD_FLAG_IS_TUNNEL | ipsec_types.IPSEC_API_SAD_FLAG_IS_TUNNEL_V6,
+			Protocol: ipsec_types.IPSEC_API_PROTO_ESP,
 		},
 	}))
 }
