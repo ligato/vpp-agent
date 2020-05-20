@@ -27,7 +27,7 @@ import (
 var (
 	vppPath     = flag.String("vpp-path", "/usr/bin/vpp", "VPP program path")
 	vppConfig   = flag.String("vpp-config", "", "VPP config file")
-	vppSockAddr = flag.String("vpp-sock-addr", "", "VPP binapi socket address")
+	vppSockAddr = flag.String("vpp-sock-addr", "/run/vpp/api.sock", "VPP binapi socket address")
 	vppRetry    = flag.Uint("retry", 3, "Number of VPP connect retries")
 
 	debug = flag.Bool("debug", false, "Turn on debug mode.")

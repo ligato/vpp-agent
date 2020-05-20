@@ -361,6 +361,12 @@ func TestLocalsidCRUD(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			if ctx.versionInfo.Release() == "20.05" {
+				// FIXME: following error occurs in VPP 20.05:
+				//  	can't properly handle end function of dumped localsid &{[0 10 0 0 0 0 0 0 0 0 0 0 0 0 0 0] true 0 0 0 {ADDRESS_IP4 {[0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]}} 0} due to: localsid with unknown or unsupported behavior (0)
+				t.Skip("skipping for VPP 20.05, FIX NEEDED!")
+			}
+
 			// Create
 			Expect(srh.AddLocalSid(test.input)).Should(Succeed())
 

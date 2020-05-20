@@ -519,28 +519,28 @@ func TestCRUDMacIPAcl(t *testing.T) {
 
 	acls, errx := h.DumpMACIPACL()
 	Expect(errx).To(BeNil())
-	Expect(acls).Should(BeEmpty())
-	t.Log("no acls dumped")
+	Expect(acls).Should(BeEmpty(), "no acls expected in dump")
 
 	const aclname = "test6"
-	aclIdx, err := h.AddMACIPACL([]*acl.ACL_Rule{
+	addRules := []*acl.ACL_Rule{
 		//RuleName:  "denyIPv4",
 		newACLMacIPRule(false, "192.168.0.1", 16, "11:44:0A:B8:4A:35", "ff:ff:ff:ff:00:00"),
 		//RuleName:  "denyIPv6",
 		newACLMacIPRule(false, "dead::1", 64, "11:44:0A:B8:4A:35", "ff:ff:ff:ff:00:00"),
-	}, aclname)
+	}
+	t.Logf("adding %d MACIP acl rules: %v", len(addRules), addRules)
+	aclIdx, err := h.AddMACIPACL(addRules, aclname)
 	Expect(err).To(BeNil())
 	Expect(aclIdx).To(BeEquivalentTo(0))
-	t.Logf("acl \"%v\" added - its index %d", aclname, aclIdx)
+	t.Logf("acl %q (index: %d) was added", aclname, aclIdx)
 
 	err = h.SetMACIPACLToInterfaces(aclIdx, []uint32{ifIdx})
 	Expect(err).To(BeNil())
-	t.Logf("acl with index %d was assigned to interface %v", aclIdx, ifName)
+	t.Logf("acl %q (index: %d) was assigned to interface %v", aclname, aclIdx, ifName)
 
 	acls, errx = h.DumpMACIPACL()
 	Expect(errx).To(BeNil())
-	Expect(acls).Should(HaveLen(1))
-	t.Log("amount of acls dumped: 1")
+	Expect(acls).Should(HaveLen(1), "one acl expected in dump")
 
 	var rules []*acl.ACL_Rule
 	var isPresent bool
@@ -548,8 +548,9 @@ func TestCRUDMacIPAcl(t *testing.T) {
 	for _, item := range acls {
 		rules = item.ACL.Rules
 		if (item.Meta.Index == aclIdx) && (aclname == item.Meta.Tag) {
-			t.Logf("found ACL \"%v\"", item.Meta.Tag)
-			for _, rule := range rules {
+			t.Logf("found ACL \"%v\" (index: %d)", item.Meta.Tag, item.Meta.Index)
+			for i, rule := range rules {
+				t.Logf("- rule #%d: \"%v\"", i, rule)
 				if (rule.MacipRule.SourceAddress == "192.168.0.1") &&
 					(rule.MacipRule.SourceAddressPrefix == 16) &&
 					(strings.ToLower(rule.MacipRule.SourceMacAddress) == strings.ToLower("11:44:0A:B8:4A:35")) &&
@@ -559,7 +560,7 @@ func TestCRUDMacIPAcl(t *testing.T) {
 				}
 			}
 			// check assignation to interface
-			t.Logf("%v", item)
+			t.Logf("- item: %v", item)
 			t.Logf("%v", item.ACL.Interfaces)
 			for _, intf := range item.ACL.Interfaces.Ingress {
 				if intf == ifName {

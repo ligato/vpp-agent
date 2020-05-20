@@ -24,6 +24,7 @@ import (
 	"github.com/pkg/errors"
 	"go.ligato.io/cn-infra/v2/health/statuscheck"
 	"go.ligato.io/cn-infra/v2/infra"
+
 	"go.ligato.io/vpp-agent/v3/plugins/kvscheduler"
 
 	"go.ligato.io/vpp-agent/v3/plugins/govppmux"
@@ -36,6 +37,7 @@ import (
 	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/ipsecplugin/vppcalls/vpp1904"
 	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/ipsecplugin/vppcalls/vpp1908"
 	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/ipsecplugin/vppcalls/vpp2001"
+	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/ipsecplugin/vppcalls/vpp2005"
 )
 
 func init() {

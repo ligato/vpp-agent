@@ -42,6 +42,7 @@ import (
 	_ "go.ligato.io/vpp-agent/v3/plugins/govppmux/vppcalls/vpp1904"
 	_ "go.ligato.io/vpp-agent/v3/plugins/govppmux/vppcalls/vpp1908"
 	_ "go.ligato.io/vpp-agent/v3/plugins/govppmux/vppcalls/vpp2001"
+	_ "go.ligato.io/vpp-agent/v3/plugins/govppmux/vppcalls/vpp2005"
 )
 
 var (
@@ -430,13 +431,13 @@ func (p *Plugin) startProxy(vppapi adapter.VppAPI, statsapi adapter.StatsAPI) (e
 
 	p.proxy, err = proxy.NewServer()
 	if err != nil {
-		return errors.WithMessage(err, "creating proxy failed")
+		return errors.Wrap(err, "creating proxy failed")
 	}
 	if err = p.proxy.ConnectBinapi(vppapi); err != nil {
-		return errors.WithMessage(err, "connecting binapi for proxy failed")
+		return errors.Wrap(err, "connecting binapi for proxy failed")
 	}
 	if err = p.proxy.ConnectStats(statsapi); err != nil {
-		return errors.WithMessage(err, "connecting stats for proxy failed")
+		return errors.Wrap(err, "connecting stats for proxy failed")
 	}
 	return nil
 }

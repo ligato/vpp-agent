@@ -12,12 +12,13 @@ It consists of:
 package acl
 
 import (
-	bytes "bytes"
-	context "context"
+	"bytes"
+	"context"
+	"io"
+	"strconv"
+
 	api "git.fd.io/govpp.git/api"
 	struc "github.com/lunixbochs/struc"
-	io "io"
-	strconv "strconv"
 )
 
 const (
@@ -220,8 +221,10 @@ type ACLInterfaceSetACLListReply struct {
 	Retval int32
 }
 
-func (m *ACLInterfaceSetACLListReply) Reset()                        { *m = ACLInterfaceSetACLListReply{} }
-func (*ACLInterfaceSetACLListReply) GetMessageName() string          { return "acl_interface_set_acl_list_reply" }
+func (m *ACLInterfaceSetACLListReply) Reset() { *m = ACLInterfaceSetACLListReply{} }
+func (*ACLInterfaceSetACLListReply) GetMessageName() string {
+	return "acl_interface_set_acl_list_reply"
+}
 func (*ACLInterfaceSetACLListReply) GetCrcString() string            { return "e8d4e804" }
 func (*ACLInterfaceSetACLListReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
@@ -291,8 +294,10 @@ func (m *ACLPluginGetConnTableMaxEntriesReply) Reset() { *m = ACLPluginGetConnTa
 func (*ACLPluginGetConnTableMaxEntriesReply) GetMessageName() string {
 	return "acl_plugin_get_conn_table_max_entries_reply"
 }
-func (*ACLPluginGetConnTableMaxEntriesReply) GetCrcString() string            { return "7a096d3d" }
-func (*ACLPluginGetConnTableMaxEntriesReply) GetMessageType() api.MessageType { return api.ReplyMessage }
+func (*ACLPluginGetConnTableMaxEntriesReply) GetCrcString() string { return "7a096d3d" }
+func (*ACLPluginGetConnTableMaxEntriesReply) GetMessageType() api.MessageType {
+	return api.ReplyMessage
+}
 
 // ACLPluginGetVersion represents VPP binary API message 'acl_plugin_get_version'.
 type ACLPluginGetVersion struct{}

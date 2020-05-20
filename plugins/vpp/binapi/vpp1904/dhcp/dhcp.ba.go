@@ -12,12 +12,13 @@ It consists of:
 package dhcp
 
 import (
-	bytes "bytes"
-	context "context"
+	"bytes"
+	"context"
+	"io"
+	"strconv"
+
 	api "git.fd.io/govpp.git/api"
 	struc "github.com/lunixbochs/struc"
-	io "io"
-	strconv "strconv"
 )
 
 const (
@@ -379,8 +380,10 @@ type WantDHCP6PdReplyEventsReply struct {
 	Retval int32
 }
 
-func (m *WantDHCP6PdReplyEventsReply) Reset()                        { *m = WantDHCP6PdReplyEventsReply{} }
-func (*WantDHCP6PdReplyEventsReply) GetMessageName() string          { return "want_dhcp6_pd_reply_events_reply" }
+func (m *WantDHCP6PdReplyEventsReply) Reset() { *m = WantDHCP6PdReplyEventsReply{} }
+func (*WantDHCP6PdReplyEventsReply) GetMessageName() string {
+	return "want_dhcp6_pd_reply_events_reply"
+}
 func (*WantDHCP6PdReplyEventsReply) GetCrcString() string            { return "e8d4e804" }
 func (*WantDHCP6PdReplyEventsReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
