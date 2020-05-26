@@ -29,7 +29,7 @@ import (
 	vpp_l2 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l2"
 )
 
-func bridgeDomains(ctx *testCtx) ([]map[string]string, error) {
+func bridgeDomains(ctx *TestCtx) ([]map[string]string, error) {
 	stdout, err := ctx.execVppctl("show", "bridge-domain")
 	if err != nil {
 		return nil, err

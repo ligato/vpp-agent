@@ -108,7 +108,7 @@ func init() {
 	log.SetFlags(log.Lmicroseconds | log.Lshortfile)
 }
 
-type testCtx struct {
+type TestCtx struct {
 	t             *testing.T
 	VPP           *exec.Cmd
 	agent         *exec.Cmd
@@ -118,13 +118,23 @@ type testCtx struct {
 	httpClient    *utils.HTTPClient
 	grpcConn      *grpc.ClientConn
 	grpcClient    client.ConfigClient
+	vppVersion    string
+	vppRelease    string
 }
 
-func setupE2E(t *testing.T) *testCtx {
+func setupE2E(t *testing.T) *TestCtx {
 	if os.Getenv("TRAVIS") != "" {
 		t.Skip("skipping test for Travis")
 	}
 	RegisterTestingT(t)
+
+	testCtx := &TestCtx{
+		t:             t,
+		microservices: make(map[string]*microservice),
+		nsCalls:       nslinuxcalls.NewSystemHandler(),
+	}
+
+	var err error
 
 	// check if VPP process is not running already
 	assertProcessNotRunning(t, "vpp", "vpp_main", *vppPath)
@@ -144,20 +154,20 @@ func setupE2E(t *testing.T) *testCtx {
 	} else {
 		vppArgs = []string{vppConf}
 	}
-	vppCmd := startProcess(t, "VPP", nil, os.Stdout, os.Stderr, *vppPath, vppArgs...)
+	testCtx.VPP = startProcess(t, "VPP", nil, os.Stdout, os.Stderr, *vppPath, vppArgs...)
 
 	SetDefaultEventuallyPollingInterval(checkPollingInterval)
 	SetDefaultEventuallyTimeout(checkTimeout)
 
 	// connect to the docker daemon
-	dockerClient, err := docker.NewClientFromEnv()
+	testCtx.dockerClient, err = docker.NewClientFromEnv()
 	if err != nil {
 		t.Fatalf("failed to get docker client instance from the environment variables: %v", err)
 	}
-	t.Logf("Using docker client endpoint: %+v", dockerClient.Endpoint())
+	t.Logf("Using docker client endpoint: %+v", testCtx.dockerClient.Endpoint())
 
 	// make sure there are no microservices left from the previous run
-	resetMicroservices(t, dockerClient)
+	resetMicroservices(t, testCtx.dockerClient)
 
 	// start the agent
 	assertProcessNotRunning(t, "vpp_agent")
@@ -168,44 +178,45 @@ func setupE2E(t *testing.T) *testCtx {
 		e2eCovPath := fmt.Sprintf("%s/%d.out", *covPath, time.Now().Unix())
 		agentArgs = []string{"-test.coverprofile", e2eCovPath}
 	}
-	agentCmd := startProcess(t, "VPP-Agent", nil, os.Stdout, os.Stderr, "/vpp-agent", agentArgs...)
+	testCtx.agent = startProcess(t, "VPP-Agent", nil, os.Stdout, os.Stderr, "/vpp-agent", agentArgs...)
 
 	// prepare HTTP client for access to REST API of the agent
 	httpAddr := fmt.Sprintf(":%d", *agentHTTPPort)
-	httpClient := utils.NewHTTPClient(httpAddr)
+	testCtx.httpClient = utils.NewHTTPClient(httpAddr)
 
 	if *debugHTTP {
-		httpClient.Log = logrus.NewLogger("http-client")
-		httpClient.Log.SetLevel(logging.DebugLevel)
+		testCtx.httpClient.Log = logrus.NewLogger("http-client")
+		testCtx.httpClient.Log.SetLevel(logging.DebugLevel)
 	}
 
-	waitUntilAgentReady(t, httpClient)
+	waitUntilAgentReady(t, testCtx.httpClient)
 
 	// connect with agent via GRPC
 	grpcAddr := fmt.Sprintf(":%d", *agentGrpcPort)
-	grpcConn, err := grpc.Dial(grpcAddr, grpc.WithInsecure())
+	testCtx.grpcConn, err = grpc.Dial(grpcAddr, grpc.WithInsecure())
 	if err != nil {
 		t.Fatalf("Failed to connect to VPP-agent via gRPC: %v", err)
 	}
-	grpcClient := remoteclient.NewClientGRPC(grpcConn)
+	testCtx.grpcClient = remoteclient.NewClientGRPC(testCtx.grpcConn)
 
 	// run initial resync
-	syncAgent(t, httpClient)
+	syncAgent(t, testCtx.httpClient)
 
-	return &testCtx{
-		t:             t,
-		VPP:           vppCmd,
-		dockerClient:  dockerClient,
-		agent:         agentCmd,
-		microservices: make(map[string]*microservice),
-		nsCalls:       nslinuxcalls.NewSystemHandler(),
-		httpClient:    httpClient,
-		grpcConn:      grpcConn,
-		grpcClient:    grpcClient,
+	if version, err := testCtx.execVppctl("show version"); err != nil {
+		t.Fatalf("Retrieving VPP version via vppctl failed: %v", err)
+	} else {
+		version = strings.SplitN(version, " ", 3)[1]
+		testCtx.vppVersion = version
+		if len(version) > 5 {
+			testCtx.vppRelease = version[1:5]
+		}
+		t.Logf("VPP version: %v", testCtx.vppVersion)
 	}
+
+	return testCtx
 }
 
-func (ctx *testCtx) teardownE2E() {
+func (ctx *TestCtx) teardownE2E() {
 	ctx.t.Logf("-----------------")
 
 	// stop all microservices
@@ -223,7 +234,7 @@ func (ctx *testCtx) teardownE2E() {
 	stopProcess(ctx.t, ctx.VPP, "VPP")
 }
 
-func (ctx *testCtx) setupETCD() string {
+func (ctx *TestCtx) setupETCD() string {
 	err := ctx.dockerClient.PullImage(docker.PullImageOptions{
 		Repository: "gcr.io/etcd-development/etcd",
 		Tag:        "latest",
@@ -262,7 +273,7 @@ func (ctx *testCtx) setupETCD() string {
 	return container.ID
 }
 
-func (ctx *testCtx) teardownETCD(id string) {
+func (ctx *TestCtx) teardownETCD(id string) {
 	err := ctx.dockerClient.StopContainer(id, msStopTimeout)
 	if err != nil {
 		ctx.t.Fatalf("failed to stop ETCD container: %v", err)
@@ -279,13 +290,13 @@ func (ctx *testCtx) teardownETCD(id string) {
 }
 
 // syncAgent runs downstream resync and returns the list of executed operations.
-func (ctx *testCtx) syncAgent() (executed kvs.RecordedTxnOps) {
+func (ctx *TestCtx) syncAgent() (executed kvs.RecordedTxnOps) {
 	return syncAgent(ctx.t, ctx.httpClient)
 }
 
 // agentInSync checks if the agent NB config and the SB state (VPP+Linux)
 // are in-sync.
-func (ctx *testCtx) agentInSync() bool {
+func (ctx *TestCtx) agentInSync() bool {
 	ops := ctx.syncAgent()
 	for _, op := range ops {
 		if !op.NOOP {
@@ -296,7 +307,7 @@ func (ctx *testCtx) agentInSync() bool {
 }
 
 // execCmd executes command and returns stdout, stderr as strings and error.
-func (ctx *testCtx) execCmd(cmd string, args ...string) (string, string, error) {
+func (ctx *TestCtx) execCmd(cmd string, args ...string) (string, string, error) {
 	ctx.t.Helper()
 	ctx.t.Logf("exec: %s %s", cmd, strings.Join(args, " "))
 	var stdout, stderr bytes.Buffer
@@ -308,7 +319,7 @@ func (ctx *testCtx) execCmd(cmd string, args ...string) (string, string, error) 
 }
 
 // execVppctl returns output from vppctl for given action and arguments.
-func (ctx *testCtx) execVppctl(action string, args ...string) (string, error) {
+func (ctx *TestCtx) execVppctl(action string, args ...string) (string, error) {
 	ctx.t.Helper()
 	command := append([]string{action}, args...)
 	stdout, _, err := ctx.execCmd("vppctl", command...)
@@ -318,13 +329,13 @@ func (ctx *testCtx) execVppctl(action string, args ...string) (string, error) {
 	return stdout, nil
 }
 
-func (ctx *testCtx) startMicroservice(msName string) (ms *microservice) {
+func (ctx *TestCtx) startMicroservice(msName string) (ms *microservice) {
 	ms = createMicroservice(ctx.t, msName, ctx.dockerClient, ctx.nsCalls)
 	ctx.microservices[msName] = ms
 	return ms
 }
 
-func (ctx *testCtx) stopMicroservice(msName string) {
+func (ctx *TestCtx) stopMicroservice(msName string) {
 	ctx.t.Helper()
 	ms, found := ctx.microservices[msName]
 	if !found {
@@ -338,7 +349,7 @@ func (ctx *testCtx) stopMicroservice(msName string) {
 }
 
 // pingFromMs pings <dstAddress> from the microservice <msName>
-func (ctx *testCtx) pingFromMs(msName, dstAddress string) error {
+func (ctx *TestCtx) pingFromMs(msName, dstAddress string) error {
 	ctx.t.Helper()
 	ms, found := ctx.microservices[msName]
 	if !found {
@@ -350,14 +361,14 @@ func (ctx *testCtx) pingFromMs(msName, dstAddress string) error {
 
 // pingFromMsClb can be used to ping repeatedly inside the assertions "Eventually"
 // and "Consistently" from Omega.
-func (ctx *testCtx) pingFromMsClb(msName, dstAddress string) func() error {
+func (ctx *TestCtx) pingFromMsClb(msName, dstAddress string) func() error {
 	return func() error {
 		return ctx.pingFromMs(msName, dstAddress)
 	}
 }
 
 // pingFromVPP pings <dstAddress> from inside the VPP.
-func (ctx *testCtx) pingFromVPP(destAddress string) error {
+func (ctx *TestCtx) pingFromVPP(destAddress string) error {
 	ctx.t.Helper()
 	// run ping on VPP using vppctl
 	stdout, err := ctx.execVppctl("ping", destAddress)
@@ -382,13 +393,13 @@ func (ctx *testCtx) pingFromVPP(destAddress string) error {
 
 // pingFromVPPClb can be used to ping repeatedly inside the assertions "Eventually"
 // and "Consistently" from Omega.
-func (ctx *testCtx) pingFromVPPClb(destAddress string) func() error {
+func (ctx *TestCtx) pingFromVPPClb(destAddress string) func() error {
 	return func() error {
 		return ctx.pingFromVPP(destAddress)
 	}
 }
 
-func (ctx *testCtx) testConnection(fromMs, toMs, toAddr, listenAddr string,
+func (ctx *TestCtx) testConnection(fromMs, toMs, toAddr, listenAddr string,
 	toPort, listenPort uint16, udp bool, traceVPPNodes ...string) error {
 	ctx.t.Helper()
 
@@ -475,12 +486,12 @@ func (ctx *testCtx) testConnection(fromMs, toMs, toAddr, listenAddr string,
 	return err
 }
 
-func (ctx *testCtx) getValueState(value proto.Message) kvscheduler.ValueState {
+func (ctx *TestCtx) getValueState(value proto.Message) kvscheduler.ValueState {
 	key := models.Key(value)
 	return ctx.getValueStateByKey(key)
 }
 
-func (ctx *testCtx) getValueStateByKey(key string) kvscheduler.ValueState {
+func (ctx *TestCtx) getValueStateByKey(key string) kvscheduler.ValueState {
 	q := fmt.Sprintf(`/scheduler/status?key=%s`, url.QueryEscape(key))
 	resp, err := ctx.httpClient.GET(q)
 	if err != nil {
@@ -498,13 +509,13 @@ func (ctx *testCtx) getValueStateByKey(key string) kvscheduler.ValueState {
 
 // getValueStateClb can be used to repeatedly check value state inside the assertions
 // "Eventually" and "Consistently" from Omega.
-func (ctx *testCtx) getValueStateClb(value proto.Message) func() kvscheduler.ValueState {
+func (ctx *TestCtx) getValueStateClb(value proto.Message) func() kvscheduler.ValueState {
 	return func() kvscheduler.ValueState {
 		return ctx.getValueState(value)
 	}
 }
 
-func (ctx *testCtx) startPacketTrace(nodes ...string) (stopTrace func()) {
+func (ctx *TestCtx) startPacketTrace(nodes ...string) (stopTrace func()) {
 	const maxPackets = 100
 	for i, node := range nodes {
 		if i == 0 {

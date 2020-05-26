@@ -21,13 +21,17 @@ import (
 	. "github.com/onsi/gomega"
 
 	"go.ligato.io/vpp-agent/v3/proto/ligato/kvscheduler"
-	"go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
-	"go.ligato.io/vpp-agent/v3/proto/ligato/vpp/ipsec"
+	vpp_interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
+	vpp_ipsec "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/ipsec"
 )
 
 func TestIPSec(t *testing.T) {
 	ctx := setupE2E(t)
 	defer ctx.teardownE2E()
+
+	if ctx.vppRelease <= "19.04" {
+		t.Skipf("IPIP: skipped for VPP <= 19.04 (%s)", ctx.vppVersion)
+	}
 
 	const (
 		msName       = "microservice1"
