@@ -33,8 +33,7 @@ func TestIPIP(t *testing.T) {
 	dumpAPIOk := true
 	release := ctx.versionInfo.Release()
 	if release < "20.01" {
-		t.Logf("IPIP: skipped for VPP < 20.01 (%s)", release)
-		return
+		t.Skipf("IPIP: skipped for VPP < 20.01 (%s)", release)
 	}
 
 	h := ifplugin_vppcalls.CompatibleInterfaceVppHandler(ctx.vppClient, logrus.NewLogger("test"))
