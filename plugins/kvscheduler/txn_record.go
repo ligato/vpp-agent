@@ -28,6 +28,11 @@ import (
 	"go.ligato.io/vpp-agent/v3/proto/ligato/kvscheduler"
 )
 
+const (
+	// how often the transaction history gets trimmed to remove records too old to keep
+	txnHistoryTrimmingPeriod = 1 * time.Minute
+)
+
 // GetTransactionHistory returns history of transactions started within the specified
 // time window, or the full recorded history if the timestamps are zero values.
 func (s *Scheduler) GetTransactionHistory(since, until time.Time) (history kvs.RecordedTxns) {

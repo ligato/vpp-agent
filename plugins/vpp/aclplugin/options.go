@@ -15,14 +15,45 @@
 package aclplugin
 
 import (
+	"github.com/google/wire"
 	"go.ligato.io/cn-infra/v2/config"
 	"go.ligato.io/cn-infra/v2/health/statuscheck"
 	"go.ligato.io/cn-infra/v2/logging"
 
 	"go.ligato.io/vpp-agent/v3/plugins/govppmux"
 	"go.ligato.io/vpp-agent/v3/plugins/kvscheduler"
+	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin"
 )
+
+var Wire = wire.NewSet(
+	Provider,
+	DepsProvider,
+	//wire.Struct(new(Deps), "*"),
+	//wire.InterfaceValue(new(API), &ACLPlugin{}),
+	wire.Bind(new(API), new(*ACLPlugin)),
+)
+
+func DepsProvider(
+	scheduler kvs.KVScheduler,
+	govppmuxPlugin govppmux.API,
+	ifPlugin ifplugin.API,
+	statuscheck statuscheck.PluginStatusWriter,
+) Deps {
+	return Deps{
+		StatusCheck: statuscheck,
+		Scheduler:   scheduler,
+		VPP:         govppmuxPlugin,
+		IfPlugin:    ifPlugin,
+	}
+}
+
+func Provider(deps Deps) (*ACLPlugin, error) {
+	p := &ACLPlugin{Deps: deps}
+	p.SetName("vpp-aclplugin")
+	p.Log = logging.ForPlugin("vpp-aclplugin")
+	return p, p.Init()
+}
 
 // DefaultPlugin is a default instance of IfPlugin.
 var DefaultPlugin = *NewPlugin()

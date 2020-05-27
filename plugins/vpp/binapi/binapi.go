@@ -44,7 +44,7 @@ func CompatibleVersion(ch CompatibilityChecker) (Version, error) {
 		// check core compatibility
 		coreMsgs := check.Core.AllMessages()
 		if err := ch.CheckCompatiblity(coreMsgs...); errors.As(err, &compErr) {
-			logging.Debugf("binapi version %v core incompatible (%d/%d messages)", version, len(compErr.IncompatibleMessages), len(coreMsgs))
+			logging.Tracef("binapi version %v core incompatible (%d/%d messages)", version, len(compErr.IncompatibleMessages), len(coreMsgs))
 			continue
 		} else if err != nil {
 			logging.Warnf("binapi version %v check failed: %v", version, err)
@@ -55,7 +55,7 @@ func CompatibleVersion(ch CompatibilityChecker) (Version, error) {
 		pluginMsgs := check.Plugins.AllMessages()
 		if err := ch.CheckCompatiblity(pluginMsgs...); errors.As(err, &compErr) {
 			// some plugins might be disabled
-			logging.Debugf("binapi version %v partly incompatible: (%d/%d messages)", version, len(compErr.IncompatibleMessages), len(pluginMsgs))
+			logging.Tracef("binapi version %v partly incompatible: (%d/%d messages)", version, len(compErr.IncompatibleMessages), len(pluginMsgs))
 			if picked.version == "" || picked.incompatible > len(compErr.IncompatibleMessages) {
 				picked.version = version
 				picked.incompatible = len(compErr.IncompatibleMessages)

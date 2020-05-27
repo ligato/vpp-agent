@@ -16,10 +16,19 @@ package kvscheduler
 
 import (
 	"github.com/golang/protobuf/proto"
+
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 	"go.ligato.io/vpp-agent/v3/plugins/kvscheduler/internal/graph"
 	"go.ligato.io/vpp-agent/v3/plugins/kvscheduler/internal/utils"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/kvscheduler"
+)
+
+const (
+	// DependencyRelation identifies dependency relation for the graph.
+	DependencyRelation = "depends-on"
+
+	// DerivesRelation identifies relation of value derivation for the graph.
+	DerivesRelation = "derives"
 )
 
 func nodeToKVPairWithMetadata(node graph.Node) kvs.KVWithMetadata {

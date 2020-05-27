@@ -63,7 +63,7 @@ func NewPlugin(opts ...Option) *Aggregator {
 	for _, o := range opts {
 		o(p)
 	}
-	p.PluginDeps.SetupLog()
+	p.PluginDeps.Setup()
 
 	return p
 }

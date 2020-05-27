@@ -20,6 +20,7 @@ import (
 	"math"
 
 	"go.ligato.io/cn-infra/v2/infra"
+
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 	"go.ligato.io/vpp-agent/v3/plugins/linux/iptablesplugin/descriptor"
 	"go.ligato.io/vpp-agent/v3/plugins/linux/iptablesplugin/linuxcalls"
@@ -39,13 +40,29 @@ const (
 	defaultMinRuleCountForPerfRuleAddition = math.MaxInt32
 )
 
+// Config holds the plugin configuration.
+type Config struct {
+	linuxcalls.HandlerConfig `json:"handler"`
+
+	Disabled      bool `json:"disabled"`
+	GoRoutinesCnt int  `json:"go-routines-count"`
+}
+
+func DefaultConfig() *Config {
+	return &Config{
+		// default configuration
+		GoRoutinesCnt: defaultGoRoutinesCnt,
+		HandlerConfig: linuxcalls.HandlerConfig{
+			MinRuleCountForPerfRuleAddition: defaultMinRuleCountForPerfRuleAddition,
+		},
+	}
+}
+
 // IPTablesPlugin configures Linux iptables rules.
 type IPTablesPlugin struct {
 	Deps
 
-	// From configuration file
-	disabled    bool
-	configFound bool
+	conf *Config
 
 	// system handlers
 	iptHandler linuxcalls.IPTablesAPI
@@ -61,32 +78,23 @@ type Deps struct {
 	NsPlugin    nsplugin.API
 }
 
-// Config holds the plugin configuration.
-type Config struct {
-	linuxcalls.HandlerConfig `json:"handler"`
-
-	Disabled      bool `json:"disabled"`
-	GoRoutinesCnt int  `json:"go-routines-count"`
-}
-
 // Init initializes and registers descriptors and handlers for Linux iptables rules.
-func (p *IPTablesPlugin) Init() error {
+func (p *IPTablesPlugin) Init() (err error) {
 	// parse configuration file
-	config, err := p.retrieveConfig()
+	p.conf, err = p.loadConfig()
 	if err != nil {
 		return err
 	}
-	p.Log.Debugf("Linux iptables config: %+v", config)
-	if config.Disabled {
-		p.disabled = true
+	p.Log.Debugf("Linux iptables config: %+v", p.conf)
+	if p.conf.Disabled {
 		p.Log.Infof("Disabling iptables plugin")
 		return nil
 	}
 
 	// init iptables handler
 	p.iptHandler = linuxcalls.NewIPTablesHandler()
-	err = p.iptHandler.Init(&config.HandlerConfig)
-	if err != nil && p.configFound {
+	err = p.iptHandler.Init(&p.conf.HandlerConfig)
+	if err != nil {
 		// just warn here, iptables / ip6tables just may not be installed - will return
 		// an error by attempt to configure it
 		p.Log.Warnf("Error by initializing iptables handler: %v", err)
@@ -94,7 +102,7 @@ func (p *IPTablesPlugin) Init() error {
 
 	// init & register the descriptor
 	ruleChainDescriptor := descriptor.NewRuleChainDescriptor(
-		p.KVScheduler, p.iptHandler, p.NsPlugin, p.Log, config.GoRoutinesCnt, config.MinRuleCountForPerfRuleAddition)
+		p.KVScheduler, p.iptHandler, p.NsPlugin, p.Log, p.conf.GoRoutinesCnt, p.conf.MinRuleCountForPerfRuleAddition)
 
 	err = p.Deps.KVScheduler.RegisterKVDescriptor(ruleChainDescriptor)
 	if err != nil {
@@ -109,23 +117,18 @@ func (p *IPTablesPlugin) Close() error {
 	return nil
 }
 
-// retrieveConfig loads plugin configuration file.
-func (p *IPTablesPlugin) retrieveConfig() (*Config, error) {
-	config := &Config{
-		// default configuration
-		GoRoutinesCnt: defaultGoRoutinesCnt,
-		HandlerConfig: linuxcalls.HandlerConfig{
-			MinRuleCountForPerfRuleAddition: defaultMinRuleCountForPerfRuleAddition,
-		},
+// loadConfig loads plugin configuration file.
+func (p *IPTablesPlugin) loadConfig() (*Config, error) {
+	config := DefaultConfig()
+	if p.Cfg != nil {
+		found, err := p.Cfg.LoadValue(config)
+		if !found {
+			p.Log.Debug("Linux IPTablesPlugin config not found")
+			return config, nil
+		}
+		if err != nil {
+			return nil, err
+		}
 	}
-	found, err := p.Cfg.LoadValue(config)
-	if !found {
-		p.Log.Debug("Linux IPTablesPlugin config not found")
-		return config, nil
-	}
-	if err != nil {
-		return nil, err
-	}
-	p.configFound = true
-	return config, err
+	return config, nil
 }

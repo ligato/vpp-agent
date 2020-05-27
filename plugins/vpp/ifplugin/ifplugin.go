@@ -98,11 +98,11 @@ type IfPlugin struct {
 
 // Deps lists dependencies of the interface plugin.
 type Deps struct {
-	infra.PluginDeps
-	KVScheduler  kvs.KVScheduler
-	VPP          govppmux.API
-	ServiceLabel servicelabel.ReaderAPI
-	AddrAlloc    netalloc.AddressAllocator
+	infra.PluginDeps `wire:"-"`
+	KVScheduler      kvs.KVScheduler
+	VPP              govppmux.API
+	ServiceLabel     servicelabel.ReaderAPI
+	AddrAlloc        netalloc.AddressAllocator
 	/*	LinuxIfPlugin and NsPlugin deps are optional,
 		but they are required if AFPacket or TAP+TAP_TO_VPP interfaces are used. */
 	LinuxIfPlugin descriptor.LinuxPluginAPI
@@ -330,22 +330,20 @@ func (p *IfPlugin) fromConfigFile() error {
 		p.Log.Errorf("Error reading %v config file: %v", p.PluginName, err)
 		return err
 	}
-	if config != nil {
-		publishers := datasync.KVProtoWriters{}
-		for _, pub := range config.StatusPublishers {
-			db, found := p.Deps.DataSyncs[pub]
-			if !found {
-				p.Log.Warnf("Unknown status publisher %q from config", pub)
-				continue
-			}
-			publishers = append(publishers, db)
-			p.Log.Infof("Added status publisher %q from config", pub)
+	publishers := datasync.KVProtoWriters{}
+	for _, pub := range config.StatusPublishers {
+		db, found := p.Deps.DataSyncs[pub]
+		if !found {
+			p.Log.Debugf("Unknown status publisher %q from config", pub)
+			continue
 		}
-		p.Deps.PublishStatistics = publishers
-		if config.MTU != 0 {
-			p.defaultMtu = config.MTU
-			p.Log.Infof("Default MTU set to %v", p.defaultMtu)
-		}
+		publishers = append(publishers, db)
+		p.Log.Infof("Added status publisher %q from config", pub)
+	}
+	p.Deps.PublishStatistics = publishers
+	if config.MTU != 0 {
+		p.defaultMtu = config.MTU
+		p.Log.Infof("Default MTU set to %v", p.defaultMtu)
 	}
 	return nil
 }
@@ -364,18 +362,18 @@ var (
 func (p *IfPlugin) fixNilPointers() {
 	if p.Deps.PublishErrors == nil {
 		p.Deps.PublishErrors = noopWriter
-		p.Log.Debug("setting default noop writer for PublishErrors dependency")
+		//p.Log.Debug("setting default noop writer for PublishErrors dependency")
 	}
 	if p.Deps.PublishStatistics == nil {
 		p.Deps.PublishStatistics = noopWriter
-		p.Log.Debug("setting default noop writer for PublishStatistics dependency")
+		//p.Log.Debug("setting default noop writer for PublishStatistics dependency")
 	}
 	if p.Deps.NotifyStates == nil {
 		p.Deps.NotifyStates = noopWriter
-		p.Log.Debug("setting default noop writer for NotifyStatistics dependency")
+		//p.Log.Debug("setting default noop writer for NotifyStatistics dependency")
 	}
 	if p.Deps.Watcher == nil {
 		p.Deps.Watcher = noopWatcher
-		p.Log.Debug("setting default noop watcher for Watcher dependency")
+		//p.Log.Debug("setting default noop watcher for Watcher dependency")
 	}
 }

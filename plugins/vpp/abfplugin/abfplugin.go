@@ -49,12 +49,12 @@ type ABFPlugin struct {
 
 // Deps represents dependencies for the plugin.
 type Deps struct {
-	infra.PluginDeps
-	Scheduler   kvs.KVScheduler
-	VPP         govppmux.API
-	ACLPlugin   aclplugin.API
-	IfPlugin    ifplugin.API
-	StatusCheck statuscheck.PluginStatusWriter // optional
+	infra.PluginDeps `wire:"-"`
+	Scheduler        kvs.KVScheduler
+	VPP              govppmux.API
+	ACLPlugin        aclplugin.API
+	IfPlugin         ifplugin.API
+	StatusCheck      statuscheck.PluginStatusWriter // optional
 }
 
 // Init initializes ABF plugin.

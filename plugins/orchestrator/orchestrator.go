@@ -15,13 +15,13 @@
 package orchestrator
 
 import (
+	"fmt"
 	"os"
 	"strings"
 
 	"github.com/golang/protobuf/proto"
 	"go.ligato.io/cn-infra/v2/datasync"
 	"go.ligato.io/cn-infra/v2/infra"
-	"go.ligato.io/cn-infra/v2/logging"
 	"go.ligato.io/cn-infra/v2/rpc/grpc"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/reflection"
@@ -67,8 +67,10 @@ type Deps struct {
 
 // Init registers the service to GRPC server.
 func (p *Plugin) Init() (err error) {
+	p.Log.Debug("Init()")
+
 	p.dispatcher = &dispatcher{
-		log: logging.DefaultRegistry.NewLogger("dispatcher"),
+		log: p.Log.NewLogger("dispatcher"),
 		db:  newMemStore(),
 		kvs: p.KVScheduler,
 	}
@@ -91,16 +93,23 @@ func (p *Plugin) Init() (err error) {
 		p.log.Infof("grpc server not available")
 	}
 
+	//_ = p.StartWatching()
+
+	return nil
+}
+
+func (p *Plugin) StartWatching() (err error) {
 	nbPrefixes := p.kvs.GetRegisteredNBKeyPrefixes()
 	if len(nbPrefixes) > 0 {
 		p.log.Infof("Watch starting for %d registered NB prefixes", len(nbPrefixes))
 	} else {
 		p.log.Warnf("No registered NB prefixes found in KVScheduler (ensure that all KVDescriptors are registered before this)")
+		return fmt.Errorf("no NB prefixes registered to KVScheduler")
 	}
 
 	var prefixes []string
 	for _, prefix := range nbPrefixes {
-		p.log.Debugf("- watching NB prefix: %s", prefix)
+		p.log.Tracef("- watching NB prefix: %s", prefix)
 		prefixes = append(prefixes, prefix)
 	}
 
@@ -114,11 +123,6 @@ func (p *Plugin) Init() (err error) {
 		return err
 	}
 
-	return nil
-}
-
-// AfterInit subscribes to known NB prefixes.
-func (p *Plugin) AfterInit() (err error) {
 	go p.watchEvents()
 
 	statusChan := make(chan *kvscheduler.BaseValueStatus, 100)
@@ -127,6 +131,17 @@ func (p *Plugin) AfterInit() (err error) {
 
 	return nil
 }
+
+// AfterInit subscribes to known NB prefixes.
+/*func (p *Plugin) AfterInit() (err error) {
+	go p.watchEvents()
+
+	statusChan := make(chan *kvscheduler.BaseValueStatus, 100)
+	p.kvs.WatchValueStatus(statusChan, nil)
+	go p.watchStatus(statusChan)
+
+	return nil
+}*/
 
 // InitialSync will start initial synchronization with downstream.
 func (p *Plugin) InitialSync() {

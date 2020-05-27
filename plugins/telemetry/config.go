@@ -36,7 +36,7 @@ type Config struct {
 	Skipped []string `json:"skipped"`
 }
 
-func defaultConfig() *Config {
+func DefaultConfig() *Config {
 	return &Config{
 		PollingInterval: defaultUpdatePeriod,
 	}
@@ -44,7 +44,7 @@ func defaultConfig() *Config {
 
 // loadConfig returns telemetry plugin file configuration if exists
 func (p *Plugin) loadConfig() (*Config, error) {
-	cfg := defaultConfig()
+	cfg := DefaultConfig()
 
 	found, err := p.Cfg.LoadValue(cfg)
 	if err != nil {

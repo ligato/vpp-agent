@@ -84,17 +84,17 @@ type Plugin struct {
 
 // Deps represents dependencies of Rest Plugin
 type Deps struct {
-	infra.PluginDeps
-	HTTPHandlers  rest.HTTPHandlers
-	VPP           govppmux.API
-	ServiceLabel  servicelabel.ReaderAPI
-	AddrAlloc     netalloc.AddressAllocator
-	VPPACLPlugin  aclplugin.API
-	VPPIfPlugin   ifplugin.API
-	VPPL2Plugin   *l2plugin.L2Plugin
-	VPPL3Plugin   *l3plugin.L3Plugin
-	LinuxIfPlugin linuxifplugin.API
-	NsPlugin      nsplugin.API
+	infra.PluginDeps `wire:"-"`
+	HTTPHandlers     rest.HTTPHandlers
+	VPP              govppmux.API
+	ServiceLabel     servicelabel.ReaderAPI
+	AddrAlloc        netalloc.AddressAllocator
+	VPPACLPlugin     aclplugin.API
+	VPPIfPlugin      ifplugin.API
+	VPPL2Plugin      *l2plugin.L2Plugin
+	VPPL3Plugin      *l3plugin.L3Plugin
+	LinuxIfPlugin    linuxifplugin.API
+	NsPlugin         nsplugin.API
 }
 
 // index defines map of main index page entries
@@ -180,11 +180,25 @@ func (p *Plugin) Init() (err error) {
 	// Register permission groups, used if REST security is enabled
 	p.HTTPHandlers.RegisterPermissionGroup(getPermissionsGroups()...)
 
+	p.RegisterHandlers()
+
 	return nil
 }
 
 // AfterInit is used to register HTTP handlers
-func (p *Plugin) AfterInit() (err error) {
+/*func (p *Plugin) AfterInit() (err error) {
+
+	p.RegisterHandlers()
+
+	return nil
+}*/
+
+// Close is used to clean up resources used by Plugin
+func (p *Plugin) Close() error {
+	return nil
+}
+
+func (p *Plugin) RegisterHandlers() {
 	// VPP handlers
 	p.registerTelemetryHandlers()
 	// core
@@ -203,12 +217,6 @@ func (p *Plugin) AfterInit() (err error) {
 	// Index and stats handlers
 	p.registerIndexHandlers()
 	p.registerStatsHandler()
-	return nil
-}
-
-// Close is used to clean up resources used by Plugin
-func (p *Plugin) Close() error {
-	return nil
 }
 
 // Fill index item lists

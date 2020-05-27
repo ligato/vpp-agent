@@ -36,6 +36,7 @@ import (
 	"go.ligato.io/vpp-agent/v3/pkg/models"
 	"go.ligato.io/vpp-agent/v3/plugins/govppmux"
 	"go.ligato.io/vpp-agent/v3/plugins/telemetry/vppcalls"
+	vpp_ifplugin "go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/configurator"
 
@@ -74,13 +75,13 @@ type InterfaceIndexProvider interface {
 
 // Deps represents dependencies of Telemetry Plugin
 type Deps struct {
-	infra.PluginDeps
-	ServiceLabel servicelabel.ReaderAPI
-	VPP          govppmux.API
-	Prometheus   prom.API
-	GRPC         grpc.Server
-	HTTPHandlers rest.HTTPHandlers
-	IfPlugin     InterfaceIndexProvider
+	infra.PluginDeps `wire:"-"`
+	ServiceLabel     servicelabel.ReaderAPI
+	VPP              govppmux.API
+	Prometheus       prom.API
+	GRPC             grpc.Server
+	HTTPHandlers     rest.HTTPHandlers
+	IfPlugin         vpp_ifplugin.API //InterfaceIndexProvider
 }
 
 // Init initializes Telemetry Plugin
@@ -146,12 +147,8 @@ func (p *Plugin) Init() error {
 
 // AfterInit executes after initializion of Telemetry Plugin
 func (p *Plugin) AfterInit() error {
-	// Do not start polling if telemetry is disabled
-	if p.disabled || p.prometheusDisabled {
-		return nil
-	}
 
-	p.startPeriodicUpdates()
+	p.StartPeriodicUpdates()
 
 	return nil
 }
@@ -178,7 +175,11 @@ func (p *Plugin) Close() error {
 	return nil
 }
 
-func (p *Plugin) startPeriodicUpdates() {
+func (p *Plugin) StartPeriodicUpdates() { // Do not start polling if telemetry is disabled
+	if p.disabled || p.prometheusDisabled {
+		return
+	}
+
 	p.handler = vppcalls.CompatibleTelemetryHandler(p.VPP)
 	if p.handler == nil {
 		p.Log.Warnf("VPP telemetry handler unavailable, skipping periodic updates")

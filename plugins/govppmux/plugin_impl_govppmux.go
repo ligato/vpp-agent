@@ -29,6 +29,7 @@ import (
 	govpp "git.fd.io/govpp.git/core"
 	"git.fd.io/govpp.git/proxy"
 	"github.com/pkg/errors"
+	"go.ligato.io/cn-infra/v2/config"
 	"go.ligato.io/cn-infra/v2/datasync/resync"
 	"go.ligato.io/cn-infra/v2/health/statuscheck"
 	"go.ligato.io/cn-infra/v2/infra"
@@ -86,14 +87,16 @@ type Plugin struct {
 
 // Deps defines dependencies for the govppmux plugin.
 type Deps struct {
-	infra.PluginDeps
-	HTTPHandlers rest.HTTPHandlers
-	StatusCheck  statuscheck.PluginStatusWriter
-	Resync       *resync.Plugin
+	infra.PluginDeps `wire:"-"`
+	HTTPHandlers     rest.HTTPHandlers
+	StatusCheck      statuscheck.PluginStatusWriter
+	Resync           *resync.Plugin
 }
 
 // Init is the entry point called by Agent Core. A single binary-API connection to VPP is established.
 func (p *Plugin) Init() (err error) {
+	p.Log.Debug("Init()")
+
 	if p.config, err = p.loadConfig(); err != nil {
 		return err
 	}
@@ -116,7 +119,7 @@ func (p *Plugin) Init() (err error) {
 	p.Log.Debugf("found %d registered VPP handlers", len(vpp.GetHandlers()))
 	for name, handler := range vpp.GetHandlers() {
 		versions := handler.Versions()
-		p.Log.Debugf("- handler: %-10s has %d versions: %v", name, len(versions), versions)
+		p.Log.Tracef("- handler: %-10s has %d versions: %v", name, len(versions), versions)
 	}
 
 	// TODO: Async connect & automatic reconnect support is not yet implemented in the agent,
@@ -175,7 +178,7 @@ func (p *Plugin) Init() (err error) {
 		if err != nil {
 			return err
 		}
-		p.Log.Infof("VPP proxy ready")
+		p.Log.Infof("VPP proxy ready %#v", config.Get("govpp.proxy-enabled"))
 	}
 
 	// register REST API handlers
@@ -201,8 +204,10 @@ func (p *Plugin) AfterInit() error {
 
 // Close cleans up the resources allocated by the govppmux plugin.
 func (p *Plugin) Close() error {
-	p.cancel()
-	p.wg.Wait()
+	if p.cancel != nil {
+		p.cancel()
+		p.wg.Wait()
+	}
 
 	defer func() {
 		if p.vppConn != nil {
@@ -295,14 +300,14 @@ func (p *Plugin) updateVPPInfo() (err error) {
 	if err != nil {
 		p.Log.Warnf("RunCli error: %v", err)
 	} else {
-		p.Log.Debugf("vpp# show version verbose\n%s", version)
+		p.Log.Tracef("vpp# show version verbose\n%s", version)
 	}
 	cmdline, err := p.vpeHandler.RunCli(ctx, "show version cmdline")
 	if err != nil {
 		p.Log.Warnf("RunCli error: %v", err)
 	} else {
 		out := strings.Replace(cmdline, "\n", "", -1)
-		p.Log.Debugf("vpp# show version cmdline:\n%s", out)
+		p.Log.Tracef("vpp# show version cmdline:\n%s", out)
 	}
 
 	ver, err := p.vpeHandler.GetVersion(ctx)
@@ -333,7 +338,7 @@ func (p *Plugin) updateVPPInfo() (err error) {
 
 	p.Log.Debugf("VPP loaded %d plugins", len(plugins))
 	for _, plugin := range plugins {
-		p.Log.Debugf(" - plugin: %v", plugin)
+		p.Log.Tracef(" - plugin: %v", plugin)
 	}
 
 	p.infoMu.Lock()

@@ -15,13 +15,45 @@
 package abfplugin
 
 import (
+	"github.com/google/wire"
 	"go.ligato.io/cn-infra/v2/health/statuscheck"
 	"go.ligato.io/cn-infra/v2/logging"
+
 	"go.ligato.io/vpp-agent/v3/plugins/govppmux"
 	"go.ligato.io/vpp-agent/v3/plugins/kvscheduler"
+	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/aclplugin"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin"
 )
+
+var Wire = wire.NewSet(
+	Provider,
+	DepsProvider,
+	//wire.Struct(new(Deps), "StatusCheck", "Scheduler", "VPP", "ACLPlugin", "IfPlugin"),
+)
+
+func DepsProvider(
+	scheduler kvs.KVScheduler,
+	govppmuxPlugin govppmux.API,
+	aclPlugin aclplugin.API,
+	ifPlugin ifplugin.API,
+	statuscheck statuscheck.PluginStatusWriter,
+) Deps {
+	return Deps{
+		StatusCheck: statuscheck,
+		Scheduler:   scheduler,
+		VPP:         govppmuxPlugin,
+		ACLPlugin:   aclPlugin,
+		IfPlugin:    ifPlugin,
+	}
+}
+
+func Provider(deps Deps) (*ABFPlugin, error) {
+	p := &ABFPlugin{Deps: deps}
+	p.SetName("vpp-abfplugin")
+	p.Log = logging.ForPlugin("vpp-abf-plugin")
+	return p, p.Init()
+}
 
 // DefaultPlugin is a default instance of ABFPlugin.
 var DefaultPlugin = *NewPlugin()

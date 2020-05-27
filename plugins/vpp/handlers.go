@@ -82,7 +82,7 @@ func (h *Handler) GetCompatibleVersion(c Client) (*HandlerVersion, error) {
 	// try preferred binapi version first
 	if ver := c.BinapiVersion(); ver != "" {
 		if v, ok := h.versions[ver]; ok {
-			logging.Debugf("VPP handler %s COMPATIBLE with preferred version: %s", h.desc.Name, v.Version)
+			logging.Tracef("VPP handler %s COMPATIBLE with preferred version: %s", h.desc.Name, v.Version)
 			return v, nil
 		}
 	}

@@ -15,7 +15,6 @@
 package nsplugin
 
 import (
-	"fmt"
 	"strconv"
 
 	"github.com/pkg/errors"
@@ -38,8 +37,7 @@ import (
 type NsPlugin struct {
 	Deps
 
-	// From configuration file
-	disabled bool
+	conf *Config
 
 	// Default namespace
 	defaultNs netns.NsHandle
@@ -63,28 +61,21 @@ type Config struct {
 	Disabled bool `json:"disabled"`
 }
 
-// UnavailableMicroserviceErr is error implementation used when a given microservice is not deployed.
-type UnavailableMicroserviceErr struct {
-	label string
-}
-
-func (e *UnavailableMicroserviceErr) Error() string {
-	return fmt.Sprintf("Microservice '%s' is not available", e.label)
+// DefaultConfig returns default configuration.
+func DefaultConfig() *Config {
+	return &Config{}
 }
 
 // Init namespace handler caches and create config namespace
-func (p *NsPlugin) Init() error {
+func (p *NsPlugin) Init() (err error) {
 	// Parse configuration file
-	config, err := p.retrieveConfig()
+	p.conf, err = p.loadConfig()
 	if err != nil {
 		return err
 	}
-	if config != nil {
-		if config.Disabled {
-			p.disabled = true
-			p.Log.Infof("Disabling Linux Namespace plugin")
-			return nil
-		}
+	if p.conf.Disabled {
+		p.Log.Infof("Disabling Linux Namespace plugin")
+		return nil
 	}
 
 	// Handlers
@@ -108,14 +99,12 @@ func (p *NsPlugin) Init() error {
 	}
 	p.msDescriptor.StartTracker()
 
-	p.Log.Infof("Namespace plugin initialized")
-
 	return nil
 }
 
 // Close stops microservice tracker
 func (p *NsPlugin) Close() error {
-	if p.disabled {
+	if p.conf.Disabled {
 		return nil
 	}
 	p.msDescriptor.StopTracker()
@@ -127,7 +116,7 @@ func (p *NsPlugin) Close() error {
 // to be used with Netlink API. Do not forget to eventually close the handle using
 // the netns.NsHandle.Close() method.
 func (p *NsPlugin) GetNamespaceHandle(ctx nsLinuxcalls.NamespaceMgmtCtx, namespace *nsmodel.NetNamespace) (handle netns.NsHandle, err error) {
-	if p.disabled {
+	if p.conf.Disabled {
 		return 0, errors.New("NsPlugin is disabled")
 	}
 	// Convert microservice namespace
@@ -153,7 +142,7 @@ func (p *NsPlugin) GetNamespaceHandle(ctx nsLinuxcalls.NamespaceMgmtCtx, namespa
 // Caller should eventually call the returned "revert" function in order to get back to the original
 // network namespace (for example using "defer revert()").
 func (p *NsPlugin) SwitchToNamespace(ctx nsLinuxcalls.NamespaceMgmtCtx, ns *nsmodel.NetNamespace) (revert func(), err error) {
-	if p.disabled {
+	if p.conf.Disabled {
 		return func() {}, errors.New("NsPlugin is disabled")
 	}
 
@@ -208,19 +197,21 @@ func (p *NsPlugin) SwitchToNamespace(ctx nsLinuxcalls.NamespaceMgmtCtx, ns *nsmo
 	}, nil
 }
 
-// retrieveConfig loads NsPlugin configuration file.
-func (p *NsPlugin) retrieveConfig() (*Config, error) {
-	config := &Config{}
-	found, err := p.Cfg.LoadValue(config)
-	if !found {
-		p.Log.Debug("Linux NsPlugin config not found")
-		return nil, nil
+// loadConfig loads NsPlugin configuration file.
+func (p *NsPlugin) loadConfig() (*Config, error) {
+	config := DefaultConfig()
+	if p.Cfg != nil {
+		found, err := p.Cfg.LoadValue(config)
+		if !found {
+			p.Log.Debug("Linux NsPlugin config not found")
+			return config, nil
+		}
+		if err != nil {
+			return nil, err
+		}
+		p.Log.Debug("Linux NsPlugin config found")
 	}
-	if err != nil {
-		return nil, err
-	}
-	p.Log.Debug("Linux NsPlugin config found")
-	return config, err
+	return config, nil
 }
 
 // getOrCreateNs returns an existing Linux network namespace or creates a new one if it doesn't exist yet.
