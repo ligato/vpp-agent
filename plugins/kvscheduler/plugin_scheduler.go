@@ -37,34 +37,6 @@ import (
 )
 
 const (
-	// DependencyRelation identifies dependency relation for the graph.
-	DependencyRelation = "depends-on"
-
-	// DerivesRelation identifies relation of value derivation for the graph.
-	DerivesRelation = "derives"
-
-	// how often the transaction history gets trimmed to remove records too old to keep
-	txnHistoryTrimmingPeriod = 1 * time.Minute
-
-	// by default, a history of processed transaction is recorded
-	defaultRecordTransactionHistory = true
-
-	// by default, only transaction processed in the last 24 hours are kept recorded
-	// (with the exception of permanently recorded init period)
-	defaultTransactionHistoryAgeLimit = 24 * 60 // in minutes
-
-	// by default, transactions from the first hour of runtime stay permanently
-	// recorded
-	defaultPermanentlyRecordedInitPeriod = 60 // in minutes
-
-	// by default, all NB transactions and SB notifications are run without
-	// simulation (Retries are always first simulated)
-	defaultEnableTxnSimulation = false
-
-	// by default, a concise summary of every processed transactions is printed
-	// to stdout
-	defaultPrintTxnSummary = true
-
 	// name of the environment variable used to enable verification after every transaction
 	verifyModeEnv = "KVSCHED_VERIFY_MODE"
 
@@ -125,15 +97,6 @@ type Deps struct {
 	HTTPHandlers rest.HTTPHandlers
 }
 
-// Config holds the KVScheduler configuration.
-type Config struct {
-	RecordTransactionHistory      bool   `json:"record-transaction-history"`
-	TransactionHistoryAgeLimit    uint32 `json:"transaction-history-age-limit"`    // in minutes
-	PermanentlyRecordedInitPeriod uint32 `json:"permanently-recorded-init-period"` // in minutes
-	EnableTxnSimulation           bool   `json:"enable-txn-simulation"`
-	PrintTxnSummary               bool   `json:"print-txn-summary"`
-}
-
 // SchedulerTxn implements transaction for the KV scheduler.
 type SchedulerTxn struct {
 	scheduler *Scheduler
@@ -149,20 +112,15 @@ type valStateWatcher struct {
 // Init initializes the scheduler. Single go routine is started that will process
 // all the transactions synchronously.
 func (s *Scheduler) Init() error {
-	// default configuration
-	s.config = &Config{
-		RecordTransactionHistory:      defaultRecordTransactionHistory,
-		TransactionHistoryAgeLimit:    defaultTransactionHistoryAgeLimit,
-		PermanentlyRecordedInitPeriod: defaultPermanentlyRecordedInitPeriod,
-		EnableTxnSimulation:           defaultEnableTxnSimulation,
-		PrintTxnSummary:               defaultPrintTxnSummary,
-	}
+	s.Log.Debug("Init()")
 
-	// load configuration
-	err := s.loadConfig(s.config)
-	if err != nil {
-		s.Log.Error(err)
-		return err
+	if s.config == nil {
+		s.config = DefaultConfig()
+		err := s.loadConfig(s.config)
+		if err != nil {
+			s.Log.Error(err)
+			return err
+		}
 	}
 	s.Log.Debugf("KVScheduler configuration: %+v", *s.config)
 
@@ -206,6 +164,9 @@ func (s *Scheduler) Init() error {
 
 // loadConfig loads configuration file.
 func (s *Scheduler) loadConfig(config *Config) error {
+	if s.Cfg == nil {
+		return nil
+	}
 	found, err := s.Cfg.LoadValue(config)
 	if err != nil {
 		return err

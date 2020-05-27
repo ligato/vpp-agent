@@ -15,6 +15,8 @@
 package nsplugin
 
 import (
+	"fmt"
+
 	"github.com/vishvananda/netns"
 
 	"go.ligato.io/vpp-agent/v3/plugins/linux/nsplugin/linuxcalls"
@@ -32,4 +34,13 @@ type API interface {
 	// to be used with Netlink API. Do not forget to eventually close the handle using
 	// the netns.NsHandle.Close() method.
 	GetNamespaceHandle(ctx linuxcalls.NamespaceMgmtCtx, ns *linux_namespace.NetNamespace) (handle netns.NsHandle, err error)
+}
+
+// UnavailableMicroserviceErr is error implementation used when a given microservice is not deployed.
+type UnavailableMicroserviceErr struct {
+	label string
+}
+
+func (e *UnavailableMicroserviceErr) Error() string {
+	return fmt.Sprintf("Microservice '%s' is not available", e.label)
 }

@@ -15,12 +15,43 @@
 package iptablesplugin
 
 import (
+	"github.com/google/wire"
 	"go.ligato.io/cn-infra/v2/config"
 	"go.ligato.io/cn-infra/v2/logging"
 
 	"go.ligato.io/vpp-agent/v3/plugins/kvscheduler"
+	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 	"go.ligato.io/vpp-agent/v3/plugins/linux/nsplugin"
 )
+
+var Wire = wire.NewSet(
+	Provider,
+	ConfigProvider,
+	DepsProvider,
+)
+
+func DepsProvider(scheduler kvs.KVScheduler, nsplugin nsplugin.API) Deps {
+	return Deps{
+		KVScheduler: scheduler,
+		NsPlugin:    nsplugin,
+	}
+}
+
+func ConfigProvider(conf config.Config) *Config {
+	var cfg = DefaultConfig()
+	if err := conf.UnmarshalKey("linux-iptablesplugin", &cfg); err != nil {
+		logging.Errorf("unmarshal key failed: %v", err)
+	}
+	return cfg
+}
+
+func Provider(deps Deps, conf *Config) (*IPTablesPlugin, error) {
+	p := &IPTablesPlugin{Deps: deps}
+	p.conf = conf
+	p.SetName("linux-iptablesplugin")
+	p.Log = logging.ForPlugin("linux-iptablesplugin")
+	return p, p.Init()
+}
 
 // DefaultPlugin is a default instance of IPTablesPlugin.
 var DefaultPlugin = *NewPlugin()

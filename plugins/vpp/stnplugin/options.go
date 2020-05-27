@@ -15,12 +15,41 @@
 package stnplugin
 
 import (
+	"github.com/google/wire"
+	"go.ligato.io/cn-infra/v2/health/statuscheck"
 	"go.ligato.io/cn-infra/v2/logging"
 
 	"go.ligato.io/vpp-agent/v3/plugins/govppmux"
 	"go.ligato.io/vpp-agent/v3/plugins/kvscheduler"
+	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin"
 )
+
+var Wire = wire.NewSet(
+	Provider,
+	DepsProvider,
+)
+
+func DepsProvider(
+	scheduler kvs.KVScheduler,
+	govppmuxPlugin govppmux.API,
+	ifPlugin ifplugin.API,
+	statuscheck statuscheck.PluginStatusWriter,
+) Deps {
+	return Deps{
+		StatusCheck: statuscheck,
+		KVScheduler: scheduler,
+		VPP:         govppmuxPlugin,
+		IfPlugin:    ifPlugin,
+	}
+}
+
+func Provider(deps Deps) (*STNPlugin, error) {
+	p := &STNPlugin{Deps: deps}
+	p.SetName("vpp-stnplugin")
+	p.Log = logging.ForPlugin("vpp-stnplugin")
+	return p, p.Init()
+}
 
 // DefaultPlugin is a default instance of STN plugin.
 var DefaultPlugin = *NewPlugin()

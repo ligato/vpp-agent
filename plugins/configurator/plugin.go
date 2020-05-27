@@ -54,18 +54,18 @@ type Plugin struct {
 
 // Deps - dependencies of Plugin
 type Deps struct {
-	infra.PluginDeps
-	GRPCServer    grpc.Server
-	Dispatch      orchestrator.Dispatcher
-	VPP           govppmux.API
-	ServiceLabel  servicelabel.ReaderAPI
-	AddrAlloc     netalloc.AddressAllocator
-	VPPACLPlugin  aclplugin.API
-	VPPIfPlugin   ifplugin.API
-	VPPL2Plugin   *l2plugin.L2Plugin
-	VPPL3Plugin   l3plugin.API
-	LinuxIfPlugin iflinuxplugin.API
-	NsPlugin      nsplugin.API
+	infra.PluginDeps `wire:"-"`
+	GRPCServer       grpc.Server
+	Dispatch         orchestrator.Dispatcher
+	VPP              govppmux.API
+	ServiceLabel     servicelabel.ReaderAPI
+	AddrAlloc        netalloc.AddressAllocator
+	VPPACLPlugin     aclplugin.API
+	VPPIfPlugin      ifplugin.API
+	VPPL2Plugin      *l2plugin.L2Plugin
+	VPPL3Plugin      l3plugin.API
+	LinuxIfPlugin    iflinuxplugin.API
+	NsPlugin         nsplugin.API
 }
 
 // Init sets plugin child loggers

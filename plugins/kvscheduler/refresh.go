@@ -131,7 +131,7 @@ func (s *Scheduler) refreshGraph(graphW graph.RWAccess,
 				plural = ""
 			}
 
-			var list strings.Builder
+			/*var list strings.Builder
 			for i, d := range retrieved {
 				num := fmt.Sprintf("%d.", i+1)
 				list.WriteString(fmt.Sprintf("\n - %3s [%s]: %q (%s)\n   %v",
@@ -140,8 +140,10 @@ func (s *Scheduler) refreshGraph(graphW graph.RWAccess,
 					list.WriteString(fmt.Sprintf("\n   Metadata: %+v", d.Metadata))
 				}
 			}
+			items := list.String()*/
+			items := retrieved
 			s.Log.Debugf("%s descriptor retrieved %d item%s: %v",
-				descriptor.Name, len(retrieved), plural, list.String())
+				descriptor.Name, len(retrieved), plural, items)
 
 		}
 

@@ -51,8 +51,8 @@ func (p *IfPlugin) loadConfig() (*Config, error) {
 	if err != nil {
 		return nil, err
 	} else if !found {
-		p.Log.Debugf("config %s not found", p.Cfg.GetConfigName())
-		return nil, nil
+		//p.Log.Debugf("config %s not found", p.Cfg.GetConfigName())
+		return &cfg, nil
 	}
 	p.Log.Debugf("config %s found: %+v", p.Cfg.GetConfigName(), cfg)
 

@@ -15,6 +15,7 @@
 package app
 
 import (
+	"go.ligato.io/cn-infra/v2/config"
 	"go.ligato.io/cn-infra/v2/datasync"
 	"go.ligato.io/cn-infra/v2/datasync/kvdbsync"
 	"go.ligato.io/cn-infra/v2/datasync/kvdbsync/local"
@@ -26,8 +27,10 @@ import (
 	"go.ligato.io/cn-infra/v2/health/probe"
 	"go.ligato.io/cn-infra/v2/health/statuscheck"
 	"go.ligato.io/cn-infra/v2/infra"
+	"go.ligato.io/cn-infra/v2/logging"
 	"go.ligato.io/cn-infra/v2/logging/logmanager"
 	"go.ligato.io/cn-infra/v2/messaging/kafka"
+	"go.ligato.io/cn-infra/v2/rpc/prometheus"
 
 	"go.ligato.io/vpp-agent/v3/plugins/configurator"
 	linux_ifplugin "go.ligato.io/vpp-agent/v3/plugins/linux/ifplugin"
@@ -36,6 +39,7 @@ import (
 	linux_nsplugin "go.ligato.io/vpp-agent/v3/plugins/linux/nsplugin"
 	"go.ligato.io/vpp-agent/v3/plugins/netalloc"
 	"go.ligato.io/vpp-agent/v3/plugins/orchestrator"
+	"go.ligato.io/vpp-agent/v3/plugins/orchestrator/watcher"
 	"go.ligato.io/vpp-agent/v3/plugins/restapi"
 	"go.ligato.io/vpp-agent/v3/plugins/telemetry"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/abfplugin"
@@ -73,9 +77,9 @@ type VPPAgent struct {
 
 	Configurator *configurator.Plugin
 	RESTAPI      *restapi.Plugin
-	Probe        *probe.Plugin
 	StatusCheck  *statuscheck.Plugin
 	Telemetry    *telemetry.Plugin
+	Probe        *probe.Plugin
 }
 
 // New creates new VPPAgent instance.
@@ -97,6 +101,9 @@ func New() *VPPAgent {
 			Topic: "if_state",
 		}),
 	)
+
+	aggregator := watcher.NewPlugin(watcher.UseWatchers(etcdDataSync, consulDataSync, redisDataSync))
+	orchestrator.DefaultPlugin.Watcher = aggregator
 
 	// Set watcher for KVScheduler.
 	watchers := datasync.KVProtoWatchers{
@@ -129,6 +136,8 @@ func New() *VPPAgent {
 	vpp := DefaultVPP()
 	linux := DefaultLinux()
 
+	probe.DefaultPlugin.Prometheus = &prometheus.DefaultPlugin
+
 	return &VPPAgent{
 		PluginName:     "VPPAgent",
 		LogManager:     &logmanager.DefaultPlugin,
@@ -160,6 +169,11 @@ func (a *VPPAgent) AfterInit() error {
 	resync.DefaultPlugin.DoResync()
 	//orchestrator.DefaultPlugin.InitialSync()
 	a.StatusCheck.ReportStateChange(a.PluginName, statuscheck.OK, nil)
+
+	if err := config.WriteAs("config-out.yml"); err != nil {
+		logging.Warn(err)
+	}
+
 	return nil
 }
 

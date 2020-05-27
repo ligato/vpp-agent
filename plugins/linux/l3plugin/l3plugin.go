@@ -35,12 +35,23 @@ const (
 	defaultGoRoutinesCnt = 10
 )
 
+// Config holds the l3plugin configuration.
+type Config struct {
+	Disabled      bool `json:"disabled"`
+	GoRoutinesCnt int  `json:"go-routines-count"`
+}
+
+func DefaultConfig() *Config {
+	return &Config{
+		GoRoutinesCnt: defaultGoRoutinesCnt,
+	}
+}
+
 // L3Plugin configures Linux routes and ARP entries using Netlink API.
 type L3Plugin struct {
 	Deps
 
-	// From configuration file
-	disabled bool
+	conf *Config
 
 	// system handlers
 	l3Handler linuxcalls.NetlinkAPI
@@ -59,22 +70,15 @@ type Deps struct {
 	AddrAlloc   netalloc.AddressAllocator
 }
 
-// Config holds the l3plugin configuration.
-type Config struct {
-	Disabled      bool `json:"disabled"`
-	GoRoutinesCnt int  `json:"go-routines-count"`
-}
-
 // Init initializes and registers descriptors for Linux ARPs and Routes.
-func (p *L3Plugin) Init() error {
+func (p *L3Plugin) Init() (err error) {
 	// parse configuration file
-	config, err := p.retrieveConfig()
+	p.conf, err = p.loadConfig()
 	if err != nil {
 		return err
 	}
-	p.Log.Debugf("Linux L3 plugin config: %+v", config)
-	if config.Disabled {
-		p.disabled = true
+	p.Log.Debugf("Linux L3 plugin config: %+v", p.conf)
+	if p.conf.Disabled {
 		p.Log.Infof("Disabling Linux L3 plugin")
 		return nil
 	}
@@ -84,10 +88,10 @@ func (p *L3Plugin) Init() error {
 
 	// init & register descriptors
 	arpDescriptor := descriptor.NewARPDescriptor(
-		p.KVScheduler, p.IfPlugin, p.NsPlugin, p.AddrAlloc, p.l3Handler, p.Log, config.GoRoutinesCnt)
+		p.KVScheduler, p.IfPlugin, p.NsPlugin, p.AddrAlloc, p.l3Handler, p.Log, p.conf.GoRoutinesCnt)
 
 	routeDescriptor := descriptor.NewRouteDescriptor(
-		p.KVScheduler, p.IfPlugin, p.NsPlugin, p.AddrAlloc, p.l3Handler, p.Log, config.GoRoutinesCnt)
+		p.KVScheduler, p.IfPlugin, p.NsPlugin, p.AddrAlloc, p.l3Handler, p.Log, p.conf.GoRoutinesCnt)
 
 	err = p.Deps.KVScheduler.RegisterKVDescriptor(arpDescriptor)
 	if err != nil {
@@ -106,19 +110,18 @@ func (p *L3Plugin) Close() error {
 	return nil
 }
 
-// retrieveConfig loads L3Plugin configuration file.
-func (p *L3Plugin) retrieveConfig() (*Config, error) {
-	config := &Config{
-		// default configuration
-		GoRoutinesCnt: defaultGoRoutinesCnt,
+// loadConfig loads L3Plugin configuration file.
+func (p *L3Plugin) loadConfig() (*Config, error) {
+	config := DefaultConfig()
+	if p.Cfg != nil {
+		found, err := p.Cfg.LoadValue(config)
+		if !found {
+			p.Log.Debug("Linux L3Plugin config not found")
+			return config, nil
+		}
+		if err != nil {
+			return nil, err
+		}
 	}
-	found, err := p.Cfg.LoadValue(config)
-	if !found {
-		p.Log.Debug("Linux L3Plugin config not found")
-		return config, nil
-	}
-	if err != nil {
-		return nil, err
-	}
-	return config, err
+	return config, nil
 }

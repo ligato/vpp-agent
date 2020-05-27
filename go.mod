@@ -24,6 +24,7 @@ require (
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-errors/errors v1.0.1
 	github.com/golang/protobuf v1.3.3
+	github.com/google/wire v0.4.0
 	github.com/gorilla/mux v1.6.2
 	github.com/gorilla/websocket v1.4.1 // indirect
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0
@@ -44,14 +45,13 @@ require (
 	github.com/prometheus/client_golang v0.9.3
 	github.com/sirupsen/logrus v1.6.0
 	github.com/spf13/cobra v0.0.3
-	github.com/spf13/pflag v1.0.3
-	github.com/spf13/viper v1.4.0
+	github.com/spf13/pflag v1.0.5
+	github.com/spf13/viper v1.6.3
 	github.com/unrolled/render v0.0.0-20180914162206-b9786414de4d
 	github.com/vishvananda/netlink v0.0.0-20180910184128-56b1bd27a9a3
 	github.com/vishvananda/netns v0.0.0-20180720170159-13995c7128cc
 	github.com/yuin/gopher-lua v0.0.0-20190514113301-1cd887cd7036 // indirect
 	go.ligato.io/cn-infra/v2 v2.5.0-alpha.0.20200313154441-b0d4c1b11c73
-	go.uber.org/multierr v1.2.0 // indirect
 	golang.org/x/crypto v0.0.0-20191206172530-e9b2fee46413 // indirect
 	golang.org/x/net v0.0.0-20190620200207-3b0461eec859
 	golang.org/x/sys v0.0.0-20200501145240-bc7a7d42d5c3
@@ -59,3 +59,7 @@ require (
 	google.golang.org/grpc v1.27.1
 	gotest.tools v2.2.0+incompatible // indirect
 )
+
+replace go.ligato.io/cn-infra/v2 => ../cn-infra
+
+//replace git.fd.io/govpp.git => github.com/FDio/govpp v0.3.4

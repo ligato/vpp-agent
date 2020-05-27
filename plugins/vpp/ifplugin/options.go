@@ -15,6 +15,7 @@
 package ifplugin
 
 import (
+	"github.com/google/wire"
 	"go.ligato.io/cn-infra/v2/config"
 	"go.ligato.io/cn-infra/v2/health/statuscheck"
 	"go.ligato.io/cn-infra/v2/logging"
@@ -22,8 +23,46 @@ import (
 
 	"go.ligato.io/vpp-agent/v3/plugins/govppmux"
 	"go.ligato.io/vpp-agent/v3/plugins/kvscheduler"
+	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v3/plugins/linux/nsplugin"
 	"go.ligato.io/vpp-agent/v3/plugins/netalloc"
 )
+
+var Wire = wire.NewSet(
+	Provider,
+	DepsProvider,
+	//wire.Struct(new(Deps), "NsPlugin", "StatusCheck", "ServiceLabel", "KVScheduler", "VPP", "AddrAlloc" /*"LinuxIfPlugin"*/),
+	//wire.InterfaceValue(new(API), &IfPlugin{}),
+	wire.Bind(new(API), new(*IfPlugin)),
+)
+
+func DepsProvider(
+	scheduler kvs.KVScheduler,
+	govppmuxPlugin govppmux.API,
+	addrallocPlugin netalloc.AddressAllocator,
+	nsPlugin nsplugin.API,
+	statuscheck statuscheck.PluginStatusWriter,
+) Deps {
+	return Deps{
+		StatusCheck: statuscheck,
+		KVScheduler: scheduler,
+		VPP:         govppmuxPlugin,
+		AddrAlloc:   addrallocPlugin,
+		NsPlugin:    nsPlugin,
+	}
+}
+
+func Provider(deps Deps) (*IfPlugin, func(), error) {
+	p := &IfPlugin{Deps: deps}
+	p.SetName("vpp-ifplugin")
+	p.Setup()
+	cancel := func() {
+		if err := p.Close(); err != nil {
+			p.Log.Error(err)
+		}
+	}
+	return p, cancel, p.Init()
+}
 
 // DefaultPlugin is a default instance of IfPlugin.
 var DefaultPlugin = *NewPlugin()

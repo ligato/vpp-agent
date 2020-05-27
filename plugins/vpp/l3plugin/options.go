@@ -15,14 +15,46 @@
 package l3plugin
 
 import (
+	"github.com/google/wire"
 	"go.ligato.io/cn-infra/v2/health/statuscheck"
 	"go.ligato.io/cn-infra/v2/logging"
 
 	"go.ligato.io/vpp-agent/v3/plugins/govppmux"
 	"go.ligato.io/vpp-agent/v3/plugins/kvscheduler"
+	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 	"go.ligato.io/vpp-agent/v3/plugins/netalloc"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin"
 )
+
+var Wire = wire.NewSet(
+	Provider,
+	DepsProvider,
+	//wire.Struct(new(Deps), "StatusCheck", "AddrAlloc", "IfPlugin", "KVScheduler", "VPP"),
+	wire.Bind(new(API), new(*L3Plugin)),
+)
+
+func DepsProvider(
+	scheduler kvs.KVScheduler,
+	govppmuxPlugin govppmux.API,
+	addrallocPlugin netalloc.AddressAllocator,
+	ifPlugin ifplugin.API,
+	statuscheck statuscheck.PluginStatusWriter,
+) Deps {
+	return Deps{
+		StatusCheck: statuscheck,
+		KVScheduler: scheduler,
+		VPP:         govppmuxPlugin,
+		AddrAlloc:   addrallocPlugin,
+		IfPlugin:    ifPlugin,
+	}
+}
+
+func Provider(deps Deps) (*L3Plugin, error) {
+	p := &L3Plugin{Deps: deps}
+	p.SetName("vpp-l3-plugin")
+	p.Setup()
+	return p, p.Init()
+}
 
 // DefaultPlugin is a default instance of IfPlugin.
 var DefaultPlugin = *NewPlugin()

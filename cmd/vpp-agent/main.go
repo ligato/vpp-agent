@@ -17,19 +17,14 @@
 package main
 
 import (
-	"flag"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
-	"time"
 
-	"go.ligato.io/cn-infra/v2/agent"
-	"go.ligato.io/cn-infra/v2/datasync/kvdbsync"
-	"go.ligato.io/cn-infra/v2/datasync/resync"
+	"go.ligato.io/cn-infra/v2/config"
 	"go.ligato.io/cn-infra/v2/logging"
 
-	"go.ligato.io/vpp-agent/v3/cmd/vpp-agent/app"
+	vppagent "go.ligato.io/vpp-agent/v3"
 	"go.ligato.io/vpp-agent/v3/pkg/debug"
 	"go.ligato.io/vpp-agent/v3/pkg/version"
 )
@@ -42,21 +37,22 @@ const logo = `                                       __
 
 `
 
+/*
+func init() {
+	flag.BoolP("version", "V", false, "Print version info and exit.")
+}
+
 func parseVersion() {
 	s := flag.NewFlagSet("version", flag.ContinueOnError)
 	s.Usage = func() {}
 	s.SetOutput(ioutil.Discard)
 	var (
-		v  = s.Bool("V", false, "Print version and exit.")
-		vv = s.Bool("version", false, "Print version info and exit.")
+		v = s.BoolP("version", "V", false, "Print version info and exit.")
 	)
+	s.Lookup("version")
 	if err := s.Parse(os.Args[1:]); err == nil {
 		if *v {
 			fmt.Fprintln(os.Stdout, version.Version())
-			os.Exit(0)
-		}
-		if *vv {
-			fmt.Fprintln(os.Stdout, version.Info())
 			os.Exit(0)
 		}
 	}
@@ -64,10 +60,9 @@ func parseVersion() {
 	agent.BuildVersion = ver
 	agent.CommitHash = rev
 	agent.BuildDate = date
-}
+}*/
 
 func main() {
-	parseVersion()
 	fmt.Fprintf(os.Stderr, logo, version.Short(), version.BuiltOn(), version.BuiltBy())
 
 	if debug.IsEnabled() {
@@ -76,19 +71,29 @@ func main() {
 		defer debug.Start().Stop()
 	}
 
-	vppAgent := app.New()
+	if err := config.Read(); err != nil {
+		log.Fatal(err)
+	}
+
+	/*vppAgent := app.New()
 	a := agent.NewAgent(
+		agent.Name("vpp-agent"),
+		agent.Version(version.Version()),
 		agent.AllPlugins(vppAgent),
-		agent.StartTimeout(startTimeout),
-		agent.StopTimeout(stopTimeout),
+		//agent.StartTimeout(startTimeout),
+		//agent.StopTimeout(stopTimeout),
 	)
 
 	if err := a.Run(); err != nil {
 		logging.DefaultLogger.Fatal(err)
-	}
+	}*/
+
+	agent := vppagent.New(config.DefaultConfig)
+
+	agent.Run()
 }
 
-var (
+/*var (
 	startTimeout  = agent.DefaultStartTimeout
 	stopTimeout   = agent.DefaultStopTimeout
 	resyncTimeout = time.Second * 10
@@ -127,4 +132,4 @@ func init() {
 	}
 	kvdbsync.ResyncDoneTimeout = resyncTimeout
 	resync.SingleResyncAckTimeout = resyncTimeout
-}
+}*/
