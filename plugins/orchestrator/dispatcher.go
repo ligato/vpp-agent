@@ -92,7 +92,7 @@ func (p *dispatcher) PushData(ctx context.Context, kvPairs []KeyVal) (results []
 		}
 		// check if key is unique
 		if _, ok := uniq[kv.Key]; ok {
-			return nil, errors.Errorf("found multiple key-value pairs with same key: ")
+			return nil, errors.Errorf("found multiple key-value pairs with same key: %q", kv.Key)
 		}
 		uniq[kv.Key] = struct{}{}
 	}
