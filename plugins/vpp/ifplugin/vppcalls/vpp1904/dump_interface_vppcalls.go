@@ -517,10 +517,14 @@ func (h *InterfaceVppHandler) dumpTapDetails(ifs map[uint32]*vppcalls.InterfaceD
 		if !ifIdxExists {
 			continue
 		}
+		hostIfName := cleanString(tapDetails.HostIfName)
+		if !isPrintable(hostIfName) {
+			return fmt.Errorf("HostIfName value contains non-printable characters: %q", hostIfName)
+		}
 		ifs[tapDetails.SwIfIndex].Interface.Link = &interfaces.Interface_Tap{
 			Tap: &interfaces.TapLink{
 				Version:    2,
-				HostIfName: cleanString(tapDetails.HostIfName),
+				HostIfName: hostIfName,
 				RxRingSize: uint32(tapDetails.RxRingSz),
 				TxRingSize: uint32(tapDetails.TxRingSz),
 				EnableGso:  tapDetails.TapFlags&TapFlagGSO == TapFlagGSO,
