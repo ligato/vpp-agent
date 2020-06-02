@@ -132,12 +132,6 @@ func runDump(cli agentcli.Cli, opts DumpOptions) error {
 	return nil
 }
 
-/*type Errors []error
-
-func (errs Errors) Error() string {
-	return fmt.Sprintf("%d errors: %v", len(errs), errs)
-}*/
-
 // printDumpTable prints dump data using table format
 //
 // KEY                                        VALUE                        ORIGIN    METADATA
