@@ -54,7 +54,7 @@ func NewDumpCommand(cli agentcli.Cli) *cobra.Command {
 		},
 	}
 	flags := cmd.Flags()
-	flags.StringVar(&opts.View, "view", "cached", "Dump view type: cached, NB, SB")
+	flags.StringVar(&opts.View, "view", "cached", "Dump view type (cached, NB, SB)")
 	flags.StringVarP(&opts.Format, "format", "f", "", "Format output")
 	return cmd
 }
@@ -66,10 +66,20 @@ type DumpOptions struct {
 }
 
 func runDump(cli agentcli.Cli, opts DumpOptions) error {
-	dumpView := opts.View
-
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+
+	var dumpView string
+	switch strings.ToLower(opts.View) {
+	case "cached", "cache", "":
+		dumpView = "cached"
+	case "nb", "northbound":
+		dumpView = "NB"
+	case "sb", "southbound":
+		dumpView = "SB"
+	default:
+		return fmt.Errorf("invalid view type: %q", opts.View)
+	}
 
 	allModels, err := cli.Client().ModelList(ctx, types.ModelListOptions{
 		Class: "config",
@@ -91,6 +101,7 @@ func runDump(cli agentcli.Cli, opts DumpOptions) error {
 		return fmt.Errorf("no models found for %q", opts.Models)
 	}
 
+	var errs Errors
 	var dumps []api.KVWithMetadata
 	for _, keyPrefix := range keyPrefixes {
 		dump, err := cli.Client().SchedulerDump(ctx, types.SchedulerDumpOptions{
@@ -98,10 +109,13 @@ func runDump(cli agentcli.Cli, opts DumpOptions) error {
 			View:      dumpView,
 		})
 		if err != nil {
-			logging.Debug(fmt.Errorf("dump for %s failed: %v", keyPrefix, err))
+			errs = append(errs, fmt.Errorf("dump for %s failed: %v", keyPrefix, err))
 			continue
 		}
 		dumps = append(dumps, dump...)
+	}
+	if errs != nil {
+		logging.Debugf("dumped with %d errors\n%v", len(errs), errs)
 	}
 
 	sort.Sort(dumpByKey(dumps))
@@ -117,6 +131,12 @@ func runDump(cli agentcli.Cli, opts DumpOptions) error {
 
 	return nil
 }
+
+/*type Errors []error
+
+func (errs Errors) Error() string {
+	return fmt.Sprintf("%d errors: %v", len(errs), errs)
+}*/
 
 // printDumpTable prints dump data using table format
 //
