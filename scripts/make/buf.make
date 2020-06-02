@@ -12,11 +12,13 @@ REMOTE_GIT := https://github.com/ligato/vpp-agent.git
 CHECK_BREAKING_BRANCH := master
 
 # https://github.com/bufbuild/buf/releases 20200101
-BUF_VERSION := 0.5.0
-# https://github.com/golang/protobuf/releases 20190709
-PROTOC_GEN_GO_VERSION ?= v1.3.3
-# https://github.com/protocolbuffers/protobuf/releases 20191213
-PROTOC_VERSION ?= 3.11.2
+BUF_VERSION := 0.15.0
+## https://github.com/protocolbuffers/protobuf-go 20200527
+##PROTOC_GEN_GO_VERSION ?= v1.24.0
+# https://github.com/golang/protobuf/releases 20200514
+PROTOC_GEN_GO_VERSION ?= v1.4.2
+# https://github.com/protocolbuffers/protobuf/releases 20200526
+PROTOC_VERSION ?= 3.12.2
 
 GO_BINS := $(GO_BINS) \
 	buf \

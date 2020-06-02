@@ -20,7 +20,7 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
 var (
@@ -34,6 +34,7 @@ var (
 type Registry struct {
 	registeredTypes map[reflect.Type]*KnownModel
 	modelNames      map[string]*KnownModel
+	ordered         []reflect.Type
 }
 
 // NewRegistry returns initialized Registry.
@@ -79,8 +80,8 @@ func (r *Registry) GetModelForKey(key string) (KnownModel, error) {
 // RegisteredModels returns all registered modules.
 func (r *Registry) RegisteredModels() []KnownModel {
 	var models []KnownModel
-	for _, model := range r.registeredTypes {
-		models = append(models, *model)
+	for _, typ := range r.ordered {
+		models = append(models, *r.registeredTypes[typ])
 	}
 	return models
 }
@@ -118,8 +119,8 @@ func (r *Registry) Register(x interface{}, spec Spec, opts ...ModelOption) (*Kno
 		goType: goType,
 	}
 
-	if pb, ok := x.(proto.Message); ok {
-		model.protoName = proto.MessageName(pb)
+	if pb, ok := x.(protoreflect.ProtoMessage); ok {
+		model.proto = pb
 	}
 
 	// Use GetName as fallback for generating name
@@ -137,6 +138,7 @@ func (r *Registry) Register(x interface{}, spec Spec, opts ...ModelOption) (*Kno
 
 	r.registeredTypes[goType] = model
 	r.modelNames[model.Name()] = model
+	r.ordered = append(r.ordered, goType)
 
 	if debugRegister {
 		fmt.Printf("- model %s registered: %+v\n", model.Name(), model)
