@@ -81,6 +81,11 @@ jobs:
         - make e2e-tests-cover
       after_success:
         - bash <(curl -s https://codecov.io/bash) -f /tmp/e2e-cov.out -F e2e
+    - env: VPP_VERSION=2005
+      script:
+        - make e2e-tests-cover
+      after_success:
+        - bash <(curl -s https://codecov.io/bash) -f /tmp/e2e-cov.out -F e2e
 
 notifications:
   slack:
