@@ -21,6 +21,7 @@ import (
 
 	. "github.com/onsi/gomega"
 	"go.ligato.io/cn-infra/v2/logging/logrus"
+	"google.golang.org/protobuf/proto"
 
 	netalloc_mock "go.ligato.io/vpp-agent/v3/plugins/netalloc/mock"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
@@ -378,7 +379,8 @@ func TestLocalsidCRUD(t *testing.T) {
 			if test.expectedDump != nil {
 				expected = test.expectedDump
 			}
-			Expect(localsids).Should(ConsistOf(expected))
+			Expect(localsids).To(HaveLen(1))
+			Expect(proto.Equal(localsids[0], expected)).To(BeTrue())
 
 			// Update (for localsids it means delete + create)
 			if test.updatedInput != nil {
@@ -391,7 +393,8 @@ func TestLocalsidCRUD(t *testing.T) {
 				if test.updatedExpectedDump != nil {
 					expected = test.updatedExpectedDump
 				}
-				Expect(localsids).Should(ConsistOf(expected))
+				Expect(localsids).To(HaveLen(1))
+				Expect(proto.Equal(localsids[0], expected)).To(BeTrue())
 			}
 			// Delete
 			if test.updatedInput != nil {
