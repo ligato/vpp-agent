@@ -55,7 +55,7 @@ func newModelListCommand(cli agentcli.Cli) *cobra.Command {
 		},
 	}
 	flags := cmd.Flags()
-	flags.StringVar(&opts.Class, "class", "", "Filter by model class")
+	flags.StringVar(&opts.Class, "class", "config", "Filter by model class")
 	flags.StringVarP(&opts.Format, "format", "f", "", "Format output")
 	return cmd
 }
@@ -69,6 +69,10 @@ type ModelListOptions struct {
 func runModelList(cli agentcli.Cli, opts ModelListOptions) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+
+	if strings.ToLower(opts.Class) == "all" {
+		opts.Class = ""
+	}
 
 	allModels, err := cli.Client().ModelList(ctx, types.ModelListOptions{
 		Class: opts.Class,
