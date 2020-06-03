@@ -38,7 +38,10 @@ func (h *BridgeDomainVppHandler) DumpBridgeDomains() ([]*vppcalls.BridgeDomainDe
 	var bds []*vppcalls.BridgeDomainDetails
 
 	// dump bridge domains
-	reqCtx := h.callsChannel.SendMultiRequest(&vpp_l2.BridgeDomainDump{BdID: ^uint32(0)})
+	reqCtx := h.callsChannel.SendMultiRequest(&vpp_l2.BridgeDomainDump{
+		BdID:      ^uint32(0),
+		SwIfIndex: ^vpp_l2.InterfaceIndex(0),
+	})
 
 	for {
 		bdDetails := &vpp_l2.BridgeDomainDetails{}

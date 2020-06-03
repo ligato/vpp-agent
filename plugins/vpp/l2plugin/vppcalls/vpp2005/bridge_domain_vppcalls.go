@@ -55,10 +55,3 @@ func (h *BridgeDomainVppHandler) DeleteBridgeDomain(bdIdx uint32) error {
 
 	return nil
 }
-
-func boolToUint(value bool) uint8 {
-	if value {
-		return 1
-	}
-	return 0
-}
