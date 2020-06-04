@@ -241,9 +241,11 @@ func (h *IPSecVppHandler) sadAddDelEntry(sa *ipsec.SecurityAssociation, isAdd bo
 				Data:   integKey,
 				Length: uint8(len(integKey)),
 			},
-			TunnelSrc: tunnelSrc,
-			TunnelDst: tunnelDst,
-			Flags:     flags,
+			TunnelSrc:  tunnelSrc,
+			TunnelDst:  tunnelDst,
+			Flags:      flags,
+			UDPSrcPort: ^uint16(0),
+			UDPDstPort: ^uint16(0),
 		},
 	}
 	reply := &vpp_ipsec.IpsecSadEntryAddDelReply{}
