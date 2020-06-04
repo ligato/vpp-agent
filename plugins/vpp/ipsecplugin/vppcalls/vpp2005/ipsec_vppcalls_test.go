@@ -210,7 +210,9 @@ func TestVppAddSA(t *testing.T) {
 				Length: uint8(len(cryptoKey)),
 				Data:   cryptoKey,
 			},
-			Flags: ipsec_types.IPSEC_API_SAD_FLAG_USE_ESN | ipsec_types.IPSEC_API_SAD_FLAG_USE_ANTI_REPLAY,
+			Flags:      ipsec_types.IPSEC_API_SAD_FLAG_USE_ESN | ipsec_types.IPSEC_API_SAD_FLAG_USE_ANTI_REPLAY,
+			UDPSrcPort: ^uint16(0),
+			UDPDstPort: ^uint16(0),
 		},
 	}))
 }
@@ -246,8 +248,10 @@ func TestVppDelSA(t *testing.T) {
 				Length: uint8(len(cryptoKey)),
 				Data:   cryptoKey,
 			},
-			Flags:    ipsec_types.IPSEC_API_SAD_FLAG_USE_ESN | ipsec_types.IPSEC_API_SAD_FLAG_USE_ANTI_REPLAY,
-			Protocol: ipsec_types.IPSEC_API_PROTO_ESP,
+			Flags:      ipsec_types.IPSEC_API_SAD_FLAG_USE_ESN | ipsec_types.IPSEC_API_SAD_FLAG_USE_ANTI_REPLAY,
+			Protocol:   ipsec_types.IPSEC_API_PROTO_ESP,
+			UDPSrcPort: ^uint16(0),
+			UDPDstPort: ^uint16(0),
 		},
 	}))
 }
@@ -291,8 +295,10 @@ func TestVppAddSATunnelMode(t *testing.T) {
 				Af: ip_types.ADDRESS_IP4,
 				Un: ipsec_types.AddressUnion{XXX_UnionData: [16]byte{20, 1, 0, 1}},
 			},
-			Flags:    ipsec_types.IPSEC_API_SAD_FLAG_IS_TUNNEL,
-			Protocol: ipsec_types.IPSEC_API_PROTO_ESP,
+			Flags:      ipsec_types.IPSEC_API_SAD_FLAG_IS_TUNNEL,
+			Protocol:   ipsec_types.IPSEC_API_PROTO_ESP,
+			UDPSrcPort: ^uint16(0),
+			UDPDstPort: ^uint16(0),
 		},
 	}))
 }
@@ -336,8 +342,10 @@ func TestVppAddSATunnelModeIPv6(t *testing.T) {
 				Af: ip_types.ADDRESS_IP6,
 				Un: ipsec_types.AddressUnion{XXX_UnionData: [16]byte{171, 205}},
 			},
-			Flags:    ipsec_types.IPSEC_API_SAD_FLAG_IS_TUNNEL | ipsec_types.IPSEC_API_SAD_FLAG_IS_TUNNEL_V6,
-			Protocol: ipsec_types.IPSEC_API_PROTO_ESP,
+			Flags:      ipsec_types.IPSEC_API_SAD_FLAG_IS_TUNNEL | ipsec_types.IPSEC_API_SAD_FLAG_IS_TUNNEL_V6,
+			Protocol:   ipsec_types.IPSEC_API_PROTO_ESP,
+			UDPSrcPort: ^uint16(0),
+			UDPDstPort: ^uint16(0),
 		},
 	}))
 }
