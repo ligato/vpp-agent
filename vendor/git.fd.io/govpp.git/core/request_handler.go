@@ -110,7 +110,7 @@ func (c *Connection) processRequest(ch *Channel, req *vppRequest) error {
 
 	if req.multi {
 		// send a control ping to determine end of the multipart response
-		pingData, _ := c.codec.EncodeMsg(msgControlPing, c.pingReqID)
+		pingData, _ := c.codec.EncodeMsg(c.msgControlPing, c.pingReqID)
 
 		log.WithFields(logger.Fields{
 			"channel":  ch.id,

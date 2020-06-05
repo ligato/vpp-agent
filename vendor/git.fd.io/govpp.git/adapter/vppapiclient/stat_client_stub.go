@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// +build windows darwin
+// +build windows darwin novpp
 
 package vppapiclient
 
@@ -40,6 +40,14 @@ func (*stubStatClient) ListStats(patterns ...string) (statNames []string, err er
 	return nil, adapter.ErrNotImplemented
 }
 
-func (*stubStatClient) DumpStats(patterns ...string) ([]*adapter.StatEntry, error) {
+func (*stubStatClient) DumpStats(patterns ...string) ([]adapter.StatEntry, error) {
 	return nil, adapter.ErrNotImplemented
+}
+
+func (*stubStatClient) PrepareDir(prefixes ...string) (*adapter.StatDir, error) {
+	return nil, adapter.ErrNotImplemented
+}
+
+func (*stubStatClient) UpdateDir(dir *adapter.StatDir) error {
+	return adapter.ErrNotImplemented
 }

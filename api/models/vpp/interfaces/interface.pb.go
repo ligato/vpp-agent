@@ -5,11 +5,10 @@ package vpp_interfaces
 
 import (
 	fmt "fmt"
-	math "math"
-
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
 	ipsec "github.com/ligato/vpp-agent/api/models/vpp/ipsec"
+	math "math"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.

@@ -6,7 +6,7 @@ Package abf is a generated VPP binary API for 'abf' module.
 
 It consists of:
 	  7 enums
-	  2 aliases
+	  5 aliases
 	 11 types
 	  1 union
 	 10 messages
@@ -15,12 +15,13 @@ It consists of:
 package abf
 
 import (
-	bytes "bytes"
-	context "context"
+	"bytes"
+	"context"
+	"io"
+	"strconv"
+
 	api "git.fd.io/govpp.git/api"
 	struc "github.com/lunixbochs/struc"
-	io "io"
-	strconv "strconv"
 )
 
 const (
@@ -29,7 +30,7 @@ const (
 	// APIVersion is the API version of this module.
 	APIVersion = "1.0.0"
 	// VersionCrc is the CRC of this module.
-	VersionCrc = 0x96d30784
+	VersionCrc = 0x56330065
 )
 
 // AddressFamily represents VPP binary API enum 'address_family'.
@@ -349,11 +350,20 @@ func (x IPProto) String() string {
 	return strconv.Itoa(int(x))
 }
 
+// AddressWithPrefix represents VPP binary API alias 'address_with_prefix'.
+type AddressWithPrefix Prefix
+
 // IP4Address represents VPP binary API alias 'ip4_address'.
 type IP4Address [4]uint8
 
+// IP4AddressWithPrefix represents VPP binary API alias 'ip4_address_with_prefix'.
+type IP4AddressWithPrefix IP4Prefix
+
 // IP6Address represents VPP binary API alias 'ip6_address'.
 type IP6Address [16]uint8
+
+// IP6AddressWithPrefix represents VPP binary API alias 'ip6_address_with_prefix'.
+type IP6AddressWithPrefix IP6Prefix
 
 // AbfItfAttach represents VPP binary API type 'abf_itf_attach'.
 type AbfItfAttach struct {
@@ -363,9 +373,7 @@ type AbfItfAttach struct {
 	IsIPv6    uint8
 }
 
-func (*AbfItfAttach) GetTypeName() string {
-	return "abf_itf_attach"
-}
+func (*AbfItfAttach) GetTypeName() string { return "abf_itf_attach" }
 
 // AbfPolicy represents VPP binary API type 'abf_policy'.
 type AbfPolicy struct {
@@ -375,9 +383,7 @@ type AbfPolicy struct {
 	Paths    []FibPath
 }
 
-func (*AbfPolicy) GetTypeName() string {
-	return "abf_policy"
-}
+func (*AbfPolicy) GetTypeName() string { return "abf_policy" }
 
 // Address represents VPP binary API type 'address'.
 type Address struct {
@@ -385,9 +391,7 @@ type Address struct {
 	Un AddressUnion
 }
 
-func (*Address) GetTypeName() string {
-	return "address"
-}
+func (*Address) GetTypeName() string { return "address" }
 
 // FibMplsLabel represents VPP binary API type 'fib_mpls_label'.
 type FibMplsLabel struct {
@@ -397,9 +401,7 @@ type FibMplsLabel struct {
 	Exp       uint8
 }
 
-func (*FibMplsLabel) GetTypeName() string {
-	return "fib_mpls_label"
-}
+func (*FibMplsLabel) GetTypeName() string { return "fib_mpls_label" }
 
 // FibPath represents VPP binary API type 'fib_path'.
 type FibPath struct {
@@ -416,9 +418,7 @@ type FibPath struct {
 	LabelStack []FibMplsLabel
 }
 
-func (*FibPath) GetTypeName() string {
-	return "fib_path"
-}
+func (*FibPath) GetTypeName() string { return "fib_path" }
 
 // FibPathNh represents VPP binary API type 'fib_path_nh'.
 type FibPathNh struct {
@@ -428,9 +428,7 @@ type FibPathNh struct {
 	ClassifyTableIndex uint32
 }
 
-func (*FibPathNh) GetTypeName() string {
-	return "fib_path_nh"
-}
+func (*FibPathNh) GetTypeName() string { return "fib_path_nh" }
 
 // IP4Prefix represents VPP binary API type 'ip4_prefix'.
 type IP4Prefix struct {
@@ -438,9 +436,7 @@ type IP4Prefix struct {
 	Len     uint8
 }
 
-func (*IP4Prefix) GetTypeName() string {
-	return "ip4_prefix"
-}
+func (*IP4Prefix) GetTypeName() string { return "ip4_prefix" }
 
 // IP6Prefix represents VPP binary API type 'ip6_prefix'.
 type IP6Prefix struct {
@@ -448,9 +444,7 @@ type IP6Prefix struct {
 	Len     uint8
 }
 
-func (*IP6Prefix) GetTypeName() string {
-	return "ip6_prefix"
-}
+func (*IP6Prefix) GetTypeName() string { return "ip6_prefix" }
 
 // Mprefix represents VPP binary API type 'mprefix'.
 type Mprefix struct {
@@ -460,9 +454,7 @@ type Mprefix struct {
 	SrcAddress       AddressUnion
 }
 
-func (*Mprefix) GetTypeName() string {
-	return "mprefix"
-}
+func (*Mprefix) GetTypeName() string { return "mprefix" }
 
 // Prefix represents VPP binary API type 'prefix'.
 type Prefix struct {
@@ -470,9 +462,7 @@ type Prefix struct {
 	Len     uint8
 }
 
-func (*Prefix) GetTypeName() string {
-	return "prefix"
-}
+func (*Prefix) GetTypeName() string { return "prefix" }
 
 // PrefixMatcher represents VPP binary API type 'prefix_matcher'.
 type PrefixMatcher struct {
@@ -480,18 +470,14 @@ type PrefixMatcher struct {
 	Ge uint8
 }
 
-func (*PrefixMatcher) GetTypeName() string {
-	return "prefix_matcher"
-}
+func (*PrefixMatcher) GetTypeName() string { return "prefix_matcher" }
 
 // AddressUnion represents VPP binary API union 'address_union'.
 type AddressUnion struct {
 	XXX_UnionData [16]byte
 }
 
-func (*AddressUnion) GetTypeName() string {
-	return "address_union"
-}
+func (*AddressUnion) GetTypeName() string { return "address_union" }
 
 func AddressUnionIP4(a IP4Address) (u AddressUnion) {
 	u.SetIP4(a)
@@ -533,71 +519,46 @@ type AbfItfAttachAddDel struct {
 	Attach AbfItfAttach
 }
 
-func (*AbfItfAttachAddDel) GetMessageName() string {
-	return "abf_itf_attach_add_del"
-}
-func (*AbfItfAttachAddDel) GetCrcString() string {
-	return "4464f87d"
-}
-func (*AbfItfAttachAddDel) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *AbfItfAttachAddDel) Reset()                        { *m = AbfItfAttachAddDel{} }
+func (*AbfItfAttachAddDel) GetMessageName() string          { return "abf_itf_attach_add_del" }
+func (*AbfItfAttachAddDel) GetCrcString() string            { return "4464f87d" }
+func (*AbfItfAttachAddDel) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // AbfItfAttachAddDelReply represents VPP binary API message 'abf_itf_attach_add_del_reply'.
 type AbfItfAttachAddDelReply struct {
 	Retval int32
 }
 
-func (*AbfItfAttachAddDelReply) GetMessageName() string {
-	return "abf_itf_attach_add_del_reply"
-}
-func (*AbfItfAttachAddDelReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*AbfItfAttachAddDelReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *AbfItfAttachAddDelReply) Reset()                        { *m = AbfItfAttachAddDelReply{} }
+func (*AbfItfAttachAddDelReply) GetMessageName() string          { return "abf_itf_attach_add_del_reply" }
+func (*AbfItfAttachAddDelReply) GetCrcString() string            { return "e8d4e804" }
+func (*AbfItfAttachAddDelReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // AbfItfAttachDetails represents VPP binary API message 'abf_itf_attach_details'.
 type AbfItfAttachDetails struct {
 	Attach AbfItfAttach
 }
 
-func (*AbfItfAttachDetails) GetMessageName() string {
-	return "abf_itf_attach_details"
-}
-func (*AbfItfAttachDetails) GetCrcString() string {
-	return "4a943370"
-}
-func (*AbfItfAttachDetails) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *AbfItfAttachDetails) Reset()                        { *m = AbfItfAttachDetails{} }
+func (*AbfItfAttachDetails) GetMessageName() string          { return "abf_itf_attach_details" }
+func (*AbfItfAttachDetails) GetCrcString() string            { return "4a943370" }
+func (*AbfItfAttachDetails) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // AbfItfAttachDump represents VPP binary API message 'abf_itf_attach_dump'.
 type AbfItfAttachDump struct{}
 
-func (*AbfItfAttachDump) GetMessageName() string {
-	return "abf_itf_attach_dump"
-}
-func (*AbfItfAttachDump) GetCrcString() string {
-	return "51077d14"
-}
-func (*AbfItfAttachDump) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *AbfItfAttachDump) Reset()                        { *m = AbfItfAttachDump{} }
+func (*AbfItfAttachDump) GetMessageName() string          { return "abf_itf_attach_dump" }
+func (*AbfItfAttachDump) GetCrcString() string            { return "51077d14" }
+func (*AbfItfAttachDump) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // AbfPluginGetVersion represents VPP binary API message 'abf_plugin_get_version'.
 type AbfPluginGetVersion struct{}
 
-func (*AbfPluginGetVersion) GetMessageName() string {
-	return "abf_plugin_get_version"
-}
-func (*AbfPluginGetVersion) GetCrcString() string {
-	return "51077d14"
-}
-func (*AbfPluginGetVersion) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *AbfPluginGetVersion) Reset()                        { *m = AbfPluginGetVersion{} }
+func (*AbfPluginGetVersion) GetMessageName() string          { return "abf_plugin_get_version" }
+func (*AbfPluginGetVersion) GetCrcString() string            { return "51077d14" }
+func (*AbfPluginGetVersion) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // AbfPluginGetVersionReply represents VPP binary API message 'abf_plugin_get_version_reply'.
 type AbfPluginGetVersionReply struct {
@@ -605,15 +566,10 @@ type AbfPluginGetVersionReply struct {
 	Minor uint32
 }
 
-func (*AbfPluginGetVersionReply) GetMessageName() string {
-	return "abf_plugin_get_version_reply"
-}
-func (*AbfPluginGetVersionReply) GetCrcString() string {
-	return "9b32cf86"
-}
-func (*AbfPluginGetVersionReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *AbfPluginGetVersionReply) Reset()                        { *m = AbfPluginGetVersionReply{} }
+func (*AbfPluginGetVersionReply) GetMessageName() string          { return "abf_plugin_get_version_reply" }
+func (*AbfPluginGetVersionReply) GetCrcString() string            { return "9b32cf86" }
+func (*AbfPluginGetVersionReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // AbfPolicyAddDel represents VPP binary API message 'abf_policy_add_del'.
 type AbfPolicyAddDel struct {
@@ -621,58 +577,38 @@ type AbfPolicyAddDel struct {
 	Policy AbfPolicy
 }
 
-func (*AbfPolicyAddDel) GetMessageName() string {
-	return "abf_policy_add_del"
-}
-func (*AbfPolicyAddDel) GetCrcString() string {
-	return "d1fc434d"
-}
-func (*AbfPolicyAddDel) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *AbfPolicyAddDel) Reset()                        { *m = AbfPolicyAddDel{} }
+func (*AbfPolicyAddDel) GetMessageName() string          { return "abf_policy_add_del" }
+func (*AbfPolicyAddDel) GetCrcString() string            { return "a74e4bb7" }
+func (*AbfPolicyAddDel) GetMessageType() api.MessageType { return api.RequestMessage }
 
 // AbfPolicyAddDelReply represents VPP binary API message 'abf_policy_add_del_reply'.
 type AbfPolicyAddDelReply struct {
 	Retval int32
 }
 
-func (*AbfPolicyAddDelReply) GetMessageName() string {
-	return "abf_policy_add_del_reply"
-}
-func (*AbfPolicyAddDelReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*AbfPolicyAddDelReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *AbfPolicyAddDelReply) Reset()                        { *m = AbfPolicyAddDelReply{} }
+func (*AbfPolicyAddDelReply) GetMessageName() string          { return "abf_policy_add_del_reply" }
+func (*AbfPolicyAddDelReply) GetCrcString() string            { return "e8d4e804" }
+func (*AbfPolicyAddDelReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // AbfPolicyDetails represents VPP binary API message 'abf_policy_details'.
 type AbfPolicyDetails struct {
 	Policy AbfPolicy
 }
 
-func (*AbfPolicyDetails) GetMessageName() string {
-	return "abf_policy_details"
-}
-func (*AbfPolicyDetails) GetCrcString() string {
-	return "c19593c8"
-}
-func (*AbfPolicyDetails) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
+func (m *AbfPolicyDetails) Reset()                        { *m = AbfPolicyDetails{} }
+func (*AbfPolicyDetails) GetMessageName() string          { return "abf_policy_details" }
+func (*AbfPolicyDetails) GetCrcString() string            { return "6769e504" }
+func (*AbfPolicyDetails) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // AbfPolicyDump represents VPP binary API message 'abf_policy_dump'.
 type AbfPolicyDump struct{}
 
-func (*AbfPolicyDump) GetMessageName() string {
-	return "abf_policy_dump"
-}
-func (*AbfPolicyDump) GetCrcString() string {
-	return "51077d14"
-}
-func (*AbfPolicyDump) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
+func (m *AbfPolicyDump) Reset()                        { *m = AbfPolicyDump{} }
+func (*AbfPolicyDump) GetMessageName() string          { return "abf_policy_dump" }
+func (*AbfPolicyDump) GetCrcString() string            { return "51077d14" }
+func (*AbfPolicyDump) GetMessageType() api.MessageType { return api.RequestMessage }
 
 func init() {
 	api.RegisterMessage((*AbfItfAttachAddDel)(nil), "abf.AbfItfAttachAddDel")

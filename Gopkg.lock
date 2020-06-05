@@ -3,7 +3,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:576638fbd32f0237520d280e7df80092293efd6780f639546bb258768f150c83"
+  digest = "1:3129c375c2941c588af37fded99be33718d0565cf3a1c9f719b1b9207a3057c6"
   name = "git.fd.io/govpp.git"
   packages = [
     "adapter",
@@ -16,10 +16,10 @@
     "cmd/binapi-generator",
     "codec",
     "core",
-    "examples/binapi/memclnt",
+    "version",
   ]
   pruneopts = "UT"
-  revision = "bde85d422c7949ec32fb067e9c36320ccc47fb9e"
+  revision = "f049390060630c0085fe4ad683c83a4a14a47ffb"
 
 [[projects]]
   branch = "master"
@@ -68,12 +68,12 @@
   version = "v1.20.1"
 
 [[projects]]
-  branch = "master"
-  digest = "1:ec2d85f88fafc85b18d543d3435dbec6a4f895017ce73d45ae7c7fff2b57c29a"
+  digest = "1:e6597842ff762e63a820fcfddaa442d1d85028db4622c2a3518c747f97048f6f"
   name = "github.com/bennyscetbun/jsongo"
   packages = ["."]
   pruneopts = "UT"
-  revision = "a97f4e906f8da60776250125ca8531adfd8ec44f"
+  revision = "dff418e4d99896843d312a8a7acb12413ca56b43"
+  version = "v1.1.0"
 
 [[projects]]
   branch = "master"

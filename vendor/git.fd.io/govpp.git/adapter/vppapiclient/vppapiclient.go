@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// +build !windows,!darwin
+// +build !windows,!darwin,!novpp
 
 package vppapiclient
 
@@ -116,7 +116,7 @@ func (a *vppClient) GetMsgID(msgName string, msgCrc string) (uint16, error) {
 	msgID := uint16(C.govpp_get_msg_index(nameAndCrc))
 	if msgID == ^uint16(0) {
 		// VPP does not know this message
-		return msgID, fmt.Errorf("unknown message: %v (crc: %v)", msgName, msgCrc)
+		return msgID, &adapter.UnknownMsgError{msgName, msgCrc}
 	}
 
 	return msgID, nil

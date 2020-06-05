@@ -7,28 +7,28 @@ jsongo
 
 **If you had only one function to look at, look at the "[At](#at)" function**
 
-***If you want an easy way to turn your json into a structure you should use the "[Print](#print)" function after unmarshalling json in a JSONNODE***
+***If you want an easy way to turn your json into a structure you should use the "[Print](#print)" function after unmarshalling json in a Node***
 
-***[2017/11/30] Project is not dead. We are using it quite often. We haven't found any necessary update***
+***[2018/10/11] Project is not dead. We are using it quite often. We haven't found any necessary update***
 
 You can find the doc on godoc.org [![GoDoc](https://godoc.org/github.com/bennyscetbun/jsongo?status.png)](https://godoc.org/github.com/bennyscetbun/jsongo)
 
 
-## JsonNode
+## Node
 
-JsonNode is the basic Structure that you must use when using jsongo. It can either be a:
+Node is the basic Structure that you must use when using jsongo. It can either be a:
 - Map (jsongo.TypeMap)
 - Array (jsongo.TypeArray)
 - Value (jsongo.TypeValue) *Precisely a pointer store in an interface{}*
 - Undefined (jsongo.TypeUndefined) *default type*
 
-*When a JSONNode Type is set you cant change it without using Unset() first*
+*When a Node Type is set you cant change it without using Unset() first*
 ____
 ### Val
 #### Synopsis:
-turn this JSONNode to TypeValue and set that value
+turn this Node to TypeValue and set that value
 ```go
-func (that *JSONNode) Val(val interface{}) 
+func (that *Node) Val(val interface{}) 
 ```
 
 #### Examples
@@ -41,7 +41,7 @@ import (
 )
 
 func main() {
-    root := jsongo.JSONNode{}
+    root := jsongo.Node{}
 	root.Val(42)
 	root.DebugPrint("")
 }
@@ -63,7 +63,7 @@ type MyStruct struct {
 }
 
 func main() {
-	root := jsongo.JSONNode{}
+	root := jsongo.Node{}
 	root.Val(MyStruct{"The answer", 42})
 	root.DebugPrint("")
 }
@@ -78,9 +78,9 @@ func main() {
 _____
 ### Array
 #### Synopsis:
- Turn this JSONNode to a TypeArray and/or set the array size (reducing size will make you loose data)
+ Turn this Node to a TypeArray and/or set the array size (reducing size will make you loose data)
 ```go
-func (that *JSONNode) Array(size int) *[]JSONNode
+func (that *Node) Array(size int) *[]Node
 ```
 
 #### Examples
@@ -93,7 +93,7 @@ import (
 )
 
 func main() {
-    root := jsongo.JSONNode{}
+    root := jsongo.Node{}
 	a := root.Array(4)
     for i := 0; i < 4; i++ {
         (*a)[i].Val(i)
@@ -119,7 +119,7 @@ import (
 )
 
 func main() {
-    root := jsongo.JSONNode{}
+    root := jsongo.Node{}
     a := root.Array(4)
     for i := 0; i < 4; i++ {
         (*a)[i].Val(i)
@@ -138,9 +138,9 @@ func main() {
 ____
 ### Map
 #### Synopsis:
-Turn this JSONNode to a TypeMap and/or Create a new element for key if necessary and return it
+Turn this Node to a TypeMap and/or Create a new element for key if necessary and return it
 ```go
-func (that *JSONNode) Map(key string) *JSONNode
+func (that *Node) Map(key string) *Node
 ```
 
 #### Examples
@@ -153,7 +153,7 @@ import (
 )
 
 func main() {
-    root := jsongo.JSONNode{}
+    root := jsongo.Node{}
     root.Map("there").Val("you are")
     root.Map("here").Val("you should be")
 	root.DebugPrint("")
@@ -177,7 +177,7 @@ Helps you move through your node by building them on the fly
 
 *ints are index in TypeArray (it will make array grow on the fly, so you should start to populate with the biggest index first)*
 ```go
-func (that *JSONNode) At(val ...interface{}) *JSONNode
+func (that *Node) At(val ...interface{}) *Node
 ```
 
 #### Examples
@@ -190,7 +190,7 @@ import (
 )
 
 func main() {
-    root := jsongo.JSONNode{}
+    root := jsongo.Node{}
     root.At(4, "Who").Val("Let the dog out") //is equivalent to (*root.Array(5))[4].Map("Who").Val("Let the dog out")
     root.DebugPrint("")
 }
@@ -216,9 +216,9 @@ import (
 )
 
 func main() {
-    root := jsongo.JSONNode{}
+    root := jsongo.Node{}
     root.At(4, "Who").Val("Let the dog out")
-    //to win some time you can even even save a certain JSONNode
+    //to win some time you can even even save a certain Node
 	node := root.At(2, "What")
 	node.At("Can", "You").Val("do with that?")
 	node.At("Do", "You", "Think").Val("Of that")
@@ -254,7 +254,7 @@ ____
 Helps you build your code by printing a go structure from the json you ve just unmarshaled
 
 ```go
-func (that *JSONNode) Print()
+func (that *Node) Print()
 ```
 
 ____
@@ -270,7 +270,7 @@ import (
     "github.com/bennyscetbun/jsongo"
 )
 
-func ShowOnlyValue(current *jsongo.JSONNode) {
+func ShowOnlyValue(current *jsongo.Node) {
     switch current.GetType() {
     	case jsongo.TypeValue:
 			println(current.Get().(string))
@@ -286,7 +286,7 @@ func ShowOnlyValue(current *jsongo.JSONNode) {
 }
 
 func main() {
-    root := jsongo.JSONNode{}
+    root := jsongo.Node{}
     root.At(4, "Who").Val("Let the dog out")
 	node := root.At(2, "What")
 	node.At("Can", "You").Val("do with that?")
@@ -326,7 +326,7 @@ type Test struct {
 }
 
 func main() {
-	root := jsongo.JSONNode{}
+	root := jsongo.Node{}
 	root.At("A", "AA", "AAA").Val(42)
 
 	node := root.At("A", "AB")
@@ -362,8 +362,8 @@ func main() {
 ```
 ____
 ### Unmarshal
-Unmarshal using JSONNode follow some simple rules:
-- Any TypeUndefined JSONNode will be set to the right type, any other type wont be changed
+Unmarshal using Node follow some simple rules:
+- Any TypeUndefined Node will be set to the right type, any other type wont be changed
 - Array will grow if necessary
 - New keys will be added to Map
 - Values set to nil "*.Val(nil)*" will be turn into the type decide by Json
@@ -388,7 +388,7 @@ import (
 )
 
 func main() {
-    root := jsongo.JSONNode{}
+    root := jsongo.Node{}
     fromjson := `{
 	  "A": {
 		"AA": {
@@ -460,7 +460,7 @@ type Test struct {
 }
 
 func main() {
-	root := jsongo.JSONNode{}
+	root := jsongo.Node{}
     fromjson := `{
       "A": {
 		"AA": {
@@ -527,7 +527,7 @@ type Test struct {
 }
 
 func main() {
-    root := jsongo.JSONNode{}
+    root := jsongo.Node{}
     fromjson := `{
       "A": {
 		"AA": {

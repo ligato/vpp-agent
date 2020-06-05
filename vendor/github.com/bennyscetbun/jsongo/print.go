@@ -27,11 +27,11 @@ func UpperCamelCase(str string) string {
 	return strings.Join(pieces, ``)
 }
 
-func (that *JSONNode) printValue(indentlevel int, indentchar string) {
+func (that *Node) printValue(indentlevel int, indentchar string) {
 	fmt.Printf(" %T ", that.Get())
 }
 
-func (that *JSONNode) printMap(indentlevel int, indentchar string) {
+func (that *Node) printMap(indentlevel int, indentchar string) {
 	fmt.Printf(" struct {\n")
 	for key := range that.m {
 		printfindent(indentlevel+1, indentchar, "%s", UpperCamelCase(key))
@@ -41,7 +41,7 @@ func (that *JSONNode) printMap(indentlevel int, indentchar string) {
 	printfindent(indentlevel, indentchar, "}")
 }
 
-func (that *JSONNode) printArray(indentlevel int, indentchar string) {
+func (that *Node) printArray(indentlevel int, indentchar string) {
 	if len(that.a) == 0 {
 		fmt.Printf(" []interface{} ")
 		return
@@ -54,7 +54,7 @@ func (that *JSONNode) printArray(indentlevel int, indentchar string) {
 }
 
 //DebugProspect Print all the data the we ve got on a node and all it s children
-func (that *JSONNode) print(indentlevel int, indentchar string) {
+func (that *Node) print(indentlevel int, indentchar string) {
 	switch that.t {
 	case TypeValue:
 		that.printValue(indentlevel, indentchar)
@@ -68,7 +68,7 @@ func (that *JSONNode) print(indentlevel int, indentchar string) {
 }
 
 //Print Print all the data the we ve got on a node and all it s children as a go struct :) (FOR DEV PURPOSE)
-func (that *JSONNode) Print() {
+func (that *Node) Print() {
 	that.print(0, "\t")
 	fmt.Printf("\n")
 }

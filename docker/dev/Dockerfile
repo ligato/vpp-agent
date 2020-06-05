@@ -100,4 +100,5 @@ ENV SUPERVISOR_CONFIG=/opt/vpp-agent/dev/supervisor.conf
 
 # run supervisor as the default executable
 CMD rm -f /dev/shm/db /dev/shm/global_vm /dev/shm/vpe-api && \
+	mkdir -p /run/vpp && \
     exec vpp-agent-init

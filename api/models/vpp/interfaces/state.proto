@@ -9,6 +9,35 @@ option (gogoproto.messagename_all) = true;
 
 import "models/vpp/interfaces/interface.proto";
 
+message InterfaceStats {
+    string name = 1;
+
+    message CombinedCounter {
+        uint64 packets = 1;
+        uint64 bytes = 2;
+    }
+    CombinedCounter rx = 2;
+    CombinedCounter tx = 3;
+
+    CombinedCounter rx_unicast = 4;
+    CombinedCounter rx_multicast = 5;
+    CombinedCounter rx_broadcast = 6;
+    CombinedCounter tx_unicast = 7;
+    CombinedCounter tx_multicast = 8;
+    CombinedCounter tx_broadcast = 9;
+
+    uint64 rx_error = 12;
+    uint64 tx_error = 13;
+
+    uint64 rx_no_buf = 10;
+    uint64 rx_miss = 11;
+    uint64 drops = 14;
+    uint64 punts = 15;
+    uint64 ip4 = 16;
+    uint64 ip6 = 17;
+    uint64 mpls = 18;
+}
+
 message InterfaceState {
     string name = 1;
     string internal_name = 2;

@@ -6,8 +6,8 @@ import (
 	"os"
 )
 
-//DebugPrint Print a JSONNode as json withindent
-func (that *JSONNode) DebugPrint(prefix string) {
+//DebugPrint Print a Node as json withindent
+func (that *Node) DebugPrint(prefix string) {
 	asJSON, err := json.MarshalIndent(that, "", "  ")
 	if err != nil {
 		fmt.Printf("%s\n", err.Error())
@@ -23,13 +23,13 @@ func printfindent(indentlevel int, indentchar string, format string, args ...int
 	fmt.Printf(format, args...)
 }
 
-func (that *JSONNode) debugProspectValue(indentlevel int, indentchar string) {
+func (that *Node) debugProspectValue(indentlevel int, indentchar string) {
 	printfindent(indentlevel, indentchar, "Is of Type: TypeValue\n")
 	printfindent(indentlevel, indentchar, "Value of type: %T\n", that.Get())
 	printfindent(indentlevel, indentchar, "%+v\n", that.Get())
 }
 
-func (that *JSONNode) debugProspectMap(indentlevel int, indentchar string) {
+func (that *Node) debugProspectMap(indentlevel int, indentchar string) {
 	printfindent(indentlevel, indentchar, "Is of Type: TypeMap\n")
 	for key := range that.m {
 		printfindent(indentlevel, indentchar, "%s:\n", key)
@@ -37,7 +37,7 @@ func (that *JSONNode) debugProspectMap(indentlevel int, indentchar string) {
 	}
 }
 
-func (that *JSONNode) debugProspectArray(indentlevel int, indentchar string) {
+func (that *Node) debugProspectArray(indentlevel int, indentchar string) {
 	printfindent(indentlevel, indentchar, "Is of Type: TypeArray\n")
 	for key := range that.a {
 		printfindent(indentlevel, indentchar, "[%d]:\n", key)
@@ -46,7 +46,7 @@ func (that *JSONNode) debugProspectArray(indentlevel int, indentchar string) {
 }
 
 //DebugProspect Print all the data the we ve got on a node and all it s children
-func (that *JSONNode) DebugProspect(indentlevel int, indentchar string) {
+func (that *Node) DebugProspect(indentlevel int, indentchar string) {
 	switch that.t {
 	case TypeValue:
 		that.debugProspectValue(indentlevel, indentchar)

@@ -7,6 +7,7 @@
 // Source code and project home:
 // https://github.com/benny-deluxe/jsongo
 //
+//go:generate stringer -type=NodeType
 
 package jsongo
 
@@ -17,11 +18,11 @@ import (
 	//"fmt"
 )
 
-//ErrorKeyAlreadyExist error if a key already exist in current JSONNode
+//ErrorKeyAlreadyExist error if a key already exist in current Node
 var ErrorKeyAlreadyExist = errors.New("jsongo key already exist")
 
-//ErrorMultipleType error if a JSONNode already got a different type of value
-var ErrorMultipleType = errors.New("jsongo this node is already set to a different jsonNodeType")
+//ErrorMultipleType error if a Node already got a different type of value
+var ErrorMultipleType = errors.New("jsongo this node is already set to a different NodeType")
 
 //ErrorArrayNegativeValue error if you ask for a negative index in an array
 var ErrorArrayNegativeValue = errors.New("jsongo negative index for array")
@@ -35,42 +36,42 @@ var ErrorRetrieveUserValue = errors.New("jsongo Cannot retrieve node's value whi
 //ErrorTypeUnmarshaling error if you try to unmarshal something in the wrong type
 var ErrorTypeUnmarshaling = errors.New("jsongo Wrong type when Unmarshaling")
 
-//ErrorUnknowType error if you try to use an unknow JSONNodeType
-var ErrorUnknowType = errors.New("jsongo Unknow JSONNodeType")
+//ErrorUnknowType error if you try to use an unknow NodeType
+var ErrorUnknowType = errors.New("jsongo Unknow NodeType")
 
 //ErrorValNotPointer error if you try to use Val without a valid pointer
 var ErrorValNotPointer = errors.New("jsongo: Val: arguments must be a pointer and not nil")
 
-//ErrorGetKeys error if you try to get the keys from a JSONNode that isnt a TypeMap or a TypeArray
-var ErrorGetKeys = errors.New("jsongo: GetKeys: JSONNode is not a TypeMap or TypeArray")
+//ErrorGetKeys error if you try to get the keys from a Node that isnt a TypeMap or a TypeArray
+var ErrorGetKeys = errors.New("jsongo: GetKeys: Node is not a TypeMap or TypeArray")
 
-//ErrorDeleteKey error if you try to call DelKey on a JSONNode that isnt a TypeMap
-var ErrorDeleteKey = errors.New("jsongo: DelKey: This JSONNode is not a TypeMap")
+//ErrorDeleteKey error if you try to call DelKey on a Node that isnt a TypeMap
+var ErrorDeleteKey = errors.New("jsongo: DelKey: This Node is not a TypeMap")
 
-//ErrorCopyType error if you try to call Copy on a JSONNode that isnt a TypeUndefined
-var ErrorCopyType = errors.New("jsongo: Copy: This JSONNode is not a TypeUndefined")
+//ErrorCopyType error if you try to call Copy on a Node that isnt a TypeUndefined
+var ErrorCopyType = errors.New("jsongo: Copy: This Node is not a TypeUndefined")
 
-//JSONNode Datastructure to build and maintain Nodes
-type JSONNode struct {
-	m          map[string]*JSONNode
-	a          []JSONNode
+//Node Datastructure to build and maintain Nodes
+type Node struct {
+	m          map[string]*Node
+	a          []Node
 	v          interface{}
-	vChanged   bool         //True if we changed the type of the value
-	t          JSONNodeType //Type of that JSONNode 0: Not defined, 1: map, 2: array, 3: value
-	dontExpand bool         //dont expand while Unmarshal
+	vChanged   bool     //True if we changed the type of the value
+	t          NodeType //Type of that Node 0: Not defined, 1: map, 2: array, 3: value
+	dontExpand bool     //dont expand while Unmarshal
 }
 
-//JSONNodeType is used to set, check and get the inner type of a JSONNode
-type JSONNodeType uint
+//NodeType is used to set, check and get the inner type of a Node
+type NodeType uint
 
 const (
-	//TypeUndefined is set by default for empty JSONNode
-	TypeUndefined JSONNodeType = iota
-	//TypeMap is set when a JSONNode is a Map
+	//TypeUndefined is set by default for empty Node
+	TypeUndefined NodeType = iota
+	//TypeMap is set when a Node is a Map
 	TypeMap
-	//TypeArray is set when a JSONNode is an Array
+	//TypeArray is set when a Node is an Array
 	TypeArray
-	//TypeValue is set when a JSONNode is a Value Node
+	//TypeValue is set when a Node is a Value Node
 	TypeValue
 	//typeError help us detect errors
 	typeError
@@ -83,7 +84,7 @@ const (
 //strings are keys for TypeMap
 //
 //ints are index in TypeArray (it will make array grow on the fly, so you should start to populate with the biggest index first)*
-func (that *JSONNode) At(val ...interface{}) *JSONNode {
+func (that *Node) At(val ...interface{}) *Node {
 	if len(val) == 0 {
 		return that
 	}
@@ -96,24 +97,24 @@ func (that *JSONNode) At(val ...interface{}) *JSONNode {
 	panic(ErrorAtUnsupportedType)
 }
 
-//atMap return the JSONNode in current map
-func (that *JSONNode) atMap(key string, val ...interface{}) *JSONNode {
+//atMap return the Node in current map
+func (that *Node) atMap(key string, val ...interface{}) *Node {
 	if that.t != TypeUndefined && that.t != TypeMap {
 		panic(ErrorMultipleType)
 	}
 	if that.m == nil {
-		that.m = make(map[string]*JSONNode)
+		that.m = make(map[string]*Node)
 		that.t = TypeMap
 	}
 	if next, ok := that.m[key]; ok {
 		return next.At(val...)
 	}
-	that.m[key] = new(JSONNode)
+	that.m[key] = new(Node)
 	return that.m[key].At(val...)
 }
 
-//atArray return the JSONNode in current TypeArray (and make it grow if necessary)
-func (that *JSONNode) atArray(key int, val ...interface{}) *JSONNode {
+//atArray return the Node in current TypeArray (and make it grow if necessary)
+func (that *Node) atArray(key int, val ...interface{}) *Node {
 	if that.t == TypeUndefined {
 		that.t = TypeArray
 	} else if that.t != TypeArray {
@@ -123,7 +124,7 @@ func (that *JSONNode) atArray(key int, val ...interface{}) *JSONNode {
 		panic(ErrorArrayNegativeValue)
 	}
 	if key >= len(that.a) {
-		newa := make([]JSONNode, key+1)
+		newa := make([]Node, key+1)
 		for i := 0; i < len(that.a); i++ {
 			newa[i] = that.a[i]
 		}
@@ -132,24 +133,24 @@ func (that *JSONNode) atArray(key int, val ...interface{}) *JSONNode {
 	return that.a[key].At(val...)
 }
 
-//Map Turn this JSONNode to a TypeMap and/or Create a new element for key if necessary and return it
-func (that *JSONNode) Map(key string) *JSONNode {
+//Map Turn this Node to a TypeMap and/or Create a new element for key if necessary and return it
+func (that *Node) Map(key string) *Node {
 	if that.t != TypeUndefined && that.t != TypeMap {
 		panic(ErrorMultipleType)
 	}
 	if that.m == nil {
-		that.m = make(map[string]*JSONNode)
+		that.m = make(map[string]*Node)
 		that.t = TypeMap
 	}
 	if _, ok := that.m[key]; ok {
 		return that.m[key]
 	}
-	that.m[key] = &JSONNode{}
+	that.m[key] = &Node{}
 	return that.m[key]
 }
 
-//Array Turn this JSONNode to a TypeArray and/or set the array size (reducing size will make you loose data)
-func (that *JSONNode) Array(size int) *[]JSONNode {
+//Array Turn this Node to a TypeArray and/or set the array size (reducing size will make you loose data)
+func (that *Node) Array(size int) *[]Node {
 	if that.t == TypeUndefined {
 		that.t = TypeArray
 	} else if that.t != TypeArray {
@@ -164,7 +165,7 @@ func (that *JSONNode) Array(size int) *[]JSONNode {
 	} else {
 		min = len(that.a)
 	}
-	newa := make([]JSONNode, size)
+	newa := make([]Node, size)
 	for i := 0; i < min; i++ {
 		newa[i] = that.a[i]
 	}
@@ -172,8 +173,8 @@ func (that *JSONNode) Array(size int) *[]JSONNode {
 	return &(that.a)
 }
 
-//Val Turn this JSONNode to Value type and/or set that value to val
-func (that *JSONNode) Val(val interface{}) {
+//Val Turn this Node to Value type and/or set that value to val
+func (that *Node) Val(val interface{}) {
 	if that.t == TypeUndefined {
 		that.t = TypeValue
 	} else if that.t != TypeValue {
@@ -202,7 +203,7 @@ func (that *JSONNode) Val(val interface{}) {
 }
 
 //Get Return value of a TypeValue as interface{}
-func (that *JSONNode) Get() interface{} {
+func (that *Node) Get() interface{} {
 	if that.t != TypeValue {
 		panic(ErrorRetrieveUserValue)
 	}
@@ -213,8 +214,92 @@ func (that *JSONNode) Get() interface{} {
 	return that.v
 }
 
+// MustGetBool Return value of a TypeValue as bool
+// will panic if cant convert the internal value or if the node is not a TypeValue
+func (that *Node) MustGetBool() bool {
+	return that.Get().(bool)
+}
+
+// MustGetString Return value of a TypeValue as string
+// will panic if cant convert the internal value or if the node is not a TypeValue
+func (that *Node) MustGetString() string {
+	return that.Get().(string)
+}
+
+// MustGetInt Return value of a TypeValue as int
+// will panic if cant convert the internal value or if the node is not a TypeValue
+func (that *Node) MustGetInt() int {
+	return (int)(that.Get().(float64))
+}
+
+// MustGetInt8 Return value of a TypeValue as int8
+// will panic if cant convert the internal value or if the node is not a TypeValue
+func (that *Node) MustGetInt8() int8 {
+	return (int8)(that.Get().(float64))
+}
+
+// MustGetInt16 Return value of a TypeValue as int16
+// will panic if cant convert the internal value or if the node is not a TypeValue
+func (that *Node) MustGetInt16() int16 {
+	return (int16)(that.Get().(float64))
+}
+
+// MustGetInt32 Return value of a TypeValue as int32
+// will panic if cant convert the internal value or if the node is not a TypeValue
+func (that *Node) MustGetInt32() int32 {
+	return (int32)(that.Get().(float64))
+}
+
+// MustGetInt64 Return value of a TypeValue as int64
+// will panic if cant convert the internal value or if the node is not a TypeValue
+func (that *Node) MustGetInt64() int64 {
+	return (int64)(that.Get().(float64))
+}
+
+// MustGetUint Return value of a TypeValue as uint
+// will panic if cant convert the internal value or if the node is not a TypeValue
+func (that *Node) MustGetUint() uint {
+	return (uint)(that.Get().(float64))
+}
+
+// MustGetUint8 Return value of a TypeValue as uint8
+// will panic if cant convert the internal value or if the node is not a TypeValue
+func (that *Node) MustGetUint8() uint8 {
+	return (uint8)(that.Get().(float64))
+}
+
+// MustGetUint16 Return value of a TypeValue as uint16
+// will panic if cant convert the internal value or if the node is not a TypeValue
+func (that *Node) MustGetUint16() uint16 {
+	return (uint16)(that.Get().(float64))
+}
+
+// MustGetUint32 Return value of a TypeValue as uint32
+// will panic if cant convert the internal value or if the node is not a TypeValue
+func (that *Node) MustGetUint32() uint32 {
+	return (uint32)(that.Get().(float64))
+}
+
+// MustGetUint64 Return value of a TypeValue as uint64
+// will panic if cant convert the internal value or if the node is not a TypeValue
+func (that *Node) MustGetUint64() uint64 {
+	return (uint64)(that.Get().(float64))
+}
+
+// MustGetFloat32 Return value of a TypeValue as float32
+// will panic if cant convert the internal value or if the node is not a TypeValue
+func (that *Node) MustGetFloat32() float32 {
+	return (float32)(that.Get().(float64))
+}
+
+// MustGetFloat64 Return value of a TypeValue as float64
+// will panic if cant convert the internal value or if the node is not a TypeValue
+func (that *Node) MustGetFloat64() float64 {
+	return that.Get().(float64)
+}
+
 //GetKeys Return a slice interface that represent the keys to use with the At fonction (Works only on TypeMap and TypeArray)
-func (that *JSONNode) GetKeys() []interface{} {
+func (that *Node) GetKeys() []interface{} {
 	var ret []interface{}
 	switch that.t {
 	case TypeMap:
@@ -246,7 +331,7 @@ func (that *JSONNode) GetKeys() []interface{} {
 // if TypeArray return the size of the array
 //
 // if TypeMap return the size of the map
-func (that *JSONNode) Len() int {
+func (that *Node) Len() int {
 	var ret int
 	switch that.t {
 	case TypeMap:
@@ -260,7 +345,7 @@ func (that *JSONNode) Len() int {
 }
 
 //SetType Is use to set the Type of a node and return the current Node you are working on
-func (that *JSONNode) SetType(t JSONNodeType) *JSONNode {
+func (that *Node) SetType(t NodeType) *Node {
 	if that.t != TypeUndefined && that.t != t {
 		panic(ErrorMultipleType)
 	}
@@ -270,9 +355,9 @@ func (that *JSONNode) SetType(t JSONNodeType) *JSONNode {
 	that.t = t
 	switch t {
 	case TypeMap:
-		that.m = make(map[string]*JSONNode, 0)
+		that.m = make(map[string]*Node, 0)
 	case TypeArray:
-		that.a = make([]JSONNode, 0)
+		that.a = make([]Node, 0)
 	case TypeValue:
 		that.Val(nil)
 	}
@@ -280,7 +365,7 @@ func (that *JSONNode) SetType(t JSONNodeType) *JSONNode {
 }
 
 //GetType Is use to Get the Type of a node
-func (that *JSONNode) GetType() JSONNodeType {
+func (that *Node) GetType() NodeType {
 	return that.t
 }
 
@@ -288,12 +373,12 @@ func (that *JSONNode) GetType() JSONNodeType {
 //
 //if deepCopy is true we will copy all the children recursively else we will share the children
 //
-//return the current JSONNode
-func (that *JSONNode) Copy(other *JSONNode, deepCopy bool) *JSONNode {
+//return the current Node
+func (that *Node) Copy(other *Node, deepCopy bool) *Node {
 	if that.t != TypeUndefined {
 		panic(ErrorCopyType)
 	}
-	
+
 	if other.t == TypeValue {
 		*that = *other
 	} else if other.t == TypeArray {
@@ -320,16 +405,15 @@ func (that *JSONNode) Copy(other *JSONNode, deepCopy bool) *JSONNode {
 	return that
 }
 
-
-//Unset Will unset everything in the JSONnode. All the children data will be lost
-func (that *JSONNode) Unset() {
-	*that = JSONNode{}
+//Unset Will unset everything in the Node. All the children data will be lost
+func (that *Node) Unset() {
+	*that = Node{}
 }
 
 //DelKey will remove a key in the map.
 //
-//return the current JSONNode.
-func (that *JSONNode) DelKey(key string) *JSONNode {
+//return the current Node.
+func (that *Node) DelKey(key string) *Node {
 	if that.t != TypeMap {
 		panic(ErrorDeleteKey)
 	}
@@ -337,7 +421,7 @@ func (that *JSONNode) DelKey(key string) *JSONNode {
 	return that
 }
 
-//UnmarshalDontExpand set or not if Unmarshall will generate anything in that JSONNode and its children
+//UnmarshalDontExpand set or not if Unmarshall will generate anything in that Node and its children
 //
 //val: will change the expanding rules for this node
 //
@@ -351,8 +435,8 @@ func (that *JSONNode) DelKey(key string) *JSONNode {
 //
 //- It will respect any current mapping and will return errors if needed
 //
-//recurse: if true, it will set all the children of that JSONNode with val
-func (that *JSONNode) UnmarshalDontExpand(val bool, recurse bool) *JSONNode {
+//recurse: if true, it will set all the children of that Node with val
+func (that *Node) UnmarshalDontExpand(val bool, recurse bool) *Node {
 	that.dontExpand = val
 	if recurse {
 		switch that.t {
@@ -369,8 +453,8 @@ func (that *JSONNode) UnmarshalDontExpand(val bool, recurse bool) *JSONNode {
 	return that
 }
 
-//MarshalJSON Make JSONNode a Marshaler Interface compatible
-func (that *JSONNode) MarshalJSON() ([]byte, error) {
+//MarshalJSON Make Node a Marshaler Interface compatible
+func (that *Node) MarshalJSON() ([]byte, error) {
 	var ret []byte
 	var err error
 	switch that.t {
@@ -389,7 +473,7 @@ func (that *JSONNode) MarshalJSON() ([]byte, error) {
 	return ret, err
 }
 
-func (that *JSONNode) unmarshalMap(data []byte) error {
+func (that *Node) unmarshalMap(data []byte) error {
 	tmp := make(map[string]json.RawMessage)
 	err := json.Unmarshal(data, &tmp)
 	if err != nil {
@@ -411,7 +495,7 @@ func (that *JSONNode) unmarshalMap(data []byte) error {
 	return nil
 }
 
-func (that *JSONNode) unmarshalArray(data []byte) error {
+func (that *Node) unmarshalArray(data []byte) error {
 	var tmp []json.RawMessage
 	err := json.Unmarshal(data, &tmp)
 	if err != nil {
@@ -428,7 +512,7 @@ func (that *JSONNode) unmarshalArray(data []byte) error {
 	return nil
 }
 
-func (that *JSONNode) unmarshalValue(data []byte) error {
+func (that *Node) unmarshalValue(data []byte) error {
 	if that.v != nil {
 		return json.Unmarshal(data, that.v)
 	}
@@ -441,8 +525,8 @@ func (that *JSONNode) unmarshalValue(data []byte) error {
 	return nil
 }
 
-//UnmarshalJSON Make JSONNode a Unmarshaler Interface compatible
-func (that *JSONNode) UnmarshalJSON(data []byte) error {
+//UnmarshalJSON Make Node a Unmarshaler Interface compatible
+func (that *Node) UnmarshalJSON(data []byte) error {
 	if len(data) == 0 {
 		return nil
 	}

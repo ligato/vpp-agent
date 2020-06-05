@@ -14,6 +14,11 @@ type Package struct {
 	Unions   []Union
 	Messages []Message
 	RefMap   map[string]string
+	Imports  map[string]Import
+}
+
+type Import struct {
+	Package string
 }
 
 // Service represents VPP binary API service
@@ -54,16 +59,18 @@ type Type struct {
 
 // Field represents VPP binary API object field
 type Field struct {
-	Name     string
-	Type     string
-	Length   int
-	SizeFrom string
-	Meta     FieldMeta
+	Name         string
+	Type         string
+	Length       int
+	SpecifiedLen bool
+	SizeFrom     string
+	Meta         FieldMeta
 }
 
 // FieldMeta represents VPP binary API meta info for field
 type FieldMeta struct {
-	Limit int
+	Limit   int
+	Default string
 }
 
 // Union represents VPP binary API union

@@ -1,6 +1,8 @@
 package core
 
-import "git.fd.io/govpp.git/api"
+import (
+	"git.fd.io/govpp.git/api"
+)
 
 var (
 	msgControlPing      api.Message = new(ControlPing)

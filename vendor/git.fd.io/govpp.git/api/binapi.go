@@ -15,6 +15,8 @@
 package api
 
 import (
+	"fmt"
+	"reflect"
 	"time"
 )
 
@@ -115,20 +117,42 @@ type SubscriptionCtx interface {
 	Unsubscribe() error
 }
 
-var registeredMessages = make(map[string]Message)
+// CompatibilityError is the error type usually returned by CheckCompatibility
+// method of Channel. It describes all of the incompatible messages.
+type CompatibilityError struct {
+	// IncompatibleMessages is the list of all messages
+	// that failed compatibility check.
+	IncompatibleMessages []string
+}
+
+func (c *CompatibilityError) Error() string {
+	return fmt.Sprintf("%d incompatible messages: %v", len(c.IncompatibleMessages), c.IncompatibleMessages)
+}
+
+var (
+	registeredMessageTypes = make(map[reflect.Type]string)
+	registeredMessages     = make(map[string]Message)
+)
 
 // RegisterMessage is called from generated code to register message.
 func RegisterMessage(x Message, name string) {
-	name = x.GetMessageName() + "_" + x.GetCrcString()
-	/*if _, ok := registeredMessages[name]; ok {
-		panic(fmt.Errorf("govpp: duplicate message registered: %s (%s)", name, x.GetCrcString()))
-	}*/
-	registeredMessages[name] = x
+	typ := reflect.TypeOf(x)
+	namecrc := x.GetMessageName() + "_" + x.GetCrcString()
+	if _, ok := registeredMessageTypes[typ]; ok {
+		panic(fmt.Errorf("govpp: message type %v already registered as %s (%s)", typ, name, namecrc))
+	}
+	registeredMessages[namecrc] = x
+	registeredMessageTypes[typ] = name
 }
 
 // GetRegisteredMessages returns list of all registered messages.
 func GetRegisteredMessages() map[string]Message {
 	return registeredMessages
+}
+
+// GetRegisteredMessageTypes returns list of all registered message types.
+func GetRegisteredMessageTypes() map[reflect.Type]string {
+	return registeredMessageTypes
 }
 
 // GoVppAPIPackageIsVersion1 is referenced from generated binapi files

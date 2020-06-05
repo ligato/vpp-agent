@@ -89,7 +89,6 @@ type ConnectionEvent struct {
 // Connection represents a shared memory connection to VPP via vppAdapter.
 type Connection struct {
 	vppClient adapter.VppAPI // VPP binary API client
-	//statsClient adapter.StatsAPI // VPP stats API client
 
 	maxAttempts int           // interval for reconnect attempts
 	recInterval time.Duration // maximum number of reconnect attempts
@@ -112,6 +111,9 @@ type Connection struct {
 
 	lastReplyLock sync.Mutex // lock for the last reply
 	lastReply     time.Time  // time of the last received reply from VPP
+
+	msgControlPing      api.Message
+	msgControlPingReply api.Message
 }
 
 func newConnection(binapi adapter.VppAPI, attempts int, interval time.Duration) *Connection {
@@ -123,14 +125,16 @@ func newConnection(binapi adapter.VppAPI, attempts int, interval time.Duration) 
 	}
 
 	c := &Connection{
-		vppClient:     binapi,
-		maxAttempts:   attempts,
-		recInterval:   interval,
-		codec:         &codec.MsgCodec{},
-		msgIDs:        make(map[string]uint16),
-		msgMap:        make(map[uint16]api.Message),
-		channels:      make(map[uint16]*Channel),
-		subscriptions: make(map[uint16][]*subscriptionCtx),
+		vppClient:           binapi,
+		maxAttempts:         attempts,
+		recInterval:         interval,
+		codec:               &codec.MsgCodec{},
+		msgIDs:              make(map[string]uint16),
+		msgMap:              make(map[uint16]api.Message),
+		channels:            make(map[uint16]*Channel),
+		subscriptions:       make(map[uint16][]*subscriptionCtx),
+		msgControlPing:      msgControlPing,
+		msgControlPingReply: msgControlPingReply,
 	}
 	binapi.SetMsgCallback(c.msgCallback)
 	return c
@@ -177,7 +181,9 @@ func (c *Connection) connectVPP() error {
 	log.Debugf("Connected to VPP")
 
 	if err := c.retrieveMessageIDs(); err != nil {
-		c.vppClient.Disconnect()
+		if err := c.vppClient.Disconnect(); err != nil {
+			log.Debugf("disconnecting vpp client failed: %v", err)
+		}
 		return fmt.Errorf("VPP is incompatible: %v", err)
 	}
 
@@ -192,7 +198,6 @@ func (c *Connection) Disconnect() {
 	if c == nil {
 		return
 	}
-
 	if c.vppClient != nil {
 		c.disconnectVPP()
 	}
@@ -260,7 +265,7 @@ func (c *Connection) connectLoop(connChan chan ConnectionEvent) {
 	// loop until connected
 	for {
 		if err := c.vppClient.WaitReady(); err != nil {
-			log.Warnf("wait ready failed: %v", err)
+			log.Debugf("wait ready failed: %v", err)
 		}
 		if err := c.connectVPP(); err == nil {
 			// signal connected event
@@ -314,7 +319,7 @@ func (c *Connection) healthCheckLoop(connChan chan ConnectionEvent) {
 		}
 
 		// send the control ping request
-		ch.reqChan <- &vppRequest{msg: msgControlPing}
+		ch.reqChan <- &vppRequest{msg: c.msgControlPing}
 
 		for {
 			// expect response within timeout period
@@ -427,12 +432,12 @@ func (c *Connection) retrieveMessageIDs() (err error) {
 		}
 		n++
 
-		if c.pingReqID == 0 && msg.GetMessageName() == msgControlPing.GetMessageName() {
+		if c.pingReqID == 0 && msg.GetMessageName() == c.msgControlPing.GetMessageName() {
 			c.pingReqID = msgID
-			msgControlPing = reflect.New(reflect.TypeOf(msg).Elem()).Interface().(api.Message)
-		} else if c.pingReplyID == 0 && msg.GetMessageName() == msgControlPingReply.GetMessageName() {
+			c.msgControlPing = reflect.New(reflect.TypeOf(msg).Elem()).Interface().(api.Message)
+		} else if c.pingReplyID == 0 && msg.GetMessageName() == c.msgControlPingReply.GetMessageName() {
 			c.pingReplyID = msgID
-			msgControlPingReply = reflect.New(reflect.TypeOf(msg).Elem()).Interface().(api.Message)
+			c.msgControlPingReply = reflect.New(reflect.TypeOf(msg).Elem()).Interface().(api.Message)
 		}
 
 		if debugMsgIDs {

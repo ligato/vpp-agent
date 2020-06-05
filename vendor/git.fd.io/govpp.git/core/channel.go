@@ -23,6 +23,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 
+	"git.fd.io/govpp.git/adapter"
 	"git.fd.io/govpp.git/api"
 )
 
@@ -144,14 +145,23 @@ func (ch *Channel) SendMultiRequest(msg api.Message) api.MultiRequestCtx {
 }
 
 func (ch *Channel) CheckCompatiblity(msgs ...api.Message) error {
+	var comperr api.CompatibilityError
 	for _, msg := range msgs {
-		// TODO: collect all incompatible messages and return summarized error
 		_, err := ch.msgIdentifier.GetMessageID(msg)
 		if err != nil {
+			if uerr, ok := err.(*adapter.UnknownMsgError); ok {
+				m := fmt.Sprintf("%s_%s", uerr.MsgName, uerr.MsgCrc)
+				comperr.IncompatibleMessages = append(comperr.IncompatibleMessages, m)
+				continue
+			}
+			// other errors return immediatelly
 			return err
 		}
 	}
-	return nil
+	if len(comperr.IncompatibleMessages) == 0 {
+		return nil
+	}
+	return &comperr
 }
 
 func (ch *Channel) SubscribeNotification(notifChan chan api.Message, event api.Message) (api.SubscriptionCtx, error) {
@@ -257,7 +267,7 @@ func (ch *Channel) receiveReplyInternal(msg api.Message, expSeqNum uint16) (last
 		case vppReply := <-ch.replyChan:
 			ignore, lastReplyReceived, err = ch.processReply(vppReply, expSeqNum, msg)
 			if ignore {
-				logrus.WithFields(logrus.Fields{
+				log.WithFields(logrus.Fields{
 					"expSeqNum": expSeqNum,
 					"channel":   ch.id,
 				}).Warnf("ignoring received reply: %+v (expecting: %s)", vppReply, msg.GetMessageName())
@@ -266,7 +276,7 @@ func (ch *Channel) receiveReplyInternal(msg api.Message, expSeqNum uint16) (last
 			return lastReplyReceived, err
 
 		case <-timer.C:
-			logrus.WithFields(logrus.Fields{
+			log.WithFields(logrus.Fields{
 				"expSeqNum": expSeqNum,
 				"channel":   ch.id,
 			}).Debugf("timeout (%v) waiting for reply: %s", ch.replyTimeout, msg.GetMessageName())
@@ -281,7 +291,7 @@ func (ch *Channel) processReply(reply *vppReply, expSeqNum uint16, msg api.Messa
 	cmpSeqNums := compareSeqNumbers(reply.seqNum, expSeqNum)
 	if cmpSeqNums == -1 {
 		// reply received too late, ignore the message
-		logrus.WithField("seqNum", reply.seqNum).
+		log.WithField("seqNum", reply.seqNum).
 			Warn("Received reply to an already closed binary API request")
 		ignore = true
 		return

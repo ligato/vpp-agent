@@ -501,11 +501,11 @@ func (p *Plugin) updatePrometheus(ctx context.Context) {
 					}
 				}
 
-				stats.metrics[ifCounterRxPackets].Set(float64(item.RxPackets))
-				stats.metrics[ifCounterRxBytes].Set(float64(item.RxBytes))
+				stats.metrics[ifCounterRxPackets].Set(float64(item.Rx.Packets))
+				stats.metrics[ifCounterRxBytes].Set(float64(item.Rx.Bytes))
 				stats.metrics[ifCounterRxErrors].Set(float64(item.RxErrors))
-				stats.metrics[ifCounterTxPackets].Set(float64(item.TxPackets))
-				stats.metrics[ifCounterTxBytes].Set(float64(item.TxBytes))
+				stats.metrics[ifCounterTxPackets].Set(float64(item.Tx.Packets))
+				stats.metrics[ifCounterTxBytes].Set(float64(item.Tx.Bytes))
 				stats.metrics[ifCounterTxErrors].Set(float64(item.TxErrors))
 				stats.metrics[ifCounterDrops].Set(float64(item.Drops))
 				stats.metrics[ifCounterPunts].Set(float64(item.Punts))

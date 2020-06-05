@@ -16,7 +16,6 @@
 package vpp1908
 
 import (
-	"bytes"
 	"fmt"
 	"net"
 	"regexp"
@@ -156,10 +155,10 @@ func (h *SRv6VppHandler) interfaceNameMapping() (map[string]string, error) {
 		}
 
 		// extract and compute names
-		ligatoName := string(bytes.SplitN(ifDetails.Tag, []byte{0x00}, 2)[0])
-		vppInternalName := string(bytes.SplitN(ifDetails.InterfaceName, []byte{0x00}, 2)[0])
+		ligatoName := strings.TrimRight(ifDetails.Tag, "\x00")
+		vppInternalName := strings.TrimRight(ifDetails.InterfaceName, "\x00")
 		if ifDetails.SupSwIfIndex == ifDetails.SwIfIndex && // no subinterface (subinterface are not DPDK)
-			guessInterfaceType(string(ifDetails.InterfaceName)) == nbint.Interface_DPDK { // fill name for physical interfaces (they are mostly without tag)
+			guessInterfaceType(vppInternalName) == nbint.Interface_DPDK { // fill name for physical interfaces (they are mostly without tag)
 			ligatoName = vppInternalName
 		}
 
