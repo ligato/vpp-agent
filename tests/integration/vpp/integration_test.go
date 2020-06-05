@@ -75,12 +75,14 @@ const (
 		}`
 )
 
-func init() {
+func TestMain(m *testing.M) {
 	log.SetFlags(log.Lmicroseconds | log.Lshortfile)
 	flag.Parse()
 	if *debug {
 		govppcore.SetLogLevel(logrus.DebugLevel)
 	}
+	result := m.Run()
+	os.Exit(result)
 }
 
 type testCtx struct {
@@ -96,8 +98,8 @@ type testCtx struct {
 }
 
 func setupVPP(t *testing.T) *testCtx {
-	if os.Getenv("TRAVIS") != "" {
-		t.Skip("skipping test for Travis")
+	if os.Getenv("TRAVIS") != "" || os.Getenv("TEST") != "INTEGRATION" {
+		t.Skip("skipping integration tests")
 	}
 
 	RegisterTestingT(t)
