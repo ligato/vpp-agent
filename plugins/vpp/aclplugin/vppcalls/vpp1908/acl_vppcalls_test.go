@@ -226,7 +226,7 @@ var aclMACIPrules = []*acl.ACL_Rule{
 }
 
 type testCtx struct {
-	*vppmock.TestCtx
+	*vppcallmock.TestCtx
 	aclHandler *ACLVppHandler
 	ifIndexes  ifaceidx.IfaceMetadataIndexRW
 }
