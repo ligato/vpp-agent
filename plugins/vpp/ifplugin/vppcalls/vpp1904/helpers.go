@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"fmt"
 	"net"
+	"unicode"
 
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1904/ip"
 )
@@ -47,4 +48,13 @@ func uintToBool(value uint8) bool {
 
 func cleanString(b []byte) string {
 	return string(bytes.SplitN(b, []byte{0x00}, 2)[0])
+}
+
+func isPrintable(name string) bool {
+	for _, r := range name {
+		if !unicode.IsPrint(r) {
+			return false
+		}
+	}
+	return true
 }
