@@ -1,8 +1,8 @@
 syntax = "proto3";
 
-package mymodel;
+package custom;
 
 message MyModel {
     string name = 1;
-    int32 mynum = 2;
+    int32 value = 2;
 }

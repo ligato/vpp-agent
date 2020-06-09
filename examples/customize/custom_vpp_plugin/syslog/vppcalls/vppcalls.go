@@ -29,21 +29,23 @@ type SenderConfig struct {
 	Port      int
 }
 
-type VppHandlerAPI interface {
+// SyslogVppAPI defines VPP handler API in vpp-version agnostic way.
+// It cannot not use any generated binary API code directly.
+type SyslogVppAPI interface {
 	SetSender(sender SenderConfig) error
 	GetSender() (*SenderConfig, error)
 	DisableSender() error
-	//SetFilter()
-	//GetFilter()
 }
 
 var handler = vpp.RegisterHandler(vpp.HandlerDesc{
 	Name:       "syslog",
-	HandlerAPI: (*VppHandlerAPI)(nil),
+	HandlerAPI: (*SyslogVppAPI)(nil),
 })
 
-type NewHandlerFunc func(ch govppapi.Channel, log logging.Logger) VppHandlerAPI
+type NewHandlerFunc func(ch govppapi.Channel, log logging.Logger) SyslogVppAPI
 
+// AddHandlerVersion is used to register implementations of VPP handler API
+// interface for a specific VPP version.
 func AddHandlerVersion(version vpp.Version, msgs []govppapi.Message, h NewHandlerFunc) {
 	handler.AddVersion(vpp.HandlerVersion{
 		Version: version,
@@ -64,9 +66,11 @@ func AddHandlerVersion(version vpp.Version, msgs []govppapi.Message, h NewHandle
 	})
 }
 
-func CompatibleVppHandler(c vpp.Client, log logging.Logger) VppHandlerAPI {
+// CompatibleVppHandler checks all the registered implementations to find the
+// compatible handler implementation.
+func CompatibleVppHandler(c vpp.Client, log logging.Logger) SyslogVppAPI {
 	if v := handler.FindCompatibleVersion(c); v != nil {
-		return v.NewHandler(c, log).(VppHandlerAPI)
+		return v.NewHandler(c, log).(SyslogVppAPI)
 	}
 	return nil
 }

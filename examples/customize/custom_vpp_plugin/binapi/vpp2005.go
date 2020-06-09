@@ -15,15 +15,16 @@
 package binapi
 
 import (
-	"go.ligato.io/vpp-agent/v3/examples/extend/custom_vpp_plugin/binapi/syslog"
+	"go.ligato.io/vpp-agent/v3/examples/customize/custom_vpp_plugin/binapi/syslog"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005"
 )
 
+// This go generate directive will generate a binapi code for the VPP plugin syslog.
 //go:generate binapi-generator --input-file=/usr/share/vpp/api/core/syslog.api.json
 
 func init() {
-	// This adds syslog API messages to the compatibility check for VPP 20.05
+	// This adds syslog API messages for the compatibility check of VPP 20.05.
 	binapi2005 := binapi.Versions[vpp2005.Version]
 	binapi2005.Core.Add(
 		syslog.AllMessages,

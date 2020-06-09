@@ -18,23 +18,27 @@ import (
 	"go.ligato.io/cn-infra/v2/infra"
 	"go.ligato.io/cn-infra/v2/logging"
 
-	"go.ligato.io/vpp-agent/v3/examples/extend/custom_vpp_plugin/syslog/descriptor"
-	"go.ligato.io/vpp-agent/v3/examples/extend/custom_vpp_plugin/syslog/descriptor/adapter"
-	"go.ligato.io/vpp-agent/v3/examples/extend/custom_vpp_plugin/syslog/vppcalls"
+	"go.ligato.io/vpp-agent/v3/examples/customize/custom_vpp_plugin/syslog/descriptor"
+	"go.ligato.io/vpp-agent/v3/examples/customize/custom_vpp_plugin/syslog/descriptor/adapter"
+	"go.ligato.io/vpp-agent/v3/examples/customize/custom_vpp_plugin/syslog/vppcalls"
 	"go.ligato.io/vpp-agent/v3/plugins/govppmux"
 	"go.ligato.io/vpp-agent/v3/plugins/kvscheduler"
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 
 	// This blank import registers vppcalls implementation for VPP 20.05
-	_ "go.ligato.io/vpp-agent/v3/examples/extend/custom_vpp_plugin/syslog/vppcalls/vpp2005"
+	_ "go.ligato.io/vpp-agent/v3/examples/customize/custom_vpp_plugin/syslog/vppcalls/vpp2005"
 )
 
-//go:generate descriptor-adapter --descriptor-name SyslogSender --value-type *vpp_syslog.Sender --import "go.ligato.io/vpp-agent/v3/examples/extend/custom_vpp_plugin/proto/custom/vpp/syslog" --output-dir "descriptor"
+// This go generate directive generates adapter code for conversion between
+// generic KV descriptor API and Syslog model API defined in proto.
+//go:generate descriptor-adapter --output-dir descriptor --descriptor-name SyslogSender --value-type *vpp_syslog.Sender --import "go.ligato.io/vpp-agent/v3/examples/customize/custom_vpp_plugin/proto/custom/vpp/syslog"
 
+// SyslogPlugin is a Ligato plugin that initializes vppcalls handler and
+// registers KV descriptors providing API to VPP plugin syslog.
 type SyslogPlugin struct {
 	Deps
 
-	handler vppcalls.VppHandlerAPI
+	handler vppcalls.SyslogVppAPI
 
 	senderDescriptor *descriptor.SenderDescriptor
 }

@@ -22,24 +22,24 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	"go.ligato.io/cn-infra/v2/logging"
 
-	"go.ligato.io/vpp-agent/v3/examples/extend/custom_vpp_plugin/binapi/syslog"
-	"go.ligato.io/vpp-agent/v3/examples/extend/custom_vpp_plugin/syslog/vppcalls"
+	"go.ligato.io/vpp-agent/v3/examples/customize/custom_vpp_plugin/binapi/syslog"
+	"go.ligato.io/vpp-agent/v3/examples/customize/custom_vpp_plugin/syslog/vppcalls"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005"
 )
 
 func init() {
-	var msgs []govppapi.Message
-	msgs = append(msgs, syslog.AllMessages()...)
-
-	vppcalls.AddHandlerVersion(vpp2005.Version, msgs, NewHandler)
+	// Register this handler implementation for VPP 20.05 in the vppcalls package.
+	vppcalls.AddHandlerVersion(vpp2005.Version, syslog.AllMessages(), NewHandler)
 }
+
+const DefaultMaxMsgSize = 480
 
 type Handler struct {
 	log logging.Logger
 	rpc syslog.RPCService
 }
 
-func NewHandler(ch govppapi.Channel, log logging.Logger) vppcalls.VppHandlerAPI {
+func NewHandler(ch govppapi.Channel, log logging.Logger) vppcalls.SyslogVppAPI {
 	return &Handler{
 		log: log,
 		rpc: syslog.NewServiceClient(ch),
@@ -57,7 +57,7 @@ func (h *Handler) SetSender(sender vppcalls.SenderConfig) error {
 	req := &syslog.SyslogSetSender{
 		CollectorPort: uint16(sender.Port),
 		VrfID:         ^uint32(0),
-		MaxMsgSize:    480,
+		MaxMsgSize:    DefaultMaxMsgSize,
 	}
 	copy(req.SrcAddress[:], sender.Source.To4())
 	copy(req.CollectorAddress[:], sender.Collector.To4())
@@ -109,7 +109,7 @@ func (h *Handler) DisableSender() error {
 		CollectorAddress: syslog.IP4Address{0, 0, 0, 1},
 		CollectorPort:    1,
 		VrfID:            ^uint32(0),
-		MaxMsgSize:       480,
+		MaxMsgSize:       DefaultMaxMsgSize,
 	}
 
 	h.log.Debugf("SetSender: %+v", req)

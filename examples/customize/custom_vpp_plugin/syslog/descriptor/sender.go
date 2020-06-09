@@ -21,9 +21,9 @@ import (
 	"github.com/golang/protobuf/proto"
 	"go.ligato.io/cn-infra/v2/logging"
 
-	vpp_syslog "go.ligato.io/vpp-agent/v3/examples/extend/custom_vpp_plugin/proto/custom/vpp/syslog"
-	"go.ligato.io/vpp-agent/v3/examples/extend/custom_vpp_plugin/syslog/descriptor/adapter"
-	"go.ligato.io/vpp-agent/v3/examples/extend/custom_vpp_plugin/syslog/vppcalls"
+	vpp_syslog "go.ligato.io/vpp-agent/v3/examples/customize/custom_vpp_plugin/proto/custom/vpp/syslog"
+	"go.ligato.io/vpp-agent/v3/examples/customize/custom_vpp_plugin/syslog/descriptor/adapter"
+	"go.ligato.io/vpp-agent/v3/examples/customize/custom_vpp_plugin/syslog/vppcalls"
 	"go.ligato.io/vpp-agent/v3/pkg/models"
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 )
@@ -38,10 +38,10 @@ var (
 
 type SenderDescriptor struct {
 	log     logging.Logger
-	handler vppcalls.VppHandlerAPI
+	handler vppcalls.SyslogVppAPI
 }
 
-func NewSenderDescriptor(handler vppcalls.VppHandlerAPI, log logging.LoggerFactory) *SenderDescriptor {
+func NewSenderDescriptor(handler vppcalls.SyslogVppAPI, log logging.LoggerFactory) *SenderDescriptor {
 	return &SenderDescriptor{
 		handler: handler,
 		log:     log.NewLogger("syslog-descriptor"),

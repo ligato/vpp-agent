@@ -24,6 +24,6 @@ var (
 		Type:    "syslog.sender",
 		Version: "v1",
 	}, models.WithNameTemplate(
-		"src/{{.Source}}/collector/{{.Collector}}",
+		"config",
 	))
 )
