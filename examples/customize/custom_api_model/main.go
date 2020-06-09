@@ -19,20 +19,20 @@ import (
 	"fmt"
 	"log"
 	"net"
-	"sync"
+	"os"
 	"time"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/namsral/flag"
 	"go.ligato.io/cn-infra/v2/agent"
 	"go.ligato.io/cn-infra/v2/infra"
-	"go.ligato.io/cn-infra/v2/logging/logrus"
+	"go.ligato.io/cn-infra/v2/logging"
 	"google.golang.org/grpc"
 
 	"go.ligato.io/vpp-agent/v3/client"
 	"go.ligato.io/vpp-agent/v3/client/remoteclient"
 	"go.ligato.io/vpp-agent/v3/cmd/vpp-agent/app"
-	mymodel "go.ligato.io/vpp-agent/v3/examples/custom_model/proto"
+	"go.ligato.io/vpp-agent/v3/examples/customize/custom_api_model/proto/custom"
 	"go.ligato.io/vpp-agent/v3/plugins/orchestrator"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/linux"
 	linux_interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/linux/interfaces"
@@ -42,101 +42,84 @@ import (
 	vpp_l2 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l2"
 )
 
-//go:generate protoc --proto_path=. --go_out=paths=source_relative:. proto/model.proto
+//go:generate protoc --proto_path=. --go_out=paths=source_relative:. proto/custom/model.proto
 
 var (
-	address    = flag.String("address", "127.0.0.1:9111", "address of GRPC server")
-	socketType = flag.String("socket-type", "tcp", "socket type [tcp, tcp4, tcp6, unix, unixpacket]")
-
-	dialTimeout = time.Second * 3
+	clientType = flag.String("client", "local", "Client type used in demonstration [local, remote]")
 )
 
-var exampleFinished = make(chan struct{})
+func init() {
+	log.SetFlags(log.Lshortfile | log.Lmicroseconds)
+}
 
 func main() {
-	ep := &ExamplePlugin{}
-	ep.Deps = Deps{
-		VPP:          app.DefaultVPP(),
-		Linux:        app.DefaultLinux(),
-		Orchestrator: &orchestrator.DefaultPlugin,
-	}
-	ep.SetName("custom-model-example")
-	ep.Setup()
+	example := NewExample()
 
 	a := agent.NewAgent(
-		agent.AllPlugins(ep),
-		agent.QuitOnClose(exampleFinished),
+		agent.AllPlugins(example),
 	)
-	if err := a.Run(); err != nil {
+
+	if err := a.Start(); err != nil {
+		log.Fatal(err)
+	}
+
+	var c client.ConfigClient
+
+	switch *clientType {
+	case "local":
+		// Local client - using direct in-process calls.
+		c = client.LocalClient
+		logging.Info("Using Local Client - in-process calls")
+
+	case "remote":
+		// Remote client - using gRPC connection to the agent.
+		conn, err := grpc.Dial("unix",
+			grpc.WithInsecure(),
+			grpc.WithDialer(dialer("tcp", "127.0.0.1:9111", time.Second*3)),
+		)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer conn.Close()
+
+		c = remoteclient.NewClientGRPC(conn)
+		logging.Info("Using Remote Client - gRPC API")
+
+	default:
+		log.Printf("unknown client type: %q", *clientType)
+		flag.Usage()
+		os.Exit(1)
+	}
+
+	demonstrateClient(c)
+
+	if err := a.Stop(); err != nil {
 		log.Fatal(err)
 	}
 }
 
-// ExamplePlugin demonstrates the use of the remoteclient to locally transport example configuration into the default VPP plugins.
-type ExamplePlugin struct {
-	Deps
-
-	conn *grpc.ClientConn
-
-	wg     sync.WaitGroup
-	cancel context.CancelFunc
-}
-
-type Deps struct {
+// Example demonstrates the use of the remoteclient to locally transport example configuration into the default VPP plugins.
+type Example struct {
 	infra.PluginDeps
 	app.VPP
 	app.Linux
 	Orchestrator *orchestrator.Plugin
 }
 
+func NewExample() *Example {
+	ep := &Example{
+		VPP:          app.DefaultVPP(),
+		Linux:        app.DefaultLinux(),
+		Orchestrator: &orchestrator.DefaultPlugin,
+	}
+	ep.SetName("custom-api-model-example")
+	ep.SetupLog()
+	return ep
+}
+
 // Init initializes example plugin.
-func (p *ExamplePlugin) Init() (err error) {
-	_, p.cancel = context.WithCancel(context.Background())
-
-	// Set up connection to the server.
-	p.conn, err = grpc.Dial("unix",
-		grpc.WithInsecure(),
-		grpc.WithDialer(dialer(*socketType, *address, dialTimeout)),
-	)
-	if err != nil {
-		return err
-	}
-
-	p.Log.Info("Init complete")
-	return nil
-}
-
-// AfterInit executes client demo.
-func (p *ExamplePlugin) AfterInit() (err error) {
-	go func() {
-		time.Sleep(time.Second)
-
-		// remoteclient
-		c := remoteclient.NewClientGRPC(p.conn)
-		demonstrateClient(c)
-
-		//time.Sleep(time.Second * 3)
-
-		// localclient
-		//demonstrateClient(client.LocalClient)
-
-		logrus.DefaultLogger().Info("Closing example")
-		close(exampleFinished)
-	}()
-	return nil
-}
-
-// Close cleans up the resources.
-func (p *ExamplePlugin) Close() error {
-	logrus.DefaultLogger().Info("Closing example")
-
-	p.cancel()
-	p.wg.Wait()
-
-	if err := p.conn.Close(); err != nil {
-		return err
-	}
-
+func (p *Example) Init() (err error) {
+	p.Log.Info("Initialization complete")
 	return nil
 }
 
@@ -145,7 +128,6 @@ func demonstrateClient(c client.ConfigClient) {
 		Compact:   true,
 		ExpandAny: true,
 	}
-	log.SetFlags(log.Lshortfile | log.Lmicroseconds)
 
 	// List known models
 	fmt.Println("# ==========================================")
@@ -165,7 +147,7 @@ func demonstrateClient(c client.ConfigClient) {
 	fmt.Println("# ==========================================")
 	fmt.Println("# Requesting config resync..")
 	fmt.Println("# ==========================================")
-	customModel := &mymodel.MyModel{
+	customModel := &custom.MyModel{
 		Name: "TheModel",
 	}
 	err = c.ResyncConfig(
@@ -185,13 +167,13 @@ func demonstrateClient(c client.ConfigClient) {
 	fmt.Println("# ==========================================")
 	memif1.Enabled = false
 	memif1.Mtu = 666
-	custom := &mymodel.MyModel{
+	mymodel := &custom.MyModel{
 		Name:  "my1",
-		Mynum: 33,
+		Value: 33,
 	}
 
 	req := c.ChangeRequest()
-	req.Update(afp1, memif1, bd1, vppRoute1, custom)
+	req.Update(afp1, memif1, bd1, vppRoute1, mymodel)
 	req.Delete(memif2)
 	if err := req.Send(context.Background()); err != nil {
 		log.Fatalln(err)
@@ -205,7 +187,7 @@ func demonstrateClient(c client.ConfigClient) {
 	type config struct {
 		VPP      vpp.ConfigData
 		Linux    linux.ConfigData
-		MyModels []*mymodel.MyModel
+		MyModels []*custom.MyModel
 	}
 	var cfg config
 	if err := c.GetConfig(&cfg.VPP, &cfg.Linux, &cfg); err != nil {
@@ -319,12 +301,6 @@ var (
 		DstNetwork:        "10.10.5.0/24",
 		OutgoingInterface: "if10",
 		GwAddr:            "10.10.5.254",
-		Scope:             linux_l3.Route_GLOBAL,
-	}
-	routeBad = &linux.Route{
-		DstNetwork:        "192.168.6.0/24",
-		OutgoingInterface: "myVETH1",
-		GwAddr:            "10.10.3.2545",
 		Scope:             linux_l3.Route_GLOBAL,
 	}
 )

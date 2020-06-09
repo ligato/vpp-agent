@@ -105,7 +105,8 @@ clean-cmd: ## Clean commands
 
 examples: ## Build examples
 	@echo "# building examples"
-	cd examples/custom_model	    	 && go build -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
+	cd examples/customize/custom_api_model && go build -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
+	cd examples/customize/custom_vpp_plugin && go build -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
 	cd examples/govpp_call 		    	 && go build -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
 	cd examples/grpc_vpp/remote_client   && go build -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
 	cd examples/grpc_vpp/notifications   && go build -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
@@ -124,7 +125,8 @@ examples: ## Build examples
 
 clean-examples: ## Clean examples
 	@echo "# cleaning examples"
-	cd examples/custom_model	    		&& go clean
+	cd examples/customize/custom_api_model && go clean
+	cd examples/customize/custom_vpp_plugin && go clean
 	cd examples/govpp_call 		    		&& go clean
 	cd examples/grpc_vpp/remote_client 		&& go clean
 	cd examples/grpc_vpp/notifications		&& go clean

@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package custom.vpp.syslog;
+
+option go_package = "go.ligato.io/vpp-agent/v3/examples/customize/custom_vpp_plugin/proto/custom/vpp/syslog;vpp_syslog";
+
+message Sender {
+    string source = 1;
+    string collector = 2;
+    int32 port = 3;
+}
