@@ -87,6 +87,9 @@ jobs:
       after_success:
         - bash <(curl -s https://codecov.io/bash) -f /tmp/e2e-cov.out -F e2e
 
+  allow_failures:
+    - env: VPP_VERSION=1904
+
 notifications:
   slack:
     rooms:
