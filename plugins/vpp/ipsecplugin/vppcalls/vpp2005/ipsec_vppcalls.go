@@ -292,6 +292,13 @@ func (h *IPSecVppHandler) tunProtectAddUpdateEntry(tp *ipsec.TunnelProtection, s
 		SaIn:      tp.SaIn,
 		NSaIn:     uint8(len(tp.SaIn)),
 	}}
+	if tp.NextHopAddr != "" {
+		nh, err := IPToAddress(tp.NextHopAddr)
+		if err != nil {
+			return err
+		}
+		req.Tunnel.Nh = nh
+	}
 	reply := &vpp_ipsec.IpsecTunnelProtectUpdateReply{}
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
@@ -302,6 +309,13 @@ func (h *IPSecVppHandler) tunProtectAddUpdateEntry(tp *ipsec.TunnelProtection, s
 func (h *IPSecVppHandler) tunProtectDelEntry(tp *ipsec.TunnelProtection, swIfIndex uint32) error {
 	req := &vpp_ipsec.IpsecTunnelProtectDel{
 		SwIfIndex: vpp_ipsec.InterfaceIndex(swIfIndex),
+	}
+	if tp.NextHopAddr != "" {
+		nh, err := IPToAddress(tp.NextHopAddr)
+		if err != nil {
+			return err
+		}
+		req.Nh = nh
 	}
 	reply := &vpp_ipsec.IpsecTunnelProtectDelReply{}
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {

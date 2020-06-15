@@ -195,6 +195,20 @@ func (h *IPSecVppHandler) DumpTunnelProtections() (tpList []*ipsec.TunnelProtect
 		}
 		tp.SaIn = append(tp.SaIn, tpDetails.Tun.SaIn...)
 		tpList = append(tpList, tp)
+
+		if tpDetails.Tun.Nh.Af == ip_types.ADDRESS_IP6 {
+			nhAddrArr := tpDetails.Tun.Nh.Un.GetIP6()
+			nhAddr := net.IP(nhAddrArr[:]).To16()
+			if !nhAddr.IsUnspecified() {
+				tp.NextHopAddr = nhAddr.String()
+			}
+		} else {
+			nhAddrArr := tpDetails.Tun.Nh.Un.GetIP4()
+			nhAddr := net.IP(nhAddrArr[:4]).To4()
+			if !nhAddr.IsUnspecified() {
+				tp.NextHopAddr = nhAddr.String()
+			}
+		}
 	}
 	return
 }

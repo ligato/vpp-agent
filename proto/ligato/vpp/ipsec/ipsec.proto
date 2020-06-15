@@ -106,4 +106,7 @@ message TunnelProtection {
 
     // Inbound security associations identified by SA index.
     repeated uint32 sa_in = 3;
+
+    // (Optional) Next hop IP address, used for multipoint tunnels.
+    string next_hop_addr = 4;
 }

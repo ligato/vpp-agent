@@ -578,11 +578,13 @@ func (d *InterfaceDescriptor) Validate(key string, intf *interfaces.Interface) e
 			return kvs.NewInvalidValueError(ErrIpipSrcAddrBad, "link.ipip.src_addr")
 		}
 
-		if intf.GetIpip().DstAddr == "" {
-			return kvs.NewInvalidValueError(ErrIpipDstAddrMissing, "link.ipip.dst_addr")
-		}
-		if net.ParseIP(intf.GetIpip().DstAddr) == nil {
-			return kvs.NewInvalidValueError(ErrIpipDstAddrBad, "link.ipip.dst_addr")
+		if intf.GetIpip().TunnelMode == interfaces.IPIPLink_POINT_TO_POINT {
+			if intf.GetIpip().DstAddr == "" {
+				return kvs.NewInvalidValueError(ErrIpipDstAddrMissing, "link.ipip.dst_addr")
+			}
+			if net.ParseIP(intf.GetIpip().DstAddr) == nil {
+				return kvs.NewInvalidValueError(ErrIpipDstAddrBad, "link.ipip.dst_addr")
+			}
 		}
 	}
 

@@ -30,10 +30,15 @@ func TestIPIP(t *testing.T) {
 	ctx := setupVPP(t)
 	defer ctx.teardownVPP()
 
-	dumpAPIOk := true
+	p2mpSupported := true        // determines point-to-multipoint support
+	tunnelModeDumpAPIOk := false // dumping of tunnel mode not working yet
+
 	release := ctx.versionInfo.Release()
 	if release < "20.01" {
 		t.Skipf("IPIP: skipped for VPP < 20.01 (%s)", release)
+	}
+	if release < "20.05" {
+		p2mpSupported = false // point-to-multipoint support comes in VPP 20.05
 	}
 
 	h := ifplugin_vppcalls.CompatibleInterfaceVppHandler(ctx.vppClient, logrus.NewLogger("test"))
@@ -76,6 +81,22 @@ func TestIPIP(t *testing.T) {
 			shouldFail: true,
 		},
 		{
+			name: "Create p2p IPIP tunnel with missing dst address",
+			ipip: &interfaces.IPIPLink{
+				SrcAddr:    "20.30.40.50",
+				TunnelMode: interfaces.IPIPLink_POINT_TO_POINT,
+			},
+			shouldFail: true,
+		},
+		{
+			name: "Create p2mp IPIP tunnel (dst address not specified)",
+			ipip: &interfaces.IPIPLink{
+				SrcAddr:    "20.30.40.50",
+				TunnelMode: interfaces.IPIPLink_POINT_TO_MULTIPOINT,
+			},
+			shouldFail: false,
+		},
+		{
 			name: "Create 2 IPIP tunnels (IPv4)",
 			ipip: &interfaces.IPIPLink{
 				SrcAddr: "20.30.40.50",
@@ -102,6 +123,9 @@ func TestIPIP(t *testing.T) {
 	}
 	for i, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			if !p2mpSupported && test.ipip.TunnelMode == interfaces.IPIPLink_POINT_TO_MULTIPOINT {
+				t.Skipf("IPIP: p2mp skipped for VPP < 20.05 (%s)", release)
+			}
 			ifName := fmt.Sprintf("ipip%d", i)
 			ifIdx, err := h.AddIpipTunnel(ifName, 0, test.ipip)
 
@@ -136,35 +160,40 @@ func TestIPIP(t *testing.T) {
 				}
 			}
 
-			if dumpAPIOk {
-				ifaces, err := h.DumpInterfaces(ctx.Ctx)
-				if err != nil {
-					t.Fatalf("dumping interfaces failed: %v", err)
-				}
-				iface, ok := ifaces[ifIdx]
+			ifaces, err := h.DumpInterfaces(ctx.Ctx)
+			if err != nil {
+				t.Fatalf("dumping interfaces failed: %v", err)
+			}
+			iface, ok := ifaces[ifIdx]
+			if !ok {
+				t.Fatalf("IPIP interface was not found in dump")
+			}
+			if test.ipip2 != nil {
+				_, ok := ifaces[ifIdx2]
 				if !ok {
-					t.Fatalf("IPIP interface was not found in dump")
+					t.Fatalf("IPIP interface2 was not found in dump")
 				}
-				if test.ipip2 != nil {
-					_, ok := ifaces[ifIdx2]
-					if !ok {
-						t.Fatalf("IPIP interface2 was not found in dump")
-					}
-				}
+			}
 
-				if iface.Interface.GetType() != interfaces.Interface_IPIP_TUNNEL {
-					t.Fatalf("Interface is not an IPIP tunnel")
-				}
+			if iface.Interface.GetType() != interfaces.Interface_IPIP_TUNNEL {
+				t.Fatalf("Interface is not an IPIP tunnel")
+			}
 
-				ipip := iface.Interface.GetIpip()
-				if test.ipip.SrcAddr != ipip.SrcAddr {
-					t.Fatalf("expected source address <%s>, got: <%s>", test.ipip.SrcAddr, ipip.SrcAddr)
+			ipip := iface.Interface.GetIpip()
+			if tunnelModeDumpAPIOk {
+				if test.ipip.TunnelMode != ipip.TunnelMode {
+					t.Fatalf("expected tunnel mode <%v>, got: <%v>", test.ipip.TunnelMode, ipip.TunnelMode)
 				}
+			} else {
+				t.Logf("IPIP: TunnelMode comparison skipped due to broken API in VPP %s", ctx.versionInfo.Version)
+			}
+			if test.ipip.SrcAddr != ipip.SrcAddr {
+				t.Fatalf("expected source address <%s>, got: <%s>", test.ipip.SrcAddr, ipip.SrcAddr)
+			}
+			if tunnelModeDumpAPIOk || test.ipip.TunnelMode == interfaces.IPIPLink_POINT_TO_POINT {
 				if test.ipip.DstAddr != ipip.DstAddr {
 					t.Fatalf("expected destination address <%s>, got: <%s>", test.ipip.DstAddr, ipip.DstAddr)
 				}
-			} else {
-				t.Logf("IPIP: DumpInterfaces skipped because of a broken API in VPP %s", ctx.versionInfo.Version)
 			}
 
 			err = h.DelIpipTunnel(ifName, ifIdx)
@@ -178,19 +207,17 @@ func TestIPIP(t *testing.T) {
 				}
 			}
 
-			if dumpAPIOk {
-				ifaces, err := h.DumpInterfaces(ctx.Ctx)
-				if err != nil {
-					t.Fatalf("dumping interfaces failed: %v", err)
-				}
+			ifaces, err = h.DumpInterfaces(ctx.Ctx)
+			if err != nil {
+				t.Fatalf("dumping interfaces failed: %v", err)
+			}
 
-				if _, ok := ifaces[ifIdx]; ok {
-					t.Fatalf("IPIP interface was found in dump after removing")
-				}
-				if test.ipip2 != nil {
-					if _, ok := ifaces[ifIdx2]; ok {
-						t.Fatalf("IPIP interface2 was found in dump after removing")
-					}
+			if _, ok := ifaces[ifIdx]; ok {
+				t.Fatalf("IPIP interface was found in dump after removing")
+			}
+			if test.ipip2 != nil {
+				if _, ok := ifaces[ifIdx2]; ok {
+					t.Fatalf("IPIP interface2 was found in dump after removing")
 				}
 			}
 		})
