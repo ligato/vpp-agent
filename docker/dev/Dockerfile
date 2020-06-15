@@ -11,6 +11,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /src/ligato/vpp-agent
 
+ARG VPP_IMG
 ARG VPP_BINAPI
 ARG SKIP_CHECK
 
@@ -28,12 +29,26 @@ RUN set -x; \
 	gofmt -w plugins/vpp/binapi; \
 	cp -r plugins/vpp/binapi /tmp/orig_binapi && \
 	make generate-binapi && \
- 	diff -r plugins/vpp/binapi /tmp/orig_binapi || \
+ 	diff --color=always -r plugins/vpp/binapi /tmp/orig_binapi || \
  	{ \
+ 		set +x; \
  		vpp_version="$(cat /vpp-version)"; \
+ 		echo >&2 "==============================================================="; \
+ 		echo >&2 "!!! VPP BINARY API CHECK FAILED !!!"; \
+ 		echo >&2 "==============================================================="; \
+ 		echo >&2 " - VPP version:   ${vpp_version}"; \
+ 		echo >&2 " - VPP base img:  ${VPP_IMG}"; \
+ 		echo >&2 " - binapi folder: ${VPP_BINAPI}"; \
  		echo >&2 "---------------------------------------------------------------"; \
- 		echo >&2 " Generated binapi does not match with used version!"; \
- 		echo >&2 " VPP version: ${vpp_version}"; \
+ 		echo >&2 " Generated binapi does not seem to be up-to-date with used VPP!"; \
+ 		echo >&2 ""; \
+ 		echo >&2 " This might happen when VPP API change gets merged to a branch of used VPP."; \
+ 		echo >&2 " Ensure that VPP base image is compatible with the selected VPP version!"; \
+ 		echo >&2 "---------------------------------------------------------------"; \
+ 		echo >&2 " To resolve this now, you could:"; \
+ 		echo >&2 ""; \
+ 		echo >&2 "  1. Ignore this check by setting: SKIP_CHECK=y"; \
+ 		echo >&2 "  2. Override used VPP base image by setting: VPP_IMG=ligato/vpp-base:<TAG>"; \
  		echo >&2 "---------------------------------------------------------------"; \
  		[ -n "$SKIP_CHECK" ] && exit 0; \
  	}
@@ -57,7 +72,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
  	&& rm -rf /var/lib/apt/lists/*
 
 # Install Go
-ENV GOLANG_VERSION 1.14.2
+ENV GOLANG_VERSION 1.14.4
 RUN set -eux; \
 	dpkgArch="$(dpkg --print-architecture)"; \
 		case "${dpkgArch##*-}" in \
