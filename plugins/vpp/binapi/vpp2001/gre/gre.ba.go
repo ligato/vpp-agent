@@ -30,6 +30,8 @@ import (
 const (
 	// ModuleName is the name of this module.
 	ModuleName = "gre"
+	// APIVersion is the API version of this module.
+	APIVersion = "2.0.1"
 	// VersionCrc is the CRC of this module.
 	VersionCrc = 0xb7663194
 )

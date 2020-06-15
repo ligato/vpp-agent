@@ -28,6 +28,8 @@ import (
 const (
 	// ModuleName is the name of this module.
 	ModuleName = "vpe"
+	// APIVersion is the API version of this module.
+	APIVersion = "1.6.0"
 	// VersionCrc is the CRC of this module.
 	VersionCrc = 0xc6c0bcf6
 )
