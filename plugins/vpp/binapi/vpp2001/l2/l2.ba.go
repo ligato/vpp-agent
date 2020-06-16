@@ -31,6 +31,8 @@ import (
 const (
 	// ModuleName is the name of this module.
 	ModuleName = "l2"
+	// APIVersion is the API version of this module.
+	APIVersion = "2.2.2"
 	// VersionCrc is the CRC of this module.
 	VersionCrc = 0x2e148df3
 )

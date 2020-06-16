@@ -27,6 +27,8 @@ import (
 const (
 	// ModuleName is the name of this module.
 	ModuleName = "flowprobe"
+	// APIVersion is the API version of this module.
+	APIVersion = "1.0.0"
 	// VersionCrc is the CRC of this module.
 	VersionCrc = 0xbb4dfc0d
 )

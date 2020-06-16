@@ -42,9 +42,10 @@ include vpp.env
 ifeq ($(VPP_VERSION),)
 VPP_VERSION=$(VPP_DEFAULT)
 endif
-VPP_IMG:=$(value VPP_$(VPP_VERSION)_IMAGE)
+
+VPP_IMG?=$(value VPP_$(VPP_VERSION)_IMAGE)
 ifeq ($(UNAME_ARCH), aarch64)
-VPP_IMG:=$(subst vpp-base,vpp-base-arm64,$(VPP_IMG))
+VPP_IMG?=$(subst vpp-base,vpp-base-arm64,$(VPP_IMG))
 endif
 VPP_BINAPI?=$(value VPP_$(VPP_VERSION)_BINAPI)
 

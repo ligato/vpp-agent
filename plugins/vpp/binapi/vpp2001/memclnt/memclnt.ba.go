@@ -24,6 +24,8 @@ import (
 const (
 	// ModuleName is the name of this module.
 	ModuleName = "memclnt"
+	// APIVersion is the API version of this module.
+	APIVersion = "2.1.0"
 	// VersionCrc is the CRC of this module.
 	VersionCrc = 0x8d3dd881
 )

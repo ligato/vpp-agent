@@ -29,6 +29,8 @@ import (
 const (
 	// ModuleName is the name of this module.
 	ModuleName = "vmxnet3"
+	// APIVersion is the API version of this module.
+	APIVersion = "1.1.0"
 	// VersionCrc is the CRC of this module.
 	VersionCrc = 0xe89a60f7
 )

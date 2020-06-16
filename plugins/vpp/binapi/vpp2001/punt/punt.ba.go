@@ -29,6 +29,8 @@ import (
 const (
 	// ModuleName is the name of this module.
 	ModuleName = "punt"
+	// APIVersion is the API version of this module.
+	APIVersion = "2.2.1"
 	// VersionCrc is the CRC of this module.
 	VersionCrc = 0x51716f7f
 )

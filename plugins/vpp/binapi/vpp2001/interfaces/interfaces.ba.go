@@ -31,6 +31,8 @@ import (
 const (
 	// ModuleName is the name of this module.
 	ModuleName = "interface"
+	// APIVersion is the API version of this module.
+	APIVersion = "3.2.2"
 	// VersionCrc is the CRC of this module.
 	VersionCrc = 0xfebc3ffa
 )

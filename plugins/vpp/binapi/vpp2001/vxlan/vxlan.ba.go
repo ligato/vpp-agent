@@ -23,6 +23,8 @@ import (
 const (
 	// ModuleName is the name of this module.
 	ModuleName = "vxlan"
+	// APIVersion is the API version of this module.
+	APIVersion = "1.1.0"
 	// VersionCrc is the CRC of this module.
 	VersionCrc = 0xa95aa271
 )
