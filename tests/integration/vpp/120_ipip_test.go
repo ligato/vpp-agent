@@ -30,8 +30,7 @@ func TestIPIP(t *testing.T) {
 	ctx := setupVPP(t)
 	defer ctx.teardownVPP()
 
-	p2mpSupported := true        // determines point-to-multipoint support
-	tunnelModeDumpAPIOk := false // dumping of tunnel mode not working yet
+	p2mpSupported := true // determines point-to-multipoint support
 
 	release := ctx.versionInfo.Release()
 	if release < "20.01" {
@@ -180,20 +179,14 @@ func TestIPIP(t *testing.T) {
 			}
 
 			ipip := iface.Interface.GetIpip()
-			if tunnelModeDumpAPIOk {
-				if test.ipip.TunnelMode != ipip.TunnelMode {
-					t.Fatalf("expected tunnel mode <%v>, got: <%v>", test.ipip.TunnelMode, ipip.TunnelMode)
-				}
-			} else {
-				t.Logf("IPIP: TunnelMode comparison skipped due to broken API in VPP %s", ctx.versionInfo.Version)
+			if test.ipip.TunnelMode != ipip.TunnelMode {
+				t.Fatalf("expected tunnel mode <%v>, got: <%v>", test.ipip.TunnelMode, ipip.TunnelMode)
 			}
 			if test.ipip.SrcAddr != ipip.SrcAddr {
 				t.Fatalf("expected source address <%s>, got: <%s>", test.ipip.SrcAddr, ipip.SrcAddr)
 			}
-			if tunnelModeDumpAPIOk || test.ipip.TunnelMode == interfaces.IPIPLink_POINT_TO_POINT {
-				if test.ipip.DstAddr != ipip.DstAddr {
-					t.Fatalf("expected destination address <%s>, got: <%s>", test.ipip.DstAddr, ipip.DstAddr)
-				}
+			if test.ipip.DstAddr != ipip.DstAddr {
+				t.Fatalf("expected destination address <%s>, got: <%s>", test.ipip.DstAddr, ipip.DstAddr)
 			}
 
 			err = h.DelIpipTunnel(ifName, ifIdx)

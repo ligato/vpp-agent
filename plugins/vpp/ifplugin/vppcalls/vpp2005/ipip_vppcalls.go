@@ -160,6 +160,13 @@ func (h *InterfaceVppHandler) dumpIpipDetails(ifc map[uint32]*vppcalls.Interface
 			ipipLink.TunnelMode = interfaces.IPIPLink_POINT_TO_MULTIPOINT
 		}
 
+		// TODO: temporary fix since VPP does not dump the tunnel mode properly.
+		// If dst address is empty, this must be a multipoint tunnel.
+		if ipipLink.DstAddr == "0.0.0.0" {
+			ipipLink.TunnelMode = interfaces.IPIPLink_POINT_TO_MULTIPOINT
+			ipipLink.DstAddr = ""
+		}
+
 		ifc[uint32(ipipDetails.Tunnel.SwIfIndex)].Interface.Link = &interfaces.Interface_Ipip{Ipip: ipipLink}
 		ifc[uint32(ipipDetails.Tunnel.SwIfIndex)].Interface.Type = interfaces.Interface_IPIP_TUNNEL
 	}
