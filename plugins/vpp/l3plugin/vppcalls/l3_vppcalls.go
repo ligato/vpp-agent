@@ -32,6 +32,9 @@ import (
 var (
 	// ErrIPNeighborNotImplemented is used for IPScanNeighAPI handlers that are missing implementation.
 	ErrIPNeighborNotImplemented = errors.New("ip neighbor config not implemented")
+
+	// ErrTeibUnsupported error is returned if TEIB is not supported on given VPP version.
+	ErrTeibUnsupported = errors.New("TEIB is not supported")
 )
 
 // L3VppAPI groups L3 Vpp APIs.
@@ -43,6 +46,7 @@ type L3VppAPI interface {
 	VrfTableVppAPI
 	DHCPProxyAPI
 	L3XCVppAPI
+	TeibVppAPI
 }
 
 // ArpDetails holds info about ARP entry as a proto model
@@ -210,6 +214,22 @@ type IPNeighVppAPI interface {
 	GetIPScanNeighbor() (*l3.IPScanNeighbor, error)
 	// DefaultIPScanNeighbor returns default IP scan neighbor configuration
 	DefaultIPScanNeighbor() *l3.IPScanNeighbor
+}
+
+// TeibVppAPI provides methods for managing VPP tunnel information base.
+type TeibVppAPI interface {
+	TeibVppRead
+
+	// VppAddTeibEntry adds a new TEIB entry.
+	VppAddTeibEntry(ctx context.Context, entry *l3.TeibEntry) error
+	// VppDelTeibEntry removes an existing TEIB entry.
+	VppDelTeibEntry(ctx context.Context, entry *l3.TeibEntry) error
+}
+
+// TeibVppRead provides read methods VPP tunnel information base.
+type TeibVppRead interface {
+	// DumpTeib dumps TEIB entries from VPP and fills them into the provided TEIB entry map.
+	DumpTeib() ([]*l3.TeibEntry, error)
 }
 
 // Path represents FIB path entry.

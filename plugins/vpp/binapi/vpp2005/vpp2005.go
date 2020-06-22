@@ -41,6 +41,7 @@ import (
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/sr"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/stn"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/tapv2"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/teib"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/vmxnet3"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/vpe"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/vxlan"
@@ -66,6 +67,7 @@ func init() {
 			span.AllMessages,
 			sr.AllMessages,
 			tapv2.AllMessages,
+			teib.AllMessages,
 			vpe.AllMessages,
 			vxlan.AllMessages,
 			vxlan_gpe.AllMessages,
@@ -110,6 +112,7 @@ func init() {
 //go:generate binapigen --input-file=$VPP_API_DIR/core/span.api.json
 //go:generate binapigen --input-file=$VPP_API_DIR/core/sr.api.json
 //go:generate binapigen --input-file=$VPP_API_DIR/core/tapv2.api.json
+//go:generate binapigen --input-file=$VPP_API_DIR/core/teib.api.json
 //go:generate binapigen --input-file=$VPP_API_DIR/core/vpe.api.json
 //go:generate binapigen --input-file=$VPP_API_DIR/core/vxlan.api.json
 //go:generate binapigen --input-file=$VPP_API_DIR/core/vxlan_gpe.api.json

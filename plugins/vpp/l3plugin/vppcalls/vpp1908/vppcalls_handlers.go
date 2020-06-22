@@ -15,6 +15,7 @@
 package vpp1908
 
 import (
+	"context"
 	"fmt"
 	"net"
 
@@ -34,6 +35,7 @@ import (
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin/vppcalls"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin/vrfidx"
+	l3 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3"
 )
 
 func init() {
@@ -53,6 +55,7 @@ type L3VppHandler struct {
 	*VrfTableHandler
 	*DHCPProxyHandler
 	*L3XCHandler
+	*TeibHandlerUnsupported
 }
 
 func NewL3VppHandler(
@@ -68,13 +71,14 @@ func NewL3VppHandler(
 		return nil
 	}
 	return &L3VppHandler{
-		ArpVppHandler:      NewArpVppHandler(ch, ifIdx, log),
-		ProxyArpVppHandler: NewProxyArpVppHandler(ch, ifIdx, log),
-		RouteHandler:       NewRouteVppHandler(ch, ifIdx, vrfIdx, addrAlloc, log),
-		IPNeighHandler:     NewIPNeighVppHandler(ch, log),
-		VrfTableHandler:    NewVrfTableVppHandler(ch, log),
-		DHCPProxyHandler:   NewDHCPProxyHandler(ch, log),
-		L3XCHandler:        NewL3XCHandler(c, ifIdx, log),
+		ArpVppHandler:          NewArpVppHandler(ch, ifIdx, log),
+		ProxyArpVppHandler:     NewProxyArpVppHandler(ch, ifIdx, log),
+		RouteHandler:           NewRouteVppHandler(ch, ifIdx, vrfIdx, addrAlloc, log),
+		IPNeighHandler:         NewIPNeighVppHandler(ch, log),
+		VrfTableHandler:        NewVrfTableVppHandler(ch, log),
+		DHCPProxyHandler:       NewDHCPProxyHandler(ch, log),
+		L3XCHandler:            NewL3XCHandler(c, ifIdx, log),
+		TeibHandlerUnsupported: &TeibHandlerUnsupported{},
 	}
 }
 
@@ -219,6 +223,20 @@ func NewL3XCHandler(c vpp.Client, ifIndexes ifaceidx.IfaceMetadataIndex, log log
 		h.l3xc = l3xc.NewServiceClient(ch)
 	}
 	return h
+}
+
+type TeibHandlerUnsupported struct{}
+
+func (h *TeibHandlerUnsupported) VppAddTeibEntry(ctx context.Context, entry *l3.TeibEntry) error {
+	return fmt.Errorf("%w in VPP %s", vppcalls.ErrTeibUnsupported, vpp1908.Version)
+}
+
+func (h *TeibHandlerUnsupported) VppDelTeibEntry(ctx context.Context, entry *l3.TeibEntry) error {
+	return fmt.Errorf("%w in VPP %s", vppcalls.ErrTeibUnsupported, vpp1908.Version)
+}
+
+func (h *TeibHandlerUnsupported) DumpTeib() ([]*l3.TeibEntry, error) {
+	return nil, fmt.Errorf("%w in VPP %s", vppcalls.ErrTeibUnsupported, vpp1908.Version)
 }
 
 func ipToAddress(ipstr string) (addr ip.Address, err error) {

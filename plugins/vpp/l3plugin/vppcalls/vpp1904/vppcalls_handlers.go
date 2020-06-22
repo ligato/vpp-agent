@@ -35,6 +35,7 @@ import (
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin/vppcalls"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin/vrfidx"
+	l3 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3"
 )
 
 var (
@@ -58,6 +59,7 @@ type L3VppHandler struct {
 	*VrfTableHandler
 	*DHCPProxyHandler
 	*L3XCHandlerUnsupported
+	*TeibHandlerUnsupported
 }
 
 func NewL3VppHandler(
@@ -80,6 +82,7 @@ func NewL3VppHandler(
 		VrfTableHandler:        NewVrfTableVppHandler(ch, log),
 		DHCPProxyHandler:       NewDHCPProxyHandler(ch, log),
 		L3XCHandlerUnsupported: &L3XCHandlerUnsupported{},
+		TeibHandlerUnsupported: &TeibHandlerUnsupported{},
 	}
 }
 
@@ -212,6 +215,20 @@ func (l L3XCHandlerUnsupported) UpdateL3XC(ctx context.Context, l3xc *vppcalls.L
 
 func (l L3XCHandlerUnsupported) DeleteL3XC(ctx context.Context, index uint32, ipv6 bool) error {
 	return ErrUnsupported
+}
+
+type TeibHandlerUnsupported struct{}
+
+func (h *TeibHandlerUnsupported) VppAddTeibEntry(ctx context.Context, entry *l3.TeibEntry) error {
+	return fmt.Errorf("%w in VPP %s", vppcalls.ErrTeibUnsupported, vpp1904.Version)
+}
+
+func (h *TeibHandlerUnsupported) VppDelTeibEntry(ctx context.Context, entry *l3.TeibEntry) error {
+	return fmt.Errorf("%w in VPP %s", vppcalls.ErrTeibUnsupported, vpp1904.Version)
+}
+
+func (h *TeibHandlerUnsupported) DumpTeib() ([]*l3.TeibEntry, error) {
+	return nil, fmt.Errorf("%w in VPP %s", vppcalls.ErrTeibUnsupported, vpp1904.Version)
 }
 
 func ipToAddress(ipstr string) (addr ip.Address, err error) {
