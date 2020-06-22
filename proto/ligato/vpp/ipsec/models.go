@@ -42,7 +42,8 @@ var (
 		Version: "v2",
 		Type:    "tun-protect",
 	}, models.WithNameTemplate(
-		`{{.Interface}}`,
+		`{{.Interface}}`+
+			`{{if .NextHopAddr}}/nh/{{.NextHopAddr}}{{end}}`,
 	))
 )
 

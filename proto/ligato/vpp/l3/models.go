@@ -80,6 +80,14 @@ var (
 	}, models.WithNameTemplate(
 		`{{.Interface}}/protocol/{{.Protocol}}`,
 	))
+
+	ModelTeib = models.Register(&TeibEntry{}, models.Spec{
+		Module:  ModuleName,
+		Type:    "teib",
+		Version: "v2",
+	}, models.WithNameTemplate(
+		`{{.Interface}}/peer/{{.PeerAddr}}`,
+	))
 )
 
 // ProxyARPKey returns key for global proxy arp

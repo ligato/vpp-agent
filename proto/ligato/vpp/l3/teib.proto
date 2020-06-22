@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package ligato.vpp.l3;
+
+option go_package = "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3;vpp_l3";
+
+// TeibEntry represents an tunnel endpoint information base entry.
+message TeibEntry {
+    // Interface references a tunnel interface this TEIB entry is linked to.
+    string interface = 1;
+
+    // IP address of the peer.
+    string peer_addr = 2;
+
+    // Next hop IP address.
+    string next_hop_addr = 3;
+
+    // VRF ID used to reach the next hop.
+    uint32 vrf_id = 4;
+}

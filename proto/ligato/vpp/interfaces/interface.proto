@@ -347,7 +347,8 @@ message IPIPLink {
     enum Mode {
         // point-to-point tunnel
         POINT_TO_POINT = 0;
-        // note: point-to multipoint support will be added in VPP 20.04
+        // point-to multipoint tunnel (supported starting from VPP 20.05)
+        POINT_TO_MULTIPOINT = 1;
     };
     // Mode of the IPIP tunnel
     Mode tunnel_mode = 1;

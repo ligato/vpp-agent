@@ -23,6 +23,7 @@ import (
 	"go.ligato.io/vpp-agent/v3/proto/ligato/kvscheduler"
 	vpp_interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
 	vpp_ipsec "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/ipsec"
+	vpp_l3 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3"
 )
 
 func TestIPSec(t *testing.T) {
@@ -165,6 +166,153 @@ func TestIPSec(t *testing.T) {
 		"IN SA was not removed")
 	Eventually(ctx.getValueStateClb(tpNew)).Should(Equal(kvscheduler.ValueState_NONEXISTENT),
 		"tunnel protection was not removed")
+	Eventually(ctx.getValueStateClb(ipipTun)).Should(Equal(kvscheduler.ValueState_NONEXISTENT),
+		"IPIP tunnel was not removed")
+}
+
+func TestIPSecMultiPoint(t *testing.T) {
+	ctx := setupE2E(t)
+	defer ctx.teardownE2E()
+
+	if ctx.vppRelease < "20.05" {
+		t.Skipf("IPSec MP: skipped for VPP < 20.05 (%s)", ctx.vppRelease)
+	}
+
+	const (
+		msName       = "microservice1"
+		tunnelIfName = "ipsec-tunnel"
+	)
+
+	ipipTun := &vpp_interfaces.Interface{
+		Name:    tunnelIfName,
+		Enabled: true,
+		Type:    vpp_interfaces.Interface_IPIP_TUNNEL,
+
+		Link: &vpp_interfaces.Interface_Ipip{
+			Ipip: &vpp_interfaces.IPIPLink{
+				SrcAddr:    "1.2.3.4",
+				TunnelMode: vpp_interfaces.IPIPLink_POINT_TO_MULTIPOINT,
+			},
+		},
+		IpAddresses: []string{"192.168.0.1/24"},
+	}
+	saOut1 := &vpp_ipsec.SecurityAssociation{
+		Index:          10,
+		Spi:            123,
+		Protocol:       vpp_ipsec.SecurityAssociation_ESP,
+		CryptoAlg:      vpp_ipsec.CryptoAlg_AES_CBC_128,
+		CryptoKey:      "d9a4ec50aed76f1bf80bc915d8fcfe1c",
+		IntegAlg:       vpp_ipsec.IntegAlg_SHA1_96,
+		IntegKey:       "bf9b150aaf5c2a87d79898b11eabd055e70abdbe",
+		EnableUdpEncap: true,
+	}
+	saIn1 := &vpp_ipsec.SecurityAssociation{
+		Index:          20,
+		Spi:            456,
+		Protocol:       vpp_ipsec.SecurityAssociation_ESP,
+		CryptoAlg:      vpp_ipsec.CryptoAlg_AES_CBC_128,
+		CryptoKey:      "d9a4ec50aed76f1bf80bc915d8fcfe1c",
+		IntegAlg:       vpp_ipsec.IntegAlg_SHA1_96,
+		IntegKey:       "bf9b150aaf5c2a87d79898b11eabd055e70abdbe",
+		EnableUdpEncap: true,
+	}
+	saOut2 := &vpp_ipsec.SecurityAssociation{
+		Index:          30,
+		Spi:            789,
+		Protocol:       vpp_ipsec.SecurityAssociation_ESP,
+		CryptoAlg:      vpp_ipsec.CryptoAlg_AES_CBC_128,
+		CryptoKey:      "d9a4ec50aed76f1bf80bc915d8fcfe1c",
+		IntegAlg:       vpp_ipsec.IntegAlg_SHA1_96,
+		IntegKey:       "bf9b150aaf5c2a87d79898b11eabd055e70abdbe",
+		EnableUdpEncap: true,
+	}
+	saIn2 := &vpp_ipsec.SecurityAssociation{
+		Index:          40,
+		Spi:            111,
+		Protocol:       vpp_ipsec.SecurityAssociation_ESP,
+		CryptoAlg:      vpp_ipsec.CryptoAlg_AES_CBC_128,
+		CryptoKey:      "d9a4ec50aed76f1bf80bc915d8fcfe1c",
+		IntegAlg:       vpp_ipsec.IntegAlg_SHA1_96,
+		IntegKey:       "bf9b150aaf5c2a87d79898b11eabd055e70abdbe",
+		EnableUdpEncap: true,
+	}
+	tp1 := &vpp_ipsec.TunnelProtection{
+		Interface:   tunnelIfName,
+		SaOut:       []uint32{saOut1.Index},
+		SaIn:        []uint32{saIn1.Index},
+		NextHopAddr: "192.168.0.2",
+	}
+	tp2 := &vpp_ipsec.TunnelProtection{
+		Interface:   tunnelIfName,
+		SaOut:       []uint32{saOut2.Index},
+		SaIn:        []uint32{saIn2.Index},
+		NextHopAddr: "192.168.0.3",
+	}
+	teib1 := &vpp_l3.TeibEntry{
+		Interface:   tunnelIfName,
+		PeerAddr:    tp1.NextHopAddr,
+		NextHopAddr: "8.8.8.8",
+	}
+	teib2 := &vpp_l3.TeibEntry{
+		Interface:   tunnelIfName,
+		PeerAddr:    tp2.NextHopAddr,
+		NextHopAddr: "8.8.8.9",
+	}
+
+	ctx.startMicroservice(msName)
+	req := ctx.grpcClient.ChangeRequest()
+	err := req.Update(
+		ipipTun,
+		saOut1, saIn1, saOut2, saIn2,
+		tp1, tp2,
+		teib1, teib2,
+	).Send(context.Background())
+	Expect(err).ToNot(HaveOccurred(), "Sending change request failed with err")
+
+	Eventually(ctx.getValueStateClb(ipipTun)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
+		"IPIP tunnel is not configured")
+	Eventually(ctx.getValueStateClb(saOut1)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
+		"OUT SA 1 is not configured")
+	Eventually(ctx.getValueStateClb(saIn1)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
+		"IN SA 1 is not configured")
+	Eventually(ctx.getValueStateClb(saOut2)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
+		"OUT SA 2 is not configured")
+	Eventually(ctx.getValueStateClb(saIn2)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
+		"IN SA 2 is not configured")
+	Eventually(ctx.getValueStateClb(tp1)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
+		"tunnel protection 1 is not configured")
+	Eventually(ctx.getValueStateClb(tp2)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
+		"tunnel protection 2 is not configured")
+	Eventually(ctx.getValueStateClb(teib1)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
+		"TEIB 1 is not configured")
+	Eventually(ctx.getValueStateClb(teib2)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
+		"TEIB 2 is not configured")
+
+	req3 := ctx.grpcClient.ChangeRequest()
+	err = req3.Delete(
+		ipipTun,
+		saOut1, saIn1, saOut2, saIn2,
+		tp1, tp2,
+		teib1, teib2,
+	).Send(context.Background())
+	Expect(err).ToNot(HaveOccurred(), "Sending change request failed with err")
+
+	Eventually(ctx.getValueStateClb(teib1)).Should(Equal(kvscheduler.ValueState_NONEXISTENT),
+		"TEIB 1 was not removed")
+	Eventually(ctx.getValueStateClb(teib2)).Should(Equal(kvscheduler.ValueState_NONEXISTENT),
+		"TEIB 2 was not removed")
+	Eventually(ctx.getValueStateClb(saOut1)).Should(Equal(kvscheduler.ValueState_NONEXISTENT),
+		"OUT SA 1 was not removed")
+	Eventually(ctx.getValueStateClb(saIn1)).Should(Equal(kvscheduler.ValueState_NONEXISTENT),
+		"IN SA 1 was not removed")
+	Eventually(ctx.getValueStateClb(saOut2)).Should(Equal(kvscheduler.ValueState_NONEXISTENT),
+		"OUT SA 2 was not removed")
+	Eventually(ctx.getValueStateClb(saIn2)).Should(Equal(kvscheduler.ValueState_NONEXISTENT),
+		"IN SA 2 was not removed")
+	Eventually(ctx.getValueStateClb(tp2)).Should(Equal(kvscheduler.ValueState_NONEXISTENT),
+		"tunnel protection 2 was not removed")
+	Eventually(ctx.getValueStateClb(tp1)).Should(Equal(kvscheduler.ValueState_NONEXISTENT),
+		"tunnel protection 1 was not removed")
 	Eventually(ctx.getValueStateClb(ipipTun)).Should(Equal(kvscheduler.ValueState_NONEXISTENT),
 		"IPIP tunnel was not removed")
 }

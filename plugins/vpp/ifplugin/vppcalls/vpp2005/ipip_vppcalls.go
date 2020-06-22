@@ -39,51 +39,63 @@ func (h *InterfaceVppHandler) AddIpipTunnel(ifName string, vrf uint32, ipipLink 
 	if ipipLink == nil {
 		return 0, errors.New("missing IPIP tunnel information")
 	}
-	srcAddr := net.ParseIP(ipipLink.SrcAddr)
+	var srcAddr, dstAddr net.IP
+	var isSrcIPv6, isDstIPv6 bool
+
+	srcAddr = net.ParseIP(ipipLink.SrcAddr)
 	if srcAddr == nil {
 		err := errors.New("bad source address for IPIP tunnel")
 		return 0, err
 	}
-	dstAddr := net.ParseIP(ipipLink.DstAddr)
-	if dstAddr == nil {
-		err := errors.New("bad destination address for IPIP tunnel")
-		return 0, err
-	}
-
-	var isSrcIPv6, isDstIPv6 bool
 	if srcAddr.To4() == nil {
 		isSrcIPv6 = true
 	}
-	if dstAddr.To4() == nil {
-		isDstIPv6 = true
+
+	if ipipLink.TunnelMode == interfaces.IPIPLink_POINT_TO_POINT {
+		dstAddr = net.ParseIP(ipipLink.DstAddr)
+		if dstAddr == nil {
+			err := errors.New("bad destination address for IPIP tunnel")
+			return 0, err
+		}
+		if dstAddr.To4() == nil {
+			isDstIPv6 = true
+		}
 	}
 
-	if !isSrcIPv6 && !isDstIPv6 {
+	if !isSrcIPv6 && (dstAddr == nil || !isDstIPv6) {
 		var src, dst [4]uint8
 		copy(src[:], srcAddr.To4())
-		copy(dst[:], dstAddr.To4())
 		req.Tunnel.Src = ip_types.Address{
 			Af: ip_types.ADDRESS_IP4,
 			Un: ip_types.AddressUnionIP4(src),
 		}
-		req.Tunnel.Dst = ip_types.Address{
-			Af: ip_types.ADDRESS_IP4,
-			Un: ip_types.AddressUnionIP4(dst),
+		if dstAddr != nil {
+			copy(dst[:], dstAddr.To4())
+			req.Tunnel.Dst = ip_types.Address{
+				Af: ip_types.ADDRESS_IP4,
+				Un: ip_types.AddressUnionIP4(dst),
+			}
 		}
-	} else if isSrcIPv6 && isDstIPv6 {
+	} else if isSrcIPv6 && (dstAddr == nil || isDstIPv6) {
 		var src, dst [16]uint8
 		copy(src[:], srcAddr.To16())
-		copy(dst[:], dstAddr.To16())
 		req.Tunnel.Src = ip_types.Address{
 			Af: ip_types.ADDRESS_IP6,
 			Un: ip_types.AddressUnionIP6(src),
 		}
-		req.Tunnel.Dst = ip_types.Address{
-			Af: ip_types.ADDRESS_IP6,
-			Un: ip_types.AddressUnionIP6(dst),
+		if dstAddr != nil {
+			copy(dst[:], dstAddr.To16())
+			req.Tunnel.Dst = ip_types.Address{
+				Af: ip_types.ADDRESS_IP6,
+				Un: ip_types.AddressUnionIP6(dst),
+			}
 		}
 	} else {
 		return 0, errors.New("source and destination addresses must be both either IPv4 or IPv6")
+	}
+
+	if ipipLink.TunnelMode == interfaces.IPIPLink_POINT_TO_MULTIPOINT {
+		req.Tunnel.Mode = ipip.TUNNEL_API_MODE_MP
 	}
 
 	reply := &ipip.IpipAddTunnelReply{}
@@ -131,13 +143,28 @@ func (h *InterfaceVppHandler) dumpIpipDetails(ifc map[uint32]*vppcalls.Interface
 		if ipipDetails.Tunnel.Src.Af == ip_types.ADDRESS_IP6 {
 			srcAddrArr := ipipDetails.Tunnel.Src.Un.GetIP6()
 			ipipLink.SrcAddr = net.IP(srcAddrArr[:]).To16().String()
-			dstAddrArr := ipipDetails.Tunnel.Dst.Un.GetIP6()
-			ipipLink.DstAddr = net.IP(dstAddrArr[:]).To16().String()
+			if ipipDetails.Tunnel.Mode == ipip.TUNNEL_API_MODE_P2P {
+				dstAddrArr := ipipDetails.Tunnel.Dst.Un.GetIP6()
+				ipipLink.DstAddr = net.IP(dstAddrArr[:]).To16().String()
+			}
 		} else {
 			srcAddrArr := ipipDetails.Tunnel.Src.Un.GetIP4()
 			ipipLink.SrcAddr = net.IP(srcAddrArr[:4]).To4().String()
-			dstAddrArr := ipipDetails.Tunnel.Dst.Un.GetIP4()
-			ipipLink.DstAddr = net.IP(dstAddrArr[:4]).To4().String()
+			if ipipDetails.Tunnel.Mode == ipip.TUNNEL_API_MODE_P2P {
+				dstAddrArr := ipipDetails.Tunnel.Dst.Un.GetIP4()
+				ipipLink.DstAddr = net.IP(dstAddrArr[:4]).To4().String()
+			}
+		}
+
+		if ipipDetails.Tunnel.Mode == ipip.TUNNEL_API_MODE_MP {
+			ipipLink.TunnelMode = interfaces.IPIPLink_POINT_TO_MULTIPOINT
+		}
+
+		// TODO: temporary fix since VPP does not dump the tunnel mode properly.
+		// If dst address is empty, this must be a multipoint tunnel.
+		if ipipLink.DstAddr == "0.0.0.0" {
+			ipipLink.TunnelMode = interfaces.IPIPLink_POINT_TO_MULTIPOINT
+			ipipLink.DstAddr = ""
 		}
 
 		ifc[uint32(ipipDetails.Tunnel.SwIfIndex)].Interface.Link = &interfaces.Interface_Ipip{Ipip: ipipLink}

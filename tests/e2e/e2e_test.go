@@ -208,7 +208,7 @@ func setupE2E(t *testing.T) *TestCtx {
 		version = strings.SplitN(version, " ", 3)[1]
 		testCtx.vppVersion = version
 		if len(version) > 5 {
-			testCtx.vppRelease = version[1:5]
+			testCtx.vppRelease = version[1:6]
 		}
 		t.Logf("VPP version: %v", testCtx.vppVersion)
 	}
