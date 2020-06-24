@@ -59,6 +59,31 @@ func Version() string {
 	return version
 }
 
+// GitCommit returns git commit hash.
+func GitCommit() string {
+	return gitCommit
+}
+
+// GitBranch returns git branch name.
+func GitBranch() string {
+	return gitBranch
+}
+
+// BuildUser returns username.
+func BuildUser() string {
+	return buildUser
+}
+
+// BuildHost returns host name.
+func BuildHost() string {
+	return buildHost
+}
+
+// BuildTime returns time when Agent was compiled.
+func BuildTime() string {
+	return buildTime.Format(time.UnixDate)
+}
+
 // Data returns version data.
 func Data() (ver, rev, date string) {
 	return version, revision, buildTime.Format(time.UnixDate)
