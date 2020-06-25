@@ -520,11 +520,12 @@ func (h *InterfaceVppHandler) dumpTapDetails(interfaces map[uint32]*vppcalls.Int
 		}
 		interfaces[tapDetails.SwIfIndex].Interface.Link = &ifs.Interface_Tap{
 			Tap: &ifs.TapLink{
-				Version:    2,
-				HostIfName: cleanString(tapDetails.HostIfName),
-				RxRingSize: uint32(tapDetails.RxRingSz),
-				TxRingSize: uint32(tapDetails.TxRingSz),
-				EnableGso:  tapDetails.TapFlags&vpp_tapv2.TAP_API_FLAG_GSO == vpp_tapv2.TAP_API_FLAG_GSO,
+				Version:      2,
+				HostIfName:   cleanString(tapDetails.HostIfName),
+				RxRingSize:   uint32(tapDetails.RxRingSz),
+				TxRingSize:   uint32(tapDetails.TxRingSz),
+				EnableGso:    tapDetails.TapFlags&vpp_tapv2.TAP_API_FLAG_GSO == vpp_tapv2.TAP_API_FLAG_GSO,
+				EnableTunnel: tapDetails.TapFlags&vpp_tapv2.TAP_API_FLAG_TUN == vpp_tapv2.TAP_API_FLAG_TUN,
 			},
 		}
 		interfaces[tapDetails.SwIfIndex].Interface.Type = ifs.Interface_TAP
