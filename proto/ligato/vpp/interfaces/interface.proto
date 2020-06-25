@@ -219,7 +219,10 @@ message TapLink {
     uint32 rx_ring_size = 4;
     // Tx ring buffer size; must be power of 2; default is 256; only for TAP v.2
     uint32 tx_ring_size = 5;
+    // EnableGso enables GSO mode for TAP interface.
     bool enable_gso = 6;
+    // EnableTunnel enables tunnel mode for TAP interface.
+    bool enable_tunnel = 7;
 }
 
 // IPSecLink defines configuration for interface type: IPSEC_TUNNEL

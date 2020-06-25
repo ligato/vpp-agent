@@ -23,11 +23,6 @@ import (
 	ifs "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
 )
 
-// TapFlags definitions from https://github.com/FDio/vpp/blob/stable/2001/src/vnet/devices/tap/tap.h#L33
-const (
-	TapFlagGSO uint32 = 1 << iota
-)
-
 func (h *InterfaceVppHandler) AddTapInterface(ifName string, tapIf *ifs.TapLink) (swIfIdx uint32, err error) {
 	if tapIf == nil || tapIf.HostIfName == "" {
 		return 0, errors.New("host interface name was not provided for the TAP interface")
@@ -39,6 +34,9 @@ func (h *InterfaceVppHandler) AddTapInterface(ifName string, tapIf *ifs.TapLink)
 		var flags vpp_tapv2.TapFlags
 		if tapIf.EnableGso {
 			flags |= vpp_tapv2.TAP_API_FLAG_GSO
+		}
+		if tapIf.EnableTunnel {
+			flags |= vpp_tapv2.TAP_API_FLAG_TUN
 		}
 
 		// Configure fast virtio-based TAP interface

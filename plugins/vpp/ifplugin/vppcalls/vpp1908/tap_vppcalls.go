@@ -40,6 +40,9 @@ func (h *InterfaceVppHandler) AddTapInterface(ifName string, tapIf *interfaces.T
 		if tapIf.EnableGso {
 			flags |= TapFlagGSO
 		}
+		if tapIf.EnableTunnel {
+			h.log.Warnf("tunnel mode not supported for VPP 19.08")
+		}
 
 		// Configure fast virtio-based TAP interface
 		req := &tapv2.TapCreateV2{
