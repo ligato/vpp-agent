@@ -30,6 +30,7 @@ import (
 	"go.ligato.io/vpp-agent/v3/pkg/version"
 	"go.ligato.io/vpp-agent/v3/plugins/configurator"
 	"go.ligato.io/vpp-agent/v3/plugins/restapi/resturl"
+	"go.ligato.io/vpp-agent/v3/plugins/restapi/types"
 	interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
 )
 
@@ -305,18 +306,7 @@ func (p *Plugin) registerHTTPHandler(key, method string, f func() (interface{}, 
 // versionHandler returns version of Agent.
 func (p *Plugin) versionHandler(formatter *render.Render) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
-		version := struct {
-			App       string
-			Version   string
-			GitCommit string
-			GitBranch string
-			BuildUser string
-			BuildHost string
-			BuildTime string
-			GoVersion string
-			OS        string
-			Arch      string
-		}{
+		version := types.Version{
 			App:       version.App(),
 			Version:   version.Version(),
 			GitCommit: version.GitCommit(),

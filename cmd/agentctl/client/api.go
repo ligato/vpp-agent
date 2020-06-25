@@ -12,6 +12,7 @@ import (
 	"go.ligato.io/vpp-agent/v3/client"
 	"go.ligato.io/vpp-agent/v3/cmd/agentctl/api/types"
 	"go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
+	restapi "go.ligato.io/vpp-agent/v3/plugins/restapi/types"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/kvscheduler"
 )
 
@@ -30,7 +31,7 @@ type APIClient interface {
 	KVDBClient() (KVDBAPIClient, error)
 	GRPCConn() (*grpc.ClientConn, error)
 	HTTPClient() *http.Client
-	ServerVersion(ctx context.Context) (types.Version, error)
+	AgentVersion(ctx context.Context) (*restapi.Version, error)
 	NegotiateAPIVersion(ctx context.Context)
 	NegotiateAPIVersionPing(types.Ping)
 	Close() error

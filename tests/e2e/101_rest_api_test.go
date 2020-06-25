@@ -34,7 +34,7 @@ func TestInfoVersionHandler(t *testing.T) {
 		GitBranch string
 		BuildUser string
 		BuildHost string
-		BuildTime string
+		BuildTime int64
 		GoVersion string
 		OS        string
 		Arch      string
@@ -47,7 +47,7 @@ func TestInfoVersionHandler(t *testing.T) {
 	Expect(version.GitBranch).ToNot(BeEmpty())
 	Expect(version.BuildUser).ToNot(BeEmpty())
 	Expect(version.BuildHost).ToNot(BeEmpty())
-	Expect(version.BuildTime).ToNot(BeEmpty())
+	Expect(version.BuildTime).ToNot(BeZero())
 	Expect(version.GoVersion).ToNot(BeEmpty())
 	Expect(version.OS).ToNot(BeEmpty())
 	Expect(version.Arch).ToNot(BeEmpty())

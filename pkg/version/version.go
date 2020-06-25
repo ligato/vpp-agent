@@ -79,9 +79,9 @@ func BuildHost() string {
 	return buildHost
 }
 
-// BuildTime returns time when Agent was compiled.
-func BuildTime() string {
-	return buildTime.Format(time.UnixDate)
+// BuildTime returns Unix time when Agent was compiled.
+func BuildTime() int64 {
+	return buildTime.Unix()
 }
 
 // Data returns version data.

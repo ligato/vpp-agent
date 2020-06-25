@@ -24,6 +24,7 @@ import (
 	"go.ligato.io/cn-infra/v2/health/probe"
 
 	"go.ligato.io/vpp-agent/v3/cmd/agentctl/api/types"
+	restapi "go.ligato.io/vpp-agent/v3/plugins/restapi/types"
 )
 
 // Ping pings the server and returns the value of the "API-Version" headers.
@@ -56,19 +57,20 @@ func parsePingResponse(cli *Client, resp serverResponse) (types.Ping, error) {
 	return ping, err
 }
 
-// ServerVersion returns information of the client and agent host.
-func (c *Client) ServerVersion(ctx context.Context) (types.Version, error) {
-	resp, err := c.get(ctx, "/version", nil, nil)
+// AgentVersion returns information about Agent.
+func (c *Client) AgentVersion(ctx context.Context) (*restapi.Version, error) {
+	resp, err := c.get(ctx, "/info/version", nil, nil)
 	defer ensureReaderClosed(resp)
 	if err != nil {
-		return types.Version{}, err
+		return nil, err
 	}
 
-	var server types.Version
-	err = json.NewDecoder(resp.body).Decode(&server)
-	return server, err
+	var v restapi.Version
+	err = json.NewDecoder(resp.body).Decode(&v)
+	return &v, err
 }
 
+// LoggerList returns list of all registered loggers in Agent.
 func (c *Client) LoggerList(ctx context.Context) ([]types.Logger, error) {
 	resp, err := c.get(ctx, "/log/list", nil, nil)
 	if err != nil {

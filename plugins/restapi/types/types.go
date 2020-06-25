@@ -1,4 +1,4 @@
-//  Copyright (c) 2019 Cisco and/or its affiliates.
+//  Copyright (c) 2020 Cisco and/or its affiliates.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -14,19 +14,17 @@
 
 package types
 
-// ErrorResponse represents an error.
-type ErrorResponse struct {
-	Message string `json:"message"`
-}
-
-// Ping contains response of Engine API:
-// GET "/_ping"
-type Ping struct {
-	APIVersion string
-	OSType     string
-}
-
-type Logger struct {
-	Logger string `json:"logger,omitempty"`
-	Level  string `json:"level,omitempty"`
+// Version contains response of Agent REST API:
+// GET "/info/version"
+type Version struct {
+	App       string
+	Version   string
+	GitCommit string
+	GitBranch string
+	BuildUser string
+	BuildHost string
+	BuildTime int64
+	GoVersion string
+	OS        string
+	Arch      string
 }
