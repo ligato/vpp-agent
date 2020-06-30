@@ -30,7 +30,7 @@ import (
 	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin"
 )
 
-func TestRoutes(t *testing.T) {
+func TestRouteDumpDefaults(t *testing.T) {
 	ctx := setupVPP(t)
 	defer ctx.teardownVPP()
 
@@ -68,7 +68,7 @@ func TestRoutes(t *testing.T) {
 	}
 }
 
-func TestCRUDIPv4Route(t *testing.T) {
+func TestRouteIP4(t *testing.T) {
 	test := setupVPP(t)
 	defer test.teardownVPP()
 
@@ -217,7 +217,7 @@ func TestCRUDIPv4Route(t *testing.T) {
 	}
 }
 
-func TestCRUDIPv6Route(t *testing.T) {
+func TestRouteIP6(t *testing.T) {
 	test := setupVPP(t)
 	defer test.teardownVPP()
 
