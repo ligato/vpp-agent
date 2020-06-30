@@ -24,7 +24,6 @@ import (
 	"go.ligato.io/cn-infra/v2/health/probe"
 
 	"go.ligato.io/vpp-agent/v3/cmd/agentctl/api/types"
-	restapi "go.ligato.io/vpp-agent/v3/plugins/restapi/types"
 )
 
 // Ping pings the server and returns the value of the "API-Version" headers.
@@ -58,14 +57,14 @@ func parsePingResponse(cli *Client, resp serverResponse) (types.Ping, error) {
 }
 
 // AgentVersion returns information about Agent.
-func (c *Client) AgentVersion(ctx context.Context) (*restapi.Version, error) {
+func (c *Client) AgentVersion(ctx context.Context) (*types.Version, error) {
 	resp, err := c.get(ctx, "/info/version", nil, nil)
 	defer ensureReaderClosed(resp)
 	if err != nil {
 		return nil, err
 	}
 
-	var v restapi.Version
+	var v types.Version
 	err = json.NewDecoder(resp.body).Decode(&v)
 	return &v, err
 }

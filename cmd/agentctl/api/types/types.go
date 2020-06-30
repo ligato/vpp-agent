@@ -19,6 +19,21 @@ type ErrorResponse struct {
 	Message string `json:"message"`
 }
 
+// Version contains response of Agent REST API:
+// GET "/info/version"
+type Version struct {
+	App       string
+	Version   string
+	GitCommit string
+	GitBranch string
+	BuildUser string
+	BuildHost string
+	BuildTime int64
+	GoVersion string
+	OS        string
+	Arch      string
+}
+
 // Ping contains response of Engine API:
 // GET "/_ping"
 type Ping struct {

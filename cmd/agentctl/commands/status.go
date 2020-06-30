@@ -21,8 +21,8 @@ import (
 
 	"go.ligato.io/cn-infra/v2/health/probe"
 
+	"go.ligato.io/vpp-agent/v3/cmd/agentctl/api/types"
 	agentcli "go.ligato.io/vpp-agent/v3/cmd/agentctl/cli"
-	"go.ligato.io/vpp-agent/v3/plugins/restapi/types"
 )
 
 func NewStatusCommand(cli agentcli.Cli) *cobra.Command {

@@ -27,10 +27,10 @@ import (
 	"github.com/go-errors/errors"
 	"github.com/unrolled/render"
 
+	"go.ligato.io/vpp-agent/v3/cmd/agentctl/api/types"
 	"go.ligato.io/vpp-agent/v3/pkg/version"
 	"go.ligato.io/vpp-agent/v3/plugins/configurator"
 	"go.ligato.io/vpp-agent/v3/plugins/restapi/resturl"
-	"go.ligato.io/vpp-agent/v3/plugins/restapi/types"
 	interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
 )
 
