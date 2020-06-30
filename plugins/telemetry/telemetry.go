@@ -194,18 +194,16 @@ func (p *Plugin) periodicUpdates() {
 	defer p.wg.Done()
 
 	p.Log.Debugf("starting periodic updates (%v)", p.updatePeriod)
+	defer p.Log.Debugf("stopping periodic updates")
 
 	tick := time.NewTicker(p.updatePeriod)
 	for {
 		select {
-		// Delay period between updates
 		case <-tick.C:
 			ctx := context.Background()
 			p.updatePrometheus(ctx)
 
-		// Plugin has stopped.
 		case <-p.quit:
-			p.Log.Debugf("stopping periodic updates")
 			return
 		}
 	}

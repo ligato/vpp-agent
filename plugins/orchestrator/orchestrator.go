@@ -17,6 +17,7 @@ package orchestrator
 import (
 	"os"
 	"strings"
+	"sync"
 
 	"github.com/golang/protobuf/proto"
 	"go.ligato.io/cn-infra/v2/datasync"
@@ -43,16 +44,18 @@ var (
 type Plugin struct {
 	Deps
 
+	*dispatcher
 	manager *genericService
+
+	reflection bool
 
 	// datasync channels
 	changeChan   chan datasync.ChangeEvent
 	resyncChan   chan datasync.ResyncEvent
 	watchDataReg datasync.WatchRegistration
 
-	reflection bool
-
-	*dispatcher
+	wg   sync.WaitGroup
+	quit chan struct{}
 }
 
 // Deps represents dependencies for the plugin.
@@ -67,6 +70,8 @@ type Deps struct {
 
 // Init registers the service to GRPC server.
 func (p *Plugin) Init() (err error) {
+	p.quit = make(chan struct{})
+
 	p.dispatcher = &dispatcher{
 		log: logging.DefaultRegistry.NewLogger("dispatcher"),
 		db:  newMemStore(),
@@ -80,28 +85,33 @@ func (p *Plugin) Init() (err error) {
 	}
 
 	if grpcServer := p.GRPC.GetServer(); grpcServer != nil {
+		p.Log.Debugf("registering generic manager and meta service")
 		generic.RegisterManagerServiceServer(grpcServer, p.manager)
 		generic.RegisterMetaServiceServer(grpcServer, p.manager)
+
 		// register grpc services for reflection
 		if p.reflection {
-			p.Log.Infof("registering grpc reflection service")
+			p.Log.Debugf("registering grpc reflection service")
 			reflection.Register(grpcServer)
 		}
 	} else {
-		p.log.Infof("grpc server not available")
+		p.log.Infof("grpc server is not available")
 	}
 
-	nbPrefixes := p.kvs.GetRegisteredNBKeyPrefixes()
-	if len(nbPrefixes) > 0 {
-		p.log.Infof("Watch starting for %d registered NB prefixes", len(nbPrefixes))
-	} else {
-		p.log.Warnf("No registered NB prefixes found in KVScheduler (ensure that all KVDescriptors are registered before this)")
+	p.Log.Infof("Found %d registered models", len(models.RegisteredModels()))
+	for _, model := range models.RegisteredModels() {
+		p.debugf("- model: %+v", *model.Spec())
 	}
 
 	var prefixes []string
-	for _, prefix := range nbPrefixes {
-		p.log.Debugf("- watching NB prefix: %s", prefix)
-		prefixes = append(prefixes, prefix)
+	if nbPrefixes := p.kvs.GetRegisteredNBKeyPrefixes(); len(nbPrefixes) > 0 {
+		p.log.Infof("Watching %d key prefixes from KVScheduler", len(nbPrefixes))
+		for _, prefix := range nbPrefixes {
+			p.debugf("- prefix: %s", prefix)
+			prefixes = append(prefixes, prefix)
+		}
+	} else {
+		p.log.Warnf("No key prefixes found in KVScheduler (ensure that all KVDescriptors are registered before this)")
 	}
 
 	// initialize datasync channels
@@ -119,12 +129,23 @@ func (p *Plugin) Init() (err error) {
 
 // AfterInit subscribes to known NB prefixes.
 func (p *Plugin) AfterInit() (err error) {
+	// watch datasync events
+	p.wg.Add(1)
 	go p.watchEvents()
 
 	statusChan := make(chan *kvscheduler.BaseValueStatus, 100)
 	p.kvs.WatchValueStatus(statusChan, nil)
+
+	// watch KVSchedular status changes
+	p.wg.Add(1)
 	go p.watchStatus(statusChan)
 
+	return nil
+}
+
+func (p *Plugin) Close() (err error) {
+	close(p.quit)
+	p.wg.Wait()
 	return nil
 }
 
@@ -142,6 +163,11 @@ func (p *Plugin) InitialSync() {
 }
 
 func (p *Plugin) watchEvents() {
+	defer p.wg.Done()
+
+	p.Log.Debugf("watching datasync events")
+	defer p.Log.Debugf("done watching datasync events")
+
 	for {
 		select {
 		case e := <-p.changeChan:
@@ -232,30 +258,22 @@ func (p *Plugin) watchEvents() {
 			_, err := p.PushData(ctx, kvPairs)
 			e.Done(err)
 
+		case <-p.quit:
+			return
 		}
 	}
 }
 
-// UnmarshalLazyValue is helper function for unmarshalling from datasync.LazyValue.
-func UnmarshalLazyValue(key string, lazy datasync.LazyValue) (proto.Message, error) {
-	model, err := models.GetModelForKey(key)
-	if err != nil {
-		return nil, err
-	}
-	instance := model.NewInstance()
-	// try to deserialize the value into instance
-	if err := lazy.GetValue(instance); err != nil {
-		return nil, err
-	}
-	return instance, nil
-}
-
 func (p *Plugin) watchStatus(ch <-chan *kvscheduler.BaseValueStatus) {
+	defer p.wg.Done()
+
+	p.Log.Debugf("watching status changes")
+	defer p.Log.Debugf("done watching status events")
+
 	for {
 		select {
 		case s := <-ch:
-
-			p.debugf("STATUS: %15s %v ===> %v (%v) %v",
+			p.debugf("incoming status change: %15s %v ===> %v (%v) %v",
 				s.Value.State, s.Value.Details, s.Value.Key, s.Value.LastOperation, s.Value.Error)
 			for _, dv := range s.DerivedValues {
 				p.debugf(" \t%15s %v ---> %v (%v) %v",
@@ -267,6 +285,9 @@ func (p *Plugin) watchStatus(ch <-chan *kvscheduler.BaseValueStatus) {
 					{Key: s.Value.Key, Status: s.Value},
 				})
 			}
+
+		case <-p.quit:
+			return
 		}
 	}
 }
@@ -293,4 +314,18 @@ func (p *Plugin) debugf(f string, a ...interface{}) {
 	if debugOrchestrator {
 		p.log.Debugf(f, a...)
 	}
+}
+
+// UnmarshalLazyValue is helper function for unmarshalling from datasync.LazyValue.
+func UnmarshalLazyValue(key string, lazy datasync.LazyValue) (proto.Message, error) {
+	model, err := models.GetModelForKey(key)
+	if err != nil {
+		return nil, err
+	}
+	instance := model.NewInstance()
+	// try to deserialize the value into instance
+	if err := lazy.GetValue(instance); err != nil {
+		return nil, err
+	}
+	return instance, nil
 }
