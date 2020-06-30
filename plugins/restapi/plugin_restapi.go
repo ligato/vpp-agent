@@ -185,6 +185,8 @@ func (p *Plugin) Init() (err error) {
 
 // AfterInit is used to register HTTP handlers
 func (p *Plugin) AfterInit() (err error) {
+	// Info handlers.
+	p.registerInfoHandlers()
 	// VPP handlers
 	p.registerTelemetryHandlers()
 	// core
@@ -214,6 +216,9 @@ func (p *Plugin) Close() error {
 // Fill index item lists
 func getIndexPageItems() map[string][]indexItem {
 	idxMap := map[string][]indexItem{
+		"Info": {
+			{Name: "Version", Path: resturl.Version},
+		},
 		"ACL plugin": {
 			{Name: "IP-type access lists", Path: resturl.ACLIP},
 			{Name: "MACIP-type access lists", Path: resturl.ACLMACIP},
@@ -254,6 +259,13 @@ func getIndexPageItems() map[string][]indexItem {
 // Create permission groups (tracer, telemetry, dump - optionally add more in the future). Used only if
 // REST security is enabled in plugin
 func getPermissionsGroups() []*access.PermissionGroup {
+	infoPg := &access.PermissionGroup{
+		Name: "info",
+		Permissions: []*access.PermissionGroup_Permissions{
+			newPermission("/", GET),
+			newPermission(resturl.Version, GET),
+		},
+	}
 	tracerPg := &access.PermissionGroup{
 		Name: "stats",
 		Permissions: []*access.PermissionGroup_Permissions{
@@ -295,7 +307,7 @@ func getPermissionsGroups() []*access.PermissionGroup {
 		},
 	}
 
-	return []*access.PermissionGroup{tracerPg, telemetryPg, dumpPg}
+	return []*access.PermissionGroup{infoPg, tracerPg, telemetryPg, dumpPg}
 }
 
 // Returns permission object with url and provided methods

@@ -19,27 +19,19 @@ type ErrorResponse struct {
 	Message string `json:"message"`
 }
 
-// ComponentVersion describes the version information for a specific component.
-type ComponentVersion struct {
-	Name    string
-	Version string
-	Details map[string]string `json:",omitempty"`
-}
-
-// Version contains response of Engine API:
-// GET "/version"
+// Version contains response of Agent REST API:
+// GET "/info/version"
 type Version struct {
-	Components []ComponentVersion
-
-	Version       string
-	APIVersion    string
-	MinAPIVersion string
-	GitCommit     string
-	GoVersion     string
-	Os            string
-	Arch          string
-	KernelVersion string
-	BuildTime     string
+	App       string
+	Version   string
+	GitCommit string
+	GitBranch string
+	BuildUser string
+	BuildHost string
+	BuildTime int64
+	GoVersion string
+	OS        string
+	Arch      string
 }
 
 // Ping contains response of Engine API:

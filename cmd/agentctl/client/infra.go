@@ -56,19 +56,20 @@ func parsePingResponse(cli *Client, resp serverResponse) (types.Ping, error) {
 	return ping, err
 }
 
-// ServerVersion returns information of the client and agent host.
-func (c *Client) ServerVersion(ctx context.Context) (types.Version, error) {
-	resp, err := c.get(ctx, "/version", nil, nil)
+// AgentVersion returns information about Agent.
+func (c *Client) AgentVersion(ctx context.Context) (*types.Version, error) {
+	resp, err := c.get(ctx, "/info/version", nil, nil)
 	defer ensureReaderClosed(resp)
 	if err != nil {
-		return types.Version{}, err
+		return nil, err
 	}
 
-	var server types.Version
-	err = json.NewDecoder(resp.body).Decode(&server)
-	return server, err
+	var v types.Version
+	err = json.NewDecoder(resp.body).Decode(&v)
+	return &v, err
 }
 
+// LoggerList returns list of all registered loggers in Agent.
 func (c *Client) LoggerList(ctx context.Context) ([]types.Logger, error) {
 	resp, err := c.get(ctx, "/log/list", nil, nil)
 	if err != nil {

@@ -30,7 +30,7 @@ type APIClient interface {
 	KVDBClient() (KVDBAPIClient, error)
 	GRPCConn() (*grpc.ClientConn, error)
 	HTTPClient() *http.Client
-	ServerVersion(ctx context.Context) (types.Version, error)
+	AgentVersion(ctx context.Context) (*types.Version, error)
 	NegotiateAPIVersion(ctx context.Context)
 	NegotiateAPIVersionPing(types.Ping)
 	Close() error
