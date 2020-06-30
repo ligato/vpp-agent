@@ -192,11 +192,11 @@ func TestAgentCtlCommands(t *testing.T) {
 		{
 			name:           "Test `status` action",
 			cmd:            "status",
-			expectInStdout: `State: OK`,
+			expectReStdout: `State:\s*OK`,
 		},
 		{
 			name:         "Test `status` action (with format)",
-			cmd:          "status -f {{.AgentStatus.State}}",
+			cmd:          "status -f {{.Status.AgentStatus.State}}",
 			expectStdout: "OK",
 		},
 		{

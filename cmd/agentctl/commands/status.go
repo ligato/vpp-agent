@@ -19,6 +19,9 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"go.ligato.io/cn-infra/v2/health/probe"
+
+	"go.ligato.io/vpp-agent/v3/cmd/agentctl/api/types"
 	agentcli "go.ligato.io/vpp-agent/v3/cmd/agentctl/cli"
 )
 
@@ -28,7 +31,7 @@ func NewStatusCommand(cli agentcli.Cli) *cobra.Command {
 	)
 	cmd := &cobra.Command{
 		Use:   "status",
-		Short: "Retrieve agent status",
+		Short: "Retrieve agent status and version info",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runStatus(cli, opts)
@@ -47,7 +50,11 @@ func runStatus(cli agentcli.Cli, opts StatusOptions) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	status, err := cli.Client().Status(ctx)
+	s, err := cli.Client().Status(ctx)
+	if err != nil {
+		return err
+	}
+	v, err := cli.Client().AgentVersion(ctx)
 	if err != nil {
 		return err
 	}
@@ -57,7 +64,12 @@ func runStatus(cli agentcli.Cli, opts StatusOptions) error {
 		format = defaultFormatStatus
 	}
 
-	if err := formatAsTemplate(cli.Out(), format, status); err != nil {
+	data := struct {
+		Status  *probe.ExposedStatus
+		Version *types.Version
+	}{s, v}
+
+	if err := formatAsTemplate(cli.Out(), format, data); err != nil {
 		return err
 	}
 
@@ -65,15 +77,26 @@ func runStatus(cli agentcli.Cli, opts StatusOptions) error {
 }
 
 const defaultFormatStatus = `AGENT
-       State: {{.AgentStatus.State}}
-     Version: {{.AgentStatus.BuildVersion}}
-     Started: {{epoch .AgentStatus.StartTime}} ({{ago (epoch .AgentStatus.StartTime)}} ago)
-  
- Last change: {{ago (epoch .AgentStatus.LastChange)}}
- Last update: {{ago (epoch .AgentStatus.LastUpdate)}}
+    App name:    {{.Version.App}}
+    Version:     {{.Version.Version}}
+
+    State:       {{.Status.AgentStatus.State}}
+    Started:     {{epoch .Status.AgentStatus.StartTime}} ({{ago (epoch .Status.AgentStatus.StartTime)}} ago)
+    Last change: {{ago (epoch .Status.AgentStatus.LastChange)}}
+    Last update: {{ago (epoch .Status.AgentStatus.LastUpdate)}}
+
+    Go version:  {{.Version.GoVersion}}
+    OS/Arch:     {{.Version.OS}}/{{.Version.Arch}}
+
+    Build Info:
+        Git commit: {{.Version.GitCommit}}
+        Git branch: {{.Version.GitBranch}}
+        User:       {{.Version.BuildUser}}
+        Host:       {{.Version.BuildHost}}
+        Built:      {{epoch .Version.BuildTime}}
 
 PLUGINS
-{{- range $name, $plugin := .PluginStatus}}
-   {{$name}}: {{$plugin.State}}
+{{- range $name, $plugin := .Status.PluginStatus}}
+    {{$name}}: {{$plugin.State}}
 {{- end}}
 `

@@ -14,6 +14,12 @@
 
 package resturl
 
+// Info
+const (
+	// Version is a path for retrieving information about version of Agent.
+	Version = "/info/version"
+)
+
 // Linux Dumps
 const (
 	// Interfaces

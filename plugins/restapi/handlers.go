@@ -22,10 +22,13 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"runtime"
 
 	"github.com/go-errors/errors"
 	"github.com/unrolled/render"
 
+	"go.ligato.io/vpp-agent/v3/cmd/agentctl/api/types"
+	"go.ligato.io/vpp-agent/v3/pkg/version"
 	"go.ligato.io/vpp-agent/v3/plugins/configurator"
 	"go.ligato.io/vpp-agent/v3/plugins/restapi/resturl"
 	interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
@@ -36,6 +39,10 @@ var (
 	// handler is not available
 	ErrHandlerUnavailable = errors.New("Handler is not available")
 )
+
+func (p *Plugin) registerInfoHandlers() {
+	p.HTTPHandlers.RegisterHTTPHandler(resturl.Version, p.versionHandler, GET)
+}
 
 // Registers ABF REST handler
 func (p *Plugin) registerABFHandler() {
@@ -294,6 +301,25 @@ func (p *Plugin) registerHTTPHandler(key, method string, f func() (interface{}, 
 		}
 	}
 	p.HTTPHandlers.RegisterHTTPHandler(key, handlerFunc, method)
+}
+
+// versionHandler returns version of Agent.
+func (p *Plugin) versionHandler(formatter *render.Render) http.HandlerFunc {
+	return func(w http.ResponseWriter, req *http.Request) {
+		version := types.Version{
+			App:       version.App(),
+			Version:   version.Version(),
+			GitCommit: version.GitCommit(),
+			GitBranch: version.GitBranch(),
+			BuildUser: version.BuildUser(),
+			BuildHost: version.BuildHost(),
+			BuildTime: version.BuildTime(),
+			GoVersion: runtime.Version(),
+			OS:        runtime.GOOS,
+			Arch:      runtime.GOARCH,
+		}
+		p.logError(formatter.JSON(w, http.StatusOK, version))
+	}
 }
 
 // commandHandler - used to execute VPP CLI commands
