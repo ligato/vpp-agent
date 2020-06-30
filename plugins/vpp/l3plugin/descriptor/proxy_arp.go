@@ -1,4 +1,4 @@
-//  Copyright (c) 2018 Cisco and/or its affiliates.
+//  Copyright (c) 2020 Cisco and/or its affiliates.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -32,6 +32,21 @@ import (
 const (
 	// ProxyArpDescriptorName is the name of the descriptor.
 	ProxyArpDescriptorName = "vpp-proxy-arp"
+
+	// Dependency labels:
+	vrfTableProxyARPDep = "vrf-table-exists"
+)
+
+// Validation errors:
+var (
+	// ErrMissingIP returned when one of IP fields in ProxyARP range is not set.
+	ErrMissingIP = errors.New("missing IP address")
+	// ErrIPWithMask returned when one of IP fields in ProxyARP range is set with a subnet mask.
+	ErrIPWithMask = errors.New("only one IP must be defined (e.g. \"192.0.2.1\"), not a subnet")
+	// ErrInvalidIP returned when one of IP fields in ProxyARP range can not be parsed.
+	ErrInvalidIP = errors.New("invalid IP address")
+	// ErrIPv6NotSupported returned when one of IP fields in ProxyARP range is defined as IPv6.
+	ErrIPv6NotSupported = errors.New("IP address must be IPv4, not IPv6")
 )
 
 // ProxyArpDescriptor teaches KVScheduler how to configure VPP proxy ARPs.
@@ -57,19 +72,73 @@ func NewProxyArpDescriptor(scheduler kvs.KVScheduler,
 		ValueTypeName:        l3.ModelProxyARP.ProtoName(),
 		KeySelector:          l3.ModelProxyARP.IsKeyValid,
 		ValueComparator:      ctx.EquivalentProxyArps,
+		Validate:             ctx.Validate,
 		Create:               ctx.Create,
 		Update:               ctx.Update,
 		Delete:               ctx.Delete,
 		Retrieve:             ctx.Retrieve,
+		Dependencies:         ctx.Dependencies,
 		DerivedValues:        ctx.DerivedValues,
 		RetrieveDependencies: []string{ifdescriptor.InterfaceDescriptorName},
 	}
 	return adapter.NewProxyARPDescriptor(typedDescr)
 }
 
-// DerivedValues derives l3.ProxyARP_Interface for every interface..
+// Validate validates ProxyARP setup.
+func (d *ProxyArpDescriptor) Validate(key string, proxyArp *l3.ProxyARP) error {
+	for _, r := range proxyArp.Ranges {
+		if r.FirstIpAddr == "" {
+			return kvs.NewInvalidValueError(ErrMissingIP, "ranges.first_ip_addr")
+		}
+		if r.LastIpAddr == "" {
+			return kvs.NewInvalidValueError(ErrMissingIP, "ranges.last_ip_addr")
+		}
+
+		if strings.Contains(r.FirstIpAddr, "/") {
+			return kvs.NewInvalidValueError(ErrIPWithMask, "ranges.first_ip_addr")
+		}
+		if strings.Contains(r.LastIpAddr, "/") {
+			return kvs.NewInvalidValueError(ErrIPWithMask, "ranges.last_ip_addr")
+		}
+
+		firstIP := net.ParseIP(r.FirstIpAddr)
+		if firstIP == nil {
+			return kvs.NewInvalidValueError(ErrInvalidIP, "ranges.first_ip_addr")
+		}
+		lastIP := net.ParseIP(r.LastIpAddr)
+		if lastIP == nil {
+			return kvs.NewInvalidValueError(ErrInvalidIP, "ranges.last_ip_addr")
+		}
+
+		if firstIP.To4() == nil {
+			return kvs.NewInvalidValueError(ErrIPv6NotSupported, "ranges.first_ip_addr")
+		}
+		if lastIP.To4() == nil {
+			return kvs.NewInvalidValueError(ErrIPv6NotSupported, "ranges.last_ip_addr")
+		}
+	}
+	return nil
+}
+
+// Dependencies lists dependencies for a VPP Proxy ARP.
+func (d *ProxyArpDescriptor) Dependencies(key string, proxyArp *l3.ProxyARP) []kvs.Dependency {
+	var dependencies []kvs.Dependency
+
+	for _, r := range proxyArp.Ranges {
+		if r.VrfId == 0 {
+			continue
+		}
+		dependencies = append(dependencies, kvs.Dependency{
+			Label: vrfTableProxyARPDep,
+			Key:   l3.VrfTableKey(r.VrfId, l3.VrfTable_IPV4),
+		})
+	}
+
+	return dependencies
+}
+
+// DerivedValues derives l3.ProxyARP_Interface for every interface.
 func (d *ProxyArpDescriptor) DerivedValues(key string, proxyArp *l3.ProxyARP) (derValues []kvs.KeyValuePair) {
-	// IP addresses
 	for _, iface := range proxyArp.Interfaces {
 		derValues = append(derValues, kvs.KeyValuePair{
 			Key:   l3.ProxyARPInterfaceKey(iface.Name),
@@ -90,16 +159,12 @@ func (d *ProxyArpDescriptor) EquivalentProxyArps(key string, oldValue, newValue 
 
 // Create adds VPP Proxy ARP.
 func (d *ProxyArpDescriptor) Create(key string, value *l3.ProxyARP) (metadata interface{}, err error) {
-	for _, proxyArpRange := range value.Ranges {
-		// Prune addresses
-		firstIP := pruneIP(proxyArpRange.FirstIpAddr)
-		lastIP := pruneIP(proxyArpRange.LastIpAddr)
-		// Convert to byte representation
-		bFirstIP := net.ParseIP(firstIP).To4()
-		bLastIP := net.ParseIP(lastIP).To4()
-		// Call VPP API to configure IP range for proxy ARP
-		if err := d.proxyArpHandler.AddProxyArpRange(bFirstIP, bLastIP); err != nil {
-			return nil, errors.Errorf("failed to add proxy ARP address range %s - %s: %v", firstIP, lastIP, err)
+	for _, r := range value.Ranges {
+		firstIP := net.ParseIP(r.FirstIpAddr).To4()
+		lastIP := net.ParseIP(r.LastIpAddr).To4()
+
+		if err := d.proxyArpHandler.AddProxyArpRange(firstIP, lastIP, r.VrfId); err != nil {
+			return nil, errors.Errorf("failed to add proxy ARP address range %s - %s (VRF: %d): %v", firstIP, lastIP, r.VrfId, err)
 		}
 	}
 	return nil, nil
@@ -108,30 +173,22 @@ func (d *ProxyArpDescriptor) Create(key string, value *l3.ProxyARP) (metadata in
 // Update modifies VPP Proxy ARP.
 func (d *ProxyArpDescriptor) Update(key string, oldValue, newValue *l3.ProxyARP, oldMetadata interface{}) (newMetadata interface{}, err error) {
 	toAdd, toDelete := calculateRngDiff(newValue.Ranges, oldValue.Ranges)
-	// Remove old ranges
-	for _, proxyArpRange := range toDelete {
-		// Prune addresses
-		firstIP := pruneIP(proxyArpRange.FirstIpAddr)
-		lastIP := pruneIP(proxyArpRange.LastIpAddr)
-		// Convert to byte representation
-		bFirstIP := net.ParseIP(firstIP).To4()
-		bLastIP := net.ParseIP(lastIP).To4()
-		// Call VPP API to configure IP range for proxy ARP
-		if err := d.proxyArpHandler.DeleteProxyArpRange(bFirstIP, bLastIP); err != nil {
-			return nil, errors.Errorf("failed to delete proxy ARP address range %s - %s: %v", firstIP, lastIP, err)
+
+	for _, r := range toDelete {
+		firstIP := net.ParseIP(r.FirstIpAddr).To4()
+		lastIP := net.ParseIP(r.LastIpAddr).To4()
+
+		if err := d.proxyArpHandler.DeleteProxyArpRange(firstIP, lastIP, r.VrfId); err != nil {
+			return nil, errors.Errorf("failed to delete proxy ARP address range %s - %s (VRF: %d): %v", firstIP, lastIP, r.VrfId, err)
 		}
 	}
-	// Add new ranges
-	for _, proxyArpRange := range toAdd {
-		// Prune addresses
-		firstIP := pruneIP(proxyArpRange.FirstIpAddr)
-		lastIP := pruneIP(proxyArpRange.LastIpAddr)
-		// Convert to byte representation
-		bFirstIP := net.ParseIP(firstIP).To4()
-		bLastIP := net.ParseIP(lastIP).To4()
-		// Call VPP API to configure IP range for proxy ARP
-		if err := d.proxyArpHandler.AddProxyArpRange(bFirstIP, bLastIP); err != nil {
-			return nil, errors.Errorf("failed to add proxy ARP address range %s - %s: %v", firstIP, lastIP, err)
+
+	for _, r := range toAdd {
+		firstIP := net.ParseIP(r.FirstIpAddr).To4()
+		lastIP := net.ParseIP(r.LastIpAddr).To4()
+
+		if err := d.proxyArpHandler.AddProxyArpRange(firstIP, lastIP, r.VrfId); err != nil {
+			return nil, errors.Errorf("failed to add proxy ARP address range %s - %s (VRF: %d): %v", firstIP, lastIP, r.VrfId, err)
 		}
 	}
 
@@ -140,16 +197,12 @@ func (d *ProxyArpDescriptor) Update(key string, oldValue, newValue *l3.ProxyARP,
 
 // Delete deletes VPP Proxy ARP.
 func (d *ProxyArpDescriptor) Delete(key string, value *l3.ProxyARP, metadata interface{}) error {
-	for _, proxyArpRange := range value.Ranges {
-		// Prune addresses
-		firstIP := pruneIP(proxyArpRange.FirstIpAddr)
-		lastIP := pruneIP(proxyArpRange.LastIpAddr)
-		// Convert to byte representation
-		bFirstIP := net.ParseIP(firstIP).To4()
-		bLastIP := net.ParseIP(lastIP).To4()
-		// Call VPP API to configure IP range for proxy ARP
-		if err := d.proxyArpHandler.DeleteProxyArpRange(bFirstIP, bLastIP); err != nil {
-			return errors.Errorf("failed to delete proxy ARP address range %s - %s: %v", firstIP, lastIP, err)
+	for _, r := range value.Ranges {
+		firstIP := net.ParseIP(r.FirstIpAddr).To4()
+		lastIP := net.ParseIP(r.LastIpAddr).To4()
+
+		if err := d.proxyArpHandler.DeleteProxyArpRange(firstIP, lastIP, r.VrfId); err != nil {
+			return errors.Errorf("failed to delete proxy ARP address range %s - %s (VRF: %d): %v", firstIP, lastIP, r.VrfId, err)
 		}
 	}
 	return nil
@@ -186,23 +239,14 @@ func (d *ProxyArpDescriptor) Retrieve(correlate []adapter.ProxyARPKVWithMetadata
 	return retrieved, nil
 }
 
-// Remove IP mask if set
-func pruneIP(ip string) string {
-	ipParts := strings.Split(ip, "/")
-	switch len(ipParts) {
-	case 1, 2:
-		return ipParts[0]
-	}
-	return ip
-}
-
-// Calculate difference between old and new ranges
+// calculateRngDiff calculates difference between old and new ranges.
 func calculateRngDiff(newRngs, oldRngs []*l3.ProxyARP_Range) (toAdd, toDelete []*l3.ProxyARP_Range) {
-	// Find missing ranges
+	// Find missing ranges.
 	for _, newRng := range newRngs {
 		var found bool
 		for _, oldRng := range oldRngs {
-			if newRng.FirstIpAddr == oldRng.FirstIpAddr &&
+			if newRng.VrfId == oldRng.VrfId &&
+				newRng.FirstIpAddr == oldRng.FirstIpAddr &&
 				newRng.LastIpAddr == oldRng.LastIpAddr {
 				found = true
 				break
@@ -212,11 +256,12 @@ func calculateRngDiff(newRngs, oldRngs []*l3.ProxyARP_Range) (toAdd, toDelete []
 			toAdd = append(toAdd, newRng)
 		}
 	}
-	// Find obsolete interfaces
+	// Find obsolete ranges.
 	for _, oldRng := range oldRngs {
 		var found bool
 		for _, newRng := range newRngs {
-			if oldRng.FirstIpAddr == newRng.FirstIpAddr &&
+			if oldRng.VrfId == newRng.VrfId &&
+				oldRng.FirstIpAddr == newRng.FirstIpAddr &&
 				oldRng.LastIpAddr == newRng.LastIpAddr {
 				found = true
 				break

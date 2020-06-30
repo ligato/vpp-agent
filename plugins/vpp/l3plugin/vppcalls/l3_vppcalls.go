@@ -122,9 +122,9 @@ type ProxyArpVppAPI interface {
 	// DisableProxyArpInterface disables interface for proxy ARP
 	DisableProxyArpInterface(ifName string) error
 	// AddProxyArpRange adds new IP range for proxy ARP
-	AddProxyArpRange(firstIP, lastIP []byte) error
+	AddProxyArpRange(firstIP, lastIP []byte, vrfID uint32) error
 	// DeleteProxyArpRange removes proxy ARP IP range
-	DeleteProxyArpRange(firstIP, lastIP []byte) error
+	DeleteProxyArpRange(firstIP, lastIP []byte, vrfID uint32) error
 }
 
 // ProxyArpVppRead provides read methods for proxy ARPs
