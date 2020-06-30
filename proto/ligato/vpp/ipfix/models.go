@@ -54,6 +54,6 @@ func FlowprobeParamsKey() string {
 
 // FlowprobeFeatureKey returns the prefix used in ETCD
 // to store vpp Flowprobe feature config.
-func FlowprobeFeatureKey() string {
-	return models.Key(&FlowProbeFeature{})
+func FlowprobeFeatureKey(iface string) string {
+	return models.Key(&FlowProbeFeature{Interface: iface})
 }
