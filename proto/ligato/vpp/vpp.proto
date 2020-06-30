@@ -6,6 +6,8 @@ option go_package = "go.ligato.io/vpp-agent/v3/proto/ligato/vpp";
 
 import "ligato/vpp/abf/abf.proto";
 import "ligato/vpp/acl/acl.proto";
+import "ligato/vpp/ipfix/ipfix.proto";
+import "ligato/vpp/ipfix/flowprobe.proto";
 import "ligato/vpp/interfaces/interface.proto";
 import "ligato/vpp/interfaces/span.proto";
 import "ligato/vpp/interfaces/state.proto";
@@ -17,11 +19,13 @@ import "ligato/vpp/l3/arp.proto";
 import "ligato/vpp/l3/l3.proto";
 import "ligato/vpp/l3/l3xc.proto";
 import "ligato/vpp/l3/route.proto";
+import "ligato/vpp/l3/teib.proto";
 import "ligato/vpp/l3/vrf.proto";
 import "ligato/vpp/nat/nat.proto";
 import "ligato/vpp/punt/punt.proto";
 import "ligato/vpp/srv6/srv6.proto";
 
+// ConfigData holds the entire VPP configuration.
 message ConfigData {
     repeated interfaces.Interface interfaces = 10;
     repeated interfaces.Span spans = 11;
@@ -40,6 +44,7 @@ message ConfigData {
     repeated l3.VrfTable vrfs = 44;
     repeated l3.L3XConnect l3xconnects = 45;
     repeated l3.DHCPProxy dhcp_proxies = 46;
+    repeated l3.TeibEntry teib_entries = 47;
 
     nat.Nat44Global nat44_global = 50;
     repeated nat.DNat44 dnat44s = 51;
@@ -48,6 +53,7 @@ message ConfigData {
 
     repeated ipsec.SecurityPolicyDatabase ipsec_spds = 60;
     repeated ipsec.SecurityAssociation ipsec_sas = 61;
+    repeated ipsec.TunnelProtection ipsec_tunnel_protections = 62;
 
     repeated punt.IPRedirect punt_ipredirects = 70;
     repeated punt.ToHost punt_tohosts = 71;
@@ -57,6 +63,10 @@ message ConfigData {
     repeated srv6.LocalSID srv6_localsids = 80;
     repeated srv6.Policy srv6_policies = 81;
     repeated srv6.Steering srv6_steerings = 82;
+
+    ipfix.IPFIX ipfix_global = 90;
+    ipfix.FlowProbeParams ipfix_flowprobe_params = 91;
+    repeated ipfix.FlowProbeFeature ipfix_flowprobes = 92;
 }
 
 message Notification {
