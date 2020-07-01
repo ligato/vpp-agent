@@ -19,6 +19,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"strings"
 	"text/template"
 	"time"
 
@@ -38,21 +39,22 @@ func formatAsTemplate(w io.Writer, format string, data interface{}) error {
 	t := template.New("format")
 	t.Funcs(tmplFuncs)
 
-	if format == "json" {
-		format = "{{json .}}"
-	} else if format == "yaml" {
-		format = "{{yaml .}}"
-	} else if format == "proto" {
-		format = "{{proto .}}"
-	}
-
-	if _, err := t.Parse(format); err != nil {
-		return fmt.Errorf("parsing format template failed: %v", err)
-	}
-
 	var b bytes.Buffer
-	if err := t.Execute(&b, data); err != nil {
-		return fmt.Errorf("executing format template failed: %v", err)
+
+	switch strings.ToLower(format) {
+	case "json":
+		b.WriteString(jsonTmpl(data))
+	case "yaml", "yml":
+		b.WriteString(yamlTmpl(data))
+	case "proto":
+		b.WriteString(protoTmpl(data))
+	default:
+		if _, err := t.Parse(format); err != nil {
+			return fmt.Errorf("parsing format template failed: %v", err)
+		}
+		if err := t.Execute(&b, data); err != nil {
+			return fmt.Errorf("executing format template failed: %v", err)
+		}
 	}
 
 	_, err := b.WriteTo(w)
