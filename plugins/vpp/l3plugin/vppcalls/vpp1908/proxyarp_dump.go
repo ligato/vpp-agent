@@ -41,6 +41,7 @@ func (h *ProxyArpVppHandler) DumpProxyArpRanges() (pArpRngs []*vppcalls.ProxyArp
 			Range: &l3.ProxyARP_Range{
 				FirstIpAddr: net.IP(proxyArpDetails.Proxy.Low[:]).To4().String(),
 				LastIpAddr:  net.IP(proxyArpDetails.Proxy.Hi[:]).To4().String(),
+				VrfId:       proxyArpDetails.Proxy.TableID,
 			},
 		})
 	}

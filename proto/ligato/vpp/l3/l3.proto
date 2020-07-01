@@ -13,6 +13,7 @@ message ProxyARP {
     message Range {
         string first_ip_addr = 1;
         string last_ip_addr = 2;
+        uint32 vrf_id = 3;
     }
     repeated Range ranges = 2;
 }

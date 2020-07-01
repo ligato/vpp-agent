@@ -20,6 +20,7 @@ import (
 	. "github.com/onsi/gomega"
 	"go.ligato.io/cn-infra/v2/logging/logrus"
 
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1904/ip"
 	vpp_arp "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/arp"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin/vppcalls"
@@ -29,7 +30,7 @@ import (
 
 // Test enable/disable proxy arp
 func TestProxyArp(t *testing.T) {
-	ctx, ifIndexes, _, pArpHandler := pArpTestSetup(t)
+	ctx, ifIndexes, pArpHandler := pArpTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ifIndexes.Put("if1", &ifaceidx.IfaceMetadata{SwIfIndex: 1})
@@ -47,29 +48,83 @@ func TestProxyArp(t *testing.T) {
 	Expect(err).NotTo(BeNil())
 }
 
-// Test add/delete ip range for proxy arp
 func TestProxyArpRange(t *testing.T) {
-	ctx, _, _, pArpHandler := pArpTestSetup(t)
+	ctx, _, pArpHandler := pArpTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&vpp_arp.ProxyArpAddDelReply{})
-	err := pArpHandler.AddProxyArpRange([]byte{192, 168, 10, 20}, []byte{192, 168, 10, 30})
-	Expect(err).To(Succeed())
+	t.Run("Add: success case", func(t *testing.T) {
+		ctx.MockVpp.MockReply(&ip.ProxyArpAddDelReply{Retval: 0})
 
-	ctx.MockVpp.MockReply(&vpp_arp.ProxyArpAddDelReply{})
-	err = pArpHandler.DeleteProxyArpRange([]byte{192, 168, 10, 23}, []byte{192, 168, 10, 27})
-	Expect(err).To(Succeed())
+		Expect(pArpHandler.AddProxyArpRange(
+			[]byte{192, 168, 10, 20}, []byte{192, 168, 10, 30}, 0,
+		)).To(Succeed())
+	})
 
-	ctx.MockVpp.MockReply(&vpp_arp.ProxyArpAddDelReply{Retval: 1})
-	err = pArpHandler.AddProxyArpRange([]byte{192, 168, 10, 23}, []byte{192, 168, 10, 27})
-	Expect(err).To(Not(BeNil()))
+	testAddProxyARPRangeError := func(firstIP, lastIP []byte, vrf uint32) {
+		t.Helper()
+
+		ctx.MockVpp.MockReply(&ip.ProxyArpAddDelReply{Retval: 0})
+		Expect(pArpHandler.AddProxyArpRange(firstIP, lastIP, vrf)).ToNot(Succeed())
+
+		//Get mocked reply, since VPP call should not happen before.
+		Expect(
+			ctx.MockVPPClient.SendRequest(&ip.ProxyArpAddDel{}).ReceiveReply(&ip.ProxyArpAddDelReply{}),
+		).To(Succeed())
+	}
+	t.Run("Add: error cases", func(t *testing.T) {
+		// Bad first IP address.
+		testAddProxyARPRangeError([]byte{192, 168, 20}, []byte{192, 168, 10, 30}, 0)
+		// Bad last IP address.
+		testAddProxyARPRangeError([]byte{192, 168, 10, 20}, []byte{192, 168, 30}, 0)
+		// Bad both IP addresses.
+		testAddProxyARPRangeError([]byte{192, 168, 20}, []byte{192, 168, 30}, 0)
+	})
+
+	t.Run("Delete: success case", func(t *testing.T) {
+		ctx.MockVpp.MockReply(&ip.ProxyArpAddDelReply{Retval: 0})
+
+		Expect(pArpHandler.DeleteProxyArpRange(
+			[]byte{192, 168, 10, 20}, []byte{192, 168, 10, 30}, 0,
+		)).To(Succeed())
+	})
+
+	testDelProxyARPRangeError := func(firstIP, lastIP []byte, vrf uint32) {
+		t.Helper()
+
+		ctx.MockVpp.MockReply(&ip.ProxyArpAddDelReply{Retval: 0})
+		Expect(pArpHandler.DeleteProxyArpRange(firstIP, lastIP, vrf)).ToNot(Succeed())
+
+		//Get mocked reply, since VPP call should not happen before.
+		Expect(
+			ctx.MockVPPClient.SendRequest(&ip.ProxyArpAddDel{}).ReceiveReply(&ip.ProxyArpAddDelReply{}),
+		).To(Succeed())
+	}
+	t.Run("Delete: error cases", func(t *testing.T) {
+		// Bad first IP address.
+		testDelProxyARPRangeError([]byte{192, 168, 20}, []byte{192, 168, 10, 30}, 0)
+		// Bad last IP address.
+		testDelProxyARPRangeError([]byte{192, 168, 10, 20}, []byte{192, 168, 30}, 0)
+		// Bad both IP addresses.
+		testDelProxyARPRangeError([]byte{192, 168, 20}, []byte{192, 168, 30}, 0)
+	})
+
+	// Test retval in "add" scenario.
+	ctx.MockVpp.MockReply(&ip.ProxyArpAddDelReply{Retval: 1})
+	Expect(pArpHandler.AddProxyArpRange(
+		[]byte{192, 168, 10, 20}, []byte{192, 168, 10, 30}, 0,
+	)).ToNot(Succeed())
+
+	// Test retval in "delete" scenario.
+	ctx.MockVpp.MockReply(&ip.ProxyArpAddDelReply{Retval: 1})
+	Expect(pArpHandler.DeleteProxyArpRange(
+		[]byte{192, 168, 10, 20}, []byte{192, 168, 10, 30}, 0,
+	)).ToNot(Succeed())
 }
 
-func pArpTestSetup(t *testing.T) (*vppmock.TestCtx, ifaceidx.IfaceMetadataIndexRW, vppcalls.ArpVppAPI, vppcalls.ProxyArpVppAPI) {
+func pArpTestSetup(t *testing.T) (*vppmock.TestCtx, ifaceidx.IfaceMetadataIndexRW, vppcalls.ProxyArpVppAPI) {
 	ctx := vppmock.SetupTestCtx(t)
 	log := logrus.NewLogger("test-log")
 	ifIndexes := ifaceidx.NewIfaceIndex(logrus.NewLogger("test"), "test")
-	arpHandler := vpp2001.NewArpVppHandler(ctx.MockChannel, ifIndexes, log)
 	pArpHandler := vpp2001.NewProxyArpVppHandler(ctx.MockChannel, ifIndexes, log)
-	return ctx, ifIndexes, arpHandler, pArpHandler
+	return ctx, ifIndexes, pArpHandler
 }

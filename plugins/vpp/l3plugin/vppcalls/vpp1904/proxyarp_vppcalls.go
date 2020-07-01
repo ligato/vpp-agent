@@ -15,6 +15,9 @@
 package vpp1904
 
 import (
+	"fmt"
+	"net"
+
 	"github.com/pkg/errors"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1904/ip"
 )
@@ -30,13 +33,13 @@ func (h *ProxyArpVppHandler) DisableProxyArpInterface(ifName string) error {
 }
 
 // AddProxyArpRange implements proxy arp handler.
-func (h *ProxyArpVppHandler) AddProxyArpRange(firstIP, lastIP []byte) error {
-	return h.vppAddDelProxyArpRange(firstIP, lastIP, true)
+func (h *ProxyArpVppHandler) AddProxyArpRange(firstIP, lastIP []byte, vrfID uint32) error {
+	return h.vppAddDelProxyArpRange(firstIP, lastIP, vrfID, true)
 }
 
 // DeleteProxyArpRange implements proxy arp handler.
-func (h *ProxyArpVppHandler) DeleteProxyArpRange(firstIP, lastIP []byte) error {
-	return h.vppAddDelProxyArpRange(firstIP, lastIP, false)
+func (h *ProxyArpVppHandler) DeleteProxyArpRange(firstIP, lastIP []byte, vrfID uint32) error {
+	return h.vppAddDelProxyArpRange(firstIP, lastIP, vrfID, false)
 }
 
 // vppAddDelProxyArpInterface adds or removes proxy ARP interface entry according to provided input
@@ -61,10 +64,24 @@ func (h *ProxyArpVppHandler) vppAddDelProxyArpInterface(ifName string, enable bo
 	return nil
 }
 
-// vppAddDelProxyArpRange adds or removes proxy ARP range according to provided input
-func (h *ProxyArpVppHandler) vppAddDelProxyArpRange(firstIP, lastIP []byte, isAdd bool) error {
+// vppAddDelProxyArpRange adds or removes proxy ARP range according to provided input.
+func (h *ProxyArpVppHandler) vppAddDelProxyArpRange(firstIP, lastIP []byte, vrf uint32, isAdd bool) error {
+	validateIPBytes := func(b []byte) error {
+		ip := net.IP(b)
+		if ip.To4() == nil {
+			return fmt.Errorf("IP bytes %v are not valid IPv4 address", b)
+		}
+		return nil
+	}
+	if err := validateIPBytes(firstIP); err != nil {
+		return fmt.Errorf("bad first IP: %v", err)
+	}
+	if err := validateIPBytes(lastIP); err != nil {
+		return fmt.Errorf("bad last IP: %v", err)
+	}
+
 	proxy := ip.ProxyArp{
-		TableID: 0, // TODO: add support for VRF
+		TableID: vrf,
 	}
 	copy(proxy.Low[:], firstIP)
 	copy(proxy.Hi[:], lastIP)
@@ -79,7 +96,7 @@ func (h *ProxyArpVppHandler) vppAddDelProxyArpRange(firstIP, lastIP []byte, isAd
 		return err
 	}
 
-	h.log.Debugf("proxy arp range: %v - %v added: %v", req.Proxy.Low, req.Proxy.Hi, isAdd)
+	h.log.Debugf("proxy arp range: %v - %v (vrf: %d) added: %v", proxy.Low, proxy.Hi, proxy.TableID, isAdd)
 
 	return nil
 }
