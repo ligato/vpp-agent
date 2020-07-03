@@ -936,7 +936,8 @@ func guessInterfaceType(ifName string) ifs.Interface_Type {
 	case strings.HasPrefix(ifName, "memif"):
 		return ifs.Interface_MEMIF
 
-	case strings.HasPrefix(ifName, "tap"):
+	case strings.HasPrefix(ifName, "tap"),
+		strings.HasPrefix(ifName, "tun"):
 		return ifs.Interface_TAP
 
 	case strings.HasPrefix(ifName, "host"):
