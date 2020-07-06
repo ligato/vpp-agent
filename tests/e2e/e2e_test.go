@@ -67,6 +67,8 @@ var (
 )
 
 const (
+	etcdImage = "gcr.io/etcd-development/etcd"
+
 	agentInitTimeout     = time.Second * 15
 	processExitTimeout   = time.Second * 3
 	checkPollingInterval = time.Millisecond * 100
@@ -225,7 +227,9 @@ func (ctx *TestCtx) teardownE2E() {
 	}
 
 	// close gRPC connection
-	ctx.grpcConn.Close()
+	if err := ctx.grpcConn.Close(); err != nil {
+		ctx.t.Logf("closing grpc connection failed: %v", err)
+	}
 
 	// terminate agent
 	stopProcess(ctx.t, ctx.agent, "VPP-Agent")
@@ -236,7 +240,7 @@ func (ctx *TestCtx) teardownE2E() {
 
 func (ctx *TestCtx) setupETCD() string {
 	err := ctx.dockerClient.PullImage(docker.PullImageOptions{
-		Repository: "gcr.io/etcd-development/etcd",
+		Repository: etcdImage,
 		Tag:        "latest",
 	}, docker.AuthConfiguration{})
 	if err != nil {
@@ -247,7 +251,7 @@ func (ctx *TestCtx) setupETCD() string {
 		Name: "e2e-test-etcd",
 		Config: &docker.Config{
 			Env:   []string{"ETCDCTL_API=3"},
-			Image: "gcr.io/etcd-development/etcd",
+			Image: etcdImage,
 			Cmd: []string{
 				"/usr/local/bin/etcd",
 				"--client-cert-auth",
@@ -309,12 +313,18 @@ func (ctx *TestCtx) agentInSync() bool {
 // execCmd executes command and returns stdout, stderr as strings and error.
 func (ctx *TestCtx) execCmd(cmd string, args ...string) (string, string, error) {
 	ctx.t.Helper()
-	ctx.t.Logf("exec: %s %s", cmd, strings.Join(args, " "))
+	ctx.t.Logf("exec: '%s %s'", cmd, strings.Join(args, " "))
 	var stdout, stderr bytes.Buffer
 	c := exec.Command(cmd, args...)
 	c.Stdout = &stdout
 	c.Stderr = &stderr
 	err := c.Run()
+	if strings.TrimSpace(stdout.String()) != "" {
+		ctx.t.Logf(" stdout:\n%s", stdout.String())
+	}
+	if strings.TrimSpace(stderr.String()) != "" {
+		ctx.t.Logf(" stderr:\n%s", stderr.String())
+	}
 	return stdout.String(), stderr.String(), err
 }
 
@@ -497,14 +507,14 @@ func (ctx *TestCtx) getValueStateByKey(key string) kvscheduler.ValueState {
 	if err != nil {
 		ctx.t.Fatalf("Request to obtain value status has failed: %v", err)
 	}
-	status := kvscheduler.BaseValueStatus{}
-	if err := json.Unmarshal(resp, &status); err != nil {
+	st := kvscheduler.BaseValueStatus{}
+	if err := json.Unmarshal(resp, &st); err != nil {
 		ctx.t.Fatalf("Reply with value status cannot be decoded: %v", err)
 	}
-	if status.GetValue().GetKey() != key {
-		ctx.t.Fatalf("Received value status for unexpected key: %v", status)
+	if st.GetValue().GetKey() != key {
+		ctx.t.Fatalf("Received value status for unexpected key: %v", st)
 	}
-	return status.GetValue().GetState()
+	return st.GetValue().GetState()
 }
 
 // getValueStateClb can be used to repeatedly check value state inside the assertions
@@ -540,6 +550,12 @@ func (ctx *TestCtx) startPacketTrace(nodes ...string) (stopTrace func()) {
 		}
 		fmt.Println(stdout)
 	}
+}
+
+func (ctx *TestCtx) sleepFor(d time.Duration) {
+	ctx.t.Helper()
+	ctx.t.Logf("SLEEPING for %v..", d)
+	time.Sleep(d)
 }
 
 func syncAgent(t *testing.T, httpClient *utils.HTTPClient) (executed kvs.RecordedTxnOps) {

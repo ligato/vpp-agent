@@ -18,7 +18,7 @@ type grpcClient struct {
 }
 
 // NewClientGRPC returns new instance that uses given service client for requests.
-func NewClientGRPC(conn *grpc.ClientConn) client.ConfigClient {
+func NewClientGRPC(conn grpc.ClientConnInterface) client.ConfigClient {
 	manager := generic.NewManagerServiceClient(conn)
 	meta := generic.NewMetaServiceClient(conn)
 	return &grpcClient{
