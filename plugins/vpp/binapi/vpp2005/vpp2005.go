@@ -17,10 +17,10 @@ package vpp2005
 import (
 	"go.ligato.io/vpp-agent/v3/plugins/vpp"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi"
-
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/abf"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/acl"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/af_packet"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/arp"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/bond"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/dhcp"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/flowprobe"
@@ -28,6 +28,8 @@ import (
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/gtpu"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/interfaces"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/ip"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/ip6_nd"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/ip_neighbor"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/ipfix_export"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/ipip"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/ipsec"
@@ -37,6 +39,7 @@ import (
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/memif"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/nat"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/punt"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/rd_cp"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/span"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/sr"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/stn"
@@ -55,15 +58,20 @@ func init() {
 	binapi.Versions[Version] = binapi.VersionMsgs{
 		Core: vpp.Messages(
 			af_packet.AllMessages,
+			arp.AllMessages,
 			bond.AllMessages,
 			gre.AllMessages,
 			interfaces.AllMessages,
 			ip.AllMessages,
-			ipsec.AllMessages,
+			ip6_nd.AllMessages,
+			ip_neighbor.AllMessages,
 			ipfix_export.AllMessages,
+			ipip.AllMessages,
+			ipsec.AllMessages,
 			l2.AllMessages,
 			memclnt.AllMessages,
 			punt.AllMessages,
+			rd_cp.AllMessages,
 			span.AllMessages,
 			sr.AllMessages,
 			tapv2.AllMessages,
@@ -71,7 +79,6 @@ func init() {
 			vpe.AllMessages,
 			vxlan.AllMessages,
 			vxlan_gpe.AllMessages,
-			ipip.AllMessages,
 		),
 		Plugins: vpp.Messages(
 			abf.AllMessages,
@@ -103,12 +110,15 @@ func init() {
 //go:generate binapigen --input-file=$VPP_API_DIR/core/gre.api.json
 //go:generate binapigen --input-file=$VPP_API_DIR/core/interface.api.json
 //go:generate binapigen --input-file=$VPP_API_DIR/core/ip.api.json
+//go:generate binapigen --input-file=$VPP_API_DIR/core/ip6_nd.api.json
 //go:generate binapigen --input-file=$VPP_API_DIR/core/ip_neighbor.api.json
 //go:generate binapigen --input-file=$VPP_API_DIR/core/ipfix_export.api.json
+//go:generate binapigen --input-file=$VPP_API_DIR/core/ipip.api.json
 //go:generate binapigen --input-file=$VPP_API_DIR/core/ipsec.api.json
 //go:generate binapigen --input-file=$VPP_API_DIR/core/l2.api.json
 //go:generate binapigen --input-file=$VPP_API_DIR/core/memclnt.api.json
 //go:generate binapigen --input-file=$VPP_API_DIR/core/punt.api.json
+//go:generate binapigen --input-file=$VPP_API_DIR/core/rd_cp.api.json
 //go:generate binapigen --input-file=$VPP_API_DIR/core/span.api.json
 //go:generate binapigen --input-file=$VPP_API_DIR/core/sr.api.json
 //go:generate binapigen --input-file=$VPP_API_DIR/core/tapv2.api.json
@@ -116,12 +126,11 @@ func init() {
 //go:generate binapigen --input-file=$VPP_API_DIR/core/vpe.api.json
 //go:generate binapigen --input-file=$VPP_API_DIR/core/vxlan.api.json
 //go:generate binapigen --input-file=$VPP_API_DIR/core/vxlan_gpe.api.json
-//go:generate binapigen --input-file=$VPP_API_DIR/core/ipip.api.json
 //go:generate binapigen --input-file=$VPP_API_DIR/plugins/abf.api.json
 //go:generate binapigen --input-file=$VPP_API_DIR/plugins/acl.api.json
-//go:generate binapigen --input-file=$VPP_API_DIR/plugins/gtpu.api.json
 //go:generate binapigen --input-file=$VPP_API_DIR/plugins/dhcp.api.json
 //go:generate binapigen --input-file=$VPP_API_DIR/plugins/flowprobe.api.json
+//go:generate binapigen --input-file=$VPP_API_DIR/plugins/gtpu.api.json
 //go:generate binapigen --input-file=$VPP_API_DIR/plugins/l3xc.api.json
 //go:generate binapigen --input-file=$VPP_API_DIR/plugins/memif.api.json
 //go:generate binapigen --input-file=$VPP_API_DIR/plugins/nat.api.json
