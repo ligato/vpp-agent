@@ -4,8 +4,8 @@ package adapter
 
 import (
 	"github.com/golang/protobuf/proto"
-	"go.ligato.io/vpp-agent/v3/pkg/idxvpp"
 	. "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v3/pkg/idxvpp"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l2"
 )
 

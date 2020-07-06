@@ -5,8 +5,8 @@ package adapter
 import (
 	"github.com/golang/protobuf/proto"
 	. "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
-	"go.ligato.io/vpp-agent/v3/plugins/linux/ifplugin/ifaceidx"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/linux/interfaces"
+	"go.ligato.io/vpp-agent/v3/plugins/linux/ifplugin/ifaceidx"
 )
 
 ////////// type-safe key-value pair with metadata //////////
