@@ -32,7 +32,7 @@ import (
 
 // configure only link on the Linux side of the interface and leave addresses
 // untouched during resync.
-func TestLinkOnly(t *testing.T) {
+func TestInterfaceLinkOnlyTap(t *testing.T) {
 	ctx := setupE2E(t)
 	defer ctx.teardownE2E()
 
