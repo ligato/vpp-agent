@@ -103,6 +103,7 @@ func (p *L3Plugin) Init() (err error) {
 	dhcpProxyDescriptor := descriptor.NewDHCPProxyDescriptor(p.KVScheduler, p.l3Handler, p.Log)
 	l3xcDescriptor := descriptor.NewL3XCDescriptor(p.l3Handler, p.IfPlugin.GetInterfaceIndex(), p.Log)
 	teibDescriptor := descriptor.NewTeibDescriptor(p.KVScheduler, p.l3Handler, p.Log)
+	ip6ndDescriptor := descriptor.NewIP6ndDescriptor(p.KVScheduler, p.l3Handler, p.Log)
 
 	err = p.Deps.KVScheduler.RegisterKVDescriptor(
 		routeDescriptor,
@@ -113,6 +114,7 @@ func (p *L3Plugin) Init() (err error) {
 		dhcpProxyDescriptor,
 		l3xcDescriptor,
 		teibDescriptor,
+		ip6ndDescriptor,
 	)
 	if err != nil {
 		return err
