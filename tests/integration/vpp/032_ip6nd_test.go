@@ -35,8 +35,8 @@ func TestIP6ND(t *testing.T) {
 	test := setupVPP(t)
 	defer test.teardownVPP()
 
-	if test.versionInfo.Release() < "20.05" {
-		t.Skipf("SKIP for VPP %s<20.05", test.versionInfo.Release())
+	if test.versionInfo.Release() < "20.01" {
+		t.Skipf("SKIP for VPP %s<20.01", test.versionInfo.Release())
 	}
 
 	ih := ifplugin_vppcalls.CompatibleInterfaceVppHandler(test.vppClient, logrus.NewLogger("test"))

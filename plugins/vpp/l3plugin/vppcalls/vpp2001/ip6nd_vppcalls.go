@@ -17,8 +17,24 @@ package vpp2001
 import (
 	"context"
 	"fmt"
+
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/interface_types"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/rd_cp"
 )
 
-func (h *L3VppHandler) SetIP6ndAutoconfig(ctx context.Context, iface string, enable, installDefaultRoutes bool) error {
-	return fmt.Errorf("not supported for this VPP version")
+func (h *IP6ndHandler) SetIP6ndAutoconfig(ctx context.Context, iface string, enable, installDefaultRoutes bool) error {
+	meta, found := h.ifIndexes.LookupByName(iface)
+	if !found {
+		return fmt.Errorf("interface %s not found", iface)
+	}
+
+	_, err := h.rpcRdCp.IP6NdAddressAutoconfig(ctx, &rd_cp.IP6NdAddressAutoconfig{
+		SwIfIndex:            interface_types.InterfaceIndex(meta.SwIfIndex),
+		Enable:               enable,
+		InstallDefaultRoutes: installDefaultRoutes,
+	})
+	if err != nil {
+		return err
+	}
+	return nil
 }
