@@ -64,7 +64,7 @@ func NewInterfaceAddressDescriptor(ifHandler vppcalls.InterfaceVppAPI, addrAlloc
 	}
 }
 
-// IsInterfaceVrfKey returns true if the key represents assignment of an IP address
+// IsInterfaceAddressKey returns true if the key represents assignment of an IP address
 // to a VPP interface (that needs to be applied). KVs representing addresses
 // already allocated from netalloc plugin or obtained from a DHCP server are
 // excluded.

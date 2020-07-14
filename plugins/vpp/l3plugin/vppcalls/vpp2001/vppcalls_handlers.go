@@ -30,11 +30,9 @@ import (
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001"
 	vpp_dhcp "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/dhcp"
 	vpp_ip "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ip"
-	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ip6_nd"
 	vpp_ip_neighbor "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ip_neighbor"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ip_types"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/l3xc"
-	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/rd_cp"
 	vpp_vpe "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/vpe"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin/vppcalls"
@@ -61,7 +59,6 @@ type L3VppHandler struct {
 	*DHCPProxyHandler
 	*L3XCHandler
 	*TeibHandlerUnsupported
-	*IP6ndHandler
 }
 
 func NewL3VppHandler(
@@ -85,7 +82,6 @@ func NewL3VppHandler(
 		DHCPProxyHandler:       NewDHCPProxyHandler(ch, log),
 		L3XCHandler:            NewL3XCHandler(c, ifIdx, log),
 		TeibHandlerUnsupported: &TeibHandlerUnsupported{},
-		IP6ndHandler:       NewIP6ndVppHandler(ch, ifIdx, log),
 	}
 }
 
@@ -130,16 +126,6 @@ type VrfTableHandler struct {
 	callsChannel govppapi.Channel
 	log          logging.Logger
 }
-
-// IP6ndHandler is accessor for IP6ND-related vppcalls methods
-type IP6ndHandler struct {
-	rpcIP6nd     ip6_nd.RPCService
-	rpcRdCp      rd_cp.RPCService
-	callsChannel govppapi.Channel
-	ifIndexes    ifaceidx.IfaceMetadataIndex
-	log          logging.Logger
-}
-
 
 // NewArpVppHandler creates new instance of IPsec vppcalls handler
 func NewArpVppHandler(callsChan govppapi.Channel, ifIndexes ifaceidx.IfaceMetadataIndex, log logging.Logger) *ArpVppHandler {
@@ -252,19 +238,6 @@ func (h *TeibHandlerUnsupported) VppDelTeibEntry(ctx context.Context, entry *l3.
 
 func (h *TeibHandlerUnsupported) DumpTeib() ([]*l3.TeibEntry, error) {
 	return nil, fmt.Errorf("%w in VPP %s", vppcalls.ErrTeibUnsupported, vpp2001.Version)
-}
-
-func NewIP6ndVppHandler(ch govppapi.Channel, ifIndexes ifaceidx.IfaceMetadataIndex, log logging.Logger) *IP6ndHandler {
-	if log == nil {
-		log = logrus.NewLogger("ip6nd-handler")
-	}
-	return &IP6ndHandler{
-		rpcIP6nd:     ip6_nd.NewServiceClient(ch),
-		rpcRdCp:      rd_cp.NewServiceClient(ch),
-		callsChannel: ch,
-		ifIndexes:    ifIndexes,
-		log:          log,
-	}
 }
 
 func ipToAddress(ipstr string) (addr vpp_ip.Address, err error) {

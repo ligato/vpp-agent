@@ -47,7 +47,6 @@ type L3VppAPI interface {
 	DHCPProxyAPI
 	L3XCVppAPI
 	TeibVppAPI
-	IP6ndVppAPI
 }
 
 // ArpDetails holds info about ARP entry as a proto model
@@ -260,11 +259,6 @@ type L3XCVppAPI interface {
 
 	UpdateL3XC(ctx context.Context, l3xc *L3XC) error
 	DeleteL3XC(ctx context.Context, index uint32, ipv6 bool) error
-}
-
-// IP6ndVppAPI provides methods for managing IPv6 ND configuration.
-type IP6ndVppAPI interface {
-	SetIP6ndAutoconfig(ctx context.Context, iface string, enable, installDefaultRoutes bool) error
 }
 
 var Handler = vpp.RegisterHandler(vpp.HandlerDesc{

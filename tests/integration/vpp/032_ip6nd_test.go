@@ -21,14 +21,12 @@ import (
 
 	"go.ligato.io/cn-infra/v2/logging/logrus"
 
-	netalloc_mock "go.ligato.io/vpp-agent/v3/plugins/netalloc/mock"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
 	ifplugin_vppcalls "go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/vppcalls"
-	l3plugin_vppcalls "go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin/vppcalls"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin/vrfidx"
 	vpp_l3 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3"
 
-	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin"
+	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin"
 )
 
 func TestIP6ND(t *testing.T) {
@@ -56,10 +54,7 @@ func TestIP6ND(t *testing.T) {
 	vrfIndexes.Put("vrf1-ipv4", &vrfidx.VRFMetadata{Index: 0, Protocol: vpp_l3.VrfTable_IPV4})
 	vrfIndexes.Put("vrf1-ipv6", &vrfidx.VRFMetadata{Index: 0, Protocol: vpp_l3.VrfTable_IPV6})
 
-	h := l3plugin_vppcalls.CompatibleL3VppHandler(test.vppClient, ifIndexes, vrfIndexes,
-		netalloc_mock.NewMockNetAlloc(), logrus.NewLogger("test"))
-
-	err = h.SetIP6ndAutoconfig(test.Ctx, ifName, true, true)
+	err = ih.SetIP6ndAutoconfig(test.Ctx, ifIdx, true, true)
 	Expect(err).To(Succeed())
 
 	out, err := test.vpp.RunCli(test.Ctx, "show ip6 fib")

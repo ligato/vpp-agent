@@ -29,11 +29,9 @@ import (
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005"
 	vpp_dhcp "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/dhcp"
 	vpp_ip "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/ip"
-	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/ip6_nd"
 	vpp_ip_neighbor "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/ip_neighbor"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/ip_types"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/l3xc"
-	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/rd_cp"
 	vpp_vpe "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/vpe"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin/vppcalls"
@@ -59,7 +57,6 @@ type L3VppHandler struct {
 	*DHCPProxyHandler
 	*L3XCHandler
 	*TeibHandler
-	*IP6ndHandler
 }
 
 func NewL3VppHandler(
@@ -83,7 +80,6 @@ func NewL3VppHandler(
 		DHCPProxyHandler:   NewDHCPProxyHandler(ch, log),
 		L3XCHandler:        NewL3XCHandler(c, ifIdx, log),
 		TeibHandler:        NewTeibVppHandler(ch, ifIdx, log),
-		IP6ndHandler:       NewIP6ndVppHandler(ch, ifIdx, log),
 	}
 }
 
@@ -131,15 +127,6 @@ type VrfTableHandler struct {
 
 // TeibHandler is accessor for TEIB-related vppcalls methods
 type TeibHandler struct {
-	callsChannel govppapi.Channel
-	ifIndexes    ifaceidx.IfaceMetadataIndex
-	log          logging.Logger
-}
-
-// IP6ndHandler is accessor for IP6ND-related vppcalls methods
-type IP6ndHandler struct {
-	rpcIP6nd     ip6_nd.RPCService
-	rpcRdCp      rd_cp.RPCService
 	callsChannel govppapi.Channel
 	ifIndexes    ifaceidx.IfaceMetadataIndex
 	log          logging.Logger
@@ -225,19 +212,6 @@ func NewTeibVppHandler(callsChan govppapi.Channel, ifIndexes ifaceidx.IfaceMetad
 	}
 	return &TeibHandler{
 		callsChannel: callsChan,
-		ifIndexes:    ifIndexes,
-		log:          log,
-	}
-}
-
-func NewIP6ndVppHandler(ch govppapi.Channel, ifIndexes ifaceidx.IfaceMetadataIndex, log logging.Logger) *IP6ndHandler {
-	if log == nil {
-		log = logrus.NewLogger("ip6nd-handler")
-	}
-	return &IP6ndHandler{
-		rpcIP6nd:     ip6_nd.NewServiceClient(ch),
-		rpcRdCp:      rd_cp.NewServiceClient(ch),
-		callsChannel: ch,
 		ifIndexes:    ifIndexes,
 		log:          log,
 	}

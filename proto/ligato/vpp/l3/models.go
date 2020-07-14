@@ -88,14 +88,6 @@ var (
 	}, models.WithNameTemplate(
 		`{{.Interface}}/peer/{{.PeerAddr}}`,
 	))
-
-	ModelIP6ND = models.Register(&IP6ND{}, models.Spec{
-		Module:  ModuleName,
-		Type:    "ip6nd",
-		Version: "v2",
-	}, models.WithNameTemplate(
-		`{{.Interface}}`,
-	))
 )
 
 // ProxyARPKey returns key for global proxy arp
@@ -146,13 +138,6 @@ func L3XCKey(iface string, protocol L3XConnect_Protocol) string {
 	return models.Key(&L3XConnect{
 		Interface: iface,
 		Protocol:  protocol,
-	})
-}
-
-// IP6NDKey returns key for IP6ND
-func IP6NDKey(iface string) string {
-	return models.Key(&IP6ND{
-		Interface: iface,
 	})
 }
 

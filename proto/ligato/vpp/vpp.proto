@@ -45,7 +45,6 @@ message ConfigData {
     repeated l3.L3XConnect l3xconnects = 45;
     repeated l3.DHCPProxy dhcp_proxies = 46;
     repeated l3.TeibEntry teib_entries = 47;
-    repeated l3.IP6ND ip6nds = 48;
 
     nat.Nat44Global nat44_global = 50;
     repeated nat.DNat44 dnat44s = 51;

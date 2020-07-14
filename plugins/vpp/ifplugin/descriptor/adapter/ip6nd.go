@@ -5,14 +5,14 @@ package adapter
 import (
 	"github.com/golang/protobuf/proto"
 	. "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
-	"go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3"
+	"go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
 )
 
 ////////// type-safe key-value pair with metadata //////////
 
 type IP6NDKVWithMetadata struct {
 	Key      string
-	Value    *vpp_l3.IP6ND
+	Value    *vpp_interfaces.Interface_IP6ND
 	Metadata interface{}
 	Origin   ValueOrigin
 }
@@ -24,19 +24,19 @@ type IP6NDDescriptor struct {
 	KeySelector          KeySelector
 	ValueTypeName        string
 	KeyLabel             func(key string) string
-	ValueComparator      func(key string, oldValue, newValue *vpp_l3.IP6ND) bool
+	ValueComparator      func(key string, oldValue, newValue *vpp_interfaces.Interface_IP6ND) bool
 	NBKeyPrefix          string
 	WithMetadata         bool
 	MetadataMapFactory   MetadataMapFactory
-	Validate             func(key string, value *vpp_l3.IP6ND) error
-	Create               func(key string, value *vpp_l3.IP6ND) (metadata interface{}, err error)
-	Delete               func(key string, value *vpp_l3.IP6ND, metadata interface{}) error
-	Update               func(key string, oldValue, newValue *vpp_l3.IP6ND, oldMetadata interface{}) (newMetadata interface{}, err error)
-	UpdateWithRecreate   func(key string, oldValue, newValue *vpp_l3.IP6ND, metadata interface{}) bool
+	Validate             func(key string, value *vpp_interfaces.Interface_IP6ND) error
+	Create               func(key string, value *vpp_interfaces.Interface_IP6ND) (metadata interface{}, err error)
+	Delete               func(key string, value *vpp_interfaces.Interface_IP6ND, metadata interface{}) error
+	Update               func(key string, oldValue, newValue *vpp_interfaces.Interface_IP6ND, oldMetadata interface{}) (newMetadata interface{}, err error)
+	UpdateWithRecreate   func(key string, oldValue, newValue *vpp_interfaces.Interface_IP6ND, metadata interface{}) bool
 	Retrieve             func(correlate []IP6NDKVWithMetadata) ([]IP6NDKVWithMetadata, error)
 	IsRetriableFailure   func(err error) bool
-	DerivedValues        func(key string, value *vpp_l3.IP6ND) []KeyValuePair
-	Dependencies         func(key string, value *vpp_l3.IP6ND) []Dependency
+	DerivedValues        func(key string, value *vpp_interfaces.Interface_IP6ND) []KeyValuePair
+	Dependencies         func(key string, value *vpp_interfaces.Interface_IP6ND) []Dependency
 	RetrieveDependencies []string /* descriptor name */
 }
 
@@ -213,8 +213,8 @@ func (da *IP6NDDescriptorAdapter) Dependencies(key string, value proto.Message) 
 
 ////////// Helper methods //////////
 
-func castIP6NDValue(key string, value proto.Message) (*vpp_l3.IP6ND, error) {
-	typedValue, ok := value.(*vpp_l3.IP6ND)
+func castIP6NDValue(key string, value proto.Message) (*vpp_interfaces.Interface_IP6ND, error) {
+	typedValue, ok := value.(*vpp_interfaces.Interface_IP6ND)
 	if !ok {
 		return nil, ErrInvalidValueType(key, value)
 	}

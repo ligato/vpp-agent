@@ -49,13 +49,3 @@ message DHCPProxy {
     uint32 rx_vrf_id = 2;
     repeated DHCPServer servers = 4;
 }
-
-// IPv6 Neighbor Discovery
-message IP6ND {
-    // Name of interface this config applies to.
-    string interface = 1;
-    // Enable IPv6 ND address autoconfiguration.
-    bool autoconfig = 2;
-    // Enable installing default routes.
-    bool install_default_routes = 3;
-}

@@ -21,7 +21,6 @@
 //go:generate descriptor-adapter --descriptor-name DHCPProxy --value-type *vpp_l3.DHCPProxy --import "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3" --output-dir "descriptor"
 //go:generate descriptor-adapter --descriptor-name L3XC --value-type *vpp_l3.L3XConnect --import "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3" --output-dir "descriptor"
 //go:generate descriptor-adapter --descriptor-name TeibEntry --value-type *vpp_l3.TeibEntry --import "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3" --output-dir "descriptor"
-//go:generate descriptor-adapter --descriptor-name IP6ND --value-type *vpp_l3.IP6ND --import "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3" --output-dir "descriptor"
 
 package l3plugin
 
@@ -103,7 +102,6 @@ func (p *L3Plugin) Init() (err error) {
 	dhcpProxyDescriptor := descriptor.NewDHCPProxyDescriptor(p.KVScheduler, p.l3Handler, p.Log)
 	l3xcDescriptor := descriptor.NewL3XCDescriptor(p.l3Handler, p.IfPlugin.GetInterfaceIndex(), p.Log)
 	teibDescriptor := descriptor.NewTeibDescriptor(p.KVScheduler, p.l3Handler, p.Log)
-	ip6ndDescriptor := descriptor.NewIP6ndDescriptor(p.KVScheduler, p.l3Handler, p.Log)
 
 	err = p.Deps.KVScheduler.RegisterKVDescriptor(
 		routeDescriptor,
@@ -114,7 +112,6 @@ func (p *L3Plugin) Init() (err error) {
 		dhcpProxyDescriptor,
 		l3xcDescriptor,
 		teibDescriptor,
-		ip6ndDescriptor,
 	)
 	if err != nil {
 		return err

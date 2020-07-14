@@ -12,13 +12,13 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 
-package vpp1908
+package vpp1904
 
 import (
 	"context"
 	"fmt"
 )
 
-func (h *L3VppHandler) SetIP6ndAutoconfig(ctx context.Context, iface string, enable, installDefaultRoutes bool) error {
+func (h *InterfaceVppHandler) SetIP6ndAutoconfig(ctx context.Context, ifIdx uint32, enable, installDefaultRoutes bool) error {
 	return fmt.Errorf("not supported for this VPP version")
 }

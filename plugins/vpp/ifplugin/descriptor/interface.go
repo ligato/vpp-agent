@@ -809,6 +809,14 @@ func (d *InterfaceDescriptor) DerivedValues(key string, intf *interfaces.Interfa
 		})
 	}
 
+	// IP6ND config
+	if intf.GetIp6Nd() != nil {
+		derValues = append(derValues, kvs.KeyValuePair{
+			Key:   interfaces.IP6NDKey(intf.Name),
+			Value: intf.GetIp6Nd(),
+		})
+	}
+
 	// IP addresses
 	for _, ipAddr := range intf.IpAddresses {
 		derValues = append(derValues, kvs.KeyValuePair{

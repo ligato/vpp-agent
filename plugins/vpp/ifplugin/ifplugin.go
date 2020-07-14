@@ -18,6 +18,7 @@
 //go:generate descriptor-adapter --descriptor-name RxPlacement  --value-type *vpp_interfaces.Interface_RxPlacement --import "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces" --output-dir "descriptor"
 //go:generate descriptor-adapter --descriptor-name BondedInterface  --value-type *vpp_interfaces.BondLink_BondedInterface --import "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces" --output-dir "descriptor"
 //go:generate descriptor-adapter --descriptor-name Span  --value-type *vpp_interfaces.Span --import "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name IP6ND --value-type *vpp_interfaces.Interface_IP6ND --import "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces" --output-dir "descriptor"
 
 package ifplugin
 
@@ -26,13 +27,12 @@ import (
 	"sync"
 	"time"
 
-	"go.ligato.io/cn-infra/v2/servicelabel"
-
 	"github.com/pkg/errors"
 	"go.ligato.io/cn-infra/v2/datasync"
 	"go.ligato.io/cn-infra/v2/health/statuscheck"
 	"go.ligato.io/cn-infra/v2/idxmap"
 	"go.ligato.io/cn-infra/v2/infra"
+	"go.ligato.io/cn-infra/v2/servicelabel"
 	"go.ligato.io/cn-infra/v2/utils/safeclose"
 
 	"go.ligato.io/vpp-agent/v3/plugins/govppmux"
@@ -182,6 +182,7 @@ func (p *IfPlugin) Init() (err error) {
 	withAddrDescriptor := descriptor.NewInterfaceWithAddrDescriptor(p.Log)
 	spanDescriptor, spanDescriptorCtx := descriptor.NewSpanDescriptor(p.ifHandler, p.Log)
 	spanDescriptorCtx.SetInterfaceIndex(p.intfIndex)
+	ip6ndDescriptor := descriptor.NewIP6ndDescriptor(p.KVScheduler, p.ifHandler, p.intfIndex, p.Log)
 
 	err = p.KVScheduler.RegisterKVDescriptor(
 		dhcpDescriptor,
@@ -194,6 +195,7 @@ func (p *IfPlugin) Init() (err error) {
 		vrfDescriptor,
 		withAddrDescriptor,
 		spanDescriptor,
+		ip6ndDescriptor,
 	)
 	if err != nil {
 		return err

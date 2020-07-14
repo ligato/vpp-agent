@@ -122,6 +122,7 @@ type InterfaceVppAPI interface {
 
 	MemifAPI
 	Wmxnet3API
+	IP6ndVppAPI
 
 	// AddAfPacketInterface calls AfPacketCreate VPP binary API.
 	AddAfPacketInterface(ifName, hwAddr, targetHostIfName string) (swIndex uint32, err error)
@@ -272,6 +273,11 @@ type InterfaceVppRead interface {
 	WatchInterfaceEvents(ctx context.Context, events chan<- *InterfaceEvent) error
 	// WatchDHCPLeases starts watching for DHCP leases.
 	WatchDHCPLeases(ctx context.Context, leases chan<- *Lease) error
+}
+
+// IP6ndVppAPI provides methods for managing IPv6 ND configuration.
+type IP6ndVppAPI interface {
+	SetIP6ndAutoconfig(ctx context.Context, ifIdx uint32, enable, installDefaultRoutes bool) error
 }
 
 var Handler = vpp.RegisterHandler(vpp.HandlerDesc{

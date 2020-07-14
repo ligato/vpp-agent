@@ -16,20 +16,14 @@ package vpp2005
 
 import (
 	"context"
-	"fmt"
 
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/interface_types"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/rd_cp"
 )
 
-func (h *IP6ndHandler) SetIP6ndAutoconfig(ctx context.Context, iface string, enable, installDefaultRoutes bool) error {
-	meta, found := h.ifIndexes.LookupByName(iface)
-	if !found {
-		return fmt.Errorf("interface %s not found", iface)
-	}
-
+func (h *InterfaceVppHandler) SetIP6ndAutoconfig(ctx context.Context, ifIdx uint32, enable, installDefaultRoutes bool) error {
 	_, err := h.rpcRdCp.IP6NdAddressAutoconfig(ctx, &rd_cp.IP6NdAddressAutoconfig{
-		SwIfIndex:            interface_types.InterfaceIndex(meta.SwIfIndex),
+		SwIfIndex:            interface_types.InterfaceIndex(ifIdx),
 		Enable:               enable,
 		InstallDefaultRoutes: installDefaultRoutes,
 	})
@@ -38,16 +32,3 @@ func (h *IP6ndHandler) SetIP6ndAutoconfig(ctx context.Context, iface string, ena
 	}
 	return nil
 }
-
-/*func (h *IP6ndHandler) DumpIP6nd(ctx context.Context, iface string) error {
-	meta, found := h.ifIndexes.LookupByName(iface)
-	if !found {
-		return fmt.Errorf("interface %s not found", iface)
-	}
-
-	_, err := h.rpcIP6nd.
-	if err != nil {
-		return err
-	}
-	return nil
-}*/
