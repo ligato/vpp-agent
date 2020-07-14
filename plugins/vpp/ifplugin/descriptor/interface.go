@@ -273,6 +273,9 @@ func (d *InterfaceDescriptor) EquivalentInterfaces(key string, oldIntf, newIntf 
 	if !proto.Equal(oldIntf.Unnumbered, newIntf.Unnumbered) {
 		return false
 	}
+	if !proto.Equal(oldIntf.Ip6Nd, newIntf.Ip6Nd) {
+		return false
+	}
 
 	// type-specific (defaults considered)
 	if !d.equivalentTypeSpecificConfig(oldIntf, newIntf) {
