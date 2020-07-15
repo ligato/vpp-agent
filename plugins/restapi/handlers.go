@@ -18,9 +18,7 @@ package restapi
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"runtime"
 
@@ -319,50 +317,6 @@ func (p *Plugin) versionHandler(formatter *render.Render) http.HandlerFunc {
 			Arch:      runtime.GOARCH,
 		}
 		p.logError(formatter.JSON(w, http.StatusOK, version))
-	}
-}
-
-// commandHandler - used to execute VPP CLI commands
-func (p *Plugin) commandHandler(formatter *render.Render) http.HandlerFunc {
-	return func(w http.ResponseWriter, req *http.Request) {
-
-		body, err := ioutil.ReadAll(req.Body)
-		if err != nil {
-			errMsg := fmt.Sprintf("400 Bad request: failed to parse request body: %v\n", err)
-			p.Log.Error(errMsg)
-			p.logError(formatter.JSON(w, http.StatusBadRequest, errMsg))
-			return
-		}
-
-		var reqParam map[string]string
-		err = json.Unmarshal(body, &reqParam)
-		if err != nil {
-			errMsg := fmt.Sprintf("400 Bad request: failed to unmarshall request body: %v\n", err)
-			p.Log.Error(errMsg)
-			p.logError(formatter.JSON(w, http.StatusBadRequest, errMsg))
-			return
-		}
-
-		command, ok := reqParam["vppclicommand"]
-		if !ok || command == "" {
-			errMsg := fmt.Sprintf("400 Bad request: vppclicommand parameter missing or empty\n")
-			p.Log.Error(errMsg)
-			p.logError(formatter.JSON(w, http.StatusBadRequest, errMsg))
-			return
-		}
-
-		p.Log.Debugf("VPPCLI command: %v", command)
-
-		reply, err := p.vpeHandler.RunCli(context.TODO(), command)
-		if err != nil {
-			errMsg := fmt.Sprintf("500 Internal server error: sending request failed: %v\n", err)
-			p.Log.Error(errMsg)
-			p.logError(formatter.JSON(w, http.StatusInternalServerError, errMsg))
-			return
-		}
-
-		p.Log.Debugf("VPPCLI response: %s", reply)
-		p.logError(formatter.JSON(w, http.StatusOK, reply))
 	}
 }
 
