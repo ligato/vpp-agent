@@ -273,6 +273,9 @@ func (d *InterfaceDescriptor) EquivalentInterfaces(key string, oldIntf, newIntf 
 	if !proto.Equal(oldIntf.Unnumbered, newIntf.Unnumbered) {
 		return false
 	}
+	if !proto.Equal(oldIntf.Ip6Nd, newIntf.Ip6Nd) {
+		return false
+	}
 
 	// type-specific (defaults considered)
 	if !d.equivalentTypeSpecificConfig(oldIntf, newIntf) {
@@ -806,6 +809,14 @@ func (d *InterfaceDescriptor) DerivedValues(key string, intf *interfaces.Interfa
 		derValues = append(derValues, kvs.KeyValuePair{
 			Key:   interfaces.DHCPClientKey(intf.Name),
 			Value: &prototypes.Empty{},
+		})
+	}
+
+	// IP6ND config
+	if intf.GetIp6Nd() != nil {
+		derValues = append(derValues, kvs.KeyValuePair{
+			Key:   interfaces.IP6NDKey(intf.Name),
+			Value: intf.GetIp6Nd(),
 		})
 	}
 

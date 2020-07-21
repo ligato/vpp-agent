@@ -51,7 +51,9 @@ func (IPScanNeighbor_Mode) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_eb46f906a6f7c0e7, []int{1, 0}
 }
 
+// ARP Proxy
 type ProxyARP struct {
+	// List of interfaces proxy ARP is enabled for.
 	Interfaces           []*ProxyARP_Interface `protobuf:"bytes,1,rep,name=interfaces,proto3" json:"interfaces,omitempty"`
 	Ranges               []*ProxyARP_Range     `protobuf:"bytes,2,rep,name=ranges,proto3" json:"ranges,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}              `json:"-"`
@@ -192,6 +194,7 @@ func (m *ProxyARP_Range) GetVrfId() uint32 {
 	return 0
 }
 
+// IP Neighbour Config
 type IPScanNeighbor struct {
 	Mode                 IPScanNeighbor_Mode `protobuf:"varint,1,opt,name=mode,proto3,enum=ligato.vpp.l3.IPScanNeighbor_Mode" json:"mode,omitempty"`
 	ScanInterval         uint32              `protobuf:"varint,2,opt,name=scan_interval,json=scanInterval,proto3" json:"scan_interval,omitempty"`
@@ -271,6 +274,7 @@ func (m *IPScanNeighbor) GetStaleThreshold() uint32 {
 	return 0
 }
 
+// DHCP Proxy
 type DHCPProxy struct {
 	SourceIpAddress      string                  `protobuf:"bytes,1,opt,name=source_ip_address,json=sourceIpAddress,proto3" json:"source_ip_address,omitempty"`
 	RxVrfId              uint32                  `protobuf:"varint,2,opt,name=rx_vrf_id,json=rxVrfId,proto3" json:"rx_vrf_id,omitempty"`

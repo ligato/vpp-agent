@@ -26,11 +26,13 @@ import (
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/gre"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/gtpu"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/interfaces"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/ip6_nd"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/ip"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/ipsec"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/l2"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/memif"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/span"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/rd_cp"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/tapv2"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/vmxnet3"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/vxlan"
@@ -81,6 +83,8 @@ type InterfaceVppHandler struct {
 	gtpu         gtpu.RPCService
 	memif        memif.RPCService
 	vmxnet3      vmxnet3.RPCService
+	rpcIP6nd     ip6_nd.RPCService
+	rpcRdCp      rd_cp.RPCService
 	log          logging.Logger
 }
 
@@ -94,6 +98,8 @@ func NewInterfaceVppHandler(c vpp.Client, log logging.Logger) vppcalls.Interface
 		callsChannel: ch,
 		interfaces:   interfaces.NewServiceClient(ch),
 		ipsec:        ipsec.NewServiceClient(ch),
+		rpcIP6nd:     ip6_nd.NewServiceClient(ch),
+		rpcRdCp:      rd_cp.NewServiceClient(ch),
 		log:          log,
 	}
 	if c.IsPluginLoaded(gtpu.ModuleName) {

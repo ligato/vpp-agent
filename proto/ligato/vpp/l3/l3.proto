@@ -4,10 +4,12 @@ package ligato.vpp.l3;
 
 option go_package = "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3;vpp_l3";
 
+// ARP Proxy
 message ProxyARP {
     message Interface {
         string name = 1;
     }
+    // List of interfaces proxy ARP is enabled for.
     repeated Interface interfaces = 1;
 
     message Range {
@@ -18,6 +20,7 @@ message ProxyARP {
     repeated Range ranges = 2;
 }
 
+// IP Neighbour Config
 message IPScanNeighbor {
     enum Mode {
         DISABLED = 0;
@@ -34,6 +37,7 @@ message IPScanNeighbor {
     uint32 stale_threshold = 6;
 }
 
+// DHCP Proxy
 message DHCPProxy {
 
     message DHCPServer {

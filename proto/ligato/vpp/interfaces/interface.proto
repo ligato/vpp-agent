@@ -51,10 +51,26 @@ message Interface {
     // the interface referenced by the numbered interface and this field is ignored.
     uint32 vrf = 6;
 
+    // SetDhcpClient enables DHCP client on interface.
     bool set_dhcp_client = 7;
+
+    // Ip6Nd is used to enable/disable IPv6 ND address autoconfiguration
+    // and setting up default routes
+    message IP6ND {
+        // Enable IPv6 ND address autoconfiguration.
+        bool address_autoconfig = 1;
+        // Enable installing default routes.
+        bool install_default_routes = 2;
+    }
+    IP6ND ip6_nd = 14;
+
+    // Mtu sets MTU (Maximum Transmission Unit) for this interface.
+    // If set to zero, default MTU (usually 9216) will be used.
     uint32 mtu = 8;
 
+    // Unnumbered is used for inheriting IP address from another interface.
     message Unnumbered {
+        // InterfaceWithIp is the name of interface to inherit IP address from.
         string interface_with_ip = 1;
     }
     Unnumbered unnumbered = 9;

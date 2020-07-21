@@ -23,7 +23,7 @@ require (
 	github.com/fsouza/go-dockerclient v1.2.2
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-errors/errors v1.0.1
-	github.com/golang/protobuf v1.3.3
+	github.com/golang/protobuf v1.4.2
 	github.com/gorilla/mux v1.6.2
 	github.com/gorilla/websocket v1.4.1 // indirect
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0
@@ -56,6 +56,8 @@ require (
 	golang.org/x/net v0.0.0-20190620200207-3b0461eec859
 	golang.org/x/sys v0.0.0-20200501145240-bc7a7d42d5c3
 	golang.org/x/time v0.0.0-20190921001708-c4c64cad1fd0 // indirect
+	google.golang.org/genproto v0.0.0-20200707001353-8e8330bf89df // indirect
 	google.golang.org/grpc v1.27.1
+	google.golang.org/protobuf v1.25.0 // indirect
 	gotest.tools v2.2.0+incompatible // indirect
 )

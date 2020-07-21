@@ -169,6 +169,7 @@ func (h *InterfaceVppHandler) dumpInterfaces(ifIdxs ...uint32) (map[uint32]*vppc
 }
 
 func (h *InterfaceVppHandler) DumpInterfaces(ctx context.Context) (map[uint32]*vppcalls.InterfaceDetails, error) {
+	// Dump all interfaces
 	interfaces, err := h.dumpInterfaces()
 	if err != nil {
 		return nil, err

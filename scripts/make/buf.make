@@ -11,8 +11,8 @@ endif
 REMOTE_GIT := https://github.com/ligato/vpp-agent.git
 CHECK_BREAKING_BRANCH := master
 
-# https://github.com/bufbuild/buf/releases 20200101
-BUF_VERSION := 0.5.0
+# https://github.com/bufbuild/buf/releases 20200625
+BUF_VERSION := 0.18.1
 # https://github.com/golang/protobuf/releases 20190709
 PROTOC_GEN_GO_VERSION ?= v1.3.3
 # https://github.com/protocolbuffers/protobuf/releases 20191213

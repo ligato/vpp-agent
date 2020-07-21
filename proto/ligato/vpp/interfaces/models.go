@@ -117,6 +117,13 @@ const (
 
 /* DHCP (client - derived, lease - notification) */
 const (
+	// IP6NDKeyPrefix is used as a common prefix for keys derived from
+	// interfaces to represent enabled IP6 ND.
+	IP6NDKeyPrefix = "vpp/interface/ip6nd/"
+)
+
+/* DHCP (client - derived, lease - notification) */
+const (
 	// DHCPClientKeyPrefix is used as a common prefix for keys derived from
 	// interfaces to represent enabled DHCP clients.
 	DHCPClientKeyPrefix = "vpp/interface/dhcp-client/"
@@ -442,6 +449,22 @@ func ParseBondedInterfaceKey(key string) (bondIf, slaveIf string, isBondSlaveInt
 		return keyComps[2], slaveIf, true
 	}
 	return "", "", false
+}
+
+// IP6NDKey returns a (derived) key used to represent enabled IP6 ND.
+func IP6NDKey(iface string) string {
+	if iface == "" {
+		iface = InvalidKeyPart
+	}
+	return IP6NDKeyPrefix + iface
+}
+
+// ParseNameFromIP6NDKey returns suffix of the key.
+func ParseNameFromIP6NDKey(key string) (iface string, isIP6NDKey bool) {
+	if suffix := strings.TrimPrefix(key, IP6NDKeyPrefix); suffix != key && suffix != "" {
+		return suffix, true
+	}
+	return
 }
 
 /* DHCP (client - derived, lease - notification) */

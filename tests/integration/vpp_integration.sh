@@ -8,6 +8,8 @@ go test -c ./tests/integration/vpp -o ./tests/integration/vpp/vpp-integration.te
 cid=$(docker run -d -it \
 	-v $(pwd)/tests/integration/vpp/vpp-integration.test:/vpp-integration.test:ro \
 	--label vpp.integration.test="$*" \
+	-e INITIAL_LOGLVL \
+	-e DEBUG_GOVPP \
 	${DOCKER_ARGS-} \
 	"$VPP_IMG" bash)
 
