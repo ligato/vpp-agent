@@ -74,7 +74,7 @@ docker exec -it agent1 vppctl -s localhost:5002 show interface
 See [README][docker-image] of development docker image for more details.
 
 ## Documentation
-[![GoDoc](https://godoc.org/github.com/ligato/vpp-agent?status.svg)](https://godoc.org/github.com/ligato/vpp-agent)
+[![PkgGoDev](https://pkg.go.dev/badge/go.ligato.io/vpp-agent/v3)](https://pkg.go.dev/go.ligato.io/vpp-agent/v3)
 
 Extensive documentation for the VPP Agent can be found at [docs.ligato.io](https://docs.ligato.io).
 
