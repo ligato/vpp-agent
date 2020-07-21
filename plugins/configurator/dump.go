@@ -110,6 +110,11 @@ func (svc *dumpService) Dump(ctx context.Context, req *rpc.DumpRequest) (*rpc.Du
 		svc.log.Errorf("DumpIPSecSPDs failed: %v", err)
 		return nil, err
 	}
+	dump.VppConfig.IpsecSps, err = svc.DumpIPSecSPs()
+	if err != nil {
+		svc.log.Errorf("DumpIPSecSPs failed: %v", err)
+		return nil, err
+	}
 	dump.VppConfig.IpsecSas, err = svc.DumpIPSecSAs()
 	if err != nil {
 		svc.log.Errorf("DumpIPSecSAs failed: %v", err)
@@ -205,14 +210,17 @@ func (svc *dumpService) DumpIPSecSPDs() (spds []*vpp_ipsec.SecurityPolicyDatabas
 		return nil, nil
 	}
 
-	spdDetails, err := svc.ipsecHandler.DumpIPSecSPD()
-	if err != nil {
-		return nil, err
+	return svc.ipsecHandler.DumpIPSecSPD()
+}
+
+// DumpIPSecSPs dumps IPSec security policies.
+func (svc *dumpService) DumpIPSecSPs() (spds []*vpp_ipsec.SecurityPolicy, err error) {
+	if svc.ipsecHandler == nil {
+		// handler is not available
+		return nil, nil
 	}
-	for _, spd := range spdDetails {
-		spds = append(spds, spd.Spd)
-	}
-	return spds, nil
+
+	return svc.ipsecHandler.DumpIPSecSP()
 }
 
 // DumpIPSecSAs reads IPSec SA and returns them as an *IPSecSAResponse. If reading ends up with error,

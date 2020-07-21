@@ -108,6 +108,8 @@ const (
 const (
 	// SPDs is rest IPSec security policy database path
 	SPDs = "/dump/vpp/v2/ipsec/spds"
+	// SPs is rest IPSec security policy path
+	SPs = "/dump/vpp/v2/ipsec/sps"
 	// SAs is rest IPSec security association path
 	SAs = "/dump/vpp/v2/ipsec/sas"
 )

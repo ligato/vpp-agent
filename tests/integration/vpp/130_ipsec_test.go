@@ -16,6 +16,7 @@ package vpp
 
 import (
 	"fmt"
+	"github.com/golang/protobuf/proto"
 	"testing"
 
 	"go.ligato.io/cn-infra/v2/logging/logrus"
@@ -36,6 +37,7 @@ func TestIPSec(t *testing.T) {
 
 	p2mpSupported := true // determines point-to-multipoint support
 	saDumpAPIOk := true   // determines if SA dump API is working
+	spdIfaceDumpOk := false // determines if ipsec_spd_interface_dump works correctly
 
 	release := ctx.versionInfo.Release()
 	if release < "20.01" {
@@ -55,6 +57,9 @@ func TestIPSec(t *testing.T) {
 		ipip  *interfaces.IPIPLink
 		saOut *ipsec.SecurityAssociation
 		saIn  *ipsec.SecurityAssociation
+		spd   *ipsec.SecurityPolicyDatabase
+		spOut *ipsec.SecurityPolicy
+		spIn  *ipsec.SecurityPolicy
 		tp    *ipsec.TunnelProtection
 	}{
 		{
@@ -82,6 +87,37 @@ func TestIPSec(t *testing.T) {
 				IntegAlg:       ipsec.IntegAlg_SHA1_96,
 				IntegKey:       "bf9b150aaf5c2a87d79898b11eabd055e70abdbe",
 				EnableUdpEncap: true,
+			},
+			spd: &ipsec.SecurityPolicyDatabase{
+				Index: 100,
+			},
+			spOut: &ipsec.SecurityPolicy{
+				SpdIndex:             100,
+				SaIndex:              10,
+				Priority:             0,
+				IsOutbound:           true,
+				RemoteAddrStart:      "10.10.1.1",
+				RemoteAddrStop:       "10.10.1.255",
+				LocalAddrStart:       "10.10.2.1",
+				LocalAddrStop:        "10.10.2.255",
+				Protocol:             0,
+				Action:               ipsec.SecurityPolicy_PROTECT,
+			},
+			spIn: &ipsec.SecurityPolicy{
+				SpdIndex:             100,
+				SaIndex:              20,
+				Priority:             0,
+				IsOutbound:           false,
+				RemoteAddrStart:      "10.10.1.1",
+				RemoteAddrStop:       "10.10.1.255",
+				LocalAddrStart:       "10.10.2.1",
+				LocalAddrStop:        "10.10.2.255",
+				Protocol:             0,
+				RemotePortStart:      1000,
+				RemotePortStop:       5000,
+				LocalPortStart:       2000,
+				LocalPortStop:        7000,
+				Action:               ipsec.SecurityPolicy_PROTECT,
 			},
 			tp: &ipsec.TunnelProtection{
 				SaOut: []uint32{10},
@@ -116,6 +152,37 @@ func TestIPSec(t *testing.T) {
 				SaOut: []uint32{1},
 				SaIn:  []uint32{2},
 			},
+			spd: &ipsec.SecurityPolicyDatabase{
+				Index: 101,
+			},
+			spOut: &ipsec.SecurityPolicy{
+				SpdIndex:             101,
+				SaIndex:              1,
+				Priority:             0,
+				IsOutbound:           true,
+				RemoteAddrStart:      "2001:1000::1",
+				RemoteAddrStop:       "2001:1000::1000",
+				LocalAddrStart:       "2001:2000::1",
+				LocalAddrStop:        "2001:2000::1000",
+				Protocol:             0,
+				Action:               ipsec.SecurityPolicy_PROTECT,
+			},
+			spIn: &ipsec.SecurityPolicy{
+				SpdIndex:             101,
+				SaIndex:              2,
+				Priority:             0,
+				IsOutbound:           false,
+				RemoteAddrStart:      "2001:1000::1",
+				RemoteAddrStop:       "2001:1000::1000",
+				LocalAddrStart:       "2001:2000::1",
+				LocalAddrStop:        "2001:2000::1000",
+				Protocol:             0,
+				RemotePortStart:      1000,
+				RemotePortStop:       5000,
+				LocalPortStart:       2000,
+				LocalPortStop:        7000,
+				Action:               ipsec.SecurityPolicy_PROTECT,
+			},
 		},
 		{
 			name: "Create multipoint IPSec tunnel",
@@ -143,6 +210,37 @@ func TestIPSec(t *testing.T) {
 				IntegKey:       "bf9b150aaf5c2a87d79898b11eabd055e70abdbe",
 				EnableUdpEncap: true,
 			},
+			spd: &ipsec.SecurityPolicyDatabase{
+				Index: 102,
+			},
+			spOut: &ipsec.SecurityPolicy{
+				SpdIndex:             102,
+				SaIndex:              100,
+				Priority:             0,
+				IsOutbound:           true,
+				RemoteAddrStart:      "10.10.1.1",
+				RemoteAddrStop:       "10.10.1.255",
+				LocalAddrStart:       "10.10.2.1",
+				LocalAddrStop:        "10.10.2.255",
+				Protocol:             0,
+				Action:               ipsec.SecurityPolicy_PROTECT,
+			},
+			spIn: &ipsec.SecurityPolicy{
+				SpdIndex:             102,
+				SaIndex:              101,
+				Priority:             0,
+				IsOutbound:           false,
+				RemoteAddrStart:      "10.10.1.1",
+				RemoteAddrStop:       "10.10.1.255",
+				LocalAddrStart:       "10.10.2.1",
+				LocalAddrStop:        "10.10.2.255",
+				Protocol:             0,
+				RemotePortStart:      1000,
+				RemotePortStop:       5000,
+				LocalPortStart:       2000,
+				LocalPortStop:        7000,
+				Action:               ipsec.SecurityPolicy_PROTECT,
+			},
 			tp: &ipsec.TunnelProtection{
 				SaOut:       []uint32{100},
 				SaIn:        []uint32{101},
@@ -155,7 +253,7 @@ func TestIPSec(t *testing.T) {
 			if !p2mpSupported && test.ipip.TunnelMode == interfaces.IPIPLink_POINT_TO_MULTIPOINT {
 				t.Skipf("IPIP: p2mp skipped for VPP < 20.05 (%s)", release)
 			}
-			// create IPIP tunnel + SAs + tunnel protection
+			// create IPIP tunnel + SAs + tunnel protection + SPs
 			ifName := fmt.Sprintf("ipip%d", i)
 			ifIdx, err := ifHandler.AddIpipTunnel(ifName, 0, test.ipip)
 			if err != nil {
@@ -178,8 +276,24 @@ func TestIPSec(t *testing.T) {
 			if err != nil {
 				t.Fatalf("add tunnel protection failed: %v\n", err)
 			}
+			err = ipsecHandler.AddSPD(test.spd.Index)
+			if err != nil {
+				t.Fatalf("add SPD failed: %v\n", err)
+			}
+			err = ipsecHandler.AddSPDInterface(test.spd.Index, &ipsec.SecurityPolicyDatabase_Interface{Name: ifName})
+			if err != nil {
+				t.Fatalf("add SPD-Interface failed: %v\n", err)
+			}
+			err = ipsecHandler.AddSP(test.spOut)
+			if err != nil {
+				t.Fatalf("add SP failed: %v\n", err)
+			}
+			err = ipsecHandler.AddSP(test.spIn)
+			if err != nil {
+				t.Fatalf("add SP failed: %v\n", err)
+			}
 
-			// check created SAs + tunnel protection
+			// check created SAs + tunnel protection + SPs
 			saList, err := ipsecHandler.DumpIPSecSA()
 			if err != nil {
 				t.Fatalf("dumping SAs failed: %v", err)
@@ -213,8 +327,68 @@ func TestIPSec(t *testing.T) {
 			if tpList[0].NextHopAddr != test.tp.NextHopAddr {
 				t.Fatalf("tunnel protection next hop mismatch (%v != %v)", tpList[0].NextHopAddr, test.tp.NextHopAddr)
 			}
+			spdList, err := ipsecHandler.DumpIPSecSPD()
+			if err != nil {
+				t.Fatalf("dumping of SPDs failed: %v", err)
+			}
+			if len(spdList) != 1 {
+				t.Fatalf("Invalid number of SPDs: %d", len(spdList))
+			}
+			if spdList[0].Index != test.spd.Index {
+				t.Fatalf("Invalid SPD index: %d", spdList[0].Index)
+			}
+			if spdIfaceDumpOk {
+				if len(spdList[0].Interfaces) != 1 {
+					t.Fatalf("Invalid number of interfaces inside SPDs: %d", len(spdList[0].Interfaces))
+				}
+				if spdList[0].Interfaces[0].Name != ifName {
+					t.Fatalf("Invalid interface name in tunnel protections: %s", spdList[0].Interfaces[0].Name)
+				}
+			}
+			spList, err := ipsecHandler.DumpIPSecSP()
+			if err != nil {
+				t.Fatalf("dumping of SPs failed: %v", err)
+			}
+			if len(spList) != 2 {
+				t.Fatalf("Invalid number of SPs: %d", len(spList))
+			}
+			for _, sp := range spList {
+				if !proto.Equal(sp, test.spOut) && !proto.Equal(sp, test.spIn) {
+					t.Fatalf("Invalid SP: %+v", sp)
+				}
+			}
 
-			// delete tunnel protection, SAs and IPIP tunnel
+			// delete SPs, tunnel protection, SAs and IPIP tunnel
+			err = ipsecHandler.DeleteSP(test.spIn)
+			if err != nil {
+				t.Fatalf("delete of security policy failed: %v\n", err)
+			}
+			err = ipsecHandler.DeleteSP(test.spOut)
+			if err != nil {
+				t.Fatalf("delete of security policy failed: %v\n", err)
+			}
+			spList, err = ipsecHandler.DumpIPSecSP()
+			if err != nil {
+				t.Fatalf("dumping of security policies failed: %v", err)
+			}
+			if len(spList) != 0 {
+				t.Fatalf("%d SPs found in dump after removing", len(spList))
+			}
+			err = ipsecHandler.DeleteSPDInterface(test.spd.Index, &ipsec.SecurityPolicyDatabase_Interface{Name: ifName})
+			if err != nil {
+				t.Fatalf("delete of SPD failed: %v\n", err)
+			}
+			err = ipsecHandler.DeleteSPD(test.spd.Index)
+			if err != nil {
+				t.Fatalf("delete of SPD failed: %v\n", err)
+			}
+			spdList, err = ipsecHandler.DumpIPSecSPD()
+			if err != nil {
+				t.Fatalf("dumping of SPDs failed: %v", err)
+			}
+			if len(spdList) != 0 {
+				t.Fatalf("%d SPDs found in dump after removing", len(spdList))
+			}
 			err = ipsecHandler.DeleteTunnelProtection(test.tp)
 			if err != nil {
 				t.Fatalf("delete tunnel protection failed: %v\n", err)

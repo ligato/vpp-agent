@@ -72,6 +72,8 @@ type DataResyncDSL interface {
 	IPSecSA(sa *ipsec.SecurityAssociation) DataResyncDSL
 	// IPSecSPD adds request to RESYNC a new Security Policy Database
 	IPSecSPD(spd *ipsec.SecurityPolicyDatabase) DataResyncDSL
+	// IPSecSP adds Security Policy to the RESYNC request
+	IPSecSP(sp *ipsec.SecurityPolicy) DataResyncDSL
 	// IPSecTunnelProtection adds request to RESYNC an IPSec tunnel protection
 	IPSecTunnelProtection(tp *ipsec.TunnelProtection) DataResyncDSL
 	// PuntIPRedirect adds request to RESYNC a rule used to punt L3 traffic via interface.

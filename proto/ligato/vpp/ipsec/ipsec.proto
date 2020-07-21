@@ -66,7 +66,38 @@ message SecurityPolicyDatabase {
         }
         Action action = 13;
     }
-    repeated PolicyEntry policy_entries = 3;    /* List of policy entries belonging to this SPD */
+    // List of policy entries belonging to this SPD.
+    // Deprecated and actually trying to use this will return an error.
+    // Use separate model for Security Policy (SP) defined below.
+    repeated PolicyEntry policy_entries = 3 [deprecated=true];
+}
+
+message SecurityPolicy {
+    uint32 spd_index = 1;                   /* Security policy database index */
+    uint32 sa_index = 2;                    /* Security association index */
+
+    int32 priority = 3;
+    bool is_outbound = 4;
+
+    string remote_addr_start = 5;
+    string remote_addr_stop = 6;
+    string local_addr_start = 7;
+    string local_addr_stop = 8;
+
+    uint32 protocol = 9;
+
+    uint32 remote_port_start = 10;
+    uint32 remote_port_stop = 11;
+    uint32 local_port_start = 12;
+    uint32 local_port_stop = 13;
+
+    enum Action {
+        BYPASS = 0;
+        DISCARD = 1;
+        RESOLVE = 2;                        /* Note: this particular action is unused in VPP */
+        PROTECT = 3;
+    }
+    Action action = 14;
 }
 
 /* Security Association (SA) */
@@ -93,6 +124,9 @@ message SecurityAssociation {
     string tunnel_dst_addr = 11;
 
     bool enable_udp_encap = 12;     /* Enable UDP encapsulation for NAT traversal */
+
+    uint32 tunnel_src_port = 13;
+    uint32 tunnel_dst_port = 14;
 }
 
 // TunnelProtection allows enabling IPSec tunnel protection on an existing interface

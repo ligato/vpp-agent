@@ -207,6 +207,13 @@ func (p *Plugin) registerIPSecHandlers() {
 		}
 		return p.ipSecHandler.DumpIPSecSPD()
 	})
+	// GET IPSec SP entries
+	p.registerHTTPHandler(resturl.SPs, GET, func() (interface{}, error) {
+		if p.ipSecHandler == nil {
+			return nil, ErrHandlerUnavailable
+		}
+		return p.ipSecHandler.DumpIPSecSP()
+	})
 	// GET IPSec SA entries
 	p.registerHTTPHandler(resturl.SAs, GET, func() (interface{}, error) {
 		if p.ipSecHandler == nil {

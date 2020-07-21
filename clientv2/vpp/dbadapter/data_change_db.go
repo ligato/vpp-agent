@@ -193,6 +193,12 @@ func (dsl *PutDSL) IPSecSPD(spd *ipsec.SecurityPolicyDatabase) vppclient.PutDSL 
 	return dsl
 }
 
+// IPSecSP adds request to create a new Security Policy
+func (dsl *PutDSL) IPSecSP(sp *ipsec.SecurityPolicy) vppclient.PutDSL {
+	dsl.parent.txn.Put(models.Key(sp), sp)
+	return dsl
+}
+
 // IPSecTunnelProtection adds request to delete an IPSec tunnel protection from an interface
 func (dsl *PutDSL) IPSecTunnelProtection(tp *ipsec.TunnelProtection) vppclient.PutDSL {
 	dsl.parent.txn.Put(models.Key(tp), tp)
@@ -358,6 +364,12 @@ func (dsl *DeleteDSL) IPSecSA(saIndex uint32) vppclient.DeleteDSL {
 // IPSecSPD adds request to create a new Security Policy Database
 func (dsl *DeleteDSL) IPSecSPD(spdIndex uint32) vppclient.DeleteDSL {
 	dsl.parent.txn.Delete(ipsec.SPDKey(spdIndex))
+	return dsl
+}
+
+// IPSecSP adds request to delete Security Policy
+func (dsl *DeleteDSL) IPSecSP(sp *ipsec.SecurityPolicy) vppclient.DeleteDSL {
+	dsl.parent.txn.Delete(models.Key(sp))
 	return dsl
 }
 

@@ -130,6 +130,7 @@ func (p *ExamplePlugin) demonstrateClient(client configurator.ConfiguratorServic
 			IpscanNeighbor: ipScanNeigh,
 			IpsecSas:       []*vpp_ipsec.SecurityAssociation{sa10},
 			IpsecSpds:      []*vpp_ipsec.SecurityPolicyDatabase{spd1},
+			IpsecSps:       []*vpp_ipsec.SecurityPolicy{sp},
 		},
 		LinuxConfig: &linux.ConfigData{
 			Interfaces: []*linux_interfaces.Interface{
@@ -216,15 +217,18 @@ var (
 	}
 	spd1 = &vpp.IPSecSPD{
 		Index: 1,
-		PolicyEntries: []*vpp_ipsec.SecurityPolicyDatabase_PolicyEntry{
-			{
-				Action:     vpp_ipsec.SecurityPolicyDatabase_PolicyEntry_BYPASS,
-				Priority:   100,
-				IsOutbound: false,
-				Protocol:   50,
-				SaIndex:    10,
-			},
-		},
+	}
+	sp = &vpp.IPSecSP{
+		SpdIndex:        spd1.Index,
+		SaIndex:         sa10.Index,
+		Action:          vpp_ipsec.SecurityPolicy_BYPASS,
+		Priority:        100,
+		IsOutbound:      false,
+		Protocol:        50,
+		LocalAddrStart:  "192.168.1.1",
+		LocalAddrStop:   "192.168.1.255",
+		RemoteAddrStart: "192.168.2.1",
+		RemoteAddrStop:  "192.168.2.255",
 	}
 	memif1 = &vpp.Interface{
 		Name:        "memif1",

@@ -18,7 +18,6 @@ import (
 	"encoding/hex"
 	vpp_ipsec "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ipsec"
 	"net"
-	"strconv"
 
 	"github.com/pkg/errors"
 
@@ -92,24 +91,35 @@ func (h *IPSecVppHandler) DumpIPSecSAWithIndex(saID uint32) (saList []*vppcalls.
 	return saList, nil
 }
 
-// DumpIPSecSPD implements IPSec handler.
-func (h *IPSecVppHandler) DumpIPSecSPD() (spdList []*vppcalls.IPSecSpdDetails, err error) {
-	metadata := make(map[string]*vppcalls.SpdMeta)
-
-	// TODO dump IPSec SPD interfaces is not available in current VPP version
+// DumpIPSecSPD returns a list of IPSec security policy databases
+func (h *IPSecVppHandler) DumpIPSecSPD() (spdList []*ipsec.SecurityPolicyDatabase, err error) {
+	// Note: dump IPSec SPD interfaces is not available in this VPP version
 
 	// Get all VPP SPD indexes
 	spdIndexes, err := h.dumpSpdIndexes()
 	if err != nil {
 		return nil, errors.Errorf("failed to dump SPD indexes: %v", err)
 	}
-	for spdIdx, numPolicies := range spdIndexes {
+	for spdIdx, _ := range spdIndexes {
 		spd := &ipsec.SecurityPolicyDatabase{
-			Index: uint32(spdIdx),
+			Index: spdIdx,
 		}
+		spdList = append(spdList, spd)
+	}
 
+	return spdList, nil
+}
+
+// DumpIPSecSP returns a list of configured security policies
+func (h *IPSecVppHandler) DumpIPSecSP() (spList []*ipsec.SecurityPolicy, err error) {
+	// Get all VPP SPD indexes
+	spdIndexes, err := h.dumpSpdIndexes()
+	if err != nil {
+		return nil, errors.Errorf("failed to dump SPD indexes: %v", err)
+	}
+	for spdIdx, _ := range spdIndexes {
 		req := &ipsecapi.IpsecSpdDump{
-			SpdID: uint32(spdIdx),
+			SpdID: spdIdx,
 			SaID:  ^uint32(0),
 		}
 		requestCtx := h.callsChannel.SendMultiRequest(req)
@@ -125,11 +135,14 @@ func (h *IPSecVppHandler) DumpIPSecSPD() (spdList []*vppcalls.IPSecSpdDetails, e
 			}
 
 			// Addresses
-			remoteStartAddr, remoteStopAddr := ipsecAddrToIP(spdDetails.Entry.RemoteAddressStart), ipsecAddrToIP(spdDetails.Entry.RemoteAddressStop)
-			localStartAddr, localStopAddr := ipsecAddrToIP(spdDetails.Entry.LocalAddressStart), ipsecAddrToIP(spdDetails.Entry.LocalAddressStop)
+			remoteStartAddr := ipsecAddrToIP(spdDetails.Entry.RemoteAddressStart)
+			remoteStopAddr := ipsecAddrToIP(spdDetails.Entry.RemoteAddressStop)
+			localStartAddr := ipsecAddrToIP(spdDetails.Entry.LocalAddressStart)
+			localStopAddr := ipsecAddrToIP(spdDetails.Entry.LocalAddressStop)
 
 			// Prepare policy entry and put to the SPD
-			policyEntry := &ipsec.SecurityPolicyDatabase_PolicyEntry{
+			sp := &ipsec.SecurityPolicy{
+				SpdIndex:        spdIdx,
 				SaIndex:         spdDetails.Entry.SaID,
 				Priority:        spdDetails.Entry.Priority,
 				IsOutbound:      uintToBool(spdDetails.Entry.IsOutbound),
@@ -142,28 +155,12 @@ func (h *IPSecVppHandler) DumpIPSecSPD() (spdList []*vppcalls.IPSecSpdDetails, e
 				RemotePortStop:  resetPort(spdDetails.Entry.RemotePortStop),
 				LocalPortStart:  uint32(spdDetails.Entry.LocalPortStart),
 				LocalPortStop:   resetPort(spdDetails.Entry.LocalPortStop),
-				Action:          ipsec.SecurityPolicyDatabase_PolicyEntry_Action(spdDetails.Entry.Policy),
+				Action:          ipsec.SecurityPolicy_Action(spdDetails.Entry.Policy),
 			}
-			spd.PolicyEntries = append(spd.PolicyEntries, policyEntry)
-
-			// Prepare meta and put to the metadata map
-			meta := &vppcalls.SpdMeta{
-				SaID:   spdDetails.Entry.SaID,
-				Policy: uint8(spdDetails.Entry.Policy),
-				//Bytes:   spdDetails.Bytes,
-				//Packets: spdDetails.Packets,
-			}
-			metadata[strconv.Itoa(int(spdDetails.Entry.SaID))] = meta
+			spList = append(spList, sp)
 		}
-		// Store SPD in list
-		spdList = append(spdList, &vppcalls.IPSecSpdDetails{
-			Spd:         spd,
-			PolicyMeta:  metadata,
-			NumPolicies: numPolicies,
-		})
 	}
-
-	return spdList, nil
+	return spList, nil
 }
 
 // DumpTunnelProtections returns configured IPSec tunnel protections.
@@ -197,9 +194,9 @@ func (h *IPSecVppHandler) DumpTunnelProtections() (tpList []*ipsec.TunnelProtect
 }
 
 // Get all indexes of SPD configured on the VPP
-func (h *IPSecVppHandler) dumpSpdIndexes() (map[int]uint32, error) {
+func (h *IPSecVppHandler) dumpSpdIndexes() (map[uint32]uint32, error) {
 	// SPD index to number of policies
-	spdIndexes := make(map[int]uint32)
+	spdIndexes := make(map[uint32]uint32)
 
 	req := &ipsecapi.IpsecSpdsDump{}
 	reqCtx := h.callsChannel.SendMultiRequest(req)
@@ -214,7 +211,7 @@ func (h *IPSecVppHandler) dumpSpdIndexes() (map[int]uint32, error) {
 			return nil, err
 		}
 
-		spdIndexes[int(spdDetails.SpdID)] = spdDetails.Npolicies
+		spdIndexes[spdDetails.SpdID] = spdDetails.Npolicies
 	}
 
 	return spdIndexes, nil

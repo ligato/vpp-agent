@@ -10,44 +10,44 @@ import (
 
 ////////// type-safe key-value pair with metadata //////////
 
-type SPDPolicyKVWithMetadata struct {
+type SPKVWithMetadata struct {
 	Key      string
-	Value    *vpp_ipsec.SecurityPolicyDatabase_PolicyEntry
+	Value    *vpp_ipsec.SecurityPolicy
 	Metadata interface{}
 	Origin   ValueOrigin
 }
 
 ////////// type-safe Descriptor structure //////////
 
-type SPDPolicyDescriptor struct {
+type SPDescriptor struct {
 	Name                 string
 	KeySelector          KeySelector
 	ValueTypeName        string
 	KeyLabel             func(key string) string
-	ValueComparator      func(key string, oldValue, newValue *vpp_ipsec.SecurityPolicyDatabase_PolicyEntry) bool
+	ValueComparator      func(key string, oldValue, newValue *vpp_ipsec.SecurityPolicy) bool
 	NBKeyPrefix          string
 	WithMetadata         bool
 	MetadataMapFactory   MetadataMapFactory
-	Validate             func(key string, value *vpp_ipsec.SecurityPolicyDatabase_PolicyEntry) error
-	Create               func(key string, value *vpp_ipsec.SecurityPolicyDatabase_PolicyEntry) (metadata interface{}, err error)
-	Delete               func(key string, value *vpp_ipsec.SecurityPolicyDatabase_PolicyEntry, metadata interface{}) error
-	Update               func(key string, oldValue, newValue *vpp_ipsec.SecurityPolicyDatabase_PolicyEntry, oldMetadata interface{}) (newMetadata interface{}, err error)
-	UpdateWithRecreate   func(key string, oldValue, newValue *vpp_ipsec.SecurityPolicyDatabase_PolicyEntry, metadata interface{}) bool
-	Retrieve             func(correlate []SPDPolicyKVWithMetadata) ([]SPDPolicyKVWithMetadata, error)
+	Validate             func(key string, value *vpp_ipsec.SecurityPolicy) error
+	Create               func(key string, value *vpp_ipsec.SecurityPolicy) (metadata interface{}, err error)
+	Delete               func(key string, value *vpp_ipsec.SecurityPolicy, metadata interface{}) error
+	Update               func(key string, oldValue, newValue *vpp_ipsec.SecurityPolicy, oldMetadata interface{}) (newMetadata interface{}, err error)
+	UpdateWithRecreate   func(key string, oldValue, newValue *vpp_ipsec.SecurityPolicy, metadata interface{}) bool
+	Retrieve             func(correlate []SPKVWithMetadata) ([]SPKVWithMetadata, error)
 	IsRetriableFailure   func(err error) bool
-	DerivedValues        func(key string, value *vpp_ipsec.SecurityPolicyDatabase_PolicyEntry) []KeyValuePair
-	Dependencies         func(key string, value *vpp_ipsec.SecurityPolicyDatabase_PolicyEntry) []Dependency
+	DerivedValues        func(key string, value *vpp_ipsec.SecurityPolicy) []KeyValuePair
+	Dependencies         func(key string, value *vpp_ipsec.SecurityPolicy) []Dependency
 	RetrieveDependencies []string /* descriptor name */
 }
 
 ////////// Descriptor adapter //////////
 
-type SPDPolicyDescriptorAdapter struct {
-	descriptor *SPDPolicyDescriptor
+type SPDescriptorAdapter struct {
+	descriptor *SPDescriptor
 }
 
-func NewSPDPolicyDescriptor(typedDescriptor *SPDPolicyDescriptor) *KVDescriptor {
-	adapter := &SPDPolicyDescriptorAdapter{descriptor: typedDescriptor}
+func NewSPDescriptor(typedDescriptor *SPDescriptor) *KVDescriptor {
+	adapter := &SPDescriptorAdapter{descriptor: typedDescriptor}
 	descriptor := &KVDescriptor{
 		Name:                 typedDescriptor.Name,
 		KeySelector:          typedDescriptor.KeySelector,
@@ -89,88 +89,88 @@ func NewSPDPolicyDescriptor(typedDescriptor *SPDPolicyDescriptor) *KVDescriptor 
 	return descriptor
 }
 
-func (da *SPDPolicyDescriptorAdapter) ValueComparator(key string, oldValue, newValue proto.Message) bool {
-	typedOldValue, err1 := castSPDPolicyValue(key, oldValue)
-	typedNewValue, err2 := castSPDPolicyValue(key, newValue)
+func (da *SPDescriptorAdapter) ValueComparator(key string, oldValue, newValue proto.Message) bool {
+	typedOldValue, err1 := castSPValue(key, oldValue)
+	typedNewValue, err2 := castSPValue(key, newValue)
 	if err1 != nil || err2 != nil {
 		return false
 	}
 	return da.descriptor.ValueComparator(key, typedOldValue, typedNewValue)
 }
 
-func (da *SPDPolicyDescriptorAdapter) Validate(key string, value proto.Message) (err error) {
-	typedValue, err := castSPDPolicyValue(key, value)
+func (da *SPDescriptorAdapter) Validate(key string, value proto.Message) (err error) {
+	typedValue, err := castSPValue(key, value)
 	if err != nil {
 		return err
 	}
 	return da.descriptor.Validate(key, typedValue)
 }
 
-func (da *SPDPolicyDescriptorAdapter) Create(key string, value proto.Message) (metadata Metadata, err error) {
-	typedValue, err := castSPDPolicyValue(key, value)
+func (da *SPDescriptorAdapter) Create(key string, value proto.Message) (metadata Metadata, err error) {
+	typedValue, err := castSPValue(key, value)
 	if err != nil {
 		return nil, err
 	}
 	return da.descriptor.Create(key, typedValue)
 }
 
-func (da *SPDPolicyDescriptorAdapter) Update(key string, oldValue, newValue proto.Message, oldMetadata Metadata) (newMetadata Metadata, err error) {
-	oldTypedValue, err := castSPDPolicyValue(key, oldValue)
+func (da *SPDescriptorAdapter) Update(key string, oldValue, newValue proto.Message, oldMetadata Metadata) (newMetadata Metadata, err error) {
+	oldTypedValue, err := castSPValue(key, oldValue)
 	if err != nil {
 		return nil, err
 	}
-	newTypedValue, err := castSPDPolicyValue(key, newValue)
+	newTypedValue, err := castSPValue(key, newValue)
 	if err != nil {
 		return nil, err
 	}
-	typedOldMetadata, err := castSPDPolicyMetadata(key, oldMetadata)
+	typedOldMetadata, err := castSPMetadata(key, oldMetadata)
 	if err != nil {
 		return nil, err
 	}
 	return da.descriptor.Update(key, oldTypedValue, newTypedValue, typedOldMetadata)
 }
 
-func (da *SPDPolicyDescriptorAdapter) Delete(key string, value proto.Message, metadata Metadata) error {
-	typedValue, err := castSPDPolicyValue(key, value)
+func (da *SPDescriptorAdapter) Delete(key string, value proto.Message, metadata Metadata) error {
+	typedValue, err := castSPValue(key, value)
 	if err != nil {
 		return err
 	}
-	typedMetadata, err := castSPDPolicyMetadata(key, metadata)
+	typedMetadata, err := castSPMetadata(key, metadata)
 	if err != nil {
 		return err
 	}
 	return da.descriptor.Delete(key, typedValue, typedMetadata)
 }
 
-func (da *SPDPolicyDescriptorAdapter) UpdateWithRecreate(key string, oldValue, newValue proto.Message, metadata Metadata) bool {
-	oldTypedValue, err := castSPDPolicyValue(key, oldValue)
+func (da *SPDescriptorAdapter) UpdateWithRecreate(key string, oldValue, newValue proto.Message, metadata Metadata) bool {
+	oldTypedValue, err := castSPValue(key, oldValue)
 	if err != nil {
 		return true
 	}
-	newTypedValue, err := castSPDPolicyValue(key, newValue)
+	newTypedValue, err := castSPValue(key, newValue)
 	if err != nil {
 		return true
 	}
-	typedMetadata, err := castSPDPolicyMetadata(key, metadata)
+	typedMetadata, err := castSPMetadata(key, metadata)
 	if err != nil {
 		return true
 	}
 	return da.descriptor.UpdateWithRecreate(key, oldTypedValue, newTypedValue, typedMetadata)
 }
 
-func (da *SPDPolicyDescriptorAdapter) Retrieve(correlate []KVWithMetadata) ([]KVWithMetadata, error) {
-	var correlateWithType []SPDPolicyKVWithMetadata
+func (da *SPDescriptorAdapter) Retrieve(correlate []KVWithMetadata) ([]KVWithMetadata, error) {
+	var correlateWithType []SPKVWithMetadata
 	for _, kvpair := range correlate {
-		typedValue, err := castSPDPolicyValue(kvpair.Key, kvpair.Value)
+		typedValue, err := castSPValue(kvpair.Key, kvpair.Value)
 		if err != nil {
 			continue
 		}
-		typedMetadata, err := castSPDPolicyMetadata(kvpair.Key, kvpair.Metadata)
+		typedMetadata, err := castSPMetadata(kvpair.Key, kvpair.Metadata)
 		if err != nil {
 			continue
 		}
 		correlateWithType = append(correlateWithType,
-			SPDPolicyKVWithMetadata{
+			SPKVWithMetadata{
 				Key:      kvpair.Key,
 				Value:    typedValue,
 				Metadata: typedMetadata,
@@ -195,16 +195,16 @@ func (da *SPDPolicyDescriptorAdapter) Retrieve(correlate []KVWithMetadata) ([]KV
 	return values, err
 }
 
-func (da *SPDPolicyDescriptorAdapter) DerivedValues(key string, value proto.Message) []KeyValuePair {
-	typedValue, err := castSPDPolicyValue(key, value)
+func (da *SPDescriptorAdapter) DerivedValues(key string, value proto.Message) []KeyValuePair {
+	typedValue, err := castSPValue(key, value)
 	if err != nil {
 		return nil
 	}
 	return da.descriptor.DerivedValues(key, typedValue)
 }
 
-func (da *SPDPolicyDescriptorAdapter) Dependencies(key string, value proto.Message) []Dependency {
-	typedValue, err := castSPDPolicyValue(key, value)
+func (da *SPDescriptorAdapter) Dependencies(key string, value proto.Message) []Dependency {
+	typedValue, err := castSPValue(key, value)
 	if err != nil {
 		return nil
 	}
@@ -213,15 +213,15 @@ func (da *SPDPolicyDescriptorAdapter) Dependencies(key string, value proto.Messa
 
 ////////// Helper methods //////////
 
-func castSPDPolicyValue(key string, value proto.Message) (*vpp_ipsec.SecurityPolicyDatabase_PolicyEntry, error) {
-	typedValue, ok := value.(*vpp_ipsec.SecurityPolicyDatabase_PolicyEntry)
+func castSPValue(key string, value proto.Message) (*vpp_ipsec.SecurityPolicy, error) {
+	typedValue, ok := value.(*vpp_ipsec.SecurityPolicy)
 	if !ok {
 		return nil, ErrInvalidValueType(key, value)
 	}
 	return typedValue, nil
 }
 
-func castSPDPolicyMetadata(key string, metadata Metadata) (interface{}, error) {
+func castSPMetadata(key string, metadata Metadata) (interface{}, error) {
 	if metadata == nil {
 		return nil, nil
 	}

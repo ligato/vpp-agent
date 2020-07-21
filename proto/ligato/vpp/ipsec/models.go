@@ -31,6 +31,17 @@ var (
 		Type:    "spd",
 	}, models.WithNameTemplate("{{.Index}}"))
 
+	ModelSecurityPolicy = models.Register(&SecurityPolicy{}, models.Spec{
+		Module:  ModuleName,
+		Version: "v2",
+		Type:    "sp",
+	}, models.WithNameTemplate(
+		"spd/{{.SpdIndex}}/" +
+			"sa/{{.SaIndex}}/" +
+			"{{if .IsOutbound}}outbound/{{else}}inbound/{{end}}" +
+			"local-addresses/{{.LocalAddrStart}}-{{.LocalAddrStop}}/" +
+			"remote-addresses/{{.RemoteAddrStart}}-{{.RemoteAddrStop}}"))
+
 	ModelSecurityAssociation = models.Register(&SecurityAssociation{}, models.Spec{
 		Module:  ModuleName,
 		Version: "v2",
@@ -70,13 +81,6 @@ const (
 	spdInterfaceKeyTemplate = "vpp/spd/{spd}/interface/{iface}"
 )
 
-/* SPD <-> policy binding (derived) */
-const (
-	// spdPolicyKeyTemplate is a template for (derived) key representing binding
-	// between policy (security association) and a security policy database.
-	spdPolicyKeyTemplate = "vpp/spd/{spd}/sa/{sa}"
-)
-
 const (
 	// InvalidKeyPart is used in key for parts which are invalid
 	InvalidKeyPart = "<invalid>"
@@ -102,27 +106,6 @@ func ParseSPDInterfaceKey(key string) (spdIndex string, iface string, isSPDIface
 	if len(keyComps) >= 5 && keyComps[0] == "vpp" && keyComps[1] == "spd" && keyComps[3] == "interface" {
 		iface = strings.Join(keyComps[4:], "/")
 		return keyComps[2], iface, true
-	}
-	return "", "", false
-}
-
-/* SPD <-> policy binding (derived) */
-
-// SPDPolicyKey returns the key used to represent binding between the given policy
-// (security association) and the security policy database.
-func SPDPolicyKey(spdIndex uint32, saIndex uint32) string {
-	key := strings.Replace(spdPolicyKeyTemplate, "{spd}", strconv.FormatUint(uint64(spdIndex), 10), 1)
-	key = strings.Replace(key, "{sa}", strconv.FormatUint(uint64(saIndex), 10), 1)
-	return key
-}
-
-// ParseSPDPolicyKey parses key representing binding between policy (security
-// association) and a security policy database
-func ParseSPDPolicyKey(key string) (spdIndex string, saIndex string, isSPDIfaceKey bool) {
-	keyComps := strings.Split(key, "/")
-	if len(keyComps) >= 5 && keyComps[0] == "vpp" && keyComps[1] == "spd" && keyComps[3] == "sa" {
-		saIndex = strings.Join(keyComps[4:], "/")
-		return keyComps[2], saIndex, true
 	}
 	return "", "", false
 }

@@ -222,6 +222,15 @@ func (dsl *DataResyncDSL) IPSecSPD(spd *ipsec.SecurityPolicyDatabase) vppclient.
 	return dsl
 }
 
+// IPSecSP adds request to RESYNC a Security Policy
+func (dsl *DataResyncDSL) IPSecSP(sp *ipsec.SecurityPolicy) vppclient.DataResyncDSL {
+	key := models.Key(sp)
+	dsl.txn.Put(key, sp)
+	dsl.txnKeys = append(dsl.txnKeys, key)
+
+	return dsl
+}
+
 // IPSecTunnelProtection adds request to RESYNC an IPSec tunnel protection
 func (dsl *DataResyncDSL) IPSecTunnelProtection(tp *ipsec.TunnelProtection) vppclient.DataResyncDSL {
 	key := models.Key(tp)
