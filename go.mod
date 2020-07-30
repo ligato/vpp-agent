@@ -4,40 +4,32 @@ go 1.13
 
 require (
 	git.fd.io/govpp.git v0.3.5
-	github.com/Azure/go-ansiterm v0.0.0-20170929234023-d6e3b3328b78 // indirect
-	github.com/Microsoft/go-winio v0.4.7 // indirect
 	github.com/Nvveen/Gotty v0.0.0-20120604004816-cd527374f1e5 // indirect
 	github.com/Shopify/sarama v1.20.1 // indirect
 	github.com/alicebob/miniredis v2.5.0+incompatible // indirect
-	github.com/containerd/continuity v0.0.0-20171215195539-b2b946a77f59 // indirect
 	github.com/coreos/bbolt v1.3.3 // indirect
 	github.com/coreos/etcd v3.3.13+incompatible
 	github.com/coreos/go-iptables v0.4.0
 	github.com/coreos/go-semver v0.3.0 // indirect
 	github.com/docker/cli v0.0.0-20190822175708-578ab52ece34
-	github.com/docker/docker v0.0.0-20180620002508-3dfb26ab3cbf
-	github.com/docker/go-connections v0.3.0 // indirect
-	github.com/docker/go-units v0.3.2 // indirect
+	github.com/docker/docker v1.4.2-0.20191101170500-ac7306503d23
 	github.com/docker/libnetwork v0.0.0-20180726175142-9ffeaf7d8b64 // indirect
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
-	github.com/fsouza/go-dockerclient v1.2.2
+	github.com/fsouza/go-dockerclient v1.6.5
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-errors/errors v1.0.1
 	github.com/golang/protobuf v1.4.2
-	github.com/gorilla/mux v1.6.2
+	github.com/gorilla/mux v1.7.4
 	github.com/gorilla/websocket v1.4.1 // indirect
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0
 	github.com/grpc-ecosystem/grpc-gateway v1.11.3 // indirect
 	github.com/hashicorp/go-uuid v1.0.1 // indirect
-	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/jhump/protoreflect v1.5.0
 	github.com/lunixbochs/struc v0.0.0-20190916212049-a5c72983bc42
 	github.com/mitchellh/go-ps v0.0.0-20170309133038-4fdf99ab2936
 	github.com/mitchellh/mapstructure v1.1.2
 	github.com/namsral/flag v1.7.4-pre
-	github.com/onsi/gomega v1.4.3
-	github.com/opencontainers/go-digest v1.0.0-rc1 // indirect
-	github.com/opencontainers/image-spec v1.0.1 // indirect
+	github.com/onsi/gomega v1.7.0
 	github.com/opencontainers/runc v1.0.0-rc5 // indirect
 	github.com/pkg/errors v0.9.1
 	github.com/pkg/profile v1.3.0
@@ -52,12 +44,10 @@ require (
 	github.com/yuin/gopher-lua v0.0.0-20190514113301-1cd887cd7036 // indirect
 	go.ligato.io/cn-infra/v2 v2.5.0-alpha.0.20200313154441-b0d4c1b11c73
 	go.uber.org/multierr v1.2.0 // indirect
-	golang.org/x/crypto v0.0.0-20191206172530-e9b2fee46413 // indirect
 	golang.org/x/net v0.0.0-20190620200207-3b0461eec859
 	golang.org/x/sys v0.0.0-20200501145240-bc7a7d42d5c3
 	golang.org/x/time v0.0.0-20190921001708-c4c64cad1fd0 // indirect
 	google.golang.org/genproto v0.0.0-20200707001353-8e8330bf89df // indirect
 	google.golang.org/grpc v1.27.1
 	google.golang.org/protobuf v1.25.0 // indirect
-	gotest.tools v2.2.0+incompatible // indirect
 )
