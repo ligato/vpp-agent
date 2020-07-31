@@ -30,6 +30,9 @@ import (
 )
 
 type genericService struct {
+	generic.UnimplementedMetaServiceServer
+	generic.UnimplementedManagerServiceServer
+
 	log      logging.Logger
 	dispatch Dispatcher
 }

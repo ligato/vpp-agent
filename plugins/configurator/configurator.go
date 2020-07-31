@@ -15,10 +15,10 @@
 package configurator
 
 import (
+	"context"
 	"runtime/trace"
 
 	"go.ligato.io/cn-infra/v2/logging"
-	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -26,7 +26,7 @@ import (
 	"go.ligato.io/vpp-agent/v3/pkg/util"
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 	"go.ligato.io/vpp-agent/v3/plugins/orchestrator"
-	rpc "go.ligato.io/vpp-agent/v3/proto/ligato/configurator"
+	pb "go.ligato.io/vpp-agent/v3/proto/ligato/configurator"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/linux"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/netalloc"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/vpp"
@@ -34,6 +34,8 @@ import (
 
 // configuratorServer implements DataSyncer service.
 type configuratorServer struct {
+	pb.UnimplementedConfiguratorServiceServer
+
 	dumpService
 	notifyService
 
@@ -41,8 +43,16 @@ type configuratorServer struct {
 	dispatch orchestrator.Dispatcher
 }
 
+func (svc *configuratorServer) Dump(ctx context.Context, req *pb.DumpRequest) (*pb.DumpResponse, error) {
+	return svc.dumpService.Dump(ctx, req, )
+}
+
+func (svc *configuratorServer)Notify(from *pb.NotifyRequest, server pb.ConfiguratorService_NotifyServer) error {
+	return svc.notifyService.Notify(from, server, )
+}
+
 // Get retrieves actual configuration data.
-func (svc *configuratorServer) Get(context.Context, *rpc.GetRequest) (*rpc.GetResponse, error) {
+func (svc *configuratorServer) Get(context.Context, *pb.GetRequest) (*pb.GetResponse, error) {
 	defer trackOperation("Get")()
 
 	config := newConfig()
@@ -53,11 +63,11 @@ func (svc *configuratorServer) Get(context.Context, *rpc.GetRequest) (*rpc.GetRe
 		config.NetallocConfig,
 	)
 
-	return &rpc.GetResponse{Config: config}, nil
+	return &pb.GetResponse{Config: config}, nil
 }
 
 // Update adds configuration data present in data request to the VPP/Linux
-func (svc *configuratorServer) Update(ctx context.Context, req *rpc.UpdateRequest) (*rpc.UpdateResponse, error) {
+func (svc *configuratorServer) Update(ctx context.Context, req *pb.UpdateRequest) (*pb.UpdateResponse, error) {
 	ctx, task := trace.NewTask(ctx, "grpc.Update")
 	defer task.End()
 	trace.Logf(ctx, "updateData", "%+v", req)
@@ -93,11 +103,11 @@ func (svc *configuratorServer) Update(ctx context.Context, req *rpc.UpdateReques
 		return nil, st.Err()
 	}
 
-	return &rpc.UpdateResponse{}, nil
+	return &pb.UpdateResponse{}, nil
 }
 
 // Delete removes configuration data present in data request from the VPP/linux
-func (svc *configuratorServer) Delete(ctx context.Context, req *rpc.DeleteRequest) (*rpc.DeleteResponse, error) {
+func (svc *configuratorServer) Delete(ctx context.Context, req *pb.DeleteRequest) (*pb.DeleteResponse, error) {
 	defer trackOperation("Delete")()
 
 	protos := util.ExtractProtos(
@@ -125,11 +135,11 @@ func (svc *configuratorServer) Delete(ctx context.Context, req *rpc.DeleteReques
 		return nil, st.Err()
 	}
 
-	return &rpc.DeleteResponse{}, nil
+	return &pb.DeleteResponse{}, nil
 }
 
-func newConfig() *rpc.Config {
-	return &rpc.Config{
+func newConfig() *pb.Config {
+	return &pb.Config{
 		LinuxConfig:    &linux.ConfigData{},
 		VppConfig:      &vpp.ConfigData{},
 		NetallocConfig: &netalloc.ConfigData{},

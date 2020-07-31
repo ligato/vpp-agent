@@ -19,6 +19,8 @@ import (
 )
 
 type statsPollerServer struct {
+	configurator.UnimplementedStatsPollerServiceServer
+
 	handler vppcalls.TelemetryVppAPI
 	ifIndex ifaceidx.IfaceMetadataIndex
 
