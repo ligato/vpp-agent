@@ -9,7 +9,7 @@ require (
 	github.com/alicebob/miniredis v2.5.0+incompatible // indirect
 	github.com/coreos/bbolt v1.3.3 // indirect
 	github.com/coreos/etcd v3.3.13+incompatible
-	github.com/coreos/go-iptables v0.4.0
+	github.com/coreos/go-iptables v0.4.5
 	github.com/coreos/go-semver v0.3.0 // indirect
 	github.com/docker/cli v0.0.0-20190822175708-578ab52ece34
 	github.com/docker/docker v1.4.2-0.20191101170500-ac7306503d23
@@ -32,7 +32,7 @@ require (
 	github.com/onsi/gomega v1.7.0
 	github.com/opencontainers/runc v1.0.0-rc5 // indirect
 	github.com/pkg/errors v0.9.1
-	github.com/pkg/profile v1.3.0
+	github.com/pkg/profile v1.5.0
 	github.com/prometheus/client_golang v0.9.3
 	github.com/sirupsen/logrus v1.6.0
 	github.com/spf13/cobra v0.0.3
