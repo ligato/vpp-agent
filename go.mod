@@ -13,7 +13,6 @@ require (
 	github.com/coreos/bbolt v1.3.3 // indirect
 	github.com/coreos/etcd v3.3.13+incompatible
 	github.com/coreos/go-iptables v0.4.5
-	github.com/coreos/go-semver v0.3.0 // indirect
 	github.com/docker/cli v0.0.0-20190822175708-578ab52ece34
 	github.com/docker/docker v0.0.0-20180620002508-3dfb26ab3cbf
 	github.com/docker/go-connections v0.3.0 // indirect
@@ -25,10 +24,8 @@ require (
 	github.com/go-errors/errors v1.0.1
 	github.com/golang/protobuf v1.4.2
 	github.com/gorilla/mux v1.6.2
-	github.com/gorilla/websocket v1.4.1 // indirect
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0
 	github.com/grpc-ecosystem/grpc-gateway v1.11.3 // indirect
-	github.com/hashicorp/go-uuid v1.0.1 // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/jhump/protoreflect v1.5.0
 	github.com/lunixbochs/struc v0.0.0-20190916212049-a5c72983bc42
@@ -45,7 +42,7 @@ require (
 	github.com/sirupsen/logrus v1.6.0
 	github.com/spf13/cobra v0.0.3
 	github.com/spf13/pflag v1.0.3
-	github.com/spf13/viper v1.4.0
+	github.com/spf13/viper v1.7.0
 	github.com/unrolled/render v0.0.0-20180914162206-b9786414de4d
 	github.com/vishvananda/netlink v0.0.0-20180910184128-56b1bd27a9a3
 	github.com/vishvananda/netns v0.0.0-20180720170159-13995c7128cc
