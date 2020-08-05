@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate descriptor-adapter --descriptor-name SPD  --value-type *vpp_ipsec.SecurityPolicyDatabase --meta-type *idxvpp.OnlyIndex --import "go.ligato.io/vpp-agent/v3/pkg/idxvpp" --import "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/ipsec" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name SPD  --value-type *vpp_ipsec.SecurityPolicyDatabase --import "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/ipsec" --output-dir "descriptor"
 //go:generate descriptor-adapter --descriptor-name SPDInterface --value-type *vpp_ipsec.SecurityPolicyDatabase_Interface --import "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/ipsec" --output-dir "descriptor"
-//go:generate descriptor-adapter --descriptor-name SPDPolicy --value-type *vpp_ipsec.SecurityPolicyDatabase_PolicyEntry --import "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/ipsec" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name SP --value-type *vpp_ipsec.SecurityPolicy --import "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/ipsec" --output-dir "descriptor"
 //go:generate descriptor-adapter --descriptor-name SA  --value-type *vpp_ipsec.SecurityAssociation --import "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/ipsec" --output-dir "descriptor"
 //go:generate descriptor-adapter --descriptor-name TunProtect --value-type *vpp_ipsec.TunnelProtection --import "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/ipsec" --output-dir "descriptor"
 
@@ -55,7 +55,6 @@ type IPSecPlugin struct {
 	spdDescriptor        *descriptor.IPSecSPDDescriptor
 	saDescriptor         *descriptor.IPSecSADescriptor
 	spdIfDescriptor      *descriptor.SPDInterfaceDescriptor
-	spdPolicyDescriptor  *descriptor.SPDPolicyDescriptor
 	tunProtectDescriptor *descriptor.TunnelProtectDescriptor
 }
 
@@ -84,6 +83,13 @@ func (p *IPSecPlugin) Init() (err error) {
 		return err
 	}
 
+	// init and register security policy descriptor
+	spDescriptor := descriptor.NewIPSecSPDescriptor(p.ipSecHandler, p.Log)
+	err = p.KVScheduler.RegisterKVDescriptor(spDescriptor)
+	if err != nil {
+		return err
+	}
+
 	// init and register security association descriptor
 	p.saDescriptor = descriptor.NewIPSecSADescriptor(p.ipSecHandler, p.Log)
 	saDescriptor := adapter.NewSADescriptor(p.saDescriptor.GetDescriptor())
@@ -104,13 +110,6 @@ func (p *IPSecPlugin) Init() (err error) {
 	p.spdIfDescriptor = descriptor.NewSPDInterfaceDescriptor(p.ipSecHandler, p.Log)
 	spdIfDescriptor := adapter.NewSPDInterfaceDescriptor(p.spdIfDescriptor.GetDescriptor())
 	err = p.KVScheduler.RegisterKVDescriptor(spdIfDescriptor)
-	if err != nil {
-		return err
-	}
-
-	p.spdPolicyDescriptor = descriptor.NewSPDPolicyDescriptor(p.ipSecHandler, p.Log)
-	spdPolicyDescriptor := adapter.NewSPDPolicyDescriptor(p.spdPolicyDescriptor.GetDescriptor())
-	err = p.KVScheduler.RegisterKVDescriptor(spdPolicyDescriptor)
 	if err != nil {
 		return err
 	}

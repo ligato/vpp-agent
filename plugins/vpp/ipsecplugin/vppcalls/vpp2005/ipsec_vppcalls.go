@@ -35,14 +35,14 @@ func (h *IPSecVppHandler) DeleteSPD(spdID uint32) error {
 	return h.spdAddDel(spdID, false)
 }
 
-// AddSPDEntry implements IPSec handler.
-func (h *IPSecVppHandler) AddSPDEntry(spdID, saID uint32, spd *ipsec.SecurityPolicyDatabase_PolicyEntry) error {
-	return h.spdAddDelEntry(spdID, saID, spd, true)
+// AddSP implements IPSec handler.
+func (h *IPSecVppHandler) AddSP(sp *ipsec.SecurityPolicy) error {
+	return h.spdAddDelEntry(sp, true)
 }
 
-// DeleteSPDEntry implements IPSec handler.
-func (h *IPSecVppHandler) DeleteSPDEntry(spdID, saID uint32, spd *ipsec.SecurityPolicyDatabase_PolicyEntry) error {
-	return h.spdAddDelEntry(spdID, saID, spd, false)
+// DeleteSP implements IPSec handler.
+func (h *IPSecVppHandler) DeleteSP(sp *ipsec.SecurityPolicy) error {
+	return h.spdAddDelEntry(sp, false)
 }
 
 // AddSPDInterface implements IPSec handler.
@@ -114,20 +114,20 @@ func (h *IPSecVppHandler) spdAddDel(spdID uint32, isAdd bool) error {
 	return nil
 }
 
-func (h *IPSecVppHandler) spdAddDelEntry(spdID, saID uint32, spd *ipsec.SecurityPolicyDatabase_PolicyEntry, isAdd bool) error {
+func (h *IPSecVppHandler) spdAddDelEntry(sp *ipsec.SecurityPolicy, isAdd bool) error {
 	req := &vpp_ipsec.IpsecSpdEntryAddDel{
 		IsAdd: isAdd,
 		Entry: vpp_ipsec.IpsecSpdEntry{
-			SpdID:           spdID,
-			Priority:        spd.Priority,
-			IsOutbound:      spd.IsOutbound,
-			Protocol:        uint8(spd.Protocol),
-			RemotePortStart: uint16(spd.RemotePortStart),
-			RemotePortStop:  uint16(spd.RemotePortStop),
-			LocalPortStart:  uint16(spd.LocalPortStart),
-			LocalPortStop:   uint16(spd.LocalPortStop),
-			Policy:          vpp_ipsec.IpsecSpdAction(spd.Action),
-			SaID:            saID,
+			SpdID:           sp.SpdIndex,
+			Priority:        sp.Priority,
+			IsOutbound:      sp.IsOutbound,
+			Protocol:        uint8(sp.Protocol),
+			RemotePortStart: uint16(sp.RemotePortStart),
+			RemotePortStop:  uint16(sp.RemotePortStop),
+			LocalPortStart:  uint16(sp.LocalPortStart),
+			LocalPortStop:   uint16(sp.LocalPortStop),
+			Policy:          vpp_ipsec.IpsecSpdAction(sp.Action),
+			SaID:            sp.SaIndex,
 		},
 	}
 	if req.Entry.RemotePortStop == 0 {
@@ -138,19 +138,19 @@ func (h *IPSecVppHandler) spdAddDelEntry(spdID, saID uint32, spd *ipsec.Security
 	}
 
 	var err error
-	req.Entry.RemoteAddressStart, err = IPToAddress(ipOr(spd.RemoteAddrStart, "0.0.0.0"))
+	req.Entry.RemoteAddressStart, err = IPToAddress(ipOr(sp.RemoteAddrStart, "0.0.0.0"))
 	if err != nil {
 		return err
 	}
-	req.Entry.RemoteAddressStop, err = IPToAddress(ipOr(spd.RemoteAddrStop, "255.255.255.255"))
+	req.Entry.RemoteAddressStop, err = IPToAddress(ipOr(sp.RemoteAddrStop, "255.255.255.255"))
 	if err != nil {
 		return err
 	}
-	req.Entry.LocalAddressStart, err = IPToAddress(ipOr(spd.LocalAddrStart, "0.0.0.0"))
+	req.Entry.LocalAddressStart, err = IPToAddress(ipOr(sp.LocalAddrStart, "0.0.0.0"))
 	if err != nil {
 		return err
 	}
-	req.Entry.LocalAddressStop, err = IPToAddress(ipOr(spd.LocalAddrStop, "255.255.255.255"))
+	req.Entry.LocalAddressStop, err = IPToAddress(ipOr(sp.LocalAddrStop, "255.255.255.255"))
 	if err != nil {
 		return err
 	}
@@ -224,6 +224,15 @@ func (h *IPSecVppHandler) sadAddDelEntry(sa *ipsec.SecurityAssociation, isAdd bo
 			return err
 		}
 	}
+	const undefinedPort = ^uint16(0)
+	udpSrcPort := undefinedPort
+	if sa.TunnelSrcPort != 0 {
+		udpSrcPort = uint16(sa.TunnelSrcPort)
+	}
+	udpDstPort := undefinedPort
+	if sa.TunnelDstPort != 0 {
+		udpDstPort = uint16(sa.TunnelDstPort)
+	}
 
 	req := &vpp_ipsec.IpsecSadEntryAddDel{
 		IsAdd: isAdd,
@@ -244,8 +253,8 @@ func (h *IPSecVppHandler) sadAddDelEntry(sa *ipsec.SecurityAssociation, isAdd bo
 			TunnelSrc:  tunnelSrc,
 			TunnelDst:  tunnelDst,
 			Flags:      flags,
-			UDPSrcPort: ^uint16(0),
-			UDPDstPort: ^uint16(0),
+			UDPSrcPort: udpSrcPort,
+			UDPDstPort: udpDstPort,
 		},
 	}
 	reply := &vpp_ipsec.IpsecSadEntryAddDelReply{}

@@ -246,6 +246,12 @@ func (dsl *DataResyncDSL) IPSecSPD(spd *ipsec.SecurityPolicyDatabase) linuxclien
 	return dsl
 }
 
+// IPSecSP adds Security Policy into the RESYNC request
+func (dsl *DataResyncDSL) IPSecSP(sp *ipsec.SecurityPolicy) linuxclient.DataResyncDSL {
+	dsl.vppDataResync.IPSecSP(sp)
+	return dsl
+}
+
 // IPSecTunnelProtection adds request to RESYNC an IPSec tunnel protection
 func (dsl *DataResyncDSL) IPSecTunnelProtection(tp *ipsec.TunnelProtection) linuxclient.DataResyncDSL {
 	dsl.vppDataResync.IPSecTunnelProtection(tp)

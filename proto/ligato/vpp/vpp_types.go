@@ -57,6 +57,7 @@ type (
 
 	// IPSec
 	IPSecSPD = vpp_ipsec.SecurityPolicyDatabase
+	IPSecSP  = vpp_ipsec.SecurityPolicy
 	IPSecSA  = vpp_ipsec.SecurityAssociation
 
 	// Punt

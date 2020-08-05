@@ -54,6 +54,7 @@ message ConfigData {
     repeated ipsec.SecurityPolicyDatabase ipsec_spds = 60;
     repeated ipsec.SecurityAssociation ipsec_sas = 61;
     repeated ipsec.TunnelProtection ipsec_tunnel_protections = 62;
+    repeated ipsec.SecurityPolicy ipsec_sps = 63;
 
     repeated punt.IPRedirect punt_ipredirects = 70;
     repeated punt.ToHost punt_tohosts = 71;

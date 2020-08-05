@@ -252,6 +252,12 @@ func (dsl *PutDSL) IPSecSPD(spd *ipsec.SecurityPolicyDatabase) linuxclient.PutDS
 	return dsl
 }
 
+// IPSecSP adds request to create a new Security Policy
+func (dsl *PutDSL) IPSecSP(sp *ipsec.SecurityPolicy) linuxclient.PutDSL {
+	dsl.vppPut.IPSecSP(sp)
+	return dsl
+}
+
 // IPSecTunnelProtection adds request to delete an IPSec tunnel protection from an interface
 func (dsl *PutDSL) IPSecTunnelProtection(tp *ipsec.TunnelProtection) linuxclient.PutDSL {
 	dsl.vppPut.IPSecTunnelProtection(tp)
@@ -474,6 +480,12 @@ func (dsl *DeleteDSL) IPSecSA(saIndex uint32) linuxclient.DeleteDSL {
 // IPSecSPD adds request to delete a Security Policy Database
 func (dsl *DeleteDSL) IPSecSPD(spdIndex uint32) linuxclient.DeleteDSL {
 	dsl.vppDelete.IPSecSPD(spdIndex)
+	return dsl
+}
+
+// IPSecSP adds request to delete a Security Policy
+func (dsl *DeleteDSL) IPSecSP(sp *ipsec.SecurityPolicy) linuxclient.DeleteDSL {
+	dsl.vppDelete.IPSecSP(sp)
 	return dsl
 }
 

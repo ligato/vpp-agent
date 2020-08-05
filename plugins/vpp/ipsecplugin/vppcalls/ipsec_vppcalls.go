@@ -50,21 +50,6 @@ type IPSecSaMeta struct {
 	TotalDataSize  uint64
 }
 
-// IPSecSpdDetails represents IPSec policy databases with particular metadata
-type IPSecSpdDetails struct {
-	Spd         *ipsec.SecurityPolicyDatabase
-	PolicyMeta  map[string]*SpdMeta // SA index name is a key
-	NumPolicies uint32
-}
-
-// SpdMeta hold VPP-specific data related to SPD
-type SpdMeta struct {
-	SaID    uint32
-	Policy  uint8
-	Bytes   uint64
-	Packets uint64
-}
-
 // IPSecVppAPI provides methods for creating and managing of a IPsec configuration
 type IPSecVppAPI interface {
 	IPSecVPPRead
@@ -77,10 +62,10 @@ type IPSecVppAPI interface {
 	AddSPDInterface(spdID uint32, iface *ipsec.SecurityPolicyDatabase_Interface) error
 	// DeleteSPDInterface deletes SPD interface assignment from VPP via binary API
 	DeleteSPDInterface(spdID uint32, iface *ipsec.SecurityPolicyDatabase_Interface) error
-	// AddSPDEntry adds SPD policy entry to VPP via binary API
-	AddSPDEntry(spdID, saID uint32, spd *ipsec.SecurityPolicyDatabase_PolicyEntry) error
-	// DeleteSPDEntry deletes SPD policy entry from VPP via binary API
-	DeleteSPDEntry(spdID, saID uint32, spd *ipsec.SecurityPolicyDatabase_PolicyEntry) error
+	// AddSP adds security policy to VPP via binary API
+	AddSP(sp *ipsec.SecurityPolicy) error
+	// DeleteSP deletes security policy from VPP via binary API
+	DeleteSP(sp *ipsec.SecurityPolicy) error
 	// AddSA adds SA to VPP via binary API
 	AddSA(sa *ipsec.SecurityAssociation) error
 	// DeleteSA deletes SA from VPP via binary API
@@ -96,7 +81,9 @@ type IPSecVppAPI interface {
 // IPSecVPPRead provides read methods for IPSec
 type IPSecVPPRead interface {
 	// DumpIPSecSPD returns a list of IPSec security policy databases
-	DumpIPSecSPD() (spdList []*IPSecSpdDetails, err error)
+	DumpIPSecSPD() (spdList []*ipsec.SecurityPolicyDatabase, err error)
+	// DumpIPSecSP returns a list of configured security policies
+	DumpIPSecSP() (spList []*ipsec.SecurityPolicy, err error)
 	// DumpIPSecSA returns a list of configured security associations
 	DumpIPSecSA() (saList []*IPSecSaDetails, err error)
 	// DumpIPSecSAWithIndex returns a security association with provided index

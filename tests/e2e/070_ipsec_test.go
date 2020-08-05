@@ -16,9 +16,8 @@ package e2e
 
 import (
 	"context"
-	"testing"
-
 	. "github.com/onsi/gomega"
+	"testing"
 
 	"go.ligato.io/vpp-agent/v3/proto/ligato/kvscheduler"
 	vpp_interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
@@ -73,6 +72,46 @@ func TestIPSec(t *testing.T) {
 		IntegKey:       "bf9b150aaf5c2a87d79898b11eabd055e70abdbe",
 		EnableUdpEncap: true,
 	}
+	spOut := &vpp_ipsec.SecurityPolicy{
+		SpdIndex:        100,
+		SaIndex:         10,
+		Priority:        0,
+		IsOutbound:      true,
+		RemoteAddrStart: "10.10.1.1",
+		RemoteAddrStop:  "10.10.1.255",
+		LocalAddrStart:  "10.10.2.1",
+		LocalAddrStop:   "10.10.2.255",
+		Protocol:        0,
+		RemotePortStart: 100,
+		RemotePortStop:  2000,
+		LocalPortStart:  0,
+		LocalPortStop:   65535,
+		Action:          vpp_ipsec.SecurityPolicy_PROTECT,
+	}
+	spIn := &vpp_ipsec.SecurityPolicy{
+		SpdIndex:        100,
+		SaIndex:         20,
+		Priority:        0,
+		IsOutbound:      false,
+		RemoteAddrStart: "10.10.1.1",
+		RemoteAddrStop:  "10.10.1.255",
+		LocalAddrStart:  "10.10.2.1",
+		LocalAddrStop:   "10.10.2.255",
+		Protocol:        0,
+		RemotePortStart: 0,
+		RemotePortStop:  65535,
+		LocalPortStart:  0,
+		LocalPortStop:   65535,
+		Action:          vpp_ipsec.SecurityPolicy_PROTECT,
+	}
+	spd := &vpp_ipsec.SecurityPolicyDatabase{
+		Index: 100,
+		Interfaces: []*vpp_ipsec.SecurityPolicyDatabase_Interface{
+			{
+				Name: tunnelIfName,
+			},
+		},
+	}
 	tp := &vpp_ipsec.TunnelProtection{
 		Interface: tunnelIfName,
 		SaOut:     []uint32{saOut.Index},
@@ -86,6 +125,9 @@ func TestIPSec(t *testing.T) {
 		saOut,
 		saIn,
 		tp,
+		spd,
+		spIn,
+		spOut,
 	).Send(context.Background())
 	Expect(err).ToNot(HaveOccurred(), "Sending change request failed with err")
 
@@ -97,6 +139,16 @@ func TestIPSec(t *testing.T) {
 		"IN SA is not configured")
 	Eventually(ctx.getValueStateClb(tp)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
 		"tunnel protection is not configured")
+	Eventually(ctx.getValueStateClb(spd)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
+		"SPD is not configured")
+	Eventually(ctx.getValueStateClb(spIn)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
+		"IN SP is not configured")
+	Eventually(ctx.getValueStateClb(spOut)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
+		"OUT SP is not configured")
+
+	if ctx.vppRelease >= "20.05" {
+		Expect(ctx.agentInSync()).To(BeTrue())
+	}
 
 	// rekey - delete old SAs, create new SAs and modify tunnel protection
 
@@ -125,15 +177,51 @@ func TestIPSec(t *testing.T) {
 		SaOut:     []uint32{saOutNew.Index},
 		SaIn:      []uint32{saInNew.Index},
 	}
+	spOutNew := &vpp_ipsec.SecurityPolicy{
+		SpdIndex:        100,
+		SaIndex:         11,
+		Priority:        0,
+		IsOutbound:      true,
+		RemoteAddrStart: "10.10.1.1",
+		RemoteAddrStop:  "10.10.1.255",
+		LocalAddrStart:  "10.10.2.1",
+		LocalAddrStop:   "10.10.2.255",
+		Protocol:        0,
+		RemotePortStart: 0,
+		RemotePortStop:  65535,
+		LocalPortStart:  0,
+		LocalPortStop:   65535,
+		Action:          vpp_ipsec.SecurityPolicy_PROTECT,
+	}
+	spInNew := &vpp_ipsec.SecurityPolicy{
+		SpdIndex:        100,
+		SaIndex:         21,
+		Priority:        0,
+		IsOutbound:      false,
+		RemoteAddrStart: "10.10.1.1",
+		RemoteAddrStop:  "10.10.1.255",
+		LocalAddrStart:  "10.10.2.1",
+		LocalAddrStop:   "10.10.2.255",
+		Protocol:        0,
+		RemotePortStart: 0,
+		RemotePortStop:  65535,
+		LocalPortStart:  0,
+		LocalPortStop:   65535,
+		Action:          vpp_ipsec.SecurityPolicy_PROTECT,
+	}
 
 	req2 := ctx.grpcClient.ChangeRequest()
 	err = req2.
 		Delete(
 			saOut,
-			saIn).
+			saIn,
+			spOut,
+			spIn).
 		Update(
 			saOutNew,
 			saInNew,
+			spOutNew,
+			spInNew,
 			tpNew,
 		).Send(context.Background())
 	Expect(err).ToNot(HaveOccurred(), "Sending change request failed with err")
@@ -148,6 +236,18 @@ func TestIPSec(t *testing.T) {
 		"IN SA is not configured")
 	Eventually(ctx.getValueStateClb(tpNew)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
 		"tunnel protection is not configured")
+	Eventually(ctx.getValueStateClb(spOut)).Should(Equal(kvscheduler.ValueState_NONEXISTENT),
+		"old OUT SP was not removed")
+	Eventually(ctx.getValueStateClb(spIn)).Should(Equal(kvscheduler.ValueState_NONEXISTENT),
+		"old IN SP was not removed")
+	Eventually(ctx.getValueStateClb(spOutNew)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
+		"OUT SP is not configured")
+	Eventually(ctx.getValueStateClb(spInNew)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
+		"IN SP is not configured")
+
+	if ctx.vppRelease >= "20.05" {
+		Expect(ctx.agentInSync()).To(BeTrue())
+	}
 
 	// delete the tunnel
 
@@ -157,6 +257,9 @@ func TestIPSec(t *testing.T) {
 		saInNew,
 		tpNew,
 		ipipTun,
+		spInNew,
+		spOutNew,
+		spd,
 	).Send(context.Background())
 	Expect(err).ToNot(HaveOccurred(), "Sending change request failed with err")
 
@@ -164,10 +267,20 @@ func TestIPSec(t *testing.T) {
 		"OUT SA was not removed")
 	Eventually(ctx.getValueStateClb(saInNew)).Should(Equal(kvscheduler.ValueState_NONEXISTENT),
 		"IN SA was not removed")
+	Eventually(ctx.getValueStateClb(spOutNew)).Should(Equal(kvscheduler.ValueState_NONEXISTENT),
+		"OUT SP was not removed")
+	Eventually(ctx.getValueStateClb(spInNew)).Should(Equal(kvscheduler.ValueState_NONEXISTENT),
+		"IN SP was not removed")
+	Eventually(ctx.getValueStateClb(spd)).Should(Equal(kvscheduler.ValueState_NONEXISTENT),
+		"SPD was not removed")
 	Eventually(ctx.getValueStateClb(tpNew)).Should(Equal(kvscheduler.ValueState_NONEXISTENT),
 		"tunnel protection was not removed")
 	Eventually(ctx.getValueStateClb(ipipTun)).Should(Equal(kvscheduler.ValueState_NONEXISTENT),
 		"IPIP tunnel was not removed")
+
+	if ctx.vppRelease >= "20.05" {
+		Expect(ctx.agentInSync()).To(BeTrue())
+	}
 }
 
 func TestIPSecMultiPoint(t *testing.T) {
@@ -258,12 +371,85 @@ func TestIPSecMultiPoint(t *testing.T) {
 		PeerAddr:    tp2.NextHopAddr,
 		NextHopAddr: "8.8.8.9",
 	}
+	spOut1 := &vpp_ipsec.SecurityPolicy{
+		SpdIndex:        100,
+		SaIndex:         10,
+		Priority:        0,
+		IsOutbound:      true,
+		RemoteAddrStart: "10.10.1.1",
+		RemoteAddrStop:  "10.10.1.255",
+		LocalAddrStart:  "10.10.2.1",
+		LocalAddrStop:   "10.10.2.255",
+		Protocol:        0,
+		RemotePortStart: 0,
+		RemotePortStop:  65535,
+		LocalPortStart:  0,
+		LocalPortStop:   65535,
+		Action:          vpp_ipsec.SecurityPolicy_PROTECT,
+	}
+	spIn1 := &vpp_ipsec.SecurityPolicy{
+		SpdIndex:        100,
+		SaIndex:         20,
+		Priority:        0,
+		IsOutbound:      false,
+		RemoteAddrStart: "10.10.1.1",
+		RemoteAddrStop:  "10.10.1.255",
+		LocalAddrStart:  "10.10.2.1",
+		LocalAddrStop:   "10.10.2.255",
+		Protocol:        0,
+		RemotePortStart: 0,
+		RemotePortStop:  65535,
+		LocalPortStart:  0,
+		LocalPortStop:   65535,
+		Action:          vpp_ipsec.SecurityPolicy_PROTECT,
+	}
+	spOut2 := &vpp_ipsec.SecurityPolicy{
+		SpdIndex:        100,
+		SaIndex:         30,
+		Priority:        0,
+		IsOutbound:      true,
+		RemoteAddrStart: "10.20.1.1",
+		RemoteAddrStop:  "10.20.1.255",
+		LocalAddrStart:  "10.20.2.1",
+		LocalAddrStop:   "10.20.2.255",
+		Protocol:        0,
+		RemotePortStart: 0,
+		RemotePortStop:  65535,
+		LocalPortStart:  0,
+		LocalPortStop:   65535,
+		Action:          vpp_ipsec.SecurityPolicy_PROTECT,
+	}
+	spIn2 := &vpp_ipsec.SecurityPolicy{
+		SpdIndex:        100,
+		SaIndex:         40,
+		Priority:        0,
+		IsOutbound:      false,
+		RemoteAddrStart: "10.20.1.1",
+		RemoteAddrStop:  "10.20.1.255",
+		LocalAddrStart:  "10.20.2.1",
+		LocalAddrStop:   "10.20.2.255",
+		Protocol:        0,
+		RemotePortStart: 0,
+		RemotePortStop:  65535,
+		LocalPortStart:  0,
+		LocalPortStop:   65535,
+		Action:          vpp_ipsec.SecurityPolicy_PROTECT,
+	}
+	spd := &vpp_ipsec.SecurityPolicyDatabase{
+		Index: 100,
+		Interfaces: []*vpp_ipsec.SecurityPolicyDatabase_Interface{
+			{
+				Name: tunnelIfName,
+			},
+		},
+	}
 
 	ctx.startMicroservice(msName)
 	req := ctx.grpcClient.ChangeRequest()
 	err := req.Update(
 		ipipTun,
 		saOut1, saIn1, saOut2, saIn2,
+		spOut1, spIn1, spOut2, spIn2, spd,
 		tp1, tp2,
 		teib1, teib2,
 	).Send(context.Background())
@@ -287,11 +473,26 @@ func TestIPSecMultiPoint(t *testing.T) {
 		"TEIB 1 is not configured")
 	Eventually(ctx.getValueStateClb(teib2)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
 		"TEIB 2 is not configured")
+	Eventually(ctx.getValueStateClb(spOut1)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
+		"OUT SP 1 is not configured")
+	Eventually(ctx.getValueStateClb(spIn1)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
+		"IN SP 1 is not configured")
+	Eventually(ctx.getValueStateClb(spOut2)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
+		"OUT SP 2 is not configured")
+	Eventually(ctx.getValueStateClb(spIn2)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
+		"IN SP 2 is not configured")
+	Eventually(ctx.getValueStateClb(spd)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
+		"SPD is not configured")
+
+	if ctx.vppRelease >= "20.05" {
+		Expect(ctx.agentInSync()).To(BeTrue())
+	}
 
 	req3 := ctx.grpcClient.ChangeRequest()
 	err = req3.Delete(
 		ipipTun,
 		saOut1, saIn1, saOut2, saIn2,
+		spOut1, spIn1, spOut2, spIn2, spd,
 		tp1, tp2,
 		teib1, teib2,
 	).Send(context.Background())
@@ -315,4 +516,16 @@ func TestIPSecMultiPoint(t *testing.T) {
 		"tunnel protection 1 was not removed")
 	Eventually(ctx.getValueStateClb(ipipTun)).Should(Equal(kvscheduler.ValueState_NONEXISTENT),
 		"IPIP tunnel was not removed")
+	Eventually(ctx.getValueStateClb(spOut1)).Should(Equal(kvscheduler.ValueState_NONEXISTENT),
+		"OUT SP 1 was not removed")
+	Eventually(ctx.getValueStateClb(spIn1)).Should(Equal(kvscheduler.ValueState_NONEXISTENT),
+		"IN SP 1 was not removed")
+	Eventually(ctx.getValueStateClb(spOut2)).Should(Equal(kvscheduler.ValueState_NONEXISTENT),
+		"OUT SP 2 was not removed")
+	Eventually(ctx.getValueStateClb(spIn2)).Should(Equal(kvscheduler.ValueState_NONEXISTENT),
+		"IN SP 2 was not removed")
+
+	if ctx.vppRelease >= "20.05" {
+		Expect(ctx.agentInSync()).To(BeTrue())
+	}
 }

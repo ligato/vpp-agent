@@ -5,7 +5,6 @@ package adapter
 import (
 	"github.com/golang/protobuf/proto"
 	. "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
-	"go.ligato.io/vpp-agent/v3/pkg/idxvpp"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/vpp/ipsec"
 )
 
@@ -14,7 +13,7 @@ import (
 type SPDKVWithMetadata struct {
 	Key      string
 	Value    *vpp_ipsec.SecurityPolicyDatabase
-	Metadata *idxvpp.OnlyIndex
+	Metadata interface{}
 	Origin   ValueOrigin
 }
 
@@ -30,10 +29,10 @@ type SPDDescriptor struct {
 	WithMetadata         bool
 	MetadataMapFactory   MetadataMapFactory
 	Validate             func(key string, value *vpp_ipsec.SecurityPolicyDatabase) error
-	Create               func(key string, value *vpp_ipsec.SecurityPolicyDatabase) (metadata *idxvpp.OnlyIndex, err error)
-	Delete               func(key string, value *vpp_ipsec.SecurityPolicyDatabase, metadata *idxvpp.OnlyIndex) error
-	Update               func(key string, oldValue, newValue *vpp_ipsec.SecurityPolicyDatabase, oldMetadata *idxvpp.OnlyIndex) (newMetadata *idxvpp.OnlyIndex, err error)
-	UpdateWithRecreate   func(key string, oldValue, newValue *vpp_ipsec.SecurityPolicyDatabase, metadata *idxvpp.OnlyIndex) bool
+	Create               func(key string, value *vpp_ipsec.SecurityPolicyDatabase) (metadata interface{}, err error)
+	Delete               func(key string, value *vpp_ipsec.SecurityPolicyDatabase, metadata interface{}) error
+	Update               func(key string, oldValue, newValue *vpp_ipsec.SecurityPolicyDatabase, oldMetadata interface{}) (newMetadata interface{}, err error)
+	UpdateWithRecreate   func(key string, oldValue, newValue *vpp_ipsec.SecurityPolicyDatabase, metadata interface{}) bool
 	Retrieve             func(correlate []SPDKVWithMetadata) ([]SPDKVWithMetadata, error)
 	IsRetriableFailure   func(err error) bool
 	DerivedValues        func(key string, value *vpp_ipsec.SecurityPolicyDatabase) []KeyValuePair
@@ -222,11 +221,11 @@ func castSPDValue(key string, value proto.Message) (*vpp_ipsec.SecurityPolicyDat
 	return typedValue, nil
 }
 
-func castSPDMetadata(key string, metadata Metadata) (*idxvpp.OnlyIndex, error) {
+func castSPDMetadata(key string, metadata Metadata) (interface{}, error) {
 	if metadata == nil {
 		return nil, nil
 	}
-	typedMetadata, ok := metadata.(*idxvpp.OnlyIndex)
+	typedMetadata, ok := metadata.(interface{})
 	if !ok {
 		return nil, ErrInvalidMetadataType(key)
 	}

@@ -68,14 +68,15 @@ func TestVppDelSPD(t *testing.T) {
 	}))
 }
 
-func TestVppAddSPDEntry(t *testing.T) {
+func TestVppAddSP(t *testing.T) {
 	ctx, ipSecHandler, _ := ipSecTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&ipsec.IpsecSpdEntryAddDelReply{})
 
-	err := ipSecHandler.AddSPDEntry(10, 5, &ipsec2.SecurityPolicyDatabase_PolicyEntry{
+	err := ipSecHandler.AddSP(&ipsec2.SecurityPolicy{
 		SaIndex:    5,
+		SpdIndex:   10,
 		Priority:   10,
 		IsOutbound: true,
 	})
@@ -98,13 +99,14 @@ func TestVppAddSPDEntry(t *testing.T) {
 	}))
 }
 
-func TestVppDelSPDEntry(t *testing.T) {
+func TestVppDelSP(t *testing.T) {
 	ctx, ipSecHandler, _ := ipSecTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&ipsec.IpsecSpdEntryAddDelReply{})
 
-	err := ipSecHandler.DeleteSPDEntry(10, 2, &ipsec2.SecurityPolicyDatabase_PolicyEntry{
+	err := ipSecHandler.DeleteSP(&ipsec2.SecurityPolicy{
+		SpdIndex:   10,
 		SaIndex:    2,
 		Priority:   5,
 		IsOutbound: true,

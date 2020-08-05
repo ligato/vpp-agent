@@ -118,6 +118,8 @@ type PutDSL interface {
 	IPSecSA(sa *ipsec.SecurityAssociation) PutDSL
 	// IPSecSPD adds request to create a new Security Policy Database
 	IPSecSPD(spd *ipsec.SecurityPolicyDatabase) PutDSL
+	// IPSecSP adds request to create a new Security Policy
+	IPSecSP(sp *ipsec.SecurityPolicy) PutDSL
 	// IPSecTunnelProtection adds request to create a new IPSec tunnel protection
 	IPSecTunnelProtection(tp *ipsec.TunnelProtection) PutDSL
 	// PuntIPRedirect adds request to create or update rule to punt L3 traffic via interface.
@@ -207,6 +209,8 @@ type DeleteDSL interface {
 	IPSecSA(saIndex uint32) DeleteDSL
 	// IPSecSPD adds request to delete a Security Policy Database
 	IPSecSPD(spdIndex uint32) DeleteDSL
+	// IPSecSP adds request to delete a Security Policy
+	IPSecSP(sp *ipsec.SecurityPolicy) DeleteDSL
 	// IPSecTunnelProtection adds request to delete an IPSec tunnel protection from an interface
 	IPSecTunnelProtection(tp *ipsec.TunnelProtection) DeleteDSL
 	// PuntIPRedirect adds request to delete a rule used to punt L3 traffic via interface.
