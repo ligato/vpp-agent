@@ -35,12 +35,12 @@ func (h *IPSecVppHandler) DeleteSPD(spdID uint32) error {
 	return h.spdAddDel(spdID, false)
 }
 
-// AddSPDEntry implements IPSec handler.
+// AddSP implements IPSec handler.
 func (h *IPSecVppHandler) AddSP(sp *ipsec.SecurityPolicy) error {
 	return h.spdAddDelEntry(sp, true)
 }
 
-// DeleteSPDEntry implements IPSec handler.
+// DeleteSP implements IPSec handler.
 func (h *IPSecVppHandler) DeleteSP(sp *ipsec.SecurityPolicy) error {
 	return h.spdAddDelEntry(sp, false)
 }

@@ -246,7 +246,7 @@ func (dsl *DataResyncDSL) IPSecSPD(spd *ipsec.SecurityPolicyDatabase) linuxclien
 	return dsl
 }
 
-// IPSecSPD adds Security Policy into the RESYNC request
+// IPSecSP adds Security Policy into the RESYNC request
 func (dsl *DataResyncDSL) IPSecSP(sp *ipsec.SecurityPolicy) linuxclient.DataResyncDSL {
 	dsl.vppDataResync.IPSecSP(sp)
 	return dsl
