@@ -235,6 +235,7 @@ func (h *IPSecVppHandler) sadAddDelEntry(sa *ipsec.SecurityAssociation, isAdd bo
 				Data:   cryptoKey,
 				Length: uint8(len(cryptoKey)),
 			},
+			Salt: sa.CryptoSalt,
 			IntegrityAlgorithm: vpp_ipsec.IpsecIntegAlg(sa.IntegAlg),
 			IntegrityKey: vpp_ipsec.Key{
 				Data:   integKey,

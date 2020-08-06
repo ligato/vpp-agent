@@ -113,6 +113,7 @@ message SecurityAssociation {
 
     CryptoAlg crypto_alg = 4;       /* Cryptographic algorithm for encryption */
     string crypto_key = 5;
+    uint32 crypto_salt = 15;
 
     IntegAlg integ_alg = 6;         /* Cryptographic algorithm for authentication */
     string integ_key = 7;
