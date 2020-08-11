@@ -76,7 +76,7 @@ echo -e " E2E TEST - VPP \e[1;33m${vppver}\e[0m"
 echo "============================================================="
 
 # run e2e test
-if docker exec -it "$cid" /e2e.test -test.v ${args[@]}; then
+if docker exec -i "$cid" /e2e.test -test.v ${args[@]}; then
 	echo >&2 "-------------------------------------------------------------"
 	echo >&2 -e " \e[32mPASSED\e[0m (took: ${SECONDS}s)"
 	echo >&2 "-------------------------------------------------------------"

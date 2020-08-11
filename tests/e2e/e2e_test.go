@@ -84,7 +84,6 @@ const (
 			cli-no-pager
 			log /tmp/vpp.log
 			full-coredump
-            nosyslog
 		}
 		api-trace {
 			on
