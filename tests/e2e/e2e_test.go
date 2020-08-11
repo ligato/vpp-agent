@@ -148,6 +148,18 @@ func setupE2E(t *testing.T) *TestCtx {
 		output:        new(bytes.Buffer),
 	}
 
+	defer func() {
+		if testCtx.t.Failed() {
+			testCtx.dumpLog()
+			if testCtx.agent != nil {
+				stopProcess(testCtx.t, testCtx.agent, "VPP-Agent")
+			}
+			if testCtx.VPP != nil {
+				stopProcess(testCtx.t, testCtx.VPP, "VPP")
+			}
+		}
+	}()
+
 	var err error
 
 	// check if VPP process is not running already
@@ -232,7 +244,7 @@ func setupE2E(t *testing.T) *TestCtx {
 
 func (ctx *TestCtx) teardownE2E() {
 	if ctx.t.Failed() {
-		ctx.t.Logf("-----------------\n Agent output \n-----------------\n%s\n------------------", ctx.output)
+		ctx.dumpLog()
 	}
 
 	ctx.t.Logf("teardown E2E")
@@ -573,6 +585,10 @@ func (ctx *TestCtx) sleepFor(d time.Duration) {
 	time.Sleep(d)
 }
 
+func (ctx *TestCtx) dumpLog() {
+	ctx.t.Logf("-----------------\n Output \n-----------------\n%s\n------------------", ctx.output)
+}
+
 func syncAgent(t *testing.T, httpClient *utils.HTTPClient) (executed kvs.RecordedTxnOps) {
 	resp, err := httpClient.POST("/scheduler/downstream-resync?retry=true", struct{}{})
 	if err != nil {
@@ -660,7 +676,6 @@ func startProcess(t *testing.T, name string, stdin io.Reader, stdout, stderr io.
 }
 
 func stopProcess(t *testing.T, cmd *exec.Cmd, name string) {
-
 	// terminate process
 	if err := cmd.Process.Signal(syscall.SIGTERM); err != nil {
 		t.Fatalf("sending SIGTERM to %s failed: %v", name, err)
