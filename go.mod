@@ -11,7 +11,7 @@ require (
 	github.com/alicebob/miniredis v2.5.0+incompatible // indirect
 	github.com/containerd/continuity v0.0.0-20171215195539-b2b946a77f59 // indirect
 	github.com/coreos/bbolt v1.3.3 // indirect
-	github.com/coreos/etcd v3.3.13+incompatible
+	github.com/coreos/etcd v3.3.22+incompatible
 	github.com/coreos/go-iptables v0.4.5
 	github.com/coreos/go-semver v0.3.0 // indirect
 	github.com/docker/cli v0.0.0-20190822175708-578ab52ece34
@@ -19,11 +19,13 @@ require (
 	github.com/docker/go-connections v0.3.0 // indirect
 	github.com/docker/go-units v0.3.2 // indirect
 	github.com/docker/libnetwork v0.0.0-20180726175142-9ffeaf7d8b64 // indirect
+	github.com/dustin/go-humanize v1.0.0 // indirect
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
 	github.com/fsouza/go-dockerclient v1.2.2
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-errors/errors v1.0.1
 	github.com/golang/protobuf v1.4.2
+	github.com/google/uuid v1.1.1 // indirect
 	github.com/gorilla/mux v1.6.2
 	github.com/gorilla/websocket v1.4.1 // indirect
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0
@@ -61,4 +63,5 @@ require (
 	google.golang.org/grpc v1.29.1
 	google.golang.org/protobuf v1.24.0
 	gotest.tools v2.2.0+incompatible // indirect
+	sigs.k8s.io/yaml v1.2.0 // indirect
 )
