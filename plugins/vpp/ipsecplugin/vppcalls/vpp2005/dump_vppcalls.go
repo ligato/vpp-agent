@@ -61,11 +61,14 @@ func (h *IPSecVppHandler) DumpIPSecSAWithIndex(saID uint32) (saList []*vppcalls.
 			Protocol:       ipsecProtoToProtocol(saData.Entry.Protocol),
 			CryptoAlg:      ipsec.CryptoAlg(saData.Entry.CryptoAlgorithm),
 			CryptoKey:      hex.EncodeToString(saData.Entry.CryptoKey.Data[:saData.Entry.CryptoKey.Length]),
+			CryptoSalt:     saData.Entry.Salt,
 			IntegAlg:       ipsec.IntegAlg(saData.Entry.IntegrityAlgorithm),
 			IntegKey:       hex.EncodeToString(saData.Entry.IntegrityKey.Data[:saData.Entry.IntegrityKey.Length]),
 			UseEsn:         (saData.Entry.Flags & ipsec_types.IPSEC_API_SAD_FLAG_USE_ESN) != 0,
 			UseAntiReplay:  (saData.Entry.Flags & ipsec_types.IPSEC_API_SAD_FLAG_USE_ANTI_REPLAY) != 0,
 			EnableUdpEncap: (saData.Entry.Flags & ipsec_types.IPSEC_API_SAD_FLAG_UDP_ENCAP) != 0,
+			TunnelSrcPort:  uint32(saData.Entry.UDPSrcPort),
+			TunnelDstPort:  uint32(saData.Entry.UDPDstPort),
 		}
 		if !tunnelSrcAddr.IsUnspecified() {
 			sa.TunnelSrcAddr = tunnelSrcAddr.String()

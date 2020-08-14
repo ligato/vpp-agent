@@ -61,6 +61,7 @@ func (h *IPSecVppHandler) DumpIPSecSAWithIndex(saID uint32) (saList []*vppcalls.
 			Protocol:       ipsec.SecurityAssociation_IPSecProtocol(saData.Entry.Protocol),
 			CryptoAlg:      ipsec.CryptoAlg(saData.Entry.CryptoAlgorithm),
 			CryptoKey:      hex.EncodeToString(saData.Entry.CryptoKey.Data[:saData.Entry.CryptoKey.Length]),
+			CryptoSalt:     saData.Entry.Salt,
 			IntegAlg:       ipsec.IntegAlg(saData.Entry.IntegrityAlgorithm),
 			IntegKey:       hex.EncodeToString(saData.Entry.IntegrityKey.Data[:saData.Entry.IntegrityKey.Length]),
 			UseEsn:         (saData.Entry.Flags & ipsecapi.IPSEC_API_SAD_FLAG_USE_ESN) != 0,

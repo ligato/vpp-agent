@@ -56,21 +56,28 @@ func TestIPSec(t *testing.T) {
 		Index:          10,
 		Spi:            123,
 		Protocol:       vpp_ipsec.SecurityAssociation_ESP,
-		CryptoAlg:      vpp_ipsec.CryptoAlg_AES_CBC_128,
+		CryptoAlg:      vpp_ipsec.CryptoAlg_AES_GCM_128,
 		CryptoKey:      "d9a4ec50aed76f1bf80bc915d8fcfe1c",
+		CryptoSalt:     1500,
 		IntegAlg:       vpp_ipsec.IntegAlg_SHA1_96,
 		IntegKey:       "bf9b150aaf5c2a87d79898b11eabd055e70abdbe",
 		EnableUdpEncap: true,
+		TunnelSrcPort:  4500,
+		TunnelDstPort:  8777,
+
 	}
 	saIn := &vpp_ipsec.SecurityAssociation{
 		Index:          20,
 		Spi:            456,
 		Protocol:       vpp_ipsec.SecurityAssociation_ESP,
-		CryptoAlg:      vpp_ipsec.CryptoAlg_AES_CBC_128,
+		CryptoAlg:      vpp_ipsec.CryptoAlg_AES_GCM_128,
 		CryptoKey:      "d9a4ec50aed76f1bf80bc915d8fcfe1c",
+		CryptoSalt:     8900,
 		IntegAlg:       vpp_ipsec.IntegAlg_SHA1_96,
 		IntegKey:       "bf9b150aaf5c2a87d79898b11eabd055e70abdbe",
 		EnableUdpEncap: true,
+		TunnelSrcPort:  8777,
+		TunnelDstPort:  4500,
 	}
 	spOut := &vpp_ipsec.SecurityPolicy{
 		SpdIndex:        100,
