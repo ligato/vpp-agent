@@ -11,12 +11,14 @@ endif
 REMOTE_GIT := https://github.com/ligato/vpp-agent.git
 CHECK_BREAKING_BRANCH := master
 
-# https://github.com/bufbuild/buf/releases 20200625
-BUF_VERSION := 0.18.1
-# https://github.com/golang/protobuf/releases 20190709
-PROTOC_GEN_GO_VERSION ?= v1.3.3
-# https://github.com/protocolbuffers/protobuf/releases 20191213
-PROTOC_VERSION ?= 3.11.2
+# https://github.com/bufbuild/buf/releases 20200724
+BUF_VERSION := 0.20.5
+# https://github.com/protocolbuffers/protobuf-go 20200624
+PROTOC_GEN_GO_VERSION ?= v1.25.0
+# https://github.com/grpc/grpc-go 20200730
+PROTOC_GEN_GO_GRPC_VERSION ?= v1.31.0
+# https://github.com/protocolbuffers/protobuf/releases 20200729
+PROTOC_VERSION ?= 3.12.4
 
 GO_BINS := $(GO_BINS) \
 	buf \
@@ -26,7 +28,7 @@ GO_BINS := $(GO_BINS) \
 PROTO_PATH := proto
 PROTOC_GEN_GO_OUT := proto
 
-PROTOC_GEN_GO_PARAMETER ?= plugins=grpc,paths=source_relative
+PROTOC_GEN_GO_PARAMETER ?= paths=source_relative
 
 ifeq ($(UNAME_OS),Darwin)
 PROTOC_OS := osx
@@ -79,11 +81,24 @@ PROTOC_GEN_GO := $(CACHE_VERSIONS)/protoc-gen-go/$(PROTOC_GEN_GO_VERSION)
 $(PROTOC_GEN_GO):
 	@rm -f $(GOBIN)/protoc-gen-go
 	$(eval PROTOC_GEN_GO_TMP := $(shell mktemp -d))
-	cd $(PROTOC_GEN_GO_TMP); go get github.com/golang/protobuf/protoc-gen-go@$(PROTOC_GEN_GO_VERSION)
+	cd $(PROTOC_GEN_GO_TMP); go get google.golang.org/protobuf/cmd/protoc-gen-go@$(PROTOC_GEN_GO_VERSION)
 	@rm -rf $(PROTOC_GEN_GO_TMP)
 	@rm -rf $(dir $(PROTOC_GEN_GO))
 	@mkdir -p $(dir $(PROTOC_GEN_GO))
 	@touch $(PROTOC_GEN_GO)
+
+PROTOC_GEN_GO_GRPC := $(CACHE_VERSIONS)/protoc-gen-go-grpc/$(PROTOC_GEN_GO_GRPC_VERSION)
+$(PROTOC_GEN_GO_GRPC):
+	@if ! command -v git >/dev/null 2>/dev/null; then echo "error: git must be installed"  >&2; exit 1; fi
+	@rm -f $(GOBIN)/protoc-gen-go-grpc
+	$(eval PROTOC_GEN_GO_GRPC_TMP := $(shell mktemp -d))
+	#cd $(PROTOC_GEN_GO_GRPC_TMP); go get -u -v google.golang.org/grpc/cmd/protoc-gen-go-grpc@$(PROTOC_GEN_GO_GRPC_VERSION)
+	cd $(PROTOC_GEN_GO_GRPC_TMP); git clone -b $(PROTOC_GEN_GO_GRPC_VERSION) https://github.com/grpc/grpc-go
+	cd $(PROTOC_GEN_GO_GRPC_TMP); cd grpc-go/cmd/protoc-gen-go-grpc && go install .
+	@rm -rf $(PROTOC_GEN_GO_GRPC_TMP)
+	@rm -rf $(dir $(PROTOC_GEN_GO_GRPC))
+	@mkdir -p $(dir $(PROTOC_GEN_GO_GRPC))
+	@touch $(PROTOC_GEN_GO_GRPC)
 
 .PHONY: buf-ls-packages
 buf-ls-packages:
@@ -128,5 +143,5 @@ protocgengoclean:
 	find "$(PROTOC_GEN_GO_OUT)" -name "*.pb.go" -exec rm -drfv '{}' \;
 
 .PHONY: protocgengo
-protocgengo: protocgengoclean $(PROTOC) $(PROTOC_GEN_GO)
+protocgengo: protocgengoclean $(PROTOC) $(PROTOC_GEN_GO) $(PROTOC_GEN_GO_GRPC)
 	bash scripts/protoc_gen_go.sh "$(PROTO_PATH)" "$(PROTOC_GEN_GO_OUT)" "$(PROTOC_GEN_GO_PARAMETER)"

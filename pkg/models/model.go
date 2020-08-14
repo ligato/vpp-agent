@@ -18,8 +18,8 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/golang/protobuf/descriptor"
 	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/reflect/protoreflect"
 
 	"go.ligato.io/vpp-agent/v3/proto/ligato/generic"
 )
@@ -29,7 +29,8 @@ type KnownModel struct {
 	spec Spec
 	modelOptions
 
-	goType    reflect.Type
+	goType reflect.Type
+	proto  protoreflect.ProtoMessage
 	protoName string
 
 	// cache
@@ -64,17 +65,16 @@ func (m *KnownModel) NewInstance() proto.Message {
 
 // ProtoName returns proto message name registered with the model.
 func (m *KnownModel) ProtoName() string {
-	if m.protoName == "" {
-		m.protoName = proto.MessageName(m.nilProto())
+	if m.proto != nil {
+		return string(m.proto.ProtoReflect().Descriptor().FullName())
 	}
-	return m.protoName
+	return ""
 }
 
 // ProtoFile returns proto file name for the model.
 func (m *KnownModel) ProtoFile() string {
-	if msg, ok := m.nilProto().(descriptor.Message); ok {
-		fd, _ := descriptor.ForMessage(msg)
-		return *fd.Name
+	if m.proto != nil {
+		return m.proto.ProtoReflect().Descriptor().ParentFile().Path()
 	}
 	return ""
 }
@@ -155,8 +155,4 @@ func (m *KnownModel) instanceName(x interface{}) (string, error) {
 		return "", nil
 	}
 	return m.nameFunc(x)
-}
-
-func (m *KnownModel) nilProto() proto.Message {
-	return reflect.Zero(m.goType).Interface().(proto.Message)
 }

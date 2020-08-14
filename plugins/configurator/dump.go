@@ -47,8 +47,6 @@ type dumpService struct {
 	log logging.Logger
 
 	// VPP Handlers
-
-	// core
 	ifHandler    ifvppcalls.InterfaceVppRead
 	l2Handler    l2vppcalls.L2VppAPI
 	l3Handler    l3vppcalls.L3VppAPI
@@ -74,7 +72,9 @@ func (svc *dumpService) Dump(ctx context.Context, req *rpc.DumpRequest) (*rpc.Du
 
 	var err error
 
-	// core
+	// -----
+	// VPP
+	// -----
 	dump.VppConfig.Interfaces, err = svc.DumpInterfaces(ctx)
 	if err != nil {
 		svc.log.Errorf("DumpInterfaces failed: %v", err)
@@ -120,8 +120,6 @@ func (svc *dumpService) Dump(ctx context.Context, req *rpc.DumpRequest) (*rpc.Du
 		svc.log.Errorf("DumpIPSecSAs failed: %v", err)
 		return nil, err
 	}
-
-	// plugins
 	dump.VppConfig.Acls, err = svc.DumpACLs()
 	if err != nil {
 		svc.log.Errorf("DumpACLs failed: %v", err)
@@ -163,6 +161,9 @@ func (svc *dumpService) Dump(ctx context.Context, req *rpc.DumpRequest) (*rpc.Du
 		return nil, err
 	}
 
+	// -----
+	// Linux
+	// -----
 	dump.LinuxConfig.Interfaces, err = svc.DumpLinuxInterfaces()
 	if err != nil {
 		svc.log.Errorf("DumpLinuxInterfaces failed: %v", err)
