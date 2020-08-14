@@ -172,7 +172,7 @@ func (h *SRv6VppHandler) interfaceNameMapping() (map[string]string, error) {
 
 func (h *SRv6VppHandler) installationVrfID(localSID *srv6.LocalSID) string {
 	if localSID != nil {
-		return string(localSID.InstallationVrfId)
+		return fmt.Sprint(localSID.InstallationVrfId)
 	}
 	return "<nil>"
 }
