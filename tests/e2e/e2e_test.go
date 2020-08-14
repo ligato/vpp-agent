@@ -33,10 +33,12 @@ import (
 	"testing"
 	"time"
 
+	govppcore "git.fd.io/govpp.git/core"
 	docker "github.com/fsouza/go-dockerclient"
 	"github.com/golang/protobuf/proto"
 	"github.com/mitchellh/go-ps"
 	. "github.com/onsi/gomega"
+	logrus2 "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 
 	"go.ligato.io/cn-infra/v2/logging"
@@ -62,6 +64,7 @@ var (
 	agentHTTPPort = flag.Int("agent-http-port", 9191, "VPP-Agent HTTP port")
 	agentGrpcPort = flag.Int("agent-grpc-port", 9111, "VPP-Agent GRPC port")
 	debugHTTP     = flag.Bool("debug-http", false, "Enable HTTP client debugging")
+	debug         = flag.Bool("debug", false, "Turn on debug mode.")
 
 	vppPingRegexp = regexp.MustCompile("Statistics: ([0-9]+) sent, ([0-9]+) received, ([0-9]+)% packet loss")
 )
@@ -106,8 +109,14 @@ const (
 	//memifInputNode    = "memif-input"
 )
 
-func init() {
+func TestMain(m *testing.M) {
 	log.SetFlags(log.Lmicroseconds | log.Lshortfile)
+	flag.Parse()
+	if *debug {
+		govppcore.SetLogLevel(logrus2.DebugLevel)
+	}
+	result := m.Run()
+	os.Exit(result)
 }
 
 type TestCtx struct {
@@ -122,6 +131,7 @@ type TestCtx struct {
 	grpcClient    client.ConfigClient
 	vppVersion    string
 	vppRelease    string
+	output        *bytes.Buffer
 }
 
 func setupE2E(t *testing.T) *TestCtx {
@@ -134,7 +144,20 @@ func setupE2E(t *testing.T) *TestCtx {
 		t:             t,
 		microservices: make(map[string]*microservice),
 		nsCalls:       nslinuxcalls.NewSystemHandler(),
+		output:        new(bytes.Buffer),
 	}
+
+	defer func() {
+		if testCtx.t.Failed() {
+			testCtx.dumpLog()
+			if testCtx.agent != nil {
+				stopProcess(testCtx.t, testCtx.agent, "VPP-Agent")
+			}
+			if testCtx.VPP != nil {
+				stopProcess(testCtx.t, testCtx.VPP, "VPP")
+			}
+		}
+	}()
 
 	var err error
 
@@ -156,7 +179,7 @@ func setupE2E(t *testing.T) *TestCtx {
 	} else {
 		vppArgs = []string{vppConf}
 	}
-	testCtx.VPP = startProcess(t, "VPP", nil, os.Stdout, os.Stderr, *vppPath, vppArgs...)
+	testCtx.VPP = startProcess(t, "VPP", nil, testCtx.output, testCtx.output, *vppPath, vppArgs...)
 
 	SetDefaultEventuallyPollingInterval(checkPollingInterval)
 	SetDefaultEventuallyTimeout(checkTimeout)
@@ -180,7 +203,7 @@ func setupE2E(t *testing.T) *TestCtx {
 		e2eCovPath := fmt.Sprintf("%s/%d.out", *covPath, time.Now().Unix())
 		agentArgs = []string{"-test.coverprofile", e2eCovPath}
 	}
-	testCtx.agent = startProcess(t, "VPP-Agent", nil, os.Stdout, os.Stderr, "/vpp-agent", agentArgs...)
+	testCtx.agent = startProcess(t, "VPP-Agent", nil, testCtx.output, testCtx.output, "/vpp-agent", agentArgs...)
 
 	// prepare HTTP client for access to REST API of the agent
 	httpAddr := fmt.Sprintf(":%d", *agentHTTPPort)
@@ -219,7 +242,11 @@ func setupE2E(t *testing.T) *TestCtx {
 }
 
 func (ctx *TestCtx) teardownE2E() {
-	ctx.t.Logf("-----------------")
+	if ctx.t.Failed() {
+		ctx.dumpLog()
+	}
+
+	ctx.t.Logf("teardown E2E")
 
 	// stop all microservices
 	for msName := range ctx.microservices {
@@ -486,11 +513,11 @@ func (ctx *TestCtx) testConnection(fromMs, toMs, toAddr, listenAddr string,
 	if err != nil {
 		outcome = err.Error()
 	}
-	fmt.Printf(
+	ctx.t.Logf(
 		"%s connection <from-ms=%s, dest=%s:%d, to-ms=%s, server=%s:%d> packet trace:\n",
 		protocol, fromMs, toAddr, toPort, toMs, listenAddr, listenPort)
 	stopPacketTrace()
-	fmt.Printf(
+	ctx.t.Logf(
 		"%s connection <from-ms=%s, dest=%s:%d, to-ms=%s, server=%s:%d> outcome: %s\n",
 		protocol, fromMs, toAddr, toPort, toMs, listenAddr, listenPort, outcome)
 	return err
@@ -544,11 +571,10 @@ func (ctx *TestCtx) startPacketTrace(nodes ...string) (stopTrace func()) {
 		if len(nodes) == 0 {
 			return
 		}
-		stdout, err := ctx.execVppctl("show trace")
+		_, err := ctx.execVppctl("show trace")
 		if err != nil {
 			ctx.t.Fatalf("Failed to show packet trace: %v", err)
 		}
-		fmt.Println(stdout)
 	}
 }
 
@@ -556,6 +582,10 @@ func (ctx *TestCtx) sleepFor(d time.Duration) {
 	ctx.t.Helper()
 	ctx.t.Logf("SLEEPING for %v..", d)
 	time.Sleep(d)
+}
+
+func (ctx *TestCtx) dumpLog() {
+	ctx.t.Logf("-----------------\n Output \n-----------------\n%s\n------------------", ctx.output)
 }
 
 func syncAgent(t *testing.T, httpClient *utils.HTTPClient) (executed kvs.RecordedTxnOps) {
@@ -645,7 +675,6 @@ func startProcess(t *testing.T, name string, stdin io.Reader, stdout, stderr io.
 }
 
 func stopProcess(t *testing.T, cmd *exec.Cmd, name string) {
-
 	// terminate process
 	if err := cmd.Process.Signal(syscall.SIGTERM); err != nil {
 		t.Fatalf("sending SIGTERM to %s failed: %v", name, err)
