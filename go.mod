@@ -29,7 +29,6 @@ require (
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0
 	github.com/grpc-ecosystem/grpc-gateway v1.11.3 // indirect
 	github.com/hashicorp/go-uuid v1.0.1 // indirect
-	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/jhump/protoreflect v1.7.0
 	github.com/lunixbochs/struc v0.0.0-20190916212049-a5c72983bc42
 	github.com/mitchellh/go-ps v0.0.0-20170309133038-4fdf99ab2936
@@ -43,7 +42,7 @@ require (
 	github.com/pkg/profile v1.5.0
 	github.com/prometheus/client_golang v0.9.3
 	github.com/sirupsen/logrus v1.6.0
-	github.com/spf13/cobra v0.0.3
+	github.com/spf13/cobra v0.0.7
 	github.com/spf13/pflag v1.0.3
 	github.com/spf13/viper v1.4.0
 	github.com/unrolled/render v0.0.0-20180914162206-b9786414de4d
