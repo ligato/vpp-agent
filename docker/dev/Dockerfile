@@ -60,7 +60,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 		ca-certificates \
 		curl \
 		git \
-		graphviz \
 		iproute2 \
 		iputils-ping \
 		make \
