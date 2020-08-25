@@ -9,7 +9,10 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
-    open-pull-requests-limit: 5
+      day: "sunday"
+    open-pull-requests-limit: 3
     target-branch: master
+    reviewers:
+      - "ligato/reviewers"
     allow:
       - dependency-type: "direct"
