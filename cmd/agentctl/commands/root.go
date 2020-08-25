@@ -22,6 +22,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/common-nighthawk/go-figure"
 	"github.com/docker/docker/pkg/term"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -61,6 +62,9 @@ func NewRootNamed(name string, agentCli *cli.AgentCli) *Root {
 		Version: fmt.Sprintf("%s, commit %s", agent.BuildVersion, agent.CommitHash),
 	}
 
+	asciiLogo := figure.NewFigure(name, "slant", true)
+	cmd.Long = asciiLogo.String()
+
 	opts, flags, helpCmd = SetupRootCommand(cmd)
 
 	flags.BoolP("version", "v", false, "Print version info and quit")
@@ -68,7 +72,7 @@ func NewRootNamed(name string, agentCli *cli.AgentCli) *Root {
 	flags.StringVarP(&opts.LogLevel, "log-level", "l", "", `Set the logging level ("debug"|"info"|"warn"|"error"|"fatal")`)
 
 	cmd.SetHelpCommand(helpCmd)
-	cmd.SetOutput(agentCli.Out())
+	cmd.SetOut(agentCli.Out())
 
 	AddBaseCommands(cmd, agentCli)
 

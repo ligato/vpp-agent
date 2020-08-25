@@ -9,6 +9,7 @@ require (
 	github.com/Nvveen/Gotty v0.0.0-20120604004816-cd527374f1e5 // indirect
 	github.com/Shopify/sarama v1.20.1 // indirect
 	github.com/alicebob/miniredis v2.5.0+incompatible // indirect
+	github.com/common-nighthawk/go-figure v0.0.0-20200609044655-c4b36f998cf2
 	github.com/containerd/continuity v0.0.0-20171215195539-b2b946a77f59 // indirect
 	github.com/coreos/bbolt v1.3.3 // indirect
 	github.com/coreos/etcd v3.3.13+incompatible
