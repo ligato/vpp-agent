@@ -126,7 +126,7 @@ func (h *InterfaceVppHandler) WatchDHCPLeases(ctx context.Context, leasesCh chan
 
 	go func() {
 		h.log.Debugf("start watching DHCP leases")
-		defer h.log.Debugf("done watching DHCP lease", ctx.Err())
+		defer h.log.Debugf("done watching DHCP lease (%v)", ctx.Err())
 
 		for {
 			select {
