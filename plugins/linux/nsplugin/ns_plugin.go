@@ -108,7 +108,7 @@ func (p *NsPlugin) Init() error {
 	}
 	p.msDescriptor.StartTracker()
 
-	p.Log.Infof("Namespace plugin initialized")
+	p.Log.Debugf("Namespace plugin initialized")
 
 	return nil
 }

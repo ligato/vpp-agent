@@ -427,7 +427,7 @@ func (p *Plugin) handleVPPConnectionEvents(ctx context.Context) {
 }
 
 func (p *Plugin) startProxy(vppapi adapter.VppAPI, statsapi adapter.StatsAPI) (err error) {
-	p.Log.Infof("starting VPP proxy")
+	p.Log.Debugf("starting VPP proxy")
 
 	p.proxy, err = proxy.NewServer()
 	if err != nil {
