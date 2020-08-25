@@ -75,14 +75,25 @@ func (s *Scheduler) dotGraphHandler(formatter *render.Render) http.HandlerFunc {
 			return
 		}
 
-		if format := req.FormValue("format"); format == "dot" {
+		format := req.FormValue("format")
+		if format == "raw" {
 			w.Write(output)
 			return
+		} else if format == "dot" {
+			dot, err := renderDot(output)
+			if err != nil {
+				http.Error(w, fmt.Sprintf("rendering dot failed: %v\n%s", err, output), http.StatusInternalServerError)
+				return
+			}
+			w.Write(dot)
+			return
+		} else if format == "" {
+			format = "svg"
 		}
 
-		img, err := dotToImage("", "svg", output)
+		img, err := dotToImage("", format, output)
 		if err != nil {
-			http.Error(w, fmt.Sprintf("rendering image failed: %v\n%v", err, img), http.StatusInternalServerError)
+			http.Error(w, fmt.Sprintf("rendering image %v failed: %v\n%s", img, err, output), http.StatusInternalServerError)
 			return
 		}
 
@@ -111,7 +122,8 @@ func (s *Scheduler) renderDotOutput(graphNodes []*graph.RecordedNode, txn *kvs.R
 		"label":     title,
 		"labelloc":  "t",
 		"labeljust": "c",
-		"fontsize":  "12",
+		"fontsize":  "14",
+		"fontname":  "Arial",
 		"tooltip":   "",
 	}
 
@@ -144,8 +156,12 @@ func (s *Scheduler) renderDotOutput(graphNodes []*graph.RecordedNode, txn *kvs.R
 		}
 
 		attrs := make(dotAttrs)
+		attrs["penwidth"] = "1"
 		attrs["fontsize"] = "9"
-
+		attrs["width"] = "0"
+		attrs["height"] = "0"
+		attrs["color"] = "Black"
+		attrs["style"] = "filled"
 		attrs["href"] = fmt.Sprintf(keyTimelineURL+"?key=%s&amp;time=%d", key, graphTimestamp.UnixNano())
 
 		if updatedKeys.Has(key) {
@@ -181,11 +197,12 @@ func (s *Scheduler) renderDotOutput(graphNodes []*graph.RecordedNode, txn *kvs.R
 					ID:       descriptorName,
 					Clusters: make(map[string]*dotCluster),
 					Attrs: dotAttrs{
-						"penwidth":  "0.8",
-						"fontsize":  "12",
+						"fontsize":  "10",
 						"label":     fmt.Sprintf("< %s >", descriptorName),
 						"style":     "filled",
 						"fillcolor": "#e6ecfa",
+						"pad":       "0.015",
+						"margin":    "4",
 					},
 				}
 			}
@@ -395,24 +412,46 @@ func renderFilename(outfname, format string, dot []byte) error {
 	return nil
 }
 
+func renderDot(dot []byte) ([]byte, error) {
+	g, err := graphviz.ParseBytes(dot)
+	if err != nil {
+		return nil, err
+	}
+
+	gv := graphviz.New()
+	defer func() {
+		if err := g.Close(); err != nil {
+			log.Println("dotgraph: closing graph: %w", err)
+		}
+		_ = gv.Close()
+	}()
+
+	var buf bytes.Buffer
+	err = gv.Render(g, "dot", &buf)
+	if err != nil {
+		return nil, err
+	}
+
+	return buf.Bytes(), nil
+}
+
 const tmplGraph = `digraph kvscheduler {
-	//ranksep=.5;
-	//nodesep=.1
     label="{{.Title}}";
 	labelloc="b";
     labeljust="c";
-    fontsize="8";
+    fontsize="10";
     rankdir="LR";
     bgcolor="lightgray";
     style="solid";
-    penwidth="1";
-    pad="0.025";
-    nodesep="{{.Options.nodesep}}";
+    pad="0.035";
+	ranksep="0.35";
+	nodesep="0.03";
+    //nodesep="{{.Options.nodesep}}";
 	ordering="out";
 	newrank="true";
 	compound="true";
 
-    node [shape="box" style="filled" fontname="Courier" fillcolor="honeydew" penwidth="1.0" width="0" height="0"];
+    node [shape="box" style="filled" color="black" fontname="Courier" fillcolor="honeydew"];
     edge [minlen="{{.Options.minlen}}"]
 
     {{template "cluster" .Cluster}}
