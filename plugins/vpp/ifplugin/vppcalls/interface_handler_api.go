@@ -42,6 +42,7 @@ type InterfaceMeta struct {
 	SupSwIfIndex   uint32           `json:"sub_sw_if_index"`
 	L2Address      net.HardwareAddr `json:"l2_address"`
 	InternalName   string           `json:"internal_name"`
+	DevType        string           `json:"dev_type"`
 	IsAdminStateUp bool             `json:"is_admin_state_up"`
 	IsLinkStateUp  bool             `json:"is_link_state_up"`
 	LinkDuplex     uint32           `json:"link_duplex"`
@@ -50,11 +51,14 @@ type InterfaceMeta struct {
 	LinkSpeed      uint32           `json:"link_speed"`
 	SubID          uint32           `json:"sub_id"`
 	Tag            string           `json:"tag"`
+
 	// dhcp
 	Dhcp *Dhcp `json:"dhcp"`
+
 	// vrf
 	VrfIPv4 uint32 `json:"vrf_ipv4"`
 	VrfIPv6 uint32 `json:"vrf_ipv6"`
+
 	// wmxnet3
 	Pci uint32 `json:"pci"`
 }
