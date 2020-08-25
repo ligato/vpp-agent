@@ -63,6 +63,8 @@ type IfaceMetadata struct {
 	Vrf           uint32
 	IPAddresses   []string // TODO: update from interfaceAddress descriptor with real IPs (not netalloc links)
 	TAPHostIfName string   /* host interface name set for the Linux-side of the TAP interface; empty for non-TAPs */
+	InternalName  string   // internal VPP name
+	DevType       string   // device type
 }
 
 // GetIndex returns sw_if_index assigned to the interface.
