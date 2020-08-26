@@ -24,6 +24,7 @@ require (
 	github.com/fsouza/go-dockerclient v1.2.2
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-errors/errors v1.0.1
+	github.com/goccy/go-graphviz v0.0.6
 	github.com/goccy/go-yaml v1.8.0
 	github.com/golang/protobuf v1.4.2
 	github.com/gorilla/mux v1.6.2
@@ -54,7 +55,6 @@ require (
 	github.com/yuin/gopher-lua v0.0.0-20190514113301-1cd887cd7036 // indirect
 	go.ligato.io/cn-infra/v2 v2.5.0-alpha.0.20200313154441-b0d4c1b11c73
 	go.uber.org/multierr v1.2.0 // indirect
-	golang.org/x/crypto v0.0.0-20191206172530-e9b2fee46413 // indirect
 	golang.org/x/net v0.0.0-20200528225125-3c3fba18258b
 	golang.org/x/sys v0.0.0-20200523222454-059865788121
 	golang.org/x/time v0.0.0-20190921001708-c4c64cad1fd0 // indirect
