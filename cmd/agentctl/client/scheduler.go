@@ -24,7 +24,6 @@ func (c *Client) SchedulerDump(ctx context.Context, opts types.SchedulerDumpOpti
 		api.KVWithMetadata
 		Value ProtoWithName
 	}
-
 	query := url.Values{}
 	query.Set("key-prefix", opts.KeyPrefix)
 	query.Set("view", opts.View)
@@ -33,12 +32,10 @@ func (c *Client) SchedulerDump(ctx context.Context, opts types.SchedulerDumpOpti
 	if err != nil {
 		return nil, err
 	}
-
 	var kvdump []KVWithMetadata
 	if err := json.NewDecoder(resp.body).Decode(&kvdump); err != nil {
 		return nil, fmt.Errorf("decoding reply failed: %v", err)
 	}
-
 	var dump []api.KVWithMetadata
 	for _, kvd := range kvdump {
 		d := kvd.KVWithMetadata
@@ -50,13 +47,14 @@ func (c *Client) SchedulerDump(ctx context.Context, opts types.SchedulerDumpOpti
 			return nil, fmt.Errorf("unknown proto message defined for key %s", d.Key)
 		}
 		d.Value = reflect.New(valueType.Elem()).Interface().(proto.Message)
+
 		if len(kvd.Value.ProtoMsgData) > 0 && kvd.Value.ProtoMsgData[0] == '{' {
 			err = jsonpb.UnmarshalString(kvd.Value.ProtoMsgData, d.Value)
 		} else {
 			err = proto.UnmarshalText(kvd.Value.ProtoMsgData, d.Value)
 		}
 		if err != nil {
-			return nil, fmt.Errorf("decoding reply failed: %v", err)
+			return nil, fmt.Errorf("decoding dump reply for %v failed: %v", valueType, err)
 		}
 		dump = append(dump, d)
 	}
@@ -71,7 +69,6 @@ func (c *Client) SchedulerValues(ctx context.Context, opts types.SchedulerValues
 	if err != nil {
 		return nil, err
 	}
-
 	var status []*kvscheduler.BaseValueStatus
 	if err := json.NewDecoder(resp.body).Decode(&status); err != nil {
 		return nil, fmt.Errorf("decoding reply failed: %v", err)
@@ -100,4 +97,19 @@ func (c *Client) SchedulerResync(ctx context.Context, opts types.SchedulerResync
 	}
 
 	return &rectxn, nil
+}
+
+func (c *Client) SchedulerHistory(ctx context.Context, opts types.SchedulerHistoryOptions) (api.RecordedTxns, error) {
+	query := url.Values{}
+
+	resp, err := c.get(ctx, "/scheduler/txn-history", query, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var rectxn api.RecordedTxns
+	if err := json.NewDecoder(resp.body).Decode(&rectxn); err != nil {
+		return nil, fmt.Errorf("decoding reply failed: %v", err)
+	}
+	return rectxn, nil
 }

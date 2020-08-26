@@ -24,6 +24,7 @@ require (
 	github.com/fsouza/go-dockerclient v1.2.2
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-errors/errors v1.0.1
+	github.com/goccy/go-yaml v1.8.0
 	github.com/golang/protobuf v1.4.2
 	github.com/gorilla/mux v1.6.2
 	github.com/gorilla/websocket v1.4.1 // indirect
@@ -35,6 +36,7 @@ require (
 	github.com/mitchellh/go-ps v0.0.0-20170309133038-4fdf99ab2936
 	github.com/mitchellh/mapstructure v1.1.2
 	github.com/namsral/flag v1.7.4-pre
+	github.com/olekukonko/tablewriter v0.0.4
 	github.com/onsi/gomega v1.4.3
 	github.com/opencontainers/go-digest v1.0.0-rc1 // indirect
 	github.com/opencontainers/image-spec v1.0.1 // indirect
@@ -55,7 +57,6 @@ require (
 	golang.org/x/crypto v0.0.0-20191206172530-e9b2fee46413 // indirect
 	golang.org/x/net v0.0.0-20200528225125-3c3fba18258b
 	golang.org/x/sys v0.0.0-20200523222454-059865788121
-	golang.org/x/text v0.3.2 // indirect
 	golang.org/x/time v0.0.0-20190921001708-c4c64cad1fd0 // indirect
 	google.golang.org/genproto v0.0.0-20200601130524-0f60399e6634 // indirect
 	google.golang.org/grpc v1.29.1

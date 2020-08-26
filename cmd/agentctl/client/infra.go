@@ -18,43 +18,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"path"
 
-	"github.com/sirupsen/logrus"
 	"go.ligato.io/cn-infra/v2/health/probe"
 
 	"go.ligato.io/vpp-agent/v3/cmd/agentctl/api/types"
 )
-
-// Ping pings the server and returns the value of the "API-Version" headers.
-func (c *Client) Ping(ctx context.Context) (types.Ping, error) {
-	var ping types.Ping
-	logrus.Debugf("sending ping request")
-	// Using cli.buildRequest() + cli.doRequest() instead of cli.sendRequest()
-	// because ping requests are used during  API version negotiation, so we want
-	// to hit the non-versioned /_ping endpoint, not /v1.xx/_ping
-	req, err := c.buildRequest("GET", path.Join(c.basePath, "/ping"), nil, nil)
-	if err != nil {
-		return ping, err
-	}
-	serverResp, err := c.doRequest(ctx, req)
-	defer ensureReaderClosed(serverResp)
-	if err != nil {
-		return ping, err
-	}
-	return parsePingResponse(c, serverResp)
-}
-
-func parsePingResponse(cli *Client, resp serverResponse) (types.Ping, error) {
-	var ping types.Ping
-	if resp.header == nil {
-		err := cli.checkResponseErr(resp)
-		return ping, err
-	}
-	ping.APIVersion = resp.header.Get("API-Version")
-	err := cli.checkResponseErr(resp)
-	return ping, err
-}
 
 // AgentVersion returns information about Agent.
 func (c *Client) AgentVersion(ctx context.Context) (*types.Version, error) {
@@ -63,8 +31,9 @@ func (c *Client) AgentVersion(ctx context.Context) (*types.Version, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	var v types.Version
+	v.APIVersion = resp.header.Get("API-Version")
+
 	err = json.NewDecoder(resp.body).Decode(&v)
 	return &v, err
 }

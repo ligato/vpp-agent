@@ -14,22 +14,9 @@
 
 package types
 
-type Model struct {
-	Name         string
-	Class        string
-	Module       string
-	Type         string
-	Version      string
-	KeyPrefix    string
-	NameTemplate string `json:",omitempty"`
-	ProtoName    string
-	ProtoFile    string `json:",omitempty"`
-	GoType       string `json:",omitempty"`
-	PkgPath      string `json:",omitempty"`
-}
-
 type ModelListOptions struct {
-	Class string
+	Class  string
+	Module string
 }
 
 type SchedulerDumpOptions struct {
@@ -44,4 +31,8 @@ type SchedulerValuesOptions struct {
 type SchedulerResyncOptions struct {
 	Retry   bool
 	Verbose bool
+}
+
+type SchedulerHistoryOptions struct {
+	Count int
 }

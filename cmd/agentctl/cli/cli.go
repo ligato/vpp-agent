@@ -221,19 +221,19 @@ func buildClientOptions(cfg *Config) []client.Opt {
 func (cli *AgentCli) initializeFromClient() {
 	logging.Debugf("initializeFromClient (DefaultVersion: %v)", cli.DefaultVersion())
 
-	ping, err := cli.client.Ping(context.Background())
+	version, err := cli.client.AgentVersion(context.Background())
 	if err != nil {
 		// Default to true if we fail to connect to daemon
 		cli.serverInfo = ServerInfo{}
 
-		if ping.APIVersion != "" {
-			cli.client.NegotiateAPIVersionPing(ping)
+		if version.APIVersion != "" {
+			cli.client.NegotiateAPIVersionPing(version)
 		}
 		return
 	}
 
 	cli.serverInfo = ServerInfo{
-		OSType: ping.OSType,
+		OSType: version.OSType,
 	}
-	cli.client.NegotiateAPIVersionPing(ping)
+	cli.client.NegotiateAPIVersionPing(version)
 }

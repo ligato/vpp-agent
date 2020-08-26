@@ -51,6 +51,7 @@ func NewRoot(agentCli *cli.AgentCli) *Root {
 func AddBaseCommands(cmd *cobra.Command, cli cli.Cli) {
 	cmd.AddCommand(
 		NewConfigCommand(cli),
+		newModelsCommand(cli),
 		NewModelCommand(cli),
 		NewLogCommand(cli),
 		NewImportCommand(cli),

@@ -35,56 +35,59 @@ import (
 	"go.ligato.io/vpp-agent/v3/pkg/models"
 )
 
+const (
+	defaultTimeout = time.Second * 30
+	defaultTxOps   = 128
+)
+
 func NewImportCommand(cli agentcli.Cli) *cobra.Command {
 	var (
 		opts    ImportOptions
 		timeout uint
 	)
 	cmd := &cobra.Command{
-		Use:   "import file",
+		Use:   "import FILE",
 		Args:  cobra.ExactArgs(1),
 		Short: "Import config data from file",
-		Example: `
- To import file contents into Etcd, run:
-  $ cat input.txt
-  config/vpp/v2/interfaces/loop1 {"name":"loop1","type":"SOFTWARE_LOOPBACK"}
-  config/vpp/l2/v2/bridge-domain/bd1 {"name":"bd1"}
-  
-  $ {{.CommandPath}} input.txt
+		Long: `Import config data from file into Etcd or via gRPC. 
+FILE FORMAT
+  Contents of the import file must contain single key-value pair per line:
 
- To import it via gRPC, include --grpc flag:
-  $ {{.CommandPath}} --grpc=localhost:9111 input.txt
-
- FILE FORMAT
-    Contents of the import file must contain single key-value pair per line:
-
-    <key1> <value1>
+	<key1> <value1>
     <key2> <value2>
     ...
     <keyN> <valueN>
 
-    Empty lines and lines starting with '#' are ignored.
+    NOTE: Empty lines and lines starting with '#' are ignored.
 
- KEY FORMAT
+  Sample file:
+  	config/vpp/v2/interfaces/loop1 {"name":"loop1","type":"SOFTWARE_LOOPBACK"}
+  	config/vpp/l2/v2/bridge-domain/bd1 {"name":"bd1"}
+
+KEY FORMAT
     Keys can be defined in two ways:
 
-    - full: 	/vnf-agent/vpp1/config/vpp/v2/interfaces/iface1
-    - short:	config/vpp/v2/interfaces/iface1
+    - Full  - /vnf-agent/vpp1/config/vpp/v2/interfaces/iface1
+    - Short - config/vpp/v2/interfaces/iface1
  
-    For short keys, the import command uses microservice label defined with --service-label.`,
+    When using short keys, import will use configured microservice label (e.g. --service-label flag).`,
+		Example: `  
+  Import data into Etcd:
+	{{.CommandPath}} input.txt
 
+  Import data directly into agent via gRPC::
+	{{.CommandPath}} --grpc input.txt
+`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			opts.InputFile = args[0]
-			opts.Timeout = time.Second * time.Duration(timeout)
+			opts.Timeout = time.Duration(timeout)
 			return RunImport(cli, opts)
 		},
 	}
-
 	flags := cmd.Flags()
-	flags.UintVar(&opts.TxOps, "txops", 128, "Number of ops per transaction")
-	flags.UintVarP(&timeout, "time", "t", 30, "Timeout (in seconds) to wait for server response")
-	flags.BoolVar(&opts.ViaGrpc, "grpc", false, "Enable to import config via gRPC")
-
+	flags.UintVar(&opts.TxOps, "txops", defaultTxOps, "Number of ops per transaction")
+	flags.DurationVarP(&opts.Timeout, "time", "t", defaultTimeout, "Timeout to wait for server response")
+	flags.BoolVar(&opts.ViaGrpc, "grpc", false, "Import config directly to agent via gRPC")
 	return cmd
 }
 
@@ -100,22 +103,19 @@ func RunImport(cli agentcli.Cli, opts ImportOptions) error {
 	if err != nil {
 		return fmt.Errorf("parsing import data failed: %v", err)
 	}
+	fmt.Printf("importing %d key-value pairs\n", len(keyVals))
 
 	if opts.ViaGrpc {
 		// Set up a connection to the server.
-		c, err := cli.Client().ConfigClient()
+		c, err := cli.Client().GenericClient()
 		if err != nil {
 			return err
 		}
-
-		fmt.Printf("importing %d key vals\n", len(keyVals))
-
 		req := c.ChangeRequest()
 		for _, keyVal := range keyVals {
 			fmt.Printf(" - %s\n", keyVal.Key)
 			req.Update(keyVal.Val)
 		}
-
 		fmt.Printf("sending via gRPC\n")
 
 		ctx, cancel := context.WithTimeout(context.Background(), opts.Timeout)
@@ -124,16 +124,12 @@ func RunImport(cli agentcli.Cli, opts ImportOptions) error {
 		if err := req.Send(ctx); err != nil {
 			return fmt.Errorf("send failed: %v", err)
 		}
-
 	} else {
 		c, err := cli.Client().KVDBClient()
 		if err != nil {
 			return fmt.Errorf("KVDB error: %v", err)
 		}
 		db := c.ProtoBroker()
-
-		fmt.Printf("importing %d key vals\n", len(keyVals))
-
 		var txn = db.NewTxn()
 		ops := 0
 		for i := 0; i < len(keyVals); i++ {
@@ -142,21 +138,18 @@ func RunImport(cli agentcli.Cli, opts ImportOptions) error {
 			if err != nil {
 				return fmt.Errorf("key processing failed: %v", err)
 			}
-
 			fmt.Printf(" - %s\n", key)
 			txn.Put(key, keyVal.Val)
 			ops++
 
 			if ops == int(opts.TxOps) || i+1 == len(keyVals) {
 				fmt.Printf("commiting tx with %d ops\n", ops)
-
 				ctx, cancel := context.WithTimeout(context.Background(), opts.Timeout)
 				err = txn.Commit(ctx)
 				cancel()
 				if err != nil {
 					return fmt.Errorf("commit failed: %v", err)
 				}
-
 				ops = 0
 				txn = db.NewTxn()
 			}
@@ -184,7 +177,6 @@ func parseImportFile(importFile string) (keyVals []keyVal, err error) {
 		if bytes.HasPrefix(line, []byte("#")) {
 			continue
 		}
-
 		parts := bytes.SplitN(line, []byte(" "), 2)
 		if len(parts) < 2 {
 			continue
@@ -194,16 +186,13 @@ func parseImportFile(importFile string) (keyVals []keyVal, err error) {
 		if key == "" || data == "" {
 			continue
 		}
-
 		logrus.Debugf("parse line: %s %s\n", key, data)
 
 		//key = completeFullKey(key)
-
 		val, err := unmarshalKeyVal(key, data)
 		if err != nil {
 			return nil, fmt.Errorf("decoding value failed: %v", err)
 		}
-
 		logrus.Debugf("KEY: %s - %v\n", key, val)
 		keyVals = append(keyVals, keyVal{key, val})
 	}

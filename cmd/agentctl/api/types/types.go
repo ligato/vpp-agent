@@ -26,22 +26,35 @@ type Version struct {
 	Version   string
 	GitCommit string
 	GitBranch string
+
 	BuildUser string
 	BuildHost string
 	BuildTime int64
+
 	GoVersion string
 	OS        string
 	Arch      string
-}
 
-// Ping contains response of Engine API:
-// GET "/_ping"
-type Ping struct {
 	APIVersion string
 	OSType     string
 }
 
 type Logger struct {
-	Logger string `json:"logger,omitempty"`
+	Logger string
 	Level  string `json:"level,omitempty"`
+}
+
+// Model provides info about registered model.
+type Model struct {
+	Name         string
+	Class        string
+	Module       string
+	Type         string
+	Version      string
+	KeyPrefix    string
+	NameTemplate string `json:",omitempty"`
+	ProtoName    string
+	ProtoFile    string `json:",omitempty"`
+	GoType       string `json:",omitempty"`
+	PkgPath      string `json:",omitempty"`
 }

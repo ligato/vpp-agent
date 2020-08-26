@@ -14,7 +14,7 @@ import (
 )
 
 func (c *Client) ModelList(ctx context.Context, opts types.ModelListOptions) ([]types.Model, error) {
-	cfgClient, err := c.ConfigClient()
+	cfgClient, err := c.GenericClient()
 	if err != nil {
 		return nil, err
 	}
@@ -22,18 +22,30 @@ func (c *Client) ModelList(ctx context.Context, opts types.ModelListOptions) ([]
 	if err != nil {
 		return nil, err
 	}
-
 	logrus.Debugf("retrieved %d known models", len(knownModels))
 	if debug.IsEnabledFor("models") {
 		for _, m := range knownModels {
-			logrus.Debug(" - ", proto.CompactTextString(m))
+			logrus.Trace(" - ", proto.CompactTextString(m))
 		}
 	}
-
 	allModels := convertModels(knownModels)
-	sort.Sort(modelsByName(allModels))
 
-	return allModels, nil
+	return sortModels(allModels), nil
+}
+
+// sortModels sorts models in this order:
+//	Class > Name > Version
+func sortModels(list []types.Model) []types.Model {
+	sort.Slice(list, func(i, j int) bool {
+		if list[i].Class != list[j].Class {
+			return list[i].Class < list[j].Class
+		}
+		if list[i].Name != list[j].Name {
+			return list[i].Name < list[j].Name
+		}
+		return list[i].Version < list[j].Version
+	})
+	return list
 }
 
 func convertModels(knownModels []*generic.ModelDetail) []types.Model {
@@ -64,7 +76,6 @@ func convertModels(knownModels []*generic.ModelDetail) []types.Model {
 				protoFile = o.Values[0]
 			}
 		}
-
 		// fix key prefixes for models with no template
 		if nameTemplate == "" {
 			km, err := models.GetModel(spec.ModelName())
@@ -73,7 +84,6 @@ func convertModels(knownModels []*generic.ModelDetail) []types.Model {
 				keyPrefix = km.KeyPrefix()
 			}
 		}
-
 		model := types.Model{
 			Name:         spec.ModelName(),
 			Module:       spec.Module,
@@ -90,18 +100,4 @@ func convertModels(knownModels []*generic.ModelDetail) []types.Model {
 		allModels[i] = model
 	}
 	return allModels
-}
-
-type modelsByName []types.Model
-
-func (s modelsByName) Len() int {
-	return len(s)
-}
-
-func (s modelsByName) Less(i, j int) bool {
-	return s[i].Name < s[j].Name
-}
-
-func (s modelsByName) Swap(i, j int) {
-	s[i], s[j] = s[j], s[i]
 }

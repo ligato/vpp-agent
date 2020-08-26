@@ -29,7 +29,6 @@ const logo = `
  / _ '/ _ '/ -_) _ \/ __/ __/ __/ / 
  \_,_/\_, /\__/_//_/\__/\__/\__/_/  
      /___/
-
 `
 
 func runAgentctl(cli *agentcli.AgentCli) error {
@@ -46,7 +45,7 @@ func main() {
 	cli := commands.NewAgentCli()
 
 	if err := runAgentctl(cli); err != nil {
-		fmt.Fprintln(cli.Err(), err)
+		fmt.Fprintf(cli.Err(), "\nERROR: %v\n", err)
 		os.Exit(commands.ExitCode(err))
 	}
 }

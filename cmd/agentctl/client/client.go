@@ -28,19 +28,19 @@ import (
 
 	"github.com/coreos/etcd/clientv3"
 	"github.com/docker/docker/api/types/versions"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
-
 	"go.ligato.io/cn-infra/v2/db/keyval"
 	"go.ligato.io/cn-infra/v2/db/keyval/etcd"
 	"go.ligato.io/cn-infra/v2/logging"
 	"go.ligato.io/cn-infra/v2/logging/logrus"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 
 	"go.ligato.io/vpp-agent/v3/client"
 	"go.ligato.io/vpp-agent/v3/client/remoteclient"
 	"go.ligato.io/vpp-agent/v3/cmd/agentctl/api"
 	"go.ligato.io/vpp-agent/v3/cmd/agentctl/api/types"
 	"go.ligato.io/vpp-agent/v3/pkg/debug"
+	"go.ligato.io/vpp-agent/v3/proto/ligato/configurator"
 )
 
 const (
@@ -107,16 +107,13 @@ func NewClientWithOpts(ops ...Opt) (*Client, error) {
 		grpcPort: DefaultPortGRPC,
 		httpPort: DefaultPortHTTP,
 	}
-
 	for _, op := range ops {
 		if err := op(c); err != nil {
 			return nil, err
 		}
 	}
-
 	c.grpcAddr = net.JoinHostPort(c.host, strconv.Itoa(c.grpcPort))
 	c.httpAddr = net.JoinHostPort(c.host, strconv.Itoa(c.httpPort))
-
 	return c, nil
 }
 
@@ -155,13 +152,21 @@ func (c *Client) GRPCConn() (*grpc.ClientConn, error) {
 	return c.grpcClient, nil
 }
 
-// ConfigClient returns "remoteclient" with gRPC connection.
-func (c *Client) ConfigClient() (client.ConfigClient, error) {
+func (c *Client) GenericClient() (client.GenericClient, error) {
 	conn, err := c.GRPCConn()
 	if err != nil {
 		return nil, err
 	}
 	return remoteclient.NewClientGRPC(conn), nil
+}
+
+// ConfiguratorClient returns "confi" with gRPC connection.
+func (c *Client) ConfiguratorClient() (configurator.ConfiguratorServiceClient, error) {
+	conn, err := c.GRPCConn()
+	if err != nil {
+		return nil, err
+	}
+	return configurator.NewConfiguratorServiceClient(conn), nil
 }
 
 // HTTPClient returns configured HTTP client.
@@ -231,12 +236,12 @@ func (c *Client) getAPIPath(ctx context.Context, p string, query url.Values) str
 
 func (c *Client) NegotiateAPIVersion(ctx context.Context) {
 	if !c.manualOverride {
-		ping, _ := c.Ping(ctx)
-		c.negotiateAPIVersionPing(ping)
+		version, _ := c.AgentVersion(ctx)
+		c.negotiateAPIVersionPing(version)
 	}
 }
 
-func (c *Client) NegotiateAPIVersionPing(p types.Ping) {
+func (c *Client) NegotiateAPIVersionPing(p *types.Version) {
 	if !c.manualOverride {
 		c.negotiateAPIVersionPing(p)
 	}
@@ -244,22 +249,19 @@ func (c *Client) NegotiateAPIVersionPing(p types.Ping) {
 
 // negotiateAPIVersionPing queries the API and updates the version to match the
 // API version. Any errors are silently ignored.
-func (c *Client) negotiateAPIVersionPing(p types.Ping) {
+func (c *Client) negotiateAPIVersionPing(p *types.Version) {
 	// try the latest version before versioning headers existed
 	if p.APIVersion == "" {
 		p.APIVersion = "0.1"
 	}
-
 	// if the client is not initialized with a version, start with the latest supported version
 	if c.version == "" {
 		c.version = api.DefaultVersion
 	}
-
 	// if server version is lower than the client version, downgrade
 	if versions.LessThan(p.APIVersion, c.version) {
 		c.version = p.APIVersion
 	}
-
 	// Store the results, so that automatic API version negotiation (if enabled)
 	// won't be performed on the next request.
 	if c.negotiateVersion {
@@ -272,9 +274,7 @@ func connectGrpc(addr string, tc *tls.Config) (*grpc.ClientConn, error) {
 	if tc != nil {
 		dialOpt = grpc.WithTransportCredentials(credentials.NewTLS(tc))
 	}
-
 	logging.Debugf("dialing grpc address: %v", addr)
-
 	return grpc.Dial(addr, dialOpt)
 }
 
@@ -285,12 +285,10 @@ func connectEtcd(endpoints []string, dialTimeout time.Duration, tc *tls.Config) 
 	} else {
 		log.SetLevel(logging.WarnLevel)
 	}
-
 	dt := defaultEtcdDialTimeout
 	if dialTimeout != 0 {
 		dt = dialTimeout
 	}
-
 	cfg := etcd.ClientConfig{
 		Config: &clientv3.Config{
 			Endpoints:   endpoints,
@@ -299,7 +297,6 @@ func connectEtcd(endpoints []string, dialTimeout time.Duration, tc *tls.Config) 
 		},
 		OpTimeout: defaultEtcdOpTimeout,
 	}
-
 	kvdb, err := etcd.NewEtcdConnectionWithBytes(cfg, log)
 	if err != nil {
 		return nil, err

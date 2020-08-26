@@ -23,8 +23,10 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/ghodss/yaml"
-	"github.com/golang/protobuf/proto"
+	"github.com/goccy/go-yaml"
+	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/encoding/prototext"
+	"google.golang.org/protobuf/proto"
 )
 
 var tmplFuncs = template.FuncMap{
@@ -36,11 +38,7 @@ var tmplFuncs = template.FuncMap{
 }
 
 func formatAsTemplate(w io.Writer, format string, data interface{}) error {
-	t := template.New("format")
-	t.Funcs(tmplFuncs)
-
 	var b bytes.Buffer
-
 	switch strings.ToLower(format) {
 	case "json":
 		b.WriteString(jsonTmpl(data))
@@ -49,6 +47,8 @@ func formatAsTemplate(w io.Writer, format string, data interface{}) error {
 	case "proto":
 		b.WriteString(protoTmpl(data))
 	default:
+		t := template.New("format")
+		t.Funcs(tmplFuncs)
 		if _, err := t.Parse(format); err != nil {
 			return fmt.Errorf("parsing format template failed: %v", err)
 		}
@@ -56,32 +56,51 @@ func formatAsTemplate(w io.Writer, format string, data interface{}) error {
 			return fmt.Errorf("executing format template failed: %v", err)
 		}
 	}
-
 	_, err := b.WriteTo(w)
 	return err
 }
 
+func jsonTmpl(data interface{}) string {
+	b := encodeJson(data, "  ")
+	return string(b)
+}
+
 func yamlTmpl(data interface{}) string {
-	var b bytes.Buffer
-	encoder := json.NewEncoder(&b)
-	if err := encoder.Encode(data); err != nil {
-		panic(err)
-	}
-	bb, err := yaml.JSONToYAML(b.Bytes())
+	out := encodeJson(data, "")
+	bb, err := jsonToYaml(out)
 	if err != nil {
 		panic(err)
 	}
 	return string(bb)
 }
 
-func jsonTmpl(data interface{}) string {
+func encodeJson(data interface{}, ident string) []byte {
+	if msg, ok := data.(proto.Message); ok {
+		m := protojson.MarshalOptions{
+			Indent: ident,
+		}
+		b, err := m.Marshal(msg)
+		if err != nil {
+			panic(err)
+		}
+		return b
+	}
 	var b bytes.Buffer
 	encoder := json.NewEncoder(&b)
-	encoder.SetIndent("", "  ")
+	encoder.SetIndent("", ident)
 	if err := encoder.Encode(data); err != nil {
 		panic(err)
 	}
-	return b.String()
+	return b.Bytes()
+}
+
+func jsonToYaml(j []byte) ([]byte, error) {
+	var jsonObj interface{}
+	err := yaml.UnmarshalWithOptions(j, &jsonObj, yaml.UseOrderedMap())
+	if err != nil {
+		return nil, err
+	}
+	return yaml.Marshal(jsonObj)
 }
 
 func protoTmpl(data interface{}) string {
@@ -89,12 +108,11 @@ func protoTmpl(data interface{}) string {
 	if !ok {
 		panic(fmt.Sprintf("%T is not a proto message", data))
 	}
-	var b bytes.Buffer
-	m := proto.TextMarshaler{}
-	if err := m.Marshal(&b, pb); err != nil {
+	out, err := prototext.Marshal(pb)
+	if err != nil {
 		panic(err)
 	}
-	return b.String()
+	return string(out)
 }
 
 func epochTmpl(s int64) time.Time {

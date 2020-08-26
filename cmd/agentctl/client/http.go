@@ -98,12 +98,10 @@ func (c *Client) sendRequest(ctx context.Context, method, path string, query url
 	if err != nil {
 		return serverResponse{}, err
 	}
-
 	resp, err := c.doRequest(ctx, req)
 	if err != nil {
 		return resp, err
 	}
-
 	err = c.checkResponseErr(resp)
 	return resp, err
 }
@@ -113,7 +111,6 @@ func (c *Client) doRequest(ctx context.Context, req *http.Request) (serverRespon
 		statusCode: -1,
 		reqURL:     req.URL,
 	}
-
 	var (
 		err  error
 		resp *http.Response
@@ -138,7 +135,6 @@ func (c *Client) doRequest(ctx context.Context, req *http.Request) (serverRespon
 		if c.scheme != "https" && strings.Contains(err.Error(), "malformed HTTP response") {
 			return serverResp, fmt.Errorf("%v.\n* Are you trying to connect to a TLS-enabled daemon without TLS?", err)
 		}
-
 		if c.scheme == "https" && strings.Contains(err.Error(), "bad certificate") {
 			return serverResp, errors.Wrap(err, "The server probably has client authentication (--tlsverify) enabled. Please check your TLS client certification settings")
 		}
@@ -166,7 +162,6 @@ func (c *Client) doRequest(ctx context.Context, req *http.Request) (serverRespon
 				}
 			}
 		}
-
 		return serverResp, errors.Wrap(err, "error during connect")
 	}
 	if logrus.IsLevelEnabled(logrus.DebugLevel) {
@@ -191,7 +186,6 @@ func (c *Client) checkResponseErr(serverResp serverResponse) error {
 	if serverResp.statusCode >= 200 && serverResp.statusCode < 400 {
 		return nil
 	}
-
 	var body []byte
 	var err error
 	if serverResp.body != nil {
@@ -213,12 +207,10 @@ func (c *Client) checkResponseErr(serverResp serverResponse) error {
 		return fmt.Errorf("request returned %s for API route and version %s, check if the server supports the requested API version",
 			http.StatusText(serverResp.statusCode), serverResp.reqURL)
 	}
-
 	var ct string
 	if serverResp.header != nil {
 		ct = serverResp.header.Get("Content-Type")
 	}
-
 	var errorMsg string
 	if ct == "application/json" {
 		var errorResponse types.ErrorResponse
@@ -229,7 +221,6 @@ func (c *Client) checkResponseErr(serverResp serverResponse) error {
 	} else {
 		errorMsg = string(body)
 	}
-
 	errorMsg = fmt.Sprintf("[%d] %s", serverResp.statusCode, strings.TrimSpace(errorMsg))
 
 	return errors.Wrap(errors.New(errorMsg), "Error response from daemon")
