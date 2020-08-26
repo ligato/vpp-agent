@@ -26,8 +26,12 @@ type ModelInfo = generic.ModelDetail
 
 type StateItem = generic.StateItem
 
-// ConfigClient defines the client-side interface for config.
-type ConfigClient interface {
+// ConfigClient ...
+// Deprecated: use GenericClient instead
+type ConfigClient = GenericClient
+
+// GenericClient is the client-side interface for generic handler.
+type GenericClient interface {
 	// KnownModels retrieves list of known modules.
 	KnownModels(class string) ([]*ModelInfo, error)
 
