@@ -85,7 +85,7 @@ func (t *TxnType) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func txnTypeToString(t TxnType) string {
+func TxnTypeToString(t TxnType) string {
 	switch t {
 	case NBTransaction:
 		return "NB Transaction"
@@ -97,7 +97,7 @@ func txnTypeToString(t TxnType) string {
 	return t.String()
 }
 
-func resyncTypeToString(t ResyncType) string {
+func ResyncTypeToString(t ResyncType) string {
 	switch t {
 	case NotResync:
 		return "Not Resync"
@@ -141,13 +141,15 @@ type RecordedTxnOp struct {
 	Key       string
 
 	// changes
-	NewState  kvscheduler.ValueState      `json:",omitempty"`
-	NewValue  *utils.RecordedProtoMessage `json:",omitempty"`
-	NewErr    error                       `json:",omitempty"`
-	PrevState kvscheduler.ValueState      `json:",omitempty"`
-	PrevValue *utils.RecordedProtoMessage `json:",omitempty"`
-	PrevErr   error                       `json:",omitempty"`
-	NOOP      bool                        `json:",omitempty"`
+	NewState   kvscheduler.ValueState      `json:",omitempty"`
+	NewValue   *utils.RecordedProtoMessage `json:",omitempty"`
+	NewErr     error                       `json:"-"`
+	NewErrMsg  string                      `json:",omitempty"`
+	PrevState  kvscheduler.ValueState      `json:",omitempty"`
+	PrevValue  *utils.RecordedProtoMessage `json:",omitempty"`
+	PrevErr    error                       `json:"-"`
+	PrevErrMsg string                      `json:",omitempty"`
+	NOOP       bool                        `json:",omitempty"`
 
 	// flags
 	IsDerived  bool `json:",omitempty"`
@@ -187,13 +189,13 @@ func (txn *RecordedTxn) StringWithOpts(resultOnly, verbose bool, indent int) str
 		str += indent1 + "* transaction arguments:\n"
 		str += indent2 + fmt.Sprintf("- seqNum: %d\n", txn.SeqNum)
 		if txn.TxnType == NBTransaction && txn.ResyncType != NotResync {
-			str += indent2 + fmt.Sprintf("- type: %s, %s\n", txnTypeToString(txn.TxnType), resyncTypeToString(txn.ResyncType))
+			str += indent2 + fmt.Sprintf("- type: %s, %s\n", TxnTypeToString(txn.TxnType), ResyncTypeToString(txn.ResyncType))
 		} else {
 			if txn.TxnType == RetryFailedOps {
 				str += indent2 + fmt.Sprintf("- type: %s (for txn %d, attempt #%d)\n",
-					txnTypeToString(txn.TxnType), txn.RetryForTxn, txn.RetryAttempt)
+					TxnTypeToString(txn.TxnType), txn.RetryForTxn, txn.RetryAttempt)
 			} else {
-				str += indent2 + fmt.Sprintf("- type: %s\n", txnTypeToString(txn.TxnType))
+				str += indent2 + fmt.Sprintf("- type: %s\n", TxnTypeToString(txn.TxnType))
 			}
 		}
 		if txn.Description != "" {

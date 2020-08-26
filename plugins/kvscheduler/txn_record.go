@@ -87,12 +87,17 @@ func (s *Scheduler) preRecordTxnOp(args *applyValueArgs, node graph.Node) *kvs.R
 		prevOrigin = args.kv.origin
 	}
 	_, prevErr := getNodeError(node)
+	var prevErrMsg string
+	if prevErr != nil {
+		prevErrMsg = prevErr.Error()
+	}
 	return &kvs.RecordedTxnOp{
 		Key:        args.kv.key,
 		PrevValue:  prevValue,
 		NewValue:   utils.RecordProtoMessage(args.kv.value),
 		PrevState:  getNodeState(node),
 		PrevErr:    prevErr,
+		PrevErrMsg: prevErrMsg,
 		IsDerived:  args.isDerived,
 		IsProperty: args.isDerived && s.registry.GetDescriptorForKey(args.kv.key) == nil,
 		IsRevert:   args.kv.isRevert,

@@ -300,6 +300,7 @@ func (s *Scheduler) applyDelete(node graph.NodeRW, txnOp *kvs.RecordedTxnOp, arg
 			}
 		} else {
 			txnOp.NewErr = err
+			txnOp.NewErrMsg = err.Error()
 			txnOp.NewState = s.markFailedValue(node, args, err, retriableErr)
 			if !args.applied.Has(getNodeBaseKey(node)) {
 				// value removal not originating from this transaction
@@ -409,6 +410,7 @@ func (s *Scheduler) applyCreate(node graph.NodeRW, txnOp *kvs.RecordedTxnOp, arg
 		if err != nil {
 			node.SetFlags(&UnavailValueFlag{})
 			txnOp.NewErr = err
+			txnOp.NewErrMsg = err.Error()
 			txnOp.NewState = kvscheduler.ValueState_INVALID
 			txnOp.NOOP = true
 			s.updateNodeState(node, txnOp.NewState, args)
@@ -456,6 +458,7 @@ func (s *Scheduler) applyCreate(node graph.NodeRW, txnOp *kvs.RecordedTxnOp, arg
 			node.SetFlags(&UnavailValueFlag{})
 			retriableErr := handler.isRetriableFailure(err)
 			txnOp.NewErr = err
+			txnOp.NewErrMsg = err.Error()
 			txnOp.NewState = s.markFailedValue(node, args, err, retriableErr)
 			if !args.applied.Has(getNodeBaseKey(node)) {
 				// value not originating from this transaction
@@ -525,6 +528,7 @@ func (s *Scheduler) applyUpdate(node graph.NodeRW, txnOp *kvs.RecordedTxnOp, arg
 			node.SetValue(args.kv.value) // save the invalid value
 			node.SetFlags(&UnavailValueFlag{})
 			txnOp.NewErr = err
+			txnOp.NewErrMsg = err.Error()
 			txnOp.NewState = kvscheduler.ValueState_INVALID
 			txnOp.NOOP = true
 			s.updateNodeState(node, txnOp.NewState, args)
@@ -611,6 +615,7 @@ func (s *Scheduler) applyUpdate(node graph.NodeRW, txnOp *kvs.RecordedTxnOp, arg
 		if err != nil {
 			retriableErr := handler.isRetriableFailure(err)
 			txnOp.NewErr = err
+			txnOp.NewErrMsg = err.Error()
 			txnOp.NewState = s.markFailedValue(node, args, err, retriableErr)
 			executed = append(executed, txnOp)
 			if !args.applied.Has(getNodeBaseKey(node)) {
@@ -826,6 +831,9 @@ func (s *Scheduler) compressTxnOps(executed kvs.RecordedTxnOps) kvs.RecordedTxnO
 						compressedOp = true
 						executed[j].PrevValue = op.PrevValue
 						executed[j].PrevErr = op.PrevErr
+						if op.PrevErr!=nil {
+							executed[j].PrevErrMsg = op.PrevErr.Error()
+						}
 						executed[j].PrevState = op.PrevState
 					}
 					break
@@ -850,6 +858,9 @@ func (s *Scheduler) compressTxnOps(executed kvs.RecordedTxnOps) kvs.RecordedTxnO
 						compressedOp = true
 						compressed[j].NewValue = op.NewValue
 						compressed[j].NewErr = op.NewErr
+						if op.NewErr != nil {
+							compressed[j].NewErrMsg = op.NewErr.Error()
+						}
 						compressed[j].NewState = op.NewState
 					}
 					break
