@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/pkg/errors"
 	"go.ligato.io/cn-infra/v2/logging"
 	"go.ligato.io/cn-infra/v2/utils/addrs"
 
@@ -101,7 +102,10 @@ func (d *TeibDescriptor) Retrieve(correlate []adapter.TeibEntryKVWithMetadata) (
 	retrieved []adapter.TeibEntryKVWithMetadata, err error,
 ) {
 	entries, err := d.teibHandler.DumpTeib()
-	if err != nil {
+	if errors.Is(err, vppcalls.ErrTeibUnsupported) {
+		d.log.Debug("DumpTeib failed:", err)
+		return nil, nil
+	} else if err != nil {
 		return nil, err
 	}
 	for _, entry := range entries {

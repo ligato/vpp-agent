@@ -95,14 +95,14 @@ func (h *InterfaceVppHandler) dumpInterfaces(ifIdxs ...uint32) (map[uint32]*vppc
 			return nil, fmt.Errorf("failed to dump interface: %v", err)
 		}
 
-		ifaceName := strings.TrimRight(ifDetails.InterfaceName, "\x00")
+		internalName := strings.TrimRight(ifDetails.InterfaceName, "\x00")
 		l2addr := net.HardwareAddr(ifDetails.L2Address[:ifDetails.L2AddressLength])
 
 		details := &vppcalls.InterfaceDetails{
 			Interface: &interfaces.Interface{
 				Name: strings.TrimRight(ifDetails.Tag, "\x00"),
 				// the type may be amended later by further dumps
-				Type:        guessInterfaceType(ifaceName),
+				Type:        guessInterfaceType(internalName),
 				Enabled:     ifDetails.AdminUpDown > 0,
 				PhysAddress: net.HardwareAddr(ifDetails.L2Address[:ifDetails.L2AddressLength]).String(),
 				Mtu:         getMtu(ifDetails.LinkMtu),
@@ -111,7 +111,7 @@ func (h *InterfaceVppHandler) dumpInterfaces(ifIdxs ...uint32) (map[uint32]*vppc
 				SwIfIndex:      ifDetails.SwIfIndex,
 				SupSwIfIndex:   ifDetails.SupSwIfIndex,
 				L2Address:      l2addr,
-				InternalName:   ifaceName,
+				InternalName:   internalName,
 				IsAdminStateUp: uintToBool(ifDetails.AdminUpDown),
 				IsLinkStateUp:  uintToBool(ifDetails.LinkUpDown),
 				LinkDuplex:     uint32(ifDetails.LinkDuplex),
@@ -140,18 +140,18 @@ func (h *InterfaceVppHandler) dumpInterfaces(ifIdxs ...uint32) (map[uint32]*vppc
 		// Fill name for physical interfaces (they are mostly without tag)
 		switch details.Interface.Type {
 		case interfaces.Interface_DPDK:
-			details.Interface.Name = ifaceName
+			details.Interface.Name = internalName
 		case interfaces.Interface_AF_PACKET:
 			details.Interface.Link = &interfaces.Interface_Afpacket{
 				Afpacket: &interfaces.AfpacketLink{
-					HostIfName: strings.TrimPrefix(ifaceName, "host-"),
+					HostIfName: strings.TrimPrefix(internalName, "host-"),
 				},
 			}
 		}
 		if details.Interface.Name == "" {
 			// untagged interface - generate a logical name for it
 			// (apart from local0 it will get removed by resync)
-			details.Interface.Name = untaggedIfPreffix + ifaceName
+			details.Interface.Name = untaggedIfPreffix + internalName
 		}
 		ifs[ifDetails.SwIfIndex] = details
 	}

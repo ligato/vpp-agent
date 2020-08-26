@@ -45,7 +45,10 @@ import (
 )
 
 func init() {
-	kvscheduler.AddNonRetryableError(vppcalls.ErrIPNeighborNotImplemented)
+	kvscheduler.AddNonRetryableError(
+		vppcalls.ErrIPNeighborNotImplemented,
+		vppcalls.ErrTeibUnsupported,
+	)
 }
 
 // L3Plugin configures Linux routes and ARP entries using Netlink API.
