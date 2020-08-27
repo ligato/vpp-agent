@@ -31,6 +31,9 @@ func (s *statsPollerServer) PollStats(req *configurator.PollStatsRequest, svr co
 	if req.GetPeriodSec() == 0 && req.GetNumPolls() > 1 {
 		return status.Error(codes.InvalidArgument, "period must be > 0 if number of polls is > 1")
 	}
+	if s.handler == nil {
+		return status.Errorf(codes.Unavailable, "VPP telemetry handler not available")
+	}
 
 	ctx := svr.Context()
 
