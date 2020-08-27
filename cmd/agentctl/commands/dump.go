@@ -191,10 +191,11 @@ func printDumpTable(out io.Writer, dump []api.KVWithMetadata) {
 		"Model", "Origin", "Value", "Metadata", "Key",
 	})
 	table.SetAutoMergeCells(true)
+	table.SetAutoWrapText(false)
 	table.SetRowLine(true)
 
 	for _, d := range dump {
-		val := proto.MarshalTextString(d.Value)
+		val := yamlTmpl(d.Value)
 		var meta string
 		if d.Metadata != nil {
 			meta = yamlTmpl(d.Metadata)
@@ -211,7 +212,7 @@ func printDumpTable(out io.Writer, dump []api.KVWithMetadata) {
 				name = d.Key
 			}
 		}
-		val = fmt.Sprintf("[%s]\n%s", proto.MessageName(d.Value), val)
+		val = fmt.Sprintf("# %s\n%s", proto.MessageName(d.Value), val)
 		var row []string
 		row = []string{
 			model,
