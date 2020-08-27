@@ -43,6 +43,7 @@ import (
 	_ "go.ligato.io/vpp-agent/v3/plugins/telemetry/vppcalls/vpp1908"
 	_ "go.ligato.io/vpp-agent/v3/plugins/telemetry/vppcalls/vpp2001"
 	_ "go.ligato.io/vpp-agent/v3/plugins/telemetry/vppcalls/vpp2005"
+	_ "go.ligato.io/vpp-agent/v3/plugins/telemetry/vppcalls/vpp2009"
 )
 
 var debug = os.Getenv("DEBUG_TELEMETRY") != ""
@@ -167,7 +168,6 @@ func (p *Plugin) setupStatsPoller() error {
 	if p.GRPC != nil && p.GRPC.GetServer() != nil {
 		configurator.RegisterStatsPollerServiceServer(p.GRPC.GetServer(), &p.statsPollerServer)
 	}
-
 	return nil
 }
 
