@@ -68,7 +68,7 @@ func TestAgentCtlCommands(t *testing.T) {
 			name:           "Test `dump` action with bad model",
 			cmd:            "dump NoSuchModel",
 			expectErr:      true,
-			expectInStderr: "no models found for [\"NoSuchModel\"]",
+			expectInStderr: "no matching models found for [\"NoSuchModel\"]",
 		},
 		{
 			name:           "Test `dump` action with one bad model",
@@ -83,7 +83,7 @@ func TestAgentCtlCommands(t *testing.T) {
 		{
 			name:           "Test `dump --view=NB` action",
 			cmd:            "dump vpp.interfaces --view=NB",
-			expectReStdout: `KEY\s+VALUE\s+ORIGIN\s+METADATA`,
+			expectReStdout: `MODEL[\s\|]+ORIGIN[\s\|]+VALUE[\s\|]+METADATA`,
 		},
 		{
 			name:           "Test `dump --view=cached` action",
@@ -100,7 +100,6 @@ func TestAgentCtlCommands(t *testing.T) {
 			cmd:            "dump vpp.interfaces -f=yaml",
 			expectReStdout: `Value:\s+name: UNTAGGED-local0`,
 		},
-
 		{
 			name:         "Test `dump` with custom format",
 			cmd:          `dump vpp.interfaces -f "{{range.}}Name:{{.Value.Name}}{{end}}"`,
@@ -241,37 +240,26 @@ func TestAgentCtlCommands(t *testing.T) {
 					test.cmd, err, stderr,
 				)
 			}
-
 			// Check STDOUT:
 			if test.expectNotEmptyStdout {
 				Expect(len(stdout)).To(Not(BeZero()),
 					"Stdout should not be empty\n",
 				)
 			}
-
 			if test.expectStdout != "" {
 				Expect(stdout).To(Equal(test.expectStdout),
-					"Want stdout: \n%s\nGot stdout: \n%s\n",
-					test.expectStdout, stdout,
+					"Expected output not equal stdout",
 				)
 			}
-
 			if test.expectInStdout != "" {
-				Expect(strings.Contains(stdout, test.expectInStdout)).To(BeTrue(),
-					"Want in stdout: \n%s\nGot stdout: \n%s\n",
-					test.expectInStdout, stdout,
-				)
+				Expect(stdout).To(ContainSubstring(test.expectInStdout),
+					"Expected string not found in stdout")
 			}
-
 			if test.expectReStdout != "" {
 				matched, err = regexp.MatchString(test.expectReStdout, stdout)
 				Expect(err).To(BeNil())
-				Expect(matched).To(BeTrue(),
-					"Want stdout to contain any match of the regular expression: \n`%s`\nGot stdout: \n%s\n",
-					test.expectReStdout, stdout,
-				)
+				Expect(matched).To(BeTrue(), "Expect regexp to match for stdout")
 			}
-
 			// Check STDERR:
 			if test.expectInStderr != "" {
 				Expect(strings.Contains(stderr, test.expectInStderr)).To(BeTrue(),
@@ -281,21 +269,6 @@ func TestAgentCtlCommands(t *testing.T) {
 			}
 		})
 	}
-}
-
-func createFileWithContent(path, content string) error {
-	f, err := os.Create(path)
-	if err != nil {
-		return err
-	}
-	w := bufio.NewWriter(f)
-	_, err = w.WriteString(content)
-	if err != nil {
-		return err
-	}
-	w.Flush()
-
-	return nil
 }
 
 func TestAgentCtlSecureGrpcWithClientCertRequired(t *testing.T) {
@@ -326,7 +299,6 @@ func TestAgentCtlSecureGrpcWithClientCertRequired(t *testing.T) {
 	Expect(strings.Contains(stderr, "rpc error")).To(BeTrue(),
 		"Want in stderr: \n\"rpc error\"\nGot stderr: \n%s\n", stderr,
 	)
-	t.Log("PASSED")
 
 	t.Log("Try with TLS enabled via flag --insecure-tls, but without cert and key (note: server configured to check those files)")
 	_, stderr, err = ctx.execCmd(
@@ -336,7 +308,6 @@ func TestAgentCtlSecureGrpcWithClientCertRequired(t *testing.T) {
 	Expect(strings.Contains(stderr, "rpc error")).To(BeTrue(),
 		"Want in stderr: \n\"rpc error\"\nGot stderr: \n%s\n", stderr,
 	)
-	t.Log("PASSED")
 
 	t.Log("Try with fully configured TLS via config file")
 	stdout, stderr, err := ctx.execCmd(
@@ -346,7 +317,6 @@ func TestAgentCtlSecureGrpcWithClientCertRequired(t *testing.T) {
 		"Should not fail. Got err: %v\nStderr:\n%s\n", err, stderr,
 	)
 	Expect(len(stdout)).To(Not(BeZero()))
-	t.Log("PASSED")
 }
 
 func TestAgentCtlSecureGrpc(t *testing.T) {
@@ -374,10 +344,8 @@ func TestAgentCtlSecureGrpc(t *testing.T) {
 		"/agentctl", "--debug", "dump", "vpp.interfaces",
 	)
 	Expect(err).To(Not(BeNil()))
-	Expect(strings.Contains(stderr, "rpc error")).To(BeTrue(),
-		"Want in stderr: \n\"rpc error\"\nGot stderr: \n%s\n", stderr,
-	)
-	t.Log("PASSED")
+	Expect(stderr).To(ContainSubstring("rpc error"),
+		"Expected string not found in stderr")
 
 	t.Log("Try with TLS enabled via flag --insecure-tls. Should work because server is not configured to check client certs.")
 	stdout, stderr, err := ctx.execCmd(
@@ -387,7 +355,6 @@ func TestAgentCtlSecureGrpc(t *testing.T) {
 		"Should not fail. Got err: %v\nStderr:\n%s\n", err, stderr,
 	)
 	Expect(len(stdout)).To(Not(BeZero()))
-	t.Log("PASSED")
 
 	t.Log("Try with fully configured TLS via config file")
 	stdout, stderr, err = ctx.execCmd(
@@ -396,8 +363,7 @@ func TestAgentCtlSecureGrpc(t *testing.T) {
 	Expect(err).To(BeNil(),
 		"Should not fail. Got err: %v\nStderr:\n%s\n", err, stderr,
 	)
-	Expect(len(stdout)).To(Not(BeZero()))
-	t.Log("PASSED")
+	Expect(stdout).ToNot(BeEmpty())
 }
 
 func TestAgentCtlSecureETCD(t *testing.T) {
@@ -406,18 +372,35 @@ func TestAgentCtlSecureETCD(t *testing.T) {
 	etcdID := ctx.setupETCD()
 	defer ctx.teardownETCD(etcdID)
 
-	t.Log("Try without any TLS")
-	_, _, err := ctx.execCmd("/agentctl", "--debug", "kvdb", "list")
-	Expect(err).To(Not(BeNil()))
-	t.Log("PASSED")
+	// test without any TLS
+	t.Run("no TLS", func(t *testing.T) {
+		_, _, err := ctx.execCmd("/agentctl", "--debug", "kvdb", "list")
+		Expect(err).To(Not(BeNil()))
+	})
 
-	t.Log("Try with TLS enabled via flag --insecure-tls, but without cert and key (note: server configured to check those files)")
-	_, _, err = ctx.execCmd("/agentctl", "--debug", "--insecure-tls", "kvdb", "list")
-	Expect(err).To(Not(BeNil()))
-	t.Log("PASSED")
+	// test with TLS enabled via flag --insecure-tls, but without cert and key (note: server configured to check those files)
+	t.Run("insecure TLS", func(t *testing.T) {
+		_, _, err := ctx.execCmd("/agentctl", "--debug", "--insecure-tls", "kvdb", "list")
+		Expect(err).To(Not(BeNil()))
+	})
 
-	t.Log("Try with fully configured TLS via config file")
-	_, stderr, err := ctx.execCmd("/agentctl", "--debug", "--config-dir=/etc/.agentctl", "kvdb", "list")
-	Expect(err).To(BeNil(), "Should not fail. Got err: %v\nStderr:\n%s\n", err, stderr)
-	t.Log("PASSED")
+	// test with fully configured TLS via config file
+	t.Run("fully cofigured TLS", func(t *testing.T) {
+		_, stderr, err := ctx.execCmd("/agentctl", "--debug", "--config-dir=/etc/.agentctl", "kvdb", "list")
+		Expect(err).To(BeNil(), "Should not fail. Got err: %v\nStderr:\n%s\n", err, stderr)
+	})
+}
+
+func createFileWithContent(path, content string) error {
+	f, err := os.Create(path)
+	if err != nil {
+		return err
+	}
+	w := bufio.NewWriter(f)
+	_, err = w.WriteString(content)
+	if err != nil {
+		return err
+	}
+	w.Flush()
+	return nil
 }
