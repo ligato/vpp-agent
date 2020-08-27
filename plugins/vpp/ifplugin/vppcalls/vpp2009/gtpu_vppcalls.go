@@ -34,6 +34,7 @@ func (h *InterfaceVppHandler) gtpuAddDelTunnel(isAdd bool, gtpuLink *interfaces.
 		McastSwIfIndex: interface_types.InterfaceIndex(multicastIf),
 		EncapVrfID:     gtpuLink.EncapVrfId,
 		Teid:           gtpuLink.Teid,
+		Tteid:          gtpuLink.RemoteTeid,
 	}
 
 	if gtpuLink.DecapNext == interfaces.GtpuLink_DEFAULT {
@@ -170,6 +171,7 @@ func (h *InterfaceVppHandler) dumpGtpuDetails(ifc map[uint32]*vppcalls.Interface
 			Multicast:  multicastIfName,
 			EncapVrfId: gtpuDetails.EncapVrfID,
 			Teid:       gtpuDetails.Teid,
+			RemoteTeid: gtpuDetails.Tteid,
 			DecapNext:  interfaces.GtpuLink_NextNode(gtpuDetails.DecapNextIndex),
 		}
 
