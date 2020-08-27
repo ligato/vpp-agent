@@ -147,14 +147,12 @@ func (cli *AgentCli) Initialize(opts *ClientOptions, ops ...InitializeOpt) error
 			return err
 		}
 	}
-
 	if opts.Debug {
 		debug.Enable()
 		SetLogLevel("debug")
 	} else {
 		SetLogLevel(opts.LogLevel)
 	}
-
 	cfg, err := MakeConfig()
 	if err != nil {
 		return err
@@ -162,7 +160,6 @@ func (cli *AgentCli) Initialize(opts *ClientOptions, ops ...InitializeOpt) error
 	if opts.Debug {
 		logging.Debug(cfg.DebugOutput())
 	}
-
 	if cli.client == nil {
 		clientOptions := buildClientOptions(cfg)
 		cli.client, err = client.NewClientWithOpts(clientOptions...)
@@ -189,7 +186,6 @@ func buildClientOptions(cfg *Config) []client.Opt {
 		client.WithEtcdEndpoints(cfg.EtcdEndpoints),
 		client.WithEtcdDialTimeout(cfg.EtcdDialTimeout),
 	}
-
 	if cfg.ShouldUseSecureGRPC() {
 		clientOpts = append(clientOpts, client.WithGrpcTLS(
 			cfg.GRPCSecure.CertFile,
@@ -214,7 +210,6 @@ func buildClientOptions(cfg *Config) []client.Opt {
 			cfg.KVDBSecure.SkipVerify,
 		))
 	}
-
 	return clientOpts
 }
 
@@ -226,12 +221,11 @@ func (cli *AgentCli) initializeFromClient() {
 		// Default to true if we fail to connect to daemon
 		cli.serverInfo = ServerInfo{}
 
-		if version.APIVersion != "" {
+		if version != nil && version.APIVersion != "" {
 			cli.client.NegotiateAPIVersionPing(version)
 		}
 		return
 	}
-
 	cli.serverInfo = ServerInfo{
 		OSType: version.OSType,
 	}
