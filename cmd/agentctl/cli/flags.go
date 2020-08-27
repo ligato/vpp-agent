@@ -84,13 +84,11 @@ func SetLogLevel(logLevel string) {
 		logging.DefaultLogger.SetLevel(logging.WarnLevel)
 		return
 	}
-
 	lvl, err := logrus.ParseLevel(logLevel)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Unable to parse logging level: %s\n", logLevel)
 		os.Exit(1)
 	}
-
 	logrus.SetLevel(lvl)
 	logging.DefaultLogger.SetLevel(logging.ParseLogLevel(logLevel))
 }

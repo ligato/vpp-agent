@@ -173,6 +173,11 @@ func TestAgentCtlCommands(t *testing.T) {
 			expectReStdout: `linux.interfaces.interface\s+config\s+ligato.linux.interfaces.Interface`,
 		},
 		{
+			name:           "Test `models` action",
+			cmd:            "models",
+			expectReStdout: `linux.interfaces.interface\s+config\s+ligato.linux.interfaces.Interface`,
+		},
+		{
 			name:           "Test `model inspect` action",
 			cmd:            "model inspect vpp.interfaces",
 			expectInStdout: `"KeyPrefix": "config/vpp/v2/interfaces/",`,

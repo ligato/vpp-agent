@@ -12,6 +12,7 @@ import (
 	"go.ligato.io/vpp-agent/v3/client"
 	"go.ligato.io/vpp-agent/v3/cmd/agentctl/api/types"
 	"go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v3/proto/ligato/configurator"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/kvscheduler"
 )
 
@@ -23,7 +24,8 @@ type APIClient interface {
 	VppAPIClient
 	MetricsAPIClient
 
-	ConfigClient() (client.ConfigClient, error)
+	GenericClient() (client.GenericClient, error)
+	ConfiguratorClient() (configurator.ConfiguratorServiceClient, error)
 
 	AgentHost() string
 	Version() string
@@ -32,14 +34,13 @@ type APIClient interface {
 	HTTPClient() *http.Client
 	AgentVersion(ctx context.Context) (*types.Version, error)
 	NegotiateAPIVersion(ctx context.Context)
-	NegotiateAPIVersionPing(types.Ping)
+	NegotiateAPIVersionPing(version *types.Version)
 	Close() error
 }
 
 // InfraAPIClient defines API client methods for the system
 type InfraAPIClient interface {
 	Status(ctx context.Context) (*probe.ExposedStatus, error)
-	Ping(ctx context.Context) (types.Ping, error)
 	LoggerList(ctx context.Context) ([]types.Logger, error)
 	LoggerSet(ctx context.Context, logger, level string) error
 }
@@ -54,11 +55,13 @@ type SchedulerAPIClient interface {
 	SchedulerDump(ctx context.Context, opts types.SchedulerDumpOptions) ([]api.KVWithMetadata, error)
 	SchedulerValues(ctx context.Context, opts types.SchedulerValuesOptions) ([]*kvscheduler.BaseValueStatus, error)
 	SchedulerResync(ctx context.Context, opts types.SchedulerResyncOptions) (*api.RecordedTxn, error)
+	SchedulerHistory(ctx context.Context, opts types.SchedulerHistoryOptions) (api.RecordedTxns, error)
 }
 
 // VppAPIClient defines API client methods for the VPP
 type VppAPIClient interface {
 	VppRunCli(ctx context.Context, cmd string) (reply string, err error)
+	VppGetStats(ctx context.Context, typ string) error
 }
 
 type MetricsAPIClient interface {

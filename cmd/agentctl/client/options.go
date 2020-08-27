@@ -66,7 +66,6 @@ func WithEtcdDialTimeout(t time.Duration) Opt {
 
 func withTLS(cert, key, ca string, skipVerify bool) (*tls.Config, error) {
 	var options []tlsconfig.Option
-
 	if cert != "" && key != "" {
 		options = append(options, tlsconfig.CertKey(cert, key))
 	}
@@ -76,7 +75,6 @@ func withTLS(cert, key, ca string, skipVerify bool) (*tls.Config, error) {
 	if skipVerify {
 		options = append(options, tlsconfig.SkipServerVerification())
 	}
-
 	return tlsconfig.New(options...)
 }
 
@@ -153,7 +151,6 @@ func WithHTTPHeader(k, v string) Opt {
 		if c.customHTTPHeaders == nil {
 			c.customHTTPHeaders = make(map[string]string)
 		}
-
 		c.customHTTPHeaders[k] = v
 		return nil
 	}
@@ -165,7 +162,6 @@ func WithHTTPBasicAuth(s string) Opt {
 	if s == "" {
 		return func(c *Client) error { return nil }
 	}
-
 	auth := base64.StdEncoding.EncodeToString([]byte(s))
 	return WithHTTPHeader("Authorization", "Basic "+auth)
 }

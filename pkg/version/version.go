@@ -17,6 +17,7 @@ package version
 
 import (
 	"fmt"
+	"os"
 	"runtime"
 	"strconv"
 	"time"
@@ -36,6 +37,9 @@ var buildTime time.Time
 var revision string
 
 func init() {
+	if buildDate == "" {
+		buildDate = getBuildDate()
+	}
 	if buildDate != "" {
 		buildstampInt64, _ := strconv.ParseInt(buildDate, 10, 64)
 		buildTime = time.Unix(buildstampInt64, 0)
@@ -47,6 +51,18 @@ func init() {
 	if gitBranch != "HEAD" {
 		revision += fmt.Sprintf("@%s", gitBranch)
 	}
+}
+
+func getBuildDate() string {
+	bin, err := os.Executable()
+	if err != nil {
+		return ""
+	}
+	info, err := os.Stat(bin)
+	if err != nil {
+		return ""
+	}
+	return fmt.Sprint(info.ModTime().Unix())
 }
 
 // App returns app name.

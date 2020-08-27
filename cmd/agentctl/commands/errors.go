@@ -25,10 +25,9 @@ import (
 type Errors []error
 
 func (errList Errors) Error() string {
-	if len(errList) < 1 {
+	if len(errList) == 0 {
 		return ""
 	}
-
 	out := make([]string, len(errList))
 	for i := range errList {
 		out[i] = errList[i].Error()

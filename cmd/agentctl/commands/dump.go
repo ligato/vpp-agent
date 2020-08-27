@@ -15,71 +15,113 @@
 package commands
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"io"
 	"sort"
 	"strings"
-	"text/tabwriter"
 
 	"github.com/golang/protobuf/proto"
+	"github.com/olekukonko/tablewriter"
 	"github.com/spf13/cobra"
 	"go.ligato.io/cn-infra/v2/logging"
 
 	"go.ligato.io/vpp-agent/v3/cmd/agentctl/api/types"
 	agentcli "go.ligato.io/vpp-agent/v3/cmd/agentctl/cli"
+	"go.ligato.io/vpp-agent/v3/pkg/models"
 	"go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 )
 
 func NewDumpCommand(cli agentcli.Cli) *cobra.Command {
-	var opts DumpOptions
-
+	var (
+		opts DumpOptions
+	)
 	cmd := &cobra.Command{
-		Use:   "dump MODEL",
+		Use:   "dump MODEL [MODEL...]",
 		Short: "Dump running state",
+		Long:  "Dumps actual running state",
 		Example: `
- To dump all data:
-  $ {{.CommandPath}} all
+  Dump everything
+	{{.CommandPath}} all
 
- To dump all VPP data in json format run:
-  $ {{.CommandPath}} -f json vpp.*
+  Dump VPP interfaces & routes
+  	{{.CommandPath}} vpp.interfaces vpp.l3.routes
 
- To use different dump view use --view flag:
-  $ {{.CommandPath}} --view=NB vpp.interfaces`,
-		Args: cobra.MinimumNArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
+  Dump all VPP data in JSON format
+	{{.CommandPath}} -f json vpp.*
+
+  Dump only VPP memif interfaces
+  	{{.CommandPath}} -f '{{` + "`{{range .}}{{if eq .Value.Type.String \"MEMIF\" }}{{json .}}{{end}}{{end}}`" + `}}' vpp.interfaces
+
+  Dump everything currently defined at northbound
+  	{{.CommandPath}} --view=NB all
+
+  Dump all VPP & Linux data directly from southband
+  	{{.CommandPath}} --view=SB vpp.* linux.*
+
+  Dump all VPP & Linux data directly from southband
+  	{{.CommandPath}} --view=SB all
+`,
+		Args: func(cmd *cobra.Command, args []string) error {
+			if len(args) == 0 {
+				fmt.Fprintf(cli.Err(), "You must specify models to dump. Use \"%s models\" for a complete list of known models.\n", cmd.Root().Name())
+				return fmt.Errorf("no models specified")
+			}
 			opts.Models = args
+			return opts.Validate()
+		},
+		RunE: func(cmd *cobra.Command, args []string) error {
 			return runDump(cli, opts)
 		},
 	}
 	flags := cmd.Flags()
 	flags.StringVar(&opts.View, "view", "cached", "Dump view type: cached, NB, SB")
-	flags.StringVarP(&opts.Format, "format", "f", "", "Format output")
+	flags.StringVar(&opts.Origin, "origin", "", "Show only data with specific origin: NB, SB, unknown")
+	flags.StringVarP(&opts.Format, "format", "f", "", "Format output (json|yaml|go-template|proto)")
 	return cmd
 }
 
 type DumpOptions struct {
 	Models []string
 	View   string
+	Origin string
 	Format string
+}
+
+func (opts *DumpOptions) Validate() error {
+	// models
+	if opts.Models[0] == "all" {
+		opts.Models = []string{"*"}
+	}
+	// view
+	switch strings.ToLower(opts.View) {
+	case "cached", "cache", "":
+		opts.View = "cached"
+	case "nb", "north", "northbound":
+		opts.View = "NB"
+	case "sb", "south", "southbound":
+		opts.View = "SB"
+	default:
+		return fmt.Errorf("invalid view type: %q", opts.View)
+	}
+	// origin
+	switch strings.ToLower(opts.Origin) {
+	case "":
+	case "unknown":
+		opts.Origin = api.UnknownOrigin.String()
+	case "from-nb", "nb", "north", "northbound":
+		opts.Origin = api.FromNB.String()
+	case "from-sb", "sb", "south", "southbound":
+		opts.Origin = api.FromSB.String()
+	default:
+		return fmt.Errorf("invalid origin: %q", opts.Origin)
+	}
+	return nil
 }
 
 func runDump(cli agentcli.Cli, opts DumpOptions) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-
-	var dumpView string
-	switch strings.ToLower(opts.View) {
-	case "cached", "cache", "":
-		dumpView = "cached"
-	case "nb", "northbound":
-		dumpView = "NB"
-	case "sb", "southbound":
-		dumpView = "SB"
-	default:
-		return fmt.Errorf("invalid view type: %q", opts.View)
-	}
 
 	allModels, err := cli.Client().ModelList(ctx, types.ModelListOptions{
 		Class: "config",
@@ -87,26 +129,21 @@ func runDump(cli agentcli.Cli, opts DumpOptions) error {
 	if err != nil {
 		return err
 	}
-
-	refs := opts.Models
-	if opts.Models[0] == "all" {
-		refs = []string{"*"}
-	}
-
 	var keyPrefixes []string
-	for _, m := range filterModelsByRefs(allModels, refs) {
+	for _, m := range filterModelsByRefs(allModels, opts.Models) {
 		keyPrefixes = append(keyPrefixes, m.KeyPrefix)
 	}
 	if len(keyPrefixes) == 0 {
-		return fmt.Errorf("no models found for %q", opts.Models)
+		return fmt.Errorf("no matching models found for %q", opts.Models)
 	}
-
-	var errs Errors
-	var dumps []api.KVWithMetadata
+	var (
+		errs  Errors
+		dumps []api.KVWithMetadata
+	)
 	for _, keyPrefix := range keyPrefixes {
 		dump, err := cli.Client().SchedulerDump(ctx, types.SchedulerDumpOptions{
 			KeyPrefix: keyPrefix,
-			View:      dumpView,
+			View:      opts.View,
 		})
 		if err != nil {
 			errs = append(errs, fmt.Errorf("dump for %s failed: %v", keyPrefix, err))
@@ -115,10 +152,13 @@ func runDump(cli agentcli.Cli, opts DumpOptions) error {
 		dumps = append(dumps, dump...)
 	}
 	if errs != nil {
-		logging.Debugf("dumped with %d errors\n%v", len(errs), errs)
+		logging.Debugf("dump finished with %d errors\n%v", len(errs), errs)
 	}
 
-	sort.Sort(dumpByKey(dumps))
+	dumps = filterDumpByOrigin(dumps, opts.Origin)
+	sort.Slice(dumps, func(i, j int) bool {
+		return dumps[i].Key < dumps[j].Key
+	})
 
 	format := opts.Format
 	if len(format) == 0 {
@@ -128,54 +168,59 @@ func runDump(cli agentcli.Cli, opts DumpOptions) error {
 			return err
 		}
 	}
-
 	return nil
 }
 
-// printDumpTable prints dump data using table format
-//
-// KEY                                        VALUE                        ORIGIN    METADATA
-// config/vpp/v2/interfaces/UNTAGGED-local0   [vpp.interfaces.Interface]   from-SB   map[IPAddresses:<nil> SwIfIndex:0 TAPHostIfName: Vrf:0]
-// name: "UNTAGGED-local0"
-// type: SOFTWARE_LOOPBACK
-//
-// config/vpp/v2/interfaces/loop1             [vpp.interfaces.Interface]   from-NB   map[IPAddresses:<nil> SwIfIndex:1 TAPHostIfName: Vrf:0]
-// name: "loop1"
-// type: SOFTWARE_LOOPBACK
-//
+func filterDumpByOrigin(dumps []api.KVWithMetadata, origin string) []api.KVWithMetadata {
+	if origin == "" {
+		return dumps
+	}
+	var filtered []api.KVWithMetadata
+	for _, d := range dumps {
+		if !strings.EqualFold(d.Origin.String(), origin) {
+			continue
+		}
+		filtered = append(filtered, d)
+	}
+	return filtered
+}
+
 func printDumpTable(out io.Writer, dump []api.KVWithMetadata) {
-	var buf bytes.Buffer
-	w := tabwriter.NewWriter(&buf, 0, 0, 3, ' ', 0)
-	fmt.Fprintf(w, "KEY\tVALUE\tORIGIN\tMETADATA\t\n")
+	table := tablewriter.NewWriter(out)
+	table.SetHeader([]string{
+		"Model", "Origin", "Value", "Metadata", "Key",
+	})
+	table.SetAutoMergeCells(true)
+	table.SetRowLine(true)
 
 	for _, d := range dump {
 		val := proto.MarshalTextString(d.Value)
-		val = strings.ReplaceAll(val, "\n", "\t\t\t\n\t")
 		var meta string
 		if d.Metadata != nil {
-			meta = fmt.Sprintf("%+v", d.Metadata)
+			meta = yamlTmpl(d.Metadata)
 		}
-
-		fmt.Fprintf(w, "%s\t[%s]\t%s\t%s\t\n",
-			d.Key, proto.MessageName(d.Value), d.Origin, meta)
-		fmt.Fprintf(w, "\t%s\t\t\n", val)
+		var (
+			name  = "-"
+			model string
+			orig  = d.Origin
+		)
+		if m, err := models.GetModelForKey(d.Key); err == nil {
+			name, _ = m.ParseKey(d.Key)
+			model = m.Name()
+			if name == "" {
+				name = d.Key
+			}
+		}
+		val = fmt.Sprintf("[%s]\n%s", proto.MessageName(d.Value), val)
+		var row []string
+		row = []string{
+			model,
+			orig.String(),
+			val,
+			meta,
+			name,
+		}
+		table.Append(row)
 	}
-	if err := w.Flush(); err != nil {
-		panic(err)
-	}
-	fmt.Fprint(out, buf.String())
-}
-
-type dumpByKey []api.KVWithMetadata
-
-func (s dumpByKey) Len() int {
-	return len(s)
-}
-
-func (s dumpByKey) Less(i, j int) bool {
-	return s[i].Key < s[j].Key
-}
-
-func (s dumpByKey) Swap(i, j int) {
-	s[i], s[j] = s[j], s[i]
+	table.Render()
 }

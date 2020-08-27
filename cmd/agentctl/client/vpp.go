@@ -28,9 +28,13 @@ func (c *Client) VppRunCli(ctx context.Context, cmd string) (reply string, err e
 	if err != nil {
 		return "", fmt.Errorf("HTTP POST request failed: %v", err)
 	}
-
 	if err := json.NewDecoder(resp.body).Decode(&reply); err != nil {
 		return "", fmt.Errorf("decoding reply failed: %v", err)
 	}
 	return reply, nil
+}
+
+func (c *Client) VppGetStats(ctx context.Context, typ string) error {
+	// TODO: implement this
+	return nil
 }

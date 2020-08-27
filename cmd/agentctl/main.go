@@ -24,13 +24,11 @@ import (
 )
 
 const logo = `
-     ___                    __  ________  __
-    /   | ____ ____  ____  / /_/ ____/ /_/ /
-   / /| |/ __ '/ _ \/ __ \/ __/ /   / __/ / 
-  / ___ / /_/ /  __/ / / / /_/ /___/ /_/ /  
- /_/  |_\__, /\___/_/ /_/\__/\____/\__/_/   
-       /____/
-
+                      __      __  __
+  ___ ____ ____ ___  / /_____/ /_/ /
+ / _ '/ _ '/ -_) _ \/ __/ __/ __/ / 
+ \_,_/\_, /\__/_//_/\__/\__/\__/_/  
+     /___/
 `
 
 func runAgentctl(cli *agentcli.AgentCli) error {
@@ -47,7 +45,7 @@ func main() {
 	cli := commands.NewAgentCli()
 
 	if err := runAgentctl(cli); err != nil {
-		fmt.Fprintln(cli.Err(), err)
+		fmt.Fprintf(cli.Err(), "\nERROR: %v\n", err)
 		os.Exit(commands.ExitCode(err))
 	}
 }

@@ -29,7 +29,7 @@ import (
 type (
 	// Interface
 	Interface = vpp_interfaces.Interface
-	Span = vpp_interfaces.Span
+	Span      = vpp_interfaces.Span
 
 	// ACL & ABF
 	ACL = vpp_acl.ACL
@@ -46,14 +46,14 @@ type (
 	ProxyARP    = vpp_l3.ProxyARP
 	IPScanNeigh = vpp_l3.IPScanNeighbor
 	VRFTable    = vpp_l3.VrfTable
-	L3XConnect    = vpp_l3.L3XConnect
-	DHCPProxy    = vpp_l3.DHCPProxy
+	L3XConnect  = vpp_l3.L3XConnect
+	DHCPProxy   = vpp_l3.DHCPProxy
 
 	// NAT
-	NAT44Global = vpp_nat.Nat44Global
-	DNAT44      = vpp_nat.DNat44
-	Nat44AddressPool      = vpp_nat.Nat44AddressPool
-	Nat44Interface      = vpp_nat.Nat44Interface
+	NAT44Global      = vpp_nat.Nat44Global
+	DNAT44           = vpp_nat.DNat44
+	Nat44AddressPool = vpp_nat.Nat44AddressPool
+	Nat44Interface   = vpp_nat.Nat44Interface
 
 	// IPSec
 	IPSecSPD = vpp_ipsec.SecurityPolicyDatabase
@@ -63,11 +63,11 @@ type (
 	// Punt
 	PuntIPRedirect = vpp_punt.IPRedirect
 	PuntToHost     = vpp_punt.ToHost
-	PuntException     = vpp_punt.Exception
+	PuntException  = vpp_punt.Exception
 
 	// SRv6
-	SRv6Global = vpp_srv6.SRv6Global
+	SRv6Global   = vpp_srv6.SRv6Global
 	SRv6LocalSID = vpp_srv6.LocalSID
-	SRv6Policy = vpp_srv6.Policy
+	SRv6Policy   = vpp_srv6.Policy
 	SRv6Steering = vpp_srv6.Steering
 )

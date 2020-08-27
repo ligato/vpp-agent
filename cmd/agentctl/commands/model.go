@@ -42,15 +42,26 @@ func NewModelCommand(cli agentcli.Cli) *cobra.Command {
 	return cmd
 }
 
+func newModelsCommand(cli agentcli.Cli) *cobra.Command {
+	cmd := newModelListCommand(cli)
+	cmd.Use = "models"
+	cmd.Aliases = nil
+	cmd.Hidden = true
+	return cmd
+}
+
 func newModelListCommand(cli agentcli.Cli) *cobra.Command {
 	var opts ModelListOptions
 	cmd := &cobra.Command{
-		Use:     "ls [PATTERN]",
-		Aliases: []string{"list", "l"},
-		Short:   "List models",
+		Use:     "list PATTERN",
+		Aliases: []string{"ls", "l"},
+		Short:   "List models mathing pattern(s)",
 		Args:    cobra.ArbitraryArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			opts.Refs = args
+			if strings.ToLower(opts.Class) == "all" {
+				opts.Class = ""
+			}
 			return runModelList(cli, opts)
 		},
 	}
@@ -70,17 +81,12 @@ func runModelList(cli agentcli.Cli, opts ModelListOptions) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	if strings.ToLower(opts.Class) == "all" {
-		opts.Class = ""
-	}
-
 	allModels, err := cli.Client().ModelList(ctx, types.ModelListOptions{
 		Class: opts.Class,
 	})
 	if err != nil {
 		return err
 	}
-
 	models := filterModelsByRefs(allModels, opts.Refs)
 
 	format := opts.Format
@@ -98,7 +104,7 @@ func runModelList(cli agentcli.Cli, opts ModelListOptions) error {
 func printModelTable(out io.Writer, models []types.Model) {
 	var buf bytes.Buffer
 	w := tabwriter.NewWriter(&buf, 0, 0, 2, ' ', 0)
-	fmt.Fprintf(w, "MODEL\tCLASS\tPROTO MESSAGE\tKEY PREFIX\t\n")
+	fmt.Fprintf(w, "MODEL NAME\tCLASS\tPROTO MESSAGE\tKEY PREFIX\t\n")
 	for _, model := range models {
 		fmt.Fprintf(w, "%s\t%s\t%s\t%s\t\n",
 			model.Name, model.Class, model.ProtoName, model.KeyPrefix)
@@ -188,19 +194,16 @@ func runModelInspect(cli agentcli.Cli, opts ModelInspectOptions) error {
 	if err != nil {
 		return err
 	}
-
 	models, err := filterModelsByPrefix(allModels, opts.Names)
 	if err != nil {
 		return err
 	}
-
 	logrus.Debugf("models: %+v", models)
 
 	format := opts.Format
 	if len(format) == 0 {
 		format = "json"
 	}
-
 	if err := formatAsTemplate(cli.Out(), format, models); err != nil {
 		return err
 	}
