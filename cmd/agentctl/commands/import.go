@@ -41,10 +41,7 @@ const (
 )
 
 func NewImportCommand(cli agentcli.Cli) *cobra.Command {
-	var (
-		opts    ImportOptions
-		timeout uint
-	)
+	var opts ImportOptions
 	cmd := &cobra.Command{
 		Use:   "import FILE",
 		Args:  cobra.ExactArgs(1),
@@ -80,7 +77,6 @@ KEY FORMAT
 `,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			opts.InputFile = args[0]
-			opts.Timeout = time.Duration(timeout)
 			return RunImport(cli, opts)
 		},
 	}
