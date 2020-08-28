@@ -141,6 +141,8 @@ func setupVPP(t *testing.T) *TestCtx {
 	}
 	RegisterTestingT(t)
 
+	start := time.Now()
+
 	ctx := context.TODO()
 
 	// start VPP process
@@ -148,10 +150,15 @@ func setupVPP(t *testing.T) *TestCtx {
 	vppCmd := startVPP(t, &stdout, &stderr)
 	vppPID := uint32(vppCmd.Process.Pid)
 
-	// connect to binapi
-	adapter := socketclient.NewVppClient(*vppSockAddr)
+	// if setupVPP fails we need stop the VPP process
+	defer func() {
+		if t.Failed() {
+			stopVPP(t, vppCmd)
+		}
+	}()
 
 	// wait until the socket is ready
+	adapter := socketclient.NewVppClient(*vppSockAddr)
 	if err := adapter.WaitReady(); err != nil {
 		t.Logf("WaitReady error: %v", err)
 	}
@@ -169,6 +176,8 @@ func setupVPP(t *testing.T) *TestCtx {
 		}
 		return nil, fmt.Errorf("failed to connect after %d retries", retries)
 	}
+
+	// connect to binapi
 	conn, err := connectRetry(int(*vppRetry))
 	if err != nil {
 		t.Errorf("connecting to VPP failed: %v", err)
@@ -196,6 +205,7 @@ func setupVPP(t *testing.T) *TestCtx {
 
 	vpeHandler := vppcalls.CompatibleHandler(vppClient)
 
+	// retrieve VPP version
 	versionInfo, err := vpeHandler.GetVersion(ctx)
 	if err != nil {
 		t.Fatalf("getting version info failed: %v", err)
@@ -204,6 +214,7 @@ func setupVPP(t *testing.T) *TestCtx {
 	if versionInfo.Version == "" {
 		t.Fatal("expected VPP version to not be empty")
 	}
+	// verify connected session
 	vpeInfo, err := vpeHandler.GetSession(ctx)
 	if err != nil {
 		t.Fatalf("getting vpp info failed: %v", err)
@@ -212,17 +223,18 @@ func setupVPP(t *testing.T) *TestCtx {
 		t.Fatalf("expected VPP PID to be %v, got %v", vppPID, vpeInfo.PID)
 	}
 
+	vppClient.vpp = vpeHandler
+
 	// connect to stats
 	statsClient := statsclient.NewStatsClient("")
 	statsConn, err := govppcore.ConnectStats(statsClient)
 	if err != nil {
-		t.Fatalf("connecting to VPP stats API failed: %v", err)
+		t.Logf("connecting to VPP stats API failed: %v", err)
+	} else {
+		vppClient.stats = statsConn
 	}
 
-	vppClient.vpp = vpeHandler
-	vppClient.stats = statsConn
-
-	t.Log("-> SETUP done\n")
+	t.Logf("-> VPP ready (took %v)", time.Since(start).Seconds())
 
 	return &TestCtx{
 		t:           t,
@@ -240,8 +252,6 @@ func setupVPP(t *testing.T) *TestCtx {
 }
 
 func (ctx *TestCtx) teardownVPP() {
-	ctx.t.Logf("-> TEARDOWN begin")
-
 	// disconnect sometimes hangs
 	done := make(chan struct{})
 	go func() {
@@ -253,38 +263,40 @@ func (ctx *TestCtx) teardownVPP() {
 	select {
 	case <-done:
 		time.Sleep(vppTermDelay)
-
 	case <-time.After(vppExitTimeout):
 		ctx.t.Logf("VPP disconnect timeout")
 	}
 
-	if err := ctx.vppCmd.Process.Signal(syscall.SIGTERM); err != nil {
-		ctx.t.Fatalf("sending SIGTERM to VPP failed: %v", err)
-	}
+	stopVPP(ctx.t, ctx.vppCmd)
+}
 
+func stopVPP(t *testing.T, vppCmd *exec.Cmd) {
+	if err := vppCmd.Process.Signal(syscall.SIGTERM); err != nil {
+		t.Fatalf("sending SIGTERM to VPP failed: %v", err)
+	}
 	// wait until VPP exits
 	exit := make(chan struct{})
 	go func() {
-		if err := ctx.vppCmd.Wait(); err != nil {
+		if err := vppCmd.Wait(); err != nil {
 			var exiterr *exec.ExitError
 			if errors.As(err, &exiterr) && strings.Contains(exiterr.Error(), "core dumped") {
-				ctx.t.Logf("VPP process CRASHED: %s", exiterr.Error())
+				t.Logf("VPP process CRASHED: %s", exiterr.Error())
 			} else {
-				ctx.t.Logf("VPP process wait failed: %v", err)
+				t.Logf("VPP process wait failed: %v", err)
 			}
 		} else {
-			ctx.t.Logf("VPP exit OK")
+			t.Logf("VPP exit OK")
 		}
 		close(exit)
 	}()
 	select {
 	case <-exit:
-
+		// exited
 	case <-time.After(vppExitTimeout):
-		ctx.t.Logf("VPP exit timeout")
-		ctx.t.Logf("sending SIGKILL to VPP..")
-		if err := ctx.vppCmd.Process.Signal(syscall.SIGKILL); err != nil {
-			ctx.t.Fatalf("sending SIGKILL to VPP failed: %v", err)
+		t.Logf("VPP exit timeout")
+		t.Logf("sending SIGKILL to VPP..")
+		if err := vppCmd.Process.Signal(syscall.SIGKILL); err != nil {
+			t.Fatalf("sending SIGKILL to VPP failed: %v", err)
 		}
 	}
 }
