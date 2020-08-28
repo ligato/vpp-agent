@@ -16,30 +16,12 @@ package commands
 
 import (
 	"fmt"
-	"time"
 )
 
-type Colorer interface {
+type colored interface {
 	Code() string
 }
 
-func escapeClr(c Colorer, s interface{}) string {
+func escapeClr(c colored, s interface{}) string {
 	return fmt.Sprintf("\xff\x1b[%sm\xff%v\xff\x1b[0m\xff", c.Code(), s)
-}
-
-func shortHumanDuration(d time.Duration) string {
-	if seconds := int(d.Seconds()); seconds < -1 {
-		return fmt.Sprintf("<invalid>")
-	} else if seconds < 0 {
-		return fmt.Sprintf("0s")
-	} else if seconds < 60 {
-		return fmt.Sprintf("%ds", seconds)
-	} else if minutes := int(d.Minutes()); minutes < 60 {
-		return fmt.Sprintf("%dm", minutes)
-	} else if hours := int(d.Hours()); hours < 24 {
-		return fmt.Sprintf("%dh", hours)
-	} else if hours < 24*365 {
-		return fmt.Sprintf("%dd", hours/24)
-	}
-	return fmt.Sprintf("%dy", int(d.Hours()/24/365))
 }

@@ -101,15 +101,27 @@ func (c *Client) SchedulerResync(ctx context.Context, opts types.SchedulerResync
 
 func (c *Client) SchedulerHistory(ctx context.Context, opts types.SchedulerHistoryOptions) (api.RecordedTxns, error) {
 	query := url.Values{}
+	if opts.SeqNum >= 0 {
+		query.Set("seq-num", fmt.Sprint(opts.SeqNum))
+	}
 
 	resp, err := c.get(ctx, "/scheduler/txn-history", query, nil)
 	if err != nil {
 		return nil, err
 	}
 
+	if opts.SeqNum >= 0 {
+		var rectxn api.RecordedTxn
+		if err := json.NewDecoder(resp.body).Decode(&rectxn); err != nil {
+			return nil, fmt.Errorf("decoding reply failed: %v", err)
+		}
+		return api.RecordedTxns{&rectxn}, nil
+	}
+
 	var rectxn api.RecordedTxns
 	if err := json.NewDecoder(resp.body).Decode(&rectxn); err != nil {
 		return nil, fmt.Errorf("decoding reply failed: %v", err)
 	}
+
 	return rectxn, nil
 }

@@ -34,5 +34,6 @@ type SchedulerResyncOptions struct {
 }
 
 type SchedulerHistoryOptions struct {
-	Count int
+	Count  int
+	SeqNum int
 }

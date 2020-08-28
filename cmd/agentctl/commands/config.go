@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"strconv"
 	"time"
 
 	yaml2 "github.com/ghodss/yaml"
@@ -194,7 +195,7 @@ func runConfigRetrieve(cli agentcli.Cli, opts ConfigRetrieveOptions) error {
 	if len(format) == 0 {
 		format = `yaml`
 	}
-	if err := formatAsTemplate(cli.Out(), format, resp); err != nil {
+	if err := formatAsTemplate(cli.Out(), format, resp.Dump); err != nil {
 		return err
 	}
 
@@ -256,10 +257,18 @@ func newConfigHistoryCommand(cli agentcli.Cli) *cobra.Command {
 		opts ConfigHistoryOptions
 	)
 	cmd := &cobra.Command{
-		Use:   "history",
-		Short: "Retrieve config history",
-		Args:  cobra.NoArgs,
+		Use:   "history [REF]",
+		Short: "Show config history",
+		Long: `Show history of config changes and status updates
+
+ Prints a table of most important information about the history of changes to 
+ config and status updates that have occurred. You can filter the output by
+ specifying a reference to sequence number (txn ID).`,
+		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if len(args) > 0 {
+				opts.TxnRef = args[0]
+			}
 			return runConfigHistory(cli, opts)
 		},
 	}
@@ -269,16 +278,25 @@ func newConfigHistoryCommand(cli agentcli.Cli) *cobra.Command {
 }
 
 type ConfigHistoryOptions struct {
-	Format  string
-	Verbose bool
-	Retry   bool
+	Format string
+	TxnRef string
 }
 
-func runConfigHistory(cli agentcli.Cli, opts ConfigHistoryOptions) error {
+func runConfigHistory(cli agentcli.Cli, opts ConfigHistoryOptions) (err error) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	txns, err := cli.Client().SchedulerHistory(ctx, types.SchedulerHistoryOptions{})
+	ref := -1
+	if opts.TxnRef != "" {
+		ref, err = strconv.Atoi(opts.TxnRef)
+		if err != nil {
+			return fmt.Errorf("invalid reference: %q, use number > 0", opts.TxnRef)
+		}
+	}
+
+	txns, err := cli.Client().SchedulerHistory(ctx, types.SchedulerHistoryOptions{
+		SeqNum: ref,
+	})
 	if err != nil {
 		return err
 	}
@@ -296,7 +314,7 @@ func runConfigHistory(cli agentcli.Cli, opts ConfigHistoryOptions) error {
 func printHistoryTable(out io.Writer, txns kvs.RecordedTxns) {
 	table := tablewriter.NewWriter(out)
 	table.SetHeader([]string{
-		"Seq", "", "Type", "", "Age", "Summary", "Result",
+		"Seq", "", "Type", "Start", "Input", "Operations", "Result", "Summary",
 	})
 	table.SetAutoWrapText(false)
 	table.SetAutoFormatHeaders(true)
@@ -310,19 +328,9 @@ func printHistoryTable(out io.Writer, txns kvs.RecordedTxns) {
 	table.SetTablePadding("\t")
 
 	for _, txn := range txns {
-		typ := kvs.TxnTypeToString(txn.TxnType)
-		info := txn.Description
-		if txn.TxnType == kvs.NBTransaction && txn.ResyncType != kvs.NotResync {
-			info = fmt.Sprintf("%s", kvs.ResyncTypeToString(txn.ResyncType))
-		}
-		elapsed := txn.Stop.Sub(txn.Start).Round(time.Millisecond / 10)
-		took := elapsed.String()
-		if elapsed < time.Millisecond/10 {
-			took = "<.1ms"
-		} else if elapsed > time.Millisecond*100 {
-			took = elapsed.Round(time.Millisecond).String()
-		}
-		_ = took
+		typ := getTxnType(txn)
+		clr := getTxnColor(txn)
+
 		result := txnErrors(txn)
 		resClr := tablewriter.FgGreenColor
 		if result != "" {
@@ -330,39 +338,81 @@ func printHistoryTable(out io.Writer, txns kvs.RecordedTxns) {
 		} else {
 			result = "ok"
 		}
-		var typClr int
-		switch txn.TxnType {
-		case kvs.NBTransaction:
-			typClr = tablewriter.FgYellowColor
-		case kvs.SBNotification:
-			typClr = tablewriter.FgCyanColor
-		case kvs.RetryFailedOps:
-			typClr = tablewriter.FgMagentaColor
-		}
 		age := shortHumanDuration(time.Since(txn.Start))
-		summary := fmt.Sprintf("%d executed", len(txn.Executed))
+		var input string
+		if len(txn.Values) > 0 {
+			input = fmt.Sprintf("%-2d values", len(txn.Values))
+		} else {
+			input = "-"
+		}
+		var operation string
+		if len(txn.Executed) > 0 {
+			operation = fmt.Sprintf("%-2d executed", len(txn.Executed))
+		} else {
+			operation = "-"
+		}
+		summary := txn.Description
 		row := []string{
 			fmt.Sprintf("%3v", txn.SeqNum),
-			fmt.Sprintf("%v", txnIcon(txn)),
+			txnIcon(txn),
 			typ,
-			info,
 			fmt.Sprintf("%-3s", age),
-			//fmt.Sprintf("%-3s (took %v)", age, took),
-			fmt.Sprintf("values: %2d -> %s", len(txn.Values), summary),
+			input,
+			operation,
 			result,
+			summary,
 		}
 		clrs := []tablewriter.Colors{
-			{tablewriter.Normal, typClr},
-			{tablewriter.Bold, typClr + 60},
-			{tablewriter.Normal, typClr},
+			{},
+			{tablewriter.Bold, clr},
+			{tablewriter.Normal, clr},
 			{},
 			{},
 			{},
 			{resClr},
+			{},
 		}
 		table.Rich(row, clrs)
 	}
 	table.Render()
+}
+
+func getTxnColor(txn *kvs.RecordedTxn) int {
+	var clr int
+	switch txn.TxnType {
+	case kvs.NBTransaction:
+		if txn.ResyncType == kvs.NotResync {
+			clr = tablewriter.FgYellowColor
+		} else if txn.ResyncType == kvs.FullResync {
+			clr = tablewriter.FgHiYellowColor
+		} else {
+			clr = tablewriter.FgYellowColor
+		}
+	case kvs.SBNotification:
+		clr = tablewriter.FgCyanColor
+	case kvs.RetryFailedOps:
+		clr = tablewriter.FgMagentaColor
+	}
+	return clr
+}
+
+func getTxnType(txn *kvs.RecordedTxn) string {
+	switch txn.TxnType {
+	case kvs.SBNotification:
+		return "status update"
+	case kvs.NBTransaction:
+		if txn.ResyncType == kvs.FullResync {
+			return "config replace"
+		} else if txn.ResyncType == kvs.UpstreamResync {
+			return "config sync"
+		} else if txn.ResyncType == kvs.DownstreamResync {
+			return "config check"
+		}
+		return "config change"
+	case kvs.RetryFailedOps:
+		return fmt.Sprintf("retry #%d for %d", txn.RetryAttempt, txn.RetryForTxn)
+	}
+	return "?"
 }
 
 func txnErrors(txn *kvs.RecordedTxn) string {
@@ -388,7 +438,12 @@ func txnIcon(txn *kvs.RecordedTxn) string {
 	case kvs.SBNotification:
 		return "⇧"
 	case kvs.NBTransaction:
-		return "⟱"
+		if txn.ResyncType == kvs.NotResync {
+			return "⇩"
+		} else if txn.ResyncType == kvs.FullResync {
+			return "⟱"
+		}
+		return "⇅"
 	case kvs.RetryFailedOps:
 		return "↻"
 	}
