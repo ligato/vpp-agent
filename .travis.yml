@@ -48,11 +48,7 @@ jobs:
         - bash <(curl -s https://codecov.io/bash) -f /tmp/coverage.out -F unittests
 
     - stage: Integration
-      env: VPP_VERSION=1904
-      script:
-        - make verify-binapi
-        - make integration-tests
-    - env: VPP_VERSION=1908
+      env: VPP_VERSION=1908
       script:
         - make verify-binapi
         - make integration-tests
@@ -61,17 +57,16 @@ jobs:
         - make verify-binapi
         - make integration-tests
     - env: VPP_VERSION=2005
+      script:
+        - make verify-binapi
+        - make integration-tests
+    - env: VPP_VERSION=2009
       script:
         - make verify-binapi
         - make integration-tests
 
     - stage: E2E
-      env: VPP_VERSION=1904
-      script:
-        - make e2e-tests-cover
-      after_success:
-        - bash <(curl -s https://codecov.io/bash) -f /tmp/e2e-cov.out -F e2e
-    - env: VPP_VERSION=1908
+      env: VPP_VERSION=1908
       script:
         - make e2e-tests-cover
       after_success:
@@ -82,13 +77,18 @@ jobs:
       after_success:
         - bash <(curl -s https://codecov.io/bash) -f /tmp/e2e-cov.out -F e2e
     - env: VPP_VERSION=2005
+      script:
+        - make e2e-tests-cover
+      after_success:
+        - bash <(curl -s https://codecov.io/bash) -f /tmp/e2e-cov.out -F e2e
+    - env: VPP_VERSION=2009
       script:
         - make e2e-tests-cover
       after_success:
         - bash <(curl -s https://codecov.io/bash) -f /tmp/e2e-cov.out -F e2e
 
   allow_failures:
-    - env: VPP_VERSION=1904
+    - env: VPP_VERSION=2009
 
 notifications:
   slack:

@@ -43,6 +43,7 @@ import (
 	_ "go.ligato.io/vpp-agent/v3/plugins/govppmux/vppcalls/vpp1908"
 	_ "go.ligato.io/vpp-agent/v3/plugins/govppmux/vppcalls/vpp2001"
 	_ "go.ligato.io/vpp-agent/v3/plugins/govppmux/vppcalls/vpp2005"
+	_ "go.ligato.io/vpp-agent/v3/plugins/govppmux/vppcalls/vpp2009"
 )
 
 var (

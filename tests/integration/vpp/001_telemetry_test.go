@@ -31,6 +31,9 @@ func TestTelemetryNodeCounters(t *testing.T) {
 	}
 
 	h := vppcalls.CompatibleTelemetryHandler(test.vppClient)
+	if h == nil {
+		t.Fatalf("telemetry handler not available")
+	}
 
 	nodeCounters, err := h.GetNodeCounters(test.Ctx)
 	if err != nil {
@@ -50,6 +53,9 @@ func TestTelemetryInterfaceStats(t *testing.T) {
 	defer test.teardownVPP()
 
 	h := vppcalls.CompatibleTelemetryHandler(test.vppClient)
+	if h == nil {
+		t.Fatalf("telemetry handler not available")
+	}
 
 	ifStats, err := h.GetInterfaceStats(test.Ctx)
 	if err != nil {

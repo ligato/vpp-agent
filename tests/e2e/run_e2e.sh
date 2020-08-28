@@ -9,7 +9,7 @@ args=($*)
 # compile vpp-agent
 if [ -z "${COVER_DIR-}" ]; then
 	go build -v -o ./tests/e2e/vpp-agent.test \
-      -ldflags "-X github.com/ligato/cn-infra/agent.BuildVersion=TEST_E2E" \
+      -ldflags "-X go.ligato.io/vpp-agent/v3/pkg/version.app=vpp-agent-e2e" \
       ./cmd/vpp-agent
 else
 	if [ ! -d ${COVER_DIR}/e2e-coverage ]; then
