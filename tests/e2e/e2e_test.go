@@ -19,7 +19,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"flag"
 	"fmt"
 	"io"
 	"log"
@@ -33,19 +32,15 @@ import (
 	"testing"
 	"time"
 
-	govppcore "git.fd.io/govpp.git/core"
 	docker "github.com/fsouza/go-dockerclient"
 	"github.com/golang/protobuf/proto"
 	"github.com/mitchellh/go-ps"
 	. "github.com/onsi/gomega"
-	logrus2 "github.com/sirupsen/logrus"
-	"google.golang.org/grpc"
-
-	"go.ligato.io/cn-infra/v2/logging"
-	"go.ligato.io/cn-infra/v2/logging/logrus"
-
 	"go.ligato.io/cn-infra/v2/health/probe"
 	"go.ligato.io/cn-infra/v2/health/statuscheck/model/status"
+	"go.ligato.io/cn-infra/v2/logging"
+	"go.ligato.io/cn-infra/v2/logging/logrus"
+	"google.golang.org/grpc"
 
 	"go.ligato.io/vpp-agent/v3/client"
 	"go.ligato.io/vpp-agent/v3/client/remoteclient"
@@ -54,19 +49,6 @@ import (
 	nslinuxcalls "go.ligato.io/vpp-agent/v3/plugins/linux/nsplugin/linuxcalls"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/kvscheduler"
 	"go.ligato.io/vpp-agent/v3/tests/e2e/utils"
-)
-
-var (
-	vppPath       = flag.String("vpp-path", "/usr/bin/vpp", "VPP program path")
-	vppConfig     = flag.String("vpp-config", "", "VPP config file")
-	vppSockAddr   = flag.String("vpp-sock-addr", "", "VPP binapi socket address")
-	covPath       = flag.String("cov", "", "Path to collect coverage data")
-	agentHTTPPort = flag.Int("agent-http-port", 9191, "VPP-Agent HTTP port")
-	agentGrpcPort = flag.Int("agent-grpc-port", 9111, "VPP-Agent GRPC port")
-	debugHTTP     = flag.Bool("debug-http", false, "Enable HTTP client debugging")
-	debug         = flag.Bool("debug", false, "Turn on debug mode.")
-
-	vppPingRegexp = regexp.MustCompile("Statistics: ([0-9]+) sent, ([0-9]+) received, ([0-9]+)% packet loss")
 )
 
 const (
@@ -109,16 +91,6 @@ const (
 	//memifInputNode    = "memif-input"
 )
 
-func TestMain(m *testing.M) {
-	log.SetFlags(log.Lmicroseconds | log.Lshortfile)
-	flag.Parse()
-	if *debug {
-		govppcore.SetLogLevel(logrus2.DebugLevel)
-	}
-	result := m.Run()
-	os.Exit(result)
-}
-
 type TestCtx struct {
 	t             *testing.T
 	VPP           *exec.Cmd
@@ -128,10 +100,11 @@ type TestCtx struct {
 	nsCalls       nslinuxcalls.NetworkNamespaceAPI
 	httpClient    *utils.HTTPClient
 	grpcConn      *grpc.ClientConn
-	grpcClient    client.ConfigClient
+	grpcClient    client.GenericClient
 	vppVersion    string
 	vppRelease    string
-	output        *bytes.Buffer
+	outputBuf     *bytes.Buffer
+	logger        *log.Logger
 }
 
 func setupE2E(t *testing.T) *TestCtx {
@@ -144,9 +117,11 @@ func setupE2E(t *testing.T) *TestCtx {
 		t:             t,
 		microservices: make(map[string]*microservice),
 		nsCalls:       nslinuxcalls.NewSystemHandler(),
-		output:        new(bytes.Buffer),
+		outputBuf:     new(bytes.Buffer),
 	}
+	testCtx.logger = log.New(testCtx.outputBuf, "e2e-test: ", log.Lshortfile)
 
+	// if setupE2E fails we need to stop started processes
 	defer func() {
 		if testCtx.t.Failed() {
 			testCtx.dumpLog()
@@ -179,7 +154,7 @@ func setupE2E(t *testing.T) *TestCtx {
 	} else {
 		vppArgs = []string{vppConf}
 	}
-	testCtx.VPP = startProcess(t, "VPP", nil, testCtx.output, testCtx.output, *vppPath, vppArgs...)
+	testCtx.VPP = startProcess(t, "VPP", nil, testCtx.outputBuf, testCtx.outputBuf, *vppPath, vppArgs...)
 
 	SetDefaultEventuallyPollingInterval(checkPollingInterval)
 	SetDefaultEventuallyTimeout(checkTimeout)
@@ -189,7 +164,9 @@ func setupE2E(t *testing.T) *TestCtx {
 	if err != nil {
 		t.Fatalf("failed to get docker client instance from the environment variables: %v", err)
 	}
-	t.Logf("Using docker client endpoint: %+v", testCtx.dockerClient.Endpoint())
+	if *debug {
+		t.Logf("Using docker client endpoint: %+v", testCtx.dockerClient.Endpoint())
+	}
 
 	// make sure there are no microservices left from the previous run
 	resetMicroservices(t, testCtx.dockerClient)
@@ -203,7 +180,7 @@ func setupE2E(t *testing.T) *TestCtx {
 		e2eCovPath := fmt.Sprintf("%s/%d.out", *covPath, time.Now().Unix())
 		agentArgs = []string{"-test.coverprofile", e2eCovPath}
 	}
-	testCtx.agent = startProcess(t, "VPP-Agent", nil, testCtx.output, testCtx.output, "/vpp-agent", agentArgs...)
+	testCtx.agent = startProcess(t, "VPP-Agent", nil, testCtx.outputBuf, testCtx.outputBuf, "/vpp-agent", agentArgs...)
 
 	// prepare HTTP client for access to REST API of the agent
 	httpAddr := fmt.Sprintf(":%d", *agentHTTPPort)
@@ -214,7 +191,8 @@ func setupE2E(t *testing.T) *TestCtx {
 		testCtx.httpClient.Log.SetLevel(logging.DebugLevel)
 	}
 
-	waitUntilAgentReady(t, testCtx.httpClient)
+	Eventually(testCtx.checkAgentReady, agentInitTimeout, checkPollingInterval).
+		Should(Succeed())
 
 	// connect with agent via GRPC
 	grpcAddr := fmt.Sprintf(":%d", *agentGrpcPort)
@@ -245,8 +223,6 @@ func (ctx *TestCtx) teardownE2E() {
 	if ctx.t.Failed() {
 		ctx.dumpLog()
 	}
-
-	ctx.t.Logf("teardown E2E")
 
 	// stop all microservices
 	for msName := range ctx.microservices {
@@ -340,17 +316,19 @@ func (ctx *TestCtx) agentInSync() bool {
 // execCmd executes command and returns stdout, stderr as strings and error.
 func (ctx *TestCtx) execCmd(cmd string, args ...string) (string, string, error) {
 	ctx.t.Helper()
-	ctx.t.Logf("exec: '%s %s'", cmd, strings.Join(args, " "))
+	ctx.logger.Printf("exec: '%s %s'", cmd, strings.Join(args, " "))
 	var stdout, stderr bytes.Buffer
 	c := exec.Command(cmd, args...)
 	c.Stdout = &stdout
 	c.Stderr = &stderr
 	err := c.Run()
-	if strings.TrimSpace(stdout.String()) != "" {
-		ctx.t.Logf(" stdout:\n%s", stdout.String())
-	}
-	if strings.TrimSpace(stderr.String()) != "" {
-		ctx.t.Logf(" stderr:\n%s", stderr.String())
+	if *debug {
+		if strings.TrimSpace(stdout.String()) != "" {
+			ctx.logger.Printf(" stdout:\n%s", stdout.String())
+		}
+		if strings.TrimSpace(stderr.String()) != "" {
+			ctx.logger.Printf(" stderr:\n%s", stderr.String())
+		}
 	}
 	return stdout.String(), stderr.String(), err
 }
@@ -367,7 +345,7 @@ func (ctx *TestCtx) execVppctl(action string, args ...string) (string, error) {
 }
 
 func (ctx *TestCtx) startMicroservice(msName string) (ms *microservice) {
-	ms = createMicroservice(ctx.t, msName, ctx.dockerClient, ctx.nsCalls)
+	ms = createMicroservice(ctx, msName, ctx.dockerClient, ctx.nsCalls)
 	ctx.microservices[msName] = ms
 	return ms
 }
@@ -404,6 +382,8 @@ func (ctx *TestCtx) pingFromMsClb(msName, dstAddress string) func() error {
 	}
 }
 
+var vppPingRegexp = regexp.MustCompile("Statistics: ([0-9]+) sent, ([0-9]+) received, ([0-9]+)% packet loss")
+
 // pingFromVPP pings <dstAddress> from inside the VPP.
 func (ctx *TestCtx) pingFromVPP(destAddress string) error {
 	ctx.t.Helper()
@@ -419,7 +399,7 @@ func (ctx *TestCtx) pingFromVPP(destAddress string) error {
 	if err != nil {
 		return err
 	}
-	ctx.t.Logf("VPP ping %s: sent=%d, received=%d, loss=%d%%",
+	ctx.logger.Printf("VPP ping %s: sent=%d, received=%d, loss=%d%%",
 		destAddress, sent, recv, loss)
 
 	if sent == 0 || loss >= 50 {
@@ -585,7 +565,7 @@ func (ctx *TestCtx) sleepFor(d time.Duration) {
 }
 
 func (ctx *TestCtx) dumpLog() {
-	ctx.t.Logf("-----------------\n Output \n-----------------\n%s\n------------------", ctx.output)
+	ctx.t.Logf("OUTPUT:\n\n-----------------\n%s\n------------------\n\n", ctx.outputBuf)
 }
 
 func syncAgent(t *testing.T, httpClient *utils.HTTPClient) (executed kvs.RecordedTxnOps) {
@@ -603,31 +583,23 @@ func syncAgent(t *testing.T, httpClient *utils.HTTPClient) (executed kvs.Recorde
 	return txn.Executed
 }
 
-func waitUntilAgentReady(t *testing.T, httpClient *utils.HTTPClient) {
-	start := time.Now()
-	for {
-		select {
-		case <-time.After(checkPollingInterval):
-			if time.Since(start) > agentInitTimeout {
-				t.Fatalf("agent failed to initialize within the timeout period of %v",
-					agentInitTimeout)
-			}
-			resp, err := httpClient.GET("/readiness")
-			if err != nil {
-				continue
-			}
-			agentStatus := probe.ExposedStatus{}
-			if err := json.Unmarshal(resp, &agentStatus); err != nil {
-				t.Fatalf("Agent readiness reply cannot be decoded: %v", err)
-			}
-			if agentStatus, ok := agentStatus.PluginStatus["VPPAgent"]; ok {
-				if agentStatus.State == status.OperationalState_OK {
-					t.Logf("agent ready, took %v", time.Since(start))
-					return
-				}
-			}
-		}
+func (ctx *TestCtx) checkAgentReady() error {
+	resp, err := ctx.httpClient.GET("/readiness")
+	if err != nil {
+		return err
 	}
+	var agentStatus probe.ExposedStatus
+	if err := json.Unmarshal(resp, &agentStatus); err != nil {
+		return fmt.Errorf("decoding reply from /readiness failed: %w", err)
+	}
+	agent, ok := agentStatus.PluginStatus["VPPAgent"]
+	if !ok {
+		return fmt.Errorf("agent status missing")
+	}
+	if agent.State != status.OperationalState_OK {
+		return fmt.Errorf("agent status: %v", agent.State.String())
+	}
+	return nil
 }
 
 func assertProcessNotRunning(t *testing.T, name string, aliases ...string) {
@@ -649,28 +621,18 @@ func assertProcessNotRunning(t *testing.T, name string, aliases ...string) {
 	}
 }
 
-func startProcess(t *testing.T, name string, stdin io.Reader, stdout, stderr io.Writer,
-	path string, args ...string) *exec.Cmd {
-
-	cmd := exec.Command(path)
-	cmd.Args = append(cmd.Args, args...)
-	if stdin != nil {
-		cmd.Stdin = stdin
-	}
-	if stdout != nil {
-		cmd.Stderr = stdout
-	}
-	if stderr != nil {
-		cmd.Stdout = stderr
-	}
-
+func startProcess(t *testing.T, name string, stdin io.Reader, stdout, stderr io.Writer, path string, args ...string) *exec.Cmd {
+	cmd := exec.Command(path, args...)
+	cmd.Stdin = stdin
+	cmd.Stderr = stdout
+	cmd.Stdout = stderr
 	// ensure that process is killed when current process exits
 	cmd.SysProcAttr = &syscall.SysProcAttr{Pdeathsig: syscall.SIGKILL}
 	if err := cmd.Start(); err != nil {
-		t.Fatalf("starting %s failed: %v", name, err)
+		t.Fatalf("starting process %s failed: %v", name, err)
 	}
 	pid := uint32(cmd.Process.Pid)
-	t.Logf("%s start OK (PID: %v)", name, pid)
+	t.Logf("%s started (PID: %v)", name, pid)
 	return cmd
 }
 

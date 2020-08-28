@@ -27,14 +27,14 @@ var (
 )
 
 type microservice struct {
-	t            *testing.T
+	ctx          *TestCtx
 	name         string
 	dockerClient *docker.Client
 	container    *docker.Container
 	nsCalls      nslinuxcalls.NetworkNamespaceAPI
 }
 
-func createMicroservice(t *testing.T, msName string, dockerClient *docker.Client, nsCalls nslinuxcalls.NetworkNamespaceAPI) *microservice {
+func createMicroservice(ctx *TestCtx, msName string, dockerClient *docker.Client, nsCalls nslinuxcalls.NetworkNamespaceAPI) *microservice {
 	container, err := dockerClient.CreateContainer(docker.CreateContainerOptions{
 		Name: msNamePrefix + msName,
 		Config: &docker.Config{
@@ -49,18 +49,18 @@ func createMicroservice(t *testing.T, msName string, dockerClient *docker.Client
 		},
 	})
 	if err != nil {
-		t.Fatalf("failed to create microservice '%s': %v", msName, err)
+		ctx.t.Fatalf("failed to create microservice '%s': %v", msName, err)
 	}
 	err = dockerClient.StartContainer(container.ID, nil)
 	if err != nil {
-		t.Fatalf("failed to start microservice '%s': %v", msName, err)
+		ctx.t.Fatalf("failed to start microservice '%s': %v", msName, err)
 	}
 	container, err = dockerClient.InspectContainer(container.ID)
 	if err != nil {
-		t.Fatalf("failed to inspect microservice '%s': %v", msName, err)
+		ctx.t.Fatalf("failed to inspect microservice '%s': %v", msName, err)
 	}
 	return &microservice{
-		t:            t,
+		ctx:          ctx,
 		name:         msName,
 		container:    container,
 		dockerClient: dockerClient,
@@ -122,7 +122,7 @@ func (ms *microservice) exec(cmdName string, args ...string) (output string, err
 		Container:    ms.container.ID,
 	})
 	if err != nil {
-		ms.t.Fatalf("failed to create docker exec instance for ping: %v", err)
+		ms.ctx.t.Fatalf("failed to create docker exec instance for ping: %v", err)
 	}
 
 	var stdout bytes.Buffer
@@ -137,11 +137,11 @@ func (ms *microservice) exec(cmdName string, args ...string) (output string, err
 func (ms *microservice) enterNetNs() (exitNetNs func()) {
 	origns, err := netns.Get()
 	if err != nil {
-		ms.t.Fatalf("failed to obtain current network namespace: %v", err)
+		ms.ctx.t.Fatalf("failed to obtain current network namespace: %v", err)
 	}
 	nsHandle, err := ms.nsCalls.GetNamespaceFromPid(ms.container.State.Pid)
 	if err != nil {
-		ms.t.Fatalf("failed to obtain handle for network namespace of microservice '%s': %v",
+		ms.ctx.t.Fatalf("failed to obtain handle for network namespace of microservice '%s': %v",
 			ms.name, err)
 	}
 	defer nsHandle.Close()
@@ -149,13 +149,13 @@ func (ms *microservice) enterNetNs() (exitNetNs func()) {
 	runtime.LockOSThread()
 	err = ms.nsCalls.SetNamespace(nsHandle)
 	if err != nil {
-		ms.t.Fatalf("failed to enter network namespace of microservice '%s': %v",
+		ms.ctx.t.Fatalf("failed to enter network namespace of microservice '%s': %v",
 			ms.name, err)
 	}
 	return func() {
 		err = ms.nsCalls.SetNamespace(origns)
 		if err != nil {
-			ms.t.Fatalf("failed to return back to the original network namespace: %v", err)
+			ms.ctx.t.Fatalf("failed to return back to the original network namespace: %v", err)
 		}
 		origns.Close()
 		runtime.UnlockOSThread()
@@ -164,7 +164,7 @@ func (ms *microservice) enterNetNs() (exitNetNs func()) {
 
 // ping <destAddress> from inside of the microservice.
 func (ms *microservice) ping(destAddress string, allowedLoss ...int) error {
-	ms.t.Helper()
+	ms.ctx.t.Helper()
 
 	stdout, err := ms.exec("ping", "-w", "4", destAddress)
 	if err != nil {
@@ -176,7 +176,7 @@ func (ms *microservice) ping(destAddress string, allowedLoss ...int) error {
 	if err != nil {
 		return err
 	}
-	ms.t.Logf("Linux ping %s: sent=%d, received=%d, loss=%d%%",
+	ms.ctx.logger.Printf("Linux ping %s: sent=%d, received=%d, loss=%d%%",
 		destAddress, sent, recv, loss)
 
 	maxLoss := 49 // by default at least half of the packets should ge through
