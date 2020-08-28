@@ -122,7 +122,8 @@ func (d *InterfaceAddressDescriptor) Delete(key string, emptyVal proto.Message, 
 		return err
 	}
 
-	if ipAddr.IP.IsLinkLocalUnicast() {
+	// do not delete (auto-assigned) IPv6 link-local addresses
+	if ipAddr.IP.To4() == nil && ipAddr.IP.IsLinkLocalUnicast() {
 		return nil
 	}
 
