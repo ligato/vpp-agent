@@ -493,12 +493,10 @@ func (ctx *TestCtx) testConnection(fromMs, toMs, toAddr, listenAddr string,
 	if err != nil {
 		outcome = err.Error()
 	}
-	ctx.t.Logf(
-		"%s connection <from-ms=%s, dest=%s:%d, to-ms=%s, server=%s:%d> packet trace:\n",
+	ctx.logger.Printf("%s connection <from-ms=%s, dest=%s:%d, to-ms=%s, server=%s:%d>\n",
 		protocol, fromMs, toAddr, toPort, toMs, listenAddr, listenPort)
 	stopPacketTrace()
-	ctx.t.Logf(
-		"%s connection <from-ms=%s, dest=%s:%d, to-ms=%s, server=%s:%d> outcome: %s\n",
+	ctx.logger.Printf("%s connection <from-ms=%s, dest=%s:%d, to-ms=%s, server=%s:%d> => outcome: %s\n",
 		protocol, fromMs, toAddr, toPort, toMs, listenAddr, listenPort, outcome)
 	return err
 }
@@ -533,28 +531,29 @@ func (ctx *TestCtx) getValueStateClb(value proto.Message) func() kvscheduler.Val
 }
 
 func (ctx *TestCtx) startPacketTrace(nodes ...string) (stopTrace func()) {
-	const maxPackets = 100
+	const tracePacketsMax = 100
 	for i, node := range nodes {
 		if i == 0 {
 			_, err := ctx.execVppctl("clear trace")
 			if err != nil {
-				ctx.t.Fatalf("Failed to clear the packet trace: %v", err)
+				ctx.t.Errorf("Failed to clear the packet trace: %v", err)
 			}
 		}
-		_, err := ctx.execVppctl("trace add", fmt.Sprintf("%s %d", node, maxPackets))
+		_, err := ctx.execVppctl("trace add", fmt.Sprintf("%s %d", node, tracePacketsMax))
 		if err != nil {
-			ctx.t.Fatalf("Failed to add packet trace for node '%s': %v", node, err)
+			ctx.t.Errorf("Failed to add packet trace for node '%s': %v", node, err)
 		}
 	}
-
 	return func() {
 		if len(nodes) == 0 {
 			return
 		}
-		_, err := ctx.execVppctl("show trace")
+		traces, err := ctx.execVppctl("show trace")
 		if err != nil {
-			ctx.t.Fatalf("Failed to show packet trace: %v", err)
+			ctx.t.Errorf("Failed to show packet trace: %v", err)
+			return
 		}
+		ctx.logger.Printf("Packet trace:\n%s\n", traces)
 	}
 }
 
@@ -869,7 +868,7 @@ func simpleTCPOrUDPClient(newConn chan connectionRequest, addr, reqMsg, expRespM
 	go func() {
 		defer close(commRv)
 		// send message to the server
-		_, err := fmt.Fprintf(cr.conn, reqMsg+"\n")
+		_, err := cr.conn.Write([]byte(reqMsg + "\n"))
 		if err != nil {
 			commRv <- fmt.Errorf("failed to send data to the server: %v", err)
 			return
