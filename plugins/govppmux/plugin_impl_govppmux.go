@@ -173,9 +173,10 @@ func (p *Plugin) Init() (err error) {
 		}
 		err := p.startProxy(NewVppAdapter(address, useShm), NewStatsAdapter(statsSocket))
 		if err != nil {
-			return err
+			p.Log.Warnf("VPP proxy failed to start: %v", err)
+		} else {
+			p.Log.Infof("VPP proxy ready")
 		}
-		p.Log.Infof("VPP proxy ready")
 	}
 
 	// register REST API handlers

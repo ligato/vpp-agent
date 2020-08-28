@@ -210,7 +210,13 @@ func (c *InterfaceStateUpdater) startReadingCounters(ctx context.Context) {
 	for {
 		select {
 		case <-tick.C:
-			c.doInterfaceStatsRead()
+			statsClient := c.vppClient.Stats()
+			if statsClient == nil {
+				c.log.Warnf("VPP stats client not available")
+				// TODO: use retry with backoff instead of returning here
+				return
+			}
+			c.doInterfaceStatsRead(statsClient)
 
 		case <-ctx.Done():
 			c.log.Debug("Interface state VPP periodic polling stopped")
@@ -276,7 +282,7 @@ func (c *InterfaceStateUpdater) doUpdatesIfStateDetails() {
 }
 
 // doInterfaceStatsRead dumps statistics using interface filter and processes them
-func (c *InterfaceStateUpdater) doInterfaceStatsRead() {
+func (c *InterfaceStateUpdater) doInterfaceStatsRead(statsClient govppapi.StatsProvider) {
 	c.access.Lock()
 	defer c.access.Unlock()
 
@@ -286,7 +292,7 @@ func (c *InterfaceStateUpdater) doInterfaceStatsRead() {
 		return
 	}
 
-	err := c.vppClient.Stats().GetInterfaceStats(&c.ifStats)
+	err := statsClient.GetInterfaceStats(&c.ifStats)
 	if err != nil {
 		// TODO add some counter to prevent it log forever
 		c.log.Errorf("failed to read statistics data: %v", err)

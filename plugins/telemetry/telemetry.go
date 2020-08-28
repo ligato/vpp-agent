@@ -159,10 +159,11 @@ func (p *Plugin) AfterInit() error {
 func (p *Plugin) setupStatsPoller() error {
 	h := vppcalls.CompatibleTelemetryHandler(p.VPP)
 	if h == nil {
-		return fmt.Errorf("VPP telemetry handler unavailable")
+		p.Log.Warnf("VPP telemetry handler unavailable")
+	} else {
+		p.statsPollerServer.handler = h
 	}
-	p.statsPollerServer.handler = h
-	p.ifIndex = p.IfPlugin.GetInterfaceIndex()
+	p.statsPollerServer.ifIndex = p.IfPlugin.GetInterfaceIndex()
 
 	if p.GRPC != nil && p.GRPC.GetServer() != nil {
 		configurator.RegisterStatsPollerServiceServer(p.GRPC.GetServer(), &p.statsPollerServer)
