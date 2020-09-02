@@ -146,6 +146,20 @@ func (p *dispatcher) PushData(ctx context.Context, kvPairs []KeyVal) (results []
 	t := time.Now()
 
 	seqID, err := txn.Commit(ctx)
+	p.kvs.TransactionBarrier()
+	results = append(results, Result{
+		Key: "seqnum",
+		Status: &Status{
+			Details: []string{fmt.Sprint(seqID)},
+		},
+	})
+	for key := range uniq {
+		s := p.kvs.GetValueStatus(key)
+		results = append(results, Result{
+			Key:    key,
+			Status: s.GetValue(),
+		})
+	}
 	if err != nil {
 		if txErr, ok := err.(*kvs.TransactionError); ok && len(txErr.GetKVErrors()) > 0 {
 			kvErrs := txErr.GetKVErrors()
@@ -153,31 +167,16 @@ func (p *dispatcher) PushData(ctx context.Context, kvPairs []KeyVal) (results []
 			for i, kvErr := range kvErrs {
 				errInfo += fmt.Sprintf(" - %3d. error (%s) %s - %v\n", i+1, kvErr.TxnOperation, kvErr.Key, kvErr.Error)
 			}
-			p.log.Errorf("Transaction #%d finished with %d errors", seqID, len(kvErrs))
-			fmt.Println(errInfo)
+			p.log.Errorf("Transaction #%d finished with %d errors\n%s", seqID, len(kvErrs), errInfo)
 		} else {
 			p.log.Errorf("Transaction failed: %v", err)
 			return nil, err
 		}
-		return nil, err
+		return results, err
+	} else {
+		took := time.Since(t)
+		p.log.Infof("Transaction #%d successful! (took %v)", seqID, took.Round(time.Microsecond*100))
 	}
-
-	p.kvs.TransactionBarrier()
-
-	for key := range uniq {
-		s := p.kvs.GetValueStatus(key)
-		/*results = append(results, KeyVal{
-			Key: key,
-			Val: s.Value,
-		})*/
-		results = append(results, Result{
-			Key:    key,
-			Status: s.GetValue(),
-		})
-	}
-
-	took := time.Since(t).Round(time.Microsecond * 100)
-	p.log.Infof("Transaction #%d successful! (took %v)", seqID, took)
 
 	return results, nil
 }
