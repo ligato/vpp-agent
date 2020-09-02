@@ -42,8 +42,11 @@ func newVppCliCommand(cli agentcli.Cli) *cobra.Command {
 		Aliases: []string{"c"},
 		Short:   "Execute VPP CLI command",
 		Example: `
- To run a VPP CLI command:
-  $ {{.CommandPath}} vpp cli show version
+# Execute VPP CLI command 'show version'
+{{.CommandPath}} vpp cli show version
+
+# Print info about VPP
+{{.CommandPath}} vpp info
 `,
 		Args: cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {

@@ -41,26 +41,26 @@ func NewDumpCommand(cli agentcli.Cli) *cobra.Command {
 		Short: "Dump running state",
 		Long:  "Dumps actual running state",
 		Example: `
-  Dump everything
-	{{.CommandPath}} all
+# Dump everything
+{{.CommandPath}} all
 
-  Dump VPP interfaces & routes
-  	{{.CommandPath}} vpp.interfaces vpp.l3.routes
+# Dump VPP interfaces & routes
+{{.CommandPath}} vpp.interfaces vpp.l3.routes
 
-  Dump all VPP data in JSON format
-	{{.CommandPath}} -f json vpp.*
+# Dump all VPP data in JSON format
+{{.CommandPath}} -f json vpp.*
 
-  Dump only VPP memif interfaces
-  	{{.CommandPath}} -f '{{` + "`{{range .}}{{if eq .Value.Type.String \"MEMIF\" }}{{json .}}{{end}}{{end}}`" + `}}' vpp.interfaces
+# Dump only VPP memif interfaces
+{{.CommandPath}} -f '{{` + "`{{range .}}{{if eq .Value.Type.String \"MEMIF\" }}{{json .}}{{end}}{{end}}`" + `}}' vpp.interfaces
 
-  Dump everything currently defined at northbound
-  	{{.CommandPath}} --view=NB all
+# Dump everything currently defined at northbound
+{{.CommandPath}} --view=NB all
 
-  Dump all VPP & Linux data directly from southband
-  	{{.CommandPath}} --view=SB vpp.* linux.*
+# Dump all VPP & Linux data directly from southband
+{{.CommandPath}} --view=SB vpp.* linux.*
 
-  Dump all VPP & Linux data directly from southband
-  	{{.CommandPath}} --view=SB all
+# Dump all VPP & Linux data directly from southband
+{{.CommandPath}} --view=SB all
 `,
 		Args: func(cmd *cobra.Command, args []string) error {
 			if len(args) == 0 {

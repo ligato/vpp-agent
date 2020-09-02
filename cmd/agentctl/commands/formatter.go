@@ -30,11 +30,13 @@ import (
 )
 
 var tmplFuncs = template.FuncMap{
-	"json":  jsonTmpl,
-	"yaml":  yamlTmpl,
-	"proto": protoTmpl,
-	"epoch": epochTmpl,
-	"ago":   agoTmpl,
+	"json":   jsonTmpl,
+	"yaml":   yamlTmpl,
+	"proto":  protoTmpl,
+	"epoch":  epochTmpl,
+	"ago":    agoTmpl,
+	"dur":    shortHumanDuration,
+	"prefix": prefixTmpl,
 }
 
 func formatAsTemplate(w io.Writer, format string, data interface{}) error {
@@ -138,4 +140,13 @@ func shortHumanDuration(d time.Duration) string {
 		return fmt.Sprintf("%dd", hours/24)
 	}
 	return fmt.Sprintf("%dy", int(d.Hours()/24/365))
+}
+
+func prefixTmpl(s string, prefix string) string {
+	ps := strings.TrimRight(s, "\n")
+	ps = strings.ReplaceAll(ps, "\n", "\n"+prefix)
+	if strings.HasSuffix(s, "\n") {
+		ps += "\n"
+	}
+	return prefix + ps
 }

@@ -300,33 +300,35 @@ func newConfigHistoryCommand(cli agentcli.Cli) *cobra.Command {
 		Short: "Show config history",
 		Long: `Show history of config changes and status updates
 
- Prints a table of most important information about the history of changes to 
- config and status updates that have occurred. You can filter the output by
- specifying a reference to sequence number (txn ID).
+Prints a table of most important information about the history of changes to 
+config and status updates that have occurred. You can filter the output by
+specifying a reference to sequence number (txn ID).
 
- TYPE
-
-  Type can be one of:
-  - config change  (NB - full resync)
-  - status update  (SB)
-  - config sync    (NB - upstream resync)
-  - status sync    (NB - downstream resync)
-  - retry #X for Y (retry of TX)
+Type can be one of:
+ - config change  (NB - full resync)
+ - status update  (SB)
+ - config sync    (NB - upstream resync)
+ - status sync    (NB - downstream resync)
+ - retry #X for Y (retry of TX)
 `,
-		Example: `  Show entire history:
-	{{.CommandPath}} config history
+		Example: `
+# Show entire history
+{{.CommandPath}} config history
 
-  Show entire history with details:
-	{{.CommandPath}} config history --details
+# Show entire history with details
+{{.CommandPath}} config history --details
 
-  Show entire history in log format:
-	{{.CommandPath}} config history -f log
+# Show entire history in transaction log format
+{{.CommandPath}} config history -f log
 
-  Show history point with sequence number 3:
-	{{.CommandPath}} config history 3
+# Show entire history in classic log format
+{{.CommandPath}} config history -f log
 
-  Show history point with seq. number 3 in log format:
-	{{.CommandPath}} config history -f log 3
+# Show history point with sequence number 3
+{{.CommandPath}} config history 3
+
+# Show history point with seq. number 3 in log format
+{{.CommandPath}} config history -f log 3
 `,
 		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
