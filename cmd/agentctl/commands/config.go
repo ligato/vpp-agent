@@ -19,19 +19,24 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"sort"
 	"strconv"
+	"strings"
 	"time"
 
 	yaml2 "github.com/ghodss/yaml"
 	"github.com/olekukonko/tablewriter"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/encoding/protojson"
 
 	"go.ligato.io/vpp-agent/v3/cmd/agentctl/api/types"
 	agentcli "go.ligato.io/vpp-agent/v3/cmd/agentctl/cli"
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/configurator"
+	"go.ligato.io/vpp-agent/v3/proto/ligato/kvscheduler"
 )
 
 func NewConfigCommand(cli agentcli.Cli) *cobra.Command {
@@ -101,6 +106,7 @@ func newConfigUpdateCommand(cli agentcli.Cli) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "update",
 		Short: "Update config in agent",
+		Long:  "Update configuration in agent from file",
 		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runConfigUpdate(cli, opts, args)
@@ -109,12 +115,14 @@ func newConfigUpdateCommand(cli agentcli.Cli) *cobra.Command {
 	flags := cmd.Flags()
 	flags.StringVarP(&opts.Format, "format", "f", "", "Format output")
 	flags.BoolVar(&opts.Replace, "replace", false, "Replaces entire config in agent")
+	flags.BoolVarP(&opts.Verbose, "verbose", "v", false, "Show verbose output")
 	return cmd
 }
 
 type ConfigUpdateOptions struct {
 	Format  string
 	Replace bool
+	Verbose bool
 }
 
 func runConfigUpdate(cli agentcli.Cli, opts ConfigUpdateOptions, args []string) error {
@@ -146,10 +154,40 @@ func runConfigUpdate(cli agentcli.Cli, opts ConfigUpdateOptions, args []string) 
 	}
 	logrus.Infof("loaded config update:\n%s", update)
 
-	if _, err := client.Update(ctx, &configurator.UpdateRequest{
+	var data interface{}
+
+	var header metadata.MD
+	resp, err := client.Update(ctx, &configurator.UpdateRequest{
 		Update:     update,
 		FullResync: opts.Replace,
-	}); err != nil {
+	}, grpc.Header(&header))
+	if err != nil {
+		logrus.Warnf("update failed")
+		data = err
+	} else {
+		data = resp
+	}
+
+	if opts.Verbose {
+		logrus.Infof("header: %+v", header)
+		if seqNum, ok := header["seqnum"]; ok {
+			ref, _ := strconv.Atoi(seqNum[0])
+			txns, err := cli.Client().SchedulerHistory(ctx, types.SchedulerHistoryOptions{
+				SeqNum: ref,
+			})
+			if err != nil {
+				logrus.Warnf("getting history for seqNum %d failed: %v", ref, err)
+			} else {
+				data = txns
+			}
+		}
+	}
+
+	format := opts.Format
+	if len(format) == 0 {
+		format = `{{.}}`
+	}
+	if err := formatAsTemplate(cli.Out(), format, data); err != nil {
 		return err
 	}
 
@@ -241,6 +279,7 @@ func runConfigResync(cli agentcli.Cli, opts ConfigResyncOptions) error {
 	if err != nil {
 		return err
 	}
+
 	format := opts.Format
 	if len(format) == 0 {
 		format = defaultFormatConfigResync
@@ -263,7 +302,32 @@ func newConfigHistoryCommand(cli agentcli.Cli) *cobra.Command {
 
  Prints a table of most important information about the history of changes to 
  config and status updates that have occurred. You can filter the output by
- specifying a reference to sequence number (txn ID).`,
+ specifying a reference to sequence number (txn ID).
+
+ TYPE
+
+  Type can be one of:
+  - config change  (NB - full resync)
+  - status update  (SB)
+  - config sync    (NB - upstream resync)
+  - status sync    (NB - downstream resync)
+  - retry #X for Y (retry of TX)
+`,
+		Example: `  Show entire history:
+	{{.CommandPath}} config history
+
+  Show entire history with details:
+	{{.CommandPath}} config history --details
+
+  Show entire history in log format:
+	{{.CommandPath}} config history -f log
+
+  Show history point with sequence number 3:
+	{{.CommandPath}} config history 3
+
+  Show history point with seq. number 3 in log format:
+	{{.CommandPath}} config history -f log 3
+`,
 		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) > 0 {
@@ -274,12 +338,14 @@ func newConfigHistoryCommand(cli agentcli.Cli) *cobra.Command {
 	}
 	flags := cmd.Flags()
 	flags.StringVarP(&opts.Format, "format", "f", "", "Format output")
+	flags.BoolVar(&opts.Details, "details", false, "Include details")
 	return cmd
 }
 
 type ConfigHistoryOptions struct {
-	Format string
-	TxnRef string
+	Format  string
+	Details bool
+	TxnRef  string
 }
 
 func runConfigHistory(cli agentcli.Cli, opts ConfigHistoryOptions) (err error) {
@@ -300,9 +366,12 @@ func runConfigHistory(cli agentcli.Cli, opts ConfigHistoryOptions) (err error) {
 	if err != nil {
 		return err
 	}
+
 	format := opts.Format
 	if len(format) == 0 {
-		printHistoryTable(cli.Out(), txns)
+		printHistoryTable(cli.Out(), txns, opts.Details)
+	} else if format == "log" {
+		format = "{{.}}"
 	}
 	if err := formatAsTemplate(cli.Out(), format, txns); err != nil {
 		return err
@@ -311,11 +380,15 @@ func runConfigHistory(cli agentcli.Cli, opts ConfigHistoryOptions) (err error) {
 	return nil
 }
 
-func printHistoryTable(out io.Writer, txns kvs.RecordedTxns) {
+func printHistoryTable(out io.Writer, txns kvs.RecordedTxns, withDetails bool) {
 	table := tablewriter.NewWriter(out)
-	table.SetHeader([]string{
-		"Seq", "", "Type", "Start", "Input", "Operations", "Result", "Summary",
-	})
+	header := []string{
+		"Seq", "Type", "Start", "Input", "Operations", "Result", "Summary",
+	}
+	if withDetails {
+		header = append(header, "Details")
+	}
+	table.SetHeader(header)
 	table.SetAutoWrapText(false)
 	table.SetAutoFormatHeaders(true)
 	table.SetHeaderAlignment(tablewriter.ALIGN_LEFT)
@@ -326,50 +399,75 @@ func printHistoryTable(out io.Writer, txns kvs.RecordedTxns) {
 	table.SetHeaderLine(false)
 	table.SetBorder(false)
 	table.SetTablePadding("\t")
-
 	for _, txn := range txns {
 		typ := getTxnType(txn)
 		clr := getTxnColor(txn)
-
-		result := txnErrors(txn)
-		resClr := tablewriter.FgGreenColor
-		if result != "" {
-			resClr = tablewriter.FgHiRedColor
-		} else {
-			result = "ok"
-		}
 		age := shortHumanDuration(time.Since(txn.Start))
+		var result string
+		var resClr int
+		var detail string
+		var summary string
 		var input string
 		if len(txn.Values) > 0 {
 			input = fmt.Sprintf("%-2d values", len(txn.Values))
 		} else {
-			input = "-"
+			input = "<none>"
 		}
 		var operation string
 		if len(txn.Executed) > 0 {
-			operation = fmt.Sprintf("%-2d executed", len(txn.Executed))
+			operation = txnOperations(txn)
+			summary = txnValueStates(txn)
 		} else {
-			operation = "-"
+			operation = "<none>"
+			summary = "<none>"
 		}
-		summary := txn.Description
+		errs := txnErrors(txn)
+		if errs != nil {
+			result = "error"
+			resClr = tablewriter.FgHiRedColor
+			if len(errs) > 1 {
+				result = fmt.Sprintf("%d errors", len(errs))
+			}
+		} else if len(txn.Executed) > 0 {
+			result = "ok"
+			resClr = tablewriter.FgGreenColor
+		}
+		if withDetails {
+			if errs != nil {
+				for _, e := range errs {
+					if detail != "" {
+						detail += "\n"
+					}
+					detail += fmt.Sprintf("%v", e.Error())
+				}
+			}
+			if reasons := txnPendingReasons(txn); reasons != "" {
+				if detail != "" {
+					detail += "\n"
+				}
+				detail += reasons
+			}
+		}
 		row := []string{
-			fmt.Sprintf("%3v", txn.SeqNum),
-			txnIcon(txn),
+			fmt.Sprint(txn.SeqNum),
 			typ,
-			fmt.Sprintf("%-3s", age),
+			age,
 			input,
 			operation,
 			result,
 			summary,
 		}
+		if withDetails {
+			row = append(row, detail)
+		}
 		clrs := []tablewriter.Colors{
 			{},
-			{tablewriter.Bold, clr},
 			{tablewriter.Normal, clr},
 			{},
 			{},
 			{},
 			{resClr},
+			{},
 			{},
 		}
 		table.Rich(row, clrs)
@@ -406,7 +504,7 @@ func getTxnType(txn *kvs.RecordedTxn) string {
 		} else if txn.ResyncType == kvs.UpstreamResync {
 			return "config sync"
 		} else if txn.ResyncType == kvs.DownstreamResync {
-			return "config check"
+			return "status sync"
 		}
 		return "config change"
 	case kvs.RetryFailedOps:
@@ -415,37 +513,51 @@ func getTxnType(txn *kvs.RecordedTxn) string {
 	return "?"
 }
 
-func txnErrors(txn *kvs.RecordedTxn) string {
+func txnValueStates(txn *kvs.RecordedTxn) string {
+	opermap := map[string]int{}
+	for _, r := range txn.Executed {
+		opermap[r.NewState.String()]++
+	}
+	var opers []string
+	for k, v := range opermap {
+		opers = append(opers, fmt.Sprintf("%s:%v", k, v))
+	}
+	sort.Strings(opers)
+	return strings.Join(opers, ", ")
+}
+
+func txnOperations(txn *kvs.RecordedTxn) string {
+	opermap := map[string]int{}
+	for _, r := range txn.Executed {
+		opermap[r.Operation.String()]++
+	}
+	var opers []string
+	for k, v := range opermap {
+		opers = append(opers, fmt.Sprintf("%s:%v", k, v))
+	}
+	sort.Strings(opers)
+	return strings.Join(opers, ", ")
+}
+
+func txnPendingReasons(txn *kvs.RecordedTxn) string {
+	var details []string
+	for _, r := range txn.Executed {
+		if r.NewState == kvscheduler.ValueState_PENDING {
+			// TODO: include pending resons in details
+			detail := fmt.Sprintf("[%s] %s -> %s", r.Operation, r.Key, r.NewState)
+			details = append(details, detail)
+		}
+	}
+	return strings.Join(details, "\n")
+}
+
+func txnErrors(txn *kvs.RecordedTxn) Errors {
 	var errs Errors
 	for _, r := range txn.Executed {
 		if r.NewErrMsg != "" {
-			r.NewErr = fmt.Errorf("%v", r.NewErrMsg)
+			r.NewErr = fmt.Errorf("[%s] %s -> %s: %v", r.Operation, r.Key, r.NewState, r.NewErrMsg)
 			errs = append(errs, r.NewErr)
 		}
 	}
-	if errs != nil {
-		word := "error"
-		if len(errs) > 1 {
-			word = fmt.Sprintf("%d errors", len(errs))
-		}
-		return fmt.Sprintf("%s: %v", word, errs.Error())
-	}
-	return ""
-}
-
-func txnIcon(txn *kvs.RecordedTxn) string {
-	switch txn.TxnType {
-	case kvs.SBNotification:
-		return "⇧"
-	case kvs.NBTransaction:
-		if txn.ResyncType == kvs.NotResync {
-			return "⇩"
-		} else if txn.ResyncType == kvs.FullResync {
-			return "⟱"
-		}
-		return "⇅"
-	case kvs.RetryFailedOps:
-		return "↻"
-	}
-	return "?"
+	return errs
 }

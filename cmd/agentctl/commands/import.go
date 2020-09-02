@@ -68,8 +68,7 @@ KEY FORMAT
     - Short - config/vpp/v2/interfaces/iface1
  
     When using short keys, import will use configured microservice label (e.g. --service-label flag).`,
-		Example: `  
-  Import data into Etcd:
+		Example: `  Import data into Etcd:
 	{{.CommandPath}} input.txt
 
   Import data directly into agent via gRPC::

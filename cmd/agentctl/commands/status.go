@@ -18,7 +18,6 @@ import (
 	"context"
 
 	"github.com/spf13/cobra"
-
 	"go.ligato.io/cn-infra/v2/health/probe"
 
 	"go.ligato.io/vpp-agent/v3/cmd/agentctl/api/types"
