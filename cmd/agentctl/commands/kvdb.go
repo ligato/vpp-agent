@@ -142,12 +142,13 @@ Supported key formats:
 
 For short key, put command use default microservice label.
 `,
-		Example: `  Set route configuration for "vpp1":
-	$ {{.CommandPath}} /vnf-agent/vpp1/config/vpp/v2/route/vrf/1/dst/10.1.1.3/32/gw/192.168.1.13 '{
-	"type": 1,
-	"vrf_id": 1,
-	"dst_network": "10.1.1.3/32",
-	"next_hop_addr": "192.168.1.13"
+		Example: `
+# Set route configuration for 'vpp1'
+{{.CommandPath}} /vnf-agent/vpp1/config/vpp/v2/route/vrf/1/dst/10.1.1.3/32/gw/192.168.1.13 '{
+  "type": 1,
+  "vrf_id": 1,
+  "dst_network": "10.1.1.3/32",
+  "next_hop_addr": "192.168.1.13"
 }'
 `,
 		Args: cobra.RangeArgs(1, 2),

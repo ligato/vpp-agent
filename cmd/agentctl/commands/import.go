@@ -62,18 +62,18 @@ FILE FORMAT
   	config/vpp/l2/v2/bridge-domain/bd1 {"name":"bd1"}
 
 KEY FORMAT
-    Keys can be defined in two ways:
-
+  Keys can be defined in two ways:
+  
     - Full  - /vnf-agent/vpp1/config/vpp/v2/interfaces/iface1
     - Short - config/vpp/v2/interfaces/iface1
  
-    When using short keys, import will use configured microservice label (e.g. --service-label flag).`,
-		Example: `  
-  Import data into Etcd:
-	{{.CommandPath}} input.txt
+  When using short keys, import will use configured microservice label (e.g. --service-label flag).`,
+		Example: `
+# Import data into Etcd
+{{.CommandPath}} input.txt
 
-  Import data directly into agent via gRPC::
-	{{.CommandPath}} --grpc input.txt
+# Import data directly into agent via gRPC
+{{.CommandPath}} --grpc input.txt
 `,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			opts.InputFile = args[0]

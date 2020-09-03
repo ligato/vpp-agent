@@ -30,11 +30,13 @@ import (
 )
 
 var tmplFuncs = template.FuncMap{
-	"json":  jsonTmpl,
-	"yaml":  yamlTmpl,
-	"proto": protoTmpl,
-	"epoch": epochTmpl,
-	"ago":   agoTmpl,
+	"json":   jsonTmpl,
+	"yaml":   yamlTmpl,
+	"proto":  protoTmpl,
+	"epoch":  epochTmpl,
+	"ago":    agoTmpl,
+	"dur":    shortHumanDuration,
+	"prefix": prefixTmpl,
 }
 
 func formatAsTemplate(w io.Writer, format string, data interface{}) error {
@@ -121,4 +123,30 @@ func epochTmpl(s int64) time.Time {
 
 func agoTmpl(t time.Time) time.Duration {
 	return time.Since(t).Round(time.Second)
+}
+
+func shortHumanDuration(d time.Duration) string {
+	if seconds := int(d.Seconds()); seconds < -1 {
+		return fmt.Sprintf("<invalid>")
+	} else if seconds < 0 {
+		return fmt.Sprintf("0s")
+	} else if seconds < 60 {
+		return fmt.Sprintf("%ds", seconds)
+	} else if minutes := int(d.Minutes()); minutes < 60 {
+		return fmt.Sprintf("%dm", minutes)
+	} else if hours := int(d.Hours()); hours < 24 {
+		return fmt.Sprintf("%dh", hours)
+	} else if hours < 24*365 {
+		return fmt.Sprintf("%dd", hours/24)
+	}
+	return fmt.Sprintf("%dy", int(d.Hours()/24/365))
+}
+
+func prefixTmpl(s string, prefix string) string {
+	ps := strings.TrimRight(s, "\n")
+	ps = strings.ReplaceAll(ps, "\n", "\n"+prefix)
+	if strings.HasSuffix(s, "\n") {
+		ps += "\n"
+	}
+	return prefix + ps
 }

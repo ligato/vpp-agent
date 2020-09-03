@@ -149,6 +149,7 @@ func SetupRootCommand(rootCmd *cobra.Command) (*cli.ClientOptions, *pflag.FlagSe
 	opts.InstallFlags(rootCmd.PersistentFlags())
 
 	cobra.AddTemplateFunc("add", func(a, b int) int { return a + b })
+	cobra.AddTemplateFunc("prefix", prefixTmpl)
 	cobra.AddTemplateFunc("cmdExample", cmdExample)
 	cobra.AddTemplateFunc("wrappedFlagUsages", wrappedFlagUsages)
 	cobra.AddTemplateFunc("wrappedGlobalFlagUsages", wrappedGlobalFlagUsages)
@@ -241,7 +242,7 @@ ALIASES
 {{- if .HasExample}}
 
 EXAMPLES
-{{ cmdExample . | trimRightSpace}}
+{{ prefix (cmdExample . | trimRightSpace) "  "}}
 
 {{- end}}
 {{- if .HasAvailableSubCommands }}

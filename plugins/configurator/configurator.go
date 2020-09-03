@@ -16,10 +16,14 @@ package configurator
 
 import (
 	"context"
+	"fmt"
 	"runtime/trace"
+	"strconv"
 
 	"go.ligato.io/cn-infra/v2/logging"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 
 	"go.ligato.io/vpp-agent/v3/pkg/models"
@@ -44,11 +48,11 @@ type configuratorServer struct {
 }
 
 func (svc *configuratorServer) Dump(ctx context.Context, req *pb.DumpRequest) (*pb.DumpResponse, error) {
-	return svc.dumpService.Dump(ctx, req, )
+	return svc.dumpService.Dump(ctx, req)
 }
 
-func (svc *configuratorServer)Notify(from *pb.NotifyRequest, server pb.ConfiguratorService_NotifyServer) error {
-	return svc.notifyService.Notify(from, server, )
+func (svc *configuratorServer) Notify(from *pb.NotifyRequest, server pb.ConfiguratorService_NotifyServer) error {
+	return svc.notifyService.Notify(from, server)
 }
 
 // Get retrieves actual configuration data.
@@ -98,7 +102,25 @@ func (svc *configuratorServer) Update(ctx context.Context, req *pb.UpdateRequest
 	}
 
 	ctx = orchestrator.DataSrcContext(ctx, "grpc")
-	if _, err := svc.dispatch.PushData(ctx, kvPairs); err != nil {
+	results, err := svc.dispatch.PushData(ctx, kvPairs)
+	seqNum := -1
+	for _, result := range results {
+		if result.Key == "seqnum" {
+			str := result.Status.Details[0]
+			if n, err := strconv.Atoi(str); err == nil {
+				seqNum = n
+			}
+		}
+	}
+	if seqNum >= 0 {
+		header := metadata.New(map[string]string{
+			"seqnum": fmt.Sprint(seqNum),
+		})
+		if err := grpc.SendHeader(ctx, header); err != nil {
+			logging.Warnf("sending grpc header failed: %v", err)
+		}
+	}
+	if err != nil {
 		st := status.New(codes.FailedPrecondition, err.Error())
 		return nil, st.Err()
 	}
