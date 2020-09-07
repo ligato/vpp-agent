@@ -254,7 +254,8 @@ func (h *IPTablesHandler) getHandler(protocol L3Protocol) (*iptables.IPTables, e
 	}
 
 	if handler == nil {
-		return nil, fmt.Errorf("iptables handler for protocol %v is not initialized", protocol)
+		return nil, fmt.Errorf("iptables handler for protocol %v is not initialized " +
+			"(please check that you have installed iptables in host system)", protocol)
 	}
 	return handler, nil
 }
