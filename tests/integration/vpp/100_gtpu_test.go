@@ -83,7 +83,8 @@ func TestGtpu(t *testing.T) {
 				DstAddr:    "50.40.30.20",
 				Teid:       201,
 				EncapVrfId: 0,
-				DecapNext:  interfaces.GtpuLink_L2,
+				//DecapNext:     interfaces.GtpuLink_L2,
+				DecapNextNode: 1,
 			},
 			mcastSwIfIndex: 0xFFFFFFFF,
 			isFail:         false,
@@ -95,7 +96,8 @@ func TestGtpu(t *testing.T) {
 				DstAddr:    "50.40.30.20",
 				Teid:       202,
 				EncapVrfId: 0,
-				DecapNext:  interfaces.GtpuLink_IP4,
+				//DecapNext:     interfaces.GtpuLink_IP4,
+				DecapNextNode: 2,
 			},
 			mcastSwIfIndex: 0xFFFFFFFF,
 			isFail:         false,
@@ -107,7 +109,8 @@ func TestGtpu(t *testing.T) {
 				DstAddr:    "2002:db8:0:1:1:1:1:1",
 				Teid:       203,
 				EncapVrfId: 0,
-				DecapNext:  interfaces.GtpuLink_IP6,
+				//DecapNext:     interfaces.GtpuLink_IP6,
+				DecapNextNode: 3,
 			},
 			mcastSwIfIndex: 0xFFFFFFFF,
 			isFail:         false,
@@ -139,7 +142,6 @@ func TestGtpu(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			ifName := fmt.Sprintf("test%d", i)
 			ifIdx, err := h.AddGtpuTunnel(ifName, test.gtpu, test.mcastSwIfIndex)
-
 			if err != nil {
 				if test.isFail {
 					return
@@ -181,12 +183,12 @@ func TestGtpu(t *testing.T) {
 				if test.gtpu.EncapVrfId != gtpu.EncapVrfId {
 					t.Fatalf("expected GTP-U EncapVrfId <%d>, got: <%d>", test.gtpu.EncapVrfId, gtpu.EncapVrfId)
 				}
-				testDecapNext := test.gtpu.DecapNext
-				if testDecapNext == interfaces.GtpuLink_DEFAULT {
-					testDecapNext = interfaces.GtpuLink_L2
+				testDecapNext := test.gtpu.DecapNextNode
+				if testDecapNext == uint32(interfaces.GtpuLink_DEFAULT) {
+					testDecapNext = uint32(interfaces.GtpuLink_L2)
 				}
-				if testDecapNext != gtpu.DecapNext {
-					t.Fatalf("expected GTP-U DecapNext <%d>, got: <%d>", testDecapNext, gtpu.DecapNext)
+				if testDecapNext != gtpu.DecapNextNode {
+					t.Fatalf("expected GTP-U DecapNextNode <%v>, got: <%v>", testDecapNext, gtpu.DecapNextNode)
 				}
 			} else {
 				t.Logf("GTP-U: DumpInterfaces skipped because of a broken API in VPP %s", ctx.versionInfo.Version)
