@@ -23,6 +23,7 @@ import (
 	"github.com/golang/protobuf/proto"
 
 	vpp_nat "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/nat"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/nat_types"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
 	ifs "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
 	nat "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/nat"
@@ -648,30 +649,30 @@ func getOrCreateDNAT(dnats dnatMap, label string) *nat.DNat44 {
 	return dnats[label]
 }
 
-func getNat44Flags(flags vpp_nat.NatConfigFlags) *nat44Flags {
+func getNat44Flags(flags nat_types.NatConfigFlags) *nat44Flags {
 	natFlags := &nat44Flags{}
-	if flags&vpp_nat.NAT_IS_EXT_HOST_VALID != 0 {
+	if flags&nat_types.NAT_IS_EXT_HOST_VALID != 0 {
 		natFlags.isExtHostValid = true
 	}
-	if flags&vpp_nat.NAT_IS_STATIC != 0 {
+	if flags&nat_types.NAT_IS_STATIC != 0 {
 		natFlags.isStatic = true
 	}
-	if flags&vpp_nat.NAT_IS_INSIDE != 0 {
+	if flags&nat_types.NAT_IS_INSIDE != 0 {
 		natFlags.isInside = true
 	}
-	if flags&vpp_nat.NAT_IS_OUTSIDE != 0 {
+	if flags&nat_types.NAT_IS_OUTSIDE != 0 {
 		natFlags.isOutside = true
 	}
-	if flags&vpp_nat.NAT_IS_ADDR_ONLY != 0 {
+	if flags&nat_types.NAT_IS_ADDR_ONLY != 0 {
 		natFlags.isAddrOnly = true
 	}
-	if flags&vpp_nat.NAT_IS_OUT2IN_ONLY != 0 {
+	if flags&nat_types.NAT_IS_OUT2IN_ONLY != 0 {
 		natFlags.isOut2In = true
 	}
-	if flags&vpp_nat.NAT_IS_SELF_TWICE_NAT != 0 {
+	if flags&nat_types.NAT_IS_SELF_TWICE_NAT != 0 {
 		natFlags.isSelfTwiceNat = true
 	}
-	if flags&vpp_nat.NAT_IS_TWICE_NAT != 0 {
+	if flags&nat_types.NAT_IS_TWICE_NAT != 0 {
 		natFlags.isTwiceNat = true
 	}
 	return natFlags

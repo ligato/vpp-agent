@@ -19,7 +19,7 @@ import (
 
 	. "github.com/onsi/gomega"
 
-	vpp_ifs "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/interfaces"
+	vpp_ifs "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/interface"
 	vpp_tapv2 "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/tapv2"
 	ifs "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
 )

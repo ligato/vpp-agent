@@ -23,8 +23,8 @@ import (
 
 	vpp_dhcp "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/dhcp"
 	vpp_gtpu "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/gtpu"
+	vpp_interfaces "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/interface"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/interface_types"
-	vpp_interfaces "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/interfaces"
 	vpp_ip "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/ip"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/ip_types"
 	vpp_ipip "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/ipip"

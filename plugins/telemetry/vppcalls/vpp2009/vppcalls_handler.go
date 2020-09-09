@@ -15,8 +15,6 @@
 package vpp2009
 
 import (
-	govppapi "git.fd.io/govpp.git/api"
-
 	vpe_vppcalls "go.ligato.io/vpp-agent/v3/plugins/govppmux/vppcalls"
 	vpe_vpp2009 "go.ligato.io/vpp-agent/v3/plugins/govppmux/vppcalls/vpp2009"
 	"go.ligato.io/vpp-agent/v3/plugins/telemetry/vppcalls"
@@ -38,8 +36,8 @@ type TelemetryHandler struct {
 	vpe vpe_vppcalls.VppCoreAPI
 }
 
-func NewTelemetryVppHandler(ch govppapi.Channel) vppcalls.TelemetryVppAPI {
+func NewTelemetryVppHandler(c vpp.Client) vppcalls.TelemetryVppAPI {
 	return &TelemetryHandler{
-		vpe: vpe_vpp2009.NewVpeHandler(ch),
+		vpe: vpe_vpp2009.NewVpeHandler(c),
 	}
 }

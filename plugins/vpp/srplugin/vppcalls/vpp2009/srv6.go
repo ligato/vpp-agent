@@ -25,9 +25,11 @@ import (
 
 	"go.ligato.io/cn-infra/v2/logging"
 
-	vpp_ifs "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/interfaces"
+	vpp_ifs "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/interface"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/interface_types"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/ip_types"
 	vpp_sr "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/sr"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/sr_types"
 	vpp2009 "go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/vppcalls/vpp2009"
 	ifs "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
 	srv6 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/srv6"
@@ -83,7 +85,7 @@ func (h *SRv6VppHandler) addDelLocalSid(deletion bool, localSID *srv6.LocalSID) 
 	if !deletion && localSID.GetEndFunctionAd() != nil {
 		return h.addSRProxy(sidAddr, localSID)
 	}
-	var localsid vpp_sr.IP6Address
+	var localsid ip_types.IP6Address
 	copy(localsid[:], sidAddr.To16())
 
 	req := &vpp_sr.SrLocalsidAddDel{
@@ -221,7 +223,7 @@ func (h *SRv6VppHandler) writeEndFunction(req *vpp_sr.SrLocalsidAddDel, localSID
 		if !exists {
 			return fmt.Errorf("for interface %v doesn't exist sw index", ef.EndFunctionX.OutgoingInterface)
 		}
-		req.SwIfIndex = vpp_ifs.InterfaceIndex(ifMeta.SwIfIndex)
+		req.SwIfIndex = interface_types.InterfaceIndex(ifMeta.SwIfIndex)
 
 		nhIP, err := parseIPv6(ef.EndFunctionX.NextHop) // parses also ipv4 addresses but into ipv6 address form
 		if err != nil {
@@ -235,7 +237,7 @@ func (h *SRv6VppHandler) writeEndFunction(req *vpp_sr.SrLocalsidAddDel, localSID
 	case *srv6.LocalSID_EndFunctionT:
 		req.Behavior = BehaviorT
 		req.EndPsp = ef.EndFunctionT.Psp
-		req.SwIfIndex = vpp_ifs.InterfaceIndex(ef.EndFunctionT.VrfId)
+		req.SwIfIndex = interface_types.InterfaceIndex(ef.EndFunctionT.VrfId)
 	case *srv6.LocalSID_EndFunctionDx2:
 		req.Behavior = BehaviorDX2
 		req.VlanIndex = ef.EndFunctionDx2.VlanTag
@@ -243,14 +245,14 @@ func (h *SRv6VppHandler) writeEndFunction(req *vpp_sr.SrLocalsidAddDel, localSID
 		if !exists {
 			return fmt.Errorf("for interface %v doesn't exist sw index", ef.EndFunctionDx2.OutgoingInterface)
 		}
-		req.SwIfIndex = vpp_ifs.InterfaceIndex(ifMeta.SwIfIndex)
+		req.SwIfIndex = interface_types.InterfaceIndex(ifMeta.SwIfIndex)
 	case *srv6.LocalSID_EndFunctionDx4:
 		req.Behavior = BehaviorDX4
 		ifMeta, exists := h.ifIndexes.LookupByName(ef.EndFunctionDx4.OutgoingInterface)
 		if !exists {
 			return fmt.Errorf("for interface %v doesn't exist sw index", ef.EndFunctionDx4.OutgoingInterface)
 		}
-		req.SwIfIndex = vpp_ifs.InterfaceIndex(ifMeta.SwIfIndex)
+		req.SwIfIndex = interface_types.InterfaceIndex(ifMeta.SwIfIndex)
 		nhAddr, err := parseIPv6(ef.EndFunctionDx4.NextHop) // parses also IPv4
 		if err != nil {
 			return err
@@ -259,7 +261,7 @@ func (h *SRv6VppHandler) writeEndFunction(req *vpp_sr.SrLocalsidAddDel, localSID
 		if nhAddr4 == nil {
 			return fmt.Errorf("next hop of DX4 end function (%v) is not valid IPv4 address", ef.EndFunctionDx4.NextHop)
 		}
-		var addr vpp_sr.IP4Address
+		var addr ip_types.IP4Address
 		copy(addr[:], nhAddr4)
 		req.NhAddr.Af = ip_types.ADDRESS_IP4
 		req.NhAddr.Un.SetIP4(addr)
@@ -269,21 +271,21 @@ func (h *SRv6VppHandler) writeEndFunction(req *vpp_sr.SrLocalsidAddDel, localSID
 		if !exists {
 			return fmt.Errorf("for interface %v doesn't exist sw index", ef.EndFunctionDx6.OutgoingInterface)
 		}
-		req.SwIfIndex = vpp_ifs.InterfaceIndex(ifMeta.SwIfIndex)
+		req.SwIfIndex = interface_types.InterfaceIndex(ifMeta.SwIfIndex)
 		nhAddr6, err := parseIPv6(ef.EndFunctionDx6.NextHop)
 		if err != nil {
 			return err
 		}
-		var addr vpp_sr.IP6Address
+		var addr ip_types.IP6Address
 		copy(addr[:], nhAddr6)
 		req.NhAddr.Af = ip_types.ADDRESS_IP6
 		req.NhAddr.Un.SetIP6(addr)
 	case *srv6.LocalSID_EndFunctionDt4:
 		req.Behavior = BehaviorDT4
-		req.SwIfIndex = vpp_ifs.InterfaceIndex(ef.EndFunctionDt4.VrfId)
+		req.SwIfIndex = interface_types.InterfaceIndex(ef.EndFunctionDt4.VrfId)
 	case *srv6.LocalSID_EndFunctionDt6:
 		req.Behavior = BehaviorDT6
-		req.SwIfIndex = vpp_ifs.InterfaceIndex(ef.EndFunctionDt6.VrfId)
+		req.SwIfIndex = interface_types.InterfaceIndex(ef.EndFunctionDt6.VrfId)
 	case nil:
 		return fmt.Errorf("End function not set. Please configure end function for local SID %v ", localSID.GetSid())
 	default:
@@ -300,7 +302,7 @@ func (h *SRv6VppHandler) SetEncapsSourceAddress(address string) error {
 	if err != nil {
 		return err
 	}
-	var encapSrc vpp_sr.IP6Address
+	var encapSrc ip_types.IP6Address
 	copy(encapSrc[:], ipAddress.To16())
 	req := &vpp_sr.SrSetEncapSource{
 		EncapsSource: encapSrc,
@@ -344,7 +346,7 @@ func (h *SRv6VppHandler) addBasePolicyWithFirstSegmentList(policy *srv6.Policy) 
 	if err != nil {
 		return err
 	}
-	var BsidAddr vpp_sr.IP6Address
+	var BsidAddr ip_types.IP6Address
 	copy(BsidAddr[:], bindingSid.To16())
 	// Note: Weight in sr.SrPolicyAdd is leftover from API changes that moved weight into sr.Srv6SidList (it is weight of sid list not of the whole policy)
 	req := &vpp_sr.SrPolicyAdd{
@@ -381,7 +383,7 @@ func (h *SRv6VppHandler) addOtherSegmentLists(policy *srv6.Policy) error {
 // DeletePolicy deletes SRv6 policy given by binding SID <bindingSid>
 func (h *SRv6VppHandler) DeletePolicy(bindingSid net.IP) error {
 	h.log.Debugf("Deleting SR policy with binding SID %v ", bindingSid)
-	var BsidAddr vpp_sr.IP6Address
+	var BsidAddr ip_types.IP6Address
 	copy(BsidAddr[:], bindingSid.To16())
 	req := &vpp_sr.SrPolicyDel{
 		BsidAddr: BsidAddr, // TODO add ability to define policy also by index (SrPolicyIndex)
@@ -422,7 +424,7 @@ func (h *SRv6VppHandler) DeletePolicySegmentList(segmentList *srv6.Policy_Segmen
 	return err
 }
 
-func (h *SRv6VppHandler) modPolicy(operation vpp_sr.SrPolicyOp, policy *srv6.Policy, segmentList *srv6.Policy_SegmentList, segmentListIndex uint32) error {
+func (h *SRv6VppHandler) modPolicy(operation sr_types.SrPolicyOp, policy *srv6.Policy, segmentList *srv6.Policy_SegmentList, segmentListIndex uint32) error {
 	bindingSid, err := parseIPv6(policy.GetBsid())
 	if err != nil {
 		return fmt.Errorf("binding sid address %s is not IPv6 address: %v", policy.GetBsid(), err) // calls from descriptor are already validated
@@ -432,7 +434,7 @@ func (h *SRv6VppHandler) modPolicy(operation vpp_sr.SrPolicyOp, policy *srv6.Pol
 		return err
 	}
 
-	var BsidAddr vpp_sr.IP6Address
+	var BsidAddr ip_types.IP6Address
 	copy(BsidAddr[:], bindingSid.To16())
 	// Note: Weight in sr.SrPolicyMod is leftover from API changes that moved weight into sr.Srv6SidList (it is weight of sid list not of the whole policy)
 	req := &vpp_sr.SrPolicyMod{
@@ -457,7 +459,7 @@ func (h *SRv6VppHandler) modPolicy(operation vpp_sr.SrPolicyOp, policy *srv6.Pol
 }
 
 func (h *SRv6VppHandler) convertPolicySegment(segmentList *srv6.Policy_SegmentList) (*vpp_sr.Srv6SidList, error) {
-	var segments []vpp_sr.IP6Address
+	var segments []ip_types.IP6Address
 	for _, sid := range segmentList.Segments {
 		// parse to IPv6 address
 		parserSid, err := parseIPv6(sid)
@@ -465,15 +467,16 @@ func (h *SRv6VppHandler) convertPolicySegment(segmentList *srv6.Policy_SegmentLi
 			return nil, err
 		}
 		// add sid to segment list
-		var ipv6Segment vpp_sr.IP6Address
+		var ipv6Segment ip_types.IP6Address
 		copy(ipv6Segment[:], parserSid)
 		segments = append(segments, ipv6Segment)
 	}
-	return &vpp_sr.Srv6SidList{
+	sidList := &vpp_sr.Srv6SidList{
 		NumSids: uint8(len(segments)),
-		Sids:    segments,
 		Weight:  segmentList.Weight,
-	}, nil
+	}
+	copy(sidList.Sids[:], segments)
+	return sidList, nil
 }
 
 // RetrievePolicyIndexInfo retrieves index of policy <policy> and its segment lists
@@ -543,8 +546,8 @@ func (h *SRv6VppHandler) addDelSteering(delete bool, steering *srv6.Steering) er
 	}
 
 	// converting policy reference
-	var policyBSIDAddr vpp_sr.IP6Address // undefined reference
-	var policyIndex = uint32(0)          // undefined reference
+	var policyBSIDAddr ip_types.IP6Address // undefined reference
+	var policyIndex = uint32(0)            // undefined reference
 	switch ref := steering.PolicyRef.(type) {
 	case *srv6.Steering_PolicyBsid:
 		bsid, err := parseIPv6(ref.PolicyBsid)
@@ -561,8 +564,8 @@ func (h *SRv6VppHandler) addDelSteering(delete bool, steering *srv6.Steering) er
 	}
 
 	// converting target traffic info
-	var prefix vpp_sr.Prefix
-	steerType := vpp_sr.SrSteer(SteerTypeIPv6)
+	var prefix ip_types.Prefix
+	steerType := sr_types.SrSteer(SteerTypeIPv6)
 	tableID := uint32(0)
 	intIndex := uint32(0)
 	switch t := steering.Traffic.(type) {
@@ -596,11 +599,11 @@ func (h *SRv6VppHandler) addDelSteering(delete bool, steering *srv6.Steering) er
 	req := &vpp_sr.SrSteeringAddDel{
 		IsDel:         delete,
 		TableID:       tableID,
-		BsidAddr:      policyBSIDAddr,                   // policy (to which we want to steer routing into) identified by policy binding sid (alternativelly it can be used policy index)
-		SrPolicyIndex: policyIndex,                      // policy (to which we want to steer routing into) identified by policy index (alternativelly it can be used policy binding sid)
-		TrafficType:   steerType,                        // type of traffic to steer
-		Prefix:        prefix,                           // destination prefix address (L3 traffic type only)
-		SwIfIndex:     vpp_ifs.InterfaceIndex(intIndex), // incoming interface (L2 traffic type only)
+		BsidAddr:      policyBSIDAddr,                           // policy (to which we want to steer routing into) identified by policy binding sid (alternativelly it can be used policy index)
+		SrPolicyIndex: policyIndex,                              // policy (to which we want to steer routing into) identified by policy index (alternativelly it can be used policy binding sid)
+		TrafficType:   steerType,                                // type of traffic to steer
+		Prefix:        prefix,                                   // destination prefix address (L3 traffic type only)
+		SwIfIndex:     interface_types.InterfaceIndex(intIndex), // incoming interface (L2 traffic type only)
 	}
 	reply := &vpp_sr.SrSteeringAddDelReply{}
 

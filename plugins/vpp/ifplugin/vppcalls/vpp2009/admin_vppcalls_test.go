@@ -20,8 +20,8 @@ import (
 	. "github.com/onsi/gomega"
 	"go.ligato.io/cn-infra/v2/logging/logrus"
 
+	vpp_ifs "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/interface"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/interface_types"
-	vpp_ifs "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/interfaces"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/vppcalls"
 	vpp2009 "go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/vppcalls/vpp2009"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/vppmock"
@@ -38,8 +38,8 @@ func TestInterfaceAdminDown(t *testing.T) {
 	vppMsg, ok := ctx.MockChannel.Msg.(*vpp_ifs.SwInterfaceSetFlags)
 	Expect(ok).To(BeTrue())
 	Expect(vppMsg).NotTo(BeNil())
-	Expect(vppMsg.SwIfIndex).To(Equal(vpp_ifs.InterfaceIndex(1)))
-	Expect(vppMsg.Flags).To(Equal(vpp_ifs.IfStatusFlags(0)))
+	Expect(vppMsg.SwIfIndex).To(Equal(interface_types.InterfaceIndex(1)))
+	Expect(vppMsg.Flags).To(Equal(interface_types.IfStatusFlags(0)))
 }
 
 func TestInterfaceAdminDownError(t *testing.T) {
@@ -75,7 +75,7 @@ func TestInterfaceAdminUp(t *testing.T) {
 	vppMsg, ok := ctx.MockChannel.Msg.(*vpp_ifs.SwInterfaceSetFlags)
 	Expect(ok).To(BeTrue())
 	Expect(vppMsg).NotTo(BeNil())
-	Expect(vppMsg.SwIfIndex).To(Equal(vpp_ifs.InterfaceIndex(1)))
+	Expect(vppMsg.SwIfIndex).To(Equal(interface_types.InterfaceIndex(1)))
 	Expect(vppMsg.Flags).To(Equal(interface_types.IF_STATUS_API_FLAG_ADMIN_UP))
 }
 
@@ -113,7 +113,7 @@ func TestInterfaceSetTag(t *testing.T) {
 	Expect(ok).To(BeTrue())
 	Expect(vppMsg).NotTo(BeNil())
 	Expect(vppMsg.Tag).To(BeEquivalentTo("tag"))
-	Expect(vppMsg.SwIfIndex).To(Equal(vpp_ifs.InterfaceIndex(1)))
+	Expect(vppMsg.SwIfIndex).To(Equal(interface_types.InterfaceIndex(1)))
 	Expect(vppMsg.IsAdd).To(BeTrue())
 }
 

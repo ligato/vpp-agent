@@ -181,7 +181,7 @@ func getPuntExceptionConfig(reasonID uint32) vpp_punt.Punt {
 	}
 }
 
-func getPuntL4Config(ipv vpp_punt.AddressFamily, ipProto vpp_punt.IPProto, port uint16) vpp_punt.Punt {
+func getPuntL4Config(ipv ip_types.AddressFamily, ipProto ip_types.IPProto, port uint16) vpp_punt.Punt {
 	puntL4 := vpp_punt.PuntL4{
 		Af:       ipv,
 		Protocol: ipProto,
@@ -279,16 +279,9 @@ func (h *PuntVppHandler) handlePuntRedirect(punt *punt.IPRedirect, isIPv4, isAdd
 	return nil
 }
 
-func resolveL4Proto(protocol punt.L4Protocol) vpp_punt.IPProto {
+func resolveL4Proto(protocol punt.L4Protocol) ip_types.IPProto {
 	if protocol == punt.L4Protocol_UDP {
 		return ip_types.IP_API_PROTO_UDP
 	}
 	return ip_types.IP_API_PROTO_TCP
-}
-
-func boolToUint(input bool) uint8 {
-	if input {
-		return 1
-	}
-	return 0
 }

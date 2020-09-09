@@ -16,6 +16,7 @@ package vpp2009
 
 import (
 	vpp_bond "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/bond"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/interface_types"
 	ifs "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
 )
 
@@ -44,7 +45,7 @@ func (h *InterfaceVppHandler) AddBondInterface(ifName string, mac string, bondLi
 
 func (h *InterfaceVppHandler) DeleteBondInterface(ifName string, ifIdx uint32) error {
 	req := &vpp_bond.BondDelete{
-		SwIfIndex: vpp_bond.InterfaceIndex(ifIdx),
+		SwIfIndex: interface_types.InterfaceIndex(ifIdx),
 	}
 	reply := &vpp_bond.BondDeleteReply{}
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
@@ -74,8 +75,8 @@ func getBondMode(mode ifs.BondLink_Mode) vpp_bond.BondMode {
 
 func (h *InterfaceVppHandler) AttachInterfaceToBond(ifIdx, bondIfIdx uint32, isPassive, isLongTimeout bool) error {
 	req := &vpp_bond.BondEnslave{
-		SwIfIndex:     vpp_bond.InterfaceIndex(ifIdx),
-		BondSwIfIndex: vpp_bond.InterfaceIndex(bondIfIdx),
+		SwIfIndex:     interface_types.InterfaceIndex(ifIdx),
+		BondSwIfIndex: interface_types.InterfaceIndex(bondIfIdx),
 		IsPassive:     isPassive,
 		IsLongTimeout: isLongTimeout,
 	}
@@ -89,7 +90,7 @@ func (h *InterfaceVppHandler) AttachInterfaceToBond(ifIdx, bondIfIdx uint32, isP
 
 func (h *InterfaceVppHandler) DetachInterfaceFromBond(ifIdx uint32) error {
 	req := &vpp_bond.BondDetachSlave{
-		SwIfIndex: vpp_bond.InterfaceIndex(ifIdx),
+		SwIfIndex: interface_types.InterfaceIndex(ifIdx),
 	}
 	reply := &vpp_bond.BondDetachSlaveReply{}
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {

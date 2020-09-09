@@ -16,13 +16,14 @@ package vpp2009
 
 import (
 	vpp_dhcp "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/dhcp"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/interface_types"
 )
 
 func (h *InterfaceVppHandler) handleInterfaceDHCP(ifIdx uint32, hostName string, isAdd bool) error {
 	req := &vpp_dhcp.DHCPClientConfig{
 		IsAdd: isAdd,
 		Client: vpp_dhcp.DHCPClient{
-			SwIfIndex:     vpp_dhcp.InterfaceIndex(ifIdx),
+			SwIfIndex:     interface_types.InterfaceIndex(ifIdx),
 			Hostname:      hostName,
 			WantDHCPEvent: true,
 		},

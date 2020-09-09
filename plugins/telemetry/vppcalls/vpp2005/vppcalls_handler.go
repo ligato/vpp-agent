@@ -31,7 +31,10 @@ func init() {
 		vpe.AllMessages,
 		memclnt.AllMessages,
 	)
-	vppcalls.AddHandlerVersion(vpp2005.Version, msgs.AllMessages(), NewTelemetryVppHandler)
+	vppcalls.AddHandlerVersion(vpp2005.Version, msgs.AllMessages(), func(c vpp.Client) vppcalls.TelemetryVppAPI {
+		ch, _ := c.NewAPIChannel()
+		return NewTelemetryVppHandler(ch)
+	})
 }
 
 type TelemetryHandler struct {

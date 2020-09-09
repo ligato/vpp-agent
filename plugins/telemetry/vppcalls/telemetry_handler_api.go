@@ -158,7 +158,7 @@ var Handler = vpp.RegisterHandler(vpp.HandlerDesc{
 	HandlerAPI: (*TelemetryVppAPI)(nil),
 })
 
-type NewHandlerFunc func(govppapi.Channel) TelemetryVppAPI
+type NewHandlerFunc func(vpp.Client) TelemetryVppAPI
 
 // AddHandlerVersion registers vppcalls Handler for the given version.
 func AddHandlerVersion(version vpp.Version, msgs []govppapi.Message, h NewHandlerFunc) {
@@ -168,11 +168,7 @@ func AddHandlerVersion(version vpp.Version, msgs []govppapi.Message, h NewHandle
 			return c.CheckCompatiblity(msgs...)
 		},
 		NewHandler: func(c vpp.Client, a ...interface{}) vpp.HandlerAPI {
-			ch, err := c.NewAPIChannel()
-			if err != nil {
-				return err
-			}
-			return h(ch)
+			return h(c)
 		},
 	})
 }
@@ -186,11 +182,7 @@ func NewHandler(c vpp.Client) (TelemetryVppAPI, error) {
 	if err != nil {
 		return nil, err
 	}
-	ch, err := c.NewAPIChannel()
-	if err != nil {
-		return nil, err
-	}
-	return v.New.(NewHandlerFunc)(ch), nil
+	return v.New.(NewHandlerFunc)(c), nil
 }
 
 func CompatibleTelemetryHandler(c vpp.Client) TelemetryVppAPI {

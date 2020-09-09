@@ -20,6 +20,7 @@ import (
 
 	"github.com/pkg/errors"
 
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/interface_types"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/ip_types"
 	vpp_ipsec "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/ipsec"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/ipsec_types"
@@ -191,7 +192,7 @@ func (h *IPSecVppHandler) DumpIPSecSP() (spList []*ipsec.SecurityPolicy, err err
 // DumpTunnelProtections returns configured IPSec tunnel protections.
 func (h *IPSecVppHandler) DumpTunnelProtections() (tpList []*ipsec.TunnelProtection, err error) {
 	req := &vpp_ipsec.IpsecTunnelProtectDump{
-		SwIfIndex: vpp_ipsec.InterfaceIndex(^uint32(0)),
+		SwIfIndex: interface_types.InterfaceIndex(^uint32(0)),
 	}
 	requestCtx := h.callsChannel.SendMultiRequest(req)
 	for {

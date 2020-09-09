@@ -20,6 +20,7 @@ import (
 
 	"git.fd.io/govpp.git/adapter/mock"
 	govppapi "git.fd.io/govpp.git/api"
+	"git.fd.io/govpp.git/core"
 	govpp "git.fd.io/govpp.git/core"
 	. "github.com/onsi/gomega"
 	log "go.ligato.io/cn-infra/v2/logging/logrus"
@@ -34,8 +35,6 @@ type TestCtx struct {
 	Context       context.Context
 	MockVpp       *mock.VppAdapter
 	MockStats     *mock.StatsAdapter
-	conn          *govpp.Connection
-	channel       govppapi.Channel
 	MockChannel   *mockedChannel
 	MockVPPClient *mockVPPClient
 }
@@ -52,32 +51,21 @@ func SetupTestCtx(t *testing.T) *TestCtx {
 		MockStats: mock.NewStatsAdapter(),
 	}
 
-	var err error
-	ctx.conn, err = govpp.Connect(ctx.MockVpp)
-	Expect(err).ShouldNot(HaveOccurred())
-
-	ctx.channel, err = ctx.conn.NewAPIChannel()
-	Expect(err).ShouldNot(HaveOccurred())
-
-	ctx.MockChannel = &mockedChannel{
-		Channel: ctx.channel,
-	}
-	ctx.MockVPPClient = &mockVPPClient{
-		mockedChannel:   ctx.MockChannel,
-		unloadedPlugins: map[string]bool{},
-	}
+	ctx.MockVPPClient = newMockVPPClient(ctx)
 
 	return ctx
 }
 
 // TeardownTestCtx politely close all used resources
 func (ctx *TestCtx) TeardownTestCtx() {
-	ctx.channel.Close()
-	ctx.conn.Disconnect()
+	ctx.MockVPPClient.mockedChannel.Close()
+	ctx.MockVPPClient.conn.Disconnect()
 }
 
 // MockedChannel implements ChannelIntf for testing purposes
 type mockedChannel struct {
+	*mockVPPClient
+
 	govppapi.Channel
 
 	// Last message which passed through method SendRequest
@@ -215,9 +203,64 @@ func (ctx *TestCtx) MockReplies(dataList []*HandleReplies) {
 }
 
 type mockVPPClient struct {
+	ctx  *TestCtx
+	conn *core.Connection
 	*mockedChannel
 	version         vpp.Version
 	unloadedPlugins map[string]bool
+}
+
+func newMockVPPClient(ctx *TestCtx) *mockVPPClient {
+	conn, err := govpp.Connect(ctx.MockVpp)
+	Expect(err).ShouldNot(HaveOccurred())
+	channel, err := conn.NewAPIChannel()
+	Expect(err).ShouldNot(HaveOccurred())
+
+	ctx.MockChannel = &mockedChannel{
+		Channel: channel,
+	}
+	return &mockVPPClient{
+		ctx:             ctx,
+		conn:            conn,
+		mockedChannel:   ctx.MockChannel,
+		unloadedPlugins: map[string]bool{},
+	}
+}
+
+type mockStream struct {
+	*mockVPPClient
+	stream govppapi.Stream
+}
+
+func (m *mockStream) SendMsg(msg govppapi.Message) error {
+	m.mockedChannel.Msg = msg
+	m.mockedChannel.Msgs = append(m.Msgs, msg)
+	return m.stream.SendMsg(msg)
+}
+
+func (m *mockStream) RecvMsg() (govppapi.Message, error) {
+	return m.stream.RecvMsg()
+}
+
+func (m *mockStream) Close() error {
+	return m.stream.Close()
+}
+
+func (m *mockVPPClient) NewStream(ctx context.Context) (govppapi.Stream, error) {
+	stream, err := m.conn.NewStream(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &mockStream{
+		mockVPPClient: m,
+		stream:        stream,
+	}, nil
+}
+
+func (m *mockVPPClient) Invoke(ctx context.Context, req govppapi.Message, reply govppapi.Message) error {
+	m.Msg = req
+	m.Msgs = append(m.Msgs, req)
+	return m.conn.Invoke(ctx, req, reply)
 }
 
 func (m *mockVPPClient) Version() vpp.Version {
@@ -232,9 +275,9 @@ func (m *mockVPPClient) NewAPIChannelBuffered(reqChanBufSize, replyChanBufSize i
 	return m.mockedChannel, nil
 }
 
-func (m *mockVPPClient) CheckCompatiblity(msgs ...govppapi.Message) error {
+/*func (m *mockVPPClient) CheckCompatiblity(msgs ...govppapi.Message) error {
 	return m.mockedChannel.CheckCompatiblity(msgs...)
-}
+}*/
 
 func (m *mockVPPClient) IsPluginLoaded(plugin string) bool {
 	return !m.unloadedPlugins[plugin]

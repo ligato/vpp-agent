@@ -21,7 +21,8 @@ import (
 	. "github.com/onsi/gomega"
 
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/dhcp"
-	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/interfaces"
+	interfaces "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/interface"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/ip_types"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/vppcalls"
 )
 
@@ -96,8 +97,8 @@ func TestWatchDHCPLeases(t *testing.T) {
 			Hostname:      "host1",
 			IsIPv6:        false,
 			MaskWidth:     24,
-			HostAddress:   dhcp.Address{Un: dhcp.AddressUnion{XXX_UnionData: hostAddr}},
-			RouterAddress: dhcp.Address{Un: dhcp.AddressUnion{XXX_UnionData: routerAddr}},
+			HostAddress:   ip_types.Address{Un: ip_types.AddressUnion{XXX_UnionData: hostAddr}},
+			RouterAddress: ip_types.Address{Un: ip_types.AddressUnion{XXX_UnionData: routerAddr}},
 			HostMac:       [6]byte{16, 16, 32, 32, 48, 48},
 		},
 	}
@@ -123,8 +124,8 @@ func TestWatchDHCPLeases(t *testing.T) {
 			Hostname:      "host2",
 			IsIPv6:        true,
 			MaskWidth:     64,
-			HostAddress:   dhcp.Address{Un: dhcp.AddressUnion{XXX_UnionData: hostAddr}},
-			RouterAddress: dhcp.Address{Un: dhcp.AddressUnion{XXX_UnionData: routerAddr}},
+			HostAddress:   ip_types.Address{Un: ip_types.AddressUnion{XXX_UnionData: hostAddr}},
+			RouterAddress: ip_types.Address{Un: ip_types.AddressUnion{XXX_UnionData: routerAddr}},
 			HostMac:       [6]byte{16, 16, 32, 32, 64, 64},
 		},
 	}

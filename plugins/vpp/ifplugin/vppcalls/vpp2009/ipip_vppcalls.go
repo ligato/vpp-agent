@@ -23,6 +23,7 @@ import (
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/interface_types"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/ip_types"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/ipip"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/tunnel_types"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/vppcalls"
 	interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
 )
@@ -95,7 +96,7 @@ func (h *InterfaceVppHandler) AddIpipTunnel(ifName string, vrf uint32, ipipLink 
 	}
 
 	if ipipLink.TunnelMode == interfaces.IPIPLink_POINT_TO_MULTIPOINT {
-		req.Tunnel.Mode = ipip.TUNNEL_API_MODE_MP
+		req.Tunnel.Mode = tunnel_types.TUNNEL_API_MODE_MP
 	}
 
 	reply := &ipip.IpipAddTunnelReply{}
@@ -110,7 +111,7 @@ func (h *InterfaceVppHandler) AddIpipTunnel(ifName string, vrf uint32, ipipLink 
 // DelIpipTunnel removes IPIP tunnel interface.
 func (h *InterfaceVppHandler) DelIpipTunnel(ifName string, ifIdx uint32) error {
 	req := &ipip.IpipDelTunnel{
-		SwIfIndex: ipip.InterfaceIndex(ifIdx),
+		SwIfIndex: interface_types.InterfaceIndex(ifIdx),
 	}
 	reply := &ipip.IpipDelTunnelReply{}
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
@@ -143,20 +144,20 @@ func (h *InterfaceVppHandler) dumpIpipDetails(ifc map[uint32]*vppcalls.Interface
 		if ipipDetails.Tunnel.Src.Af == ip_types.ADDRESS_IP6 {
 			srcAddrArr := ipipDetails.Tunnel.Src.Un.GetIP6()
 			ipipLink.SrcAddr = net.IP(srcAddrArr[:]).To16().String()
-			if ipipDetails.Tunnel.Mode == ipip.TUNNEL_API_MODE_P2P {
+			if ipipDetails.Tunnel.Mode == tunnel_types.TUNNEL_API_MODE_P2P {
 				dstAddrArr := ipipDetails.Tunnel.Dst.Un.GetIP6()
 				ipipLink.DstAddr = net.IP(dstAddrArr[:]).To16().String()
 			}
 		} else {
 			srcAddrArr := ipipDetails.Tunnel.Src.Un.GetIP4()
 			ipipLink.SrcAddr = net.IP(srcAddrArr[:4]).To4().String()
-			if ipipDetails.Tunnel.Mode == ipip.TUNNEL_API_MODE_P2P {
+			if ipipDetails.Tunnel.Mode == tunnel_types.TUNNEL_API_MODE_P2P {
 				dstAddrArr := ipipDetails.Tunnel.Dst.Un.GetIP4()
 				ipipLink.DstAddr = net.IP(dstAddrArr[:4]).To4().String()
 			}
 		}
 
-		if ipipDetails.Tunnel.Mode == ipip.TUNNEL_API_MODE_MP {
+		if ipipDetails.Tunnel.Mode == tunnel_types.TUNNEL_API_MODE_MP {
 			ipipLink.TunnelMode = interfaces.IPIPLink_POINT_TO_MULTIPOINT
 		}
 

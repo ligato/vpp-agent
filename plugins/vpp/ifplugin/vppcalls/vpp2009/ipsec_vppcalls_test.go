@@ -71,7 +71,7 @@ func TestAddIPSecTunnelInterface(t *testing.T) {
 	Expect(vppMsg.AntiReplay).To(Equal(true))
 	Expect(vppMsg.LocalIP.Af).To(Equal(ip_types.ADDRESS_IP4))
 	copy(ipv4Addr[:], net.ParseIP(ipSecLink.LocalIp)[12:])
-	Expect(vppMsg.LocalIP.Un).To(BeEquivalentTo(vpp_ipsec.AddressUnion{XXX_UnionData: ipv4Addr}))
+	Expect(vppMsg.LocalIP.Un).To(BeEquivalentTo(ip_types.AddressUnion{XXX_UnionData: ipv4Addr}))
 	Expect(vppMsg.LocalSpi).To(Equal(uint32(1500)))
 	Expect(vppMsg.RemoteSpi).To(Equal(uint32(2000)))
 	Expect(vppMsg.CryptoAlg).To(Equal(uint8(9)))
