@@ -67,8 +67,10 @@ func (h *Handler) AddVersion(hv HandlerVersion) {
 func (h *Handler) FindCompatibleVersion(c Client) *HandlerVersion {
 	v, err := h.GetCompatibleVersion(c)
 	if err != nil {
+		logging.Debugf("no compatible version found for handler %v: %v", h.Name(), err)
 		return nil
 	}
+	logging.Debugf("found compatible version for handler %v: %v", h.Name(), v.Version)
 	return v
 }
 
@@ -82,7 +84,7 @@ func (h *Handler) GetCompatibleVersion(c Client) (*HandlerVersion, error) {
 	// try preferred binapi version first
 	if ver := c.BinapiVersion(); ver != "" {
 		if v, ok := h.versions[ver]; ok {
-			logging.Debugf("VPP handler %s COMPATIBLE with preferred version: %s", h.desc.Name, v.Version)
+			logging.Debugf("VPP handler %s using preferred version: %s", h.desc.Name, v.Version)
 			return v, nil
 		}
 	}

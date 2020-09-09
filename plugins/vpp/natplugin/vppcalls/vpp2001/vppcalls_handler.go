@@ -19,6 +19,7 @@ import (
 	"go.ligato.io/cn-infra/v2/idxmap"
 	"go.ligato.io/cn-infra/v2/logging"
 
+	"go.ligato.io/vpp-agent/v3/plugins/vpp"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001"
 	vpp_ip "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ip"
 	vpp_nat "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/nat"
@@ -30,7 +31,10 @@ func init() {
 	var msgs []govppapi.Message
 	msgs = append(msgs, vpp_nat.AllMessages()...)
 
-	vppcalls.AddNatHandlerVersion(vpp2001.Version, msgs, NewNatVppHandler)
+	vppcalls.AddNatHandlerVersion(vpp2001.Version, msgs, func(c vpp.Client, ifIdx ifaceidx.IfaceMetadataIndex, dhcpIdx idxmap.NamedMapping, log logging.Logger) vppcalls.NatVppAPI {
+		ch, _ := c.NewAPIChannel()
+		return NewNatVppHandler(ch, ifIdx, dhcpIdx, log)
+	})
 }
 
 // NatVppHandler is accessor for NAT-related vppcalls methods.
