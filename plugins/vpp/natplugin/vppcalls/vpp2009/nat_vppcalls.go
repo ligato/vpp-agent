@@ -270,7 +270,7 @@ func (h *NatVppHandler) handleNat44StaticMapping(mapping *nat.DNat44_StaticMappi
 		addrOnly = true
 	}
 
-	req := &vpp_nat.Nat44AddDelStaticMapping{
+	req := &vpp_nat.Nat44AddDelStaticMappingV2{
 		Tag:               dnatLabel,
 		LocalIPAddress:    lcIPAddr,
 		ExternalIPAddress: exIPAddr,
@@ -291,7 +291,17 @@ func (h *NatVppHandler) handleNat44StaticMapping(mapping *nat.DNat44_StaticMappi
 		req.ExternalPort = uint16(mapping.ExternalPort)
 	}
 
-	reply := &vpp_nat.Nat44AddDelStaticMappingReply{}
+	// Applying(if needed) the override of IP address picking from twice-NAT address pool
+	if mapping.TwiceNatPoolIp != "" {
+		req.MatchPool = true
+		req.PoolIPAddress, err = ipTo4Address(mapping.TwiceNatPoolIp)
+		if err != nil {
+			return errors.Errorf("cannot configure static mapping for DNAT %s: unable to parse " +
+				"twice-NAT pool IP %s: %v", dnatLabel, mapping.TwiceNatPoolIp, err)
+		}
+	}
+
+	reply := &vpp_nat.Nat44AddDelStaticMappingV2Reply{}
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err

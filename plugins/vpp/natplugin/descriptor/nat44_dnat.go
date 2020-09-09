@@ -15,12 +15,13 @@
 package descriptor
 
 import (
+	"net"
+	"strconv"
+	"strings"
+
 	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
 	"go.ligato.io/cn-infra/v2/logging"
-
-	"strconv"
-
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 	vpp_ifdescriptor "go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/descriptor"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/natplugin/descriptor/adapter"
@@ -106,6 +107,19 @@ func (d *DNAT44Descriptor) Validate(key string, dnat *nat.DNat44) error {
 	if dnat.Label == "" {
 		return kvs.NewInvalidValueError(ErrDNAT44WithEmptyLabel, "label")
 	}
+
+	// Static Mapping validation
+	for _, stMapping:= range dnat.StMappings {
+		// Twice-NAT validation
+		if stMapping.TwiceNatPoolIp != "" {
+			if _, err := ParseIPv4(stMapping.TwiceNatPoolIp); err != nil {
+				return kvs.NewInvalidValueError(errors.Errorf("NAT44 DNAT static mapping configuration " +
+					"has unparsable non-empty twice-NAT pool IPv4 address %s: %v", stMapping.TwiceNatPoolIp, err),
+					"st_mappings.twice_nat_pool_ip")
+			}
+		}
+	}
+
 	return nil
 }
 
@@ -170,6 +184,11 @@ func (d *DNAT44Descriptor) Update(key string, oldDNAT, newDNAT *nat.DNat44, oldM
 func (d *DNAT44Descriptor) Retrieve(correlate []adapter.DNAT44KVWithMetadata) (
 	retrieved []adapter.DNAT44KVWithMetadata, err error,
 ) {
+	// TODO when added to dump then implement value retrieval for these new values
+	//  vpp_nat.Nat44AddDelStaticMappingV2.MatchPool
+	//  vpp_nat.Nat44AddDelStaticMappingV2.PoolIPAddress
+	//  (=functionality modeled in NB proto model as DNat44.StaticMapping.twice_nat_pool_ip)
+
 	// collect DNATs which are expected to be empty
 	corrEmptyDNATs := make(map[string]*nat.DNat44)
 	for _, kv := range correlate {
@@ -323,7 +342,8 @@ func equivalentStaticMappings(stMapping1, stMapping2 *nat.DNat44_StaticMapping) 
 	// attributes compared as usually
 	if stMapping1.Protocol != stMapping2.Protocol || stMapping1.ExternalPort != stMapping2.ExternalPort ||
 		stMapping1.ExternalIp != stMapping2.ExternalIp || stMapping1.ExternalInterface != stMapping2.ExternalInterface ||
-		stMapping1.TwiceNat != stMapping2.TwiceNat || stMapping1.SessionAffinity != stMapping1.SessionAffinity {
+		stMapping1.TwiceNat != stMapping2.TwiceNat || stMapping1.SessionAffinity != stMapping1.SessionAffinity  ||
+		!equivalentIPv4(stMapping1.TwiceNatPoolIp, stMapping2.TwiceNatPoolIp) {
 		return false
 	}
 
@@ -354,4 +374,30 @@ func equivalentStaticMappings(stMapping1, stMapping2 *nat.DNat44_StaticMapping) 
 	}
 
 	return true
+}
+
+func equivalentIPv4(ip1str, ip2str string) bool {
+	ip1, err1 := ParseIPv4(ip1str)
+	ip2, err2 := ParseIPv4(ip2str)
+	if err1 != nil || err2 != nil { // one of values is invalid, but that will handle validator -> compare by strings
+		return equivalentTrimmedLowered(ip1str, ip2str)
+	}
+	return ip1.Equal(ip2) // form doesn't matter, are they representing the same IP value ?
+}
+
+func equivalentTrimmedLowered(str1, str2 string) bool {
+	return strings.TrimSpace(strings.ToLower(str1)) == strings.TrimSpace(strings.ToLower(str2))
+}
+
+// ParseIPv4 parses string <str> to IPv4 address
+func ParseIPv4(str string) (net.IP, error) {
+	ip := net.ParseIP(str)
+	if ip == nil {
+		return nil, errors.Errorf(" %q is not ip address", str)
+	}
+	ipv4 := ip.To4()
+	if ipv4 == nil {
+		return nil, errors.Errorf(" %q is not ipv4 address", str)
+	}
+	return ipv4, nil
 }

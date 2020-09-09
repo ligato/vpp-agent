@@ -86,6 +86,15 @@ message DNat44 {
         // Enable/disable (self-)twice NAT.
         TwiceNatMode twice_nat = 6;
 
+        // IP address from Twice-NAT address pool that should be used as source IP in twice-NAT processing.
+        // This is override for default behaviour of choosing the first IP address from twice-NAT pool that
+        // has available at least one free port (NAT is tracking translation sessions and exhausts free ports
+        // for given IP address). This is needed for example in use cases when multiple twice-NAT
+        // translations need to use different IP Addresses as source IP addresses.
+        // This functionality works with VPP 20.09 and newer. It also needs to have twice_nat set to ENABLED.
+        // It doesn't work for load-balanced static mappings (=local_ips has multiple values).
+        string twice_nat_pool_ip = 8;
+
         // Session affinity. 0 means disabled, otherwise client IP affinity sticky time in seconds.
         uint32 session_affinity = 7;
     }
