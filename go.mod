@@ -3,7 +3,7 @@ module go.ligato.io/vpp-agent/v3
 go 1.13
 
 require (
-	git.fd.io/govpp.git v0.3.5
+	git.fd.io/govpp.git v0.3.6-0.20200907135408-e517439567ad
 	github.com/Azure/go-ansiterm v0.0.0-20170929234023-d6e3b3328b78 // indirect
 	github.com/Microsoft/go-winio v0.4.7 // indirect
 	github.com/Nvveen/Gotty v0.0.0-20120604004816-cd527374f1e5 // indirect
@@ -33,7 +33,7 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway v1.11.3 // indirect
 	github.com/hashicorp/go-uuid v1.0.1 // indirect
 	github.com/jhump/protoreflect v1.7.0
-	github.com/lunixbochs/struc v0.0.0-20190916212049-a5c72983bc42
+	github.com/lunixbochs/struc v0.0.0-20200521075829-a4cb8d33dbbe
 	github.com/mitchellh/go-ps v0.0.0-20170309133038-4fdf99ab2936
 	github.com/mitchellh/mapstructure v1.1.2
 	github.com/namsral/flag v1.7.4-pre
@@ -56,7 +56,7 @@ require (
 	go.ligato.io/cn-infra/v2 v2.5.0-alpha.0.20200313154441-b0d4c1b11c73
 	go.uber.org/multierr v1.2.0 // indirect
 	golang.org/x/net v0.0.0-20200528225125-3c3fba18258b
-	golang.org/x/sys v0.0.0-20200523222454-059865788121
+	golang.org/x/sys v0.0.0-20200610111108-226ff32320da
 	golang.org/x/time v0.0.0-20190921001708-c4c64cad1fd0 // indirect
 	google.golang.org/genproto v0.0.0-20200601130524-0f60399e6634 // indirect
 	google.golang.org/grpc v1.29.1
