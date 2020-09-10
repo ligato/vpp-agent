@@ -10,12 +10,13 @@ set -euo pipefail
 }
 
 echo "==============================================="
-echo " Image: ${IMAGE_TAG:=dev_vpp_agent}"
+echo " IMAGE_TAG: ${IMAGE_TAG:=dev_vpp_agent}"
 echo "==============================================="
 echo " VPP"
 echo "-----------------------------------------------"
-echo " - base image: ${VPP_IMG}"
-echo " - binapi dir: ${VPP_BINAPI}"
+echo " - VPP_IMG:     ${VPP_IMG}"
+echo " - VPP_VERSION: ${VPP_VERSION}"
+echo " - VPP_BINAPI:  ${VPP_BINAPI}"
 echo "-----------------------------------------------"
 echo " Agent"
 echo "-----------------------------------------------"
@@ -29,7 +30,7 @@ set -x
 
 docker build -f Dockerfile \
     --build-arg VPP_IMG=${VPP_IMG} \
-    --build-arg VPP_BINAPI=${VPP_BINAPI} \
+    --build-arg VPP_VERSION=${VPP_VERSION} \
     --build-arg VERSION=${VERSION} \
     --build-arg COMMIT=${COMMIT} \
     --build-arg BRANCH=${BRANCH} \

@@ -18,6 +18,7 @@ type RPCService interface {
 	Nat44AddDelInterfaceAddr(ctx context.Context, in *Nat44AddDelInterfaceAddr) (*Nat44AddDelInterfaceAddrReply, error)
 	Nat44AddDelLbStaticMapping(ctx context.Context, in *Nat44AddDelLbStaticMapping) (*Nat44AddDelLbStaticMappingReply, error)
 	Nat44AddDelStaticMapping(ctx context.Context, in *Nat44AddDelStaticMapping) (*Nat44AddDelStaticMappingReply, error)
+	Nat44AddDelStaticMappingV2(ctx context.Context, in *Nat44AddDelStaticMappingV2) (*Nat44AddDelStaticMappingV2Reply, error)
 	Nat44AddressDump(ctx context.Context, in *Nat44AddressDump) (RPCService_Nat44AddressDumpClient, error)
 	Nat44DelSession(ctx context.Context, in *Nat44DelSession) (*Nat44DelSessionReply, error)
 	Nat44DelUser(ctx context.Context, in *Nat44DelUser) (*Nat44DelUserReply, error)
@@ -63,6 +64,7 @@ type RPCService interface {
 	NatSetTimeouts(ctx context.Context, in *NatSetTimeouts) (*NatSetTimeoutsReply, error)
 	NatSetWorkers(ctx context.Context, in *NatSetWorkers) (*NatSetWorkersReply, error)
 	NatShowConfig(ctx context.Context, in *NatShowConfig) (*NatShowConfigReply, error)
+	NatShowConfig2(ctx context.Context, in *NatShowConfig2) (*NatShowConfig2Reply, error)
 	NatWorkerDump(ctx context.Context, in *NatWorkerDump) (RPCService_NatWorkerDumpClient, error)
 }
 
@@ -112,6 +114,15 @@ func (c *serviceClient) Nat44AddDelLbStaticMapping(ctx context.Context, in *Nat4
 
 func (c *serviceClient) Nat44AddDelStaticMapping(ctx context.Context, in *Nat44AddDelStaticMapping) (*Nat44AddDelStaticMappingReply, error) {
 	out := new(Nat44AddDelStaticMappingReply)
+	err := c.conn.Invoke(ctx, in, out)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *serviceClient) Nat44AddDelStaticMappingV2(ctx context.Context, in *Nat44AddDelStaticMappingV2) (*Nat44AddDelStaticMappingV2Reply, error) {
+	out := new(Nat44AddDelStaticMappingV2Reply)
 	err := c.conn.Invoke(ctx, in, out)
 	if err != nil {
 		return nil, err
@@ -937,6 +948,15 @@ func (c *serviceClient) NatSetWorkers(ctx context.Context, in *NatSetWorkers) (*
 
 func (c *serviceClient) NatShowConfig(ctx context.Context, in *NatShowConfig) (*NatShowConfigReply, error) {
 	out := new(NatShowConfigReply)
+	err := c.conn.Invoke(ctx, in, out)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *serviceClient) NatShowConfig2(ctx context.Context, in *NatShowConfig2) (*NatShowConfig2Reply, error) {
+	out := new(NatShowConfig2Reply)
 	err := c.conn.Invoke(ctx, in, out)
 	if err != nil {
 		return nil, err

@@ -95,7 +95,7 @@ func init() {
 	}
 }
 
-//go:generate -command binapigen binapi-generator --output-dir=.
+//go:generate -command binapigen binapi-generator --no-version-info --output-dir=.
 //go:generate binapigen --input-file=$VPP_API_DIR/core/af_packet.api.json
 //go:generate binapigen --input-file=$VPP_API_DIR/core/arp.api.json
 //go:generate binapigen --input-file=$VPP_API_DIR/core/bond.api.json

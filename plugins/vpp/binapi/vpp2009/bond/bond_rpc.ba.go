@@ -15,6 +15,7 @@ import (
 type RPCService interface {
 	BondAddMember(ctx context.Context, in *BondAddMember) (*BondAddMemberReply, error)
 	BondCreate(ctx context.Context, in *BondCreate) (*BondCreateReply, error)
+	BondCreate2(ctx context.Context, in *BondCreate2) (*BondCreate2Reply, error)
 	BondDelete(ctx context.Context, in *BondDelete) (*BondDeleteReply, error)
 	BondDetachMember(ctx context.Context, in *BondDetachMember) (*BondDetachMemberReply, error)
 	BondDetachSlave(ctx context.Context, in *BondDetachSlave) (*BondDetachSlaveReply, error)
@@ -45,6 +46,15 @@ func (c *serviceClient) BondAddMember(ctx context.Context, in *BondAddMember) (*
 
 func (c *serviceClient) BondCreate(ctx context.Context, in *BondCreate) (*BondCreateReply, error) {
 	out := new(BondCreateReply)
+	err := c.conn.Invoke(ctx, in, out)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *serviceClient) BondCreate2(ctx context.Context, in *BondCreate2) (*BondCreate2Reply, error) {
+	out := new(BondCreate2Reply)
 	err := c.conn.Invoke(ctx, in, out)
 	if err != nil {
 		return nil, err

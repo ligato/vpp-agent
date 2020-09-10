@@ -202,13 +202,7 @@ generate: generate-proto generate-binapi generate-desc-adapters ## Generate all
 generate-proto: protocgengo ## Generate Protobuf files
 
 get-binapi-generators:
-	if [ $(VPP_VERSION) -lt "2009" ]; then \
-    	cd $(mktemp -d); \
-    	echo "module x" > go.mod; \
-    	GO111MODULE=on go get -v git.fd.io/govpp.git/cmd/binapi-generator@v0.3.5; \
-    else \
-		go install -mod=readonly git.fd.io/govpp.git/cmd/binapi-generator; \
-	fi
+	go install -mod=readonly git.fd.io/govpp.git/cmd/binapi-generator
 
 generate-binapi: get-binapi-generators ## Generate Go code for VPP binary API
 	@echo "# generating VPP binapi"
@@ -218,7 +212,7 @@ verify-binapi: ## Verify generated VPP binary API
 	@echo "# verifying generated binapi"
 	docker build -f docker/dev/Dockerfile \
 		--build-arg VPP_IMG=${VPP_IMG} \
-		--build-arg VPP_BINAPI=${VPP_BINAPI} \
+		--build-arg VPP_VERSION=${VPP_VERSION} \
 		--target verify-binapi .
 
 get-desc-adapter-generator:

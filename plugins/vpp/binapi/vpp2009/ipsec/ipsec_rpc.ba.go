@@ -21,6 +21,7 @@ type RPCService interface {
 	IpsecSaDump(ctx context.Context, in *IpsecSaDump) (RPCService_IpsecSaDumpClient, error)
 	IpsecSadEntryAddDel(ctx context.Context, in *IpsecSadEntryAddDel) (*IpsecSadEntryAddDelReply, error)
 	IpsecSelectBackend(ctx context.Context, in *IpsecSelectBackend) (*IpsecSelectBackendReply, error)
+	IpsecSetAsyncMode(ctx context.Context, in *IpsecSetAsyncMode) (*IpsecSetAsyncModeReply, error)
 	IpsecSpdAddDel(ctx context.Context, in *IpsecSpdAddDel) (*IpsecSpdAddDelReply, error)
 	IpsecSpdDump(ctx context.Context, in *IpsecSpdDump) (RPCService_IpsecSpdDumpClient, error)
 	IpsecSpdEntryAddDel(ctx context.Context, in *IpsecSpdEntryAddDel) (*IpsecSpdEntryAddDelReply, error)
@@ -196,6 +197,15 @@ func (c *serviceClient) IpsecSadEntryAddDel(ctx context.Context, in *IpsecSadEnt
 
 func (c *serviceClient) IpsecSelectBackend(ctx context.Context, in *IpsecSelectBackend) (*IpsecSelectBackendReply, error) {
 	out := new(IpsecSelectBackendReply)
+	err := c.conn.Invoke(ctx, in, out)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *serviceClient) IpsecSetAsyncMode(ctx context.Context, in *IpsecSetAsyncMode) (*IpsecSetAsyncModeReply, error) {
+	out := new(IpsecSetAsyncModeReply)
 	err := c.conn.Invoke(ctx, in, out)
 	if err != nil {
 		return nil, err
