@@ -360,8 +360,10 @@ message GtpuLink {
     uint32 remote_teid = 7;
     // VRF id for the encapsulated packets
     uint32 encap_vrf_id = 5;
+    // DEPRECATED - use decap_next_node
+    NextNode decap_next = 6 [deprecated=true];
     // Next VPP node after decapsulation
-    NextNode decap_next = 6;
+    uint32 decap_next_node = 8;
 }
 
 message IPIPLink {

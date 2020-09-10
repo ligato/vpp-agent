@@ -28,18 +28,25 @@ import (
 	interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
 )
 
+const defaultDecapNextIndex = 0xFFFFFFFF
+
 func (h *InterfaceVppHandler) gtpuAddDelTunnel(isAdd bool, gtpuLink *interfaces.GtpuLink, multicastIf uint32) (uint32, error) {
+	var decapNextNode uint32 = defaultDecapNextIndex
+	if gtpuLink.DecapNextNode != 0 {
+		decapNextNode = gtpuLink.DecapNextNode
+	} else {
+		// backwards compatible fallback
+		if gtpuLink.DecapNext != interfaces.GtpuLink_DEFAULT {
+			decapNextNode = uint32(gtpuLink.DecapNext)
+		}
+	}
+
 	req := &gtpu.GtpuAddDelTunnel{
 		IsAdd:          isAdd,
 		McastSwIfIndex: interface_types.InterfaceIndex(multicastIf),
 		EncapVrfID:     gtpuLink.EncapVrfId,
 		Teid:           gtpuLink.Teid,
-	}
-
-	if gtpuLink.DecapNext == interfaces.GtpuLink_DEFAULT {
-		req.DecapNextIndex = 0xFFFFFFFF
-	} else {
-		req.DecapNextIndex = uint32(gtpuLink.DecapNext)
+		DecapNextIndex: decapNextNode,
 	}
 
 	srcAddr := net.ParseIP(gtpuLink.SrcAddr)
@@ -167,10 +174,11 @@ func (h *InterfaceVppHandler) dumpGtpuDetails(ifc map[uint32]*vppcalls.Interface
 		}
 
 		gtpuLink := &interfaces.GtpuLink{
-			Multicast:  multicastIfName,
-			EncapVrfId: gtpuDetails.EncapVrfID,
-			Teid:       gtpuDetails.Teid,
-			DecapNext:  interfaces.GtpuLink_NextNode(gtpuDetails.DecapNextIndex),
+			Multicast:     multicastIfName,
+			EncapVrfId:    gtpuDetails.EncapVrfID,
+			Teid:          gtpuDetails.Teid,
+			DecapNext:     interfaces.GtpuLink_NextNode(gtpuDetails.DecapNextIndex),
+			DecapNextNode: gtpuDetails.DecapNextIndex,
 		}
 
 		if gtpuDetails.SrcAddress.Af == ip_types.ADDRESS_IP6 {
