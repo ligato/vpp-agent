@@ -17,10 +17,11 @@ package vpp2009
 import (
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/interface_types"
 	vpp_ip "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/ip"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/ip_types"
 )
 
 func (h *InterfaceVppHandler) sendAndLogMessageForVpp(ifIdx uint32, addr string, isAdd bool) error {
-	prefix, err := IPtoPrefix(addr)
+	prefix, err := ip_types.ParsePrefix(addr)
 	if err != nil {
 		return err
 	}

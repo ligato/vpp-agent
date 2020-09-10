@@ -20,7 +20,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	vpp_gtpu "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/gtpu"
-	vpp_ifs "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/interfaces"
+	vpp_ifs "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/interface"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/ip_types"
 	ifs "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
 )

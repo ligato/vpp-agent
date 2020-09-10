@@ -21,7 +21,9 @@ import (
 
 	. "github.com/onsi/gomega"
 
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/ip_types"
 	vpp_nat "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/nat"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/nat_types"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
 	vpp2009 "go.ligato.io/vpp-agent/v3/plugins/vpp/natplugin/vppcalls/vpp2009"
 	nat "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/nat"
@@ -96,7 +98,7 @@ func TestEnableNat44InterfaceAsInside(t *testing.T) {
 	Expect(ok).To(BeTrue())
 	Expect(msg).ToNot(BeNil())
 	Expect(msg.IsAdd).To(BeTrue())
-	Expect(msg.Flags).To(BeEquivalentTo(vpp_nat.NAT_IS_INSIDE))
+	Expect(msg.Flags).To(BeEquivalentTo(nat_types.NAT_IS_INSIDE))
 	Expect(msg.SwIfIndex).To(BeEquivalentTo(1))
 }
 
@@ -161,7 +163,7 @@ func TestDisableNat44InterfaceAsInside(t *testing.T) {
 	Expect(ok).To(BeTrue())
 	Expect(msg).ToNot(BeNil())
 	Expect(msg.IsAdd).To(BeFalse())
-	Expect(msg.Flags).To(BeEquivalentTo(vpp_nat.NAT_IS_INSIDE))
+	Expect(msg.Flags).To(BeEquivalentTo(nat_types.NAT_IS_INSIDE))
 	Expect(msg.SwIfIndex).To(BeEquivalentTo(1))
 }
 
@@ -199,7 +201,7 @@ func TestEnableNat44InterfaceOutputAsInside(t *testing.T) {
 	Expect(ok).To(BeTrue())
 	Expect(msg).ToNot(BeNil())
 	Expect(msg.IsAdd).To(BeTrue())
-	Expect(msg.Flags).To(BeEquivalentTo(vpp_nat.NAT_IS_INSIDE))
+	Expect(msg.Flags).To(BeEquivalentTo(nat_types.NAT_IS_INSIDE))
 	Expect(msg.SwIfIndex).To(BeEquivalentTo(1))
 }
 
@@ -264,7 +266,7 @@ func TestDisableNat44InterfaceOutputAsInside(t *testing.T) {
 	Expect(ok).To(BeTrue())
 	Expect(msg).ToNot(BeNil())
 	Expect(msg.IsAdd).To(BeFalse())
-	Expect(msg.Flags).To(BeEquivalentTo(vpp_nat.NAT_IS_INSIDE))
+	Expect(msg.Flags).To(BeEquivalentTo(nat_types.NAT_IS_INSIDE))
 	Expect(msg.SwIfIndex).To(BeEquivalentTo(1))
 }
 
@@ -455,7 +457,7 @@ func TestAddNat44StaticMapping(t *testing.T) {
 	Expect(addressTo4IP(msg.ExternalIPAddress)).To(BeEquivalentTo("0.0.0.0"))
 	Expect(msg.ExternalSwIfIndex).To(BeEquivalentTo(1))
 	Expect(addressTo4IP(msg.LocalIPAddress)).To(BeEquivalentTo(localIP.String()))
-	Expect(msg.Flags).To(BeEquivalentTo(vpp_nat.NAT_IS_TWICE_NAT + vpp_nat.NAT_IS_OUT2IN_ONLY))
+	Expect(msg.Flags).To(BeEquivalentTo(nat_types.NAT_IS_TWICE_NAT + nat_types.NAT_IS_OUT2IN_ONLY))
 }
 
 func TestAddNat44IdentityMappingWithInterface(t *testing.T) {
@@ -487,7 +489,7 @@ func TestAddNat44IdentityMappingWithInterface(t *testing.T) {
 	Expect(msg.IsAdd).To(BeTrue())
 	Expect(addressTo4IP(msg.ExternalIPAddress)).To(BeEquivalentTo(externalIP.String()))
 	Expect(addressTo4IP(msg.LocalIPAddress)).To(BeEquivalentTo(localIP.String()))
-	Expect(msg.Flags).To(BeEquivalentTo(vpp_nat.NAT_IS_OUT2IN_ONLY + vpp_nat.NAT_IS_ADDR_ONLY))
+	Expect(msg.Flags).To(BeEquivalentTo(nat_types.NAT_IS_OUT2IN_ONLY + nat_types.NAT_IS_ADDR_ONLY))
 }
 
 func TestAddNat44StaticMappingError(t *testing.T) {
@@ -553,7 +555,7 @@ func TestDelNat44StaticMapping(t *testing.T) {
 	Expect(addressTo4IP(msg.ExternalIPAddress)).To(BeEquivalentTo("0.0.0.0"))
 	Expect(msg.ExternalSwIfIndex).To(BeEquivalentTo(1))
 	Expect(addressTo4IP(msg.LocalIPAddress)).To(BeEquivalentTo(localIP.String()))
-	Expect(msg.Flags).To(BeEquivalentTo(vpp_nat.NAT_IS_TWICE_NAT + vpp_nat.NAT_IS_OUT2IN_ONLY))
+	Expect(msg.Flags).To(BeEquivalentTo(nat_types.NAT_IS_TWICE_NAT + nat_types.NAT_IS_OUT2IN_ONLY))
 }
 
 func TestDelNat44StaticMappingAddrOnly(t *testing.T) {
@@ -615,7 +617,7 @@ func TestAddNat44StaticMappingLb(t *testing.T) {
 	Expect(addressTo4IP(msg.ExternalAddr)).To(BeEquivalentTo(externalIP.String()))
 	Expect(msg.ExternalPort).To(BeEquivalentTo(8080))
 	Expect(msg.Protocol).To(BeEquivalentTo(6))
-	Expect(msg.Flags).To(BeEquivalentTo(vpp_nat.NAT_IS_TWICE_NAT + vpp_nat.NAT_IS_OUT2IN_ONLY))
+	Expect(msg.Flags).To(BeEquivalentTo(nat_types.NAT_IS_TWICE_NAT + nat_types.NAT_IS_OUT2IN_ONLY))
 
 	// Local IPs
 	Expect(msg.Locals).To(HaveLen(2))
@@ -663,7 +665,7 @@ func TestDelNat44StaticMappingLb(t *testing.T) {
 	Expect(addressTo4IP(msg.ExternalAddr)).To(BeEquivalentTo(externalIP.String()))
 	Expect(msg.ExternalPort).To(BeEquivalentTo(8080))
 	Expect(msg.Protocol).To(BeEquivalentTo(6))
-	Expect(msg.Flags).To(BeEquivalentTo(vpp_nat.NAT_IS_TWICE_NAT + vpp_nat.NAT_IS_OUT2IN_ONLY))
+	Expect(msg.Flags).To(BeEquivalentTo(nat_types.NAT_IS_TWICE_NAT + nat_types.NAT_IS_OUT2IN_ONLY))
 
 	// Local IPs
 	Expect(msg.Locals).To(HaveLen(2))
@@ -740,7 +742,7 @@ func TestAddNat44IdentityMappingAddrOnly(t *testing.T) {
 	Expect(msg.IsAdd).To(BeTrue())
 	Expect(msg.Protocol).To(BeEquivalentTo(17))
 	Expect(msg.SwIfIndex).To(BeEquivalentTo(1))
-	Expect(msg.Flags).To(BeEquivalentTo(vpp_nat.NAT_IS_ADDR_ONLY))
+	Expect(msg.Flags).To(BeEquivalentTo(nat_types.NAT_IS_ADDR_ONLY))
 }
 
 func TestAddNat44IdentityMappingNoInterface(t *testing.T) {
@@ -821,7 +823,7 @@ func TestDelNat44IdentityMapping(t *testing.T) {
 	Expect(msg.IsAdd).To(BeFalse())
 	Expect(msg.SwIfIndex).To(BeEquivalentTo(1))
 	Expect(msg.Protocol).To(BeEquivalentTo(6))
-	Expect(msg.Flags).To(BeEquivalentTo(vpp_nat.NAT_IS_ADDR_ONLY))
+	Expect(msg.Flags).To(BeEquivalentTo(nat_types.NAT_IS_ADDR_ONLY))
 }
 
 func TestNat44MappingLongTag(t *testing.T) {
@@ -900,7 +902,7 @@ func localIPs(addr1, addr2 net.IP) []*nat.DNat44_StaticMapping_LocalIP {
 	}
 }
 
-func addressTo4IP(address vpp_nat.IP4Address) string {
+func addressTo4IP(address ip_types.IP4Address) string {
 	ipAddr := make(net.IP, net.IPv4len)
 	copy(ipAddr[:], address[:])
 	if ipAddr.To4() == nil {

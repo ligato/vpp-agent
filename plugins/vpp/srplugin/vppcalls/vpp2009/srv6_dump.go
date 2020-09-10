@@ -19,6 +19,7 @@ import (
 
 	"github.com/go-errors/errors"
 
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/ip_types"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/sr"
 	srv6 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/srv6"
 )
@@ -62,7 +63,7 @@ func (h *SRv6VppHandler) DumpLocalSids() (localsids []*srv6.LocalSID, err error)
 }
 
 // convertDumpedSid extract from dumped structure SID value and converts it to IPv6 (net.IP)
-func (h *SRv6VppHandler) convertDumpedSid(srv6Sid *sr.IP6Address) (net.IP, error) {
+func (h *SRv6VppHandler) convertDumpedSid(srv6Sid *ip_types.IP6Address) (net.IP, error) {
 	if srv6Sid == nil {
 		return nil, errors.New("can't convert sid from nil dumped address (or nil srv6sid)")
 	}

@@ -18,6 +18,7 @@ import (
 	"fmt"
 
 	vpp_acl "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/acl"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/interface_types"
 )
 
 // SetACLToInterfacesAsIngress implements ACL handler.
@@ -67,7 +68,7 @@ func (h *ACLVppHandler) AddACLToInterfaceAsIngress(aclIndex uint32, ifName strin
 	req := &vpp_acl.ACLInterfaceAddDel{
 		ACLIndex:  aclIndex,
 		IsAdd:     true,
-		SwIfIndex: vpp_acl.InterfaceIndex(ifIdx),
+		SwIfIndex: interface_types.InterfaceIndex(ifIdx),
 		IsInput:   true,
 	}
 	reply := &vpp_acl.ACLInterfaceAddDelReply{}
@@ -91,7 +92,7 @@ func (h *ACLVppHandler) AddACLToInterfaceAsEgress(aclIndex uint32, ifName string
 	req := &vpp_acl.ACLInterfaceAddDel{
 		ACLIndex:  aclIndex,
 		IsAdd:     true,
-		SwIfIndex: vpp_acl.InterfaceIndex(ifIdx),
+		SwIfIndex: interface_types.InterfaceIndex(ifIdx),
 		IsInput:   false,
 	}
 	reply := &vpp_acl.ACLInterfaceAddDelReply{}
@@ -115,7 +116,7 @@ func (h *ACLVppHandler) DeleteACLFromInterfaceAsIngress(aclIndex uint32, ifName 
 	req := &vpp_acl.ACLInterfaceAddDel{
 		ACLIndex:  aclIndex,
 		IsAdd:     false,
-		SwIfIndex: vpp_acl.InterfaceIndex(ifIdx),
+		SwIfIndex: interface_types.InterfaceIndex(ifIdx),
 		IsInput:   true,
 	}
 	reply := &vpp_acl.ACLInterfaceAddDelReply{}
@@ -138,7 +139,7 @@ func (h *ACLVppHandler) DeleteACLFromInterfaceAsEgress(aclIndex uint32, ifName s
 	req := &vpp_acl.ACLInterfaceAddDel{
 		ACLIndex:  aclIndex,
 		IsAdd:     false,
-		SwIfIndex: vpp_acl.InterfaceIndex(ifIdx),
+		SwIfIndex: interface_types.InterfaceIndex(ifIdx),
 		IsInput:   false,
 	}
 	reply := &vpp_acl.ACLInterfaceAddDelReply{}
@@ -161,7 +162,7 @@ func (h *ACLVppHandler) AddMACIPACLToInterface(aclIndex uint32, ifName string) e
 	req := &vpp_acl.MacipACLInterfaceAddDel{
 		ACLIndex:  aclIndex,
 		IsAdd:     true,
-		SwIfIndex: vpp_acl.InterfaceIndex(ifIdx),
+		SwIfIndex: interface_types.InterfaceIndex(ifIdx),
 	}
 	reply := &vpp_acl.MacipACLInterfaceAddDelReply{}
 
@@ -184,7 +185,7 @@ func (h *ACLVppHandler) DeleteMACIPACLFromInterface(aclIndex uint32, ifName stri
 	req := &vpp_acl.MacipACLInterfaceAddDel{
 		ACLIndex:  aclIndex,
 		IsAdd:     false,
-		SwIfIndex: vpp_acl.InterfaceIndex(ifIdx),
+		SwIfIndex: interface_types.InterfaceIndex(ifIdx),
 	}
 	reply := &vpp_acl.MacipACLInterfaceAddDelReply{}
 
@@ -202,7 +203,7 @@ func (h *ACLVppHandler) SetMACIPACLToInterfaces(aclIndex uint32, ifIndices []uin
 		req := &vpp_acl.MacipACLInterfaceAddDel{
 			ACLIndex:  aclIndex,
 			IsAdd:     true,
-			SwIfIndex: vpp_acl.InterfaceIndex(ifIdx),
+			SwIfIndex: interface_types.InterfaceIndex(ifIdx),
 		}
 		reply := &vpp_acl.MacipACLInterfaceAddDelReply{}
 
@@ -220,7 +221,7 @@ func (h *ACLVppHandler) RemoveMACIPACLFromInterfaces(removedACLIndex uint32, ifI
 	for _, ifIdx := range ifIndices {
 		req := &vpp_acl.MacipACLInterfaceAddDel{
 			ACLIndex:  removedACLIndex,
-			SwIfIndex: vpp_acl.InterfaceIndex(ifIdx),
+			SwIfIndex: interface_types.InterfaceIndex(ifIdx),
 			IsAdd:     false,
 		}
 		reply := &vpp_acl.MacipACLInterfaceAddDelReply{}
@@ -276,7 +277,7 @@ func (h *ACLVppHandler) requestSetACLToInterfaces(logicalReq *aclInterfaceLogica
 		msg := &vpp_acl.ACLInterfaceSetACLList{
 			Acls:      ACLs,
 			Count:     uint8(len(ACLs)),
-			SwIfIndex: vpp_acl.InterfaceIndex(aclIfIdx),
+			SwIfIndex: interface_types.InterfaceIndex(aclIfIdx),
 			NInput:    nInput,
 		}
 		reply := &vpp_acl.ACLInterfaceSetACLListReply{}
@@ -323,7 +324,7 @@ func (h *ACLVppHandler) requestRemoveInterfacesFromACL(logicalReq *aclInterfaceL
 		msg := &vpp_acl.ACLInterfaceSetACLList{
 			Acls:      ACLs,
 			Count:     uint8(len(ACLs)),
-			SwIfIndex: vpp_acl.InterfaceIndex(aclIfIdx),
+			SwIfIndex: interface_types.InterfaceIndex(aclIfIdx),
 			NInput:    nInput,
 		}
 

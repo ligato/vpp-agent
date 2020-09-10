@@ -52,7 +52,7 @@ import (
 )
 
 // Version is used to identify VPP binapi version
-const Version = "20.05-rc1~1"
+const Version = "20.05.1"
 
 func init() {
 	binapi.Versions[Version] = binapi.VersionMsgs{

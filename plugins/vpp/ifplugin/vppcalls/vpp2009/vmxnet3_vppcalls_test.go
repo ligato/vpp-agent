@@ -19,7 +19,7 @@ import (
 
 	. "github.com/onsi/gomega"
 
-	vpp_ifs "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/interfaces"
+	vpp_ifs "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/interface"
 	vpp_vmxnet3 "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/vmxnet3"
 	ifs "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
 )

@@ -93,7 +93,7 @@ var Handler = vpp.RegisterHandler(vpp.HandlerDesc{
 	NewFunc:    (*NewHandlerFunc)(nil),
 })
 
-type NewHandlerFunc func(govppapi.Channel) VppCoreAPI
+type NewHandlerFunc func(vpp.Client) VppCoreAPI
 
 // AddVersion registers vppcalls Handler for the given version.
 func AddVersion(version vpp.Version, msgs []govppapi.Message, h NewHandlerFunc) {
@@ -103,11 +103,7 @@ func AddVersion(version vpp.Version, msgs []govppapi.Message, h NewHandlerFunc) 
 			return c.CheckCompatiblity(msgs...)
 		},
 		NewHandler: func(c vpp.Client, a ...interface{}) vpp.HandlerAPI {
-			ch, err := c.NewAPIChannel()
-			if err != nil {
-				return err
-			}
-			return h(ch)
+			return h(c)
 		},
 		New: h,
 	})
@@ -118,11 +114,7 @@ func NewHandler(c vpp.Client) (VppCoreAPI, error) {
 	if err != nil {
 		return nil, err
 	}
-	ch, err := c.NewAPIChannel()
-	if err != nil {
-		return nil, err
-	}
-	return v.New.(NewHandlerFunc)(ch), nil
+	return v.New.(NewHandlerFunc)(c), nil
 }
 
 // CompatibleHandler is helper for returning compatible Handler.

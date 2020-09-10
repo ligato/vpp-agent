@@ -83,7 +83,11 @@ func AddABFHandlerVersion(version vpp.Version, msgs []govppapi.Message, h NewHan
 			if err != nil {
 				return err
 			}
-			return h(ch, a[0].(aclidx.ACLMetadataIndex), a[1].(ifaceidx.IfaceMetadataIndex), a[2].(logging.Logger))
+			var aclIdx aclidx.ACLMetadataIndex
+			if a[0] != nil {
+				aclIdx = a[0].(aclidx.ACLMetadataIndex)
+			}
+			return h(ch, aclIdx, a[1].(ifaceidx.IfaceMetadataIndex), a[2].(logging.Logger))
 		},
 	})
 }

@@ -29,7 +29,10 @@ func init() {
 		vpe.AllMessages,
 		memclnt.AllMessages,
 	)
-	vppcalls.AddVersion(vpp1904.Version, msgs.AllMessages(), NewVpeHandler)
+	vppcalls.AddVersion(vpp1904.Version, msgs.AllMessages(), func(client vpp.Client) vppcalls.VppCoreAPI {
+		ch, _ := client.NewAPIChannel()
+		return NewVpeHandler(ch)
+	})
 }
 
 type VpeHandler struct {

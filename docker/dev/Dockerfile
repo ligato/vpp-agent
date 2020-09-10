@@ -3,7 +3,7 @@ FROM ${VPP_IMG} AS vppimg
 
 RUN dpkg-query -f '${Version}' -W vpp > /vpp/version
 
-FROM golang:1.14 AS verify-binapi
+FROM golang:1.15 AS verify-binapi
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
 		patch \
@@ -12,7 +12,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /src/ligato/vpp-agent
 
 ARG VPP_IMG
-ARG VPP_BINAPI
+ARG VPP_VERSION
 ARG SKIP_CHECK
 
 COPY go.mod go.sum ./
@@ -29,18 +29,20 @@ RUN set -x; \
 	gofmt -w plugins/vpp/binapi; \
 	cp -r plugins/vpp/binapi /tmp/orig_binapi && \
 	make generate-binapi && \
- 	diff --color=always -r plugins/vpp/binapi /tmp/orig_binapi || \
+ 	diff --color=always -I="\/\/.*" -r plugins/vpp/binapi /tmp/orig_binapi || \
  	{ \
- 		set +x; \
+ 		set +ex; \
  		vpp_version="$(cat /vpp-version)"; \
  		echo >&2 "==============================================================="; \
  		echo >&2 "!!! VPP BINARY API CHECK FAILED !!!"; \
  		echo >&2 "==============================================================="; \
- 		echo >&2 " - VPP version:   ${vpp_version}"; \
- 		echo >&2 " - VPP base img:  ${VPP_IMG}"; \
- 		echo >&2 " - binapi folder: ${VPP_BINAPI}"; \
+ 		echo >&2 " - VPP installed: ${vpp_version}"; \
+ 		echo >&2 " - VPP_VERSION:   ${VPP_VERSION}"; \
+ 		echo >&2 " - VPP_IMG:       ${VPP_IMG}"; \
  		echo >&2 "---------------------------------------------------------------"; \
- 		echo >&2 " Generated binapi does not seem to be up-to-date with used VPP!"; \
+ 		echo >&2 "Generated binapi does not seem to be up-to-date with used VPP/GoVPP!"; \
+ 		echo >&2 ""; \
+ 		echo >&2 "$(diff -q --color=always -r plugins/vpp/binapi /tmp/orig_binapi)"; \
  		echo >&2 ""; \
  		echo >&2 " This might happen when VPP API change gets merged to a branch of used VPP."; \
  		echo >&2 " Ensure that VPP base image is compatible with the selected VPP version!"; \
@@ -50,7 +52,10 @@ RUN set -x; \
  		echo >&2 "  1. Ignore this check by setting: SKIP_CHECK=y"; \
  		echo >&2 "  2. Override used VPP base image by setting: VPP_IMG=ligato/vpp-base:<TAG>"; \
  		echo >&2 "---------------------------------------------------------------"; \
- 		[ -n "$SKIP_CHECK" ] && exit 0; \
+ 		[ -n "$SKIP_CHECK" ] && { \
+ 			echo >&2 "SKIP_CHECK set, ignoring check failure!"; \
+ 			exit 0; \
+ 		}; \
  	}
 
 FROM vppimg AS devimg
@@ -71,7 +76,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
  	&& rm -rf /var/lib/apt/lists/*
 
 # Install Go
-ENV GOLANG_VERSION 1.14.4
+ENV GOLANG_VERSION 1.15.2
 RUN set -eux; \
 	dpkgArch="$(dpkg --print-architecture)"; \
 		case "${dpkgArch##*-}" in \
@@ -113,7 +118,6 @@ ARG VERSION
 ARG COMMIT
 ARG BRANCH
 ARG BUILD_DATE
-
 RUN make install purge
 
 ENV SUPERVISOR_CONFIG=/opt/vpp-agent/dev/supervisor.conf

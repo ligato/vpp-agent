@@ -16,10 +16,12 @@ package vppmock
 
 import (
 	"context"
+	"strings"
 	"testing"
 
 	"git.fd.io/govpp.git/adapter/mock"
 	govppapi "git.fd.io/govpp.git/api"
+	"git.fd.io/govpp.git/core"
 	govpp "git.fd.io/govpp.git/core"
 	. "github.com/onsi/gomega"
 	log "go.ligato.io/cn-infra/v2/logging/logrus"
@@ -30,14 +32,13 @@ import (
 // TestCtx is a helper for unit testing.
 // It wraps VppAdapter which is used instead of real VPP.
 type TestCtx struct {
-	//*GomegaWithT
+	// *GomegaWithT
 	Context       context.Context
 	MockVpp       *mock.VppAdapter
 	MockStats     *mock.StatsAdapter
-	conn          *govpp.Connection
-	channel       govppapi.Channel
 	MockChannel   *mockedChannel
 	MockVPPClient *mockVPPClient
+	PingReplyMsg  govppapi.Message
 }
 
 // SetupTestCtx sets up all fields of TestCtx structure at the begining of test
@@ -47,96 +48,21 @@ func SetupTestCtx(t *testing.T) *TestCtx {
 
 	ctx := &TestCtx{
 		//GomegaWithT: g,
-		Context:   context.Background(),
-		MockVpp:   mock.NewVppAdapter(),
-		MockStats: mock.NewStatsAdapter(),
+		Context:      context.Background(),
+		MockVpp:      mock.NewVppAdapter(),
+		MockStats:    mock.NewStatsAdapter(),
+		PingReplyMsg: &govpp.ControlPingReply{VpePID: 123},
 	}
 
-	var err error
-	ctx.conn, err = govpp.Connect(ctx.MockVpp)
-	Expect(err).ShouldNot(HaveOccurred())
-
-	ctx.channel, err = ctx.conn.NewAPIChannel()
-	Expect(err).ShouldNot(HaveOccurred())
-
-	ctx.MockChannel = &mockedChannel{
-		Channel: ctx.channel,
-	}
-	ctx.MockVPPClient = &mockVPPClient{
-		mockedChannel:   ctx.MockChannel,
-		unloadedPlugins: map[string]bool{},
-	}
+	ctx.MockVPPClient = newMockVPPClient(ctx)
 
 	return ctx
 }
 
 // TeardownTestCtx politely close all used resources
 func (ctx *TestCtx) TeardownTestCtx() {
-	ctx.channel.Close()
-	ctx.conn.Disconnect()
-}
-
-// MockedChannel implements ChannelIntf for testing purposes
-type mockedChannel struct {
-	govppapi.Channel
-
-	// Last message which passed through method SendRequest
-	Msg govppapi.Message
-
-	// List of all messages which passed through method SendRequest
-	Msgs []govppapi.Message
-
-	RetErrs []error
-
-	channel chan govppapi.Message
-}
-
-// SendRequest just save input argument to structure field for future check
-func (m *mockedChannel) SendRequest(msg govppapi.Message) govppapi.RequestCtx {
-	m.Msg = msg
-	m.Msgs = append(m.Msgs, msg)
-	reqCtx := m.Channel.SendRequest(msg)
-	var retErr error
-	if retErrsLen := len(m.RetErrs); retErrsLen > 0 {
-		retErr = m.RetErrs[retErrsLen-1]
-		m.RetErrs = m.RetErrs[:retErrsLen-1]
-	}
-	return &mockedContext{reqCtx, retErr}
-}
-
-// SendMultiRequest just save input argument to structure field for future check
-func (m *mockedChannel) SendMultiRequest(msg govppapi.Message) govppapi.MultiRequestCtx {
-	m.Msg = msg
-	m.Msgs = append(m.Msgs, msg)
-	return m.Channel.SendMultiRequest(msg)
-}
-
-func (m *mockedChannel) SubscribeNotification(notifChan chan govppapi.Message, event govppapi.Message) (govppapi.SubscriptionCtx, error) {
-	m.channel = notifChan
-	return &mockSubscription{}, nil
-}
-
-func (m *mockedChannel) GetChannel() chan govppapi.Message {
-	return m.channel
-}
-
-type mockSubscription struct{}
-
-func (s *mockSubscription) Unsubscribe() error {
-	return nil
-}
-
-type mockedContext struct {
-	requestCtx govppapi.RequestCtx
-	retErr     error
-}
-
-// ReceiveReply returns prepared error or nil
-func (m *mockedContext) ReceiveReply(msg govppapi.Message) error {
-	if m.retErr != nil {
-		return m.retErr
-	}
-	return m.requestCtx.ReceiveReply(msg)
+	ctx.MockVPPClient.mockedChannel.Close()
+	ctx.MockVPPClient.conn.Disconnect()
 }
 
 // HandleReplies represents spec for MockReplyHandler.
@@ -171,7 +97,7 @@ func (ctx *TestCtx) MockReplies(dataList []*HandleReplies) {
 
 		if sendControlPing {
 			sendControlPing = false
-			data := &govpp.ControlPingReply{}
+			data := ctx.PingReplyMsg
 			reply, err := ctx.MockVpp.ReplyBytes(request, data)
 			Expect(err).To(BeNil())
 			msgID, err := ctx.MockVpp.GetMsgID(data.GetMessageName(), data.GetCrcString())
@@ -199,6 +125,11 @@ func (ctx *TestCtx) MockReplies(dataList []*HandleReplies) {
 			}
 		}
 
+		if strings.HasSuffix(request.MsgName, "_dump") {
+			sendControlPing = true
+			return nil, 0, false
+		}
+
 		var err error
 		replyMsg, id, ok := ctx.MockVpp.ReplyFor(request.MsgName)
 		if ok {
@@ -214,10 +145,133 @@ func (ctx *TestCtx) MockReplies(dataList []*HandleReplies) {
 	})
 }
 
+// MockedChannel implements ChannelIntf for testing purposes
+type mockedChannel struct {
+	govppapi.Channel
+
+	// Last message which passed through method SendRequest
+	Msg govppapi.Message
+
+	// List of all messages which passed through method SendRequest
+	Msgs []govppapi.Message
+
+	RetErrs []error
+
+	notifications chan govppapi.Message
+}
+
+// SendRequest just save input argument to structure field for future check
+func (m *mockedChannel) SendRequest(msg govppapi.Message) govppapi.RequestCtx {
+	m.Msg = msg
+	m.Msgs = append(m.Msgs, msg)
+	reqCtx := m.Channel.SendRequest(msg)
+	var retErr error
+	if retErrsLen := len(m.RetErrs); retErrsLen > 0 {
+		retErr = m.RetErrs[retErrsLen-1]
+		m.RetErrs = m.RetErrs[:retErrsLen-1]
+	}
+	return &mockedContext{reqCtx, retErr}
+}
+
+// SendMultiRequest just save input argument to structure field for future check
+func (m *mockedChannel) SendMultiRequest(msg govppapi.Message) govppapi.MultiRequestCtx {
+	m.Msg = msg
+	m.Msgs = append(m.Msgs, msg)
+	return m.Channel.SendMultiRequest(msg)
+}
+
+func (m *mockedChannel) SubscribeNotification(notifChan chan govppapi.Message, event govppapi.Message) (govppapi.SubscriptionCtx, error) {
+	m.notifications = notifChan
+	return &mockSubscription{}, nil
+}
+
+func (m *mockedChannel) GetChannel() chan govppapi.Message {
+	return m.notifications
+}
+
+type mockSubscription struct{}
+
+func (s *mockSubscription) Unsubscribe() error {
+	return nil
+}
+
+type mockedContext struct {
+	requestCtx govppapi.RequestCtx
+	retErr     error
+}
+
+// ReceiveReply returns prepared error or nil
+func (m *mockedContext) ReceiveReply(msg govppapi.Message) error {
+	if m.retErr != nil {
+		return m.retErr
+	}
+	return m.requestCtx.ReceiveReply(msg)
+}
+
+type mockStream struct {
+	mockVPPClient *mockVPPClient
+	stream        govppapi.Stream
+}
+
+func (m *mockStream) SendMsg(msg govppapi.Message) error {
+	m.mockVPPClient.mockedChannel.Msg = msg
+	m.mockVPPClient.mockedChannel.Msgs = append(m.mockVPPClient.mockedChannel.Msgs, msg)
+	if retErrsLen := len(m.mockVPPClient.mockedChannel.RetErrs); retErrsLen > 0 {
+		retErr := m.mockVPPClient.mockedChannel.RetErrs[retErrsLen-1]
+		m.mockVPPClient.mockedChannel.RetErrs = m.mockVPPClient.mockedChannel.RetErrs[:retErrsLen-1]
+		return retErr
+	}
+	return m.stream.SendMsg(msg)
+}
+
+func (m *mockStream) RecvMsg() (govppapi.Message, error) {
+	return m.stream.RecvMsg()
+}
+
+func (m *mockStream) Close() error {
+	return m.stream.Close()
+}
+
 type mockVPPClient struct {
+	ctx  *TestCtx
+	conn *core.Connection
 	*mockedChannel
 	version         vpp.Version
 	unloadedPlugins map[string]bool
+}
+
+func newMockVPPClient(ctx *TestCtx) *mockVPPClient {
+	conn, err := govpp.Connect(ctx.MockVpp)
+	Expect(err).ShouldNot(HaveOccurred())
+	channel, err := conn.NewAPIChannel()
+	Expect(err).ShouldNot(HaveOccurred())
+
+	ctx.MockChannel = &mockedChannel{
+		Channel: channel,
+	}
+	return &mockVPPClient{
+		ctx:             ctx,
+		conn:            conn,
+		mockedChannel:   ctx.MockChannel,
+		unloadedPlugins: map[string]bool{},
+	}
+}
+
+func (m *mockVPPClient) NewStream(ctx context.Context) (govppapi.Stream, error) {
+	stream, err := m.conn.NewStream(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &mockStream{
+		mockVPPClient: m,
+		stream:        stream,
+	}, nil
+}
+
+func (m *mockVPPClient) Invoke(ctx context.Context, req govppapi.Message, reply govppapi.Message) error {
+	m.Msg = req
+	m.Msgs = append(m.Msgs, req)
+	return m.conn.Invoke(ctx, req, reply)
 }
 
 func (m *mockVPPClient) Version() vpp.Version {
@@ -232,9 +286,9 @@ func (m *mockVPPClient) NewAPIChannelBuffered(reqChanBufSize, replyChanBufSize i
 	return m.mockedChannel, nil
 }
 
-func (m *mockVPPClient) CheckCompatiblity(msgs ...govppapi.Message) error {
+/*func (m *mockVPPClient) CheckCompatiblity(msgs ...govppapi.Message) error {
 	return m.mockedChannel.CheckCompatiblity(msgs...)
-}
+}*/
 
 func (m *mockVPPClient) IsPluginLoaded(plugin string) bool {
 	return !m.unloadedPlugins[plugin]

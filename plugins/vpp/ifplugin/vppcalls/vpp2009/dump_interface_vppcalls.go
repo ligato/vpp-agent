@@ -25,8 +25,8 @@ import (
 	vpp_bond "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/bond"
 	vpp_dhcp "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/dhcp"
 	vpp_gre "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/gre"
+	vpp_ifs "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/interface"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/interface_types"
-	vpp_ifs "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/interfaces"
 	vpp_ip "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/ip"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/ip_types"
 	vpp_ipsec "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/ipsec"
@@ -91,7 +91,7 @@ func (h *InterfaceVppHandler) dumpInterfaces(ifIdxs ...uint32) (map[uint32]*vppc
 	}
 	// First, dump all interfaces to create initial data.
 	reqCtx := h.callsChannel.SendMultiRequest(&vpp_ifs.SwInterfaceDump{
-		SwIfIndex: vpp_ifs.InterfaceIndex(ifIdx),
+		SwIfIndex: interface_types.InterfaceIndex(ifIdx),
 	})
 	for {
 		ifDetails := &vpp_ifs.SwInterfaceDetails{}
@@ -365,7 +365,7 @@ func (h *InterfaceVppHandler) DumpInterfaceStates(ifIdxs ...uint32) (map[uint32]
 	ifStates := make(map[uint32]*vppcalls.InterfaceState)
 	for _, ifIdx := range ifIdxs {
 		reqCtx := h.callsChannel.SendMultiRequest(&vpp_ifs.SwInterfaceDump{
-			SwIfIndex: vpp_ifs.InterfaceIndex(ifIdx),
+			SwIfIndex: interface_types.InterfaceIndex(ifIdx),
 		})
 		for {
 			ifDetails := &vpp_ifs.SwInterfaceDetails{}
@@ -397,7 +397,7 @@ func (h *InterfaceVppHandler) DumpInterfaceStates(ifIdxs ...uint32) (map[uint32]
 	return ifStates, nil
 }
 
-func toLinkDuplex(duplex vpp_ifs.LinkDuplex) ifs.InterfaceState_Duplex {
+func toLinkDuplex(duplex interface_types.LinkDuplex) ifs.InterfaceState_Duplex {
 	switch duplex {
 	case 1:
 		return ifs.InterfaceState_HALF
@@ -506,7 +506,7 @@ func (h *InterfaceVppHandler) dumpTapDetails(interfaces map[uint32]*vppcalls.Int
 
 	// TAP v2
 	reqCtx := h.callsChannel.SendMultiRequest(&vpp_tapv2.SwInterfaceTapV2Dump{
-		SwIfIndex: ^vpp_tapv2.InterfaceIndex(0),
+		SwIfIndex: ^interface_types.InterfaceIndex(0),
 	})
 	for {
 		tapDetails := &vpp_tapv2.SwInterfaceTapV2Details{}
@@ -540,7 +540,7 @@ func (h *InterfaceVppHandler) dumpTapDetails(interfaces map[uint32]*vppcalls.Int
 // dumpVxlanDetails dumps VXLAN interface details from VPP and fills them into the provided interface map.
 func (h *InterfaceVppHandler) dumpVxlanDetails(interfaces map[uint32]*vppcalls.InterfaceDetails) error {
 	reqCtx := h.callsChannel.SendMultiRequest(&vpp_vxlan.VxlanTunnelDump{
-		SwIfIndex: ^vpp_ifs.InterfaceIndex(0),
+		SwIfIndex: ^interface_types.InterfaceIndex(0),
 	})
 	for {
 		vxlanDetails := &vpp_vxlan.VxlanTunnelDetails{}
@@ -593,7 +593,7 @@ func (h *InterfaceVppHandler) dumpVxlanDetails(interfaces map[uint32]*vppcalls.I
 
 // dumpVxlanDetails dumps VXLAN-GPE interface details from VPP and fills them into the provided interface map.
 func (h *InterfaceVppHandler) dumpVxLanGpeDetails(interfaces map[uint32]*vppcalls.InterfaceDetails) error {
-	reqCtx := h.callsChannel.SendMultiRequest(&vpp_vxlangpe.VxlanGpeTunnelDump{SwIfIndex: ^vpp_ifs.InterfaceIndex(0)})
+	reqCtx := h.callsChannel.SendMultiRequest(&vpp_vxlangpe.VxlanGpeTunnelDump{SwIfIndex: ^interface_types.InterfaceIndex(0)})
 	for {
 		vxlanGpeDetails := &vpp_vxlangpe.VxlanGpeTunnelDetails{}
 		stop, err := reqCtx.ReceiveReply(vxlanGpeDetails)
@@ -661,7 +661,7 @@ func (h *InterfaceVppHandler) dumpIPSecTunnelDetails(interfaces map[uint32]*vppc
 			return err
 		}
 		// skip non-tunnel security associations
-		if saDetails.SwIfIndex != ^vpp_ifs.InterfaceIndex(0) {
+		if saDetails.SwIfIndex != ^interface_types.InterfaceIndex(0) {
 			tunnels = append(tunnels, saDetails)
 		}
 	}
@@ -782,7 +782,7 @@ func (h *InterfaceVppHandler) dumpBondDetails(interfaces map[uint32]*vppcalls.In
 	for _, bondIdx := range bondIndexes {
 		var bondSlaves []*ifs.BondLink_BondedInterface
 		reqSlCtx := h.callsChannel.SendMultiRequest(&vpp_bond.SwInterfaceSlaveDump{
-			SwIfIndex: vpp_bond.InterfaceIndex(bondIdx),
+			SwIfIndex: interface_types.InterfaceIndex(bondIdx),
 		})
 		for {
 			slaveDetails := &vpp_bond.SwInterfaceSlaveDetails{}
@@ -810,7 +810,7 @@ func (h *InterfaceVppHandler) dumpBondDetails(interfaces map[uint32]*vppcalls.In
 }
 
 func (h *InterfaceVppHandler) dumpGreDetails(interfaces map[uint32]*vppcalls.InterfaceDetails) error {
-	msg := &vpp_gre.GreTunnelDump{SwIfIndex: vpp_gre.InterfaceIndex(^uint32(0))}
+	msg := &vpp_gre.GreTunnelDump{SwIfIndex: interface_types.InterfaceIndex(^uint32(0))}
 	reqCtx := h.callsChannel.SendMultiRequest(msg)
 	for {
 		greDetails := &vpp_gre.GreTunnelDetails{}
@@ -880,7 +880,7 @@ func (h *InterfaceVppHandler) dumpUnnumberedDetails() (map[uint32]uint32, error)
 
 func (h *InterfaceVppHandler) dumpRxPlacement(interfaces map[uint32]*vppcalls.InterfaceDetails) error {
 	reqCtx := h.callsChannel.SendMultiRequest(&vpp_ifs.SwInterfaceRxPlacementDump{
-		SwIfIndex: vpp_ifs.InterfaceIndex(^uint32(0)),
+		SwIfIndex: interface_types.InterfaceIndex(^uint32(0)),
 	})
 	for {
 		rxDetails := &vpp_ifs.SwInterfaceRxPlacementDetails{}
@@ -918,7 +918,7 @@ func (h *InterfaceVppHandler) dumpRxPlacement(interfaces map[uint32]*vppcalls.In
 	return nil
 }
 
-func dhcpAddressToString(address vpp_dhcp.Address, maskWidth uint32, isIPv6 bool) string {
+func dhcpAddressToString(address ip_types.Address, maskWidth uint32, isIPv6 bool) string {
 	dhcpIPByte := make([]byte, 16)
 	copy(dhcpIPByte[:], address.Un.XXX_UnionData[:])
 	if isIPv6 {
@@ -982,7 +982,7 @@ func memifModetoNB(mode vpp_memif.MemifMode) ifs.MemifLink_MemifMode {
 }
 
 // Convert binary API rx-mode to northbound representation
-func getRxModeType(mode vpp_ifs.RxMode) ifs.Interface_RxMode_Type {
+func getRxModeType(mode interface_types.RxMode) ifs.Interface_RxMode_Type {
 	switch mode {
 	case 1:
 		return ifs.Interface_RxMode_POLLING
@@ -1086,22 +1086,22 @@ func getVxLanGpeProtocol(p ip_types.IPProto) ifs.VxlanLink_Gpe_Protocol {
 	}
 }
 
-func isAdminStateUp(flags vpp_ifs.IfStatusFlags) bool {
+func isAdminStateUp(flags interface_types.IfStatusFlags) bool {
 	return flags&interface_types.IF_STATUS_API_FLAG_ADMIN_UP != 0
 }
 
-func isLinkStateUp(flags vpp_ifs.IfStatusFlags) bool {
+func isLinkStateUp(flags interface_types.IfStatusFlags) bool {
 	return flags&interface_types.IF_STATUS_API_FLAG_LINK_UP != 0
 }
 
-func adminStateToInterfaceStatus(flags vpp_ifs.IfStatusFlags) ifs.InterfaceState_Status {
+func adminStateToInterfaceStatus(flags interface_types.IfStatusFlags) ifs.InterfaceState_Status {
 	if isAdminStateUp(flags) {
 		return ifs.InterfaceState_UP
 	}
 	return ifs.InterfaceState_DOWN
 }
 
-func linkStateToInterfaceStatus(flags vpp_ifs.IfStatusFlags) ifs.InterfaceState_Status {
+func linkStateToInterfaceStatus(flags interface_types.IfStatusFlags) ifs.InterfaceState_Status {
 	if isLinkStateUp(flags) {
 		return ifs.InterfaceState_UP
 	}

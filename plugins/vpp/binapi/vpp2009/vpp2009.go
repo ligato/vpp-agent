@@ -26,7 +26,7 @@ import (
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/flowprobe"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/gre"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/gtpu"
-	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/interfaces"
+	interfaces "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/interface"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/ip"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/ip6_nd"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/ip_neighbor"
@@ -95,15 +95,7 @@ func init() {
 	}
 }
 
-//go:generate -command binapigentypes binapi-generator --output-dir=. --import-prefix=go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/
-//go:generate binapigentypes --input-file=$VPP_API_DIR/core/ethernet_types.api.json
-//go:generate binapigentypes --input-file=$VPP_API_DIR/core/interface_types.api.json
-//go:generate binapigentypes --input-file=$VPP_API_DIR/core/ip_types.api.json
-//go:generate binapigentypes --input-file=$VPP_API_DIR/core/fib_types.api.json --input-types=$VPP_API_DIR/core/ethernet_types.api.json,$VPP_API_DIR/core/interface_types.api.json,$VPP_API_DIR/core/ip_types.api.json
-//go:generate binapigentypes --input-file=$VPP_API_DIR/core/ipsec_types.api.json --input-types=$VPP_API_DIR/core/ethernet_types.api.json,$VPP_API_DIR/core/interface_types.api.json,$VPP_API_DIR/core/ip_types.api.json
-//go:generate binapigentypes --input-file=$VPP_API_DIR/core/vpe_types.api.json
-
-//go:generate -command binapigen binapi-generator --output-dir=. --import-prefix=go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/ --input-types=$VPP_API_DIR/core/ethernet_types.api.json,$VPP_API_DIR/core/interface_types.api.json,$VPP_API_DIR/core/ip_types.api.json,$VPP_API_DIR/core/fib_types.api.json,$VPP_API_DIR/core/ipsec_types.api.json,$VPP_API_DIR/core/vpe_types.api.json
+//go:generate -command binapigen binapi-generator --no-version-info --output-dir=.
 //go:generate binapigen --input-file=$VPP_API_DIR/core/af_packet.api.json
 //go:generate binapigen --input-file=$VPP_API_DIR/core/arp.api.json
 //go:generate binapigen --input-file=$VPP_API_DIR/core/bond.api.json

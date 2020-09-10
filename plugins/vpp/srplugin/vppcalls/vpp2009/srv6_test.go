@@ -23,8 +23,8 @@ import (
 	. "github.com/onsi/gomega"
 	"go.ligato.io/cn-infra/v2/logging/logrus"
 
+	vpp_ifs "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/interface"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/interface_types"
-	vpp_ifs "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/interfaces"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/ip_types"
 	vpp_sr "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/sr"
 	vpp_vpe "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/vpe"
@@ -806,7 +806,7 @@ func TestAddPolicy(t *testing.T) {
 					Sids: vpp_sr.Srv6SidList{
 						Weight:  1,
 						NumSids: 3,
-						Sids:    []vpp_sr.IP6Address{sidA, sidB, sidC},
+						Sids:    [16]ip_types.IP6Address{sidA, sidB, sidC},
 					},
 				}))
 			},
@@ -827,7 +827,9 @@ func TestAddPolicy(t *testing.T) {
 					Sids: vpp_sr.Srv6SidList{
 						Weight:  1,
 						NumSids: 3,
-						Sids:    []vpp_sr.IP6Address{sidA, sidB, sidC},
+						Sids: [16]ip_types.IP6Address{
+							sidA, sidB, sidC,
+						},
 					},
 				}))
 				Expect(catchedMsgs[1]).To(Equal(&vpp_sr.SrPolicyMod{
@@ -837,7 +839,7 @@ func TestAddPolicy(t *testing.T) {
 					Sids: vpp_sr.Srv6SidList{
 						Weight:  1,
 						NumSids: 3,
-						Sids:    []vpp_sr.IP6Address{sidB, sidC, sidA},
+						Sids:    [16]ip_types.IP6Address{sidB, sidC, sidA},
 					},
 				}))
 			},
@@ -991,7 +993,7 @@ func TestAddPolicySegmentList(t *testing.T) {
 					Sids: vpp_sr.Srv6SidList{
 						Weight:  1,
 						NumSids: 3,
-						Sids:    []vpp_sr.IP6Address{sidA, sidB, sidC},
+						Sids:    [16]ip_types.IP6Address{sidA, sidB, sidC},
 					},
 				}))
 			},
@@ -1075,7 +1077,7 @@ func TestDeletePolicySegmentList(t *testing.T) {
 					Sids: vpp_sr.Srv6SidList{
 						Weight:  1,
 						NumSids: 3,
-						Sids:    []vpp_sr.IP6Address{sidA, sidB, sidC},
+						Sids:    [16]ip_types.IP6Address{sidA, sidB, sidC},
 					},
 				}))
 			},
@@ -1468,12 +1470,12 @@ func teardown(ctx *vppmock.TestCtx) {
 	ctx.TeardownTestCtx()
 }
 
-func sid(str string) vpp_sr.IP6Address {
+func sid(str string) ip_types.IP6Address {
 	bsid, err := parseIPv6(str)
 	if err != nil {
 		panic(fmt.Sprintf("can't parse %q into SRv6 BSID (IPv6 address)", str))
 	}
-	var ip vpp_sr.IP6Address
+	var ip ip_types.IP6Address
 	copy(ip[:], bsid)
 	return ip
 }
@@ -1520,7 +1522,7 @@ func boolToUint(input bool) uint8 {
 	return uint8(0)
 }
 
-func sidToStr(sid vpp_sr.IP6Address) string {
+func sidToStr(sid ip_types.IP6Address) string {
 	return srv6.SID(sid[:]).String()
 }
 

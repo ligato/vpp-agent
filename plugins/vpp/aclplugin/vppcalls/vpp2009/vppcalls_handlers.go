@@ -48,7 +48,7 @@ func NewACLVppHandler(c vpp.Client, ifIdx ifaceidx.IfaceMetadataIndex) vppcalls.
 	}
 	return &ACLVppHandler{
 		callsChannel: ch,
-		acl:          acl.NewServiceClient(ch),
+		acl:          acl.NewServiceClient(c),
 		ifIndexes:    ifIdx,
 	}
 }
