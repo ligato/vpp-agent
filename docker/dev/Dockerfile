@@ -32,8 +32,6 @@ RUN set -x; \
  	diff --color=always -I="\/\/.*" -r plugins/vpp/binapi /tmp/orig_binapi || \
  	{ \
  		set +ex; \
- 		source vpp.env; \
- 		binapivar="VPP_${VPP_VERSION}_BINAPI"; \
  		vpp_version="$(cat /vpp-version)"; \
  		echo >&2 "==============================================================="; \
  		echo >&2 "!!! VPP BINARY API CHECK FAILED !!!"; \
@@ -41,7 +39,6 @@ RUN set -x; \
  		echo >&2 " - VPP installed: ${vpp_version}"; \
  		echo >&2 " - VPP_VERSION:   ${VPP_VERSION}"; \
  		echo >&2 " - VPP_IMG:       ${VPP_IMG}"; \
- 		echo >&2 " - binapi dir:    $(eval echo \"\$VPP_${VPP_VERSION}_BINAPI\")"; \
  		echo >&2 "---------------------------------------------------------------"; \
  		echo >&2 "Generated binapi does not seem to be up-to-date with used VPP/GoVPP!"; \
  		echo >&2 ""; \
@@ -79,7 +76,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
  	&& rm -rf /var/lib/apt/lists/*
 
 # Install Go
-ENV GOLANG_VERSION 1.15.1
+ENV GOLANG_VERSION 1.15.2
 RUN set -eux; \
 	dpkgArch="$(dpkg --print-architecture)"; \
 		case "${dpkgArch##*-}" in \
@@ -121,7 +118,6 @@ ARG VERSION
 ARG COMMIT
 ARG BRANCH
 ARG BUILD_DATE
-
 RUN make install purge
 
 ENV SUPERVISOR_CONFIG=/opt/vpp-agent/dev/supervisor.conf
