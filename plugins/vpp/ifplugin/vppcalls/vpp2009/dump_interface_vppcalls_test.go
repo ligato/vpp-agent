@@ -32,6 +32,7 @@ import (
 	vpp_tapv2 "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/tapv2"
 	vpp_vpe "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/vpe"
 	vpp_vxlan "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/vxlan"
+	vpp_vxlangpe "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/vxlan_gpe"
 	vpp2009 "go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/vppcalls/vpp2009"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/vppmock"
 	ifs "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
@@ -85,11 +86,23 @@ func TestDumpInterfacesVxLan(t *testing.T) {
 			},
 		},
 		{
+			Name: (&vpp_vxlangpe.VxlanGpeTunnelDump{}).GetMessageName(),
+			Ping: true,
+		},
+		{
 			Name: (&vpp_gtpu.GtpuTunnelDump{}).GetMessageName(),
 			Ping: true,
 		},
 		{
 			Name: (&vpp_ipip.IpipTunnelDump{}).GetMessageName(),
+			Ping: true,
+		},
+		{
+			Name: (&vpp_ip.IPUnnumberedDump{}).GetMessageName(),
+			Ping: true,
+		},
+		{
+			Name: (&vpp_dhcp.DHCPClientDump{}).GetMessageName(),
 			Ping: true,
 		},
 	})
@@ -149,6 +162,18 @@ func TestDumpInterfacesHost(t *testing.T) {
 		},
 		{
 			Name: (&vpp_ipip.IpipTunnelDump{}).GetMessageName(),
+			Ping: true,
+		},
+		{
+			Name: (&vpp_dhcp.DHCPClientDump{}).GetMessageName(),
+			Ping: true,
+		},
+		{
+			Name: (&vpp_ip.IPUnnumberedDump{}).GetMessageName(),
+			Ping: true,
+		},
+		{
+			Name: (&vpp_vxlangpe.VxlanGpeTunnelDump{}).GetMessageName(),
 			Ping: true,
 		},
 	})
@@ -291,11 +316,23 @@ func TestDumpInterfacesTap2(t *testing.T) {
 			Ping: true,
 		},
 		{
+			Name: (&vpp_vxlangpe.VxlanGpeTunnelDump{}).GetMessageName(),
+			Ping: true,
+		},
+		{
 			Name: (&vpp_gtpu.GtpuTunnelDump{}).GetMessageName(),
 			Ping: true,
 		},
 		{
 			Name: (&vpp_ipip.IpipTunnelDump{}).GetMessageName(),
+			Ping: true,
+		},
+		{
+			Name: (&vpp_ip.IPUnnumberedDump{}).GetMessageName(),
+			Ping: true,
+		},
+		{
+			Name: (&vpp_memif.MemifSocketFilenameDump{}).GetMessageName(),
 			Ping: true,
 		},
 	})
@@ -424,6 +461,18 @@ func TestDumpInterfacesRxPlacement(t *testing.T) {
 					Mode:      1, // polling
 				},
 			},
+		},
+		{
+			Name: (&vpp_ip.IPUnnumberedDump{}).GetMessageName(),
+			Ping: true,
+		},
+		{
+			Name: (&vpp_dhcp.DHCPClientDump{}).GetMessageName(),
+			Ping: true,
+		},
+		{
+			Name: (&vpp_vxlan.VxlanTunnelDump{}).GetMessageName(),
+			Ping: true,
 		},
 	})
 

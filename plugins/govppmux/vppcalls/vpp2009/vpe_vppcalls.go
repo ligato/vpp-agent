@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"strings"
 
+	"git.fd.io/govpp.git/api"
 	"github.com/pkg/errors"
 
 	"go.ligato.io/vpp-agent/v3/plugins/govppmux/vppcalls"
@@ -136,11 +137,13 @@ func (h *VpeHandler) GetPlugins(ctx context.Context) ([]vppcalls.PluginInfo, err
 
 // RunCli sends CLI command to VPP and returns response.
 func (h *VpeHandler) RunCli(ctx context.Context, cmd string) (string, error) {
-	resp, err := h.vpe.CliInband(ctx, &vpe.CliInband{
+	reply, err := h.vpe.CliInband(ctx, &vpe.CliInband{
 		Cmd: cmd,
 	})
 	if err != nil {
 		return "", errors.Wrapf(err, "VPP CLI command '%s' failed", cmd)
+	} else if err = api.RetvalToVPPApiError(reply.Retval); err != nil {
+		return "", err
 	}
-	return resp.Reply, nil
+	return reply.Reply, nil
 }
