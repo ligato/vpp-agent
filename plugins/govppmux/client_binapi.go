@@ -24,6 +24,14 @@ import (
 	"go.ligato.io/cn-infra/v2/logging"
 )
 
+func (p *Plugin) NewStream(ctx context.Context) (govppapi.Stream, error) {
+	return p.vppConn.NewStream(ctx)
+}
+
+func (p *Plugin) Invoke(ctx context.Context, req govppapi.Message, reply govppapi.Message) error {
+	return p.vppConn.Invoke(ctx, req, reply)
+}
+
 // NewAPIChannel returns a new API channel for communication with VPP via govpp core.
 // It uses default buffer sizes for the request and reply Go channels.
 func (p *Plugin) NewAPIChannel() (govppapi.Channel, error) {

@@ -198,9 +198,9 @@ func setupVPP(t *testing.T) *TestCtx {
 	}
 
 	vppClient := &vppClient{
-		t:               t,
-		ChannelProvider: conn,
-		ch:              apiChannel,
+		t:    t,
+		conn: conn,
+		ch:   apiChannel,
 	}
 
 	vpeHandler := vppcalls.CompatibleHandler(vppClient)
@@ -302,12 +302,24 @@ func stopVPP(t *testing.T, vppCmd *exec.Cmd) {
 }
 
 type vppClient struct {
-	t *testing.T
-	govppapi.ChannelProvider
+	t       *testing.T
+	conn    *govppcore.Connection
 	ch      govppapi.Channel
 	stats   govppapi.StatsProvider
 	vpp     vppcalls.VppCoreAPI
 	version vpp.Version
+}
+
+func (v *vppClient) NewAPIChannel() (govppapi.Channel, error) {
+	return v.conn.NewAPIChannel()
+}
+
+func (v *vppClient) NewStream(ctx context.Context) (govppapi.Stream, error) {
+	return v.conn.NewStream(ctx)
+}
+
+func (v *vppClient) Invoke(ctx context.Context, req govppapi.Message, reply govppapi.Message) error {
+	return v.conn.Invoke(ctx, req, reply)
 }
 
 func (v *vppClient) Version() vpp.Version {

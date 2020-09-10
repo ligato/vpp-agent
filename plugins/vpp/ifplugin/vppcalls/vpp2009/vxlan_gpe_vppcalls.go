@@ -4,16 +4,18 @@ import (
 	"fmt"
 	"net"
 
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/interface_types"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/ip_types"
 	vpp_gpe "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/vxlan_gpe"
 	ifs "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
 )
 
 func (h *InterfaceVppHandler) vxLanGpeAddDelTunnel(isAdd bool, vxLan *ifs.VxlanLink, vrf, multicastIf uint32) (uint32, error) {
 	req := &vpp_gpe.VxlanGpeAddDelTunnel{
-		McastSwIfIndex: vpp_gpe.InterfaceIndex(multicastIf),
+		McastSwIfIndex: interface_types.InterfaceIndex(multicastIf),
 		EncapVrfID:     vrf,
 		DecapVrfID:     vxLan.Gpe.DecapVrfId,
-		Protocol:       vpp_gpe.IPProto(vxLan.Gpe.Protocol),
+		Protocol:       ip_types.IPProto(vxLan.Gpe.Protocol),
 		Vni:            vxLan.Vni,
 		IsAdd:          isAdd,
 	}

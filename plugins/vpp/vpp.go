@@ -35,6 +35,7 @@ type Version = binapi.Version
 
 // Client provides methods for managing VPP.
 type Client interface {
+	govppapi.Connection
 	binapi.CompatibilityChecker
 
 	// NewAPIChannel returns new channel for sending binapi requests.

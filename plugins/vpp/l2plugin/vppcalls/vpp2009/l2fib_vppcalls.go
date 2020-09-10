@@ -18,7 +18,8 @@ import (
 	"errors"
 	"net"
 
-	vpp_ipsec "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/ipsec"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/ethernet_types"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/interface_types"
 	vpp_l2 "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/l2"
 	l2 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l2"
 )
@@ -59,7 +60,7 @@ func (h *FIBVppHandler) l2fibAddDel(fib *l2.FIBEntry, isAdd bool) (err error) {
 		}
 	}
 
-	var macAddr vpp_l2.MacAddress
+	var macAddr ethernet_types.MacAddress
 	copy(macAddr[:], mac)
 
 	// add L2 FIB
@@ -67,7 +68,7 @@ func (h *FIBVppHandler) l2fibAddDel(fib *l2.FIBEntry, isAdd bool) (err error) {
 		IsAdd:     isAdd,
 		Mac:       macAddr,
 		BdID:      bdMeta.GetIndex(),
-		SwIfIndex: vpp_ipsec.InterfaceIndex(swIfIndex),
+		SwIfIndex: interface_types.InterfaceIndex(swIfIndex),
 		BviMac:    fib.BridgedVirtualInterface,
 		StaticMac: fib.StaticConfig,
 		FilterMac: fib.Action == l2.FIBEntry_DROP,

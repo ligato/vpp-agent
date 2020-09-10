@@ -19,6 +19,7 @@ import (
 
 	. "github.com/onsi/gomega"
 
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/ethernet_types"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/ip_types"
 	vpp_l2 "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/l2"
 )
@@ -36,13 +37,13 @@ func TestVppAddArpTerminationTableEntry(t *testing.T) {
 	Expect(ctx.MockChannel.Msg).To(Equal(&vpp_l2.BdIPMacAddDel{
 		Entry: vpp_l2.BdIPMac{
 			BdID: 4,
-			IP: vpp_l2.Address{
+			IP: ip_types.Address{
 				Af: ip_types.ADDRESS_IP4,
 				Un: ip_types.AddressUnionIP4(
-					vpp_l2.IP4Address{192, 168, 4, 4},
+					ip_types.IP4Address{192, 168, 4, 4},
 				),
 			},
-			Mac: vpp_l2.MacAddress{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF},
+			Mac: ethernet_types.MacAddress{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF},
 		},
 		IsAdd: true,
 	}))
@@ -60,13 +61,13 @@ func TestVppAddArpTerminationTableEntryIPv6(t *testing.T) {
 	Expect(ctx.MockChannel.Msg).To(Equal(&vpp_l2.BdIPMacAddDel{
 		Entry: vpp_l2.BdIPMac{
 			BdID: 4,
-			IP: vpp_l2.Address{
+			IP: ip_types.Address{
 				Af: ip_types.ADDRESS_IP6,
 				Un: ip_types.AddressUnionIP6(
-					vpp_l2.IP6Address{32, 1, 13, 185, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 84},
+					ip_types.IP6Address{32, 1, 13, 185, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 84},
 				),
 			},
-			Mac: vpp_l2.MacAddress{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF},
+			Mac: ethernet_types.MacAddress{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF},
 		},
 		IsAdd: true,
 	}))
@@ -84,13 +85,13 @@ func TestVppRemoveArpTerminationTableEntry(t *testing.T) {
 	Expect(ctx.MockChannel.Msg).To(Equal(&vpp_l2.BdIPMacAddDel{
 		Entry: vpp_l2.BdIPMac{
 			BdID: 4,
-			IP: vpp_l2.Address{
+			IP: ip_types.Address{
 				Af: ip_types.ADDRESS_IP4,
 				Un: ip_types.AddressUnionIP4(
-					vpp_l2.IP4Address{192, 168, 4, 4},
+					ip_types.IP4Address{192, 168, 4, 4},
 				),
 			},
-			Mac: vpp_l2.MacAddress{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF},
+			Mac: ethernet_types.MacAddress{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF},
 		},
 		IsAdd: false,
 	}))

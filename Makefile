@@ -212,7 +212,7 @@ verify-binapi: ## Verify generated VPP binary API
 	@echo "# verifying generated binapi"
 	docker build -f docker/dev/Dockerfile \
 		--build-arg VPP_IMG=${VPP_IMG} \
-		--build-arg VPP_BINAPI=${VPP_BINAPI} \
+		--build-arg VPP_VERSION=${VPP_VERSION} \
 		--target verify-binapi .
 
 get-desc-adapter-generator:
@@ -315,7 +315,7 @@ images: dev-image prod-image ## Build all images
 dev-image: ## Build developer image
 	@echo "# building dev image"
 	IMAGE_TAG=$(IMAGE_TAG) \
-		VPP_IMG=$(VPP_IMG) VPP_BINAPI=$(VPP_BINAPI) \
+		VPP_IMG=$(VPP_IMG) VPP_VERSION=$(VPP_VERSION) VPP_BINAPI=$(VPP_BINAPI) \
 		VERSION=$(VERSION) COMMIT=$(COMMIT) BRANCH=$(BRANCH) \
 		BUILD_DATE=$(BUILD_DATE) \
 	  ./docker/dev/build.sh

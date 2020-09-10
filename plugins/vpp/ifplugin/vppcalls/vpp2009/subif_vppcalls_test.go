@@ -19,7 +19,8 @@ import (
 
 	. "github.com/onsi/gomega"
 
-	vpp_ifs "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/interfaces"
+	vpp_ifs "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/interface"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/interface_types"
 )
 
 func TestCreateSubif(t *testing.T) {
@@ -34,7 +35,7 @@ func TestCreateSubif(t *testing.T) {
 	vppMsg, ok := ctx.MockChannel.Msg.(*vpp_ifs.CreateVlanSubif)
 	Expect(ok).To(BeTrue())
 	Expect(vppMsg).ToNot(BeNil())
-	Expect(vppMsg.SwIfIndex).To(Equal(vpp_ifs.InterfaceIndex(5)))
+	Expect(vppMsg.SwIfIndex).To(Equal(interface_types.InterfaceIndex(5)))
 	Expect(vppMsg.VlanID).To(Equal(uint32(32)))
 }
 
@@ -61,7 +62,7 @@ func TestDeleteSubif(t *testing.T) {
 	vppMsg, ok := ctx.MockChannel.Msg.(*vpp_ifs.DeleteSubif)
 	Expect(ok).To(BeTrue())
 	Expect(vppMsg).ToNot(BeNil())
-	Expect(vppMsg.SwIfIndex).To(Equal(vpp_ifs.InterfaceIndex(5)))
+	Expect(vppMsg.SwIfIndex).To(Equal(interface_types.InterfaceIndex(5)))
 }
 
 func TestDeleteSubifError(t *testing.T) {

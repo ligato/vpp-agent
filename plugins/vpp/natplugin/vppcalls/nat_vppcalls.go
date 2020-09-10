@@ -73,7 +73,7 @@ var handler = vpp.RegisterHandler(vpp.HandlerDesc{
 })
 
 func AddNatHandlerVersion(version vpp.Version, msgs []govppapi.Message,
-	h func(ch govppapi.Channel, ifIdx ifaceidx.IfaceMetadataIndex, dhcpIdx idxmap.NamedMapping, log logging.Logger) NatVppAPI,
+	h func(c vpp.Client, ifIdx ifaceidx.IfaceMetadataIndex, dhcpIdx idxmap.NamedMapping, log logging.Logger) NatVppAPI,
 ) {
 	handler.AddVersion(vpp.HandlerVersion{
 		Version: version,
@@ -85,11 +85,7 @@ func AddNatHandlerVersion(version vpp.Version, msgs []govppapi.Message,
 			return ch.CheckCompatiblity(msgs...)
 		},
 		NewHandler: func(c vpp.Client, a ...interface{}) vpp.HandlerAPI {
-			ch, err := c.NewAPIChannel()
-			if err != nil {
-				return err
-			}
-			return h(ch, a[0].(ifaceidx.IfaceMetadataIndex), a[1].(idxmap.NamedMapping), a[2].(logging.Logger))
+			return h(c, a[0].(ifaceidx.IfaceMetadataIndex), a[1].(idxmap.NamedMapping), a[2].(logging.Logger))
 		},
 	})
 }

@@ -25,8 +25,8 @@ import (
 	"github.com/pkg/errors"
 
 	vpp_dhcp "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/dhcp"
+	vpp_ifs "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/interface"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/interface_types"
-	vpp_ifs "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/interfaces"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/vppcalls"
 )
 

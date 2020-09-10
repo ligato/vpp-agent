@@ -20,6 +20,7 @@ import (
 
 	"github.com/pkg/errors"
 
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/interface_types"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/ip_types"
 	vpp_l2 "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/l2"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/l2plugin/vppcalls"
@@ -40,7 +41,7 @@ func (h *BridgeDomainVppHandler) DumpBridgeDomains() ([]*vppcalls.BridgeDomainDe
 	// dump bridge domains
 	reqCtx := h.callsChannel.SendMultiRequest(&vpp_l2.BridgeDomainDump{
 		BdID:      ^uint32(0),
-		SwIfIndex: ^vpp_l2.InterfaceIndex(0),
+		SwIfIndex: ^interface_types.InterfaceIndex(0),
 	})
 
 	for {
@@ -233,7 +234,7 @@ func (h *XConnectVppHandler) DumpXConnectPairs() (map[uint32]*vppcalls.XConnectD
 	return xpairs, nil
 }
 
-func parseAddressToString(address vpp_l2.Address) string {
+func parseAddressToString(address ip_types.Address) string {
 	var nhIP net.IP = make([]byte, 16)
 	copy(nhIP[:], address.Un.XXX_UnionData[:])
 	if address.Af == ip_types.ADDRESS_IP4 {

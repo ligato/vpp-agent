@@ -20,9 +20,11 @@ import (
 	"io"
 	"strings"
 
+	"git.fd.io/govpp.git/api"
 	"github.com/pkg/errors"
 
 	"go.ligato.io/vpp-agent/v3/plugins/vpp"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/interface_types"
 	vpp_memif "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/memif"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/vppcalls"
 	ifs "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
@@ -59,6 +61,8 @@ func (h *InterfaceVppHandler) AddMemifInterface(ctx context.Context, ifName stri
 	reply, err := h.memif.MemifCreate(ctx, req)
 	if err != nil {
 		return 0, err
+	} else if err = api.RetvalToVPPApiError(reply.Retval); err != nil {
+		return 0, err
 	}
 	swIdx = uint32(reply.SwIfIndex)
 
@@ -71,9 +75,11 @@ func (h *InterfaceVppHandler) DeleteMemifInterface(ctx context.Context, ifName s
 	}
 
 	req := &vpp_memif.MemifDelete{
-		SwIfIndex: vpp_memif.InterfaceIndex(idx),
+		SwIfIndex: interface_types.InterfaceIndex(idx),
 	}
-	if _, err := h.memif.MemifDelete(ctx, req); err != nil {
+	if reply, err := h.memif.MemifDelete(ctx, req); err != nil {
+		return err
+	} else if err = api.RetvalToVPPApiError(reply.Retval); err != nil {
 		return err
 	}
 
@@ -90,7 +96,9 @@ func (h *InterfaceVppHandler) RegisterMemifSocketFilename(ctx context.Context, f
 		SocketID:       id,
 		IsAdd:          true, // sockets can be added only
 	}
-	if _, err := h.memif.MemifSocketFilenameAddDel(ctx, req); err != nil {
+	if reply, err := h.memif.MemifSocketFilenameAddDel(ctx, req); err != nil {
+		return err
+	} else if err = api.RetvalToVPPApiError(reply.Retval); err != nil {
 		return err
 	}
 	return nil
@@ -112,7 +120,7 @@ func (h *InterfaceVppHandler) DumpMemifSocketDetails(ctx context.Context) (map[s
 		return nil, errors.WithMessage(vpp.ErrPluginDisabled, "memif")
 	}
 
-	dump, err := h.memif.DumpMemifSocketFilename(ctx, &vpp_memif.MemifSocketFilenameDump{})
+	dump, err := h.memif.MemifSocketFilenameDump(ctx, &vpp_memif.MemifSocketFilenameDump{})
 	if err != nil {
 		return nil, err
 	}
@@ -147,7 +155,7 @@ func (h *InterfaceVppHandler) dumpMemifDetails(ctx context.Context, interfaces m
 		return fmt.Errorf("dumping memif socket details failed: %v", err)
 	}
 
-	dump, err := h.memif.DumpMemif(ctx, &vpp_memif.MemifDump{})
+	dump, err := h.memif.MemifDump(ctx, &vpp_memif.MemifDump{})
 	if err != nil {
 		return err
 	}

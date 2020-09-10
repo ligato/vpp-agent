@@ -60,7 +60,7 @@ func NewSRv6VppHandler(c vpp.Client, ifIdx ifaceidx.IfaceMetadataIndex, log logg
 		callsChannel: vppChan,
 		ifIndexes:    ifIdx,
 		log:          log,
-		VppCoreAPI:   core_vpp2009.NewVpeHandler(vppChan),
+		VppCoreAPI:   core_vpp2009.NewVpeHandler(c),
 	}
 }
 
@@ -89,7 +89,7 @@ func parseIPv6(str string) (net.IP, error) {
 func IPToAddress(ipstr string) (addr ip_types.Address, err error) {
 	netIP := net.ParseIP(ipstr)
 	if netIP == nil {
-		return sr.Address{}, fmt.Errorf("invalid IP: %q", ipstr)
+		return ip_types.Address{}, fmt.Errorf("invalid IP: %q", ipstr)
 	}
 	if ip4 := netIP.To4(); ip4 == nil {
 		addr.Af = ip_types.ADDRESS_IP6

@@ -20,6 +20,8 @@ import (
 	"github.com/pkg/errors"
 	"go.ligato.io/cn-infra/v2/utils/addrs"
 
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/interface_types"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/ip_types"
 	vpp_ipsec "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/ipsec"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/ipsec_types"
 	ipsec "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/ipsec"
@@ -173,7 +175,7 @@ func ipOr(s, o string) string {
 func (h *IPSecVppHandler) interfaceAddDelSpd(spdID, swIfIdx uint32, isAdd bool) error {
 	req := &vpp_ipsec.IpsecInterfaceAddDelSpd{
 		IsAdd:     isAdd,
-		SwIfIndex: vpp_ipsec.InterfaceIndex(swIfIdx),
+		SwIfIndex: interface_types.InterfaceIndex(swIfIdx),
 		SpdID:     spdID,
 	}
 	reply := &vpp_ipsec.IpsecInterfaceAddDelSpdReply{}
@@ -195,7 +197,7 @@ func (h *IPSecVppHandler) sadAddDelEntry(sa *ipsec.SecurityAssociation, isAdd bo
 		return err
 	}
 
-	var flags vpp_ipsec.IpsecSadFlags
+	var flags ipsec_types.IpsecSadFlags
 	if sa.UseEsn {
 		flags |= ipsec_types.IPSEC_API_SAD_FLAG_USE_ESN
 	}
@@ -205,7 +207,7 @@ func (h *IPSecVppHandler) sadAddDelEntry(sa *ipsec.SecurityAssociation, isAdd bo
 	if sa.EnableUdpEncap {
 		flags |= ipsec_types.IPSEC_API_SAD_FLAG_UDP_ENCAP
 	}
-	var tunnelSrc, tunnelDst ipsec_types.Address
+	var tunnelSrc, tunnelDst ip_types.Address
 	if sa.TunnelSrcAddr != "" {
 		flags |= ipsec_types.IPSEC_API_SAD_FLAG_IS_TUNNEL
 		isIPv6, err := addrs.IsIPv6(sa.TunnelSrcAddr)
@@ -236,18 +238,18 @@ func (h *IPSecVppHandler) sadAddDelEntry(sa *ipsec.SecurityAssociation, isAdd bo
 
 	req := &vpp_ipsec.IpsecSadEntryAddDel{
 		IsAdd: isAdd,
-		Entry: vpp_ipsec.IpsecSadEntry{
+		Entry: ipsec_types.IpsecSadEntry{
 			SadID:           sa.Index,
 			Spi:             sa.Spi,
 			Protocol:        protocolToIpsecProto(sa.Protocol),
-			CryptoAlgorithm: vpp_ipsec.IpsecCryptoAlg(sa.CryptoAlg),
-			CryptoKey: vpp_ipsec.Key{
+			CryptoAlgorithm: ipsec_types.IpsecCryptoAlg(sa.CryptoAlg),
+			CryptoKey: ipsec_types.Key{
 				Data:   cryptoKey,
 				Length: uint8(len(cryptoKey)),
 			},
 			Salt:               sa.CryptoSalt,
-			IntegrityAlgorithm: vpp_ipsec.IpsecIntegAlg(sa.IntegAlg),
-			IntegrityKey: vpp_ipsec.Key{
+			IntegrityAlgorithm: ipsec_types.IpsecIntegAlg(sa.IntegAlg),
+			IntegrityKey: ipsec_types.Key{
 				Data:   integKey,
 				Length: uint8(len(integKey)),
 			},
@@ -297,7 +299,7 @@ func (h *IPSecVppHandler) tunProtectAddUpdateEntry(tp *ipsec.TunnelProtection, s
 		return errors.New("invalid number of inbound SAs")
 	}
 	req := &vpp_ipsec.IpsecTunnelProtectUpdate{Tunnel: vpp_ipsec.IpsecTunnelProtect{
-		SwIfIndex: vpp_ipsec.InterfaceIndex(swIfIndex),
+		SwIfIndex: interface_types.InterfaceIndex(swIfIndex),
 		SaOut:     tp.SaOut[0],
 		SaIn:      tp.SaIn,
 		NSaIn:     uint8(len(tp.SaIn)),
@@ -318,7 +320,7 @@ func (h *IPSecVppHandler) tunProtectAddUpdateEntry(tp *ipsec.TunnelProtection, s
 
 func (h *IPSecVppHandler) tunProtectDelEntry(tp *ipsec.TunnelProtection, swIfIndex uint32) error {
 	req := &vpp_ipsec.IpsecTunnelProtectDel{
-		SwIfIndex: vpp_ipsec.InterfaceIndex(swIfIndex),
+		SwIfIndex: interface_types.InterfaceIndex(swIfIndex),
 	}
 	if tp.NextHopAddr != "" {
 		nh, err := IPToAddress(tp.NextHopAddr)

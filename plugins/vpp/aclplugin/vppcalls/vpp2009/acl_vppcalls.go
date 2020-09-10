@@ -23,8 +23,7 @@ import (
 
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/aclplugin/vppcalls"
 	vpp_acl "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/acl"
-	vpp_ifs "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/interfaces"
-	vpp_ip "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/ip"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/acl_types"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/ip_types"
 	acl "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/acl"
 )
@@ -161,9 +160,9 @@ func (h *ACLVppHandler) DeleteMACIPACL(aclIndex uint32) error {
 }
 
 // Method transforms provided set of IP proto ACL rules to binapi ACL rules.
-func transformACLIpRules(rules []*acl.ACL_Rule) (aclIPRules []vpp_acl.ACLRule, err error) {
+func transformACLIpRules(rules []*acl.ACL_Rule) (aclIPRules []acl_types.ACLRule, err error) {
 	for _, rule := range rules {
-		aclRule := &vpp_acl.ACLRule{
+		aclRule := &acl_types.ACLRule{
 			IsPermit: ruleAction(rule.Action),
 		}
 		// Match
@@ -190,9 +189,9 @@ func transformACLIpRules(rules []*acl.ACL_Rule) (aclIPRules []vpp_acl.ACLRule, e
 	return aclIPRules, nil
 }
 
-func (h *ACLVppHandler) transformACLMacIPRules(rules []*acl.ACL_Rule) (aclMacIPRules []vpp_acl.MacipACLRule, err error) {
+func (h *ACLVppHandler) transformACLMacIPRules(rules []*acl.ACL_Rule) (aclMacIPRules []acl_types.MacipACLRule, err error) {
 	for _, rule := range rules {
-		aclMacIPRule := &vpp_acl.MacipACLRule{
+		aclMacIPRule := &acl_types.MacipACLRule{
 			IsPermit: ruleAction(rule.Action),
 		}
 		// Matche
@@ -223,7 +222,7 @@ func (h *ACLVppHandler) transformACLMacIPRules(rules []*acl.ACL_Rule) (aclMacIPR
 
 // The function sets an IP ACL rule fields into provided ACL Rule object. Source
 // and destination addresses have to be the same IP version and contain a network mask.
-func ipACL(ipRule *acl.ACL_Rule_IpRule_Ip, aclRule *vpp_acl.ACLRule) (*vpp_acl.ACLRule, error) {
+func ipACL(ipRule *acl.ACL_Rule_IpRule_Ip, aclRule *acl_types.ACLRule) (*acl_types.ACLRule, error) {
 	var (
 		err        error
 		srcNetwork *net.IPNet
@@ -283,7 +282,7 @@ func ipACL(ipRule *acl.ACL_Rule_IpRule_Ip, aclRule *vpp_acl.ACLRule) (*vpp_acl.A
 
 // The function sets an ICMP ACL rule fields into provided ACL Rule object.
 // The ranges are exclusive, use first = 0 and last = 255/65535 (icmpv4/icmpv6) to match "any".
-func icmpACL(icmpRule *acl.ACL_Rule_IpRule_Icmp, aclRule *vpp_acl.ACLRule) *vpp_acl.ACLRule {
+func icmpACL(icmpRule *acl.ACL_Rule_IpRule_Icmp, aclRule *acl_types.ACLRule) *acl_types.ACLRule {
 	if icmpRule == nil {
 		return aclRule
 	}
@@ -308,7 +307,7 @@ func icmpACL(icmpRule *acl.ACL_Rule_IpRule_Icmp, aclRule *vpp_acl.ACLRule) *vpp_
 }
 
 // Sets an TCP ACL rule fields into provided ACL Rule object.
-func tcpACL(tcpRule *acl.ACL_Rule_IpRule_Tcp, aclRule *vpp_acl.ACLRule) *vpp_acl.ACLRule {
+func tcpACL(tcpRule *acl.ACL_Rule_IpRule_Tcp, aclRule *acl_types.ACLRule) *acl_types.ACLRule {
 	aclRule.Proto = vppcalls.TCPProto // IANA TCP
 	aclRule.SrcportOrIcmptypeFirst = uint16(tcpRule.SourcePortRange.LowerPort)
 	aclRule.SrcportOrIcmptypeLast = uint16(tcpRule.SourcePortRange.UpperPort)
@@ -320,7 +319,7 @@ func tcpACL(tcpRule *acl.ACL_Rule_IpRule_Tcp, aclRule *vpp_acl.ACLRule) *vpp_acl
 }
 
 // Sets an UDP ACL rule fields into provided ACL Rule object.
-func udpACL(udpRule *acl.ACL_Rule_IpRule_Udp, aclRule *vpp_acl.ACLRule) *vpp_acl.ACLRule {
+func udpACL(udpRule *acl.ACL_Rule_IpRule_Udp, aclRule *acl_types.ACLRule) *acl_types.ACLRule {
 	aclRule.Proto = vppcalls.UDPProto // IANA UDP
 	aclRule.SrcportOrIcmptypeFirst = uint16(udpRule.SourcePortRange.LowerPort)
 	aclRule.SrcportOrIcmptypeLast = uint16(udpRule.SourcePortRange.UpperPort)
@@ -329,14 +328,14 @@ func udpACL(udpRule *acl.ACL_Rule_IpRule_Udp, aclRule *vpp_acl.ACLRule) *vpp_acl
 	return aclRule
 }
 
-func ruleAction(action acl.ACL_Rule_Action) vpp_acl.ACLAction {
+func ruleAction(action acl.ACL_Rule_Action) acl_types.ACLAction {
 	switch action {
 	case acl.ACL_Rule_DENY:
-		return vpp_acl.ACL_ACTION_API_DENY
+		return acl_types.ACL_ACTION_API_DENY
 	case acl.ACL_Rule_PERMIT:
-		return vpp_acl.ACL_ACTION_API_PERMIT
+		return acl_types.ACL_ACTION_API_PERMIT
 	case acl.ACL_Rule_REFLECT:
-		return vpp_acl.ACL_ACTION_API_PERMIT_REFLECT
+		return acl_types.ACL_ACTION_API_PERMIT_REFLECT
 	default:
 		return 0
 	}
@@ -346,12 +345,12 @@ func IPNetToPrefix(dstNetwork *net.IPNet) ip_types.Prefix {
 	var addr ip_types.Address
 	if dstNetwork.IP.To4() == nil {
 		addr.Af = ip_types.ADDRESS_IP6
-		var ip6addr vpp_ip.IP6Address
+		var ip6addr ip_types.IP6Address
 		copy(ip6addr[:], dstNetwork.IP.To16())
 		addr.Un.SetIP6(ip6addr)
 	} else {
 		addr.Af = ip_types.ADDRESS_IP4
-		var ip4addr vpp_ip.IP4Address
+		var ip4addr ip_types.IP4Address
 		copy(ip4addr[:], dstNetwork.IP.To4())
 		addr.Un.SetIP4(ip4addr)
 	}
@@ -372,12 +371,12 @@ func IPtoPrefix(addr string) (ip_types.Prefix, error) {
 	prefix.Len = byte(maskSize)
 	if isIPv6 {
 		prefix.Address.Af = ip_types.ADDRESS_IP6
-		var ip6addr vpp_ifs.IP6Address
+		var ip6addr ip_types.IP6Address
 		copy(ip6addr[:], ipAddr.IP.To16())
 		prefix.Address.Un.SetIP6(ip6addr)
 	} else {
 		prefix.Address.Af = ip_types.ADDRESS_IP4
-		var ip4addr vpp_ifs.IP4Address
+		var ip4addr ip_types.IP4Address
 		copy(ip4addr[:], ipAddr.IP.To4())
 		prefix.Address.Un.SetIP4(ip4addr)
 	}

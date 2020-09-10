@@ -27,7 +27,9 @@ import (
 	idxmap_mem "go.ligato.io/cn-infra/v2/idxmap/mem"
 	"go.ligato.io/cn-infra/v2/logging/logrus"
 
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/ip_types"
 	vpp_nat "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/nat"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/nat_types"
 	vpp_vpe "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/vpe"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/natplugin/vppcalls"
@@ -65,14 +67,14 @@ func TestNat44GlobalConfigDump(t *testing.T) {
 		},
 		&vpp_nat.Nat44InterfaceDetails{
 			SwIfIndex: 2,
-			Flags:     vpp_nat.NAT_IS_INSIDE,
+			Flags:     nat_types.NAT_IS_INSIDE,
 		})
 	ctx.MockVpp.MockReply(&vpp_vpe.ControlPingReply{})
 
 	// output interfaces
 	ctx.MockVpp.MockReply(&vpp_nat.Nat44InterfaceOutputFeatureDetails{
 		SwIfIndex: 3,
-		Flags:     vpp_nat.NAT_IS_INSIDE,
+		Flags:     nat_types.NAT_IS_INSIDE,
 	})
 	ctx.MockVpp.MockReply(&vpp_vpe.ControlPingReply{})
 
@@ -80,7 +82,7 @@ func TestNat44GlobalConfigDump(t *testing.T) {
 	ctx.MockVpp.MockReply(
 		&vpp_nat.Nat44AddressDetails{
 			IPAddress: ipTo4Address("192.168.10.1"),
-			Flags:     vpp_nat.NAT_IS_TWICE_NAT,
+			Flags:     nat_types.NAT_IS_TWICE_NAT,
 			VrfID:     1,
 		},
 		&vpp_nat.Nat44AddressDetails{
@@ -132,18 +134,18 @@ func TestNat44InterfacesDump(t *testing.T) {
 	ctx.MockVpp.MockReply(
 		&vpp_nat.Nat44InterfaceDetails{
 			SwIfIndex: 1,
-			Flags:     vpp_nat.NAT_IS_OUTSIDE,
+			Flags:     nat_types.NAT_IS_OUTSIDE,
 		},
 		&vpp_nat.Nat44InterfaceDetails{
 			SwIfIndex: 2,
-			Flags:     vpp_nat.NAT_IS_INSIDE,
+			Flags:     nat_types.NAT_IS_INSIDE,
 		})
 	ctx.MockVpp.MockReply(&vpp_vpe.ControlPingReply{})
 
 	// output interfaces
 	ctx.MockVpp.MockReply(&vpp_nat.Nat44InterfaceOutputFeatureDetails{
 		SwIfIndex: 3,
-		Flags:     vpp_nat.NAT_IS_INSIDE | vpp_nat.NAT_IS_OUTSIDE,
+		Flags:     nat_types.NAT_IS_INSIDE | nat_types.NAT_IS_OUTSIDE,
 	})
 	ctx.MockVpp.MockReply(&vpp_vpe.ControlPingReply{})
 
@@ -180,7 +182,7 @@ func TestNat44AddressPoolsDump(t *testing.T) {
 	ctx.MockVpp.MockReply(
 		&vpp_nat.Nat44AddressDetails{
 			IPAddress: ipTo4Address("192.168.10.1"),
-			Flags:     vpp_nat.NAT_IS_TWICE_NAT,
+			Flags:     nat_types.NAT_IS_TWICE_NAT,
 			VrfID:     1,
 		},
 		&vpp_nat.Nat44AddressDetails{
@@ -228,7 +230,7 @@ func TestDNATDump(t *testing.T) {
 			ExternalSwIfIndex: vpp2009.NoInterface,
 			VrfID:             1,
 			Tag:               "DNAT 1",
-			Flags:             vpp_nat.NAT_IS_TWICE_NAT,
+			Flags:             nat_types.NAT_IS_TWICE_NAT,
 		},
 		&vpp_nat.Nat44StaticMappingDetails{
 			LocalIPAddress:    ipTo4Address("10.10.11.120"),
@@ -238,7 +240,7 @@ func TestDNATDump(t *testing.T) {
 			ExternalSwIfIndex: 1,
 			VrfID:             1,
 			Tag:               "DNAT 1",
-			Flags:             vpp_nat.NAT_IS_TWICE_NAT,
+			Flags:             nat_types.NAT_IS_TWICE_NAT,
 		},
 		&vpp_nat.Nat44StaticMappingDetails{
 			LocalIPAddress:    ipTo4Address("10.10.11.140"),
@@ -248,7 +250,7 @@ func TestDNATDump(t *testing.T) {
 			ExternalSwIfIndex: 2,
 			VrfID:             1,
 			Tag:               "DNAT 2",
-			Flags:             vpp_nat.NAT_IS_SELF_TWICE_NAT,
+			Flags:             nat_types.NAT_IS_SELF_TWICE_NAT,
 		},
 		// auto-generated mappings with interface replaced by all assigned IP addresses
 		&vpp_nat.Nat44StaticMappingDetails{
@@ -260,7 +262,7 @@ func TestDNATDump(t *testing.T) {
 			ExternalSwIfIndex: vpp2009.NoInterface,
 			VrfID:             1,
 			Tag:               "DNAT 1",
-			Flags:             vpp_nat.NAT_IS_TWICE_NAT,
+			Flags:             nat_types.NAT_IS_TWICE_NAT,
 		},
 		&vpp_nat.Nat44StaticMappingDetails{
 			LocalIPAddress:    ipTo4Address("10.10.11.120"),
@@ -271,7 +273,7 @@ func TestDNATDump(t *testing.T) {
 			ExternalSwIfIndex: vpp2009.NoInterface,
 			VrfID:             1,
 			Tag:               "DNAT 1",
-			Flags:             vpp_nat.NAT_IS_TWICE_NAT,
+			Flags:             nat_types.NAT_IS_TWICE_NAT,
 		},
 		&vpp_nat.Nat44StaticMappingDetails{
 			LocalIPAddress:    ipTo4Address("10.10.11.140"),
@@ -282,7 +284,7 @@ func TestDNATDump(t *testing.T) {
 			ExternalSwIfIndex: vpp2009.NoInterface,
 			VrfID:             1,
 			Tag:               "DNAT 2",
-			Flags:             vpp_nat.NAT_IS_SELF_TWICE_NAT,
+			Flags:             nat_types.NAT_IS_SELF_TWICE_NAT,
 		},
 		&vpp_nat.Nat44StaticMappingDetails{
 			LocalIPAddress:    ipTo4Address("10.10.11.140"),
@@ -293,7 +295,7 @@ func TestDNATDump(t *testing.T) {
 			ExternalSwIfIndex: vpp2009.NoInterface,
 			VrfID:             1,
 			Tag:               "DNAT 2",
-			Flags:             vpp_nat.NAT_IS_SELF_TWICE_NAT,
+			Flags:             nat_types.NAT_IS_SELF_TWICE_NAT,
 		},
 	)
 
@@ -304,7 +306,7 @@ func TestDNATDump(t *testing.T) {
 		ExternalAddr: ipTo4Address("10.36.20.60"),
 		ExternalPort: 53,
 		Protocol:     17,
-		Flags:        vpp_nat.NAT_IS_OUT2IN_ONLY,
+		Flags:        nat_types.NAT_IS_OUT2IN_ONLY,
 		Tag:          "DNAT 2",
 		LocalNum:     2,
 		Locals: []vpp_nat.Nat44LbAddrPort{
@@ -328,7 +330,7 @@ func TestDNATDump(t *testing.T) {
 	// identity mappings
 	ctx.MockVpp.MockReply(
 		&vpp_nat.Nat44IdentityMappingDetails{
-			Flags:     vpp_nat.NAT_IS_ADDR_ONLY,
+			Flags:     nat_types.NAT_IS_ADDR_ONLY,
 			Protocol:  17,
 			IPAddress: ipTo4Address("10.10.11.200"),
 			SwIfIndex: vpp2009.NoInterface,
@@ -336,7 +338,7 @@ func TestDNATDump(t *testing.T) {
 			Tag:       "DNAT 3",
 		},
 		&vpp_nat.Nat44IdentityMappingDetails{
-			Flags:     vpp_nat.NAT_IS_ADDR_ONLY,
+			Flags:     nat_types.NAT_IS_ADDR_ONLY,
 			Protocol:  17,
 			SwIfIndex: 2,
 			VrfID:     1,
@@ -344,7 +346,7 @@ func TestDNATDump(t *testing.T) {
 		},
 		// auto-generated mappings with interface replaced by all assigned IP addresses
 		&vpp_nat.Nat44IdentityMappingDetails{
-			Flags:     vpp_nat.NAT_IS_ADDR_ONLY,
+			Flags:     nat_types.NAT_IS_ADDR_ONLY,
 			Protocol:  17,
 			IPAddress: ipTo4Address("10.36.40.10"),
 			SwIfIndex: vpp2009.NoInterface,
@@ -352,7 +354,7 @@ func TestDNATDump(t *testing.T) {
 			Tag:       "DNAT 3",
 		},
 		&vpp_nat.Nat44IdentityMappingDetails{
-			Flags:     vpp_nat.NAT_IS_ADDR_ONLY,
+			Flags:     nat_types.NAT_IS_ADDR_ONLY,
 			Protocol:  17,
 			IPAddress: ipTo4Address("10.36.40.20"),
 			SwIfIndex: vpp2009.NoInterface,
@@ -454,11 +456,11 @@ func natTestSetup(t *testing.T) (*vppmock.TestCtx, vppcalls.NatVppAPI, ifaceidx.
 	log := logrus.NewLogger("test-log")
 	swIfIndexes := ifaceidx.NewIfaceIndex(logrus.DefaultLogger(), "test-sw_if_indexes")
 	dhcpIndexes := idxmap_mem.NewNamedMapping(logrus.DefaultLogger(), "test-dhcp_indexes", nil)
-	natHandler := vpp2009.NewNatVppHandler(ctx.MockChannel, swIfIndexes, dhcpIndexes, log)
+	natHandler := vpp2009.NewNatVppHandler(ctx.MockVPPClient, swIfIndexes, dhcpIndexes, log)
 	return ctx, natHandler, swIfIndexes, dhcpIndexes
 }
 
-func ipTo4Address(ipStr string) (addr vpp_nat.IP4Address) {
+func ipTo4Address(ipStr string) (addr ip_types.IP4Address) {
 	netIP := net.ParseIP(ipStr)
 	if ip4 := netIP.To4(); ip4 != nil {
 		copy(addr[:], ip4)

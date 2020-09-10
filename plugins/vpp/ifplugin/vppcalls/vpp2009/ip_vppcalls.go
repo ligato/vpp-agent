@@ -20,12 +20,13 @@ import (
 
 	"go.ligato.io/cn-infra/v2/utils/addrs"
 
-	vpp_ifs "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/interfaces"
+	vpp_ifs "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/interface"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/interface_types"
 )
 
 func (h *InterfaceVppHandler) addDelInterfaceIP(ifIdx uint32, addr *net.IPNet, isAdd bool) error {
 	req := &vpp_ifs.SwInterfaceAddDelAddress{
-		SwIfIndex: vpp_ifs.InterfaceIndex(ifIdx),
+		SwIfIndex: interface_types.InterfaceIndex(ifIdx),
 		IsAdd:     isAdd,
 	}
 
@@ -56,8 +57,8 @@ func (h *InterfaceVppHandler) DelInterfaceIP(ifIdx uint32, addr *net.IPNet) erro
 
 func (h *InterfaceVppHandler) setUnsetUnnumberedIP(uIfIdx uint32, ifIdxWithIP uint32, isAdd bool) error {
 	req := &vpp_ifs.SwInterfaceSetUnnumbered{
-		SwIfIndex:           vpp_ifs.InterfaceIndex(ifIdxWithIP),
-		UnnumberedSwIfIndex: vpp_ifs.InterfaceIndex(uIfIdx),
+		SwIfIndex:           interface_types.InterfaceIndex(ifIdxWithIP),
+		UnnumberedSwIfIndex: interface_types.InterfaceIndex(uIfIdx),
 		IsAdd:               isAdd,
 	}
 	reply := &vpp_ifs.SwInterfaceSetUnnumberedReply{}

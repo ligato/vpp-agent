@@ -24,6 +24,7 @@ import (
 	"go.ligato.io/vpp-agent/v3/plugins/vpp"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/fib_types"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/interface_types"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/ip_types"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/l3xc"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin/vppcalls"
 )
@@ -38,7 +39,7 @@ func (h *L3XCHandler) DumpL3XC(ctx context.Context, index uint32) ([]vppcalls.L3
 		return nil, nil
 	}
 
-	dump, err := h.l3xc.DumpL3xc(ctx, &l3xc.L3xcDump{
+	dump, err := h.l3xc.L3xcDump(ctx, &l3xc.L3xcDump{
 		SwIfIndex: interface_types.InterfaceIndex(index),
 	})
 	if err != nil {
@@ -83,9 +84,9 @@ func (h *L3XCHandler) UpdateL3XC(ctx context.Context, xc *vppcalls.L3XC) error {
 		return errors.Wrap(vpp.ErrPluginDisabled, "l3xc")
 	}
 
-	paths := make([]l3xc.FibPath, len(xc.Paths))
+	paths := make([]fib_types.FibPath, len(xc.Paths))
 	for i, p := range xc.Paths {
-		fibPath := l3xc.FibPath{
+		fibPath := fib_types.FibPath{
 			SwIfIndex:  p.SwIfIndex,
 			Weight:     p.Weight,
 			Preference: p.Preference,
@@ -122,20 +123,20 @@ func (h *L3XCHandler) DeleteL3XC(ctx context.Context, index uint32, ipv6 bool) e
 	return nil
 }
 
-func getL3XCFibPathNhAndProto(netIP net.IP) (nh l3xc.FibPathNh, proto l3xc.FibPathNhProto) {
-	var addrUnion fib_types.AddressUnion
+func getL3XCFibPathNhAndProto(netIP net.IP) (nh fib_types.FibPathNh, proto fib_types.FibPathNhProto) {
+	var addrUnion ip_types.AddressUnion
 	if netIP.To4() == nil {
 		proto = fib_types.FIB_API_PATH_NH_PROTO_IP6
-		var ip6addr fib_types.IP6Address
+		var ip6addr ip_types.IP6Address
 		copy(ip6addr[:], netIP.To16())
 		addrUnion.SetIP6(ip6addr)
 	} else {
 		proto = fib_types.FIB_API_PATH_NH_PROTO_IP4
-		var ip4addr fib_types.IP4Address
+		var ip4addr ip_types.IP4Address
 		copy(ip4addr[:], netIP.To4())
 		addrUnion.SetIP4(ip4addr)
 	}
-	return l3xc.FibPathNh{
+	return fib_types.FibPathNh{
 		Address:            addrUnion,
 		ViaLabel:           NextHopViaLabelUnset,
 		ClassifyTableIndex: ClassifyTableIndexUnset,

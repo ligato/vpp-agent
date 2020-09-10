@@ -15,7 +15,8 @@
 package vpp2009
 
 import (
-	vpp_ifs "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/interfaces"
+	vpp_ifs "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/interface"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/interface_types"
 )
 
 func (h *InterfaceVppHandler) AddLoopbackInterface(ifName string) (swIndex uint32, err error) {
@@ -32,7 +33,7 @@ func (h *InterfaceVppHandler) AddLoopbackInterface(ifName string) (swIndex uint3
 func (h *InterfaceVppHandler) DeleteLoopbackInterface(ifName string, idx uint32) error {
 	// Prepare the message.
 	req := &vpp_ifs.DeleteLoopback{
-		SwIfIndex: vpp_ifs.InterfaceIndex(idx),
+		SwIfIndex: interface_types.InterfaceIndex(idx),
 	}
 	reply := &vpp_ifs.DeleteLoopbackReply{}
 

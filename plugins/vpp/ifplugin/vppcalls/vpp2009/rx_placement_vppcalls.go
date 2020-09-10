@@ -15,13 +15,14 @@
 package vpp2009
 
 import (
-	vpp_ifs "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/interfaces"
+	vpp_ifs "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/interface"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/interface_types"
 	ifs "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
 )
 
 func (h *InterfaceVppHandler) SetRxPlacement(ifIdx uint32, rxPlacement *ifs.Interface_RxPlacement) error {
 	req := &vpp_ifs.SwInterfaceSetRxPlacement{
-		SwIfIndex: vpp_ifs.InterfaceIndex(ifIdx),
+		SwIfIndex: interface_types.InterfaceIndex(ifIdx),
 		QueueID:   rxPlacement.Queue,
 		WorkerID:  rxPlacement.Worker,
 		IsMain:    rxPlacement.MainThread,

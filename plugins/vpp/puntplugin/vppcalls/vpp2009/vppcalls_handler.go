@@ -55,19 +55,19 @@ func NewPuntVppHandler(
 	}
 }
 
-func ipToAddress(ipstr string) (addr vpp_ip.Address, err error) {
+func ipToAddress(ipstr string) (addr ip_types.Address, err error) {
 	netIP := net.ParseIP(ipstr)
 	if netIP == nil {
-		return vpp_ip.Address{}, fmt.Errorf("invalid IP: %q", ipstr)
+		return ip_types.Address{}, fmt.Errorf("invalid IP: %q", ipstr)
 	}
 	if ip4 := netIP.To4(); ip4 == nil {
 		addr.Af = ip_types.ADDRESS_IP6
-		var ip6addr vpp_ip.IP6Address
+		var ip6addr ip_types.IP6Address
 		copy(ip6addr[:], netIP.To16())
 		addr.Un.SetIP6(ip6addr)
 	} else {
 		addr.Af = ip_types.ADDRESS_IP4
-		var ip4addr vpp_ip.IP4Address
+		var ip4addr ip_types.IP4Address
 		copy(ip4addr[:], ip4)
 		addr.Un.SetIP4(ip4addr)
 	}

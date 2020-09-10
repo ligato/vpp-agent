@@ -17,6 +17,7 @@ package vpp2009
 import (
 	"testing"
 
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/fib_types"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/ip_types"
 	l3 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3"
 
@@ -48,13 +49,13 @@ func TestDumpStaticRoutes(t *testing.T) {
 
 	ctx.MockVpp.MockReply(&vpp_ip.IPRouteDetails{
 		Route: vpp_ip.IPRoute{
-			Prefix: vpp_ip.Prefix{
-				Address: vpp_ip.Address{
+			Prefix: ip_types.Prefix{
+				Address: ip_types.Address{
 					Af: ip_types.ADDRESS_IP4,
 					Un: ip_types.AddressUnionIP4([4]uint8{10, 0, 0, 1}),
 				},
 			},
-			Paths: []vpp_ip.FibPath{
+			Paths: []fib_types.FibPath{
 				{
 					SwIfIndex: 2,
 				},
@@ -64,13 +65,13 @@ func TestDumpStaticRoutes(t *testing.T) {
 	ctx.MockVpp.MockReply(&vpp_vpe.ControlPingReply{})
 	ctx.MockVpp.MockReply(&vpp_ip.IPRouteDetails{
 		Route: vpp_ip.IPRoute{
-			Prefix: vpp_ip.Prefix{
-				Address: vpp_ip.Address{
+			Prefix: ip_types.Prefix{
+				Address: ip_types.Address{
 					Af: ip_types.ADDRESS_IP6,
 					Un: ip_types.AddressUnionIP6([16]uint8{255, 255, 10, 1}),
 				},
 			},
-			Paths: []vpp_ip.FibPath{
+			Paths: []fib_types.FibPath{
 				{
 					SwIfIndex: 1,
 				},
