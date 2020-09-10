@@ -59,7 +59,7 @@ require (
 	golang.org/x/sys v0.0.0-20200610111108-226ff32320da
 	golang.org/x/time v0.0.0-20190921001708-c4c64cad1fd0 // indirect
 	google.golang.org/genproto v0.0.0-20200601130524-0f60399e6634 // indirect
-	google.golang.org/grpc v1.29.1
+	google.golang.org/grpc v1.32.0
 	google.golang.org/protobuf v1.24.0
 	gotest.tools v2.2.0+incompatible // indirect
 )
