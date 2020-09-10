@@ -124,6 +124,8 @@ message Nat44Interface {
 
 // Nat44AddressPool defines an address pool used for NAT44.
 message Nat44AddressPool {
+    // Unique name for address pool
+    string name = 5;
     // VRF id of tenant, 0xFFFFFFFF means independent of VRF.
     // Non-zero (and not all-ones) VRF has to be explicitly created (see api/models/vpp/l3/vrf.proto).
     uint32 vrf_id = 1;

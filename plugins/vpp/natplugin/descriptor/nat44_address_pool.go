@@ -16,11 +16,12 @@ package descriptor
 
 import (
 	"bytes"
-	"errors"
 	"net"
+	"strings"
 
+	"github.com/pkg/errors"
 	"go.ligato.io/cn-infra/v2/logging"
-
+	"go.ligato.io/vpp-agent/v3/pkg/models"
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/natplugin/descriptor/adapter"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/natplugin/vppcalls"
@@ -75,16 +76,16 @@ func NewNAT44AddressPoolDescriptor(nat44GlobalDesc *NAT44GlobalDescriptor,
 
 // Validate validates configuration for NAT44 IP addresses pool.
 func (d *NAT44AddressPoolDescriptor) Validate(key string, natAddr *nat.Nat44AddressPool) error {
-	firstIp := net.ParseIP(natAddr.FirstIp)
-	if firstIp == nil {
+	firstIP := net.ParseIP(natAddr.FirstIp)
+	if firstIP == nil {
 		return kvs.NewInvalidValueError(errInvalidIPAddress, "first_ip")
 	}
 	if natAddr.LastIp != "" {
-		lastIp := net.ParseIP(natAddr.LastIp)
-		if lastIp == nil {
+		lastIP := net.ParseIP(natAddr.LastIp)
+		if lastIP == nil {
 			return kvs.NewInvalidValueError(errInvalidIPAddress, "last_ip")
 		}
-		if bytes.Compare(firstIp, lastIp) > 0 {
+		if bytes.Compare(firstIP, lastIP) > 0 {
 			// last IP should be empty or higher than first IP
 			return kvs.NewInvalidValueError(errInvalidLastPoolAddress, "last_ip")
 		}
@@ -109,13 +110,27 @@ func (d *NAT44AddressPoolDescriptor) Retrieve(correlate []adapter.NAT44AddressPo
 	if d.nat44GlobalDesc.UseDeprecatedAPI {
 		return nil, nil // NAT IP addresses already dumped by global descriptor (deprecated API is in use)
 	}
+
+	// dumping pools
 	natPools, err := d.natHandler.Nat44AddressPoolsDump()
 	if err != nil {
 		return nil, err
 	}
-	for _, pool := range natPools {
+
+	// processing the pool dump
+	for _, sbPool := range natPools {
+		// try to find NB Pool corresponding to SB Pool (for named pools we link name to SB pools)
+		pool := sbPool
+		for _, nbPool := range correlate {
+			if d.equalNamelessPool(nbPool.Value, sbPool) {
+				pool = nbPool.Value // NB pool found
+				break
+			}
+		}
+
+		// creating SB view result
 		retrieved = append(retrieved, adapter.NAT44AddressPoolKVWithMetadata{
-			Key:    nat.Nat44AddressPoolKey(pool.VrfId, pool.FirstIp, pool.LastIp),
+			Key:    models.Key(pool),
 			Value:  pool,
 			Origin: kvs.FromNB,
 		})
@@ -134,4 +149,38 @@ func (d *NAT44AddressPoolDescriptor) Dependencies(key string, natAddr *nat.Nat44
 			Key:   l3.VrfTableKey(natAddr.VrfId, l3.VrfTable_IPV4),
 		},
 	}
+}
+
+// equalNamelessPool determine equality between 2 Nat44AddressPools ignoring Name field
+func (d *NAT44AddressPoolDescriptor) equalNamelessPool(pool1, pool2 *nat.Nat44AddressPool) bool {
+	return pool1.VrfId == pool2.VrfId &&
+		pool1.TwiceNat == pool2.TwiceNat &&
+		equivalentIPv4(pool1.FirstIp, pool2.FirstIp) &&
+		equivalentIPv4(pool1.LastIp, pool2.LastIp)
+}
+
+func equivalentIPv4(ip1str, ip2str string) bool {
+	ip1, err1 := ParseIPv4(ip1str)
+	ip2, err2 := ParseIPv4(ip2str)
+	if err1 != nil || err2 != nil { // one of values is invalid, but that will handle validator -> compare by strings
+		return equivalentTrimmedLowered(ip1str, ip2str)
+	}
+	return ip1.Equal(ip2) // form doesn't matter, are they representing the same IP value ?
+}
+
+func equivalentTrimmedLowered(str1, str2 string) bool {
+	return strings.TrimSpace(strings.ToLower(str1)) == strings.TrimSpace(strings.ToLower(str2))
+}
+
+// ParseIPv4 parses string <str> to IPv4 address
+func ParseIPv4(str string) (net.IP, error) {
+	ip := net.ParseIP(str)
+	if ip == nil {
+		return nil, errors.Errorf(" %q is not ip address", str)
+	}
+	ipv4 := ip.To4()
+	if ipv4 == nil {
+		return nil, errors.Errorf(" %q is not ipv4 address", str)
+	}
+	return ipv4, nil
 }

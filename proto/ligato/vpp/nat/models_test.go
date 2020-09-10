@@ -16,6 +16,8 @@ package vpp_nat
 
 import (
 	"testing"
+
+	"go.ligato.io/vpp-agent/v3/pkg/models"
 )
 
 /*func TestDNAT44Key(t *testing.T) {
@@ -279,6 +281,69 @@ func TestParseAddressNAT44Key(t *testing.T) {
 			}
 			if twiceNat != test.expectedTwiceNat {
 				t.Errorf("expected twiceNat: %t\tgot: %t", test.expectedTwiceNat, twiceNat)
+			}
+		})
+	}
+}
+
+func TestNat44AddressPoolKey(t *testing.T) {
+	tests := []struct {
+		name        string
+		pool        Nat44AddressPool
+		expectedKey string
+	}{
+		{
+			"named-pool",
+			Nat44AddressPool{
+				Name:     "myPool",
+				VrfId:    0,
+				FirstIp:  "1.2.3.4",
+				LastIp:   "1.2.3.5",
+				TwiceNat: false,
+			},
+			"config/vpp/nat/v2/nat44-pool/myPool",
+		},
+		{
+			"DEPRECATED key: unnamed pool with 1 IP address",
+			Nat44AddressPool{
+				Name:     "",
+				VrfId:    0,
+				FirstIp:  "1.2.3.4",
+				LastIp:   "",
+				TwiceNat: false,
+			},
+			"config/vpp/nat/v2/nat44-pool/vrf/0/address/1.2.3.4",
+		},
+		{
+			"DEPRECATED key: unnamed pool with multiple IP addresses",
+			Nat44AddressPool{
+				Name:     "",
+				VrfId:    0,
+				FirstIp:  "1.2.3.4",
+				LastIp:   "1.2.3.10",
+				TwiceNat: false,
+			},
+			"config/vpp/nat/v2/nat44-pool/vrf/0/address/1.2.3.4-1.2.3.10",
+		},
+		{
+			"DEPRECATED key: unnamed pool with 1 IP address (first and last IP address is the same)",
+			Nat44AddressPool{
+				Name:     "",
+				VrfId:    0,
+				FirstIp:  "1.2.3.4",
+				LastIp:   "1.2.3.4",
+				TwiceNat: false,
+			},
+			"config/vpp/nat/v2/nat44-pool/vrf/0/address/1.2.3.4",
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			key := models.Key(&test.pool)
+			if key != test.expectedKey {
+				t.Errorf("failed key for NAT44 address pool: %+v\n"+
+					"expected key:\n\t%q\ngot key:\n\t%q",
+					test.pool, test.expectedKey, key)
 			}
 		})
 	}
