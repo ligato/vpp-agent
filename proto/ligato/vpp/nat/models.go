@@ -47,9 +47,13 @@ var (
 		Type:    "nat44-pool",
 		Version: "v2",
 	}, models.WithNameTemplate(
-		"vrf/{{.VrfId}}"+
+		"{{if .Name}}"+
+			"{{.Name}}"+
+			"{{else}}"+
+			"vrf/{{.VrfId}}"+
 			"/address/{{.FirstIp}}"+
-			"{{if and .LastIp (ne .FirstIp .LastIp)}}-{{.LastIp}}{{end}}",
+			"{{if and .LastIp (ne .FirstIp .LastIp)}}-{{.LastIp}}{{end}}"+
+			"{{end}}",
 	))
 )
 
@@ -71,16 +75,6 @@ func DNAT44Key(label string) string {
 func Nat44InterfaceKey(name string) string {
 	return models.Key(&Nat44Interface{
 		Name: name,
-	})
-}
-
-// Nat44AddressPoolKey returns the key used in NB DB to store the configuration of the
-// given NAT44 address pool.
-func Nat44AddressPoolKey(vrf uint32, firstIP, lastIP string) string {
-	return models.Key(&Nat44AddressPool{
-		VrfId:   vrf,
-		FirstIp: firstIP,
-		LastIp:  lastIP,
 	})
 }
 
