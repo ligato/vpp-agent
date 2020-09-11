@@ -297,6 +297,13 @@ func (d *ACLDescriptor) equivalentACLRules(rule1, rule2 *acl.ACL_Rule) bool {
 	if !d.equivalentIPRuleNetworks(ipRule1.GetIp().GetDestinationNetwork(), ipRule2.GetIp().GetDestinationNetwork()) {
 		return false
 	}
+
+	// handle undefined (AUTO) IP protocol
+	proto1 := ipRule1.GetIp().GetProtocol()
+	proto2 := ipRule2.GetIp().GetProtocol()
+	if proto1 != 0 && proto2 != 0 && proto1 != proto2 {
+		return false
+	}
 	return true
 }
 

@@ -553,6 +553,7 @@ func (h *ACLVppHandler) getIPRuleMatches(r acl_api.ACLRule) *acl.ACL_Rule_IpRule
 		Ip: &acl.ACL_Rule_IpRule_Ip{
 			SourceNetwork:      fmt.Sprintf("%s/%d", srcIP, r.SrcIPPrefixLen),
 			DestinationNetwork: fmt.Sprintf("%s/%d", dstIP, r.DstIPPrefixLen),
+			Protocol:           uint32(r.Proto),
 		},
 	}
 

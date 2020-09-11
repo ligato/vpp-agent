@@ -193,6 +193,7 @@ func TestL3ACLs(t *testing.T) {
 					Ip: &vpp_acl.ACL_Rule_IpRule_Ip{
 						SourceNetwork:      ms2Net,
 						DestinationNetwork: anyAddr,
+						Protocol:           17,
 					},
 					Udp: &vpp_acl.ACL_Rule_IpRule_Udp{
 						SourcePortRange: anyPort,
