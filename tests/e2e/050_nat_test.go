@@ -16,13 +16,14 @@ package e2e
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	. "github.com/onsi/gomega"
 
 	"go.ligato.io/vpp-agent/v3/proto/ligato/kvscheduler"
-	"go.ligato.io/vpp-agent/v3/proto/ligato/linux/interfaces"
-	"go.ligato.io/vpp-agent/v3/proto/ligato/linux/l3"
+	linux_interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/linux/interfaces"
+	linux_l3 "go.ligato.io/vpp-agent/v3/proto/ligato/linux/l3"
 	linux_namespace "go.ligato.io/vpp-agent/v3/proto/ligato/linux/namespace"
 	vpp_interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
 	vpp_l3 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3"
@@ -229,6 +230,126 @@ func TestSourceNAT(t *testing.T) {
 	Expect(connectTCP()).Should(Succeed())
 	Expect(connectUDP()).Should(Succeed())
 	Expect(ctx.agentInSync()).To(BeTrue(), "Agent is not in-sync")
+}
+
+// Tests NAT pool CRUD operation and NAT pool resync.
+func TestNATPools(t *testing.T) {
+	// variable/helper method initialization
+	const addressCount = 7
+	addresses := make([]string, addressCount)
+	for i := 0; i < addressCount; i++ {
+		addresses[i] = fmt.Sprintf("80.80.80.%d", i)
+	}
+	nat44Addresses := func(ctx *TestCtx) func() (string, error) {
+		return func() (string, error) {
+			return ctx.execVppctl("show", "nat44", "addresses")
+		}
+	}
+	mustBeInVPP := func(ctx *TestCtx, addrs []string) {
+		for _, addr := range addrs { //Eventually is needed due to VPP-Agent to VPP configuration delay
+			Eventually(nat44Addresses(ctx)).Should(ContainSubstring(addr))
+		}
+	}
+	cantBeInVPP := func(ctx *TestCtx, addrs []string) {
+		for _, addr := range addrs { //Eventually is needed due to VPP-Agent to VPP configuration delay
+			Eventually(nat44Addresses(ctx)).ShouldNot(ContainSubstring(addr))
+		}
+	}
+
+	// tests
+	tests := []struct {
+		name               string
+		createNATPool      *vpp_nat.Nat44AddressPool
+		checkAfterCreation func(ctx *TestCtx)
+		updateNATPool      *vpp_nat.Nat44AddressPool
+		checkAfterUpdate   func(ctx *TestCtx)
+		checkAfterDelete   func(ctx *TestCtx)
+	}{
+		{
+			name: "CRUD for named pool",
+			createNATPool: &vpp_nat.Nat44AddressPool{
+				Name:    "myPool",
+				FirstIp: addresses[0],
+				LastIp:  addresses[2],
+			},
+			checkAfterCreation: func(ctx *TestCtx) {
+				mustBeInVPP(ctx, addresses[0:3]) // initial creation
+			},
+			updateNATPool: &vpp_nat.Nat44AddressPool{
+				Name:    "myPool",
+				FirstIp: addresses[4],
+				LastIp:  addresses[6],
+			},
+			checkAfterUpdate: func(ctx *TestCtx) {
+				cantBeInVPP(ctx, addresses[0:3]) // old addresses are deleted
+				mustBeInVPP(ctx, addresses[4:7]) // new addresses are created
+			},
+			checkAfterDelete: func(ctx *TestCtx) {
+				cantBeInVPP(ctx, addresses) // empty pool after deleting only pool
+			},
+		},
+		{
+			name: "CRUD for unnamed pool",
+			createNATPool: &vpp_nat.Nat44AddressPool{
+				FirstIp: addresses[0],
+				LastIp:  addresses[2],
+			},
+			checkAfterCreation: func(ctx *TestCtx) {
+				mustBeInVPP(ctx, addresses[0:3]) // initial creation
+			},
+			updateNATPool: &vpp_nat.Nat44AddressPool{
+				FirstIp: addresses[4],
+				LastIp:  addresses[6],
+			},
+			checkAfterUpdate: func(ctx *TestCtx) {
+				// unnamed pools are not tied by name in key
+				// -> update with different ip addresses == create another pool
+				mustBeInVPP(ctx, addresses[0:3])
+				mustBeInVPP(ctx, addresses[4:7])
+			},
+			checkAfterDelete: func(ctx *TestCtx) {
+				mustBeInVPP(ctx, addresses[0:3]) // original create won't get deleted
+				cantBeInVPP(ctx, addresses[4:7]) // the updated is deleted
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			ctx := setupE2E(t)
+			defer ctx.teardownE2E()
+
+			// check empty pool state
+			cantBeInVPP(ctx, addresses)
+
+			// create NAT pool
+			req := ctx.grpcClient.ChangeRequest()
+			err := req.Update(
+				test.createNATPool,
+			).Send(context.Background())
+			Expect(err).ToNot(HaveOccurred(), "Transaction creating nat pool failed")
+			test.checkAfterCreation(ctx)
+			Expect(ctx.agentInSync()).To(BeTrue(), "Agent is not in-sync") // resync
+
+			// update NAT pool
+			req = ctx.grpcClient.ChangeRequest()
+			err = req.Update(
+				test.updateNATPool,
+			).Send(context.Background())
+			Expect(err).ToNot(HaveOccurred(), "Transaction updating nat pool failed")
+			test.checkAfterUpdate(ctx)
+			Expect(ctx.agentInSync()).To(BeTrue(), "Agent is not in-sync") // resync
+
+			// delete NAT pool
+			req = ctx.grpcClient.ChangeRequest()
+			err = req.Delete(
+				test.updateNATPool,
+			).Send(context.Background())
+			Expect(err).ToNot(HaveOccurred(), "Transaction deleting NAT pool failed")
+			test.checkAfterDelete(ctx)
+			Expect(ctx.agentInSync()).To(BeTrue(), "Agent is not in-sync") // resync
+		})
+	}
 }
 
 // Simulate use-case in which a service located in a private network is published
