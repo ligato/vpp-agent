@@ -15,6 +15,8 @@
 package descriptor
 
 import (
+	"bytes"
+	"net"
 	"strconv"
 
 	"github.com/golang/protobuf/proto"
@@ -39,8 +41,9 @@ const (
 	untaggedDNAT = "UNTAGGED-DNAT"
 
 	// dependency labels
-	mappingInterfaceDep = "interface-exists"
-	mappingVrfDep       = "vrf-table-exists"
+	mappingInterfaceDep  = "interface-exists"
+	mappingVrfDep        = "vrf-table-exists"
+	refTwiceNATPoolIPDep = "reference-to-twiceNATPoolIP"
 )
 
 // A list of non-retriable errors:
@@ -268,6 +271,34 @@ func (d *DNAT44Descriptor) Dependencies(key string, dnat *nat.DNat44) (dependenc
 			Label: mappingVrfDep + "-" + strconv.Itoa(int(vrf)),
 			Key:   l3.VrfTableKey(vrf, l3.VrfTable_IPV4),
 		})
+	}
+
+	// for every twiceNAT pool address reference add one dependency
+	for _, stMapping := range dnat.StMappings {
+		if stMapping.TwiceNat == nat.DNat44_StaticMapping_ENABLED && stMapping.TwiceNatPoolIp != "" {
+			dependencies = append(dependencies, kvs.Dependency{
+				Label: refTwiceNATPoolIPDep,
+				AnyOf: kvs.AnyOfDependency{
+					KeyPrefixes: []string{nat.TwiceNATDerivedKeyPrefix},
+					KeySelector: func(key string) bool {
+						firstIP, lastIP, _, isValid := nat.ParseDerivedTwiceNATAddressPoolKey(key)
+						if isValid {
+							if lastIP == "" { // single IP address pool
+								return equivalentTrimmedLowered(firstIP, stMapping.TwiceNatPoolIp)
+							}
+							// multiple IP addresses in address pool
+							fIP := net.ParseIP(firstIP)
+							lIP := net.ParseIP(lastIP)
+							tnpIP := net.ParseIP(stMapping.TwiceNatPoolIp)
+							if fIP != nil && lIP != nil && tnpIP != nil {
+								return bytes.Compare(fIP, tnpIP) <= 0 && bytes.Compare(tnpIP, lIP) <= 0
+							}
+						}
+						return false
+					},
+				},
+			})
+		}
 	}
 
 	return dependencies

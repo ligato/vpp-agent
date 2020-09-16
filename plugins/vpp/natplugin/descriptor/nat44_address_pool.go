@@ -68,6 +68,7 @@ func NewNAT44AddressPoolDescriptor(nat44GlobalDesc *NAT44GlobalDescriptor,
 		Delete:        ctx.Delete,
 		Retrieve:      ctx.Retrieve,
 		Dependencies:  ctx.Dependencies,
+		DerivedValues: ctx.DerivedValues,
 		// retrieve global NAT config first (required for deprecated global NAT interface & address API)
 		RetrieveDependencies: []string{NAT44GlobalDescriptorName},
 	}
@@ -149,6 +150,21 @@ func (d *NAT44AddressPoolDescriptor) Dependencies(key string, natAddr *nat.Nat44
 			Key:   l3.VrfTableKey(natAddr.VrfId, l3.VrfTable_IPV4),
 		},
 	}
+}
+
+// DerivedValues derives:
+//   - for twiceNAT address pool the pool itself with exposed IP addresses and VRF in derived key
+func (d *NAT44AddressPoolDescriptor) DerivedValues(key string, addrPool *nat.Nat44AddressPool) (derValues []kvs.KeyValuePair) {
+	if addrPool.TwiceNat {
+		// this derived value may seem as copy of nat44-pool, but nat44-pool key can have 2 forms and in form
+		// where nat44-pool key is only pool name, there can't be made dependency based on IP address and
+		// twiceNAT bool => this derived key is needed
+		derValues = append(derValues, kvs.KeyValuePair{
+			Key:   nat.DerivedTwiceNATAddressPoolKey(addrPool.FirstIp, addrPool.LastIp, addrPool.VrfId),
+			Value: addrPool,
+		})
+	}
+	return derValues
 }
 
 // equalNamelessPool determine equality between 2 Nat44AddressPools ignoring Name field
