@@ -51,6 +51,18 @@ var (
 	// ErrDNAT44WithEmptyLabel is returned when NAT44 DNAT configuration is defined
 	// with empty label
 	ErrDNAT44WithEmptyLabel = errors.New("NAT44 DNAT configuration defined with empty label")
+
+	// ErrDNAT44TwiceNATPoolIPNeedsTwiceNAT is returned when NAT44 DNAT static configuration is defined
+	// with non-empty twiceNAT pool IP, but twiceNAT is not enabled for given static mapping.
+	ErrDNAT44TwiceNATPoolIPNeedsTwiceNAT = errors.New("NAT44 DNAT static mapping configuration with " +
+		"non-empty twiceNAT pool IP have to have also enabled twiceNAT (use enabled, not self-twiceNAT)")
+
+	// ErrDNAT44TwiceNATPoolIPIsNotSupportedForLBStMappings is returned when twiceNAT pool IP is used with
+	// loadbalanced version of static mapping. This combination is not supported by VPP.
+	ErrDNAT44TwiceNATPoolIPIsNotSupportedForLBStMappings = errors.New("NAT44 DNAT static mapping's " +
+		"twiceNAT pool IP feature is not supported(by VPP) when the loadbalanced version of static mapping " +
+		"is used. Use non-loadbalanced version of static mappings(<=>len(local IP)<=1) or don't use twiceNAT " +
+		"pool IP feature.")
 )
 
 // DNAT44Descriptor teaches KVScheduler how to configure Destination NAT44 in VPP.
@@ -113,6 +125,14 @@ func (d *DNAT44Descriptor) Validate(key string, dnat *nat.DNat44) error {
 	for _, stMapping := range dnat.StMappings {
 		// Twice-NAT validation
 		if stMapping.TwiceNatPoolIp != "" {
+			if stMapping.TwiceNat != nat.DNat44_StaticMapping_ENABLED {
+				return kvs.NewInvalidValueError(ErrDNAT44TwiceNATPoolIPNeedsTwiceNAT,
+					"st_mappings.twice_nat_pool_ip")
+			}
+			if len(stMapping.LocalIps) > 1 {
+				kvs.NewInvalidValueError(ErrDNAT44TwiceNATPoolIPIsNotSupportedForLBStMappings,
+					"st_mappings.twice_nat_pool_ip")
+			}
 			if _, err := ParseIPv4(stMapping.TwiceNatPoolIp); err != nil {
 				return kvs.NewInvalidValueError(errors.Errorf("NAT44 DNAT static mapping configuration "+
 					"has unparsable non-empty twice-NAT pool IPv4 address %s: %v", stMapping.TwiceNatPoolIp, err),
