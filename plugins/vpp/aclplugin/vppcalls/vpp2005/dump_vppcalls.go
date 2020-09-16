@@ -548,6 +548,7 @@ func (h *ACLVppHandler) getIPRuleMatches(r vpp_acl.ACLRule) *acl.ACL_Rule_IpRule
 		Ip: &acl.ACL_Rule_IpRule_Ip{
 			SourceNetwork:      srcNet,
 			DestinationNetwork: dstNet,
+			Protocol:           uint32(r.Proto),
 		},
 	}
 

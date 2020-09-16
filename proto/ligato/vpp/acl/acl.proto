@@ -41,6 +41,11 @@ message ACL {
                 string destination_network = 1;
                 // Destination IPv4/IPv6 network address (<ip>/<network>)
                 string source_network = 2;
+                // IP protocol number (http://www.iana.org/assignments/protocol-numbers/protocol-numbers.xhtml)
+                // Zero value (i.e. undefined protocol) means that the protocol to match will be automatically
+                // selected from one of the ICMP/ICMP6/TCP/UDP based on the rule definition. For example, if "icmp"
+                // is defined and src/dst addresses are IPv6 then packets of the ICMP6 protocol will be matched, etc.
+                uint32 protocol = 3;
             }
             Ip ip = 1;
 
