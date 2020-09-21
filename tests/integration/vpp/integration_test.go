@@ -65,6 +65,9 @@ const (
 		}
 		plugins {
 			plugin dpdk_plugin.so { disable }
+		}
+		nat {
+			endpoint-dependent
 		}`
 )
 
