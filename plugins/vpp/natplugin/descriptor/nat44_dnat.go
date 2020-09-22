@@ -15,12 +15,13 @@
 package descriptor
 
 import (
+	"bytes"
+	"net"
+	"strconv"
+
 	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
 	"go.ligato.io/cn-infra/v2/logging"
-
-	"strconv"
-
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 	vpp_ifdescriptor "go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/descriptor"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/natplugin/descriptor/adapter"
@@ -40,8 +41,9 @@ const (
 	untaggedDNAT = "UNTAGGED-DNAT"
 
 	// dependency labels
-	mappingInterfaceDep = "interface-exists"
-	mappingVrfDep       = "vrf-table-exists"
+	mappingInterfaceDep  = "interface-exists"
+	mappingVrfDep        = "vrf-table-exists"
+	refTwiceNATPoolIPDep = "reference-to-twiceNATPoolIP"
 )
 
 // A list of non-retriable errors:
@@ -49,6 +51,18 @@ var (
 	// ErrDNAT44WithEmptyLabel is returned when NAT44 DNAT configuration is defined
 	// with empty label
 	ErrDNAT44WithEmptyLabel = errors.New("NAT44 DNAT configuration defined with empty label")
+
+	// ErrDNAT44TwiceNATPoolIPNeedsTwiceNAT is returned when NAT44 DNAT static configuration is defined
+	// with non-empty twiceNAT pool IP, but twiceNAT is not enabled for given static mapping.
+	ErrDNAT44TwiceNATPoolIPNeedsTwiceNAT = errors.New("NAT44 DNAT static mapping configuration with " +
+		"non-empty twiceNAT pool IP have to have also enabled twiceNAT (use enabled, not self-twiceNAT)")
+
+	// ErrDNAT44TwiceNATPoolIPIsNotSupportedForLBStMappings is returned when twiceNAT pool IP is used with
+	// loadbalanced version of static mapping. This combination is not supported by VPP.
+	ErrDNAT44TwiceNATPoolIPIsNotSupportedForLBStMappings = errors.New("NAT44 DNAT static mapping's " +
+		"twiceNAT pool IP feature is not supported(by VPP) when the loadbalanced version of static mapping " +
+		"is used. Use non-loadbalanced version of static mappings(<=>len(local IP)<=1) or don't use twiceNAT " +
+		"pool IP feature.")
 )
 
 // DNAT44Descriptor teaches KVScheduler how to configure Destination NAT44 in VPP.
@@ -106,6 +120,27 @@ func (d *DNAT44Descriptor) Validate(key string, dnat *nat.DNat44) error {
 	if dnat.Label == "" {
 		return kvs.NewInvalidValueError(ErrDNAT44WithEmptyLabel, "label")
 	}
+
+	// Static Mapping validation
+	for _, stMapping := range dnat.StMappings {
+		// Twice-NAT validation
+		if stMapping.TwiceNatPoolIp != "" {
+			if stMapping.TwiceNat != nat.DNat44_StaticMapping_ENABLED {
+				return kvs.NewInvalidValueError(ErrDNAT44TwiceNATPoolIPNeedsTwiceNAT,
+					"st_mappings.twice_nat_pool_ip")
+			}
+			if len(stMapping.LocalIps) > 1 {
+				kvs.NewInvalidValueError(ErrDNAT44TwiceNATPoolIPIsNotSupportedForLBStMappings,
+					"st_mappings.twice_nat_pool_ip")
+			}
+			if _, err := ParseIPv4(stMapping.TwiceNatPoolIp); err != nil {
+				return kvs.NewInvalidValueError(errors.Errorf("NAT44 DNAT static mapping configuration "+
+					"has unparsable non-empty twice-NAT pool IPv4 address %s: %v", stMapping.TwiceNatPoolIp, err),
+					"st_mappings.twice_nat_pool_ip")
+			}
+		}
+	}
+
 	return nil
 }
 
@@ -170,6 +205,11 @@ func (d *DNAT44Descriptor) Update(key string, oldDNAT, newDNAT *nat.DNat44, oldM
 func (d *DNAT44Descriptor) Retrieve(correlate []adapter.DNAT44KVWithMetadata) (
 	retrieved []adapter.DNAT44KVWithMetadata, err error,
 ) {
+	// TODO when added to dump then implement value retrieval for these new values
+	//  vpp_nat.Nat44AddDelStaticMappingV2.MatchPool
+	//  vpp_nat.Nat44AddDelStaticMappingV2.PoolIPAddress
+	//  (=functionality modeled in NB proto model as DNat44.StaticMapping.twice_nat_pool_ip)
+
 	// collect DNATs which are expected to be empty
 	corrEmptyDNATs := make(map[string]*nat.DNat44)
 	for _, kv := range correlate {
@@ -253,6 +293,34 @@ func (d *DNAT44Descriptor) Dependencies(key string, dnat *nat.DNat44) (dependenc
 		})
 	}
 
+	// for every twiceNAT pool address reference add one dependency
+	for _, stMapping := range dnat.StMappings {
+		if stMapping.TwiceNat == nat.DNat44_StaticMapping_ENABLED && stMapping.TwiceNatPoolIp != "" {
+			dependencies = append(dependencies, kvs.Dependency{
+				Label: refTwiceNATPoolIPDep,
+				AnyOf: kvs.AnyOfDependency{
+					KeyPrefixes: []string{nat.TwiceNATDerivedKeyPrefix},
+					KeySelector: func(key string) bool {
+						firstIP, lastIP, _, isValid := nat.ParseDerivedTwiceNATAddressPoolKey(key)
+						if isValid {
+							if lastIP == "" { // single IP address pool
+								return equivalentTrimmedLowered(firstIP, stMapping.TwiceNatPoolIp)
+							}
+							// multiple IP addresses in address pool
+							fIP := net.ParseIP(firstIP)
+							lIP := net.ParseIP(lastIP)
+							tnpIP := net.ParseIP(stMapping.TwiceNatPoolIp)
+							if fIP != nil && lIP != nil && tnpIP != nil {
+								return bytes.Compare(fIP, tnpIP) <= 0 && bytes.Compare(tnpIP, lIP) <= 0
+							}
+						}
+						return false
+					},
+				},
+			})
+		}
+	}
+
 	return dependencies
 }
 
@@ -323,7 +391,8 @@ func equivalentStaticMappings(stMapping1, stMapping2 *nat.DNat44_StaticMapping) 
 	// attributes compared as usually
 	if stMapping1.Protocol != stMapping2.Protocol || stMapping1.ExternalPort != stMapping2.ExternalPort ||
 		stMapping1.ExternalIp != stMapping2.ExternalIp || stMapping1.ExternalInterface != stMapping2.ExternalInterface ||
-		stMapping1.TwiceNat != stMapping2.TwiceNat || stMapping1.SessionAffinity != stMapping1.SessionAffinity {
+		stMapping1.TwiceNat != stMapping2.TwiceNat || stMapping1.SessionAffinity != stMapping1.SessionAffinity ||
+		!equivalentIPv4(stMapping1.TwiceNatPoolIp, stMapping2.TwiceNatPoolIp) {
 		return false
 	}
 

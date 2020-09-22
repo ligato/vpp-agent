@@ -15,6 +15,8 @@
 package vpp_nat
 
 import (
+	"fmt"
+	"strconv"
 	"strings"
 
 	"go.ligato.io/vpp-agent/v3/pkg/models"
@@ -108,6 +110,17 @@ const (
 	// twice-NAT switch
 	twiceNatOn  = "on"
 	twiceNatOff = "off"
+
+	// TwiceNATDerivedKeyPrefix is common prefix for (derived) keys each representing twiceNAT address pool
+	TwiceNATDerivedKeyPrefix = "vpp/nat44/twiceNAT-pool/"
+
+	// twiceNATKeyTemplate is a template for (derived) key
+	// representing twiceNAT address pool with single IP range.
+	twiceNATKeyTemplate = TwiceNATDerivedKeyPrefix + "vrf/{vrfID}/addresses/{firstIP}"
+
+	// twiceNATWithMultipeAddressesKeyTemplate is a template for (derived) key
+	// representing twiceNAT address pool with multiple IP range.
+	twiceNATWithMultipeAddressesKeyTemplate = TwiceNATDerivedKeyPrefix + "vrf/{vrfID}/addresses/{firstIP}-{lastIP}"
 )
 
 const (
@@ -177,6 +190,43 @@ func ParseDerivedAddressNAT44Key(key string) (address string, twiceNat bool, isA
 			}
 			address = strings.Join(fibComps[:len(fibComps)-2], "/")
 			isAddressNAT44Key = true
+			return
+		}
+	}
+	return
+}
+
+// DerivedTwiceNATAddressPoolKey returns (derived) key representing TwiceNAT address pool configuration.
+func DerivedTwiceNATAddressPoolKey(firstIP, lastIP string, vrfID uint32) (key string) {
+	if lastIP == "" {
+		key = strings.Replace(twiceNATKeyTemplate, "{vrfID}", fmt.Sprint(vrfID), 1)
+		key = strings.Replace(key, "{firstIP}", firstIP, 1)
+	} else {
+		key = strings.Replace(twiceNATWithMultipeAddressesKeyTemplate, "{vrfID}", fmt.Sprint(vrfID), 1)
+		key = strings.Replace(key, "{firstIP}", firstIP, 1)
+		key = strings.Replace(key, "{lastIP}", lastIP, 1)
+	}
+	return key
+}
+
+// ParseDerivedTwiceNATAddressPoolKey parses configuration of a twiceNAT address pool from a key
+// returned by DerivedTwiceNATAddressPoolKey().
+func ParseDerivedTwiceNATAddressPoolKey(key string) (firstIP, lastIP string, vrfID uint32, isTwiceNatKey bool) {
+	trim := strings.TrimPrefix(key, TwiceNATDerivedKeyPrefix)
+	if trim != key && trim != "" {
+		comps := strings.Split(trim, "/")
+		if len(comps) == 4 && comps[0] == "vrf" && comps[2] == "addresses" {
+			vrfID64, err := strconv.ParseUint(comps[1], 10, 32)
+			if err != nil {
+				return
+			}
+			vrfID = uint32(vrfID64)
+			addrComps := strings.Split(comps[3], "-")
+			firstIP = addrComps[0]
+			if len(addrComps) > 1 {
+				lastIP = addrComps[1]
+			}
+			isTwiceNatKey = true
 			return
 		}
 	}

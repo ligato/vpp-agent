@@ -229,6 +229,11 @@ func (h *NatVppHandler) handleNat44StaticMapping(mapping *nat.DNat44_StaticMappi
 	var ifIdx = NoInterface
 	var exIPAddr natba.IP4Address
 
+	if mapping.TwiceNatPoolIp != "" {
+		h.log.Debug("DNAT44 static mapping's twiceNAT pool IP feature " +
+			"is unsupported in this version of VPP (use 20.09 and newer)")
+	}
+
 	// check tag length limit
 	if err := checkTagLength(dnatLabel); err != nil {
 		return err
