@@ -49,6 +49,7 @@ import (
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/vpe"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/vxlan"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/vxlan_gpe"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/wireguard"
 )
 
 // Version is used to identify VPP binapi version
@@ -91,6 +92,7 @@ func init() {
 			nat.AllMessages,
 			stn.AllMessages,
 			vmxnet3.AllMessages,
+			wireguard.AllMessages,
 		),
 	}
 }
@@ -128,3 +130,4 @@ func init() {
 //go:generate binapigen --input-file=$VPP_API_DIR/plugins/nat.api.json
 //go:generate binapigen --input-file=$VPP_API_DIR/plugins/stn.api.json
 //go:generate binapigen --input-file=$VPP_API_DIR/plugins/vmxnet3.api.json
+//go:generate binapigen --input-file=$VPP_API_DIR/plugins/wireguard.api.json

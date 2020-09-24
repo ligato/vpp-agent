@@ -30,6 +30,7 @@ import (
 	l3vppcalls "go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin/vppcalls"
 	natvppcalls "go.ligato.io/vpp-agent/v3/plugins/vpp/natplugin/vppcalls"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/puntplugin/vppcalls"
+	wireguardvppcalls "go.ligato.io/vpp-agent/v3/plugins/vpp/wireguardplugin/vppcalls"
 	rpc "go.ligato.io/vpp-agent/v3/proto/ligato/configurator"
 	linux_interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/linux/interfaces"
 	linux_l3 "go.ligato.io/vpp-agent/v3/proto/ligato/linux/l3"
@@ -41,6 +42,7 @@ import (
 	vpp_l3 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3"
 	vpp_nat "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/nat"
 	vpp_punt "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/punt"
+	vpp_wg "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/wireguard"
 )
 
 type dumpService struct {
@@ -56,6 +58,7 @@ type dumpService struct {
 	abfHandler  abfvppcalls.ABFVppRead
 	natHandler  natvppcalls.NatVppRead
 	puntHandler vppcalls.PuntVPPRead
+	wireguardHandler wireguardvppcalls.WgVppRead
 
 	// Linux handlers
 	linuxIfHandler iflinuxcalls.NetlinkAPIRead
@@ -158,6 +161,11 @@ func (svc *dumpService) Dump(ctx context.Context, req *rpc.DumpRequest) (*rpc.Du
 	dump.VppConfig.PuntExceptions, err = svc.DumpPuntExceptions()
 	if err != nil {
 		svc.log.Errorf("DumpPuntExceptions failed: %v", err)
+		return nil, err
+	}
+	dump.VppConfig.WgPeers, err = svc.DumpWgPeers()
+	if err != nil {
+		svc.log.Errorf("DumpWgPeers failed: %v", err)
 		return nil, err
 	}
 
@@ -462,6 +470,22 @@ func (svc *dumpService) DumpPuntExceptions() (punts []*vpp_punt.Exception, err e
 	}
 
 	return punts, nil
+}
+
+func (svc *dumpService) DumpWgPeers() (peers []*vpp_wg.Peer, err error) {
+	if svc.wireguardHandler == nil {
+		// handler is not available
+		return nil, nil
+	}
+
+	_peers, err := svc.wireguardHandler.DumpWgPeers()
+	if err != nil {
+		return nil, err
+	}
+	for _, peer := range _peers {
+		peers = append(peers, peer)
+	}
+	return
 }
 
 // DumpLinuxInterfaces reads linux interfaces and returns them as an *LinuxInterfaceResponse. If reading ends up with error,

@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package ligato.vpp.wireguard;
+
+option go_package = "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/wireguard;vpp_wg";
+
+message Peer {
+  // Public-key base64
+  string public_key = 1;
+
+  // Peer UDP port
+  uint32 port = 2;
+
+  // Keepalive interval (sec)
+  uint32 persistent_keepalive = 3;
+
+  // Endpoint IP
+  string endpoint = 4;
+
+  // The name of the wireguard interface to which this peer belongs
+  string wg_if_name = 5;
+
+  // Flags
+  // WIREGUARD_PEER_STATUS_DEAD = 0x1
+  uint32 flags = 6;
+
+  // Allowed IPs
+  repeated string allowed_ips = 7;
+}

@@ -28,6 +28,7 @@ message Interface {
         GRE_TUNNEL = 11;
         GTPU_TUNNEL = 12;
         IPIP_TUNNEL = 13;
+        WIREGUARD_TUNNEL = 14;
     };
     // Type represents the type of VPP interface and it must match the actual Link.
     Type type = 2;
@@ -119,6 +120,7 @@ message Interface {
         GreLink gre = 108;
         GtpuLink gtpu = 109;
         IPIPLink ipip = 110;
+        WireguardLink wireguard = 111;
     };
 };
 
@@ -380,4 +382,15 @@ message IPIPLink {
     string src_addr = 2;
     // Destination VTEP IP address
     string dst_addr = 3;
+}
+
+message WireguardLink {
+  // Private-key base64
+  string private_key = 2;
+
+  // Listen UDP port
+  uint32 port = 3;
+
+  // Source IP address
+  string src_addr = 4;
 }

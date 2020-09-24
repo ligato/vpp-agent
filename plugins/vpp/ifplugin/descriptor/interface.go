@@ -74,6 +74,9 @@ const (
 	defaultMemifNumOfQueues uint32 = 1
 	defaultMemifBufferSize  uint32 = 2048
 	defaultMemifRingSize    uint32 = 1024
+
+	// Length of wireguard private-key in base64. It should be equal 32 in binary
+	wireguardKeyLength = 44
 )
 
 // A list of non-retriable errors:
@@ -165,6 +168,18 @@ var (
 
 	// ErrIpipDstAddrBad is returned when destination address was not set to valid IP address.
 	ErrIpipDstAddrBad = errors.Errorf("bad destination address for IPIP tunnel")
+
+	// ErrWgKeyLen is returned when private-key length has wrong size.
+	ErrWgKeyLen = errors.New("invalid wireguard private-key length")
+
+	// ErrWgSrcAddrMissing is returned when source address was not set or set to an empty string.
+	ErrWgSrcAddrMissing = errors.Errorf("missing source address for wireguard tunnel")
+
+	// ErrWgSrcAddrBad is returned when source address was not set to valid IP address.
+	ErrWgSrcAddrBad = errors.Errorf("bad source address for wireguard tunnel")
+
+	// ErrWgPort is returned when udp-port exceeds max value.
+	ErrWgPort = errors.New("invalid wireguard port")
 )
 
 // InterfaceDescriptor teaches KVScheduler how to configure VPP interfaces.
@@ -357,6 +372,10 @@ func (d *InterfaceDescriptor) equivalentTypeSpecificConfig(oldIntf, newIntf *int
 		if !proto.Equal(oldIntf.GetIpip(), newIntf.GetIpip()) {
 			return false
 		}
+	case interfaces.Interface_WIREGUARD_TUNNEL:
+		if !proto.Equal(oldIntf.GetWireguard(), newIntf.GetWireguard()) {
+			return false
+		}
 	}
 	return true
 }
@@ -491,6 +510,10 @@ func (d *InterfaceDescriptor) Validate(key string, intf *interfaces.Interface) e
 		if intf.Type != interfaces.Interface_IPIP_TUNNEL {
 			return linkMismatchErr
 		}
+	case *interfaces.Interface_Wireguard:
+		if intf.Type != interfaces.Interface_WIREGUARD_TUNNEL {
+			return linkMismatchErr
+		}
 	case nil:
 		if intf.Type != interfaces.Interface_SOFTWARE_LOOPBACK &&
 			intf.Type != interfaces.Interface_DPDK {
@@ -588,6 +611,21 @@ func (d *InterfaceDescriptor) Validate(key string, intf *interfaces.Interface) e
 			if net.ParseIP(intf.GetIpip().DstAddr) == nil {
 				return kvs.NewInvalidValueError(ErrIpipDstAddrBad, "link.ipip.dst_addr")
 			}
+		}
+	case interfaces.Interface_WIREGUARD_TUNNEL:
+		if intf.GetWireguard().SrcAddr == "" {
+			return kvs.NewInvalidValueError(ErrWgSrcAddrMissing, "link.wireguard.src_addr")
+		}
+		if net.ParseIP(intf.GetWireguard().SrcAddr) == nil {
+			return kvs.NewInvalidValueError(ErrWgSrcAddrBad, "link.wireguard.src_addr")
+		}
+
+		if len(intf.GetWireguard().PrivateKey) != wireguardKeyLength {
+			return kvs.NewInvalidValueError(ErrWgKeyLen, "link.wireguard.key")
+		}
+
+		if intf.GetWireguard().Port > 0xFFFF {
+			return kvs.NewInvalidValueError(ErrWgPort, "link.wireguard.port")
 		}
 	}
 

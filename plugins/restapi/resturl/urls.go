@@ -119,6 +119,11 @@ const (
 	PuntSocket = "/dump/vpp/v2/punt/sockets"
 )
 
+// VPP Wireguard plugin
+const (
+	Peers = "/dump/vpp/v2/wireguard/peers"
+)
+
 // Telemetry
 const (
 	// Telemetry reads various types of metrics data from the VPP

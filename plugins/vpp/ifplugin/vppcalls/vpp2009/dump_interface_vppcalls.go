@@ -298,6 +298,11 @@ func (h *InterfaceVppHandler) DumpInterfaces(ctx context.Context) (map[uint32]*v
 		return nil, err
 	}
 
+	err = h.dumpWireguardDetails(interfaces)
+	if err != nil {
+		return nil, err
+	}
+
 	// Rx-placement dump is last since it uses interface type-specific data
 	err = h.dumpRxPlacement(interfaces)
 	if err != nil {
@@ -963,6 +968,9 @@ func guessInterfaceType(ifDevType, ifName string) ifs.Interface_Type {
 
 	case strings.HasPrefix(ifName, "ipip"):
 		return ifs.Interface_IPIP_TUNNEL
+
+	case strings.HasPrefix(ifName, "wireguard"):
+		return ifs.Interface_WIREGUARD_TUNNEL
 
 	default:
 		return ifs.Interface_DPDK
