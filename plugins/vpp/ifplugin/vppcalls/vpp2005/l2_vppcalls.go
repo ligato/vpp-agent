@@ -17,6 +17,7 @@ package vpp2005
 import (
 	"fmt"
 
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/interface_types"
 	vpp_l2 "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/l2"
 	ifs "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
 )
@@ -26,7 +27,7 @@ import (
 // SetVLanTagRewrite sets an interface tag rewrite
 func (h *InterfaceVppHandler) SetVLanTagRewrite(ifIdx uint32, subIf *ifs.SubInterface) error {
 	req := &vpp_l2.L2InterfaceVlanTagRewrite{
-		SwIfIndex: vpp_l2.InterfaceIndex(ifIdx),
+		SwIfIndex: interface_types.InterfaceIndex(ifIdx),
 		VtrOp:     getTagRewriteOption(subIf.TagRwOption),
 		PushDot1q: uint32(boolToUint(subIf.PushDot1Q)),
 		Tag1:      subIf.Tag1,

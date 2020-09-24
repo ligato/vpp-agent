@@ -20,6 +20,8 @@ import (
 
 	"github.com/pkg/errors"
 
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/interface_types"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/ip_types"
 	vpp_nat "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/nat"
 	nat "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/nat"
 )
@@ -33,7 +35,7 @@ const (
 
 const (
 	// NoInterface is sw-if-idx which means 'no interface'
-	NoInterface = vpp_nat.InterfaceIndex(^uint32(0))
+	NoInterface = interface_types.InterfaceIndex(^uint32(0))
 	// Maximal length of tag
 	maxTagLen = 64
 )
@@ -141,7 +143,7 @@ func (h *NatVppHandler) handleNat44Interface(iface string, isInside, isAdd bool)
 	}
 
 	req := &vpp_nat.Nat44InterfaceAddDelFeature{
-		SwIfIndex: vpp_nat.InterfaceIndex(ifaceMeta.SwIfIndex),
+		SwIfIndex: interface_types.InterfaceIndex(ifaceMeta.SwIfIndex),
 		Flags:     setNat44Flags(&nat44Flags{isInside: isInside}),
 		IsAdd:     isAdd,
 	}
@@ -163,7 +165,7 @@ func (h *NatVppHandler) handleNat44InterfaceOutputFeature(iface string, isInside
 	}
 
 	req := &vpp_nat.Nat44InterfaceAddDelOutputFeature{
-		SwIfIndex: vpp_nat.InterfaceIndex(ifaceMeta.SwIfIndex),
+		SwIfIndex: interface_types.InterfaceIndex(ifaceMeta.SwIfIndex),
 		Flags:     setNat44Flags(&nat44Flags{isInside: isInside}),
 		IsAdd:     isAdd,
 	}
@@ -227,7 +229,7 @@ func (h *NatVppHandler) handleNatVirtualReassembly(vrCfg *nat.VirtualReassembly,
 // Calls VPP binary API to add/remove NAT44 static mapping
 func (h *NatVppHandler) handleNat44StaticMapping(mapping *nat.DNat44_StaticMapping, dnatLabel string, isAdd bool) error {
 	var ifIdx = NoInterface
-	var exIPAddr vpp_nat.IP4Address
+	var exIPAddr ip_types.IP4Address
 
 	if mapping.TwiceNatPoolIp != "" {
 		h.log.Debug("DNAT44 static mapping's twiceNAT pool IP feature " +
@@ -256,7 +258,7 @@ func (h *NatVppHandler) handleNat44StaticMapping(mapping *nat.DNat44_StaticMappi
 			return errors.Errorf("cannot configure static mapping for DNAT %s: required external interface %s is missing",
 				dnatLabel, mapping.ExternalInterface)
 		}
-		ifIdx = vpp_nat.InterfaceIndex(ifMeta.SwIfIndex)
+		ifIdx = interface_types.InterfaceIndex(ifMeta.SwIfIndex)
 	} else {
 		// Parse external IP address
 		exIPAddr, err = ipTo4Address(mapping.ExternalIp)
@@ -371,7 +373,7 @@ func (h *NatVppHandler) handleNat44StaticMappingLb(mapping *nat.DNat44_StaticMap
 // Calls VPP binary API to add/remove NAT44 identity mapping.
 func (h *NatVppHandler) handleNat44IdentityMapping(mapping *nat.DNat44_IdentityMapping, dnatLabel string, isAdd bool) (err error) {
 	var ifIdx = NoInterface
-	var ipAddr vpp_nat.IP4Address
+	var ipAddr ip_types.IP4Address
 
 	// check tag length limit
 	if err := checkTagLength(dnatLabel); err != nil {
@@ -385,7 +387,7 @@ func (h *NatVppHandler) handleNat44IdentityMapping(mapping *nat.DNat44_IdentityM
 			return errors.Errorf("failed to configure identity mapping for DNAT %s: addressed interface %s does not exist",
 				dnatLabel, mapping.Interface)
 		}
-		ifIdx = vpp_nat.InterfaceIndex(ifMeta.SwIfIndex)
+		ifIdx = interface_types.InterfaceIndex(ifMeta.SwIfIndex)
 	}
 
 	if ifIdx == NoInterface {
@@ -451,17 +453,17 @@ func setNat44Flags(flags *nat44Flags) vpp_nat.NatConfigFlags {
 	return flagsCfg
 }
 
-func ipTo4Address(ipStr string) (addr vpp_nat.IP4Address, err error) {
+func ipTo4Address(ipStr string) (addr ip_types.IP4Address, err error) {
 	netIP := net.ParseIP(ipStr)
 	if netIP == nil {
-		return vpp_nat.IP4Address{}, fmt.Errorf("invalid IP: %q", ipStr)
+		return ip_types.IP4Address{}, fmt.Errorf("invalid IP: %q", ipStr)
 	}
 	if ip4 := netIP.To4(); ip4 != nil {
-		var ip4Addr vpp_nat.IP4Address
+		var ip4Addr ip_types.IP4Address
 		copy(ip4Addr[:], netIP.To4())
 		addr = ip4Addr
 	} else {
-		return vpp_nat.IP4Address{}, fmt.Errorf("required IPv4, provided: %q", ipStr)
+		return ip_types.IP4Address{}, fmt.Errorf("required IPv4, provided: %q", ipStr)
 	}
 	return
 }

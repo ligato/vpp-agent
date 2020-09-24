@@ -6,6 +6,7 @@ import (
 
 	vpp_gre "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/gre"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/ip_types"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/tunnel_types"
 	ifs "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
 )
 
@@ -50,7 +51,7 @@ func (h *InterfaceVppHandler) greAddDelTunnel(isAdd bool, greLink *ifs.GreLink) 
 
 	tunnel := vpp_gre.GreTunnel{
 		Type:         tt,
-		Mode:         vpp_gre.TUNNEL_API_MODE_P2P, // TODO: add mode to proto model
+		Mode:         tunnel_types.TUNNEL_API_MODE_P2P, // TODO: add mode to proto model
 		Instance:     ^uint32(0),
 		OuterTableID: greLink.OuterFibId,
 		SessionID:    uint16(greLink.SessionId),
@@ -72,11 +73,11 @@ func (h *InterfaceVppHandler) greAddDelTunnel(isAdd bool, greLink *ifs.GreLink) 
 		var src, dst [16]uint8
 		copy(src[:], greSource.To16())
 		copy(dst[:], greDestination.To16())
-		tunnel.Src = vpp_gre.Address{
+		tunnel.Src = ip_types.Address{
 			Af: ip_types.ADDRESS_IP6,
 			Un: ip_types.AddressUnionIP6(src),
 		}
-		tunnel.Dst = vpp_gre.Address{
+		tunnel.Dst = ip_types.Address{
 			Af: ip_types.ADDRESS_IP6,
 			Un: ip_types.AddressUnionIP6(dst),
 		}
@@ -84,11 +85,11 @@ func (h *InterfaceVppHandler) greAddDelTunnel(isAdd bool, greLink *ifs.GreLink) 
 		var src, dst [4]uint8
 		copy(src[:], greSource.To4())
 		copy(dst[:], greDestination.To4())
-		tunnel.Src = vpp_gre.Address{
+		tunnel.Src = ip_types.Address{
 			Af: ip_types.ADDRESS_IP4,
 			Un: ip_types.AddressUnionIP4(src),
 		}
-		tunnel.Dst = vpp_gre.Address{
+		tunnel.Dst = ip_types.Address{
 			Af: ip_types.ADDRESS_IP4,
 			Un: ip_types.AddressUnionIP4(dst),
 		}

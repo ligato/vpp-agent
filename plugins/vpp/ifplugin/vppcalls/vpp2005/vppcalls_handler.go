@@ -25,14 +25,14 @@ import (
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/dhcp"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/gre"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/gtpu"
-	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/interfaces"
-	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/ip6_nd"
+	interfaces "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/interface"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/ip"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/ip6_nd"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/ipsec"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/l2"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/memif"
-	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/span"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/rd_cp"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/span"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/tapv2"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/vmxnet3"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/vxlan"
@@ -55,13 +55,13 @@ var HandlerVersion = vpp.HandlerVersion{
 			tapv2.AllMessages,
 			vxlan.AllMessages,
 		)
-		if c.IsPluginLoaded(gtpu.ModuleName) {
+		if c.IsPluginLoaded(gtpu.APIFile) {
 			msgs.Add(gtpu.AllMessages)
 		}
-		if c.IsPluginLoaded(memif.ModuleName) {
+		if c.IsPluginLoaded(memif.APIFile) {
 			msgs.Add(memif.AllMessages)
 		}
-		if c.IsPluginLoaded(vmxnet3.ModuleName) {
+		if c.IsPluginLoaded(vmxnet3.APIFile) {
 			msgs.Add(vmxnet3.AllMessages)
 		}
 		return c.CheckCompatiblity(msgs.AllMessages()...)
@@ -96,20 +96,20 @@ func NewInterfaceVppHandler(c vpp.Client, log logging.Logger) vppcalls.Interface
 	}
 	h := &InterfaceVppHandler{
 		callsChannel: ch,
-		interfaces:   interfaces.NewServiceClient(ch),
-		ipsec:        ipsec.NewServiceClient(ch),
-		rpcIP6nd:     ip6_nd.NewServiceClient(ch),
-		rpcRdCp:      rd_cp.NewServiceClient(ch),
+		interfaces:   interfaces.NewServiceClient(c),
+		ipsec:        ipsec.NewServiceClient(c),
+		rpcIP6nd:     ip6_nd.NewServiceClient(c),
+		rpcRdCp:      rd_cp.NewServiceClient(c),
 		log:          log,
 	}
-	if c.IsPluginLoaded(gtpu.ModuleName) {
-		h.gtpu = gtpu.NewServiceClient(ch)
+	if c.IsPluginLoaded(gtpu.APIFile) {
+		h.gtpu = gtpu.NewServiceClient(c)
 	}
-	if c.IsPluginLoaded(memif.ModuleName) {
-		h.memif = memif.NewServiceClient(ch)
+	if c.IsPluginLoaded(memif.APIFile) {
+		h.memif = memif.NewServiceClient(c)
 	}
-	if c.IsPluginLoaded(vmxnet3.ModuleName) {
-		h.vmxnet3 = vmxnet3.NewServiceClient(ch)
+	if c.IsPluginLoaded(vmxnet3.APIFile) {
+		h.vmxnet3 = vmxnet3.NewServiceClient(c)
 	}
 	return h
 }

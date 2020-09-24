@@ -178,7 +178,7 @@ func (h *RouteHandler) dumpRouteIPDetails(ipRoute vpp_ip.IPRoute) ([]*vppcalls.R
 	return routeDetails, nil
 }
 
-func resolvePathType(meta *vppcalls.RouteMeta, pathType vpp_ip.FibPathType) {
+func resolvePathType(meta *vppcalls.RouteMeta, pathType fib_types.FibPathType) {
 	switch pathType {
 	case fib_types.FIB_API_PATH_TYPE_LOCAL:
 		meta.IsLocal = true
@@ -195,7 +195,7 @@ func resolvePathType(meta *vppcalls.RouteMeta, pathType vpp_ip.FibPathType) {
 	}
 }
 
-func resolvePathFlags(meta *vppcalls.RouteMeta, pathFlags vpp_ip.FibPathFlags) {
+func resolvePathFlags(meta *vppcalls.RouteMeta, pathFlags fib_types.FibPathFlags) {
 	switch pathFlags {
 	case fib_types.FIB_API_PATH_FLAG_RESOLVE_VIA_HOST:
 		meta.IsResolveHost = true

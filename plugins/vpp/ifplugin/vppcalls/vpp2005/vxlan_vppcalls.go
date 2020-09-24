@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"net"
 
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/interface_types"
 	vpp_vxlan "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/vxlan"
 	ifs "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
 )
@@ -29,7 +30,7 @@ func (h *InterfaceVppHandler) addDelVxLanTunnel(vxLan *ifs.VxlanLink, vrf, multi
 		DecapNextIndex: 0xFFFFFFFF,
 		Instance:       ^uint32(0),
 		EncapVrfID:     vrf,
-		McastSwIfIndex: vpp_vxlan.InterfaceIndex(multicastIf),
+		McastSwIfIndex: interface_types.InterfaceIndex(multicastIf),
 	}
 
 	srcAddr := net.ParseIP(vxLan.SrcAddress).To4()

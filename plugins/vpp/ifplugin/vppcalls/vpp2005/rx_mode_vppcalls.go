@@ -15,15 +15,15 @@
 package vpp2005
 
 import (
+	vpp_ifs "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/interface"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/interface_types"
-	vpp_ifs "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/interfaces"
 	ifs "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
 )
 
 func (h *InterfaceVppHandler) SetRxMode(ifIdx uint32, rxMode *ifs.Interface_RxMode) error {
 
 	req := &vpp_ifs.SwInterfaceSetRxMode{
-		SwIfIndex:    vpp_ifs.InterfaceIndex(ifIdx),
+		SwIfIndex:    interface_types.InterfaceIndex(ifIdx),
 		Mode:         setRxMode(rxMode.Mode),
 		QueueID:      rxMode.Queue,
 		QueueIDValid: !rxMode.DefaultMode,
@@ -37,7 +37,7 @@ func (h *InterfaceVppHandler) SetRxMode(ifIdx uint32, rxMode *ifs.Interface_RxMo
 	return nil
 }
 
-func setRxMode(mode ifs.Interface_RxMode_Type) vpp_ifs.RxMode {
+func setRxMode(mode ifs.Interface_RxMode_Type) interface_types.RxMode {
 	switch mode {
 	case ifs.Interface_RxMode_POLLING:
 		return interface_types.RX_MODE_API_POLLING

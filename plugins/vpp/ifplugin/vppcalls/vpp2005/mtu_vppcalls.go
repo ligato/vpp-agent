@@ -15,12 +15,13 @@
 package vpp2005
 
 import (
-	vpp_ifs "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/interfaces"
+	vpp_ifs "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/interface"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/interface_types"
 )
 
 func (h *InterfaceVppHandler) SetInterfaceMtu(ifIdx uint32, mtu uint32) error {
 	req := &vpp_ifs.HwInterfaceSetMtu{
-		SwIfIndex: vpp_ifs.InterfaceIndex(ifIdx),
+		SwIfIndex: interface_types.InterfaceIndex(ifIdx),
 		Mtu:       uint16(mtu),
 	}
 	reply := &vpp_ifs.HwInterfaceSetMtuReply{}

@@ -24,6 +24,7 @@ import (
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/abfplugin/vppcalls"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/aclplugin/aclidx"
 	vpp_abf "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/abf"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/ip_types"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/vppmock"
 	abf "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/abf"
@@ -75,9 +76,9 @@ func TestAddABFPolicy(t *testing.T) {
 	Expect(req.Policy.ACLIndex).To(Equal(uint32(2)))
 	Expect(req.Policy.NPaths).To(Equal(uint8(2)))
 	Expect(req.Policy.Paths[0].SwIfIndex).To(Equal(uint32(5)))
-	Expect(req.Policy.Paths[0].Nh.Address.GetIP4()).To(BeEquivalentTo(vpp_abf.IP4Address([4]uint8{10, 0, 0, 1})))
+	Expect(req.Policy.Paths[0].Nh.Address.GetIP4()).To(BeEquivalentTo(ip_types.IP4Address([4]uint8{10, 0, 0, 1})))
 	Expect(req.Policy.Paths[1].SwIfIndex).To(Equal(uint32(10)))
-	Expect(req.Policy.Paths[1].Nh.Address.GetIP6()).To(BeEquivalentTo(vpp_abf.IP6Address([16]uint8{255, 255})))
+	Expect(req.Policy.Paths[1].Nh.Address.GetIP6()).To(BeEquivalentTo(ip_types.IP6Address([16]uint8{255, 255})))
 }
 
 func TestAddABFPolicyError(t *testing.T) {

@@ -17,8 +17,8 @@ package vpp2005
 import (
 	"context"
 
+	vpp_ifs "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/interface"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/interface_types"
-	vpp_ifs "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/interfaces"
 )
 
 func (h *InterfaceVppHandler) InterfaceAdminDown(ctx context.Context, ifIdx uint32) error {
@@ -30,16 +30,16 @@ func (h *InterfaceVppHandler) InterfaceAdminUp(ctx context.Context, ifIdx uint32
 }
 
 func (h *InterfaceVppHandler) SetInterfaceTag(tag string, ifIdx uint32) error {
-	return h.handleInterfaceTag(tag, vpp_ifs.InterfaceIndex(ifIdx), true)
+	return h.handleInterfaceTag(tag, interface_types.InterfaceIndex(ifIdx), true)
 }
 
 func (h *InterfaceVppHandler) RemoveInterfaceTag(tag string, ifIdx uint32) error {
-	return h.handleInterfaceTag(tag, vpp_ifs.InterfaceIndex(ifIdx), false)
+	return h.handleInterfaceTag(tag, interface_types.InterfaceIndex(ifIdx), false)
 }
 
 func (h *InterfaceVppHandler) interfaceSetFlags(ifIdx uint32, adminUp bool) error {
 	req := &vpp_ifs.SwInterfaceSetFlags{
-		SwIfIndex: vpp_ifs.InterfaceIndex(ifIdx),
+		SwIfIndex: interface_types.InterfaceIndex(ifIdx),
 		Flags:     setAdminUpFlag(adminUp),
 	}
 	reply := &vpp_ifs.SwInterfaceSetFlagsReply{}
@@ -51,7 +51,7 @@ func (h *InterfaceVppHandler) interfaceSetFlags(ifIdx uint32, adminUp bool) erro
 	return nil
 }
 
-func (h *InterfaceVppHandler) handleInterfaceTag(tag string, ifIdx vpp_ifs.InterfaceIndex, isAdd bool) error {
+func (h *InterfaceVppHandler) handleInterfaceTag(tag string, ifIdx interface_types.InterfaceIndex, isAdd bool) error {
 	req := &vpp_ifs.SwInterfaceTagAddDel{
 		Tag:   tag,
 		IsAdd: isAdd,
@@ -70,7 +70,7 @@ func (h *InterfaceVppHandler) handleInterfaceTag(tag string, ifIdx vpp_ifs.Inter
 	return nil
 }
 
-func setAdminUpFlag(adminUp bool) vpp_ifs.IfStatusFlags {
+func setAdminUpFlag(adminUp bool) interface_types.IfStatusFlags {
 	if adminUp {
 		return interface_types.IF_STATUS_API_FLAG_ADMIN_UP
 	}

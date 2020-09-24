@@ -22,10 +22,11 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	. "github.com/onsi/gomega"
 	"go.ligato.io/cn-infra/v2/logging/logrus"
-
+	vpp_ifs "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/interface"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/interface_types"
-	vpp_ifs "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/interfaces"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/ip_types"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/sr_types"
+
 	vpp_sr "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/sr"
 	vpp_vpe "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/vpe"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
@@ -81,7 +82,7 @@ func TestAddLocalSID(t *testing.T) {
 			Expected: &vpp_sr.SrLocalsidAddDel{
 				IsDel:    false,
 				Localsid: sidA,
-				Behavior: vpp2005.BehaviorEnd,
+				Behavior: sr_types.SR_BEHAVIOR_API_END,
 				FibTable: 10, // installationVrfId
 				EndPsp:   true,
 			},
@@ -102,7 +103,7 @@ func TestAddLocalSID(t *testing.T) {
 			Expected: &vpp_sr.SrLocalsidAddDel{
 				IsDel:     false,
 				Localsid:  sidA,
-				Behavior:  vpp2005.BehaviorX,
+				Behavior:  sr_types.SR_BEHAVIOR_API_X,
 				FibTable:  10, // installationVrfId
 				EndPsp:    true,
 				SwIfIndex: interface_types.InterfaceIndex(swIndexA),
@@ -125,7 +126,7 @@ func TestAddLocalSID(t *testing.T) {
 			Expected: &vpp_sr.SrLocalsidAddDel{
 				IsDel:     false,
 				Localsid:  sidA,
-				Behavior:  vpp2005.BehaviorX,
+				Behavior:  sr_types.SR_BEHAVIOR_API_X,
 				FibTable:  10, // installationVrfId
 				EndPsp:    true,
 				SwIfIndex: swIndexA,
@@ -147,7 +148,7 @@ func TestAddLocalSID(t *testing.T) {
 			Expected: &vpp_sr.SrLocalsidAddDel{
 				IsDel:     false,
 				Localsid:  sidA,
-				Behavior:  vpp2005.BehaviorT,
+				Behavior:  sr_types.SR_BEHAVIOR_API_T,
 				FibTable:  10, // installationVrfId
 				SwIfIndex: 11,
 				EndPsp:    true,
@@ -168,7 +169,7 @@ func TestAddLocalSID(t *testing.T) {
 			Expected: &vpp_sr.SrLocalsidAddDel{
 				IsDel:     false,
 				Localsid:  sidA,
-				Behavior:  vpp2005.BehaviorDX2,
+				Behavior:  sr_types.SR_BEHAVIOR_API_DX2,
 				FibTable:  10, // installationVrfId
 				EndPsp:    false,
 				VlanIndex: 1,
@@ -190,7 +191,7 @@ func TestAddLocalSID(t *testing.T) {
 			Expected: &vpp_sr.SrLocalsidAddDel{
 				IsDel:     false,
 				Localsid:  sidA,
-				Behavior:  vpp2005.BehaviorDX4,
+				Behavior:  sr_types.SR_BEHAVIOR_API_DX4,
 				FibTable:  10, // installationVrfId
 				EndPsp:    false,
 				SwIfIndex: swIndexA,
@@ -212,7 +213,7 @@ func TestAddLocalSID(t *testing.T) {
 			Expected: &vpp_sr.SrLocalsidAddDel{
 				IsDel:     false,
 				Localsid:  sidA,
-				Behavior:  vpp2005.BehaviorDX6,
+				Behavior:  sr_types.SR_BEHAVIOR_API_DX6,
 				FibTable:  10, // installationVrfId
 				EndPsp:    false,
 				SwIfIndex: swIndexA,
@@ -233,7 +234,7 @@ func TestAddLocalSID(t *testing.T) {
 			Expected: &vpp_sr.SrLocalsidAddDel{
 				IsDel:     false,
 				Localsid:  sidA,
-				Behavior:  vpp2005.BehaviorDT4,
+				Behavior:  sr_types.SR_BEHAVIOR_API_DT4,
 				FibTable:  10, // installationVrfId
 				SwIfIndex: 5,
 				EndPsp:    false,
@@ -253,7 +254,7 @@ func TestAddLocalSID(t *testing.T) {
 			Expected: &vpp_sr.SrLocalsidAddDel{
 				IsDel:     false,
 				Localsid:  sidA,
-				Behavior:  vpp2005.BehaviorDT6,
+				Behavior:  sr_types.SR_BEHAVIOR_API_DT6,
 				FibTable:  10, // installationVrfId
 				SwIfIndex: 5,
 				EndPsp:    false,
@@ -806,7 +807,7 @@ func TestAddPolicy(t *testing.T) {
 					Sids: vpp_sr.Srv6SidList{
 						Weight:  1,
 						NumSids: 3,
-						Sids:    []vpp_sr.IP6Address{sidA, sidB, sidC},
+						Sids:    [16]ip_types.IP6Address{sidA, sidB, sidC},
 					},
 				}))
 			},
@@ -827,17 +828,19 @@ func TestAddPolicy(t *testing.T) {
 					Sids: vpp_sr.Srv6SidList{
 						Weight:  1,
 						NumSids: 3,
-						Sids:    []vpp_sr.IP6Address{sidA, sidB, sidC},
+						Sids: [16]ip_types.IP6Address{
+							sidA, sidB, sidC,
+						},
 					},
 				}))
 				Expect(catchedMsgs[1]).To(Equal(&vpp_sr.SrPolicyMod{
 					BsidAddr:  sidA,
-					Operation: vpp2005.AddSRList,
+					Operation: sr_types.SR_POLICY_OP_API_ADD,
 					FibTable:  10, // installationVrfId
 					Sids: vpp_sr.Srv6SidList{
 						Weight:  1,
 						NumSids: 3,
-						Sids:    []vpp_sr.IP6Address{sidB, sidC, sidA},
+						Sids:    [16]ip_types.IP6Address{sidB, sidC, sidA},
 					},
 				}))
 			},
@@ -986,12 +989,12 @@ func TestAddPolicySegmentList(t *testing.T) {
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(catchedMsg).To(Equal(&vpp_sr.SrPolicyMod{
 					BsidAddr:  sidA,
-					Operation: vpp2005.AddSRList,
+					Operation: sr_types.SR_POLICY_OP_API_ADD,
 					FibTable:  10, // installationVrfId
 					Sids: vpp_sr.Srv6SidList{
 						Weight:  1,
 						NumSids: 3,
-						Sids:    []vpp_sr.IP6Address{sidA, sidB, sidC},
+						Sids:    [16]ip_types.IP6Address{sidA, sidB, sidC},
 					},
 				}))
 			},
@@ -1069,13 +1072,13 @@ func TestDeletePolicySegmentList(t *testing.T) {
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(catchedMsg).To(Equal(&vpp_sr.SrPolicyMod{
 					BsidAddr:  sidA,
-					Operation: vpp2005.DeleteSRList,
+					Operation: sr_types.SR_POLICY_OP_API_DEL,
 					SlIndex:   111,
 					FibTable:  10, // installationVrfId
 					Sids: vpp_sr.Srv6SidList{
 						Weight:  1,
 						NumSids: 3,
-						Sids:    []vpp_sr.IP6Address{sidA, sidB, sidC},
+						Sids:    [16]ip_types.IP6Address{sidA, sidB, sidC},
 					},
 				}))
 			},
@@ -1167,7 +1170,7 @@ func testAddRemoveSteering(t *testing.T, removal bool) {
 					BsidAddr:      sidA,
 					SrPolicyIndex: uint32(0),
 					TableID:       10,
-					TrafficType:   vpp2005.SteerTypeIPv6,
+					TrafficType:   sr_types.SR_STEER_API_IPV6,
 					Prefix:        ip_types.Prefix{Address: toAddress("1::"), Len: 64},
 				}))
 			},
@@ -1193,7 +1196,7 @@ func testAddRemoveSteering(t *testing.T, removal bool) {
 					BsidAddr:      sidA,
 					SrPolicyIndex: uint32(0),
 					TableID:       10,
-					TrafficType:   vpp2005.SteerTypeIPv4,
+					TrafficType:   sr_types.SR_STEER_API_IPV4,
 					Prefix:        ip_types.Prefix{Address: toAddress("1.2.3.4"), Len: 24},
 				}))
 			},
@@ -1217,7 +1220,7 @@ func testAddRemoveSteering(t *testing.T, removal bool) {
 					IsDel:         removal,
 					BsidAddr:      sidA,
 					SrPolicyIndex: uint32(0),
-					TrafficType:   vpp2005.SteerTypeL2,
+					TrafficType:   sr_types.SR_STEER_API_L2,
 					SwIfIndex:     swIndexA,
 				}))
 			},
@@ -1242,7 +1245,7 @@ func testAddRemoveSteering(t *testing.T, removal bool) {
 					IsDel:         removal,
 					SrPolicyIndex: uint32(20),
 					TableID:       10,
-					TrafficType:   vpp2005.SteerTypeIPv6,
+					TrafficType:   sr_types.SR_STEER_API_IPV6,
 					Prefix:        ip_types.Prefix{Address: toAddress("1::"), Len: 64},
 				}))
 			},
@@ -1468,12 +1471,12 @@ func teardown(ctx *vppmock.TestCtx) {
 	ctx.TeardownTestCtx()
 }
 
-func sid(str string) vpp_sr.IP6Address {
+func sid(str string) ip_types.IP6Address {
 	bsid, err := parseIPv6(str)
 	if err != nil {
 		panic(fmt.Sprintf("can't parse %q into SRv6 BSID (IPv6 address)", str))
 	}
-	var ip vpp_sr.IP6Address
+	var ip ip_types.IP6Address
 	copy(ip[:], bsid)
 	return ip
 }
@@ -1520,7 +1523,7 @@ func boolToUint(input bool) uint8 {
 	return uint8(0)
 }
 
-func sidToStr(sid vpp_sr.IP6Address) string {
+func sidToStr(sid ip_types.IP6Address) string {
 	return srv6.SID(sid[:]).String()
 }
 

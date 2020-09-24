@@ -24,43 +24,14 @@ import (
 	"strings"
 
 	"go.ligato.io/cn-infra/v2/logging"
-
-	vpp_ifs "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/interfaces"
+	vpp_ifs "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/interface"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/interface_types"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/ip_types"
 	vpp_sr "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/sr"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/sr_types"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/vppcalls/vpp2005"
 	ifs "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
 	srv6 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/srv6"
-)
-
-// Constants for behavior function hardcoded into VPP (there can be also custom behavior functions implemented as VPP plugins)
-// Constants are taken from VPP's vnet/srv6/sr.h (names are modified to Golang from original C form in VPP code)
-const (
-	BehaviorEnd    = iota + 1 // Behavior of simple endpoint
-	BehaviorX                 // Behavior of endpoint with Layer-3 cross-connect
-	BehaviorT                 // Behavior of endpoint with specific IPv6 table lookup
-	BehaviorDfirst            // Unused. Separator in between regular and D
-	BehaviorDX2               // Behavior of endpoint with decapulation and Layer-2 cross-connect (or DX2 with egress VLAN rewrite when VLAN notzero - not supported this variant yet)
-	BehaviorDX6               // Behavior of endpoint with decapsulation and IPv6 cross-connect
-	BehaviorDX4               // Behavior of endpoint with decapsulation and IPv4 cross-connect
-	BehaviorDT6               // Behavior of endpoint with decapsulation and specific IPv6 table lookup
-	BehaviorDT4               // Behavior of endpoint with decapsulation and specific IPv4 table lookup
-	BehaviorLast              // seems unused, note in VPP: "Must always be the last one"
-)
-
-// Constants for steering type
-// Constants are taken from VPP's vnet/srv6/sr.h (names are modified to Golang from original C form in VPP code)
-const (
-	SteerTypeL2   = 2
-	SteerTypeIPv4 = 4
-	SteerTypeIPv6 = 6
-)
-
-// Constants for operation of SR policy modify binary API method
-const (
-	AddSRList            = iota + 1 // Add SR List to an existing SR policy
-	DeleteSRList                    // Delete SR List from an existing SR policy
-	ModifyWeightOfSRList            // Modify the weight of an existing SR List
 )
 
 // AddLocalSid adds local sid <localSID> into VPP
@@ -83,7 +54,7 @@ func (h *SRv6VppHandler) addDelLocalSid(deletion bool, localSID *srv6.LocalSID) 
 	if !deletion && localSID.GetEndFunctionAd() != nil {
 		return h.addSRProxy(sidAddr, localSID)
 	}
-	var localsid vpp_sr.IP6Address
+	var localsid ip_types.IP6Address
 	copy(localsid[:], sidAddr.To16())
 
 	req := &vpp_sr.SrLocalsidAddDel{
@@ -212,16 +183,16 @@ func (h *SRv6VppHandler) endFunction(localSID *srv6.LocalSID) string {
 func (h *SRv6VppHandler) writeEndFunction(req *vpp_sr.SrLocalsidAddDel, localSID *srv6.LocalSID) error {
 	switch ef := localSID.EndFunction.(type) {
 	case *srv6.LocalSID_BaseEndFunction:
-		req.Behavior = BehaviorEnd
+		req.Behavior = sr_types.SR_BEHAVIOR_API_END // Behavior of simple endpoint
 		req.EndPsp = ef.BaseEndFunction.Psp
 	case *srv6.LocalSID_EndFunctionX:
-		req.Behavior = BehaviorX
+		req.Behavior = sr_types.SR_BEHAVIOR_API_X // Behavior of endpoint with Layer-3 cross-connect
 		req.EndPsp = ef.EndFunctionX.Psp
 		ifMeta, exists := h.ifIndexes.LookupByName(ef.EndFunctionX.OutgoingInterface)
 		if !exists {
 			return fmt.Errorf("for interface %v doesn't exist sw index", ef.EndFunctionX.OutgoingInterface)
 		}
-		req.SwIfIndex = vpp_ifs.InterfaceIndex(ifMeta.SwIfIndex)
+		req.SwIfIndex = interface_types.InterfaceIndex(ifMeta.SwIfIndex)
 
 		nhIP, err := parseIPv6(ef.EndFunctionX.NextHop) // parses also ipv4 addresses but into ipv6 address form
 		if err != nil {
@@ -233,24 +204,26 @@ func (h *SRv6VppHandler) writeEndFunction(req *vpp_sr.SrLocalsidAddDel, localSID
 		}
 		req.NhAddr = nhAddr // ipv4 address in ipv6 address form?
 	case *srv6.LocalSID_EndFunctionT:
-		req.Behavior = BehaviorT
+		req.Behavior = sr_types.SR_BEHAVIOR_API_T // Behavior of endpoint with specific IPv6 table lookup
 		req.EndPsp = ef.EndFunctionT.Psp
-		req.SwIfIndex = vpp_ifs.InterfaceIndex(ef.EndFunctionT.VrfId)
+		req.SwIfIndex = interface_types.InterfaceIndex(ef.EndFunctionT.VrfId)
 	case *srv6.LocalSID_EndFunctionDx2:
-		req.Behavior = BehaviorDX2
+		// Behavior of endpoint with decapulation and Layer-2 cross-connect (or DX2 with egress VLAN rewrite
+		// when VLAN notzero - not supported this variant yet)
+		req.Behavior = sr_types.SR_BEHAVIOR_API_DX2
 		req.VlanIndex = ef.EndFunctionDx2.VlanTag
 		ifMeta, exists := h.ifIndexes.LookupByName(ef.EndFunctionDx2.OutgoingInterface)
 		if !exists {
 			return fmt.Errorf("for interface %v doesn't exist sw index", ef.EndFunctionDx2.OutgoingInterface)
 		}
-		req.SwIfIndex = vpp_ifs.InterfaceIndex(ifMeta.SwIfIndex)
+		req.SwIfIndex = interface_types.InterfaceIndex(ifMeta.SwIfIndex)
 	case *srv6.LocalSID_EndFunctionDx4:
-		req.Behavior = BehaviorDX4
+		req.Behavior = sr_types.SR_BEHAVIOR_API_DX4 // Behavior of endpoint with decapsulation and IPv4 cross-connect
 		ifMeta, exists := h.ifIndexes.LookupByName(ef.EndFunctionDx4.OutgoingInterface)
 		if !exists {
 			return fmt.Errorf("for interface %v doesn't exist sw index", ef.EndFunctionDx4.OutgoingInterface)
 		}
-		req.SwIfIndex = vpp_ifs.InterfaceIndex(ifMeta.SwIfIndex)
+		req.SwIfIndex = interface_types.InterfaceIndex(ifMeta.SwIfIndex)
 		nhAddr, err := parseIPv6(ef.EndFunctionDx4.NextHop) // parses also IPv4
 		if err != nil {
 			return err
@@ -259,31 +232,31 @@ func (h *SRv6VppHandler) writeEndFunction(req *vpp_sr.SrLocalsidAddDel, localSID
 		if nhAddr4 == nil {
 			return fmt.Errorf("next hop of DX4 end function (%v) is not valid IPv4 address", ef.EndFunctionDx4.NextHop)
 		}
-		var addr vpp_sr.IP4Address
+		var addr ip_types.IP4Address
 		copy(addr[:], nhAddr4)
 		req.NhAddr.Af = ip_types.ADDRESS_IP4
 		req.NhAddr.Un.SetIP4(addr)
 	case *srv6.LocalSID_EndFunctionDx6:
-		req.Behavior = BehaviorDX6
+		req.Behavior = sr_types.SR_BEHAVIOR_API_DX6 // Behavior of endpoint with decapsulation and IPv6 cross-connect
 		ifMeta, exists := h.ifIndexes.LookupByName(ef.EndFunctionDx6.OutgoingInterface)
 		if !exists {
 			return fmt.Errorf("for interface %v doesn't exist sw index", ef.EndFunctionDx6.OutgoingInterface)
 		}
-		req.SwIfIndex = vpp_ifs.InterfaceIndex(ifMeta.SwIfIndex)
+		req.SwIfIndex = interface_types.InterfaceIndex(ifMeta.SwIfIndex)
 		nhAddr6, err := parseIPv6(ef.EndFunctionDx6.NextHop)
 		if err != nil {
 			return err
 		}
-		var addr vpp_sr.IP6Address
+		var addr ip_types.IP6Address
 		copy(addr[:], nhAddr6)
 		req.NhAddr.Af = ip_types.ADDRESS_IP6
 		req.NhAddr.Un.SetIP6(addr)
 	case *srv6.LocalSID_EndFunctionDt4:
-		req.Behavior = BehaviorDT4
-		req.SwIfIndex = vpp_ifs.InterfaceIndex(ef.EndFunctionDt4.VrfId)
+		req.Behavior = sr_types.SR_BEHAVIOR_API_DT4 // Behavior of endpoint with decapsulation and specific IPv4 table lookup
+		req.SwIfIndex = interface_types.InterfaceIndex(ef.EndFunctionDt4.VrfId)
 	case *srv6.LocalSID_EndFunctionDt6:
-		req.Behavior = BehaviorDT6
-		req.SwIfIndex = vpp_ifs.InterfaceIndex(ef.EndFunctionDt6.VrfId)
+		req.Behavior = sr_types.SR_BEHAVIOR_API_DT6 // Behavior of endpoint with decapsulation and specific IPv6 table lookup
+		req.SwIfIndex = interface_types.InterfaceIndex(ef.EndFunctionDt6.VrfId)
 	case nil:
 		return fmt.Errorf("End function not set. Please configure end function for local SID %v ", localSID.GetSid())
 	default:
@@ -300,7 +273,7 @@ func (h *SRv6VppHandler) SetEncapsSourceAddress(address string) error {
 	if err != nil {
 		return err
 	}
-	var encapSrc vpp_sr.IP6Address
+	var encapSrc ip_types.IP6Address
 	copy(encapSrc[:], ipAddress.To16())
 	req := &vpp_sr.SrSetEncapSource{
 		EncapsSource: encapSrc,
@@ -344,7 +317,7 @@ func (h *SRv6VppHandler) addBasePolicyWithFirstSegmentList(policy *srv6.Policy) 
 	if err != nil {
 		return err
 	}
-	var BsidAddr vpp_sr.IP6Address
+	var BsidAddr ip_types.IP6Address
 	copy(BsidAddr[:], bindingSid.To16())
 	// Note: Weight in sr.SrPolicyAdd is leftover from API changes that moved weight into sr.Srv6SidList (it is weight of sid list not of the whole policy)
 	req := &vpp_sr.SrPolicyAdd{
@@ -381,7 +354,7 @@ func (h *SRv6VppHandler) addOtherSegmentLists(policy *srv6.Policy) error {
 // DeletePolicy deletes SRv6 policy given by binding SID <bindingSid>
 func (h *SRv6VppHandler) DeletePolicy(bindingSid net.IP) error {
 	h.log.Debugf("Deleting SR policy with binding SID %v ", bindingSid)
-	var BsidAddr vpp_sr.IP6Address
+	var BsidAddr ip_types.IP6Address
 	copy(BsidAddr[:], bindingSid.To16())
 	req := &vpp_sr.SrPolicyDel{
 		BsidAddr: BsidAddr, // TODO add ability to define policy also by index (SrPolicyIndex)
@@ -403,7 +376,7 @@ func (h *SRv6VppHandler) DeletePolicy(bindingSid net.IP) error {
 // AddPolicySegmentList adds segment list <segmentList> to SRv6 policy <policy> in VPP
 func (h *SRv6VppHandler) AddPolicySegmentList(segmentList *srv6.Policy_SegmentList, policy *srv6.Policy) error {
 	h.log.Debugf("Adding segment %+v to SR policy %+v", segmentList, policy)
-	err := h.modPolicy(AddSRList, policy, segmentList, 0)
+	err := h.modPolicy(sr_types.SR_POLICY_OP_API_ADD, policy, segmentList, 0)
 	if err == nil {
 		h.log.WithFields(logging.Fields{"binding SID": policy.Bsid, "list of next SIDs": segmentList.Segments}).
 			Debug("SR policy modified(added another segment list)")
@@ -414,7 +387,7 @@ func (h *SRv6VppHandler) AddPolicySegmentList(segmentList *srv6.Policy_SegmentLi
 // DeletePolicySegmentList removes segment list <segmentList> (with VPP-internal index <segmentVPPIndex>) from SRv6 policy <policy> in VPP
 func (h *SRv6VppHandler) DeletePolicySegmentList(segmentList *srv6.Policy_SegmentList, segmentVPPIndex uint32, policy *srv6.Policy) error {
 	h.log.Debugf("Removing segment %+v (vpp-internal index %v) from SR policy %+v", segmentList, segmentVPPIndex, policy)
-	err := h.modPolicy(DeleteSRList, policy, segmentList, segmentVPPIndex)
+	err := h.modPolicy(sr_types.SR_POLICY_OP_API_DEL, policy, segmentList, segmentVPPIndex)
 	if err == nil {
 		h.log.WithFields(logging.Fields{"binding SID": policy.Bsid, "list of next SIDs": segmentList.Segments, "segmentListIndex": segmentVPPIndex}).
 			Debug("SR policy modified(removed segment list)")
@@ -422,7 +395,7 @@ func (h *SRv6VppHandler) DeletePolicySegmentList(segmentList *srv6.Policy_Segmen
 	return err
 }
 
-func (h *SRv6VppHandler) modPolicy(operation vpp_sr.SrPolicyOp, policy *srv6.Policy, segmentList *srv6.Policy_SegmentList, segmentListIndex uint32) error {
+func (h *SRv6VppHandler) modPolicy(operation sr_types.SrPolicyOp, policy *srv6.Policy, segmentList *srv6.Policy_SegmentList, segmentListIndex uint32) error {
 	bindingSid, err := parseIPv6(policy.GetBsid())
 	if err != nil {
 		return fmt.Errorf("binding sid address %s is not IPv6 address: %v", policy.GetBsid(), err) // calls from descriptor are already validated
@@ -432,7 +405,7 @@ func (h *SRv6VppHandler) modPolicy(operation vpp_sr.SrPolicyOp, policy *srv6.Pol
 		return err
 	}
 
-	var BsidAddr vpp_sr.IP6Address
+	var BsidAddr ip_types.IP6Address
 	copy(BsidAddr[:], bindingSid.To16())
 	// Note: Weight in sr.SrPolicyMod is leftover from API changes that moved weight into sr.Srv6SidList (it is weight of sid list not of the whole policy)
 	req := &vpp_sr.SrPolicyMod{
@@ -441,7 +414,8 @@ func (h *SRv6VppHandler) modPolicy(operation vpp_sr.SrPolicyOp, policy *srv6.Pol
 		Sids:      *sids,
 		FibTable:  policy.InstallationVrfId,
 	}
-	if operation == DeleteSRList || operation == ModifyWeightOfSRList {
+	if operation == sr_types.SR_POLICY_OP_API_DEL || operation == sr_types.SR_POLICY_OP_API_MOD {
+		// Note: SR_POLICY_OP_API_MOD == change of policy weight
 		req.SlIndex = segmentListIndex
 	}
 
@@ -457,7 +431,7 @@ func (h *SRv6VppHandler) modPolicy(operation vpp_sr.SrPolicyOp, policy *srv6.Pol
 }
 
 func (h *SRv6VppHandler) convertPolicySegment(segmentList *srv6.Policy_SegmentList) (*vpp_sr.Srv6SidList, error) {
-	var segments []vpp_sr.IP6Address
+	var segments []ip_types.IP6Address
 	for _, sid := range segmentList.Segments {
 		// parse to IPv6 address
 		parserSid, err := parseIPv6(sid)
@@ -465,15 +439,16 @@ func (h *SRv6VppHandler) convertPolicySegment(segmentList *srv6.Policy_SegmentLi
 			return nil, err
 		}
 		// add sid to segment list
-		var ipv6Segment vpp_sr.IP6Address
+		var ipv6Segment ip_types.IP6Address
 		copy(ipv6Segment[:], parserSid)
 		segments = append(segments, ipv6Segment)
 	}
-	return &vpp_sr.Srv6SidList{
+	sidList := &vpp_sr.Srv6SidList{
 		NumSids: uint8(len(segments)),
-		Sids:    segments,
 		Weight:  segmentList.Weight,
-	}, nil
+	}
+	copy(sidList.Sids[:], segments)
+	return sidList, nil
 }
 
 // RetrievePolicyIndexInfo retrieves index of policy <policy> and its segment lists
@@ -543,8 +518,8 @@ func (h *SRv6VppHandler) addDelSteering(delete bool, steering *srv6.Steering) er
 	}
 
 	// converting policy reference
-	var policyBSIDAddr vpp_sr.IP6Address // undefined reference
-	var policyIndex = uint32(0)          // undefined reference
+	var policyBSIDAddr ip_types.IP6Address // undefined reference
+	var policyIndex = uint32(0)            // undefined reference
 	switch ref := steering.PolicyRef.(type) {
 	case *srv6.Steering_PolicyBsid:
 		bsid, err := parseIPv6(ref.PolicyBsid)
@@ -561,8 +536,8 @@ func (h *SRv6VppHandler) addDelSteering(delete bool, steering *srv6.Steering) er
 	}
 
 	// converting target traffic info
-	var prefix vpp_sr.Prefix
-	steerType := vpp_sr.SrSteer(SteerTypeIPv6)
+	var prefix ip_types.Prefix
+	steerType := sr_types.SR_STEER_API_IPV6
 	tableID := uint32(0)
 	intIndex := uint32(0)
 	switch t := steering.Traffic.(type) {
@@ -572,7 +547,7 @@ func (h *SRv6VppHandler) addDelSteering(delete bool, steering *srv6.Steering) er
 			return fmt.Errorf("can't parse ip prefix %q: %v", t.L3Traffic.PrefixAddress, err)
 		}
 		if ip.To4() != nil { // IPv4 address
-			steerType = SteerTypeIPv4
+			steerType = sr_types.SR_STEER_API_IPV4
 		}
 		tableID = t.L3Traffic.InstallationVrfId
 		if ip.To16() != nil {
@@ -582,7 +557,7 @@ func (h *SRv6VppHandler) addDelSteering(delete bool, steering *srv6.Steering) er
 		maskWidth, _ := ipnet.Mask.Size()
 		prefix.Len = uint8(maskWidth)
 	case *srv6.Steering_L2Traffic_:
-		steerType = SteerTypeL2
+		steerType = sr_types.SR_STEER_API_L2
 		ifMeta, exists := h.ifIndexes.LookupByName(t.L2Traffic.InterfaceName)
 		if !exists {
 			return fmt.Errorf("for interface %v doesn't exist sw index", t.L2Traffic.InterfaceName)
@@ -596,11 +571,11 @@ func (h *SRv6VppHandler) addDelSteering(delete bool, steering *srv6.Steering) er
 	req := &vpp_sr.SrSteeringAddDel{
 		IsDel:         delete,
 		TableID:       tableID,
-		BsidAddr:      policyBSIDAddr,                   // policy (to which we want to steer routing into) identified by policy binding sid (alternativelly it can be used policy index)
-		SrPolicyIndex: policyIndex,                      // policy (to which we want to steer routing into) identified by policy index (alternativelly it can be used policy binding sid)
-		TrafficType:   steerType,                        // type of traffic to steer
-		Prefix:        prefix,                           // destination prefix address (L3 traffic type only)
-		SwIfIndex:     vpp_ifs.InterfaceIndex(intIndex), // incoming interface (L2 traffic type only)
+		BsidAddr:      policyBSIDAddr,                           // policy (to which we want to steer routing into) identified by policy binding sid (alternativelly it can be used policy index)
+		SrPolicyIndex: policyIndex,                              // policy (to which we want to steer routing into) identified by policy index (alternativelly it can be used policy binding sid)
+		TrafficType:   steerType,                                // type of traffic to steer
+		Prefix:        prefix,                                   // destination prefix address (L3 traffic type only)
+		SwIfIndex:     interface_types.InterfaceIndex(intIndex), // incoming interface (L2 traffic type only)
 	}
 	reply := &vpp_sr.SrSteeringAddDelReply{}
 

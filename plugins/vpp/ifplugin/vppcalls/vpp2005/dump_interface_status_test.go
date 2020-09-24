@@ -17,13 +17,13 @@ package vpp2005
 import (
 	"testing"
 
-	vpp_ifs "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/interfaces"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/interface_types"
 	ifs "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
 )
 
 func TestIsAdminStateUp(t *testing.T) {
 	tests := []struct {
-		input vpp_ifs.IfStatusFlags
+		input interface_types.IfStatusFlags
 		want  bool
 	}{
 		{input: 0, want: false},
@@ -45,7 +45,7 @@ func TestIsAdminStateUp(t *testing.T) {
 
 func TestIsLinkStateUp(t *testing.T) {
 	tests := []struct {
-		input vpp_ifs.IfStatusFlags
+		input interface_types.IfStatusFlags
 		want  bool
 	}{
 		{input: 0, want: false},
@@ -67,7 +67,7 @@ func TestIsLinkStateUp(t *testing.T) {
 
 func TestAdminStateToInterfaceStatus(t *testing.T) {
 	tests := []struct {
-		input vpp_ifs.IfStatusFlags
+		input interface_types.IfStatusFlags
 		want  ifs.InterfaceState_Status
 	}{
 		{input: 0, want: ifs.InterfaceState_DOWN},
@@ -87,7 +87,7 @@ func TestAdminStateToInterfaceStatus(t *testing.T) {
 
 func TestLinkStateToInterfaceStatus(t *testing.T) {
 	tests := []struct {
-		input vpp_ifs.IfStatusFlags
+		input interface_types.IfStatusFlags
 		want  ifs.InterfaceState_Status
 	}{
 		{input: 0, want: ifs.InterfaceState_DOWN},

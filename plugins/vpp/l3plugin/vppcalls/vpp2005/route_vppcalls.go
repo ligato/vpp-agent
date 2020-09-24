@@ -22,6 +22,7 @@ import (
 
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/fib_types"
 	vpp_ip "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/ip"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/ip_types"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/netalloc"
 	l3 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3"
 )
@@ -49,7 +50,7 @@ func (h *RouteHandler) vppAddDelRoute(route *l3.Route, rtIfIdx uint32, delete bo
 	}
 
 	// Common route parameters
-	fibPath := vpp_ip.FibPath{
+	fibPath := fib_types.FibPath{
 		Weight:     uint8(route.Weight),
 		Preference: uint8(route.Preference),
 	}
@@ -84,7 +85,7 @@ func (h *RouteHandler) vppAddDelRoute(route *l3.Route, rtIfIdx uint32, delete bo
 		TableID: route.VrfId,
 		Prefix:  prefix,
 		NPaths:  1,
-		Paths:   []vpp_ip.FibPath{fibPath},
+		Paths:   []fib_types.FibPath{fibPath},
 	}
 
 	reply := &vpp_ip.IPRouteAddDelReply{}
@@ -115,21 +116,21 @@ func (h *RouteHandler) VppDelRoute(ctx context.Context, route *l3.Route) error {
 	return h.vppAddDelRoute(route, swIfIdx, true)
 }
 
-func setFibPathNhAndProto(netIP net.IP) (nh vpp_ip.FibPathNh, proto vpp_ip.FibPathNhProto) {
-	var addrUnion vpp_ip.AddressUnion
+func setFibPathNhAndProto(netIP net.IP) (nh fib_types.FibPathNh, proto fib_types.FibPathNhProto) {
+	var addrUnion ip_types.AddressUnion
 	if netIP.To4() == nil {
 		proto = fib_types.FIB_API_PATH_NH_PROTO_IP6
-		var ip6addr vpp_ip.IP6Address
+		var ip6addr ip_types.IP6Address
 		copy(ip6addr[:], netIP.To16())
 		addrUnion.SetIP6(ip6addr)
 	} else {
 		proto = fib_types.FIB_API_PATH_NH_PROTO_IP4
-		var ip4addr vpp_ip.IP4Address
+		var ip4addr ip_types.IP4Address
 		copy(ip4addr[:], netIP.To4())
 		addrUnion.SetIP4(ip4addr)
 	}
 
-	return vpp_ip.FibPathNh{
+	return fib_types.FibPathNh{
 		Address:            addrUnion,
 		ViaLabel:           NextHopViaLabelUnset,
 		ClassifyTableIndex: ClassifyTableIndexUnset,

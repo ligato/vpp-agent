@@ -46,7 +46,7 @@ func NewIPSecVppHandler(ch govppapi.Channel, ifIdx ifaceidx.IfaceMetadataIndex, 
 	return &IPSecVppHandler{ch, ifIdx, log}
 }
 
-func ipsecAddrToIP(addr vpp_ipsec.Address) net.IP {
+func ipsecAddrToIP(addr ip_types.Address) net.IP {
 	if addr.Af == ip_types.ADDRESS_IP6 {
 		addrIP := addr.Un.GetIP6()
 		return net.IP(addrIP[:])

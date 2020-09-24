@@ -226,7 +226,7 @@ func (h *PuntVppHandler) dumpPuntReasons() (reasons []*vppcalls.ReasonDetails, e
 	return reasons, nil
 }
 
-func parseL3Proto(p vpp_punt.AddressFamily) punt.L3Protocol {
+func parseL3Proto(p ip_types.AddressFamily) punt.L3Protocol {
 	switch p {
 	case ip_types.ADDRESS_IP4:
 		return punt.L3Protocol_IPV4
@@ -236,7 +236,7 @@ func parseL3Proto(p vpp_punt.AddressFamily) punt.L3Protocol {
 	return punt.L3Protocol_UNDEFINED_L3
 }
 
-func parseL4Proto(p vpp_punt.IPProto) punt.L4Protocol {
+func parseL4Proto(p ip_types.IPProto) punt.L4Protocol {
 	switch p {
 	case ip_types.IP_API_PROTO_TCP:
 		return punt.L4Protocol_TCP

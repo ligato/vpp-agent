@@ -26,7 +26,7 @@ import (
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/flowprobe"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/gre"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/gtpu"
-	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/interfaces"
+	interfaces "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/interface"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/ip"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/ip6_nd"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/ip_neighbor"
