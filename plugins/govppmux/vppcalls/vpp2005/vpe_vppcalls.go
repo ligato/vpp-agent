@@ -19,8 +19,8 @@ import (
 	"fmt"
 	"strings"
 
+	"git.fd.io/govpp.git/api"
 	"github.com/pkg/errors"
-
 	"go.ligato.io/vpp-agent/v3/plugins/govppmux/vppcalls"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/memclnt"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/vpe"
@@ -161,6 +161,8 @@ func (h *VpeHandler) RunCli(ctx context.Context, cmd string) (string, error) {
 	})
 	if err != nil {
 		return "", errors.Wrapf(err, "VPP CLI command '%s' failed", cmd)
+	} else if err = api.RetvalToVPPApiError(resp.Retval); err != nil {
+		return "", err
 	}
 	return resp.Reply, nil
 }
