@@ -20,6 +20,7 @@ import (
 	"io"
 	"strings"
 
+	"git.fd.io/govpp.git/api"
 	"github.com/pkg/errors"
 
 	"go.ligato.io/vpp-agent/v3/plugins/vpp"
@@ -60,6 +61,8 @@ func (h *InterfaceVppHandler) AddMemifInterface(ctx context.Context, ifName stri
 	reply, err := h.memif.MemifCreate(ctx, req)
 	if err != nil {
 		return 0, err
+	} else if err = api.RetvalToVPPApiError(reply.Retval); err != nil {
+		return 0, err
 	}
 	swIdx = uint32(reply.SwIfIndex)
 
@@ -74,7 +77,9 @@ func (h *InterfaceVppHandler) DeleteMemifInterface(ctx context.Context, ifName s
 	req := &vpp_memif.MemifDelete{
 		SwIfIndex: interface_types.InterfaceIndex(idx),
 	}
-	if _, err := h.memif.MemifDelete(ctx, req); err != nil {
+	if reply, err := h.memif.MemifDelete(ctx, req); err != nil {
+		return err
+	} else if err = api.RetvalToVPPApiError(reply.Retval); err != nil {
 		return err
 	}
 
@@ -91,7 +96,9 @@ func (h *InterfaceVppHandler) RegisterMemifSocketFilename(ctx context.Context, f
 		SocketID:       id,
 		IsAdd:          true, // sockets can be added only
 	}
-	if _, err := h.memif.MemifSocketFilenameAddDel(ctx, req); err != nil {
+	if reply, err := h.memif.MemifSocketFilenameAddDel(ctx, req); err != nil {
+		return err
+	} else if err = api.RetvalToVPPApiError(reply.Retval); err != nil {
 		return err
 	}
 	return nil
