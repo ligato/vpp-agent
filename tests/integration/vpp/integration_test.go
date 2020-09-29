@@ -22,20 +22,22 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"reflect"
 	"strings"
 	"syscall"
 	"testing"
 	"time"
 
+	"git.fd.io/govpp.git/adapter"
 	"git.fd.io/govpp.git/adapter/socketclient"
 	"git.fd.io/govpp.git/adapter/statsclient"
 	govppapi "git.fd.io/govpp.git/api"
 	govppcore "git.fd.io/govpp.git/core"
 	"github.com/mitchellh/go-ps"
 	. "github.com/onsi/gomega"
-
 	"go.ligato.io/vpp-agent/v3/plugins/govppmux/vppcalls"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi"
 )
 
 const (
@@ -138,6 +140,34 @@ func startVPP(t *testing.T, stdout, stderr io.Writer) *exec.Cmd {
 	return vppCmd
 }
 
+// reRegisterMessage overwrites the original registration of Messages in GoVPP with new message registration.
+func reRegisterMessage(x govppapi.Message) {
+	typ := reflect.TypeOf(x)
+	namecrc := x.GetMessageName() + "_" + x.GetCrcString()
+	govppapi.GetRegisteredMessages()[namecrc] = x
+	govppapi.GetRegisteredMessageTypes()[typ] = namecrc
+}
+
+func hackForBugInGoVPPMessageCache(t *testing.T, adapter adapter.VppAPI, vppCmd *exec.Cmd) error {
+	// connect to VPP
+	conn, apiChannel, _ := connectToBinAPI(t, adapter, vppCmd)
+	binapiVersion, err := binapi.CompatibleVersion(apiChannel)
+	if err != nil {
+		return err
+	}
+
+	// overwrite messages with messages from correct VPP version
+	for _, msg := range binapi.Versions[binapiVersion].AllMessages() {
+		reRegisterMessage(msg)
+	}
+
+	// disconnect from VPP (GoVPP is caching the messages that we want to override
+	// by first connection to VPP -> we must disconnect and reconnect later again)
+	disconnectBinAPI(t, conn, apiChannel, nil)
+
+	return nil
+}
+
 func setupVPP(t *testing.T) *TestCtx {
 	if os.Getenv("TRAVIS") != "" {
 		t.Skip("skipping test for Travis")
@@ -167,45 +197,15 @@ func setupVPP(t *testing.T) *TestCtx {
 	}
 	time.Sleep(vppBootDelay)
 
-	connectRetry := func(retries int) (conn *govppcore.Connection, err error) {
-		for i := 1; i <= retries; i++ {
-			conn, err = govppcore.Connect(adapter)
-			if err != nil {
-				t.Logf("attempt #%d failed: %v, retrying in %v", i, err, vppConnectRetryDelay)
-				time.Sleep(vppConnectRetryDelay)
-				continue
-			}
-			return
-		}
-		return nil, fmt.Errorf("failed to connect after %d retries", retries)
+	// FIXME: this is a hack for GoVPP bug when register of the same message(same CRC and name) but different
+	//  VPP version overwrites the already registered message from one VPP version (map key is only CRC+name
+	//  and that didn't change with VPP version, but generated binapi generated 2 different go types for it)
+	if err := hackForBugInGoVPPMessageCache(t, adapter, vppCmd); err != nil {
+		t.Fatal("can't apply hack fixing bug in GoVPP regarding stream's message type resolving")
 	}
 
-	// connect to binapi
-	conn, err := connectRetry(int(*vppRetry))
-	if err != nil {
-		t.Errorf("connecting to VPP failed: %v", err)
-		if err := vppCmd.Process.Kill(); err != nil {
-			t.Fatalf("killing VPP failed: %v", err)
-		}
-		if state, err := vppCmd.Process.Wait(); err != nil {
-			t.Logf("VPP wait failed: %v", err)
-		} else {
-			t.Logf("VPP wait OK: %v", state)
-		}
-		t.FailNow()
-	}
-
-	apiChannel, err := conn.NewAPIChannel()
-	if err != nil {
-		t.Fatalf("creating channel failed: %v", err)
-	}
-
-	vppClient := &vppClient{
-		t:    t,
-		conn: conn,
-		ch:   apiChannel,
-	}
-
+	// connect to VPP's binary API
+	conn, apiChannel, vppClient := connectToBinAPI(t, adapter, vppCmd)
 	vpeHandler := vppcalls.CompatibleHandler(vppClient)
 
 	// retrieve VPP version
@@ -254,23 +254,71 @@ func setupVPP(t *testing.T) *TestCtx {
 	}
 }
 
+func connectToBinAPI(t *testing.T, adapter adapter.VppAPI, vppCmd *exec.Cmd) (*govppcore.Connection, govppapi.Channel, *vppClient) {
+	connectRetry := func(retries int) (conn *govppcore.Connection, err error) {
+		for i := 1; i <= retries; i++ {
+			conn, err = govppcore.Connect(adapter)
+			if err != nil {
+				t.Logf("attempt #%d failed: %v, retrying in %v", i, err, vppConnectRetryDelay)
+				time.Sleep(vppConnectRetryDelay)
+				continue
+			}
+			return
+		}
+		return nil, fmt.Errorf("failed to connect after %d retries", retries)
+	}
+
+	// connect to binapi
+	conn, err := connectRetry(int(*vppRetry))
+	if err != nil {
+		t.Errorf("connecting to VPP failed: %v", err)
+		if err := vppCmd.Process.Kill(); err != nil {
+			t.Fatalf("killing VPP failed: %v", err)
+		}
+		if state, err := vppCmd.Process.Wait(); err != nil {
+			t.Logf("VPP wait failed: %v", err)
+		} else {
+			t.Logf("VPP wait OK: %v", state)
+		}
+		t.FailNow()
+	}
+
+	apiChannel, err := conn.NewAPIChannel()
+	if err != nil {
+		t.Fatalf("creating channel failed: %v", err)
+	}
+
+	vppClient := &vppClient{
+		t:    t,
+		conn: conn,
+		ch:   apiChannel,
+	}
+	return conn, apiChannel, vppClient
+}
+
 func (ctx *TestCtx) teardownVPP() {
+	disconnectBinAPI(ctx.t, ctx.Conn, ctx.vppBinapi, ctx.StatsConn)
+	stopVPP(ctx.t, ctx.vppCmd)
+}
+
+func disconnectBinAPI(t *testing.T, conn *govppcore.Connection, vppBinapi govppapi.Channel,
+	statsConn *govppcore.StatsConnection) {
 	// disconnect sometimes hangs
 	done := make(chan struct{})
 	go func() {
-		ctx.StatsConn.Disconnect()
-		ctx.vppBinapi.Close()
-		ctx.Conn.Disconnect()
+		if statsConn != nil {
+			statsConn.Disconnect()
+		}
+		vppBinapi.Close()
+		conn.Disconnect()
 		close(done)
 	}()
 	select {
 	case <-done:
 		time.Sleep(vppTermDelay)
 	case <-time.After(vppExitTimeout):
-		ctx.t.Logf("VPP disconnect timeout")
+		t.Logf("VPP disconnect timeout")
 	}
-
-	stopVPP(ctx.t, ctx.vppCmd)
 }
 
 func stopVPP(t *testing.T, vppCmd *exec.Cmd) {
