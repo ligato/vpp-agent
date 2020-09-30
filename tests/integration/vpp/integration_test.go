@@ -378,7 +378,15 @@ func (v *vppClient) Version() vpp.Version {
 }
 
 func (v *vppClient) BinapiVersion() vpp.Version {
-	return ""
+	vppapiChan, err := v.conn.NewAPIChannel()
+	if err != nil {
+		v.t.Fatalf("Can't create new API channel (to get binary API version) due to: %v", err)
+	}
+	binapiVersion, err := binapi.CompatibleVersion(vppapiChan)
+	if err != nil {
+		v.t.Fatalf("Can't get binary API version due to: %v", err)
+	}
+	return binapiVersion
 }
 
 func (v *vppClient) CheckCompatiblity(msgs ...govppapi.Message) error {
