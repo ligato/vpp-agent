@@ -20,8 +20,8 @@ import (
 	. "github.com/onsi/gomega"
 	"go.ligato.io/cn-infra/v2/logging/logrus"
 
-	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1908/ip"
 	vpp_arp "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/arp"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/ip"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin/vppcalls"
 	vpp2009 "go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin/vppcalls/vpp2009"
