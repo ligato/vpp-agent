@@ -8,14 +8,14 @@ import "ligato/vpp/vpp.proto";
 import "ligato/linux/linux.proto";
 import "ligato/netalloc/netalloc.proto";
 
-// Config groups all supported config data into single message.
+// Config describes all supported configs into a single config message.
 message Config {
     vpp.ConfigData vpp_config = 1;
     linux.ConfigData linux_config = 2;
     netalloc.ConfigData netalloc_config = 3;
 }
 
-// Notification groups all notification data into single message.
+// Notification describes all known notifications into a single message.
 message Notification {
     oneof notification {
         vpp.Notification vpp_notification = 1;
@@ -24,12 +24,24 @@ message Notification {
 }
 
 message UpdateRequest {
-    // Update describes config data to be updated.
+    // Update is a config data to be updated.
     Config update = 1;
 
-    // The full_resync option can be used
-    // to overwrite all existing data.
+    // FullResync option can be used to overwrite
+    // all existing config with config update.
+    //
+    // NOTE: Using FullResync with empty config update will
+    // remove all existing config.
     bool full_resync = 2;
+
+    // WaitDone option can be used to block until either
+    // config update is done (non-pending) or request times out.
+    //
+    // NOTE: WaitDone is intended to be used for config updates
+    // that depend on some event from dataplane to fully configure.
+    // Using this with incomplete config updates will require
+    // another update request to unblock.
+    bool wait_done = 3;
 }
 
 message UpdateResponse {
@@ -37,7 +49,7 @@ message UpdateResponse {
 }
 
 message DeleteRequest {
-    // Delete describes config data to be deleted.
+    // Delete is a config data to be deleted.
     Config delete = 1;
 }
 

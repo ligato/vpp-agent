@@ -114,15 +114,17 @@ func newConfigUpdateCommand(cli agentcli.Cli) *cobra.Command {
 	}
 	flags := cmd.Flags()
 	flags.StringVarP(&opts.Format, "format", "f", "", "Format output")
-	flags.BoolVar(&opts.Replace, "replace", false, "Replaces entire config in agent")
+	flags.BoolVar(&opts.Replace, "replace", false, "Replaces all existing config")
+	flags.BoolVar(&opts.WaitDone, "waitdone", false, "Waits until config update is done")
 	flags.BoolVarP(&opts.Verbose, "verbose", "v", false, "Show verbose output")
 	return cmd
 }
 
 type ConfigUpdateOptions struct {
-	Format  string
-	Replace bool
-	Verbose bool
+	Format   string
+	Replace  bool
+	WaitDone bool
+	Verbose  bool
 }
 
 func runConfigUpdate(cli agentcli.Cli, opts ConfigUpdateOptions, args []string) error {
@@ -160,16 +162,17 @@ func runConfigUpdate(cli agentcli.Cli, opts ConfigUpdateOptions, args []string) 
 	resp, err := client.Update(ctx, &configurator.UpdateRequest{
 		Update:     update,
 		FullResync: opts.Replace,
+		WaitDone:   opts.WaitDone,
 	}, grpc.Header(&header))
 	if err != nil {
-		logrus.Warnf("update failed")
+		logrus.Warnf("update failed: %v", err)
 		data = err
 	} else {
 		data = resp
 	}
 
 	if opts.Verbose {
-		logrus.Infof("header: %+v", header)
+		logrus.Debugf("grpc header: %+v", header)
 		if seqNum, ok := header["seqnum"]; ok {
 			ref, _ := strconv.Atoi(seqNum[0])
 			txns, err := cli.Client().SchedulerHistory(ctx, types.SchedulerHistoryOptions{
