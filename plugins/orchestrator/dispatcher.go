@@ -81,8 +81,8 @@ func (p *dispatcher) GetStatus(key string) (*Status, error) {
 func (p *dispatcher) PushData(ctx context.Context, kvPairs []KeyVal) (results []Result, err error) {
 	trace.Logf(ctx, "pushData", "%d KV pairs", len(kvPairs))
 
-	// validate key-value pairs
-	uniq := make(map[string]struct{})
+	// check key-value pairs for uniqness and validate key
+	uniq := make(map[string]proto.Message)
 	for _, kv := range kvPairs {
 		if kv.Val != nil {
 			// check if given key matches the key generated from value
@@ -91,10 +91,10 @@ func (p *dispatcher) PushData(ctx context.Context, kvPairs []KeyVal) (results []
 			}
 		}
 		// check if key is unique
-		if _, ok := uniq[kv.Key]; ok {
-			return nil, errors.Errorf("found multiple key-value pairs with same key: %q", kv.Key)
+		if oldVal, ok := uniq[kv.Key]; ok {
+			return nil, errors.Errorf("found multiple key-value pairs with same key: %q (value 1: %#v, value 2: %#v)", kv.Key, kv.Val, oldVal)
 		}
-		uniq[kv.Key] = struct{}{}
+		uniq[kv.Key] = kv.Val
 	}
 
 	p.mu.Lock()
