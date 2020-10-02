@@ -21,7 +21,6 @@ import (
 	"go.ligato.io/cn-infra/v2/logging/logrus"
 
 	vpp_arp "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/arp"
-	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/ip"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin/vppcalls"
 	vpp2009 "go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin/vppcalls/vpp2009"
@@ -53,7 +52,7 @@ func TestProxyArpRange(t *testing.T) {
 	defer ctx.TeardownTestCtx()
 
 	t.Run("Add: success case", func(t *testing.T) {
-		ctx.MockVpp.MockReply(&ip.ProxyArpAddDelReply{Retval: 0})
+		ctx.MockVpp.MockReply(&vpp_arp.ProxyArpAddDelReply{Retval: 0})
 
 		Expect(pArpHandler.AddProxyArpRange(
 			[]byte{192, 168, 10, 20}, []byte{192, 168, 10, 30}, 0,
@@ -63,12 +62,12 @@ func TestProxyArpRange(t *testing.T) {
 	testAddProxyARPRangeError := func(firstIP, lastIP []byte, vrf uint32) {
 		t.Helper()
 
-		ctx.MockVpp.MockReply(&ip.ProxyArpAddDelReply{Retval: 0})
+		ctx.MockVpp.MockReply(&vpp_arp.ProxyArpAddDelReply{Retval: 0})
 		Expect(pArpHandler.AddProxyArpRange(firstIP, lastIP, vrf)).ToNot(Succeed())
 
 		//Get mocked reply, since VPP call should not happen before.
 		Expect(
-			ctx.MockVPPClient.SendRequest(&ip.ProxyArpAddDel{}).ReceiveReply(&ip.ProxyArpAddDelReply{}),
+			ctx.MockVPPClient.SendRequest(&vpp_arp.ProxyArpAddDel{}).ReceiveReply(&vpp_arp.ProxyArpAddDelReply{}),
 		).To(Succeed())
 	}
 	t.Run("Add: error cases", func(t *testing.T) {
@@ -81,7 +80,7 @@ func TestProxyArpRange(t *testing.T) {
 	})
 
 	t.Run("Delete: success case", func(t *testing.T) {
-		ctx.MockVpp.MockReply(&ip.ProxyArpAddDelReply{Retval: 0})
+		ctx.MockVpp.MockReply(&vpp_arp.ProxyArpAddDelReply{Retval: 0})
 
 		Expect(pArpHandler.DeleteProxyArpRange(
 			[]byte{192, 168, 10, 20}, []byte{192, 168, 10, 30}, 0,
@@ -91,12 +90,12 @@ func TestProxyArpRange(t *testing.T) {
 	testDelProxyARPRangeError := func(firstIP, lastIP []byte, vrf uint32) {
 		t.Helper()
 
-		ctx.MockVpp.MockReply(&ip.ProxyArpAddDelReply{Retval: 0})
+		ctx.MockVpp.MockReply(&vpp_arp.ProxyArpAddDelReply{Retval: 0})
 		Expect(pArpHandler.DeleteProxyArpRange(firstIP, lastIP, vrf)).ToNot(Succeed())
 
 		//Get mocked reply, since VPP call should not happen before.
 		Expect(
-			ctx.MockVPPClient.SendRequest(&ip.ProxyArpAddDel{}).ReceiveReply(&ip.ProxyArpAddDelReply{}),
+			ctx.MockVPPClient.SendRequest(&vpp_arp.ProxyArpAddDel{}).ReceiveReply(&vpp_arp.ProxyArpAddDelReply{}),
 		).To(Succeed())
 	}
 	t.Run("Delete: error cases", func(t *testing.T) {
@@ -109,13 +108,13 @@ func TestProxyArpRange(t *testing.T) {
 	})
 
 	// Test retval in "add" scenario.
-	ctx.MockVpp.MockReply(&ip.ProxyArpAddDelReply{Retval: 1})
+	ctx.MockVpp.MockReply(&vpp_arp.ProxyArpAddDelReply{Retval: 1})
 	Expect(pArpHandler.AddProxyArpRange(
 		[]byte{192, 168, 10, 20}, []byte{192, 168, 10, 30}, 0,
 	)).ToNot(Succeed())
 
 	// Test retval in "delete" scenario.
-	ctx.MockVpp.MockReply(&ip.ProxyArpAddDelReply{Retval: 1})
+	ctx.MockVpp.MockReply(&vpp_arp.ProxyArpAddDelReply{Retval: 1})
 	Expect(pArpHandler.DeleteProxyArpRange(
 		[]byte{192, 168, 10, 20}, []byte{192, 168, 10, 30}, 0,
 	)).ToNot(Succeed())
