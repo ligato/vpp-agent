@@ -34,7 +34,6 @@ import (
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/puntplugin/vppcalls"
 	vpp_punt "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/punt"
 
-	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/puntplugin/vppcalls/vpp1904"
 	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/puntplugin/vppcalls/vpp1908"
 	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/puntplugin/vppcalls/vpp2001"
 	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/puntplugin/vppcalls/vpp2005"

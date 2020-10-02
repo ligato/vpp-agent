@@ -34,9 +34,7 @@ func TestGtpu(t *testing.T) {
 	// See https://gerrit.fd.io/r/c/vpp/+/22904 and https://gerrit.fd.io/r/c/vpp/+/23054
 	dumpAPIOk := true
 	release := ctx.versionInfo.Release()
-	if release <= "19.04" {
-		dumpAPIOk = false
-	} else if release <= "19.08" {
+	if release <= "19.08" {
 		if ctx.versionInfo.Version < "19.08.1-255" {
 			dumpAPIOk = false
 		}

@@ -469,11 +469,6 @@ func (d *InterfaceDescriptor) Retrieve(correlate []adapter.InterfaceKVWithMetada
 				// that the retrieved value was generated before and the original host name
 				// was empty.
 				intf.Interface.GetTap().HostIfName = ""
-				// VPP 1904 BUG - host name is sometimes not properly dumped, use generated
-				// value for metadata
-				// TODO remove with VPP 1904 support drop
-			} else if tapHostIfName == "" {
-				tapHostIfName = generateTAPHostName(intf.Interface.Name)
 			}
 		}
 

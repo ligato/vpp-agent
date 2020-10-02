@@ -26,10 +26,6 @@ func TestTelemetryNodeCounters(t *testing.T) {
 	test := setupVPP(t)
 	defer test.teardownVPP()
 
-	if test.versionInfo.Release() <= "19.04" {
-		t.Skipf("SKIP for VPP %s<=19.04", test.versionInfo.Release())
-	}
-
 	h := vppcalls.CompatibleTelemetryHandler(test.vppClient)
 	if h == nil {
 		t.Fatalf("telemetry handler not available")
