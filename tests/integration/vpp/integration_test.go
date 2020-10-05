@@ -199,7 +199,8 @@ func setupVPP(t *testing.T) *TestCtx {
 
 	// FIXME: this is a hack for GoVPP bug when register of the same message(same CRC and name) but different
 	//  VPP version overwrites the already registered message from one VPP version (map key is only CRC+name
-	//  and that didn't change with VPP version, but generated binapi generated 2 different go types for it)
+	//  and that didn't change with VPP version, but generated binapi generated 2 different go types for it).
+	//  Similar fix exists also for govppmux.
 	if err := hackForBugInGoVPPMessageCache(t, adapter, vppCmd); err != nil {
 		t.Fatal("can't apply hack fixing bug in GoVPP regarding stream's message type resolving")
 	}

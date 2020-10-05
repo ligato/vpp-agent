@@ -19,6 +19,7 @@ import (
 	"encoding/gob"
 	"fmt"
 	"os"
+	"reflect"
 	"sort"
 	"strings"
 	"sync"
@@ -119,6 +120,15 @@ func (p *Plugin) Init() (err error) {
 		p.Log.Debugf("- handler: %-10s has %d versions: %v", name, len(versions), versions)
 	}
 
+	// FIXME: this is a hack for GoVPP bug when register of the same message(same CRC and name) but different
+	//  VPP version overwrites the already registered message from one VPP version (map key is only CRC+name
+	//  and that didn't change with VPP version, but generated binapi generated 2 different go types for it).
+	//  Similar fix exists also for integration tests.
+	if err := p.hackForBugInGoVPPMessageCache(address, useShm); err != nil {
+		return errors.Errorf("can't apply hack fixing bug in GoVPP "+
+			"regarding stream's message type resolving: %v", err)
+	}
+
 	// TODO: Async connect & automatic reconnect support is not yet implemented in the agent,
 	// so synchronously wait until connected to VPP.
 	startTime := time.Now()
@@ -129,19 +139,8 @@ func (p *Plugin) Init() (err error) {
 	if err != nil {
 		return err
 	}
-	// wait for connection event
-	for {
-		event, ok := <-p.vppConChan
-		if !ok {
-			return errors.Errorf("VPP connection state channel closed")
-		}
-		if event.State == govpp.Connected {
-			break
-		} else if event.State == govpp.Failed || event.State == govpp.Disconnected {
-			return errors.Errorf("unable to establish connection to VPP (%v)", event.Error)
-		} else {
-			p.Log.Debugf("VPP connection state: %+v", event)
-		}
+	if err := p.waitForConnectionEvent(p.vppConChan); err != nil {
+		return err
 	}
 	took := time.Since(startTime)
 	p.Log.Debugf("connection to VPP established (took %s)", took.Round(time.Millisecond))
@@ -183,6 +182,72 @@ func (p *Plugin) Init() (err error) {
 	p.registerHandlers(p.HTTPHandlers)
 
 	return nil
+}
+
+// waitForConnectionEvent waits for Connected event from govpp
+func (p *Plugin) waitForConnectionEvent(vppConChan chan govpp.ConnectionEvent) error {
+	for {
+		event, ok := <-vppConChan
+		if !ok {
+			return errors.Errorf("VPP connection state channel closed")
+		}
+		if event.State == govpp.Connected {
+			break
+		} else if event.State == govpp.Failed || event.State == govpp.Disconnected {
+			return errors.Errorf("unable to establish connection to VPP (%v)", event.Error)
+		} else {
+			p.Log.Debugf("VPP connection state: %+v", event)
+		}
+	}
+	return nil
+}
+
+func (p *Plugin) hackForBugInGoVPPMessageCache(address string, useShm bool) error {
+	// connect to VPP
+	startTime := time.Now()
+	vppAdapter := NewVppAdapter(address, useShm)
+	vppConn, vppConChan, err := govpp.AsyncConnect(vppAdapter, p.config.RetryConnectCount, p.config.RetryConnectTimeout)
+	if err != nil {
+		return err
+	}
+	if err := p.waitForConnectionEvent(vppConChan); err != nil {
+		return err
+	}
+	took := time.Since(startTime)
+	p.Log.Debugf("first connection to VPP established (took %s)", took.Round(time.Millisecond))
+
+	if vppConn == nil {
+		return fmt.Errorf("VPP connection is nil")
+	}
+
+	// detect binary API version
+	vppapiChan, err := vppConn.NewAPIChannel()
+	if err != nil {
+		return err
+	}
+	binapiVersion, err := binapi.CompatibleVersion(vppapiChan)
+	if err != nil {
+		return err
+	}
+
+	// overwrite messages with messages from correct VPP version
+	for _, msg := range binapi.Versions[binapiVersion].AllMessages() {
+		reRegisterMessage(msg)
+	}
+
+	// disconnect from VPP (GoVPP is caching the messages that we want to override
+	// by first connection to VPP -> we must disconnect and reconnect later again)
+	vppConn.Disconnect()
+
+	return nil
+}
+
+// reRegisterMessage overwrites the original registration of Messages in GoVPP with new message registration.
+func reRegisterMessage(x govppapi.Message) {
+	typ := reflect.TypeOf(x)
+	namecrc := x.GetMessageName() + "_" + x.GetCrcString()
+	govppapi.GetRegisteredMessages()[namecrc] = x
+	govppapi.GetRegisteredMessageTypes()[typ] = namecrc
 }
 
 // AfterInit reports status check.
