@@ -16,8 +16,9 @@ package e2e
 
 import (
 	"context"
-	. "github.com/onsi/gomega"
 	"testing"
+
+	. "github.com/onsi/gomega"
 
 	"go.ligato.io/vpp-agent/v3/proto/ligato/kvscheduler"
 	vpp_interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
@@ -28,10 +29,6 @@ import (
 func TestIPSec(t *testing.T) {
 	ctx := setupE2E(t)
 	defer ctx.teardownE2E()
-
-	if ctx.vppRelease <= "19.04" {
-		t.Skipf("IPIP: skipped for VPP <= 19.04 (%s)", ctx.vppVersion)
-	}
 
 	const (
 		msName       = "microservice1"
@@ -64,7 +61,6 @@ func TestIPSec(t *testing.T) {
 		EnableUdpEncap: true,
 		TunnelSrcPort:  4500,
 		TunnelDstPort:  8777,
-
 	}
 	saIn := &vpp_ipsec.SecurityAssociation{
 		Index:          20,

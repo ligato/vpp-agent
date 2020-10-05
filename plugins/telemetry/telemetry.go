@@ -39,7 +39,6 @@ import (
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/configurator"
 
-	_ "go.ligato.io/vpp-agent/v3/plugins/telemetry/vppcalls/vpp1904"
 	_ "go.ligato.io/vpp-agent/v3/plugins/telemetry/vppcalls/vpp1908"
 	_ "go.ligato.io/vpp-agent/v3/plugins/telemetry/vppcalls/vpp2001"
 	_ "go.ligato.io/vpp-agent/v3/plugins/telemetry/vppcalls/vpp2005"

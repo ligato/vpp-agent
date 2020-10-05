@@ -35,10 +35,6 @@ func TestL3XC(t *testing.T) {
 	test := setupVPP(t)
 	defer test.teardownVPP()
 
-	if test.versionInfo.Release() <= "19.04" {
-		t.Skipf("SKIP for VPP %s<=19.04", test.versionInfo.Release())
-	}
-
 	// Setup indexers
 	ifIndexes := ifaceidx.NewIfaceIndex(logrus.NewLogger("test-if"), "test-if")
 	vrfIndexes := vrfidx.NewVRFIndex(logrus.NewLogger("test-vrf"), "test-vrf")
