@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package ligato.vpp.l3;
+
+option go_package = "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3;vpp_l3";
+
+message VRRPEntry {
+    string interface = 1;
+    uint32 vr_id = 2;
+    uint32 priority = 3;
+    // VR advertisement interval
+    uint32 interval = 4;
+    bool preemtp_flag = 5;
+    bool accept_flag = 6;
+    bool unicast_flag = 7;
+    bool ipv6_flag = 8;
+
+    repeated string addrs = 9;
+    bool enabled = 10;
+}

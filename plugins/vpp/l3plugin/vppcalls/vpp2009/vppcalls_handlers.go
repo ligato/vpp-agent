@@ -57,6 +57,7 @@ type L3VppHandler struct {
 	*DHCPProxyHandler
 	*L3XCHandler
 	*TeibHandler
+	*VrrpVppHandler
 }
 
 func NewL3VppHandler(
@@ -80,6 +81,7 @@ func NewL3VppHandler(
 		DHCPProxyHandler:   NewDHCPProxyHandler(ch, log),
 		L3XCHandler:        NewL3XCHandler(c, ifIdx, log),
 		TeibHandler:        NewTeibVppHandler(ch, ifIdx, log),
+		VrrpVppHandler:     NewVrrpVppHandler(ch, ifIdx, log),
 	}
 }
 
@@ -127,6 +129,13 @@ type VrfTableHandler struct {
 
 // TeibHandler is accessor for TEIB-related vppcalls methods
 type TeibHandler struct {
+	callsChannel govppapi.Channel
+	ifIndexes    ifaceidx.IfaceMetadataIndex
+	log          logging.Logger
+}
+
+// VrrpVppHandler is accessor for vrrp-related vppcalls methods
+type VrrpVppHandler struct {
 	callsChannel govppapi.Channel
 	ifIndexes    ifaceidx.IfaceMetadataIndex
 	log          logging.Logger
@@ -238,6 +247,18 @@ func NewL3XCHandler(c vpp.Client, ifIndexes ifaceidx.IfaceMetadataIndex, log log
 	return h
 }
 
+// NewVrrpVppHandler creates new instance of VRRP handler
+func NewVrrpVppHandler(callsChan govppapi.Channel, ifIndexes ifaceidx.IfaceMetadataIndex, log logging.Logger) *VrrpVppHandler {
+	if log == nil {
+		log = logrus.NewLogger("vrrp-handler")
+	}
+	return &VrrpVppHandler{
+		callsChannel: callsChan,
+		ifIndexes:    ifIndexes,
+		log:          log,
+	}
+}
+
 func ipToAddress(ipstr string) (addr ip_types.Address, err error) {
 	netIP := net.ParseIP(ipstr)
 	if netIP == nil {
@@ -282,4 +303,11 @@ func uintToBool(value uint8) bool {
 		return false
 	}
 	return true
+}
+
+func boolToUint(input bool) uint8 {
+	if input {
+		return 1
+	}
+	return 0
 }
