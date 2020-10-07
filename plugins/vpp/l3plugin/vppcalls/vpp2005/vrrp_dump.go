@@ -67,16 +67,16 @@ func (h *VrrpVppHandler) DumpVrrpEntries() (entries []*l3.VRRPEntry, err error) 
 
 		// VRRP entry
 		vrrp := &l3.VRRPEntry{
-			Interface:   ifName,
-			VrId:        uint32(vrrpDetails.Config.VrID),
-			Priority:    uint32(vrrpDetails.Config.Priority),
-			Interval:    uint32(vrrpDetails.Config.Interval),
-			Ipv6Flag:    isIpv6,
-			PreemtpFlag: isPreempt,
-			AcceptFlag:  isAccept,
-			UnicastFlag: isUnicast,
-			Addrs:       ipStrs,
-			Enabled:     isEnabled,
+			Interface: ifName,
+			VrId:      uint32(vrrpDetails.Config.VrID),
+			Priority:  uint32(vrrpDetails.Config.Priority),
+			Interval:  uint32(vrrpDetails.Config.Interval),
+			Ipv6:      isIpv6,
+			Preempt:   isPreempt,
+			Accept:    isAccept,
+			Unicast:   isUnicast,
+			Addrs:     ipStrs,
+			Enabled:   isEnabled,
 		}
 
 		entries = append(entries, vrrp)

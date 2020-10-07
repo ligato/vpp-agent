@@ -8,12 +8,21 @@ message VRRPEntry {
     string interface = 1;
     uint32 vr_id = 2;
     uint32 priority = 3;
-    // VR advertisement interval
+    // VR advertisement interval.
     uint32 interval = 4;
-    bool preemtp_flag = 5;
-    bool accept_flag = 6;
-    bool unicast_flag = 7;
-    bool ipv6_flag = 8;
+    // Controls whether a (starting or restarting) 
+    // higher-priority Backup router preempts a lower-priority Master router.
+    bool preempt = 5;
+    // Controls whether a virtual router in Master state will accept packets
+    // addressed to the address owner's IPvX address as its own if it is not the IPvX address owner.
+    bool accept = 6;
+    // Unicast mode may be used to take
+    // advantage of newer token ring adapter implementations that support
+    // non-promiscuous reception for multiple unicast MAC addresses and to
+    // avoid both the multicast traffic and usage conflicts associated with
+    // the use of token ring functional addresses.
+    bool unicast = 7;
+    bool ipv6 = 8;
 
     repeated string addrs = 9;
     bool enabled = 10;

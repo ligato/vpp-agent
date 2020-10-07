@@ -113,7 +113,7 @@ func (d *VrrpDescriptor) Validate(key string, vrrp *l3.VRRPEntry) error {
 			return kvs.NewInvalidValueError(ErrInvalidVrrpIP, "addr")
 		}
 
-		if ip.To4() == nil && !vrrp.Ipv6Flag || ip.To4() != nil && vrrp.Ipv6Flag {
+		if ip.To4() == nil && !vrrp.Ipv6 || ip.To4() != nil && vrrp.Ipv6 {
 			return kvs.NewInvalidValueError(ErrInvalidIPVer, "addr")
 		}
 	}
@@ -164,10 +164,10 @@ func (d *VrrpDescriptor) UpdateWithRecreate(_ string, oldVRRPEntry, newVRRPEntry
 		oldVRRPEntry.Interval == newVRRPEntry.Interval &&
 		oldVRRPEntry.Priority == newVRRPEntry.Priority &&
 		oldVRRPEntry.VrId == newVRRPEntry.VrId &&
-		oldVRRPEntry.Ipv6Flag == newVRRPEntry.Ipv6Flag &&
-		oldVRRPEntry.AcceptFlag == newVRRPEntry.AcceptFlag &&
-		oldVRRPEntry.PreemtpFlag == newVRRPEntry.PreemtpFlag &&
-		oldVRRPEntry.UnicastFlag == newVRRPEntry.UnicastFlag &&
+		oldVRRPEntry.Ipv6 == newVRRPEntry.Ipv6 &&
+		oldVRRPEntry.Accept == newVRRPEntry.Accept &&
+		oldVRRPEntry.Preempt == newVRRPEntry.Preempt &&
+		oldVRRPEntry.Unicast == newVRRPEntry.Unicast &&
 		len(oldVRRPEntry.Addrs) == len(newVRRPEntry.Addrs) {
 		return false
 	}

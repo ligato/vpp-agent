@@ -62,8 +62,8 @@ func (h *VrrpVppHandler) vppAddDelVrrp(entry *l3.VRRPEntry, isAdd uint8) error {
 			return err
 		}
 
-		if entry.Ipv6Flag && ip.Af == ip_types.ADDRESS_IP4 ||
-			!entry.Ipv6Flag && ip.Af == ip_types.ADDRESS_IP6 {
+		if entry.Ipv6 && ip.Af == ip_types.ADDRESS_IP4 ||
+			!entry.Ipv6 && ip.Af == ip_types.ADDRESS_IP6 {
 			return errInvalidIPVersion
 		}
 
@@ -76,16 +76,16 @@ func (h *VrrpVppHandler) vppAddDelVrrp(entry *l3.VRRPEntry, isAdd uint8) error {
 	}
 
 	var flags uint32
-	if entry.PreemtpFlag {
+	if entry.Preempt {
 		flags |= uint32(vrrp.VRRP_API_VR_PREEMPT)
 	}
-	if entry.AcceptFlag {
+	if entry.Accept {
 		flags |= uint32(vrrp.VRRP_API_VR_ACCEPT)
 	}
-	if entry.UnicastFlag {
+	if entry.Unicast {
 		flags |= uint32(vrrp.VRRP_API_VR_UNICAST)
 	}
-	if entry.Ipv6Flag {
+	if entry.Ipv6 {
 		flags |= uint32(vrrp.VRRP_API_VR_IPV6)
 	}
 
@@ -132,7 +132,7 @@ func (h *VrrpVppHandler) vppStartStopVrrp(entry *l3.VRRPEntry, isStart uint8) er
 	req := &vrrp.VrrpVrStartStop{
 		SwIfIndex: interface_types.InterfaceIndex(md.SwIfIndex),
 		VrID:      uint8(entry.VrId),
-		IsIPv6:    boolToUint(entry.GetIpv6Flag()),
+		IsIPv6:    boolToUint(entry.Ipv6),
 		IsStart:   isStart,
 	}
 
