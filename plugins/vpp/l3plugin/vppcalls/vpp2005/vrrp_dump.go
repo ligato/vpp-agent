@@ -17,6 +17,7 @@ package vpp2005
 import (
 	"net"
 
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/ip_types"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/vrrp"
 	l3 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3"
 )
@@ -60,9 +61,15 @@ func (h *VrrpVppHandler) DumpVrrpEntries() (entries []*l3.VRRPEntry, err error) 
 			isIpv6 = true
 		}
 
-		ipStrs := make([]string, 0, 0)
+		ipStrs := make([]string, 0, len(vrrpDetails.Addrs))
 		for _, v := range vrrpDetails.Addrs {
-			ipStrs = append(ipStrs, net.IP(v.Un.XXX_UnionData[:]).String())
+			if v.Af == ip_types.ADDRESS_IP4 {
+				addr := v.Un.GetIP4()
+				ipStrs = append(ipStrs, net.IP(addr[:]).To4().String())
+			} else {
+				addr := v.Un.GetIP6()
+				ipStrs = append(ipStrs, net.IP(addr[:]).To16().String())
+			}
 		}
 
 		// VRRP entry

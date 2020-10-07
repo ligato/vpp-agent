@@ -15,7 +15,6 @@
 package vpp
 
 import (
-	"fmt"
 	"testing"
 
 	"go.ligato.io/cn-infra/v2/logging/logrus"
@@ -91,7 +90,7 @@ func TestVrrp(t *testing.T) {
 				Accept:    false,
 				Unicast:   false,
 				Ipv6:      true,
-				Addrs:     []string{"2001:0db8:11a3:09d7:1f34:8a2e:07a0:765d"},
+				Addrs:     []string{"2001:db8:11a3:9d7:1f34:8a2e:7a0:765d"},
 				Enabled:   false,
 			},
 			shouldFail: false,
@@ -107,13 +106,13 @@ func TestVrrp(t *testing.T) {
 				Accept:    false,
 				Unicast:   false,
 				Ipv6:      true,
-				Addrs:     []string{"2001:0db8:11a3:09d7:1f34:8a2e:07a0:765d"},
+				Addrs:     []string{"2001:db8:11a3:9d7:1f34:8a2e:7a0:765d"},
 				Enabled:   false,
 			},
 			shouldFail: true,
 		},
 	}
-	for idx, test := range tests {
+	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			ifIdx, err := ifHandler.AddLoopbackInterface(test.vrrp.Interface)
 			if err != nil {
@@ -141,41 +140,37 @@ func TestVrrp(t *testing.T) {
 				t.Fatalf("no VRRP entries dumped")
 			}
 
-			for _, e := range entries {
-				fmt.Println(e)
+			if entries[0].VrId != test.vrrp.VrId {
+				t.Fatalf("expected VrId <%v>, got: <%v>", test.vrrp.VrId, entries[0].VrId)
 			}
-
-			if entries[idx].VrId != test.vrrp.VrId {
-				t.Fatalf("expected VrId <%v>, got: <%v>", test.vrrp.VrId, entries[idx].VrId)
+			if entries[0].Interface != test.vrrp.Interface {
+				t.Fatalf("expected Interface <%v>, got: <%v>", test.vrrp.Interface, entries[0].Interface)
 			}
-			if entries[idx].Interface != test.vrrp.Interface {
-				t.Fatalf("expected Interface <%v>, got: <%v>", test.vrrp.Interface, entries[idx].Interface)
+			if entries[0].Interval != test.vrrp.Interval {
+				t.Fatalf("expected Interval <%v>, got: <%v>", test.vrrp.Interval, entries[0].Interval)
 			}
-			if entries[idx].Interval != test.vrrp.Interval {
-				t.Fatalf("expected Interval <%v>, got: <%v>", test.vrrp.Interval, entries[idx].Interval)
+			if entries[0].Priority != test.vrrp.Priority {
+				t.Fatalf("expected Priority <%v>, got: <%v>", test.vrrp.Priority, entries[0].Priority)
 			}
-			if entries[idx].Priority != test.vrrp.Priority {
-				t.Fatalf("expected Priority <%v>, got: <%v>", test.vrrp.Priority, entries[idx].Priority)
+			if entries[0].Enabled != test.vrrp.Enabled {
+				t.Fatalf("expected Enabled <%v>, got: <%v>", test.vrrp.Enabled, entries[0].Enabled)
 			}
-			if entries[idx].Enabled != test.vrrp.Enabled {
-				t.Fatalf("expected Enabled <%v>, got: <%v>", test.vrrp.Enabled, entries[idx].Enabled)
+			if entries[0].Ipv6 != test.vrrp.Ipv6 {
+				t.Fatalf("expected Ipv6 <%v>, got: <%v>", test.vrrp.Ipv6, entries[0].Ipv6)
 			}
-			if entries[idx].Ipv6 != test.vrrp.Ipv6 {
-				t.Fatalf("expected Ipv6 <%v>, got: <%v>", test.vrrp.Ipv6, entries[idx].Ipv6)
+			if entries[0].Preempt != test.vrrp.Preempt {
+				t.Fatalf("expected Preempt <%v>, got: <%v>", test.vrrp.Preempt, entries[0].Preempt)
 			}
-			if entries[idx].Preempt != test.vrrp.Preempt {
-				t.Fatalf("expected Preempt <%v>, got: <%v>", test.vrrp.Preempt, entries[idx].Preempt)
+			if entries[0].Unicast != test.vrrp.Unicast {
+				t.Fatalf("expected Unicast <%v>, got: <%v>", test.vrrp.Unicast, entries[0].Unicast)
 			}
-			if entries[idx].Unicast != test.vrrp.Unicast {
-				t.Fatalf("expected Unicast <%v>, got: <%v>", test.vrrp.Unicast, entries[idx].Unicast)
-			}
-			if entries[idx].Accept != test.vrrp.Accept {
-				t.Fatalf("expected Accept <%v>, got: <%v>", test.vrrp.Accept, entries[idx].Accept)
+			if entries[0].Accept != test.vrrp.Accept {
+				t.Fatalf("expected Accept <%v>, got: <%v>", test.vrrp.Accept, entries[0].Accept)
 			}
 
 			for i := 0; i < len(test.vrrp.Addrs); i++ {
-				if entries[idx].Addrs[i] != test.vrrp.Addrs[i] {
-					t.Fatalf("expected Addrs[%v]  <%v>, got: <%v>", i, test.vrrp.Addrs[i], entries[idx].Addrs[i])
+				if entries[0].Addrs[i] != test.vrrp.Addrs[i] {
+					t.Fatalf("expected Addrs[%v]  <%v>, got: <%v>", i, test.vrrp.Addrs[i], entries[0].Addrs[i])
 				}
 			}
 
