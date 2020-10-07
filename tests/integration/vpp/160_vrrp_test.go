@@ -1,4 +1,4 @@
-// Copyright (c) 2020 Pantheon.tech
+//  Copyright (c) 2020 Cisco and/or its affiliates.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -96,7 +96,7 @@ func TestVrrp(t *testing.T) {
 			shouldFail: false,
 		},
 		{
-			name: "Create TEIB entry (IPv6)",
+			name: "Create VRRP entry (IPv6)",
 			vrrp: &l3.VRRPEntry{
 				Interface:   "if3",
 				VrId:        33,

@@ -94,7 +94,7 @@ var (
 		Type:    "vrrp",
 		Version: "v2",
 	}, models.WithNameTemplate(
-		"{{.Interface}}",
+		"{{.Interface}}/vrid/{{.VrId}}",
 	))
 )
 
@@ -193,10 +193,10 @@ func ParseRouteKey(key string) (outIface, vrfIndex, dstNet, nextHopAddr string, 
 }
 
 // VrrpEntryKey returns the key to store VRRP entry
-func VrrpEntryKey(iface string, ipAddr []string) string {
+func VrrpEntryKey(iface string, vrId uint32) string {
 	return models.Key(&VRRPEntry{
 		Interface: iface,
-		Addrs:     ipAddr,
+		VrId:      vrId,
 	})
 }
 

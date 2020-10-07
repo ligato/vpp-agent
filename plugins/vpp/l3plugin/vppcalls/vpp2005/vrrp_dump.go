@@ -18,12 +18,11 @@ import (
 	"net"
 
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/vrrp"
-	"go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin/vppcalls"
 	l3 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3"
 )
 
 // DumpVrrpEntries dumps all configured VRRP entries.
-func (h *VrrpVppHandler) DumpVrrpEntries() (entries []*vppcalls.VrrpDetails, err error) {
+func (h *VrrpVppHandler) DumpVrrpEntries() (entries []*l3.VRRPEntry, err error) {
 	req := &vrrp.VrrpVrDump{
 		SwIfIndex: 0xffffffff, // Send multirequest to get all VRRP entries
 	}
@@ -79,15 +78,8 @@ func (h *VrrpVppHandler) DumpVrrpEntries() (entries []*vppcalls.VrrpDetails, err
 			Addrs:       ipStrs,
 			Enabled:     isEnabled,
 		}
-		// VRRP meta
-		meta := &vppcalls.VrrpMeta{
-			SwIfIndex: uint32(vrrpDetails.Config.SwIfIndex),
-		}
 
-		entries = append(entries, &vppcalls.VrrpDetails{
-			Vrrp: vrrp,
-			Meta: meta,
-		})
+		entries = append(entries, vrrp)
 	}
 
 	return entries, nil

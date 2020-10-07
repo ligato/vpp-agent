@@ -38,18 +38,21 @@ var (
 )
 
 func (h *VrrpVppHandler) vppAddDelVrrp(entry *l3.VRRPEntry, isAdd uint8) error {
-	var flags uint32
-	if entry.PreemtpFlag {
-		flags |= uint32(vrrp.VRRP_API_VR_PREEMPT)
+
+	if len(entry.Addrs) > maxUint8 || len(entry.Addrs) == 0 {
+		return errInvalidAddrNum
 	}
-	if entry.AcceptFlag {
-		flags |= uint32(vrrp.VRRP_API_VR_ACCEPT)
+
+	if entry.GetVrId() > maxUint8 || entry.GetVrId() == 0 {
+		return errIvalidVrID
 	}
-	if entry.UnicastFlag {
-		flags |= uint32(vrrp.VRRP_API_VR_UNICAST)
+
+	if entry.GetPriority() > maxUint8 || entry.GetPriority() == 0 {
+		return errIvalidPriority
 	}
-	if entry.Ipv6Flag {
-		flags |= uint32(vrrp.VRRP_API_VR_IPV6)
+
+	if entry.GetInterval() > maxUint16 || entry.GetInterval() == 0 {
+		return errIvalidInterval
 	}
 
 	var addrs []ip_types.Address
@@ -67,26 +70,23 @@ func (h *VrrpVppHandler) vppAddDelVrrp(entry *l3.VRRPEntry, isAdd uint8) error {
 		addrs = append(addrs, ip)
 	}
 
-	addrsLen := len(addrs)
-	if addrsLen > maxUint8 || addrsLen == 0 {
-		return errInvalidAddrNum
-	}
-
-	if entry.GetVrId() > maxUint8 || entry.GetVrId() == 0 {
-		return errIvalidVrID
-	}
-
-	if entry.GetPriority() > maxUint8 || entry.GetPriority() == 0 {
-		return errIvalidPriority
-	}
-
-	if entry.GetInterval() > maxUint16 || entry.GetInterval() == 0 {
-		return errIvalidInterval
-	}
-
 	md, exist := h.ifIndexes.LookupByName(entry.Interface)
 	if !exist {
 		return errInvalidInterface
+	}
+
+	var flags uint32
+	if entry.PreemtpFlag {
+		flags |= uint32(vrrp.VRRP_API_VR_PREEMPT)
+	}
+	if entry.AcceptFlag {
+		flags |= uint32(vrrp.VRRP_API_VR_ACCEPT)
+	}
+	if entry.UnicastFlag {
+		flags |= uint32(vrrp.VRRP_API_VR_UNICAST)
+	}
+	if entry.Ipv6Flag {
+		flags |= uint32(vrrp.VRRP_API_VR_IPV6)
 	}
 
 	req := &vrrp.VrrpVrAddDel{
@@ -119,6 +119,10 @@ func (h *VrrpVppHandler) VppDelVrrp(entry *l3.VRRPEntry) error {
 }
 
 func (h *VrrpVppHandler) vppStartStopVrrp(entry *l3.VRRPEntry, isStart uint8) error {
+
+	if entry.VrId > maxUint8 || entry.VrId == 0 {
+		return errIvalidVrID
+	}
 
 	md, exist := h.ifIndexes.LookupByName(entry.Interface)
 	if !exist {

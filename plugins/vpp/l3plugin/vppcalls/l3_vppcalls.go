@@ -242,18 +242,7 @@ type VrrpVppAPI interface {
 	VppDelVrrp(entry *l3.VRRPEntry) error
 	VppStartVrrp(entry *l3.VRRPEntry) error
 	VppStopVrrp(entry *l3.VRRPEntry) error
-	DumpVrrpEntries() ([]*VrrpDetails, error)
-}
-
-// VrrpDetails holds info about VRRP entry as a proto model
-type VrrpDetails struct {
-	Vrrp *l3.VRRPEntry
-	Meta *VrrpMeta
-}
-
-// VrrpMeta contains interface index of the VRRP interface
-type VrrpMeta struct {
-	SwIfIndex uint32
+	DumpVrrpEntries() ([]*l3.VRRPEntry, error)
 }
 
 // Path represents FIB path entry.
