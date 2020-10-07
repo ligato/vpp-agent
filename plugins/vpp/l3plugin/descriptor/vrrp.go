@@ -92,6 +92,11 @@ func (d *VrrpDescriptor) Create(key string, vrrp *l3.VRRPEntry) (interface{}, er
 
 // Delete removes VPP VRRP entry.
 func (d *VrrpDescriptor) Delete(key string, vrrp *l3.VRRPEntry, metadata interface{}) error {
+	if vrrp.Enabled {
+		if err := d.vrrpHandler.VppStopVrrp(vrrp); err != nil {
+			return err
+		}
+	}
 	if err := d.vrrpHandler.VppDelVrrp(vrrp); err != nil {
 		return err
 	}

@@ -45,7 +45,7 @@ func (h *VrrpVppHandler) DumpVrrpEntries() (entries []*vppcalls.VrrpDetails, err
 		}
 
 		var isEnabled, isIpv6, isPreempt, isUnicast, isAccept bool
-		if vrrpDetails.Runtime.State == vrrp.VRRP_API_VR_STATE_INTF_DOWN {
+		if vrrpDetails.Runtime.State != vrrp.VRRP_API_VR_STATE_INIT {
 			isEnabled = true
 		}
 		if uintToBool(uint8(vrrpDetails.Config.Flags & vrrp.VRRP_API_VR_PREEMPT)) {

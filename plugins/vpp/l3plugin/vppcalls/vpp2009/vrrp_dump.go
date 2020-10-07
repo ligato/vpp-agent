@@ -29,7 +29,7 @@ func (h *VrrpVppHandler) DumpVrrpEntries() (entries []*vppcalls.VrrpDetails, err
 	}
 	reqCtx := h.callsChannel.SendMultiRequest(req)
 	for {
-		vrrpDetails := &vrrp.VrrpVrPeerDetails{}
+		vrrpDetails := &vrrp.VrrpVrDetails{}
 		stop, err := reqCtx.ReceiveReply(vrrpDetails)
 		if stop {
 			break
@@ -39,26 +39,49 @@ func (h *VrrpVppHandler) DumpVrrpEntries() (entries []*vppcalls.VrrpDetails, err
 		}
 
 		// VRRP interface
-		ifName, _, exists := h.ifIndexes.LookupBySwIfIndex(uint32(vrrpDetails.SwIfIndex))
+		ifName, _, exists := h.ifIndexes.LookupBySwIfIndex(uint32(vrrpDetails.Config.SwIfIndex))
 		if !exists {
-			h.log.Warnf("VRRP dump: interface name not found for index %d", vrrpDetails.SwIfIndex)
+			h.log.Warnf("VRRP dump: interface name not found for index %d", vrrpDetails.Config.SwIfIndex)
+		}
+
+		var isEnabled, isIpv6, isPreempt, isUnicast, isAccept bool
+		if vrrpDetails.Runtime.State != vrrp.VRRP_API_VR_STATE_INIT {
+			isEnabled = true
+		}
+		if uintToBool(uint8(vrrpDetails.Config.Flags & vrrp.VRRP_API_VR_PREEMPT)) {
+			isPreempt = true
+		}
+		if uintToBool(uint8(vrrpDetails.Config.Flags & vrrp.VRRP_API_VR_ACCEPT)) {
+			isAccept = true
+		}
+		if uintToBool(uint8(vrrpDetails.Config.Flags & vrrp.VRRP_API_VR_UNICAST)) {
+			isUnicast = true
+		}
+		if uintToBool(uint8(vrrpDetails.Config.Flags & vrrp.VRRP_API_VR_IPV6)) {
+			isIpv6 = true
 		}
 
 		ipStrs := make([]string, 0, 0)
-		for _, v := range vrrpDetails.PeerAddrs {
+		for _, v := range vrrpDetails.Addrs {
 			ipStrs = append(ipStrs, net.IP(v.Un.XXX_UnionData[:]).String())
 		}
 
 		// VRRP entry
 		vrrp := &l3.VRRPEntry{
-			Interface: ifName,
-			VrId:      uint32(vrrpDetails.VrID),
-			Ipv6Flag:  uintToBool(vrrpDetails.IsIPv6),
-			Addrs:     ipStrs,
+			Interface:   ifName,
+			VrId:        uint32(vrrpDetails.Config.VrID),
+			Priority:    uint32(vrrpDetails.Config.Priority),
+			Interval:    uint32(vrrpDetails.Config.Interval),
+			Ipv6Flag:    isIpv6,
+			PreemtpFlag: isPreempt,
+			AcceptFlag:  isAccept,
+			UnicastFlag: isUnicast,
+			Addrs:       ipStrs,
+			Enabled:     isEnabled,
 		}
 		// VRRP meta
 		meta := &vppcalls.VrrpMeta{
-			SwIfIndex: uint32(vrrpDetails.SwIfIndex),
+			SwIfIndex: uint32(vrrpDetails.Config.SwIfIndex),
 		}
 
 		entries = append(entries, &vppcalls.VrrpDetails{

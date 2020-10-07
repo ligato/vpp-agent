@@ -32,7 +32,7 @@ func TestVrrp(t *testing.T) {
 
 	release := ctx.versionInfo.Release()
 	if release < "20.05" {
-		t.Skipf("TEIB: skipped for VPP < 20.05 (%s)", release)
+		t.Skipf("VRRP: skipped for VPP < 20.05 (%s)", release)
 	}
 
 	ifIndexes := ifaceidx.NewIfaceIndex(logrus.NewLogger("test-if"), "test-if")
@@ -48,7 +48,7 @@ func TestVrrp(t *testing.T) {
 		shouldFail bool
 	}{
 		{
-			name: "",
+			name: "Create VRRP entry (IPv4)",
 			vrrp: &l3.VRRPEntry{
 				Interface:   "if0",
 				VrId:        1,
@@ -62,6 +62,54 @@ func TestVrrp(t *testing.T) {
 				Enabled:     true,
 			},
 			shouldFail: false,
+		},
+		{
+			name: "Create VRRP entry (IPv4)",
+			vrrp: &l3.VRRPEntry{
+				Interface:   "if1",
+				VrId:        1,
+				Priority:    200,
+				Interval:    150,
+				PreemtpFlag: false,
+				AcceptFlag:  false,
+				UnicastFlag: false,
+				Ipv6Flag:    false,
+				Addrs:       []string{"192.168.10.22"},
+				Enabled:     true,
+			},
+			shouldFail: false,
+		},
+		{
+			name: "Create VRRP entry (IPv6)",
+			vrrp: &l3.VRRPEntry{
+				Interface:   "if2",
+				VrId:        33,
+				Priority:    200,
+				Interval:    200,
+				PreemtpFlag: false,
+				AcceptFlag:  false,
+				UnicastFlag: false,
+				Ipv6Flag:    true,
+				Addrs:       []string{"2001:0db8:11a3:09d7:1f34:8a2e:07a0:765d"},
+				Enabled:     true,
+			},
+			shouldFail: false,
+		},
+		{
+			name: "Create TEIB entry (IPv6)",
+			vrrp: &l3.VRRPEntry{
+				Interface:   "if3",
+				VrId:        33,
+				Priority:    100,
+				Interval:    0,
+				PreemtpFlag: false,
+				AcceptFlag:  false,
+				UnicastFlag: false,
+				Ipv6Flag:    true,
+				Addrs:       []string{"2001:0db8:11a3:09d7:1f34:8a2e:07a0:765d"},
+				Enabled:     true,
+			},
+			shouldFail: true,
 		},
 	}
 	for _, test := range tests {
@@ -84,6 +132,66 @@ func TestVrrp(t *testing.T) {
 				}
 			}
 
+			entries, err := l3Handler.DumpVrrpEntries()
+			if err != nil {
+				t.Fatalf("dump VRRP entries failed: %v\n", err)
+			}
+			if len(entries) == 0 {
+				t.Fatalf("no VRRP entries dumped")
+			}
+
+			if entries[0].Vrrp.VrId != test.vrrp.VrId {
+				t.Fatalf("expected VrId <%v>, got: <%v>", test.vrrp.VrId, entries[0].Vrrp.VrId)
+			}
+			if entries[0].Vrrp.Interface != test.vrrp.Interface {
+				t.Fatalf("expected Interface <%v>, got: <%v>", test.vrrp.Interface, entries[0].Vrrp.Interface)
+			}
+			if entries[0].Vrrp.Interval != test.vrrp.Interval {
+				t.Fatalf("expected Interval <%v>, got: <%v>", test.vrrp.Interval, entries[0].Vrrp.Interval)
+			}
+			if entries[0].Vrrp.Priority != test.vrrp.Priority {
+				t.Fatalf("expected Priority <%v>, got: <%v>", test.vrrp.Priority, entries[0].Vrrp.Priority)
+			}
+			if entries[0].Vrrp.Enabled != test.vrrp.Enabled {
+				t.Fatalf("expected Enabled <%v>, got: <%v>", test.vrrp.Enabled, entries[0].Vrrp.Enabled)
+			}
+			if entries[0].Vrrp.Ipv6Flag != test.vrrp.Ipv6Flag {
+				t.Fatalf("expected Ipv6Flag <%v>, got: <%v>", test.vrrp.Ipv6Flag, entries[0].Vrrp.Ipv6Flag)
+			}
+			if entries[0].Vrrp.PreemtpFlag != test.vrrp.PreemtpFlag {
+				t.Fatalf("expected PreemtpFlag <%v>, got: <%v>", test.vrrp.PreemtpFlag, entries[0].Vrrp.PreemtpFlag)
+			}
+			if entries[0].Vrrp.UnicastFlag != test.vrrp.UnicastFlag {
+				t.Fatalf("expected UnicastFlag <%v>, got: <%v>", test.vrrp.UnicastFlag, entries[0].Vrrp.UnicastFlag)
+			}
+			if entries[0].Vrrp.AcceptFlag != test.vrrp.AcceptFlag {
+				t.Fatalf("expected AcceptFlag <%v>, got: <%v>", test.vrrp.AcceptFlag, entries[0].Vrrp.AcceptFlag)
+			}
+
+			for i := 0; i < len(test.vrrp.Addrs); i++ {
+				if entries[0].Vrrp.Addrs[i] != test.vrrp.Addrs[i] {
+					t.Fatalf("expected Addrs[%v]  <%v>, got: <%v>", i, test.vrrp.Addrs[i], entries[0].Vrrp.Addrs[i])
+				}
+			}
+
+			err = l3Handler.VppDelVrrp(test.vrrp)
+			if err != nil {
+				t.Fatalf("delete VRRP entry failed: %v\n", err)
+			}
+
+			entries, err = l3Handler.DumpVrrpEntries()
+			if err != nil {
+				t.Fatalf("dump VRRP entries failed: %v\n", err)
+			}
+			if len(entries) != 0 {
+				t.Fatalf("%d VRRP entries dumped after delete", len(entries))
+			}
+
+			err = ifHandler.DeleteLoopbackInterface(test.vrrp.Interface, ifIdx)
+			if err != nil {
+				t.Fatalf("delete interface failed: %v", err)
+			}
+			ifIndexes.Delete(test.vrrp.Interface)
 		})
 	}
 }
