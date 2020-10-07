@@ -60,9 +60,13 @@ func (h *VrrpVppHandler) DumpVrrpEntries() (entries []*l3.VRRPEntry, err error) 
 			isIpv6 = true
 		}
 
-		ipStrs := make([]string, 0, 0)
+		ipStrs := make([]string, 0, len(vrrpDetails.Addrs))
 		for _, v := range vrrpDetails.Addrs {
-			ipStrs = append(ipStrs, net.IP(v.Un.XXX_UnionData[:]).String())
+			if ipv4 := net.IP(v.Un.XXX_UnionData[:]).To4(); ipv4 != nil {
+				ipStrs = append(ipStrs, ipv4.String())
+			} else {
+				ipStrs = append(ipStrs, net.IP(v.Un.XXX_UnionData[:]).String())
+			}
 		}
 
 		// VRRP entry
