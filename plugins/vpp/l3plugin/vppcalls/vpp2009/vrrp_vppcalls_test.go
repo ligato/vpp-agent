@@ -66,7 +66,7 @@ var vrrpEntries = []*l3.VRRPEntry{
 	},
 }
 
-// Test adding of VRRP
+// Test adding of the VRRP
 func TestAddVrrp(t *testing.T) {
 	ctx, ifIndexes, vrrpHandler := vrrpTestSetup(t)
 	defer ctx.TeardownTestCtx()
@@ -86,7 +86,7 @@ func TestAddVrrp(t *testing.T) {
 	Expect(err).NotTo(BeNil())
 }
 
-// Test deletion of VRRP
+// Test deletion of the VRRP
 func TestDelVrrp(t *testing.T) {
 	ctx, ifIndexes, vrrpHandler := vrrpTestSetup(t)
 	defer ctx.TeardownTestCtx()
@@ -98,6 +98,7 @@ func TestDelVrrp(t *testing.T) {
 	Expect(err).To(Succeed())
 }
 
+// Test start of the VRRP
 func TestStartVrrp(t *testing.T) {
 	ctx, ifIndexes, vrrpHandler := vrrpTestSetup(t)
 	defer ctx.TeardownTestCtx()
@@ -113,6 +114,7 @@ func TestStartVrrp(t *testing.T) {
 	Expect(err).To(Succeed())
 }
 
+// Test stop of the VRRP
 func TestStopVrrp(t *testing.T) {
 	ctx, ifIndexes, vrrpHandler := vrrpTestSetup(t)
 	defer ctx.TeardownTestCtx()
