@@ -60,7 +60,7 @@ var vrrpEntries = []*l3.VRRPEntry{
 		Preempt:   false,
 		Accept:    false,
 		Unicast:   false,
-		Ipv6:      true,
+		Ipv6:      false,
 		Addrs:     []string{"192.168.10.21"},
 		Enabled:   true,
 	},
@@ -83,7 +83,7 @@ func TestAddVrrp(t *testing.T) {
 
 	ctx.MockVpp.MockReply(&vrrp.VrrpVrAddDelReply{})
 	err = vrrpHandler.VppAddVrrp(vrrpEntries[2])
-	Expect(err).NotTo(BeNil())
+	Expect(err).To(Succeed())
 }
 
 // Test deletion of the VRRP

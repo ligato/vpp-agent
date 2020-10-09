@@ -23,48 +23,16 @@ import (
 	l3 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3"
 )
 
-const (
-	maxUint8  = 255
-	maxUint16 = 65535
-)
-
 var (
-	errInvalidAddrNum   = errors.New("addrs quantity should be > 0 && <= 255")
-	errIvalidVrID       = errors.New("vr_id should be > 0 && <= 255")
-	errIvalidPriority   = errors.New("priority should be > 0 && <= 255")
-	errIvalidInterval   = errors.New("interval should be > 0 && <= 65535")
-	errInvalidIPVersion = errors.New("ipv6_flag does not correspond to IP version of the provided address")
 	errInvalidInterface = errors.New("interface does not exist")
 )
 
 func (h *VrrpVppHandler) vppAddDelVrrp(entry *l3.VRRPEntry, isAdd uint8) error {
-
-	if len(entry.Addrs) > maxUint8 || len(entry.Addrs) == 0 {
-		return errInvalidAddrNum
-	}
-
-	if entry.GetVrId() > maxUint8 || entry.GetVrId() == 0 {
-		return errIvalidVrID
-	}
-
-	if entry.GetPriority() > maxUint8 || entry.GetPriority() == 0 {
-		return errIvalidPriority
-	}
-
-	if entry.GetInterval() > maxUint16 || entry.GetInterval() == 0 {
-		return errIvalidInterval
-	}
-
 	var addrs []ip_types.Address
 	for _, addr := range entry.Addrs {
 		ip, err := ipToAddress(addr)
 		if err != nil {
 			return err
-		}
-
-		if entry.Ipv6 && ip.Af == ip_types.ADDRESS_IP4 ||
-			!entry.Ipv6 && ip.Af == ip_types.ADDRESS_IP6 {
-			return errInvalidIPVersion
 		}
 
 		addrs = append(addrs, ip)
@@ -119,10 +87,6 @@ func (h *VrrpVppHandler) VppDelVrrp(entry *l3.VRRPEntry) error {
 }
 
 func (h *VrrpVppHandler) vppStartStopVrrp(entry *l3.VRRPEntry, isStart uint8) error {
-
-	if entry.VrId > maxUint8 || entry.VrId == 0 {
-		return errIvalidVrID
-	}
 
 	md, exist := h.ifIndexes.LookupByName(entry.Interface)
 	if !exist {

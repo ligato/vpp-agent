@@ -134,6 +134,8 @@ type PutDSL interface {
 	FlowprobeParams(val *ipfix.FlowProbeParams) PutDSL
 	// FlowprobeFeature adds a request to enable Flowprobe Feature on interface.
 	FlowprobeFeature(val *ipfix.FlowProbeFeature) PutDSL
+	// VRRP adds a request to create or update VPP L3 VRRP.
+	VRRP(val *vpp_l3.VRRPEntry) PutDSL
 
 	// Delete changes the DSL mode to allow removing an existing configuration.
 	// See documentation for DataChangeDSL.Delete().
@@ -221,6 +223,8 @@ type DeleteDSL interface {
 	PuntException(reason string) DeleteDSL
 	// FlowprobeFeature adds a request to disable Flowprobe Feature on interface.
 	FlowprobeFeature(val *ipfix.FlowProbeFeature) DeleteDSL
+	// VRRP adds a request to delete VPP L3 VRRP.
+	VRRP(val *vpp_l3.VRRPEntry) DeleteDSL
 
 	// Put changes the DSL mode to allow configuration editing.
 	// See documentation for DataChangeDSL.Put().

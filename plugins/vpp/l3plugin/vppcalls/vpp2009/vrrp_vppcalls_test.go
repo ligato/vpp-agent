@@ -1,4 +1,4 @@
-//  Copyright (c) 2019 Cisco and/or its affiliates.
+//  Copyright (c) 2020 Cisco and/or its affiliates.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -60,13 +60,13 @@ var vrrpEntries = []*l3.VRRPEntry{
 		Preempt:   false,
 		Accept:    false,
 		Unicast:   false,
-		Ipv6:      true,
+		Ipv6:      false,
 		Addrs:     []string{"192.168.10.21"},
 		Enabled:   true,
 	},
 }
 
-// Test adding of the VRRP
+// Test an adding of the VRRP
 func TestAddVrrp(t *testing.T) {
 	ctx, ifIndexes, vrrpHandler := vrrpTestSetup(t)
 	defer ctx.TeardownTestCtx()
@@ -83,10 +83,10 @@ func TestAddVrrp(t *testing.T) {
 
 	ctx.MockVpp.MockReply(&vrrp.VrrpVrAddDelReply{})
 	err = vrrpHandler.VppAddVrrp(vrrpEntries[2])
-	Expect(err).NotTo(BeNil())
+	Expect(err).To(Succeed())
 }
 
-// Test deletion of the VRRP
+// Test a deletion of the VRRP
 func TestDelVrrp(t *testing.T) {
 	ctx, ifIndexes, vrrpHandler := vrrpTestSetup(t)
 	defer ctx.TeardownTestCtx()
@@ -98,7 +98,7 @@ func TestDelVrrp(t *testing.T) {
 	Expect(err).To(Succeed())
 }
 
-// Test start of the VRRP
+// Test a start of the VRRP
 func TestStartVrrp(t *testing.T) {
 	ctx, ifIndexes, vrrpHandler := vrrpTestSetup(t)
 	defer ctx.TeardownTestCtx()
@@ -114,7 +114,7 @@ func TestStartVrrp(t *testing.T) {
 	Expect(err).To(Succeed())
 }
 
-// Test stop of the VRRP
+// Test a stop of the VRRP
 func TestStopVrrp(t *testing.T) {
 	ctx, ifIndexes, vrrpHandler := vrrpTestSetup(t)
 	defer ctx.TeardownTestCtx()
