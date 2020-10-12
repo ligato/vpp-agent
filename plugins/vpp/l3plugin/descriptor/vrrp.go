@@ -90,8 +90,8 @@ func (d *VrrpDescriptor) Validate(key string, vrrp *l3.VRRPEntry) error {
 		return kvs.NewInvalidValueError(ErrMissingInterface, "interface")
 	}
 
-	if len(vrrp.Addrs) > maxUint8 || len(vrrp.Addrs) == 0 {
-		return kvs.NewInvalidValueError(ErrInvalidAddrNum, "addrs")
+	if len(vrrp.IpAdresses) > maxUint8 || len(vrrp.IpAdresses) == 0 {
+		return kvs.NewInvalidValueError(ErrInvalidAddrNum, "ip_addresses")
 	}
 
 	if vrrp.GetVrId() > maxUint8 || vrrp.GetVrId() == 0 {
@@ -107,14 +107,20 @@ func (d *VrrpDescriptor) Validate(key string, vrrp *l3.VRRPEntry) error {
 	}
 
 	var ip net.IP
-	for _, addr := range vrrp.Addrs {
+	var isIpv6 bool
+	for idx, addr := range vrrp.IpAdresses {
 		ip = net.ParseIP(addr)
 		if ip == nil {
-			return kvs.NewInvalidValueError(ErrInvalidVrrpIP, "addr")
+			return kvs.NewInvalidValueError(ErrInvalidVrrpIP, "ip_addresses")
 		}
 
-		if ip.To4() == nil && !vrrp.Ipv6 || ip.To4() != nil && vrrp.Ipv6 {
-			return kvs.NewInvalidValueError(ErrInvalidIPVer, "addr")
+		if idx == 0 && ip.To4() == nil {
+			isIpv6 = true
+			continue
+		}
+
+		if ip.To4() == nil && !isIpv6 || ip.To4() != nil && isIpv6 {
+			return kvs.NewInvalidValueError(ErrInvalidIPVer, "ip_addresses")
 		}
 	}
 	return nil
@@ -124,7 +130,7 @@ func (d *VrrpDescriptor) Validate(key string, vrrp *l3.VRRPEntry) error {
 func (d *VrrpDescriptor) Create(key string, vrrp *l3.VRRPEntry) (interface{}, error) {
 	if err := d.vrrpHandler.VppAddVrrp(vrrp); err != nil {
 		if errors.Is(vppcalls.ErrVRRPUnsupported, err) {
-			d.log.Debugf("Unsupported action: ", err)
+			d.log.Debugf("Unsupported action: %v", err)
 		}
 		return nil, err
 	}
@@ -160,25 +166,24 @@ func (d *VrrpDescriptor) UpdateWithRecreate(_ string, oldVRRPEntry, newVRRPEntry
 		return true
 	}
 
-	if oldVRRPEntry.Interface == newVRRPEntry.Interface &&
-		oldVRRPEntry.Interval == newVRRPEntry.Interval &&
-		oldVRRPEntry.Priority == newVRRPEntry.Priority &&
-		oldVRRPEntry.VrId == newVRRPEntry.VrId &&
-		oldVRRPEntry.Ipv6 == newVRRPEntry.Ipv6 &&
-		oldVRRPEntry.Accept == newVRRPEntry.Accept &&
-		oldVRRPEntry.Preempt == newVRRPEntry.Preempt &&
-		oldVRRPEntry.Unicast == newVRRPEntry.Unicast &&
-		len(oldVRRPEntry.Addrs) == len(newVRRPEntry.Addrs) {
-		return false
+	if oldVRRPEntry.Interface != newVRRPEntry.Interface ||
+		oldVRRPEntry.Interval != newVRRPEntry.Interval ||
+		oldVRRPEntry.Priority != newVRRPEntry.Priority ||
+		oldVRRPEntry.VrId != newVRRPEntry.VrId ||
+		oldVRRPEntry.Accept != newVRRPEntry.Accept ||
+		oldVRRPEntry.Preempt != newVRRPEntry.Preempt ||
+		oldVRRPEntry.Unicast != newVRRPEntry.Unicast ||
+		len(oldVRRPEntry.IpAdresses) != len(newVRRPEntry.IpAdresses) {
+		return true
 	}
 
-	for i := 0; i < len(oldVRRPEntry.Addrs); i++ {
-		if oldVRRPEntry.Addrs[i] != newVRRPEntry.Addrs[i] {
+	for i := 0; i < len(oldVRRPEntry.IpAdresses); i++ {
+		if oldVRRPEntry.IpAdresses[i] != newVRRPEntry.IpAdresses[i] {
 			return true
 		}
 	}
 
-	return true // Something changed except VRRP Enabled = recreate
+	return false // Nothing changed except VRRP Enabled = update
 }
 
 // Update updates VPP VRRP entry.
@@ -190,7 +195,6 @@ func (d *VrrpDescriptor) Update(_ string, oldVRRPEntry, newVRRPEntry *l3.VRRPEnt
 	} else {
 		err = d.vrrpHandler.VppStopVrrp(newVRRPEntry)
 	}
-	d.log.Debugf("Unsupported action: ", err)
 
 	return nil, err
 }
@@ -223,13 +227,4 @@ func (d *VrrpDescriptor) Retrieve(correlate []adapter.VRRPEntryKVWithMetadata) (
 	}
 
 	return retrieved, nil
-}
-
-// IsRetriableFailure returns false if error is one of errors
-// defined at the top of this file as non-retriable.
-func (d *VrrpDescriptor) IsRetriableFailure(err error) bool {
-	if errors.Is(err, vppcalls.ErrVRRPUnsupported) {
-		return false
-	}
-	return true
 }

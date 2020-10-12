@@ -49,6 +49,7 @@ func init() {
 	kvscheduler.AddNonRetryableError(
 		vppcalls.ErrIPNeighborNotImplemented,
 		vppcalls.ErrTeibUnsupported,
+		vppcalls.ErrVRRPUnsupported,
 	)
 }
 

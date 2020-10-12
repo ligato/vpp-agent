@@ -4,11 +4,13 @@ package ligato.vpp.l3;
 
 option go_package = "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3;vpp_l3";
 
+// VRRPEntry represents Virtual Router desired state.
 message VRRPEntry {
     string interface = 1;
     uint32 vr_id = 2;
+    // Priority defines which router becomes master.
     uint32 priority = 3;
-    // VR advertisement interval.
+    // VR advertisement interval in centiseconds.
     uint32 interval = 4;
     // Controls whether a (starting or restarting) 
     // higher-priority Backup router preempts a lower-priority Master router.
@@ -22,8 +24,7 @@ message VRRPEntry {
     // avoid both the multicast traffic and usage conflicts associated with
     // the use of token ring functional addresses.
     bool unicast = 7;
-    bool ipv6 = 8;
 
-    repeated string addrs = 9;
-    bool enabled = 10;
+    repeated string ip_adresses = 8;
+    bool enabled = 9;
 }

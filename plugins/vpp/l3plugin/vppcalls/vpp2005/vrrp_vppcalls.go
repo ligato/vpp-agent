@@ -15,7 +15,7 @@
 package vpp2005
 
 import (
-	"errors"
+	"fmt"
 
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/interface_types"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/ip_types"
@@ -23,16 +23,17 @@ import (
 	l3 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3"
 )
 
-var (
-	errInvalidInterface = errors.New("interface does not exist")
-)
-
 func (h *VrrpVppHandler) vppAddDelVrrp(entry *l3.VRRPEntry, isAdd uint8) error {
 	var addrs []ip_types.Address
-	for _, addr := range entry.Addrs {
+	var isIpv6 bool
+	for idx, addr := range entry.IpAdresses {
 		ip, err := ipToAddress(addr)
 		if err != nil {
 			return err
+		}
+
+		if idx == 0 && ip.Af == ip_types.ADDRESS_IP6 {
+			isIpv6 = true
 		}
 
 		addrs = append(addrs, ip)
@@ -40,7 +41,7 @@ func (h *VrrpVppHandler) vppAddDelVrrp(entry *l3.VRRPEntry, isAdd uint8) error {
 
 	md, exist := h.ifIndexes.LookupByName(entry.Interface)
 	if !exist {
-		return errInvalidInterface
+		return fmt.Errorf("interface does not exist: %v", entry.Interface)
 	}
 
 	var flags uint32
@@ -53,7 +54,7 @@ func (h *VrrpVppHandler) vppAddDelVrrp(entry *l3.VRRPEntry, isAdd uint8) error {
 	if entry.Unicast {
 		flags |= uint32(vrrp.VRRP_API_VR_UNICAST)
 	}
-	if entry.Ipv6 {
+	if isIpv6 {
 		flags |= uint32(vrrp.VRRP_API_VR_IPV6)
 	}
 
@@ -90,13 +91,25 @@ func (h *VrrpVppHandler) vppStartStopVrrp(entry *l3.VRRPEntry, isStart uint8) er
 
 	md, exist := h.ifIndexes.LookupByName(entry.Interface)
 	if !exist {
-		return errInvalidInterface
+		return fmt.Errorf("interface does not exist: %v", entry.Interface)
+	}
+
+	var isIpv6 bool
+	for idx, addr := range entry.IpAdresses {
+		ip, err := ipToAddress(addr)
+		if err != nil {
+			return err
+		}
+
+		if idx == 0 && ip.Af == ip_types.ADDRESS_IP6 {
+			isIpv6 = true
+		}
 	}
 
 	req := &vrrp.VrrpVrStartStop{
 		SwIfIndex: interface_types.InterfaceIndex(md.SwIfIndex),
 		VrID:      uint8(entry.VrId),
-		IsIPv6:    boolToUint(entry.Ipv6),
+		IsIPv6:    boolToUint(isIpv6),
 		IsStart:   isStart,
 	}
 
