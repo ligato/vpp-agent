@@ -349,6 +349,7 @@ func (p *Plugin) updatePrometheus(ctx context.Context) {
 							itemName:   item.Name,
 							metrics:    map[string]prometheus.Gauge{},
 						}
+						p.runtimeStats[item.Name] = stats
 
 						// add gauges with corresponding labels into vectors
 						for k, vec := range p.runtimeGaugeVecs {
@@ -389,6 +390,7 @@ func (p *Plugin) updatePrometheus(ctx context.Context) {
 						itemIndex: item.Index,
 						metrics:   map[string]prometheus.Gauge{},
 					}
+					p.buffersStats[item.Name] = stats
 
 					// add gauges with corresponding labels into vectors
 					for k, vec := range p.buffersGaugeVecs {
@@ -427,6 +429,7 @@ func (p *Plugin) updatePrometheus(ctx context.Context) {
 						threadID:   thread.ID,
 						metrics:    map[string]prometheus.Gauge{},
 					}
+					p.memoryStats[thread.Name] = stats
 
 					// add gauges with corresponding labels into vectors
 					for k, vec := range p.memoryGaugeVecs {
@@ -466,6 +469,7 @@ func (p *Plugin) updatePrometheus(ctx context.Context) {
 						itemName: item.Name,
 						metrics:  map[string]prometheus.Gauge{},
 					}
+					p.nodeCounterStats[item.Name] = stats
 
 					// add gauges with corresponding labels into vectors
 					for k, vec := range p.nodeCounterGaugeVecs {
@@ -502,6 +506,7 @@ func (p *Plugin) updatePrometheus(ctx context.Context) {
 						name:    item.InterfaceName,
 						metrics: map[string]prometheus.Gauge{},
 					}
+					p.ifCounterStats[item.InterfaceName] = stats
 
 					// add gauges with corresponding labels into vectors
 					for k, vec := range p.ifCounterGaugeVecs {
