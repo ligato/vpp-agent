@@ -18,7 +18,6 @@ import (
 	"context"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/golang/protobuf/proto"
 	prototypes "github.com/golang/protobuf/ptypes/empty"
@@ -35,11 +34,6 @@ const (
 	// InterfaceWatcherName is the name of the descriptor watching Linux interfaces
 	// in the default namespace.
 	InterfaceWatcherName = "linux-interface-watcher"
-
-	// notificationDelay specifies how long to delay notification when interface changes.
-	// Typically interface is created in multiple stages and we do not want to notify
-	// scheduler about intermediate states.
-	notificationDelay = 500 * time.Millisecond
 )
 
 // InterfaceWatcher watches default namespace for newly added/removed Linux interfaces.
@@ -58,9 +52,6 @@ type InterfaceWatcher struct {
 	ifacesMu sync.Mutex
 	ifaces   map[string]struct{}
 
-	// interface changes delayed to give Linux time to "finalize" them
-	pendingIntfs map[string]bool // interface name -> exists?
-
 	// conditional variable to check if the list of interfaces is in-sync with
 	// Linux network stack
 	intfsInSync     bool
@@ -74,13 +65,12 @@ type InterfaceWatcher struct {
 // NewInterfaceWatcher creates a new instance of the Interface Watcher.
 func NewInterfaceWatcher(kvscheduler kvs.KVScheduler, ifHandler linuxcalls.NetlinkAPI, log logging.PluginLogger) *InterfaceWatcher {
 	descriptor := &InterfaceWatcher{
-		log:          log.NewLogger("if-watcher"),
-		kvscheduler:  kvscheduler,
-		ifHandler:    ifHandler,
-		ifaces:       make(map[string]struct{}),
-		pendingIntfs: make(map[string]bool),
-		notifCh:      make(chan netlink.LinkUpdate),
-		doneCh:       make(chan struct{}),
+		log:         log.NewLogger("if-watcher"),
+		kvscheduler: kvscheduler,
+		ifHandler:   ifHandler,
+		ifaces:      make(map[string]struct{}),
+		notifCh:     make(chan netlink.LinkUpdate),
+		doneCh:      make(chan struct{}),
 	}
 	descriptor.intfsInSyncCond = sync.NewCond(&descriptor.ifacesMu)
 	descriptor.ctx, descriptor.cancel = context.WithCancel(context.Background())
@@ -185,59 +175,14 @@ func (w *InterfaceWatcher) processLinkNotification(linkUpdate netlink.LinkUpdate
 	defer w.ifacesMu.Unlock()
 
 	ifName := linkUpdate.Attrs().Name
-	isEnabled := linkUpdate.Attrs().OperState != netlink.OperDown &&
-		linkUpdate.Attrs().OperState != netlink.OperNotPresent
+	isUp := isLinkUp(linkUpdate)
 
-	_, isPendingNotif := w.pendingIntfs[ifName]
-	if isPendingNotif {
-		// notification for this interface is already scheduled, just update the state
-		w.pendingIntfs[ifName] = isEnabled
-		return
-	}
-
-	if !w.needsUpdate(ifName, isEnabled) {
+	if !w.needsUpdate(ifName, isUp) {
 		// ignore notification if the interface admin status remained the same
 		return
 	}
 
-	if isEnabled {
-		// do not notify until interface is truly finished
-		w.pendingIntfs[ifName] = true
-		w.wg.Add(1)
-		go w.delayNotification(ifName)
-		return
-	}
-
-	// notification about removed interface is propagated immediately
-	w.notifyScheduler(ifName, false)
-}
-
-// delayNotification delays notification about enabled interface - typically
-// interface is created in multiple stages and we do not want to notify scheduler
-// about intermediate states.
-func (w *InterfaceWatcher) delayNotification(ifName string) {
-	defer w.wg.Done()
-
-	select {
-	case <-w.ctx.Done():
-		return
-	case <-time.After(notificationDelay):
-		w.applyDelayedNotification(ifName)
-	}
-}
-
-// applyDelayedNotification applies delayed interface notification.
-func (w *InterfaceWatcher) applyDelayedNotification(ifName string) {
-	w.ifacesMu.Lock()
-	defer w.ifacesMu.Unlock()
-
-	// in the meantime the status may have changed and may not require update anymore
-	isEnabled := w.pendingIntfs[ifName]
-	if w.needsUpdate(ifName, isEnabled) {
-		w.notifyScheduler(ifName, isEnabled)
-	}
-
-	delete(w.pendingIntfs, ifName)
+	w.notifyScheduler(ifName, isUp)
 }
 
 // notifyScheduler notifies scheduler about interface change.
@@ -251,14 +196,21 @@ func (w *InterfaceWatcher) notifyScheduler(ifName string, enabled bool) {
 		delete(w.ifaces, ifName)
 	}
 
-	w.kvscheduler.PushSBNotification(kvs.KVWithMetadata{
+	if err := w.kvscheduler.PushSBNotification(kvs.KVWithMetadata{
 		Key:      ifmodel.InterfaceHostNameKey(ifName),
 		Value:    value,
 		Metadata: nil,
-	})
+	}); err != nil {
+		w.log.Warnf("pushing SB notification failed: %v", err)
+	}
 }
 
 func (w *InterfaceWatcher) needsUpdate(ifName string, isEnabled bool) bool {
 	_, wasEnabled := w.ifaces[ifName]
 	return isEnabled != wasEnabled
+}
+
+func isLinkUp(update netlink.LinkUpdate) bool {
+	return update.Attrs().OperState != netlink.OperDown &&
+		update.Attrs().OperState != netlink.OperNotPresent
 }
