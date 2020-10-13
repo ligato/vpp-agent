@@ -39,6 +39,9 @@ const (
 
 	// DisableIPv6SysctlTemplate is used to enable ipv6 via sysctl.
 	DisableIPv6SysctlTemplate = "net.ipv6.conf.%s.disable_ipv6"
+
+	// dependency labels
+	interfaceVrfDep = "interface-assigned-to-vrf"
 )
 
 // InterfaceAddressDescriptor (un)assigns IP address to/from Linux interface.
@@ -77,18 +80,18 @@ func (d *InterfaceAddressDescriptor) SetInterfaceIndex(intfIndex ifaceidx.LinuxI
 	d.intfIndex = intfIndex
 }
 
-// IsInterfaceVrfKey returns true if the key represents assignment of an IP address
+// IsInterfaceAddressKey returns true if the key represents assignment of an IP address
 // to a Linux interface (that needs to be applied). KVs representing addresses
 // already allocated from netalloc plugin are excluded.
 func (d *InterfaceAddressDescriptor) IsInterfaceAddressKey(key string) bool {
-	_, _, source, _, isAddrKey := interfaces.ParseInterfaceAddressKey(key)
+	_, _, _, source, _, isAddrKey := interfaces.ParseInterfaceAddressKey(key)
 	return isAddrKey &&
 		(source == netalloc_api.IPAddressSource_STATIC || source == netalloc_api.IPAddressSource_ALLOC_REF)
 }
 
 // Validate validates IP address to be assigned to an interface.
 func (d *InterfaceAddressDescriptor) Validate(key string, emptyVal proto.Message) (err error) {
-	iface, addr, _, invalidKey, _ := interfaces.ParseInterfaceAddressKey(key)
+	iface, addr, _, _, invalidKey, _ := interfaces.ParseInterfaceAddressKey(key)
 	if invalidKey {
 		return errors.New("invalid key")
 	}
@@ -98,7 +101,7 @@ func (d *InterfaceAddressDescriptor) Validate(key string, emptyVal proto.Message
 
 // Create assigns IP address to an interface.
 func (d *InterfaceAddressDescriptor) Create(key string, emptyVal proto.Message) (metadata kvs.Metadata, err error) {
-	iface, addr, _, _, _ := interfaces.ParseInterfaceAddressKey(key)
+	iface, addr, _, _, _, _ := interfaces.ParseInterfaceAddressKey(key)
 
 	ifMeta, found := d.intfIndex.LookupByName(iface)
 	if !found {
@@ -157,7 +160,7 @@ func (d *InterfaceAddressDescriptor) Create(key string, emptyVal proto.Message) 
 
 // Delete unassigns IP address from an interface.
 func (d *InterfaceAddressDescriptor) Delete(key string, emptyVal proto.Message, metadata kvs.Metadata) (err error) {
-	iface, addr, _, _, _ := interfaces.ParseInterfaceAddressKey(key)
+	iface, addr, _, _, _, _ := interfaces.ParseInterfaceAddressKey(key)
 
 	ifMeta, found := d.intfIndex.LookupByName(iface)
 	if !found {
@@ -192,13 +195,18 @@ func (d *InterfaceAddressDescriptor) Delete(key string, emptyVal proto.Message, 
 	return err
 }
 
-// Dependencies mentions potential allocation of the IP address as dependency.
+// Dependencies mentions (non-default) VRF and a potential allocation of the IP address as dependencies.
 func (d *InterfaceAddressDescriptor) Dependencies(key string, emptyVal proto.Message) (deps []kvs.Dependency) {
-	iface, addr, _, _, _ := interfaces.ParseInterfaceAddressKey(key)
+	iface, addr, vrf, _, _, _ := interfaces.ParseInterfaceAddressKey(key)
+	if vrf != "" {
+		deps = append(deps, kvs.Dependency{
+			Label: interfaceVrfDep,
+			Key:   interfaces.InterfaceVrfKey(iface, vrf),
+		})
+	}
 	allocDep, hasAllocDep := d.addrAlloc.GetAddressAllocDep(addr, iface, "")
 	if hasAllocDep {
 		deps = append(deps, allocDep)
 	}
-
 	return deps
 }

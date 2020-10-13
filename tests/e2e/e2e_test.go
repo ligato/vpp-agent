@@ -364,21 +364,21 @@ func (ctx *TestCtx) stopMicroservice(msName string) {
 }
 
 // pingFromMs pings <dstAddress> from the microservice <msName>
-func (ctx *TestCtx) pingFromMs(msName, dstAddress string) error {
+func (ctx *TestCtx) pingFromMs(msName, dstAddress string, opts... pingOpt) error {
 	ctx.t.Helper()
 	ms, found := ctx.microservices[msName]
 	if !found {
 		// bug inside a test
 		ctx.t.Fatalf("cannot ping from unknown microservice '%s'", msName)
 	}
-	return ms.ping(dstAddress)
+	return ms.ping(dstAddress, opts...)
 }
 
 // pingFromMsClb can be used to ping repeatedly inside the assertions "Eventually"
 // and "Consistently" from Omega.
-func (ctx *TestCtx) pingFromMsClb(msName, dstAddress string) func() error {
+func (ctx *TestCtx) pingFromMsClb(msName, dstAddress string, opts... pingOpt) func() error {
 	return func() error {
-		return ctx.pingFromMs(msName, dstAddress)
+		return ctx.pingFromMs(msName, dstAddress, opts...)
 	}
 }
 

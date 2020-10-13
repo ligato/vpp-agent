@@ -45,18 +45,26 @@ type retrievedRoutes struct {
 // interface.
 // <interfaceIdx> works as filter, if set to zero, all routes in the namespace
 // are returned.
-func (h *NetLinkHandler) GetRoutes(interfaceIdx int) (v4Routes, v6Routes []netlink.Route, err error) {
-	var link netlink.Link
-	if interfaceIdx != 0 {
-		// netlink.RouteList reads only link index
-		link = &netlink.Dummy{LinkAttrs: netlink.LinkAttrs{Index: interfaceIdx}}
+func (h *NetLinkHandler) GetRoutes(interfaceIdx, table int) (v4Routes, v6Routes []netlink.Route, err error) {
+	var routeFilter *netlink.Route
+	var filterMask uint64
+	if interfaceIdx != 0 || table != 0 {
+		routeFilter = &netlink.Route{
+			LinkIndex: interfaceIdx,
+			Table:     table,
+		}
+		if interfaceIdx != 0 {
+			filterMask |= netlink.RT_FILTER_OIF
+		}
+		if table != 0 {
+			filterMask |= netlink.RT_FILTER_TABLE
+		}
 	}
-
-	v4Routes, err = netlink.RouteList(link, netlink.FAMILY_V4)
+	v4Routes, err = netlink.RouteListFiltered(netlink.FAMILY_V4, routeFilter, filterMask)
 	if err != nil {
 		return
 	}
-	v6Routes, err = netlink.RouteList(link, netlink.FAMILY_V6)
+	v6Routes, err = netlink.RouteListFiltered(netlink.FAMILY_V6, routeFilter, filterMask)
 	return
 }
 
@@ -112,6 +120,15 @@ func (h *NetLinkHandler) retrieveRoutes(interfaces []string, goRoutineIdx, goRou
 			break
 		}
 
+		// obtain the associated routing table
+		var table int
+		if ifMeta.VrfMasterIf != "" {
+			vrfMeta, found := h.ifIndexes.LookupByName(ifMeta.VrfMasterIf)
+			if found {
+				table = int(vrfMeta.VrfDevRT)
+			}
+		}
+
 		// switch to the namespace of the interface
 		revertNs, err := h.nsPlugin.SwitchToNamespace(nsCtx, ifMeta.Namespace)
 		if err != nil {
@@ -124,7 +141,7 @@ func (h *NetLinkHandler) retrieveRoutes(interfaces []string, goRoutineIdx, goRou
 		}
 
 		// get routes assigned to this interface
-		v4Routes, v6Routes, err := h.GetRoutes(ifMeta.LinuxIfIndex)
+		v4Routes, v6Routes, err := h.GetRoutes(ifMeta.LinuxIfIndex, table)
 		revertNs()
 		if err != nil {
 			retrieved.err = err
@@ -163,6 +180,7 @@ func (h *NetLinkHandler) retrieveRoutes(interfaces []string, goRoutineIdx, goRou
 					NetlinkScope:   route.Scope,
 					Protocol:       uint32(route.Protocol),
 					MTU:            uint32(route.MTU),
+					Table:          uint32(route.Table),
 				},
 			})
 		}

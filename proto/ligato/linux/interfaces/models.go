@@ -66,11 +66,21 @@ const (
 
 	// interfaceAddressKeyPrefix is used as a common prefix for keys derived from
 	// interfaces to represent assigned IP addresses.
-	interfaceAddressKeyPrefix = "linux/interface/{iface}/address/"
+	interfaceAddrKeyPrefix = "linux/interface/{iface}/address/"
 
-	// interfaceAddressKeyTemplate is a template for (derived) key representing IP address
+	// interfaceAddrKeyTmpl is a template for (derived) key representing IP address
 	// (incl. mask) assigned to a Linux interface (referenced by the logical name).
-	interfaceAddressKeyTemplate = interfaceAddressKeyPrefix + "{address-source}/{address}"
+	interfaceAddrKeyTmpl = interfaceAddrKeyPrefix + "{address-source}/{address}"
+
+	// interfaceAddrKeyTmplWithVrf is extended template for keys of derived
+	// interface addresses which also includes the VRF name.
+	interfaceAddrKeyTmplWithVrf = interfaceAddrKeyTmpl + "/vrf/{vrf}"
+
+	/* Interface VRF (derived) */
+
+	// interfaceVrfKeyTmpl is a template for (derived) key representing assignment
+	// of a Linux interface into a VRF.
+	interfaceVrfKeyTmpl = "linux/interface/{iface}/vrf/{vrf}"
 )
 
 const (
@@ -125,11 +135,13 @@ func InterfaceAddressPrefix(iface string) string {
 	if iface == "" {
 		iface = InvalidKeyPart
 	}
-	return strings.Replace(interfaceAddressKeyPrefix, "{iface}", iface, 1)
+	return strings.Replace(interfaceAddrKeyPrefix, "{iface}", iface, 1)
 }
 
 // InterfaceAddressKey returns key representing IP address assigned to Linux interface.
-func InterfaceAddressKey(iface string, address string, source netalloc.IPAddressSource) string {
+// With undefined vrf the returned key can be also used as a key prefix, matching derived
+// interface address key regardless of the VRF to which it belongs.
+func InterfaceAddressKey(iface, address, vrf string, source netalloc.IPAddressSource) string {
 	if iface == "" {
 		iface = InvalidKeyPart
 	}
@@ -144,25 +156,35 @@ func InterfaceAddressKey(iface string, address string, source netalloc.IPAddress
 	src = strings.ToLower(src)
 
 	// construct key without validating the IP address
-	key := strings.Replace(interfaceAddressKeyTemplate, "{iface}", iface, 1)
+	tmpl := interfaceAddrKeyTmpl
+	if vrf != "" {
+		tmpl = interfaceAddrKeyTmplWithVrf
+	}
+	key := strings.Replace(tmpl, "{iface}", iface, 1)
 	key = strings.Replace(key, "{address-source}", src, 1)
 	key = strings.Replace(key, "{address}", address, 1)
+	if vrf != "" {
+		key = strings.Replace(key, "{vrf}", vrf, 1)
+	}
 	return key
 }
 
 // ParseInterfaceAddressKey parses interface address from key derived
 // from interface by InterfaceAddressKey().
-func ParseInterfaceAddressKey(key string) (iface, address string, source netalloc.IPAddressSource, invalidKey, isAddrKey bool) {
+func ParseInterfaceAddressKey(key string) (iface, address, vrf string, source netalloc.IPAddressSource, invalidKey, isAddrKey bool) {
 	parts := strings.Split(key, "/")
 	if len(parts) < 4 || parts[0] != "linux" || parts[1] != "interface" {
 		return
 	}
 
 	addrIdx := -1
+	vrfIdx := len(parts)
 	for idx, part := range parts {
-		if part == "address" {
+		switch part {
+		case "address":
 			addrIdx = idx
-			break
+		case "vrf":
+			vrfIdx = idx
 		}
 	}
 	if addrIdx == -1 {
@@ -193,10 +215,73 @@ func ParseInterfaceAddressKey(key string) (iface, address string, source netallo
 	source = netalloc.IPAddressSource(srcInt)
 
 	// return address as is (not parsed - this is done by the netalloc plugin)
-	address = strings.Join(parts[addrIdx+2:], "/")
+	address = strings.Join(parts[addrIdx+2:vrfIdx], "/")
 	if address == "" {
 		invalidKey = true
 	}
+
+	// parse vrf
+	if vrfIdx < len(parts) {
+		if vrfIdx == len(parts)-1 {
+			invalidKey = true
+			return
+		}
+		vrf = parts[vrfIdx+1]
+	}
+	return
+}
+
+// InterfaceVrfKey returns key representing assignment of a Linux interface into a VRF.
+func InterfaceVrfKey(iface, vrf string) string {
+	if iface == "" {
+		iface = InvalidKeyPart
+	}
+	if vrf == "" {
+		vrf = InvalidKeyPart
+	}
+
+	key := strings.Replace(interfaceVrfKeyTmpl, "{iface}", iface, 1)
+	key = strings.Replace(key, "{vrf}", vrf, 1)
+	return key
+}
+
+// ParseInterfaceVrfKey parses interface VRF from key derived
+// from interface by InterfaceVrfKey().
+func ParseInterfaceVrfKey(key string) (iface, vrf string, invalidKey, isVrfKey bool) {
+	parts := strings.Split(key, "/")
+	if len(parts) < 4 || parts[0] != "linux" || parts[1] != "interface" {
+		return
+	}
+
+	vrfIdx := -1
+	for idx, part := range parts {
+		switch part {
+		case "address":
+			// avoid collision with InterfaceAddressKey
+			return
+		case "vrf":
+			vrfIdx = idx
+		}
+	}
+	if vrfIdx == -1 {
+		return
+	}
+	isVrfKey = true
+
+	// parse interface name
+	iface = strings.Join(parts[2:vrfIdx], "/")
+	if iface == "" {
+		iface = InvalidKeyPart
+		invalidKey = true
+	}
+
+	// parse VRF
+	if vrfIdx == len(parts)-1 {
+		invalidKey = true
+		vrf = InvalidKeyPart
+		return
+	}
+	vrf = parts[vrfIdx+1]
 	return
 }
 

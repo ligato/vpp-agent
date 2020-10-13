@@ -68,6 +68,8 @@ type LinuxIfMetadata struct {
 	VPPTapName   string // empty for VETHs
 	Namespace    *linux_namespace.NetNamespace
 	HostIfName   string
+	VrfMasterIf  string
+	VrfDevRT     uint32 // only set for VRF_DEVICE
 }
 
 // LinuxIfMetadataIndexDto represents an item sent through watch channel in LinuxIfMetadataIndex.

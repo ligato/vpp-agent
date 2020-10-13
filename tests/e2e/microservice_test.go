@@ -34,6 +34,13 @@ type microservice struct {
 	nsCalls      nslinuxcalls.NetworkNamespaceAPI
 }
 
+type pingOpts struct {
+	allowedLoss int
+	outIface    string
+}
+
+type pingOpt func(opts *pingOpts)
+
 func createMicroservice(ctx *TestCtx, msName string, dockerClient *docker.Client, nsCalls nslinuxcalls.NetworkNamespaceAPI) *microservice {
 	container, err := dockerClient.CreateContainer(docker.CreateContainerOptions{
 		Name: msNamePrefix + msName,
@@ -162,11 +169,34 @@ func (ms *microservice) enterNetNs() (exitNetNs func()) {
 	}
 }
 
-// ping <destAddress> from inside of the microservice.
-func (ms *microservice) ping(destAddress string, allowedLoss ...int) error {
-	ms.ctx.t.Helper()
+func pingWithAllowedLoss(maxLoss int) pingOpt {
+	return func(opts *pingOpts) {
+		opts.allowedLoss = maxLoss
+	}
+}
 
-	stdout, err := ms.exec("ping", "-w", "4", destAddress)
+func pingWithOutInterface(iface string) pingOpt {
+	return func(opts *pingOpts) {
+		opts.outIface = iface
+	}
+}
+
+// ping <destAddress> from inside of the microservice.
+func (ms *microservice) ping(destAddress string, opts... pingOpt) error {
+	ms.ctx.t.Helper()
+	params := &pingOpts{
+		allowedLoss: 49, // by default at least half of the packets should get through
+	}
+	for _, o := range opts {
+		o(params)
+	}
+
+	args := []string{"-w", "4"}
+	if params.outIface != "" {
+		args = append(args, "-I", params.outIface)
+	}
+	args = append(args, destAddress)
+	stdout, err := ms.exec("ping", args...)
 	if err != nil {
 		return err
 	}
@@ -179,11 +209,7 @@ func (ms *microservice) ping(destAddress string, allowedLoss ...int) error {
 	ms.ctx.logger.Printf("Linux ping %s: sent=%d, received=%d, loss=%d%%",
 		destAddress, sent, recv, loss)
 
-	maxLoss := 49 // by default at least half of the packets should ge through
-	if len(allowedLoss) > 0 {
-		maxLoss = allowedLoss[0]
-	}
-	if sent == 0 || loss > maxLoss {
+	if sent == 0 || loss > params.allowedLoss {
 		return fmt.Errorf("failed to ping '%s': %s", destAddress, matches[0])
 	}
 	return nil

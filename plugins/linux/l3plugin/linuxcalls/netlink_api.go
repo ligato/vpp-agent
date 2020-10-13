@@ -50,6 +50,7 @@ type RouteMeta struct {
 	NetlinkScope   netlink.Scope `json:"link_scope"`
 	Protocol       uint32        `json:"protocol"`
 	MTU            uint32        `json:"mtu"`
+	Table          uint32        `json:"table"`
 }
 
 // NetlinkAPI interface covers all methods inside linux calls package needed
@@ -89,11 +90,12 @@ type NetlinkAPIRead interface {
 	// with proto-modeled ARP data and additional metadata
 	DumpARPEntries() ([]*ArpDetails, error)
 
-	// GetRoutes reads all configured static routes with the given outgoing
-	// interface.
+	// GetRoutes reads all configured static routes inside the given table
+	// and with the given outgoing interface.
 	// <interfaceIdx> works as filter, if set to zero, all routes in the namespace
 	// are returned.
-	GetRoutes(interfaceIdx int) (v4Routes, v6Routes []netlink.Route, err error)
+	// Zero <table> represents the main routing table.
+	GetRoutes(interfaceIdx, table int) (v4Routes, v6Routes []netlink.Route, err error)
 
 	// DumpRoutes reads all route entries and returns them as details
 	// with proto-modeled route data and additional metadata

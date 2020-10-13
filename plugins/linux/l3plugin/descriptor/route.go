@@ -183,6 +183,21 @@ func (d *RouteDescriptor) updateRoute(route *linux_l3.Route, actionName string, 
 	// set link index
 	netlinkRoute.LinkIndex = ifMeta.LinuxIfIndex
 
+	// set routing table
+	if ifMeta.VrfMasterIf != "" {
+		// - route depends on interface having an IP address
+		// - IP address depends on the interface already being in the VRF
+		// - VRF assignment depends on the VRF device being configured
+		// => conclusion: VRF device is configured at this point
+		vrfMeta, found := d.ifPlugin.GetInterfaceIndex().LookupByName(ifMeta.VrfMasterIf)
+		if !found || vrfMeta == nil {
+			err = errors.Errorf("failed to obtain metadata for VRF device %s", ifMeta.VrfMasterIf)
+			d.log.Error(err)
+			return err
+		}
+		netlinkRoute.Table = int(vrfMeta.VrfDevRT)
+	}
+
 	// set destination network
 	dstNet, err := d.addrAlloc.GetOrParseIPAddress(route.DstNetwork, "",
 		netalloc_api.IPAddressForm_ADDR_NET)
@@ -274,9 +289,14 @@ func (d *RouteDescriptor) Dependencies(key string, route *linux_l3.Route) []kvs.
 		})
 		dependencies = append(dependencies, kvs.Dependency{
 			Label: allocatedAddrAttached,
-			Key: ifmodel.InterfaceAddressKey(
-				route.OutgoingInterface, d.addrAlloc.CreateAddressAllocRef(network, "", false),
-				netalloc_api.IPAddressSource_ALLOC_REF),
+			AnyOf: kvs.AnyOfDependency{
+				// match IP address assignment regardless of VRF (hence key prefix omitting suffix with vrf from the key)
+				KeyPrefixes: []string{
+					ifmodel.InterfaceAddressKey(
+						route.OutgoingInterface, d.addrAlloc.CreateAddressAllocRef(network, "", false),
+						"", netalloc_api.IPAddressSource_ALLOC_REF),
+				},
+			},
 		})
 	} else if gwAddr := net.ParseIP(getGwAddr(route)); gwAddr != nil && !gwAddr.IsUnspecified() {
 		// GW is not netalloc reference but an actual IP
@@ -296,7 +316,7 @@ func (d *RouteDescriptor) Dependencies(key string, route *linux_l3.Route) []kvs.
 						}
 						return false
 					}
-					ifName, address, source, _, isAddrKey := ifmodel.ParseInterfaceAddressKey(key)
+					ifName, address, _, source, _, isAddrKey := ifmodel.ParseInterfaceAddressKey(key)
 					if isAddrKey && source != netalloc_api.IPAddressSource_ALLOC_REF {
 						if _, network, err := net.ParseCIDR(address); err == nil && network.Contains(gwAddr) {
 							// GW address is inside the local network of the outgoing interface
@@ -308,10 +328,9 @@ func (d *RouteDescriptor) Dependencies(key string, route *linux_l3.Route) []kvs.
 				},
 			},
 		})
-	} else if route.OutgoingInterface != "" {
-		// route also requires the interface to be in the L3 mode (have at least one
-		// IP address assigned) - we set this only for routes without GW and other
-		// routes will inherit this dependency transitively through GW-reachability dep.
+	}
+	if route.OutgoingInterface != "" {
+		// route also requires the interface to be in the L3 mode (have at least one IP address assigned)
 		dependencies = append(dependencies, kvs.Dependency{
 			Label: routeOutInterfaceIPAddrDep,
 			AnyOf: kvs.AnyOfDependency{

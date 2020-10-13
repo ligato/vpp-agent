@@ -25,7 +25,7 @@ func (h *NetLinkHandler) AddRoute(route *netlink.Route) error {
 	return netlink.RouteAdd(route)
 }
 
-// ReplaceRoute removes the static route
+// ReplaceRoute replaces the static route
 func (h *NetLinkHandler) ReplaceRoute(route *netlink.Route) error {
 	return netlink.RouteReplace(route)
 }

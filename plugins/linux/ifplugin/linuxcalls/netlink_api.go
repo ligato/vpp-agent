@@ -72,6 +72,12 @@ type NetlinkAPI interface {
 
 	// AddVethInterfacePair configures two connected VETH interfaces
 	AddVethInterfacePair(ifName, peerIfName string) error
+	// AddVRFDevice configures new VRF network device.
+	AddVRFDevice(vrfDevName string, routingTable uint32) error
+	// PutInterfaceIntoVRF assigns Linux interface into a given VRF.
+	PutInterfaceIntoVRF(ifName, vrfDevName string) error
+	// RemoveInterfaceFromVRF un-assigns Linux interface from a given VRF.
+	RemoveInterfaceFromVRF(ifName, vrfDevName string) error
 	// DeleteInterface removes the given interface.
 	DeleteInterface(ifName string) error
 	// SetInterfaceUp sets interface state to 'up'
