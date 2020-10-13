@@ -126,6 +126,7 @@ func (svc *configuratorServer) Update(ctx context.Context, req *pb.UpdateRequest
 	}
 
 	if req.WaitDone {
+		waitStart := time.Now()
 		var pendingKeys []string
 		for _, res := range results {
 			if res.Status.GetState() == kvscheduler.ValueState_PENDING {
@@ -133,8 +134,7 @@ func (svc *configuratorServer) Update(ctx context.Context, req *pb.UpdateRequest
 			}
 		}
 		if len(pendingKeys) > 0 {
-			waitStart := time.Now()
-			svc.log.Infof("waiting for %d pending keys to be done", len(pendingKeys))
+			svc.log.Infof("waiting for %d pending keys", len(pendingKeys))
 			for len(pendingKeys) > 0 {
 				select {
 				case <-time.After(waitDoneCheckPendingPeriod):
@@ -144,10 +144,10 @@ func (svc *configuratorServer) Update(ctx context.Context, req *pb.UpdateRequest
 					return nil, ctx.Err()
 				}
 			}
-			svc.log.Infof("finished waiting for pending keys to be done (took %v)", time.Since(waitStart))
 		} else {
 			svc.log.Debugf("no pendings keys to wait for")
 		}
+		svc.log.Infof("finished waiting for done (took %v)", time.Since(waitStart))
 	}
 
 	svc.log.Debugf("config update finished with %d results", len(results))
