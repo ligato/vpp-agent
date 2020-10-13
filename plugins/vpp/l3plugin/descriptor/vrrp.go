@@ -15,10 +15,12 @@
 package descriptor
 
 import (
+	"math"
 	"net"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
+
 	"go.ligato.io/cn-infra/v2/logging"
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 	ifdescriptor "go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/descriptor"
@@ -35,9 +37,6 @@ const (
 	// Dependency labels.
 	vrrpEntryInterfaceDep    = "interface-exists"
 	vrrpDescriptorLoggerName = "vrrp-descriptor"
-
-	maxUint8  = 255
-	maxUint16 = 65535
 
 	// The minimum value in milliseconds that can be used as interval.
 	centisecondInMilliseconds = 10
@@ -94,19 +93,19 @@ func (d *VrrpDescriptor) Validate(key string, vrrp *l3.VRRPEntry) error {
 		return kvs.NewInvalidValueError(ErrMissingInterface, "interface")
 	}
 
-	if len(vrrp.IpAddresses) > maxUint8 || len(vrrp.IpAddresses) == 0 {
+	if len(vrrp.IpAddresses) > math.MaxUint8 || len(vrrp.IpAddresses) == 0 {
 		return kvs.NewInvalidValueError(ErrInvalidAddrNum, "ip_addresses")
 	}
 
-	if vrrp.GetVrId() > maxUint8 || vrrp.GetVrId() == 0 {
+	if vrrp.GetVrId() > math.MaxUint8 || vrrp.GetVrId() == 0 {
 		return kvs.NewInvalidValueError(ErrInvalidVrID, "vr_id")
 	}
 
-	if vrrp.GetPriority() > maxUint8 || vrrp.GetPriority() == 0 {
+	if vrrp.GetPriority() > math.MaxUint8 || vrrp.GetPriority() == 0 {
 		return kvs.NewInvalidValueError(ErrInvalidPriority, "priority")
 	}
 
-	if vrrp.GetInterval() > maxUint16 || vrrp.GetInterval() < centisecondInMilliseconds {
+	if vrrp.GetInterval() > math.MaxUint16 || vrrp.GetInterval() < centisecondInMilliseconds {
 		return kvs.NewInvalidValueError(ErrInvalidInterval, "interval")
 	}
 
