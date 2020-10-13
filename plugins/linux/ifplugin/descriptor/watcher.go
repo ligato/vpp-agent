@@ -18,7 +18,6 @@ import (
 	"context"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/golang/protobuf/proto"
 	prototypes "github.com/golang/protobuf/ptypes/empty"
@@ -35,11 +34,6 @@ const (
 	// InterfaceWatcherName is the name of the descriptor watching Linux interfaces
 	// in the default namespace.
 	InterfaceWatcherName = "linux-interface-watcher"
-
-	// notificationDelay specifies how long to delay notification when interface changes.
-	// Typically interface is created in multiple stages and we do not want to notify
-	// scheduler about intermediate states.
-	notificationDelay = 500 * time.Millisecond
 )
 
 // InterfaceWatcher watches default namespace for newly added/removed Linux interfaces.
@@ -204,7 +198,7 @@ func (w *InterfaceWatcher) processLinkNotification(linkUpdate netlink.LinkUpdate
 		// do not notify until interface is truly finished
 		w.pendingIntfs[ifName] = true
 		w.wg.Add(1)
-		go w.delayNotification(ifName)
+		go w.applyDelayedNotification(ifName)
 		return
 	}
 
@@ -212,24 +206,18 @@ func (w *InterfaceWatcher) processLinkNotification(linkUpdate netlink.LinkUpdate
 	w.notifyScheduler(ifName, false)
 }
 
-// delayNotification delays notification about enabled interface - typically
-// interface is created in multiple stages and we do not want to notify scheduler
-// about intermediate states.
-func (w *InterfaceWatcher) delayNotification(ifName string) {
+// applyDelayedNotification applies delayed interface notification.
+func (w *InterfaceWatcher) applyDelayedNotification(ifName string) {
 	defer w.wg.Done()
+
+	w.ifacesMu.Lock()
+	defer w.ifacesMu.Unlock()
 
 	select {
 	case <-w.ctx.Done():
 		return
-	case <-time.After(notificationDelay):
-		w.applyDelayedNotification(ifName)
+	default:
 	}
-}
-
-// applyDelayedNotification applies delayed interface notification.
-func (w *InterfaceWatcher) applyDelayedNotification(ifName string) {
-	w.ifacesMu.Lock()
-	defer w.ifacesMu.Unlock()
 
 	// in the meantime the status may have changed and may not require update anymore
 	isEnabled := w.pendingIntfs[ifName]
@@ -251,11 +239,13 @@ func (w *InterfaceWatcher) notifyScheduler(ifName string, enabled bool) {
 		delete(w.ifaces, ifName)
 	}
 
-	w.kvscheduler.PushSBNotification(kvs.KVWithMetadata{
+	if err := w.kvscheduler.PushSBNotification(kvs.KVWithMetadata{
 		Key:      ifmodel.InterfaceHostNameKey(ifName),
 		Value:    value,
 		Metadata: nil,
-	})
+	}); err != nil {
+		w.log.Warnf("pushing SB notification failed: %v", err)
+	}
 }
 
 func (w *InterfaceWatcher) needsUpdate(ifName string, isEnabled bool) bool {
