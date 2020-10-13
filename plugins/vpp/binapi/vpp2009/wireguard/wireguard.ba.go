@@ -10,12 +10,12 @@
 package wireguard
 
 import (
-	interface_types "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/interface_types"
-	ip_types "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/ip_types"
 	"strconv"
 
 	api "git.fd.io/govpp.git/api"
 	codec "git.fd.io/govpp.git/codec"
+	interface_types "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/interface_types"
+	ip_types "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/ip_types"
 )
 
 // This is a compile-time assertion to ensure that this generated file
