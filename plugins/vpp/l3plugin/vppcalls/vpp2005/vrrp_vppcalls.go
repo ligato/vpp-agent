@@ -23,10 +23,14 @@ import (
 	l3 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3"
 )
 
+const (
+	centiMilliRatio uint32 = 10
+)
+
 func (h *VrrpVppHandler) vppAddDelVrrp(entry *l3.VRRPEntry, isAdd uint8) error {
 	var addrs []ip_types.Address
 	var isIpv6 bool
-	for idx, addr := range entry.IpAdresses {
+	for idx, addr := range entry.IpAddresses {
 		ip, err := ipToAddress(addr)
 		if err != nil {
 			return err
@@ -63,7 +67,7 @@ func (h *VrrpVppHandler) vppAddDelVrrp(entry *l3.VRRPEntry, isAdd uint8) error {
 		SwIfIndex: interface_types.InterfaceIndex(md.SwIfIndex),
 		VrID:      uint8(entry.GetVrId()),
 		Priority:  uint8(entry.GetPriority()),
-		Interval:  uint16(entry.GetInterval()),
+		Interval:  uint16(entry.GetInterval() / centiMilliRatio),
 		Flags:     vrrp.VrrpVrFlags(flags),
 		NAddrs:    uint8(len(addrs)),
 		Addrs:     addrs,
@@ -95,7 +99,7 @@ func (h *VrrpVppHandler) vppStartStopVrrp(entry *l3.VRRPEntry, isStart uint8) er
 	}
 
 	var isIpv6 bool
-	for idx, addr := range entry.IpAdresses {
+	for idx, addr := range entry.IpAddresses {
 		ip, err := ipToAddress(addr)
 		if err != nil {
 			return err

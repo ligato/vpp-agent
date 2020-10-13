@@ -44,19 +44,14 @@ func (h *VrrpVppHandler) DumpVrrpEntries() (entries []*l3.VRRPEntry, err error) 
 			h.log.Warnf("VRRP dump: interface name not found for index %d", vrrpDetails.Config.SwIfIndex)
 		}
 
-		var isEnabled, isPreempt, isUnicast, isAccept bool
+		var isEnabled bool
 		if vrrpDetails.Runtime.State != vrrp.VRRP_API_VR_STATE_INIT {
 			isEnabled = true
 		}
-		if uintToBool(uint8(vrrpDetails.Config.Flags & vrrp.VRRP_API_VR_PREEMPT)) {
-			isPreempt = true
-		}
-		if uintToBool(uint8(vrrpDetails.Config.Flags & vrrp.VRRP_API_VR_ACCEPT)) {
-			isAccept = true
-		}
-		if uintToBool(uint8(vrrpDetails.Config.Flags & vrrp.VRRP_API_VR_UNICAST)) {
-			isUnicast = true
-		}
+
+		isPreempt := (vrrpDetails.Config.Flags & vrrp.VRRP_API_VR_PREEMPT) == vrrp.VRRP_API_VR_PREEMPT
+		isAccept := (vrrpDetails.Config.Flags & vrrp.VRRP_API_VR_ACCEPT) == vrrp.VRRP_API_VR_ACCEPT
+		isUnicast := (vrrpDetails.Config.Flags & vrrp.VRRP_API_VR_UNICAST) == vrrp.VRRP_API_VR_UNICAST
 
 		ipStrs := make([]string, 0, len(vrrpDetails.Addrs))
 		for _, v := range vrrpDetails.Addrs {
@@ -71,15 +66,15 @@ func (h *VrrpVppHandler) DumpVrrpEntries() (entries []*l3.VRRPEntry, err error) 
 
 		// VRRP entry
 		vrrp := &l3.VRRPEntry{
-			Interface:  ifName,
-			VrId:       uint32(vrrpDetails.Config.VrID),
-			Priority:   uint32(vrrpDetails.Config.Priority),
-			Interval:   uint32(vrrpDetails.Config.Interval),
-			Preempt:    isPreempt,
-			Accept:     isAccept,
-			Unicast:    isUnicast,
-			IpAdresses: ipStrs,
-			Enabled:    isEnabled,
+			Interface:   ifName,
+			VrId:        uint32(vrrpDetails.Config.VrID),
+			Priority:    uint32(vrrpDetails.Config.Priority),
+			Interval:    uint32(vrrpDetails.Config.Interval) * centiMilliRatio,
+			Preempt:     isPreempt,
+			Accept:      isAccept,
+			Unicast:     isUnicast,
+			IpAddresses: ipStrs,
+			Enabled:     isEnabled,
 		}
 
 		entries = append(entries, vrrp)

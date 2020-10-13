@@ -10,7 +10,8 @@ message VRRPEntry {
     uint32 vr_id = 2;
     // Priority defines which router becomes master.
     uint32 priority = 3;
-    // VR advertisement interval in centiseconds.
+    // VR advertisement interval in milliseconds, should be => 10. 
+    // (Later, in implemetation it is converted into centiseconds, so precision may be lost).
     uint32 interval = 4;
     // Controls whether a (starting or restarting) 
     // higher-priority Backup router preempts a lower-priority Master router.
@@ -25,6 +26,6 @@ message VRRPEntry {
     // the use of token ring functional addresses.
     bool unicast = 7;
 
-    repeated string ip_adresses = 8;
+    repeated string ip_addresses = 8;
     bool enabled = 9;
 }

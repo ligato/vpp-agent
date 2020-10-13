@@ -2,7 +2,7 @@
 set -eu
 
 # compile test
-# go test -c ./tests/integration/vpp -o ./tests/integration/vpp/vpp-integration.test
+go test -c ./tests/integration/vpp -o ./tests/integration/vpp/vpp-integration.test
 
 # start vpp image
 cid=$(docker run -d -it \

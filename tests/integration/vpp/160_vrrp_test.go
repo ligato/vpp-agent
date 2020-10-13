@@ -50,60 +50,60 @@ func TestVrrp(t *testing.T) {
 		{
 			name: "Create VRRP entry (IPv4)",
 			vrrp: &l3.VRRPEntry{
-				Interface:  "if0",
-				VrId:       1,
-				Priority:   100,
-				Interval:   150,
-				Preempt:    false,
-				Accept:     false,
-				Unicast:    false,
-				IpAdresses: []string{"11.11.11.11"},
-				Enabled:    false,
+				Interface:   "if0",
+				VrId:        1,
+				Priority:    100,
+				Interval:    150,
+				Preempt:     false,
+				Accept:      false,
+				Unicast:     false,
+				IpAddresses: []string{"11.11.11.11"},
+				Enabled:     false,
 			},
 			shouldFail: false,
 		},
 		{
 			name: "Create VRRP entry (IPv4)",
 			vrrp: &l3.VRRPEntry{
-				Interface:  "if1",
-				VrId:       1,
-				Priority:   200,
-				Interval:   150,
-				Preempt:    false,
-				Accept:     false,
-				Unicast:    false,
-				IpAdresses: []string{"22.2.22.22"},
-				Enabled:    false,
+				Interface:   "if1",
+				VrId:        1,
+				Priority:    200,
+				Interval:    150,
+				Preempt:     false,
+				Accept:      false,
+				Unicast:     false,
+				IpAddresses: []string{"22.2.22.22"},
+				Enabled:     false,
 			},
 			shouldFail: false,
 		},
 		{
 			name: "Create VRRP entry (IPv6)",
 			vrrp: &l3.VRRPEntry{
-				Interface:  "if2",
-				VrId:       33,
-				Priority:   200,
-				Interval:   200,
-				Preempt:    false,
-				Accept:     false,
-				Unicast:    false,
-				IpAdresses: []string{"2001:db8:11a3:9d7:1f34:8a2e:7a0:765d"},
-				Enabled:    false,
+				Interface:   "if2",
+				VrId:        33,
+				Priority:    200,
+				Interval:    200,
+				Preempt:     false,
+				Accept:      false,
+				Unicast:     false,
+				IpAddresses: []string{"2001:db8:11a3:9d7:1f34:8a2e:7a0:765d"},
+				Enabled:     false,
 			},
 			shouldFail: false,
 		},
 		{
 			name: "Create VRRP entry (IPv6)",
 			vrrp: &l3.VRRPEntry{
-				Interface:  "if3",
-				VrId:       33,
-				Priority:   100,
-				Interval:   0,
-				Preempt:    false,
-				Accept:     false,
-				Unicast:    false,
-				IpAdresses: []string{"2001:db8:11a3:9d7:1f34:8a2e:7a0:765d"},
-				Enabled:    false,
+				Interface:   "if3",
+				VrId:        33,
+				Priority:    100,
+				Interval:    0,
+				Preempt:     false,
+				Accept:      false,
+				Unicast:     false,
+				IpAddresses: []string{"2001:db8:11a3:9d7:1f34:8a2e:7a0:765d"},
+				Enabled:     false,
 			},
 			shouldFail: true,
 		},
@@ -161,9 +161,9 @@ func TestVrrp(t *testing.T) {
 				t.Fatalf("expected Accept <%v>, got: <%v>", test.vrrp.Accept, entries[0].Accept)
 			}
 
-			for i := 0; i < len(test.vrrp.IpAdresses); i++ {
-				if entries[0].IpAdresses[i] != test.vrrp.IpAdresses[i] {
-					t.Fatalf("expected IpAdresses[%v]  <%v>, got: <%v>", i, test.vrrp.IpAdresses[i], entries[0].IpAdresses[i])
+			for i := 0; i < len(test.vrrp.IpAddresses); i++ {
+				if entries[0].IpAddresses[i] != test.vrrp.IpAddresses[i] {
+					t.Fatalf("expected IpAddresses[%v]  <%v>, got: <%v>", i, test.vrrp.IpAddresses[i], entries[0].IpAddresses[i])
 				}
 			}
 

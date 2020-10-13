@@ -17,6 +17,7 @@ package descriptor
 import (
 	"net"
 
+	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
 	"go.ligato.io/cn-infra/v2/logging"
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
@@ -37,6 +38,9 @@ const (
 
 	maxUint8  = 255
 	maxUint16 = 65535
+
+	// The minimum value in milliseconds that can be used as interval.
+	centisecondInMilliseconds = 10
 )
 
 // A list of validation errors.
@@ -71,6 +75,7 @@ func NewVrrpDescriptor(vrrpHandler vppcalls.VrrpVppAPI,
 		ValueTypeName:        l3.ModelVRRPEntry.ProtoName(),
 		KeySelector:          l3.ModelVRRPEntry.IsKeyValid,
 		KeyLabel:             l3.ModelVRRPEntry.StripKeyPrefix,
+		ValueComparator:      ctx.EquivalentVRRPs,
 		Create:               ctx.Create,
 		Delete:               ctx.Delete,
 		Update:               ctx.Update,
@@ -80,7 +85,6 @@ func NewVrrpDescriptor(vrrpHandler vppcalls.VrrpVppAPI,
 		Dependencies:         ctx.Dependencies,
 		RetrieveDependencies: []string{ifdescriptor.InterfaceDescriptorName},
 	}
-
 	return adapter.NewVRRPEntryDescriptor(typedDescr)
 }
 
@@ -90,7 +94,7 @@ func (d *VrrpDescriptor) Validate(key string, vrrp *l3.VRRPEntry) error {
 		return kvs.NewInvalidValueError(ErrMissingInterface, "interface")
 	}
 
-	if len(vrrp.IpAdresses) > maxUint8 || len(vrrp.IpAdresses) == 0 {
+	if len(vrrp.IpAddresses) > maxUint8 || len(vrrp.IpAddresses) == 0 {
 		return kvs.NewInvalidValueError(ErrInvalidAddrNum, "ip_addresses")
 	}
 
@@ -102,13 +106,13 @@ func (d *VrrpDescriptor) Validate(key string, vrrp *l3.VRRPEntry) error {
 		return kvs.NewInvalidValueError(ErrInvalidPriority, "priority")
 	}
 
-	if vrrp.GetInterval() > maxUint16 || vrrp.GetInterval() == 0 {
+	if vrrp.GetInterval() > maxUint16 || vrrp.GetInterval() < centisecondInMilliseconds {
 		return kvs.NewInvalidValueError(ErrInvalidInterval, "interval")
 	}
 
 	var ip net.IP
 	var isIpv6 bool
-	for idx, addr := range vrrp.IpAdresses {
+	for idx, addr := range vrrp.IpAddresses {
 		ip = net.ParseIP(addr)
 		if ip == nil {
 			return kvs.NewInvalidValueError(ErrInvalidVrrpIP, "ip_addresses")
@@ -148,7 +152,7 @@ func (d *VrrpDescriptor) Delete(key string, vrrp *l3.VRRPEntry, metadata interfa
 	if vrrp.Enabled {
 		if err := d.vrrpHandler.VppStopVrrp(vrrp); err != nil {
 			if errors.Is(vppcalls.ErrVRRPUnsupported, err) {
-				d.log.Debugf("Unsupported action: ", err)
+				d.log.Debugf("Unsupported action: %v", err)
 			}
 			return err
 		}
@@ -166,24 +170,7 @@ func (d *VrrpDescriptor) UpdateWithRecreate(_ string, oldVRRPEntry, newVRRPEntry
 		return true
 	}
 
-	if oldVRRPEntry.Interface != newVRRPEntry.Interface ||
-		oldVRRPEntry.Interval != newVRRPEntry.Interval ||
-		oldVRRPEntry.Priority != newVRRPEntry.Priority ||
-		oldVRRPEntry.VrId != newVRRPEntry.VrId ||
-		oldVRRPEntry.Accept != newVRRPEntry.Accept ||
-		oldVRRPEntry.Preempt != newVRRPEntry.Preempt ||
-		oldVRRPEntry.Unicast != newVRRPEntry.Unicast ||
-		len(oldVRRPEntry.IpAdresses) != len(newVRRPEntry.IpAdresses) {
-		return true
-	}
-
-	for i := 0; i < len(oldVRRPEntry.IpAdresses); i++ {
-		if oldVRRPEntry.IpAdresses[i] != newVRRPEntry.IpAdresses[i] {
-			return true
-		}
-	}
-
-	return false // Nothing changed except VRRP Enabled = update
+	return !allFieldsWhithoutEnabledEquals(oldVRRPEntry, newVRRPEntry)
 }
 
 // Update updates VPP VRRP entry.
@@ -195,7 +182,6 @@ func (d *VrrpDescriptor) Update(_ string, oldVRRPEntry, newVRRPEntry *l3.VRRPEnt
 	} else {
 		err = d.vrrpHandler.VppStopVrrp(newVRRPEntry)
 	}
-
 	return nil, err
 }
 
@@ -218,13 +204,52 @@ func (d *VrrpDescriptor) Retrieve(correlate []adapter.VRRPEntryKVWithMetadata) (
 	entries, err := d.vrrpHandler.DumpVrrpEntries()
 
 	for _, entry := range entries {
-
 		retrieved = append(retrieved, adapter.VRRPEntryKVWithMetadata{
 			Key:    l3.VrrpEntryKey(entry.Interface, entry.VrId),
 			Value:  entry,
 			Origin: kvs.UnknownOrigin,
 		})
 	}
-
 	return retrieved, nil
+}
+
+// EquivalentVRRPs is a comparison function for l3.VRRPEntry.
+func (d *VrrpDescriptor) EquivalentVRRPs(_ string, oldVRRPEntry, newVRRPEntry *l3.VRRPEntry) bool {
+	if proto.Equal(oldVRRPEntry, newVRRPEntry) {
+		return true
+	}
+	if oldVRRPEntry.Enabled != newVRRPEntry.Enabled {
+		return false
+	}
+	return allFieldsWhithoutEnabledEquals(oldVRRPEntry, newVRRPEntry)
+}
+
+// allFieldsWhithoutEnabledEquals returns true if all entrys' fields are equal,
+// without checking the Enabled field.
+func allFieldsWhithoutEnabledEquals(entry1, entry2 *l3.VRRPEntry) bool {
+	if entry1.Interface != entry2.Interface ||
+		!intervalEquals(entry1.Interval, entry2.Interval) ||
+		entry1.Priority != entry2.Priority ||
+		entry1.VrId != entry2.VrId ||
+		entry1.Accept != entry2.Accept ||
+		entry1.Preempt != entry2.Preempt ||
+		entry1.Unicast != entry2.Unicast ||
+		len(entry1.IpAddresses) != len(entry2.IpAddresses) {
+		return false
+	}
+
+	for i := 0; i < len(entry1.IpAddresses); i++ {
+		if entry1.IpAddresses[i] != entry2.IpAddresses[i] {
+			return false
+		}
+	}
+	return true
+}
+
+// intervalEquals returns true if i1 and i2 are equal in centisonds.
+func intervalEquals(i1, i2 uint32) bool {
+	if i1/centisecondInMilliseconds == i2/centisecondInMilliseconds {
+		return true
+	}
+	return false
 }
