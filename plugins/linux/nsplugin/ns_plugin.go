@@ -248,6 +248,7 @@ func (p *NsPlugin) getOrCreateNs(ctx nsLinuxcalls.NamespaceMgmtCtx, ns *nsmodel.
 	case nsmodel.NetNamespace_NSID:
 		nsHandle, err = p.sysHandler.GetNamespaceFromName(ns.Reference)
 		if err != nil {
+			p.Log.Warnf("GetNamespaceFromName %s failed: %v", ns.Reference, err)
 			// Create named namespace if it doesn't exist yet.
 			_, err = p.namedNsHandler.CreateNamedNetNs(ctx, ns.Reference)
 			if err != nil {
