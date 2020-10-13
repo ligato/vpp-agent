@@ -28,6 +28,9 @@ import (
 var (
 	// ErrIPIPUnsupported error is returned if IPIP interface is not supported on given VPP version.
 	ErrIPIPUnsupported = errors.New("IPIP interface not supported")
+
+	// ErrWireguardUnsupported error is returned if Wireguard interface is not supported on given VPP version.
+	ErrWireguardUnsupported = errors.New("Wireguard interface not supported")
 )
 
 // InterfaceDetails is the wrapper structure for the interface northbound API structure.
@@ -182,6 +185,11 @@ type InterfaceVppAPI interface {
 	AddIpipTunnel(ifName string, vrf uint32, ipipLink *interfaces.IPIPLink) (uint32, error)
 	// DelIpipTunnel removes IPIP tunnel interface.
 	DelIpipTunnel(ifName string, ifIdx uint32) error
+
+	// AddWireguardTunnel adds new wireguard tunnel interface.
+	AddWireguardTunnel(ifName string, wgLink *interfaces.WireguardLink) (uint32, error)
+	// DeleteWireguardTunnel removes wireguard tunnel interface.
+	DeleteWireguardTunnel(ifName string, ifIdx uint32) error
 
 	// CreateSubif creates sub interface.
 	CreateSubif(ifIdx, vlanID uint32) (swIfIdx uint32, err error)

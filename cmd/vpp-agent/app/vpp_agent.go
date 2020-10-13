@@ -49,6 +49,7 @@ import (
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/puntplugin"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/srplugin"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/stnplugin"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/wireguardplugin"
 )
 
 // VPPAgent defines plugins which will be loaded and their order.
@@ -181,6 +182,7 @@ type VPP struct {
 	PuntPlugin  *puntplugin.PuntPlugin
 	STNPlugin   *stnplugin.STNPlugin
 	SRPlugin    *srplugin.SRPlugin
+	WgPlugin    *wireguardplugin.WgPlugin
 }
 
 func DefaultVPP() VPP {
@@ -196,6 +198,7 @@ func DefaultVPP() VPP {
 		PuntPlugin:  &puntplugin.DefaultPlugin,
 		STNPlugin:   &stnplugin.DefaultPlugin,
 		SRPlugin:    &srplugin.DefaultPlugin,
+		WgPlugin:    &wireguardplugin.DefaultPlugin,
 	}
 }
 

@@ -17,7 +17,6 @@ package vpp2009
 import (
 	govppapi "git.fd.io/govpp.git/api"
 	"go.ligato.io/cn-infra/v2/logging"
-
 	"go.ligato.io/vpp-agent/v3/plugins/vpp"
 	vpp2009 "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/af_packet"
@@ -36,6 +35,7 @@ import (
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/tapv2"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/vmxnet3"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/vxlan"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/wireguard"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/vppcalls"
 )
 
@@ -64,6 +64,9 @@ var HandlerVersion = vpp.HandlerVersion{
 		if c.IsPluginLoaded(vmxnet3.APIFile) {
 			msgs.Add(vmxnet3.AllMessages)
 		}
+		if c.IsPluginLoaded(wireguard.APIFile) {
+			msgs.Add(wireguard.AllMessages)
+		}
 		return c.CheckCompatiblity(msgs.AllMessages()...)
 	},
 	NewHandler: func(c vpp.Client, a ...interface{}) vpp.HandlerAPI {
@@ -85,6 +88,7 @@ type InterfaceVppHandler struct {
 	vmxnet3      vmxnet3.RPCService
 	rpcIP6nd     ip6_nd.RPCService
 	rpcRdCp      rd_cp.RPCService
+	wireguard    wireguard.RPCService
 	log          logging.Logger
 }
 
@@ -110,6 +114,9 @@ func NewInterfaceVppHandler(c vpp.Client, log logging.Logger) vppcalls.Interface
 	}
 	if c.IsPluginLoaded(vmxnet3.APIFile) {
 		h.vmxnet3 = vmxnet3.NewServiceClient(c)
+	}
+	if c.IsPluginLoaded(wireguard.APIFile) {
+		h.wireguard = wireguard.NewServiceClient(c)
 	}
 	return h
 }

@@ -129,6 +129,12 @@ func (d *InterfaceDescriptor) Create(key string, intf *interfaces.Interface) (me
 			d.log.Error(err)
 			return nil, err
 		}
+	case interfaces.Interface_WIREGUARD_TUNNEL:
+		ifIdx, err = d.ifHandler.AddWireguardTunnel(intf.Name, intf.GetWireguard())
+		if err != nil {
+			d.log.Error(err)
+			return nil, err
+		}
 	case interfaces.Interface_SUB_INTERFACE:
 		sub := intf.GetSub()
 		parentMeta, found := d.intfIndex.LookupByName(sub.GetParentName())
@@ -298,6 +304,8 @@ func (d *InterfaceDescriptor) Delete(key string, intf *interfaces.Interface, met
 		}
 	case interfaces.Interface_IPSEC_TUNNEL:
 		err = d.ifHandler.DeleteIPSecTunnelInterface(ctx, intf.Name, intf.GetIpsec())
+	case interfaces.Interface_WIREGUARD_TUNNEL:
+		err = d.ifHandler.DeleteWireguardTunnel(intf.Name, ifIdx)
 	case interfaces.Interface_SUB_INTERFACE:
 		err = d.ifHandler.DeleteSubif(ifIdx)
 	case interfaces.Interface_VMXNET3_INTERFACE:
@@ -594,6 +602,7 @@ func ifaceSupportsSetMTU(intf *interfaces.Interface) bool {
 	switch intf.Type {
 	case interfaces.Interface_VXLAN_TUNNEL,
 		interfaces.Interface_IPSEC_TUNNEL,
+		interfaces.Interface_WIREGUARD_TUNNEL,
 		interfaces.Interface_SUB_INTERFACE:
 		// MTU not supported
 		return false
