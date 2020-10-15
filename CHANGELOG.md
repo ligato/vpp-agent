@@ -1,9 +1,10 @@
 # Changelog
 
-![GitHub commits since latest release](https://img.shields.io/github/commits-since/ligato/vpp-agent/latest.svg?style=flat-square)
+[![GitHub commits since latest release](https://img.shields.io/github/commits-since/ligato/vpp-agent/latest.svg?style=flat-square)](https://github.com/ligato/vpp-agent/compare/v3.1.0...master)
 
 ## Release Notes
 
+- [v3.2.0](#v3.2.0)
 - [v3.1.0](#v3.1.0)
 - [v3.0.0](#v3.0.0)
   - [v3.0.1](#v3.0.1)
@@ -51,6 +52,69 @@ RELEASE CHANGELOG TEMPLATE:
 ### Docker Images
 ### Documentation
 -->
+
+<a name="v3.2.0"></a>
+# [3.2.0](https://github.com/ligato/vpp-agent/compare/v3.1.0...v3.2.0) (2020-10-XX)
+
+### COMPATIBILITY
+- VPP 20.09 (compatible)
+- VPP 20.05 (default)
+- VPP 20.01 (backwards compatible)
+- VPP 19.08 (backwards compatible)
+- ~~VPP 19.04~~ (no longer supported)
+
+### KNOWN ISSUES
+
+### BREAKING CHANGES
+
+### Bug Fixes
+- Fixes and improvements for agentctl and models (#1643)
+- Fix creation of multiple ipip tunnels (#1650)
+- Fix IPSec tun protect + add IPSec e2e test (#1654)
+- Fix bridge domain dump for VPP 20.05 (#1663)
+- Fix IPSec SA add/del in VPP 20.05 (#1664)
+- Update expected output of agentctl status command (#1673)
+- vpp/ifplugin: Recognize interface name prefix "tun" as TAP (#1674)
+- Fix IPv4 link-local IP address handling (#1715)
+- maps caching prometheus gauges weren't really used (#1741)
+- Permit agent to run even when VPP stats are unavailable (#1712)
+- Fix grpc context timeout for agentctl import command (#1718)
+- Changed nat44 pool key to prevent possible key collisions (#1725)
+- Remove forced delay for linux interface notifications (#1742)
+
+### Features
+- agentctl: Add config get/update commands (#1709)
+- agentctl: Support specific history seq num and improve layout (#1717)
+- agentctl: Add config.resync subcommand (with resync) (#1642)
+- IP Flow Information eXport (IPFIX) plugin (#1649)
+- Add IPIP & IPSec point-to-multipoint support (#1669)
+- Wireguard plugin support (#1731)
+- Add tunnel mode support for VPP TAP interfaces (#1671)
+- New REST endpoint for retrieving version of Agent (#1670)
+- Add support for IPv6 ND address autoconfig (#1676)
+- Add VRF field to proxy ARP range (#1672)
+- Switch to new proto v2 (google.golang.org/protobuf) (#1691)
+- ipsec: allow to configure salt for encryption algorithm (#1698)
+- gtpu: Add RemoteTeid to GTPU interface (#1719)
+- Added support for NAT44 static mapping twice-NAT pool IP address reference (#1728)
+- add IP protocol number to ACL model (#1726)
+- gtpu: Add support for arbitrary DecapNextNode (#1721)
+- Add support for waiting until config update is done (#1734)
+
+### Improvements
+- perf: Performance enhancement for adding many rules to Linux IP… (#1644)
+
+### Documentation
+- docs: Add example for developing agents with custom VPP plugins (#1665)
+
+### Other
+- Delete unused REST handler for VPP commands (#1677)
+- separate model for IPSec Security Policies (#1679)
+- do not mark host_if_name for AF_PACKET as deprecated (#1745)
+- Store interface internal name & dev type as metadata (#1706)
+- Check if HostIfName contains non-printable characters (#1662)
+- Fix error message for duplicate keys (#1659)
+
 
 <a name="v3.1.0"></a>
 # [3.1.0](https://github.com/ligato/vpp-agent/compare/v3.0.0...v3.1.0) (2020-03-13)
