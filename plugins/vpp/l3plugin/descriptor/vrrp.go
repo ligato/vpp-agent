@@ -206,7 +206,7 @@ func (d *VrrpDescriptor) Retrieve(correlate []adapter.VRRPEntryKVWithMetadata) (
 		retrieved = append(retrieved, adapter.VRRPEntryKVWithMetadata{
 			Key:    l3.VrrpEntryKey(entry.Interface, entry.VrId),
 			Value:  entry,
-			Origin: kvs.UnknownOrigin,
+			Origin: kvs.FromNB,
 		})
 	}
 	return retrieved, nil
