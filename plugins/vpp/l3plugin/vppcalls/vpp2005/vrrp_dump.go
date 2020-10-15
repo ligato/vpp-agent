@@ -55,13 +55,7 @@ func (h *VrrpVppHandler) DumpVrrpEntries() (entries []*l3.VRRPEntry, err error) 
 
 		ipStrs := make([]string, 0, len(vrrpDetails.Addrs))
 		for _, v := range vrrpDetails.Addrs {
-			if v.Af == ip_types.ADDRESS_IP4 {
-				addr := v.Un.GetIP4()
-				ipStrs = append(ipStrs, net.IP(addr[:]).To4().String())
-			} else {
-				addr := v.Un.GetIP6()
-				ipStrs = append(ipStrs, net.IP(addr[:]).To16().String())
-			}
+			ipStrs = append(ipStrs, v.String())
 		}
 
 		// VRRP entry
