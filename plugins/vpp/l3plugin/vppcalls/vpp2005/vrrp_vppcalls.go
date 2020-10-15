@@ -31,9 +31,6 @@ func (h *VrrpVppHandler) vppAddDelVrrp(entry *l3.VRRPEntry, isAdd uint8) error {
 	var addrs []ip_types.Address
 	var isIpv6 bool
 	for idx, addr := range entry.IpAddresses {
-		if addr == "localhost" {
-			addr = "127.0.0.1"
-		}
 		ip, err := ipToAddress(addr)
 		if err != nil {
 			return err

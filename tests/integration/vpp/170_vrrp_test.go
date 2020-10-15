@@ -57,7 +57,7 @@ func TestVrrp(t *testing.T) {
 				Preempt:     false,
 				Accept:      false,
 				Unicast:     false,
-				IpAddresses: []string{"localhost"},
+				IpAddresses: []string{"11.11.11.11"},
 				Enabled:     false,
 			},
 			shouldFail: false,
@@ -162,8 +162,7 @@ func TestVrrp(t *testing.T) {
 			}
 
 			for i := 0; i < len(test.vrrp.IpAddresses); i++ {
-				if entries[0].Vrrp.IpAddresses[i] != test.vrrp.IpAddresses[i] &&
-					!(entries[0].Vrrp.IpAddresses[i] == "127.0.0.1" && test.vrrp.IpAddresses[i] == "localhost") {
+				if entries[0].Vrrp.IpAddresses[i] != test.vrrp.IpAddresses[i] {
 					t.Fatalf("expected IpAddresses[%v]  <%v>, got: <%v>", i, test.vrrp.IpAddresses[i], entries[0].Vrrp.IpAddresses[i])
 				}
 			}
