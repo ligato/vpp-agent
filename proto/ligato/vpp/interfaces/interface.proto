@@ -207,15 +207,24 @@ message VxlanLink {
 // AfpacketLink defines configuration for interface type: AF_PACKET
 message AfpacketLink {
     // Name of the host (Linux) interface to bind to.
-    // This field is DEPRECATED. The logical reference <linux_interface> should be used instead.
-    // Target Linux interface which is not configured by the same (or any) vpp-agent can be assigned
-    // a logical name using a Linux interface configuration entry of type EXISTING
-    // (see proto/ligato/linux/interfaces/interface.proto).
+    // This type of reference is suitable for scenarios when the target interface
+    // is not managed (and should not be touched) by the agent. In such cases the interface
+    // does not have logical name in the agent's namespace and can only be referenced
+    // by the host interface name (i.e. the name used in the Linux network stack).
+    // Please note that agent learns about externally created interfaces through netlink
+    // notifications.
+    // If, however, the target interface is managed by the agent, then it is recommended
+    // to use the alternative reference <linux_interface> (see below), pointing to the interface
+    // by its logical name. One advantage of such approach is, that if AF-PACKET and the target
+    // Linux interface are requested to be created at the same time, then it can be done inside
+    // the same transaction because the agent does not rely on any notification from the Linux.
     // It is mandatory to define either <host_if_name> or <linux_interface>.
-    string host_if_name = 1 [deprecated=true];
+    string host_if_name = 1;
 
     // Logical name of the Linux interface to bind to.
-    // This is an alternative (and preferred) interface reference to <host_if_name>.
+    // This is an alternative interface reference to <host_if_name> and preferred
+    // if the target interface is managed by the agent and not created externally
+    // (see comments for <host_if_name> for explanation).
     // It is mandatory to define either <host_if_name> or <linux_interface>.
     string linux_interface = 2;
 }

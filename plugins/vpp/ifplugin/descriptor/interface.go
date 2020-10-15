@@ -532,7 +532,6 @@ func (d *InterfaceDescriptor) Validate(key string, intf *interfaces.Interface) e
 			return kvs.NewInvalidValueError(ErrDPDKInterfaceMissing, "name")
 		}
 	case interfaces.Interface_AF_PACKET:
-		//nolint:staticcheck
 		if intf.GetAfpacket().GetHostIfName() == "" &&
 			intf.GetAfpacket().GetLinuxInterface() == "" {
 			return kvs.NewInvalidValueError(ErrAfPacketWithoutTarget,
