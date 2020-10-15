@@ -196,6 +196,13 @@ func (p *Plugin) registerL3Handlers() {
 		}
 		return p.l3Handler.GetIPScanNeighbor()
 	})
+	// GET vrrp entries
+	p.registerHTTPHandler(resturl.Vrrps, GET, func() (interface{}, error) {
+		if p.l3Handler == nil {
+			return nil, ErrHandlerUnavailable
+		}
+		return p.l3Handler.DumpVrrpEntries()
+	})
 }
 
 // Registers IPSec plugin REST handlers

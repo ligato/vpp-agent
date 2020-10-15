@@ -15,15 +15,13 @@
 package vpp2009
 
 import (
-	"net"
-
-	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/ip_types"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/vrrp"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin/vppcalls"
 	l3 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3"
 )
 
 // DumpVrrpEntries dumps all configured VRRP entries.
-func (h *VrrpVppHandler) DumpVrrpEntries() (entries []*l3.VRRPEntry, err error) {
+func (h *VrrpVppHandler) DumpVrrpEntries() (entries []*vppcalls.VrrpDetails, err error) {
 	req := &vrrp.VrrpVrDump{
 		SwIfIndex: 0xffffffff, // Send multirequest to get all VRRP entries
 	}
@@ -55,26 +53,23 @@ func (h *VrrpVppHandler) DumpVrrpEntries() (entries []*l3.VRRPEntry, err error) 
 
 		ipStrs := make([]string, 0, len(vrrpDetails.Addrs))
 		for _, v := range vrrpDetails.Addrs {
-			if v.Af == ip_types.ADDRESS_IP4 {
-				addr := v.Un.GetIP4()
-				ipStrs = append(ipStrs, net.IP(addr[:]).To4().String())
-			} else {
-				addr := v.Un.GetIP6()
-				ipStrs = append(ipStrs, net.IP(addr[:]).To16().String())
-			}
+			ipStrs = append(ipStrs, v.String())
 		}
 
 		// VRRP entry
-		vrrp := &l3.VRRPEntry{
-			Interface:   ifName,
-			VrId:        uint32(vrrpDetails.Config.VrID),
-			Priority:    uint32(vrrpDetails.Config.Priority),
-			Interval:    uint32(vrrpDetails.Config.Interval) * centiMilliRatio,
-			Preempt:     isPreempt,
-			Accept:      isAccept,
-			Unicast:     isUnicast,
-			IpAddresses: ipStrs,
-			Enabled:     isEnabled,
+		vrrp := &vppcalls.VrrpDetails{
+			Vrrp: &l3.VRRPEntry{
+				Interface:   ifName,
+				VrId:        uint32(vrrpDetails.Config.VrID),
+				Priority:    uint32(vrrpDetails.Config.Priority),
+				Interval:    uint32(vrrpDetails.Config.Interval) * centiMilliRatio,
+				Preempt:     isPreempt,
+				Accept:      isAccept,
+				Unicast:     isUnicast,
+				IpAddresses: ipStrs,
+				Enabled:     isEnabled,
+			},
+			Meta: &vppcalls.VrrpMeta{},
 		}
 
 		entries = append(entries, vrrp)

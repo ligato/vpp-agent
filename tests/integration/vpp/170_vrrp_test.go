@@ -48,7 +48,7 @@ func TestVrrp(t *testing.T) {
 		shouldFail bool
 	}{
 		{
-			name: "Create VRRP entry (IPv4)",
+			name: "Create VRRP entry (localhost)",
 			vrrp: &l3.VRRPEntry{
 				Interface:   "if0",
 				VrId:        1,
@@ -57,22 +57,7 @@ func TestVrrp(t *testing.T) {
 				Preempt:     false,
 				Accept:      false,
 				Unicast:     false,
-				IpAddresses: []string{"11.11.11.11"},
-				Enabled:     false,
-			},
-			shouldFail: false,
-		},
-		{
-			name: "Create VRRP entry (IPv4)",
-			vrrp: &l3.VRRPEntry{
-				Interface:   "if1",
-				VrId:        1,
-				Priority:    200,
-				Interval:    150,
-				Preempt:     false,
-				Accept:      false,
-				Unicast:     false,
-				IpAddresses: []string{"22.2.22.22"},
+				IpAddresses: []string{"localhost"},
 				Enabled:     false,
 			},
 			shouldFail: false,
@@ -80,10 +65,10 @@ func TestVrrp(t *testing.T) {
 		{
 			name: "Create VRRP entry (IPv6)",
 			vrrp: &l3.VRRPEntry{
-				Interface:   "if2",
-				VrId:        33,
-				Priority:    200,
-				Interval:    200,
+				Interface:   "if1",
+				VrId:        1,
+				Priority:    244,
+				Interval:    150,
 				Preempt:     false,
 				Accept:      false,
 				Unicast:     false,
@@ -93,7 +78,22 @@ func TestVrrp(t *testing.T) {
 			shouldFail: false,
 		},
 		{
-			name: "Create VRRP entry (IPv6)",
+			name: "Create VRRP entry with empty IpAddresses",
+			vrrp: &l3.VRRPEntry{
+				Interface:   "if2",
+				VrId:        33,
+				Priority:    200,
+				Interval:    200,
+				Preempt:     false,
+				Accept:      false,
+				Unicast:     false,
+				IpAddresses: []string{},
+				Enabled:     false,
+			},
+			shouldFail: true,
+		},
+		{
+			name: "Create VRRP entry (IPv6) with invalid interval",
 			vrrp: &l3.VRRPEntry{
 				Interface:   "if3",
 				VrId:        33,
@@ -136,34 +136,35 @@ func TestVrrp(t *testing.T) {
 				t.Fatalf("no VRRP entries dumped")
 			}
 
-			if entries[0].VrId != test.vrrp.VrId {
-				t.Fatalf("expected VrId <%v>, got: <%v>", test.vrrp.VrId, entries[0].VrId)
+			if entries[0].Vrrp.VrId != test.vrrp.VrId {
+				t.Fatalf("expected VrId <%v>, got: <%v>", test.vrrp.VrId, entries[0].Vrrp.VrId)
 			}
-			if entries[0].Interface != test.vrrp.Interface {
-				t.Fatalf("expected Interface <%v>, got: <%v>", test.vrrp.Interface, entries[0].Interface)
+			if entries[0].Vrrp.Interface != test.vrrp.Interface {
+				t.Fatalf("expected Interface <%v>, got: <%v>", test.vrrp.Interface, entries[0].Vrrp.Interface)
 			}
-			if entries[0].Interval != test.vrrp.Interval {
-				t.Fatalf("expected Interval <%v>, got: <%v>", test.vrrp.Interval, entries[0].Interval)
+			if entries[0].Vrrp.Interval != test.vrrp.Interval {
+				t.Fatalf("expected Interval <%v>, got: <%v>", test.vrrp.Interval, entries[0].Vrrp.Interval)
 			}
-			if entries[0].Priority != test.vrrp.Priority {
-				t.Fatalf("expected Priority <%v>, got: <%v>", test.vrrp.Priority, entries[0].Priority)
+			if entries[0].Vrrp.Priority != test.vrrp.Priority {
+				t.Fatalf("expected Priority <%v>, got: <%v>", test.vrrp.Priority, entries[0].Vrrp.Priority)
 			}
-			if entries[0].Enabled != test.vrrp.Enabled {
-				t.Fatalf("expected Enabled <%v>, got: <%v>", test.vrrp.Enabled, entries[0].Enabled)
+			if entries[0].Vrrp.Enabled != test.vrrp.Enabled {
+				t.Fatalf("expected Enabled <%v>, got: <%v>", test.vrrp.Enabled, entries[0].Vrrp.Enabled)
 			}
-			if entries[0].Preempt != test.vrrp.Preempt {
-				t.Fatalf("expected Preempt <%v>, got: <%v>", test.vrrp.Preempt, entries[0].Preempt)
+			if entries[0].Vrrp.Preempt != test.vrrp.Preempt {
+				t.Fatalf("expected Preempt <%v>, got: <%v>", test.vrrp.Preempt, entries[0].Vrrp.Preempt)
 			}
-			if entries[0].Unicast != test.vrrp.Unicast {
-				t.Fatalf("expected Unicast <%v>, got: <%v>", test.vrrp.Unicast, entries[0].Unicast)
+			if entries[0].Vrrp.Unicast != test.vrrp.Unicast {
+				t.Fatalf("expected Unicast <%v>, got: <%v>", test.vrrp.Unicast, entries[0].Vrrp.Unicast)
 			}
-			if entries[0].Accept != test.vrrp.Accept {
-				t.Fatalf("expected Accept <%v>, got: <%v>", test.vrrp.Accept, entries[0].Accept)
+			if entries[0].Vrrp.Accept != test.vrrp.Accept {
+				t.Fatalf("expected Accept <%v>, got: <%v>", test.vrrp.Accept, entries[0].Vrrp.Accept)
 			}
 
 			for i := 0; i < len(test.vrrp.IpAddresses); i++ {
-				if entries[0].IpAddresses[i] != test.vrrp.IpAddresses[i] {
-					t.Fatalf("expected IpAddresses[%v]  <%v>, got: <%v>", i, test.vrrp.IpAddresses[i], entries[0].IpAddresses[i])
+				if entries[0].Vrrp.IpAddresses[i] != test.vrrp.IpAddresses[i] &&
+					!(entries[0].Vrrp.IpAddresses[i] == "127.0.0.1" && test.vrrp.IpAddresses[i] == "localhost") {
+					t.Fatalf("expected IpAddresses[%v]  <%v>, got: <%v>", i, test.vrrp.IpAddresses[i], entries[0].Vrrp.IpAddresses[i])
 				}
 			}
 

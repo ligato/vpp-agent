@@ -146,6 +146,12 @@ type RouteDetails struct {
 	Meta  *RouteMeta
 }
 
+// VrrpDetails is object returned as a VRRP dump.
+type VrrpDetails struct {
+	Vrrp *l3.VRRPEntry
+	Meta *VrrpMeta
+}
+
 // FibMplsLabel is object returned with route dump.
 type FibMplsLabel struct {
 	IsUniform bool
@@ -172,6 +178,9 @@ type RouteMeta struct {
 	RpfID             uint32
 	LabelStack        []FibMplsLabel
 }
+
+// VrrpMeta holds fields returned from the VPP as details which are not in the model
+type VrrpMeta struct{}
 
 // RouteVppAPI provides methods for managing routes
 type RouteVppAPI interface {
@@ -242,7 +251,7 @@ type VrrpVppAPI interface {
 	VppDelVrrp(entry *l3.VRRPEntry) error
 	VppStartVrrp(entry *l3.VRRPEntry) error
 	VppStopVrrp(entry *l3.VRRPEntry) error
-	DumpVrrpEntries() ([]*l3.VRRPEntry, error)
+	DumpVrrpEntries() ([]*VrrpDetails, error)
 }
 
 // Path represents FIB path entry.

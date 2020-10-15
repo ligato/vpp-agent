@@ -18,11 +18,10 @@ import (
 	"fmt"
 
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin/vppcalls"
-	l3 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3"
 )
 
 // DumpVrrpEntries implements VRRP handler (not supported in VPP 20.01).
-func (h *VrrpVppHandler) DumpVrrpEntries() (entries []*l3.VRRPEntry, err error) {
+func (h *VrrpVppHandler) DumpVrrpEntries() (entries []*vppcalls.VrrpDetails, err error) {
 	err = fmt.Errorf("%w in VPP 20.01", vppcalls.ErrVRRPUnsupported)
 	return
 }

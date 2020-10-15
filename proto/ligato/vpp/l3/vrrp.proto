@@ -6,11 +6,13 @@ option go_package = "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3;vpp_l3";
 
 // VRRPEntry represents Virtual Router desired state.
 message VRRPEntry {
+    // This field refers to logical interface name
     string interface = 1;
+    // Should be > 0 and <= 255
     uint32 vr_id = 2;
-    // Priority defines which router becomes master.
+    // Priority defines which router becomes master. Should be > 0 and <= 255.
     uint32 priority = 3;
-    // VR advertisement interval in milliseconds, should be => 10. 
+    // VR advertisement interval in milliseconds, should be => 10 and <= 655350. 
     // (Later, in implemetation it is converted into centiseconds, so precision may be lost).
     uint32 interval = 4;
     // Controls whether a (starting or restarting) 
@@ -26,6 +28,7 @@ message VRRPEntry {
     // the use of token ring functional addresses.
     bool unicast = 7;
 
+    // Ip address quantity should be > 0 and <= 255.
     repeated string ip_addresses = 8;
     bool enabled = 9;
 }
