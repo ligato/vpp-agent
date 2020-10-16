@@ -114,6 +114,8 @@ type DataResyncDSL interface {
 	FlowprobeParams(val *ipfix.FlowProbeParams) DataResyncDSL
 	// FlowprobeFeature adds Flowprobe Feature configuration to the RESYNC request.
 	FlowprobeFeature(val *ipfix.FlowProbeFeature) DataResyncDSL
+	// VRRP adds VPP L3 VRRP to the RESYNC request.
+	VRRP(val *vpp_l3.VRRPEntry) DataResyncDSL
 
 	// Send propagates the RESYNC request to the plugins.
 	Send() vpp_clientv2.Reply

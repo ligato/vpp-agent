@@ -21,6 +21,7 @@
 //go:generate descriptor-adapter --descriptor-name DHCPProxy --value-type *vpp_l3.DHCPProxy --import "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3" --output-dir "descriptor"
 //go:generate descriptor-adapter --descriptor-name L3XC --value-type *vpp_l3.L3XConnect --import "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3" --output-dir "descriptor"
 //go:generate descriptor-adapter --descriptor-name TeibEntry --value-type *vpp_l3.TeibEntry --import "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name VRRPEntry --value-type *vpp_l3.VRRPEntry --import "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3" --output-dir "descriptor"
 
 package l3plugin
 
@@ -48,6 +49,7 @@ func init() {
 	kvscheduler.AddNonRetryableError(
 		vppcalls.ErrIPNeighborNotImplemented,
 		vppcalls.ErrTeibUnsupported,
+		vppcalls.ErrVRRPUnsupported,
 	)
 }
 
@@ -105,6 +107,7 @@ func (p *L3Plugin) Init() (err error) {
 	dhcpProxyDescriptor := descriptor.NewDHCPProxyDescriptor(p.KVScheduler, p.l3Handler, p.Log)
 	l3xcDescriptor := descriptor.NewL3XCDescriptor(p.l3Handler, p.IfPlugin.GetInterfaceIndex(), p.Log)
 	teibDescriptor := descriptor.NewTeibDescriptor(p.KVScheduler, p.l3Handler, p.Log)
+	vrrpDescriptor := descriptor.NewVrrpDescriptor(p.l3Handler, p.Log)
 
 	err = p.Deps.KVScheduler.RegisterKVDescriptor(
 		routeDescriptor,
@@ -115,6 +118,7 @@ func (p *L3Plugin) Init() (err error) {
 		dhcpProxyDescriptor,
 		l3xcDescriptor,
 		teibDescriptor,
+		vrrpDescriptor,
 	)
 	if err != nil {
 		return err

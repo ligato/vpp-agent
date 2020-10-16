@@ -59,6 +59,7 @@ type L3VppHandler struct {
 	*DHCPProxyHandler
 	*L3XCHandler
 	*TeibHandlerUnsupported
+	*VrrpVppHandler
 }
 
 func NewL3VppHandler(
@@ -81,6 +82,7 @@ func NewL3VppHandler(
 		VrfTableHandler:        NewVrfTableVppHandler(ch, log),
 		DHCPProxyHandler:       NewDHCPProxyHandler(ch, log),
 		L3XCHandler:            NewL3XCHandler(c, ifIdx, log),
+		VrrpVppHandler:         NewVrrpVppHandler(ch, log),
 		TeibHandlerUnsupported: &TeibHandlerUnsupported{},
 	}
 }
@@ -123,6 +125,12 @@ type IPNeighHandler struct {
 
 // VrfTableHandler is accessor for vrf-related vppcalls methods
 type VrfTableHandler struct {
+	callsChannel govppapi.Channel
+	log          logging.Logger
+}
+
+// VrrpVppHandler is accessor for vrrp-related vppcalls methods
+type VrrpVppHandler struct {
 	callsChannel govppapi.Channel
 	log          logging.Logger
 }
@@ -224,6 +232,17 @@ func NewL3XCHandler(c vpp.Client, ifIndexes ifaceidx.IfaceMetadataIndex, log log
 		h.l3xc = l3xc.NewServiceClient(ch)
 	}
 	return h
+}
+
+// NewVrrpVppHandler creates new instance of VRRP handler
+func NewVrrpVppHandler(callsChan govppapi.Channel, log logging.Logger) *VrrpVppHandler {
+	if log == nil {
+		log = logrus.NewLogger("vrrp-handler")
+	}
+	return &VrrpVppHandler{
+		callsChannel: callsChan,
+		log:          log,
+	}
 }
 
 type TeibHandlerUnsupported struct{}

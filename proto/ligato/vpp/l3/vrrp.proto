@@ -1,0 +1,34 @@
+syntax = "proto3";
+
+package ligato.vpp.l3;
+
+option go_package = "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3;vpp_l3";
+
+// VRRPEntry represents Virtual Router desired state.
+message VRRPEntry {
+    // This field refers to logical interface name
+    string interface = 1;
+    // Should be > 0 and <= 255
+    uint32 vr_id = 2;
+    // Priority defines which router becomes master. Should be > 0 and <= 255.
+    uint32 priority = 3;
+    // VR advertisement interval in milliseconds, should be => 10 and <= 655350. 
+    // (Later, in implemetation it is converted into centiseconds, so precision may be lost).
+    uint32 interval = 4;
+    // Controls whether a (starting or restarting) 
+    // higher-priority Backup router preempts a lower-priority Master router.
+    bool preempt = 5;
+    // Controls whether a virtual router in Master state will accept packets
+    // addressed to the address owner's IPvX address as its own if it is not the IPvX address owner.
+    bool accept = 6;
+    // Unicast mode may be used to take
+    // advantage of newer token ring adapter implementations that support
+    // non-promiscuous reception for multiple unicast MAC addresses and to
+    // avoid both the multicast traffic and usage conflicts associated with
+    // the use of token ring functional addresses.
+    bool unicast = 7;
+
+    // Ip address quantity should be > 0 and <= 255.
+    repeated string ip_addresses = 8;
+    bool enabled = 9;
+}

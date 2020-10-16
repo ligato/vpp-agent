@@ -88,6 +88,14 @@ var (
 	}, models.WithNameTemplate(
 		`{{.Interface}}/peer/{{.PeerAddr}}`,
 	))
+
+	ModelVRRPEntry = models.Register(&VRRPEntry{}, models.Spec{
+		Module:  ModuleName,
+		Type:    "vrrp",
+		Version: "v2",
+	}, models.WithNameTemplate(
+		"{{.Interface}}/vrid/{{.VrId}}",
+	))
 )
 
 // ProxyARPKey returns key for global proxy arp
@@ -182,6 +190,14 @@ func ParseRouteKey(key string) (outIface, vrfIndex, dstNet, nextHopAddr string, 
 		}
 	}
 	return "", "", "", "", false
+}
+
+// VrrpEntryKey returns the key to store VRRP entry
+func VrrpEntryKey(iface string, vrId uint32) string {
+	return models.Key(&VRRPEntry{
+		Interface: iface,
+		VrId:      vrId,
+	})
 }
 
 func getRouteKeyItem(items []string, itemLabel, nextItemLabel string) (value string, found bool) {

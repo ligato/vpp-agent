@@ -35,6 +35,9 @@ var (
 
 	// ErrTeibUnsupported error is returned if TEIB is not supported on given VPP version.
 	ErrTeibUnsupported = errors.New("TEIB is not supported")
+
+	// ErrVRRPUnsupported error is returned if VRRP is not supported on given VPP version.
+	ErrVRRPUnsupported = errors.New("VRRP is not supported")
 )
 
 // L3VppAPI groups L3 Vpp APIs.
@@ -47,6 +50,7 @@ type L3VppAPI interface {
 	DHCPProxyAPI
 	L3XCVppAPI
 	TeibVppAPI
+	VrrpVppAPI
 }
 
 // ArpDetails holds info about ARP entry as a proto model
@@ -142,6 +146,12 @@ type RouteDetails struct {
 	Meta  *RouteMeta
 }
 
+// VrrpDetails is object returned as a VRRP dump.
+type VrrpDetails struct {
+	Vrrp *l3.VRRPEntry
+	Meta *VrrpMeta
+}
+
 // FibMplsLabel is object returned with route dump.
 type FibMplsLabel struct {
 	IsUniform bool
@@ -168,6 +178,9 @@ type RouteMeta struct {
 	RpfID             uint32
 	LabelStack        []FibMplsLabel
 }
+
+// VrrpMeta holds fields returned from the VPP as details which are not in the model
+type VrrpMeta struct{}
 
 // RouteVppAPI provides methods for managing routes
 type RouteVppAPI interface {
@@ -230,6 +243,15 @@ type TeibVppAPI interface {
 type TeibVppRead interface {
 	// DumpTeib dumps TEIB entries from VPP and fills them into the provided TEIB entry map.
 	DumpTeib() ([]*l3.TeibEntry, error)
+}
+
+// VrrpVppAPI provides methods for managing VPP VRRP.
+type VrrpVppAPI interface {
+	VppAddVrrp(entry *l3.VRRPEntry) error
+	VppDelVrrp(entry *l3.VRRPEntry) error
+	VppStartVrrp(entry *l3.VRRPEntry) error
+	VppStopVrrp(entry *l3.VRRPEntry) error
+	DumpVrrpEntries() ([]*VrrpDetails, error)
 }
 
 // Path represents FIB path entry.

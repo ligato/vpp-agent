@@ -131,3 +131,4 @@ func init() {
 //go:generate binapigen --input-file=$VPP_API_DIR/plugins/stn.api.json
 //go:generate binapigen --input-file=$VPP_API_DIR/plugins/vmxnet3.api.json
 //go:generate binapigen --input-file=$VPP_API_DIR/plugins/wireguard.api.json
+//go:generate binapigen --input-file=$VPP_API_DIR/plugins/vrrp.api.json

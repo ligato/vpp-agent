@@ -306,6 +306,12 @@ func (dsl *DataResyncDSL) FlowprobeFeature(val *ipfix.FlowProbeFeature) linuxcli
 	return dsl
 }
 
+// VRRP adds VRRP entry to the RESYNC request.
+func (dsl *DataResyncDSL) VRRP(val *l3.VRRPEntry) linuxclient.DataResyncDSL {
+	dsl.vppDataResync.VRRP(val)
+	return dsl
+}
+
 // AppendKeys is a helper function that fills the keySet <keys> with values
 // pointed to by the iterator <it>.
 func appendKeys(keys *keySet, it keyval.ProtoKeyIterator) {

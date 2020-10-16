@@ -300,6 +300,12 @@ func (dsl *PutDSL) FlowprobeFeature(val *ipfix.FlowProbeFeature) linuxclient.Put
 	return dsl
 }
 
+// VRRP adds a request to add an existing VPP L3 VRRP entry.
+func (dsl *PutDSL) VRRP(val *l3.VRRPEntry) linuxclient.PutDSL {
+	dsl.vppPut.VRRP(val)
+	return dsl
+}
+
 // Delete changes the DSL mode to allow removal of an existing configuration.
 func (dsl *PutDSL) Delete() linuxclient.DeleteDSL {
 	return &DeleteDSL{dsl.parent, dsl.vppPut.Delete()}
@@ -527,4 +533,10 @@ func (dsl *DeleteDSL) Put() linuxclient.PutDSL {
 // Send propagates requested changes to the plugins.
 func (dsl *DeleteDSL) Send() vppclient.Reply {
 	return dsl.parent.Send()
+}
+
+// VRRP adds a request to delete an existing VPP L3 VRRP entry.
+func (dsl *DeleteDSL) VRRP(val *l3.VRRPEntry) linuxclient.DeleteDSL {
+	dsl.vppDelete.VRRP(val)
+	return dsl
 }

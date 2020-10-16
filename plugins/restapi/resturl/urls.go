@@ -102,6 +102,8 @@ const (
 	PArpRngs = "/dump/vpp/v2/proxyarp/ranges"
 	// IPScanNeigh is rest IP scan neighbor setup path
 	IPScanNeigh = "/dump/vpp/v2/ipscanneigh"
+	// Vrrps is rest vrrp entries path
+	Vrrps = "/dump/vpp/v2/vrrps"
 )
 
 // VPP IPSec plugin
