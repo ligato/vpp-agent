@@ -16,6 +16,7 @@ package e2e
 
 import (
 	"context"
+	"os"
 	"testing"
 
 	. "github.com/onsi/gomega"
@@ -47,6 +48,12 @@ import (
 //    +-------------------------------+  +-------------------------------+
 //
 func TestVRFsWithSameSubnets(t *testing.T) {
+	if os.Getenv("TRAVIS") != "" {
+		// VRFs are seemingly not supported on Ubuntu Xenial, which is used in Travis CI to run the tests.
+		// TODO: remove `skip` once we upgrade to Ubuntu Bionic or newer
+		t.Skip("skip for travis")
+	}
+
 	ctx := setupE2E(t)
 	defer ctx.teardownE2E()
 
@@ -240,6 +247,12 @@ func TestVRFsWithSameSubnets(t *testing.T) {
 //    +-------------------------------+            +-------------------------------+
 //
 func TestVRFRoutes(t *testing.T) {
+	if os.Getenv("TRAVIS") != "" {
+		// VRFs are seemingly not supported on Ubuntu Xenial, which is used in Travis CI to run the tests.
+		// TODO: remove `skip` once we upgrade to Ubuntu Bionic or newer
+		t.Skip("skip for travis")
+	}
+
 	ctx := setupE2E(t)
 	defer ctx.teardownE2E()
 
