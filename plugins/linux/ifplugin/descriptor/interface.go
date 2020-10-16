@@ -58,6 +58,7 @@ const (
 	// default MTU - expected when MTU is not specified in the config.
 	defaultEthernetMTU = 1500
 	defaultLoopbackMTU = 65536
+	defaultVrfDevMTU   = 65536
 
 	// dependency labels
 	existingHostInterfaceDep = "host-interface-exists"
@@ -114,6 +115,12 @@ var (
 
 	// ErrLoopbackNotFound is returned if loopback interface can not be found
 	ErrLoopbackNotFound = errors.New("loopback not found")
+
+	// ErrVRFDevWithMACAddr is returned when VRF device is configured with a MAC address.
+	ErrVRFDevWithMACAddr = errors.New("it is unsupported to set MAC address to a VRF device")
+
+	// ErrVRFDevInsideVrf is returned when VRF device is configured to be inside another VRF.
+	ErrVRFDevInsideVrf = errors.New("VRF device cannot be inside another VRF")
 )
 
 // InterfaceDescriptor teaches KVScheduler how to configure Linux interfaces.
@@ -198,10 +205,12 @@ func (d *InterfaceDescriptor) EquivalentInterfaces(key string, oldIntf, newIntf 
 		oldIntf.Type != newIntf.Type ||
 		oldIntf.Enabled != newIntf.Enabled ||
 		oldIntf.LinkOnly != newIntf.LinkOnly ||
+		oldIntf.VrfMasterInterface != newIntf.VrfMasterInterface ||
 		getHostIfName(oldIntf) != getHostIfName(newIntf) {
 		return false
 	}
-	if oldIntf.Type == interfaces.Interface_VETH {
+	switch oldIntf.Type {
+	case interfaces.Interface_VETH:
 		if oldIntf.GetVeth().GetPeerIfName() != newIntf.GetVeth().GetPeerIfName() {
 			return false
 		}
@@ -210,11 +219,16 @@ func (d *InterfaceDescriptor) EquivalentInterfaces(key string, oldIntf, newIntf 
 			getTxChksmOffloading(oldIntf) != getTxChksmOffloading(newIntf) {
 			return false
 		}
+	case interfaces.Interface_TAP_TO_VPP:
+		if oldIntf.GetTap().GetVppTapIfName() != newIntf.GetTap().GetVppTapIfName() {
+			return false
+		}
+	case interfaces.Interface_VRF_DEVICE:
+		if oldIntf.GetVrfDev().GetRoutingTable() != newIntf.GetVrfDev().GetRoutingTable() {
+			return false
+		}
 	}
-	if oldIntf.Type == interfaces.Interface_TAP_TO_VPP &&
-		oldIntf.GetTap().GetVppTapIfName() != newIntf.GetTap().GetVppTapIfName() {
-		return false
-	}
+
 	if !proto.Equal(oldIntf.Namespace, newIntf.Namespace) {
 		return false
 	}
@@ -275,6 +289,13 @@ func (d *InterfaceDescriptor) Validate(key string, linuxIf *interfaces.Interface
 		if d.vppIfPlugin == nil {
 			return ErrTAPRequiresVPPIfPlugin
 		}
+	case interfaces.Interface_VRF_DEVICE:
+		if linuxIf.GetPhysAddress() != "" {
+			return kvs.NewInvalidValueError(ErrVRFDevWithMACAddr, "type", "phys_address")
+		}
+		if linuxIf.GetVrfMasterInterface() != "" {
+			return kvs.NewInvalidValueError(ErrVRFDevInsideVrf, "type", "vrf")
+		}
 	case interfaces.Interface_UNDEFINED:
 		return kvs.NewInvalidValueError(ErrInterfaceWithoutType, "type")
 	}
@@ -300,7 +321,7 @@ func (d *InterfaceDescriptor) Validate(key string, linuxIf *interfaces.Interface
 	return nil
 }
 
-// Create creates VETH or configures TAP interface.
+// Create creates Linux interface.
 func (d *InterfaceDescriptor) Create(key string, linuxIf *interfaces.Interface) (metadata *ifaceidx.LinuxIfMetadata, err error) {
 	// move to the default namespace
 	nsCtx := nslinuxcalls.NewNamespaceMgmtCtx()
@@ -334,6 +355,8 @@ func (d *InterfaceDescriptor) Create(key string, linuxIf *interfaces.Interface) 
 			}, nil
 		}
 		metadata, err = getMetadata(linuxIf)
+	case interfaces.Interface_VRF_DEVICE:
+		metadata, err = d.createVRF(nsCtx, linuxIf)
 	default:
 		return nil, ErrUnsupportedLinuxInterfaceType
 	}
@@ -343,6 +366,7 @@ func (d *InterfaceDescriptor) Create(key string, linuxIf *interfaces.Interface) 
 	}
 
 	metadata.HostIfName = getHostIfName(linuxIf)
+	metadata.VrfMasterIf = linuxIf.VrfMasterInterface
 
 	// move to the namespace with the interface
 	revert2, err := d.nsPlugin.SwitchToNamespace(nsCtx, linuxIf.Namespace)
@@ -407,7 +431,7 @@ func (d *InterfaceDescriptor) Create(key string, linuxIf *interfaces.Interface) 
 	return metadata, nil
 }
 
-// Delete removes VETH or unconfigures TAP interface.
+// Delete removes Linux interface.
 func (d *InterfaceDescriptor) Delete(key string, linuxIf *interfaces.Interface, metadata *ifaceidx.LinuxIfMetadata) error {
 	// move to the namespace with the interface
 	nsCtx := nslinuxcalls.NewNamespaceMgmtCtx()
@@ -429,6 +453,8 @@ func (d *InterfaceDescriptor) Delete(key string, linuxIf *interfaces.Interface, 
 		// We only need to unconfigure the interface.
 		// Nothing else needs to be done.
 		return nil
+	case interfaces.Interface_VRF_DEVICE:
+		return d.deleteVRF(linuxIf)
 	}
 
 	err = ErrUnsupportedLinuxInterfaceType
@@ -525,6 +551,7 @@ func (d *InterfaceDescriptor) Update(key string, oldLinuxIf, newLinuxIf *interfa
 	}
 	oldMetadata.LinuxIfIndex = link.Attrs().Index
 	oldMetadata.HostIfName = newHostName
+	oldMetadata.VrfMasterIf = newLinuxIf.VrfMasterInterface
 	return oldMetadata, nil
 }
 
@@ -545,6 +572,8 @@ func (d *InterfaceDescriptor) UpdateWithRecreate(key string, oldLinuxIf, newLinu
 		return oldLinuxIf.GetVeth().GetPeerIfName() != newLinuxIf.GetVeth().GetPeerIfName()
 	case interfaces.Interface_TAP_TO_VPP:
 		return oldLinuxIf.GetTap().GetVppTapIfName() != newLinuxIf.GetTap().GetVppTapIfName()
+	case interfaces.Interface_VRF_DEVICE:
+		return oldLinuxIf.GetVrfDev().GetRoutingTable() != newLinuxIf.GetVrfDev().GetRoutingTable()
 	}
 	return false
 }
@@ -590,19 +619,28 @@ func (d *InterfaceDescriptor) Dependencies(key string, linuxIf *interfaces.Inter
 	return dependencies
 }
 
-// DerivedValues derives one empty value to represent interface state and also
-// one empty value for every IP address assigned to the interface.
+// DerivedValues derives:
+//   - one empty value to represent interface state
+//   - one empty value to represent assignment of the interface to a (non-default) VRF
+//   - one empty value for every IP address assigned to the interface.
 func (d *InterfaceDescriptor) DerivedValues(key string, linuxIf *interfaces.Interface) (derValues []kvs.KeyValuePair) {
 	// interface state
 	derValues = append(derValues, kvs.KeyValuePair{
 		Key:   interfaces.InterfaceStateKey(linuxIf.Name, linuxIf.Enabled),
 		Value: &prototypes.Empty{},
 	})
+	if linuxIf.GetVrfMasterInterface() != "" {
+		derValues = append(derValues, kvs.KeyValuePair{
+			Key:   interfaces.InterfaceVrfKey(linuxIf.Name, linuxIf.VrfMasterInterface),
+			Value: &prototypes.Empty{},
+		})
+	}
 	if !linuxIf.GetLinkOnly() {
 		// IP addresses
 		for _, ipAddr := range linuxIf.IpAddresses {
 			derValues = append(derValues, kvs.KeyValuePair{
-				Key:   interfaces.InterfaceAddressKey(linuxIf.Name, ipAddr, netalloc_api.IPAddressSource_STATIC),
+				Key:   interfaces.InterfaceAddressKey(
+					linuxIf.Name, ipAddr, linuxIf.VrfMasterInterface, netalloc_api.IPAddressSource_STATIC),
 				Value: &prototypes.Empty{},
 			})
 		}
@@ -663,6 +701,10 @@ func (d *InterfaceDescriptor) Retrieve(correlate []adapter.InterfaceKVWithMetada
 
 	for _, ifDetail := range ifDetails {
 		// Transform linux interface details to the type-safe value with metadata
+		var vrfDevRT uint32
+		if ifDetail.Interface.Type == interfaces.Interface_VRF_DEVICE {
+			vrfDevRT = ifDetail.Interface.GetVrfDev().GetRoutingTable()
+		}
 		kv := adapter.InterfaceKVWithMetadata{
 			Origin: kvs.FromNB,
 			Value:  ifDetail.Interface,
@@ -671,6 +713,8 @@ func (d *InterfaceDescriptor) Retrieve(correlate []adapter.InterfaceKVWithMetada
 				Namespace:    ifDetail.Interface.GetNamespace(),
 				VPPTapName:   ifDetail.Interface.GetTap().GetVppTapIfName(),
 				HostIfName:   ifDetail.Interface.HostIfName,
+				VrfMasterIf:  ifDetail.Interface.VrfMasterInterface,
+				VrfDevRT:     vrfDevRT,
 			},
 			Key: interfaces.InterfaceKey(ifDetail.Interface.Name),
 		}
@@ -979,8 +1023,11 @@ func getHostIfName(linuxIf *interfaces.Interface) string {
 func getInterfaceMTU(linuxIntf *interfaces.Interface) int {
 	mtu := int(linuxIntf.Mtu)
 	if mtu == 0 {
-		if linuxIntf.Type == interfaces.Interface_LOOPBACK {
+		switch linuxIntf.Type {
+		case interfaces.Interface_LOOPBACK:
 			return defaultLoopbackMTU
+		case interfaces.Interface_VRF_DEVICE:
+			return defaultVrfDevMTU
 		}
 		return defaultEthernetMTU
 	}

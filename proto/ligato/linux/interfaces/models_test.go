@@ -25,6 +25,7 @@ func TestInterfaceAddressKey(t *testing.T) {
 		name        string
 		iface       string
 		address     string
+		vrf         string
 		source      netalloc.IPAddressSource
 		expectedKey string
 	}{
@@ -104,14 +105,30 @@ func TestInterfaceAddressKey(t *testing.T) {
 			source:      netalloc.IPAddressSource_STATIC,
 			expectedKey: "linux/interface/memif0/address/alloc_ref/alloc:net1/IPV6_ADDR",
 		},
+		{
+			name:        "IPv4 address inside VRF",
+			iface:       "memif0",
+			address:     "192.168.1.12/24",
+			vrf:         "blue",
+			source:      netalloc.IPAddressSource_STATIC,
+			expectedKey: "linux/interface/memif0/address/static/192.168.1.12/24/vrf/blue",
+		},
+		{
+			name:        "IPv6 address inside VRF",
+			iface:       "memif0",
+			address:     "2001:db8::/32",
+			vrf:         "red",
+			source:      netalloc.IPAddressSource_STATIC,
+			expectedKey: "linux/interface/memif0/address/static/2001:db8::/32/vrf/red",
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			key := InterfaceAddressKey(test.iface, test.address, test.source)
+			key := InterfaceAddressKey(test.iface, test.address, test.vrf, test.source)
 			if key != test.expectedKey {
-				t.Errorf("failed for: iface=%s address=%s source=%s\n"+
+				t.Errorf("failed for: iface=%s address=%s vrf=%s source=%s\n"+
 					"expected key:\n\t%q\ngot key:\n\t%q",
-					test.iface, test.address, string(test.source), test.expectedKey, key)
+					test.iface, test.address, test.vrf, string(test.source), test.expectedKey, key)
 			}
 		})
 	}
@@ -123,6 +140,7 @@ func TestParseInterfaceAddressKey(t *testing.T) {
 		key                string
 		expectedIface      string
 		expectedIfaceAddr  string
+		expectedIfaceVrf   string
 		expectedSource     netalloc.IPAddressSource
 		expectedInvalidKey bool
 		expectedIsAddrKey  bool
@@ -173,6 +191,24 @@ func TestParseInterfaceAddressKey(t *testing.T) {
 			expectedIface:     "tap1",
 			expectedIfaceAddr: "2001:db8:85a3::8a2e:370:7334/48",
 			expectedSource:    netalloc.IPAddressSource_FROM_DHCP,
+			expectedIsAddrKey: true,
+		},
+		{
+			name:              "IPv4 address inside VRF",
+			key:               "linux/interface/memif0/address/static/192.168.1.12/24/vrf/blue",
+			expectedIface:     "memif0",
+			expectedIfaceAddr: "192.168.1.12/24",
+			expectedIfaceVrf:  "blue",
+			expectedSource:    netalloc.IPAddressSource_STATIC,
+			expectedIsAddrKey: true,
+		},
+		{
+			name:              "IPv6 address",
+			key:               "linux/interface/tap1/address/static/2001:db8:85a3::8a2e:370:7334/48/vrf/red",
+			expectedIface:     "tap1",
+			expectedIfaceAddr: "2001:db8:85a3::8a2e:370:7334/48",
+			expectedIfaceVrf:  "red",
+			expectedSource:    netalloc.IPAddressSource_STATIC,
 			expectedIsAddrKey: true,
 		},
 		{
@@ -244,6 +280,13 @@ func TestParseInterfaceAddressKey(t *testing.T) {
 			expectedIsAddrKey: false,
 		},
 		{
+			name:              "not interface address key #2",
+			key:               "linux/interface/veth0/vrf/blue",
+			expectedIface:     "",
+			expectedIfaceAddr: "",
+			expectedIsAddrKey: false,
+		},
+		{
 			name:               "invalid address source",
 			key:                "linux/interface/memif0/address/<invalid>/192.168.1.12/24",
 			expectedIface:      "memif0",
@@ -267,7 +310,7 @@ func TestParseInterfaceAddressKey(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			iface, ipAddr, source, invalidKey, isAddrKey := ParseInterfaceAddressKey(test.key)
+			iface, ipAddr, vrf, source, invalidKey, isAddrKey := ParseInterfaceAddressKey(test.key)
 			if isAddrKey != test.expectedIsAddrKey {
 				t.Errorf("expected isAddrKey: %v\tgot: %v", test.expectedIsAddrKey, isAddrKey)
 			}
@@ -282,6 +325,122 @@ func TestParseInterfaceAddressKey(t *testing.T) {
 			}
 			if ipAddr != test.expectedIfaceAddr {
 				t.Errorf("expected ipAddr: %s\tgot: %s", test.expectedIfaceAddr, ipAddr)
+			}
+			if vrf != test.expectedIfaceVrf {
+				t.Errorf("expected vrf: %s\tgot: %s", test.expectedIfaceVrf, vrf)
+			}
+		})
+	}
+}
+
+func TestInterfaceVrfKey(t *testing.T) {
+	tests := []struct {
+		name        string
+		iface       string
+		vrf         string
+		expectedKey string
+	}{
+		{
+			name:        "VRF 'blue'",
+			iface:       "veth0",
+			vrf:         "blue",
+			expectedKey: "linux/interface/veth0/vrf/blue",
+		},
+		{
+			name:        "VRF 'red'",
+			iface:       "veth0",
+			vrf:         "red",
+			expectedKey: "linux/interface/veth0/vrf/red",
+		},
+		{
+			name:        "invalid interface",
+			iface:       "",
+			vrf:         "blue",
+			expectedKey: "linux/interface/<invalid>/vrf/blue",
+		},
+		{
+			name:        "invalid VRF",
+			iface:       "veth0",
+			vrf:         "",
+			expectedKey: "linux/interface/veth0/vrf/<invalid>",
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			key := InterfaceVrfKey(test.iface, test.vrf)
+			if key != test.expectedKey {
+				t.Errorf("failed for: iface=%s vrf=%s\n"+
+					"expected key:\n\t%q\ngot key:\n\t%q",
+					test.iface, test.vrf, test.expectedKey, key)
+			}
+		})
+	}
+}
+
+func TestParseInterfaceVrfKey(t *testing.T) {
+	tests := []struct {
+		name               string
+		key                string
+		expectedIface      string
+		expectedIfaceVrf   string
+		expectedInvalidKey bool
+		expectedIsVrfKey   bool
+	}{
+		{
+			name:             "VRF 'blue'",
+			key:              "linux/interface/veth0/vrf/blue",
+			expectedIface:    "veth0",
+			expectedIfaceVrf: "blue",
+			expectedIsVrfKey: true,
+		},
+		{
+			name:             "VRF 'red'",
+			key:              "linux/interface/veth0/vrf/red",
+			expectedIface:    "veth0",
+			expectedIfaceVrf: "red",
+			expectedIsVrfKey: true,
+		},
+		{
+			name:               "missing interface",
+			key:                "linux/interface//vrf/blue",
+			expectedIface:      "<invalid>",
+			expectedIfaceVrf:   "blue",
+			expectedInvalidKey: true,
+			expectedIsVrfKey:   true,
+		},
+		{
+			name:               "missing VRF",
+			key:                "linux/interface/veth0/vrf",
+			expectedIface:      "veth0",
+			expectedIfaceVrf:   "<invalid>",
+			expectedInvalidKey: true,
+			expectedIsVrfKey:   true,
+		},
+		{
+			name:               "not interface VRF key",
+			key:                "linux/interface/tap1/address/static/2001:db8:85a3::8a2e:370:7334/48",
+			expectedIsVrfKey:   false,
+		},
+		{
+			name:               "not interface VRF key #2",
+			key:                "linux/interface/tap1/address/static/192.168.1.1/32/vrf/blue",
+			expectedIsVrfKey:   false,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			iface, vrf, invalidKey, isVrfKey := ParseInterfaceVrfKey(test.key)
+			if isVrfKey != test.expectedIsVrfKey {
+				t.Errorf("expected isVrfKey: %v\tgot: %v", test.expectedIsVrfKey, isVrfKey)
+			}
+			if invalidKey != test.expectedInvalidKey {
+				t.Errorf("expected invalidKey: %v\tgot: %v", test.expectedInvalidKey, invalidKey)
+			}
+			if iface != test.expectedIface {
+				t.Errorf("expected iface: %s\tgot: %s", test.expectedIface, iface)
+			}
+			if vrf != test.expectedIfaceVrf {
+				t.Errorf("expected vrf: %s\tgot: %s", test.expectedIfaceVrf, vrf)
 			}
 		})
 	}

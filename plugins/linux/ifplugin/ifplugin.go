@@ -50,6 +50,7 @@ type IfPlugin struct {
 	ifDescriptor     *descriptor.InterfaceDescriptor
 	ifWatcher        *descriptor.InterfaceWatcher
 	ifAddrDescriptor *descriptor.InterfaceAddressDescriptor
+	ifVrfDescriptor  *descriptor.InterfaceVrfDescriptor
 
 	// index map
 	ifIndex ifaceidx.LinuxIfMetadataIndex
@@ -108,10 +109,11 @@ func (p *IfPlugin) Init() error {
 		config.GoRoutinesCnt, p.Log)
 	p.ifDescriptor.SetInterfaceHandler(p.ifHandler)
 
-	var addrDescriptor *kvs.KVDescriptor
+	var addrDescriptor, vrfDescriptor *kvs.KVDescriptor
 	addrDescriptor, p.ifAddrDescriptor = descriptor.NewInterfaceAddressDescriptor(p.NsPlugin,
 		p.AddrAlloc, p.ifHandler, p.Log)
-	err = p.Deps.KVScheduler.RegisterKVDescriptor(addrDescriptor)
+	vrfDescriptor, p.ifVrfDescriptor = descriptor.NewInterfaceVrfDescriptor(p.NsPlugin, p.ifHandler, p.Log)
+	err = p.Deps.KVScheduler.RegisterKVDescriptor(addrDescriptor, vrfDescriptor)
 	if err != nil {
 		return err
 	}
@@ -125,6 +127,7 @@ func (p *IfPlugin) Init() error {
 	// pass read-only index map to descriptors
 	p.ifDescriptor.SetInterfaceIndex(p.ifIndex)
 	p.ifAddrDescriptor.SetInterfaceIndex(p.ifIndex)
+	p.ifVrfDescriptor.SetInterfaceIndex(p.ifIndex)
 
 	// start interface watching
 	if err = p.ifWatcher.StartWatching(); err != nil {

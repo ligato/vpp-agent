@@ -198,6 +198,17 @@ func ParseTapAlias(alias string) (linuxTapName, vppTapName, origHostIfName strin
 	return
 }
 
+// GetVRFAlias returns alias for Linux VRF devices managed by the agent.
+func GetVRFAlias(linuxIf *interfaces.Interface) string {
+	return linuxIf.Name
+}
+
+// ParseVRFAlias parses out logical name of a VRF devices from the alias.
+// Currently there are no other logical information stored in the alias so it is very straightforward.
+func ParseVRFAlias(alias string) (vrfName string) {
+	return alias
+}
+
 // retrieveInterfaces is run by a separate go routine to retrieve all interfaces
 // present in every <goRoutineIdx>-th network namespace from the list.
 func (h *NetLinkHandler) retrieveInterfaces(nsList []*namespaces.NetNamespace, goRoutineIdx, goRoutinesCnt int, ch chan<- retrievedInterfaces) {
@@ -224,6 +235,8 @@ func (h *NetLinkHandler) retrieveInterfaces(nsList []*namespaces.NetNamespace, g
 		}
 
 		// retrieve every interface managed by this agent
+		var ifaces []*InterfaceDetails
+		vrfDevs := make(map[int]string) // vrf index -> vrf name
 		for _, link := range links {
 			iface := &interfaces.Interface{
 				Namespace:   nsRef,
@@ -258,6 +271,23 @@ func (h *NetLinkHandler) retrieveInterfaces(nsList []*namespaces.NetNamespace, g
 						VppTapIfName: vppTapIfName,
 					},
 				}
+			} else if link.Type() == "vrf" {
+				vrfDev, isVrf := link.(*netlink.Vrf)
+				if !isVrf {
+					h.log.WithFields(logging.Fields{
+						"if-host-name": link.Attrs().Name,
+						"namespace":    nsRef,
+					}).Warnf("Unable to retrieve VRF-specific attributes")
+					continue
+				}
+				iface.Type = interfaces.Interface_VRF_DEVICE
+				iface.Name = ParseVRFAlias(alias)
+				iface.Link = &interfaces.Interface_VrfDev{
+					VrfDev: &interfaces.VrfDevLink{
+						RoutingTable: vrfDev.Table,
+					},
+				}
+				vrfDevs[link.Attrs().Index] = iface.Name
 			} else if link.Attrs().Name == DefaultLoopbackName {
 				iface.Type = interfaces.Interface_LOOPBACK
 				iface.Name = alias
@@ -279,7 +309,7 @@ func (h *NetLinkHandler) retrieveInterfaces(nsList []*namespaces.NetNamespace, g
 			h.retrieveLinkDetails(link, iface, nsRef)
 
 			// build interface details
-			retrieved.interfaces = append(retrieved.interfaces, &InterfaceDetails{
+			ifaces = append(ifaces, &InterfaceDetails{
 				Interface: iface,
 				Meta: &InterfaceMeta{
 					LinuxIfIndex:  link.Attrs().Index,
@@ -309,6 +339,14 @@ func (h *NetLinkHandler) retrieveInterfaces(nsList []*namespaces.NetNamespace, g
 				TxDropped:    link.Attrs().Statistics.RxDropped,
 			})
 		}
+
+		// fill VRF names
+		for _, iface := range ifaces {
+			if vrfDev, inVrf := vrfDevs[iface.Meta.MasterIndex]; inVrf {
+				iface.Interface.VrfMasterInterface = vrfDev
+			}
+		}
+		retrieved.interfaces = append(retrieved.interfaces, ifaces...)
 
 		// switch back to the default namespace
 		revert()

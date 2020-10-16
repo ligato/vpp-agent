@@ -13,6 +13,11 @@ message Interface {
         TAP_TO_VPP = 2; // TAP created by VPP to have the Linux-side further configured
         LOOPBACK = 3;
         EXISTING = 4;
+
+        // In Linux, VRF is implemented as yet another type of netdevice (i.e. listed with `ip link show`).
+        // Network interfaces are then assigned to VRF simply by enslaving them to the VRF device.
+        // For more information, visit: https://www.kernel.org/doc/Documentation/networking/vrf.txt
+        VRF_DEVICE = 5;
     };
 
     // Name is mandatory field representing logical name for the interface.
@@ -41,9 +46,10 @@ message Interface {
 
     // PhysAddress represents physical address (MAC) of the interface.
     // Random address will be assigned if left empty.
+    // Not used (and not supported) by VRF devices.
     string phys_address = 7;
 
-    /* MTU is the maximum transmission unit value. */
+    // MTU is the maximum transmission unit value.
     uint32 mtu = 8;
 
     oneof link {
@@ -52,11 +58,21 @@ message Interface {
 
         // TAP_TO_VPP-specific configuration
         TapLink tap = 21;
+
+        // VRF_DEVICE-specific configuration
+        VrfDevLink vrf_dev = 22;
     };
 
     // Configure/Resync link only. IP/MAC addresses are expected to be configured
     // externally - i.e. by a different agent or manually via CLI.
     bool link_only = 9;
+
+    // Reference to the logical name of a VRF_DEVICE interface.
+    // If defined, this interface will be enslaved to the VRF device and will thus become
+    // part of the VRF (L3-level separation) that the device represents.
+    // Interfaces enslaved to the same VRF_DEVICE master interface therefore
+    // comprise single VRF with a separate routing table.
+    string vrf_master_interface = 10;
 };
 
 message VethLink {
@@ -80,3 +96,14 @@ message TapLink {
     // Logical name of the VPP TAP interface (mandatory for TAP_TO_VPP)
     string vpp_tap_if_name = 1;
 };
+
+
+message VrfDevLink {
+    // Routing table associated with the VRF.
+    // Table ID is an 8-bit unsigned integer value. Please note that 253, 254 and 255 are reserved values
+    // for special routing tables (main, default, local).
+    // Multiple VRFs inside the same network namespace should each use a different routing table.
+    // For more information, visit: http://linux-ip.net/html/routing-tables.html
+    uint32 routing_table = 1;
+};
+
