@@ -242,7 +242,7 @@ func (h *NetLinkHandler) AddVRFDevice(vrfDevName string, routingTable uint32) er
 		Table:     routingTable,
 	}
 	if err := netlink.LinkAdd(link); err != nil {
-		return errors.Wrapf(err, "failed to add VRF device: LinkAdd (vrf=%s, rt=%d)",
+		return errors.Wrapf(err, "LinkAdd (vrf=%s, rt=%d)",
 			vrfDevName, routingTable)
 	}
 	return nil
@@ -259,8 +259,7 @@ func (h *NetLinkHandler) PutInterfaceIntoVRF(ifName, vrfDevName string) error {
 		return err
 	}
 	if err := netlink.LinkSetMasterByIndex(ifLink, vrfLink.Attrs().Index); err != nil {
-		return errors.Wrapf(err, "failed to put interface into VRF: " +
-			"LinkSetMasterByIndex (interface=%s, vrf=%s, vrf-index=%d)",
+		return errors.Wrapf(err, "LinkSetMasterByIndex (interface=%s, vrf=%s, vrf-index=%d)",
 			ifName, vrfDevName, vrfLink.Attrs().Index)
 	}
 	return nil
@@ -273,8 +272,8 @@ func (h *NetLinkHandler) RemoveInterfaceFromVRF(ifName, vrfDevName string) error
 		return err
 	}
 	if err := netlink.LinkSetNoMaster(ifLink); err != nil {
-		return errors.Wrapf(err, "failed to remove interface from VRF: " +
-			"LinkSetNoMaster (interface=%s, vrf=%s)", ifName, vrfDevName)
+		return errors.Wrapf(err, "LinkSetNoMaster (interface=%s, vrf=%s)",
+			ifName, vrfDevName)
 	}
 	return nil
 }

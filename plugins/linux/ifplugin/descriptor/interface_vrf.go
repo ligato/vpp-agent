@@ -110,6 +110,10 @@ func (d *InterfaceVrfDescriptor) Create(key string, emptyVal proto.Message) (met
 	defer revert()
 
 	err = d.ifHandler.PutInterfaceIntoVRF(ifMeta.HostIfName, vrfMeta.HostIfName)
+	if err != nil {
+		err = errors.WithMessagef(err, "failed to put interface '%s' into VRF '%s'",
+			ifMeta.HostIfName, vrfMeta.HostIfName)
+	}
 	return nil, err
 }
 
@@ -147,6 +151,10 @@ func (d *InterfaceVrfDescriptor) Delete(key string, emptyVal proto.Message, meta
 	defer revert()
 
 	err = d.ifHandler.RemoveInterfaceFromVRF(ifMeta.HostIfName, vrfMeta.HostIfName)
+	if err != nil {
+		err = errors.WithMessagef(err, "failed to remove interface '%s' from VRF '%s'",
+			ifMeta.HostIfName, vrfMeta.HostIfName)
+	}
 	return err
 }
 
