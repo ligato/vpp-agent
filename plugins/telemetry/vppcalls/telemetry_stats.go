@@ -16,6 +16,7 @@ package vppcalls
 
 import (
 	"context"
+	"fmt"
 	"regexp"
 	"strings"
 
@@ -26,6 +27,10 @@ import (
 // VPP stats API to retrieve the telemetry data.
 type TelemetryStats struct {
 	stats govppapi.StatsProvider
+	// telemetry API helps with reading Memory/Threads data
+	// (i.e. those who are not a part of the stats API or are not
+	// implemented yet)
+	telemetryAPI TelemetryVppAPI
 
 	sysStats  govppapi.SystemStats
 	ifStats   govppapi.InterfaceStats
@@ -34,9 +39,10 @@ type TelemetryStats struct {
 	bufStats  govppapi.BufferStats
 }
 
-func NewTelemetryVppStats(stats govppapi.StatsProvider) *TelemetryStats {
+func NewTelemetryVppStats(stats govppapi.StatsProvider, teleApi TelemetryVppAPI) *TelemetryStats {
 	return &TelemetryStats{
-		stats: stats,
+		stats:        stats,
+		telemetryAPI: teleApi,
 	}
 }
 
@@ -50,9 +56,23 @@ func (h *TelemetryStats) GetSystemStats(context.Context) (*govppapi.SystemStats,
 }
 
 // GetMemory retrieves `show memory` info.
+// todo switch to stats when memory data will be implemented
 func (h *TelemetryStats) GetMemory(ctx context.Context) (*MemoryInfo, error) {
-	// TODO: retrieve memory stats
+	if h.telemetryAPI == nil {
+		return nil, fmt.Errorf("`GetMemory` unavailable, telemetry handler was not provided")
+	}
+	// todo failing, temporary disabled
+	// return h.telemetryAPI.GetMemory(ctx)
 	return nil, nil
+}
+
+// GetThreads retrieves `show threads` info.
+// todo switch to stats when threads data will be available
+func (h *TelemetryStats) GetThreads(ctx context.Context) (*ThreadsInfo, error) {
+	if h.telemetryAPI == nil {
+		return nil, fmt.Errorf("`GetThreads` unavailable, telemetry handler was not provided")
+	}
+	return h.telemetryAPI.GetThreads(ctx)
 }
 
 // GetInterfaceStats retrieves interface stats.

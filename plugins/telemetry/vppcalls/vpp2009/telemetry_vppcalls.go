@@ -266,6 +266,30 @@ func (h *TelemetryHandler) GetBuffersInfo(ctx context.Context) (*vppcalls.Buffer
 	return info, nil
 }
 
+// GetThreads retrieves info about the VPP threads
+func (h *TelemetryHandler) GetThreads(ctx context.Context) (*vppcalls.ThreadsInfo, error) {
+	threads, err := h.vpe.GetThreads(ctx)
+	if err != nil {
+		return nil, err
+	}
+	var items []vppcalls.ThreadsItem
+	for _, thread := range threads {
+		fmt.Printf("thread: %v", thread)
+		items = append(items, vppcalls.ThreadsItem{
+			Name:      thread.Name,
+			ID:        thread.ID,
+			Type:      thread.Type,
+			PID:       thread.PID,
+			CPUID:     thread.CPUID,
+			Core:      thread.Core,
+			CPUSocket: thread.CPUSocket,
+		})
+	}
+	return &vppcalls.ThreadsInfo{
+		Items: items,
+	}, err
+}
+
 func strToFloat64(s string) float64 {
 	// Replace 'k' (thousands) with 'e3' to make it parsable with strconv
 	s = strings.Replace(s, "k", "e3", 1)

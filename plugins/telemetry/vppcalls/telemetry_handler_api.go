@@ -24,7 +24,7 @@ import (
 )
 
 var (
-	// FallbackToCli defines wether should telemetry handler
+	// FallbackToCli defines whether should telemetry handler
 	// fallback to parsing stats from CLI output.
 	FallbackToCli = false
 )
@@ -37,6 +37,7 @@ type TelemetryVppAPI interface {
 	GetRuntimeInfo(context.Context) (*RuntimeInfo, error)
 	GetBuffersInfo(context.Context) (*BuffersInfo, error)
 	GetInterfaceStats(context.Context) (*govppapi.InterfaceStats, error)
+	GetThreads(ctx context.Context) (*ThreadsInfo, error)
 }
 
 // MemoryInfo contains memory thread info.
@@ -153,6 +154,30 @@ type BuffersItem struct {
 	NumFree  uint64 `json:"num_free"`
 }
 
+// ThreadsInfo contains values returned form `show threads`
+type ThreadsInfo struct {
+	Items []ThreadsItem
+}
+
+// GetItems is safe getter for thread items
+func (i *ThreadsInfo) GetItems() []ThreadsItem {
+	if i == nil {
+		return nil
+	}
+	return i.Items
+}
+
+// ThreadsItem represents single threads item
+type ThreadsItem struct {
+	Name      string `json:"name"`
+	ID        uint32 `json:"id"`
+	Type      string `json:"type"`
+	PID       uint32 `json:"pid"`
+	CPUID     uint32 `json:"cpuid"`
+	Core      uint32 `json:"core"`
+	CPUSocket uint32 `json:"cpu_socket"`
+}
+
 var Handler = vpp.RegisterHandler(vpp.HandlerDesc{
 	Name:       "telemetry",
 	HandlerAPI: (*TelemetryVppAPI)(nil),
@@ -173,30 +198,47 @@ func AddHandlerVersion(version vpp.Version, msgs []govppapi.Message, h NewHandle
 	})
 }
 
+// NewHandler returns the telemetry handler preferring the VPP stats API
+// with CLI/binary API handler injected to retrieve data not included in
+// stats. In case the stats API is not available, CLI handler is returned.
 func NewHandler(c vpp.Client) (TelemetryVppAPI, error) {
-	// Prefer using VPP stats API.
-	if stats := c.Stats(); stats != nil {
-		return NewTelemetryVppStats(stats), nil
-	}
+	var compatibleHandler TelemetryVppAPI = nil
 	v, err := Handler.GetCompatibleVersion(c)
+	if err != nil {
+		log.Warnf("compatible handler unavailable: %v", err)
+	} else {
+		compatibleHandler = v.NewHandler(c).(TelemetryVppAPI)
+	}
+	// Prefer the VPP stats API (even without the handler)
+	if stats := c.Stats(); stats != nil {
+		return NewTelemetryVppStats(stats, compatibleHandler), nil
+	}
 	if err != nil {
 		return nil, err
 	}
-	return v.New.(NewHandlerFunc)(c), nil
+	return compatibleHandler, nil
 }
 
+// CompatibleTelemetryHandler returns the telemetry handler respecting
+// VPP version. It returns the stats API handler when available, or
+// fallbacks to the CLI when requested.
 func CompatibleTelemetryHandler(c vpp.Client) TelemetryVppAPI {
-	// Prefer using VPP stats API.
+	var compatibleHandler TelemetryVppAPI = nil
+	v := Handler.FindCompatibleVersion(c)
+	if v != nil {
+		compatibleHandler = v.NewHandler(c).(TelemetryVppAPI)
+	}
+	if FallbackToCli && v != nil {
+		log.Info("falling back to parsing CLI output for telemetry")
+		return v.NewHandler(c).(TelemetryVppAPI)
+	}
 	if stats := c.Stats(); stats != nil {
-		return NewTelemetryVppStats(stats)
-	}
-	if FallbackToCli {
-		if v := Handler.FindCompatibleVersion(c); v != nil {
-			log.Info("falling back to parsing CLI output for telemetry")
-			return v.NewHandler(c).(TelemetryVppAPI)
+		if v == nil {
+			log.Warn("handler unavailable, functionality limited")
 		}
-		// no compatible version found
+		return NewTelemetryVppStats(stats, compatibleHandler)
 	}
+	// no compatible version found
 	log.Warnf("stats connection not available for telemetry")
 	return nil
 }
