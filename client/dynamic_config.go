@@ -1,17 +1,14 @@
 package client
 
 import (
-	"context"
 	"fmt"
-	"log"
-	"net"
 	"strings"
-	"time"
+
+	"go.ligato.io/cn-infra/v2/logging/logrus"
 
 	"github.com/go-errors/errors"
 	"go.ligato.io/vpp-agent/v3/pkg/models"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/generic"
-	"google.golang.org/grpc"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protodesc"
 	"google.golang.org/protobuf/reflect/protoreflect"
@@ -87,9 +84,14 @@ var backwardCompatibleNames = map[string]names{
 // proto model, but that model is hardcoded). Dynamic config can contain also custom 3rd party models
 // and therefore can be used to import/export config data also for 3rd party models that are registered, but not
 // part of VPP-Agent repository and therefore not know to hardcoded configurator.Config.
-func NewDynamicConfig(knownModels []*ModelInfo) (*dynamicpb.Message, error) {
+func NewDynamicConfig(knownModels []*ModelInfo, fileDescProtos []*descriptorpb.FileDescriptorProto) (*dynamicpb.Message, error) {
+	dependencyRegistry, err := createDependencyRegistry(fileDescProtos)
+	if err != nil {
+		return nil, errors.Errorf("can't create dependency file descriptor registry due to: %v", err)
+	}
+
 	// get file descriptor proto for give known models
-	fileDP, dependencyRegistry, rootMsgName, err := createDynamicConfigDescriptorProto(knownModels)
+	fileDP, rootMsgName, err := createDynamicConfigDescriptorProto(knownModels, dependencyRegistry)
 	if err != nil {
 		return nil, errors.Errorf("can't create descriptor proto for dynamic config due to: %v", err)
 	}
@@ -107,14 +109,34 @@ func NewDynamicConfig(knownModels []*ModelInfo) (*dynamicpb.Message, error) {
 	return dynamicpb.NewMessage(rootMsg), nil
 }
 
+func createDependencyRegistry(fileDescProtos []*descriptorpb.FileDescriptorProto) (protodesc.Resolver, error) {
+	reg := &protoregistry.Files{}
+	fds, err := toFileDescriptors(fileDescProtos)
+	if err != nil {
+		return nil, errors.Errorf("can't convert file descriptor protos to file descriptors "+
+			"(for dependency registry creation) due to: %v", err)
+	}
+	for _, fd := range fds {
+		if err := reg.RegisterFile(fd); err != nil {
+			return nil, errors.Errorf("can't add proto file descriptor(%v) "+
+				"to cache due to: %v", fd.Name(), err)
+		}
+
+		logrus.DefaultLogger().Debugf("Proto file %v was successfully "+
+			"added to dependency registry.", fd.Path())
+	}
+	return reg, nil
+}
+
 // createDynamicConfigDescriptorProto creates descriptor proto for configuration. The construction of the descriptor
 // proto is the way how the configuration from known models are added to the configuration proto message.
 // The constructed file descriptor proto is used to get file descriptor that in turn can be used to instantiate
 // proto message with all the configs from knownModels. This method conveniently provides also all referenced
 // external models of provided knownModels and the configuration root message (proto file has many messages, but
 // we need to know which one is the root for our configuration).
-func createDynamicConfigDescriptorProto(knownModels []*ModelInfo) (fileDP *descriptorpb.FileDescriptorProto,
-	dependencyRegistry *protoregistry.Files, rootMsgName protoreflect.Name, error error) {
+func createDynamicConfigDescriptorProto(knownModels []*ModelInfo, dependencyRegistry protodesc.Resolver) (
+	fileDP *descriptorpb.FileDescriptorProto, rootMsgName protoreflect.Name, error error) {
+
 	// file descriptor proto for dynamic config proto model
 	fileDP = &descriptorpb.FileDescriptorProto{
 		Syntax:  proto.String("proto3"),
@@ -150,24 +172,8 @@ func createDynamicConfigDescriptorProto(knownModels []*ModelInfo) (fileDP *descr
 
 	// fill dynamic message with given known models
 	configGroups := make(map[string]*descriptorpb.DescriptorProto)
-	dependencyRegistry = &protoregistry.Files{}
+	importedDependency := make(map[string]struct{}) // just for deduplication checking
 	for _, modelDetail := range knownModels {
-		// retrieve info about known model from model registry
-		// TODO remove
-		//if modelDetail.Spec == nil {
-		//	error = errors.Errorf("model doesn't have specification (model %#v)", modelDetail)
-		//	return
-		//}
-		//modelName := models.ToSpec(modelDetail.Spec).ModelName()
-		//knownModel, err := models.GetModel(modelName)
-		//if err != nil {
-		//	for _, regModel := range models.DefaultRegistry.RegisteredModels() {
-		//		fmt.Println(regModel.Name())
-		//	}
-		//	error = errors.Errorf("can't retrieve registered model with name %v (is this model correctly registered?) due to: %v", modelName, err)
-		//	return
-		//}
-
 		// get/create group config for this know model (all configs are grouped into groups based on their module)
 		configGroupName := fmt.Sprintf("%v%v", modulePrefix(models.ToSpec(modelDetail.Spec).ModelName()), configGroupSuffix)
 		configGroup, found := configGroups[configGroupName]
@@ -219,68 +225,31 @@ func createDynamicConfigDescriptorProto(knownModels []*ModelInfo) (fileDP *descr
 			TypeName: proto.String(fmt.Sprintf(".%v", modelDetail.ProtoName)),
 		})
 
-		// TODO compilation break -> implement getting file descriptor for known model from VPP-Agent
-		//  meta.proto service RPC
-		// TODO meta client outside of this pure computational/conversion function
-		// Remote client - using gRPC connection to the agent.
-		conn, err := grpc.Dial("unix",
-			grpc.WithInsecure(),
-			//grpc.WithDialer(dialer("tcp", "172.17.0.4:9111", time.Second*3)),
-			grpc.WithDialer(dialer("tcp", "127.0.0.1:9111", time.Second*3)),
-		)
+		//add proto file dependency for this known model (+ check that it is in dependency file descriptor registry)
+		protoFile, err := ModelOptionFor("protoFile", modelDetail.Options)
 		if err != nil {
-			log.Fatal(err)
+			error = errors.Errorf("can't retrieve protoFile from model options "+
+				"from model %v due to: %v", modelDetail.ProtoName, err)
+			return
 		}
-		defer conn.Close()
-		metaServiceClient := generic.NewMetaServiceClient(conn)
+		if _, found := importedDependency[protoFile]; !found {
+			importedDependency[protoFile] = struct{}{}
 
-		protoFilePath, err := modelOptionFor("protoFile", modelDetail.Options) // TODO
-		if err != nil {
-			panic(err) // TODO
-		}
-		ctx := context.Background()
-		resp, err := metaServiceClient.ProtoFileDescriptor(ctx, &generic.ProtoFileDescriptorRequest{
-			FullProtoFileName: protoFilePath,
-		})
-		if err != nil {
-			panic(err) // TODO
-		}
-		if resp.FileDescriptor == nil {
-			panic("ca") // TODO
-		}
-		if resp.FileImportDescriptors == nil {
-			panic("ca") // TODO
-		}
+			//add proto file dependency for this known model
+			fileDP.Dependency = append(fileDP.Dependency, protoFile)
 
-		reg := &protoregistry.Files{}
-		fds, err := toFileDescriptors(resp.FileImportDescriptors.File)
-		if err != nil {
-			panic("asdfasd") // TODO
-		}
-		for _, fd := range fds {
-			reg.RegisterFile(fd)
-		}
-
-		protoFileDesc, err := protodesc.NewFile(resp.FileDescriptor, reg)
-		if err != nil {
-			panic(err) // TODO
-		}
-
-		//add proto file dependency for this known model
-		// TODO remove ?
-		//protoFileDesc := msgDesc.ParentFile()
-		//if protoFileDesc == nil {
-		//	error = errors.Errorf("can't add dependency to dynamic config descriptor proto due to: "+
-		//		"can't retrieve parent proto file for proto message %v", msgDesc)
-		//	return
-		//}
-		if _, err := dependencyRegistry.FindFileByPath(protoFileDesc.Path()); err == protoregistry.NotFound {
-			if err := dependencyRegistry.RegisterFile(protoFileDesc); err != nil {
-				error = errors.Errorf("can't add dependency to dynamic config descriptor due to: "+
-					"can't add proto file descriptor(%#v) to cache due to: %v", protoFileDesc, err)
+			// checking dependency registry that should already contain the linked dependency
+			if _, err := dependencyRegistry.FindFileByPath(protoFile); err != nil {
+				if err == protoregistry.NotFound {
+					error = errors.Errorf("proto file %v need to be referenced in dynamic config, but it "+
+						"is not in dependency registry that was created from file descriptor proto input "+
+						"(missing in input? check debug output from creating dependency registry) ", protoFile)
+					return
+				}
+				error = errors.Errorf("can't verify that proto file %v is in "+
+					"dependency registry, it is due to: %v", protoFile, err)
 				return
 			}
-			fileDP.Dependency = append(fileDP.Dependency, protoFileDesc.Path())
 		}
 	}
 	return
@@ -344,17 +313,6 @@ func toFileDescriptors(fileDescProtos []*descriptorpb.FileDescriptorProto) ([]pr
 		result = append(result, fd)
 	}
 	return result, nil
-}
-
-// TODO move this away
-// Dialer for unix domain socket
-func dialer(socket, address string, timeoutVal time.Duration) func(string, time.Duration) (net.Conn, error) {
-	return func(addr string, timeout time.Duration) (net.Conn, error) {
-		// Pass values
-		addr, timeout = address, timeoutVal
-		// Dial with timeout
-		return net.DialTimeout(socket, addr, timeoutVal)
-	}
 }
 
 // DynamicConfigExport exports from dynamic config the proto.Messages corresponding to known models that
@@ -422,7 +380,7 @@ func simpleProtoName(fullProtoName string) string {
 	return nameSplit[len(nameSplit)-1]
 }
 
-func modelOptionFor(key string, options []*generic.ModelDetail_Option) (string, error) {
+func ModelOptionFor(key string, options []*generic.ModelDetail_Option) (string, error) {
 	for _, option := range options {
 		if option.Key == key {
 			if len(option.Values) == 0 {
@@ -435,7 +393,7 @@ func modelOptionFor(key string, options []*generic.ModelDetail_Option) (string, 
 }
 
 func existsModelOptionFor(key string, options []*generic.ModelDetail_Option) bool {
-	_, err := modelOptionFor(key, options)
+	_, err := ModelOptionFor(key, options)
 	return err == nil
 }
 

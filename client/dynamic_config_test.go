@@ -69,9 +69,28 @@ func TestYamlCompatibility(t *testing.T) {
 			},
 		},
 	}
+	loop1 := &interfaces.Interface{
+		Name:        "loop-test-1",
+		Type:        interfaces.Interface_SOFTWARE_LOOPBACK,
+		Enabled:     true,
+		Mtu:         1500,
+		IpAddresses: []string{"10.10.1.1/24"},
+	}
+	vppTap1 := &interfaces.Interface{
+		Name:        "vpp-tap1",
+		Type:        interfaces.Interface_TAP,
+		Enabled:     true,
+		IpAddresses: []string{"10.10.10.1/24"},
+		Link: &interfaces.Interface_Tap{
+			Tap: &interfaces.TapLink{
+				Version:        2,
+				ToMicroservice: "test-microservice1",
+			},
+		},
+	}
 	// TODO add more configuration to hardcoded version of configuration so it can cover all configuration
 	//  possibilities
-	ifaces := []*interfaces.Interface{memIFRed, memIFBlack}
+	ifaces := []*interfaces.Interface{memIFRed, memIFBlack, loop1, vppTap1}
 	configRoot := configurator.GetResponse{ // using fake Config root to get "config" root element in json/yaml (mimicking agentctl config yaml handling)
 		Config: &configurator.Config{
 			VppConfig: &vpp.ConfigData{

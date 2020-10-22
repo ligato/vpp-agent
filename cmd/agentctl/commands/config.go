@@ -19,25 +19,30 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
+	"net"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/types/descriptorpb"
 
 	yaml2 "github.com/ghodss/yaml"
+	"github.com/golang/protobuf/proto"
+	"github.com/golang/protobuf/protoc-gen-go/descriptor"
 	"github.com/olekukonko/tablewriter"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"google.golang.org/protobuf/encoding/protojson"
-
 	"go.ligato.io/vpp-agent/v3/client"
 	"go.ligato.io/vpp-agent/v3/cmd/agentctl/api/types"
 	agentcli "go.ligato.io/vpp-agent/v3/cmd/agentctl/cli"
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/configurator"
+	"go.ligato.io/vpp-agent/v3/proto/ligato/generic"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/kvscheduler"
+	"google.golang.org/grpc"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
 func NewConfigCommand(cli agentcli.Cli) *cobra.Command {
@@ -155,7 +160,8 @@ func runConfigUpdate(cli agentcli.Cli, opts ConfigUpdateOptions, args []string) 
 	if err != nil {
 		return fmt.Errorf("getting registered models: %w", err)
 	}
-	config, err := client.NewDynamicConfig(knownModels)
+	fileDescProtos := modelFileDescriptorProtos(knownModels)
+	config, err := client.NewDynamicConfig(knownModels, fileDescProtos)
 	if err != nil {
 		return fmt.Errorf("can't create all-config proto message dynamically due to: %w", err)
 	}
@@ -178,7 +184,7 @@ func runConfigUpdate(cli agentcli.Cli, opts ConfigUpdateOptions, args []string) 
 	// convert to version 1 proto messages
 	configProtos := make([]proto.Message, 0, len(configMsgs))
 	for _, configProto := range configMsgs {
-		configProtos = append(configProtos, proto.MessageV1(configProto))
+		configProtos = append(configProtos, proto.MessageV1(configProto.ProtoReflect().Interface()))
 	}
 	req.Update(configProtos...)
 	if err := req.Send(ctx); err != nil {
@@ -303,6 +309,74 @@ func runConfigDelete(cli agentcli.Cli, opts ConfigDeleteOptions, args []string) 
 	}
 
 	return nil
+}
+
+func modelFileDescriptorProtos(knownModels []*client.ModelInfo) []*descriptorpb.FileDescriptorProto {
+	// TODO extend RPC ProtoFileDescriptor from meta service API to generic client API just like for knownModels?
+	// TODO use agenctl conn or client or something? or at least configuration for host/port/etc.
+	// remote GRPC client for meta service
+	conn, err := grpc.Dial("unix",
+		grpc.WithInsecure(),
+		//grpc.WithDialer(dialer("tcp", "172.17.0.4:9111", time.Second*3)),
+		grpc.WithDialer(dialer("tcp", "127.0.0.1:9111", time.Second*3)),
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer conn.Close()
+	metaServiceClient := generic.NewMetaServiceClient(conn)
+
+	// extract proto files from known models
+	protoFilePaths := make(map[string]struct{}) // using map as set for deduplication
+	for _, modelDetail := range knownModels {
+		protoFilePath, err := client.ModelOptionFor("protoFile", modelDetail.Options) // TODO make global constant?
+		if err != nil {
+			panic(err) // TODO
+		}
+		protoFilePaths[protoFilePath] = struct{}{}
+	}
+
+	// query meta service for extracted proto files to get their file descriptor protos
+	fileDescProto := make(map[string]*descriptor.FileDescriptorProto) // deduplicaton + data container
+	for protoFilePath, _ := range protoFilePaths {
+		ctx := context.Background()
+		resp, err := metaServiceClient.ProtoFileDescriptor(ctx, &generic.ProtoFileDescriptorRequest{
+			FullProtoFileName: protoFilePath,
+		})
+		if err != nil {
+			panic(err) // TODO
+		}
+		if resp.FileDescriptor == nil {
+			panic("ca") // TODO
+		}
+		if resp.FileImportDescriptors == nil {
+			panic("ca") // TODO
+		}
+
+		fileDescProto[*resp.FileDescriptor.Name] = resp.FileDescriptor
+		for _, fid := range resp.FileImportDescriptors.File {
+			if fid != nil {
+				fileDescProto[*fid.Name] = fid
+			}
+		}
+	}
+
+	// data reorganization to get properly formatted result
+	result := make([]*descriptorpb.FileDescriptorProto, 0)
+	for _, fdp := range fileDescProto {
+		result = append(result, fdp)
+	}
+	return result
+}
+
+// Dialer for unix domain socket
+func dialer(socket, address string, timeoutVal time.Duration) func(string, time.Duration) (net.Conn, error) {
+	return func(addr string, timeout time.Duration) (net.Conn, error) {
+		// Pass values
+		addr, timeout = address, timeoutVal
+		// Dial with timeout
+		return net.DialTimeout(socket, addr, timeoutVal)
+	}
 }
 
 func newConfigRetrieveCommand(cli agentcli.Cli) *cobra.Command {
