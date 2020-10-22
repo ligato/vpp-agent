@@ -24,6 +24,7 @@ import (
 	vpp_nat "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/nat"
 	vpp_punt "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/punt"
 	vpp_srv6 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/srv6"
+	vpp_stn "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/stn"
 	vpp_wg "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/wireguard"
 )
 
@@ -71,6 +72,9 @@ type (
 	SRv6LocalSID = vpp_srv6.LocalSID
 	SRv6Policy   = vpp_srv6.Policy
 	SRv6Steering = vpp_srv6.Steering
+
+	// STN
+	STNRule = vpp_stn.Rule
 
 	// Wireguard
 	WgPeer = vpp_wg.Peer
