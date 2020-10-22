@@ -20,6 +20,18 @@ type MetaServiceClient interface {
 	// KnownModels returns information about service capabilities
 	// including list of models supported by the server.
 	KnownModels(ctx context.Context, in *KnownModelsRequest, opts ...grpc.CallOption) (*KnownModelsResponse, error)
+	// ProtoFileDescriptor returns proto file descriptor for proto file identified by full name.
+	// The proto file descriptor is in form of proto messages (file descriptor proto and
+	// proto of its imports) so there are needed additional steps to join them into protoreflect.FileDescriptor
+	// ("google.golang.org/protobuf/reflect/protodesc".NewFile(...)).
+	//
+	// This rpc can be used together with knownModels rpc to retrieve additional model information.
+	// Message descriptor can be retrieved from file descriptor corresponding to knownModel message
+	// and used with proto reflecting to get all kinds of information about the known model.
+	//
+	// Due to nature of data retrieval, it is expected that at least one message from that proto file
+	// is registered as known model.
+	ProtoFileDescriptor(ctx context.Context, in *ProtoFileDescriptorRequest, opts ...grpc.CallOption) (*ProtoFileDescriptorResponse, error)
 }
 
 type metaServiceClient struct {
@@ -39,6 +51,15 @@ func (c *metaServiceClient) KnownModels(ctx context.Context, in *KnownModelsRequ
 	return out, nil
 }
 
+func (c *metaServiceClient) ProtoFileDescriptor(ctx context.Context, in *ProtoFileDescriptorRequest, opts ...grpc.CallOption) (*ProtoFileDescriptorResponse, error) {
+	out := new(ProtoFileDescriptorResponse)
+	err := c.cc.Invoke(ctx, "/ligato.generic.MetaService/ProtoFileDescriptor", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // MetaServiceServer is the server API for MetaService service.
 // All implementations must embed UnimplementedMetaServiceServer
 // for forward compatibility
@@ -46,6 +67,18 @@ type MetaServiceServer interface {
 	// KnownModels returns information about service capabilities
 	// including list of models supported by the server.
 	KnownModels(context.Context, *KnownModelsRequest) (*KnownModelsResponse, error)
+	// ProtoFileDescriptor returns proto file descriptor for proto file identified by full name.
+	// The proto file descriptor is in form of proto messages (file descriptor proto and
+	// proto of its imports) so there are needed additional steps to join them into protoreflect.FileDescriptor
+	// ("google.golang.org/protobuf/reflect/protodesc".NewFile(...)).
+	//
+	// This rpc can be used together with knownModels rpc to retrieve additional model information.
+	// Message descriptor can be retrieved from file descriptor corresponding to knownModel message
+	// and used with proto reflecting to get all kinds of information about the known model.
+	//
+	// Due to nature of data retrieval, it is expected that at least one message from that proto file
+	// is registered as known model.
+	ProtoFileDescriptor(context.Context, *ProtoFileDescriptorRequest) (*ProtoFileDescriptorResponse, error)
 	mustEmbedUnimplementedMetaServiceServer()
 }
 
@@ -55,6 +88,9 @@ type UnimplementedMetaServiceServer struct {
 
 func (*UnimplementedMetaServiceServer) KnownModels(context.Context, *KnownModelsRequest) (*KnownModelsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method KnownModels not implemented")
+}
+func (*UnimplementedMetaServiceServer) ProtoFileDescriptor(context.Context, *ProtoFileDescriptorRequest) (*ProtoFileDescriptorResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ProtoFileDescriptor not implemented")
 }
 func (*UnimplementedMetaServiceServer) mustEmbedUnimplementedMetaServiceServer() {}
 
@@ -80,6 +116,24 @@ func _MetaService_KnownModels_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _MetaService_ProtoFileDescriptor_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ProtoFileDescriptorRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MetaServiceServer).ProtoFileDescriptor(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/ligato.generic.MetaService/ProtoFileDescriptor",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MetaServiceServer).ProtoFileDescriptor(ctx, req.(*ProtoFileDescriptorRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _MetaService_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "ligato.generic.MetaService",
 	HandlerType: (*MetaServiceServer)(nil),
@@ -87,6 +141,10 @@ var _MetaService_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "KnownModels",
 			Handler:    _MetaService_KnownModels_Handler,
+		},
+		{
+			MethodName: "ProtoFileDescriptor",
+			Handler:    _MetaService_ProtoFileDescriptor_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

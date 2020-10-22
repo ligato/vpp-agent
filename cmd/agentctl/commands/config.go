@@ -24,14 +24,15 @@ import (
 	"strings"
 	"time"
 
+	"github.com/golang/protobuf/proto"
+
 	yaml2 "github.com/ghodss/yaml"
 	"github.com/olekukonko/tablewriter"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/encoding/protojson"
 
+	"go.ligato.io/vpp-agent/v3/client"
 	"go.ligato.io/vpp-agent/v3/cmd/agentctl/api/types"
 	agentcli "go.ligato.io/vpp-agent/v3/cmd/agentctl/cli"
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
@@ -115,6 +116,7 @@ func newConfigUpdateCommand(cli agentcli.Cli) *cobra.Command {
 	}
 	flags := cmd.Flags()
 	flags.StringVarP(&opts.Format, "format", "f", "", "Format output")
+	// TODO check options again -> add/remove (changing client means getting different set of options)
 	flags.BoolVar(&opts.Replace, "replace", false, "Replaces all existing config")
 	flags.BoolVar(&opts.WaitDone, "waitdone", false, "Waits until config update is done")
 	flags.BoolVarP(&opts.Verbose, "verbose", "v", false, "Show verbose output")
@@ -129,10 +131,13 @@ type ConfigUpdateOptions struct {
 }
 
 func runConfigUpdate(cli agentcli.Cli, opts ConfigUpdateOptions, args []string) error {
-	ctx, cancel := context.WithCancel(context.Background())
+	// TODO remove this debug
+	fmt.Println(&configurator.Config{}) // getting all registered models?
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Hour) // TODO add opts.Timeout
 	defer cancel()
 
-	client, err := cli.Client().ConfiguratorClient()
+	c, err := cli.Client().GenericClient()
 	if err != nil {
 		return err
 	}
@@ -146,52 +151,59 @@ func runConfigUpdate(cli agentcli.Cli, opts ConfigUpdateOptions, args []string) 
 		return fmt.Errorf("reading file %s: %w", file, err)
 	}
 
-	var update = &configurator.Config{}
+	knownModels, err := c.KnownModels("config")
+	if err != nil {
+		return fmt.Errorf("getting registered models: %w", err)
+	}
+	config, err := client.NewDynamicConfig(knownModels)
+	if err != nil {
+		return fmt.Errorf("can't create all-config proto message dynamically due to: %w", err)
+	}
+
 	bj, err := yaml2.YAMLToJSON(b)
 	if err != nil {
 		return fmt.Errorf("converting to JSON: %w", err)
 	}
-	err = protojson.Unmarshal(bj, update)
+	err = protojson.Unmarshal(bj, config)
 	if err != nil {
 		return err
 	}
-	logrus.Infof("loaded config update:\n%s", update)
+	logrus.Infof("loaded config :\n%s", config)
+
+	req := c.ChangeRequest()
+	configMsgs, err := client.DynamicConfigExport(config)
+	if err != nil {
+		return fmt.Errorf("can't extract single configuration proto messages from one big configuration proto message due to: %v", err)
+	}
+	// convert to version 1 proto messages
+	configProtos := make([]proto.Message, 0, len(configMsgs))
+	for _, configProto := range configMsgs {
+		configProtos = append(configProtos, proto.MessageV1(configProto))
+	}
+	req.Update(configProtos...)
+	if err := req.Send(ctx); err != nil {
+		return fmt.Errorf("send failed: %v", err)
+	}
 
 	var data interface{}
-
-	var header metadata.MD
-	resp, err := client.Update(ctx, &configurator.UpdateRequest{
-		Update:     update,
-		FullResync: opts.Replace,
-		WaitDone:   opts.WaitDone,
-	}, grpc.Header(&header))
 	if err != nil {
 		logrus.Warnf("update failed: %v", err)
 		data = err
 	} else {
-		data = resp
+		// TODO probably breaking compatibility with old-way returned result data.
+		//  Can be done something about it?
+		data = "OK"
 	}
 
 	if opts.Verbose {
-		logrus.Debugf("grpc header: %+v", header)
-		if seqNum, ok := header["seqnum"]; ok {
-			ref, _ := strconv.Atoi(seqNum[0])
-			txns, err := cli.Client().SchedulerHistory(ctx, types.SchedulerHistoryOptions{
-				SeqNum: ref,
-			})
-			if err != nil {
-				logrus.Warnf("getting history for seqNum %d failed: %v", ref, err)
-			} else {
-				data = txns
-			}
-		}
+		// TODO if nothing to show with generic client then remove verbose
 	}
 
 	format := opts.Format
 	if len(format) == 0 {
 		format = `{{.}}`
 	}
-	if err := formatAsTemplate(cli.Out(), format, data); err != nil {
+	if err := formatAsTemplate(cli.Out(), format, data); err != nil { // TODO test different formats for "OK" whether it does not fail
 		return err
 	}
 
