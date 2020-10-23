@@ -61,9 +61,7 @@ func (h *TelemetryStats) GetMemory(ctx context.Context) (*MemoryInfo, error) {
 	if h.telemetryAPI == nil {
 		return nil, fmt.Errorf("`GetMemory` unavailable, telemetry handler was not provided")
 	}
-	// todo failing, temporary disabled
-	// return h.telemetryAPI.GetMemory(ctx)
-	return nil, nil
+	return h.telemetryAPI.GetMemory(ctx)
 }
 
 // GetThreads retrieves `show threads` info.

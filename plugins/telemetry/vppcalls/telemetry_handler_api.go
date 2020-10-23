@@ -55,17 +55,18 @@ func (i *MemoryInfo) GetThreads() []MemoryThread {
 
 // MemoryThread represents single thread memory counters
 type MemoryThread struct {
-	ID        uint   `json:"id"`
-	Name      string `json:"name"`
-	Size      uint64 `json:"size"`
-	Objects   uint64 `json:"objects"`
-	Used      uint64 `json:"used"`
-	Total     uint64 `json:"total"`
-	Free      uint64 `json:"free"`
-	Reclaimed uint64 `json:"reclaimed"`
-	Overhead  uint64 `json:"overhead"`
-	Pages     uint64 `json:"pages"`
-	PageSize  uint64 `json:"page_size"`
+	ID              uint   `json:"id"`
+	Name            string `json:"name"`
+	Size            uint64 `json:"size"`
+	Pages           uint64 `json:"pages"`
+	PageSize        uint64 `json:"page_size"`
+	Total           uint64 `json:"total"`
+	Used            uint64 `json:"used"`
+	Free            uint64 `json:"free"`
+	Trimmable       uint64 `json:"trimmable"`
+	FreeChunks      uint64 `json:"free_chunks"`
+	FreeFastbinBlks uint64 `json:"free_fastbin_blks"`
+	MaxTotalAlloc   uint64 `json:"max_total_allocated"`
 }
 
 // NodeCounterInfo contains node counters info.

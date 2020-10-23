@@ -125,6 +125,12 @@ func (p *StatsExamplePlugin) processStats() {
 		errors = append(errors, fmt.Errorf("eroror retireving threads: %v", err))
 	}
 
+	memoryInfo, err := p.handler.GetMemory(context.Background())
+	fmt.Printf("mem %v, err %v", memoryInfo, err)
+	if err != nil {
+		errors = append(errors, fmt.Errorf("eroror retireving memory info: %v", err))
+	}
+
 	// print all errors and return if there is any
 	if len(errors) != 0 {
 		for _, err := range errors {
@@ -140,6 +146,7 @@ func (p *StatsExamplePlugin) processStats() {
 	printRuntimeInfo(runtimeInfo)
 	printBufferInfo(bufferInfo)
 	printThreadsInfo(threadsInfo)
+	printMemoryInfo(memoryInfo)
 }
 
 func printIfStats(ifStats *api.InterfaceStats) {
@@ -211,5 +218,18 @@ Thread name: %s (ID %d)
 	PID: %d 
 	Core: %d (CPU ID %d, CPU socket %d)
 `, thread.Name, thread.ID, thread.Type, thread.PID, thread.Core, thread.CPUID, thread.CPUSocket)
+	}
+}
+
+func printMemoryInfo(memoryInfo *vppcalls.MemoryInfo) {
+	for _, thread := range memoryInfo.GetThreads() {
+		fmt.Printf(`
+Thread %d %s
+  size %d, %d pages, page size %d
+  total: %d, used: %d, free: %d, trimmable: %d
+    free chunks %d free fastbin blks %d
+    max total allocated %d
+`, thread.ID, thread.Name, thread.Size, thread.Pages, thread.PageSize, thread.Total, thread.Used,
+			thread.Free, thread.Trimmable, thread.FreeChunks, thread.FreeFastbinBlks, thread.MaxTotalAlloc)
 	}
 }

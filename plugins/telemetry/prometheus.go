@@ -54,14 +54,16 @@ const (
 	memoryThreadLabel   = "thread"
 	memoryThreadIDLabel = "threadID"
 
-	memoryObjectsMetric   = "objects"
-	memoryUsedMetric      = "used"
-	memoryTotalMetric     = "total"
-	memoryFreeMetric      = "free"
-	memoryReclaimedMetric = "reclaimed"
-	memoryOverheadMetric  = "overhead"
-	memorySizeMetric      = "size"
-	memoryPagesMetric     = "pages"
+	memoryObjectsMetric         = "objects"
+	memoryUsedMetric            = "used"
+	memoryTotalMetric           = "total"
+	memoryFreeMetric            = "free"
+	memoryTrimmableMetric       = "trimmable"
+	memoryFreeChunksMetric      = "free_chunks"
+	memoryFreeFastbinBlksMetric = "free_fastbin_blks"
+	memoryMaxTotalAlloc         = "max_total_allocated"
+	memorySizeMetric            = "size"
+	memoryPagesMetric           = "pages"
 )
 
 // Buffers metrics
@@ -181,7 +183,6 @@ func (p *Plugin) registerPrometheus() error {
 				agentLabel: p.ServiceLabel.GetAgentLabel(),
 			},
 		}, []string{runtimeItemLabel, runtimeThreadLabel, runtimeThreadIDLabel})
-
 	}
 
 	// register created vectors to prometheus
@@ -201,10 +202,12 @@ func (p *Plugin) registerPrometheus() error {
 		{memoryUsedMetric, "Used memory"},
 		{memoryTotalMetric, "Total memory"},
 		{memoryFreeMetric, "Free memory"},
-		{memoryReclaimedMetric, "Reclaimed memory"},
-		{memoryOverheadMetric, "Overhead"},
 		{memorySizeMetric, "Size"},
 		{memoryPagesMetric, "Pages"},
+		{memoryTrimmableMetric, "Trimmable"},
+		{memoryFreeChunksMetric, "Free Chunks"},
+		{memoryFreeFastbinBlksMetric, "Free Fastbin Bulks"},
+		{memoryMaxTotalAlloc, "Max Total Allocations"},
 	} {
 		name := metric[0]
 		p.memoryGaugeVecs[name] = prometheus.NewGaugeVec(prometheus.GaugeOpts{
@@ -443,14 +446,15 @@ func (p *Plugin) updatePrometheus(ctx context.Context) {
 					}
 				}
 
-				stats.metrics[memoryObjectsMetric].Set(float64(thread.Objects))
 				stats.metrics[memoryUsedMetric].Set(float64(thread.Used))
 				stats.metrics[memoryTotalMetric].Set(float64(thread.Total))
 				stats.metrics[memoryFreeMetric].Set(float64(thread.Free))
-				stats.metrics[memoryReclaimedMetric].Set(float64(thread.Reclaimed))
-				stats.metrics[memoryOverheadMetric].Set(float64(thread.Overhead))
 				stats.metrics[memorySizeMetric].Set(float64(thread.Size))
 				stats.metrics[memoryPagesMetric].Set(float64(thread.Pages))
+				stats.metrics[memoryTrimmableMetric].Set(float64(thread.Trimmable))
+				stats.metrics[memoryFreeChunksMetric].Set(float64(thread.FreeChunks))
+				stats.metrics[memoryFreeFastbinBlksMetric].Set(float64(thread.FreeFastbinBlks))
+				stats.metrics[memoryMaxTotalAlloc].Set(float64(thread.MaxTotalAlloc))
 			}
 		}
 	}
