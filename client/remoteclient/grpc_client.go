@@ -45,11 +45,15 @@ func (c *grpcClient) KnownModels(class string) ([]*client.ModelInfo, error) {
 	return modules, nil
 }
 
-func (c *grpcClient) ChangeRequest() client.ChangeRequest {
-	return &setConfigRequest{
+func (c *grpcClient) ChangeRequest(options ...client.ChangeRequestOption) client.ChangeRequest {
+	changeRequest := &setConfigRequest{
 		client: c.manager,
 		req:    &generic.SetConfigRequest{},
 	}
+	for _, option := range options {
+		option(changeRequest)
+	}
+	return changeRequest
 }
 
 func (c *grpcClient) ResyncConfig(items ...proto.Message) error {
@@ -114,9 +118,10 @@ func (c *grpcClient) DumpState() ([]*client.StateItem, error) {
 }
 
 type setConfigRequest struct {
-	client generic.ManagerServiceClient
-	req    *generic.SetConfigRequest
-	err    error
+	client                generic.ManagerServiceClient
+	req                   *generic.SetConfigRequest
+	externallyKnownModels []*client.ModelInfo
+	err                   error
 }
 
 func (r *setConfigRequest) Update(items ...proto.Message) client.ChangeRequest {
@@ -124,9 +129,13 @@ func (r *setConfigRequest) Update(items ...proto.Message) client.ChangeRequest {
 		return r
 	}
 	for _, protoModel := range items {
-		item, err := models.MarshalItem(protoModel)
-		if err != nil {
-			r.err = err
+		var item *generic.Item
+		if r.externallyKnownModels != nil {
+			item, r.err = models.MarshalItemWithExternallyKnownModels(protoModel, r.externallyKnownModels)
+		} else {
+			item, r.err = models.MarshalItem(protoModel)
+		}
+		if r.err != nil {
 			return r
 		}
 		r.req.Updates = append(r.req.Updates, &generic.UpdateItem{
@@ -160,4 +169,16 @@ func (r *setConfigRequest) Send(ctx context.Context) (err error) {
 	}
 	_, err = r.client.SetConfig(ctx, r.req)
 	return err
+}
+
+// WithExternallyKnownModels uses for remote client given list of known models to use instead of local
+// model registry that is created by models included in compilation. This can be used to separate models
+// between compiled programs (i.e. to have generic agenctl that doesn't have custom models of customized
+// vpp-agent fork).
+func WithExternallyKnownModels(knownModels []*client.ModelInfo) client.ChangeRequestOption {
+	return func(changeRequest client.ChangeRequest) {
+		if request, ok := changeRequest.(*setConfigRequest); ok {
+			request.externallyKnownModels = knownModels
+		}
+	}
 }

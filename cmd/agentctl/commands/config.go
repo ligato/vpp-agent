@@ -26,8 +26,6 @@ import (
 	"strings"
 	"time"
 
-	"google.golang.org/protobuf/types/descriptorpb"
-
 	yaml2 "github.com/ghodss/yaml"
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/protoc-gen-go/descriptor"
@@ -35,6 +33,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"go.ligato.io/vpp-agent/v3/client"
+	"go.ligato.io/vpp-agent/v3/client/remoteclient"
 	"go.ligato.io/vpp-agent/v3/cmd/agentctl/api/types"
 	agentcli "go.ligato.io/vpp-agent/v3/cmd/agentctl/cli"
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
@@ -43,6 +42,7 @@ import (
 	"go.ligato.io/vpp-agent/v3/proto/ligato/kvscheduler"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/types/descriptorpb"
 )
 
 func NewConfigCommand(cli agentcli.Cli) *cobra.Command {
@@ -176,7 +176,7 @@ func runConfigUpdate(cli agentcli.Cli, opts ConfigUpdateOptions, args []string) 
 	}
 	logrus.Infof("loaded config :\n%s", config)
 
-	req := c.ChangeRequest()
+	req := c.ChangeRequest(remoteclient.WithExternallyKnownModels(knownModels))
 	configMsgs, err := client.DynamicConfigExport(config)
 	if err != nil {
 		return fmt.Errorf("can't extract single configuration proto messages from one big configuration proto message due to: %v", err)

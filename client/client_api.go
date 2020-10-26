@@ -36,7 +36,7 @@ type GenericClient interface {
 	KnownModels(class string) ([]*ModelInfo, error)
 
 	// ChangeRequest returns transaction for changing config.
-	ChangeRequest() ChangeRequest
+	ChangeRequest(options ...ChangeRequestOption) ChangeRequest
 
 	// ResyncConfig overwrites existing config.
 	ResyncConfig(items ...proto.Message) error
@@ -60,3 +60,6 @@ type ChangeRequest interface {
 	// Send sends the request.
 	Send(ctx context.Context) error
 }
+
+// ChangeRequestOption allows customization of ChangeRequest
+type ChangeRequestOption func(changeRequest ChangeRequest)

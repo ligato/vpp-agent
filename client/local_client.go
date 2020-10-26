@@ -75,8 +75,12 @@ func (c *client) DumpState() ([]*generic.StateItem, error) {
 	return nil, nil
 }
 
-func (c *client) ChangeRequest() ChangeRequest {
-	return &changeRequest{txn: c.txnFactory.NewTxn(false)}
+func (c *client) ChangeRequest(options ...ChangeRequestOption) ChangeRequest {
+	changeRequest := &changeRequest{txn: c.txnFactory.NewTxn(false)}
+	for _, option := range options {
+		option(changeRequest)
+	}
+	return changeRequest
 }
 
 type changeRequest struct {
