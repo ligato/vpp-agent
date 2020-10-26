@@ -132,6 +132,26 @@ func (h *VpeHandler) GetPlugins(ctx context.Context) ([]vppcalls.PluginInfo, err
 	return plugins, nil
 }
 
+func (h *VpeHandler) GetThreads(ctx context.Context) ([]vppcalls.ThreadInfo, error) {
+	resp, err := h.vpe.ShowThreads(ctx, &vpe.ShowThreads{})
+	if err != nil {
+		return nil, err
+	}
+	threads := make([]vppcalls.ThreadInfo, len(resp.ThreadData))
+	for i, thread := range resp.ThreadData {
+		threads[i] = vppcalls.ThreadInfo{
+			Name:      string(thread.Name),
+			ID:        thread.ID,
+			Type:      string(thread.Type),
+			PID:       thread.PID,
+			Core:      thread.Core,
+			CPUID:     thread.CPUID,
+			CPUSocket: thread.CPUSocket,
+		}
+	}
+	return threads, nil
+}
+
 // RunCli sends CLI command to VPP and returns response.
 func (h *VpeHandler) RunCli(ctx context.Context, cmd string) (string, error) {
 	resp, err := h.vpe.CliInband(ctx, &vpe.CliInband{

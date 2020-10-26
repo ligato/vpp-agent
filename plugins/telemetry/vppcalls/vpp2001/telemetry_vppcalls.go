@@ -37,13 +37,14 @@ var (
 			`virtual memory start 0x[0-9a-f]+, size ([\dkmg\.]+), ([\dkmg\.]+) pages, page size ([\dkmg\.]+)\s+` +
 			`(?:page information not available.*\s+)*` +
 			`(?:(?:\s+(?:numa [\d]+|not mapped|unknown): [\dkmg\.]+ pages, [\dkmg\.]+\s+)*\s+)*` +
-			`\s+total: ([\dkmgKMG\.]+), used: ([\dkmgKMG\.]+), free: ([\dkmgKMG\.]+), trimmable: ([\dkmgKMG\.]+)`,
+			`\s+total: ([\dkmgKMG\.]+), used: ([\dkmgKMG\.]+), free: ([\dkmgKMG\.]+), trimmable: ([\dkmgKMG\.]+)\s+` +
+			`free chunks (\d+)\s+free fastbin blks (\d+)\s+max total allocated\s+([\dkmgKMG\.]+)`,
 	)
 )
 
 // GetMemory retrieves `show memory` info.
 func (h *TelemetryHandler) GetMemory(ctx context.Context) (*vppcalls.MemoryInfo, error) {
-	input, err := h.vpe.RunCli(context.TODO(), "show memory main-heap")
+	input, err := h.vpe.RunCli(context.TODO(), "show memory main-heap verbose")
 	if err != nil {
 		return nil, err
 	}
@@ -57,7 +58,7 @@ func (h *TelemetryHandler) GetMemory(ctx context.Context) (*vppcalls.MemoryInfo,
 	var threads []vppcalls.MemoryThread
 	for _, matches := range threadMatches {
 		fields := matches[1:]
-		if len(fields) != 9 {
+		if len(fields) != 12 {
 			return nil, fmt.Errorf("invalid memory data %v for thread: %q", fields, matches[0])
 		}
 		id, err := strconv.ParseUint(fields[0], 10, 64)
@@ -65,15 +66,18 @@ func (h *TelemetryHandler) GetMemory(ctx context.Context) (*vppcalls.MemoryInfo,
 			return nil, err
 		}
 		thread := &vppcalls.MemoryThread{
-			ID:        uint(id),
-			Name:      fields[1],
-			Size:      strToUint64(fields[2]),
-			Pages:     strToUint64(fields[3]),
-			PageSize:  strToUint64(fields[4]),
-			Total:     strToUint64(fields[5]),
-			Used:      strToUint64(fields[6]),
-			Free:      strToUint64(fields[7]),
-			Reclaimed: strToUint64(fields[8]),
+			ID:              uint(id),
+			Name:            fields[1],
+			Size:            strToUint64(fields[2]),
+			Pages:           strToUint64(fields[3]),
+			PageSize:        strToUint64(fields[4]),
+			Total:           strToUint64(fields[5]),
+			Used:            strToUint64(fields[6]),
+			Free:            strToUint64(fields[7]),
+			Trimmable:       strToUint64(fields[8]),
+			FreeChunks:      strToUint64(fields[9]),
+			FreeFastbinBlks: strToUint64(fields[10]),
+			MaxTotalAlloc:   strToUint64(fields[11]),
 		}
 		threads = append(threads, *thread)
 	}
@@ -264,6 +268,29 @@ func (h *TelemetryHandler) GetBuffersInfo(ctx context.Context) (*vppcalls.Buffer
 	}
 
 	return info, nil
+}
+
+// GetThreads retrieves info about the VPP threads
+func (h *TelemetryHandler) GetThreads(ctx context.Context) (*vppcalls.ThreadsInfo, error) {
+	threads, err := h.vpe.GetThreads(ctx)
+	if err != nil {
+		return nil, err
+	}
+	var items []vppcalls.ThreadsItem
+	for _, thread := range threads {
+		items = append(items, vppcalls.ThreadsItem{
+			Name:      thread.Name,
+			ID:        thread.ID,
+			Type:      thread.Type,
+			PID:       thread.PID,
+			CPUID:     thread.CPUID,
+			Core:      thread.Core,
+			CPUSocket: thread.CPUSocket,
+		})
+	}
+	return &vppcalls.ThreadsInfo{
+		Items: items,
+	}, err
 }
 
 func strToFloat64(s string) float64 {

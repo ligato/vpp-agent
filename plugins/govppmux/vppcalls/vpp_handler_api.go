@@ -28,7 +28,7 @@ import (
 type VppCoreAPI interface {
 	// Ping sends control ping to VPP.
 	Ping(context.Context) error
-	// RunCli sends CLI commmand to VPP.
+	// RunCli sends CLI command to VPP.
 	RunCli(ctx context.Context, cmd string) (string, error)
 	// GetVersion retrieves info about VPP version.
 	GetVersion(context.Context) (*VersionInfo, error)
@@ -38,6 +38,8 @@ type VppCoreAPI interface {
 	GetModules(context.Context) ([]APIModule, error)
 	// GetPlugins retrieves info about loaded VPP plugins.
 	GetPlugins(context.Context) ([]PluginInfo, error)
+	// GetThreads retrieves info about VPP threads.
+	GetThreads(ctx context.Context) ([]ThreadInfo, error)
 }
 
 // SessionInfo contains info about VPP session.
@@ -81,6 +83,17 @@ type PluginInfo struct {
 	Path        string
 	Version     string
 	Description string
+}
+
+// ThreadInfo wraps all thread data counters.
+type ThreadInfo struct {
+	Name      string
+	ID        uint32
+	Type      string
+	PID       uint32
+	CPUID     uint32
+	Core      uint32
+	CPUSocket uint32
 }
 
 func (p PluginInfo) String() string {
