@@ -320,116 +320,133 @@ func TestGetMemory(t *testing.T) {
 		{
 			name: "single",
 			reply: `Thread 0 vpp_main
-  virtual memory start 0x7f60d0ee7000, size 1048640k, 262160 pages, page size 4k
-    numa 0: 5677 pages, 22708k
-    not mapped: 256483 pages, 1025932k
-  total: 1.00G, used: 19.18M, free: 1004.88M, trimmable: 1004.87M
-no traced allocations
+  virtual memory start 0x7f435fa4a000, size 1048640k, 262160 pages, page size 4k
+    numa 0: 10084 pages, 40336k
+    not mapped: 252076 pages, 1008304k
+  total: 1.00G, used: 31.56M, free: 992.50M, trimmable: 991.39M
+    free chunks 285 free fastbin blks 0
+    max total allocated 1.00G
 `,
 			threadCount: 1,
 			threadIdx:   0,
 			thread: vppcalls.MemoryThread{
-				ID:        0,
-				Name:      "vpp_main",
-				Size:      1048.64e6,
-				Pages:     262160,
-				PageSize:  4000,
-				Used:      19.18e6,
-				Total:     1e9,
-				Free:      1004.88e6,
-				Reclaimed: 1004.87e6,
+				ID:              0,
+				Name:            "vpp_main",
+				Size:            1048.64e6,
+				Pages:           262160,
+				PageSize:        4000,
+				Used:            31.56e6,
+				Total:           1.00e9,
+				Free:            992.50e6,
+				Trimmable:       991.39e6,
+				FreeChunks:      285,
+				FreeFastbinBlks: 0,
+				MaxTotalAlloc:   1e9,
 			},
 		},
 		{
 			name: "unknown",
 			reply: `Thread 0 vpp_main
-  virtual memory start 0x7f60d0ee7000, size 1048640k, 262160 pages, page size 4k
-    numa 0: 5677 pages, 22708k
-    not mapped: 256483 pages, 1025932k
+  virtual memory start 0x7f435fa4a000, size 1048640k, 262160 pages, page size 4k
+    numa 0: 10084 pages, 40336k
+    not mapped: 252076 pages, 1008304k
     unknown: 368 pages, 1472k
-  total: 1.00G, used: 19.18M, free: 1004.88M, trimmable: 1004.87M
-no traced allocations
+  total: 1.00G, used: 31.56M, free: 992.50M, trimmable: 991.39M
+    free chunks 285 free fastbin blks 0
+    max total allocated 1.00G
 `,
 			threadCount: 1,
 			threadIdx:   0,
 			thread: vppcalls.MemoryThread{
-				ID:        0,
-				Name:      "vpp_main",
-				Size:      1048.64e6,
-				Pages:     262160,
-				PageSize:  4000,
-				Used:      19.18e6,
-				Total:     1e9,
-				Free:      1004.88e6,
-				Reclaimed: 1004.87e6,
+				ID:              0,
+				Name:            "vpp_main",
+				Size:            1048.64e6,
+				Pages:           262160,
+				PageSize:        4000,
+				Used:            31.56e6,
+				Total:           1.00e9,
+				Free:            992.50e6,
+				Trimmable:       991.39e6,
+				FreeChunks:      285,
+				FreeFastbinBlks: 0,
+				MaxTotalAlloc:   1e9,
 			},
 		},
 		{
 			name: "3 workers",
 			reply: `Thread 0 vpp_main
-  virtual memory start 0x7f1fb0e0f000, size 1048640k, 262160 pages, page size 4k
-    numa 0: 5587 pages, 22348k
-    not mapped: 256573 pages, 1026292k
-  total: 1.00G, used: 24.33M, free: 999.73M, trimmable: 996.12M
-no traced allocations
-
+  virtual memory start 0x7f435fa4a000, size 1048640k, 262160 pages, page size 4k
+    numa 0: 10084 pages, 40336k
+    not mapped: 252076 pages, 1008304k
+  total: 1.00G, used: 31.56M, free: 992.50M, trimmable: 991.39M
+    free chunks 285 free fastbin blks 0
+    max total allocated 1.00G
 
 Thread 1 vpp_wk_0
-  virtual memory start 0x7f1fb0e0f000, size 1048640k, 262160 pages, page size 4k
-    numa 0: 5587 pages, 22348k
-    not mapped: 256573 pages, 1026292k
-  total: 1.00G, used: 24.33M, free: 999.73M, trimmable: 996.12M
-no traced allocations
-
+  virtual memory start 0x7f435fa4a000, size 1048640k, 262160 pages, page size 4k
+    numa 0: 10084 pages, 40336k
+    not mapped: 252076 pages, 1008304k
+  total: 1.00G, used: 31.56M, free: 992.50M, trimmable: 991.39M
+    free chunks 284 free fastbin blks 0
+    max total allocated 1.00G
 
 Thread 2 vpp_wk_1
-  virtual memory start 0x7f1fb0e0f000, size 1048640k, 262160 pages, page size 4k
-    numa 0: 5587 pages, 22348k
-    not mapped: 256573 pages, 1026292k
-  total: 1.00G, used: 24.33M, free: 999.73M, trimmable: 996.12M
-no traced allocations
-
+  virtual memory start 0x7f435fa4a000, size 1048640k, 262160 pages, page size 4k
+    numa 0: 10084 pages, 40336k
+    not mapped: 252076 pages, 1008304k
+  total: 1.00G, used: 31.56M, free: 992.50M, trimmable: 991.39M
+    free chunks 285 free fastbin blks 0
+    max total allocated 1.00G
 
 Thread 3 vpp_wk_2
-  virtual memory start 0x7f1fb0e0f000, size 1048640k, 262160 pages, page size 4k
-    numa 0: 5587 pages, 22348k
-    not mapped: 256573 pages, 1026292k
-  total: 1.00G, used: 24.33M, free: 999.73M, trimmable: 996.12M
-no traced allocations
+  virtual memory start 0x7f435fa4a000, size 1048640k, 262160 pages, page size 4k
+    numa 0: 10084 pages, 40336k
+    not mapped: 252076 pages, 1008304k
+  total: 1.00G, used: 31.56M, free: 992.50M, trimmable: 991.39M
+    free chunks 285 free fastbin blks 0
+    max total allocated 1.00G
 `,
 			threadCount: 4,
 			threadIdx:   1,
 			thread: vppcalls.MemoryThread{
-				ID:        1,
-				Name:      "vpp_wk_0",
-				Size:      1048.64e6,
-				Pages:     262160,
-				PageSize:  4000,
-				Used:      24.33e6,
-				Total:     1e9,
-				Free:      999.73e6,
-				Reclaimed: 996.12e6,
+				ID:              1,
+				Name:            "vpp_wk_0",
+				Size:            1048.64e6,
+				Pages:           262160,
+				PageSize:        4000,
+				Used:            31.56e6,
+				Total:           1.00e9,
+				Free:            992.50e6,
+				Trimmable:       991.39e6,
+				FreeChunks:      284,
+				FreeFastbinBlks: 0,
+				MaxTotalAlloc:   1e9,
 			},
 		},
 		{
 			name: "19.08 update",
 			reply: `Thread 0 vpp_main
-  virtual memory start 0x7ff41b3ca000, size 1048640k, 262160 pages, page size 4k
+  virtual memory start 0x7f435fa4a000, size 1048640k, 262160 pages, page size 4k
     page information not available (errno 1)
-  total: 1.00G, used: 19.81M, free: 1004.25M, trimmable: 1004.24M
+  total: 1.00G, used: 31.56M, free: 992.50M, trimmable: 991.39M
+    free chunks 285 free fastbin blks 0
+    max total allocated 1.00G
 `,
 			threadCount: 1,
 			threadIdx:   0,
 			thread: vppcalls.MemoryThread{
-				ID:        0,
-				Name:      "vpp_main",
-				Size:      1048.64e6,
-				Pages:     262160,
-				PageSize:  4000,
-				Used:      19.81e6,
-				Total:     1e9,
-				Free:      1004.25e6,
-				Reclaimed: 1004.24e6,
+				ID:              0,
+				Name:            "vpp_main",
+				Size:            1048.64e6,
+				Pages:           262160,
+				PageSize:        4000,
+				Used:            31.56e6,
+				Total:           1e9,
+				Free:            992.50e6,
+				Trimmable:       991.39e6,
+				FreeChunks:      285,
+				FreeFastbinBlks: 0,
+				MaxTotalAlloc:   1e9,
 			},
 		},
 	}
