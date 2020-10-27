@@ -393,6 +393,10 @@ func ModelOptionFor(key string, options []*generic.ModelDetail_Option) (string, 
 			if len(option.Values) == 0 {
 				return "", errors.Errorf("there is no value for key %v in model options", key)
 			}
+			if strings.TrimSpace(option.Values[0]) == "" {
+				return "", errors.Errorf("there is no value(only empty string "+
+					"after trimming) for key %v in model options", key)
+			}
 			return option.Values[0], nil
 		}
 	}
