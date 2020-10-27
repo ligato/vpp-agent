@@ -19,12 +19,8 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/go-errors/errors"
-
-	// TODO move custom model for testing somewhere into test related packages/folders
-	_ "go.ligato.io/vpp-agent/v3/examples/customize/custom_api_model/proto/custom"
-
 	yaml2 "github.com/ghodss/yaml"
+	"github.com/go-errors/errors"
 	"github.com/goccy/go-yaml"
 	protoV1 "github.com/golang/protobuf/proto"
 	. "github.com/onsi/gomega"
@@ -34,6 +30,7 @@ import (
 	"go.ligato.io/vpp-agent/v3/proto/ligato/generic"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/vpp"
 	interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
+	vpp_srv6 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/srv6"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protodesc"
@@ -53,10 +50,11 @@ func TestYamlCompatibility(t *testing.T) {
 	// (Note: using fake Config root (configurator.GetResponse) to get "config" root element
 	// in json/yaml (mimicking agentctl config yaml handling))
 	ifaces := []*interfaces.Interface{memIFRed, memIFBlack, loop1, vppTap1}
-	configRoot := configurator.GetResponse{
+	configRoot := &configurator.GetResponse{
 		Config: &configurator.Config{
 			VppConfig: &vpp.ConfigData{
 				Interfaces: ifaces,
+				Srv6Global: srv6Global,
 			},
 		},
 	}
@@ -93,7 +91,7 @@ func TestYamlCompatibility(t *testing.T) {
 	Expect(err).ShouldNot(HaveOccurred(), "can't create dynamic config")
 
 	// Hardcoded Config filled with data -> YAML -> JSON -> load to empty dynamic Config -> YAML
-	yamlFromHardcodedConfig, err := toYAML(configRoot)
+	yamlFromHardcodedConfig, err := toYAML(configRoot) // should be the same output as agentctl config get
 	Expect(err).ShouldNot(HaveOccurred(), "can't export hardcoded config as yaml (initial export)")
 	bj, err := yaml2.YAMLToJSON([]byte(yamlFromHardcodedConfig))
 	Expect(err).ShouldNot(HaveOccurred(), "can't convert yaml (from hardcoded config) to json")
@@ -207,5 +205,8 @@ var (
 				ToMicroservice: "test-microservice1",
 			},
 		},
+	}
+	srv6Global = &vpp_srv6.SRv6Global{
+		EncapSourceAddress: "10.1.1.1",
 	}
 )
