@@ -17,23 +17,31 @@ package client_test
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
-	"io"
-	"strings"
 	"testing"
+
+	"github.com/go-errors/errors"
+
+	// TODO move custom model for testing somewhere into test related packages/folders
+	_ "go.ligato.io/vpp-agent/v3/examples/customize/custom_api_model/proto/custom"
 
 	yaml2 "github.com/ghodss/yaml"
 	"github.com/goccy/go-yaml"
+	protoV1 "github.com/golang/protobuf/proto"
 	. "github.com/onsi/gomega"
 	"go.ligato.io/vpp-agent/v3/client"
+	"go.ligato.io/vpp-agent/v3/pkg/models"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/configurator"
+	"go.ligato.io/vpp-agent/v3/proto/ligato/generic"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/vpp"
 	interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/reflect/protodesc"
+	"google.golang.org/protobuf/reflect/protoreflect"
+	"google.golang.org/protobuf/types/descriptorpb"
 )
 
-// TODO clean up test from development-helping/debug stuff
+// TODO test for client.DynamicConfigExport(...)
 
 // TestYamlCompatibility test dynamically generated all-in-one configuration proto message to be compatible
 // with its hardcoded counterpart(configurator.Config). The compatibility refers to the ability to use the same
@@ -41,7 +49,119 @@ import (
 func TestYamlCompatibility(t *testing.T) {
 	RegisterTestingT(t)
 
-	memIFRed := &interfaces.Interface{
+	// fill hardcoded Config with configuration
+	// (Note: using fake Config root (configurator.GetResponse) to get "config" root element
+	// in json/yaml (mimicking agentctl config yaml handling))
+	ifaces := []*interfaces.Interface{memIFRed, memIFBlack, loop1, vppTap1}
+	configRoot := configurator.GetResponse{
+		Config: &configurator.Config{
+			VppConfig: &vpp.ConfigData{
+				Interfaces: ifaces,
+			},
+		},
+	}
+	// TODO add more configuration to hardcoded version of configuration so it can cover all configuration
+	//  possibilities
+
+	// create construction input for dynamic config from locally registered models (only with class "config")
+	// (for remote models use combination of generic client's KnownModels and meta service's rpc ProtoFileDescriptor
+	// example of this is in agentctl yaml config update (commands.runConfigUpdate))
+	fileDescProtosMap := make(map[string]*descriptorpb.FileDescriptorProto)
+	var knownModels []*generic.ModelDetail
+	for _, model := range models.RegisteredModels() {
+		if model.Spec().Class == "config" {
+			// collect "knownModel" input
+			knownModels = append(knownModels, model.ModelDetail())
+
+			// collect related "fileDescriptorProtos" input
+			fileDesc := protoV1.MessageV2(model.NewInstance()).ProtoReflect().Descriptor().ParentFile()
+			fdp := protodesc.ToFileDescriptorProto(fileDesc)
+			fileDescProtosMap[*fdp.Name] = fdp
+			for _, importFileDesc := range allImports(fileDesc) {
+				fdp := protodesc.ToFileDescriptorProto(importFileDesc)
+				fileDescProtosMap[*fdp.Name] = fdp
+			}
+		}
+	}
+	fileDescProtos := make([]*descriptorpb.FileDescriptorProto, 0)
+	for _, fdp := range fileDescProtosMap { // extracting "fileDescriptorProtos" input (map was used for deduplication)
+		fileDescProtos = append(fileDescProtos, fdp)
+	}
+
+	// create dynamic config
+	dynConfig, err := client.NewDynamicConfig(knownModels, fileDescProtos)
+	Expect(err).ShouldNot(HaveOccurred(), "can't create dynamic config")
+
+	// Hardcoded Config filled with data -> YAML -> JSON -> load to empty dynamic Config -> YAML
+	yamlFromHardcodedConfig, err := toYAML(configRoot)
+	Expect(err).ShouldNot(HaveOccurred(), "can't export hardcoded config as yaml (initial export)")
+	bj, err := yaml2.YAMLToJSON([]byte(yamlFromHardcodedConfig))
+	Expect(err).ShouldNot(HaveOccurred(), "can't convert yaml (from hardcoded config) to json")
+	Expect(protojson.Unmarshal(bj, dynConfig)).To(Succeed(),
+		"can't marshal json data (from hardcoded config) to dynamic config")
+	yamlFromDynConfig, err := toYAML(dynConfig)
+	Expect(err).ShouldNot(HaveOccurred(), "can't export hardcoded config as yaml")
+
+	// final compare of YAML from hardcoded and dynamic config
+	Expect(yamlFromDynConfig).To(BeEquivalentTo(yamlFromHardcodedConfig))
+}
+
+// allImports extract direct and transitive imports from file descriptor.
+func allImports(desc protoreflect.FileDescriptor) []protoreflect.FileDescriptor {
+	results := make([]protoreflect.FileDescriptor, 0)
+	imports := desc.Imports()
+	for i := 0; i < imports.Len(); i++ {
+		importFD := imports.Get(i).FileDescriptor
+		results = append(results, importFD)
+		results = append(results, allImports(importFD)...)
+	}
+	return results
+}
+
+func toYAML(data interface{}) (string, error) {
+	out, err := encodeJson(data, "")
+	if err != nil {
+		return "", errors.Errorf("can't encode to JSON due to: %v", err)
+	}
+	bb, err := jsonToYaml(out)
+	if err != nil {
+		return "", errors.Errorf("can't convert json to yaml due to: %v", err)
+	}
+	return string(bb), nil
+}
+
+func encodeJson(data interface{}, ident string) ([]byte, error) {
+	if msg, ok := data.(proto.Message); ok {
+		m := protojson.MarshalOptions{
+			Indent: ident,
+		}
+		b, err := m.Marshal(msg)
+		if err != nil {
+			return nil, errors.Errorf("can't marshal proto message to json due to: %v", err)
+		}
+		return b, nil
+	}
+	var b bytes.Buffer
+	encoder := json.NewEncoder(&b)
+	encoder.SetIndent("", ident)
+	if err := encoder.Encode(data); err != nil {
+		return nil, errors.Errorf("can't marshal data to json due to: %v", err)
+	}
+	return b.Bytes(), nil
+}
+
+func jsonToYaml(j []byte) ([]byte, error) {
+	var jsonObj interface{}
+	err := yaml.UnmarshalWithOptions(j, &jsonObj, yaml.UseOrderedMap())
+	if err != nil {
+		return nil, err
+	}
+	return yaml.Marshal(jsonObj)
+}
+
+// test configuration
+var (
+	memIFRed = &interfaces.Interface{
 		Name:        "red",
 		Type:        interfaces.Interface_MEMIF,
 		IpAddresses: []string{"100.0.0.1/24"},
@@ -55,7 +175,7 @@ func TestYamlCompatibility(t *testing.T) {
 			},
 		},
 	}
-	memIFBlack := &interfaces.Interface{
+	memIFBlack = &interfaces.Interface{
 		Name:        "black",
 		Type:        interfaces.Interface_MEMIF,
 		IpAddresses: []string{"192.168.20.1/24"},
@@ -69,14 +189,14 @@ func TestYamlCompatibility(t *testing.T) {
 			},
 		},
 	}
-	loop1 := &interfaces.Interface{
+	loop1 = &interfaces.Interface{
 		Name:        "loop-test-1",
 		Type:        interfaces.Interface_SOFTWARE_LOOPBACK,
 		Enabled:     true,
 		Mtu:         1500,
 		IpAddresses: []string{"10.10.1.1/24"},
 	}
-	vppTap1 := &interfaces.Interface{
+	vppTap1 = &interfaces.Interface{
 		Name:        "vpp-tap1",
 		Type:        interfaces.Interface_TAP,
 		Enabled:     true,
@@ -88,147 +208,4 @@ func TestYamlCompatibility(t *testing.T) {
 			},
 		},
 	}
-	// TODO add more configuration to hardcoded version of configuration so it can cover all configuration
-	//  possibilities
-	ifaces := []*interfaces.Interface{memIFRed, memIFBlack, loop1, vppTap1}
-	configRoot := configurator.GetResponse{ // using fake Config root to get "config" root element in json/yaml (mimicking agentctl config yaml handling)
-		Config: &configurator.Config{
-			VppConfig: &vpp.ConfigData{
-				Interfaces: ifaces,
-			},
-		},
-	}
-	var buf bytes.Buffer
-	if err := formatAsTemplate(&buf, "yaml", configRoot); err != nil {
-		t.Fatalf("can't export hardcoded config as yaml due to: %v", err)
-	}
-	yaml := buf.String()
-
-	//client.NewDynamicConfig()
-	models, err := client.LocalClient.KnownModels("config")
-	if err != nil {
-		t.Fatalf("can't retrieve known models due to: %v", err)
-	}
-	config, err := client.NewDynamicConfig(models)
-	if err != nil {
-		t.Fatalf("can't create dynamic config due to: %v", err)
-	}
-	b := []byte(yaml)
-	//var update = &configurator.Config{}
-	bj, err := yaml2.YAMLToJSON(b)
-	if err != nil {
-		fmt.Print(err) //TODO
-	}
-	//msg := proto.MessageV2(allConfigMsg)
-	fields := config.ProtoReflect().Descriptor().Fields()
-	for i := 0; i < fields.Len(); i++ {
-		fmt.Println(fields.Get(i).Name())
-	}
-
-	err = protojson.Unmarshal(bj, config)
-	if err != nil {
-		fmt.Print(err) //TODO
-	}
-
-	var buf2 bytes.Buffer
-	if err := formatAsTemplate(&buf2, "yaml", config); err != nil {
-		t.Fatalf("can't export hardcoded config as yaml due to: %v", err)
-	}
-	yaml2 := buf2.String()
-
-	Expect(yaml2).To(BeEquivalentTo(yaml))
-
-	fmt.Println(yaml)
-
-	client.DynamicConfigExport(config)
-
-	//opts := cmp.Options{
-	//	cmp.Comparer(func (x,y protocmp.Message) bool {
-	//		fullName1 := x.Descriptor().FullName()
-	//		fullName2 := y.Descriptor().FullName()
-	//		if (fullName1 == "ligato.configurator.GetResponse" && fullName2 == "ligato.configurator.Config") ||
-	//			(fullName2 == "ligato.configurator.GetResponse" && fullName1 == "ligato.configurator.Config") {
-	//			return cmp.Equal(x.ProtoReflect().Get(), , protocmp.Transform())
-	//		}
-	//	}),
-	//	cmp.Transformer("ignoreRootConfigTypes", func(msg protocmp.Message) protocmp.Message {
-	//		fn := msg.Descriptor().FullName()
-	//		a := fn == "ligato.configurator.GetResponse"
-	//		fmt.Print(a)
-	//		if msg["@type"] == "ligato.configurator.GetResponse" {
-	//			newMsg := make(protocmp.Message)
-	//			for k, v := range msg {
-	//				newMsg[k] = v
-	//			}
-	//			newMsg["@type"] = "ligato.configurator.Config"
-	//			return newMsg
-	//		}
-	//		return msg
-	//	}),
-	//}
-	//if diff := cmp.Diff(configRoot, config, protocmp.Transform(), opts); diff != "" {
-	//	t.Errorf("Merge mismatch (-want +got):\n%s", diff)
-	//}
-
-}
-
-func formatAsTemplate(w io.Writer, format string, data interface{}) error {
-	var b bytes.Buffer
-	switch strings.ToLower(format) {
-	case "json":
-		//b.WriteString(jsonTmpl(data))
-	case "yaml", "yml":
-		b.WriteString(yamlTmpl(data))
-	case "proto": // TODO clean up help functions
-		//b.WriteString(protoTmpl(data))
-		//default:
-		//	t := template.New("format")
-		//	t.Funcs(tmplFuncs)
-		//	if _, err := t.Parse(format); err != nil {
-		//		return fmt.Errorf("parsing format template failed: %v", err)
-		//	}
-		//	if err := t.Execute(&b, data); err != nil {
-		//		return fmt.Errorf("executing format template failed: %v", err)
-		//	}
-	}
-	_, err := b.WriteTo(w)
-	return err
-}
-
-func yamlTmpl(data interface{}) string {
-	out := encodeJson(data, "")
-	bb, err := jsonToYaml(out)
-	if err != nil {
-		panic(err)
-	}
-	return string(bb)
-}
-
-func encodeJson(data interface{}, ident string) []byte {
-	if msg, ok := data.(proto.Message); ok {
-		m := protojson.MarshalOptions{
-			Indent: ident,
-		}
-		b, err := m.Marshal(msg)
-		if err != nil {
-			panic(err)
-		}
-		return b
-	}
-	var b bytes.Buffer
-	encoder := json.NewEncoder(&b)
-	encoder.SetIndent("", ident)
-	if err := encoder.Encode(data); err != nil {
-		panic(err)
-	}
-	return b.Bytes()
-}
-
-func jsonToYaml(j []byte) ([]byte, error) {
-	var jsonObj interface{}
-	err := yaml.UnmarshalWithOptions(j, &jsonObj, yaml.UseOrderedMap())
-	if err != nil {
-		return nil, err
-	}
-	return yaml.Marshal(jsonObj)
-}
+)

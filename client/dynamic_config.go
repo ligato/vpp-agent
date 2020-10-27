@@ -216,7 +216,6 @@ func createDynamicConfigDescriptorProto(knownModels []*ModelInfo, dependencyRegi
 			protoName = newNames.protoName
 			jsonName = newNames.jsonName
 		}
-		fmt.Println(protoName) // TODO remove this debug
 		configGroup.Field = append(configGroup.Field, &descriptorpb.FieldDescriptorProto{
 			Name:     proto.String(protoName),
 			Number:   proto.Int32(int32(len(configGroup.Field) + 1)),
