@@ -98,7 +98,7 @@ func NewDynamicConfig(knownModels []*ModelInfo, fileDescProtos []*descriptorpb.F
 	// convert file descriptor proto to file descriptor
 	fd, err := protodesc.NewFile(fileDP, dependencyRegistry)
 	if err != nil {
-		panic(err) // TODO
+		return nil, errors.Errorf("can't convert file descriptor proto to file descriptor due to: %v", err)
 	}
 
 	// get descriptor for config root message
@@ -108,6 +108,10 @@ func NewDynamicConfig(knownModels []*ModelInfo, fileDescProtos []*descriptorpb.F
 	return dynamicpb.NewMessage(rootMsg), nil
 }
 
+// createDependencyRegistry resolves file descriptor protos into file descriptors and returns them in convenient
+// registry (in form of protodesc.Resolver). The basic difference between file descriptor protos and file
+// descriptors is that file descriptors have resolved all (direct or transitive) import dependencies and file
+// descriptor protos have only string/name references to direct dependencies.
 func createDependencyRegistry(fileDescProtos []*descriptorpb.FileDescriptorProto) (protodesc.Resolver, error) {
 	reg := &protoregistry.Files{}
 	fds, err := toFileDescriptors(fileDescProtos)
@@ -130,9 +134,8 @@ func createDependencyRegistry(fileDescProtos []*descriptorpb.FileDescriptorProto
 // createDynamicConfigDescriptorProto creates descriptor proto for configuration. The construction of the descriptor
 // proto is the way how the configuration from known models are added to the configuration proto message.
 // The constructed file descriptor proto is used to get file descriptor that in turn can be used to instantiate
-// proto message with all the configs from knownModels. This method conveniently provides also all referenced
-// external models of provided knownModels and the configuration root message (proto file has many messages, but
-// we need to know which one is the root for our configuration).
+// proto message with all the configs from knownModels. This method conveniently provides also the configuration
+// root message (proto file has many messages, but we need to know which one is the root for our configuration).
 func createDynamicConfigDescriptorProto(knownModels []*ModelInfo, dependencyRegistry protodesc.Resolver) (
 	fileDP *descriptorpb.FileDescriptorProto, rootMsgName protoreflect.Name, error error) {
 
@@ -204,8 +207,6 @@ func createDynamicConfigDescriptorProto(knownModels []*ModelInfo, dependencyRegi
 		if !existsModelOptionFor("nameTemplate", modelDetail.Options) {
 			label = protoLabel(descriptorpb.FieldDescriptorProto_LABEL_OPTIONAL)
 		}
-		// TODO remove
-		//msgDesc := protoV1.MessageReflect(knownModel.NewInstance()).Descriptor()
 		simpleProtoName := simpleProtoName(modelDetail.ProtoName)
 		protoName := string(simpleProtoName)
 		jsonName := string(simpleProtoName)
@@ -215,6 +216,7 @@ func createDynamicConfigDescriptorProto(knownModels []*ModelInfo, dependencyRegi
 			protoName = newNames.protoName
 			jsonName = newNames.jsonName
 		}
+		fmt.Println(protoName) // TODO remove this debug
 		configGroup.Field = append(configGroup.Field, &descriptorpb.FieldDescriptorProto{
 			Name:     proto.String(protoName),
 			Number:   proto.Int32(int32(len(configGroup.Field) + 1)),
@@ -291,7 +293,8 @@ func toFileDescriptors(fileDescProtos []*descriptorpb.FileDescriptorProto) ([]pr
 			if allDepsFound {
 				fd, err := protodesc.NewFile(fdp, reg)
 				if err != nil {
-					panic(err) // TODO
+					return nil, errors.Errorf("can't create file descriptor "+
+						"(from file descriptor proto named %v) due to: %v", *fdp.Name, err)
 				}
 				resolved[fdpName] = fd
 				delete(unresolvedFDProtos, fdpName)
@@ -300,11 +303,9 @@ func toFileDescriptors(fileDescProtos []*descriptorpb.FileDescriptorProto) ([]pr
 		}
 	}
 	if len(unresolvedFDProtos) > 0 {
-		keys := make([]string, 0, len(unresolvedFDProtos)) // TODO move away
-		for key, _ := range unresolvedFDProtos {
-			keys = append(keys, key)
-		}
-		return nil, errors.Errorf("can't resolve these FileDescriptorProto's %v", strings.Join(keys, ","))
+		return nil, errors.Errorf("can't resolve some FileDescriptorProtos due to missing of "+
+			"some protos of their imports (FileDescriptorProtos with unresolvable imports: %v)",
+			fileDescriptorProtoMapToString(unresolvedFDProtos))
 	}
 
 	result := make([]protoreflect.FileDescriptor, 0, len(resolved))
@@ -312,6 +313,14 @@ func toFileDescriptors(fileDescProtos []*descriptorpb.FileDescriptorProto) ([]pr
 		result = append(result, fd)
 	}
 	return result, nil
+}
+
+func fileDescriptorProtoMapToString(fdps map[string]*descriptorpb.FileDescriptorProto) string {
+	keys := make([]string, 0, len(fdps))
+	for key, _ := range fdps {
+		keys = append(keys, key)
+	}
+	return strings.Join(keys, ",")
 }
 
 // DynamicConfigExport exports from dynamic config the proto.Messages corresponding to known models that
