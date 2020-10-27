@@ -15,8 +15,6 @@
 package vpp2005
 
 import (
-	govppapi "git.fd.io/govpp.git/api"
-
 	vpe_vppcalls "go.ligato.io/vpp-agent/v3/plugins/govppmux/vppcalls"
 	vpe_vpp2005 "go.ligato.io/vpp-agent/v3/plugins/govppmux/vppcalls/vpp2005"
 	"go.ligato.io/vpp-agent/v3/plugins/telemetry/vppcalls"
@@ -31,18 +29,15 @@ func init() {
 		vpe.AllMessages,
 		memclnt.AllMessages,
 	)
-	vppcalls.AddHandlerVersion(vpp2005.Version, msgs.AllMessages(), func(c vpp.Client) vppcalls.TelemetryVppAPI {
-		ch, _ := c.NewAPIChannel()
-		return NewTelemetryVppHandler(ch)
-	})
+	vppcalls.AddHandlerVersion(vpp2005.Version, msgs.AllMessages(), NewTelemetryVppHandler)
 }
 
 type TelemetryHandler struct {
 	vpe vpe_vppcalls.VppCoreAPI
 }
 
-func NewTelemetryVppHandler(ch govppapi.Channel) vppcalls.TelemetryVppAPI {
+func NewTelemetryVppHandler(c vpp.Client) vppcalls.TelemetryVppAPI {
 	return &TelemetryHandler{
-		vpe: vpe_vpp2005.NewVpeHandler(ch),
+		vpe: vpe_vpp2005.NewVpeHandler(c),
 	}
 }

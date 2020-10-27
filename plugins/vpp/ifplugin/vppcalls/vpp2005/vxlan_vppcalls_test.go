@@ -21,7 +21,7 @@ import (
 
 	. "github.com/onsi/gomega"
 
-	vpp_ifs "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/interfaces"
+	vpp_ifs "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/interface"
 	vpp_vxlan "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/vxlan"
 	ifs "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
 )
@@ -46,8 +46,8 @@ func TestAddVxlanTunnel(t *testing.T) {
 	for _, msg := range ctx.MockChannel.Msgs {
 		vppMsg, ok := msg.(*vpp_vxlan.VxlanAddDelTunnel)
 		if ok {
-			Expect(vppMsg.SrcAddress.Un.GetIP4()).To(BeEquivalentTo(vpp_ifs.IP4Address{10, 0, 0, 1}))
-			Expect(vppMsg.DstAddress.Un.GetIP4()).To(BeEquivalentTo(vpp_ifs.IP4Address{20, 0, 0, 1}))
+			Expect(vppMsg.SrcAddress.Un.GetIP4()).To(BeEquivalentTo(ip_types.IP4Address{10, 0, 0, 1}))
+			Expect(vppMsg.DstAddress.Un.GetIP4()).To(BeEquivalentTo(ip_types.IP4Address{20, 0, 0, 1}))
 			Expect(vppMsg.IsAdd).To(BeEquivalentTo(true))
 			Expect(vppMsg.EncapVrfID).To(BeEquivalentTo(0))
 			Expect(vppMsg.McastSwIfIndex).To(BeEquivalentTo(2))

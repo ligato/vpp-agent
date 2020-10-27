@@ -19,6 +19,7 @@ import (
 
 	"github.com/pkg/errors"
 
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/interface_types"
 	vpp_l2 "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/l2"
 	l2 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l2"
 )
@@ -51,7 +52,7 @@ func (h *BridgeDomainVppHandler) addDelInterfaceToBridgeDomain(bdIdx uint32, ifa
 	ifIdx uint32, add bool) error {
 	req := &vpp_l2.SwInterfaceSetL2Bridge{
 		BdID:        bdIdx,
-		RxSwIfIndex: vpp_l2.InterfaceIndex(ifIdx),
+		RxSwIfIndex: interface_types.InterfaceIndex(ifIdx),
 		Shg:         uint8(ifaceCfg.SplitHorizonGroup),
 		Enable:      add,
 	}

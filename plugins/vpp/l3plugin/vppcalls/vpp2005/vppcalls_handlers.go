@@ -76,7 +76,7 @@ func NewL3VppHandler(
 		ArpVppHandler:      NewArpVppHandler(ch, ifIdx, log),
 		ProxyArpVppHandler: NewProxyArpVppHandler(ch, ifIdx, log),
 		RouteHandler:       NewRouteVppHandler(ch, ifIdx, vrfIdx, addrAlloc, log),
-		IPNeighHandler:     NewIPNeighVppHandler(ch, log),
+		IPNeighHandler:     NewIPNeighVppHandler(c, ch, log),
 		VrfTableHandler:    NewVrfTableVppHandler(ch, log),
 		DHCPProxyHandler:   NewDHCPProxyHandler(ch, log),
 		L3XCHandler:        NewL3XCHandler(c, ifIdx, log),
@@ -181,14 +181,14 @@ func NewRouteVppHandler(callsChan govppapi.Channel, ifIndexes ifaceidx.IfaceMeta
 }
 
 // NewIPNeighVppHandler creates new instance of ip neighbor vppcalls handler
-func NewIPNeighVppHandler(callsChan govppapi.Channel, log logging.Logger) *IPNeighHandler {
+func NewIPNeighVppHandler(c vpp.Client, callsChan govppapi.Channel, log logging.Logger) *IPNeighHandler {
 	if log == nil {
 		log = logrus.NewLogger("ip-neigh")
 	}
 	return &IPNeighHandler{
 		callsChannel: callsChan,
 		log:          log,
-		VppCoreAPI:   vpe_vpp2005.NewVpeHandler(callsChan),
+		VppCoreAPI:   vpe_vpp2005.NewVpeHandler(c),
 	}
 }
 
@@ -241,13 +241,8 @@ func NewL3XCHandler(c vpp.Client, ifIndexes ifaceidx.IfaceMetadataIndex, log log
 		ifIndexes: ifIndexes,
 		log:       log,
 	}
-	if c.IsPluginLoaded(l3xc.ModuleName) {
-		ch, err := c.NewAPIChannel()
-		if err != nil {
-			logging.Warnf("creating channel failed: %v", err)
-			return nil
-		}
-		h.l3xc = l3xc.NewServiceClient(ch)
+	if c.IsPluginLoaded(l3xc.APIFile) {
+		h.l3xc = l3xc.NewServiceClient(c)
 	}
 	return h
 }
@@ -264,40 +259,40 @@ func NewVrrpVppHandler(callsChan govppapi.Channel, ifIndexes ifaceidx.IfaceMetad
 	}
 }
 
-func ipToAddress(ipstr string) (addr vpp_ip.Address, err error) {
+func ipToAddress(ipstr string) (addr ip_types.Address, err error) {
 	netIP := net.ParseIP(ipstr)
 	if netIP == nil {
-		return vpp_ip.Address{}, fmt.Errorf("invalid IP: %q", ipstr)
+		return ip_types.Address{}, fmt.Errorf("invalid IP: %q", ipstr)
 	}
 	if ip4 := netIP.To4(); ip4 == nil {
 		addr.Af = ip_types.ADDRESS_IP6
-		var ip6addr vpp_ip.IP6Address
+		var ip6addr ip_types.IP6Address
 		copy(ip6addr[:], netIP.To16())
 		addr.Un.SetIP6(ip6addr)
 	} else {
 		addr.Af = ip_types.ADDRESS_IP4
-		var ip4addr vpp_ip.IP4Address
+		var ip4addr ip_types.IP4Address
 		copy(ip4addr[:], ip4)
 		addr.Un.SetIP4(ip4addr)
 	}
 	return
 }
 
-func networkToPrefix(dstNetwork *net.IPNet) vpp_ip.Prefix {
-	var addr vpp_ip.Address
+func networkToPrefix(dstNetwork *net.IPNet) ip_types.Prefix {
+	var addr ip_types.Address
 	if dstNetwork.IP.To4() == nil {
 		addr.Af = ip_types.ADDRESS_IP6
-		var ip6addr vpp_ip.IP6Address
+		var ip6addr ip_types.IP6Address
 		copy(ip6addr[:], dstNetwork.IP.To16())
 		addr.Un.SetIP6(ip6addr)
 	} else {
 		addr.Af = ip_types.ADDRESS_IP4
-		var ip4addr vpp_ip.IP4Address
+		var ip4addr ip_types.IP4Address
 		copy(ip4addr[:], dstNetwork.IP.To4())
 		addr.Un.SetIP4(ip4addr)
 	}
 	mask, _ := dstNetwork.Mask.Size()
-	return vpp_ip.Prefix{
+	return ip_types.Prefix{
 		Address: addr,
 		Len:     uint8(mask),
 	}

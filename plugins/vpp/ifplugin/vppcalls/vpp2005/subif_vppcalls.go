@@ -15,13 +15,14 @@
 package vpp2005
 
 import (
-	vpp_ifs "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/interfaces"
+	vpp_ifs "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/interface"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/interface_types"
 )
 
 // CreateSubif creates sub interface.
 func (h *InterfaceVppHandler) CreateSubif(ifIdx, vlanID uint32) (uint32, error) {
 	req := &vpp_ifs.CreateVlanSubif{
-		SwIfIndex: vpp_ifs.InterfaceIndex(ifIdx),
+		SwIfIndex: interface_types.InterfaceIndex(ifIdx),
 		VlanID:    vlanID,
 	}
 
@@ -36,7 +37,7 @@ func (h *InterfaceVppHandler) CreateSubif(ifIdx, vlanID uint32) (uint32, error) 
 // DeleteSubif deletes sub interface.
 func (h *InterfaceVppHandler) DeleteSubif(ifIdx uint32) error {
 	req := &vpp_ifs.DeleteSubif{
-		SwIfIndex: vpp_ifs.InterfaceIndex(ifIdx),
+		SwIfIndex: interface_types.InterfaceIndex(ifIdx),
 	}
 
 	reply := &vpp_ifs.DeleteSubifReply{}

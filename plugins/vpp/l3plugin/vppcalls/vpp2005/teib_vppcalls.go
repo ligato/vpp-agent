@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/interface_types"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/ip_types"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/teib"
 	l3 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3"
@@ -37,7 +38,7 @@ func (h *TeibHandler) vppAddDelTeibEntry(entry *l3.TeibEntry, delete bool) error
 
 	req := &teib.TeibEntryAddDel{
 		Entry: teib.TeibEntry{
-			SwIfIndex: teib.InterfaceIndex(meta.SwIfIndex),
+			SwIfIndex: interface_types.InterfaceIndex(meta.SwIfIndex),
 			Peer:      peer,
 			Nh:        nh,
 			NhTableID: entry.VrfId,

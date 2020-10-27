@@ -519,6 +519,6 @@ func TestGetNodeCounters(t *testing.T) {
 
 func testSetup(t *testing.T) (*vppmock.TestCtx, vppcalls.TelemetryVppAPI) {
 	ctx := vppmock.SetupTestCtx(t)
-	handler := vpp2005.NewTelemetryVppHandler(ctx.MockChannel)
+	handler := vpp2005.NewTelemetryVppHandler(ctx.MockVPPClient)
 	return ctx, handler
 }

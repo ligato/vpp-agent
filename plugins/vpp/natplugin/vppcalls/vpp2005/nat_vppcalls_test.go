@@ -21,6 +21,7 @@ import (
 
 	. "github.com/onsi/gomega"
 
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/ip_types"
 	vpp_nat "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/nat"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/natplugin/vppcalls/vpp2005"
@@ -900,7 +901,7 @@ func localIPs(addr1, addr2 net.IP) []*nat.DNat44_StaticMapping_LocalIP {
 	}
 }
 
-func addressTo4IP(address vpp_nat.IP4Address) string {
+func addressTo4IP(address ip_types.IP4Address) string {
 	ipAddr := make(net.IP, net.IPv4len)
 	copy(ipAddr[:], address[:])
 	if ipAddr.To4() == nil {

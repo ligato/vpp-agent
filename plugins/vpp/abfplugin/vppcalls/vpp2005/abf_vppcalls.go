@@ -23,6 +23,7 @@ import (
 	vpp_abf "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/abf"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/fib_types"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/interface_types"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/ip_types"
 	abf "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/abf"
 )
 
@@ -126,7 +127,7 @@ func (h *ABFVppHandler) abfAddDelPolicy(policyID, aclID uint32, abfPaths []*abf.
 	return h.callsChannel.SendRequest(req).ReceiveReply(reply)
 }
 
-func (h *ABFVppHandler) toFibPaths(abfPaths []*abf.ABF_ForwardingPath) (fibPaths []vpp_abf.FibPath) {
+func (h *ABFVppHandler) toFibPaths(abfPaths []*abf.ABF_ForwardingPath) (fibPaths []fib_types.FibPath) {
 	var err error
 	for _, abfPath := range abfPaths {
 		// fib path interface
@@ -135,7 +136,7 @@ func (h *ABFVppHandler) toFibPaths(abfPaths []*abf.ABF_ForwardingPath) (fibPaths
 			continue
 		}
 
-		fibPath := vpp_abf.FibPath{
+		fibPath := fib_types.FibPath{
 			SwIfIndex:  ifData.SwIfIndex,
 			Weight:     uint8(abfPath.Weight),
 			Preference: uint8(abfPath.Preference),
@@ -151,7 +152,7 @@ func (h *ABFVppHandler) toFibPaths(abfPaths []*abf.ABF_ForwardingPath) (fibPaths
 }
 
 // supported cases are DVR and normal
-func setFibPathType(isDvr bool) vpp_abf.FibPathType {
+func setFibPathType(isDvr bool) fib_types.FibPathType {
 	if isDvr {
 		return fib_types.FIB_API_PATH_TYPE_DVR
 	}
@@ -159,24 +160,24 @@ func setFibPathType(isDvr bool) vpp_abf.FibPathType {
 }
 
 // resolve IP address and return FIB path next hop (IP address) and IPv4/IPv6 version
-func setFibPathNhAndProto(ipStr string) (nh vpp_abf.FibPathNh, proto vpp_abf.FibPathNhProto, err error) {
+func setFibPathNhAndProto(ipStr string) (nh fib_types.FibPathNh, proto fib_types.FibPathNhProto, err error) {
 	netIP := net.ParseIP(ipStr)
 	if netIP == nil {
 		return nh, proto, errors.Errorf("failed to parse next hop IP address %s", ipStr)
 	}
-	var au fib_types.AddressUnion
+	var au ip_types.AddressUnion
 	if ipv4 := netIP.To4(); ipv4 == nil {
-		var address fib_types.IP6Address
+		var address ip_types.IP6Address
 		proto = fib_types.FIB_API_PATH_NH_PROTO_IP6
 		copy(address[:], netIP[:])
 		au.SetIP6(address)
 	} else {
-		var address fib_types.IP4Address
+		var address ip_types.IP4Address
 		proto = fib_types.FIB_API_PATH_NH_PROTO_IP4
 		copy(address[:], netIP[12:])
 		au.SetIP4(address)
 	}
-	return vpp_abf.FibPathNh{
+	return fib_types.FibPathNh{
 		Address:            au,
 		ViaLabel:           NextHopViaLabelUnset,
 		ClassifyTableIndex: ClassifyTableIndexUnset,

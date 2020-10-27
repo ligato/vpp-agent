@@ -15,8 +15,6 @@
 package vpp2005
 
 import (
-	govppapi "git.fd.io/govpp.git/api"
-
 	"go.ligato.io/vpp-agent/v3/plugins/govppmux/vppcalls"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005"
@@ -29,10 +27,7 @@ func init() {
 		vpe.AllMessages,
 		memclnt.AllMessages,
 	)
-	vppcalls.AddVersion(vpp2005.Version, msgs.AllMessages(), func(client vpp.Client) vppcalls.VppCoreAPI {
-		ch, _ := client.NewAPIChannel()
-		return NewVpeHandler(ch)
-	})
+	vppcalls.AddVersion(vpp2005.Version, msgs.AllMessages(), NewVpeHandler)
 }
 
 type VpeHandler struct {
@@ -40,9 +35,9 @@ type VpeHandler struct {
 	vpe     vpe.RPCService
 }
 
-func NewVpeHandler(ch govppapi.Channel) vppcalls.VppCoreAPI {
+func NewVpeHandler(c vpp.Client) vppcalls.VppCoreAPI {
 	return &VpeHandler{
-		memclnt: memclnt.NewServiceClient(ch),
-		vpe:     vpe.NewServiceClient(ch),
+		memclnt: memclnt.NewServiceClient(c),
+		vpe:     vpe.NewServiceClient(c),
 	}
 }

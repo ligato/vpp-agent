@@ -15,7 +15,8 @@
 package vpp2005
 
 import (
-	vpp_ifs "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/interfaces"
+	vpp_ifs "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/interface"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/interface_types"
 )
 
 func (h *InterfaceVppHandler) SetInterfaceVrf(ifIdx, vrfID uint32) error {
@@ -37,7 +38,7 @@ func (h *InterfaceVppHandler) GetInterfaceVrfIPv6(ifIdx uint32) (vrfID uint32, e
 // Interface is set to VRF table. Table IP version has to be defined.
 func (h *InterfaceVppHandler) setInterfaceVrf(ifIdx, vrfID uint32, isIPv6 bool) error {
 	req := &vpp_ifs.SwInterfaceSetTable{
-		SwIfIndex: vpp_ifs.InterfaceIndex(ifIdx),
+		SwIfIndex: interface_types.InterfaceIndex(ifIdx),
 		VrfID:     vrfID,
 		IsIPv6:    isIPv6,
 	}
@@ -55,7 +56,7 @@ func (h *InterfaceVppHandler) setInterfaceVrf(ifIdx, vrfID uint32, isIPv6 bool) 
 // Returns VRF ID for provided interface.
 func (h *InterfaceVppHandler) getInterfaceVrf(ifIdx uint32, isIPv6 bool) (vrfID uint32, err error) {
 	req := &vpp_ifs.SwInterfaceGetTable{
-		SwIfIndex: vpp_ifs.InterfaceIndex(ifIdx),
+		SwIfIndex: interface_types.InterfaceIndex(ifIdx),
 		IsIPv6:    isIPv6,
 	}
 	reply := &vpp_ifs.SwInterfaceGetTableReply{}

@@ -17,11 +17,14 @@ package vpp2005_test
 import (
 	"testing"
 
+	"git.fd.io/govpp.git/api"
+	"git.fd.io/govpp.git/core"
 	. "github.com/onsi/gomega"
 	"go.ligato.io/cn-infra/v2/logging/logrus"
 
+	vpp_ifs "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/interface"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/interface_types"
-	vpp_ifs "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/interfaces"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/vpe"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/vppcalls"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/vppcalls/vpp2005"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/vppmock"
@@ -38,8 +41,8 @@ func TestInterfaceAdminDown(t *testing.T) {
 	vppMsg, ok := ctx.MockChannel.Msg.(*vpp_ifs.SwInterfaceSetFlags)
 	Expect(ok).To(BeTrue())
 	Expect(vppMsg).NotTo(BeNil())
-	Expect(vppMsg.SwIfIndex).To(Equal(vpp_ifs.InterfaceIndex(1)))
-	Expect(vppMsg.Flags).To(Equal(vpp_ifs.IfStatusFlags(0)))
+	Expect(vppMsg.SwIfIndex).To(Equal(interface_types.InterfaceIndex(1)))
+	Expect(vppMsg.Flags).To(Equal(interface_types.IfStatusFlags(0)))
 }
 
 func TestInterfaceAdminDownError(t *testing.T) {
@@ -75,7 +78,7 @@ func TestInterfaceAdminUp(t *testing.T) {
 	vppMsg, ok := ctx.MockChannel.Msg.(*vpp_ifs.SwInterfaceSetFlags)
 	Expect(ok).To(BeTrue())
 	Expect(vppMsg).NotTo(BeNil())
-	Expect(vppMsg.SwIfIndex).To(Equal(vpp_ifs.InterfaceIndex(1)))
+	Expect(vppMsg.SwIfIndex).To(Equal(interface_types.InterfaceIndex(1)))
 	Expect(vppMsg.Flags).To(Equal(interface_types.IF_STATUS_API_FLAG_ADMIN_UP))
 }
 
@@ -113,7 +116,7 @@ func TestInterfaceSetTag(t *testing.T) {
 	Expect(ok).To(BeTrue())
 	Expect(vppMsg).NotTo(BeNil())
 	Expect(vppMsg.Tag).To(BeEquivalentTo("tag"))
-	Expect(vppMsg.SwIfIndex).To(Equal(vpp_ifs.InterfaceIndex(1)))
+	Expect(vppMsg.SwIfIndex).To(Equal(interface_types.InterfaceIndex(1)))
 	Expect(vppMsg.IsAdd).To(BeTrue())
 }
 
@@ -177,7 +180,16 @@ func TestInterfaceRemoveTagRetval(t *testing.T) {
 }
 
 func ifTestSetup(t *testing.T) (*vppmock.TestCtx, vppcalls.InterfaceVppAPI) {
+	// FIXME: this control pings below are hacked to avoid issues in tests
+	// that do not properly handle all replies, affecting tests that run after
+	// causing failures, because of unexpected ControlPingReply type from core
+	controlPingMsg := &vpe.ControlPingReply{}
+	api.GetRegisteredMessages()["control_ping_reply"] = controlPingMsg
+	api.GetRegisteredMessages()["control_ping_reply_f6b0b8ca"] = controlPingMsg
+	core.SetControlPingReply(controlPingMsg)
 	ctx := vppmock.SetupTestCtx(t)
+	core.SetControlPingReply(controlPingMsg)
+	ctx.PingReplyMsg = controlPingMsg
 	log := logrus.NewLogger("test-log")
 	ifHandler := vpp2005.NewInterfaceVppHandler(ctx.MockVPPClient, log)
 	return ctx, ifHandler

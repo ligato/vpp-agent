@@ -27,6 +27,7 @@ import (
 	idxmap_mem "go.ligato.io/cn-infra/v2/idxmap/mem"
 	"go.ligato.io/cn-infra/v2/logging/logrus"
 
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/ip_types"
 	vpp_nat "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/nat"
 	vpp_vpe "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/vpe"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
@@ -454,11 +455,11 @@ func natTestSetup(t *testing.T) (*vppmock.TestCtx, vppcalls.NatVppAPI, ifaceidx.
 	log := logrus.NewLogger("test-log")
 	swIfIndexes := ifaceidx.NewIfaceIndex(logrus.DefaultLogger(), "test-sw_if_indexes")
 	dhcpIndexes := idxmap_mem.NewNamedMapping(logrus.DefaultLogger(), "test-dhcp_indexes", nil)
-	natHandler := vpp2005.NewNatVppHandler(ctx.MockChannel, swIfIndexes, dhcpIndexes, log)
+	natHandler := vpp2005.NewNatVppHandler(ctx.MockVPPClient, swIfIndexes, dhcpIndexes, log)
 	return ctx, natHandler, swIfIndexes, dhcpIndexes
 }
 
-func ipTo4Address(ipStr string) (addr vpp_nat.IP4Address) {
+func ipTo4Address(ipStr string) (addr ip_types.IP4Address) {
 	netIP := net.ParseIP(ipStr)
 	if ip4 := netIP.To4(); ip4 != nil {
 		copy(addr[:], ip4)

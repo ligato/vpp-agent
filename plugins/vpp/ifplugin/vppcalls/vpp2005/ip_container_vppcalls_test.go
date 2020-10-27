@@ -21,10 +21,11 @@ import (
 	. "github.com/onsi/gomega"
 
 	vpp_ip "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/ip"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/ip_types"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/vppcalls/vpp2005"
 )
 
-func ipToAddr(ip string) vpp_ip.Address {
+func ipToAddr(ip string) ip_types.Address {
 	addr, err := vpp2005.IPToAddress(ip)
 	if err != nil {
 		panic(fmt.Sprintf("invalid IP: %s", ip))
@@ -44,7 +45,7 @@ func TestAddContainerIP(t *testing.T) {
 	vppMsg, ok := ctx.MockChannel.Msg.(*vpp_ip.IPContainerProxyAddDel)
 	Expect(ok).To(BeTrue())
 	Expect(vppMsg.SwIfIndex).To(BeEquivalentTo(1))
-	Expect(vppMsg.Pfx).To(BeEquivalentTo(vpp_ip.Prefix{
+	Expect(vppMsg.Pfx).To(BeEquivalentTo(ip_types.Prefix{
 		Address: ipToAddr("10.0.0.1"),
 		Len:     24,
 	}))
@@ -63,7 +64,7 @@ func TestAddContainerIPv6(t *testing.T) {
 	vppMsg, ok := ctx.MockChannel.Msg.(*vpp_ip.IPContainerProxyAddDel)
 	Expect(ok).To(BeTrue())
 	Expect(vppMsg.SwIfIndex).To(BeEquivalentTo(1))
-	Expect(vppMsg.Pfx).To(BeEquivalentTo(vpp_ip.Prefix{
+	Expect(vppMsg.Pfx).To(BeEquivalentTo(ip_types.Prefix{
 		Address: ipToAddr("2001:db8:0:1:1:1:1:1"),
 		Len:     128,
 	}))
@@ -117,7 +118,7 @@ func TestDelContainerIP(t *testing.T) {
 	vppMsg, ok := ctx.MockChannel.Msg.(*vpp_ip.IPContainerProxyAddDel)
 	Expect(ok).To(BeTrue())
 	Expect(vppMsg.SwIfIndex).To(BeEquivalentTo(1))
-	Expect(vppMsg.Pfx).To(BeEquivalentTo(vpp_ip.Prefix{
+	Expect(vppMsg.Pfx).To(BeEquivalentTo(ip_types.Prefix{
 		Address: ipToAddr("10.0.0.1"),
 		Len:     24,
 	}))
@@ -136,7 +137,7 @@ func TestDelContainerIPv6(t *testing.T) {
 	vppMsg, ok := ctx.MockChannel.Msg.(*vpp_ip.IPContainerProxyAddDel)
 	Expect(ok).To(BeTrue())
 	Expect(vppMsg.SwIfIndex).To(BeEquivalentTo(1))
-	Expect(vppMsg.Pfx).To(BeEquivalentTo(vpp_ip.Prefix{
+	Expect(vppMsg.Pfx).To(BeEquivalentTo(ip_types.Prefix{
 		Address: ipToAddr("2001:db8:0:1:1:1:1:1"),
 		Len:     128,
 	}))

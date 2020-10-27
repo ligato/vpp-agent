@@ -18,8 +18,8 @@ import (
 	"net"
 
 	"github.com/go-errors/errors"
-
-	vpp_ifs "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/interfaces"
+	vpp_ifs "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/interface"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/interface_types"
 )
 
 func (h *InterfaceVppHandler) SetInterfaceMac(ifIdx uint32, macAddress string) error {
@@ -28,7 +28,7 @@ func (h *InterfaceVppHandler) SetInterfaceMac(ifIdx uint32, macAddress string) e
 		return err
 	}
 	req := &vpp_ifs.SwInterfaceSetMacAddress{
-		SwIfIndex:  vpp_ifs.InterfaceIndex(ifIdx),
+		SwIfIndex:  interface_types.InterfaceIndex(ifIdx),
 		MacAddress: mac,
 	}
 	reply := &vpp_ifs.SwInterfaceSetMacAddressReply{}

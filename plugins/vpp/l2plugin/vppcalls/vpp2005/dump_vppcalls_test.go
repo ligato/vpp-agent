@@ -148,13 +148,13 @@ func TestDumpBridgeDomainsWithARP(t *testing.T) {
 			Message: &vpp_l2.BdIPMacDetails{
 				Entry: vpp_l2.BdIPMac{
 					BdID: 5,
-					IP: vpp_l2.Address{
+					IP: ip_types.Address{
 						Af: ip_types.ADDRESS_IP4,
 						Un: ip_types.AddressUnionIP4(
-							vpp_l2.IP4Address{192, 168, 0, 1},
+							ip_types.IP4Address{192, 168, 0, 1},
 						),
 					},
-					Mac: vpp_l2.MacAddress{0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA},
+					Mac: ethernet_types.MacAddress{0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA},
 				},
 			},
 		},

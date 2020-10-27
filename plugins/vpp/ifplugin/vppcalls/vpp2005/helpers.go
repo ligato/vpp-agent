@@ -7,7 +7,6 @@ import (
 
 	"go.ligato.io/cn-infra/v2/utils/addrs"
 
-	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/interfaces"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/ip_types"
 )
 
@@ -31,15 +30,15 @@ func IPToAddress(ipStr string) (addr ip_types.Address, err error) {
 	return
 }
 
-func ipToAddress(address *net.IPNet, isIPv6 bool) (ipAddr interfaces.Address) {
+func ipToAddress(address *net.IPNet, isIPv6 bool) (ipAddr ip_types.Address) {
 	if isIPv6 {
 		ipAddr.Af = ip_types.ADDRESS_IP6
-		var ip6addr interfaces.IP6Address
+		var ip6addr ip_types.IP6Address
 		copy(ip6addr[:], address.IP.To16())
 		ipAddr.Un.SetIP6(ip6addr)
 	} else {
 		ipAddr.Af = ip_types.ADDRESS_IP4
-		var ip4addr interfaces.IP4Address
+		var ip4addr ip_types.IP4Address
 		copy(ip4addr[:], address.IP.To4())
 		ipAddr.Un.SetIP4(ip4addr)
 	}
@@ -56,12 +55,12 @@ func IPtoPrefix(addr string) (ip_types.Prefix, error) {
 	prefix.Len = byte(maskSize)
 	if isIPv6 {
 		prefix.Address.Af = ip_types.ADDRESS_IP6
-		var ip6addr interfaces.IP6Address
+		var ip6addr ip_types.IP6Address
 		copy(ip6addr[:], ipAddr.IP.To16())
 		prefix.Address.Un.SetIP6(ip6addr)
 	} else {
 		prefix.Address.Af = ip_types.ADDRESS_IP4
-		var ip4addr interfaces.IP4Address
+		var ip4addr ip_types.IP4Address
 		copy(ip4addr[:], ipAddr.IP.To4())
 		prefix.Address.Un.SetIP4(ip4addr)
 	}

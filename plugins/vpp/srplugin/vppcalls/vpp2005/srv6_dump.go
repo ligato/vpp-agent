@@ -18,8 +18,9 @@ import (
 	"net"
 
 	"github.com/go-errors/errors"
-
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/ip_types"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/sr"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/sr_types"
 	srv6 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/srv6"
 )
 
@@ -62,7 +63,7 @@ func (h *SRv6VppHandler) DumpLocalSids() (localsids []*srv6.LocalSID, err error)
 }
 
 // convertDumpedSid extract from dumped structure SID value and converts it to IPv6 (net.IP)
-func (h *SRv6VppHandler) convertDumpedSid(srv6Sid *sr.IP6Address) (net.IP, error) {
+func (h *SRv6VppHandler) convertDumpedSid(srv6Sid *ip_types.IP6Address) (net.IP, error) {
 	if srv6Sid == nil {
 		return nil, errors.New("can't convert sid from nil dumped address (or nil srv6sid)")
 	}
@@ -75,14 +76,14 @@ func (h *SRv6VppHandler) convertDumpedSid(srv6Sid *sr.IP6Address) (net.IP, error
 
 // fillEndFunction create end function part of NB-modeled localsid from SB-dumped structure
 func (h *SRv6VppHandler) fillEndFunction(localSID *srv6.LocalSID, dumpReply *sr.SrLocalsidsDetails) error {
-	switch uint8(dumpReply.Behavior) {
-	case BehaviorEnd:
+	switch dumpReply.Behavior {
+	case sr_types.SR_BEHAVIOR_API_END:
 		localSID.EndFunction = &srv6.LocalSID_BaseEndFunction{
 			BaseEndFunction: &srv6.LocalSID_End{
 				Psp: dumpReply.EndPsp,
 			},
 		}
-	case BehaviorX:
+	case sr_types.SR_BEHAVIOR_API_X:
 		ifName, _, exists := h.ifIndexes.LookupBySwIfIndex(dumpReply.XconnectIfaceOrVrfTable)
 		if !exists {
 			return errors.Errorf("there is no interface with sw index %v", dumpReply.XconnectIfaceOrVrfTable)
@@ -94,14 +95,14 @@ func (h *SRv6VppHandler) fillEndFunction(localSID *srv6.LocalSID, dumpReply *sr.
 				NextHop:           h.nextHop(dumpReply),
 			},
 		}
-	case BehaviorT:
+	case sr_types.SR_BEHAVIOR_API_T:
 		localSID.EndFunction = &srv6.LocalSID_EndFunctionT{
 			EndFunctionT: &srv6.LocalSID_EndT{
 				Psp:   dumpReply.EndPsp,
 				VrfId: dumpReply.XconnectIfaceOrVrfTable,
 			},
 		}
-	case BehaviorDX2:
+	case sr_types.SR_BEHAVIOR_API_DX2:
 		ifName, _, exists := h.ifIndexes.LookupBySwIfIndex(dumpReply.XconnectIfaceOrVrfTable)
 		if !exists {
 			return errors.Errorf("there is no interface with sw index %v", dumpReply.XconnectIfaceOrVrfTable)
@@ -112,7 +113,7 @@ func (h *SRv6VppHandler) fillEndFunction(localSID *srv6.LocalSID, dumpReply *sr.
 				OutgoingInterface: ifName,
 			},
 		}
-	case BehaviorDX4:
+	case sr_types.SR_BEHAVIOR_API_DX4:
 		ifName, _, exists := h.ifIndexes.LookupBySwIfIndex(dumpReply.XconnectIfaceOrVrfTable)
 		if !exists {
 			return errors.Errorf("there is no interface with sw index %v", dumpReply.XconnectIfaceOrVrfTable)
@@ -123,7 +124,7 @@ func (h *SRv6VppHandler) fillEndFunction(localSID *srv6.LocalSID, dumpReply *sr.
 				NextHop:           h.nextHop(dumpReply),
 			},
 		}
-	case BehaviorDX6:
+	case sr_types.SR_BEHAVIOR_API_DX6:
 		ifName, _, exists := h.ifIndexes.LookupBySwIfIndex(dumpReply.XconnectIfaceOrVrfTable)
 		if !exists {
 			return errors.Errorf("there is no interface with sw index %v", dumpReply.XconnectIfaceOrVrfTable)
@@ -134,13 +135,13 @@ func (h *SRv6VppHandler) fillEndFunction(localSID *srv6.LocalSID, dumpReply *sr.
 				NextHop:           h.nextHop(dumpReply),
 			},
 		}
-	case BehaviorDT4:
+	case sr_types.SR_BEHAVIOR_API_DT4:
 		localSID.EndFunction = &srv6.LocalSID_EndFunctionDt4{
 			EndFunctionDt4: &srv6.LocalSID_EndDT4{
 				VrfId: dumpReply.XconnectIfaceOrVrfTable,
 			},
 		}
-	case BehaviorDT6:
+	case sr_types.SR_BEHAVIOR_API_DT6:
 		localSID.EndFunction = &srv6.LocalSID_EndFunctionDt6{
 			EndFunctionDt6: &srv6.LocalSID_EndDT6{
 				VrfId: dumpReply.XconnectIfaceOrVrfTable,

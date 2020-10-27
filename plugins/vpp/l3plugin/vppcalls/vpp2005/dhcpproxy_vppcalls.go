@@ -55,19 +55,19 @@ func (h *DHCPProxyHandler) DeleteDHCPProxy(entry *l3.DHCPProxy) error {
 	return h.createDeleteDHCPProxy(entry, true)
 }
 
-func ipToDHCPAddress(address string) (dhcpAddr vpp_dhcp.Address, err error) {
+func ipToDHCPAddress(address string) (dhcpAddr ip_types.Address, err error) {
 	netIP := net.ParseIP(address)
 	if netIP == nil {
-		return vpp_dhcp.Address{}, fmt.Errorf("invalid IP: %q", address)
+		return ip_types.Address{}, fmt.Errorf("invalid IP: %q", address)
 	}
 	if ip4 := netIP.To4(); ip4 == nil {
 		dhcpAddr.Af = ip_types.ADDRESS_IP6
-		var ip6addr vpp_dhcp.IP6Address
+		var ip6addr ip_types.IP6Address
 		copy(ip6addr[:], netIP.To16())
 		dhcpAddr.Un.SetIP6(ip6addr)
 	} else {
 		dhcpAddr.Af = ip_types.ADDRESS_IP4
-		var ip4addr vpp_dhcp.IP4Address
+		var ip4addr ip_types.IP4Address
 		copy(ip4addr[:], ip4)
 		dhcpAddr.Un.SetIP4(ip4addr)
 	}

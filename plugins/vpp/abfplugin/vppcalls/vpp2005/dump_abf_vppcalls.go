@@ -150,7 +150,7 @@ func (h *ABFVppHandler) dumpABFPolicy() ([]*vppcalls.ABFDetails, error) {
 }
 
 // returns next hop IP address
-func parseNextHopToString(nh vpp_abf.FibPathNh, proto vpp_abf.FibPathNhProto) string {
+func parseNextHopToString(nh fib_types.FibPathNh, proto fib_types.FibPathNhProto) string {
 	if proto == fib_types.FIB_API_PATH_NH_PROTO_IP4 {
 		addr := nh.Address.GetIP4()
 		return net.IP(addr[:]).To4().String()

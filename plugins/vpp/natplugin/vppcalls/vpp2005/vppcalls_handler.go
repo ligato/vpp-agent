@@ -30,12 +30,8 @@ import (
 func init() {
 	var msgs []govppapi.Message
 	msgs = append(msgs, vpp_nat.AllMessages()...)
-	msgs = append(msgs, vpp_ip.AllMessages()...)
 
-	vppcalls.AddNatHandlerVersion(vpp2005.Version, msgs, func(c vpp.Client, ifIdx ifaceidx.IfaceMetadataIndex, dhcpIdx idxmap.NamedMapping, log logging.Logger) vppcalls.NatVppAPI {
-		ch, _ := c.NewAPIChannel()
-		return NewNatVppHandler(ch, ifIdx, dhcpIdx, log)
-	})
+	vppcalls.AddNatHandlerVersion(vpp2005.Version, msgs, NewNatVppHandler)
 }
 
 // NatVppHandler is accessor for NAT-related vppcalls methods.
@@ -49,13 +45,14 @@ type NatVppHandler struct {
 }
 
 // NewNatVppHandler creates new instance of NAT vppcalls handler.
-func NewNatVppHandler(callsChan govppapi.Channel,
+func NewNatVppHandler(c vpp.Client,
 	ifIndexes ifaceidx.IfaceMetadataIndex, dhcpIndex idxmap.NamedMapping, log logging.Logger,
 ) vppcalls.NatVppAPI {
+	callsChan, _ := c.NewAPIChannel()
 	return &NatVppHandler{
 		callsChannel: callsChan,
-		ip:           vpp_ip.NewServiceClient(callsChan),
-		nat:          vpp_nat.NewServiceClient(callsChan),
+		ip:           vpp_ip.NewServiceClient(c),
+		nat:          vpp_nat.NewServiceClient(c),
 		ifIndexes:    ifIndexes,
 		dhcpIndex:    dhcpIndex,
 		log:          log,

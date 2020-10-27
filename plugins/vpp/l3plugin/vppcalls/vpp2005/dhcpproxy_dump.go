@@ -70,7 +70,7 @@ func (h *DHCPProxyHandler) dumpDHCPProxyForIPVersion(isIPv6 bool) (entry []*vppc
 	return
 }
 
-func addressToString(address vpp_dhcp.Address) string {
+func addressToString(address ip_types.Address) string {
 	if address.Af == ip_types.ADDRESS_IP6 {
 		ipAddr := address.Un.GetIP6()
 		return net.IP(ipAddr[:]).To16().String()

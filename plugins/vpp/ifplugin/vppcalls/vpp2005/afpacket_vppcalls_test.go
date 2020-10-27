@@ -17,12 +17,12 @@ package vpp2005_test
 import (
 	"testing"
 
-	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/vppcalls/vpp2005"
-
 	. "github.com/onsi/gomega"
 
 	vpp_afpacket "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/af_packet"
-	vpp_ifs "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/interfaces"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/ethernet_types"
+	vpp_ifs "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/interface"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/vppcalls/vpp2005"
 )
 
 func TestAddAfPacketInterface(t *testing.T) {
@@ -43,7 +43,7 @@ func TestAddAfPacketInterface(t *testing.T) {
 			Expect(ok).To(BeTrue())
 			Expect(vppMsg).To(Equal(&vpp_afpacket.AfPacketCreate{
 				HostIfName:      "host1",
-				HwAddr:          vpp_afpacket.MacAddress{},
+				HwAddr:          ethernet_types.MacAddress{},
 				UseRandomHwAddr: true,
 			}))
 		}

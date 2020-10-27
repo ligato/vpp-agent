@@ -17,6 +17,7 @@ package vpp2005
 import (
 	"errors"
 
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/interface_types"
 	vpp_l2 "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/l2"
 )
 
@@ -46,8 +47,8 @@ func (h *XConnectVppHandler) addDelXConnect(rxIface, txIface string, enable bool
 	// add/del xConnect pair
 	req := &vpp_l2.SwInterfaceSetL2Xconnect{
 		Enable:      enable,
-		TxSwIfIndex: vpp_l2.InterfaceIndex(txIfaceMeta.GetIndex()),
-		RxSwIfIndex: vpp_l2.InterfaceIndex(rxIfaceMeta.GetIndex()),
+		TxSwIfIndex: interface_types.InterfaceIndex(txIfaceMeta.GetIndex()),
+		RxSwIfIndex: interface_types.InterfaceIndex(rxIfaceMeta.GetIndex()),
 	}
 	reply := &vpp_l2.SwInterfaceSetL2XconnectReply{}
 

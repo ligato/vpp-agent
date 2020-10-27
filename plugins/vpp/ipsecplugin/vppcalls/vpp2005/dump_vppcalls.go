@@ -16,9 +16,11 @@ package vpp2005
 
 import (
 	"encoding/hex"
-	"github.com/pkg/errors"
 	"net"
 
+	"github.com/pkg/errors"
+
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/interface_types"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/ip_types"
 	vpp_ipsec "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/ipsec"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/ipsec_types"
@@ -116,16 +118,16 @@ func (h *IPSecVppHandler) DumpIPSecSPD() (spdList []*ipsec.SecurityPolicyDatabas
 			Index: spdIdx,
 		}
 		/*
-		for _, swIfIndex := range spdInterfaces[spdIdx] {
-			name, _, found := h.ifIndexes.LookupBySwIfIndex(swIfIndex)
-			if !found {
-				h.log.Warnf("Failed to find interface with sw_if_index %d", swIfIndex)
-				continue
+			for _, swIfIndex := range spdInterfaces[spdIdx] {
+				name, _, found := h.ifIndexes.LookupBySwIfIndex(swIfIndex)
+				if !found {
+					h.log.Warnf("Failed to find interface with sw_if_index %d", swIfIndex)
+					continue
+				}
+				spd.Interfaces = append(spd.Interfaces, &ipsec.SecurityPolicyDatabase_Interface{
+					Name: name,
+				})
 			}
-			spd.Interfaces = append(spd.Interfaces, &ipsec.SecurityPolicyDatabase_Interface{
-				Name: name,
-			})
-		}
 		*/
 		spdList = append(spdList, spd)
 	}
@@ -190,7 +192,7 @@ func (h *IPSecVppHandler) DumpIPSecSP() (spList []*ipsec.SecurityPolicy, err err
 // DumpTunnelProtections returns configured IPSec tunnel protections.
 func (h *IPSecVppHandler) DumpTunnelProtections() (tpList []*ipsec.TunnelProtection, err error) {
 	req := &vpp_ipsec.IpsecTunnelProtectDump{
-		SwIfIndex: vpp_ipsec.InterfaceIndex(^uint32(0)),
+		SwIfIndex: interface_types.InterfaceIndex(^uint32(0)),
 	}
 	requestCtx := h.callsChannel.SendMultiRequest(req)
 	for {

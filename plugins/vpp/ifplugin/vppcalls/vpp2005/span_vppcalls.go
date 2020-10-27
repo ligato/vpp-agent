@@ -3,6 +3,7 @@ package vpp2005
 import (
 	"fmt"
 
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/interface_types"
 	vpp_span "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/span"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/vppcalls"
 )
@@ -10,8 +11,8 @@ import (
 // SetSpan enables or disables SPAN on interface
 func (h *InterfaceVppHandler) setSpan(ifIdxFrom, ifIdxTo uint32, state uint8, isL2 bool) error {
 	req := &vpp_span.SwInterfaceSpanEnableDisable{
-		SwIfIndexFrom: vpp_span.InterfaceIndex(ifIdxFrom),
-		SwIfIndexTo:   vpp_span.InterfaceIndex(ifIdxTo),
+		SwIfIndexFrom: interface_types.InterfaceIndex(ifIdxFrom),
+		SwIfIndexTo:   interface_types.InterfaceIndex(ifIdxTo),
 		State:         vpp_span.SpanState(state),
 		IsL2:          isL2,
 	}

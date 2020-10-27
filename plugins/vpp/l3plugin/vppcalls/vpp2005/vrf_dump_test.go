@@ -20,6 +20,7 @@ import (
 	. "github.com/onsi/gomega"
 	"go.ligato.io/cn-infra/v2/logging/logrus"
 
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/fib_types"
 	vpp_ip "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/ip"
 	vpp_vpe "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/vpe"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/vppmock"
@@ -59,7 +60,7 @@ func TestDumpVrfTables(t *testing.T) {
 		&vpp_ip.IPRouteDetails{
 			Route: vpp_ip.IPRoute{
 				TableID: 2,
-				Paths:   []vpp_ip.FibPath{{SwIfIndex: 5}},
+				Paths:   []fib_types.FibPath{{SwIfIndex: 5}},
 			},
 		})
 	ctx.MockVpp.MockReply(&vpp_vpe.ControlPingReply{})

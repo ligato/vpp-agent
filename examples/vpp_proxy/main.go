@@ -27,13 +27,16 @@ import (
 	"git.fd.io/govpp.git/proxy"
 
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi"
-	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005"
-	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/interfaces"
-	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/vpe"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/interfaces"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/vpe"
 )
 
+// TODO update example for VPP >=20.05
+//   (changed govpp's api.Channel for api.Connection in binapi NewServiceClient creation)
+
 // VPP version used in the example.
-const vppVersion = vpp2005.Version
+const vppVersion = vpp2001.Version
 
 var (
 	address = flag.String("addr", ":9191", "agent address")
