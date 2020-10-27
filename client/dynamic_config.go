@@ -4,9 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"go.ligato.io/cn-infra/v2/logging/logrus"
-
 	"github.com/go-errors/errors"
+	"go.ligato.io/cn-infra/v2/logging/logrus"
 	"go.ligato.io/vpp-agent/v3/pkg/models"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/generic"
 	"google.golang.org/protobuf/proto"
@@ -30,7 +29,7 @@ type names struct {
 	protoName, jsonName string
 }
 
-// TOOD: generate backwardCompatibleNames dynamically by searching given known model in configurator.Config
+// TODO: generate backwardCompatibleNames dynamically by searching given known model in configurator.Config
 //  and extracting proto field name and json name?
 
 // backwardCompatibleNames is mappging from dynamic Config fields (derived from currently known models) to
