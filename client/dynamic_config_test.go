@@ -19,6 +19,10 @@ import (
 	"encoding/json"
 	"testing"
 
+	// TODO move custom model for testing somewhere into test related packages/folders
+	// include in registered models a model not present in hardcoded config
+	_ "go.ligato.io/vpp-agent/v3/examples/customize/custom_api_model/proto/custom"
+
 	yaml2 "github.com/ghodss/yaml"
 	"github.com/go-errors/errors"
 	"github.com/goccy/go-yaml"
@@ -102,6 +106,42 @@ func TestYamlCompatibility(t *testing.T) {
 
 	// final compare of YAML from hardcoded and dynamic config
 	Expect(yamlFromDynConfig).To(BeEquivalentTo(yamlFromHardcodedConfig))
+}
+
+// TestDynamicConfigWithThirdPartyModel tests whether 3rd party model (= model not in hardcoded configurator.Config)
+// data can be loaded into dynamic config from yaml form
+func TestDynamicConfigWithThirdPartyModel(t *testing.T) {
+	RegisterTestingT(t)
+	yaml := `config:
+  customConfig:
+    MyModel:
+    - name: testName
+      value: 21
+`
+	// create construction input for dynamic config
+	var knownModels []*generic.ModelDetail
+	fileDescProtos := make([]*descriptorpb.FileDescriptorProto, 0)
+	for _, model := range models.RegisteredModels() {
+		if model.Spec().Class == "config" && model.Spec().Module == "custom" {
+			// collect "knownModel" input
+			knownModels = append(knownModels, model.ModelDetail())
+
+			// collect related "fileDescriptorProtos" input
+			fileDesc := protoV1.MessageV2(model.NewInstance()).ProtoReflect().Descriptor().ParentFile()
+			fdp := protodesc.ToFileDescriptorProto(fileDesc)
+			fileDescProtos = append(fileDescProtos, fdp)
+		}
+	}
+
+	// create dynamic config
+	dynConfig, err := client.NewDynamicConfig(knownModels, fileDescProtos)
+	Expect(err).ShouldNot(HaveOccurred(), "can't create dynamic config")
+
+	// test loading of 3rd party model data into dynamic config
+	bj2, err := yaml2.YAMLToJSON([]byte(yaml))
+	Expect(err).ShouldNot(HaveOccurred(), "can't convert yaml (from hardcoded config) to json")
+	Expect(protojson.Unmarshal(bj2, dynConfig)).To(Succeed(),
+		"can't marshal json data (from hardcoded config) to dynamic config")
 }
 
 // allImports extract direct and transitive imports from file descriptor.
