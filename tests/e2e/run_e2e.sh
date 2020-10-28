@@ -82,7 +82,7 @@ if docker run -i \
 	--env CERTS_PATH="$PWD/tests/e2e/resources/certs" \
 	--env INITIAL_LOGLVL \
 	${DOCKER_ARGS-} \
-	"${imgname}" ${args[@]}
+	"${imgname}" ${args[@]:-}
 then
 	echo >&2 "-------------------------------------------------------------"
 	echo >&2 -e " \e[32mPASSED\e[0m (took: ${SECONDS}s)"

@@ -6,7 +6,7 @@ echo "Preparing integration tests.."
 args=($*)
 VPP_IMG="${VPP_IMG:-ligato/vpp-base}"
 testname="vpp-agent-integration-test"
-imgname="vpp-agent-e2e-tests"
+imgname="vpp-agent-integration-tests"
 
 # Compile testing suite
 go test -c -o ./tests/integration/integration.test \
@@ -43,7 +43,7 @@ if docker run -i \
 	--label io.ligato.vpp-agent.testname="${testname}" \
 	--env INITIAL_LOGLVL \
 	${DOCKER_ARGS-} \
-	"${imgname}" ${args[@]}
+	"${imgname}" ${args[@]:-}
 then
 	echo >&2 "-------------------------------------------------------------"
 	echo >&2 -e " \e[32mPASSED\e[0m (took: ${SECONDS}s)"
