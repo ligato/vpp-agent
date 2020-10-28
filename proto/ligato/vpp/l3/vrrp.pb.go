@@ -7,12 +7,11 @@
 package vpp_l3
 
 import (
-	reflect "reflect"
-	sync "sync"
-
 	proto "github.com/golang/protobuf/proto"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	reflect "reflect"
+	sync "sync"
 )
 
 const (
@@ -32,11 +31,13 @@ type VRRPEntry struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// This field refers to logical interface name
 	Interface string `protobuf:"bytes,1,opt,name=interface,proto3" json:"interface,omitempty"`
-	VrId      uint32 `protobuf:"varint,2,opt,name=vr_id,json=vrId,proto3" json:"vr_id,omitempty"`
-	// Priority defines which router becomes master.
+	// Should be > 0 and <= 255
+	VrId uint32 `protobuf:"varint,2,opt,name=vr_id,json=vrId,proto3" json:"vr_id,omitempty"`
+	// Priority defines which router becomes master. Should be > 0 and <= 255.
 	Priority uint32 `protobuf:"varint,3,opt,name=priority,proto3" json:"priority,omitempty"`
-	// VR advertisement interval in milliseconds, should be => 10.
+	// VR advertisement interval in milliseconds, should be => 10 and <= 655350.
 	// (Later, in implemetation it is converted into centiseconds, so precision may be lost).
 	Interval uint32 `protobuf:"varint,4,opt,name=interval,proto3" json:"interval,omitempty"`
 	// Controls whether a (starting or restarting)
@@ -50,7 +51,8 @@ type VRRPEntry struct {
 	// non-promiscuous reception for multiple unicast MAC addresses and to
 	// avoid both the multicast traffic and usage conflicts associated with
 	// the use of token ring functional addresses.
-	Unicast     bool     `protobuf:"varint,7,opt,name=unicast,proto3" json:"unicast,omitempty"`
+	Unicast bool `protobuf:"varint,7,opt,name=unicast,proto3" json:"unicast,omitempty"`
+	// Ip address quantity should be > 0 and <= 255.
 	IpAddresses []string `protobuf:"bytes,8,rep,name=ip_addresses,json=ipAddresses,proto3" json:"ip_addresses,omitempty"`
 	Enabled     bool     `protobuf:"varint,9,opt,name=enabled,proto3" json:"enabled,omitempty"`
 }

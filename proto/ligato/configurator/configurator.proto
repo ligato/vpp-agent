@@ -51,6 +51,15 @@ message UpdateResponse {
 message DeleteRequest {
     // Delete is a config data to be deleted.
     Config delete = 1;
+
+    // WaitDone option can be used to block until either
+    // config delete is done (non-pending) or request times out.
+    //
+    // NOTE: WaitDone is intended to be used for config updates
+    // that depend on some event from dataplane to fully configure.
+    // Using this with incomplete config updates will require
+    // another update request to unblock.
+    bool wait_done = 3;
 }
 
 message DeleteResponse {

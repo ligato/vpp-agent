@@ -196,6 +196,33 @@ func (svc *configuratorServer) Delete(ctx context.Context, req *pb.DeleteRequest
 		return nil, st.Err()
 	}
 
+	if req.WaitDone {
+		waitStart := time.Now()
+		var pendingKeys []string
+		for _, res := range results {
+			if res.Status.GetState() == kvscheduler.ValueState_PENDING {
+				pendingKeys = append(pendingKeys, res.Key)
+			}
+		}
+		if len(pendingKeys) > 0 {
+			svc.log.Infof("waiting for %d pending keys", len(pendingKeys))
+			for len(pendingKeys) > 0 {
+				select {
+				case <-time.After(waitDoneCheckPendingPeriod):
+					pendingKeys = svc.listPending(pendingKeys)
+				case <-ctx.Done():
+					svc.log.Warnf("update returning before %d pending keys are done: %v", len(pendingKeys), ctx.Err())
+					return nil, ctx.Err()
+				}
+			}
+		} else {
+			svc.log.Debugf("no pendings keys to wait for")
+		}
+		svc.log.Infof("finished waiting for done (took %v)", time.Since(waitStart))
+	}
+
+	svc.log.Debugf("config delete finished with %d results", len(results))
+
 	return &pb.DeleteResponse{}, nil
 }
 
