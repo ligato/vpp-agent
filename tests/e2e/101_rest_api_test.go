@@ -22,8 +22,8 @@ import (
 )
 
 func TestInfoVersionHandler(t *testing.T) {
-	ctx := setupE2E(t)
-	defer ctx.teardownE2E()
+	ctx := Setup(t)
+	defer ctx.Teardown()
 
 	resp, err := ctx.httpClient.GET("/info/version")
 	Expect(err).ToNot(HaveOccurred())

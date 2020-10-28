@@ -38,7 +38,7 @@ require (
 	github.com/mitchellh/mapstructure v1.1.2
 	github.com/namsral/flag v1.7.4-pre
 	github.com/olekukonko/tablewriter v0.0.4
-	github.com/onsi/gomega v1.4.3
+	github.com/onsi/gomega v1.10.3
 	github.com/opencontainers/go-digest v1.0.0-rc1 // indirect
 	github.com/opencontainers/image-spec v1.0.1 // indirect
 	github.com/opencontainers/runc v1.0.0-rc5 // indirect
@@ -55,8 +55,8 @@ require (
 	github.com/yuin/gopher-lua v0.0.0-20190514113301-1cd887cd7036 // indirect
 	go.ligato.io/cn-infra/v2 v2.5.0-alpha.0.20200313154441-b0d4c1b11c73
 	go.uber.org/multierr v1.2.0 // indirect
-	golang.org/x/net v0.0.0-20200528225125-3c3fba18258b
-	golang.org/x/sys v0.0.0-20200610111108-226ff32320da
+	golang.org/x/net v0.0.0-20201006153459-a7d1128ccaa0
+	golang.org/x/sys v0.0.0-20200930185726-fdedc70b468f
 	golang.org/x/time v0.0.0-20190921001708-c4c64cad1fd0 // indirect
 	google.golang.org/genproto v0.0.0-20200601130524-0f60399e6634 // indirect
 	google.golang.org/grpc v1.29.1

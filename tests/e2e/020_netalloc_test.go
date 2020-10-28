@@ -38,8 +38,8 @@ import (
 // topology + addressing AFTER CHANGE:
 //  VPP loop (192.168.20.1/24) <--> VPP tap (192.168.12.1/24) <--> Linux tap (192.168.12.2/24)
 func TestIPWithNeighGW(t *testing.T) {
-	ctx := setupE2E(t)
-	defer ctx.teardownE2E()
+	ctx := Setup(t)
+	defer ctx.Teardown()
 
 	const (
 		networkName      = "net1"
@@ -135,8 +135,8 @@ func TestIPWithNeighGW(t *testing.T) {
 		GwAddr:            "alloc:" + networkName + "/GW",
 	}
 
-	ctx.startMicroservice(msName)
-	req := ctx.grpcClient.ChangeRequest()
+	ctx.StartMicroservice(msName)
+	req := ctx.GenericClient().ChangeRequest()
 	err := req.Update(
 		vppLoopAddr, vppTapAddr, linuxTapAddr,
 		vppLoop, vppTap, linuxTap,
@@ -147,42 +147,42 @@ func TestIPWithNeighGW(t *testing.T) {
 	checkItemsAreConfigured := func(msRestart, withLoopAddr bool) {
 		// configured immediately:
 		if withLoopAddr {
-			Expect(ctx.getValueState(vppLoopAddr)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+			Expect(ctx.GetValueState(vppLoopAddr)).To(Equal(kvscheduler.ValueState_CONFIGURED))
 		}
-		Expect(ctx.getValueState(vppTapAddr)).To(Equal(kvscheduler.ValueState_CONFIGURED))
-		Expect(ctx.getValueState(linuxTapAddr)).To(Equal(kvscheduler.ValueState_CONFIGURED))
-		Expect(ctx.getValueState(vppLoop)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+		Expect(ctx.GetValueState(vppTapAddr)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+		Expect(ctx.GetValueState(linuxTapAddr)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+		Expect(ctx.GetValueState(vppLoop)).To(Equal(kvscheduler.ValueState_CONFIGURED))
 		// the rest depends on the microservice
 		if msRestart {
-			Eventually(ctx.getValueStateClb(vppTap)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
+			Eventually(ctx.GetValueStateClb(vppTap)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
 		} else {
-			Expect(ctx.getValueState(vppTap)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+			Expect(ctx.GetValueState(vppTap)).To(Equal(kvscheduler.ValueState_CONFIGURED))
 		}
-		Expect(ctx.getValueState(linuxTap)).To(Equal(kvscheduler.ValueState_CONFIGURED))
-		Expect(ctx.getValueState(linuxArp)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+		Expect(ctx.GetValueState(linuxTap)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+		Expect(ctx.GetValueState(linuxArp)).To(Equal(kvscheduler.ValueState_CONFIGURED))
 		if withLoopAddr {
-			Expect(ctx.getValueState(linuxRoute)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+			Expect(ctx.GetValueState(linuxRoute)).To(Equal(kvscheduler.ValueState_CONFIGURED))
 		} else {
-			Expect(ctx.getValueState(linuxRoute)).To(Equal(kvscheduler.ValueState_PENDING))
+			Expect(ctx.GetValueState(linuxRoute)).To(Equal(kvscheduler.ValueState_PENDING))
 		}
 	}
 	checkItemsAreConfigured(true, true)
 
 	// check connection with ping
-	Expect(ctx.pingFromVPP(linuxTapIP)).To(Succeed())
-	Expect(ctx.pingFromMs(msName, vppLoopIP)).To(Succeed())
-	Expect(ctx.agentInSync()).To(BeTrue())
+	Expect(ctx.PingFromVPP(linuxTapIP)).To(Succeed())
+	Expect(ctx.PingFromMs(msName, vppLoopIP)).To(Succeed())
+	Expect(ctx.AgentInSync()).To(BeTrue())
 
 	// restart microservice
-	ctx.stopMicroservice(msName)
-	ctx.startMicroservice(msName)
+	ctx.StopMicroservice(msName)
+	ctx.StartMicroservice(msName)
 	checkItemsAreConfigured(true, true)
 
 	// check connection with ping (few packets will get lost before tables are refreshed)
-	ctx.pingFromVPP(linuxTapIP)
-	Expect(ctx.pingFromVPP(linuxTapIP)).To(Succeed())
-	Expect(ctx.pingFromMs(msName, vppLoopIP)).To(Succeed())
-	Expect(ctx.agentInSync()).To(BeTrue())
+	ctx.PingFromVPP(linuxTapIP)
+	Expect(ctx.PingFromVPP(linuxTapIP)).To(Succeed())
+	Expect(ctx.PingFromMs(msName, vppLoopIP)).To(Succeed())
+	Expect(ctx.AgentInSync()).To(BeTrue())
 
 	// change IP addresses - the network items should be re-created
 	vppLoopAddr.Address = vppLoopIP2 + netMask
@@ -191,21 +191,21 @@ func TestIPWithNeighGW(t *testing.T) {
 	linuxTapAddr.Address = linuxTapIP2 + netMask
 	linuxTapAddr.Gw = vppTapIP2
 
-	req = ctx.grpcClient.ChangeRequest()
+	req = ctx.GenericClient().ChangeRequest()
 	err = req.Update(vppLoopAddr, vppTapAddr, linuxTapAddr).Send(context.Background())
 	Expect(err).ToNot(HaveOccurred())
 	checkItemsAreConfigured(false, true)
 
 	// check connection with ping
-	Expect(ctx.pingFromVPP(linuxTapIP)).NotTo(Succeed())
+	Expect(ctx.PingFromVPP(linuxTapIP)).NotTo(Succeed())
 
-	Expect(ctx.pingFromMs(msName, vppLoopIP)).NotTo(Succeed())
-	Expect(ctx.pingFromVPP(linuxTapIP2)).To(Succeed())
-	Expect(ctx.pingFromMs(msName, vppLoopIP2)).To(Succeed())
-	Expect(ctx.agentInSync()).To(BeTrue())
+	Expect(ctx.PingFromMs(msName, vppLoopIP)).NotTo(Succeed())
+	Expect(ctx.PingFromVPP(linuxTapIP2)).To(Succeed())
+	Expect(ctx.PingFromMs(msName, vppLoopIP2)).To(Succeed())
+	Expect(ctx.AgentInSync()).To(BeTrue())
 
 	// de-allocate loopback IP - the connection should not work anymore
-	req = ctx.grpcClient.ChangeRequest()
+	req = ctx.GenericClient().ChangeRequest()
 	err = req.Delete(vppLoopAddr).Send(context.Background())
 	Expect(err).ToNot(HaveOccurred())
 
@@ -213,8 +213,8 @@ func TestIPWithNeighGW(t *testing.T) {
 	checkItemsAreConfigured(false, false)
 
 	// can ping linux TAP from VPP, but cannot ping loopback
-	Expect(ctx.pingFromVPP(linuxTapIP2)).To(Succeed())
-	Expect(ctx.pingFromMs(msName, vppLoopIP2)).NotTo(Succeed())
+	Expect(ctx.PingFromVPP(linuxTapIP2)).To(Succeed())
+	Expect(ctx.PingFromMs(msName, vppLoopIP2)).NotTo(Succeed())
 
 	// TODO: not in-sync - the list of IP addresses is updated in the metadata
 	//  - we need to figure out how to get rid of this and how to solve VRF-related
@@ -231,8 +231,8 @@ func TestIPWithNeighGW(t *testing.T) {
 // topology + addressing AFTER CHANGE:
 //  VPP loop (192.168.20.1/24) <--> VPP tap (192.168.12.1/24) <--> Linux tap (192.168.12.2/32)
 func TestIPWithNonLocalGW(t *testing.T) {
-	ctx := setupE2E(t)
-	defer ctx.teardownE2E()
+	ctx := Setup(t)
+	defer ctx.Teardown()
 
 	const (
 		networkName      = "net1"
@@ -336,8 +336,8 @@ func TestIPWithNonLocalGW(t *testing.T) {
 		DstNetwork:        "alloc:" + networkName + "/" + linuxTapName + "/GW",
 	}
 
-	ctx.startMicroservice(msName)
-	req := ctx.grpcClient.ChangeRequest()
+	ctx.StartMicroservice(msName)
+	req := ctx.GenericClient().ChangeRequest()
 	err := req.Update(
 		vppLoopAddr, vppTapAddr, linuxTapAddr,
 		vppLoop, vppTap, linuxTap,
@@ -347,42 +347,42 @@ func TestIPWithNonLocalGW(t *testing.T) {
 
 	checkItemsAreConfigured := func(msRestart, withLinkRoute bool) {
 		// configured immediately:
-		Expect(ctx.getValueState(vppLoopAddr)).To(Equal(kvscheduler.ValueState_CONFIGURED))
-		Expect(ctx.getValueState(vppTapAddr)).To(Equal(kvscheduler.ValueState_CONFIGURED))
-		Expect(ctx.getValueState(linuxTapAddr)).To(Equal(kvscheduler.ValueState_CONFIGURED))
-		Expect(ctx.getValueState(vppLoop)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+		Expect(ctx.GetValueState(vppLoopAddr)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+		Expect(ctx.GetValueState(vppTapAddr)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+		Expect(ctx.GetValueState(linuxTapAddr)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+		Expect(ctx.GetValueState(vppLoop)).To(Equal(kvscheduler.ValueState_CONFIGURED))
 		// the rest depends on the microservice
 		if msRestart {
-			Eventually(ctx.getValueStateClb(vppTap)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
+			Eventually(ctx.GetValueStateClb(vppTap)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
 		} else {
-			Expect(ctx.getValueState(vppTap)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+			Expect(ctx.GetValueState(vppTap)).To(Equal(kvscheduler.ValueState_CONFIGURED))
 		}
-		Expect(ctx.getValueState(linuxTap)).To(Equal(kvscheduler.ValueState_CONFIGURED))
-		Expect(ctx.getValueState(linuxArp)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+		Expect(ctx.GetValueState(linuxTap)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+		Expect(ctx.GetValueState(linuxArp)).To(Equal(kvscheduler.ValueState_CONFIGURED))
 		if withLinkRoute {
-			Expect(ctx.getValueState(linuxRoute)).To(Equal(kvscheduler.ValueState_CONFIGURED))
-			Expect(ctx.getValueState(linuxLinkRoute)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+			Expect(ctx.GetValueState(linuxRoute)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+			Expect(ctx.GetValueState(linuxLinkRoute)).To(Equal(kvscheduler.ValueState_CONFIGURED))
 		} else {
-			Expect(ctx.getValueState(linuxRoute)).To(Equal(kvscheduler.ValueState_PENDING))
+			Expect(ctx.GetValueState(linuxRoute)).To(Equal(kvscheduler.ValueState_PENDING))
 		}
 	}
 	checkItemsAreConfigured(true, true)
 
 	// check connection with ping
-	Expect(ctx.pingFromVPP(linuxTapIP)).To(Succeed())
-	Expect(ctx.pingFromMs(msName, vppLoopIP)).To(Succeed())
-	Expect(ctx.agentInSync()).To(BeTrue())
+	Expect(ctx.PingFromVPP(linuxTapIP)).To(Succeed())
+	Expect(ctx.PingFromMs(msName, vppLoopIP)).To(Succeed())
+	Expect(ctx.AgentInSync()).To(BeTrue())
 
 	// restart microservice
-	ctx.stopMicroservice(msName)
-	ctx.startMicroservice(msName)
+	ctx.StopMicroservice(msName)
+	ctx.StartMicroservice(msName)
 	checkItemsAreConfigured(true, true)
 
 	// check connection with ping (few packets will get lost before tables are refreshed)
-	ctx.pingFromVPP(linuxTapIP)
-	Expect(ctx.pingFromVPP(linuxTapIP)).To(Succeed())
-	Expect(ctx.pingFromMs(msName, vppLoopIP)).To(Succeed())
-	Expect(ctx.agentInSync()).To(BeTrue())
+	ctx.PingFromVPP(linuxTapIP)
+	Expect(ctx.PingFromVPP(linuxTapIP)).To(Succeed())
+	Expect(ctx.PingFromMs(msName, vppLoopIP)).To(Succeed())
+	Expect(ctx.AgentInSync()).To(BeTrue())
 
 	// change IP addresses - the network items should be re-created
 	vppLoopAddr.Address = vppLoopIP2 + vppNetMask
@@ -391,21 +391,21 @@ func TestIPWithNonLocalGW(t *testing.T) {
 	linuxTapAddr.Address = linuxTapIP2 + linuxNetMask
 	linuxTapAddr.Gw = vppTapIP2
 
-	req = ctx.grpcClient.ChangeRequest()
+	req = ctx.GenericClient().ChangeRequest()
 	err = req.Update(vppLoopAddr, vppTapAddr, linuxTapAddr).Send(context.Background())
 	Expect(err).ToNot(HaveOccurred())
 	checkItemsAreConfigured(false, true)
 
 	// check connection with ping
-	Expect(ctx.pingFromVPP(linuxTapIP)).NotTo(Succeed())
+	Expect(ctx.PingFromVPP(linuxTapIP)).NotTo(Succeed())
 
-	Expect(ctx.pingFromMs(msName, vppLoopIP)).NotTo(Succeed())
-	Expect(ctx.pingFromVPP(linuxTapIP2)).To(Succeed())
-	Expect(ctx.pingFromMs(msName, vppLoopIP2)).To(Succeed())
-	Expect(ctx.agentInSync()).To(BeTrue())
+	Expect(ctx.PingFromMs(msName, vppLoopIP)).NotTo(Succeed())
+	Expect(ctx.PingFromVPP(linuxTapIP2)).To(Succeed())
+	Expect(ctx.PingFromMs(msName, vppLoopIP2)).To(Succeed())
+	Expect(ctx.AgentInSync()).To(BeTrue())
 
 	// remove link route - this should make the GW for linux TAP non-routable
-	req = ctx.grpcClient.ChangeRequest()
+	req = ctx.GenericClient().ChangeRequest()
 	err = req.Delete(linuxLinkRoute).Send(context.Background())
 	Expect(err).ToNot(HaveOccurred())
 
@@ -413,9 +413,9 @@ func TestIPWithNonLocalGW(t *testing.T) {
 	checkItemsAreConfigured(false, false)
 
 	// cannot ping anymore from any of the sides
-	Expect(ctx.pingFromVPP(linuxTapIP2)).NotTo(Succeed())
-	Expect(ctx.pingFromMs(msName, vppLoopIP2)).NotTo(Succeed())
-	Expect(ctx.agentInSync()).To(BeTrue())
+	Expect(ctx.PingFromVPP(linuxTapIP2)).NotTo(Succeed())
+	Expect(ctx.PingFromMs(msName, vppLoopIP2)).NotTo(Succeed())
+	Expect(ctx.AgentInSync()).To(BeTrue())
 }
 
 // test IP address allocation using the netalloc plugin for VPP routes mainly.
@@ -426,8 +426,8 @@ func TestIPWithNonLocalGW(t *testing.T) {
 // topology + addressing AFTER CHANGE:
 //  VPP tap (192.168.12.1/24) <--> Linux tap (192.168.12.2/24) <--> Linux loop (192.168.30.1/24, 10.10.10.10/32)
 func TestVPPRoutesWithNetalloc(t *testing.T) {
-	ctx := setupE2E(t)
-	defer ctx.teardownE2E()
+	ctx := Setup(t)
+	defer ctx.Teardown()
 
 	const (
 		network1Name     = "net1"
@@ -532,8 +532,8 @@ func TestVPPRoutesWithNetalloc(t *testing.T) {
 		NextHopAddr:       "alloc:" + network1Name + "/GW",
 	}
 
-	ctx.startMicroservice(msName)
-	req := ctx.grpcClient.ChangeRequest()
+	ctx.StartMicroservice(msName)
+	req := ctx.GenericClient().ChangeRequest()
 	err := req.Update(
 		vppTapAddr, linuxTapAddr, linuxLoopNet1Addr, linuxLoopNet2Addr,
 		vppTap, linuxTap, linuxLoop,
@@ -544,44 +544,44 @@ func TestVPPRoutesWithNetalloc(t *testing.T) {
 	checkItemsAreConfigured := func(msRestart, withLoopNet2Addr bool) {
 		// configured immediately:
 		if withLoopNet2Addr {
-			Expect(ctx.getValueState(linuxLoopNet2Addr)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+			Expect(ctx.GetValueState(linuxLoopNet2Addr)).To(Equal(kvscheduler.ValueState_CONFIGURED))
 		}
-		Expect(ctx.getValueState(vppTapAddr)).To(Equal(kvscheduler.ValueState_CONFIGURED))
-		Expect(ctx.getValueState(linuxTapAddr)).To(Equal(kvscheduler.ValueState_CONFIGURED))
-		Expect(ctx.getValueState(linuxLoopNet1Addr)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+		Expect(ctx.GetValueState(vppTapAddr)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+		Expect(ctx.GetValueState(linuxTapAddr)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+		Expect(ctx.GetValueState(linuxLoopNet1Addr)).To(Equal(kvscheduler.ValueState_CONFIGURED))
 		// the rest depends on the microservice
 		if msRestart {
-			Eventually(ctx.getValueStateClb(vppTap)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
+			Eventually(ctx.GetValueStateClb(vppTap)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
 		} else {
-			Expect(ctx.getValueState(vppTap)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+			Expect(ctx.GetValueState(vppTap)).To(Equal(kvscheduler.ValueState_CONFIGURED))
 		}
-		Expect(ctx.getValueState(linuxTap)).To(Equal(kvscheduler.ValueState_CONFIGURED))
-		Expect(ctx.getValueState(linuxLoop)).To(Equal(kvscheduler.ValueState_CONFIGURED))
-		Expect(ctx.getValueState(vppRouteLoopNet1)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+		Expect(ctx.GetValueState(linuxTap)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+		Expect(ctx.GetValueState(linuxLoop)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+		Expect(ctx.GetValueState(vppRouteLoopNet1)).To(Equal(kvscheduler.ValueState_CONFIGURED))
 		if withLoopNet2Addr {
-			Expect(ctx.getValueState(vppRouteLoopNet2)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+			Expect(ctx.GetValueState(vppRouteLoopNet2)).To(Equal(kvscheduler.ValueState_CONFIGURED))
 		} else {
-			Expect(ctx.getValueState(vppRouteLoopNet2)).To(Equal(kvscheduler.ValueState_PENDING))
+			Expect(ctx.GetValueState(vppRouteLoopNet2)).To(Equal(kvscheduler.ValueState_PENDING))
 		}
 	}
 	checkItemsAreConfigured(true, true)
 
 	// check connection with ping
-	Expect(ctx.pingFromVPP(linuxLoopNet1IP)).To(Succeed())
-	Expect(ctx.pingFromVPP(linuxLoopNet2IP)).To(Succeed())
-	Expect(ctx.agentInSync()).To(BeTrue())
+	Expect(ctx.PingFromVPP(linuxLoopNet1IP)).To(Succeed())
+	Expect(ctx.PingFromVPP(linuxLoopNet2IP)).To(Succeed())
+	Expect(ctx.AgentInSync()).To(BeTrue())
 
 	// restart microservice
-	ctx.stopMicroservice(msName)
-	ctx.startMicroservice(msName)
+	ctx.StopMicroservice(msName)
+	ctx.StartMicroservice(msName)
 	checkItemsAreConfigured(true, true)
 
 	// check connection with ping (few packets will get lost before tables are refreshed)
-	ctx.pingFromVPP(linuxLoopNet1IP)
-	ctx.pingFromVPP(linuxLoopNet2IP)
-	Expect(ctx.pingFromVPP(linuxLoopNet1IP)).To(Succeed())
-	Expect(ctx.pingFromVPP(linuxLoopNet2IP)).To(Succeed())
-	Expect(ctx.agentInSync()).To(BeTrue())
+	ctx.PingFromVPP(linuxLoopNet1IP)
+	ctx.PingFromVPP(linuxLoopNet2IP)
+	Expect(ctx.PingFromVPP(linuxLoopNet1IP)).To(Succeed())
+	Expect(ctx.PingFromVPP(linuxLoopNet2IP)).To(Succeed())
+	Expect(ctx.AgentInSync()).To(BeTrue())
 
 	// change IP addresses - the network items should be re-created
 	linuxLoopNet1Addr.Address = linuxLoopNet1IP2 + net1Mask
@@ -590,19 +590,19 @@ func TestVPPRoutesWithNetalloc(t *testing.T) {
 	linuxTapAddr.Address = linuxTapIP2 + net1Mask
 	linuxTapAddr.Gw = vppTapIP2
 
-	req = ctx.grpcClient.ChangeRequest()
+	req = ctx.GenericClient().ChangeRequest()
 	err = req.Update(linuxLoopNet1Addr, vppTapAddr, linuxTapAddr).Send(context.Background())
 	Expect(err).ToNot(HaveOccurred())
 	checkItemsAreConfigured(false, true)
 
 	// check connection with ping
-	Expect(ctx.pingFromVPP(linuxLoopNet1IP)).NotTo(Succeed())
-	Expect(ctx.pingFromVPP(linuxLoopNet1IP2)).To(Succeed())
-	Expect(ctx.pingFromVPP(linuxLoopNet2IP)).To(Succeed())
-	Expect(ctx.agentInSync()).To(BeTrue())
+	Expect(ctx.PingFromVPP(linuxLoopNet1IP)).NotTo(Succeed())
+	Expect(ctx.PingFromVPP(linuxLoopNet1IP2)).To(Succeed())
+	Expect(ctx.PingFromVPP(linuxLoopNet2IP)).To(Succeed())
+	Expect(ctx.AgentInSync()).To(BeTrue())
 
 	// de-allocate loopback IP in net2 - the connection to that IP should not work anymore
-	req = ctx.grpcClient.ChangeRequest()
+	req = ctx.GenericClient().ChangeRequest()
 	err = req.Delete(linuxLoopNet2Addr).Send(context.Background())
 	Expect(err).ToNot(HaveOccurred())
 
@@ -610,7 +610,7 @@ func TestVPPRoutesWithNetalloc(t *testing.T) {
 	checkItemsAreConfigured(false, false)
 
 	// can ping loop1, but cannot ping loop2
-	Expect(ctx.pingFromVPP(linuxLoopNet1IP2)).To(Succeed())
-	Expect(ctx.pingFromVPP(linuxLoopNet2IP)).NotTo(Succeed())
-	Expect(ctx.agentInSync()).To(BeTrue())
+	Expect(ctx.PingFromVPP(linuxLoopNet1IP2)).To(Succeed())
+	Expect(ctx.PingFromVPP(linuxLoopNet2IP)).NotTo(Succeed())
+	Expect(ctx.AgentInSync()).To(BeTrue())
 }

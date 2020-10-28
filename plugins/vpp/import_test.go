@@ -15,10 +15,14 @@
 package vpp_test
 
 import (
+	"bytes"
 	"fmt"
 	"log"
+	"os"
 	"reflect"
+	"sort"
 	"testing"
+	"text/tabwriter"
 
 	"git.fd.io/govpp.git/api"
 
@@ -41,10 +45,39 @@ func TestBinapiMessage(t *testing.T) {
 	msgTypes := api.GetRegisteredMessageTypes()
 	log.Printf("%d binapi messages:", len(msgTypes))
 
+	type item struct {
+		message string
+		crc     string
+		pkgPath string
+	}
+	items := []item{}
 	for msgType := range msgTypes {
 		typ := msgType.Elem()
 		msg := reflect.New(typ).Interface().(api.Message)
-		id := fmt.Sprintf("%s_%s", msg.GetMessageName(), msg.GetCrcString())
-		log.Printf("- msg: %s - %s (%v)", typ.String(), typ.PkgPath(), id)
+		t := item{msg.GetMessageName(), msg.GetCrcString(), typ.PkgPath()}
+		items = append(items, t)
 	}
+
+	sort.Slice(items, func(i, j int) bool {
+		if items[i].pkgPath == items[j].pkgPath {
+			return items[i].message < items[j].message
+		}
+		return items[i].pkgPath < items[j].pkgPath
+	})
+
+	b := new(bytes.Buffer)
+	w := tabwriter.NewWriter(b, 0, 0, 1, ' ', 0)
+	fmt.Fprintf(w, "MESSAGE\tCRC\tPKG PATH\t\n")
+	for _, item := range items {
+		//typ := msgType.Elem()
+		//msg := reflect.New(typ).Interface().(api.Message)
+		//id := fmt.Sprintf("%s_%s", msg.GetMessageName(), msg.GetCrcString())
+		//log.Printf("- msg: %s - %s (%v)", typ.String(), typ.PkgPath(), id)
+		//fmt.Fprintf(w, "%s\t%s\t%s\t\n", msg.GetMessageName(), msg.GetCrcString(), typ.PkgPath())
+		fmt.Fprintf(w, "%s\t%s\t%s\t\n", item.message, item.crc, item.pkgPath)
+	}
+	if err := w.Flush(); err != nil {
+		return
+	}
+	fmt.Fprintf(os.Stdout, "%s", b)
 }

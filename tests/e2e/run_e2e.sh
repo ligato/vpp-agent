@@ -1,64 +1,61 @@
-#!/bin/bash
-set -euo pipefail
+#!/usr/bin/env bash
+set -Eeuo pipefail
 
-echo "preparing E2E test"
-set -x
+echo "Preparing end-to-end tests.."
 
 args=($*)
+VPP_IMG="${VPP_IMG:-ligato/vpp-base}"
+testname="vpp-agent-e2e-test"
+imgname="vpp-agent-e2e-tests"
 
-# compile vpp-agent
+# Compile vpp-agent for testing
 if [ -z "${COVER_DIR-}" ]; then
-	go build -v -o ./tests/e2e/vpp-agent.test \
-      -ldflags "-X go.ligato.io/vpp-agent/v3/pkg/version.app=vpp-agent-e2e" \
-      ./cmd/vpp-agent
+	go build -o ./tests/e2e/vpp-agent.test \
+	  -tags 'osusergo netgo' \
+    -ldflags '-w -s -extldflags "-static" -X go.ligato.io/vpp-agent/v3/pkg/version.app=vpp-agent.test-e2e' \
+    ./cmd/vpp-agent
 else
 	if [ ! -d ${COVER_DIR}/e2e-coverage ]; then
 		mkdir ${COVER_DIR}/e2e-coverage
 	elif [ "$(ls -A ${COVER_DIR}/e2e-coverage)" ]; then
 		rm -f ${COVER_DIR}/e2e-coverage/*
 	fi
-	go test -covermode=count -coverpkg="go.ligato.io/vpp-agent/v3/..." -c ./cmd/vpp-agent -o ./tests/e2e/vpp-agent.test -tags teste2e
+	go test -c -o ./tests/e2e/vpp-agent.test \
+	  -tags teste2e \
+	  -covermode=count \
+	  -coverpkg="go.ligato.io/vpp-agent/v3/..." \
+	  -ldflags '-w -s -extldflags "-static" -X go.ligato.io/vpp-agent/v3/pkg/version.app=vpp-agent.test-e2e' \
+	  ./cmd/vpp-agent
 	DOCKER_ARGS="${DOCKER_ARGS-} -v ${COVER_DIR}/e2e-coverage:${COVER_DIR}/e2e-coverage"
 	args+=("-cov=${COVER_DIR}/e2e-coverage")
 fi
 
-# complie agentctl
-go build -v -o ./tests/e2e/agentctl.test ./cmd/agentctl
+# Compile agentctl for testing
+go build -o ./tests/e2e/agentctl.test \
+	  -tags 'osusergo netgo' \
+    -ldflags '-w -s -extldflags "-static"' \
+    ./cmd/agentctl
 
-# compile e2e test suite
-go test -c -o ./tests/e2e/e2e.test ./tests/e2e
+# Compile testing suite
+go test -c -o ./tests/e2e/e2e.test \
+	  -tags 'osusergo netgo' \
+    -ldflags '-w -s -extldflags "-static"' \
+    ./tests/e2e
 
-# start image
-# TODO: do not run docker image with pid=host,
-#  because any other vpp running now breaks tests
-cid=$(docker run -d -it \
-	-v $PWD/tests/e2e/e2e.test:/e2e.test:ro \
-	-v $PWD/tests/e2e/vpp-agent.test:/vpp-agent:ro \
-	-v $PWD/tests/e2e/agentctl.test:/agentctl:ro \
-	-v $PWD/tests/e2e/resources/grpc.conf:/etc/grpc.conf:ro \
-	-v $PWD/tests/e2e/resources/grpc-secure.conf:/etc/grpc-secure.conf:ro \
-	-v $PWD/tests/e2e/resources/grpc-secure-full.conf:/etc/grpc-secure-full.conf:ro \
-	-v $PWD/tests/e2e/resources/agentctl.conf:/etc/.agentctl/config.yml:ro \
-	-v $PWD/tests/e2e/resources/certs:/etc/certs:ro \
-	-v /var/run/docker.sock:/var/run/docker.sock \
-	--label e2e.test="$*" \
-	--pid="host" \
-	--privileged \
-	--env KVSCHEDULER_GRAPHDUMP=true \
-	--env VPP_IMG="$VPP_IMG" \
-	--env GRPC_CONFIG=/etc/grpc.conf \
-	--env CERTS_PATH="$PWD/tests/e2e/resources/certs" \
-	--name vpp-agent-e2e-tests \
-	${DOCKER_ARGS-} \
-	"$VPP_IMG" bash)
+# Build testing image
+docker build \
+    -f ./tests/e2e/Dockerfile.e2e \
+    --build-arg VPP_IMG \
+    --tag "${imgname}" \
+    ./tests/e2e
 
-set +x
+vppver=$(docker run --rm -i "$VPP_IMG" dpkg-query -f '${Version}' -W vpp)
 
 cleanup() {
 	echo "stopping test container"
 	set -x
-	docker stop -t 2 "$cid" >/dev/null
-	docker rm "$cid" >/dev/null
+	docker stop -t 1 "${testname}" 2>/dev/null
+	docker rm -v "${testname}" 2>/dev/null
 
 	# merge coverage
 	if [ ! -z "${COVER_DIR-}" ]; then
@@ -67,16 +64,26 @@ cleanup() {
 	fi
 }
 
-vppver=$(docker exec -i "$cid" dpkg-query -f '${Version}' -W vpp)
-
 trap 'cleanup' EXIT
 
 echo "============================================================="
 echo -e " E2E TEST - VPP \e[1;33m${vppver}\e[0m"
 echo "============================================================="
 
-# run e2e test
-if docker exec -i "$cid" /e2e.test -test.v ${args[@]}; then
+# Run e2e tests
+if docker run -i \
+	--name "${testname}" \
+	--pid=host \
+	--privileged \
+	--label io.ligato.vpp-agent.testsuite=e2e \
+	--label io.ligato.vpp-agent.testname="${testname}" \
+	--volume $(pwd)/tests/e2e/resources/certs:/etc/certs:ro \
+	--volume /var/run/docker.sock:/var/run/docker.sock \
+	--env CERTS_PATH="$PWD/tests/e2e/resources/certs" \
+	--env INITIAL_LOGLVL \
+	${DOCKER_ARGS-} \
+	"${imgname}" ${args[@]}
+then
 	echo >&2 "-------------------------------------------------------------"
 	echo >&2 -e " \e[32mPASSED\e[0m (took: ${SECONDS}s)"
 	echo >&2 "-------------------------------------------------------------"
@@ -86,12 +93,5 @@ else
 	echo >&2 "-------------------------------------------------------------"
 	echo >&2 -e " \e[31mFAILED!\e[0m (exit code: $res)"
 	echo >&2 "-------------------------------------------------------------"
-
-	# dump container logs
-	logs=$(docker logs --tail 10 "$cid")
-	if [[ -n "$logs" ]]; then
-		echo >&2 -e "\e[1;30m${logs}\e[0m"
-	fi
-
 	exit $res
 fi

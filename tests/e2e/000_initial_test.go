@@ -24,23 +24,23 @@ import (
 )
 
 func TestAgentInSync(t *testing.T) {
-	ctx := setupE2E(t)
-	defer ctx.teardownE2E()
-	Expect(ctx.agentInSync()).To(BeTrue())
+	ctx := Setup(t)
+	defer ctx.Teardown()
+	Expect(ctx.AgentInSync()).To(BeTrue())
 }
 
 func TestStartStopMicroservice(t *testing.T) {
-	ctx := setupE2E(t)
-	defer ctx.teardownE2E()
+	ctx := Setup(t)
+	defer ctx.Teardown()
 
 	const msName = "microservice1"
 	key := ns.MicroserviceKey(msNamePrefix + msName)
 	msState := func() kvscheduler.ValueState {
-		return ctx.getValueStateByKey(key)
+		return ctx.GetValueStateByKey(key)
 	}
 
-	ctx.startMicroservice(msName)
+	ctx.StartMicroservice(msName)
 	Eventually(msState).Should(Equal(kvscheduler.ValueState_OBTAINED))
-	ctx.stopMicroservice(msName)
+	ctx.StopMicroservice(msName)
 	Eventually(msState).Should(Equal(kvscheduler.ValueState_NONEXISTENT))
 }

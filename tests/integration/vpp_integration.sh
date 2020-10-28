@@ -1,13 +1,18 @@
 #!/bin/bash
-set -eu
+set -euo pipefail
+
+echo "preparing integration test.."
 
 # compile test
 go test -c ./tests/integration/vpp -o ./tests/integration/vpp/vpp-integration.test
+env GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o ./tests/integration/test2json.test -ldflags="-s -w" cmd/test2json
 
 # start vpp image
 cid=$(docker run -d -it \
 	-v $(pwd)/tests/integration/vpp/vpp-integration.test:/vpp-integration.test:ro \
-	--label vpp.integration.test="$*" \
+	-v $(which gotestsum):/usr/local/bin/gotestsum:ro \
+	-v $(pwd)/tests/integration/test2json.test:/usr/local/bin/test2json:ro \
+	--label io.ligato.vpp-agent.test=integration \
 	-e INITIAL_LOGLVL \
 	-e DEBUG_GOVPP \
 	${DOCKER_ARGS-} \
@@ -27,7 +32,7 @@ echo -e " VPP Integration Test - \e[1;33m${vppver}\e[0m"
 echo "============================================================="
 
 # run integration test
-if docker exec -i "$cid" /vpp-integration.test $*; then
+if docker exec -i "$cid" gotestsum --raw-command -f testname -- test2json -t -p integration /vpp-integration.test -test.v $*; then
 	echo >&2 "-------------------------------------------------------------"
 	echo >&2 -e " \e[32mPASSED\e[0m (took: ${SECONDS}s)"
 	echo >&2 "-------------------------------------------------------------"

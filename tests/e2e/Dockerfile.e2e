@@ -1,0 +1,50 @@
+ARG VPP_IMG=ligato/vpp-base
+
+FROM golang:1.15 as build
+
+RUN env CGO_ENABLED=0 \
+ 	go build -ldflags='-s -w -extldflags "-static"' -o /test2json cmd/test2json
+
+FROM ${VPP_IMG}
+
+RUN apt-get update && apt-get install -yq \
+		curl \
+		git \
+		iproute2 \
+		iputils-ping \
+		make \
+		nano \
+		netcat \
+		wget \
+ 	&& rm -rf /var/lib/apt/lists/*
+
+# Install test tools
+# - test2json
+# - gotestsum
+
+#RUN env CGO_ENABLED=0 \
+# 	go build -ldflags='-s -w -extldflags "-static"' -o /usr/local/bin/test2json cmd/test2json
+
+COPY --from=build /test2json /usr/local/bin/test2json
+
+ARG GOTESTSUM_VERSION=0.6.0
+RUN set -eux; \
+	curl -fsSL https://github.com/gotestyourself/gotestsum/releases/download/v${GOTESTSUM_VERSION}/gotestsum_${GOTESTSUM_VERSION}_linux_amd64.tar.gz -o gotestsum.tar.gz; \
+    tar -xf gotestsum.tar.gz gotestsum; \
+    mv gotestsum /usr/local/bin/gotestsum; \
+    rm gotestsum.tar.gz
+
+COPY resources/certs/* /etc/certs/
+COPY resources/grpc.conf /etc/
+COPY resources/grpc-secure.conf /etc/
+COPY resources/grpc-secure-full.conf /etc/
+COPY resources/agentctl.conf /etc/.agentctl/config.yml
+
+ENV GRPC_CONFIG /etc/grpc.conf
+
+COPY agentctl.test /agentctl
+COPY vpp-agent.test /vpp-agent
+COPY e2e.test /
+
+COPY entrypoint.sh /entrypoint.sh
+ENTRYPOINT [ "/entrypoint.sh" ]

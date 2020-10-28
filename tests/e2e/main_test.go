@@ -41,6 +41,10 @@ func TestMain(m *testing.M) {
 	if *debug {
 		govppcore.SetLogLevel(logrus.DebugLevel)
 	}
+	if os.Getenv("TRAVIS") != "" {
+		log.Println("skipping e2e tests for Travis")
+		os.Exit(0)
+	}
 	result := m.Run()
 	os.Exit(result)
 }

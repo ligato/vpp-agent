@@ -22,11 +22,11 @@ import (
 	. "github.com/onsi/gomega"
 
 	"go.ligato.io/vpp-agent/v3/proto/ligato/kvscheduler"
-	"go.ligato.io/vpp-agent/v3/proto/ligato/linux/interfaces"
-	"go.ligato.io/vpp-agent/v3/proto/ligato/linux/l3"
-	"go.ligato.io/vpp-agent/v3/proto/ligato/linux/namespace"
-	"go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
-	"go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3"
+	linux_interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/linux/interfaces"
+	linux_l3 "go.ligato.io/vpp-agent/v3/proto/ligato/linux/l3"
+	linux_namespace "go.ligato.io/vpp-agent/v3/proto/ligato/linux/namespace"
+	vpp_interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
+	vpp_l3 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3"
 )
 
 //
@@ -54,8 +54,8 @@ func TestVRFsWithSameSubnets(t *testing.T) {
 		t.Skip("skip for travis")
 	}
 
-	ctx := setupE2E(t)
-	defer ctx.teardownE2E()
+	ctx := Setup(t)
+	defer ctx.Teardown()
 
 	const (
 		vrf1ID        = 1
@@ -169,10 +169,10 @@ func TestVRFsWithSameSubnets(t *testing.T) {
 		},
 	}
 
-	ctx.startMicroservice(msName)
+	ctx.StartMicroservice(msName)
 
 	// configure everything in one resync
-	err := ctx.grpcClient.ResyncConfig(
+	err := ctx.GenericClient().ResyncConfig(
 		vppVrf1, vppVrf2,
 		linuxVrf1, linuxVrf2,
 		vrf1VppTap, vrf1LinuxTap,
@@ -180,49 +180,49 @@ func TestVRFsWithSameSubnets(t *testing.T) {
 	)
 	Expect(err).ToNot(HaveOccurred())
 
-	Eventually(ctx.getValueStateClb(vrf1LinuxTap)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
-	Expect(ctx.getValueState(vrf1VppTap)).To(Equal(kvscheduler.ValueState_CONFIGURED))
-	Expect(ctx.getValueState(vrf2LinuxTap)).To(Equal(kvscheduler.ValueState_CONFIGURED))
-	Expect(ctx.getValueState(vrf2VppTap)).To(Equal(kvscheduler.ValueState_CONFIGURED))
-	Expect(ctx.getValueState(linuxVrf1)).To(Equal(kvscheduler.ValueState_CONFIGURED))
-	Expect(ctx.getValueState(linuxVrf2)).To(Equal(kvscheduler.ValueState_CONFIGURED))
-	Expect(ctx.getValueState(vppVrf1)).To(Equal(kvscheduler.ValueState_CONFIGURED))
-	Expect(ctx.getValueState(vppVrf2)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+	Eventually(ctx.GetValueStateClb(vrf1LinuxTap)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
+	Expect(ctx.GetValueState(vrf1VppTap)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+	Expect(ctx.GetValueState(vrf2LinuxTap)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+	Expect(ctx.GetValueState(vrf2VppTap)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+	Expect(ctx.GetValueState(linuxVrf1)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+	Expect(ctx.GetValueState(linuxVrf2)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+	Expect(ctx.GetValueState(vppVrf1)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+	Expect(ctx.GetValueState(vppVrf2)).To(Equal(kvscheduler.ValueState_CONFIGURED))
 
 	// try to ping in both VRFs
-	Expect(ctx.pingFromMs(msName, vrfVppIP, pingWithOutInterface(vrf1Label+tapNameSuffix))).To(Succeed())
-	Expect(ctx.pingFromMs(msName, vrfVppIP, pingWithOutInterface(vrf2Label+tapNameSuffix))).To(Succeed())
+	Expect(ctx.PingFromMs(msName, vrfVppIP, pingWithOutInterface(vrf1Label+tapNameSuffix))).To(Succeed())
+	Expect(ctx.PingFromMs(msName, vrfVppIP, pingWithOutInterface(vrf2Label+tapNameSuffix))).To(Succeed())
 
-	Expect(ctx.agentInSync()).To(BeTrue())
+	Expect(ctx.AgentInSync()).To(BeTrue())
 
 	// restart microservice
-	ctx.stopMicroservice(msName)
-	Eventually(ctx.getValueStateClb(vrf1LinuxTap)).Should(Equal(kvscheduler.ValueState_PENDING))
-	Eventually(ctx.getValueStateClb(vrf2LinuxTap)).Should(Equal(kvscheduler.ValueState_PENDING))
-	Expect(ctx.agentInSync()).To(BeTrue())
+	ctx.StopMicroservice(msName)
+	Eventually(ctx.GetValueStateClb(vrf1LinuxTap)).Should(Equal(kvscheduler.ValueState_PENDING))
+	Eventually(ctx.GetValueStateClb(vrf2LinuxTap)).Should(Equal(kvscheduler.ValueState_PENDING))
+	Expect(ctx.AgentInSync()).To(BeTrue())
 
-	ctx.startMicroservice(msName)
-	Eventually(ctx.getValueStateClb(vrf1LinuxTap)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
-	Eventually(ctx.getValueStateClb(vrf2LinuxTap)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
-	Expect(ctx.pingFromMs(msName, vrfVppIP, pingWithOutInterface(vrf1Label+tapNameSuffix))).To(Succeed())
-	Expect(ctx.pingFromMs(msName, vrfVppIP, pingWithOutInterface(vrf2Label+tapNameSuffix))).To(Succeed())
-	Expect(ctx.agentInSync()).To(BeTrue())
+	ctx.StartMicroservice(msName)
+	Eventually(ctx.GetValueStateClb(vrf1LinuxTap)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
+	Eventually(ctx.GetValueStateClb(vrf2LinuxTap)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
+	Expect(ctx.PingFromMs(msName, vrfVppIP, pingWithOutInterface(vrf1Label+tapNameSuffix))).To(Succeed())
+	Expect(ctx.PingFromMs(msName, vrfVppIP, pingWithOutInterface(vrf2Label+tapNameSuffix))).To(Succeed())
+	Expect(ctx.AgentInSync()).To(BeTrue())
 
 	// re-create Linux VRF1
-	err = ctx.grpcClient.ChangeRequest().
+	err = ctx.GenericClient().ChangeRequest().
 		Delete(linuxVrf1).Send(context.Background())
 	Expect(err).ToNot(HaveOccurred())
-	Expect(ctx.pingFromMs(msName, vrfVppIP, pingWithOutInterface(vrf1Label+tapNameSuffix))).ToNot(Succeed())
-	Expect(ctx.pingFromMs(msName, vrfVppIP, pingWithOutInterface(vrf2Label+tapNameSuffix))).To(Succeed())
+	Expect(ctx.PingFromMs(msName, vrfVppIP, pingWithOutInterface(vrf1Label+tapNameSuffix))).ToNot(Succeed())
+	Expect(ctx.PingFromMs(msName, vrfVppIP, pingWithOutInterface(vrf2Label+tapNameSuffix))).To(Succeed())
 
-	err = ctx.grpcClient.ChangeRequest().Update(
+	err = ctx.GenericClient().ChangeRequest().Update(
 		linuxVrf1,
 	).Send(context.Background())
 	Expect(err).ToNot(HaveOccurred())
 
-	Eventually(ctx.pingFromMsClb(msName, vrfVppIP, pingWithOutInterface(vrf1Label+tapNameSuffix))).Should(Succeed())
-	Expect(ctx.pingFromMs(msName, vrfVppIP, pingWithOutInterface(vrf2Label+tapNameSuffix))).To(Succeed())
-	Expect(ctx.agentInSync()).To(BeTrue())
+	Eventually(ctx.PingFromMsClb(msName, vrfVppIP, pingWithOutInterface(vrf1Label+tapNameSuffix))).Should(Succeed())
+	Expect(ctx.PingFromMs(msName, vrfVppIP, pingWithOutInterface(vrf2Label+tapNameSuffix))).To(Succeed())
+	Expect(ctx.AgentInSync()).To(BeTrue())
 }
 
 //
@@ -253,8 +253,8 @@ func TestVRFRoutes(t *testing.T) {
 		t.Skip("skip for travis")
 	}
 
-	ctx := setupE2E(t)
-	defer ctx.teardownE2E()
+	ctx := Setup(t)
+	defer ctx.Teardown()
 
 	const (
 		vrf1ID        = 1
@@ -400,10 +400,10 @@ func TestVRFRoutes(t *testing.T) {
 		GwAddr:            vrf2VppIP,
 	}
 
-	ctx.startMicroservice(msName)
+	ctx.StartMicroservice(msName)
 
 	// configure everything in one resync
-	err := ctx.grpcClient.ResyncConfig(
+	err := ctx.GenericClient().ResyncConfig(
 		vppVrf1, vppVrf2,
 		linuxVrf1, linuxVrf2,
 		vrf1VppTap, vrf1LinuxTap,
@@ -413,45 +413,45 @@ func TestVRFRoutes(t *testing.T) {
 	)
 	Expect(err).ToNot(HaveOccurred())
 
-	Eventually(ctx.getValueStateClb(vrf1LinuxTap)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
-	Expect(ctx.getValueState(vrf1VppTap)).To(Equal(kvscheduler.ValueState_CONFIGURED))
-	Expect(ctx.getValueState(vrf2LinuxTap)).To(Equal(kvscheduler.ValueState_CONFIGURED))
-	Expect(ctx.getValueState(vrf2VppTap)).To(Equal(kvscheduler.ValueState_CONFIGURED))
-	Expect(ctx.getValueState(vrf1VppRoute)).To(Equal(kvscheduler.ValueState_CONFIGURED))
-	Expect(ctx.getValueState(vrf2VppRoute)).To(Equal(kvscheduler.ValueState_CONFIGURED))
-	Expect(ctx.getValueState(vrf1LinuxRoute)).To(Equal(kvscheduler.ValueState_CONFIGURED))
-	Expect(ctx.getValueState(vrf2LinuxRoute)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+	Eventually(ctx.GetValueStateClb(vrf1LinuxTap)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
+	Expect(ctx.GetValueState(vrf1VppTap)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+	Expect(ctx.GetValueState(vrf2LinuxTap)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+	Expect(ctx.GetValueState(vrf2VppTap)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+	Expect(ctx.GetValueState(vrf1VppRoute)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+	Expect(ctx.GetValueState(vrf2VppRoute)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+	Expect(ctx.GetValueState(vrf1LinuxRoute)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+	Expect(ctx.GetValueState(vrf2LinuxRoute)).To(Equal(kvscheduler.ValueState_CONFIGURED))
 
 	// try to ping across VRFs
-	Expect(ctx.pingFromMs(msName, vrf2LinuxIP, pingWithOutInterface(vrf1Label+tapNameSuffix))).To(Succeed())
-	Expect(ctx.pingFromMs(msName, vrf1LinuxIP, pingWithOutInterface(vrf2Label+tapNameSuffix))).To(Succeed())
-	Expect(ctx.agentInSync()).To(BeTrue())
+	Expect(ctx.PingFromMs(msName, vrf2LinuxIP, pingWithOutInterface(vrf1Label+tapNameSuffix))).To(Succeed())
+	Expect(ctx.PingFromMs(msName, vrf1LinuxIP, pingWithOutInterface(vrf2Label+tapNameSuffix))).To(Succeed())
+	Expect(ctx.AgentInSync()).To(BeTrue())
 
 	// restart microservice
-	ctx.stopMicroservice(msName)
-	Eventually(ctx.getValueStateClb(vrf1LinuxTap)).Should(Equal(kvscheduler.ValueState_PENDING))
-	Eventually(ctx.getValueStateClb(vrf2LinuxTap)).Should(Equal(kvscheduler.ValueState_PENDING))
-	Expect(ctx.agentInSync()).To(BeTrue())
+	ctx.StopMicroservice(msName)
+	Eventually(ctx.GetValueStateClb(vrf1LinuxTap)).Should(Equal(kvscheduler.ValueState_PENDING))
+	Eventually(ctx.GetValueStateClb(vrf2LinuxTap)).Should(Equal(kvscheduler.ValueState_PENDING))
+	Expect(ctx.AgentInSync()).To(BeTrue())
 
-	ctx.startMicroservice(msName)
-	Eventually(ctx.getValueStateClb(vrf1LinuxTap)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
-	Eventually(ctx.getValueStateClb(vrf2LinuxTap)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
-	Expect(ctx.pingFromMs(msName, vrf2LinuxIP, pingWithOutInterface(vrf1Label+tapNameSuffix))).To(Succeed())
-	Expect(ctx.pingFromMs(msName, vrf1LinuxIP, pingWithOutInterface(vrf2Label+tapNameSuffix))).To(Succeed())
-	Expect(ctx.agentInSync()).To(BeTrue())
+	ctx.StartMicroservice(msName)
+	Eventually(ctx.GetValueStateClb(vrf1LinuxTap)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
+	Eventually(ctx.GetValueStateClb(vrf2LinuxTap)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
+	Expect(ctx.PingFromMs(msName, vrf2LinuxIP, pingWithOutInterface(vrf1Label+tapNameSuffix))).To(Succeed())
+	Expect(ctx.PingFromMs(msName, vrf1LinuxIP, pingWithOutInterface(vrf2Label+tapNameSuffix))).To(Succeed())
+	Expect(ctx.AgentInSync()).To(BeTrue())
 
 	// re-create Linux VRF1
-	err = ctx.grpcClient.ChangeRequest().
+	err = ctx.GenericClient().ChangeRequest().
 		Delete(linuxVrf1).Send(context.Background())
 	Expect(err).ToNot(HaveOccurred())
-	Expect(ctx.pingFromMs(msName, vrf2LinuxIP, pingWithOutInterface(vrf1Label+tapNameSuffix))).ToNot(Succeed())
-	Expect(ctx.pingFromMs(msName, vrf1LinuxIP, pingWithOutInterface(vrf2Label+tapNameSuffix))).ToNot(Succeed())
+	Expect(ctx.PingFromMs(msName, vrf2LinuxIP, pingWithOutInterface(vrf1Label+tapNameSuffix))).ToNot(Succeed())
+	Expect(ctx.PingFromMs(msName, vrf1LinuxIP, pingWithOutInterface(vrf2Label+tapNameSuffix))).ToNot(Succeed())
 
-	err = ctx.grpcClient.ChangeRequest().Update(
+	err = ctx.GenericClient().ChangeRequest().Update(
 		linuxVrf1,
 	).Send(context.Background())
 	Expect(err).ToNot(HaveOccurred())
-	Eventually(ctx.pingFromMsClb(msName, vrf2LinuxIP, pingWithOutInterface(vrf1Label+tapNameSuffix))).Should(Succeed())
-	Expect(ctx.pingFromMs(msName, vrf1LinuxIP, pingWithOutInterface(vrf2Label+tapNameSuffix))).To(Succeed())
-	Expect(ctx.agentInSync()).To(BeTrue())
+	Eventually(ctx.PingFromMsClb(msName, vrf2LinuxIP, pingWithOutInterface(vrf1Label+tapNameSuffix))).Should(Succeed())
+	Expect(ctx.PingFromMs(msName, vrf1LinuxIP, pingWithOutInterface(vrf2Label+tapNameSuffix))).To(Succeed())
+	Expect(ctx.AgentInSync()).To(BeTrue())
 }

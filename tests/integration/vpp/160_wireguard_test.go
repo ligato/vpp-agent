@@ -16,20 +16,17 @@ package vpp
 
 import (
 	"fmt"
-	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
-	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/wireguardplugin"
-	wgplugin_vppcalls "go.ligato.io/vpp-agent/v3/plugins/vpp/wireguardplugin/vppcalls"
-
-	//wg_vpp2009 "go.ligato.io/vpp-agent/v3/plugins/vpp/wireguardplugin/vppcalls/vpp2009"
-	wg "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/wireguard"
 	"testing"
 
 	"go.ligato.io/cn-infra/v2/logging/logrus"
 
-	ifplugin_vppcalls "go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/vppcalls"
-	interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
-
 	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
+	ifplugin_vppcalls "go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/vppcalls"
+	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/wireguardplugin"
+	wgplugin_vppcalls "go.ligato.io/vpp-agent/v3/plugins/vpp/wireguardplugin/vppcalls"
+	interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
+	wg "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/wireguard"
 )
 
 type testEntry struct {
@@ -53,45 +50,45 @@ func TestWireguard(t *testing.T) {
 	ifHandler := ifplugin_vppcalls.CompatibleInterfaceVppHandler(ctx.vppClient, logrus.NewLogger("test"))
 	ifIndexes := ifaceidx.NewIfaceIndex(logrus.NewLogger("test"), "test-ifidx")
 
-	tests := []testEntry {
+	tests := []testEntry{
 		{
 			name: "Create Wireguard tunnel (IPv4)",
 			wgInt: &interfaces.WireguardLink{
-				PrivateKey:   "gIjXzrQfIFf80d0O8Hd2KhcfkKLRncc+8C70OjotIW8=",
-				Port:         12312,
-				SrcAddr:     "10.10.0.1",
+				PrivateKey: "gIjXzrQfIFf80d0O8Hd2KhcfkKLRncc+8C70OjotIW8=",
+				Port:       12312,
+				SrcAddr:    "10.10.0.1",
 			},
 			shouldFail: false,
 		},
 		{
 			name: "Create Wireguard tunnel with invalid privateKey",
 			wgInt: &interfaces.WireguardLink{
-				PrivateKey:   "d0O8Hd2KhcfkKLRncc+8C70OjotIW8=",
-				Port:         12312,
-				SrcAddr:     "10.10.0.1",
+				PrivateKey: "d0O8Hd2KhcfkKLRncc+8C70OjotIW8=",
+				Port:       12312,
+				SrcAddr:    "10.10.0.1",
 			},
 			shouldFail: true,
 		},
 		{
 			name: "Create Wireguard 2 tunnels (IPv4)",
 			wgInt: &interfaces.WireguardLink{
-				PrivateKey:   "gIjXzrQfIFf80d0O8Hd2KhcfkKLRncc+8C70OjotIW8=",
-				Port:         12322,
-				SrcAddr:     "10.10.0.1",
+				PrivateKey: "gIjXzrQfIFf80d0O8Hd2KhcfkKLRncc+8C70OjotIW8=",
+				Port:       12322,
+				SrcAddr:    "10.10.0.1",
 			},
 			wgInt2: &interfaces.WireguardLink{
-				PrivateKey:   "qDUQL8I5RNMWfbi3qgFs237FYD+SyZTj5g0Ix3qRvGs=",
-				Port:         12323,
-				SrcAddr:     "10.11.0.1",
+				PrivateKey: "qDUQL8I5RNMWfbi3qgFs237FYD+SyZTj5g0Ix3qRvGs=",
+				Port:       12323,
+				SrcAddr:    "10.11.0.1",
 			},
 			shouldFail: false,
 		},
 		{
 			name: "Create Wireguard tunnel with peer",
 			wgInt: &interfaces.WireguardLink{
-				PrivateKey:   "gIjXzrQfIFf80d0O8Hd2KhcfkKLRncc+8C70OjotIW8=",
-				Port:         12332,
-				SrcAddr:     "10.10.0.1",
+				PrivateKey: "gIjXzrQfIFf80d0O8Hd2KhcfkKLRncc+8C70OjotIW8=",
+				Port:       12332,
+				SrcAddr:    "10.10.0.1",
 			},
 			peer: &wg.Peer{
 				PublicKey:           "dIjXzrQfIFf80d0O8Hd2KhcfkKLRncc+8C70OjotIW8=",
@@ -107,14 +104,14 @@ func TestWireguard(t *testing.T) {
 		{
 			name: "Create Wireguard tunnel with 2 itfs and 2 peers",
 			wgInt: &interfaces.WireguardLink{
-				PrivateKey:   "gIjXzrQfIFf80d0O8Hd2KhcfkKLRncc+8C70OjotIW8=",
-				Port:         12342,
-				SrcAddr:     "10.10.0.1",
+				PrivateKey: "gIjXzrQfIFf80d0O8Hd2KhcfkKLRncc+8C70OjotIW8=",
+				Port:       12342,
+				SrcAddr:    "10.10.0.1",
 			},
 			wgInt2: &interfaces.WireguardLink{
-				PrivateKey:   "qDUQL8I5RNMWfbi3qgFs237FYD+SyZTj5g0Ix3qRvGs=",
-				Port:         12343,
-				SrcAddr:     "10.11.0.1",
+				PrivateKey: "qDUQL8I5RNMWfbi3qgFs237FYD+SyZTj5g0Ix3qRvGs=",
+				Port:       12343,
+				SrcAddr:    "10.11.0.1",
 			},
 			peer: &wg.Peer{
 				PublicKey:           "dIjXzrQfIFf80d0O8Hd2KhcfkKLRncc+8C70OjotIW8=",
@@ -136,7 +133,6 @@ func TestWireguard(t *testing.T) {
 			},
 			shouldFail: false,
 		},
-
 	}
 	for i, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -247,7 +243,7 @@ func peersTest(test *testEntry, ifIdx ifaceidx.IfaceMetadataIndex, ctx *TestCtx)
 
 	wgHandler := wgplugin_vppcalls.CompatibleWgVppHandler(ctx.vppClient, ifIdx, logrus.NewLogger("test"))
 	if wgHandler == nil {
-		return fmt.Errorf("Getting compatible wireguard handler failed")
+		return fmt.Errorf("no compatible wireguard handler")
 	}
 	peerIdx1, err := wgHandler.AddPeer(test.peer)
 
@@ -263,7 +259,7 @@ func peersTest(test *testEntry, ifIdx ifaceidx.IfaceMetadataIndex, ctx *TestCtx)
 	}
 
 	var (
-		peerIdx2  uint32
+		peerIdx2 uint32
 	)
 	if test.peer2 != nil {
 		peerIdx2, err = wgHandler.AddPeer(test.peer2)

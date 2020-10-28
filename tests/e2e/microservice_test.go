@@ -42,13 +42,16 @@ type pingOpts struct {
 type pingOpt func(opts *pingOpts)
 
 func createMicroservice(ctx *TestCtx, msName string, dockerClient *docker.Client, nsCalls nslinuxcalls.NetworkNamespaceAPI) *microservice {
+	msLabel := msNamePrefix + msName
 	container, err := dockerClient.CreateContainer(docker.CreateContainerOptions{
-		Name: msNamePrefix + msName,
+		Name: msLabel,
 		Config: &docker.Config{
-			Env:    []string{"MICROSERVICE_LABEL=" + msNamePrefix + msName},
-			Image:  msImage + ":" + msImageTag,
-			Cmd:    []string{"tail", "-f", "/dev/null"},
-			Labels: map[string]string{msLabelKey: msName},
+			Env:   []string{"MICROSERVICE_LABEL=" + msLabel},
+			Image: msImage + ":" + msImageTag,
+			Cmd:   []string{"tail", "-f", "/dev/null"},
+			Labels: map[string]string{
+				msLabelKey: msName,
+			},
 		},
 		HostConfig: &docker.HostConfig{
 			// networking configured via VPP in E2E tests
@@ -182,7 +185,7 @@ func pingWithOutInterface(iface string) pingOpt {
 }
 
 // ping <destAddress> from inside of the microservice.
-func (ms *microservice) ping(destAddress string, opts... pingOpt) error {
+func (ms *microservice) ping(destAddress string, opts ...pingOpt) error {
 	ms.ctx.t.Helper()
 	params := &pingOpts{
 		allowedLoss: 49, // by default at least half of the packets should get through

@@ -2,22 +2,17 @@ package kvscheduler
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"io"
-	"log"
-	"net/http"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"text/template"
 	"time"
 
-	"github.com/goccy/go-graphviz"
 	"github.com/golang/protobuf/proto"
-	"github.com/unrolled/render"
 
+	"go.ligato.io/vpp-agent/v3/pkg/graphviz"
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 	"go.ligato.io/vpp-agent/v3/plugins/kvscheduler/internal/graph"
 	"go.ligato.io/vpp-agent/v3/plugins/kvscheduler/internal/utils"
@@ -25,82 +20,8 @@ import (
 )
 
 const (
-	// txnArg allows to display graph at the time when the referenced transaction
-	// has just finalized
-	txnArg = "txn" // value = txn sequence number
-)
-
-const (
 	minlen = 1
 )
-
-type depNode struct {
-	node      *dotNode
-	label     string
-	satisfied bool
-}
-
-func (s *Scheduler) dotGraphHandler(formatter *render.Render) http.HandlerFunc {
-	return func(w http.ResponseWriter, req *http.Request) {
-		args := req.URL.Query()
-		s.txnLock.Lock()
-		defer s.txnLock.Unlock()
-		graphRead := s.graph.Read()
-		defer graphRead.Release()
-
-		var txn *kvs.RecordedTxn
-		timestamp := time.Now()
-
-		// parse optional *txn* argument
-		if txnStr, withTxn := args[txnArg]; withTxn && len(txnStr) == 1 {
-			txnSeqNum, err := strconv.ParseUint(txnStr[0], 10, 64)
-			if err != nil {
-				s.logError(formatter.JSON(w, http.StatusInternalServerError, errorString{err.Error()}))
-				return
-			}
-
-			txn = s.GetRecordedTransaction(txnSeqNum)
-			if txn == nil {
-				err := errors.New("transaction with such sequence number is not recorded")
-				s.logError(formatter.JSON(w, http.StatusNotFound, errorString{err.Error()}))
-				return
-			}
-			timestamp = txn.Stop
-		}
-
-		graphSnapshot := graphRead.GetSnapshot(timestamp)
-		output, err := s.renderDotOutput(graphSnapshot, txn)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		format := req.FormValue("format")
-		if format == "raw" {
-			w.Write(output)
-			return
-		} else if format == "dot" {
-			dot, err := renderDot(output)
-			if err != nil {
-				http.Error(w, fmt.Sprintf("rendering dot failed: %v\n%s", err, output), http.StatusInternalServerError)
-				return
-			}
-			w.Write(dot)
-			return
-		} else if format == "" {
-			format = "svg"
-		}
-
-		img, err := dotToImage("", format, output)
-		if err != nil {
-			http.Error(w, fmt.Sprintf("rendering image %v failed: %v\n%s", img, err, output), http.StatusInternalServerError)
-			return
-		}
-
-		s.Log.Debug("serving graph image from:", img)
-		http.ServeFile(w, req, img)
-	}
-}
 
 func (s *Scheduler) renderDotOutput(graphNodes []*graph.RecordedNode, txn *kvs.RecordedTxn) ([]byte, error) {
 	title := fmt.Sprintf("%d keys", len(graphNodes))
@@ -316,6 +237,11 @@ func (s *Scheduler) renderDotOutput(graphNodes []*graph.RecordedNode, txn *kvs.R
 			if target.Relation != DependencyRelation {
 				break
 			}
+			type depNode struct {
+				node      *dotNode
+				label     string
+				satisfied bool
+			}
 			var deps []depNode
 			if target.MatchingKeys.Length() == 0 {
 				var dn *dotNode
@@ -374,6 +300,14 @@ func (s *Scheduler) renderDotOutput(graphNodes []*graph.RecordedNode, txn *kvs.R
 	return buf.Bytes(), nil
 }
 
+func validateDot(output []byte) ([]byte, error) {
+	dot, err := graphviz.RenderDot(output)
+	if err != nil {
+		return nil, fmt.Errorf("rendering dot failed: %v\nRaw output:%s", err, output)
+	}
+	return dot, nil
+}
+
 func dotToImage(outfname string, format string, dot []byte) (string, error) {
 	var img string
 	if outfname == "" {
@@ -382,57 +316,12 @@ func dotToImage(outfname string, format string, dot []byte) (string, error) {
 		img = fmt.Sprintf("%s.%s", outfname, format)
 	}
 
-	err := renderFilename(img, format, dot)
+	err := graphviz.RenderFilename(img, format, dot)
 	if err != nil {
 		return "", err
 	}
 
 	return img, nil
-}
-
-func renderFilename(outfname, format string, dot []byte) error {
-	g, err := graphviz.ParseBytes(dot)
-	if err != nil {
-		return err
-	}
-
-	gv := graphviz.New()
-	defer func() {
-		if err := g.Close(); err != nil {
-			log.Println("dotgraph: closing graph: %w", err)
-		}
-		_ = gv.Close()
-	}()
-
-	err = gv.RenderFilename(g, graphviz.Format(format), outfname)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func renderDot(dot []byte) ([]byte, error) {
-	g, err := graphviz.ParseBytes(dot)
-	if err != nil {
-		return nil, err
-	}
-
-	gv := graphviz.New()
-	defer func() {
-		if err := g.Close(); err != nil {
-			log.Println("dotgraph: closing graph: %w", err)
-		}
-		_ = gv.Close()
-	}()
-
-	var buf bytes.Buffer
-	err = gv.Render(g, "dot", &buf)
-	if err != nil {
-		return nil, err
-	}
-
-	return buf.Bytes(), nil
 }
 
 const tmplGraph = `digraph kvscheduler {

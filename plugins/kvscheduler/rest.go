@@ -17,6 +17,7 @@ package kvscheduler
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/url"
 	"sort"
@@ -110,6 +111,10 @@ const (
 	// See type View from kvscheduler's API to learn the set of possible values.
 	viewArg = "view"
 
+	// txnArg allows to display graph at the time when the referenced transaction
+	// has just finalized
+	txnArg = "txn" // value = txn sequence number
+
 	// statusURL is URL used to print the state of values under the given
 	// descriptor / key-prefix or all of them.
 	statusURL = urlPrefix + "status"
@@ -155,7 +160,7 @@ func (s *Scheduler) registerHandlers(http rest.HTTPHandlers) {
 	http.RegisterHTTPHandler(downstreamResyncURL, s.downstreamResyncPostHandler, "POST")
 	http.RegisterHTTPHandler(dumpURL, s.dumpGetHandler, "GET")
 	http.RegisterHTTPHandler(statusURL, s.statusGetHandler, "GET")
-	http.RegisterHTTPHandler(urlPrefix+"graph", s.dotGraphHandler, "GET")
+	http.RegisterHTTPHandler(urlPrefix+"graph", s.graphHandler, "GET")
 	http.RegisterHTTPHandler(urlPrefix+"stats", s.statsHandler, "GET")
 }
 
@@ -505,6 +510,69 @@ func (s *Scheduler) statusGetHandler(formatter *render.Render) http.HandlerFunc 
 			return status[i].Value.Key < status[j].Value.Key
 		})
 		s.logError(formatter.JSON(w, http.StatusOK, status))
+	}
+}
+
+func (s *Scheduler) graphHandler(formatter *render.Render) http.HandlerFunc {
+	return func(w http.ResponseWriter, req *http.Request) {
+		args := req.URL.Query()
+		s.txnLock.Lock()
+		defer s.txnLock.Unlock()
+		graphRead := s.graph.Read()
+		defer graphRead.Release()
+
+		var txn *kvs.RecordedTxn
+		timestamp := time.Now()
+
+		// parse optional *txn* argument
+		if txnStr, withTxn := args[txnArg]; withTxn && len(txnStr) == 1 {
+			txnSeqNum, err := strconv.ParseUint(txnStr[0], 10, 64)
+			if err != nil {
+				s.logError(formatter.JSON(w, http.StatusInternalServerError, errorString{err.Error()}))
+				return
+			}
+
+			txn = s.GetRecordedTransaction(txnSeqNum)
+			if txn == nil {
+				err := errors.New("transaction with such sequence number is not recorded")
+				s.logError(formatter.JSON(w, http.StatusNotFound, errorString{err.Error()}))
+				return
+			}
+			timestamp = txn.Stop
+		}
+
+		graphSnapshot := graphRead.GetSnapshot(timestamp)
+		output, err := s.renderDotOutput(graphSnapshot, txn)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		format := req.FormValue("format")
+		switch format {
+		case "raw":
+			w.Write(output)
+			return
+		case "dot":
+			dot, err := validateDot(output)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			w.Write(dot)
+			return
+		default:
+			format = "svg"
+		}
+
+		img, err := dotToImage("", format, output)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("rendering image %v failed: %v\n%s", img, err, output), http.StatusInternalServerError)
+			return
+		}
+
+		s.Log.Debug("serving graph image from:", img)
+		http.ServeFile(w, req, img)
 	}
 }
 

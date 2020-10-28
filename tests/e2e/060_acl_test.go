@@ -30,13 +30,13 @@ import (
 )
 
 func vppACLs(ctx *TestCtx) (string, error) {
-	return ctx.execVppctl("show", "acl-plugin", "acl")
+	return ctx.ExecVppctl("show", "acl-plugin", "acl")
 }
 
 // Test access control between microservices connected over VPP on the L3 layer.
 func TestL3ACLs(t *testing.T) {
-	ctx := setupE2E(t)
-	defer ctx.teardownE2E()
+	ctx := Setup(t)
+	defer ctx.Teardown()
 
 	const (
 		// microservice1
@@ -316,40 +316,40 @@ func TestL3ACLs(t *testing.T) {
 		}
 
 		// ICMP
-		ExpectWithOffset(1, ctx.pingFromMs(ms1Name, linuxTap2IP)).To(beAllowed) // reflected by ms1IngressACL
-		ExpectWithOffset(1, ctx.pingFromMs(ms2Name, linuxTap1IP)).To(beBlocked) // blocked by ms1EgressACL
+		ExpectWithOffset(1, ctx.PingFromMs(ms1Name, linuxTap2IP)).To(beAllowed) // reflected by ms1IngressACL
+		ExpectWithOffset(1, ctx.PingFromMs(ms2Name, linuxTap1IP)).To(beBlocked) // blocked by ms1EgressACL
 
 		// TCP
-		ExpectWithOffset(1, ctx.testConnection(ms1Name, ms2Name, linuxTap2IP, linuxTap2IP,
+		ExpectWithOffset(1, ctx.TestConnection(ms1Name, ms2Name, linuxTap2IP, linuxTap2IP,
 			ms2BlockedTCPPort, ms2BlockedTCPPort, false, tapv2InputNode)).To(beBlocked) // blocked by ms2EgressACL
-		ExpectWithOffset(1, ctx.testConnection(ms1Name, ms2Name, linuxTap2IP, linuxTap2IP,
+		ExpectWithOffset(1, ctx.TestConnection(ms1Name, ms2Name, linuxTap2IP, linuxTap2IP,
 			8080, 8080, false, tapv2InputNode)).To(beAllowed)
-		ExpectWithOffset(1, ctx.testConnection(ms1Name, ms2Name, linuxTap2IP, linuxTap2IP,
+		ExpectWithOffset(1, ctx.TestConnection(ms1Name, ms2Name, linuxTap2IP, linuxTap2IP,
 			80, 80, false, tapv2InputNode)).To(beAllowed)
-		ExpectWithOffset(1, ctx.testConnection(ms2Name, ms1Name, linuxTap1IP, linuxTap1IP,
+		ExpectWithOffset(1, ctx.TestConnection(ms2Name, ms1Name, linuxTap1IP, linuxTap1IP,
 			ms2BlockedTCPPort, ms2BlockedTCPPort, false, tapv2InputNode)).To(beAllowed)
-		ExpectWithOffset(1, ctx.testConnection(ms2Name, ms1Name, linuxTap1IP, linuxTap1IP,
+		ExpectWithOffset(1, ctx.TestConnection(ms2Name, ms1Name, linuxTap1IP, linuxTap1IP,
 			8080, 8080, false, tapv2InputNode)).To(beAllowed)
-		ExpectWithOffset(1, ctx.testConnection(ms2Name, ms1Name, linuxTap1IP, linuxTap1IP,
+		ExpectWithOffset(1, ctx.TestConnection(ms2Name, ms1Name, linuxTap1IP, linuxTap1IP,
 			80, 80, false, tapv2InputNode)).To(beBlocked) // blocked by ms2IngressACL
 
 		// UDP
-		ExpectWithOffset(1, ctx.testConnection(ms1Name, ms2Name, linuxTap2IP, linuxTap2IP,
+		ExpectWithOffset(1, ctx.TestConnection(ms1Name, ms2Name, linuxTap2IP, linuxTap2IP,
 			ms1BlockedUDPPort, ms1BlockedUDPPort, true, tapv2InputNode)).To(beAllowed)
-		ExpectWithOffset(1, ctx.testConnection(ms1Name, ms2Name, linuxTap2IP, linuxTap2IP,
+		ExpectWithOffset(1, ctx.TestConnection(ms1Name, ms2Name, linuxTap2IP, linuxTap2IP,
 			9999, 9999, true, tapv2InputNode)).To(beAllowed)
-		ExpectWithOffset(1, ctx.testConnection(ms2Name, ms1Name, linuxTap1IP, linuxTap1IP,
+		ExpectWithOffset(1, ctx.TestConnection(ms2Name, ms1Name, linuxTap1IP, linuxTap1IP,
 			ms1BlockedUDPPort, ms1BlockedUDPPort, true, tapv2InputNode)).To(beBlocked) // blocked by ms1EgressACL
-		ExpectWithOffset(1, ctx.testConnection(ms2Name, ms1Name, linuxTap1IP, linuxTap1IP,
+		ExpectWithOffset(1, ctx.TestConnection(ms2Name, ms1Name, linuxTap1IP, linuxTap1IP,
 			9999, 9999, true, tapv2InputNode)).To(beAllowed)
 	}
 
-	ctx.startMicroservice(ms1Name)
-	ctx.startMicroservice(ms2Name)
+	ctx.StartMicroservice(ms1Name)
+	ctx.StartMicroservice(ms2Name)
 	Expect(vppACLs(ctx)).ShouldNot(SatisfyAny(
 		ContainSubstring(showMs1IngressACL), ContainSubstring(showMs1EgressACL),
 		ContainSubstring(showMs2IngressACL), ContainSubstring(showMs2EgressACL)))
-	req := ctx.grpcClient.ChangeRequest()
+	req := ctx.GenericClient().ChangeRequest()
 	err := req.Update(
 		vppTap1,
 		linuxTap1,
@@ -361,19 +361,19 @@ func TestL3ACLs(t *testing.T) {
 	).Send(context.Background())
 	Expect(err).ToNot(HaveOccurred(), "Transaction connecting microservices and configuring ACLs failed")
 
-	Eventually(ctx.getValueStateClb(vppTap1)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
+	Eventually(ctx.GetValueStateClb(vppTap1)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
 		"TAP attached to a newly started microservice1 should be eventually configured")
-	Eventually(ctx.getValueStateClb(vppTap2)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
+	Eventually(ctx.GetValueStateClb(vppTap2)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
 		"TAP attached to a newly started microservice2 should be eventually configured")
 
 	Expect(vppACLs(ctx)).Should(SatisfyAll(
 		ContainSubstring(showMs1IngressACL), ContainSubstring(showMs1EgressACL),
 		ContainSubstring(showMs2IngressACL), ContainSubstring(showMs2EgressACL)))
 	checkAccess(true)
-	Expect(ctx.agentInSync()).To(BeTrue(), "Agent is not in-sync")
+	Expect(ctx.AgentInSync()).To(BeTrue(), "Agent is not in-sync")
 
 	// remove ACL configuration
-	req = ctx.grpcClient.ChangeRequest()
+	req = ctx.GenericClient().ChangeRequest()
 	err = req.Delete(
 		ms1IngressACL, ms1EgressACL,
 		ms2IngressACL, ms2EgressACL,
@@ -384,10 +384,10 @@ func TestL3ACLs(t *testing.T) {
 		ContainSubstring(showMs1IngressACL), ContainSubstring(showMs1EgressACL),
 		ContainSubstring(showMs2IngressACL), ContainSubstring(showMs2EgressACL)))
 	checkAccess(false)
-	Expect(ctx.agentInSync()).To(BeTrue(), "Agent is not in-sync")
+	Expect(ctx.AgentInSync()).To(BeTrue(), "Agent is not in-sync")
 
 	// get back the ACL configuration
-	req = ctx.grpcClient.ChangeRequest()
+	req = ctx.GenericClient().ChangeRequest()
 	err = req.Update(
 		ms1IngressACL, ms1EgressACL,
 		ms2IngressACL, ms2EgressACL,
@@ -398,27 +398,27 @@ func TestL3ACLs(t *testing.T) {
 		ContainSubstring(showMs1IngressACL), ContainSubstring(showMs1EgressACL),
 		ContainSubstring(showMs2IngressACL), ContainSubstring(showMs2EgressACL)))
 	checkAccess(true)
-	Expect(ctx.agentInSync()).To(BeTrue(), "Agent is not in-sync")
+	Expect(ctx.AgentInSync()).To(BeTrue(), "Agent is not in-sync")
 
 	// restart both microservices
-	ctx.stopMicroservice(ms1Name)
-	ctx.stopMicroservice(ms2Name)
-	Eventually(ctx.getValueStateClb(vppTap1)).Should(Equal(kvscheduler.ValueState_PENDING),
+	ctx.StopMicroservice(ms1Name)
+	ctx.StopMicroservice(ms2Name)
+	Eventually(ctx.GetValueStateClb(vppTap1)).Should(Equal(kvscheduler.ValueState_PENDING),
 		"Without microservice, the associated VPP-TAP should be pending")
-	Eventually(ctx.getValueStateClb(vppTap2)).Should(Equal(kvscheduler.ValueState_PENDING),
+	Eventually(ctx.GetValueStateClb(vppTap2)).Should(Equal(kvscheduler.ValueState_PENDING),
 		"Without microservice, the associated VPP-TAP should be pending")
-	ctx.startMicroservice(ms1Name)
-	ctx.startMicroservice(ms2Name)
-	Eventually(ctx.getValueStateClb(vppTap1)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
+	ctx.StartMicroservice(ms1Name)
+	ctx.StartMicroservice(ms2Name)
+	Eventually(ctx.GetValueStateClb(vppTap1)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
 		"VPP-TAP attached to a re-started microservice1 should be eventually configured")
-	Eventually(ctx.getValueStateClb(vppTap2)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
+	Eventually(ctx.GetValueStateClb(vppTap2)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
 		"VPP-TAP attached to a re-started microservice1 should be eventually configured")
 
 	Expect(vppACLs(ctx)).Should(SatisfyAll(
 		ContainSubstring(showMs1IngressACL), ContainSubstring(showMs1EgressACL),
 		ContainSubstring(showMs2IngressACL), ContainSubstring(showMs2EgressACL)))
 	checkAccess(true)
-	Expect(ctx.agentInSync()).To(BeTrue(), "Agent is not in-sync")
+	Expect(ctx.AgentInSync()).To(BeTrue(), "Agent is not in-sync")
 
 }
 
