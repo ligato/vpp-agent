@@ -6,6 +6,7 @@ echo "Preparing integration tests.."
 args=($*)
 VPP_IMG="${VPP_IMG:-ligato/vpp-base}"
 testname="vpp-agent-integration-test"
+imgname="vpp-agent-e2e-tests"
 
 # Compile testing suite
 go test -c -o ./tests/integration/integration.test \
@@ -17,7 +18,7 @@ go test -c -o ./tests/integration/integration.test \
 docker build \
     -f ./tests/integration/Dockerfile.integration \
     --build-arg VPP_IMG \
-    --tag vpp-agent-integration-tests \
+    --tag "${imgname}" \
     ./tests/integration
 
 vppver=$(docker run --rm -i "$VPP_IMG" dpkg-query -f '${Version}' -W vpp)
@@ -38,10 +39,11 @@ echo "============================================================="
 if docker run -i \
 	--name "${testname}" \
 	--privileged \
-	--label io.ligato.vpp-agent.test=integration \
+	--label io.ligato.vpp-agent.testsuite=integration \
+	--label io.ligato.vpp-agent.testname="${testname}" \
 	--env INITIAL_LOGLVL \
 	${DOCKER_ARGS-} \
-	vpp-agent-integration-tests ${args[@]}
+	"${imgname}" ${args[@]}
 then
 	echo >&2 "-------------------------------------------------------------"
 	echo >&2 -e " \e[32mPASSED\e[0m (took: ${SECONDS}s)"

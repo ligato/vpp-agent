@@ -165,10 +165,6 @@ test-cover-html: test-cover
 	go tool cover -html=${COVER_DIR}/coverage.out -o ${COVER_DIR}/coverage.html
 	@echo "# coverage report generated into ${COVER_DIR}/coverage.html"
 
-test-cover-xml: test-cover
-	gocov convert ${COVER_DIR}/coverage.out | gocov-xml > ${COVER_DIR}/coverage.xml
-	@echo "# coverage report generated into ${COVER_DIR}/coverage.xml"
-
 perf: ## Run quick performance test
 	@echo "# running perf test"
 	./tests/perf/perf_test.sh grpc-perf 1000
@@ -177,11 +173,11 @@ perf-all: ## Run all performance tests
 	@echo "# running all perf tests"
 	./tests/perf/run_all.sh
 
-integration-tests: ## Run integration tests
+integration-tests: test-tools ## Run integration tests
 	@echo "# running integration tests"
-	VPP_IMG=$(VPP_IMG) ./tests/integration/vpp_integration.sh
+	VPP_IMG=$(VPP_IMG) ./tests/integration/run_integration.sh
 
-e2e-tests: ## Run end-to-end tests
+e2e-tests: test-tools ## Run end-to-end tests
 	@echo "# running end-to-end tests"
 	VPP_IMG=$(VPP_IMG) ./tests/e2e/run_e2e.sh
 
@@ -263,6 +259,14 @@ dep-check:
 #  Linters
 # -------------------------------
 
+gotestsumcmd := $(shell command -v gotestsum 2> /dev/null)
+
+test-tools: ## install test tools
+ifndef gotestsumcmd
+	go get -v gotest.tools/gotestsum
+endif
+	env CGO_ENABLED=0 go build -ldflags="-s -w" -o $(BUILD_DIR)/test2json cmd/test2json
+
 LINTER := $(shell command -v gometalinter 2> /dev/null)
 
 get-linters:
@@ -328,7 +332,7 @@ prod-image: ## Build production image
 .PHONY: help \
 	agent agentctl build clean install purge \
 	cmd examples clean-examples \
-	test test-cover test-cover-html test-cover-xml \
+	test test-cover test-cover-html \
 	generate checknodiffgenerated genereate-binapi generate-proto get-binapi-generators \
 	get-dep dep-install dep-update dep-check \
 	get-linters lint format lint-proto check-proto \
