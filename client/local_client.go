@@ -83,6 +83,11 @@ func (c *client) ChangeRequest(options ...ChangeRequestOption) ChangeRequest {
 	return changeRequest
 }
 
+func (c *client) WithOptions(callFunc func(GenericClient), options ...APIFuncOptions) {
+	// No options defined for local client, yet -> just calling the client without options
+	callFunc(c)
+}
+
 type changeRequest struct {
 	txn keyval.ProtoTxn
 	err error

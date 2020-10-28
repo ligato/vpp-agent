@@ -15,9 +15,18 @@
 package models
 
 import (
+	"encoding/json"
 	"path"
+	"strings"
+	"unicode"
+	"unicode/utf8"
 
+	"github.com/go-errors/errors"
+	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
+	"go.ligato.io/cn-infra/v2/logging/logrus"
+	api "go.ligato.io/vpp-agent/v3/proto/ligato/generic"
+	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
 // Register registers model in DefaultRegistry.
@@ -44,6 +53,26 @@ func GetModelFor(x proto.Message) (KnownModel, error) {
 	return DefaultRegistry.GetModelFor(x)
 }
 
+// GetExternallyKnownModelFor returns externally known model (from given externallyKnownModels) corresponding
+// to given proto message
+func GetExternallyKnownModelFor(message proto.Message, externallyKnownModels []*api.ModelDetail) (
+	*api.ModelDetail, error) {
+	messageDesc := proto.MessageV2(message).ProtoReflect().Descriptor()
+	messageFullName := string(messageDesc.FullName())
+	var knownModel *api.ModelDetail
+	for _, ekm := range externallyKnownModels {
+		if ekm.ProtoName == messageFullName {
+			knownModel = ekm
+			break
+		}
+	}
+	if knownModel == nil {
+		return nil, errors.Errorf("can't find externally known model for message %v "+
+			"(All externally known models: %#v)", messageFullName, externallyKnownModels)
+	}
+	return knownModel, nil
+}
+
 // GetModelForKey returns model registered in DefaultRegistry which matches key.
 func GetModelForKey(key string) (KnownModel, error) {
 	return DefaultRegistry.GetModelForKey(key)
@@ -67,7 +96,7 @@ func Name(x proto.Message) string {
 	return name
 }
 
-// GetKey returns complete key for gived model,
+// GetKey returns complete key for given model,
 // including key prefix defined by model specification.
 // It returns error if given model is not registered.
 func GetKey(x proto.Message) (string, error) {
@@ -83,6 +112,28 @@ func GetKey(x proto.Message) (string, error) {
 	return key, nil
 }
 
+// GetKeyWithExternallyKnownModels returns complete
+// key for given model, including key prefix defined
+// by externally known model specification.
+func GetKeyWithExternallyKnownModels(message proto.Message, externallyKnownModels []*api.ModelDetail) (string, error) {
+	// find model for message
+	knownModel, err := GetExternallyKnownModelFor(message, externallyKnownModels)
+	if err != nil {
+		return "", errors.Errorf("can't find externally known model "+
+			"for message due to: %v (message = %+v)", err, message)
+	}
+
+	// compute Item.ID.Name
+	messageDesc := proto.MessageV2(message).ProtoReflect().Descriptor()
+	name, err := instanceNameWithExternallyKnownModel(message, knownModel, messageDesc)
+	if err != nil {
+		return "", errors.Errorf("can't compute model instance name due to: %v (message %+v)", err, message)
+	}
+
+	key := path.Join(keyPrefix(ToSpec(knownModel.Spec), name != ""), name)
+	return key, nil
+}
+
 // GetName returns instance name for given model.
 // It returns error if given model is not registered.
 func GetName(x proto.Message) (string, error) {
@@ -95,4 +146,72 @@ func GetName(x proto.Message) (string, error) {
 		return "", err
 	}
 	return name, nil
+}
+
+// instanceNameWithExternallyKnownModel computes message name using name template (if present).
+// This is the equivalent to models.KnownModel's instanceName(...) using not locally registered
+// model but using externally acquired models.
+func instanceNameWithExternallyKnownModel(message proto.Message, knownModel *api.ModelDetail,
+	messageDesc protoreflect.MessageDescriptor) (string, error) {
+	nameTemplate, err := modelOptionFor("nameTemplate", knownModel.Options)
+	if err != nil {
+		logrus.DefaultLogger().Debugf("no nameTemplate model "+
+			"option for model %v, using empty instance name", knownModel.ProtoName)
+		return "", nil // having no name template is valid case for some models
+	}
+	nameTemplate = replaceFieldNamesInNameTemplate(messageDesc, nameTemplate)
+	marshaler := jsonpb.Marshaler{EmitDefaults: true} // using jsonbp to generate json with json name field in proto tag
+	jsonData, err := marshaler.MarshalToString(message)
+	if err != nil {
+		return "", errors.Errorf("can't marshall message "+
+			"to json due to: %v (message: %+v)", err, message)
+	}
+	var mapData map[string]interface{}
+	if err := json.Unmarshal([]byte(jsonData), &mapData); err != nil {
+		return "", errors.Errorf("can't load json of marshalled "+
+			"message to generic map due to: %v (json=%v)", err, jsonData)
+	}
+	name, err := NameTemplate(nameTemplate)(mapData)
+	if err != nil {
+		return "", errors.Errorf("can't compute name from name template by applying generic map "+
+			"due to: %v (name template=%v, generic map=%v)", err, nameTemplate, mapData)
+	}
+	return name, nil
+}
+
+// replaceFieldNamesInNameTemplate replaces JSON field names to Go Type field name in name template.
+func replaceFieldNamesInNameTemplate(messageDesc protoreflect.MessageDescriptor, nameTemplate string) string {
+	// FIXME this is only a good effort to map between NameTemplate variables and Proto model field names
+	//  (protoName, jsonName). We can do here better (fix field names prefixing other field names or field
+	//  names colliding with field names of inner reference structures), but i the end we are still guessing
+	//  without knowledge of go type. Can we fix this?
+	for i := 0; i < messageDesc.Fields().Len(); i++ {
+		fieldDesc := messageDesc.Fields().Get(i)
+		pbJSONName := fieldDesc.JSONName()
+		nameTemplate = strings.ReplaceAll(nameTemplate, upperFirst(pbJSONName), pbJSONName)
+		if fieldDesc.Message() != nil {
+			nameTemplate = replaceFieldNamesInNameTemplate(fieldDesc.Message(), nameTemplate)
+		}
+	}
+	return nameTemplate
+}
+
+// upperFirst converts the first letter of string to upper case
+func upperFirst(s string) string {
+	if s == "" {
+		return ""
+	}
+	r, n := utf8.DecodeRuneInString(s)
+	return string(unicode.ToUpper(r)) + s[n:]
+}
+
+// keyPrefix computes correct key prefix from given model. It
+// handles correctly the case when name suffix of the key is empty
+// (no template name -> key prefix does not end with "/")
+func keyPrefix(modelSpec Spec, hasTemplateName bool) string {
+	keyPrefix := modelSpec.KeyPrefix()
+	if !hasTemplateName {
+		keyPrefix = strings.TrimSuffix(keyPrefix, "/")
+	}
+	return keyPrefix
 }

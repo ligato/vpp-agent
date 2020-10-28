@@ -3,18 +3,26 @@ package remoteclient
 import (
 	"context"
 
+	"github.com/go-errors/errors"
 	"github.com/golang/protobuf/proto"
-	"google.golang.org/grpc"
-
 	"go.ligato.io/vpp-agent/v3/client"
 	"go.ligato.io/vpp-agent/v3/pkg/models"
 	"go.ligato.io/vpp-agent/v3/pkg/util"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/generic"
+	"google.golang.org/grpc"
+	"google.golang.org/protobuf/reflect/protoregistry"
+)
+
+// option keys
+const (
+	externallyKnownModels = "externallyKnownModels"
+	messageTypeResolver   = "messageTypeResolver"
 )
 
 type grpcClient struct {
-	manager generic.ManagerServiceClient
-	meta    generic.MetaServiceClient
+	manager        generic.ManagerServiceClient
+	meta           generic.MetaServiceClient
+	apiFuncOptions client.APIFuncOptions
 }
 
 // NewClientGRPC returns new instance that uses given service client for requests.
@@ -83,17 +91,38 @@ func (c *grpcClient) GetConfig(dsts ...interface{}) error {
 		return err
 	}
 
+	knownModels, dontUseLocalModelRegistry := c.apiFuncOptions[externallyKnownModels]
+	resolver, resolverFound := c.apiFuncOptions[messageTypeResolver]
+	if dontUseLocalModelRegistry && !resolverFound {
+		return errors.Errorf("when not using local model registry then message type resolver is needed")
+	}
+
 	protos := map[string]proto.Message{}
 	for _, item := range resp.Items {
-		val, err := models.UnmarshalItem(item.Item)
-		if err != nil {
-			return err
-		}
+		var val proto.Message
 		var key string
-		if data := item.Item.GetData(); data != nil {
-			key, err = models.GetKey(val)
+		if dontUseLocalModelRegistry {
+			knownmodels := knownModels.([]*client.ModelInfo)
+			msgTypeResolver := resolver.(*protoregistry.Types)
+			val, err = models.UnmarshalItemWithExternallyKnownModels(item.Item, knownmodels, msgTypeResolver)
+			if err != nil {
+				return err
+			}
+			if data := item.Item.GetData(); data != nil {
+				key, err = models.GetKeyWithExternallyKnownModels(val, knownmodels)
+			} else {
+				key, err = models.GetKeyForItemWithExternallyKnownModels(item.Item, knownmodels)
+			}
 		} else {
-			key, err = models.GetKeyForItem(item.Item)
+			val, err = models.UnmarshalItem(item.Item)
+			if err != nil {
+				return err
+			}
+			if data := item.Item.GetData(); data != nil {
+				key, err = models.GetKey(val)
+			} else {
+				key, err = models.GetKeyForItem(item.Item)
+			}
 		}
 		if err != nil {
 			return err
@@ -101,7 +130,7 @@ func (c *grpcClient) GetConfig(dsts ...interface{}) error {
 		protos[key] = val
 	}
 
-	util.PlaceProtos(protos, dsts...)
+	util.PlaceProtos(protos, dsts...) // TODO make proto desc version with unlimited struct nesting
 
 	return nil
 }
@@ -180,5 +209,33 @@ func WithExternallyKnownModels(knownModels []*client.ModelInfo) client.ChangeReq
 		if request, ok := changeRequest.(*setConfigRequest); ok {
 			request.externallyKnownModels = knownModels
 		}
+	}
+}
+
+func (c *grpcClient) WithOptions(callFunc func(client.GenericClient), options ...client.APIFuncOptions) {
+	newClient := &grpcClient{
+		manager:        c.manager,
+		meta:           c.meta,
+		apiFuncOptions: make(client.APIFuncOptions),
+	}
+	for _, optionSlice := range options {
+		for k, v := range optionSlice {
+			newClient.apiFuncOptions[k] = v
+		}
+	}
+	callFunc(newClient)
+}
+
+// UseExternallyKnownModels returns properly filled APIFuncOption to use externally known models
+func UseExternallyKnownModels(knownModels []*client.ModelInfo) client.APIFuncOptions {
+	return client.APIFuncOptions{
+		externallyKnownModels: knownModels,
+	}
+}
+
+// UseMessageTypeResolver returns properly filled APIFuncOption to use message type resolver
+func UseMessageTypeResolver(msgTypeResolver *protoregistry.Types) client.APIFuncOptions {
+	return client.APIFuncOptions{
+		messageTypeResolver: msgTypeResolver,
 	}
 }

@@ -29,8 +29,8 @@ type KnownModel struct {
 	spec Spec
 	modelOptions
 
-	goType reflect.Type
-	proto  protoreflect.ProtoMessage
+	goType    reflect.Type
+	proto     protoreflect.ProtoMessage
 	protoName string
 
 	// cache
@@ -113,11 +113,7 @@ func (m *KnownModel) KeyPrefix() string {
 }
 
 func (m *KnownModel) getKeyPrefix() string {
-	keyPrefix := m.spec.KeyPrefix()
-	if m.nameFunc == nil {
-		keyPrefix = strings.TrimSuffix(keyPrefix, "/")
-	}
-	return keyPrefix
+	return keyPrefix(m.spec, m.nameFunc != nil)
 }
 
 // ParseKey parses the given key and returns item name

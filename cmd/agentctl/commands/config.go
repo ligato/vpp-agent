@@ -82,23 +82,48 @@ type ConfigGetOptions struct {
 }
 
 func runConfigGet(cli agentcli.Cli, opts ConfigGetOptions) error {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	client, err := cli.Client().ConfiguratorClient()
-	if err != nil {
-		return err
-	}
-	resp, err := client.Get(ctx, &configurator.GetRequest{})
+	// get generic client
+	c, err := cli.Client().GenericClient()
 	if err != nil {
 		return err
 	}
 
+	// create dynamically config that can hold all remote known models
+	// (not using local model registry that gives only locally available models)
+	knownModels, err := c.KnownModels("config")
+	if err != nil {
+		return fmt.Errorf("getting registered models: %w", err)
+	}
+	fileDescProtos, err := retrieveModelFileDescriptorProtos(knownModels, cli)
+	if err != nil {
+		return fmt.Errorf("can't retrieve mode file descriptor protos for known models due to: %v", err)
+	}
+	config, err := client.NewDynamicConfig(knownModels, fileDescProtos)
+	if err != nil {
+		return fmt.Errorf("can't create all-config proto message dynamically due to: %w", err)
+	}
+
+	// create type registry for resolving proto.Any messages retrieved
+	msgTypeResolver, err := client.MessageTypeRegistry(fileDescProtos)
+	if err != nil {
+		return fmt.Errorf("can't create message type resolver due to: %v", err)
+	}
+
+	// retrieve data into config
+	c.WithOptions(func(c client.GenericClient) {
+		err = c.GetConfig(config)
+	}, remoteclient.UseExternallyKnownModels(knownModels),
+		remoteclient.UseMessageTypeResolver(msgTypeResolver))
+	if err != nil {
+		return fmt.Errorf("can't retrieve configuration due to: %v", err)
+	}
+
+	// handle data output
 	format := opts.Format
 	if len(format) == 0 {
 		format = `yaml`
 	}
-	if err := formatAsTemplate(cli.Out(), format, resp.Config); err != nil {
+	if err := formatAsTemplate(cli.Out(), format, config); err != nil {
 		return err
 	}
 

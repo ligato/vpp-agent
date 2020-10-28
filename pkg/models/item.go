@@ -15,19 +15,18 @@
 package models
 
 import (
-	"encoding/json"
 	"fmt"
 	"path"
 	"strings"
-	"unicode"
-	"unicode/utf8"
 
 	"github.com/go-errors/errors"
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
 	types "github.com/golang/protobuf/ptypes"
+	"github.com/golang/protobuf/ptypes/any"
 	api "go.ligato.io/vpp-agent/v3/proto/ligato/generic"
-	"google.golang.org/protobuf/reflect/protoreflect"
+	protoV2 "google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/reflect/protoregistry"
+	"google.golang.org/protobuf/types/known/anypb"
 )
 
 // This constant is used as prefix for TypeUrl when marshalling to Any.
@@ -67,43 +66,18 @@ func MarshalItem(pb proto.Message) (*api.Item, error) {
 // by variable initialization of compiled code)
 func MarshalItemWithExternallyKnownModels(message proto.Message, externallyKnownModels []*api.ModelDetail) (*api.Item, error) {
 	// find model for message
-	messageDesc := proto.MessageV2(message).ProtoReflect().Descriptor()
-	messageFullName := string(messageDesc.FullName())
-	var knownModel *api.ModelDetail
-	for _, ekm := range externallyKnownModels {
-		if ekm.ProtoName == messageFullName {
-			knownModel = ekm
-			break
-		}
-	}
-	if knownModel == nil {
-		return nil, errors.Errorf("can't find externally known model for message %v "+
-			"(All externally known models: %#v)", messageFullName, externallyKnownModels)
+	knownModel, err := GetExternallyKnownModelFor(message, externallyKnownModels)
+	if err != nil {
+		return nil, errors.Errorf("can't find externally known model "+
+			"for message due to: %v (message = %+v)", err, message)
 	}
 
-	// compute Item.ID.Name from name template
-	nameTemplate, err := modelOptionFor("nameTemplate", knownModel.Options)
+	// compute Item.ID.Name
+	messageDesc := proto.MessageV2(message).ProtoReflect().Descriptor()
+	messageFullName := string(messageDesc.FullName())
+	name, err := instanceNameWithExternallyKnownModel(message, knownModel, messageDesc)
 	if err != nil {
-		return nil, errors.Errorf("can't get name template from model options "+
-			"from externally known model %v due to: %v", knownModel.ProtoName, err)
-	}
-	nameTemplate = replaceFieldNamesInNameTemplate(messageDesc, nameTemplate)
-	marshaler := jsonpb.Marshaler{EmitDefaults: true} // using jsonbp to generate json with json name field in proto tag
-	jsonData, err := marshaler.MarshalToString(message)
-	if err != nil {
-		return nil, errors.Errorf("can't marshall message "+
-			"to json due to: %v (message: %+v)", err, message)
-	}
-	var mapData map[string]interface{}
-	err = json.Unmarshal([]byte(jsonData), &mapData)
-	if err != nil {
-		return nil, errors.Errorf("can't load json of marshalled "+
-			"message to generic map due to: %v (json=%v)", err, jsonData)
-	}
-	name, err := NameTemplate(nameTemplate)(mapData)
-	if err != nil {
-		return nil, errors.Errorf("can't compute name from name template by applying generic map "+
-			"due to: %v (name template=%v, generic map=%v)", err, nameTemplate, mapData)
+		return nil, errors.Errorf("can't compute model instance name due to: %v (message %+v)", err, message)
 	}
 
 	// convert message itself
@@ -126,15 +100,43 @@ func MarshalItemWithExternallyKnownModels(message proto.Message, externallyKnown
 	return item, nil
 }
 
-// Unmarshal is helper function for unmarshalling items.
+// UnmarshalItem is helper function for unmarshalling items.
 func UnmarshalItem(item *api.Item) (proto.Message, error) {
+	// check existence of locally registered model
 	_, err := GetModelForItem(item)
 	if err != nil {
 		return nil, err
 	}
+	return unmarshalItemDataAnyV1(item.GetData().GetAny())
+}
 
+// UnmarshalItemWithExternallyKnownModels is helper function for unmarshalling items corresponding to only
+// externally known models (= not present in local model registry)
+func UnmarshalItemWithExternallyKnownModels(item *api.Item, externallyKnownModels []*api.ModelDetail,
+	msgTypeResolver *protoregistry.Types) (proto.Message, error) {
+	// check existence of remotely known model
+	_, err := GetExternallyKnownModelForItem(item, externallyKnownModels)
+	if err != nil {
+		return nil, err
+	}
+	return unmarshalItemDataAny(item.GetData().GetAny(), msgTypeResolver)
+}
+
+// unmarshalItemDataAny unmarshalls the generic data part of api.Item (using new protoV2 method)
+func unmarshalItemDataAny(itemAny *any.Any, msgTypeResolver *protoregistry.Types) (proto.Message, error) {
+	msg, err := anypb.UnmarshalNew(itemAny, protoV2.UnmarshalOptions{
+		Resolver: msgTypeResolver,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return proto.MessageV1(msg), nil
+}
+
+// unmarshalItemDataAnyV1 unmarshalls the generic data part of api.Item (using old working protoV1 method)
+func unmarshalItemDataAnyV1(itemAny *any.Any) (proto.Message, error) {
 	var any types.DynamicAny
-	if err := types.UnmarshalAny(item.GetData().GetAny(), &any); err != nil {
+	if err := types.UnmarshalAny(itemAny, &any); err != nil {
 		return nil, err
 	}
 	return any.Message, nil
@@ -154,6 +156,22 @@ func GetModelForItem(item *api.Item) (KnownModel, error) {
 	return model, nil
 }
 
+// GetExternallyKnownModelForItem returns model for given item.
+func GetExternallyKnownModelForItem(item *api.Item, externallyKnownModels []*api.ModelDetail) (*api.ModelDetail, error) {
+	if item.GetId() == nil {
+		return nil, fmt.Errorf("item id is nil")
+	}
+	modelPath := item.GetId().GetModel()
+	for _, model := range externallyKnownModels {
+		externalModelPath := fmt.Sprintf("%v.%v", model.Spec.Module, model.Spec.Type)
+		if externalModelPath == modelPath {
+			return model, nil
+		}
+	}
+	return nil, fmt.Errorf("can't find modelpath %v in provided "+
+		"external models %+v", modelPath, externallyKnownModels)
+}
+
 // GetKeyForItem returns key for given item.
 func GetKeyForItem(item *api.Item) (string, error) {
 	model, err := GetModelForItem(item)
@@ -164,30 +182,15 @@ func GetKeyForItem(item *api.Item) (string, error) {
 	return key, nil
 }
 
-// replaceFieldNamesInNameTemplate replaces JSON field names to Go Type field name in name template.
-func replaceFieldNamesInNameTemplate(messageDesc protoreflect.MessageDescriptor, nameTemplate string) string {
-	// FIXME this is only a good effort to map between NameTemplate variables and Proto model field names
-	//  (protoName, jsonName). We can do here better (fix field names prefixing other field names or field
-	//  names colliding with field names of inner reference structures), but i the end we are still guessing
-	//  without knowledge of go type. Can we fix this?
-	for i := 0; i < messageDesc.Fields().Len(); i++ {
-		fieldDesc := messageDesc.Fields().Get(i)
-		pbJSONName := fieldDesc.JSONName()
-		nameTemplate = strings.ReplaceAll(nameTemplate, upperFirst(pbJSONName), pbJSONName)
-		if fieldDesc.Message() != nil {
-			nameTemplate = replaceFieldNamesInNameTemplate(fieldDesc.Message(), nameTemplate)
-		}
+// GetKeyForItemWithExternallyKnownModels returns key for given item.
+func GetKeyForItemWithExternallyKnownModels(item *api.Item, externallyKnownModels []*api.ModelDetail) (string, error) {
+	model, err := GetExternallyKnownModelForItem(item, externallyKnownModels)
+	if err != nil {
+		return "", err
 	}
-	return nameTemplate
-}
-
-// upperFirst converts the first letter of string to upper case
-func upperFirst(s string) string {
-	if s == "" {
-		return ""
-	}
-	r, n := utf8.DecodeRuneInString(s)
-	return string(unicode.ToUpper(r)) + s[n:]
+	name := item.GetId().GetName()
+	key := path.Join(keyPrefix(ToSpec(model.Spec), name != ""), name)
+	return key, nil
 }
 
 // modelOptionFor retrieves first value for given key in model detail options
@@ -196,6 +199,10 @@ func modelOptionFor(key string, options []*api.ModelDetail_Option) (string, erro
 		if option.Key == key {
 			if len(option.Values) == 0 {
 				return "", errors.Errorf("there is no value for key %v in model options", key)
+			}
+			if strings.TrimSpace(option.Values[0]) == "" {
+				return "", errors.Errorf("there is no value(only empty string "+
+					"after trimming) for key %v in model options", key)
 			}
 			return option.Values[0], nil
 		}

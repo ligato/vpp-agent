@@ -84,7 +84,8 @@ var backwardCompatibleNames = map[string]names{
 // and therefore can be used to import/export config data also for 3rd party models that are registered, but not
 // part of VPP-Agent repository and therefore not know to hardcoded configurator.Config.
 func NewDynamicConfig(knownModels []*ModelInfo, fileDescProtos []*descriptorpb.FileDescriptorProto) (*dynamicpb.Message, error) {
-	dependencyRegistry, err := createDependencyRegistry(fileDescProtos)
+	// create dependency registry
+	dependencyRegistry, err := createFileDescRegistry(fileDescProtos)
 	if err != nil {
 		return nil, errors.Errorf("can't create dependency file descriptor registry due to: %v", err)
 	}
@@ -108,11 +109,38 @@ func NewDynamicConfig(knownModels []*ModelInfo, fileDescProtos []*descriptorpb.F
 	return dynamicpb.NewMessage(rootMsg), nil
 }
 
-// createDependencyRegistry resolves file descriptor protos into file descriptors and returns them in convenient
+// MessageTypeRegistry creates a message type registry for all messages in given file descriptor protos
+func MessageTypeRegistry(fileDescProtos []*descriptorpb.FileDescriptorProto) (*protoregistry.Types, error) {
+	typeRegistry := new(protoregistry.Types)
+
+	// create file descriptor registry registry
+	fileDescRegistry, err := createFileDescRegistry(fileDescProtos)
+	if err != nil {
+		return nil, errors.Errorf("can't create file descriptor registry due to: %v", err)
+	}
+
+	// iterate over all messages in all file descriptors and register their types in type registry
+	alreadyRegistered := make(map[string]struct{})
+	fileDescRegistry.(*protoregistry.Files).RangeFiles(func(fileDesc protoreflect.FileDescriptor) bool {
+		messages := fileDesc.Messages()
+		for i := 0; i < messages.Len(); i++ {
+			messageDesc := messages.Get(i)
+			if _, found := alreadyRegistered[string(messageDesc.FullName())]; !found {
+				alreadyRegistered[string(messageDesc.FullName())] = struct{}{}
+				typeRegistry.RegisterMessage(dynamicpb.NewMessageType(messageDesc))
+			}
+		}
+		return true // iterate over all file descriptors
+	})
+
+	return typeRegistry, nil
+}
+
+// createFileDescRegistry resolves file descriptor protos into file descriptors and returns them in convenient
 // registry (in form of protodesc.Resolver). The basic difference between file descriptor protos and file
 // descriptors is that file descriptors have resolved all (direct or transitive) import dependencies and file
 // descriptor protos have only string/name references to direct dependencies.
-func createDependencyRegistry(fileDescProtos []*descriptorpb.FileDescriptorProto) (protodesc.Resolver, error) {
+func createFileDescRegistry(fileDescProtos []*descriptorpb.FileDescriptorProto) (protodesc.Resolver, error) {
 	reg := &protoregistry.Files{}
 	fds, err := toFileDescriptors(fileDescProtos)
 	if err != nil {
