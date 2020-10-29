@@ -2,15 +2,17 @@ package remoteclient
 
 import (
 	"context"
-
 	"github.com/go-errors/errors"
 	"github.com/golang/protobuf/proto"
+	"github.com/golang/protobuf/protoc-gen-go/descriptor"
 	"go.ligato.io/vpp-agent/v3/client"
 	"go.ligato.io/vpp-agent/v3/pkg/models"
 	"go.ligato.io/vpp-agent/v3/pkg/util"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/generic"
 	"google.golang.org/grpc"
+	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/reflect/protoregistry"
+	"google.golang.org/protobuf/types/descriptorpb"
 )
 
 // option keys
@@ -38,22 +40,83 @@ func NewClientGRPC(conn grpc.ClientConnInterface) client.ConfigClient {
 func (c *grpcClient) KnownModels(class string) ([]*client.ModelInfo, error) {
 	ctx := context.Background()
 
+	// get known models from meta service
 	resp, err := c.meta.KnownModels(ctx, &generic.KnownModelsRequest{
 		Class: class,
 	})
 	if err != nil {
 		return nil, err
 	}
+	knownModels := resp.KnownModels
 
-	var modules []*models.ModelInfo
-	for _, info := range resp.KnownModels {
-		modules = append(modules, &models.ModelInfo{
-			ModelDetail: *info,
-			// TODO fill proto file desc
+	// extract proto files for meta service known models
+	protoFilePaths := make(map[string]struct{}) // using map as set for deduplication
+	for _, modelDetail := range knownModels {
+		protoFilePath, err := client.ModelOptionFor("protoFile", modelDetail.Options)
+		if err != nil {
+			return nil, errors.Errorf("can't get protoFile from model options of "+
+				"known model %v due to: %v", modelDetail.ProtoName, err)
+		}
+		protoFilePaths[protoFilePath] = struct{}{}
+	}
+
+	// query meta service for extracted proto files to get their file descriptor protos
+	fileDescProtos := make(map[string]*descriptor.FileDescriptorProto) // deduplicaton + data container
+	for protoFilePath, _ := range protoFilePaths {
+		ctx := context.Background()
+		resp, err := c.meta.ProtoFileDescriptor(ctx, &generic.ProtoFileDescriptorRequest{
+			FullProtoFileName: protoFilePath,
+		})
+		if err != nil {
+			return nil, errors.Errorf("can't retrieve ProtoFileDescriptor "+
+				"for proto file %v due to: %v", protoFilePath, err)
+		}
+		if resp.FileDescriptor == nil {
+			return nil, errors.Errorf("returned file descriptor proto "+
+				"for proto file %v from meta service can't be nil", protoFilePath)
+		}
+		if resp.FileImportDescriptors == nil {
+			return nil, errors.Errorf("returned import file descriptors proto "+
+				"for proto file %v from meta service can't be nil", protoFilePath)
+		}
+
+		fileDescProtos[*resp.FileDescriptor.Name] = resp.FileDescriptor
+		for _, fid := range resp.FileImportDescriptors.File {
+			if fid != nil {
+				fileDescProtos[*fid.Name] = fid
+			}
+		}
+	}
+
+	// convert file descriptor protos to file descriptors
+	fileDescProtosSlice := make([]*descriptorpb.FileDescriptorProto, 0) // conversion set to slice
+	for _, fdp := range fileDescProtos {
+		fileDescProtosSlice = append(fileDescProtosSlice, fdp)
+	}
+	fileDescriptors, err := client.ToFileDescriptors(fileDescProtosSlice)
+	if err != nil {
+		return nil, errors.Errorf("can't convert file descriptor protos to file descriptors "+
+			"(for dependency registry creation) due to: %v", err)
+	}
+
+	// extract all messages from file descriptors
+	messageDescriptors := make(map[string]protoreflect.MessageDescriptor)
+	for _, fd := range fileDescriptors {
+		for i:=0; i < fd.Messages().Len(); i++ {
+			messageDescriptors[string(fd.Messages().Get(i).FullName())] = fd.Messages().Get(i)
+		}
+	}
+
+	// pack all gathered information into correct output format
+	var result []*models.ModelInfo
+	for _, info := range knownModels {
+		result = append(result, &models.ModelInfo{
+			ModelDetail:       *info,
+			MessageDescriptor: messageDescriptors[info.ProtoName],
 		})
 	}
 
-	return modules, nil
+	return result, nil
 }
 
 func (c *grpcClient) ChangeRequest(options ...client.ChangeRequestOption) client.ChangeRequest {

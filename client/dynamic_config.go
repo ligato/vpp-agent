@@ -84,7 +84,7 @@ var backwardCompatibleNames = map[string]names{
 // proto model, but that model is hardcoded). Dynamic config can contain also custom 3rd party models
 // and therefore can be used to import/export config data also for 3rd party models that are registered, but not
 // part of VPP-Agent repository and therefore not know to hardcoded configurator.Config.
-func NewDynamicConfig(knownModels []*ModelInfo, fileDescProtos []*descriptorpb.FileDescriptorProto) (*dynamicpb.Message, error) {
+func NewDynamicConfig(knownModels []*models.ModelInfo, fileDescProtos []*descriptorpb.FileDescriptorProto) (*dynamicpb.Message, error) {
 	// create dependency registry
 	dependencyRegistry, err := createFileDescRegistry(fileDescProtos)
 	if err != nil {
@@ -143,7 +143,7 @@ func MessageTypeRegistry(fileDescProtos []*descriptorpb.FileDescriptorProto) (*p
 // descriptor protos have only string/name references to direct dependencies.
 func createFileDescRegistry(fileDescProtos []*descriptorpb.FileDescriptorProto) (protodesc.Resolver, error) {
 	reg := &protoregistry.Files{}
-	fds, err := toFileDescriptors(fileDescProtos)
+	fds, err := ToFileDescriptors(fileDescProtos)
 	if err != nil {
 		return nil, errors.Errorf("can't convert file descriptor protos to file descriptors "+
 			"(for dependency registry creation) due to: %v", err)
@@ -284,10 +284,10 @@ func createDynamicConfigDescriptorProto(knownModels []*ModelInfo, dependencyRegi
 	return
 }
 
-// toFileDescriptors convert file descriptor protos to file descriptors. This conversion handles correctly
+// ToFileDescriptors convert file descriptor protos to file descriptors. This conversion handles correctly
 // possible transitive dependencies, but all dependencies (direct or transitive) must be included in input
 // file descriptor protos.
-func toFileDescriptors(fileDescProtos []*descriptorpb.FileDescriptorProto) ([]protoreflect.FileDescriptor, error) {
+func ToFileDescriptors(fileDescProtos []*descriptorpb.FileDescriptorProto) ([]protoreflect.FileDescriptor, error) {
 	// NOTE this could be done more efficiently by creating dependency tree and
 	// traversing it and all, but it seems more complicated to implement
 	// => going over unresolved FileDescriptorProto over and over while resolving that FileDescriptorProto that

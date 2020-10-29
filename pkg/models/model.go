@@ -27,7 +27,9 @@ import (
 // ModelInfo represents model information retrieved using meta service
 type ModelInfo struct {
 	generic.ModelDetail
-	//MessageDescriptor *protoreflect.MessageDescriptor // TODO make message descriptor part of retrieved info (+ resolve it in generic client retrieval using file descriptor proto meta service RPC and code in dynamic config)
+
+	// MessageDescriptor is the proto message descriptor of the message represented by this ModelInfo struct
+	MessageDescriptor protoreflect.MessageDescriptor
 }
 
 // KnownModel represents a registered model.

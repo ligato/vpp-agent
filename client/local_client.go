@@ -45,8 +45,8 @@ func (c *client) KnownModels(class string) ([]*ModelInfo, error) {
 		if class == "" || model.Spec().Class == class {
 			modules = append(modules, &models.ModelInfo{
 				ModelDetail: *model.ModelDetail(),
-				// TODO fill proto file desc
-			} )
+				MessageDescriptor: proto.MessageV2(model.NewInstance()).ProtoReflect().Descriptor(),
+			})
 		}
 	}
 	return modules, nil
