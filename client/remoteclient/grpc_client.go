@@ -201,7 +201,10 @@ func (c *grpcClient) GetConfig(dsts ...interface{}) error {
 
 	protoDsts := extractProtoMessages(dsts)
 	if len(dsts) == len(protoDsts) { // all dsts are proto messages
-		util.PlaceProtosIntoProtos(convertToProtoV2(protos), protoDsts...)
+		// TODO the clearIgnoreLayerCount function argument should be a option of generic.Client
+		//  (the value 2 generates from dynamic config the same json/yaml output as the hardcoded
+		//  configurator.Config and therefore serves for backward compatibility)
+		util.PlaceProtosIntoProtos(convertToProtoV2(protos), 2, protoDsts...)
 	} else {
 		util.PlaceProtos(protos, dsts...)
 	}

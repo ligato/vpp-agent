@@ -78,24 +78,30 @@ func PlaceProtos(protos map[string]proto.Message, dsts ...interface{}) {
 }
 
 // PlaceProtosIntoProtos fills dsts proto messages (direct or transitive) fields with protos values.
-// The matching is done by message descriptor's full name.
-func PlaceProtosIntoProtos(protos []protoV2.Message, dsts ...protoV2.Message) {
+// The matching is done by message descriptor's full name. The <clearIgnoreLayerCount> variable controls
+// how many top model structure hierarchy layers can have empty values for messages (see
+// util.placeProtosInProto(...) for details)
+func PlaceProtosIntoProtos(protos []protoV2.Message, clearIgnoreLayerCount int, dsts ...protoV2.Message) {
 	protosMap := make(map[string][]protoV2.Message)
 	for _, protoMsg := range protos {
 		protoName := string(protoMsg.ProtoReflect().Descriptor().FullName())
 		protosMap[protoName] = append(protosMap[protoName], protoMsg)
 	}
 	for _, dst := range dsts {
-		placeProtosInProto(dst, protosMap)
+		placeProtosInProto(dst, protosMap, clearIgnoreLayerCount)
 	}
 }
 
 // placeProtosInProto fills dst proto message (direct or transitive) fields with protos values from protoMap
 // (convenient map[proto descriptor full name]= proto value). The matching is done by message descriptor's
 // full name. The function is recursive and one run is handling only one level of proto message structure tree
-// (only handling Message references and ignoring scalar/enum/... values)
+// (only handling Message references and ignoring scalar/enum/... values). The <clearIgnoreLayerCount> controls
+// how many top layer can have empty values for their message fields (as the algorithm backtracks the descriptor
+// model tree, it unfortunately initialize empty value for visited fields). The layer below
+// <clearIgnoreLayerCount> top layer will be cleared from the fake empty value.
 // Currently unsupported are maps as fields.
-func placeProtosInProto(dst protoV2.Message, protosMap map[string][]protoV2.Message) {
+func placeProtosInProto(dst protoV2.Message, protosMap map[string][]protoV2.Message, clearIgnoreLayerCount int) bool {
+	changed := false
 	fields := dst.ProtoReflect().Descriptor().Fields()
 	for i := 0; i < fields.Len(); i++ {
 		field := fields.Get(i)
@@ -107,23 +113,41 @@ func placeProtosInProto(dst protoV2.Message, protosMap map[string][]protoV2.Mess
 					list := dst.ProtoReflect().Mutable(field).List()
 					for _, protoMsg := range protoMsgsForField {
 						list.Append(protoreflect.ValueOf(protoMsg))
+						changed = true
 					}
 				} else if field.IsMap() { // unsupported
 				} else {
 					dst.ProtoReflect().Set(field, protoreflect.ValueOf(protoMsgsForField[0]))
+					changed = true
 				}
 			} else {
 				// no type match -> check deeper structure layers
+				// Note: dst.ProtoReflect().Mutable(field) creates empty value that creates problems later
+				// (i.e. by outputing to json/yaml) => need to check whether actual value has been assigned
+				// and if not then clear the field. Additionally there is clearIgnoreLayerCount variable
+				// disabling this clearing functionality for upper <clearIgnoreLayerCount> layers
 				if field.IsList() {
 					list := dst.ProtoReflect().Mutable(field).List()
+					changeOnLowerLayer := false
 					for j:=0; j < list.Len(); j++ {
-						placeProtosInProto(list.Get(j).Message().Interface(), protosMap)
+						changeOnLowerLayer = changeOnLowerLayer ||
+							placeProtosInProto(list.Get(j).Message().Interface(), protosMap, clearIgnoreLayerCount- 1)
 					}
+					if !changeOnLowerLayer && clearIgnoreLayerCount <= 0 {
+						dst.ProtoReflect().Clear(field)
+					}
+					changed = changed || changeOnLowerLayer
 				} else if field.IsMap() { // unsupported
 				} else {
-					placeProtosInProto(dst.ProtoReflect().Mutable(field).Message().Interface(), protosMap)
+					changeOnLowerLayer := placeProtosInProto(dst.ProtoReflect().Mutable(field).
+						Message().Interface(), protosMap, clearIgnoreLayerCount- 1)
+					if !changeOnLowerLayer && clearIgnoreLayerCount <= 0 {
+						dst.ProtoReflect().Clear(field)
+					}
+					changed = changed || changeOnLowerLayer
 				}
 			}
 		}
 	}
+	return changed
 }
