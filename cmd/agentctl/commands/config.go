@@ -36,6 +36,8 @@ import (
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/configurator"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/kvscheduler"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/encoding/protojson"
 	protoV2 "google.golang.org/protobuf/proto"
 )
@@ -326,7 +328,6 @@ func convertToProtoV1(messages []protoV2.Message) []proto.Message {
 	}
 	return result
 }
-
 
 func newConfigRetrieveCommand(cli agentcli.Cli) *cobra.Command {
 	var (
