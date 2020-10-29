@@ -1,6 +1,6 @@
 # Changelog
 
-[![GitHub commits since latest release](https://img.shields.io/github/commits-since/ligato/vpp-agent/latest.svg?style=flat-square)](https://github.com/ligato/vpp-agent/compare/v3.1.0...master)
+[![GitHub commits since latest release](https://img.shields.io/github/commits-since/ligato/vpp-agent/latest.svg?style=flat-square)](https://github.com/ligato/vpp-agent/compare/v3.2.0...master)
 
 ## Release Notes
 
@@ -94,15 +94,19 @@ RELEASE CHANGELOG TEMPLATE:
 - Add support for IPv6 ND address autoconfig (#1676)
 - Add VRF field to proxy ARP range (#1672)
 - Switch to new proto v2 (google.golang.org/protobuf) (#1691)
-- ipsec: allow to configure salt for encryption algorithm (#1698)
+- ipsec: allow configuring salt for encryption algorithm (#1698)
 - gtpu: Add RemoteTeid to GTPU interface (#1719)
 - Added support for NAT44 static mapping twice-NAT pool IP address reference (#1728)
 - add IP protocol number to ACL model (#1726)
 - gtpu: Add support for arbitrary DecapNextNode (#1721)
-- Add support for waiting until config update is done (#1734)
+- configurator: Add support for waiting until config update is done (#1734)\
+- telemetry: Add reading VPP threads to the telemetry plugin (#1753)
+- linux: Add support for Linux VRFs (#1744)
+- VRRP support (#1744)
 
 ### Improvements
 - perf: Performance enhancement for adding many rules to Linux IP… (#1644)
+- Improve testing process for e2e/integration tests (#1757)
 
 ### Documentation
 - docs: Add example for developing agents with custom VPP plugins (#1665)
