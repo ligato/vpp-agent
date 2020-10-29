@@ -46,6 +46,7 @@ func NewConfigCommand(cli agentcli.Cli) *cobra.Command {
 	}
 	cmd.AddCommand(
 		newConfigGetCommand(cli),
+		newConfigDeleteCommand(cli),
 		newConfigRetrieveCommand(cli),
 		newConfigUpdateCommand(cli),
 		newConfigResyncCommand(cli),
@@ -166,6 +167,101 @@ func runConfigUpdate(cli agentcli.Cli, opts ConfigUpdateOptions, args []string) 
 	}, grpc.Header(&header))
 	if err != nil {
 		logrus.Warnf("update failed: %v", err)
+		data = err
+	} else {
+		data = resp
+	}
+
+	if opts.Verbose {
+		logrus.Debugf("grpc header: %+v", header)
+		if seqNum, ok := header["seqnum"]; ok {
+			ref, _ := strconv.Atoi(seqNum[0])
+			txns, err := cli.Client().SchedulerHistory(ctx, types.SchedulerHistoryOptions{
+				SeqNum: ref,
+			})
+			if err != nil {
+				logrus.Warnf("getting history for seqNum %d failed: %v", ref, err)
+			} else {
+				data = txns
+			}
+		}
+	}
+
+	format := opts.Format
+	if len(format) == 0 {
+		format = `{{.}}`
+	}
+	if err := formatAsTemplate(cli.Out(), format, data); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func newConfigDeleteCommand(cli agentcli.Cli) *cobra.Command {
+	var (
+		opts ConfigDeleteOptions
+	)
+	cmd := &cobra.Command{
+		Use:   "delete",
+		Short: "Delete config in agent",
+		Long:  "Delete configuration in agent",
+		Args:  cobra.MaximumNArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return runConfigDelete(cli, opts, args)
+		},
+	}
+	flags := cmd.Flags()
+	flags.StringVarP(&opts.Format, "format", "f", "", "Format output")
+	flags.BoolVar(&opts.WaitDone, "waitdone", false, "Waits until config update is done")
+	flags.BoolVarP(&opts.Verbose, "verbose", "v", false, "Show verbose output")
+	return cmd
+}
+
+type ConfigDeleteOptions struct {
+	Format   string
+	WaitDone bool
+	Verbose  bool
+}
+
+func runConfigDelete(cli agentcli.Cli, opts ConfigDeleteOptions, args []string) error {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	client, err := cli.Client().ConfiguratorClient()
+	if err != nil {
+		return err
+	}
+
+	if len(args) == 0 {
+		return fmt.Errorf("missing file argument")
+	}
+	file := args[0]
+	b, err := ioutil.ReadFile(file)
+	if err != nil {
+		return fmt.Errorf("reading file %s: %w", file, err)
+	}
+
+	var update = &configurator.Config{}
+	bj, err := yaml2.YAMLToJSON(b)
+	if err != nil {
+		return fmt.Errorf("converting to JSON: %w", err)
+	}
+	err = protojson.Unmarshal(bj, update)
+	if err != nil {
+		return err
+	}
+	logrus.Infof("loaded config delete:\n%s", update)
+
+	var data interface{}
+
+	var header metadata.MD
+	resp, err := client.Delete(ctx, &configurator.DeleteRequest{
+		Delete:   update,
+		WaitDone: opts.WaitDone,
+	}, grpc.Header(&header))
+	if err != nil {
+		logrus.Warnf("delete failed: %v", err)
 		data = err
 	} else {
 		data = resp
