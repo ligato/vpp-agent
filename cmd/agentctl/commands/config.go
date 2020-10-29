@@ -217,7 +217,7 @@ func runConfigUpdate(cli agentcli.Cli, opts ConfigUpdateOptions, args []string) 
 	if len(format) == 0 {
 		format = `{{.}}`
 	}
-	if err := formatAsTemplate(cli.Out(), format, data); err != nil { // TODO test different formats for "OK" whether it does not fail
+	if err := formatAsTemplate(cli.Out(), format, data); err != nil {
 		return err
 	}
 
