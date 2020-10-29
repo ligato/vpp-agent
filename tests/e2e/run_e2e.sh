@@ -38,7 +38,7 @@ go build -o ./tests/e2e/agentctl.test \
 
 # Compile testing suite
 go test -c -o ./tests/e2e/e2e.test \
-	  -tags 'osusergo netgo' \
+	  -tags 'osusergo netgo e2e' \
     -ldflags '-w -s -extldflags "-static"' \
     ./tests/e2e
 

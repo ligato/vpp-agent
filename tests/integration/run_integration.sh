@@ -10,7 +10,7 @@ imgname="vpp-agent-integration-tests"
 
 # Compile testing suite
 go test -c -o ./tests/integration/integration.test \
-	  -tags 'osusergo netgo' \
+	  -tags 'osusergo netgo integration' \
     -ldflags '-w -s -extldflags "-static"' \
     ./tests/integration/...
 

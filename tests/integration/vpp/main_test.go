@@ -22,6 +22,8 @@ import (
 
 	govppcore "git.fd.io/govpp.git/core"
 	"github.com/sirupsen/logrus"
+
+	testutils "go.ligato.io/vpp-agent/v3/tests/testutils"
 )
 
 var (
@@ -39,6 +41,8 @@ func TestMain(m *testing.M) {
 	if *debug {
 		govppcore.SetLogLevel(logrus.DebugLevel)
 	}
-	result := m.Run()
-	os.Exit(result)
+	if testutils.RunTestSuite("integration") {
+		result := m.Run()
+		os.Exit(result)
+	}
 }

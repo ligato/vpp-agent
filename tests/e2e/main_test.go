@@ -22,6 +22,8 @@ import (
 
 	govppcore "git.fd.io/govpp.git/core"
 	"github.com/sirupsen/logrus"
+
+	"go.ligato.io/vpp-agent/v3/tests/testutils"
 )
 
 var (
@@ -41,10 +43,8 @@ func TestMain(m *testing.M) {
 	if *debug {
 		govppcore.SetLogLevel(logrus.DebugLevel)
 	}
-	if os.Getenv("TRAVIS") != "" {
-		log.Println("skipping e2e tests for Travis")
-		os.Exit(0)
+	if testutils.RunTestSuite("e2e") {
+		result := m.Run()
+		os.Exit(result)
 	}
-	result := m.Run()
-	os.Exit(result)
 }
