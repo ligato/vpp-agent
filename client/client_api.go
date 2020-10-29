@@ -16,13 +16,16 @@ package client
 
 import (
 	"context"
+	"go.ligato.io/vpp-agent/v3/pkg/models"
 
 	"github.com/golang/protobuf/proto"
 
 	"go.ligato.io/vpp-agent/v3/proto/ligato/generic"
 )
 
-type ModelInfo = generic.ModelDetail
+// ModelInfo is just retyped models.ModelInfo for backward compatibility purpose
+// Deprecated: use models.ModelInfo instead
+type ModelInfo = models.ModelInfo
 
 type StateItem = generic.StateItem
 
@@ -58,6 +61,7 @@ type GenericClient interface {
 	//  of GenericClient in the WithOptions(...).
 	//  Both ways of setting can coexist, but should they? Can we do all of this better? Maybe breaking
 	//  the API by adding options to each needed function could be nicer and more maintainable for future
+	//  Action: Put in constructor of generic client (make it default generic client in agentcl)
 
 	// WithOptions is a generic way how to apply options to any API function in this interface.
 	// The given API function-specific options are temporary applied to generic client that

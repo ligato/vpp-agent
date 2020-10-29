@@ -31,6 +31,7 @@ type names struct {
 
 // TODO: generate backwardCompatibleNames dynamically by searching given known model in configurator.Config
 //  and extracting proto field name and json name?
+// TODO add suffix(_list) for repeated fields
 
 // backwardCompatibleNames is mappging from dynamic Config fields (derived from currently known models) to
 // hardcoded names (proto field name/json name) in hardcoded configurator.Config. This mapping should allow

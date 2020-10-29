@@ -45,9 +45,12 @@ func (c *grpcClient) KnownModels(class string) ([]*client.ModelInfo, error) {
 		return nil, err
 	}
 
-	var modules []*client.ModelInfo
+	var modules []*models.ModelInfo
 	for _, info := range resp.KnownModels {
-		modules = append(modules, info)
+		modules = append(modules, &models.ModelInfo{
+			ModelDetail: *info,
+			// TODO fill proto file desc
+		})
 	}
 
 	return modules, nil

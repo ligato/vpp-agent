@@ -24,6 +24,12 @@ import (
 	"go.ligato.io/vpp-agent/v3/proto/ligato/generic"
 )
 
+// ModelInfo represents model information retrieved using meta service
+type ModelInfo struct {
+	generic.ModelDetail
+	//MessageDescriptor *protoreflect.MessageDescriptor // TODO make message descriptor part of retrieved info (+ resolve it in generic client retrieval using file descriptor proto meta service RPC and code in dynamic config)
+}
+
 // KnownModel represents a registered model.
 type KnownModel struct {
 	spec Spec

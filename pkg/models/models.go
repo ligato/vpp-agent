@@ -25,7 +25,6 @@ import (
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
 	"go.ligato.io/cn-infra/v2/logging/logrus"
-	api "go.ligato.io/vpp-agent/v3/proto/ligato/generic"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
@@ -55,11 +54,10 @@ func GetModelFor(x proto.Message) (KnownModel, error) {
 
 // GetExternallyKnownModelFor returns externally known model (from given externallyKnownModels) corresponding
 // to given proto message
-func GetExternallyKnownModelFor(message proto.Message, externallyKnownModels []*api.ModelDetail) (
-	*api.ModelDetail, error) {
+func GetExternallyKnownModelFor(message proto.Message, externallyKnownModels []*ModelInfo) (*ModelInfo, error) {
 	messageDesc := proto.MessageV2(message).ProtoReflect().Descriptor()
 	messageFullName := string(messageDesc.FullName())
-	var knownModel *api.ModelDetail
+	var knownModel *ModelInfo
 	for _, ekm := range externallyKnownModels {
 		if ekm.ProtoName == messageFullName {
 			knownModel = ekm
@@ -115,7 +113,7 @@ func GetKey(x proto.Message) (string, error) {
 // GetKeyWithExternallyKnownModels returns complete
 // key for given model, including key prefix defined
 // by externally known model specification.
-func GetKeyWithExternallyKnownModels(message proto.Message, externallyKnownModels []*api.ModelDetail) (string, error) {
+func GetKeyWithExternallyKnownModels(message proto.Message, externallyKnownModels []*ModelInfo) (string, error) {
 	// find model for message
 	knownModel, err := GetExternallyKnownModelFor(message, externallyKnownModels)
 	if err != nil {
@@ -151,7 +149,7 @@ func GetName(x proto.Message) (string, error) {
 // instanceNameWithExternallyKnownModel computes message name using name template (if present).
 // This is the equivalent to models.KnownModel's instanceName(...) using not locally registered
 // model but using externally acquired models.
-func instanceNameWithExternallyKnownModel(message proto.Message, knownModel *api.ModelDetail,
+func instanceNameWithExternallyKnownModel(message proto.Message, knownModel *ModelInfo,
 	messageDesc protoreflect.MessageDescriptor) (string, error) {
 	nameTemplate, err := modelOptionFor("nameTemplate", knownModel.Options)
 	if err != nil {
@@ -185,6 +183,7 @@ func replaceFieldNamesInNameTemplate(messageDesc protoreflect.MessageDescriptor,
 	//  (protoName, jsonName). We can do here better (fix field names prefixing other field names or field
 	//  names colliding with field names of inner reference structures), but i the end we are still guessing
 	//  without knowledge of go type. Can we fix this?
+	//  Try check message type fields for possible information about Go Type field names
 	for i := 0; i < messageDesc.Fields().Len(); i++ {
 		fieldDesc := messageDesc.Fields().Get(i)
 		pbJSONName := fieldDesc.JSONName()

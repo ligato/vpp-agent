@@ -342,7 +342,7 @@ func convertToProtoV1(messages []protoV2.Message) []proto.Message {
 // retrieveModelFileDescriptorProtos uses mete service to retrieve mode file descriptor protos for each known model
 func retrieveModelFileDescriptorProtos(knownModels []*client.ModelInfo, cli agentcli.Cli) (
 	[]*descriptorpb.FileDescriptorProto, error) {
-	// TODO extend RPC ProtoFileDescriptor from meta service API to generic client API just like for knownModels?
+	// TODO extend RPC ProtoFileDescriptor from meta service API to generic client API just like for knownModels? (add to modeldetail as part of getting known models)
 	// get meta service client
 	metaServiceClient, err := cli.Client().MetaServiceClient()
 	if err != nil {

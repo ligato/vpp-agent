@@ -64,7 +64,7 @@ func MarshalItem(pb proto.Message) (*api.Item, error) {
 // MarshalItemWithExternallyKnownModels is helper function for marshalling model instance into item by using
 // models that are known only from external sources (=not registered in default model registry that is filled
 // by variable initialization of compiled code)
-func MarshalItemWithExternallyKnownModels(message proto.Message, externallyKnownModels []*api.ModelDetail) (*api.Item, error) {
+func MarshalItemWithExternallyKnownModels(message proto.Message, externallyKnownModels []*ModelInfo) (*api.Item, error) {
 	// find model for message
 	knownModel, err := GetExternallyKnownModelFor(message, externallyKnownModels)
 	if err != nil {
@@ -112,7 +112,7 @@ func UnmarshalItem(item *api.Item) (proto.Message, error) {
 
 // UnmarshalItemWithExternallyKnownModels is helper function for unmarshalling items corresponding to only
 // externally known models (= not present in local model registry)
-func UnmarshalItemWithExternallyKnownModels(item *api.Item, externallyKnownModels []*api.ModelDetail,
+func UnmarshalItemWithExternallyKnownModels(item *api.Item, externallyKnownModels []*ModelInfo,
 	msgTypeResolver *protoregistry.Types) (proto.Message, error) {
 	// check existence of remotely known model
 	_, err := GetExternallyKnownModelForItem(item, externallyKnownModels)
@@ -157,7 +157,7 @@ func GetModelForItem(item *api.Item) (KnownModel, error) {
 }
 
 // GetExternallyKnownModelForItem returns model for given item.
-func GetExternallyKnownModelForItem(item *api.Item, externallyKnownModels []*api.ModelDetail) (*api.ModelDetail, error) {
+func GetExternallyKnownModelForItem(item *api.Item, externallyKnownModels []*ModelInfo) (*ModelInfo, error) {
 	if item.GetId() == nil {
 		return nil, fmt.Errorf("item id is nil")
 	}
@@ -183,7 +183,7 @@ func GetKeyForItem(item *api.Item) (string, error) {
 }
 
 // GetKeyForItemWithExternallyKnownModels returns key for given item.
-func GetKeyForItemWithExternallyKnownModels(item *api.Item, externallyKnownModels []*api.ModelDetail) (string, error) {
+func GetKeyForItemWithExternallyKnownModels(item *api.Item, externallyKnownModels []*ModelInfo) (string, error) {
 	model, err := GetExternallyKnownModelForItem(item, externallyKnownModels)
 	if err != nil {
 		return "", err

@@ -43,7 +43,10 @@ func (c *client) KnownModels(class string) ([]*ModelInfo, error) {
 	var modules []*ModelInfo
 	for _, model := range models.RegisteredModels() {
 		if class == "" || model.Spec().Class == class {
-			modules = append(modules, model.ModelDetail())
+			modules = append(modules, &models.ModelInfo{
+				ModelDetail: *model.ModelDetail(),
+				// TODO fill proto file desc
+			} )
 		}
 	}
 	return modules, nil
