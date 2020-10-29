@@ -10,6 +10,7 @@ import (
 	"go.ligato.io/vpp-agent/v3/pkg/util"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/generic"
 	"google.golang.org/grpc"
+	protoV2 "google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protodesc"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/reflect/protoregistry"
@@ -198,7 +199,12 @@ func (c *grpcClient) GetConfig(dsts ...interface{}) error {
 		protos[key] = val
 	}
 
-	util.PlaceProtos(protos, dsts...) // TODO make proto desc version with unlimited struct nesting
+	protoDsts := extractProtoMessages(dsts)
+	if len(dsts) == len(protoDsts) { // all dsts are proto messages
+		util.PlaceProtosIntoProtos(convertToProtoV2(protos), protoDsts...)
+	} else {
+		util.PlaceProtos(protos, dsts...)
+	}
 
 	return nil
 }
@@ -373,4 +379,30 @@ func fileDescriptorProtoMapToString(fdps map[string]*descriptorpb.FileDescriptor
 		keys = append(keys, key)
 	}
 	return strings.Join(keys, ",")
+}
+
+func extractProtoMessages(dsts []interface{}) []protoV2.Message {
+	protoDsts := make([]protoV2.Message, 0)
+	for _, dst := range dsts {
+		protoV1Dst, isProtoV1 := dst.(proto.Message)
+		if isProtoV1 {
+			protoDsts = append(protoDsts, proto.MessageV2(protoV1Dst))
+		} else {
+			protoV2Dst, isProtoV2 := dst.(protoV2.Message)
+			if isProtoV2 {
+				protoDsts = append(protoDsts, protoV2Dst)
+			} else {
+				break
+			}
+		}
+	}
+	return protoDsts
+}
+
+func convertToProtoV2(protoMap map[string]proto.Message) []protoV2.Message{
+	result := make([]protoV2.Message,0,len(protoMap))
+	for _,msg := range protoMap {
+		result = append(result, proto.MessageV2(msg))
+	}
+	return result
 }

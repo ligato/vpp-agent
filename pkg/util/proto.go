@@ -15,6 +15,8 @@
 package util
 
 import (
+	protoV2 "google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/reflect/protoreflect"
 	"reflect"
 
 	"github.com/golang/protobuf/proto"
@@ -73,4 +75,55 @@ func PlaceProtos(protos map[string]proto.Message, dsts ...interface{}) {
 		}
 	}
 	return
+}
+
+// PlaceProtosIntoProtos fills dsts proto messages (direct or transitive) fields with protos values.
+// The matching is done by message descriptor's full name.
+func PlaceProtosIntoProtos(protos []protoV2.Message, dsts ...protoV2.Message) {
+	protosMap := make(map[string][]protoV2.Message)
+	for _, protoMsg := range protos {
+		protoName := string(protoMsg.ProtoReflect().Descriptor().FullName())
+		protosMap[protoName] = append(protosMap[protoName], protoMsg)
+	}
+	for _, dst := range dsts {
+		placeProtosInProto(dst, protosMap)
+	}
+}
+
+// placeProtosInProto fills dst proto message (direct or transitive) fields with protos values from protoMap
+// (convenient map[proto descriptor full name]= proto value). The matching is done by message descriptor's
+// full name. The function is recursive and one run is handling only one level of proto message structure tree
+// (only handling Message references and ignoring scalar/enum/... values)
+// Currently unsupported are maps as fields.
+func placeProtosInProto(dst protoV2.Message, protosMap map[string][]protoV2.Message) {
+	fields := dst.ProtoReflect().Descriptor().Fields()
+	for i := 0; i < fields.Len(); i++ {
+		field := fields.Get(i)
+		fieldMessageDesc := field.Message()
+		if fieldMessageDesc != nil { // only interested in MessageKind or GroupKind fields
+			if protoMsgsForField, typeMatch := protosMap[string(fieldMessageDesc.FullName())]; typeMatch {
+				// fill value(s)
+				if field.IsList() {
+					list := dst.ProtoReflect().Mutable(field).List()
+					for _, protoMsg := range protoMsgsForField {
+						list.Append(protoreflect.ValueOf(protoMsg))
+					}
+				} else if field.IsMap() { // unsupported
+				} else {
+					dst.ProtoReflect().Set(field, protoreflect.ValueOf(protoMsgsForField[0]))
+				}
+			} else {
+				// no type match -> check deeper structure layers
+				if field.IsList() {
+					list := dst.ProtoReflect().Mutable(field).List()
+					for j:=0; j < list.Len(); j++ {
+						placeProtosInProto(list.Get(j).Message().Interface(), protosMap)
+					}
+				} else if field.IsMap() { // unsupported
+				} else {
+					placeProtosInProto(dst.ProtoReflect().Mutable(field).Message().Interface(), protosMap)
+				}
+			}
+		}
+	}
 }
