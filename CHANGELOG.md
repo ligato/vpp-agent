@@ -1,9 +1,10 @@
 # Changelog
 
-![GitHub commits since latest release](https://img.shields.io/github/commits-since/ligato/vpp-agent/latest.svg?style=flat-square)
+[![GitHub commits since latest release](https://img.shields.io/github/commits-since/ligato/vpp-agent/latest.svg?style=flat-square)](https://github.com/ligato/vpp-agent/compare/v3.2.0...master)
 
 ## Release Notes
 
+- [v3.2.0](#v3.2.0)
 - [v3.1.0](#v3.1.0)
 - [v3.0.0](#v3.0.0)
   - [v3.0.1](#v3.0.1)
@@ -52,6 +53,69 @@ RELEASE CHANGELOG TEMPLATE:
 ### Documentation
 -->
 
+<a name="v3.2.0"></a>
+# [3.2.0](https://github.com/ligato/vpp-agent/compare/v3.1.0...v3.2.0) (2020-10-XX)
+
+### COMPATIBILITY
+- VPP 20.09 (compatible)
+- VPP 20.05 (default)
+- VPP 20.01 (backwards compatible)
+- VPP 19.08 (backwards compatible)
+- ~~VPP 19.04~~ (no longer supported)
+
+### Bug Fixes
+- Fixes and improvements for agentctl and models [#1643](https://github.com/ligato/vpp-agent/pull/1643)
+- Fix creation of multiple ipip tunnels [#1650](https://github.com/ligato/vpp-agent/pull/1650)
+- Fix IPSec tun protect + add IPSec e2e test [#1654](https://github.com/ligato/vpp-agent/pull/1654)
+- Fix bridge domain dump for VPP 20.05 [#1663](https://github.com/ligato/vpp-agent/pull/1663)
+- Fix IPSec SA add/del in VPP 20.05 [#1664](https://github.com/ligato/vpp-agent/pull/1664)
+- Update expected output of agentctl status command [#1673](https://github.com/ligato/vpp-agent/pull/1673)
+- vpp/ifplugin: Recognize interface name prefix "tun" as TAP [#1674](https://github.com/ligato/vpp-agent/pull/1674)
+- Fix IPv4 link-local IP address handling [#1715](https://github.com/ligato/vpp-agent/pull/1715)
+- maps caching prometheus gauges weren't really used [#1741](https://github.com/ligato/vpp-agent/pull/1741)
+- Permit agent to run even when VPP stats are unavailable [#1712](https://github.com/ligato/vpp-agent/pull/1712)
+- Fix grpc context timeout for agentctl import command [#1718](https://github.com/ligato/vpp-agent/pull/1718)
+- Changed nat44 pool key to prevent possible key collisions [#1725](https://github.com/ligato/vpp-agent/pull/1725)
+- Remove forced delay for linux interface notifications [#1742](https://github.com/ligato/vpp-agent/pull/1742)
+
+### Features
+- agentctl: Add config get/update commands [#1709](https://github.com/ligato/vpp-agent/pull/1709)
+- agentctl: Support specific history seq num and improve layout [#1717](https://github.com/ligato/vpp-agent/pull/1717)
+- agentctl: Add config.resync subcommand (with resync) [#1642](https://github.com/ligato/vpp-agent/pull/1642)
+- IP Flow Information eXport (IPFIX) plugin [#1649](https://github.com/ligato/vpp-agent/pull/1649)
+- Add IPIP & IPSec point-to-multipoint support [#1669](https://github.com/ligato/vpp-agent/pull/1669)
+- Wireguard plugin support [#1731](https://github.com/ligato/vpp-agent/pull/1731)
+- Add tunnel mode support for VPP TAP interfaces [#1671](https://github.com/ligato/vpp-agent/pull/1671)
+- New REST endpoint for retrieving version of Agent [#1670](https://github.com/ligato/vpp-agent/pull/1670)
+- Add support for IPv6 ND address autoconfig [#1676](https://github.com/ligato/vpp-agent/pull/1676)
+- Add VRF field to proxy ARP range [#1672](https://github.com/ligato/vpp-agent/pull/1672)
+- Switch to new proto v2 (google.golang.org/protobuf) [#1691](https://github.com/ligato/vpp-agent/pull/1691)
+- ipsec: allow configuring salt for encryption algorithm [#1698](https://github.com/ligato/vpp-agent/pull/1698)
+- gtpu: Add RemoteTeid to GTPU interface [#1719](https://github.com/ligato/vpp-agent/pull/1719)
+- Added support for NAT44 static mapping twice-NAT pool IP address reference [#1728](https://github.com/ligato/vpp-agent/pull/1728)
+- add IP protocol number to ACL model [#1726](https://github.com/ligato/vpp-agent/pull/1726)
+- gtpu: Add support for arbitrary DecapNextNode [#1721](https://github.com/ligato/vpp-agent/pull/1721)
+- configurator: Add support for waiting until config update is done [#1734](https://github.com/ligato/vpp-agent/pull/1734)
+- telemetry: Add reading VPP threads to the telemetry plugin [#1753](https://github.com/ligato/vpp-agent/pull/1753)
+- linux: Add support for Linux VRFs [#1744](https://github.com/ligato/vpp-agent/pull/1744)
+- VRRP support [#1744](https://github.com/ligato/vpp-agent/pull/1744)
+
+### Improvements
+- perf: Performance enhancement for adding many rules to Linux IP… [#1644](https://github.com/ligato/vpp-agent/pull/1644)
+- Improve testing process for e2e/integration tests [#1757](https://github.com/ligato/vpp-agent/pull/1757)
+
+### Documentation
+- docs: Add example for developing agents with custom VPP plugins [#1665](https://github.com/ligato/vpp-agent/pull/1665)
+
+### Other
+- Delete unused REST handler for VPP commands [#1677](https://github.com/ligato/vpp-agent/pull/1677)
+- separate model for IPSec Security Policies [#1679](https://github.com/ligato/vpp-agent/pull/1679)
+- do not mark host_if_name for AF_PACKET as deprecated [#1745](https://github.com/ligato/vpp-agent/pull/1745)
+- Store interface internal name & dev type as metadata [#1706](https://github.com/ligato/vpp-agent/pull/1706)
+- Check if HostIfName contains non-printable characters [#1662](https://github.com/ligato/vpp-agent/pull/1662)
+- Fix error message for duplicate keys [#1659](https://github.com/ligato/vpp-agent/pull/1659)
+
+
 <a name="v3.1.0"></a>
 # [3.1.0](https://github.com/ligato/vpp-agent/compare/v3.0.0...v3.1.0) (2020-03-13)
 
@@ -94,23 +158,23 @@ RELEASE CHANGELOG TEMPLATE:
 - VPP NAT plugin: `VirtualReassembly` in `Nat44Global` was disabled for VPP 20.01 due to VPP API changes (will be implemented later in VPP L3 plugin using new model)
 
 ### BREAKING CHANGES
-- migrate from dep to Go modules for dependency management and remove vendor directory (#1599)
-- use vanity import path  `go.ligato.io/vpp-agent/v3` in Go files (#1599)
-- move all _.proto_ files into `proto/ligato` directory and add check for breaking changes (#1599)
+- migrate from dep to Go modules for dependency management and remove vendor directory [#1599](https://github.com/ligato/vpp-agent/pull/1599)
+- use vanity import path  `go.ligato.io/vpp-agent/v3` in Go files [#1599](https://github.com/ligato/vpp-agent/pull/1599)
+- move all _.proto_ files into `proto/ligato` directory and add check for breaking changes [#1599](https://github.com/ligato/vpp-agent/pull/1599)
 
 ### Bug Fixes
-- check for duplicate Linux interface IP address (#1586)
+- check for duplicate Linux interface IP address [#1586](https://github.com/ligato/vpp-agent/pull/1586)
 
 ### New Features
-- VPP interface plugin: Allow AF-PACKET to reference target Linux interface via logical name (#1616)
-- VPP L3 plugin: add support for L3 cross-connects (#1602)
-- VPP L3 plugin: IP flow hash settings support (#1610)
-- VPP NAT plugin: NAT interface and AddressPool API changes (#1595)
-- VPP plugins: support disabling VPP plugins (#1593)
-- VPP client: add support for govpp proxy (#1593)
+- VPP interface plugin: Allow AF-PACKET to reference target Linux interface via logical name [#1616](https://github.com/ligato/vpp-agent/pull/1616)
+- VPP L3 plugin: add support for L3 cross-connects [#1602](https://github.com/ligato/vpp-agent/pull/1602)
+- VPP L3 plugin: IP flow hash settings support [#1610](https://github.com/ligato/vpp-agent/pull/1610)
+- VPP NAT plugin: NAT interface and AddressPool API changes [#1595](https://github.com/ligato/vpp-agent/pull/1595)
+- VPP plugins: support disabling VPP plugins [#1593](https://github.com/ligato/vpp-agent/pull/1593)
+- VPP client: add support for govpp proxy [#1593](https://github.com/ligato/vpp-agent/pull/1593)
 
 ### Improvements
-- optimize getting model keys, with up to 20% faster transactions (#1615)
+- optimize getting model keys, with up to 20% faster transactions [#1615](https://github.com/ligato/vpp-agent/pull/1615)
 - agentctl output formatting improvements (#1581, #1582, #1589)
 - generated VPP binary API now imports common types from `*_types` packages
 - development docker images now have smaller size (~400MB less)
@@ -303,13 +367,13 @@ Many end-to-end tests introduced, gradually increasing VPP-Agent stability.
 - **VPP 19.01** (backward compatible)
 
 ### Bug Fixes
-* Fixed IPv6 detection for Linux interfaces (#1355).
-* Fixed config file names for ifplugin in VPP & Linux (#1341).
+* Fixed IPv6 detection for Linux interfaces [#1355](https://github.com/ligato/vpp-agent/pull/1355).
+* Fixed config file names for ifplugin in VPP & Linux [#1341](https://github.com/ligato/vpp-agent/pull/1341).
 * Fixed setting status publishers from env var: `VPP_STATUS_PUBLISHERS`.
 
 ### Improvements
 * The start/stop timeouts for agent can be configured using env vars: `START_TIMEOUT=15s` and `STOP_TIMEOUT=5s`, with values parsed as duration.
-* ABF was added to the `ConfigData` message for VPP (#1356).
+* ABF was added to the `ConfigData` message for VPP [#1356](https://github.com/ligato/vpp-agent/pull/1356).
   
 ### Docker Images
 * Images now install all compiled .deb packages from VPP (including `vpp-plugin-dpdk`).
