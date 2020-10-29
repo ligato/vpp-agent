@@ -33,8 +33,8 @@ import (
 // configure only link on the Linux side of the interface and leave addresses
 // untouched during resync.
 func TestInterfaceLinkOnlyTap(t *testing.T) {
-	ctx := setupE2E(t)
-	defer ctx.teardownE2E()
+	ctx := Setup(t)
+	defer ctx.Teardown()
 
 	const (
 		vppTapName         = "vpp-tap"
@@ -80,17 +80,17 @@ func TestInterfaceLinkOnlyTap(t *testing.T) {
 		},
 	}
 
-	ms := ctx.startMicroservice(msName)
-	req := ctx.grpcClient.ChangeRequest()
+	ms := ctx.StartMicroservice(msName)
+	req := ctx.GenericClient().ChangeRequest()
 	err := req.Update(
 		vppTap,
 		linuxTap,
 	).Send(context.Background())
 	Expect(err).ToNot(HaveOccurred())
 
-	Eventually(ctx.getValueStateClb(vppTap)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
-	Expect(ctx.getValueState(linuxTap)).To(Equal(kvscheduler.ValueState_CONFIGURED))
-	Expect(ctx.pingFromVPP(linuxTapIPIgnored)).NotTo(Succeed()) // IP address was not set
+	Eventually(ctx.GetValueStateClb(vppTap)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
+	Expect(ctx.GetValueState(linuxTap)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+	Expect(ctx.PingFromVPP(linuxTapIPIgnored)).NotTo(Succeed()) // IP address was not set
 
 	hasIP := func(tapLinkName netlink.Link, ipAddr string) bool {
 		addrs, err := netlink.AddrList(tapLinkName, netlink.FAMILY_ALL)
@@ -122,7 +122,7 @@ func TestInterfaceLinkOnlyTap(t *testing.T) {
 	leaveMs()
 
 	// run downstream resync
-	Expect(ctx.agentInSync()).To(BeTrue()) // everything in-sync even though the IP addr was added
+	Expect(ctx.AgentInSync()).To(BeTrue()) // everything in-sync even though the IP addr was added
 	leaveMs = ms.enterNetNs()
 	Expect(hasIP(tapLinkName, linuxTapIPIgnored)).To(BeFalse())
 	Expect(hasIP(tapLinkName, linuxTapIPExternal)).To(BeTrue())
@@ -133,6 +133,6 @@ func TestInterfaceLinkOnlyTap(t *testing.T) {
 	leaveMs()
 
 	// test with ping
-	Expect(ctx.pingFromVPP(linuxTapIPExternal)).To(Succeed())
-	Expect(ctx.pingFromMs(msName, vppTapIP)).To(Succeed())
+	Expect(ctx.PingFromVPP(linuxTapIPExternal)).To(Succeed())
+	Expect(ctx.PingFromMs(msName, vppTapIP)).To(Succeed())
 }

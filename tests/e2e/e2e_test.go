@@ -71,11 +71,10 @@ const (
 			on
 		}
 		socksvr {
-			default
+			socket-name /run/vpp/api.sock
 		}
 		statseg {
-			default
-			per-node-counters on
+			socket-name /run/vpp/stats.sock
 		}
 		plugins {
 			plugin dpdk_plugin.so { disable }
@@ -102,15 +101,13 @@ type TestCtx struct {
 	grpcConn      *grpc.ClientConn
 	grpcClient    client.GenericClient
 	vppVersion    string
-	vppRelease    string
 	outputBuf     *bytes.Buffer
 	logger        *log.Logger
 }
 
-func setupE2E(t *testing.T) *TestCtx {
-	if os.Getenv("TRAVIS") != "" {
-		t.Skip("skipping test for Travis")
-	}
+func Setup(t *testing.T) *TestCtx {
+	// TODO: Do not use global test registration.
+	//  It is now deprecated and you should use NewWithT() instead.
 	RegisterTestingT(t)
 
 	testCtx := &TestCtx{
@@ -123,8 +120,10 @@ func setupE2E(t *testing.T) *TestCtx {
 
 	// if setupE2E fails we need to stop started processes
 	defer func() {
-		if testCtx.t.Failed() {
+		if testCtx.t.Failed() || *debug {
 			testCtx.dumpLog()
+		}
+		if testCtx.t.Failed() {
 			if testCtx.agent != nil {
 				stopProcess(testCtx.t, testCtx.agent, "VPP-Agent")
 			}
@@ -205,28 +204,37 @@ func setupE2E(t *testing.T) *TestCtx {
 	// run initial resync
 	syncAgent(t, testCtx.httpClient)
 
-	if version, err := testCtx.execVppctl("show version"); err != nil {
+	if version, err := testCtx.ExecVppctl("show version"); err != nil {
 		t.Fatalf("Retrieving VPP version via vppctl failed: %v", err)
 	} else {
 		version = strings.SplitN(version, " ", 3)[1]
 		testCtx.vppVersion = version
-		if len(version) > 5 {
-			testCtx.vppRelease = version[1:6]
-		}
 		t.Logf("VPP version: %v", testCtx.vppVersion)
 	}
 
 	return testCtx
 }
 
-func (ctx *TestCtx) teardownE2E() {
-	if ctx.t.Failed() {
+func (ctx *TestCtx) VppRelease() string {
+	version := ctx.vppVersion
+	if len(version) > 5 {
+		return version[1:6]
+	}
+	return ctx.vppVersion
+}
+
+func (ctx *TestCtx) GenericClient() client.GenericClient {
+	return ctx.grpcClient
+}
+
+func (ctx *TestCtx) Teardown() {
+	if ctx.t.Failed() || *debug {
 		ctx.dumpLog()
 	}
 
 	// stop all microservices
 	for msName := range ctx.microservices {
-		ctx.stopMicroservice(msName)
+		ctx.StopMicroservice(msName)
 	}
 
 	// close gRPC connection
@@ -241,7 +249,7 @@ func (ctx *TestCtx) teardownE2E() {
 	stopProcess(ctx.t, ctx.VPP, "VPP")
 }
 
-func (ctx *TestCtx) setupETCD() string {
+func (ctx *TestCtx) StartEtcd() string {
 	err := ctx.dockerClient.PullImage(docker.PullImageOptions{
 		Repository: etcdImage,
 		Tag:        "latest",
@@ -249,7 +257,6 @@ func (ctx *TestCtx) setupETCD() string {
 	if err != nil {
 		ctx.t.Fatalf("failed to pull ETCD image: %v", err)
 	}
-
 	container, err := ctx.dockerClient.CreateContainer(docker.CreateContainerOptions{
 		Name: "e2e-test-etcd",
 		Config: &docker.Config{
@@ -266,7 +273,7 @@ func (ctx *TestCtx) setupETCD() string {
 			},
 		},
 		HostConfig: &docker.HostConfig{
-			NetworkMode: "container:vpp-agent-e2e-tests",
+			NetworkMode: "container:vpp-agent-e2e-test",
 			Binds:       []string{os.Getenv("CERTS_PATH") + ":/etc/certs"},
 		},
 	})
@@ -275,15 +282,23 @@ func (ctx *TestCtx) setupETCD() string {
 	}
 	err = ctx.dockerClient.StartContainer(container.ID, nil)
 	if err != nil {
+		err = ctx.dockerClient.RemoveContainer(docker.RemoveContainerOptions{
+			ID:    container.ID,
+			Force: true,
+		})
+		if err != nil {
+			ctx.t.Errorf("failed to remove ETCD container: %v", err)
+		}
 		ctx.t.Fatalf("failed to start ETCD container: %v", err)
 	}
+	ctx.t.Logf("started ETCD container %v", container.ID)
 	return container.ID
 }
 
-func (ctx *TestCtx) teardownETCD(id string) {
+func (ctx *TestCtx) StopEtcd(id string) {
 	err := ctx.dockerClient.StopContainer(id, msStopTimeout)
 	if err != nil {
-		ctx.t.Fatalf("failed to stop ETCD container: %v", err)
+		ctx.t.Logf("failed to stop ETCD container: %v", err)
 	}
 	err = ctx.dockerClient.RemoveContainer(docker.RemoveContainerOptions{
 		ID:    id,
@@ -291,9 +306,8 @@ func (ctx *TestCtx) teardownETCD(id string) {
 	})
 	if err != nil {
 		ctx.t.Fatalf("failed to remove ETCD container: %v", err)
-	} else {
-		ctx.t.Logf("removed ETCD container")
 	}
+	ctx.t.Logf("removed ETCD container %v", id)
 }
 
 // syncAgent runs downstream resync and returns the list of executed operations.
@@ -301,9 +315,9 @@ func (ctx *TestCtx) syncAgent() (executed kvs.RecordedTxnOps) {
 	return syncAgent(ctx.t, ctx.httpClient)
 }
 
-// agentInSync checks if the agent NB config and the SB state (VPP+Linux)
+// AgentInSync checks if the agent NB config and the SB state (VPP+Linux)
 // are in-sync.
-func (ctx *TestCtx) agentInSync() bool {
+func (ctx *TestCtx) AgentInSync() bool {
 	ops := ctx.syncAgent()
 	for _, op := range ops {
 		if !op.NOOP {
@@ -313,8 +327,8 @@ func (ctx *TestCtx) agentInSync() bool {
 	return true
 }
 
-// execCmd executes command and returns stdout, stderr as strings and error.
-func (ctx *TestCtx) execCmd(cmd string, args ...string) (string, string, error) {
+// ExecCmd executes command and returns stdout, stderr as strings and error.
+func (ctx *TestCtx) ExecCmd(cmd string, args ...string) (string, string, error) {
 	ctx.t.Helper()
 	ctx.logger.Printf("exec: '%s %s'", cmd, strings.Join(args, " "))
 	var stdout, stderr bytes.Buffer
@@ -333,38 +347,38 @@ func (ctx *TestCtx) execCmd(cmd string, args ...string) (string, string, error) 
 	return stdout.String(), stderr.String(), err
 }
 
-// execVppctl returns output from vppctl for given action and arguments.
-func (ctx *TestCtx) execVppctl(action string, args ...string) (string, error) {
+// ExecVppctl returns output from vppctl for given action and arguments.
+func (ctx *TestCtx) ExecVppctl(action string, args ...string) (string, error) {
 	ctx.t.Helper()
 	command := append([]string{action}, args...)
-	stdout, _, err := ctx.execCmd("vppctl", command...)
+	stdout, _, err := ctx.ExecCmd("vppctl", command...)
 	if err != nil {
 		return "", fmt.Errorf("could not execute `vppctl %s`: %v", strings.Join(command, " "), err)
 	}
 	return stdout, nil
 }
 
-func (ctx *TestCtx) startMicroservice(msName string) (ms *microservice) {
+func (ctx *TestCtx) StartMicroservice(msName string) (ms *microservice) {
 	ms = createMicroservice(ctx, msName, ctx.dockerClient, ctx.nsCalls)
 	ctx.microservices[msName] = ms
 	return ms
 }
 
-func (ctx *TestCtx) stopMicroservice(msName string) {
+func (ctx *TestCtx) StopMicroservice(msName string) {
 	ctx.t.Helper()
 	ms, found := ctx.microservices[msName]
 	if !found {
 		// bug inside a test
-		ctx.t.Fatalf("cannot stop unknown microservice '%s'", msName)
+		ctx.t.Logf("ERROR: cannot stop unknown microservice '%s'", msName)
 	}
 	if err := ms.stop(); err != nil {
-		ctx.t.Fatalf("failed to stop microservice '%s': %v", msName, err)
+		ctx.t.Logf("ERROR: stopping microservice failed '%s': %v", msName, err)
 	}
 	delete(ctx.microservices, msName)
 }
 
-// pingFromMs pings <dstAddress> from the microservice <msName>
-func (ctx *TestCtx) pingFromMs(msName, dstAddress string, opts... pingOpt) error {
+// PingFromMs pings <dstAddress> from the microservice <msName>
+func (ctx *TestCtx) PingFromMs(msName, dstAddress string, opts ...pingOpt) error {
 	ctx.t.Helper()
 	ms, found := ctx.microservices[msName]
 	if !found {
@@ -374,21 +388,21 @@ func (ctx *TestCtx) pingFromMs(msName, dstAddress string, opts... pingOpt) error
 	return ms.ping(dstAddress, opts...)
 }
 
-// pingFromMsClb can be used to ping repeatedly inside the assertions "Eventually"
+// PingFromMsClb can be used to ping repeatedly inside the assertions "Eventually"
 // and "Consistently" from Omega.
-func (ctx *TestCtx) pingFromMsClb(msName, dstAddress string, opts... pingOpt) func() error {
+func (ctx *TestCtx) PingFromMsClb(msName, dstAddress string, opts ...pingOpt) func() error {
 	return func() error {
-		return ctx.pingFromMs(msName, dstAddress, opts...)
+		return ctx.PingFromMs(msName, dstAddress, opts...)
 	}
 }
 
 var vppPingRegexp = regexp.MustCompile("Statistics: ([0-9]+) sent, ([0-9]+) received, ([0-9]+)% packet loss")
 
-// pingFromVPP pings <dstAddress> from inside the VPP.
-func (ctx *TestCtx) pingFromVPP(destAddress string) error {
+// PingFromVPP pings <dstAddress> from inside the VPP.
+func (ctx *TestCtx) PingFromVPP(destAddress string) error {
 	ctx.t.Helper()
 	// run ping on VPP using vppctl
-	stdout, err := ctx.execVppctl("ping", destAddress)
+	stdout, err := ctx.ExecVppctl("ping", destAddress)
 	if err != nil {
 		return err
 	}
@@ -408,15 +422,15 @@ func (ctx *TestCtx) pingFromVPP(destAddress string) error {
 	return nil
 }
 
-// pingFromVPPClb can be used to ping repeatedly inside the assertions "Eventually"
+// PingFromVPPClb can be used to ping repeatedly inside the assertions "Eventually"
 // and "Consistently" from Omega.
-func (ctx *TestCtx) pingFromVPPClb(destAddress string) func() error {
+func (ctx *TestCtx) PingFromVPPClb(destAddress string) func() error {
 	return func() error {
-		return ctx.pingFromVPP(destAddress)
+		return ctx.PingFromVPP(destAddress)
 	}
 }
 
-func (ctx *TestCtx) testConnection(fromMs, toMs, toAddr, listenAddr string,
+func (ctx *TestCtx) TestConnection(fromMs, toMs, toAddr, listenAddr string,
 	toPort, listenPort uint16, udp bool, traceVPPNodes ...string) error {
 	ctx.t.Helper()
 
@@ -501,12 +515,12 @@ func (ctx *TestCtx) testConnection(fromMs, toMs, toAddr, listenAddr string,
 	return err
 }
 
-func (ctx *TestCtx) getValueState(value proto.Message) kvscheduler.ValueState {
+func (ctx *TestCtx) GetValueState(value proto.Message) kvscheduler.ValueState {
 	key := models.Key(value)
-	return ctx.getValueStateByKey(key)
+	return ctx.GetValueStateByKey(key)
 }
 
-func (ctx *TestCtx) getValueStateByKey(key string) kvscheduler.ValueState {
+func (ctx *TestCtx) GetValueStateByKey(key string) kvscheduler.ValueState {
 	q := fmt.Sprintf(`/scheduler/status?key=%s`, url.QueryEscape(key))
 	resp, err := ctx.httpClient.GET(q)
 	if err != nil {
@@ -522,11 +536,11 @@ func (ctx *TestCtx) getValueStateByKey(key string) kvscheduler.ValueState {
 	return st.GetValue().GetState()
 }
 
-// getValueStateClb can be used to repeatedly check value state inside the assertions
+// GetValueStateClb can be used to repeatedly check value state inside the assertions
 // "Eventually" and "Consistently" from Omega.
-func (ctx *TestCtx) getValueStateClb(value proto.Message) func() kvscheduler.ValueState {
+func (ctx *TestCtx) GetValueStateClb(value proto.Message) func() kvscheduler.ValueState {
 	return func() kvscheduler.ValueState {
-		return ctx.getValueState(value)
+		return ctx.GetValueState(value)
 	}
 }
 
@@ -534,12 +548,12 @@ func (ctx *TestCtx) startPacketTrace(nodes ...string) (stopTrace func()) {
 	const tracePacketsMax = 100
 	for i, node := range nodes {
 		if i == 0 {
-			_, err := ctx.execVppctl("clear trace")
+			_, err := ctx.ExecVppctl("clear trace")
 			if err != nil {
 				ctx.t.Errorf("Failed to clear the packet trace: %v", err)
 			}
 		}
-		_, err := ctx.execVppctl("trace add", fmt.Sprintf("%s %d", node, tracePacketsMax))
+		_, err := ctx.ExecVppctl("trace add", fmt.Sprintf("%s %d", node, tracePacketsMax))
 		if err != nil {
 			ctx.t.Errorf("Failed to add packet trace for node '%s': %v", node, err)
 		}
@@ -548,7 +562,7 @@ func (ctx *TestCtx) startPacketTrace(nodes ...string) (stopTrace func()) {
 		if len(nodes) == 0 {
 			return
 		}
-		traces, err := ctx.execVppctl("show trace")
+		traces, err := ctx.ExecVppctl("show trace")
 		if err != nil {
 			ctx.t.Errorf("Failed to show packet trace: %v", err)
 			return
@@ -557,14 +571,8 @@ func (ctx *TestCtx) startPacketTrace(nodes ...string) (stopTrace func()) {
 	}
 }
 
-func (ctx *TestCtx) sleepFor(d time.Duration) {
-	ctx.t.Helper()
-	ctx.t.Logf("SLEEPING for %v..", d)
-	time.Sleep(d)
-}
-
 func (ctx *TestCtx) dumpLog() {
-	ctx.t.Logf("OUTPUT:\n\n-----------------\n%s\n------------------\n\n", ctx.outputBuf)
+	ctx.t.Logf("OUTPUT:\n-----------------\n%s\n------------------\n\n", ctx.outputBuf)
 }
 
 func syncAgent(t *testing.T, httpClient *utils.HTTPClient) (executed kvs.RecordedTxnOps) {
@@ -638,7 +646,7 @@ func startProcess(t *testing.T, name string, stdin io.Reader, stdout, stderr io.
 func stopProcess(t *testing.T, cmd *exec.Cmd, name string) {
 	// terminate process
 	if err := cmd.Process.Signal(syscall.SIGTERM); err != nil {
-		t.Fatalf("sending SIGTERM to %s failed: %v", name, err)
+		t.Logf("sending SIGTERM to %s failed: %v", name, err)
 	}
 
 	// wait until process exits
@@ -657,7 +665,7 @@ func stopProcess(t *testing.T, cmd *exec.Cmd, name string) {
 		t.Logf("%s exit timeout", name)
 		t.Logf("sending SIGKILL to %s..", name)
 		if err := cmd.Process.Signal(syscall.SIGKILL); err != nil {
-			t.Fatalf("sending SIGKILL to %s failed: %v", name, err)
+			t.Errorf("sending SIGKILL to %s failed: %v", name, err)
 		}
 	}
 }

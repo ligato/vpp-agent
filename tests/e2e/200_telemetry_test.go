@@ -29,8 +29,8 @@ import (
 )
 
 func TestTelemetryStatsPoller(t *testing.T) {
-	ctx := setupE2E(t)
-	defer ctx.teardownE2E()
+	ctx := Setup(t)
+	defer ctx.Teardown()
 
 	const (
 		msName     = "microservice1"
@@ -106,26 +106,26 @@ func TestTelemetryStatsPoller(t *testing.T) {
 		Direction:     vpp_interfaces.Span_RX,
 	}
 
-	ctx.startMicroservice(msName)
+	ctx.StartMicroservice(msName)
 
-	req := ctx.grpcClient.ChangeRequest()
+	req := ctx.GenericClient().ChangeRequest()
 	err := req.Update(dstTap, dstLinuxTap, spanRx).Send(context.Background())
 	Expect(err).ToNot(HaveOccurred())
 
-	Eventually(ctx.getValueStateClb(dstTap)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
+	Eventually(ctx.GetValueStateClb(dstTap)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
 
-	Expect(ctx.getValueState(spanRx)).To(Equal(kvscheduler.ValueState_PENDING))
+	Expect(ctx.GetValueState(spanRx)).To(Equal(kvscheduler.ValueState_PENDING))
 
-	req = ctx.grpcClient.ChangeRequest()
+	req = ctx.GenericClient().ChangeRequest()
 	err = req.Update(srcTap, srcLinuxTap).Send(context.Background())
 	Expect(err).ToNot(HaveOccurred())
 
-	Eventually(ctx.getValueStateClb(srcTap)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
+	Eventually(ctx.GetValueStateClb(srcTap)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
 
-	Expect(ctx.getValueState(spanRx)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+	Expect(ctx.GetValueState(spanRx)).To(Equal(kvscheduler.ValueState_CONFIGURED))
 
-	Expect(ctx.pingFromVPP("10.20.1.1")).To(Succeed())
-	Expect(ctx.pingFromMs(msName, "10.20.1.2")).To(Succeed())
+	Expect(ctx.PingFromVPP("10.20.1.1")).To(Succeed())
+	Expect(ctx.PingFromMs(msName, "10.20.1.2")).To(Succeed())
 
 	pollerClient := configurator.NewStatsPollerServiceClient(ctx.grpcConn)
 

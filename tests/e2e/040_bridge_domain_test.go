@@ -30,7 +30,7 @@ import (
 )
 
 func bridgeDomains(ctx *TestCtx) ([]map[string]string, error) {
-	stdout, err := ctx.execVppctl("show", "bridge-domain")
+	stdout, err := ctx.ExecVppctl("show", "bridge-domain")
 	if err != nil {
 		return nil, err
 	}
@@ -61,8 +61,8 @@ func bdWithLearning() types.GomegaMatcher {
 // connect microservices into the same L2 network segment via bridge domain
 // and TAP interfaces.
 func TestBridgeDomainWithTAPs(t *testing.T) {
-	ctx := setupE2E(t)
-	defer ctx.teardownE2E()
+	ctx := Setup(t)
+	defer ctx.Teardown()
 
 	const (
 		vppTap1Name       = "vpp-tap1"
@@ -168,9 +168,9 @@ func TestBridgeDomainWithTAPs(t *testing.T) {
 		},
 	}
 
-	ctx.startMicroservice(ms1Name)
-	ctx.startMicroservice(ms2Name)
-	req := ctx.grpcClient.ChangeRequest()
+	ctx.StartMicroservice(ms1Name)
+	ctx.StartMicroservice(ms2Name)
+	req := ctx.GenericClient().ChangeRequest()
 	err := req.Update(
 		vppTap1,
 		linuxTap1,
@@ -181,11 +181,11 @@ func TestBridgeDomainWithTAPs(t *testing.T) {
 	).Send(context.Background())
 	Expect(err).To(BeNil(), "Transaction creating BD with TAPs failed")
 
-	Expect(ctx.getValueState(vppLoop)).To(Equal(kvscheduler.ValueState_CONFIGURED),
+	Expect(ctx.GetValueState(vppLoop)).To(Equal(kvscheduler.ValueState_CONFIGURED),
 		"BD BVI should be configured even before microservices start")
-	Eventually(ctx.getValueStateClb(vppTap1)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
+	Eventually(ctx.GetValueStateClb(vppTap1)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
 		"TAP attached to a newly started microservice1 should be eventually configured")
-	Eventually(ctx.getValueStateClb(vppTap2)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
+	Eventually(ctx.GetValueStateClb(vppTap2)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
 		"TAP attached to a newly started microservice2 should be eventually configured")
 
 	bds, err := bridgeDomains(ctx)
@@ -194,69 +194,69 @@ func TestBridgeDomainWithTAPs(t *testing.T) {
 	Expect(bds[0]).To(SatisfyAll(
 		bdAgeIs(0), bdWithFlooding(), bdWithForwarding(), bdWithLearning()))
 
-	Expect(ctx.pingFromMs(ms2Name, linuxTap1IP)).To(Succeed())
-	Expect(ctx.pingFromMs(ms1Name, linuxTap2IP)).To(Succeed())
-	Expect(ctx.pingFromMs(ms1Name, vppLoopbackIP)).To(Succeed())
-	Expect(ctx.pingFromMs(ms2Name, vppLoopbackIP)).To(Succeed())
-	Expect(ctx.pingFromVPP(linuxTap1IP)).To(Succeed())
-	Expect(ctx.pingFromVPP(linuxTap2IP)).To(Succeed())
-	Expect(ctx.agentInSync()).To(BeTrue(), "Agent is not in-sync")
+	Expect(ctx.PingFromMs(ms2Name, linuxTap1IP)).To(Succeed())
+	Expect(ctx.PingFromMs(ms1Name, linuxTap2IP)).To(Succeed())
+	Expect(ctx.PingFromMs(ms1Name, vppLoopbackIP)).To(Succeed())
+	Expect(ctx.PingFromMs(ms2Name, vppLoopbackIP)).To(Succeed())
+	Expect(ctx.PingFromVPP(linuxTap1IP)).To(Succeed())
+	Expect(ctx.PingFromVPP(linuxTap2IP)).To(Succeed())
+	Expect(ctx.AgentInSync()).To(BeTrue(), "Agent is not in-sync")
 
 	// kill one of the microservices
 	// - "Eventually" is also used with linuxTap1 to wait for retry txn that
 	//   will change state from RETRYING to PENDING
-	ctx.stopMicroservice(ms1Name)
-	Eventually(ctx.getValueStateClb(vppTap1)).Should(Equal(kvscheduler.ValueState_PENDING),
+	ctx.StopMicroservice(ms1Name)
+	Eventually(ctx.GetValueStateClb(vppTap1)).Should(Equal(kvscheduler.ValueState_PENDING),
 		"Without microservice, the associated VPP-TAP should be pending")
-	Eventually(ctx.getValueStateClb(linuxTap1)).Should(Equal(kvscheduler.ValueState_PENDING),
+	Eventually(ctx.GetValueStateClb(linuxTap1)).Should(Equal(kvscheduler.ValueState_PENDING),
 		"Without microservice, the associated LinuxTAP should be pending")
-	Expect(ctx.getValueState(vppTap2)).To(Equal(kvscheduler.ValueState_CONFIGURED),
+	Expect(ctx.GetValueState(vppTap2)).To(Equal(kvscheduler.ValueState_CONFIGURED),
 		"VPP-TAP attached to running microservice is not configured")
-	Expect(ctx.getValueState(linuxTap2)).To(Equal(kvscheduler.ValueState_CONFIGURED),
+	Expect(ctx.GetValueState(linuxTap2)).To(Equal(kvscheduler.ValueState_CONFIGURED),
 		"Linux-TAP attached to running microservice is not configured")
-	Expect(ctx.getValueState(vppLoop)).To(Equal(kvscheduler.ValueState_CONFIGURED),
+	Expect(ctx.GetValueState(vppLoop)).To(Equal(kvscheduler.ValueState_CONFIGURED),
 		"BD BVI interface is not configured")
-	Expect(ctx.getValueState(bd)).To(Equal(kvscheduler.ValueState_CONFIGURED),
+	Expect(ctx.GetValueState(bd)).To(Equal(kvscheduler.ValueState_CONFIGURED),
 		"BD is not configured")
 
-	Expect(ctx.pingFromMs(ms2Name, linuxTap1IP)).ToNot(Succeed())
-	Expect(ctx.pingFromMs(ms2Name, vppLoopbackIP)).To(Succeed())
-	Expect(ctx.pingFromVPP(linuxTap1IP)).ToNot(Succeed())
-	Expect(ctx.pingFromVPP(linuxTap2IP)).To(Succeed())
-	Expect(ctx.agentInSync()).To(BeTrue(), "Agent is not in-sync")
+	Expect(ctx.PingFromMs(ms2Name, linuxTap1IP)).ToNot(Succeed())
+	Expect(ctx.PingFromMs(ms2Name, vppLoopbackIP)).To(Succeed())
+	Expect(ctx.PingFromVPP(linuxTap1IP)).ToNot(Succeed())
+	Expect(ctx.PingFromVPP(linuxTap2IP)).To(Succeed())
+	Expect(ctx.AgentInSync()).To(BeTrue(), "Agent is not in-sync")
 
 	// restart the microservice
-	ctx.startMicroservice(ms1Name)
-	Eventually(ctx.getValueStateClb(vppTap1)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
+	ctx.StartMicroservice(ms1Name)
+	Eventually(ctx.GetValueStateClb(vppTap1)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
 		"VPP-TAP attached to a re-started microservice1 should be eventually configured")
-	Expect(ctx.getValueState(linuxTap1)).To(Equal(kvscheduler.ValueState_CONFIGURED),
+	Expect(ctx.GetValueState(linuxTap1)).To(Equal(kvscheduler.ValueState_CONFIGURED),
 		"Linux-TAP attached to a re-started microservice1 is not configured")
 
 	// Waiting for TAP interface after restart
 	// See: https://github.com/ligato/vpp-agent/issues/1489
-	Eventually(ctx.pingFromMsClb(ms2Name, linuxTap1IP), "18s", "2s").Should(Succeed())
-	Expect(ctx.pingFromMs(ms1Name, linuxTap2IP)).To(Succeed())
-	Expect(ctx.pingFromMs(ms1Name, vppLoopbackIP)).To(Succeed())
-	Expect(ctx.pingFromMs(ms2Name, vppLoopbackIP)).To(Succeed())
-	Expect(ctx.pingFromVPP(linuxTap1IP)).To(Succeed())
-	Expect(ctx.pingFromVPP(linuxTap2IP)).To(Succeed())
-	Expect(ctx.agentInSync()).To(BeTrue(), "Agent is not in-sync")
+	Eventually(ctx.PingFromMsClb(ms2Name, linuxTap1IP), "18s", "2s").Should(Succeed())
+	Expect(ctx.PingFromMs(ms1Name, linuxTap2IP)).To(Succeed())
+	Expect(ctx.PingFromMs(ms1Name, vppLoopbackIP)).To(Succeed())
+	Expect(ctx.PingFromMs(ms2Name, vppLoopbackIP)).To(Succeed())
+	Expect(ctx.PingFromVPP(linuxTap1IP)).To(Succeed())
+	Expect(ctx.PingFromVPP(linuxTap2IP)).To(Succeed())
+	Expect(ctx.AgentInSync()).To(BeTrue(), "Agent is not in-sync")
 
 	// change bridge domain config to trigger re-creation
 	bd.MacAge = 10
-	req = ctx.grpcClient.ChangeRequest()
+	req = ctx.GenericClient().ChangeRequest()
 	err = req.Update(
 		bd,
 	).Send(context.Background())
 	Expect(err).ToNot(HaveOccurred(), "Transaction updating BD failed")
 
-	Expect(ctx.pingFromMs(ms2Name, linuxTap1IP)).To(Succeed())
-	Expect(ctx.pingFromMs(ms1Name, linuxTap2IP)).To(Succeed())
-	Expect(ctx.pingFromMs(ms1Name, vppLoopbackIP)).To(Succeed())
-	Expect(ctx.pingFromMs(ms2Name, vppLoopbackIP)).To(Succeed())
-	Expect(ctx.pingFromVPP(linuxTap1IP)).To(Succeed())
-	Expect(ctx.pingFromVPP(linuxTap2IP)).To(Succeed())
-	Expect(ctx.agentInSync()).To(BeTrue(), "Agent is not in-sync")
+	Expect(ctx.PingFromMs(ms2Name, linuxTap1IP)).To(Succeed())
+	Expect(ctx.PingFromMs(ms1Name, linuxTap2IP)).To(Succeed())
+	Expect(ctx.PingFromMs(ms1Name, vppLoopbackIP)).To(Succeed())
+	Expect(ctx.PingFromMs(ms2Name, vppLoopbackIP)).To(Succeed())
+	Expect(ctx.PingFromVPP(linuxTap1IP)).To(Succeed())
+	Expect(ctx.PingFromVPP(linuxTap2IP)).To(Succeed())
+	Expect(ctx.AgentInSync()).To(BeTrue(), "Agent is not in-sync")
 
 	bds, err = bridgeDomains(ctx)
 	Expect(err).ToNot(HaveOccurred())
@@ -268,8 +268,8 @@ func TestBridgeDomainWithTAPs(t *testing.T) {
 // connect microservices into the same L2 network segment via bridge domain
 // and AF-PACKET+VETH interfaces.
 func TestBridgeDomainWithAfPackets(t *testing.T) {
-	ctx := setupE2E(t)
-	defer ctx.teardownE2E()
+	ctx := Setup(t)
+	defer ctx.Teardown()
 
 	const (
 		afPacket1Name  = "vpp-afpacket1"
@@ -403,9 +403,9 @@ func TestBridgeDomainWithAfPackets(t *testing.T) {
 		},
 	}
 
-	ctx.startMicroservice(ms1Name)
-	ctx.startMicroservice(ms2Name)
-	req := ctx.grpcClient.ChangeRequest()
+	ctx.StartMicroservice(ms1Name)
+	ctx.StartMicroservice(ms2Name)
+	req := ctx.GenericClient().ChangeRequest()
 	err := req.Update(
 		afPacket1,
 		veth1a, veth1b,
@@ -416,11 +416,11 @@ func TestBridgeDomainWithAfPackets(t *testing.T) {
 	).Send(context.Background())
 	Expect(err).ToNot(HaveOccurred(), "Transaction creating BD with AF-PACKETs failed")
 
-	Expect(ctx.getValueState(vppLoop)).To(Equal(kvscheduler.ValueState_CONFIGURED),
+	Expect(ctx.GetValueState(vppLoop)).To(Equal(kvscheduler.ValueState_CONFIGURED),
 		"BD BVI should be configured even before microservices start")
-	Eventually(ctx.getValueStateClb(afPacket1)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
+	Eventually(ctx.GetValueStateClb(afPacket1)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
 		"AF-PACKET attached to a newly started microservice1 should be eventually configured")
-	Eventually(ctx.getValueStateClb(afPacket2)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
+	Eventually(ctx.GetValueStateClb(afPacket2)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
 		"AF-PACKET attached to a newly started microservice2 should be eventually configured")
 
 	bds, err := bridgeDomains(ctx)
@@ -429,63 +429,63 @@ func TestBridgeDomainWithAfPackets(t *testing.T) {
 	Expect(bds[0]).To(SatisfyAll(
 		bdAgeIs(0), bdWithFlooding(), bdWithForwarding(), bdWithLearning()))
 
-	Expect(ctx.pingFromMs(ms2Name, veth1IP)).To(Succeed())
-	Expect(ctx.pingFromMs(ms1Name, veth2IP)).To(Succeed())
-	Expect(ctx.pingFromMs(ms1Name, vppLoopbackIP)).To(Succeed())
-	Expect(ctx.pingFromMs(ms2Name, vppLoopbackIP)).To(Succeed())
-	Expect(ctx.pingFromVPP(veth1IP)).To(Succeed())
-	Expect(ctx.pingFromVPP(veth2IP)).To(Succeed())
-	Expect(ctx.agentInSync()).To(BeTrue(), "Agent is not in-sync")
+	Expect(ctx.PingFromMs(ms2Name, veth1IP)).To(Succeed())
+	Expect(ctx.PingFromMs(ms1Name, veth2IP)).To(Succeed())
+	Expect(ctx.PingFromMs(ms1Name, vppLoopbackIP)).To(Succeed())
+	Expect(ctx.PingFromMs(ms2Name, vppLoopbackIP)).To(Succeed())
+	Expect(ctx.PingFromVPP(veth1IP)).To(Succeed())
+	Expect(ctx.PingFromVPP(veth2IP)).To(Succeed())
+	Expect(ctx.AgentInSync()).To(BeTrue(), "Agent is not in-sync")
 
 	// kill one of the microservices
 	// - both AF-PACKET and VETH use separate "Eventually" assertion since
 	//   they react to different SB notifications
-	ctx.stopMicroservice(ms1Name)
-	Eventually(ctx.getValueStateClb(afPacket1)).Should(Equal(kvscheduler.ValueState_PENDING),
+	ctx.StopMicroservice(ms1Name)
+	Eventually(ctx.GetValueStateClb(afPacket1)).Should(Equal(kvscheduler.ValueState_PENDING),
 		"Without microservice, the associated AF-PACKET should be pending")
-	Eventually(ctx.getValueStateClb(veth1a)).Should(Equal(kvscheduler.ValueState_PENDING),
+	Eventually(ctx.GetValueStateClb(veth1a)).Should(Equal(kvscheduler.ValueState_PENDING),
 		"Without microservice, the associated VETH should be pending")
-	Expect(ctx.getValueState(veth1b)).To(Equal(kvscheduler.ValueState_PENDING),
+	Expect(ctx.GetValueState(veth1b)).To(Equal(kvscheduler.ValueState_PENDING),
 		"Without microservice, the associated VETH should be pending")
-	Expect(ctx.getValueState(afPacket2)).To(Equal(kvscheduler.ValueState_CONFIGURED),
+	Expect(ctx.GetValueState(afPacket2)).To(Equal(kvscheduler.ValueState_CONFIGURED),
 		"AF-PACKET attached to running microservice is not configured")
-	Expect(ctx.getValueState(veth2a)).To(Equal(kvscheduler.ValueState_CONFIGURED),
+	Expect(ctx.GetValueState(veth2a)).To(Equal(kvscheduler.ValueState_CONFIGURED),
 		"VETH attached to running microservice is not configured")
-	Expect(ctx.getValueState(veth2b)).To(Equal(kvscheduler.ValueState_CONFIGURED),
+	Expect(ctx.GetValueState(veth2b)).To(Equal(kvscheduler.ValueState_CONFIGURED),
 		"VETH attached to running microservice is not configured")
-	Expect(ctx.getValueState(vppLoop)).To(Equal(kvscheduler.ValueState_CONFIGURED),
+	Expect(ctx.GetValueState(vppLoop)).To(Equal(kvscheduler.ValueState_CONFIGURED),
 		"BD BVI interface is not configured")
-	Expect(ctx.getValueState(bd)).To(Equal(kvscheduler.ValueState_CONFIGURED),
+	Expect(ctx.GetValueState(bd)).To(Equal(kvscheduler.ValueState_CONFIGURED),
 		"BD is not configured")
 
-	Expect(ctx.pingFromMs(ms2Name, veth1IP)).ToNot(Succeed())
-	Expect(ctx.pingFromMs(ms2Name, vppLoopbackIP)).To(Succeed())
-	Expect(ctx.pingFromVPP(veth1IP)).ToNot(Succeed())
-	Expect(ctx.pingFromVPP(veth2IP)).To(Succeed())
-	Expect(ctx.agentInSync()).To(BeTrue(), "Agent is not in-sync")
+	Expect(ctx.PingFromMs(ms2Name, veth1IP)).ToNot(Succeed())
+	Expect(ctx.PingFromMs(ms2Name, vppLoopbackIP)).To(Succeed())
+	Expect(ctx.PingFromVPP(veth1IP)).ToNot(Succeed())
+	Expect(ctx.PingFromVPP(veth2IP)).To(Succeed())
+	Expect(ctx.AgentInSync()).To(BeTrue(), "Agent is not in-sync")
 
 	// restart the microservice
-	ctx.startMicroservice(ms1Name)
-	Eventually(ctx.getValueStateClb(afPacket1)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
+	ctx.StartMicroservice(ms1Name)
+	Eventually(ctx.GetValueStateClb(afPacket1)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
 		"AF-PACKET attached to a re-started microservice1 should be eventually configured")
-	Expect(ctx.getValueState(veth1a)).To(Equal(kvscheduler.ValueState_CONFIGURED),
+	Expect(ctx.GetValueState(veth1a)).To(Equal(kvscheduler.ValueState_CONFIGURED),
 		"VETH attached to re-started microservice1 is not configured")
-	Expect(ctx.getValueState(veth1b)).To(Equal(kvscheduler.ValueState_CONFIGURED),
+	Expect(ctx.GetValueState(veth1b)).To(Equal(kvscheduler.ValueState_CONFIGURED),
 		"VETH attached to re-started microservice1 is not configured")
 
 	// Waiting for AF-PACKET interface after restart
 	// See: https://github.com/ligato/vpp-agent/issues/1489
-	Eventually(ctx.pingFromMsClb(ms2Name, veth1IP), "18s", "2s").Should(Succeed())
-	Expect(ctx.pingFromMs(ms1Name, veth2IP)).To(Succeed())
-	Expect(ctx.pingFromMs(ms1Name, vppLoopbackIP)).To(Succeed())
-	Expect(ctx.pingFromMs(ms2Name, vppLoopbackIP)).To(Succeed())
-	Expect(ctx.pingFromVPP(veth1IP)).To(Succeed())
-	Expect(ctx.pingFromVPP(veth2IP)).To(Succeed())
-	Expect(ctx.agentInSync()).To(BeTrue(), "Agent is not in-sync")
+	Eventually(ctx.PingFromMsClb(ms2Name, veth1IP), "18s", "2s").Should(Succeed())
+	Expect(ctx.PingFromMs(ms1Name, veth2IP)).To(Succeed())
+	Expect(ctx.PingFromMs(ms1Name, vppLoopbackIP)).To(Succeed())
+	Expect(ctx.PingFromMs(ms2Name, vppLoopbackIP)).To(Succeed())
+	Expect(ctx.PingFromVPP(veth1IP)).To(Succeed())
+	Expect(ctx.PingFromVPP(veth2IP)).To(Succeed())
+	Expect(ctx.AgentInSync()).To(BeTrue(), "Agent is not in-sync")
 
 	// change bridge domain config to trigger re-creation
 	bd.MacAge = 10
-	req = ctx.grpcClient.ChangeRequest()
+	req = ctx.GenericClient().ChangeRequest()
 	err = req.Update(
 		bd,
 	).Send(context.Background())
@@ -497,11 +497,11 @@ func TestBridgeDomainWithAfPackets(t *testing.T) {
 	Expect(bds[0]).To(SatisfyAll(
 		bdAgeIs(10), bdWithFlooding(), bdWithForwarding(), bdWithLearning()))
 
-	Expect(ctx.pingFromMs(ms2Name, veth1IP)).To(Succeed())
-	Expect(ctx.pingFromMs(ms1Name, veth2IP)).To(Succeed())
-	Expect(ctx.pingFromMs(ms1Name, vppLoopbackIP)).To(Succeed())
-	Expect(ctx.pingFromMs(ms2Name, vppLoopbackIP)).To(Succeed())
-	Expect(ctx.pingFromVPP(veth1IP)).To(Succeed())
-	Expect(ctx.pingFromVPP(veth2IP)).To(Succeed())
-	Expect(ctx.agentInSync()).To(BeTrue(), "Agent is not in-sync")
+	Expect(ctx.PingFromMs(ms2Name, veth1IP)).To(Succeed())
+	Expect(ctx.PingFromMs(ms1Name, veth2IP)).To(Succeed())
+	Expect(ctx.PingFromMs(ms1Name, vppLoopbackIP)).To(Succeed())
+	Expect(ctx.PingFromMs(ms2Name, vppLoopbackIP)).To(Succeed())
+	Expect(ctx.PingFromVPP(veth1IP)).To(Succeed())
+	Expect(ctx.PingFromVPP(veth2IP)).To(Succeed())
+	Expect(ctx.AgentInSync()).To(BeTrue(), "Agent is not in-sync")
 }

@@ -33,8 +33,8 @@ import (
 // Simulate public and private networks using two microservices and test
 // source-NAT in-between.
 func TestSourceNAT(t *testing.T) {
-	ctx := setupE2E(t)
-	defer ctx.teardownE2E()
+	ctx := Setup(t)
+	defer ctx.Teardown()
 
 	const (
 		// public network
@@ -140,25 +140,25 @@ func TestSourceNAT(t *testing.T) {
 	}
 
 	nat44Addresses := func() (string, error) {
-		return ctx.execVppctl("show", "nat44", "addresses")
+		return ctx.ExecVppctl("show", "nat44", "addresses")
 	}
 	connectTCP := func() error {
-		return ctx.testConnection(ms2Name, ms1Name, linuxTap1IP, linuxTap1IP,
+		return ctx.TestConnection(ms2Name, ms1Name, linuxTap1IP, linuxTap1IP,
 			8000, 8000, false, tapv2InputNode)
 	}
 	connectUDP := func() error {
-		return ctx.testConnection(ms2Name, ms1Name, linuxTap1IP, linuxTap1IP,
+		return ctx.TestConnection(ms2Name, ms1Name, linuxTap1IP, linuxTap1IP,
 			8000, 8000, true, tapv2InputNode)
 	}
 	ping := func() error {
-		return ctx.pingFromMs(ms2Name, linuxTap1IP)
+		return ctx.PingFromMs(ms2Name, linuxTap1IP)
 	}
 
-	ctx.startMicroservice(ms1Name)
-	ctx.startMicroservice(ms2Name)
+	ctx.StartMicroservice(ms1Name)
+	ctx.StartMicroservice(ms2Name)
 	Expect(nat44Addresses()).ShouldNot(SatisfyAny(
 		ContainSubstring(sNatAddr1), ContainSubstring(sNatAddr2), ContainSubstring(sNatAddr3)))
-	req := ctx.grpcClient.ChangeRequest()
+	req := ctx.GenericClient().ChangeRequest()
 	err := req.Update(
 		vppTap1,
 		linuxTap1,
@@ -171,9 +171,9 @@ func TestSourceNAT(t *testing.T) {
 	).Send(context.Background())
 	Expect(err).ToNot(HaveOccurred(), "Transaction creating public and private networks failed")
 
-	Eventually(ctx.getValueStateClb(vppTap1)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
+	Eventually(ctx.GetValueStateClb(vppTap1)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
 		"TAP attached to a newly started microservice1 should be eventually configured")
-	Eventually(ctx.getValueStateClb(vppTap2)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
+	Eventually(ctx.GetValueStateClb(vppTap2)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
 		"TAP attached to a newly started microservice2 should be eventually configured")
 
 	Expect(nat44Addresses()).Should(SatisfyAll(
@@ -181,10 +181,10 @@ func TestSourceNAT(t *testing.T) {
 	Expect(ping()).Should(Succeed())
 	Expect(connectTCP()).Should(Succeed())
 	Expect(connectUDP()).Should(Succeed())
-	Expect(ctx.agentInSync()).To(BeTrue(), "Agent is not in-sync")
+	Expect(ctx.AgentInSync()).To(BeTrue(), "Agent is not in-sync")
 
 	// remove S-NAT configuration
-	req = ctx.grpcClient.ChangeRequest()
+	req = ctx.GenericClient().ChangeRequest()
 	err = req.Delete(
 		natGlobal,
 		natInterface,
@@ -198,10 +198,10 @@ func TestSourceNAT(t *testing.T) {
 	Expect(ping()).ShouldNot(Succeed())
 	Expect(connectTCP()).ShouldNot(Succeed())
 	Expect(connectUDP()).ShouldNot(Succeed())
-	Expect(ctx.agentInSync()).To(BeTrue(), "Agent is not in-sync")
+	Expect(ctx.AgentInSync()).To(BeTrue(), "Agent is not in-sync")
 
 	// get back the S-NAT configuration
-	req = ctx.grpcClient.ChangeRequest()
+	req = ctx.GenericClient().ChangeRequest()
 	err = req.Update(
 		natGlobal,
 		natInterface,
@@ -214,14 +214,14 @@ func TestSourceNAT(t *testing.T) {
 	Expect(ping()).Should(Succeed())
 	Expect(connectTCP()).Should(Succeed())
 	Expect(connectUDP()).Should(Succeed())
-	Expect(ctx.agentInSync()).To(BeTrue(), "Agent is not in-sync")
+	Expect(ctx.AgentInSync()).To(BeTrue(), "Agent is not in-sync")
 
 	// restart microservice with S-NAT attached
-	ctx.stopMicroservice(ms1Name)
-	Eventually(ctx.getValueStateClb(vppTap1)).Should(Equal(kvscheduler.ValueState_PENDING),
+	ctx.StopMicroservice(ms1Name)
+	Eventually(ctx.GetValueStateClb(vppTap1)).Should(Equal(kvscheduler.ValueState_PENDING),
 		"Without microservice, the associated VPP-TAP should be pending")
-	ctx.startMicroservice(ms1Name)
-	Eventually(ctx.getValueStateClb(vppTap1)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
+	ctx.StartMicroservice(ms1Name)
+	Eventually(ctx.GetValueStateClb(vppTap1)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
 		"VPP-TAP attached to a re-started microservice1 should be eventually configured")
 
 	Expect(nat44Addresses()).Should(SatisfyAll(
@@ -229,7 +229,7 @@ func TestSourceNAT(t *testing.T) {
 	Expect(ping()).Should(Succeed())
 	Expect(connectTCP()).Should(Succeed())
 	Expect(connectUDP()).Should(Succeed())
-	Expect(ctx.agentInSync()).To(BeTrue(), "Agent is not in-sync")
+	Expect(ctx.AgentInSync()).To(BeTrue(), "Agent is not in-sync")
 }
 
 // Tests NAT pool CRUD operation and NAT pool resync.
@@ -242,7 +242,7 @@ func TestNATPools(t *testing.T) {
 	}
 	nat44Addresses := func(ctx *TestCtx) func() (string, error) {
 		return func() (string, error) {
-			return ctx.execVppctl("show", "nat44", "addresses")
+			return ctx.ExecVppctl("show", "nat44", "addresses")
 		}
 	}
 	mustBeInVPP := func(ctx *TestCtx, addrs []string) {
@@ -316,38 +316,38 @@ func TestNATPools(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			ctx := setupE2E(t)
-			defer ctx.teardownE2E()
+			ctx := Setup(t)
+			defer ctx.Teardown()
 
 			// check empty pool state
 			cantBeInVPP(ctx, addresses)
 
 			// create NAT pool
-			req := ctx.grpcClient.ChangeRequest()
+			req := ctx.GenericClient().ChangeRequest()
 			err := req.Update(
 				test.createNATPool,
 			).Send(context.Background())
 			Expect(err).ToNot(HaveOccurred(), "Transaction creating nat pool failed")
 			test.checkAfterCreation(ctx)
-			Expect(ctx.agentInSync()).To(BeTrue(), "Agent is not in-sync") // resync
+			Expect(ctx.AgentInSync()).To(BeTrue(), "Agent is not in-sync") // resync
 
 			// update NAT pool
-			req = ctx.grpcClient.ChangeRequest()
+			req = ctx.GenericClient().ChangeRequest()
 			err = req.Update(
 				test.updateNATPool,
 			).Send(context.Background())
 			Expect(err).ToNot(HaveOccurred(), "Transaction updating nat pool failed")
 			test.checkAfterUpdate(ctx)
-			Expect(ctx.agentInSync()).To(BeTrue(), "Agent is not in-sync") // resync
+			Expect(ctx.AgentInSync()).To(BeTrue(), "Agent is not in-sync") // resync
 
 			// delete NAT pool
-			req = ctx.grpcClient.ChangeRequest()
+			req = ctx.GenericClient().ChangeRequest()
 			err = req.Delete(
 				test.updateNATPool,
 			).Send(context.Background())
 			Expect(err).ToNot(HaveOccurred(), "Transaction deleting NAT pool failed")
 			test.checkAfterDelete(ctx)
-			Expect(ctx.agentInSync()).To(BeTrue(), "Agent is not in-sync") // resync
+			Expect(ctx.AgentInSync()).To(BeTrue(), "Agent is not in-sync") // resync
 		})
 	}
 }
@@ -355,8 +355,8 @@ func TestNATPools(t *testing.T) {
 // Simulate use-case in which a service located in a private network is published
 // on a publicly accessible IP address.
 func TestNATStaticMappings(t *testing.T) {
-	ctx := setupE2E(t)
-	defer ctx.teardownE2E()
+	ctx := Setup(t)
+	defer ctx.Teardown()
 
 	const (
 		// public network
@@ -521,7 +521,7 @@ func TestNATStaticMappings(t *testing.T) {
 	}
 
 	staticMappings := func() (string, error) {
-		return ctx.execVppctl("show", "nat44", "static", "mappings")
+		return ctx.ExecVppctl("show", "nat44", "static", "mappings")
 	}
 	containTCP := ContainSubstring(
 		"tcp local %s:%d external %s:%d vrf 0  out2in-only",
@@ -532,18 +532,18 @@ func TestNATStaticMappings(t *testing.T) {
 		linuxTap2IP, udpSvcLocalPort, udpSvcExtIP, udpSvcExtPort)
 
 	connectTCP := func() error {
-		return ctx.testConnection(ms1Name, ms2Name, tcpSvcExtIP, linuxTap2IP,
+		return ctx.TestConnection(ms1Name, ms2Name, tcpSvcExtIP, linuxTap2IP,
 			tcpSvcExtPort, tcpSvcLocalPort, false, tapv2InputNode)
 	}
 	connectUDP := func() error {
-		return ctx.testConnection(ms1Name, ms2Name, udpSvcExtIP, linuxTap2IP,
+		return ctx.TestConnection(ms1Name, ms2Name, udpSvcExtIP, linuxTap2IP,
 			udpSvcExtPort, udpSvcLocalPort, true, tapv2InputNode)
 	}
 
-	ctx.startMicroservice(ms1Name)
-	ctx.startMicroservice(ms2Name)
+	ctx.StartMicroservice(ms1Name)
+	ctx.StartMicroservice(ms2Name)
 	Expect(staticMappings()).ShouldNot(SatisfyAny(containTCP, containUDP))
-	req := ctx.grpcClient.ChangeRequest()
+	req := ctx.GenericClient().ChangeRequest()
 	err := req.Update(
 		vppTap1,
 		linuxTap1,
@@ -558,18 +558,18 @@ func TestNATStaticMappings(t *testing.T) {
 	).Send(context.Background())
 	Expect(err).ToNot(HaveOccurred(), "Transaction creating public and private networks failed")
 
-	Eventually(ctx.getValueStateClb(vppTap1)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
+	Eventually(ctx.GetValueStateClb(vppTap1)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
 		"TAP attached to a newly started microservice1 should be eventually configured")
-	Eventually(ctx.getValueStateClb(vppTap2)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
+	Eventually(ctx.GetValueStateClb(vppTap2)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
 		"TAP attached to a newly started microservice2 should be eventually configured")
 
 	Expect(staticMappings()).Should(SatisfyAll(containTCP, containUDP))
 	Expect(connectTCP()).Should(Succeed())
 	Expect(connectUDP()).Should(Succeed())
-	Expect(ctx.agentInSync()).To(BeTrue(), "Agent is not in-sync")
+	Expect(ctx.AgentInSync()).To(BeTrue(), "Agent is not in-sync")
 
 	// remove static mappings
-	req = ctx.grpcClient.ChangeRequest()
+	req = ctx.GenericClient().ChangeRequest()
 	err = req.Delete(
 		tcpSvc, udpSvc,
 	).Send(context.Background())
@@ -578,10 +578,10 @@ func TestNATStaticMappings(t *testing.T) {
 	Expect(staticMappings()).ShouldNot(SatisfyAny(containTCP, containUDP))
 	Expect(connectTCP()).ShouldNot(Succeed())
 	Expect(connectUDP()).ShouldNot(Succeed())
-	Expect(ctx.agentInSync()).To(BeTrue(), "Agent is not in-sync")
+	Expect(ctx.AgentInSync()).To(BeTrue(), "Agent is not in-sync")
 
 	// get back the NAT configuration
-	req = ctx.grpcClient.ChangeRequest()
+	req = ctx.GenericClient().ChangeRequest()
 	err = req.Update(
 		tcpSvc, udpSvc,
 	).Send(context.Background())
@@ -590,33 +590,33 @@ func TestNATStaticMappings(t *testing.T) {
 	Expect(staticMappings()).Should(SatisfyAll(containTCP, containUDP))
 	Expect(connectTCP()).Should(Succeed())
 	Expect(connectUDP()).Should(Succeed())
-	Expect(ctx.agentInSync()).To(BeTrue(), "Agent is not in-sync")
+	Expect(ctx.AgentInSync()).To(BeTrue(), "Agent is not in-sync")
 
 	// restart both microservices
-	ctx.stopMicroservice(ms1Name)
-	ctx.stopMicroservice(ms2Name)
-	Eventually(ctx.getValueStateClb(vppTap1)).Should(Equal(kvscheduler.ValueState_PENDING),
+	ctx.StopMicroservice(ms1Name)
+	ctx.StopMicroservice(ms2Name)
+	Eventually(ctx.GetValueStateClb(vppTap1)).Should(Equal(kvscheduler.ValueState_PENDING),
 		"Without microservice, the associated VPP-TAP should be pending")
-	Eventually(ctx.getValueStateClb(vppTap2)).Should(Equal(kvscheduler.ValueState_PENDING),
+	Eventually(ctx.GetValueStateClb(vppTap2)).Should(Equal(kvscheduler.ValueState_PENDING),
 		"Without microservice, the associated VPP-TAP should be pending")
-	ctx.startMicroservice(ms1Name)
-	ctx.startMicroservice(ms2Name)
-	Eventually(ctx.getValueStateClb(vppTap1)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
+	ctx.StartMicroservice(ms1Name)
+	ctx.StartMicroservice(ms2Name)
+	Eventually(ctx.GetValueStateClb(vppTap1)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
 		"VPP-TAP attached to a re-started microservice1 should be eventually configured")
-	Eventually(ctx.getValueStateClb(vppTap2)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
+	Eventually(ctx.GetValueStateClb(vppTap2)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
 		"VPP-TAP attached to a re-started microservice1 should be eventually configured")
 
 	Expect(staticMappings()).Should(SatisfyAll(containTCP, containUDP))
 	Expect(connectTCP()).Should(Succeed())
 	Expect(connectUDP()).Should(Succeed())
-	Expect(ctx.agentInSync()).To(BeTrue(), "Agent is not in-sync")
+	Expect(ctx.AgentInSync()).To(BeTrue(), "Agent is not in-sync")
 }
 
 // Simulate public and private networks using two microservices and test
 // source-NAT in-between. Uses deprecated API for NatInterfaces and AddressPool in Nat44Global.
 func TestSourceNATDeprecatedAPI(t *testing.T) {
-	ctx := setupE2E(t)
-	defer ctx.teardownE2E()
+	ctx := Setup(t)
+	defer ctx.Teardown()
 
 	const (
 		// public network
@@ -731,25 +731,25 @@ func TestSourceNATDeprecatedAPI(t *testing.T) {
 	}
 
 	nat44Addresses := func() (string, error) {
-		return ctx.execVppctl("show", "nat44", "addresses")
+		return ctx.ExecVppctl("show", "nat44", "addresses")
 	}
 	connectTCP := func() error {
-		return ctx.testConnection(ms2Name, ms1Name, linuxTap1IP, linuxTap1IP,
+		return ctx.TestConnection(ms2Name, ms1Name, linuxTap1IP, linuxTap1IP,
 			8000, 8000, false, tapv2InputNode)
 	}
 	connectUDP := func() error {
-		return ctx.testConnection(ms2Name, ms1Name, linuxTap1IP, linuxTap1IP,
+		return ctx.TestConnection(ms2Name, ms1Name, linuxTap1IP, linuxTap1IP,
 			8000, 8000, true, tapv2InputNode)
 	}
 	ping := func() error {
-		return ctx.pingFromMs(ms2Name, linuxTap1IP)
+		return ctx.PingFromMs(ms2Name, linuxTap1IP)
 	}
 
-	ctx.startMicroservice(ms1Name)
-	ctx.startMicroservice(ms2Name)
+	ctx.StartMicroservice(ms1Name)
+	ctx.StartMicroservice(ms2Name)
 	Expect(nat44Addresses()).ShouldNot(SatisfyAny(
 		ContainSubstring(sNatAddr1), ContainSubstring(sNatAddr2), ContainSubstring(sNatAddr3)))
-	req := ctx.grpcClient.ChangeRequest()
+	req := ctx.GenericClient().ChangeRequest()
 	err := req.Update(
 		vppTap1,
 		linuxTap1,
@@ -760,9 +760,9 @@ func TestSourceNATDeprecatedAPI(t *testing.T) {
 	).Send(context.Background())
 	Expect(err).ToNot(HaveOccurred(), "Transaction creating public and private networks failed")
 
-	Eventually(ctx.getValueStateClb(vppTap1)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
+	Eventually(ctx.GetValueStateClb(vppTap1)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
 		"TAP attached to a newly started microservice1 should be eventually configured")
-	Eventually(ctx.getValueStateClb(vppTap2)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
+	Eventually(ctx.GetValueStateClb(vppTap2)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
 		"TAP attached to a newly started microservice2 should be eventually configured")
 
 	Expect(nat44Addresses()).Should(SatisfyAll(
@@ -770,10 +770,10 @@ func TestSourceNATDeprecatedAPI(t *testing.T) {
 	Expect(ping()).Should(Succeed())
 	Expect(connectTCP()).Should(Succeed())
 	Expect(connectUDP()).Should(Succeed())
-	Expect(ctx.agentInSync()).To(BeTrue(), "Agent is not in-sync")
+	Expect(ctx.AgentInSync()).To(BeTrue(), "Agent is not in-sync")
 
 	// remove S-NAT configuration
-	req = ctx.grpcClient.ChangeRequest()
+	req = ctx.GenericClient().ChangeRequest()
 	err = req.Delete(
 		sourceNat,
 	).Send(context.Background())
@@ -785,10 +785,10 @@ func TestSourceNATDeprecatedAPI(t *testing.T) {
 	Expect(ping()).ShouldNot(Succeed())
 	Expect(connectTCP()).ShouldNot(Succeed())
 	Expect(connectUDP()).ShouldNot(Succeed())
-	Expect(ctx.agentInSync()).To(BeTrue(), "Agent is not in-sync")
+	Expect(ctx.AgentInSync()).To(BeTrue(), "Agent is not in-sync")
 
 	// get back the S-NAT configuration
-	req = ctx.grpcClient.ChangeRequest()
+	req = ctx.GenericClient().ChangeRequest()
 	err = req.Update(
 		sourceNat,
 	).Send(context.Background())
@@ -799,14 +799,14 @@ func TestSourceNATDeprecatedAPI(t *testing.T) {
 	Expect(ping()).Should(Succeed())
 	Expect(connectTCP()).Should(Succeed())
 	Expect(connectUDP()).Should(Succeed())
-	Expect(ctx.agentInSync()).To(BeTrue(), "Agent is not in-sync")
+	Expect(ctx.AgentInSync()).To(BeTrue(), "Agent is not in-sync")
 
 	// restart microservice with S-NAT attached
-	ctx.stopMicroservice(ms1Name)
-	Eventually(ctx.getValueStateClb(vppTap1)).Should(Equal(kvscheduler.ValueState_PENDING),
+	ctx.StopMicroservice(ms1Name)
+	Eventually(ctx.GetValueStateClb(vppTap1)).Should(Equal(kvscheduler.ValueState_PENDING),
 		"Without microservice, the associated VPP-TAP should be pending")
-	ctx.startMicroservice(ms1Name)
-	Eventually(ctx.getValueStateClb(vppTap1)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
+	ctx.StartMicroservice(ms1Name)
+	Eventually(ctx.GetValueStateClb(vppTap1)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
 		"VPP-TAP attached to a re-started microservice1 should be eventually configured")
 
 	Expect(nat44Addresses()).Should(SatisfyAll(
@@ -814,5 +814,5 @@ func TestSourceNATDeprecatedAPI(t *testing.T) {
 	Expect(ping()).Should(Succeed())
 	Expect(connectTCP()).Should(Succeed())
 	Expect(connectUDP()).Should(Succeed())
-	Expect(ctx.agentInSync()).To(BeTrue(), "Agent is not in-sync")
+	Expect(ctx.AgentInSync()).To(BeTrue(), "Agent is not in-sync")
 }
