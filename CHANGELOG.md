@@ -63,10 +63,6 @@ RELEASE CHANGELOG TEMPLATE:
 - VPP 19.08 (backwards compatible)
 - ~~VPP 19.04~~ (no longer supported)
 
-### KNOWN ISSUES
-
-### BREAKING CHANGES
-
 ### Bug Fixes
 - Fixes and improvements for agentctl and models (#1643)
 - Fix creation of multiple ipip tunnels (#1650)
