@@ -95,7 +95,7 @@ RELEASE CHANGELOG TEMPLATE:
 - Added support for NAT44 static mapping twice-NAT pool IP address reference (#1728)
 - add IP protocol number to ACL model (#1726)
 - gtpu: Add support for arbitrary DecapNextNode (#1721)
-- configurator: Add support for waiting until config update is done (#1734)\
+- configurator: Add support for waiting until config update is done (#1734)
 - telemetry: Add reading VPP threads to the telemetry plugin (#1753)
 - linux: Add support for Linux VRFs (#1744)
 - VRRP support (#1744)
