@@ -36,9 +36,7 @@ import (
 	vpp_srv6 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/srv6"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/reflect/protodesc"
 	"google.golang.org/protobuf/reflect/protoreflect"
-	"google.golang.org/protobuf/types/descriptorpb"
 )
 
 // TestYamlCompatibility test dynamically generated all-in-one configuration proto message to be compatible
@@ -63,34 +61,20 @@ func TestYamlCompatibility(t *testing.T) {
 	//  possibilities
 
 	// create construction input for dynamic config from locally registered models (only with class "config")
-	// (for remote models use combination of generic client's KnownModels and meta service's rpc ProtoFileDescriptor
-	// example of this is in agentctl yaml config update (commands.runConfigUpdate))
-	fileDescProtosMap := make(map[string]*descriptorpb.FileDescriptorProto)
+	// (for remote models use generic client's KnownModels, example of this is in agentctl yaml config
+	// update (commands.runConfigUpdate))
 	var knownModels []*models.ModelInfo
 	for _, model := range models.RegisteredModels() {
 		if model.Spec().Class == "config" {
-			// collect "knownModel" input
 			knownModels = append(knownModels, &models.ModelInfo{
-				ModelDetail: *model.ModelDetail(),
+				ModelDetail:       *model.ModelDetail(),
+				MessageDescriptor: protoV1.MessageV2(model.NewInstance()).ProtoReflect().Descriptor(),
 			})
-
-			// collect related "fileDescriptorProtos" input
-			fileDesc := protoV1.MessageV2(model.NewInstance()).ProtoReflect().Descriptor().ParentFile()
-			fdp := protodesc.ToFileDescriptorProto(fileDesc)
-			fileDescProtosMap[*fdp.Name] = fdp
-			for _, importFileDesc := range allImports(fileDesc) {
-				fdp := protodesc.ToFileDescriptorProto(importFileDesc)
-				fileDescProtosMap[*fdp.Name] = fdp
-			}
 		}
-	}
-	fileDescProtos := make([]*descriptorpb.FileDescriptorProto, 0)
-	for _, fdp := range fileDescProtosMap { // extracting "fileDescriptorProtos" input (map was used for deduplication)
-		fileDescProtos = append(fileDescProtos, fdp)
 	}
 
 	// create dynamic config
-	dynConfig, err := client.NewDynamicConfig(knownModels, fileDescProtos)
+	dynConfig, err := client.NewDynamicConfig(knownModels)
 	Expect(err).ShouldNot(HaveOccurred(), "can't create dynamic config")
 
 	// Hardcoded Config filled with data -> YAML -> JSON -> load to empty dynamic Config -> YAML
@@ -119,23 +103,17 @@ func TestDynamicConfigWithThirdPartyModel(t *testing.T) {
 `
 	// create construction input for dynamic config
 	var knownModels []*models.ModelInfo
-	fileDescProtos := make([]*descriptorpb.FileDescriptorProto, 0)
 	for _, model := range models.RegisteredModels() {
 		if model.Spec().Class == "config" && model.Spec().Module == "custom" {
-			// collect "knownModel" input
 			knownModels = append(knownModels, &models.ModelInfo{
-				ModelDetail: *model.ModelDetail(),
+				ModelDetail:       *model.ModelDetail(),
+				MessageDescriptor: protoV1.MessageV2(model.NewInstance()).ProtoReflect().Descriptor(),
 			})
-
-			// collect related "fileDescriptorProtos" input
-			fileDesc := protoV1.MessageV2(model.NewInstance()).ProtoReflect().Descriptor().ParentFile()
-			fdp := protodesc.ToFileDescriptorProto(fileDesc)
-			fileDescProtos = append(fileDescProtos, fdp)
 		}
 	}
 
 	// create dynamic config
-	dynConfig, err := client.NewDynamicConfig(knownModels, fileDescProtos)
+	dynConfig, err := client.NewDynamicConfig(knownModels)
 	Expect(err).ShouldNot(HaveOccurred(), "can't create dynamic config")
 
 	// test loading of 3rd party model data into dynamic config
