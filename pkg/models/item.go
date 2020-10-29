@@ -73,9 +73,7 @@ func MarshalItemWithExternallyKnownModels(message proto.Message, externallyKnown
 	}
 
 	// compute Item.ID.Name
-	messageDesc := proto.MessageV2(message).ProtoReflect().Descriptor()
-	messageFullName := string(messageDesc.FullName())
-	name, err := instanceNameWithExternallyKnownModel(message, knownModel, messageDesc)
+	name, err := instanceNameWithExternallyKnownModel(message, knownModel)
 	if err != nil {
 		return nil, errors.Errorf("can't compute model instance name due to: %v (message %+v)", err, message)
 	}
@@ -85,7 +83,7 @@ func MarshalItemWithExternallyKnownModels(message proto.Message, externallyKnown
 	if err != nil {
 		return nil, err
 	}
-	any.TypeUrl = ligatoModels + messageFullName
+	any.TypeUrl = ligatoModels + string(proto.MessageV2(message).ProtoReflect().Descriptor().FullName())
 
 	// create Item
 	item := &api.Item{

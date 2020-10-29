@@ -84,9 +84,9 @@ var backwardCompatibleNames = map[string]names{
 // proto model, but that model is hardcoded). Dynamic config can contain also custom 3rd party models
 // and therefore can be used to import/export config data also for 3rd party models that are registered, but not
 // part of VPP-Agent repository and therefore not know to hardcoded configurator.Config.
-func NewDynamicConfig(knownModels []*models.ModelInfo, fileDescProtos []*descriptorpb.FileDescriptorProto) (*dynamicpb.Message, error) {
+func NewDynamicConfig(knownModels []*models.ModelInfo) (*dynamicpb.Message, error) {
 	// create dependency registry
-	dependencyRegistry, err := createFileDescRegistry(fileDescProtos)
+	dependencyRegistry, err := createFileDescRegistry(knownModels)
 	if err != nil {
 		return nil, errors.Errorf("can't create dependency file descriptor registry due to: %v", err)
 	}
@@ -110,52 +110,26 @@ func NewDynamicConfig(knownModels []*models.ModelInfo, fileDescProtos []*descrip
 	return dynamicpb.NewMessage(rootMsg), nil
 }
 
-// MessageTypeRegistry creates a message type registry for all messages in given file descriptor protos
-func MessageTypeRegistry(fileDescProtos []*descriptorpb.FileDescriptorProto) (*protoregistry.Types, error) {
+// MessageTypeRegistry creates a message type registry for all known model messages
+func MessageTypeRegistry(knownModels []*models.ModelInfo) (*protoregistry.Types, error) {
 	typeRegistry := new(protoregistry.Types)
-
-	// create file descriptor registry registry
-	fileDescRegistry, err := createFileDescRegistry(fileDescProtos)
-	if err != nil {
-		return nil, errors.Errorf("can't create file descriptor registry due to: %v", err)
+	for _, knownModel := range knownModels {
+		typeRegistry.RegisterMessage(dynamicpb.NewMessageType(knownModel.MessageDescriptor))
 	}
-
-	// iterate over all messages in all file descriptors and register their types in type registry
-	alreadyRegistered := make(map[string]struct{})
-	fileDescRegistry.(*protoregistry.Files).RangeFiles(func(fileDesc protoreflect.FileDescriptor) bool {
-		messages := fileDesc.Messages()
-		for i := 0; i < messages.Len(); i++ {
-			messageDesc := messages.Get(i)
-			if _, found := alreadyRegistered[string(messageDesc.FullName())]; !found {
-				alreadyRegistered[string(messageDesc.FullName())] = struct{}{}
-				typeRegistry.RegisterMessage(dynamicpb.NewMessageType(messageDesc))
-			}
-		}
-		return true // iterate over all file descriptors
-	})
-
 	return typeRegistry, nil
 }
 
-// createFileDescRegistry resolves file descriptor protos into file descriptors and returns them in convenient
-// registry (in form of protodesc.Resolver). The basic difference between file descriptor protos and file
-// descriptors is that file descriptors have resolved all (direct or transitive) import dependencies and file
-// descriptor protos have only string/name references to direct dependencies.
-func createFileDescRegistry(fileDescProtos []*descriptorpb.FileDescriptorProto) (protodesc.Resolver, error) {
+// createFileDescRegistry extracts file descriptors from given known models and returns them in convenient
+// registry (in form of protodesc.Resolver).
+func createFileDescRegistry(knownModels []*models.ModelInfo) (protodesc.Resolver, error) {
 	reg := &protoregistry.Files{}
-	fds, err := ToFileDescriptors(fileDescProtos)
-	if err != nil {
-		return nil, errors.Errorf("can't convert file descriptor protos to file descriptors "+
-			"(for dependency registry creation) due to: %v", err)
-	}
-	for _, fd := range fds {
-		if err := reg.RegisterFile(fd); err != nil {
-			return nil, errors.Errorf("can't add proto file descriptor(%v) "+
-				"to cache due to: %v", fd.Name(), err)
+	for _,knownModel := range knownModels {
+		fileDesc := knownModel.MessageDescriptor.ParentFile()
+		if _, err := reg.FindDescriptorByName(fileDesc.FullName()); err == protoregistry.NotFound {
+			reg.RegisterFile(fileDesc)
+			logrus.DefaultLogger().Debugf("Proto file %v was successfully "+
+				"added to dependency registry.", fileDesc.Path())
 		}
-
-		logrus.DefaultLogger().Debugf("Proto file %v was successfully "+
-			"added to dependency registry.", fd.Path())
 	}
 	return reg, nil
 }
@@ -282,73 +256,6 @@ func createDynamicConfigDescriptorProto(knownModels []*ModelInfo, dependencyRegi
 		}
 	}
 	return
-}
-
-// ToFileDescriptors convert file descriptor protos to file descriptors. This conversion handles correctly
-// possible transitive dependencies, but all dependencies (direct or transitive) must be included in input
-// file descriptor protos.
-func ToFileDescriptors(fileDescProtos []*descriptorpb.FileDescriptorProto) ([]protoreflect.FileDescriptor, error) {
-	// NOTE this could be done more efficiently by creating dependency tree and
-	// traversing it and all, but it seems more complicated to implement
-	// => going over unresolved FileDescriptorProto over and over while resolving that FileDescriptorProto that
-	// could be resolved, in the end(first round with nothing new to resolve) there is either everything resolved
-	// (everything went ok) or there exist something that is not resolved and can't be resolved with given
-	// input to this function (this result is considered error expecting not adding to function input
-	// additional useless file descriptor protos)
-	unresolvedFDProtos := make(map[string]*descriptorpb.FileDescriptorProto)
-	for _, fdp := range fileDescProtos {
-		unresolvedFDProtos[*fdp.Name] = fdp
-	}
-	resolved := make(map[string]protoreflect.FileDescriptor)
-
-	newResolvedInLastRound := true
-	for len(unresolvedFDProtos) > 0 && newResolvedInLastRound {
-		newResolvedInLastRound = false
-		for fdpName, fdp := range unresolvedFDProtos {
-			allDepsFound := true
-			reg := &protoregistry.Files{}
-			for _, dependencyName := range fdp.Dependency {
-				resolvedDep, found := resolved[dependencyName]
-				if !found {
-					allDepsFound = false
-					break
-				}
-				if err := reg.RegisterFile(resolvedDep); err != nil {
-					return nil, errors.Errorf("can't put resolved dependency %v "+
-						"into descriptor registry due to: %v", resolvedDep.Name(), err)
-				}
-			}
-			if allDepsFound {
-				fd, err := protodesc.NewFile(fdp, reg)
-				if err != nil {
-					return nil, errors.Errorf("can't create file descriptor "+
-						"(from file descriptor proto named %v) due to: %v", *fdp.Name, err)
-				}
-				resolved[fdpName] = fd
-				delete(unresolvedFDProtos, fdpName)
-				newResolvedInLastRound = true
-			}
-		}
-	}
-	if len(unresolvedFDProtos) > 0 {
-		return nil, errors.Errorf("can't resolve some FileDescriptorProtos due to missing of "+
-			"some protos of their imports (FileDescriptorProtos with unresolvable imports: %v)",
-			fileDescriptorProtoMapToString(unresolvedFDProtos))
-	}
-
-	result := make([]protoreflect.FileDescriptor, 0, len(resolved))
-	for _, fd := range resolved {
-		result = append(result, fd)
-	}
-	return result, nil
-}
-
-func fileDescriptorProtoMapToString(fdps map[string]*descriptorpb.FileDescriptorProto) string {
-	keys := make([]string, 0, len(fdps))
-	for key, _ := range fdps {
-		keys = append(keys, key)
-	}
-	return strings.Join(keys, ",")
 }
 
 // DynamicConfigExport exports from dynamic config the proto.Messages corresponding to known models that

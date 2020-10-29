@@ -25,9 +25,7 @@ import (
 	"time"
 
 	yaml2 "github.com/ghodss/yaml"
-	"github.com/go-errors/errors"
 	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/protoc-gen-go/descriptor"
 	"github.com/olekukonko/tablewriter"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -37,11 +35,9 @@ import (
 	agentcli "go.ligato.io/vpp-agent/v3/cmd/agentctl/cli"
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/configurator"
-	"go.ligato.io/vpp-agent/v3/proto/ligato/generic"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/kvscheduler"
 	"google.golang.org/protobuf/encoding/protojson"
 	protoV2 "google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/types/descriptorpb"
 )
 
 func NewConfigCommand(cli agentcli.Cli) *cobra.Command {
@@ -94,17 +90,13 @@ func runConfigGet(cli agentcli.Cli, opts ConfigGetOptions) error {
 	if err != nil {
 		return fmt.Errorf("getting registered models: %w", err)
 	}
-	fileDescProtos, err := retrieveModelFileDescriptorProtos(knownModels, cli)
-	if err != nil {
-		return fmt.Errorf("can't retrieve mode file descriptor protos for known models due to: %v", err)
-	}
-	config, err := client.NewDynamicConfig(knownModels, fileDescProtos)
+	config, err := client.NewDynamicConfig(knownModels)
 	if err != nil {
 		return fmt.Errorf("can't create all-config proto message dynamically due to: %w", err)
 	}
 
 	// create type registry for resolving proto.Any messages retrieved
-	msgTypeResolver, err := client.MessageTypeRegistry(fileDescProtos)
+	msgTypeResolver, err := client.MessageTypeRegistry(knownModels)
 	if err != nil {
 		return fmt.Errorf("can't create message type resolver due to: %v", err)
 	}
@@ -181,11 +173,7 @@ func runConfigUpdate(cli agentcli.Cli, opts ConfigUpdateOptions, args []string) 
 	if err != nil {
 		return fmt.Errorf("getting registered models: %w", err)
 	}
-	fileDescProtos, err := retrieveModelFileDescriptorProtos(knownModels, cli)
-	if err != nil {
-		return fmt.Errorf("can't retrieve mode file descriptor protos for known models due to: %v", err)
-	}
-	config, err := client.NewDynamicConfig(knownModels, fileDescProtos)
+	config, err := client.NewDynamicConfig(knownModels)
 	if err != nil {
 		return fmt.Errorf("can't create all-config proto message dynamically due to: %w", err)
 	}
@@ -339,62 +327,6 @@ func convertToProtoV1(messages []protoV2.Message) []proto.Message {
 	return result
 }
 
-// retrieveModelFileDescriptorProtos uses mete service to retrieve mode file descriptor protos for each known model
-func retrieveModelFileDescriptorProtos(knownModels []*client.ModelInfo, cli agentcli.Cli) (
-	[]*descriptorpb.FileDescriptorProto, error) {
-	// TODO extend RPC ProtoFileDescriptor from meta service API to generic client API just like for knownModels? (add to modeldetail as part of getting known models)
-	// get meta service client
-	metaServiceClient, err := cli.Client().MetaServiceClient()
-	if err != nil {
-		return nil, errors.Errorf("can't get meta service client due to: %v", err)
-	}
-
-	// extract proto files from known models
-	protoFilePaths := make(map[string]struct{}) // using map as set for deduplication
-	for _, modelDetail := range knownModels {
-		protoFilePath, err := client.ModelOptionFor("protoFile", modelDetail.Options)
-		if err != nil {
-			return nil, errors.Errorf("can't get protoFile from model options of "+
-				"known model %v due to: %v", modelDetail.ProtoName, err)
-		}
-		protoFilePaths[protoFilePath] = struct{}{}
-	}
-
-	// query meta service for extracted proto files to get their file descriptor protos
-	fileDescProto := make(map[string]*descriptor.FileDescriptorProto) // deduplicaton + data container
-	for protoFilePath, _ := range protoFilePaths {
-		ctx := context.Background()
-		resp, err := metaServiceClient.ProtoFileDescriptor(ctx, &generic.ProtoFileDescriptorRequest{
-			FullProtoFileName: protoFilePath,
-		})
-		if err != nil {
-			return nil, errors.Errorf("can't retrieve ProtoFileDescriptor "+
-				"for proto file %v due to: %v", protoFilePath, err)
-		}
-		if resp.FileDescriptor == nil {
-			return nil, errors.Errorf("returned file descriptor proto "+
-				"for proto file %v from meta service can't be nil", protoFilePath)
-		}
-		if resp.FileImportDescriptors == nil {
-			return nil, errors.Errorf("returned import file descriptors proto "+
-				"for proto file %v from meta service can't be nil", protoFilePath)
-		}
-
-		fileDescProto[*resp.FileDescriptor.Name] = resp.FileDescriptor
-		for _, fid := range resp.FileImportDescriptors.File {
-			if fid != nil {
-				fileDescProto[*fid.Name] = fid
-			}
-		}
-	}
-
-	// data reorganization to get properly formatted result
-	result := make([]*descriptorpb.FileDescriptorProto, 0)
-	for _, fdp := range fileDescProto {
-		result = append(result, fdp)
-	}
-	return result, nil
-}
 
 func newConfigRetrieveCommand(cli agentcli.Cli) *cobra.Command {
 	var (

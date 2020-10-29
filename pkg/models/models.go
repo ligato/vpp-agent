@@ -122,8 +122,7 @@ func GetKeyWithExternallyKnownModels(message proto.Message, externallyKnownModel
 	}
 
 	// compute Item.ID.Name
-	messageDesc := proto.MessageV2(message).ProtoReflect().Descriptor()
-	name, err := instanceNameWithExternallyKnownModel(message, knownModel, messageDesc)
+	name, err := instanceNameWithExternallyKnownModel(message, knownModel)
 	if err != nil {
 		return "", errors.Errorf("can't compute model instance name due to: %v (message %+v)", err, message)
 	}
@@ -149,15 +148,14 @@ func GetName(x proto.Message) (string, error) {
 // instanceNameWithExternallyKnownModel computes message name using name template (if present).
 // This is the equivalent to models.KnownModel's instanceName(...) using not locally registered
 // model but using externally acquired models.
-func instanceNameWithExternallyKnownModel(message proto.Message, knownModel *ModelInfo,
-	messageDesc protoreflect.MessageDescriptor) (string, error) {
+func instanceNameWithExternallyKnownModel(message proto.Message, knownModel *ModelInfo) (string, error) {
 	nameTemplate, err := modelOptionFor("nameTemplate", knownModel.Options)
 	if err != nil {
 		logrus.DefaultLogger().Debugf("no nameTemplate model "+
 			"option for model %v, using empty instance name", knownModel.ProtoName)
 		return "", nil // having no name template is valid case for some models
 	}
-	nameTemplate = replaceFieldNamesInNameTemplate(messageDesc, nameTemplate)
+	nameTemplate = replaceFieldNamesInNameTemplate(knownModel.MessageDescriptor, nameTemplate)
 	marshaler := jsonpb.Marshaler{EmitDefaults: true} // using jsonbp to generate json with json name field in proto tag
 	jsonData, err := marshaler.MarshalToString(message)
 	if err != nil {

@@ -10,9 +10,11 @@ import (
 	"go.ligato.io/vpp-agent/v3/pkg/util"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/generic"
 	"google.golang.org/grpc"
+	"google.golang.org/protobuf/reflect/protodesc"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/reflect/protoregistry"
 	"google.golang.org/protobuf/types/descriptorpb"
+	"strings"
 )
 
 // option keys
@@ -93,7 +95,7 @@ func (c *grpcClient) KnownModels(class string) ([]*client.ModelInfo, error) {
 	for _, fdp := range fileDescProtos {
 		fileDescProtosSlice = append(fileDescProtosSlice, fdp)
 	}
-	fileDescriptors, err := client.ToFileDescriptors(fileDescProtosSlice)
+	fileDescriptors, err := toFileDescriptors(fileDescProtosSlice)
 	if err != nil {
 		return nil, errors.Errorf("can't convert file descriptor protos to file descriptors "+
 			"(for dependency registry creation) due to: %v", err)
@@ -304,4 +306,71 @@ func UseMessageTypeResolver(msgTypeResolver *protoregistry.Types) client.APIFunc
 	return client.APIFuncOptions{
 		messageTypeResolver: msgTypeResolver,
 	}
+}
+
+// toFileDescriptors convert file descriptor protos to file descriptors. This conversion handles correctly
+// possible transitive dependencies, but all dependencies (direct or transitive) must be included in input
+// file descriptor protos.
+func toFileDescriptors(fileDescProtos []*descriptorpb.FileDescriptorProto) ([]protoreflect.FileDescriptor, error) {
+	// NOTE this could be done more efficiently by creating dependency tree and
+	// traversing it and all, but it seems more complicated to implement
+	// => going over unresolved FileDescriptorProto over and over while resolving that FileDescriptorProto that
+	// could be resolved, in the end(first round with nothing new to resolve) there is either everything resolved
+	// (everything went ok) or there exist something that is not resolved and can't be resolved with given
+	// input to this function (this result is considered error expecting not adding to function input
+	// additional useless file descriptor protos)
+	unresolvedFDProtos := make(map[string]*descriptorpb.FileDescriptorProto)
+	for _, fdp := range fileDescProtos {
+		unresolvedFDProtos[*fdp.Name] = fdp
+	}
+	resolved := make(map[string]protoreflect.FileDescriptor)
+
+	newResolvedInLastRound := true
+	for len(unresolvedFDProtos) > 0 && newResolvedInLastRound {
+		newResolvedInLastRound = false
+		for fdpName, fdp := range unresolvedFDProtos {
+			allDepsFound := true
+			reg := &protoregistry.Files{}
+			for _, dependencyName := range fdp.Dependency {
+				resolvedDep, found := resolved[dependencyName]
+				if !found {
+					allDepsFound = false
+					break
+				}
+				if err := reg.RegisterFile(resolvedDep); err != nil {
+					return nil, errors.Errorf("can't put resolved dependency %v "+
+						"into descriptor registry due to: %v", resolvedDep.Name(), err)
+				}
+			}
+			if allDepsFound {
+				fd, err := protodesc.NewFile(fdp, reg)
+				if err != nil {
+					return nil, errors.Errorf("can't create file descriptor "+
+						"(from file descriptor proto named %v) due to: %v", *fdp.Name, err)
+				}
+				resolved[fdpName] = fd
+				delete(unresolvedFDProtos, fdpName)
+				newResolvedInLastRound = true
+			}
+		}
+	}
+	if len(unresolvedFDProtos) > 0 {
+		return nil, errors.Errorf("can't resolve some FileDescriptorProtos due to missing of "+
+			"some protos of their imports (FileDescriptorProtos with unresolvable imports: %v)",
+			fileDescriptorProtoMapToString(unresolvedFDProtos))
+	}
+
+	result := make([]protoreflect.FileDescriptor, 0, len(resolved))
+	for _, fd := range resolved {
+		result = append(result, fd)
+	}
+	return result, nil
+}
+
+func fileDescriptorProtoMapToString(fdps map[string]*descriptorpb.FileDescriptorProto) string {
+	keys := make([]string, 0, len(fdps))
+	for key, _ := range fdps {
+		keys = append(keys, key)
+	}
+	return strings.Join(keys, ",")
 }
