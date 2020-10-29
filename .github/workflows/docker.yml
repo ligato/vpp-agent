@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - master
+      - release/*
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+'
       - 'v[0-9]+.[0-9]+.[0-9]+-beta'
@@ -30,7 +31,7 @@ jobs:
     name: deploy latest
     needs: build
     runs-on: ubuntu-18.04
-    if: github.event_name == 'push' && !contains(github.ref, 'refs/tags/v')
+    if: github.event_name == 'push' && contains(github.ref, 'master')
 
     steps:
       - uses: actions/checkout@v1
@@ -67,6 +68,38 @@ jobs:
         id: vars
         run: |
           echo ::set-output name=tag::$(echo ${GITHUB_REF:10})
+
+          echo ::group::Env vars
+          echo $(env | sort)
+          echo ::endgroup::
+      - name: Tag images
+        run: |
+          docker tag dev_vpp_agent ligato/dev-vpp-agent:${{ steps.vars.outputs.tag }}
+          docker tag prod_vpp_agent ligato/vpp-agent:${{ steps.vars.outputs.tag }}
+      - name: Docker Login
+        run: docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
+      - name: Push images
+        run: |
+          docker push ligato/dev-vpp-agent:${{ steps.vars.outputs.tag }}
+          docker push ligato/vpp-agent:${{ steps.vars.outputs.tag }}
+
+  deploy-release:
+    name: deploy release
+    needs: build
+    runs-on: ubuntu-18.04
+    if: github.event_name == 'push' && contains(github.ref, 'release/')
+
+    steps:
+      - uses: actions/checkout@v1
+      - name: Dev image
+        run: make dev-image
+      - name: Prod image
+        run: make prod-image
+
+      - name: Get tag
+        id: vars
+        run: |
+          echo ::set-output name=tag::$(echo ${GITHUB_REF:11:14})
 
           echo ::group::Env vars
           echo $(env | sort)
