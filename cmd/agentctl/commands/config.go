@@ -145,22 +145,18 @@ func newConfigUpdateCommand(cli agentcli.Cli) *cobra.Command {
 	}
 	flags := cmd.Flags()
 	flags.StringVarP(&opts.Format, "format", "f", "", "Format output")
-	// TODO check options again -> add/remove (changing client means getting different set of options)
-	flags.BoolVar(&opts.Replace, "replace", false, "Replaces all existing config")
-	flags.BoolVar(&opts.WaitDone, "waitdone", false, "Waits until config update is done")
-	flags.BoolVarP(&opts.Verbose, "verbose", "v", false, "Show verbose output")
+	flags.DurationVarP(&opts.Timeout, "timeout", "t",
+		5*time.Minute, "Timeout for sending updated data")
 	return cmd
 }
 
 type ConfigUpdateOptions struct {
-	Format   string
-	Replace  bool
-	WaitDone bool
-	Verbose  bool
+	Format  string
+	Timeout time.Duration
 }
 
 func runConfigUpdate(cli agentcli.Cli, opts ConfigUpdateOptions, args []string) error {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Hour) // TODO add opts.Timeout
+	ctx, cancel := context.WithTimeout(context.Background(), opts.Timeout)
 	defer cancel()
 
 	// get input file
@@ -227,12 +223,7 @@ func runConfigUpdate(cli agentcli.Cli, opts ConfigUpdateOptions, args []string) 
 		logrus.Warnf("update failed: %v", err)
 		data = err
 	} else {
-		// TODO probably breaking compatibility with old-way returned result data.
-		//  Can be done something about it?
 		data = "OK"
-	}
-	if opts.Verbose {
-		// TODO if nothing to show with generic client then remove verbose
 	}
 	format := opts.Format
 	if len(format) == 0 {
@@ -361,7 +352,7 @@ func retrieveModelFileDescriptorProtos(knownModels []*client.ModelInfo, cli agen
 	// extract proto files from known models
 	protoFilePaths := make(map[string]struct{}) // using map as set for deduplication
 	for _, modelDetail := range knownModels {
-		protoFilePath, err := client.ModelOptionFor("protoFile", modelDetail.Options) // TODO make global constant?
+		protoFilePath, err := client.ModelOptionFor("protoFile", modelDetail.Options)
 		if err != nil {
 			return nil, errors.Errorf("can't get protoFile from model options of "+
 				"known model %v due to: %v", modelDetail.ProtoName, err)
