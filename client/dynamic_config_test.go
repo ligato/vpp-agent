@@ -19,9 +19,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	// TODO move custom model for testing somewhere into test related packages/folders (use test model in pkg/model)
-	// include in registered models a model not present in hardcoded config
-	_ "go.ligato.io/vpp-agent/v3/examples/customize/custom_api_model/proto/custom"
+	testmodel "go.ligato.io/vpp-agent/v3/pkg/models/testdata/proto"
 
 	yaml2 "github.com/ghodss/yaml"
 	"github.com/go-errors/errors"
@@ -74,6 +72,7 @@ func TestYamlCompatibility(t *testing.T) {
 	}
 
 	// create dynamic config
+	// Note: for revealing dynamic sctructure use fmt.Println(client.ExportDynamicConfigStructure(dynConfig))
 	dynConfig, err := client.NewDynamicConfig(knownModels)
 	Expect(err).ShouldNot(HaveOccurred(), "can't create dynamic config")
 
@@ -96,15 +95,23 @@ func TestYamlCompatibility(t *testing.T) {
 func TestDynamicConfigWithThirdPartyModel(t *testing.T) {
 	RegisterTestingT(t)
 	yaml := `config:
-  customConfig:
-    MyModel:
-    - name: testName
-      value: 21
+  modelConfig:
+    Basic_list:
+    - name: testName1
+    - name: testName2
 `
+	models.Register(&testmodel.Basic{}, models.Spec{
+		Module:  "model",
+		Type:    "basic",
+		Version: "v1",
+	}, models.WithNameTemplate("{{.Name}}")) // contains Name template => as repeated field in dynamic config
+	// Note: no Name template (and no GetName() in generated proto message) => as optional field in
+	// dynamic config (without "_list" suffix and  list to single reference in yaml)
+
 	// create construction input for dynamic config
 	var knownModels []*models.ModelInfo
 	for _, model := range models.RegisteredModels() {
-		if model.Spec().Class == "config" && model.Spec().Module == "custom" {
+		if model.Spec().Class == "config" && model.Spec().Module == "model" {
 			knownModels = append(knownModels, &models.ModelInfo{
 				ModelDetail:       *model.ModelDetail(),
 				MessageDescriptor: protoV1.MessageV2(model.NewInstance()).ProtoReflect().Descriptor(),
@@ -113,14 +120,15 @@ func TestDynamicConfigWithThirdPartyModel(t *testing.T) {
 	}
 
 	// create dynamic config
+	// Note: for revealing dynamic sctructure use fmt.Println(client.ExportDynamicConfigStructure(dynConfig))
 	dynConfig, err := client.NewDynamicConfig(knownModels)
 	Expect(err).ShouldNot(HaveOccurred(), "can't create dynamic config")
 
 	// test loading of 3rd party model data into dynamic config
 	bj2, err := yaml2.YAMLToJSON([]byte(yaml))
-	Expect(err).ShouldNot(HaveOccurred(), "can't convert yaml (from hardcoded config) to json")
+	Expect(err).ShouldNot(HaveOccurred(), "can't convert yaml to json")
 	Expect(protojson.Unmarshal(bj2, dynConfig)).To(Succeed(),
-		"can't marshal json data (from hardcoded config) to dynamic config")
+		"can't marshal json data to dynamic config")
 }
 
 // allImports extract direct and transitive imports from file descriptor.

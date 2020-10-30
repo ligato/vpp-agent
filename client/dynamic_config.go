@@ -5,9 +5,12 @@ import (
 	"strings"
 
 	"github.com/go-errors/errors"
+	"github.com/goccy/go-yaml"
 	"go.ligato.io/cn-infra/v2/logging/logrus"
 	"go.ligato.io/vpp-agent/v3/pkg/models"
+	"go.ligato.io/vpp-agent/v3/pkg/util"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/generic"
+	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protodesc"
 	"google.golang.org/protobuf/reflect/protoreflect"
@@ -280,6 +283,38 @@ func DynamicConfigExport(dynamicConfig *dynamicpb.Message) ([]proto.Message, err
 
 	// handling export from inner config layers by using helper methods
 	return exportFromConfigMessage(configMessage), nil
+}
+
+// ExportDynamicConfigStructure is a debugging helper function revealing current structure of dynamic config.
+// Debugging tools can't reveal that because dynamic config is dynamic proto message with no fields named by
+// proto fields as it is in generated proto messages.
+func ExportDynamicConfigStructure(dynamicConfig proto.Message) (string, error) {
+	// fill dynamic message with nothing (one proto message that will not map to anything), but relaying
+	// on side effect that will fill the structure with empty messages
+	anyProtoMessage := []proto.Message{&generic.Item{}}
+	util.PlaceProtosIntoProtos(anyProtoMessage, 1000, dynamicConfig)
+
+	// export dynamic config to json and then into yaml format
+	m := protojson.MarshalOptions{
+		Indent: "",
+		// this will also fill non-Message fields (Message fields are filled by util.PlaceProtosIntoProtos side effect)
+		EmitUnpopulated: true,
+	}
+	b, err := m.Marshal(dynamicConfig)
+	if err != nil {
+		return "", errors.Errorf("can't marshal dynamic config to json due to: %v", err)
+	}
+	var jsonObj interface{}
+	err = yaml.UnmarshalWithOptions(b, &jsonObj, yaml.UseOrderedMap())
+	if err != nil {
+		return "", errors.Errorf("can't convert dynamic config's json bytes to "+
+			"json struct for yaml marshalling due to: %v", err)
+	}
+	bb, err := yaml.Marshal(jsonObj)
+	if err != nil {
+		return "", errors.Errorf("can't marshal dynamic config from json to yaml due to: %v", err)
+	}
+	return string(bb), nil
 }
 
 // exportFromConfigMessage exports proto messages from config message layer of dynamic config
