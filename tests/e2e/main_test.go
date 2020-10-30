@@ -26,17 +26,6 @@ import (
 	"go.ligato.io/vpp-agent/v3/tests/testutils"
 )
 
-var (
-	vppPath       = flag.String("vpp-path", "/usr/bin/vpp", "VPP program path")
-	vppConfig     = flag.String("vpp-config", "", "VPP config file")
-	vppSockAddr   = flag.String("vpp-sock-addr", "", "VPP binapi socket address")
-	covPath       = flag.String("cov", "", "Path to collect coverage data")
-	agentHTTPPort = flag.Int("agent-http-port", 9191, "VPP-Agent HTTP port")
-	agentGrpcPort = flag.Int("agent-grpc-port", 9111, "VPP-Agent GRPC port")
-	debugHTTP     = flag.Bool("debug-http", false, "Enable HTTP client debugging")
-	debug         = flag.Bool("debug", false, "Turn on debug mode.")
-)
-
 func TestMain(m *testing.M) {
 	log.SetFlags(log.Lmicroseconds | log.Lshortfile)
 	flag.Parse()
