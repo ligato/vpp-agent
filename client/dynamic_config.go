@@ -361,6 +361,7 @@ func simpleProtoName(fullProtoName string) string {
 	return nameSplit[len(nameSplit)-1]
 }
 
+// ModelOptionFor extracts value for given model detail option key
 func ModelOptionFor(key string, options []*generic.ModelDetail_Option) (string, error) {
 	for _, option := range options {
 		if option.Key == key {

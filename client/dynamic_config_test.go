@@ -34,7 +34,6 @@ import (
 	vpp_srv6 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/srv6"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
 // TestYamlCompatibility test dynamically generated all-in-one configuration proto message to be compatible
@@ -129,18 +128,6 @@ func TestDynamicConfigWithThirdPartyModel(t *testing.T) {
 	Expect(err).ShouldNot(HaveOccurred(), "can't convert yaml to json")
 	Expect(protojson.Unmarshal(bj2, dynConfig)).To(Succeed(),
 		"can't marshal json data to dynamic config")
-}
-
-// allImports extract direct and transitive imports from file descriptor.
-func allImports(desc protoreflect.FileDescriptor) []protoreflect.FileDescriptor {
-	results := make([]protoreflect.FileDescriptor, 0)
-	imports := desc.Imports()
-	for i := 0; i < imports.Len(); i++ {
-		importFD := imports.Get(i).FileDescriptor
-		results = append(results, importFD)
-		results = append(results, allImports(importFD)...)
-	}
-	return results
 }
 
 func toYAML(data interface{}) (string, error) {
