@@ -22,6 +22,8 @@ const (
 	configName = "config"
 	// configGroupSuffix is field proto name suffix that all fields referencing config groups has
 	configGroupSuffix = "Config"
+	// repeatedFieldsSuffix is suffix added to repeated fields inside config group message
+	repeatedFieldsSuffix = "_list"
 )
 
 // names is supporting structure for remembering proto field name and json name
@@ -31,7 +33,6 @@ type names struct {
 
 // TODO: generate backwardCompatibleNames dynamically by searching given known model in configurator.Config
 //  and extracting proto field name and json name?
-// TODO add suffix(_list) for repeated fields
 
 // backwardCompatibleNames is mappging from dynamic Config fields (derived from currently known models) to
 // hardcoded names (proto field name/json name) in hardcoded configurator.Config. This mapping should allow
@@ -123,7 +124,7 @@ func MessageTypeRegistry(knownModels []*models.ModelInfo) (*protoregistry.Types,
 // registry (in form of protodesc.Resolver).
 func createFileDescRegistry(knownModels []*models.ModelInfo) (protodesc.Resolver, error) {
 	reg := &protoregistry.Files{}
-	for _,knownModel := range knownModels {
+	for _, knownModel := range knownModels {
 		fileDesc := knownModel.MessageDescriptor.ParentFile()
 		if _, err := reg.FindDescriptorByName(fileDesc.FullName()); err == protoregistry.NotFound {
 			reg.RegisterFile(fileDesc)
@@ -206,13 +207,15 @@ func createDynamicConfigDescriptorProto(knownModels []*ModelInfo, dependencyRegi
 		}
 
 		// fill config group message with currently handled known model
+		simpleProtoName := simpleProtoName(modelDetail.ProtoName)
+		protoName := string(simpleProtoName) + repeatedFieldsSuffix
+		jsonName := string(simpleProtoName) + repeatedFieldsSuffix
 		label := protoLabel(descriptorpb.FieldDescriptorProto_LABEL_REPEATED)
 		if !existsModelOptionFor("nameTemplate", modelDetail.Options) {
 			label = protoLabel(descriptorpb.FieldDescriptorProto_LABEL_OPTIONAL)
+			protoName = string(simpleProtoName)
+			jsonName = string(simpleProtoName)
 		}
-		simpleProtoName := simpleProtoName(modelDetail.ProtoName)
-		protoName := string(simpleProtoName)
-		jsonName := string(simpleProtoName)
 		compatibilityKey := fmt.Sprintf("%v.%v", configGroupName, string(simpleProtoName))
 		if newNames, found := backwardCompatibleNames[compatibilityKey]; found {
 			// using field names from hardcoded configurator.Config to achieve json/yaml backward compatibility
