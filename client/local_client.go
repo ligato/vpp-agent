@@ -44,7 +44,7 @@ func (c *client) KnownModels(class string) ([]*ModelInfo, error) {
 	for _, model := range models.RegisteredModels() {
 		if class == "" || model.Spec().Class == class {
 			modules = append(modules, &models.ModelInfo{
-				ModelDetail: *model.ModelDetail(),
+				ModelDetail:       *model.ModelDetail(),
 				MessageDescriptor: proto.MessageV2(model.NewInstance()).ProtoReflect().Descriptor(),
 			})
 		}
@@ -78,17 +78,8 @@ func (c *client) DumpState() ([]*generic.StateItem, error) {
 	return nil, nil
 }
 
-func (c *client) ChangeRequest(options ...ChangeRequestOption) ChangeRequest {
-	changeRequest := &changeRequest{txn: c.txnFactory.NewTxn(false)}
-	for _, option := range options {
-		option(changeRequest)
-	}
-	return changeRequest
-}
-
-func (c *client) WithOptions(callFunc func(GenericClient), options ...APIFuncOptions) {
-	// No options defined for local client, yet -> just calling the client without options
-	callFunc(c)
+func (c *client) ChangeRequest() ChangeRequest {
+	return &changeRequest{txn: c.txnFactory.NewTxn(false)}
 }
 
 type changeRequest struct {

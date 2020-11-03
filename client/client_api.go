@@ -16,10 +16,9 @@ package client
 
 import (
 	"context"
-	"go.ligato.io/vpp-agent/v3/pkg/models"
 
 	"github.com/golang/protobuf/proto"
-
+	"go.ligato.io/vpp-agent/v3/pkg/models"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/generic"
 )
 
@@ -28,8 +27,6 @@ import (
 type ModelInfo = models.ModelInfo
 
 type StateItem = generic.StateItem
-
-type APIFuncOptions map[string]interface{}
 
 // ConfigClient ...
 // Deprecated: use GenericClient instead
@@ -41,7 +38,7 @@ type GenericClient interface {
 	KnownModels(class string) ([]*ModelInfo, error)
 
 	// ChangeRequest returns transaction for changing config.
-	ChangeRequest(options ...ChangeRequestOption) ChangeRequest
+	ChangeRequest() ChangeRequest
 
 	// ResyncConfig overwrites existing config.
 	ResyncConfig(items ...proto.Message) error
@@ -52,21 +49,6 @@ type GenericClient interface {
 
 	// DumpState dumps actual running state.
 	DumpState() ([]*StateItem, error)
-
-	// TODO there are 2 ways how to set options for API functions (the generic below or
-	//  for ChangeRequest only the apply function). The apply function (as used in ChangeRequest)
-	//  can't be used for direct methods of GenericClient due to missing of appropriate root struct/interface.
-	//  GenericClient itself can be used, but the options scope is API function calls and therefore they
-	//  should be short lived and not globally set to GenericClient forever. Hence the recreation
-	//  of GenericClient in the WithOptions(...).
-	//  Both ways of setting can coexist, but should they? Can we do all of this better? Maybe breaking
-	//  the API by adding options to each needed function could be nicer and more maintainable for future
-	//  Action: Put in constructor of generic client (make it default generic client in agentcl)
-
-	// WithOptions is a generic way how to apply options to any API function in this interface.
-	// The given API function-specific options are temporary applied to generic client that
-	// will be provided back to called in form of callback function callFunc.
-	WithOptions(callFunc func(GenericClient), options ...APIFuncOptions)
 }
 
 // ChangeRequest is interface for config change request.
@@ -80,6 +62,3 @@ type ChangeRequest interface {
 	// Send sends the request.
 	Send(ctx context.Context) error
 }
-
-// ChangeRequestOption allows customization of ChangeRequest
-type ChangeRequestOption func(changeRequest ChangeRequest)

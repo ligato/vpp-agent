@@ -114,15 +114,6 @@ func NewDynamicConfig(knownModels []*models.ModelInfo) (*dynamicpb.Message, erro
 	return dynamicpb.NewMessage(rootMsg), nil
 }
 
-// MessageTypeRegistry creates a message type registry for all known model messages
-func MessageTypeRegistry(knownModels []*models.ModelInfo) (*protoregistry.Types, error) {
-	typeRegistry := new(protoregistry.Types)
-	for _, knownModel := range knownModels {
-		typeRegistry.RegisterMessage(dynamicpb.NewMessageType(knownModel.MessageDescriptor))
-	}
-	return typeRegistry, nil
-}
-
 // createFileDescRegistry extracts file descriptors from given known models and returns them in convenient
 // registry (in form of protodesc.Resolver).
 func createFileDescRegistry(knownModels []*models.ModelInfo) (protodesc.Resolver, error) {

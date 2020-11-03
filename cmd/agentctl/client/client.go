@@ -160,7 +160,7 @@ func (c *Client) GenericClient() (client.GenericClient, error) {
 	if err != nil {
 		return nil, err
 	}
-	return remoteclient.NewClientGRPC(conn), nil
+	return remoteclient.NewClientGRPC(conn, remoteclient.UseRemoteRegistry("config"))
 }
 
 // ConfiguratorClient returns "config" with gRPC connection.

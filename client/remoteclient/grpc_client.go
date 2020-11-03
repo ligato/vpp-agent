@@ -2,6 +2,8 @@ package remoteclient
 
 import (
 	"context"
+	"strings"
+
 	"github.com/go-errors/errors"
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/protoc-gen-go/descriptor"
@@ -15,29 +17,31 @@ import (
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/reflect/protoregistry"
 	"google.golang.org/protobuf/types/descriptorpb"
-	"strings"
-)
-
-// option keys
-const (
-	externallyKnownModels = "externallyKnownModels"
-	messageTypeResolver   = "messageTypeResolver"
 )
 
 type grpcClient struct {
-	manager        generic.ManagerServiceClient
-	meta           generic.MetaServiceClient
-	apiFuncOptions client.APIFuncOptions
+	manager       generic.ManagerServiceClient
+	meta          generic.MetaServiceClient
+	modelRegistry models.Registry
 }
 
+type NewClientOption = func(client.GenericClient) error
+
 // NewClientGRPC returns new instance that uses given service client for requests.
-func NewClientGRPC(conn grpc.ClientConnInterface) client.ConfigClient {
+func NewClientGRPC(conn grpc.ClientConnInterface, options ...NewClientOption) (client.ConfigClient, error) {
 	manager := generic.NewManagerServiceClient(conn)
 	meta := generic.NewMetaServiceClient(conn)
-	return &grpcClient{
-		manager: manager,
-		meta:    meta,
+	client := &grpcClient{
+		manager:       manager,
+		meta:          meta,
+		modelRegistry: models.DefaultRegistry,
 	}
+	for _, option := range options {
+		if err := option(client); err != nil {
+			return nil, errors.Errorf("can't apply option to newly created GRPC client due to: %v", err)
+		}
+	}
+	return client, nil
 }
 
 func (c *grpcClient) KnownModels(class string) ([]*client.ModelInfo, error) {
@@ -105,7 +109,7 @@ func (c *grpcClient) KnownModels(class string) ([]*client.ModelInfo, error) {
 	// extract all messages from file descriptors
 	messageDescriptors := make(map[string]protoreflect.MessageDescriptor)
 	for _, fd := range fileDescriptors {
-		for i:=0; i < fd.Messages().Len(); i++ {
+		for i := 0; i < fd.Messages().Len(); i++ {
 			messageDescriptors[string(fd.Messages().Get(i).FullName())] = fd.Messages().Get(i)
 		}
 	}
@@ -122,15 +126,12 @@ func (c *grpcClient) KnownModels(class string) ([]*client.ModelInfo, error) {
 	return result, nil
 }
 
-func (c *grpcClient) ChangeRequest(options ...client.ChangeRequestOption) client.ChangeRequest {
-	changeRequest := &setConfigRequest{
-		client: c.manager,
-		req:    &generic.SetConfigRequest{},
+func (c *grpcClient) ChangeRequest() client.ChangeRequest {
+	return &setConfigRequest{
+		client:        c.manager,
+		modelRegistry: c.modelRegistry,
+		req:           &generic.SetConfigRequest{},
 	}
-	for _, option := range options {
-		option(changeRequest)
-	}
-	return changeRequest
 }
 
 func (c *grpcClient) ResyncConfig(items ...proto.Message) error {
@@ -139,7 +140,7 @@ func (c *grpcClient) ResyncConfig(items ...proto.Message) error {
 	}
 
 	for _, protoModel := range items {
-		item, err := models.MarshalItem(protoModel)
+		item, err := models.MarshalItemUsingModelRegistry(protoModel, c.modelRegistry)
 		if err != nil {
 			return err
 		}
@@ -160,38 +161,17 @@ func (c *grpcClient) GetConfig(dsts ...interface{}) error {
 		return err
 	}
 
-	knownModels, dontUseLocalModelRegistry := c.apiFuncOptions[externallyKnownModels]
-	resolver, resolverFound := c.apiFuncOptions[messageTypeResolver]
-	if dontUseLocalModelRegistry && !resolverFound {
-		return errors.Errorf("when not using local model registry then message type resolver is needed")
-	}
-
 	protos := map[string]proto.Message{}
 	for _, item := range resp.Items {
-		var val proto.Message
 		var key string
-		if dontUseLocalModelRegistry {
-			knownmodels := knownModels.([]*client.ModelInfo)
-			msgTypeResolver := resolver.(*protoregistry.Types)
-			val, err = models.UnmarshalItemWithExternallyKnownModels(item.Item, knownmodels, msgTypeResolver)
-			if err != nil {
-				return err
-			}
-			if data := item.Item.GetData(); data != nil {
-				key, err = models.GetKeyWithExternallyKnownModels(val, knownmodels)
-			} else {
-				key, err = models.GetKeyForItemWithExternallyKnownModels(item.Item, knownmodels)
-			}
+		val, err := models.UnmarshalItemUsingModelRegistry(item.Item, c.modelRegistry)
+		if err != nil {
+			return err
+		}
+		if data := item.Item.GetData(); data != nil {
+			key, err = models.GetKeyUsingModelRegistry(val, c.modelRegistry)
 		} else {
-			val, err = models.UnmarshalItem(item.Item)
-			if err != nil {
-				return err
-			}
-			if data := item.Item.GetData(); data != nil {
-				key, err = models.GetKey(val)
-			} else {
-				key, err = models.GetKeyForItem(item.Item)
-			}
+			key, err = models.GetKeyForItemUsingModelRegistry(item.Item, c.modelRegistry)
 		}
 		if err != nil {
 			return err
@@ -224,10 +204,10 @@ func (c *grpcClient) DumpState() ([]*client.StateItem, error) {
 }
 
 type setConfigRequest struct {
-	client                generic.ManagerServiceClient
-	req                   *generic.SetConfigRequest
-	externallyKnownModels []*client.ModelInfo
-	err                   error
+	client        generic.ManagerServiceClient
+	modelRegistry models.Registry
+	req           *generic.SetConfigRequest
+	err           error
 }
 
 func (r *setConfigRequest) Update(items ...proto.Message) client.ChangeRequest {
@@ -236,11 +216,7 @@ func (r *setConfigRequest) Update(items ...proto.Message) client.ChangeRequest {
 	}
 	for _, protoModel := range items {
 		var item *generic.Item
-		if r.externallyKnownModels != nil {
-			item, r.err = models.MarshalItemWithExternallyKnownModels(protoModel, r.externallyKnownModels)
-		} else {
-			item, r.err = models.MarshalItem(protoModel)
-		}
+		item, r.err = models.MarshalItemUsingModelRegistry(protoModel, r.modelRegistry)
 		if r.err != nil {
 			return r
 		}
@@ -256,7 +232,7 @@ func (r *setConfigRequest) Delete(items ...proto.Message) client.ChangeRequest {
 		return r
 	}
 	for _, protoModel := range items {
-		item, err := models.MarshalItem(protoModel)
+		item, err := models.MarshalItemUsingModelRegistry(protoModel, r.modelRegistry)
 		if err != nil {
 			r.err = err
 			return r
@@ -277,43 +253,27 @@ func (r *setConfigRequest) Send(ctx context.Context) (err error) {
 	return err
 }
 
-// WithExternallyKnownModels uses for remote client given list of known models to use instead of local
-// model registry that is created by models included in compilation. This can be used to separate models
-// between compiled programs (i.e. to have generic agenctl that doesn't have custom models of customized
-// vpp-agent fork).
-func WithExternallyKnownModels(knownModels []*client.ModelInfo) client.ChangeRequestOption {
-	return func(changeRequest client.ChangeRequest) {
-		if request, ok := changeRequest.(*setConfigRequest); ok {
-			request.externallyKnownModels = knownModels
+// UseRemoteRegistry modifies remote client to use remote model registry instead of local model registry. The
+// remote model registry is filled with remote known models for given class (modelClass).
+func UseRemoteRegistry(modelClass string) NewClientOption {
+	return func(c client.GenericClient) error {
+		if grpcClient, ok := c.(*grpcClient); ok {
+			// get all remote models
+			knownModels, err := grpcClient.KnownModels(modelClass)
+			if err != nil {
+				return errors.Errorf("can't retrieve remote models (in UseRemoteRegistry) due to: %w", err)
+			}
+
+			// fill them into new remote registry and use that registry instead of default local model registry
+			grpcClient.modelRegistry = models.NewRemoteRegistry()
+			for _, knowModel := range knownModels {
+				if _, err := grpcClient.modelRegistry.Register(knowModel, models.ToSpec(knowModel.Spec)); err != nil {
+					return errors.Errorf("can't register remote known model "+
+						"for remote generic client usage due to: %w", err)
+				}
+			}
 		}
-	}
-}
-
-func (c *grpcClient) WithOptions(callFunc func(client.GenericClient), options ...client.APIFuncOptions) {
-	newClient := &grpcClient{
-		manager:        c.manager,
-		meta:           c.meta,
-		apiFuncOptions: make(client.APIFuncOptions),
-	}
-	for _, optionSlice := range options {
-		for k, v := range optionSlice {
-			newClient.apiFuncOptions[k] = v
-		}
-	}
-	callFunc(newClient)
-}
-
-// UseExternallyKnownModels returns properly filled APIFuncOption to use externally known models
-func UseExternallyKnownModels(knownModels []*client.ModelInfo) client.APIFuncOptions {
-	return client.APIFuncOptions{
-		externallyKnownModels: knownModels,
-	}
-}
-
-// UseMessageTypeResolver returns properly filled APIFuncOption to use message type resolver
-func UseMessageTypeResolver(msgTypeResolver *protoregistry.Types) client.APIFuncOptions {
-	return client.APIFuncOptions{
-		messageTypeResolver: msgTypeResolver,
+		return nil
 	}
 }
 
@@ -402,9 +362,9 @@ func extractProtoMessages(dsts []interface{}) []protoV2.Message {
 	return protoDsts
 }
 
-func convertToProtoV2(protoMap map[string]proto.Message) []protoV2.Message{
-	result := make([]protoV2.Message,0,len(protoMap))
-	for _,msg := range protoMap {
+func convertToProtoV2(protoMap map[string]proto.Message) []protoV2.Message {
+	result := make([]protoV2.Message, 0, len(protoMap))
+	for _, msg := range protoMap {
 		result = append(result, proto.MessageV2(msg))
 	}
 	return result

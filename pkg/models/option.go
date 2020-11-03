@@ -21,7 +21,7 @@ import (
 	"go.ligato.io/vpp-agent/v3/proto/ligato/generic"
 )
 
-func (r *Registry) checkProtoOptions(x interface{}) *KnownModel {
+func (r *LocalRegistry) checkProtoOptions(x interface{}) *LocallyKnownModel {
 	p, ok := x.(descriptor.Message)
 	if !ok {
 		return nil
@@ -36,7 +36,7 @@ func (r *Registry) checkProtoOptions(x interface{}) *KnownModel {
 		if err != nil {
 			panic(err)
 		}
-		return km
+		return km.(*LocallyKnownModel)
 	}
 	return nil
 }

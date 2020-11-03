@@ -30,7 +30,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"go.ligato.io/vpp-agent/v3/client"
-	"go.ligato.io/vpp-agent/v3/client/remoteclient"
 	"go.ligato.io/vpp-agent/v3/cmd/agentctl/api/types"
 	agentcli "go.ligato.io/vpp-agent/v3/cmd/agentctl/cli"
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
@@ -97,18 +96,8 @@ func runConfigGet(cli agentcli.Cli, opts ConfigGetOptions) error {
 		return fmt.Errorf("can't create all-config proto message dynamically due to: %w", err)
 	}
 
-	// create type registry for resolving proto.Any messages retrieved
-	msgTypeResolver, err := client.MessageTypeRegistry(knownModels)
-	if err != nil {
-		return fmt.Errorf("can't create message type resolver due to: %v", err)
-	}
-
 	// retrieve data into config
-	c.WithOptions(func(c client.GenericClient) {
-		err = c.GetConfig(config)
-	}, remoteclient.UseExternallyKnownModels(knownModels),
-		remoteclient.UseMessageTypeResolver(msgTypeResolver))
-	if err != nil {
+	if err := c.GetConfig(config); err != nil {
 		return fmt.Errorf("can't retrieve configuration due to: %v", err)
 	}
 
@@ -194,7 +183,7 @@ func runConfigUpdate(cli agentcli.Cli, opts ConfigUpdateOptions, args []string) 
 
 	// extracting proto messages from dynamically created config structure
 	// (generic client wants single proto messages and not one big hierarchical config)
-	req := c.ChangeRequest(remoteclient.WithExternallyKnownModels(knownModels))
+	req := c.ChangeRequest()
 	configMessages, err := client.DynamicConfigExport(config)
 	if err != nil {
 		return fmt.Errorf("can't extract single configuration proto messages "+
