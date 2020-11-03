@@ -99,7 +99,7 @@ func GetKeyUsingModelRegistry(message proto.Message, modelRegistry Registry) (st
 	model, err := GetModelFromRegistryFor(message, modelRegistry)
 	if err != nil {
 		return "", errors.Errorf("can't find known model "+
-			"for message due to: %v (message = %+v)", err, message)
+			"for message (while getting key for model) due to: %v (message = %+v)", err, message)
 	}
 
 	// compute Item.ID.Name

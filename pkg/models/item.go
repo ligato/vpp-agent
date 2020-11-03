@@ -79,11 +79,21 @@ func UnmarshalItemUsingModelRegistry(item *api.Item, modelRegistry Registry) (pr
 	if err != nil {
 		return nil, err
 	}
-	return unmarshalItemDataAny(item.GetData().GetAny(), modelRegistry.MessageTypeRegistry()) // msgTypeResolver *protoregistry.Types
+
+	// unmarshal item's inner data
+	// (we must distinguish between model registries due to different go types produced by using different
+	// model registry. The LocalRegistry use cases need go types as generated from models, but
+	// the RemoteRegistry can't produce such go typed instances (we know the name of go type, but can't
+	// produce it from remote information) so dynamic proto message must be enough (*dynamicpb.Message))
+	if _, ok := modelRegistry.(*LocalRegistry); ok {
+		return unmarshalItemDataAnyOfLocalModel(item.GetData().GetAny())
+	}
+	return unmarshalItemDataAnyOfRemoteModel(item.GetData().GetAny(), modelRegistry.MessageTypeRegistry())
 }
 
-// unmarshalItemDataAny unmarshalls the generic data part of api.Item
-func unmarshalItemDataAny(itemAny *any.Any, msgTypeResolver *protoregistry.Types) (proto.Message, error) {
+// unmarshalItemDataAnyOfRemoteModel unmarshalls the generic data part of api.Item that has remote model.
+// The unmarshalled proto.Message will have dynamic type (*dynamicpb.Message).
+func unmarshalItemDataAnyOfRemoteModel(itemAny *any.Any, msgTypeResolver *protoregistry.Types) (proto.Message, error) {
 	msg, err := anypb.UnmarshalNew(itemAny, protoV2.UnmarshalOptions{
 		Resolver: msgTypeResolver,
 	})
@@ -91,6 +101,17 @@ func unmarshalItemDataAny(itemAny *any.Any, msgTypeResolver *protoregistry.Types
 		return nil, err
 	}
 	return proto.MessageV1(msg), nil
+}
+
+// unmarshalItemDataAnyOfLocalModel unmarshalls the generic data part of api.Item that has local model.
+// The unmarshalled proto.Message will have the go type of model generated go structures (that is due to
+// go type registering in init() method of generated go structures file).
+func unmarshalItemDataAnyOfLocalModel(itemAny *any.Any) (proto.Message, error) {
+	var any types.DynamicAny // local
+	if err := types.UnmarshalAny(itemAny, &any); err != nil {
+		return nil, err
+	}
+	return any.Message, nil
 }
 
 // GetModelForItem returns model for given item.
