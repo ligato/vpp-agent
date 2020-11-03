@@ -82,7 +82,10 @@ func main() {
 		}
 		defer conn.Close()
 
-		c = remoteclient.NewClientGRPC(conn)
+		c, err = remoteclient.NewClientGRPC(conn)
+		if err != nil {
+			log.Fatal(err)
+		}
 		logging.Info("Using Remote Client - gRPC API")
 
 	default:
