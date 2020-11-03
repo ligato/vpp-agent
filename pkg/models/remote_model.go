@@ -169,7 +169,10 @@ func (m *RemotelyKnownModel) replaceFieldNamesInNameTemplate(messageDesc protore
 	//  (protoName, jsonName). We can do here better (fix field names prefixing other field names or field
 	//  names colliding with field names of inner reference structures), but i the end we are still guessing
 	//  without knowledge of go type. Can we fix this?
-	//  Try check message type fields for possible information about Go Type field names
+	//  (The dynamicpb.NewMessageType(messageDesc) should return MessageType that joins message descriptor and
+	//  go type information, but for dynamicpb package the go type means always dynamicpb.Message and not real
+	//  go type of generated models. We could use some other MessageType implementation, but they always need
+	//  the go type informations(reflect.Type) so without it the MessageType is useless for solving this)
 	for i := 0; i < messageDesc.Fields().Len(); i++ {
 		fieldDesc := messageDesc.Fields().Get(i)
 		pbJSONName := fieldDesc.JSONName()
