@@ -46,9 +46,10 @@ func NewConfigCommand(cli agentcli.Cli) *cobra.Command {
 	}
 	cmd.AddCommand(
 		newConfigGetCommand(cli),
+		newConfigUpdateCommand(cli),
 		newConfigDeleteCommand(cli),
 		newConfigRetrieveCommand(cli),
-		newConfigUpdateCommand(cli),
+		newConfigWatchCommand(cli),
 		newConfigResyncCommand(cli),
 		newConfigHistoryCommand(cli),
 	)
@@ -299,7 +300,7 @@ func newConfigRetrieveCommand(cli agentcli.Cli) *cobra.Command {
 	)
 	cmd := &cobra.Command{
 		Use:     "retrieve",
-		Aliases: []string{"ret", "read"},
+		Aliases: []string{"ret", "read", "dump"},
 		Short:   "Retrieve currently running config",
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -337,6 +338,96 @@ func runConfigRetrieve(cli agentcli.Cli, opts ConfigRetrieveOptions) error {
 	}
 
 	return nil
+}
+
+func newConfigWatchCommand(cli agentcli.Cli) *cobra.Command {
+	var (
+		opts ConfigWatchOptions
+	)
+	cmd := &cobra.Command{
+		Use:     "watch",
+		Aliases: []string{"notify", "subscribe"},
+		Short:   "Watch events",
+		Example: "Filter events by VPP interface name 'loop1'" +
+			`{{.CommandPath}} config watch --filter='{"vpp_notification":{"interface":{"state":{"name":"loop1"}}}}'` +
+			"" +
+			"Filter events by VPP interface UPDOWN type" +
+			`{{.CommandPath}} config watch --filter='{"vpp_notification":{"interface":{"type":"UPDOWN"}}}'`,
+		Args: cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return runConfigWatch(cli, opts)
+		},
+	}
+	flags := cmd.Flags()
+	flags.StringArrayVar(&opts.Filters, "filter", nil, "Filter for notifications. Value should be JSON data of configurator.Notification.")
+	flags.StringVarP(&opts.Format, "format", "f", "", "Format output")
+	return cmd
+}
+
+type ConfigWatchOptions struct {
+	Format  string
+	Filters []string
+}
+
+func runConfigWatch(cli agentcli.Cli, opts ConfigWatchOptions) error {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	client, err := cli.Client().ConfiguratorClient()
+	if err != nil {
+		return err
+	}
+
+	filters, err := prepareNotifyFilters(opts.Filters)
+	if err != nil {
+		return fmt.Errorf("filters error: %w", err)
+	}
+
+	var nextIdx uint32
+	stream, err := client.Notify(ctx, &configurator.NotifyRequest{
+		Idx:     nextIdx,
+		Filters: filters,
+	})
+	if err != nil {
+		return err
+	}
+
+	format := opts.Format
+	if len(format) == 0 {
+		format = `json`
+	}
+
+	for {
+		notif, err := stream.Recv()
+		if err == io.EOF {
+			break
+		} else if err != nil {
+			return err
+		}
+
+		logrus.Debugf("Notification[%d]: %v",
+			notif.NextIdx-1, notif.Notification)
+		nextIdx = notif.NextIdx
+
+		if err := formatAsTemplate(cli.Out(), format, notif); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func prepareNotifyFilters(filters []string) ([]*configurator.Notification, error) {
+	var list []*configurator.Notification
+	for _, filter := range filters {
+		notif := &configurator.Notification{}
+		err := protojson.Unmarshal([]byte(filter), notif)
+		if err != nil {
+			return nil, err
+		}
+		list = append(list, notif)
+	}
+	return list, nil
 }
 
 func newConfigResyncCommand(cli agentcli.Cli) *cobra.Command {

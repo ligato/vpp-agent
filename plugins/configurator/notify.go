@@ -59,6 +59,9 @@ func (svc *notifyService) Notify(from *pb.NotifyRequest, server pb.ConfiguratorS
 	// Start from requested index until the most recent entry
 	for i := fromIdx; i < svc.curIdx; i++ {
 		entry := svc.buffer[i%bufferSize]
+		if !isFilter(entry.GetNotification(), from.Filters) {
+			continue
+		}
 		if err := server.Send(entry); err != nil {
 			svc.mx.RUnlock()
 			svc.log.Warnf("Notify send error: %v", err)
@@ -126,7 +129,7 @@ func (svc *notifyService) init() {
 	svc.notifs = make(chan *pb.NotifyResponse)
 	svc.watchs = make(chan *watcher)
 
-	watchers := []*watcher{}
+	var watchers []*watcher
 
 	go func() {
 		for {
