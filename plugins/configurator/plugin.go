@@ -18,6 +18,7 @@ import (
 	"go.ligato.io/cn-infra/v2/infra"
 	"go.ligato.io/cn-infra/v2/rpc/grpc"
 	"go.ligato.io/cn-infra/v2/servicelabel"
+	"google.golang.org/protobuf/proto"
 
 	"go.ligato.io/vpp-agent/v3/plugins/govppmux"
 	iflinuxplugin "go.ligato.io/vpp-agent/v3/plugins/linux/ifplugin"
@@ -39,7 +40,8 @@ import (
 	natvppcalls "go.ligato.io/vpp-agent/v3/plugins/vpp/natplugin/vppcalls"
 	puntvppcalls "go.ligato.io/vpp-agent/v3/plugins/vpp/puntplugin/vppcalls"
 	wireguardvppcalls "go.ligato.io/vpp-agent/v3/plugins/vpp/wireguardplugin/vppcalls"
-	rpc "go.ligato.io/vpp-agent/v3/proto/ligato/configurator"
+	pb "go.ligato.io/vpp-agent/v3/proto/ligato/configurator"
+	"go.ligato.io/vpp-agent/v3/proto/ligato/linux"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/vpp"
 )
 
@@ -74,6 +76,7 @@ func (p *Plugin) Init() error {
 	p.configurator.log = p.Log.NewLogger("configurator")
 	p.configurator.dumpService.log = p.Log.NewLogger("dump")
 	p.configurator.notifyService.log = p.Log.NewLogger("notify")
+	p.configurator.notifyService.init()
 	p.configurator.dispatch = p.Dispatch
 
 	if err := p.initHandlers(); err != nil {
@@ -82,22 +85,35 @@ func (p *Plugin) Init() error {
 
 	grpcServer := p.GRPCServer.GetServer()
 	if grpcServer != nil {
-		rpc.RegisterConfiguratorServiceServer(grpcServer, &p.configurator)
+		pb.RegisterConfiguratorServiceServer(grpcServer, &p.configurator)
 	}
 
 	if p.VPPIfPlugin != nil {
-		p.VPPIfPlugin.SetNotifyService(p.sendVppNotification)
+		p.VPPIfPlugin.SetNotifyService(func(notification *vpp.Notification) {
+			p.sendNotification(notification)
+		})
 	}
 
 	return nil
 }
 
-func (p *Plugin) sendVppNotification(vppNotification *vpp.Notification) {
-	p.configurator.notifyService.pushNotification(&rpc.Notification{
-		Notification: &rpc.Notification_VppNotification{
-			VppNotification: vppNotification,
-		},
-	})
+func (p *Plugin) sendNotification(notification proto.Message) {
+	switch n := notification.(type) {
+	case *vpp.Notification:
+		p.configurator.notifyService.pushNotification(&pb.Notification{
+			Notification: &pb.Notification_VppNotification{
+				VppNotification: n,
+			},
+		})
+	case *linux.Notification:
+		p.configurator.notifyService.pushNotification(&pb.Notification{
+			Notification: &pb.Notification_LinuxNotification{
+				LinuxNotification: n,
+			},
+		})
+	default:
+		p.Log.Warnf("unknown notification type: %v", notification)
+	}
 }
 
 // Close does nothing.
