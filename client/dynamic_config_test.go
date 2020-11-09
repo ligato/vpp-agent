@@ -43,15 +43,11 @@ func TestYamlCompatibility(t *testing.T) {
 	RegisterTestingT(t)
 
 	// fill hardcoded Config with configuration
-	// (Note: using fake Config root (configurator.GetResponse) to get "config" root element
-	// in json/yaml (mimicking agentctl config yaml handling))
 	ifaces := []*interfaces.Interface{memIFRed, memIFBlack, loop1, vppTap1}
-	configRoot := &configurator.GetResponse{
-		Config: &configurator.Config{
-			VppConfig: &vpp.ConfigData{
-				Interfaces: ifaces,
-				Srv6Global: srv6Global,
-			},
+	config := &configurator.Config{
+		VppConfig: &vpp.ConfigData{
+			Interfaces: ifaces,
+			Srv6Global: srv6Global,
 		},
 	}
 	// TODO add more configuration to hardcoded version of configuration so it can cover all configuration
@@ -71,12 +67,12 @@ func TestYamlCompatibility(t *testing.T) {
 	}
 
 	// create dynamic config
-	// Note: for revealing dynamic sctructure use fmt.Println(client.ExportDynamicConfigStructure(dynConfig))
+	// Note: for revealing dynamic structure use fmt.Println(client.ExportDynamicConfigStructure(dynConfig))
 	dynConfig, err := client.NewDynamicConfig(knownModels)
 	Expect(err).ShouldNot(HaveOccurred(), "can't create dynamic config")
 
-	// Hardcoded Config filled with data -> YAML -> JSON -> load to empty dynamic Config -> YAML
-	yamlFromHardcodedConfig, err := toYAML(configRoot) // should be the same output as agentctl config get
+	// Hardcoded Config filled with data -> YAML -> JSON -> load into empty dynamic Config -> YAML
+	yamlFromHardcodedConfig, err := toYAML(config) // should be the same output as agentctl config get
 	Expect(err).ShouldNot(HaveOccurred(), "can't export hardcoded config as yaml (initial export)")
 	bj, err := yaml2.YAMLToJSON([]byte(yamlFromHardcodedConfig))
 	Expect(err).ShouldNot(HaveOccurred(), "can't convert yaml (from hardcoded config) to json")
@@ -93,8 +89,7 @@ func TestYamlCompatibility(t *testing.T) {
 // data can be loaded into dynamic config from yaml form
 func TestDynamicConfigWithThirdPartyModel(t *testing.T) {
 	RegisterTestingT(t)
-	yaml := `config:
-  modelConfig:
+	yaml := `modelConfig:
     Basic_list:
     - name: testName1
     - name: testName2

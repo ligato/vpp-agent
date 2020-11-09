@@ -146,29 +146,14 @@ func createDynamicConfigDescriptorProto(knownModels []*ModelInfo, dependencyRegi
 
 	// create config message
 	configDP := &descriptorpb.DescriptorProto{
-		Name: proto.String("Config"),
-	}
-
-	// create fake root to mimic the same usage as with hardcoded configurator.Config proto message
-	// (idea is to not break anything for user that is using yaml configs from/for old
-	// hardcoded configurator.Config proto message)
-	fakeConfigRootDP := &descriptorpb.DescriptorProto{
 		Name: proto.String("Dynamic_config"),
-		Field: []*descriptorpb.FieldDescriptorProto{
-			&descriptorpb.FieldDescriptorProto{
-				Name:     proto.String(configName),
-				Number:   proto.Int32(1), // field numbering
-				JsonName: proto.String("config"),
-				Type:     protoType(descriptorpb.FieldDescriptorProto_TYPE_MESSAGE),
-				TypeName: proto.String(*configDP.Name),
-				Label:    protoLabel(descriptorpb.FieldDescriptorProto_LABEL_OPTIONAL),
-			},
-		},
 	}
-	rootMsgName = protoreflect.Name(*(fakeConfigRootDP.Name))
 
-	// add new messages to proto file
-	fileDP.MessageType = []*descriptorpb.DescriptorProto{fakeConfigRootDP, configDP}
+	// add config message to proto file
+	fileDP.MessageType = []*descriptorpb.DescriptorProto{configDP}
+
+	// define configuration root (for users of this function)
+	rootMsgName = protoreflect.Name(*(configDP.Name))
 
 	// fill dynamic message with given known models
 	configGroups := make(map[string]*descriptorpb.DescriptorProto)
@@ -264,16 +249,19 @@ func DynamicConfigExport(dynamicConfig *dynamicpb.Message) ([]proto.Message, err
 		return nil, errors.Errorf("dynamic config can't be nil")
 	}
 
-	// moving from fake config root to real config root
-	configField := dynamicConfig.Descriptor().Fields().ByName(configName)
-	if configField == nil {
-		return nil, errors.Errorf("can't find field %v. Was provided dynamic config created by "+
-			"NewDynamicConfig(...) method or equivalently?", configName)
-	}
-	configMessage := dynamicConfig.Get(configField).Message()
+	// iterate over config group messages and extract proto message from them
+	result := make([]proto.Message, 0)
+	fields := dynamicConfig.Descriptor().Fields()
+	for i := 0; i < fields.Len(); i++ {
+		fieldName := fields.Get(i).Name()
+		if strings.HasSuffix(string(fieldName), configGroupSuffix) {
+			configGroupMessage := dynamicConfig.Get(fields.Get(i)).Message()
 
-	// handling export from inner config layers by using helper methods
-	return exportFromConfigMessage(configMessage), nil
+			// handling export from inner config layers by using helper method
+			result = append(result, exportFromConfigGroupMessage(configGroupMessage)...)
+		}
+	}
+	return result, nil
 }
 
 // ExportDynamicConfigStructure is a debugging helper function revealing current structure of dynamic config.
@@ -306,22 +294,6 @@ func ExportDynamicConfigStructure(dynamicConfig proto.Message) (string, error) {
 		return "", errors.Errorf("can't marshal dynamic config from json to yaml due to: %v", err)
 	}
 	return string(bb), nil
-}
-
-// exportFromConfigMessage exports proto messages from config message layer of dynamic config
-func exportFromConfigMessage(configMessage protoreflect.Message) []proto.Message {
-	result := make([]proto.Message, 0)
-	fields := configMessage.Descriptor().Fields()
-	for i := 0; i < fields.Len(); i++ {
-		fieldName := fields.Get(i).Name()
-		if strings.HasSuffix(string(fieldName), configGroupSuffix) {
-			configGroupMessage := configMessage.Get(fields.Get(i)).Message()
-
-			// handling export from inner config layers by using helper methods
-			result = append(result, exportFromConfigGroupMessage(configGroupMessage)...)
-		}
-	}
-	return result
 }
 
 // exportFromConfigGroupMessage exports proto messages from config group message layer of dynamic config
