@@ -31,6 +31,9 @@ var (
 
 	// ErrWireguardUnsupported error is returned if Wireguard interface is not supported on given VPP version.
 	ErrWireguardUnsupported = errors.New("Wireguard interface not supported")
+
+	// ErrRdmaUnsupported error is returned if RDMA interface is not supported on given VPP version.
+	ErrRdmaUnsupported = errors.New("RDMA interface not supported")
 )
 
 // InterfaceDetails is the wrapper structure for the interface northbound API structure.
@@ -130,6 +133,7 @@ type InterfaceVppAPI interface {
 	MemifAPI
 	Wmxnet3API
 	IP6ndVppAPI
+	RdmaAPI
 
 	// AddAfPacketInterface calls AfPacketCreate VPP binary API.
 	AddAfPacketInterface(ifName, hwAddr, targetHostIfName string) (swIndex uint32, err error)
@@ -258,6 +262,13 @@ type Wmxnet3API interface {
 	AddVmxNet3(ifName string, vmxNet3 *interfaces.VmxNet3Link) (uint32, error)
 	// DeleteVmxNet3 removes vmxNet3 interface
 	DeleteVmxNet3(ifName string, ifIdx uint32) error
+}
+
+type RdmaAPI interface {
+	// AddRdmaInterface adds new interface with RDMA driver.
+	AddRdmaInterface(ctx context.Context, ifName string, rdmaLink *interfaces.RDMALink) (swIdx uint32, err error)
+	// DeleteRdmaInterface removes interface with RDMA driver.
+	DeleteRdmaInterface(ctx context.Context, ifName string, ifIdx uint32) error
 }
 
 // InterfaceVppRead provides read methods for interface plugin

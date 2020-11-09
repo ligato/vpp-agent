@@ -57,6 +57,7 @@ const (
 	ipipVrfTableDep          = "vrf-table-for-ipip-exists"
 	microserviceDep          = "microservice-available"
 	parentInterfaceDep       = "parent-interface-exists"
+	rdmaHostInterfaceDep     = "rdma-host-interface-exists"
 
 	// how many characters a logical interface name is allowed to have
 	//  - determined by much fits into the VPP interface tag (64 null-terminated character string)
@@ -77,6 +78,10 @@ const (
 
 	// Length of wireguard private-key in base64. It should be equal 32 in binary
 	wireguardKeyLength = 44
+
+	// default RDMA attributes
+	defaultRdmaQueueNum = 1
+	defaultRdmaQueueSize = 1024
 )
 
 // A list of non-retriable errors:
@@ -180,6 +185,18 @@ var (
 
 	// ErrWgPort is returned when udp-port exceeds max value.
 	ErrWgPort = errors.New("invalid wireguard port")
+
+	// ErrRdmaHostInterfaceMissing is returned when host_if_name is not configured for RDMA link.
+	ErrRdmaHostInterfaceMissing =  errors.Errorf("missing the host interface name for RDMA")
+
+	// ErrRdmaInvalidQueueSize is returned when configured Rx or Tx queue size for RDMA driver is not power of 2.
+	ErrRdmaInvalidQueueSize =  errors.Errorf("RDMA Rx/Tx queue size is not power of 2")
+
+	// ErrRdmaQueueSizeTooLarge is returned when configured Rx or Tx queue size for RDMA driver is too large.
+	ErrRdmaQueueSizeTooLarge =  errors.Errorf("RDMA Rx/Tx queue size is too large (more than 16bits)")
+
+	// ErrRdmaQueueNumTooLarge is returned when the number of configured Rx/Tx queues for RDMA driver exceeds the limit.
+	ErrRdmaQueueNumTooLarge =  errors.Errorf("Number of RDMA queues is too large (more than 16bits)")
 )
 
 // InterfaceDescriptor teaches KVScheduler how to configure VPP interfaces.
@@ -376,6 +393,10 @@ func (d *InterfaceDescriptor) equivalentTypeSpecificConfig(oldIntf, newIntf *int
 		if !proto.Equal(oldIntf.GetWireguard(), newIntf.GetWireguard()) {
 			return false
 		}
+	case interfaces.Interface_RDMA:
+		if !d.equivalentRdma(oldIntf.GetRdma(), newIntf.GetRdma()) {
+			return false
+		}
 	}
 	return true
 }
@@ -442,6 +463,15 @@ func (d *InterfaceDescriptor) equivalentBond(oldBond, newBond *interfaces.BondLi
 	return oldBond.Id == newBond.Id &&
 		oldBond.Mode == newBond.Mode &&
 		oldBond.Lb == newBond.Lb
+}
+
+// equivalentRdma compares two RDMA interfaces for equivalence.
+func (d *InterfaceDescriptor) equivalentRdma(oldRdma, newRdma *interfaces.RDMALink) bool {
+	return oldRdma.GetHostIfName() == newRdma.GetHostIfName() &&
+		oldRdma.GetMode() == newRdma.GetMode() &&
+		d.getRdmaQueueNum(oldRdma) == d.getRdmaQueueNum(newRdma) &&
+		d.getRdmaRxQueueSize(oldRdma) == d.getRdmaRxQueueSize(newRdma) &&
+		d.getRdmaTxQueueSize(oldRdma) == d.getRdmaTxQueueSize(newRdma)
 }
 
 // MetadataFactory is a factory for index-map customized for VPP interfaces.
@@ -512,6 +542,10 @@ func (d *InterfaceDescriptor) Validate(key string, intf *interfaces.Interface) e
 		}
 	case *interfaces.Interface_Wireguard:
 		if intf.Type != interfaces.Interface_WIREGUARD_TUNNEL {
+			return linkMismatchErr
+		}
+	case *interfaces.Interface_Rdma:
+		if intf.Type != interfaces.Interface_RDMA {
 			return linkMismatchErr
 		}
 	case nil:
@@ -626,6 +660,29 @@ func (d *InterfaceDescriptor) Validate(key string, intf *interfaces.Interface) e
 		if intf.GetWireguard().Port > 0xFFFF {
 			return kvs.NewInvalidValueError(ErrWgPort, "link.wireguard.port")
 		}
+	case interfaces.Interface_RDMA:
+		if intf.GetRdma().GetHostIfName() == "" {
+			return kvs.NewInvalidValueError(ErrRdmaHostInterfaceMissing, "link.rdma.host_if_name")
+		}
+		if intf.GetRdma().GetRxqNum() >> 16 != 0 {
+			return kvs.NewInvalidValueError(ErrRdmaQueueNumTooLarge, "link.rdma.rxq_num")
+		}
+		if rxQSize := intf.GetRdma().GetRxqSize(); rxQSize > 0 {
+			if rxQSize & (rxQSize - 1) != 0 {
+				return kvs.NewInvalidValueError(ErrRdmaInvalidQueueSize, "link.rdma.rxq_size")
+			}
+			if rxQSize >> 16 != 0 {
+				return kvs.NewInvalidValueError(ErrRdmaQueueSizeTooLarge, "link.rdma.rxq_size")
+			}
+		}
+		if txQSize := intf.GetRdma().GetTxqSize(); txQSize > 0 {
+			if txQSize & (txQSize - 1) != 0 {
+				return kvs.NewInvalidValueError(ErrRdmaInvalidQueueSize, "link.rdma.txq_size")
+			}
+			if txQSize >> 16 != 0 {
+				return kvs.NewInvalidValueError(ErrRdmaQueueSizeTooLarge, "link.rdma.txq_size")
+			}
+		}
 	}
 
 	// validate unnumbered
@@ -681,7 +738,6 @@ func (d *InterfaceDescriptor) Dependencies(key string, intf *interfaces.Interfac
 	switch intf.Type {
 	case interfaces.Interface_AF_PACKET:
 		// AF-PACKET depends on a referenced Linux interface in the default namespace
-		//nolint:staticcheck
 		if intf.GetAfpacket().GetLinuxInterface() != "" {
 			dependencies = append(dependencies, kvs.Dependency{
 				Label: afPacketHostInterfaceDep,
@@ -807,6 +863,13 @@ func (d *InterfaceDescriptor) Dependencies(key string, intf *interfaces.Interfac
 				Key:   interfaces.InterfaceKey(parentName),
 			})
 		}
+
+	case interfaces.Interface_RDMA:
+		// RDMA depends on a referenced Linux interface in the default namespace
+		dependencies = append(dependencies, kvs.Dependency{
+			Label: rdmaHostInterfaceDep,
+			Key:   linux_intf.InterfaceHostNameKey(intf.GetRdma().GetHostIfName()),
+		})
 	}
 
 	return dependencies
@@ -1026,6 +1089,30 @@ func (d *InterfaceDescriptor) getMemifRingSize(memif *interfaces.MemifLink) uint
 		return defaultMemifRingSize
 	}
 	return memif.GetRingSize()
+}
+
+// getRdmaQueueNum returns the number of RDMA queues.
+func (d *InterfaceDescriptor) getRdmaQueueNum(rdma *interfaces.RDMALink) uint32 {
+	if rdma.GetRxqNum() == 0 {
+		return defaultRdmaQueueNum
+	}
+	return rdma.GetRxqNum()
+}
+
+// getRdmaRxQueueSize returns the size of Rx queues of an RDMA interface.
+func (d *InterfaceDescriptor) getRdmaRxQueueSize(rdma *interfaces.RDMALink) uint32 {
+	if rdma.GetRxqSize() == 0 {
+		return defaultRdmaQueueSize
+	}
+	return rdma.GetRxqSize()
+}
+
+// getRdmaTxQueueSize returns the size of Tx queues of an RDMA interface.
+func (d *InterfaceDescriptor) getRdmaTxQueueSize(rdma *interfaces.RDMALink) uint32 {
+	if rdma.GetTxqSize() == 0 {
+		return defaultRdmaQueueSize
+	}
+	return rdma.GetTxqSize()
 }
 
 // getTapConfig returns the TAP-specific configuration section (handling undefined attributes).

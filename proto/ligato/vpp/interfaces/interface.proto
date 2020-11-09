@@ -29,6 +29,7 @@ message Interface {
         GTPU_TUNNEL = 12;
         IPIP_TUNNEL = 13;
         WIREGUARD_TUNNEL = 14;
+        RDMA = 15;
     };
     // Type represents the type of VPP interface and it must match the actual Link.
     Type type = 2;
@@ -121,6 +122,7 @@ message Interface {
         GtpuLink gtpu = 109;
         IPIPLink ipip = 110;
         WireguardLink wireguard = 111;
+        RDMALink rdma = 112;
     };
 };
 
@@ -402,4 +404,35 @@ message WireguardLink {
 
   // Source IP address
   string src_addr = 4;
+}
+
+// https://github.com/FDio/vpp/blob/master/src/plugins/rdma/rdma_doc.md
+message RDMALink {
+    enum Mode {
+        AUTO = 0;
+        // InfiniBand Verb (using libibverb).
+        IBV = 1;
+        // Direct Verb allows the driver to access the NIC HW RX/TX rings directly
+        // instead of having to go through libibverb and suffering associated overhead.
+        // It will be automatically selected if the adapter supports it.
+        DV = 2;
+    };
+
+    // Linux interface name representing the RDMA-enabled network device to attach into.
+    string host_if_name = 1;
+
+    // Mode at which the RDMA driver operates.
+    Mode mode = 2;
+
+    // Number of receive queues.
+    // By default only one RX queue is used.
+    uint32 rxq_num = 3;
+
+    // The size of each RX queue.
+    // Default is 1024 bytes.
+    uint32 rxq_size = 4;
+
+    // The size of each TX queue.
+    // Default is 1024 bytes.
+    uint32 txq_size = 5;
 }
