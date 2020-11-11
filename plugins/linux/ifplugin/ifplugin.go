@@ -28,6 +28,8 @@ import (
 	"go.ligato.io/vpp-agent/v3/plugins/linux/ifplugin/linuxcalls"
 	"go.ligato.io/vpp-agent/v3/plugins/linux/nsplugin"
 	"go.ligato.io/vpp-agent/v3/plugins/netalloc"
+	"go.ligato.io/vpp-agent/v3/proto/ligato/linux"
+	linux_interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/linux/interfaces"
 )
 
 const (
@@ -54,6 +56,8 @@ type IfPlugin struct {
 
 	// index map
 	ifIndex ifaceidx.LinuxIfMetadataIndex
+
+	PushNotification func(notification *linux.Notification)
 }
 
 // Deps lists dependencies of the interface plugin.
@@ -118,7 +122,14 @@ func (p *IfPlugin) Init() error {
 		return err
 	}
 
-	p.ifWatcher = descriptor.NewInterfaceWatcher(p.KVScheduler, p.ifHandler, p.Log)
+	notifyInterface := func(notif *linux_interfaces.InterfaceNotification) {
+		if p.PushNotification != nil {
+			p.PushNotification(&linux.Notification{
+				Interface: notif,
+			})
+		}
+	}
+	p.ifWatcher = descriptor.NewInterfaceWatcher(p.KVScheduler, p.ifHandler, notifyInterface, p.Log)
 	err = p.Deps.KVScheduler.RegisterKVDescriptor(p.ifWatcher.GetDescriptor())
 	if err != nil {
 		return err
@@ -150,6 +161,10 @@ func (p *IfPlugin) Close() error {
 // linux interfaces.
 func (p *IfPlugin) GetInterfaceIndex() ifaceidx.LinuxIfMetadataIndex {
 	return p.ifIndex
+}
+
+func (p *IfPlugin) SetNotifyService(notify func(notification *linux.Notification)) {
+	p.PushNotification = notify
 }
 
 // retrieveConfig loads IfPlugin configuration file.

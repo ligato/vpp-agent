@@ -16,8 +16,10 @@ package descriptor
 
 import (
 	"context"
+	"net"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/golang/protobuf/proto"
 	prototypes "github.com/golang/protobuf/ptypes/empty"
@@ -60,14 +62,16 @@ type InterfaceWatcher struct {
 	// Linux notifications
 	notifCh chan netlink.LinkUpdate
 	doneCh  chan struct{}
+	notify  func(notification *ifmodel.InterfaceNotification)
 }
 
 // NewInterfaceWatcher creates a new instance of the Interface Watcher.
-func NewInterfaceWatcher(kvscheduler kvs.KVScheduler, ifHandler linuxcalls.NetlinkAPI, log logging.PluginLogger) *InterfaceWatcher {
+func NewInterfaceWatcher(kvscheduler kvs.KVScheduler, ifHandler linuxcalls.NetlinkAPI, notifyInterface func(*ifmodel.InterfaceNotification), log logging.PluginLogger) *InterfaceWatcher {
 	descriptor := &InterfaceWatcher{
 		log:         log.NewLogger("if-watcher"),
 		kvscheduler: kvscheduler,
 		ifHandler:   ifHandler,
+		notify:      notifyInterface,
 		ifaces:      make(map[string]struct{}),
 		notifCh:     make(chan netlink.LinkUpdate),
 		doneCh:      make(chan struct{}),
@@ -177,12 +181,31 @@ func (w *InterfaceWatcher) processLinkNotification(linkUpdate netlink.LinkUpdate
 	ifName := linkUpdate.Attrs().Name
 	isUp := isLinkUp(linkUpdate)
 
+	w.sendNotification(linkUpdate)
+
 	if !w.needsUpdate(ifName, isUp) {
 		// ignore notification if the interface admin status remained the same
 		return
 	}
 
 	w.notifyScheduler(ifName, isUp)
+
+}
+
+func linkToInterfaceType(link netlink.Link) ifmodel.Interface_Type {
+	switch link.Type() {
+	case "veth":
+		return ifmodel.Interface_VETH
+	case "tuntap", "tun":
+		return ifmodel.Interface_TAP_TO_VPP
+	case "vrf":
+		return ifmodel.Interface_VRF_DEVICE
+	default:
+		if link.Attrs().Name == linuxcalls.DefaultLoopbackName {
+			return ifmodel.Interface_LOOPBACK
+		}
+		return ifmodel.Interface_UNDEFINED
+	}
 }
 
 // notifyScheduler notifies scheduler about interface change.
@@ -208,6 +231,36 @@ func (w *InterfaceWatcher) notifyScheduler(ifName string, enabled bool) {
 func (w *InterfaceWatcher) needsUpdate(ifName string, isEnabled bool) bool {
 	_, wasEnabled := w.ifaces[ifName]
 	return isEnabled != wasEnabled
+}
+
+func (w *InterfaceWatcher) sendNotification(linkUpdate netlink.LinkUpdate) {
+	if w.notify != nil {
+		attrs := linkUpdate.Attrs()
+		adminStatus := ifmodel.InterfaceState_DOWN
+		if attrs.Flags&net.FlagUp == net.FlagUp {
+			adminStatus = ifmodel.InterfaceState_UP
+		}
+		operStatus := ifmodel.InterfaceState_DOWN
+		if attrs.OperState != netlink.OperDown && attrs.OperState != netlink.OperNotPresent {
+			operStatus = ifmodel.InterfaceState_UP
+		}
+		w.notify(&ifmodel.InterfaceNotification{
+			Type: ifmodel.InterfaceNotification_UPDOWN,
+			State: &ifmodel.InterfaceState{
+				Name:         attrs.Alias,
+				InternalName: attrs.Name,
+				Type:         linkToInterfaceType(linkUpdate.Link),
+				IfIndex:      int32(attrs.Index),
+				AdminStatus:  adminStatus,
+				OperStatus:   operStatus,
+				LastChange:   time.Now().Unix(),
+				PhysAddress:  attrs.HardwareAddr.String(),
+				Speed:        0,
+				Mtu:          uint32(attrs.MTU),
+				Statistics:   nil,
+			},
+		})
+	}
 }
 
 func isLinkUp(update netlink.LinkUpdate) bool {

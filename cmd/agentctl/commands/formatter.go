@@ -30,13 +30,14 @@ import (
 )
 
 var tmplFuncs = template.FuncMap{
-	"json":   jsonTmpl,
-	"yaml":   yamlTmpl,
-	"proto":  protoTmpl,
-	"epoch":  epochTmpl,
-	"ago":    agoTmpl,
-	"dur":    shortHumanDuration,
-	"prefix": prefixTmpl,
+	"json":       jsonTmpl,
+	"yaml":       yamlTmpl,
+	"proto":      protoTmpl,
+	"protomulti": protoTmplMulti,
+	"epoch":      epochTmpl,
+	"ago":        agoTmpl,
+	"dur":        shortHumanDuration,
+	"prefix":     prefixTmpl,
 }
 
 func formatAsTemplate(w io.Writer, format string, data interface{}) error {
@@ -111,6 +112,18 @@ func protoTmpl(data interface{}) string {
 		panic(fmt.Sprintf("%T is not a proto message", data))
 	}
 	out, err := prototext.Marshal(pb)
+	if err != nil {
+		panic(err)
+	}
+	return string(out)
+}
+
+func protoTmplMulti(data interface{}) string {
+	pb, ok := data.(proto.Message)
+	if !ok {
+		panic(fmt.Sprintf("%T is not a proto message", data))
+	}
+	out, err := prototext.MarshalOptions{Multiline: true}.Marshal(pb)
 	if err != nil {
 		panic(err)
 	}

@@ -5,6 +5,7 @@ package ligato.linux;
 option go_package = "go.ligato.io/vpp-agent/v3/proto/ligato/linux;linux";
 
 import "ligato/linux/interfaces/interface.proto";
+import "ligato/linux/interfaces/state.proto";
 import "ligato/linux/l3/arp.proto";
 import "ligato/linux/l3/route.proto";
 
@@ -15,4 +16,6 @@ message ConfigData {
     repeated linux.l3.Route routes = 21;
 }
 
-message Notification {}
+message Notification {
+    linux.interfaces.InterfaceNotification interface = 1;
+}

@@ -93,6 +93,11 @@ func (p *Plugin) Init() error {
 			p.sendNotification(notification)
 		})
 	}
+	if p.LinuxIfPlugin != nil {
+		p.LinuxIfPlugin.SetNotifyService(func(notification *linux.Notification) {
+			p.sendNotification(notification)
+		})
+	}
 
 	return nil
 }

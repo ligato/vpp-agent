@@ -359,7 +359,7 @@ func newConfigWatchCommand(cli agentcli.Cli) *cobra.Command {
 		},
 	}
 	flags := cmd.Flags()
-	flags.StringArrayVar(&opts.Filters, "filter", nil, "Filter for notifications. Value should be JSON data of configurator.Notification.")
+	flags.StringArrayVar(&opts.Filters, "filter", nil, "Filter(s) for notifications (multiple filters are used with AND operator). Value should be JSON data of configurator.Notification.")
 	flags.StringVarP(&opts.Format, "format", "f", "", "Format output")
 	return cmd
 }
@@ -394,7 +394,14 @@ func runConfigWatch(cli agentcli.Cli, opts ConfigWatchOptions) error {
 
 	format := opts.Format
 	if len(format) == 0 {
-		format = `json`
+		format = `------------------
+ NOTIFICATION #{{.NextIdx}}
+------------------
+{{if .Notification.GetVppNotification}}Source: VPP
+Value: {{protomulti .Notification.GetVppNotification}}
+{{end}}{{if .Notification.GetLinuxNotification}}Source: LINUX
+Value:  {{protomulti .Notification.GetLinuxNotification}}
+{{end}}`
 	}
 
 	for {
